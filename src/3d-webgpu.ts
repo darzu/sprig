@@ -1,5 +1,13 @@
 import { mat4, vec3 } from './ext/gl-matrix.js';
 
+/*
+TODO:
+    Face painting
+    Refactor into seperate files
+        Kill babylonjs?
+*/
+
+
 // face normals vs vertex normals
 interface MeshModel {
     // vertex positions (x,y,z)
