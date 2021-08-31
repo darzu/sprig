@@ -363,7 +363,6 @@ function computeNormals(m: MeshModel): vec3[] {
     return triPoses.map(computeNormal)
 }
 
-
 export function addTriToBuffers(
     triPos: [vec3, vec3, vec3],
     triInd: vec3,
@@ -375,55 +374,53 @@ export function addTriToBuffers(
     const vOff = prevNumVerts * vertElStride
     const iOff = prevNumTri * triElStride
     const indShift = shiftIndices ? prevNumVerts : 0;
-    const vi0 = triInd[0] + indShift
-    const vi1 = triInd[1] + indShift
-    const vi2 = triInd[2] + indShift
     if (indices) {
-        indices[iOff + 0] = vi0
-        indices[iOff + 1] = vi1
-        indices[iOff + 2] = vi2
+        indices[iOff + 0] = triInd[0] + indShift
+        indices[iOff + 1] = triInd[1] + indShift
+        indices[iOff + 2] = triInd[2] + indShift
     }
     // set per-face vertex data
     // position
-    verts[vOff + vi0 * vertElStride + 0] = triPos[0][0]
-    verts[vOff + vi0 * vertElStride + 1] = triPos[0][1]
-    verts[vOff + vi0 * vertElStride + 2] = triPos[0][2]
-    verts[vOff + vi1 * vertElStride + 0] = triPos[1][0]
-    verts[vOff + vi1 * vertElStride + 1] = triPos[1][1]
-    verts[vOff + vi1 * vertElStride + 2] = triPos[1][2]
-    verts[vOff + vi2 * vertElStride + 0] = triPos[2][0]
-    verts[vOff + vi2 * vertElStride + 1] = triPos[2][1]
-    verts[vOff + vi2 * vertElStride + 2] = triPos[2][2]
+    verts[vOff + 0 * vertElStride + 0] = triPos[0][0]
+    verts[vOff + 0 * vertElStride + 1] = triPos[0][1]
+    verts[vOff + 0 * vertElStride + 2] = triPos[0][2]
+    verts[vOff + 1 * vertElStride + 0] = triPos[1][0]
+    verts[vOff + 1 * vertElStride + 1] = triPos[1][1]
+    verts[vOff + 1 * vertElStride + 2] = triPos[1][2]
+    verts[vOff + 2 * vertElStride + 0] = triPos[2][0]
+    verts[vOff + 2 * vertElStride + 1] = triPos[2][1]
+    verts[vOff + 2 * vertElStride + 2] = triPos[2][2]
     // color
     const [r1, g1, b1] = triColors[0]
     const [r2, g2, b2] = triColors[1]
     const [r3, g3, b3] = triColors[2]
-    verts[vOff + vi0 * vertElStride + 3] = r1
-    verts[vOff + vi0 * vertElStride + 4] = g1
-    verts[vOff + vi0 * vertElStride + 5] = b1
-    verts[vOff + vi1 * vertElStride + 3] = r2
-    verts[vOff + vi1 * vertElStride + 4] = g2
-    verts[vOff + vi1 * vertElStride + 5] = b2
-    verts[vOff + vi2 * vertElStride + 3] = r3
-    verts[vOff + vi2 * vertElStride + 4] = g3
-    verts[vOff + vi2 * vertElStride + 5] = b3
+    verts[vOff + 0 * vertElStride + 3] = r1
+    verts[vOff + 0 * vertElStride + 4] = g1
+    verts[vOff + 0 * vertElStride + 5] = b1
+    verts[vOff + 1 * vertElStride + 3] = r2
+    verts[vOff + 1 * vertElStride + 4] = g2
+    verts[vOff + 1 * vertElStride + 5] = b2
+    verts[vOff + 2 * vertElStride + 3] = r3
+    verts[vOff + 2 * vertElStride + 4] = g3
+    verts[vOff + 2 * vertElStride + 5] = b3
     // normals
     const [nx, ny, nz] = triNorm
-    verts[vOff + vi0 * vertElStride + 6] = nx
-    verts[vOff + vi0 * vertElStride + 7] = ny
-    verts[vOff + vi0 * vertElStride + 8] = nz
-    verts[vOff + vi1 * vertElStride + 6] = nx
-    verts[vOff + vi1 * vertElStride + 7] = ny
-    verts[vOff + vi1 * vertElStride + 8] = nz
-    verts[vOff + vi2 * vertElStride + 6] = nx
-    verts[vOff + vi2 * vertElStride + 7] = ny
-    verts[vOff + vi2 * vertElStride + 8] = nz
+    verts[vOff + 0 * vertElStride + 6] = nx
+    verts[vOff + 0 * vertElStride + 7] = ny
+    verts[vOff + 0 * vertElStride + 8] = nz
+    verts[vOff + 1 * vertElStride + 6] = nx
+    verts[vOff + 1 * vertElStride + 7] = ny
+    verts[vOff + 1 * vertElStride + 8] = nz
+    verts[vOff + 2 * vertElStride + 6] = nx
+    verts[vOff + 2 * vertElStride + 7] = ny
+    verts[vOff + 2 * vertElStride + 8] = nz
     // sway height
     const [y0, y1, y2] = triSwayHeights
-    verts[vOff + vi0 * vertElStride + 9] = y0
-    verts[vOff + vi1 * vertElStride + 9] = y1
-    verts[vOff + vi2 * vertElStride + 9] = y2
+    verts[vOff + 0 * vertElStride + 9] = y0
+    verts[vOff + 1 * vertElStride + 9] = y1
+    verts[vOff + 2 * vertElStride + 9] = y2
 }
+
 /*
 Adds mesh vertices and indices into buffers. Optionally shifts triangle indicies.
 */
@@ -433,7 +430,6 @@ function addMeshToBuffers(
     indices: Uint16Array | null, prevNumTri: number, shiftIndices = false): void {
     // IMPORTANT: assumes unshared vertices
     const norms = computeNormals(m);
-    const vOff = prevNumVerts * vertElStride
     m.tri.forEach((t, i) => {
         addTriToBuffers(
             [m.pos[t[0]], m.pos[t[1]], m.pos[t[2]]],
@@ -441,7 +437,7 @@ function addMeshToBuffers(
             norms[i],
             [m.colors[i], m.colors[i], m.colors[i]],
             [0, 0, 0],
-            verts, prevNumVerts, vertElStride,
+            verts, prevNumVerts + i * 3, vertElStride,
             indices, prevNumTri + i, shiftIndices);
     })
 }
