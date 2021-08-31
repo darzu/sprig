@@ -3,3 +3,7 @@ Contstruct game engine uses a scripting language:
 
 Vector networks instead of paths:
     https://medium.com/@alexharri/the-engineering-behind-figmas-vector-networks-688568e37110
+
+https://hazel.org
+    "Hazel is a live functional programming environment featuring typed holes."
+    https://arxiv.org/pdf/1703.08694.pdf

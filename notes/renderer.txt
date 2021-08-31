@@ -307,10 +307,18 @@ Rust -> WebGPU examples:
 
 "Geometry shaders":
   " are for creating new geometry on the fly. It's taking geometry of one type as input, and then 
-  emitting a different number of the same, or another type of geometry as output. You could have 
+  emitting a different number of the same, or another type of geoAmetry as output. You could have 
   points transformed to a series of triangles or quads."
     https://www.reddit.com/r/vulkan/comments/c9ws13/do_we_need_geometry_shader_anymore/
   http://www.joshbarczak.com/blog/?p=667 (they are slow)
+
+  Maybe also a way of doing per-face data?
+  https://docs.microsoft.com/en-us/previous-versions//bb205146(v=vs.85)?redirectedfrom=MSDN
+
+  grass?
+    https://upvoid.com/devblog/2013/02/prototype-grass/
+
+  Don't use GS: https://twitter.com/pointinpolygon/status/1270695113967181827
 
 LOD / automatic mesh simplification:
   quad simplification: https://www.youtube.com/watch?v=vBJcdClynFE

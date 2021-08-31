@@ -98,8 +98,8 @@ Forests:
 
 
 Low Poly advice:
-  https://www.youtube.com/watch?v=H1oNuKChsdU
-    Consider a consistent atom-size
-    Recommends hand-done LODs
-    Consider low-res
-    scrolling UV maps, normal maps
+    https://www.youtube.com/watch?v=H1oNuKChsdU
+        Consider a consistent atom-size
+        Recommends hand-done LODs
+        Consider low-res
+        scrolling UV maps, normal maps
