@@ -82,8 +82,12 @@ export interface MeshMemoryPool {
     _numTris: number,
     addMeshes: (meshesToAdd: MeshModel[]) => void,
     applyMeshTransform: (m: Mesh) => void,
-    preRender: () => void,
-    postRender: () => void,
+
+    // TODO: mapping, unmapping, and raw access is pretty odd
+    _vertsMap: Float32Array | null,
+    _indMap: Uint16Array | null,
+    _unmap: () => void,
+    _map: () => void,
 }
 
 export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDevice): MeshMemoryPool {
@@ -119,28 +123,28 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
 
     const vertElStride = vertByteSize / Float32Array.BYTES_PER_ELEMENT;
 
-    let vertsMap: Float32Array | null = null;
-    let indMap: Uint16Array | null = null;
+    let _vertsMap: Float32Array | null = null;
+    let _indMap: Uint16Array | null = null;
 
-    function preRender() {
-        if (vertsMap)
+    function _unmap() {
+        if (_vertsMap)
             _vertBuffer.unmap()
-        if (indMap)
+        if (_indMap)
             _indexBuffer.unmap()
-        vertsMap = null;
-        indMap = null;
+        _vertsMap = null;
+        _indMap = null;
     }
 
-    function postRender() {
-        if (!vertsMap)
-            vertsMap = new Float32Array(_vertBuffer.getMappedRange())
-        if (!indMap)
-            indMap = new Uint16Array(_indexBuffer.getMappedRange());
+    function _map() {
+        if (!_vertsMap)
+            _vertsMap = new Float32Array(_vertBuffer.getMappedRange())
+        if (!_indMap)
+            _indMap = new Uint16Array(_indexBuffer.getMappedRange());
     }
 
     function addMeshes(meshesToAdd: MeshModel[]) {
         function addMesh(m: MeshModel): Mesh {
-            if (vertsMap === null || indMap === null) {
+            if (_vertsMap === null || _indMap === null) {
                 throw "Use preRender() and postRender() functions"
             }
 
@@ -153,7 +157,7 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
                 throw "Too many triangles!"
 
             // add to vertex and index buffers
-            addMeshToBuffers(m, vertsMap, _numVerts, vertElStride, indMap, _numTris, false);
+            addMeshToBuffers(m, _vertsMap, _numVerts, vertElStride, _indMap, _numTris, false);
 
             // create transformation matrix
             const trans = mat4.create() as Float32Array;
@@ -203,7 +207,7 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
         );
     }
 
-    return {
+    const res: MeshMemoryPool = {
         _opts: opts,
         _vertBuffer,
         _indexBuffer,
@@ -211,11 +215,14 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
         _numVerts,
         _numTris,
         _meshes,
-        preRender,
-        postRender,
+        _vertsMap,
+        _indMap,
+        _unmap: _unmap,
+        _map: _map,
         addMeshes,
         applyMeshTransform,
     }
+    return res;
 }
 
 // TODO(@darzu): this shouldn't be needed once "flat" shading is supported in Chrome's WGSL, 
@@ -350,6 +357,56 @@ function computeNormals(m: MeshModel): vec3[] {
 }
 
 
+function addTriToBuffers(
+    triPos: [vec3, vec3, vec3],
+    triInd: vec3,
+    triNorm: vec3,
+    triColor: vec3,
+    verts: Float32Array, prevNumVerts: number, vertElStride: number,
+    indices: Uint16Array, prevNumTri: number, shiftIndices = false): void {
+    const vOff = prevNumVerts * vertElStride
+    const iOff = prevNumTri * triElStride
+    const indShift = shiftIndices ? prevNumVerts : 0;
+    const vi0 = triInd[0] + indShift
+    const vi1 = triInd[1] + indShift
+    const vi2 = triInd[2] + indShift
+    indices[iOff + 0] = vi0
+    indices[iOff + 1] = vi1
+    indices[iOff + 2] = vi2
+    // set per-face vertex data
+    // position
+    verts[vOff + vi0 * vertElStride + 0] = triPos[0][0]
+    verts[vOff + vi0 * vertElStride + 1] = triPos[0][1]
+    verts[vOff + vi0 * vertElStride + 2] = triPos[0][2]
+    verts[vOff + vi1 * vertElStride + 0] = triPos[1][0]
+    verts[vOff + vi1 * vertElStride + 1] = triPos[1][1]
+    verts[vOff + vi1 * vertElStride + 2] = triPos[1][2]
+    verts[vOff + vi2 * vertElStride + 0] = triPos[2][0]
+    verts[vOff + vi2 * vertElStride + 1] = triPos[2][1]
+    verts[vOff + vi2 * vertElStride + 2] = triPos[2][2]
+    // color
+    const [r, g, b] = triColor
+    verts[vOff + vi0 * vertElStride + 3] = r
+    verts[vOff + vi0 * vertElStride + 4] = g
+    verts[vOff + vi0 * vertElStride + 5] = b
+    verts[vOff + vi1 * vertElStride + 3] = r
+    verts[vOff + vi1 * vertElStride + 4] = g
+    verts[vOff + vi1 * vertElStride + 5] = b
+    verts[vOff + vi2 * vertElStride + 3] = r
+    verts[vOff + vi2 * vertElStride + 4] = g
+    verts[vOff + vi2 * vertElStride + 5] = b
+    // normals
+    const [nx, ny, nz] = triNorm
+    verts[vOff + vi0 * vertElStride + 6] = nx
+    verts[vOff + vi0 * vertElStride + 7] = ny
+    verts[vOff + vi0 * vertElStride + 8] = nz
+    verts[vOff + vi1 * vertElStride + 6] = nx
+    verts[vOff + vi1 * vertElStride + 7] = ny
+    verts[vOff + vi1 * vertElStride + 8] = nz
+    verts[vOff + vi2 * vertElStride + 6] = nx
+    verts[vOff + vi2 * vertElStride + 7] = ny
+    verts[vOff + vi2 * vertElStride + 8] = nz
+}
 /*
 Adds mesh vertices and indices into buffers. Optionally shifts triangle indicies.
 */
@@ -357,47 +414,17 @@ function addMeshToBuffers(
     m: MeshModel,
     verts: Float32Array, prevNumVerts: number, vertElStride: number,
     indices: Uint16Array, prevNumTri: number, shiftIndices = false): void {
+    // IMPORTANT: assumes unshared vertices
     const norms = computeNormals(m);
-    m.pos.forEach((v, i) => {
-        const off = (prevNumVerts + i) * vertElStride
-        // position
-        verts[off + 0] = v[0]
-        verts[off + 1] = v[1]
-        verts[off + 2] = v[2]
-    })
     const vOff = prevNumVerts * vertElStride
     m.tri.forEach((t, i) => {
-        const iOff = (prevNumTri + i) * triElStride
-        const indShift = shiftIndices ? prevNumVerts : 0;
-        const vi0 = t[0] + indShift
-        const vi1 = t[1] + indShift
-        const vi2 = t[2] + indShift
-        indices[iOff + 0] = vi0
-        indices[iOff + 1] = vi1
-        indices[iOff + 2] = vi2
-        // set per-face data
-        // color
-        const [r, g, b] = m.colors[i]
-        verts[vOff + vi0 * vertElStride + 3] = r
-        verts[vOff + vi0 * vertElStride + 4] = g
-        verts[vOff + vi0 * vertElStride + 5] = b
-        verts[vOff + vi1 * vertElStride + 3] = r
-        verts[vOff + vi1 * vertElStride + 4] = g
-        verts[vOff + vi1 * vertElStride + 5] = b
-        verts[vOff + vi2 * vertElStride + 3] = r
-        verts[vOff + vi2 * vertElStride + 4] = g
-        verts[vOff + vi2 * vertElStride + 5] = b
-        // normals
-        const [nx, ny, nz] = norms[i]
-        verts[vOff + vi0 * vertElStride + 6] = nx
-        verts[vOff + vi0 * vertElStride + 7] = ny
-        verts[vOff + vi0 * vertElStride + 8] = nz
-        verts[vOff + vi1 * vertElStride + 6] = nx
-        verts[vOff + vi1 * vertElStride + 7] = ny
-        verts[vOff + vi1 * vertElStride + 8] = nz
-        verts[vOff + vi2 * vertElStride + 6] = nx
-        verts[vOff + vi2 * vertElStride + 7] = ny
-        verts[vOff + vi2 * vertElStride + 8] = nz
+        addTriToBuffers(
+            [m.pos[t[0]], m.pos[t[1]], m.pos[t[2]]],
+            t,
+            norms[i],
+            m.colors[i],
+            verts, prevNumVerts, vertElStride,
+            indices, prevNumTri + i, shiftIndices);
     })
 }
 

@@ -128,14 +128,13 @@ async function init(canvasRef: HTMLCanvasElement) {
     const context = canvasRef.getContext('gpupresent')!;
 
     const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/)
-    const defaultMeshPoolOpts: MeshMemoryPoolOptions = {
+    const meshPool = createMeshMemoryPool({
         vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
         maxVerts: 100000,
         maxTris: 100000,
         maxMeshes: 10000,
         meshUniByteSize: Math.ceil(mat4ByteSize / 256) * 256, // align to 256,
-    }
-    const meshPool = createMeshMemoryPool(defaultMeshPoolOpts, device);
+    }, device);
 
     // TODO(@darzu): 
     const meshRenderer = createMeshRenderer(meshPool, device, context, canvasRef.width, canvasRef.height);
@@ -153,7 +152,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         cursorLocked = true
     }
 
-    meshPool.postRender()
+    meshPool._map()
 
     meshPool.addMeshes([
         PLANE
@@ -192,28 +191,35 @@ async function init(canvasRef: HTMLCanvasElement) {
         }
     }
 
+    meshPool._unmap();
+
+
     // create grass field
+    const grassMeshPool = createMeshMemoryPool({
+        vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
+        maxVerts: 30000,
+        maxTris: 10000,
+        maxMeshes: 1,
+        meshUniByteSize: Math.ceil(mat4ByteSize / 256) * 256, // align to 256,
+    }, device);
     {
+        grassMeshPool._map();
+
         const spread = 20;
         const spacing = 1;
-        const boxHandles: Mesh[] = []
+        let i = 0;
         for (let x = -spread; x < spread; x++) {
             for (let z = -spread; z < spread; z++) {
-                meshPool.addMeshes([GRASS])
-                const handle = meshPool._meshes[meshPool._meshes.length - 1] // TODO(@darzu): hack
-                const jitter = 1.0;
-                const xJitter = (Math.random() - 0.5) * spacing * jitter;
-                const zJitter = (Math.random() - 0.5) * spacing * jitter;
-                mat4.translate(handle.transform, handle.transform, [x * spacing + xJitter, 0, z * spacing + zJitter])
-                mat4.rotateY(handle.transform, handle.transform, (Math.random() - 0.5) * 0.5 * Math.PI)
-                meshPool.applyMeshTransform(handle);
-                boxHandles.push(handle)
+
+                // TODO(@darzu): 
+                i++;
             }
         }
+
+        grassMeshPool._unmap();
     }
 
 
-    meshPool.preRender();
 
     const aspect = Math.abs(canvasRef.width / canvasRef.height);
     const projectionMatrix = mat4.create();
