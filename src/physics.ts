@@ -87,6 +87,11 @@ export function checkCollisions(objs: { worldAABB: AABB, id: number }[]): Collid
     _lastCollisionTestTimeMs = performance.now() - start;
     return _collidesWith;
 }
+
+// grid buckets implementation
+// TODO(@darzu): impl
+
+// OctTree implementation
 interface OctTree {
     aabb: AABB,
     objs: Map<number, AABB>,
@@ -139,7 +144,8 @@ function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
         objs: thisObjs,
     }
 }
-// function bitree(
+
+// AABB utils
 export let _doesOverlaps = 0;
 export function doesOverlap(a: AABB, b: AABB) {
     _doesOverlaps++; // TODO(@darzu): debugging
@@ -162,12 +168,10 @@ export function enclosedBy(inner: AABB, outer: AABB) {
         && outer.min[1] <= inner.min[1]
         && outer.min[2] <= inner.min[2]
 }
-
 export interface AABB {
     min: vec3,
     max: vec3,
 }
-
 export function getAABBFromPositions(positions: vec3[]): AABB {
     const min = vec3.fromValues(Infinity, Infinity, Infinity)
     const max = vec3.fromValues(-Infinity, -Infinity, -Infinity)
