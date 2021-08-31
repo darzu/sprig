@@ -17,7 +17,12 @@ export interface PhysicsResults {
   collidesWith: CollidesWith;
 }
 
-export function stepPhysics(objs: PhysicsObject[], dt: number): PhysicsResults {
+export function stepPhysics(
+  objDict: Record<number, PhysicsObject>,
+  dt: number
+): PhysicsResults {
+  const objs = Object.values(objDict);
+
   moveObjects(objs, dt);
 
   // update AABBs
@@ -28,7 +33,7 @@ export function stepPhysics(objs: PhysicsObject[], dt: number): PhysicsResults {
 
   const collidesWith = checkCollisions(objs);
 
-  // TODO(@darzu): physics overlaps
+  // TODO(@darzu): fix physics overlaps
 
   for (let o of objs) {
     copyMotionProps(o.lastMotion, o.motion);
@@ -38,3 +43,8 @@ export function stepPhysics(objs: PhysicsObject[], dt: number): PhysicsResults {
     collidesWith,
   };
 }
+
+function fixOverlaps(
+  objs: Record<number, PhysicsObject>,
+  collidesWith: CollidesWith
+) {}

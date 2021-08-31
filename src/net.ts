@@ -66,7 +66,10 @@ class StateSynchronizer<Inputs> {
     // Then we're removing a constant # of items, so removing should be O(log N) overall?
     // Could also cache this sorted list--order will stay mostly the same so with a sort that's
     // optimized for mostly-ordered data (like TimSort) the sort should be O(N)
-    let objects = Object.values(this.net.state.objects);
+    let objects = [
+      ...Object.values(this.net.state.objects),
+      ...Object.values(this.net.state.deletedObjects),
+    ];
     objects = objects.filter(
       (obj) =>
         (!obj.deleted && obj.authority == this.net.state.me) ||
@@ -310,7 +313,9 @@ export class Net<Inputs> {
         }
         let event: GameEvent = { id, type, objects, authority };
         // do we know about all of these object ids?
-        let haveObjects = event.objects.every((id) => !!this.state.objects[id]);
+        let haveObjects = event.objects.every(
+          (id) => !!this.state.objects[id] || !!this.state.deletedObjects[id]
+        );
         if (!haveObjects) {
           applied = false;
         } else if (!this.state.events[id]) {
@@ -326,26 +331,27 @@ export class Net<Inputs> {
         let authority_seq = message.readUint32();
         let typeId = message.readUint8();
         let creator = message.readUint8();
-        let obj = this.state.objects[id];
+        let obj = this.state.objects[id] ?? this.state.deletedObjects[id];
+        let objExisted = !!obj;
         if (!obj) {
           obj = this.state.objectOfType(typeId, id, creator);
         }
         // Don't update an existing object if this was a create message or the authority claim is old
         if (
-          (this.state.objects[id] && updateType === ObjectUpdateType.Create) ||
+          (objExisted && updateType === ObjectUpdateType.Create) ||
           !obj.claimAuthority(authority, authority_seq)
         ) {
           message.dummy = true;
         }
         obj.deserializeFull(message);
-        if (!this.state.objects[id]) {
+        if (!objExisted) {
           this.state.addObject(obj);
         }
       } else if (updateType === ObjectUpdateType.Dynamic) {
         //console.log("Dynamic state update");
         let authority = message.readUint8();
         let authority_seq = message.readUint32();
-        let obj = this.state.objects[id];
+        let obj = this.state.objects[id] ?? this.state.deletedObjects[id];
         if (!obj) {
           throw "Got non-full update for unknown object ${id}";
         }

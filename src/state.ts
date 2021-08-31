@@ -166,6 +166,7 @@ export abstract class GameState<Inputs> {
   nextObjectId: number;
   protected renderer: Renderer;
   objects: Record<number, GameObject>;
+  deletedObjects: Record<number, GameObject>;
   events: Record<number, GameEvent>;
   me: number;
   numObjects: number = 0;
@@ -177,6 +178,7 @@ export abstract class GameState<Inputs> {
     this.nextPlayerId = 0;
     this.nextObjectId = 0;
     this.objects = {};
+    this.deletedObjects = {};
     this.events = {};
     this.collidesWith = {};
   }
@@ -204,6 +206,8 @@ export abstract class GameState<Inputs> {
   removeObject(obj: GameObject) {
     this.numObjects--;
     obj.deleted = true;
+    delete this.objects[obj.id];
+    this.deletedObjects[obj.id] = obj;
     this.renderer.removeObject(obj);
   }
 
@@ -231,7 +235,7 @@ export abstract class GameState<Inputs> {
 
   recordEvent(type: number, objects: number[]) {
     // check to see whether we're the authority for this event
-    let objs = objects.map((id) => this.objects[id]);
+    let objs = objects.map((id) => this.objects[id] ?? this.deletedObjects[id]);
     if (
       objs.some((o) => this.me === o.authority) &&
       objs.every((o) => this.me <= o.authority)
@@ -247,7 +251,7 @@ export abstract class GameState<Inputs> {
   step(dt: number, inputs: Inputs) {
     this.stepGame(dt, inputs);
 
-    const objs = Object.values(this.objects).filter((obj) => !obj.deleted);
+    const objs = Object.values(this.objects);
 
     // reduce error in location and rotation
     let identity_quat = quat.create();
@@ -288,7 +292,7 @@ export abstract class GameState<Inputs> {
     }
 
     // move, check collisions
-    const physRes = stepPhysics(objs, dt);
+    const physRes = stepPhysics(this.objects, dt);
     this.collidesWith = physRes.collidesWith;
 
     // UPDATE DERIVED STATE:

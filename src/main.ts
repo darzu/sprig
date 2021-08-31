@@ -21,7 +21,7 @@ import {
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
 const MAX_VERTICES = 21844;
-const ENABLE_NET = false;
+const ENABLE_NET = true;
 
 enum ObjectType {
   Plane,
@@ -489,7 +489,7 @@ class CubeGameState extends GameState<Inputs> {
     // check collisions
     for (let o of Object.values(this.objects)) {
       // TODO: consider a helper method to get only live objects
-      if (o instanceof Bullet && !o.deleted) {
+      if (o instanceof Bullet) {
         if (this.collidesWith[o.id]) {
           let collidingObjects = this.collidesWith[o.id].map(
             (id) => this.objects[id]
@@ -529,7 +529,7 @@ class CubeGameState extends GameState<Inputs> {
             // delete all bullet objects in collision
             // TODO: figure out how object deletion should really work
             this.removeObject(obj);
-          } else {
+          } else if (!obj?.deleted) {
             throw `Bad id ${id} in event ${event.id}`;
           }
         }
@@ -543,7 +543,7 @@ class CubeGameState extends GameState<Inputs> {
             this.removeObject(obj);
           } else if (obj && obj instanceof Player) {
             vec3.add(obj.color, obj.color, vec3.fromValues(0.1, 0, 0));
-          } else {
+          } else if (!obj?.deleted) {
             throw `Bad id ${id} in event ${event.id}`;
           }
         }
