@@ -33,10 +33,11 @@ export function checkCollisions(
   // TODO(@darzu): be more precise than just AABBs. broad & narrow phases.
   // TODO(@darzu): also use better memory pooling for aabbs and collidesWith relation
   // reset _collidesWith
+  for (let [_, ents] of _collidesWith) {
+    ents.length = 0;
+  }
   for (let o of objs) {
-    if (!_collidesWith.has(o.id)) 
-      _collidesWith.set(o.id, []);
-    else _collidesWith.get(o.id)!.length = 0;
+    if (!_collidesWith.has(o.id)) _collidesWith.set(o.id, []);
   }
   // reset _mapPool
   _nextMap = 0;
