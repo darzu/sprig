@@ -1,5 +1,9 @@
 import { vec3 } from "./gl-matrix.js";
+import { clamp } from "./math.js";
 import { range } from "./util.js";
+import { vec3Floor } from "./utils-3d.js";
+
+const BROAD_PHASE: "N^2" | "OCT" | "GRID" = "OCT";
 
 export interface CollidesWith {
     // one-to-many GameObject ids
@@ -30,55 +34,110 @@ export function checkCollisions(objs: { worldAABB: AABB, id: number }[]): Collid
     //      3000 objs: 44.6ms, 4,800,000 overlaps
     //      1000 objs: 5.8ms, 500,000 overlaps
     //      100 objs: <0.1ms, 6,000 overlaps
-    // for (let i0 = 0; i0 < objs.length; i0++) {
-    //     const box0 = objs[i0].worldAABB
-    //     for (let i1 = i0 + 1; i1 < objs.length; i1++) {
-    //         const box1 = objs[i1].worldAABB
-    //         if (doesOverlap(box0, box1)) {
-    //             _collidesWith[objs[i0].id].push(objs[i1].id)
-    //             _collidesWith[objs[i1].id].push(objs[i0].id)
-    //         }
-    //     }
-    // }
+    if (BROAD_PHASE === "N^2") {
+        for (let i0 = 0; i0 < objs.length; i0++) {
+            const box0 = objs[i0].worldAABB
+            for (let i1 = i0 + 1; i1 < objs.length; i1++) {
+                const box1 = objs[i1].worldAABB
+                if (doesOverlap(box0, box1)) {
+                    _collidesWith[objs[i0].id].push(objs[i1].id)
+                    _collidesWith[objs[i1].id].push(objs[i0].id)
+                }
+            }
+        }
+    }
+
+    const maxHorizontalDist = 1000;
+    const maxVerticalDist = 100;
+    const worldAABB: AABB = { min: [-maxHorizontalDist, -maxVerticalDist, -maxHorizontalDist], max: [maxHorizontalDist, maxVerticalDist, maxHorizontalDist] };
 
     // naive oct-tree
     //      5000 objs: 12.5ms, 56,000 overlaps + 235,000 enclosed-bys
     //      3000 objs: 7.6ms, 21,000 overlaps + 186,000 enclosed-bys
+    //      3000 objs @[2000, 200, 2000]: 5ms, 26,000 + 120,000 enclosed-bys ?
     //      1000 objs: 2.6ms, 8,500 overlaps + 53,000 enclosed-bys
     //      100 objs: 0.1ms, 1,200 overlaps + 6,000 enclosed-bys
-    const octObjs = new Map<number, AABB>(objs.map(o => [o.id, o.worldAABB])); // TODO(@darzu): necessary?
-    const maxDist = 10000;
-    const octWorld: AABB = { min: [-maxDist, -maxDist, -maxDist], max: [maxDist, maxDist, maxDist] };
-    const tree = octtree(octObjs, octWorld);
-    function octCheckOverlap(tree: OctTree) {
-        // check ea obj
-        for (let obj of tree.objs.entries()) {
-            octObjCheckOverlap(obj, tree, true);
-        }
-        // check ea tree
-        for (let t of tree.children) {
-            if (t)
-                octCheckOverlap(t)
-        }
-    }
-    function octObjCheckOverlap(obj: [number, AABB], tree: OctTree, first = false) {
-        const [id0, box0] = obj;
-        // check this tree
-        for (let [id1, box1] of tree.objs) {
-            if ((!first || id0 < id1) && doesOverlap(box0, box1)) {
-                _collidesWith[id0].push(id1)
-                _collidesWith[id1].push(id0)
+    if (BROAD_PHASE === "OCT") {
+        const octObjs = new Map<number, AABB>(objs.map(o => [o.id, o.worldAABB])); // TODO(@darzu): necessary?
+        const tree = octtree(octObjs, worldAABB);
+        function octCheckOverlap(tree: OctTree) {
+            // check ea obj
+            for (let obj of tree.objs.entries()) {
+                octObjCheckOverlap(obj, tree, true);
+            }
+            // check ea tree
+            for (let t of tree.children) {
+                if (t)
+                    octCheckOverlap(t)
             }
         }
-        // check down the tree
-        for (let t of tree.children) {
-            if (t && doesOverlap(box0, t.aabb)) {
-                octObjCheckOverlap(obj, t)
+        function octObjCheckOverlap(obj: [number, AABB], tree: OctTree, first = false) {
+            const [id0, box0] = obj;
+            // check this tree
+            for (let [id1, box1] of tree.objs) {
+                if ((!first || id0 < id1) && doesOverlap(box0, box1)) {
+                    _collidesWith[id0].push(id1)
+                    _collidesWith[id1].push(id0)
+                }
+            }
+            // check down the tree
+            for (let t of tree.children) {
+                if (t && doesOverlap(box0, t.aabb)) {
+                    octObjCheckOverlap(obj, t)
+                }
             }
         }
+        if (tree)
+            octCheckOverlap(tree);
     }
-    if (tree)
-        octCheckOverlap(tree);
+
+    // grid / buckets / spacial hash
+    //      3000 objs @[2000, 200, 2000]: 1.2-7.6ms, 180,000-400,000 overlaps, 4,400 cell checks
+    if (BROAD_PHASE === "GRID") {
+        // initialize world
+        if (!_worldGrid)
+            _worldGrid = createWorldGrid(worldAABB, [10, 10, 10])
+        // place objects in grid
+        for (let o of objs) {
+            let ll = _objToObjLL[o.id]
+            if (!ll) // new object
+                ll = _objToObjLL[o.id] = {
+                    id: o.id,
+                    minCoord: vec3.create(),
+                    maxCoord: vec3.create(),
+                    aabb: o.worldAABB,
+                    next: null,
+                    prev: null
+                }
+            gridPlace(_worldGrid, ll);
+        }
+        // check for collisions
+        let _numMultiCell = 0;
+        _cellChecks = 0;
+        for (let o of Object.values(_objToObjLL)) {
+            if (!o.prev)
+                continue; // not attached
+            if (vec3.equals(o.minCoord, o.maxCoord)) {
+                // we're fully within one cell
+                checkCell(o, o.prev)
+            } else {
+                // we're within multiple cells
+                for (let x = o.minCoord[0]; x <= o.maxCoord[0]; x++) {
+                    for (let y = o.minCoord[1]; y <= o.maxCoord[1]; y++) {
+                        for (let z = o.minCoord[2]; z <= o.maxCoord[2]; z++) {
+                            const c = _worldGrid.grid[gridIdx(_worldGrid, [x, y, z])]
+                            checkCell(o, c);
+                        }
+                    }
+                }
+                _numMultiCell++;
+                // TODO(@darzu): impl
+                // console.log(`obj in multiple cells! (${o.minCoord.join(',')})->(${o.maxCoord.join(',')})`)
+            }
+        }
+        console.log(`_cellChecks: ${_cellChecks}`)
+        console.log(`_numMultiCell: ${_numMultiCell}`)
+    }
 
     // TODO(@darzu): debugging
     // console.log(debugOcttree(tree).join(','))
@@ -87,9 +146,128 @@ export function checkCollisions(objs: { worldAABB: AABB, id: number }[]): Collid
     _lastCollisionTestTimeMs = performance.now() - start;
     return _collidesWith;
 }
+let _worldGrid: WorldGrid | null = null;
+const _objToObjLL: { [id: number]: ObjLL } = {};
+export let _cellChecks = 0;
 
 // grid buckets implementation
 // TODO(@darzu): impl
+interface WorldGrid {
+    aabb: AABB,
+    cellSize: vec3,
+    dimensions: vec3,
+    grid: WorldCell[],
+}
+interface WorldCell {
+    next: ObjLL | null,
+}
+interface ObjLL {
+    id: number,
+    aabb: AABB,
+    minCoord: vec3,
+    maxCoord: vec3,
+    next: ObjLL | null,
+    prev: WorldCell | ObjLL | null,
+}
+function createWorldGrid(aabb: AABB, cellSize: vec3): WorldGrid {
+    const chunkSize = vec3.sub(vec3.create(), aabb.max, aabb.min)
+    const dims = vec3.div(vec3.create(), chunkSize, cellSize);
+    vec3Floor(dims, dims);
+    const gridLength = dims[0] * dims[1] * dims[2];
+    console.log(gridLength);
+    const grid = range(gridLength).map(_ => ({ next: null } as WorldCell));
+    return {
+        aabb,
+        cellSize,
+        dimensions: dims,
+        grid,
+    }
+}
+function gridRemove(o: ObjLL) {
+    const oldPrev = o.prev;
+    const oldNext = o.next;
+    if (oldPrev)
+        oldPrev.next = oldNext;
+    if (oldNext)
+        oldNext.prev = oldPrev;
+    o.next = null;
+    o.prev = null;
+}
+function gridIdx(g: WorldGrid, coord: vec3): number {
+    const idx = coord[0] + coord[1] * g.dimensions[0] + coord[2] * g.dimensions[0] * g.dimensions[1]
+    if (idx < 0 || g.grid.length <= idx) // TODO(@darzu): for debugging
+        throw `object out of bounds! (${coord.join(',')}), idx: ${idx}`
+    return idx;
+}
+function gridCoord(out: vec3, g: WorldGrid, pos: vec3): vec3 {
+    vec3.div(out, vec3.sub(out, pos, g.aabb.min), g.cellSize);
+    // clamp coordinates onto world grid
+    // TODO(@darzu): should we use multiple grids?
+    out[0] = clamp(Math.floor(out[0]), 0, g.dimensions[0] - 1)
+    out[1] = clamp(Math.floor(out[1]), 0, g.dimensions[1] - 1)
+    out[2] = clamp(Math.floor(out[2]), 0, g.dimensions[2] - 1)
+    return out;
+}
+function gridPlace(g: WorldGrid, o: ObjLL) {
+    const minCoord = gridCoord(_scratchVec3, g, o.aabb.min);
+    if (o.prev && vec3.equals(minCoord, o.minCoord)) {
+        // same place, do nothing
+        return;
+    }
+    // new placement, update coordinates
+    vec3.copy(o.minCoord, minCoord);
+    gridCoord(o.maxCoord, g, o.aabb.max);
+    const idx = gridIdx(g, o.minCoord);
+    // console.log(`(${coord.join(',')}), idx: ${idx}`)
+    const cell = g.grid[idx]
+    if (!cell.next) {
+        // we're first
+        gridRemove(o)
+        cell.next = o;
+        o.prev = cell;
+        return;
+    }
+    // traverse to end or self
+    let tail = cell.next;
+    while (tail.next !== null && tail.id !== o.id) {
+        tail = tail.next;
+    }
+    if (tail.id === o.id) {
+        // we shouldn't find ourself
+        // TODO(@darzu): debugging
+        throw `gridPlace: Incorrectly found ourselves at: ${o.minCoord.join(',')}`
+    }
+    // add us to the end
+    gridRemove(o)
+    tail.next = o;
+    o.prev = tail;
+    return;
+}
+function checkCell(o: ObjLL, c: ObjLL | WorldCell) {
+    _cellChecks++ // TODO(@darzu): debugging;
+    // check given
+    if ((c as ObjLL).id) {
+        checkPair(o, c as ObjLL);
+    }
+    // check backward
+    let prev = (c as ObjLL).prev;
+    while (prev && (prev as ObjLL).id) {
+        checkPair(o, prev as ObjLL);
+        prev = (prev as ObjLL).prev;
+    }
+    // check forward
+    let next = c.next;
+    while (next && (next as ObjLL).id) {
+        checkPair(o, next as ObjLL);
+        next = next.next;
+    }
+}
+function checkPair(a: { id: number, aabb: AABB }, b: { id: number, aabb: AABB }) {
+    if (b.id < a.id && doesOverlap(a.aabb, b.aabb)) {
+        _collidesWith[a.id].push(b.id);
+        _collidesWith[b.id].push(a.id);
+    }
+}
 
 // OctTree implementation
 interface OctTree {

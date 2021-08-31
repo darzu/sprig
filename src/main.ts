@@ -6,7 +6,7 @@ import { test } from "./test.js";
 import { Renderer, Renderer_WebGPU } from "./render_webgpu.js";
 import { attachToCanvas } from "./render_webgl.js";
 import { getAABBFromMesh, Mesh, MeshHandle, unshareProvokingVertices } from "./mesh-pool.js";
-import { _doesOverlaps, _enclosedBys, _lastCollisionTestTimeMs } from "./physics.js";
+import { _cellChecks, _doesOverlaps, _enclosedBys, _lastCollisionTestTimeMs } from "./physics.js";
 
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
@@ -691,7 +691,7 @@ async function startGame(host: string | null) {
     debugTxt.nodeValue =
       controlsStr +
     ` (js: ${avgJsTime.toFixed(2)}ms, net: ${avgNetTime.toFixed(2)}ms, ` +
-    `broad:${_lastCollisionTestTimeMs.toFixed(1)}ms (o:${_doesOverlaps}, e:${_enclosedBys}), fps: ${avgFPS.toFixed(1)}, ` +
+    `broad:${_lastCollisionTestTimeMs.toFixed(1)}ms (o:${_doesOverlaps}, e:${_enclosedBys}, c: ${_cellChecks}), fps: ${avgFPS.toFixed(1)}, ` +
     `buffers: r=${reliableBufferSize}/u=${unreliableBufferSize}, ` +
       `dropped updates: ${numDroppedUpdates}` +
       `objects=${gameState.numObjects}) ${usingWebGPU ? 'WebGPU' : 'WebGL'}`;
