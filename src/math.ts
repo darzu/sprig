@@ -54,3 +54,11 @@ export function multiplyMatrices(a: Mat, b: V3): V3 {
 }
 
 export const radToDeg = 180 / Math.PI;
+
+export function jitter(radius: number): number {
+    return (Math.random() - 0.5) * radius * 2
+}
+
+export function align(x: number, size: number): number {
+    return Math.ceil(x / size) * size
+}
