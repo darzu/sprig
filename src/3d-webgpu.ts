@@ -184,45 +184,20 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
             const p3: vec3 = [x3, y3, z3];
             const p4: vec3 = [x4, y4, z4];
 
-            // const norm1 = vec3.cross(vec3.create(), [x2 - x1, y2 - y1, z2 - z1], [x3 - x1, y3 - y1, z3 - z1])
-            // vec3.normalize(norm1, norm1);
-
-            // addTriToBuffers(
-            //     [p1, p2, p3],
-            //     [0, 1, 2],
-            //     norm1,
-            //     [
-            //         // TODO(@darzu): use proper darkening
-            //         [r * 0.5, g * 0.5, b * 0.5],
-            //         [r * 0.5, g * 0.5, b * 0.5],
-            //         [r, g, b],
-            //     ],
-            //     [0, 0, 1.0],
-            //     grassMeshPool._vertsMap(),
-            //     grassMeshPool._numVerts,
-            //     vertElStride,
-            //     grassMeshPool._indMap(),
-            //     grassMeshPool._numTris,
-            //     true);
-
-            // grassMeshPool._numTris += 1;
-            // grassMeshPool._numVerts += 3;
-
-            // i++;
-
-            const norm2 = vec3.cross(vec3.create(), [x3 - x1, y3 - y1, z3 - z1], [x4 - x1, y4 - y1, z4 - z1])
-            vec3.normalize(norm2, norm2);
+            const norm1 = vec3.cross(vec3.create(), [x2 - x1, y2 - y1, z2 - z1], [x3 - x1, y3 - y1, z3 - z1])
+            vec3.normalize(norm1, norm1);
 
             addTriToBuffers(
-                [p1, p3, p4],
+                [p1, p2, p3],
                 [0, 1, 2],
-                norm2,
+                norm1,
                 [
+                    // TODO(@darzu): use proper darkening
+                    [r * 0.5, g * 0.5, b * 0.5],
                     [r * 0.5, g * 0.5, b * 0.5],
                     [r, g, b],
-                    [r, g, b],
                 ],
-                [0.0, 1.0, 1.0],
+                [0, 0, 1.0],
                 grassMeshPool._vertsMap(),
                 grassMeshPool._numVerts,
                 vertElStride,
@@ -234,6 +209,31 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
             grassMeshPool._numVerts += 3;
 
             i++;
+
+            // const norm2 = vec3.cross(vec3.create(), [x3 - x1, y3 - y1, z3 - z1], [x4 - x1, y4 - y1, z4 - z1])
+            // vec3.normalize(norm2, norm2);
+
+            // addTriToBuffers(
+            //     [p1, p3, p4],
+            //     [0, 1, 2],
+            //     norm2,
+            //     [
+            //         [r * 0.5, g * 0.5, b * 0.5],
+            //         [r, g, b],
+            //         [r, g, b],
+            //     ],
+            //     [0.0, 1.0, 1.0],
+            //     grassMeshPool._vertsMap(),
+            //     grassMeshPool._numVerts,
+            //     vertElStride,
+            //     grassMeshPool._indMap(),
+            //     grassMeshPool._numTris,
+            //     true);
+
+            // grassMeshPool._numTris += 1;
+            // grassMeshPool._numVerts += 3;
+
+            // i++;
         }
     }
 
@@ -406,7 +406,7 @@ function initGrassSystem(device: GPUDevice): GrassSystem {
         // bladeW: 0.2,
         bladeW: 0.2,
         // bladeH: 3,
-        bladeH: 1.2,
+        bladeH: 1.6,
         // bladeH: 1.5,
         // bladeH: 1.7,
         // TODO(@darzu): debugging
@@ -426,20 +426,20 @@ function initGrassSystem(device: GPUDevice): GrassSystem {
     }
     const lod2Opts: GrassTilesetOpts = {
         ...lod1Opts,
-        bladeH: lod1Opts.bladeH * 1.5,
+        bladeH: lod1Opts.bladeH * 1.4,
         spacing: lod1Opts.spacing * 2,
         tileSize: lod1Opts.tileSize * 2,
     }
     const lod3Opts: GrassTilesetOpts = {
         ...lod1Opts,
-        bladeH: lod1Opts.bladeH * 2,
+        bladeH: lod1Opts.bladeH * 1.6,
         spacing: lod1Opts.spacing * 4,
         tileSize: lod1Opts.tileSize * 4,
     }
     const lod4Opts: GrassTilesetOpts = {
         ...lod1Opts,
         tilesPerSide: 8,
-        bladeH: lod1Opts.bladeH * 2.5,
+        bladeH: lod1Opts.bladeH * 1.8,
         spacing: lod1Opts.spacing * 8,
         tileSize: lod1Opts.tileSize * 8,
     }
