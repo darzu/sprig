@@ -190,7 +190,7 @@ export class Net<Inputs> {
 
     for (let server of this.peers) {
       // TODO: this should be sent/received unreliably
-      this.send(server, msg, true);
+      this.send(server, msg, false);
     }
     this.snap_seq++;
   }
