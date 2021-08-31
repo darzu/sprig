@@ -569,8 +569,13 @@ async function init(canvasRef: HTMLCanvasElement) {
     const [playerM] = meshPool.addMeshes([playerCubeModel], true)
 
     // create a field of cubes
+    function createGarbageCube(pos: vec3)
     {
-        const grayCube: MeshModel = { ...CUBE, colors: CUBE.colors.map(c => [0.3, 0.3, 0.3]) }
+        const color: vec3 = [0.3 + jitter(0.05), 0.3 + jitter(0.05), 0.3 + jitter(0.05)];
+        const grayCube: MeshModel = {
+            ...CUBE,
+            colors: CUBE.colors.map(c => color),
+        }
         const spread = 2;
         const spacing = 2;
         const boxHandles: Mesh[] = []
@@ -579,6 +584,7 @@ async function init(canvasRef: HTMLCanvasElement) {
                 for (let z = -spread; z < spread; z++) {
                     meshPool.addMeshes([grayCube], true)
                     const handle = meshPool._meshes[meshPool._meshes.length - 1] // TODO(@darzu): hack
+                    mat4.translate(handle.transform, handle.transform, pos)
                     mat4.translate(handle.transform, handle.transform, [x * spacing, (y + spread + 1.5) * spacing, (z - spread * 1.5) * spacing])
                     mat4.rotateX(handle.transform, handle.transform, Math.random() * 2 * Math.PI)
                     mat4.rotateY(handle.transform, handle.transform, Math.random() * 2 * Math.PI)
@@ -588,7 +594,12 @@ async function init(canvasRef: HTMLCanvasElement) {
                 }
             }
         }
+        return boxHandles;
     }
+    createGarbageCube([0, 3, 0])
+    createGarbageCube([20, 2, 0])
+    createGarbageCube([0, 7, 20])
+    createGarbageCube([-10, -5, -10])
 
     // light cube
     const cubeSize = 10;
@@ -607,7 +618,7 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     const aspect = Math.abs(canvasRef.width / canvasRef.height);
     const projectionMatrix = mat4.create();
-    const viewDistance = 1000.0;
+    const viewDistance = 10000.0;
     mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 1, viewDistance);
 
     const cameraPos = mkAffineTransformable();
