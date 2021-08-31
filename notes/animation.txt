@@ -78,3 +78,5 @@ Animation editor:
     small number of frames
     timing defined in code
     
+Rigging -> model via AI:
+    http://gvv.mpi-inf.mpg.de/projects/NeuralActor/

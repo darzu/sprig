@@ -701,7 +701,6 @@ async function init(canvasRef: HTMLCanvasElement) {
         verticesBuffer.unmap();
     }
 
-
     const aspect = Math.abs(canvasRef.width / canvasRef.height);
     const projectionMatrix = mat4.create();
     mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 1, 100.0);
@@ -736,11 +735,12 @@ async function init(canvasRef: HTMLCanvasElement) {
         );
     }
 
-    const cameraPos = mkEulerTransformable();
+    const cameraPos = mkAffineTransformable();
     // cameraPos.yaw(Math.PI)
-    cameraPos.moveZ(40)
-    cameraPos.moveY(5)
-    cameraPos.moveX(5)
+    cameraPos.pitch(-Math.PI / 4)
+    // cameraPos.moveZ(40)
+    // cameraPos.moveY(5)
+    // cameraPos.moveX(5)
     // // cameraPos.lookAt([0, 0, 0])
 
     // console.log(cameraPos.getTransform())
@@ -780,7 +780,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         return out;
     }
 
-    function controlTransformable(t: Transformable) {
+    function controlPlayer(t: Transformable) {
         // keys
         if (pressedKeys['w'])
             t.moveZ(-1)
@@ -795,23 +795,28 @@ async function init(canvasRef: HTMLCanvasElement) {
         if (pressedKeys['c'])
             t.moveY(-1)
         if (pressedKeys['q'])
-            t.roll(0.1)
+            // t.roll(0.1)
         if (pressedKeys['e'])
-            t.roll(-0.1)
+            // t.roll(-0.1)
         if (pressedKeys['r']) {
             // TODO(@darzu): 
         }
         // mouse
         if (mouseDeltaX !== 0)
             t.yaw(-mouseDeltaX * 0.01);
-        if (mouseDeltaY !== 0)
-            t.pitch(-mouseDeltaY * 0.01);
+        // if (mouseDeltaY !== 0)
+        //     t.pitch(-mouseDeltaY * 0.01);
     }
 
-    const m2 = meshes[4]
-    const m2t = mkAffineTransformable();
-    m2.transform = m2t.getTransform();
-    applyMeshTransform(m2)
+    function cameraFollow(camera: Transformable, player: Transformable) {
+        if (mouseDeltaY !== 0)
+            camera.pitch(-mouseDeltaY * 0.01);
+    }
+
+    const playerM = meshes[4]
+    const playerT = mkAffineTransformable();
+    playerM.transform = playerT.getTransform();
+    applyMeshTransform(playerM)
 
     function frame(time: number) {
         // Sample is no longer the active page.
@@ -826,11 +831,13 @@ async function init(canvasRef: HTMLCanvasElement) {
         mat4.translate(meshes[3].transform, meshes[3].transform, [0.0, 0, 0.3])
         applyMeshTransform(meshes[3])
 
-        controlTransformable(cameraPos);
+        // controlTransformable(cameraPos);
+        controlPlayer(playerT);
+        cameraFollow(cameraPos, playerT);
         // controlTransformable(m2t);
 
-        m2.transform = m2t.getTransform();
-        applyMeshTransform(m2)
+        playerM.transform = playerT.getTransform();
+        applyMeshTransform(playerM)
 
         // reset accummulated mouse delta
         mouseDeltaX = 0;
@@ -838,7 +845,13 @@ async function init(canvasRef: HTMLCanvasElement) {
 
         function getViewProj() {
             const viewProj = mat4.create();
-            const viewMatrix = cameraPos.getTransform()
+            const cam = cameraPos.getTransform()
+            const player = playerT.getTransform()
+
+            const viewMatrix = mat4.create()
+            mat4.multiply(viewMatrix, viewMatrix, player)
+            mat4.multiply(viewMatrix, viewMatrix, cam)
+            mat4.translate(viewMatrix, viewMatrix, [0, 0, 10])
 
             mat4.invert(viewMatrix, viewMatrix);
 
