@@ -1,0 +1,6 @@
+nakama:
+    https://heroiclabs.com
+    https://heroiclabs.com/nakama-opensource/
+    https://github.com/heroiclabs/nakama
+    makes money via Heroic Cloud hosted solution
+

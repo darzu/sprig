@@ -370,3 +370,6 @@ https://github.com/googlearchive/gamebuilder
 
 HackMD.io
   collaborative markdown editting
+
+Flash-like animations:
+  https://www.rive.app

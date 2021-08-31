@@ -1,0 +1,19 @@
+Compact binary format
+    vert buffer, index buffer,
+    painted faces, material properties?
+    
+Optionally embedded in a .png
+    bigger files use a bigger png so you get more bits
+Can losslessly re-render the .png from the binary format
+
+
+Other binary formats:
+    glTF2.0
+        https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/figures/gltfOverview-2.0.0b.png
+        https://blog.playcanvas.com/playcanvas-launches-gltf-2-0-viewer-tool/
+            https://news.ycombinator.com/item?id=24008108
+        https://github.com/KhronosGroup/glTF-Sample-Viewer
+
+Material:
+    Metal vs Roughness
+

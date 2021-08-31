@@ -8,6 +8,7 @@ Rust community stuff:
 
 "WASI"
     https://wasi.dev
+    https://hacks.mozilla.org/2019/03/standardizing-wasi-a-webassembly-system-interface/
 
 https://wasmtime.dev
     https://docs.wasmtime.dev/lang-rust.html
@@ -23,4 +24,12 @@ wasm<->js
     https://rustwasm.github.io/docs/book/game-of-life/implementing.html
     Minimizing copying into and out of the WebAssembly linear memory
     Minimizing serializing and deserializing
+
+Trunk
+    Max Approved(TM)
+    https://github.com/thedodd/trunk
+    https://trunkrs.dev
+
+"Interface Types"
+    https://github.com/WebAssembly/interface-types/blob/master/proposals/interface-types/Explainer.md
 
