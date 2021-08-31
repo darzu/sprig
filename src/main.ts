@@ -184,7 +184,7 @@ class Bullet extends Cube {
 
   mesh(): Mesh {
     // TODO(@darzu): DEBUG
-    return scaleMesh(super.mesh(), 0.5);
+    return scaleMesh(super.mesh(), 0.2);
   }
 
   typeId(): number {
@@ -561,8 +561,8 @@ class CubeGameState extends GameState<Inputs> {
   }
 
   runEvent(event: GameEvent) {
-    return; // TODO(@darzu): DEBUG
-    console.log(`Running event of type ${EventType[event.type]}`);
+    // return; // TODO(@darzu): DEBUG, this is very slow when done with >100s of objs.
+    // console.log(`Running event of type ${EventType[event.type]}`);
     switch (event.type as EventType) {
       case EventType.BulletBulletCollision:
         for (let id of event.objects) {
