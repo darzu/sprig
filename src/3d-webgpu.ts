@@ -1,4 +1,5 @@
 import { mat4, vec3, quat } from './ext/gl-matrix.js';
+import { clamp } from './math.js';
 
 /*
 TODO:
@@ -293,7 +294,6 @@ interface Mesh {
 const sampleCount = 4;
 
 interface Transformable {
-    _transform: mat4,
     getTransform: () => mat4;
     lookAt: (target: vec3) => void;
     pitch: (rad: number) => void;
@@ -304,10 +304,9 @@ interface Transformable {
     moveZ: (n: number) => void;
 }
 
-function mkTransformable(): Transformable {
+function mkAffineTransformable(): Transformable {
     const transform = mat4.create();
     return {
-        _transform: transform, // TODO:
         getTransform: () => {
             return mat4.clone(transform);
         },
@@ -331,6 +330,74 @@ function mkTransformable(): Transformable {
         },
         moveZ: (n: number) => {
             mat4.translate(transform, transform, [0, 0, n]);
+        },
+    }
+}
+
+function mkQuatTransformable(): Transformable {
+    const rotation: quat = quat.create();
+    const position: vec3 = vec3.create();
+    return {
+        getTransform: () => {
+            return mat4.fromRotationTranslation(mat4.create(), rotation, position);
+        },
+        lookAt: (target: vec3) => {
+            // TODO(@darzu): dz
+        },
+        pitch: (rad: number) => {
+            quat.rotateX(rotation, rotation, rad);
+        },
+        yaw: (rad: number) => {
+            quat.rotateY(rotation, rotation, rad);
+        },
+        roll: (rad: number) => {
+            quat.rotateZ(rotation, rotation, rad);
+        },
+        moveX: (n: number) => {
+            position[0] += n;
+        },
+        moveY: (n: number) => {
+            position[1] += n;
+        },
+        moveZ: (n: number) => {
+            position[2] += n;
+        },
+    }
+}
+
+const radToDeg = 180 / Math.PI;
+
+
+function mkEulerTransformable(): Transformable {
+    const position: vec3 = vec3.create();
+    let yaw: number = 0;
+    let pitch: number = 0;
+    let roll: number = 0;
+    return {
+        getTransform: () => {
+            const rot = quat.fromEuler(quat.create(), radToDeg * pitch, radToDeg * yaw, radToDeg * roll)
+            return mat4.fromRotationTranslation(mat4.create(), rot, position);
+        },
+        lookAt: (target: vec3) => {
+            // TODO(@darzu): dz
+        },
+        pitch: (rad: number) => {
+            pitch = clamp(pitch + rad, -Math.PI / 2, Math.PI / 2)
+        },
+        yaw: (rad: number) => {
+            yaw += rad
+        },
+        roll: (rad: number) => {
+            // roll = clamp(roll + rad, -Math.PI / 2, Math.PI / 2)
+        },
+        moveX: (n: number) => {
+            position[0] += n;
+        },
+        moveY: (n: number) => {
+            position[1] += n;
+        },
+        moveZ: (n: number) => {
+            position[2] += n;
         },
     }
 }
@@ -689,7 +756,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         );
     }
 
-    const cameraPos = mkTransformable();
+    const cameraPos = mkEulerTransformable();
     // cameraPos.yaw(Math.PI)
     cameraPos.moveZ(40)
     cameraPos.moveY(5)
@@ -753,7 +820,6 @@ async function init(canvasRef: HTMLCanvasElement) {
             t.roll(-0.1)
         if (pressedKeys['r']) {
             // TODO(@darzu): 
-            console.log(t._transform)
         }
         // mouse
         if (mouseDeltaX !== 0)
@@ -763,7 +829,7 @@ async function init(canvasRef: HTMLCanvasElement) {
     }
 
     const m2 = meshes[4]
-    const m2t = mkTransformable();
+    const m2t = mkAffineTransformable();
     m2.transform = m2t.getTransform();
     applyMeshTransform(m2)
 
