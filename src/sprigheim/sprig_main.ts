@@ -225,27 +225,43 @@ const fragmentShaderForFS = `
     fn main(
         input: VertexOutput
     ) -> [[location(0)]] vec4<f32> {
-        // let r = input.position.x / 2048.0; /// (2048.0 * 2.0); // * 0.5 + 0.5;
-        let r = input.coordinate.x; // * 0.5 + 0.5;
-        let g = input.coordinate.y; // 0.0; //position.y;
+        let r = input.coordinate.x;
+        let g = input.coordinate.y;
         let b = 0.0;
         return vec4<f32>(r, g, b, 1.0);
      }
 `;
 
-// TODO(@darzu): post processing
-var FULLSCREEN_VERTEX_SOURCE = `
-    attribute vec2 a_position;
-    varying vec2 v_coordinates;
+const computeForFS = `
+  [[block]] struct Scene {
+    time : f32;
+  };
 
-    void main (void) {
-        v_coordinates = a_position * 0.5 + 0.5;
-        gl_Position = vec4(a_position, 0.0, 1.0);
-    }
+  [[group(0), binding(0)]] var<uniform> scene : Scene;
+  [[group(0), binding(1)]] var output : texture_storage_2d<rgba8unorm, write>;
+
+  // TODO: try workgroup data
+  // var<workgroup> tile : array<array<vec3<f32>, 256>, 4>;
+
+  [[stage(compute), workgroup_size(64, 1, 1)]]
+  fn main(
+    [[builtin(workgroup_id)]] groupId : vec3<u32>,
+    [[builtin(local_invocation_id)]] memberId : vec3<u32>
+  ) {
+    let dims : vec2<i32> = textureDimensions(output);
+
+    let col: u32 = (groupId.x * 64u) + memberId.x;
+    let row: u32 = (groupId.y * 64u) + memberId.y;
+    let coord = vec2<i32>(i32(row), i32(col));
+
+    let r = 0.0;
+    let g = f32(col) / f32(dims.x);
+    let b = f32(row) / f32(dims.y);
+    let res = vec4<f32>(r, g, b, 1.0);
+
+    textureStore(output, coord, res);
+  }
 `
-// var fullscreenVertexBuffer = gl.createBuffer();
-// gl.bindBuffer(gl.ARRAY_BUFFER, fullscreenVertexBuffer);
-// gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0]), gl.STATIC_DRAW);
 
 // useful constants
 const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
@@ -927,6 +943,48 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         fsBundle = fsBundleEnc.finish()
     }
 
+    // our compute pipeline for generating a texture
+    const computeTexWidth = 2048;
+    const computeTexHeight = 2048;
+    const computeGroupSize = 64; // TODO(@darzu): is this needed?
+    let computeTextureView: GPUTextureView;
+    let computeSceneBuffer: GPUBuffer;
+    let computePipeline: GPUComputePipeline;
+    let computeBindGroup: GPUBindGroup;
+    {
+        computePipeline = device.createComputePipeline({
+            compute: {
+                module: device.createShaderModule({
+                    code: computeForFS,
+                }),
+                entryPoint: 'main',
+            },
+        });
+
+        const computeSceneSizeExact = bytesPerFloat * 1; // time
+        computeSceneBuffer = device.createBuffer({
+            size: computeSceneSizeExact,
+            usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
+        });
+
+        const computeColorFormat: GPUTextureFormat = 'rgba8unorm'; // rgba8unorm
+        const computeTextureDesc: GPUTextureDescriptor = {
+            size: { width: computeTexWidth, height: computeTexHeight },
+            usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE | GPUTextureUsage.SAMPLED,
+            format: computeColorFormat, // TODO(@darzu): which format?
+        }
+        const computeTexture = device.createTexture(computeTextureDesc);
+        computeTextureView = computeTexture.createView();
+
+        computeBindGroup = device.createBindGroup({
+            layout: computePipeline.getBindGroupLayout(0),
+            entries: [
+                { binding: 0, resource: { buffer: computeSceneBuffer } },
+                { binding: 1, resource: computeTextureView },
+            ],
+        });
+    }
+
     // setup our second phase pipeline which renders meshes to the canvas
     const renderSceneUniBindGroupLayout = device.createBindGroupLayout({
         entries: [
@@ -945,6 +1003,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
             { binding: 1, resource: shadowDepthTextureView },
             { binding: 2, resource: device.createSampler({ compare: 'less' }) },
             { binding: 3, resource: fsTextureView },
+            // { binding: 3, resource: computeTextureView },
             {
                 binding: 4, resource: device.createSampler({
                     magFilter: 'linear',
@@ -1101,6 +1160,18 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
 
         // start our rendering passes
         const commandEncoder = device.createCommandEncoder();
+
+        // do compute pass(es)
+        {
+            const computePass = commandEncoder.beginComputePass();
+            computePass.setPipeline(computePipeline);
+            computePass.setBindGroup(0, computeBindGroup);
+            computePass.dispatch(
+                Math.ceil(computeTexWidth / computeGroupSize),
+                Math.ceil(computeTexHeight / computeGroupSize)
+            );
+            computePass.endPass();
+        }
 
         // TODO(@darzu): render fullscreen pipeline
         const fsRenderPassEncoder = commandEncoder.beginRenderPass({

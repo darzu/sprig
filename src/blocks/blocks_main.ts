@@ -47,7 +47,8 @@ async function main() {
     console.log("loaded DOM2")
 
     // playing with colors:
-    makeAllColorBars();
+    // TODO(@darzu): re-enable
+    // makeAllColorBars();
 
     // code render
     refreshCode()

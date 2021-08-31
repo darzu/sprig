@@ -1,6 +1,6 @@
 import { clampHSL, clampLCH, Color, contrastClamp, parseHex, toHex, toHSL, toLCH, white } from "./color.js";
 import { CornerShape } from "./legacy-block-ast.js";
-import { V2, max, Sized, clamp } from "../math";
+import { V2, max, Sized, clamp } from "../math.js";
 import {
     INNER_H_M, INNER_W_M, MOUTH_INDENT, NODE_SPACER,
     Renderable, RenderableBlock, RenderableDropdown, RenderableStack, STACK_GAP
