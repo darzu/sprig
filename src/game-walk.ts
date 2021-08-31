@@ -15,9 +15,9 @@ https://www.mixamo.com/#/
 
 function OnStart() {
     let ground = CreateGround(100, 100);
-    let player = CreateBox({ size: 5, color: "white", kind: "player", yScale: 2.5 });
-    MoveWithControls(player);
-    CameraFollow(player);
+    // let player = CreateBox({ size: 5, color: "white", kind: "player", yScale: 2.5 });
+    // MoveWithControls(player);
+    // CameraFollow(player);
 }
 
 ///////
@@ -126,7 +126,7 @@ function MoveWithControls(g: GameObj) {
     })
 }
 
-let camera: BABYLON.Camera | undefined = undefined;
+let camera: BABYLON.ArcRotateCamera | BABYLON.FollowCamera | undefined = undefined;
 
 function CameraFollow(g: GameObj) {
     // TODO(@darzu): 
@@ -175,6 +175,7 @@ function ChangeScore(n: number) {
 ///////
 
 /// <reference path="./ext/babylonjs.materials.d.ts"/>
+/// <reference path="./ext/babylonjs.loaders.d.ts"/>
 /// <reference path="./ext/babylon.d.ts"/>
 /// <reference path="./ext/babylon.gui.d.ts"/>
 
@@ -193,7 +194,7 @@ window.addEventListener("resize", function () {
     engine.resize();
 });
 
-camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 3, new BABYLON.Vector3(0, 0, 0), scene);
+camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 3, new BABYLON.Vector3(0, 0, 0), scene)!;
 camera.position = (new BABYLON.Vector3(-10, 100, -100)).scale(1.2)
 // camera.attachControl(canvas, true);
 
@@ -345,6 +346,25 @@ _renderScore(0)
 
 // })
 
+
+///// TO SORT
+
+BABYLON.SceneLoader.ImportMesh("", "./assets/", "human_anim1.glb", scene, function (newMeshes, particleSystems, skeletons, animationGroups) {
+    var hero = newMeshes[0];
+
+    //Scale the model down        
+    hero.scaling.scaleInPlace(10);
+
+    //Lock camera on the character 
+    camera!.target = hero.position;
+
+    //Get the Samba animation Group
+    const sambaAnim = scene.getAnimationGroupByName("Walking")!;
+
+    //Play the Samba animation  
+    sambaAnim.start(true, 1.0, sambaAnim.from, sambaAnim.to, false);
+
+});
 
 
 ///
