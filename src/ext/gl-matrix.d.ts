@@ -1,4 +1,21 @@
 
+// DZ mod all these types to remove the "| [number, number, number, number" option
+// export type mat2 = Float32Array;
+// export type mat2d = Float32Array;
+// export type mat3 = Float32Array;
+// export type mat4 = Float32Array;
+// export type quat = Float32Array;
+// export type quat2 = Float32Array;
+// export type vec2 = Float32Array;
+// export type ReadonlyMat2 = Float32Array;
+// export type ReadonlyMat2d = Float32Array;
+// export type ReadonlyMat3 = Float32Array;
+// export type ReadonlyMat4 = Float32Array;
+// export type ReadonlyQuat = Float32Array;
+// export type ReadonlyQuat2 = Float32Array;
+// export type ReadonlyVec2 = Float32Array;
+// export type ReadonlyVec3 = Float32Array;
+// export type ReadonlyVec4 = Float32Array;
     // prettier-ignore
     export type mat2 =
         | [number, number,
@@ -117,7 +134,7 @@
          * @module glMatrix
          */
         export const EPSILON: 0.000001;
-        export let ARRAY_TYPE: ArrayConstructor | Float32ArrayConstructor;
+        export let ARRAY_TYPE: Float32ArrayConstructor; // DZ mod
         export const RANDOM: () => number;
     }
     export module mat2 {

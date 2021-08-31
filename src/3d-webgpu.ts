@@ -144,11 +144,22 @@ const shadowDepthTextureSize = 1024;
 
 const maxNumVerts = 1000;
 const maxNumTri = 1000;
+const maxNumModels = 100;
 
-const vertStride = (3/*pos*/ + 3/*norm*/)
-const vertSize = Float32Array.BYTES_PER_ELEMENT * vertStride
-const triStride = 3/*ind per tri*/;
-const triSize = Uint16Array.BYTES_PER_ELEMENT * triStride;
+const vertElStride = (3/*pos*/ + 3/*norm*/)
+const vertByteSize = Float32Array.BYTES_PER_ELEMENT * vertElStride
+const triElStride = 3/*ind per tri*/;
+const triByteSize = Uint16Array.BYTES_PER_ELEMENT * triElStride;
+
+const mat4ByteSize = (4 * 4)/*4x4 mat*/ * 4/*f32*/
+const modelUniByteSize = Math.ceil(mat4ByteSize / 256) * 256; // align to 256
+
+// space stats
+console.log(`Pre-alloc ${maxNumVerts * vertByteSize / 1024} KB for verts`);
+console.log(`Pre-alloc ${maxNumTri * triByteSize / 1024} KB for indices`);
+console.log(`Pre-alloc ${maxNumModels * modelUniByteSize / 1024} KB for models`);
+const unusedBytesPerModel = 256 - mat4ByteSize % 256
+console.log(`Unused ${unusedBytesPerModel} bytes in uniform buffer per model (${unusedBytesPerModel * maxNumModels / 1024} KB total)`);
 
 /*
 Adds mesh vertices and indices into buffers. Optionally shifts triangle indicies.
@@ -156,7 +167,7 @@ Adds mesh vertices and indices into buffers. Optionally shifts triangle indicies
 function addMeshToBuffers(m: MeshModel, verts: Float32Array, prevNumVerts: number, indices: Uint16Array, prevNumTri: number, shiftIndices = false): void {
     const norms = computeNormals(m);
     m.pos.forEach((v, i) => {
-        const off = (prevNumVerts + i) * vertStride
+        const off = (prevNumVerts + i) * vertElStride
         verts[off + 0] = v[0]
         verts[off + 1] = v[1]
         verts[off + 2] = v[2]
@@ -166,7 +177,7 @@ function addMeshToBuffers(m: MeshModel, verts: Float32Array, prevNumVerts: numbe
         verts[off + 5] = 0
     })
     m.tri.forEach((t, i) => {
-        const off = (prevNumTri + i) * triStride
+        const off = (prevNumTri + i) * triElStride
         const indShift = shiftIndices ? prevNumVerts : 0;
         indices[off + 0] = t[0] + indShift
         indices[off + 1] = t[1] + indShift
@@ -180,6 +191,7 @@ interface Mesh {
     indicesNumOffset: number,
     transform: mat4;
     model: MeshModel,
+    binding: GPUBindGroup,
 }
 
 const sampleCount = 4;
@@ -211,56 +223,22 @@ async function init(canvasRef: HTMLCanvasElement) {
     let numTris = 0;
 
     const verticesBuffer = device.createBuffer({
-        size: maxNumVerts * vertSize,
+        size: maxNumVerts * vertByteSize,
         usage: GPUBufferUsage.VERTEX,
         mappedAtCreation: true,
     });
 
     const indexBuffer = device.createBuffer({
-        size: maxNumTri * triSize,
+        size: maxNumTri * triByteSize,
         usage: GPUBufferUsage.INDEX,
         mappedAtCreation: true,
     });
 
-    const meshes: Mesh[] = []
-    {
-        const vertsMap = new Float32Array(verticesBuffer.getMappedRange())
-        const indMap = new Uint16Array(indexBuffer.getMappedRange());
-
-        function addMesh(m: MeshModel): Mesh {
-            if (numVerts + m.pos.length > maxNumVerts)
-                throw "Too many vertices!"
-            if (numTris + m.tri.length > maxNumTri)
-                throw "Too many triangles!"
-
-            addMeshToBuffers(m, vertsMap, numVerts, indMap, numTris, false);
-
-            // TODO(@darzu): real transforms
-            const trans = mat4.create();
-            mat4.translate(trans, trans, vec3.fromValues(4 * meshes.length, 0, 0));
-
-            const res: Mesh = {
-                vertNumOffset: numVerts, // TODO(@darzu): 
-                indicesNumOffset: numTris * 3, // TODO(@darzu): 
-                transform: trans,
-                model: m,
-            }
-            numVerts += m.pos.length;
-            numTris += m.tri.length;
-            return res;
-        }
-
-        {
-            // TODO(@darzu): add meshes!
-            meshes.push(addMesh(PLANE))
-            meshes.push(addMesh(CUBE))
-            meshes.push(addMesh(CUBE))
-            meshes.push(addMesh(CUBE))
-        }
-
-        indexBuffer.unmap();
-        verticesBuffer.unmap();
-    }
+    const modelUniBufferSize = mat4ByteSize * maxNumModels;
+    const modelUniBuffer = device.createBuffer({
+        size: modelUniBufferSize,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
 
     // GPUDepthStencilStateDescriptor
 
@@ -311,7 +289,7 @@ async function init(canvasRef: HTMLCanvasElement) {
             entryPoint: 'main',
             buffers: [
                 {
-                    arrayStride: vertSize,
+                    arrayStride: vertByteSize,
                     attributes: [
                         {
                             // position
@@ -393,26 +371,6 @@ async function init(canvasRef: HTMLCanvasElement) {
         ],
     });
 
-
-    const modelUniBufferSize = 4 * 16; // 4x4 matrix
-    const modelUniBuffer = device.createBuffer({
-        size: modelUniBufferSize,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
-
-    const modelUniBindGroup = device.createBindGroup({
-        layout: pipeline.getBindGroupLayout(0),
-        entries: [
-            {
-                binding: 0,
-                resource: {
-                    buffer: modelUniBuffer,
-                    offset: 0, // TODO(@darzu): different offsets per model
-                },
-            },
-        ],
-    });
-
     // Declare swapchain image handles
     let colorTexture: GPUTexture = device.createTexture({
         size: {
@@ -464,6 +422,75 @@ async function init(canvasRef: HTMLCanvasElement) {
         return viewProj as Float32Array;
     }
 
+
+    const meshes: Mesh[] = []
+    {
+        const vertsMap = new Float32Array(verticesBuffer.getMappedRange())
+        const indMap = new Uint16Array(indexBuffer.getMappedRange());
+
+        function addMesh(m: MeshModel): Mesh {
+            if (numVerts + m.pos.length > maxNumVerts)
+                throw "Too many vertices!"
+            if (numTris + m.tri.length > maxNumTri)
+                throw "Too many triangles!"
+
+            // add to vertex and index buffers
+            addMeshToBuffers(m, vertsMap, numVerts, indMap, numTris, false);
+
+            // create transformation matrix
+            // TODO(@darzu): real transforms
+            const trans = mat4.create() as Float32Array;
+            mat4.translate(trans, trans, vec3.fromValues(4 * meshes.length, 0, 0));
+
+            // save the transform matrix to the buffer
+            const uniOffset = meshes.length * modelUniByteSize;
+            device.queue.writeBuffer(
+                modelUniBuffer,
+                uniOffset,
+                trans.buffer,
+                trans.byteOffset,
+                trans.byteLength
+            );
+
+            // creating binding group
+            const modelUniBindGroup = device.createBindGroup({
+                layout: pipeline.getBindGroupLayout(0),
+                entries: [
+                    {
+                        binding: 0,
+                        resource: {
+                            buffer: modelUniBuffer,
+                            offset: uniOffset, // TODO(@darzu): different offsets per model
+                        },
+                    },
+                ],
+            });
+
+            // create the result
+            const res: Mesh = {
+                vertNumOffset: numVerts, // TODO(@darzu): 
+                indicesNumOffset: numTris * 3, // TODO(@darzu): 
+                transform: trans,
+                model: m,
+                binding: modelUniBindGroup,
+            }
+            numVerts += m.pos.length;
+            numTris += m.tri.length;
+            return res;
+        }
+
+        {
+            // TODO(@darzu): add meshes!
+            meshes.push(addMesh(PLANE))
+            meshes.push(addMesh(CUBE))
+            meshes.push(addMesh(CUBE))
+            meshes.push(addMesh(CUBE))
+        }
+
+        indexBuffer.unmap();
+        verticesBuffer.unmap();
+    }
+
     function frame() {
         // Sample is no longer the active page.
         if (!canvasRef) return;
@@ -487,19 +514,12 @@ async function init(canvasRef: HTMLCanvasElement) {
         const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
         passEncoder.setPipeline(pipeline);
         passEncoder.setBindGroup(0, sharedUniBindGroup);
-        passEncoder.setBindGroup(1, modelUniBindGroup);
         passEncoder.setVertexBuffer(0, verticesBuffer);
         passEncoder.setIndexBuffer(indexBuffer, 'uint16');
         // TODO(@darzu): one draw call per mesh?
         for (let m of meshes) {
-            const transform = m.transform as Float32Array;
-            device.queue.writeBuffer(
-                modelUniBuffer,
-                0,
-                transform.buffer,
-                transform.byteOffset,
-                transform.byteLength
-            );
+            // TODO(@darzu): set bind group
+            passEncoder.setBindGroup(1, m.binding);
             passEncoder.drawIndexed(m.model.tri.length * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
         }
         // passEncoder.drawIndexed(numTris * 3);

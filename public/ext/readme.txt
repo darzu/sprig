@@ -18,3 +18,4 @@ gl-matrix:
 3. delete the wrapper and "exports.* = *" section at the end of the .js
 4. include it as a <script ... type="module">
 5. add "export " prefix where needed (e.g. "var mat4" => "export var4")
+6. modify gl-matrix.d.ts to always assume Float32 arrays (see "// DZ Mod")
