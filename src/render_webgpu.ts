@@ -69,7 +69,7 @@ const bytesPerTri = Uint32Array.BYTES_PER_ELEMENT * indicesPerTriangle;
 const antiAliasSampleCount = 4;
 const swapChainFormat = "bgra8unorm";
 const depthStencilFormat = "depth24plus-stencil8";
-const backgroundColor = { r: 0.5, g: 0.5, b: 0.5, a: 1.0 };
+const backgroundColor = { r: 0.6, g: 0.63, b: 0.6, a: 1.0 };
 
 export interface MeshObj {
   handle: MeshHandle,
