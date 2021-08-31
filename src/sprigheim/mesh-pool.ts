@@ -98,6 +98,36 @@ export module Vertex {
         scratch_u32[0] = kind
         buffer.set(scratch_u32_as_u8, byteOffset + bytesPerVec3 * 3);
     }
+
+    // for WebGL: deserialize whole array?
+    export function Deserialize(buffer: Uint8Array, vertexCount: number, positions: Float32Array, colors: Float32Array, normals: Float32Array, kinds: Uint32Array) {
+        if (false
+            || buffer.length < vertexCount * ByteSize
+            || positions.length < vertexCount * 3
+            || colors.length < vertexCount * 3
+            || normals.length < vertexCount * 3
+            || kinds.length < vertexCount * 1
+        )
+            throw 'buffer too short!'
+        // TODO(@darzu): This only works because they have the same element size. Not sure what to do if that changes.
+        const f32View = new Float32Array(buffer.buffer);
+        const u32View = new Uint32Array(buffer.buffer);
+        for (let i = 0; i < vertexCount; i++) {
+            const u8_i = i * ByteSize;
+            const f32_i = u8_i / Float32Array.BYTES_PER_ELEMENT;
+            const u32_i = u8_i / Uint32Array.BYTES_PER_ELEMENT;
+            positions[i * 3 + 0] = f32View[f32_i + 0]
+            positions[i * 3 + 1] = f32View[f32_i + 1]
+            positions[i * 3 + 2] = f32View[f32_i + 2]
+            colors[i * 3 + 0] = f32View[f32_i + 3]
+            colors[i * 3 + 1] = f32View[f32_i + 4]
+            colors[i * 3 + 2] = f32View[f32_i + 5]
+            normals[i * 3 + 0] = f32View[f32_i + 6]
+            normals[i * 3 + 1] = f32View[f32_i + 7]
+            normals[i * 3 + 2] = f32View[f32_i + 8]
+            kinds[i] = f32View[u32_i + 9]
+        }
+    }
 }
 
 export module MeshUniform {
@@ -427,6 +457,7 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
 
         m.pos.forEach((pos, i) => {
             b.addVertex(pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0], Vertex.Kind.normal)
+
         })
         m.tri.forEach((triInd, i) => {
             b.addTri(triInd)
@@ -455,6 +486,22 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         if (finished)
             throw `trying to use finished MeshPoolBuilder`
         finished = true;
+
+        // TODO(@darzu): debugging deserialization
+        // {
+        //     // before:
+        //     console.log(Vertex.DEBUG_len);
+        //     console.log(Vertex.DEBUG_serialize);
+
+        //     const positions = new Float32Array(builder.numVerts * 3)
+        //     const colors = new Float32Array(builder.numVerts * 3)
+        //     const normals = new Float32Array(builder.numVerts * 3)
+        //     const kinds = new Uint32Array(builder.numVerts * 1)
+        //     Vertex.Deserialize(verticesMap, builder.numVerts, positions, colors, normals, kinds);
+        //     console.log(colors.length)
+        //     console.log(colors.map(c => Math.floor(c * 256)).join(','))
+        // }
+
         // unmap the buffers so the GPU can use them
         verticesBuffer.unmap()
         indicesBuffer.unmap()
@@ -474,7 +521,6 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         MeshUniform.Serialize(scratch_uniform_u8, 0, m.transform, m.aabbMin, m.aabbMax)
         builder.uniformMap.set(scratch_uniform_u8, m.modelUniByteOffset);
     }
-
 
     function buildMesh(): MeshBuilder {
         if (finished)

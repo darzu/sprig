@@ -3,7 +3,7 @@ import { mat4, vec3 } from "../ext/gl-matrix.js";
 import { align, jitter } from "../math.js";
 import { createMeshPoolBuilder, MeshHandle, MeshPool, MeshPoolBuilder, Vertex } from "./mesh-pool.js";
 
-const RENDER_GRASS = true;
+const RENDER_GRASS = false;
 
 export interface GrassSystem {
     getGrassPools: () => MeshPool[],

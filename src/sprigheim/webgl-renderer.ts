@@ -60,6 +60,10 @@ u_lightColor * (diffuseColor * litR.y + diffuseColor * u_ambient +
 gl_FragColor = outColor;
 }`
 
+// webgl strategy
+//  how do we have a unified approach for our vertex buffers?
+//      deserializeFromUnified arrays into seperate arrays?
+
 export interface Renderer {
     renderFrame(timeMs: number): void;
 }

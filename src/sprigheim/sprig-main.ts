@@ -443,6 +443,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     const ground = poolBuilder.addMesh(PLANE);
     const player = poolBuilder.addMesh(CUBE);
     const randomCubes: MeshHandle[] = [];
+    // const NUM_CUBES = 1;
     const NUM_CUBES = 10;
     for (let i = 0; i < NUM_CUBES; i++) {
         // create cubes with random colors
