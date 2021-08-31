@@ -237,7 +237,7 @@ export class Renderer {
     );
 
     // TODO(@darzu): hack
-    this._meshUniformBufferFloat32Size = meshUniformBuffer.length
+    this._meshUniformBufferFloat32Size = meshUniformBuffer.length;
     this._meshUniformBuffer = new Float32Array(meshUniformBuffer.length);
 
     this.mappedGPUBuffers = {
@@ -629,8 +629,7 @@ export class Renderer {
     this.gpuBufferWriteAllMeshUniforms();
 
     // TODO(@darzu): more fine grain
-    if (this.needsRebundle)
-      this.createRenderBundle();
+    if (this.needsRebundle) this.createRenderBundle();
 
     // start collecting our render commands for this frame
     const commandEncoder = this.device.createCommandEncoder();
