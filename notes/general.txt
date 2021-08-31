@@ -458,6 +458,17 @@ Objectives / early result:
 Matrix math:
   http://web.cse.ohio-state.edu/~wang.3602/courses/cse5542-2013-spring/6-Transformation_II.pdf
 
+  https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-837-computer-graphics-fall-2012/lecture-notes/MIT6_837F12_Lec03.pdf
+    (new basis) = (old basis) * M
+    (new basis) * M^-1 = (old basis)
+    v = (old basis) * coord
+    v = (new basis) * M^-1 * coord
+    frame = origin and basis
+    with 4-tuple:
+      points have a "1" as last element
+      vectors have a "0" as last element
+
+
 Understanding quanternions / rotation:
   http://acko.net/blog/animate-your-way-to-glory-pt2/
   https://imadr.github.io/rotations-with-quaternions/

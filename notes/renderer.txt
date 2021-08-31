@@ -377,3 +377,4 @@ Camera transformations:
   https://gamedev.stackexchange.com/questions/178643/the-view-matrix-finally-explained
   https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix
   http://web.cse.ohio-state.edu/~wang.3602/courses/cse5542-2013-spring/6-Transformation_II.pdf
+  https://learnopengl.com/Getting-started/Coordinate-Systems

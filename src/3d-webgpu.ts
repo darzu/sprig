@@ -293,6 +293,7 @@ interface Mesh {
 const sampleCount = 4;
 
 interface Transformable {
+    _transform: mat4,
     getTransform: () => mat4;
     lookAt: (target: vec3) => void;
     pitch: (rad: number) => void;
@@ -314,6 +315,7 @@ function mkTransformable(): Transformable {
 
     const transform = mat4.create();
     return {
+        _transform: transform, // TODO:
         getTransform: () => {
             return mat4.clone(transform);
 
@@ -657,7 +659,9 @@ async function init(canvasRef: HTMLCanvasElement) {
             // create transformation matrix
             // TODO(@darzu): real transforms
             const trans = mat4.create() as Float32Array;
-            mat4.translate(trans, trans, vec3.fromValues(4 * meshes.length, 0, 0));
+            mat4.translate(trans, trans, vec3.fromValues(
+                4 * meshes.length, // TODO
+                0, 0));
 
             // save the transform matrix to the buffer
             const uniOffset = meshes.length * modelUniByteSize;
@@ -703,6 +707,8 @@ async function init(canvasRef: HTMLCanvasElement) {
             meshes.push(addMesh(CUBE))
             meshes.push(addMesh(CUBE))
             meshes.push(addMesh(CUBE))
+            meshes.push(addMesh(CUBE))
+            meshes.push(addMesh(CUBE))
         }
 
         indexBuffer.unmap();
@@ -745,10 +751,10 @@ async function init(canvasRef: HTMLCanvasElement) {
     }
 
     const cameraPos = mkTransformable();
-    cameraPos.moveZ(-20)
+    cameraPos.yaw(Math.PI)
+    cameraPos.moveZ(40)
     cameraPos.moveY(5)
     cameraPos.moveX(5)
-    // cameraPos.yaw(Math.PI)
     // // cameraPos.lookAt([0, 0, 0])
 
     // console.log(cameraPos.getTransform())
@@ -781,6 +787,13 @@ async function init(canvasRef: HTMLCanvasElement) {
         mouseDeltaY += ev.movementY
     }
 
+    function scaleTranslate(out: mat4, a: mat4, s: vec3): mat4 {
+        out[12] = a[12] * s[0]
+        out[13] = a[13] * s[1]
+        out[14] = a[14] * s[2]
+        return out;
+    }
+
     function controlTransformable(t: Transformable) {
         // keys
         if (pressedKeys['w'])
@@ -799,6 +812,19 @@ async function init(canvasRef: HTMLCanvasElement) {
             t.roll(-0.1)
         if (pressedKeys['e'])
             t.roll(0.1)
+        if (pressedKeys['r']) {
+            console.log(t._transform)
+            // TODO(@darzu): 
+            // t._transform[12] = -t._transform[12]
+            // t._transform[13] = -t._transform[13]
+            // t._transform[14] = -t._transform[14]
+            // mat4.multiply(t._transform, t._transform, [
+            //     1, 0, 0, 0,
+            //     0, 1, 0, 0,
+            //     0, 0, 1, 0,
+            //     0, 0, 0, 1,
+            // ]);
+        }
         // mouse
         if (mouseDeltaX !== 0)
             t.yaw(-mouseDeltaX * 0.01);
@@ -810,7 +836,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         // cameraPos.pitch(0.01)
         // cameraPos.roll(0.01)
 
-    const m2 = meshes[2]
+    const m2 = meshes[4]
     const m2t = mkTransformable();
     m2.transform = m2t.getTransform();
     applyMeshTransform(m2)
@@ -826,6 +852,10 @@ async function init(canvasRef: HTMLCanvasElement) {
         // TODO(@darzu): real movement
         mat4.translate(meshes[1].transform, meshes[1].transform, [0.1, 0, 0])
         applyMeshTransform(meshes[1])
+        mat4.translate(meshes[2].transform, meshes[2].transform, [0.0, 0.2, 0])
+        applyMeshTransform(meshes[2])
+        mat4.translate(meshes[3].transform, meshes[3].transform, [0.0, 0, 0.3])
+        applyMeshTransform(meshes[3])
 
         controlTransformable(m2t);
 
@@ -840,6 +870,27 @@ async function init(canvasRef: HTMLCanvasElement) {
             const viewProj = mat4.create();
             // const cameraPosT = new Float32Array([-1, 0, -1.2246468525851679e-16, 0, 0, 1, 0, 0, 1.2246468525851679e-16, 0, -1, 0, 2.4492935992912173e-15, -5, -20, 1])
             const viewMatrix = cameraPos.getTransform()
+
+            // mat4.rotateX(viewMatrix, viewMatrix, Math.PI)
+            // mat4.rotateY(viewMatrix, viewMatrix, Math.PI)
+            // mat4.rotateZ(viewMatrix, viewMatrix, Math.PI)
+
+            // mat4.scale(viewMatrix, viewMatrix, [1, 1, -1])
+
+            mat4.invert(viewMatrix, viewMatrix);
+
+            // mat4.multiply(viewMatrix, viewMatrix, [
+            //     -1, 0, 0, 0,
+            //     0, -1, 0, 0,
+            //     0, 0, -1, 0,
+            //     0, 0, 0, 1,
+            // ]);
+
+            // scaleTranslate(viewMatrix, viewMatrix, [-1, -1, -1])
+
+
+            // mat4.multiplyScalar(viewMatrix, viewMatrix, -1)
+            // mat4.adjoint(
 
             // mat4.transpose(viewMatrix, viewMatrix);
             // mat4.invert(viewMatrix, viewMatrix);

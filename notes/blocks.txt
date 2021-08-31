@@ -7,3 +7,9 @@ Vector networks instead of paths:
 https://hazel.org
     "Hazel is a live functional programming environment featuring typed holes."
     https://arxiv.org/pdf/1703.08694.pdf
+
+Droplet
+    https://droplet-editor.github.io
+    Used by Code.org's AppLab and GameLab
+    https://github.com/droplet-editor/droplet
+    http://pencilcode.net
