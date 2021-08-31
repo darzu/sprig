@@ -475,6 +475,7 @@ async function startGame(host: string | null) {
   const controlsStr = `controls: WASD, shift/c, mouse, spacebar`;
   let previousFrameTime = performance.now();
   let avgJsTime = 0;
+  let avgNetTime = 0;
   let avgFrameTime = 0;
   let avgWeight = 0.05;
   let net: Net<Inputs>;
@@ -483,6 +484,8 @@ async function startGame(host: string | null) {
     gameState.step(performance.now(), inputs());
     gameState.renderFrame();
     let jsTime = performance.now() - start;
+    net.sendStateUpdates();
+    let netTime = performance.now() - (start + jsTime);
     let frameTime = start - previousFrameTime;
     previousFrameTime = start;
     avgJsTime = avgJsTime
@@ -491,12 +494,18 @@ async function startGame(host: string | null) {
     avgFrameTime = avgFrameTime
       ? (1 - avgWeight) * avgFrameTime + avgWeight * frameTime
       : frameTime;
+    avgNetTime = avgNetTime
+      ? (1 - avgWeight) * avgNetTime + avgWeight * netTime
+      : netTime;
     const avgFPS = 1000 / avgFrameTime;
     debugDiv.innerText =
       controlsStr +
       `\n` +
-      `(js per frame: ${avgJsTime.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)})`;
-    net.sendStateUpdates();
+      `(js per frame: ${avgJsTime.toFixed(
+        2
+      )}ms, net per frame: ${avgNetTime.toFixed(2)}ms, fps: ${avgFPS.toFixed(
+        1
+      )})`;
     requestAnimationFrame(frame);
   };
   net = new Net(gameState, host, (id: string) => {
