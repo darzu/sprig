@@ -514,3 +514,10 @@ Rant about hosting:
 
 Third age of JS?
   https://www.swyx.io/js-third-age/
+
+A project of ur own:
+  http://paulgraham.com/own.html
+
+Goal: the essential parts of every game can be done by one developer
+  all the gameplay, all the assets
+  AAA just throws people at more detail

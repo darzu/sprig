@@ -140,6 +140,7 @@ Shaders Wow:
 Game shaders for beginners:
   https://news.ycombinator.com/item?id=19895218
   https://github.com/lettier/3d-game-shaders-for-beginners
+  https://www.youtube.com/watch?v=kfM-yu0iQBk
 
 Ben Cloward on shaders:
   Shaders in Anthem:
@@ -222,6 +223,7 @@ Defered rendering:
       3. Postprocess.
     "Forward+ splits the screen into a 2d grid and a process (compute or other shader) figures out what lights affect that tile. Forward++ takes this a step 
     further and instead of a 2d grid splitting the screen, its a 3d grid splitting space with perspective."
+  used by Horizon Zero Dawn
 
 Shadows:
   Shadow volumes? (aka stencil shadows)
@@ -238,6 +240,11 @@ Lighting:
     https://mynameismjp.wordpress.com/2016/10/09/sg-series-part-1-a-brief-and-incomplete-history-of-baked-lighting-representations/
   deferred vs forward
   https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-shading/shading-normals
+  WebGPU "clustered forward shading"
+    https://toji.github.io/webgpu-clustered-shading/
+    https://github.com/toji/webgpu-clustered-shading
+      "I don't think WGSL has atomic methods yet so I can't effectively do the light list compacting 
+      the way I want (or at least I don't know the workaround)."
 
 TO LEARN:
   Fourier transform
@@ -299,6 +306,7 @@ GDC:
 
 Rust -> WebGPU examples:
   https://github.com/gfx-rs/wgpu-rs/tree/master/examples
+  https://wgpu.rs
 
 "Mixed resolution rendering":
   https://www.gdcvault.com/play/1022982/Mixed-Resolution-Rendering-in-Skylanders
@@ -318,9 +326,6 @@ Rust -> WebGPU examples:
 
   Maybe also a way of doing per-face data?
   https://docs.microsoft.com/en-us/previous-versions//bb205146(v=vs.85)?redirectedfrom=MSDN
-
-  grass?
-    https://upvoid.com/devblog/2013/02/prototype-grass/
 
   Don't use GS: https://twitter.com/pointinpolygon/status/1270695113967181827
 
@@ -386,3 +391,21 @@ Camera transformations:
 hierarchical modeling:
   https://www.youtube.com/watch?v=JdhpViedm0g&list=PLQ3UicqQtfNuBjzJ-KEWmG1yjiRMXYKhh&index=5
 
+Low-poly planet map effect:
+  https://www.youtube.com/watch?v=i5zwDoYXH5c
+
+WebGPU vs WebGL:
+  https://www.babylonjs.com/demos/webgpu/forestwebgl
+  https://www.babylonjs.com/demos/webgpu/forestwebgpu
+
+Alpha tested vs transparency:
+  https://forum.unity.com/threads/difference-between-alphatest-and-transparent-renderqueue.458750/
+  alpha tested renders front-to-back (occluded pixels r ignored)
+  transparency renders back-to-front
+
+Texture compression:
+  BC7, BC4, BCn
+  https://www.reedbeta.com/blog/understanding-bcn-texture-compression-formats/
+
+Foveated rendering:
+  https://en.wikipedia.org/wiki/Foveated_rendering
