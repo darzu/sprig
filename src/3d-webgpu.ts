@@ -376,7 +376,7 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     function getTransformationMatrix() {
         const viewMatrix = mat4.create();
-        mat4.translate(viewMatrix, viewMatrix, vec3.fromValues(0, 0, -4));
+        mat4.translate(viewMatrix, viewMatrix, vec3.fromValues(0, 0, -40));
         const now = Date.now() / 1000;
         mat4.rotate(
             viewMatrix,
