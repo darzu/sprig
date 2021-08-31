@@ -304,18 +304,27 @@ class CubeGameState extends GameState<Inputs> {
 
     if (createObjects) {
       // create checkered grid
-      const NUM_PLANES_X = 10;
-      const NUM_PLANES_Z = 10;
+      const NUM_PLANES_X = 1;
+      const NUM_PLANES_Z = 1;
       for (let x = 0; x < NUM_PLANES_X; x++) {
         for (let z = 0; z < NUM_PLANES_Z; z++) {
           let plane = new Plane(this.newId(), this.me);
           const xPos = (x - NUM_PLANES_X / 2) * 20;
           const zPos = (z - NUM_PLANES_Z / 2) * 20;
           const parity = !!((x + z) % 2);
-          plane.motion.location = vec3.fromValues(xPos, -3, -8 + zPos);
+          plane.motion.location = vec3.fromValues(xPos + 10, -3, -8 + zPos);
           if (parity) plane.color = LIGHT_GRAY;
           this.addObject(plane);
         }
+      }
+
+      // create stack of boxes
+      const BOX_STACK_COUNT = 5;
+      for (let i = 0; i < BOX_STACK_COUNT; i++) {
+        let b = new Bullet(this.newId(), this.me);
+        b.motion.location = vec3.fromValues(0, 5 + i * 1, -20);
+        b.motion.linearVelocity[1] = -0.01;
+        this.addObject(b);
       }
 
       // create player
@@ -535,6 +544,7 @@ class CubeGameState extends GameState<Inputs> {
   }
 
   runEvent(event: GameEvent) {
+    return; // TODO(@darzu): DEBUG
     console.log(`Running event of type ${EventType[event.type]}`);
     switch (event.type as EventType) {
       case EventType.BulletBulletCollision:
