@@ -9,22 +9,6 @@ const shaderSceneStruct = `
         lightDir : vec3<f32>;
     };
 `;
-const vertexShaderForShadows = shaderSceneStruct + `
-    [[block]] struct Model {
-        modelMatrix : mat4x4<f32>;
-    };
-
-    [[group(0), binding(0)]] var<uniform> scene : Scene;
-    [[group(1), binding(0)]] var<uniform> model : Model;
-
-    [[stage(vertex)]]
-    fn main([[location(0)]] position : vec3<f32>) -> [[builtin(position)]] vec4<f32> {
-        return scene.lightViewProjMatrix * model.modelMatrix * vec4<f32>(position, 1.0);
-    }
-`;
-const fragmentShaderForShadows = `
-    [[stage(fragment)]] fn main() { }
-`;
 const vertexShader = shaderSceneStruct + `
     [[block]] struct Model {
         modelMatrix : mat4x4<f32>;
@@ -34,9 +18,8 @@ const vertexShader = shaderSceneStruct + `
     [[group(1), binding(0)]] var<uniform> model : Model;
 
     struct VertexOutput {
-        [[location(0)]] shadowPos : vec3<f32>;
-        [[location(1)]] normal : vec3<f32>;
-        [[location(2)]] color : vec3<f32>;
+        [[location(0)]] normal : vec3<f32>;
+        [[location(1)]] color : vec3<f32>;
         [[builtin(position)]] position : vec4<f32>;
     };
 
@@ -48,13 +31,6 @@ const vertexShader = shaderSceneStruct + `
         ) -> VertexOutput {
         var output : VertexOutput;
         let worldPos: vec4<f32> = model.modelMatrix * vec4<f32>(position, 1.0);
-        // XY is in (-1, 1) space, Z is in (0, 1) space
-        let posFromLight : vec4<f32> = scene.lightViewProjMatrix * worldPos;
-        // Convert XY to (0, 1), Y is flipped because texture coords are Y-down.
-        output.shadowPos = vec3<f32>(
-            posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5),
-            posFromLight.z
-        );
         output.position = scene.cameraViewProjMatrix * worldPos;
         output.normal = normalize(model.modelMatrix * vec4<f32>(normal, 0.0)).xyz;
         output.color = color;
@@ -63,19 +39,15 @@ const vertexShader = shaderSceneStruct + `
 `;
 const fragmentShader = shaderSceneStruct + `
     [[group(0), binding(0)]] var<uniform> scene : Scene;
-    [[group(0), binding(1)]] var shadowMap: texture_depth_2d;
-    [[group(0), binding(2)]] var shadowSampler: sampler_comparison;
 
     struct VertexOutput {
-        [[location(0)]] shadowPos : vec3<f32>;
-        [[location(1)]] normal : vec3<f32>;
-        [[location(2)]] color : vec3<f32>;
+        [[location(0)]] normal : vec3<f32>;
+        [[location(1)]] color : vec3<f32>;
     };
 
     [[stage(fragment)]]
     fn main(input: VertexOutput) -> [[location(0)]] vec4<f32> {
-        let shadowVis : f32 = textureSampleCompare(shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
-        let sunLight : f32 = shadowVis * clamp(dot(-scene.lightDir, input.normal), 0.0, 1.0);
+        let sunLight : f32 = clamp(dot(-scene.lightDir, input.normal), 0.0, 1.0);
         let resultColor: vec3<f32> = input.color * (sunLight * 2.0 + 0.2);
         let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
         return vec4<f32>(gammaCorrected, 1.0);
@@ -93,7 +65,7 @@ const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
 const antiAliasSampleCount = 4;
 const swapChainFormat = 'bgra8unorm';
 const depthStencilFormat = 'depth24plus-stencil8';
-const shadowDepthStencilFormat = 'depth32float';
+const backgroundColor = { r: 0.5, g: 0.5, b: 0.5, a: 1.0 };
 
 // this state is recomputed upon canvas resize
 let depthTexture: GPUTexture;
@@ -229,11 +201,6 @@ const vertexDataFormat: GPUVertexAttribute[] = [
 // these help us pack and use vertices in that format
 const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/)
 const vertByteSize = bytesPerFloat * vertElStride;
-function bufferWriteVertex(buffer: Float32Array, offset: number, position: vec3, color: vec3, normal: vec3) {
-    bufferWriteVec3(buffer, offset + 0, position);
-    bufferWriteVec3(buffer, offset + 3, color);
-    bufferWriteVec3(buffer, offset + 6, normal);
-}
 
 // define the format of our models' uniform buffer
 const meshUniByteSizeExact =
@@ -339,9 +306,9 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
                     indicesMap[iOff + 2] = triInd[2]
                 }
                 const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
-                bufferWriteVertex(verticesMap, vOff + 0 * vertElStride, m.pos[triInd[0]], m.colors[i], normal)
-                bufferWriteVertex(verticesMap, vOff + 1 * vertElStride, m.pos[triInd[1]], m.colors[i], normal)
-                bufferWriteVertex(verticesMap, vOff + 2 * vertElStride, m.pos[triInd[2]], m.colors[i], normal)
+                verticesMap.set([...m.pos[triInd[0]], ...m.colors[i], ...normal], vOff + 0 * vertElStride)
+                verticesMap.set([...m.pos[triInd[1]], ...m.colors[i], ...normal], vOff + 1 * vertElStride)
+                verticesMap.set([...m.pos[triInd[2]], ...m.colors[i], ...normal], vOff + 2 * vertElStride)
                 numVerts += 3;
                 numTris += 1;
             })
@@ -452,72 +419,18 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         frontFace: 'ccw',
     };
 
-    // define the resource bindings for the shadow pipeline
-    const shadowSceneUniBindGroupLayout = device.createBindGroupLayout({
-        entries: [
-            { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-        ],
-    });
-    const shadowSceneUniBindGroup = device.createBindGroup({
-        layout: shadowSceneUniBindGroupLayout,
-        entries: [
-            { binding: 0, resource: { buffer: sceneUniBuffer } }
-        ],
-    });
-
-    // create the texture that our shadow pass will render to
-    const shadowDepthTextureDesc: GPUTextureDescriptor = {
-        size: { width: 2048 * 2, height: 2048 * 2 },
-        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.SAMPLED,
-        format: shadowDepthStencilFormat,
-    }
-    const shadowDepthTexture = device.createTexture(shadowDepthTextureDesc);
-    const shadowDepthTextureView = shadowDepthTexture.createView();
-
     // define the resource bindings for the mesh rendering pipeline
     const renderSceneUniBindGroupLayout = device.createBindGroupLayout({
         entries: [
             { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-            { binding: 1, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, texture: { sampleType: 'depth' } },
-            { binding: 2, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, sampler: { type: 'comparison' } },
         ],
     });
     const renderSceneUniBindGroup = device.createBindGroup({
         layout: renderSceneUniBindGroupLayout,
         entries: [
             { binding: 0, resource: { buffer: sceneUniBuffer } },
-            { binding: 1, resource: shadowDepthTextureView },
-            { binding: 2, resource: device.createSampler({ compare: 'less' }) },
         ],
     });
-
-    // setup our first phase pipeline which tracks the depth of meshes 
-    // from the point of view of the lighting so we know where the shadows are
-    const shadowPipelineDesc: GPURenderPipelineDescriptor = {
-        layout: device.createPipelineLayout({
-            bindGroupLayouts: [shadowSceneUniBindGroupLayout, modelUniBindGroupLayout],
-        }),
-        vertex: {
-            module: device.createShaderModule({ code: vertexShaderForShadows }),
-            entryPoint: 'main',
-            buffers: [{
-                arrayStride: vertByteSize,
-                attributes: vertexDataFormat,
-            }],
-        },
-        fragment: {
-            module: device.createShaderModule({ code: fragmentShaderForShadows }),
-            entryPoint: 'main',
-            targets: [],
-        },
-        depthStencil: {
-            depthWriteEnabled: true,
-            depthCompare: 'less',
-            format: shadowDepthStencilFormat,
-        },
-        primitive: primitiveBackcull,
-    };
-    const shadowPipeline = device.createRenderPipeline(shadowPipelineDesc);
 
     // setup our second phase pipeline which renders meshes to the canvas
     const renderPipelineDesc: GPURenderPipelineDescriptor = {
@@ -551,20 +464,6 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
 
     // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
     // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
-    const shadowBundleEnc = device.createRenderBundleEncoder({
-        colorFormats: [],
-        depthStencilFormat: shadowDepthStencilFormat,
-    });
-    shadowBundleEnc.setPipeline(shadowPipeline);
-    shadowBundleEnc.setBindGroup(0, shadowSceneUniBindGroup);
-    shadowBundleEnc.setVertexBuffer(0, verticesBuffer);
-    shadowBundleEnc.setIndexBuffer(indicesBuffer, 'uint16');
-    for (let m of allMeshHandles) {
-        shadowBundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
-        shadowBundleEnc.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-    }
-    let shadowBundle = shadowBundleEnc.finish()
-
     const bundleEnc = device.createRenderBundleEncoder({
         colorFormats: [swapChainFormat],
         depthStencilFormat: depthStencilFormat,
@@ -622,21 +521,6 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
             gpuBufferWriteMeshTransform(m);
         }
 
-        // render from the light's point of view to a depth buffer so we know where shadows are
-        const commandEncoder = device.createCommandEncoder();
-        const shadowRenderPassEncoder = commandEncoder.beginRenderPass({
-            colorAttachments: [],
-            depthStencilAttachment: {
-                view: shadowDepthTextureView,
-                depthLoadValue: 1.0,
-                depthStoreOp: 'store',
-                stencilLoadValue: 0,
-                stencilStoreOp: 'store',
-            },
-        });
-        shadowRenderPassEncoder.executeBundles([shadowBundle]);
-        shadowRenderPassEncoder.endPass();
-
         // calculate and write our view and project matrices
         const viewMatrix = mat4.create()
         mat4.multiply(viewMatrix, viewMatrix, player.transform)
@@ -647,12 +531,15 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         const viewProj = mat4.multiply(mat4.create(), projectionMatrix, viewMatrix) as Float32Array
         device.queue.writeBuffer(sceneUniBuffer, 0, viewProj.buffer);
 
+        // start collecting our render commands for this frame
+        const commandEncoder = device.createCommandEncoder();
+
         // render to the canvas' via our swap-chain
         const renderPassEncoder = commandEncoder.beginRenderPass({
             colorAttachments: [{
                 view: colorTextureView,
                 resolveTarget: context.getCurrentTexture().createView(),
-                loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
+                loadValue: backgroundColor,
                 storeOp: 'store',
             }],
             depthStencilAttachment: {
@@ -699,13 +586,6 @@ function roll(m: mat4, rad: number) { return mat4.rotateZ(m, m, rad); }
 function moveX(m: mat4, n: number) { return mat4.translate(m, m, [n, 0, 0]); }
 function moveY(m: mat4, n: number) { return mat4.translate(m, m, [0, n, 0]); }
 function moveZ(m: mat4, n: number) { return mat4.translate(m, m, [0, 0, n]); }
-
-// buffer utilities
-function bufferWriteVec3(buffer: Float32Array, offset: number, v: vec3) {
-    buffer[offset + 0] = v[0]
-    buffer[offset + 1] = v[1]
-    buffer[offset + 2] = v[2]
-}
 
 async function main() {
     const start = performance.now();
