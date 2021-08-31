@@ -100,6 +100,8 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxTr
   gl.getExtension('OES_standard_derivatives');
   gl.getExtension('EXT_shader_texture_lod');
 
+  gl.clearColor(0.5, 0.5, 0.5, 1.0);
+
   let vertShader = gl.createShader(gl.VERTEX_SHADER)!;
   gl.shaderSource(vertShader, vertCode);
   gl.compileShader(vertShader);
