@@ -5720,22 +5720,13 @@ export var vec3 = /*#__PURE__*/Object.freeze({
 
         return out;
     }
-    /**
-     * Creates a quaternion from the given euler angle x, y, z.
-     *
-     * @param {quat} out the receiving quaternion
-     * @param {x} Angle to rotate around X axis in degrees.
-     * @param {y} Angle to rotate around Y axis in degrees.
-     * @param {z} Angle to rotate around Z axis in degrees.
-     * @returns {quat} out
-     * @function
-     */
 
-      function fromEuler(out, x, y, z) {
-        var halfToRad = 0.5 * Math.PI / 180.0;
-        x *= halfToRad;
-        y *= halfToRad;
-        z *= halfToRad;
+    // TODO(@darzu): modified this to take radians
+    function fromEuler(out, x, y, z) {
+        var half = 0.5;
+        x *= half;
+        y *= half;
+        z *= half;
         var sx = Math.sin(x);
         var cx = Math.cos(x);
         var sy = Math.sin(y);

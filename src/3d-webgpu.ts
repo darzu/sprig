@@ -295,7 +295,6 @@ const sampleCount = 4;
 
 interface Transformable {
     getTransform: () => mat4;
-    lookAt: (target: vec3) => void;
     pitch: (rad: number) => void;
     yaw: (rad: number) => void;
     roll: (rad: number) => void;
@@ -309,9 +308,6 @@ function mkAffineTransformable(): Transformable {
     return {
         getTransform: () => {
             return mat4.clone(transform);
-        },
-        lookAt: (target: vec3) => {
-            // TODO(@darzu): dz
         },
         pitch: (rad: number) => {
             mat4.rotateX(transform, transform, rad)
@@ -334,70 +330,44 @@ function mkAffineTransformable(): Transformable {
     }
 }
 
-function mkQuatTransformable(): Transformable {
-    const rotation: quat = quat.create();
-    const position: vec3 = vec3.create();
-    return {
-        getTransform: () => {
-            return mat4.fromRotationTranslation(mat4.create(), rotation, position);
-        },
-        lookAt: (target: vec3) => {
-            // TODO(@darzu): dz
-        },
-        pitch: (rad: number) => {
-            quat.rotateX(rotation, rotation, rad);
-        },
-        yaw: (rad: number) => {
-            quat.rotateY(rotation, rotation, rad);
-        },
-        roll: (rad: number) => {
-            quat.rotateZ(rotation, rotation, rad);
-        },
-        moveX: (n: number) => {
-            position[0] += n;
-        },
-        moveY: (n: number) => {
-            position[1] += n;
-        },
-        moveZ: (n: number) => {
-            position[2] += n;
-        },
-    }
-}
-
-const radToDeg = 180 / Math.PI;
-
-
 function mkEulerTransformable(): Transformable {
-    const position: vec3 = vec3.create();
+    // yaw with respect to absolute
+    // pitch with respect to yaw
+    // translate with respect to yaw and pitch
+
     let yaw: number = 0;
     let pitch: number = 0;
     let roll: number = 0;
+
+    const rotation = quat.create();
+    const position = vec3.create();
+
     return {
         getTransform: () => {
-            const rot = quat.fromEuler(quat.create(), radToDeg * pitch, radToDeg * yaw, radToDeg * roll)
-            return mat4.fromRotationTranslation(mat4.create(), rot, position);
-        },
-        lookAt: (target: vec3) => {
-            // TODO(@darzu): dz
+            // return mat4.clone(transform);
+            // const rot = quat.fromEuler(quat.create(), radToDeg * pitch, radToDeg * yaw, radToDeg * roll)
+            return mat4.fromRotationTranslation(mat4.create(), rotation, position);
         },
         pitch: (rad: number) => {
             pitch = clamp(pitch + rad, -Math.PI / 2, Math.PI / 2)
+            quat.fromEuler(rotation, pitch, yaw, roll)
         },
         yaw: (rad: number) => {
             yaw += rad
+            quat.fromEuler(rotation, pitch, yaw, roll)
         },
         roll: (rad: number) => {
             // roll = clamp(roll + rad, -Math.PI / 2, Math.PI / 2)
+            // console.log(transform);
         },
         moveX: (n: number) => {
-            position[0] += n;
+            vec3.add(position, position, vec3.transformQuat(vec3.create(), [n, 0, 0], rotation))
         },
         moveY: (n: number) => {
-            position[1] += n;
+            vec3.add(position, position, vec3.transformQuat(vec3.create(), [0, n, 0], rotation))
         },
         moveZ: (n: number) => {
-            position[2] += n;
+            vec3.add(position, position, vec3.transformQuat(vec3.create(), [0, 0, n], rotation))
         },
     }
 }

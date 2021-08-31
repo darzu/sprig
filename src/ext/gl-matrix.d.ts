@@ -2333,13 +2333,13 @@
          * Creates a quaternion from the given euler angle x, y, z.
          *
          * @param {quat} out the receiving quaternion
-         * @param {x} Angle to rotate around X axis in degrees.
-         * @param {y} Angle to rotate around Y axis in degrees.
-         * @param {z} Angle to rotate around Z axis in degrees.
+         * @param {x} Angle to rotate around X axis in radians.
+         * @param {y} Angle to rotate around Y axis in radians.
+         * @param {z} Angle to rotate around Z axis in radians.
          * @returns {quat} out
          * @function
          */
-        export function fromEuler(out: quat, x: any, y: any, z: any): quat;
+        export function fromEuler(out: quat, x: number, y: number, z: number): quat;
         /**
          * Returns a string representation of a quatenion
          *

@@ -475,3 +475,6 @@ Understanding quanternions / rotation:
   https://marctenbosch.com/quaternions/
   https://rotations.berkeley.edu
   https://omar-shehata.medium.com/how-to-fix-gimbal-lock-in-n-dimensions-f2f7baec2b5e
+
+Voxel engine used by minecraft classic web:
+  https://github.com/andyhall/noa/tree/develop

@@ -52,3 +52,5 @@ export function multiplyMatrices(a: Mat, b: V3): V3 {
         a[2][0] * b[0] + a[2][1] * b[1] + a[2][2] * b[2],
     ]
 }
+
+export const radToDeg = 180 / Math.PI;
