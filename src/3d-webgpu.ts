@@ -677,6 +677,8 @@ async function init(canvasRef: HTMLCanvasElement) {
     playerM.transform = playerT.getTransform();
     meshPool.applyMeshTransform(playerM)
 
+    let playerPos = getPositionFromTransform(playerM.transform);
+
     // write light source
     const lightProjectionMatrix = mat4.create();
     {
@@ -688,13 +690,20 @@ async function init(canvasRef: HTMLCanvasElement) {
         const far = 300;
         mat4.ortho(lightProjectionMatrix, left, right, bottom, top, near, far);
     }
+    let timeOffset = 0;
     function updateLight(timeMs: number) {
         const upVector = vec3.fromValues(0, 1, 0);
         const origin = vec3.fromValues(0, 0, 0);
-        const sunSpeed = 0.0001;
-        const lightX = Math.cos(timeMs * sunSpeed) * 100
-        const lightY = Math.sin(timeMs * sunSpeed) * 100
-        const lightPosition = vec3.fromValues(lightX, lightY, 0);
+        const sunSpeed = 0.0004;
+        const lightX = Math.cos((timeMs + timeOffset) * sunSpeed) * 100
+        const lightY = Math.sin((timeMs + timeOffset) * sunSpeed) * 100
+        const isNight = lightY < 0;
+        if (isNight) {
+            // TODO(@darzu): this isn't framerate independent
+            timeOffset += 50;
+        }
+
+        const lightPosition = vec3.fromValues(lightX + playerPos[0], lightY, playerPos[2]);
         // const lightPosition = vec3.fromValues(50, 100, -100);
         const lightViewMatrix = mat4.create();
         mat4.lookAt(lightViewMatrix, lightPosition, origin, upVector);
@@ -745,6 +754,8 @@ async function init(canvasRef: HTMLCanvasElement) {
         // Sample is no longer the active page.
         if (!canvasRef) return;
 
+        playerPos = getPositionFromTransform(playerM.transform);
+
         updateLight(timeMs);
 
         // update model positions
@@ -768,8 +779,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         mouseDeltaX = 0;
         mouseDeltaY = 0;
 
-        const grassTarget = getPositionFromTransform(playerM.transform);
-        grassSystem.update(grassTarget)
+        grassSystem.update(playerPos)
 
         function getViewProj() {
             const viewProj = mat4.create();
