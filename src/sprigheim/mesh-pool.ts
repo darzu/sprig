@@ -10,6 +10,7 @@ const indicesPerTriangle = 3;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
 const bytesPerMat4 = (4 * 4)/*4x4 mat*/ * 4/*f32*/
 const bytesPerVec3 = 3/*vec3*/ * 4/*f32*/
+const bytesPerVec2 = 2/*vec3*/ * 4/*f32*/
 const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
 const bytesPerUint16 = Uint16Array.BYTES_PER_ELEMENT;
 const bytesPerUint32 = Uint32Array.BYTES_PER_ELEMENT;
@@ -148,6 +149,77 @@ export module MeshUniform {
         }
 
         return res;
+    }
+}
+
+export module SceneUniform {
+    export interface Data {
+        cameraViewProjMatrix: mat4,
+        lightViewProjMatrix: mat4,
+        lightDir: vec3,
+        time: number /*f32*/,
+        targetSize: [number, number],
+        cameraPos: vec3,
+    }
+
+    const _counts = [
+        4 * 4, // camera projection
+        4 * 4, // light projection
+        3, // light pos
+        1, // time
+        2, // targetSize
+        3, // camera pos
+    ]
+    const _names = [
+        'transform',
+        'aabbMin',
+        'aabbMax',
+    ]
+    const _types = [
+        'mat4x4<f32>',
+        'vec3<f32>',
+        'vec3<f32>',
+    ]
+
+    const _offsets = _counts.reduce((p, n) => [...p, p[p.length - 1] + n], [0])
+
+    // TODO(@darzu): SCENE FORMAT
+    // defines the format of our scene's uniform data
+    export const ByteSizeExact = sum(_counts) * bytesPerFloat
+    export const ByteSizeAligned = align(ByteSizeExact, 256); // uniform objects must be 256 byte aligned
+
+    export function GenerateWGSLUniformStruct() {
+        // Example
+        //     cameraViewProjMatrix : mat4x4<f32>;
+        //     lightViewProjMatrix : mat4x4<f32>;
+        //     lightDir : vec3<f32>;
+        //     time : f32;
+        //     targetSize: vec2<f32>;
+        //     cameraPos : vec3<f32>;
+        // TODO(@darzu): enforce agreement w/ Scene interface
+        return `
+            cameraViewProjMatrix : mat4x4<f32>;
+            lightViewProjMatrix : mat4x4<f32>;
+            lightDir : vec3<f32>;
+            time : f32;
+            targetSize: vec2<f32>;
+            cameraPos : vec3<f32>;
+        `
+    }
+
+    // // write the light data to the scene uniform buffer
+    // device.queue.writeBuffer(sceneUniBuffer, bytesPerMat4 * 1, (lightViewProjMatrix as Float32Array).buffer);
+    // device.queue.writeBuffer(sceneUniBuffer, bytesPerMat4 * 2, (lightDir as Float32Array).buffer);
+    const scratch_f32 = new Float32Array(sum(_counts));
+    const scratch_f32_as_u8 = new Uint8Array(scratch_f32.buffer);
+    export function Serialize(buffer: Uint8Array, byteOffset: number, data: Data) {
+        scratch_f32.set(data.cameraViewProjMatrix, _offsets[0])
+        scratch_f32.set(data.lightViewProjMatrix, _offsets[1])
+        scratch_f32.set(data.lightDir, _offsets[2])
+        scratch_f32[_offsets[3]] = data.time;
+        scratch_f32.set(data.targetSize, _offsets[4])
+        scratch_f32.set(data.cameraPos, _offsets[5])
+        buffer.set(scratch_f32_as_u8, byteOffset)
     }
 }
 

@@ -1,7 +1,7 @@
 import { mat4, vec3 } from '../ext/gl-matrix.js';
 import { align } from '../math.js';
 import { initGrassSystem } from './grass.js';
-import { createMeshPoolBuilder, MeshHandle, MeshPool, Vertex, MeshUniform } from './mesh-pool.js';
+import { createMeshPoolBuilder, MeshHandle, MeshPool, Vertex, MeshUniform, SceneUniform } from './mesh-pool.js';
 
 const ENABLE_WATER = false;
 
@@ -434,25 +434,43 @@ const PLANE: Mesh = unshareProvokingVertices({
     ],
 })
 
-// TODO(@darzu): SCENE FORMAT
-// defines the format of our scene's uniform data
-const sceneUniBufferSizeExact =
-    bytesPerMat4 * 2 // camera and light projection
-    + bytesPerVec3 * 1 // light pos
-    + bytesPerFloat * 1 // time
-    + bytesPerFloat * 2 // targetSize
-    + bytesPerVec3 * 1 // camera pos
-export const sceneUniBufferSizeAligned = align(sceneUniBufferSizeExact, 256); // uniform objects must be 256 byte aligned
+interface Scene {
+    worldOrigin: vec3,
+    lightPosition: vec3,
+    lightViewMatrix: mat4,
+    lightProjectionMatrix: mat4,
+    lightViewProjMatrix: mat4,
+    lightDir: vec3,
+}
 
-// create a directional light and compute it's projection (for shadows) and direction
-const worldOrigin = vec3.fromValues(0, 0, 0);
-const lightPosition = vec3.fromValues(50, 50, 0);
-const upVector = vec3.fromValues(0, 1, 0);
-const lightViewMatrix = mat4.lookAt(mat4.create(), lightPosition, worldOrigin, upVector);
-const lightProjectionMatrix = mat4.ortho(mat4.create(), -80, 80, -80, 80, -200, 300);
-const lightViewProjMatrix = mat4.multiply(mat4.create(), lightProjectionMatrix, lightViewMatrix);
-const lightDir = vec3.subtract(vec3.create(), worldOrigin, lightPosition);
-vec3.normalize(lightDir, lightDir);
+function createScene(): Scene {
+    // create a directional light and compute it's projection (for shadows) and direction
+    const worldOrigin = vec3.fromValues(0, 0, 0);
+    const lightPosition = vec3.fromValues(50, 50, 0);
+    const upVector = vec3.fromValues(0, 1, 0);
+    const lightViewMatrix = mat4.lookAt(mat4.create(), lightPosition, worldOrigin, upVector);
+    const lightProjectionMatrix = mat4.ortho(mat4.create(), -80, 80, -80, 80, -200, 300);
+    const lightViewProjMatrix = mat4.multiply(mat4.create(), lightProjectionMatrix, lightViewMatrix);
+    const lightDir = vec3.subtract(vec3.create(), worldOrigin, lightPosition);
+    vec3.normalize(lightDir, lightDir);
+
+    return {
+        worldOrigin,
+        lightPosition,
+        lightViewMatrix,
+        lightProjectionMatrix,
+        lightViewProjMatrix,
+        lightDir,
+    }
+}
+
+const scene = createScene();
+
+const scratch_sceneuniform_u8 = new Uint8Array(SceneUniform.ByteSizeAligned);
+function updateSceneUniform(device: GPUDevice, buffer: GPUBuffer, data: SceneUniform.Data) {
+    SceneUniform.Serialize(scratch_sceneuniform_u8, 0, data)
+    device.queue.writeBuffer(buffer, 0, scratch_sceneuniform_u8);
+}
 
 type RenderFrameFn = (timeMS: number) => void;
 function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): RenderFrameFn {
@@ -462,9 +480,19 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
 
     // create our scene's uniform buffer
     const sceneUniBuffer = device.createBuffer({
-        size: sceneUniBufferSizeAligned,
+        size: SceneUniform.ByteSizeAligned,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
+
+    // create our scene's uniform local data
+    const sceneUni: SceneUniform.Data = {
+        cameraViewProjMatrix: mat4.create(), // updated later
+        lightViewProjMatrix: scene.lightViewProjMatrix,
+        lightDir: scene.lightDir,
+        time: 0.0, // updated later
+        targetSize: [canvasRef.width, canvasRef.height],
+        cameraPos: vec3.create(), // updated later
+    }
 
     // setup a binding for our per-mesh uniforms
     const modelUniBindGroupLayout = device.createBindGroupLayout({
@@ -557,10 +585,6 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     pitch(cameraOffset, -Math.PI / 8)
     // mat4.rotateY(player.transform, player.transform, Math.PI * 1.25)
     pool.updateUniform(player)
-
-    // write the light data to the scene uniform buffer
-    device.queue.writeBuffer(sceneUniBuffer, bytesPerMat4 * 1, (lightViewProjMatrix as Float32Array).buffer);
-    device.queue.writeBuffer(sceneUniBuffer, bytesPerMat4 * 2, (lightDir as Float32Array).buffer);
 
     // we'll use a triangle list with backface culling and counter-clockwise triangle indices for both pipelines
     const primitiveBackcull: GPUPrimitiveState = {
@@ -883,16 +907,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
 
         // resize (if necessary)
         checkCanvasResize(device, canvasRef.width, canvasRef.height);
-        // TODO(@darzu): integrate this with checkCanvasResize
-        // TODO(@darzu): SCENE FORMAT
-        // targetSize
-        const sceneUniSizeOffset = bytesPerMat4 * 2 // camera and light projection
-            + bytesPerVec3 * 1 // light pos
-            + bytesPerFloat * 1 // time
-        const sizeBuffer = new Float32Array(2);
-        sizeBuffer[0] = canvasRef.width;
-        sizeBuffer[1] = canvasRef.height;
-        device.queue.writeBuffer(sceneUniBuffer, sceneUniSizeOffset, sizeBuffer);
+        sceneUni.targetSize = [canvasRef.width, canvasRef.height];
 
         // process inputs and move the player & camera
         const playerSpeed = pressedKeys[' '] ? 1.0 : 0.2; // spacebar boosts speed
@@ -916,8 +931,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         mat4.translate(viewLocMatrix, viewLocMatrix, [0, 0, 10]) // TODO(@darzu): can this be merged into the camera offset?
         const viewMatrix = mat4.invert(mat4.create(), viewLocMatrix);
         const projectionMatrix = mat4.perspective(mat4.create(), (2 * Math.PI) / 5, aspectRatio, 1, 10000.0/*view distance*/);
-        const viewProj = mat4.multiply(mat4.create(), projectionMatrix, viewMatrix) as Float32Array
-        device.queue.writeBuffer(sceneUniBuffer, 0, viewProj.buffer);
+        mat4.multiply(sceneUni.cameraViewProjMatrix, projectionMatrix, viewMatrix) as Float32Array
 
         // rotate the random cubes
         for (let i = 0; i < randomCubes.length; i++) {
@@ -932,21 +946,12 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         grass.update(playerPos)
 
         // update scene data
-        // TODO(@darzu): SCENE FORMAT
-        const sceneUniTimeOffset = bytesPerMat4 * 2 // camera and light projection
-            + bytesPerVec3 * 1 // light pos
-        const timeBuffer = new Float32Array(1);
-        timeBuffer[0] = timeMs;
-        device.queue.writeBuffer(sceneUniBuffer, sceneUniTimeOffset, timeBuffer);
-        const cameraPosOffset =
-            bytesPerMat4 * 2 // camera and light projection
-            + bytesPerVec3 * 1 // light pos
-            + bytesPerFloat * 1 // time
-            + bytesPerFloat * 2 // targetSize
-        // const cameraPos = playerPos as Float32Array;
+        sceneUni.time = timeMs;
         // TODO(@darzu): is this the camera position? seems off in the shader...
-        const cameraPos = getPositionFromTransform(viewLocMatrix) as Float32Array;
-        device.queue.writeBuffer(sceneUniBuffer, cameraPosOffset, cameraPos);
+        sceneUni.cameraPos = getPositionFromTransform(viewLocMatrix);
+
+        // send scene uniform data to GPU
+        updateSceneUniform(device, sceneUniBuffer, sceneUni);
 
         // update fullscreen scene data
         const fsUniTimeOffset = 0
