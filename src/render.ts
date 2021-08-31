@@ -395,7 +395,8 @@ export class Renderer {
       obj: o,
     };
     this.meshHandles.push(res);
-    this.createRenderBundle();
+    // TODO(@darzu): disabled as hack
+    // this.createRenderBundle();
     return res;
   }
 
@@ -619,6 +620,9 @@ export class Renderer {
     // }
     // TODO(@darzu): hack
     this.gpuBufferWriteAllMeshUniforms();
+
+    // TODO(@darzu): more fine grain
+    this.createRenderBundle();
 
     // start collecting our render commands for this frame
     const commandEncoder = this.device.createCommandEncoder();
