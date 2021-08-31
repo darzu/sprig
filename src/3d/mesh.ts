@@ -96,6 +96,10 @@ export interface MeshMemoryPool {
 export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDevice): MeshMemoryPool {
     const { vertByteSize, maxVerts, maxTris, maxMeshes, meshUniByteSize } = opts;
 
+    if (meshUniByteSize % 256 !== 0) {
+        console.error("invalid mesh uni byte size, not 256 byte aligned: " + meshUniByteSize)
+    }
+
     // space stats
     console.log(`New mesh pool`);
     console.log(`   ${maxVerts * vertByteSize / 1024} KB for verts`);
@@ -115,7 +119,7 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
         mappedAtCreation: true,
     }) : null;
 
-    const meshUniBufferSize = mat4ByteSize * maxMeshes;
+    const meshUniBufferSize = meshUniByteSize * maxMeshes;
     const _meshUniBuffer = device.createBuffer({
         size: align(meshUniBufferSize, 256),
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,

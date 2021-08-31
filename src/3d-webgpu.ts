@@ -127,14 +127,20 @@ interface GrassTileOpts {
     bladeW: number,
     bladeH: number
     spacing: number,
-    size: number,
+    tileSize: number,
 }
 interface GrassTilesetOpts {
-    count: number,
+    tilesPerSide: number,
 }
 
 function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Mesh {
-    const { spacing, size, bladeW, bladeH } = opts;
+    const { spacing, tileSize: size, bladeW, bladeH } = opts;
+
+    // TODO(@darzu): debug coloring
+    const [r, g, b] = [Math.random(), Math.random(), Math.random()];
+
+    const prevNumTris = grassMeshPool._numTris;
+    const prevNumVerts = grassMeshPool._numVerts;
 
     let i = 0;
     for (let xi = 0.0; xi < size; xi += spacing) {
@@ -156,9 +162,10 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
 
             const y = bladeH + jitter(1)
 
-            const r = 0.2 + jitter(0.02)
-            const g = 0.5 + jitter(0.2)
-            const b = 0.2 + jitter(0.02)
+            // TODO(@darzu): debug coloring
+            // const r = 0.2 + jitter(0.02)
+            // const g = 0.5 + jitter(0.2)
+            // const b = 0.2 + jitter(0.02)
 
             const p0: vec3 = [x1, 0, z1];
             const p1: vec3 = [x2, 0, z2];
@@ -194,13 +201,12 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
             i++;
         }
     }
-    console.log(`Grass triangles: ${i}`)
 
     // TODO(@darzu): compute correct offsets
     const grassMesh: Mesh = {
-        vertNumOffset: 0,
-        indicesNumOffset: 0,
-        modelUniByteOffset: 0,
+        vertNumOffset: prevNumVerts,
+        indicesNumOffset: prevNumTris * 3,
+        modelUniByteOffset: grassMeshPool._opts.meshUniByteSize * grassMeshPool._meshes.length,
         triCount: i,
 
         // used and updated elsewhere
@@ -218,23 +224,33 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
 
 function createGrassTileset(opts: GrassTileOpts & GrassTilesetOpts, device: GPUDevice): MeshMemoryPool {
     // create grass field
-    const { spacing, size } = opts;
-    const grassPerTile = (size / spacing) ** 2;
-    const totalGrass = grassPerTile * opts.count;
+    const { spacing, tileSize, tilesPerSide } = opts;
+    const grassPerTile = (tileSize / spacing) ** 2;
+    const tileCount = tilesPerSide ** 2;
+    const totalGrass = grassPerTile * tileCount;
     const grassMeshPool = createMeshMemoryPool({
         vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
         maxVerts: align(totalGrass * 3, 4),
         maxTris: align(totalGrass, 4),
-        maxMeshes: opts.count,
-        meshUniByteSize: align(mat4ByteSize, 256), // align to 256,
+        maxMeshes: tileCount,
+        meshUniByteSize: align(mat4ByteSize, 256),
         backfaceCulling: false,
         usesIndices: false,
     }, device);
 
     grassMeshPool._map();
 
-    const tile = createGrassTile(opts, grassMeshPool);
-    grassMeshPool.applyMeshTransform(tile)
+
+    for (let xi = 0; xi < tilesPerSide; xi++) {
+        for (let zi = 0; zi < tilesPerSide; zi++) {
+            const x = xi * tileSize;
+            const z = zi * tileSize;
+            console.log(`(${xi}, ${zi})`);
+            const tile = createGrassTile(opts, grassMeshPool);
+            mat4.translate(tile.transform, tile.transform, [x, 0, z])
+            grassMeshPool.applyMeshTransform(tile)
+        }
+    }
 
     grassMeshPool._unmap();
 
@@ -260,11 +276,10 @@ function initGrassSystem(device: GPUDevice): GrassSystem {
         bladeW: 0.1,
         bladeH: 1.7,
         spacing: 0.25,
-        size: 10,
+        tileSize: 10,
         // tileset
-        count: 4
+        tilesPerSide: 2
     }, device);
-
 
     const res: GrassSystem = {
         getGrassPools: () => [tilesetPool]
