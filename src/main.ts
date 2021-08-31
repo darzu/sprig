@@ -229,11 +229,6 @@ class Player extends Cube {
     this.color = vec3.fromValues(0, 0.2, 0);
   }
 
-  mesh() {
-    // TODO(@darzu): DEBUG
-    return scaleMesh(CUBE_MESH, 0);
-  }
-
   syncPriority(): number {
     return 10000;
   }
