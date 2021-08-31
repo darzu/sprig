@@ -551,20 +551,34 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
 
     // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
     // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
-    const bundleEncoder = device.createRenderBundleEncoder({
+    const shadowBundleEnc = device.createRenderBundleEncoder({
+        colorFormats: [],
+        depthStencilFormat: shadowDepthStencilFormat,
+    });
+    shadowBundleEnc.setPipeline(shadowPipeline);
+    shadowBundleEnc.setBindGroup(0, shadowSceneUniBindGroup);
+    shadowBundleEnc.setVertexBuffer(0, verticesBuffer);
+    shadowBundleEnc.setIndexBuffer(indicesBuffer, 'uint16');
+    for (let m of allMeshHandles) {
+        shadowBundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
+        shadowBundleEnc.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+    }
+    let shadowBundle = shadowBundleEnc.finish()
+
+    const bundleEnc = device.createRenderBundleEncoder({
         colorFormats: [swapChainFormat],
         depthStencilFormat: depthStencilFormat,
         sampleCount: antiAliasSampleCount,
     });
-    bundleEncoder.setPipeline(renderPipeline);
-    bundleEncoder.setBindGroup(0, renderSceneUniBindGroup);
-    bundleEncoder.setVertexBuffer(0, verticesBuffer);
-    bundleEncoder.setIndexBuffer(indicesBuffer, 'uint16');
+    bundleEnc.setPipeline(renderPipeline);
+    bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
+    bundleEnc.setVertexBuffer(0, verticesBuffer);
+    bundleEnc.setIndexBuffer(indicesBuffer, 'uint16');
     for (let m of allMeshHandles) {
-        bundleEncoder.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
-        bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+        bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
+        bundleEnc.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
     }
-    let renderBundle = bundleEncoder.finish()
+    let renderBundle = bundleEnc.finish()
 
     // initialize performance metrics
     let debugDiv = document.getElementById('debug-div') as HTMLDivElement;
@@ -610,7 +624,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
 
         // render from the light's point of view to a depth buffer so we know where shadows are
         const commandEncoder = device.createCommandEncoder();
-        const shadowPassDescriptor: GPURenderPassDescriptor = {
+        const shadowRenderPassEncoder = commandEncoder.beginRenderPass({
             colorAttachments: [],
             depthStencilAttachment: {
                 view: shadowDepthTextureView,
@@ -619,17 +633,9 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
                 stencilLoadValue: 0,
                 stencilStoreOp: 'store',
             },
-        };
-        const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
-        shadowPass.setBindGroup(0, shadowSceneUniBindGroup);
-        shadowPass.setPipeline(shadowPipeline);
-        shadowPass.setVertexBuffer(0, verticesBuffer);
-        shadowPass.setIndexBuffer(indicesBuffer, 'uint16');
-        for (let m of allMeshHandles) {
-            shadowPass.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
-            shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-        }
-        shadowPass.endPass();
+        });
+        shadowRenderPassEncoder.executeBundles([shadowBundle]);
+        shadowRenderPassEncoder.endPass();
 
         // calculate and write our view and project matrices
         const viewMatrix = mat4.create()
@@ -659,6 +665,8 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         });
         renderPassEncoder.executeBundles([renderBundle]);
         renderPassEncoder.endPass();
+
+        // submit render passes to GPU
         device.queue.submit([commandEncoder.finish()]);
 
         // calculate performance metrics as running, weighted averages across frames
