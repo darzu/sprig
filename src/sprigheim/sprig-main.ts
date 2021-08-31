@@ -1,7 +1,7 @@
 import { mat4, vec3 } from '../ext/gl-matrix.js';
 import { align } from '../math.js';
 import { initGrassSystem } from './grass.js';
-import { createMeshPoolBuilder, meshApplyUniformData, MeshHandle, MeshPool } from './mesh-pool.js';
+import { createMeshPoolBuilder, MeshHandle, MeshPool } from './mesh-pool.js';
 
 const ENABLE_WATER = false;
 
@@ -547,7 +547,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     // place the ground
     mat4.translate(ground.transform, ground.transform, [0, -3, -8])
     mat4.scale(ground.transform, ground.transform, [10, 10, 10])
-    meshApplyUniformData(ground);
+    pool.updateUniform(ground);
 
     // initialize our cubes; each will have a random axis of rotation
     const randomCubesAxis: vec3[] = []
@@ -556,7 +556,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         mat4.translate(m.transform, m.transform, [Math.random() * 20 - 10, Math.random() * 5, -Math.random() * 10 - 5])
         const axis: vec3 = vec3.normalize(vec3.create(), [Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5]);
         randomCubesAxis.push(axis)
-        meshApplyUniformData(m);
+        pool.updateUniform(m);
         // TODO(@darzu): debug
         // meshApplyMinMaxPos(m);
     }
@@ -598,7 +598,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     const cameraOffset = mat4.create();
     pitch(cameraOffset, -Math.PI / 8)
     // mat4.rotateY(player.transform, player.transform, Math.PI * 1.25)
-    meshApplyUniformData(player)
+    pool.updateUniform(player)
 
     // write the light data to the scene uniform buffer
     device.queue.writeBuffer(sceneUniBuffer, bytesPerMat4 * 1, (lightViewProjMatrix as Float32Array).buffer);
@@ -949,7 +949,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         pitch(cameraOffset, -mouseY * 0.01);
 
         // apply the players movement by writting to the model uniform buffer
-        meshApplyUniformData(player);
+        pool.updateUniform(player);
 
         // calculate and write our view and project matrices
         const viewLocMatrix = mat4.create()
@@ -966,7 +966,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
             const m = randomCubes[i]
             const axis = randomCubesAxis[i]
             mat4.rotate(m.transform, m.transform, Math.PI * 0.01, axis);
-            meshApplyUniformData(m);
+            pool.updateUniform(m);
         }
 
         // update grass
@@ -1280,7 +1280,7 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
     mat4.translate(waterMesh.transform, waterMesh.transform, [-(mapXSize * spacing) * 0.5, -4, -(mapZSize * spacing) * 0.5])
 
     // TODO(@darzu): these could be done while the builder has mapped buffers
-    pool.allMeshes.forEach(m => meshApplyUniformData(m));
+    pool.allMeshes.forEach(m => pool.updateUniform(m));
     // pool.allMeshes.forEach(m => meshApplyMinMaxPos(m));
 
     const water: WaterSystem = {

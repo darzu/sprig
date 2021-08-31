@@ -46,6 +46,7 @@ export interface MeshPoolBuilder {
     // methods
     addMesh: (m: Mesh) => MeshHandle,
     buildMesh: () => MeshBuilder,
+    updateUniform: (m: MeshHandle) => void,
     finish: () => MeshPool,
 }
 export interface MeshPool {
@@ -61,28 +62,19 @@ export interface MeshPool {
     numVerts: number,
     // handles
     device: GPUDevice,
+    // methods
+    updateUniform: (m: MeshHandle) => void,
 }
 
-interface AABB {
-    min: vec3,
-    max: vec3,
+
+export interface MeshBuilder {
+    poolBuilder: MeshPoolBuilder;
+    addVertex: (data: VertexData) => void,
+    addTri: (ind: vec3) => void,
+    setUniform: (transform: mat4, aabbMin: vec3, aabbMax: vec3) => void,
+    finish: () => MeshHandle;
 }
 
-function getAABBFromMesh(m: Mesh): AABB {
-    const min = vec3.fromValues(Infinity, Infinity, Infinity) as Float32Array
-    const max = vec3.fromValues(-Infinity, -Infinity, -Infinity) as Float32Array
-
-    for (let pos of m.pos) {
-        min[0] = Math.min(pos[0], min[0])
-        min[1] = Math.min(pos[1], min[1])
-        min[2] = Math.min(pos[2], min[2])
-        max[0] = Math.max(pos[0], max[0])
-        max[1] = Math.max(pos[1], max[1])
-        max[2] = Math.max(pos[2], max[2])
-    }
-
-    return { min, max }
-}
 
 export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolBuilder {
     const { maxMeshes, maxTris, maxVerts } = opts;
@@ -132,6 +124,7 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         allMeshes,
         numTris: 0,
         numVerts: 0,
+        updateUniform: _queueSetUniform,
     }
 
     const builder: MeshPoolBuilder = {
@@ -146,6 +139,7 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         poolHandle: pool,
         addMesh,
         buildMesh,
+        updateUniform,
         finish,
     };
 
@@ -182,7 +176,39 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
             // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
         })
 
+        const { min, max } = getAABBFromMesh(m)
+
+        b.setUniform(mat4.create(), min, max);
+
         return b.finish();
+    }
+
+    function _queueSetUniform(m: MeshHandle) {
+        // TODO(@darzu): for some reason doing this seperate for the transform and the AABB box didn't work...
+        // TODO(@darzu): MESH FORMAT
+        // TODO(@darzu): alignment requirements
+        // const offset = m.modelUniByteOffset + bytesPerMat4 /*transform*/
+        // m.pool.device.queue.writeBuffer(m.pool.uniformBuffer, offset, (m.modelMin as Float32Array).buffer);
+        // m.pool.device.queue.writeBuffer(m.pool.uniformBuffer, offset + align(bytesPerVec3, 4), (m.modelMax as Float32Array).buffer);
+
+        // const f32Scratch = new Float32Array(4 + 4);
+        const f32Scratch = new Float32Array(4 * 4 + 4 + 4);
+        f32Scratch.set(m.transform, 0)
+        f32Scratch.set(m.modelMin, align(4 * 4, 4))
+        f32Scratch.set(m.modelMax, align(4 * 4 + 3, 4))
+        const u8Scratch = new Uint8Array(f32Scratch.buffer);
+        m.pool.device.queue.writeBuffer(m.pool.uniformBuffer, m.modelUniByteOffset, u8Scratch);
+    }
+    function _mappedSetUniform(uniOffset: number, transform: mat4, aabbMin: vec3, aabbMax: vec3): void {
+        // TODO(@darzu): MESH FORMAT
+        // TODO(@darzu): seems each element needs to be 4-byte aligned
+        const f32Scratch = new Float32Array(4 * 4 + 4 + 4);
+        f32Scratch.set(transform, 0)
+        f32Scratch.set(aabbMin, align(4 * 4, 4))
+        f32Scratch.set(aabbMax, align(4 * 4 + 3, 4))
+        const u8Scratch = new Uint8Array(f32Scratch.buffer);
+        // console.dir({ floatBuff: f32Scratch })
+        builder.uniformMap.set(u8Scratch, uniOffset)
     }
 
     function finish(): MeshPool {
@@ -201,6 +227,13 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
 
         return pool;
     }
+
+    function updateUniform(m: MeshHandle): void {
+        if (finished)
+            throw 'trying to use finished MeshBuilder'
+        _mappedSetUniform(m.modelUniByteOffset, m.transform, m.modelMin, m.modelMax)
+    }
+
 
     function buildMesh(): MeshBuilder {
         if (finished)
@@ -238,27 +271,18 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         }
 
         let _transform: mat4 | undefined = undefined;
-        function setUniform(transform: mat4): void {
+        function setUniform(transform: mat4, aabbMin: vec3, aabbMax: vec3): void {
             if (finished || meshFinished)
                 throw 'trying to use finished MeshBuilder'
             _transform = transform;
-            // TODO(@darzu): MESH FORMAT
-            // TODO(@darzu): seems each element needs to be 4-byte aligned
-            const f32Scratch = new Float32Array(4 * 4 + 4 + 4);
-            f32Scratch.set(transform, 0)
-            f32Scratch.set(aabbMin, align(4 * 4, 4))
-            f32Scratch.set(aabbMax, align(4 * 4 + 3, 4))
-            const u8Scratch = new Uint8Array(f32Scratch.buffer);
-            // console.dir({ floatBuff: f32Scratch })
-            builder.uniformMap.set(u8Scratch, uniOffset)
+            _mappedSetUniform(uniOffset, transform, aabbMin, aabbMax)
         }
 
         function finish(): MeshHandle {
             if (finished || meshFinished)
                 throw 'trying to use finished MeshBuilder'
-            if (!_transform) {
-                setUniform(mat4.create())
-            }
+            if (!_transform)
+                throw 'uniform never set for mesh'
             meshFinished = true;
             const res: MeshHandle = {
                 vertNumOffset,
@@ -287,36 +311,24 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
     return builder;
 }
 
-
-export interface MeshBuilder {
-    poolBuilder: MeshPoolBuilder;
-    addVertex: (data: VertexData) => void,
-    addTri: (ind: vec3) => void,
-    setUniform: (transform: mat4) => void,
-    finish: () => MeshHandle;
+// utils
+export interface AABB {
+    min: vec3,
+    max: vec3,
 }
 
+export function getAABBFromMesh(m: Mesh): AABB {
+    const min = vec3.fromValues(Infinity, Infinity, Infinity) as Float32Array
+    const max = vec3.fromValues(-Infinity, -Infinity, -Infinity) as Float32Array
 
-// utilities for mesh pools
-// TODO(@darzu): move into pool interface?
-// export function meshApplyTransform(m: MeshHandle) {
-//     m.pool.device.queue.writeBuffer(m.pool.uniformBuffer, m.modelUniByteOffset, (m.transform as Float32Array).buffer);
-// }
-export function meshApplyUniformData(m: MeshHandle) {
-    // TODO(@darzu): for some reason doing this seperate for the transform and the AABB box didn't work...
-    // TODO(@darzu): MESH FORMAT
-    // TODO(@darzu): alignment requirements
-    // const offset = m.modelUniByteOffset + bytesPerMat4 /*transform*/
-    // m.pool.device.queue.writeBuffer(m.pool.uniformBuffer, offset, (m.modelMin as Float32Array).buffer);
-    // m.pool.device.queue.writeBuffer(m.pool.uniformBuffer, offset + align(bytesPerVec3, 4), (m.modelMax as Float32Array).buffer);
+    for (let pos of m.pos) {
+        min[0] = Math.min(pos[0], min[0])
+        min[1] = Math.min(pos[1], min[1])
+        min[2] = Math.min(pos[2], min[2])
+        max[0] = Math.max(pos[0], max[0])
+        max[1] = Math.max(pos[1], max[1])
+        max[2] = Math.max(pos[2], max[2])
+    }
 
-    // const f32Scratch = new Float32Array(4 + 4);
-    const f32Scratch = new Float32Array(4 * 4 + 4 + 4);
-    f32Scratch.set(m.transform, 0)
-    // f32Scratch.set(m.modelMin, 0)
-    // f32Scratch.set(m.modelMax, 4)
-    f32Scratch.set(m.modelMin, align(4 * 4, 4))
-    f32Scratch.set(m.modelMax, align(4 * 4 + 3, 4))
-    const u8Scratch = new Uint8Array(f32Scratch.buffer);
-    m.pool.device.queue.writeBuffer(m.pool.uniformBuffer, m.modelUniByteOffset, u8Scratch);
+    return { min, max }
 }

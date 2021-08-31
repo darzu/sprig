@@ -1,6 +1,6 @@
 import { mat4, vec3 } from "../ext/gl-matrix.js";
 import { align, jitter } from "../math.js";
-import { createMeshPoolBuilder, meshApplyUniformData, MeshHandle, MeshPool, MeshPoolBuilder } from "./mesh-pool.js";
+import { createMeshPoolBuilder, MeshHandle, MeshPool, MeshPoolBuilder } from "./mesh-pool.js";
 import { getPositionFromTransform, VertexKind } from "./sprig-main.js";
 
 const RENDER_GRASS = true;
@@ -84,6 +84,10 @@ function createGrassTile(opts: GrassTileOpts, builder: MeshPoolBuilder): MeshHan
         }
     }
 
+    const aabbMin: vec3 = vec3.fromValues(-spacing, 0, -spacing);
+    const aabbMax: vec3 = vec3.fromValues(size + spacing, bladeH * 2, size + spacing);
+
+    m.setUniform(mat4.create(), aabbMin, aabbMax);
 
     const grassMesh = m.finish();
 
@@ -128,7 +132,7 @@ function createGrassTileset(opts: GrassTilesetOpts, device: GPUDevice): GrassTil
             // console.log(`(${xi}, ${zi})`);
             const tile = createGrassTile(tileOpts, builder);
             mat4.translate(tile.transform, tile.transform, [x, 0, z])
-            meshApplyUniformData(tile)
+            builder.updateUniform(tile);
         }
     }
 
@@ -184,7 +188,7 @@ function createGrassTileset(opts: GrassTilesetOpts, device: GPUDevice): GrassTil
                 const move = vec3.subtract(vec3.create(), targetPos, tilePoses[i])
                 mat4.translate(t.transform, t.transform, move)
                 // console.log(`moving (${tilePoses[i][0]}, ${tilePoses[i][1]}, ${tilePoses[i][2]}) to (${targetPos[0]}, ${targetPos[1]}, ${targetPos[2]}) via (${move[0]}, ${move[1]}, ${move[2]})`)
-                meshApplyUniformData(t)
+                pool.updateUniform(t)
                 break;
             }
         }
