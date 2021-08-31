@@ -94,6 +94,7 @@ const antiAliasSampleCount = 4;
 const swapChainFormat = 'bgra8unorm';
 const depthStencilFormat = 'depth24plus-stencil8';
 const shadowDepthStencilFormat = 'depth32float';
+const backgroundColor = { r: 0.5, g: 0.5, b: 0.5, a: 1.0 };
 
 // this state is recomputed upon canvas resize
 let depthTexture: GPUTexture;
@@ -247,6 +248,12 @@ const sceneUniBufferSizeExact =
     bytesPerMat4 * 2 // camera and light projection
     + bytesPerVec3 * 1 // light pos
 const sceneUniBufferSizeAligned = align(sceneUniBufferSizeExact, 256); // uniform objects must be 256 byte aligned
+
+// TODO(@darzu): vertex formatting?
+interface VertexFormat {
+    // addToBuffer
+    // 
+}
 
 interface MeshPoolOpts {
     maxMeshes: number,
@@ -692,7 +699,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
             colorAttachments: [{
                 view: colorTextureView,
                 resolveTarget: context.getCurrentTexture().createView(),
-                loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
+                loadValue: backgroundColor,
                 storeOp: 'store',
             }],
             depthStencilAttachment: {
