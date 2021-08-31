@@ -1,5 +1,6 @@
 import { mat4, vec3, quat } from './ext/gl-matrix.js';
 import { clamp } from './math.js';
+import { createMeshMemoryPool, CUBE, mat4ByteSize, Mesh, MeshMemoryPoolOptions, MeshModel, PLANE, triByteSize } from './3d/mesh.js';
 // import * as RAPIER from './ext/@dimforge/rapier3d/rapier.js';
 
 /*
@@ -21,123 +22,6 @@ TODO:
 
 // TODO(@darzu): expand faces to have unique vertices
 
-// face normals vs vertex normals
-interface MeshModel {
-    // vertex positions (x,y,z)
-    pos: vec3[];
-    // triangles (vert indices, ccw)
-    tri: vec3[];
-    // colors per triangle in r,g,b float [0-1] format
-    colors: vec3[];
-}
-
-// TODO(@darzu): this shouldn't be needed once "flat" shading is supported in Chrome's WGSL, 
-//  and/or PrimativeID is supported https://github.com/gpuweb/gpuweb/issues/1786
-function unshareVertices(inp: MeshModel): MeshModel {
-    // TODO(@darzu): pre-alloc
-    const outVerts: vec3[] = []
-    const outTri: vec3[] = []
-    inp.tri.forEach(([i0, i1, i2], i) => {
-        const v0 = inp.pos[i0];
-        const v1 = inp.pos[i1];
-        const v2 = inp.pos[i2];
-        outVerts.push(v0);
-        outVerts.push(v1);
-        outVerts.push(v2);
-        const vOff = i * 3;
-        outTri.push([
-            vOff + 0,
-            vOff + 1,
-            vOff + 2,
-        ])
-    })
-    return {
-        pos: outVerts,
-        tri: outTri,
-        colors: inp.colors,
-    }
-}
-interface ExpandedMesh extends MeshModel {
-    // face normals, per triangle
-    fnorm: vec3[];
-}
-
-const CUBE: MeshModel = {
-    pos: [
-        [+1.0, +1.0, +1.0],
-        [-1.0, +1.0, +1.0],
-        [-1.0, -1.0, +1.0],
-        [+1.0, -1.0, +1.0],
-
-        [+1.0, +1.0, -1.0],
-        [-1.0, +1.0, -1.0],
-        [-1.0, -1.0, -1.0],
-        [+1.0, -1.0, -1.0],
-    ],
-    tri: [
-        // front
-        [0, 1, 2],
-        [0, 2, 3],
-        // top
-        [4, 5, 1],
-        [4, 1, 0],
-        // right
-        [3, 4, 0],
-        [3, 7, 4],
-        // left
-        [2, 1, 5],
-        [2, 5, 6],
-        // bottom
-        [6, 3, 2],
-        [6, 7, 3],
-        // back
-        [5, 4, 7],
-        [5, 7, 6],
-    ],
-    colors: [
-        // front
-        [0.5, 0.0, 0.0],
-        [0.5, 0.0, 0.0],
-        // top
-        [0.0, 0.5, 0.0],
-        [0.0, 0.5, 0.0],
-        // right
-        [0.0, 0.0, 0.5],
-        [0.0, 0.0, 0.5],
-        // left
-        [0.5, 0.5, 0.0],
-        [0.5, 0.5, 0.0],
-        // bottom
-        [0.0, 0.5, 0.5],
-        [0.0, 0.5, 0.5],
-        // back
-        [0.5, 0.0, 0.5],
-        [0.5, 0.0, 0.5],
-    ]
-}
-
-const PLANE: MeshModel = {
-    pos: [
-        [+10, 0, +10],
-        [-10, 0, +10],
-        [+10, 0, -10],
-        [-10, 0, -10],
-    ],
-    tri: [
-        // top
-        [0, 2, 3],
-        [0, 3, 1],
-        // bottom
-        [3, 2, 0],
-        [1, 3, 0],
-    ],
-    colors: [
-        [0.2, 0.3, 0.2],
-        [0.2, 0.3, 0.2],
-        [0.2, 0.3, 0.2],
-        [0.2, 0.3, 0.2],
-    ],
-}
 
 const GRASS: MeshModel = {
     pos: [
@@ -155,27 +39,6 @@ const GRASS: MeshModel = {
     ],
 }
 
-function computeNormal([p1, p2, p3]: [vec3, vec3, vec3]): vec3 {
-    // https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
-    // cross product of two edges
-    // edge 1
-    const u: vec3 = [0, 0, 0]
-    vec3.sub(u, p2, p1)
-    // edge 2
-    const v: vec3 = [0, 0, 0]
-    vec3.sub(v, p3, p1)
-    // cross
-    const n: vec3 = [0, 0, 0]
-    vec3.cross(n, u, v)
-
-    vec3.normalize(n, n)
-
-    return n;
-}
-function computeNormals(m: MeshModel): vec3[] {
-    const triPoses = m.tri.map(([i0, i1, i2]) => [m.pos[i0], m.pos[i1], m.pos[i2]] as [vec3, vec3, vec3])
-    return triPoses.map(computeNormal)
-}
 
 // TODO: canvas ref
 // TODO: navigator.gpu typings
@@ -243,70 +106,10 @@ fn main(
 
 const shadowDepthTextureSize = 1024;
 
-const maxNumVerts = 1000;
-const maxNumTri = 1000;
-const maxNumModels = 100;
+// const maxNumVerts = 1000;
+// const maxNumTri = 1000;
+// const maxNumModels = 100;
 
-const vertElStride = (3/*pos*/ + 3/*color*/)
-const vertByteSize = Float32Array.BYTES_PER_ELEMENT * vertElStride
-const triElStride = 3/*ind per tri*/;
-const triByteSize = Uint16Array.BYTES_PER_ELEMENT * triElStride;
-
-const mat4ByteSize = (4 * 4)/*4x4 mat*/ * 4/*f32*/
-const modelUniByteSize = Math.ceil(mat4ByteSize / 256) * 256; // align to 256
-
-// space stats
-console.log(`Pre-alloc ${maxNumVerts * vertByteSize / 1024} KB for verts`);
-console.log(`Pre-alloc ${maxNumTri * triByteSize / 1024} KB for indices`);
-console.log(`Pre-alloc ${maxNumModels * modelUniByteSize / 1024} KB for models`);
-const unusedBytesPerModel = 256 - mat4ByteSize % 256
-console.log(`Unused ${unusedBytesPerModel} bytes in uniform buffer per model (${unusedBytesPerModel * maxNumModels / 1024} KB total)`);
-
-/*
-Adds mesh vertices and indices into buffers. Optionally shifts triangle indicies.
-*/
-function addMeshToBuffers(m: MeshModel, verts: Float32Array, prevNumVerts: number, indices: Uint16Array, prevNumTri: number, shiftIndices = false): void {
-    const norms = computeNormals(m);
-    m.pos.forEach((v, i) => {
-        const off = (prevNumVerts + i) * vertElStride
-        // position
-        verts[off + 0] = v[0]
-        verts[off + 1] = v[1]
-        verts[off + 2] = v[2]
-    })
-    const vOff = prevNumVerts * vertElStride
-    m.tri.forEach((t, i) => {
-        const iOff = (prevNumTri + i) * triElStride
-        const indShift = shiftIndices ? prevNumVerts : 0;
-        const vi0 = t[0] + indShift
-        const vi1 = t[1] + indShift
-        const vi2 = t[2] + indShift
-        indices[iOff + 0] = vi0
-        indices[iOff + 1] = vi1
-        indices[iOff + 2] = vi2
-        // set per-face data
-        // color
-        const [r, g, b] = m.colors[i]
-        verts[vOff + vi0 * vertElStride + 3] = r
-        verts[vOff + vi0 * vertElStride + 4] = g
-        verts[vOff + vi0 * vertElStride + 5] = b
-        verts[vOff + vi1 * vertElStride + 3] = r
-        verts[vOff + vi1 * vertElStride + 4] = g
-        verts[vOff + vi1 * vertElStride + 5] = b
-        verts[vOff + vi2 * vertElStride + 3] = r
-        verts[vOff + vi2 * vertElStride + 4] = g
-        verts[vOff + vi2 * vertElStride + 5] = b
-        // TODO(@darzu): normals needed?
-    })
-}
-interface Mesh {
-    vertNumOffset: number,
-    indicesNumOffset: number,
-    modelUniByteOffset: number,
-    transform: mat4;
-    model: MeshModel,
-    binding: GPUBindGroup,
-}
 
 const sampleCount = 4;
 
@@ -389,6 +192,18 @@ function mkEulerTransformable(): Transformable {
     }
 }
 
+// TODO(@darzu): add meshes back
+// {
+//     // TODO(@darzu): add meshes!
+//     meshes.push(addMesh(PLANE))
+//     meshes.push(addMesh(CUBE))
+//     meshes.push(addMesh(CUBE))
+//     meshes.push(addMesh(CUBE))
+//     meshes.push(addMesh(CUBE))
+//     meshes.push(addMesh(CUBE))
+//     meshes.push(addMesh(GRASS))
+// }
+
 async function init(canvasRef: HTMLCanvasElement) {
     const adapter = await navigator.gpu.requestAdapter();
     const device = await adapter!.requestDevice();
@@ -425,26 +240,6 @@ async function init(canvasRef: HTMLCanvasElement) {
         track current number of vertices
 
     */
-    let numVerts = 0;
-    let numTris = 0;
-
-    const verticesBuffer = device.createBuffer({
-        size: maxNumVerts * vertByteSize,
-        usage: GPUBufferUsage.VERTEX,
-        mappedAtCreation: true,
-    });
-
-    const indexBuffer = device.createBuffer({
-        size: maxNumTri * triByteSize,
-        usage: GPUBufferUsage.INDEX,
-        mappedAtCreation: true,
-    });
-
-    const modelUniBufferSize = mat4ByteSize * maxNumModels;
-    const modelUniBuffer = device.createBuffer({
-        size: modelUniBufferSize,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
 
     // GPUDepthStencilStateDescriptor
 
@@ -487,6 +282,7 @@ async function init(canvasRef: HTMLCanvasElement) {
     // TODO(@darzu): createBindGroupLayout
 
     // TODO(@darzu): trying per-face data, but this actually ended up being "per instance" data
+    // TODO(@darzu): handle this in the mesh pool ?
     const maxNumInstances = 1000;
     const instanceByteSize = Float32Array.BYTES_PER_ELEMENT * 3/*color*/
     const instanceDataBuffer = device.createBuffer({
@@ -506,6 +302,17 @@ async function init(canvasRef: HTMLCanvasElement) {
         instanceDataBuffer.unmap();
     }
 
+    const vertElStride = (3/*pos*/ + 3/*color*/)
+    const defaultMeshPoolOpts: MeshMemoryPoolOptions = {
+        vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
+        maxVerts: 1000,
+        maxTris: 1000,
+        maxMeshes: 100,
+        meshUniByteSize: Math.ceil(mat4ByteSize / 256) * 256, // align to 256,
+    }
+
+    const meshPool = createMeshMemoryPool(defaultMeshPoolOpts, device);
+
     const pipeline = device.createRenderPipeline({
         vertex: {
             module: device.createShaderModule({
@@ -514,7 +321,8 @@ async function init(canvasRef: HTMLCanvasElement) {
             entryPoint: 'main',
             buffers: [
                 {
-                    arrayStride: vertByteSize,
+                    // TODO(@darzu): the buffer index should be connected to the pool probably?
+                    arrayStride: defaultMeshPoolOpts.vertByteSize,
                     attributes: [
                         {
                             // position
@@ -645,82 +453,15 @@ async function init(canvasRef: HTMLCanvasElement) {
         },
     } as const;
 
-    const meshes: Mesh[] = []
-    {
-        const vertsMap = new Float32Array(verticesBuffer.getMappedRange())
-        const indMap = new Uint16Array(indexBuffer.getMappedRange());
-
-        function addMesh(m: MeshModel): Mesh {
-            // TODO(@darzu): temporary
-            m = unshareVertices(m);
-
-            if (numVerts + m.pos.length > maxNumVerts)
-                throw "Too many vertices!"
-            if (numTris + m.tri.length > maxNumTri)
-                throw "Too many triangles!"
-
-            // add to vertex and index buffers
-            addMeshToBuffers(m, vertsMap, numVerts, indMap, numTris, false);
-
-            // create transformation matrix
-            // TODO(@darzu): real transforms
-            const trans = mat4.create() as Float32Array;
-            mat4.translate(trans, trans, vec3.fromValues(
-                4 * meshes.length, // TODO
-                0, 0));
-
-            // save the transform matrix to the buffer
-            const uniOffset = meshes.length * modelUniByteSize;
-            device.queue.writeBuffer(
-                modelUniBuffer,
-                uniOffset,
-                trans.buffer,
-                trans.byteOffset,
-                trans.byteLength
-            );
-
-            // creating binding group
-            const modelUniBindGroup = device.createBindGroup({
-                layout: pipeline.getBindGroupLayout(0),
-                entries: [
-                    {
-                        binding: 0,
-                        resource: {
-                            buffer: modelUniBuffer,
-                            offset: uniOffset, // TODO(@darzu): different offsets per model
-                        },
-                    },
-                ],
-            });
-
-            // create the result
-            const res: Mesh = {
-                vertNumOffset: numVerts, // TODO(@darzu): 
-                indicesNumOffset: numTris * 3, // TODO(@darzu): 
-                modelUniByteOffset: uniOffset,
-                transform: trans,
-                model: m,
-                binding: modelUniBindGroup,
-            }
-            numVerts += m.pos.length;
-            numTris += m.tri.length;
-            return res;
-        }
-
-        {
-            // TODO(@darzu): add meshes!
-            meshes.push(addMesh(PLANE))
-            meshes.push(addMesh(CUBE))
-            meshes.push(addMesh(CUBE))
-            meshes.push(addMesh(CUBE))
-            meshes.push(addMesh(CUBE))
-            meshes.push(addMesh(CUBE))
-            meshes.push(addMesh(GRASS))
-        }
-
-        indexBuffer.unmap();
-        verticesBuffer.unmap();
-    }
+    meshPool.doUpdate(pipeline, [
+        PLANE,
+        CUBE,
+        CUBE,
+        CUBE,
+        CUBE,
+        CUBE,
+        GRASS,
+    ])
 
     const aspect = Math.abs(canvasRef.width / canvasRef.height);
     const projectionMatrix = mat4.create();
@@ -743,17 +484,6 @@ async function init(canvasRef: HTMLCanvasElement) {
         mat4.multiply(viewProj, projectionMatrix, viewMatrix);
 
         return viewProj as Float32Array;
-    }
-
-    function applyMeshTransform(m: Mesh) {
-        // save the transform matrix to the buffer
-        device.queue.writeBuffer(
-            modelUniBuffer,
-            m.modelUniByteOffset,
-            (m.transform as Float32Array).buffer,
-            (m.transform as Float32Array).byteOffset,
-            (m.transform as Float32Array).byteLength
-        );
     }
 
     const cameraPos = mkAffineTransformable();
@@ -834,10 +564,10 @@ async function init(canvasRef: HTMLCanvasElement) {
             camera.pitch(-mouseDeltaY * 0.01);
     }
 
-    const playerM = meshes[4]
+    const playerM = meshPool._meshes[4]
     const playerT = mkAffineTransformable();
     playerM.transform = playerT.getTransform();
-    applyMeshTransform(playerM)
+    meshPool.applyMeshTransform(playerM)
 
     function frame(time: number) {
         // Sample is no longer the active page.
@@ -845,12 +575,12 @@ async function init(canvasRef: HTMLCanvasElement) {
 
         // update model positions
         // TODO(@darzu): real movement
-        mat4.translate(meshes[1].transform, meshes[1].transform, [0.1, 0, 0])
-        applyMeshTransform(meshes[1])
-        mat4.translate(meshes[2].transform, meshes[2].transform, [0.0, 0.2, 0])
-        applyMeshTransform(meshes[2])
-        mat4.translate(meshes[3].transform, meshes[3].transform, [0.0, 0, 0.3])
-        applyMeshTransform(meshes[3])
+        mat4.translate(meshPool._meshes[1].transform, meshPool._meshes[1].transform, [0.1, 0, 0])
+        meshPool.applyMeshTransform(meshPool._meshes[1])
+        mat4.translate(meshPool._meshes[2].transform, meshPool._meshes[2].transform, [0.0, 0.2, 0])
+        meshPool.applyMeshTransform(meshPool._meshes[2])
+        mat4.translate(meshPool._meshes[3].transform, meshPool._meshes[3].transform, [0.0, 0, 0.3])
+        meshPool.applyMeshTransform(meshPool._meshes[3])
 
         // controlTransformable(cameraPos);
         controlPlayer(playerT);
@@ -858,7 +588,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         // controlTransformable(m2t);
 
         playerM.transform = playerT.getTransform();
-        applyMeshTransform(playerM)
+        meshPool.applyMeshTransform(playerM)
 
         // reset accummulated mouse delta
         mouseDeltaX = 0;
@@ -901,11 +631,11 @@ async function init(canvasRef: HTMLCanvasElement) {
         const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
         passEncoder.setPipeline(pipeline);
         passEncoder.setBindGroup(0, sharedUniBindGroup);
-        passEncoder.setVertexBuffer(0, verticesBuffer);
+        passEncoder.setVertexBuffer(0, meshPool._vertBuffer);
         passEncoder.setVertexBuffer(1, instanceDataBuffer);
-        passEncoder.setIndexBuffer(indexBuffer, 'uint16');
+        passEncoder.setIndexBuffer(meshPool._indexBuffer, 'uint16');
         // TODO(@darzu): one draw call per mesh?
-        for (let m of meshes) {
+        for (let m of meshPool._meshes) {
             // TODO(@darzu): set bind group
             passEncoder.setBindGroup(1, m.binding);
             passEncoder.drawIndexed(m.model.tri.length * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
