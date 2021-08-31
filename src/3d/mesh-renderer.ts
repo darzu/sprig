@@ -62,7 +62,9 @@ const wgslShaders = {
     fn main(
         [[location(0)]] position : vec3<f32>,
         [[location(1)]] color : vec3<f32>,
-        [[location(2)]] normal : vec3<f32>
+        [[location(2)]] normal : vec3<f32>,
+        // TODO(@darzu): VERTEX FORMAT
+        [[location(3)]] swayHeight : f32,
         ) -> VertexOutput {
     var output : VertexOutput;
 
@@ -76,10 +78,10 @@ const wgslShaders = {
         posFromLight.z
     );
 
-    let xTimeJitter: f32 = 0.0;
-    let zTimeJitter: f32 = 0.0;
-    // let xTimeJitter: f32 = sin(scene.time * 0.001) * 0.2;
-    // let zTimeJitter: f32 = sin(scene.time * 0.002) * 0.2;
+    // let xTimeJitter: f32 = 0.0;
+    // let zTimeJitter: f32 = 0.0;
+    let xTimeJitter: f32 = sin(scene.time * 0.001) * 0.2 * swayHeight;
+    let zTimeJitter: f32 = sin(scene.time * 0.002) * 0.2 * swayHeight;
     output.Position = scene.cameraViewProjMatrix * model.modelMatrix * vec4<f32>(position, 1.0) + vec4<f32>(xTimeJitter, 0.0, zTimeJitter, 0.0);
     output.fragPos = output.Position.xyz;
     // output.fragNorm = normal;
@@ -341,25 +343,32 @@ export function createMeshRenderer(
     const vertexBuffersLayout: GPUVertexBufferLayout[] = [
         {
             // TODO(@darzu): the buffer index should be connected to the pool probably?
+            // TODO(@darzu): VERTEX FORMAT
             arrayStride: vertByteSize,
             attributes: [
                 {
                     // position
                     shaderLocation: 0,
-                    offset: 0,
+                    offset: vec3ByteSize * 0,
                     format: 'float32x3',
                 },
                 {
                     // color
                     shaderLocation: 1,
-                    offset: 4 * 3,
+                    offset: vec3ByteSize * 1,
                     format: 'float32x3',
                 },
                 {
                     // normals
                     shaderLocation: 2,
-                    offset: 4 * 3 * 2,
+                    offset: vec3ByteSize * 2,
                     format: 'float32x3',
+                },
+                {
+                    // sway height
+                    shaderLocation: 3,
+                    offset: vec3ByteSize * 3,
+                    format: 'float32',
                 },
                 // {
                 //     // uv
@@ -369,6 +378,7 @@ export function createMeshRenderer(
                 // },
             ],
         },
+        // TODO(@darzu): VERTEX FORMAT
         {
             // per-instance data
             stepMode: "instance",
@@ -376,7 +386,7 @@ export function createMeshRenderer(
             attributes: [
                 {
                     // color
-                    shaderLocation: 3,
+                    shaderLocation: 4,
                     offset: 0,
                     format: 'float32x3',
                 },

@@ -139,7 +139,8 @@ async function init(canvasRef: HTMLCanvasElement) {
     }
     resize();
 
-    const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/)
+    // TODO(@darzu): VERTEX FORMAT
+    const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/ + 1/*swayHeight*/)
     const meshPool = createMeshMemoryPool({
         vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
         maxVerts: 100000,
@@ -274,6 +275,7 @@ async function init(canvasRef: HTMLCanvasElement) {
                     [0, 1, 2],
                     norm,
                     [r, g, b],
+                    [0, 0, y],
                     grassMeshPool._vertsMap(),
                     grassMeshPool._numVerts,
                     vertElStride,

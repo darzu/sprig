@@ -368,6 +368,7 @@ export function addTriToBuffers(
     triInd: vec3,
     triNorm: vec3,
     triColor: vec3,
+    triSwayHeights: vec3,
     verts: Float32Array, prevNumVerts: number, vertElStride: number,
     indices: Uint16Array | null, prevNumTri: number, shiftIndices = false): void {
     const vOff = prevNumVerts * vertElStride
@@ -414,6 +415,11 @@ export function addTriToBuffers(
     verts[vOff + vi2 * vertElStride + 6] = nx
     verts[vOff + vi2 * vertElStride + 7] = ny
     verts[vOff + vi2 * vertElStride + 8] = nz
+    // sway height
+    const [y0, y1, y2] = triSwayHeights
+    verts[vOff + vi0 * vertElStride + 9] = y0
+    verts[vOff + vi1 * vertElStride + 9] = y1
+    verts[vOff + vi2 * vertElStride + 9] = y2
 }
 /*
 Adds mesh vertices and indices into buffers. Optionally shifts triangle indicies.
@@ -431,6 +437,7 @@ function addMeshToBuffers(
             t,
             norms[i],
             m.colors[i],
+            [0, 0, 0],
             verts, prevNumVerts, vertElStride,
             indices, prevNumTri + i, shiftIndices);
     })
