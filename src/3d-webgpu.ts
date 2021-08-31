@@ -146,10 +146,13 @@ const vertSize = Float32Array.BYTES_PER_ELEMENT * vertStride
 const triStride = 3/*ind per tri*/;
 const triSize = Uint16Array.BYTES_PER_ELEMENT * triStride;
 
-function addMeshToBuffers(m: Mesh, verts: Float32Array, numVerts: number, indices: Uint16Array, numTri: number): void {
+/*
+Adds mesh vertices and indices into buffers. Optionally shifts triangle indicies.
+*/
+function addMeshToBuffers(m: Mesh, verts: Float32Array, prevNumVerts: number, indices: Uint16Array, prevNumTri: number, shiftIndices = false): void {
     const norms = computeNormals(m);
     m.pos.forEach((v, i) => {
-        const off = (numVerts + i) * vertStride
+        const off = (prevNumVerts + i) * vertStride
         verts[off + 0] = v[0]
         verts[off + 1] = v[1]
         verts[off + 2] = v[2]
@@ -159,13 +162,19 @@ function addMeshToBuffers(m: Mesh, verts: Float32Array, numVerts: number, indice
         verts[off + 5] = 0
     })
     m.tri.forEach((t, i) => {
-        const off = (numTri + i) * triStride
-        indices[off + 0] = t[0] + numVerts
-        indices[off + 1] = t[1] + numVerts
-        indices[off + 2] = t[2] + numVerts
+        const off = (prevNumTri + i) * triStride
+        const indShift = shiftIndices ? prevNumVerts : 0;
+        indices[off + 0] = t[0] + indShift
+        indices[off + 1] = t[1] + indShift
+        indices[off + 2] = t[2] + indShift
         // set vertex normals for the first vertex per triangle
         // verts[off + t[0] + 3] = norms[i][0]
     })
+}
+interface RenderableMesh {
+    vertNumOffset: number,
+    indicesNumOffset: number,
+    mesh: Mesh,
 }
 
 const sampleCount = 4;
@@ -208,29 +217,32 @@ async function init(canvasRef: HTMLCanvasElement) {
         mappedAtCreation: true,
     });
 
+    const meshes: RenderableMesh[] = []
     {
         const vertsMap = new Float32Array(verticesBuffer.getMappedRange())
         const indMap = new Uint16Array(indexBuffer.getMappedRange());
 
-        function addMesh(m: Mesh) {
-            if (numVerts + m.pos.length > maxNumVerts) {
-                console.error("Too many vertices!")
-                return;
-            }
-            if (numTris + m.tri.length > maxNumTri) {
-                console.error("Too many triangles!")
-                return;
-            }
+        function addMesh(m: Mesh): RenderableMesh {
+            if (numVerts + m.pos.length > maxNumVerts)
+                throw "Too many vertices!"
+            if (numTris + m.tri.length > maxNumTri)
+                throw "Too many triangles!"
 
-            addMeshToBuffers(m, vertsMap, numVerts, indMap, numTris);
+            addMeshToBuffers(m, vertsMap, numVerts, indMap, numTris, false);
+            const res: RenderableMesh = {
+                vertNumOffset: numVerts, // TODO(@darzu): 
+                indicesNumOffset: numTris * 3, // TODO(@darzu): 
+                mesh: m,
+            }
             numVerts += m.pos.length;
             numTris += m.tri.length;
+            return res;
         }
 
         {
             // TODO(@darzu): add meshes!
-            addMesh(CUBE);
-            addMesh(PLANE);
+            meshes.push(addMesh(CUBE))
+            meshes.push(addMesh(PLANE))
         }
 
         indexBuffer.unmap();
@@ -445,7 +457,10 @@ async function init(canvasRef: HTMLCanvasElement) {
         passEncoder.setVertexBuffer(0, verticesBuffer);
         passEncoder.setIndexBuffer(indexBuffer, 'uint16');
         // TODO(@darzu): one draw call per mesh?
-        passEncoder.drawIndexed(numTris * 3);
+        for (let m of meshes) {
+            passEncoder.drawIndexed(m.mesh.tri.length * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+        }
+        // passEncoder.drawIndexed(numTris * 3);
         // passEncoder.draw(CUBE.pos.length, 1, 0, 0);
         passEncoder.endPass();
         device.queue.submit([commandEncoder.finish()]);
