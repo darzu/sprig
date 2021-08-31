@@ -3,7 +3,7 @@ import { align, jitter } from "../math.js";
 import { createMeshPoolBuilder, meshApplyUniformData, MeshHandle, MeshPool, MeshPoolBuilder } from "./mesh-pool.js";
 import { getPositionFromTransform, meshUniByteSizeAligned, setVertexData, vertByteSize, VertexData, VertexKind } from "./sprig-main.js";
 
-const RENDER_GRASS = false;
+const RENDER_GRASS = true;
 
 export interface GrassSystem {
     getGrassPools: () => MeshPool[],
