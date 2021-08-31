@@ -38,3 +38,5 @@ Animometer Test
     "renderBundles" is essential
     "dynamicOffsets" has no impact (so far)
 
+For automatic lod'ing:
+    Maybe convert to volumetric first, then use marching cubes (or square voxels) to create lower detail versions?

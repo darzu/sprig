@@ -651,3 +651,63 @@ CSS is good?
 "An open-source creative-coding framework for Rust":
   https://nannou.cc
   https://twitter.com/nannoucc
+
+Instant games are the future?:
+  https://www.fortressofdoors.com/the-future-of-games-is-an-instant-flash-to-the-past/
+    https://news.ycombinator.com/item?id=27629340
+  flash emulator in rust: https://ruffle.rs
+  https://haxeflixel.com
+  example .ios:
+    https://yohoho.io, http://slither.io, https://agar.io/#ffa
+    https://www.addictinggames.com/what-are-io-games
+  "Here's some potential business models for instant games":
+    Ads
+    Microtransactions / F2P
+    Free demo w/ premium upsell
+    Subscriptions & direct support
+    Crypto bullshit
+    Something weird and novel
+  "Too much capitalism does not mean too many capitalists, but too few capitalists"
+  https://news.ycombinator.com/item?id=27629936:
+    "Gamedev has got to be the most rewarding type of software coding there is."
+  e.g. https://future.a16z.com/instant-games/
+
+History of flash:
+  https://www.flashgamehistory.com
+  https://www.molleindustria.org/blog/gone-with-a-flash-talk/
+
+On piracy:
+  https://www.fortressofdoors.com/piracy-and-the-four-currencies/
+
+Game of platform power:
+  https://lostgarden.home.blog/2011/03/18/gdc-2011-the-game-of-platform-power/
+  https://www.joelonsoftware.com/2000/06/03/strategy-letter-iii-let-me-go-back/
+  competing with steam:
+    https://www.fortressofdoors.com/so-you-want-to-compete-with-steam/
+    https://www.fortressofdoors.com/so-you-want-to-compete-with-steam-2/
+
+Public games data:
+  https://www.gamedatacrunch.com
+    
+low poly, gameplay first e.g.: 
+  https://store.steampowered.com/app/636480/Ravenfield/
+
+Roblox competitors:
+  https://www.coregames.com
+  https://www.atomontage.com
+
+Fun browser game:
+  https://landgreen.github.io/sidescroller/index.html
+
+Playco:
+  https://www.play.co
+
+3D game creator for html5?
+  https://github.com/morgan3d/quadplay
+
+comments about "the barrier of entry for HTML5 games is absurd compared to what you could do with Flash, RIP.
+  Why does everything have to be so damned complicated these days?":
+  https://news.ycombinator.com/item?id=27632926
+
+lement about the state of web games (top comment), too slow and bug ridden:
+  https://news.ycombinator.com/item?id=27634582
