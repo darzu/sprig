@@ -395,12 +395,16 @@ export class Renderer {
       obj: o,
     };
     this.meshHandles.push(res);
-    // TODO(@darzu): disabled as hack
+    // TODO(@darzu): hack
     // this.createRenderBundle();
+    this.needsRebundle = true;
     return res;
   }
 
+  needsRebundle = false;
+
   private createRenderBundle() {
+    this.needsRebundle = false; // TODO(@darzu): hack
     const modelUniBindGroupLayout = this.device.createBindGroupLayout({
       entries: [
         {
@@ -622,7 +626,8 @@ export class Renderer {
     this.gpuBufferWriteAllMeshUniforms();
 
     // TODO(@darzu): more fine grain
-    this.createRenderBundle();
+    if (this.needsRebundle)
+      this.createRenderBundle();
 
     // start collecting our render commands for this frame
     const commandEncoder = this.device.createCommandEncoder();
