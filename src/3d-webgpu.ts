@@ -166,31 +166,31 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
             const z2 = z + Math.sin(rot + Math.PI) * w
             const x3 = x + jitter(0.7)
             const z3 = z + jitter(0.7)
+            const x4 = x3 + jitter(w * 0.5)
+            const z4 = z3 + jitter(w * 0.5)
 
-            const y = bladeH + jitter(1)
+            const y1 = bladeH + jitter(1)
+            const y2 = y1 * (1.0 + jitter(0.1))
 
             // TODO(@darzu): debug coloring
             // const r = 0.2 + jitter(0.02)
             // const g = 0.5 + jitter(0.2)
             // const b = 0.2 + jitter(0.02)
 
-            const p0: vec3 = [x1, 0, z1];
-            const p1: vec3 = [x2, 0, z2];
-            const p2: vec3 = [x3, y, z3];
-            const p3: vec3 = [x1, y * (1.0 + jitter(0.1)), z1];
+            const p1: vec3 = [x1, 0, z1];
+            const p2: vec3 = [x2, 0, z2];
+            const p3: vec3 = [x3, y1, z3];
+            const p4: vec3 = [x4, y2, z4];
 
-            const norm = vec3.cross(vec3.create(), [x2 - x1, 0, z2 - z1], [x3 - x1, y, z3 - z1])
-            vec3.normalize(norm, norm);
+            const norm1 = vec3.cross(vec3.create(), [x2 - x1, 0, z2 - z1], [x3 - x1, y1, z3 - z1])
+            vec3.normalize(norm1, norm1);
 
-            // const x = xi * spacing + jitter(0.5);
-            // const z = zi * spacing + jitter(0.5);
-
-            // TODO(@darzu): turn off back-face culling
             addTriToBuffers(
-                [p0, p1, p2],
+                [p1, p2, p3],
                 [0, 1, 2],
-                norm,
+                norm1,
                 [
+                    // TODO(@darzu): use proper darkening
                     [r * 0.5, g * 0.5, b * 0.5],
                     [r * 0.5, g * 0.5, b * 0.5],
                     [r, g, b],
@@ -208,16 +208,19 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
 
             i++;
 
+            const norm2 = vec3.cross(vec3.create(), [x3 - x1, y1, z3 - z1], [x4 - x1, y2, z4 - z1])
+            vec3.normalize(norm2, norm2);
+
             addTriToBuffers(
-                [p3, p1, p2],
+                [p1, p3, p4],
                 [0, 1, 2],
-                norm,
+                norm2,
                 [
-                    [r, g, b],
                     [r * 0.5, g * 0.5, b * 0.5],
                     [r, g, b],
+                    [r, g, b],
                 ],
-                [1.0, 0, 1.0],
+                [0.0, 1.0, 1.0],
                 grassMeshPool._vertsMap(),
                 grassMeshPool._numVerts,
                 vertElStride,
@@ -396,8 +399,10 @@ function nearestIntegers(target: number, numInts: number): number[] {
 function initGrassSystem(device: GPUDevice): GrassSystem {
     const lod1Opts: GrassTilesetOpts = {
         // tile
+        // bladeW: 0.2,
         bladeW: 0.2,
-        bladeH: 3,
+        // bladeH: 3,
+        bladeH: 1.0,
         // bladeH: 1.7,
         // TODO(@darzu): debugging
         // spacing: 1,
@@ -454,8 +459,8 @@ function initGrassSystem(device: GPUDevice): GrassSystem {
         tilesets.forEach(t => t.update(target))
     }
 
-    const bladeCount = tilesets.map(s => s.pool._numTris).reduce((p, n) => p + n, 0)
-    console.log(`Creating grass system with ${(bladeCount / 1000).toFixed(0)}k blades of grass.`);
+    const triCount = tilesets.map(s => s.pool._numTris).reduce((p, n) => p + n, 0)
+    console.log(`Creating grass system with ${(triCount / 1000).toFixed(0)}k triangles.`);
 
     const res: GrassSystem = {
         getGrassPools: () => tilesets.map(t => t.pool),
