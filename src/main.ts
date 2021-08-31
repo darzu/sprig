@@ -268,7 +268,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
         usage: GPUBufferUsage.VERTEX,
         mappedAtCreation: true,
     });
-    const indicesBuffer = device.createBuffer({
+    const triIndicesBuffer = device.createBuffer({
         size: maxTris * bytesPerTri,
         usage: GPUBufferUsage.INDEX,
         mappedAtCreation: true,
@@ -297,7 +297,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
     {
         // to modify buffers, we need to map them into JS space; we'll need to unmap later
         let verticesMap = new Float32Array(verticesBuffer.getMappedRange())
-        let indicesMap = new Uint16Array(indicesBuffer.getMappedRange());
+        let triIndicesMap = new Uint16Array(triIndicesBuffer.getMappedRange());
 
         // add our meshes to the vertex and index buffers
         let numVerts = 0;
@@ -320,17 +320,17 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
             })
 
             m.tri.forEach((triInd, i) => {
-                const vOff = (vertNumOffset + triInd[0]) * vertElStride
+                const provokingVertOffset = (vertNumOffset + triInd[0]) * vertElStride
                 const iOff = (numTris) * indicesPerTriangle
-                if (indicesMap) {
+                if (triIndicesMap) {
                     // update indices
-                    indicesMap[iOff + 0] = triInd[0]
-                    indicesMap[iOff + 1] = triInd[1]
-                    indicesMap[iOff + 2] = triInd[2]
+                    triIndicesMap[iOff + 0] = triInd[0]
+                    triIndicesMap[iOff + 1] = triInd[1]
+                    triIndicesMap[iOff + 2] = triInd[2]
                 }
                 // set provoking vertex
                 const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
-                verticesMap.set([...m.pos[triInd[0]], ...m.colors[i], ...normal], vOff)
+                verticesMap.set([...m.pos[triInd[0]], ...m.colors[i], ...normal], provokingVertOffset)
                 numTris += 1;
             })
 
@@ -363,7 +363,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
 
         // unmap the buffers so the GPU can use them
         verticesBuffer.unmap()
-        indicesBuffer.unmap()
+        triIndicesBuffer.unmap()
     }
 
     // place the ground
@@ -434,10 +434,15 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
     });
 
     // we'll use a triangle list with backface culling and counter-clockwise triangle indices for both pipelines
-    const primitiveBackcull: GPUPrimitiveState = {
+    const prim_triList: GPUPrimitiveState = {
         topology: 'triangle-list',
         cullMode: 'back',
         frontFace: 'ccw',
+    };
+    const prim_lineList: GPUPrimitiveState = {
+        topology: 'line-list',
+        // cullMode: 'none',
+        // frontFace: 'ccw',
     };
 
     // define the resource bindings for the mesh rendering pipeline
@@ -471,7 +476,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
             entryPoint: 'main',
             targets: [{ format: presentationFormat }],
         },
-        primitive: primitiveBackcull,
+        primitive: prim_triList,
         depthStencil: {
             depthWriteEnabled: true,
             depthCompare: 'less',
@@ -493,7 +498,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
     bundleEnc.setPipeline(renderPipeline);
     bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
     bundleEnc.setVertexBuffer(0, verticesBuffer);
-    bundleEnc.setIndexBuffer(indicesBuffer, 'uint16');
+    bundleEnc.setIndexBuffer(triIndicesBuffer, 'uint16');
     for (let m of allMeshHandles) {
         bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
         bundleEnc.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
