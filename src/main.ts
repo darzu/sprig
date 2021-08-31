@@ -509,7 +509,7 @@ async function startGame(host: string | null) {
   const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter!.requestDevice();
-  let renderer: Renderer = new Renderer_WebGPU(canvas, device, 20000);
+  let renderer: Renderer = new Renderer_WebGPU(canvas, device, 1000);
   let start_of_time = performance.now();
   let gameState = new CubeGameState(renderer, hosting);
   let inputs = inputsReader(canvas);

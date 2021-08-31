@@ -235,12 +235,11 @@ export module SceneUniform {
 
 // to track offsets into those buffers so we can make modifications and form draw calls.
 export interface MeshHandle {
-    // handles into the buffers
-    pool: MeshPool,
     vertNumOffset: number,
     indicesNumOffset: number,
     modelUniByteOffset: number,
     numTris: number,
+    numVerts: number,
     // data
     transform: mat4,
     aabbMin: vec3,
@@ -258,6 +257,8 @@ export interface MeshPoolMaps {
     verticesMap: Uint8Array,
     indicesMap: Uint16Array,
     uniformMap: Uint8Array,
+}
+export interface MeshPoolQueues {
     // asynchronous updates to buffers
     queueUpdateVertices: (offset: number, data: Uint8Array) => void,
     queueUpdateIndices: (offset: number, data: Uint8Array) => void,
@@ -308,13 +309,11 @@ export interface MeshPoolBuffers_WebGPU {
 export type MeshPool_WebGPU = MeshPool & MeshPoolBuffers_WebGPU;
 
 export interface MeshBuilder {
-    poolBuilder: MeshPoolBuilder;
     addVertex: (pos: vec3, color: vec3, normal: vec3) => void,
     addTri: (ind: vec3) => void,
     setUniform: (transform: mat4, aabbMin: vec3, aabbMax: vec3) => void,
     finish: () => MeshHandle;
 }
-
 
 // defines the geometry and coloring of a mesh
 export interface Mesh {
@@ -403,6 +402,8 @@ export function createMeshPoolBuilder_WebGPU(device: GPUDevice, opts: MeshPoolOp
         verticesMap,
         indicesMap,
         uniformMap,
+    }
+    const queues: MeshPoolQueues = {
         queueUpdateIndices: (offset: number, data: Uint8Array) => queueUpdateBuffer(indicesBuffer, offset, data),
         queueUpdateVertices: (offset: number, data: Uint8Array) => queueUpdateBuffer(verticesBuffer, offset, data),
         queueUpdateUniform: (offset: number, data: Uint8Array) => queueUpdateBuffer(uniformBuffer, offset, data),
@@ -415,7 +416,7 @@ export function createMeshPoolBuilder_WebGPU(device: GPUDevice, opts: MeshPoolOp
         uniformBuffer,
     }
 
-    const builder = createMeshPoolBuilder(opts, maps);
+    const builder = createMeshPoolBuilder(opts, maps, queues);
 
     const poolHandle: MeshPool_WebGPU = Object.assign(builder.poolHandle, buffers);
 
@@ -440,10 +441,12 @@ export function createMeshPoolBuilder_WebGPU(device: GPUDevice, opts: MeshPoolOp
     return builder_webgpu;
 }
 
-function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps): MeshPoolBuilder {
+const scratch_uniform_u8 = new Uint8Array(MeshUniform.ByteSizeAligned);
+
+function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: MeshPoolQueues): MeshPoolBuilder {
     const { maxMeshes, maxTris, maxVerts } = opts;
 
-    let finished = false;
+    let isUnmapped = false;
 
     // log our estimated space usage stats
     console.log(`Mesh space usage for up to ${maxMeshes} meshes, ${maxTris} tris, ${maxVerts} verts:`);
@@ -476,17 +479,34 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps): MeshPool
         numVerts: 0,
         allMeshes,
         poolHandle: pool,
-        addMesh,
-        buildMesh,
+        addMesh: mappedAddMesh,
+        buildMesh: mappedMeshBuilder,
         updateUniform: mappedUpdateUniform,
         finish,
     };
 
-    // device,
+    function mappedMeshBuilder(): MeshBuilder {
+        const b = createMeshBuilder(maps,
+            allMeshes.length * MeshUniform.ByteSizeAligned,
+            builder.numVerts * Vertex.ByteSize,
+            builder.numTris * bytesPerTri);
 
-    // add our meshes to the vertex and index buffers
-    function addMesh(m: Mesh): MeshHandle {
-        if (finished)
+        function finish() {
+            const m = b.finish()
+            builder.numVerts += m.numVerts;
+            builder.numTris += m.numTris;
+            builder.allMeshes.push(m);
+            return m;
+        }
+
+        return {
+            ...b,
+            finish,
+        }
+    }
+
+    function mappedAddMesh(m: Mesh): MeshHandle {
+        if (isUnmapped)
             throw `trying to use finished MeshPoolBuilder`
         if (!m.usesProvoking)
             throw `mesh must use provoking vertices`
@@ -497,13 +517,12 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps): MeshPool
         if (builder.numTris + m.tri.length > maxTris)
             throw "Too many triangles!"
 
-        const b = buildMesh();
+        const b = mappedMeshBuilder();
 
         const vertNumOffset = builder.numVerts;
 
         m.pos.forEach((pos, i) => {
             b.addVertex(pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0])
-
         })
         m.tri.forEach((triInd, i) => {
             b.addTri(triInd)
@@ -523,9 +542,9 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps): MeshPool
     }
 
     function finish(): MeshPool {
-        if (finished)
+        if (isUnmapped)
             throw `trying to use finished MeshPoolBuilder`
-        finished = true;
+        isUnmapped = true;
 
         pool.numTris = builder.numTris;
         pool.numVerts = builder.numVerts;
@@ -535,87 +554,79 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps): MeshPool
         return pool;
     }
 
-    const scratch_uniform_u8 = new Uint8Array(MeshUniform.ByteSizeAligned);
     function queueUpdateUniform(m: MeshHandle): void {
         MeshUniform.Serialize(scratch_uniform_u8, 0, m.transform, m.aabbMin, m.aabbMax)
-        maps.queueUpdateUniform(m.modelUniByteOffset, scratch_uniform_u8)
+        queues.queueUpdateUniform(m.modelUniByteOffset, scratch_uniform_u8)
     }
     function mappedUpdateUniform(m: MeshHandle): void {
-        if (finished)
+        if (isUnmapped)
             throw 'trying to use finished MeshBuilder'
         MeshUniform.Serialize(scratch_uniform_u8, 0, m.transform, m.aabbMin, m.aabbMax)
         builder.uniformMap.set(scratch_uniform_u8, m.modelUniByteOffset);
     }
 
-    function buildMesh(): MeshBuilder {
-        if (finished)
-            throw `trying to use finished MeshPoolBuilder`
-        let meshFinished = false;
-        const uniOffset = builder.allMeshes.length * MeshUniform.ByteSizeAligned;
-        const vertNumOffset = builder.numVerts;
-        const triNumOffset = builder.numTris;
-        const indicesNumOffset = builder.numTris * 3;
+    return builder;
+}
 
-        // TODO(@darzu): VERTEX FORMAT
-        function addVertex(pos: vec3, color: vec3, normal: vec3): void {
-            if (finished || meshFinished)
-                throw 'trying to use finished MeshBuilder'
-            const vOff = builder.numVerts * Vertex.ByteSize
-            Vertex.Serialize(builder.verticesMap, vOff, pos, color, normal)
-            builder.numVerts += 1;
-        }
-        function addTri(triInd: vec3): void {
-            if (finished || meshFinished)
-                throw 'trying to use finished MeshBuilder'
-            const iOff = builder.numTris * 3
-            builder.indicesMap.set(triInd, iOff)
-            builder.numTris += 1;
-        }
+function createMeshBuilder(maps: MeshPoolMaps, uByteOff: number, vByteOff: number, iByteOff: number): MeshBuilder {
+    let meshFinished = false;
+    let numVerts = 0;
+    let numTris = 0;
 
-        let _transform: mat4 | undefined = undefined;
-        let _aabbMin: vec3 | undefined = undefined;
-        let _aabbMax: vec3 | undefined = undefined;
-        function setUniform(transform: mat4, aabbMin: vec3, aabbMax: vec3): void {
-            if (finished || meshFinished)
-                throw 'trying to use finished MeshBuilder'
-            _transform = transform;
-            _aabbMin = aabbMin;
-            _aabbMax = aabbMax;
-            MeshUniform.Serialize(scratch_uniform_u8, 0, transform, aabbMin, aabbMax)
-            builder.uniformMap.set(scratch_uniform_u8, uniOffset);
-        }
-
-        function finish(): MeshHandle {
-            if (finished || meshFinished)
-                throw 'trying to use finished MeshBuilder'
-            if (!_transform)
-                throw 'uniform never set for this mesh!'
-            meshFinished = true;
-            const res: MeshHandle = {
-                vertNumOffset,
-                indicesNumOffset,
-                modelUniByteOffset: uniOffset,
-                transform: _transform!,
-                aabbMin: _aabbMin!,
-                aabbMax: _aabbMax!,
-                numTris: builder.numTris - triNumOffset,
-                model: undefined,
-                pool: builder.poolHandle,
-            }
-            builder.allMeshes.push(res)
-            return res;
-        }
-
-        return {
-            poolBuilder: builder,
-            addVertex,
-            addTri,
-            setUniform,
-            finish
-        }
+    // TODO(@darzu): VERTEX FORMAT
+    function addVertex(pos: vec3, color: vec3, normal: vec3): void {
+        if (meshFinished)
+            throw 'trying to use finished MeshBuilder'
+        const vOff = vByteOff + numVerts * Vertex.ByteSize
+        Vertex.Serialize(maps.verticesMap, vOff, pos, color, normal)
+        numVerts += 1;
+    }
+    function addTri(triInd: vec3): void {
+        if (meshFinished)
+            throw 'trying to use finished MeshBuilder'
+        const iOff = iByteOff + numTris * bytesPerTri
+        maps.indicesMap.set(triInd, iOff / 2) // TODO(@darzu): it's kinda weird indices map uses uint16 vs the rest us u8
+        numTris += 1;
     }
 
-    return builder;
+    let _transform: mat4 | undefined = undefined;
+    let _aabbMin: vec3 | undefined = undefined;
+    let _aabbMax: vec3 | undefined = undefined;
+    function setUniform(transform: mat4, aabbMin: vec3, aabbMax: vec3): void {
+        if (meshFinished)
+            throw 'trying to use finished MeshBuilder'
+        _transform = transform;
+        _aabbMin = aabbMin;
+        _aabbMax = aabbMax;
+        MeshUniform.Serialize(maps.uniformMap, uByteOff, transform, aabbMin, aabbMax)
+    }
+
+    function finish(): MeshHandle {
+        if (meshFinished)
+            throw 'trying to use finished MeshBuilder'
+        if (!_transform)
+            throw 'uniform never set for this mesh!'
+        meshFinished = true;
+        const res: MeshHandle = {
+            vertNumOffset: vByteOff / Vertex.ByteSize,
+            indicesNumOffset: iByteOff / 2,
+            modelUniByteOffset: uByteOff,
+            transform: _transform!,
+            aabbMin: _aabbMin!,
+            aabbMax: _aabbMax!,
+            numTris,
+            numVerts,
+            model: undefined,
+        }
+        return res;
+    }
+
+    return {
+        addVertex,
+        addTri,
+        setUniform,
+        finish
+    }
 }
 
 // utils
