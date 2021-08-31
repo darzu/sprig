@@ -55,6 +55,9 @@ Regl:
 e.g.
   https://github.com/jacklaplante/bowdown
   https://github.com/onegeek/webglu
+
+Sketch fab:
+  https://sketchfab.com
 */
 
 /*============= Creating a canvas ======================*/

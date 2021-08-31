@@ -1,33 +1,273 @@
-Networking
-Although online games are fun to play, be aware that networking will suck your time and that it doesn't only involve sending a message back and forth. Lag compensation, dead-reckoning, bad connections, bad computers, proper physics and preventing cheating are all things to care about for a real-time game. Turn-based multiplayer games are way easier to design.
-Gabriel Gambetta : Client-Server Game Architecture Great first read, but part IV shouldn't be implemented in your first game.
-    http://www.gabrielgambetta.com/client-server-game-architecture.html
-Gafferon Games : What every programmer needs to know about game networking
-    http://gafferongames.com/networking-for-game-programmers/what-every-programmer-needs-to-know-about-game-networking/
-Gafferon Games : Networked Physics
-    http://gafferongames.com/game-physics/networked-physics/
-Gafferon Games : Fix your timestep! How-to have a "deterministic" physics
-    http://gafferongames.com/game-physics/fix-your-timestep/
-Gafferon Games : UDP vs. TCP
-    http://gafferongames.com/networking-for-game-programmers/udp-vs-tcp/
-Gafferon Games : Sending and Receiving Packets
-    http://gafferongames.com/networking-for-game-programmers/sending-and-receiving-packets/
-Gafferon Games : Reliability and Flow Control
-    http://gafferongames.com/networking-for-game-programmers/reliability-and-flow-control/
-The Poor Man's Netcode
-    https://www.gamedev.net/articles/programming/networking-and-multiplayer/the-poor-mans-netcode-r4851/
-Fabien Sanglard : Quake Engine code review He talks about client-side prediction, really interesting since it's probably the first game involving code about hiding latency
-    http://fabiensanglard.net/quakeSource/index.php
-The Quake3 Networking Model Read it at least for the brute-force model :)
-    http://trac.bookofhook.com/bookofhook/trac.cgi/wiki/Quake3Networking
-Source Multiplayer Networking Must-read of course, a bit more complex than q1 or q3. Note that you definitely don't need a server-side history of inputs for a first game.
-    https://developer.valvesoftware.com/wiki/Source_Multiplayer_Networking
-Valve Latency Compensation
-    https://developer.valvesoftware.com/wiki/Latency_Compensating_Methods_in_Client/Server_In-game_Protocol_Design_and_Optimization
-Unreal Networking Architecture
-    https://api.unrealengine.com/udk/Three/NetworkingOverview.html
-GDC : I Shot You First Great talk about AAA networking, but quite a few suggestions apply to indies as well.
-    https://www.gdcvault.com/play/1014345/I-Shot-You-First-Networking
-GDC : Overwatch Gameplay Architecture and Netcode
-    https://youtu.be/W3aieHjyNvw?t=1342
+From GameDev reddit on Networking:
+    Although online games are fun to play, be aware that networking will suck your time and that it doesn't only involve sending a message back and forth. Lag compensation, dead-reckoning, bad connections, bad computers, proper physics and preventing cheating are all things to care about for a real-time game. Turn-based multiplayer games are way easier to design.
+    Gabriel Gambetta : Client-Server Game Architecture Great first read, but part IV shouldn't be implemented in your first game.
+        http://www.gabrielgambetta.com/client-server-game-architecture.html
+    Gafferon Games : What every programmer needs to know about game networking
+        http://gafferongames.com/networking-for-game-programmers/what-every-programmer-needs-to-know-about-game-networking/
+    Gafferon Games : Networked Physics
+        http://gafferongames.com/game-physics/networked-physics/
+    Gafferon Games : Fix your timestep! How-to have a "deterministic" physics
+        http://gafferongames.com/game-physics/fix-your-timestep/
+    Gafferon Games : UDP vs. TCP
+        http://gafferongames.com/networking-for-game-programmers/udp-vs-tcp/
+    Gafferon Games : Sending and Receiving Packets
+        http://gafferongames.com/networking-for-game-programmers/sending-and-receiving-packets/
+    Gafferon Games : Reliability and Flow Control
+        http://gafferongames.com/networking-for-game-programmers/reliability-and-flow-control/
+    The Poor Man's Netcode
+        https://www.gamedev.net/articles/programming/networking-and-multiplayer/the-poor-mans-netcode-r4851/
+    Fabien Sanglard : Quake Engine code review He talks about client-side prediction, really interesting since it's probably the first game involving code about hiding latency
+        http://fabiensanglard.net/quakeSource/index.php
+    The Quake3 Networking Model Read it at least for the brute-force model :)
+        http://trac.bookofhook.com/bookofhook/trac.cgi/wiki/Quake3Networking
+    Source Multiplayer Networking Must-read of course, a bit more complex than q1 or q3. Note that you definitely don't need a server-side history of inputs for a first game.
+        https://developer.valvesoftware.com/wiki/Source_Multiplayer_Networking
+    Valve Latency Compensation
+        https://developer.valvesoftware.com/wiki/Latency_Compensating_Methods_in_Client/Server_In-game_Protocol_Design_and_Optimization
+    Unreal Networking Architecture
+        https://api.unrealengine.com/udk/Three/NetworkingOverview.html
+    GDC : I Shot You First Great talk about AAA networking, but quite a few suggestions apply to indies as well.
+        https://www.gdcvault.com/play/1014345/I-Shot-You-First-Networking
+    GDC : Overwatch Gameplay Architecture and Netcode
+        https://youtu.be/W3aieHjyNvw?t=1342
+
+Following:
+    https://gafferongames.com/categories/networked-physics/
+    https://gafferongames.com/post/introduction_to_networked_physics/
+    https://gafferongames.com/post/deterministic_lockstep/
+    https://gafferongames.com/post/snapshot_interpolation/
+    https://gafferongames.com/post/snapshot_compression/
+        https://gist.github.com/gafferongames/bb7e593ba1b05da35ab6
+
+Techniques:
+    Deterministic lockstep:
+        Con: need to wait for input from all players to run simulation, best for 2-4 players
+        Con: deterministic physics is hard
+        Pro: very compact bandwidth
+        Good for RTS and turn-based
+    Snapshots + interpolation + delta compression
+        Hermite Interpolation is much better for rotations
+        Con: more bandwidth
+        ~10pps gives very good results
+        interpolation buffer should have enough delay so you can lose two packets in a row
+            ~10pps goes to ~350ms delay
+            ~30pps goes to ~150ms delay
+            ~60pps goes to ~85ms delay
+    State synchronization
+        send state and input
+        pro: doesn't require deterministic physics
+        con: extrapolation divergence happens, leads to bugs and "pops"
+        optimizations:
+            use "has changed" bits
+            other bit packing applies
+            "serialization function": https://gafferongames.com/post/serialization_strategies/
+            send multiple redundent inputs (like det-lockstep)
+            use a prioritization scheme to select ~64 most important updates
+                use "priority accumulator" to focus on most important (player, interacting) but eventually service all objects.
+            bandwidth limit: use prioritization scheme to set dynamic bandwidth limits
+            use jitter buffer
+            quantize both sides
+        Reduce popping:
+            Don't render at simulation location, instead render at sim location lerp'ed w/ error
+            Use different smoothing amounts: 
+                0.95 for small jitter (<25cm), 0.85 (>1m), lerp between
+        Delta compression
+            Store positions as relative to player
+            per-object ack's and diffing
+            bidirectional acks are complicated:
+                https://gafferongames.com/post/reliability_ordering_and_congestion_avoidance_over_udp/
+            bump priority of objs at rest that haven't been ack'ed
+
+
+        
+Learnings:
+    You can often trade latency for smoothness
+    To lower latency, you can use extrapolation, which can be hard
+    Position is often the hardest to compress well
+    RTT: round trip time
+
+bandwidth optimizations:
+    any numerical:
+        bound and quantize
+        use known relations (e.g. "smallest three")
+    smallest three (for quantenion):
+        send only three members
+        w = sqrt( 1 - x^2 - y^2 - z^2 )
+        (x,y,z,w) = (-x,-y,-z,-w) # no sign bit required
+        TODO: another optimization something with (v,v,0,0)
+        possible to turn 128bits into 29bits
+    compress velocity:
+        bound and quantize
+            e.g. Set max speed bounds and stepping (e.g. max: 32 m/s, step: 1 m/s)
+            e.g. [0,2047]
+        track "at rest" bit
+        depending on transfer frequency, might be best to switch back to lerp
+    compress position:
+        bound and quantize
+            e.g. [-131072,+131071] // x,y
+            e.g. [0,16383] // z
+        e.g. 50 bits per absolute position
+    delta compression:
+        simplest: 1 bit per obj that hasn't changed
+        reciever sends "ack"
+        sender sends delta relative to last ack'ed
+    small wins:
+        send only changed objs with a obj index and assume others are unchanged
+            for 10 bit indices, indices are more efficient for <=90 cubes
+            calculate per snapshot which encoding to use
+        send indices as relative offsets from previous indices
+            e.g.:
+                [1,8] => 1 + 3 (4 bits)
+                [9,40] => 1 + 1 + 5 (7 bits)
+                [41,900] => 1 + 1 + 10 (12 bits)
+                => avg 5.5 bits (instead of 10) per index
+            note this makes swapping encodings between index objs vs all objs more complicated
+        encode position relative to snapshot
+            collected runtime data
+            used a script to determine most efficient encoding of the sample data
+                e.g. result: delta [-16,+15], delta [-256,+255], absolute
+                    => 26.1 bits per position
+        Delta Encoding Smallest Three
+            tried and failed:
+                4D delta components + smallest three like above
+                delta whole orientation (only 90% better)
+            per 3 components:[-16,+15] small, [-128,+127] large
+                => 23.3 bits per relative quantenion
+        One change bit for position, one for orientation
+            e.g. 5% changed didn't rotate, 5% changed didn't move
+                => save 2 bits per cube
+        Estimate angular velocity using previous orientations to predict new orientations
+    context aware arithmetic encoding:
+        https://github.com/rygorous/gaffer_net/blob/master/main.cpp
+        25% better than bit packing
+        somewhere here: https://fgiesen.wordpress.com/category/compression/
+        http://www.radgametools.com/oodle.htm
+            licensing: sales3@radgametools.com
+        https://twitter.com/gafferongames/status/576954706334887936
+        
+
+
+Ideas:
+    build a shitty network simulator into the IDE
+
+
+NEXT: 
+    https://gafferongames.com/post/networked_physics_in_virtual_reality/
+    https://gafferongames.com/categories/building-a-game-network-protocol/
+    search: minecraft network model
+    search: valheim network model
+    search: dark souls network model
+
+WebRTC problems (and solutions?):
+    https://gafferongames.com/post/why_cant_i_send_udp_packets_from_a_browser/
+        https://github.com/networkprotocol/netcode
+        https://github.com/RedpointGames/netcode.io-browser
+        https://news.ycombinator.com/item?id=13264952
+        rust server? https://github.com/kyren/webrtc-unreliable
+        "BoringSSL and usrsctplib"
+        librtcdcpp ?
+
+Oculus physics sample:
+    https://gafferongames.com/post/networked_physics_in_virtual_reality/
+    https://github.com/fbsamples/oculus-networked-physics-sample
+    Options:
+        Deterministic lockstep
+            subtype: "rollback networking" or GGPO
+                Used by basically all fighting games
+                Great for simple physics where ~25x physics steps per frame isn't hard
+        Client/server with client-side prediction
+        Distributed simulation with authority scheme (*chosen*)
+            Players take authority over objs they interact with
+    authority schemes:
+        What if two players interact with the same set of objs?
+        What if two players try to take authority at once (masked by latency)?
+        Intuition: since state is exchanged rapidly (~60hz), handle in protocol encoding
+        Authority: last touched wins, transitive (thrown cube claims authority over those it hits)
+        Ownership: once taken, player keeps it until relinquished
+    lossy bandwidth optimizations made PhysX behave badly
+        need to set maxDepenetrationVelocity
+        need custom 'at rest' detection
+    priority accumulator:
+        negative and positive values (neg clears accum)
+        boost priority for objs likely involved in divergence
+    per-cube snapshoting and delta compression
+        need reliability ack's
+        lots of code complexity
+    included a fancy ballistics predictor
+        cubes that follow the prediction get another bit: "perfect prediction"
+    regret: using smallest-three
+    recommend: use a arithmetic compressor
+    (months of work to this point)
+    ! all the above looked awful for avatars
+        because of timestep issues (FixedUpdate vs Update)
+        100ms jitter buffer
+        include held cubes as part of avatar instead of physics sim (neg priority)
+    one player is the "host"
+        all packets flow through, they are the arbiter
+        host can override ownership & authority
+        at rest cubes go back to host (I think?)
+        
+Unity multiplayer:
+    "MLAPI"
+    "Transport"
+        What does "jobified client and server" mean?
+        options: UnetTransport, ???
+    Boss Room example
+    https://docs-multiplayer.unity3d.com/blog
+    User burden:
+        Create a singleton "NetworkManager"
+        Switch on "client" vs "server" vs "host"
+        Create component which inherits from "NetworkBehaviour"
+        Create properties with type NetworkVariableVector3
+            Write perms: ServerOnly
+            Read perms: Everyone
+        Annotate methods with "[ServerRpc]", e.g.:
+            [ServerRpc]
+            void SubmitPositionRequestServerRpc(ServerRpcParams rpcParams = default)
+            {
+                Position.Value = GetRandomPositionOnPlane();
+            }
+        clients can request a server runs some code, these keeps everything in the client perspective when coding
+        manually need to keep local rigidbody transform in sync:
+             void Update()
+            {
+                transform.position = Position.Value;
+            }
+        there's a singleton "PlayerObject" on the client?
+            if (NetworkManager.Singleton.ConnectedClients.TryGetValue(NetworkManager.Singleton.LocalClientId, out var networkedClient))
+            {
+                var player = networkedClient.PlayerObject.GetComponent<HelloWorldPlayer>();
+                if (player)
+                {
+                    player.Move();
+                }
+            }
+        "NetworkTransform" is a component synchronized between client and server
+        Also [ClientRpc] exists
+
+    MLAPI:
+        NetworkObjects
+            has NetworkId
+            NetworkTransform, NetworkBehavior, and NetworkVariable need to be childed under one
+            has owner
+            SoftSync vs PrefabSync
+                PrefabSync is "ONLY recommended for multi project setups"
+        NetworkBehavior
+        PlayerObject is a simplification for when there's just one
+        Spawning is something the user has to care about
+        data structures: NetworkVariable, NetworkList and NetworkDictionary
+            for keeping state in sync
+        Host/server can control custom "visibility" criteria for clients
+        programmer concerns:
+            scene switching
+            obj network visiblity per client
+            spawning/despawning
+            object pooling
+    https://unity.com/products/netcode
+
+RTS networking: https://www.gamasutra.com/view/feature/3094/1500_archers_on_a_288_network_.php
+
+Unreal networking: https://docs.unrealengine.com/udk/Three/NetworkingOverview.html
+
+
 

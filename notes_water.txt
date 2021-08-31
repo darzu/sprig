@@ -1,0 +1,12 @@
+Unreal water: https://docs.unrealengine.com/en-US/BuildingWorlds/Water/index.html
+
+google "projected grid water"
+
+Tessendorf FFT with Gerstner waves vertex grid displacement
+https://www.keithlantz.net/2011/10/ocean-simulation-part-one-using-the-discrete-fourier-transform/
+
+see grapeshot games
+    https://developer.nvidia.com/waveworks
+
+GPU simulated water: http://www-evasion.imag.fr/~Fabrice.Neyret/images/fluids-nuages/waves/Jonathan/articlesCG/OceanWaveSimulationInRealtimeUsingGPU2010.pdf
+
