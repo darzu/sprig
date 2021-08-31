@@ -149,7 +149,24 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxTr
   const cameraOffset = setupCamera();
 
   function finishInit() {
+    console.log("finishInit")
     initFinished = true;
+
+    // TODO(@darzu): DEBUG
+    const positions = [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1];
+    const normals = [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1];
+    const colors = normals.map(_ => 0.5);
+    const indices = [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23];
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, pool.positionsBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(positions));
+    gl.bindBuffer(gl.ARRAY_BUFFER, pool.normalsBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(normals));
+    gl.bindBuffer(gl.ARRAY_BUFFER, pool.colorsBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(colors));
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pool.indicesBuffer);
+    gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, new Uint16Array(indices));
   }
 
   function addObject(o: GameObject): MeshObj {
@@ -221,11 +238,16 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxTr
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pool.indicesBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, builder.indicesMap, gl.DYNAMIC_DRAW);
 
-    for (let m of meshObjs) {
-      // gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset * 2);
-      gl.drawElements(gl.TRIANGLES, m.handle.numTris * 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset * 2);
-      // break; // TODO(@darzu): 
-    }
+    // TODO(@darzu): DEBUG
+    gl.uniformMatrix4fv(u_loc_transform, false, mat4.create());
+    gl.drawElements(gl.TRIANGLES, 6 * 6, gl.UNSIGNED_SHORT, 0);
+
+    // for (let m of meshObjs) {
+    //   // gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset * 2);
+    //   gl.uniformMatrix4fv(u_loc_transform, false, m.handle.transform);
+    //   gl.drawElements(gl.TRIANGLES, m.handle.numTris * 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset);
+    //   // break; // TODO(@darzu): 
+    // }
 
   }
 
