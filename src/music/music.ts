@@ -21,23 +21,40 @@ function createNote(): OscillatorNode {
     return oscillator;
 }
 
-let playing = false;
+function playFreq(freq: number, durSec: number, offset: number) {
+    const oscillator = audioCtx.createOscillator();
 
-// oscillator.start();
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(freq, offset);
+    oscillator.connect(audioCtx.destination);
+
+    oscillator.start(offset)
+    oscillator.stop(offset + durSec)
+}
+
+function noteFreq(n: number): number {
+    const root = 440;
+    const f = root * (2 ** (n / 12));
+    return f;
+}
+
+function playNote(n: number, durSec: number = 0.25, offset: number | null = null) {
+    if (!offset)
+        offset = audioCtx.currentTime;
+
+    const f = noteFreq(n);
+    playFreq(f, durSec, offset);
+}
 
 function canvasClick() {
     // canvasRef.removeEventListener('click', doLockMouse)
 
-    if (playing) {
-        if (oscillator)
-            oscillator.stop()
-        oscillator = null;
-    } else {
-        oscillator = createNote()
-        oscillator.start()
-    }
+    const start = audioCtx.currentTime;
 
-    playing = !playing;
+    playNote(0, 0.25, start + 0);
+    playNote(4, 0.25, start + 0.25);
+    playNote(7, 0.25, start + 0.5);
+
 }
 canvasRef.addEventListener('click', canvasClick)
 
