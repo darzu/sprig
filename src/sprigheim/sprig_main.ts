@@ -994,7 +994,7 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
     const builder = createMeshPoolBuilder(device, {
         maxMeshes: 1,
         maxTris: mapArea * 2,
-        maxVerts: mapArea * 3,
+        maxVerts: mapArea * 2,
     })
 
     // const idx = (xi: number, zi: number) => clamp(zi, 0, mapZSize - 1) * mapXSize + clamp(xi, 0, mapXSize - 1)
