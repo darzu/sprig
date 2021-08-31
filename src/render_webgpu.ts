@@ -116,7 +116,7 @@ export class Renderer_WebGPU implements Renderer {
   private gpuBufferWriteAllMeshUniforms() {
     // TODO(@darzu): make this update all meshes at once
     for (let m of this.meshObjs) {
-      m.handle.transform = m.obj.transform(); // TODO(@darzu): not great
+      m.handle.transform = m.obj.transform; // TODO(@darzu): this discrepency isn't great...
       this.pool.updateUniform(m.handle)
     }
   }

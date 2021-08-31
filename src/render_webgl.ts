@@ -257,7 +257,7 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxTr
 
     // update uniforms
     for (let m of meshObjs) {
-      m.handle.transform = m.obj.transform()
+      m.handle.transform = m.obj.transform // TODO(@darzu): this is hacky
     }
 
     // TODO(@darzu): need to draw update uniform: u_loc_transform

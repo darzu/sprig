@@ -45,7 +45,7 @@ export abstract class GameObject {
   snap_seq: number;
   location_error: vec3;
   rotation_error: quat;
-  private _transform: mat4;
+  transform: mat4;
 
   constructor(id: number, creator: number) {
     this.id = id;
@@ -60,7 +60,7 @@ export abstract class GameObject {
     this.snap_seq = -1;
     this.location_error = vec3.fromValues(0, 0, 0);
     this.rotation_error = quat.create();
-    this._transform = mat4.create();
+    this.transform = mat4.create();
   }
 
   snapLocation(location: vec3) {
@@ -103,9 +103,9 @@ export abstract class GameObject {
     this.rotation_error = rotation_error;
   }
 
-  transform(): mat4 {
-    return mat4.fromRotationTranslation(
-      this._transform,
+  updateTransform(): void {
+    mat4.fromRotationTranslation(
+      this.transform,
       quat.mul(working_quat, this.rotation, this.rotation_error),
       vec3.add(working_vec3, this.location, this.location_error)
     );
@@ -195,13 +195,6 @@ export abstract class GameState<Inputs> {
 
     const objs = Object.values(this.objects)
 
-    // check collisions
-    // TODO(@darzu): hack. also we need AABBs on objects
-    // const collidesWith = checkCollisions(objs);
-    // for (let o of os) {
-    //   o.color = collidesWith[o.id] ? vec3.fromValues(0.2, 0.0, 0.0) : vec3.fromValues(0.0, 0.2, 0.0)
-    // }
-
     let identity_quat = quat.create();
     let delta = vec3.create();
     let normalized_velocity = vec3.create();
@@ -258,5 +251,17 @@ export abstract class GameState<Inputs> {
       // note--quat multiplication is not commutative, need to multiply on the left
       quat.multiply(o.rotation, deltaRotation, o.rotation);
     }
+
+    // update transforms
+    for (let o of objs) {
+      o.updateTransform();
+    }
+
+    // check collisions
+    // TODO(@darzu): hack. also we need AABBs on objects
+    // const collidesWith = checkCollisions(objs);
+    // for (let o of os) {
+    //   o.color = collidesWith[o.id] ? vec3.fromValues(0.2, 0.0, 0.0) : vec3.fromValues(0.0, 0.2, 0.0)
+    // }
   }
 }
