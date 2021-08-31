@@ -887,3 +887,12 @@ async function main() {
     }
 }
 await main()
+
+/*
+WATER
+
+Approach:
+    mesh defining surface of water
+    different LODs of that mesh
+    vertices displaced using displacement map
+*/

@@ -1,9 +1,12 @@
 Unreal water: https://docs.unrealengine.com/en-US/BuildingWorlds/Water/index.html
 
-google "projected grid water"
+"projected grid water"
+    https://www.reddit.com/r/GraphicsProgramming/comments/ahx14d/is_water_rendering_using_a_projected_grid_still/
+    https://fileadmin.cs.lth.se/graphics/theses/projects/projgrid/
+    https://tamats.com/games/bwr/
 
 Tessendorf FFT with Gerstner waves vertex grid displacement
-https://www.keithlantz.net/2011/10/ocean-simulation-part-one-using-the-discrete-fourier-transform/
+    https://www.keithlantz.net/2011/10/ocean-simulation-part-one-using-the-discrete-fourier-transform/
 
 see grapeshot games
     https://developer.nvidia.com/waveworks
