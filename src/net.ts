@@ -334,12 +334,15 @@ export class Net<Inputs> {
   }
 
   sendStateUpdates() {
+    // first, make sure we've added objects everywhere we need to
+    Object.values(this.state.objects).forEach((obj) =>
+      this.syncObject(obj.netObject())
+    );
     this.updateObjectPriorities();
     let objects = this.objectsToSync();
     // build snapshot
     let data = new Array();
     for (let obj of objects) {
-      this.syncObject(obj.netObject());
       this.object_priorities[obj.id] = 0;
       data.push(obj.id);
       data.push(obj.authority_seq);
