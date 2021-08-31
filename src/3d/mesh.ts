@@ -50,10 +50,11 @@ function OnStart() {
 }
 */
 
-export const mat4ByteSize = (4 * 4)/*4x4 mat*/ * 4/*f32*/
-export const vec3ByteSize = 3/*vec3*/ * 4/*f32*/
+export const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
+export const bytesPerMat4 = (4 * 4)/*4x4 mat*/ * 4/*f32*/
+export const bytesPerVec3 = 3/*vec3*/ * 4/*f32*/
 export const triElStride = 3/*ind per tri*/;
-export const triByteSize = Uint16Array.BYTES_PER_ELEMENT * triElStride;
+export const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * triElStride;
 
 // face normals vs vertex normals
 export interface MeshModel {
@@ -103,10 +104,10 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
     // space stats
     console.log(`New mesh pool`);
     console.log(`   ${maxVerts * vertByteSize / 1024} KB for verts`);
-    console.log(`   ${opts.usesIndices ? maxTris * triByteSize / 1024 : 0} KB for indices`);
+    console.log(`   ${opts.usesIndices ? maxTris * bytesPerTri / 1024 : 0} KB for indices`);
     console.log(`   ${maxMeshes * meshUniByteSize / 1024} KB for models`);
     // TODO(@darzu): MESH FORMAT
-    const unusedBytesPerModel = 256 - mat4ByteSize % 256
+    const unusedBytesPerModel = 256 - bytesPerMat4 % 256
     console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per model (${unusedBytesPerModel * maxMeshes / 1024} KB total waste)`);
 
     const _vertBuffer = device.createBuffer({
@@ -115,7 +116,7 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
         mappedAtCreation: true,
     });
     const _indexBuffer = opts.usesIndices ? device.createBuffer({
-        size: maxTris * triByteSize,
+        size: maxTris * bytesPerTri,
         usage: GPUBufferUsage.INDEX,
         mappedAtCreation: true,
     }) : null;
@@ -129,7 +130,7 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
     let _numVerts = 0;
     let _numTris = 0;
 
-    const vertElStride = vertByteSize / Float32Array.BYTES_PER_ELEMENT;
+    const vertElStride = vertByteSize / bytesPerFloat;
 
     let _vertsMap: Float32Array | null = null;
     let _indMap: Uint16Array | null = null;

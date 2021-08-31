@@ -2,7 +2,7 @@
 
 import { mat4 } from "../ext/gl-matrix.js";
 import { align } from "../math.js";
-import { mat4ByteSize, MeshMemoryPool, MeshMemoryPool as MeshPool, MeshMemoryPoolOptions, vec3ByteSize } from "./mesh.js";
+import { bytesPerFloat, bytesPerMat4, MeshMemoryPool, MeshMemoryPool as MeshPool, MeshMemoryPoolOptions, bytesPerVec3 } from "./mesh.js";
 
 const shadowDepthTextureSize = 1024 * 2;
 
@@ -185,7 +185,7 @@ const shadowDepthTextureDesc: GPUTextureDescriptor = {
 }
 
 const maxNumInstances = 1000;
-const instanceByteSize = Float32Array.BYTES_PER_ELEMENT * 3/*color*/
+const instanceByteSize = bytesPerFloat * 3/*color*/
 
 // TODO(@darzu): depth24plus-stencil8
 const depthStencilFormat = 'depth24plus-stencil8';
@@ -251,7 +251,6 @@ export function createMeshRenderer(
                     type: 'uniform',
                     hasDynamicOffset: true,
                     // TODO(@darzu): why have this?
-                    // TODO(@darzu): MESH FORMAT
                     minBindingSize: meshUniByteSize,
                 },
             },
@@ -312,10 +311,10 @@ export function createMeshRenderer(
         // Two 4x4 viewProj matrices,
         // one for the camera and one for the light.
         // Then a vec3 for the light position.
-        mat4ByteSize * 2 // camera and light projection
-        + vec3ByteSize * 1 // light pos
-        + Float32Array.BYTES_PER_ELEMENT * 1 // time
-        + vec3ByteSize // displacer
+        bytesPerMat4 * 2 // camera and light projection
+        + bytesPerVec3 * 1 // light pos
+        + bytesPerFloat * 1 // time
+        + bytesPerVec3 // displacer
     const sharedUniBuffer = device.createBuffer({
         size: align(sharedUniBufferSize, 256),
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -365,25 +364,25 @@ export function createMeshRenderer(
                 {
                     // position
                     shaderLocation: 0,
-                    offset: vec3ByteSize * 0,
+                    offset: bytesPerVec3 * 0,
                     format: 'float32x3',
                 },
                 {
                     // color
                     shaderLocation: 1,
-                    offset: vec3ByteSize * 1,
+                    offset: bytesPerVec3 * 1,
                     format: 'float32x3',
                 },
                 {
                     // normals
                     shaderLocation: 2,
-                    offset: vec3ByteSize * 2,
+                    offset: bytesPerVec3 * 2,
                     format: 'float32x3',
                 },
                 {
                     // sway height
                     shaderLocation: 3,
-                    offset: vec3ByteSize * 3,
+                    offset: bytesPerVec3 * 3,
                     format: 'float32',
                 },
                 // {

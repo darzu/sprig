@@ -1,6 +1,6 @@
 import { mat4, vec3, vec4, quat } from './ext/gl-matrix.js';
 import { align, clamp, jitter } from './math.js';
-import { addTriToBuffers, createMeshMemoryPool, CUBE, mat4ByteSize, Mesh, MeshMemoryPool, MeshMemoryPoolOptions, MeshModel, PLANE, triByteSize, vec3ByteSize } from './3d/mesh.js';
+import { addTriToBuffers, createMeshMemoryPool, CUBE, bytesPerFloat as bytesPerFloat, bytesPerMat4 as bytesPerMat4, Mesh, MeshMemoryPool, MeshMemoryPoolOptions, MeshModel, PLANE, bytesPerTri, bytesPerVec3 } from './3d/mesh.js';
 import { createMeshRenderer } from './3d/mesh-renderer.js';
 // import * as RAPIER from './ext/@dimforge/rapier3d/rapier.js';
 
@@ -237,12 +237,15 @@ function createGrassTileset(opts: GrassTileOpts & GrassTilesetOpts, device: GPUD
     const tileCount = tilesPerSide ** 2;
     const totalGrass = grassPerTile * tileCount;
     const pool = createMeshMemoryPool({
-        vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
+        vertByteSize: bytesPerFloat * vertElStride,
         maxVerts: align(totalGrass * 3, 4),
         maxTris: align(totalGrass, 4),
         maxMeshes: tileCount,
         // TODO(@darzu): MESH FORMAT
-        meshUniByteSize: align(mat4ByteSize, 256),
+        meshUniByteSize: align(
+            bytesPerMat4 // transform
+            + bytesPerFloat
+            , 256),
         backfaceCulling: false,
         usesIndices: false,
     }, device);
@@ -420,12 +423,12 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     // TODO(@darzu): VERTEX FORMAT
     const meshPool = createMeshMemoryPool({
-        vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
+        vertByteSize: bytesPerFloat * vertElStride,
         maxVerts: 100000,
         maxTris: 100000,
         maxMeshes: 10000,
         // TODO(@darzu): MESH FORMAT
-        meshUniByteSize: align(mat4ByteSize, 256),
+        meshUniByteSize: align(bytesPerMat4, 256),
         backfaceCulling: true,
         usesIndices: true,
     }, device);
@@ -595,7 +598,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         const lightMatrixData = lightViewProjMatrix as Float32Array;
         device.queue.writeBuffer(
             meshRenderer.sharedUniBuffer,
-            mat4ByteSize * 1, // second matrix
+            bytesPerMat4 * 1, // second matrix
             lightMatrixData.buffer,
             lightMatrixData.byteOffset,
             lightMatrixData.byteLength
@@ -604,7 +607,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         const lightData = lightPosition as Float32Array;
         device.queue.writeBuffer(
             meshRenderer.sharedUniBuffer,
-            mat4ByteSize * 2, // third matrix
+            bytesPerMat4 * 2, // third matrix
             lightData.buffer,
             lightData.byteOffset,
             lightData.byteLength
@@ -688,7 +691,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         sharedTime[0] = Math.floor(time); // TODO(@darzu):         
         device.queue.writeBuffer(
             meshRenderer.sharedUniBuffer,
-            mat4ByteSize * 2 + vec3ByteSize * 1, // TODO(@darzu): getting these offsets is a pain
+            bytesPerMat4 * 2 + bytesPerVec3 * 1, // TODO(@darzu): getting these offsets is a pain
             sharedTime.buffer,
             sharedTime.byteOffset,
             sharedTime.byteLength
@@ -698,7 +701,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         // console.log(`(${displacer[0]}, ${displacer[1]}, ${displacer[2]})`);
         device.queue.writeBuffer(
             meshRenderer.sharedUniBuffer,
-            mat4ByteSize * 2 + vec3ByteSize * 1 + Float32Array.BYTES_PER_ELEMENT * 1,
+            bytesPerMat4 * 2 + bytesPerVec3 * 1 + bytesPerFloat * 1,
             displacer.buffer,
             displacer.byteOffset,
             displacer.byteLength - 4
@@ -736,7 +739,7 @@ await init(canvas)
 // {
 //     // Create the model vertex buffer.
 //     const vertexBuffer = device.createBuffer({
-//         size: mesh.positions.length * 3 * 2 * Float32Array.BYTES_PER_ELEMENT,
+//         size: mesh.positions.length * 3 * 2 * float32ByteSize,
 //         usage: GPUBufferUsage.VERTEX,
 //         mappedAtCreation: true,
 //     });
