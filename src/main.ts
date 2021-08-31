@@ -184,7 +184,7 @@ class Bullet extends Cube {
 
   mesh(): Mesh {
     // TODO(@darzu): DEBUG
-    return scaleMesh(super.mesh(), 0.2);
+    return scaleMesh(super.mesh(), 0.3);
   }
 
   typeId(): number {
