@@ -87,7 +87,7 @@ class Plane extends GameObject {
 
   constructor(id: number, creator: number) {
     super(id, creator);
-    this.color = DARK_GRAY;
+    this.color = vec3.clone(DARK_GRAY);
     this.localAABB = PLANE_AABB;
   }
 
@@ -101,17 +101,19 @@ class Plane extends GameObject {
 
   serializeFull(buffer: Serializer) {
     buffer.writeVec3(this.motion.location);
+    buffer.writeVec3(this.color);
   }
 
   deserializeFull(buffer: Deserializer) {
     buffer.readVec3(this.motion.location);
+    buffer.readVec3(this.color);
   }
 
-  serializeDynamic(_buffer: Serializer) {
+  serializeDynamic(buffer: Serializer) {
     // don't need to write anything at all here, planes never change
   }
 
-  deserializeDynamic(_buffer: Deserializer) {
+  deserializeDynamic(buffer: Deserializer) {
     // don't need to read anything at all here, planes never change
   }
 }
@@ -211,6 +213,7 @@ class Bullet extends Cube {
     buffer.writeVec3(this.motion.linearVelocity);
     buffer.writeQuat(this.motion.rotation);
     buffer.writeVec3(this.motion.angularVelocity);
+    buffer.writeVec3(this.color);
   }
 
   deserializeFull(buffer: Deserializer) {
@@ -224,6 +227,7 @@ class Bullet extends Cube {
       this.snapRotation(rotation);
     }
     buffer.readVec3(this.motion.angularVelocity);
+    buffer.readVec3(this.color);
   }
 
   serializeDynamic(buffer: Serializer) {
