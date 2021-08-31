@@ -219,7 +219,6 @@ let lastHeight = 0;
 let aspect = 1;
 
 const projectionMatrix = mat4.create();
-const viewDistance = 10000.0;
 
 function resize(device: GPUDevice, canvasWidth: number, canvasHeight: number) {
     if (lastWidth === canvasWidth && lastHeight === canvasHeight)
@@ -238,12 +237,8 @@ function resize(device: GPUDevice, canvasWidth: number, canvasHeight: number) {
     });
     depthTextureView = depthTexture.createView();
 
-    // Declare swapchain image handles
     colorTexture = device.createTexture({
-        size: {
-            width: canvasWidth,
-            height: canvasHeight,
-        },
+        size: { width: canvasWidth, height: canvasHeight },
         sampleCount: antiAliasSampleCount,
         format: swapChainFormat,
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
@@ -255,7 +250,7 @@ function resize(device: GPUDevice, canvasWidth: number, canvasHeight: number) {
 
     aspect = Math.abs(canvasWidth / canvasHeight);
 
-    mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 1, viewDistance);
+    mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 1, 10000.0/*view distance*/);
 }
 
 // face normals vs vertex normals
@@ -479,7 +474,6 @@ async function init(canvasRef: HTMLCanvasElement) {
     if (!canvasRef === null) return;
     const context = canvasRef.getContext('gpupresent')!;
 
-    // dynamic resize:
     function onWindowResize() {
         canvasRef.width = window.innerWidth;
         canvasRef.style.width = `${window.innerWidth}px`;
@@ -880,7 +874,6 @@ async function init(canvasRef: HTMLCanvasElement) {
         },
     };
 
-    resize(device, 100, 100);
 
     // cursor lock
     let cursorLocked = false
@@ -935,12 +928,6 @@ async function init(canvasRef: HTMLCanvasElement) {
     function onmousemove(ev: MouseEvent) {
         mouseDeltaX += ev.movementX
         mouseDeltaY += ev.movementY
-    }
-
-    function controlPlayer(t: Transformable) {
-    }
-
-    function cameraFollow(camera: Transformable) {
     }
 
     const playerT = mkAffineTransformable();
@@ -1012,6 +999,8 @@ async function init(canvasRef: HTMLCanvasElement) {
     let previousFrameTime = 0;
     let avgJsTimeMs = 0
     let avgFrameTimeMs = 0
+
+    resize(device, 100, 100);
 
     function renderFrame(timeMs: number) {
         const start = performance.now();
