@@ -419,3 +419,12 @@ Dark souls, the "ikea" of games:
 Books:
   http://www.realtimerendering.com/#rendpipe
   https://www.gameenginebook.com/
+
+Game on steam w/ tutorial:
+  https://store.steampowered.com/app/760330/BYTEPATH/
+  https://github.com/a327ex/BYTEPATH
+  https://github.com/a327ex/blog/issues/30
+  https://love2d.org
+  postmortem: https://github.com/a327ex/blog/issues/35
+  1yr sales: https://github.com/a327ex/blog/issues/44
+  second game: https://www.a327ex.com/posts/lessons_second_game/

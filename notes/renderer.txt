@@ -139,6 +139,11 @@ Game shaders for beginners:
   https://news.ycombinator.com/item?id=19895218
   https://github.com/lettier/3d-game-shaders-for-beginners
 
+Ben Cloward on shaders:
+  Shaders in Anthem:
+    https://www.youtube.com/watch?v=IjQWRjWZGn0
+  https://www.youtube.com/user/bcloward/videos?view=0&sort=p&flow=grid
+
 Computer shader pathfinding:
   https://www.youtube.com/watch?v=1OSXWhd3hvI
 
@@ -161,6 +166,9 @@ WebGPU uses Web Shading Language (WSL)
 
 webgpu-rs:
     https://github.com/gfx-rs/wgpu-rs
+    Why WebGPU for native is good:
+      http://kvark.github.io/web/gpu/native/2020/05/03/point-of-webgpu-native.html
+    https://dawn.googlesource.com/dawn (webgpu on native by Google)
 
 MIT computer graphics lectures:
     https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-837-computer-graphics-fall-2012/lecture-notes/
@@ -183,6 +191,14 @@ Defered rendering:
   Uses large amounts of VRAM and frame buffer bandwidth
   stencil-based geometry vs "tiled/froxel compute-based shading"
   Unity: https://docs.unity3d.com/2021.2/Documentation/Manual/RenderTech-DeferredShading.html
+  https://www.reddit.com/r/gamedev/comments/8klygv/is_deferred_shading_still_considered_state_of_the/
+    "It looks like the industry is going towards a forward+/hybrid approach"
+      0. Render Depth Prepass (optional, could prepare a thin gbuffer on this pass)
+      1. Use depth buffer (or not) to bin lights into screenspace tiles, save this as a light buffer
+      2. Render the geometry with the full shader, and get the light information from the screenspace coordinate, wich lets you see the lights on that tile
+      3. Postprocess.
+    "Forward+ splits the screen into a 2d grid and a process (compute or other shader) figures out what lights affect that tile. Forward++ takes this a step 
+    further and instead of a 2d grid splitting the screen, its a 3d grid splitting space with perspective."
 
 Shadows:
   Shadow volumes? (aka stencil shadows)
