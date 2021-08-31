@@ -1,22 +1,37 @@
 import { mat4, vec3 } from './gl-matrix.js';
 
-function align(x: number, size: number): number {
-    return Math.ceil(x / size) * size
-}
+/*
+file layout:
+    shaders
+    utility constants
+    setup meshes
+    setup pipeline common resources
+    setup shadow pipeline
+    setup render pipeline
+    create shadow pipeline bundle
+    create render pipeline bundle
+    setup interactivity
+    render loop:
+        track perf
+        update interactivity
+        render bundles
+    utility code
 
-const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
-const bytesPerMat4 = (4 * 4)/*4x4 mat*/ * 4/*f32*/
-const bytesPerVec3 = 3/*vec3*/ * 4/*f32*/
-const indicesPerTriangle = 3;
-const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
+    TO SIMPLIFY:
+        Mesh add to buffer code
+        dependencies between pipeline and loop
+        bundling shadows
+*/
 
+// Defines shaders in WGSL for the shadow and regular rendering pipelines. Likely you'll want
+// these in external files but they've been inlined for redistribution convenience.
 const shaderSceneStruct = `
     [[block]] struct Scene {
         cameraViewProjMatrix : mat4x4<f32>;
         lightViewProjMatrix : mat4x4<f32>;
         lightDir : vec3<f32>;
     };
-`
+`;
 const vertexShaderForShadows = shaderSceneStruct + `
     [[block]] struct Model {
         modelMatrix : mat4x4<f32>;
@@ -88,6 +103,14 @@ const fragmentShader = shaderSceneStruct + `
     }
 `;
 
+// useful constants
+const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
+const bytesPerMat4 = (4 * 4)/*4x4 mat*/ * 4/*f32*/
+const bytesPerVec3 = 3/*vec3*/ * 4/*f32*/
+const indicesPerTriangle = 3;
+const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
+
+
 const antiAliasSampleCount = 4;
 const swapChainFormat = 'bgra8unorm';
 
@@ -100,9 +123,7 @@ let colorTexture: GPUTexture;
 let colorTextureView: GPUTextureView;
 let lastWidth = 0;
 let lastHeight = 0;
-let aspect = 1;
-
-const projectionMatrix = mat4.create();
+let aspectRatio = 1;
 
 function resize(device: GPUDevice, canvasWidth: number, canvasHeight: number) {
     if (lastWidth === canvasWidth && lastHeight === canvasHeight)
@@ -130,18 +151,16 @@ function resize(device: GPUDevice, canvasWidth: number, canvasHeight: number) {
     lastWidth = canvasWidth;
     lastHeight = canvasHeight;
 
-    aspect = Math.abs(canvasWidth / canvasHeight);
-
-    mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 1, 10000.0/*view distance*/);
+    aspectRatio = Math.abs(canvasWidth / canvasHeight);
 }
 
-interface MeshModel {
+interface Mesh {
     pos: vec3[];
     tri: vec3[];
     colors: vec3[];  // colors per triangle in r,g,b float [0-1] format
 }
 
-function unshareVertices(input: MeshModel): MeshModel {
+function unshareVertices(input: Mesh): Mesh {
     // TODO: this shouldn't be needed once "flat" shading is supported in Chrome's WGSL, 
     // https://bugs.chromium.org/p/tint/issues/detail?id=746&q=interpolate&can=2
     const pos: vec3[] = []
@@ -159,73 +178,13 @@ function unshareVertices(input: MeshModel): MeshModel {
     return { pos, tri, colors: input.colors }
 }
 
-function computeNormals(m: MeshModel): vec3[] {
+function computeNormals(m: Mesh): vec3[] {
     const triPoses = m.tri.map(([i0, i1, i2]) => [m.pos[i0], m.pos[i1], m.pos[i2]] as [vec3, vec3, vec3])
     return triPoses.map(([p1, p2, p3]) => {
         // cross product of two edges, https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
         const n = vec3.cross(vec3.create(), vec3.sub(vec3.create(), p2, p1), vec3.sub(vec3.create(), p3, p1))
         vec3.normalize(n, n)
         return n;
-    })
-}
-
-// TODO(@darzu): this can be simplified
-function addMeshToBuffers(
-    m: MeshModel,
-    verts: Float32Array, prevNumVerts2: number, vertElStride: number,
-    indices: Uint16Array | null, prevNumTri2: number): void {
-    // NOTE: we currently assumes vertices are unshared, this should be fixed by
-    const norms = computeNormals(m);
-    m.tri.forEach((triInd, i) => {
-        const triPos: [vec3, vec3, vec3] = [m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]]];
-        const triNorms: [vec3, vec3, vec3] = [norms[i], norms[i], norms[i]];
-        const triColors: [vec3, vec3, vec3] = [m.colors[i], m.colors[i], m.colors[i]];
-        const prevNumVerts: number = prevNumVerts2 + i * 3;
-        const prevNumTri: number = prevNumTri2 + i;
-        const vOff = prevNumVerts * vertElStride
-        const iOff = prevNumTri * indicesPerTriangle
-        if (indices) {
-            indices[iOff + 0] = triInd[0]
-            indices[iOff + 1] = triInd[1]
-            indices[iOff + 2] = triInd[2]
-        }
-        // set per-face vertex data
-        // position
-        verts[vOff + 0 * vertElStride + 0] = triPos[0][0]
-        verts[vOff + 0 * vertElStride + 1] = triPos[0][1]
-        verts[vOff + 0 * vertElStride + 2] = triPos[0][2]
-        verts[vOff + 1 * vertElStride + 0] = triPos[1][0]
-        verts[vOff + 1 * vertElStride + 1] = triPos[1][1]
-        verts[vOff + 1 * vertElStride + 2] = triPos[1][2]
-        verts[vOff + 2 * vertElStride + 0] = triPos[2][0]
-        verts[vOff + 2 * vertElStride + 1] = triPos[2][1]
-        verts[vOff + 2 * vertElStride + 2] = triPos[2][2]
-        // color
-        const [r1, g1, b1] = triColors[0]
-        const [r2, g2, b2] = triColors[1]
-        const [r3, g3, b3] = triColors[2]
-        verts[vOff + 0 * vertElStride + 3] = r1
-        verts[vOff + 0 * vertElStride + 4] = g1
-        verts[vOff + 0 * vertElStride + 5] = b1
-        verts[vOff + 1 * vertElStride + 3] = r2
-        verts[vOff + 1 * vertElStride + 4] = g2
-        verts[vOff + 1 * vertElStride + 5] = b2
-        verts[vOff + 2 * vertElStride + 3] = r3
-        verts[vOff + 2 * vertElStride + 4] = g3
-        verts[vOff + 2 * vertElStride + 5] = b3
-        // normals
-        const [nx1, ny1, nz1] = triNorms[0]
-        verts[vOff + 0 * vertElStride + 6] = nx1
-        verts[vOff + 0 * vertElStride + 7] = ny1
-        verts[vOff + 0 * vertElStride + 8] = nz1
-        const [nx2, ny2, nz2] = triNorms[1]
-        verts[vOff + 1 * vertElStride + 6] = nx2
-        verts[vOff + 1 * vertElStride + 7] = ny2
-        verts[vOff + 1 * vertElStride + 8] = nz2
-        const [nx3, ny3, nz3] = triNorms[2]
-        verts[vOff + 2 * vertElStride + 6] = nx3
-        verts[vOff + 2 * vertElStride + 7] = ny3
-        verts[vOff + 2 * vertElStride + 8] = nz3
     })
 }
 
@@ -237,7 +196,7 @@ interface MeshHandle {
     triCount: number,
     // data
     transform: mat4,
-    model: MeshModel,
+    model: Mesh,
 }
 
 // TODO(@darzu): VERTEX FORMAT
@@ -347,8 +306,8 @@ const _meshUniBuffer = device.createBuffer({
 const _meshes: MeshHandle[] = [];
 let _numVerts = 0;
 let _numTris = 0;
-function addMeshes(meshesToAdd: MeshModel[], shadowCasters: boolean): MeshHandle[] {
-    function addMesh(m: MeshModel): MeshHandle {
+function addMeshes(meshesToAdd: Mesh[], shadowCasters: boolean): MeshHandle[] {
+    function addMesh(m: Mesh): MeshHandle {
         if (_vertsMap === null)
             throw "Use preRender() and postRender() functions"
 
@@ -359,7 +318,65 @@ function addMeshes(meshesToAdd: MeshModel[], shadowCasters: boolean): MeshHandle
         if (_numTris + m.tri.length > maxTris)
             throw "Too many triangles!"
 
-        addMeshToBuffers(m, _vertsMap, _numVerts, vertElStride, _indMap, _numTris);
+        const verts: Float32Array = _vertsMap;
+        const prevNumVerts2: number = _numVerts;
+        const indices: Uint16Array | null = _indMap;
+        const prevNumTri2: number = _numTris;
+        {
+            // NOTE: we currently assumes vertices are unshared, this should be fixed by
+            const norms = computeNormals(m);
+            m.tri.forEach((triInd, i) => {
+                const triPos: [vec3, vec3, vec3] = [m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]]];
+                const triNorms: [vec3, vec3, vec3] = [norms[i], norms[i], norms[i]];
+                const triColors: [vec3, vec3, vec3] = [m.colors[i], m.colors[i], m.colors[i]];
+                const prevNumVerts: number = prevNumVerts2 + i * 3;
+                const prevNumTri: number = prevNumTri2 + i;
+                const vOff = prevNumVerts * vertElStride
+                const iOff = prevNumTri * indicesPerTriangle
+                if (indices) {
+                    indices[iOff + 0] = triInd[0]
+                    indices[iOff + 1] = triInd[1]
+                    indices[iOff + 2] = triInd[2]
+                }
+                // set per-face vertex data
+                // position
+                verts[vOff + 0 * vertElStride + 0] = triPos[0][0]
+                verts[vOff + 0 * vertElStride + 1] = triPos[0][1]
+                verts[vOff + 0 * vertElStride + 2] = triPos[0][2]
+                verts[vOff + 1 * vertElStride + 0] = triPos[1][0]
+                verts[vOff + 1 * vertElStride + 1] = triPos[1][1]
+                verts[vOff + 1 * vertElStride + 2] = triPos[1][2]
+                verts[vOff + 2 * vertElStride + 0] = triPos[2][0]
+                verts[vOff + 2 * vertElStride + 1] = triPos[2][1]
+                verts[vOff + 2 * vertElStride + 2] = triPos[2][2]
+                // color
+                const [r1, g1, b1] = triColors[0]
+                const [r2, g2, b2] = triColors[1]
+                const [r3, g3, b3] = triColors[2]
+                verts[vOff + 0 * vertElStride + 3] = r1
+                verts[vOff + 0 * vertElStride + 4] = g1
+                verts[vOff + 0 * vertElStride + 5] = b1
+                verts[vOff + 1 * vertElStride + 3] = r2
+                verts[vOff + 1 * vertElStride + 4] = g2
+                verts[vOff + 1 * vertElStride + 5] = b2
+                verts[vOff + 2 * vertElStride + 3] = r3
+                verts[vOff + 2 * vertElStride + 4] = g3
+                verts[vOff + 2 * vertElStride + 5] = b3
+                // normals
+                const [nx1, ny1, nz1] = triNorms[0]
+                verts[vOff + 0 * vertElStride + 6] = nx1
+                verts[vOff + 0 * vertElStride + 7] = ny1
+                verts[vOff + 0 * vertElStride + 8] = nz1
+                const [nx2, ny2, nz2] = triNorms[1]
+                verts[vOff + 1 * vertElStride + 6] = nx2
+                verts[vOff + 1 * vertElStride + 7] = ny2
+                verts[vOff + 1 * vertElStride + 8] = nz2
+                const [nx3, ny3, nz3] = triNorms[2]
+                verts[vOff + 2 * vertElStride + 6] = nx3
+                verts[vOff + 2 * vertElStride + 7] = ny3
+                verts[vOff + 2 * vertElStride + 8] = nz3
+            })
+        }
 
         const transform = mat4.create() as Float32Array;
 
@@ -414,7 +431,7 @@ function writeMeshTransform(m: MeshHandle) {
     device.queue.writeBuffer(_meshUniBuffer, m.modelUniByteOffset, (m.transform as Float32Array).buffer);
 }
 
-const CUBE: MeshModel = {
+const CUBE: Mesh = {
     pos: [
         [+1.0, +1.0, +1.0],
         [-1.0, +1.0, +1.0],
@@ -444,7 +461,7 @@ const CUBE: MeshModel = {
     ]
 }
 
-const PLANE: MeshModel = {
+const PLANE: Mesh = {
     pos: [
         [+10, 0, +10],
         [-10, 0, +10],
@@ -585,7 +602,6 @@ const renderSharedUniBindGroup = device.createBindGroup({
     ],
 });
 
-
 // setup our first phase pipeline which tracks the depth of meshes 
 // from the point of view of the lighting so we know where the shadows are
 const shadowPipelineDesc: GPURenderPipelineDescriptor = {
@@ -637,7 +653,6 @@ const renderPipelineDesc: GPURenderPipelineDescriptor = {
     },
 };
 const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
-
 
 // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
 // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
@@ -714,12 +729,13 @@ function renderFrame(timeMs: number) {
     }
     shadowPass.endPass();
 
-    // calculate and write our view matrix
+    // calculate and write our view and project matrices
     const viewMatrix = mat4.create()
     mat4.multiply(viewMatrix, viewMatrix, playerT.getTransform())
     mat4.multiply(viewMatrix, viewMatrix, cameraPos.getTransform())
     mat4.translate(viewMatrix, viewMatrix, [0, 0, 10])
     mat4.invert(viewMatrix, viewMatrix);
+    const projectionMatrix = mat4.perspective(mat4.create(), (2 * Math.PI) / 5, aspectRatio, 1, 10000.0/*view distance*/);
     const viewProj = mat4.multiply(mat4.create(), projectionMatrix, viewMatrix) as Float32Array
     device.queue.writeBuffer(sharedUniBuffer, 0, viewProj.buffer);
 
@@ -759,4 +775,9 @@ if (renderFrame) {
         requestAnimationFrame(_renderFrame);
     }
     requestAnimationFrame(_renderFrame);
+}
+
+// utility code
+function align(x: number, size: number): number {
+    return Math.ceil(x / size) * size
 }
