@@ -314,7 +314,7 @@ function mkTransformable(): Transformable {
     const transform = mat4.create();
     return {
         getTransform: () => {
-            return transform;
+            return mat4.clone(transform);
 
             // // return mat4.fromRotationTranslationScaleOrigin(mat4.create(), rot, position, scale, [0, 0, 0]);
 
@@ -743,9 +743,9 @@ async function init(canvasRef: HTMLCanvasElement) {
         );
     }
 
-    // const cameraPos = mkTransformable();
-    // cameraPos.moveZ(20)
-    // cameraPos.moveY(-5)
+    const cameraPos = mkTransformable();
+    cameraPos.moveZ(-20)
+    cameraPos.moveY(5)
     // cameraPos.yaw(Math.PI)
     // // cameraPos.lookAt([0, 0, 0])
 
@@ -836,9 +836,14 @@ async function init(canvasRef: HTMLCanvasElement) {
 
         function getViewProj() {
             const viewProj = mat4.create();
-            const cameraPosT = new Float32Array([-1, 0, -1.2246468525851679e-16, 0, 0, 1, 0, 0, 1.2246468525851679e-16, 0, -1, 0, 2.4492935992912173e-15, -5, -20, 1])
-            // mat4.multiply(viewProj, projectionMatrix, cameraPos.getTransform());
-            mat4.multiply(viewProj, projectionMatrix, cameraPosT);
+            // const cameraPosT = new Float32Array([-1, 0, -1.2246468525851679e-16, 0, 0, 1, 0, 0, 1.2246468525851679e-16, 0, -1, 0, 2.4492935992912173e-15, -5, -20, 1])
+            const viewMatrix = cameraPos.getTransform()
+
+            // TODO(@darzu): this view matrix is wrong! It's position is inverted, and it's rotation is inverted.
+
+            // mat4.transpose(viewMatrix, viewMatrix);
+            mat4.multiply(viewProj, projectionMatrix, viewMatrix);
+            // mat4.multiply(viewProj, projectionMatrix, cameraPosT);
             return viewProj as Float32Array;
         }
 
