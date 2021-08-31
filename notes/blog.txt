@@ -48,3 +48,5 @@ Tree shaking:
     recurse over those
 
     does this need annotations of which code has side-effects?
+
+    also very useful for keeping out random notes and unrelated & unreviewed snippets of code
