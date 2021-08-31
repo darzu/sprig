@@ -33,6 +33,9 @@ Snowpack / skypack:
     into one JavaScript file per dependency, converts those files to a native 
     JavaScript module, then serves it to the browser."
 
+    Typescript decls?
+    https://docs.skypack.dev/skypack-cdn/api-reference/lookup-urls#typescript-declarations
+
 SWC:
     Rust TS compiler and transpiler (a la babel) (and bundler?)
     https://swc.rs

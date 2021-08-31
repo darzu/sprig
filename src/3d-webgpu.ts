@@ -1,5 +1,6 @@
 import { mat4, vec3, quat } from './ext/gl-matrix.js';
 import { clamp } from './math.js';
+// import * as RAPIER from './ext/@dimforge/rapier3d/rapier.js';
 
 /*
 TODO:
@@ -378,6 +379,9 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     if (!canvasRef === null) return;
     const context = canvasRef.getContext('gpupresent')!;
+
+    // TODO(@darzu): physics?
+    // console.dir(RAPIER)
 
     // canvas.requestFullscreen({
     //     navigationUI: "hide"
