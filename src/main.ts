@@ -57,15 +57,13 @@ const bytesPerVec3 = 3/*vec3*/ * 4/*f32*/
 const indicesPerTriangle = 3;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
 
-const wgslSceneStruct = `
+const shaderSceneStruct = `
 [[block]] struct Scene {
     cameraViewProjMatrix : mat4x4<f32>;
     lightViewProjMatrix : mat4x4<f32>;
     lightDir : vec3<f32>;
 }; `
-
-const wgslShaders = {
-    vertexShadow: wgslSceneStruct + `
+const vertexShaderForShadows = shaderSceneStruct + `
     [[block]] struct Model {
         modelMatrix : mat4x4<f32>;
     };
@@ -74,19 +72,14 @@ const wgslShaders = {
     [[group(1), binding(0)]] var<uniform> model : Model;
 
     [[stage(vertex)]]
-    fn main([[location(0)]] position : vec3<f32>)
-        -> [[builtin(position)]] vec4<f32> {
+    fn main([[location(0)]] position : vec3<f32>) -> [[builtin(position)]] vec4<f32> {
         return scene.lightViewProjMatrix * model.modelMatrix * vec4<f32>(position, 1.0);
     }
-  `,
-
-    fragmentShadow: `
-    [[stage(fragment)]]
-        fn main() {
-    }
-  `,
-
-    vertex: wgslSceneStruct + `
+`;
+const fragmentShaderForShadows = `
+    [[stage(fragment)]] fn main() { }
+`;
+const vertexShader = shaderSceneStruct + `
     [[block]] struct Model {
         modelMatrix : mat4x4<f32>;
     };
@@ -121,8 +114,8 @@ const wgslShaders = {
         output.color = color;
         return output;
     }
-    `,
-    fragment: wgslSceneStruct + `
+`;
+const fragmentShader = shaderSceneStruct + `
     [[group(0), binding(0)]] var<uniform> scene : Scene;
     [[group(0), binding(1)]] var shadowMap: texture_depth_2d;
     [[group(0), binding(2)]] var shadowSampler: sampler_comparison;
@@ -139,8 +132,7 @@ const wgslShaders = {
         let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
         return vec4<f32>(gammaCorrected, 1.0);
     }
-    `,
-}
+`;
 
 const antiAliasSampleCount = 4;
 const swapChainFormat = 'bgra8unorm';
@@ -582,12 +574,12 @@ const shadowPipelineLayout = device.createPipelineLayout({
 const shadowPipelineDesc: GPURenderPipelineDescriptor = {
     layout: shadowPipelineLayout,
     vertex: {
-        module: device.createShaderModule({ code: wgslShaders.vertexShadow }),
+        module: device.createShaderModule({ code: vertexShaderForShadows }),
         entryPoint: 'main',
         buffers: vertexBuffersLayout,
     },
     fragment: {
-        module: device.createShaderModule({ code: wgslShaders.fragmentShadow }),
+        module: device.createShaderModule({ code: fragmentShaderForShadows }),
         entryPoint: 'main',
         targets: [],
     },
@@ -608,19 +600,16 @@ const renderPipelineLayout = device.createPipelineLayout({
 const renderPipelineDesc: GPURenderPipelineDescriptor = {
     layout: renderPipelineLayout,
     vertex: {
-        module: device.createShaderModule({ code: wgslShaders.vertex }),
+        module: device.createShaderModule({ code: vertexShader }),
         entryPoint: 'main',
         buffers: vertexBuffersLayout,
     },
     fragment: {
-        module: device.createShaderModule({ code: wgslShaders.fragment }),
+        module: device.createShaderModule({ code: fragmentShader }),
         entryPoint: 'main',
         targets: [{ format: swapChainFormat }],
     },
     primitive: primitiveBackcull,
-
-    // Enable depth testing so that the fragment closest to the camera
-    // is rendered in front.
     depthStencil: {
         depthWriteEnabled: true,
         depthCompare: 'less',
@@ -632,8 +621,6 @@ const renderPipelineDesc: GPURenderPipelineDescriptor = {
 };
 
 const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
-
-// TODO(@darzu): how do we handle this abstraction with multiple passes e.g. shadows?
 
 const shadowPassDescriptor: GPURenderPassDescriptor = {
     colorAttachments: [],
