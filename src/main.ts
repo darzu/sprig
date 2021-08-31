@@ -61,6 +61,7 @@ const bytesPerVec3 = 3/*vec3*/ * 4/*f32*/
 const vertsPerTri = 3;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * vertsPerTri;
 const linesPerTri = 6;
+const bytesPerWireTri = Uint16Array.BYTES_PER_ELEMENT * linesPerTri;
 
 // render pipeline parameters
 const antiAliasSampleCount = 4;
@@ -274,6 +275,11 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
         usage: GPUBufferUsage.INDEX,
         mappedAtCreation: true,
     });
+    const lineIndicesBuffer = device.createBuffer({
+        size: maxTris * bytesPerWireTri,
+        usage: GPUBufferUsage.INDEX,
+        mappedAtCreation: true,
+    });
     const _meshUniBuffer = device.createBuffer({
         size: meshUniByteSizeAligned * maxMeshes,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -299,6 +305,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
         // to modify buffers, we need to map them into JS space; we'll need to unmap later
         let verticesMap = new Float32Array(verticesBuffer.getMappedRange())
         let triIndicesMap = new Uint16Array(triIndicesBuffer.getMappedRange());
+        let lineIndicesMap = new Uint16Array(lineIndicesBuffer.getMappedRange());
 
         // add our meshes to the vertex and index buffers
         let numVerts = 0;
@@ -362,9 +369,27 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
             randomCubes.push(addMesh(coloredCube))
         }
 
+        // compute the wireframe indices from the triangle indices
+        // TODO(@darzu): 
+        let lineIdx = 0
+        for (let i = 0; i < triIndicesMap.length; i += 3) {
+            const a = triIndicesMap[i + 0]
+            const b = triIndicesMap[i + 1]
+            const c = triIndicesMap[i + 2]
+
+            lineIndicesMap[lineIdx + 0] = a
+            lineIndicesMap[lineIdx + 1] = b
+            lineIndicesMap[lineIdx + 2] = a
+            lineIndicesMap[lineIdx + 3] = c
+            lineIndicesMap[lineIdx + 4] = b
+            lineIndicesMap[lineIdx + 5] = c
+            lineIdx += 6
+        }
+
         // unmap the buffers so the GPU can use them
         verticesBuffer.unmap()
         triIndicesBuffer.unmap()
+        lineIndicesBuffer.unmap()
     }
 
     // place the ground
@@ -522,7 +547,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
     bundleEnc_wire.setPipeline(renderPipeline_wire);
     bundleEnc_wire.setBindGroup(0, renderSceneUniBindGroup);
     bundleEnc_wire.setVertexBuffer(0, verticesBuffer);
-    bundleEnc_wire.setIndexBuffer(triIndicesBuffer, 'uint16');
+    bundleEnc_wire.setIndexBuffer(lineIndicesBuffer, 'uint16');
     for (let m of allMeshHandles) {
         bundleEnc_wire.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
         bundleEnc_wire.drawIndexed(m.triCount * linesPerTri, undefined, m.triIndicesNumOffset, m.vertNumOffset);
@@ -600,7 +625,8 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
                 stencilStoreOp: 'store',
             },
         });
-        renderPassEncoder.executeBundles([bundle_solid]);
+        renderPassEncoder.executeBundles([bundle_wire]);
+        // renderPassEncoder.executeBundles([bundle_solid]);
         renderPassEncoder.endPass();
 
         // submit render passes to GPU
