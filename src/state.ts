@@ -185,6 +185,10 @@ export abstract class GameState<Inputs> {
   step(time: number, inputs: Inputs) {
     let dt = time - this.time;
     this.stepGame(dt, inputs);
+    let identity_quat = quat.create();
+    let delta = vec3.create();
+    let normalized_velocity = vec3.create();
+    let deltaRotation = quat.create();
     for (let o of Object.values(this.objects)) {
       // reduce error in location and rotation
       o.location_error = vec3.scale(
@@ -201,7 +205,6 @@ export abstract class GameState<Inputs> {
         o.location_error = vec3.fromValues(0, 0, 0);
       }
 
-      let identity_quat = quat.create();
       o.rotation_error = quat.slerp(
         o.rotation_error,
         o.rotation_error,
@@ -220,17 +223,17 @@ export abstract class GameState<Inputs> {
       }
 
       // change location according to linear velocity
-      let delta = vec3.scale(vec3.create(), o.linear_velocity, dt);
+      delta = vec3.scale(delta, o.linear_velocity, dt);
       vec3.add(o.location, o.location, delta);
 
       // change rotation according to angular velocity
-      let normalized_velocity = vec3.normalize(
-        vec3.create(),
+      normalized_velocity = vec3.normalize(
+        normalized_velocity,
         o.angular_velocity
       );
       let angle = vec3.length(o.angular_velocity) * dt;
-      let deltaRotation = quat.setAxisAngle(
-        quat.create(),
+      deltaRotation = quat.setAxisAngle(
+        deltaRotation,
         normalized_velocity,
         angle
       );
