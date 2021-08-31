@@ -94,6 +94,7 @@ const antiAliasSampleCount = 4;
 const swapChainFormat = 'bgra8unorm';
 const depthStencilFormat = 'depth24plus-stencil8';
 const shadowDepthStencilFormat = 'depth32float';
+// const shadowDepthStencilFormat = 'depth32float';
 
 // this state is recomputed upon canvas resize
 let depthTexture: GPUTexture;
@@ -115,14 +116,14 @@ function checkCanvasResize(device: GPUDevice, canvasWidth: number, canvasHeight:
     depthTexture = device.createTexture({
         size: { width: canvasWidth, height: canvasHeight },
         format: depthStencilFormat,
-        sampleCount: antiAliasSampleCount,
+        // sampleCount: antiAliasSampleCount,
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
     depthTextureView = depthTexture.createView();
 
     colorTexture = device.createTexture({
         size: { width: canvasWidth, height: canvasHeight },
-        sampleCount: antiAliasSampleCount,
+        // sampleCount: antiAliasSampleCount,
         format: swapChainFormat,
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });;
@@ -469,7 +470,9 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     const shadowDepthTextureDesc: GPUTextureDescriptor = {
         size: { width: 2048 * 2, height: 2048 * 2 },
         usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.SAMPLED,
+        // format: depthStencilFormat,
         format: shadowDepthStencilFormat,
+        // sampleCount: antiAliasSampleCount,
     }
     const shadowDepthTexture = device.createTexture(shadowDepthTextureDesc);
     const shadowDepthTextureView = shadowDepthTexture.createView();
@@ -508,13 +511,19 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         fragment: {
             module: device.createShaderModule({ code: fragmentShaderForShadows }),
             entryPoint: 'main',
-            targets: [],
+            targets: [
+                { format: swapChainFormat } // TODO(@darzu): 
+            ],
         },
         depthStencil: {
             depthWriteEnabled: true,
             depthCompare: 'less',
-            format: shadowDepthStencilFormat,
+            format: depthStencilFormat,
+            // format: shadowDepthStencilFormat,
         },
+        // multisample: { // TODO(@darzu): 
+        //     count: antiAliasSampleCount,
+        // },
         primitive: primitiveBackcull,
     };
     const shadowPipeline = device.createRenderPipeline(shadowPipelineDesc);
@@ -543,28 +552,47 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
             depthCompare: 'less',
             format: depthStencilFormat,
         },
-        multisample: {
-            count: antiAliasSampleCount,
-        },
+        // multisample: {
+        //     count: antiAliasSampleCount,
+        // },
     };
     const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
 
+    // TODO: shadow bundle ?
+    const shadowBundleEnc = device.createRenderBundleEncoder({
+        colorFormats: [
+            swapChainFormat
+        ],
+        depthStencilFormat: depthStencilFormat,
+        // depthStencilFormat: shadowDepthStencilFormat,
+        // sampleCount: antiAliasSampleCount,
+    });
+    shadowBundleEnc.setPipeline(shadowPipeline);
+    shadowBundleEnc.setBindGroup(0, shadowSceneUniBindGroup);
+    shadowBundleEnc.setVertexBuffer(0, verticesBuffer);
+    shadowBundleEnc.setIndexBuffer(indicesBuffer, 'uint16');
+    for (let m of allMeshHandles) {
+        shadowBundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
+        shadowBundleEnc.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+    }
+    let shadowBundle = shadowBundleEnc.finish()
+
     // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
     // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
-    const bundleEncoder = device.createRenderBundleEncoder({
+    const bundleEnc = device.createRenderBundleEncoder({
         colorFormats: [swapChainFormat],
         depthStencilFormat: depthStencilFormat,
-        sampleCount: antiAliasSampleCount,
+        // sampleCount: antiAliasSampleCount,
     });
-    bundleEncoder.setPipeline(renderPipeline);
-    bundleEncoder.setBindGroup(0, renderSceneUniBindGroup);
-    bundleEncoder.setVertexBuffer(0, verticesBuffer);
-    bundleEncoder.setIndexBuffer(indicesBuffer, 'uint16');
+    bundleEnc.setPipeline(renderPipeline);
+    bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
+    bundleEnc.setVertexBuffer(0, verticesBuffer);
+    bundleEnc.setIndexBuffer(indicesBuffer, 'uint16');
     for (let m of allMeshHandles) {
-        bundleEncoder.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
-        bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+        bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
+        bundleEnc.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
     }
-    let renderBundle = bundleEncoder.finish()
+    let renderBundle = bundleEnc.finish()
 
     // initialize performance metrics
     let debugDiv = document.getElementById('debug-div') as HTMLDivElement;
@@ -610,26 +638,48 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
 
         // render from the light's point of view to a depth buffer so we know where shadows are
         const commandEncoder = device.createCommandEncoder();
-        const shadowPassDescriptor: GPURenderPassDescriptor = {
-            colorAttachments: [],
+        // const shadowPassDescriptor: GPURenderPassDescriptor = {
+        //     colorAttachments: [],
+        //     depthStencilAttachment: {
+        //         view: shadowDepthTextureView,
+        //         depthLoadValue: 1.0,
+        //         depthStoreOp: 'store',
+        //         stencilLoadValue: 0,
+        //         stencilStoreOp: 'store',
+        //     },
+        // };
+        // const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
+        // shadowPass.setBindGroup(0, shadowSceneUniBindGroup);
+        // shadowPass.setPipeline(shadowPipeline);
+        // shadowPass.setVertexBuffer(0, verticesBuffer);
+        // shadowPass.setIndexBuffer(indicesBuffer, 'uint16');
+        // for (let m of allMeshHandles) {
+        //     shadowPass.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
+        //     shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+        // }
+        // shadowPass.endPass();
+        const shadowRenderPassEncoder = commandEncoder.beginRenderPass({
+            colorAttachments: [
+                {
+                    // view: colorTextureView,
+                    view: context.getCurrentTexture().createView(),
+                    // resolveTarget: context.getCurrentTexture().createView(),
+                    loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
+                    storeOp: 'store',
+                }
+            ],
             depthStencilAttachment: {
-                view: shadowDepthTextureView,
+                view: depthTextureView,
+                // view: shadowDepthTextureView,
                 depthLoadValue: 1.0,
                 depthStoreOp: 'store',
                 stencilLoadValue: 0,
                 stencilStoreOp: 'store',
             },
-        };
-        const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
-        shadowPass.setBindGroup(0, shadowSceneUniBindGroup);
-        shadowPass.setPipeline(shadowPipeline);
-        shadowPass.setVertexBuffer(0, verticesBuffer);
-        shadowPass.setIndexBuffer(indicesBuffer, 'uint16');
-        for (let m of allMeshHandles) {
-            shadowPass.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
-            shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-        }
-        shadowPass.endPass();
+        });
+        shadowRenderPassEncoder.executeBundles([shadowBundle]);
+        shadowRenderPassEncoder.endPass();
+        // device.queue.submit([commandEncoder.finish()]);
 
         // calculate and write our view and project matrices
         const viewMatrix = mat4.create()
@@ -644,8 +694,9 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         // render to the canvas' via our swap-chain
         const renderPassEncoder = commandEncoder.beginRenderPass({
             colorAttachments: [{
+                // view: context.getCurrentTexture().createView(),
                 view: colorTextureView,
-                resolveTarget: context.getCurrentTexture().createView(),
+                // resolveTarget: context.getCurrentTexture().createView(),
                 loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
                 storeOp: 'store',
             }],
@@ -659,6 +710,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         });
         renderPassEncoder.executeBundles([renderBundle]);
         renderPassEncoder.endPass();
+        // TODO(@darzu): 
         device.queue.submit([commandEncoder.finish()]);
 
         // calculate performance metrics as running, weighted averages across frames
