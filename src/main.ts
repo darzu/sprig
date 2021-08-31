@@ -57,14 +57,15 @@ const bytesPerVec3 = 3/*vec3*/ * 4/*f32*/
 const indicesPerTriangle = 3;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
 
-const wgslShaders = {
-    vertexShadow: `
-    [[block]] struct Scene {
-        cameraViewProjMatrix : mat4x4<f32>;
-        lightViewProjMatrix : mat4x4<f32>;
-        lightDir : vec3<f32>;
-    };
+const wgslSceneStruct = `
+[[block]] struct Scene {
+    cameraViewProjMatrix : mat4x4<f32>;
+    lightViewProjMatrix : mat4x4<f32>;
+    lightDir : vec3<f32>;
+}; `
 
+const wgslShaders = {
+    vertexShadow: wgslSceneStruct + `
     [[block]] struct Model {
         modelMatrix : mat4x4<f32>;
     };
@@ -85,13 +86,7 @@ const wgslShaders = {
     }
   `,
 
-    vertex: `
-    [[block]] struct Scene {
-        cameraViewProjMatrix : mat4x4<f32>;
-        lightViewProjMatrix : mat4x4<f32>;
-        lightDir : vec3<f32>;
-    };
-
+    vertex: wgslSceneStruct + `
     [[block]] struct Model {
         modelMatrix : mat4x4<f32>;
     };
@@ -127,14 +122,7 @@ const wgslShaders = {
         return output;
     }
     `,
-    fragment:
-    `
-    [[block]] struct Scene {
-        cameraViewProjMatrix : mat4x4<f32>;
-        lightViewProjMatrix : mat4x4<f32>;
-        lightDir : vec3<f32>;
-    };
-
+    fragment: wgslSceneStruct + `
     [[group(0), binding(0)]] var<uniform> scene : Scene;
     [[group(0), binding(1)]] var shadowMap: texture_depth_2d;
     [[group(0), binding(2)]] var shadowSampler: sampler_comparison;
@@ -768,16 +756,16 @@ let avgFrameTimeMs = 0
 
 resize(device, 100, 100);
 
-
 function renderFrame(timeMs: number) {
+    // track performance metrics
     const start = performance.now();
-
     const frameTimeMs = previousFrameTime ? timeMs - previousFrameTime : 0;
     previousFrameTime = timeMs;
 
+    // resize (if necessary)
     resize(device, canvasRef.width, canvasRef.height);
 
-    // keys
+    // process inputs
     const playerSpeed = pressedKeys[' '] ? 1.0 : 0.2; // spacebar boosts
     if (pressedKeys['w']) // forward
         playerT.moveZ(-playerSpeed)
@@ -791,8 +779,6 @@ function renderFrame(timeMs: number) {
         playerT.moveY(playerSpeed)
     if (pressedKeys['c']) // down
         playerT.moveY(-playerSpeed)
-
-    // mouse
     if (mouseDeltaX !== 0)
         playerT.yaw(-mouseDeltaX * 0.01);
     if (mouseDeltaY !== 0)
@@ -802,23 +788,24 @@ function renderFrame(timeMs: number) {
     mouseDeltaX = 0;
     mouseDeltaY = 0;
 
+    // apply movement to the "player"
     playerM.transform = playerT.getTransform();
     writeMeshTransform(playerM);
 
+    // calculate and write our view matrix
     const viewMatrix = mat4.create()
     mat4.multiply(viewMatrix, viewMatrix, playerT.getTransform())
     mat4.multiply(viewMatrix, viewMatrix, cameraPos.getTransform())
     mat4.translate(viewMatrix, viewMatrix, [0, 0, 10])
     mat4.invert(viewMatrix, viewMatrix);
     const viewProj = mat4.multiply(mat4.create(), projectionMatrix, viewMatrix) as Float32Array
-
     device.queue.writeBuffer(sharedUniBuffer, 0, viewProj.buffer);
 
+    // render from the light's point of view to a depth buffer so we know where shadows are
     const commandEncoder = device.createCommandEncoder();
     const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
     shadowPass.setBindGroup(0, shadowSharedUniBindGroup);
     shadowPass.setPipeline(shadowPipeline);
-
     shadowPass.setVertexBuffer(0, _vertBuffer);
     shadowPass.setIndexBuffer(_indexBuffer, 'uint16');
     const uniOffset = [0];
