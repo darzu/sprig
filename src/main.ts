@@ -691,7 +691,7 @@ async function startGame(host: string | null) {
     debugTxt.nodeValue =
       controlsStr +
     ` (js: ${avgJsTime.toFixed(2)}ms, net: ${avgNetTime.toFixed(2)}ms, ` +
-    `broad:${_lastCollisionTestTimeMs}ms, fps: ${avgFPS.toFixed(1)}, ` +
+    `broad:${_lastCollisionTestTimeMs.toFixed(1)}ms, fps: ${avgFPS.toFixed(1)}, ` +
     `buffers: r=${reliableBufferSize}/u=${unreliableBufferSize}, ` +
       `dropped updates: ${numDroppedUpdates}` +
       `objects=${gameState.numObjects}) ${usingWebGPU ? 'WebGPU' : 'WebGL'}`;

@@ -19,16 +19,26 @@ export function checkCollisions(objs: { worldAABB: AABB, id: number }[]): Collid
         else
             _collidesWith[o.id].length = 0
     }
-    for (let i0 = 0; i0 < objs.length; i0++) {
-        const box0 = objs[i0].worldAABB
-        for (let i1 = i0 + 1; i1 < objs.length; i1++) {
-            const box1 = objs[i1].worldAABB
-            if (doesOverlap(box0, box1)) {
-                _collidesWith[objs[i0].id].push(objs[i1].id)
-                _collidesWith[objs[i1].id].push(objs[i0].id)
-            }
-        }
-    }
+
+    // naive n^2
+    // for (let i0 = 0; i0 < objs.length; i0++) {
+    //     const box0 = objs[i0].worldAABB
+    //     for (let i1 = i0 + 1; i1 < objs.length; i1++) {
+    //         const box1 = objs[i1].worldAABB
+    //         if (doesOverlap(box0, box1)) {
+    //             _collidesWith[objs[i0].id].push(objs[i1].id)
+    //             _collidesWith[objs[i1].id].push(objs[i0].id)
+    //         }
+    //     }
+    // }
+
+    // oct-tree
+    const octObjs = new Map<number, AABB>(objs.map(o => [o.id, o.worldAABB])); // TODO(@darzu): necessary?
+    const maxDist = 10000;
+    const octWorld: AABB = { min: [-maxDist, -maxDist, -maxDist], max: [maxDist, maxDist, maxDist] };
+    const tree = octtree(octObjs, octWorld);
+    console.dir(tree)
+
     _lastCollisionTestTimeMs = performance.now() - start;
     return _collidesWith;
 }
@@ -42,7 +52,7 @@ const _octtreeMinLen = 1.0;
 function octtree(objs: Map<number, AABB>, aabb: AABB): OctTree | null {
     const myObjs = new Map<number, AABB>();
     for (let [id, objAABB] of objs.entries()) {
-        if (doesOverlap(objAABB, aabb)) {
+        if (enclosedBy(objAABB, aabb)) {
             myObjs.set(id, objAABB)
             objs.delete(id)
         }
@@ -80,6 +90,15 @@ export function doesOverlap(a: AABB, b: AABB) {
         && a.min[0] <= b.max[0]
         && a.min[1] <= b.max[1]
         && a.min[2] <= b.max[2]
+}
+export function enclosedBy(inner: AABB, outer: AABB) {
+    return true
+        && inner.max[0] <= outer.max[0]
+        && inner.max[1] <= outer.max[1]
+        && inner.max[2] <= outer.max[2]
+        && outer.min[0] <= inner.min[0]
+        && outer.min[1] <= inner.min[1]
+        && outer.min[2] <= inner.min[2]
 }
 
 export interface AABB {
