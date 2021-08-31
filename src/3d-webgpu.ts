@@ -711,23 +711,33 @@ async function init(canvasRef: HTMLCanvasElement) {
         const far = 300;
         mat4.ortho(lightProjectionMatrix, left, right, bottom, top, near, far);
     }
-    let timeOffset = 0;
+    let sunOffset = 0;
+    let lastTimeMs = 0;
     function updateLight(timeMs: number) {
+        const timeDelta = timeMs - lastTimeMs;
+        lastTimeMs = timeMs;
+
+        if (pressedKeys['l']) {
+            return;
+        }
+
+        sunOffset += timeDelta
+
         const upVector = vec3.fromValues(0, 1, 0);
         const origin = vec3.fromValues(0, 0, 0);
         const sunSpeed = 0.0004;
-        const lightX = Math.cos((timeMs + timeOffset) * sunSpeed) * 100
-        const lightY = Math.sin((timeMs + timeOffset) * sunSpeed) * 100
+        const lightX = Math.cos((sunOffset) * sunSpeed) * 100
+        const lightY = Math.sin((sunOffset) * sunSpeed) * 100
         const isNight = lightY < 0;
         if (isNight) {
-            // TODO(@darzu): this isn't framerate independent
-            timeOffset += 50;
+            sunOffset += 50;
         }
 
-        const lightPosition = vec3.fromValues(lightX + playerPos[0], lightY, playerPos[2]);
+        const lightPosition = vec3.fromValues(lightX, lightY, 0);
         // const lightPosition = vec3.fromValues(50, 100, -100);
         const lightViewMatrix = mat4.create();
         mat4.lookAt(lightViewMatrix, lightPosition, origin, upVector);
+        // mat4.translate(lightViewMatrix, lightViewMatrix, playerPos)
 
         const lightViewProjMatrix = mat4.create();
         mat4.multiply(lightViewProjMatrix, lightProjectionMatrix, lightViewMatrix);
