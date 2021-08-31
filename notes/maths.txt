@@ -34,3 +34,5 @@ Graph experiment / viz:
 
 Interval algebra:
     https://www.ics.uci.edu/~alspaugh/cls/shr/allen.html
+
+Dot product: a nice way to measure similarity of vectors

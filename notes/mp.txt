@@ -332,3 +332,18 @@ Unity DOTS:
 
 netplayjs:
     https://github.com/rameshvarun/netplayjs
+
+Rocket League networking:
+    https://youtu.be/ueEmiDM94IE?t=1354
+    input delay is not an option
+        need client prediction for rigid bodies
+    server can't wait for client input
+        results in non determinism between player and server
+    collisions with moving objects
+    100% server authority
+    lag compensation in FPS:
+        client send a packet saying, hey I shot that player at this time, 
+            server looks back in time and confirms the kill
+
+Overwatch netcode:
+    https://www.youtube.com/watch?v=W3aieHjyNvw

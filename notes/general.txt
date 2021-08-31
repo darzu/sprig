@@ -714,3 +714,78 @@ lement about the state of web games (top comment), too slow and bug ridden:
 
 Behavior trees:
   https://www.gamedeveloper.com/programming/behavior-trees-for-ai-how-they-work
+
+Cursed Problems in Game Design
+  https://www.youtube.com/watch?v=8uE6-vIi1rQ
+  Problems realign our thinking when they're well posed
+  Good to know what cursed problems are so you don't naive think you can solve them
+  Player Promises: A game's essential experiences. Why the player came to play.
+    see: "Welcome to the Yard Sale" by Zak M
+    promises live in the designers heart, and sometimes the players heart
+  Cursed Problem: an unsolvable design problem rooted in a conflict between core player promises.
+    Can't be solved directly, worked around by giving up strategicly
+    common special case: conflict between promised experiences and objectives.
+      experiences: the moment-by-moment gameplay
+      objectives: what's pulling us through the game
+
+  Examples:
+    Free-for-All Politics:
+      promise: I want to focus on combat mastery
+      promise: I want to win
+      politics: competition through social negotiation, alliances, and manipulation.
+        see: "Characteristics of Games" (unrated)
+      politics is at odds with technical execution
+    Quarterbacking problem:
+      in a coop game, someone starts steering everyone else
+      promise: I want to have a cooperative experience
+        requires player independence
+      promise: I want to play to win
+        requires central decision making
+    Skill Inflation Problem:
+      For evergreen games, the longer the game is on the market the better everyone is
+      promise: I want a long journey of mastery
+        requires: rising skill pool
+      promise: I want a stable, vibrant community
+        requires: broad variety of skill levels
+    Commodified Reward Problem:
+      e.g. diablo loot marketplace
+    Life Disruption Problem:
+      e.g. Pokemon Go
+    Quantified Creativity Problem:
+      I want to express myself: Intrinsic goal following
+      I want to progress my character: Extrinsic goal following
+      (Extrinsic seems to win over intrinsic in games and in life)
+
+    Game, spot the cursed problem:
+      No Man's Sky: millions of worlds vs diverse, interactive ecosystems
+        Daryl: Just Hard. 
+        Alex: Yup, just hard.
+      Loot games with efficient trading: rich loot experience vs ubiquitous market place
+        Daryl: Cursed. 
+          I want to care about the loot item not just the value.
+          Marketplace will quickly become a fn of rarity and utility.
+        Alex: Cursed.
+          Varied loot drop experience vs Items fungible for one another
+      Always on location based games (Pokemon Go): 
+        rewards at specific times and places vs need for personal safety and convenience
+        Daryl: Just hard, if you could encode your safety and convenience constraints it'd be fine.
+          but effectively cursed because you can't totally encode that.
+        Alex: Cursed.
+          Play anywhere, anytime vs Only play when appropriate
+    
+    Working around cursed problem by making sacrafices:
+      Think of the player moving through the play space, 
+        the time they spend in experiences they don't want in order to 
+        achieve an objective is maybe a cursed problem
+
+      1. Barriers (keep the player in the "happy land")
+        e.g. for FFA politics: limit players agency over one another (foot race, battle royal,)
+      2. Gates (make it harder for the player to leave "happy land")
+        e.g. for FFA politics: limit players visiblity of each other's success
+      3. Carrots (incentive to avoid bad states)
+        e.g. for FFA politics: add meta-game effects
+      4. S'mores (make it fun)
+        e.g. for FFA politics: give players tools for deep political play e.g. secrecy
+
+    Psychologically, humans think a game is fair when they win ~70% of the time
+  

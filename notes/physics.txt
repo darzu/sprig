@@ -210,3 +210,137 @@ Gilbert–Johnson–Keerthi algorithm (GJK)
 Expanding Polytope algorithm:
     respond to collisions
     https://blog.winter.dev/2020/epa-algorithm/
+
+Continuous collision detection:
+    https://www.youtube.com/watch?v=7_nKOET6zwI
+    standard contact constraint:
+        v_rel * norm >= 0
+    "in-elastic", "restitution"
+    goal: a method for computing time of impact between two convex polygons
+        ray-casting works fine if shapes aren't too oblong, and static vs dynamic only
+        "shape cast": assume no rotation, just translate shape and find first collision point
+        brute force: try each edge against each other edge
+
+    conservative advancement:
+        t = 0
+        d = compute_distance(t) // GJK
+
+        while abs(d) > tolerance && t < 1
+            delta = abs(d)/velocity_bound
+            t = t + delta
+            d = compute_distance(t)
+        end
+
+        if t < 1
+            time_of_impact = t
+        else
+            no_collision
+        end
+
+    Bilateral Advancement:
+        Deepest point solder:
+            Root finder w/ seperation function
+        GJK to find closest features
+        in 3D: consider edge vs edge too
+
+    This guy made Box2D
+
+https://box2d.org/about/
+
+"My order of studying physics engine is like this : 
+    David Baraff paper
+    Chris Hecker column
+    Box2D Articles
+"
+
+https://www.youtube.com/watch?v=SHinxAhv1ZE
+    "As a Physics Programmer, it is our job to understand constraints"
+    Game Graphics: shaders
+    Game Physics: constraints
+    Standard constraints:
+        "revolute", "prysmatic"
+    We create beautiful, accurate constraints but we're saddled with crappy solvers
+    To solve precisely: we need cubic time and quadratic memory
+    For games: we need linear time and linear memory
+
+    Everything starts with the position constraint
+    Position constraint example:
+        Need position constraint,
+        Need velocity constraint,
+        Need to know about impulses,
+            "Apply impulses to steer the box so the velocity constraint is satisfied"
+    
+    When we have many bodies, we need to do global constraint solving to be accurate
+    But in games, we can't afford that, so we often iteratively solve the local problems
+        over and over and hope they converge.
+    Understanding convergance of iterative solutions:
+        You have some fraction (0,1), and you multiply your error by this every iteration
+            if it's small, you converge quickly
+            if it's large, you converge slowly
+    
+    Mass ratios are often a difficult problem
+        for two circles stacked, itr needed = 3 * mass_ratio + 2
+
+    One trick: warm start the converge using the solution from the last frame
+        or iterate a few times per time step and pass results to next frame
+
+    Block solver:
+        instead of being totally local or fully global, try ~4 constraints at a time
+    
+    We don't use acceleration constraints, because for rigid bodies, 
+        collisions are instantanious and so you need an infinite force 
+        to fix the acceleration.
+
+    Velocity constraints work well with friction
+
+    Common method for solving position errors:
+        velocity steering: tweak velocity to undo unwanted overlap
+            problem: you're adding kenetic energy
+            problem: constraints look less solid
+        pseudo-velocity: like velocity steering but it's a seperate 
+            value that only exists for that time step, so there is no 
+            momentum
+            simpler in some ways, no time involved (?)
+    
+    Are position constraints better than velocity constraints?
+        With cloth solvers, we work directly with position
+        With character solvers: 
+            you likely don't want rigid body rules
+            example, character moving into a plane:
+                move character to target point, then project onto the plane
+
+    The biggest difference with 3D is rotations become a lot more complex
+
+    acceleration constraints: almost never (never?)
+    velocity constraints: force field, ...
+    position constraints: character controller
+
+Bend Physic Engine to Your Will:
+    https://www.youtube.com/watch?v=NwPIoVW65pE
+
+GJK explained:
+    https://www.youtube.com/watch?v=ajv46BSqcK4
+    support point: point farthest from origin along a direction
+    to check collision between two convex objects, you just need a support function for each
+
+Rocket League Physics:
+    https://www.youtube.com/watch?v=ueEmiDM94IE
+    uses Bullet, open source, can modify
+    fast, single-threaded physics
+        handles many frames at once (not that many objects)
+    120hz physics
+        more consistent
+    Vehical system:
+        use force/accel curve instead of gears/transmission
+        mass: keep consistent, ignore when applying forces
+        no longitudinal friction, simplify lateral friction
+            slide_ friction = curve(side_speed / (side_speed + forward_speed))
+        apply friction force at center of mass
+            suspension done in animation system
+        don't put physical wheel locations at visual wheel locations
+        stability: apply a rolling torque whenever a vehical isn't all the way on the ground
+            tried and gave up on yaw and pitch
+            once a wheel is on the ground, also give downward linear force
+
+Interacting with 3D Geometry:
+    https://www.youtube.com/watch?v=GpsKrAipXm8

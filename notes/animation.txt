@@ -87,3 +87,11 @@ auto bug walking:
 Easing functions:
     ThinMatrix recommended these over "maths"
     https://easings.net
+
+Vaccume hose:
+    https://youtu.be/PGk0rnyTa1U?t=181
+    "Fabrik" algorithm
+    Vaccume cord: "coding math: verlet integration"
+
+Vertex shader for animation:
+    https://www.youtube.com/watch?v=EUTE1SoOGrk

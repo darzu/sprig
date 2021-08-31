@@ -1,8 +1,69 @@
+
+Ordered set of blogs To-Write:
+    What is Sprig Land?
+        What, Why, Why-Not-X
+        Sprig Land aims to be the simplest way to write fun 3D games.
+        "fun" does a lot of heavy lifting:
+            I want everything that is at the core of good gameplay: 
+                multiplayer, performant, diverse game play, local coop,
+            I do not want all the bells and whistles that aren't necessary to good gameplay:
+                AAA graphics, likely not highly detailed animation, bloat
+        "simple" is doing a lot of heavy lifting:
+            Simple means learnable, composible, well-crafted
+            https://patrickjuchli.com/en/posts/learning-experience/
+            I do not want to make something that "works" and then move on
+            The goal of this software is not to solve immediate buisness problems,
+                it is to craft a tool that will be reliable enough to belong on a well considered tool belt
+                I'm an amature wood worker and I work with a lot of high speed saws
+                    I would not use a power tool that asks me to allow cookies, 
+                        doesn't turn off when I tell it, 
+                        expands over time to fill more of my workshop
+            Software should be scrutable,
+                like any other good tool, you should be able to take it apart, 
+                inspect the parts, and replace them as needed.
+                The joining of one gear to another should be well considered and sturdy,
+                    not made of ducktape and super glue.
+            Interfaces are the lifeblood of all software.
+        4 Goals:
+            To build a fun game that people are willing to pay money for and write favorable reviews of. The flagship game.
+            To ruthelessly rewrite that game into a composition of simpler, reliable parts. The sprigland libraries.
+            To document the entire process so that one could reconstruct that game with a fraction of the effort. The sprigland tutorials.
+            To build tooling to further speed up the building of that game by an order of magnitude. The sprigland tools.
+        Repeat.
+        Progress in software is only made when tasks become easier. (If you hold resource availability constant.)
+
+        There's another secret goal here. I think this approach is the right way to advance the whole human enterprise of software
+            and possibly other complex systems. I choose to start with the domain of games because they're sufficiently compelex
+            and sufficiently fun to be intresnictly rewarding and I'm not getting much if any financial reward from this persuit.
+
+        There's yet another secret goal here. This ruthless simplification is not only the best way to be productive,
+            it's the best way to make something teachable. The learnability and productivity are inextricably linked.
+
+        To create something better than what was there you have to steep yourself in the domain.
+
+    Roadmap 2021
+        It's about the journey as much as it is about the end
+        Why will following or sponsoring Sprig Land be useful for you?
+            Incremental progress,
+            Journey of learning all parts of game making
+            Early game making potential,
+            Code bits
+            Learning content
+    Looking Back 2021
+    What's in a game?
+        DAG of all features of a game
+    
 Sprigland blog:
     the "why", the "what"
     patreon
 
     grid of micro blogs entries
+
+    taxonomy of blogs:
+        micro blogs / code dumps
+        indepth interactive articles
+        well considered positions
+        "tweets"
 
 Micro entry:
     Scene
