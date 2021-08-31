@@ -55,59 +55,51 @@ export function stepPhysics(
       //    we can know which face was first pushed in based on the vector of collision,
       //    and the overlap of each face,
 
-      // TODO(@darzu): consider mass
-      const aMovRatio = 0.5;
+      // approaches:
+      // 1. use velocity constraints
+      // 2. use position constraints
+      //    This is what we're doing now. why doesn't it work?
+      //    Can it work? We could maintain the invariant that
+      //      no object can move backward farther than it started
+      // 3. step progress movement and collision detection
 
-      let minAdjOverlap = Infinity;
-      let minAdjOverlapDim = 0;
+      // TODO(@darzu): consider mass
+
+      let allMovFrac = 1.0; // TODO(@darzu): needs to be per-object across all collisions
 
       for (let i of [0, 1, 2]) {
-        let aLastMov =
-          a.motion.linearVelocity[i] ||
-          a.motion.location[i] - a.lastMotion.location[i];
-        let bLastMov =
-          b.motion.linearVelocity[i] ||
-          b.motion.location[i] - b.lastMotion.location[i];
-
-        _collisionVec[i] = bLastMov - aLastMov;
-
-        // if (_collisionVec[i] === 0) {
-        //   _collisionOverlap[i] = 0; // x isn't responsible for this collision
-        //   continue;
-        // }
+        _collisionVec[i] =
+          b.motion.linearVelocity[i] - a.motion.linearVelocity[i];
 
         _collisionOverlap[i] =
           _collisionVec[i] > 0
             ? b.worldAABB.max[i] - a.worldAABB.min[i]
             : b.worldAABB.min[i] - a.worldAABB.max[i];
 
-        _collisionAdjOverlap[i] = Math.abs(
-          _collisionOverlap[i] / _collisionVec[i]
-        );
-
-        if (_collisionAdjOverlap[i] < minAdjOverlap) {
-          minAdjOverlap = _collisionAdjOverlap[i];
-          minAdjOverlapDim = i;
+        if (_collisionOverlap[i] > 0) {
+          let movFrac = Math.min(
+            Math.abs(
+              (_collisionOverlap[i] + 0.1) /
+                (a.motion.linearVelocity[i] - b.motion.linearVelocity[i])
+            ),
+            1.0
+          );
+          allMovFrac = Math.min(movFrac, allMovFrac);
         }
       }
 
-      vec3.scale(
-        _collisionRefl,
-        _collisionVec,
-        minAdjOverlap * aMovRatio * 1.01
-      );
-      vec3.add(a.motion.location, a.motion.location, _collisionRefl);
-      vec3.scale(
-        _collisionRefl,
-        _collisionVec,
-        minAdjOverlap * (1.0 - aMovRatio) * 1.01
-      );
-      vec3.sub(b.motion.location, b.motion.location, _collisionRefl);
+      // TODO(@darzu): DEBUGGING
+      // console.log(
+      //   `${allMovFrac}` +
+      //     ` A:(${a.motion.linearVelocity.join(",")})` +
+      //     ` B:(${b.motion.linearVelocity.join(",")})`
+      // );
 
-      // a.motion.location[minAdjOverlapDim] +=
-      //   _collisionOverlap[minAdjOverlapDim] * aMovRatio * 1.01;
-      // b.motion.location[minAdjOverlapDim] -=
-      //   _collisionOverlap[minAdjOverlapDim] * (1.0 - aMovRatio) * 1.01;
+      vec3.scale(_collisionRefl, a.motion.linearVelocity, -allMovFrac * dt);
+      vec3.add(a.motion.location, a.motion.location, _collisionRefl);
+      vec3.scale(_collisionRefl, b.motion.linearVelocity, -allMovFrac * dt);
+      console.log(_collisionRefl);
+      vec3.add(b.motion.location, b.motion.location, _collisionRefl);
     }
   }
 
