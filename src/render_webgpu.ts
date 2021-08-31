@@ -306,6 +306,7 @@ export class Renderer_WebGPU implements Renderer {
       maxMeshes,
       maxTris: maxMeshes * maxTrisPerMesh,
       maxVerts: maxMeshes * maxTrisPerMesh * 3,
+      shiftMeshIndices: false,
     }
 
     this.builder = createMeshPoolBuilder_WebGPU(device, opts);
