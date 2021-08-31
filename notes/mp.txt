@@ -134,8 +134,6 @@ Techniques:
             bidirectional acks are complicated:
                 https://gafferongames.com/post/reliability_ordering_and_congestion_avoidance_over_udp/
             bump priority of objs at rest that haven't been ack'ed
-
-
         
 Learnings:
     You can often trade latency for smoothness

@@ -1,5 +1,5 @@
 import { mat4, vec3 } from '../ext/gl-matrix.js';
-import { jitter } from '../math.js';
+import { clamp, jitter } from '../math.js';
 import { initGrassSystem } from './grass.js';
 
 // Defines shaders in WGSL for the shadow and regular rendering pipelines. Likely you'll want
@@ -910,41 +910,92 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
     const mapZSize = 100;
     const mapArea = mapXSize * mapZSize;
 
+    const idx = (xi: number, zi: number) => zi * mapXSize + xi
+
     const map = new Float32Array(mapXSize * mapZSize);
     for (let x = 0; x < mapXSize; x++) {
         for (let z = 0; z < mapZSize; z++) {
-            const i = z * mapXSize + x;
-            map[i] = Math.random() // TODO(@darzu): 
+            const i = idx(x, z)
+            map[i] = Math.random() * 2 + x * 0.02 + z * 0.04 // TODO(@darzu): 
         }
     }
 
     const builder = createMeshPoolBuilder(device, {
         maxMeshes: 1,
-        maxTris: mapArea,
+        maxTris: mapArea * 2,
         maxVerts: mapArea * 3,
     })
 
-    for (let x = 0; x < mapXSize; x++) {
-        for (let z = 0; z < mapZSize; z++) {
+    const verts = new Float32Array(mapXSize * mapZSize * vertByteSize);
 
-            const i = z * mapXSize + x;
-            let y = map[i];
+    // const idx = (xi: number, zi: number) => clamp(zi, 0, mapZSize - 1) * mapXSize + clamp(xi, 0, mapXSize - 1)
 
-            const color: vec3 = [Math.random(), Math.random(), Math.random()]
+    const color: vec3 = [0.2, 0.6, 1.0]
+    // const color: vec3 = [Math.random(), Math.random(), Math.random()]
+
+    const spacing = 2.0;
+
+    for (let xi = 0; xi < mapXSize; xi++) {
+        for (let zi = 0; zi < mapZSize; zi++) {
+
+            let y = map[idx(xi, zi)];
+            let yX0 = map[idx(xi - 1, zi)];
+            // let yX2 = map[idx(xi + 1, zi)];
+            let yZ0 = map[idx(xi, zi - 1)];
+            // let yZ2 = map[idx(xi, zi + 1)];
+
+            const x = xi * spacing;
+            const z = zi * spacing;
+
+            const p0: vec3 = [x, y, z]
+            const p1: vec3 = [x - 1, yX0, z]
+            const p2: vec3 = [x, yZ0, z - 1]
+
+            const norm = computeTriangleNormal(p0, p1, p2);
+
+
+            // TODO(@darzu): compute normal
             const vertexData = [
-                ...[x, y, z], ...color, ...[0, 1, 0],
-                ...[x + 1, y, z], ...color, ...[0, 1, 0],
-                ...[x, y, z + 1], ...color, ...[0, 1, 0],
+                ...[x, y, z], ...color, ...norm,
             ]
+
             const vOff = builder.numVerts * vertElStride;
             builder.verticesMap.set(vertexData, vOff)
 
-            const iOff = builder.numTris * 3;
-            // builder.indicesMap.set([2, 1, 0], iOff)
-            builder.indicesMap.set([2 + builder.numVerts, 1 + builder.numVerts, 0 + builder.numVerts], iOff)
+            builder.numVerts += 1;
 
+            // const vertexData = [
+            //     ...[xi, y, zi], ...color, ...[0, 1, 0],
+            //     ...[xi + 1, y, zi], ...color, ...[0, 1, 0],
+            //     ...[xi, y, zi + 1], ...color, ...[0, 1, 0],
+            // ]
+            // const vOff = builder.numVerts * vertElStride;
+            // builder.verticesMap.set(vertexData, vOff)
+
+            // const iOff = builder.numTris * 3;
+            // // builder.indicesMap.set([2, 1, 0], iOff)
+            // builder.indicesMap.set([2 + builder.numVerts, 1 + builder.numVerts, 0 + builder.numVerts], iOff)
+
+            // builder.numVerts += 3;
+        }
+    }
+
+    for (let xi = 1; xi < mapXSize - 1; xi++) {
+        for (let zi = 1; zi < mapZSize - 1; zi++) {
+            const iOff = builder.numTris * 3;
+
+            let i0 = idx(xi, zi);
+            let i1 = idx(xi - 1, zi);
+            let i2 = idx(xi, zi - 1);
+
+            builder.indicesMap.set([i0, i1, i2], iOff)
             builder.numTris += 1;
-            builder.numVerts += 3;
+
+            let i3 = idx(xi + 1, zi);
+            let i4 = idx(xi, zi + 1);
+
+            builder.indicesMap.set([i0, i3, i4], iOff + 3)
+            builder.numTris += 1;
         }
     }
 
