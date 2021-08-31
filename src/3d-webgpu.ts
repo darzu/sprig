@@ -141,9 +141,9 @@ const PLANE: MeshModel = {
 
 const GRASS: MeshModel = {
     pos: [
-        [+1, 0, 0],
-        [-1, 0, 0],
-        [0, 3, 0],
+        [+0.2, 0, 0],
+        [-0.2, 0, 0],
+        [0, 2, 0],
     ],
     tri: [
         [0, 1, 2],
