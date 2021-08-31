@@ -1,7 +1,7 @@
 import { mat4, vec3 } from '../ext/gl-matrix.js';
 import { align } from '../math.js';
 import { initGrassSystem } from './grass.js';
-import { createMeshPoolBuilder, MeshHandle, MeshPool } from './mesh-pool.js';
+import { createMeshPoolBuilder, MeshHandle, MeshPool, meshUniByteSizeAligned, setVertexData, vertByteSize, vertexDataFormat, VertexKind } from './mesh-pool.js';
 
 const ENABLE_WATER = false;
 
@@ -440,52 +440,6 @@ const PLANE: Mesh = unshareProvokingVertices({
         [0.02, 0.02, 0.02], [0.02, 0.02, 0.02],
     ],
 })
-
-export enum VertexKind {
-    normal = 0,
-    water = 1,
-}
-
-// TODO(@darzu): VERTEX FORMAT
-// define the format of our vertices (this needs to agree with the inputs to the vertex shaders)
-const vertexDataFormat: GPUVertexAttribute[] = [
-    { shaderLocation: 0, offset: bytesPerVec3 * 0, format: 'float32x3' }, // position
-    { shaderLocation: 1, offset: bytesPerVec3 * 1, format: 'float32x3' }, // color
-    { shaderLocation: 2, offset: bytesPerVec3 * 2, format: 'float32x3' }, // normals
-    { shaderLocation: 3, offset: bytesPerVec3 * 3, format: 'uint32' }, // kind
-];
-// these help us pack and use vertices in that format
-export const vertByteSize = bytesPerVec3/*pos*/ + bytesPerVec3/*color*/ + bytesPerVec3/*normal*/ + bytesPerUint32/*kind*/;
-
-// for performance reasons, we keep scratch buffers around
-const _scratch_setVertexData_f32 = new Float32Array(3 + 3 + 3);
-const _scratch_setVertexData_f32_as_u8 = new Uint8Array(_scratch_setVertexData_f32.buffer);
-const _scratch_setVertexData_u32 = new Uint32Array(1);
-const _scratch_setVertexData_u32_as_u8 = new Uint8Array(_scratch_setVertexData_u32.buffer);
-export function setVertexData(buffer: Uint8Array, byteOffset: number, pos: vec3, color: vec3, normal: vec3, kind: number) {
-    _scratch_setVertexData_f32[0] = pos[0]
-    _scratch_setVertexData_f32[1] = pos[1]
-    _scratch_setVertexData_f32[2] = pos[2]
-    _scratch_setVertexData_f32[3] = color[0]
-    _scratch_setVertexData_f32[4] = color[1]
-    _scratch_setVertexData_f32[5] = color[2]
-    _scratch_setVertexData_f32[6] = normal[0]
-    _scratch_setVertexData_f32[7] = normal[1]
-    _scratch_setVertexData_f32[8] = normal[2]
-    buffer.set(_scratch_setVertexData_f32_as_u8, byteOffset)
-    _scratch_setVertexData_u32[0] = kind
-    buffer.set(_scratch_setVertexData_u32_as_u8, byteOffset + bytesPerVec3 * 3);
-}
-
-// TODO(@darzu): MODEL FORMAT
-// define the format of our models' uniform buffer
-// TODO(@darzu): move "kind" into uniform buffer (instead of per-vertex)
-// TODO(@darzu): handle alignment issues
-export const meshUniByteSizeExact =
-    bytesPerMat4 // transform
-    + align(bytesPerVec3, 4) // mesh min
-    + align(bytesPerVec3, 4) // mesh max
-export const meshUniByteSizeAligned = align(meshUniByteSizeExact, 256); // uniform objects must be 256 byte aligned
 
 // TODO(@darzu): SCENE FORMAT
 // defines the format of our scene's uniform data

@@ -1,7 +1,7 @@
 import { mat4, vec3 } from "../ext/gl-matrix.js";
 import { align, jitter } from "../math.js";
-import { createMeshPoolBuilder, MeshHandle, MeshPool, MeshPoolBuilder } from "./mesh-pool.js";
-import { getPositionFromTransform, VertexKind } from "./sprig-main.js";
+import { createMeshPoolBuilder, MeshHandle, MeshPool, MeshPoolBuilder, VertexKind } from "./mesh-pool.js";
+import { getPositionFromTransform } from "./sprig-main.js";
 
 const RENDER_GRASS = true;
 
@@ -284,12 +284,12 @@ export function initGrassSystem(device: GPUDevice): GrassSystem {
     // const lodOpts = [lodDebug]
     const lodOpts = [
         // lodDebug
-        // lod0Opts,
+        lod0Opts,
         lod1Opts,
-        // lod2Opts,
-        // lod3Opts,
-        // lod4Opts,
-        // lod5Opts,
+        lod2Opts,
+        lod3Opts,
+        lod4Opts,
+        lod5Opts,
     ]
 
     const tilesets = lodOpts.map(opts => createGrassTileset(opts, device))
