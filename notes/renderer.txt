@@ -52,6 +52,9 @@ Unity Tiny:
   (OLD!) https://docs.unity3d.com/Packages/com.unity.tiny@0.13/manual/scripting-systems.html
   (OLD!) https://docs.unity3d.com/Packages/com.unity.tiny@0.13/manual/intro-for-unity-developers.html
 
+Pict3D:
+  https://docs.racket-lang.org/pict3d/index.html
+
 Regl:
   https://github.com/regl-project/regl
 

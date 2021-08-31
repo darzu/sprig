@@ -82,6 +82,8 @@ export interface MeshMemoryPool {
     _numTris: number,
     addMeshes: (meshesToAdd: MeshModel[]) => void,
     applyMeshTransform: (m: Mesh) => void,
+    preRender: () => void,
+    postRender: () => void,
 }
 
 export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDevice): MeshMemoryPool {
@@ -117,11 +119,31 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
 
     const vertElStride = vertByteSize / Float32Array.BYTES_PER_ELEMENT;
 
-    function addMeshes(meshesToAdd: MeshModel[]) {
-        const vertsMap = new Float32Array(_vertBuffer.getMappedRange())
-        const indMap = new Uint16Array(_indexBuffer.getMappedRange());
+    let vertsMap: Float32Array | null = null;
+    let indMap: Uint16Array | null = null;
 
+    function preRender() {
+        if (vertsMap)
+            _vertBuffer.unmap()
+        if (indMap)
+            _indexBuffer.unmap()
+        vertsMap = null;
+        indMap = null;
+    }
+
+    function postRender() {
+        if (!vertsMap)
+            vertsMap = new Float32Array(_vertBuffer.getMappedRange())
+        if (!indMap)
+            indMap = new Uint16Array(_indexBuffer.getMappedRange());
+    }
+
+    function addMeshes(meshesToAdd: MeshModel[]) {
         function addMesh(m: MeshModel): Mesh {
+            if (vertsMap === null || indMap === null) {
+                throw "Use preRender() and postRender() functions"
+            }
+
             // TODO(@darzu): temporary
             m = unshareVertices(m);
 
@@ -134,11 +156,12 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
             addMeshToBuffers(m, vertsMap, _numVerts, vertElStride, indMap, _numTris, false);
 
             // create transformation matrix
-            // TODO(@darzu): real transforms
             const trans = mat4.create() as Float32Array;
-            mat4.translate(trans, trans, vec3.fromValues(
-                4 * _meshes.length, // TODO
-                0, 0));
+
+            // TODO(@darzu): real transforms
+            // mat4.translate(trans, trans, vec3.fromValues(
+            //     4 * _meshes.length, // TODO
+            //     0, 0));
 
             // save the transform matrix to the buffer
             const uniOffset = _meshes.length * meshUniByteSize;
@@ -165,8 +188,8 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
 
         meshesToAdd.forEach(m => _meshes.push(addMesh(m)))
 
-        _indexBuffer.unmap();
-        _vertBuffer.unmap();
+        // _indexBuffer.unmap();
+        // _vertBuffer.unmap();
     }
 
     function applyMeshTransform(m: Mesh) {
@@ -188,7 +211,9 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
         _numVerts,
         _numTris,
         _meshes,
-        addMeshes: addMeshes,
+        preRender,
+        postRender,
+        addMeshes,
         applyMeshTransform,
     }
 }

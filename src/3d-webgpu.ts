@@ -120,18 +120,6 @@ function mkEulerTransformable(): Transformable {
     }
 }
 
-// TODO(@darzu): add meshes back
-// {
-//     // TODO(@darzu): add meshes!
-//     meshes.push(addMesh(PLANE))
-//     meshes.push(addMesh(CUBE))
-//     meshes.push(addMesh(CUBE))
-//     meshes.push(addMesh(CUBE))
-//     meshes.push(addMesh(CUBE))
-//     meshes.push(addMesh(CUBE))
-//     meshes.push(addMesh(GRASS))
-// }
-
 async function init(canvasRef: HTMLCanvasElement) {
     const adapter = await navigator.gpu.requestAdapter();
     const device = await adapter!.requestDevice();
@@ -142,9 +130,9 @@ async function init(canvasRef: HTMLCanvasElement) {
     const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/)
     const defaultMeshPoolOpts: MeshMemoryPoolOptions = {
         vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
-        maxVerts: 1000,
-        maxTris: 1000,
-        maxMeshes: 100,
+        maxVerts: 100000,
+        maxTris: 100000,
+        maxMeshes: 10000,
         meshUniByteSize: Math.ceil(mat4ByteSize / 256) * 256, // align to 256,
     }
     const meshPool = createMeshMemoryPool(defaultMeshPoolOpts, device);
@@ -165,48 +153,16 @@ async function init(canvasRef: HTMLCanvasElement) {
         cursorLocked = true
     }
 
-    /*
-    tracking meshes:
-        add to vertex & index buffers
-            add current vertex count to as triangle offset
-        resize buffers if needed
-            nahh.. fixed size, max count
-        track current number of vertices
-
-    */
-
-    // GPUDepthStencilStateDescriptor
-
-
-    // // Create some common descriptors used for both the shadow pipeline
-    // // and the color rendering pipeline.
-    // const vertexBuffers: Iterable<GPUVertexBufferLayout> = [
-    //     {
-    //     arrayStride: Float32Array.BYTES_PER_ELEMENT * 6,
-    //     attributes: [
-    //         {
-    //         // position
-    //         shaderLocation: 0,
-    //         offset: 0,
-    //         format: 'float32x3',
-    //         },
-    //         {
-    //         // normal
-    //         shaderLocation: 1,
-    //         offset: Float32Array.BYTES_PER_ELEMENT * 3,
-    //         format: 'float32x3',
-    //         },
-    //     ],
-    //     },
-    // ];
-
-    // TODO(@darzu): createBindGroupLayout
-
-    // TODO(@darzu): trying per-face data, but this actually ended up being "per instance" data
-    // TODO(@darzu): handle this in the mesh pool ?
+    meshPool.postRender()
 
     meshPool.addMeshes([
-        PLANE,
+        PLANE
+    ])
+    const planeHandle = meshPool._meshes[meshPool._meshes.length - 1] // TODO(@darzu): hack
+    mat4.scale(planeHandle.transform, planeHandle.transform, [10, 10, 10]);
+    meshPool.applyMeshTransform(planeHandle);
+
+    meshPool.addMeshes([
         CUBE,
         CUBE,
         CUBE,
@@ -214,6 +170,30 @@ async function init(canvasRef: HTMLCanvasElement) {
         CUBE,
         GRASS,
     ])
+
+    // create a field of cubes
+    const grayCube: MeshModel = { ...CUBE, colors: CUBE.colors.map(c => [0.3, 0.3, 0.3]) }
+    const spread = 2;
+    const spacing = 2;
+    const handles: Mesh[] = []
+    for (let x = -spread; x < spread; x++) {
+        for (let y = -spread; y < spread; y++) {
+            for (let z = -spread; z < spread; z++) {
+                meshPool.addMeshes([grayCube])
+                const handle = meshPool._meshes[meshPool._meshes.length - 1] // TODO(@darzu): hack
+                mat4.translate(handle.transform, handle.transform, [x * spacing, (y + spread + 1.5) * spacing, (z - spread * 1.5) * spacing])
+                mat4.rotateX(handle.transform, handle.transform, Math.random() * 2 * Math.PI)
+                mat4.rotateY(handle.transform, handle.transform, Math.random() * 2 * Math.PI)
+                mat4.rotateZ(handle.transform, handle.transform, Math.random() * 2 * Math.PI)
+                handles.push(handle)
+            }
+        }
+    }
+
+    for (let h of handles)
+        meshPool.applyMeshTransform(h);
+
+    meshPool.preRender();
 
     const aspect = Math.abs(canvasRef.width / canvasRef.height);
     const projectionMatrix = mat4.create();
@@ -369,10 +349,14 @@ async function init(canvasRef: HTMLCanvasElement) {
     let avgFrameTime = 0
 
     function frame(time: number) {
+        // meshPool.postRender()
+
         const start = performance.now();
 
         const frameTime = previousFrameTime ? time - previousFrameTime : 0;
         previousFrameTime = time;
+
+        // meshPool.postRender()
 
         // Sample is no longer the active page.
         if (!canvasRef) return;
@@ -424,6 +408,8 @@ async function init(canvasRef: HTMLCanvasElement) {
             transformationMatrix.byteOffset,
             transformationMatrix.byteLength
         );
+
+        // meshPool.preRender()
 
         const commandEncoder = device.createCommandEncoder();
         meshRenderer.render(commandEncoder);
