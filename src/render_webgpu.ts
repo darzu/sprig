@@ -23,8 +23,8 @@ const vertexShader =
     [[group(1), binding(0)]] var<uniform> model : Model;
 
     struct VertexOutput {
-        [[location(0)]] normal : vec3<f32>;
-        [[location(1)]] color : vec3<f32>;
+        [[location(0)]] [[interpolate(flat)]] normal : vec3<f32>;
+        [[location(1)]] [[interpolate(flat)]] color : vec3<f32>;
         [[builtin(position)]] position : vec4<f32>;
     };
 
@@ -46,8 +46,8 @@ const fragmentShader =
     [[group(0), binding(0)]] var<uniform> scene : Scene;
 
     struct VertexOutput {
-        [[location(0)]] normal : vec3<f32>;
-        [[location(1)]] color : vec3<f32>;
+        [[location(0)]] [[interpolate(flat)]] normal : vec3<f32>;
+        [[location(1)]] [[interpolate(flat)]] color : vec3<f32>;
     };
 
     [[stage(fragment)]]
@@ -118,6 +118,7 @@ export class Renderer_WebGPU implements Renderer {
   private gpuBufferWriteAllMeshUniforms() {
     // TODO(@darzu): make this update all meshes at once
     for (let m of this.meshObjs) {
+      m.handle.transform = m.obj.transform(); // TODO(@darzu): not great
       this.pool.updateUniform(m.handle)
     }
   }
