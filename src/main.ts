@@ -168,6 +168,56 @@ class Bullet extends Cube {
     }
   }
 }
+class BulletHIGH extends Cube {
+  constructor(id: number, creator: number) {
+    super(id, creator);
+    this.color = vec3.fromValues(0.1, 0.1, 0.8);
+  }
+
+  syncPriority(): number {
+    return 20000;
+  }
+
+  mesh(): Mesh {
+    return scaleMesh(super.mesh(), 0.3);
+  }
+
+  typeId(): number {
+    return ObjectType.Bullet;
+  }
+
+  serializeFull(buffer: Serializer) {
+    buffer.writeVec3(this.location);
+    buffer.writeVec3(this.linear_velocity);
+    buffer.writeQuat(this.rotation);
+    buffer.writeVec3(this.angular_velocity);
+  }
+
+  deserializeFull(buffer: Deserializer) {
+    let location = buffer.readVec3()!;
+    if (!buffer.dummy) {
+      this.snapLocation(location);
+    }
+    buffer.readVec3(this.linear_velocity);
+    let rotation = buffer.readQuat()!;
+    if (!buffer.dummy) {
+      this.snapRotation(rotation);
+    }
+    buffer.readVec3(this.angular_velocity);
+  }
+
+  serializeDynamic(buffer: Serializer) {
+    // rotation and location can both change, but we only really care about syncing location
+    buffer.writeVec3(this.location);
+  }
+
+  deserializeDynamic(buffer: Deserializer) {
+    let location = buffer.readVec3()!;
+    if (!buffer.dummy) {
+      this.snapLocation(location);
+    }
+  }
+}
 
 class Player extends Cube {
   constructor(id: number, creator: number) {
@@ -242,6 +292,9 @@ class CubeGameState extends GameState<Inputs> {
       let plane = new Plane(this.id(), this.me);
       plane.location = vec3.fromValues(0, -3, -8);
       this.addObject(plane);
+      let cube2 = new BulletHIGH(this.id(), this.me);
+      cube2.location = vec3.fromValues(0, -3, -8);
+      this.addObject(cube2);
       this.addPlayer();
       // have added our objects, can unmap buffers
       this.renderer.finishInit();

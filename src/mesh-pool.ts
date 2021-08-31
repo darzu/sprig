@@ -505,8 +505,8 @@ export function createMeshPoolBuilder_WebGL(gl: WebGLRenderingContext, opts: Mes
 
     function queueUpdateVertices(offset: number, data: Uint8Array) {
         // TODO(@darzu): this is a strange way to compute this, but seems to work conservatively
-        const numVerts = Math.min(data.length / Vertex.ByteSize, Math.max(builder.numVerts, builder.poolHandle.numVerts))
-        // const numVerts = data.length / Vertex.ByteSize;
+        // const numVerts = Math.min(data.length / Vertex.ByteSize, Math.max(builder.numVerts, builder.poolHandle.numVerts))
+        const numVerts = data.length / Vertex.ByteSize;
         const positions = new Float32Array(numVerts * 3)
         const colors = new Float32Array(numVerts * 3)
         const normals = new Float32Array(numVerts * 3)

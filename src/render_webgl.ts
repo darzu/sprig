@@ -160,7 +160,7 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxTr
   const scene = setupScene();
 
   function finishInit() {
-    console.log("finishInit")
+    console.log("WEBGL FINISH INIT")
     initFinished = true;
 
     builder.finish();
