@@ -17,4 +17,3 @@ function testBasics() {
 export function test() {
     testBasics();
 }
-//# sourceMappingURL=test.js.map

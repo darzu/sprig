@@ -5,6 +5,7 @@ import { test } from "./test.js";
 import { Renderer_WebGPU } from "./render_webgpu.js";
 import { attachToCanvas } from "./render_webgl.js";
 import { getAABBFromMesh, unshareProvokingVertices } from "./mesh-pool.js";
+import { _cellChecks, _doesOverlaps, _enclosedBys, _lastCollisionTestTimeMs } from "./physics.js";
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
 const MAX_VERTICES = 21844;
@@ -244,6 +245,7 @@ class CubeGameState extends GameState {
         return this.players[this.me];
     }
     stepGame(dt, inputs) {
+        var _a;
         if (this.player()) {
             // move player
             this.player().linear_velocity = vec3.fromValues(0, 0, 0);
@@ -306,7 +308,7 @@ class CubeGameState extends GameState {
         for (let o of Object.values(this.objects)) {
             if (o instanceof Cube || o instanceof Plane) {
                 vec3.copy(o.color, o.defaultColor);
-                if (this.collidesWith[o.id]) {
+                if ((_a = this.collidesWith[o.id]) === null || _a === void 0 ? void 0 : _a.length) {
                     vec3.add(o.color, o.color, vec3.fromValues(0.1, 0.0, 0.0));
                 }
             }
@@ -400,7 +402,7 @@ function inputsReader(canvas) {
             mouseY += ev.movementY;
         }
     });
-    window.addEventListener("click", (ev) => {
+    window.addEventListener("mouseup", (ev) => {
         if (document.pointerLockElement === canvas) {
             if (ev.button === 0) {
                 lclick = true;
@@ -528,13 +530,17 @@ async function startGame(host) {
             ? (1 - avgWeight) * avgNetTime + avgWeight * net_time
             : net_time;
         const avgFPS = 1000 / avgFrameTime;
-        debugDiv.innerText =
+        const debugTxt = debugDiv.firstChild;
+        // PERF NOTE: using ".innerText =" creates a new DOM element each frame, whereas
+        //    using ".firstChild.nodeValue =" reuses the DOM element. Unfortunately this
+        //    means we'll need to do more work to get line breaks.
+        debugTxt.nodeValue =
             controlsStr +
-                `\n` +
-                `(js per frame: ${avgJsTime.toFixed(2)}ms, net per frame: ${avgNetTime.toFixed(2)}ms, 
-      fps: ${avgFPS.toFixed(1)}, buffers: r=${reliableBufferSize}/u=${unreliableBufferSize},
-      dropped updates: ${numDroppedUpdates}
-      objects=${gameState.numObjects}) ${usingWebGPU ? 'wGPU' : 'wGL'}`;
+                ` (js: ${avgJsTime.toFixed(2)}ms, net: ${avgNetTime.toFixed(2)}ms, ` +
+                `broad:${_lastCollisionTestTimeMs.toFixed(1)}ms (o:${_doesOverlaps}, e:${_enclosedBys}, c: ${_cellChecks}), fps: ${avgFPS.toFixed(1)}, ` +
+                `buffers: r=${reliableBufferSize}/u=${unreliableBufferSize}, ` +
+                `dropped updates: ${numDroppedUpdates}` +
+                `objects=${gameState.numObjects}) ${usingWebGPU ? 'WebGPU' : 'WebGL'}`;
         requestAnimationFrame(frame);
     };
     if (ENABLE_NET) {
@@ -543,7 +549,8 @@ async function startGame(host) {
             if (hosting) {
                 console.log("hello");
                 console.log(`Net up and running with id ${id}`);
-                navigator.clipboard.writeText(id);
+                if (navigator.clipboard)
+                    navigator.clipboard.writeText(id);
                 frame();
             }
             else {
@@ -586,4 +593,3 @@ test();
         console.error(e);
     }
 })();
-//# sourceMappingURL=main.js.map

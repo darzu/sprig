@@ -1,25 +1,28 @@
 <!DOCTYPE html>
 <html>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-    }
+  <head>
+    <meta charset="utf-8">
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+      }
 
-    body {
-        height: 100%;
+      body {
+          height: 100%;
+          position: absolute;
+      }
+      
+      #debug-div {
         position: absolute;
-    }
-    
-    #debug-div {
-      position: absolute;
-      bottom: 24px;
-      left: 24px;
-      color: white;
-      font-family: monospace;
-      font-size: 24px;
-    }
-  </style>
+        bottom: 24px;
+        left: 24px;
+        color: white;
+        font-family: monospace;
+        font-size: 24px;
+      }
+    </style>
+  </head>
 
   <body>
     <div id="server-controls">
@@ -29,7 +32,7 @@
     </div>
     <canvas width="570" height="570" id="sample-canvas"></canvas>
 
-    <div id="debug-div"></div>
+    <div id="debug-div">(debug text)</div>
 
     <script src="./main.js" type="module"></script>
   </body>

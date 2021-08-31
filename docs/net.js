@@ -199,8 +199,9 @@ export class Net {
         };
     }
     setupChannel(server, chan) {
-        chan.onmessage = (ev) => {
-            this.handleMessage(server, ev.data);
+        chan.onmessage = async (ev) => {
+            const buff = ev.data.arrayBuffer ? await ev.data.arrayBuffer() : ev.data;
+            this.handleMessage(server, buff);
         };
     }
     handleMessage(server, data) {
@@ -416,4 +417,3 @@ export class Net {
         });
     }
 }
-//# sourceMappingURL=net.js.map

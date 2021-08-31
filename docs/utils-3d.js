@@ -19,4 +19,10 @@ export function getPositionFromTransform(t) {
     vec3.transformMat4(pos, pos, t);
     return pos;
 }
-//# sourceMappingURL=3d-util.js.map
+// vec utilities
+export function vec3Floor(out, v) {
+    out[0] = Math.floor(v[0]);
+    out[1] = Math.floor(v[1]);
+    out[2] = Math.floor(v[2]);
+    return out;
+}

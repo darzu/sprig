@@ -230,4 +230,3 @@ export function attachToCanvas(canv, maxMeshes, maxVertices) {
     };
     return renderer;
 }
-//# sourceMappingURL=render_webgl.js.map

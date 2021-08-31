@@ -34,6 +34,12 @@ const PLANE_MESH = unshareProvokingVertices(scaleMesh(
       [3, 2, 0],
       [1, 3, 0], // bottom
     ],
+    lines: [
+      [0, 1],
+      [0, 2],
+      [1, 3],
+      [2, 3],
+    ],
     colors: [BLACK, BLACK, BLACK, BLACK],
   },
   10
@@ -101,6 +107,23 @@ const CUBE_MESH = unshareProvokingVertices({
     [6, 7, 3], // bottom
     [5, 4, 7],
     [5, 7, 6], // back
+  ],
+  lines: [
+    // top
+    [0, 1],
+    [1, 2],
+    [2, 3],
+    [3, 0],
+    // bottom
+    [4, 5],
+    [5, 6],
+    [6, 7],
+    [7, 4],
+    // connectors
+    [0, 4],
+    [1, 5],
+    [2, 6],
+    [3, 7],
   ],
   colors: [
     BLACK,
@@ -238,6 +261,7 @@ interface Inputs {
   lclick: boolean;
   rclick: boolean;
   accel: boolean;
+  lastNumKey: number;
 }
 
 class CubeGameState extends GameState<Inputs> {
@@ -440,6 +464,13 @@ class CubeGameState extends GameState<Inputs> {
         }
       }
     }
+    // check render mode
+    if (inputs.lastNumKey === 1) {
+      this.renderer.mode = "normal"
+    }
+    if (inputs.lastNumKey === 2) {
+      this.renderer.mode = "wireframe"
+    }
     // check collisions
     for (let o of Object.values(this.objects)) {
       if (o instanceof Cube || o instanceof Plane) {
@@ -486,6 +517,7 @@ function inputsReader(canvas: HTMLCanvasElement): () => Inputs {
   let rclick = false;
   let mouseX = 0;
   let mouseY = 0;
+  let lastNumKey = 0; // TODO(@darzu): this is a little hacky
 
   window.addEventListener("keydown", (ev) => {
     switch (ev.key.toLowerCase()) {
@@ -539,6 +571,12 @@ function inputsReader(canvas: HTMLCanvasElement): () => Inputs {
       case "c":
         down = false;
         break;
+      case "1":
+        lastNumKey = 1;
+        break;
+      case "2":
+        lastNumKey = 2;
+        break;
       case " ":
         accel = false;
         break;
@@ -552,7 +590,7 @@ function inputsReader(canvas: HTMLCanvasElement): () => Inputs {
     }
   });
 
-  window.addEventListener("click", (ev) => {
+  window.addEventListener("mouseup", (ev) => {
     if (document.pointerLockElement === canvas) {
       if (ev.button === 0) {
         lclick = true;
@@ -576,6 +614,7 @@ function inputsReader(canvas: HTMLCanvasElement): () => Inputs {
       mouseY,
       lclick,
       rclick,
+      lastNumKey,
     };
     mouseX = 0;
     mouseY = 0;
@@ -703,7 +742,8 @@ async function startGame(host: string | null) {
       if (hosting) {
         console.log("hello");
         console.log(`Net up and running with id ${id}`);
-        navigator.clipboard.writeText(id);
+        if (navigator.clipboard)
+          navigator.clipboard.writeText(id);
         frame();
       } else {
         frame();

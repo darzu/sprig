@@ -140,4 +140,3 @@ export class Deserializer {
         return s;
     }
 }
-//# sourceMappingURL=serialize.js.map

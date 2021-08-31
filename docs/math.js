@@ -28,4 +28,3 @@ export function jitter(radius) {
 export function align(x, size) {
     return Math.ceil(x / size) * size;
 }
-//# sourceMappingURL=math.js.map

@@ -187,8 +187,9 @@ export class Net<Inputs> {
   }
 
   private setupChannel(server: string, chan: RTCDataChannel) {
-    chan.onmessage = (ev) => {
-      this.handleMessage(server, ev.data);
+    chan.onmessage = async (ev) => {
+      const buff = (ev.data as Blob).arrayBuffer ? await (ev.data as Blob).arrayBuffer() : ev.data as ArrayBuffer;
+      this.handleMessage(server, buff);
     };
   }
 
