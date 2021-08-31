@@ -58,6 +58,9 @@ void main() {
 `
 
 const fragCode = `
+#extension GL_EXT_shader_texture_lod : enable
+#extension GL_OES_standard_derivatives : enable
+
 precision mediump float;
 
 // scene
@@ -74,7 +77,10 @@ varying vec3 v_color;
 varying vec4 v_position;
 
 void main() {
-  float sunLight = clamp(dot(-u_lightDir, v_normal), 0.0, 1.0);
+  // ANNOYING: flat interpolation isn't supported in webgl so let's just compute it
+  vec3 norm = -normalize(cross(dFdx(v_position.xyz), dFdy(v_position.xyz)));
+
+  float sunLight = clamp(dot(-u_lightDir, norm), 0.0, 1.0);
   vec3 resultColor = v_color * (sunLight * 2.0 + 0.2);
   vec3 gammaCorrected = pow(resultColor, vec3(1.0/2.2));
   gl_FragColor = vec4(gammaCorrected, 1.0);
@@ -90,6 +96,9 @@ void main() {
 
 export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxTrisPerMesh: number): Renderer {
   let gl = canv.getContext('webgl')!; // TODO: use webgl2
+
+  gl.getExtension('OES_standard_derivatives');
+  gl.getExtension('EXT_shader_texture_lod');
 
   let vertShader = gl.createShader(gl.VERTEX_SHADER)!;
   gl.shaderSource(vertShader, vertCode);
@@ -216,7 +225,9 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxTr
     gl.viewport(0, 0, canv.width, canv.height);
 
     gl.enable(gl.DEPTH_TEST);
+    // gl.frontFace(gl.CW);
     gl.enable(gl.CULL_FACE);
+    // gl.cullFace(gl.FRONT);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     gl.useProgram(program);

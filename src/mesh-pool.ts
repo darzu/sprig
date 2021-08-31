@@ -505,7 +505,7 @@ export function createMeshPoolBuilder_WebGL(gl: WebGLRenderingContext, opts: Mes
 
     function queueUpdateVertices(offset: number, data: Uint8Array) {
         // TODO(@darzu): this is a strange way to compute this, but seems to work conservatively
-        const numVerts = Math.min(data.length / Vertex.ByteSize, Math.max(builder.numVerts, builder.poolHandle.numVerts) + 10)
+        const numVerts = Math.min(data.length / Vertex.ByteSize, Math.max(builder.numVerts, builder.poolHandle.numVerts))
         // const numVerts = data.length / Vertex.ByteSize;
         const positions = new Float32Array(numVerts * 3)
         const colors = new Float32Array(numVerts * 3)
@@ -515,7 +515,7 @@ export function createMeshPoolBuilder_WebGL(gl: WebGLRenderingContext, opts: Mes
         const vNumOffset = offset / Vertex.ByteSize;
 
         // TODO(@darzu): debug logging
-        console.log(`positions: #${vNumOffset}: ${positions.slice(0, numVerts * 3).join(',')}`)
+        // console.log(`positions: #${vNumOffset}: ${positions.slice(0, numVerts * 3).join(',')}`)
         gl.bindBuffer(gl.ARRAY_BUFFER, positionsBuffer);
         gl.bufferSubData(gl.ARRAY_BUFFER, vNumOffset * bytesPerVec3, positions);
         gl.bindBuffer(gl.ARRAY_BUFFER, normalsBuffer);
@@ -525,9 +525,9 @@ export function createMeshPoolBuilder_WebGL(gl: WebGLRenderingContext, opts: Mes
     }
     function queueUpdateIndices(offset: number, data: Uint8Array) {
         // TODO(@darzu): again, strange but a useful optimization        
-        const numInd = Math.min(data.length / 2, Math.max(builder.numTris, builder.poolHandle.numTris) * 3 + 10)
+        const numInd = Math.min(data.length / 2, Math.max(builder.numTris, builder.poolHandle.numTris) * 3)
         // TODO(@darzu): debug logging
-        console.log(`indices: #${offset / 2}: ${new Uint16Array(data.buffer).slice(0, numInd).join(',')}`)
+        // console.log(`indices: #${offset / 2}: ${new Uint16Array(data.buffer).slice(0, numInd).join(',')}`)
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
         gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, offset, data);
     }
