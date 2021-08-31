@@ -316,13 +316,9 @@ interface MeshPool {
     allMeshHandles: MeshHandle[],
     // handles
     device: GPUDevice,
-    addMesh: (m: Mesh) => MeshHandle,
     // TODO:
     // - add via queue
 }
-
-const scratchFloat32Arr = new Float32Array(1000);
-const scratchUint16Arr = new Uint16Array(1000);
 
 function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolBuilder {
     const { maxMeshes, maxTris, maxVerts } = opts;
@@ -364,7 +360,7 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
     // add our meshes to the vertex and index buffers
     let numVerts = 0;
     let numTris = 0;
-    function addMesh(m: Mesh, directWrite = false): MeshHandle {
+    function addMesh(m: Mesh): MeshHandle {
         // m = unshareVertices(m); // work-around; see TODO inside function
         if (!m.usesProvoking)
             m = unshareProvokingVertices(m);
@@ -380,31 +376,16 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
 
         m.pos.forEach((pos, i) => {
             const vOff = (numVerts + i) * vertElStride
-            if (directWrite)
-                verticesMap.set([...pos, ...[0.5, 0.5, 0.5], ...[1.0, 0.0, 0.0]], vOff)
-            else {
-                scratchFloat32Arr.set([...pos, ...[0.5, 0.5, 0.5], ...[1.0, 0.0, 0.0]], 0)
-                device.queue.writeBuffer(verticesBuffer, vOff * bytesPerFloat, scratchFloat32Arr, 0, vertByteSize)
-            }
+            verticesMap.set([...pos, ...[0.5, 0.5, 0.5], ...[1.0, 0.0, 0.0]], vOff)
         })
         m.tri.forEach((triInd, i) => {
             const iOff = (numTris + i) * indicesPerTriangle
-            if (directWrite) {
-                indicesMap[iOff + 0] = triInd[0]
-                indicesMap[iOff + 1] = triInd[1]
-                indicesMap[iOff + 2] = triInd[2]
-            } else {
-                scratchUint16Arr.set(triInd, 0)
-                device.queue.writeBuffer(indicesBuffer, iOff * bytesPerUint16, scratchUint16Arr, 0, 3 * bytesPerUint16)
-            }
+            indicesMap[iOff + 0] = triInd[0]
+            indicesMap[iOff + 1] = triInd[1]
+            indicesMap[iOff + 2] = triInd[2]
             const vOff = (numVerts + triInd[0]) * vertElStride
             const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
-            if (directWrite)
-                verticesMap.set([...m.pos[triInd[0]], ...m.colors[i], ...normal], vOff)
-            else {
-                scratchFloat32Arr.set([...m.pos[triInd[0]], ...m.colors[i], ...normal], 0)
-                device.queue.writeBuffer(verticesBuffer, vOff * bytesPerFloat, scratchFloat32Arr, 0, vertByteSize)
-            }
+            verticesMap.set([...m.pos[triInd[0]], ...m.colors[i], ...normal], vOff)
             // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
         })
 
@@ -438,7 +419,6 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
         indicesBuffer,
         _meshUniBuffer,
         allMeshHandles,
-        addMesh: (m: Mesh) => addMesh(m, false),
     }
 
     function finish(): MeshPool {
@@ -458,7 +438,7 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
         verticesMap,
         indicesMap,
         uniformMap,
-        addMesh: (m: Mesh) => addMesh(m, true),
+        addMesh,
         finish,
     };
 
