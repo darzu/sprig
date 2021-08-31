@@ -523,7 +523,8 @@ export function createMeshRenderer(
         if (colorTexture)
             colorTexture.destroy();
 
-        console.log("resizing")
+        // TODO(@darzu): 
+        // console.log("resizing")
 
         depthTexture = device.createTexture({
             size: { width: canvasWidth, height: canvasHeight },

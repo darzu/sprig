@@ -134,7 +134,7 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
     let _indMap: Uint16Array | null = null;
 
     function _unmap() {
-        console.log("unmapping") // TODO(@darzu): 
+        // console.log("unmapping") // TODO(@darzu): 
         if (_vertsMap)
             _vertBuffer.unmap()
         if (_indMap && _indexBuffer)
@@ -143,8 +143,9 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
         _indMap = null;
     }
 
+    // TODO(@darzu): misnomer. This doesn't do the mapping
     function _map() {
-        console.log("mapping") // TODO(@darzu): 
+        // console.log("mapping") // TODO(@darzu): 
         if (!_vertsMap)
             _vertsMap = new Float32Array(_vertBuffer.getMappedRange())
         if (!_indMap && _indexBuffer)
