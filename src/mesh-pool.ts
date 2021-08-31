@@ -258,6 +258,10 @@ export interface MeshPoolMaps {
     verticesMap: Uint8Array,
     indicesMap: Uint16Array,
     uniformMap: Uint8Array,
+    // asynchronous updates to buffers
+    queueUpdateVertices: (offset: number, data: Uint8Array) => void,
+    queueUpdateIndices: (offset: number, data: Uint8Array) => void,
+    queueUpdateUniform: (offset: number, data: Uint8Array) => void,
 }
 export interface MeshPoolBuilder {
     // options
@@ -391,10 +395,17 @@ export function createMeshPoolBuilder_WebGPU(device: GPUDevice, opts: MeshPoolOp
     let indicesMap = new Uint16Array(indicesBuffer.getMappedRange());
     let uniformMap = new Uint8Array(uniformBuffer.getMappedRange());
 
+    function queueUpdateBuffer(buffer: GPUBuffer, offset: number, data: Uint8Array) {
+        device.queue.writeBuffer(buffer, offset, data);
+    }
+
     const maps: MeshPoolMaps = {
         verticesMap,
         indicesMap,
-        uniformMap
+        uniformMap,
+        queueUpdateIndices: (offset: number, data: Uint8Array) => queueUpdateBuffer(indicesBuffer, offset, data),
+        queueUpdateVertices: (offset: number, data: Uint8Array) => queueUpdateBuffer(verticesBuffer, offset, data),
+        queueUpdateUniform: (offset: number, data: Uint8Array) => queueUpdateBuffer(uniformBuffer, offset, data),
     }
 
     const buffers: MeshPoolBuffers_WebGPU = {
@@ -404,13 +415,7 @@ export function createMeshPoolBuilder_WebGPU(device: GPUDevice, opts: MeshPoolOp
         uniformBuffer,
     }
 
-    const builder = createMeshPoolBuilder(opts, maps, updateUniform);
-
-    const scratch_uniform_u8 = new Uint8Array(MeshUniform.ByteSizeAligned);
-    function updateUniform(m: MeshHandle) {
-        MeshUniform.Serialize(scratch_uniform_u8, 0, m.transform, m.aabbMin, m.aabbMax)
-        device.queue.writeBuffer(uniformBuffer, m.modelUniByteOffset, scratch_uniform_u8);
-    }
+    const builder = createMeshPoolBuilder(opts, maps);
 
     const poolHandle: MeshPool_WebGPU = Object.assign(builder.poolHandle, buffers);
 
@@ -435,7 +440,7 @@ export function createMeshPoolBuilder_WebGPU(device: GPUDevice, opts: MeshPoolOp
     return builder_webgpu;
 }
 
-function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, updateUniform: (m: MeshHandle) => void): MeshPoolBuilder {
+function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps): MeshPoolBuilder {
     const { maxMeshes, maxTris, maxVerts } = opts;
 
     let finished = false;
@@ -457,7 +462,7 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, updateUni
         allMeshes,
         numTris: 0,
         numVerts: 0,
-        updateUniform,
+        updateUniform: queueUpdateUniform,
     }
 
     const { verticesMap, indicesMap, uniformMap } = maps;
@@ -531,6 +536,10 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, updateUni
     }
 
     const scratch_uniform_u8 = new Uint8Array(MeshUniform.ByteSizeAligned);
+    function queueUpdateUniform(m: MeshHandle): void {
+        MeshUniform.Serialize(scratch_uniform_u8, 0, m.transform, m.aabbMin, m.aabbMax)
+        maps.queueUpdateUniform(m.modelUniByteOffset, scratch_uniform_u8)
+    }
     function mappedUpdateUniform(m: MeshHandle): void {
         if (finished)
             throw 'trying to use finished MeshBuilder'
