@@ -1,0 +1,10 @@
+Critique of TSC:
+    "Their code makes pretty heavy use of megamorphic object shapes and unnecessary 
+    dynamic property accesses (both well-known JavaScript speed bumps)"
+        https://esbuild.github.io/faq/#why-is-esbuild-fast
+        https://mrale.ph/blog/2015/01/11/whats-up-with-monomorphism.html
+        https://github.com/microsoft/TypeScript/issues/39247
+
+Rant about JS:
+    https://hackernoon.com/how-it-feels-to-learn-javascript-in-2016-d3a717dd577f
+    

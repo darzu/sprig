@@ -282,6 +282,7 @@ BLOGS TO SCAN:
     http://courses.cs.washington.edu/courses/cse458/ Computer Animation
     http://courses.cs.washington.edu/courses/csep557/ Trends in Computer Graphics
     http://courses.cs.washington.edu/courses/cse557/ Computer Graphics
+  http://madebyevan.com
 
 coloring models:
   https://www.willusher.io/webgl-ewa-splatter/#Dinosaur

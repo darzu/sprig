@@ -29,3 +29,8 @@ Teaching:
             What are the paths an indie dev can take?
             What are the paths a AAA dev takes?
 
+Series of islands like Sea of Thieves using Redblob island generator
+
+Mount:
+    Maybe each island you find a bird that will fly you around on that island
+

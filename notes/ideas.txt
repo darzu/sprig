@@ -1,0 +1,10 @@
+Woodworking interactive tutorial:
+    Principle of referencing, distance
+    e.g. track saw is so direct
+    simulate jitter when going through table saw to show how you must press into the guide
+    tolerances and multiplicative effects
+    Cutting dovetails
+    Joinery principles
+    solid wood vs plywood
+    structural stress tests
+    weight and cost

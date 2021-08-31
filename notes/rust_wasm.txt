@@ -37,3 +37,7 @@ wasm-pack
     https://github.com/rustwasm/wasm-pack
     used by rapier
 
+With bundler
+    https://github.com/evanw/esbuild/issues/408#issuecomment-699688651
+    https://esbuild.github.io/plugins/#webassembly-plugin
+

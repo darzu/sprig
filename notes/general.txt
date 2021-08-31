@@ -498,3 +498,19 @@ Good YouTube channels:
 
 Unreal Voxel system:
   https://www.youtube.com/channel/UCtJiCZyy95guZFCyBbnCs2Q
+
+Bundler:
+  https://parceljs.org
+  https://esbuild.github.io/getting-started/
+
+N-body simulation:
+  "Barnes-Hut for gravity"
+
+Data processing / query language?
+  https://code.kx.com/q/
+
+Rant about hosting:
+  https://circleci.com/blog/its-the-future/
+
+Third age of JS?
+  https://www.swyx.io/js-third-age/
