@@ -5,10 +5,10 @@ export interface CollidesWith {
     [id: number]: number[]
 }
 
-export let _lastCollisionTestTimeMs = 0; // TODO(@darzu): hack
-export function checkCollisions(objs: { aabb: () => AABB, id: number }[]): CollidesWith {
+export let _lastCollisionTestTimeMs = 0; // TODO(@darzu): hack for stat debugging
+export function checkCollisions(objs: { worldAABB: AABB, id: number }[]): CollidesWith {
     const start = performance.now()
-    const aabbs = objs.map(o => o.aabb())
+    const aabbs = objs.map(o => o.worldAABB)
     const collidesWith: CollidesWith = {}
     // TODO(@darzu): do better than n^2. oct-tree
     // TODO(@darzu): be more precise than just AABBs. broad & narrow phases.

@@ -51,6 +51,7 @@ export abstract class GameObject {
   // NOTE: it kinda sucks to have duplicate sources of truth on loc & rot, 
   // but it's more important that we don't unnecessarily recompute this transform
   transform: mat4;
+  worldAABB: AABB;
 
   constructor(id: number, creator: number) {
     this.id = id;
@@ -67,6 +68,7 @@ export abstract class GameObject {
     this.rotation_error = quat.create();
     this.transform = mat4.create();
     this.localAABB = { min: vec3.fromValues(-1, -1, -1), max: vec3.fromValues(1, 1, 1) };
+    this.worldAABB = { ...this.localAABB }
   }
 
   snapLocation(location: vec3) {
@@ -251,19 +253,24 @@ export abstract class GameState<Inputs> {
       quat.multiply(o.rotation, deltaRotation, o.rotation);
     }
 
-    // update transforms based on new rotations and positions
+    // UPDATE DERIVED STATE:
     for (let o of objs) {
+      // update transform based on new rotations and positions
       mat4.fromRotationTranslation(
         o.transform,
         quat.mul(working_quat, o.rotation, o.rotation_error),
         vec3.add(working_vec3, o.location, o.location_error)
       );
+
+      // update AABB
+      vec3.add(o.worldAABB.min, o.localAABB.min, o.location)
+      vec3.add(o.worldAABB.max, o.localAABB.max, o.location)
     }
 
     // check collisions
     // TODO(@darzu): hack. also we need AABBs on objects
     // const collidesWith = checkCollisions(objs);
-    // for (let o of os) {
+    // for (let o of objs) {
     //   o.color = collidesWith[o.id] ? vec3.fromValues(0.2, 0.0, 0.0) : vec3.fromValues(0.0, 0.2, 0.0)
     // }
   }
