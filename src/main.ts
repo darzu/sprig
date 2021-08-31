@@ -443,7 +443,7 @@ class CubeGameState extends GameState<Inputs> {
     for (let o of Object.values(this.objects)) {
       if (o instanceof Cube || o instanceof Plane) {
         vec3.copy(o.color, o.defaultColor);
-        if (this.collidesWith[o.id]) {
+        if (this.collidesWith[o.id]?.length) {
           vec3.add(o.color, o.color, vec3.fromValues(0.1, 0.0, 0.0));
         }
       }

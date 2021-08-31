@@ -6,27 +6,31 @@ export interface CollidesWith {
 }
 
 export let _lastCollisionTestTimeMs = 0; // TODO(@darzu): hack for stat debugging
+let _collidesWith: CollidesWith = {};
 export function checkCollisions(objs: { worldAABB: AABB, id: number }[]): CollidesWith {
     const start = performance.now()
-    const aabbs = objs.map(o => o.worldAABB)
-    const collidesWith: CollidesWith = {}
+
     // TODO(@darzu): do better than n^2. oct-tree
     // TODO(@darzu): be more precise than just AABBs. broad & narrow phases.
     // TODO(@darzu): also use better memory pooling for aabbs and collidesWith relation
-    for (let i0 = 0; i0 < aabbs.length; i0++) {
-        const box0 = aabbs[i0]
-        for (let i1 = i0 + 1; i1 < aabbs.length; i1++) {
-            const box1 = aabbs[i1]
+    for (let o of objs) {
+        if (!_collidesWith[o.id])
+            _collidesWith[o.id] = []
+        else
+            _collidesWith[o.id].length = 0
+    }
+    for (let i0 = 0; i0 < objs.length; i0++) {
+        const box0 = objs[i0].worldAABB
+        for (let i1 = i0 + 1; i1 < objs.length; i1++) {
+            const box1 = objs[i1].worldAABB
             if (doesOverlap(box0, box1)) {
-                const id0 = objs[i0].id
-                const id1 = objs[i1].id
-                collidesWith[id0] = [...(collidesWith[id0] ?? []), id1]
-                collidesWith[id1] = [...(collidesWith[id1] ?? []), id0]
+                _collidesWith[objs[i0].id].push(objs[i1].id)
+                _collidesWith[objs[i1].id].push(objs[i0].id)
             }
         }
     }
     _lastCollisionTestTimeMs = performance.now() - start;
-    return collidesWith;
+    return _collidesWith;
 }
 export function doesOverlap(a: AABB, b: AABB) {
     return true
