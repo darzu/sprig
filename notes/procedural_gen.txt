@@ -59,3 +59,21 @@ Big height map stuff:
 
 Triangle grids (different from Redblob):
     https://www.boristhebrave.com/2021/05/23/triangle-grids/
+    If u look at the connectivity of corners on a triangle grid, it's actually a hex grid!
+    If u look at the connectivity of corners on a hex grid, it's actually a triangle grid!
+    Why use triangles:
+        They’re always planar
+            as a height map, each vertex can be at a different heights
+        They’re simple
+            "triangles [are] the best shape for any algorithm that scales with the number of points or edges"
+            Simplex Noise uses a triangle grid and is prefered over Perlin Noise; because of better interpolation (?)
+        They have nicer geometry
+            straight edges (unlike hex)
+    Marching cubes (2d) on a triangle grid: https://www.shadertoy.com/view/WtfGDX
+    consider making vertices "stepable":
+        https://www.boristhebrave.com/2021/05/27/some-triangle-grid-extensions/
+        all triangles sharing only a vertex are two steps away
+        all triangles sharing an edge are one step away
+
+Trihex grids / kagome lattices:
+    https://www.boristhebrave.com/2021/05/27/some-triangle-grid-extensions/
