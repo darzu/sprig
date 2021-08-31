@@ -5,6 +5,10 @@ import { vec3, quat } from "./gl-matrix.js";
 // fraction of state updates to artificially drop
 const DROP_PROBABILITY = 0.0;
 
+const DELAY_SENDS = false;
+const SEND_DELAY = 60.0;
+const SEND_DELAY_JITTER = 60.0;
+
 const MAX_OBJECTS_PER_STATE_UPDATE = 16;
 
 type DataConnection = Peer.DataConnection;
@@ -117,6 +121,9 @@ function deserializeObjectUpdates(msg: StateUpdate): ObjectUpdate[] {
   return updates;
 }
 
+// target length for jitter buffer
+const BUFFER_TARGET = 3;
+
 export class Net<Inputs> {
   private state: GameState<Inputs>;
   private host: boolean;
@@ -130,6 +137,10 @@ export class Net<Inputs> {
   private unapplied_updates: Record<number, ObjectUpdate> = {};
   private object_priorities: Record<number, number> = {};
   private objects_known: Record<number, ServerId[]> = {};
+  private state_updates: Record<ServerId, StateUpdate[]> = {};
+  private latest_update_applied: Record<ServerId, number> = {};
+  private waiting: Record<ServerId, boolean> = {};
+  private objectsToAdd: Record<number, NetObject> = {};
 
   private objectKnownToServer(obj: GameObject, server: ServerId) {
     return (
@@ -144,6 +155,8 @@ export class Net<Inputs> {
     }
     for (let server of this.peers) {
       if (!this.objectKnownToServer(obj, server)) {
+        // make sure we send at least one state update for newly-added objects
+        this.object_priorities[obj.id] += 5000;
         let netObj = obj.netObject();
         let addObjects: AddObjects = {
           type: MessageType.AddObjects,
@@ -259,37 +272,33 @@ export class Net<Inputs> {
             break;
           }
           this.recordObjectKnown(netObj.id, server);
-          let obj = this.state.addObjectFromNet(netObj);
-          let update = this.unapplied_updates[obj.id];
+          let update = this.unapplied_updates[netObj.id];
           if (update) {
+            let obj = this.state.addObjectFromNet(netObj);
             if (this.shouldAcceptUpdate(obj, update)) {
               this.applyUpdate(obj, update);
             }
+          } else {
+            this.objectsToAdd[netObj.id] = netObj;
           }
         }
         break;
       }
       case MessageType.StateUpdate: {
         let msg = message as StateUpdate;
-        let updates = deserializeObjectUpdates(msg);
-        for (let update of updates) {
-          // do we know about this object?
-          let obj = this.state.objects[update.id];
-          if (!obj) {
-            // we've never heard of this object before, so we need to save this
-            // update and apply it once we do hear about this object.
-            // BUT: we only want to save the most up-to-date snapshot,
-            // according to both the snapshot and authority sequences!
-            let latest_update = this.unapplied_updates[update.id];
-            if (!latest_update) {
-              this.unapplied_updates[update.id] = update;
-            } else if (this.shouldAcceptUpdate(latest_update, update)) {
-              this.unapplied_updates[update.id] = update;
-            }
-          } else if (this.shouldAcceptUpdate(obj, update)) {
-            this.applyUpdate(obj, update);
-          }
+        // don't apply this update yet--buffer it for the next time we're ready
+        // for updates
+        if (!this.state_updates[server]) {
+          this.state_updates[server] = [];
         }
+        let i = 0;
+        while (i < this.state_updates[server].length) {
+          if (msg.seq < this.state_updates[server][i].seq) {
+            break;
+          }
+          i++;
+        }
+        this.state_updates[server].splice(i, 0, msg);
       }
     }
   }
@@ -335,9 +344,11 @@ export class Net<Inputs> {
   }
 
   sendStateUpdates() {
-    // first, make sure we've added objects everywhere we need to
-    Object.values(this.state.objects).forEach((obj) => this.syncObject(obj));
     this.updateObjectPriorities();
+    // make sure we've added objects everywhere we need to
+    for (let obj of Object.values(this.state.objects)) {
+      this.syncObject(obj);
+    }
     let objects = this.objectsToSync();
     // build snapshot
     let data = new Array();
@@ -359,10 +370,79 @@ export class Net<Inputs> {
 
     for (let server of this.peers) {
       if (Math.random() >= DROP_PROBABILITY) {
-        this.send(server, msg, false);
+        if (DELAY_SENDS) {
+          setTimeout(
+            () => this.send(server, msg, false),
+            SEND_DELAY + Math.random() * SEND_DELAY_JITTER
+          );
+        } else {
+          this.send(server, msg, false);
+        }
       }
     }
     this.snap_seq++;
+  }
+
+  applyStateUpdate(msg: StateUpdate) {
+    let updates = deserializeObjectUpdates(msg);
+    for (let update of updates) {
+      // do we know about this object?
+      let obj = this.state.objects[update.id];
+      if (!obj) {
+        if (this.objectsToAdd[update.id]) {
+          let netObj = this.objectsToAdd[update.id];
+          let obj = this.state.addObjectFromNet(netObj);
+          this.applyUpdate(obj, update);
+        }
+        // we've never heard of this object before, so we need to save this
+        // update and apply it once we do hear about this object.
+        // BUT: we only want to save the most up-to-date snapshot,
+        // according to both the snapshot and authority sequences!
+        let latest_update = this.unapplied_updates[update.id];
+        if (!latest_update) {
+          this.unapplied_updates[update.id] = update;
+        } else if (this.shouldAcceptUpdate(latest_update, update)) {
+          this.unapplied_updates[update.id] = update;
+        }
+      } else if (this.shouldAcceptUpdate(obj, update)) {
+        this.applyUpdate(obj, update);
+      }
+    }
+  }
+
+  updateState() {
+    for (let server of this.peers) {
+      // first, apply any old updates ASAP
+      while (
+        this.state_updates[server] &&
+        this.state_updates[server].length > 0 &&
+        this.state_updates[server][0].seq < this.latest_update_applied[server]
+      ) {
+        let msg = this.state_updates[server].shift() as StateUpdate;
+        console.log(`Applying old state update ${msg.seq} from ${server}`);
+        this.applyStateUpdate(msg);
+        this.latest_update_applied[server] = msg.seq;
+      }
+      if (
+        !this.state_updates[server] ||
+        this.state_updates[server].length === 0
+      ) {
+        // buffer some state updates from this server
+        this.waiting[server] = true;
+        continue;
+      } else if (
+        !this.waiting[server] ||
+        this.state_updates[server].length >= BUFFER_TARGET
+      ) {
+        this.waiting[server] = false;
+        do {
+          let msg = this.state_updates[server].shift() as StateUpdate;
+          this.applyStateUpdate(msg);
+          this.latest_update_applied[server] = msg.seq;
+          // if we've fallen significantly behind, want to catch up now
+        } while (this.state_updates[server].length > BUFFER_TARGET * 2);
+      }
+    }
   }
 
   // listen for incoming connections

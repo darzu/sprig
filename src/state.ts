@@ -1,7 +1,7 @@
 import { mat4, vec3, quat } from "./gl-matrix.js";
 import { Renderer } from "./render.js";
 
-const ERROR_SMOOTHING_FACTOR = 0.9;
+const ERROR_SMOOTHING_FACTOR = 0.8;
 const EPSILON = 0.0001;
 
 // defines the geometry and coloring of a mesh
@@ -115,16 +115,14 @@ export abstract class GameObject {
 export type NetObject = any;
 
 export abstract class GameState<Inputs> {
-  protected time: number;
   protected nextPlayerId: number;
   nextObjectId: number;
   protected renderer: Renderer;
   objects: Record<number, GameObject>;
   me: number;
 
-  constructor(time: number, renderer: Renderer) {
+  constructor(renderer: Renderer) {
     this.me = 0;
-    this.time = time;
     this.renderer = renderer;
     this.nextPlayerId = 0;
     this.nextObjectId = 0;
@@ -185,8 +183,7 @@ export abstract class GameState<Inputs> {
     return this.nextObjectId++;
   }
 
-  step(time: number, inputs: Inputs) {
-    let dt = time - this.time;
+  step(dt: number, inputs: Inputs) {
     this.stepGame(dt, inputs);
     let identity_quat = quat.create();
     let delta = vec3.create();
@@ -244,6 +241,5 @@ export abstract class GameState<Inputs> {
       // note--quat multiplication is not commutative, need to multiply on the left
       quat.multiply(o.rotation, deltaRotation, o.rotation);
     }
-    this.time = time;
   }
 }

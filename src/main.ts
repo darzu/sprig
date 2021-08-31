@@ -160,9 +160,8 @@ class CubeGameState extends GameState<Inputs> {
   cameraRotation: quat;
   cameraLocation: vec3;
 
-  constructor(time: number, renderer: Renderer, createObjects: boolean = true) {
-    super(time, renderer);
-    this.time = 0;
+  constructor(renderer: Renderer, createObjects: boolean = true) {
+    super(renderer);
     this.me = 0;
     this.cameraRotation = quat.identity(quat.create());
     quat.rotateX(this.cameraRotation, this.cameraRotation, -Math.PI / 8);
@@ -484,6 +483,9 @@ function inputsReader(canvas: HTMLCanvasElement): () => Inputs {
   return getInputs;
 }
 
+// ms per network sync (should be the same for all servers)
+const NET_DT = 1000.0 / 20.0;
+
 async function startGame(host: string | null) {
   let hosting = host === null;
   let canvas = document.getElementById("sample-canvas") as HTMLCanvasElement;
@@ -502,7 +504,8 @@ async function startGame(host: string | null) {
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter!.requestDevice();
   let renderer = new Renderer(canvas, device, 20000);
-  let gameState = new CubeGameState(performance.now(), renderer, hosting);
+  let start_of_time = performance.now();
+  let gameState = new CubeGameState(renderer, hosting);
   let inputs = inputsReader(canvas);
   function doLockMouse() {
     if (document.pointerLockElement !== canvas) {
@@ -512,21 +515,37 @@ async function startGame(host: string | null) {
   canvas.addEventListener("click", doLockMouse);
 
   const controlsStr = `controls: WASD, shift/c, mouse, spacebar`;
-  let previousFrameTime = performance.now();
   let avgJsTime = 0;
   let avgNetTime = 0;
   let avgFrameTime = 0;
   let avgWeight = 0.05;
   let net: Net<Inputs>;
+  let time_to_next_sync = NET_DT;
+  let previous_frame_time = start_of_time;
   let frame = () => {
-    let start = performance.now();
-    gameState.step(performance.now(), inputs());
+    let frame_start_time = performance.now();
+    let time_to_consume = frame_start_time - previous_frame_time;
+    let net_time = 0;
+    while (true) {
+      // need to do some game steps before we render
+      if (time_to_consume > time_to_next_sync) {
+        gameState.step(time_to_next_sync, inputs());
+        let before_net = performance.now();
+        net.updateState();
+        net.sendStateUpdates();
+        net_time += performance.now() - before_net;
+        time_to_consume = time_to_consume - time_to_next_sync;
+        time_to_next_sync = NET_DT;
+      } else {
+        gameState.step(time_to_consume, inputs());
+        time_to_next_sync = time_to_next_sync - time_to_consume;
+        break;
+      }
+    }
     gameState.renderFrame();
-    let jsTime = performance.now() - start;
-    net.sendStateUpdates();
-    let netTime = performance.now() - (start + jsTime);
-    let frameTime = start - previousFrameTime;
-    previousFrameTime = start;
+    let jsTime = performance.now() - frame_start_time;
+    let frameTime = frame_start_time - previous_frame_time;
+    previous_frame_time = frame_start_time;
     avgJsTime = avgJsTime
       ? (1 - avgWeight) * avgJsTime + avgWeight * jsTime
       : jsTime;
@@ -534,8 +553,8 @@ async function startGame(host: string | null) {
       ? (1 - avgWeight) * avgFrameTime + avgWeight * frameTime
       : frameTime;
     avgNetTime = avgNetTime
-      ? (1 - avgWeight) * avgNetTime + avgWeight * netTime
-      : netTime;
+      ? (1 - avgWeight) * avgNetTime + avgWeight * net_time
+      : net_time;
     const avgFPS = 1000 / avgFrameTime;
     debugDiv.innerText =
       controlsStr +
