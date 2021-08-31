@@ -129,6 +129,12 @@ export module Vertex {
 }
 
 export module MeshUniform {
+    export interface Data {
+        transform: mat4,
+        aabbMin: vec3,
+        aabbMax: vec3,
+    }
+
     const _counts = [
         align(4 * 4, 4), // transform
         align(3, 4), // aabb min
@@ -245,15 +251,11 @@ export interface PoolIndex {
     indicesNumOffset: number,
     modelUniByteOffset: number,
 }
-export interface MeshHandle extends PoolIndex {
+export interface MeshHandle extends PoolIndex, MeshUniform.Data {
     // this mesh
     numTris: number,
     numVerts: number,
     model?: Mesh,
-    // data
-    transform: mat4,
-    aabbMin: vec3,
-    aabbMax: vec3,
 }
 
 export interface MeshPoolOpts {
@@ -288,6 +290,7 @@ export interface MeshPoolBuilder {
     poolHandle: MeshPool,
     // methods
     addMesh: (m: Mesh) => MeshHandle,
+    instanceMesh: (m: MeshHandle, d: MeshUniform.Data) => MeshHandle,
     buildMesh: () => MeshBuilder,
     updateUniform: (m: MeshHandle) => void,
     finish: () => MeshPool,
@@ -301,6 +304,7 @@ export interface MeshPool {
     numVerts: number,
     // methods
     addMesh: (m: Mesh) => MeshHandle,
+    instanceMesh: (m: MeshHandle, d: MeshUniform.Data) => MeshHandle,
     updateUniform: (m: MeshHandle) => void,
 }
 
@@ -612,6 +616,7 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
         numVerts: 0,
         updateUniform: queueUpdateUniform,
         addMesh: queueAddMesh,
+        instanceMesh: queueInstanceMesh,
     }
 
     const { verticesMap, indicesMap, uniformMap } = maps;
@@ -626,6 +631,7 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
         allMeshes,
         poolHandle: pool,
         addMesh: mappedAddMesh,
+        instanceMesh: mappedInstanceMesh,
         buildMesh: mappedMeshBuilder,
         updateUniform: mappedUpdateUniform,
         finish,
@@ -759,6 +765,14 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
         pool.allMeshes.push(handle)
 
         return handle;
+    }
+    function mappedInstanceMesh(m: MeshHandle, d: MeshUniform.Data): MeshHandle {
+        // TODO(@darzu): implement
+        throw 'TODO'
+    }
+    function queueInstanceMesh(m: MeshHandle, d: MeshUniform.Data): MeshHandle {
+        // TODO(@darzu): implement
+        throw 'TODO'
     }
 
     function finish(): MeshPool {
