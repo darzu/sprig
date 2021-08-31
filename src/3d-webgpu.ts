@@ -177,7 +177,7 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
             const p0: vec3 = [x1, 0, z1];
             const p1: vec3 = [x2, 0, z2];
             const p2: vec3 = [x3, y, z3];
-            const p3: vec3 = [x1, y, z1];
+            const p3: vec3 = [x1, y * (1.0 + jitter(0.1)), z1];
 
             const norm = vec3.cross(vec3.create(), [x2 - x1, 0, z2 - z1], [x3 - x1, y, z3 - z1])
             vec3.normalize(norm, norm);
@@ -208,27 +208,27 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
 
             i++;
 
-            // addTriToBuffers(
-            //     [p3, p1, p2],
-            //     [0, 1, 2],
-            //     norm,
-            //     [
-            //         [r, g, b],
-            //         [r * 0.5, g * 0.5, b * 0.5],
-            //         [r, g, b],
-            //     ],
-            //     [1.0, 0, 1.0],
-            //     grassMeshPool._vertsMap(),
-            //     grassMeshPool._numVerts,
-            //     vertElStride,
-            //     grassMeshPool._indMap(),
-            //     grassMeshPool._numTris,
-            //     true);
+            addTriToBuffers(
+                [p3, p1, p2],
+                [0, 1, 2],
+                norm,
+                [
+                    [r, g, b],
+                    [r * 0.5, g * 0.5, b * 0.5],
+                    [r, g, b],
+                ],
+                [1.0, 0, 1.0],
+                grassMeshPool._vertsMap(),
+                grassMeshPool._numVerts,
+                vertElStride,
+                grassMeshPool._indMap(),
+                grassMeshPool._numTris,
+                true);
 
-            // grassMeshPool._numTris += 1;
-            // grassMeshPool._numVerts += 3;
+            grassMeshPool._numTris += 1;
+            grassMeshPool._numVerts += 3;
 
-            // i++;
+            i++;
         }
     }
 
@@ -269,8 +269,8 @@ function createGrassTileset(opts: GrassTilesetOpts, device: GPUDevice): GrassTil
     const grassPerTile = (tileSize / spacing) ** 2;
     const tileCount = tilesPerSide ** 2;
     const totalGrass = grassPerTile * tileCount;
-    const totalGrassTris = totalGrass * 1;
-    // const totalGrassTris = totalGrass * 2;
+    // const totalGrassTris = totalGrass * 1;
+    const totalGrassTris = totalGrass * 2;
     const pool = createMeshMemoryPool({
         vertByteSize: bytesPerFloat * vertElStride,
         maxVerts: align(totalGrassTris * 3, 4),
