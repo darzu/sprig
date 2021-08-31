@@ -24,6 +24,8 @@ import {
   _lastCollisionTestTimeMs,
 } from "./phys_broadphase.js";
 import { _motionPairsLen } from "./phys.js";
+import { BoatProps, createBoatProps, stepBoats } from "./boat.js";
+import { jitter } from "./math.js";
 
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
@@ -276,10 +278,13 @@ class Player extends Cube {
 }
 
 class Boat extends Cube {
+  public boat: BoatProps;
+
   constructor(id: number, creator: number) {
     super(id, creator);
     this.color = vec3.fromValues(0.2, 0.1, 0.05);
     this.localAABB = getAABBFromMesh(this.mesh());
+    this.boat = createBoatProps();
   }
 
   mesh(): Mesh {
@@ -376,9 +381,14 @@ class CubeGameState extends GameState<Inputs> {
       }
 
       // create boat(s)
-      {
+      const BOAT_COUNT = 4;
+      for (let i = 0; i < BOAT_COUNT; i++) {
         const boat = new Boat(this.newId(), this.me);
-        boat.motion.location[1] = -5;
+        boat.motion.location[1] = -9;
+        boat.motion.location[0] = (Math.random() - 0.5) * 20 - 10;
+        boat.motion.location[2] = (Math.random() - 0.5) * 20 - 20;
+        boat.boat.speed = 0.01 + jitter(0.01);
+        boat.boat.wheelDir = jitter(0.002);
         this.addObject(boat);
       }
 
@@ -582,6 +592,13 @@ class CubeGameState extends GameState<Inputs> {
     if (inputs.lastNumKey === 2) {
       this.renderer.mode = "wireframe";
     }
+
+    // move boats
+    const boats = Object.values(this.objects).filter(
+      (o) => o instanceof Boat
+    ) as Boat[];
+    stepBoats(boats, dt);
+
     // check collisions
     for (let o of Object.values(this.objects)) {
       // TODO: consider a helper method to get only live objects
