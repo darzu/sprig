@@ -3,6 +3,7 @@
 import { mat4 } from "../ext/gl-matrix.js";
 import { mat4ByteSize, MeshMemoryPool as MeshPool, vec3ByteSize } from "./mesh.js";
 
+const shadowDepthTextureSize = 1024;
 
 const wgslShaders = {
     vertexShadow: `
@@ -31,6 +32,97 @@ const wgslShaders = {
   fn main() {
   }
   `,
+
+    vertex: `
+    [[block]] struct Scene {
+        cameraViewProjMatrix : mat4x4<f32>;
+        lightViewProjMatrix : mat4x4<f32>;
+        lightPos : vec3<f32>;
+    };
+
+    [[block]] struct Model {
+    modelMatrix : mat4x4<f32>;
+    };
+
+    [[group(0), binding(0)]] var<uniform> scene : Scene;
+    [[group(1), binding(0)]] var<uniform> model : Model;
+
+    struct VertexOutput {
+    [[location(0)]] shadowPos : vec3<f32>;
+    [[location(1)]] fragPos : vec3<f32>;
+    [[location(2)]] fragNorm : vec3<f32>;
+
+    [[builtin(position)]] Position : vec4<f32>;
+    };
+
+    [[stage(vertex)]]
+    fn main(
+        [[location(0)]] position : vec3<f32>,
+        [[location(1)]] color : vec3<f32>,
+        [[location(2)]] normal : vec3<f32>
+        ) -> VertexOutput {
+    var output : VertexOutput;
+
+    // XY is in (-1, 1) space, Z is in (0, 1) space
+    let posFromLight : vec4<f32> = scene.lightViewProjMatrix * model.modelMatrix * vec4<f32>(position, 1.0);
+
+    // Convert XY to (0, 1)
+    // Y is flipped because texture coords are Y-down.
+    output.shadowPos = vec3<f32>(
+        posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5),
+        posFromLight.z
+    );
+
+    output.Position = scene.cameraViewProjMatrix * model.modelMatrix * vec4<f32>(position, 1.0);
+    output.fragPos = output.Position.xyz;
+    output.fragNorm = normal;
+    return output;
+    }
+    `,
+    fragment: `
+    [[block]] struct Scene {
+    lightViewProjMatrix : mat4x4<f32>;
+    cameraViewProjMatrix : mat4x4<f32>;
+    lightPos : vec3<f32>;
+    };
+
+    [[group(0), binding(0)]] var<uniform> scene : Scene;
+    [[group(0), binding(1)]] var shadowMap: texture_depth_2d;
+    [[group(0), binding(2)]] var shadowSampler: sampler_comparison;
+
+    struct FragmentInput {
+    [[location(0)]] shadowPos : vec3<f32>;
+    [[location(1)]] fragPos : vec3<f32>;
+    [[location(2)]] fragNorm : vec3<f32>;
+    };
+
+    let albedo : vec3<f32> = vec3<f32>(0.9, 0.9, 0.9);
+    let ambientFactor : f32 = 0.2;
+
+    [[stage(fragment)]]
+    fn main(input : FragmentInput) -> [[location(0)]] vec4<f32> {
+    // Percentage-closer filtering. Sample texels in the region
+    // to smooth the result.
+    var visibility : f32 = 0.0;
+    for (var y : i32 = -1 ; y <= 1 ; y = y + 1) {
+        for (var x : i32 = -1 ; x <= 1 ; x = x + 1) {
+            let offset : vec2<f32> = vec2<f32>(
+            f32(x) * ${1 / shadowDepthTextureSize},
+            f32(y) * ${1 / shadowDepthTextureSize});
+
+            visibility = visibility + textureSampleCompare(
+            shadowMap, shadowSampler,
+            input.shadowPos.xy + offset, input.shadowPos.z - 0.007);
+        }
+    }
+    visibility = visibility / 9.0;
+
+    let lambertFactor : f32 = max(dot(normalize(scene.lightPos - input.fragPos), input.fragNorm), 0.0);
+
+    let lightingFactor : f32 = min(ambientFactor + visibility * lambertFactor, 1.0);
+    return vec4<f32>(lightingFactor * albedo, 1.0);
+    }
+    `,
 }
 
 const basicVertWGSL =
@@ -96,7 +188,6 @@ fn main(
 }
 `;
 
-const shadowDepthTextureSize = 1024;
 
 // const maxNumVerts = 1000;
 // const maxNumTri = 1000;
@@ -120,7 +211,7 @@ const maxNumInstances = 1000;
 const instanceByteSize = Float32Array.BYTES_PER_ELEMENT * 3/*color*/
 
 // TODO(@darzu): depth24plus-stencil8
-const depthStencilFormat = 'depth24plus';
+const depthStencilFormat = 'depth24plus-stencil8';
 
 // TODO(@darzu): move this out?
 const lightProjectionMatrix = mat4.create();
@@ -318,12 +409,12 @@ export function createMeshRenderer(
                     offset: 4 * 3,
                     format: 'float32x3',
                 },
-                // {
-                //     // normals
-                //     shaderLocation: 1,
-                //     offset: 0,
-                //     format: 'float32x3',
-                // },
+                {
+                    // normals
+                    shaderLocation: 2,
+                    offset: 4 * 3 * 2,
+                    format: 'float32x3',
+                },
                 // {
                 //     // uv
                 //     shaderLocation: 1,
@@ -339,7 +430,7 @@ export function createMeshRenderer(
             attributes: [
                 {
                     // color
-                    shaderLocation: 2,
+                    shaderLocation: 3,
                     offset: 0,
                     format: 'float32x3',
                 },
@@ -360,17 +451,6 @@ export function createMeshRenderer(
     const shadowPipelineLayout = device.createPipelineLayout({
         bindGroupLayouts: [shadowSharedUniBindGroupLayout, modelUniBindGroupLayout],
     });
-
-    const shadowPassDescriptor: GPURenderPassDescriptor = {
-        colorAttachments: [],
-        depthStencilAttachment: {
-            view: shadowDepthTextureView,
-            depthLoadValue: 1.0,
-            depthStoreOp: 'store',
-            stencilLoadValue: 0,
-            stencilStoreOp: 'store',
-        },
-    };
 
     const shadowPipeline = device.createRenderPipeline({
         layout: shadowPipelineLayout, // TODO(@darzu): same for shadow and not?
@@ -476,32 +556,73 @@ export function createMeshRenderer(
 
     // TODO(@darzu): how do we handle this abstraction with multiple passes e.g. shadows?
 
+    const shadowPassDescriptor: GPURenderPassDescriptor = {
+        colorAttachments: [],
+        depthStencilAttachment: {
+            view: shadowDepthTextureView,
+            depthLoadValue: 1.0,
+            depthStoreOp: 'store',
+            stencilLoadValue: 0,
+            stencilStoreOp: 'store',
+        },
+    };
+
+    let shadowRenderBundle: GPURenderBundle;
     let renderBundle: GPURenderBundle;
 
     function rebuildBundles() {
-        // create render bundle
-        const bundleRenderDesc: GPURenderBundleEncoderDescriptor = {
-            colorFormats: [swapChainFormat],
-            depthStencilFormat: depthStencilFormat,
-            sampleCount,
-        }
+        // TODO(@darzu): use bundle
+        // {
+        //     const shadowBundleRenderDesc: GPURenderBundleEncoderDescriptor = {
+        //         colorFormats: [],
+        //         // TODO(@darzu): 
+        //         // depthStencilFormat: depthStencilFormat,
+        //         // TODO(@darzu): 
+        //         // sampleCount: 1,
+        //     }
 
-        const bundleEncoder = device.createRenderBundleEncoder(bundleRenderDesc);
+        //     const shadowPass = device.createRenderBundleEncoder(shadowBundleRenderDesc);
 
-        bundleEncoder.setPipeline(renderPipeline);
-        bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
-        bundleEncoder.setVertexBuffer(0, meshPool._vertBuffer);
-        bundleEncoder.setVertexBuffer(1, instanceDataBuffer);
-        bundleEncoder.setIndexBuffer(meshPool._indexBuffer, 'uint16');
-        // TODO(@darzu): one draw call per mesh?
-        const uniOffset = [0];
-        for (let m of meshPool._meshes) {
-            // TODO(@darzu): set bind group
-            uniOffset[0] = m.modelUniByteOffset;
-            bundleEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
-            bundleEncoder.drawIndexed(m.model.tri.length * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+        //     shadowPass.setPipeline(shadowPipeline);
+        //     shadowPass.setBindGroup(0, shadowSharedUniBindGroup);
+        //     shadowPass.setVertexBuffer(0, meshPool._vertBuffer);
+        //     shadowPass.setVertexBuffer(1, instanceDataBuffer);
+        //     shadowPass.setIndexBuffer(meshPool._indexBuffer, 'uint16');
+        //     // TODO(@darzu): one draw call per mesh?
+        //     const uniOffset = [0];
+        //     for (let m of meshPool._meshes) {
+        //         // TODO(@darzu): set bind group
+        //         uniOffset[0] = m.modelUniByteOffset;
+        //         shadowPass.setBindGroup(1, modelUniBindGroup, uniOffset);
+        //         shadowPass.drawIndexed(m.model.tri.length * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+        //     }
+        //     shadowRenderBundle = shadowPass.finish()
+        // }
+        {
+            // create render bundle
+            const bundleRenderDesc: GPURenderBundleEncoderDescriptor = {
+                colorFormats: [swapChainFormat],
+                depthStencilFormat: depthStencilFormat,
+                sampleCount,
+            }
+
+            const bundleEncoder = device.createRenderBundleEncoder(bundleRenderDesc);
+
+            bundleEncoder.setPipeline(renderPipeline);
+            bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
+            bundleEncoder.setVertexBuffer(0, meshPool._vertBuffer);
+            bundleEncoder.setVertexBuffer(1, instanceDataBuffer);
+            bundleEncoder.setIndexBuffer(meshPool._indexBuffer, 'uint16');
+            // TODO(@darzu): one draw call per mesh?
+            const uniOffset = [0];
+            for (let m of meshPool._meshes) {
+                // TODO(@darzu): set bind group
+                uniOffset[0] = m.modelUniByteOffset;
+                bundleEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
+                bundleEncoder.drawIndexed(m.model.tri.length * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+            }
+            renderBundle = bundleEncoder.finish()
         }
-        renderBundle = bundleEncoder.finish()
     }
 
     function render(commandEncoder: GPUCommandEncoder) {
@@ -511,9 +632,30 @@ export function createMeshRenderer(
         colorTextureView = colorTexture.createView();
         renderPassDescriptor.colorAttachments[0].resolveTarget = colorTextureView;
 
-        const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
-        passEncoder.executeBundles([renderBundle]);
-        passEncoder.endPass();
+        const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
+        // shadowPassEncoder.executeBundles([shadowRenderBundle]);
+        // TODO(@darzu): use bundle
+        {
+            shadowPass.setPipeline(shadowPipeline);
+            shadowPass.setBindGroup(0, shadowSharedUniBindGroup);
+            shadowPass.setVertexBuffer(0, meshPool._vertBuffer);
+            shadowPass.setVertexBuffer(1, instanceDataBuffer);
+            shadowPass.setIndexBuffer(meshPool._indexBuffer, 'uint16');
+            // TODO(@darzu): one draw call per mesh?
+            const uniOffset = [0];
+            for (let m of meshPool._meshes) {
+                // TODO(@darzu): set bind group
+                uniOffset[0] = m.modelUniByteOffset;
+                shadowPass.setBindGroup(1, modelUniBindGroup, uniOffset);
+                shadowPass.drawIndexed(m.model.tri.length * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+            }
+            // shadowRenderBundle = shadowPass.finish()
+        }
+        shadowPass.endPass();
+
+        const renderPassEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+        renderPassEncoder.executeBundles([renderBundle]);
+        renderPassEncoder.endPass();
 
         return commandEncoder;
     }

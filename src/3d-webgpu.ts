@@ -139,7 +139,7 @@ async function init(canvasRef: HTMLCanvasElement) {
     if (!canvasRef === null) return;
     const context = canvasRef.getContext('gpupresent')!;
 
-    const vertElStride = (3/*pos*/ + 3/*color*/)
+    const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/)
     const defaultMeshPoolOpts: MeshMemoryPoolOptions = {
         vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
         maxVerts: 1000,

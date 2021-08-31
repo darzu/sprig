@@ -362,7 +362,17 @@ function addMeshToBuffers(
         verts[vOff + vi2 * vertElStride + 3] = r
         verts[vOff + vi2 * vertElStride + 4] = g
         verts[vOff + vi2 * vertElStride + 5] = b
-        // TODO(@darzu): normals needed?
+        // normals
+        const [nx, ny, nz] = norms[i]
+        verts[vOff + vi0 * vertElStride + 6] = nx
+        verts[vOff + vi0 * vertElStride + 7] = ny
+        verts[vOff + vi0 * vertElStride + 8] = nz
+        verts[vOff + vi1 * vertElStride + 6] = nx
+        verts[vOff + vi1 * vertElStride + 7] = ny
+        verts[vOff + vi1 * vertElStride + 8] = nz
+        verts[vOff + vi2 * vertElStride + 6] = nx
+        verts[vOff + vi2 * vertElStride + 7] = ny
+        verts[vOff + vi2 * vertElStride + 8] = nz
     })
 }
 
