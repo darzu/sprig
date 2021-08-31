@@ -2,6 +2,9 @@ import Peer from "./peerjs.js";
 import { GameObject, GameState } from "./state.js";
 import { vec3, quat } from "./gl-matrix.js";
 
+// fraction of state updates to artificially drop
+const DROP_PROBABILITY = 0.0;
+
 type DataConnection = Peer.DataConnection;
 
 enum MessageType {
@@ -263,8 +266,9 @@ export class Net<Inputs> {
     };
 
     for (let server of this.peers) {
-      // TODO: this should be sent/received unreliably
-      this.send(server, msg, false);
+      if (Math.random() >= DROP_PROBABILITY) {
+        this.send(server, msg, false);
+      }
     }
     this.snap_seq++;
   }
