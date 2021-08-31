@@ -311,3 +311,6 @@ Rust -> WebGPU examples:
   points transformed to a series of triangles or quads."
     https://www.reddit.com/r/vulkan/comments/c9ws13/do_we_need_geometry_shader_anymore/
   http://www.joshbarczak.com/blog/?p=667 (they are slow)
+
+LOD / automatic mesh simplification:
+  quad simplification: https://www.youtube.com/watch?v=vBJcdClynFE
