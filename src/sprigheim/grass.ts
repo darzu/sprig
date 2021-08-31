@@ -1,6 +1,7 @@
 import { mat4, vec3 } from "../ext/gl-matrix.js";
 import { align, jitter } from "../math.js";
-import { createMeshPoolBuilder, getPositionFromTransform, meshApplyUniformData, MeshHandle, MeshPool, MeshPoolBuilder, meshUniByteSizeAligned, setVertexData, vertByteSize, VertexData, VertexKind } from "./sprig_main.js";
+import { createMeshPoolBuilder, meshApplyUniformData, MeshHandle, MeshPool, MeshPoolBuilder } from "./mesh-pool.js";
+import { getPositionFromTransform, meshUniByteSizeAligned, setVertexData, vertByteSize, VertexData, VertexKind } from "./sprig_main.js";
 
 const RENDER_GRASS = false;
 

@@ -4,7 +4,7 @@ import { range, setStyle, values } from "../util.js";
 import { turbo } from "./color-turbo.js";
 import { contrastClamp, pxtColors, pxtColorsHSL, lumDiff, perceptualLum, toRGB, white, whiteLum, toHex, Color, colorDistOKLAB, clampHSL, toHSL, HSL, toLCH, LCH, clampLCH, parse, toCIELAB, toFLRGB, toOKLAB, isLCH } from "./color.js";
 import * as m from "../math.js";
-import { world } from "./blocks_main.js";
+import { world } from "./lang_main.js";
 
 const ENABLE_WIDE_GAMUT = false
 
