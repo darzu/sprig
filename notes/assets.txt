@@ -1,3 +1,19 @@
 https://pixelprospector.com
 turbosquid
 https://opengameart.org
+
+Roblox assets:
+    Either catalog asset IDs
+    Or URL to asset ID on roblox.com
+    https://developer.roblox.com/en-us/articles/roblox-avatars
+        R6 vs R15
+        avatar properties: 
+            cartoon <-> human
+            height, width, head size
+            slender vs thick
+        supports import from blender
+            body parts must be seperate models
+            "skinning" is more complex
+    Creating t-shits and pants:
+        https://developer.roblox.com/en-us/articles/How-to-Make-Shirts-and-Pants-for-Roblox-Characters
+        works even for R15 models

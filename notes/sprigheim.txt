@@ -3,5 +3,29 @@ Approach:
         Chunked
     Character
         Minecraft style?
+            Doesn't work:
+                Rolls, dodges, 
+            Does work:
+                Jumping
+                Swing (simple)
         Full animation style?
+
+
+Teaching:
+    Show a tree (more trunk and off-shoots) of tutorials (kinda like a bioware game)
+    You can either take the result (skip) or go down each branch
+    Branches will be in one of three states:
+        Complete
+        Sketch
+        TODO
+    Users can vote for TODO or Sketch tutorials to be completed
+        TODO tutorials have nothing or some text
+        Sketch tutorials are recorded quickly in on pass with little/no editting
+    E.g. 
+        creating a 3d character
+        animating a 3d character
+    At the end of each tutorial:
+        Talk about how this transfers to other tools (Unity, Blender, etc)
+            What are the paths an indie dev can take?
+            What are the paths a AAA dev takes?
 
