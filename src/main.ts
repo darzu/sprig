@@ -484,7 +484,7 @@ class CubeGameState extends GameState {
     // TODO(@darzu): IMPLEMENT
     // move player(s)
     const players = Object.values(this.objects).filter(
-      (o) => o instanceof Player
+      (o) => o instanceof Player && o.authority === this.me
     ) as Player[];
     for (let o of players)
       stepPlayer(o, dt, inputs, this.camera, this.spawnBullet);
