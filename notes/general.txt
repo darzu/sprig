@@ -377,4 +377,7 @@ Flash-like animations:
 
   Simplify each task, relentlessly make it easier at simpler
     3D modeling -> side,front view vertex dragging
-    
+
+Portals:
+  https://www.youtube.com/watch?v=cWpFZbjtSQg
+  https://www.youtube.com/watch?v=ivyseNMVt-4&t=3642s

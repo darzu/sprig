@@ -1,0 +1,11 @@
+Wow.
+    Slime and ants: https://www.youtube.com/watch?v=X-iSQQgOd1A
+
+TO LEARN:
+    Limitations ?
+    From JS / WASM ?
+    What can it be used for?
+        Physics?
+        Algorithms?
+        Celular atomita?
+        Procedural gen?

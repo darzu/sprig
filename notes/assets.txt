@@ -44,3 +44,18 @@ TO LEARN:
 Procedural by example:
     https://www.youtube.com/watch?v=yED9t2tImog
     
+Sphere:
+    Fibinacci sphere: even Distribution of points
+    Redblob
+    icosphere
+
+Compute shaders:
+    mass parallel processing on GPU
+    "smooth min" functions for merging shapes and functions nicely
+
+Procedural gen sphere:
+    https://www.youtube.com/watch?v=lctXaT9pxA0
+
+MinionsArt tutorials:
+    https://minionsart.github.io/tutorials/
+
