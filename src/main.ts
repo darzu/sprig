@@ -131,7 +131,7 @@ class CubeGameState extends GameState<Inputs> {
     let player = new Player(0);
     this.players = [player];
     let randomCubes: SpinningCube[] = [];
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 10; i++) {
       let cube = new SpinningCube();
       // create cubes with random colors
       cube.location = vec3.fromValues(
@@ -168,6 +168,7 @@ class CubeGameState extends GameState<Inputs> {
   }
 
   stepGame(dt: number, inputs: Inputs) {
+    // move player
     this.player().linear_velocity = vec3.fromValues(0, 0, 0);
     let playerSpeed = inputs.accel ? 0.005 : 0.001;
     let n = playerSpeed * dt;
@@ -228,6 +229,20 @@ class CubeGameState extends GameState<Inputs> {
       this.cameraRotation,
       -inputs.mouseY * 0.001
     );
+
+    // move cubes in range
+    for (let cube of this.cubes) {
+      cube.linear_velocity = vec3.fromValues(0, 0, 0);
+      let cube_to_player = vec3.subtract(
+        vec3.create(),
+        this.player().location,
+        cube.location
+      );
+      if (vec3.length(cube_to_player) < 8 && vec3.length(cube_to_player) > 2) {
+        vec3.normalize(cube_to_player, cube_to_player);
+        vec3.scale(cube.linear_velocity, cube_to_player, 0.01);
+      }
+    }
   }
 
   snap(snapshot: string, time: number) {
