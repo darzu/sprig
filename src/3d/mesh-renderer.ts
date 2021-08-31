@@ -1,6 +1,7 @@
 // rendering pipeline for meshes
 
 import { mat4 } from "../ext/gl-matrix.js";
+import { align } from "../math.js";
 import { mat4ByteSize, MeshMemoryPool, MeshMemoryPool as MeshPool, MeshMemoryPoolOptions, vec3ByteSize } from "./mesh.js";
 
 const shadowDepthTextureSize = 1024 * 2;
@@ -315,7 +316,7 @@ export function createMeshRenderer(
         // TODO(@darzu): SCENE FORMAT
         + vec3ByteSize // displacer
     const sharedUniBuffer = device.createBuffer({
-        size: sharedUniBufferSize,
+        size: align(sharedUniBufferSize, 256),
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
