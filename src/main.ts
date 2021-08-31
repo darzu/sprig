@@ -116,14 +116,14 @@ function checkCanvasResize(device: GPUDevice, canvasWidth: number, canvasHeight:
     depthTexture = device.createTexture({
         size: { width: canvasWidth, height: canvasHeight },
         format: depthStencilFormat,
-        // sampleCount: antiAliasSampleCount,
+        sampleCount: antiAliasSampleCount,
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
     depthTextureView = depthTexture.createView();
 
     colorTexture = device.createTexture({
         size: { width: canvasWidth, height: canvasHeight },
-        // sampleCount: antiAliasSampleCount,
+        sampleCount: antiAliasSampleCount,
         format: swapChainFormat,
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });;
@@ -552,9 +552,9 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
             depthCompare: 'less',
             format: depthStencilFormat,
         },
-        // multisample: {
-        //     count: antiAliasSampleCount,
-        // },
+        multisample: {
+            count: antiAliasSampleCount,
+        },
     };
     const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
 
@@ -582,7 +582,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     const bundleEnc = device.createRenderBundleEncoder({
         colorFormats: [swapChainFormat],
         depthStencilFormat: depthStencilFormat,
-        // sampleCount: antiAliasSampleCount,
+        sampleCount: antiAliasSampleCount,
     });
     bundleEnc.setPipeline(renderPipeline);
     bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
@@ -694,9 +694,9 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         // render to the canvas' via our swap-chain
         const renderPassEncoder = commandEncoder.beginRenderPass({
             colorAttachments: [{
-                view: context.getCurrentTexture().createView(),
-                // view: colorTextureView,
-                // resolveTarget: context.getCurrentTexture().createView(),
+                // view: context.getCurrentTexture().createView(),
+                view: colorTextureView,
+                resolveTarget: context.getCurrentTexture().createView(),
                 loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
                 storeOp: 'store',
             }],
