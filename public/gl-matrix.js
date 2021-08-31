@@ -7512,7 +7512,7 @@ export var quat = /*#__PURE__*/Object.freeze({
         };
     }();
 
-    var vec2 = /*#__PURE__*/Object.freeze({
+export var vec2 = /*#__PURE__*/Object.freeze({
         __proto__: null,
         create: create$8,
         clone: clone$8,

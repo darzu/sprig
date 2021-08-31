@@ -59,12 +59,6 @@ const fragmentShader =
     }
 `;
 
-const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
-const bytesPerMat4 = 4 * 4 /*4x4 mat*/ * 4; /*f32*/
-const bytesPerVec3 = 3 /*vec3*/ * 4; /*f32*/
-const indicesPerTriangle = 3; // hack: GPU writes need to be 4-byte aligned
-const bytesPerTri = Uint32Array.BYTES_PER_ELEMENT * indicesPerTriangle;
-
 // render pipeline parameters
 const antiAliasSampleCount = 4;
 const depthStencilFormat = "depth24plus-stencil8";
@@ -240,10 +234,13 @@ export class Renderer_WebGPU implements Renderer {
     });
 
     // we'll use a triangle list with backface culling and counter-clockwise triangle indices for both pipelines
-    const primitiveBackcull: GPUPrimitiveState = {
+    const prim_tris: GPUPrimitiveState = {
       topology: "triangle-list",
       cullMode: "back",
       frontFace: "ccw",
+    };
+    const prim_lines: GPUPrimitiveState = {
+      topology: "line-list",
     };
 
     // define the resource bindings for the mesh rendering pipeline
@@ -262,7 +259,7 @@ export class Renderer_WebGPU implements Renderer {
     });
 
     // setup our second phase pipeline which renders meshes to the canvas
-    const renderPipelineDesc: GPURenderPipelineDescriptor = {
+    const renderPipelineDesc_tris: GPURenderPipelineDescriptor = {
       layout: this.device.createPipelineLayout({
         bindGroupLayouts: [
           renderSceneUniBindGroupLayout,
@@ -284,7 +281,7 @@ export class Renderer_WebGPU implements Renderer {
         entryPoint: "main",
         targets: [{ format: this.presentationFormat }],
       },
-      primitive: primitiveBackcull,
+      primitive: prim_tris,
       depthStencil: {
         depthWriteEnabled: true,
         depthCompare: "less",
@@ -294,30 +291,43 @@ export class Renderer_WebGPU implements Renderer {
         count: antiAliasSampleCount,
       },
     };
-    const renderPipeline = this.device.createRenderPipeline(renderPipelineDesc);
+    const renderPipeline_tris = this.device.createRenderPipeline(renderPipelineDesc_tris);
+    const renderPipelineDesc_lines: GPURenderPipelineDescriptor = {
+      ...renderPipelineDesc_tris,
+      primitive: prim_lines,
+    };
+    const renderPipeline_lines = this.device.createRenderPipeline(renderPipelineDesc_lines);
 
     // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
     // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
-    const bundleEnc = this.device.createRenderBundleEncoder({
+    const bundleEnc_tris = this.device.createRenderBundleEncoder({
       colorFormats: [this.presentationFormat],
       depthStencilFormat: depthStencilFormat,
       sampleCount: antiAliasSampleCount,
     });
-    bundleEnc.setPipeline(renderPipeline);
-    bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
-    bundleEnc.setVertexBuffer(0, this.pool.verticesBuffer);
+    bundleEnc_tris.setPipeline(renderPipeline_lines);
+    // bundleEnc_tris.setPipeline(renderPipeline_tris);
+    bundleEnc_tris.setBindGroup(0, renderSceneUniBindGroup);
+    bundleEnc_tris.setVertexBuffer(0, this.pool.verticesBuffer);
     // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
-    bundleEnc.setIndexBuffer(this.pool.triIndicesBuffer, "uint16");
+    // bundleEnc_tris.setIndexBuffer(this.pool.triIndicesBuffer, "uint16");
+    bundleEnc_tris.setIndexBuffer(this.pool.lineIndicesBuffer, "uint16");
     for (let m of this.meshObjs) {
-      bundleEnc.setBindGroup(1, modelUniBindGroup, [m.handle.modelUniByteOffset]);
-      bundleEnc.drawIndexed(
-        m.handle.numTris * indicesPerTriangle,
+      bundleEnc_tris.setBindGroup(1, modelUniBindGroup, [m.handle.modelUniByteOffset]);
+      bundleEnc_tris.drawIndexed(
+        m.handle.numLines * 2,
         undefined,
-        m.handle.triIndicesNumOffset,
+        m.handle.lineIndicesNumOffset,
         m.handle.vertNumOffset
       );
+      // bundleEnc_tris.drawIndexed(
+      //   m.handle.numTris * 3,
+      //   undefined,
+      //   m.handle.triIndicesNumOffset,
+      //   m.handle.vertNumOffset
+      // );
     }
-    this.renderBundle = bundleEnc.finish();
+    this.renderBundle = bundleEnc_tris.finish();
     return this.renderBundle;
   }
 
@@ -339,6 +349,7 @@ export class Renderer_WebGPU implements Renderer {
       maxMeshes,
       maxTris: maxVertices,
       maxVerts: maxVertices,
+      maxLines: maxVertices * 2,
       shiftMeshIndices: false,
     }
 

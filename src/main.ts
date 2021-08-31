@@ -34,6 +34,12 @@ const PLANE_MESH = unshareProvokingVertices(scaleMesh(
       [3, 2, 0],
       [1, 3, 0], // bottom
     ],
+    lines: [
+      [0, 1],
+      [0, 2],
+      [1, 3],
+      [2, 3],
+    ],
     colors: [BLACK, BLACK, BLACK, BLACK],
   },
   10
@@ -101,6 +107,23 @@ const CUBE_MESH = unshareProvokingVertices({
     [6, 7, 3], // bottom
     [5, 4, 7],
     [5, 7, 6], // back
+  ],
+  lines: [
+    // top
+    [0, 1],
+    [1, 2],
+    [2, 3],
+    [3, 0],
+    // bottom
+    [4, 5],
+    [5, 6],
+    [6, 7],
+    [7, 4],
+    // connectors
+    [0, 4],
+    [1, 5],
+    [2, 6],
+    [3, 7],
   ],
   colors: [
     BLACK,

@@ -129,6 +129,7 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxVe
     maxMeshes,
     maxTris: maxVertices,
     maxVerts: maxVertices,
+    maxLines: maxVertices * 2,
     shiftMeshIndices: true,
   }
 
@@ -277,6 +278,8 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxVe
       gl.uniform3fv(u_loc_tint, m.handle.tint);
       const indicesBytesOffset = m.handle.triIndicesNumOffset * 2;
       gl.drawElements(gl.TRIANGLES, m.handle.numTris * 3, gl.UNSIGNED_SHORT, indicesBytesOffset);
+      // TODO(@darzu): support draw lines
+
       // gl.drawElements(gl.TRIANGLES, m.handle.numTris * 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset);
       // break; // TODO(@darzu): 
       // console.log(`t: ${m.handle.transform.join(',')}`)
