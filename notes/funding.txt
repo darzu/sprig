@@ -3,6 +3,9 @@ Donations:
     https://github.com/sponsors/darzu/dashboard
     https://www.patreon.com/darzu
 
+other donations?
+    https://opencollective.com/retool
+
 Hosted servers
     e.g. Roblox, heroiclabs
 

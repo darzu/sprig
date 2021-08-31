@@ -314,3 +314,10 @@ Rust -> WebGPU examples:
 
 LOD / automatic mesh simplification:
   quad simplification: https://www.youtube.com/watch?v=vBJcdClynFE
+
+Rendering pipeline:
+  https://www.khronos.org/opengl/wiki/Rendering_Pipeline_Overview
+
+Flat shading:
+  "Provoking vertex" https://www.khronos.org/opengl/wiki/Primitive#Provoking_vertex
+  "flat" interpolation qualifier https://www.khronos.org/opengl/wiki/Type_Qualifier_(GLSL)#Interpolation_qualifiers

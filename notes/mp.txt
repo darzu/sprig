@@ -326,4 +326,11 @@ RTS networking: https://www.gamasutra.com/view/feature/3094/1500_archers_on_a_28
 
 Unreal networking: https://docs.unrealengine.com/udk/Three/NetworkingOverview.html
 
+https://yal.cc/preparing-your-game-for-deterministic-netcode/
+    https://news.ycombinator.com/item?id=27253890
 
+Unity DOTS:
+    https://unity.com/dots
+
+netplayjs:
+    https://github.com/rameshvarun/netplayjs

@@ -3,13 +3,13 @@ import { mat4, vec3 } from './ext/gl-matrix.js';
 // face normals vs vertex normals
 interface Mesh {
     // vertex positions (x,y,z)
-    pos: [number, number, number][];
+    pos: vec3[];
     // triangles (vert indices, ccw)
-    tri: [number, number, number][];
+    tri: vec3[];
 }
 interface ExpandedMesh extends Mesh {
     // face normals, per triangle
-    fnorm: [number, number, number][];
+    fnorm: vec3[];
 }
 
 const CUBE: Mesh = {
@@ -32,10 +32,10 @@ const CUBE: Mesh = {
         [4, 5, 1],
         [4, 1, 0],
         // right
-        [4, 0, 3],
-        [4, 3, 7],
+        [3, 4, 0],
+        [3, 7, 4],
         // left
-        [1, 5, 2],
+        [2, 1, 5],
         [2, 5, 6],
         // bottom
         [6, 3, 2],
@@ -46,6 +46,39 @@ const CUBE: Mesh = {
     ]
 }
 
+function computeNormal([p1, p2, p3]: [vec3, vec3, vec3]): vec3 {
+    // https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
+    // cross product of two edges
+    // edge 1
+    const u: vec3 = [0, 0, 0]
+    vec3.sub(u, p2, p1)
+    // edge 2
+    const v: vec3 = [0, 0, 0]
+    vec3.sub(v, p3, p1)
+    // cross
+    const n: vec3 = [0, 0, 0]
+    vec3.cross(n, u, v)
+
+    vec3.normalize(n, n)
+
+    return n;
+}
+function computeNormals(m: Mesh): vec3[] {
+    const triPoses = m.tri.map(([i0, i1, i2]) => [m.pos[i0], m.pos[i1], m.pos[i2]] as [vec3, vec3, vec3])
+    return triPoses.map(computeNormal)
+}
+
+function buildVertexBuffer(m: Mesh): Float32Array {
+    const triPoses = m.tri.map(([i0, i1, i2]) => [m.pos[i0], m.pos[i1], m.pos[i2]] as [vec3, vec3, vec3])
+    const norms = triPoses.map(t => [...t, computeNormal(t)]);
+    const verts = triPoses
+        .reduce((p, n) => [...p, ...n], [] as vec3[])
+        .reduce((p, n) => [...p, ...n], [] as number[])
+    const stride = 3/*position*/ + 3/*normal*/
+    const size = m.tri.length * stride
+    return new Float32Array(verts);
+}
+
 // TODO: canvas ref
 // TODO: navigator.gpu typings
 //          @webgpu/types
@@ -53,8 +86,8 @@ const CUBE: Mesh = {
 const vertexPositionColorWGSL =
 `
 [[stage(fragment)]]
-fn main([[location(0)]] fragPosition: vec4<f32>) -> [[location(0)]] vec4<f32> {
-    return fragPosition;
+fn main([[location(0)]] color: vec4<f32>) -> [[location(0)]] vec4<f32> {
+    return color;
 }
 `;
 
@@ -66,19 +99,19 @@ const basicVertWGSL =
 [[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
 
 struct VertexOutput {
-    [[builtin(position)]] Position : vec4<f32>;
-    [[location(0)]] fragPosition: vec4<f32>;
+    [[builtin(position)]] pos : vec4<f32>;
+    [[location(0)]] color: vec4<f32>;
 };
 
 [[stage(vertex)]]
 fn main(
     [[location(0)]] position : vec3<f32>
+    // [[location(1)]] normal : vec3<f32>
     ) -> VertexOutput {
     var output : VertexOutput;
     var pos4: vec4<f32> = vec4<f32>(position, 1.0);
-    output.Position = uniforms.modelViewProjectionMatrix * pos4;
-    output.fragPosition = 0.5 * (pos4 + vec4<f32>(1.0, 1.0, 1.0, 1.0));
-    // output.fragPosition = position;
+    output.pos = uniforms.modelViewProjectionMatrix * pos4;
+    output.color = 0.5 * (pos4 + vec4<f32>(1.0, 1.0, 1.0, 1.0));
 
     return output;
 }
@@ -111,18 +144,20 @@ async function init(canvasRef: HTMLCanvasElement) {
     //     verticesBuffer.unmap();
     // }
     // NEW Create a vertex buffer from the cube data.
-    const cubePos = new Float32Array(
+    // const cubeVerts = buildVertexBuffer(CUBE)
+    const cubeVerts = new Float32Array(
         CUBE.pos
             // .map(p => [p[0], p[1], p[2], 1])
             .reduce((p, n) => [...p, ...n], [] as number[])
     )
+    const vertStride = cubeVerts.byteLength / CUBE.pos.length;
     const verticesBuffer = device.createBuffer({
-        size: cubePos.byteLength,
+        size: cubeVerts.byteLength,
         usage: GPUBufferUsage.VERTEX,
         mappedAtCreation: true,
     });
     {
-        new Float32Array(verticesBuffer.getMappedRange()).set(cubePos);
+        new Float32Array(verticesBuffer.getMappedRange()).set(cubeVerts);
         verticesBuffer.unmap();
     }
     // TODO: vertex, index, normals
@@ -195,7 +230,7 @@ async function init(canvasRef: HTMLCanvasElement) {
             entryPoint: 'main',
             buffers: [
                 {
-                    arrayStride: 4/*byes per float32*/ * 3/*num floats*/,
+                    arrayStride: vertStride,
                     attributes: [
                         {
                             // position
@@ -203,6 +238,12 @@ async function init(canvasRef: HTMLCanvasElement) {
                             offset: 0,
                             format: 'float32x3',
                         },
+                        // {
+                        //     // normals
+                        //     shaderLocation: 1,
+                        //     offset: 0,
+                        //     format: 'float32x3',
+                        // },
                         // {
                         //     // uv
                         //     shaderLocation: 1,
