@@ -435,9 +435,9 @@ function initGrassSystem(device: GPUDevice): GrassSystem {
         // bladeW: 0.2,
         bladeW: 0.2,
         // bladeH: 3,
-        bladeH: 1.6,
+        // bladeH: 1.6,
         // bladeH: 1.5,
-        // bladeH: 1.7,
+        bladeH: 1.8,
         // TODO(@darzu): debugging
         // spacing: 1,
         // tileSize: 4,
@@ -492,13 +492,12 @@ function initGrassSystem(device: GPUDevice): GrassSystem {
     // TODO(@darzu): debugging
     // const lodOpts = [lodDebug]
     const lodOpts = [
-        // lod0Opts,
-        // lod1Opts,
-        // lod1Opts,
+        lod0Opts,
+        lod1Opts,
         lod2Opts,
         lod3Opts,
         lod4Opts,
-        // lod5Opts,
+        lod5Opts,
     ]
 
     const tilesets = lodOpts.map(opts => createGrassTileset(opts, device))

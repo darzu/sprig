@@ -129,7 +129,7 @@ const wgslShaders = {
     `
     [[group(0), binding(0)]] var<uniform> scene : Scene;
     [[group(0), binding(1)]] var shadowMap: texture_depth_2d;
-    [[group(0), binding(2)]] var shadowSampler: sampler_comparison;
+    // [[group(0), binding(2)]] var shadowSampler: sampler_comparison;
 
     struct FragmentInput {
         [[location(0)]] shadowPos : vec3<f32>;
@@ -159,36 +159,36 @@ const wgslShaders = {
 
         // Percentage-closer filtering. Sample texels in the region
         // to smooth the result.
-        var shadowVis : f32 = 0.0;
+        var shadowVis : f32 = 1.0;
 
-        if (
-            input.shadowPos.x < 0.0
-            || input.shadowPos.x > 0.99
-            || input.shadowPos.y < 0.0
-            || input.shadowPos.y > 0.99
-            || input.shadowPos.z < 0.0
-            || input.shadowPos.z > 0.99
-            ) {
-            // we're outside the shadow box
-            shadowVis = 1.0;
-        } else {
-            // we're in the shadow box, do a multi sample
-            for (var y : i32 = -1 ; y <= 1 ; y = y + 1) {
-                for (var x : i32 = -1 ; x <= 1 ; x = x + 1) {
-                    let offset : vec2<f32> = vec2<f32>(
-                    f32(x) * ${1 / shadowDepthTextureSize},
-                    f32(y) * ${1 / shadowDepthTextureSize});
+        // if (
+        //     input.shadowPos.x < 0.0
+        //     || input.shadowPos.x > 0.99
+        //     || input.shadowPos.y < 0.0
+        //     || input.shadowPos.y > 0.99
+        //     || input.shadowPos.z < 0.0
+        //     || input.shadowPos.z > 0.99
+        //     ) {
+        //     // we're outside the shadow box
+        //     shadowVis = 1.0;
+        // } else {
+        //     // we're in the shadow box, do a multi sample
+        //     for (var y : i32 = -1 ; y <= 1 ; y = y + 1) {
+        //         for (var x : i32 = -1 ; x <= 1 ; x = x + 1) {
+        //             let offset : vec2<f32> = vec2<f32>(
+        //             f32(x) * ${1 / shadowDepthTextureSize},
+        //             f32(y) * ${1 / shadowDepthTextureSize});
 
-                    shadowVis = shadowVis + textureSampleCompare(
-                    shadowMap, shadowSampler,
-                    input.shadowPos.xy + offset, input.shadowPos.z - 0.007);
-                }
-            }
-            shadowVis = shadowVis / 9.0;
+        //             shadowVis = shadowVis + textureSampleCompare(
+        //             shadowMap, shadowSampler,
+        //             input.shadowPos.xy + offset, input.shadowPos.z - 0.007);
+        //         }
+        //     }
+        //     shadowVis = shadowVis / 9.0;
 
-        // shadowVis = textureSampleCompare(
-        //         shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
-        }
+        // // shadowVis = textureSampleCompare(
+        // //         shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
+        // }
 
         // TODO: night time. Maybe we should instead slowly "turn off" the sun as night approaches including the sun reflect
         //      the shadow factor should only ever scale down the sun factor anyway.
@@ -241,8 +241,10 @@ const wgslShaders = {
 
         // return vec4<f32>(norm, 1.0);
 
+        let resultColor: vec3<f32> = input.color * max(sunFactor, 0.2);
+
         // return vec4<f32>(diffuse, 1.0);
-        let resultColor: vec3<f32> = sunEffect + ambient; // + chlorophyllFactor
+        // let resultColor: vec3<f32> = sunEffect + ambient; // + chlorophyllFactor
         // return vec4<f32>(resultColor, 1.0);
 
         // TODO: this gamma correction doesn't look good...
@@ -380,13 +382,13 @@ export function createMeshRenderer(
                     sampleType: 'depth',
                 },
             },
-            {
-                binding: 2,
-                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                sampler: {
-                    type: 'comparison',
-                },
-            },
+            // {
+            //     binding: 2,
+            //     visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+            //     sampler: {
+            //         type: 'comparison',
+            //     },
+            // },
         ],
     });
 
@@ -434,13 +436,13 @@ export function createMeshRenderer(
                 binding: 1,
                 resource: shadowDepthTextureView,
             },
-            {
-                binding: 2,
-                // TODO(@darzu): what's a sampler here?
-                resource: device.createSampler({
-                    compare: 'less',
-                }),
-            },
+            // {
+            //     binding: 2,
+            //     // TODO(@darzu): what's a sampler here?
+            //     resource: device.createSampler({
+            //         compare: 'less',
+            //     }),
+            // },
         ],
     });
 
