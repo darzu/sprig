@@ -1,5 +1,6 @@
 
 import { mat4, vec3, quat } from '../ext/gl-matrix.js';
+import { align } from '../math.js';
 
 /*
 Abstractions:
@@ -95,6 +96,8 @@ export interface MeshMemoryPool {
 export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDevice): MeshMemoryPool {
     const { vertByteSize, maxVerts, maxTris, maxMeshes, meshUniByteSize } = opts;
 
+    console.dir({ vertByteSize, maxVerts, maxTris, maxMeshes, meshUniByteSize }) // TODO(@darzu): 
+
     // space stats
     console.log(`New mesh pool`);
     console.log(`   ${maxVerts * vertByteSize / 1024} KB for verts`);
@@ -103,9 +106,10 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
     const unusedBytesPerModel = 256 - mat4ByteSize % 256
     console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per model (${unusedBytesPerModel * maxMeshes / 1024} KB total waste)`);
 
+    console.log("new buffer size: " + maxVerts * vertByteSize)
     const _vertBuffer = device.createBuffer({
         size: maxVerts * vertByteSize,
-        usage: GPUBufferUsage.VERTEX,
+        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
         mappedAtCreation: true,
     });
     const _indexBuffer = opts.usesIndices ? device.createBuffer({
@@ -115,8 +119,9 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
     }) : null;
 
     const meshUniBufferSize = mat4ByteSize * maxMeshes;
+    console.log(`meshUniBufferSize: ${meshUniBufferSize}`)
     const _meshUniBuffer = device.createBuffer({
-        size: meshUniBufferSize,
+        size: align(meshUniBufferSize, 256),
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
     const _meshes: Mesh[] = [];
@@ -147,6 +152,7 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
     }
 
     function addMeshes(meshesToAdd: MeshModel[]) {
+        return // TODO(@darzu): 
         function addMesh(m: MeshModel): Mesh {
             if (_vertsMap === null) {
                 throw "Use preRender() and postRender() functions"
@@ -374,54 +380,59 @@ export function addTriToBuffers(
     const vOff = prevNumVerts * vertElStride
     const iOff = prevNumTri * triElStride
     const indShift = shiftIndices ? prevNumVerts : 0;
-    const vi0 = triInd[0] + indShift
-    const vi1 = triInd[1] + indShift
-    const vi2 = triInd[2] + indShift
+    console.log(`indShift: ${indShift}`)
     if (indices) {
-        indices[iOff + 0] = vi0
-        indices[iOff + 1] = vi1
-        indices[iOff + 2] = vi2
+        indices[iOff + 0] = triInd[0] + indShift
+        indices[iOff + 1] = triInd[1] + indShift
+        indices[iOff + 2] = triInd[2] + indShift
+        // console.log(`ind <${iOff + 0}, ${iOff + 1}, ${iOff + 2}> = verts (${vi0}, ${vi1}, ${vi2})`)
+
     }
     // set per-face vertex data
+    console.log(`vOff: ${vOff}`)
     // position
-    verts[vOff + vi0 * vertElStride + 0] = triPos[0][0]
-    verts[vOff + vi0 * vertElStride + 1] = triPos[0][1]
-    verts[vOff + vi0 * vertElStride + 2] = triPos[0][2]
-    verts[vOff + vi1 * vertElStride + 0] = triPos[1][0]
-    verts[vOff + vi1 * vertElStride + 1] = triPos[1][1]
-    verts[vOff + vi1 * vertElStride + 2] = triPos[1][2]
-    verts[vOff + vi2 * vertElStride + 0] = triPos[2][0]
-    verts[vOff + vi2 * vertElStride + 1] = triPos[2][1]
-    verts[vOff + vi2 * vertElStride + 2] = triPos[2][2]
+    // const nearestInd = vOff + Math.min(vi0, vi1, vi2) * vertElStride + 0;
+    verts[vOff + 0 * vertElStride + 0] = triPos[0][0]
+    verts[vOff + 0 * vertElStride + 1] = triPos[0][1]
+    verts[vOff + 0 * vertElStride + 2] = triPos[0][2]
+    verts[vOff + 1 * vertElStride + 0] = triPos[1][0]
+    verts[vOff + 1 * vertElStride + 1] = triPos[1][1]
+    verts[vOff + 1 * vertElStride + 2] = triPos[1][2]
+    verts[vOff + 2 * vertElStride + 0] = triPos[2][0]
+    verts[vOff + 2 * vertElStride + 1] = triPos[2][1]
+    verts[vOff + 2 * vertElStride + 2] = triPos[2][2]
     // color
     const [r1, g1, b1] = triColors[0]
     const [r2, g2, b2] = triColors[1]
     const [r3, g3, b3] = triColors[2]
-    verts[vOff + vi0 * vertElStride + 3] = r1
-    verts[vOff + vi0 * vertElStride + 4] = g1
-    verts[vOff + vi0 * vertElStride + 5] = b1
-    verts[vOff + vi1 * vertElStride + 3] = r2
-    verts[vOff + vi1 * vertElStride + 4] = g2
-    verts[vOff + vi1 * vertElStride + 5] = b2
-    verts[vOff + vi2 * vertElStride + 3] = r3
-    verts[vOff + vi2 * vertElStride + 4] = g3
-    verts[vOff + vi2 * vertElStride + 5] = b3
+    verts[vOff + 0 * vertElStride + 3] = r1
+    verts[vOff + 0 * vertElStride + 4] = g1
+    verts[vOff + 0 * vertElStride + 5] = b1
+    verts[vOff + 1 * vertElStride + 3] = r2
+    verts[vOff + 1 * vertElStride + 4] = g2
+    verts[vOff + 1 * vertElStride + 5] = b2
+    verts[vOff + 2 * vertElStride + 3] = r3
+    verts[vOff + 2 * vertElStride + 4] = g3
+    verts[vOff + 2 * vertElStride + 5] = b3
     // normals
     const [nx, ny, nz] = triNorm
-    verts[vOff + vi0 * vertElStride + 6] = nx
-    verts[vOff + vi0 * vertElStride + 7] = ny
-    verts[vOff + vi0 * vertElStride + 8] = nz
-    verts[vOff + vi1 * vertElStride + 6] = nx
-    verts[vOff + vi1 * vertElStride + 7] = ny
-    verts[vOff + vi1 * vertElStride + 8] = nz
-    verts[vOff + vi2 * vertElStride + 6] = nx
-    verts[vOff + vi2 * vertElStride + 7] = ny
-    verts[vOff + vi2 * vertElStride + 8] = nz
+    verts[vOff + 0 * vertElStride + 6] = nx
+    verts[vOff + 0 * vertElStride + 7] = ny
+    verts[vOff + 0 * vertElStride + 8] = nz
+    verts[vOff + 1 * vertElStride + 6] = nx
+    verts[vOff + 1 * vertElStride + 7] = ny
+    verts[vOff + 1 * vertElStride + 8] = nz
+    verts[vOff + 2 * vertElStride + 6] = nx
+    verts[vOff + 2 * vertElStride + 7] = ny
+    verts[vOff + 2 * vertElStride + 8] = nz
     // sway height
     const [y0, y1, y2] = triSwayHeights
-    verts[vOff + vi0 * vertElStride + 9] = y0
-    verts[vOff + vi1 * vertElStride + 9] = y1
-    verts[vOff + vi2 * vertElStride + 9] = y2
+    verts[vOff + 0 * vertElStride + 9] = y0
+    verts[vOff + 1 * vertElStride + 9] = y1
+    verts[vOff + 2 * vertElStride + 9] = y2
+    // const farthestInd = vOff + Math.max(vi0, vi1, vi2) * vertElStride + 9;
+
+    // console.log(`vert floats [${nearestInd}, ${farthestInd}]`);
 }
 /*
 Adds mesh vertices and indices into buffers. Optionally shifts triangle indicies.

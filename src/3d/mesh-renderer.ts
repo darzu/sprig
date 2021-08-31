@@ -211,7 +211,6 @@ export interface MeshRenderer {
 export function createMeshRenderer(
     meshUniByteSize: number,
     vertByteSize: number,
-
     device: GPUDevice, context: GPUCanvasContext): MeshRenderer {
     /*
     TODO: we'll probably switch when enga@chromium.org does
@@ -354,6 +353,7 @@ export function createMeshRenderer(
         ],
     });
 
+    console.log(`vertByteSize: ${vertByteSize}, should be: ${vec3ByteSize * 3 + Float32Array.BYTES_PER_ELEMENT}`)
     const vertexBuffersLayout: GPUVertexBufferLayout[] = [
         {
             // TODO(@darzu): the buffer index should be connected to the pool probably?
@@ -393,19 +393,19 @@ export function createMeshRenderer(
             ],
         },
         // TODO(@darzu): VERTEX FORMAT
-        {
-            // per-instance data
-            stepMode: "instance",
-            arrayStride: instanceByteSize,
-            attributes: [
-                {
-                    // color
-                    shaderLocation: 4,
-                    offset: 0,
-                    format: 'float32x3',
-                },
-            ],
-        },
+        // {
+        //     // per-instance data
+        //     stepMode: "instance",
+        //     arrayStride: instanceByteSize,
+        //     attributes: [
+        //         {
+        //             // color
+        //             shaderLocation: 4,
+        //             offset: 0,
+        //             format: 'float32x3',
+        //         },
+        //     ],
+        // },
     ];
 
     const primitiveBackcull: GPUPrimitiveState = {
@@ -596,8 +596,9 @@ export function createMeshRenderer(
                     },
                 ],
             });
-            bundleEncoder.setVertexBuffer(0, pool._vertBuffer);
-            bundleEncoder.setVertexBuffer(1, instanceDataBuffer);
+            console.log(`bufer size? ${pool._numVerts * vertByteSize}`)
+            bundleEncoder.setVertexBuffer(0, pool._vertBuffer, 0, pool._numVerts * vertByteSize);
+            // bundleEncoder.setVertexBuffer(1, instanceDataBuffer);
             if (pool._indexBuffer)
                 bundleEncoder.setIndexBuffer(pool._indexBuffer, 'uint16');
             // TODO(@darzu): one draw call per mesh?
@@ -606,10 +607,14 @@ export function createMeshRenderer(
                 // TODO(@darzu): set bind group
                 uniOffset[0] = m.modelUniByteOffset;
                 bundleEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
+                console.dir(m)
                 if (pool._indexBuffer)
                     bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-                else
-                    bundleEncoder.draw(m.triCount * 3, undefined, undefined, m.vertNumOffset);
+                else {
+                    console.log(`drawing ${m.triCount * 3} vertices starting at ${m.vertNumOffset}`)
+                    // console.log(`indices:`);
+                    bundleEncoder.draw(m.triCount * 3, undefined, m.vertNumOffset);
+                }
             }
         }
         renderBundle = bundleEncoder.finish()
@@ -641,50 +646,50 @@ export function createMeshRenderer(
             },
         } as const;
 
-        const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
-        // shadowPassEncoder.executeBundles([shadowRenderBundle]);
-        // TODO(@darzu): use bundle
-        {
-            shadowPass.setBindGroup(0, shadowSharedUniBindGroup);
-            for (let pool of meshPools) {
-                if (pool._opts.backfaceCulling)
-                    shadowPass.setPipeline(shadowPipeline);
-                else
-                    shadowPass.setPipeline(shadowPipelineTwosided);
+        // const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
+        // // shadowPassEncoder.executeBundles([shadowRenderBundle]);
+        // // TODO(@darzu): use bundle
+        // {
+        //     shadowPass.setBindGroup(0, shadowSharedUniBindGroup);
+        //     for (let pool of meshPools) {
+        //         if (pool._opts.backfaceCulling)
+        //             shadowPass.setPipeline(shadowPipeline);
+        //         else
+        //             shadowPass.setPipeline(shadowPipelineTwosided);
 
-                const modelUniBindGroup = device.createBindGroup({
-                    layout: modelUniBindGroupLayout,
-                    entries: [
-                        {
-                            binding: 0,
-                            resource: {
-                                buffer: pool._meshUniBuffer,
-                                offset: 0, // TODO(@darzu): different offsets per model
-                                // TODO(@darzu): needed?
-                                size: meshUniByteSize,
-                            },
-                        },
-                    ],
-                });
-                shadowPass.setVertexBuffer(0, pool._vertBuffer);
-                shadowPass.setVertexBuffer(1, instanceDataBuffer);
-                if (pool._indexBuffer)
-                    shadowPass.setIndexBuffer(pool._indexBuffer, 'uint16');
-                // TODO(@darzu): one draw call per mesh?
-                const uniOffset = [0];
-                for (let m of pool._meshes) {
-                    // TODO(@darzu): set bind group
-                    uniOffset[0] = m.modelUniByteOffset;
-                    shadowPass.setBindGroup(1, modelUniBindGroup, uniOffset);
-                    if (pool._indexBuffer)
-                        shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-                    else
-                        shadowPass.draw(m.triCount * 3, undefined, undefined, m.vertNumOffset);
-                }
-            }
-            // shadowRenderBundle = shadowPass.finish()
-        }
-        shadowPass.endPass();
+        //         const modelUniBindGroup = device.createBindGroup({
+        //             layout: modelUniBindGroupLayout,
+        //             entries: [
+        //                 {
+        //                     binding: 0,
+        //                     resource: {
+        //                         buffer: pool._meshUniBuffer,
+        //                         offset: 0, // TODO(@darzu): different offsets per model
+        //                         // TODO(@darzu): needed?
+        //                         size: meshUniByteSize,
+        //                     },
+        //                 },
+        //             ],
+        //         });
+        //         shadowPass.setVertexBuffer(0, pool._vertBuffer);
+        //         shadowPass.setVertexBuffer(1, instanceDataBuffer);
+        //         if (pool._indexBuffer)
+        //             shadowPass.setIndexBuffer(pool._indexBuffer, 'uint16');
+        //         // TODO(@darzu): one draw call per mesh?
+        //         const uniOffset = [0];
+        //         for (let m of pool._meshes) {
+        //             // TODO(@darzu): set bind group
+        //             uniOffset[0] = m.modelUniByteOffset;
+        //             shadowPass.setBindGroup(1, modelUniBindGroup, uniOffset);
+        //             if (pool._indexBuffer)
+        //                 shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+        //             else
+        //                 shadowPass.draw(m.triCount * 3, undefined, undefined, m.vertNumOffset);
+        //         }
+        //     }
+        //     // shadowRenderBundle = shadowPass.finish()
+        // }
+        // shadowPass.endPass();
 
         const renderPassEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
         renderPassEncoder.executeBundles([renderBundle]);

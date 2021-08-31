@@ -1,5 +1,5 @@
 import { mat4, vec3, vec4, quat } from './ext/gl-matrix.js';
-import { clamp } from './math.js';
+import { align, clamp, jitter } from './math.js';
 import { addTriToBuffers, createMeshMemoryPool, CUBE, mat4ByteSize, Mesh, MeshMemoryPool, MeshMemoryPoolOptions, MeshModel, PLANE, triByteSize, vec3ByteSize } from './3d/mesh.js';
 import { createMeshRenderer } from './3d/mesh-renderer.js';
 // import * as RAPIER from './ext/@dimforge/rapier3d/rapier.js';
@@ -107,15 +107,6 @@ function mkEulerTransformable(): Transformable {
 }
 
 
-function jitter(radius: number): number {
-    return (Math.random() - 0.5) * radius * 2
-}
-
-function align(x: number, size: number): number {
-    return Math.ceil(x / size) * size
-}
-
-
 // TODO(@darzu): grass tiles
 /*
 simple:
@@ -150,25 +141,30 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
     for (let xi = 0.0; xi < size; xi += spacing) {
         for (let zi = 0.0; zi < size; zi += spacing) {
 
-            const x = xi + jitter(0.5)
-            const z = zi + jitter(0.5)
+            const x = xi //+ jitter(0.5)
+            const z = zi //+ jitter(0.5)
 
-            const w = bladeW + jitter(0.05)
+            console.log(`grass xy: (${x}, ${z})`)
+
+            const w = bladeW //+ jitter(0.05)
 
             const rot = jitter(Math.PI * 0.5)
 
-            const x1 = x + Math.cos(rot) * w
-            const z1 = z + Math.sin(rot) * w
-            const x2 = x + Math.cos(rot + Math.PI) * w
-            const z2 = z + Math.sin(rot + Math.PI) * w
-            const x3 = x + jitter(0.7)
-            const z3 = z + jitter(0.7)
+            const x1 = x + 0//Math.cos(rot) * w
+            const z1 = z + 0//Math.sin(rot) * w
+            const x2 = x + w//Math.cos(rot + Math.PI) * w
+            const z2 = z + w//Math.sin(rot + Math.PI) * w
+            const x3 = x + 0//jitter(0.7)
+            const z3 = z + 0//jitter(0.7)
 
-            const y = bladeH + jitter(1)
+            const y = bladeH //+ jitter(1)
 
-            const r = 0.2 + jitter(0.02)
-            const g = 0.5 + jitter(0.2)
-            const b = 0.2 + jitter(0.02)
+            const r = x / 10;
+            const g = z / 10;
+            const b = 0;
+            // const r = 0.2 + jitter(0.02)
+            // const g = 0.5 + jitter(0.2)
+            // const b = 0.2 + jitter(0.02)
 
             const p0: vec3 = [x1, 0, z1];
             const p1: vec3 = [x2, 0, z2];
@@ -226,6 +222,7 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
     return grassMesh;
 }
 
+console.log(`vertElStride: ${vertElStride}`);
 function createGrassTileset(opts: GrassTileOpts & GrassTilesetOpts, device: GPUDevice): MeshMemoryPool {
     // create grass field
     const { spacing, size } = opts;
@@ -238,13 +235,20 @@ function createGrassTileset(opts: GrassTileOpts & GrassTilesetOpts, device: GPUD
         maxMeshes: opts.count,
         meshUniByteSize: align(mat4ByteSize, 256), // align to 256,
         backfaceCulling: false,
-        usesIndices: false,
+        // TODO(@darzu): 
+        usesIndices: true,
     }, device);
+
+    console.log(`maxVerts: ${align(totalGrass * 3, 4)}`)
 
     grassMeshPool._map();
 
     const tile = createGrassTile(opts, grassMeshPool);
     grassMeshPool.applyMeshTransform(tile)
+
+    const vs = grassMeshPool._vertsMap();
+    console.log(`vert buffer floats: ${vs.length}, vert buffer bytes: ${vs.length * 4}, verts: ${vs.length / 10}`)
+    // console.dir(grassMeshPool._vertsMap())
 
     grassMeshPool._unmap();
 
@@ -269,11 +273,22 @@ function initGrassSystem(device: GPUDevice): GrassSystem {
         // tile
         bladeW: 0.1,
         bladeH: 1.7,
-        spacing: 0.25,
-        size: 10,
+        spacing: 1.0,
+        size: 4,
+        // spacing: 0.25,
+        // size: 10,
         // tileset
-        count: 4
+        count: 1
     }, device);
+
+    // // TODO(@darzu): this doesn't work b/c "the buffer must have the MapRead usage"
+    // tilesetPool._vertBuffer.mapAsync(GPUBufferUsage.VERTEX | GPUBufferUsage.MAP_READ).then(_ => {
+    //     const map = tilesetPool._vertBuffer.getMappedRange()
+
+    //     console.dir(map)
+
+    //     tilesetPool._vertBuffer.unmap()
+    // })
 
 
     const res: GrassSystem = {
@@ -302,19 +317,21 @@ async function init(canvasRef: HTMLCanvasElement) {
     resize();
 
     // TODO(@darzu): VERTEX FORMAT
-    const meshPool = createMeshMemoryPool({
-        vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
-        maxVerts: 100000,
-        maxTris: 100000,
-        maxMeshes: 10000,
-        meshUniByteSize: Math.ceil(mat4ByteSize / 256) * 256, // align to 256,
-        backfaceCulling: true,
-        usesIndices: true,
-    }, device);
+    // const meshPool = createMeshMemoryPool({
+    //     vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
+    //     maxVerts: 100000,
+    //     maxTris: 100000,
+    //     maxMeshes: 10000,
+    //     meshUniByteSize: Math.ceil(mat4ByteSize / 256) * 256, // align to 256,
+    //     backfaceCulling: true,
+    //     usesIndices: true,
+    // }, device);
 
     // TODO(@darzu): 
     const meshRenderer = createMeshRenderer(
-        meshPool._opts.meshUniByteSize, meshPool._opts.vertByteSize, device, context);
+        align(mat4ByteSize, 256),
+        Float32Array.BYTES_PER_ELEMENT * vertElStride,
+        device, context);
 
     // TODO(@darzu): physics?
     // console.dir(RAPIER)
@@ -329,46 +346,46 @@ async function init(canvasRef: HTMLCanvasElement) {
         cursorLocked = true
     }
 
-    meshPool._map()
+    // meshPool._map()
 
-    meshPool.addMeshes([
-        PLANE
-    ])
-    const planeHandle = meshPool._meshes[meshPool._meshes.length - 1] // TODO(@darzu): hack
-    mat4.scale(planeHandle.transform, planeHandle.transform, [10, 10, 10]);
-    meshPool.applyMeshTransform(planeHandle);
+    // meshPool.addMeshes([
+    //     PLANE
+    // ])
+    // const planeHandle = meshPool._meshes[meshPool._meshes.length - 1] // TODO(@darzu): hack
+    // mat4.scale(planeHandle.transform, planeHandle.transform, [10, 10, 10]);
+    // meshPool.applyMeshTransform(planeHandle);
 
-    meshPool.addMeshes([
-        CUBE,
-        CUBE,
-        CUBE,
-        CUBE,
-        CUBE,
-    ])
+    // meshPool.addMeshes([
+    //     CUBE,
+    //     CUBE,
+    //     CUBE,
+    //     CUBE,
+    //     // CUBE,
+    // ])
 
     // create a field of cubes
-    {
-        const grayCube: MeshModel = { ...CUBE, colors: CUBE.colors.map(c => [0.3, 0.3, 0.3]) }
-        const spread = 2;
-        const spacing = 2;
-        const boxHandles: Mesh[] = []
-        for (let x = -spread; x < spread; x++) {
-            for (let y = -spread; y < spread; y++) {
-                for (let z = -spread; z < spread; z++) {
-                    meshPool.addMeshes([grayCube])
-                    const handle = meshPool._meshes[meshPool._meshes.length - 1] // TODO(@darzu): hack
-                    mat4.translate(handle.transform, handle.transform, [x * spacing, (y + spread + 1.5) * spacing, (z - spread * 1.5) * spacing])
-                    mat4.rotateX(handle.transform, handle.transform, Math.random() * 2 * Math.PI)
-                    mat4.rotateY(handle.transform, handle.transform, Math.random() * 2 * Math.PI)
-                    mat4.rotateZ(handle.transform, handle.transform, Math.random() * 2 * Math.PI)
-                    meshPool.applyMeshTransform(handle);
-                    boxHandles.push(handle)
-                }
-            }
-        }
-    }
+    // {
+    //     const grayCube: MeshModel = { ...CUBE, colors: CUBE.colors.map(c => [0.3, 0.3, 0.3]) }
+    //     const spread = 2;
+    //     const spacing = 2;
+    //     const boxHandles: Mesh[] = []
+    //     for (let x = -spread; x < spread; x++) {
+    //         for (let y = -spread; y < spread; y++) {
+    //             for (let z = -spread; z < spread; z++) {
+    //                 meshPool.addMeshes([grayCube])
+    //                 const handle = meshPool._meshes[meshPool._meshes.length - 1] // TODO(@darzu): hack
+    //                 mat4.translate(handle.transform, handle.transform, [x * spacing, (y + spread + 1.5) * spacing, (z - spread * 1.5) * spacing])
+    //                 mat4.rotateX(handle.transform, handle.transform, Math.random() * 2 * Math.PI)
+    //                 mat4.rotateY(handle.transform, handle.transform, Math.random() * 2 * Math.PI)
+    //                 mat4.rotateZ(handle.transform, handle.transform, Math.random() * 2 * Math.PI)
+    //                 meshPool.applyMeshTransform(handle);
+    //                 boxHandles.push(handle)
+    //             }
+    //         }
+    //     }
+    // }
 
-    meshPool._unmap();
+    // meshPool._unmap();
 
     const grassSystem = initGrassSystem(device);
 
@@ -449,10 +466,10 @@ async function init(canvasRef: HTMLCanvasElement) {
             camera.pitch(-mouseDeltaY * 0.01);
     }
 
-    const playerM = meshPool._meshes[4]
+    // const playerM = meshPool._meshes[4]
     const playerT = mkAffineTransformable();
-    playerM.transform = playerT.getTransform();
-    meshPool.applyMeshTransform(playerM)
+    // playerM.transform = playerT.getTransform();
+    // meshPool.applyMeshTransform(playerM)
 
     // write light source
     {
@@ -493,7 +510,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         );
     }
 
-    meshRenderer.rebuildBundles([meshPool, ...grassSystem.getGrassPools()]);
+    meshRenderer.rebuildBundles([...grassSystem.getGrassPools()]);
 
     let debugDiv = document.getElementById('debug_div') as HTMLDivElement;
 
@@ -515,21 +532,21 @@ async function init(canvasRef: HTMLCanvasElement) {
         if (!canvasRef) return;
 
         // update model positions
-        // TODO(@darzu): real movement
-        mat4.translate(meshPool._meshes[1].transform, meshPool._meshes[1].transform, [0.1, 0, 0])
-        meshPool.applyMeshTransform(meshPool._meshes[1])
-        mat4.translate(meshPool._meshes[2].transform, meshPool._meshes[2].transform, [0.0, 0.2, 0])
-        meshPool.applyMeshTransform(meshPool._meshes[2])
-        mat4.translate(meshPool._meshes[3].transform, meshPool._meshes[3].transform, [0.0, 0, 0.3])
-        meshPool.applyMeshTransform(meshPool._meshes[3])
+        // // TODO(@darzu): real movement
+        // mat4.translate(meshPool._meshes[1].transform, meshPool._meshes[1].transform, [0.1, 0, 0])
+        // meshPool.applyMeshTransform(meshPool._meshes[1])
+        // mat4.translate(meshPool._meshes[2].transform, meshPool._meshes[2].transform, [0.0, 0.2, 0])
+        // meshPool.applyMeshTransform(meshPool._meshes[2])
+        // mat4.translate(meshPool._meshes[3].transform, meshPool._meshes[3].transform, [0.0, 0, 0.3])
+        // meshPool.applyMeshTransform(meshPool._meshes[3])
 
         // controlTransformable(cameraPos);
         controlPlayer(playerT);
         cameraFollow(cameraPos, playerT);
         // controlTransformable(m2t);
 
-        playerM.transform = playerT.getTransform();
-        meshPool.applyMeshTransform(playerM)
+        // playerM.transform = playerT.getTransform();
+        // meshPool.applyMeshTransform(playerM)
 
         // reset accummulated mouse delta
         mouseDeltaX = 0;
@@ -588,7 +605,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         const canvasHeight = canvasRef.clientHeight;
 
         const commandEncoder = device.createCommandEncoder();
-        meshRenderer.render(commandEncoder, [meshPool, ...grassSystem.getGrassPools()], canvasWidth, canvasHeight);
+        meshRenderer.render(commandEncoder, [...grassSystem.getGrassPools()], canvasWidth, canvasHeight);
         device.queue.submit([commandEncoder.finish()]);
 
         requestAnimationFrame(frame);
