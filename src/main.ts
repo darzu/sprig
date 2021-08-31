@@ -512,14 +512,14 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
             module: device.createShaderModule({ code: fragmentShaderForShadows }),
             entryPoint: 'main',
             targets: [
-                { format: swapChainFormat } // TODO(@darzu): 
+                // { format: swapChainFormat } // TODO(@darzu): 
             ],
         },
         depthStencil: {
             depthWriteEnabled: true,
             depthCompare: 'less',
-            format: depthStencilFormat,
-            // format: shadowDepthStencilFormat,
+            // format: depthStencilFormat,
+            format: shadowDepthStencilFormat,
         },
         // multisample: { // TODO(@darzu): 
         //     count: antiAliasSampleCount,
@@ -561,10 +561,10 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     // TODO: shadow bundle ?
     const shadowBundleEnc = device.createRenderBundleEncoder({
         colorFormats: [
-            swapChainFormat
+            // swapChainFormat
         ],
-        depthStencilFormat: depthStencilFormat,
-        // depthStencilFormat: shadowDepthStencilFormat,
+        // depthStencilFormat: depthStencilFormat,
+        depthStencilFormat: shadowDepthStencilFormat,
         // sampleCount: antiAliasSampleCount,
     });
     shadowBundleEnc.setPipeline(shadowPipeline);
@@ -660,17 +660,17 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         // shadowPass.endPass();
         const shadowRenderPassEncoder = commandEncoder.beginRenderPass({
             colorAttachments: [
-                {
-                    // view: colorTextureView,
-                    view: context.getCurrentTexture().createView(),
-                    // resolveTarget: context.getCurrentTexture().createView(),
-                    loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
-                    storeOp: 'store',
-                }
+                // {
+                //     // view: colorTextureView,
+                //     view: context.getCurrentTexture().createView(),
+                //     // resolveTarget: context.getCurrentTexture().createView(),
+                //     loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
+                //     storeOp: 'store',
+                // }
             ],
             depthStencilAttachment: {
-                view: depthTextureView,
-                // view: shadowDepthTextureView,
+                // view: depthTextureView,
+                view: shadowDepthTextureView,
                 depthLoadValue: 1.0,
                 depthStoreOp: 'store',
                 stencilLoadValue: 0,
@@ -694,8 +694,8 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         // render to the canvas' via our swap-chain
         const renderPassEncoder = commandEncoder.beginRenderPass({
             colorAttachments: [{
-                // view: context.getCurrentTexture().createView(),
-                view: colorTextureView,
+                view: context.getCurrentTexture().createView(),
+                // view: colorTextureView,
                 // resolveTarget: context.getCurrentTexture().createView(),
                 loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
                 storeOp: 'store',
