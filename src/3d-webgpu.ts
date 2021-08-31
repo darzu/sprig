@@ -219,7 +219,7 @@ async function init(canvasRef: HTMLCanvasElement) {
     }
 
     // create grass field
-    const spacing = 0.025;
+    const spacing = 0.25;
     const grassSpread = 500;
     const grassTris = (grassSpread * 2 + 1) ** 2
     const grassMeshPool = createMeshMemoryPool({

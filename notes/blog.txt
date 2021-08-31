@@ -21,3 +21,16 @@ Micro entry:
         web IDE
         easy dependencies
     
+    What do the URLs look like?
+        static serve from github pages
+        so a project is a self-contained folder
+        so to create a project, take an entry point and tree shake off everything else
+
+    Build step:
+        From entry point .ts file
+            which has a standard attachToCanvas() function
+        traverse imports
+        collect files to be coppied
+        create a readme.md
+        tree shake off unused .ts ?
+        copy to blog/ folder
