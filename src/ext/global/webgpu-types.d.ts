@@ -8,13 +8,13 @@
 
 interface HTMLCanvasElement {
   getContext(
-    contextId: "gpupresent"
+    contextId: "webgpu"
   ): GPUCanvasContext | null;
 }
 
 interface OffscreenCanvas {
   getContext(
-    contextId: "gpupresent"
+    contextId: "webgpu"
   ): GPUCanvasContext | null;
 }
 

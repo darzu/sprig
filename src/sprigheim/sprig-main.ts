@@ -499,7 +499,7 @@ vec3.normalize(lightDir, lightDir);
 type RenderFrameFn = (timeMS: number) => void;
 function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): RenderFrameFn {
     // configure our canvas backed swapchain
-    const context = canvasRef.getContext('gpupresent')!;
+    const context = canvasRef.getContext('webgpu')!;
     context.configure({ device, format: swapChainFormat });
 
     // create our scene's uniform buffer
@@ -527,7 +527,8 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     const ground = poolBuilder.addMesh(PLANE);
     const player = poolBuilder.addMesh(CUBE);
     const randomCubes: MeshHandle[] = [];
-    for (let i = 0; i < 10; i++) {
+    const NUM_CUBES = 1;
+    for (let i = 0; i < NUM_CUBES; i++) {
         // create cubes with random colors
         const color: vec3 = [Math.random(), Math.random(), Math.random()];
         const coloredCube: Mesh = { ...CUBE, colors: CUBE.colors.map(_ => color) }
