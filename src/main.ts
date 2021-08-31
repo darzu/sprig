@@ -594,8 +594,7 @@ async function init(canvasRef: HTMLCanvasElement) {
     const [playerM] = meshPool.addMeshes([playerCubeModel], true)
 
     // create a field of cubes
-    function createGarbageCube(pos: vec3)
-    {
+    function createGarbageCube(pos: vec3) {
         const color: vec3 = [0.1 + jitter(0.05), 0.1 + jitter(0.05), 0.1 + jitter(0.05)];
         const grayCube: MeshModel = {
             ...CUBE,
@@ -701,11 +700,11 @@ async function init(canvasRef: HTMLCanvasElement) {
             t.moveY(-speed)
         if (pressedKeys['q'])
             // t.roll(0.1)
-        if (pressedKeys['e'])
-            // t.roll(-0.1)
-        if (pressedKeys['r']) {
-            // TODO(@darzu): 
-        }
+            if (pressedKeys['e'])
+                // t.roll(-0.1)
+                if (pressedKeys['r']) {
+                    // TODO(@darzu): 
+                }
         // mouse
         if (mouseDeltaX !== 0)
             t.yaw(-mouseDeltaX * 0.01);
@@ -793,7 +792,7 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     meshRenderer.rebuildBundles([meshPool, ...grassSystem.getGrassPools()]);
 
-    let debugDiv = document.getElementById('debug_div') as HTMLDivElement;
+    let debugDiv = document.getElementById('debug-div') as HTMLDivElement;
 
     let previousFrameTime = 0;
     let avgJsTimeMs = 0
@@ -915,7 +914,7 @@ async function init(canvasRef: HTMLCanvasElement) {
 };
 
 // Attach to html
-let canvas = document.getElementById('my_Canvas') as HTMLCanvasElement;
+let canvas = document.getElementById('sample-canvas') as HTMLCanvasElement;
 await init(canvas)
 
 // TODO: vertex, index, normals
