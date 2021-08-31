@@ -1,263 +1,293 @@
-import * as m4 from "./m4.js"
-import { v3, V3 } from "./v3.js";
+import { mat4, vec3 } from 'gl-matrix';
 
-/*============= Creating a canvas ======================*/
-let canvas = document.getElementById('my_Canvas') as HTMLCanvasElement;
-let gl = canvas.getContext('webgl') as WebGLRenderingContext; // TODO: use webgl2
-let canv = gl.canvas as HTMLCanvasElement
+// TODO: canvas ref
+// TODO: navigator.gpu typings
+//          @webgpu/types
 
-let vertCode = `
-uniform mat4 u_worldViewProjection;
-uniform vec3 u_lightWorldPos;
-uniform mat4 u_world;
-uniform mat4 u_viewInverse;
-uniform mat4 u_worldInverseTranspose;
-
-attribute vec4 a_position;
-attribute vec3 a_normal;
-attribute vec2 a_texcoord;
-
-varying vec4 v_position;
-varying vec2 v_texCoord;
-varying vec3 v_normal;
-varying vec3 v_surfaceToLight;
-varying vec3 v_surfaceToView;
-
-void main() {
-  v_texCoord = a_texcoord;
-  v_position = (u_worldViewProjection * a_position);
-  v_normal = (u_worldInverseTranspose * vec4(a_normal, 0)).xyz;
-  v_surfaceToLight = u_lightWorldPos - (u_world * a_position).xyz;
-  v_surfaceToView = (u_viewInverse[3] - (u_world * a_position)).xyz;
-  gl_Position = v_position;
-}
+const vertexPositionColorWGSL =
 `
-
-let fragCode = `
-precision mediump float;
-
-varying vec4 v_position;
-varying vec2 v_texCoord;
-varying vec3 v_normal;
-varying vec3 v_surfaceToLight;
-varying vec3 v_surfaceToView;
-
-uniform vec4 u_lightColor;
-uniform vec4 u_ambient;
-uniform sampler2D u_diffuse;
-uniform vec4 u_specular;
-uniform float u_shininess;
-uniform float u_specularFactor;
-
-vec4 lit(float l ,float h, float m) {
-  return vec4(1.0,
-              max(l, 0.0),
-              (l > 0.0) ? pow(max(0.0, h), m) : 0.0,
-              1.0);
+[[stage(fragment)]]
+fn main([[location(0)]] fragUV: vec2<f32>,
+        [[location(1)]] fragPosition: vec4<f32>) -> [[location(0)]] vec4<f32> {
+  return fragPosition;
 }
+`;
 
-void main() {
-  vec4 diffuseColor = texture2D(u_diffuse, v_texCoord);
-  vec3 a_normal = normalize(v_normal);
-  vec3 surfaceToLight = normalize(v_surfaceToLight);
-  vec3 surfaceToView = normalize(v_surfaceToView);
-  vec3 halfVector = normalize(surfaceToLight + surfaceToView);
-  vec4 litR = lit(dot(a_normal, surfaceToLight),
-                    dot(a_normal, halfVector), u_shininess);
-  vec4 outColor = vec4((
-  u_lightColor * (diffuseColor * litR.y + diffuseColor * u_ambient +
-                u_specular * litR.z * u_specularFactor)).rgb,
-      diffuseColor.a);
-  gl_FragColor = outColor;
-}`
+const basicVertWGSL = `
+[[block]] struct Uniforms {
+    modelViewProjectionMatrix : mat4x4<f32>;
+  };
+  [[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
 
-let vertShader = gl.createShader(gl.VERTEX_SHADER)!;
-gl.shaderSource(vertShader, vertCode);
-gl.compileShader(vertShader);
+  struct VertexOutput {
+    [[builtin(position)]] Position : vec4<f32>;
+    [[location(0)]] fragUV : vec2<f32>;
+    [[location(1)]] fragPosition: vec4<f32>;
+  };
 
-let fragShader = gl.createShader(gl.FRAGMENT_SHADER)!;
-gl.shaderSource(fragShader, fragCode);
-gl.compileShader(fragShader);
+  [[stage(vertex)]]
+  fn main([[location(0)]] position : vec4<f32>,
+          [[location(1)]] uv : vec2<f32>) -> VertexOutput {
+    var output : VertexOutput;
+    output.Position = uniforms.modelViewProjectionMatrix * position;
+    output.fragUV = uv;
+    output.fragPosition = 0.5 * (position + vec4<f32>(1.0, 1.0, 1.0, 1.0));
+    return output;
+  }
+`;
 
-let program = gl.createProgram()!;
-gl.attachShader(program, vertShader);
-gl.attachShader(program, fragShader);
-gl.linkProgram(program);
+export const cubeVertexSize = 4 * 10; // Byte size of one cube vertex.
+export const cubePositionOffset = 0;
+export const cubeColorOffset = 4 * 4; // Byte offset of cube vertex color attribute.
+export const cubeUVOffset = 4 * 8;
+export const cubeVertexCount = 36;
 
-/////
+// prettier-ignore
+export const cubeVertexArray = new Float32Array([
+    // float4 position, float4 color, float2 uv,
+    1, -1, 1, 1, 1, 0, 1, 1, 1, 1,
+    -1, -1, 1, 1, 0, 0, 1, 1, 0, 1,
+    -1, -1, -1, 1, 0, 0, 0, 1, 0, 0,
+    1, -1, -1, 1, 1, 0, 0, 1, 1, 0,
+    1, -1, 1, 1, 1, 0, 1, 1, 1, 1,
+    -1, -1, -1, 1, 0, 0, 0, 1, 0, 0,
 
-const u_lightWorldPosLoc = gl.getUniformLocation(program, "u_lightWorldPos");
-const u_lightColorLoc = gl.getUniformLocation(program, "u_lightColor");
-const u_ambientLoc = gl.getUniformLocation(program, "u_ambient");
-const u_specularLoc = gl.getUniformLocation(program, "u_specular");
-const u_shininessLoc = gl.getUniformLocation(program, "u_shininess");
-const u_specularFactorLoc = gl.getUniformLocation(program, "u_specularFactor");
-const u_diffuseLoc = gl.getUniformLocation(program, "u_diffuse");
-const u_worldLoc = gl.getUniformLocation(program, "u_world");
-const u_worldInverseTransposeLoc = gl.getUniformLocation(program, "u_worldInverseTranspose");
-const u_worldViewProjectionLoc = gl.getUniformLocation(program, "u_worldViewProjection");
-const u_viewInverseLoc = gl.getUniformLocation(program, "u_viewInverse");
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, -1, 1, 1, 1, 0, 1, 1, 0, 1,
+    1, -1, -1, 1, 1, 0, 0, 1, 0, 0,
+    1, 1, -1, 1, 1, 1, 0, 1, 1, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, -1, -1, 1, 1, 0, 0, 1, 0, 0,
 
-const positionLoc = gl.getAttribLocation(program, "a_position");
-// let _Pmatrix = gl.getUniformLocation(program, "a_position");
-const normalLoc = gl.getAttribLocation(program, "a_normal");
-const texcoordLoc = gl.getAttribLocation(program, "a_texcoord");
+    -1, 1, 1, 1, 0, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
+    1, 1, -1, 1, 1, 1, 0, 1, 0, 0,
+    -1, 1, -1, 1, 0, 1, 0, 1, 1, 0,
+    -1, 1, 1, 1, 0, 1, 1, 1, 1, 1,
+    1, 1, -1, 1, 1, 1, 0, 1, 0, 0,
 
-const positions = [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1];
-const normals = [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1];
-const texcoords = [1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1];
-const indices = [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23];
+    -1, -1, 1, 1, 0, 0, 1, 1, 1, 1,
+    -1, 1, 1, 1, 0, 1, 1, 1, 0, 1,
+    -1, 1, -1, 1, 0, 1, 0, 1, 0, 0,
+    -1, -1, -1, 1, 0, 0, 0, 1, 1, 0,
+    -1, -1, 1, 1, 0, 0, 1, 1, 1, 1,
+    -1, 1, -1, 1, 0, 1, 0, 1, 0, 0,
 
-const positionBuffer = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-const normalBuffer = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
-gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
-const texcoordBuffer = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
-gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texcoords), gl.STATIC_DRAW);
-const indicesBuffer = gl.createBuffer();
-gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
-gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    -1, 1, 1, 1, 0, 1, 1, 1, 0, 1,
+    -1, -1, 1, 1, 0, 0, 1, 1, 0, 0,
+    -1, -1, 1, 1, 0, 0, 1, 1, 0, 0,
+    1, -1, 1, 1, 1, 0, 1, 1, 1, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 
-const tex = gl.createTexture();
-gl.bindTexture(gl.TEXTURE_2D, tex);
-gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 2, 2, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([
-    255, 255, 255, 255,
-    192, 100, 192, 255,
-    100, 192, 192, 255,
-    255, 255, 100, 255,
-]));
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    1, -1, -1, 1, 1, 0, 0, 1, 1, 1,
+    -1, -1, -1, 1, 0, 0, 0, 1, 0, 1,
+    -1, 1, -1, 1, 0, 1, 0, 1, 0, 0,
+    1, 1, -1, 1, 1, 1, 0, 1, 1, 0,
+    1, -1, -1, 1, 1, 0, 0, 1, 1, 1,
+    -1, 1, -1, 1, 0, 1, 0, 1, 0, 0,
+]);
 
-function render(time: number) {
-    time *= 0.001;
-    resizeCanvasToDisplaySize(canv);
-    gl.viewport(0, 0, canv.width, canv.height);
+async function init(canvasRef: HTMLCanvasElement) {
+    const adapter = await navigator.gpu.requestAdapter();
+    const device = await adapter.requestDevice();
 
-    gl.enable(gl.DEPTH_TEST);
-    gl.enable(gl.CULL_FACE);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    if (!canvasRef === null) return;
+    const context = canvasRef.getContext('gpupresent');
 
-    const projection = m4.perspective(30 * Math.PI / 180, canv.clientWidth / canv.clientHeight, 0.5, 10);
-    const eye: V3 = v3([1, 4, -6]);
-    const target: V3 = v3([0, 0, 0]);
-    const up: V3 = v3([0, 1, 0]);
+    const swapChainFormat = 'bgra8unorm';
 
-    const camera = m4.lookAt(eye, target, up);
-    const view = m4.inverse(camera);
-    const viewProjection = m4.multiply(projection, view);
-    const world = updatePos() // m4.rotationY(time);
+    const swapChain = context.configureSwapChain({
+        device,
+        format: swapChainFormat,
+    });
 
-    gl.useProgram(program);
+    // Create a vertex buffer from the cube data.
+    const verticesBuffer = device.createBuffer({
+        size: cubeVertexArray.byteLength,
+        usage: GPUBufferUsage.VERTEX,
+        mappedAtCreation: true,
+    });
+    new Float32Array(verticesBuffer.getMappedRange()).set(cubeVertexArray);
+    verticesBuffer.unmap();
 
-    gl.uniform3fv(u_lightWorldPosLoc, [1, 8, -10]);
-    gl.uniform4fv(u_lightColorLoc, [1, 0.8, 0.8, 1]);
-    gl.uniform4fv(u_ambientLoc, [0, 0, 0, 1]);
-    gl.uniform4fv(u_specularLoc, [1, 1, 1, 1]);
-    gl.uniform1f(u_shininessLoc, 50);
-    gl.uniform1f(u_specularFactorLoc, 0.5);
-    gl.uniform1i(u_diffuseLoc, 0);
-    gl.uniformMatrix4fv(u_viewInverseLoc, false, camera);
-    gl.uniformMatrix4fv(u_worldLoc, false, world);
-    gl.uniformMatrix4fv(u_worldInverseTransposeLoc, false, m4.transpose(m4.inverse(world)));
-    gl.uniformMatrix4fv(u_worldViewProjectionLoc, false, m4.multiply(viewProjection, world));
+    const pipeline = device.createRenderPipeline({
+        vertex: {
+            module: device.createShaderModule({
+                code: basicVertWGSL,
+            }),
+            entryPoint: 'main',
+            buffers: [
+                {
+                    arrayStride: cubeVertexSize,
+                    attributes: [
+                        {
+                            // position
+                            shaderLocation: 0,
+                            offset: cubePositionOffset,
+                            format: 'float32x4',
+                        },
+                        {
+                            // uv
+                            shaderLocation: 1,
+                            offset: cubeUVOffset,
+                            format: 'float32x2',
+                        },
+                    ],
+                },
+            ],
+        },
+        fragment: {
+            module: device.createShaderModule({
+                code: vertexPositionColorWGSL,
+            }),
+            entryPoint: 'main',
+            targets: [
+                {
+                    format: swapChainFormat,
+                },
+            ],
+        },
+        primitive: {
+            topology: 'triangle-list',
 
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, tex);
+            // Backface culling since the cube is solid piece of geometry.
+            // Faces pointing away from the camera will be occluded by faces
+            // pointing toward the camera.
+            cullMode: 'back',
+        },
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.vertexAttribPointer(positionLoc, 3, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(positionLoc);
-    gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
-    gl.vertexAttribPointer(normalLoc, 3, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(normalLoc);
-    gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
-    gl.vertexAttribPointer(texcoordLoc, 2, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(texcoordLoc);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
+        // Enable depth testing so that the fragment closest to the camera
+        // is rendered in front.
+        depthStencil: {
+            depthWriteEnabled: true,
+            depthCompare: 'less',
+            format: 'depth24plus',
+        },
+    });
 
-    gl.drawElements(gl.TRIANGLES, 6 * 6, gl.UNSIGNED_SHORT, 0);
+    const depthTexture = device.createTexture({
+        size: { width: canvasRef.current.width, height: canvasRef.current.width },
+        format: 'depth24plus',
+        usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });
 
-    requestAnimationFrame(render);
-}
-requestAnimationFrame(render);
+    const uniformBufferSize = 4 * 16; // 4x4 matrix
+    const uniformBuffer = device.createBuffer({
+        size: uniformBufferSize,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
 
-//////////
+    const uniformBindGroup = device.createBindGroup({
+        layout: pipeline.getBindGroupLayout(0),
+        entries: [
+            {
+                binding: 0,
+                resource: {
+                    buffer: uniformBuffer,
+                },
+            },
+        ],
+    });
 
+    const renderPassDescriptor: GPURenderPassDescriptor = {
+        colorAttachments: [
+            {
+                view: undefined, // Assigned later
 
-/*================= Mouse events ======================*/
-// positionLoc
+                loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
+                storeOp: 'store',
+            },
+        ],
+        depthStencilAttachment: {
+            view: depthTexture.createView(),
 
-let AMORTIZATION = 0.95;
-let drag = false;
-let old_x: number;
-let old_y: number;
-let dX = 0;
-let dY = 0;
-let THETA = 0;
-let PHI = 0;
+            depthLoadValue: 1.0,
+            depthStoreOp: 'store',
+            stencilLoadValue: 0,
+            stencilStoreOp: 'store',
+        },
+    };
 
-let mouseDown = function (e: MouseEvent) {
-    drag = true;
-    old_x = e.pageX, old_y = e.pageY;
-    e.preventDefault();
-    return false;
-};
+    const aspect = Math.abs(canvasRef.current.width / canvasRef.current.height);
+    const projectionMatrix = mat4.create();
+    mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 1, 100.0);
 
-let mouseUp = function (e: MouseEvent) {
-    drag = false;
-};
+    function getTransformationMatrix() {
+        const viewMatrix = mat4.create();
+        mat4.translate(viewMatrix, viewMatrix, vec3.fromValues(0, 0, -4));
+        const now = Date.now() / 1000;
+        mat4.rotate(
+            viewMatrix,
+            viewMatrix,
+            1,
+            vec3.fromValues(Math.sin(now), Math.cos(now), 0)
+        );
 
-let mouseMove = function (e: MouseEvent) {
-    if (!drag) return false;
-    dX = (e.pageX - old_x) * 2 * Math.PI / canvas.width,
-        dY = (e.pageY - old_y) * 2 * Math.PI / canvas.height;
-    THETA += dX;
-    PHI -= dY;
-    old_x = e.pageX, old_y = e.pageY;
-    e.preventDefault();
-    return;
-};
+        const modelViewProjectionMatrix = mat4.create();
+        mat4.multiply(modelViewProjectionMatrix, projectionMatrix, viewMatrix);
 
-function updatePos(): m4.M4 {
-    let mo_matrix = m4.identity() // todo
-
-    if (!drag) {
-        dX *= AMORTIZATION, dY *= AMORTIZATION;
-        THETA += dX, PHI += dY;
+        return modelViewProjectionMatrix as Float32Array;
     }
 
-    m4.rotateY(mo_matrix, THETA, mo_matrix);
-    m4.rotateX(mo_matrix, PHI, mo_matrix);
+    function frame() {
+        // Sample is no longer the active page.
+        if (!canvasRef.current) return;
 
-    return mo_matrix
-}
+        const transformationMatrix = getTransformationMatrix();
+        device.queue.writeBuffer(
+            uniformBuffer,
+            0,
+            transformationMatrix.buffer,
+            transformationMatrix.byteOffset,
+            transformationMatrix.byteLength
+        );
+        renderPassDescriptor.colorAttachments[0].view = swapChain
+            .getCurrentTexture()
+            .createView();
 
-canvas.addEventListener("mousedown", mouseDown, false);
-canvas.addEventListener("mouseup", mouseUp, false);
-canvas.addEventListener("mouseout", mouseUp, false);
-canvas.addEventListener("mousemove", mouseMove, false);
+        const commandEncoder = device.createCommandEncoder();
+        const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+        passEncoder.setPipeline(pipeline);
+        passEncoder.setBindGroup(0, uniformBindGroup);
+        passEncoder.setVertexBuffer(0, verticesBuffer);
+        passEncoder.draw(cubeVertexCount, 1, 0, 0);
+        passEncoder.endPass();
+        device.queue.submit([commandEncoder.finish()]);
 
-/*================= Mouse events ======================*/
-
-
-/**
- * Resize a canvas to match the size it's displayed.
- * @param canvas The canvas to resize.
- * @param [multiplier] So you can pass in `window.devicePixelRatio` or other scale value if you want to.
- * @return true if the canvas was resized.
- */
-function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, multiplier: number = 1) {
-    multiplier = Math.max(0, multiplier);
-    const width = canvas.clientWidth * multiplier | 0;
-    const height = canvas.clientHeight * multiplier | 0;
-    if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        return true;
+        requestAnimationFrame(frame);
     }
-    return false;
-}
+    requestAnimationFrame(frame);
+};
+
+const RotatingCube: () => JSX.Element = () =>
+    makeSample({
+        name: 'Rotating Cube',
+        description:
+            'This example shows how to upload uniform data every frame to render a rotating object.',
+        init,
+        sources: [
+            {
+                name: __filename.substr(__dirname.length + 1),
+                contents: __SOURCE__,
+            },
+            {
+                name: '../../shaders/basic.vert.wgsl',
+                contents: basicVertWGSL,
+                editable: true,
+            },
+            {
+                name: '../../shaders/vertexPositionColor.frag.wgsl',
+                contents: vertexPositionColorWGSL,
+                editable: true,
+            },
+            {
+                name: '../../meshes/cube.ts',
+                // eslint-disable-next-line @typescript-eslint/no-var-requires
+                contents: require('!!raw-loader!../../meshes/cube.ts').default,
+            },
+        ],
+        filename: __filename,
+    });
+
+export default RotatingCube;
