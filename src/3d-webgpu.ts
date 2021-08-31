@@ -46,6 +46,19 @@ const CUBE: Mesh = {
     ]
 }
 
+const PLANE: Mesh = {
+    pos: [
+        [+10, 0, +10],
+        [-10, 0, +10],
+        [+10, 0, -10],
+        [-10, 0, -10],
+    ],
+    tri: [
+        [0, 2, 3],
+        [0, 3, 1],
+    ]
+}
+
 function computeNormal([p1, p2, p3]: [vec3, vec3, vec3]): vec3 {
     // https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
     // cross product of two edges
