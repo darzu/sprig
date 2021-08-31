@@ -1,6 +1,9 @@
 import { mat4, vec3, quat } from "./gl-matrix.js";
 import { Renderer } from "./render.js";
+import * as RAPIER from './rapier3d-dz.js';
 
+// TODO(@darzu): for debugging imports
+// console.dir(RAPIER)
 
 // defines the geometry and coloring of a mesh
 export interface Mesh {
@@ -32,6 +35,11 @@ export abstract class GameObject {
   snap_seq: number;
   color: vec3;
 
+  // TODO(@darzu): 
+  // physics
+  // gravity: vec3;
+  // world: RAPIER.World;
+
   constructor(id: number) {
     this.id = id;
     this.location = vec3.fromValues(0, 0, 0);
@@ -43,6 +51,11 @@ export abstract class GameObject {
     this.authority_seq = 0;
     this.snap_seq = -1;
     this.color = vec3.fromValues(0, 0, 0);
+
+    // TODO(@darzu): 
+    // physics
+    // this.gravity = vec3.fromValues(0.0, -9.81, 0.0);
+    // this.world = new RAPIER.World(this.gravity);
   }
 
   transform(): mat4 {
@@ -105,6 +118,16 @@ export abstract class GameState<Inputs> {
   addObject(obj: GameObject) {
     this.objects[obj.id] = obj;
     this.renderer.addObject(obj);
+
+    // physics
+    // TODO(@darzu): create physics object
+    // let groundColliderDesc = RAPIER.ColliderDesc.cuboid(10.0, 0.1, 10.0);
+    // world.createCollider(groundColliderDesc);
+    // let rigidBodyDesc = RAPIER.RigidBodyDesc.newDynamic()
+    //   .setTranslation(0.0, 1.0, 0.0);
+    // let rigidBody = world.createRigidBody(rigidBodyDesc);
+    // let colliderDesc = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5);
+    // let collider = world.createCollider(colliderDesc, rigidBody.handle);
   }
 
   addObjectFromNet(netObj: NetObject): GameObject {
@@ -151,6 +174,11 @@ export abstract class GameState<Inputs> {
     let dt = time - this.time;
     this.stepGame(dt, inputs);
     const os = Object.values(this.objects);
+
+    // TODO(@darzu): step physics
+    // let position = rigidBody.translation();
+    // world.step();
+
     for (let o of os) {
       // change location according to linear velocity
       let delta = vec3.scale(vec3.create(), o.linear_velocity, dt);
@@ -227,14 +255,9 @@ function doesOverlap(a: AABB, b: AABB) {
     && a.min[2] <= b.max[2]
 }
 
-
-// import dimforgeRapier3d from 'https://cdn.skypack.dev/@dimforge/rapier3d-compat';
-import * as RAPIER from './rapier3d-dz.js';
-console.dir(RAPIER)
-
 {
   // Use the RAPIER module here.
-  let gravity = { x: 0.0, y: -9.81, z: 0.0 };
+  let gravity: vec3 = [0.0, -9.81, 0.0];
   let world = new RAPIER.World(gravity);
 
   // Create the ground
@@ -257,7 +280,7 @@ console.dir(RAPIER)
 
     // Get and print the rigid-body's position.
     let position = rigidBody.translation();
-    console.log("Rigid-body position: ", position.x, position.y, position.z);
+    console.log("Rigid-body position: ", position[0], position[1], position[2]);
 
     setTimeout(gameLoop, 16);
   };

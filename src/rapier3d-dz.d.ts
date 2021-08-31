@@ -177,25 +177,25 @@ export class Joint {
   /**
    * The rotation quaternion that aligns this joint's first local axis to the `x` axis.
    */
-  frameX1(): Rotation;
+  frameX1(): quat;
   /**
    * The rotation matrix that aligns this joint's second local axis to the `x` axis.
    */
-  frameX2(): Rotation;
+  frameX2(): quat;
   /**
    * The position of the first anchor of this joint.
    *
    * The first anchor gives the position of the points application point on the
    * local frame of the first rigid-body it is attached to.
    */
-  anchor1(): Vector;
+  anchor1(): vec3;
   /**
    * The position of the second anchor of this joint.
    *
    * The second anchor gives the position of the points application point on the
    * local frame of the second rigid-body it is attached to.
    */
-  anchor2(): Vector;
+  anchor2(): vec3;
   /**
    * The first axis of this joint, if any.
    *
@@ -203,7 +203,7 @@ export class Joint {
    * this returns the application axis on the first rigid-body this joint is attached to, expressed
    * in the local-space of this first rigid-body.
    */
-  axis1(): Vector;
+  axis1(): vec3;
   /**
    * The second axis of this joint, if any.
    *
@@ -211,7 +211,7 @@ export class Joint {
    * this returns the application axis on the second rigid-body this joint is attached to, expressed
    * in the local-space of this second rigid-body.
    */
-  axis2(): Vector;
+  axis2(): vec3;
 }
 export class UnitJoint extends Joint {
   /**
@@ -237,21 +237,21 @@ export class PrismaticJoint extends UnitJoint {
 }
 export class BallJoint extends Joint {
   configureMotorModel(model: SpringModel): void;
-  configureMotorVelocity(targetVel: Vector, factor: number): void;
-  configureMotorPosition(targetPos: Quaternion, stiffness: number, damping: number): void;
-  configureMotor(targetPos: Quaternion, targetVel: Vector, stiffness: number, damping: number): void;
+  configureMotorVelocity(targetVel: vec3, factor: number): void;
+  configureMotorPosition(targetPos: quat, stiffness: number, damping: number): void;
+  configureMotor(targetPos: quat, targetVel: vec3, stiffness: number, damping: number): void;
 }
 export class RevoluteJoint extends UnitJoint {
 }
 export class JointParams {
-  anchor1: Vector;
-  anchor2: Vector;
-  axis1: Vector;
-  axis2: Vector;
-  tangent1: Vector;
-  tangent2: Vector;
-  frame1: Rotation;
-  frame2: Rotation;
+  anchor1: vec3;
+  anchor2: vec3;
+  axis1: vec3;
+  axis2: vec3;
+  tangent1: vec3;
+  tangent2: vec3;
+  frame1: quat;
+  frame2: quat;
   jointType: JointType;
   limitsEnabled: boolean;
   limits: Array<number>;
@@ -268,7 +268,7 @@ export class JointParams {
    * @param anchor2 - Point where the joint is attached on the second rigid-body affected by this joint. Expressed in the
    *                  local-space of the rigid-body.
    */
-  static ball(anchor1: Vector, anchor2: Vector): JointParams;
+  static ball(anchor1: vec3, anchor2: vec3): JointParams;
   /**
    * Creates a new joint descriptor that builds a Fixed joint.
    *
@@ -282,7 +282,7 @@ export class JointParams {
    *                  local-space of the rigid-body.
    * @param frame2 - The reference orientation of the joint wrt. the second rigid-body.
    */
-  static fixed(anchor1: Vector, frame1: Rotation, anchor2: Vector, frame2: Rotation): JointParams;
+  static fixed(anchor1: vec3, frame1: quat, anchor2: vec3, frame2: quat): JointParams;
   /**
    * Creates a new joint descriptor that builds a Prismatic joint.
    *
@@ -302,7 +302,7 @@ export class JointParams {
    *                   to the joint's axis. If this tangent is set to the zero vector, the orthonormal
    *                   basis will be automatically computed arbitrarily.
    */
-  static prismatic(anchor1: Vector, axis1: Vector, tangent1: Vector, anchor2: Vector, axis2: Vector, tangent2: Vector): JointParams;
+  static prismatic(anchor1: vec3, axis1: vec3, tangent1: vec3, anchor2: vec3, axis2: vec3, tangent2: vec3): JointParams;
   /**
    * Create a new joint descriptor that builds Revolute joints.
    *
@@ -316,7 +316,7 @@ export class JointParams {
    *                  local-space of the rigid-body.
    * @param axis2 - Axis of the joint, expressed in the local-space of the second rigid-body it is attached to.
    */
-  static revolute(anchor1: Vector, axis1: Vector, anchor2: Vector, axis2: Vector): JointParams;
+  static revolute(anchor1: vec3, axis1: vec3, anchor2: vec3, axis2: vec3): JointParams;
   intoRaw(): RawJointParams;
 }
 
@@ -473,11 +473,11 @@ export class RigidBody {
   /**
    * The world-space translation of this rigid-body.
    */
-  translation(): Vector;
+  translation(): vec3;
   /**
    * The world-space orientation of this rigid-body.
    */
-  rotation(): Rotation;
+  rotation(): quat;
   /**
    * The world-space next translation of this rigid-body.
    *
@@ -485,7 +485,7 @@ export class RigidBody {
    * method and is used for estimating the kinematic body velocity at the next timestep.
    * For non-kinematic bodies, this value is currently unspecified.
    */
-  nextTranslation(): Vector;
+  nextTranslation(): vec3;
   /**
    * The world-space next orientation of this rigid-body.
    *
@@ -493,7 +493,7 @@ export class RigidBody {
    * method and is used for estimating the kinematic body velocity at the next timestep.
    * For non-kinematic bodies, this value is currently unspecified.
    */
-  nextRotation(): Rotation;
+  nextRotation(): quat;
   /**
    * Sets the translation of this rigid-body.
    *
@@ -501,14 +501,14 @@ export class RigidBody {
    * @param wakeUp - Forces the rigid-body to wake-up so it is properly affected by forces if it
    *                 wasn't moving before modifying its position.
    */
-  setTranslation(tra: Vector, wakeUp: boolean): void;
+  setTranslation(tra: vec3, wakeUp: boolean): void;
   /**
    * Sets the linear velocity fo this rigid-body.
    *
    * @param vel - The linear velocity to set.
    * @param wakeUp - Forces the rigid-body to wake-up if it was asleep.
    */
-  setLinvel(vel: Vector, wakeUp: boolean): void;
+  setLinvel(vel: vec3, wakeUp: boolean): void;
   /**
    * The scale factor applied to the gravity affecting
    * this rigid-body.
@@ -532,14 +532,14 @@ export class RigidBody {
    * @param wakeUp - Forces the rigid-body to wake-up so it is properly affected by forces if it
    * wasn't moving before modifying its position.
    */
-  setRotation(rot: Rotation, wakeUp: boolean): void;
+  setRotation(rot: quat, wakeUp: boolean): void;
   /**
    * Sets the angular velocity fo this rigid-body.
    *
    * @param vel - The angular velocity to set.
    * @param wakeUp - Forces the rigid-body to wake-up if it was asleep.
    */
-  setAngvel(vel: Vector, wakeUp: boolean): void;
+  setAngvel(vel: vec3, wakeUp: boolean): void;
   /**
    * If this rigid body is kinematic, sets its future translation after the next timestep integration.
    *
@@ -551,7 +551,7 @@ export class RigidBody {
    *
    * @param t - The kinematic translation to set.
    */
-  setNextKinematicTranslation(t: Vector): void;
+  setNextKinematicTranslation(t: vec3): void;
   /**
    * If this rigid body is kinematic, sets its future rotation after the next timestep integration.
    *
@@ -563,15 +563,15 @@ export class RigidBody {
    *
    * @param rot - The kinematic rotation to set.
    */
-  setNextKinematicRotation(rot: Rotation): void;
+  setNextKinematicRotation(rot: quat): void;
   /**
    * The linear velocity of this rigid-body.
    */
-  linvel(): Vector;
+  linvel(): vec3;
   /**
    * The angular velocity of this rigid-body.
    */
-  angvel(): Vector;
+  angvel(): vec3;
   /**
    * The mass of this rigid-body.
    */
@@ -659,28 +659,28 @@ export class RigidBody {
    * @param force - the world-space force to apply on the rigid-body.
    * @param wakeUp - should the rigid-body be automatically woken-up?
    */
-  applyForce(force: Vector, wakeUp: boolean): void;
+  applyForce(force: vec3, wakeUp: boolean): void;
   /**
    * Applies an impulse at the center-of-mass of this rigid-body.
    *
    * @param impulse - the world-space impulse to apply on the rigid-body.
    * @param wakeUp - should the rigid-body be automatically woken-up?
    */
-  applyImpulse(impulse: Vector, wakeUp: boolean): void;
+  applyImpulse(impulse: vec3, wakeUp: boolean): void;
   /**
    * Applies a torque at the center-of-mass of this rigid-body.
    *
    * @param torque - the world-space torque to apply on the rigid-body.
    * @param wakeUp - should the rigid-body be automatically woken-up?
    */
-  applyTorque(torque: Vector, wakeUp: boolean): void;
+  applyTorque(torque: vec3, wakeUp: boolean): void;
   /**
    * Applies an impulsive torque at the center-of-mass of this rigid-body.
    *
    * @param torqueImpulse - the world-space torque impulse to apply on the rigid-body.
    * @param wakeUp - should the rigid-body be automatically woken-up?
    */
-  applyTorqueImpulse(torqueImpulse: Vector, wakeUp: boolean): void;
+  applyTorqueImpulse(torqueImpulse: vec3, wakeUp: boolean): void;
   /**
    * Applies a force at the given world-space point of this rigid-body.
    *
@@ -688,7 +688,7 @@ export class RigidBody {
    * @param point - the world-space point where the impulse is to be applied on the rigid-body.
    * @param wakeUp - should the rigid-body be automatically woken-up?
    */
-  applyForceAtPoint(force: Vector, point: Vector, wakeUp: boolean): void;
+  applyForceAtPoint(force: vec3, point: vec3, wakeUp: boolean): void;
   /**
    * Applies an impulse at the given world-space point of this rigid-body.
    *
@@ -696,19 +696,19 @@ export class RigidBody {
    * @param point - the world-space point where the impulse is to be applied on the rigid-body.
    * @param wakeUp - should the rigid-body be automatically woken-up?
    */
-  applyImpulseAtPoint(impulse: Vector, point: Vector, wakeUp: boolean): void;
+  applyImpulseAtPoint(impulse: vec3, point: vec3, wakeUp: boolean): void;
 }
 export class RigidBodyDesc {
-  translation: Vector;
-  rotation: Rotation;
+  translation: vec3;
+  rotation: quat;
   gravityScale: number;
   mass: number;
   translationsEnabled: boolean;
-  centerOfMass: Vector;
-  linvel: Vector;
-  angvel: Vector;
-  principalAngularInertia: Vector;
-  angularInertiaLocalFrame: Rotation;
+  centerOfMass: vec3;
+  linvel: vec3;
+  angvel: vec3;
+  principalAngularInertia: vec3;
+  angularInertiaLocalFrame: quat;
   rotationsEnabledX: boolean;
   rotationsEnabledY: boolean;
   rotationsEnabledZ: boolean;
@@ -747,7 +747,7 @@ export class RigidBodyDesc {
    *
    * @param rot - The rotation to set.
    */
-  setRotation(rot: Rotation): RigidBodyDesc;
+  setRotation(rot: quat): RigidBodyDesc;
   /**
    * Sets the scale factor applied to the gravity affecting
    * the rigid-body being built.
@@ -780,7 +780,7 @@ export class RigidBodyDesc {
    *
    * @param vel - The angular velocity to set.
    */
-  setAngvel(vel: Vector): RigidBodyDesc;
+  setAngvel(vel: vec3): RigidBodyDesc;
   /**
    * Sets the mass properties of the rigid-body being built.
    *
@@ -800,13 +800,13 @@ export class RigidBodyDesc {
    * @param angularInertiaLocalFrame − The initial local angular inertia frame of the rigid-body to create.
    *                                   These are the eigenvectors of the angular inertia matrix.
    */
-  setAdditionalMassProperties(mass: number, centerOfMass: Vector, principalAngularInertia: Vector, angularInertiaLocalFrame: Rotation): RigidBodyDesc;
+  setAdditionalMassProperties(mass: number, centerOfMass: vec3, principalAngularInertia: vec3, angularInertiaLocalFrame: quat): RigidBodyDesc;
   /**
    * Sets the mass properties of the rigid-body being built.
    *
    * @param principalAngularInertia − The initial principal angular inertia of the rigid-body to create.
    */
-  setAdditionalPrincipalAngularInertia(principalAngularInertia: Vector): RigidBodyDesc;
+  setAdditionalPrincipalAngularInertia(principalAngularInertia: vec3): RigidBodyDesc;
   /**
    * Allow rotation of this rigid-body only along specific axes.
    * @param rotationsEnabledX - Are rotations along the X axis enabled?
@@ -963,11 +963,11 @@ export class Collider {
   /**
    * The world-space translation of this rigid-body.
    */
-  translation(): Vector;
+  translation(): vec3;
   /**
    * The world-space orientation of this rigid-body.
    */
-  rotation(): Rotation;
+  rotation(): quat;
   /**
    * Is this collider a sensor?
    */
@@ -1072,7 +1072,7 @@ export class Collider {
    *
    * @param tra - The world-space position of the collider.
    */
-  setTranslation(tra: Vector): void;
+  setTranslation(tra: vec3): void;
   /**
    * Sets the translation of this collider relative to its parent rigid-body.
    *
@@ -1080,7 +1080,7 @@ export class Collider {
    *
    * @param tra - The new translation of the collider relative to its parent.
    */
-  setTranslationWrtParent(tra: Vector): void;
+  setTranslationWrtParent(tra: vec3): void;
   /**
    * Sets the rotation quaternion of this collider.
    *
@@ -1088,7 +1088,7 @@ export class Collider {
    *
    * @param rotation - The rotation to set.
    */
-  setRotation(rot: Rotation): void;
+  setRotation(rot: quat): void;
   /**
    * Sets the rotation quaternion of this collider relative to its parent rigid-body.
    *
@@ -1097,7 +1097,7 @@ export class Collider {
    *
    * @param rotation - The rotation to set.
    */
-  setRotationWrtParent(rot: Rotation): void;
+  setRotationWrtParent(rot: quat): void;
   /**
    * The type of the shape of this collider.
    */
@@ -1105,7 +1105,7 @@ export class Collider {
   /**
    * The half-extents of this collider if it is a cuboid shape.
    */
-  halfExtents(): Vector;
+  halfExtents(): vec3;
   /**
    * The radius of this collider if it is a ball, cylinder, capsule, or cone shape.
    */
@@ -1138,7 +1138,7 @@ export class Collider {
    * If this collider has a heightfield shape, this returns the scale
    * applied to it.
    */
-  heightfieldScale(): Vector;
+  heightfieldScale(): vec3;
   /**
    * If this collider has a heightfield shape, this returns the number of
    * rows of its height matrix.
@@ -1174,14 +1174,14 @@ export class ColliderDesc {
   shape: Shape;
   useMassProps: boolean;
   mass: number;
-  centerOfMass: Vector;
-  principalAngularInertia: Vector;
-  angularInertiaLocalFrame: Rotation;
+  centerOfMass: vec3;
+  principalAngularInertia: vec3;
+  angularInertiaLocalFrame: quat;
   density: number;
   friction: number;
   restitution: number;
-  rotation: Rotation;
-  translation: Vector;
+  rotation: quat;
+  translation: vec3;
   isSensor: boolean;
   collisionGroups: InteractionGroups;
   solverGroups: InteractionGroups;
@@ -1215,7 +1215,7 @@ export class ColliderDesc {
    * @param a - The first point of the segment.
    * @param b - The second point of the segment.
    */
-  static segment(a: Vector, b: Vector): ColliderDesc;
+  static segment(a: vec3, b: vec3): ColliderDesc;
   /**
    * Creates a new triangle shape.
    *
@@ -1223,7 +1223,7 @@ export class ColliderDesc {
    * @param b - The second point of the triangle.
    * @param c - The third point of the triangle.
    */
-  static triangle(a: Vector, b: Vector, c: Vector): ColliderDesc;
+  static triangle(a: vec3, b: vec3, c: vec3): ColliderDesc;
   /**
    * Creates a new triangle shape with round corners.
    *
@@ -1233,7 +1233,7 @@ export class ColliderDesc {
    * @param borderRadius - The radius of the borders of this triangle. In 3D,
    *   this is also equal to half the thickness of the triangle.
    */
-  static roundTriangle(a: Vector, b: Vector, c: Vector, borderRadius: number): ColliderDesc;
+  static roundTriangle(a: vec3, b: vec3, c: vec3, borderRadius: number): ColliderDesc;
   /**
    * Creates a new collider descriptor with a polyline shape.
    *
@@ -1275,7 +1275,7 @@ export class ColliderDesc {
    *                  provided as a matrix stored in column-major order.
    * @param scale - The scale factor applied to the heightfield.
    */
-  static heightfield(nrows: number, ncols: number, heights: Float32Array, scale: Vector): ColliderDesc;
+  static heightfield(nrows: number, ncols: number, heights: Float32Array, scale: vec3): ColliderDesc;
   /**
    * Create a new collider descriptor with a cylinder shape.
    *
@@ -1346,7 +1346,7 @@ export class ColliderDesc {
    *
    * @param rot - The rotation of the collider to be created relative to the rigid-body it is attached to.
    */
-  setRotation(rot: Rotation): ColliderDesc;
+  setRotation(rot: quat): ColliderDesc;
   /**
    * Sets whether or not the collider being created is a sensor.
    *
@@ -1376,7 +1376,7 @@ export class ColliderDesc {
    * @param angularInertiaLocalFrame − The initial local angular inertia frame of the collider to create.
    *                                   These are the eigenvectors of the angular inertia matrix.
    */
-  setMassProperties(mass: number, centerOfMass: Vector, principalAngularInertia: Vector, angularInertiaLocalFrame: Rotation): ColliderDesc;
+  setMassProperties(mass: number, centerOfMass: vec3, principalAngularInertia: vec3, angularInertiaLocalFrame: quat): ColliderDesc;
   /**
    * Sets the restitution coefficient of the collider to be created.
    *
@@ -1575,14 +1575,14 @@ export class TempContactManifold {
   raw: RawContactManifold;
   free(): void;
   constructor(raw: RawContactManifold);
-  normal(): Vector;
-  localNormal1(): Vector;
-  localNormal2(): Vector;
+  normal(): vec3;
+  localNormal1(): vec3;
+  localNormal2(): vec3;
   subshape1(): number;
   subshape2(): number;
   numContacts(): number;
-  localContactPoint1(i: number): Vector | null;
-  localContactPoint2(i: number): Vector | null;
+  localContactPoint1(i: number): vec3 | null;
+  localContactPoint2(i: number): vec3 | null;
   contactDist(i: number): number;
   contactFid1(i: number): number;
   contactFid2(i: number): number;
@@ -1590,11 +1590,11 @@ export class TempContactManifold {
   contactTangentImpulseX(i: number): number;
   contactTangentImpulseY(i: number): number;
   numSolverContacts(): number;
-  solverContactPoint(i: number): Vector;
+  solverContactPoint(i: number): vec3;
   solverContactDist(i: number): number;
   solverContactFriction(i: number): number;
   solverContactRestitution(i: number): number;
-  solverContactTangentVelocity(i: number): Vector;
+  solverContactTangentVelocity(i: number): vec3;
 }
 
 /**
@@ -1608,12 +1608,12 @@ export class PointColliderProjection {
   /**
    * The projection of the point on the collider.
    */
-  point: Vector;
+  point: vec3;
   /**
    * Is the point inside of the collider?
    */
   isInside: boolean;
-  constructor(colliderHandle: ColliderHandle, point: Vector, isInside: boolean);
+  constructor(colliderHandle: ColliderHandle, point: vec3, isInside: boolean);
   static fromRaw(raw: RawPointColliderProjection): PointColliderProjection;
 }
 
@@ -1624,19 +1624,19 @@ export class Ray {
   /**
    * The starting point of the ray.
    */
-  origin: Vector;
+  origin: vec3;
   /**
    * The direction of propagation of the ray.
    */
-  dir: Vector;
+  dir: vec3;
   /**
    * Builds a ray from its origin and direction.
    *
    * @param origin - The ray's starting point.
    * @param dir - The ray's direction of propagation.
    */
-  constructor(origin: Vector, dir: Vector);
-  pointAt(t: number): Vector;
+  constructor(origin: vec3, dir: vec3);
+  pointAt(t: number): vec3;
 }
 /**
  * The intersection between a ray and a collider.
@@ -1655,8 +1655,8 @@ export class RayColliderIntersection {
   /**
    * The normal of the collider at the hit point.
    */
-  normal: Vector;
-  constructor(colliderHandle: ColliderHandle, toi: number, normal: Vector);
+  normal: vec3;
+  constructor(colliderHandle: ColliderHandle, toi: number, normal: vec3);
   static fromRaw(raw: RawRayColliderIntersection): RayColliderIntersection;
 }
 /**
@@ -1724,7 +1724,7 @@ export class Cuboid {
   /**
    * The half extent of the cuboid along each coordinate axis.
    */
-  halfExtents: Vector;
+  halfExtents: vec3;
   /**
    * Creates a new 3D cuboid.
    * @param hx - The half width of the cuboid.
@@ -1741,7 +1741,7 @@ export class RoundCuboid {
   /**
    * The half extent of the cuboid along each coordinate axis.
    */
-  halfExtents: Vector;
+  halfExtents: vec3;
   /**
    * The radius of the cuboid's round border.
    */
@@ -1784,17 +1784,17 @@ export class Segment {
   /**
    * The first point of the segment.
    */
-  readonly a: Vector;
+  readonly a: vec3;
   /**
    * The second point of the segment.
    */
-  readonly b: Vector;
+  readonly b: vec3;
   /**
    * Creates a new segment shape.
    * @param a - The first point of the segment.
    * @param b - The second point of the segment.
    */
-  constructor(a: Vector, b: Vector);
+  constructor(a: vec3, b: vec3);
   intoRaw(): RawShape;
 }
 /**
@@ -1804,15 +1804,15 @@ export class Triangle {
   /**
    * The first point of the triangle.
    */
-  readonly a: Vector;
+  readonly a: vec3;
   /**
    * The second point of the triangle.
    */
-  readonly b: Vector;
+  readonly b: vec3;
   /**
    * The second point of the triangle.
    */
-  readonly c: Vector;
+  readonly c: vec3;
   /**
    * Creates a new triangle shape.
    *
@@ -1820,7 +1820,7 @@ export class Triangle {
    * @param b - The second point of the triangle.
    * @param c - The third point of the triangle.
    */
-  constructor(a: Vector, b: Vector, c: Vector);
+  constructor(a: vec3, b: vec3, c: vec3);
   intoRaw(): RawShape;
 }
 /**
@@ -1830,15 +1830,15 @@ export class RoundTriangle {
   /**
    * The first point of the triangle.
    */
-  readonly a: Vector;
+  readonly a: vec3;
   /**
    * The second point of the triangle.
    */
-  readonly b: Vector;
+  readonly b: vec3;
   /**
    * The second point of the triangle.
    */
-  readonly c: Vector;
+  readonly c: vec3;
   /**
    * The radius of the triangles's rounded edges and vertices.
    * In 3D, this is also equal to half the thickness of the round triangle.
@@ -1853,7 +1853,7 @@ export class RoundTriangle {
    * @param borderRadius - The radius of the borders of this triangle. In 3D,
    *   this is also equal to half the thickness of the triangle.
    */
-  constructor(a: Vector, b: Vector, c: Vector, borderRadius: number);
+  constructor(a: vec3, b: vec3, c: vec3, borderRadius: number);
   intoRaw(): RawShape;
 }
 /**
@@ -1972,7 +1972,7 @@ export class Heightfield {
   /**
    * The dimensions of the heightfield's local `x,z` plane.
    */
-  readonly scale: Vector;
+  readonly scale: vec3;
   /**
    * Creates a new heightfield shape.
    *
@@ -1982,7 +1982,7 @@ export class Heightfield {
    *                  provided as a matrix stored in column-major order.
    * @param scale - The dimensions of the heightfield's local `x,z` plane.
    */
-  constructor(nrows: number, ncols: number, heights: Float32Array, scale: Vector);
+  constructor(nrows: number, ncols: number, heights: Float32Array, scale: vec3);
   intoRaw(): RawShape;
 }
 /**
@@ -2092,66 +2092,53 @@ export class ShapeColliderTOI {
    * The local-space contact point on the first shape, at
    * the time of impact.
    */
-  witness1: Vector;
+  witness1: vec3;
   /**
    * The local-space contact point on the second shape, at
    * the time of impact.
    */
-  witness2: Vector;
+  witness2: vec3;
   /**
    * The local-space normal on the first shape, at
    * the time of impact.
    */
-  normal1: Vector;
+  normal1: vec3;
   /**
    * The local-space normal on the second shape, at
    * the time of impact.
    */
-  normal2: Vector;
-  constructor(colliderHandle: ColliderHandle, toi: number, witness1: Vector, witness2: Vector, normal1: Vector, normal2: Vector);
+  normal2: vec3;
+  constructor(colliderHandle: ColliderHandle, toi: number, witness1: vec3, witness2: vec3, normal1: vec3, normal2: vec3);
   static fromRaw(raw: RawShapeColliderTOI): ShapeColliderTOI;
 }
 
-export interface Vector {
-  x: number;
-  y: number;
-  z: number;
-}
 /**
- * A 3D vector.
+ * A 3D vector. gl-matrix style.
  */
-export class Vector3 implements Vector {
-  x: number;
-  y: number;
-  z: number;
-  constructor(x: number, y: number, z: number);
+export type vec3 = [number, number, number] | Float32Array;
+export module vec3 {
+  function fromValues(x: number, y: number, z: number): vec3;
 }
 export class VectorOps {
-  static new(x: number, y: number, z: number): Vector;
-  static intoRaw(v: Vector): RawVector;
-  static zeros(): Vector;
-  static fromRaw(raw: RawVector): Vector;
-}
-export interface Rotation {
-  x: number;
-  y: number;
-  z: number;
-  w: number;
+  static new(x: number, y: number, z: number): vec3;
+  static intoRaw(v: vec3): RawVector;
+  static zeros(): vec3;
+  static fromRaw(raw: RawVector): vec3;
 }
 /**
  * A quaternion.
  */
-export class Quaternion implements Rotation {
-  x: number;
-  y: number;
-  z: number;
-  w: number;
-  constructor(x: number, y: number, z: number, w: number);
+/**
+ * A quaternion. gl-matrix style.
+ */
+export type quat = [number, number, number, number] | Float32Array;
+export module quat {
+  function fromValues(x: number, y: number, z: number, w: number): quat;
 }
 export class RotationOps {
-  static identity(): Rotation;
-  static fromRaw(raw: RawRotation): Rotation;
-  static intoRaw(rot: Rotation): RawRotation;
+  static identity(): quat;
+  static fromRaw(raw: RawRotation): quat;
+  static intoRaw(rot: quat): RawRotation;
 }
 
 export enum ActiveEvents {
@@ -2247,7 +2234,7 @@ export class PhysicsPipeline {
   raw: RawPhysicsPipeline;
   free(): void;
   constructor(raw?: RawPhysicsPipeline);
-  step(gravity: Vector, integrationParameters: IntegrationParameters, islands: IslandManager, broadPhase: BroadPhase, narrowPhase: NarrowPhase, bodies: RigidBodySet, colliders: ColliderSet, joints: JointSet, ccdSolver: CCDSolver, eventQueue?: EventQueue, hooks?: PhysicsHooks): void;
+  step(gravity: vec3, integrationParameters: IntegrationParameters, islands: IslandManager, broadPhase: BroadPhase, narrowPhase: NarrowPhase, bodies: RigidBodySet, colliders: ColliderSet, joints: JointSet, ccdSolver: CCDSolver, eventQueue?: EventQueue, hooks?: PhysicsHooks): void;
 }
 
 /**
@@ -2321,7 +2308,7 @@ export class QueryPipeline {
    * @param groups - The bit groups and filter associated to the ray, in order to only
    *   hit the colliders with collision groups compatible with the ray's group.
    */
-  intersectionWithShape(colliders: ColliderSet, shapePos: Vector, shapeRot: Rotation, shape: Shape, groups: InteractionGroups): ColliderHandle | null;
+  intersectionWithShape(colliders: ColliderSet, shapePos: vec3, shapeRot: quat, shape: Shape, groups: InteractionGroups): ColliderHandle | null;
   /**
    * Find the projection of a point on the closest collider.
    *
@@ -2335,7 +2322,7 @@ export class QueryPipeline {
    * @param groups - The bit groups and filter associated to the point to project, in order to only
    *   project on colliders with collision groups compatible with the ray's group.
    */
-  projectPoint(colliders: ColliderSet, point: Vector, solid: boolean, groups: InteractionGroups): PointColliderProjection | null;
+  projectPoint(colliders: ColliderSet, point: vec3, solid: boolean, groups: InteractionGroups): PointColliderProjection | null;
   /**
    * Find all the colliders containing the given point.
    *
@@ -2346,7 +2333,7 @@ export class QueryPipeline {
    * @param callback - A function called with the handles of each collider with a shape
    *   containing the `point`.
    */
-  intersectionsWithPoint(colliders: ColliderSet, point: Vector, groups: InteractionGroups, callback: (ColliderHandle: any) => boolean): void;
+  intersectionsWithPoint(colliders: ColliderSet, point: vec3, groups: InteractionGroups, callback: (ColliderHandle: any) => boolean): void;
   /**
    * Casts a shape at a constant linear velocity and retrieve the first collider it hits.
    * This is similar to ray-casting except that we are casting a whole shape instead of
@@ -2362,7 +2349,7 @@ export class QueryPipeline {
    * @param groups - The bit groups and filter associated to the shape to cast, in order to only
    *   test on colliders with collision groups compatible with this group.
    */
-  castShape(colliders: ColliderSet, shapePos: Vector, shapeRot: Rotation, shapeVel: Vector, shape: Shape, maxToi: number, groups: InteractionGroups): ShapeColliderTOI | null;
+  castShape(colliders: ColliderSet, shapePos: vec3, shapeRot: quat, shapeVel: vec3, shape: Shape, maxToi: number, groups: InteractionGroups): ShapeColliderTOI | null;
   /**
    * Retrieve all the colliders intersecting the given shape.
    *
@@ -2374,7 +2361,7 @@ export class QueryPipeline {
    *   test on colliders with collision groups compatible with this group.
    * @param callback - A function called with the handles of each collider intersecting the `shape`.
    */
-  intersectionsWithShape(colliders: ColliderSet, shapePos: Vector, shapeRot: Rotation, shape: Shape, groups: InteractionGroups, callback: (handle: ColliderHandle) => boolean): void;
+  intersectionsWithShape(colliders: ColliderSet, shapePos: vec3, shapeRot: quat, shape: Shape, groups: InteractionGroups, callback: (handle: ColliderHandle) => boolean): void;
   /**
    * Finds the handles of all the colliders with an AABB intersecting the given AABB.
    *
@@ -2383,7 +2370,7 @@ export class QueryPipeline {
    * @param callback - The callback that will be called with the handles of all the colliders
    *                   currently intersecting the given AABB.
    */
-  collidersWithAabbIntersectingAabb(aabbCenter: Vector, aabbHalfExtents: Vector, callback: (handle: ColliderHandle) => boolean): void;
+  collidersWithAabbIntersectingAabb(aabbCenter: vec3, aabbHalfExtents: vec3, callback: (handle: ColliderHandle) => boolean): void;
 }
 
 /**
@@ -2409,7 +2396,7 @@ export class SerializationPipeline {
    * @param colliders - The colliders taking part into the simulation.
    * @param joints - The joints taking part into the simulation.
    */
-  serializeAll(gravity: Vector, integrationParameters: IntegrationParameters, islands: IslandManager, broadPhase: BroadPhase, narrowPhase: NarrowPhase, bodies: RigidBodySet, colliders: ColliderSet, joints: JointSet): Uint8Array;
+  serializeAll(gravity: vec3, integrationParameters: IntegrationParameters, islands: IslandManager, broadPhase: BroadPhase, narrowPhase: NarrowPhase, bodies: RigidBodySet, colliders: ColliderSet, joints: JointSet): Uint8Array;
   /**
    * Deserialize the complete physics state from a single byte array.
    *
@@ -2425,7 +2412,7 @@ export class SerializationPipeline {
  * bodies with contacts, joints, and external forces.
  */
 export class World {
-  gravity: Vector;
+  gravity: vec3;
   integrationParameters: IntegrationParameters;
   islands: IslandManager;
   broadPhase: BroadPhase;
@@ -2444,7 +2431,7 @@ export class World {
    * so there is no need to call their `.free()` methods individually.
    */
   free(): void;
-  constructor(gravity: Vector, rawIntegrationParameters?: RawIntegrationParameters, rawIslands?: RawIslandManager, rawBroadPhase?: RawBroadPhase, rawNarrowPhase?: RawNarrowPhase, rawBodies?: RawRigidBodySet, rawColliders?: RawColliderSet, rawJoints?: RawJointSet, rawCCDSolver?: RawCCDSolver, rawQueryPipeline?: RawQueryPipeline, rawPhysicsPipeline?: RawPhysicsPipeline, rawSerializationPipeline?: RawSerializationPipeline);
+  constructor(gravity: vec3, rawIntegrationParameters?: RawIntegrationParameters, rawIslands?: RawIslandManager, rawBroadPhase?: RawBroadPhase, rawNarrowPhase?: RawNarrowPhase, rawBodies?: RawRigidBodySet, rawColliders?: RawColliderSet, rawJoints?: RawJointSet, rawCCDSolver?: RawCCDSolver, rawQueryPipeline?: RawQueryPipeline, rawPhysicsPipeline?: RawPhysicsPipeline, rawSerializationPipeline?: RawSerializationPipeline);
   static fromRaw(raw: RawDeserializedWorld): World;
   /**
    * Takes a snapshot of this world.
@@ -2671,7 +2658,7 @@ export class World {
    * @param groups - The bit groups and filter associated to the ray, in order to only
    *   hit the colliders with collision groups compatible with the ray's group.
    */
-  intersectionWithShape(shapePos: Vector, shapeRot: Rotation, shape: Shape, groups: InteractionGroups): ColliderHandle | null;
+  intersectionWithShape(shapePos: vec3, shapeRot: quat, shape: Shape, groups: InteractionGroups): ColliderHandle | null;
   /**
    * Find the projection of a point on the closest collider.
    *
@@ -2684,7 +2671,7 @@ export class World {
    * @param groups - The bit groups and filter associated to the point to project, in order to only
    *   project on colliders with collision groups compatible with the ray's group.
    */
-  projectPoint(point: Vector, solid: boolean, groups: InteractionGroups): PointColliderProjection | null;
+  projectPoint(point: vec3, solid: boolean, groups: InteractionGroups): PointColliderProjection | null;
   /**
    * Find all the colliders containing the given point.
    *
@@ -2694,7 +2681,7 @@ export class World {
    * @param callback - A function called with the handles of each collider with a shape
    *   containing the `point`.
    */
-  intersectionsWithPoint(point: Vector, groups: InteractionGroups, callback: (ColliderHandle: any) => boolean): void;
+  intersectionsWithPoint(point: vec3, groups: InteractionGroups, callback: (ColliderHandle: any) => boolean): void;
   /**
    * Casts a shape at a constant linear velocity and retrieve the first collider it hits.
    * This is similar to ray-casting except that we are casting a whole shape instead of
@@ -2709,7 +2696,7 @@ export class World {
    * @param groups - The bit groups and filter associated to the shape to cast, in order to only
    *   test on colliders with collision groups compatible with this group.
    */
-  castShape(shapePos: Vector, shapeRot: Rotation, shapeVel: Vector, shape: Shape, maxToi: number, groups: InteractionGroups): ShapeColliderTOI | null;
+  castShape(shapePos: vec3, shapeRot: quat, shapeVel: vec3, shape: Shape, maxToi: number, groups: InteractionGroups): ShapeColliderTOI | null;
   /**
    * Retrieve all the colliders intersecting the given shape.
    *
@@ -2720,7 +2707,7 @@ export class World {
    *   test on colliders with collision groups compatible with this group.
    * @param callback - A function called with the handles of each collider intersecting the `shape`.
    */
-  intersectionsWithShape(shapePos: Vector, shapeRot: Rotation, shape: Shape, groups: InteractionGroups, callback: (handle: ColliderHandle) => boolean): void;
+  intersectionsWithShape(shapePos: vec3, shapeRot: quat, shape: Shape, groups: InteractionGroups, callback: (handle: ColliderHandle) => boolean): void;
   /**
    * Finds the handles of all the colliders with an AABB intersecting the given AABB.
    *
@@ -2729,7 +2716,7 @@ export class World {
    * @param callback - The callback that will be called with the handles of all the colliders
    *                   currently intersecting the given AABB.
    */
-  collidersWithAabbIntersectingAabb(aabbCenter: Vector, aabbHalfExtents: Vector, callback: (handle: ColliderHandle) => boolean): void;
+  collidersWithAabbIntersectingAabb(aabbCenter: vec3, aabbHalfExtents: vec3, callback: (handle: ColliderHandle) => boolean): void;
   /**
    * Enumerates all the colliders potentially in contact with the given collider.
    *
@@ -4564,4 +4551,3 @@ export class RawVector {
   */
   z: number;
 }
-

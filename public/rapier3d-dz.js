@@ -2014,7 +2014,6 @@ var imports = {
   }
 };
 async function loadWasm(module3, imports2) {
-  console.log('loadWasm');
   if (typeof module3 === "string") {
     const moduleRequest = await fetch(module3);
     if (typeof WebAssembly.instantiateStreaming === "function") {
@@ -2329,19 +2328,23 @@ var __wbindgen_free = instance.exports.__wbindgen_free;
 var __wbindgen_exn_store = instance.exports.__wbindgen_exn_store;
 
 // math.ts
-var Vector3 = class {
-  constructor(x, y, z) {
-    this.x = x;
-    this.y = y;
-    this.z = z;
+var vec3;
+(function (vec314) {
+  function fromValues(x, y, z) {
+    var out = new Float32Array(4);
+    out[0] = x;
+    out[1] = y;
+    out[2] = z;
+    return out;
   }
-};
+  vec314.fromValues = fromValues;
+})(vec3 || (vec3 = {}));
 var VectorOps = class {
   static new(x, y, z) {
-    return new Vector3(x, y, z);
+    return vec3.fromValues(x, y, z);
   }
   static intoRaw(v) {
-    return new RawVector(v.x, v.y, v.z);
+    return new RawVector(v[0], v[1], v[2]);
   }
   static zeros() {
     return VectorOps.new(0, 0, 0);
@@ -2354,27 +2357,30 @@ var VectorOps = class {
     return res;
   }
 };
-var Quaternion = class {
-  constructor(x, y, z, w) {
-    this.x = x;
-    this.y = y;
-    this.z = z;
-    this.w = w;
+var quat;
+(function (quat7) {
+  function fromValues(x, y, z, w) {
+    var out = new Float32Array(4);
+    out[0] = x;
+    out[1] = y;
+    out[2] = z;
+    return out;
   }
-};
+  quat7.fromValues = fromValues;
+})(quat || (quat = {}));
 var RotationOps = class {
   static identity() {
-    return new Quaternion(0, 0, 0, 1);
+    return quat.fromValues(0, 0, 0, 1);
   }
   static fromRaw(raw) {
     if (!raw)
       return null;
-    let res = new Quaternion(raw.x, raw.y, raw.z, raw.w);
+    let res = quat.fromValues(raw.x, raw.y, raw.z, raw.w);
     raw.free();
     return res;
   }
   static intoRaw(rot) {
-    return new RawRotation(rot.x, rot.y, rot.z, rot.w);
+    return new RawRotation(rot[0], rot[1], rot[2], rot[3]);
   }
 };
 
@@ -2429,7 +2435,7 @@ var RigidBody = class {
     return RotationOps.fromRaw(res);
   }
   setTranslation(tra, wakeUp) {
-    this.rawSet.rbSetTranslation(this.handle, tra.x, tra.y, tra.z, wakeUp);
+    this.rawSet.rbSetTranslation(this.handle, tra[0], tra[1], tra[2], wakeUp);
   }
   setLinvel(vel, wakeUp) {
     let rawVel = VectorOps.intoRaw(vel);
@@ -2443,7 +2449,7 @@ var RigidBody = class {
     this.rawSet.rbSetGravityScale(this.handle, factor, wakeUp);
   }
   setRotation(rot, wakeUp) {
-    this.rawSet.rbSetRotation(this.handle, rot.x, rot.y, rot.z, rot.w, wakeUp);
+    this.rawSet.rbSetRotation(this.handle, rot[0], rot[1], rot[2], rot[3], wakeUp);
   }
   setAngvel(vel, wakeUp) {
     let rawVel = VectorOps.intoRaw(vel);
@@ -2451,10 +2457,10 @@ var RigidBody = class {
     rawVel.free();
   }
   setNextKinematicTranslation(t) {
-    this.rawSet.rbSetNextKinematicTranslation(this.handle, t.x, t.y, t.z);
+    this.rawSet.rbSetNextKinematicTranslation(this.handle, t[0], t[1], t[2]);
   }
   setNextKinematicRotation(rot) {
-    this.rawSet.rbSetNextKinematicRotation(this.handle, rot.x, rot.y, rot.z, rot.w);
+    this.rawSet.rbSetNextKinematicRotation(this.handle, rot[0], rot[1], rot[2], rot[3]);
   }
   linvel() {
     return VectorOps.fromRaw(this.rawSet.rbLinvel(this.handle));
@@ -2586,7 +2592,7 @@ var RigidBodyDesc = class {
   setTranslation(x, y, z) {
     if (typeof x != "number" || typeof y != "number" || typeof z != "number")
       throw TypeError("The translation components must be numbers.");
-    this.translation = { x, y, z };
+    this.translation = VectorOps.new(x, y, z);
     return this;
   }
   setRotation(rot) {
@@ -2608,7 +2614,7 @@ var RigidBodyDesc = class {
   setLinvel(x, y, z) {
     if (typeof x != "number" || typeof y != "number" || typeof z != "number")
       throw TypeError("The linvel components must be numbers.");
-    this.linvel = { x, y, z };
+    this.linvel = VectorOps.new(x, y, z);
     return this;
   }
   setAngvel(vel) {
@@ -2883,13 +2889,13 @@ var BallJoint = class extends Joint {
     this.rawSet.jointConfigureMotorModel(this.handle, model);
   }
   configureMotorVelocity(targetVel, factor) {
-    this.rawSet.jointConfigureBallMotorVelocity(this.handle, targetVel.x, targetVel.y, targetVel.z, factor);
+    this.rawSet.jointConfigureBallMotorVelocity(this.handle, targetVel[0], targetVel[1], targetVel[2], factor);
   }
   configureMotorPosition(targetPos, stiffness, damping) {
-    this.rawSet.jointConfigureBallMotorPosition(this.handle, targetPos.w, targetPos.x, targetPos.y, targetPos.z, stiffness, damping);
+    this.rawSet.jointConfigureBallMotorPosition(this.handle, targetPos[3], targetPos[0], targetPos[1], targetPos[2], stiffness, damping);
   }
   configureMotor(targetPos, targetVel, stiffness, damping) {
-    this.rawSet.jointConfigureBallMotor(this.handle, targetPos.w, targetPos.x, targetPos.y, targetPos.z, targetVel.x, targetVel.y, targetVel.z, stiffness, damping);
+    this.rawSet.jointConfigureBallMotor(this.handle, targetPos[3], targetPos[0], targetPos[1], targetPos[2], targetVel[0], targetVel[1], targetVel[2], stiffness, damping);
   }
 };
 var RevoluteJoint = class extends UnitJoint {
@@ -3216,7 +3222,7 @@ var Cuboid = class {
     this.halfExtents = VectorOps.new(hx, hy, hz);
   }
   intoRaw() {
-    return RawShape.cuboid(this.halfExtents.x, this.halfExtents.y, this.halfExtents.z);
+    return RawShape.cuboid(this.halfExtents[0], this.halfExtents[1], this.halfExtents[2]);
   }
 };
 var RoundCuboid = class {
@@ -3225,7 +3231,7 @@ var RoundCuboid = class {
     this.borderRadius = borderRadius;
   }
   intoRaw() {
-    return RawShape.roundCuboid(this.halfExtents.x, this.halfExtents.y, this.halfExtents.z, this.borderRadius);
+    return RawShape.roundCuboid(this.halfExtents[0], this.halfExtents[1], this.halfExtents[2], this.borderRadius);
   }
 };
 var Capsule = class {
@@ -3464,16 +3470,16 @@ var Collider = class {
     this.rawSet.coSetActiveCollisionTypes(this.handle, activeCollisionTypes);
   }
   setTranslation(tra) {
-    this.rawSet.coSetTranslation(this.handle, tra.x, tra.y, tra.z);
+    this.rawSet.coSetTranslation(this.handle, tra[0], tra[1], tra[2]);
   }
   setTranslationWrtParent(tra) {
-    this.rawSet.coSetTranslationWrtParent(this.handle, tra.x, tra.y, tra.z);
+    this.rawSet.coSetTranslationWrtParent(this.handle, tra[0], tra[1], tra[2]);
   }
   setRotation(rot) {
-    this.rawSet.coSetRotation(this.handle, rot.x, rot.y, rot.z, rot.w);
+    this.rawSet.coSetRotation(this.handle, rot[0], rot[1], rot[2], rot[3]);
   }
   setRotationWrtParent(rot) {
-    this.rawSet.coSetRotationWrtParent(this.handle, rot.x, rot.y, rot.z, rot.w);
+    this.rawSet.coSetRotationWrtParent(this.handle, rot[0], rot[1], rot[2], rot[3]);
   }
   shapeType() {
     return this.rawSet.coShapeType(this.handle);
@@ -3622,7 +3628,7 @@ var ColliderDesc = class {
   setTranslation(x, y, z) {
     if (typeof x != "number" || typeof y != "number" || typeof z != "number")
       throw TypeError("The translation components must be numbers.");
-    this.translation = { x, y, z };
+    this.translation = VectorOps.new(x, y, z);
     return this;
   }
   setRotation(rot) {
@@ -3745,11 +3751,7 @@ var Ray = class {
     this.dir = dir;
   }
   pointAt(t) {
-    return {
-      x: this.origin.x + this.dir.x * t,
-      y: this.origin.y + this.dir.y * t,
-      z: this.origin.z + this.dir.z * t
-    };
+    return VectorOps.new(this.origin[0] + this.dir[0] * t, this.origin[1] + this.dir[1] * t, this.origin[2] + this.dir[2] * t);
   }
 };
 var RayColliderIntersection = class {
@@ -4176,7 +4178,6 @@ export {
   PointColliderProjection,
   Polyline,
   PrismaticJoint,
-  Quaternion,
   Ray,
   RayColliderIntersection,
   RayColliderToi,
@@ -4201,8 +4202,9 @@ export {
   TriMesh,
   Triangle,
   UnitJoint,
-  Vector3,
   VectorOps,
   World,
+  quat,
+  vec3,
   version3 as version
 };
