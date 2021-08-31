@@ -303,7 +303,7 @@ export class Renderer {
     TODO: support adding objects when buffers aren't memory-mapped using device.queue
   */
   addObject(o: GameObject): MeshHandle {
-    console.log(`Adding object ${o.id}`);
+    //console.log(`Adding object ${o.id}`);
     let m = o.mesh();
     m = unshareVertices(m); // work-around; see TODO inside function
     // need to introduce a new variable to convince Typescript the mapping is non-null
