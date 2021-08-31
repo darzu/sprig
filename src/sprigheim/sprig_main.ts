@@ -60,7 +60,7 @@ const vertexShader = `
 
     [[group(0), binding(0)]] var<uniform> scene : Scene;
     [[group(1), binding(0)]] var<uniform> model : Model;
-    [[group(0), binding(3)]] var fsTexture: texture_2d<f32>;
+    // [[group(0), binding(3)]] var fsTexture: texture_2d<f32>;
 
     struct VertexOutput {
         ${vertexShaderOutput}
@@ -80,9 +80,9 @@ const vertexShader = `
         return vec3<f32>(0.0, y, 0.0);
     }
 
-    fn quantize(n: f32, step: f32) -> f32 {
-        return floor(n / step) * step;
-    }
+    // fn quantize(n: f32, step: f32) -> f32 {
+    //     return floor(n / step) * step;
+    // }
 
     [[stage(vertex)]]
     fn main(
@@ -90,13 +90,12 @@ const vertexShader = `
         ) -> VertexOutput {
         var output : VertexOutput;
 
-        // sample from displacement map
-        // let geometrySize: vec2<f32> = vec2<f32>(100.0, 100.0);
-        let geometrySize: vec2<f32> = (model.modelMax - model.modelMin).xz;
-        let fsSampleCoord = vec2<i32>(((position.xz - model.modelMin.xz) / geometrySize) * vec2<f32>(textureDimensions(fsTexture)));
-        let fsSample : vec3<f32> = textureLoad(fsTexture, fsSampleCoord, 0).rgb;
-        let fsSampleQuant = vec3<f32>(quantize(fsSample.x, 0.1), quantize(fsSample.y, 0.1), quantize(fsSample.z, 0.1));
-
+        // // sample from displacement map
+        // // let geometrySize: vec2<f32> = vec2<f32>(100.0, 100.0);
+        // let geometrySize: vec2<f32> = (model.modelMax - model.modelMin).xz;
+        // let fsSampleCoord = vec2<i32>(((position.xz - model.modelMin.xz) / geometrySize) * vec2<f32>(textureDimensions(fsTexture)));
+        // let fsSample : vec3<f32> = textureLoad(fsTexture, fsSampleCoord, 0).rgb;
+        // let fsSampleQuant = vec3<f32>(quantize(fsSample.x, 0.1), quantize(fsSample.y, 0.1), quantize(fsSample.z, 0.1));
         let positionL: vec3<f32> = vec3<f32>(position.x - 1.0, position.y, position.z);
         let positionB: vec3<f32> = vec3<f32>(position.x, position.y, position.z - 1.0);
         var displacement: vec3<f32> = vec3<f32>(0.0);
@@ -118,16 +117,16 @@ const vertexShader = `
             // dNorm = normalize(cross(dPos - dPosB, dPos - dPosL));
         }
 
-        var dPos2: vec3<f32>;
+        // var dPos2: vec3<f32>;
 
-        if (kind == 1u) {
-            dPos2 = position + fsSample;
-            // dPos2 = position + fsSampleQuant * 10.0;
-        } else {
-            dPos2 = position;
-        }
+        // if (kind == 1u) {
+        //     dPos2 = position + fsSample;
+        //     // dPos2 = position + fsSampleQuant * 10.0;
+        // } else {
+        //     dPos2 = position;
+        // }
 
-        let worldPos: vec4<f32> = model.modelMatrix * vec4<f32>(dPos2, 1.0);
+        let worldPos: vec4<f32> = model.modelMatrix * vec4<f32>(dPos, 1.0);
 
         // XY is in (-1, 1) space, Z is in (0, 1) space
         let posFromLight : vec4<f32> = scene.lightViewProjMatrix * worldPos;
@@ -185,7 +184,6 @@ const fragmentShader = `
         // let fsSample : vec3<f32> = textureSample(fsTexture, samp, screenCoordinates).rgb;
         // let fsSampleQuant = vec3<f32>(quantize(fsSample.x, 0.1), quantize(fsSample.y, 0.1), quantize(fsSample.z, 0.1));
 
-        // return vec4<f32>(input.color, 1.0);
 
         let resultColor: vec3<f32> = input.color * (sunLight * 2.0 + 0.2); // + fsSampleQuant * 0.2;
         let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
@@ -1020,48 +1018,47 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         fsBundle = fsBundleEnc.finish()
     }
 
-    // our compute pipeline for generating a texture
-    const computeTexWidth = 2048;
-    const computeTexHeight = 2048;
-    const computeGroupSize = 8; // TODO(@darzu): is this needed?
-    let computeTextureView: GPUTextureView;
-    let computeSceneBuffer: GPUBuffer;
-    let computePipeline: GPUComputePipeline;
-    let computeBindGroup: GPUBindGroup;
-    {
-        computePipeline = device.createComputePipeline({
-            compute: {
-                module: device.createShaderModule({
-                    code: computeForFS,
-                }),
-                entryPoint: 'main',
-            },
-        });
+    // // our compute pipeline for generating a texture
+    // const computeTexWidth = 2048;
+    // const computeTexHeight = 2048;
+    // const computeGroupSize = 8; // TODO(@darzu): is this needed?
+    // let computeTextureView: GPUTextureView;
+    // let computeSceneBuffer: GPUBuffer;
+    // let computePipeline: GPUComputePipeline;
+    // let computeBindGroup: GPUBindGroup;
+    // {
+    //     computePipeline = device.createComputePipeline({
+    //         compute: {
+    //             module: device.createShaderModule({
+    //                 code: computeForFS,
+    //             }),
+    //             entryPoint: 'main',
+    //         },
+    //     });
 
-        const computeSceneSizeExact = bytesPerFloat * 1; // time
-        computeSceneBuffer = device.createBuffer({
-            size: computeSceneSizeExact,
-            usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
-        });
+    //     const computeSceneSizeExact = bytesPerFloat * 1; // time
+    //     computeSceneBuffer = device.createBuffer({
+    //         size: computeSceneSizeExact,
+    //         usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
+    //     });
 
-        const computeColorFormat: GPUTextureFormat = 'rgba8unorm'; // rgba8unorm
-        const computeTextureDesc: GPUTextureDescriptor = {
-            size: { width: computeTexWidth, height: computeTexHeight },
-            usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE | GPUTextureUsage.SAMPLED,
-            format: computeColorFormat, // TODO(@darzu): which format?
-        }
-        const computeTexture = device.createTexture(computeTextureDesc);
-        computeTextureView = computeTexture.createView();
+    //     const computeColorFormat: GPUTextureFormat = 'rgba8unorm'; // rgba8unorm
+    //     const computeTextureDesc: GPUTextureDescriptor = {
+    //         size: { width: computeTexWidth, height: computeTexHeight },
+    //         usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE | GPUTextureUsage.SAMPLED,
+    //         format: computeColorFormat, // TODO(@darzu): which format?
+    //     }
+    //     const computeTexture = device.createTexture(computeTextureDesc);
+    //     computeTextureView = computeTexture.createView();
 
-        computeBindGroup = device.createBindGroup({
-            layout: computePipeline.getBindGroupLayout(0),
-            entries: [
-                { binding: 0, resource: { buffer: computeSceneBuffer } },
-                { binding: 1, resource: computeTextureView },
-            ],
-        });
-    }
-
+    //     computeBindGroup = device.createBindGroup({
+    //         layout: computePipeline.getBindGroupLayout(0),
+    //         entries: [
+    //             { binding: 0, resource: { buffer: computeSceneBuffer } },
+    //             { binding: 1, resource: computeTextureView },
+    //         ],
+    //     });
+    // }
     // setup our second phase pipeline which renders meshes to the canvas
     const renderSceneUniBindGroupLayout = device.createBindGroupLayout({
         entries: [
@@ -1079,8 +1076,8 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
             { binding: 0, resource: { buffer: sceneUniBuffer } },
             { binding: 1, resource: shadowDepthTextureView },
             { binding: 2, resource: device.createSampler({ compare: 'less' }) },
-            // { binding: 3, resource: fsTextureView },
-            { binding: 3, resource: computeTextureView },
+            { binding: 3, resource: fsTextureView },
+            // { binding: 3, resource: computeTextureView },
             {
                 binding: 4, resource: device.createSampler({
                     magFilter: 'linear',
@@ -1238,18 +1235,17 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         // start our rendering passes
         const commandEncoder = device.createCommandEncoder();
 
-        // do compute pass(es)
-        {
-            const computePass = commandEncoder.beginComputePass();
-            computePass.setPipeline(computePipeline);
-            computePass.setBindGroup(0, computeBindGroup);
-            computePass.dispatch(
-                Math.ceil(computeTexWidth / computeGroupSize),
-                Math.ceil(computeTexHeight / computeGroupSize)
-            );
-            computePass.endPass();
-        }
-
+        // // do compute pass(es)
+        // {
+        //     const computePass = commandEncoder.beginComputePass();
+        //     computePass.setPipeline(computePipeline);
+        //     computePass.setBindGroup(0, computeBindGroup);
+        //     computePass.dispatch(
+        //         Math.ceil(computeTexWidth / computeGroupSize),
+        //         Math.ceil(computeTexHeight / computeGroupSize)
+        //     );
+        //     computePass.endPass();
+        // }
         // TODO(@darzu): render fullscreen pipeline
         const fsRenderPassEncoder = commandEncoder.beginRenderPass({
             colorAttachments: [{
