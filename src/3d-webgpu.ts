@@ -553,9 +553,10 @@ async function init(canvasRef: HTMLCanvasElement) {
         CUBE,
         CUBE,
         CUBE,
-        CUBE,
-        CUBE,
     ], true)
+
+    const playerCubeModel: MeshModel = { ...CUBE, colors: CUBE.colors.map(c => [0.0, 0.3, 0.3]) }
+    const [playerM] = meshPool.addMeshes([playerCubeModel], true)
 
     // create a field of cubes
     {
@@ -671,7 +672,7 @@ async function init(canvasRef: HTMLCanvasElement) {
             camera.pitch(-mouseDeltaY * 0.01);
     }
 
-    const playerM = meshPool._meshes[4]
+
     const playerT = mkAffineTransformable();
     playerM.transform = playerT.getTransform();
     meshPool.applyMeshTransform(playerM)
