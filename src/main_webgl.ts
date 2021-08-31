@@ -1,4 +1,5 @@
-import * as m4 from "./m4.js"
+import { vec3, mat4 } from "./gl-matrix.js";
+import * as m4 from "./m4.js";
 import { v3, V3 } from "./v3.js";
 
 /*============= Creating a canvas ======================*/
@@ -141,14 +142,14 @@ function render(time: number) {
     gl.enable(gl.CULL_FACE);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    const projection = m4.perspective(30 * Math.PI / 180, canv.clientWidth / canv.clientHeight, 0.5, 10);
+    const projection = mat4.perspective(mat4.create(), 30 * Math.PI / 180, canv.clientWidth / canv.clientHeight, 0.5, 10);
     const eye: V3 = v3([1, 4, -6]);
     const target: V3 = v3([0, 0, 0]);
     const up: V3 = v3([0, 1, 0]);
 
     const camera = m4.lookAt(eye, target, up);
     const view = m4.inverse(camera);
-    const viewProjection = m4.multiply(projection, view);
+    const viewProjection = mat4.multiply(mat4.create(), projection, view);
     const world = updatePos() // m4.rotationY(time);
 
     gl.useProgram(program);
@@ -163,7 +164,7 @@ function render(time: number) {
     gl.uniformMatrix4fv(u_viewInverseLoc, false, camera);
     gl.uniformMatrix4fv(u_worldLoc, false, world);
     gl.uniformMatrix4fv(u_worldInverseTransposeLoc, false, m4.transpose(m4.inverse(world)));
-    gl.uniformMatrix4fv(u_worldViewProjectionLoc, false, m4.multiply(viewProjection, world));
+    gl.uniformMatrix4fv(u_worldViewProjectionLoc, false, mat4.multiply(mat4.create(), viewProjection, world));
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, tex);
