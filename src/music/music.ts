@@ -121,6 +121,22 @@ function rotate<T>(ts: T[], shift: number): T[] {
     // console.dir({ ts: [0, 1, 2, 3], tsN2: rotate([0, 1, 2, 3], -2) });
     // console.dir({ ts: [0, 1, 2, 3], ts0: rotate([0, 1, 2, 3], 0) });
 }
+function rotateChord(c: Chord, s: Scale, shift: number): Chord {
+    // TODO(@darzu): this doesn't properly handle shifts larger than an octave
+    if (shift > 0)
+        return {
+            ...c, offsets: rotate(c.offsets, -shift).map((o, i) => c.offsets.length - shift <= i ? o + s.offsets.length - 1 : o)
+        }
+    else if (shift < 0)
+        return {
+            ...c, offsets: rotate(c.offsets, -shift).map((o, i) => i < -shift ? o - s.offsets.length + 1 : o)
+        }
+    else
+        return c
+}
+function lowNote(c: Chord): Chord {
+    return { octave: c.octave - 1, offsets: [c.offsets[0]] }
+}
 
 // function mkChordProgression(indices: number[]): ChordProgression {
 //     throw `TODO`
@@ -180,6 +196,7 @@ function playFromScale(idx: number, scale: Scale, durSec: number = 0.25, offset:
 
 function playChord(c: Chord, s: Scale, durSec: number = 0.25, offset: number | null = null) {
     const notes = getNotesForChord(c, s)
+    console.log(`playing: [${notes.join(',')}]`)
     for (let n of notes)
         playNote(n, durSec, offset)
 }
@@ -199,16 +216,45 @@ function canvasClick() {
         isMinor: stdChords.map(c => isMinor(c, scale)),
     })
 
+
+    // test cases for rotateChord:
+    // console.dir({ chords: [...stdChords, ...stdChords].map((chord, i) => rotateChord(chord, scale, i).offsets) })
+    // console.dir({ chords: [...stdChords, ...stdChords].map((chord, i) => rotateChord(chord, scale, -i).offsets) })
+    // console.dir({ ts: [0, 1, 2, 3], ts2: rotate([0, 1, 2, 3], 2) });
+    // console.dir({ ts: [0, 1, 2, 3], tsN2: rotate([0, 1, 2, 3], -2) });
+    // console.dir({ ts: [0, 1, 2, 3], ts0: rotate([0, 1, 2, 3], 0) });
+
     // for (let i = 0; i < stdChords.length; i++)
         // playChord(stdChords[i], scale, 0.25, start + 0.5 * i)
 
     const noteSpace = 0.3;
     const noteLen = 0.7;
-    playChord(stdChords[0], scale, noteLen, start + noteSpace * 0)
-    playChord(stdChords[5], scale, noteLen, start + noteSpace * 1)
-    playChord(stdChords[1], scale, noteLen, start + noteSpace * 2)
-    playChord(stdChords[4], scale, noteLen, start + noteSpace * 3)
-    playChord(stdChords[0], scale, noteLen, start + noteSpace * 4)
+
+    function playChordProgression(chordIds: number[]) {
+        const chords = chordIds.map(i => stdChords[i])
+        const lowNotes = chords.map(lowNote)
+
+        for (let i = 0; i < chords.length; i++) {
+            playChord(chords[i], scale, noteLen, start + noteSpace * i)
+            playChord(lowNotes[i], scale, noteLen, start + noteSpace * i)
+        }
+    }
+
+    playChordProgression([0, 5, 1, 4, 0])
+
+    // playChord(stdChords[0], scale, noteLen, start + noteSpace * 0)
+    // playChord(lowNote(stdChords[0]), scale, noteLen, start + noteSpace * 0)
+    // // playChord(stdChords[5], scale, noteLen, start + noteSpace * 1)
+    // playChord(rotateChord(stdChords[5], scale, -1), scale, noteLen, start + noteSpace * 1)
+    // playChord(lowNote(rotateChord(stdChords[5], scale, -1)), scale, noteLen, start + noteSpace * 1)
+    // // playChord(stdChords[1], scale, noteLen, start + noteSpace * 2)
+    // playChord(rotateChord(stdChords[1], scale, -1), scale, noteLen, start + noteSpace * 2)
+    // playChord(lowNote(rotateChord(stdChords[1], scale, -1)), scale, noteLen, start + noteSpace * 2)
+    // // playChord(stdChords[4], scale, noteLen, start + noteSpace * 3)
+    // playChord(rotateChord(stdChords[4], scale, -1), scale, noteLen, start + noteSpace * 3)
+    // playChord(lowNote(rotateChord(stdChords[4], scale, -1)), scale, noteLen, start + noteSpace * 3)
+    // playChord(stdChords[0], scale, noteLen, start + noteSpace * 4)
+    // playChord(lowNote(stdChords[0]), scale, noteLen, start + noteSpace * 4)
     // playFromScale(0, scale, 0.25, start + 0.0);
     // playFromScale(1, scale, 0.25, start + 0.25);
     // playFromScale(2, scale, 0.25, start + 0.5);
