@@ -183,7 +183,7 @@ const wgslShaders = {
     fn main(
         [[location(0)]] shadowPos : vec3<f32>,
         [[location(1)]] fragNorm : vec3<f32>,
-        [[location(2)]] color : vec3<f32>
+        [[location(2)]] color : vec3<f32>,
         ) -> [[location(0)]] vec4<f32> {
         let shadowVis : f32 = textureSampleCompare(shadowMap, shadowSampler, shadowPos.xy, shadowPos.z - 0.007);
         let sunLight : f32 = shadowVis * clamp(dot(-scene.lightDir, fragNorm), 0.0, 1.0);
@@ -197,6 +197,9 @@ const wgslShaders = {
 const antiAliasSampleCount = 4;
 const swapChainFormat = 'bgra8unorm';
 
+const depthStencilFormat = 'depth24plus-stencil8';
+const shadowDepthStencilFormat = 'depth32float';
+
 const shadowDepthTextureDesc: GPUTextureDescriptor = {
     size: {
         width: shadowDepthTextureSize,
@@ -204,13 +207,8 @@ const shadowDepthTextureDesc: GPUTextureDescriptor = {
         depthOrArrayLayers: 1,
     },
     usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.SAMPLED,
-    format: 'depth32float',
+    format: shadowDepthStencilFormat,
 }
-
-const depthStencilFormat = 'depth24plus-stencil8';
-
-const lightProjectionMatrix = mat4.create();
-mat4.ortho(lightProjectionMatrix, -80, 80, -80, 80, -200, 300);
 
 let depthTexture: GPUTexture;
 let depthTextureView: GPUTextureView;
@@ -814,7 +812,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         depthStencil: {
             depthWriteEnabled: true,
             depthCompare: 'less',
-            format: 'depth32float',
+            format: shadowDepthStencilFormat,
         },
         primitive: primitiveBackcull,
     };
@@ -868,13 +866,6 @@ async function init(canvasRef: HTMLCanvasElement) {
     };
 
     const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
-    const renderPipelineTwosided = device.createRenderPipeline({
-        ...renderPipelineDesc,
-        primitive: primitiveTwosided,
-
-    });
-    // 'depth24plus-stencil8'
-
 
     // TODO(@darzu): how do we handle this abstraction with multiple passes e.g. shadows?
 
@@ -889,13 +880,11 @@ async function init(canvasRef: HTMLCanvasElement) {
         },
     };
 
-    let renderBundle: GPURenderBundle;
-
     resize(device, 100, 100);
 
     // cursor lock
     let cursorLocked = false
-    canvas.onclick = (ev) => {
+    canvas.onclick = (_) => {
         if (!cursorLocked)
             canvas.requestPointerLock();
         cursorLocked = true
@@ -949,47 +938,17 @@ async function init(canvasRef: HTMLCanvasElement) {
     }
 
     function controlPlayer(t: Transformable) {
-        // keys
-        const speed = pressedKeys[' '] ? 1.0 : 0.2;
-        if (pressedKeys['w'])
-            t.moveZ(-speed)
-        if (pressedKeys['s'])
-            t.moveZ(speed)
-        if (pressedKeys['a'])
-            t.moveX(-speed)
-        if (pressedKeys['d'])
-            t.moveX(speed)
-        if (pressedKeys['shift'])
-            t.moveY(speed)
-        if (pressedKeys['c'])
-            t.moveY(-speed)
-        // mouse
-        if (mouseDeltaX !== 0)
-            t.yaw(-mouseDeltaX * 0.01);
     }
 
     function cameraFollow(camera: Transformable) {
-        if (mouseDeltaY !== 0)
-            camera.pitch(-mouseDeltaY * 0.01);
     }
 
     const playerT = mkAffineTransformable();
     playerM.transform = playerT.getTransform();
     applyMeshTransform(playerM)
 
-    let playerPos = getPositionFromTransform(playerM.transform);
-
     // write light source
-    const lightProjectionMatrix = mat4.create();
-    {
-        const left = -80;
-        const right = 80;
-        const bottom = -80;
-        const top = 80;
-        const near = -200;
-        const far = 300;
-        mat4.ortho(lightProjectionMatrix, left, right, bottom, top, near, far);
-    }
+    const lightProjectionMatrix = mat4.ortho(mat4.create(), -80, 80, -80, 80, -200, 300);
 
     // init light
     const upVector = vec3.fromValues(0, 1, 0);
@@ -1046,7 +1005,7 @@ async function init(canvasRef: HTMLCanvasElement) {
             bundleEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
             bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
         }
-    renderBundle = bundleEncoder.finish()
+    let renderBundle = bundleEncoder.finish()
 
     let debugDiv = document.getElementById('debug-div') as HTMLDivElement;
 
@@ -1060,37 +1019,43 @@ async function init(canvasRef: HTMLCanvasElement) {
         const frameTimeMs = previousFrameTime ? timeMs - previousFrameTime : 0;
         previousFrameTime = timeMs;
 
-        // Sample is no longer the active page.
-        if (!canvasRef) return;
-
         resize(device, canvasRef.width, canvasRef.height);
 
-        playerPos = getPositionFromTransform(playerM.transform);
+        // keys
+        const playerSpeed = pressedKeys[' '] ? 1.0 : 0.2; // spacebar boosts
+        if (pressedKeys['w']) // forward
+            playerT.moveZ(-playerSpeed)
+        if (pressedKeys['s']) // backward
+            playerT.moveZ(playerSpeed)
+        if (pressedKeys['a']) // left
+            playerT.moveX(-playerSpeed)
+        if (pressedKeys['d']) // right
+            playerT.moveX(playerSpeed)
+        if (pressedKeys['shift']) // up
+            playerT.moveY(playerSpeed)
+        if (pressedKeys['c']) // down
+            playerT.moveY(-playerSpeed)
 
-        controlPlayer(playerT);
-        cameraFollow(cameraPos);
-
-        playerM.transform = playerT.getTransform();
-        applyMeshTransform(playerM);
+        // mouse
+        if (mouseDeltaX !== 0)
+            playerT.yaw(-mouseDeltaX * 0.01);
+        if (mouseDeltaY !== 0)
+            cameraPos.pitch(-mouseDeltaY * 0.01);
 
         // reset accummulated mouse delta
         mouseDeltaX = 0;
         mouseDeltaY = 0;
 
+        playerM.transform = playerT.getTransform();
+        applyMeshTransform(playerM);
+
         function getViewProj() {
-            const viewProj = mat4.create();
-            const cam = cameraPos.getTransform()
-            const player = playerT.getTransform()
-
             const viewMatrix = mat4.create()
-            mat4.multiply(viewMatrix, viewMatrix, player)
-            mat4.multiply(viewMatrix, viewMatrix, cam)
+            mat4.multiply(viewMatrix, viewMatrix, playerT.getTransform())
+            mat4.multiply(viewMatrix, viewMatrix, cameraPos.getTransform())
             mat4.translate(viewMatrix, viewMatrix, [0, 0, 10])
-
             mat4.invert(viewMatrix, viewMatrix);
-
-            mat4.multiply(viewProj, projectionMatrix, viewMatrix);
-            return viewProj as Float32Array;
+            return mat4.multiply(mat4.create(), projectionMatrix, viewMatrix) as Float32Array
         }
 
         const transformationMatrix = getViewProj();
