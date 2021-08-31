@@ -12,6 +12,7 @@ const shaderSceneStruct = `
         lightViewProjMatrix : mat4x4<f32>;
         lightDir : vec3<f32>;
         time : f32;
+        targetSize: vec2<f32>;
     };
 `;
 const vertexInputStruct = `
@@ -112,6 +113,9 @@ const vertexShader = `
         let worldNorm: vec4<f32> = normalize(model.modelMatrix * vec4<f32>(dNorm, 0.0));
 
         output.position = scene.cameraViewProjMatrix * worldPos;
+        // let xyz = (output.position.xyz / output.position.w);
+        // let xy = (xyz.xy / xyz.z);
+        // // output.screenCoord = normalize(xy) * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5);
         output.normal = worldNorm.xyz;
         output.color = color;
         // output.color = worldNorm.xyz;
@@ -125,21 +129,90 @@ const fragmentShader = `
     [[group(0), binding(1)]] var shadowMap: texture_depth_2d;
     // TODO(@darzu): waiting on this sample to work again: http://austin-eng.com/webgpu-samples/samples/shadowMapping
     [[group(0), binding(2)]] var shadowSampler: sampler_comparison;
+    [[group(0), binding(3)]] var fsTexture: texture_2d<f32>;
+    [[group(0), binding(4)]] var samp : sampler;
 
     struct VertexOutput {
         ${vertexShaderOutput}
     };
+
+    fn quantize(n: f32, step: f32) -> f32 {
+        return floor(n / step) * step;
+    }
 
     [[stage(fragment)]]
     fn main(input: VertexOutput) -> [[location(0)]] vec4<f32> {
         // let shadowVis : f32 = 1.0;
         let shadowVis : f32 = textureSampleCompare(shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
         let sunLight : f32 = shadowVis * clamp(dot(-scene.lightDir, input.normal), 0.0, 1.0);
-        let resultColor: vec3<f32> = input.color * (sunLight * 2.0 + 0.2);
+
+        // TODO: test fs shader
+        // top left is 0,0
+        let screenCoordinates = input.position.xy / scene.targetSize;
+        let fsSampleCoord = screenCoordinates * vec2<f32>(textureDimensions(fsTexture));
+        // let fsSampleCoord = vec2<f32>(input.position.x, input.position.y);
+        let fsSample : vec3<f32> = textureSample(fsTexture, samp, screenCoordinates).rgb;
+        let fsSampleQuant = vec3<f32>(quantize(fsSample.x, 0.1), quantize(fsSample.y, 0.1), quantize(fsSample.z, 0.1));
+
+        let resultColor: vec3<f32> = input.color * (sunLight * 2.0 + 0.2) + fsSampleQuant * 0.2;
         let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
         return vec4<f32>(gammaCorrected, 1.0);
     }
 `;
+
+// generates a texture
+const vertexShaderForFS = `
+    [[block]] struct Scene {
+        time : f32;
+    };
+
+    struct VertexOutput {
+        [[builtin(position)]] position: vec4<f32>;
+        [[location(0)]] coordinate: vec2<f32>;
+    };
+
+    [[group(0), binding(0)]] var<uniform> scene : Scene;
+
+    [[stage(vertex)]]
+    fn main([[location(0)]] position : vec2<f32>) -> VertexOutput {
+        // TODO:
+        var output: VertexOutput;
+        output.position = vec4<f32>(position, 0.0, 1.0);
+        output.coordinate = position * 0.5 + 0.5;
+        return output;
+    }
+`;
+const fragmentShaderForFS = `
+    struct VertexOutput {
+        [[builtin(position)]] position: vec4<f32>;
+        [[location(0)]] coordinate: vec2<f32>;
+    };
+
+    [[stage(fragment)]]
+    fn main(
+        input: VertexOutput
+    ) -> [[location(0)]] vec4<f32> {
+        // let r = input.position.x / 2048.0; /// (2048.0 * 2.0); // * 0.5 + 0.5;
+        let r = input.coordinate.x; // * 0.5 + 0.5;
+        let g = input.coordinate.y; // 0.0; //position.y;
+        let b = 0.0;
+        return vec4<f32>(r, g, b, 1.0);
+     }
+`;
+
+// TODO(@darzu): post processing
+var FULLSCREEN_VERTEX_SOURCE = `
+    attribute vec2 a_position;
+    varying vec2 v_coordinates;
+
+    void main (void) {
+        v_coordinates = a_position * 0.5 + 0.5;
+        gl_Position = vec4(a_position, 0.0, 1.0);
+    }
+`
+// var fullscreenVertexBuffer = gl.createBuffer();
+// gl.bindBuffer(gl.ARRAY_BUFFER, fullscreenVertexBuffer);
+// gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0]), gl.STATIC_DRAW);
 
 // useful constants
 const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
@@ -350,6 +423,7 @@ const sceneUniBufferSizeExact =
     bytesPerMat4 * 2 // camera and light projection
     + bytesPerVec3 * 1 // light pos
     + bytesPerFloat * 1 // time
+    + bytesPerFloat * 2 // targetSize
 export const sceneUniBufferSizeAligned = align(sceneUniBufferSizeExact, 256); // uniform objects must be 256 byte aligned
 
 export interface MeshPoolOpts {
@@ -649,35 +723,185 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         frontFace: 'ccw',
     };
 
-    // define the resource bindings for the shadow pipeline
-    const shadowSceneUniBindGroupLayout = device.createBindGroupLayout({
-        entries: [
-            { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-        ],
-    });
-    const shadowSceneUniBindGroup = device.createBindGroup({
-        layout: shadowSceneUniBindGroupLayout,
-        entries: [
-            { binding: 0, resource: { buffer: sceneUniBuffer } }
-        ],
-    });
 
-    // create the texture that our shadow pass will render to
-    const shadowDepthTextureDesc: GPUTextureDescriptor = {
-        size: { width: 2048 * 2, height: 2048 * 2 },
-        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.SAMPLED,
-        format: shadowDepthStencilFormat,
+    // TODO(@darzu): trying to extract the shadow pipeline
+    let shadowBundle: GPURenderBundle;
+    let shadowDepthTextureView: GPUTextureView;
+    {
+        // define the resource bindings for the shadow pipeline
+        const shadowSceneUniBindGroupLayout = device.createBindGroupLayout({
+            entries: [
+                { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+            ],
+        });
+        const shadowSceneUniBindGroup = device.createBindGroup({
+            layout: shadowSceneUniBindGroupLayout,
+            entries: [
+                { binding: 0, resource: { buffer: sceneUniBuffer } }
+            ],
+        });
+        // create the texture that our shadow pass will render to
+        const shadowDepthTextureDesc: GPUTextureDescriptor = {
+            size: { width: 2048 * 2, height: 2048 * 2 },
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.SAMPLED,
+            format: shadowDepthStencilFormat,
+        }
+        const shadowDepthTexture = device.createTexture(shadowDepthTextureDesc);
+        shadowDepthTextureView = shadowDepthTexture.createView();
+
+        // setup our first phase pipeline which tracks the depth of meshes 
+        // from the point of view of the lighting so we know where the shadows are
+        const shadowPipelineDesc: GPURenderPipelineDescriptor = {
+            layout: device.createPipelineLayout({
+                bindGroupLayouts: [shadowSceneUniBindGroupLayout, modelUniBindGroupLayout],
+            }),
+            vertex: {
+                module: device.createShaderModule({ code: vertexShaderForShadows }),
+                entryPoint: 'main',
+                buffers: [{
+                    arrayStride: vertByteSize,
+                    attributes: vertexDataFormat,
+                }],
+            },
+            fragment: {
+                module: device.createShaderModule({ code: fragmentShaderForShadows }),
+                entryPoint: 'main',
+                targets: [],
+            },
+            depthStencil: {
+                depthWriteEnabled: true,
+                depthCompare: 'less',
+                format: shadowDepthStencilFormat,
+            },
+            primitive: primitiveBackcull,
+        };
+        const shadowPipeline = device.createRenderPipeline(shadowPipelineDesc);
+
+        // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
+        // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
+        const shadowBundleEnc = device.createRenderBundleEncoder({
+            colorFormats: [],
+            depthStencilFormat: shadowDepthStencilFormat,
+        });
+        shadowBundleEnc.setPipeline(shadowPipeline);
+        shadowBundleEnc.setBindGroup(0, shadowSceneUniBindGroup);
+        shadowBundleEnc.setVertexBuffer(0, pool.verticesBuffer);
+        shadowBundleEnc.setIndexBuffer(pool.indicesBuffer, 'uint16');
+        for (let m of pool.allMeshes) {
+            shadowBundleEnc.setBindGroup(1, poolUniBindGroup, [m.modelUniByteOffset]);
+            shadowBundleEnc.drawIndexed(m.numTris * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+        }
+        shadowBundle = shadowBundleEnc.finish()
     }
-    const shadowDepthTexture = device.createTexture(shadowDepthTextureDesc);
-    const shadowDepthTextureView = shadowDepthTexture.createView();
 
-    // define the resource bindings for the mesh rendering pipeline
+    // TODO(@darzu): trying to extract the shadow pipeline
+    let fsUniBuffer: GPUBuffer;
+    let fsBundle: GPURenderBundle;
+    let fsTextureView: GPUTextureView;
+    {
+        const width = 2048;
+        const height = 2048;
+        // TODO(@darzu): FS SCENE FORMAT
+        const fsUniBufferSizeExact = 0
+            + bytesPerFloat * 1 // time
+        const fsUniBufferSizeAligned = align(fsUniBufferSizeExact, 256); // uniform objects must be 256 byte aligned
+        fsUniBuffer = device.createBuffer({
+            size: fsUniBufferSizeAligned,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+        const fsSceneUniBindGroupLayout = device.createBindGroupLayout({
+            entries: [
+                { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+            ],
+        });
+        const fsSceneUniBindGroup = device.createBindGroup({
+            layout: fsSceneUniBindGroupLayout,
+            entries: [
+                { binding: 0, resource: { buffer: fsUniBuffer } }
+            ],
+        });
+        const fsColorFormat: GPUTextureFormat = 'bgra8unorm'; // rgba8unorm
+        const fsTextureDesc: GPUTextureDescriptor = {
+            size: { width, height },
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.SAMPLED,
+            format: fsColorFormat, // TODO(@darzu): which format?
+        }
+        const fsDepthTexture = device.createTexture(fsTextureDesc);
+        fsTextureView = fsDepthTexture.createView();
+        const fsVertByteSize = bytesPerFloat * 2 // TODO(@darzu): FS VERTEX FORMAT
+        const fsVertexDataFormat: GPUVertexAttribute[] = [
+            { shaderLocation: 0, offset: 0, format: 'float32x2' }, // position
+        ];
+        const fsPipelineDesc: GPURenderPipelineDescriptor = {
+            layout: device.createPipelineLayout({
+                bindGroupLayouts: [fsSceneUniBindGroupLayout],
+            }),
+            vertex: {
+                module: device.createShaderModule({ code: vertexShaderForFS }),
+                entryPoint: 'main',
+                buffers: [{
+                    arrayStride: fsVertByteSize,
+                    attributes: fsVertexDataFormat,
+                }],
+            },
+            fragment: {
+                module: device.createShaderModule({ code: fragmentShaderForFS }),
+                entryPoint: 'main',
+                targets: [{ format: fsColorFormat }],
+            },
+            primitive: {
+                topology: 'triangle-list',
+                cullMode: 'none',
+                frontFace: 'ccw',
+            },
+        };
+        const numVerts = 6;
+        const fsVerticesBuffer = device.createBuffer({
+            size: numVerts * fsVertByteSize,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+            mappedAtCreation: true,
+        });
+        {
+            // TODO(@darzu): 
+            // var uv = array<vec2<f32>, 6>(
+            //     vec2<f32>(1.0, 0.0),
+            //     vec2<f32>(1.0, 1.0),
+            //     vec2<f32>(0.0, 1.0),
+            //     vec2<f32>(1.0, 0.0),
+            //     vec2<f32>(0.0, 1.0),
+            //     vec2<f32>(0.0, 0.0));
+            const fsVertsMap = new Float32Array(fsVerticesBuffer.getMappedRange())
+            fsVertsMap.set([
+                ...[1.0, 1.0],
+                ...[1.0, -1.0],
+                ...[-1.0, -1.0],
+                ...[1.0, 1.0],
+                ...[-1.0, -1.0],
+                ...[-1.0, 1.0],
+            ]);
+        }
+        // TODO(@darzu): set verts
+        fsVerticesBuffer.unmap();
+        const fsPipeline = device.createRenderPipeline(fsPipelineDesc);
+        const fsBundleEnc = device.createRenderBundleEncoder({
+            colorFormats: [fsColorFormat],
+        });
+        fsBundleEnc.setPipeline(fsPipeline);
+        fsBundleEnc.setBindGroup(0, fsSceneUniBindGroup);
+        fsBundleEnc.setVertexBuffer(0, fsVerticesBuffer);
+        fsBundleEnc.draw(numVerts);
+        fsBundle = fsBundleEnc.finish()
+    }
+
+    // setup our second phase pipeline which renders meshes to the canvas
     const renderSceneUniBindGroupLayout = device.createBindGroupLayout({
         entries: [
             { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
             { binding: 1, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, texture: { sampleType: 'depth' } },
-            // TODO(@darzu): waiting on this sample to work again: http://austin-eng.com/webgpu-samples/samples/shadowMapping
             { binding: 2, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, sampler: { type: 'comparison' } },
+            // TODO(@darzu): testing fullscreen shader
+            { binding: 3, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+            { binding: 4, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
         ],
     });
     const renderSceneUniBindGroup = device.createBindGroup({
@@ -685,40 +909,16 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         entries: [
             { binding: 0, resource: { buffer: sceneUniBuffer } },
             { binding: 1, resource: shadowDepthTextureView },
-            // TODO(@darzu): waiting on this sample to work again: http://austin-eng.com/webgpu-samples/samples/shadowMapping
             { binding: 2, resource: device.createSampler({ compare: 'less' }) },
+            { binding: 3, resource: fsTextureView },
+            {
+                binding: 4, resource: device.createSampler({
+                    magFilter: 'linear',
+                    minFilter: 'linear',
+                })
+            },
         ],
     });
-
-    // setup our first phase pipeline which tracks the depth of meshes 
-    // from the point of view of the lighting so we know where the shadows are
-    const shadowPipelineDesc: GPURenderPipelineDescriptor = {
-        layout: device.createPipelineLayout({
-            bindGroupLayouts: [shadowSceneUniBindGroupLayout, modelUniBindGroupLayout],
-        }),
-        vertex: {
-            module: device.createShaderModule({ code: vertexShaderForShadows }),
-            entryPoint: 'main',
-            buffers: [{
-                arrayStride: vertByteSize,
-                attributes: vertexDataFormat,
-            }],
-        },
-        fragment: {
-            module: device.createShaderModule({ code: fragmentShaderForShadows }),
-            entryPoint: 'main',
-            targets: [],
-        },
-        depthStencil: {
-            depthWriteEnabled: true,
-            depthCompare: 'less',
-            format: shadowDepthStencilFormat,
-        },
-        primitive: primitiveBackcull,
-    };
-    const shadowPipeline = device.createRenderPipeline(shadowPipelineDesc);
-
-    // setup our second phase pipeline which renders meshes to the canvas
     const renderPipelineDesc: GPURenderPipelineDescriptor = {
         layout: device.createPipelineLayout({
             bindGroupLayouts: [renderSceneUniBindGroupLayout, modelUniBindGroupLayout],
@@ -748,21 +948,6 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     };
     const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
 
-    // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
-    // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
-    const shadowBundleEnc = device.createRenderBundleEncoder({
-        colorFormats: [],
-        depthStencilFormat: shadowDepthStencilFormat,
-    });
-    shadowBundleEnc.setPipeline(shadowPipeline);
-    shadowBundleEnc.setBindGroup(0, shadowSceneUniBindGroup);
-    shadowBundleEnc.setVertexBuffer(0, pool.verticesBuffer);
-    shadowBundleEnc.setIndexBuffer(pool.indicesBuffer, 'uint16');
-    for (let m of pool.allMeshes) {
-        shadowBundleEnc.setBindGroup(1, poolUniBindGroup, [m.modelUniByteOffset]);
-        shadowBundleEnc.drawIndexed(m.numTris * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-    }
-    let shadowBundle = shadowBundleEnc.finish()
 
     const bundleEnc = device.createRenderBundleEncoder({
         colorFormats: [swapChainFormat],
@@ -809,6 +994,15 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
 
         // resize (if necessary)
         checkCanvasResize(device, canvasRef.width, canvasRef.height);
+        // TODO(@darzu): integrate this with checkCanvasResize
+        // TODO(@darzu): SCENE FORMAT
+        const sceneUniSizeOffset = bytesPerMat4 * 2 // camera and light projection
+            + bytesPerVec3 * 1 // light pos
+            + bytesPerFloat * 1 // time
+        const sizeBuffer = new Float32Array(2);
+        sizeBuffer[0] = canvasRef.width;
+        sizeBuffer[1] = canvasRef.height;
+        device.queue.writeBuffer(sceneUniBuffer, sceneUniSizeOffset, sizeBuffer);
 
         // process inputs and move the player & camera
         const playerSpeed = pressedKeys[' '] ? 1.0 : 0.2; // spacebar boosts speed
@@ -845,8 +1039,27 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         timeBuffer[0] = timeMs;
         device.queue.writeBuffer(sceneUniBuffer, sceneUniTimeOffset, timeBuffer);
 
-        // render from the light's point of view to a depth buffer so we know where shadows are
+        // update fullscreen scene data
+        const fsUniTimeOffset = 0
+        const fsTimeBuffer = new Float32Array(1);
+        fsTimeBuffer[0] = timeMs;
+        device.queue.writeBuffer(fsUniBuffer, fsUniTimeOffset, fsTimeBuffer);
+
+        // start our rendering passes
         const commandEncoder = device.createCommandEncoder();
+
+        // TODO(@darzu): render fullscreen pipeline
+        const fsRenderPassEncoder = commandEncoder.beginRenderPass({
+            colorAttachments: [{
+                view: fsTextureView,
+                loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
+                storeOp: 'store',
+            }],
+        });
+        fsRenderPassEncoder.executeBundles([fsBundle]);
+        fsRenderPassEncoder.endPass();
+
+        // render from the light's point of view to a depth buffer so we know where shadows are
         const shadowRenderPassEncoder = commandEncoder.beginRenderPass({
             colorAttachments: [],
             depthStencilAttachment: {

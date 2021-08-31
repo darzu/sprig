@@ -103,3 +103,6 @@ Low Poly advice:
         Recommends hand-done LODs
         Consider low-res
         scrolling UV maps, normal maps
+
+Voxel / pixely 3D models:
+    https://spritestack.io/
