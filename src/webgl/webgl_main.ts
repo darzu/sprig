@@ -78,8 +78,6 @@ gl.attachShader(program, vertShader);
 gl.attachShader(program, fragShader);
 gl.linkProgram(program);
 
-/////
-
 const u_lightWorldPosLoc = gl.getUniformLocation(program, "u_lightWorldPos");
 const u_lightColorLoc = gl.getUniformLocation(program, "u_lightColor");
 const u_ambientLoc = gl.getUniformLocation(program, "u_ambient");
@@ -126,7 +124,7 @@ function render(time: number) {
   const camera = mat4.lookAt(mat4.create(), eye, target, up) as Float32Array;
   const view = camera;
   const viewProjection = mat4.multiply(mat4.create(), projection, view);
-  const world = updatePos() // m4.rotationY(time);
+  const world = updatePos()
 
   gl.useProgram(program);
 
