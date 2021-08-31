@@ -192,6 +192,9 @@ export class Net<Inputs> {
         for (let obj of msg.objects) {
           this.state.addObjectFromNet(obj);
         }
+        for (let peer in msg.peers) {
+          this.peers.push(peer);
+        }
         this.ready(this.me);
         break;
       }
