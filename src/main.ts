@@ -7,7 +7,7 @@ import { Renderer, Renderer_WebGPU } from "./render_webgpu.js";
 import { attachToCanvas } from "./render_webgl.js";
 import { Mesh, unshareProvokingVertices } from "./mesh-pool.js";
 
-const USE_WEBGPU = true;
+const USE_WEBGPU = false;
 
 enum ObjectType {
   Plane,
