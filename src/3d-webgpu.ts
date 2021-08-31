@@ -18,6 +18,7 @@ const CUBE: Mesh = {
         [-1.0, +1.0, +1.0],
         [-1.0, -1.0, +1.0],
         [+1.0, -1.0, +1.0],
+
         [+1.0, +1.0, -1.0],
         [-1.0, +1.0, -1.0],
         [-1.0, -1.0, -1.0],
@@ -52,13 +53,13 @@ const CUBE: Mesh = {
 const vertexPositionColorWGSL =
 `
 [[stage(fragment)]]
-fn main([[location(0)]] fragUV: vec2<f32>,
-        [[location(1)]] fragPosition: vec4<f32>) -> [[location(0)]] vec4<f32> {
+fn main([[location(0)]] fragPosition: vec4<f32>) -> [[location(0)]] vec4<f32> {
     return fragPosition;
 }
 `;
 
-const basicVertWGSL = `
+const basicVertWGSL =
+`
 [[block]] struct Uniforms {
     modelViewProjectionMatrix : mat4x4<f32>;
 };
@@ -66,74 +67,21 @@ const basicVertWGSL = `
 
 struct VertexOutput {
     [[builtin(position)]] Position : vec4<f32>;
-    [[location(0)]] fragUV : vec2<f32>;
-    [[location(1)]] fragPosition: vec4<f32>;
+    [[location(0)]] fragPosition: vec4<f32>;
 };
 
 [[stage(vertex)]]
-fn main([[location(0)]] position : vec4<f32>,
-        [[location(1)]] uv : vec2<f32>) -> VertexOutput {
+fn main(
+    [[location(0)]] position : vec4<f32>
+    ) -> VertexOutput {
     var output : VertexOutput;
     output.Position = uniforms.modelViewProjectionMatrix * position;
-    output.fragUV = uv;
     output.fragPosition = 0.5 * (position + vec4<f32>(1.0, 1.0, 1.0, 1.0));
     // output.fragPosition = position;
 
     return output;
 }
 `;
-
-export const cubeVertexSize = 4 * 10; // Byte size of one cube vertex.
-export const cubePositionOffset = 0;
-export const cubeColorOffset = 4 * 4; // Byte offset of cube vertex color attribute.
-export const cubeUVOffset = 4 * 8;
-export const cubeVertexCount = 36;
-
-// prettier-ignore
-export const cubeVertexArray = new Float32Array([
-    // float4 position, float4 color, float2 uv,
-    1, -1, 1, 1,    1, 0, 1, 1, 1, 1,
-    -1, -1, 1, 1,   1, 0, 1, 1, 0, 1,
-    -1, -1, -1, 1,  1, 0, 1, 1, 0, 0,
-    1, -1, -1, 1,   1, 0, 1, 1, 1, 0,
-    1, -1, 1, 1,    1, 0, 1, 1, 1, 1,
-    -1, -1, -1, 1,  1, 0, 1, 1, 0, 0,
-
-    1, 1, 1, 1,     1, 0, 1, 1, 1, 1,
-    1, -1, 1, 1,    1, 0, 1, 1, 0, 1,
-    1, -1, -1, 1,   1, 0, 1, 1, 0, 0,
-    1, 1, -1, 1,    1, 0, 1, 1, 1, 0,
-    1, 1, 1, 1,     1, 0, 1, 1, 1, 1,
-    1, -1, -1, 1,   1, 0, 1, 1, 0, 0,
-
-    -1, 1, 1, 1, 0, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
-    1, 1, -1, 1, 1, 1, 0, 1, 0, 0,
-    -1, 1, -1, 1, 0, 1, 0, 1, 1, 0,
-    -1, 1, 1, 1, 0, 1, 1, 1, 1, 1,
-    1, 1, -1, 1, 1, 1, 0, 1, 0, 0,
-
-    -1, -1, 1, 1, 0, 0, 1, 1, 1, 1,
-    -1, 1, 1, 1, 0, 1, 1, 1, 0, 1,
-    -1, 1, -1, 1, 0, 1, 0, 1, 0, 0,
-    -1, -1, -1, 1, 0, 0, 0, 1, 1, 0,
-    -1, -1, 1, 1, 0, 0, 1, 1, 1, 1,
-    -1, 1, -1, 1, 0, 1, 0, 1, 0, 0,
-
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    -1, 1, 1, 1, 0, 1, 1, 1, 0, 1,
-    -1, -1, 1, 1, 0, 0, 1, 1, 0, 0,
-    -1, -1, 1, 1, 0, 0, 1, 1, 0, 0,
-    1, -1, 1, 1, 1, 0, 1, 1, 1, 0,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-
-    1, -1, -1, 1, 1, 0, 0, 1, 1, 1,
-    -1, -1, -1, 1, 0, 0, 0, 1, 0, 1,
-    -1, 1, -1, 1, 0, 1, 0, 1, 0, 0,
-    1, 1, -1, 1, 1, 1, 0, 1, 1, 0,
-    1, -1, -1, 1, 1, 0, 0, 1, 1, 1,
-    -1, 1, -1, 1, 0, 1, 0, 1, 0, 0,
-]);
 
 const shadowDepthTextureSize = 1024;
 
@@ -151,14 +99,31 @@ async function init(canvasRef: HTMLCanvasElement) {
         format: swapChainFormat,
     });
 
-    // Create a vertex buffer from the cube data.
+    // // OLD Create a vertex buffer from the cube data.
+    // const verticesBuffer = device.createBuffer({
+    //     size: cubeVertexArray.byteLength,
+    //     usage: GPUBufferUsage.VERTEX,
+    //     mappedAtCreation: true,
+    // });
+    // {
+    //     new Float32Array(verticesBuffer.getMappedRange()).set(cubeVertexArray);
+    //     verticesBuffer.unmap();
+    // }
+    // NEW Create a vertex buffer from the cube data.
+    const cubePos = new Float32Array(
+        CUBE.pos
+            .map(p => [p[0], p[1], p[2], 1.0])
+            .reduce((p, n) => [...p, ...n], [] as number[])
+    )
     const verticesBuffer = device.createBuffer({
-        size: cubeVertexArray.byteLength,
+        size: cubePos.byteLength,
         usage: GPUBufferUsage.VERTEX,
         mappedAtCreation: true,
     });
-    new Float32Array(verticesBuffer.getMappedRange()).set(cubeVertexArray);
-    verticesBuffer.unmap();
+    {
+        new Float32Array(verticesBuffer.getMappedRange()).set(cubePos);
+        verticesBuffer.unmap();
+    }
     // TODO: vertex, index, normals
     // {
     //     // Create the model vertex buffer.
@@ -176,21 +141,20 @@ async function init(canvasRef: HTMLCanvasElement) {
     //         vertexBuffer.unmap();
     //     }
 
-    //     // Create the model index buffer.
-    //     const indexCount = mesh.triangles.length * 3;
-    //     const indexBuffer = device.createBuffer({
-    //         size: indexCount * Uint16Array.BYTES_PER_ELEMENT,
-    //         usage: GPUBufferUsage.INDEX,
-    //         mappedAtCreation: true,
-    //     });
-    //     {
-    //         const mapping = new Uint16Array(indexBuffer.getMappedRange());
-    //         for (let i = 0; i < mesh.triangles.length; ++i) {
-    //         mapping.set(mesh.triangles[i], 3 * i);
-    //         }
-    //         indexBuffer.unmap();
-    //     }
-    // }
+    // Create the model index buffer.
+    const indexCount = CUBE.tri.length * 3;
+    const indexBuffer = device.createBuffer({
+        size: indexCount * Uint16Array.BYTES_PER_ELEMENT,
+        usage: GPUBufferUsage.INDEX,
+        mappedAtCreation: true,
+    });
+    {
+        const mapping = new Uint16Array(indexBuffer.getMappedRange());
+        for (let i = 0; i < CUBE.tri.length; ++i) {
+            mapping.set(CUBE.tri[i], 3 * i);
+        }
+        indexBuffer.unmap();
+    }
 
     // Create the depth texture for rendering/sampling the shadow map.
     const shadowDepthTexture = device.createTexture({
@@ -230,20 +194,20 @@ async function init(canvasRef: HTMLCanvasElement) {
             entryPoint: 'main',
             buffers: [
                 {
-                    arrayStride: cubeVertexSize,
+                    arrayStride: 4/*byes per float32*/ * 4/*num floats*/,
                     attributes: [
                         {
                             // position
                             shaderLocation: 0,
-                            offset: cubePositionOffset,
+                            offset: 0,
                             format: 'float32x4',
                         },
-                        {
-                            // uv
-                            shaderLocation: 1,
-                            offset: cubeUVOffset,
-                            format: 'float32x2',
-                        },
+                        // {
+                        //     // uv
+                        //     shaderLocation: 1,
+                        //     offset: cubeUVOffset,
+                        //     format: 'float32x2',
+                        // },
                     ],
                 },
             ],
@@ -266,6 +230,7 @@ async function init(canvasRef: HTMLCanvasElement) {
             // Faces pointing away from the camera will be occluded by faces
             // pointing toward the camera.
             cullMode: 'back',
+            frontFace: 'ccw', // TODO(dz):
         },
 
         // Enable depth testing so that the fragment closest to the camera
@@ -360,7 +325,9 @@ async function init(canvasRef: HTMLCanvasElement) {
         passEncoder.setPipeline(pipeline);
         passEncoder.setBindGroup(0, uniformBindGroup);
         passEncoder.setVertexBuffer(0, verticesBuffer);
-        passEncoder.draw(cubeVertexCount, 1, 0, 0);
+        passEncoder.setIndexBuffer(indexBuffer, 'uint16');
+        passEncoder.drawIndexed(indexCount);
+        // passEncoder.draw(CUBE.pos.length, 1, 0, 0);
         passEncoder.endPass();
         device.queue.submit([commandEncoder.finish()]);
 
