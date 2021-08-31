@@ -161,3 +161,6 @@ GDC Horizon Zero vegitation:
 Grass plan:
   Heightmap data
     provides fns for sampling at any point, height and normal
+
+Grass shading:
+  Maybe based on sway height, let through super green light
