@@ -54,7 +54,6 @@ class StateSynchronizer<Inputs> {
 
   private events(): GameEvent[] {
     let events = Object.values(this.net.state.events);
-    console.log(this.objectsKnown);
     return events.filter(
       (ev) => ev.authority == this.net.state.me && !this.objectsKnown.has(ev.id)
     );
