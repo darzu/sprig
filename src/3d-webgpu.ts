@@ -230,7 +230,7 @@ async function init(canvasRef: HTMLCanvasElement) {
             // Faces pointing away from the camera will be occluded by faces
             // pointing toward the camera.
             cullMode: 'back',
-            frontFace: 'ccw', // TODO(dz):
+            // frontFace: 'ccw', // TODO(dz):
         },
 
         // Enable depth testing so that the fragment closest to the camera
