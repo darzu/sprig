@@ -13,6 +13,12 @@ export function scaleMesh(m: Mesh, by: number): Mesh {
   return { pos, tri: m.tri, colors: m.colors };
 }
 
+// axis-aligned bounding-box
+export interface AABB {
+  min: vec3;
+  max: vec3;
+}
+
 export abstract class GameObject {
   id: number;
   location: vec3;
@@ -62,6 +68,8 @@ export abstract class GameObject {
   abstract mesh(): Mesh;
 
   abstract type(): string;
+
+  abstract aabb(): AABB;
 }
 
 export type NetObject = any;
@@ -89,7 +97,7 @@ export abstract class GameState<Inputs> {
 
   abstract viewMatrix(): mat4;
 
-  abstract objectFromNetObject(NetObject: any): GameObject;
+  abstract objectFromNetObject(NetObject: NetObject): GameObject;
 
   addObject(obj: GameObject) {
     this.objects[obj.id] = obj;
@@ -140,6 +148,7 @@ export abstract class GameState<Inputs> {
     let dt = time - this.time;
     this.stepGame(dt, inputs);
     for (let o of Object.values(this.objects)) {
+      // TODO(@darzu): collisions, push-back
       // change location according to linear velocity
       let delta = vec3.scale(vec3.create(), o.linear_velocity, dt);
       vec3.add(o.location, o.location, delta);
@@ -162,3 +171,10 @@ export abstract class GameState<Inputs> {
     this.time = time;
   }
 }
+
+/*
+collision detection
+  define AABB boxes for everyone
+  check for collisions
+
+*/

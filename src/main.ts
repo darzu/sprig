@@ -1,7 +1,7 @@
 const jsStartTime = performance.now();
 
 import { mat4, vec3, quat } from "./gl-matrix.js";
-import { Mesh, scaleMesh, GameObject, NetObject, GameState } from "./state.js";
+import { Mesh, scaleMesh, GameObject, NetObject, GameState, AABB } from "./state.js";
 import { Renderer } from "./render.js";
 import { Net } from "./net.js";
 
@@ -32,6 +32,15 @@ class Plane extends GameObject {
       },
       10
     );
+  }
+
+  // TODO(@darzu): think about cache invalidation
+  private _aabb: AABB | null = null;
+  aabb() {
+    if (!this._aabb) {
+      this._aabb = getMeshAABB(this.mesh())
+    }
+    return this._aabb;
   }
 
   type(): string {
@@ -97,11 +106,35 @@ abstract class Cube extends GameObject {
     };
   }
 
+  // TODO(@darzu): think about cache invalidation
+  private _aabb: AABB | null = null;
+  aabb() {
+    if (!this._aabb) {
+      this._aabb = getMeshAABB(this.mesh())
+    }
+    return this._aabb;
+  }
+
   netObject() {
     let obj = super.netObject();
     obj.color = Array.from(this.color);
     return obj;
   }
+}
+
+function getMeshAABB(mesh: Mesh): AABB {
+  const min = vec3.fromValues(Infinity, Infinity, Infinity);
+  const max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
+  mesh.pos.forEach(([x, y, z]) => {
+    min[0] = Math.min(min[0], x);
+    min[1] = Math.min(min[1], y);
+    min[2] = Math.min(min[2], z);
+
+    max[0] = Math.max(max[0], x);
+    max[1] = Math.max(max[1], y);
+    max[2] = Math.max(max[2], z);
+  })
+  return { min, max }
 }
 
 class SpinningCube extends Cube {
