@@ -1,2 +1,20 @@
 "build your own 3D multiplayer game in the browser with blocks, typescript, or rust"
 
+Games should be easier to make.
+Programming should be easier to learn.
+
+Programs should be easier to understand.
+
+Emphasis on gameplay.
+Ruthelessly simplify your abstractions.
+
+Programming should be easier to learn.
+All considerations are secondary to gameplay.
+All abstractions must be ruthelessly simplified.
+The goals are one and the same.
+
+Games first and foremost must be FUN.
+Programs first and foremost must be UNDERSTANDABLE.
+
+You can't iterate on something you don't understand.
+You shouldn't program something you won't enjoy.

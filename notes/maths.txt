@@ -31,3 +31,6 @@ Elliptic Curve Cryptography :
 
 Graph experiment / viz:
     https://www.desmos.com/calculator
+
+Interval algebra:
+    https://www.ics.uci.edu/~alspaugh/cls/shr/allen.html

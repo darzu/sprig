@@ -3,6 +3,11 @@ turbosquid
 https://opengameart.org
 https://blendermarket.com
 
+Ken stuff:
+    https://assetforge.io
+    https://www.kenney.nl/assets/
+    https://tools.kenney.nl/kenshape/
+
 format:
     https://github.com/libgdx/fbx-conv
 
@@ -106,3 +111,13 @@ Low Poly advice:
 
 Voxel / pixely 3D models:
     https://spritestack.io/
+    "I did everything to avoid the black magic of raymarching but that's the only 
+    sane way to edit huge amount of voxels in realtime."
+    https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.42.3443&rep=rep1&type=pdf
+
+
+MagicaVoxel:
+    http://ephtracy.github.io
+
+    MagicaCSG:
+        https://twitter.com/metinse7en/status/1410174115776970753/photo/1

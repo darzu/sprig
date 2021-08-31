@@ -52,3 +52,6 @@ Tree shaking:
     also very useful for keeping out random notes and unrelated & unreviewed snippets of code
 
     highlight key lines, which are all those using the key definitions
+
+profile Website goals:
+    https://halisavakis.carrd.co
