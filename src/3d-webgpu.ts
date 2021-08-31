@@ -127,6 +127,18 @@ async function init(canvasRef: HTMLCanvasElement) {
     if (!canvasRef === null) return;
     const context = canvasRef.getContext('gpupresent')!;
 
+    // dynamic resize:
+    function resize() {
+        canvasRef.width = window.innerWidth;
+        canvasRef.style.width = `${window.innerWidth}px`;
+        canvasRef.height = window.innerHeight;
+        canvasRef.style.height = `${window.innerHeight}px`;
+    }
+    window.onresize = function () {
+        resize();
+    }
+    resize();
+
     const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/)
     const meshPool = createMeshMemoryPool({
         vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
@@ -139,7 +151,7 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     // TODO(@darzu): 
     const meshRenderer = createMeshRenderer(
-        meshPool._opts.meshUniByteSize, meshPool._opts.vertByteSize, device, context, canvasRef.width, canvasRef.height);
+        meshPool._opts.meshUniByteSize, meshPool._opts.vertByteSize, device, context);
 
     // TODO(@darzu): physics?
     // console.dir(RAPIER)
@@ -344,18 +356,19 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     function controlPlayer(t: Transformable) {
         // keys
+        const speed = 0.2;
         if (pressedKeys['w'])
-            t.moveZ(-1)
+            t.moveZ(-speed)
         if (pressedKeys['s'])
-            t.moveZ(1)
+            t.moveZ(speed)
         if (pressedKeys['a'])
-            t.moveX(-1)
+            t.moveX(-speed)
         if (pressedKeys['d'])
-            t.moveX(1)
+            t.moveX(speed)
         if (pressedKeys['shift'])
-            t.moveY(1)
+            t.moveY(speed)
         if (pressedKeys['c'])
-            t.moveY(-1)
+            t.moveY(-speed)
         if (pressedKeys['q'])
             // t.roll(0.1)
         if (pressedKeys['e'])
@@ -489,9 +502,11 @@ async function init(canvasRef: HTMLCanvasElement) {
         );
 
         // meshPool.preRender()
+        const canvasWidth = canvasRef.clientWidth;
+        const canvasHeight = canvasRef.clientHeight;
 
         const commandEncoder = device.createCommandEncoder();
-        meshRenderer.render(commandEncoder, [meshPool, grassMeshPool]);
+        meshRenderer.render(commandEncoder, [meshPool, grassMeshPool], canvasWidth, canvasHeight);
         device.queue.submit([commandEncoder.finish()]);
 
         requestAnimationFrame(frame);

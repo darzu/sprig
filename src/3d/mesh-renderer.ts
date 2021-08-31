@@ -245,15 +245,14 @@ export interface MeshRenderer {
     // TODO(@darzu): what should really be exposed?
     sharedUniBuffer: GPUBuffer,
     rebuildBundles: (meshPools: MeshMemoryPool[]) => void,
-    render: (commandEncoder: GPUCommandEncoder, meshPools: MeshMemoryPool[]) => void,
+    render: (commandEncoder: GPUCommandEncoder, meshPools: MeshMemoryPool[], canvasWidth: number, canvasHeight: number) => void,
 }
 
 export function createMeshRenderer(
     meshUniByteSize: number,
     vertByteSize: number,
 
-    device: GPUDevice, context: GPUCanvasContext,
-    canvasWidth: number, canvasHeight: number): MeshRenderer {
+    device: GPUDevice, context: GPUCanvasContext): MeshRenderer {
     /*
     TODO: we'll probably switch when enga@chromium.org does
     configureSwapChain() is deprecated. Use configure() instead and call getCurrentTexture()
@@ -537,42 +536,49 @@ export function createMeshRenderer(
     });
     // 'depth24plus-stencil8'
 
-    const depthTexture = device.createTexture({
-        size: { width: canvasWidth, height: canvasHeight },
-        format: depthStencilFormat,
-        sampleCount,
-        usage: GPUTextureUsage.RENDER_ATTACHMENT,
-    });
 
-    // Declare swapchain image handles
-    let colorTexture: GPUTexture = device.createTexture({
-        size: {
-            width: canvasWidth,
-            height: canvasHeight,
-        },
-        sampleCount,
-        format: swapChainFormat,
-        usage: GPUTextureUsage.RENDER_ATTACHMENT,
-    });;
-    let colorTextureView: GPUTextureView = colorTexture.createView();
+    let depthTexture: GPUTexture;
+    let depthTextureView: GPUTextureView;
+    let colorTexture: GPUTexture;
+    let colorTextureView: GPUTextureView;
+    let lastWidth = 0;
+    let lastHeight = 0;
 
-    const colorAtt: GPURenderPassColorAttachmentNew = {
-        view: colorTextureView,
-        resolveTarget: swapChain.getCurrentTexture().createView(),
-        loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
-        storeOp: 'store',
-    };
-    const renderPassDescriptor = {
-        colorAttachments: [colorAtt],
-        depthStencilAttachment: {
-            view: depthTexture.createView(),
+    function resize(canvasWidth: number, canvasHeight: number) {
+        if (depthTexture && colorTexture && lastWidth === canvasWidth && lastHeight === canvasHeight)
+            return;
 
-            depthLoadValue: 1.0,
-            depthStoreOp: 'store',
-            stencilLoadValue: 0,
-            stencilStoreOp: 'store',
-        },
-    } as const;
+        if (depthTexture)
+            depthTexture.destroy();
+        if (colorTexture)
+            colorTexture.destroy();
+
+        console.log("resizing")
+
+        depthTexture = device.createTexture({
+            size: { width: canvasWidth, height: canvasHeight },
+            format: depthStencilFormat,
+            sampleCount,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT,
+        });
+        depthTextureView = depthTexture.createView();
+
+        // Declare swapchain image handles
+        colorTexture = device.createTexture({
+            size: {
+                width: canvasWidth,
+                height: canvasHeight,
+            },
+            sampleCount,
+            format: swapChainFormat,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT,
+        });;
+        colorTextureView = colorTexture.createView();
+
+        lastWidth = canvasWidth;
+        lastHeight = canvasHeight;
+    }
+    resize(100, 100);
 
     // TODO(@darzu): how do we handle this abstraction with multiple passes e.g. shadows?
 
@@ -636,12 +642,31 @@ export function createMeshRenderer(
         renderBundle = bundleEncoder.finish()
     }
 
-    function render(commandEncoder: GPUCommandEncoder, meshPools: MeshMemoryPool[]) {
+    function render(commandEncoder: GPUCommandEncoder, meshPools: MeshMemoryPool[], canvasWidth: number, canvasHeight: number) {
+        // console.log(`w: ${canvasWidth}, h: ${canvasHeight}`)
+        resize(canvasWidth, canvasHeight);
+
         // TODO(@darzu):  this feels akward
         // Acquire next image from swapchain
-        colorTexture = swapChain.getCurrentTexture();
-        colorTextureView = colorTexture.createView();
-        renderPassDescriptor.colorAttachments[0].resolveTarget = colorTextureView;
+        // colorTexture = swapChain.getCurrentTexture();
+        // colorTextureView = colorTexture.createView();
+
+        const colorAtt: GPURenderPassColorAttachmentNew = {
+            view: colorTextureView,
+            resolveTarget: swapChain.getCurrentTexture().createView(),
+            loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
+            storeOp: 'store',
+        };
+        const renderPassDescriptor = {
+            colorAttachments: [colorAtt],
+            depthStencilAttachment: {
+                view: depthTextureView,
+                depthLoadValue: 1.0,
+                depthStoreOp: 'store',
+                stencilLoadValue: 0,
+                stencilStoreOp: 'store',
+            },
+        } as const;
 
         const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
         // shadowPassEncoder.executeBundles([shadowRenderBundle]);
