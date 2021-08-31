@@ -340,6 +340,7 @@ export class Net<Inputs> {
     let data = new Array();
     for (let obj of objects) {
       this.syncObject(obj.netObject());
+      this.object_priorities[obj.id] = 0;
       data.push(obj.id);
       data.push(obj.authority_seq);
       this.serializeVec3(data, obj.location);
