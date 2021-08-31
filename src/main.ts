@@ -670,4 +670,11 @@ async function main() {
 
 test();
 
-await main();
+(async () => {
+  // TODO(@darzu): work around for lack of top-level await in Safari
+  try {
+    await main();
+  } catch (e) {
+    console.error(e)
+  }
+})();
