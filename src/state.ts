@@ -47,7 +47,7 @@ export abstract class GameObject {
 
   snapLocation(location: vec3) {
     let current_location = vec3.add(
-      vec3.create(),
+      this.location,
       this.location,
       this.location_error
     );
@@ -58,11 +58,13 @@ export abstract class GameObject {
 
   snapRotation(rotation: quat) {
     let current_rotation = quat.mul(
-      quat.create(),
+      this.rotation,
       this.rotation,
       this.rotation_error
     );
-    let rotation_inverse = quat.invert(quat.create(), rotation);
+    // sort of a hack--reuse our current rotation error quat to store the
+    // rotation inverse to avoid a quat allocation
+    let rotation_inverse = quat.invert(this.rotation_error, rotation);
     let rotation_error = quat.mul(
       current_rotation,
       current_rotation,
