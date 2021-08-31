@@ -14,6 +14,7 @@ import {
   MotionProps,
 } from "./phys_motion.js";
 import { stepPhysics } from "./phys.js";
+import { Inputs } from "./inputs.js";
 
 const ERROR_SMOOTHING_FACTOR = 0.8;
 const EPSILON = 0.0001;
@@ -171,7 +172,7 @@ export interface GameEvent {
   authority: number;
 }
 
-export abstract class GameState<Inputs> {
+export abstract class GameState {
   protected nextPlayerId: number;
   nextObjectId: number;
   protected renderer: Renderer;
