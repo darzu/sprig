@@ -1,4 +1,4 @@
-import { computeTriangleNormal } from "./3d-util.js";
+import { computeTriangleNormal } from "./utils-3d.js";
 import { mat4, vec3 } from "./gl-matrix.js";
 import { align, sum } from "./math.js";
 import { getAABBFromPositions } from "./physics.js";
@@ -679,4 +679,3 @@ function createMeshBuilder(maps, uByteOff, vByteOff, iByteOff, indicesShift) {
 export function getAABBFromMesh(m) {
     return getAABBFromPositions(m.pos);
 }
-//# sourceMappingURL=mesh-pool.js.map

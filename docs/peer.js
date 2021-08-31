@@ -197,4 +197,3 @@ export class Peer {
         });
     }
 }
-//# sourceMappingURL=peer.js.map

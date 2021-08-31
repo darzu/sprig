@@ -71,6 +71,7 @@ export class Renderer_WebGPU {
         this.lastHeight = 0;
         this.aspectRatio = 1;
         this.needsRebundle = false;
+        this.scratchSceneUni = new Uint8Array(SceneUniform.ByteSizeAligned);
         this.canvas = canvas;
         this.device = device;
         this.context = context;
@@ -281,9 +282,8 @@ export class Renderer_WebGPU {
         const projectionMatrix = mat4.perspective(mat4.create(), (2 * Math.PI) / 5, this.aspectRatio, 1, 10000.0 /*view distance*/);
         const viewProj = mat4.multiply(mat4.create(), projectionMatrix, viewMatrix);
         this.sceneData.cameraViewProjMatrix = viewProj;
-        const sceneUniScratch = new Uint8Array(SceneUniform.ByteSizeAligned);
-        SceneUniform.Serialize(sceneUniScratch, 0, this.sceneData);
-        this.device.queue.writeBuffer(this.sceneUniformBuffer, 0, sceneUniScratch.buffer);
+        SceneUniform.Serialize(this.scratchSceneUni, 0, this.sceneData);
+        this.device.queue.writeBuffer(this.sceneUniformBuffer, 0, this.scratchSceneUni.buffer);
         // update all mesh transforms
         this.gpuBufferWriteAllMeshUniforms();
         // TODO(@darzu): more fine grain
@@ -335,4 +335,3 @@ export function setupScene() {
         cameraPos: vec3.create(), // updated later
     };
 }
-//# sourceMappingURL=render_webgpu.js.map

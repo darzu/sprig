@@ -163,4 +163,3 @@ export class GameState {
         this.collidesWith = checkCollisions(objs);
     }
 }
-//# sourceMappingURL=state.js.map
