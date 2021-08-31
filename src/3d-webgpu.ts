@@ -138,6 +138,7 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
 
     // TODO(@darzu): debug coloring
     const [r, g, b] = [Math.random(), Math.random(), Math.random()];
+    // console.log(r, g, b) // TODO(@darzu): 
 
     const prevNumTris = grassMeshPool._numTris;
     const prevNumVerts = grassMeshPool._numVerts;
@@ -275,6 +276,9 @@ function initGrassSystem(device: GPUDevice): GrassSystem {
         // tile
         bladeW: 0.1,
         bladeH: 1.7,
+        // TODO(@darzu): debugging
+        // spacing: 1,
+        // tileSize: 4,
         spacing: 0.25,
         tileSize: 10,
         // tileset

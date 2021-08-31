@@ -609,8 +609,9 @@ export function createMeshRenderer(
                 bundleEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
                 if (pool._indexBuffer)
                     bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-                else
-                    bundleEncoder.draw(m.triCount * 3, undefined, undefined, m.vertNumOffset);
+                else {
+                    bundleEncoder.draw(m.triCount * 3, undefined, m.vertNumOffset);
+                }
             }
         }
         renderBundle = bundleEncoder.finish()
@@ -679,8 +680,10 @@ export function createMeshRenderer(
                     shadowPass.setBindGroup(1, modelUniBindGroup, uniOffset);
                     if (pool._indexBuffer)
                         shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-                    else
-                        shadowPass.draw(m.triCount * 3, undefined, undefined, m.vertNumOffset);
+                    else {
+                        // console.log(`m.vertNumOffset: ${m.vertNumOffset}`)
+                        shadowPass.draw(m.triCount * 3, undefined, m.vertNumOffset);
+                    }
                 }
             }
             // shadowRenderBundle = shadowPass.finish()
