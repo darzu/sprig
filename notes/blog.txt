@@ -13,6 +13,10 @@ Micro entry:
     optional written text
     tags
 
+    maybe: "start from X (other project) and follow Y (YouTube link)"
+        creates a DAG between projects
+        can use a "create lesson plan" to come up with a traversal to a particular topic
+
     record and replay user inputs?
         resize canvas to 128x128 or something
 

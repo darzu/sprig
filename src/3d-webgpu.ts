@@ -241,7 +241,6 @@ function createGrassTileset(opts: GrassTileOpts & GrassTilesetOpts, device: GPUD
 
     grassMeshPool._map();
 
-
     for (let xi = 0; xi < tilesPerSide; xi++) {
         for (let zi = 0; zi < tilesPerSide; zi++) {
             const x = xi * tileSize;
