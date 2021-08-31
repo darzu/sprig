@@ -168,6 +168,8 @@ function addMeshToBuffers(m: Mesh, verts: Float32Array, numVerts: number, indice
     })
 }
 
+const sampleCount = 4;
+
 async function init(canvasRef: HTMLCanvasElement) {
     const adapter = await navigator.gpu.requestAdapter();
     const device = await adapter!.requestDevice();
@@ -235,14 +237,21 @@ async function init(canvasRef: HTMLCanvasElement) {
         verticesBuffer.unmap();
     }
 
+    // GPUDepthStencilStateDescriptor
 
 
     // Create the depth texture for rendering/sampling the shadow map.
-    const shadowDepthTexture = device.createTexture({
-        size: [shadowDepthTextureSize, shadowDepthTextureSize, 1],
+    const shadowDepthTextureDesc: GPUTextureDescriptor = {
+        size: {
+            width: shadowDepthTextureSize,
+            height: shadowDepthTextureSize,
+            // TODO(@darzu): deprecated
+            // depth: 1,
+        },
         usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.SAMPLED,
         format: 'depth32float',
-    });
+    }
+    const shadowDepthTexture = device.createTexture(shadowDepthTextureDesc);
     const shadowDepthTextureView = shadowDepthTexture.createView();
 
     // // Create some common descriptors used for both the shadow pipeline
@@ -327,11 +336,15 @@ async function init(canvasRef: HTMLCanvasElement) {
             depthCompare: 'less',
             format: 'depth24plus',
         },
+        multisample: {
+            count: sampleCount,
+        },
     });
 
     const depthTexture = device.createTexture({
         size: { width: canvasRef.width, height: canvasRef.width },
         format: 'depth24plus',
+        sampleCount,
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
 
@@ -353,12 +366,25 @@ async function init(canvasRef: HTMLCanvasElement) {
         ],
     });
 
+    // Declare swapchain image handles
+    let colorTexture: GPUTexture = device.createTexture({
+        size: {
+            width: canvasRef.width,
+            height: canvasRef.height,
+        },
+        sampleCount,
+        format: swapChainFormat,
+        usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });;
+    let colorTextureView: GPUTextureView = colorTexture.createView();
+
     const colorAtt: GPURenderPassColorAttachmentNew = {
-        view: { __brand: "GPUTextureView", label: "" }, // Assigned later
+        view: colorTextureView,
+        resolveTarget: swapChain.getCurrentTexture().createView(),
         loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
         storeOp: 'store',
     };
-    const renderPassDescriptor: GPURenderPassDescriptor = {
+    const renderPassDescriptor = {
         colorAttachments: [colorAtt],
         depthStencilAttachment: {
             view: depthTexture.createView(),
@@ -368,7 +394,9 @@ async function init(canvasRef: HTMLCanvasElement) {
             stencilLoadValue: 0,
             stencilStoreOp: 'store',
         },
-    };
+    } as const;
+
+
 
     const aspect = Math.abs(canvasRef.width / canvasRef.height);
     const projectionMatrix = mat4.create();
@@ -403,9 +431,12 @@ async function init(canvasRef: HTMLCanvasElement) {
             transformationMatrix.byteOffset,
             transformationMatrix.byteLength
         );
-        (renderPassDescriptor.colorAttachments as GPURenderPassColorAttachmentNew[])[0].view = swapChain
-            .getCurrentTexture()
-            .createView();
+
+
+        // Acquire next image from swapchain
+        colorTexture = swapChain.getCurrentTexture();
+        colorTextureView = colorTexture.createView();
+        renderPassDescriptor.colorAttachments[0].resolveTarget = colorTextureView;
 
         const commandEncoder = device.createCommandEncoder();
         const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
