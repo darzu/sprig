@@ -1,5 +1,6 @@
 
 import { mat4, vec3, quat } from '../ext/gl-matrix.js';
+import { align } from '../math.js';
 
 /*
 Abstractions:
@@ -116,7 +117,7 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
 
     const meshUniBufferSize = mat4ByteSize * maxMeshes;
     const _meshUniBuffer = device.createBuffer({
-        size: meshUniBufferSize,
+        size: align(meshUniBufferSize, 256),
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
     const _meshes: Mesh[] = [];
