@@ -12,6 +12,8 @@ import {
 } from "./mesh-pool.js";
 import { pitch } from "./utils-3d.js";
 
+const PIXEL_PER_PX: number | null = null;
+
 // TODO: some state lives in global variables when it should live on the Renderer object
 
 // shaders
@@ -134,7 +136,9 @@ export class Renderer_WebGPU implements Renderer {
 
   // recomputes textures, widths, and aspect ratio on canvas resize
   private checkCanvasResize() {
-    const devicePixelRatio = window.devicePixelRatio || 1;
+    const devicePixelRatio = PIXEL_PER_PX
+      ? PIXEL_PER_PX
+      : window.devicePixelRatio || 1;
     const newWidth = this.canvas.clientWidth * devicePixelRatio;
     const newHeight = this.canvas.clientHeight * devicePixelRatio;
     if (this.lastWidth === newWidth && this.lastHeight === newHeight) return;

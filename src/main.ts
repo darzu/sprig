@@ -713,6 +713,16 @@ async function startGame(host: string | null) {
   };
   onWindowResize();
 
+  // This tells Chrome that the canvas should be pixelated instead of blurred.
+  //    this looks better in lower resolution games and gives us full control over
+  //    resolution and blur.
+  // HACK: for some odd reason, setting this on a timeout is the only way I can get
+  //    Chrome to accept this property. Otherwise it'll only apply after the canvas
+  //    is resized by the user. (Version 94.0.4604.0 (Official Build) canary (arm64))
+  setTimeout(() => {
+    canvas.style.imageRendering = `pixelated`;
+  }, 50);
+
   const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
 
   let rendererInit: Renderer | undefined = undefined;
