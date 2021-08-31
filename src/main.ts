@@ -11,11 +11,12 @@ const indicesPerTriangle = 3;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
 
 const shaderSceneStruct = `
-[[block]] struct Scene {
-    cameraViewProjMatrix : mat4x4<f32>;
-    lightViewProjMatrix : mat4x4<f32>;
-    lightDir : vec3<f32>;
-}; `
+    [[block]] struct Scene {
+        cameraViewProjMatrix : mat4x4<f32>;
+        lightViewProjMatrix : mat4x4<f32>;
+        lightDir : vec3<f32>;
+    };
+`
 const vertexShaderForShadows = shaderSceneStruct + `
     [[block]] struct Model {
         modelMatrix : mat4x4<f32>;
@@ -181,79 +182,63 @@ function addMeshToBuffers(
         const triColors: [vec3, vec3, vec3] = [m.colors[i], m.colors[i], m.colors[i]];
         const prevNumVerts: number = prevNumVerts2 + i * 3;
         const prevNumTri: number = prevNumTri2 + i;
-        {
-            const vOff = prevNumVerts * vertElStride
-            const iOff = prevNumTri * indicesPerTriangle
-            if (indices) {
-                indices[iOff + 0] = triInd[0]
-                indices[iOff + 1] = triInd[1]
-                indices[iOff + 2] = triInd[2]
-            }
-            // set per-face vertex data
-            // position
-            verts[vOff + 0 * vertElStride + 0] = triPos[0][0]
-            verts[vOff + 0 * vertElStride + 1] = triPos[0][1]
-            verts[vOff + 0 * vertElStride + 2] = triPos[0][2]
-            verts[vOff + 1 * vertElStride + 0] = triPos[1][0]
-            verts[vOff + 1 * vertElStride + 1] = triPos[1][1]
-            verts[vOff + 1 * vertElStride + 2] = triPos[1][2]
-            verts[vOff + 2 * vertElStride + 0] = triPos[2][0]
-            verts[vOff + 2 * vertElStride + 1] = triPos[2][1]
-            verts[vOff + 2 * vertElStride + 2] = triPos[2][2]
-            // color
-            const [r1, g1, b1] = triColors[0]
-            const [r2, g2, b2] = triColors[1]
-            const [r3, g3, b3] = triColors[2]
-            verts[vOff + 0 * vertElStride + 3] = r1
-            verts[vOff + 0 * vertElStride + 4] = g1
-            verts[vOff + 0 * vertElStride + 5] = b1
-            verts[vOff + 1 * vertElStride + 3] = r2
-            verts[vOff + 1 * vertElStride + 4] = g2
-            verts[vOff + 1 * vertElStride + 5] = b2
-            verts[vOff + 2 * vertElStride + 3] = r3
-            verts[vOff + 2 * vertElStride + 4] = g3
-            verts[vOff + 2 * vertElStride + 5] = b3
-            // normals
-            const [nx1, ny1, nz1] = triNorms[0]
-            verts[vOff + 0 * vertElStride + 6] = nx1
-            verts[vOff + 0 * vertElStride + 7] = ny1
-            verts[vOff + 0 * vertElStride + 8] = nz1
-            const [nx2, ny2, nz2] = triNorms[1]
-            verts[vOff + 1 * vertElStride + 6] = nx2
-            verts[vOff + 1 * vertElStride + 7] = ny2
-            verts[vOff + 1 * vertElStride + 8] = nz2
-            const [nx3, ny3, nz3] = triNorms[2]
-            verts[vOff + 2 * vertElStride + 6] = nx3
-            verts[vOff + 2 * vertElStride + 7] = ny3
-            verts[vOff + 2 * vertElStride + 8] = nz3
+        const vOff = prevNumVerts * vertElStride
+        const iOff = prevNumTri * indicesPerTriangle
+        if (indices) {
+            indices[iOff + 0] = triInd[0]
+            indices[iOff + 1] = triInd[1]
+            indices[iOff + 2] = triInd[2]
         }
+        // set per-face vertex data
+        // position
+        verts[vOff + 0 * vertElStride + 0] = triPos[0][0]
+        verts[vOff + 0 * vertElStride + 1] = triPos[0][1]
+        verts[vOff + 0 * vertElStride + 2] = triPos[0][2]
+        verts[vOff + 1 * vertElStride + 0] = triPos[1][0]
+        verts[vOff + 1 * vertElStride + 1] = triPos[1][1]
+        verts[vOff + 1 * vertElStride + 2] = triPos[1][2]
+        verts[vOff + 2 * vertElStride + 0] = triPos[2][0]
+        verts[vOff + 2 * vertElStride + 1] = triPos[2][1]
+        verts[vOff + 2 * vertElStride + 2] = triPos[2][2]
+        // color
+        const [r1, g1, b1] = triColors[0]
+        const [r2, g2, b2] = triColors[1]
+        const [r3, g3, b3] = triColors[2]
+        verts[vOff + 0 * vertElStride + 3] = r1
+        verts[vOff + 0 * vertElStride + 4] = g1
+        verts[vOff + 0 * vertElStride + 5] = b1
+        verts[vOff + 1 * vertElStride + 3] = r2
+        verts[vOff + 1 * vertElStride + 4] = g2
+        verts[vOff + 1 * vertElStride + 5] = b2
+        verts[vOff + 2 * vertElStride + 3] = r3
+        verts[vOff + 2 * vertElStride + 4] = g3
+        verts[vOff + 2 * vertElStride + 5] = b3
+        // normals
+        const [nx1, ny1, nz1] = triNorms[0]
+        verts[vOff + 0 * vertElStride + 6] = nx1
+        verts[vOff + 0 * vertElStride + 7] = ny1
+        verts[vOff + 0 * vertElStride + 8] = nz1
+        const [nx2, ny2, nz2] = triNorms[1]
+        verts[vOff + 1 * vertElStride + 6] = nx2
+        verts[vOff + 1 * vertElStride + 7] = ny2
+        verts[vOff + 1 * vertElStride + 8] = nz2
+        const [nx3, ny3, nz3] = triNorms[2]
+        verts[vOff + 2 * vertElStride + 6] = nx3
+        verts[vOff + 2 * vertElStride + 7] = ny3
+        verts[vOff + 2 * vertElStride + 8] = nz3
     })
 }
 
-// TODO(@darzu): rename to MeshHandle ?
-interface Mesh {
+interface MeshHandle {
     // handles into the buffers
     vertNumOffset: number,
     indicesNumOffset: number,
     modelUniByteOffset: number,
     triCount: number,
-
     // data
     transform: mat4,
     model: MeshModel,
 }
-
-// TODO(@darzu): we want a nicer interface, but for now since it's 1-1 with the memory pool, just put it in that
-// interface MeshPool {
-//     _meshes: Mesh[],
-//     addMesh: (mesh: MeshModel) => void,
-// }
-
-// function createMeshPool(memPool: MeshMemoryPool) {
-//     const _meshes: Mesh[] = [];
-
-// }
-
 
 // TODO(@darzu): VERTEX FORMAT
 const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/ + 1/*swayHeight*/)
@@ -359,11 +344,11 @@ const _meshUniBuffer = device.createBuffer({
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 });
 
-const _meshes: Mesh[] = [];
+const _meshes: MeshHandle[] = [];
 let _numVerts = 0;
 let _numTris = 0;
-function addMeshes(meshesToAdd: MeshModel[], shadowCasters: boolean): Mesh[] {
-    function addMesh(m: MeshModel): Mesh {
+function addMeshes(meshesToAdd: MeshModel[], shadowCasters: boolean): MeshHandle[] {
+    function addMesh(m: MeshModel): MeshHandle {
         if (_vertsMap === null)
             throw "Use preRender() and postRender() functions"
 
@@ -381,7 +366,7 @@ function addMeshes(meshesToAdd: MeshModel[], shadowCasters: boolean): Mesh[] {
         const uniOffset = _meshes.length * meshUniByteSize;
         device.queue.writeBuffer(_meshUniBuffer, uniOffset, transform.buffer);
 
-        const res: Mesh = {
+        const res: MeshHandle = {
             vertNumOffset: _numVerts,
             indicesNumOffset: _numTris * 3,
             modelUniByteOffset: uniOffset,
@@ -425,7 +410,7 @@ const vertexBuffersLayout: GPUVertexBufferLayout[] = [{
 _vertsMap = new Float32Array(_vertBuffer.getMappedRange())
 _indMap = new Uint16Array(_indexBuffer.getMappedRange());
 
-function writeMeshTransform(m: Mesh) {
+function writeMeshTransform(m: MeshHandle) {
     device.queue.writeBuffer(_meshUniBuffer, m.modelUniByteOffset, (m.transform as Float32Array).buffer);
 }
 
