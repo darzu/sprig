@@ -137,7 +137,8 @@ async function init(canvasRef: HTMLCanvasElement) {
     }, device);
 
     // TODO(@darzu): 
-    const meshRenderer = createMeshRenderer(meshPool, device, context, canvasRef.width, canvasRef.height);
+    const meshRenderer = createMeshRenderer(
+        meshPool._opts.meshUniByteSize, meshPool._opts.vertByteSize, device, context, canvasRef.width, canvasRef.height);
 
     // TODO(@darzu): physics?
     // console.dir(RAPIER)
@@ -207,28 +208,30 @@ async function init(canvasRef: HTMLCanvasElement) {
 
         const spread = 20;
         const spacing = 1;
+        const bladeW = 0.2;
+        const bladeH = 2;
         let i = 0;
         for (let x = -spread; x < spread; x++) {
             for (let z = -spread; z < spread; z++) {
                 // TODO(@darzu): turn off back-face culling
                 addTriToBuffers(
                     [
-                        [x - 1, 0, z],
-                        [x + 1, 0, z],
-                        [x, 3, z],
+                        [x - bladeW, 0, z],
+                        [x + bladeW, 0, z],
+                        [x, bladeH, z],
                     ],
                     [0, 2, 1],
-                    [0, 0, -1],
+                    [0, 0, 1],
                     [0.2, 0.8, 0.2],
                     grassMeshPool._vertsMap(),
                     grassMeshPool._numVerts,
                     vertElStride,
                     grassMeshPool._indMap(),
                     grassMeshPool._numTris,
-                    false);
+                    true);
 
                 grassMeshPool._numTris += 1;
-                grassMeshPool._numVerts += 1;
+                grassMeshPool._numVerts += 3;
 
                 i++;
             }
@@ -243,6 +246,18 @@ async function init(canvasRef: HTMLCanvasElement) {
             trans.byteOffset,
             trans.byteLength
         );
+
+        const grassMesh: Mesh = {
+            vertNumOffset: 0,
+            indicesNumOffset: 0,
+            modelUniByteOffset: 0,
+            triCount: i,
+
+            transform: trans,
+            model: null as unknown as MeshModel,
+        };
+
+        grassMeshPool._meshes.push(grassMesh);
 
         grassMeshPool._unmap();
     }
@@ -392,7 +407,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         );
     }
 
-    meshRenderer.rebuildBundles();
+    meshRenderer.rebuildBundles([meshPool, grassMeshPool]);
 
     let debugDiv = document.getElementById('debug_div') as HTMLDivElement;
 
@@ -464,7 +479,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         // meshPool.preRender()
 
         const commandEncoder = device.createCommandEncoder();
-        meshRenderer.render(commandEncoder);
+        meshRenderer.render(commandEncoder, [meshPool, grassMeshPool]);
         device.queue.submit([commandEncoder.finish()]);
 
         requestAnimationFrame(frame);

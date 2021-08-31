@@ -187,6 +187,8 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
                 indicesNumOffset: _numTris * 3, // TODO(@darzu): 
                 modelUniByteOffset: uniOffset,
                 transform: trans,
+                triCount: m.tri.length,
+
                 model: m,
             }
             _numVerts += m.pos.length;
@@ -438,6 +440,8 @@ export interface Mesh {
     vertNumOffset: number,
     indicesNumOffset: number,
     modelUniByteOffset: number,
+    triCount: number,
+
     // data
     transform: mat4;
     model: MeshModel,
