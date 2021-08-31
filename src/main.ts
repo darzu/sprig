@@ -11,6 +11,7 @@ class Plane extends GameObject {
   constructor(id: number) {
     super(id);
     this.color = vec3.fromValues(0.02, 0.02, 0.02);
+    this.static = true;
   }
 
   mesh(): Mesh {

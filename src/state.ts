@@ -33,6 +33,9 @@ export abstract class GameObject {
   authority: number;
   authority_seq: number;
   snap_seq: number;
+  static: boolean;
+
+  // TODO(@darzu): hack state
   color: vec3;
 
   // physics
@@ -47,6 +50,7 @@ export abstract class GameObject {
     this.authority = 0;
     this.authority_seq = 0;
     this.snap_seq = -1;
+    this.static = false;
 
     // TODO(@darzu): this is a hack.
     this.color = vec3.fromValues(0, 0, 0);
@@ -71,6 +75,7 @@ export abstract class GameObject {
       authority: this.authority,
       authority_seq: this.authority_seq,
       type: this.type(),
+      static: this.static,
     };
     return obj;
   }
@@ -127,7 +132,7 @@ export abstract class GameState<Inputs> {
 
     // physics
     // TODO(@darzu): create physics object
-    const rigidBodyDesc = RAPIER.RigidBodyDesc.newDynamic()
+    const rigidBodyDesc = (obj.static ? RAPIER.RigidBodyDesc.newStatic() : RAPIER.RigidBodyDesc.newDynamic())
       .setTranslation(obj.location[0], obj.location[1], obj.location[2]);
     const rigidBody = this.world.createRigidBody(rigidBodyDesc);
     this.objectBodies[obj.id] = rigidBody;
@@ -149,6 +154,7 @@ export abstract class GameState<Inputs> {
     obj.linear_velocity = netObj.linear_velocity;
 
     obj.at_rest = netObj.at_rest;
+    obj.static = netObj.static;
 
     obj.angular_velocity = netObj.angular_velocity;
     obj.rotation = netObj.rotation;
