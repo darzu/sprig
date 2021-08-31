@@ -131,9 +131,9 @@ const wgslShaders = {
 
     struct VertexOutput {
         [[location(0)]] shadowPos : vec3<f32>;
-        [[location(1)]] fragNorm : vec3<f32>;
+        [[location(1)]] normal : vec3<f32>;
         [[location(2)]] color : vec3<f32>;
-        [[builtin(position)]] Position : vec4<f32>;
+        [[builtin(position)]] position : vec4<f32>;
     };
 
     [[stage(vertex)]]
@@ -143,21 +143,16 @@ const wgslShaders = {
         [[location(2)]] normal : vec3<f32>,
         ) -> VertexOutput {
         var output : VertexOutput;
-
         let worldPos: vec4<f32> = model.modelMatrix * vec4<f32>(position, 1.0);
-
         // XY is in (-1, 1) space, Z is in (0, 1) space
         let posFromLight : vec4<f32> = scene.lightViewProjMatrix * worldPos;
-
-        // Convert XY to (0, 1)
-        // Y is flipped because texture coords are Y-down.
+        // Convert XY to (0, 1), Y is flipped because texture coords are Y-down.
         output.shadowPos = vec3<f32>(
             posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5),
             posFromLight.z
         );
-
-        output.Position = scene.cameraViewProjMatrix * worldPos;
-        output.fragNorm = normalize(model.modelMatrix * vec4<f32>(normal, 0.0)).xyz;
+        output.position = scene.cameraViewProjMatrix * worldPos;
+        output.normal = normalize(model.modelMatrix * vec4<f32>(normal, 0.0)).xyz;
         output.color = color;
         return output;
     }
@@ -177,11 +172,11 @@ const wgslShaders = {
     [[stage(fragment)]]
     fn main(
         [[location(0)]] shadowPos : vec3<f32>,
-        [[location(1)]] fragNorm : vec3<f32>,
+        [[location(1)]] normal : vec3<f32>,
         [[location(2)]] color : vec3<f32>,
         ) -> [[location(0)]] vec4<f32> {
         let shadowVis : f32 = textureSampleCompare(shadowMap, shadowSampler, shadowPos.xy, shadowPos.z - 0.007);
-        let sunLight : f32 = shadowVis * clamp(dot(-scene.lightDir, fragNorm), 0.0, 1.0);
+        let sunLight : f32 = shadowVis * clamp(dot(-scene.lightDir, normal), 0.0, 1.0);
         let resultColor: vec3<f32> = color * (sunLight * 2.0 + 0.2);
         let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
         return vec4<f32>(gammaCorrected, 1.0);
@@ -634,19 +629,13 @@ const renderSharedUniBindGroupLayout = device.createBindGroupLayout({
     ],
 });
 
-// Create the depth texture for rendering/sampling the shadow map.
 const shadowDepthTexture = device.createTexture(shadowDepthTextureDesc);
-// TODO(@darzu): use
 const shadowDepthTextureView = shadowDepthTexture.createView();
 
 // TODO(@darzu): SCENE FORMAT
 const sharedUniBufferSize =
-    // Two 4x4 viewProj matrices,
-    // one for the camera and one for the light.
-    // Then a vec3 for the light position.
     bytesPerMat4 * 2 // camera and light projection
     + bytesPerVec3 * 1 // light pos
-// + bytesPerFloat * 1 // time
 const sharedUniBuffer = device.createBuffer({
     size: align(sharedUniBufferSize, 256),
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -655,87 +644,37 @@ const sharedUniBuffer = device.createBuffer({
 const shadowSharedUniBindGroup = device.createBindGroup({
     layout: shadowSharedUniBindGroupLayout,
     entries: [
-        {
-            binding: 0,
-            resource: {
-                buffer: sharedUniBuffer,
-            },
-        },
+        { binding: 0, resource: { buffer: sharedUniBuffer } }
     ],
 });
 
 const renderSharedUniBindGroup = device.createBindGroup({
     layout: renderSharedUniBindGroupLayout,
     entries: [
-        {
-            binding: 0,
-            resource: {
-                buffer: sharedUniBuffer,
-            },
-        },
-        {
-            binding: 1,
-            resource: shadowDepthTextureView,
-        },
-        {
-            binding: 2,
-            // TODO(@darzu): what's a sampler here?
-            resource: device.createSampler({
-                compare: 'less',
-            }),
-        },
+        { binding: 0, resource: { buffer: sharedUniBuffer } },
+        { binding: 1, resource: shadowDepthTextureView },
+        { binding: 2, resource: device.createSampler({ compare: 'less' }) },
     ],
 });
 
-const vertexBuffersLayout: GPUVertexBufferLayout[] = [
-    {
-        // TODO(@darzu): the buffer index should be connected to the pool probably?
-        // TODO(@darzu): VERTEX FORMAT
-        arrayStride: vertByteSize,
-        attributes: [
-            {
-                // position
-                shaderLocation: 0,
-                offset: bytesPerVec3 * 0,
-                format: 'float32x3',
-            },
-            {
-                // color
-                shaderLocation: 1,
-                offset: bytesPerVec3 * 1,
-                format: 'float32x3',
-            },
-            {
-                // normals
-                shaderLocation: 2,
-                offset: bytesPerVec3 * 2,
-                format: 'float32x3',
-            },
-            {
-                // sway height
-                shaderLocation: 3,
-                offset: bytesPerVec3 * 3,
-                format: 'float32',
-            },
-            // {
-            //     // uv
-            //     shaderLocation: 1,
-            //     offset: cubeUVOffset,
-            //     format: 'float32x2',
-            // },
-        ],
-    },
-];
+const vertexBuffersLayout: GPUVertexBufferLayout[] = [{
+    arrayStride: vertByteSize,
+    attributes: [
+        // position
+        { shaderLocation: 0, offset: bytesPerVec3 * 0, format: 'float32x3' },
+        // color
+        { shaderLocation: 1, offset: bytesPerVec3 * 1, format: 'float32x3' },
+        // normals
+        { shaderLocation: 2, offset: bytesPerVec3 * 2, format: 'float32x3' },
+        // sway height
+        { shaderLocation: 3, offset: bytesPerVec3 * 3, format: 'float32' },
+    ],
+}];
 
 const primitiveBackcull: GPUPrimitiveState = {
     topology: 'triangle-list',
     cullMode: 'back',
-    // frontFace: 'ccw', // TODO(dz):
-};
-const primitiveTwosided: GPUPrimitiveState = {
-    topology: 'triangle-list',
-    cullMode: 'none',
-    // frontFace: 'ccw', // TODO(dz):
+    frontFace: 'ccw',
 };
 
 const shadowPipelineLayout = device.createPipelineLayout({
@@ -743,20 +682,14 @@ const shadowPipelineLayout = device.createPipelineLayout({
 });
 
 const shadowPipelineDesc: GPURenderPipelineDescriptor = {
-    layout: shadowPipelineLayout, // TODO(@darzu): same for shadow and not?
+    layout: shadowPipelineLayout,
     vertex: {
-        module: device.createShaderModule({
-            code: wgslShaders.vertexShadow,
-        }),
+        module: device.createShaderModule({ code: wgslShaders.vertexShadow }),
         entryPoint: 'main',
         buffers: vertexBuffersLayout,
     },
     fragment: {
-        // This should be omitted and we can use a vertex-only pipeline, but it's
-        // not yet implemented.
-        module: device.createShaderModule({
-            code: wgslShaders.fragmentShadow,
-        }),
+        module: device.createShaderModule({ code: wgslShaders.fragmentShadow }),
         entryPoint: 'main',
         targets: [],
     },
@@ -769,10 +702,6 @@ const shadowPipelineDesc: GPURenderPipelineDescriptor = {
 };
 
 const shadowPipeline = device.createRenderPipeline(shadowPipelineDesc);
-const shadowPipelineTwosided = device.createRenderPipeline({
-    ...shadowPipelineDesc,
-    primitive: primitiveTwosided
-});
 
 const renderPipelineLayout = device.createPipelineLayout({
     bindGroupLayouts: [renderSharedUniBindGroupLayout, modelUniBindGroupLayout],
@@ -781,26 +710,14 @@ const renderPipelineLayout = device.createPipelineLayout({
 const renderPipelineDesc: GPURenderPipelineDescriptor = {
     layout: renderPipelineLayout,
     vertex: {
-        module: device.createShaderModule({
-            code: wgslShaders.vertex,
-            // TODO(@darzu):
-            // code: basicVertWGSL,
-        }),
+        module: device.createShaderModule({ code: wgslShaders.vertex }),
         entryPoint: 'main',
         buffers: vertexBuffersLayout,
     },
     fragment: {
-        module: device.createShaderModule({
-            code: wgslShaders.fragment,
-            // TODO(@darzu):
-            // code: vertexPositionColorWGSL,
-        }),
+        module: device.createShaderModule({ code: wgslShaders.fragment }),
         entryPoint: 'main',
-        targets: [
-            {
-                format: swapChainFormat,
-            },
-        ],
+        targets: [{ format: swapChainFormat }],
     },
     primitive: primitiveBackcull,
 
