@@ -139,6 +139,22 @@ const PLANE: MeshModel = {
     ],
 }
 
+const GRASS: MeshModel = {
+    pos: [
+        [+1, 0, 0],
+        [-1, 0, 0],
+        [0, 3, 0],
+    ],
+    tri: [
+        [0, 1, 2],
+        [2, 1, 0],
+    ],
+    colors: [
+        [0.2, 0.6, 0.2],
+        [0.2, 0.5, 0.2],
+    ],
+}
+
 function computeNormal([p1, p2, p3]: [vec3, vec3, vec3]): vec3 {
     // https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
     // cross product of two edges
@@ -699,6 +715,7 @@ async function init(canvasRef: HTMLCanvasElement) {
             meshes.push(addMesh(CUBE))
             meshes.push(addMesh(CUBE))
             meshes.push(addMesh(CUBE))
+            meshes.push(addMesh(GRASS))
         }
 
         indexBuffer.unmap();
