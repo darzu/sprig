@@ -70,4 +70,10 @@ Defold:
   https://github.com/defold/defold
   Owned by King (Candy Crush, etc)
 
+Google Docs switching to canvas:
+  https://workspaceupdates.googleblog.com/2021/05/Google-Docs-Canvas-Based-Rendering-Update.html
+
+Flutter does all UI via canvas:
+  https://gallery.flutter.dev/#/
+
 

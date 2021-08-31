@@ -1,6 +1,10 @@
 https://pixelprospector.com
 turbosquid
 https://opengameart.org
+https://blendermarket.com
+
+format:
+    https://github.com/libgdx/fbx-conv
 
 Roblox assets:
     Either catalog asset IDs
@@ -17,3 +21,26 @@ Roblox assets:
     Creating t-shits and pants:
         https://developer.roblox.com/en-us/articles/How-to-Make-Shirts-and-Pants-for-Roblox-Characters
         works even for R15 models
+
+Art references:
+    Humanoids:
+        https://www.artstation.com/marketplace/p/dVN0/stylized-anatomy-basemeshes 
+
+3D scan:
+    "photogrammetry"
+    https://www.capturingreality.com
+    https://medium.com/embarkstudios/one-click-photogrammetry-17e24f63f4f4
+    https://alicevision.org/#meshroom
+    https://www.meshmixer.com/download.html
+    https://sketchfab.com/blogs/community/3d-scanning-with-the-iphone-12-pro-lidar/
+        http://3dscannerapp.com
+        https://poly.cam
+        https://apps.apple.com/us/app/scaniverse-3d-scanner/id1541433223
+    point cloud vs mesh
+
+TO LEARN:
+    UV Wraps ?
+
+Procedural by example:
+    https://www.youtube.com/watch?v=yED9t2tImog
+    

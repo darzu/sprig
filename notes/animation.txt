@@ -19,3 +19,21 @@ DIY mocap:
 Robolox style, standard "knight" animations:
     Run, Walk, Jump, Idle, Fall, Swim, Climb
     supports multiple animations per category, indicating (weighted) variation
+
+Skinned vs not:
+    Skinned introduces new vertices (I think)
+        Mixamo introduces lots of new triangles
+
+TO LEARN:
+    https://www.youtube.com/watch?v=zp6kCe5Kmf4
+
+Rigid animation:
+    Seperate meshes, childed, placed with offsets
+        Also works well for body animations like a rock golum
+    Single vertex buffer, just stretched
+
+FBX format:
+    https://code.blender.org/2013/08/fbx-binary-file-format-specification/
+
+low poly riging:
+    https://www.youtube.com/watch?v=srpOeu9UUBU

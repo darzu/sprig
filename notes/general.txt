@@ -373,3 +373,8 @@ HackMD.io
 
 Flash-like animations:
   https://www.rive.app
+
+
+  Simplify each task, relentlessly make it easier at simpler
+    3D modeling -> side,front view vertex dragging
+    
