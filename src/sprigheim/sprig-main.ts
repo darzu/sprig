@@ -395,7 +395,7 @@ function unshareProvokingVertices(input: Mesh): Mesh {
 
 
 // define our meshes (ideally these would be imported from a standard format)
-const CUBE: Mesh = unshareProvokingVertices({
+export const CUBE: Mesh = unshareProvokingVertices({
     pos: [
         [+1.0, +1.0, +1.0],
         [-1.0, +1.0, +1.0],

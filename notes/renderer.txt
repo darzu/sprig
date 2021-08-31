@@ -35,6 +35,9 @@ HAXE:
     Northgard, Dead Cells, "Papers, Please", Rymdkapsel
   https://github.com/armory3d
 
+  Heaps.io:
+    https://heaps.io
+
 Multi-platform:
   https://github.com/expo/expo/tree/master/packages/expo-gl#expo-gl
 

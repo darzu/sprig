@@ -156,9 +156,7 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         })
         m.tri.forEach((triInd, i) => {
             const iOff = (builder.numTris + i) * indicesPerTriangle
-            indicesMap[iOff + 0] = triInd[0]
-            indicesMap[iOff + 1] = triInd[1]
-            indicesMap[iOff + 2] = triInd[2]
+            builder.indicesMap.set(triInd, iOff)
             const vOff = (builder.numVerts + triInd[0]) * vertByteSize
             const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
             setVertexData(verticesMap, [m.pos[triInd[0]], m.colors[i], normal, VertexKind.normal], vOff)

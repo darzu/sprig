@@ -1,7 +1,7 @@
 import { mat4, vec3 } from "../ext/gl-matrix.js";
 import { align, jitter } from "../math.js";
 import { createMeshPoolBuilder, meshApplyUniformData, MeshHandle, MeshPool, MeshPoolBuilder } from "./mesh-pool.js";
-import { getPositionFromTransform, meshUniByteSizeAligned, setVertexData, vertByteSize, VertexData, VertexKind } from "./sprig-main.js";
+import { computeTriangleNormal, CUBE, getPositionFromTransform, Mesh, meshUniByteSizeAligned, setVertexData, vertByteSize, VertexData, VertexKind } from "./sprig-main.js";
 
 const RENDER_GRASS = true;
 
@@ -26,14 +26,122 @@ interface GrassTilesetOpts {
     tilesPerSide: number,
 }
 
-function createGrassTile(opts: GrassTileOpts, builder: MeshPoolBuilder): MeshHandle {
+interface AABB {
+    min: vec3,
+    max: vec3,
+}
+
+function getAABBFromMesh(m: Mesh): AABB {
+
+    const min = vec3.fromValues(99999.0, 99999.0, 99999.0) as Float32Array
+    const max = vec3.fromValues(-99999.0, -99999.0, -99999.0) as Float32Array
+
+    for (let pos of m.pos) {
+        min[0] = Math.min(pos[0], min[0])
+        min[1] = Math.min(pos[1], min[1])
+        min[2] = Math.min(pos[2], min[2])
+        max[0] = Math.max(pos[0], max[0])
+        max[1] = Math.max(pos[1], max[1])
+        max[2] = Math.max(pos[2], max[2])
+    }
+
+    return { min, max }
+}
+
+function addMesh(m: Mesh, builder: MeshPoolBuilder): MeshHandle {
+
+    const vertNumOffset = builder.numVerts;
+    const indicesNumOffset = builder.numTris * 3;
+
+    m.pos.forEach((pos, i) => {
+        const vOff = (builder.numVerts + i) * vertByteSize
+        setVertexData(builder.verticesMap, [pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0], VertexKind.normal], vOff)
+    })
+    m.tri.forEach((triInd, i) => {
+        const iOff = (builder.numTris + i) * 3
+        builder.indicesMap.set(triInd, iOff)
+        const vOff = (builder.numVerts + triInd[0]) * vertByteSize
+        const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
+        setVertexData(builder.verticesMap, [m.pos[triInd[0]], m.colors[i], normal, VertexKind.normal], vOff)
+        // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
+    })
+
+    builder.numVerts += m.pos.length;
+    builder.numTris += m.tri.length;
+
+    const transform = mat4.create() as Float32Array;
+
+    const uniOffset = builder.allMeshes.length * meshUniByteSizeAligned;
+
+    const { min: modelMin, max: modelMax } = getAABBFromMesh(m);
+
+    // TODO(@darzu): MESH FORMAT
+    // TODO(@darzu): seems each element needs to be 4-byte aligned
+    const f32Scratch = new Float32Array(4 * 4 + 4 + 4);
+    f32Scratch.set(transform, 0)
+    f32Scratch.set(modelMin, align(4 * 4, 4))
+    f32Scratch.set(modelMax, align(4 * 4 + 3, 4))
+    const u8Scratch = new Uint8Array(f32Scratch.buffer);
+
+    // console.dir({ floatBuff: f32Scratch })
+    builder.uniformMap.set(u8Scratch, uniOffset)
+
+    console.log(`uniOffset: ${uniOffset}`);
+
+    const res: MeshHandle = {
+        vertNumOffset,
+        indicesNumOffset,
+        modelUniByteOffset: uniOffset,
+        transform,
+        modelMin,
+        modelMax,
+        numTris: m.tri.length,
+        model: m,
+        pool: builder.poolHandle,
+    }
+
+    builder.allMeshes.push(res)
+    return res;
+}
+
+function createGrassTileMesh(opts: GrassTileOpts): Mesh {
     const { spacing, tileSize: size, bladeW, bladeH } = opts;
-    console.log("createGrassTile")
 
     const [r, g, b] = [Math.random(), Math.random(), Math.random()];
 
-    const prevNumTris = builder.numTris;
-    const prevNumVerts = builder.numVerts;
+    const pos: vec3[] = []
+    const tri: vec3[] = []
+    const colors: vec3[] = []
+
+    let i = 0;
+    for (let xi = 0.0; xi < size; xi += spacing) {
+        for (let zi = 0.0; zi < size; zi += spacing) {
+
+            pos.push([xi, 0, zi])
+            pos.push([xi, 0, zi + spacing])
+            pos.push([xi + spacing, 0, zi])
+
+            tri.push([0 + i * 3, 1 + i * 3, 2 + i * 3])
+
+            colors.push([r, g, b])
+
+            i++;
+        }
+    }
+
+    return {
+        pos, tri, colors,
+        usesProvoking: true,
+    }
+}
+function createGrassTile(opts: GrassTileOpts, builder: MeshPoolBuilder): MeshHandle {
+    const { spacing, tileSize: size, bladeW, bladeH } = opts;
+    // console.log("createGrassTile")
+
+    const [r, g, b] = [Math.random(), Math.random(), Math.random()];
+
+    const vertNumOffset = builder.numVerts;
+    const indicesNumOffset = builder.numTris * 3;
 
     let i = 0;
     for (let xi = 0.0; xi < size; xi += spacing) {
@@ -55,26 +163,43 @@ function createGrassTile(opts: GrassTileOpts, builder: MeshPoolBuilder): MeshHan
             builder.numVerts += 3;
 
             i++;
-            continue;
         }
     }
 
+    const uniOffset = builder.allMeshes.length * meshUniByteSizeAligned;
+
+    const modelMin = vec3.fromValues(-spacing, 0, -spacing);
+    const modelMax = vec3.fromValues(size * spacing, bladeH * 2, size * spacing);
+
+    const transform = mat4.create();
+    const f32Scratch = new Float32Array(4 * 4 + 4 + 4);
+    f32Scratch.set(transform, 0)
+    f32Scratch.set(modelMin, align(4 * 4, 4))
+    f32Scratch.set(modelMax, align(4 * 4 + 3, 4))
+    const u8Scratch = new Uint8Array(f32Scratch.buffer);
+
+    // console.dir({ floatBuff: f32Scratch })
+    builder.uniformMap.set(u8Scratch, uniOffset)
+
+    console.log(`uniOffset: ${uniOffset}`);
+
     // TODO(@darzu): compute correct offsets
     const grassMesh: MeshHandle = {
-        vertNumOffset: prevNumVerts,
-        indicesNumOffset: prevNumTris * 3,
-        modelUniByteOffset: meshUniByteSizeAligned * builder.allMeshes.length,
+        vertNumOffset,
+        indicesNumOffset,
+        modelUniByteOffset: uniOffset,
         numTris: i,
 
         // used and updated elsewhere
-        transform: mat4.create(),
-        modelMin: vec3.fromValues(-spacing, 0, -spacing),
-        modelMax: vec3.fromValues(size * spacing, bladeH * 2, size * spacing),
+        transform,
+        modelMin,
+        modelMax,
 
         pool: builder.poolHandle,
         model: undefined,
     };
 
+    // console.log(`tile has ${i} tris`);
 
     builder.allMeshes.push(grassMesh);
 
@@ -94,7 +219,7 @@ function createGrassTileset(opts: GrassTilesetOpts, device: GPUDevice): GrassTil
     const grassPerTile = (tileSize / spacing) ** 2;
     const tileCount = tilesPerSide ** 2;
     const totalGrass = grassPerTile * tileCount;
-    const totalGrassTris = totalGrass * 1;
+    const totalGrassTris = totalGrass * 1 + 1000;
     const builder = createMeshPoolBuilder(device, {
         maxVerts: align(totalGrassTris * 3, 4),
         maxTris: align(totalGrassTris, 4),
@@ -111,7 +236,14 @@ function createGrassTileset(opts: GrassTilesetOpts, device: GPUDevice): GrassTil
         for (let zi = 0; zi < tilesPerSide; zi++) {
             const x = xi * tileSize;
             const z = zi * tileSize;
-            const tile = createGrassTile(tileOpts, builder);
+
+            const color: vec3 = [Math.random(), Math.random(), Math.random()];
+            const coloredCube: Mesh = { ...CUBE, colors: CUBE.colors.map(_ => color) }
+            // TODO(@darzu): create the grass tile as a Mesh
+            // const tile = addMesh(coloredCube, builder);
+            const tile = addMesh(createGrassTileMesh(tileOpts), builder);
+            // const tile = createGrassTile(tileOpts, builder);
+            // builder.numTris += 1000;
             mat4.translate(tile.transform, tile.transform, [x, 0, z])
         }
     }
@@ -122,55 +254,70 @@ function createGrassTileset(opts: GrassTilesetOpts, device: GPUDevice): GrassTil
 
     // handle grass tile movement
     function update(target: vec3) {
-        const [tx, _, tz] = target;
+        // const [tx, _, tz] = target;
 
-        // compute the N closest centers
-        const txi = tx / opts.tileSize;
-        const nearestXIs = nearestIntegers(txi, opts.tilesPerSide)
-        const tzi = tz / opts.tileSize;
-        const nearestZIs = nearestIntegers(tzi, opts.tilesPerSide)
-        const nearestIs: [number, number][] = []
-        for (let xi of nearestXIs)
-            for (let zi of nearestZIs)
-                nearestIs.push([xi, zi])
+        // // compute the N closest centers
+        // const txi = tx / opts.tileSize;
+        // const nearestXIs = nearestIntegers(txi, opts.tilesPerSide)
+        // const tzi = tz / opts.tileSize;
+        // const nearestZIs = nearestIntegers(tzi, opts.tilesPerSide)
+        // const nearestIs: [number, number][] = []
+        // for (let xi of nearestXIs)
+        //     for (let zi of nearestZIs)
+        //         nearestIs.push([xi, zi])
 
-        // compare with current positions
-        const occupied: [number, number][] = []
-        const toMoveInds: number[] = []
-        const tilePoses: vec3[] = tiles.map(t => getPositionFromTransform(t.transform))
-        for (let i = 0; i < tiles.length; i++) {
-            const t = tiles[i]
-            const [x, _, z] = tilePoses[i]
-            const xi = Math.floor((x + 0.5) / opts.tileSize)
-            const zi = Math.floor((z + 0.5) / opts.tileSize)
-            let shouldMove = true;
-            for (let [xi2, zi2] of nearestIs) {
-                if (xi2 === xi && zi2 === zi) {
-                    occupied.push([xi2, zi2])
-                    shouldMove = false;
-                    break;
-                }
+        // // compare with current positions
+        // const occupied: [number, number][] = []
+        // const toMoveInds: number[] = []
+        // const tilePoses: vec3[] = tiles.map(t => getPositionFromTransform(t.transform))
+        // for (let i = 0; i < tiles.length; i++) {
+        //     const t = tiles[i]
+        //     const [x, _, z] = tilePoses[i]
+        //     const xi = Math.floor((x + 0.5) / opts.tileSize)
+        //     const zi = Math.floor((z + 0.5) / opts.tileSize)
+        //     let shouldMove = true;
+        //     for (let [xi2, zi2] of nearestIs) {
+        //         if (xi2 === xi && zi2 === zi) {
+        //             occupied.push([xi2, zi2])
+        //             shouldMove = false;
+        //             break;
+        //         }
+        //     }
+        //     if (shouldMove)
+        //         toMoveInds.push(i)
+        // }
+
+        // // move those that don't match
+        // for (let i of toMoveInds) {
+        //     const t = tiles[i]
+        //     for (let [xi1, zi1] of nearestIs) {
+        //         const isOpen = !occupied.some(([xi2, zi2]) => xi2 === xi1 && zi2 === zi1)
+        //         if (!isOpen)
+        //             continue;
+        //         // do move
+        //         occupied.push([xi1, zi1])
+        //         const targetPos: vec3 = [xi1 * opts.tileSize, 0, zi1 * opts.tileSize]
+        //         const move = vec3.subtract(vec3.create(), targetPos, tilePoses[i])
+        //         mat4.translate(t.transform, t.transform, move)
+        //         // console.log(`moving (${tilePoses[i][0]}, ${tilePoses[i][1]}, ${tilePoses[i][2]}) to (${targetPos[0]}, ${targetPos[1]}, ${targetPos[2]}) via (${move[0]}, ${move[1]}, ${move[2]})`)
+        //         // meshApplyUniformData(t)
+        //         break;
+        //     }
+        // }
+
+        let i = 0;
+        for (let x = 0; x < tilesPerSide; x++) {
+            for (let y = 0; y < tilesPerSide; y++) {
+                // const move = vec3.subtract(vec3.create(), targetPos, tilePoses[i])
+                const t = tiles[i]
+                const move = vec3.fromValues(x * tileSize, 0, y * tileSize);
+                mat4.translate(t.transform, mat4.create(), move)
+                i++;
             }
-            if (shouldMove)
-                toMoveInds.push(i)
         }
 
-        // move those that don't match
-        for (let i of toMoveInds) {
-            const t = tiles[i]
-            for (let [xi1, zi1] of nearestIs) {
-                const isOpen = !occupied.some(([xi2, zi2]) => xi2 === xi1 && zi2 === zi1)
-                if (!isOpen)
-                    continue;
-                // do move
-                occupied.push([xi1, zi1])
-                const targetPos: vec3 = [xi1 * opts.tileSize, 0, zi1 * opts.tileSize]
-                const move = vec3.subtract(vec3.create(), targetPos, tilePoses[i])
-                mat4.translate(t.transform, t.transform, move)
-                // console.log(`moving (${tilePoses[i][0]}, ${tilePoses[i][1]}, ${tilePoses[i][2]}) to (${targetPos[0]}, ${targetPos[1]}, ${targetPos[2]}) via (${move[0]}, ${move[1]}, ${move[2]})`)
-                meshApplyUniformData(t)
-                break;
-            }
+        for (let t of tiles) {
+            meshApplyUniformData(t)
         }
     }
 
@@ -202,15 +349,6 @@ export function initGrassSystem(device: GPUDevice): GrassSystem {
         }
     }
 
-    // TODO(@darzu): try upside down triangles
-    const lod1Opts: GrassTilesetOpts = {
-        bladeW: 0.2,
-        bladeH: 1.8,
-        spacing: 0.25,
-        tileSize: 16,
-        tilesPerSide: 5,
-    }
-
     const lodDebug: GrassTilesetOpts = {
         bladeW: 0.4,
         bladeH: 2,
@@ -225,17 +363,18 @@ export function initGrassSystem(device: GPUDevice): GrassSystem {
         lodDebug
     ]
 
-    const tilesets = lodOpts.map(opts => createGrassTileset(opts, device))
+    const tileset = createGrassTileset(lodDebug, device);
+    // const tilesets = lodOpts.map(opts => createGrassTileset(opts, device))
 
     function updateAll(target: vec3) {
-        tilesets.forEach(t => t.update(target))
+        tileset.update(target)
     }
 
-    const numTris = tilesets.map(s => s.pool.numTris).reduce((p, n) => p + n, 0)
+    const numTris = tileset.pool.numTris;
     console.log(`Creating grass system with ${(numTris / 1000).toFixed(0)}k triangles.`);
 
     const res: GrassSystem = {
-        getGrassPools: () => tilesets.map(t => t.pool),
+        getGrassPools: () => [tileset.pool],
         update: updateAll,
     }
     return res;
