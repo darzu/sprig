@@ -193,17 +193,17 @@ export function stepPhysics(
         if (leftMaxContrib + rightMaxContrib < overlap - PAD * itr) {
           // we can't get unstuck going backward, so don't try
           // maybe we'll tunnel through
-          // TODO(@darzu): DEBUG
-          if (i === 1) {
-            console.log(
-              `give up: ${a.id}vs${b.id} i: ${itr} o: ${overlap.toFixed(
-                2
-              )} l: ${leftMaxContrib.toFixed(2)} r: ${rightMaxContrib.toFixed(
-                2
-              )}`
-            );
-            // throw `TUNNELING!!`; // TODO(@darzu):
-          }
+          // TODO(@darzu): TO DEBUG
+          // if (i === 1) {
+          //   console.log(
+          //     `give up: ${a.id}vs${b.id} i: ${itr} o: ${overlap.toFixed(
+          //       2
+          //     )} l: ${leftMaxContrib.toFixed(2)} r: ${rightMaxContrib.toFixed(
+          //       2
+          //     )}`
+          //   );
+          //   // throw `TUNNELING!!`; // TODO(@darzu):
+          // }
           continue;
         }
         if (leftMaxContrib === 0 && rightMaxContrib === 0)
