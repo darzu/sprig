@@ -147,11 +147,10 @@ interface Mesh {
     pos: vec3[];
     tri: vec3[];
     colors: vec3[];  // colors per triangle in r,g,b float [0-1] format
+    usesProvoking?: boolean,
+    verticesUnshared?: boolean,
 }
 
-// normally vertices can be shared by triangles, so this duplicates vertices as necessary so they are unshared
-// TODO: this shouldn't be needed once "flat" shading is supported in Chrome's WGSL, see:
-//      https://bugs.chromium.org/p/tint/issues/detail?id=746&q=interpolate&can=2
 function unshareVertices(input: Mesh): Mesh {
     const pos: vec3[] = []
     const tri: vec3[] = []
@@ -165,7 +164,7 @@ function unshareVertices(input: Mesh): Mesh {
             i * 3 + 2,
         ])
     })
-    return { pos, tri, colors: input.colors }
+    return { pos, tri, colors: input.colors, verticesUnshared: true }
 }
 function unshareProvokingVertices(input: Mesh): Mesh {
     const pos: vec3[] = [...input.pos]
@@ -176,16 +175,15 @@ function unshareProvokingVertices(input: Mesh): Mesh {
             // First vertex is unused as a provoking vertex, so we'll use it for this triangle.
             provoking[i0] = true;
             tri.push([i0, i1, i2])
-        } else if (!provoking[i1] || !provoking[i2]) {
+        } else if (!provoking[i1]) {
             // First vertex was taken, so let's see if we can rotate the indices to get an unused 
             // provoking vertex.
-            if (!provoking[i1]) {
-                provoking[i1] = true;
-                tri.push([i1, i2, i0])
-            } else {
-                provoking[i2] = true;
-                tri.push([i2, i0, i1])
-            }
+            provoking[i1] = true;
+            tri.push([i1, i2, i0])
+        } else if (!provoking[i2]) {
+            // ditto
+            provoking[i2] = true;
+            tri.push([i2, i0, i1])
         } else {
             // All vertices are taken, so create a new one
             const i3 = pos.length;
@@ -194,7 +192,7 @@ function unshareProvokingVertices(input: Mesh): Mesh {
             tri.push([i3, i1, i2])
         }
     })
-    return { ...input, pos, tri }
+    return { ...input, pos, tri, usesProvoking: true }
 }
 
 // once a mesh has been added to our vertex, triangle, and uniform buffers, we need
@@ -212,7 +210,7 @@ interface MeshHandle {
 }
 
 // define our meshes (ideally these would be imported from a standard format)
-const CUBE: Mesh = {
+const CUBE: Mesh = unshareProvokingVertices({
     pos: [
         [+1.0, +1.0, +1.0],
         [-1.0, +1.0, +1.0],
@@ -239,9 +237,9 @@ const CUBE: Mesh = {
         [0.2, 0, 0], [0.2, 0, 0], // left
         [0.2, 0, 0], [0.2, 0, 0], // bottom
         [0.2, 0, 0], [0.2, 0, 0], // back
-    ]
-}
-const PLANE: Mesh = {
+    ],
+})
+const PLANE: Mesh = unshareProvokingVertices({
     pos: [
         [+1, 0, +1],
         [-1, 0, +1],
@@ -256,7 +254,7 @@ const PLANE: Mesh = {
         [0.02, 0.02, 0.02], [0.02, 0.02, 0.02],
         [0.02, 0.02, 0.02], [0.02, 0.02, 0.02],
     ],
-}
+})
 
 // define the format of our vertices (this needs to agree with the inputs to the vertex shaders)
 const vertexDataFormat: GPUVertexAttribute[] = [
@@ -363,7 +361,8 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
     let numTris = 0;
     function addMesh(m: Mesh): MeshHandle {
         // m = unshareVertices(m); // work-around; see TODO inside function
-        m = unshareProvokingVertices(m);
+        if (!m.usesProvoking)
+            m = unshareProvokingVertices(m);
         if (verticesMap === null)
             throw "Use preRender() and postRender() functions"
         if (numVerts + m.pos.length > maxVerts)
