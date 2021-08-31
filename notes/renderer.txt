@@ -157,6 +157,9 @@ TO LEARN COMPUTE SHADERS:
         Algorithms?
         Celular atomita?
         Procedural gen?
+    101:
+      https://news.ycombinator.com/item?id=27396634
+      https://www.youtube.com/watch?v=DZRn_jNZjbw
 
 Book of Shaders (online):
   https://thebookofshaders.com
@@ -381,3 +384,4 @@ Camera transformations:
 
 hierarchical modeling:
   https://www.youtube.com/watch?v=JdhpViedm0g&list=PLQ3UicqQtfNuBjzJ-KEWmG1yjiRMXYKhh&index=5
+

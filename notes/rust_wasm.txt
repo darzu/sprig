@@ -33,3 +33,7 @@ Trunk
 "Interface Types"
     https://github.com/WebAssembly/interface-types/blob/master/proposals/interface-types/Explainer.md
 
+wasm-pack
+    https://github.com/rustwasm/wasm-pack
+    used by rapier
+

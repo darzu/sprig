@@ -24,5 +24,30 @@ Oimo:
 2D:
     https://brm.io/matter-js/
 
-
 Babylon: uses plugins for Cannon.js, Oimo.js, or Ammo.js
+
+Rapier.js
+    Want to use Rapier.js, but it's a difficult dependency to vender since it's split into many files.
+    I tried building it myself following the github workflow for macos, but get these errors:
+        npm ERR! command sh -c node bin/index.js
+        npm ERR! Error: Error: This platform not supported
+        ...
+        error: failed to download `nalgebra-macros v0.1.0`
+        ...
+        feature `resolver` is required
+        this Cargo does not support nightly features, but if you
+        switch to nightly channel you can add
+        `cargo-features = ["resolver"]` to enable this feature
+        ...
+        ./build_typescript.sh: line 2: pkg/raw.ts: No such file or directory
+        ...
+        Error: Tried to set an option (inputFiles) that was not declared.
+    Options:
+        1. Write my own physics and/or collision detection
+            Do I need advanced physics for Sprigheim?
+                Yes. Falling trees
+                No. Character and enemy movement
+                Yes? Carts and hills
+                Yes? harpoon
+        2. Bite the bullet, take on NPM and a bundler
+        3. Create a dummy project w/ NPM to bundle dependencies
