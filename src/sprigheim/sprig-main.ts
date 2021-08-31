@@ -25,18 +25,14 @@ const vertexShaderOutput = `
     [[location(3)]] worldPos : vec3<f32>;
     [[builtin(position)]] position : vec4<f32>;
 `
-const shaderModelStruct = `
-    [[block]] struct Model {
-        transform : mat4x4<f32>;
-        aabbMin: vec3<f32>;
-        aabbMax: vec3<f32>;
-    };
-`
 // shader code
 const vertexShaderForShadows = `
     ${shaderSceneStruct}
 
-    ${shaderModelStruct}
+
+    [[block]] struct Model {
+    ${MeshUniform.GenerateWGSLUniformStruct()}
+    };
 
     [[group(0), binding(0)]] var<uniform> scene : Scene;
     [[group(1), binding(0)]] var<uniform> model : Model;
@@ -52,7 +48,10 @@ const fragmentShaderForShadows = `
 const vertexShader = `
     ${shaderSceneStruct}
 
-    ${shaderModelStruct}
+
+    [[block]] struct Model {
+    ${MeshUniform.GenerateWGSLUniformStruct()}
+    };
 
     [[group(0), binding(0)]] var<uniform> scene : Scene;
     [[group(1), binding(0)]] var<uniform> model : Model;

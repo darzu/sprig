@@ -101,12 +101,22 @@ export module Vertex {
 }
 
 export module MeshUniform {
-
     const _counts = [
         align(4 * 4, 4), // transform
         align(3, 4), // aabb min
         align(3, 4), // aabb max
     ]
+    const _names = [
+        'transform',
+        'aabbMin',
+        'aabbMax',
+    ]
+    const _types = [
+        'mat4x4<f32>',
+        'vec3<f32>',
+        'vec3<f32>',
+    ]
+
     const _offsets = _counts.reduce((p, n) => [...p, p[p.length - 1] + n], [0])
 
     export const ByteSizeExact = sum(_counts) * bytesPerFloat
@@ -120,6 +130,24 @@ export module MeshUniform {
         scratch_f32.set(aabbMin, _offsets[1])
         scratch_f32.set(aabbMax, _offsets[2])
         buffer.set(scratch_f32_as_u8, byteOffset)
+    }
+
+    export function GenerateWGSLUniformStruct() {
+        // Example:
+        //     transform: mat4x4<f32>;
+        //     aabbMin: vec3<f32>;
+        //     aabbMax: vec3<f32>;
+        if (_names.length !== _types.length)
+            throw `mismatch between names and sizes for mesh uniform format`
+        let res = ``
+
+        for (let i = 0; i < _names.length; i++) {
+            const n = _names[i]
+            const t = _types[i]
+            res += `${n}: ${t};\n`
+        }
+
+        return res;
     }
 }
 
