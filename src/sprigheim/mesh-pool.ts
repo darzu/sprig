@@ -31,6 +31,50 @@ export module Vertex {
         { shaderLocation: 3, offset: bytesPerVec3 * 3, format: 'uint32' }, // kind
     ];
 
+    const names = [
+        'position',
+        'color',
+        'normal',
+        'kind',
+    ]
+
+    const formatToWgslType: Partial<Record<GPUVertexFormat, string>> = {
+        "float16x2": "vec2<f16>",
+        "float16x4": "vec2<f16>",
+        "float32": "f32",
+        "float32x2": "vec2<f32>",
+        "float32x3": "vec3<f32>",
+        "float32x4": "vec4<f32>",
+        "uint32": "u32",
+        "sint32": "i32",
+    }
+
+    export function GenerateWGSLVertexInputStruct(terminator: ',' | ';'): string {
+        // Example output:
+        // `
+        // [[location(0)]] position : vec3<f32>,
+        // [[location(1)]] color : vec3<f32>,
+        // [[location(2)]] normal : vec3<f32>,
+        // [[location(3)]] kind : u32,
+        // `
+
+        let res = ``
+
+        if (WebGPUFormat.length !== names.length)
+            throw `mismatch between vertex format specifiers and names`
+
+        for (let i = 0; i < WebGPUFormat.length; i++) {
+            const f = WebGPUFormat[i]
+            const t = formatToWgslType[f.format]
+            const n = names[i]
+            if (!t)
+                throw `Unknown vertex type -> wgls type '${f.format}'`
+            res += `[[location(${f.shaderLocation})]] ${n} : ${t}${terminator}\n`
+        }
+
+        return res;
+    }
+
     // these help us pack and use vertices in that format
     export const ByteSize = bytesPerVec3/*pos*/ + bytesPerVec3/*color*/ + bytesPerVec3/*normal*/ + bytesPerUint32/*kind*/;
 
@@ -53,6 +97,7 @@ export module Vertex {
         scratch_u32[0] = kind
         buffer.set(scratch_u32_as_u8, byteOffset + bytesPerVec3 * 3);
     }
+
 }
 
 export module MeshUniform {

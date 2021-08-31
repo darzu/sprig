@@ -18,12 +18,6 @@ const shaderSceneStruct = `
         cameraPos : vec3<f32>;
     };
 `;
-const vertexInputStruct = `
-    [[location(0)]] position : vec3<f32>,
-    [[location(1)]] color : vec3<f32>,
-    [[location(2)]] normal : vec3<f32>,
-    [[location(3)]] kind : u32,
-`;
 const vertexShaderOutput = `
     [[location(0)]] shadowPos : vec3<f32>;
     [[location(1)]] [[interpolate(flat)]] normal : vec3<f32>;
@@ -88,7 +82,7 @@ const vertexShader = `
 
     [[stage(vertex)]]
     fn main(
-        ${vertexInputStruct}
+        ${Vertex.GenerateWGSLVertexInputStruct(',')}
         ) -> VertexOutput {
         var output : VertexOutput;
 
