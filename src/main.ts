@@ -161,8 +161,6 @@ interface MeshRenderer {
     render: (commandEncoder: GPUCommandEncoder, meshPools: MeshMemoryPool[], canvasWidth: number, canvasHeight: number) => void,
 }
 
-
-
 let depthTexture: GPUTexture;
 let depthTextureView: GPUTextureView;
 let colorTexture: GPUTexture;
@@ -175,7 +173,7 @@ const projectionMatrix = mat4.create();
 const viewDistance = 10000.0;
 
 function resize(device: GPUDevice, canvasWidth: number, canvasHeight: number) {
-    if (depthTexture && colorTexture && lastWidth === canvasWidth && lastHeight === canvasHeight)
+    if (lastWidth === canvasWidth && lastHeight === canvasHeight)
         return;
 
     if (depthTexture)
@@ -214,417 +212,19 @@ function resize(device: GPUDevice, canvasWidth: number, canvasHeight: number) {
     mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 1, viewDistance);
 }
 
-function createMeshRenderer(
-    meshUniByteSize: number,
-    vertByteSize: number,
-    device: GPUDevice, context: GPUCanvasContext): MeshRenderer {
+// function createMeshRenderer(
+//     meshUniByteSize: number,
+//     vertByteSize: number,
+//     device: GPUDevice, context: GPUCanvasContext): MeshRenderer 
+// {
 
-    const swapChain = context.configureSwapChain({
-        device,
-        format: swapChainFormat,
-    });
-
-    const modelUniBindGroupLayout = device.createBindGroupLayout({
-        entries: [
-            {
-                binding: 0,
-                visibility: GPUShaderStage.VERTEX,
-                buffer: {
-                    type: 'uniform',
-                    hasDynamicOffset: true,
-                    // TODO(@darzu): why have this?
-                    minBindingSize: meshUniByteSize,
-                },
-            },
-        ],
-    });
-
-    const shadowSharedUniBindGroupLayout = device.createBindGroupLayout({
-        entries: [
-            {
-                binding: 0,
-                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: {
-                    type: 'uniform',
-                    // hasDynamicOffset: true,
-                    // TODO(@darzu): why have this?
-                    // minBindingSize: 20,
-                },
-            },
-        ],
-    });
-
-    const renderSharedUniBindGroupLayout = device.createBindGroupLayout({
-        entries: [
-            {
-                binding: 0,
-                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: {
-                    type: 'uniform',
-                    // hasDynamicOffset: true,
-                    // TODO(@darzu): why have this?
-                    // minBindingSize: 20,
-                },
-            },
-            {
-                binding: 1,
-                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                texture: {
-                    sampleType: 'depth',
-                },
-            },
-            {
-                binding: 2,
-                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                sampler: {
-                    type: 'comparison',
-                },
-            },
-        ],
-    });
-
-    // Create the depth texture for rendering/sampling the shadow map.
-    const shadowDepthTexture = device.createTexture(shadowDepthTextureDesc);
-    // TODO(@darzu): use
-    const shadowDepthTextureView = shadowDepthTexture.createView();
-
-    // TODO(@darzu): SCENE FORMAT
-    const sharedUniBufferSize =
-        // Two 4x4 viewProj matrices,
-        // one for the camera and one for the light.
-        // Then a vec3 for the light position.
-        bytesPerMat4 * 2 // camera and light projection
-        + bytesPerVec3 * 1 // light pos
-        + bytesPerFloat * 1 // time
-        + bytesPerVec3 // displacer
-    const sharedUniBuffer = device.createBuffer({
-        size: align(sharedUniBufferSize, 256),
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
-
-    const shadowSharedUniBindGroup = device.createBindGroup({
-        layout: shadowSharedUniBindGroupLayout,
-        entries: [
-            {
-                binding: 0,
-                resource: {
-                    buffer: sharedUniBuffer,
-                },
-            },
-        ],
-    });
-
-    const renderSharedUniBindGroup = device.createBindGroup({
-        layout: renderSharedUniBindGroupLayout,
-        entries: [
-            {
-                binding: 0,
-                resource: {
-                    buffer: sharedUniBuffer,
-                },
-            },
-            {
-                binding: 1,
-                resource: shadowDepthTextureView,
-            },
-            {
-                binding: 2,
-                // TODO(@darzu): what's a sampler here?
-                resource: device.createSampler({
-                    compare: 'less',
-                }),
-            },
-        ],
-    });
-
-    const vertexBuffersLayout: GPUVertexBufferLayout[] = [
-        {
-            // TODO(@darzu): the buffer index should be connected to the pool probably?
-            // TODO(@darzu): VERTEX FORMAT
-            arrayStride: vertByteSize,
-            attributes: [
-                {
-                    // position
-                    shaderLocation: 0,
-                    offset: bytesPerVec3 * 0,
-                    format: 'float32x3',
-                },
-                {
-                    // color
-                    shaderLocation: 1,
-                    offset: bytesPerVec3 * 1,
-                    format: 'float32x3',
-                },
-                {
-                    // normals
-                    shaderLocation: 2,
-                    offset: bytesPerVec3 * 2,
-                    format: 'float32x3',
-                },
-                {
-                    // sway height
-                    shaderLocation: 3,
-                    offset: bytesPerVec3 * 3,
-                    format: 'float32',
-                },
-                // {
-                //     // uv
-                //     shaderLocation: 1,
-                //     offset: cubeUVOffset,
-                //     format: 'float32x2',
-                // },
-            ],
-        },
-    ];
-
-    const primitiveBackcull: GPUPrimitiveState = {
-        topology: 'triangle-list',
-        cullMode: 'back',
-        // frontFace: 'ccw', // TODO(dz):
-    };
-    const primitiveTwosided: GPUPrimitiveState = {
-        topology: 'triangle-list',
-        cullMode: 'none',
-        // frontFace: 'ccw', // TODO(dz):
-    };
-
-    const shadowPipelineLayout = device.createPipelineLayout({
-        bindGroupLayouts: [shadowSharedUniBindGroupLayout, modelUniBindGroupLayout],
-    });
-
-    const shadowPipelineDesc: GPURenderPipelineDescriptor = {
-        layout: shadowPipelineLayout, // TODO(@darzu): same for shadow and not?
-        vertex: {
-            module: device.createShaderModule({
-                code: wgslShaders.vertexShadow,
-            }),
-            entryPoint: 'main',
-            buffers: vertexBuffersLayout,
-        },
-        fragment: {
-            // This should be omitted and we can use a vertex-only pipeline, but it's
-            // not yet implemented.
-            module: device.createShaderModule({
-                code: wgslShaders.fragmentShadow,
-            }),
-            entryPoint: 'main',
-            targets: [],
-        },
-        depthStencil: {
-            depthWriteEnabled: true,
-            depthCompare: 'less',
-            format: 'depth32float',
-        },
-        primitive: primitiveBackcull,
-    };
-
-    const shadowPipeline = device.createRenderPipeline(shadowPipelineDesc);
-    const shadowPipelineTwosided = device.createRenderPipeline({
-        ...shadowPipelineDesc,
-        primitive: primitiveTwosided
-    });
-
-    const renderPipelineLayout = device.createPipelineLayout({
-        bindGroupLayouts: [renderSharedUniBindGroupLayout, modelUniBindGroupLayout],
-    });
-
-    const renderPipelineDesc: GPURenderPipelineDescriptor = {
-        layout: renderPipelineLayout,
-        vertex: {
-            module: device.createShaderModule({
-                code: wgslShaders.vertex,
-                // TODO(@darzu):
-                // code: basicVertWGSL,
-            }),
-            entryPoint: 'main',
-            buffers: vertexBuffersLayout,
-        },
-        fragment: {
-            module: device.createShaderModule({
-                code: wgslShaders.fragment,
-                // TODO(@darzu):
-                // code: vertexPositionColorWGSL,
-            }),
-            entryPoint: 'main',
-            targets: [
-                {
-                    format: swapChainFormat,
-                },
-            ],
-        },
-        primitive: primitiveBackcull,
-
-        // Enable depth testing so that the fragment closest to the camera
-        // is rendered in front.
-        depthStencil: {
-            depthWriteEnabled: true,
-            depthCompare: 'less',
-            format: depthStencilFormat,
-        },
-        multisample: {
-            count: sampleCount,
-        },
-    };
-
-    const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
-    const renderPipelineTwosided = device.createRenderPipeline({
-        ...renderPipelineDesc,
-        primitive: primitiveTwosided,
-
-    });
-    // 'depth24plus-stencil8'
-
-
-    // TODO(@darzu): how do we handle this abstraction with multiple passes e.g. shadows?
-
-    const shadowPassDescriptor: GPURenderPassDescriptor = {
-        colorAttachments: [],
-        depthStencilAttachment: {
-            view: shadowDepthTextureView,
-            depthLoadValue: 1.0,
-            depthStoreOp: 'store',
-            stencilLoadValue: 0,
-            stencilStoreOp: 'store',
-        },
-    };
-
-    let shadowRenderBundle: GPURenderBundle;
-    let renderBundle: GPURenderBundle;
-
-    function rebuildBundles(meshPools: MeshMemoryPool[]) {
-        // create render bundle
-        const bundleRenderDesc: GPURenderBundleEncoderDescriptor = {
-            colorFormats: [swapChainFormat],
-            depthStencilFormat: depthStencilFormat,
-            sampleCount,
-        }
-
-        const bundleEncoder = device.createRenderBundleEncoder(bundleRenderDesc);
-
-        for (let pool of meshPools) {
-            if (pool._opts.backfaceCulling)
-                bundleEncoder.setPipeline(renderPipeline);
-            else
-                bundleEncoder.setPipeline(renderPipelineTwosided);
-
-            bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
-            const modelUniBindGroup = device.createBindGroup({
-                layout: modelUniBindGroupLayout,
-                entries: [
-                    {
-                        binding: 0,
-                        resource: {
-                            buffer: pool._meshUniBuffer,
-                            offset: 0, // TODO(@darzu): different offsets per model
-                            // TODO(@darzu): needed?
-                            size: meshUniByteSize,
-                        },
-                    },
-                ],
-            });
-            bundleEncoder.setVertexBuffer(0, pool._vertBuffer);
-            if (pool._indexBuffer)
-                bundleEncoder.setIndexBuffer(pool._indexBuffer, 'uint16');
-            const uniOffset = [0];
-            for (let m of pool._meshes) {
-                // TODO(@darzu): set bind group
-                uniOffset[0] = m.modelUniByteOffset;
-                bundleEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
-                if (pool._indexBuffer)
-                    bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-                else {
-                    bundleEncoder.draw(m.triCount * 3, undefined, m.vertNumOffset);
-                }
-            }
-        }
-        renderBundle = bundleEncoder.finish()
-    }
-
-    function render(commandEncoder: GPUCommandEncoder, meshPools: MeshMemoryPool[], canvasWidth: number, canvasHeight: number) {
-        // TODO(@darzu):  this feels akward
-        // Acquire next image from swapchain
-        // colorTexture = swapChain.getCurrentTexture();
-        // colorTextureView = colorTexture.createView();
-
-        const colorAtt: GPURenderPassColorAttachmentNew = {
-            view: colorTextureView,
-            resolveTarget: swapChain.getCurrentTexture().createView(),
-            loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
-            storeOp: 'store',
-        };
-        const renderPassDescriptor = {
-            colorAttachments: [colorAtt],
-            depthStencilAttachment: {
-                view: depthTextureView,
-                depthLoadValue: 1.0,
-                depthStoreOp: 'store',
-                stencilLoadValue: 0,
-                stencilStoreOp: 'store',
-            },
-        } as const;
-
-        const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
-        // shadowPassEncoder.executeBundles([shadowRenderBundle]);
-        // TODO(@darzu): use bundle
-        {
-            shadowPass.setBindGroup(0, shadowSharedUniBindGroup);
-            for (let pool of meshPools) {
-                if (pool._opts.backfaceCulling)
-                    shadowPass.setPipeline(shadowPipeline);
-                else
-                    shadowPass.setPipeline(shadowPipelineTwosided);
-
-                const modelUniBindGroup = device.createBindGroup({
-                    layout: modelUniBindGroupLayout,
-                    entries: [
-                        {
-                            binding: 0,
-                            resource: {
-                                buffer: pool._meshUniBuffer,
-                                offset: 0, // TODO(@darzu): different offsets per model
-                                // TODO(@darzu): needed?
-                                size: meshUniByteSize,
-                            },
-                        },
-                    ],
-                });
-                shadowPass.setVertexBuffer(0, pool._vertBuffer);
-                if (pool._indexBuffer)
-                    shadowPass.setIndexBuffer(pool._indexBuffer, 'uint16');
-                // TODO(@darzu): one draw call per mesh?
-                const uniOffset = [0];
-                for (let m of pool._meshes) {
-                    if (!m.shadowCaster)
-                        continue;
-                    // TODO(@darzu): set bind group
-                    uniOffset[0] = m.modelUniByteOffset;
-                    shadowPass.setBindGroup(1, modelUniBindGroup, uniOffset);
-                    if (pool._indexBuffer)
-                        shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-                    else {
-                        // console.log(`m.vertNumOffset: ${m.vertNumOffset}`)
-                        shadowPass.draw(m.triCount * 3, undefined, m.vertNumOffset);
-                    }
-                }
-            }
-            // shadowRenderBundle = shadowPass.finish()
-        }
-        shadowPass.endPass();
-
-        const renderPassEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
-        renderPassEncoder.executeBundles([renderBundle]);
-        renderPassEncoder.endPass();
-
-        return commandEncoder;
-    }
-
-    const res: MeshRenderer = {
-        sharedUniBuffer,
-        rebuildBundles,
-        render,
-    };
-    return res;
-}
+    // const res: MeshRenderer = {
+    //     sharedUniBuffer,
+    //     rebuildBundles,
+    //     render,
+    // };
+    // return res;
+// }
 
 
 // face normals vs vertex normals
@@ -1149,24 +749,421 @@ async function init(canvasRef: HTMLCanvasElement) {
     }
     onWindowResize();
 
+    const meshUniByteSize = align(
+        bytesPerMat4 // transform
+        + bytesPerFloat // max draw distance
+        , 256);
+    const vertByteSize = bytesPerFloat * vertElStride;
+
     // TODO(@darzu): VERTEX FORMAT
     const meshPool = createMeshMemoryPool({
-        vertByteSize: bytesPerFloat * vertElStride,
+        vertByteSize,
         maxVerts: 100000,
         maxTris: 100000,
         maxMeshes: 10000,
-        // TODO(@darzu): MESH FORMAT
-        meshUniByteSize: align(
-            bytesPerMat4 // transform
-            + bytesPerFloat // max draw distance
-            , 256),
+        meshUniByteSize,
         backfaceCulling: true,
         usesIndices: true,
     }, device);
 
-    // TODO(@darzu): 
-    const meshRenderer = createMeshRenderer(
-        meshPool._opts.meshUniByteSize, meshPool._opts.vertByteSize, device, context);
+    const swapChain = context.configureSwapChain({
+        device,
+        format: swapChainFormat,
+    });
+
+    const modelUniBindGroupLayout = device.createBindGroupLayout({
+        entries: [
+            {
+                binding: 0,
+                visibility: GPUShaderStage.VERTEX,
+                buffer: {
+                    type: 'uniform',
+                    hasDynamicOffset: true,
+                    // TODO(@darzu): why have this?
+                    minBindingSize: meshUniByteSize,
+                },
+            },
+        ],
+    });
+
+    const shadowSharedUniBindGroupLayout = device.createBindGroupLayout({
+        entries: [
+            {
+                binding: 0,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                buffer: {
+                    type: 'uniform',
+                    // hasDynamicOffset: true,
+                    // TODO(@darzu): why have this?
+                    // minBindingSize: 20,
+                },
+            },
+        ],
+    });
+
+    const renderSharedUniBindGroupLayout = device.createBindGroupLayout({
+        entries: [
+            {
+                binding: 0,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                buffer: {
+                    type: 'uniform',
+                    // hasDynamicOffset: true,
+                    // TODO(@darzu): why have this?
+                    // minBindingSize: 20,
+                },
+            },
+            {
+                binding: 1,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                texture: {
+                    sampleType: 'depth',
+                },
+            },
+            {
+                binding: 2,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                sampler: {
+                    type: 'comparison',
+                },
+            },
+        ],
+    });
+
+    // Create the depth texture for rendering/sampling the shadow map.
+    const shadowDepthTexture = device.createTexture(shadowDepthTextureDesc);
+    // TODO(@darzu): use
+    const shadowDepthTextureView = shadowDepthTexture.createView();
+
+    // TODO(@darzu): SCENE FORMAT
+    const sharedUniBufferSize =
+        // Two 4x4 viewProj matrices,
+        // one for the camera and one for the light.
+        // Then a vec3 for the light position.
+        bytesPerMat4 * 2 // camera and light projection
+        + bytesPerVec3 * 1 // light pos
+        + bytesPerFloat * 1 // time
+        + bytesPerVec3 // displacer
+    const sharedUniBuffer = device.createBuffer({
+        size: align(sharedUniBufferSize, 256),
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    const shadowSharedUniBindGroup = device.createBindGroup({
+        layout: shadowSharedUniBindGroupLayout,
+        entries: [
+            {
+                binding: 0,
+                resource: {
+                    buffer: sharedUniBuffer,
+                },
+            },
+        ],
+    });
+
+    const renderSharedUniBindGroup = device.createBindGroup({
+        layout: renderSharedUniBindGroupLayout,
+        entries: [
+            {
+                binding: 0,
+                resource: {
+                    buffer: sharedUniBuffer,
+                },
+            },
+            {
+                binding: 1,
+                resource: shadowDepthTextureView,
+            },
+            {
+                binding: 2,
+                // TODO(@darzu): what's a sampler here?
+                resource: device.createSampler({
+                    compare: 'less',
+                }),
+            },
+        ],
+    });
+
+    const vertexBuffersLayout: GPUVertexBufferLayout[] = [
+        {
+            // TODO(@darzu): the buffer index should be connected to the pool probably?
+            // TODO(@darzu): VERTEX FORMAT
+            arrayStride: vertByteSize,
+            attributes: [
+                {
+                    // position
+                    shaderLocation: 0,
+                    offset: bytesPerVec3 * 0,
+                    format: 'float32x3',
+                },
+                {
+                    // color
+                    shaderLocation: 1,
+                    offset: bytesPerVec3 * 1,
+                    format: 'float32x3',
+                },
+                {
+                    // normals
+                    shaderLocation: 2,
+                    offset: bytesPerVec3 * 2,
+                    format: 'float32x3',
+                },
+                {
+                    // sway height
+                    shaderLocation: 3,
+                    offset: bytesPerVec3 * 3,
+                    format: 'float32',
+                },
+                // {
+                //     // uv
+                //     shaderLocation: 1,
+                //     offset: cubeUVOffset,
+                //     format: 'float32x2',
+                // },
+            ],
+        },
+    ];
+
+    const primitiveBackcull: GPUPrimitiveState = {
+        topology: 'triangle-list',
+        cullMode: 'back',
+        // frontFace: 'ccw', // TODO(dz):
+    };
+    const primitiveTwosided: GPUPrimitiveState = {
+        topology: 'triangle-list',
+        cullMode: 'none',
+        // frontFace: 'ccw', // TODO(dz):
+    };
+
+    const shadowPipelineLayout = device.createPipelineLayout({
+        bindGroupLayouts: [shadowSharedUniBindGroupLayout, modelUniBindGroupLayout],
+    });
+
+    const shadowPipelineDesc: GPURenderPipelineDescriptor = {
+        layout: shadowPipelineLayout, // TODO(@darzu): same for shadow and not?
+        vertex: {
+            module: device.createShaderModule({
+                code: wgslShaders.vertexShadow,
+            }),
+            entryPoint: 'main',
+            buffers: vertexBuffersLayout,
+        },
+        fragment: {
+            // This should be omitted and we can use a vertex-only pipeline, but it's
+            // not yet implemented.
+            module: device.createShaderModule({
+                code: wgslShaders.fragmentShadow,
+            }),
+            entryPoint: 'main',
+            targets: [],
+        },
+        depthStencil: {
+            depthWriteEnabled: true,
+            depthCompare: 'less',
+            format: 'depth32float',
+        },
+        primitive: primitiveBackcull,
+    };
+
+    const shadowPipeline = device.createRenderPipeline(shadowPipelineDesc);
+    const shadowPipelineTwosided = device.createRenderPipeline({
+        ...shadowPipelineDesc,
+        primitive: primitiveTwosided
+    });
+
+    const renderPipelineLayout = device.createPipelineLayout({
+        bindGroupLayouts: [renderSharedUniBindGroupLayout, modelUniBindGroupLayout],
+    });
+
+    const renderPipelineDesc: GPURenderPipelineDescriptor = {
+        layout: renderPipelineLayout,
+        vertex: {
+            module: device.createShaderModule({
+                code: wgslShaders.vertex,
+                // TODO(@darzu):
+                // code: basicVertWGSL,
+            }),
+            entryPoint: 'main',
+            buffers: vertexBuffersLayout,
+        },
+        fragment: {
+            module: device.createShaderModule({
+                code: wgslShaders.fragment,
+                // TODO(@darzu):
+                // code: vertexPositionColorWGSL,
+            }),
+            entryPoint: 'main',
+            targets: [
+                {
+                    format: swapChainFormat,
+                },
+            ],
+        },
+        primitive: primitiveBackcull,
+
+        // Enable depth testing so that the fragment closest to the camera
+        // is rendered in front.
+        depthStencil: {
+            depthWriteEnabled: true,
+            depthCompare: 'less',
+            format: depthStencilFormat,
+        },
+        multisample: {
+            count: sampleCount,
+        },
+    };
+
+    const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
+    const renderPipelineTwosided = device.createRenderPipeline({
+        ...renderPipelineDesc,
+        primitive: primitiveTwosided,
+
+    });
+    // 'depth24plus-stencil8'
+
+
+    // TODO(@darzu): how do we handle this abstraction with multiple passes e.g. shadows?
+
+    const shadowPassDescriptor: GPURenderPassDescriptor = {
+        colorAttachments: [],
+        depthStencilAttachment: {
+            view: shadowDepthTextureView,
+            depthLoadValue: 1.0,
+            depthStoreOp: 'store',
+            stencilLoadValue: 0,
+            stencilStoreOp: 'store',
+        },
+    };
+
+    let shadowRenderBundle: GPURenderBundle;
+    let renderBundle: GPURenderBundle;
+
+    function rebuildBundles(meshPools: MeshMemoryPool[]) {
+        // create render bundle
+        const bundleRenderDesc: GPURenderBundleEncoderDescriptor = {
+            colorFormats: [swapChainFormat],
+            depthStencilFormat: depthStencilFormat,
+            sampleCount,
+        }
+
+        const bundleEncoder = device.createRenderBundleEncoder(bundleRenderDesc);
+
+        for (let pool of meshPools) {
+            if (pool._opts.backfaceCulling)
+                bundleEncoder.setPipeline(renderPipeline);
+            else
+                bundleEncoder.setPipeline(renderPipelineTwosided);
+
+            bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
+            const modelUniBindGroup = device.createBindGroup({
+                layout: modelUniBindGroupLayout,
+                entries: [
+                    {
+                        binding: 0,
+                        resource: {
+                            buffer: pool._meshUniBuffer,
+                            offset: 0, // TODO(@darzu): different offsets per model
+                            // TODO(@darzu): needed?
+                            size: meshUniByteSize,
+                        },
+                    },
+                ],
+            });
+            bundleEncoder.setVertexBuffer(0, pool._vertBuffer);
+            if (pool._indexBuffer)
+                bundleEncoder.setIndexBuffer(pool._indexBuffer, 'uint16');
+            const uniOffset = [0];
+            for (let m of pool._meshes) {
+                // TODO(@darzu): set bind group
+                uniOffset[0] = m.modelUniByteOffset;
+                bundleEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
+                if (pool._indexBuffer)
+                    bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+                else {
+                    bundleEncoder.draw(m.triCount * 3, undefined, m.vertNumOffset);
+                }
+            }
+        }
+        renderBundle = bundleEncoder.finish()
+    }
+
+    function render(commandEncoder: GPUCommandEncoder, meshPools: MeshMemoryPool[], canvasWidth: number, canvasHeight: number) {
+        // TODO(@darzu):  this feels akward
+        // Acquire next image from swapchain
+        // colorTexture = swapChain.getCurrentTexture();
+        // colorTextureView = colorTexture.createView();
+
+        const colorAtt: GPURenderPassColorAttachmentNew = {
+            view: colorTextureView,
+            resolveTarget: swapChain.getCurrentTexture().createView(),
+            loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
+            storeOp: 'store',
+        };
+        const renderPassDescriptor = {
+            colorAttachments: [colorAtt],
+            depthStencilAttachment: {
+                view: depthTextureView,
+                depthLoadValue: 1.0,
+                depthStoreOp: 'store',
+                stencilLoadValue: 0,
+                stencilStoreOp: 'store',
+            },
+        } as const;
+
+        const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
+        // shadowPassEncoder.executeBundles([shadowRenderBundle]);
+        // TODO(@darzu): use bundle
+        {
+            shadowPass.setBindGroup(0, shadowSharedUniBindGroup);
+            for (let pool of meshPools) {
+                if (pool._opts.backfaceCulling)
+                    shadowPass.setPipeline(shadowPipeline);
+                else
+                    shadowPass.setPipeline(shadowPipelineTwosided);
+
+                const modelUniBindGroup = device.createBindGroup({
+                    layout: modelUniBindGroupLayout,
+                    entries: [
+                        {
+                            binding: 0,
+                            resource: {
+                                buffer: pool._meshUniBuffer,
+                                offset: 0, // TODO(@darzu): different offsets per model
+                                // TODO(@darzu): needed?
+                                size: meshUniByteSize,
+                            },
+                        },
+                    ],
+                });
+                shadowPass.setVertexBuffer(0, pool._vertBuffer);
+                if (pool._indexBuffer)
+                    shadowPass.setIndexBuffer(pool._indexBuffer, 'uint16');
+                // TODO(@darzu): one draw call per mesh?
+                const uniOffset = [0];
+                for (let m of pool._meshes) {
+                    if (!m.shadowCaster)
+                        continue;
+                    // TODO(@darzu): set bind group
+                    uniOffset[0] = m.modelUniByteOffset;
+                    shadowPass.setBindGroup(1, modelUniBindGroup, uniOffset);
+                    if (pool._indexBuffer)
+                        shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+                    else {
+                        // console.log(`m.vertNumOffset: ${m.vertNumOffset}`)
+                        shadowPass.draw(m.triCount * 3, undefined, m.vertNumOffset);
+                    }
+                }
+            }
+            // shadowRenderBundle = shadowPass.finish()
+        }
+        shadowPass.endPass();
+
+        const renderPassEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+        renderPassEncoder.executeBundles([renderBundle]);
+        renderPassEncoder.endPass();
+
+        return commandEncoder;
+    }
 
     resize(device, 100, 100);
 
@@ -1279,7 +1276,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         mat4.multiply(lightViewProjMatrix, lightProjectionMatrix, lightViewMatrix);
         const lightMatrixData = lightViewProjMatrix as Float32Array;
         device.queue.writeBuffer(
-            meshRenderer.sharedUniBuffer,
+            sharedUniBuffer,
             bytesPerMat4 * 1, // second matrix
             lightMatrixData.buffer,
             lightMatrixData.byteOffset,
@@ -1288,7 +1285,7 @@ async function init(canvasRef: HTMLCanvasElement) {
 
         const lightData = lightDir as Float32Array;
         device.queue.writeBuffer(
-            meshRenderer.sharedUniBuffer,
+            sharedUniBuffer,
             bytesPerMat4 * 2, // third matrix
             lightData.buffer,
             lightData.byteOffset,
@@ -1296,7 +1293,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         );
     }
 
-    meshRenderer.rebuildBundles([meshPool]);
+    rebuildBundles([meshPool]);
 
     let debugDiv = document.getElementById('debug-div') as HTMLDivElement;
 
@@ -1345,7 +1342,7 @@ async function init(canvasRef: HTMLCanvasElement) {
 
         const transformationMatrix = getViewProj();
         device.queue.writeBuffer(
-            meshRenderer.sharedUniBuffer,
+            sharedUniBuffer,
             0,
             transformationMatrix.buffer,
             transformationMatrix.byteOffset,
@@ -1356,7 +1353,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         const sharedTime = new Float32Array(1);
         sharedTime[0] = Math.floor(timeMs);
         device.queue.writeBuffer(
-            meshRenderer.sharedUniBuffer,
+            sharedUniBuffer,
             bytesPerMat4 * 2 + bytesPerVec3 * 1, // TODO(@darzu): getting these offsets is a pain
             sharedTime.buffer,
             sharedTime.byteOffset,
@@ -1366,7 +1363,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         const displacer = vec4.transformMat4(vec4.create(), [0, 0, 0, 1], playerT.getTransform()) as Float32Array;
         // console.log(`(${displacer[0]}, ${displacer[1]}, ${displacer[2]})`);
         device.queue.writeBuffer(
-            meshRenderer.sharedUniBuffer,
+            sharedUniBuffer,
             bytesPerMat4 * 2 + bytesPerVec3 * 1 + bytesPerFloat * 1,
             displacer.buffer,
             displacer.byteOffset,
@@ -1378,7 +1375,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         const canvasHeight = canvasRef.clientHeight;
 
         const commandEncoder = device.createCommandEncoder();
-        meshRenderer.render(commandEncoder, [meshPool], canvasWidth, canvasHeight);
+        render(commandEncoder, [meshPool], canvasWidth, canvasHeight);
         device.queue.submit([commandEncoder.finish()]);
 
         requestAnimationFrame(frame);
