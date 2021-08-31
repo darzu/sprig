@@ -49,12 +49,9 @@ function OnStart() {
 }
 */
 
-
-
 export const mat4ByteSize = (4 * 4)/*4x4 mat*/ * 4/*f32*/
 export const triElStride = 3/*ind per tri*/;
 export const triByteSize = Uint16Array.BYTES_PER_ELEMENT * triElStride;
-
 
 // face normals vs vertex normals
 export interface MeshModel {
@@ -151,21 +148,6 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
                 trans.byteLength
             );
 
-            // creating binding group
-            // TODO(@darzu): we don't want to use binding groups here
-            const modelUniBindGroup = device.createBindGroup({
-                layout: pipeline.getBindGroupLayout(0),
-                entries: [
-                    {
-                        binding: 0,
-                        resource: {
-                            buffer: _meshUniBuffer,
-                            offset: uniOffset, // TODO(@darzu): different offsets per model
-                        },
-                    },
-                ],
-            });
-
             // create the result
             const res: Mesh = {
                 vertNumOffset: _numVerts, // TODO(@darzu): 
@@ -173,7 +155,6 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
                 modelUniByteOffset: uniOffset,
                 transform: trans,
                 model: m,
-                binding: modelUniBindGroup,
             }
             _numVerts += m.pos.length;
             _numTris += m.tri.length;
@@ -208,8 +189,6 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
         applyMeshTransform,
     }
 }
-
-
 
 // TODO(@darzu): this shouldn't be needed once "flat" shading is supported in Chrome's WGSL, 
 //  and/or PrimativeID is supported https://github.com/gpuweb/gpuweb/issues/1786
@@ -320,7 +299,6 @@ export const PLANE: MeshModel = {
     ],
 }
 
-
 function computeNormal([p1, p2, p3]: [vec3, vec3, vec3]): vec3 {
     // https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
     // cross product of two edges
@@ -392,7 +370,6 @@ export interface Mesh {
     modelUniByteOffset: number,
     transform: mat4;
     model: MeshModel,
-    binding: GPUBindGroup,
 }
 
 // TODO(@darzu): we want a nicer interface, but for now since it's 1-1 with the memory pool, just put it in that

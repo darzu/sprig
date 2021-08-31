@@ -226,6 +226,12 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     const swapChainFormat = 'bgra8unorm';
 
+    /*
+    TODO:
+    configureSwapChain() is deprecated. Use configure() instead and call getCurrentTexture()
+    directly on the context. Note that configure() must also be called if you want to change
+    the size of the textures returned by getCurrentTexture()
+    */
     const swapChain = context.configureSwapChain({
         device,
         format: swapChainFormat,
@@ -313,7 +319,77 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     const meshPool = createMeshMemoryPool(defaultMeshPoolOpts, device);
 
+    const modelUniBindGroupLayout = device.createBindGroupLayout({
+        entries: [
+            {
+                binding: 0,
+                visibility: GPUShaderStage.VERTEX,
+                buffer: {
+                    type: 'uniform',
+                    hasDynamicOffset: true,
+                    // TODO(@darzu): why have this?
+                    minBindingSize: defaultMeshPoolOpts.meshUniByteSize,
+                },
+            },
+        ],
+    });
+
+    // creating binding group
+    // TODO(@darzu): we don't want to use binding groups here
+    const modelUniBindGroup = device.createBindGroup({
+        layout: modelUniBindGroupLayout,
+        entries: [
+            {
+                binding: 0,
+                resource: {
+                    buffer: meshPool._meshUniBuffer,
+                    offset: 0, // TODO(@darzu): different offsets per model
+                    // TODO(@darzu): needed?
+                    size: defaultMeshPoolOpts.meshUniByteSize,
+                },
+            },
+        ],
+    });
+
+    const sharedUniBindGroupLayout = device.createBindGroupLayout({
+        entries: [
+            {
+                binding: 0,
+                visibility: GPUShaderStage.VERTEX,
+                buffer: {
+                    type: 'uniform',
+                    // hasDynamicOffset: true,
+                    // TODO(@darzu): why have this?
+                    // minBindingSize: 20,
+                },
+            },
+        ],
+    });
+
+    const sharedUniBufferSize = 4 * 16; // 4x4 matrix
+    const sharedUniBuffer = device.createBuffer({
+        size: sharedUniBufferSize,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    const sharedUniBindGroup = device.createBindGroup({
+        layout: sharedUniBindGroupLayout,
+        entries: [
+            {
+                binding: 0,
+                resource: {
+                    buffer: sharedUniBuffer,
+                },
+            },
+        ],
+    });
+
+    const pipelineLayout = device.createPipelineLayout({
+        bindGroupLayouts: [sharedUniBindGroupLayout, modelUniBindGroupLayout],
+    });
+
     const pipeline = device.createRenderPipeline({
+        layout: pipelineLayout,
         vertex: {
             module: device.createShaderModule({
                 code: basicVertWGSL,
@@ -405,23 +481,6 @@ async function init(canvasRef: HTMLCanvasElement) {
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
 
-    const sharedUniBufferSize = 4 * 16; // 4x4 matrix
-    const sharedUniBuffer = device.createBuffer({
-        size: sharedUniBufferSize,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
-
-    const sharedUniBindGroup = device.createBindGroup({
-        layout: pipeline.getBindGroupLayout(0),
-        entries: [
-            {
-                binding: 0,
-                resource: {
-                    buffer: sharedUniBuffer,
-                },
-            },
-        ],
-    });
 
     // Declare swapchain image handles
     let colorTexture: GPUTexture = device.createTexture({
@@ -452,6 +511,7 @@ async function init(canvasRef: HTMLCanvasElement) {
             stencilStoreOp: 'store',
         },
     } as const;
+
 
     meshPool.doUpdate(pipeline, [
         PLANE,
@@ -635,9 +695,11 @@ async function init(canvasRef: HTMLCanvasElement) {
         passEncoder.setVertexBuffer(1, instanceDataBuffer);
         passEncoder.setIndexBuffer(meshPool._indexBuffer, 'uint16');
         // TODO(@darzu): one draw call per mesh?
+        const uniOffset = [0];
         for (let m of meshPool._meshes) {
             // TODO(@darzu): set bind group
-            passEncoder.setBindGroup(1, m.binding);
+            uniOffset[0] = m.modelUniByteOffset;
+            passEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
             passEncoder.drawIndexed(m.model.tri.length * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
         }
         // passEncoder.drawIndexed(numTris * 3);
