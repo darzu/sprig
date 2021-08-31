@@ -224,7 +224,12 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
     return grassMesh;
 }
 
-function createGrassTileset(opts: GrassTileOpts & GrassTilesetOpts, device: GPUDevice): MeshMemoryPool {
+interface GrassTileset {
+    pool: MeshMemoryPool,
+    tiles: Mesh[]
+}
+
+function createGrassTileset(opts: GrassTileOpts & GrassTilesetOpts, device: GPUDevice): GrassTileset {
     // create grass field
     const { spacing, tileSize, tilesPerSide } = opts;
     const grassPerTile = (tileSize / spacing) ** 2;
@@ -246,7 +251,8 @@ function createGrassTileset(opts: GrassTileOpts & GrassTilesetOpts, device: GPUD
         for (let zi = 0; zi < tilesPerSide; zi++) {
             const x = xi * tileSize;
             const z = zi * tileSize;
-            console.log(`(${xi}, ${zi})`);
+            // TODO(@darzu): 
+            // console.log(`(${xi}, ${zi})`);
             const tile = createGrassTile(opts, grassMeshPool);
             mat4.translate(tile.transform, tile.transform, [x, 0, z])
             grassMeshPool.applyMeshTransform(tile)
@@ -267,7 +273,10 @@ function createGrassTileset(opts: GrassTileOpts & GrassTilesetOpts, device: GPUD
     //     trans.byteLength
     // );
 
-    return grassMeshPool
+    return {
+        pool: grassMeshPool,
+        tiles: grassMeshPool._meshes,
+    }
 }
 
 function nearestIntegers(target: number, numInts: number): number[] {
@@ -297,11 +306,11 @@ function initGrassSystem(device: GPUDevice): GrassSystem {
         tilesPerSide: 4,
     }
 
-    const tilesetPool = createGrassTileset(opts, device);
+    const { pool, tiles } = createGrassTileset(opts, device);
 
     // TODO(@darzu): handle grass tile movement
     function update(target: vec3) {
-        const [tx, ty, tz] = target;
+        const [tx, _, tz] = target;
 
         // compute the N closest centers
         const txi = tx / opts.tileSize;
@@ -314,14 +323,57 @@ function initGrassSystem(device: GPUDevice): GrassSystem {
                 nearestIs.push([xi, zi])
 
         // compare with current positions
+        const occupied: [number, number][] = []
+        const toMoveInds: number[] = []
+        const tilePoses: vec3[] = tiles.map(t => getPositionFromTransform(t.transform))
+        for (let i = 0; i < tiles.length; i++) {
+            const t = tiles[i]
+            const [x, _, z] = tilePoses[i]
+            const xi = Math.floor((x + 0.5) / opts.tileSize)
+            const zi = Math.floor((z + 0.5) / opts.tileSize)
+            let shouldMove = true;
+            for (let [xi2, zi2] of nearestIs) {
+                if (xi2 === xi && zi2 === zi) {
+                    occupied.push([xi2, zi2])
+                    shouldMove = false;
+                    break;
+                }
+            }
+            if (shouldMove)
+                toMoveInds.push(i)
+        }
+
         // move those that don't match
+        for (let i of toMoveInds) {
+            const t = tiles[i]
+            for (let [xi1, zi1] of nearestIs) {
+                const isOpen = !occupied.some(([xi2, zi2]) => xi2 === xi1 && zi2 === zi1)
+                if (!isOpen)
+                    continue;
+                // do move
+                occupied.push([xi1, zi1])
+                const targetPos: vec3 = [xi1 * opts.tileSize, 0, zi1 * opts.tileSize]
+                const move = vec3.subtract(vec3.create(), targetPos, tilePoses[i])
+                mat4.translate(t.transform, t.transform, move)
+                // console.log(`moving (${tilePoses[i][0]}, ${tilePoses[i][1]}, ${tilePoses[i][2]}) to (${targetPos[0]}, ${targetPos[1]}, ${targetPos[2]}) via (${move[0]}, ${move[1]}, ${move[2]})`)
+                pool.applyMeshTransform(t)
+                break;
+            }
+        }
     }
 
     const res: GrassSystem = {
-        getGrassPools: () => [tilesetPool],
+        getGrassPools: () => [pool],
         update,
     }
     return res;
+}
+
+function getPositionFromTransform(t: mat4): vec3 {
+    // TODO(@darzu): not really necessary
+    const pos = vec3.create();
+    vec3.transformMat4(pos, pos, t);
+    return pos
 }
 
 async function init(canvasRef: HTMLCanvasElement) {
@@ -571,15 +623,14 @@ async function init(canvasRef: HTMLCanvasElement) {
         // controlTransformable(m2t);
 
         playerM.transform = playerT.getTransform();
-        meshPool.applyMeshTransform(playerM)
+        meshPool.applyMeshTransform(playerM);
 
         // reset accummulated mouse delta
         mouseDeltaX = 0;
         mouseDeltaY = 0;
 
-        const grassTarget = vec3.create();
-        vec3.transformMat4(grassTarget, grassTarget, playerM.transform);
-        grassSystem.update(grassTarget);
+        const grassTarget = getPositionFromTransform(playerM.transform);
+        grassSystem.update(grassTarget)
 
         function getViewProj() {
             const viewProj = mat4.create();
