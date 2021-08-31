@@ -1,7 +1,7 @@
 import { mat4, vec3 } from '../ext/gl-matrix.js';
 import { align } from '../math.js';
 import { initGrassSystem } from './grass.js';
-import { createMeshPoolBuilder, MeshHandle, MeshPool, meshUniByteSizeAligned, serializeVertex, vertByteSize, vertexDataFormat, VertexKind } from './mesh-pool.js';
+import { createMeshPoolBuilder, MeshHandle, MeshPool, meshUniByteSizeAligned, Vertex } from './mesh-pool.js';
 
 const ENABLE_WATER = false;
 
@@ -613,8 +613,8 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
                 module: device.createShaderModule({ code: vertexShaderForShadows }),
                 entryPoint: 'main',
                 buffers: [{
-                    arrayStride: vertByteSize,
-                    attributes: vertexDataFormat,
+                    arrayStride: Vertex.ByteSize,
+                    attributes: Vertex.WebGPUFormat,
                 }],
             },
             fragment: {
@@ -823,8 +823,8 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
             module: device.createShaderModule({ code: vertexShader }),
             entryPoint: 'main',
             buffers: [{
-                arrayStride: vertByteSize,
-                attributes: vertexDataFormat,
+                arrayStride: Vertex.ByteSize,
+                attributes: Vertex.WebGPUFormat,
             }],
         },
         fragment: {
@@ -1163,12 +1163,12 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
             const norm2 = computeTriangleNormal(p0, p4, p3);
 
             // TODO(@darzu): compute normal
-            const kind = VertexKind.water;
+            const kind = Vertex.Kind.water;
 
-            const vOff = builder.numVerts * vertByteSize;
+            const vOff = builder.numVerts * Vertex.ByteSize;
             // builder.verticesMap.set(vertexData, vOff)
-            serializeVertex(builder.verticesMap, vOff, [x, y, z], color1, norm1, kind)
-            serializeVertex(builder.verticesMap, vOff + vertByteSize, [x, y, z], color2, norm2, kind)
+            Vertex.Serialize(builder.verticesMap, vOff, [x, y, z], color1, norm1, kind)
+            Vertex.Serialize(builder.verticesMap, vOff + Vertex.ByteSize, [x, y, z], color2, norm2, kind)
 
             builder.numVerts += 2;
             // builder.numVerts += 1;

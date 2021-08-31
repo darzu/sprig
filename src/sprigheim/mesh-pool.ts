@@ -14,41 +14,47 @@ const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
 const bytesPerUint16 = Uint16Array.BYTES_PER_ELEMENT;
 const bytesPerUint32 = Uint32Array.BYTES_PER_ELEMENT;
 
-export enum VertexKind {
-    normal = 0,
-    water = 1,
+// Everything to do with our vertex format must be in this module.
+// TODO(@darzu): code gen some of this so code changes are less error prone.
+export module Vertex {
+    export enum Kind {
+        normal = 0,
+        water = 1,
+    }
+
+    // TODO(@darzu): VERTEX FORMAT
+    // define the format of our vertices (this needs to agree with the inputs to the vertex shaders)
+    export const WebGPUFormat: GPUVertexAttribute[] = [
+        { shaderLocation: 0, offset: bytesPerVec3 * 0, format: 'float32x3' }, // position
+        { shaderLocation: 1, offset: bytesPerVec3 * 1, format: 'float32x3' }, // color
+        { shaderLocation: 2, offset: bytesPerVec3 * 2, format: 'float32x3' }, // normals
+        { shaderLocation: 3, offset: bytesPerVec3 * 3, format: 'uint32' }, // kind
+    ];
+
+    // these help us pack and use vertices in that format
+    export const ByteSize = bytesPerVec3/*pos*/ + bytesPerVec3/*color*/ + bytesPerVec3/*normal*/ + bytesPerUint32/*kind*/;
+
+    // for performance reasons, we keep scratch buffers around
+    const _scratch_serializeVertex_f32 = new Float32Array(3 + 3 + 3);
+    const _scratch_serializeVertex_f32_as_u8 = new Uint8Array(_scratch_serializeVertex_f32.buffer);
+    const _scratch_serializeVertex_u32 = new Uint32Array(1);
+    const _scratch_serializeVertex_u32_as_u8 = new Uint8Array(_scratch_serializeVertex_u32.buffer);
+    export function Serialize(buffer: Uint8Array, byteOffset: number, pos: vec3, color: vec3, normal: vec3, kind: number) {
+        _scratch_serializeVertex_f32[0] = pos[0]
+        _scratch_serializeVertex_f32[1] = pos[1]
+        _scratch_serializeVertex_f32[2] = pos[2]
+        _scratch_serializeVertex_f32[3] = color[0]
+        _scratch_serializeVertex_f32[4] = color[1]
+        _scratch_serializeVertex_f32[5] = color[2]
+        _scratch_serializeVertex_f32[6] = normal[0]
+        _scratch_serializeVertex_f32[7] = normal[1]
+        _scratch_serializeVertex_f32[8] = normal[2]
+        buffer.set(_scratch_serializeVertex_f32_as_u8, byteOffset)
+        _scratch_serializeVertex_u32[0] = kind
+        buffer.set(_scratch_serializeVertex_u32_as_u8, byteOffset + bytesPerVec3 * 3);
+    }
 }
 
-// TODO(@darzu): VERTEX FORMAT
-// define the format of our vertices (this needs to agree with the inputs to the vertex shaders)
-export const vertexDataFormat: GPUVertexAttribute[] = [
-    { shaderLocation: 0, offset: bytesPerVec3 * 0, format: 'float32x3' }, // position
-    { shaderLocation: 1, offset: bytesPerVec3 * 1, format: 'float32x3' }, // color
-    { shaderLocation: 2, offset: bytesPerVec3 * 2, format: 'float32x3' }, // normals
-    { shaderLocation: 3, offset: bytesPerVec3 * 3, format: 'uint32' }, // kind
-];
-// these help us pack and use vertices in that format
-export const vertByteSize = bytesPerVec3/*pos*/ + bytesPerVec3/*color*/ + bytesPerVec3/*normal*/ + bytesPerUint32/*kind*/;
-
-// for performance reasons, we keep scratch buffers around
-const _scratch_serializeVertex_f32 = new Float32Array(3 + 3 + 3);
-const _scratch_serializeVertex_f32_as_u8 = new Uint8Array(_scratch_serializeVertex_f32.buffer);
-const _scratch_serializeVertex_u32 = new Uint32Array(1);
-const _scratch_serializeVertex_u32_as_u8 = new Uint8Array(_scratch_serializeVertex_u32.buffer);
-export function serializeVertex(buffer: Uint8Array, byteOffset: number, pos: vec3, color: vec3, normal: vec3, kind: number) {
-    _scratch_serializeVertex_f32[0] = pos[0]
-    _scratch_serializeVertex_f32[1] = pos[1]
-    _scratch_serializeVertex_f32[2] = pos[2]
-    _scratch_serializeVertex_f32[3] = color[0]
-    _scratch_serializeVertex_f32[4] = color[1]
-    _scratch_serializeVertex_f32[5] = color[2]
-    _scratch_serializeVertex_f32[6] = normal[0]
-    _scratch_serializeVertex_f32[7] = normal[1]
-    _scratch_serializeVertex_f32[8] = normal[2]
-    buffer.set(_scratch_serializeVertex_f32_as_u8, byteOffset)
-    _scratch_serializeVertex_u32[0] = kind
-    buffer.set(_scratch_serializeVertex_u32_as_u8, byteOffset + bytesPerVec3 * 3);
-}
 
 // TODO(@darzu): MODEL FORMAT
 // define the format of our models' uniform buffer
@@ -133,17 +139,17 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
 
     // log our estimated space usage stats
     console.log(`Mesh space usage for up to ${maxMeshes} meshes, ${maxTris} tris, ${maxVerts} verts:`);
-    console.log(`   ${(maxVerts * vertByteSize / 1024).toFixed(1)} KB for verts`);
+    console.log(`   ${(maxVerts * Vertex.ByteSize / 1024).toFixed(1)} KB for verts`);
     console.log(`   ${(maxTris * bytesPerTri / 1024).toFixed(1)} KB for indices`);
     console.log(`   ${(maxMeshes * meshUniByteSizeAligned / 1024).toFixed(1)} KB for other object data`);
     const unusedBytesPerModel = meshUniByteSizeAligned - meshUniByteSizeExact;
     console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per object (${(unusedBytesPerModel * maxMeshes / 1024).toFixed(1)} KB total waste)`);
-    const totalReservedBytes = maxVerts * vertByteSize + maxTris * bytesPerTri + maxMeshes * meshUniByteSizeAligned;
+    const totalReservedBytes = maxVerts * Vertex.ByteSize + maxTris * bytesPerTri + maxMeshes * meshUniByteSizeAligned;
     console.log(`Total space reserved for objects: ${(totalReservedBytes / 1024).toFixed(1)} KB`);
 
     // create our mesh buffers (vertex, index, uniform)
     const verticesBuffer = device.createBuffer({
-        size: maxVerts * vertByteSize,
+        size: maxVerts * Vertex.ByteSize,
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
         mappedAtCreation: true,
     });
@@ -214,15 +220,15 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         const indicesNumOffset = builder.numTris * indicesPerTriangle;
 
         m.pos.forEach((pos, i) => {
-            b.addVertex(pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0], VertexKind.normal)
+            b.addVertex(pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0], Vertex.Kind.normal)
         })
         m.tri.forEach((triInd, i) => {
             b.addTri(triInd)
 
             // set provoking vertex data
-            const vOff = (vertNumOffset + triInd[0]) * vertByteSize
+            const vOff = (vertNumOffset + triInd[0]) * Vertex.ByteSize
             const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
-            serializeVertex(verticesMap, vOff, m.pos[triInd[0]], m.colors[i], normal, VertexKind.normal)
+            Vertex.Serialize(verticesMap, vOff, m.pos[triInd[0]], m.colors[i], normal, Vertex.Kind.normal)
             // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
         })
 
@@ -301,8 +307,8 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         function addVertex(pos: vec3, color: vec3, normal: vec3, kind: number): void {
             if (finished || meshFinished)
                 throw 'trying to use finished MeshBuilder'
-            const vOff = builder.numVerts * vertByteSize
-            serializeVertex(builder.verticesMap, vOff, pos, color, normal, kind)
+            const vOff = builder.numVerts * Vertex.ByteSize
+            Vertex.Serialize(builder.verticesMap, vOff, pos, color, normal, kind)
             builder.numVerts += 1;
 
             // update our aabb min/max
