@@ -1,9 +1,9 @@
+import { getPositionFromTransform, moveX, moveY, moveZ, pitch, yaw } from '../3d-util.js';
 import { mat4, vec3 } from '../ext/gl-matrix.js';
 import { align } from '../math.js';
 import { initGrassSystem } from './grass.js';
-import { createMeshPoolBuilder, MeshHandle, MeshPool, Vertex, MeshUniform, SceneUniform } from './mesh-pool.js';
-
-const ENABLE_WATER = false;
+import { createMeshPoolBuilder, MeshHandle, MeshPool, Vertex, MeshUniform, SceneUniform, unshareProvokingVertices, Mesh } from './mesh-pool.js';
+import { createWaterSystem } from './water.js';
 
 // Defines shaders in WGSL for the shadow and regular rendering pipelines. Likely you'll want
 // these in external files but they've been inlined for redistribution convenience.
@@ -331,61 +331,6 @@ function checkCanvasResize(device: GPUDevice, canvasWidth: number, canvasHeight:
 
     aspectRatio = Math.abs(canvasWidth / canvasHeight);
 }
-
-// defines the geometry and coloring of a mesh
-export interface Mesh {
-    pos: vec3[];
-    tri: vec3[];
-    colors: vec3[];  // colors per triangle in r,g,b float [0-1] format
-    // format flags:
-    usesProvoking?: boolean,
-    verticesUnshared?: boolean, // TODO(@darzu): support
-}
-
-function unshareVertices(input: Mesh): Mesh {
-    const pos: vec3[] = []
-    const tri: vec3[] = []
-    input.tri.forEach(([i0, i1, i2], i) => {
-        pos.push(input.pos[i0]);
-        pos.push(input.pos[i1]);
-        pos.push(input.pos[i2]);
-        tri.push([
-            i * 3 + 0,
-            i * 3 + 1,
-            i * 3 + 2,
-        ])
-    })
-    return { pos, tri, colors: input.colors, verticesUnshared: true }
-}
-function unshareProvokingVertices(input: Mesh): Mesh {
-    const pos: vec3[] = [...input.pos]
-    const tri: vec3[] = []
-    const provoking: { [key: number]: boolean } = {}
-    input.tri.forEach(([i0, i1, i2], triI) => {
-        if (!provoking[i0]) {
-            // First vertex is unused as a provoking vertex, so we'll use it for this triangle.
-            provoking[i0] = true;
-            tri.push([i0, i1, i2])
-        } else if (!provoking[i1]) {
-            // First vertex was taken, so let's see if we can rotate the indices to get an unused 
-            // provoking vertex.
-            provoking[i1] = true;
-            tri.push([i1, i2, i0])
-        } else if (!provoking[i2]) {
-            // ditto
-            provoking[i2] = true;
-            tri.push([i2, i0, i1])
-        } else {
-            // All vertices are taken, so create a new one
-            const i3 = pos.length;
-            pos.push(input.pos[i0])
-            provoking[i3] = true;
-            tri.push([i3, i1, i2])
-        }
-    })
-    return { ...input, pos, tri, usesProvoking: true }
-}
-
 
 // define our meshes (ideally these would be imported from a standard format)
 export const CUBE: Mesh = unshareProvokingVertices({
@@ -1024,28 +969,6 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     return renderFrame;
 }
 
-// math utilities
-export function computeTriangleNormal(p1: vec3, p2: vec3, p3: vec3): vec3 {
-    // cross product of two edges, https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
-    const n = vec3.cross(vec3.create(), vec3.sub(vec3.create(), p2, p1), vec3.sub(vec3.create(), p3, p1))
-    vec3.normalize(n, n)
-    return n;
-}
-
-// matrix utilities
-function pitch(m: mat4, rad: number) { return mat4.rotateX(m, m, rad); }
-function yaw(m: mat4, rad: number) { return mat4.rotateY(m, m, rad); }
-function roll(m: mat4, rad: number) { return mat4.rotateZ(m, m, rad); }
-function moveX(m: mat4, n: number) { return mat4.translate(m, m, [n, 0, 0]); }
-function moveY(m: mat4, n: number) { return mat4.translate(m, m, [0, n, 0]); }
-function moveZ(m: mat4, n: number) { return mat4.translate(m, m, [0, 0, n]); }
-export function getPositionFromTransform(t: mat4): vec3 {
-    // TODO(@darzu): not really necessary
-    const pos = vec3.create();
-    vec3.transformMat4(pos, pos, t);
-    return pos
-}
-
 async function main() {
     const start = performance.now();
 
@@ -1081,163 +1004,3 @@ async function main() {
 }
 await main()
 
-/*
-WATER
-
-Approach:
-    mesh defining surface of water
-    different LODs of that mesh
-    vertices displaced using displacement map
-*/
-
-interface WaterSystem {
-    getMeshPools: () => MeshPool[],
-}
-
-function createWaterSystem(device: GPUDevice): WaterSystem {
-    if (!ENABLE_WATER)
-        return { getMeshPools: () => [] }
-
-    const mapXSize = 100;
-    const mapZSize = 100;
-    const mapArea = mapXSize * mapZSize;
-
-    const idx = (xi: number, zi: number) => zi * mapXSize + xi
-
-    const map = new Float32Array(mapXSize * mapZSize);
-    for (let x = 0; x < mapXSize; x++) {
-        for (let z = 0; z < mapZSize; z++) {
-            const i = idx(x, z)
-            map[i] = 0; // Math.sin(x * 0.5) + Math.cos(z) // TODO(@darzu): 
-            // map[i] = Math.random() * 2 + x * 0.02 + z * 0.04 - 10 // TODO(@darzu):
-        }
-    }
-
-    const builder = createMeshPoolBuilder(device, {
-        maxMeshes: 1,
-        maxTris: mapArea * 2,
-        maxVerts: mapArea * 2,
-    })
-
-    // const idx = (xi: number, zi: number) => clamp(zi, 0, mapZSize - 1) * mapXSize + clamp(xi, 0, mapXSize - 1)
-
-    const color1: vec3 = [0.1, 0.3, 0.5]
-    const color2: vec3 = color1
-    // const color2: vec3 = [0.1, 0.5, 0.3]
-    // const color: vec3 = [Math.random(), Math.random(), Math.random()]
-
-    const spacing = 1.0;
-    const maxHeight = 10.0; // TODO(@darzu): compute?
-
-    for (let xi = 0; xi < mapXSize; xi++) {
-        for (let zi = 0; zi < mapZSize; zi++) {
-
-            let y = map[idx(xi, zi)];
-            let yX0 = map[idx(xi - 1, zi)];
-            let yX2 = map[idx(xi + 1, zi)];
-            let yZ0 = map[idx(xi, zi - 1)];
-            let yZ2 = map[idx(xi, zi + 1)];
-
-            const x = xi * spacing;
-            const z = zi * spacing;
-
-            const p0: vec3 = [x, y, z]
-            const p1: vec3 = [x - 1, yX0, z]
-            const p2: vec3 = [x, yZ0, z - 1]
-
-            const norm1 = computeTriangleNormal(p0, p2, p1);
-
-            const p3: vec3 = [x + 1, yX2, z]
-            const p4: vec3 = [x, yZ2, z + 1]
-
-            const norm2 = computeTriangleNormal(p0, p4, p3);
-
-            // TODO(@darzu): compute normal
-            const kind = Vertex.Kind.water;
-
-            const vOff = builder.numVerts * Vertex.ByteSize;
-            // builder.verticesMap.set(vertexData, vOff)
-            Vertex.Serialize(builder.verticesMap, vOff, [x, y, z], color1, norm1, kind)
-            Vertex.Serialize(builder.verticesMap, vOff + Vertex.ByteSize, [x, y, z], color2, norm2, kind)
-
-            builder.numVerts += 2;
-            // builder.numVerts += 1;
-
-            // const vertexData = [
-            //     ...[xi, y, zi], ...color, ...[0, 1, 0],
-            //     ...[xi + 1, y, zi], ...color, ...[0, 1, 0],
-            //     ...[xi, y, zi + 1], ...color, ...[0, 1, 0],
-            // ]
-            // const vOff = builder.numVerts * vertElStride;
-            // builder.verticesMap.set(vertexData, vOff)
-
-            // const iOff = builder.numTris * 3;
-            // // builder.indicesMap.set([2, 1, 0], iOff)
-            // builder.indicesMap.set([2 + builder.numVerts, 1 + builder.numVerts, 0 + builder.numVerts], iOff)
-
-            // builder.numVerts += 3;
-        }
-    }
-
-    for (let xi = 1; xi < mapXSize - 1; xi++) {
-        for (let zi = 1; zi < mapZSize - 1; zi++) {
-            let i0 = idx(xi, zi) * 2;
-            let i1 = idx(xi - 1, zi) * 2;
-            let i2 = idx(xi, zi - 1) * 2;
-
-            builder.indicesMap.set([i0, i1, i2], builder.numTris * 3)
-            builder.numTris += 1;
-
-            let i3 = idx(xi, zi) * 2 + 1;
-            let i4 = idx(xi + 1, zi) * 2 + 1;
-            let i5 = idx(xi, zi + 1) * 2 + 1;
-
-            builder.indicesMap.set([i3, i4, i5], builder.numTris * 3)
-            builder.numTris += 1;
-        }
-    }
-
-    const prevNumVerts = 0;
-    const prevNumTris = 0;
-    const waterMesh: MeshHandle = {
-        vertNumOffset: prevNumVerts,
-        indicesNumOffset: prevNumTris * 3,
-        modelUniByteOffset: MeshUniform.ByteSizeAligned * builder.allMeshes.length,
-        numTris: builder.numTris,
-
-        // used and updated elsewhere
-        transform: mat4.create(),
-        aabbMin: vec3.fromValues(0, 0, 0),
-        aabbMax: vec3.fromValues(mapXSize * spacing, maxHeight, mapZSize * spacing),
-
-        pool: builder.poolHandle,
-        // TODO(@darzu):
-        // maxDraw: opts.maxBladeDraw,
-
-        // TODO(@darzu): what're the implications of this?
-        // shadowCaster: true,
-
-        // not applicable
-        // TODO(@darzu): make this optional?
-        model: undefined,
-    };
-    console.dir(waterMesh)
-    builder.allMeshes.push(waterMesh)
-
-    // builder.addMesh(CUBE)
-
-    const pool = builder.finish();
-
-    // initial position
-    mat4.translate(waterMesh.transform, waterMesh.transform, [-(mapXSize * spacing) * 0.5, -4, -(mapZSize * spacing) * 0.5])
-
-    // TODO(@darzu): these could be done while the builder has mapped buffers
-    pool.allMeshes.forEach(m => pool.updateUniform(m));
-    // pool.allMeshes.forEach(m => meshApplyMinMaxPos(m));
-
-    const water: WaterSystem = {
-        getMeshPools: () => [pool]
-    };
-
-    return water;
-}

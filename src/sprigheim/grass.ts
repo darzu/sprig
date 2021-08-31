@@ -1,7 +1,7 @@
+import { getPositionFromTransform } from "../3d-util.js";
 import { mat4, vec3 } from "../ext/gl-matrix.js";
 import { align, jitter } from "../math.js";
 import { createMeshPoolBuilder, MeshHandle, MeshPool, MeshPoolBuilder, Vertex } from "./mesh-pool.js";
-import { getPositionFromTransform } from "./sprig-main.js";
 
 const RENDER_GRASS = true;
 

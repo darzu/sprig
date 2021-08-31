@@ -2,9 +2,9 @@
 
 // once a mesh has been added to our vertex, triangle, and uniform buffers, we need
 
+import { computeTriangleNormal } from "../3d-util.js";
 import { mat4, vec3 } from "../ext/gl-matrix.js";
 import { align, sum } from "../math.js";
-import { computeTriangleNormal, Mesh } from "./sprig-main.js";
 
 const indicesPerTriangle = 3;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
@@ -207,9 +207,6 @@ export module SceneUniform {
         `
     }
 
-    // // write the light data to the scene uniform buffer
-    // device.queue.writeBuffer(sceneUniBuffer, bytesPerMat4 * 1, (lightViewProjMatrix as Float32Array).buffer);
-    // device.queue.writeBuffer(sceneUniBuffer, bytesPerMat4 * 2, (lightDir as Float32Array).buffer);
     const scratch_f32 = new Float32Array(sum(_counts));
     const scratch_f32_as_u8 = new Uint8Array(scratch_f32.buffer);
     export function Serialize(buffer: Uint8Array, byteOffset: number, data: Data) {
@@ -286,6 +283,61 @@ export interface MeshBuilder {
     addTri: (ind: vec3) => void,
     setUniform: (transform: mat4, aabbMin: vec3, aabbMax: vec3) => void,
     finish: () => MeshHandle;
+}
+
+
+// defines the geometry and coloring of a mesh
+export interface Mesh {
+    pos: vec3[];
+    tri: vec3[];
+    colors: vec3[];  // colors per triangle in r,g,b float [0-1] format
+    // format flags:
+    usesProvoking?: boolean,
+    verticesUnshared?: boolean, // TODO(@darzu): support
+}
+
+export function unshareVertices(input: Mesh): Mesh {
+    const pos: vec3[] = []
+    const tri: vec3[] = []
+    input.tri.forEach(([i0, i1, i2], i) => {
+        pos.push(input.pos[i0]);
+        pos.push(input.pos[i1]);
+        pos.push(input.pos[i2]);
+        tri.push([
+            i * 3 + 0,
+            i * 3 + 1,
+            i * 3 + 2,
+        ])
+    })
+    return { pos, tri, colors: input.colors, verticesUnshared: true }
+}
+export function unshareProvokingVertices(input: Mesh): Mesh {
+    const pos: vec3[] = [...input.pos]
+    const tri: vec3[] = []
+    const provoking: { [key: number]: boolean } = {}
+    input.tri.forEach(([i0, i1, i2], triI) => {
+        if (!provoking[i0]) {
+            // First vertex is unused as a provoking vertex, so we'll use it for this triangle.
+            provoking[i0] = true;
+            tri.push([i0, i1, i2])
+        } else if (!provoking[i1]) {
+            // First vertex was taken, so let's see if we can rotate the indices to get an unused 
+            // provoking vertex.
+            provoking[i1] = true;
+            tri.push([i1, i2, i0])
+        } else if (!provoking[i2]) {
+            // ditto
+            provoking[i2] = true;
+            tri.push([i2, i0, i1])
+        } else {
+            // All vertices are taken, so create a new one
+            const i3 = pos.length;
+            pos.push(input.pos[i0])
+            provoking[i3] = true;
+            tri.push([i3, i1, i2])
+        }
+    })
+    return { ...input, pos, tri, usesProvoking: true }
 }
 
 export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolBuilder {
