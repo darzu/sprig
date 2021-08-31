@@ -76,3 +76,67 @@ Physics engine tutorials
     http://web.archive.org/web/20200323032109/http://www.wildbunny.co.uk/blog/2011/04/06/physics-engines-for-dummies/
     Broad vs narrow:
         https://research.ncl.ac.uk/game/mastersdegree/gametechnologies/physicstutorials/6accelerationstructures/Physics%20-%20Spatial%20Acceleration%20Structures.pdf
+
+Rapier on it's broad phase:
+https://github.com/dimforge/rapier/blob/master/src/geometry/broad_phase_multi_sap/broad_phase.rs
+    /// A broad-phase combining a Hierarchical Grid and Sweep-and-Prune.
+    ///
+    /// The basic Sweep-and-Prune (SAP) algorithm has one significant flaws:
+    /// the interactions between far-away objects. This means that objects
+    /// that are very far away will still have some of their endpoints swapped
+    /// within the SAP data-structure. This results in poor scaling because this
+    /// results in lots of swapping between endpoints of AABBs that won't ever
+    /// actually interact.
+    ///
+    /// The first optimization to address this problem is to use the Multi-SAP
+    /// method. This basically combines an SAP with a grid. The grid subdivides
+    /// the spaces into equally-sized subspaces (grid cells). Each subspace, which we call
+    /// a "region" contains an SAP instance (i.e. there SAP axes responsible for
+    /// collecting endpoints and swapping them when they move to detect interaction pairs).
+    /// Each AABB is inserted in all the regions it intersects.
+    /// This prevents the far-away problem because two objects that are far away will
+    /// be located on different regions. So their endpoints will never meed.
+    ///
+    /// However, the Multi-SAP approach has one notable problem: the region size must
+    /// be chosen wisely. It could be user-defined, but that's makes it more difficult
+    /// to use (for the end-user). Or it can be given a fixed value. Using a fixed
+    /// value may result in large objects intersecting lots of regions, resulting in
+    /// poor performances and very high memory usage.
+    ///
+    /// So a solution to that large-objects problem is the Multi-SAP approach is to
+    /// replace the grid by a hierarchical grid. A hierarchical grid is composed of
+    /// several layers. And each layer have different region sizes. For example all
+    /// the regions on layer 0 will have the size 1x1x1. All the regions on the layer
+    /// 1 will have the size 10x10x10, etc. That way, a given AABB will be inserted
+    /// on the layer that has regions big enough to avoid the large-object problem.
+    /// For example a 20x20x20 object will be inserted in the layer with region
+    /// of size 10x10x10, resulting in only 8 regions being intersect by the AABB.
+    /// (If it was inserted in the layer with regions of size 1x1x1, it would have intersected
+    /// 8000 regions, which is a problem performancewise.)
+    ///
+    /// We call this new method the Hierarchical-SAP.
+    ///
+    /// Now with the Hierarchical-SAP, we can update each layer independently from one another.
+    /// However, objects belonging to different layers will never be detected as intersecting that
+    /// way. So we need a way to do inter-layer interference detection. There is a lot ways of doing
+    /// this: performing inter-layer Multi-Box-Pruning passes is one example (but this is not what we do).
+    /// In our implementation, we do the following:
+    /// - The AABB bounds of each region of the layer `n` are inserted into the corresponding larger region
+    ///   of the layer `n + 1`.
+    /// - When an AABB in the region of the layer `n + 1` intersects the AABB corresponding to one of the
+    ///   regions at the smaller layer `n`, we add that AABB to that smaller region.
+    /// So in the end it means that a given AABB will be inserted into all the region it intersects at
+    /// the layer `n`. And it will also be inserted into all the regions it intersects at the smaller layers
+    /// (the layers `< n`), but only for the regions that already exist (so we don't have to discretize
+    /// our AABB into the layers `< n`). This involves a fair amount of bookkeeping unfortunately, but
+    /// this has the benefit of keep the overall complexity of the algorithm O(1) in the typical specially
+    /// coherent scenario.
+    ///
+    /// From an implementation point-of-view, our hierarchical SAP is implemented with the following structures:
+    /// - There is one `SAPLayer` per layer of the hierarchical grid.
+    /// - Each `SAPLayer` contains multiple `SAPRegion` (each being a region of the grid represented by that layer).
+    /// - Each `SAPRegion` contains three `SAPAxis`, representing the "classical" SAP algorithm running on this region.
+    /// - Each `SAPAxis` maintains a sorted list of `SAPEndpoints` representing the endpoints of the AABBs intersecting
+    ///   the bounds on the `SAPRegion` containing this `SAPAxis`.
+    /// - A set of `SAPProxy` are maintained separately. It contains the AABBs of all the colliders managed by this
+    ///   broad-phase, as well as the AABBs of all the regions part of this broad-phase.

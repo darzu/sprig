@@ -43,3 +43,9 @@ For automatic lod'ing:
 
 GPU architectures:
     https://rastergrid.com/blog/gpu-tech/2021/07/gpu-architecture-types-explained/
+
+Debugging html5 games:
+    https://www.html5rocks.com/en/tutorials/games/abouttracing/
+    chrome://tracing/
+    console.time("update"),
+    console.timeEnd("update");
