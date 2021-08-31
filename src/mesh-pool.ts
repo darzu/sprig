@@ -615,14 +615,11 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
     };
 
     function mappedMeshBuilder(): MeshBuilder {
-        let getIndicesShift: (() => number) | undefined = undefined;
-        if (opts.shiftMeshIndices)
-            getIndicesShift = () => builder.numVerts
         const b = createMeshBuilder(maps,
             allMeshes.length * MeshUniform.ByteSizeAligned,
             builder.numVerts * Vertex.ByteSize,
             builder.numTris * bytesPerTri,
-            getIndicesShift);
+            opts.shiftMeshIndices ? builder.numVerts : undefined);
 
         function finish() {
             const idx: PoolIndex = {
@@ -684,21 +681,19 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
             throw `trying to use unfinished MeshPool`
         if (!m.usesProvoking)
             throw `mesh must use provoking vertices`
-        if (builder.numVerts + m.pos.length > maxVerts)
+        if (pool.numVerts + m.pos.length > maxVerts)
             throw "Too many vertices!"
-        if (builder.numTris + m.tri.length > maxTris)
+        if (pool.numTris + m.tri.length > maxTris)
             throw "Too many triangles!"
 
         const data: MeshPoolMaps = {
+            // TODO(@darzu): use scratch arrays
             verticesMap: new Uint8Array(m.pos.length * Vertex.ByteSize),
             indicesMap: new Uint16Array(m.tri.length * 3),
             uniformMap: new Uint8Array(MeshUniform.ByteSizeAligned),
         }
 
-        let getIndicesShift: (() => number) | undefined = undefined;
-        if (opts.shiftMeshIndices)
-            getIndicesShift = () => pool.numVerts
-        const b = createMeshBuilder(data, 0, 0, 0, getIndicesShift);
+        const b = createMeshBuilder(data, 0, 0, 0, opts.shiftMeshIndices ? pool.numVerts : undefined);
 
         m.pos.forEach((pos, i) => {
             b.addVertex(pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0])
@@ -719,8 +714,8 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
 
         const idx: PoolIndex = {
             pool,
-            vertNumOffset: builder.numVerts,
-            indicesNumOffset: builder.numTris * 3,
+            vertNumOffset: pool.numVerts,
+            indicesNumOffset: pool.numTris * 3,
             modelUniByteOffset: allMeshes.length * MeshUniform.ByteSizeAligned,
         };
 
@@ -764,7 +759,7 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
     return builder;
 }
 
-function createMeshBuilder(maps: MeshPoolMaps, uByteOff: number, vByteOff: number, iByteOff: number, getIndicesShift: (() => number) | undefined): MeshBuilderInternal {
+function createMeshBuilder(maps: MeshPoolMaps, uByteOff: number, vByteOff: number, iByteOff: number, indicesShift: number | undefined): MeshBuilderInternal {
     let meshFinished = false;
     let numVerts = 0;
     let numTris = 0;
@@ -783,13 +778,12 @@ function createMeshBuilder(maps: MeshPoolMaps, uByteOff: number, vByteOff: numbe
             throw 'trying to use finished MeshBuilder'
         const currIByteOff = iByteOff + numTris * bytesPerTri
         const currI = currIByteOff / 2;
-        if (getIndicesShift) {
-            const n = getIndicesShift()
-            _scratchTri[0] = triInd[0] + n
-            _scratchTri[1] = triInd[1] + n
-            _scratchTri[2] = triInd[2] + n
+        if (indicesShift) {
+            _scratchTri[0] = triInd[0] + indicesShift
+            _scratchTri[1] = triInd[1] + indicesShift
+            _scratchTri[2] = triInd[2] + indicesShift
         }
-        maps.indicesMap.set(getIndicesShift ? _scratchTri : triInd, currI) // TODO(@darzu): it's kinda weird indices map uses uint16 vs the rest us u8
+        maps.indicesMap.set(indicesShift ? _scratchTri : triInd, currI) // TODO(@darzu): it's kinda weird indices map uses uint16 vs the rest us u8
         numTris += 1;
     }
 
