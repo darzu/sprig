@@ -241,10 +241,11 @@ function computeNormals(m: MeshModel): vec3[] {
     })
 }
 
+// TODO(@darzu): this can be simplified
 function addMeshToBuffers(
     m: MeshModel,
     verts: Float32Array, prevNumVerts2: number, vertElStride: number,
-    indices: Uint16Array | null, prevNumTri2: number, shiftIndices = false): void {
+    indices: Uint16Array | null, prevNumTri2: number): void {
     // NOTE: we currently assumes vertices are unshared, this should be fixed by
     const norms = computeNormals(m);
     m.tri.forEach((triInd, i) => {
@@ -256,11 +257,10 @@ function addMeshToBuffers(
         {
             const vOff = prevNumVerts * vertElStride
             const iOff = prevNumTri * indicesPerTriangle
-            const indShift = shiftIndices ? prevNumVerts : 0;
             if (indices) {
-                indices[iOff + 0] = triInd[0] + indShift
-                indices[iOff + 1] = triInd[1] + indShift
-                indices[iOff + 2] = triInd[2] + indShift
+                indices[iOff + 0] = triInd[0]
+                indices[iOff + 1] = triInd[1]
+                indices[iOff + 2] = triInd[2]
             }
             // set per-face vertex data
             // position
@@ -439,9 +439,8 @@ let _indMap: Uint16Array | null = null;
 
 function addMeshes(meshesToAdd: MeshModel[], shadowCasters: boolean): Mesh[] {
     function addMesh(m: MeshModel): Mesh {
-        if (_vertsMap === null) {
+        if (_vertsMap === null)
             throw "Use preRender() and postRender() functions"
-        }
 
         m = unshareVertices(m);
 
@@ -450,32 +449,22 @@ function addMeshes(meshesToAdd: MeshModel[], shadowCasters: boolean): Mesh[] {
         if (_numTris + m.tri.length > maxTris)
             throw "Too many triangles!"
 
-        // add to vertex and index buffers
-        addMeshToBuffers(m, _vertsMap, _numVerts, vertElStride, _indMap, _numTris, false);
+        addMeshToBuffers(m, _vertsMap, _numVerts, vertElStride, _indMap, _numTris);
 
-        // create transformation matrix
-        const trans = mat4.create() as Float32Array;
+        const transform = mat4.create() as Float32Array;
 
-        // TODO(@darzu): real transforms
-        // mat4.translate(trans, trans, vec3.fromValues(
-        //     4 * _meshes.length, // TODO
-        //     0, 0));
-
-        // save the transform matrix to the buffer
-        // TODO(@darzu): MESH FORMAT
         const uniOffset = _meshes.length * meshUniByteSize;
         device.queue.writeBuffer(
             _meshUniBuffer,
             uniOffset,
-            trans.buffer,
+            transform.buffer,
         );
 
-        // create the result
         const res: Mesh = {
-            vertNumOffset: _numVerts, // TODO(@darzu): 
-            indicesNumOffset: _numTris * 3, // TODO(@darzu): 
+            vertNumOffset: _numVerts,
+            indicesNumOffset: _numTris * 3,
             modelUniByteOffset: uniOffset,
-            transform: trans,
+            transform,
             triCount: m.tri.length,
             model: m,
         }
