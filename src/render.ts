@@ -209,7 +209,10 @@ export class Renderer {
   private gpuBufferWriteAllMeshUniforms() {
     // TODO(@darzu): hack
     for (let m of this.meshHandles) {
-      this._meshUniformBuffer.set((m.obj.transform() as Float32Array), m.modelUniByteOffset / bytesPerFloat)
+      this._meshUniformBuffer.set(
+        m.obj.transform() as Float32Array,
+        m.modelUniByteOffset / bytesPerFloat
+      );
     }
 
     this.device.queue.writeBuffer(
