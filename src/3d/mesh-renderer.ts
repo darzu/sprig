@@ -83,9 +83,9 @@ const wgslShaders = {
 
         let dist3ToDisplacer: vec4<f32> = worldPos - vec4<f32>(scene.displacer, 1.0);
         let distToDisplacer: f32 = distance(vec3<f32>(), dist3ToDisplacer.xyz);
-        let displaceStr: f32 = clamp(pow(2.5 / distToDisplacer, 5.0), 0.0, 1.0);
+        let displaceStr: f32 = clamp(pow(1.5 / distToDisplacer, 5.0), 0.0, 1.0);
         let localDisplacement: vec4<f32> = (normalize(dist3ToDisplacer) * displaceStr);
-        let displacerDisplacement: vec4<f32> = vec4<f32>(localDisplacement.x, min(0.0, localDisplacement.y) , localDisplacement.z, 0.0) * swayHeight;
+        let displacerDisplacement: vec4<f32> = vec4<f32>(localDisplacement.x, max(-position.y * 0.9, -position.y * displaceStr * 0.4), localDisplacement.z, 0.0) * swayHeight;
 
         let swayScale: f32 = swayHeight * 0.12;
         let timeScale: f32 = scene.time * 0.0015;
