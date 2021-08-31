@@ -1,5 +1,5 @@
 import { Peer } from "./peer.js";
-import { GameObject, GameState } from "./state.js";
+import { GameObject, GameEvent, GameState } from "./state.js";
 import { Serializer, Deserializer, OutOfRoomError } from "./serialize.js";
 import { vec3, quat } from "./gl-matrix.js";
 
@@ -25,6 +25,7 @@ enum MessageType {
 }
 
 enum ObjectUpdateType {
+  Event,
   Full,
   Dynamic,
   Create,
@@ -49,6 +50,13 @@ class StateSynchronizer<Inputs> {
   constructor(net: Net<Inputs>, remoteId: ServerId) {
     this.net = net;
     this.remoteId = remoteId;
+  }
+
+  private events(): GameEvent[] {
+    let events = Object.values(this.net.state.events);
+    return events.filter(
+      (ev) => ev.authority == this.net.state.me && !this.objectsKnown.has(ev.id)
+    );
   }
 
   private objects(): GameObject[] {
@@ -90,19 +98,36 @@ class StateSynchronizer<Inputs> {
     let seq = this.updateSeq++;
     message.writeUint8(MessageType.StateUpdate);
     message.writeUint32(seq);
+    let events = this.events();
     let objects = this.objects();
     let numObjects = 0;
     let numObjectsIndex = message.writeUint8(numObjects);
     try {
+      // events always get synced before objects
+      for (let ev of events) {
+        message.writeUint32(ev.id);
+        message.writeUint8(ObjectUpdateType.Event);
+        message.writeUint8(ev.type);
+        message.writeUint8(ev.authority);
+        message.writeUint8(ev.objects.length);
+        for (let id of ev.objects) {
+          message.writeUint32(id);
+        }
+        if (!this.objectsInUpdate[seq]) {
+          this.objectsInUpdate[seq] = new Set();
+        }
+        this.objectsInUpdate[seq].add(ev.id);
+        numObjects++;
+      }
       for (let obj of objects) {
         //console.log(`Trying to sync object ${obj.id}`);
         // TODO: could this be a 16-bit integer instead?
         message.writeUint32(obj.id);
-        message.writeUint8(obj.authority);
-        message.writeUint32(obj.authority_seq);
         if (this.objectsKnown.has(obj.id)) {
           // do a dynamic update
           message.writeUint8(ObjectUpdateType.Dynamic);
+          message.writeUint8(obj.authority);
+          message.writeUint32(obj.authority_seq);
           obj.serializeDynamic(message);
         } else {
           // need to do a full sync
@@ -111,6 +136,8 @@ class StateSynchronizer<Inputs> {
           } else {
             message.writeUint8(ObjectUpdateType.Full);
           }
+          message.writeUint8(obj.authority);
+          message.writeUint32(obj.authority_seq);
           message.writeUint8(obj.typeId());
           message.writeUint8(obj.creator);
           obj.serializeFull(message);
@@ -188,7 +215,9 @@ export class Net<Inputs> {
 
   private setupChannel(server: string, chan: RTCDataChannel) {
     chan.onmessage = async (ev) => {
-      const buff = (ev.data as Blob).arrayBuffer ? await (ev.data as Blob).arrayBuffer() : ev.data as ArrayBuffer;
+      const buff = (ev.data as Blob).arrayBuffer
+        ? await (ev.data as Blob).arrayBuffer()
+        : (ev.data as ArrayBuffer);
       this.handleMessage(server, buff);
     };
   }
@@ -269,14 +298,27 @@ export class Net<Inputs> {
       // make sure we're not in dummy mode
       message.dummy = false;
       let id = message.readUint32();
-      let authority = message.readUint8();
-      let authority_seq = message.readUint32();
       let updateType: ObjectUpdateType = message.readUint8();
-      if (
+      if (updateType === ObjectUpdateType.Event) {
+        let type = message.readUint8();
+        let authority = message.readUint8();
+        let numObjectsInEvent = message.readUint8();
+        let objects = [];
+        for (let i = 0; i < numObjectsInEvent; i++) {
+          objects.push(message.readUint32());
+        }
+        let event: GameEvent = { id, type, objects, authority };
+        if (!this.state.events[id]) {
+          this.state.events[id] = event;
+          this.state.runEvent(event);
+        }
+      } else if (
         updateType === ObjectUpdateType.Full ||
         updateType === ObjectUpdateType.Create
       ) {
         //console.log("Full state update");
+        let authority = message.readUint8();
+        let authority_seq = message.readUint32();
         let typeId = message.readUint8();
         let creator = message.readUint8();
         let obj = this.state.objects[id];
@@ -296,6 +338,8 @@ export class Net<Inputs> {
         }
       } else if (updateType === ObjectUpdateType.Dynamic) {
         //console.log("Dynamic state update");
+        let authority = message.readUint8();
+        let authority_seq = message.readUint32();
         let obj = this.state.objects[id];
         if (!obj) {
           throw "Got non-full update for unknown object ${id}";

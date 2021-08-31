@@ -1,5 +1,5 @@
 import { mat4, vec3, quat } from "./gl-matrix.js";
-import { scaleMesh, GameObject, GameState } from "./state.js";
+import { scaleMesh, GameObject, GameEvent, GameState } from "./state.js";
 import { Serializer, Deserializer } from "./serialize.js";
 import { Net } from "./net.js";
 import { test } from "./test.js";
@@ -27,6 +27,10 @@ enum ObjectType {
   Plane,
   Player,
   Bullet,
+}
+
+enum EventType {
+  BulletBulletCollision,
 }
 
 const BLACK = vec3.fromValues(0, 0, 0);
@@ -456,12 +460,37 @@ class CubeGameState extends GameState<Inputs> {
     }
     // check collisions
     for (let o of Object.values(this.objects)) {
-      if (o instanceof Cube || o instanceof Plane) {
-        vec3.copy(o.color, o.defaultColor);
-        if (this.collidesWith[o.id]?.length) {
-          vec3.add(o.color, o.color, vec3.fromValues(0.1, 0.0, 0.0));
+      if (o instanceof Bullet) {
+        // find other bullets this bullet is colliding with. only want to find each collision once
+        if (this.collidesWith[o.id]) {
+          let collidingBullets = this.collidesWith[o.id]
+            .map((id) => this.objects[id])
+            .filter((obj) => obj instanceof Bullet && obj.id > o.id);
+          for (let otherBullet of collidingBullets) {
+            this.recordEvent(EventType.BulletBulletCollision, [
+              o.id,
+              otherBullet.id,
+            ]);
+          }
         }
       }
+    }
+  }
+
+  runEvent(event: GameEvent) {
+    console.log(`Running event of type ${EventType[event.type]}`);
+    switch (event.type as EventType) {
+      case EventType.BulletBulletCollision:
+        // TODO: do something more interesting here
+        for (let id of event.objects) {
+          let obj = this.objects[id];
+          if (obj && obj instanceof Bullet) {
+            vec3.add(obj.color, obj.color, vec3.fromValues(0.1, 0.0, 0.0));
+          }
+        }
+        break;
+      default:
+        throw `Bad event type ${event.type} for event ${event.id}`;
     }
   }
 

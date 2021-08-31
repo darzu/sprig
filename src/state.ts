@@ -48,7 +48,7 @@ export abstract class GameObject {
   localAABB: AABB;
 
   // derivative state:
-  // NOTE: it kinda sucks to have duplicate sources of truth on loc & rot, 
+  // NOTE: it kinda sucks to have duplicate sources of truth on loc & rot,
   // but it's more important that we don't unnecessarily recompute this transform
   transform: mat4;
   worldAABB: AABB;
@@ -67,8 +67,11 @@ export abstract class GameObject {
     this.location_error = vec3.fromValues(0, 0, 0);
     this.rotation_error = quat.create();
     this.transform = mat4.create();
-    this.localAABB = { min: vec3.fromValues(-1, -1, -1), max: vec3.fromValues(1, 1, 1) };
-    this.worldAABB = { ...this.localAABB }
+    this.localAABB = {
+      min: vec3.fromValues(-1, -1, -1),
+      max: vec3.fromValues(1, 1, 1),
+    };
+    this.worldAABB = { ...this.localAABB };
   }
 
   snapLocation(location: vec3) {
@@ -140,11 +143,19 @@ export abstract class GameObject {
   abstract typeId(): number;
 }
 
+export interface GameEvent {
+  type: number;
+  id: number;
+  objects: number[];
+  authority: number;
+}
+
 export abstract class GameState<Inputs> {
   protected nextPlayerId: number;
   nextObjectId: number;
   protected renderer: Renderer;
   objects: Record<number, GameObject>;
+  events: Record<number, GameEvent>;
   me: number;
   numObjects: number = 0;
   collidesWith: CollidesWith;
@@ -154,13 +165,16 @@ export abstract class GameState<Inputs> {
     this.renderer = renderer;
     this.nextPlayerId = 0;
     this.nextObjectId = 0;
-    this.objects = [];
+    this.objects = {};
+    this.events = {};
     this.collidesWith = {};
   }
 
   abstract playerObject(playerId: number): GameObject;
 
   abstract stepGame(dt: number, inputs: Inputs): void;
+
+  abstract runEvent(event: GameEvent): void;
 
   abstract viewMatrix(): mat4;
 
@@ -197,10 +211,23 @@ export abstract class GameState<Inputs> {
     return this.nextObjectId++;
   }
 
+  recordEvent(type: number, objects: number[]) {
+    // check to see whether we're the authority for this event
+    if (
+      objects.map((id) => this.objects[id]).every((o) => this.me <= o.authority)
+    ) {
+      console.log(`Recording event type=${type}`);
+      let id = this.id();
+      let event = { id, type, objects, authority: this.me };
+      this.events[id] = event;
+      this.runEvent(event);
+    }
+  }
+
   step(dt: number, inputs: Inputs) {
     this.stepGame(dt, inputs);
 
-    const objs = Object.values(this.objects)
+    const objs = Object.values(this.objects);
 
     // update location and rotation
     let identity_quat = quat.create();
@@ -270,8 +297,8 @@ export abstract class GameState<Inputs> {
       );
 
       // update AABB
-      vec3.add(o.worldAABB.min, o.localAABB.min, o.location)
-      vec3.add(o.worldAABB.max, o.localAABB.max, o.location)
+      vec3.add(o.worldAABB.min, o.localAABB.min, o.location);
+      vec3.add(o.worldAABB.max, o.localAABB.max, o.location);
     }
 
     // check collisions
