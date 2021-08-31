@@ -61,19 +61,34 @@ export function createInputsReader(canvas: HTMLCanvasElement): () => Inputs {
     return result;
   }
 
-  // TODO(@darzu): Ideally mouse clicks would trigger on mouse down not up for more responsive actions
+  // track mouse buttons
   let accumulated_lClicks = 0;
   let accumulated_rClicks = 0;
-  window.addEventListener("mouseup", (ev) => {
+  let isLMouseDown = false;
+  let isRMouseDown = false;
+  window.addEventListener("mousedown", (ev) => {
     if (document.pointerLockElement === canvas) {
       if (ev.button === 0) {
-        accumulated_lClicks += 1;
+        if (!isLMouseDown) accumulated_lClicks += 1;
+        isLMouseDown = true;
       } else {
-        accumulated_rClicks += 1;
+        if (!isRMouseDown) accumulated_rClicks += 1;
+        isRMouseDown = true;
       }
     }
     return false;
   });
+  window.addEventListener("mouseup", (ev) => {
+    if (document.pointerLockElement === canvas) {
+      if (ev.button === 0) {
+        isLMouseDown = false;
+      } else {
+        isRMouseDown = false;
+      }
+    }
+    return false;
+  });
+
   function takeAccumulatedMouseClicks(): { lClicks: number; rClicks: number } {
     const result = {
       lClicks: accumulated_lClicks,
