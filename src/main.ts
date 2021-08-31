@@ -308,6 +308,41 @@ class CubeGameState extends GameState<Inputs> {
       this.bullets.push(bullet);
       this.addObject(bullet);
     }
+    if (inputs.rclick) {
+      for (let i = 0; i <= 10; i++) {
+        let bullet = new Bullet(this.id(), this.me);
+        let bullet_axis = vec3.fromValues(0, 0, -1);
+        bullet_axis = vec3.transformQuat(
+          bullet_axis,
+          bullet_axis,
+          this.player().rotation
+        );
+        bullet.axis = bullet_axis;
+        bullet.location = vec3.add(
+          vec3.create(),
+          this.player().location,
+          vec3.fromValues(i - 5, 0, 0)
+        );
+        bullet.rotation = quat.clone(this.player().rotation);
+        bullet.linear_velocity = vec3.scale(
+          bullet.linear_velocity,
+          bullet_axis,
+          0.02
+        );
+        bullet.linear_velocity = vec3.add(
+          bullet.linear_velocity,
+          bullet.linear_velocity,
+          this.player().linear_velocity
+        );
+        bullet.angular_velocity = vec3.scale(
+          bullet.angular_velocity,
+          bullet_axis,
+          0.01
+        );
+        this.bullets.push(bullet);
+        this.addObject(bullet);
+      }
+    }
   }
 
   viewMatrix() {
