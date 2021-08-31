@@ -71,3 +71,10 @@ Procedural gen talk:
 
 Valheim:
     https://screenrant.com/valheim-good-graphics-lighting-low-resolution-textures/
+
+Compression:
+    Triangle strips, triangle fans
+
+Forests:
+    https://www.google.com/search?q=low+poly+forest
+    https://www.pinterest.com/search/pins/?q=low%20poly%20forest

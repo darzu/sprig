@@ -1,5 +1,50 @@
 import { mat4, vec3 } from './ext/gl-matrix.js';
 
+// face normals vs vertex normals
+interface Mesh {
+    // vertex positions (x,y,z)
+    pos: [number, number, number][];
+    // triangles (vert indices, ccw)
+    tri: [number, number, number][];
+}
+interface ExpandedMesh extends Mesh {
+    // face normals, per triangle
+    fnorm: [number, number, number][];
+}
+
+const CUBE: Mesh = {
+    pos: [
+        [+1.0, +1.0, +1.0],
+        [-1.0, +1.0, +1.0],
+        [-1.0, -1.0, +1.0],
+        [+1.0, -1.0, +1.0],
+        [+1.0, +1.0, -1.0],
+        [-1.0, +1.0, -1.0],
+        [-1.0, -1.0, -1.0],
+        [+1.0, -1.0, -1.0],
+    ],
+    tri: [
+        // front
+        [0, 1, 2],
+        [0, 2, 3],
+        // top
+        [4, 5, 1],
+        [4, 1, 0],
+        // right
+        [4, 0, 3],
+        [4, 3, 7],
+        // left
+        [1, 5, 2],
+        [2, 5, 6],
+        // bottom
+        [6, 3, 2],
+        [6, 7, 3],
+        // back
+        [5, 4, 7],
+        [5, 4, 6],
+    ]
+}
+
 // TODO: canvas ref
 // TODO: navigator.gpu typings
 //          @webgpu/types
@@ -90,6 +135,8 @@ export const cubeVertexArray = new Float32Array([
     -1, 1, -1, 1, 0, 1, 0, 1, 0, 0,
 ]);
 
+const shadowDepthTextureSize = 1024;
+
 async function init(canvasRef: HTMLCanvasElement) {
     const adapter = await navigator.gpu.requestAdapter();
     const device = await adapter!.requestDevice();
@@ -112,6 +159,68 @@ async function init(canvasRef: HTMLCanvasElement) {
     });
     new Float32Array(verticesBuffer.getMappedRange()).set(cubeVertexArray);
     verticesBuffer.unmap();
+    // TODO: vertex, index, normals
+    // {
+    //     // Create the model vertex buffer.
+    //     const vertexBuffer = device.createBuffer({
+    //         size: mesh.positions.length * 3 * 2 * Float32Array.BYTES_PER_ELEMENT,
+    //         usage: GPUBufferUsage.VERTEX,
+    //         mappedAtCreation: true,
+    //     });
+    //     {
+    //         const mapping = new Float32Array(vertexBuffer.getMappedRange());
+    //         for (let i = 0; i < mesh.positions.length; ++i) {
+    //         mapping.set(mesh.positions[i], 6 * i);
+    //         mapping.set(mesh.normals[i], 6 * i + 3);
+    //         }
+    //         vertexBuffer.unmap();
+    //     }
+
+    //     // Create the model index buffer.
+    //     const indexCount = mesh.triangles.length * 3;
+    //     const indexBuffer = device.createBuffer({
+    //         size: indexCount * Uint16Array.BYTES_PER_ELEMENT,
+    //         usage: GPUBufferUsage.INDEX,
+    //         mappedAtCreation: true,
+    //     });
+    //     {
+    //         const mapping = new Uint16Array(indexBuffer.getMappedRange());
+    //         for (let i = 0; i < mesh.triangles.length; ++i) {
+    //         mapping.set(mesh.triangles[i], 3 * i);
+    //         }
+    //         indexBuffer.unmap();
+    //     }
+    // }
+
+    // Create the depth texture for rendering/sampling the shadow map.
+    const shadowDepthTexture = device.createTexture({
+        size: [shadowDepthTextureSize, shadowDepthTextureSize, 1],
+        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.SAMPLED,
+        format: 'depth32float',
+    });
+    const shadowDepthTextureView = shadowDepthTexture.createView();
+
+    // // Create some common descriptors used for both the shadow pipeline
+    // // and the color rendering pipeline.
+    // const vertexBuffers: Iterable<GPUVertexBufferLayout> = [
+    //     {
+    //     arrayStride: Float32Array.BYTES_PER_ELEMENT * 6,
+    //     attributes: [
+    //         {
+    //         // position
+    //         shaderLocation: 0,
+    //         offset: 0,
+    //         format: 'float32x3',
+    //         },
+    //         {
+    //         // normal
+    //         shaderLocation: 1,
+    //         offset: Float32Array.BYTES_PER_ELEMENT * 3,
+    //         format: 'float32x3',
+    //         },
+    //     ],
+    //     },
+    // ];
 
     const pipeline = device.createRenderPipeline({
         vertex: {

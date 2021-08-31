@@ -8,7 +8,14 @@ Hosted servers
 
 consulting
 
-So cheap it doesn't need funding
+ideally: so cheap it doesn't need funding
     peer-to-peer only
     all file hosting is elsewhere
-    static content only
+    static content only, CDN served
+
+Less ideal:
+    cut per game > $xxk/yer (e.g. Unity for >100k/yr)
+    pay to remove splash screen
+
+never:
+    ads
