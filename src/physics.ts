@@ -23,6 +23,9 @@ export function checkCollisions(objs: { worldAABB: AABB, id: number }[]): Collid
     }
 
     // naive n^2
+    //      3000 objs: 44.6ms, 4,800,000 overlaps
+    //      1000 objs: 5.8ms, 500,000 overlaps
+    //      100 objs: <0.1ms, 6,000 overlaps
     // for (let i0 = 0; i0 < objs.length; i0++) {
     //     const box0 = objs[i0].worldAABB
     //     for (let i1 = i0 + 1; i1 < objs.length; i1++) {
@@ -35,6 +38,9 @@ export function checkCollisions(objs: { worldAABB: AABB, id: number }[]): Collid
     // }
 
     // naive oct-tree
+    //      5000 objs: 12.5ms, 56,000 overlaps + 235,000 enclosed-bys
+    //      1000 objs: 2.6ms, 8,500 overlaps + 53,000 enclosed-bys
+    //      100 objs: 0.1ms, 1,200 overlaps + 6,000 enclosed-bys
     const octObjs = new Map<number, AABB>(objs.map(o => [o.id, o.worldAABB])); // TODO(@darzu): necessary?
     const maxDist = 10000;
     const octWorld: AABB = { min: [-maxDist, -maxDist, -maxDist], max: [maxDist, maxDist, maxDist] };
