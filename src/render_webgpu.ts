@@ -67,7 +67,6 @@ const bytesPerTri = Uint32Array.BYTES_PER_ELEMENT * indicesPerTriangle;
 
 // render pipeline parameters
 const antiAliasSampleCount = 4;
-const swapChainFormat = "bgra8unorm";
 const depthStencilFormat = "depth24plus-stencil8";
 const backgroundColor = { r: 0.6, g: 0.63, b: 0.6, a: 1.0 };
 
@@ -86,7 +85,9 @@ export interface Renderer {
 export class Renderer_WebGPU implements Renderer {
   private device: GPUDevice;
   private canvas: HTMLCanvasElement;
-  private context: GPUCanvasContext;
+  private context: GPUPresentationContext;
+  private adapter: GPUAdapter;
+  private presentationFormat: GPUTextureFormat;
 
   private sceneUniformBuffer: GPUBuffer;
 
@@ -124,17 +125,28 @@ export class Renderer_WebGPU implements Renderer {
 
   // recomputes textures, widths, and aspect ratio on canvas resize
   private checkCanvasResize() {
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const newWidth = this.canvas.clientWidth * devicePixelRatio;
+    const newHeight = this.canvas.clientHeight * devicePixelRatio;
     if (
-      this.lastWidth === this.canvas.width &&
-      this.lastHeight === this.canvas.height
+      this.lastWidth === newWidth &&
+      this.lastHeight === newHeight
     )
       return;
 
     if (this.depthTexture) this.depthTexture.destroy();
     if (this.colorTexture) this.colorTexture.destroy();
 
+    const newSize = [newWidth, newHeight] as const;
+
+    this.context.configure({
+      device: this.device,
+      format: this.presentationFormat, // this.presentationFormat
+      size: newSize,
+    });
+
     this.depthTexture = this.device.createTexture({
-      size: { width: this.canvas.width, height: this.canvas.height },
+      size: newSize,
       format: depthStencilFormat,
       sampleCount: antiAliasSampleCount,
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
@@ -142,17 +154,17 @@ export class Renderer_WebGPU implements Renderer {
     this.depthTextureView = this.depthTexture.createView();
 
     this.colorTexture = this.device.createTexture({
-      size: { width: this.canvas.width, height: this.canvas.height },
+      size: newSize,
       sampleCount: antiAliasSampleCount,
-      format: swapChainFormat,
+      format: this.presentationFormat,
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
     this.colorTextureView = this.colorTexture.createView();
 
-    this.lastWidth = this.canvas.width;
-    this.lastHeight = this.canvas.height;
+    this.lastWidth = newWidth;
+    this.lastHeight = newHeight;
 
-    this.aspectRatio = Math.abs(this.canvas.width / this.canvas.height);
+    this.aspectRatio = Math.abs(newWidth / newHeight);
   }
 
   /*
@@ -267,7 +279,7 @@ export class Renderer_WebGPU implements Renderer {
       fragment: {
         module: this.device.createShaderModule({ code: fragmentShader }),
         entryPoint: "main",
-        targets: [{ format: swapChainFormat }],
+        targets: [{ format: this.presentationFormat }],
       },
       primitive: primitiveBackcull,
       depthStencil: {
@@ -284,7 +296,7 @@ export class Renderer_WebGPU implements Renderer {
     // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
     // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
     const bundleEnc = this.device.createRenderBundleEncoder({
-      colorFormats: [swapChainFormat],
+      colorFormats: [this.presentationFormat],
       depthStencilFormat: depthStencilFormat,
       sampleCount: antiAliasSampleCount,
     });
@@ -309,14 +321,16 @@ export class Renderer_WebGPU implements Renderer {
   constructor(
     canvas: HTMLCanvasElement,
     device: GPUDevice,
-    context: GPUCanvasContext,
+    context: GPUPresentationContext,
+    adapter: GPUAdapter,
     maxMeshes: number,
     maxVertices: number,
   ) {
     this.canvas = canvas;
     this.device = device;
     this.context = context;
-    this.context.configure({ device, format: swapChainFormat });
+    this.adapter = adapter;
+    this.presentationFormat = context.getPreferredFormat(this.adapter);
 
     const opts: MeshPoolOpts = {
       maxMeshes,

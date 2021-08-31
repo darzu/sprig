@@ -596,9 +596,10 @@ async function startGame(host: string | null) {
     const adapter = await navigator.gpu?.requestAdapter();
     if (adapter) {
       const device = await adapter.requestDevice();
-      const context = canvas.getContext("gpupresent");
+      // TODO(@darzu): uses cast while waiting for webgpu-types.d.ts to be updated
+      const context = canvas.getContext("webgpu") as any as GPUPresentationContext;
       if (context) {
-        rendererInit = new Renderer_WebGPU(canvas, device, context, MAX_MESHES, MAX_VERTICES);
+        rendererInit = new Renderer_WebGPU(canvas, device, context, adapter, MAX_MESHES, MAX_VERTICES);
         if (rendererInit)
           usingWebGPU = true
       }
