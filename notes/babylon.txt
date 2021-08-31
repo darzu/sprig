@@ -1,3 +1,5 @@
+// SEE COMMIT: "Deletes Babylon JS"
+
 // TODO: use babylon via ES6 modules (probably needs webpack)
 //  docs: https://doc.babylonjs.com/divingDeeper/developWithBjs/treeShaking
 //  example: https://github.com/RaananW/babylonjs-webpack-es6
