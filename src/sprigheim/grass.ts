@@ -33,8 +33,8 @@ interface AABB {
 
 function getAABBFromMesh(m: Mesh): AABB {
 
-    const min = vec3.fromValues(99999.0, 99999.0, 99999.0) as Float32Array
-    const max = vec3.fromValues(-99999.0, -99999.0, -99999.0) as Float32Array
+    const min = vec3.fromValues(Infinity, Infinity, Infinity) as Float32Array
+    const max = vec3.fromValues(-Infinity, -Infinity, -Infinity) as Float32Array
 
     for (let pos of m.pos) {
         min[0] = Math.min(pos[0], min[0])
@@ -131,8 +131,7 @@ function createGrassTile(opts: GrassTileOpts, builder: MeshPoolBuilder): MeshHan
 
     const [r, g, b] = [Math.random(), Math.random(), Math.random()];
 
-    const vertNumOffset = builder.numVerts;
-    const indicesNumOffset = builder.numTris * 3;
+    const m = builder.buildMesh();
 
     let i = 0;
     for (let xi = 0.0; xi < size; xi += spacing) {
@@ -142,57 +141,60 @@ function createGrassTile(opts: GrassTileOpts, builder: MeshPoolBuilder): MeshHan
             const vertexData2: VertexData = [[xi, 0, zi + spacing], [r, g, b], [0, 1, 0], VertexKind.normal]
             const vertexData3: VertexData = [[xi + spacing, 0, zi], [r, g, b], [0, 1, 0], VertexKind.normal]
 
-            const vOff = builder.numVerts * vertByteSize;
-            setVertexData(builder.verticesMap, vertexData1, vOff)
-            setVertexData(builder.verticesMap, vertexData2, vOff + vertByteSize)
-            setVertexData(builder.verticesMap, vertexData3, vOff + vertByteSize * 2)
+            m.addVertex(vertexData1)
+            m.addVertex(vertexData2)
+            m.addVertex(vertexData3)
 
-            const iOff = builder.numTris * 3;
-            builder.indicesMap.set([2 + builder.numVerts, 1 + builder.numVerts, 0 + builder.numVerts], iOff)
+            m.addTri([2 + i * 3, 1 + i * 3, 0 + i * 3])
 
-            builder.numTris += 1;
-            builder.numVerts += 3;
+            // const iOff = builder.numTris * 3;
+            // builder.indicesMap.set([2 + builder.numVerts, 1 + builder.numVerts, 0 + builder.numVerts], iOff)
+
+            // builder.numTris += 1;
+            // builder.numVerts += 3;
 
             i++;
         }
     }
 
-    const uniOffset = builder.allMeshes.length * meshUniByteSizeAligned;
+    // const uniOffset = builder.allMeshes.length * meshUniByteSizeAligned;
 
-    const modelMin = vec3.fromValues(-spacing, 0, -spacing);
-    const modelMax = vec3.fromValues(size * spacing, bladeH * 2, size * spacing);
+    // const modelMin = vec3.fromValues(-spacing, 0, -spacing);
+    // const modelMax = vec3.fromValues(size * spacing, bladeH * 2, size * spacing);
 
-    const transform = mat4.create();
-    const f32Scratch = new Float32Array(4 * 4 + 4 + 4);
-    f32Scratch.set(transform, 0)
-    f32Scratch.set(modelMin, align(4 * 4, 4))
-    f32Scratch.set(modelMax, align(4 * 4 + 3, 4))
-    const u8Scratch = new Uint8Array(f32Scratch.buffer);
+    // const transform = mat4.create();
+    // const f32Scratch = new Float32Array(4 * 4 + 4 + 4);
+    // f32Scratch.set(transform, 0)
+    // f32Scratch.set(modelMin, align(4 * 4, 4))
+    // f32Scratch.set(modelMax, align(4 * 4 + 3, 4))
+    // const u8Scratch = new Uint8Array(f32Scratch.buffer);
 
-    // console.dir({ floatBuff: f32Scratch })
-    builder.uniformMap.set(u8Scratch, uniOffset)
+    // // console.dir({ floatBuff: f32Scratch })
+    // builder.uniformMap.set(u8Scratch, uniOffset)
 
-    console.log(`uniOffset: ${uniOffset}`);
+    // console.log(`uniOffset: ${uniOffset}`);
 
     // TODO(@darzu): compute correct offsets
-    const grassMesh: MeshHandle = {
-        vertNumOffset,
-        indicesNumOffset,
-        modelUniByteOffset: uniOffset,
-        numTris: i,
+    // const grassMesh: MeshHandle = {
+    //     vertNumOffset,
+    //     indicesNumOffset,
+    //     modelUniByteOffset: uniOffset,
+    //     numTris: i,
 
-        // used and updated elsewhere
-        transform,
-        modelMin,
-        modelMax,
+    //     // used and updated elsewhere
+    //     transform,
+    //     modelMin,
+    //     modelMax,
 
-        pool: builder.poolHandle,
-        model: undefined,
-    };
+    //     pool: builder.poolHandle,
+    //     model: undefined,
+    // };
 
-    // console.log(`tile has ${i} tris`);
+    // // console.log(`tile has ${i} tris`);
 
-    builder.allMeshes.push(grassMesh);
+    // builder.allMeshes.push(grassMesh);
+
+    const grassMesh = m.finish()
 
     return grassMesh;
 }
@@ -232,8 +234,8 @@ function createGrassTileset(opts: GrassTilesetOpts, device: GPUDevice): GrassTil
             const coloredCube: Mesh = { ...CUBE, colors: CUBE.colors.map(_ => color) }
             // TODO(@darzu): create the grass tile as a Mesh
             // const tile = addMesh(coloredCube, builder);
-            const tile = addMesh(createGrassTileMesh(tileOpts), builder);
-            // const tile = createGrassTile(tileOpts, builder);
+            // const tile = addMesh(createGrassTileMesh(tileOpts), builder);
+            const tile = createGrassTile(tileOpts, builder);
             // builder.numTris += 1000;
             mat4.translate(tile.transform, tile.transform, [x, 0, z])
         }
