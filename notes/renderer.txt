@@ -136,52 +136,6 @@ WebGPU samples:
     https://github.com/mikbry/awesome-webgpu
     http://austin-eng.com/webgpu-samples/samples/computeBoids
 
-Shaders Wow:
-    Slime and ants: https://www.youtube.com/watch?v=X-iSQQgOd1A
-    https://www.shadertoy.com
-
-Game shaders for beginners:
-  https://news.ycombinator.com/item?id=19895218
-  https://github.com/lettier/3d-game-shaders-for-beginners
-  https://www.youtube.com/watch?v=kfM-yu0iQBk
-
-Ben Cloward on shaders:
-  Shaders in Anthem:
-    https://www.youtube.com/watch?v=IjQWRjWZGn0
-  https://www.youtube.com/user/bcloward/videos?view=0&sort=p&flow=grid
-
-Computer shader pathfinding:
-  https://www.youtube.com/watch?v=1OSXWhd3hvI
-
-TO LEARN COMPUTE SHADERS:
-    Limitations ?
-    From JS / WASM ?
-    What can it be used for?
-        Physics?
-        Algorithms?
-        Celular atomita?
-        Procedural gen?
-    101:
-      https://news.ycombinator.com/item?id=27396634
-      https://www.youtube.com/watch?v=DZRn_jNZjbw
-
-Book of Shaders (online):
-  https://thebookofshaders.com
-  https://twitter.com/patriciogv
-
-"Shader god" (says Max):
-  https://www.shadertoy.com/user/iq
-  https://www.iquilezles.org/www/articles/voxellines/voxellines.htm
-
-Compute shader tutorial ($400?):
-  https://paprika.studio/workshops/compute/
-
-Shader School:
-  https://github.com/stackgl/shader-school
-
-SDFs (Signed Distance Field) ?
-    https://joyrok.com/What-Are-SDFs-Anyway
-
 Vulkan vs OpenGL:
     https://gamedev.stackexchange.com/questions/96014/what-is-vulkan-and-how-does-it-differ-from-opengl
 
@@ -325,37 +279,11 @@ Rust -> WebGPU examples:
     for clouds based on sprites
     downsample depth -> raster -> "bilateral" upsample 
 
-"Mesh shaders":
-  https://devblogs.microsoft.com/directx/dev-preview-of-new-directx-12-features/#directx-mesh-shader
-  https://developer.nvidia.com/blog/introduction-turing-mesh-shaders/
-
-"Geometry shaders":
-  " are for creating new geometry on the fly. It's taking geometry of one type as input, and then 
-  emitting a different number of the same, or another type of geoAmetry as output. You could have 
-  points transformed to a series of triangles or quads."
-    https://www.reddit.com/r/vulkan/comments/c9ws13/do_we_need_geometry_shader_anymore/
-  http://www.joshbarczak.com/blog/?p=667 (they are slow)
-
-  Maybe also a way of doing per-face data?
-  https://docs.microsoft.com/en-us/previous-versions//bb205146(v=vs.85)?redirectedfrom=MSDN
-
-  Don't use GS: https://twitter.com/pointinpolygon/status/1270695113967181827
-
 LOD / automatic mesh simplification:
   quad simplification: https://www.youtube.com/watch?v=vBJcdClynFE
 
 Rendering pipeline:
   https://www.khronos.org/opengl/wiki/Rendering_Pipeline_Overview
-
-Flat shading:
-  "Provoking vertex" https://www.khronos.org/opengl/wiki/Primitive#Provoking_vertex
-  "flat" interpolation qualifier https://www.khronos.org/opengl/wiki/Type_Qualifier_(GLSL)#Interpolation_qualifiers
-  waiting on interplate(flat) support in Chrome's Tint WGSL parser:
-    https://bugs.chromium.org/p/tint/issues/detail?id=746&q=interpolate&can=2
-  https://gamedev.stackexchange.com/questions/154854/how-do-i-implement-flat-shading-in-glsl
-    vec3 xTangent = dFdx( viewPosition );
-    vec3 yTangent = dFdy( viewPosition );
-    vec3 faceNormal = normalize( cross( xTangent, yTangent ) );
 
 hierarchical /  models:
   https://sites.google.com/site/csc8820/educational/how-to-animate-hierarchical-models
@@ -388,9 +316,6 @@ Graphics storage options:
 
 Unreal 5 analysis:
   https://www.elopezr.com/a-macro-view-of-nanite/
-
-Flat shading in PlayCanvas:
-  https://omar-shehata.medium.com/flat-shading-in-webgl-with-playcanvas-a-quick-tip-97d1bd85258f
 
 Camera transformations:
   https://www.3dgep.com/understanding-the-view-matrix/#Transformations
@@ -455,9 +380,5 @@ Virtual texturing:
 Don't have T junctions in meshes:
   https://computergraphics.stackexchange.com/questions/1461/why-do-t-junctions-in-meshes-result-in-cracks
 
-Compute shader slime mold webgl:
-  https://greggman.github.io/doodles/slime/slime.html
-
-Redblob on grass:
-  https://www.redblobgames.com/x/2108-grass-shader/
-
+Frustum culling:
+  https://www.iquilezles.org/www/articles/frustumcorrect/frustumcorrect.htm
