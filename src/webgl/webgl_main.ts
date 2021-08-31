@@ -1,8 +1,7 @@
-import * as m4 from "../m4.js"
-import { v3, V3 } from "../v3.js";
+import { vec3, mat4 } from "../ext/gl-matrix.js";
 
 /*============= Creating a canvas ======================*/
-let canvas = document.getElementById('my_Canvas') as HTMLCanvasElement;
+let canvas = document.getElementById('sample-canvas') as HTMLCanvasElement;
 let gl = canvas.getContext('webgl') as WebGLRenderingContext; // TODO: use webgl2
 let canv = gl.canvas as HTMLCanvasElement
 
@@ -15,16 +14,13 @@ uniform mat4 u_worldInverseTranspose;
 
 attribute vec4 a_position;
 attribute vec3 a_normal;
-attribute vec2 a_texcoord;
 
 varying vec4 v_position;
-varying vec2 v_texCoord;
 varying vec3 v_normal;
 varying vec3 v_surfaceToLight;
 varying vec3 v_surfaceToView;
 
 void main() {
-  v_texCoord = a_texcoord;
   v_position = (u_worldViewProjection * a_position);
   v_normal = (u_worldInverseTranspose * vec4(a_normal, 0)).xyz;
   v_surfaceToLight = u_lightWorldPos - (u_world * a_position).xyz;
@@ -37,14 +33,12 @@ let fragCode = `
 precision mediump float;
 
 varying vec4 v_position;
-varying vec2 v_texCoord;
 varying vec3 v_normal;
 varying vec3 v_surfaceToLight;
 varying vec3 v_surfaceToView;
 
 uniform vec4 u_lightColor;
 uniform vec4 u_ambient;
-uniform sampler2D u_diffuse;
 uniform vec4 u_specular;
 uniform float u_shininess;
 uniform float u_specularFactor;
@@ -57,7 +51,7 @@ vec4 lit(float l ,float h, float m) {
 }
 
 void main() {
-  vec4 diffuseColor = texture2D(u_diffuse, v_texCoord);
+  vec4 diffuseColor = vec4(0.8, 0.1, 0.1, 1.0);
   vec3 a_normal = normalize(v_normal);
   vec3 surfaceToLight = normalize(v_surfaceToLight);
   vec3 surfaceToView = normalize(v_surfaceToView);
@@ -99,13 +93,10 @@ const u_worldViewProjectionLoc = gl.getUniformLocation(program, "u_worldViewProj
 const u_viewInverseLoc = gl.getUniformLocation(program, "u_viewInverse");
 
 const positionLoc = gl.getAttribLocation(program, "a_position");
-// let _Pmatrix = gl.getUniformLocation(program, "a_position");
 const normalLoc = gl.getAttribLocation(program, "a_normal");
-const texcoordLoc = gl.getAttribLocation(program, "a_texcoord");
 
 const positions = [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1];
 const normals = [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1];
-const texcoords = [1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1];
 const indices = [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23];
 
 const positionBuffer = gl.createBuffer();
@@ -114,23 +105,9 @@ gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 const normalBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
-const texcoordBuffer = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
-gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texcoords), gl.STATIC_DRAW);
 const indicesBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
 gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-
-const tex = gl.createTexture();
-gl.bindTexture(gl.TEXTURE_2D, tex);
-gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 2, 2, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([
-  255, 255, 255, 255,
-  192, 100, 192, 255,
-  100, 192, 192, 255,
-  255, 255, 100, 255,
-]));
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
 function render(time: number) {
   time *= 0.001;
@@ -141,14 +118,14 @@ function render(time: number) {
   gl.enable(gl.CULL_FACE);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  const projection = m4.perspective(30 * Math.PI / 180, canv.clientWidth / canv.clientHeight, 0.5, 10);
-  const eye: V3 = v3([1, 4, -6]);
-  const target: V3 = v3([0, 0, 0]);
-  const up: V3 = v3([0, 1, 0]);
+  const projection = mat4.perspective(mat4.create(), 30 * Math.PI / 180, canv.clientWidth / canv.clientHeight, 0.5, 10);
+  const eye: vec3 = vec3.fromValues(1, 4, -6) as Float32Array;
+  const target: vec3 = vec3.fromValues(0, 0, 0) as Float32Array;
+  const up: vec3 = vec3.fromValues(0, 1, 0) as Float32Array;
 
-  const camera = m4.lookAt(eye, target, up);
-  const view = m4.inverse(camera);
-  const viewProjection = m4.multiply(projection, view);
+  const camera = mat4.lookAt(mat4.create(), eye, target, up) as Float32Array;
+  const view = camera;
+  const viewProjection = mat4.multiply(mat4.create(), projection, view);
   const world = updatePos() // m4.rotationY(time);
 
   gl.useProgram(program);
@@ -162,11 +139,8 @@ function render(time: number) {
   gl.uniform1i(u_diffuseLoc, 0);
   gl.uniformMatrix4fv(u_viewInverseLoc, false, camera);
   gl.uniformMatrix4fv(u_worldLoc, false, world);
-  gl.uniformMatrix4fv(u_worldInverseTransposeLoc, false, m4.transpose(m4.inverse(world)));
-  gl.uniformMatrix4fv(u_worldViewProjectionLoc, false, m4.multiply(viewProjection, world));
-
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.uniformMatrix4fv(u_worldInverseTransposeLoc, false, mat4.transpose(mat4.create(), mat4.invert(mat4.create(), world)));
+  gl.uniformMatrix4fv(u_worldViewProjectionLoc, false, mat4.multiply(mat4.create(), viewProjection, world));
 
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
   gl.vertexAttribPointer(positionLoc, 3, gl.FLOAT, false, 0, 0);
@@ -174,9 +148,6 @@ function render(time: number) {
   gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
   gl.vertexAttribPointer(normalLoc, 3, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(normalLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
-  gl.vertexAttribPointer(texcoordLoc, 2, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(texcoordLoc);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
 
   gl.drawElements(gl.TRIANGLES, 6 * 6, gl.UNSIGNED_SHORT, 0);
@@ -222,16 +193,16 @@ let mouseMove = function (e: MouseEvent) {
   return;
 };
 
-function updatePos(): m4.M4 {
-  let mo_matrix = m4.identity() // todo
+function updatePos(): mat4 {
+  let mo_matrix = mat4.create() // todo
 
   if (!drag) {
     dX *= AMORTIZATION, dY *= AMORTIZATION;
     THETA += dX, PHI += dY;
   }
 
-  m4.rotateY(mo_matrix, THETA, mo_matrix);
-  m4.rotateX(mo_matrix, PHI, mo_matrix);
+  mat4.rotateY(mo_matrix, mo_matrix, THETA);
+  mat4.rotateX(mo_matrix, mo_matrix, PHI);
 
   return mo_matrix
 }
