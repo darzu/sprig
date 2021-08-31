@@ -16,3 +16,15 @@ Bilinear up/down sampling:
 Discrete Differential Geometry:
     Exterior Algebra:
         https://www.youtube.com/watch?v=paEKgbiCyPk&list=PL9_jI1bdZmz0hIrNCMQW1YmZysAiIYSSS&index=6
+
+Lots of great old math papers:
+    https://twitter.com/gabrielpeyre
+
+Annotated equations:
+    https://agilescientific.com/blog/2021/1/14/illuminated-equations
+
+"Lyapunov function":
+    https://twitter.com/ahmedallibhoy/status/1347600886986469381
+
+Elliptic Curve Cryptography :
+    https://www.allaboutcircuits.com/technical-articles/elliptic-curve-cryptography-in-embedded-systems/

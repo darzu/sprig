@@ -45,3 +45,11 @@ Procedural gen as sculpting:
 
 Procedural color pallets:
     https://iquilezles.org/www/articles/palettes/palettes.htm
+
+Generative art guy:
+    https://inconvergent.net/#about
+
+Triangulated sphere:
+    https://twitter.com/OskSta/status/1338825080844021760
+    https://www.redblobgames.com/x/1842-delaunay-voronoi-sphere/
+    https://www.newcastle.edu.au/__data/assets/pdf_file/0017/22508/13_A-fast-algorithm-for-constructing-Delaunay-triangulations-in-the-plane.pdf

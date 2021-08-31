@@ -34,3 +34,11 @@ Series of islands like Sea of Thieves using Redblob island generator
 Mount:
     Maybe each island you find a bird that will fly you around on that island
 
+
+Travel:
+    First between islands (longships)
+    Then underwater (magic air bubble)
+        monsters get bigger the deeper you go
+        just hit the bottom and try to loot all you can before you're eaten
+    Then to other planets (magic air bubble + propulsion)
+        long before you can travel the stars, you see monsters occasionally moving amongst the stars

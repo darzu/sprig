@@ -28,3 +28,6 @@ On latency (via Redblob):
 
 Efficient code is harder to change, from redblob lementing mapgen4:
     https://twitter.com/redblobgames/status/1362852520096198656
+
+Visualizing perf:
+    https://dubroy.com/blog/visualizing-packrat-parsing/

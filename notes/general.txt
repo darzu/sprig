@@ -583,6 +583,7 @@ Everybook should start with:
 
 Twitter search by user and date range:
   (from:redblobgames) until:2020-01-01 since:2015-01-01
+  https://twitter.com/search?q=(from%3Aredblobgames)%20until%3A2020-01-01%20since%3A2015-01-01&src=typed_query
 
 Assign dwarves to jobs:
   https://twitter.com/gabrielpeyre/status/1372427547821101056
@@ -618,3 +619,25 @@ Redblob's project workflow:
 
 Explanation of marching cubes:
   https://wordsandbuttons.online/interactive_explanation_of_marching_cubes_and_dual_contouring.html
+
+Sigmoid Curves for game design:
+  https://medium.com/@pedro.camara/sigmoid-curves-are-game-designers-friends-8b1f5b53d2fc
+
+Cool utility code:
+  https://observablehq.com/@makio135/utilities#HexGrid
+
+Redblob recap of 2020:
+  https://simblob.blogspot.com/2020/12/what-i-did-in-2020.html
+
+Cool compact numeral system:
+  "single glyph able to indicate any integer from 1 to 9,999"
+  https://twitter.com/Rainmaker1973/status/1348307518045507584
+  https://en.wikipedia.org/wiki/Cistercian_numerals
+
+Dithering:
+  https://surma.dev/things/ditherpunk/
+
+Creative modes:
+  Creatives have two kinds of working: open mode and closed mode.
+  Open mode: A state of unfocused play where you discover new ideas. (
+  Closed mode: A state of focused work where you work towards a specific outcome.

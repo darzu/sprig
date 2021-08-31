@@ -164,6 +164,11 @@ TO LEARN COMPUTE SHADERS:
 
 Book of Shaders (online):
   https://thebookofshaders.com
+  https://twitter.com/patriciogv
+
+"Shader god" (says Max):
+  https://www.shadertoy.com/user/iq
+  https://www.iquilezles.org/www/articles/voxellines/voxellines.htm
 
 Compute shader tutorial ($400?):
   https://paprika.studio/workshops/compute/
