@@ -75,11 +75,3 @@ Physics engine tutorials
     http://web.archive.org/web/20200323032109/http://www.wildbunny.co.uk/blog/2011/04/06/physics-engines-for-dummies/
     Broad vs narrow:
         https://research.ncl.ac.uk/game/mastersdegree/gametechnologies/physicstutorials/6accelerationstructures/Physics%20-%20Spatial%20Acceleration%20Structures.pdf
-
-Noita:
-    GDC talk https://www.youtube.com/watch?v=prXuyMCgbTc
-
-Sand playground:
-    sandspiel.club
-    "sand games" https://www.youtube.com/watch?v=-dD-EaZ29hs
-    making of: https://maxbittker.com/making-sandspiel

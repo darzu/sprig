@@ -207,6 +207,7 @@ RTX / ray tracing:
   on m1 https://www.willusher.io/graphics/2020/12/20/rt-dive-m1
     ~7-9 million rays / sec
   beyond ray-tracing http://sci.utah.edu/~will/papers/rtx-points-hpg19.pdf
+  on GPU via Cuda: https://developer.nvidia.com/blog/accelerated-ray-tracing-cuda/
 
 pbr / physically based rendering:
   https://pbrt.org
