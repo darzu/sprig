@@ -51,3 +51,6 @@ Animation groups:
 
 How import are animations?
     Meta: effort should be spent proportial to gameplay
+
+Skinning:
+    https://canvas.dartmouth.edu/courses/16840/assignments/82767

@@ -327,3 +327,13 @@ Flat shading:
     vec3 xTangent = dFdx( viewPosition );
     vec3 yTangent = dFdy( viewPosition );
     vec3 faceNormal = normalize( cross( xTangent, yTangent ) );
+
+hierarchical /  models:
+  https://sites.google.com/site/csc8820/educational/how-to-animate-hierarchical-models
+  https://canvas.dartmouth.edu/courses/16840/assignments/82764
+
+how many triangles?
+  "overwatch ingame characters has 60K tris"
+
+"bundles"?
+  https://computergraphics.stackexchange.com/questions/4066/whats-the-main-difference-of-pipeline-process-between-vulkan-and-dx12

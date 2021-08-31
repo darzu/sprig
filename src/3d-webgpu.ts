@@ -444,6 +444,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         passEncoder.setBindGroup(0, uniformBindGroup);
         passEncoder.setVertexBuffer(0, verticesBuffer);
         passEncoder.setIndexBuffer(indexBuffer, 'uint16');
+        // TODO(@darzu): one draw call per mesh?
         passEncoder.drawIndexed(numTris * 3);
         // passEncoder.draw(CUBE.pos.length, 1, 0, 0);
         passEncoder.endPass();
