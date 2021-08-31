@@ -28,3 +28,6 @@ Annotated equations:
 
 Elliptic Curve Cryptography :
     https://www.allaboutcircuits.com/technical-articles/elliptic-curve-cryptography-in-embedded-systems/
+
+Graph experiment / viz:
+    https://www.desmos.com/calculator

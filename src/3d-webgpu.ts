@@ -219,7 +219,8 @@ async function init(canvasRef: HTMLCanvasElement) {
     }
 
     // create grass field
-    const grassSpread = 200;
+    const spacing = 0.025;
+    const grassSpread = 500;
     const grassTris = (grassSpread * 2 + 1) ** 2
     const grassMeshPool = createMeshMemoryPool({
         vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
@@ -233,7 +234,6 @@ async function init(canvasRef: HTMLCanvasElement) {
     {
         grassMeshPool._map();
 
-        const spacing = 0.2;
         const bladeW = 0.1;
         const bladeH = 1.7;
         let i = 0;
