@@ -72,11 +72,12 @@ struct VertexOutput {
 
 [[stage(vertex)]]
 fn main(
-    [[location(0)]] position : vec4<f32>
+    [[location(0)]] position : vec3<f32>
     ) -> VertexOutput {
     var output : VertexOutput;
-    output.Position = uniforms.modelViewProjectionMatrix * position;
-    output.fragPosition = 0.5 * (position + vec4<f32>(1.0, 1.0, 1.0, 1.0));
+    var pos4: vec4<f32> = vec4<f32>(position, 1.0);
+    output.Position = uniforms.modelViewProjectionMatrix * pos4;
+    output.fragPosition = 0.5 * (pos4 + vec4<f32>(1.0, 1.0, 1.0, 1.0));
     // output.fragPosition = position;
 
     return output;
@@ -112,7 +113,7 @@ async function init(canvasRef: HTMLCanvasElement) {
     // NEW Create a vertex buffer from the cube data.
     const cubePos = new Float32Array(
         CUBE.pos
-            .map(p => [p[0], p[1], p[2], 1.0])
+            // .map(p => [p[0], p[1], p[2], 1])
             .reduce((p, n) => [...p, ...n], [] as number[])
     )
     const verticesBuffer = device.createBuffer({
@@ -194,13 +195,13 @@ async function init(canvasRef: HTMLCanvasElement) {
             entryPoint: 'main',
             buffers: [
                 {
-                    arrayStride: 4/*byes per float32*/ * 4/*num floats*/,
+                    arrayStride: 4/*byes per float32*/ * 3/*num floats*/,
                     attributes: [
                         {
                             // position
                             shaderLocation: 0,
                             offset: 0,
-                            format: 'float32x4',
+                            format: 'float32x3',
                         },
                         // {
                         //     // uv
