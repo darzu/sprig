@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "outDir": "./out",
+        "module": "ESNext",
+        "target": "ES2019",
+        "lib": [
+            "DOM",
+            "esnext"
+        ],
+        "moduleResolution": "node",
+        "sourceMap": true,
+        "declaration": true,
+    },
+    "files": [
+        "./deps.ts"
+    ]
+}
