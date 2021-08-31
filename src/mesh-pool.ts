@@ -183,6 +183,14 @@ export module MeshUniform {
 
         return res;
     }
+
+    export function CloneData(d: Data): Data {
+        return {
+            aabbMin: vec3.clone(d.aabbMin),
+            aabbMax: vec3.clone(d.aabbMax),
+            transform: mat4.clone(d.transform),
+        }
+    }
 }
 
 export module SceneUniform {
@@ -290,7 +298,7 @@ export interface MeshPoolBuilder {
     poolHandle: MeshPool,
     // methods
     addMesh: (m: Mesh) => MeshHandle,
-    instanceMesh: (m: MeshHandle, d: MeshUniform.Data) => MeshHandle,
+    addMeshInstance: (m: MeshHandle, d: MeshUniform.Data) => MeshHandle,
     buildMesh: () => MeshBuilder,
     updateUniform: (m: MeshHandle) => void,
     finish: () => MeshPool,
@@ -304,7 +312,7 @@ export interface MeshPool {
     numVerts: number,
     // methods
     addMesh: (m: Mesh) => MeshHandle,
-    instanceMesh: (m: MeshHandle, d: MeshUniform.Data) => MeshHandle,
+    addMeshInstance: (m: MeshHandle, d: MeshUniform.Data) => MeshHandle,
     updateUniform: (m: MeshHandle) => void,
 }
 
@@ -616,7 +624,7 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
         numVerts: 0,
         updateUniform: queueUpdateUniform,
         addMesh: queueAddMesh,
-        instanceMesh: queueInstanceMesh,
+        addMeshInstance: queueInstanceMesh,
     }
 
     const { verticesMap, indicesMap, uniformMap } = maps;
@@ -631,7 +639,7 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
         allMeshes,
         poolHandle: pool,
         addMesh: mappedAddMesh,
-        instanceMesh: mappedInstanceMesh,
+        addMeshInstance: mappedInstanceMesh,
         buildMesh: mappedMeshBuilder,
         updateUniform: mappedUpdateUniform,
         finish,

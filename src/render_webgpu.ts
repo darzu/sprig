@@ -79,6 +79,7 @@ export interface MeshObj {
 export interface Renderer {
   finishInit(): void;
   addObject(o: GameObject): MeshObj;
+  addObjectInstance(o: GameObject, m: MeshHandle): MeshObj;
   renderFrame(viewMatrix: mat4): void;
 }
 
@@ -169,6 +170,22 @@ export class Renderer_WebGPU implements Renderer {
     const res = {
       obj: o,
       handle,
+    }
+
+    this.meshObjs.push(res);
+
+    this.needsRebundle = true;
+    return res;
+  }
+  public addObjectInstance(o: GameObject, oldHandle: MeshHandle): MeshObj {
+    console.log(`Adding (instanced) object ${o.id}`);
+
+    const d = MeshUniform.CloneData(oldHandle)
+    const newHandle = this.initFinished ? this.pool.addMeshInstance(oldHandle, d) : this.builder.addMeshInstance(oldHandle, d);
+
+    const res = {
+      obj: o,
+      handle: newHandle,
     }
 
     this.meshObjs.push(res);

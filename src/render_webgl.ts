@@ -1,6 +1,6 @@
 import { pitch } from "./3d-util.js";
 import { vec3, mat4 } from "./gl-matrix.js";
-import { createMeshPoolBuilder_WebGL, MeshPoolOpts, SceneUniform } from "./mesh-pool.js";
+import { createMeshPoolBuilder_WebGL, MeshHandle, MeshPoolOpts, MeshUniform, SceneUniform } from "./mesh-pool.js";
 import { GameObject } from "./state.js";
 // TODO(@darzu): this is a bad dependency:
 import { MeshObj, Renderer, setupScene } from "./render_webgpu.js";
@@ -186,6 +186,22 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxVe
 
     return res;
   }
+  function addObjectInstance(o: GameObject, oldHandle: MeshHandle): MeshObj {
+    console.log(`Adding (instanced) object ${o.id}`);
+
+    const d = MeshUniform.CloneData(oldHandle)
+
+    const newHandle = initFinished ? pool.addMeshInstance(oldHandle, d) : builder.addMeshInstance(oldHandle, d);
+
+    const res = {
+      obj: o,
+      handle: newHandle,
+    }
+
+    meshObjs.push(res);
+
+    return res;
+  }
 
   function renderFrame(viewMatrix: mat4) {
     let aspectRatio = Math.abs(canv.width / canv.height);
@@ -265,6 +281,7 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxVe
 
   const renderer: Renderer = {
     addObject,
+    addObjectInstance,
     renderFrame,
     finishInit,
   };
