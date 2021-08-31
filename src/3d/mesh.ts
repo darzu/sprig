@@ -84,7 +84,7 @@ export interface MeshMemoryPool {
     _meshes: Mesh[],
     _numVerts: number,
     _numTris: number,
-    addMeshes: (meshesToAdd: MeshModel[]) => void,
+    addMeshes: (meshesToAdd: MeshModel[], shadowCasters: boolean) => Mesh[],
     applyMeshTransform: (m: Mesh) => void,
     applyMeshMaxDraw: (m: Mesh) => void,
 
@@ -160,7 +160,7 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
             _indMap = new Uint16Array(_indexBuffer.getMappedRange());
     }
 
-    function addMeshes(meshesToAdd: MeshModel[]) {
+    function addMeshes(meshesToAdd: MeshModel[], shadowCasters: boolean): Mesh[] {
         function addMesh(m: MeshModel): Mesh {
             if (_vertsMap === null) {
                 throw "Use preRender() and postRender() functions"
@@ -204,6 +204,9 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
                 transform: trans,
                 triCount: m.tri.length,
 
+                // TODO(@darzu): hrm
+                shadowCaster: shadowCasters,
+
                 model: m,
                 maxDraw: 0,
             }
@@ -212,8 +215,11 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
             return res;
         }
 
-        meshesToAdd.forEach(m => _meshes.push(addMesh(m)))
+        const newMeshes = meshesToAdd.map(m => addMesh(m))
 
+        _meshes.push(...newMeshes)
+
+        return newMeshes
         // _indexBuffer.unmap();
         // _vertBuffer.unmap();
     }
@@ -481,12 +487,15 @@ export interface Mesh {
     triCount: number,
 
     // data
-    transform: mat4;
+    transform: mat4,
     model: MeshModel,
+
+    // properties
+    shadowCaster: boolean,
 
     // TODO(@darzu): MESH FORMAT
     // TODO(@darzu): this isn't relevant to all meshes....
-    maxDraw: number;
+    maxDraw: number,
 }
 
 // TODO(@darzu): we want a nicer interface, but for now since it's 1-1 with the memory pool, just put it in that

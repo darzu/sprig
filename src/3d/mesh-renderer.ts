@@ -698,6 +698,8 @@ export function createMeshRenderer(
                 // TODO(@darzu): one draw call per mesh?
                 const uniOffset = [0];
                 for (let m of pool._meshes) {
+                    if (!m.shadowCaster)
+                        continue;
                     // TODO(@darzu): set bind group
                     uniOffset[0] = m.modelUniByteOffset;
                     shadowPass.setBindGroup(1, modelUniBindGroup, uniOffset);

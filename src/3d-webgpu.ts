@@ -248,6 +248,9 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
         transform: mat4.create(),
         maxDraw: opts.maxBladeDraw,
 
+        // TODO(@darzu): what're the implications of this?
+        shadowCaster: true,
+
         // not applicable
         // TODO(@darzu): make this optional?
         model: null as unknown as MeshModel,
@@ -539,11 +542,11 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     meshPool._map()
 
-    meshPool.addMeshes([
+    const [planeHandle] = meshPool.addMeshes([
         PLANE
-    ])
-    const planeHandle = meshPool._meshes[meshPool._meshes.length - 1] // TODO(@darzu): hack
-    mat4.scale(planeHandle.transform, planeHandle.transform, [10, 10, 10]);
+    ], true)
+    const planeSize = 1000;
+    mat4.scale(planeHandle.transform, planeHandle.transform, [planeSize, planeSize, planeSize]);
     meshPool.applyMeshTransform(planeHandle);
 
     meshPool.addMeshes([
@@ -552,7 +555,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         CUBE,
         CUBE,
         CUBE,
-    ])
+    ], true)
 
     // create a field of cubes
     {
@@ -563,7 +566,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         for (let x = -spread; x < spread; x++) {
             for (let y = -spread; y < spread; y++) {
                 for (let z = -spread; z < spread; z++) {
-                    meshPool.addMeshes([grayCube])
+                    meshPool.addMeshes([grayCube], true)
                     const handle = meshPool._meshes[meshPool._meshes.length - 1] // TODO(@darzu): hack
                     mat4.translate(handle.transform, handle.transform, [x * spacing, (y + spread + 1.5) * spacing, (z - spread * 1.5) * spacing])
                     mat4.rotateX(handle.transform, handle.transform, Math.random() * 2 * Math.PI)
@@ -575,6 +578,17 @@ async function init(canvasRef: HTMLCanvasElement) {
             }
         }
     }
+
+    // light cube
+    const cubeSize = 10;
+    const lightCubeModel: MeshModel = {
+        ...CUBE,
+        pos: CUBE.pos.map(([x, y, z]) => [x * cubeSize, y * cubeSize, z * cubeSize]),
+        colors: CUBE.colors.map(c => [0.9, 0.9, 0.3]),
+    }
+    const [lightCube] = meshPool.addMeshes([
+        lightCubeModel,
+    ], false)
 
     meshPool._unmap();
 
@@ -663,24 +677,27 @@ async function init(canvasRef: HTMLCanvasElement) {
     meshPool.applyMeshTransform(playerM)
 
     // write light source
-    function updateLight()
+    const lightProjectionMatrix = mat4.create();
     {
+        const left = -80;
+        const right = 80;
+        const bottom = -80;
+        const top = 80;
+        const near = -200;
+        const far = 300;
+        mat4.ortho(lightProjectionMatrix, left, right, bottom, top, near, far);
+    }
+    function updateLight(timeMs: number) {
         const upVector = vec3.fromValues(0, 1, 0);
         const origin = vec3.fromValues(0, 0, 0);
-        const lightPosition = vec3.fromValues(50, 100, -100);
+        const sunSpeed = 0.0001;
+        const lightX = Math.cos(timeMs * sunSpeed) * 100
+        const lightY = Math.sin(timeMs * sunSpeed) * 100
+        const lightPosition = vec3.fromValues(lightX, lightY, 0);
+        // const lightPosition = vec3.fromValues(50, 100, -100);
         const lightViewMatrix = mat4.create();
         mat4.lookAt(lightViewMatrix, lightPosition, origin, upVector);
 
-        const lightProjectionMatrix = mat4.create();
-        {
-            const left = -80;
-            const right = 80;
-            const bottom = -80;
-            const top = 80;
-            const near = -200;
-            const far = 300;
-            mat4.ortho(lightProjectionMatrix, left, right, bottom, top, near, far);
-        }
         const lightViewProjMatrix = mat4.create();
         mat4.multiply(lightViewProjMatrix, lightProjectionMatrix, lightViewMatrix);
         const lightMatrixData = lightViewProjMatrix as Float32Array;
@@ -700,30 +717,34 @@ async function init(canvasRef: HTMLCanvasElement) {
             lightData.byteOffset,
             lightData.byteLength
         );
-    }
 
-    updateLight();
+        // light cube
+        mat4.translate(lightCube.transform, mat4.create(), lightPosition)
+        meshPool.applyMeshTransform(lightCube)
+    }
 
     meshRenderer.rebuildBundles([meshPool, ...grassSystem.getGrassPools()]);
 
     let debugDiv = document.getElementById('debug_div') as HTMLDivElement;
 
     let previousFrameTime = 0;
-    let avgJsTime = 0
-    let avgFrameTime = 0
+    let avgJsTimeMs = 0
+    let avgFrameTimeMs = 0
 
-    function frame(time: number) {
+    function frame(timeMs: number) {
         // meshPool.postRender()
 
         const start = performance.now();
 
-        const frameTime = previousFrameTime ? time - previousFrameTime : 0;
-        previousFrameTime = time;
+        const frameTimeMs = previousFrameTime ? timeMs - previousFrameTime : 0;
+        previousFrameTime = timeMs;
 
         // meshPool.postRender()
 
         // Sample is no longer the active page.
         if (!canvasRef) return;
+
+        updateLight(timeMs);
 
         // update model positions
         // TODO(@darzu): real movement
@@ -778,7 +799,7 @@ async function init(canvasRef: HTMLCanvasElement) {
 
         // writting time to shared buffer
         const sharedTime = new Float32Array(1);
-        sharedTime[0] = Math.floor(time); // TODO(@darzu):         
+        sharedTime[0] = Math.floor(timeMs); // TODO(@darzu):         
         device.queue.writeBuffer(
             meshRenderer.sharedUniBuffer,
             bytesPerMat4 * 2 + bytesPerVec3 * 1, // TODO(@darzu): getting these offsets is a pain
@@ -809,14 +830,15 @@ async function init(canvasRef: HTMLCanvasElement) {
 
         const jsTime = performance.now() - start;
 
+        // weighted average
         const avgWeight = 0.05
-        avgJsTime = avgJsTime ? (1 - avgWeight) * avgJsTime + avgWeight * jsTime : jsTime
-        avgFrameTime = avgFrameTime ? (1 - avgWeight) * avgFrameTime + avgWeight * frameTime : frameTime
+        avgJsTimeMs = avgJsTimeMs ? (1 - avgWeight) * avgJsTimeMs + avgWeight * jsTime : jsTime
+        avgFrameTimeMs = avgFrameTimeMs ? (1 - avgWeight) * avgFrameTimeMs + avgWeight * frameTimeMs : frameTimeMs
 
-        const avgFPS = 1000 / avgFrameTime;
+        const avgFPS = 1000 / avgFrameTimeMs;
 
-        // TODO(@darzu): 
-        debugDiv.innerText = `js: ${avgJsTime.toFixed(2)}ms, frame: ${avgFrameTime.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)}`
+        // TODO(@darzu): triangle, vertex, pixel counts
+        debugDiv.innerText = `js: ${avgJsTimeMs.toFixed(2)}ms, frame: ${avgFrameTimeMs.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)}`
     }
     requestAnimationFrame(frame);
 };
