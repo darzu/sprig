@@ -1,41 +1,1258 @@
-import { mat4, vec3, vec4, quat } from './gl-matrix.js';
-import { align, clamp, jitter } from './math.js';
-import { addTriToBuffers, createMeshMemoryPool, CUBE, bytesPerFloat as bytesPerFloat, bytesPerMat4 as bytesPerMat4, Mesh, MeshMemoryPool, MeshMemoryPoolOptions, MeshModel, PLANE, bytesPerTri, bytesPerVec3 } from './mesh.js';
-import { createMeshRenderer } from './mesh-renderer.js';
-// import * as RAPIER from './ext/@dimforge/rapier3d/rapier.js';
+import { mat4, vec3, vec4 } from './gl-matrix.js';
+import { align } from './math.js';
+
+const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
+const bytesPerMat4 = (4 * 4)/*4x4 mat*/ * 4/*f32*/
+const bytesPerVec3 = 3/*vec3*/ * 4/*f32*/
+const triElStride = 3/*ind per tri*/;
+const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * triElStride;
+
+// rendering pipeline for meshes
+const shadowDepthTextureSize = 1024 * 2 * 4;
+
+// TODO(@darzu): SCENE FORMAT
+const sceneStruct = `
+[[block]] struct Scene {
+  cameraViewProjMatrix : mat4x4<f32>;
+  lightViewProjMatrix : mat4x4<f32>;
+  lightDir : vec3<f32>;
+  time : f32;
+  displacer: vec3<f32>;
+};
+`
+
+const wgslShaders = {
+    vertexShadow: sceneStruct + `
+
+  [[block]] struct Model {
+    modelMatrix : mat4x4<f32>;
+  };
+
+  [[group(0), binding(0)]] var<uniform> scene : Scene;
+  [[group(1), binding(0)]] var<uniform> model : Model;
+
+  [[stage(vertex)]]
+  fn main([[location(0)]] position : vec3<f32>)
+       -> [[builtin(position)]] vec4<f32> {
+    return scene.lightViewProjMatrix * model.modelMatrix * vec4<f32>(position, 1.0);
+  }
+  `,
+
+    fragmentShadow: `
+  [[stage(fragment)]]
+  fn main() {
+  }
+  `,
+
+    vertex: sceneStruct + `
+
+    [[block]] struct Model {
+        modelMatrix : mat4x4<f32>;
+        maxDraw: f32;
+    };
+
+    [[group(0), binding(0)]] var<uniform> scene : Scene;
+    [[group(1), binding(0)]] var<uniform> model : Model;
+
+    struct VertexOutput {
+        [[location(0)]] shadowPos : vec3<f32>;
+        [[location(1)]] fragPos : vec3<f32>;
+        [[location(2)]] fragNorm : vec3<f32>;
+        [[location(3)]] color : vec3<f32>;
+        [[location(4)]] swayHeight : f32;
+
+        [[builtin(position)]] Position : vec4<f32>;
+    };
+
+    [[stage(vertex)]]
+    fn main(
+        [[location(0)]] position : vec3<f32>,
+        [[location(1)]] color : vec3<f32>,
+        [[location(2)]] normal : vec3<f32>,
+        // TODO(@darzu): VERTEX FORMAT
+        [[location(3)]] swayHeight : f32,
+        ) -> VertexOutput {
+        var output : VertexOutput;
+
+        let worldPos: vec4<f32> = model.modelMatrix * vec4<f32>(position, 1.0);
+
+        // XY is in (-1, 1) space, Z is in (0, 1) space
+        let posFromLight : vec4<f32> = scene.lightViewProjMatrix * worldPos;
+
+        // Convert XY to (0, 1)
+        // Y is flipped because texture coords are Y-down.
+        output.shadowPos = vec3<f32>(
+            posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5),
+            posFromLight.z
+        );
+
+        let dist3ToDisplacer: vec4<f32> = worldPos - vec4<f32>(scene.displacer, 1.0);
+        let distToDisplacer: f32 = distance(vec3<f32>(), dist3ToDisplacer.xyz);
+        let distUntilDraw: f32 = distToDisplacer - model.maxDraw;
+        // let distUntilFullHeight: f32 = distToDisplacer - maxDraw;
+        // TODO(dz): use distUntilDraw
+        let drawFade: f32 = 4.0; // + 5.0 * sin(1.0 * (worldPos.x + worldPos.z));
+        var maxHeight: f32;
+        if (swayHeight > 0.0 && model.maxDraw > 0.0) {
+            if (distUntilDraw > 0.0) {
+                maxHeight = 0.1;
+            } elseif (distUntilDraw > -drawFade) {
+                maxHeight = worldPos.y * max(distUntilDraw / -drawFade, 0.1);
+            } else {
+                maxHeight = worldPos.y;
+            }
+        } else {
+            maxHeight = worldPos.y;
+        }
+        let heightClamper = maxHeight - worldPos.y;
+
+        let displaceStr: f32 = clamp(pow(1.5 / distToDisplacer, 5.0), 0.0, 1.0);
+        let localDisplacement: vec4<f32> = (normalize(dist3ToDisplacer) * displaceStr);
+        let displacerDisplacement: vec4<f32> = vec4<f32>(
+                localDisplacement.x,
+                min(max(-position.y * 0.9, -position.y * displaceStr * 0.4), heightClamper),
+                localDisplacement.z, 0.0
+            ) * swayHeight;
+
+        let swayScale: f32 = swayHeight * 0.12;
+        let timeScale: f32 = scene.time * 0.0015;
+        let xSway: f32 = 2.0 * sin(1.0 * (worldPos.x + worldPos.y + worldPos.z + timeScale)) + 1.0;
+        let zSway: f32 = 1.0 * sin(2.0 * (worldPos.x + worldPos.y + worldPos.z + timeScale)) + 0.5;
+        let sway: vec4<f32> = vec4<f32>(xSway, 0.0, zSway, 0.0) * swayScale;
+        output.Position = scene.cameraViewProjMatrix * (worldPos + sway + displacerDisplacement);
+        output.fragPos = output.Position.xyz;
+        // output.fragNorm = normal;
+        output.fragNorm = normalize(model.modelMatrix * vec4<f32>(normal, 0.0)).xyz;
+        output.color = color;
+        output.swayHeight = swayHeight;
+        return output;
+    }
+    `,
+    fragment:
+        sceneStruct +
+        `
+    [[group(0), binding(0)]] var<uniform> scene : Scene;
+    [[group(0), binding(1)]] var shadowMap: texture_depth_2d;
+    [[group(0), binding(2)]] var shadowSampler: sampler_comparison;
+
+    struct FragmentInput {
+        [[location(0)]] shadowPos : vec3<f32>;
+        [[location(1)]] fragPos : vec3<f32>;
+        [[location(2)]] fragNorm : vec3<f32>;
+        [[location(3)]] color : vec3<f32>;
+        // TODO: use swayHeight?
+        [[location(4)]] swayHeight : f32;
+        [[builtin(front_facing)]] front: bool;
+    };
+
+    // let albedo : vec3<f32> = vec3<f32>(0.9, 0.9, 0.9);
+    let sunStr : f32 = 2.0;
+    let sunColor : vec3<f32> =  vec3<f32>(1.0, 1.0, 0.8);
+    // let skydomeLightDir: vec3<f32> = vec3<f32>(1.0, 0.0, 0.0);
+    let skydomeStr : f32 = 1.0;
+    let skydomeLightDir: vec3<f32> = vec3<f32>(0.0, -1.0, 0.0);
+    let sunReflectStr : f32 = 0.2;
+    // let sunReflectLightDir: vec3<f32> = vec3<f32>(-0.5, 0.0, -0.5);
+
+    [[stage(fragment)]]
+    fn main(input : FragmentInput) -> [[location(0)]] vec4<f32> {
+
+        // let normSign: f32 = select(1.0, -1.0, input.front);
+        // return vec4<f32>(normSign * input.fragNorm, 1.0);
+
+
+        // Percentage-closer filtering. Sample texels in the region
+        // to smooth the result.
+        var shadowVis : f32 = 0.0;
+
+        if (
+            input.shadowPos.x < 0.0
+            || input.shadowPos.x > 0.99
+            || input.shadowPos.y < 0.0
+            || input.shadowPos.y > 0.99
+            || input.shadowPos.z < 0.0
+            || input.shadowPos.z > 0.99
+            ) {
+            // we're outside the shadow box
+            shadowVis = 1.0;
+        } else {
+            // we're in the shadow box, do a multi sample
+            for (var y : i32 = -1 ; y <= 1 ; y = y + 1) {
+                for (var x : i32 = -1 ; x <= 1 ; x = x + 1) {
+                    let offset : vec2<f32> = vec2<f32>(
+                    f32(x) * ${1 / shadowDepthTextureSize},
+                    f32(y) * ${1 / shadowDepthTextureSize});
+
+                    shadowVis = shadowVis + textureSampleCompare(
+                    shadowMap, shadowSampler,
+                    input.shadowPos.xy + offset, input.shadowPos.z - 0.007);
+                }
+            }
+            shadowVis = shadowVis / 9.0;
+
+        // shadowVis = textureSampleCompare(
+        //         shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
+        }
+
+        // TODO: night time. Maybe we should instead slowly "turn off" the sun as night approaches including the sun reflect
+        //      the shadow factor should only ever scale down the sun factor anyway.
+        //      reflect sun should be sun intensity * 0.2 (~0.3)
+        if (scene.lightDir.y > 0.0) {
+            // sun is down
+            shadowVis = max(shadowVis - scene.lightDir.y * 2.0, 0.0);
+            // TODO: how to fix this with planets?
+        }
+
+        // return vec4<f32>(input.shadowPos.x * 0.5, input.shadowPos.x * 0.5, input.shadowPos.x * 0.5, 1.0);
+
+        // TODO: what is this 0.007 factor?
+        // shadowVis = textureSampleCompare(
+        //     shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
+
+        // shadowVis = 1.0;
+
+        // TODO: what does this "colorize penumbras" do?
+        // let cshadow: vec3<f32> = vec3<f32>(0.7);
+        // let shadowR = pow(shadowVis, 1.0);
+        // let shadowG = pow(shadowVis, 1.2);
+        // let shadowB = pow(shadowVis, 1.5);
+        // let cshadow: vec3<f32> = vec3<f32>(shadowR, shadowG, shadowB);
+
+        let normSign: f32 = select(1.0, -1.0, input.front);
+        // let norm: vec3<f32> = input.fragNorm;
+        let norm: vec3<f32> = normalize(input.fragNorm) * normSign;
+        let antiNorm: vec3<f32> = norm * -1.0;
+
+        // let lightDir: vec3<f32> = normalize(scene.lightPos - input.fragPos);
+        let lightDir: vec3<f32> = scene.lightDir;
+        // let sunLight : f32 = dot(-lightDir, norm);
+        let sunLight : f32 = max(dot(-lightDir, norm), 0.0);
+        // let antisunLight : f32 = 1.5 - max(dot(-lightDir, antiNorm), 0.0);
+        // let lightingFactor : f32 = sunLight * 1.5;
+        // let lightingFactor : f32 = shadowVis * sunLight * 1.5;
+        let skydomeFactor : f32 = clamp(dot(-skydomeLightDir, norm), 0.0, 1.0);
+        let sunReflectLightDir: vec3<f32> = vec3<f32>(-lightDir.xy, 0.0);
+        let sunReflectFactor : f32 = clamp(dot(-sunReflectLightDir, norm), 0.0, 1.0);
+        // let csSunFactor : vec3<f32> = cshadow * sunLight * sunStr;
+        // let csSunFactor : vec3<f32> = min(cshadow * sunLight, vec3<f32>(1.0,1.0,1.0)) * sunStr;
+        let sunFactor : f32 = min(shadowVis * sunLight, 1.0) * sunStr;
+        let sunEffect: vec3<f32> = input.color * sunColor * sunFactor;
+        let sunIntensity: f32 = pow(max(lightDir.y, 0.0), 2.0);
+        // let chlorophyllFactor: vec3<f32> = input.color * pow(input.swayHeight * sunIntensity, 2.0);
+        // let diffuse: vec3<f32> = ;
+        // let diffuse: vec3<f32> = 1.0 * csSunFactor;
+        let ambient: vec3<f32> = sunIntensity * input.color * (skydomeFactor * skydomeStr + sunReflectFactor * sunReflectStr);
+
+        // return vec4<f32>(norm, 1.0);
+
+        // return vec4<f32>(diffuse, 1.0);
+        let resultColor: vec3<f32> = sunEffect + ambient; // + chlorophyllFactor
+        // return vec4<f32>(resultColor, 1.0);
+
+        // TODO: this gamma correction doesn't look good...
+        let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
+        return vec4<f32>(gammaCorrected, 1.0);
+
+        // return vec4<f32>(lightingFactor * input.color, 1.0);
+        // return vec4<f32>(lightingFactor * albedo, 1.0);
+    }
+    `,
+}
+
+// const maxNumVerts = 1000;
+// const maxNumTri = 1000;
+// const maxNumModels = 100;
+
+const sampleCount = 4;
+
+const swapChainFormat = 'bgra8unorm';
+
+const shadowDepthTextureDesc: GPUTextureDescriptor = {
+    size: {
+        width: shadowDepthTextureSize,
+        height: shadowDepthTextureSize,
+        depthOrArrayLayers: 1,
+    },
+    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.SAMPLED,
+    format: 'depth32float',
+}
+
+const maxNumInstances = 1000;
+const instanceByteSize = bytesPerFloat * 3/*color*/
+
+// TODO(@darzu): depth24plus-stencil8
+const depthStencilFormat = 'depth24plus-stencil8';
+
+// TODO(@darzu): move this out?
+const lightProjectionMatrix = mat4.create();
+{
+    const left = -80;
+    const right = 80;
+    const bottom = -80;
+    const top = 80;
+    const near = -200;
+    const far = 300;
+    mat4.ortho(lightProjectionMatrix, left, right, bottom, top, near, far);
+}
+
+interface MeshRenderer {
+    // TODO(@darzu): what should really be exposed?
+    sharedUniBuffer: GPUBuffer,
+    rebuildBundles: (meshPools: MeshMemoryPool[]) => void,
+    render: (commandEncoder: GPUCommandEncoder, meshPools: MeshMemoryPool[], canvasWidth: number, canvasHeight: number) => void,
+}
+
+function createMeshRenderer(
+    meshUniByteSize: number,
+    vertByteSize: number,
+    device: GPUDevice, context: GPUCanvasContext): MeshRenderer {
+
+    const swapChain = context.configureSwapChain({
+        device,
+        format: swapChainFormat,
+    });
+
+    const instanceDataBuffer = device.createBuffer({
+        size: maxNumInstances * instanceByteSize,
+        usage: GPUBufferUsage.VERTEX,
+        mappedAtCreation: true,
+    });
+    {
+        const instMap = new Float32Array(instanceDataBuffer.getMappedRange())
+        for (let i = 0; i < maxNumInstances; i++) {
+            const off = i * instanceByteSize
+            // TODO(@darzu): colors
+            instMap[off + 0] = Math.random()
+            instMap[off + 1] = Math.random()
+            instMap[off + 2] = Math.random()
+        }
+        instanceDataBuffer.unmap();
+    }
+
+    const modelUniBindGroupLayout = device.createBindGroupLayout({
+        entries: [
+            {
+                binding: 0,
+                visibility: GPUShaderStage.VERTEX,
+                buffer: {
+                    type: 'uniform',
+                    hasDynamicOffset: true,
+                    // TODO(@darzu): why have this?
+                    minBindingSize: meshUniByteSize,
+                },
+            },
+        ],
+    });
+
+    const shadowSharedUniBindGroupLayout = device.createBindGroupLayout({
+        entries: [
+            {
+                binding: 0,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                buffer: {
+                    type: 'uniform',
+                    // hasDynamicOffset: true,
+                    // TODO(@darzu): why have this?
+                    // minBindingSize: 20,
+                },
+            },
+        ],
+    });
+
+    const renderSharedUniBindGroupLayout = device.createBindGroupLayout({
+        entries: [
+            {
+                binding: 0,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                buffer: {
+                    type: 'uniform',
+                    // hasDynamicOffset: true,
+                    // TODO(@darzu): why have this?
+                    // minBindingSize: 20,
+                },
+            },
+            {
+                binding: 1,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                texture: {
+                    sampleType: 'depth',
+                },
+            },
+            {
+                binding: 2,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                sampler: {
+                    type: 'comparison',
+                },
+            },
+        ],
+    });
+
+    // Create the depth texture for rendering/sampling the shadow map.
+    const shadowDepthTexture = device.createTexture(shadowDepthTextureDesc);
+    // TODO(@darzu): use
+    const shadowDepthTextureView = shadowDepthTexture.createView();
+
+    // TODO(@darzu): SCENE FORMAT
+    const sharedUniBufferSize =
+        // Two 4x4 viewProj matrices,
+        // one for the camera and one for the light.
+        // Then a vec3 for the light position.
+        bytesPerMat4 * 2 // camera and light projection
+        + bytesPerVec3 * 1 // light pos
+        + bytesPerFloat * 1 // time
+        + bytesPerVec3 // displacer
+    const sharedUniBuffer = device.createBuffer({
+        size: align(sharedUniBufferSize, 256),
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    const shadowSharedUniBindGroup = device.createBindGroup({
+        layout: shadowSharedUniBindGroupLayout,
+        entries: [
+            {
+                binding: 0,
+                resource: {
+                    buffer: sharedUniBuffer,
+                },
+            },
+        ],
+    });
+
+    const renderSharedUniBindGroup = device.createBindGroup({
+        layout: renderSharedUniBindGroupLayout,
+        entries: [
+            {
+                binding: 0,
+                resource: {
+                    buffer: sharedUniBuffer,
+                },
+            },
+            {
+                binding: 1,
+                resource: shadowDepthTextureView,
+            },
+            {
+                binding: 2,
+                // TODO(@darzu): what's a sampler here?
+                resource: device.createSampler({
+                    compare: 'less',
+                }),
+            },
+        ],
+    });
+
+    const vertexBuffersLayout: GPUVertexBufferLayout[] = [
+        {
+            // TODO(@darzu): the buffer index should be connected to the pool probably?
+            // TODO(@darzu): VERTEX FORMAT
+            arrayStride: vertByteSize,
+            attributes: [
+                {
+                    // position
+                    shaderLocation: 0,
+                    offset: bytesPerVec3 * 0,
+                    format: 'float32x3',
+                },
+                {
+                    // color
+                    shaderLocation: 1,
+                    offset: bytesPerVec3 * 1,
+                    format: 'float32x3',
+                },
+                {
+                    // normals
+                    shaderLocation: 2,
+                    offset: bytesPerVec3 * 2,
+                    format: 'float32x3',
+                },
+                {
+                    // sway height
+                    shaderLocation: 3,
+                    offset: bytesPerVec3 * 3,
+                    format: 'float32',
+                },
+                // {
+                //     // uv
+                //     shaderLocation: 1,
+                //     offset: cubeUVOffset,
+                //     format: 'float32x2',
+                // },
+            ],
+        },
+        // TODO(@darzu): VERTEX FORMAT
+        {
+            // per-instance data
+            stepMode: "instance",
+            arrayStride: instanceByteSize,
+            attributes: [
+                {
+                    // color
+                    shaderLocation: 4,
+                    offset: 0,
+                    format: 'float32x3',
+                },
+            ],
+        },
+    ];
+
+    const primitiveBackcull: GPUPrimitiveState = {
+        topology: 'triangle-list',
+        cullMode: 'back',
+        // frontFace: 'ccw', // TODO(dz):
+    };
+    const primitiveTwosided: GPUPrimitiveState = {
+        topology: 'triangle-list',
+        cullMode: 'none',
+        // frontFace: 'ccw', // TODO(dz):
+    };
+
+    const shadowPipelineLayout = device.createPipelineLayout({
+        bindGroupLayouts: [shadowSharedUniBindGroupLayout, modelUniBindGroupLayout],
+    });
+
+    const shadowPipelineDesc: GPURenderPipelineDescriptor = {
+        layout: shadowPipelineLayout, // TODO(@darzu): same for shadow and not?
+        vertex: {
+            module: device.createShaderModule({
+                code: wgslShaders.vertexShadow,
+            }),
+            entryPoint: 'main',
+            buffers: vertexBuffersLayout,
+        },
+        fragment: {
+            // This should be omitted and we can use a vertex-only pipeline, but it's
+            // not yet implemented.
+            module: device.createShaderModule({
+                code: wgslShaders.fragmentShadow,
+            }),
+            entryPoint: 'main',
+            targets: [],
+        },
+        depthStencil: {
+            depthWriteEnabled: true,
+            depthCompare: 'less',
+            format: 'depth32float',
+        },
+        primitive: primitiveBackcull,
+    };
+
+    const shadowPipeline = device.createRenderPipeline(shadowPipelineDesc);
+    const shadowPipelineTwosided = device.createRenderPipeline({
+        ...shadowPipelineDesc,
+        primitive: primitiveTwosided
+    });
+
+    const renderPipelineLayout = device.createPipelineLayout({
+        bindGroupLayouts: [renderSharedUniBindGroupLayout, modelUniBindGroupLayout],
+    });
+
+    const renderPipelineDesc: GPURenderPipelineDescriptor = {
+        layout: renderPipelineLayout,
+        vertex: {
+            module: device.createShaderModule({
+                code: wgslShaders.vertex,
+                // TODO(@darzu):
+                // code: basicVertWGSL,
+            }),
+            entryPoint: 'main',
+            buffers: vertexBuffersLayout,
+        },
+        fragment: {
+            module: device.createShaderModule({
+                code: wgslShaders.fragment,
+                // TODO(@darzu):
+                // code: vertexPositionColorWGSL,
+            }),
+            entryPoint: 'main',
+            targets: [
+                {
+                    format: swapChainFormat,
+                },
+            ],
+        },
+        primitive: primitiveBackcull,
+
+        // Enable depth testing so that the fragment closest to the camera
+        // is rendered in front.
+        depthStencil: {
+            depthWriteEnabled: true,
+            depthCompare: 'less',
+            format: depthStencilFormat,
+        },
+        multisample: {
+            count: sampleCount,
+        },
+    };
+
+    const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
+    const renderPipelineTwosided = device.createRenderPipeline({
+        ...renderPipelineDesc,
+        primitive: primitiveTwosided,
+
+    });
+    // 'depth24plus-stencil8'
+
+
+    let depthTexture: GPUTexture;
+    let depthTextureView: GPUTextureView;
+    let colorTexture: GPUTexture;
+    let colorTextureView: GPUTextureView;
+    let lastWidth = 0;
+    let lastHeight = 0;
+
+    function resize(canvasWidth: number, canvasHeight: number) {
+        if (depthTexture && colorTexture && lastWidth === canvasWidth && lastHeight === canvasHeight)
+            return;
+
+        if (depthTexture)
+            depthTexture.destroy();
+        if (colorTexture)
+            colorTexture.destroy();
+
+        // TODO(@darzu): 
+        // console.log("resizing")
+
+        depthTexture = device.createTexture({
+            size: { width: canvasWidth, height: canvasHeight },
+            format: depthStencilFormat,
+            sampleCount,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT,
+        });
+        depthTextureView = depthTexture.createView();
+
+        // Declare swapchain image handles
+        colorTexture = device.createTexture({
+            size: {
+                width: canvasWidth,
+                height: canvasHeight,
+            },
+            sampleCount,
+            format: swapChainFormat,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT,
+        });;
+        colorTextureView = colorTexture.createView();
+
+        lastWidth = canvasWidth;
+        lastHeight = canvasHeight;
+    }
+    resize(100, 100);
+
+    // TODO(@darzu): how do we handle this abstraction with multiple passes e.g. shadows?
+
+    const shadowPassDescriptor: GPURenderPassDescriptor = {
+        colorAttachments: [],
+        depthStencilAttachment: {
+            view: shadowDepthTextureView,
+            depthLoadValue: 1.0,
+            depthStoreOp: 'store',
+            stencilLoadValue: 0,
+            stencilStoreOp: 'store',
+        },
+    };
+
+    let shadowRenderBundle: GPURenderBundle;
+    let renderBundle: GPURenderBundle;
+
+    function rebuildBundles(meshPools: MeshMemoryPool[]) {
+        // create render bundle
+        const bundleRenderDesc: GPURenderBundleEncoderDescriptor = {
+            colorFormats: [swapChainFormat],
+            depthStencilFormat: depthStencilFormat,
+            sampleCount,
+        }
+
+        const bundleEncoder = device.createRenderBundleEncoder(bundleRenderDesc);
+
+        for (let pool of meshPools) {
+            if (pool._opts.backfaceCulling)
+                bundleEncoder.setPipeline(renderPipeline);
+            else
+                bundleEncoder.setPipeline(renderPipelineTwosided);
+
+            bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
+            const modelUniBindGroup = device.createBindGroup({
+                layout: modelUniBindGroupLayout,
+                entries: [
+                    {
+                        binding: 0,
+                        resource: {
+                            buffer: pool._meshUniBuffer,
+                            offset: 0, // TODO(@darzu): different offsets per model
+                            // TODO(@darzu): needed?
+                            size: meshUniByteSize,
+                        },
+                    },
+                ],
+            });
+            bundleEncoder.setVertexBuffer(0, pool._vertBuffer);
+            bundleEncoder.setVertexBuffer(1, instanceDataBuffer);
+            if (pool._indexBuffer)
+                bundleEncoder.setIndexBuffer(pool._indexBuffer, 'uint16');
+            const uniOffset = [0];
+            for (let m of pool._meshes) {
+                // TODO(@darzu): set bind group
+                uniOffset[0] = m.modelUniByteOffset;
+                bundleEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
+                if (pool._indexBuffer)
+                    bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+                else {
+                    bundleEncoder.draw(m.triCount * 3, undefined, m.vertNumOffset);
+                }
+            }
+        }
+        renderBundle = bundleEncoder.finish()
+    }
+
+    function render(commandEncoder: GPUCommandEncoder, meshPools: MeshMemoryPool[], canvasWidth: number, canvasHeight: number) {
+        // console.log(`w: ${canvasWidth}, h: ${canvasHeight}`)
+        resize(canvasWidth, canvasHeight);
+
+        // TODO(@darzu):  this feels akward
+        // Acquire next image from swapchain
+        // colorTexture = swapChain.getCurrentTexture();
+        // colorTextureView = colorTexture.createView();
+
+        const colorAtt: GPURenderPassColorAttachmentNew = {
+            view: colorTextureView,
+            resolveTarget: swapChain.getCurrentTexture().createView(),
+            loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
+            storeOp: 'store',
+        };
+        const renderPassDescriptor = {
+            colorAttachments: [colorAtt],
+            depthStencilAttachment: {
+                view: depthTextureView,
+                depthLoadValue: 1.0,
+                depthStoreOp: 'store',
+                stencilLoadValue: 0,
+                stencilStoreOp: 'store',
+            },
+        } as const;
+
+        const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
+        // shadowPassEncoder.executeBundles([shadowRenderBundle]);
+        // TODO(@darzu): use bundle
+        {
+            shadowPass.setBindGroup(0, shadowSharedUniBindGroup);
+            for (let pool of meshPools) {
+                if (pool._opts.backfaceCulling)
+                    shadowPass.setPipeline(shadowPipeline);
+                else
+                    shadowPass.setPipeline(shadowPipelineTwosided);
+
+                const modelUniBindGroup = device.createBindGroup({
+                    layout: modelUniBindGroupLayout,
+                    entries: [
+                        {
+                            binding: 0,
+                            resource: {
+                                buffer: pool._meshUniBuffer,
+                                offset: 0, // TODO(@darzu): different offsets per model
+                                // TODO(@darzu): needed?
+                                size: meshUniByteSize,
+                            },
+                        },
+                    ],
+                });
+                shadowPass.setVertexBuffer(0, pool._vertBuffer);
+                shadowPass.setVertexBuffer(1, instanceDataBuffer);
+                if (pool._indexBuffer)
+                    shadowPass.setIndexBuffer(pool._indexBuffer, 'uint16');
+                // TODO(@darzu): one draw call per mesh?
+                const uniOffset = [0];
+                for (let m of pool._meshes) {
+                    if (!m.shadowCaster)
+                        continue;
+                    // TODO(@darzu): set bind group
+                    uniOffset[0] = m.modelUniByteOffset;
+                    shadowPass.setBindGroup(1, modelUniBindGroup, uniOffset);
+                    if (pool._indexBuffer)
+                        shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+                    else {
+                        // console.log(`m.vertNumOffset: ${m.vertNumOffset}`)
+                        shadowPass.draw(m.triCount * 3, undefined, m.vertNumOffset);
+                    }
+                }
+            }
+            // shadowRenderBundle = shadowPass.finish()
+        }
+        shadowPass.endPass();
+
+        const renderPassEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+        renderPassEncoder.executeBundles([renderBundle]);
+        renderPassEncoder.endPass();
+
+        return commandEncoder;
+    }
+
+    const res: MeshRenderer = {
+        sharedUniBuffer,
+        rebuildBundles,
+        render,
+    };
+    return res;
+}
+
+
+// face normals vs vertex normals
+interface MeshModel {
+    // vertex positions (x,y,z)
+    pos: vec3[];
+    // triangles (vert indices, ccw)
+    tri: vec3[];
+    // colors per triangle in r,g,b float [0-1] format
+    colors: vec3[];
+}
+interface MeshMemoryPoolOptions {
+    // TODO(@darzu): vertex structure for shaders?
+    vertByteSize: number, // bytes
+    maxVerts: number,
+    maxTris: number,
+    maxMeshes: number,
+    meshUniByteSize: number,
+    backfaceCulling: boolean,
+    usesIndices: boolean,
+}
+
+interface MeshMemoryPool {
+    _opts: MeshMemoryPoolOptions,
+    _vertBuffer: GPUBuffer,
+    _indexBuffer: GPUBuffer | null,
+    _meshUniBuffer: GPUBuffer,
+    _meshes: Mesh[],
+    _numVerts: number,
+    _numTris: number,
+    addMeshes: (meshesToAdd: MeshModel[], shadowCasters: boolean) => Mesh[],
+    applyMeshTransform: (m: Mesh) => void,
+    applyMeshMaxDraw: (m: Mesh) => void,
+
+    // TODO: mapping, unmapping, and raw access is pretty odd
+    _vertsMap: () => Float32Array,
+    _indMap: () => Uint16Array,
+    _unmap: () => void,
+    _map: () => void,
+}
+
+const _scratchSingletonFloatBuffer = new Float32Array(1);
+
+function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDevice): MeshMemoryPool {
+    const { vertByteSize, maxVerts, maxTris, maxMeshes, meshUniByteSize } = opts;
+
+    if (meshUniByteSize % 256 !== 0) {
+        console.error("invalid mesh uni byte size, not 256 byte aligned: " + meshUniByteSize)
+    }
+
+    // space stats
+    console.log(`New mesh pool`);
+    console.log(`   ${maxVerts * vertByteSize / 1024} KB for verts`);
+    console.log(`   ${opts.usesIndices ? maxTris * bytesPerTri / 1024 : 0} KB for indices`);
+    console.log(`   ${maxMeshes * meshUniByteSize / 1024} KB for models`);
+        // TODO(@darzu): MESH FORMAT
+    const assumedBytesPerModel =
+            bytesPerMat4 // transform
+            + bytesPerFloat // max draw distance
+    const unusedBytesPerModel = 256 - assumedBytesPerModel % 256
+    console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per model (${(unusedBytesPerModel * maxMeshes / 1024).toFixed(1)} KB total waste)`);
+
+    const _vertBuffer = device.createBuffer({
+        size: maxVerts * vertByteSize,
+        usage: GPUBufferUsage.VERTEX,
+        mappedAtCreation: true,
+    });
+    const _indexBuffer = opts.usesIndices ? device.createBuffer({
+        size: maxTris * bytesPerTri,
+        usage: GPUBufferUsage.INDEX,
+        mappedAtCreation: true,
+    }) : null;
+
+    const meshUniBufferSize = meshUniByteSize * maxMeshes;
+    const _meshUniBuffer = device.createBuffer({
+        size: align(meshUniBufferSize, 256),
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+    const _meshes: Mesh[] = [];
+    let _numVerts = 0;
+    let _numTris = 0;
+
+    const vertElStride = vertByteSize / bytesPerFloat;
+
+    let _vertsMap: Float32Array | null = null;
+    let _indMap: Uint16Array | null = null;
+
+    function _unmap() {
+        // console.log("unmapping") // TODO(@darzu): 
+        if (_vertsMap)
+            _vertBuffer.unmap()
+        if (_indMap && _indexBuffer)
+            _indexBuffer.unmap()
+        _vertsMap = null;
+        _indMap = null;
+        }
+
+    // TODO(@darzu): misnomer. This doesn't do the mapping
+    function _map() {
+        // console.log("mapping") // TODO(@darzu): 
+        if (!_vertsMap)
+            _vertsMap = new Float32Array(_vertBuffer.getMappedRange())
+        if (!_indMap && _indexBuffer)
+            _indMap = new Uint16Array(_indexBuffer.getMappedRange());
+    }
+
+    function addMeshes(meshesToAdd: MeshModel[], shadowCasters: boolean): Mesh[] {
+        function addMesh(m: MeshModel): Mesh {
+            if (_vertsMap === null) {
+                throw "Use preRender() and postRender() functions"
+            }
+
+            // TODO(@darzu): temporary
+            m = unshareVertices(m);
+
+            if (_numVerts + m.pos.length > maxVerts)
+                throw "Too many vertices!"
+            if (_numTris + m.tri.length > maxTris)
+                throw "Too many triangles!"
+
+            // add to vertex and index buffers
+            addMeshToBuffers(m, _vertsMap, _numVerts, vertElStride, _indMap, _numTris, false);
+
+            // create transformation matrix
+            const trans = mat4.create() as Float32Array;
+
+            // TODO(@darzu): real transforms
+            // mat4.translate(trans, trans, vec3.fromValues(
+            //     4 * _meshes.length, // TODO
+            //     0, 0));
+
+            // save the transform matrix to the buffer
+            // TODO(@darzu): MESH FORMAT
+            const uniOffset = _meshes.length * meshUniByteSize;
+            device.queue.writeBuffer(
+                _meshUniBuffer,
+                uniOffset,
+                trans.buffer,
+                trans.byteOffset,
+                trans.byteLength
+            );
+
+            // create the result
+            const res: Mesh = {
+                vertNumOffset: _numVerts, // TODO(@darzu): 
+                indicesNumOffset: _numTris * 3, // TODO(@darzu): 
+                modelUniByteOffset: uniOffset,
+                transform: trans,
+                triCount: m.tri.length,
+
+                // TODO(@darzu): hrm
+                shadowCaster: shadowCasters,
+
+                model: m,
+                maxDraw: 0,
+                }
+            _numVerts += m.pos.length;
+            _numTris += m.tri.length;
+            return res;
+            }
+
+        const newMeshes = meshesToAdd.map(m => addMesh(m))
+
+        _meshes.push(...newMeshes)
+
+        return newMeshes
+            // _indexBuffer.unmap();
+            // _vertBuffer.unmap();
+        }
+
+    function applyMeshTransform(m: Mesh) {
+        // save the transform matrix to the buffer
+        // TODO(@darzu): MESH FORMAT
+        device.queue.writeBuffer(
+            _meshUniBuffer,
+            m.modelUniByteOffset,
+            (m.transform as Float32Array).buffer,
+            (m.transform as Float32Array).byteOffset,
+            (m.transform as Float32Array).byteLength
+        );
+    }
+
+    function applyMeshMaxDraw(m: Mesh) {
+        // save the min draw distance to uniform buffer
+        _scratchSingletonFloatBuffer[0] = m.maxDraw;
+        device.queue.writeBuffer(
+            _meshUniBuffer,
+            // TODO(@darzu): MESH FORMAT
+            m.modelUniByteOffset + bytesPerMat4,
+            _scratchSingletonFloatBuffer.buffer,
+            _scratchSingletonFloatBuffer.byteOffset,
+            _scratchSingletonFloatBuffer.byteLength
+        );
+    }
+
+    const res: MeshMemoryPool = {
+        _opts: opts,
+        _vertBuffer,
+        _indexBuffer,
+        _meshUniBuffer,
+        _numVerts,
+        _numTris,
+        _meshes,
+        _vertsMap: () => _vertsMap!,
+        _indMap: () => _indMap!,
+        _unmap: _unmap,
+        _map: _map,
+        addMeshes,
+        applyMeshTransform,
+        applyMeshMaxDraw,
+    }
+    return res;
+}
+
+// TODO(@darzu): this shouldn't be needed once "flat" shading is supported in Chrome's WGSL, 
+//  and/or PrimativeID is supported https://github.com/gpuweb/gpuweb/issues/1786
+function unshareVertices(inp: MeshModel): MeshModel {
+    // TODO(@darzu): pre-alloc
+    const outVerts: vec3[] = []
+    const outTri: vec3[] = []
+    inp.tri.forEach(([i0, i1, i2], i) => {
+        const v0 = inp.pos[i0];
+        const v1 = inp.pos[i1];
+        const v2 = inp.pos[i2];
+        outVerts.push(v0);
+        outVerts.push(v1);
+        outVerts.push(v2);
+        const vOff = i * 3;
+        outTri.push([
+            vOff + 0,
+            vOff + 1,
+            vOff + 2,
+        ])
+    })
+    return {
+        pos: outVerts,
+        tri: outTri,
+        colors: inp.colors,
+    }
+}
+// TODO(@darzu): needed?
+interface ExpandedMesh extends MeshModel {
+    // face normals, per triangle
+    fnorm: vec3[];
+}
+
+const CUBE: MeshModel = {
+    pos: [
+        [+1.0, +1.0, +1.0],
+        [-1.0, +1.0, +1.0],
+        [-1.0, -1.0, +1.0],
+        [+1.0, -1.0, +1.0],
+
+        [+1.0, +1.0, -1.0],
+        [-1.0, +1.0, -1.0],
+        [-1.0, -1.0, -1.0],
+        [+1.0, -1.0, -1.0],
+    ],
+    tri: [
+        // front
+        [0, 1, 2],
+        [0, 2, 3],
+        // top
+        [4, 5, 1],
+        [4, 1, 0],
+        // right
+        [3, 4, 0],
+        [3, 7, 4],
+        // left
+        [2, 1, 5],
+        [2, 5, 6],
+        // bottom
+        [6, 3, 2],
+        [6, 7, 3],
+        // back
+        [5, 4, 7],
+        [5, 7, 6],
+    ],
+    colors: [
+        // front
+        [0.5, 0.0, 0.0],
+        [0.5, 0.0, 0.0],
+        // top
+        [0.0, 0.5, 0.0],
+        [0.0, 0.5, 0.0],
+        // right
+        [0.0, 0.0, 0.5],
+        [0.0, 0.0, 0.5],
+        // left
+        [0.5, 0.5, 0.0],
+        [0.5, 0.5, 0.0],
+        // bottom
+        [0.0, 0.5, 0.5],
+        [0.0, 0.5, 0.5],
+        // back
+        [0.5, 0.0, 0.5],
+        [0.5, 0.0, 0.5],
+    ]
+    }
+
+const PLANE: MeshModel = {
+    pos: [
+        [+10, 0, +10],
+        [-10, 0, +10],
+        [+10, 0, -10],
+        [-10, 0, -10],
+    ],
+    tri: [
+        // top
+        [0, 2, 3],
+        [0, 3, 1],
+        // bottom
+        [3, 2, 0],
+        [1, 3, 0],
+    ],
+    colors: [
+        [0.1, 0.15, 0.1],
+        [0.1, 0.15, 0.1],
+        [0.1, 0.15, 0.1],
+        [0.1, 0.15, 0.1],
+    ],
+}
+
+function computeNormal([p1, p2, p3]: [vec3, vec3, vec3]): vec3 {
+    // https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
+    // cross product of two edges
+    // edge 1
+    const u: vec3 = [0, 0, 0]
+    vec3.sub(u, p2, p1)
+    // edge 2
+    const v: vec3 = [0, 0, 0]
+    vec3.sub(v, p3, p1)
+    // cross
+    const n: vec3 = [0, 0, 0]
+    vec3.cross(n, u, v)
+
+    vec3.normalize(n, n)
+
+    return n;
+    }
+function computeNormals(m: MeshModel): vec3[] {
+    const triPoses = m.tri.map(([i0, i1, i2]) => [m.pos[i0], m.pos[i1], m.pos[i2]] as [vec3, vec3, vec3])
+    return triPoses.map(computeNormal)
+}
+
+function addTriToBuffers(
+    triPos: [vec3, vec3, vec3],
+    triInd: vec3,
+    triNorms: [vec3, vec3, vec3],
+    triColors: [vec3, vec3, vec3],
+    triSwayHeights: vec3,
+    verts: Float32Array, prevNumVerts: number, vertElStride: number,
+    indices: Uint16Array | null, prevNumTri: number, shiftIndices = false): void {
+    const vOff = prevNumVerts * vertElStride
+    const iOff = prevNumTri * triElStride
+    const indShift = shiftIndices ? prevNumVerts : 0;
+    if (indices) {
+        indices[iOff + 0] = triInd[0] + indShift
+        indices[iOff + 1] = triInd[1] + indShift
+        indices[iOff + 2] = triInd[2] + indShift
+    }
+    // set per-face vertex data
+    // position
+    verts[vOff + 0 * vertElStride + 0] = triPos[0][0]
+    verts[vOff + 0 * vertElStride + 1] = triPos[0][1]
+    verts[vOff + 0 * vertElStride + 2] = triPos[0][2]
+    verts[vOff + 1 * vertElStride + 0] = triPos[1][0]
+    verts[vOff + 1 * vertElStride + 1] = triPos[1][1]
+    verts[vOff + 1 * vertElStride + 2] = triPos[1][2]
+    verts[vOff + 2 * vertElStride + 0] = triPos[2][0]
+    verts[vOff + 2 * vertElStride + 1] = triPos[2][1]
+    verts[vOff + 2 * vertElStride + 2] = triPos[2][2]
+    // color
+    const [r1, g1, b1] = triColors[0]
+    const [r2, g2, b2] = triColors[1]
+    const [r3, g3, b3] = triColors[2]
+    verts[vOff + 0 * vertElStride + 3] = r1
+    verts[vOff + 0 * vertElStride + 4] = g1
+    verts[vOff + 0 * vertElStride + 5] = b1
+    verts[vOff + 1 * vertElStride + 3] = r2
+    verts[vOff + 1 * vertElStride + 4] = g2
+    verts[vOff + 1 * vertElStride + 5] = b2
+    verts[vOff + 2 * vertElStride + 3] = r3
+    verts[vOff + 2 * vertElStride + 4] = g3
+    verts[vOff + 2 * vertElStride + 5] = b3
+    // normals
+    const [nx1, ny1, nz1] = triNorms[0]
+    verts[vOff + 0 * vertElStride + 6] = nx1
+    verts[vOff + 0 * vertElStride + 7] = ny1
+    verts[vOff + 0 * vertElStride + 8] = nz1
+    const [nx2, ny2, nz2] = triNorms[1]
+    verts[vOff + 1 * vertElStride + 6] = nx2
+    verts[vOff + 1 * vertElStride + 7] = ny2
+    verts[vOff + 1 * vertElStride + 8] = nz2
+    const [nx3, ny3, nz3] = triNorms[2]
+    verts[vOff + 2 * vertElStride + 6] = nx3
+    verts[vOff + 2 * vertElStride + 7] = ny3
+    verts[vOff + 2 * vertElStride + 8] = nz3
+    // sway height
+    const [y0, y1, y2] = triSwayHeights
+    verts[vOff + 0 * vertElStride + 9] = y0
+    verts[vOff + 1 * vertElStride + 9] = y1
+    verts[vOff + 2 * vertElStride + 9] = y2
+    }
 
 /*
-TODO:
-    I want some data per:
-        Model (e.g. transform)
-        Face/Triangle (e.g. color, material, normal)
-        Vertex (e.g. ???)
-
-    Face painting:
-        color per defining vertex would be ideal
-        could do uniform buffer data
-        how to do the painting?
-        pick out face color in vertex shader and pass to fragment
-            How do we know which face? We need that prominent vertex thing...
-    Refactor into seperate files
-        Kill babylonjs?
-
-    Debug toggles to render:
-        Shadow map
-        Normals
-
-    Curve normals on grass blade
+Adds mesh vertices and indices into buffers. Optionally shifts triangle indicies.
 */
+function addMeshToBuffers(
+    m: MeshModel,
+    verts: Float32Array, prevNumVerts: number, vertElStride: number,
+    indices: Uint16Array | null, prevNumTri: number, shiftIndices = false): void {
+    // IMPORTANT: assumes unshared vertices
+    const norms = computeNormals(m);
+    m.tri.forEach((t, i) => {
+        addTriToBuffers(
+            [m.pos[t[0]], m.pos[t[1]], m.pos[t[2]]],
+            t,
+            [norms[i], norms[i], norms[i]],
+            [m.colors[i], m.colors[i], m.colors[i]],
+            [0, 0, 0],
+            verts, prevNumVerts + i * 3, vertElStride,
+            indices, prevNumTri + i, shiftIndices);
+    })
+}
 
-// FLAGS
-// const RENDER_GRASS = false;
-const RENDER_GRASS = true;
+// TODO(@darzu): rename to MeshHandle ?
+interface Mesh {
+    // handles into the buffers
+    vertNumOffset: number,
+    indicesNumOffset: number,
+    modelUniByteOffset: number,
+    triCount: number,
 
-// TODO(@darzu): expand faces to have unique vertices
+    // data
+    transform: mat4,
+    model: MeshModel,
+
+    // properties
+    shadowCaster: boolean,
+
+    // TODO(@darzu): MESH FORMAT
+    // TODO(@darzu): this isn't relevant to all meshes....
+    maxDraw: number,
+}
+
+// TODO(@darzu): we want a nicer interface, but for now since it's 1-1 with the memory pool, just put it in that
+// interface MeshPool {
+//     _meshes: Mesh[],
+//     addMesh: (mesh: MeshModel) => void,
+// }
+
+// function createMeshPool(memPool: MeshMemoryPool) {
+//     const _meshes: Mesh[] = [];
+
+// }
+
 
 // TODO(@darzu): VERTEX FORMAT
 const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/ + 1/*swayHeight*/)
-
 
 interface Transformable {
     getTransform: () => mat4;
@@ -72,449 +1289,6 @@ function mkAffineTransformable(): Transformable {
             mat4.translate(transform, transform, [0, 0, n]);
         },
     }
-}
-
-function mkEulerTransformable(): Transformable {
-    // yaw with respect to absolute
-    // pitch with respect to yaw
-    // translate with respect to yaw and pitch
-
-    let yaw: number = 0;
-    let pitch: number = 0;
-    let roll: number = 0;
-
-    const rotation = quat.create();
-    const position = vec3.create();
-
-    return {
-        getTransform: () => {
-            // return mat4.clone(transform);
-            // const rot = quat.fromEuler(quat.create(), radToDeg * pitch, radToDeg * yaw, radToDeg * roll)
-            return mat4.fromRotationTranslation(mat4.create(), rotation, position);
-        },
-        pitch: (rad: number) => {
-            pitch = clamp(pitch + rad, -Math.PI / 2, Math.PI / 2)
-            quat.fromEuler(rotation, pitch, yaw, roll)
-        },
-        yaw: (rad: number) => {
-            yaw += rad
-            quat.fromEuler(rotation, pitch, yaw, roll)
-        },
-        roll: (rad: number) => {
-            // roll = clamp(roll + rad, -Math.PI / 2, Math.PI / 2)
-            // console.log(transform);
-        },
-        moveX: (n: number) => {
-            vec3.add(position, position, vec3.transformQuat(vec3.create(), [n, 0, 0], rotation))
-        },
-        moveY: (n: number) => {
-            vec3.add(position, position, vec3.transformQuat(vec3.create(), [0, n, 0], rotation))
-        },
-        moveZ: (n: number) => {
-            vec3.add(position, position, vec3.transformQuat(vec3.create(), [0, 0, n], rotation))
-        },
-    }
-}
-
-// TODO(@darzu): grass tiles
-/*
-simple:
-    grid of tiles, all the same amount of grass
-    move to center around the player
-    each tile level can be totaly independent
-    more levels can be added/removed
-
-can this be done with ECS?
-    "on player change tile, level X"
-*/
-
-interface GrassSystem {
-    getGrassPools: () => MeshMemoryPool[],
-    update: (target: vec3) => void,
-    // TODO(@darzu): getAABB
-}
-
-interface GrassTileOpts {
-    bladeW: number,
-    bladeH: number
-    spacing: number,
-    tileSize: number,
-    maxBladeDraw: number,
-}
-interface GrassTilesetOpts {
-    bladeW: number,
-    bladeH: number
-    spacing: number,
-    tileSize: number,
-    tilesPerSide: number,
-}
-
-function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Mesh {
-    const { spacing, tileSize: size, bladeW, bladeH } = opts;
-
-    // TODO(@darzu): debug coloring
-    const [r, g, b] = [Math.random(), Math.random(), Math.random()];
-    // console.log(r, g, b) // TODO(@darzu): 
-
-    const prevNumTris = grassMeshPool._numTris;
-    const prevNumVerts = grassMeshPool._numVerts;
-
-    let i = 0;
-    for (let xi = 0.0; xi < size; xi += spacing) {
-        for (let zi = 0.0; zi < size; zi += spacing) {
-
-            const x = xi + jitter(spacing)
-            const z = zi + jitter(spacing)
-
-            const w = bladeW + jitter(0.05)
-
-            const rot = jitter(Math.PI * 0.5)
-
-            const x1 = x + Math.cos(rot) * w
-            const z1 = z + Math.sin(rot) * w
-            const x2 = x + Math.cos(rot + Math.PI) * w
-            const z2 = z + Math.sin(rot + Math.PI) * w
-            const x3 = x + jitter(0.7)
-            const z3 = z + jitter(0.7)
-            const x4 = x3 + jitter(w * 0.5)
-            const z4 = z3 + jitter(w * 0.5)
-
-            const y1 = 0; //-bladeH;
-            const y2 = 0;
-            const y3 = bladeH + jitter(1)
-            const y4 = y3 * (0.9 + jitter(0.1))
-
-            // TODO(@darzu): disable for debug coloring
-            // "make sure your diffuse colors are around 0.2, and no much brighter except for very special situations."
-            const r = (0.05 + jitter(0.02)) * 0.3
-            const g = (0.5 + jitter(0.2)) * 0.3
-            const b = (0.05 + jitter(0.02)) * 0.3
-
-            const p1: vec3 = [x1, y1, z1];
-            const p2: vec3 = [x2, y2, z2];
-            const p3: vec3 = [x3, y3, z3];
-            const p4: vec3 = [x4, y4, z4];
-
-            // const norm3 = vec3.fromValues(0, 1, 0);
-            const norm0 = vec3.cross(vec3.create(), [x2 - x1, y2 - y1, z2 - z1], [x3 - x1, y3 - y1, z3 - z1])
-            vec3.normalize(norm0, norm0);
-            // const norm3 = vec3.cross(vec3.create(), [x2 - x1, y2 - y1, z2 - z1], [x3 - x1, y3 - y1, z3 - z1])
-            // const norm1 = vec3.subtract(vec3.create(), p1, p2)
-            // const norm2 = vec3.subtract(vec3.create(), p2, p1)
-            // vec3.normalize(norm1, norm1);
-            // vec3.normalize(norm2, norm2);
-            // vec3.normalize(norm3, norm3);
-
-            addTriToBuffers(
-                [p1, p2, p3],
-                [0, 1, 2],
-                // [norm1, norm2, norm3],
-                [norm0, norm0, norm0],
-                [
-                    // TODO(@darzu): use proper darkening
-                    [r * 0.5, g * 0.5, b * 0.5],
-                    [r * 0.5, g * 0.5, b * 0.5],
-                    [r, g, b],
-                ],
-                [0, 0, 1.0],
-                grassMeshPool._vertsMap(),
-                grassMeshPool._numVerts,
-                vertElStride,
-                grassMeshPool._indMap(),
-                grassMeshPool._numTris,
-                true);
-
-            grassMeshPool._numTris += 1;
-            grassMeshPool._numVerts += 3;
-
-            i++;
-
-            // const norm2 = vec3.cross(vec3.create(), [x3 - x1, y3 - y1, z3 - z1], [x4 - x1, y4 - y1, z4 - z1])
-            // vec3.normalize(norm2, norm2);
-
-            // addTriToBuffers(
-            //     [p1, p3, p4],
-            //     [0, 1, 2],
-            //     norm2,
-            //     [
-            //         [r * 0.5, g * 0.5, b * 0.5],
-            //         [r, g, b],
-            //         [r, g, b],
-            //     ],
-            //     [0.0, 1.0, 1.0],
-            //     grassMeshPool._vertsMap(),
-            //     grassMeshPool._numVerts,
-            //     vertElStride,
-            //     grassMeshPool._indMap(),
-            //     grassMeshPool._numTris,
-            //     true);
-
-            // grassMeshPool._numTris += 1;
-            // grassMeshPool._numVerts += 3;
-
-            // i++;
-        }
-    }
-
-    // TODO(@darzu): compute correct offsets
-    const grassMesh: Mesh = {
-        vertNumOffset: prevNumVerts,
-        indicesNumOffset: prevNumTris * 3,
-        modelUniByteOffset: grassMeshPool._opts.meshUniByteSize * grassMeshPool._meshes.length,
-        triCount: i,
-
-        // used and updated elsewhere
-        transform: mat4.create(),
-        maxDraw: opts.maxBladeDraw,
-
-        // TODO(@darzu): what're the implications of this?
-        shadowCaster: true,
-
-        // not applicable
-        // TODO(@darzu): make this optional?
-        model: null as unknown as MeshModel,
-    };
-
-    // TODO(@darzu): do here?
-    grassMeshPool.applyMeshMaxDraw(grassMesh)
-
-
-    grassMeshPool._meshes.push(grassMesh);
-
-    return grassMesh;
-}
-
-interface GrassTileset {
-    pool: MeshMemoryPool,
-    tiles: Mesh[],
-    update: (target: vec3) => void,
-}
-
-function createGrassTileset(opts: GrassTilesetOpts, device: GPUDevice): GrassTileset {
-    // create grass field
-    const { spacing, tileSize, tilesPerSide } = opts;
-    const grassPerTile = (tileSize / spacing) ** 2;
-    const tileCount = tilesPerSide ** 2;
-    const totalGrass = grassPerTile * tileCount;
-    // const totalGrassTris = totalGrass * 1;
-    // TODO(@darzu): GRASS FORMAT
-    const totalGrassTris = totalGrass * 2;
-    const pool = createMeshMemoryPool({
-        vertByteSize: bytesPerFloat * vertElStride,
-        maxVerts: align(totalGrassTris * 3, 4),
-        maxTris: align(totalGrassTris, 4),
-        maxMeshes: tileCount,
-        // TODO(@darzu): MESH FORMAT
-        meshUniByteSize: align(
-            bytesPerMat4 // transform
-            + bytesPerFloat // max draw distance
-            , 256),
-        backfaceCulling: false,
-        usesIndices: false,
-    }, device);
-
-    pool._map();
-
-    const maxBladeDraw = ((tilesPerSide - 1) / 2) * tileSize
-    const tileOpts: GrassTileOpts = {
-        ...opts,
-        maxBladeDraw
-    }
-
-    for (let xi = 0; xi < tilesPerSide; xi++) {
-        for (let zi = 0; zi < tilesPerSide; zi++) {
-            const x = xi * tileSize;
-            const z = zi * tileSize;
-            // TODO(@darzu): 
-            // console.log(`(${xi}, ${zi})`);
-            const tile = createGrassTile(tileOpts, pool);
-            mat4.translate(tile.transform, tile.transform, [x, 0, z])
-            pool.applyMeshTransform(tile)
-            // TODO(@darzu): 
-
-            // const uniOffset = _meshes.length * meshUniByteSize;
-            // device.queue.writeBuffer(
-            //     _meshUniBuffer,
-            //     uniOffset,
-            //     trans.buffer,
-            //     trans.byteOffset,
-            //     trans.byteLength
-            // );
-        }
-    }
-
-    pool._unmap();
-
-    const tiles = pool._meshes;
-
-    // handle grass tile movement
-    function update(target: vec3) {
-        const [tx, _, tz] = target;
-
-        // compute the N closest centers
-        const txi = tx / opts.tileSize;
-        const nearestXIs = nearestIntegers(txi, opts.tilesPerSide)
-        const tzi = tz / opts.tileSize;
-        const nearestZIs = nearestIntegers(tzi, opts.tilesPerSide)
-        const nearestIs: [number, number][] = []
-        for (let xi of nearestXIs)
-            for (let zi of nearestZIs)
-                nearestIs.push([xi, zi])
-
-        // compare with current positions
-        const occupied: [number, number][] = []
-        const toMoveInds: number[] = []
-        const tilePoses: vec3[] = tiles.map(t => getPositionFromTransform(t.transform))
-        for (let i = 0; i < tiles.length; i++) {
-            const t = tiles[i]
-            const [x, _, z] = tilePoses[i]
-            const xi = Math.floor((x + 0.5) / opts.tileSize)
-            const zi = Math.floor((z + 0.5) / opts.tileSize)
-            let shouldMove = true;
-            for (let [xi2, zi2] of nearestIs) {
-                if (xi2 === xi && zi2 === zi) {
-                    occupied.push([xi2, zi2])
-                    shouldMove = false;
-                    break;
-                }
-            }
-            if (shouldMove)
-                toMoveInds.push(i)
-        }
-
-        // move those that don't match
-        for (let i of toMoveInds) {
-            const t = tiles[i]
-            for (let [xi1, zi1] of nearestIs) {
-                const isOpen = !occupied.some(([xi2, zi2]) => xi2 === xi1 && zi2 === zi1)
-                if (!isOpen)
-                    continue;
-                // do move
-                occupied.push([xi1, zi1])
-                const targetPos: vec3 = [xi1 * opts.tileSize, 0, zi1 * opts.tileSize]
-                const move = vec3.subtract(vec3.create(), targetPos, tilePoses[i])
-                mat4.translate(t.transform, t.transform, move)
-                // console.log(`moving (${tilePoses[i][0]}, ${tilePoses[i][1]}, ${tilePoses[i][2]}) to (${targetPos[0]}, ${targetPos[1]}, ${targetPos[2]}) via (${move[0]}, ${move[1]}, ${move[2]})`)
-                pool.applyMeshTransform(t)
-                break;
-            }
-        }
-    }
-
-    return {
-        pool,
-        tiles,
-        update,
-    }
-}
-
-function nearestIntegers(target: number, numInts: number): number[] {
-    const maxIntDist = (numInts - 1) / 2;
-    const minInt = Math.floor(target - maxIntDist);
-    const maxInt = Math.floor(target + maxIntDist);
-    const nearestInts: number[] = [];
-    for (let xi = minInt; xi <= maxInt; xi++)
-        nearestInts.push(xi)
-    if (nearestInts.length !== numInts) {
-        console.error(`Too many (!=${numInts}) 'NEAREST' integers [${nearestInts.join(',')}] found to: ${target}`)
-    }
-    return nearestInts;
-}
-
-function initGrassSystem(device: GPUDevice): GrassSystem {
-    if (!RENDER_GRASS) {
-        return {
-            getGrassPools: () => [],
-            update: () => { },
-        }
-    }
-
-    // TODO(@darzu): try upside down triangles
-    const lod1Opts: GrassTilesetOpts = {
-        // tile
-        // bladeW: 0.2,
-        bladeW: 0.2,
-        // bladeH: 3,
-        bladeH: 1.6,
-        // bladeH: 1.5,
-        // bladeH: 1.7,
-        // TODO(@darzu): debugging
-        // spacing: 1,
-        // tileSize: 4,
-        spacing: 0.25,
-        tileSize: 16,
-        // tileSize: 10,
-        // tileset
-        tilesPerSide: 5,
-    }
-    const lod0Opts: GrassTilesetOpts = {
-        ...lod1Opts,
-        bladeH: lod1Opts.bladeH * 0.8,
-        spacing: lod1Opts.spacing * 0.5,
-        tileSize: lod1Opts.tileSize * 0.5,
-    }
-    const lod2Opts: GrassTilesetOpts = {
-        ...lod1Opts,
-        bladeH: lod1Opts.bladeH * 1.4,
-        spacing: lod1Opts.spacing * 2,
-        tileSize: lod1Opts.tileSize * 2,
-    }
-    const lod3Opts: GrassTilesetOpts = {
-        ...lod1Opts,
-        bladeH: lod1Opts.bladeH * 1.6,
-        spacing: lod1Opts.spacing * 4,
-        tileSize: lod1Opts.tileSize * 4,
-    }
-    const lod4Opts: GrassTilesetOpts = {
-        ...lod1Opts,
-        tilesPerSide: 8,
-        bladeH: lod1Opts.bladeH * 1.8,
-        spacing: lod1Opts.spacing * 8,
-        tileSize: lod1Opts.tileSize * 8,
-    }
-    const lod5Opts: GrassTilesetOpts = {
-        ...lod1Opts,
-        tilesPerSide: 8,
-        bladeW: lod1Opts.bladeW * 2,
-        bladeH: lod1Opts.bladeH * 2,
-        spacing: lod1Opts.spacing * 32,
-        tileSize: lod1Opts.tileSize * 32,
-    }
-
-    const lodDebug: GrassTilesetOpts = {
-        bladeW: 0.4,
-        bladeH: 2,
-        spacing: 1,
-        tileSize: 4,
-        tilesPerSide: 5,
-    }
-
-    // TODO(@darzu): debugging
-    // const lodOpts = [lodDebug]
-    const lodOpts = [
-        // lod0Opts,
-        // lod1Opts,
-        // lod1Opts,
-        lod2Opts,
-        lod3Opts,
-        lod4Opts,
-        // lod5Opts,
-    ]
-
-    const tilesets = lodOpts.map(opts => createGrassTileset(opts, device))
-
-    function updateAll(target: vec3) {
-        tilesets.forEach(t => t.update(target))
-    }
-
-    const triCount = tilesets.map(s => s.pool._numTris).reduce((p, n) => p + n, 0)
-    console.log(`Creating grass system with ${(triCount / 1000).toFixed(0)}k triangles.`);
-
-    const res: GrassSystem = {
-        getGrassPools: () => tilesets.map(t => t.pool),
-        update: updateAll,
-    }
-    return res;
 }
 
 function getPositionFromTransform(t: mat4): vec3 {
@@ -562,12 +1336,7 @@ async function init(canvasRef: HTMLCanvasElement) {
     const meshRenderer = createMeshRenderer(
         meshPool._opts.meshUniByteSize, meshPool._opts.vertByteSize, device, context);
 
-    // TODO(@darzu): physics?
-    // console.dir(RAPIER)
-
-    // canvas.requestFullscreen({
-    //     navigationUI: "hide"
-    // })
+    // cursor lock
     let cursorLocked = false
     canvas.onclick = (ev) => {
         if (!cursorLocked)
@@ -584,61 +1353,10 @@ async function init(canvasRef: HTMLCanvasElement) {
     mat4.scale(planeHandle.transform, planeHandle.transform, [planeSize, planeSize, planeSize]);
     meshPool.applyMeshTransform(planeHandle);
 
-    meshPool.addMeshes([
-        CUBE,
-        CUBE,
-        CUBE,
-    ], true)
-
     const playerCubeModel: MeshModel = { ...CUBE, colors: CUBE.colors.map(c => [0.0, 0.1, 0.1]) }
     const [playerM] = meshPool.addMeshes([playerCubeModel], true)
 
-    // create a field of cubes
-    function createGarbageCube(pos: vec3) {
-        const color: vec3 = [0.1 + jitter(0.05), 0.1 + jitter(0.05), 0.1 + jitter(0.05)];
-        const grayCube: MeshModel = {
-            ...CUBE,
-            colors: CUBE.colors.map(c => color),
-        }
-        const spread = 2;
-        const spacing = 2;
-        const boxHandles: Mesh[] = []
-        for (let x = -spread; x < spread; x++) {
-            for (let y = -spread; y < spread; y++) {
-                for (let z = -spread; z < spread; z++) {
-                    meshPool.addMeshes([grayCube], true)
-                    const handle = meshPool._meshes[meshPool._meshes.length - 1] // TODO(@darzu): hack
-                    mat4.translate(handle.transform, handle.transform, pos)
-                    mat4.translate(handle.transform, handle.transform, [x * spacing, (y + spread + 1.5) * spacing, (z - spread * 1.5) * spacing])
-                    mat4.rotateX(handle.transform, handle.transform, Math.random() * 2 * Math.PI)
-                    mat4.rotateY(handle.transform, handle.transform, Math.random() * 2 * Math.PI)
-                    mat4.rotateZ(handle.transform, handle.transform, Math.random() * 2 * Math.PI)
-                    meshPool.applyMeshTransform(handle);
-                    boxHandles.push(handle)
-                }
-            }
-        }
-        return boxHandles;
-    }
-    createGarbageCube([0, 3, 0])
-    createGarbageCube([20, 2, 0])
-    createGarbageCube([0, 7, 20])
-    createGarbageCube([-10, -5, -10])
-
-    // light cube
-    const cubeSize = 10;
-    const lightCubeModel: MeshModel = {
-        ...CUBE,
-        pos: CUBE.pos.map(([x, y, z]) => [x * cubeSize, y * cubeSize, z * cubeSize]),
-        colors: CUBE.colors.map(c => [0.9, 0.9, 0.3]),
-    }
-    const [lightCube] = meshPool.addMeshes([
-        lightCubeModel,
-    ], false)
-
     meshPool._unmap();
-
-    const grassSystem = initGrassSystem(device);
 
     const aspect = Math.abs(canvasRef.width / canvasRef.height);
     const projectionMatrix = mat4.create();
@@ -676,13 +1394,6 @@ async function init(canvasRef: HTMLCanvasElement) {
         mouseDeltaY += ev.movementY
     }
 
-    function scaleTranslate(out: mat4, a: mat4, s: vec3): mat4 {
-        out[12] = a[12] * s[0]
-        out[13] = a[13] * s[1]
-        out[14] = a[14] * s[2]
-        return out;
-    }
-
     function controlPlayer(t: Transformable) {
         // keys
         const speed = pressedKeys[' '] ? 1.0 : 0.2;
@@ -698,25 +1409,15 @@ async function init(canvasRef: HTMLCanvasElement) {
             t.moveY(speed)
         if (pressedKeys['c'])
             t.moveY(-speed)
-        if (pressedKeys['q'])
-            // t.roll(0.1)
-            if (pressedKeys['e'])
-                // t.roll(-0.1)
-                if (pressedKeys['r']) {
-                    // TODO(@darzu): 
-                }
         // mouse
         if (mouseDeltaX !== 0)
             t.yaw(-mouseDeltaX * 0.01);
-        // if (mouseDeltaY !== 0)
-        //     t.pitch(-mouseDeltaY * 0.01);
     }
 
-    function cameraFollow(camera: Transformable, player: Transformable) {
+    function cameraFollow(camera: Transformable) {
         if (mouseDeltaY !== 0)
             camera.pitch(-mouseDeltaY * 0.01);
     }
-
 
     const playerT = mkAffineTransformable();
     playerM.transform = playerT.getTransform();
@@ -735,36 +1436,18 @@ async function init(canvasRef: HTMLCanvasElement) {
         const far = 300;
         mat4.ortho(lightProjectionMatrix, left, right, bottom, top, near, far);
     }
-    let sunOffset = 0;
-    let lastTimeMs = 0;
-    function updateLight(timeMs: number) {
-        const timeDelta = timeMs - lastTimeMs;
-        lastTimeMs = timeMs;
 
-        if (pressedKeys['l']) {
-            return;
-        }
-
-        sunOffset += timeDelta
-
+    // init light
+    {
         const upVector = vec3.fromValues(0, 1, 0);
         const origin = vec3.fromValues(0, 0, 0);
-        const sunSpeed = 0.00004;
-        const lightX = Math.cos((sunOffset) * sunSpeed) * 100
-        const lightY = Math.sin((sunOffset) * sunSpeed) * 100
-        const isNight = lightY < 0;
-        if (isNight) {
-            sunOffset += 50;
-        }
-
+        const lightX = 50;
+        const lightY = 50;
         const lightPosition = vec3.fromValues(lightX, lightY, 0);
         const lightDir = vec3.subtract(vec3.create(), origin, lightPosition);
         vec3.normalize(lightDir, lightDir);
-        // const lightPosition = vec3.fromValues(50, 100, -100);
         const lightViewMatrix = mat4.create();
         mat4.lookAt(lightViewMatrix, lightPosition, origin, upVector);
-        // mat4.translate(lightViewMatrix, lightViewMatrix, playerPos)
-
         const lightViewProjMatrix = mat4.create();
         mat4.multiply(lightViewProjMatrix, lightProjectionMatrix, lightViewMatrix);
         const lightMatrixData = lightViewProjMatrix as Float32Array;
@@ -784,13 +1467,9 @@ async function init(canvasRef: HTMLCanvasElement) {
             lightData.byteOffset,
             lightData.byteLength
         );
-
-        // light cube
-        mat4.translate(lightCube.transform, mat4.create(), lightPosition)
-        meshPool.applyMeshTransform(lightCube)
     }
 
-    meshRenderer.rebuildBundles([meshPool, ...grassSystem.getGrassPools()]);
+    meshRenderer.rebuildBundles([meshPool]);
 
     let debugDiv = document.getElementById('debug-div') as HTMLDivElement;
 
@@ -799,35 +1478,18 @@ async function init(canvasRef: HTMLCanvasElement) {
     let avgFrameTimeMs = 0
 
     function frame(timeMs: number) {
-        // meshPool.postRender()
-
         const start = performance.now();
 
         const frameTimeMs = previousFrameTime ? timeMs - previousFrameTime : 0;
         previousFrameTime = timeMs;
-
-        // meshPool.postRender()
 
         // Sample is no longer the active page.
         if (!canvasRef) return;
 
         playerPos = getPositionFromTransform(playerM.transform);
 
-        updateLight(timeMs);
-
-        // update model positions
-        // TODO(@darzu): real movement
-        mat4.translate(meshPool._meshes[1].transform, meshPool._meshes[1].transform, [0.1, 0, 0])
-        meshPool.applyMeshTransform(meshPool._meshes[1])
-        mat4.translate(meshPool._meshes[2].transform, meshPool._meshes[2].transform, [0.0, 0.2, 0])
-        meshPool.applyMeshTransform(meshPool._meshes[2])
-        mat4.translate(meshPool._meshes[3].transform, meshPool._meshes[3].transform, [0.0, 0, 0.3])
-        meshPool.applyMeshTransform(meshPool._meshes[3])
-
-        // controlTransformable(cameraPos);
         controlPlayer(playerT);
-        cameraFollow(cameraPos, playerT);
-        // controlTransformable(m2t);
+        cameraFollow(cameraPos);
 
         playerM.transform = playerT.getTransform();
         meshPool.applyMeshTransform(playerM);
@@ -835,8 +1497,6 @@ async function init(canvasRef: HTMLCanvasElement) {
         // reset accummulated mouse delta
         mouseDeltaX = 0;
         mouseDeltaY = 0;
-
-        grassSystem.update(playerPos)
 
         function getViewProj() {
             const viewProj = mat4.create();
@@ -855,8 +1515,6 @@ async function init(canvasRef: HTMLCanvasElement) {
         }
 
         const transformationMatrix = getViewProj();
-        // const transformationMatrix = getTransformationMatrix();
-        // console.dir(transformationMatrix)
         device.queue.writeBuffer(
             meshRenderer.sharedUniBuffer,
             0,
@@ -867,7 +1525,7 @@ async function init(canvasRef: HTMLCanvasElement) {
 
         // writting time to shared buffer
         const sharedTime = new Float32Array(1);
-        sharedTime[0] = Math.floor(timeMs); // TODO(@darzu):         
+        sharedTime[0] = Math.floor(timeMs);
         device.queue.writeBuffer(
             meshRenderer.sharedUniBuffer,
             bytesPerMat4 * 2 + bytesPerVec3 * 1, // TODO(@darzu): getting these offsets is a pain
@@ -891,9 +1549,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         const canvasHeight = canvasRef.clientHeight;
 
         const commandEncoder = device.createCommandEncoder();
-        meshRenderer.render(commandEncoder, [
-            meshPool,
-            ...grassSystem.getGrassPools()], canvasWidth, canvasHeight);
+        meshRenderer.render(commandEncoder, [meshPool], canvasWidth, canvasHeight);
         device.queue.submit([commandEncoder.finish()]);
 
         requestAnimationFrame(frame);
@@ -916,20 +1572,3 @@ async function init(canvasRef: HTMLCanvasElement) {
 // Attach to html
 let canvas = document.getElementById('sample-canvas') as HTMLCanvasElement;
 await init(canvas)
-
-// TODO: vertex, index, normals
-// {
-//     // Create the model vertex buffer.
-//     const vertexBuffer = device.createBuffer({
-//         size: mesh.positions.length * 3 * 2 * float32ByteSize,
-//         usage: GPUBufferUsage.VERTEX,
-//         mappedAtCreation: true,
-//     });
-//     {
-//         const mapping = new Float32Array(vertexBuffer.getMappedRange());
-//         for (let i = 0; i < mesh.positions.length; ++i) {
-//         mapping.set(mesh.positions[i], 6 * i);
-//         mapping.set(mesh.normals[i], 6 * i + 3);
-//         }
-//         vertexBuffer.unmap();
-//     }
