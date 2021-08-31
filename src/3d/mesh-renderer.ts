@@ -91,9 +91,9 @@ const wgslShaders = {
         var maxHeight: f32;
         if (swayHeight > 0.0 && model.maxDraw > 0.0) {
             if (distUntilDraw > 0.0) {
-                maxHeight = 0.0;
+                maxHeight = 0.1;
             } elseif (distUntilDraw > -drawFade) {
-                maxHeight = worldPos.y * (distUntilDraw / -drawFade);
+                maxHeight = worldPos.y * max(distUntilDraw / -drawFade, 0.1);
             } else {
                 maxHeight = worldPos.y;
             }

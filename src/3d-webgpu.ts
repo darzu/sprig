@@ -625,7 +625,7 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     function controlPlayer(t: Transformable) {
         // keys
-        const speed = 0.2;
+        const speed = pressedKeys[' '] ? 1.0 : 0.2;
         if (pressedKeys['w'])
             t.moveZ(-speed)
         if (pressedKeys['s'])
@@ -663,6 +663,7 @@ async function init(canvasRef: HTMLCanvasElement) {
     meshPool.applyMeshTransform(playerM)
 
     // write light source
+    function updateLight()
     {
         const upVector = vec3.fromValues(0, 1, 0);
         const origin = vec3.fromValues(0, 0, 0);
@@ -700,6 +701,8 @@ async function init(canvasRef: HTMLCanvasElement) {
             lightData.byteLength
         );
     }
+
+    updateLight();
 
     meshRenderer.rebuildBundles([meshPool, ...grassSystem.getGrassPools()]);
 

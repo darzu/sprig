@@ -114,7 +114,7 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
         bytesPerMat4 // transform
         + bytesPerFloat // max draw distance
     const unusedBytesPerModel = 256 - assumedBytesPerModel % 256
-    console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per model (${unusedBytesPerModel * maxMeshes / 1024} KB total waste)`);
+    console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per model (${(unusedBytesPerModel * maxMeshes / 1024).toFixed(1)} KB total waste)`);
 
     const _vertBuffer = device.createBuffer({
         size: maxVerts * vertByteSize,
