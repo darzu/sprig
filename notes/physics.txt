@@ -51,6 +51,7 @@ Rapier.js
                 Yes? harpoon
         2. Bite the bullet, take on NPM and a bundler
         3. Create a dummy project w/ NPM to bundle dependencies
+    https://github.com/dimforge/rapier.js/issues/30
 
 Can physics be doen on GPU via compute shaders?
     https://www.reddit.com/r/gamedev/comments/7ppvyg/physics_simulation_on_gpu/
