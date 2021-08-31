@@ -1,5 +1,11 @@
 import { mat4, vec3, quat } from "./gl-matrix.js";
-import { scaleMesh, GameObject, GameEvent, GameState } from "./state.js";
+import {
+  scaleMesh,
+  GameObject,
+  GameEvent,
+  GameState,
+  scaleMesh3,
+} from "./state.js";
 import { Serializer, Deserializer } from "./serialize.js";
 import { Net } from "./net.js";
 import { test } from "./test.js";
@@ -22,12 +28,13 @@ import { _motionPairsLen } from "./phys.js";
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
 const MAX_VERTICES = 21844;
-const ENABLE_NET = true;
+const ENABLE_NET = false;
 
 enum ObjectType {
   Plane,
   Player,
   Bullet,
+  Boat,
 }
 
 enum EventType {
@@ -66,6 +73,8 @@ const PLANE_AABB = getAABBFromMesh(PLANE_MESH);
 
 const DARK_GRAY = vec3.fromValues(0.02, 0.02, 0.02);
 const LIGHT_GRAY = vec3.fromValues(0.2, 0.2, 0.2);
+const DARK_BLUE = vec3.fromValues(0.03, 0.03, 0.2);
+const LIGHT_BLUE = vec3.fromValues(0.05, 0.05, 0.2);
 class Plane extends GameObject {
   color: vec3;
 
@@ -266,6 +275,51 @@ class Player extends Cube {
   }
 }
 
+class Boat extends Cube {
+  constructor(id: number, creator: number) {
+    super(id, creator);
+    this.color = vec3.fromValues(0.2, 0.1, 0.05);
+    this.localAABB = getAABBFromMesh(this.mesh());
+  }
+
+  mesh(): Mesh {
+    // TODO(@darzu): this should be computed only once.
+    return scaleMesh3(super.mesh(), [5, 0.3, 2.5]);
+  }
+
+  typeId(): number {
+    return ObjectType.Boat;
+  }
+
+  serializeFull(buffer: Serializer) {
+    buffer.writeVec3(this.motion.location);
+    buffer.writeVec3(this.motion.linearVelocity);
+    buffer.writeQuat(this.motion.rotation);
+    buffer.writeVec3(this.motion.angularVelocity);
+  }
+
+  deserializeFull(buffer: Deserializer) {
+    let location = buffer.readVec3()!;
+    if (!buffer.dummy) {
+      this.snapLocation(location);
+    }
+    buffer.readVec3(this.motion.linearVelocity);
+    let rotation = buffer.readQuat()!;
+    if (!buffer.dummy) {
+      this.snapRotation(rotation);
+    }
+    buffer.readVec3(this.motion.angularVelocity);
+  }
+
+  serializeDynamic(buffer: Serializer) {
+    this.serializeFull(buffer);
+  }
+
+  deserializeDynamic(buffer: Deserializer) {
+    this.deserializeFull(buffer);
+  }
+}
+
 interface Inputs {
   forward: boolean;
   back: boolean;
@@ -306,8 +360,8 @@ class CubeGameState extends GameState<Inputs> {
 
     if (createObjects) {
       // create checkered grid
-      const NUM_PLANES_X = 1;
-      const NUM_PLANES_Z = 1;
+      const NUM_PLANES_X = 10;
+      const NUM_PLANES_Z = 10;
       for (let x = 0; x < NUM_PLANES_X; x++) {
         for (let z = 0; z < NUM_PLANES_Z; z++) {
           let plane = new Plane(this.newId(), this.me);
@@ -316,9 +370,16 @@ class CubeGameState extends GameState<Inputs> {
           const parity = !!((x + z) % 2);
           plane.motion.location = vec3.fromValues(xPos, -10, zPos);
           // plane.motion.location = vec3.fromValues(xPos + 10, -3, 12 + zPos);
-          if (parity) plane.color = LIGHT_GRAY;
+          plane.color = parity ? LIGHT_BLUE : DARK_BLUE;
           this.addObject(plane);
         }
+      }
+
+      // create boat(s)
+      {
+        const boat = new Boat(this.newId(), this.me);
+        boat.motion.location[1] = -5;
+        this.addObject(boat);
       }
 
       // create stack of boxes
