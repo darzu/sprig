@@ -43,6 +43,9 @@ Art references:
         https://apps.apple.com/us/app/scaniverse-3d-scanner/id1541433223
     point cloud vs mesh
 
+SketchFab:
+    https://sketchfab.com/store/3d-models/nature-plants?ref=header
+
 TO LEARN:
     UV Wraps ?
 
