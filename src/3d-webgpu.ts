@@ -241,6 +241,7 @@ function createGrassTileset(opts: GrassTileOpts & GrassTilesetOpts, device: GPUD
         maxVerts: align(totalGrass * 3, 4),
         maxTris: align(totalGrass, 4),
         maxMeshes: tileCount,
+        // TODO(@darzu): MESH FORMAT
         meshUniByteSize: align(mat4ByteSize, 256),
         backfaceCulling: false,
         usesIndices: false,
@@ -423,7 +424,8 @@ async function init(canvasRef: HTMLCanvasElement) {
         maxVerts: 100000,
         maxTris: 100000,
         maxMeshes: 10000,
-        meshUniByteSize: Math.ceil(mat4ByteSize / 256) * 256, // align to 256,
+        // TODO(@darzu): MESH FORMAT
+        meshUniByteSize: align(mat4ByteSize, 256),
         backfaceCulling: true,
         usesIndices: true,
     }, device);

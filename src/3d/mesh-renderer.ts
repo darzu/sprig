@@ -251,6 +251,7 @@ export function createMeshRenderer(
                     type: 'uniform',
                     hasDynamicOffset: true,
                     // TODO(@darzu): why have this?
+                    // TODO(@darzu): MESH FORMAT
                     minBindingSize: meshUniByteSize,
                 },
             },
@@ -306,6 +307,7 @@ export function createMeshRenderer(
     // TODO(@darzu): use
     const shadowDepthTextureView = shadowDepthTexture.createView();
 
+    // TODO(@darzu): SCENE FORMAT
     const sharedUniBufferSize =
         // Two 4x4 viewProj matrices,
         // one for the camera and one for the light.
@@ -313,7 +315,6 @@ export function createMeshRenderer(
         mat4ByteSize * 2 // camera and light projection
         + vec3ByteSize * 1 // light pos
         + Float32Array.BYTES_PER_ELEMENT * 1 // time
-        // TODO(@darzu): SCENE FORMAT
         + vec3ByteSize // displacer
     const sharedUniBuffer = device.createBuffer({
         size: align(sharedUniBufferSize, 256),

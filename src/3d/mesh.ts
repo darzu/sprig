@@ -105,6 +105,7 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
     console.log(`   ${maxVerts * vertByteSize / 1024} KB for verts`);
     console.log(`   ${opts.usesIndices ? maxTris * triByteSize / 1024 : 0} KB for indices`);
     console.log(`   ${maxMeshes * meshUniByteSize / 1024} KB for models`);
+    // TODO(@darzu): MESH FORMAT
     const unusedBytesPerModel = 256 - mat4ByteSize % 256
     console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per model (${unusedBytesPerModel * maxMeshes / 1024} KB total waste)`);
 
