@@ -1,0 +1,7 @@
+Approach:
+    Heightmap
+        Chunked
+    Character
+        Minecraft style?
+        Full animation style?
+

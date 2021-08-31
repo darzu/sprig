@@ -1,4 +1,3 @@
-
 WebGL
   https://twgljs.org // tiny layer over webgl
   https://twgljs.org/examples/twgl-cube.html
@@ -32,6 +31,9 @@ Three.js tutorial:
 
 HAXE:
   http://babylonhx.com
+  https://haxe.org/use-cases/games/
+    Northgard, Dead Cells, "Papers, Please", Rymdkapsel
+  https://github.com/armory3d
 
 Multi-platform:
   https://github.com/expo/expo/tree/master/packages/expo-gl#expo-gl
