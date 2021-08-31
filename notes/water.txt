@@ -10,3 +10,5 @@ see grapeshot games
 
 GPU simulated water: http://www-evasion.imag.fr/~Fabrice.Neyret/images/fluids-nuages/waves/Jonathan/articlesCG/OceanWaveSimulationInRealtimeUsingGPU2010.pdf
 
+AC: Black Flag
+    https://simonschreibt.de/gat/black-flag-waterplane/

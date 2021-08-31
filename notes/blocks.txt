@@ -1,2 +1,5 @@
 Contstruct game engine uses a scripting language:
     https://www.construct.net/en/make-games/games-editor
+
+Vector networks instead of paths:
+    https://medium.com/@alexharri/the-engineering-behind-figmas-vector-networks-688568e37110

@@ -133,6 +133,10 @@ WebGPU samples:
 
 Shaders Wow:
     Slime and ants: https://www.youtube.com/watch?v=X-iSQQgOd1A
+    https://www.shadertoy.com
+
+Computer shader pathfinding:
+  https://www.youtube.com/watch?v=1OSXWhd3hvI
 
 TO LEARN COMPUTE SHADERS:
     Limitations ?
@@ -159,3 +163,79 @@ MIT computer graphics lectures:
 
 Game Engine Architecture book:
     https://www.gameenginebook.com/
+
+RTX:
+  minecraft RTX: https://alain.xyz/blog/frame-analysis-minecraftrtx
+
+GPU API concepts compared:
+  https://alain.xyz/blog/comparison-of-modern-graphics-apis
+
+Defered rendering:
+  https://gamedev.stackexchange.com/questions/74/what-is-deferred-rendering
+    Forward: O(geometry * lights)
+    Defered: O(geometry + lights)
+  Works poorly for transparency (most engines use Forward)
+    see: depth peeling
+  Uses large amounts of VRAM and frame buffer bandwidth
+  stencil-based geometry vs "tiled/froxel compute-based shading"
+  Unity: https://docs.unity3d.com/2021.2/Documentation/Manual/RenderTech-DeferredShading.html
+
+Shadows:
+  Shadow volumes? (aka stencil shadows)
+    https://en.wikipedia.org/wiki/Shadow_volume
+  Shadow maps
+
+Lighting:
+  pixel vs vertex
+  Spherical Harmonics lighting
+    https://computergraphics.stackexchange.com/questions/4164/what-are-spherical-harmonics-light-probes
+    https://mynameismjp.wordpress.com/2016/10/09/sg-series-part-1-a-brief-and-incomplete-history-of-baked-lighting-representations/
+  deferred vs forward
+
+TO LEARN:
+  Fourier transform
+    then Spherical Harmonics
+
+GPU perf for artists:
+  http://www.fragmentbuffer.com/gpu-performance-for-game-artists/
+    https://news.ycombinator.com/item?id=14726355
+    https://news.ycombinator.com/item?id=21978146
+
+Frame analysis:
+  RenderDoc:
+    https://renderdoc.org
+    https://spector.babylonjs.com (for WebGL)
+  https://zhangdoa.com/posts/rendering-analysis-cyberpunk-2077
+  https://alain.xyz/blog/frame-analysis-overwatch
+  https://alain.xyz/blog/frame-analysis-mk11
+  https://alain.xyz/blog/frame-analysis-minecraftrtx
+  https://aschrein.github.io/2019/08/11/metro_breakdown.html
+  https://aschrein.github.io/2019/08/01/re2_breakdown.html
+  http://www.adriancourreges.com/blog/2016/09/09/doom-2016-graphics-study/
+    https://news.ycombinator.com/item?id=12461896
+  http://www.adriancourreges.com/blog/2017/12/15/mgs-v-graphics-study/
+  http://www.adriancourreges.com/blog/2015/11/02/gta-v-graphics-study/
+    https://news.ycombinator.com/item?id=10492876
+  http://www.adriancourreges.com/blog/2015/06/23/supreme-commander-graphics-study/
+    https://news.ycombinator.com/item?id=9770020
+  http://www.adriancourreges.com/blog/2015/03/10/deus-ex-human-revolution-graphics-study/
+    https://news.ycombinator.com/item?id=9565891
+
+BLOGS TO SCAN:
+  https://www.ea.com/frostbite/news
+  http://advances.realtimerendering.com/s2015/index.html (siggraph conference)
+  https://simonschreibt.de/game-art-tricks/
+
+
+TO READ:
+  https://forum.beyond3d.com/threads/gpu-driven-rendering-siggraph-2015-follow-up.57240/
+    "about GPU-driven rendering pipelines"
+
+GDC:
+  Horizon Zero Dawn:
+    Vegitation https://www.youtube.com/watch?v=wavnKZNSYqU
+    game design https://www.youtube.com/watch?v=TawhcWao9ls
+    procedural gen https://www.youtube.com/watch?v=ToCozpl1sYY
+
+Rust -> WebGPU examples:
+  https://github.com/gfx-rs/wgpu-rs/tree/master/examples
