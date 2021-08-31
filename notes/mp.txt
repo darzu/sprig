@@ -346,4 +346,44 @@ Rocket League networking:
             server looks back in time and confirms the kill
 
 Overwatch netcode:
-    https://www.youtube.com/watch?v=W3aieHjyNvw
+    https://www.youtube.com/watch?v=
+    Great talk about how to do ECS at scale
+
+    ECS is for integrating a bunch of systems together, 
+        it shouldn't force its design principles where it isn't welcome
+        ECS is glue
+            Enforces constraints on your glue code
+        ECS minimizes coupling
+        Netcode is tricky so decouple it
+        Only a handful of people will touch your physics or your audio, 
+            but everyone is going to touch the glue that holds everything together
+
+    Many systems (and the components they operate on) are often ice-berg shaped. 
+        They have a small surface area that systems can touch, 
+        with a large amount of complexity under the water.
+
+    Post mortem:
+        Deferring creation was a mistake, but it's a difficult problem
+
+    Systems strictly define the tuple of components they depend on at compile time
+        This allows multi-threading b/c you can have a clear D-DAG
+
+    ECS rules:
+        Components have no functions
+        Systems have no state
+            This requirement was necessary for kill cam
+            Embraced singleton components
+        Shared code in utils
+        Complex side-effects should be deferred
+            by enqueuing them in components, preferably singleton components
+        Systems can't call other systems
+
+    Quantized to 1m/1024
+
+    `if you take away one lesson from this talk let it be this - 
+    behaviors are much less complex if they are expressed in a 
+    single callsite, in which all major behavioral sideeffects 
+    are localized to that callsite`
+
+https://johanhelsing.studio/posts/introducing-matchbox
+    web Rust, peer-to-peer webrtc

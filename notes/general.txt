@@ -789,3 +789,6 @@ Cursed Problems in Game Design
 
     Psychologically, humans think a game is fair when they win ~70% of the time
   
+5 years of game dev: https://www.youtube.com/watch?v=NnI_1DOYt2A
+  positioning isn't enough
+  a hard trio to solve!: fun <-> easy to learn <-> tough to master

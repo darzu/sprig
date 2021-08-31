@@ -344,3 +344,7 @@ Rocket League Physics:
 
 Interacting with 3D Geometry:
     https://www.youtube.com/watch?v=GpsKrAipXm8
+
+Highly optimized collision detection in Titan Fall:
+    https://www.youtube.com/watch?v=6BIfqfC1i7U
+
