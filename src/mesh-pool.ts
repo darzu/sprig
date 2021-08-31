@@ -475,12 +475,25 @@ export function createMeshPoolBuilder_WebGPU(device: GPUDevice, opts: MeshPoolOp
 export function createMeshPoolBuilder_WebGL(gl: WebGLRenderingContext, opts: MeshPoolOpts): MeshPoolBuilder_WebGL {
     const { maxMeshes, maxTris, maxVerts } = opts;
 
+    const scratchPositions = new Float32Array(maxVerts * 3)
+    const scratchNormals = new Float32Array(maxVerts * 3)
+    const scratchColors = new Float32Array(maxVerts * 3)
+    const scratchIndices = new Uint16Array(maxTris * 3)
+
     // vertex buffers
     const positionsBuffer = gl.createBuffer()!;
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionsBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, scratchPositions, gl.DYNAMIC_DRAW);
     const normalsBuffer = gl.createBuffer()!;
+    gl.bindBuffer(gl.ARRAY_BUFFER, normalsBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, scratchNormals, gl.DYNAMIC_DRAW);
     const colorsBuffer = gl.createBuffer()!;
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorsBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, scratchColors, gl.DYNAMIC_DRAW);
     // index buffer
     const indicesBuffer = gl.createBuffer()!;
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, scratchIndices, gl.DYNAMIC_DRAW);
 
     // our in-memory reflections of the buffers used during the initial build phase
     let verticesMap = new Uint8Array(maxVerts * Vertex.ByteSize)

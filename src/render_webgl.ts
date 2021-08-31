@@ -143,7 +143,7 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxTr
 
   let initFinished = false;
 
-  const meshObjs = [];
+  const meshObjs: MeshObj[] = [];
 
   const scene = setupScene();
   const cameraOffset = setupCamera();
@@ -219,8 +219,13 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxTr
 
     // bind index buffer
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pool.indicesBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, builder.indicesMap, gl.DYNAMIC_DRAW);
 
-    gl.drawElements(gl.TRIANGLES, 6 * 6, gl.UNSIGNED_SHORT, 0);
+    for (let m of meshObjs) {
+      // gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset * 2);
+      gl.drawElements(gl.TRIANGLES, m.handle.numTris * 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset * 2);
+      // break; // TODO(@darzu): 
+    }
 
   }
 
