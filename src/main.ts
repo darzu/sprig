@@ -388,9 +388,9 @@ function addMesh(m: Mesh): MeshHandle {
     return res;
 }
 
-const planeHandle = addMesh(PLANE);
-mat4.translate(planeHandle.transform, planeHandle.transform, [0, -3, 0])
-gpuBufferWriteMeshTransform(planeHandle);
+const ground = addMesh(PLANE);
+mat4.translate(ground.transform, ground.transform, [0, -3, 0])
+gpuBufferWriteMeshTransform(ground);
 
 const player = addMesh(CUBE);
 
