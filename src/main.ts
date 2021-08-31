@@ -572,6 +572,9 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     let avgJsTimeMs = 0
     let avgFrameTimeMs = 0
 
+    // controls for this demo
+    const controlsStr = `controls: WASD, shift/c, mouse, spacebar`
+
     // our main game loop
     function renderFrame(timeMs: number) {
         // track performance metrics
@@ -665,6 +668,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         avgFrameTimeMs = avgFrameTimeMs ? (1 - avgWeight) * avgFrameTimeMs + avgWeight * frameTimeMs : frameTimeMs
         const avgFPS = 1000 / avgFrameTimeMs;
         debugDiv.innerText = `js p/frame: ${avgJsTimeMs.toFixed(2)}ms, frame: ${avgFrameTimeMs.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)}`
+            + '\n' + controlsStr
     }
     return renderFrame;
 }
