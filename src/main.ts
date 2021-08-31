@@ -467,8 +467,6 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
     };
     const prim_lineList: GPUPrimitiveState = {
         topology: 'line-list',
-        // cullMode: 'none',
-        // frontFace: 'ccw',
     };
 
     // define the resource bindings for the mesh rendering pipeline
@@ -561,7 +559,9 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
     let avgFrameTimeMs = 0
 
     // controls for this demo
-    const controlsStr = `controls: WASD, shift/c, mouse, spacebar`
+    const controlsStr = `controls: WASD, shift/c, mouse, spacebar, 1&2: solid/wireframe`
+
+    let isWireframe = false;
 
     // our main game loop
     function renderFrame(timeMs: number) {
@@ -581,6 +581,8 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
         if (pressedKeys['d']) moveX(player.transform, playerSpeed) // right
         if (pressedKeys['shift']) moveY(player.transform, playerSpeed) // up
         if (pressedKeys['c']) moveY(player.transform, -playerSpeed) // down
+        if (pressedKeys['1']) isWireframe = false
+        if (pressedKeys['2']) isWireframe = true
         const { x: mouseX, y: mouseY } = takeAccumulatedMouseMovement();
         yaw(player.transform, -mouseX * 0.01);
         pitch(cameraOffset, -mouseY * 0.01);
@@ -625,8 +627,10 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
                 stencilStoreOp: 'store',
             },
         });
-        renderPassEncoder.executeBundles([bundle_wire]);
-        // renderPassEncoder.executeBundles([bundle_solid]);
+        if (isWireframe)
+            renderPassEncoder.executeBundles([bundle_wire]);
+        else
+            renderPassEncoder.executeBundles([bundle_solid]);
         renderPassEncoder.endPass();
 
         // submit render passes to GPU
