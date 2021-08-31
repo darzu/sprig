@@ -73,7 +73,7 @@ export function stepPhysics(
     aabb: motionAABB,
   }));
   motionCollidesWith = checkCollisions(motionAABBs);
-  const motionPairs = [...collisionPairs(motionCollidesWith)];
+  let motionPairs = [...collisionPairs(motionCollidesWith)];
 
   // TODO(@darzu): DEBUG
   // console.log(`pairs: ${motionPairs.map((p) => p.join("v")).join(",")}`);
@@ -100,9 +100,8 @@ export function stepPhysics(
 
     // enumerate the possible collisions, looking for objects that need to pushed apart
     for (let [aId, bId] of motionPairs) {
-      // TODO(@darzu): this isn't a safe optimization!? :((((
-      // // did one of these objects move?
-      // if (!lastObjMovs[aId] && !lastObjMovs[bId]) continue;
+      // did one of these objects move?
+      if (!lastObjMovs[aId] && !lastObjMovs[bId]) continue;
 
       const a = objDict[aId];
       const b = objDict[bId];
