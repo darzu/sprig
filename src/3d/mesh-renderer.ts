@@ -142,13 +142,21 @@ const wgslShaders = {
     };
 
     // let albedo : vec3<f32> = vec3<f32>(0.9, 0.9, 0.9);
-    let ambientFactor : f32 = 0.4;
-    let lightColor : vec3<f32> =  vec3<f32>(1.0, 1.0, 0.8);
-    let ambientLightDir1: vec3<f32> = vec3<f32>(1.0, 0.0, 0.0);
-    let ambientLightDir2: vec3<f32> = vec3<f32>(-0.5, 0.0, -0.5);
+    let sunStr : f32 = 2.0;
+    let sunColor : vec3<f32> =  vec3<f32>(1.0, 1.0, 0.8);
+    // let skydomeLightDir: vec3<f32> = vec3<f32>(1.0, 0.0, 0.0);
+    let skydomeStr : f32 = 1.0;
+    let skydomeLightDir: vec3<f32> = vec3<f32>(0.0, -1.0, 0.0);
+    let sunReflectStr : f32 = 0.2;
+    // let sunReflectLightDir: vec3<f32> = vec3<f32>(-0.5, 0.0, -0.5);
 
     [[stage(fragment)]]
     fn main(input : FragmentInput) -> [[location(0)]] vec4<f32> {
+
+        // let normSign: f32 = select(1.0, -1.0, input.front);
+        // return vec4<f32>(normSign * input.fragNorm, 1.0);
+
+
         // Percentage-closer filtering. Sample texels in the region
         // to smooth the result.
         var shadowVis : f32 = 0.0;
@@ -182,6 +190,9 @@ const wgslShaders = {
         //         shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
         }
 
+        // TODO: night time. Maybe we should instead slowly "turn off" the sun as night approaches including the sun reflect
+        //      the shadow factor should only ever scale down the sun factor anyway.
+        //      reflect sun should be sun intensity * 0.2 (~0.3)
         if (scene.lightDir.y > 0.0) {
             // sun is down
             shadowVis = max(shadowVis - scene.lightDir.y * 2.0, 0.0);
@@ -194,12 +205,18 @@ const wgslShaders = {
         // shadowVis = textureSampleCompare(
         //     shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
 
-
         // shadowVis = 1.0;
+
+        // TODO: what does this "colorize penumbras" do?
+        // let cshadow: vec3<f32> = vec3<f32>(0.7);
+        // let shadowR = pow(shadowVis, 1.0);
+        // let shadowG = pow(shadowVis, 1.2);
+        // let shadowB = pow(shadowVis, 1.5);
+        // let cshadow: vec3<f32> = vec3<f32>(shadowR, shadowG, shadowB);
 
         let normSign: f32 = select(1.0, -1.0, input.front);
         // let norm: vec3<f32> = input.fragNorm;
-        let norm: vec3<f32> = input.fragNorm * normSign;
+        let norm: vec3<f32> = normalize(input.fragNorm) * normSign;
         let antiNorm: vec3<f32> = norm * -1.0;
 
         // let lightDir: vec3<f32> = normalize(scene.lightPos - input.fragPos);
@@ -209,16 +226,28 @@ const wgslShaders = {
         // let antisunLight : f32 = 1.5 - max(dot(-lightDir, antiNorm), 0.0);
         // let lightingFactor : f32 = sunLight * 1.5;
         // let lightingFactor : f32 = shadowVis * sunLight * 1.5;
-        let ambient1Factor : f32 = clamp(dot(ambientLightDir1, norm), 0.0, 1.0);
-        let ambient2Factor : f32 = clamp(dot(ambientLightDir2, norm), 0.0, 1.0);
-        let sunFactor : f32 = min(shadowVis * sunLight, 1.0) * 1.5;
-        let diffuse: vec3<f32> = lightColor * sunFactor ;
-        let ambient: vec3<f32> = vec3<f32>(1.0, 1.0, 1.0) * ambientFactor * (ambient1Factor + ambient2Factor);
+        let skydomeFactor : f32 = clamp(dot(-skydomeLightDir, norm), 0.0, 1.0);
+        let sunReflectLightDir: vec3<f32> = vec3<f32>(-lightDir.xy, 0.0);
+        let sunReflectFactor : f32 = clamp(dot(-sunReflectLightDir, norm), 0.0, 1.0);
+        // let csSunFactor : vec3<f32> = cshadow * sunLight * sunStr;
+        // let csSunFactor : vec3<f32> = min(cshadow * sunLight, vec3<f32>(1.0,1.0,1.0)) * sunStr;
+        let sunFactor : f32 = min(shadowVis * sunLight, 1.0) * sunStr;
+        let sunEffect: vec3<f32> = input.color * sunColor * sunFactor;
+        let sunIntensity: f32 = pow(max(lightDir.y, 0.0), 2.0);
+        // let chlorophyllFactor: vec3<f32> = input.color * pow(input.swayHeight * sunIntensity, 2.0);
+        // let diffuse: vec3<f32> = ;
+        // let diffuse: vec3<f32> = 1.0 * csSunFactor;
+        let ambient: vec3<f32> = sunIntensity * input.color * (skydomeFactor * skydomeStr + sunReflectFactor * sunReflectStr);
 
         // return vec4<f32>(norm, 1.0);
 
-        // return vec4<f32>(diffuse * input.color, 1.0);
-        return vec4<f32>((diffuse + ambient) * input.color, 1.0);
+        // return vec4<f32>(diffuse, 1.0);
+        let resultColor: vec3<f32> = sunEffect + ambient; // + chlorophyllFactor
+        // return vec4<f32>(resultColor, 1.0);
+
+        // TODO: this gamma correction doesn't look good...
+        let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
+        return vec4<f32>(gammaCorrected, 1.0);
 
         // return vec4<f32>(lightingFactor * input.color, 1.0);
         // return vec4<f32>(lightingFactor * albedo, 1.0);

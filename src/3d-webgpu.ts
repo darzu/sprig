@@ -185,22 +185,31 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
             const y4 = y3 * (0.9 + jitter(0.1))
 
             // TODO(@darzu): disable for debug coloring
-            // const r = 0.2 + jitter(0.02)
-            // const g = 0.5 + jitter(0.2)
-            // const b = 0.2 + jitter(0.02)
+            // "make sure your diffuse colors are around 0.2, and no much brighter except for very special situations."
+            const r = (0.05 + jitter(0.02)) * 0.3
+            const g = (0.5 + jitter(0.2)) * 0.3
+            const b = (0.05 + jitter(0.02)) * 0.3
 
             const p1: vec3 = [x1, y1, z1];
             const p2: vec3 = [x2, y2, z2];
             const p3: vec3 = [x3, y3, z3];
             const p4: vec3 = [x4, y4, z4];
 
-            const norm1 = vec3.cross(vec3.create(), [x2 - x1, y2 - y1, z2 - z1], [x3 - x1, y3 - y1, z3 - z1])
-            vec3.normalize(norm1, norm1);
+            // const norm3 = vec3.fromValues(0, 1, 0);
+            const norm0 = vec3.cross(vec3.create(), [x2 - x1, y2 - y1, z2 - z1], [x3 - x1, y3 - y1, z3 - z1])
+            vec3.normalize(norm0, norm0);
+            // const norm3 = vec3.cross(vec3.create(), [x2 - x1, y2 - y1, z2 - z1], [x3 - x1, y3 - y1, z3 - z1])
+            // const norm1 = vec3.subtract(vec3.create(), p1, p2)
+            // const norm2 = vec3.subtract(vec3.create(), p2, p1)
+            // vec3.normalize(norm1, norm1);
+            // vec3.normalize(norm2, norm2);
+            // vec3.normalize(norm3, norm3);
 
             addTriToBuffers(
                 [p1, p2, p3],
                 [0, 1, 2],
-                norm1,
+                // [norm1, norm2, norm3],
+                [norm0, norm0, norm0],
                 [
                     // TODO(@darzu): use proper darkening
                     [r * 0.5, g * 0.5, b * 0.5],
@@ -259,7 +268,7 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
         maxDraw: opts.maxBladeDraw,
 
         // TODO(@darzu): what're the implications of this?
-        shadowCaster: false,
+        shadowCaster: true,
 
         // not applicable
         // TODO(@darzu): make this optional?
@@ -463,6 +472,14 @@ function initGrassSystem(device: GPUDevice): GrassSystem {
         spacing: lod1Opts.spacing * 8,
         tileSize: lod1Opts.tileSize * 8,
     }
+    const lod5Opts: GrassTilesetOpts = {
+        ...lod1Opts,
+        tilesPerSide: 8,
+        bladeW: lod1Opts.bladeW * 2,
+        bladeH: lod1Opts.bladeH * 2,
+        spacing: lod1Opts.spacing * 32,
+        tileSize: lod1Opts.tileSize * 32,
+    }
 
     const lodDebug: GrassTilesetOpts = {
         bladeW: 0.4,
@@ -475,12 +492,13 @@ function initGrassSystem(device: GPUDevice): GrassSystem {
     // TODO(@darzu): debugging
     // const lodOpts = [lodDebug]
     const lodOpts = [
-        lod0Opts,
-        lod1Opts,
+        // lod0Opts,
+        // lod1Opts,
         // lod1Opts,
         lod2Opts,
         lod3Opts,
-        lod4Opts
+        lod4Opts,
+        // lod5Opts,
     ]
 
     const tilesets = lodOpts.map(opts => createGrassTileset(opts, device))
@@ -572,13 +590,13 @@ async function init(canvasRef: HTMLCanvasElement) {
         CUBE,
     ], true)
 
-    const playerCubeModel: MeshModel = { ...CUBE, colors: CUBE.colors.map(c => [0.0, 0.3, 0.3]) }
+    const playerCubeModel: MeshModel = { ...CUBE, colors: CUBE.colors.map(c => [0.0, 0.1, 0.1]) }
     const [playerM] = meshPool.addMeshes([playerCubeModel], true)
 
     // create a field of cubes
     function createGarbageCube(pos: vec3)
     {
-        const color: vec3 = [0.3 + jitter(0.05), 0.3 + jitter(0.05), 0.3 + jitter(0.05)];
+        const color: vec3 = [0.1 + jitter(0.05), 0.1 + jitter(0.05), 0.1 + jitter(0.05)];
         const grayCube: MeshModel = {
             ...CUBE,
             colors: CUBE.colors.map(c => color),
@@ -732,7 +750,7 @@ async function init(canvasRef: HTMLCanvasElement) {
 
         const upVector = vec3.fromValues(0, 1, 0);
         const origin = vec3.fromValues(0, 0, 0);
-        const sunSpeed = 0.0004;
+        const sunSpeed = 0.00004;
         const lightX = Math.cos((sunOffset) * sunSpeed) * 100
         const lightY = Math.sin((sunOffset) * sunSpeed) * 100
         const isNight = lightY < 0;

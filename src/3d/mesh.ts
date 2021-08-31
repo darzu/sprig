@@ -370,10 +370,10 @@ export const PLANE: MeshModel = {
         [1, 3, 0],
     ],
     colors: [
-        [0.2, 0.3, 0.2],
-        [0.2, 0.3, 0.2],
-        [0.2, 0.3, 0.2],
-        [0.2, 0.3, 0.2],
+        [0.1, 0.15, 0.1],
+        [0.1, 0.15, 0.1],
+        [0.1, 0.15, 0.1],
+        [0.1, 0.15, 0.1],
     ],
 }
 
@@ -402,7 +402,7 @@ function computeNormals(m: MeshModel): vec3[] {
 export function addTriToBuffers(
     triPos: [vec3, vec3, vec3],
     triInd: vec3,
-    triNorm: vec3,
+    triNorms: [vec3, vec3, vec3],
     triColors: [vec3, vec3, vec3],
     triSwayHeights: vec3,
     verts: Float32Array, prevNumVerts: number, vertElStride: number,
@@ -440,16 +440,18 @@ export function addTriToBuffers(
     verts[vOff + 2 * vertElStride + 4] = g3
     verts[vOff + 2 * vertElStride + 5] = b3
     // normals
-    const [nx, ny, nz] = triNorm
-    verts[vOff + 0 * vertElStride + 6] = nx
-    verts[vOff + 0 * vertElStride + 7] = ny
-    verts[vOff + 0 * vertElStride + 8] = nz
-    verts[vOff + 1 * vertElStride + 6] = nx
-    verts[vOff + 1 * vertElStride + 7] = ny
-    verts[vOff + 1 * vertElStride + 8] = nz
-    verts[vOff + 2 * vertElStride + 6] = nx
-    verts[vOff + 2 * vertElStride + 7] = ny
-    verts[vOff + 2 * vertElStride + 8] = nz
+    const [nx1, ny1, nz1] = triNorms[0]
+    verts[vOff + 0 * vertElStride + 6] = nx1
+    verts[vOff + 0 * vertElStride + 7] = ny1
+    verts[vOff + 0 * vertElStride + 8] = nz1
+    const [nx2, ny2, nz2] = triNorms[1]
+    verts[vOff + 1 * vertElStride + 6] = nx2
+    verts[vOff + 1 * vertElStride + 7] = ny2
+    verts[vOff + 1 * vertElStride + 8] = nz2
+    const [nx3, ny3, nz3] = triNorms[2]
+    verts[vOff + 2 * vertElStride + 6] = nx3
+    verts[vOff + 2 * vertElStride + 7] = ny3
+    verts[vOff + 2 * vertElStride + 8] = nz3
     // sway height
     const [y0, y1, y2] = triSwayHeights
     verts[vOff + 0 * vertElStride + 9] = y0
@@ -470,7 +472,7 @@ function addMeshToBuffers(
         addTriToBuffers(
             [m.pos[t[0]], m.pos[t[1]], m.pos[t[2]]],
             t,
-            norms[i],
+            [norms[i], norms[i], norms[i]],
             [m.colors[i], m.colors[i], m.colors[i]],
             [0, 0, 0],
             verts, prevNumVerts + i * 3, vertElStride,
