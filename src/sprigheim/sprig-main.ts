@@ -1,7 +1,7 @@
 import { mat4, vec3 } from '../ext/gl-matrix.js';
 import { align } from '../math.js';
 import { initGrassSystem } from './grass.js';
-import { createMeshPoolBuilder, MeshHandle, MeshPool, meshUniByteSizeAligned, Vertex } from './mesh-pool.js';
+import { createMeshPoolBuilder, MeshHandle, MeshPool, Vertex, MeshUniform } from './mesh-pool.js';
 
 const ENABLE_WATER = false;
 
@@ -478,7 +478,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         entries: [{
             binding: 0,
             visibility: GPUShaderStage.VERTEX,
-            buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: meshUniByteSizeAligned },
+            buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: MeshUniform.ByteSizeAligned },
         }],
     });
 
@@ -505,7 +505,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         layout: modelUniBindGroupLayout,
         entries: [{
             binding: 0,
-            resource: { buffer: pool.uniformBuffer, size: meshUniByteSizeAligned, },
+            resource: { buffer: pool.uniformBuffer, size: MeshUniform.ByteSizeAligned, },
         }],
     });
 
@@ -858,7 +858,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
             layout: modelUniBindGroupLayout,
             entries: [{
                 binding: 0,
-                resource: { buffer: p.uniformBuffer, size: meshUniByteSizeAligned, },
+                resource: { buffer: p.uniformBuffer, size: MeshUniform.ByteSizeAligned, },
             }],
         });
 
@@ -1212,7 +1212,7 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
     const waterMesh: MeshHandle = {
         vertNumOffset: prevNumVerts,
         indicesNumOffset: prevNumTris * 3,
-        modelUniByteOffset: meshUniByteSizeAligned * builder.allMeshes.length,
+        modelUniByteOffset: MeshUniform.ByteSizeAligned * builder.allMeshes.length,
         numTris: builder.numTris,
 
         // used and updated elsewhere

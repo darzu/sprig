@@ -3,7 +3,7 @@
 // once a mesh has been added to our vertex, triangle, and uniform buffers, we need
 
 import { mat4, vec3 } from "../ext/gl-matrix.js";
-import { align } from "../math.js";
+import { align, sum } from "../math.js";
 import { computeTriangleNormal, Mesh } from "./sprig-main.js";
 
 const indicesPerTriangle = 3;
@@ -14,7 +14,8 @@ const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
 const bytesPerUint16 = Uint16Array.BYTES_PER_ELEMENT;
 const bytesPerUint32 = Uint32Array.BYTES_PER_ELEMENT;
 
-// Everything to do with our vertex format must be in this module.
+// Everything to do with our vertex format must be in this module (minus downstream 
+//  places that should get type errors when this module changes.)
 // TODO(@darzu): code gen some of this so code changes are less error prone.
 export module Vertex {
     export enum Kind {
@@ -22,7 +23,6 @@ export module Vertex {
         water = 1,
     }
 
-    // TODO(@darzu): VERTEX FORMAT
     // define the format of our vertices (this needs to agree with the inputs to the vertex shaders)
     export const WebGPUFormat: GPUVertexAttribute[] = [
         { shaderLocation: 0, offset: bytesPerVec3 * 0, format: 'float32x3' }, // position
@@ -35,37 +35,48 @@ export module Vertex {
     export const ByteSize = bytesPerVec3/*pos*/ + bytesPerVec3/*color*/ + bytesPerVec3/*normal*/ + bytesPerUint32/*kind*/;
 
     // for performance reasons, we keep scratch buffers around
-    const _scratch_serializeVertex_f32 = new Float32Array(3 + 3 + 3);
-    const _scratch_serializeVertex_f32_as_u8 = new Uint8Array(_scratch_serializeVertex_f32.buffer);
-    const _scratch_serializeVertex_u32 = new Uint32Array(1);
-    const _scratch_serializeVertex_u32_as_u8 = new Uint8Array(_scratch_serializeVertex_u32.buffer);
+    const scratch_f32 = new Float32Array(3 + 3 + 3);
+    const scratch_f32_as_u8 = new Uint8Array(scratch_f32.buffer);
+    const scratch_u32 = new Uint32Array(1);
+    const scratch_u32_as_u8 = new Uint8Array(scratch_u32.buffer);
     export function Serialize(buffer: Uint8Array, byteOffset: number, pos: vec3, color: vec3, normal: vec3, kind: number) {
-        _scratch_serializeVertex_f32[0] = pos[0]
-        _scratch_serializeVertex_f32[1] = pos[1]
-        _scratch_serializeVertex_f32[2] = pos[2]
-        _scratch_serializeVertex_f32[3] = color[0]
-        _scratch_serializeVertex_f32[4] = color[1]
-        _scratch_serializeVertex_f32[5] = color[2]
-        _scratch_serializeVertex_f32[6] = normal[0]
-        _scratch_serializeVertex_f32[7] = normal[1]
-        _scratch_serializeVertex_f32[8] = normal[2]
-        buffer.set(_scratch_serializeVertex_f32_as_u8, byteOffset)
-        _scratch_serializeVertex_u32[0] = kind
-        buffer.set(_scratch_serializeVertex_u32_as_u8, byteOffset + bytesPerVec3 * 3);
+        scratch_f32[0] = pos[0]
+        scratch_f32[1] = pos[1]
+        scratch_f32[2] = pos[2]
+        scratch_f32[3] = color[0]
+        scratch_f32[4] = color[1]
+        scratch_f32[5] = color[2]
+        scratch_f32[6] = normal[0]
+        scratch_f32[7] = normal[1]
+        scratch_f32[8] = normal[2]
+        buffer.set(scratch_f32_as_u8, byteOffset)
+        scratch_u32[0] = kind
+        buffer.set(scratch_u32_as_u8, byteOffset + bytesPerVec3 * 3);
     }
 }
 
+export module MeshUniform {
 
-// TODO(@darzu): MODEL FORMAT
-// define the format of our models' uniform buffer
-// TODO(@darzu): move "kind" into uniform buffer (instead of per-vertex)
-// TODO(@darzu): handle alignment issues
-export const meshUniByteSizeExact =
-    bytesPerMat4 // transform
-    + align(bytesPerVec3, 4) // mesh min
-    + align(bytesPerVec3, 4) // mesh max
-export const meshUniByteSizeAligned = align(meshUniByteSizeExact, 256); // uniform objects must be 256 byte aligned
+    const _counts = [
+        align(4 * 4, 4), // transform
+        align(3, 4), // aabb min
+        align(3, 4), // aabb max
+    ]
+    const _offsets = _counts.reduce((p, n) => [...p, p[p.length - 1] + n], [0])
 
+    export const ByteSizeExact = sum(_counts) * bytesPerFloat
+
+    export const ByteSizeAligned = align(ByteSizeExact, 256); // uniform objects must be 256 byte aligned
+
+    const scratch_f32 = new Float32Array(sum(_counts));
+    const scratch_f32_as_u8 = new Uint8Array(scratch_f32.buffer);
+    export function Serialize(buffer: Uint8Array, byteOffset: number, transform: mat4, aabbMin: vec3, aabbMax: vec3): void {
+        scratch_f32.set(transform, _offsets[0])
+        scratch_f32.set(aabbMin, _offsets[1])
+        scratch_f32.set(aabbMax, _offsets[2])
+        buffer.set(scratch_f32_as_u8, byteOffset)
+    }
+}
 
 // to track offsets into those buffers so we can make modifications and form draw calls.
 export interface MeshHandle {
@@ -141,10 +152,10 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
     console.log(`Mesh space usage for up to ${maxMeshes} meshes, ${maxTris} tris, ${maxVerts} verts:`);
     console.log(`   ${(maxVerts * Vertex.ByteSize / 1024).toFixed(1)} KB for verts`);
     console.log(`   ${(maxTris * bytesPerTri / 1024).toFixed(1)} KB for indices`);
-    console.log(`   ${(maxMeshes * meshUniByteSizeAligned / 1024).toFixed(1)} KB for other object data`);
-    const unusedBytesPerModel = meshUniByteSizeAligned - meshUniByteSizeExact;
+    console.log(`   ${(maxMeshes * MeshUniform.ByteSizeAligned / 1024).toFixed(1)} KB for object uniform data`);
+    const unusedBytesPerModel = MeshUniform.ByteSizeAligned - MeshUniform.ByteSizeExact;
     console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per object (${(unusedBytesPerModel * maxMeshes / 1024).toFixed(1)} KB total waste)`);
-    const totalReservedBytes = maxVerts * Vertex.ByteSize + maxTris * bytesPerTri + maxMeshes * meshUniByteSizeAligned;
+    const totalReservedBytes = maxVerts * Vertex.ByteSize + maxTris * bytesPerTri + maxMeshes * MeshUniform.ByteSizeAligned;
     console.log(`Total space reserved for objects: ${(totalReservedBytes / 1024).toFixed(1)} KB`);
 
     // create our mesh buffers (vertex, index, uniform)
@@ -159,7 +170,7 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         mappedAtCreation: true,
     });
     const uniformBuffer = device.createBuffer({
-        size: meshUniByteSizeAligned * maxMeshes,
+        size: MeshUniform.ByteSizeAligned * maxMeshes,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         mappedAtCreation: true,
     });
@@ -239,32 +250,10 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         return b.finish();
     }
 
+    const scratch_uniform_u8 = new Uint8Array(MeshUniform.ByteSizeAligned);
     function _queueSetUniform(m: MeshHandle) {
-        // TODO(@darzu): for some reason doing this seperate for the transform and the AABB box didn't work...
-        // TODO(@darzu): MESH FORMAT
-        // TODO(@darzu): alignment requirements
-        // const offset = m.modelUniByteOffset + bytesPerMat4 /*transform*/
-        // m.pool.device.queue.writeBuffer(m.pool.uniformBuffer, offset, (m.modelMin as Float32Array).buffer);
-        // m.pool.device.queue.writeBuffer(m.pool.uniformBuffer, offset + align(bytesPerVec3, 4), (m.modelMax as Float32Array).buffer);
-
-        // const f32Scratch = new Float32Array(4 + 4);
-        const f32Scratch = new Float32Array(4 * 4 + 4 + 4);
-        f32Scratch.set(m.transform, 0)
-        f32Scratch.set(m.modelMin, align(4 * 4, 4))
-        f32Scratch.set(m.modelMax, align(4 * 4 + 3, 4))
-        const u8Scratch = new Uint8Array(f32Scratch.buffer);
-        m.pool.device.queue.writeBuffer(m.pool.uniformBuffer, m.modelUniByteOffset, u8Scratch);
-    }
-    function _mappedSetUniform(uniOffset: number, transform: mat4, aabbMin: vec3, aabbMax: vec3): void {
-        // TODO(@darzu): MESH FORMAT
-        // TODO(@darzu): seems each element needs to be 4-byte aligned
-        const f32Scratch = new Float32Array(4 * 4 + 4 + 4);
-        f32Scratch.set(transform, 0)
-        f32Scratch.set(aabbMin, align(4 * 4, 4))
-        f32Scratch.set(aabbMax, align(4 * 4 + 3, 4))
-        const u8Scratch = new Uint8Array(f32Scratch.buffer);
-        // console.dir({ floatBuff: f32Scratch })
-        builder.uniformMap.set(u8Scratch, uniOffset)
+        MeshUniform.Serialize(scratch_uniform_u8, 0, m.transform, m.modelMin, m.modelMax)
+        m.pool.device.queue.writeBuffer(m.pool.uniformBuffer, m.modelUniByteOffset, scratch_uniform_u8);
     }
 
     function finish(): MeshPool {
@@ -287,7 +276,8 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
     function updateUniform(m: MeshHandle): void {
         if (finished)
             throw 'trying to use finished MeshBuilder'
-        _mappedSetUniform(m.modelUniByteOffset, m.transform, m.modelMin, m.modelMax)
+        MeshUniform.Serialize(scratch_uniform_u8, 0, m.transform, m.modelMin, m.modelMax)
+        builder.uniformMap.set(scratch_uniform_u8, m.modelUniByteOffset);
     }
 
 
@@ -295,13 +285,10 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         if (finished)
             throw `trying to use finished MeshPoolBuilder`
         let meshFinished = false;
-        const uniOffset = builder.allMeshes.length * meshUniByteSizeAligned;
+        const uniOffset = builder.allMeshes.length * MeshUniform.ByteSizeAligned;
         const vertNumOffset = builder.numVerts;
         const triNumOffset = builder.numTris;
         const indicesNumOffset = builder.numTris * 3;
-
-        const aabbMin = vec3.fromValues(Infinity, Infinity, Infinity) as Float32Array;
-        const aabbMax = vec3.fromValues(-Infinity, -Infinity, -Infinity) as Float32Array;
 
         // TODO(@darzu): VERTEX FORMAT
         function addVertex(pos: vec3, color: vec3, normal: vec3, kind: number): void {
@@ -310,14 +297,6 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
             const vOff = builder.numVerts * Vertex.ByteSize
             Vertex.Serialize(builder.verticesMap, vOff, pos, color, normal, kind)
             builder.numVerts += 1;
-
-            // update our aabb min/max
-            aabbMin[0] = Math.min(pos[0], aabbMin[0])
-            aabbMin[1] = Math.min(pos[1], aabbMin[1])
-            aabbMin[2] = Math.min(pos[2], aabbMin[2])
-            aabbMax[0] = Math.max(pos[0], aabbMax[0])
-            aabbMax[1] = Math.max(pos[1], aabbMax[1])
-            aabbMax[2] = Math.max(pos[2], aabbMax[2])
         }
         function addTri(triInd: vec3): void {
             if (finished || meshFinished)
@@ -328,26 +307,31 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         }
 
         let _transform: mat4 | undefined = undefined;
+        let _aabbMin: vec3 | undefined = undefined;
+        let _aabbMax: vec3 | undefined = undefined;
         function setUniform(transform: mat4, aabbMin: vec3, aabbMax: vec3): void {
             if (finished || meshFinished)
                 throw 'trying to use finished MeshBuilder'
             _transform = transform;
-            _mappedSetUniform(uniOffset, transform, aabbMin, aabbMax)
+            _aabbMin = aabbMin;
+            _aabbMax = aabbMax;
+            MeshUniform.Serialize(scratch_uniform_u8, 0, transform, aabbMin, aabbMax)
+            builder.uniformMap.set(scratch_uniform_u8, uniOffset);
         }
 
         function finish(): MeshHandle {
             if (finished || meshFinished)
                 throw 'trying to use finished MeshBuilder'
             if (!_transform)
-                throw 'uniform never set for mesh'
+                throw 'uniform never set for this mesh!'
             meshFinished = true;
             const res: MeshHandle = {
                 vertNumOffset,
                 indicesNumOffset,
                 modelUniByteOffset: uniOffset,
                 transform: _transform!,
-                modelMin: aabbMin,
-                modelMax: aabbMax,
+                modelMin: _aabbMin!,
+                modelMax: _aabbMax!,
                 numTris: builder.numTris - triNumOffset,
                 model: undefined,
                 pool: builder.poolHandle,
