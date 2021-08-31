@@ -615,9 +615,9 @@ async function startGame(host: string | null) {
       `\n` +
       `(js per frame: ${avgJsTime.toFixed(
         2
-      )}ms, net per frame: ${avgNetTime.toFixed(2)}ms, fps: ${avgFPS.toFixed(
-        1
-      )}, buffers: r=${reliable}/u=${unreliable})`;
+      )}ms, net per frame: ${avgNetTime.toFixed(2)}ms, 
+      fps: ${avgFPS.toFixed(1)}, buffers: r=${reliable}/u=${unreliable},
+      objects=${gameState.numObjects})`;
     requestAnimationFrame(frame);
   };
   net = new Net(gameState, host, (id: string) => {

@@ -134,6 +134,7 @@ export abstract class GameState<Inputs> {
   protected renderer: Renderer;
   objects: Record<number, GameObject>;
   me: number;
+  numObjects: number = 0;
 
   constructor(renderer: Renderer) {
     this.me = 0;
@@ -156,6 +157,7 @@ export abstract class GameState<Inputs> {
   ): GameObject;
 
   addObject(obj: GameObject) {
+    this.numObjects++;
     this.objects[obj.id] = obj;
     this.renderer.addObject(obj);
   }
