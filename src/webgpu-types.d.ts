@@ -1287,13 +1287,10 @@ interface HTMLCanvasElement {
      */
     readonly __brand: "GPUCanvasContext";
     /**
-     * Configures the swap chain for this canvas, and returns a new
-     * {@link GPUSwapChain} object representing it. Destroys any swapchain
-     * previously returned by `configureSwapChain`, including all of the
-     * textures it has produced.
+     * Configures the swap chain for this canvas.
      * @param descriptor - Description of the {@link GPUSwapChain} to configure.
      */
-    configureSwapChain(
+    configure(
       descriptor: GPUSwapChainDescriptor
     ): GPUSwapChain;
     /**
@@ -1308,6 +1305,14 @@ interface HTMLCanvasElement {
     getSwapChainPreferredFormat(
       device: GPUDevice
     ): Promise<GPUTextureFormat>;
+
+    /**
+     * Get the {@link GPUTexture} that will be composited to the document by this {@link GPUCanvasContext}.
+     * Note: Developers can expect that the same {@link GPUTexture} object will be returned by every
+     * call to {@link GPUSwapChain#getCurrentTexture} made within the same frame (i.e. between
+     * invocations of Update the rendering).
+     */
+    getCurrentTexture(): GPUTexture;
   }
   
   declare var GPUCanvasContext: {

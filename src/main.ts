@@ -464,7 +464,7 @@ const modelUniBindGroup = device.createBindGroup({
 });
 
 // configure our canvas backed swapchain
-const swapChain = context.configureSwapChain({ device, format: swapChainFormat });
+context.configure({ device, format: swapChainFormat });
 
 // we'll use a triangle list with backface culling and counter-clockwise triangle indices for both pipelines
 const primitiveBackcull: GPUPrimitiveState = {
@@ -651,7 +651,7 @@ function renderFrame(timeMs: number) {
     const renderPassEncoder = commandEncoder.beginRenderPass({
         colorAttachments: [{
             view: colorTextureView,
-            resolveTarget: swapChain.getCurrentTexture().createView(),
+            resolveTarget: context.getCurrentTexture().createView(),
             loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
             storeOp: 'store',
         }],
