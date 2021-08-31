@@ -321,7 +321,46 @@ async function init(canvasRef: HTMLCanvasElement) {
     playerM.transform = playerT.getTransform();
     meshPool.applyMeshTransform(playerM)
 
-    const bundle = meshRenderer.createRenderBundle();
+    // write light source
+    {
+        const upVector = vec3.fromValues(0, 1, 0);
+        const origin = vec3.fromValues(0, 0, 0);
+        const lightPosition = vec3.fromValues(50, 100, -100);
+        const lightViewMatrix = mat4.create();
+        mat4.lookAt(lightViewMatrix, lightPosition, origin, upVector);
+
+        const lightProjectionMatrix = mat4.create();
+        {
+            const left = -80;
+            const right = 80;
+            const bottom = -80;
+            const top = 80;
+            const near = -200;
+            const far = 300;
+            mat4.ortho(lightProjectionMatrix, left, right, bottom, top, near, far);
+        }
+        const lightViewProjMatrix = mat4.create();
+        mat4.multiply(lightViewProjMatrix, lightProjectionMatrix, lightViewMatrix);
+        const lightMatrixData = lightViewProjMatrix as Float32Array;
+        device.queue.writeBuffer(
+            meshRenderer.sharedUniBuffer,
+            mat4ByteSize * 1, // second matrix
+            lightMatrixData.buffer,
+            lightMatrixData.byteOffset,
+            lightMatrixData.byteLength
+        );
+
+        const lightData = lightPosition as Float32Array;
+        device.queue.writeBuffer(
+            meshRenderer.sharedUniBuffer,
+            mat4ByteSize * 2, // third matrix
+            lightData.buffer,
+            lightData.byteOffset,
+            lightData.byteLength
+        );
+    }
+
+    meshRenderer.rebuildBundles();
 
     function frame(time: number) {
         // Sample is no longer the active page.
@@ -376,7 +415,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         );
 
         const commandEncoder = device.createCommandEncoder();
-        meshRenderer.renderBundle(commandEncoder, bundle);
+        meshRenderer.render(commandEncoder);
         device.queue.submit([commandEncoder.finish()]);
 
         requestAnimationFrame(frame);

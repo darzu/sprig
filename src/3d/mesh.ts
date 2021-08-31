@@ -50,6 +50,7 @@ function OnStart() {
 */
 
 export const mat4ByteSize = (4 * 4)/*4x4 mat*/ * 4/*f32*/
+export const vec3ByteSize = 3/*vec3*/ * 4/*f32*/
 export const triElStride = 3/*ind per tri*/;
 export const triByteSize = Uint16Array.BYTES_PER_ELEMENT * triElStride;
 

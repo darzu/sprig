@@ -1,37 +1,45 @@
 // rendering pipeline for meshes
 
-import { MeshMemoryPool as MeshPool } from "./mesh";
+import { mat4 } from "../ext/gl-matrix.js";
+import { mat4ByteSize, MeshMemoryPool as MeshPool, vec3ByteSize } from "./mesh.js";
 
-// TODO: canvas ref
-// TODO: navigator.gpu typings
-//          @webgpu/types
-// TODO: frag_depth
-const vertexPositionColorWGSL =
-    `
-[[stage(fragment)]]
-fn main(
-    [[location(0)]] modelPos: vec4<f32>,
-    [[location(1)]] color: vec3<f32>
-    ) -> [[location(0)]] vec4<f32> {
-    var xTan: vec3<f32> = dpdx(modelPos).xyz;
-    var yTan: vec3<f32> = dpdy(modelPos).xyz;
-    var norm: vec3<f32> = normalize(cross(xTan, yTan));
 
-    var lDirection: vec3<f32> = vec3<f32>(0.5, 0.5, 0.5);
-    var lColor: vec3<f32> = vec3<f32>(0.5, 0.5, 0.5);
-    var ambient: vec4<f32> = vec4<f32>(color, 1.0); // vec4<f32>(0.0, 0.2, 0.2, 0.2);
+const wgslShaders = {
+    vertexShadow: `
+  [[block]] struct Scene {
+    cameraViewProjMatrix : mat4x4<f32>;
+    lightViewProjMatrix : mat4x4<f32>;
+    lightPos : vec3<f32>;
+  };
 
-    var diffuse: vec4<f32> = vec4<f32>(max(dot(lDirection, -norm), 0.0) * lColor, 1.0);
+  [[block]] struct Model {
+    modelMatrix : mat4x4<f32>;
+  };
 
-    return ambient + diffuse;
-    // return vec4<f32>(norm, 1.0);
+  [[group(0), binding(0)]] var<uniform> scene : Scene;
+  [[group(1), binding(0)]] var<uniform> model : Model;
+
+  [[stage(vertex)]]
+  fn main([[location(0)]] position : vec3<f32>)
+       -> [[builtin(position)]] vec4<f32> {
+    return scene.lightViewProjMatrix * model.modelMatrix * vec4<f32>(position, 1.0);
+  }
+  `,
+
+    fragmentShadow: `
+  [[stage(fragment)]]
+  fn main() {
+  }
+  `,
 }
-`;
 
 const basicVertWGSL =
     `
 [[block]] struct SharedUnis {
     viewProj : mat4x4<f32>;
+    // TODO: use
+    lightViewProjMatrix : mat4x4<f32>;
+    lightPos : vec3<f32>;
 };
 [[binding(0), group(0)]] var<uniform> sharedUnis : SharedUnis;
 [[block]] struct ModelUnis {
@@ -66,12 +74,33 @@ fn main(
 }
 `;
 
+const vertexPositionColorWGSL =
+    `
+[[stage(fragment)]]
+fn main(
+    [[location(0)]] modelPos: vec4<f32>,
+    [[location(1)]] color: vec3<f32>
+    ) -> [[location(0)]] vec4<f32> {
+    var xTan: vec3<f32> = dpdx(modelPos).xyz;
+    var yTan: vec3<f32> = dpdy(modelPos).xyz;
+    var norm: vec3<f32> = normalize(cross(xTan, yTan));
+
+    var lDirection: vec3<f32> = vec3<f32>(0.5, 0.5, 0.5);
+    var lColor: vec3<f32> = vec3<f32>(0.5, 0.5, 0.5);
+    var ambient: vec4<f32> = vec4<f32>(color, 1.0); // vec4<f32>(0.0, 0.2, 0.2, 0.2);
+
+    var diffuse: vec4<f32> = vec4<f32>(max(dot(lDirection, -norm), 0.0) * lColor, 1.0);
+
+    return ambient + diffuse;
+    // return vec4<f32>(norm, 1.0);
+}
+`;
+
 const shadowDepthTextureSize = 1024;
 
 // const maxNumVerts = 1000;
 // const maxNumTri = 1000;
 // const maxNumModels = 100;
-
 
 const sampleCount = 4;
 
@@ -81,8 +110,7 @@ const shadowDepthTextureDesc: GPUTextureDescriptor = {
     size: {
         width: shadowDepthTextureSize,
         height: shadowDepthTextureSize,
-        // TODO(@darzu): deprecated
-        // depth: 1,
+        depthOrArrayLayers: 1,
     },
     usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.SAMPLED,
     format: 'depth32float',
@@ -91,13 +119,26 @@ const shadowDepthTextureDesc: GPUTextureDescriptor = {
 const maxNumInstances = 1000;
 const instanceByteSize = Float32Array.BYTES_PER_ELEMENT * 3/*color*/
 
+// TODO(@darzu): depth24plus-stencil8
 const depthStencilFormat = 'depth24plus';
+
+// TODO(@darzu): move this out?
+const lightProjectionMatrix = mat4.create();
+{
+    const left = -80;
+    const right = 80;
+    const bottom = -80;
+    const top = 80;
+    const near = -200;
+    const far = 300;
+    mat4.ortho(lightProjectionMatrix, left, right, bottom, top, near, far);
+}
 
 export interface MeshRenderer {
     // TODO(@darzu): what should really be exposed?
     sharedUniBuffer: GPUBuffer,
-    createRenderBundle: () => GPURenderBundle,
-    renderBundle: (commandEncoder: GPUCommandEncoder, bundle: GPURenderBundle) => void,
+    rebuildBundles: () => void,
+    render: (commandEncoder: GPUCommandEncoder) => void,
 }
 
 export function createMeshRenderer(
@@ -113,10 +154,6 @@ export function createMeshRenderer(
         device,
         format: swapChainFormat,
     });
-
-    // Create the depth texture for rendering/sampling the shadow map.
-    const shadowDepthTexture = device.createTexture(shadowDepthTextureDesc);
-    const shadowDepthTextureView = shadowDepthTexture.createView();
 
     const instanceDataBuffer = device.createBuffer({
         size: maxNumInstances * instanceByteSize,
@@ -167,11 +204,11 @@ export function createMeshRenderer(
         ],
     });
 
-    const sharedUniBindGroupLayout = device.createBindGroupLayout({
+    const shadowSharedUniBindGroupLayout = device.createBindGroupLayout({
         entries: [
             {
                 binding: 0,
-                visibility: GPUShaderStage.VERTEX,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
                 buffer: {
                     type: 'uniform',
                     // hasDynamicOffset: true,
@@ -182,14 +219,55 @@ export function createMeshRenderer(
         ],
     });
 
-    const sharedUniBufferSize = 4 * 16; // 4x4 matrix
+    const renderSharedUniBindGroupLayout = device.createBindGroupLayout({
+        entries: [
+            {
+                binding: 0,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                buffer: {
+                    type: 'uniform',
+                    // hasDynamicOffset: true,
+                    // TODO(@darzu): why have this?
+                    // minBindingSize: 20,
+                },
+            },
+            {
+                binding: 1,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                texture: {
+                    sampleType: 'depth',
+                },
+            },
+            {
+                binding: 2,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                sampler: {
+                    type: 'comparison',
+                },
+            },
+        ],
+    });
+
+    // Create the depth texture for rendering/sampling the shadow map.
+    const shadowDepthTexture = device.createTexture(shadowDepthTextureDesc);
+    // TODO(@darzu): use
+    const shadowDepthTextureView = shadowDepthTexture.createView();
+
+
+
+    const sharedUniBufferSize =
+        // Two 4x4 viewProj matrices,
+        // one for the camera and one for the light.
+        // Then a vec3 for the light position.
+        mat4ByteSize * 2 // camera and light pos
+        + vec3ByteSize * 1;
     const sharedUniBuffer = device.createBuffer({
         size: sharedUniBufferSize,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
-    const sharedUniBindGroup = device.createBindGroup({
-        layout: sharedUniBindGroupLayout,
+    const shadowSharedUniBindGroup = device.createBindGroup({
+        layout: shadowSharedUniBindGroupLayout,
         entries: [
             {
                 binding: 0,
@@ -200,63 +278,138 @@ export function createMeshRenderer(
         ],
     });
 
-    const pipelineLayout = device.createPipelineLayout({
-        bindGroupLayouts: [sharedUniBindGroupLayout, modelUniBindGroupLayout],
+    const renderSharedUniBindGroup = device.createBindGroup({
+        layout: renderSharedUniBindGroupLayout,
+        entries: [
+            {
+                binding: 0,
+                resource: {
+                    buffer: sharedUniBuffer,
+                },
+            },
+            {
+                binding: 1,
+                resource: shadowDepthTextureView,
+            },
+            {
+                binding: 2,
+                // TODO(@darzu): what's a sampler here?
+                resource: device.createSampler({
+                    compare: 'less',
+                }),
+            },
+        ],
     });
 
+    const vertexBuffers: GPUVertexBufferLayout[] = [
+        {
+            // TODO(@darzu): the buffer index should be connected to the pool probably?
+            arrayStride: meshPool._opts.vertByteSize,
+            attributes: [
+                {
+                    // position
+                    shaderLocation: 0,
+                    offset: 0,
+                    format: 'float32x3',
+                },
+                {
+                    // color
+                    shaderLocation: 1,
+                    offset: 4 * 3,
+                    format: 'float32x3',
+                },
+                // {
+                //     // normals
+                //     shaderLocation: 1,
+                //     offset: 0,
+                //     format: 'float32x3',
+                // },
+                // {
+                //     // uv
+                //     shaderLocation: 1,
+                //     offset: cubeUVOffset,
+                //     format: 'float32x2',
+                // },
+            ],
+        },
+        {
+            // per-instance data
+            stepMode: "instance",
+            arrayStride: instanceByteSize,
+            attributes: [
+                {
+                    // color
+                    shaderLocation: 2,
+                    offset: 0,
+                    format: 'float32x3',
+                },
+            ],
+        },
+    ];
 
-    const pipeline = device.createRenderPipeline({
-        layout: pipelineLayout,
+    const primitive: GPUPrimitiveState = {
+        topology: 'triangle-list',
+
+        // Backface culling since the cube is solid piece of geometry.
+        // Faces pointing away from the camera will be occluded by faces
+        // pointing toward the camera.
+        cullMode: 'back',
+        // frontFace: 'ccw', // TODO(dz):
+    };
+
+    const shadowPipelineLayout = device.createPipelineLayout({
+        bindGroupLayouts: [shadowSharedUniBindGroupLayout, modelUniBindGroupLayout],
+    });
+
+    const shadowPassDescriptor: GPURenderPassDescriptor = {
+        colorAttachments: [],
+        depthStencilAttachment: {
+            view: shadowDepthTextureView,
+            depthLoadValue: 1.0,
+            depthStoreOp: 'store',
+            stencilLoadValue: 0,
+            stencilStoreOp: 'store',
+        },
+    };
+
+    const shadowPipeline = device.createRenderPipeline({
+        layout: shadowPipelineLayout, // TODO(@darzu): same for shadow and not?
+        vertex: {
+            module: device.createShaderModule({
+                code: wgslShaders.vertexShadow,
+            }),
+            entryPoint: 'main',
+            buffers: vertexBuffers,
+        },
+        fragment: {
+            // This should be omitted and we can use a vertex-only pipeline, but it's
+            // not yet implemented.
+            module: device.createShaderModule({
+                code: wgslShaders.fragmentShadow,
+            }),
+            entryPoint: 'main',
+            targets: [],
+        },
+        depthStencil: {
+            depthWriteEnabled: true,
+            depthCompare: 'less',
+            format: 'depth32float',
+        },
+        primitive,
+    });
+
+    const renderPipelineLayout = device.createPipelineLayout({
+        bindGroupLayouts: [renderSharedUniBindGroupLayout, modelUniBindGroupLayout],
+    });
+
+    const renderPipeline = device.createRenderPipeline({
+        layout: renderPipelineLayout,
         vertex: {
             module: device.createShaderModule({
                 code: basicVertWGSL,
             }),
             entryPoint: 'main',
-            buffers: [
-                {
-                    // TODO(@darzu): the buffer index should be connected to the pool probably?
-                    arrayStride: meshPool._opts.vertByteSize,
-                    attributes: [
-                        {
-                            // position
-                            shaderLocation: 0,
-                            offset: 0,
-                            format: 'float32x3',
-                        },
-                        {
-                            // color
-                            shaderLocation: 1,
-                            offset: 4 * 3,
-                            format: 'float32x3',
-                        },
-                        // {
-                        //     // normals
-                        //     shaderLocation: 1,
-                        //     offset: 0,
-                        //     format: 'float32x3',
-                        // },
-                        // {
-                        //     // uv
-                        //     shaderLocation: 1,
-                        //     offset: cubeUVOffset,
-                        //     format: 'float32x2',
-                        // },
-                    ],
-                },
-                {
-                    // per-instance data
-                    stepMode: "instance",
-                    arrayStride: instanceByteSize,
-                    attributes: [
-                        {
-                            // color
-                            shaderLocation: 2,
-                            offset: 0,
-                            format: 'float32x3',
-                        },
-                    ],
-                },
-            ],
+            buffers: vertexBuffers,
         },
         fragment: {
             module: device.createShaderModule({
@@ -269,15 +422,7 @@ export function createMeshRenderer(
                 },
             ],
         },
-        primitive: {
-            topology: 'triangle-list',
-
-            // Backface culling since the cube is solid piece of geometry.
-            // Faces pointing away from the camera will be occluded by faces
-            // pointing toward the camera.
-            cullMode: 'back',
-            // frontFace: 'ccw', // TODO(dz):
-        },
+        primitive,
 
         // Enable depth testing so that the fragment closest to the camera
         // is rendered in front.
@@ -290,6 +435,7 @@ export function createMeshRenderer(
             count: sampleCount,
         },
     });
+    // 'depth24plus-stencil8'
 
     const depthTexture = device.createTexture({
         size: { width: canvasWidth, height: canvasHeight },
@@ -297,7 +443,6 @@ export function createMeshRenderer(
         sampleCount,
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
-
 
     // Declare swapchain image handles
     let colorTexture: GPUTexture = device.createTexture({
@@ -329,7 +474,11 @@ export function createMeshRenderer(
         },
     } as const;
 
-    function createRenderBundle(): GPURenderBundle {
+    // TODO(@darzu): how do we handle this abstraction with multiple passes e.g. shadows?
+
+    let renderBundle: GPURenderBundle;
+
+    function rebuildBundles() {
         // create render bundle
         const bundleRenderDesc: GPURenderBundleEncoderDescriptor = {
             colorFormats: [swapChainFormat],
@@ -338,9 +487,9 @@ export function createMeshRenderer(
         }
 
         const bundleEncoder = device.createRenderBundleEncoder(bundleRenderDesc);
-        // const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
-        bundleEncoder.setPipeline(pipeline);
-        bundleEncoder.setBindGroup(0, sharedUniBindGroup);
+
+        bundleEncoder.setPipeline(renderPipeline);
+        bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
         bundleEncoder.setVertexBuffer(0, meshPool._vertBuffer);
         bundleEncoder.setVertexBuffer(1, instanceDataBuffer);
         bundleEncoder.setIndexBuffer(meshPool._indexBuffer, 'uint16');
@@ -352,11 +501,10 @@ export function createMeshRenderer(
             bundleEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
             bundleEncoder.drawIndexed(m.model.tri.length * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
         }
-        const renderBundle = bundleEncoder.finish()
-        return renderBundle;
+        renderBundle = bundleEncoder.finish()
     }
 
-    function renderBundle(commandEncoder: GPUCommandEncoder, bundle: GPURenderBundle) {
+    function render(commandEncoder: GPUCommandEncoder) {
         // TODO(@darzu):  this feels akward
         // Acquire next image from swapchain
         colorTexture = swapChain.getCurrentTexture();
@@ -364,7 +512,7 @@ export function createMeshRenderer(
         renderPassDescriptor.colorAttachments[0].resolveTarget = colorTextureView;
 
         const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
-        passEncoder.executeBundles([bundle]);
+        passEncoder.executeBundles([renderBundle]);
         passEncoder.endPass();
 
         return commandEncoder;
@@ -372,7 +520,7 @@ export function createMeshRenderer(
 
     return {
         sharedUniBuffer,
-        createRenderBundle,
-        renderBundle,
+        rebuildBundles,
+        render,
     };
 }
