@@ -5,8 +5,18 @@ import { Net } from "./net.js";
 import { test } from "./test.js";
 import { Renderer, Renderer_WebGPU } from "./render_webgpu.js";
 import { attachToCanvas } from "./render_webgl.js";
-import { getAABBFromMesh, Mesh, MeshHandle, unshareProvokingVertices } from "./mesh-pool.js";
-import { _cellChecks, _doesOverlaps, _enclosedBys, _lastCollisionTestTimeMs } from "./physics.js";
+import {
+  getAABBFromMesh,
+  Mesh,
+  MeshHandle,
+  unshareProvokingVertices,
+} from "./mesh-pool.js";
+import {
+  _cellChecks,
+  _doesOverlaps,
+  _enclosedBys,
+  _lastCollisionTestTimeMs,
+} from "./physics.js";
 
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
@@ -20,30 +30,32 @@ enum ObjectType {
 }
 
 const BLACK = vec3.fromValues(0, 0, 0);
-const PLANE_MESH = unshareProvokingVertices(scaleMesh(
-  {
-    pos: [
-      [+1, 0, +1],
-      [-1, 0, +1],
-      [+1, 0, -1],
-      [-1, 0, -1],
-    ],
-    tri: [
-      [0, 2, 3],
-      [0, 3, 1], // top
-      [3, 2, 0],
-      [1, 3, 0], // bottom
-    ],
-    lines: [
-      [0, 1],
-      [0, 2],
-      [1, 3],
-      [2, 3],
-    ],
-    colors: [BLACK, BLACK, BLACK, BLACK],
-  },
-  10
-));
+const PLANE_MESH = unshareProvokingVertices(
+  scaleMesh(
+    {
+      pos: [
+        [+1, 0, +1],
+        [-1, 0, +1],
+        [+1, 0, -1],
+        [-1, 0, -1],
+      ],
+      tri: [
+        [0, 2, 3],
+        [0, 3, 1], // top
+        [3, 2, 0],
+        [1, 3, 0], // bottom
+      ],
+      lines: [
+        [0, 1],
+        [0, 2],
+        [1, 3],
+        [2, 3],
+      ],
+      colors: [BLACK, BLACK, BLACK, BLACK],
+    },
+    10
+  )
+);
 const PLANE_AABB = getAABBFromMesh(PLANE_MESH);
 
 class Plane extends GameObject {
@@ -162,7 +174,7 @@ class Bullet extends Cube {
   constructor(id: number, creator: number) {
     super(id, creator);
     this.defaultColor = vec3.fromValues(0.1, 0.1, 0.8);
-    this.localAABB = getAABBFromMesh(this.mesh())
+    this.localAABB = getAABBFromMesh(this.mesh());
   }
 
   mesh(): Mesh {
@@ -280,7 +292,9 @@ class CubeGameState extends GameState<Inputs> {
     this.players = {};
 
     // create local mesh prototypes
-    let bulletProtoObj = this.renderer.addObject(new Bullet(this.id(), this.me))
+    let bulletProtoObj = this.renderer.addObject(
+      new Bullet(this.id(), this.me)
+    );
     bulletProtoObj.obj.transform = new Float32Array(16); // zero the transforms so it doesn't render
     bulletProtoObj.handle.transform = new Float32Array(16);
     this.bulletProto = bulletProtoObj.handle;
@@ -466,10 +480,10 @@ class CubeGameState extends GameState<Inputs> {
     }
     // check render mode
     if (inputs.lastNumKey === 1) {
-      this.renderer.mode = "normal"
+      this.renderer.mode = "normal";
     }
     if (inputs.lastNumKey === 2) {
-      this.renderer.mode = "wireframe"
+      this.renderer.mode = "wireframe";
     }
     // check collisions
     for (let o of Object.values(this.objects)) {
@@ -652,20 +666,27 @@ async function startGame(host: string | null) {
     if (adapter) {
       const device = await adapter.requestDevice();
       // TODO(@darzu): uses cast while waiting for webgpu-types.d.ts to be updated
-      const context = canvas.getContext("webgpu") as any as GPUPresentationContext;
+      const context = canvas.getContext(
+        "webgpu"
+      ) as any as GPUPresentationContext;
       if (context) {
-        rendererInit = new Renderer_WebGPU(canvas, device, context, adapter, MAX_MESHES, MAX_VERTICES);
-        if (rendererInit)
-          usingWebGPU = true
+        rendererInit = new Renderer_WebGPU(
+          canvas,
+          device,
+          context,
+          adapter,
+          MAX_MESHES,
+          MAX_VERTICES
+        );
+        if (rendererInit) usingWebGPU = true;
       }
     }
   }
   if (!rendererInit) {
     rendererInit = attachToCanvas(canvas, MAX_MESHES, MAX_VERTICES);
   }
-  if (!rendererInit)
-    throw 'Unable to create webgl or webgpu renderer'
-  console.log(`Renderer: ${usingWebGPU ? 'webGPU' : 'webGL'}`);
+  if (!rendererInit) throw "Unable to create webgl or webgpu renderer";
+  console.log(`Renderer: ${usingWebGPU ? "webGPU" : "webGL"}`);
   const renderer: Renderer = rendererInit;
   let start_of_time = performance.now();
   let gameState = new CubeGameState(renderer, hosting);
@@ -710,8 +731,13 @@ async function startGame(host: string | null) {
     gameState.renderFrame();
     let jsTime = performance.now() - frame_start_time;
     let frameTime = frame_start_time - previous_frame_time;
-    let { reliableBufferSize, unreliableBufferSize, numDroppedUpdates } =
-      net ? net.stats() : { reliableBufferSize: 0, unreliableBufferSize: 0, numDroppedUpdates: 0 };
+    let { reliableBufferSize, unreliableBufferSize, numDroppedUpdates } = net
+      ? net.stats()
+      : {
+          reliableBufferSize: 0,
+          unreliableBufferSize: 0,
+          numDroppedUpdates: 0,
+        };
     previous_frame_time = frame_start_time;
     avgJsTime = avgJsTime
       ? (1 - avgWeight) * avgJsTime + avgWeight * jsTime
@@ -729,11 +755,15 @@ async function startGame(host: string | null) {
     //    means we'll need to do more work to get line breaks.
     debugTxt.nodeValue =
       controlsStr +
-    ` (js: ${avgJsTime.toFixed(2)}ms, net: ${avgNetTime.toFixed(2)}ms, ` +
-    `broad:${_lastCollisionTestTimeMs.toFixed(1)}ms (o:${_doesOverlaps}, e:${_enclosedBys}, c: ${_cellChecks}), fps: ${avgFPS.toFixed(1)}, ` +
-    `buffers: r=${reliableBufferSize}/u=${unreliableBufferSize}, ` +
+      ` (js: ${avgJsTime.toFixed(2)}ms, net: ${avgNetTime.toFixed(2)}ms, ` +
+      `broad:${_lastCollisionTestTimeMs.toFixed(
+        1
+      )}ms (o:${_doesOverlaps}, e:${_enclosedBys}, c: ${_cellChecks}), fps: ${avgFPS.toFixed(
+        1
+      )}, ` +
+      `buffers: r=${reliableBufferSize}/u=${unreliableBufferSize}, ` +
       `dropped updates: ${numDroppedUpdates}` +
-      `objects=${gameState.numObjects}) ${usingWebGPU ? 'WebGPU' : 'WebGL'}`;
+      `objects=${gameState.numObjects}) ${usingWebGPU ? "WebGPU" : "WebGL"}`;
     requestAnimationFrame(frame);
   };
   if (ENABLE_NET) {
@@ -742,8 +772,7 @@ async function startGame(host: string | null) {
       if (hosting) {
         console.log("hello");
         console.log(`Net up and running with id ${id}`);
-        if (navigator.clipboard)
-          navigator.clipboard.writeText(id);
+        if (navigator.clipboard) navigator.clipboard.writeText(id);
         frame();
       } else {
         frame();
@@ -784,6 +813,6 @@ test();
   try {
     await main();
   } catch (e) {
-    console.error(e)
+    console.error(e);
   }
 })();

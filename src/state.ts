@@ -48,7 +48,7 @@ export abstract class GameObject {
   localAABB: AABB;
 
   // derivative state:
-  // NOTE: it kinda sucks to have duplicate sources of truth on loc & rot, 
+  // NOTE: it kinda sucks to have duplicate sources of truth on loc & rot,
   // but it's more important that we don't unnecessarily recompute this transform
   transform: mat4;
   worldAABB: AABB;
@@ -67,8 +67,11 @@ export abstract class GameObject {
     this.location_error = vec3.fromValues(0, 0, 0);
     this.rotation_error = quat.create();
     this.transform = mat4.create();
-    this.localAABB = { min: vec3.fromValues(-1, -1, -1), max: vec3.fromValues(1, 1, 1) };
-    this.worldAABB = { ...this.localAABB }
+    this.localAABB = {
+      min: vec3.fromValues(-1, -1, -1),
+      max: vec3.fromValues(1, 1, 1),
+    };
+    this.worldAABB = { ...this.localAABB };
   }
 
   snapLocation(location: vec3) {
@@ -200,7 +203,7 @@ export abstract class GameState<Inputs> {
   step(dt: number, inputs: Inputs) {
     this.stepGame(dt, inputs);
 
-    const objs = Object.values(this.objects)
+    const objs = Object.values(this.objects);
 
     // update location and rotation
     let identity_quat = quat.create();
@@ -270,8 +273,8 @@ export abstract class GameState<Inputs> {
       );
 
       // update AABB
-      vec3.add(o.worldAABB.min, o.localAABB.min, o.location)
-      vec3.add(o.worldAABB.max, o.localAABB.max, o.location)
+      vec3.add(o.worldAABB.min, o.localAABB.min, o.location);
+      vec3.add(o.worldAABB.max, o.localAABB.max, o.location);
     }
 
     // check collisions
