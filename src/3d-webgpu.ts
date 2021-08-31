@@ -196,35 +196,69 @@ async function init(canvasRef: HTMLCanvasElement) {
     meshPool._unmap();
 
 
+    function jitter(radius: number): number {
+        return (Math.random() - 0.5) * radius * 2
+    }
+
+    function align(x: number, size: number): number {
+        return Math.ceil(x / size) * size
+    }
+
     // create grass field
+    const grassSpread = 60;
+    const grassTris = (grassSpread * 2 + 1) ** 2
     const grassMeshPool = createMeshMemoryPool({
         vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
-        maxVerts: 30000,
-        maxTris: 10000,
+        maxVerts: align(grassTris * 3, 4),
+        maxTris: align(grassTris, 4),
         maxMeshes: 10,
-        meshUniByteSize: Math.ceil(mat4ByteSize / 256) * 256, // align to 256,
+        meshUniByteSize: align(mat4ByteSize, 256), // align to 256,
         backfaceCulling: false,
     }, device);
     {
         grassMeshPool._map();
 
-        const spread = 20;
-        const spacing = 1;
+        const spacing = 0.4;
         const bladeW = 0.2;
         const bladeH = 2;
         let i = 0;
-        for (let x = -spread; x < spread; x++) {
-            for (let z = -spread; z < spread; z++) {
+        for (let xi = -grassSpread; xi < grassSpread; xi++) {
+            for (let zi = -grassSpread; zi < grassSpread; zi++) {
+
+                const rot = jitter(Math.PI * 0.5)
+                const w = bladeW + jitter(0.05)
+
+                const x = xi * spacing + jitter(0.5)
+                const z = zi * spacing + jitter(0.5)
+
+                const x1 = x + Math.cos(rot) * w
+                const z1 = z + Math.sin(rot) * w
+                const x2 = x + Math.cos(rot + Math.PI) * w
+                const z2 = z + Math.sin(rot + Math.PI) * w
+                const x3 = x + jitter(0.5)
+                const z3 = z + jitter(0.5)
+
+                const y = bladeH + jitter(0.5)
+
+                const r = 0.2
+                const g = 0.8
+                const b = 0.2
+
+                const p0: vec3 = [x1, 0, z1];
+                const p1: vec3 = [x2, 0, z2];
+                const p2: vec3 = [x3, y, z3];
+
+                const norm = vec3.cross(vec3.create(), [x1 - x2, 0, z1 - z2], [0, y, 0])
+
+                // const x = xi * spacing + jitter(0.5);
+                // const z = zi * spacing + jitter(0.5);
+
                 // TODO(@darzu): turn off back-face culling
                 addTriToBuffers(
-                    [
-                        [x - bladeW, 0, z],
-                        [x + bladeW, 0, z],
-                        [x, bladeH, z],
-                    ],
+                    [p0, p1, p2],
                     [0, 2, 1],
-                    [0, 0, 1],
-                    [0.2, 0.8, 0.2],
+                    norm,
+                    [r, g, b],
                     grassMeshPool._vertsMap(),
                     grassMeshPool._numVerts,
                     vertElStride,
@@ -238,6 +272,7 @@ async function init(canvasRef: HTMLCanvasElement) {
                 i++;
             }
         }
+        console.log(`Grass triangles: ${i}`)
 
         const trans = mat4.create() as Float32Array;
         const uniOffset = 0;
@@ -268,34 +303,8 @@ async function init(canvasRef: HTMLCanvasElement) {
     const projectionMatrix = mat4.create();
     mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 1, 100.0);
 
-    function getTransformationMatrix() {
-        const viewMatrix = mat4.create();
-        const now = Date.now() / 1000;
-        const yaw = Math.sin(now);
-        const pitch = Math.cos(now);
-        mat4.translate(viewMatrix, viewMatrix, vec3.fromValues(0, 0, -40));
-        mat4.rotate(
-            viewMatrix,
-            viewMatrix,
-            1,
-            vec3.fromValues(yaw, pitch, 0)
-        );
-
-        const viewProj = mat4.create();
-        mat4.multiply(viewProj, projectionMatrix, viewMatrix);
-
-        return viewProj as Float32Array;
-    }
-
     const cameraPos = mkAffineTransformable();
-    // cameraPos.yaw(Math.PI)
     cameraPos.pitch(-Math.PI / 4)
-    // cameraPos.moveZ(40)
-    // cameraPos.moveY(5)
-    // cameraPos.moveX(5)
-    // // cameraPos.lookAt([0, 0, 0])
-
-    // console.log(cameraPos.getTransform())
 
     // register key stuff
     window.addEventListener('keydown', function (event: KeyboardEvent) {
