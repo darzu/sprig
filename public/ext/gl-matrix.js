@@ -5950,17 +5950,6 @@ export var vec3 = /*#__PURE__*/Object.freeze({
             }
         };
     }();
-    /**
-     * Performs a spherical linear interpolation with two control points
-     *
-     * @param {quat} out the receiving quaternion
-     * @param {ReadonlyQuat} a the first operand
-     * @param {ReadonlyQuat} b the second operand
-     * @param {ReadonlyQuat} c the third operand
-     * @param {ReadonlyQuat} d the fourth operand
-     * @param {Number} t interpolation amount, in the range [0-1], between the two inputs
-     * @returns {quat} out
-     */
 
     var sqlerp = function () {
         var temp1 = create$6();
@@ -5972,16 +5961,6 @@ export var vec3 = /*#__PURE__*/Object.freeze({
           return out;
       };
     }();
-    /**
-     * Sets the specified quaternion with values corresponding to the given
-     * axes. Each axis is a vec3 and is expected to be unit length and
-     * perpendicular to all other specified axes.
-     *
-     * @param {ReadonlyVec3} view  the vector representing the viewing direction
-     * @param {ReadonlyVec3} right the vector representing the local "right" direction
-     * @param {ReadonlyVec3} up    the vector representing the local "up" direction
-     * @returns {quat} out
-     */
 
     var setAxes = function () {
         var matr = create$2();
@@ -5999,7 +5978,7 @@ export var vec3 = /*#__PURE__*/Object.freeze({
         };
     }();
 
-    var quat = /*#__PURE__*/Object.freeze({
+export var quat = /*#__PURE__*/Object.freeze({
         __proto__: null,
         create: create$6,
         identity: identity$4,

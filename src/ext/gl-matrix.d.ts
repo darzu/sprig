@@ -1169,7 +1169,7 @@
          * @param {ReadonlyVec3} v Translation vector
          * @returns {mat4} out
          */
-        export function fromRotationTranslation(out: mat4, q: any, v: ReadonlyVec3): mat4;
+        export function fromRotationTranslation(out: mat4, q: ReadonlyQuat, v: ReadonlyVec3): mat4;
         /**
          * Creates a new mat4 from a dual quat.
          *
@@ -2487,8 +2487,29 @@
          */
         export const equals: typeof vec4.equals;
         export function rotationTo(out: any, a: any, b: any): any;
-        export function sqlerp(out: any, a: any, b: any, c: any, d: any, t: any): any;
-        export function setAxes(out: any, view: any, right: any, up: any): vec4;
+        /**
+         * Performs a spherical linear interpolation with two control points
+         *
+         * @param {quat} out the receiving quaternion
+         * @param {ReadonlyQuat} a the first operand
+         * @param {ReadonlyQuat} b the second operand
+         * @param {ReadonlyQuat} c the third operand
+         * @param {ReadonlyQuat} d the fourth operand
+         * @param {Number} t interpolation amount, in the range [0-1], between the two inputs
+         * @returns {quat} out
+         */
+        export function sqlerp(out: quat, a: ReadonlyQuat, b: ReadonlyQuat, c: ReadonlyQuat, d: ReadonlyQuat, t: number): quat;
+        /**
+         * Sets the specified quaternion with values corresponding to the given
+         * axes. Each axis is a vec3 and is expected to be unit length and
+         * perpendicular to all other specified axes.
+         *
+         * @param {ReadonlyVec3} view  the vector representing the viewing direction
+         * @param {ReadonlyVec3} right the vector representing the local "right" direction
+         * @param {ReadonlyVec3} up    the vector representing the local "up" direction
+         * @returns {quat} out
+         */
+        export function setAxes(out: quat, view: ReadonlyVec3, right: ReadonlyVec3, up: ReadonlyVec3): quat;
 
     }
     export module quat2 {

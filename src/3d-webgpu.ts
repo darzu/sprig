@@ -1,4 +1,4 @@
-import { mat4, vec3 } from './ext/gl-matrix.js';
+import { mat4, vec3, quat } from './ext/gl-matrix.js';
 
 /*
 TODO:
@@ -307,17 +307,41 @@ interface Transformable {
 
 function mkTransformable(): Transformable {
     const position = vec3.create();
+    const translation = mat4.create();
     const rotation = mat4.create();
+    const rot = quat.create();
+
+    const transform = mat4.create();
+
+    const scale: vec3 = [1, 1, 1]
     //mat4.tar
     return {
         position,
         rotation,
         getTransform: () => {
+
+            // return mat4.fromRotationTranslationScaleOrigin(mat4.create(), rot, position, scale, [0, 0, 0]);
+
+            let quatMat = mat4.create();
+            mat4.fromQuat(quatMat, rot);
+
+            const dest = mat4.create();
+
+            mat4.multiply(dest, dest, quatMat);
+
+            mat4.translate(dest, dest, position);
+            mat4.translate(dest, dest, [0, 0, 0]);
+
+            // mat4.translate(dest, dest, negativeOrigin);
+            return dest;
+
             const transform = mat4.create();
-            // const invRot = mat4.invert(mat4.create(), rotation);
-            // mat4.rotateX(transform, transform, 1);
-            mat4.translate(transform, transform, position);
-            mat4.multiply(transform, rotation, transform);
+            // // const invRot = mat4.invert(mat4.create(), rotation);
+            // // mat4.rotateX(transform, transform, 1);
+            // mat4.translate(transform, transform, position);
+            mat4.multiply(transform, translation, transform);
+            // mat4.multiply(transform, rotation, transform);
+            // quat.setAxes
 
             // mat4.lookAt(transform, position, [0, 0, 0], [0, 1, 0]);
             // mat4.targetTo(transform, position, [0, 0, 0], [0, 1, 0]);
@@ -330,21 +354,43 @@ function mkTransformable(): Transformable {
             // mat4.multiply(rotation, mat4.create(), frust)
         },
         pitch: (rad: number) => {
-            mat4.rotateX(rotation, rotation, rad)
+            // mat4.rotateX(transform, transform, rad)
+            // mat4.rotateX(rotation, rotation, rad)
+            quat.rotateX(rot, rot, rad)
         },
         yaw: (rad: number) => {
-            mat4.rotateY(rotation, rotation, rad)
+            // mat4.rotateY(transform, transform, rad)
+            // mat4.rotateY(rotation, rotation, rad)
+            quat.rotateY(rot, rot, rad)
         },
         roll: (rad: number) => {
-            mat4.rotateZ(rotation, rotation, rad)
+            // mat4.rotateZ(transform, transform, rad)
+            // mat4.rotateZ(rotation, rotation, rad)
+            quat.rotateX(rot, rot, rad)
         },
         moveX: (n: number) => {
+            // mat4.translate(transform, transform, [n, 0, 0]);
+            const t: vec3 = [n, 0, 0]
+            // const t = vec3.transformMat4(vec3.create(), [n, 0, 0], rotation)
+            mat4.translate(translation, translation, t);
+            // mat4.translate(rotation, rotation, [n, 0, 0]);
             position[0] += n
         },
         moveY: (n: number) => {
+            // mat4.translate(transform, transform, [0, n, 0]);
+            // mat4.multiply(
+            const t: vec3 = [0, n, 0]
+            // const t = vec3.transformMat4(vec3.create(), [0, n, 0], rotation)
+            mat4.translate(translation, translation, t);
+            // mat4.translate(rotation, rotation, [0, n, 0]);
             position[1] += n
         },
         moveZ: (n: number) => {
+            // mat4.translate(transform, transform, [0, 0, n]);
+            const t: vec3 = [0, 0, n]
+            // const t = vec3.transformMat4(vec3.create(), [0, 0, n], rotation)
+            mat4.translate(translation, translation, t);
+            // mat4.translate(rotation, rotation, [0, 0, n]);
             position[2] += n
         },
     }
@@ -755,19 +801,19 @@ async function init(canvasRef: HTMLCanvasElement) {
             cameraPos.roll(-0.1)
         if (pressedKeys['e'])
             cameraPos.roll(0.1)
+        // mouse
+        if (mouseDeltaX !== 0)
+            cameraPos.yaw(mouseDeltaX * 0.01);
+        if (mouseDeltaY !== 0)
+            cameraPos.pitch(mouseDeltaY * 0.01);
+
         // cameraPos.yaw(0.01)
         // cameraPos.pitch(0.01)
         // cameraPos.roll(0.01)
-        // mouse
-        if (mouseDeltaX !== 0) {
-            cameraPos.yaw(mouseDeltaX * 0.01);
-            mouseDeltaX = 0;
-        }
-        if (mouseDeltaY !== 0) {
-            cameraPos.pitch(mouseDeltaY * 0.01);
-            mouseDeltaY = 0;
-        }
 
+        // reset accummulated mouse delta
+        mouseDeltaX = 0;
+        mouseDeltaY = 0;
 
         function getViewProj() {
             const viewProj = mat4.create();
