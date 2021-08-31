@@ -18,4 +18,5 @@ DIY w/ software:
 
 way to consume midi, decompose it into these concepts?
 
-
+multiplayer sequencer:
+    https://marcgg.com/blog/2016/11/21/chiptune-sequencer-multiplayer/

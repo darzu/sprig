@@ -11,25 +11,31 @@ const audioCtx = new AudioContext();
 // create Oscillator node
 let oscillator: OscillatorNode | null;
 
-function createNote(): OscillatorNode {
-    const oscillator = audioCtx.createOscillator();
-
-    oscillator.type = 'square';
-    oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // value in hertz
-    oscillator.connect(audioCtx.destination);
-
-    return oscillator;
-}
-
 function playFreq(freq: number, durSec: number, offset: number) {
-    const oscillator = audioCtx.createOscillator();
+    const startTime = offset;
+    const stopTime = offset + durSec;
 
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(freq, offset);
-    oscillator.connect(audioCtx.destination);
+    const o = audioCtx.createOscillator();
 
-    oscillator.start(offset)
-    oscillator.stop(offset + durSec)
+    const g = audioCtx.createGain()
+    o.connect(g)
+    g.connect(audioCtx.destination)
+
+    g.gain.exponentialRampToValueAtTime(
+        1.0, startTime
+    )
+
+    g.gain.exponentialRampToValueAtTime(
+        0.00001, stopTime + 1.0
+    )
+
+    o.type = 'sine';
+    o.frequency.setValueAtTime(freq, startTime);
+
+    // o.connect(audioCtx.destination);
+
+    o.start(startTime)
+    // o.stop(stopTime + 0.1)
 }
 
 function noteFreq(n: number): number {
@@ -47,17 +53,18 @@ function playNote(n: number, durSec: number = 0.25, offset: number | null = null
 }
 
 function canvasClick() {
+    console.log('click!')
     // canvasRef.removeEventListener('click', doLockMouse)
 
     const start = audioCtx.currentTime;
 
-    playNote(0, 0.25, start + 0);
+    playNote(7, 0.25, start + 0);
     playNote(4, 0.25, start + 0.25);
-    playNote(7, 0.25, start + 0.5);
+    playNote(0, 0.25, start + 0.5);
+    playNote(7, 0.25, start + 0.75);
 
 }
 canvasRef.addEventListener('click', canvasClick)
-
 
 // var context = new AudioContext()
 // var o = context.createOscillator()
