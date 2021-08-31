@@ -486,14 +486,18 @@ export function createMeshRenderer(
         layout: renderPipelineLayout,
         vertex: {
             module: device.createShaderModule({
-                code: basicVertWGSL,
+                code: wgslShaders.vertex,
+                // TODO(@darzu):
+                // code: basicVertWGSL,
             }),
             entryPoint: 'main',
             buffers: vertexBuffers,
         },
         fragment: {
             module: device.createShaderModule({
-                code: vertexPositionColorWGSL,
+                code: wgslShaders.fragment,
+                // TODO(@darzu):
+                // code: vertexPositionColorWGSL,
             }),
             entryPoint: 'main',
             targets: [
