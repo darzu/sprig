@@ -6,12 +6,14 @@ import { CameraProps } from "./main.js";
 import { createMotionProps, MotionProps } from "./phys_motion.js";
 
 export interface PlayerProps {
-  jumpHeight: number;
+  jumpSpeed: number;
+  gravity: number;
 }
 
 export function createPlayerProps(): PlayerProps {
   return {
-    jumpHeight: 5,
+    jumpSpeed: 0.003,
+    gravity: 0.0003,
   };
 }
 
@@ -28,58 +30,43 @@ export function stepPlayer(
   camera: CameraProps,
   spawnBullet: (motion: MotionProps) => void
 ) {
+  // fall with gravity
+  player.motion.linearVelocity[1] -= player.player.gravity * dt;
+
   // move player
-  player.motion.linearVelocity = vec3.fromValues(0, 0, 0);
-  let playerSpeed = inputs.keyDowns[" "] ? 0.005 : 0.001;
+  let vel = vec3.fromValues(0, 0, 0);
+  let playerSpeed = 0.001;
   let n = playerSpeed * dt;
   if (inputs.keyDowns["a"]) {
-    vec3.add(
-      player.motion.linearVelocity,
-      player.motion.linearVelocity,
-      vec3.fromValues(-n, 0, 0)
-    );
+    vec3.add(vel, vel, vec3.fromValues(-n, 0, 0));
   }
   if (inputs.keyDowns["d"]) {
-    vec3.add(
-      player.motion.linearVelocity,
-      player.motion.linearVelocity,
-      vec3.fromValues(n, 0, 0)
-    );
+    vec3.add(vel, vel, vec3.fromValues(n, 0, 0));
   }
   if (inputs.keyDowns["w"]) {
-    vec3.add(
-      player.motion.linearVelocity,
-      player.motion.linearVelocity,
-      vec3.fromValues(0, 0, -n)
-    );
+    vec3.add(vel, vel, vec3.fromValues(0, 0, -n));
   }
   if (inputs.keyDowns["s"]) {
-    vec3.add(
-      player.motion.linearVelocity,
-      player.motion.linearVelocity,
-      vec3.fromValues(0, 0, n)
-    );
+    vec3.add(vel, vel, vec3.fromValues(0, 0, n));
   }
-  if (inputs.keyDowns["shift"]) {
-    vec3.add(
-      player.motion.linearVelocity,
-      player.motion.linearVelocity,
-      vec3.fromValues(0, n, 0)
-    );
-  }
-  if (inputs.keyDowns["c"]) {
-    vec3.add(
-      player.motion.linearVelocity,
-      player.motion.linearVelocity,
-      vec3.fromValues(0, -n, 0)
-    );
+  // if (inputs.keyDowns["shift"]) {
+  //   vec3.add(vel, vel, vec3.fromValues(0, n, 0));
+  // }
+  // if (inputs.keyDowns["c"]) {
+  //   vec3.add(vel, vel, vec3.fromValues(0, -n, 0));
+  // }
+  if (inputs.keyClicks[" "]) {
+    player.motion.linearVelocity[1] = player.player.jumpSpeed * dt;
   }
 
-  vec3.transformQuat(
-    player.motion.linearVelocity,
-    player.motion.linearVelocity,
-    player.motion.rotation
-  );
+  vec3.transformQuat(vel, vel, player.motion.rotation);
+
+  // vec3.add(player.motion.linearVelocity, player.motion.linearVelocity, vel);
+
+  // x and z from local movement
+  player.motion.linearVelocity[0] = vel[0];
+  player.motion.linearVelocity[2] = vel[2];
+
   quat.rotateY(
     player.motion.rotation,
     player.motion.rotation,
