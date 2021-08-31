@@ -325,7 +325,6 @@ const vertexBuffersLayout: GPUVertexBufferLayout[] = [{
         { shaderLocation: 0, offset: bytesPerVec3 * 0, format: 'float32x3' }, // position
         { shaderLocation: 1, offset: bytesPerVec3 * 1, format: 'float32x3' }, // color
         { shaderLocation: 2, offset: bytesPerVec3 * 2, format: 'float32x3' }, // normals
-        { shaderLocation: 3, offset: bytesPerVec3 * 3, format: 'float32' }, // sway height
     ],
 }];
 
@@ -337,7 +336,7 @@ function writeMeshTransform(m: MeshHandle) {
 let verticesMap = new Float32Array(_vertBuffer.getMappedRange())
 let indicesMap = new Uint16Array(_indexBuffer.getMappedRange());
 
-const _meshes: MeshHandle[] = [];
+const meshHandles: MeshHandle[] = [];
 let _numVerts = 0;
 let _numTris = 0;
 function addMesh(m: Mesh): MeshHandle {
@@ -351,9 +350,6 @@ function addMesh(m: Mesh): MeshHandle {
 
     const norms = computeNormals(m);
     m.tri.forEach((triInd, i) => {
-        const triPos: [vec3, vec3, vec3] = [m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]]];
-        const triNorms: [vec3, vec3, vec3] = [norms[i], norms[i], norms[i]];
-        const triColors: [vec3, vec3, vec3] = [m.colors[i], m.colors[i], m.colors[i]];
         const vOff = (_numVerts + i * 3) * vertElStride
         const iOff = (_numTris + i) * indicesPerTriangle
         if (indicesMap) {
@@ -363,46 +359,42 @@ function addMesh(m: Mesh): MeshHandle {
         }
         // set per-face vertex data
         // position
-        verticesMap[vOff + 0 * vertElStride + 0] = triPos[0][0]
-        verticesMap[vOff + 0 * vertElStride + 1] = triPos[0][1]
-        verticesMap[vOff + 0 * vertElStride + 2] = triPos[0][2]
-        verticesMap[vOff + 1 * vertElStride + 0] = triPos[1][0]
-        verticesMap[vOff + 1 * vertElStride + 1] = triPos[1][1]
-        verticesMap[vOff + 1 * vertElStride + 2] = triPos[1][2]
-        verticesMap[vOff + 2 * vertElStride + 0] = triPos[2][0]
-        verticesMap[vOff + 2 * vertElStride + 1] = triPos[2][1]
-        verticesMap[vOff + 2 * vertElStride + 2] = triPos[2][2]
+        verticesMap[vOff + 0 * vertElStride + 0] = m.pos[triInd[0]][0]
+        verticesMap[vOff + 0 * vertElStride + 1] = m.pos[triInd[0]][1]
+        verticesMap[vOff + 0 * vertElStride + 2] = m.pos[triInd[0]][2]
+        verticesMap[vOff + 1 * vertElStride + 0] = m.pos[triInd[1]][0]
+        verticesMap[vOff + 1 * vertElStride + 1] = m.pos[triInd[1]][1]
+        verticesMap[vOff + 1 * vertElStride + 2] = m.pos[triInd[1]][2]
+        verticesMap[vOff + 2 * vertElStride + 0] = m.pos[triInd[2]][0]
+        verticesMap[vOff + 2 * vertElStride + 1] = m.pos[triInd[2]][1]
+        verticesMap[vOff + 2 * vertElStride + 2] = m.pos[triInd[2]][2]
         // color
-        const [r1, g1, b1] = triColors[0]
-        const [r2, g2, b2] = triColors[1]
-        const [r3, g3, b3] = triColors[2]
-        verticesMap[vOff + 0 * vertElStride + 3] = r1
-        verticesMap[vOff + 0 * vertElStride + 4] = g1
-        verticesMap[vOff + 0 * vertElStride + 5] = b1
-        verticesMap[vOff + 1 * vertElStride + 3] = r2
-        verticesMap[vOff + 1 * vertElStride + 4] = g2
-        verticesMap[vOff + 1 * vertElStride + 5] = b2
-        verticesMap[vOff + 2 * vertElStride + 3] = r3
-        verticesMap[vOff + 2 * vertElStride + 4] = g3
-        verticesMap[vOff + 2 * vertElStride + 5] = b3
+        const [r, g, b] = m.colors[i]
+        verticesMap[vOff + 0 * vertElStride + 3] = r
+        verticesMap[vOff + 0 * vertElStride + 4] = g
+        verticesMap[vOff + 0 * vertElStride + 5] = b
+        verticesMap[vOff + 1 * vertElStride + 3] = r
+        verticesMap[vOff + 1 * vertElStride + 4] = g
+        verticesMap[vOff + 1 * vertElStride + 5] = b
+        verticesMap[vOff + 2 * vertElStride + 3] = r
+        verticesMap[vOff + 2 * vertElStride + 4] = g
+        verticesMap[vOff + 2 * vertElStride + 5] = b
         // normals
-        const [nx1, ny1, nz1] = triNorms[0]
-        verticesMap[vOff + 0 * vertElStride + 6] = nx1
-        verticesMap[vOff + 0 * vertElStride + 7] = ny1
-        verticesMap[vOff + 0 * vertElStride + 8] = nz1
-        const [nx2, ny2, nz2] = triNorms[1]
-        verticesMap[vOff + 1 * vertElStride + 6] = nx2
-        verticesMap[vOff + 1 * vertElStride + 7] = ny2
-        verticesMap[vOff + 1 * vertElStride + 8] = nz2
-        const [nx3, ny3, nz3] = triNorms[2]
-        verticesMap[vOff + 2 * vertElStride + 6] = nx3
-        verticesMap[vOff + 2 * vertElStride + 7] = ny3
-        verticesMap[vOff + 2 * vertElStride + 8] = nz3
+        const [nx, ny, nz] = norms[i]
+        verticesMap[vOff + 0 * vertElStride + 6] = nx
+        verticesMap[vOff + 0 * vertElStride + 7] = ny
+        verticesMap[vOff + 0 * vertElStride + 8] = nz
+        verticesMap[vOff + 1 * vertElStride + 6] = nx
+        verticesMap[vOff + 1 * vertElStride + 7] = ny
+        verticesMap[vOff + 1 * vertElStride + 8] = nz
+        verticesMap[vOff + 2 * vertElStride + 6] = nx
+        verticesMap[vOff + 2 * vertElStride + 7] = ny
+        verticesMap[vOff + 2 * vertElStride + 8] = nz
     })
 
     const transform = mat4.create() as Float32Array;
 
-    const uniOffset = _meshes.length * meshUniByteSize;
+    const uniOffset = meshHandles.length * meshUniByteSize;
     device.queue.writeBuffer(_meshUniBuffer, uniOffset, transform.buffer);
 
     const res: MeshHandle = {
@@ -416,7 +408,7 @@ function addMesh(m: Mesh): MeshHandle {
     _numVerts += m.pos.length;
     _numTris += m.tri.length;
 
-    _meshes.push(res)
+    meshHandles.push(res)
     return res;
 }
 
@@ -601,7 +593,7 @@ bundleEncoder.setPipeline(renderPipeline);
 bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
 bundleEncoder.setVertexBuffer(0, _vertBuffer);
 bundleEncoder.setIndexBuffer(_indexBuffer, 'uint16');
-for (let m of _meshes) {
+for (let m of meshHandles) {
     bundleEncoder.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
     bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
 }
@@ -657,7 +649,7 @@ function renderFrame(timeMs: number) {
     shadowPass.setVertexBuffer(0, _vertBuffer);
     shadowPass.setIndexBuffer(_indexBuffer, 'uint16');
     const uniOffset = [0];
-    for (let m of _meshes) {
+    for (let m of meshHandles) {
         uniOffset[0] = m.modelUniByteOffset;
         shadowPass.setBindGroup(1, modelUniBindGroup, uniOffset);
         shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
