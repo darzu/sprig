@@ -409,3 +409,49 @@ Texture compression:
 
 Foveated rendering:
   https://en.wikipedia.org/wiki/Foveated_rendering
+
+GPU hardware:
+  Rasterization is still done in fixed hardware, not programmable
+    https://en.wikipedia.org/wiki/Rasterisation
+    (Intel tried with Larrabee, aborted)
+    (Nvidia tried: https://highperformancegraphics.net/previous/www_2011/media/Papers/HPG2011_Papers_Laine.pdf, 
+      https://dl.acm.org/doi/10.1145/2018323.2018337, http://code.google.com/p/cudaraster/)
+      Issues: interpolation, anti-aliasing, power consumption
+    Desire for software rasterization:
+      shader perf boost?
+      ROP (render output unit): a-buffering, order-independent transparency
+      Stochastic rasterization
+      Non-linear rasterization
+  Vertex and fragment shaders
+  Compute vs Fragment for post-processing:
+    https://computergraphics.stackexchange.com/questions/54/when-is-a-compute-shader-more-efficient-than-a-pixel-shader-for-image-filtering
+  ROP:
+    https://en.wikipedia.org/wiki/Render_output_unit
+    handles anti-aliasing (e.g. MSAA)
+
+Z-order curve:
+  https://en.wikipedia.org/wiki/Z-order_curve#Applications
+  Zig-zag textures for more efficient cache locality
+
+Albedo vs Diffuse:
+  https://computergraphics.stackexchange.com/questions/350/albedo-vs-diffuse
+
+Virtual texturing:
+  http://holger.dammertz.org/stuff/notes_VirtualTexturing.html
+  https://computergraphics.stackexchange.com/questions/1768/how-can-virtual-texturing-actually-be-efficient
+
+GPU memory access costs:
+  https://computergraphics.stackexchange.com/questions/37/what-is-the-cost-of-changing-state
+    TODO: read for good GPU perf tips
+  most to least expensive state changes:
+    render target (~60K/s)
+    program (~300K/s)
+    ROP
+    texture bindings (~1.5M/s)
+    vertex format
+    UBO bindings
+    vertex bindings
+    uniform updates (~10M/s)
+
+Don't have T junctions in meshes:
+  https://computergraphics.stackexchange.com/questions/1461/why-do-t-junctions-in-meshes-result-in-cracks

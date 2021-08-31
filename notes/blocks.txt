@@ -13,3 +13,6 @@ Droplet
     Used by Code.org's AppLab and GameLab
     https://github.com/droplet-editor/droplet
     http://pencilcode.net
+
+"Next gen HTML renderer"
+    https://ultralig.ht
