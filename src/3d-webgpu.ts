@@ -129,8 +129,13 @@ interface GrassTileOpts {
     bladeH: number
     spacing: number,
     tileSize: number,
+    maxBladeDraw: number,
 }
 interface GrassTilesetOpts {
+    bladeW: number,
+    bladeH: number
+    spacing: number,
+    tileSize: number,
     tilesPerSide: number,
 }
 
@@ -213,11 +218,16 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
 
         // used and updated elsewhere
         transform: mat4.create(),
+        maxDraw: opts.maxBladeDraw,
 
         // not applicable
         // TODO(@darzu): make this optional?
         model: null as unknown as MeshModel,
     };
+
+    // TODO(@darzu): do here?
+    grassMeshPool.applyMeshMaxDraw(grassMesh)
+
 
     grassMeshPool._meshes.push(grassMesh);
 
@@ -230,7 +240,7 @@ interface GrassTileset {
     update: (target: vec3) => void,
 }
 
-function createGrassTileset(opts: GrassTileOpts & GrassTilesetOpts, device: GPUDevice): GrassTileset {
+function createGrassTileset(opts: GrassTilesetOpts, device: GPUDevice): GrassTileset {
     // create grass field
     const { spacing, tileSize, tilesPerSide } = opts;
     const grassPerTile = (tileSize / spacing) ** 2;
@@ -244,7 +254,7 @@ function createGrassTileset(opts: GrassTileOpts & GrassTilesetOpts, device: GPUD
         // TODO(@darzu): MESH FORMAT
         meshUniByteSize: align(
             bytesPerMat4 // transform
-            + bytesPerFloat
+            + bytesPerFloat // max draw distance
             , 256),
         backfaceCulling: false,
         usesIndices: false,
@@ -252,15 +262,31 @@ function createGrassTileset(opts: GrassTileOpts & GrassTilesetOpts, device: GPUD
 
     pool._map();
 
+    const maxBladeDraw = ((tilesPerSide - 1) / 2) * tileSize
+    const tileOpts: GrassTileOpts = {
+        ...opts,
+        maxBladeDraw
+    }
+
     for (let xi = 0; xi < tilesPerSide; xi++) {
         for (let zi = 0; zi < tilesPerSide; zi++) {
             const x = xi * tileSize;
             const z = zi * tileSize;
             // TODO(@darzu): 
             // console.log(`(${xi}, ${zi})`);
-            const tile = createGrassTile(opts, pool);
+            const tile = createGrassTile(tileOpts, pool);
             mat4.translate(tile.transform, tile.transform, [x, 0, z])
             pool.applyMeshTransform(tile)
+            // TODO(@darzu): 
+
+            // const uniOffset = _meshes.length * meshUniByteSize;
+            // device.queue.writeBuffer(
+            //     _meshUniBuffer,
+            //     uniOffset,
+            //     trans.buffer,
+            //     trans.byteOffset,
+            //     trans.byteLength
+            // );
         }
     }
 
@@ -343,7 +369,7 @@ function nearestIntegers(target: number, numInts: number): number[] {
 }
 
 function initGrassSystem(device: GPUDevice): GrassSystem {
-    const lod1Opts: GrassTilesetOpts & GrassTileOpts = {
+    const lod1Opts: GrassTilesetOpts = {
         // tile
         bladeW: 0.1,
         bladeH: 1.7,
@@ -353,31 +379,43 @@ function initGrassSystem(device: GPUDevice): GrassSystem {
         spacing: 0.25,
         tileSize: 10,
         // tileset
-        tilesPerSide: 4,
+        tilesPerSide: 5,
     }
-    const lod0Opts: GrassTilesetOpts & GrassTileOpts = {
+    const lod0Opts: GrassTilesetOpts = {
         ...lod1Opts,
         spacing: lod1Opts.spacing * 0.25,
         tileSize: lod1Opts.tileSize * 0.25,
     }
-    const lod2Opts: GrassTilesetOpts & GrassTileOpts = {
+    const lod2Opts: GrassTilesetOpts = {
         ...lod1Opts,
         spacing: lod1Opts.spacing * 2,
         tileSize: lod1Opts.tileSize * 2,
     }
-    const lod3Opts: GrassTilesetOpts & GrassTileOpts = {
+    const lod3Opts: GrassTilesetOpts = {
         ...lod1Opts,
         spacing: lod1Opts.spacing * 4,
         tileSize: lod1Opts.tileSize * 4,
     }
-    const lod4Opts: GrassTilesetOpts & GrassTileOpts = {
+    const lod4Opts: GrassTilesetOpts = {
         ...lod1Opts,
         tilesPerSide: 8,
         spacing: lod1Opts.spacing * 8,
         tileSize: lod1Opts.tileSize * 8,
     }
 
-    const lodOpts = [lod0Opts, lod1Opts, lod2Opts, lod3Opts, lod4Opts]
+    const lodDebug: GrassTilesetOpts = {
+        bladeW: 0.2,
+        bladeH: 2,
+        spacing: 1,
+        tileSize: 4,
+        tilesPerSide: 5,
+    }
+
+    // TODO(@darzu): debugging
+    // const lodOpts = [lodDebug]
+    const lodOpts = [
+        // lod0Opts, 
+        lod1Opts, lod2Opts, lod3Opts, lod4Opts]
 
     const tilesets = lodOpts.map(opts => createGrassTileset(opts, device))
 
@@ -428,7 +466,10 @@ async function init(canvasRef: HTMLCanvasElement) {
         maxTris: 100000,
         maxMeshes: 10000,
         // TODO(@darzu): MESH FORMAT
-        meshUniByteSize: align(bytesPerMat4, 256),
+        meshUniByteSize: align(
+            bytesPerMat4 // transform
+            + bytesPerFloat // max draw distance
+            , 256),
         backfaceCulling: true,
         usesIndices: true,
     }, device);

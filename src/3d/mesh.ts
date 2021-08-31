@@ -86,6 +86,7 @@ export interface MeshMemoryPool {
     _numTris: number,
     addMeshes: (meshesToAdd: MeshModel[]) => void,
     applyMeshTransform: (m: Mesh) => void,
+    applyMeshMaxDraw: (m: Mesh) => void,
 
     // TODO: mapping, unmapping, and raw access is pretty odd
     _vertsMap: () => Float32Array,
@@ -93,6 +94,8 @@ export interface MeshMemoryPool {
     _unmap: () => void,
     _map: () => void,
 }
+
+const _scratchSingletonFloatBuffer = new Float32Array(1);
 
 export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDevice): MeshMemoryPool {
     const { vertByteSize, maxVerts, maxTris, maxMeshes, meshUniByteSize } = opts;
@@ -107,7 +110,10 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
     console.log(`   ${opts.usesIndices ? maxTris * bytesPerTri / 1024 : 0} KB for indices`);
     console.log(`   ${maxMeshes * meshUniByteSize / 1024} KB for models`);
     // TODO(@darzu): MESH FORMAT
-    const unusedBytesPerModel = 256 - bytesPerMat4 % 256
+    const assumedBytesPerModel =
+        bytesPerMat4 // transform
+        + bytesPerFloat // max draw distance
+    const unusedBytesPerModel = 256 - assumedBytesPerModel % 256
     console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per model (${unusedBytesPerModel * maxMeshes / 1024} KB total waste)`);
 
     const _vertBuffer = device.createBuffer({
@@ -180,6 +186,7 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
             //     0, 0));
 
             // save the transform matrix to the buffer
+            // TODO(@darzu): MESH FORMAT
             const uniOffset = _meshes.length * meshUniByteSize;
             device.queue.writeBuffer(
                 _meshUniBuffer,
@@ -198,6 +205,7 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
                 triCount: m.tri.length,
 
                 model: m,
+                maxDraw: 0,
             }
             _numVerts += m.pos.length;
             _numTris += m.tri.length;
@@ -212,12 +220,26 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
 
     function applyMeshTransform(m: Mesh) {
         // save the transform matrix to the buffer
+        // TODO(@darzu): MESH FORMAT
         device.queue.writeBuffer(
             _meshUniBuffer,
             m.modelUniByteOffset,
             (m.transform as Float32Array).buffer,
             (m.transform as Float32Array).byteOffset,
             (m.transform as Float32Array).byteLength
+        );
+    }
+
+    function applyMeshMaxDraw(m: Mesh) {
+        // save the min draw distance to uniform buffer
+        _scratchSingletonFloatBuffer[0] = m.maxDraw;
+        device.queue.writeBuffer(
+            _meshUniBuffer,
+            // TODO(@darzu): MESH FORMAT
+            m.modelUniByteOffset + bytesPerMat4,
+            _scratchSingletonFloatBuffer.buffer,
+            _scratchSingletonFloatBuffer.byteOffset,
+            _scratchSingletonFloatBuffer.byteLength
         );
     }
 
@@ -235,6 +257,7 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
         _map: _map,
         addMeshes,
         applyMeshTransform,
+        applyMeshMaxDraw,
     }
     return res;
 }
@@ -460,6 +483,10 @@ export interface Mesh {
     // data
     transform: mat4;
     model: MeshModel,
+
+    // TODO(@darzu): MESH FORMAT
+    // TODO(@darzu): this isn't relevant to all meshes....
+    maxDraw: number;
 }
 
 // TODO(@darzu): we want a nicer interface, but for now since it's 1-1 with the memory pool, just put it in that

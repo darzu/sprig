@@ -44,6 +44,7 @@ const wgslShaders = {
 
     [[block]] struct Model {
         modelMatrix : mat4x4<f32>;
+        maxDraw: f32;
     };
 
     [[group(0), binding(0)]] var<uniform> scene : Scene;
@@ -83,9 +84,31 @@ const wgslShaders = {
 
         let dist3ToDisplacer: vec4<f32> = worldPos - vec4<f32>(scene.displacer, 1.0);
         let distToDisplacer: f32 = distance(vec3<f32>(), dist3ToDisplacer.xyz);
+        let distUntilDraw: f32 = distToDisplacer - model.maxDraw;
+        // let distUntilFullHeight: f32 = distToDisplacer - maxDraw;
+        // TODO(dz): use distUntilDraw
+        let drawFade: f32 = 4.0; // + 5.0 * sin(1.0 * (worldPos.x + worldPos.z));
+        var maxHeight: f32;
+        if (swayHeight > 0.0 && model.maxDraw > 0.0) {
+            if (distUntilDraw > 0.0) {
+                maxHeight = 0.0;
+            } elseif (distUntilDraw > -drawFade) {
+                maxHeight = worldPos.y * (distUntilDraw / -drawFade);
+            } else {
+                maxHeight = worldPos.y;
+            }
+        } else {
+            maxHeight = worldPos.y;
+        }
+        let heightClamper = maxHeight - worldPos.y;
+
         let displaceStr: f32 = clamp(pow(1.5 / distToDisplacer, 5.0), 0.0, 1.0);
         let localDisplacement: vec4<f32> = (normalize(dist3ToDisplacer) * displaceStr);
-        let displacerDisplacement: vec4<f32> = vec4<f32>(localDisplacement.x, max(-position.y * 0.9, -position.y * displaceStr * 0.4), localDisplacement.z, 0.0) * swayHeight;
+        let displacerDisplacement: vec4<f32> = vec4<f32>(
+                localDisplacement.x,
+                min(max(-position.y * 0.9, -position.y * displaceStr * 0.4), heightClamper),
+                localDisplacement.z, 0.0
+            ) * swayHeight;
 
         let swayScale: f32 = swayHeight * 0.12;
         let timeScale: f32 = scene.time * 0.0015;
@@ -602,7 +625,6 @@ export function createMeshRenderer(
             bundleEncoder.setVertexBuffer(1, instanceDataBuffer);
             if (pool._indexBuffer)
                 bundleEncoder.setIndexBuffer(pool._indexBuffer, 'uint16');
-            // TODO(@darzu): one draw call per mesh?
             const uniOffset = [0];
             for (let m of pool._meshes) {
                 // TODO(@darzu): set bind group
