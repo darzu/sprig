@@ -85,6 +85,8 @@ WebGPU
         https://github.com/gpuweb/gpuweb/wiki/Implementation-Status
     spec:
         https://gpuweb.github.io/gpuweb/
+    examples:
+      https://www.willusher.io/projects#WebGPU%20Experiments
 
 Construct blog:
   https://www.construct.net/en/blogs/ashleys-blog-2/brief-history-graphics-web-1517
@@ -156,6 +158,15 @@ TO LEARN COMPUTE SHADERS:
         Celular atomita?
         Procedural gen?
 
+Book of Shaders (online):
+  https://thebookofshaders.com
+
+Compute shader tutorial ($400?):
+  https://paprika.studio/workshops/compute/
+
+Shader School:
+  https://github.com/stackgl/shader-school
+
 SDFs (Signed Distance Field) ?
     https://joyrok.com/What-Are-SDFs-Anyway
 
@@ -172,12 +183,21 @@ webgpu-rs:
 
 MIT computer graphics lectures:
     https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-837-computer-graphics-fall-2012/lecture-notes/
+    lectures
+      https://www.youtube.com/watch?v=-LqUu61oRdk&list=PLQ3UicqQtfNuBjzJ-KEWmG1yjiRMXYKhh
+      https://www.youtube.com/watch?v=t7g2oaNs-c8&list=PLQ3UicqQtfNuKZjdA3fY1_X9gXn13JLlW
 
 Game Engine Architecture book:
     https://www.gameenginebook.com/
 
-RTX:
+RTX / ray tracing:
   minecraft RTX: https://alain.xyz/blog/frame-analysis-minecraftrtx
+  on m1 https://www.willusher.io/graphics/2020/12/20/rt-dive-m1
+    ~7-9 million rays / sec
+  beyond ray-tracing http://sci.utah.edu/~will/papers/rtx-points-hpg19.pdf
+
+pbr / physically based rendering:
+  https://pbrt.org
 
 GPU API concepts compared:
   https://alain.xyz/blog/comparison-of-modern-graphics-apis
@@ -250,7 +270,18 @@ BLOGS TO SCAN:
   https://www.ea.com/frostbite/news
   http://advances.realtimerendering.com/s2015/index.html (siggraph conference)
   https://simonschreibt.de/game-art-tricks/
+  https://www.willusher.io
+    lots of graphics projects: https://www.willusher.io/projects
+    teapot rendering challenge https://graphics.cs.utah.edu/trc/
+  https://www.cs.washington.edu/research/graphics
+    https://grail.cs.washington.edu/research/
+    http://courses.cs.washington.edu/courses/cse457/ Computer Graphics
+    http://courses.cs.washington.edu/courses/cse458/ Computer Animation
+    http://courses.cs.washington.edu/courses/csep557/ Trends in Computer Graphics
+    http://courses.cs.washington.edu/courses/cse557/ Computer Graphics
 
+coloring models:
+  https://www.willusher.io/webgl-ewa-splatter/#Dinosaur
 
 TO READ:
   https://forum.beyond3d.com/threads/gpu-driven-rendering-siggraph-2015-follow-up.57240/

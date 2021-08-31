@@ -435,3 +435,6 @@ Demoscene:
 
 Brackeys:
   10 years of making games https://www.youtube.com/watch?v=T18X1HuawRc
+
+Learning to code book:
+  https://natureofcode.com/book/
