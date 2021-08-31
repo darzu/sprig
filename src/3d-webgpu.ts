@@ -134,6 +134,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         maxTris: 100000,
         maxMeshes: 10000,
         meshUniByteSize: Math.ceil(mat4ByteSize / 256) * 256, // align to 256,
+        backfaceCulling: true,
     }, device);
 
     // TODO(@darzu): 
@@ -202,6 +203,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         maxTris: 10000,
         maxMeshes: 10,
         meshUniByteSize: Math.ceil(mat4ByteSize / 256) * 256, // align to 256,
+        backfaceCulling: false,
     }, device);
     {
         grassMeshPool._map();

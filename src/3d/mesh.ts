@@ -70,6 +70,7 @@ export interface MeshMemoryPoolOptions {
     maxTris: number,
     maxMeshes: number,
     meshUniByteSize: number,
+    backfaceCulling: boolean,
 }
 
 export interface MeshMemoryPool {

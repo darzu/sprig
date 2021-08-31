@@ -436,13 +436,14 @@ export function createMeshRenderer(
         },
     ];
 
-    const primitive: GPUPrimitiveState = {
+    const primitiveBackcull: GPUPrimitiveState = {
         topology: 'triangle-list',
-
-        // Backface culling since the cube is solid piece of geometry.
-        // Faces pointing away from the camera will be occluded by faces
-        // pointing toward the camera.
         cullMode: 'back',
+        // frontFace: 'ccw', // TODO(dz):
+    };
+    const primitiveTwosided: GPUPrimitiveState = {
+        topology: 'triangle-list',
+        cullMode: 'none',
         // frontFace: 'ccw', // TODO(dz):
     };
 
@@ -450,7 +451,7 @@ export function createMeshRenderer(
         bindGroupLayouts: [shadowSharedUniBindGroupLayout, modelUniBindGroupLayout],
     });
 
-    const shadowPipeline = device.createRenderPipeline({
+    const shadowPipelineDesc: GPURenderPipelineDescriptor = {
         layout: shadowPipelineLayout, // TODO(@darzu): same for shadow and not?
         vertex: {
             module: device.createShaderModule({
@@ -473,14 +474,20 @@ export function createMeshRenderer(
             depthCompare: 'less',
             format: 'depth32float',
         },
-        primitive,
+        primitive: primitiveBackcull,
+    };
+
+    const shadowPipeline = device.createRenderPipeline(shadowPipelineDesc);
+    const shadowPipelineTwosided = device.createRenderPipeline({
+        ...shadowPipelineDesc,
+        primitive: primitiveTwosided
     });
 
     const renderPipelineLayout = device.createPipelineLayout({
         bindGroupLayouts: [renderSharedUniBindGroupLayout, modelUniBindGroupLayout],
     });
 
-    const renderPipeline = device.createRenderPipeline({
+    const renderPipelineDesc: GPURenderPipelineDescriptor = {
         layout: renderPipelineLayout,
         vertex: {
             module: device.createShaderModule({
@@ -504,7 +511,7 @@ export function createMeshRenderer(
                 },
             ],
         },
-        primitive,
+        primitive: primitiveBackcull,
 
         // Enable depth testing so that the fragment closest to the camera
         // is rendered in front.
@@ -516,6 +523,13 @@ export function createMeshRenderer(
         multisample: {
             count: sampleCount,
         },
+    };
+
+    const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
+    const renderPipelineTwosided = device.createRenderPipeline({
+        ...renderPipelineDesc,
+        primitive: primitiveTwosided,
+
     });
     // 'depth24plus-stencil8'
 
@@ -582,9 +596,13 @@ export function createMeshRenderer(
 
         const bundleEncoder = device.createRenderBundleEncoder(bundleRenderDesc);
 
-        bundleEncoder.setPipeline(renderPipeline);
-        bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
         for (let pool of meshPools) {
+            if (pool._opts.backfaceCulling)
+                bundleEncoder.setPipeline(renderPipeline);
+            else
+                bundleEncoder.setPipeline(renderPipelineTwosided);
+
+            bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
             const modelUniBindGroup = device.createBindGroup({
                 layout: modelUniBindGroupLayout,
                 entries: [
@@ -625,9 +643,13 @@ export function createMeshRenderer(
         // shadowPassEncoder.executeBundles([shadowRenderBundle]);
         // TODO(@darzu): use bundle
         {
-            shadowPass.setPipeline(shadowPipeline);
             shadowPass.setBindGroup(0, shadowSharedUniBindGroup);
             for (let pool of meshPools) {
+                if (pool._opts.backfaceCulling)
+                    shadowPass.setPipeline(shadowPipeline);
+                else
+                    shadowPass.setPipeline(shadowPipelineTwosided);
+
                 const modelUniBindGroup = device.createBindGroup({
                     layout: modelUniBindGroupLayout,
                     entries: [
