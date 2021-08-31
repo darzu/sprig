@@ -598,7 +598,8 @@ async function startGame(host: string | null) {
     gameState.renderFrame();
     let jsTime = performance.now() - frame_start_time;
     let frameTime = frame_start_time - previous_frame_time;
-    let { reliable, unreliable } = net.bufferStats();
+    let { reliableBufferSize, unreliableBufferSize, numDroppedUpdates } =
+      net.stats();
     previous_frame_time = frame_start_time;
     avgJsTime = avgJsTime
       ? (1 - avgWeight) * avgJsTime + avgWeight * jsTime
@@ -616,7 +617,10 @@ async function startGame(host: string | null) {
       `(js per frame: ${avgJsTime.toFixed(
         2
       )}ms, net per frame: ${avgNetTime.toFixed(2)}ms, 
-      fps: ${avgFPS.toFixed(1)}, buffers: r=${reliable}/u=${unreliable},
+      fps: ${avgFPS.toFixed(
+        1
+      )}, buffers: r=${reliableBufferSize}/u=${unreliableBufferSize},
+      dropped updates: ${numDroppedUpdates}
       objects=${gameState.numObjects})`;
     requestAnimationFrame(frame);
   };

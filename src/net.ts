@@ -158,6 +158,7 @@ export class Net<Inputs> {
   private synchronizers: Record<ServerId, StateSynchronizer<Inputs>> = {};
   private nextUpdate: Record<ServerId, number> = {};
   private waiting: Record<ServerId, boolean> = {};
+  private numDroppedUpdates: number = 0;
 
   send(server: ServerId, message: ArrayBuffer, reliable: boolean) {
     let conn = reliable
@@ -166,16 +167,20 @@ export class Net<Inputs> {
     conn.send(message);
   }
 
-  bufferStats() {
-    let reliable = 0;
+  stats() {
+    let reliableBufferSize = 0;
     for (let chan of Object.values(this.reliableChannels)) {
-      reliable += chan.bufferedAmount;
+      reliableBufferSize += chan.bufferedAmount;
     }
-    let unreliable = 0;
+    let unreliableBufferSize = 0;
     for (let chan of Object.values(this.unreliableChannels)) {
-      unreliable += chan.bufferedAmount;
+      unreliableBufferSize += chan.bufferedAmount;
     }
-    return { reliable, unreliable };
+    return {
+      reliableBufferSize,
+      unreliableBufferSize,
+      numDroppedUpdates: this.numDroppedUpdates,
+    };
   }
 
   private setupChannel(server: string, chan: RTCDataChannel) {
@@ -321,6 +326,7 @@ export class Net<Inputs> {
         this.stateUpdates[server][0].seq < this.nextUpdate[server]
       ) {
         let { seq } = this.stateUpdates[server].shift()!;
+        this.numDroppedUpdates++;
         /*
         console.log(
           `Ignoring old state update ${seq} < ${this.nextUpdate[server]} from ${server}`
@@ -335,6 +341,7 @@ export class Net<Inputs> {
         while (this.stateUpdates[server].length > BUFFER_TARGET) {
           this.stateUpdates[server].shift();
           this.nextUpdate[server]++;
+          this.numDroppedUpdates++;
         }
       }
       if (
@@ -362,6 +369,9 @@ export class Net<Inputs> {
           ack.writeUint8(MessageType.StateUpdateResponse);
           ack.writeUint32(seq);
           this.send(server, ack.buffer, false);
+        } else {
+          // put it back in the buffer, we're not ready yet
+          this.stateUpdates[server].unshift({ seq, data });
         }
       }
       if (!this.waiting[server]) {
