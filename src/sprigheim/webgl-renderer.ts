@@ -1,5 +1,18 @@
 import { MeshPool, SceneUniform } from "./mesh-pool";
 
+// this is the interface we need
+// constructor(
+//   canvas: HTMLCanvasElement,
+//   device: GPUDevice,
+//   maxMeshes = 100,
+//   maxTrisPerMesh = 100
+// )
+// export interface Renderer {
+//     unmapGPUBuffers(): void;
+//     addObject(o: GameObject): MeshHandle;
+//     renderFrame(viewMatrix: mat4): void;
+//   }
+
 const vertCode = `
 uniform mat4 u_worldViewProjection;
 uniform vec3 u_lightWorldPos;
