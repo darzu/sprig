@@ -7,9 +7,9 @@ import { Renderer, Renderer_WebGPU } from "./render_webgpu.js";
 import { attachToCanvas } from "./render_webgl.js";
 import { getAABBFromMesh, Mesh, MeshHandle, unshareProvokingVertices } from "./mesh-pool.js";
 
-const FORCE_WEBGL = true;
+const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
-const MAX_VERTICES = 21845;
+const MAX_VERTICES = 21844;
 const ENABLE_NET = true;
 
 enum ObjectType {
