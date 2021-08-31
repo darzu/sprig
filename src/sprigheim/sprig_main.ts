@@ -916,7 +916,7 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
     for (let x = 0; x < mapXSize; x++) {
         for (let z = 0; z < mapZSize; z++) {
             const i = idx(x, z)
-            map[i] = Math.random() * 2 + x * 0.02 + z * 0.04 // TODO(@darzu): 
+            map[i] = Math.random() * 2 + x * 0.02 + z * 0.04 - 10 // TODO(@darzu): 
         }
     }
 
@@ -926,11 +926,9 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
         maxVerts: mapArea * 3,
     })
 
-    const verts = new Float32Array(mapXSize * mapZSize * vertByteSize);
-
     // const idx = (xi: number, zi: number) => clamp(zi, 0, mapZSize - 1) * mapXSize + clamp(xi, 0, mapXSize - 1)
 
-    const color: vec3 = [0.2, 0.6, 1.0]
+    const color: vec3 = [0.1, 0.3, 0.5]
     // const color: vec3 = [Math.random(), Math.random(), Math.random()]
 
     const spacing = 2.0;
@@ -940,9 +938,9 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
 
             let y = map[idx(xi, zi)];
             let yX0 = map[idx(xi - 1, zi)];
-            // let yX2 = map[idx(xi + 1, zi)];
+            let yX2 = map[idx(xi + 1, zi)];
             let yZ0 = map[idx(xi, zi - 1)];
-            // let yZ2 = map[idx(xi, zi + 1)];
+            let yZ2 = map[idx(xi, zi + 1)];
 
             const x = xi * spacing;
             const z = zi * spacing;
@@ -951,18 +949,23 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
             const p1: vec3 = [x - 1, yX0, z]
             const p2: vec3 = [x, yZ0, z - 1]
 
-            const norm = computeTriangleNormal(p0, p1, p2);
+            const norm1 = computeTriangleNormal(p0, p2, p1);
 
+            const p3: vec3 = [x + 1, yX2, z]
+            const p4: vec3 = [x, yZ2, z + 1]
+
+            const norm2 = computeTriangleNormal(p0, p4, p3);
 
             // TODO(@darzu): compute normal
             const vertexData = [
-                ...[x, y, z], ...color, ...norm,
+                ...[x, y, z], ...color, ...norm1,
+                ...[x, y, z], ...color, ...norm2,
             ]
 
             const vOff = builder.numVerts * vertElStride;
             builder.verticesMap.set(vertexData, vOff)
 
-            builder.numVerts += 1;
+            builder.numVerts += 2;
 
             // const vertexData = [
             //     ...[xi, y, zi], ...color, ...[0, 1, 0],
@@ -982,19 +985,18 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
 
     for (let xi = 1; xi < mapXSize - 1; xi++) {
         for (let zi = 1; zi < mapZSize - 1; zi++) {
-            const iOff = builder.numTris * 3;
+            let i0 = idx(xi, zi) * 2;
+            let i1 = idx(xi - 1, zi) * 2;
+            let i2 = idx(xi, zi - 1) * 2;
 
-            let i0 = idx(xi, zi);
-            let i1 = idx(xi - 1, zi);
-            let i2 = idx(xi, zi - 1);
-
-            builder.indicesMap.set([i0, i1, i2], iOff)
+            builder.indicesMap.set([i0, i1, i2], builder.numTris * 3)
             builder.numTris += 1;
 
-            let i3 = idx(xi + 1, zi);
-            let i4 = idx(xi, zi + 1);
+            let i3 = idx(xi, zi) * 2 + 1;
+            let i4 = idx(xi + 1, zi) * 2 + 1;
+            let i5 = idx(xi, zi + 1) * 2 + 1;
 
-            builder.indicesMap.set([i0, i3, i4], iOff + 3)
+            builder.indicesMap.set([i3, i4, i5], builder.numTris * 3)
             builder.numTris += 1;
         }
     }
