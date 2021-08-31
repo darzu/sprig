@@ -155,6 +155,14 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxTr
 
     builder.finish();
 
+
+    // TODO(@darzu): debugging
+    // console.log("will draw:")
+    // for (let m of meshObjs) {
+    //   console.log(`t: ${m.handle.transform.join(',')}`)
+    //   console.log(`count: ${m.handle.numTris * 3} at ${m.handle.indicesNumOffset}`)
+    // }
+
     // TODO(@darzu): DEBUG
     // const positions = [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1];
     // const normals = [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1];
@@ -253,8 +261,12 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxTr
     for (let m of meshObjs) {
       // gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset * 2);
       gl.uniformMatrix4fv(u_loc_transform, false, m.handle.transform);
-      gl.drawElements(gl.TRIANGLES, m.handle.numTris * 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset);
+      const indicesBytesOffset = m.handle.indicesNumOffset * 2;
+      gl.drawElements(gl.TRIANGLES, m.handle.numTris * 3, gl.UNSIGNED_SHORT, indicesBytesOffset);
+      // gl.drawElements(gl.TRIANGLES, m.handle.numTris * 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset);
       // break; // TODO(@darzu): 
+      // console.log(`t: ${m.handle.transform.join(',')}`)
+      // console.log(`count: ${m.handle.numTris * 3} at ${m.handle.indicesNumOffset}`)
     }
 
   }
