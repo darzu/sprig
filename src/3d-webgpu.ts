@@ -90,7 +90,7 @@ const CUBE: MeshModel = {
         [6, 7, 3],
         // back
         [5, 4, 7],
-        [5, 4, 6],
+        [5, 7, 6],
     ],
     colors: [
         // front
@@ -290,6 +290,41 @@ interface Mesh {
 }
 
 const sampleCount = 4;
+
+interface Transformable {
+    transform: mat4;
+    pitch: (rad: number) => void;
+    yaw: (rad: number) => void;
+    roll: (rad: number) => void;
+    moveX: (n: number) => void;
+    moveY: (n: number) => void;
+    moveZ: (n: number) => void;
+}
+
+function mkTransformable(): Transformable {
+    const transform = mat4.create();
+    return {
+        transform,
+        pitch: (rad: number) => {
+            mat4.rotateX(transform, transform, rad)
+        },
+        yaw: (rad: number) => {
+            mat4.rotateY(transform, transform, rad)
+        },
+        roll: (rad: number) => {
+            mat4.rotateZ(transform, transform, rad)
+        },
+        moveX: (n: number) => {
+            mat4.translate(transform, transform, [n, 0, 0])
+        },
+        moveY: (n: number) => {
+            mat4.translate(transform, transform, [0, n, 0])
+        },
+        moveZ: (n: number) => {
+            mat4.translate(transform, transform, [0, 0, n])
+        },
+    }
+}
 
 async function init(canvasRef: HTMLCanvasElement) {
     const adapter = await navigator.gpu.requestAdapter();
@@ -534,27 +569,6 @@ async function init(canvasRef: HTMLCanvasElement) {
         },
     } as const;
 
-    const aspect = Math.abs(canvasRef.width / canvasRef.height);
-    const projectionMatrix = mat4.create();
-    mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 1, 100.0);
-
-    function getTransformationMatrix() {
-        const viewMatrix = mat4.create();
-        mat4.translate(viewMatrix, viewMatrix, vec3.fromValues(0, 0, -40));
-        const now = Date.now() / 1000;
-        mat4.rotate(
-            viewMatrix,
-            viewMatrix,
-            1,
-            vec3.fromValues(Math.sin(now), Math.cos(now), 0)
-        );
-
-        const viewProj = mat4.create();
-        mat4.multiply(viewProj, projectionMatrix, viewMatrix);
-
-        return viewProj as Float32Array;
-    }
-
     const meshes: Mesh[] = []
     {
         const vertsMap = new Float32Array(verticesBuffer.getMappedRange())
@@ -627,6 +641,30 @@ async function init(canvasRef: HTMLCanvasElement) {
         verticesBuffer.unmap();
     }
 
+
+    const aspect = Math.abs(canvasRef.width / canvasRef.height);
+    const projectionMatrix = mat4.create();
+    mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 1, 100.0);
+
+    function getTransformationMatrix() {
+        const viewMatrix = mat4.create();
+        const now = Date.now() / 1000;
+        const yaw = Math.sin(now);
+        const pitch = Math.cos(now);
+        mat4.translate(viewMatrix, viewMatrix, vec3.fromValues(0, 0, -40));
+        mat4.rotate(
+            viewMatrix,
+            viewMatrix,
+            1,
+            vec3.fromValues(yaw, pitch, 0)
+        );
+
+        const viewProj = mat4.create();
+        mat4.multiply(viewProj, projectionMatrix, viewMatrix);
+
+        return viewProj as Float32Array;
+    }
+
     function applyMeshTransform(m: Mesh) {
         // save the transform matrix to the buffer
         device.queue.writeBuffer(
@@ -638,16 +676,34 @@ async function init(canvasRef: HTMLCanvasElement) {
         );
     }
 
+    const cameraPos = mkTransformable();
+    cameraPos.moveZ(-40)
+
     function frame() {
         // Sample is no longer the active page.
         if (!canvasRef) return;
+
+        // check inputs
+        // TODO(@darzu):
 
         // update model positions
         // TODO(@darzu): real movement
         mat4.translate(meshes[1].transform, meshes[1].transform, [0.1, 0, 0])
         applyMeshTransform(meshes[1])
 
-        const transformationMatrix = getTransformationMatrix();
+        cameraPos.yaw(0.01)
+        cameraPos.pitch(0.01)
+        cameraPos.roll(0.01)
+
+        function getViewProj() {
+            const viewProj = mat4.create();
+            mat4.multiply(viewProj, projectionMatrix, cameraPos.transform);
+            return viewProj as Float32Array;
+        }
+
+        const transformationMatrix = getViewProj();
+        // const transformationMatrix = getTransformationMatrix();
+        // console.dir(transformationMatrix)
         device.queue.writeBuffer(
             sharedUniBuffer,
             0,
