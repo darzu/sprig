@@ -1,0 +1,3 @@
+Svelte
+    https://svelte.dev
+    replacement for react?

@@ -1,0 +1,11 @@
+From the Portal guys:
+    You really want the player to figure it out instead of you telling them
+    they remember it better, and have the epiphony moment
+    get rid of false negatives: 
+        make sure they know when they didn't get it
+        make sure they get it when they should have
+    new mechanic:
+        introduction -> saturation -> graduation -> combination
+
+Vids from CS50:
+    https://www.youtube.com/channel/UCcabW7890RKJzL968QWEykA

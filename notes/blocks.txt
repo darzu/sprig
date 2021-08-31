@@ -1,0 +1,18 @@
+Contstruct game engine uses a scripting language:
+    https://www.construct.net/en/make-games/games-editor
+
+Vector networks instead of paths:
+    https://medium.com/@alexharri/the-engineering-behind-figmas-vector-networks-688568e37110
+
+https://hazel.org
+    "Hazel is a live functional programming environment featuring typed holes."
+    https://arxiv.org/pdf/1703.08694.pdf
+
+Droplet
+    https://droplet-editor.github.io
+    Used by Code.org's AppLab and GameLab
+    https://github.com/droplet-editor/droplet
+    http://pencilcode.net
+
+"Next gen HTML renderer"
+    https://ultralig.ht

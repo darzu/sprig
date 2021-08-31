@@ -1,0 +1,82 @@
+DIY mocap:
+    https://www.youtube.com/watch?v=LOg_Z0t2LFs
+    https://github.com/digital-standard/ThreeDPoseUnityBarracuda
+    Doable with VR headset + controllers
+    Glycon VR
+    OpenVR Tracker
+    Flipside Studio
+    iPhone:
+        Face Cap
+    Faces:
+        FaceWare (commercial)
+        StrongTrack (free)
+        Unreal + Live Link app
+        mic + Blendshape
+    PoseNet
+        https://medium.com/tensorflow/real-time-human-pose-estimation-in-the-browser-with-tensorflow-js-7dd0bc881cd5
+    Pose estimation: https://www.fritz.ai/pose-estimation/
+
+Robolox style, standard "knight" animations:
+    Run, Walk, Jump, Idle, Fall, Swim, Climb
+    supports multiple animations per category, indicating (weighted) variation
+
+Skinned vs not:
+    Skinned introduces new vertices (I think)
+        Mixamo introduces lots of new triangles
+
+TO LEARN:
+    https://www.youtube.com/watch?v=zp6kCe5Kmf4
+
+Rigid animation:
+    Seperate meshes, childed, placed with offsets
+        Also works well for body animations like a rock golum
+    Single vertex buffer, just stretched
+
+FBX format:
+    https://code.blender.org/2013/08/fbx-binary-file-format-specification/
+
+low poly riging:
+    https://www.youtube.com/watch?v=srpOeu9UUBU
+
+Programatic animations:
+    Bouncing:
+        https://youtu.be/r_It_X7v-1E?t=25
+    Spider legs:
+        https://youtu.be/--GB9qyZJqg?t=477
+    biped ?
+    
+Animation groups:
+    Biped (human, mech)
+    Quadraped (dog, cat)
+
+How import are animations?
+    Meta: effort should be spent proportial to gameplay
+
+Skinning:
+    https://canvas.dartmouth.edu/courses/16840/assignments/82767
+
+Skeletal:
+    https://en.wikipedia.org/wiki/Skeletal_animation
+    http://morpheo.inrialpes.fr/~franco/3dgraphics/practical3.html
+
+Two frame animations:
+    Sword slash: wind up, strike
+    Walking, running: walk left, walk right
+
+    sort of arcade fighting style
+
+    Effects:
+        Tween vertices?
+        glow trails between keyframes?
+            allow user to draw trail?
+            let the user chose: straight path, orbit path, ???
+
+Animation editor:
+    rigging
+    inverse kinimatics
+    poser
+    small number of frames
+    timing defined in code
+    
+Rigging -> model via AI:
+    http://gvv.mpi-inf.mpg.de/projects/NeuralActor/

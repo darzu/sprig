@@ -1,0 +1,54 @@
+Sprigland blog:
+    the "why", the "what"
+    patreon
+
+    grid of micro blogs entries
+
+Micro entry:
+    Scene
+    Code @ version or hash
+    Dependencies @ version or hash
+    Should be easy to open sample for oneself
+    optional YouTube video link
+    optional written text
+    tags
+
+    maybe: "start from X (other project) and follow Y (YouTube link)"
+        creates a DAG between projects
+        can use a "create lesson plan" to come up with a traversal to a particular topic
+
+    record and replay user inputs?
+        resize canvas to 128x128 or something
+
+    future:
+        upgradable
+        web IDE
+        easy dependencies
+    
+    What do the URLs look like?
+        static serve from github pages
+        so a project is a self-contained folder
+        so to create a project, take an entry point and tree shake off everything else
+
+    Build step:
+        From entry point .ts file
+            which has a standard attachToCanvas() function
+        traverse imports
+        collect files to be coppied
+        create a readme.md
+        tree shake off unused .ts ?
+        copy to blog/ folder
+
+
+Tree shaking:
+    to minimize size of examples
+
+    start from the "exportExample" function
+    collect all the references it depends on,
+    recurse over those
+
+    does this need annotations of which code has side-effects?
+
+    also very useful for keeping out random notes and unrelated & unreviewed snippets of code
+
+    highlight key lines, which are all those using the key definitions

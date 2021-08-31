@@ -1,0 +1,8 @@
+References:
+https://webrtc.rs
+    https://github.com/webrtc-rs/webrtc
+https://pion.ly
+https://github.com/kyren/webrtc-unreliable
+
+Rust meeting notes about WASM:
+    https://www.youtube.com/watch?v=XH4sXBa06ig
