@@ -4,6 +4,7 @@ import { initGrassSystem } from './grass.js';
 
 // Defines shaders in WGSL for the shadow and regular rendering pipelines. Likely you'll want
 // these in external files but they've been inlined for redistribution convenience.
+// shader common structs
 const shaderSceneStruct = `
     [[block]] struct Scene {
         cameraViewProjMatrix : mat4x4<f32>;
@@ -11,6 +12,19 @@ const shaderSceneStruct = `
         lightDir : vec3<f32>;
     };
 `;
+const vertexInputStruct = `
+    [[location(0)]] position : vec3<f32>,
+    [[location(1)]] color : vec3<f32>,
+    [[location(2)]] normal : vec3<f32>,
+    [[location(3)]] kind : u32,
+`;
+const vertexShaderOutput = `
+    [[location(0)]] shadowPos : vec3<f32>;
+    [[location(1)]] [[interpolate(flat)]] normal : vec3<f32>;
+    [[location(2)]] [[interpolate(flat)]] color : vec3<f32>;
+    [[builtin(position)]] position : vec4<f32>;
+`
+// shader code
 const vertexShaderForShadows = `
     ${shaderSceneStruct}
 
@@ -29,14 +43,6 @@ const vertexShaderForShadows = `
 const fragmentShaderForShadows = `
     [[stage(fragment)]] fn main() { }
 `;
-const vertexShaderOutput = `
-    struct VertexOutput {
-        [[location(0)]] shadowPos : vec3<f32>;
-        [[location(1)]] [[interpolate(flat)]] normal : vec3<f32>;
-        [[location(2)]] [[interpolate(flat)]] color : vec3<f32>;
-        [[builtin(position)]] position : vec4<f32>;
-    };
-`
 const vertexShader = `
     ${shaderSceneStruct}
 
@@ -47,13 +53,13 @@ const vertexShader = `
     [[group(0), binding(0)]] var<uniform> scene : Scene;
     [[group(1), binding(0)]] var<uniform> model : Model;
 
-    ${vertexShaderOutput}
+    struct VertexOutput {
+        ${vertexShaderOutput}
+    };
 
     [[stage(vertex)]]
     fn main(
-        [[location(0)]] position : vec3<f32>,
-        [[location(1)]] color : vec3<f32>,
-        [[location(2)]] normal : vec3<f32>,
+        ${vertexInputStruct}
         ) -> VertexOutput {
         var output : VertexOutput;
         let worldPos: vec4<f32> = model.modelMatrix * vec4<f32>(position, 1.0);
@@ -78,7 +84,9 @@ const fragmentShader = `
     // TODO(@darzu): waiting on this sample to work again: http://austin-eng.com/webgpu-samples/samples/shadowMapping
     // [[group(0), binding(2)]] var shadowSampler: sampler_comparison;
 
-    ${vertexShaderOutput}
+    struct VertexOutput {
+        ${vertexShaderOutput}
+    };
 
     [[stage(fragment)]]
     fn main(input: VertexOutput) -> [[location(0)]] vec4<f32> {
@@ -94,6 +102,7 @@ const fragmentShader = `
 // useful constants
 const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
 const bytesPerUint16 = Uint16Array.BYTES_PER_ELEMENT;
+const bytesPerUint32 = Uint32Array.BYTES_PER_ELEMENT;
 const bytesPerMat4 = (4 * 4)/*4x4 mat*/ * 4/*f32*/
 const bytesPerVec3 = 3/*vec3*/ * 4/*f32*/
 const indicesPerTriangle = 3;
@@ -260,16 +269,31 @@ const PLANE: Mesh = unshareProvokingVertices({
     ],
 })
 
+export enum VertexKind {
+    normal = 0,
+    water = 1,
+}
+
 // TODO(@darzu): VERTEX FORMAT
 // define the format of our vertices (this needs to agree with the inputs to the vertex shaders)
 const vertexDataFormat: GPUVertexAttribute[] = [
     { shaderLocation: 0, offset: bytesPerVec3 * 0, format: 'float32x3' }, // position
     { shaderLocation: 1, offset: bytesPerVec3 * 1, format: 'float32x3' }, // color
     { shaderLocation: 2, offset: bytesPerVec3 * 2, format: 'float32x3' }, // normals
+    { shaderLocation: 3, offset: bytesPerVec3 * 3, format: 'uint32' }, // kind
 ];
 // these help us pack and use vertices in that format
-export const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/)
-export const vertByteSize = bytesPerFloat * vertElStride;
+// export const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/ + 1)
+export const vertByteSize = bytesPerVec3/*pos*/ + bytesPerVec3/*color*/ + bytesPerVec3/*normal*/ + bytesPerUint32;
+export type VertexData = [vec3, vec3, vec3, VertexKind];
+// const _scratchF32 = new Float32Array(100);
+// const _scratchU32 = new Uint32Array(100);
+export function setVertexData(buffer: Uint8Array, data: VertexData, byteOffset: number) {
+    const p0 = new Uint8Array(new Float32Array([...data[0], ...data[1], ...data[2]]).buffer);
+    const p1 = new Uint8Array(new Uint32Array([data[3]]).buffer);
+    buffer.set(p0, byteOffset)
+    buffer.set(p1, byteOffset + bytesPerVec3 * 3);
+}
 
 // define the format of our models' uniform buffer
 const meshUniByteSizeExact =
@@ -283,12 +307,6 @@ const sceneUniBufferSizeExact =
     + bytesPerVec3 * 1 // light pos
 export const sceneUniBufferSizeAligned = align(sceneUniBufferSizeExact, 256); // uniform objects must be 256 byte aligned
 
-// TODO(@darzu): vertex formatting?
-interface VertexFormat {
-    // addToBuffer
-    // 
-}
-
 export interface MeshPoolOpts {
     maxMeshes: number,
     maxTris: number,
@@ -298,7 +316,7 @@ export interface MeshPoolBuilder {
     // options
     opts: MeshPoolOpts,
     // memory mapped buffers
-    verticesMap: Float32Array,
+    verticesMap: Uint8Array,
     indicesMap: Uint16Array,
     uniformMap: Uint8Array,
     numTris: number,
@@ -359,7 +377,7 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
     const allMeshes: MeshHandle[] = [];
 
     // to modify buffers, we need to map them into JS space; we'll need to unmap later
-    let verticesMap = new Float32Array(verticesBuffer.getMappedRange())
+    let verticesMap = new Uint8Array(verticesBuffer.getMappedRange())
     let indicesMap = new Uint16Array(indicesBuffer.getMappedRange());
     let uniformMap = new Uint8Array(_meshUniBuffer.getMappedRange());
 
@@ -404,17 +422,17 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         const indicesNumOffset = builder.numTris * indicesPerTriangle;
 
         m.pos.forEach((pos, i) => {
-            const vOff = (builder.numVerts + i) * vertElStride
-            verticesMap.set([...pos, ...[0.5, 0.5, 0.5], ...[1.0, 0.0, 0.0]], vOff)
+            const vOff = (builder.numVerts + i) * vertByteSize
+            setVertexData(verticesMap, [pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0], VertexKind.normal], vOff)
         })
         m.tri.forEach((triInd, i) => {
             const iOff = (builder.numTris + i) * indicesPerTriangle
             indicesMap[iOff + 0] = triInd[0]
             indicesMap[iOff + 1] = triInd[1]
             indicesMap[iOff + 2] = triInd[2]
-            const vOff = (builder.numVerts + triInd[0]) * vertElStride
+            const vOff = (builder.numVerts + triInd[0]) * vertByteSize
             const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
-            verticesMap.set([...m.pos[triInd[0]], ...m.colors[i], ...normal], vOff)
+            setVertexData(verticesMap, [m.pos[triInd[0]], m.colors[i], normal, VertexKind.normal], vOff)
             // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
         })
 
@@ -959,13 +977,15 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
             const norm2 = computeTriangleNormal(p0, p4, p3);
 
             // TODO(@darzu): compute normal
-            const vertexData = [
-                ...[x, y, z], ...color, ...norm1,
-                ...[x, y, z], ...color, ...norm2,
-            ]
+            const kind = VertexKind.water;
 
-            const vOff = builder.numVerts * vertElStride;
-            builder.verticesMap.set(vertexData, vOff)
+            const vertexData1: VertexData = [[x, y, z], color, norm1, kind]
+            const vertexData2: VertexData = [[x, y, z], color, norm2, kind]
+
+            const vOff = builder.numVerts * vertByteSize;
+            // builder.verticesMap.set(vertexData, vOff)
+            setVertexData(builder.verticesMap, vertexData1, vOff)
+            setVertexData(builder.verticesMap, vertexData2, vOff + vertByteSize)
 
             builder.numVerts += 2;
 

@@ -1,6 +1,6 @@
 import { mat4, vec3 } from "../ext/gl-matrix.js";
 import { align, jitter } from "../math.js";
-import { createMeshPoolBuilder, getPositionFromTransform, gpuBufferWriteMeshTransform, MeshHandle, MeshPool, MeshPoolBuilder, meshUniByteSizeAligned, vertElStride } from "./sprig_main.js";
+import { createMeshPoolBuilder, getPositionFromTransform, gpuBufferWriteMeshTransform, MeshHandle, MeshPool, MeshPoolBuilder, meshUniByteSizeAligned, setVertexData, vertByteSize, VertexData, VertexKind } from "./sprig_main.js";
 
 const RENDER_GRASS = false;
 
@@ -130,13 +130,15 @@ function createGrassTile(opts: GrassTileOpts, builder: MeshPoolBuilder): MeshHan
             // vec3.normalize(norm2, norm2);
             // vec3.normalize(norm3, norm3);
 
-            const vertexData = [
-                ...[0, 0, 0], ...[r, g, b], ...[0, 1, 0],
-                ...[0, 0, size], ...[r, g, b], ...[0, 1, 0],
-                ...[size, 0, 0], ...[r, g, b], ...[0, 1, 0],
-            ]
-            const vOff = builder.numVerts * vertElStride;
-            builder.verticesMap.set(vertexData, vOff)
+            const vertexData1: VertexData = [[0, 0, 0], [r, g, b], [0, 1, 0], VertexKind.normal]
+            const vertexData2: VertexData = [[0, 0, size], [r, g, b], [0, 1, 0], VertexKind.normal]
+            const vertexData3: VertexData = [[size, 0, 0], [r, g, b], [0, 1, 0], VertexKind.normal]
+
+            const vOff = builder.numVerts * vertByteSize;
+            setVertexData(builder.verticesMap, vertexData1, vOff)
+            setVertexData(builder.verticesMap, vertexData2, vOff + vertByteSize)
+            setVertexData(builder.verticesMap, vertexData3, vOff + vertByteSize * 2)
+            // builder.verticesMap.set(vertexData, vOff)
 
             const iOff = builder.numTris * 3;
             builder.indicesMap.set([2 + builder.numVerts, 1 + builder.numVerts, 0 + builder.numVerts], iOff)
@@ -147,31 +149,31 @@ function createGrassTile(opts: GrassTileOpts, builder: MeshPoolBuilder): MeshHan
             i++;
             continue;
 
-            addTriToBuffers(
-                [p1, p2, p3],
-                [0, 1, 2],
-                // [norm1, norm2, norm3],
-                [norm0, norm0, norm0],
-                [
-                    // TODO(@darzu): use proper darkening
-                    // [r * 0.5, g * 0.5, b * 0.5],
-                    // [r * 0.5, g * 0.5, b * 0.5],
-                    [r, g, b],
-                    [r, g, b],
-                    [r, g, b],
-                ],
-                [0, 0, 1.0],
-                builder.verticesMap,
-                builder.numVerts,
-                vertElStride,
-                builder.indicesMap,
-                builder.numTris,
-                true);
+            // addTriToBuffers(
+            //     [p1, p2, p3],
+            //     [0, 1, 2],
+            //     // [norm1, norm2, norm3],
+            //     [norm0, norm0, norm0],
+            //     [
+            //         // TODO(@darzu): use proper darkening
+            //         // [r * 0.5, g * 0.5, b * 0.5],
+            //         // [r * 0.5, g * 0.5, b * 0.5],
+            //         [r, g, b],
+            //         [r, g, b],
+            //         [r, g, b],
+            //     ],
+            //     [0, 0, 1.0],
+            //     builder.verticesMap,
+            //     builder.numVerts,
+            //     vertElStride,
+            //     builder.indicesMap,
+            //     builder.numTris,
+            //     true);
 
-            builder.numTris += 1;
-            builder.numVerts += 3;
+            // builder.numTris += 1;
+            // builder.numVerts += 3;
 
-            i++;
+            // i++;
 
             // const norm2 = vec3.cross(vec3.create(), [x3 - x1, y3 - y1, z3 - z1], [x4 - x1, y4 - y1, z4 - z1])
             // vec3.normalize(norm2, norm2);
