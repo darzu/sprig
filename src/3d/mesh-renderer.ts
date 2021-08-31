@@ -76,7 +76,8 @@ const wgslShaders = {
 
     output.Position = scene.cameraViewProjMatrix * model.modelMatrix * vec4<f32>(position, 1.0);
     output.fragPos = output.Position.xyz;
-    output.fragNorm = normal;
+    // output.fragNorm = normal;
+    output.fragNorm = normalize(model.modelMatrix * vec4<f32>(normal, 0.0)).xyz;
     output.color = color;
     return output;
     }
@@ -100,7 +101,8 @@ const wgslShaders = {
     };
 
     let albedo : vec3<f32> = vec3<f32>(0.9, 0.9, 0.9);
-    let ambientFactor : f32 = 0.5;
+    let ambientFactor : f32 = 0.6;
+    let lightColor : vec3<f32> =  vec3<f32>(1.0, 1.0, 1.0);
 
     [[stage(fragment)]]
     fn main(input : FragmentInput) -> [[location(0)]] vec4<f32> {
@@ -121,10 +123,15 @@ const wgslShaders = {
     visibility = visibility / 9.0;
 
     let lambertFactor : f32 = max(dot(normalize(scene.lightPos - input.fragPos), input.fragNorm), 0.0);
+    let lightingFactor : f32 = min(visibility * lambertFactor, 1.0) * 1.5;
+    let diffuse: vec3<f32> = lightColor * lightingFactor;
+    let ambient: vec3<f32> = vec3<f32>(0.9, 0.9, 0.9) * ambientFactor;
 
-    let lightingFactor : f32 = min(ambientFactor + visibility * lambertFactor, 1.0);
+    // return vec4<f32>(input.fragNorm, 1.0);
 
-    return vec4<f32>(lightingFactor * input.color, 1.0);
+    return vec4<f32>((diffuse + ambient) * input.color, 1.0);
+
+    // return vec4<f32>(lightingFactor * input.color, 1.0);
     // return vec4<f32>(lightingFactor * albedo, 1.0);
     }
     `,
