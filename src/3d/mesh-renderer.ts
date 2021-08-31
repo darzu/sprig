@@ -141,15 +141,17 @@ const wgslShaders = {
         [[builtin(front_facing)]] front: bool;
     };
 
-    let albedo : vec3<f32> = vec3<f32>(0.9, 0.9, 0.9);
+    // let albedo : vec3<f32> = vec3<f32>(0.9, 0.9, 0.9);
     let ambientFactor : f32 = 0.4;
-    let lightColor : vec3<f32> =  vec3<f32>(1.0, 1.0, 1.0);
+    let lightColor : vec3<f32> =  vec3<f32>(1.0, 1.0, 0.8);
+    let ambientLightDir1: vec3<f32> = vec3<f32>(1.0, 0.0, 0.0);
+    let ambientLightDir2: vec3<f32> = vec3<f32>(-0.5, 0.0, -0.5);
 
     [[stage(fragment)]]
     fn main(input : FragmentInput) -> [[location(0)]] vec4<f32> {
         // Percentage-closer filtering. Sample texels in the region
         // to smooth the result.
-        var visibility : f32 = 0.0;
+        var shadowVis : f32 = 0.0;
 
         if (
             input.shadowPos.x < 0.0
@@ -160,7 +162,7 @@ const wgslShaders = {
             || input.shadowPos.z > 0.99
             ) {
             // we're outside the shadow box
-            visibility = 1.0;
+            shadowVis = 1.0;
         } else {
             // we're in the shadow box, do a multi sample
             for (var y : i32 = -1 ; y <= 1 ; y = y + 1) {
@@ -169,52 +171,54 @@ const wgslShaders = {
                     f32(x) * ${1 / shadowDepthTextureSize},
                     f32(y) * ${1 / shadowDepthTextureSize});
 
-                    visibility = visibility + textureSampleCompare(
+                    shadowVis = shadowVis + textureSampleCompare(
                     shadowMap, shadowSampler,
                     input.shadowPos.xy + offset, input.shadowPos.z - 0.007);
                 }
             }
-            visibility = visibility / 9.0;
+            shadowVis = shadowVis / 9.0;
 
-        // visibility = textureSampleCompare(
+        // shadowVis = textureSampleCompare(
         //         shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
         }
 
         if (scene.lightDir.y > 0.0) {
             // sun is down
-            visibility = max(visibility - scene.lightDir.y * 2.0, 0.0);
+            shadowVis = max(shadowVis - scene.lightDir.y * 2.0, 0.0);
             // TODO: how to fix this with planets?
         }
 
         // return vec4<f32>(input.shadowPos.x * 0.5, input.shadowPos.x * 0.5, input.shadowPos.x * 0.5, 1.0);
 
         // TODO: what is this 0.007 factor?
-        // visibility = textureSampleCompare(
+        // shadowVis = textureSampleCompare(
         //     shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
 
 
-        // visibility = 1.0;
+        // shadowVis = 1.0;
 
-        // let normSign: f32 = select(1.0, -1.0, input.front);
-        let norm: vec3<f32> = input.fragNorm;
-        // let norm: vec3<f32> = input.fragNorm * normSign;
-        // let antiNorm: vec3<f32> = norm * -1.0;
+        let normSign: f32 = select(1.0, -1.0, input.front);
+        // let norm: vec3<f32> = input.fragNorm;
+        let norm: vec3<f32> = input.fragNorm * normSign;
+        let antiNorm: vec3<f32> = norm * -1.0;
 
         // let lightDir: vec3<f32> = normalize(scene.lightPos - input.fragPos);
         let lightDir: vec3<f32> = scene.lightDir;
-        let lambert : f32 = dot(-lightDir, norm);
-        // let lambert : f32 = max(dot(lightDir, norm), 0.0);
-        // let antiLambert : f32 = 1.5 - max(dot(lightDir, antiNorm), 0.0);
-        // let lightingFactor : f32 = lambert * 1.5;
-        let lightingFactor : f32 = visibility * lambert * 1.5;
-        // let lightingFactor : f32 = min(visibility * lambert, 1.0) * 1.5;
-        let diffuse: vec3<f32> = lightColor * lightingFactor;
-        // let ambient: vec3<f32> = vec3<f32>(1.0, 1.0, 1.0) * ambientFactor; // * antiLambert;
+        // let sunLight : f32 = dot(-lightDir, norm);
+        let sunLight : f32 = max(dot(-lightDir, norm), 0.0);
+        // let antisunLight : f32 = 1.5 - max(dot(-lightDir, antiNorm), 0.0);
+        // let lightingFactor : f32 = sunLight * 1.5;
+        // let lightingFactor : f32 = shadowVis * sunLight * 1.5;
+        let ambient1Factor : f32 = clamp(dot(ambientLightDir1, norm), 0.0, 1.0);
+        let ambient2Factor : f32 = clamp(dot(ambientLightDir2, norm), 0.0, 1.0);
+        let sunFactor : f32 = min(shadowVis * sunLight, 1.0) * 1.5;
+        let diffuse: vec3<f32> = lightColor * sunFactor ;
+        let ambient: vec3<f32> = vec3<f32>(1.0, 1.0, 1.0) * ambientFactor * (ambient1Factor + ambient2Factor);
 
         // return vec4<f32>(norm, 1.0);
 
-        return vec4<f32>(diffuse * input.color, 1.0);
-        // return vec4<f32>((diffuse + ambient) * input.color, 1.0);
+        // return vec4<f32>(diffuse * input.color, 1.0);
+        return vec4<f32>((diffuse + ambient) * input.color, 1.0);
 
         // return vec4<f32>(lightingFactor * input.color, 1.0);
         // return vec4<f32>(lightingFactor * albedo, 1.0);
