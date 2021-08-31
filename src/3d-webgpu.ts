@@ -1,6 +1,6 @@
 import { mat4, vec3, vec4, quat } from './ext/gl-matrix.js';
 import { clamp } from './math.js';
-import { addTriToBuffers, createMeshMemoryPool, CUBE, mat4ByteSize, Mesh, MeshMemoryPoolOptions, MeshModel, PLANE, triByteSize, vec3ByteSize } from './3d/mesh.js';
+import { addTriToBuffers, createMeshMemoryPool, CUBE, mat4ByteSize, Mesh, MeshMemoryPool, MeshMemoryPoolOptions, MeshModel, PLANE, triByteSize, vec3ByteSize } from './3d/mesh.js';
 import { createMeshRenderer } from './3d/mesh-renderer.js';
 // import * as RAPIER from './ext/@dimforge/rapier3d/rapier.js';
 
@@ -23,22 +23,8 @@ TODO:
 
 // TODO(@darzu): expand faces to have unique vertices
 
-
-const GRASS: MeshModel = {
-    pos: [
-        [+0.2, 0, 0],
-        [-0.2, 0, 0],
-        [0, 2, 0],
-    ],
-    tri: [
-        [0, 1, 2],
-        [2, 1, 0],
-    ],
-    colors: [
-        [0.2, 0.6, 0.2],
-        [0.2, 0.5, 0.2],
-    ],
-}
+// TODO(@darzu): VERTEX FORMAT
+const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/ + 1/*swayHeight*/)
 
 
 interface Transformable {
@@ -120,6 +106,182 @@ function mkEulerTransformable(): Transformable {
     }
 }
 
+
+function jitter(radius: number): number {
+    return (Math.random() - 0.5) * radius * 2
+}
+
+function align(x: number, size: number): number {
+    return Math.ceil(x / size) * size
+}
+
+
+// TODO(@darzu): grass tiles
+/*
+simple:
+    grid of tiles, all the same amount of grass
+    move to center around the player
+    each tile level can be totaly independent
+    more levels can be added/removed
+
+can this be done with ECS?
+    "on player change tile, level X"
+*/
+
+interface GrassSystem {
+    getGrassPools: () => MeshMemoryPool[],
+    // TODO(@darzu): getAABB
+}
+
+interface GrassTileOpts {
+    bladeW: number,
+    bladeH: number
+    spacing: number,
+    size: number,
+}
+interface GrassTilesetOpts {
+    count: number,
+}
+
+function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Mesh {
+    const { spacing, size, bladeW, bladeH } = opts;
+
+    let i = 0;
+    for (let xi = 0.0; xi < size; xi += spacing) {
+        for (let zi = 0.0; zi < size; zi += spacing) {
+
+            const x = xi + jitter(0.5)
+            const z = zi + jitter(0.5)
+
+            const w = bladeW + jitter(0.05)
+
+            const rot = jitter(Math.PI * 0.5)
+
+            const x1 = x + Math.cos(rot) * w
+            const z1 = z + Math.sin(rot) * w
+            const x2 = x + Math.cos(rot + Math.PI) * w
+            const z2 = z + Math.sin(rot + Math.PI) * w
+            const x3 = x + jitter(0.7)
+            const z3 = z + jitter(0.7)
+
+            const y = bladeH + jitter(1)
+
+            const r = 0.2 + jitter(0.02)
+            const g = 0.5 + jitter(0.2)
+            const b = 0.2 + jitter(0.02)
+
+            const p0: vec3 = [x1, 0, z1];
+            const p1: vec3 = [x2, 0, z2];
+            const p2: vec3 = [x3, y, z3];
+
+            const norm = vec3.cross(vec3.create(), [x2 - x1, 0, z2 - z1], [x3 - x1, y, z3 - z1])
+            vec3.normalize(norm, norm);
+
+            // const x = xi * spacing + jitter(0.5);
+            // const z = zi * spacing + jitter(0.5);
+
+            // TODO(@darzu): turn off back-face culling
+            addTriToBuffers(
+                [p0, p1, p2],
+                [0, 1, 2],
+                norm,
+                [
+                    [r * 0.5, g * 0.5, b * 0.5],
+                    [r * 0.5, g * 0.5, b * 0.5],
+                    [r, g, b],
+                ],
+                [0, 0, 1.0],
+                grassMeshPool._vertsMap(),
+                grassMeshPool._numVerts,
+                vertElStride,
+                grassMeshPool._indMap(),
+                grassMeshPool._numTris,
+                true);
+
+            grassMeshPool._numTris += 1;
+            grassMeshPool._numVerts += 3;
+
+            i++;
+        }
+    }
+    console.log(`Grass triangles: ${i}`)
+
+    // TODO(@darzu): compute correct offsets
+    const grassMesh: Mesh = {
+        vertNumOffset: 0,
+        indicesNumOffset: 0,
+        modelUniByteOffset: 0,
+        triCount: i,
+
+        // used and updated elsewhere
+        transform: mat4.create(),
+
+        // not applicable
+        // TODO(@darzu): make this optional?
+        model: null as unknown as MeshModel,
+    };
+
+    grassMeshPool._meshes.push(grassMesh);
+
+    return grassMesh;
+}
+
+function createGrassTileset(opts: GrassTileOpts & GrassTilesetOpts, device: GPUDevice): MeshMemoryPool {
+    // create grass field
+    const { spacing, size } = opts;
+    const grassPerTile = (size / spacing) ** 2;
+    const totalGrass = grassPerTile * opts.count;
+    const grassMeshPool = createMeshMemoryPool({
+        vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
+        maxVerts: align(totalGrass * 3, 4),
+        maxTris: align(totalGrass, 4),
+        maxMeshes: opts.count,
+        meshUniByteSize: align(mat4ByteSize, 256), // align to 256,
+        backfaceCulling: false,
+        usesIndices: false,
+    }, device);
+
+    grassMeshPool._map();
+
+    const tile = createGrassTile(opts, grassMeshPool);
+    grassMeshPool.applyMeshTransform(tile)
+
+    grassMeshPool._unmap();
+
+    // TODO(@darzu): update transform
+
+    // const trans = mat4.create() as Float32Array;
+    // const uniOffset = 0;
+    // device.queue.writeBuffer(
+    //     grassMeshPool._meshUniBuffer,
+    //     uniOffset,
+    //     trans.buffer,
+    //     trans.byteOffset,
+    //     trans.byteLength
+    // );
+
+    return grassMeshPool
+}
+
+function initGrassSystem(device: GPUDevice): GrassSystem {
+
+    const tilesetPool = createGrassTileset({
+        // tile
+        bladeW: 0.1,
+        bladeH: 1.7,
+        spacing: 0.25,
+        size: 10,
+        // tileset
+        count: 4
+    }, device);
+
+
+    const res: GrassSystem = {
+        getGrassPools: () => [tilesetPool]
+    }
+    return res;
+}
+
 async function init(canvasRef: HTMLCanvasElement) {
     const adapter = await navigator.gpu.requestAdapter();
     const device = await adapter!.requestDevice();
@@ -140,7 +302,6 @@ async function init(canvasRef: HTMLCanvasElement) {
     resize();
 
     // TODO(@darzu): VERTEX FORMAT
-    const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/ + 1/*swayHeight*/)
     const meshPool = createMeshMemoryPool({
         vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
         maxVerts: 100000,
@@ -209,116 +370,7 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     meshPool._unmap();
 
-
-    function jitter(radius: number): number {
-        return (Math.random() - 0.5) * radius * 2
-    }
-
-    function align(x: number, size: number): number {
-        return Math.ceil(x / size) * size
-    }
-
-    // create grass field
-    const spacing = 0.25;
-    const grassSpread = 500;
-    const grassTris = (grassSpread * 2 + 1) ** 2
-    const grassMeshPool = createMeshMemoryPool({
-        vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
-        maxVerts: align(grassTris * 3, 4),
-        maxTris: align(grassTris, 4),
-        maxMeshes: 10,
-        meshUniByteSize: align(mat4ByteSize, 256), // align to 256,
-        backfaceCulling: false,
-        usesIndices: false,
-    }, device);
-    {
-        grassMeshPool._map();
-
-        const bladeW = 0.1;
-        const bladeH = 1.7;
-        let i = 0;
-        for (let xi = -grassSpread; xi < grassSpread; xi++) {
-            for (let zi = -grassSpread; zi < grassSpread; zi++) {
-
-                const rot = jitter(Math.PI * 0.5)
-                const w = bladeW + jitter(0.05)
-
-                const x = xi * spacing + jitter(0.5)
-                const z = zi * spacing + jitter(0.5)
-
-                const x1 = x + Math.cos(rot) * w
-                const z1 = z + Math.sin(rot) * w
-                const x2 = x + Math.cos(rot + Math.PI) * w
-                const z2 = z + Math.sin(rot + Math.PI) * w
-                const x3 = x + jitter(0.7)
-                const z3 = z + jitter(0.7)
-
-                const y = bladeH + jitter(1)
-
-                const r = 0.2 + jitter(0.02)
-                const g = 0.5 + jitter(0.2)
-                const b = 0.2 + jitter(0.02)
-
-                const p0: vec3 = [x1, 0, z1];
-                const p1: vec3 = [x2, 0, z2];
-                const p2: vec3 = [x3, y, z3];
-
-                const norm = vec3.cross(vec3.create(), [x2 - x1, 0, z2 - z1], [x3 - x1, y, z3 - z1])
-                vec3.normalize(norm, norm);
-
-                // const x = xi * spacing + jitter(0.5);
-                // const z = zi * spacing + jitter(0.5);
-
-                // TODO(@darzu): turn off back-face culling
-                addTriToBuffers(
-                    [p0, p1, p2],
-                    [0, 1, 2],
-                    norm,
-                    [
-                        [r * 0.5, g * 0.5, b * 0.5],
-                        [r * 0.5, g * 0.5, b * 0.5],
-                        [r, g, b],
-                    ],
-                    [0, 0, 1.0],
-                    grassMeshPool._vertsMap(),
-                    grassMeshPool._numVerts,
-                    vertElStride,
-                    grassMeshPool._indMap(),
-                    grassMeshPool._numTris,
-                    true);
-
-                grassMeshPool._numTris += 1;
-                grassMeshPool._numVerts += 3;
-
-                i++;
-            }
-        }
-        console.log(`Grass triangles: ${i}`)
-
-        const trans = mat4.create() as Float32Array;
-        const uniOffset = 0;
-        device.queue.writeBuffer(
-            grassMeshPool._meshUniBuffer,
-            uniOffset,
-            trans.buffer,
-            trans.byteOffset,
-            trans.byteLength
-        );
-
-        const grassMesh: Mesh = {
-            vertNumOffset: 0,
-            indicesNumOffset: 0,
-            modelUniByteOffset: 0,
-            triCount: i,
-
-            transform: trans,
-            model: null as unknown as MeshModel,
-        };
-
-        grassMeshPool._meshes.push(grassMesh);
-
-        grassMeshPool._unmap();
-    }
+    const grassSystem = initGrassSystem(device);
 
     const aspect = Math.abs(canvasRef.width / canvasRef.height);
     const projectionMatrix = mat4.create();
@@ -441,7 +493,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         );
     }
 
-    meshRenderer.rebuildBundles([meshPool, grassMeshPool]);
+    meshRenderer.rebuildBundles([meshPool, ...grassSystem.getGrassPools()]);
 
     let debugDiv = document.getElementById('debug_div') as HTMLDivElement;
 
@@ -536,7 +588,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         const canvasHeight = canvasRef.clientHeight;
 
         const commandEncoder = device.createCommandEncoder();
-        meshRenderer.render(commandEncoder, [meshPool, grassMeshPool], canvasWidth, canvasHeight);
+        meshRenderer.render(commandEncoder, [meshPool, ...grassSystem.getGrassPools()], canvasWidth, canvasHeight);
         device.queue.submit([commandEncoder.finish()]);
 
         requestAnimationFrame(frame);
