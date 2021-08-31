@@ -6,3 +6,11 @@ carving a stick in vr:
 
     other VR inspiration:
         https://twitter.com/pushmatrix/status/1343924184649519105
+
+
+sunless skies:
+    simplified trading
+    bargians (lower buy), missions (higher sell), fixed price (central market)
+
+starfleet commander:
+    shield and power management

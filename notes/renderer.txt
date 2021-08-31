@@ -165,6 +165,8 @@ RTX / ray tracing:
     ~7-9 million rays / sec
   beyond ray-tracing http://sci.utah.edu/~will/papers/rtx-points-hpg19.pdf
   on GPU via Cuda: https://developer.nvidia.com/blog/accelerated-ray-tracing-cuda/
+  Ray Tracing Gems II:
+    http://www.realtimerendering.com/raytracinggems/rtg2/index.html
 
 pbr / physically based rendering:
   https://pbrt.org

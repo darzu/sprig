@@ -1,3 +1,8 @@
 Memory visualization:
     https://twitter.com/patriciogv/status/1023563312766676992
     https://www.instagram.com/p/Bl0TOeKHgXP/
+
+Typescript analyzer:
+    Determine changes in the DAG between components over time (commits)
+    Show boundries and names around Sprig modules
+    Show interfaces

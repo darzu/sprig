@@ -140,3 +140,44 @@ https://github.com/dimforge/rapier/blob/master/src/geometry/broad_phase_multi_sa
     ///   the bounds on the `SAPRegion` containing this `SAPAxis`.
     /// - A set of `SAPProxy` are maintained separately. It contains the AABBs of all the colliders managed by this
     ///   broad-phase, as well as the AABBs of all the regions part of this broad-phase.
+
+
+Some of my own (horribly naive) ideas about collision detection:
+    Idea 0: brute force, n^2. Works okayish for ~1,000 objects.
+    Idea 1: octtree, recomputed every frame
+        impl 1: 
+            basic tree; ea level contains what is in it (id ptrs), but nothing smaller
+            ea node can only collide with itself or those lower
+
+    Idea 2:
+        octree
+        each object has a bitfield indicating region memberships
+        for "expected steady" objects (e.g. bullets, constant moving objects)
+            when velocity or acceleration change, compute expected membership changes and a counter of when to expect them
+            decrement and apply these membership changes, otherwise never check for new memberships
+        occassionally recenter the origin around the player
+
+        we could reduce the amount of collision detection work needed by making each player responsible only for checking collisions
+            of their objects against authority >= their player number
+    Idea 3:
+        octtree
+
+Other collision detection ideas:
+    https://www.reddit.com/r/gamedev/comments/1cssyn/sweep_and_prune_vs_quadtree_or_similar/
+    https://www.reddit.com/r/gamedev/comments/1xbnmq/question_regarding_extremely_fast_spatial/
+    http://www.codercorner.com/SAP.pdf
+    https://gamedev.stackexchange.com/questions/87625/sweep-and-prune-vs-quad-tree-when-all-objects-are-dynamic-moving
+    https://gamedev.stackexchange.com/questions/57470/are-collision-detection-always-on2
+    
+    techniques:
+        simple grid / buckets, 
+            pros: great for well-bound object sizes
+        "dynamic icoseptree", 
+        AABB tree,
+            pros: great for ray casting
+            "The key is that the objects, when put the tree, have their AABB inflated in the direction of their velocity by some platform and use-case amount. When the object moves, if it doesn't travel outside of the AABB, the tree is not modified. This effectively amortizes the cost of tree updates over multiple frames."
+            "This structure is normally paired with a OverlappingPairCache - a cache that stores A/B pairs of objects. 
+            Every frame that cache is walked and collisions performed between them."
+            http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?f=4&t=9800
+            http://www.randygaul.net/2013/08/06/dynamic-aabb-tree/
+        multi-axis sweep and prune, 
