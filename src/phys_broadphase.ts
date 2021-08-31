@@ -300,6 +300,7 @@ function checkPair(
 }
 
 // OctTree implementation
+// TODO(@darzu): collisions groups and "atRest"
 interface OctTree {
   aabb: AABB;
   objs: Map<number, AABB>;

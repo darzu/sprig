@@ -7,7 +7,12 @@ import {
   doesOverlap,
   resetCollidesWithSet,
 } from "./phys_broadphase.js";
-import { copyMotionProps, MotionProps, moveObjects } from "./phys_motion.js";
+import {
+  checkAtRest,
+  copyMotionProps,
+  MotionProps,
+  moveObjects,
+} from "./phys_motion.js";
 
 export interface PhysicsObject {
   id: number;
@@ -21,10 +26,14 @@ export interface PhysicsResults {
   collidesWith: CollidesWith;
 }
 
+export let _motionPairsLen = 0;
+
 const _collisionVec = vec3.create();
 const _collisionOverlap = vec3.create();
 const _collisionAdjOverlap = vec3.create();
 const _collisionRefl = vec3.create();
+
+const _motionAABBs: { aabb: AABB; id: number }[] = [];
 
 export function stepPhysics(
   objDict: Record<number, PhysicsObject>,
@@ -68,12 +77,21 @@ export function stepPhysics(
   }
 
   // check for possible collisions using the motion swept AABBs
-  const motionAABBs = objs.map(({ id, motionAABB }) => ({
-    id,
-    aabb: motionAABB,
-  }));
-  motionCollidesWith = checkCollisions(motionAABBs);
+  if (_motionAABBs.length !== objs.length) _motionAABBs.length = objs.length;
+  for (let i = 0; i < objs.length; i++) {
+    if (!_motionAABBs[i]) {
+      _motionAABBs[i] = {
+        id: objs[i].id,
+        aabb: objs[i].motionAABB,
+      };
+    } else {
+      _motionAABBs[i].id = objs[i].id;
+      _motionAABBs[i].aabb = objs[i].motionAABB;
+    }
+  }
+  motionCollidesWith = checkCollisions(_motionAABBs);
   let motionPairs = [...collisionPairs(motionCollidesWith)];
+  _motionPairsLen = motionPairs.length;
 
   // TODO(@darzu): DEBUG
   // console.log(`pairs: ${motionPairs.map((p) => p.join("v")).join(",")}`);
@@ -105,6 +123,10 @@ export function stepPhysics(
 
       const a = objDict[aId];
       const b = objDict[bId];
+
+      // TODO(@darzu): IMPLEMENT
+      // // is one of these objects dynamic?
+      // if (a.motion.atRest && b.motion.atRest) continue;
 
       if (!doesOverlap(a.worldAABB, b.worldAABB)) {
         // TODO(@darzu): DEBUG
@@ -207,6 +229,15 @@ export function stepPhysics(
         nextObjMovFracs[aId] = Math.max(nextObjMovFracs[aId] || 0, aFrac);
       if (bFrac < Infinity)
         nextObjMovFracs[bId] = Math.max(nextObjMovFracs[bId] || 0, bFrac);
+
+      // TODO(@darzu): IMPLEMENT "atRest"
+      // // check for rest
+      // if (aFrac < Infinity) {
+      //   if (b.motion.atRest) a.motion.atRest = true;
+      // }
+      // if (bFrac < Infinity) {
+      //   if (a.motion.atRest) b.motion.atRest = true;
+      // }
     }
 
     // adjust objects backward to compensate for collisions
@@ -247,6 +278,11 @@ export function stepPhysics(
     itr++;
   }
 
+  // TODO(@darzu): IMPLEMENT "atRest"
+  // // check for objects at rest
+  // checkAtRest(objs, dt);
+
+  // remember current state for next time
   for (let o of objs) {
     copyMotionProps(o.lastMotion, o.motion);
   }

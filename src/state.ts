@@ -76,7 +76,7 @@ export abstract class GameObject {
       rotation: quat.identity(quat.create()),
       linearVelocity: vec3.fromValues(0, 0, 0),
       angularVelocity: vec3.fromValues(0, 0, 0),
-      atRest: true,
+      atRest: false,
     });
     this.lastMotion = copyMotionProps(createMotionProps({}), this.motion);
     this.authority = creator;
@@ -244,6 +244,7 @@ export abstract class GameState<Inputs> {
   }
 
   recordEvent(type: number, objects: number[]) {
+    // return; // TODO(@darzu): TO DEBUG this fn is costing a ton of memory
     // check to see whether we're the authority for this event
     let objs = objects.map((id) => this.objects[id] ?? this.deletedObjects[id]);
     if (

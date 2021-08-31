@@ -17,6 +17,7 @@ import {
   _enclosedBys,
   _lastCollisionTestTimeMs,
 } from "./phys_broadphase.js";
+import { _motionPairsLen } from "./phys.js";
 
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
@@ -319,7 +320,7 @@ class CubeGameState extends GameState<Inputs> {
           const xPos = (x - NUM_PLANES_X / 2) * 20 + 10;
           const zPos = (z - NUM_PLANES_Z / 2) * 20;
           const parity = !!((x + z) % 2);
-          plane.motion.location = vec3.fromValues(xPos, -3, zPos);
+          plane.motion.location = vec3.fromValues(xPos, -10, zPos);
           // plane.motion.location = vec3.fromValues(xPos + 10, -3, 12 + zPos);
           if (parity) plane.color = LIGHT_GRAY;
           this.addObject(plane);
@@ -327,7 +328,7 @@ class CubeGameState extends GameState<Inputs> {
       }
 
       // create stack of boxes
-      const BOX_STACK_COUNT = 100;
+      const BOX_STACK_COUNT = 10;
       for (let i = 0; i < BOX_STACK_COUNT; i++) {
         let b = new Bullet(this.newId(), this.me);
         // b.motion.location = vec3.fromValues(0, 5 + i * 2, -2);
@@ -337,7 +338,7 @@ class CubeGameState extends GameState<Inputs> {
           Math.random() * -10 - 5
         );
         b.color = vec3.fromValues(Math.random(), Math.random(), Math.random());
-        b.motion.linearVelocity[1] = -0.05;
+        b.motion.linearVelocity[1] = -0.06;
         this.addObject(b);
         // TODO(@darzu): debug
         console.log(`box: ${b.id}`);
@@ -809,9 +810,10 @@ async function startGame(host: string | null) {
   }
   canvas.addEventListener("click", doLockMouse);
 
-  const controlsStr = `controls: WASD, shift/c, mouse, spacebar`;
+  const controlsStr = `[WASD shift/c mouse spacebar]`;
   let avgJsTime = 0;
   let avgNetTime = 0;
+  let avgSimTime = 0;
   let avgFrameTime = 0;
   let avgWeight = 0.05;
   let net: Net<Inputs> | null = null;
@@ -824,15 +826,18 @@ async function startGame(host: string | null) {
 
     // simulation step(s)
     sim_time_accumulator += dt;
-    sim_time_accumulator = Math.min(sim_time_accumulator, SIM_DT * 10);
+    sim_time_accumulator = Math.min(sim_time_accumulator, SIM_DT * 2);
+    let sim_time = 0;
     while (sim_time_accumulator > SIM_DT) {
+      let before_sim = performance.now();
       gameState.step(SIM_DT, inputs());
       sim_time_accumulator -= SIM_DT;
+      sim_time += performance.now() - before_sim;
     }
 
     // network step(s)
     net_time_accumulator += dt;
-    net_time_accumulator = Math.min(net_time_accumulator, NET_DT * 10);
+    net_time_accumulator = Math.min(net_time_accumulator, NET_DT * 2);
     let net_time = 0;
     while (net_time_accumulator > NET_DT) {
       let before_net = performance.now();
@@ -865,6 +870,9 @@ async function startGame(host: string | null) {
     avgNetTime = avgNetTime
       ? (1 - avgWeight) * avgNetTime + avgWeight * net_time
       : net_time;
+    avgSimTime = avgSimTime
+      ? (1 - avgWeight) * avgSimTime + avgWeight * sim_time
+      : sim_time;
     const avgFPS = 1000 / avgFrameTime;
     const debugTxt = debugDiv.firstChild!;
     // PERF NOTE: using ".innerText =" creates a new DOM element each frame, whereas
@@ -872,15 +880,23 @@ async function startGame(host: string | null) {
     //    means we'll need to do more work to get line breaks.
     debugTxt.nodeValue =
       controlsStr +
-      ` (js: ${avgJsTime.toFixed(2)}ms, net: ${avgNetTime.toFixed(2)}ms, ` +
-      `broad:${_lastCollisionTestTimeMs.toFixed(
-        1
-      )}ms (o:${_doesOverlaps}, e:${_enclosedBys}, c: ${_cellChecks}), fps: ${avgFPS.toFixed(
-        1
-      )}, ` +
-      `buffers: r=${reliableBufferSize}/u=${unreliableBufferSize}, ` +
-      `dropped updates: ${numDroppedUpdates}` +
-      `objects=${gameState.numObjects}) ${usingWebGPU ? "WebGPU" : "WebGL"}`;
+      ` ` +
+      `js:${avgJsTime.toFixed(2)}ms ` +
+      `net:${avgNetTime.toFixed(2)}ms ` +
+      `sim:${avgSimTime.toFixed(2)}ms ` +
+      `broad:(${_lastCollisionTestTimeMs.toFixed(1)}ms ` +
+      `o:${_doesOverlaps} e:${_enclosedBys} c:${_cellChecks}) ` +
+      `fps:${avgFPS.toFixed(1)} ` +
+      `buffers:(r=${reliableBufferSize}/u=${unreliableBufferSize}) ` +
+      `dropped:${numDroppedUpdates} ` +
+      `objects:${gameState.numObjects} ` +
+      `${usingWebGPU ? "WebGPU" : "WebGL"}`;
+    // // TODO(@darzu): DEBUG
+    // debugTxt.nodeValue =
+    //   `sim:${avgSimTime.toFixed(2)}ms ` +
+    //   `broad:${_lastCollisionTestTimeMs.toFixed(1)}ms ` +
+    //   `pairs:${_motionPairsLen} ` +
+    //   `o:${_doesOverlaps} e:${_enclosedBys} `;
     requestAnimationFrame(frame);
   };
   if (ENABLE_NET) {
