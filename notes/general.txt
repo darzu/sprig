@@ -428,3 +428,10 @@ Game on steam w/ tutorial:
   postmortem: https://github.com/a327ex/blog/issues/35
   1yr sales: https://github.com/a327ex/blog/issues/44
   second game: https://www.a327ex.com/posts/lessons_second_game/
+
+Demoscene:
+  https://github.com/psenough/teach_yourself_demoscene_in_14_days
+  https://en.wikipedia.org/wiki/Demoscene
+
+Brackeys:
+  10 years of making games https://www.youtube.com/watch?v=T18X1HuawRc
