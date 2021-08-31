@@ -2,6 +2,7 @@ import { mat4, vec3, quat } from "./gl-matrix.js";
 import { Serializer, Deserializer } from "./serialize.js";
 import { Mesh } from "./mesh-pool.js";
 import { Renderer } from "./render_webgpu.js";
+import { checkCollisions } from "./physics.js";
 
 const ERROR_SMOOTHING_FACTOR = 0.8;
 const EPSILON = 0.0001;
@@ -191,11 +192,21 @@ export abstract class GameState<Inputs> {
 
   step(dt: number, inputs: Inputs) {
     this.stepGame(dt, inputs);
+
+    const objs = Object.values(this.objects)
+
+    // check collisions
+    // TODO(@darzu): hack. also we need AABBs on objects
+    // const collidesWith = checkCollisions(objs);
+    // for (let o of os) {
+    //   o.color = collidesWith[o.id] ? vec3.fromValues(0.2, 0.0, 0.0) : vec3.fromValues(0.0, 0.2, 0.0)
+    // }
+
     let identity_quat = quat.create();
     let delta = vec3.create();
     let normalized_velocity = vec3.create();
     let deltaRotation = quat.create();
-    for (let o of Object.values(this.objects)) {
+    for (let o of objs) {
       // reduce error in location and rotation
       o.location_error = vec3.scale(
         o.location_error,

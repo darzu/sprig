@@ -5,6 +5,7 @@
 import { computeTriangleNormal } from "./3d-util.js";
 import { mat4, vec3 } from "./gl-matrix.js";
 import { align, sum } from "./math.js";
+import { AABB, getAABBFromPositions } from "./physics.js";
 
 const indicesPerTriangle = 3;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
@@ -837,23 +838,7 @@ function createMeshBuilder(maps: MeshPoolMaps, uByteOff: number, vByteOff: numbe
 }
 
 // utils
-export interface AABB {
-    min: vec3,
-    max: vec3,
-}
 
 export function getAABBFromMesh(m: Mesh): AABB {
-    const min = vec3.fromValues(Infinity, Infinity, Infinity) as Float32Array
-    const max = vec3.fromValues(-Infinity, -Infinity, -Infinity) as Float32Array
-
-    for (let pos of m.pos) {
-        min[0] = Math.min(pos[0], min[0])
-        min[1] = Math.min(pos[1], min[1])
-        min[2] = Math.min(pos[2], min[2])
-        max[0] = Math.max(pos[0], max[0])
-        max[1] = Math.max(pos[1], max[1])
-        max[2] = Math.max(pos[2], max[2])
-    }
-
-    return { min, max }
+    return getAABBFromPositions(m.pos)
 }
