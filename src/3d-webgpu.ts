@@ -54,8 +54,12 @@ const PLANE: Mesh = {
         [-10, 0, -10],
     ],
     tri: [
+        // top
         [0, 2, 3],
         [0, 3, 1],
+        // bottom
+        [3, 2, 0],
+        [1, 3, 0],
     ]
 }
 
@@ -79,23 +83,6 @@ function computeNormal([p1, p2, p3]: [vec3, vec3, vec3]): vec3 {
 function computeNormals(m: Mesh): vec3[] {
     const triPoses = m.tri.map(([i0, i1, i2]) => [m.pos[i0], m.pos[i1], m.pos[i2]] as [vec3, vec3, vec3])
     return triPoses.map(computeNormal)
-}
-
-function buildVertexBuffer(m: Mesh): Float32Array {
-    const norms = computeNormals(m);
-    const stride = 3 + 3
-    const size = m.pos.length * stride
-    const buffer = new Float32Array(size);
-    m.pos.forEach((v, i) => {
-        buffer[i * stride + 0] = v[0]
-        buffer[i * stride + 1] = v[1]
-        buffer[i * stride + 2] = v[2]
-        const n = norms[i]
-        buffer[i * stride + 3] = n[0]
-        buffer[i * stride + 4] = n[1]
-        buffer[i * stride + 5] = n[2]
-    })
-    return buffer;
 }
 
 // TODO: canvas ref
@@ -151,6 +138,36 @@ fn main(
 
 const shadowDepthTextureSize = 1024;
 
+const maxNumVerts = 1000;
+const maxNumTri = 1000;
+
+const vertStride = (3/*pos*/ + 3/*norm*/)
+const vertSize = Float32Array.BYTES_PER_ELEMENT * vertStride
+const triStride = 3/*ind per tri*/;
+const triSize = Uint16Array.BYTES_PER_ELEMENT * triStride;
+
+function addMeshToBuffers(m: Mesh, verts: Float32Array, numVerts: number, indices: Uint16Array, numTri: number): void {
+    const norms = computeNormals(m);
+    m.pos.forEach((v, i) => {
+        const off = (numVerts + i) * vertStride
+        verts[off + 0] = v[0]
+        verts[off + 1] = v[1]
+        verts[off + 2] = v[2]
+        // TODO(@darzu): normals needed?
+        verts[off + 3] = 0
+        verts[off + 4] = 0
+        verts[off + 5] = 0
+    })
+    m.tri.forEach((t, i) => {
+        const off = (numTri + i) * triStride
+        indices[off + 0] = t[0] + numVerts
+        indices[off + 1] = t[1] + numVerts
+        indices[off + 2] = t[2] + numVerts
+        // set vertex normals for the first vertex per triangle
+        // verts[off + t[0] + 3] = norms[i][0]
+    })
+}
+
 async function init(canvasRef: HTMLCanvasElement) {
     const adapter = await navigator.gpu.requestAdapter();
     const device = await adapter!.requestDevice();
@@ -165,64 +182,60 @@ async function init(canvasRef: HTMLCanvasElement) {
         format: swapChainFormat,
     });
 
-    // // OLD Create a vertex buffer from the cube data.
-    // const verticesBuffer = device.createBuffer({
-    //     size: cubeVertexArray.byteLength,
-    //     usage: GPUBufferUsage.VERTEX,
-    //     mappedAtCreation: true,
-    // });
-    // {
-    //     new Float32Array(verticesBuffer.getMappedRange()).set(cubeVertexArray);
-    //     verticesBuffer.unmap();
-    // }
-    // NEW Create a vertex buffer from the cube data.
-    const cubeVerts = buildVertexBuffer(CUBE)
-    // const cubeVerts = new Float32Array(
-    //     CUBE.pos
-    //         // .map(p => [p[0], p[1], p[2], 1])
-    //         .reduce((p, n) => [...p, ...n], [] as number[])
-    // )
-    const vertStride = cubeVerts.byteLength / CUBE.pos.length;
+    /*
+    tracking meshes:
+        add to vertex & index buffers
+            add current vertex count to as triangle offset
+        resize buffers if needed
+            nahh.. fixed size, max count
+        track current number of vertices
+
+    */
+    let numVerts = 0;
+    let numTris = 0;
+
     const verticesBuffer = device.createBuffer({
-        size: cubeVerts.byteLength,
+        size: maxNumVerts * vertSize,
         usage: GPUBufferUsage.VERTEX,
         mappedAtCreation: true,
     });
-    {
-        new Float32Array(verticesBuffer.getMappedRange()).set(cubeVerts);
-        verticesBuffer.unmap();
-    }
-    // TODO: vertex, index, normals
-    // {
-    //     // Create the model vertex buffer.
-    //     const vertexBuffer = device.createBuffer({
-    //         size: mesh.positions.length * 3 * 2 * Float32Array.BYTES_PER_ELEMENT,
-    //         usage: GPUBufferUsage.VERTEX,
-    //         mappedAtCreation: true,
-    //     });
-    //     {
-    //         const mapping = new Float32Array(vertexBuffer.getMappedRange());
-    //         for (let i = 0; i < mesh.positions.length; ++i) {
-    //         mapping.set(mesh.positions[i], 6 * i);
-    //         mapping.set(mesh.normals[i], 6 * i + 3);
-    //         }
-    //         vertexBuffer.unmap();
-    //     }
 
-    // Create the model index buffer.
-    const indexCount = CUBE.tri.length * 3;
     const indexBuffer = device.createBuffer({
-        size: indexCount * Uint16Array.BYTES_PER_ELEMENT,
+        size: maxNumTri * triSize,
         usage: GPUBufferUsage.INDEX,
         mappedAtCreation: true,
     });
+
     {
-        const mapping = new Uint16Array(indexBuffer.getMappedRange());
-        for (let i = 0; i < CUBE.tri.length; ++i) {
-            mapping.set(CUBE.tri[i], 3 * i);
+        const vertsMap = new Float32Array(verticesBuffer.getMappedRange())
+        const indMap = new Uint16Array(indexBuffer.getMappedRange());
+
+        function addMesh(m: Mesh) {
+            if (numVerts + m.pos.length > maxNumVerts) {
+                console.error("Too many vertices!")
+                return;
+            }
+            if (numTris + m.tri.length > maxNumTri) {
+                console.error("Too many triangles!")
+                return;
+            }
+
+            addMeshToBuffers(m, vertsMap, numVerts, indMap, numTris);
+            numVerts += m.pos.length;
+            numTris += m.tri.length;
         }
+
+        {
+            // TODO(@darzu): add meshes!
+            addMesh(CUBE);
+            addMesh(PLANE);
+        }
+
         indexBuffer.unmap();
+        verticesBuffer.unmap();
     }
+
+
 
     // Create the depth texture for rendering/sampling the shadow map.
     const shadowDepthTexture = device.createTexture({
@@ -262,7 +275,7 @@ async function init(canvasRef: HTMLCanvasElement) {
             entryPoint: 'main',
             buffers: [
                 {
-                    arrayStride: vertStride,
+                    arrayStride: vertSize,
                     attributes: [
                         {
                             // position
@@ -400,7 +413,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         passEncoder.setBindGroup(0, uniformBindGroup);
         passEncoder.setVertexBuffer(0, verticesBuffer);
         passEncoder.setIndexBuffer(indexBuffer, 'uint16');
-        passEncoder.drawIndexed(indexCount);
+        passEncoder.drawIndexed(numTris * 3);
         // passEncoder.draw(CUBE.pos.length, 1, 0, 0);
         passEncoder.endPass();
         device.queue.submit([commandEncoder.finish()]);
@@ -413,3 +426,24 @@ async function init(canvasRef: HTMLCanvasElement) {
 // Attach to html
 let canvas = document.getElementById('my_Canvas') as HTMLCanvasElement;
 await init(canvas)
+
+
+// scratch
+
+
+// TODO: vertex, index, normals
+// {
+//     // Create the model vertex buffer.
+//     const vertexBuffer = device.createBuffer({
+//         size: mesh.positions.length * 3 * 2 * Float32Array.BYTES_PER_ELEMENT,
+//         usage: GPUBufferUsage.VERTEX,
+//         mappedAtCreation: true,
+//     });
+//     {
+//         const mapping = new Float32Array(vertexBuffer.getMappedRange());
+//         for (let i = 0; i < mesh.positions.length; ++i) {
+//         mapping.set(mesh.positions[i], 6 * i);
+//         mapping.set(mesh.normals[i], 6 * i + 3);
+//         }
+//         vertexBuffer.unmap();
+//     }
