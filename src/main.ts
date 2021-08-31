@@ -195,31 +195,6 @@ interface MeshHandle {
     model: Mesh,
 }
 
-// // attach to HTML canvas 
-let canvasRef = document.getElementById('sample-canvas') as HTMLCanvasElement;
-// //      needed for: resize, click events, pointer lock
-const adapter = await navigator.gpu.requestAdapter();
-const device = await adapter!.requestDevice();
-// //      needed for: vertex/index/uniform createBuffer, queue, createBindGroup, createBindGroupLayout, createTexture, createSampler, 
-// //                   createPipelineLayout, createShaderModule, createRenderPipeline, createRenderBundleEncoder, createCommandEncoder
-// //      tasks: create buffers, update buffers, create pipelines, bind buffers to pipeline, render bundle,  
-const context = canvasRef.getContext('gpupresent')!;
-//      needed for: configure, getCurrentTexture()
-//      tasks: initialize canvas, do render
-// window, needed for: keyboard, mouse events
-
-// resize the canvas when the window resizes
-function onWindowResize() {
-    canvasRef.width = window.innerWidth;
-    canvasRef.style.width = `${window.innerWidth}px`;
-    canvasRef.height = window.innerHeight;
-    canvasRef.style.height = `${window.innerHeight}px`;
-}
-window.onresize = function () {
-    onWindowResize();
-}
-onWindowResize();
-
 // define our meshes (ideally these would be imported from a standard format)
 const CUBE: Mesh = {
     pos: [
@@ -291,10 +266,31 @@ if (meshUniByteSize % 256 !== 0) {
     console.error("invalid mesh uni byte size, not 256 byte aligned: " + meshUniByteSize)
 }
 
-const maxVerts = 100000;
-const maxTris = 100000;
-const maxMeshes = 10000;
-function createMeshBuffers(device: GPUDevice) {
+// TODO(@darzu): SCENE FORMAT
+const sharedUniBufferSize =
+    bytesPerMat4 * 2 // camera and light projection
+    + bytesPerVec3 * 1 // light pos
+
+// create a directional light and compute it's projection (for shadows) and direction
+const worldOrigin = vec3.fromValues(0, 0, 0);
+const lightPosition = vec3.fromValues(50, 50, 0);
+const upVector = vec3.fromValues(0, 1, 0);
+const lightViewMatrix = mat4.lookAt(mat4.create(), lightPosition, worldOrigin, upVector);
+const lightProjectionMatrix = mat4.ortho(mat4.create(), -80, 80, -80, 80, -200, 300);
+const lightViewProjMatrix = mat4.multiply(mat4.create(), lightProjectionMatrix, lightViewMatrix);
+const lightDir = vec3.subtract(vec3.create(), worldOrigin, lightPosition);
+vec3.normalize(lightDir, lightDir);
+
+type RenderFrameFn = (timeMS: number) => void;
+function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): RenderFrameFn {
+    // configure our canvas backed swapchain
+    const context = canvasRef.getContext('gpupresent')!;
+    context.configure({ device, format: swapChainFormat });
+
+    const maxVerts = 100000;
+    const maxTris = 100000;
+    const maxMeshes = 10000;
+
     // space stats
     console.log(`New mesh pool`);
     console.log(`   ${maxVerts * vertByteSize / 1024} KB for verts`);
@@ -322,199 +318,176 @@ function createMeshBuffers(device: GPUDevice) {
         size: align(meshUniBufferSize, 256),
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
-    return { _vertBuffer, _indexBuffer, _meshUniBuffer };
-}
-const { _vertBuffer, _indexBuffer, _meshUniBuffer } = createMeshBuffers(device);
 
-function createSceneBuffers(device: GPUDevice) {
     // TODO(@darzu): SCENE FORMAT
-    const sharedUniBufferSize =
-        bytesPerMat4 * 2 // camera and light projection
-        + bytesPerVec3 * 1 // light pos
     const sharedUniBuffer = device.createBuffer({
         size: align(sharedUniBufferSize, 256),
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
-    return { sharedUniBuffer };
-}
-const { sharedUniBuffer } = createSceneBuffers(device);
 
-function gpuBufferWriteMeshTransform(m: MeshHandle) {
-    device.queue.writeBuffer(_meshUniBuffer, m.modelUniByteOffset, (m.transform as Float32Array).buffer);
-}
-
-// add our meshes to the vertex and index buffers
-let verticesMap = new Float32Array(_vertBuffer.getMappedRange())
-let indicesMap = new Uint16Array(_indexBuffer.getMappedRange());
-
-const meshHandles: MeshHandle[] = [];
-let _numVerts = 0;
-let _numTris = 0;
-function addMesh(m: Mesh): MeshHandle {
-    m = unshareVertices(m); // work-around; see TODO inside function
-    if (verticesMap === null)
-        throw "Use preRender() and postRender() functions"
-    if (_numVerts + m.pos.length > maxVerts)
-        throw "Too many vertices!"
-    if (_numTris + m.tri.length > maxTris)
-        throw "Too many triangles!"
-
-    const vertNumOffset = _numVerts;
-    const indicesNumOffset = _numTris * 3;
-
-    m.tri.forEach((triInd, i) => {
-        const vOff = (_numVerts) * vertElStride
-        const iOff = (_numTris) * indicesPerTriangle
-        if (indicesMap) {
-            indicesMap[iOff + 0] = triInd[0]
-            indicesMap[iOff + 1] = triInd[1]
-            indicesMap[iOff + 2] = triInd[2]
-        }
-        const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
-        bufferWriteVertex(verticesMap, vOff + 0 * vertElStride, m.pos[triInd[0]], m.colors[i], normal)
-        bufferWriteVertex(verticesMap, vOff + 1 * vertElStride, m.pos[triInd[1]], m.colors[i], normal)
-        bufferWriteVertex(verticesMap, vOff + 2 * vertElStride, m.pos[triInd[2]], m.colors[i], normal)
-        _numVerts += 3;
-        _numTris += 1;
-    })
-
-    const transform = mat4.create() as Float32Array;
-
-    const uniOffset = meshHandles.length * meshUniByteSize;
-    device.queue.writeBuffer(_meshUniBuffer, uniOffset, transform.buffer);
-
-    const res: MeshHandle = {
-        vertNumOffset,
-        indicesNumOffset,
-        modelUniByteOffset: uniOffset,
-        transform,
-        triCount: m.tri.length,
-        model: m,
+    function gpuBufferWriteMeshTransform(m: MeshHandle) {
+        device.queue.writeBuffer(_meshUniBuffer, m.modelUniByteOffset, (m.transform as Float32Array).buffer);
     }
 
-    meshHandles.push(res)
-    return res;
-}
+    // add our meshes to the vertex and index buffers
+    let verticesMap = new Float32Array(_vertBuffer.getMappedRange())
+    let indicesMap = new Uint16Array(_indexBuffer.getMappedRange());
 
-const ground = addMesh(PLANE);
-mat4.translate(ground.transform, ground.transform, [0, -3, 0])
-gpuBufferWriteMeshTransform(ground);
+    const meshHandles: MeshHandle[] = [];
+    let _numVerts = 0;
+    let _numTris = 0;
+    function addMesh(m: Mesh): MeshHandle {
+        m = unshareVertices(m); // work-around; see TODO inside function
+        if (verticesMap === null)
+            throw "Use preRender() and postRender() functions"
+        if (_numVerts + m.pos.length > maxVerts)
+            throw "Too many vertices!"
+        if (_numTris + m.tri.length > maxTris)
+            throw "Too many triangles!"
 
-const player = addMesh(CUBE);
+        const vertNumOffset = _numVerts;
+        const indicesNumOffset = _numTris * 3;
 
-_vertBuffer.unmap()
-_indexBuffer.unmap()
+        m.tri.forEach((triInd, i) => {
+            const vOff = (_numVerts) * vertElStride
+            const iOff = (_numTris) * indicesPerTriangle
+            if (indicesMap) {
+                indicesMap[iOff + 0] = triInd[0]
+                indicesMap[iOff + 1] = triInd[1]
+                indicesMap[iOff + 2] = triInd[2]
+            }
+            const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
+            bufferWriteVertex(verticesMap, vOff + 0 * vertElStride, m.pos[triInd[0]], m.colors[i], normal)
+            bufferWriteVertex(verticesMap, vOff + 1 * vertElStride, m.pos[triInd[1]], m.colors[i], normal)
+            bufferWriteVertex(verticesMap, vOff + 2 * vertElStride, m.pos[triInd[2]], m.colors[i], normal)
+            _numVerts += 3;
+            _numTris += 1;
+        })
 
-// track which keys are pressed for use in the game loop
-const pressedKeys: { [keycode: string]: boolean } = {}
-window.addEventListener('keydown', (ev) => pressedKeys[ev.key.toLowerCase()] = true, false);
-window.addEventListener('keyup', (ev) => pressedKeys[ev.key.toLowerCase()] = false, false);
+        const transform = mat4.create() as Float32Array;
 
-// track mouse movement for use in the game loop
-let _mouseAccumulatedX = 0;
-let _mouseAccummulatedY = 0;
-window.addEventListener('mousemove', (ev) => {
-    _mouseAccumulatedX += ev.movementX
-    _mouseAccummulatedY += ev.movementY
-}, false);
-function takeAccumulatedMouseMovement(): { x: number, y: number } {
-    const result = { x: _mouseAccumulatedX, y: _mouseAccummulatedY };
-    _mouseAccumulatedX = 0; // reset accumulators
-    _mouseAccummulatedY = 0;
-    return result
-}
+        const uniOffset = meshHandles.length * meshUniByteSize;
+        device.queue.writeBuffer(_meshUniBuffer, uniOffset, transform.buffer);
 
-// when the player clicks on the canvas, lock the cursor for better gaming (the browser lets them exit)
-function doLockMouse() {
-    canvasRef.requestPointerLock();
-    canvasRef.removeEventListener('click', doLockMouse)
-}
-canvasRef.addEventListener('click', doLockMouse)
+        const res: MeshHandle = {
+            vertNumOffset,
+            indicesNumOffset,
+            modelUniByteOffset: uniOffset,
+            transform,
+            triCount: m.tri.length,
+            model: m,
+        }
 
-// create the "player", which is an affine matrix tracking position & orientation of a cube
-// the camera will follow behind it.
-const cameraOffset = mat4.create();
-pitch(cameraOffset, -Math.PI / 4)
-gpuBufferWriteMeshTransform(player)
+        meshHandles.push(res)
+        return res;
+    }
 
-// create a directional light and compute it's projection (for shadows) and direction
-const worldOrigin = vec3.fromValues(0, 0, 0);
-const lightPosition = vec3.fromValues(50, 50, 0);
-const upVector = vec3.fromValues(0, 1, 0);
-const lightViewMatrix = mat4.lookAt(mat4.create(), lightPosition, worldOrigin, upVector);
-const lightProjectionMatrix = mat4.ortho(mat4.create(), -80, 80, -80, 80, -200, 300);
-const lightViewProjMatrix = mat4.multiply(mat4.create(), lightProjectionMatrix, lightViewMatrix);
-const lightDir = vec3.subtract(vec3.create(), worldOrigin, lightPosition);
-vec3.normalize(lightDir, lightDir);
-// write the light data to the shared uniform buffer
-device.queue.writeBuffer(sharedUniBuffer, bytesPerMat4 * 1, (lightViewProjMatrix as Float32Array).buffer);
-device.queue.writeBuffer(sharedUniBuffer, bytesPerMat4 * 2, (lightDir as Float32Array).buffer);
+    const ground = addMesh(PLANE);
+    mat4.translate(ground.transform, ground.transform, [0, -3, 0])
+    gpuBufferWriteMeshTransform(ground);
 
-// setup a binding for our per-mesh uniforms
-const modelUniBindGroupLayout = device.createBindGroupLayout({
-    entries: [{
-        binding: 0,
-        visibility: GPUShaderStage.VERTEX,
-        buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: meshUniByteSize },
-    }],
-});
-const modelUniBindGroup = device.createBindGroup({
-    layout: modelUniBindGroupLayout,
-    entries: [{
-        binding: 0,
-        resource: { buffer: _meshUniBuffer, size: meshUniByteSize, },
-    }],
-});
+    const player = addMesh(CUBE);
 
-// configure our canvas backed swapchain
-context.configure({ device, format: swapChainFormat });
+    _vertBuffer.unmap()
+    _indexBuffer.unmap()
 
-// we'll use a triangle list with backface culling and counter-clockwise triangle indices for both pipelines
-const primitiveBackcull: GPUPrimitiveState = {
-    topology: 'triangle-list',
-    cullMode: 'back',
-    frontFace: 'ccw',
-};
+    // track which keys are pressed for use in the game loop
+    const pressedKeys: { [keycode: string]: boolean } = {}
+    window.addEventListener('keydown', (ev) => pressedKeys[ev.key.toLowerCase()] = true, false);
+    window.addEventListener('keyup', (ev) => pressedKeys[ev.key.toLowerCase()] = false, false);
 
-// define the resource bindings for the shadow pipeline
-const shadowSharedUniBindGroupLayout = device.createBindGroupLayout({
-    entries: [
-        { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-    ],
-});
-const shadowSharedUniBindGroup = device.createBindGroup({
-    layout: shadowSharedUniBindGroupLayout,
-    entries: [
-        { binding: 0, resource: { buffer: sharedUniBuffer } }
-    ],
-});
+    // track mouse movement for use in the game loop
+    let _mouseAccumulatedX = 0;
+    let _mouseAccummulatedY = 0;
+    window.addEventListener('mousemove', (ev) => {
+        _mouseAccumulatedX += ev.movementX
+        _mouseAccummulatedY += ev.movementY
+    }, false);
+    function takeAccumulatedMouseMovement(): { x: number, y: number } {
+        const result = { x: _mouseAccumulatedX, y: _mouseAccummulatedY };
+        _mouseAccumulatedX = 0; // reset accumulators
+        _mouseAccummulatedY = 0;
+        return result
+    }
 
-// ???
-const shadowDepthTextureDesc: GPUTextureDescriptor = {
-    size: { width: 2048 * 2, height: 2048 * 2 },
-    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.SAMPLED,
-    format: shadowDepthStencilFormat,
-}
-const shadowDepthTexture = device.createTexture(shadowDepthTextureDesc);
-const shadowDepthTextureView = shadowDepthTexture.createView();
-// define the resource bindings for the mesh rendering pipeline
-const renderSharedUniBindGroupLayout = device.createBindGroupLayout({
-    entries: [
-        { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-        { binding: 1, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, texture: { sampleType: 'depth' } },
-        { binding: 2, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, sampler: { type: 'comparison' } },
-    ],
-});
-const renderSharedUniBindGroup = device.createBindGroup({
-    layout: renderSharedUniBindGroupLayout,
-    entries: [
-        { binding: 0, resource: { buffer: sharedUniBuffer } },
-        { binding: 1, resource: shadowDepthTextureView },
-        { binding: 2, resource: device.createSampler({ compare: 'less' }) },
-    ],
-});
+    // when the player clicks on the canvas, lock the cursor for better gaming (the browser lets them exit)
+    function doLockMouse() {
+        canvasRef.requestPointerLock();
+        canvasRef.removeEventListener('click', doLockMouse)
+    }
+    canvasRef.addEventListener('click', doLockMouse)
 
-function createShadowRenderPipeline(device: GPUDevice) {
+    // create the "player", which is an affine matrix tracking position & orientation of a cube
+    // the camera will follow behind it.
+    const cameraOffset = mat4.create();
+    pitch(cameraOffset, -Math.PI / 4)
+    gpuBufferWriteMeshTransform(player)
+
+    // write the light data to the shared uniform buffer
+    device.queue.writeBuffer(sharedUniBuffer, bytesPerMat4 * 1, (lightViewProjMatrix as Float32Array).buffer);
+    device.queue.writeBuffer(sharedUniBuffer, bytesPerMat4 * 2, (lightDir as Float32Array).buffer);
+
+    // setup a binding for our per-mesh uniforms
+    const modelUniBindGroupLayout = device.createBindGroupLayout({
+        entries: [{
+            binding: 0,
+            visibility: GPUShaderStage.VERTEX,
+            buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: meshUniByteSize },
+        }],
+    });
+    const modelUniBindGroup = device.createBindGroup({
+        layout: modelUniBindGroupLayout,
+        entries: [{
+            binding: 0,
+            resource: { buffer: _meshUniBuffer, size: meshUniByteSize, },
+        }],
+    });
+
+    // we'll use a triangle list with backface culling and counter-clockwise triangle indices for both pipelines
+    const primitiveBackcull: GPUPrimitiveState = {
+        topology: 'triangle-list',
+        cullMode: 'back',
+        frontFace: 'ccw',
+    };
+
+    // define the resource bindings for the shadow pipeline
+    const shadowSharedUniBindGroupLayout = device.createBindGroupLayout({
+        entries: [
+            { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+        ],
+    });
+    const shadowSharedUniBindGroup = device.createBindGroup({
+        layout: shadowSharedUniBindGroupLayout,
+        entries: [
+            { binding: 0, resource: { buffer: sharedUniBuffer } }
+        ],
+    });
+
+    // ???
+    const shadowDepthTextureDesc: GPUTextureDescriptor = {
+        size: { width: 2048 * 2, height: 2048 * 2 },
+        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.SAMPLED,
+        format: shadowDepthStencilFormat,
+    }
+    const shadowDepthTexture = device.createTexture(shadowDepthTextureDesc);
+    const shadowDepthTextureView = shadowDepthTexture.createView();
+    // define the resource bindings for the mesh rendering pipeline
+    const renderSharedUniBindGroupLayout = device.createBindGroupLayout({
+        entries: [
+            { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+            { binding: 1, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, texture: { sampleType: 'depth' } },
+            { binding: 2, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, sampler: { type: 'comparison' } },
+        ],
+    });
+    const renderSharedUniBindGroup = device.createBindGroup({
+        layout: renderSharedUniBindGroupLayout,
+        entries: [
+            { binding: 0, resource: { buffer: sharedUniBuffer } },
+            { binding: 1, resource: shadowDepthTextureView },
+            { binding: 2, resource: device.createSampler({ compare: 'less' }) },
+        ],
+    });
+
     // setup our first phase pipeline which tracks the depth of meshes 
     // from the point of view of the lighting so we know where the shadows are
     const shadowPipelineDesc: GPURenderPipelineDescriptor = {
@@ -541,11 +514,8 @@ function createShadowRenderPipeline(device: GPUDevice) {
         },
         primitive: primitiveBackcull,
     };
-    return device.createRenderPipeline(shadowPipelineDesc);
-}
-const shadowPipeline = createShadowRenderPipeline(device);
+    const shadowPipeline = device.createRenderPipeline(shadowPipelineDesc);
 
-function createRenderPipeline(device: GPUDevice): GPURenderPipeline {
     // setup our second phase pipeline which renders meshes to the canvas
     const renderPipelineDesc: GPURenderPipelineDescriptor = {
         layout: device.createPipelineLayout({
@@ -575,128 +545,118 @@ function createRenderPipeline(device: GPUDevice): GPURenderPipeline {
         },
     };
     const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
-    return renderPipeline;
-}
-const renderPipeline = createRenderPipeline(device);
 
-// record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
-// This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
-const bundleEncoder = device.createRenderBundleEncoder({
-    colorFormats: [swapChainFormat],
-    depthStencilFormat: depthStencilFormat,
-    sampleCount: antiAliasSampleCount,
-});
-bundleEncoder.setPipeline(renderPipeline);
-bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
-bundleEncoder.setVertexBuffer(0, _vertBuffer);
-bundleEncoder.setIndexBuffer(_indexBuffer, 'uint16');
-for (let m of meshHandles) {
-    bundleEncoder.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
-    bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-}
-let renderBundle = bundleEncoder.finish()
-
-// initialize performance metrics
-let debugDiv = document.getElementById('debug-div') as HTMLDivElement;
-let previousFrameTime = 0;
-let avgJsTimeMs = 0
-let avgFrameTimeMs = 0
-
-// our main game loop
-function renderFrame(timeMs: number) {
-    // track performance metrics
-    const start = performance.now();
-    const frameTimeMs = previousFrameTime ? timeMs - previousFrameTime : 0;
-    previousFrameTime = timeMs;
-
-    // resize (if necessary)
-    resize(device, canvasRef.width, canvasRef.height);
-
-    // process inputs and move the player & camera
-    const playerSpeed = pressedKeys[' '] ? 1.0 : 0.2; // spacebar boosts speed
-    if (pressedKeys['w']) moveZ(player.transform, -playerSpeed) // forward
-    if (pressedKeys['s']) moveZ(player.transform, playerSpeed) // backward
-    if (pressedKeys['a']) moveX(player.transform, -playerSpeed) // left
-    if (pressedKeys['d']) moveX(player.transform, playerSpeed) // right
-    if (pressedKeys['shift']) moveY(player.transform, playerSpeed) // up
-    if (pressedKeys['c']) moveY(player.transform, -playerSpeed) // down
-    const { x: mouseX, y: mouseY } = takeAccumulatedMouseMovement();
-    yaw(player.transform, -mouseX * 0.01);
-    pitch(cameraOffset, -mouseY * 0.01);
-
-    // apply the players movement by writting to the model uniform buffer
-    gpuBufferWriteMeshTransform(player);
-
-    // render from the light's point of view to a depth buffer so we know where shadows are
-    // TODO(@darzu): try bundled shadows
-    const commandEncoder = device.createCommandEncoder();
-    const shadowPassDescriptor: GPURenderPassDescriptor = {
-        colorAttachments: [],
-        depthStencilAttachment: {
-            view: shadowDepthTextureView,
-            depthLoadValue: 1.0,
-            depthStoreOp: 'store',
-            stencilLoadValue: 0,
-            stencilStoreOp: 'store',
-        },
-    };
-    const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
-    shadowPass.setBindGroup(0, shadowSharedUniBindGroup);
-    shadowPass.setPipeline(shadowPipeline);
-    shadowPass.setVertexBuffer(0, _vertBuffer);
-    shadowPass.setIndexBuffer(_indexBuffer, 'uint16');
-    for (let m of meshHandles) {
-        shadowPass.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
-        shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-    }
-    shadowPass.endPass();
-
-    // calculate and write our view and project matrices
-    const viewMatrix = mat4.create()
-    mat4.multiply(viewMatrix, viewMatrix, player.transform)
-    mat4.multiply(viewMatrix, viewMatrix, cameraOffset)
-    mat4.translate(viewMatrix, viewMatrix, [0, 0, 10]) // TODO(@darzu): can this be merged into the camera offset?
-    mat4.invert(viewMatrix, viewMatrix);
-    const projectionMatrix = mat4.perspective(mat4.create(), (2 * Math.PI) / 5, aspectRatio, 1, 10000.0/*view distance*/);
-    const viewProj = mat4.multiply(mat4.create(), projectionMatrix, viewMatrix) as Float32Array
-    device.queue.writeBuffer(sharedUniBuffer, 0, viewProj.buffer);
-
-    // render to the canvas' via our swap-chain
-    const renderPassEncoder = commandEncoder.beginRenderPass({
-        colorAttachments: [{
-            view: colorTextureView,
-            resolveTarget: context.getCurrentTexture().createView(),
-            loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
-            storeOp: 'store',
-        }],
-        depthStencilAttachment: {
-            view: depthTextureView,
-            depthLoadValue: 1.0,
-            depthStoreOp: 'store',
-            stencilLoadValue: 0,
-            stencilStoreOp: 'store',
-        },
+    // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
+    // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
+    const bundleEncoder = device.createRenderBundleEncoder({
+        colorFormats: [swapChainFormat],
+        depthStencilFormat: depthStencilFormat,
+        sampleCount: antiAliasSampleCount,
     });
-    renderPassEncoder.executeBundles([renderBundle]);
-    renderPassEncoder.endPass();
-    device.queue.submit([commandEncoder.finish()]);
-
-    // calculate performance metrics as running, weighted averages across frames
-    const jsTime = performance.now() - start;
-    const avgWeight = 0.05
-    avgJsTimeMs = avgJsTimeMs ? (1 - avgWeight) * avgJsTimeMs + avgWeight * jsTime : jsTime
-    avgFrameTimeMs = avgFrameTimeMs ? (1 - avgWeight) * avgFrameTimeMs + avgWeight * frameTimeMs : frameTimeMs
-    const avgFPS = 1000 / avgFrameTimeMs;
-    debugDiv.innerText = `js: ${avgJsTimeMs.toFixed(2)}ms, frame: ${avgFrameTimeMs.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)}`
-}
-
-// run our game loop using 'requestAnimationFrame`
-if (renderFrame) {
-    const _renderFrame = (time: number) => {
-        renderFrame(time);
-        requestAnimationFrame(_renderFrame);
+    bundleEncoder.setPipeline(renderPipeline);
+    bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
+    bundleEncoder.setVertexBuffer(0, _vertBuffer);
+    bundleEncoder.setIndexBuffer(_indexBuffer, 'uint16');
+    for (let m of meshHandles) {
+        bundleEncoder.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
+        bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
     }
-    requestAnimationFrame(_renderFrame);
+    let renderBundle = bundleEncoder.finish()
+
+    // initialize performance metrics
+    let debugDiv = document.getElementById('debug-div') as HTMLDivElement;
+    let previousFrameTime = 0;
+    let avgJsTimeMs = 0
+    let avgFrameTimeMs = 0
+
+    // our main game loop
+    function renderFrame(timeMs: number) {
+        // track performance metrics
+        const start = performance.now();
+        const frameTimeMs = previousFrameTime ? timeMs - previousFrameTime : 0;
+        previousFrameTime = timeMs;
+
+        // resize (if necessary)
+        resize(device, canvasRef.width, canvasRef.height);
+
+        // process inputs and move the player & camera
+        const playerSpeed = pressedKeys[' '] ? 1.0 : 0.2; // spacebar boosts speed
+        if (pressedKeys['w']) moveZ(player.transform, -playerSpeed) // forward
+        if (pressedKeys['s']) moveZ(player.transform, playerSpeed) // backward
+        if (pressedKeys['a']) moveX(player.transform, -playerSpeed) // left
+        if (pressedKeys['d']) moveX(player.transform, playerSpeed) // right
+        if (pressedKeys['shift']) moveY(player.transform, playerSpeed) // up
+        if (pressedKeys['c']) moveY(player.transform, -playerSpeed) // down
+        const { x: mouseX, y: mouseY } = takeAccumulatedMouseMovement();
+        yaw(player.transform, -mouseX * 0.01);
+        pitch(cameraOffset, -mouseY * 0.01);
+
+        // apply the players movement by writting to the model uniform buffer
+        gpuBufferWriteMeshTransform(player);
+
+        // render from the light's point of view to a depth buffer so we know where shadows are
+        // TODO(@darzu): try bundled shadows
+        const commandEncoder = device.createCommandEncoder();
+        const shadowPassDescriptor: GPURenderPassDescriptor = {
+            colorAttachments: [],
+            depthStencilAttachment: {
+                view: shadowDepthTextureView,
+                depthLoadValue: 1.0,
+                depthStoreOp: 'store',
+                stencilLoadValue: 0,
+                stencilStoreOp: 'store',
+            },
+        };
+        const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
+        shadowPass.setBindGroup(0, shadowSharedUniBindGroup);
+        shadowPass.setPipeline(shadowPipeline);
+        shadowPass.setVertexBuffer(0, _vertBuffer);
+        shadowPass.setIndexBuffer(_indexBuffer, 'uint16');
+        for (let m of meshHandles) {
+            shadowPass.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
+            shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+        }
+        shadowPass.endPass();
+
+        // calculate and write our view and project matrices
+        const viewMatrix = mat4.create()
+        mat4.multiply(viewMatrix, viewMatrix, player.transform)
+        mat4.multiply(viewMatrix, viewMatrix, cameraOffset)
+        mat4.translate(viewMatrix, viewMatrix, [0, 0, 10]) // TODO(@darzu): can this be merged into the camera offset?
+        mat4.invert(viewMatrix, viewMatrix);
+        const projectionMatrix = mat4.perspective(mat4.create(), (2 * Math.PI) / 5, aspectRatio, 1, 10000.0/*view distance*/);
+        const viewProj = mat4.multiply(mat4.create(), projectionMatrix, viewMatrix) as Float32Array
+        device.queue.writeBuffer(sharedUniBuffer, 0, viewProj.buffer);
+
+        // render to the canvas' via our swap-chain
+        const renderPassEncoder = commandEncoder.beginRenderPass({
+            colorAttachments: [{
+                view: colorTextureView,
+                resolveTarget: context.getCurrentTexture().createView(),
+                loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
+                storeOp: 'store',
+            }],
+            depthStencilAttachment: {
+                view: depthTextureView,
+                depthLoadValue: 1.0,
+                depthStoreOp: 'store',
+                stencilLoadValue: 0,
+                stencilStoreOp: 'store',
+            },
+        });
+        renderPassEncoder.executeBundles([renderBundle]);
+        renderPassEncoder.endPass();
+        device.queue.submit([commandEncoder.finish()]);
+
+        // calculate performance metrics as running, weighted averages across frames
+        const jsTime = performance.now() - start;
+        const avgWeight = 0.05
+        avgJsTimeMs = avgJsTimeMs ? (1 - avgWeight) * avgJsTimeMs + avgWeight * jsTime : jsTime
+        avgFrameTimeMs = avgFrameTimeMs ? (1 - avgWeight) * avgFrameTimeMs + avgWeight * frameTimeMs : frameTimeMs
+        const avgFPS = 1000 / avgFrameTimeMs;
+        debugDiv.innerText = `js: ${avgJsTimeMs.toFixed(2)}ms, frame: ${avgFrameTimeMs.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)}`
+    }
+    return renderFrame;
 }
 
 // math utilities
@@ -718,3 +678,39 @@ function bufferWriteVec3(buffer: Float32Array, offset: number, v: vec3) {
     buffer[offset + 1] = v[1]
     buffer[offset + 2] = v[2]
 }
+
+async function main() {
+    // // attach to HTML canvas 
+    let canvasRef2 = document.getElementById('sample-canvas') as HTMLCanvasElement;
+    // //      needed for: resize, click events, pointer lock
+    const adapter2 = await navigator.gpu.requestAdapter();
+    const device2 = await adapter2!.requestDevice();
+    // //      needed for: vertex/index/uniform createBuffer, queue, createBindGroup, createBindGroupLayout, createTexture, createSampler, 
+    // //                   createPipelineLayout, createShaderModule, createRenderPipeline, createRenderBundleEncoder, createCommandEncoder
+    // //      tasks: create buffers, update buffers, create pipelines, bind buffers to pipeline, render bundle,  
+    // window, needed for: keyboard, mouse events
+
+    // resize the canvas when the window resizes
+    function onWindowResize() {
+        canvasRef2.width = window.innerWidth;
+        canvasRef2.style.width = `${window.innerWidth}px`;
+        canvasRef2.height = window.innerHeight;
+        canvasRef2.style.height = `${window.innerHeight}px`;
+    }
+    window.onresize = function () {
+        onWindowResize();
+    }
+    onWindowResize();
+
+    const renderFrame = attachToCanvas(canvasRef2, device2);
+
+    // run our game loop using 'requestAnimationFrame`
+    if (renderFrame) {
+        const _renderFrame = (time: number) => {
+            renderFrame(time);
+            requestAnimationFrame(_renderFrame);
+        }
+        requestAnimationFrame(_renderFrame);
+    }
+}
+await main()
