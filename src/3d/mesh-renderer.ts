@@ -102,7 +102,7 @@ const wgslShaders = {
     };
 
     let albedo : vec3<f32> = vec3<f32>(0.9, 0.9, 0.9);
-    let ambientFactor : f32 = 0.6;
+    let ambientFactor : f32 = 0.4;
     let lightColor : vec3<f32> =  vec3<f32>(1.0, 1.0, 1.0);
 
     [[stage(fragment)]]
@@ -125,11 +125,14 @@ const wgslShaders = {
 
     let normSign: f32 = select(1.0, -1.0, input.front);
     let norm: vec3<f32> = input.fragNorm * normSign;
+    let antiNorm: vec3<f32> = norm * -1.0;
 
-    let lambertFactor : f32 = max(dot(normalize(scene.lightPos - input.fragPos), norm), 0.0);
-    let lightingFactor : f32 = min(visibility * lambertFactor, 1.0) * 1.5;
+    let lightDir: vec3<f32> = normalize(scene.lightPos - input.fragPos);
+    let lambert : f32 = max(dot(lightDir, norm), 0.0);
+    let antiLambert : f32 = 1.0 - max(dot(lightDir, antiNorm), 0.0);
+    let lightingFactor : f32 = min(visibility * lambert, 1.0) * 1.5;
     let diffuse: vec3<f32> = lightColor * lightingFactor;
-    let ambient: vec3<f32> = vec3<f32>(0.9, 0.9, 0.9) * ambientFactor;
+    let ambient: vec3<f32> = vec3<f32>(1.0, 1.0, 1.0) * ambientFactor * antiLambert;
 
     // return vec4<f32>(norm, 1.0);
 
@@ -140,70 +143,6 @@ const wgslShaders = {
     }
     `,
 }
-
-const basicVertWGSL =
-    `
-[[block]] struct SharedUnis {
-    viewProj : mat4x4<f32>;
-    // TODO: use
-    lightViewProjMatrix : mat4x4<f32>;
-    lightPos : vec3<f32>;
-};
-[[binding(0), group(0)]] var<uniform> sharedUnis : SharedUnis;
-[[block]] struct ModelUnis {
-    model : mat4x4<f32>;
-};
-[[binding(0), group(1)]] var<uniform> modelUnis : ModelUnis;
-
-struct VertexOutput {
-    [[builtin(position)]] pos : vec4<f32>;
-    [[location(0)]] modelPos: vec4<f32>;
-    [[location(1)]] color: vec3<f32>;
-};
-
-[[stage(vertex)]]
-fn main(
-    [[location(0)]] position : vec3<f32>,
-    [[location(1)]] color : vec3<f32>,
-    [[location(2)]] color2 : vec3<f32>
-    ) -> VertexOutput {
-    var output : VertexOutput;
-    var pos4: vec4<f32> = vec4<f32>(position, 1.0);
-    output.pos =  sharedUnis.viewProj * modelUnis.model * pos4;
-    // output.color = vec4<f32>(normal, 1.0);
-    // output.color = 0.5 * (pos4 + vec4<f32>(1.0, 1.0, 1.0, 1.0));
-    // output.modelPos = sharedUnis.viewProj * pos4;
-    output.modelPos = sharedUnis.viewProj * pos4;
-    // output.color = color2;
-    // output.color = vec3<f32>(0.2, 0.5, 0.4);
-    output.color = color;
-
-    return output;
-}
-`;
-
-const vertexPositionColorWGSL =
-    `
-[[stage(fragment)]]
-fn main(
-    [[location(0)]] modelPos: vec4<f32>,
-    [[location(1)]] color: vec3<f32>
-    ) -> [[location(0)]] vec4<f32> {
-    var xTan: vec3<f32> = dpdx(modelPos).xyz;
-    var yTan: vec3<f32> = dpdy(modelPos).xyz;
-    var norm: vec3<f32> = normalize(cross(xTan, yTan));
-
-    var lDirection: vec3<f32> = vec3<f32>(0.5, 0.5, 0.5);
-    var lColor: vec3<f32> = vec3<f32>(0.5, 0.5, 0.5);
-    var ambient: vec4<f32> = vec4<f32>(color, 1.0); // vec4<f32>(0.0, 0.2, 0.2, 0.2);
-
-    var diffuse: vec4<f32> = vec4<f32>(max(dot(lDirection, -norm), 0.0) * lColor, 1.0);
-
-    return ambient + diffuse;
-    // return vec4<f32>(norm, 1.0);
-}
-`;
-
 
 // const maxNumVerts = 1000;
 // const maxNumTri = 1000;
