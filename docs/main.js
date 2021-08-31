@@ -549,7 +549,8 @@ async function startGame(host) {
             if (hosting) {
                 console.log("hello");
                 console.log(`Net up and running with id ${id}`);
-                navigator.clipboard.writeText(id);
+                if (navigator.clipboard)
+                    navigator.clipboard.writeText(id);
                 frame();
             }
             else {
