@@ -491,3 +491,10 @@ Other game engines:
     http://www.voxeljs.com
   http://superpowers-html5.com/index.en.html
     simplish 3D HTML engine
+
+Good YouTube channels:
+  https://www.youtube.com/watch?v=GWc7QppCPHM
+    making a survival multiplayer game
+
+Unreal Voxel system:
+  https://www.youtube.com/channel/UCtJiCZyy95guZFCyBbnCs2Q
