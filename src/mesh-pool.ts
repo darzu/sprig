@@ -17,6 +17,7 @@ const bytesPerVec2 = 2/*vec3*/ * 4/*f32*/
 const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
 const bytesPerUint16 = Uint16Array.BYTES_PER_ELEMENT;
 const bytesPerUint32 = Uint32Array.BYTES_PER_ELEMENT;
+const MAX_INDICES = 65535; // Since we're using u16 index type, this is our max indices count
 
 // Everything to do with our vertex format must be in this module (minus downstream 
 //  places that should get type errors when this module changes.)
@@ -586,6 +587,9 @@ const scratch_uniform_u8 = new Uint8Array(MeshUniform.ByteSizeAligned);
 
 function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: MeshPoolQueues): MeshPoolBuilder {
     const { maxMeshes, maxTris, maxVerts } = opts;
+
+    if (MAX_INDICES < maxVerts)
+        throw `Too many vertices (${maxVerts})! W/ Uint16, we can only support '${maxVerts}' verts`
 
     let isUnmapped = false;
 

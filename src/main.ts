@@ -9,6 +9,7 @@ import { getAABBFromMesh, Mesh, unshareProvokingVertices } from "./mesh-pool.js"
 
 const FORCE_WEBGL = true;
 const MAX_MESHES = 20000;
+const MAX_VERTICES = 21845;
 const ENABLE_NET = false;
 
 enum ObjectType {
@@ -582,14 +583,14 @@ async function startGame(host: string | null) {
       const device = await adapter.requestDevice();
       const context = canvas.getContext("gpupresent");
       if (context) {
-        rendererInit = new Renderer_WebGPU(canvas, device, context, MAX_MESHES, 100);
+        rendererInit = new Renderer_WebGPU(canvas, device, context, MAX_MESHES, MAX_VERTICES);
         if (rendererInit)
           usingWebGPU = true
       }
     }
   }
   if (!rendererInit) {
-    rendererInit = attachToCanvas(canvas, MAX_MESHES, 100);
+    rendererInit = attachToCanvas(canvas, MAX_MESHES, MAX_VERTICES);
   }
   if (!rendererInit)
     throw 'Unable to create webgl or webgpu renderer'

@@ -294,7 +294,7 @@ export class Renderer_WebGPU implements Renderer {
     device: GPUDevice,
     context: GPUCanvasContext,
     maxMeshes: number,
-    maxTrisPerMesh: number,
+    maxVertices: number,
   ) {
     this.canvas = canvas;
     this.device = device;
@@ -303,8 +303,8 @@ export class Renderer_WebGPU implements Renderer {
 
     const opts: MeshPoolOpts = {
       maxMeshes,
-      maxTris: maxMeshes * maxTrisPerMesh,
-      maxVerts: maxMeshes * maxTrisPerMesh * 3,
+      maxTris: maxVertices,
+      maxVerts: maxVertices,
       shiftMeshIndices: false,
     }
 

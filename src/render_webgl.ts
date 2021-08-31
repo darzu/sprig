@@ -74,7 +74,7 @@ void main() {
 //   renderFrame(viewMatrix: mat4): void;
 // }
 
-export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxTrisPerMesh: number): Renderer {
+export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxVertices: number): Renderer {
   let gl = canv.getContext('webgl')!; // TODO: use webgl2
 
   gl.getExtension('OES_standard_derivatives');
@@ -107,7 +107,7 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxTr
 
   console.log("linked a program!")
 
-  // scene uniforms
+  // scene uniforms locations
   const u_loc_cameraViewProjMatrix = gl.getUniformLocation(program, "u_cameraViewProjMatrix")
   const u_loc_lightViewProjMatrix = gl.getUniformLocation(program, "u_lightViewProjMatrix")
   const u_loc_lightDir = gl.getUniformLocation(program, "u_lightDir")
@@ -115,18 +115,18 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxTr
   const u_loc_playerPos = gl.getUniformLocation(program, "u_playerPos")
   const u_loc_cameraPos = gl.getUniformLocation(program, "u_cameraPos")
 
-  // model uniforms
+  // model uniforms locations
   const u_loc_transform = gl.getUniformLocation(program, "u_transform");
 
-  // vertex inputs
+  // vertex inputs locations
   const a_loc_position = gl.getAttribLocation(program, "a_position");
   const a_loc_normal = gl.getAttribLocation(program, "a_normal");
   const a_loc_color = gl.getAttribLocation(program, "a_color");
 
   const opts: MeshPoolOpts = {
     maxMeshes,
-    maxTris: maxMeshes * maxTrisPerMesh,
-    maxVerts: maxMeshes * maxTrisPerMesh * 3,
+    maxTris: maxVertices,
+    maxVerts: maxVertices,
     shiftMeshIndices: true,
   }
 
