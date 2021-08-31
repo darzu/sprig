@@ -133,20 +133,24 @@ export module MeshUniform {
         transform: mat4,
         aabbMin: vec3,
         aabbMax: vec3,
+        tint: vec3,
     }
 
     const _counts = [
         align(4 * 4, 4), // transform
         align(3, 4), // aabb min
         align(3, 4), // aabb max
+        align(3, 4), // tint
     ]
     const _names = [
         'transform',
         'aabbMin',
         'aabbMax',
+        'tint',
     ]
     const _types = [
         'mat4x4<f32>',
+        'vec3<f32>',
         'vec3<f32>',
         'vec3<f32>',
     ]
@@ -159,10 +163,11 @@ export module MeshUniform {
 
     const scratch_f32 = new Float32Array(sum(_counts));
     const scratch_f32_as_u8 = new Uint8Array(scratch_f32.buffer);
-    export function Serialize(buffer: Uint8Array, byteOffset: number, transform: mat4, aabbMin: vec3, aabbMax: vec3): void {
+    export function Serialize(buffer: Uint8Array, byteOffset: number, transform: mat4, aabbMin: vec3, aabbMax: vec3, tint: vec3): void {
         scratch_f32.set(transform, _offsets[0])
         scratch_f32.set(aabbMin, _offsets[1])
         scratch_f32.set(aabbMax, _offsets[2])
+        scratch_f32.set(tint, _offsets[3])
         buffer.set(scratch_f32_as_u8, byteOffset)
     }
 
@@ -171,6 +176,7 @@ export module MeshUniform {
         //     transform: mat4x4<f32>;
         //     aabbMin: vec3<f32>;
         //     aabbMax: vec3<f32>;
+        //     tint: vec3<f32>;
         if (_names.length !== _types.length)
             throw `mismatch between names and sizes for mesh uniform format`
         let res = ``
@@ -189,6 +195,7 @@ export module MeshUniform {
             aabbMin: vec3.clone(d.aabbMin),
             aabbMax: vec3.clone(d.aabbMax),
             transform: mat4.clone(d.transform),
+            tint: vec3.clone(d.tint),
         }
     }
 }
@@ -353,13 +360,13 @@ export type MeshPool_WebGL = MeshPool & MeshPoolBuffers_WebGL;
 export interface MeshBuilder {
     addVertex: (pos: vec3, color: vec3, normal: vec3) => void,
     addTri: (ind: vec3) => void,
-    setUniform: (transform: mat4, aabbMin: vec3, aabbMax: vec3) => void,
+    setUniform: (transform: mat4, aabbMin: vec3, aabbMax: vec3, tint: vec3) => void,
     finish: () => MeshHandle;
 }
 interface MeshBuilderInternal {
     addVertex: (pos: vec3, color: vec3, normal: vec3) => void,
     addTri: (ind: vec3) => void,
-    setUniform: (transform: mat4, aabbMin: vec3, aabbMax: vec3) => void,
+    setUniform: (transform: mat4, aabbMin: vec3, aabbMax: vec3, tint: vec3) => void,
     finish: (idx: PoolIndex) => MeshHandle;
 }
 
@@ -709,7 +716,7 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
 
         const { min, max } = getAABBFromMesh(m)
 
-        b.setUniform(mat4.create(), min, max);
+        b.setUniform(mat4.create(), min, max, vec3.create());
 
         return b.finish();
     }
@@ -753,7 +760,7 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
 
         const { min, max } = getAABBFromMesh(m)
 
-        b.setUniform(mat4.create(), min, max);
+        b.setUniform(mat4.create(), min, max, vec3.create());
 
         const idx: PoolIndex = {
             pool,
@@ -819,13 +826,13 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
     }
 
     function queueUpdateUniform(m: MeshHandle): void {
-        MeshUniform.Serialize(scratch_uniform_u8, 0, m.transform, m.aabbMin, m.aabbMax)
+        MeshUniform.Serialize(scratch_uniform_u8, 0, m.transform, m.aabbMin, m.aabbMax, m.tint)
         queues.queueUpdateUniform(m.modelUniByteOffset, scratch_uniform_u8)
     }
     function mappedUpdateUniform(m: MeshHandle): void {
         if (isUnmapped)
             throw 'trying to use finished MeshBuilder'
-        MeshUniform.Serialize(scratch_uniform_u8, 0, m.transform, m.aabbMin, m.aabbMax)
+        MeshUniform.Serialize(scratch_uniform_u8, 0, m.transform, m.aabbMin, m.aabbMax, m.tint)
         builder.uniformMap.set(scratch_uniform_u8, m.modelUniByteOffset);
     }
 
@@ -863,13 +870,15 @@ function createMeshBuilder(maps: MeshPoolMaps, uByteOff: number, vByteOff: numbe
     let _transform: mat4 | undefined = undefined;
     let _aabbMin: vec3 | undefined = undefined;
     let _aabbMax: vec3 | undefined = undefined;
-    function setUniform(transform: mat4, aabbMin: vec3, aabbMax: vec3): void {
+    let _tint: vec3 | undefined = undefined;
+    function setUniform(transform: mat4, aabbMin: vec3, aabbMax: vec3, tint: vec3): void {
         if (meshFinished)
             throw 'trying to use finished MeshBuilder'
         _transform = transform;
         _aabbMin = aabbMin;
         _aabbMax = aabbMax;
-        MeshUniform.Serialize(maps.uniformMap, uByteOff, transform, aabbMin, aabbMax)
+        _tint = tint;
+        MeshUniform.Serialize(maps.uniformMap, uByteOff, transform, aabbMin, aabbMax, tint)
     }
 
     function finish(idx: PoolIndex): MeshHandle {
@@ -883,6 +892,7 @@ function createMeshBuilder(maps: MeshPoolMaps, uByteOff: number, vByteOff: numbe
             transform: _transform!,
             aabbMin: _aabbMin!,
             aabbMax: _aabbMax!,
+            tint: _tint!,
             numTris,
             numVerts,
             model: undefined,

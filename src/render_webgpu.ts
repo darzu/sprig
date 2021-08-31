@@ -36,7 +36,7 @@ const vertexShader =
         let worldPos: vec4<f32> = model.transform * vec4<f32>(position, 1.0);
         output.position = scene.cameraViewProjMatrix * worldPos;
         output.normal = normalize(model.transform * vec4<f32>(normal, 0.0)).xyz;
-        output.color = color;
+        output.color = color + model.tint;
         return output;
     }
 `;
@@ -119,6 +119,9 @@ export class Renderer_WebGPU implements Renderer {
     // TODO(@darzu): make this update all meshes at once
     for (let m of this.meshObjs) {
       m.handle.transform = m.obj.transform; // TODO(@darzu): this discrepency isn't great...
+      // TODO(@darzu): this is definitely weird. Need to think about this interaction better.
+      if ((m.obj as any).color)
+        m.handle.tint = (m.obj as any).color
       this.pool.updateUniform(m.handle)
     }
   }

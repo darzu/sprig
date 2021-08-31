@@ -18,6 +18,7 @@ uniform vec3 u_cameraPos;
 
 // model
 uniform mat4 u_transform;
+uniform vec3 u_tint;
 
 // vertex
 attribute vec3 a_position;
@@ -32,7 +33,7 @@ varying vec4 v_position;
 void main() {
   v_position = u_cameraViewProjMatrix * u_transform * vec4(a_position, 1.0);
   v_normal = normalize(u_transform * vec4(a_normal, 0.0)).xyz;
-  v_color = a_color;
+  v_color = a_color + u_tint;
   gl_Position = v_position;
 }
 `
@@ -117,6 +118,7 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxVe
 
   // model uniforms locations
   const u_loc_transform = gl.getUniformLocation(program, "u_transform");
+  const u_loc_tint = gl.getUniformLocation(program, "u_tint");
 
   // vertex inputs locations
   const a_loc_position = gl.getAttribLocation(program, "a_position");
@@ -254,6 +256,9 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxVe
     // update uniforms
     for (let m of meshObjs) {
       m.handle.transform = m.obj.transform // TODO(@darzu): this is hacky
+      // TODO(@darzu): this is definitely weird. Need to think about this interaction better.
+      if ((m.obj as any).color)
+        m.handle.tint = (m.obj as any).color
     }
 
     // TODO(@darzu): need to draw update uniform: u_loc_transform
@@ -269,6 +274,7 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxVe
     for (let m of meshObjs) {
       // gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset * 2);
       gl.uniformMatrix4fv(u_loc_transform, false, m.handle.transform);
+      gl.uniform3fv(u_loc_tint, m.handle.tint);
       const indicesBytesOffset = m.handle.indicesNumOffset * 2;
       gl.drawElements(gl.TRIANGLES, m.handle.numTris * 3, gl.UNSIGNED_SHORT, indicesBytesOffset);
       // gl.drawElements(gl.TRIANGLES, m.handle.numTris * 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset);

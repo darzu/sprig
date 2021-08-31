@@ -18,6 +18,7 @@ enum ObjectType {
   Bullet,
 }
 
+const BLACK = vec3.fromValues(0, 0, 0);
 const PLANE_MESH = unshareProvokingVertices(scaleMesh(
   {
     pos: [
@@ -32,7 +33,7 @@ const PLANE_MESH = unshareProvokingVertices(scaleMesh(
       [3, 2, 0],
       [1, 3, 0], // bottom
     ],
-    colors: [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5], [0.5, 0.5, 0.5], [0.5, 0.5, 0.5]],
+    colors: [BLACK, BLACK, BLACK, BLACK],
   },
   10
 ));
@@ -48,7 +49,7 @@ class Plane extends GameObject {
   }
 
   mesh(): Mesh {
-    return { ...PLANE_MESH, colors: PLANE_MESH.colors.map(_ => this.color) }
+    return PLANE_MESH;
   }
 
   typeId(): number {
@@ -99,18 +100,18 @@ const CUBE_MESH = unshareProvokingVertices({
     [5, 7, 6], // back
   ],
   colors: [
-    [0.5, 0.5, 0.5],
-    [0.5, 0.5, 0.5],
-    [0.5, 0.5, 0.5],
-    [0.5, 0.5, 0.5],
-    [0.5, 0.5, 0.5],
-    [0.5, 0.5, 0.5],
-    [0.5, 0.5, 0.5],
-    [0.5, 0.5, 0.5],
-    [0.5, 0.5, 0.5],
-    [0.5, 0.5, 0.5],
-    [0.5, 0.5, 0.5],
-    [0.5, 0.5, 0.5],
+    BLACK,
+    BLACK,
+    BLACK,
+    BLACK,
+    BLACK,
+    BLACK,
+    BLACK,
+    BLACK,
+    BLACK,
+    BLACK,
+    BLACK,
+    BLACK,
   ],
 });
 const CUBE_AABB = getAABBFromMesh(CUBE_MESH);
@@ -125,10 +126,7 @@ abstract class Cube extends GameObject {
   }
 
   mesh(): Mesh {
-    return {
-      ...CUBE_MESH,
-      colors: CUBE_MESH.colors.map(_ => this.color),
-    }
+    return CUBE_MESH;
   }
 }
 
