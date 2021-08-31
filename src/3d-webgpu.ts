@@ -292,9 +292,6 @@ interface Mesh {
 const sampleCount = 4;
 
 interface Transformable {
-    position: vec3;
-    // TODO(@darzu): use quanternion?
-    rotation: mat4;
     getTransform: () => mat4;
     lookAt: (target: vec3) => void;
     pitch: (rad: number) => void;
@@ -307,17 +304,15 @@ interface Transformable {
 
 function mkTransformable(): Transformable {
     const position = vec3.create();
+
+    const direction: vec3 = new Float32Array([0, 0, 1]);
+
     const translation = mat4.create();
     const rotation = mat4.create();
     const rot = quat.create();
 
     const transform = mat4.create();
-
-    const scale: vec3 = [1, 1, 1]
-    //mat4.tar
     return {
-        position,
-        rotation,
         getTransform: () => {
 
             // return mat4.fromRotationTranslationScaleOrigin(mat4.create(), rot, position, scale, [0, 0, 0]);
@@ -330,7 +325,8 @@ function mkTransformable(): Transformable {
             mat4.multiply(dest, dest, quatMat);
 
             mat4.translate(dest, dest, position);
-            mat4.translate(dest, dest, [0, 0, 0]);
+            // mat4.translate(dest, dest, [0, 0, 0]);
+
 
             // mat4.translate(dest, dest, negativeOrigin);
             return dest;
@@ -370,26 +366,26 @@ function mkTransformable(): Transformable {
         },
         moveX: (n: number) => {
             // mat4.translate(transform, transform, [n, 0, 0]);
-            const t: vec3 = [n, 0, 0]
-            // const t = vec3.transformMat4(vec3.create(), [n, 0, 0], rotation)
-            mat4.translate(translation, translation, t);
+            // const t: vec3 = [n, 0, 0]
+            // // const t = vec3.transformMat4(vec3.create(), [n, 0, 0], rotation)
+            // mat4.translate(translation, translation, t);
             // mat4.translate(rotation, rotation, [n, 0, 0]);
             position[0] += n
         },
         moveY: (n: number) => {
             // mat4.translate(transform, transform, [0, n, 0]);
             // mat4.multiply(
-            const t: vec3 = [0, n, 0]
+            // const t: vec3 = [0, n, 0]
             // const t = vec3.transformMat4(vec3.create(), [0, n, 0], rotation)
-            mat4.translate(translation, translation, t);
+            // mat4.translate(translation, translation, t);
             // mat4.translate(rotation, rotation, [0, n, 0]);
             position[1] += n
         },
         moveZ: (n: number) => {
             // mat4.translate(transform, transform, [0, 0, n]);
-            const t: vec3 = [0, 0, n]
+            // const t: vec3 = [0, 0, n]
             // const t = vec3.transformMat4(vec3.create(), [0, 0, n], rotation)
-            mat4.translate(translation, translation, t);
+            // mat4.translate(translation, translation, t);
             // mat4.translate(rotation, rotation, [0, 0, n]);
             position[2] += n
         },
@@ -747,8 +743,9 @@ async function init(canvasRef: HTMLCanvasElement) {
     }
 
     const cameraPos = mkTransformable();
-    cameraPos.moveZ(-20)
+    cameraPos.moveZ(20)
     cameraPos.moveY(-5)
+    cameraPos.yaw(Math.PI)
     // cameraPos.lookAt([0, 0, 0])
 
     // register key stuff
@@ -764,7 +761,10 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     const pressedKeys: { [keycode: string]: boolean } = {}
     function onKeyDown(ev: KeyboardEvent) {
-        pressedKeys[ev.key.toLowerCase()] = true
+        const k = ev.key.toLowerCase();
+        if (pressedKeys[k] === undefined)
+            console.log(`new key: ${k}`)
+        pressedKeys[k] = true
     }
     function onKeyUp(ev: KeyboardEvent) {
         pressedKeys[ev.key.toLowerCase()] = false
@@ -775,6 +775,40 @@ async function init(canvasRef: HTMLCanvasElement) {
         mouseDeltaX += ev.movementX
         mouseDeltaY += ev.movementY
     }
+
+    function controlTransformable(t: Transformable) {
+        // keys
+        if (pressedKeys['w'])
+            t.moveZ(1)
+        if (pressedKeys['s'])
+            t.moveZ(-1)
+        if (pressedKeys['a'])
+            t.moveX(1)
+        if (pressedKeys['d'])
+            t.moveX(-1)
+        if (pressedKeys['shift'])
+            t.moveY(1)
+        if (pressedKeys['control'])
+            t.moveY(-1)
+        if (pressedKeys['q'])
+            t.roll(-0.1)
+        if (pressedKeys['e'])
+            t.roll(0.1)
+        // mouse
+        if (mouseDeltaX !== 0)
+            t.yaw(-mouseDeltaX * 0.01);
+        if (mouseDeltaY !== 0)
+            t.pitch(mouseDeltaY * 0.01);
+    }
+
+        // cameraPos.yaw(0.01)
+        // cameraPos.pitch(0.01)
+        // cameraPos.roll(0.01)
+
+    const m2 = meshes[2]
+    const m2t = mkTransformable();
+    m2.transform = m2t.getTransform();
+    applyMeshTransform(m2)
 
     function frame(time: number) {
         // Sample is no longer the active page.
@@ -788,28 +822,10 @@ async function init(canvasRef: HTMLCanvasElement) {
         mat4.translate(meshes[1].transform, meshes[1].transform, [0.1, 0, 0])
         applyMeshTransform(meshes[1])
 
-        // keys
-        if (pressedKeys['w'])
-            cameraPos.moveZ(1)
-        if (pressedKeys['s'])
-            cameraPos.moveZ(-1)
-        if (pressedKeys['a'])
-            cameraPos.moveX(1)
-        if (pressedKeys['d'])
-            cameraPos.moveX(-1)
-        if (pressedKeys['q'])
-            cameraPos.roll(-0.1)
-        if (pressedKeys['e'])
-            cameraPos.roll(0.1)
-        // mouse
-        if (mouseDeltaX !== 0)
-            cameraPos.yaw(mouseDeltaX * 0.01);
-        if (mouseDeltaY !== 0)
-            cameraPos.pitch(mouseDeltaY * 0.01);
+        controlTransformable(m2t);
 
-        // cameraPos.yaw(0.01)
-        // cameraPos.pitch(0.01)
-        // cameraPos.roll(0.01)
+        m2.transform = m2t.getTransform();
+        applyMeshTransform(m2)
 
         // reset accummulated mouse delta
         mouseDeltaX = 0;
