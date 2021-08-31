@@ -362,7 +362,18 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     meshRenderer.rebuildBundles();
 
+    let debugDiv = document.getElementById('debug_div') as HTMLDivElement;
+
+    let previousFrameTime = 0;
+    let avgJsTime = 0
+    let avgFrameTime = 0
+
     function frame(time: number) {
+        const start = performance.now();
+
+        const frameTime = previousFrameTime ? time - previousFrameTime : 0;
+        previousFrameTime = time;
+
         // Sample is no longer the active page.
         if (!canvasRef) return;
 
@@ -419,6 +430,17 @@ async function init(canvasRef: HTMLCanvasElement) {
         device.queue.submit([commandEncoder.finish()]);
 
         requestAnimationFrame(frame);
+
+        const jsTime = performance.now() - start;
+
+        const avgWeight = 0.05
+        avgJsTime = avgJsTime ? (1 - avgWeight) * avgJsTime + avgWeight * jsTime : jsTime
+        avgFrameTime = avgFrameTime ? (1 - avgWeight) * avgFrameTime + avgWeight * frameTime : frameTime
+
+        const avgFPS = 1000 / avgFrameTime;
+
+        // TODO(@darzu): 
+        debugDiv.innerText = `js: ${avgJsTime.toFixed(2)}ms, frame: ${avgFrameTime.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)}`
     }
     requestAnimationFrame(frame);
 };
