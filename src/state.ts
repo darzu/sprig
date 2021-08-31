@@ -140,7 +140,12 @@ export abstract class GameState<Inputs> {
     const rigidBody = this.world.createRigidBody(rigidBodyDesc);
     this.objectBodies[obj.id] = rigidBody;
 
+    // TODO(@darzu): 
+    if (!obj.static)
+      rigidBody.setLinvel([0, 10, 0], true)
+
     const halfSize = vec3.scale(vec3.create(), aabbSize(obj.aabb()), 0.5);
+    // const colliderDesc = obj.static ? RAPIER.ColliderDesc.cuboid(100.0, 0.1, 100.0) : RAPIER.ColliderDesc.cuboid(1.0, 1.0, 1.0)
     const colliderDesc = RAPIER.ColliderDesc.cuboid(halfSize[0], Math.max(halfSize[1], 0.1), halfSize[2])
       .setActiveCollisionTypes(
         RAPIER.ActiveCollisionTypes.DEFAULT
@@ -150,6 +155,9 @@ export abstract class GameState<Inputs> {
         | RAPIER.ActiveCollisionTypes.STATIC_STATIC)
       .setCollisionGroups(0x00010001)
       .setSolverGroups(0x00010001)
+      .setActiveEvents(RAPIER.ActiveEvents.CONTACT_EVENTS |
+        RAPIER.ActiveEvents.INTERSECTION_EVENTS)
+      .setActiveHooks(RAPIER.ActiveHooks.FILTER_CONTACT_PAIRS)
     const collider = this.world.createCollider(colliderDesc, rigidBody.handle);
     this.objectColliders[obj.id] = collider;
   }
