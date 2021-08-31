@@ -1,5 +1,6 @@
 import { mat4, vec3, quat } from "./gl-matrix.js";
 import { Renderer } from "./render.js";
+import { Serializer, Deserializer } from "./serialize.js";
 
 const ERROR_SMOOTHING_FACTOR = 0.8;
 const EPSILON = 0.0001;
@@ -51,6 +52,11 @@ export abstract class GameObject {
   }
 
   snapLocation(location: vec3) {
+    // TODO: this is a hack to see if we're setting our location for the first time
+    if (vec3.length(this.location) === 0) {
+      this.location = location;
+      return;
+    }
     let current_location = vec3.add(
       this.location,
       this.location,
@@ -62,6 +68,12 @@ export abstract class GameObject {
   }
 
   snapRotation(rotation: quat) {
+    // TODO: this is a hack to see if we're setting our rotation for the first time
+    let id = quat.identity(working_quat);
+    if (quat.equals(rotation, id)) {
+      this.rotation = rotation;
+      return;
+    }
     let current_rotation = quat.mul(
       this.rotation,
       this.rotation,
@@ -87,32 +99,34 @@ export abstract class GameObject {
     );
   }
 
-  netObject(): NetObject {
-    let obj: any = {
-      id: this.id,
-      creator: this.creator,
-      location: Array.from(this.location),
-      rotation: Array.from(this.rotation),
-      at_rest: this.at_rest,
-      linear_velocity: Array.from(this.linear_velocity),
-      angular_velocity: Array.from(this.angular_velocity),
-      authority: this.authority,
-      authority_seq: this.authority_seq,
-      type: this.type(),
-    };
-    return obj;
-  }
-
   syncPriority(): number {
     return 1;
   }
 
+  claimAuthority(authority: number, authority_seq: number): boolean {
+    if (
+      this.authority_seq < authority_seq ||
+      (this.authority_seq == authority_seq && authority <= this.authority)
+    ) {
+      this.authority = authority;
+      this.authority_seq = authority_seq;
+      return true;
+    }
+    return false;
+  }
+
+  abstract serializeFull(buf: Serializer): void;
+
+  abstract serializeDynamic(buf: Serializer): void;
+
+  abstract deserializeFull(buf: Deserializer): void;
+
+  abstract deserializeDynamic(buf: Deserializer): void;
+
   abstract mesh(): Mesh;
 
-  abstract type(): string;
+  abstract typeId(): number;
 }
-
-export type NetObject = any;
 
 export abstract class GameState<Inputs> {
   protected nextPlayerId: number;
@@ -135,48 +149,27 @@ export abstract class GameState<Inputs> {
 
   abstract viewMatrix(): mat4;
 
-  abstract objectFromNetObject(NetObject: any): GameObject;
+  abstract objectOfType(
+    typeID: number,
+    id: number,
+    creator: number
+  ): GameObject;
 
   addObject(obj: GameObject) {
     this.objects[obj.id] = obj;
     this.renderer.addObject(obj);
   }
 
-  addObjectFromNet(netObj: NetObject): GameObject {
-    let obj = this.objectFromNetObject(netObj);
-    obj.id = netObj.id;
-    obj.creator = netObj.creator;
-
-    obj.authority = netObj.authority;
-    obj.authority_seq = netObj.authority_seq;
-
-    obj.location = netObj.location;
-    obj.linear_velocity = netObj.linear_velocity;
-
-    obj.at_rest = netObj.at_rest;
-
-    obj.angular_velocity = netObj.angular_velocity;
-    obj.rotation = netObj.rotation;
-    this.addObject(obj);
-    return obj;
-  }
-
-  netObjects(): NetObject[] {
-    return Object.values(this.objects).map((obj: GameObject) =>
-      obj.netObject()
-    );
-  }
-
   renderFrame() {
     this.renderer.renderFrame(this.viewMatrix());
   }
 
-  addPlayer(): [number, NetObject] {
+  addPlayer(): [number, Object] {
     let id = this.nextPlayerId;
     this.nextPlayerId += 1;
     let obj = this.playerObject(id);
     this.addObject(obj);
-    return [id, obj.netObject()];
+    return [id, obj];
   }
 
   id(): number {

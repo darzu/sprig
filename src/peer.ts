@@ -66,7 +66,7 @@ export class Peer {
       };
 
       sock.onopen = () => {
-        console.log("Socket opened");
+        //console.log("Socket opened");
         // PeerJS sends a heartbeat to the server every 5 seconds--I assume the
         // server will eventually close the connection otherwise
         setInterval(
@@ -92,7 +92,7 @@ export class Peer {
   ) {
     peerConnection.onicecandidate = (ev) => {
       if (!ev.candidate || !ev.candidate.candidate) return;
-      console.log(`Got ICE candidate for ${remotePeerId}`);
+      //console.log(`Got ICE candidate for ${remotePeerId}`);
       if (!this.sock) {
         throw "no sock";
       }
@@ -123,7 +123,7 @@ export class Peer {
     };
 
     peerConnection.ondatachannel = (ev) => {
-      console.log("Received data channel");
+      //console.log("Received data channel");
       if (this.onconnection) {
         this.onconnection(remotePeerId, ev.channel);
       }
@@ -131,7 +131,7 @@ export class Peer {
   }
 
   private async handleServerMessage(msg: ServerMessage) {
-    console.log(`Received message of type: ${msg.type}`);
+    //console.log(`Received message of type: ${msg.type}`);
     let payload = msg.payload;
     let remotePeerId = msg.src;
     switch (msg.type) {
@@ -147,7 +147,7 @@ export class Peer {
         await peerConnection.setRemoteDescription(sdp);
         const answer = await peerConnection.createAnswer();
         await peerConnection.setLocalDescription(answer);
-        console.log("Sending answer");
+        //console.log("Sending answer");
         if (!this.sock) {
           throw "no sock";
         }
@@ -174,7 +174,7 @@ export class Peer {
         const candidate = ice.candidate;
         const sdpMLineIndex = ice.sdpMLineIndex;
         const sdpMid = ice.sdpMid;
-        console.log(`ICE candidate is ${candidate}`);
+        //console.log(`ICE candidate is ${candidate}`);
         await peerConnection.addIceCandidate(
           new RTCIceCandidate({
             sdpMid,
