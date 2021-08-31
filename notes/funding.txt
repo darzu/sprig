@@ -1,3 +1,14 @@
-https://opencollective.com/peer
-https://github.com/sponsors/darzu/dashboard
-https://www.patreon.com/darzu
+Donations:
+    https://opencollective.com/peer
+    https://github.com/sponsors/darzu/dashboard
+    https://www.patreon.com/darzu
+
+Hosted servers
+    e.g. Roblox, heroiclabs
+
+consulting
+
+So cheap it doesn't need funding
+    peer-to-peer only
+    all file hosting is elsewhere
+    static content only
