@@ -166,10 +166,7 @@ export class Renderer_WebGPU implements Renderer {
     let m = o.mesh();
     // need to introduce a new variable to convince Typescript the mapping is non-null
 
-    if (this.initFinished)
-      throw `TODO: support adding objects late`
-
-    const handle = this.builder.addMesh(m)
+    const handle = this.initFinished ? this.pool.addMesh(m) : this.builder.addMesh(m);
 
     const res = {
       obj: o,

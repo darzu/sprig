@@ -301,6 +301,7 @@ export interface MeshPool {
     numTris: number,
     numVerts: number,
     // methods
+    addMesh: (m: Mesh) => MeshHandle,
     updateUniform: (m: MeshHandle) => void,
 }
 export interface MeshPoolBuffers_WebGPU {
@@ -477,6 +478,7 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
         numTris: 0,
         numVerts: 0,
         updateUniform: queueUpdateUniform,
+        addMesh: queueAddMesh,
     }
 
     const { verticesMap, indicesMap, uniformMap } = maps;
@@ -573,7 +575,7 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
             uniformMap: new Uint8Array(MeshUniform.ByteSizeAligned),
         }
 
-        const b = createMeshBuilder(maps, 0, 0, 0);
+        const b = createMeshBuilder(data, 0, 0, 0);
 
         m.pos.forEach((pos, i) => {
             b.addVertex(pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0])
@@ -600,6 +602,10 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
         };
 
         const handle = b.finish(idx);
+
+        pool.numTris += handle.numTris
+        pool.numVerts += handle.numVerts
+        pool.allMeshes.push(handle)
 
         return handle;
     }
