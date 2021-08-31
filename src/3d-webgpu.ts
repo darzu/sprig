@@ -226,7 +226,8 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
 
 interface GrassTileset {
     pool: MeshMemoryPool,
-    tiles: Mesh[]
+    tiles: Mesh[],
+    update: (target: vec3) => void,
 }
 
 function createGrassTileset(opts: GrassTileOpts & GrassTilesetOpts, device: GPUDevice): GrassTileset {
@@ -235,7 +236,7 @@ function createGrassTileset(opts: GrassTileOpts & GrassTilesetOpts, device: GPUD
     const grassPerTile = (tileSize / spacing) ** 2;
     const tileCount = tilesPerSide ** 2;
     const totalGrass = grassPerTile * tileCount;
-    const grassMeshPool = createMeshMemoryPool({
+    const pool = createMeshMemoryPool({
         vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
         maxVerts: align(totalGrass * 3, 4),
         maxTris: align(totalGrass, 4),
@@ -245,7 +246,7 @@ function createGrassTileset(opts: GrassTileOpts & GrassTilesetOpts, device: GPUD
         usesIndices: false,
     }, device);
 
-    grassMeshPool._map();
+    pool._map();
 
     for (let xi = 0; xi < tilesPerSide; xi++) {
         for (let zi = 0; zi < tilesPerSide; zi++) {
@@ -253,62 +254,17 @@ function createGrassTileset(opts: GrassTileOpts & GrassTilesetOpts, device: GPUD
             const z = zi * tileSize;
             // TODO(@darzu): 
             // console.log(`(${xi}, ${zi})`);
-            const tile = createGrassTile(opts, grassMeshPool);
+            const tile = createGrassTile(opts, pool);
             mat4.translate(tile.transform, tile.transform, [x, 0, z])
-            grassMeshPool.applyMeshTransform(tile)
+            pool.applyMeshTransform(tile)
         }
     }
 
-    grassMeshPool._unmap();
+    pool._unmap();
 
-    // TODO(@darzu): update transform
+    const tiles = pool._meshes;
 
-    // const trans = mat4.create() as Float32Array;
-    // const uniOffset = 0;
-    // device.queue.writeBuffer(
-    //     grassMeshPool._meshUniBuffer,
-    //     uniOffset,
-    //     trans.buffer,
-    //     trans.byteOffset,
-    //     trans.byteLength
-    // );
-
-    return {
-        pool: grassMeshPool,
-        tiles: grassMeshPool._meshes,
-    }
-}
-
-function nearestIntegers(target: number, numInts: number): number[] {
-    const maxIntDist = (numInts - 1) / 2;
-    const minInt = Math.floor(target - maxIntDist);
-    const maxInt = Math.floor(target + maxIntDist);
-    const nearestInts: number[] = [];
-    for (let xi = minInt; xi <= maxInt; xi++)
-        nearestInts.push(xi)
-    if (nearestInts.length !== numInts) {
-        console.error(`Too many (!=${numInts}) 'NEAREST' integers [${nearestInts.join(',')}] found to: ${target}`)
-    }
-    return nearestInts;
-}
-
-function initGrassSystem(device: GPUDevice): GrassSystem {
-    const opts: GrassTilesetOpts & GrassTileOpts = {
-        // tile
-        bladeW: 0.1,
-        bladeH: 1.7,
-        // TODO(@darzu): debugging
-        // spacing: 1,
-        // tileSize: 4,
-        spacing: 0.25,
-        tileSize: 10,
-        // tileset
-        tilesPerSide: 4,
-    }
-
-    const { pool, tiles } = createGrassTileset(opts, device);
-
-    // TODO(@darzu): handle grass tile movement
+    // handle grass tile movement
     function update(target: vec3) {
         const [tx, _, tz] = target;
 
@@ -362,9 +318,57 @@ function initGrassSystem(device: GPUDevice): GrassSystem {
         }
     }
 
-    const res: GrassSystem = {
-        getGrassPools: () => [pool],
+    return {
+        pool,
+        tiles,
         update,
+    }
+}
+
+function nearestIntegers(target: number, numInts: number): number[] {
+    const maxIntDist = (numInts - 1) / 2;
+    const minInt = Math.floor(target - maxIntDist);
+    const maxInt = Math.floor(target + maxIntDist);
+    const nearestInts: number[] = [];
+    for (let xi = minInt; xi <= maxInt; xi++)
+        nearestInts.push(xi)
+    if (nearestInts.length !== numInts) {
+        console.error(`Too many (!=${numInts}) 'NEAREST' integers [${nearestInts.join(',')}] found to: ${target}`)
+    }
+    return nearestInts;
+}
+
+function initGrassSystem(device: GPUDevice): GrassSystem {
+    const lod1Opts: GrassTilesetOpts & GrassTileOpts = {
+        // tile
+        bladeW: 0.1,
+        bladeH: 1.7,
+        // TODO(@darzu): debugging
+        // spacing: 1,
+        // tileSize: 4,
+        spacing: 0.25,
+        tileSize: 10,
+        // tileset
+        tilesPerSide: 4,
+    }
+
+    const lod2Opts: GrassTilesetOpts & GrassTileOpts = {
+        ...lod1Opts,
+        spacing: lod1Opts.spacing * 4,
+        tileSize: lod1Opts.tileSize * 4,
+    }
+
+    const lodOpts = [lod1Opts, lod2Opts]
+
+    const tilesets = lodOpts.map(opts => createGrassTileset(opts, device))
+
+    function updateAll(target: vec3) {
+        tilesets.forEach(t => t.update(target))
+    }
+
+    const res: GrassSystem = {
+        getGrassPools: () => tilesets.map(t => t.pool),
+        update: updateAll,
     }
     return res;
 }
