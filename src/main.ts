@@ -316,8 +316,6 @@ interface MeshPool {
     allMeshHandles: MeshHandle[],
     // handles
     device: GPUDevice,
-    // TODO:
-    // - add via queue
 }
 
 function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolBuilder {
