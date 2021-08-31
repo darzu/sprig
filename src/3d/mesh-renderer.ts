@@ -3,7 +3,7 @@
 import { mat4 } from "../ext/gl-matrix.js";
 import { mat4ByteSize, MeshMemoryPool as MeshPool, vec3ByteSize } from "./mesh.js";
 
-const shadowDepthTextureSize = 1024;
+const shadowDepthTextureSize = 1024 * 4;
 
 const wgslShaders = {
     vertexShadow: `
@@ -51,6 +51,7 @@ const wgslShaders = {
     [[location(0)]] shadowPos : vec3<f32>;
     [[location(1)]] fragPos : vec3<f32>;
     [[location(2)]] fragNorm : vec3<f32>;
+    [[location(3)]] color : vec3<f32>;
 
     [[builtin(position)]] Position : vec4<f32>;
     };
@@ -76,6 +77,7 @@ const wgslShaders = {
     output.Position = scene.cameraViewProjMatrix * model.modelMatrix * vec4<f32>(position, 1.0);
     output.fragPos = output.Position.xyz;
     output.fragNorm = normal;
+    output.color = color;
     return output;
     }
     `,
@@ -94,10 +96,11 @@ const wgslShaders = {
     [[location(0)]] shadowPos : vec3<f32>;
     [[location(1)]] fragPos : vec3<f32>;
     [[location(2)]] fragNorm : vec3<f32>;
+    [[location(3)]] color : vec3<f32>;
     };
 
     let albedo : vec3<f32> = vec3<f32>(0.9, 0.9, 0.9);
-    let ambientFactor : f32 = 0.2;
+    let ambientFactor : f32 = 0.5;
 
     [[stage(fragment)]]
     fn main(input : FragmentInput) -> [[location(0)]] vec4<f32> {
@@ -120,7 +123,9 @@ const wgslShaders = {
     let lambertFactor : f32 = max(dot(normalize(scene.lightPos - input.fragPos), input.fragNorm), 0.0);
 
     let lightingFactor : f32 = min(ambientFactor + visibility * lambertFactor, 1.0);
-    return vec4<f32>(lightingFactor * albedo, 1.0);
+
+    return vec4<f32>(lightingFactor * input.color, 1.0);
+    // return vec4<f32>(lightingFactor * albedo, 1.0);
     }
     `,
 }
