@@ -26,6 +26,8 @@ import { MeshObj, Renderer, setupCamera, setupScene } from "./render_webgpu.js";
 //     aabbMax: vec3<f32>;
 
 const vertCode = `
+precision mediump float;
+
 // scene
 uniform mat4 u_cameraViewProjMatrix;
 uniform mat4 u_lightViewProjMatrix;
@@ -72,11 +74,12 @@ varying vec3 v_color;
 varying vec4 v_position;
 
 void main() {
-  float sunLight = clamp(dot(-su_lightDir, v_normal), 0.0, 1.0);
+  float sunLight = clamp(dot(-u_lightDir, v_normal), 0.0, 1.0);
   vec3 resultColor = v_color * (sunLight * 2.0 + 0.2);
   vec3 gammaCorrected = pow(resultColor, vec3(1.0/2.2));
   gl_FragColor = vec4(gammaCorrected, 1.0);
-}`
+}
+`
 
 // TODO(@darzu): 
 // export interface Renderer {
@@ -91,15 +94,27 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxTr
   let vertShader = gl.createShader(gl.VERTEX_SHADER)!;
   gl.shaderSource(vertShader, vertCode);
   gl.compileShader(vertShader);
+  if (!gl.getShaderParameter(vertShader, gl.COMPILE_STATUS)) {
+    console.error(gl.getShaderInfoLog(vertShader));
+  }
 
   let fragShader = gl.createShader(gl.FRAGMENT_SHADER)!;
   gl.shaderSource(fragShader, fragCode);
   gl.compileShader(fragShader);
+  if (!gl.getShaderParameter(fragShader, gl.COMPILE_STATUS)) {
+    console.error(gl.getShaderInfoLog(fragShader));
+  }
 
+  console.log("made a program!")
   let program = gl.createProgram()!;
   gl.attachShader(program, vertShader);
   gl.attachShader(program, fragShader);
   gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    console.error(gl.getProgramInfoLog(program));
+  }
+
+  console.log("linked a program!")
 
   // scene uniforms
   const u_loc_cameraViewProjMatrix = gl.getUniformLocation(program, "u_cameraViewProjMatrix")
@@ -199,6 +214,8 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxTr
     gl.bindBuffer(gl.ARRAY_BUFFER, pool.colorsBuffer);
     gl.vertexAttribPointer(a_loc_color, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(a_loc_color);
+
+    // TODO(@darzu): need to draw update uniform: u_loc_transform
 
     // bind index buffer
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pool.indicesBuffer);
