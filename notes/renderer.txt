@@ -1,3 +1,102 @@
+WebGL
+  https://twgljs.org // tiny layer over webgl
+  https://twgljs.org/examples/twgl-cube.html
+  https://twgljs.org/examples/webgl-cube.html
+  https://github.com/pmndrs/react-three-fiber
+  https://enable3d.io (three.js, ammo.js, capacitor.js, phaser, )
+  https://github.com/tamani-coding/enable3d-physics-examples
+
+Three.js:
+  https://threejs.org
+  https://www.npmtrends.com/babylonjs-vs-three
+
+
+WebGL learning:
+  https://games.greggman.com/game/webgl-3d-cameras/
+  https://webglfundamentals.org/webgl/lessons/webgl-3d-camera.html
+  https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices
+  https://www.tutorialspoint.com/webgl/webgl_interactive_cube.htm
+
+Babylon:
+  https://www.babylonjs.com
+  https://playground.babylonjs.com
+  https://nme.babylonjs.com // material editor (flow based)
+  https://github.com/BabylonJS/SummerFestival
+  https://doc.babylonjs.com/guidedLearning/createAGame
+  https://babylonjs.medium.com/from-unity-to-babylon-js-how-is-the-journey-c71f79482aa3
+  https://news.ycombinator.com/from?site=babylonjs.com
+
+Three.js tutorial:
+  https://www.youtube.com/watch?v=cp-H_6VODko
+
+HAXE:
+  http://babylonhx.com
+  https://haxe.org/use-cases/games/
+    Northgard, Dead Cells, "Papers, Please", Rymdkapsel
+  https://github.com/armory3d
+
+Multi-platform:
+  https://github.com/expo/expo/tree/master/packages/expo-gl#expo-gl
+
+PlayCanvas:
+  https://playcanvas.com
+  praise: https://news.ycombinator.com/item?id=27050731
+  https://news.ycombinator.com/from?site=playcanvas.com
+  https://blog.playcanvas.com/a-multiplayer-3rd-person-shooter-in-html5/
+
+Unity Tiny:
+  https://unity.com/solutions/instant-games
+  https://forum.unity.com/threads/project-tiny-0-32-preview-is-available-ui-new-skinned-mesh-renderer-blendshape-sample.1045204/
+  https://tiny.vision/demos/Tiny3D/Wasm/Tiny3D.html (needs Chrome or Safari Preview)
+  https://github.com/Unity-Technologies/ProjectTinySamples/tree/master/Tiny3D
+  (OLD!) https://docs.unity3d.com/Packages/com.unity.tiny@0.13/manual/scripting-systems.html
+  (OLD!) https://docs.unity3d.com/Packages/com.unity.tiny@0.13/manual/intro-for-unity-developers.html
+
+Regl:
+  https://github.com/regl-project/regl
+
+e.g.
+  https://github.com/jacklaplante/bowdown
+  https://github.com/onegeek/webglu
+
+Sketch fab:
+  https://sketchfab.com
+
+Defold:
+  https://defold.com
+    "I recall our unity engineer quite liked Defold, which had an 
+    integrated builder tool, but for some reason the lead dev didn’t 
+    want to go with it." - https://news.ycombinator.com/item?id=24018097
+  https://github.com/defold/defold
+  Owned by King (Candy Crush, etc)
+
+Google Docs switching to canvas:
+  https://workspaceupdates.googleblog.com/2021/05/Google-Docs-Canvas-Based-Rendering-Update.html
+
+Flutter does all UI via canvas:
+  https://gallery.flutter.dev/#/
+
+Construct:
+  https://www.construct.net/en/make-games/showcase
+
+WebGPU
+  https://github.com/gpuweb/gpuweb
+  status:
+    https://github.com/gpuweb/gpuweb/wiki/Implementation-Status
+
+Construct blog:
+  https://www.construct.net/en/blogs/ashleys-blog-2/brief-history-graphics-web-1517
+  https://www.construct.net/en/blogs/ashleys-blog-2/webgl-webgpu-construct-1519
+
+Safari WebGPU intro:
+  https://webkit.org/blog/9528/webgpu-and-wsl-in-safari/
+
+Mozilla WebGPU intro:
+  https://hacks.mozilla.org/2020/04/experimental-webgpu-in-firefox/
+
+Chrome WebGPU intro:
+  https://www.youtube.com/watch?v=K2JzIUIHIhc
+  
 TO DECIDE:
     Build our own renderer?
 
@@ -8,6 +107,51 @@ GLTF viewers:
     https://sandbox.babylonjs.com/
     https://gltf-viewer.donmccurdy.com/
     https://gltf.insimo.com/
+    https://github.khronos.org/glTF-Sample-Viewer-Release/
+        https://github.com/KhronosGroup/glTF-Sample-Viewer
 
 GLTF loader:
     https://github.com/mrdoob/three.js/blob/a98b9bf/examples/js/loaders/GLTFLoader.js
+
+GLTF compression:
+    https://google.github.io/draco/
+        has JS encode / decode libraries
+
+WebGPU on Chrome:
+    https://developers.google.com/web/updates/2019/08/get-started-with-gpu-compute-on-the-web
+
+WebGPU tutorials:
+    https://alain.xyz/blog/raw-webgpu
+    https://www.willusher.io/graphics/2020/06/15/0-to-gltf-triangle
+
+Shaders Wow:
+    Slime and ants: https://www.youtube.com/watch?v=X-iSQQgOd1A
+
+TO LEARN COMPUTE SHADERS:
+    Limitations ?
+    From JS / WASM ?
+    What can it be used for?
+        Physics?
+        Algorithms?
+        Celular atomita?
+        Procedural gen?
+
+SDFs (Signed Distance Field) ?
+    https://joyrok.com/What-Are-SDFs-Anyway
+
+Vulkan vs OpenGL:
+    https://gamedev.stackexchange.com/questions/96014/what-is-vulkan-and-how-does-it-differ-from-opengl
+
+WebGPU uses Web Shading Language (WSL)
+
+WebGPU boids:
+    http://austin-eng.com/webgpu-samples/samples/computeBoids
+
+webgpu-rs:
+    https://github.com/gfx-rs/wgpu-rs
+
+MIT computer graphics lectures:
+    https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-837-computer-graphics-fall-2012/lecture-notes/
+
+Game Engine Architecture book:
+    https://www.gameenginebook.com/
