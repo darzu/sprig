@@ -7,7 +7,7 @@ import { Renderer, Renderer_WebGPU } from "./render_webgpu.js";
 import { attachToCanvas } from "./render_webgl.js";
 import { getAABBFromMesh, Mesh, unshareProvokingVertices } from "./mesh-pool.js";
 
-const USE_WEBGPU = true;
+const FORCE_WEBGL = false;
 
 enum ObjectType {
   Plane,
@@ -571,14 +571,28 @@ async function startGame(host: string | null) {
 
   const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
 
-  let renderer: Renderer;
-  if (USE_WEBGPU) {
-    const adapter = await navigator.gpu.requestAdapter();
-    const device = await adapter!.requestDevice();
-    renderer = new Renderer_WebGPU(canvas, device, 1000);
-  } else {
-    renderer = attachToCanvas(canvas, 1000, 100);
+  let rendererInit: Renderer | undefined = undefined;
+  let usingWebGPU = false;
+  if (!FORCE_WEBGL) {
+    // try webgpu
+    const adapter = await navigator.gpu?.requestAdapter();
+    if (adapter) {
+      const device = await adapter.requestDevice();
+      const context = canvas.getContext("gpupresent");
+      if (context) {
+        rendererInit = new Renderer_WebGPU(canvas, device, context, 1000);
+        if (rendererInit)
+          usingWebGPU = true
+      }
+    }
   }
+  if (!rendererInit) {
+    rendererInit = attachToCanvas(canvas, 1000, 100);
+  }
+  if (!rendererInit)
+    throw 'Unable to create webgl or webgpu renderer'
+  console.log(`Renderer: ${usingWebGPU ? 'webGPU' : 'webGL'}`);
+  const renderer: Renderer = rendererInit;
   let start_of_time = performance.now();
   let gameState = new CubeGameState(renderer, hosting);
   let inputs = inputsReader(canvas);
@@ -643,7 +657,7 @@ async function startGame(host: string | null) {
         1
       )}, buffers: r=${reliableBufferSize}/u=${unreliableBufferSize},
       dropped updates: ${numDroppedUpdates}
-      objects=${gameState.numObjects})`;
+      objects=${gameState.numObjects}) ${usingWebGPU ? 'wGPU' : 'wGL'}`;
     requestAnimationFrame(frame);
   };
   net = new Net(gameState, host, (id: string) => {

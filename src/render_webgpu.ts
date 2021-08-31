@@ -292,12 +292,13 @@ export class Renderer_WebGPU implements Renderer {
   constructor(
     canvas: HTMLCanvasElement,
     device: GPUDevice,
+    context: GPUCanvasContext,
     maxMeshes = 100,
     maxTrisPerMesh = 100
   ) {
     this.canvas = canvas;
     this.device = device;
-    this.context = canvas.getContext("gpupresent")!;
+    this.context = context;
     this.context.configure({ device, format: swapChainFormat });
 
     const opts: MeshPoolOpts = {
