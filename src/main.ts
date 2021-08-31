@@ -327,14 +327,14 @@ class CubeGameState extends GameState<Inputs> {
       }
 
       // create stack of boxes
-      const BOX_STACK_COUNT = 200;
+      const BOX_STACK_COUNT = 100;
       for (let i = 0; i < BOX_STACK_COUNT; i++) {
         let b = new Bullet(this.newId(), this.me);
         // b.motion.location = vec3.fromValues(0, 5 + i * 2, -2);
         b.motion.location = vec3.fromValues(
-          Math.random() * -20 + 10,
+          Math.random() * -10 + 10 - 5,
           i * 2,
-          Math.random() * -20
+          Math.random() * -10 - 5
         );
         b.color = vec3.fromValues(Math.random(), Math.random(), Math.random());
         b.motion.linearVelocity[1] = -0.05;
@@ -740,6 +740,9 @@ function inputsReader(canvas: HTMLCanvasElement): () => Inputs {
 // ms per network sync (should be the same for all servers)
 const NET_DT = 1000.0 / 20;
 
+// local simulation speed
+const SIM_DT = 1000.0 / 60;
+
 async function startGame(host: string | null) {
   let hosting = host === null;
   let canvas = document.getElementById("sample-canvas") as HTMLCanvasElement;
@@ -812,30 +815,36 @@ async function startGame(host: string | null) {
   let avgFrameTime = 0;
   let avgWeight = 0.05;
   let net: Net<Inputs> | null = null;
-  let time_to_next_sync = NET_DT;
   let previous_frame_time = start_of_time;
+  let net_time_accumulator = 0;
+  let sim_time_accumulator = 0;
   let frame = () => {
     let frame_start_time = performance.now();
-    let time_to_consume = frame_start_time - previous_frame_time;
-    let net_time = 0;
-    while (true) {
-      // need to do some game steps before we render
-      if (time_to_consume > time_to_next_sync) {
-        gameState.step(time_to_next_sync, inputs());
-        let before_net = performance.now();
-        if (net) {
-          net.updateState();
-          net.sendStateUpdates();
-        }
-        net_time += performance.now() - before_net;
-        time_to_consume = time_to_consume - time_to_next_sync;
-        time_to_next_sync = NET_DT;
-      } else {
-        gameState.step(time_to_consume, inputs());
-        time_to_next_sync = time_to_next_sync - time_to_consume;
-        break;
-      }
+    const dt = frame_start_time - previous_frame_time;
+
+    // simulation step(s)
+    sim_time_accumulator += dt;
+    sim_time_accumulator = Math.min(sim_time_accumulator, SIM_DT * 10);
+    while (sim_time_accumulator > SIM_DT) {
+      gameState.step(SIM_DT, inputs());
+      sim_time_accumulator -= SIM_DT;
     }
+
+    // network step(s)
+    net_time_accumulator += dt;
+    net_time_accumulator = Math.min(net_time_accumulator, NET_DT * 10);
+    let net_time = 0;
+    while (net_time_accumulator > NET_DT) {
+      let before_net = performance.now();
+      if (net) {
+        net.updateState();
+        net.sendStateUpdates();
+      }
+      net_time += performance.now() - before_net;
+      net_time_accumulator -= NET_DT;
+    }
+
+    // render
     gameState.renderFrame();
     let jsTime = performance.now() - frame_start_time;
     let frameTime = frame_start_time - previous_frame_time;
