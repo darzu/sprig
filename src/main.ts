@@ -493,8 +493,6 @@ canvasRef.addEventListener('click', doLockMouse)
 // the camera will follow behind it.
 const cameraPos = mat4.create();
 pitch(cameraPos, -Math.PI / 4)
-const playerT = mat4.create();
-playerM.transform = playerT;
 writeMeshTransform(playerM)
 
 // create a directional light and compute it's projection (for shadows) and direction
@@ -659,20 +657,19 @@ function renderFrame(timeMs: number) {
     // resize (if necessary)
     resize(device, canvasRef.width, canvasRef.height);
 
-    // process inputs
+    // process inputs and move the player & camera
     const playerSpeed = pressedKeys[' '] ? 1.0 : 0.2; // spacebar boosts speed
-    if (pressedKeys['w']) moveZ(playerT, -playerSpeed) // forward
-    if (pressedKeys['s']) moveZ(playerT, playerSpeed) // backward
-    if (pressedKeys['a']) moveX(playerT, -playerSpeed) // left
-    if (pressedKeys['d']) moveX(playerT, playerSpeed) // right
-    if (pressedKeys['shift']) moveY(playerT, playerSpeed) // up
-    if (pressedKeys['c']) moveY(playerT, -playerSpeed) // down
+    if (pressedKeys['w']) moveZ(playerM.transform, -playerSpeed) // forward
+    if (pressedKeys['s']) moveZ(playerM.transform, playerSpeed) // backward
+    if (pressedKeys['a']) moveX(playerM.transform, -playerSpeed) // left
+    if (pressedKeys['d']) moveX(playerM.transform, playerSpeed) // right
+    if (pressedKeys['shift']) moveY(playerM.transform, playerSpeed) // up
+    if (pressedKeys['c']) moveY(playerM.transform, -playerSpeed) // down
     const { x: mouseX, y: mouseY } = takeAccumulatedMouseMovement();
-    yaw(playerT, -mouseX * 0.01);
+    yaw(playerM.transform, -mouseX * 0.01);
     pitch(cameraPos, -mouseY * 0.01);
 
-    // apply movement to the "player"
-    playerM.transform = playerT;
+    // apply the players movement by writting to the model uniform buffer
     writeMeshTransform(playerM);
 
     // render from the light's point of view to a depth buffer so we know where shadows are
@@ -703,7 +700,7 @@ function renderFrame(timeMs: number) {
 
     // calculate and write our view and project matrices
     const viewMatrix = mat4.create()
-    mat4.multiply(viewMatrix, viewMatrix, playerT)
+    mat4.multiply(viewMatrix, viewMatrix, playerM.transform)
     mat4.multiply(viewMatrix, viewMatrix, cameraPos)
     mat4.translate(viewMatrix, viewMatrix, [0, 0, 10])
     mat4.invert(viewMatrix, viewMatrix);
