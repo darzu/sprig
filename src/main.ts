@@ -195,28 +195,28 @@ const CUBE: Mesh = {
         [5, 4, 7], [5, 7, 6], // back
     ],
     colors: [
-        [0.2, 0.0, 0.0], [0.2, 0.0, 0.0], // front
-        [0.0, 0.2, 0.0], [0.0, 0.2, 0.0], // top
-        [0.0, 0.0, 0.2], [0.0, 0.0, 0.2], // right
-        [0.2, 0.2, 0.0], [0.2, 0.2, 0.0], // left
-        [0.0, 0.2, 0.2], [0.0, 0.2, 0.2], // bottom
-        [0.2, 0.0, 0.2], [0.2, 0.0, 0.2], // back
+        [0.2, 0, 0], [0.2, 0, 0], // front
+        [0.2, 0, 0], [0.2, 0, 0], // top
+        [0.2, 0, 0], [0.2, 0, 0], // right
+        [0.2, 0, 0], [0.2, 0, 0], // left
+        [0.2, 0, 0], [0.2, 0, 0], // bottom
+        [0.2, 0, 0], [0.2, 0, 0], // back
     ]
 }
 const PLANE: Mesh = {
     pos: [
-        [+10, 0, +10],
-        [-10, 0, +10],
-        [+10, 0, -10],
-        [-10, 0, -10],
+        [+1, 0, +1],
+        [-1, 0, +1],
+        [+1, 0, -1],
+        [-1, 0, -1],
     ],
     tri: [
         [0, 2, 3], [0, 3, 1], // top
         [3, 2, 0], [1, 3, 0], // bottom
     ],
     colors: [
-        [0.05, 0.1, 0.05], [0.05, 0.1, 0.05],
-        [0.05, 0.1, 0.05], [0.05, 0.1, 0.05],
+        [0.02, 0.02, 0.02], [0.02, 0.02, 0.02],
+        [0.02, 0.02, 0.02], [0.02, 0.02, 0.02],
     ],
 }
 
@@ -308,7 +308,8 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     // let's create meshes for our scene and store their data in the vertex, index, and uniform buffers
     let ground: MeshHandle;
     let player: MeshHandle;
-    const meshHandles: MeshHandle[] = [];
+    let randomCubes: MeshHandle[] = [];
+    const allMeshHandles: MeshHandle[] = [];
     {
         // to modify buffers, we need to map them into JS space; we'll need to unmap later
         let verticesMap = new Float32Array(verticesBuffer.getMappedRange())
@@ -347,7 +348,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
 
             const transform = mat4.create() as Float32Array;
 
-            const uniOffset = meshHandles.length * meshUniByteSizeAligned;
+            const uniOffset = allMeshHandles.length * meshUniByteSizeAligned;
             device.queue.writeBuffer(_meshUniBuffer, uniOffset, transform.buffer);
 
             const res: MeshHandle = {
@@ -359,21 +360,38 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
                 model: m,
             }
 
-            meshHandles.push(res)
+            allMeshHandles.push(res)
             return res;
         }
 
-        ground = addMesh(PLANE);
-        player = addMesh(CUBE);
+        ground = addMesh(PLANE); // ground plane
+        player = addMesh(CUBE); // player movable cube
+        for (let i = 0; i < 10; i++) {
+            // create cubes with random colors
+            const color: vec3 = [Math.random(), Math.random(), Math.random()];
+            const coloredCube: Mesh = { ...CUBE, colors: CUBE.colors.map(_ => color) }
+            randomCubes.push(addMesh(coloredCube))
+        }
 
         // unmap the buffers so the GPU can use them
         verticesBuffer.unmap()
         indicesBuffer.unmap()
     }
 
-    // set the initial state of our meshes
-    mat4.translate(ground.transform, ground.transform, [0, -3, 0])
+    // place the ground
+    mat4.translate(ground.transform, ground.transform, [0, -3, -8])
+    mat4.scale(ground.transform, ground.transform, [10, 10, 10])
     gpuBufferWriteMeshTransform(ground);
+
+    // initialize our cubes; each will have a random axis of rotation
+    const randomCubesAxis: vec3[] = []
+    for (let m of randomCubes) {
+        // place and rotate cubes randomly
+        mat4.translate(m.transform, m.transform, [Math.random() * 20 - 10, Math.random() * 5, -Math.random() * 10 - 5])
+        const axis: vec3 = vec3.normalize(vec3.create(), [Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5]);
+        randomCubesAxis.push(axis)
+        gpuBufferWriteMeshTransform(m);
+    }
 
     // track which keys are pressed for use in the game loop
     const pressedKeys: { [keycode: string]: boolean } = {}
@@ -404,7 +422,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     // create the "player", which is an affine matrix tracking position & orientation of a cube
     // the camera will follow behind it.
     const cameraOffset = mat4.create();
-    pitch(cameraOffset, -Math.PI / 4)
+    pitch(cameraOffset, -Math.PI / 8)
     gpuBufferWriteMeshTransform(player)
 
     // write the light data to the scene uniform buffer
@@ -542,7 +560,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     bundleEncoder.setBindGroup(0, renderSceneUniBindGroup);
     bundleEncoder.setVertexBuffer(0, verticesBuffer);
     bundleEncoder.setIndexBuffer(indicesBuffer, 'uint16');
-    for (let m of meshHandles) {
+    for (let m of allMeshHandles) {
         bundleEncoder.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
         bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
     }
@@ -579,6 +597,14 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         // apply the players movement by writting to the model uniform buffer
         gpuBufferWriteMeshTransform(player);
 
+        // rotate the random cubes
+        for (let i = 0; i < randomCubes.length; i++) {
+            const m = randomCubes[i]
+            const axis = randomCubesAxis[i]
+            mat4.rotate(m.transform, m.transform, Math.PI * 0.01, axis);
+            gpuBufferWriteMeshTransform(m);
+        }
+
         // render from the light's point of view to a depth buffer so we know where shadows are
         const commandEncoder = device.createCommandEncoder();
         const shadowPassDescriptor: GPURenderPassDescriptor = {
@@ -596,7 +622,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         shadowPass.setPipeline(shadowPipeline);
         shadowPass.setVertexBuffer(0, verticesBuffer);
         shadowPass.setIndexBuffer(indicesBuffer, 'uint16');
-        for (let m of meshHandles) {
+        for (let m of allMeshHandles) {
             shadowPass.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
             shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
         }
@@ -638,7 +664,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         avgJsTimeMs = avgJsTimeMs ? (1 - avgWeight) * avgJsTimeMs + avgWeight * jsTime : jsTime
         avgFrameTimeMs = avgFrameTimeMs ? (1 - avgWeight) * avgFrameTimeMs + avgWeight * frameTimeMs : frameTimeMs
         const avgFPS = 1000 / avgFrameTimeMs;
-        debugDiv.innerText = `js: ${avgJsTimeMs.toFixed(2)}ms, frame: ${avgFrameTimeMs.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)}`
+        debugDiv.innerText = `js p/frame: ${avgJsTimeMs.toFixed(2)}ms, frame: ${avgFrameTimeMs.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)}`
     }
     return renderFrame;
 }
@@ -670,6 +696,8 @@ function bufferWriteVec3(buffer: Float32Array, offset: number, v: vec3) {
 }
 
 async function main() {
+    const start = performance.now();
+
     // attach to HTML canvas 
     let canvasRef = document.getElementById('sample-canvas') as HTMLCanvasElement;
     const adapter = await navigator.gpu.requestAdapter();
@@ -689,6 +717,7 @@ async function main() {
 
     // build our scene for the canvas
     const renderFrame = attachToCanvas(canvasRef, device);
+    console.log(`JS init time: ${(performance.now() - start).toFixed(1)}ms`)
 
     // run our game loop using 'requestAnimationFrame`
     if (renderFrame) {
