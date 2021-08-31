@@ -622,6 +622,7 @@ async function startGame(host: string | null) {
   };
   net = new Net(gameState, host, (id: string) => {
     if (hosting) {
+      console.log("hello");
       console.log(`Net up and running with id ${id}`);
       navigator.clipboard.writeText(id);
       frame();

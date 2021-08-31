@@ -184,6 +184,7 @@ export class Net<Inputs> {
   private handleMessage(server: ServerId, data: ArrayBuffer) {
     let deserializer = new Deserializer(data);
     let type: MessageType = deserializer.readUint8();
+    //console.log(`Received message of type ${MessageType[type]}`);
     switch (type) {
       case MessageType.Join: {
         // no other data associated with a join message
@@ -244,6 +245,7 @@ export class Net<Inputs> {
   }
 
   applyStateUpdate(data: ArrayBuffer) {
+    //console.log("In applyStateUpdate");
     //console.log("Applying state update");
     let message = new Deserializer(data);
     let type = message.readUint8();
@@ -297,12 +299,14 @@ export class Net<Inputs> {
   }
 
   updateState() {
+    //console.log("In updateState");
     for (let server of this.peers) {
       /*console.log(
         `Have ${
           this.stateUpdates[server] ? this.stateUpdates[server].length : 0
         } buffered state updates`
-      );*/
+        );*/
+      //console.log(`Looking for update ${this.nextUpdate[server]}`);
       if (!this.nextUpdate[server]) {
         this.nextUpdate[server] = 0;
       }
@@ -314,7 +318,8 @@ export class Net<Inputs> {
         this.stateUpdates[server][0].seq < this.nextUpdate[server]
       ) {
         let { seq } = this.stateUpdates[server].shift()!;
-        /*console.log(
+        /*
+        console.log(
           `Ignoring old state update ${seq} < ${this.nextUpdate[server]} from ${server}`
         );*/
       }
@@ -323,6 +328,7 @@ export class Net<Inputs> {
         this.stateUpdates[server] &&
         this.stateUpdates[server].length > BUFFER_TARGET * 2
       ) {
+        //console.log("Buffer too large, dropping in order to catch up");
         while (this.stateUpdates[server].length > BUFFER_TARGET) {
           this.stateUpdates[server].shift();
           this.nextUpdate[server]++;
@@ -333,14 +339,20 @@ export class Net<Inputs> {
         this.stateUpdates[server].length === 0
       ) {
         // buffer some state updates from this server
+        //console.log("Buffering for updates");
         this.waiting[server] = true;
         continue;
       } else if (
         !this.waiting[server] ||
         this.stateUpdates[server].length >= BUFFER_TARGET
       ) {
-        this.waiting[server] = false;
+        //console.log("Trying to apply an update");
         let { seq, data } = this.stateUpdates[server].shift()!;
+        // if we were buffering, we're going to reset our "clock" to whatever we have now
+        if (this.waiting[server]) {
+          this.nextUpdate[server] = seq;
+          this.waiting[server] = false;
+        }
         if (this.nextUpdate[server] === seq) {
           this.applyStateUpdate(data);
           let ack = new Serializer(8);
@@ -349,7 +361,7 @@ export class Net<Inputs> {
           this.send(server, ack.buffer, false);
         }
       }
-      if (!this.waiting[server] || this.nextUpdate[server] > 0) {
+      if (!this.waiting[server]) {
         this.nextUpdate[server]++;
       }
     }
