@@ -3,7 +3,7 @@ import { align } from '../math.js';
 import { initGrassSystem } from './grass.js';
 import { createMeshPoolBuilder, meshApplyUniformData, MeshHandle, MeshPool } from './mesh-pool.js';
 
-const ENABLE_WATER = true;
+const ENABLE_WATER = false;
 
 // Defines shaders in WGSL for the shadow and regular rendering pipelines. Likely you'll want
 // these in external files but they've been inlined for redistribution convenience.
