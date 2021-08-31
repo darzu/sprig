@@ -189,6 +189,7 @@ function addMeshToBuffers(m: MeshModel, verts: Float32Array, prevNumVerts: numbe
 interface Mesh {
     vertNumOffset: number,
     indicesNumOffset: number,
+    modelUniByteOffset: number,
     transform: mat4;
     model: MeshModel,
     binding: GPUBindGroup,
@@ -470,6 +471,7 @@ async function init(canvasRef: HTMLCanvasElement) {
             const res: Mesh = {
                 vertNumOffset: numVerts, // TODO(@darzu): 
                 indicesNumOffset: numTris * 3, // TODO(@darzu): 
+                modelUniByteOffset: uniOffset,
                 transform: trans,
                 model: m,
                 binding: modelUniBindGroup,
@@ -491,9 +493,25 @@ async function init(canvasRef: HTMLCanvasElement) {
         verticesBuffer.unmap();
     }
 
+    function applyMeshTransform(m: Mesh) {
+        // save the transform matrix to the buffer
+        device.queue.writeBuffer(
+            modelUniBuffer,
+            m.modelUniByteOffset,
+            (m.transform as Float32Array).buffer,
+            (m.transform as Float32Array).byteOffset,
+            (m.transform as Float32Array).byteLength
+        );
+    }
+
     function frame() {
         // Sample is no longer the active page.
         if (!canvasRef) return;
+
+        // update model positions
+        // TODO(@darzu): real movement
+        mat4.translate(meshes[1].transform, meshes[1].transform, [0.1, 0, 0])
+        applyMeshTransform(meshes[1])
 
         const transformationMatrix = getTransformationMatrix();
         device.queue.writeBuffer(
