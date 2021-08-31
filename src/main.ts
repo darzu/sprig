@@ -1,4 +1,4 @@
-import { mat4, vec3, vec4 } from './gl-matrix.js';
+import { mat4, vec3 } from './gl-matrix.js';
 
 function align(x: number, size: number): number {
     return Math.ceil(x / size) * size
@@ -225,25 +225,6 @@ interface MeshMemoryPoolOptions {
     usesIndices: boolean,
 }
 
-interface MeshMemoryPool {
-    _opts: MeshMemoryPoolOptions,
-    _vertBuffer: GPUBuffer,
-    _indexBuffer: GPUBuffer | null,
-    _meshUniBuffer: GPUBuffer,
-    _meshes: Mesh[],
-    _numVerts: number,
-    _numTris: number,
-    addMeshes: (meshesToAdd: MeshModel[], shadowCasters: boolean) => Mesh[],
-    applyMeshTransform: (m: Mesh) => void,
-    applyMeshMaxDraw: (m: Mesh) => void,
-
-    // TODO: mapping, unmapping, and raw access is pretty odd
-    _vertsMap: () => Float32Array,
-    _indMap: () => Uint16Array,
-    _unmap: () => void,
-    _map: () => void,
-}
-
 const _scratchSingletonFloatBuffer = new Float32Array(1);
 
 // TODO(@darzu): this shouldn't be needed once "flat" shading is supported in Chrome's WGSL, 
@@ -271,11 +252,6 @@ function unshareVertices(inp: MeshModel): MeshModel {
         tri: outTri,
         colors: inp.colors,
     }
-}
-// TODO(@darzu): needed?
-interface ExpandedMesh extends MeshModel {
-    // face normals, per triangle
-    fnorm: vec3[];
 }
 
 const CUBE: MeshModel = {
@@ -1015,128 +991,8 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     const backfaceCulling = true;
 
-    function rebuildBundles() {
-
-        // create render bundle
-        const bundleRenderDesc: GPURenderBundleEncoderDescriptor = {
-            colorFormats: [swapChainFormat],
-            depthStencilFormat: depthStencilFormat,
-            sampleCount,
-        }
-
-        const bundleEncoder = device.createRenderBundleEncoder(bundleRenderDesc);
-
-        if (backfaceCulling)
-            bundleEncoder.setPipeline(renderPipeline);
-        else
-            bundleEncoder.setPipeline(renderPipelineTwosided);
-
-        bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
-        const modelUniBindGroup = device.createBindGroup({
-            layout: modelUniBindGroupLayout,
-            entries: [
-                {
-                    binding: 0,
-                    resource: {
-                        buffer: _meshUniBuffer,
-                        offset: 0, // TODO(@darzu): different offsets per model
-                        // TODO(@darzu): needed?
-                        size: meshUniByteSize,
-                    },
-                },
-            ],
-        });
-        bundleEncoder.setVertexBuffer(0, _vertBuffer);
-        if (_indexBuffer)
-            bundleEncoder.setIndexBuffer(_indexBuffer, 'uint16');
-        const uniOffset = [0];
-        for (let m of _meshes) {
-            // TODO(@darzu): set bind group
-            uniOffset[0] = m.modelUniByteOffset;
-            bundleEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
-            if (_indexBuffer)
-                bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-            else {
-                bundleEncoder.draw(m.triCount * 3, undefined, m.vertNumOffset);
-            }
-        }
-        renderBundle = bundleEncoder.finish()
-    }
-
     function render(commandEncoder: GPUCommandEncoder, canvasWidth: number, canvasHeight: number) {
-        // TODO(@darzu):  this feels akward
-        // Acquire next image from swapchain
-        // colorTexture = swapChain.getCurrentTexture();
-        // colorTextureView = colorTexture.createView();
 
-        const colorAtt: GPURenderPassColorAttachmentNew = {
-            view: colorTextureView,
-            resolveTarget: swapChain.getCurrentTexture().createView(),
-            loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
-            storeOp: 'store',
-        };
-        const renderPassDescriptor = {
-            colorAttachments: [colorAtt],
-            depthStencilAttachment: {
-                view: depthTextureView,
-                depthLoadValue: 1.0,
-                depthStoreOp: 'store',
-                stencilLoadValue: 0,
-                stencilStoreOp: 'store',
-            },
-        } as const;
-
-        const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
-        // shadowPassEncoder.executeBundles([shadowRenderBundle]);
-        // TODO(@darzu): use bundle
-        {
-            shadowPass.setBindGroup(0, shadowSharedUniBindGroup);
-            if (backfaceCulling)
-                    shadowPass.setPipeline(shadowPipeline);
-                else
-                    shadowPass.setPipeline(shadowPipelineTwosided);
-
-                const modelUniBindGroup = device.createBindGroup({
-                    layout: modelUniBindGroupLayout,
-                    entries: [
-                        {
-                            binding: 0,
-                            resource: {
-                                buffer: _meshUniBuffer,
-                                offset: 0, // TODO(@darzu): different offsets per model
-                                // TODO(@darzu): needed?
-                                size: meshUniByteSize,
-                            },
-                        },
-                    ],
-                });
-            shadowPass.setVertexBuffer(0, _vertBuffer);
-            if (_indexBuffer)
-                shadowPass.setIndexBuffer(_indexBuffer, 'uint16');
-                // TODO(@darzu): one draw call per mesh?
-                const uniOffset = [0];
-            for (let m of _meshes) {
-                    if (!m.shadowCaster)
-                        continue;
-                    // TODO(@darzu): set bind group
-                    uniOffset[0] = m.modelUniByteOffset;
-                    shadowPass.setBindGroup(1, modelUniBindGroup, uniOffset);
-                if (_indexBuffer)
-                        shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-                    else {
-                        // console.log(`m.vertNumOffset: ${m.vertNumOffset}`)
-                        shadowPass.draw(m.triCount * 3, undefined, m.vertNumOffset);
-                    }
-            }
-            // shadowRenderBundle = shadowPass.finish()
-        }
-        shadowPass.endPass();
-
-        const renderPassEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
-        renderPassEncoder.executeBundles([renderBundle]);
-        renderPassEncoder.endPass();
-
-        return commandEncoder;
     }
 
     resize(device, 100, 100);
@@ -1267,7 +1123,52 @@ async function init(canvasRef: HTMLCanvasElement) {
         );
     }
 
-    rebuildBundles();
+    {
+        // create render bundle
+        const bundleRenderDesc: GPURenderBundleEncoderDescriptor = {
+            colorFormats: [swapChainFormat],
+            depthStencilFormat: depthStencilFormat,
+            sampleCount,
+        }
+
+        const bundleEncoder = device.createRenderBundleEncoder(bundleRenderDesc);
+
+        if (backfaceCulling)
+            bundleEncoder.setPipeline(renderPipeline);
+        else
+            bundleEncoder.setPipeline(renderPipelineTwosided);
+
+        bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
+        const modelUniBindGroup = device.createBindGroup({
+            layout: modelUniBindGroupLayout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: {
+                        buffer: _meshUniBuffer,
+                        offset: 0, // TODO(@darzu): different offsets per model
+                        // TODO(@darzu): needed?
+                        size: meshUniByteSize,
+                    },
+                },
+            ],
+        });
+        bundleEncoder.setVertexBuffer(0, _vertBuffer);
+        if (_indexBuffer)
+            bundleEncoder.setIndexBuffer(_indexBuffer, 'uint16');
+        const uniOffset = [0];
+        for (let m of _meshes) {
+            // TODO(@darzu): set bind group
+            uniOffset[0] = m.modelUniByteOffset;
+            bundleEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
+            if (_indexBuffer)
+                bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+            else {
+                bundleEncoder.draw(m.triCount * 3, undefined, m.vertNumOffset);
+            }
+        }
+        renderBundle = bundleEncoder.finish()
+    }
 
     let debugDiv = document.getElementById('debug-div') as HTMLDivElement;
 
@@ -1323,22 +1224,75 @@ async function init(canvasRef: HTMLCanvasElement) {
             transformationMatrix.byteLength
         );
 
-        // // writting time to shared buffer
-        // const sharedTime = new Float32Array(1);
-        // sharedTime[0] = Math.floor(timeMs);
-        // device.queue.writeBuffer(
-        //     sharedUniBuffer,
-        //     bytesPerMat4 * 2 + bytesPerVec3 * 1, // TODO(@darzu): getting these offsets is a pain
-        //     sharedTime.buffer,
-        //     sharedTime.byteOffset,
-        //     sharedTime.byteLength
-        // );
-
-        const canvasWidth = canvasRef.clientWidth;
-        const canvasHeight = canvasRef.clientHeight;
-
         const commandEncoder = device.createCommandEncoder();
-        render(commandEncoder, canvasWidth, canvasHeight);
+        {
+            const colorAtt: GPURenderPassColorAttachmentNew = {
+                view: colorTextureView,
+                resolveTarget: swapChain.getCurrentTexture().createView(),
+                loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
+                storeOp: 'store',
+            };
+            const renderPassDescriptor = {
+                colorAttachments: [colorAtt],
+                depthStencilAttachment: {
+                    view: depthTextureView,
+                    depthLoadValue: 1.0,
+                    depthStoreOp: 'store',
+                    stencilLoadValue: 0,
+                    stencilStoreOp: 'store',
+                },
+            } as const;
+
+            const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
+            // shadowPassEncoder.executeBundles([shadowRenderBundle]);
+            // TODO(@darzu): use bundle
+            {
+                shadowPass.setBindGroup(0, shadowSharedUniBindGroup);
+                if (backfaceCulling)
+                    shadowPass.setPipeline(shadowPipeline);
+                else
+                    shadowPass.setPipeline(shadowPipelineTwosided);
+
+                const modelUniBindGroup = device.createBindGroup({
+                    layout: modelUniBindGroupLayout,
+                    entries: [
+                        {
+                            binding: 0,
+                            resource: {
+                                buffer: _meshUniBuffer,
+                                offset: 0, // TODO(@darzu): different offsets per model
+                                // TODO(@darzu): needed?
+                                size: meshUniByteSize,
+                            },
+                        },
+                    ],
+                });
+                shadowPass.setVertexBuffer(0, _vertBuffer);
+                if (_indexBuffer)
+                    shadowPass.setIndexBuffer(_indexBuffer, 'uint16');
+                // TODO(@darzu): one draw call per mesh?
+                const uniOffset = [0];
+                for (let m of _meshes) {
+                    if (!m.shadowCaster)
+                        continue;
+                    // TODO(@darzu): set bind group
+                    uniOffset[0] = m.modelUniByteOffset;
+                    shadowPass.setBindGroup(1, modelUniBindGroup, uniOffset);
+                    if (_indexBuffer)
+                        shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+                    else {
+                        // console.log(`m.vertNumOffset: ${m.vertNumOffset}`)
+                        shadowPass.draw(m.triCount * 3, undefined, m.vertNumOffset);
+                    }
+                }
+                // shadowRenderBundle = shadowPass.finish()
+            }
+            shadowPass.endPass();
+
+            const renderPassEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+            renderPassEncoder.executeBundles([renderBundle]);
+            renderPassEncoder.endPass();
+        }
         device.queue.submit([commandEncoder.finish()]);
 
         const jsTime = performance.now() - start;
