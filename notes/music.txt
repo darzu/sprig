@@ -6,6 +6,7 @@ Music Theory
     4 (inversions) - https://www.youtube.com/watch?v=rgaTLrZGlk0&t=1424s
     5 (melody) - https://www.youtube.com/watch?v=rgaTLrZGlk0&t=1628s
     6 (rhythm) - https://www.youtube.com/watch?v=rgaTLrZGlk0&t=1844s
+    course: https://monthly.com/andrew-huang-music?ref=ANDREW&code=a
 
 concepts: 
     notes, chords, keys (home base?), scales, major (4-3) and minor (3-4) scales, 12 notes, octaves, 7 note subsets (scales), 
