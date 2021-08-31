@@ -28,6 +28,7 @@ export abstract class GameObject {
   location: vec3;
   rotation: quat;
   at_rest: boolean;
+  // TODO(@darzu): these properties aren't being properly synced by physics system
   linear_velocity: vec3;
   angular_velocity: vec3;
   authority: number;
@@ -37,8 +38,6 @@ export abstract class GameObject {
 
   // TODO(@darzu): hack state
   color: vec3;
-
-  // physics
 
   constructor(id: number) {
     this.id = id;
@@ -133,12 +132,24 @@ export abstract class GameState<Inputs> {
     // physics
     // TODO(@darzu): create physics object
     const rigidBodyDesc = (obj.static ? RAPIER.RigidBodyDesc.newStatic() : RAPIER.RigidBodyDesc.newDynamic())
-      .setTranslation(obj.location[0], obj.location[1], obj.location[2]);
+      .setTranslation(obj.location[0], obj.location[1], obj.location[2])
+      // .setRotation(obj.rotation)
+      // .setLinvel(obj.linear_velocity[0], obj.linear_velocity[1], obj.linear_velocity[2])
+      // .setAngvel(obj.angular_velocity)
+      // .setDominanceGroup(0)
     const rigidBody = this.world.createRigidBody(rigidBodyDesc);
     this.objectBodies[obj.id] = rigidBody;
 
     const halfSize = vec3.scale(vec3.create(), aabbSize(obj.aabb()), 0.5);
-    const colliderDesc = RAPIER.ColliderDesc.cuboid(halfSize[0], Math.max(halfSize[1], 0.1), halfSize[2]);
+    const colliderDesc = RAPIER.ColliderDesc.cuboid(halfSize[0], Math.max(halfSize[1], 0.1), halfSize[2])
+      .setActiveCollisionTypes(
+        RAPIER.ActiveCollisionTypes.DEFAULT
+        | RAPIER.ActiveCollisionTypes.KINEMATIC_STATIC
+        | RAPIER.ActiveCollisionTypes.DYNAMIC_DYNAMIC
+        | RAPIER.ActiveCollisionTypes.DYNAMIC_STATIC
+        | RAPIER.ActiveCollisionTypes.STATIC_STATIC)
+      .setCollisionGroups(0x00010001)
+      .setSolverGroups(0x00010001)
     const collider = this.world.createCollider(colliderDesc, rigidBody.handle);
     this.objectColliders[obj.id] = collider;
   }

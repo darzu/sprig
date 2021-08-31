@@ -203,7 +203,7 @@ class CubeGameState extends GameState<Inputs> {
       this.addObject(plane);
       this.addPlayer();
       let randomCubes: SpinningCube[] = [];
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 1; i++) {
         let cube = new SpinningCube(this.id());
         // create cubes with random colors
         cube.location = vec3.fromValues(
