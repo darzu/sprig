@@ -17,12 +17,7 @@ TODO:
         Kill babylonjs?
 */
 
-// TODO(@darzu): per-face data?
-// interface GPUVertexBufferLayout {
-//     arrayStride: GPUSize64;
-//     stepMode?: GPUInputStepMode;
-//     attributes: Iterable<GPUVertexAttribute>;
-// }
+// TODO(@darzu): expand faces to have unique vertices
 
 // face normals vs vertex normals
 interface MeshModel {
@@ -30,6 +25,32 @@ interface MeshModel {
     pos: vec3[];
     // triangles (vert indices, ccw)
     tri: vec3[];
+}
+
+// TODO(@darzu): this shouldn't be needed once "flat" shading is supported in Chrome's WGSL, 
+//  and/or PrimativeID is supported https://github.com/gpuweb/gpuweb/issues/1786
+function unshareVertices(inp: MeshModel): MeshModel {
+    // TODO(@darzu): pre-alloc
+    const outVerts: vec3[] = []
+    const outTri: vec3[] = []
+    inp.tri.forEach(([i0, i1, i2], i) => {
+        const v0 = inp.pos[i0];
+        const v1 = inp.pos[i1];
+        const v2 = inp.pos[i2];
+        outVerts.push(v0);
+        outVerts.push(v1);
+        outVerts.push(v2);
+        const vOff = i * 3;
+        outTri.push([
+            vOff + 0,
+            vOff + 1,
+            vOff + 2,
+        ])
+    })
+    return {
+        pos: outVerts,
+        tri: outTri,
+    }
 }
 interface ExpandedMesh extends MeshModel {
     // face normals, per triangle
@@ -491,6 +512,9 @@ async function init(canvasRef: HTMLCanvasElement) {
         const indMap = new Uint16Array(indexBuffer.getMappedRange());
 
         function addMesh(m: MeshModel): Mesh {
+            // TODO(@darzu): temporary
+            m = unshareVertices(m);
+
             if (numVerts + m.pos.length > maxNumVerts)
                 throw "Too many vertices!"
             if (numTris + m.tri.length > maxNumTri)

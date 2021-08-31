@@ -356,3 +356,11 @@ Data per triangle:
   gl_PrimitiveID
   "texture buffer object (TBO)" for high primitive count
     texelFetch
+
+Graphics storage options:
+  Vertex buffer
+  Vertex buffer (instance step)
+  Uniform buffer
+    Small, performant
+  SSBOS
+    large, slow, writable
