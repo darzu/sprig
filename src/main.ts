@@ -110,7 +110,6 @@ const bytesPerVec3 = 3/*vec3*/ * 4/*f32*/
 const indicesPerTriangle = 3;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
 
-
 const antiAliasSampleCount = 4;
 const swapChainFormat = 'bgra8unorm';
 
@@ -220,9 +219,52 @@ window.onresize = function () {
 }
 onWindowResize();
 
-// TODO(@darzu): mesh stuff
-let _vertsMap: Float32Array | null = null;
-let _indMap: Uint16Array | null = null;
+// define our meshes (ideally these would be imported from a standard format)
+const CUBE: Mesh = {
+    pos: [
+        [+1.0, +1.0, +1.0],
+        [-1.0, +1.0, +1.0],
+        [-1.0, -1.0, +1.0],
+        [+1.0, -1.0, +1.0],
+
+        [+1.0, +1.0, -1.0],
+        [-1.0, +1.0, -1.0],
+        [-1.0, -1.0, -1.0],
+        [+1.0, -1.0, -1.0],
+    ],
+    tri: [
+        [0, 1, 2], [0, 2, 3], // front
+        [4, 5, 1], [4, 1, 0], // top
+        [3, 4, 0], [3, 7, 4], // right
+        [2, 1, 5], [2, 5, 6], // left
+        [6, 3, 2], [6, 7, 3], // bottom
+        [5, 4, 7], [5, 7, 6], // back
+    ],
+    colors: [
+        [0.2, 0.0, 0.0], [0.2, 0.0, 0.0], // front
+        [0.0, 0.2, 0.0], [0.0, 0.2, 0.0], // top
+        [0.0, 0.0, 0.2], [0.0, 0.0, 0.2], // right
+        [0.2, 0.2, 0.0], [0.2, 0.2, 0.0], // left
+        [0.0, 0.2, 0.2], [0.0, 0.2, 0.2], // bottom
+        [0.2, 0.0, 0.2], [0.2, 0.0, 0.2], // back
+    ]
+}
+const PLANE: Mesh = {
+    pos: [
+        [+10, 0, +10],
+        [-10, 0, +10],
+        [+10, 0, -10],
+        [-10, 0, -10],
+    ],
+    tri: [
+        [0, 2, 3], [0, 3, 1], // top
+        [3, 2, 0], [1, 3, 0], // bottom
+    ],
+    colors: [
+        [0.05, 0.1, 0.05], [0.05, 0.1, 0.05],
+        [0.05, 0.1, 0.05], [0.05, 0.1, 0.05],
+    ],
+}
 
 const meshUniByteSize = align(
     bytesPerMat4 // transform
@@ -267,106 +309,6 @@ const _meshUniBuffer = device.createBuffer({
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 });
 
-const _meshes: MeshHandle[] = [];
-let _numVerts = 0;
-let _numTris = 0;
-function addMeshes(meshesToAdd: Mesh[], shadowCasters: boolean): MeshHandle[] {
-    function addMesh(m: Mesh): MeshHandle {
-        if (_vertsMap === null)
-            throw "Use preRender() and postRender() functions"
-
-        m = unshareVertices(m);
-
-        if (_numVerts + m.pos.length > maxVerts)
-            throw "Too many vertices!"
-        if (_numTris + m.tri.length > maxTris)
-            throw "Too many triangles!"
-
-        const verts: Float32Array = _vertsMap;
-        const prevNumVerts2: number = _numVerts;
-        const indices: Uint16Array | null = _indMap;
-        const prevNumTri2: number = _numTris;
-        {
-            // NOTE: we currently assumes vertices are unshared, this should be fixed by
-            const norms = computeNormals(m);
-            m.tri.forEach((triInd, i) => {
-                const triPos: [vec3, vec3, vec3] = [m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]]];
-                const triNorms: [vec3, vec3, vec3] = [norms[i], norms[i], norms[i]];
-                const triColors: [vec3, vec3, vec3] = [m.colors[i], m.colors[i], m.colors[i]];
-                const prevNumVerts: number = prevNumVerts2 + i * 3;
-                const prevNumTri: number = prevNumTri2 + i;
-                const vOff = prevNumVerts * vertElStride
-                const iOff = prevNumTri * indicesPerTriangle
-                if (indices) {
-                    indices[iOff + 0] = triInd[0]
-                    indices[iOff + 1] = triInd[1]
-                    indices[iOff + 2] = triInd[2]
-                }
-                // set per-face vertex data
-                // position
-                verts[vOff + 0 * vertElStride + 0] = triPos[0][0]
-                verts[vOff + 0 * vertElStride + 1] = triPos[0][1]
-                verts[vOff + 0 * vertElStride + 2] = triPos[0][2]
-                verts[vOff + 1 * vertElStride + 0] = triPos[1][0]
-                verts[vOff + 1 * vertElStride + 1] = triPos[1][1]
-                verts[vOff + 1 * vertElStride + 2] = triPos[1][2]
-                verts[vOff + 2 * vertElStride + 0] = triPos[2][0]
-                verts[vOff + 2 * vertElStride + 1] = triPos[2][1]
-                verts[vOff + 2 * vertElStride + 2] = triPos[2][2]
-                // color
-                const [r1, g1, b1] = triColors[0]
-                const [r2, g2, b2] = triColors[1]
-                const [r3, g3, b3] = triColors[2]
-                verts[vOff + 0 * vertElStride + 3] = r1
-                verts[vOff + 0 * vertElStride + 4] = g1
-                verts[vOff + 0 * vertElStride + 5] = b1
-                verts[vOff + 1 * vertElStride + 3] = r2
-                verts[vOff + 1 * vertElStride + 4] = g2
-                verts[vOff + 1 * vertElStride + 5] = b2
-                verts[vOff + 2 * vertElStride + 3] = r3
-                verts[vOff + 2 * vertElStride + 4] = g3
-                verts[vOff + 2 * vertElStride + 5] = b3
-                // normals
-                const [nx1, ny1, nz1] = triNorms[0]
-                verts[vOff + 0 * vertElStride + 6] = nx1
-                verts[vOff + 0 * vertElStride + 7] = ny1
-                verts[vOff + 0 * vertElStride + 8] = nz1
-                const [nx2, ny2, nz2] = triNorms[1]
-                verts[vOff + 1 * vertElStride + 6] = nx2
-                verts[vOff + 1 * vertElStride + 7] = ny2
-                verts[vOff + 1 * vertElStride + 8] = nz2
-                const [nx3, ny3, nz3] = triNorms[2]
-                verts[vOff + 2 * vertElStride + 6] = nx3
-                verts[vOff + 2 * vertElStride + 7] = ny3
-                verts[vOff + 2 * vertElStride + 8] = nz3
-            })
-        }
-
-        const transform = mat4.create() as Float32Array;
-
-        const uniOffset = _meshes.length * meshUniByteSize;
-        device.queue.writeBuffer(_meshUniBuffer, uniOffset, transform.buffer);
-
-        const res: MeshHandle = {
-            vertNumOffset: _numVerts,
-            indicesNumOffset: _numTris * 3,
-            modelUniByteOffset: uniOffset,
-            transform,
-            triCount: m.tri.length,
-            model: m,
-        }
-        _numVerts += m.pos.length;
-        _numTris += m.tri.length;
-        return res;
-    }
-
-    const newMeshes = meshesToAdd.map(m => addMesh(m))
-
-    _meshes.push(...newMeshes)
-
-    return newMeshes
-}
-
 // TODO(@darzu): SCENE FORMAT
 const sharedUniBufferSize =
     bytesPerMat4 * 2 // camera and light projection
@@ -387,73 +329,105 @@ const vertexBuffersLayout: GPUVertexBufferLayout[] = [{
     ],
 }];
 
-// add our meshes to the vertex and index buffers
-_vertsMap = new Float32Array(_vertBuffer.getMappedRange())
-_indMap = new Uint16Array(_indexBuffer.getMappedRange());
-
 function writeMeshTransform(m: MeshHandle) {
     device.queue.writeBuffer(_meshUniBuffer, m.modelUniByteOffset, (m.transform as Float32Array).buffer);
 }
 
-const CUBE: Mesh = {
-    pos: [
-        [+1.0, +1.0, +1.0],
-        [-1.0, +1.0, +1.0],
-        [-1.0, -1.0, +1.0],
-        [+1.0, -1.0, +1.0],
+// add our meshes to the vertex and index buffers
+let verticesMap = new Float32Array(_vertBuffer.getMappedRange())
+let indicesMap = new Uint16Array(_indexBuffer.getMappedRange());
 
-        [+1.0, +1.0, -1.0],
-        [-1.0, +1.0, -1.0],
-        [-1.0, -1.0, -1.0],
-        [+1.0, -1.0, -1.0],
-    ],
-    tri: [
-        [0, 1, 2], [0, 2, 3], // front
-        [4, 5, 1], [4, 1, 0], // top
-        [3, 4, 0], [3, 7, 4], // right
-        [2, 1, 5], [2, 5, 6], // left
-        [6, 3, 2], [6, 7, 3], // bottom
-        [5, 4, 7], [5, 7, 6], // back
-    ],
-    colors: [
-        [0.2, 0.0, 0.0], [0.2, 0.0, 0.0], // front
-        [0.0, 0.2, 0.0], [0.0, 0.2, 0.0], // top
-        [0.0, 0.0, 0.2], [0.0, 0.0, 0.2], // right
-        [0.2, 0.2, 0.0], [0.2, 0.2, 0.0], // left
-        [0.0, 0.2, 0.2], [0.0, 0.2, 0.2], // bottom
-        [0.2, 0.0, 0.2], [0.2, 0.0, 0.2], // back
-    ]
+const _meshes: MeshHandle[] = [];
+let _numVerts = 0;
+let _numTris = 0;
+function addMesh(m: Mesh): MeshHandle {
+    m = unshareVertices(m); // work-around; see TODO inside function
+    if (verticesMap === null)
+        throw "Use preRender() and postRender() functions"
+    if (_numVerts + m.pos.length > maxVerts)
+        throw "Too many vertices!"
+    if (_numTris + m.tri.length > maxTris)
+        throw "Too many triangles!"
+
+    const norms = computeNormals(m);
+    m.tri.forEach((triInd, i) => {
+        const triPos: [vec3, vec3, vec3] = [m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]]];
+        const triNorms: [vec3, vec3, vec3] = [norms[i], norms[i], norms[i]];
+        const triColors: [vec3, vec3, vec3] = [m.colors[i], m.colors[i], m.colors[i]];
+        const vOff = (_numVerts + i * 3) * vertElStride
+        const iOff = (_numTris + i) * indicesPerTriangle
+        if (indicesMap) {
+            indicesMap[iOff + 0] = triInd[0]
+            indicesMap[iOff + 1] = triInd[1]
+            indicesMap[iOff + 2] = triInd[2]
+        }
+        // set per-face vertex data
+        // position
+        verticesMap[vOff + 0 * vertElStride + 0] = triPos[0][0]
+        verticesMap[vOff + 0 * vertElStride + 1] = triPos[0][1]
+        verticesMap[vOff + 0 * vertElStride + 2] = triPos[0][2]
+        verticesMap[vOff + 1 * vertElStride + 0] = triPos[1][0]
+        verticesMap[vOff + 1 * vertElStride + 1] = triPos[1][1]
+        verticesMap[vOff + 1 * vertElStride + 2] = triPos[1][2]
+        verticesMap[vOff + 2 * vertElStride + 0] = triPos[2][0]
+        verticesMap[vOff + 2 * vertElStride + 1] = triPos[2][1]
+        verticesMap[vOff + 2 * vertElStride + 2] = triPos[2][2]
+        // color
+        const [r1, g1, b1] = triColors[0]
+        const [r2, g2, b2] = triColors[1]
+        const [r3, g3, b3] = triColors[2]
+        verticesMap[vOff + 0 * vertElStride + 3] = r1
+        verticesMap[vOff + 0 * vertElStride + 4] = g1
+        verticesMap[vOff + 0 * vertElStride + 5] = b1
+        verticesMap[vOff + 1 * vertElStride + 3] = r2
+        verticesMap[vOff + 1 * vertElStride + 4] = g2
+        verticesMap[vOff + 1 * vertElStride + 5] = b2
+        verticesMap[vOff + 2 * vertElStride + 3] = r3
+        verticesMap[vOff + 2 * vertElStride + 4] = g3
+        verticesMap[vOff + 2 * vertElStride + 5] = b3
+        // normals
+        const [nx1, ny1, nz1] = triNorms[0]
+        verticesMap[vOff + 0 * vertElStride + 6] = nx1
+        verticesMap[vOff + 0 * vertElStride + 7] = ny1
+        verticesMap[vOff + 0 * vertElStride + 8] = nz1
+        const [nx2, ny2, nz2] = triNorms[1]
+        verticesMap[vOff + 1 * vertElStride + 6] = nx2
+        verticesMap[vOff + 1 * vertElStride + 7] = ny2
+        verticesMap[vOff + 1 * vertElStride + 8] = nz2
+        const [nx3, ny3, nz3] = triNorms[2]
+        verticesMap[vOff + 2 * vertElStride + 6] = nx3
+        verticesMap[vOff + 2 * vertElStride + 7] = ny3
+        verticesMap[vOff + 2 * vertElStride + 8] = nz3
+    })
+
+    const transform = mat4.create() as Float32Array;
+
+    const uniOffset = _meshes.length * meshUniByteSize;
+    device.queue.writeBuffer(_meshUniBuffer, uniOffset, transform.buffer);
+
+    const res: MeshHandle = {
+        vertNumOffset: _numVerts,
+        indicesNumOffset: _numTris * 3,
+        modelUniByteOffset: uniOffset,
+        transform,
+        triCount: m.tri.length,
+        model: m,
+    }
+    _numVerts += m.pos.length;
+    _numTris += m.tri.length;
+
+    _meshes.push(res)
+    return res;
 }
 
-const PLANE: Mesh = {
-    pos: [
-        [+10, 0, +10],
-        [-10, 0, +10],
-        [+10, 0, -10],
-        [-10, 0, -10],
-    ],
-    tri: [
-        [0, 2, 3], [0, 3, 1], // top
-        [3, 2, 0], [1, 3, 0], // bottom
-    ],
-    colors: [
-        [0.05, 0.1, 0.05], [0.05, 0.1, 0.05],
-        [0.05, 0.1, 0.05], [0.05, 0.1, 0.05],
-    ],
-}
-
-const [planeHandle] = addMeshes([
-    PLANE
-], true)
+const planeHandle = addMesh(PLANE);
 mat4.translate(planeHandle.transform, planeHandle.transform, [0, -3, 0])
 writeMeshTransform(planeHandle);
 
-const [playerM] = addMeshes([CUBE], true)
+const player = addMesh(CUBE);
 
 _vertBuffer.unmap()
 _indexBuffer.unmap()
-_vertsMap = null;
-_indMap = null;
 
 // track which keys are pressed for use in the game loop
 const pressedKeys: { [keycode: string]: boolean } = {}
@@ -483,9 +457,9 @@ canvasRef.addEventListener('click', doLockMouse)
 
 // create the "player", which is an affine matrix tracking position & orientation of a cube
 // the camera will follow behind it.
-const cameraPos = mat4.create();
-pitch(cameraPos, -Math.PI / 4)
-writeMeshTransform(playerM)
+const cameraOffset = mat4.create();
+pitch(cameraOffset, -Math.PI / 4)
+writeMeshTransform(player)
 
 // create a directional light and compute it's projection (for shadows) and direction
 const origin = vec3.fromValues(0, 0, 0);
@@ -651,18 +625,18 @@ function renderFrame(timeMs: number) {
 
     // process inputs and move the player & camera
     const playerSpeed = pressedKeys[' '] ? 1.0 : 0.2; // spacebar boosts speed
-    if (pressedKeys['w']) moveZ(playerM.transform, -playerSpeed) // forward
-    if (pressedKeys['s']) moveZ(playerM.transform, playerSpeed) // backward
-    if (pressedKeys['a']) moveX(playerM.transform, -playerSpeed) // left
-    if (pressedKeys['d']) moveX(playerM.transform, playerSpeed) // right
-    if (pressedKeys['shift']) moveY(playerM.transform, playerSpeed) // up
-    if (pressedKeys['c']) moveY(playerM.transform, -playerSpeed) // down
+    if (pressedKeys['w']) moveZ(player.transform, -playerSpeed) // forward
+    if (pressedKeys['s']) moveZ(player.transform, playerSpeed) // backward
+    if (pressedKeys['a']) moveX(player.transform, -playerSpeed) // left
+    if (pressedKeys['d']) moveX(player.transform, playerSpeed) // right
+    if (pressedKeys['shift']) moveY(player.transform, playerSpeed) // up
+    if (pressedKeys['c']) moveY(player.transform, -playerSpeed) // down
     const { x: mouseX, y: mouseY } = takeAccumulatedMouseMovement();
-    yaw(playerM.transform, -mouseX * 0.01);
-    pitch(cameraPos, -mouseY * 0.01);
+    yaw(player.transform, -mouseX * 0.01);
+    pitch(cameraOffset, -mouseY * 0.01);
 
     // apply the players movement by writting to the model uniform buffer
-    writeMeshTransform(playerM);
+    writeMeshTransform(player);
 
     // render from the light's point of view to a depth buffer so we know where shadows are
     // TODO(@darzu): try bundled shadows
@@ -692,9 +666,9 @@ function renderFrame(timeMs: number) {
 
     // calculate and write our view and project matrices
     const viewMatrix = mat4.create()
-    mat4.multiply(viewMatrix, viewMatrix, playerM.transform)
-    mat4.multiply(viewMatrix, viewMatrix, cameraPos)
-    mat4.translate(viewMatrix, viewMatrix, [0, 0, 10])
+    mat4.multiply(viewMatrix, viewMatrix, player.transform)
+    mat4.multiply(viewMatrix, viewMatrix, cameraOffset)
+    mat4.translate(viewMatrix, viewMatrix, [0, 0, 10]) // TODO(@darzu): can this be merged into the camera offset?
     mat4.invert(viewMatrix, viewMatrix);
     const projectionMatrix = mat4.perspective(mat4.create(), (2 * Math.PI) / 5, aspectRatio, 1, 10000.0/*view distance*/);
     const viewProj = mat4.multiply(mat4.create(), projectionMatrix, viewMatrix) as Float32Array
