@@ -3,6 +3,11 @@ import { Serializer, Deserializer } from "./serialize.js";
 import { Mesh, MeshHandle } from "./mesh-pool.js";
 import { Renderer } from "./render_webgpu.js";
 import { AABB, checkCollisions, CollidesWith } from "./phys_collision.js";
+import {
+  createMotionObject,
+  MotionObject,
+  moveAndCheckObjects,
+} from "./phys_motion.js";
 
 const ERROR_SMOOTHING_FACTOR = 0.8;
 const EPSILON = 0.0001;
@@ -35,11 +40,9 @@ everything gets updated in the right place.
 export abstract class GameObject {
   id: number;
   creator: number;
-  location: vec3;
-  rotation: quat;
-  at_rest: boolean;
-  linear_velocity: vec3;
-  angular_velocity: vec3;
+
+  motion: MotionObject;
+
   authority: number;
   authority_seq: number;
   snap_seq: number;
@@ -57,11 +60,13 @@ export abstract class GameObject {
   constructor(id: number, creator: number) {
     this.id = id;
     this.creator = creator;
-    this.location = vec3.fromValues(0, 0, 0);
-    this.rotation = quat.identity(quat.create());
-    this.linear_velocity = vec3.fromValues(0, 0, 0);
-    this.angular_velocity = vec3.fromValues(0, 0, 0);
-    this.at_rest = true;
+    this.motion = createMotionObject({
+      location: vec3.fromValues(0, 0, 0),
+      rotation: quat.identity(quat.create()),
+      linearVelocity: vec3.fromValues(0, 0, 0),
+      angularVelocity: vec3.fromValues(0, 0, 0),
+      atRest: true,
+    });
     this.authority = creator;
     this.authority_seq = 0;
     this.snap_seq = -1;
@@ -77,17 +82,17 @@ export abstract class GameObject {
 
   snapLocation(location: vec3) {
     // TODO: this is a hack to see if we're setting our location for the first time
-    if (vec3.length(this.location) === 0) {
-      this.location = location;
+    if (vec3.length(this.motion.location) === 0) {
+      this.motion.location = location;
       return;
     }
     let current_location = vec3.add(
-      this.location,
-      this.location,
+      this.motion.location,
+      this.motion.location,
       this.location_error
     );
     let location_error = vec3.sub(current_location, current_location, location);
-    this.location = location;
+    this.motion.location = location;
     this.location_error = location_error;
   }
 
@@ -95,12 +100,12 @@ export abstract class GameObject {
     // TODO: this is a hack to see if we're setting our rotation for the first time
     let id = quat.identity(working_quat);
     if (quat.equals(rotation, id)) {
-      this.rotation = rotation;
+      this.motion.rotation = rotation;
       return;
     }
     let current_rotation = quat.mul(
-      this.rotation,
-      this.rotation,
+      this.motion.rotation,
+      this.motion.rotation,
       this.rotation_error
     );
     // sort of a hack--reuse our current rotation error quat to store the
@@ -111,7 +116,7 @@ export abstract class GameObject {
       current_rotation,
       rotation_inverse
     );
-    this.rotation = rotation;
+    this.motion.rotation = rotation;
     this.rotation_error = rotation_error;
   }
 
@@ -276,39 +281,23 @@ export abstract class GameState<Inputs> {
         //console.log(`Object ${o.id} reached 0 rotation error`);
         o.rotation_error = identity_quat;
       }
-
-      // change location according to linear velocity
-      delta = vec3.scale(delta, o.linear_velocity, dt);
-      vec3.add(o.location, o.location, delta);
-
-      // change rotation according to angular velocity
-      normalized_velocity = vec3.normalize(
-        normalized_velocity,
-        o.angular_velocity
-      );
-      let angle = vec3.length(o.angular_velocity) * dt;
-      deltaRotation = quat.setAxisAngle(
-        deltaRotation,
-        normalized_velocity,
-        angle
-      );
-      quat.normalize(deltaRotation, deltaRotation);
-      // note--quat multiplication is not commutative, need to multiply on the left
-      quat.multiply(o.rotation, deltaRotation, o.rotation);
     }
+
+    // move objects
+    moveAndCheckObjects(objs, dt);
 
     // UPDATE DERIVED STATE:
     for (let o of objs) {
       // update transform based on new rotations and positions
       mat4.fromRotationTranslation(
         o.transform,
-        quat.mul(working_quat, o.rotation, o.rotation_error),
-        vec3.add(working_vec3, o.location, o.location_error)
+        quat.mul(working_quat, o.motion.rotation, o.rotation_error),
+        vec3.add(working_vec3, o.motion.location, o.location_error)
       );
 
       // update AABB
-      vec3.add(o.worldAABB.min, o.localAABB.min, o.location);
-      vec3.add(o.worldAABB.max, o.localAABB.max, o.location);
+      vec3.add(o.worldAABB.min, o.localAABB.min, o.motion.location);
+      vec3.add(o.worldAABB.max, o.localAABB.max, o.motion.location);
     }
 
     // check collisions
@@ -316,3 +305,4 @@ export abstract class GameState<Inputs> {
     this.collidesWith = checkCollisions(objs);
   }
 }
+

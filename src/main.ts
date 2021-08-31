@@ -81,11 +81,11 @@ class Plane extends GameObject {
   }
 
   serializeFull(buffer: Serializer) {
-    buffer.writeVec3(this.location);
+    buffer.writeVec3(this.motion.location);
   }
 
   deserializeFull(buffer: Deserializer) {
-    buffer.readVec3(this.location);
+    buffer.readVec3(this.motion.location);
   }
 
   serializeDynamic(_buffer: Serializer) {
@@ -187,10 +187,10 @@ class Bullet extends Cube {
   }
 
   serializeFull(buffer: Serializer) {
-    buffer.writeVec3(this.location);
-    buffer.writeVec3(this.linear_velocity);
-    buffer.writeQuat(this.rotation);
-    buffer.writeVec3(this.angular_velocity);
+    buffer.writeVec3(this.motion.location);
+    buffer.writeVec3(this.motion.linearVelocity);
+    buffer.writeQuat(this.motion.rotation);
+    buffer.writeVec3(this.motion.angularVelocity);
   }
 
   deserializeFull(buffer: Deserializer) {
@@ -198,17 +198,17 @@ class Bullet extends Cube {
     if (!buffer.dummy) {
       this.snapLocation(location);
     }
-    buffer.readVec3(this.linear_velocity);
+    buffer.readVec3(this.motion.linearVelocity);
     let rotation = buffer.readQuat()!;
     if (!buffer.dummy) {
       this.snapRotation(rotation);
     }
-    buffer.readVec3(this.angular_velocity);
+    buffer.readVec3(this.motion.angularVelocity);
   }
 
   serializeDynamic(buffer: Serializer) {
     // rotation and location can both change, but we only really care about syncing location
-    buffer.writeVec3(this.location);
+    buffer.writeVec3(this.motion.location);
   }
 
   deserializeDynamic(buffer: Deserializer) {
@@ -234,10 +234,10 @@ class Player extends Cube {
   }
 
   serializeFull(buffer: Serializer) {
-    buffer.writeVec3(this.location);
-    buffer.writeVec3(this.linear_velocity);
-    buffer.writeQuat(this.rotation);
-    buffer.writeVec3(this.angular_velocity);
+    buffer.writeVec3(this.motion.location);
+    buffer.writeVec3(this.motion.linearVelocity);
+    buffer.writeQuat(this.motion.rotation);
+    buffer.writeVec3(this.motion.angularVelocity);
   }
 
   deserializeFull(buffer: Deserializer) {
@@ -245,12 +245,12 @@ class Player extends Cube {
     if (!buffer.dummy) {
       this.snapLocation(location);
     }
-    buffer.readVec3(this.linear_velocity);
+    buffer.readVec3(this.motion.linearVelocity);
     let rotation = buffer.readQuat()!;
     if (!buffer.dummy) {
       this.snapRotation(rotation);
     }
-    buffer.readVec3(this.angular_velocity);
+    buffer.readVec3(this.motion.angularVelocity);
   }
 
   serializeDynamic(buffer: Serializer) {
@@ -302,7 +302,7 @@ class CubeGameState extends GameState<Inputs> {
 
     if (createObjects) {
       let plane = new Plane(this.id(), this.me);
-      plane.location = vec3.fromValues(0, -3, -8);
+      plane.motion.location = vec3.fromValues(0, -3, -8);
       this.addObject(plane);
       this.addPlayer();
       // have added our objects, can unmap buffers
@@ -351,59 +351,59 @@ class CubeGameState extends GameState<Inputs> {
   stepGame(dt: number, inputs: Inputs) {
     if (this.player()) {
       // move player
-      this.player().linear_velocity = vec3.fromValues(0, 0, 0);
+      this.player().motion.linearVelocity = vec3.fromValues(0, 0, 0);
       let playerSpeed = inputs.accel ? 0.005 : 0.001;
       let n = playerSpeed * dt;
       if (inputs.left) {
         vec3.add(
-          this.player().linear_velocity,
-          this.player().linear_velocity,
+          this.player().motion.linearVelocity,
+          this.player().motion.linearVelocity,
           vec3.fromValues(-n, 0, 0)
         );
       }
       if (inputs.right) {
         vec3.add(
-          this.player().linear_velocity,
-          this.player().linear_velocity,
+          this.player().motion.linearVelocity,
+          this.player().motion.linearVelocity,
           vec3.fromValues(n, 0, 0)
         );
       }
       if (inputs.forward) {
         vec3.add(
-          this.player().linear_velocity,
-          this.player().linear_velocity,
+          this.player().motion.linearVelocity,
+          this.player().motion.linearVelocity,
           vec3.fromValues(0, 0, -n)
         );
       }
       if (inputs.back) {
         vec3.add(
-          this.player().linear_velocity,
-          this.player().linear_velocity,
+          this.player().motion.linearVelocity,
+          this.player().motion.linearVelocity,
           vec3.fromValues(0, 0, n)
         );
       }
       if (inputs.up) {
         vec3.add(
-          this.player().linear_velocity,
-          this.player().linear_velocity,
+          this.player().motion.linearVelocity,
+          this.player().motion.linearVelocity,
           vec3.fromValues(0, n, 0)
         );
       }
       if (inputs.down) {
         vec3.add(
-          this.player().linear_velocity,
-          this.player().linear_velocity,
+          this.player().motion.linearVelocity,
+          this.player().motion.linearVelocity,
           vec3.fromValues(0, -n, 0)
         );
       }
       vec3.transformQuat(
-        this.player().linear_velocity,
-        this.player().linear_velocity,
-        this.player().rotation
+        this.player().motion.linearVelocity,
+        this.player().motion.linearVelocity,
+        this.player().motion.rotation
       );
       quat.rotateY(
-        this.player().rotation,
-        this.player().rotation,
+        this.player().motion.rotation,
+        this.player().motion.rotation,
         -inputs.mouseX * 0.001
       );
       quat.rotateX(
@@ -419,22 +419,22 @@ class CubeGameState extends GameState<Inputs> {
       bullet_axis = vec3.transformQuat(
         bullet_axis,
         bullet_axis,
-        this.player().rotation
+        this.player().motion.rotation
       );
-      bullet.location = vec3.clone(this.player().location);
-      bullet.rotation = quat.clone(this.player().rotation);
-      bullet.linear_velocity = vec3.scale(
-        bullet.linear_velocity,
+      bullet.motion.location = vec3.clone(this.player().motion.location);
+      bullet.motion.rotation = quat.clone(this.player().motion.rotation);
+      bullet.motion.linearVelocity = vec3.scale(
+        bullet.motion.linearVelocity,
         bullet_axis,
         0.02
       );
-      bullet.linear_velocity = vec3.add(
-        bullet.linear_velocity,
-        bullet.linear_velocity,
-        this.player().linear_velocity
+      bullet.motion.linearVelocity = vec3.add(
+        bullet.motion.linearVelocity,
+        bullet.motion.linearVelocity,
+        this.player().motion.linearVelocity
       );
-      bullet.angular_velocity = vec3.scale(
-        bullet.angular_velocity,
+      bullet.motion.angularVelocity = vec3.scale(
+        bullet.motion.angularVelocity,
         bullet_axis,
         0.01
       );
@@ -452,26 +452,26 @@ class CubeGameState extends GameState<Inputs> {
           bullet_axis = vec3.transformQuat(
             bullet_axis,
             bullet_axis,
-            this.player().rotation
+            this.player().motion.rotation
           );
-          bullet.location = vec3.add(
+          bullet.motion.location = vec3.add(
             vec3.create(),
-            this.player().location,
+            this.player().motion.location,
             vec3.fromValues(x, y, 0)
           );
-          bullet.rotation = quat.clone(this.player().rotation);
-          bullet.linear_velocity = vec3.scale(
-            bullet.linear_velocity,
+          bullet.motion.rotation = quat.clone(this.player().motion.rotation);
+          bullet.motion.linearVelocity = vec3.scale(
+            bullet.motion.linearVelocity,
             bullet_axis,
             0.005
           );
-          bullet.linear_velocity = vec3.add(
-            bullet.linear_velocity,
-            bullet.linear_velocity,
-            this.player().linear_velocity
+          bullet.motion.linearVelocity = vec3.add(
+            bullet.motion.linearVelocity,
+            bullet.motion.linearVelocity,
+            this.player().motion.linearVelocity
           );
-          bullet.angular_velocity = vec3.scale(
-            bullet.angular_velocity,
+          bullet.motion.angularVelocity = vec3.scale(
+            bullet.motion.angularVelocity,
             bullet_axis,
             0.01
           );
@@ -558,11 +558,11 @@ class CubeGameState extends GameState<Inputs> {
     //understand quaternions.
     let viewMatrix = mat4.create();
     if (this.player()) {
-      mat4.translate(viewMatrix, viewMatrix, this.player().location);
+      mat4.translate(viewMatrix, viewMatrix, this.player().motion.location);
       mat4.multiply(
         viewMatrix,
         viewMatrix,
-        mat4.fromQuat(mat4.create(), this.player().rotation)
+        mat4.fromQuat(mat4.create(), this.player().motion.rotation)
       );
     }
     mat4.multiply(
