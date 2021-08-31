@@ -1,3 +1,8 @@
+import { computeTriangleNormal } from "../3d-util.js";
+import { mat4, vec3 } from "../ext/gl-matrix.js";
+import { MeshHandle, MeshPool, MeshPoolBuilder, MeshPoolOpts, MeshUniform, Vertex } from "./mesh-pool.js";
+
+const ENABLE_WATER = false;
 
 /*
 WATER
@@ -8,17 +13,11 @@ Approach:
     vertices displaced using displacement map
 */
 
-const ENABLE_WATER = false;
-
-import { computeTriangleNormal } from "../3d-util.js";
-import { mat4, vec3 } from "../ext/gl-matrix.js";
-import { createMeshPoolBuilder_WebGPU, MeshHandle, MeshPool, MeshPool_WebGPU, MeshUniform, Vertex } from "./mesh-pool.js";
-
 export interface WaterSystem {
-    getMeshPools: () => MeshPool_WebGPU[],
+    getMeshPools: () => MeshPool[],
 }
 
-export function createWaterSystem(device: GPUDevice): WaterSystem {
+export function createWaterSystem(builderBuilder: (opts: MeshPoolOpts) => MeshPoolBuilder): WaterSystem {
     if (!ENABLE_WATER)
         return { getMeshPools: () => [] }
 
@@ -37,7 +36,7 @@ export function createWaterSystem(device: GPUDevice): WaterSystem {
         }
     }
 
-    const builder = createMeshPoolBuilder_WebGPU(device, {
+    const builder = builderBuilder({
         maxMeshes: 1,
         maxTris: mapArea * 2,
         maxVerts: mapArea * 2,

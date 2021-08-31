@@ -305,6 +305,8 @@ export interface MeshPool {
     allMeshes: MeshHandle[],
     numTris: number,
     numVerts: number,
+    // methods
+    updateUniform: (m: MeshHandle) => void,
 }
 export interface MeshPoolBuffers_WebGPU {
     // buffers
@@ -313,8 +315,6 @@ export interface MeshPoolBuffers_WebGPU {
     uniformBuffer: GPUBuffer,
     // handles
     device: GPUDevice,
-    // methods
-    updateUniform: (m: MeshHandle) => void,
 }
 export type MeshPool_WebGPU = MeshPool & MeshPoolBuffers_WebGPU;
 
@@ -417,10 +417,9 @@ export function createMeshPoolBuilder_WebGPU(device: GPUDevice, opts: MeshPoolOp
         verticesBuffer,
         indicesBuffer,
         uniformBuffer,
-        updateUniform,
     }
 
-    const builder = createMeshPoolBuilder(opts, maps);
+    const builder = createMeshPoolBuilder(opts, maps, updateUniform);
 
     const scratch_uniform_u8 = new Uint8Array(MeshUniform.ByteSizeAligned);
     function updateUniform(m: MeshHandle) {
@@ -453,7 +452,9 @@ export function createMeshPoolBuilder_WebGPU(device: GPUDevice, opts: MeshPoolOp
     return builder_webgpu;
 }
 
-function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps): MeshPoolBuilder {
+
+
+function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, updateUniform: (m: MeshHandle) => void): MeshPoolBuilder {
     const { maxMeshes, maxTris, maxVerts } = opts;
 
     let finished = false;
@@ -475,6 +476,7 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps): MeshPool
         allMeshes,
         numTris: 0,
         numVerts: 0,
+        updateUniform,
     }
 
     const { verticesMap, indicesMap, uniformMap } = maps;
@@ -490,7 +492,7 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps): MeshPool
         poolHandle: pool,
         addMesh,
         buildMesh,
-        updateUniform,
+        updateUniform: mappedUpdateUniform,
         finish,
     };
 
@@ -550,7 +552,7 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps): MeshPool
     }
 
     const scratch_uniform_u8 = new Uint8Array(MeshUniform.ByteSizeAligned);
-    function updateUniform(m: MeshHandle): void {
+    function mappedUpdateUniform(m: MeshHandle): void {
         if (finished)
             throw 'trying to use finished MeshBuilder'
         MeshUniform.Serialize(scratch_uniform_u8, 0, m.transform, m.aabbMin, m.aabbMax)

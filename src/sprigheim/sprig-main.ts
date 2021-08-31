@@ -2,7 +2,7 @@ import { getPositionFromTransform, moveX, moveY, moveZ, pitch, yaw } from '../3d
 import { mat4, vec3 } from '../ext/gl-matrix.js';
 import { align } from '../math.js';
 import { initGrassSystem } from './grass.js';
-import { createMeshPoolBuilder_WebGPU, MeshHandle, MeshPool, Vertex, MeshUniform, SceneUniform, unshareProvokingVertices, Mesh } from './mesh-pool.js';
+import { createMeshPoolBuilder_WebGPU, MeshHandle, MeshPool, Vertex, MeshUniform, SceneUniform, unshareProvokingVertices, Mesh, MeshPoolOpts, MeshPool_WebGPU } from './mesh-pool.js';
 import { createWaterSystem } from './water.js';
 
 // Defines shaders in WGSL for the shadow and regular rendering pipelines. Likely you'll want
@@ -478,11 +478,13 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         // meshApplyMinMaxPos(m);
     }
 
+    const builderBuilder = (opts: MeshPoolOpts) => createMeshPoolBuilder_WebGPU(device, opts);
+
     // init grass
-    const grass = initGrassSystem(device)
+    const grass = initGrassSystem(builderBuilder)
 
     // init water
-    const water = createWaterSystem(device);
+    const water = createWaterSystem(builderBuilder);
 
     // track which keys are pressed for use in the game loop
     const pressedKeys: { [keycode: string]: boolean } = {}
@@ -800,7 +802,9 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     });
     bundleEnc.setPipeline(renderPipeline);
     bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
-    for (let p of [pool, ...grass.getGrassPools(), ...water.getMeshPools()]) {
+    // TODO(@darzu): change for webgl vs webgpu
+    const pools = [pool, ...grass.getGrassPools(), ...water.getMeshPools()] as MeshPool_WebGPU[]
+    for (let p of pools) {
         // TODO(@darzu): not super happy about these being created during bundle time...
         const modelUniBindGroup = device.createBindGroup({
             layout: modelUniBindGroupLayout,

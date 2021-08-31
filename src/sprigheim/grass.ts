@@ -1,12 +1,12 @@
 import { getPositionFromTransform } from "../3d-util.js";
 import { mat4, vec3 } from "../ext/gl-matrix.js";
 import { align, jitter } from "../math.js";
-import { createMeshPoolBuilder_WebGPU, MeshHandle, MeshPool, MeshPoolBuilder, MeshPool_WebGPU, Vertex } from "./mesh-pool.js";
+import { MeshHandle, MeshPoolBuilder, MeshPool, Vertex, MeshPoolOpts } from "./mesh-pool.js";
 
 const RENDER_GRASS = false;
 
 export interface GrassSystem {
-    getGrassPools: () => MeshPool_WebGPU[],
+    getGrassPools: () => MeshPool[],
     update: (target: vec3) => void,
     // TODO(@darzu): getAABB
 }
@@ -95,12 +95,12 @@ function createGrassTile(opts: GrassTileOpts, builder: MeshPoolBuilder): MeshHan
 }
 
 interface GrassTileset {
-    pool: MeshPool_WebGPU,
+    pool: MeshPool,
     tiles: MeshHandle[],
     update: (target: vec3) => void,
 }
 
-function createGrassTileset(opts: GrassTilesetOpts, device: GPUDevice): GrassTileset {
+function createGrassTileset(opts: GrassTilesetOpts, builderBuilder: (opts: MeshPoolOpts) => MeshPoolBuilder): GrassTileset {
     console.log("createGrassTileset")
     // create grass field
     const { spacing, tileSize, tilesPerSide } = opts;
@@ -110,7 +110,7 @@ function createGrassTileset(opts: GrassTilesetOpts, device: GPUDevice): GrassTil
     const totalGrassTris = totalGrass * 1;
     // TODO(@darzu): GRASS FORMAT
     // const totalGrassTris = totalGrass * 2;
-    const builder = createMeshPoolBuilder_WebGPU(device, {
+    const builder = builderBuilder({
         maxVerts: align(totalGrassTris * 3, 4),
         maxTris: align(totalGrassTris, 4),
         maxMeshes: tileCount,
@@ -214,7 +214,7 @@ function nearestIntegers(target: number, numInts: number): number[] {
     return nearestInts;
 }
 
-export function initGrassSystem(device: GPUDevice): GrassSystem {
+export function initGrassSystem(builderBuilder: (opts: MeshPoolOpts) => MeshPoolBuilder): GrassSystem {
     if (!RENDER_GRASS) {
         return {
             getGrassPools: () => [],
@@ -292,7 +292,7 @@ export function initGrassSystem(device: GPUDevice): GrassSystem {
         lod5Opts,
     ]
 
-    const tilesets = lodOpts.map(opts => createGrassTileset(opts, device))
+    const tilesets = lodOpts.map(opts => createGrassTileset(opts, builderBuilder))
 
     function updateAll(target: vec3) {
         tilesets.forEach(t => t.update(target))
