@@ -106,6 +106,22 @@ function mkStandardChords(s: Scale): Chord[] {
     })
     return chords;
 }
+// function rotate<T>(ts: T[]): T[] {
+//     return [ts[ts.length - 1], ...ts.slice(0, ts.length - 1)]
+// }
+function rotate<T>(ts: T[], shift: number): T[] {
+    if (shift > 0)
+        return [...ts.slice(ts.length - shift, ts.length), ...ts.slice(0, ts.length - shift)]
+    else if (shift < 0)
+        return [...ts.slice(-shift, ts.length), ...ts.slice(0, -shift)]
+    else
+        return [...ts]
+    // test cases:
+    // console.dir({ ts: [0, 1, 2, 3], ts2: rotate([0, 1, 2, 3], 2) });
+    // console.dir({ ts: [0, 1, 2, 3], tsN2: rotate([0, 1, 2, 3], -2) });
+    // console.dir({ ts: [0, 1, 2, 3], ts0: rotate([0, 1, 2, 3], 0) });
+}
+
 // function mkChordProgression(indices: number[]): ChordProgression {
 //     throw `TODO`
 // }
@@ -174,7 +190,7 @@ function canvasClick() {
 
     const start = audioCtx.currentTime;
 
-    const scale = mkMajorScale(-5);
+    const scale = mkMajorScale(0);
     const stdChords = mkStandardChords(scale)
     console.dir({
         scale,
