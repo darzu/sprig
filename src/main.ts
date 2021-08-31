@@ -1,9 +1,8 @@
-import { mat4, vec3 } from './gl-matrix.js';
-import Peer from "./peerjs.js"
+import { mat4, vec3, quat } from "./gl-matrix.js";
+import Peer from "./peerjs.js";
 
+// shaders
 
-// Defines shaders in WGSL for the shadow and regular rendering pipelines. Likely you'll want
-// these in external files but they've been inlined for redistribution convenience.
 const shaderSceneStruct = `
     [[block]] struct Scene {
         cameraViewProjMatrix : mat4x4<f32>;
@@ -11,7 +10,9 @@ const shaderSceneStruct = `
         lightDir : vec3<f32>;
     };
 `;
-const vertexShader = shaderSceneStruct + `
+const vertexShader =
+  shaderSceneStruct +
+  `
     [[block]] struct Model {
         modelMatrix : mat4x4<f32>;
     };
@@ -39,7 +40,9 @@ const vertexShader = shaderSceneStruct + `
         return output;
     }
 `;
-const fragmentShader = shaderSceneStruct + `
+const fragmentShader =
+  shaderSceneStruct +
+  `
     [[group(0), binding(0)]] var<uniform> scene : Scene;
 
     struct VertexOutput {
@@ -56,100 +59,54 @@ const fragmentShader = shaderSceneStruct + `
     }
 `;
 
-// useful constants
-const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
-const bytesPerMat4 = (4 * 4)/*4x4 mat*/ * 4/*f32*/
-const bytesPerVec3 = 3/*vec3*/ * 4/*f32*/
-const indicesPerTriangle = 3;
-const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
-
-// render pipeline parameters
-const antiAliasSampleCount = 4;
-const swapChainFormat = 'bgra8unorm';
-const depthStencilFormat = 'depth24plus-stencil8';
-const backgroundColor = { r: 0.5, g: 0.5, b: 0.5, a: 1.0 };
-
-// this state is recomputed upon canvas resize
-let depthTexture: GPUTexture;
-let depthTextureView: GPUTextureView;
-let colorTexture: GPUTexture;
-let colorTextureView: GPUTextureView;
-let lastWidth = 0;
-let lastHeight = 0;
-let aspectRatio = 1;
-
-// recomputes textures, widths, and aspect ratio on canvas resize
-function checkCanvasResize(device: GPUDevice, canvasWidth: number, canvasHeight: number) {
-    if (lastWidth === canvasWidth && lastHeight === canvasHeight)
-        return;
-
-    if (depthTexture) depthTexture.destroy();
-    if (colorTexture) colorTexture.destroy();
-
-    depthTexture = device.createTexture({
-        size: { width: canvasWidth, height: canvasHeight },
-        format: depthStencilFormat,
-        sampleCount: antiAliasSampleCount,
-        usage: GPUTextureUsage.RENDER_ATTACHMENT,
-    });
-    depthTextureView = depthTexture.createView();
-
-    colorTexture = device.createTexture({
-        size: { width: canvasWidth, height: canvasHeight },
-        sampleCount: antiAliasSampleCount,
-        format: swapChainFormat,
-        usage: GPUTextureUsage.RENDER_ATTACHMENT,
-    });;
-    colorTextureView = colorTexture.createView();
-
-    lastWidth = canvasWidth;
-    lastHeight = canvasHeight;
-
-    aspectRatio = Math.abs(canvasWidth / canvasHeight);
-}
-
 // defines the geometry and coloring of a mesh
 interface Mesh {
-    pos: vec3[];
-    tri: vec3[];
-    colors: vec3[];  // colors per triangle in r,g,b float [0-1] format
+  pos: vec3[];
+  tri: vec3[];
+  colors: vec3[]; // colors per triangle in r,g,b float [0-1] format
 }
 
-// normally vertices can be shared by triangles, so this duplicates vertices as necessary so they are unshared
-// TODO: this shouldn't be needed once "flat" shading is supported in Chrome's WGSL, see:
-//      https://bugs.chromium.org/p/tint/issues/detail?id=746&q=interpolate&can=2
-function unshareVertices(input: Mesh): Mesh {
-    const pos: vec3[] = []
-    const tri: vec3[] = []
-    input.tri.forEach(([i0, i1, i2], i) => {
-        pos.push(input.pos[i0]);
-        pos.push(input.pos[i1]);
-        pos.push(input.pos[i2]);
-        tri.push([
-            i * 3 + 0,
-            i * 3 + 1,
-            i * 3 + 2,
-        ])
-    })
-    return { pos, tri, colors: input.colors }
+abstract class Object {
+  location: vec3;
+  rotation: quat;
+  at_rest: boolean;
+  linear_velocity: vec3;
+  angular_velocity: vec3;
+  owner: number;
+  authority: number;
+
+  constructor() {
+    this.location = vec3.fromValues(0, 0, 0);
+    this.rotation = quat.fromValues(0, 0, 0, 0);
+    this.linear_velocity = vec3.fromValues(0, 0, 0);
+    this.angular_velocity = vec3.fromValues(0, 0, 0);
+    this.at_rest = true;
+    this.owner = 0;
+    this.authority = 0;
+  }
+
+  transform(): mat4 {
+    return mat4.fromRotationTranslation(
+      mat4.create(),
+      this.rotation,
+      this.location
+    );
+  }
+
+  abstract mesh(): Mesh;
 }
 
-// once a mesh has been added to our vertex, triangle, and uniform buffers, we need
-// to track offsets into those buffers so we can make modifications and form draw calls.
-interface MeshHandle {
-    // handles into the buffers
-    vertNumOffset: number,
-    indicesNumOffset: number,
-    modelUniByteOffset: number,
-    triCount: number,
-    // data
-    transform: mat4,
-    model: Mesh,
-}
+class Cube extends Object {
+  color: vec3;
 
-// define our meshes (ideally these would be imported from a standard format)
-const CUBE: Mesh = {
-    pos: [
+  constructor() {
+    super();
+    this.color = vec3.fromValues(0.2, 0, 0);
+  }
+
+  mesh(): Mesh {
+    return {
+      pos: [
         [+1.0, +1.0, +1.0],
         [-1.0, +1.0, +1.0],
         [-1.0, -1.0, +1.0],
@@ -159,61 +116,248 @@ const CUBE: Mesh = {
         [-1.0, +1.0, -1.0],
         [-1.0, -1.0, -1.0],
         [+1.0, -1.0, -1.0],
-    ],
-    tri: [
-        [0, 1, 2], [0, 2, 3], // front
-        [4, 5, 1], [4, 1, 0], // top
-        [3, 4, 0], [3, 7, 4], // right
-        [2, 1, 5], [2, 5, 6], // left
-        [6, 3, 2], [6, 7, 3], // bottom
-        [5, 4, 7], [5, 7, 6], // back
-    ],
-    colors: [
-        [0.2, 0, 0], [0.2, 0, 0], // front
-        [0.2, 0, 0], [0.2, 0, 0], // top
-        [0.2, 0, 0], [0.2, 0, 0], // right
-        [0.2, 0, 0], [0.2, 0, 0], // left
-        [0.2, 0, 0], [0.2, 0, 0], // bottom
-        [0.2, 0, 0], [0.2, 0, 0], // back
-    ]
+      ],
+      tri: [
+        [0, 1, 2],
+        [0, 2, 3], // front
+        [4, 5, 1],
+        [4, 1, 0], // top
+        [3, 4, 0],
+        [3, 7, 4], // right
+        [2, 1, 5],
+        [2, 5, 6], // left
+        [6, 3, 2],
+        [6, 7, 3], // bottom
+        [5, 4, 7],
+        [5, 7, 6], // back
+      ],
+      colors: [
+        this.color,
+        this.color,
+        this.color,
+        this.color,
+        this.color,
+        this.color,
+        this.color,
+        this.color,
+        this.color,
+        this.color,
+        this.color,
+        this.color,
+      ],
+    };
+  }
 }
-const PLANE: Mesh = {
-    pos: [
-        [+1, 0, +1],
-        [-1, 0, +1],
-        [+1, 0, -1],
-        [-1, 0, -1],
-    ],
-    tri: [
-        [0, 2, 3], [0, 3, 1], // top
-        [3, 2, 0], [1, 3, 0], // bottom
-    ],
-    colors: [
-        [0.02, 0.02, 0.02], [0.02, 0.02, 0.02],
-        [0.02, 0.02, 0.02], [0.02, 0.02, 0.02],
-    ],
+
+class SpinningCube extends Cube {
+  axis: vec3;
+
+  constructor() {
+    super();
+    this.axis = vec3.fromValues(0, 0, 0);
+  }
+}
+
+class Player extends Cube {
+  constructor(id: number) {
+    super();
+    this.authority = id;
+    this.owner = id;
+  }
+}
+
+interface Inputs {
+  forward: boolean;
+  back: boolean;
+  left: boolean;
+  right: boolean;
+  up: boolean;
+  down: boolean;
+  mouseX: number;
+  mouseY: number;
+  accel: boolean;
+}
+
+class GameState {
+  players: Player[];
+  cubes: SpinningCube[];
+  me: number;
+  sequences: number[];
+  time: number;
+
+  constructor() {
+    let player = new Player(0);
+    this.players = [player];
+    let randomCubes: SpinningCube[] = [];
+    for (let i = 0; i < 1; i++) {
+      let cube = new SpinningCube();
+      // create cubes with random colors
+      cube.location = vec3.fromValues(0, 0, -5 * (i + 1));
+      cube.rotation = quat.fromValues(0, 0, 0, 0);
+      cube.color = vec3.fromValues(Math.random(), Math.random(), Math.random());
+      cube.axis = vec3.normalize(vec3.create(), [
+        Math.random() - 0.5,
+        Math.random() - 0.5,
+        Math.random() - 0.5,
+      ]);
+      cube.angular_velocity = vec3.scale(
+        vec3.create(),
+        cube.axis,
+        Math.PI * 0.01
+      );
+      cube.at_rest = false;
+      randomCubes.push(cube);
+    }
+    this.cubes = randomCubes;
+    this.me = 0;
+    this.sequences = [0];
+    this.time = 0;
+  }
+
+  stepCubes(time: number) {
+    for (let cube of this.cubes) {
+      cube.angular_velocity = vec3.scale(
+        cube.angular_velocity,
+        cube.axis,
+        Math.PI * 0.01
+      );
+      let deltaQuaternion = quat.setAxisAngle(
+        quat.create(),
+        cube.axis,
+        time - this.time
+      );
+      quat.multiply(cube.rotation, deltaQuaternion, cube.rotation);
+    }
+  }
+
+  step(time: number) {
+    this.stepCubes(time);
+    this.time = time;
+  }
+
+  snap(snapshot: string, time: number) {
+    let deserialized = JSON.parse(snapshot);
+    this.cubes = deserialized.cubes;
+    this.time = time;
+  }
+
+  objects(): Object[] {
+    let r = [];
+    for (let o of this.players) {
+      r.push(o);
+    }
+    for (let o of this.cubes) {
+      r.push(o);
+    }
+    console.log(r.length);
+    return r;
+  }
+
+  playerTransform() {
+    return this.players[this.me].transform();
+  }
+}
+
+const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
+const bytesPerMat4 = 4 * 4 /*4x4 mat*/ * 4; /*f32*/
+const bytesPerVec3 = 3 /*vec3*/ * 4; /*f32*/
+const indicesPerTriangle = 3;
+const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
+
+// render pipeline parameters
+const antiAliasSampleCount = 4;
+const swapChainFormat = "bgra8unorm";
+const depthStencilFormat = "depth24plus-stencil8";
+const backgroundColor = { r: 0.5, g: 0.5, b: 0.5, a: 1.0 };
+
+let depthTexture: GPUTexture;
+let depthTextureView: GPUTextureView;
+let colorTexture: GPUTexture;
+let colorTextureView: GPUTextureView;
+let lastWidth = 0;
+let lastHeight = 0;
+let aspectRatio = 1;
+
+// recomputes textures, widths, and aspect ratio on canvas resize
+function checkCanvasResize(
+  device: GPUDevice,
+  canvasWidth: number,
+  canvasHeight: number
+) {
+  if (lastWidth === canvasWidth && lastHeight === canvasHeight) return;
+
+  if (depthTexture) depthTexture.destroy();
+  if (colorTexture) colorTexture.destroy();
+
+  depthTexture = device.createTexture({
+    size: { width: canvasWidth, height: canvasHeight },
+    format: depthStencilFormat,
+    sampleCount: antiAliasSampleCount,
+    usage: GPUTextureUsage.RENDER_ATTACHMENT,
+  });
+  depthTextureView = depthTexture.createView();
+
+  colorTexture = device.createTexture({
+    size: { width: canvasWidth, height: canvasHeight },
+    sampleCount: antiAliasSampleCount,
+    format: swapChainFormat,
+    usage: GPUTextureUsage.RENDER_ATTACHMENT,
+  });
+  colorTextureView = colorTexture.createView();
+
+  lastWidth = canvasWidth;
+  lastHeight = canvasHeight;
+
+  aspectRatio = Math.abs(canvasWidth / canvasHeight);
+}
+
+// normally vertices can be shared by triangles, so this duplicates vertices as necessary so they are unshared
+// TODO: this shouldn't be needed once "flat" shading is supported in Chrome's WGSL, see:
+//      https://bugs.chromium.org/p/tint/issues/detail?id=746&q=interpolate&can=2
+function unshareVertices(input: Mesh): Mesh {
+  const pos: vec3[] = [];
+  const tri: vec3[] = [];
+  input.tri.forEach(([i0, i1, i2], i) => {
+    pos.push(input.pos[i0]);
+    pos.push(input.pos[i1]);
+    pos.push(input.pos[i2]);
+    tri.push([i * 3 + 0, i * 3 + 1, i * 3 + 2]);
+  });
+  return { pos, tri, colors: input.colors };
+}
+
+// once a mesh has been added to our vertex, triangle, and uniform buffers, we need
+// to track offsets into those buffers so we can make modifications and form draw calls.
+interface MeshHandle {
+  // handles into the buffers
+  vertNumOffset: number;
+  indicesNumOffset: number;
+  modelUniByteOffset: number;
+  triCount: number;
+  // data
+  obj: Object;
 }
 
 // define the format of our vertices (this needs to agree with the inputs to the vertex shaders)
 const vertexDataFormat: GPUVertexAttribute[] = [
-    { shaderLocation: 0, offset: bytesPerVec3 * 0, format: 'float32x3' }, // position
-    { shaderLocation: 1, offset: bytesPerVec3 * 1, format: 'float32x3' }, // color
-    { shaderLocation: 2, offset: bytesPerVec3 * 2, format: 'float32x3' }, // normals
+  { shaderLocation: 0, offset: bytesPerVec3 * 0, format: "float32x3" }, // position
+  { shaderLocation: 1, offset: bytesPerVec3 * 1, format: "float32x3" }, // color
+  { shaderLocation: 2, offset: bytesPerVec3 * 2, format: "float32x3" }, // normals
 ];
 // these help us pack and use vertices in that format
-const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/)
+const vertElStride = 3 /*pos*/ + 3 /*color*/ + 3; /*normal*/
 const vertByteSize = bytesPerFloat * vertElStride;
 
 // define the format of our models' uniform buffer
 const meshUniByteSizeExact =
-    bytesPerMat4 // transform
-    + bytesPerFloat // max draw distance;
+  bytesPerMat4 + // transform
+  bytesPerFloat; // max draw distance;
 const meshUniByteSizeAligned = align(meshUniByteSizeExact, 256); // uniform objects must be 256 byte aligned
 
 // defines the format of our scene's uniform data
 const sceneUniBufferSizeExact =
-    bytesPerMat4 * 2 // camera and light projection
-    + bytesPerVec3 * 1 // light pos
+  bytesPerMat4 * 2 + // camera and light projection
+  bytesPerVec3 * 1; // light pos
 const sceneUniBufferSizeAligned = align(sceneUniBufferSizeExact, 256); // uniform objects must be 256 byte aligned
 
 // defines the limits of our vertex, index, and uniform buffers
@@ -225,417 +369,443 @@ const maxVerts = maxTris * 3;
 const worldOrigin = vec3.fromValues(0, 0, 0);
 const lightPosition = vec3.fromValues(50, 50, 0);
 const upVector = vec3.fromValues(0, 1, 0);
-const lightViewMatrix = mat4.lookAt(mat4.create(), lightPosition, worldOrigin, upVector);
-const lightProjectionMatrix = mat4.ortho(mat4.create(), -80, 80, -80, 80, -200, 300);
-const lightViewProjMatrix = mat4.multiply(mat4.create(), lightProjectionMatrix, lightViewMatrix);
+const lightViewMatrix = mat4.lookAt(
+  mat4.create(),
+  lightPosition,
+  worldOrigin,
+  upVector
+);
+const lightProjectionMatrix = mat4.ortho(
+  mat4.create(),
+  -80,
+  80,
+  -80,
+  80,
+  -200,
+  300
+);
+const lightViewProjMatrix = mat4.multiply(
+  mat4.create(),
+  lightProjectionMatrix,
+  lightViewMatrix
+);
 const lightDir = vec3.subtract(vec3.create(), worldOrigin, lightPosition);
 vec3.normalize(lightDir, lightDir);
 
-type RenderFrameFn = (timeMS: number) => void;
-function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): RenderFrameFn {
-    // configure our canvas backed swapchain
-    const context = canvasRef.getContext('gpupresent')!;
-    context.configure({ device, format: swapChainFormat });
+function align(x: number, size: number): number {
+  return Math.ceil(x / size) * size;
+}
+function computeTriangleNormal(p1: vec3, p2: vec3, p3: vec3): vec3 {
+  // cross product of two edges, https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
+  const n = vec3.cross(
+    vec3.create(),
+    vec3.sub(vec3.create(), p2, p1),
+    vec3.sub(vec3.create(), p3, p1)
+  );
+  vec3.normalize(n, n);
+  return n;
+}
 
-    // log our estimated space usage stats
-    console.log(`Mesh space usage for up to ${maxMeshes} meshes, ${maxTris} tris, ${maxVerts} verts:`);
-    console.log(`   ${(maxVerts * vertByteSize / 1024).toFixed(1)} KB for verts`);
-    console.log(`   ${(maxTris * bytesPerTri / 1024).toFixed(1)} KB for indices`);
-    console.log(`   ${(maxMeshes * meshUniByteSizeAligned / 1024).toFixed(1)} KB for other object data`);
-    const unusedBytesPerModel = 256 - meshUniByteSizeExact % 256
-    console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per object (${(unusedBytesPerModel * maxMeshes / 1024).toFixed(1)} KB total waste)`);
-    const totalReservedBytes = maxVerts * vertByteSize + maxTris * bytesPerTri + maxMeshes * meshUniByteSizeAligned;
-    console.log(`Total space reserved for objects: ${(totalReservedBytes / 1024).toFixed(1)} KB`);
+// matrix utilities
+function pitch(m: mat4, rad: number) {
+  return mat4.rotateX(m, m, rad);
+}
+function yaw(m: mat4, rad: number) {
+  return mat4.rotateY(m, m, rad);
+}
+function roll(m: mat4, rad: number) {
+  return mat4.rotateZ(m, m, rad);
+}
+function moveX(m: mat4, n: number) {
+  return mat4.translate(m, m, [n, 0, 0]);
+}
+function moveY(m: mat4, n: number) {
+  return mat4.translate(m, m, [0, n, 0]);
+}
+function moveZ(m: mat4, n: number) {
+  return mat4.translate(m, m, [0, 0, n]);
+}
 
-    // create our mesh buffers (vertex, index, uniform)
-    const verticesBuffer = device.createBuffer({
-        size: maxVerts * vertByteSize,
-        usage: GPUBufferUsage.VERTEX,
-        mappedAtCreation: true,
-    });
-    const indicesBuffer = device.createBuffer({
-        size: maxTris * bytesPerTri,
-        usage: GPUBufferUsage.INDEX,
-        mappedAtCreation: true,
-    });
-    const _meshUniBuffer = device.createBuffer({
-        size: meshUniByteSizeAligned * maxMeshes,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
+interface MappedGPUBuffers {
+  vertexBufferOffset: number;
+  vertexBuffer: Float32Array;
+  indexBufferOffset: number;
+  indexBuffer: Uint16Array;
+  meshUniformBufferOffset: number;
+  meshUniformBuffer: Float32Array;
+}
 
+class Renderer {
+  maxMeshes = 100;
+  maxTris = maxMeshes * 100;
+  maxVerts = maxTris * 3;
+
+  state: GameState;
+  device: GPUDevice;
+  canvas: HTMLCanvasElement;
+  context: GPUCanvasContext;
+
+  numVerts: number;
+  numTris: number;
+
+  vertexBuffer: GPUBuffer;
+  indexBuffer: GPUBuffer;
+  meshUniformBuffer: GPUBuffer;
+  sceneUniformBuffer: GPUBuffer;
+
+  cameraOffset: mat4;
+
+  meshHandles: MeshHandle[];
+
+  mappedGPUBuffers: MappedGPUBuffers | null = null;
+
+  renderBundle: GPURenderBundle;
+
+  private gpuBufferWriteMeshTransform(m: MeshHandle) {
+    this.device.queue.writeBuffer(
+      this.meshUniformBuffer,
+      m.modelUniByteOffset,
+      (m.obj.transform() as Float32Array).buffer
+    );
+  }
+
+  // should only be called when GPU buffers are already mapped
+  private getMappedRanges() {
+    let vertexBuffer = new Float32Array(this.vertexBuffer.getMappedRange());
+    let indexBuffer = new Uint16Array(this.indexBuffer.getMappedRange());
+    let meshUniformBuffer = new Float32Array(
+      this.meshUniformBuffer.getMappedRange()
+    );
+
+    this.mappedGPUBuffers = {
+      vertexBuffer,
+      indexBuffer,
+      meshUniformBuffer,
+      vertexBufferOffset: 0,
+      indexBufferOffset: 0,
+      meshUniformBufferOffset: 0,
+    };
+  }
+
+  private async mapGPUBuffers() {
+    await Promise.all([
+      this.vertexBuffer.mapAsync(GPUMapMode.READ),
+      this.indexBuffer.mapAsync(GPUMapMode.READ),
+      this.meshUniformBuffer.mapAsync(GPUMapMode.READ),
+    ]);
+    this.getMappedRanges();
+  }
+
+  private unmapGPUBuffers() {
+    this.vertexBuffer.unmap();
+    this.indexBuffer.unmap();
+    this.meshUniformBuffer.unmap();
+    this.mappedGPUBuffers = null;
+  }
+
+  /*
+                  Adds an object to be rendered. Currently expects the GPU's buffers to be memory-mapped.
+                  
+                  TODO: support adding objects when buffers aren't memory-mapped using device.queue
+                */
+  addObject(o: Object): MeshHandle {
+    let m = o.mesh();
+    m = unshareVertices(m); // work-around; see TODO inside function
+    if (this.mappedGPUBuffers === null) {
+      throw "addObject() called with un-mapped buffers";
+    } else {
+      // need to introduce a new variable to convince Typescript the mapping is non-null
+      let mapped = this.mappedGPUBuffers;
+      if (this.numVerts + m.pos.length > maxVerts) throw "Too many vertices!";
+      if (this.numTris + m.tri.length > maxTris) throw "Too many triangles!";
+
+      const vertNumOffset = this.numVerts;
+      const indicesNumOffset = this.numTris * 3;
+
+      m.tri.forEach((triInd, i) => {
+        const vOff = this.numVerts * vertElStride;
+        const iOff = this.numTris * indicesPerTriangle;
+        mapped.indexBuffer[iOff + 0] = triInd[0];
+        mapped.indexBuffer[iOff + 1] = triInd[1];
+        mapped.indexBuffer[iOff + 2] = triInd[2];
+        const normal = computeTriangleNormal(
+          m.pos[triInd[0]],
+          m.pos[triInd[1]],
+          m.pos[triInd[2]]
+        );
+        mapped.vertexBuffer.set(
+          [...m.pos[triInd[0]], ...m.colors[i], ...normal],
+          vOff + 0 * vertElStride
+        );
+        mapped.vertexBuffer.set(
+          [...m.pos[triInd[1]], ...m.colors[i], ...normal],
+          vOff + 1 * vertElStride
+        );
+        mapped.vertexBuffer.set(
+          [...m.pos[triInd[2]], ...m.colors[i], ...normal],
+          vOff + 2 * vertElStride
+        );
+        this.numVerts += 3;
+        this.numTris += 1;
+      });
+
+      const uniOffset = this.meshHandles.length * meshUniByteSizeAligned;
+      console.log(uniOffset);
+      console.log(mapped.meshUniformBuffer);
+      mapped.meshUniformBuffer.set(o.transform() as Float32Array, uniOffset);
+      console.log(mapped.meshUniformBuffer);
+      const res: MeshHandle = {
+        vertNumOffset,
+        indicesNumOffset,
+        modelUniByteOffset: uniOffset,
+        triCount: m.tri.length,
+        obj: o,
+      };
+      console.log(res);
+      this.meshHandles.push(res);
+      return res;
+    }
+  }
+
+  setupSceneBuffer() {
+    this.device.queue.writeBuffer(
+      this.sceneUniformBuffer,
+      bytesPerMat4 * 1,
+      (lightViewProjMatrix as Float32Array).buffer
+    );
+    this.device.queue.writeBuffer(
+      this.sceneUniformBuffer,
+      bytesPerMat4 * 2,
+      (lightDir as Float32Array).buffer
+    );
+  }
+
+  constructor(state: GameState, canvas: HTMLCanvasElement, device: GPUDevice) {
+    this.state = state;
+    this.canvas = canvas;
+    this.device = device;
+    this.context = canvas.getContext("gpupresent")!;
+    this.context.configure({ device, format: swapChainFormat });
+
+    this.vertexBuffer = device.createBuffer({
+      size: maxVerts * vertByteSize,
+      usage: GPUBufferUsage.VERTEX,
+      mappedAtCreation: true,
+    });
+    this.indexBuffer = device.createBuffer({
+      size: maxTris * bytesPerTri,
+      usage: GPUBufferUsage.INDEX,
+      mappedAtCreation: true,
+    });
+    this.meshUniformBuffer = device.createBuffer({
+      size: meshUniByteSizeAligned * maxMeshes,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      mappedAtCreation: true,
+    });
+    this.getMappedRanges();
     // create our scene's uniform buffer
-    const sceneUniBuffer = device.createBuffer({
-        size: sceneUniBufferSizeAligned,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    this.sceneUniformBuffer = device.createBuffer({
+      size: sceneUniBufferSizeAligned,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
-    // utilities for the device queue
-    function gpuBufferWriteMeshTransform(m: MeshHandle) {
-        device.queue.writeBuffer(_meshUniBuffer, m.modelUniByteOffset, (m.transform as Float32Array).buffer);
+    this.meshHandles = [];
+    this.numVerts = 0;
+    this.numTris = 0;
+
+    for (let obj of state.objects()) {
+      this.addObject(obj);
     }
+    this.unmapGPUBuffers();
 
-    // let's create meshes for our scene and store their data in the vertex, index, and uniform buffers
-    let ground: MeshHandle;
-    let player: MeshHandle;
-    let randomCubes: MeshHandle[] = [];
-    const allMeshHandles: MeshHandle[] = [];
-    {
-        // to modify buffers, we need to map them into JS space; we'll need to unmap later
-        let verticesMap = new Float32Array(verticesBuffer.getMappedRange())
-        let indicesMap = new Uint16Array(indicesBuffer.getMappedRange());
+    this.setupSceneBuffer();
 
-        // add our meshes to the vertex and index buffers
-        let numVerts = 0;
-        let numTris = 0;
-        function addMesh(m: Mesh): MeshHandle {
-            m = unshareVertices(m); // work-around; see TODO inside function
-            if (verticesMap === null)
-                throw "Use preRender() and postRender() functions"
-            if (numVerts + m.pos.length > maxVerts)
-                throw "Too many vertices!"
-            if (numTris + m.tri.length > maxTris)
-                throw "Too many triangles!"
+    this.cameraOffset = mat4.create();
+    pitch(this.cameraOffset, -Math.PI / 8);
 
-            const vertNumOffset = numVerts;
-            const indicesNumOffset = numTris * 3;
-
-            m.tri.forEach((triInd, i) => {
-                const vOff = (numVerts) * vertElStride
-                const iOff = (numTris) * indicesPerTriangle
-                if (indicesMap) {
-                    indicesMap[iOff + 0] = triInd[0]
-                    indicesMap[iOff + 1] = triInd[1]
-                    indicesMap[iOff + 2] = triInd[2]
-                }
-                const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
-                verticesMap.set([...m.pos[triInd[0]], ...m.colors[i], ...normal], vOff + 0 * vertElStride)
-                verticesMap.set([...m.pos[triInd[1]], ...m.colors[i], ...normal], vOff + 1 * vertElStride)
-                verticesMap.set([...m.pos[triInd[2]], ...m.colors[i], ...normal], vOff + 2 * vertElStride)
-                numVerts += 3;
-                numTris += 1;
-            })
-
-            const transform = mat4.create() as Float32Array;
-
-            const uniOffset = allMeshHandles.length * meshUniByteSizeAligned;
-            device.queue.writeBuffer(_meshUniBuffer, uniOffset, transform.buffer);
-
-            const res: MeshHandle = {
-                vertNumOffset,
-                indicesNumOffset,
-                modelUniByteOffset: uniOffset,
-                transform,
-                triCount: m.tri.length,
-                model: m,
-            }
-
-            allMeshHandles.push(res)
-            return res;
-        }
-
-        ground = addMesh(PLANE); // ground plane
-        player = addMesh(CUBE); // player movable cube
-        for (let i = 0; i < 10; i++) {
-            // create cubes with random colors
-            const color: vec3 = [Math.random(), Math.random(), Math.random()];
-            const coloredCube: Mesh = { ...CUBE, colors: CUBE.colors.map(_ => color) }
-            randomCubes.push(addMesh(coloredCube))
-        }
-
-        // unmap the buffers so the GPU can use them
-        verticesBuffer.unmap()
-        indicesBuffer.unmap()
-    }
-
-    // place the ground
-    mat4.translate(ground.transform, ground.transform, [0, -3, -8])
-    mat4.scale(ground.transform, ground.transform, [10, 10, 10])
-    gpuBufferWriteMeshTransform(ground);
-
-    // initialize our cubes; each will have a random axis of rotation
-    const randomCubesAxis: vec3[] = []
-    for (let m of randomCubes) {
-        // place and rotate cubes randomly
-        mat4.translate(m.transform, m.transform, [Math.random() * 20 - 10, Math.random() * 5, -Math.random() * 10 - 5])
-        const axis: vec3 = vec3.normalize(vec3.create(), [Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5]);
-        randomCubesAxis.push(axis)
-        gpuBufferWriteMeshTransform(m);
-    }
-
-    // track which keys are pressed for use in the game loop
-    const pressedKeys: { [keycode: string]: boolean } = {}
-    window.addEventListener('keydown', (ev) => pressedKeys[ev.key.toLowerCase()] = true, false);
-    window.addEventListener('keyup', (ev) => pressedKeys[ev.key.toLowerCase()] = false, false);
-
-    // track mouse movement for use in the game loop
-    let _mouseAccumulatedX = 0;
-    let _mouseAccummulatedY = 0;
-    window.addEventListener('mousemove', (ev) => {
-        _mouseAccumulatedX += ev.movementX
-        _mouseAccummulatedY += ev.movementY
-    }, false);
-    function takeAccumulatedMouseMovement(): { x: number, y: number } {
-        const result = { x: _mouseAccumulatedX, y: _mouseAccummulatedY };
-        _mouseAccumulatedX = 0; // reset accumulators
-        _mouseAccummulatedY = 0;
-        return result
-    }
-
-    // when the player clicks on the canvas, lock the cursor for better gaming (the browser lets them exit)
-    function doLockMouse() {
-        canvasRef.requestPointerLock();
-        canvasRef.removeEventListener('click', doLockMouse)
-    }
-    canvasRef.addEventListener('click', doLockMouse)
-
-    // create the "player", which is an affine matrix tracking position & orientation of a cube
-    // the camera will follow behind it.
-    const cameraOffset = mat4.create();
-    pitch(cameraOffset, -Math.PI / 8)
-    gpuBufferWriteMeshTransform(player)
-
-    // write the light data to the scene uniform buffer
-    device.queue.writeBuffer(sceneUniBuffer, bytesPerMat4 * 1, (lightViewProjMatrix as Float32Array).buffer);
-    device.queue.writeBuffer(sceneUniBuffer, bytesPerMat4 * 2, (lightDir as Float32Array).buffer);
-
-    // setup a binding for our per-mesh uniforms
     const modelUniBindGroupLayout = device.createBindGroupLayout({
-        entries: [{
-            binding: 0,
-            visibility: GPUShaderStage.VERTEX,
-            buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: meshUniByteSizeAligned },
-        }],
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.VERTEX,
+          buffer: {
+            type: "uniform",
+            hasDynamicOffset: true,
+            minBindingSize: meshUniByteSizeAligned,
+          },
+        },
+      ],
     });
     const modelUniBindGroup = device.createBindGroup({
-        layout: modelUniBindGroupLayout,
-        entries: [{
-            binding: 0,
-            resource: { buffer: _meshUniBuffer, size: meshUniByteSizeAligned, },
-        }],
+      layout: modelUniBindGroupLayout,
+      entries: [
+        {
+          binding: 0,
+          resource: {
+            buffer: this.meshUniformBuffer,
+            size: meshUniByteSizeAligned,
+          },
+        },
+      ],
     });
 
     // we'll use a triangle list with backface culling and counter-clockwise triangle indices for both pipelines
     const primitiveBackcull: GPUPrimitiveState = {
-        topology: 'triangle-list',
-        cullMode: 'back',
-        frontFace: 'ccw',
+      topology: "triangle-list",
+      cullMode: "back",
+      frontFace: "ccw",
     };
 
     // define the resource bindings for the mesh rendering pipeline
     const renderSceneUniBindGroupLayout = device.createBindGroupLayout({
-        entries: [
-            { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-        ],
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          buffer: { type: "uniform" },
+        },
+      ],
     });
     const renderSceneUniBindGroup = device.createBindGroup({
-        layout: renderSceneUniBindGroupLayout,
-        entries: [
-            { binding: 0, resource: { buffer: sceneUniBuffer } },
-        ],
+      layout: renderSceneUniBindGroupLayout,
+      entries: [{ binding: 0, resource: { buffer: this.sceneUniformBuffer } }],
     });
 
     // setup our second phase pipeline which renders meshes to the canvas
     const renderPipelineDesc: GPURenderPipelineDescriptor = {
-        layout: device.createPipelineLayout({
-            bindGroupLayouts: [renderSceneUniBindGroupLayout, modelUniBindGroupLayout],
-        }),
-        vertex: {
-            module: device.createShaderModule({ code: vertexShader }),
-            entryPoint: 'main',
-            buffers: [{
-                arrayStride: vertByteSize,
-                attributes: vertexDataFormat,
-            }],
-        },
-        fragment: {
-            module: device.createShaderModule({ code: fragmentShader }),
-            entryPoint: 'main',
-            targets: [{ format: swapChainFormat }],
-        },
-        primitive: primitiveBackcull,
-        depthStencil: {
-            depthWriteEnabled: true,
-            depthCompare: 'less',
-            format: depthStencilFormat,
-        },
-        multisample: {
-            count: antiAliasSampleCount,
-        },
+      layout: device.createPipelineLayout({
+        bindGroupLayouts: [
+          renderSceneUniBindGroupLayout,
+          modelUniBindGroupLayout,
+        ],
+      }),
+      vertex: {
+        module: device.createShaderModule({ code: vertexShader }),
+        entryPoint: "main",
+        buffers: [
+          {
+            arrayStride: vertByteSize,
+            attributes: vertexDataFormat,
+          },
+        ],
+      },
+      fragment: {
+        module: device.createShaderModule({ code: fragmentShader }),
+        entryPoint: "main",
+        targets: [{ format: swapChainFormat }],
+      },
+      primitive: primitiveBackcull,
+      depthStencil: {
+        depthWriteEnabled: true,
+        depthCompare: "less",
+        format: depthStencilFormat,
+      },
+      multisample: {
+        count: antiAliasSampleCount,
+      },
     };
     const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
 
     // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
     // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
     const bundleEnc = device.createRenderBundleEncoder({
-        colorFormats: [swapChainFormat],
-        depthStencilFormat: depthStencilFormat,
-        sampleCount: antiAliasSampleCount,
+      colorFormats: [swapChainFormat],
+      depthStencilFormat: depthStencilFormat,
+      sampleCount: antiAliasSampleCount,
     });
     bundleEnc.setPipeline(renderPipeline);
     bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
-    bundleEnc.setVertexBuffer(0, verticesBuffer);
-    bundleEnc.setIndexBuffer(indicesBuffer, 'uint16');
-    for (let m of allMeshHandles) {
-        bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
-        bundleEnc.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+    bundleEnc.setVertexBuffer(0, this.vertexBuffer);
+    bundleEnc.setIndexBuffer(this.indexBuffer, "uint16");
+    for (let m of this.meshHandles) {
+      console.log(m);
+      bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
+      bundleEnc.drawIndexed(
+        m.triCount * 3,
+        undefined,
+        m.indicesNumOffset,
+        m.vertNumOffset
+      );
     }
-    let renderBundle = bundleEnc.finish()
+    this.renderBundle = bundleEnc.finish();
 
-    // initialize performance metrics
-    let debugDiv = document.getElementById('debug-div') as HTMLDivElement;
-    let previousFrameTime = 0;
-    let avgJsTimeMs = 0
-    let avgFrameTimeMs = 0
+    console.log(this.numTris);
+    console.log(this.numVerts);
+  }
 
-    // controls for this demo
-    const controlsStr = `controls: WASD, shift/c, mouse, spacebar`
+  renderFrame() {
+    checkCanvasResize(this.device, this.canvas.width, this.canvas.height);
+    const viewMatrix = mat4.create();
+    console.log(this.state.playerTransform());
+    mat4.multiply(viewMatrix, viewMatrix, this.state.playerTransform());
+    mat4.multiply(viewMatrix, viewMatrix, this.cameraOffset);
+    mat4.translate(viewMatrix, viewMatrix, [0, 0, 10]); // TODO(@darzu): can this be merged into the camera offset?
+    mat4.invert(viewMatrix, viewMatrix);
+    const projectionMatrix = mat4.perspective(
+      mat4.create(),
+      (2 * Math.PI) / 5,
+      aspectRatio,
+      1,
+      10000.0 /*view distance*/
+    );
+    const viewProj = mat4.multiply(
+      mat4.create(),
+      projectionMatrix,
+      viewMatrix
+    ) as Float32Array;
+    this.device.queue.writeBuffer(this.sceneUniformBuffer, 0, viewProj.buffer);
 
-    // our main game loop
-    function renderFrame(timeMs: number) {
-        // track performance metrics
-        const start = performance.now();
-        const frameTimeMs = previousFrameTime ? timeMs - previousFrameTime : 0;
-        previousFrameTime = timeMs;
+    // start collecting our render commands for this frame
+    const commandEncoder = this.device.createCommandEncoder();
 
-        // resize (if necessary)
-        checkCanvasResize(device, canvasRef.width, canvasRef.height);
+    // render to the canvas' via our swap-chain
+    const renderPassEncoder = commandEncoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: colorTextureView,
+          resolveTarget: this.context.getCurrentTexture().createView(),
+          loadValue: backgroundColor,
+          storeOp: "store",
+        },
+      ],
+      depthStencilAttachment: {
+        view: depthTextureView,
+        depthLoadValue: 1.0,
+        depthStoreOp: "store",
+        stencilLoadValue: 0,
+        stencilStoreOp: "store",
+      },
+    });
+    renderPassEncoder.executeBundles([this.renderBundle]);
+    renderPassEncoder.endPass();
 
-        // process inputs and move the player & camera
-        const playerSpeed = pressedKeys[' '] ? 1.0 : 0.2; // spacebar boosts speed
-        if (pressedKeys['w']) moveZ(player.transform, -playerSpeed) // forward
-        if (pressedKeys['s']) moveZ(player.transform, playerSpeed) // backward
-        if (pressedKeys['a']) moveX(player.transform, -playerSpeed) // left
-        if (pressedKeys['d']) moveX(player.transform, playerSpeed) // right
-        if (pressedKeys['shift']) moveY(player.transform, playerSpeed) // up
-        if (pressedKeys['c']) moveY(player.transform, -playerSpeed) // down
-        const { x: mouseX, y: mouseY } = takeAccumulatedMouseMovement();
-        yaw(player.transform, -mouseX * 0.01);
-        pitch(cameraOffset, -mouseY * 0.01);
-
-        // apply the players movement by writting to the model uniform buffer
-        gpuBufferWriteMeshTransform(player);
-
-        // rotate the random cubes
-        for (let i = 0; i < randomCubes.length; i++) {
-            const m = randomCubes[i]
-            const axis = randomCubesAxis[i]
-            mat4.rotate(m.transform, m.transform, Math.PI * 0.01, axis);
-            gpuBufferWriteMeshTransform(m);
-        }
-
-        // calculate and write our view and project matrices
-        const viewMatrix = mat4.create()
-        mat4.multiply(viewMatrix, viewMatrix, player.transform)
-        mat4.multiply(viewMatrix, viewMatrix, cameraOffset)
-        mat4.translate(viewMatrix, viewMatrix, [0, 0, 10]) // TODO(@darzu): can this be merged into the camera offset?
-        mat4.invert(viewMatrix, viewMatrix);
-        const projectionMatrix = mat4.perspective(mat4.create(), (2 * Math.PI) / 5, aspectRatio, 1, 10000.0/*view distance*/);
-        const viewProj = mat4.multiply(mat4.create(), projectionMatrix, viewMatrix) as Float32Array
-        device.queue.writeBuffer(sceneUniBuffer, 0, viewProj.buffer);
-
-        // start collecting our render commands for this frame
-        const commandEncoder = device.createCommandEncoder();
-
-        // render to the canvas' via our swap-chain
-        const renderPassEncoder = commandEncoder.beginRenderPass({
-            colorAttachments: [{
-                view: colorTextureView,
-                resolveTarget: context.getCurrentTexture().createView(),
-                loadValue: backgroundColor,
-                storeOp: 'store',
-            }],
-            depthStencilAttachment: {
-                view: depthTextureView,
-                depthLoadValue: 1.0,
-                depthStoreOp: 'store',
-                stencilLoadValue: 0,
-                stencilStoreOp: 'store',
-            },
-        });
-        renderPassEncoder.executeBundles([renderBundle]);
-        renderPassEncoder.endPass();
-
-        // submit render passes to GPU
-        device.queue.submit([commandEncoder.finish()]);
-
-        // calculate performance metrics as running, weighted averages across frames
-        const jsTime = performance.now() - start;
-        const avgWeight = 0.05
-        avgJsTimeMs = avgJsTimeMs ? (1 - avgWeight) * avgJsTimeMs + avgWeight * jsTime : jsTime
-        avgFrameTimeMs = avgFrameTimeMs ? (1 - avgWeight) * avgFrameTimeMs + avgWeight * frameTimeMs : frameTimeMs
-        const avgFPS = 1000 / avgFrameTimeMs;
-        debugDiv.innerText = controlsStr
-            + `\n` + `(js per frame: ${avgJsTimeMs.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)})`
-    }
-    return renderFrame;
+    // submit render passes to GPU
+    this.device.queue.submit([commandEncoder.finish()]);
+  }
 }
-
-// math utilities
-function align(x: number, size: number): number {
-    return Math.ceil(x / size) * size
-}
-function computeTriangleNormal(p1: vec3, p2: vec3, p3: vec3): vec3 {
-    // cross product of two edges, https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
-    const n = vec3.cross(vec3.create(), vec3.sub(vec3.create(), p2, p1), vec3.sub(vec3.create(), p3, p1))
-    vec3.normalize(n, n)
-    return n;
-}
-
-// matrix utilities
-function pitch(m: mat4, rad: number) { return mat4.rotateX(m, m, rad); }
-function yaw(m: mat4, rad: number) { return mat4.rotateY(m, m, rad); }
-function roll(m: mat4, rad: number) { return mat4.rotateZ(m, m, rad); }
-function moveX(m: mat4, n: number) { return mat4.translate(m, m, [n, 0, 0]); }
-function moveY(m: mat4, n: number) { return mat4.translate(m, m, [0, n, 0]); }
-function moveZ(m: mat4, n: number) { return mat4.translate(m, m, [0, 0, n]); }
-
 
 async function startServer() {
-    const start = performance.now();
-
-    // attach to HTML canvas 
-    let canvasRef = document.getElementById('sample-canvas') as HTMLCanvasElement;
-    const adapter = await navigator.gpu.requestAdapter();
-    const device = await adapter!.requestDevice();
-
-    // resize the canvas when the window resizes
-    function onWindowResize() {
-        canvasRef.width = window.innerWidth;
-        canvasRef.style.width = `${window.innerWidth}px`;
-        canvasRef.height = window.innerHeight;
-        canvasRef.style.height = `${window.innerHeight}px`;
-    }
-    window.onresize = function() {
-        onWindowResize();
-    }
-    onWindowResize();
-
-    // build our scene for the canvas
-    const renderFrame = attachToCanvas(canvasRef, device);
-    console.log(`JS init time: ${(performance.now() - start).toFixed(1)}ms`)
-
-    // run our game loop using 'requestAnimationFrame`
-    if (renderFrame) {
-        const _renderFrame = (time: number) => {
-            renderFrame(time);
-            requestAnimationFrame(_renderFrame);
-        }
-        requestAnimationFrame(_renderFrame);
-    }
-
-    let peer = new Peer();
-    peer.on('open', (id: string) => {
-        console.log(`Peer id is ${id}`)
-    })
+  let peer = new Peer();
+  peer.on("open", (id: string) => {
+    console.log(`Peer id is ${id}`);
+  });
+  let gameState: GameState = new GameState();
+  let canvas = document.getElementById("sample-canvas") as HTMLCanvasElement;
+  const adapter = await navigator.gpu.requestAdapter();
+  const device = await adapter!.requestDevice();
+  let renderer = new Renderer(gameState, canvas, device);
+  renderer.renderFrame();
 }
 
 async function main() {
-    let controls = document.getElementById("server-controls") as HTMLDivElement;
-    let serverStartButton = document.getElementById("server-start") as HTMLButtonElement;
-    serverStartButton.onclick = (e: MouseEvent) => {
-        startServer()
-        controls.hidden = true
-    }
+  let controls = document.getElementById("server-controls") as HTMLDivElement;
+  let serverStartButton = document.getElementById(
+    "server-start"
+  ) as HTMLButtonElement;
+  serverStartButton.onclick = (e: MouseEvent) => {
+    startServer();
+    controls.hidden = true;
+  };
 }
 
-await main()
+await main();
