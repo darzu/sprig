@@ -64,7 +64,8 @@ const vertexShader = shaderSceneStruct + `
 const fragmentShader = shaderSceneStruct + `
     [[group(0), binding(0)]] var<uniform> scene : Scene;
     [[group(0), binding(1)]] var shadowMap: texture_depth_2d;
-    [[group(0), binding(2)]] var shadowSampler: sampler_comparison;
+    // TODO(@darzu): waiting on this sample to work again: http://austin-eng.com/webgpu-samples/samples/shadowMapping
+    // [[group(0), binding(2)]] var shadowSampler: sampler_comparison;
 
     struct VertexOutput {
         [[location(0)]] shadowPos : vec3<f32>;
@@ -74,7 +75,8 @@ const fragmentShader = shaderSceneStruct + `
 
     [[stage(fragment)]]
     fn main(input: VertexOutput) -> [[location(0)]] vec4<f32> {
-        let shadowVis : f32 = textureSampleCompare(shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
+        let shadowVis : f32 = 1.0;
+        // let shadowVis : f32 = textureSampleCompare(shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
         let sunLight : f32 = shadowVis * clamp(dot(-scene.lightDir, input.normal), 0.0, 1.0);
         let resultColor: vec3<f32> = input.color * (sunLight * 2.0 + 0.2);
         let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
@@ -547,7 +549,8 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         entries: [
             { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
             { binding: 1, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, texture: { sampleType: 'depth' } },
-            { binding: 2, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, sampler: { type: 'comparison' } },
+            // TODO(@darzu): waiting on this sample to work again: http://austin-eng.com/webgpu-samples/samples/shadowMapping
+            // { binding: 2, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, sampler: { type: 'comparison' } },
         ],
     });
     const renderSceneUniBindGroup = device.createBindGroup({
@@ -555,7 +558,8 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         entries: [
             { binding: 0, resource: { buffer: sceneUniBuffer } },
             { binding: 1, resource: shadowDepthTextureView },
-            { binding: 2, resource: device.createSampler({ compare: 'less' }) },
+            // TODO(@darzu): waiting on this sample to work again: http://austin-eng.com/webgpu-samples/samples/shadowMapping
+            // { binding: 2, resource: device.createSampler({ compare: 'less' }) },
         ],
     });
 
