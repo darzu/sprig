@@ -16,7 +16,7 @@ import {
   _doesOverlaps,
   _enclosedBys,
   _lastCollisionTestTimeMs,
-} from "./physics.js";
+} from "./phys_collision.js";
 
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;

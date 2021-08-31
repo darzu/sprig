@@ -1,7 +1,7 @@
 import { computeTriangleNormal } from "./utils-3d.js";
 import { mat4, vec2, vec3 } from "./gl-matrix.js";
 import { align, sum } from "./math.js";
-import { AABB, getAABBFromPositions } from "./physics.js";
+import { AABB, getAABBFromPositions } from "./phys_collision.js";
 
 // TODO(@darzu): BUGS:
 // - in WebGL, around object 5566, we get some weird index stuff, even single player.
