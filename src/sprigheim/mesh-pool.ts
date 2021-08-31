@@ -4,7 +4,7 @@
 
 import { mat4, vec3 } from "../ext/gl-matrix.js";
 import { align } from "../math.js";
-import { computeTriangleNormal, Mesh, meshUniByteSizeAligned, meshUniByteSizeExact, setVertexData, vertByteSize, VertexKind } from "./sprig_main.js";
+import { computeTriangleNormal, Mesh, meshUniByteSizeAligned, meshUniByteSizeExact, setVertexData, vertByteSize, VertexKind } from "./sprig-main.js";
 
 const indicesPerTriangle = 3;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
