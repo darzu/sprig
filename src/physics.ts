@@ -1,4 +1,5 @@
 import { vec3 } from "./gl-matrix.js";
+import { range } from "./util.js";
 
 export interface CollidesWith {
     // one-to-many GameObject ids
@@ -12,15 +13,18 @@ export function checkCollisions(objs: { worldAABB: AABB, id: number }[]): Collid
     _doesOverlaps = 0; // TODO(@darzu): debugging
     _enclosedBys = 0; // TODO(@darzu): debugging
 
-    // TODO(@darzu): do better than n^2. oct-tree
     // TODO(@darzu): be more precise than just AABBs. broad & narrow phases.
     // TODO(@darzu): also use better memory pooling for aabbs and collidesWith relation
+    // reset _collidesWith
     for (let o of objs) {
         if (!_collidesWith[o.id])
             _collidesWith[o.id] = []
         else
             _collidesWith[o.id].length = 0
     }
+    // reset _mapPool
+    _nextMap = 0;
+    _mapPool.forEach(p => p.clear())
 
     // naive n^2
     //      3000 objs: 44.6ms, 4,800,000 overlaps
@@ -78,7 +82,7 @@ export function checkCollisions(objs: { worldAABB: AABB, id: number }[]): Collid
 
     // TODO(@darzu): debugging
     // console.log(debugOcttree(tree).join(','))
-    // console.log(`trees: ${debugOcttree(tree).length}`);
+    // console.log(`num oct-trees: ${debugOcttree(tree).length}`);
 
     _lastCollisionTestTimeMs = performance.now() - start;
     return _collidesWith;
@@ -96,18 +100,26 @@ function debugOcttree(tree: OctTree | null): number[] {
     return [tree.objs.size, ...tree.children.map(debugOcttree).reduce((p, n) => [...p, ...n], [] as number[])]
 }
 
-const scratchVec3: vec3 = vec3.create();
+const _mapPoolSize = 2000;
+const _mapPool: Map<number, AABB>[] = range(_mapPoolSize).map(_ => new Map<number, AABB>());
+let _nextMap = 0;
+const _scratchVec3: vec3 = vec3.create();
 function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
-    const thisObjs = new Map<number, AABB>();
+    if (_nextMap >= _mapPool.length)
+        throw `Exceeding _mapPool! max: ${_mapPoolSize}`
+    const thisObjs = _mapPool[_nextMap++]; // grab from the map pool
     for (let [id, objAABB] of parentObjs.entries()) {
         if (enclosedBy(objAABB, aabb)) {
             thisObjs.set(id, objAABB)
             parentObjs.delete(id)
         }
     }
-    if (thisObjs.size === 0)
+    if (thisObjs.size === 0) {
+        // we didn't use our map, return it
+        _nextMap--;
         return null;
-    const nextLen = vec3.scale(scratchVec3, vec3.sub(scratchVec3, aabb.max, aabb.min), 0.5)
+    }
+    const nextLen = vec3.scale(_scratchVec3, vec3.sub(_scratchVec3, aabb.max, aabb.min), 0.5)
     if (thisObjs.size <= 2 || nextLen[0] <= _octtreeMinLen)
         return { aabb, objs: thisObjs, children: [null, null, null, null, null, null, null, null] }
     const childAABBs: AABB[] = [];
