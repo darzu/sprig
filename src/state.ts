@@ -213,8 +213,10 @@ export abstract class GameState<Inputs> {
 
   recordEvent(type: number, objects: number[]) {
     // check to see whether we're the authority for this event
+    let objs = objects.map((id) => this.objects[id]);
     if (
-      objects.map((id) => this.objects[id]).every((o) => this.me <= o.authority)
+      objs.some((o) => this.me === o.authority) &&
+      objs.every((o) => this.me <= o.authority)
     ) {
       console.log(`Recording event type=${type}`);
       let id = this.id();
