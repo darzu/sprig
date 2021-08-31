@@ -66,16 +66,16 @@ class StateSynchronizer<Inputs> {
     // Then we're removing a constant # of items, so removing should be O(log N) overall?
     // Could also cache this sorted list--order will stay mostly the same so with a sort that's
     // optimized for mostly-ordered data (like TimSort) the sort should be O(N)
-    let objects = [
+    let allObjects = [
       ...Object.values(this.net.state.objects),
       ...Object.values(this.net.state.deletedObjects),
     ];
-    objects = objects.filter(
+    allObjects = allObjects.filter(
       (obj) =>
         (!obj.deleted && obj.authority == this.net.state.me) ||
         (obj.creator == this.net.state.me && !this.objectsKnown.has(obj.id))
     );
-    for (let obj of objects) {
+    for (let obj of allObjects) {
       let priorityIncrease = obj.syncPriority();
       if (!this.objectsKnown.has(obj.id)) {
         // try to sync new objects
@@ -89,10 +89,10 @@ class StateSynchronizer<Inputs> {
     }
     // We always want objects that this remote peer might not know
     // about to come first. After that, we want objects sorted in priority order.
-    objects.sort((o1, o2) => {
+    allObjects.sort((o1, o2) => {
       return this.objectPriorities[o2.id] - this.objectPriorities[o1.id];
     });
-    return objects;
+    return allObjects;
   }
 
   update() {

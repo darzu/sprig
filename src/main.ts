@@ -529,8 +529,8 @@ class CubeGameState extends GameState<Inputs> {
             // delete all bullet objects in collision
             // TODO: figure out how object deletion should really work
             this.removeObject(obj);
-          } else if (!obj?.deleted) {
-            throw `Bad id ${id} in event ${event.id}`;
+          } else if (!this.deletedObjects[id]) {
+            throw `Bad id ${id} in event ${event.id} (1)`;
           }
         }
         break;
@@ -543,8 +543,8 @@ class CubeGameState extends GameState<Inputs> {
             this.removeObject(obj);
           } else if (obj && obj instanceof Player) {
             vec3.add(obj.color, obj.color, vec3.fromValues(0.1, 0, 0));
-          } else if (!obj?.deleted) {
-            throw `Bad id ${id} in event ${event.id}`;
+          } else if (!this.deletedObjects[id]) {
+            throw `Bad id ${id} in event ${event.id} (2)`;
           }
         }
         break;
