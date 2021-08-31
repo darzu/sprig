@@ -1,6 +1,9 @@
 // player controller component and system
 
-import { MotionProps } from "./phys_motion.js";
+import { quat, vec3 } from "./gl-matrix.js";
+import { Inputs } from "./inputs.js";
+import { CameraProps } from "./main.js";
+import { createMotionProps, MotionProps } from "./phys_motion.js";
 
 export interface PlayerProps {
   jumpHeight: number;
@@ -18,6 +21,137 @@ export interface PlayerObj {
   motion: MotionProps;
 }
 
-export function stepPlayers(player: Record<number, PlayerObj>, dt: number) {
-  // TODO(@darzu): implement
+export function stepPlayer(
+  player: PlayerObj,
+  dt: number,
+  inputs: Inputs,
+  camera: CameraProps,
+  spawnBullet: (motion: MotionProps) => void
+) {
+  // move player
+  player.motion.linearVelocity = vec3.fromValues(0, 0, 0);
+  let playerSpeed = inputs.keyDowns[" "] ? 0.005 : 0.001;
+  let n = playerSpeed * dt;
+  if (inputs.keyDowns["a"]) {
+    vec3.add(
+      player.motion.linearVelocity,
+      player.motion.linearVelocity,
+      vec3.fromValues(-n, 0, 0)
+    );
+  }
+  if (inputs.keyDowns["d"]) {
+    vec3.add(
+      player.motion.linearVelocity,
+      player.motion.linearVelocity,
+      vec3.fromValues(n, 0, 0)
+    );
+  }
+  if (inputs.keyDowns["w"]) {
+    vec3.add(
+      player.motion.linearVelocity,
+      player.motion.linearVelocity,
+      vec3.fromValues(0, 0, -n)
+    );
+  }
+  if (inputs.keyDowns["s"]) {
+    vec3.add(
+      player.motion.linearVelocity,
+      player.motion.linearVelocity,
+      vec3.fromValues(0, 0, n)
+    );
+  }
+  if (inputs.keyDowns["shift"]) {
+    vec3.add(
+      player.motion.linearVelocity,
+      player.motion.linearVelocity,
+      vec3.fromValues(0, n, 0)
+    );
+  }
+  if (inputs.keyDowns["c"]) {
+    vec3.add(
+      player.motion.linearVelocity,
+      player.motion.linearVelocity,
+      vec3.fromValues(0, -n, 0)
+    );
+  }
+
+  vec3.transformQuat(
+    player.motion.linearVelocity,
+    player.motion.linearVelocity,
+    player.motion.rotation
+  );
+  quat.rotateY(
+    player.motion.rotation,
+    player.motion.rotation,
+    -inputs.mouseX * 0.001
+  );
+  quat.rotateX(camera.rotation, camera.rotation, -inputs.mouseY * 0.001);
+
+  // add bullet on lclick
+  if (inputs.lclick) {
+    let bullet_axis = vec3.fromValues(0, 0, -1);
+    bullet_axis = vec3.transformQuat(
+      bullet_axis,
+      bullet_axis,
+      player.motion.rotation
+    );
+    let bulletMotion = createMotionProps({});
+    bulletMotion.location = vec3.clone(player.motion.location);
+    bulletMotion.rotation = quat.clone(player.motion.rotation);
+    bulletMotion.linearVelocity = vec3.scale(
+      bulletMotion.linearVelocity,
+      bullet_axis,
+      0.02
+    );
+    bulletMotion.linearVelocity = vec3.add(
+      bulletMotion.linearVelocity,
+      bulletMotion.linearVelocity,
+      player.motion.linearVelocity
+    );
+    bulletMotion.angularVelocity = vec3.scale(
+      bulletMotion.angularVelocity,
+      bullet_axis,
+      0.01
+    );
+    spawnBullet(bulletMotion);
+  }
+  if (inputs.rclick) {
+    const SPREAD = 5;
+    const GAP = 1.0;
+    for (let xi = 0; xi <= SPREAD; xi++) {
+      for (let yi = 0; yi <= SPREAD; yi++) {
+        const x = (xi - SPREAD / 2) * GAP;
+        const y = (yi - SPREAD / 2) * GAP;
+        let bullet_axis = vec3.fromValues(0, 0, -1);
+        bullet_axis = vec3.transformQuat(
+          bullet_axis,
+          bullet_axis,
+          player.motion.rotation
+        );
+        let bulletMotion = createMotionProps({});
+        bulletMotion.location = vec3.add(
+          vec3.create(),
+          player.motion.location,
+          vec3.fromValues(x, y, 0)
+        );
+        bulletMotion.rotation = quat.clone(player.motion.rotation);
+        bulletMotion.linearVelocity = vec3.scale(
+          bulletMotion.linearVelocity,
+          bullet_axis,
+          0.005
+        );
+        bulletMotion.linearVelocity = vec3.add(
+          bulletMotion.linearVelocity,
+          bulletMotion.linearVelocity,
+          player.motion.linearVelocity
+        );
+        bulletMotion.angularVelocity = vec3.scale(
+          bulletMotion.angularVelocity,
+          bullet_axis,
+          0.01
+        );
+        spawnBullet(bulletMotion);
+      }
+    }
+  }
 }

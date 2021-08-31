@@ -26,9 +26,10 @@ import {
 import { _motionPairsLen } from "./phys.js";
 import { BoatProps, createBoatProps, stepBoats } from "./boat.js";
 import { jitter } from "./math.js";
-import { createPlayerProps, PlayerProps, stepPlayers } from "./player.js";
+import { createPlayerProps, PlayerProps, stepPlayer } from "./player.js";
 import { never } from "./util.js";
 import { createInputsReader, Inputs } from "./inputs.js";
+import { copyMotionProps, MotionProps } from "./phys_motion.js";
 
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
@@ -332,19 +333,31 @@ class Boat extends Cube {
   }
 }
 
+export interface CameraProps {
+  rotation: quat;
+  location: vec3;
+}
+
 class CubeGameState extends GameState {
   players: Record<number, Player>;
-  cameraRotation: quat;
-  cameraLocation: vec3;
+  camera: CameraProps;
 
   bulletProto: MeshHandle;
 
   constructor(renderer: Renderer, createObjects: boolean = true) {
     super(renderer);
+
+    // TODO(@darzu): can we do without this lame javascript-ism?
+    this.spawnBullet = this.spawnBullet.bind(this);
+
     this.me = 0;
-    this.cameraRotation = quat.identity(quat.create());
-    quat.rotateX(this.cameraRotation, this.cameraRotation, -Math.PI / 8);
-    this.cameraLocation = vec3.fromValues(0, 0, 10);
+    let cameraRotation = quat.identity(quat.create());
+    quat.rotateX(cameraRotation, cameraRotation, -Math.PI / 8);
+    let cameraLocation = vec3.fromValues(0, 0, 10);
+    this.camera = {
+      rotation: cameraRotation,
+      location: cameraLocation,
+    };
     this.players = {};
 
     // create local mesh prototypes
@@ -448,137 +461,13 @@ class CubeGameState extends GameState {
     return this.players[this.me];
   }
 
+  spawnBullet(motion: MotionProps) {
+    let bullet = new Bullet(this.newId(), this.me);
+    copyMotionProps(bullet.motion, motion);
+    this.addObjectInstance(bullet, this.bulletProto);
+  }
+
   stepGame(dt: number, inputs: Inputs) {
-    if (this.player()) {
-      // move player
-      this.player().motion.linearVelocity = vec3.fromValues(0, 0, 0);
-      let playerSpeed = inputs.keyDowns[" "] ? 0.005 : 0.001;
-      let n = playerSpeed * dt;
-      if (inputs.keyDowns["a"]) {
-        vec3.add(
-          this.player().motion.linearVelocity,
-          this.player().motion.linearVelocity,
-          vec3.fromValues(-n, 0, 0)
-        );
-      }
-      if (inputs.keyDowns["d"]) {
-        vec3.add(
-          this.player().motion.linearVelocity,
-          this.player().motion.linearVelocity,
-          vec3.fromValues(n, 0, 0)
-        );
-      }
-      if (inputs.keyDowns["w"]) {
-        vec3.add(
-          this.player().motion.linearVelocity,
-          this.player().motion.linearVelocity,
-          vec3.fromValues(0, 0, -n)
-        );
-      }
-      if (inputs.keyDowns["s"]) {
-        vec3.add(
-          this.player().motion.linearVelocity,
-          this.player().motion.linearVelocity,
-          vec3.fromValues(0, 0, n)
-        );
-      }
-      if (inputs.keyDowns["shift"]) {
-        vec3.add(
-          this.player().motion.linearVelocity,
-          this.player().motion.linearVelocity,
-          vec3.fromValues(0, n, 0)
-        );
-      }
-      if (inputs.keyDowns["c"]) {
-        vec3.add(
-          this.player().motion.linearVelocity,
-          this.player().motion.linearVelocity,
-          vec3.fromValues(0, -n, 0)
-        );
-      }
-      vec3.transformQuat(
-        this.player().motion.linearVelocity,
-        this.player().motion.linearVelocity,
-        this.player().motion.rotation
-      );
-      quat.rotateY(
-        this.player().motion.rotation,
-        this.player().motion.rotation,
-        -inputs.mouseX * 0.001
-      );
-      quat.rotateX(
-        this.cameraRotation,
-        this.cameraRotation,
-        -inputs.mouseY * 0.001
-      );
-    }
-    // add bullet on lclick
-    if (inputs.lclick) {
-      let bullet = new Bullet(this.newId(), this.me);
-      let bullet_axis = vec3.fromValues(0, 0, -1);
-      bullet_axis = vec3.transformQuat(
-        bullet_axis,
-        bullet_axis,
-        this.player().motion.rotation
-      );
-      bullet.motion.location = vec3.clone(this.player().motion.location);
-      bullet.motion.rotation = quat.clone(this.player().motion.rotation);
-      bullet.motion.linearVelocity = vec3.scale(
-        bullet.motion.linearVelocity,
-        bullet_axis,
-        0.02
-      );
-      bullet.motion.linearVelocity = vec3.add(
-        bullet.motion.linearVelocity,
-        bullet.motion.linearVelocity,
-        this.player().motion.linearVelocity
-      );
-      bullet.motion.angularVelocity = vec3.scale(
-        bullet.motion.angularVelocity,
-        bullet_axis,
-        0.01
-      );
-      this.addObjectInstance(bullet, this.bulletProto);
-    }
-    if (inputs.rclick) {
-      const SPREAD = 5;
-      const GAP = 1.0;
-      for (let xi = 0; xi <= SPREAD; xi++) {
-        for (let yi = 0; yi <= SPREAD; yi++) {
-          const x = (xi - SPREAD / 2) * GAP;
-          const y = (yi - SPREAD / 2) * GAP;
-          let bullet = new Bullet(this.newId(), this.me);
-          let bullet_axis = vec3.fromValues(0, 0, -1);
-          bullet_axis = vec3.transformQuat(
-            bullet_axis,
-            bullet_axis,
-            this.player().motion.rotation
-          );
-          bullet.motion.location = vec3.add(
-            vec3.create(),
-            this.player().motion.location,
-            vec3.fromValues(x, y, 0)
-          );
-          bullet.motion.rotation = quat.clone(this.player().motion.rotation);
-          bullet.motion.linearVelocity = vec3.scale(
-            bullet.motion.linearVelocity,
-            bullet_axis,
-            0.005
-          );
-          bullet.motion.linearVelocity = vec3.add(
-            bullet.motion.linearVelocity,
-            bullet.motion.linearVelocity,
-            this.player().motion.linearVelocity
-          );
-          bullet.motion.angularVelocity = vec3.scale(
-            bullet.motion.angularVelocity,
-            bullet_axis,
-            0.01
-          );
-          this.addObjectInstance(bullet, this.bulletProto);
-        }
-      }
-    }
     // check render mode
     if (inputs.keyClicks["1"]) {
       this.renderer.mode = "normal";
@@ -593,11 +482,12 @@ class CubeGameState extends GameState {
     stepBoats(boats, dt);
 
     // TODO(@darzu): IMPLEMENT
-    // move players
+    // move player(s)
     const players = Object.values(this.objects).filter(
       (o) => o instanceof Player
     ) as Player[];
-    stepPlayers(players, dt);
+    for (let o of players)
+      stepPlayer(o, dt, inputs, this.camera, this.spawnBullet);
 
     // check collisions
     for (let o of Object.values(this.objects)) {
@@ -682,9 +572,9 @@ class CubeGameState extends GameState {
     mat4.multiply(
       viewMatrix,
       viewMatrix,
-      mat4.fromQuat(mat4.create(), this.cameraRotation)
+      mat4.fromQuat(mat4.create(), this.camera.rotation)
     );
-    mat4.translate(viewMatrix, viewMatrix, this.cameraLocation);
+    mat4.translate(viewMatrix, viewMatrix, this.camera.location);
     mat4.invert(viewMatrix, viewMatrix);
     return viewMatrix;
   }
