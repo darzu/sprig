@@ -31,8 +31,6 @@ export function stepPhysics(
 
   moveObjects(objs, dt);
 
-  const ITRS = 1;
-
   let collidesWith: CollidesWith | null = null;
 
   // update AABBs
@@ -43,91 +41,55 @@ export function stepPhysics(
 
   collidesWith = checkCollisions(objs);
 
+  const PAD = 0.01;
   const objMovFracs: { [id: number]: number } = {};
 
-  // solid object non-intersection
+  // solid object order maintenance
   for (let [aId, bId] of collisionPairs(collidesWith)) {
     const a = objDict[aId];
     const b = objDict[bId];
 
-    // For AABB:
-    // fixing collision means we end with two faces touching
-    //    we figure out which faces,
-    //    we can know which face was first pushed in based on the vector of collision,
-    //    and the overlap of each face,
-
-    // approaches:
-    // 1. use velocity constraints
-    // 2. use position constraints
-    //    This is what we're doing now. why doesn't it work?
-    //    Can it work? We could maintain the invariant that
-    //      no object can move backward farther than it started
-    // 3. step progress movement and collision detection
-
-    // TODO(@darzu): consider mass
-
-    let newMovFrac = 1.0; // TODO(@darzu): needs to be per-object across all collisions
-    let dimOfLeastMov = 0;
-
+    // for each of X,Y,Z dimensions
     for (let i of [0, 1, 2]) {
-      _collisionVec[i] =
-        b.motion.linearVelocity[i] - a.motion.linearVelocity[i];
+      const left = a.lastMotion.location[i] < b.lastMotion.location[i] ? a : b;
+      const right = a.lastMotion.location[i] < b.lastMotion.location[i] ? b : a;
 
-      _collisionOverlap[i] =
-        _collisionVec[i] > 0
-          ? b.worldAABB.max[i] - a.worldAABB.min[i]
-          : b.worldAABB.min[i] - a.worldAABB.max[i];
+      const overlap = left.worldAABB.max[i] - right.worldAABB.min[i];
+      if (overlap < 0) continue; // no overlap to deal with
 
-      if (_collisionOverlap[i] + 0.1 > 0) {
-        let dimMovFrac = Math.min(
-          Math.abs(
-            (_collisionOverlap[i] + 0.1) /
-              (a.motion.linearVelocity[i] * dt -
-                b.motion.linearVelocity[i] * dt)
-          ),
-          1.0
+      const leftMaxContrib = Math.max(
+        0,
+        left.motion.location[i] - left.lastMotion.location[i]
+      );
+      const rightMaxContrib = Math.max(
+        0,
+        right.lastMotion.location[i] - right.motion.location[i]
+      );
+      if (leftMaxContrib + rightMaxContrib < overlap)
+        // we can't get unstuck going backward, so don't try
+        // maybe we'll tunnel through
+        continue;
+      if (leftMaxContrib === 0 && rightMaxContrib === 0)
+        // no movement possible or necessary
+        continue;
+
+      // TODO(@darzu): wait, these fractions are slightly wrong, I need to account for leftFracRemaining
+      // find F such that F * (leftMaxContrib + rightMaxContrib) >= overlap
+      const f = Math.min(1.0, overlap / (leftMaxContrib + rightMaxContrib));
+      if (f <= 0 || 1 < f)
+        // TODO(@darzu): DEBUG
+        console.error(
+          `Invalid fraction: ${f}, overlap: ${overlap}, leftMaxContrib: ${leftMaxContrib} rightMaxContrib: ${rightMaxContrib}`
         );
 
-        newMovFrac = Math.min(dimMovFrac, newMovFrac);
-        dimOfLeastMov = i;
-      }
-    }
-
-    let aPrevMovFrac = objMovFracs[aId] ?? 0.0;
-    let bPrevMovFrac = objMovFracs[bId] ?? 0.0;
-
-    if (aPrevMovFrac + newMovFrac > 1.0) {
-      // "a" can't move this far, so move it as
-      // far as we can, then put the rest on "b"
-      // and hope for the best.
-      objMovFracs[aId] = 1.0; // max "a"s movement
-      let bStillToMovDist =
-        (aPrevMovFrac + newMovFrac - 1.0) * // left over "a" fraction
-        a.motion.linearVelocity[dimOfLeastMov] *
-        dt;
-      let bStillToMovFrac =
-        bStillToMovDist / (b.motion.linearVelocity[dimOfLeastMov] * dt);
-      objMovFracs[bId] = Math.min(
-        1.0,
-        bStillToMovFrac + newMovFrac + bPrevMovFrac
+      console.log(
+        `f: ${f}, o: ${overlap}, l: ${leftMaxContrib}, r: ${rightMaxContrib}`
       );
-    } else if (bPrevMovFrac + newMovFrac > 1.0) {
-      // ditto
-      objMovFracs[bId] = 1.0;
-      let aStillToMovDist =
-        (bPrevMovFrac + newMovFrac - 1.0) *
-        b.motion.linearVelocity[dimOfLeastMov] *
-        dt;
-      let aStillToMovFrac =
-        aStillToMovDist / (a.motion.linearVelocity[dimOfLeastMov] * dt);
-      objMovFracs[aId] = Math.min(
-        1.0,
-        aStillToMovFrac + newMovFrac + aPrevMovFrac
-      );
-    } else {
-      // we haven't already moved too far back
-      objMovFracs[aId] = newMovFrac;
-      objMovFracs[bId] = newMovFrac;
+
+      if (0 < leftMaxContrib)
+        objMovFracs[left.id] = Math.max(objMovFracs[left.id] || 0, f);
+      if (0 < rightMaxContrib)
+        objMovFracs[right.id] = Math.max(objMovFracs[right.id] || 0, f);
     }
   }
 
@@ -135,6 +97,7 @@ export function stepPhysics(
   for (let a of objs) {
     let movFrac = objMovFracs[a.id];
     if (movFrac) {
+      // TODO(@darzu): use last location not linear velocity
       vec3.scale(_collisionRefl, a.motion.linearVelocity, -movFrac * dt);
       vec3.add(a.motion.location, a.motion.location, _collisionRefl);
     }
