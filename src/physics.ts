@@ -39,6 +39,7 @@ export function checkCollisions(objs: { worldAABB: AABB, id: number }[]): Collid
 
     // naive oct-tree
     //      5000 objs: 12.5ms, 56,000 overlaps + 235,000 enclosed-bys
+    //      3000 objs: 7.6ms, 21,000 overlaps + 186,000 enclosed-bys
     //      1000 objs: 2.6ms, 8,500 overlaps + 53,000 enclosed-bys
     //      100 objs: 0.1ms, 1,200 overlaps + 6,000 enclosed-bys
     const octObjs = new Map<number, AABB>(objs.map(o => [o.id, o.worldAABB])); // TODO(@darzu): necessary?
@@ -77,6 +78,7 @@ export function checkCollisions(objs: { worldAABB: AABB, id: number }[]): Collid
 
     // TODO(@darzu): debugging
     // console.log(debugOcttree(tree).join(','))
+    // console.log(`trees: ${debugOcttree(tree).length}`);
 
     _lastCollisionTestTimeMs = performance.now() - start;
     return _collidesWith;
