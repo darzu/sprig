@@ -154,13 +154,6 @@ const lightProjectionMatrix = mat4.create();
     mat4.ortho(lightProjectionMatrix, left, right, bottom, top, near, far);
 }
 
-interface MeshRenderer {
-    // TODO(@darzu): what should really be exposed?
-    sharedUniBuffer: GPUBuffer,
-    rebuildBundles: (meshPools: MeshMemoryPool[]) => void,
-    render: (commandEncoder: GPUCommandEncoder, meshPools: MeshMemoryPool[], canvasWidth: number, canvasHeight: number) => void,
-}
-
 let depthTexture: GPUTexture;
 let depthTextureView: GPUTextureView;
 let colorTexture: GPUTexture;
@@ -212,21 +205,6 @@ function resize(device: GPUDevice, canvasWidth: number, canvasHeight: number) {
     mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 1, viewDistance);
 }
 
-// function createMeshRenderer(
-//     meshUniByteSize: number,
-//     vertByteSize: number,
-//     device: GPUDevice, context: GPUCanvasContext): MeshRenderer 
-// {
-
-    // const res: MeshRenderer = {
-    //     sharedUniBuffer,
-    //     rebuildBundles,
-    //     render,
-    // };
-    // return res;
-// }
-
-
 // face normals vs vertex normals
 interface MeshModel {
     // vertex positions (x,y,z)
@@ -267,177 +245,6 @@ interface MeshMemoryPool {
 }
 
 const _scratchSingletonFloatBuffer = new Float32Array(1);
-
-function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDevice): MeshMemoryPool {
-    const { vertByteSize, maxVerts, maxTris, maxMeshes, meshUniByteSize } = opts;
-
-    if (meshUniByteSize % 256 !== 0) {
-        console.error("invalid mesh uni byte size, not 256 byte aligned: " + meshUniByteSize)
-    }
-
-    // space stats
-    console.log(`New mesh pool`);
-    console.log(`   ${maxVerts * vertByteSize / 1024} KB for verts`);
-    console.log(`   ${opts.usesIndices ? maxTris * bytesPerTri / 1024 : 0} KB for indices`);
-    console.log(`   ${maxMeshes * meshUniByteSize / 1024} KB for models`);
-        // TODO(@darzu): MESH FORMAT
-    const assumedBytesPerModel =
-            bytesPerMat4 // transform
-            + bytesPerFloat // max draw distance
-    const unusedBytesPerModel = 256 - assumedBytesPerModel % 256
-    console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per model (${(unusedBytesPerModel * maxMeshes / 1024).toFixed(1)} KB total waste)`);
-
-    const _vertBuffer = device.createBuffer({
-        size: maxVerts * vertByteSize,
-        usage: GPUBufferUsage.VERTEX,
-        mappedAtCreation: true,
-    });
-    const _indexBuffer = opts.usesIndices ? device.createBuffer({
-        size: maxTris * bytesPerTri,
-        usage: GPUBufferUsage.INDEX,
-        mappedAtCreation: true,
-    }) : null;
-
-    const meshUniBufferSize = meshUniByteSize * maxMeshes;
-    const _meshUniBuffer = device.createBuffer({
-        size: align(meshUniBufferSize, 256),
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
-    const _meshes: Mesh[] = [];
-    let _numVerts = 0;
-    let _numTris = 0;
-
-    const vertElStride = vertByteSize / bytesPerFloat;
-
-    let _vertsMap: Float32Array | null = null;
-    let _indMap: Uint16Array | null = null;
-
-    function _unmap() {
-        // console.log("unmapping") // TODO(@darzu): 
-        if (_vertsMap)
-            _vertBuffer.unmap()
-        if (_indMap && _indexBuffer)
-            _indexBuffer.unmap()
-        _vertsMap = null;
-        _indMap = null;
-        }
-
-    // TODO(@darzu): misnomer. This doesn't do the mapping
-    function _map() {
-        // console.log("mapping") // TODO(@darzu): 
-        if (!_vertsMap)
-            _vertsMap = new Float32Array(_vertBuffer.getMappedRange())
-        if (!_indMap && _indexBuffer)
-            _indMap = new Uint16Array(_indexBuffer.getMappedRange());
-    }
-
-    function addMeshes(meshesToAdd: MeshModel[], shadowCasters: boolean): Mesh[] {
-        function addMesh(m: MeshModel): Mesh {
-            if (_vertsMap === null) {
-                throw "Use preRender() and postRender() functions"
-            }
-
-            // TODO(@darzu): temporary
-            m = unshareVertices(m);
-
-            if (_numVerts + m.pos.length > maxVerts)
-                throw "Too many vertices!"
-            if (_numTris + m.tri.length > maxTris)
-                throw "Too many triangles!"
-
-            // add to vertex and index buffers
-            addMeshToBuffers(m, _vertsMap, _numVerts, vertElStride, _indMap, _numTris, false);
-
-            // create transformation matrix
-            const trans = mat4.create() as Float32Array;
-
-            // TODO(@darzu): real transforms
-            // mat4.translate(trans, trans, vec3.fromValues(
-            //     4 * _meshes.length, // TODO
-            //     0, 0));
-
-            // save the transform matrix to the buffer
-            // TODO(@darzu): MESH FORMAT
-            const uniOffset = _meshes.length * meshUniByteSize;
-            device.queue.writeBuffer(
-                _meshUniBuffer,
-                uniOffset,
-                trans.buffer,
-                trans.byteOffset,
-                trans.byteLength
-            );
-
-            // create the result
-            const res: Mesh = {
-                vertNumOffset: _numVerts, // TODO(@darzu): 
-                indicesNumOffset: _numTris * 3, // TODO(@darzu): 
-                modelUniByteOffset: uniOffset,
-                transform: trans,
-                triCount: m.tri.length,
-
-                // TODO(@darzu): hrm
-                shadowCaster: shadowCasters,
-
-                model: m,
-                maxDraw: 0,
-                }
-            _numVerts += m.pos.length;
-            _numTris += m.tri.length;
-            return res;
-            }
-
-        const newMeshes = meshesToAdd.map(m => addMesh(m))
-
-        _meshes.push(...newMeshes)
-
-        return newMeshes
-            // _indexBuffer.unmap();
-            // _vertBuffer.unmap();
-        }
-
-    function applyMeshTransform(m: Mesh) {
-        // save the transform matrix to the buffer
-        // TODO(@darzu): MESH FORMAT
-        device.queue.writeBuffer(
-            _meshUniBuffer,
-            m.modelUniByteOffset,
-            (m.transform as Float32Array).buffer,
-            (m.transform as Float32Array).byteOffset,
-            (m.transform as Float32Array).byteLength
-        );
-    }
-
-    function applyMeshMaxDraw(m: Mesh) {
-        // save the min draw distance to uniform buffer
-        _scratchSingletonFloatBuffer[0] = m.maxDraw;
-        device.queue.writeBuffer(
-            _meshUniBuffer,
-            // TODO(@darzu): MESH FORMAT
-            m.modelUniByteOffset + bytesPerMat4,
-            _scratchSingletonFloatBuffer.buffer,
-            _scratchSingletonFloatBuffer.byteOffset,
-            _scratchSingletonFloatBuffer.byteLength
-        );
-    }
-
-    const res: MeshMemoryPool = {
-        _opts: opts,
-        _vertBuffer,
-        _indexBuffer,
-        _meshUniBuffer,
-        _numVerts,
-        _numTris,
-        _meshes,
-        _vertsMap: () => _vertsMap!,
-        _indMap: () => _indMap!,
-        _unmap: _unmap,
-        _map: _map,
-        addMeshes,
-        applyMeshTransform,
-        applyMeshMaxDraw,
-    }
-    return res;
-}
 
 // TODO(@darzu): this shouldn't be needed once "flat" shading is supported in Chrome's WGSL, 
 //  and/or PrimativeID is supported https://github.com/gpuweb/gpuweb/issues/1786
@@ -756,7 +563,8 @@ async function init(canvasRef: HTMLCanvasElement) {
     const vertByteSize = bytesPerFloat * vertElStride;
 
     // TODO(@darzu): VERTEX FORMAT
-    const meshPool = createMeshMemoryPool({
+
+    const memoryPoolOpts: MeshMemoryPoolOptions = {
         vertByteSize,
         maxVerts: 100000,
         maxTris: 100000,
@@ -764,7 +572,175 @@ async function init(canvasRef: HTMLCanvasElement) {
         meshUniByteSize,
         backfaceCulling: true,
         usesIndices: true,
-    }, device);
+    };
+    const { maxVerts, maxTris, maxMeshes } = memoryPoolOpts;
+
+    if (meshUniByteSize % 256 !== 0) {
+        console.error("invalid mesh uni byte size, not 256 byte aligned: " + meshUniByteSize)
+    }
+
+    // space stats
+    console.log(`New mesh pool`);
+    console.log(`   ${maxVerts * vertByteSize / 1024} KB for verts`);
+    console.log(`   ${memoryPoolOpts.usesIndices ? maxTris * bytesPerTri / 1024 : 0} KB for indices`);
+    console.log(`   ${maxMeshes * meshUniByteSize / 1024} KB for models`);
+    // TODO(@darzu): MESH FORMAT
+    const assumedBytesPerModel =
+        bytesPerMat4 // transform
+        + bytesPerFloat // max draw distance
+    const unusedBytesPerModel = 256 - assumedBytesPerModel % 256
+    console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per model (${(unusedBytesPerModel * maxMeshes / 1024).toFixed(1)} KB total waste)`);
+
+    const _vertBuffer = device.createBuffer({
+        size: maxVerts * vertByteSize,
+        usage: GPUBufferUsage.VERTEX,
+        mappedAtCreation: true,
+    });
+    const _indexBuffer = memoryPoolOpts.usesIndices ? device.createBuffer({
+        size: maxTris * bytesPerTri,
+        usage: GPUBufferUsage.INDEX,
+        mappedAtCreation: true,
+    }) : null;
+
+    const meshUniBufferSize = meshUniByteSize * maxMeshes;
+    const _meshUniBuffer = device.createBuffer({
+        size: align(meshUniBufferSize, 256),
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+    const _meshes: Mesh[] = [];
+    let _numVerts = 0;
+    let _numTris = 0;
+
+    // const vertElStride = vertByteSize / bytesPerFloat;
+
+    let _vertsMap: Float32Array | null = null;
+    let _indMap: Uint16Array | null = null;
+
+    function _unmap() {
+        // console.log("unmapping") // TODO(@darzu): 
+        if (_vertsMap)
+            _vertBuffer.unmap()
+        if (_indMap && _indexBuffer)
+            _indexBuffer.unmap()
+        _vertsMap = null;
+        _indMap = null;
+    }
+
+    // TODO(@darzu): misnomer. This doesn't do the mapping
+    function _map() {
+        // console.log("mapping") // TODO(@darzu): 
+        if (!_vertsMap)
+            _vertsMap = new Float32Array(_vertBuffer.getMappedRange())
+        if (!_indMap && _indexBuffer)
+            _indMap = new Uint16Array(_indexBuffer.getMappedRange());
+    }
+
+    function addMeshes(meshesToAdd: MeshModel[], shadowCasters: boolean): Mesh[] {
+        function addMesh(m: MeshModel): Mesh {
+            if (_vertsMap === null) {
+                throw "Use preRender() and postRender() functions"
+            }
+
+            // TODO(@darzu): temporary
+            m = unshareVertices(m);
+
+            if (_numVerts + m.pos.length > maxVerts)
+                throw "Too many vertices!"
+            if (_numTris + m.tri.length > maxTris)
+                throw "Too many triangles!"
+
+            // add to vertex and index buffers
+            addMeshToBuffers(m, _vertsMap, _numVerts, vertElStride, _indMap, _numTris, false);
+
+            // create transformation matrix
+            const trans = mat4.create() as Float32Array;
+
+            // TODO(@darzu): real transforms
+            // mat4.translate(trans, trans, vec3.fromValues(
+            //     4 * _meshes.length, // TODO
+            //     0, 0));
+
+            // save the transform matrix to the buffer
+            // TODO(@darzu): MESH FORMAT
+            const uniOffset = _meshes.length * meshUniByteSize;
+            device.queue.writeBuffer(
+                _meshUniBuffer,
+                uniOffset,
+                trans.buffer,
+                trans.byteOffset,
+                trans.byteLength
+            );
+
+            // create the result
+            const res: Mesh = {
+                vertNumOffset: _numVerts, // TODO(@darzu): 
+                indicesNumOffset: _numTris * 3, // TODO(@darzu): 
+                modelUniByteOffset: uniOffset,
+                transform: trans,
+                triCount: m.tri.length,
+
+                // TODO(@darzu): hrm
+                shadowCaster: shadowCasters,
+
+                model: m,
+                maxDraw: 0,
+            }
+            _numVerts += m.pos.length;
+            _numTris += m.tri.length;
+            return res;
+        }
+
+        const newMeshes = meshesToAdd.map(m => addMesh(m))
+
+        _meshes.push(...newMeshes)
+
+        return newMeshes
+        // _indexBuffer.unmap();
+        // _vertBuffer.unmap();
+    }
+
+    function applyMeshTransform(m: Mesh) {
+        // save the transform matrix to the buffer
+        // TODO(@darzu): MESH FORMAT
+        device.queue.writeBuffer(
+            _meshUniBuffer,
+            m.modelUniByteOffset,
+            (m.transform as Float32Array).buffer,
+            (m.transform as Float32Array).byteOffset,
+            (m.transform as Float32Array).byteLength
+        );
+    }
+
+    function applyMeshMaxDraw(m: Mesh) {
+        // save the min draw distance to uniform buffer
+        _scratchSingletonFloatBuffer[0] = m.maxDraw;
+        device.queue.writeBuffer(
+            _meshUniBuffer,
+            // TODO(@darzu): MESH FORMAT
+            m.modelUniByteOffset + bytesPerMat4,
+            _scratchSingletonFloatBuffer.buffer,
+            _scratchSingletonFloatBuffer.byteOffset,
+            _scratchSingletonFloatBuffer.byteLength
+        );
+    }
+
+        // const res: MeshMemoryPool = {
+        //     _opts: memoryPoolOpts,
+        //     _vertBuffer,
+        //     _indexBuffer,
+        //     _meshUniBuffer,
+        //     _numVerts,
+        //     _numTris,
+        //     _meshes,
+        //     _vertsMap: () => _vertsMap!,
+        //     _indMap: () => _indMap!,
+        //     _unmap: _unmap,
+        //     _map: _map,
+        //     addMeshes,
+        //     applyMeshTransform,
+        //     applyMeshMaxDraw,
+        // }
+        // return res;
 
     const swapChain = context.configureSwapChain({
         device,
@@ -1038,7 +1014,10 @@ async function init(canvasRef: HTMLCanvasElement) {
     let shadowRenderBundle: GPURenderBundle;
     let renderBundle: GPURenderBundle;
 
-    function rebuildBundles(meshPools: MeshMemoryPool[]) {
+    const backfaceCulling = true;
+
+    function rebuildBundles() {
+
         // create render bundle
         const bundleRenderDesc: GPURenderBundleEncoderDescriptor = {
             colorFormats: [swapChainFormat],
@@ -1048,46 +1027,44 @@ async function init(canvasRef: HTMLCanvasElement) {
 
         const bundleEncoder = device.createRenderBundleEncoder(bundleRenderDesc);
 
-        for (let pool of meshPools) {
-            if (pool._opts.backfaceCulling)
-                bundleEncoder.setPipeline(renderPipeline);
-            else
-                bundleEncoder.setPipeline(renderPipelineTwosided);
+        if (backfaceCulling)
+            bundleEncoder.setPipeline(renderPipeline);
+        else
+            bundleEncoder.setPipeline(renderPipelineTwosided);
 
-            bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
-            const modelUniBindGroup = device.createBindGroup({
-                layout: modelUniBindGroupLayout,
-                entries: [
-                    {
-                        binding: 0,
-                        resource: {
-                            buffer: pool._meshUniBuffer,
-                            offset: 0, // TODO(@darzu): different offsets per model
-                            // TODO(@darzu): needed?
-                            size: meshUniByteSize,
-                        },
+        bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
+        const modelUniBindGroup = device.createBindGroup({
+            layout: modelUniBindGroupLayout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: {
+                        buffer: _meshUniBuffer,
+                        offset: 0, // TODO(@darzu): different offsets per model
+                        // TODO(@darzu): needed?
+                        size: meshUniByteSize,
                     },
-                ],
-            });
-            bundleEncoder.setVertexBuffer(0, pool._vertBuffer);
-            if (pool._indexBuffer)
-                bundleEncoder.setIndexBuffer(pool._indexBuffer, 'uint16');
-            const uniOffset = [0];
-            for (let m of pool._meshes) {
-                // TODO(@darzu): set bind group
-                uniOffset[0] = m.modelUniByteOffset;
-                bundleEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
-                if (pool._indexBuffer)
-                    bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-                else {
-                    bundleEncoder.draw(m.triCount * 3, undefined, m.vertNumOffset);
-                }
+                },
+            ],
+        });
+        bundleEncoder.setVertexBuffer(0, _vertBuffer);
+        if (_indexBuffer)
+            bundleEncoder.setIndexBuffer(_indexBuffer, 'uint16');
+        const uniOffset = [0];
+        for (let m of _meshes) {
+            // TODO(@darzu): set bind group
+            uniOffset[0] = m.modelUniByteOffset;
+            bundleEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
+            if (_indexBuffer)
+                bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+            else {
+                bundleEncoder.draw(m.triCount * 3, undefined, m.vertNumOffset);
             }
         }
         renderBundle = bundleEncoder.finish()
     }
 
-    function render(commandEncoder: GPUCommandEncoder, meshPools: MeshMemoryPool[], canvasWidth: number, canvasHeight: number) {
+    function render(commandEncoder: GPUCommandEncoder, canvasWidth: number, canvasHeight: number) {
         // TODO(@darzu):  this feels akward
         // Acquire next image from swapchain
         // colorTexture = swapChain.getCurrentTexture();
@@ -1115,8 +1092,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         // TODO(@darzu): use bundle
         {
             shadowPass.setBindGroup(0, shadowSharedUniBindGroup);
-            for (let pool of meshPools) {
-                if (pool._opts.backfaceCulling)
+            if (backfaceCulling)
                     shadowPass.setPipeline(shadowPipeline);
                 else
                     shadowPass.setPipeline(shadowPipelineTwosided);
@@ -1127,7 +1103,7 @@ async function init(canvasRef: HTMLCanvasElement) {
                         {
                             binding: 0,
                             resource: {
-                                buffer: pool._meshUniBuffer,
+                                buffer: _meshUniBuffer,
                                 offset: 0, // TODO(@darzu): different offsets per model
                                 // TODO(@darzu): needed?
                                 size: meshUniByteSize,
@@ -1135,24 +1111,23 @@ async function init(canvasRef: HTMLCanvasElement) {
                         },
                     ],
                 });
-                shadowPass.setVertexBuffer(0, pool._vertBuffer);
-                if (pool._indexBuffer)
-                    shadowPass.setIndexBuffer(pool._indexBuffer, 'uint16');
+            shadowPass.setVertexBuffer(0, _vertBuffer);
+            if (_indexBuffer)
+                shadowPass.setIndexBuffer(_indexBuffer, 'uint16');
                 // TODO(@darzu): one draw call per mesh?
                 const uniOffset = [0];
-                for (let m of pool._meshes) {
+            for (let m of _meshes) {
                     if (!m.shadowCaster)
                         continue;
                     // TODO(@darzu): set bind group
                     uniOffset[0] = m.modelUniByteOffset;
                     shadowPass.setBindGroup(1, modelUniBindGroup, uniOffset);
-                    if (pool._indexBuffer)
+                if (_indexBuffer)
                         shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
                     else {
                         // console.log(`m.vertNumOffset: ${m.vertNumOffset}`)
                         shadowPass.draw(m.triCount * 3, undefined, m.vertNumOffset);
                     }
-                }
             }
             // shadowRenderBundle = shadowPass.finish()
         }
@@ -1175,17 +1150,17 @@ async function init(canvasRef: HTMLCanvasElement) {
         cursorLocked = true
     }
 
-    meshPool._map()
+    _map()
 
-    const [planeHandle] = meshPool.addMeshes([
+    const [planeHandle] = addMeshes([
         PLANE
     ], true)
     mat4.translate(planeHandle.transform, planeHandle.transform, [0, -3, 0])
-    meshPool.applyMeshTransform(planeHandle);
+    applyMeshTransform(planeHandle);
 
-    const [playerM] = meshPool.addMeshes([CUBE], true)
+    const [playerM] = addMeshes([CUBE], true)
 
-    meshPool._unmap();
+    _unmap();
 
     const cameraPos = mkAffineTransformable();
     cameraPos.pitch(-Math.PI / 4)
@@ -1245,7 +1220,7 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     const playerT = mkAffineTransformable();
     playerM.transform = playerT.getTransform();
-    meshPool.applyMeshTransform(playerM)
+    applyMeshTransform(playerM)
 
     let playerPos = getPositionFromTransform(playerM.transform);
 
@@ -1293,7 +1268,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         );
     }
 
-    rebuildBundles([meshPool]);
+    rebuildBundles();
 
     let debugDiv = document.getElementById('debug-div') as HTMLDivElement;
 
@@ -1301,7 +1276,7 @@ async function init(canvasRef: HTMLCanvasElement) {
     let avgJsTimeMs = 0
     let avgFrameTimeMs = 0
 
-    function frame(timeMs: number) {
+    function renderFrame(timeMs: number) {
         const start = performance.now();
 
         const frameTimeMs = previousFrameTime ? timeMs - previousFrameTime : 0;
@@ -1318,7 +1293,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         cameraFollow(cameraPos);
 
         playerM.transform = playerT.getTransform();
-        meshPool.applyMeshTransform(playerM);
+        applyMeshTransform(playerM);
 
         // reset accummulated mouse delta
         mouseDeltaX = 0;
@@ -1370,15 +1345,13 @@ async function init(canvasRef: HTMLCanvasElement) {
             displacer.byteLength - 4
         );
 
-        // meshPool.preRender()
+        // meshpreRender()
         const canvasWidth = canvasRef.clientWidth;
         const canvasHeight = canvasRef.clientHeight;
 
         const commandEncoder = device.createCommandEncoder();
-        render(commandEncoder, [meshPool], canvasWidth, canvasHeight);
+        render(commandEncoder, canvasWidth, canvasHeight);
         device.queue.submit([commandEncoder.finish()]);
-
-        requestAnimationFrame(frame);
 
         const jsTime = performance.now() - start;
 
@@ -1392,9 +1365,18 @@ async function init(canvasRef: HTMLCanvasElement) {
         // TODO(@darzu): triangle, vertex, pixel counts
         debugDiv.innerText = `js: ${avgJsTimeMs.toFixed(2)}ms, frame: ${avgFrameTimeMs.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)}`
     }
-    requestAnimationFrame(frame);
+
+    return renderFrame;
 };
 
 // Attach to html
 let canvas = document.getElementById('sample-canvas') as HTMLCanvasElement;
-await init(canvas)
+const renderFrame = await init(canvas)
+
+if (renderFrame) {
+    const _renderFrame = (time: number) => {
+        renderFrame(time);
+        requestAnimationFrame(_renderFrame);
+    }
+    requestAnimationFrame(_renderFrame);
+}
