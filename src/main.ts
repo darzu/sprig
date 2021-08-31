@@ -21,7 +21,7 @@ import {
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
 const MAX_VERTICES = 21844;
-const ENABLE_NET = true;
+const ENABLE_NET = false;
 
 enum ObjectType {
   Plane,
