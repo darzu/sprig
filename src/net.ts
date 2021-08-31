@@ -11,6 +11,8 @@ enum MessageType {
   // State update
   StateUpdate,
   StateUpdateResponse,
+  // Adds objects to the game
+  AddObjects,
   // Reserve unique object IDs
   ReserveIDs,
   ReserveIDsResponse,
@@ -23,8 +25,8 @@ interface Message {
 interface JoinResponse extends Message {
   type: MessageType.JoinResponse;
   you: number;
+  peers: ServerId[];
   objects: any[];
-  test: vec3;
 }
 
 interface StateUpdate extends Message {
@@ -33,6 +35,11 @@ interface StateUpdate extends Message {
   from: number;
   seq: number;
   data: Array<number>;
+}
+
+interface AddObjects extends Message {
+  type: MessageType.AddObjects;
+  objects: any[];
 }
 
 // TODO: change to number?
@@ -49,6 +56,71 @@ type ServerId = string;
   next(
 }*/
 
+interface ObjectUpdate {
+  id: number;
+  authority: number;
+  authority_seq: number;
+  location: vec3;
+  linear_velocity: vec3;
+  rotation: quat;
+  angular_velocity: vec3;
+  snap_seq: number;
+}
+
+function deserializeVec3(data: Iterator<number>) {
+  let v0 = data.next().value;
+  let v1 = data.next().value;
+  let v2 = data.next().value;
+  return vec3.fromValues(v0, v1, v2);
+}
+
+function deserializeQuat(data: Iterator<number>) {
+  let v0 = data.next().value;
+  let v1 = data.next().value;
+  let v2 = data.next().value;
+  let v3 = data.next().value;
+  return quat.fromValues(v0, v1, v2, v3);
+}
+
+function deserializeObjectUpdates(msg: StateUpdate): ObjectUpdate[] {
+  let updates = [];
+  let data = msg.data.values();
+  while (true) {
+    let next = data.next();
+    if (next.done) {
+      break;
+    }
+    let id = next.value;
+    let authority = msg.from;
+    let authority_seq = data.next().value;
+    let location = deserializeVec3(data);
+    let linear_velocity = deserializeVec3(data);
+    let rotation = deserializeQuat(data);
+    let angular_velocity = deserializeVec3(data);
+    let snap_seq = msg.seq;
+    updates.push({
+      id,
+      authority,
+      authority_seq,
+      location,
+      linear_velocity,
+      rotation,
+      angular_velocity,
+      snap_seq,
+    });
+  }
+  return updates;
+}
+
+function shouldAcceptUpdate(obj: ObjectUpdate, update: ObjectUpdate) {
+  return (
+    obj.authority_seq < update.authority_seq ||
+    (obj.authority_seq == update.authority_seq &&
+      obj.authority < update.authority) ||
+    (obj.authority == update.authority && obj.snap_seq < update.snap_seq)
+  );
+}
+
 export class Net<Inputs> {
   private state: GameState<Inputs>;
   private host: boolean;
@@ -59,6 +131,7 @@ export class Net<Inputs> {
   private unreliableConnections: Record<ServerId, DataConnection> = {};
   private ready: (id: string) => void;
   private snap_seq: number = 0;
+  private unapplied_updates: Record<number, ObjectUpdate> = {};
 
   private send(server: ServerId, message: Message, reliable: boolean) {
     console.log(`Sending message of type ${MessageType[message.type]}`);
@@ -78,14 +151,21 @@ export class Net<Inputs> {
     switch (message.type) {
       case MessageType.Join: {
         // no other data associated with a join message
-        let id = this.state.addPlayer();
+        let [id, playerNetObj] = this.state.addPlayer();
         let response: JoinResponse = {
           type: MessageType.JoinResponse,
           you: id,
           objects: this.state.netObjects(),
-          test: vec3.fromValues(1, 3, 4),
+          peers: this.peers,
         };
         this.send(server, response, true);
+        let addObjects: AddObjects = {
+          type: MessageType.AddObjects,
+          objects: [playerNetObj],
+        };
+        for (let peer of this.peers) {
+          this.send(peer, addObjects, true);
+        }
         this.peers.push(server);
         break;
       }
@@ -98,59 +178,55 @@ export class Net<Inputs> {
         this.ready(this.me);
         break;
       }
+      case MessageType.AddObjects: {
+        let msg = message as AddObjects;
+        for (let netObj of msg.objects) {
+          let obj = this.state.addObjectFromNet(netObj);
+          let update = this.unapplied_updates[obj.id];
+          if (update) {
+            if (shouldAcceptUpdate(obj, update)) {
+              obj.authority = update.authority;
+              obj.authority_seq = update.authority_seq;
+              obj.location = update.location;
+              obj.linear_velocity = update.linear_velocity;
+              obj.rotation = update.rotation;
+              obj.angular_velocity = update.angular_velocity;
+              obj.snap_seq = update.snap_seq;
+            }
+          }
+        }
+        break;
+      }
       case MessageType.StateUpdate: {
         let msg = message as StateUpdate;
-        let data = msg.data.values();
-        while (true) {
-          let next = data.next();
-          if (next.done) {
-            break;
-          }
-          let id = next.value;
-          let obj = this.state.objects[id];
+        let updates = deserializeObjectUpdates(msg);
+        for (let update of updates) {
+          // do we know about this object?
+          let obj = this.state.objects[update.id];
           if (!obj) {
-            throw `State update for unrecognized id ${id}`;
-          }
-          let authority_seq = data.next().value;
-          // lower numbered servers win authority ties
-          if (
-            obj.snap_seq < msg.seq &&
-            (obj.authority_seq < authority_seq ||
-              (obj.authority_seq == authority_seq && obj.authority <= msg.from))
-          ) {
+            // we've never heard of this object before, so we need to save this
+            // update and apply it once we do hear about this object.
+            // BUT: we only want to save the most up-to-date snapshot,
+            // according to both the snapshot and authority sequences!
+            let latest_update = this.unapplied_updates[update.id];
+            if (!latest_update) {
+              this.unapplied_updates[update.id] = update;
+            } else if (shouldAcceptUpdate(latest_update, update)) {
+              this.unapplied_updates[update.id] = update;
+            }
+          } else if (shouldAcceptUpdate(obj, update)) {
             // actually apply the state update
-            obj.authority = msg.from;
-            obj.authority_seq = authority_seq;
-            obj.location = this.deserializeVec3(data);
-            obj.linear_velocity = this.deserializeVec3(data);
-            obj.rotation = this.deserializeQuat(data);
-            obj.angular_velocity = this.deserializeVec3(data);
-            obj.snap_seq = msg.seq;
-          } else {
-            // need to skip over some data
-            this.deserializeVec3(data);
-            this.deserializeVec3(data);
-            this.deserializeQuat(data);
-            this.deserializeVec3(data);
+            obj.authority = update.authority;
+            obj.authority_seq = update.authority_seq;
+            obj.location = update.location;
+            obj.linear_velocity = update.linear_velocity;
+            obj.rotation = update.rotation;
+            obj.angular_velocity = update.angular_velocity;
+            obj.snap_seq = update.snap_seq;
           }
         }
       }
     }
-  }
-
-  deserializeVec3(data: Iterator<number>) {
-    let v0 = data.next().value;
-    let v1 = data.next().value;
-    let v2 = data.next().value;
-    return vec3.fromValues(v0, v1, v2);
-  }
-
-  deserializeQuat(data: Iterator<number>) {
-    let v0 = data.next().value;
-    let v1 = data.next().value;
-    let v2 = data.next().value;
-    let v3 = data.next().value;
-    return quat.fromValues(v0, v1, v2, v3);
   }
 
   serializeVec3(data: Array<number>, v: vec3) {
@@ -204,6 +280,20 @@ export class Net<Inputs> {
         this.unreliableConnections[conn.peer] = conn;
       }
       this.setupConnection(conn);
+    });
+  }
+
+  private connectTo(server: ServerId) {
+    var reliableConn = this.peer.connect(server, { reliable: true });
+    reliableConn.on("open", () => {
+      var unreliableConn = this.peer.connect(server, { reliable: false });
+      unreliableConn.on("open", () => {
+        this.reliableConnections[server] = reliableConn;
+        this.unreliableConnections[server] = reliableConn;
+        this.setupConnection(reliableConn);
+        this.setupConnection(unreliableConn);
+        this.peers.push(server);
+      });
     });
   }
 

@@ -96,7 +96,7 @@ export abstract class GameState<Inputs> {
     this.renderer.addObject(obj);
   }
 
-  addObjectFromNet(netObj: NetObject) {
+  addObjectFromNet(netObj: NetObject): GameObject {
     let obj = this.objectFromNetObject(netObj);
     obj.id = netObj.id;
 
@@ -111,6 +111,7 @@ export abstract class GameState<Inputs> {
     obj.angular_velocity = netObj.angular_velocity;
     obj.rotation = netObj.rotation;
     this.addObject(obj);
+    return obj;
   }
 
   netObjects(): NetObject[] {
@@ -123,12 +124,12 @@ export abstract class GameState<Inputs> {
     this.renderer.renderFrame(this.viewMatrix());
   }
 
-  addPlayer(): number {
+  addPlayer(): [number, NetObject] {
     let id = this.nextPlayerId;
     this.nextPlayerId += 1;
     let obj = this.playerObject(id);
     this.addObject(obj);
-    return id;
+    return [id, obj.netObject()];
   }
 
   id(): number {
