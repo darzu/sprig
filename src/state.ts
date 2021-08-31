@@ -238,7 +238,8 @@ export abstract class GameState<Inputs> {
   }
 
   newId(): number {
-    if (this.nextObjectId > MAX_ID) throw `Out of object IDs, max: ${MAX_ID}`;
+    // TODO(@darzu): should we have a MAX_ID?
+    // if (this.nextObjectId > MAX_ID) throw `Out of object IDs, max: ${MAX_ID}`;
     return this.nextObjectId++;
   }
 

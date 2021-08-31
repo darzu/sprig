@@ -43,6 +43,7 @@ export function stepPhysics(
   // TODO(@darzu): incorperate this into CollidesWith data struct?
   let collidesWithHashes: { [idSet: number]: boolean } = {};
   function idHash(aId: number, bId: number): number {
+    // TODO(@darzu): need a better hash...
     return (aId << 16) & bId;
   }
 
