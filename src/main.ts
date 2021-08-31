@@ -87,11 +87,6 @@ const bytesPerVec3 = 3/*vec3*/ * 4/*f32*/
 const triElStride = 3/*ind per tri*/;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * triElStride;
 
-// rendering pipeline for meshes
-const shadowDepthTextureSize = 1024 * 2 * 4;
-
-// TODO(@darzu): SCENE FORMAT
-
 const wgslShaders = {
     vertexShadow: `
     [[block]] struct Scene {
@@ -202,9 +197,8 @@ const shadowDepthStencilFormat = 'depth32float';
 
 const shadowDepthTextureDesc: GPUTextureDescriptor = {
     size: {
-        width: shadowDepthTextureSize,
-        height: shadowDepthTextureSize,
-        depthOrArrayLayers: 1,
+        width: 2048 * 2,
+        height: 2048 * 2,
     },
     usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.SAMPLED,
     format: shadowDepthStencilFormat,
@@ -263,33 +257,22 @@ interface MeshModel {
     colors: vec3[];
 }
 
-const _scratchSingletonFloatBuffer = new Float32Array(1);
-
 // TODO(@darzu): this shouldn't be needed once "flat" shading is supported in Chrome's WGSL, 
 //  and/or PrimativeID is supported https://github.com/gpuweb/gpuweb/issues/1786
-function unshareVertices(inp: MeshModel): MeshModel {
-    // TODO(@darzu): pre-alloc
-    const outVerts: vec3[] = []
-    const outTri: vec3[] = []
-    inp.tri.forEach(([i0, i1, i2], i) => {
-        const v0 = inp.pos[i0];
-        const v1 = inp.pos[i1];
-        const v2 = inp.pos[i2];
-        outVerts.push(v0);
-        outVerts.push(v1);
-        outVerts.push(v2);
-        const vOff = i * 3;
-        outTri.push([
-            vOff + 0,
-            vOff + 1,
-            vOff + 2,
+function unshareVertices(input: MeshModel): MeshModel {
+    const pos: vec3[] = []
+    const tri: vec3[] = []
+    input.tri.forEach(([i0, i1, i2], i) => {
+        pos.push(input.pos[i0]);
+        pos.push(input.pos[i1]);
+        pos.push(input.pos[i2]);
+        tri.push([
+            i * 3 + 0,
+            i * 3 + 1,
+            i * 3 + 2,
         ])
     })
-    return {
-        pos: outVerts,
-        tri: outTri,
-        colors: inp.colors,
-    }
+    return { pos, tri, colors: input.colors }
 }
 
 function computeNormal([p1, p2, p3]: [vec3, vec3, vec3]): vec3 {
@@ -526,19 +509,8 @@ const _meshes: Mesh[] = [];
 let _numVerts = 0;
 let _numTris = 0;
 
-// const vertElStride = vertByteSize / bytesPerFloat;
-
 let _vertsMap: Float32Array | null = null;
 let _indMap: Uint16Array | null = null;
-
-function _unmap() {
-    // console.log("unmapping") // TODO(@darzu): 
-}
-
-// TODO(@darzu): misnomer. This doesn't do the mapping
-function _map() {
-    // console.log("mapping") // TODO(@darzu): 
-}
 
 function addMeshes(meshesToAdd: MeshModel[], shadowCasters: boolean): Mesh[] {
     function addMesh(m: MeshModel): Mesh {
@@ -546,7 +518,6 @@ function addMeshes(meshesToAdd: MeshModel[], shadowCasters: boolean): Mesh[] {
             throw "Use preRender() and postRender() functions"
         }
 
-        // TODO(@darzu): temporary
         m = unshareVertices(m);
 
         if (_numVerts + m.pos.length > maxVerts)
@@ -572,8 +543,6 @@ function addMeshes(meshesToAdd: MeshModel[], shadowCasters: boolean): Mesh[] {
             _meshUniBuffer,
             uniOffset,
             trans.buffer,
-            trans.byteOffset,
-            trans.byteLength
         );
 
         // create the result
@@ -603,15 +572,8 @@ function writeMeshTransform(m: Mesh) {
         _meshUniBuffer,
         m.modelUniByteOffset,
         (m.transform as Float32Array).buffer,
-        (m.transform as Float32Array).byteOffset,
-        (m.transform as Float32Array).byteLength
     );
 }
-
-const swapChain = context.configureSwapChain({
-    device,
-    format: swapChainFormat,
-});
 
 const modelUniBindGroupLayout = device.createBindGroupLayout({
     entries: [
@@ -948,8 +910,6 @@ device.queue.writeBuffer(
     sharedUniBuffer,
     bytesPerMat4 * 1, // second matrix
     lightMatrixData.buffer,
-    lightMatrixData.byteOffset,
-    lightMatrixData.byteLength
 );
 
 const lightData = lightDir as Float32Array;
@@ -957,8 +917,6 @@ device.queue.writeBuffer(
     sharedUniBuffer,
     bytesPerMat4 * 2, // third matrix
     lightData.buffer,
-    lightData.byteOffset,
-    lightData.byteLength
 );
 
 const modelUniBindGroup = device.createBindGroup({
@@ -966,27 +924,27 @@ const modelUniBindGroup = device.createBindGroup({
     entries: [{ binding: 0, resource: { buffer: _meshUniBuffer, size: meshUniByteSize, }, },],
 });
 
-const bundleRenderDesc: GPURenderBundleEncoderDescriptor = {
+const bundleEncoder = device.createRenderBundleEncoder({
     colorFormats: [swapChainFormat],
     depthStencilFormat: depthStencilFormat,
     sampleCount: antiAliasSampleCount,
-}
-
-const bundleEncoder = device.createRenderBundleEncoder(bundleRenderDesc);
-
+});
 bundleEncoder.setPipeline(renderPipeline);
-
 bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
 bundleEncoder.setVertexBuffer(0, _vertBuffer);
 bundleEncoder.setIndexBuffer(_indexBuffer, 'uint16');
 const uniOffset = [0];
 for (let m of _meshes) {
-    // TODO(@darzu): set bind group
     uniOffset[0] = m.modelUniByteOffset;
     bundleEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
     bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
 }
 let renderBundle = bundleEncoder.finish()
+
+const swapChain = context.configureSwapChain({
+    device,
+    format: swapChainFormat,
+});
 
 let debugDiv = document.getElementById('debug-div') as HTMLDivElement;
 
@@ -995,6 +953,7 @@ let avgJsTimeMs = 0
 let avgFrameTimeMs = 0
 
 resize(device, 100, 100);
+
 
 function renderFrame(timeMs: number) {
     const start = performance.now();
@@ -1043,26 +1002,7 @@ function renderFrame(timeMs: number) {
         sharedUniBuffer,
         0,
         viewProj.buffer,
-        viewProj.byteOffset,
-        viewProj.byteLength
     );
-
-    const colorAtt: GPURenderPassColorAttachmentNew = {
-        view: colorTextureView,
-        resolveTarget: swapChain.getCurrentTexture().createView(),
-        loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
-        storeOp: 'store',
-    };
-    const renderPassDescriptor = {
-        colorAttachments: [colorAtt],
-        depthStencilAttachment: {
-            view: depthTextureView,
-            depthLoadValue: 1.0,
-            depthStoreOp: 'store',
-            stencilLoadValue: 0,
-            stencilStoreOp: 'store',
-        },
-    } as const;
 
     const commandEncoder = device.createCommandEncoder();
     const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
@@ -1079,7 +1019,21 @@ function renderFrame(timeMs: number) {
     }
     shadowPass.endPass();
 
-    const renderPassEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+    const renderPassEncoder = commandEncoder.beginRenderPass({
+        colorAttachments: [{
+            view: colorTextureView,
+            resolveTarget: swapChain.getCurrentTexture().createView(),
+            loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
+            storeOp: 'store',
+        }],
+        depthStencilAttachment: {
+            view: depthTextureView,
+            depthLoadValue: 1.0,
+            depthStoreOp: 'store',
+            stencilLoadValue: 0,
+            stencilStoreOp: 'store',
+        },
+    });
     renderPassEncoder.executeBundles([renderBundle]);
     renderPassEncoder.endPass();
     device.queue.submit([commandEncoder.finish()]);
@@ -1096,7 +1050,6 @@ function renderFrame(timeMs: number) {
     // TODO(@darzu): triangle, vertex, pixel counts
     debugDiv.innerText = `js: ${avgJsTimeMs.toFixed(2)}ms, frame: ${avgFrameTimeMs.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)}`
 }
-
 
 if (renderFrame) {
     const _renderFrame = (time: number) => {
