@@ -479,7 +479,7 @@ export class Net<Inputs> {
       var unreliableConn = this.peer.connect(server, { reliable: false });
       unreliableConn.on("open", () => {
         this.reliableConnections[server] = reliableConn;
-        this.unreliableConnections[server] = reliableConn;
+        this.unreliableConnections[server] = unreliableConn;
         this.setupConnection(reliableConn);
         this.setupConnection(unreliableConn);
         this.peers.push(server);
@@ -514,7 +514,7 @@ export class Net<Inputs> {
           var unreliableConn = this.peer.connect(host, { reliable: false });
           unreliableConn.on("open", () => {
             this.reliableConnections[host] = reliableConn;
-            this.unreliableConnections[host] = reliableConn;
+            this.unreliableConnections[host] = unreliableConn;
             this.setupConnection(reliableConn);
             this.setupConnection(unreliableConn);
             this.send(host, { type: MessageType.Join }, true);
