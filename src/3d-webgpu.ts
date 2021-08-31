@@ -116,14 +116,17 @@ function computeNormals(m: MeshModel): vec3[] {
 const vertexPositionColorWGSL =
 `
 [[stage(fragment)]]
-fn main([[location(0)]] color: vec4<f32>) -> [[location(0)]] vec4<f32> {
-    var xTan: vec3<f32> = dpdx(color).xyz;
-    var yTan: vec3<f32> = dpdy(color).xyz;
+fn main(
+    [[location(0)]] modelPos: vec4<f32>,
+    [[location(1)]] color: vec3<f32>
+    ) -> [[location(0)]] vec4<f32> {
+    var xTan: vec3<f32> = dpdx(modelPos).xyz;
+    var yTan: vec3<f32> = dpdy(modelPos).xyz;
     var norm: vec3<f32> = normalize(cross(xTan, yTan));
 
     var lDirection: vec3<f32> = vec3<f32>(0.5, 0.5, 0.5);
     var lColor: vec3<f32> = vec3<f32>(0.5, 0.5, 0.5);
-    var ambient: vec4<f32> = vec4<f32>(0.0, 0.2, 0.2, 0.2);
+    var ambient: vec4<f32> = vec4<f32>(color, 1.0); // vec4<f32>(0.0, 0.2, 0.2, 0.2);
 
     var diffuse: vec4<f32> = vec4<f32>(max(dot(lDirection, -norm), 0.0) * lColor, 1.0);
 
@@ -145,20 +148,23 @@ const basicVertWGSL =
 
 struct VertexOutput {
     [[builtin(position)]] pos : vec4<f32>;
-    [[location(0)]] color: vec4<f32>;
+    [[location(0)]] modelPos: vec4<f32>;
+    [[location(1)]] color: vec3<f32>;
 };
 
 [[stage(vertex)]]
 fn main(
     [[location(0)]] position : vec3<f32>,
-    [[location(1)]] normal : vec3<f32>
+    [[location(1)]] normal : vec3<f32>,
+    [[location(2)]] color : vec3<f32>
     ) -> VertexOutput {
     var output : VertexOutput;
     var pos4: vec4<f32> = vec4<f32>(position, 1.0);
     output.pos = sharedUnis.viewProj * modelUnis.model * pos4;
     // output.color = vec4<f32>(normal, 1.0);
     // output.color = 0.5 * (pos4 + vec4<f32>(1.0, 1.0, 1.0, 1.0));
-    output.color = sharedUnis.viewProj * pos4;
+    output.modelPos = sharedUnis.viewProj * pos4;
+    output.color = color;
 
     return output;
 }
@@ -267,7 +273,6 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     // GPUDepthStencilStateDescriptor
 
-
     // Create the depth texture for rendering/sampling the shadow map.
     const shadowDepthTextureDesc: GPUTextureDescriptor = {
         size: {
@@ -306,6 +311,26 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     // TODO(@darzu): createBindGroupLayout
 
+    // TODO(@darzu): trying per-face data, but this actually ended up being "per instance" data
+    const maxNumInstances = 1000;
+    const instanceByteSize = Float32Array.BYTES_PER_ELEMENT * 3/*color*/
+    const instanceDataBuffer = device.createBuffer({
+        size: maxNumInstances * instanceByteSize,
+        usage: GPUBufferUsage.VERTEX,
+        mappedAtCreation: true,
+    });
+    {
+        const instMap = new Float32Array(instanceDataBuffer.getMappedRange())
+        for (let i = 0; i < maxNumInstances; i++) {
+            const off = i * instanceByteSize
+            // TODO(@darzu): colors
+            instMap[off + 0] = Math.random()
+            instMap[off + 1] = Math.random()
+            instMap[off + 2] = Math.random()
+        }
+        instanceDataBuffer.unmap();
+    }
+
     const pipeline = device.createRenderPipeline({
         vertex: {
             module: device.createShaderModule({
@@ -334,6 +359,19 @@ async function init(canvasRef: HTMLCanvasElement) {
                         //     offset: cubeUVOffset,
                         //     format: 'float32x2',
                         // },
+                    ],
+                },
+                {
+                    // per-instance data
+                    stepMode: "instance",
+                    arrayStride: instanceByteSize,
+                    attributes: [
+                        {
+                            // color
+                            shaderLocation: 2,
+                            offset: 0,
+                            format: 'float32x3',
+                        },
                     ],
                 },
             ],
@@ -447,7 +485,6 @@ async function init(canvasRef: HTMLCanvasElement) {
         return viewProj as Float32Array;
     }
 
-
     const meshes: Mesh[] = []
     {
         const vertsMap = new Float32Array(verticesBuffer.getMappedRange())
@@ -557,6 +594,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         passEncoder.setPipeline(pipeline);
         passEncoder.setBindGroup(0, sharedUniBindGroup);
         passEncoder.setVertexBuffer(0, verticesBuffer);
+        passEncoder.setVertexBuffer(1, instanceDataBuffer);
         passEncoder.setIndexBuffer(indexBuffer, 'uint16');
         // TODO(@darzu): one draw call per mesh?
         for (let m of meshes) {
