@@ -202,41 +202,13 @@ interface MeshHandle {
 // TODO(@darzu): VERTEX FORMAT
 const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/ + 1/*swayHeight*/)
 
-interface Transformable {
-    getTransform: () => mat4;
-    pitch: (rad: number) => void;
-    yaw: (rad: number) => void;
-    roll: (rad: number) => void;
-    moveX: (n: number) => void;
-    moveY: (n: number) => void;
-    moveZ: (n: number) => void;
-}
-function mkAffineTransformable(): Transformable {
-    const transform = mat4.create();
-    return {
-        getTransform: () => {
-            return mat4.clone(transform);
-        },
-        pitch: (rad: number) => {
-            mat4.rotateX(transform, transform, rad)
-        },
-        yaw: (rad: number) => {
-            mat4.rotateY(transform, transform, rad)
-        },
-        roll: (rad: number) => {
-            mat4.rotateZ(transform, transform, rad)
-        },
-        moveX: (n: number) => {
-            mat4.translate(transform, transform, [n, 0, 0]);
-        },
-        moveY: (n: number) => {
-            mat4.translate(transform, transform, [0, n, 0]);
-        },
-        moveZ: (n: number) => {
-            mat4.translate(transform, transform, [0, 0, n]);
-        },
-    }
-}
+// matrix helpers
+const pitch = (m: mat4, rad: number) => mat4.rotateX(m, m, rad);
+const yaw = (m: mat4, rad: number) => mat4.rotateY(m, m, rad);
+const roll = (m: mat4, rad: number) => mat4.rotateZ(m, m, rad);
+const moveX = (m: mat4, n: number) => mat4.translate(m, m, [n, 0, 0]);
+const moveY = (m: mat4, n: number) => mat4.translate(m, m, [0, n, 0]);
+const moveZ = (m: mat4, n: number) => mat4.translate(m, m, [0, 0, n]);
 
 // attach to HTML canvas 
 let canvasRef = document.getElementById('sample-canvas') as HTMLCanvasElement;
@@ -519,10 +491,10 @@ canvasRef.addEventListener('click', doLockMouse)
 
 // create the "player", which is an affine matrix tracking position & orientation of a cube
 // the camera will follow behind it.
-const cameraPos = mkAffineTransformable();
-cameraPos.pitch(-Math.PI / 4)
-const playerT = mkAffineTransformable();
-playerM.transform = playerT.getTransform();
+const cameraPos = mat4.create();
+pitch(cameraPos, -Math.PI / 4)
+const playerT = mat4.create();
+playerM.transform = playerT;
 writeMeshTransform(playerM)
 
 // create a directional light and compute it's projection (for shadows) and direction
@@ -689,18 +661,18 @@ function renderFrame(timeMs: number) {
 
     // process inputs
     const playerSpeed = pressedKeys[' '] ? 1.0 : 0.2; // spacebar boosts speed
-    if (pressedKeys['w']) playerT.moveZ(-playerSpeed) // forward
-    if (pressedKeys['s']) playerT.moveZ(playerSpeed) // backward
-    if (pressedKeys['a']) playerT.moveX(-playerSpeed) // left
-    if (pressedKeys['d']) playerT.moveX(playerSpeed) // right
-    if (pressedKeys['shift']) playerT.moveY(playerSpeed) // up
-    if (pressedKeys['c']) playerT.moveY(-playerSpeed) // down
+    if (pressedKeys['w']) moveZ(playerT, -playerSpeed) // forward
+    if (pressedKeys['s']) moveZ(playerT, playerSpeed) // backward
+    if (pressedKeys['a']) moveX(playerT, -playerSpeed) // left
+    if (pressedKeys['d']) moveX(playerT, playerSpeed) // right
+    if (pressedKeys['shift']) moveY(playerT, playerSpeed) // up
+    if (pressedKeys['c']) moveY(playerT, -playerSpeed) // down
     const { x: mouseX, y: mouseY } = takeAccumulatedMouseMovement();
-    playerT.yaw(-mouseX * 0.01);
-    cameraPos.pitch(-mouseY * 0.01);
+    yaw(playerT, -mouseX * 0.01);
+    pitch(cameraPos, -mouseY * 0.01);
 
     // apply movement to the "player"
-    playerM.transform = playerT.getTransform();
+    playerM.transform = playerT;
     writeMeshTransform(playerM);
 
     // render from the light's point of view to a depth buffer so we know where shadows are
@@ -731,8 +703,8 @@ function renderFrame(timeMs: number) {
 
     // calculate and write our view and project matrices
     const viewMatrix = mat4.create()
-    mat4.multiply(viewMatrix, viewMatrix, playerT.getTransform())
-    mat4.multiply(viewMatrix, viewMatrix, cameraPos.getTransform())
+    mat4.multiply(viewMatrix, viewMatrix, playerT)
+    mat4.multiply(viewMatrix, viewMatrix, cameraPos)
     mat4.translate(viewMatrix, viewMatrix, [0, 0, 10])
     mat4.invert(viewMatrix, viewMatrix);
     const projectionMatrix = mat4.perspective(mat4.create(), (2 * Math.PI) / 5, aspectRatio, 1, 10000.0/*view distance*/);
