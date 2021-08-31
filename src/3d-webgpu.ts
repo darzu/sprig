@@ -120,6 +120,7 @@ can this be done with ECS?
 
 interface GrassSystem {
     getGrassPools: () => MeshMemoryPool[],
+    update: (target: vec3) => void,
     // TODO(@darzu): getAABB
 }
 
@@ -269,10 +270,21 @@ function createGrassTileset(opts: GrassTileOpts & GrassTilesetOpts, device: GPUD
     return grassMeshPool
 }
 
-function initGrassSystem(device: GPUDevice): GrassSystem {
-    const tilesPerSide = 2;
+function nearestIntegers(target: number, numInts: number): number[] {
+    const maxIntDist = (numInts - 1) / 2;
+    const minInt = Math.floor(target - maxIntDist);
+    const maxInt = Math.floor(target + maxIntDist);
+    const nearestInts: number[] = [];
+    for (let xi = minInt; xi <= maxInt; xi++)
+        nearestInts.push(xi)
+    if (nearestInts.length !== numInts) {
+        console.error(`Too many (!=${numInts}) 'NEAREST' integers [${nearestInts.join(',')}] found to: ${target}`)
+    }
+    return nearestInts;
+}
 
-    const tilesetPool = createGrassTileset({
+function initGrassSystem(device: GPUDevice): GrassSystem {
+    const opts: GrassTilesetOpts & GrassTileOpts = {
         // tile
         bladeW: 0.1,
         bladeH: 1.7,
@@ -282,18 +294,32 @@ function initGrassSystem(device: GPUDevice): GrassSystem {
         spacing: 0.25,
         tileSize: 10,
         // tileset
-        tilesPerSide,
-    }, device);
+        tilesPerSide: 4,
+    }
+
+    const tilesetPool = createGrassTileset(opts, device);
 
     // TODO(@darzu): handle grass tile movement
-    function update(center: vec3) {
+    function update(target: vec3) {
+        const [tx, ty, tz] = target;
+
         // compute the N closest centers
+        const txi = tx / opts.tileSize;
+        const nearestXIs = nearestIntegers(txi, opts.tilesPerSide)
+        const tzi = tz / opts.tileSize;
+        const nearestZIs = nearestIntegers(tzi, opts.tilesPerSide)
+        const nearestIs: [number, number][] = []
+        for (let xi of nearestXIs)
+            for (let zi of nearestZIs)
+                nearestIs.push([xi, zi])
+
         // compare with current positions
         // move those that don't match
     }
 
     const res: GrassSystem = {
-        getGrassPools: () => [tilesetPool]
+        getGrassPools: () => [tilesetPool],
+        update,
     }
     return res;
 }
@@ -550,6 +576,10 @@ async function init(canvasRef: HTMLCanvasElement) {
         // reset accummulated mouse delta
         mouseDeltaX = 0;
         mouseDeltaY = 0;
+
+        const grassTarget = vec3.create();
+        vec3.transformMat4(grassTarget, grassTarget, playerM.transform);
+        grassSystem.update(grassTarget);
 
         function getViewProj() {
             const viewProj = mat4.create();
