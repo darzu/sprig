@@ -110,12 +110,9 @@ const wgslShaders = {
 
     [[stage(fragment)]]
     fn main(input : FragmentInput) -> [[location(0)]] vec4<f32> {
-        // Percentage-closer filtering. Sample texels in the region
-        // to smooth the result.
         let shadowVis : f32 = textureSampleCompare(shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
 
         let norm: vec3<f32> = normalize(input.fragNorm);
-        let antiNorm: vec3<f32> = norm * -1.0;
 
         let lightDir: vec3<f32> = scene.lightDir;
         let sunLight : f32 = shadowVis * clamp(dot(-lightDir, norm), 0.0, 1.0);
@@ -162,6 +159,59 @@ interface MeshRenderer {
     sharedUniBuffer: GPUBuffer,
     rebuildBundles: (meshPools: MeshMemoryPool[]) => void,
     render: (commandEncoder: GPUCommandEncoder, meshPools: MeshMemoryPool[], canvasWidth: number, canvasHeight: number) => void,
+}
+
+
+
+let depthTexture: GPUTexture;
+let depthTextureView: GPUTextureView;
+let colorTexture: GPUTexture;
+let colorTextureView: GPUTextureView;
+let lastWidth = 0;
+let lastHeight = 0;
+let aspect = 1;
+
+const projectionMatrix = mat4.create();
+const viewDistance = 10000.0;
+
+function resize(device: GPUDevice, canvasWidth: number, canvasHeight: number) {
+    if (depthTexture && colorTexture && lastWidth === canvasWidth && lastHeight === canvasHeight)
+        return;
+
+    if (depthTexture)
+        depthTexture.destroy();
+    if (colorTexture)
+        colorTexture.destroy();
+
+    // TODO(@darzu): 
+    // console.log("resizing")
+
+    depthTexture = device.createTexture({
+        size: { width: canvasWidth, height: canvasHeight },
+        format: depthStencilFormat,
+        sampleCount,
+        usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    depthTextureView = depthTexture.createView();
+
+    // Declare swapchain image handles
+    colorTexture = device.createTexture({
+        size: {
+            width: canvasWidth,
+            height: canvasHeight,
+        },
+        sampleCount,
+        format: swapChainFormat,
+        usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });;
+    colorTextureView = colorTexture.createView();
+
+    lastWidth = canvasWidth;
+    lastHeight = canvasHeight;
+
+    aspect = Math.abs(canvasWidth / canvasHeight);
+
+    mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 1, viewDistance);
 }
 
 function createMeshRenderer(
@@ -425,50 +475,6 @@ function createMeshRenderer(
     // 'depth24plus-stencil8'
 
 
-    let depthTexture: GPUTexture;
-    let depthTextureView: GPUTextureView;
-    let colorTexture: GPUTexture;
-    let colorTextureView: GPUTextureView;
-    let lastWidth = 0;
-    let lastHeight = 0;
-
-    function resize(canvasWidth: number, canvasHeight: number) {
-        if (depthTexture && colorTexture && lastWidth === canvasWidth && lastHeight === canvasHeight)
-            return;
-
-        if (depthTexture)
-            depthTexture.destroy();
-        if (colorTexture)
-            colorTexture.destroy();
-
-        // TODO(@darzu): 
-        // console.log("resizing")
-
-        depthTexture = device.createTexture({
-            size: { width: canvasWidth, height: canvasHeight },
-            format: depthStencilFormat,
-            sampleCount,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT,
-        });
-        depthTextureView = depthTexture.createView();
-
-        // Declare swapchain image handles
-        colorTexture = device.createTexture({
-            size: {
-                width: canvasWidth,
-                height: canvasHeight,
-            },
-            sampleCount,
-            format: swapChainFormat,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT,
-        });;
-        colorTextureView = colorTexture.createView();
-
-        lastWidth = canvasWidth;
-        lastHeight = canvasHeight;
-    }
-    resize(100, 100);
-
     // TODO(@darzu): how do we handle this abstraction with multiple passes e.g. shadows?
 
     const shadowPassDescriptor: GPURenderPassDescriptor = {
@@ -535,9 +541,6 @@ function createMeshRenderer(
     }
 
     function render(commandEncoder: GPUCommandEncoder, meshPools: MeshMemoryPool[], canvasWidth: number, canvasHeight: number) {
-        // console.log(`w: ${canvasWidth}, h: ${canvasHeight}`)
-        resize(canvasWidth, canvasHeight);
-
         // TODO(@darzu):  this feels akward
         // Acquire next image from swapchain
         // colorTexture = swapChain.getCurrentTexture();
@@ -1135,16 +1138,16 @@ async function init(canvasRef: HTMLCanvasElement) {
     const context = canvasRef.getContext('gpupresent')!;
 
     // dynamic resize:
-    function resize() {
+    function onWindowResize() {
         canvasRef.width = window.innerWidth;
         canvasRef.style.width = `${window.innerWidth}px`;
         canvasRef.height = window.innerHeight;
         canvasRef.style.height = `${window.innerHeight}px`;
     }
     window.onresize = function () {
-        resize();
+        onWindowResize();
     }
-    resize();
+    onWindowResize();
 
     // TODO(@darzu): VERTEX FORMAT
     const meshPool = createMeshMemoryPool({
@@ -1165,6 +1168,8 @@ async function init(canvasRef: HTMLCanvasElement) {
     const meshRenderer = createMeshRenderer(
         meshPool._opts.meshUniByteSize, meshPool._opts.vertByteSize, device, context);
 
+    resize(device, 100, 100);
+
     // cursor lock
     let cursorLocked = false
     canvas.onclick = (ev) => {
@@ -1184,11 +1189,6 @@ async function init(canvasRef: HTMLCanvasElement) {
     const [playerM] = meshPool.addMeshes([CUBE], true)
 
     meshPool._unmap();
-
-    const aspect = Math.abs(canvasRef.width / canvasRef.height);
-    const projectionMatrix = mat4.create();
-    const viewDistance = 10000.0;
-    mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 1, viewDistance);
 
     const cameraPos = mkAffineTransformable();
     cameraPos.pitch(-Math.PI / 4)
@@ -1312,6 +1312,8 @@ async function init(canvasRef: HTMLCanvasElement) {
 
         // Sample is no longer the active page.
         if (!canvasRef) return;
+
+        resize(device, canvasRef.width, canvasRef.height);
 
         playerPos = getPositionFromTransform(playerM.transform);
 
