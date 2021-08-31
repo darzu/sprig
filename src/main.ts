@@ -260,21 +260,38 @@ const PLANE: Mesh = {
     ],
 }
 
+// define the format of our vertices (this needs to agree with the inputs to the vertex shaders)
+const vertexDataFormat: GPUVertexAttribute[] = [
+    { shaderLocation: 0, offset: bytesPerVec3 * 0, format: 'float32x3' }, // position
+    { shaderLocation: 1, offset: bytesPerVec3 * 1, format: 'float32x3' }, // color
+    { shaderLocation: 2, offset: bytesPerVec3 * 2, format: 'float32x3' }, // normals
+];
+// these help us pack and use vertices in that format
+const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/)
+const vertByteSize = bytesPerFloat * vertElStride;
+function bufferWriteVertex(buffer: Float32Array, offset: number, position: vec3, color: vec3, normal: vec3) {
+    bufferWriteVec3(buffer, offset + 0, position);
+    bufferWriteVec3(buffer, offset + 3, color);
+    bufferWriteVec3(buffer, offset + 6, normal);
+}
+// and create the GPU buffer layout
+const vertexBuffersLayout: GPUVertexBufferLayout[] = [{
+    arrayStride: vertByteSize,
+    attributes: vertexDataFormat,
+}];
+
+// define the format of our models' uniform buffer
 const meshUniByteSize = align(
     bytesPerMat4 // transform
     + bytesPerFloat // max draw distance
     , 256);
-
-const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/)
-const vertByteSize = bytesPerFloat * vertElStride;
+if (meshUniByteSize % 256 !== 0) {
+    console.error("invalid mesh uni byte size, not 256 byte aligned: " + meshUniByteSize)
+}
 
 const maxVerts = 100000;
 const maxTris = 100000;
 const maxMeshes = 10000;
-
-if (meshUniByteSize % 256 !== 0) {
-    console.error("invalid mesh uni byte size, not 256 byte aligned: " + meshUniByteSize)
-}
 
 // space stats
 console.log(`New mesh pool`);
@@ -314,30 +331,8 @@ const sharedUniBuffer = device.createBuffer({
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 });
 
-// define the format of our vertices. This needs to agree with the inputs to the vertex shaders
-const vertexBuffersLayout: GPUVertexBufferLayout[] = [{
-    arrayStride: vertByteSize,
-    attributes: [
-        { shaderLocation: 0, offset: bytesPerVec3 * 0, format: 'float32x3' }, // position
-        { shaderLocation: 1, offset: bytesPerVec3 * 1, format: 'float32x3' }, // color
-        { shaderLocation: 2, offset: bytesPerVec3 * 2, format: 'float32x3' }, // normals
-    ],
-}];
-
 function gpuBufferWriteMeshTransform(m: MeshHandle) {
     device.queue.writeBuffer(_meshUniBuffer, m.modelUniByteOffset, (m.transform as Float32Array).buffer);
-}
-
-function bufferWriteVec3(buffer: Float32Array, offset: number, v: vec3) {
-    buffer[offset + 0] = v[0]
-    buffer[offset + 1] = v[1]
-    buffer[offset + 2] = v[2]
-}
-
-function bufferWriteVertex(buffer: Float32Array, offset: number, position: vec3, color: vec3, normal: vec3) {
-    bufferWriteVec3(buffer, offset + 0, position);
-    bufferWriteVec3(buffer, offset + 3, color);
-    bufferWriteVec3(buffer, offset + 6, normal);
 }
 
 // add our meshes to the vertex and index buffers
@@ -435,13 +430,13 @@ pitch(cameraOffset, -Math.PI / 4)
 gpuBufferWriteMeshTransform(player)
 
 // create a directional light and compute it's projection (for shadows) and direction
-const origin = vec3.fromValues(0, 0, 0);
+const worldOrigin = vec3.fromValues(0, 0, 0);
 const lightPosition = vec3.fromValues(50, 50, 0);
 const upVector = vec3.fromValues(0, 1, 0);
-const lightViewMatrix = mat4.lookAt(mat4.create(), lightPosition, origin, upVector);
+const lightViewMatrix = mat4.lookAt(mat4.create(), lightPosition, worldOrigin, upVector);
 const lightProjectionMatrix = mat4.ortho(mat4.create(), -80, 80, -80, 80, -200, 300);
 const lightViewProjMatrix = mat4.multiply(mat4.create(), lightProjectionMatrix, lightViewMatrix);
-const lightDir = vec3.subtract(vec3.create(), origin, lightPosition);
+const lightDir = vec3.subtract(vec3.create(), worldOrigin, lightPosition);
 vec3.normalize(lightDir, lightDir);
 // write the light data to the shared uniform buffer
 device.queue.writeBuffer(sharedUniBuffer, bytesPerMat4 * 1, (lightViewProjMatrix as Float32Array).buffer);
@@ -629,10 +624,8 @@ function renderFrame(timeMs: number) {
     shadowPass.setPipeline(shadowPipeline);
     shadowPass.setVertexBuffer(0, _vertBuffer);
     shadowPass.setIndexBuffer(_indexBuffer, 'uint16');
-    const uniOffset = [0];
     for (let m of meshHandles) {
-        uniOffset[0] = m.modelUniByteOffset;
-        shadowPass.setBindGroup(1, modelUniBindGroup, uniOffset);
+        shadowPass.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
         shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
     }
     shadowPass.endPass();
@@ -685,15 +678,22 @@ if (renderFrame) {
     requestAnimationFrame(_renderFrame);
 }
 
-// math utility code
+// math utilities
 function align(x: number, size: number): number {
     return Math.ceil(x / size) * size
 }
 
-// matrix utility code
+// matrix utilities
 function pitch(m: mat4, rad: number) { return mat4.rotateX(m, m, rad); }
 function yaw(m: mat4, rad: number) { return mat4.rotateY(m, m, rad); }
 function roll(m: mat4, rad: number) { return mat4.rotateZ(m, m, rad); }
 function moveX(m: mat4, n: number) { return mat4.translate(m, m, [n, 0, 0]); }
 function moveY(m: mat4, n: number) { return mat4.translate(m, m, [0, n, 0]); }
 function moveZ(m: mat4, n: number) { return mat4.translate(m, m, [0, 0, n]); }
+
+// buffer utilities
+function bufferWriteVec3(buffer: Float32Array, offset: number, v: vec3) {
+    buffer[offset + 0] = v[0]
+    buffer[offset + 1] = v[1]
+    buffer[offset + 2] = v[2]
+}
