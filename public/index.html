@@ -18,10 +18,16 @@
 </style>
 
 <body>
+    <div id="server-controls">
+        <button id="server-start">Start server</button>
+        <input type="text" id="server-id"/>
+        <button id="connect">Connect to server</button>
+    </div>
     <canvas width="570" height="570" id="sample-canvas"></canvas>
 
     <div id="debug-div"></div>
 
+    <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
     <script src="./main.js" type="module"></script>
 </body>
 

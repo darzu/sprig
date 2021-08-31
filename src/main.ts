@@ -1,4 +1,6 @@
 import { mat4, vec3 } from './gl-matrix.js';
+import Peer from "./peerjs.js"
+
 
 // Defines shaders in WGSL for the shadow and regular rendering pipelines. Likely you'll want
 // these in external files but they've been inlined for redistribution convenience.
@@ -587,7 +589,8 @@ function moveX(m: mat4, n: number) { return mat4.translate(m, m, [n, 0, 0]); }
 function moveY(m: mat4, n: number) { return mat4.translate(m, m, [0, n, 0]); }
 function moveZ(m: mat4, n: number) { return mat4.translate(m, m, [0, 0, n]); }
 
-async function main() {
+
+async function startServer() {
     const start = performance.now();
 
     // attach to HTML canvas 
@@ -602,7 +605,7 @@ async function main() {
         canvasRef.height = window.innerHeight;
         canvasRef.style.height = `${window.innerHeight}px`;
     }
-    window.onresize = function () {
+    window.onresize = function() {
         onWindowResize();
     }
     onWindowResize();
@@ -619,5 +622,20 @@ async function main() {
         }
         requestAnimationFrame(_renderFrame);
     }
+
+    let peer = new Peer();
+    peer.on('open', (id: string) => {
+        console.log(`Peer id is ${id}`)
+    })
 }
+
+async function main() {
+    let controls = document.getElementById("server-controls") as HTMLDivElement;
+    let serverStartButton = document.getElementById("server-start") as HTMLButtonElement;
+    serverStartButton.onclick = (e: MouseEvent) => {
+        startServer()
+        controls.hidden = true
+    }
+}
+
 await main()
