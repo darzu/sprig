@@ -168,47 +168,33 @@ const wgslShaders = {
     }
     `,
     fragment:
-        `
+    `
     [[block]] struct Scene {
-    cameraViewProjMatrix : mat4x4<f32>;
-    lightViewProjMatrix : mat4x4<f32>;
-    lightDir : vec3<f32>;
+        cameraViewProjMatrix : mat4x4<f32>;
+        lightViewProjMatrix : mat4x4<f32>;
+        lightDir : vec3<f32>;
     };
 
     [[group(0), binding(0)]] var<uniform> scene : Scene;
     [[group(0), binding(1)]] var shadowMap: texture_depth_2d;
     [[group(0), binding(2)]] var shadowSampler: sampler_comparison;
 
-    struct FragmentInput {
-        [[location(0)]] shadowPos : vec3<f32>;
-        [[location(1)]] fragNorm : vec3<f32>;
-        [[location(2)]] color : vec3<f32>;
-    };
-
-    let sunStr : f32 = 2.0;
-    let sunColor : vec3<f32> =  vec3<f32>(1.0, 1.0, 0.8);
-    let sunReflectStr : f32 = 0.5;
-
     [[stage(fragment)]]
-    fn main(input : FragmentInput) -> [[location(0)]] vec4<f32> {
-        let shadowVis : f32 = textureSampleCompare(shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
-
-        let norm: vec3<f32> = normalize(input.fragNorm);
-
-        let lightDir: vec3<f32> = scene.lightDir;
-        let sunLight : f32 = shadowVis * clamp(dot(-lightDir, norm), 0.0, 1.0);
-
-        let ambient: f32 = 0.2;
-
-        let resultColor: vec3<f32> = input.color * (sunLight * 2.0 + ambient);
+    fn main(
+        [[location(0)]] shadowPos : vec3<f32>,
+        [[location(1)]] fragNorm : vec3<f32>,
+        [[location(2)]] color : vec3<f32>
+        ) -> [[location(0)]] vec4<f32> {
+        let shadowVis : f32 = textureSampleCompare(shadowMap, shadowSampler, shadowPos.xy, shadowPos.z - 0.007);
+        let sunLight : f32 = shadowVis * clamp(dot(-scene.lightDir, fragNorm), 0.0, 1.0);
+        let resultColor: vec3<f32> = color * (sunLight * 2.0 + 0.2);
         let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
         return vec4<f32>(gammaCorrected, 1.0);
     }
     `,
 }
 
-const sampleCount = 4;
-
+const antiAliasSampleCount = 4;
 const swapChainFormat = 'bgra8unorm';
 
 const shadowDepthTextureDesc: GPUTextureDescriptor = {
@@ -249,7 +235,7 @@ function resize(device: GPUDevice, canvasWidth: number, canvasHeight: number) {
     depthTexture = device.createTexture({
         size: { width: canvasWidth, height: canvasHeight },
         format: depthStencilFormat,
-        sampleCount,
+        sampleCount: antiAliasSampleCount,
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
     depthTextureView = depthTexture.createView();
@@ -260,7 +246,7 @@ function resize(device: GPUDevice, canvasWidth: number, canvasHeight: number) {
             width: canvasWidth,
             height: canvasHeight,
         },
-        sampleCount,
+        sampleCount: antiAliasSampleCount,
         format: swapChainFormat,
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });;
@@ -877,7 +863,7 @@ async function init(canvasRef: HTMLCanvasElement) {
             format: depthStencilFormat,
         },
         multisample: {
-            count: sampleCount,
+            count: antiAliasSampleCount,
         },
     };
 
@@ -1043,7 +1029,7 @@ async function init(canvasRef: HTMLCanvasElement) {
     const bundleRenderDesc: GPURenderBundleEncoderDescriptor = {
         colorFormats: [swapChainFormat],
         depthStencilFormat: depthStencilFormat,
-        sampleCount,
+        sampleCount: antiAliasSampleCount,
     }
 
     const bundleEncoder = device.createRenderBundleEncoder(bundleRenderDesc);
