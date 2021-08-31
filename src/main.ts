@@ -1,5 +1,82 @@
 import { mat4, vec3 } from './gl-matrix.js';
 
+const CUBE: MeshModel = {
+    pos: [
+        [+1.0, +1.0, +1.0],
+        [-1.0, +1.0, +1.0],
+        [-1.0, -1.0, +1.0],
+        [+1.0, -1.0, +1.0],
+
+        [+1.0, +1.0, -1.0],
+        [-1.0, +1.0, -1.0],
+        [-1.0, -1.0, -1.0],
+        [+1.0, -1.0, -1.0],
+    ],
+    tri: [
+        // front
+        [0, 1, 2],
+        [0, 2, 3],
+        // top
+        [4, 5, 1],
+        [4, 1, 0],
+        // right
+        [3, 4, 0],
+        [3, 7, 4],
+        // left
+        [2, 1, 5],
+        [2, 5, 6],
+        // bottom
+        [6, 3, 2],
+        [6, 7, 3],
+        // back
+        [5, 4, 7],
+        [5, 7, 6],
+    ],
+    colors: [
+        // front
+        [0.2, 0.0, 0.0],
+        [0.2, 0.0, 0.0],
+        // top
+        [0.0, 0.2, 0.0],
+        [0.0, 0.2, 0.0],
+        // right
+        [0.0, 0.0, 0.2],
+        [0.0, 0.0, 0.2],
+        // left
+        [0.2, 0.2, 0.0],
+        [0.2, 0.2, 0.0],
+        // bottom
+        [0.0, 0.2, 0.2],
+        [0.0, 0.2, 0.2],
+        // back
+        [0.2, 0.0, 0.2],
+        [0.2, 0.0, 0.2],
+    ]
+}
+
+const PLANE: MeshModel = {
+    pos: [
+        [+10, 0, +10],
+        [-10, 0, +10],
+        [+10, 0, -10],
+        [-10, 0, -10],
+    ],
+    tri: [
+        // top
+        [0, 2, 3],
+        [0, 3, 1],
+        // bottom
+        [3, 2, 0],
+        [1, 3, 0],
+    ],
+    colors: [
+        [0.05, 0.1, 0.05],
+        [0.05, 0.1, 0.05],
+        [0.05, 0.1, 0.05],
+        [0.05, 0.1, 0.05],
+    ],
+}
+
 function align(x: number, size: number): number {
     return Math.ceil(x / size) * size
 }
@@ -14,38 +91,41 @@ const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * triElStride;
 const shadowDepthTextureSize = 1024 * 2 * 4;
 
 // TODO(@darzu): SCENE FORMAT
-const sceneStruct = `
-[[block]] struct Scene {
-  cameraViewProjMatrix : mat4x4<f32>;
-  lightViewProjMatrix : mat4x4<f32>;
-  lightDir : vec3<f32>;
-};
-`
 
 const wgslShaders = {
-    vertexShadow: sceneStruct + `
+    vertexShadow: `
+    [[block]] struct Scene {
+        cameraViewProjMatrix : mat4x4<f32>;
+        lightViewProjMatrix : mat4x4<f32>;
+        lightDir : vec3<f32>;
+    };
 
-  [[block]] struct Model {
-    modelMatrix : mat4x4<f32>;
-  };
+    [[block]] struct Model {
+        modelMatrix : mat4x4<f32>;
+    };
 
-  [[group(0), binding(0)]] var<uniform> scene : Scene;
-  [[group(1), binding(0)]] var<uniform> model : Model;
+    [[group(0), binding(0)]] var<uniform> scene : Scene;
+    [[group(1), binding(0)]] var<uniform> model : Model;
 
-  [[stage(vertex)]]
-  fn main([[location(0)]] position : vec3<f32>)
-       -> [[builtin(position)]] vec4<f32> {
-    return scene.lightViewProjMatrix * model.modelMatrix * vec4<f32>(position, 1.0);
-  }
+    [[stage(vertex)]]
+    fn main([[location(0)]] position : vec3<f32>)
+        -> [[builtin(position)]] vec4<f32> {
+        return scene.lightViewProjMatrix * model.modelMatrix * vec4<f32>(position, 1.0);
+    }
   `,
 
     fragmentShadow: `
-  [[stage(fragment)]]
-  fn main() {
-  }
+    [[stage(fragment)]]
+        fn main() {
+    }
   `,
 
-    vertex: sceneStruct + `
+    vertex: `
+    [[block]] struct Scene {
+        cameraViewProjMatrix : mat4x4<f32>;
+        lightViewProjMatrix : mat4x4<f32>;
+        lightDir : vec3<f32>;
+    };
 
     [[block]] struct Model {
         modelMatrix : mat4x4<f32>;
@@ -56,10 +136,8 @@ const wgslShaders = {
 
     struct VertexOutput {
         [[location(0)]] shadowPos : vec3<f32>;
-        [[location(1)]] fragPos : vec3<f32>;
-        [[location(2)]] fragNorm : vec3<f32>;
-        [[location(3)]] color : vec3<f32>;
-
+        [[location(1)]] fragNorm : vec3<f32>;
+        [[location(2)]] color : vec3<f32>;
         [[builtin(position)]] Position : vec4<f32>;
     };
 
@@ -84,24 +162,27 @@ const wgslShaders = {
         );
 
         output.Position = scene.cameraViewProjMatrix * worldPos;
-        output.fragPos = output.Position.xyz;
         output.fragNorm = normalize(model.modelMatrix * vec4<f32>(normal, 0.0)).xyz;
         output.color = color;
         return output;
     }
     `,
     fragment:
-        sceneStruct +
         `
+    [[block]] struct Scene {
+    cameraViewProjMatrix : mat4x4<f32>;
+    lightViewProjMatrix : mat4x4<f32>;
+    lightDir : vec3<f32>;
+    };
+
     [[group(0), binding(0)]] var<uniform> scene : Scene;
     [[group(0), binding(1)]] var shadowMap: texture_depth_2d;
     [[group(0), binding(2)]] var shadowSampler: sampler_comparison;
 
     struct FragmentInput {
         [[location(0)]] shadowPos : vec3<f32>;
-        [[location(1)]] fragPos : vec3<f32>;
-        [[location(2)]] fragNorm : vec3<f32>;
-        [[location(3)]] color : vec3<f32>;
+        [[location(1)]] fragNorm : vec3<f32>;
+        [[location(2)]] color : vec3<f32>;
     };
 
     let sunStr : f32 = 2.0;
@@ -143,15 +224,7 @@ const shadowDepthTextureDesc: GPUTextureDescriptor = {
 const depthStencilFormat = 'depth24plus-stencil8';
 
 const lightProjectionMatrix = mat4.create();
-{
-    const left = -80;
-    const right = 80;
-    const bottom = -80;
-    const top = 80;
-    const near = -200;
-    const far = 300;
-    mat4.ortho(lightProjectionMatrix, left, right, bottom, top, near, far);
-}
+mat4.ortho(lightProjectionMatrix, -80, 80, -80, 80, -200, 300);
 
 let depthTexture: GPUTexture;
 let depthTextureView: GPUTextureView;
@@ -238,83 +311,6 @@ function unshareVertices(inp: MeshModel): MeshModel {
         tri: outTri,
         colors: inp.colors,
     }
-}
-
-const CUBE: MeshModel = {
-    pos: [
-        [+1.0, +1.0, +1.0],
-        [-1.0, +1.0, +1.0],
-        [-1.0, -1.0, +1.0],
-        [+1.0, -1.0, +1.0],
-
-        [+1.0, +1.0, -1.0],
-        [-1.0, +1.0, -1.0],
-        [-1.0, -1.0, -1.0],
-        [+1.0, -1.0, -1.0],
-    ],
-    tri: [
-        // front
-        [0, 1, 2],
-        [0, 2, 3],
-        // top
-        [4, 5, 1],
-        [4, 1, 0],
-        // right
-        [3, 4, 0],
-        [3, 7, 4],
-        // left
-        [2, 1, 5],
-        [2, 5, 6],
-        // bottom
-        [6, 3, 2],
-        [6, 7, 3],
-        // back
-        [5, 4, 7],
-        [5, 7, 6],
-    ],
-    colors: [
-        // front
-        [0.2, 0.0, 0.0],
-        [0.2, 0.0, 0.0],
-        // top
-        [0.0, 0.2, 0.0],
-        [0.0, 0.2, 0.0],
-        // right
-        [0.0, 0.0, 0.2],
-        [0.0, 0.0, 0.2],
-        // left
-        [0.2, 0.2, 0.0],
-        [0.2, 0.2, 0.0],
-        // bottom
-        [0.0, 0.2, 0.2],
-        [0.0, 0.2, 0.2],
-        // back
-        [0.2, 0.0, 0.2],
-        [0.2, 0.0, 0.2],
-    ]
-}
-
-const PLANE: MeshModel = {
-    pos: [
-        [+10, 0, +10],
-        [-10, 0, +10],
-        [+10, 0, -10],
-        [-10, 0, -10],
-    ],
-    tri: [
-        // top
-        [0, 2, 3],
-        [0, 3, 1],
-        // bottom
-        [3, 2, 0],
-        [1, 3, 0],
-    ],
-    colors: [
-        [0.05, 0.1, 0.05],
-        [0.05, 0.1, 0.05],
-        [0.05, 0.1, 0.05],
-        [0.05, 0.1, 0.05],
-    ],
 }
 
 function computeNormal([p1, p2, p3]: [vec3, vec3, vec3]): vec3 {
@@ -1010,36 +1006,34 @@ async function init(canvasRef: HTMLCanvasElement) {
     }
 
     // init light
-    {
-        const upVector = vec3.fromValues(0, 1, 0);
-        const origin = vec3.fromValues(0, 0, 0);
-        const lightX = 50;
-        const lightY = 50;
-        const lightPosition = vec3.fromValues(lightX, lightY, 0);
-        const lightDir = vec3.subtract(vec3.create(), origin, lightPosition);
-        vec3.normalize(lightDir, lightDir);
-        const lightViewMatrix = mat4.create();
-        mat4.lookAt(lightViewMatrix, lightPosition, origin, upVector);
-        const lightViewProjMatrix = mat4.create();
-        mat4.multiply(lightViewProjMatrix, lightProjectionMatrix, lightViewMatrix);
-        const lightMatrixData = lightViewProjMatrix as Float32Array;
-        device.queue.writeBuffer(
-            sharedUniBuffer,
-            bytesPerMat4 * 1, // second matrix
-            lightMatrixData.buffer,
-            lightMatrixData.byteOffset,
-            lightMatrixData.byteLength
-        );
+    const upVector = vec3.fromValues(0, 1, 0);
+    const origin = vec3.fromValues(0, 0, 0);
+    const lightX = 50;
+    const lightY = 50;
+    const lightPosition = vec3.fromValues(lightX, lightY, 0);
+    const lightDir = vec3.subtract(vec3.create(), origin, lightPosition);
+    vec3.normalize(lightDir, lightDir);
+    const lightViewMatrix = mat4.create();
+    mat4.lookAt(lightViewMatrix, lightPosition, origin, upVector);
+    const lightViewProjMatrix = mat4.create();
+    mat4.multiply(lightViewProjMatrix, lightProjectionMatrix, lightViewMatrix);
+    const lightMatrixData = lightViewProjMatrix as Float32Array;
+    device.queue.writeBuffer(
+        sharedUniBuffer,
+        bytesPerMat4 * 1, // second matrix
+        lightMatrixData.buffer,
+        lightMatrixData.byteOffset,
+        lightMatrixData.byteLength
+    );
 
-        const lightData = lightDir as Float32Array;
-        device.queue.writeBuffer(
-            sharedUniBuffer,
-            bytesPerMat4 * 2, // third matrix
-            lightData.buffer,
-            lightData.byteOffset,
-            lightData.byteLength
-        );
-    }
+    const lightData = lightDir as Float32Array;
+    device.queue.writeBuffer(
+        sharedUniBuffer,
+        bytesPerMat4 * 2, // third matrix
+        lightData.buffer,
+        lightData.byteOffset,
+        lightData.byteLength
+    );
 
     const modelUniBindGroup = device.createBindGroup({
         layout: modelUniBindGroupLayout,
