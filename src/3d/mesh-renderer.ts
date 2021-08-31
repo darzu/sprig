@@ -161,9 +161,23 @@ const wgslShaders = {
         //         input.shadowPos.xy + offset, input.shadowPos.z - 0.007);
         //     }
         // }
-        // what is this 0.007 factor?
+
+        // return vec4<f32>(input.shadowPos.x * 0.5, input.shadowPos.x * 0.5, input.shadowPos.x * 0.5, 1.0);
+
+        // TODO: what is this 0.007 factor?
         visibility = visibility + textureSampleCompare(
             shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
+        if (
+            input.shadowPos.x < 0.0
+            || input.shadowPos.x > 0.99
+            || input.shadowPos.y < 0.0
+            || input.shadowPos.y > 0.99
+            || input.shadowPos.z < 0.0
+            || input.shadowPos.z > 0.99
+            ) {
+            visibility = 1.0;
+        }
+
         // visibility = visibility / 9.0;
         // visibility = 1.0;
 
