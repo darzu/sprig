@@ -460,658 +460,643 @@ function mkAffineTransformable(): Transformable {
     }
 }
 
-function getPositionFromTransform(t: mat4): vec3 {
-    // TODO(@darzu): not really necessary
-    const pos = vec3.create();
-    vec3.transformMat4(pos, pos, t);
-    return pos
+
+
+// Attach to html
+let canvasRef = document.getElementById('sample-canvas') as HTMLCanvasElement;
+const adapter = await navigator.gpu.requestAdapter();
+const device = await adapter!.requestDevice();
+
+const context = canvasRef.getContext('gpupresent')!;
+
+function onWindowResize() {
+    canvasRef.width = window.innerWidth;
+    canvasRef.style.width = `${window.innerWidth}px`;
+    canvasRef.height = window.innerHeight;
+    canvasRef.style.height = `${window.innerHeight}px`;
+}
+window.onresize = function () {
+    onWindowResize();
+}
+onWindowResize();
+
+const meshUniByteSize = align(
+    bytesPerMat4 // transform
+    + bytesPerFloat // max draw distance
+    , 256);
+const vertByteSize = bytesPerFloat * vertElStride;
+
+const maxVerts = 100000;
+const maxTris = 100000;
+const maxMeshes = 10000;
+
+if (meshUniByteSize % 256 !== 0) {
+    console.error("invalid mesh uni byte size, not 256 byte aligned: " + meshUniByteSize)
 }
 
-async function init(canvasRef: HTMLCanvasElement) {
-    const adapter = await navigator.gpu.requestAdapter();
-    const device = await adapter!.requestDevice();
+// space stats
+console.log(`New mesh pool`);
+console.log(`   ${maxVerts * vertByteSize / 1024} KB for verts`);
+console.log(`   ${true ? maxTris * bytesPerTri / 1024 : 0} KB for indices`);
+console.log(`   ${maxMeshes * meshUniByteSize / 1024} KB for models`);
+// TODO(@darzu): MESH FORMAT
+const assumedBytesPerModel =
+    bytesPerMat4 // transform
+    + bytesPerFloat // max draw distance
+const unusedBytesPerModel = 256 - assumedBytesPerModel % 256
+console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per model (${(unusedBytesPerModel * maxMeshes / 1024).toFixed(1)} KB total waste)`);
 
-    if (!canvasRef === null) return;
-    const context = canvasRef.getContext('gpupresent')!;
+const _vertBuffer = device.createBuffer({
+    size: maxVerts * vertByteSize,
+    usage: GPUBufferUsage.VERTEX,
+    mappedAtCreation: true,
+});
+const _indexBuffer = device.createBuffer({
+    size: maxTris * bytesPerTri,
+    usage: GPUBufferUsage.INDEX,
+    mappedAtCreation: true,
+});
 
-    function onWindowResize() {
-        canvasRef.width = window.innerWidth;
-        canvasRef.style.width = `${window.innerWidth}px`;
-        canvasRef.height = window.innerHeight;
-        canvasRef.style.height = `${window.innerHeight}px`;
-    }
-    window.onresize = function () {
-        onWindowResize();
-    }
-    onWindowResize();
+const meshUniBufferSize = meshUniByteSize * maxMeshes;
+const _meshUniBuffer = device.createBuffer({
+    size: align(meshUniBufferSize, 256),
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+});
+const _meshes: Mesh[] = [];
+let _numVerts = 0;
+let _numTris = 0;
 
-    const meshUniByteSize = align(
-        bytesPerMat4 // transform
-        + bytesPerFloat // max draw distance
-        , 256);
-    const vertByteSize = bytesPerFloat * vertElStride;
+// const vertElStride = vertByteSize / bytesPerFloat;
 
-    const maxVerts = 100000;
-    const maxTris = 100000;
-    const maxMeshes = 10000;
+let _vertsMap: Float32Array | null = null;
+let _indMap: Uint16Array | null = null;
 
-    if (meshUniByteSize % 256 !== 0) {
-        console.error("invalid mesh uni byte size, not 256 byte aligned: " + meshUniByteSize)
-    }
+function _unmap() {
+    // console.log("unmapping") // TODO(@darzu): 
+}
 
-    // space stats
-    console.log(`New mesh pool`);
-    console.log(`   ${maxVerts * vertByteSize / 1024} KB for verts`);
-    console.log(`   ${true ? maxTris * bytesPerTri / 1024 : 0} KB for indices`);
-    console.log(`   ${maxMeshes * meshUniByteSize / 1024} KB for models`);
-    // TODO(@darzu): MESH FORMAT
-    const assumedBytesPerModel =
-        bytesPerMat4 // transform
-        + bytesPerFloat // max draw distance
-    const unusedBytesPerModel = 256 - assumedBytesPerModel % 256
-    console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per model (${(unusedBytesPerModel * maxMeshes / 1024).toFixed(1)} KB total waste)`);
+// TODO(@darzu): misnomer. This doesn't do the mapping
+function _map() {
+    // console.log("mapping") // TODO(@darzu): 
+}
 
-    const _vertBuffer = device.createBuffer({
-        size: maxVerts * vertByteSize,
-        usage: GPUBufferUsage.VERTEX,
-        mappedAtCreation: true,
-    });
-    const _indexBuffer = device.createBuffer({
-        size: maxTris * bytesPerTri,
-        usage: GPUBufferUsage.INDEX,
-        mappedAtCreation: true,
-    });
-
-    const meshUniBufferSize = meshUniByteSize * maxMeshes;
-    const _meshUniBuffer = device.createBuffer({
-        size: align(meshUniBufferSize, 256),
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
-    const _meshes: Mesh[] = [];
-    let _numVerts = 0;
-    let _numTris = 0;
-
-    // const vertElStride = vertByteSize / bytesPerFloat;
-
-    let _vertsMap: Float32Array | null = null;
-    let _indMap: Uint16Array | null = null;
-
-    function _unmap() {
-        // console.log("unmapping") // TODO(@darzu): 
-    }
-
-    // TODO(@darzu): misnomer. This doesn't do the mapping
-    function _map() {
-        // console.log("mapping") // TODO(@darzu): 
-    }
-
-    function addMeshes(meshesToAdd: MeshModel[], shadowCasters: boolean): Mesh[] {
-        function addMesh(m: MeshModel): Mesh {
-            if (_vertsMap === null) {
-                throw "Use preRender() and postRender() functions"
-            }
-
-            // TODO(@darzu): temporary
-            m = unshareVertices(m);
-
-            if (_numVerts + m.pos.length > maxVerts)
-                throw "Too many vertices!"
-            if (_numTris + m.tri.length > maxTris)
-                throw "Too many triangles!"
-
-            // add to vertex and index buffers
-            addMeshToBuffers(m, _vertsMap, _numVerts, vertElStride, _indMap, _numTris, false);
-
-            // create transformation matrix
-            const trans = mat4.create() as Float32Array;
-
-            // TODO(@darzu): real transforms
-            // mat4.translate(trans, trans, vec3.fromValues(
-            //     4 * _meshes.length, // TODO
-            //     0, 0));
-
-            // save the transform matrix to the buffer
-            // TODO(@darzu): MESH FORMAT
-            const uniOffset = _meshes.length * meshUniByteSize;
-            device.queue.writeBuffer(
-                _meshUniBuffer,
-                uniOffset,
-                trans.buffer,
-                trans.byteOffset,
-                trans.byteLength
-            );
-
-            // create the result
-            const res: Mesh = {
-                vertNumOffset: _numVerts, // TODO(@darzu): 
-                indicesNumOffset: _numTris * 3, // TODO(@darzu): 
-                modelUniByteOffset: uniOffset,
-                transform: trans,
-                triCount: m.tri.length,
-                model: m,
-            }
-            _numVerts += m.pos.length;
-            _numTris += m.tri.length;
-            return res;
+function addMeshes(meshesToAdd: MeshModel[], shadowCasters: boolean): Mesh[] {
+    function addMesh(m: MeshModel): Mesh {
+        if (_vertsMap === null) {
+            throw "Use preRender() and postRender() functions"
         }
 
-        const newMeshes = meshesToAdd.map(m => addMesh(m))
+        // TODO(@darzu): temporary
+        m = unshareVertices(m);
 
-        _meshes.push(...newMeshes)
+        if (_numVerts + m.pos.length > maxVerts)
+            throw "Too many vertices!"
+        if (_numTris + m.tri.length > maxTris)
+            throw "Too many triangles!"
 
-        return newMeshes
-    }
+        // add to vertex and index buffers
+        addMeshToBuffers(m, _vertsMap, _numVerts, vertElStride, _indMap, _numTris, false);
 
-    function applyMeshTransform(m: Mesh) {
+        // create transformation matrix
+        const trans = mat4.create() as Float32Array;
+
+        // TODO(@darzu): real transforms
+        // mat4.translate(trans, trans, vec3.fromValues(
+        //     4 * _meshes.length, // TODO
+        //     0, 0));
+
+        // save the transform matrix to the buffer
         // TODO(@darzu): MESH FORMAT
+        const uniOffset = _meshes.length * meshUniByteSize;
         device.queue.writeBuffer(
             _meshUniBuffer,
-            m.modelUniByteOffset,
-            (m.transform as Float32Array).buffer,
-            (m.transform as Float32Array).byteOffset,
-            (m.transform as Float32Array).byteLength
+            uniOffset,
+            trans.buffer,
+            trans.byteOffset,
+            trans.byteLength
         );
+
+        // create the result
+        const res: Mesh = {
+            vertNumOffset: _numVerts, // TODO(@darzu): 
+            indicesNumOffset: _numTris * 3, // TODO(@darzu): 
+            modelUniByteOffset: uniOffset,
+            transform: trans,
+            triCount: m.tri.length,
+            model: m,
+        }
+        _numVerts += m.pos.length;
+        _numTris += m.tri.length;
+        return res;
     }
 
-    const swapChain = context.configureSwapChain({
-        device,
-        format: swapChainFormat,
-    });
+    const newMeshes = meshesToAdd.map(m => addMesh(m))
 
-    const modelUniBindGroupLayout = device.createBindGroupLayout({
-        entries: [
-            {
-                binding: 0,
-                visibility: GPUShaderStage.VERTEX,
-                buffer: {
-                    type: 'uniform',
-                    hasDynamicOffset: true,
-                    // TODO(@darzu): why have this?
-                    minBindingSize: meshUniByteSize,
-                },
-            },
-        ],
-    });
+    _meshes.push(...newMeshes)
 
-    const shadowSharedUniBindGroupLayout = device.createBindGroupLayout({
-        entries: [
-            {
-                binding: 0,
-                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: {
-                    type: 'uniform',
-                    // hasDynamicOffset: true,
-                    // TODO(@darzu): why have this?
-                    // minBindingSize: 20,
-                },
-            },
-        ],
-    });
+    return newMeshes
+}
 
-    const renderSharedUniBindGroupLayout = device.createBindGroupLayout({
-        entries: [
-            {
-                binding: 0,
-                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                buffer: {
-                    type: 'uniform',
-                    // hasDynamicOffset: true,
-                    // TODO(@darzu): why have this?
-                    // minBindingSize: 20,
-                },
-            },
-            {
-                binding: 1,
-                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                texture: {
-                    sampleType: 'depth',
-                },
-            },
-            {
-                binding: 2,
-                visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                sampler: {
-                    type: 'comparison',
-                },
-            },
-        ],
-    });
+function writeMeshTransform(m: Mesh) {
+    // TODO(@darzu): MESH FORMAT
+    device.queue.writeBuffer(
+        _meshUniBuffer,
+        m.modelUniByteOffset,
+        (m.transform as Float32Array).buffer,
+        (m.transform as Float32Array).byteOffset,
+        (m.transform as Float32Array).byteLength
+    );
+}
 
-    // Create the depth texture for rendering/sampling the shadow map.
-    const shadowDepthTexture = device.createTexture(shadowDepthTextureDesc);
-    // TODO(@darzu): use
-    const shadowDepthTextureView = shadowDepthTexture.createView();
+const swapChain = context.configureSwapChain({
+    device,
+    format: swapChainFormat,
+});
 
-    // TODO(@darzu): SCENE FORMAT
-    const sharedUniBufferSize =
-        // Two 4x4 viewProj matrices,
-        // one for the camera and one for the light.
-        // Then a vec3 for the light position.
-        bytesPerMat4 * 2 // camera and light projection
-        + bytesPerVec3 * 1 // light pos
-        // + bytesPerFloat * 1 // time
-    const sharedUniBuffer = device.createBuffer({
-        size: align(sharedUniBufferSize, 256),
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
-
-    const shadowSharedUniBindGroup = device.createBindGroup({
-        layout: shadowSharedUniBindGroupLayout,
-        entries: [
-            {
-                binding: 0,
-                resource: {
-                    buffer: sharedUniBuffer,
-                },
-            },
-        ],
-    });
-
-    const renderSharedUniBindGroup = device.createBindGroup({
-        layout: renderSharedUniBindGroupLayout,
-        entries: [
-            {
-                binding: 0,
-                resource: {
-                    buffer: sharedUniBuffer,
-                },
-            },
-            {
-                binding: 1,
-                resource: shadowDepthTextureView,
-            },
-            {
-                binding: 2,
-                // TODO(@darzu): what's a sampler here?
-                resource: device.createSampler({
-                    compare: 'less',
-                }),
-            },
-        ],
-    });
-
-    const vertexBuffersLayout: GPUVertexBufferLayout[] = [
+const modelUniBindGroupLayout = device.createBindGroupLayout({
+    entries: [
         {
-            // TODO(@darzu): the buffer index should be connected to the pool probably?
-            // TODO(@darzu): VERTEX FORMAT
-            arrayStride: vertByteSize,
-            attributes: [
-                {
-                    // position
-                    shaderLocation: 0,
-                    offset: bytesPerVec3 * 0,
-                    format: 'float32x3',
-                },
-                {
-                    // color
-                    shaderLocation: 1,
-                    offset: bytesPerVec3 * 1,
-                    format: 'float32x3',
-                },
-                {
-                    // normals
-                    shaderLocation: 2,
-                    offset: bytesPerVec3 * 2,
-                    format: 'float32x3',
-                },
-                {
-                    // sway height
-                    shaderLocation: 3,
-                    offset: bytesPerVec3 * 3,
-                    format: 'float32',
-                },
-                // {
-                //     // uv
-                //     shaderLocation: 1,
-                //     offset: cubeUVOffset,
-                //     format: 'float32x2',
-                // },
-            ],
+            binding: 0,
+            visibility: GPUShaderStage.VERTEX,
+            buffer: {
+                type: 'uniform',
+                hasDynamicOffset: true,
+                // TODO(@darzu): why have this?
+                minBindingSize: meshUniByteSize,
+            },
         },
-    ];
+    ],
+});
 
-    const primitiveBackcull: GPUPrimitiveState = {
-        topology: 'triangle-list',
-        cullMode: 'back',
-        // frontFace: 'ccw', // TODO(dz):
-    };
-    const primitiveTwosided: GPUPrimitiveState = {
-        topology: 'triangle-list',
-        cullMode: 'none',
-        // frontFace: 'ccw', // TODO(dz):
-    };
+const shadowSharedUniBindGroupLayout = device.createBindGroupLayout({
+    entries: [
+        {
+            binding: 0,
+            visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+            buffer: {
+                type: 'uniform',
+                // hasDynamicOffset: true,
+                // TODO(@darzu): why have this?
+                // minBindingSize: 20,
+            },
+        },
+    ],
+});
 
-    const shadowPipelineLayout = device.createPipelineLayout({
-        bindGroupLayouts: [shadowSharedUniBindGroupLayout, modelUniBindGroupLayout],
-    });
+const renderSharedUniBindGroupLayout = device.createBindGroupLayout({
+    entries: [
+        {
+            binding: 0,
+            visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+            buffer: {
+                type: 'uniform',
+                // hasDynamicOffset: true,
+                // TODO(@darzu): why have this?
+                // minBindingSize: 20,
+            },
+        },
+        {
+            binding: 1,
+            visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+            texture: {
+                sampleType: 'depth',
+            },
+        },
+        {
+            binding: 2,
+            visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+            sampler: {
+                type: 'comparison',
+            },
+        },
+    ],
+});
 
-    const shadowPipelineDesc: GPURenderPipelineDescriptor = {
-        layout: shadowPipelineLayout, // TODO(@darzu): same for shadow and not?
-        vertex: {
-            module: device.createShaderModule({
-                code: wgslShaders.vertexShadow,
+// Create the depth texture for rendering/sampling the shadow map.
+const shadowDepthTexture = device.createTexture(shadowDepthTextureDesc);
+// TODO(@darzu): use
+const shadowDepthTextureView = shadowDepthTexture.createView();
+
+// TODO(@darzu): SCENE FORMAT
+const sharedUniBufferSize =
+    // Two 4x4 viewProj matrices,
+    // one for the camera and one for the light.
+    // Then a vec3 for the light position.
+    bytesPerMat4 * 2 // camera and light projection
+    + bytesPerVec3 * 1 // light pos
+// + bytesPerFloat * 1 // time
+const sharedUniBuffer = device.createBuffer({
+    size: align(sharedUniBufferSize, 256),
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+});
+
+const shadowSharedUniBindGroup = device.createBindGroup({
+    layout: shadowSharedUniBindGroupLayout,
+    entries: [
+        {
+            binding: 0,
+            resource: {
+                buffer: sharedUniBuffer,
+            },
+        },
+    ],
+});
+
+const renderSharedUniBindGroup = device.createBindGroup({
+    layout: renderSharedUniBindGroupLayout,
+    entries: [
+        {
+            binding: 0,
+            resource: {
+                buffer: sharedUniBuffer,
+            },
+        },
+        {
+            binding: 1,
+            resource: shadowDepthTextureView,
+        },
+        {
+            binding: 2,
+            // TODO(@darzu): what's a sampler here?
+            resource: device.createSampler({
+                compare: 'less',
             }),
-            entryPoint: 'main',
-            buffers: vertexBuffersLayout,
         },
-        fragment: {
-            // This should be omitted and we can use a vertex-only pipeline, but it's
-            // not yet implemented.
-            module: device.createShaderModule({
-                code: wgslShaders.fragmentShadow,
-            }),
-            entryPoint: 'main',
-            targets: [],
-        },
-        depthStencil: {
-            depthWriteEnabled: true,
-            depthCompare: 'less',
-            format: shadowDepthStencilFormat,
-        },
-        primitive: primitiveBackcull,
+    ],
+});
+
+const vertexBuffersLayout: GPUVertexBufferLayout[] = [
+    {
+        // TODO(@darzu): the buffer index should be connected to the pool probably?
+        // TODO(@darzu): VERTEX FORMAT
+        arrayStride: vertByteSize,
+        attributes: [
+            {
+                // position
+                shaderLocation: 0,
+                offset: bytesPerVec3 * 0,
+                format: 'float32x3',
+            },
+            {
+                // color
+                shaderLocation: 1,
+                offset: bytesPerVec3 * 1,
+                format: 'float32x3',
+            },
+            {
+                // normals
+                shaderLocation: 2,
+                offset: bytesPerVec3 * 2,
+                format: 'float32x3',
+            },
+            {
+                // sway height
+                shaderLocation: 3,
+                offset: bytesPerVec3 * 3,
+                format: 'float32',
+            },
+            // {
+            //     // uv
+            //     shaderLocation: 1,
+            //     offset: cubeUVOffset,
+            //     format: 'float32x2',
+            // },
+        ],
+    },
+];
+
+const primitiveBackcull: GPUPrimitiveState = {
+    topology: 'triangle-list',
+    cullMode: 'back',
+    // frontFace: 'ccw', // TODO(dz):
+};
+const primitiveTwosided: GPUPrimitiveState = {
+    topology: 'triangle-list',
+    cullMode: 'none',
+    // frontFace: 'ccw', // TODO(dz):
+};
+
+const shadowPipelineLayout = device.createPipelineLayout({
+    bindGroupLayouts: [shadowSharedUniBindGroupLayout, modelUniBindGroupLayout],
+});
+
+const shadowPipelineDesc: GPURenderPipelineDescriptor = {
+    layout: shadowPipelineLayout, // TODO(@darzu): same for shadow and not?
+    vertex: {
+        module: device.createShaderModule({
+            code: wgslShaders.vertexShadow,
+        }),
+        entryPoint: 'main',
+        buffers: vertexBuffersLayout,
+    },
+    fragment: {
+        // This should be omitted and we can use a vertex-only pipeline, but it's
+        // not yet implemented.
+        module: device.createShaderModule({
+            code: wgslShaders.fragmentShadow,
+        }),
+        entryPoint: 'main',
+        targets: [],
+    },
+    depthStencil: {
+        depthWriteEnabled: true,
+        depthCompare: 'less',
+        format: shadowDepthStencilFormat,
+    },
+    primitive: primitiveBackcull,
+};
+
+const shadowPipeline = device.createRenderPipeline(shadowPipelineDesc);
+const shadowPipelineTwosided = device.createRenderPipeline({
+    ...shadowPipelineDesc,
+    primitive: primitiveTwosided
+});
+
+const renderPipelineLayout = device.createPipelineLayout({
+    bindGroupLayouts: [renderSharedUniBindGroupLayout, modelUniBindGroupLayout],
+});
+
+const renderPipelineDesc: GPURenderPipelineDescriptor = {
+    layout: renderPipelineLayout,
+    vertex: {
+        module: device.createShaderModule({
+            code: wgslShaders.vertex,
+            // TODO(@darzu):
+            // code: basicVertWGSL,
+        }),
+        entryPoint: 'main',
+        buffers: vertexBuffersLayout,
+    },
+    fragment: {
+        module: device.createShaderModule({
+            code: wgslShaders.fragment,
+            // TODO(@darzu):
+            // code: vertexPositionColorWGSL,
+        }),
+        entryPoint: 'main',
+        targets: [
+            {
+                format: swapChainFormat,
+            },
+        ],
+    },
+    primitive: primitiveBackcull,
+
+    // Enable depth testing so that the fragment closest to the camera
+    // is rendered in front.
+    depthStencil: {
+        depthWriteEnabled: true,
+        depthCompare: 'less',
+        format: depthStencilFormat,
+    },
+    multisample: {
+        count: antiAliasSampleCount,
+    },
+};
+
+const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
+
+// TODO(@darzu): how do we handle this abstraction with multiple passes e.g. shadows?
+
+const shadowPassDescriptor: GPURenderPassDescriptor = {
+    colorAttachments: [],
+    depthStencilAttachment: {
+        view: shadowDepthTextureView,
+        depthLoadValue: 1.0,
+        depthStoreOp: 'store',
+        stencilLoadValue: 0,
+        stencilStoreOp: 'store',
+    },
+};
+
+// cursor lock
+let cursorLocked = false
+canvasRef.onclick = (_) => {
+    if (!cursorLocked)
+        canvasRef.requestPointerLock();
+    cursorLocked = true
+}
+
+_vertsMap = new Float32Array(_vertBuffer.getMappedRange())
+_indMap = new Uint16Array(_indexBuffer.getMappedRange());
+
+const [planeHandle] = addMeshes([
+    PLANE
+], true)
+mat4.translate(planeHandle.transform, planeHandle.transform, [0, -3, 0])
+writeMeshTransform(planeHandle);
+
+const [playerM] = addMeshes([CUBE], true)
+
+_vertBuffer.unmap()
+_indexBuffer.unmap()
+_vertsMap = null;
+_indMap = null;
+
+const cameraPos = mkAffineTransformable();
+cameraPos.pitch(-Math.PI / 4)
+
+// register key stuff
+window.addEventListener('keydown', function (event: KeyboardEvent) {
+    onKeyDown(event);
+}, false);
+window.addEventListener('keyup', function (event: KeyboardEvent) {
+    onKeyUp(event);
+}, false);
+window.addEventListener('mousemove', function (event: MouseEvent) {
+    onmousemove(event);
+}, false);
+
+const pressedKeys: { [keycode: string]: boolean } = {}
+function onKeyDown(ev: KeyboardEvent) {
+    const k = ev.key.toLowerCase();
+    if (pressedKeys[k] === undefined)
+        console.log(`new key: ${k}`)
+    pressedKeys[k] = true
+}
+function onKeyUp(ev: KeyboardEvent) {
+    pressedKeys[ev.key.toLowerCase()] = false
+}
+let mouseDeltaX = 0;
+let mouseDeltaY = 0;
+function onmousemove(ev: MouseEvent) {
+    mouseDeltaX += ev.movementX
+    mouseDeltaY += ev.movementY
+}
+
+const playerT = mkAffineTransformable();
+playerM.transform = playerT.getTransform();
+writeMeshTransform(playerM)
+
+// write light source
+const lightProjectionMatrix = mat4.ortho(mat4.create(), -80, 80, -80, 80, -200, 300);
+
+// init light
+const upVector = vec3.fromValues(0, 1, 0);
+const origin = vec3.fromValues(0, 0, 0);
+const lightX = 50;
+const lightY = 50;
+const lightPosition = vec3.fromValues(lightX, lightY, 0);
+const lightDir = vec3.subtract(vec3.create(), origin, lightPosition);
+vec3.normalize(lightDir, lightDir);
+const lightViewMatrix = mat4.create();
+mat4.lookAt(lightViewMatrix, lightPosition, origin, upVector);
+const lightViewProjMatrix = mat4.create();
+mat4.multiply(lightViewProjMatrix, lightProjectionMatrix, lightViewMatrix);
+const lightMatrixData = lightViewProjMatrix as Float32Array;
+device.queue.writeBuffer(
+    sharedUniBuffer,
+    bytesPerMat4 * 1, // second matrix
+    lightMatrixData.buffer,
+    lightMatrixData.byteOffset,
+    lightMatrixData.byteLength
+);
+
+const lightData = lightDir as Float32Array;
+device.queue.writeBuffer(
+    sharedUniBuffer,
+    bytesPerMat4 * 2, // third matrix
+    lightData.buffer,
+    lightData.byteOffset,
+    lightData.byteLength
+);
+
+const modelUniBindGroup = device.createBindGroup({
+    layout: modelUniBindGroupLayout,
+    entries: [{ binding: 0, resource: { buffer: _meshUniBuffer, size: meshUniByteSize, }, },],
+});
+
+const bundleRenderDesc: GPURenderBundleEncoderDescriptor = {
+    colorFormats: [swapChainFormat],
+    depthStencilFormat: depthStencilFormat,
+    sampleCount: antiAliasSampleCount,
+}
+
+const bundleEncoder = device.createRenderBundleEncoder(bundleRenderDesc);
+
+bundleEncoder.setPipeline(renderPipeline);
+
+bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
+bundleEncoder.setVertexBuffer(0, _vertBuffer);
+bundleEncoder.setIndexBuffer(_indexBuffer, 'uint16');
+const uniOffset = [0];
+for (let m of _meshes) {
+    // TODO(@darzu): set bind group
+    uniOffset[0] = m.modelUniByteOffset;
+    bundleEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
+    bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+}
+let renderBundle = bundleEncoder.finish()
+
+let debugDiv = document.getElementById('debug-div') as HTMLDivElement;
+
+let previousFrameTime = 0;
+let avgJsTimeMs = 0
+let avgFrameTimeMs = 0
+
+resize(device, 100, 100);
+
+function renderFrame(timeMs: number) {
+    const start = performance.now();
+
+    const frameTimeMs = previousFrameTime ? timeMs - previousFrameTime : 0;
+    previousFrameTime = timeMs;
+
+    resize(device, canvasRef.width, canvasRef.height);
+
+    // keys
+    const playerSpeed = pressedKeys[' '] ? 1.0 : 0.2; // spacebar boosts
+    if (pressedKeys['w']) // forward
+        playerT.moveZ(-playerSpeed)
+    if (pressedKeys['s']) // backward
+        playerT.moveZ(playerSpeed)
+    if (pressedKeys['a']) // left
+        playerT.moveX(-playerSpeed)
+    if (pressedKeys['d']) // right
+        playerT.moveX(playerSpeed)
+    if (pressedKeys['shift']) // up
+        playerT.moveY(playerSpeed)
+    if (pressedKeys['c']) // down
+        playerT.moveY(-playerSpeed)
+
+    // mouse
+    if (mouseDeltaX !== 0)
+        playerT.yaw(-mouseDeltaX * 0.01);
+    if (mouseDeltaY !== 0)
+        cameraPos.pitch(-mouseDeltaY * 0.01);
+
+    // reset accummulated mouse delta
+    mouseDeltaX = 0;
+    mouseDeltaY = 0;
+
+    playerM.transform = playerT.getTransform();
+    writeMeshTransform(playerM);
+
+    const viewMatrix = mat4.create()
+    mat4.multiply(viewMatrix, viewMatrix, playerT.getTransform())
+    mat4.multiply(viewMatrix, viewMatrix, cameraPos.getTransform())
+    mat4.translate(viewMatrix, viewMatrix, [0, 0, 10])
+    mat4.invert(viewMatrix, viewMatrix);
+    const viewProj = mat4.multiply(mat4.create(), projectionMatrix, viewMatrix) as Float32Array
+
+    device.queue.writeBuffer(
+        sharedUniBuffer,
+        0,
+        viewProj.buffer,
+        viewProj.byteOffset,
+        viewProj.byteLength
+    );
+
+    const colorAtt: GPURenderPassColorAttachmentNew = {
+        view: colorTextureView,
+        resolveTarget: swapChain.getCurrentTexture().createView(),
+        loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
+        storeOp: 'store',
     };
-
-    const shadowPipeline = device.createRenderPipeline(shadowPipelineDesc);
-    const shadowPipelineTwosided = device.createRenderPipeline({
-        ...shadowPipelineDesc,
-        primitive: primitiveTwosided
-    });
-
-    const renderPipelineLayout = device.createPipelineLayout({
-        bindGroupLayouts: [renderSharedUniBindGroupLayout, modelUniBindGroupLayout],
-    });
-
-    const renderPipelineDesc: GPURenderPipelineDescriptor = {
-        layout: renderPipelineLayout,
-        vertex: {
-            module: device.createShaderModule({
-                code: wgslShaders.vertex,
-                // TODO(@darzu):
-                // code: basicVertWGSL,
-            }),
-            entryPoint: 'main',
-            buffers: vertexBuffersLayout,
-        },
-        fragment: {
-            module: device.createShaderModule({
-                code: wgslShaders.fragment,
-                // TODO(@darzu):
-                // code: vertexPositionColorWGSL,
-            }),
-            entryPoint: 'main',
-            targets: [
-                {
-                    format: swapChainFormat,
-                },
-            ],
-        },
-        primitive: primitiveBackcull,
-
-        // Enable depth testing so that the fragment closest to the camera
-        // is rendered in front.
-        depthStencil: {
-            depthWriteEnabled: true,
-            depthCompare: 'less',
-            format: depthStencilFormat,
-        },
-        multisample: {
-            count: antiAliasSampleCount,
-        },
-    };
-
-    const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
-
-    // TODO(@darzu): how do we handle this abstraction with multiple passes e.g. shadows?
-
-    const shadowPassDescriptor: GPURenderPassDescriptor = {
-        colorAttachments: [],
+    const renderPassDescriptor = {
+        colorAttachments: [colorAtt],
         depthStencilAttachment: {
-            view: shadowDepthTextureView,
+            view: depthTextureView,
             depthLoadValue: 1.0,
             depthStoreOp: 'store',
             stencilLoadValue: 0,
             stencilStoreOp: 'store',
         },
-    };
+    } as const;
 
+    const commandEncoder = device.createCommandEncoder();
+    const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
+    shadowPass.setBindGroup(0, shadowSharedUniBindGroup);
+    shadowPass.setPipeline(shadowPipeline);
 
-    // cursor lock
-    let cursorLocked = false
-    canvas.onclick = (_) => {
-        if (!cursorLocked)
-            canvas.requestPointerLock();
-        cursorLocked = true
+    shadowPass.setVertexBuffer(0, _vertBuffer);
+    shadowPass.setIndexBuffer(_indexBuffer, 'uint16');
+    const uniOffset = [0];
+    for (let m of _meshes) {
+        uniOffset[0] = m.modelUniByteOffset;
+        shadowPass.setBindGroup(1, modelUniBindGroup, uniOffset);
+        shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
     }
+    shadowPass.endPass();
 
-    _vertsMap = new Float32Array(_vertBuffer.getMappedRange())
-    _indMap = new Uint16Array(_indexBuffer.getMappedRange());
+    const renderPassEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+    renderPassEncoder.executeBundles([renderBundle]);
+    renderPassEncoder.endPass();
+    device.queue.submit([commandEncoder.finish()]);
 
-    const [planeHandle] = addMeshes([
-        PLANE
-    ], true)
-    mat4.translate(planeHandle.transform, planeHandle.transform, [0, -3, 0])
-    applyMeshTransform(planeHandle);
+    const jsTime = performance.now() - start;
 
-    const [playerM] = addMeshes([CUBE], true)
+    // weighted average
+    const avgWeight = 0.05
+    avgJsTimeMs = avgJsTimeMs ? (1 - avgWeight) * avgJsTimeMs + avgWeight * jsTime : jsTime
+    avgFrameTimeMs = avgFrameTimeMs ? (1 - avgWeight) * avgFrameTimeMs + avgWeight * frameTimeMs : frameTimeMs
 
-    _vertBuffer.unmap()
-    _indexBuffer.unmap()
-    _vertsMap = null;
-    _indMap = null;
+    const avgFPS = 1000 / avgFrameTimeMs;
 
-    const cameraPos = mkAffineTransformable();
-    cameraPos.pitch(-Math.PI / 4)
+    // TODO(@darzu): triangle, vertex, pixel counts
+    debugDiv.innerText = `js: ${avgJsTimeMs.toFixed(2)}ms, frame: ${avgFrameTimeMs.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)}`
+}
 
-    // register key stuff
-    window.addEventListener('keydown', function (event: KeyboardEvent) {
-        onKeyDown(event);
-    }, false);
-    window.addEventListener('keyup', function (event: KeyboardEvent) {
-        onKeyUp(event);
-    }, false);
-    window.addEventListener('mousemove', function (event: MouseEvent) {
-        onmousemove(event);
-    }, false);
-
-    const pressedKeys: { [keycode: string]: boolean } = {}
-    function onKeyDown(ev: KeyboardEvent) {
-        const k = ev.key.toLowerCase();
-        if (pressedKeys[k] === undefined)
-            console.log(`new key: ${k}`)
-        pressedKeys[k] = true
-    }
-    function onKeyUp(ev: KeyboardEvent) {
-        pressedKeys[ev.key.toLowerCase()] = false
-    }
-    let mouseDeltaX = 0;
-    let mouseDeltaY = 0;
-    function onmousemove(ev: MouseEvent) {
-        mouseDeltaX += ev.movementX
-        mouseDeltaY += ev.movementY
-    }
-
-    const playerT = mkAffineTransformable();
-    playerM.transform = playerT.getTransform();
-    applyMeshTransform(playerM)
-
-    // write light source
-    const lightProjectionMatrix = mat4.ortho(mat4.create(), -80, 80, -80, 80, -200, 300);
-
-    // init light
-    const upVector = vec3.fromValues(0, 1, 0);
-    const origin = vec3.fromValues(0, 0, 0);
-    const lightX = 50;
-    const lightY = 50;
-    const lightPosition = vec3.fromValues(lightX, lightY, 0);
-    const lightDir = vec3.subtract(vec3.create(), origin, lightPosition);
-    vec3.normalize(lightDir, lightDir);
-    const lightViewMatrix = mat4.create();
-    mat4.lookAt(lightViewMatrix, lightPosition, origin, upVector);
-    const lightViewProjMatrix = mat4.create();
-    mat4.multiply(lightViewProjMatrix, lightProjectionMatrix, lightViewMatrix);
-    const lightMatrixData = lightViewProjMatrix as Float32Array;
-    device.queue.writeBuffer(
-        sharedUniBuffer,
-        bytesPerMat4 * 1, // second matrix
-        lightMatrixData.buffer,
-        lightMatrixData.byteOffset,
-        lightMatrixData.byteLength
-    );
-
-    const lightData = lightDir as Float32Array;
-    device.queue.writeBuffer(
-        sharedUniBuffer,
-        bytesPerMat4 * 2, // third matrix
-        lightData.buffer,
-        lightData.byteOffset,
-        lightData.byteLength
-    );
-
-    const modelUniBindGroup = device.createBindGroup({
-        layout: modelUniBindGroupLayout,
-        entries: [{ binding: 0, resource: { buffer: _meshUniBuffer, size: meshUniByteSize, }, },],
-    });
-
-    const bundleRenderDesc: GPURenderBundleEncoderDescriptor = {
-        colorFormats: [swapChainFormat],
-        depthStencilFormat: depthStencilFormat,
-        sampleCount: antiAliasSampleCount,
-    }
-
-    const bundleEncoder = device.createRenderBundleEncoder(bundleRenderDesc);
-
-    bundleEncoder.setPipeline(renderPipeline);
-
-    bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
-    bundleEncoder.setVertexBuffer(0, _vertBuffer);
-    bundleEncoder.setIndexBuffer(_indexBuffer, 'uint16');
-        const uniOffset = [0];
-        for (let m of _meshes) {
-            // TODO(@darzu): set bind group
-            uniOffset[0] = m.modelUniByteOffset;
-            bundleEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
-            bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-        }
-    let renderBundle = bundleEncoder.finish()
-
-    let debugDiv = document.getElementById('debug-div') as HTMLDivElement;
-
-    let previousFrameTime = 0;
-    let avgJsTimeMs = 0
-    let avgFrameTimeMs = 0
-
-    resize(device, 100, 100);
-
-    function renderFrame(timeMs: number) {
-        const start = performance.now();
-
-        const frameTimeMs = previousFrameTime ? timeMs - previousFrameTime : 0;
-        previousFrameTime = timeMs;
-
-        resize(device, canvasRef.width, canvasRef.height);
-
-        // keys
-        const playerSpeed = pressedKeys[' '] ? 1.0 : 0.2; // spacebar boosts
-        if (pressedKeys['w']) // forward
-            playerT.moveZ(-playerSpeed)
-        if (pressedKeys['s']) // backward
-            playerT.moveZ(playerSpeed)
-        if (pressedKeys['a']) // left
-            playerT.moveX(-playerSpeed)
-        if (pressedKeys['d']) // right
-            playerT.moveX(playerSpeed)
-        if (pressedKeys['shift']) // up
-            playerT.moveY(playerSpeed)
-        if (pressedKeys['c']) // down
-            playerT.moveY(-playerSpeed)
-
-        // mouse
-        if (mouseDeltaX !== 0)
-            playerT.yaw(-mouseDeltaX * 0.01);
-        if (mouseDeltaY !== 0)
-            cameraPos.pitch(-mouseDeltaY * 0.01);
-
-        // reset accummulated mouse delta
-        mouseDeltaX = 0;
-        mouseDeltaY = 0;
-
-        playerM.transform = playerT.getTransform();
-        applyMeshTransform(playerM);
-
-        function getViewProj() {
-            const viewMatrix = mat4.create()
-            mat4.multiply(viewMatrix, viewMatrix, playerT.getTransform())
-            mat4.multiply(viewMatrix, viewMatrix, cameraPos.getTransform())
-            mat4.translate(viewMatrix, viewMatrix, [0, 0, 10])
-            mat4.invert(viewMatrix, viewMatrix);
-            return mat4.multiply(mat4.create(), projectionMatrix, viewMatrix) as Float32Array
-        }
-
-        const transformationMatrix = getViewProj();
-        device.queue.writeBuffer(
-            sharedUniBuffer,
-            0,
-            transformationMatrix.buffer,
-            transformationMatrix.byteOffset,
-            transformationMatrix.byteLength
-        );
-
-        const colorAtt: GPURenderPassColorAttachmentNew = {
-            view: colorTextureView,
-            resolveTarget: swapChain.getCurrentTexture().createView(),
-            loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
-            storeOp: 'store',
-        };
-        const renderPassDescriptor = {
-            colorAttachments: [colorAtt],
-            depthStencilAttachment: {
-                view: depthTextureView,
-                depthLoadValue: 1.0,
-                depthStoreOp: 'store',
-                stencilLoadValue: 0,
-                stencilStoreOp: 'store',
-            },
-        } as const;
-
-        const commandEncoder = device.createCommandEncoder();
-        const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
-        shadowPass.setBindGroup(0, shadowSharedUniBindGroup);
-        shadowPass.setPipeline(shadowPipeline);
-
-        shadowPass.setVertexBuffer(0, _vertBuffer);
-        shadowPass.setIndexBuffer(_indexBuffer, 'uint16');
-        const uniOffset = [0];
-        for (let m of _meshes) {
-            uniOffset[0] = m.modelUniByteOffset;
-            shadowPass.setBindGroup(1, modelUniBindGroup, uniOffset);
-            shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-        }
-        shadowPass.endPass();
-
-        const renderPassEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
-        renderPassEncoder.executeBundles([renderBundle]);
-        renderPassEncoder.endPass();
-        device.queue.submit([commandEncoder.finish()]);
-
-        const jsTime = performance.now() - start;
-
-        // weighted average
-        const avgWeight = 0.05
-        avgJsTimeMs = avgJsTimeMs ? (1 - avgWeight) * avgJsTimeMs + avgWeight * jsTime : jsTime
-        avgFrameTimeMs = avgFrameTimeMs ? (1 - avgWeight) * avgFrameTimeMs + avgWeight * frameTimeMs : frameTimeMs
-
-        const avgFPS = 1000 / avgFrameTimeMs;
-
-        // TODO(@darzu): triangle, vertex, pixel counts
-        debugDiv.innerText = `js: ${avgJsTimeMs.toFixed(2)}ms, frame: ${avgFrameTimeMs.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)}`
-    }
-
-    return renderFrame;
-};
-
-// Attach to html
-let canvas = document.getElementById('sample-canvas') as HTMLCanvasElement;
-const renderFrame = await init(canvas)
 
 if (renderFrame) {
     const _renderFrame = (time: number) => {
