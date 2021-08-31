@@ -1,7 +1,7 @@
 // import { deltaE2000 } from "./color-lab.js";
 import { D50_to_D65 as XYZD50ToXYZD65, D65_to_D50 as XYZD65ToXYZD50, deltaE2000, FLRGBToFRGB, FLRGBToXYZD65, FRGBToFLRGB, Lab_to_LCH as CIELABToLCH, Lab_to_XYZD50 as XYZCIELABToXYZD50, LCH_to_Lab as LCHToCIELAB, XYZD50_to_CIELAB as XYZD50ToCIELAB, XYZD65ToFLRGB } from "./color-lab.js";
 import { LABToLRGB, LRGBToLAB } from "./color-oklab.js";
-import { clamp, dist, max, min, sub, V3 } from "../math.js";
+import { clamp, dist, max, min, sub } from "../math.js";
 import { mapObj, never, values } from "../util.js"
 
 export type FRGB = { fr: number, fg: number, fb: number };
@@ -130,7 +130,7 @@ export function toXYZD65(clr: Color): XYZD65 {
     return FLRGBToXYZD65(toFLRGB(clr))
 }
 
-export function toV3(c: Color): V3 {
+export function toV3(c: Color): [number, number, number] {
     if (isHSL(c))
         return [c.h, c.s, c.l]
     else if (isRGB(c))

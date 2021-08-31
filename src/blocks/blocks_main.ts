@@ -11,6 +11,8 @@ import { getBarsBottom, makeAllColorBars } from "./color-bars.js";
 import { compileTs } from "./ts-host.js";
 //// <reference path="./ext/typescript.d.ts" />
 
+const SHOW_COLORS = true;
+
 document.addEventListener('DOMContentLoaded', main, false);
 
 async function main() {
@@ -48,7 +50,8 @@ async function main() {
 
     // playing with colors:
     // TODO(@darzu): re-enable
-    // makeAllColorBars();
+    if (SHOW_COLORS)
+        makeAllColorBars();
 
     // code render
     refreshCode()

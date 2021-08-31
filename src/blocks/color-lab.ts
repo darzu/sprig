@@ -2,7 +2,17 @@
 // https://drafts.csswg.org/css-color/#color-conversion-code
 
 import { CIELAB, FLRGB, FRGB, LAB, LCH, toV3, XYZD50, XYZD65 } from "./color.js";
-import { Mat, multiplyMatrices } from "../math.js";
+
+// TODO(@darzu): deprecate in favor of gl-matrix style?
+type V3 = [number, number, number]
+type Mat = [V3, V3, V3];
+function multiplyMatrices(a: Mat, b: V3): V3 {
+    return [
+        a[0][0] * b[0] + a[0][1] * b[1] + a[0][2] * b[2],
+        a[1][0] * b[0] + a[1][1] * b[1] + a[1][2] * b[2],
+        a[2][0] * b[0] + a[2][1] * b[1] + a[2][2] * b[2],
+    ]
+}
 
 // Sample code for color conversions
 // Conversion can also be done using ICC profiles and a Color Management System

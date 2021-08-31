@@ -1,4 +1,5 @@
 // types
+// TODO(@darzu): deprecate these in favor of gl-matrix style?
 export type V2 = { x: number, y: number }
 export interface Sized { size: V2 }
 
@@ -41,16 +42,6 @@ export function min(ns: number[]): number {
 }
 export function even(n: number) {
     return n % 2 == 0
-}
-
-export type V3 = [number, number, number]
-export type Mat = [V3, V3, V3];
-export function multiplyMatrices(a: Mat, b: V3): V3 {
-    return [
-        a[0][0] * b[0] + a[0][1] * b[1] + a[0][2] * b[2],
-        a[1][0] * b[0] + a[1][1] * b[1] + a[1][2] * b[2],
-        a[2][0] * b[0] + a[2][1] * b[1] + a[2][2] * b[2],
-    ]
 }
 
 export const radToDeg = 180 / Math.PI;
