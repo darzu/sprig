@@ -1,7 +1,7 @@
 import { GameObject } from "./state.js";
 import { mat4, vec3, quat } from "./gl-matrix.js";
 import { createMeshPoolBuilder_WebGPU, MeshHandle, MeshPoolBuilder_WebGPU, MeshPoolOpts, MeshPool_WebGPU, MeshUniform, SceneUniform, Vertex } from "./mesh-pool.js";
-import { pitch } from "./3d-util.js";
+import { pitch } from "./utils-3d.js";
 
 // TODO: some state lives in global variables when it should live on the Renderer object
 

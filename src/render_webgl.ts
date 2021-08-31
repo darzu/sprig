@@ -1,4 +1,4 @@
-import { pitch } from "./3d-util.js";
+import { pitch } from "./utils-3d.js";
 import { vec3, mat4 } from "./gl-matrix.js";
 import { createMeshPoolBuilder_WebGL, MeshHandle, MeshPoolOpts, MeshUniform, SceneUniform } from "./mesh-pool.js";
 import { GameObject } from "./state.js";

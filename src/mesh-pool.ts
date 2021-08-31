@@ -1,4 +1,4 @@
-import { computeTriangleNormal } from "./3d-util.js";
+import { computeTriangleNormal } from "./utils-3d.js";
 import { mat4, vec3 } from "./gl-matrix.js";
 import { align, sum } from "./math.js";
 import { AABB, getAABBFromPositions } from "./physics.js";
