@@ -342,7 +342,7 @@ interface Inputs {
   lclick: boolean;
   rclick: boolean;
   accel: boolean;
-  lastNumKey: number;
+  keyClicks: { [key: string]: number };
 }
 
 class CubeGameState extends GameState<Inputs> {
@@ -593,10 +593,9 @@ class CubeGameState extends GameState<Inputs> {
       }
     }
     // check render mode
-    if (inputs.lastNumKey === 1) {
+    if (inputs.keyClicks["1"]) {
       this.renderer.mode = "normal";
-    }
-    if (inputs.lastNumKey === 2) {
+    } else if (inputs.keyClicks["2"]) {
       this.renderer.mode = "wireframe";
     }
 
@@ -704,124 +703,98 @@ class CubeGameState extends GameState<Inputs> {
   }
 }
 
-function inputsReader(canvas: HTMLCanvasElement): () => Inputs {
-  let forward = false;
-  let back = false;
-  let left = false;
-  let right = false;
-  let up = false;
-  let down = false;
-  let accel = false;
-  let lclick = false;
-  let rclick = false;
-  let mouseX = 0;
-  let mouseY = 0;
-  let lastNumKey = 0; // TODO(@darzu): this is a little hacky
-
-  window.addEventListener("keydown", (ev) => {
-    switch (ev.key.toLowerCase()) {
-      case "w":
-        forward = true;
-        back = false;
-        break;
-      case "s":
-        back = true;
-        forward = false;
-        break;
-      case "a":
-        left = true;
-        right = false;
-        break;
-      case "d":
-        right = true;
-        left = false;
-        break;
-      case "shift":
-        up = true;
-        down = false;
-        break;
-      case "c":
-        down = true;
-        up = false;
-        break;
-      case " ":
-        accel = true;
-        break;
+function createInputsReader(canvas: HTMLCanvasElement): () => Inputs {
+  // track which keys are pressed for use in the game loop
+  const pressedKeys: { [keycode: string]: boolean } = {};
+  const accumulated_keyClicks: { [keycode: string]: number } = {};
+  window.addEventListener(
+    "keydown",
+    (ev) => {
+      const k = ev.key.toLowerCase();
+      if (!pressedKeys[k])
+        accumulated_keyClicks[k] = (accumulated_keyClicks[k] ?? 0) + 1;
+      pressedKeys[k] = true;
+    },
+    false
+  );
+  window.addEventListener(
+    "keyup",
+    (ev) => {
+      pressedKeys[ev.key.toLowerCase()] = false;
+    },
+    false
+  );
+  const _result_keyClicks: { [keycode: string]: number } = {};
+  function takeAccumulatedKeyClicks(): { [keycode: string]: number } {
+    for (let k in accumulated_keyClicks) {
+      _result_keyClicks[k] = accumulated_keyClicks[k];
+      accumulated_keyClicks[k] = 0;
     }
-  });
+    return _result_keyClicks;
+  }
 
-  window.addEventListener("keyup", (ev) => {
-    switch (ev.key.toLowerCase()) {
-      case "w":
-        forward = false;
-        break;
-      case "s":
-        back = false;
-        break;
-      case "a":
-        left = false;
-        break;
-      case "d":
-        right = false;
-        break;
-      case "shift":
-        up = false;
-        break;
-      case "c":
-        down = false;
-        break;
-      case "1":
-        lastNumKey = 1;
-        break;
-      case "2":
-        lastNumKey = 2;
-        break;
-      case " ":
-        accel = false;
-        break;
-    }
-  });
+  // track mouse movement for use in the game loop
+  let accumulated_mouseX = 0;
+  let accumulated_mouseY = 0;
+  window.addEventListener(
+    "mousemove",
+    (ev) => {
+      accumulated_mouseX += ev.movementX;
+      accumulated_mouseY += ev.movementY;
+    },
+    false
+  );
+  function takeAccumulatedMouseMovement(): { x: number; y: number } {
+    const result = { x: accumulated_mouseX, y: accumulated_mouseY };
+    accumulated_mouseX = 0; // reset accumulators
+    accumulated_mouseY = 0;
+    return result;
+  }
 
-  window.addEventListener("mousemove", (ev) => {
-    if (document.pointerLockElement === canvas) {
-      mouseX += ev.movementX;
-      mouseY += ev.movementY;
-    }
-  });
-
+  // TODO(@darzu): Ideally mouse clicks would trigger on mouse down not up for more responsive actions
+  let accumulated_lClicks = 0;
+  let accumulated_rClicks = 0;
   window.addEventListener("mouseup", (ev) => {
     if (document.pointerLockElement === canvas) {
       if (ev.button === 0) {
-        lclick = true;
+        accumulated_lClicks += 1;
       } else {
-        rclick = true;
+        accumulated_rClicks += 1;
       }
     }
     return false;
   });
+  function takeAccumulatedMouseClicks(): { lClicks: number; rClicks: number } {
+    const result = {
+      lClicks: accumulated_lClicks,
+      rClicks: accumulated_rClicks,
+    };
+    accumulated_lClicks = 0; // reset accumulators
+    accumulated_rClicks = 0;
+    return result;
+  }
 
-  function getInputs(): Inputs {
+  function takeInputs(): Inputs {
+    const { x: mouseX, y: mouseY } = takeAccumulatedMouseMovement();
+    const { lClicks, rClicks } = takeAccumulatedMouseClicks();
+    const keyClicks = takeAccumulatedKeyClicks();
     let inputs = {
-      forward,
-      back,
-      left,
-      right,
-      up,
-      down,
-      accel,
+      forward: pressedKeys["w"],
+      back: pressedKeys["s"],
+      left: pressedKeys["a"],
+      right: pressedKeys["d"],
+      up: pressedKeys["shift"],
+      down: pressedKeys["c"],
+      accel: pressedKeys[" "],
       mouseX,
       mouseY,
-      lclick,
-      rclick,
-      lastNumKey,
+      lclick: lClicks > 0,
+      rclick: rClicks > 0,
+      keyClicks,
     };
-    mouseX = 0;
-    mouseY = 0;
-    lclick = false;
-    rclick = false;
     return inputs;
   }
-  return getInputs;
+  return takeInputs;
 }
 
 // ms per network sync (should be the same for all servers)
@@ -888,7 +861,7 @@ async function startGame(host: string | null) {
   const renderer: Renderer = rendererInit;
   let start_of_time = performance.now();
   let gameState = new CubeGameState(renderer, hosting);
-  let inputs = inputsReader(canvas);
+  let takeInputs = createInputsReader(canvas);
   function doLockMouse() {
     if (document.pointerLockElement !== canvas) {
       canvas.requestPointerLock();
@@ -916,7 +889,7 @@ async function startGame(host: string | null) {
     let sim_time = 0;
     while (sim_time_accumulator > SIM_DT) {
       let before_sim = performance.now();
-      gameState.step(SIM_DT, inputs());
+      gameState.step(SIM_DT, takeInputs());
       sim_time_accumulator -= SIM_DT;
       sim_time += performance.now() - before_sim;
     }
