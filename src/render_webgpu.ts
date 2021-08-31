@@ -12,7 +12,7 @@ import {
 } from "./mesh-pool.js";
 import { pitch } from "./utils-3d.js";
 
-const PIXEL_PER_PX: number | null = null;
+const PIXEL_PER_PX: number | null = null; // 0.5;
 
 // TODO: some state lives in global variables when it should live on the Renderer object
 
@@ -142,6 +142,8 @@ export class Renderer_WebGPU implements Renderer {
     const newWidth = this.canvas.clientWidth * devicePixelRatio;
     const newHeight = this.canvas.clientHeight * devicePixelRatio;
     if (this.lastWidth === newWidth && this.lastHeight === newHeight) return;
+
+    console.log(`devicePixelRatio: ${devicePixelRatio}`);
 
     if (this.depthTexture) this.depthTexture.destroy();
     if (this.colorTexture) this.colorTexture.destroy();

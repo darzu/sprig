@@ -18,8 +18,9 @@ export interface PhysicsResults {
   collidesWith: CollidesWith;
 }
 
-const _aOverlap = vec3.create();
-const _mov = vec3.create();
+const _collisionVec = vec3.create();
+const _collisionOverlap = vec3.create();
+const _collisionAdjOverlap = vec3.create();
 
 export function stepPhysics(
   objDict: Record<number, PhysicsObject>,
@@ -42,35 +43,48 @@ export function stepPhysics(
     const a = objDict[aId];
     const b = objDict[bId];
 
-    for (let i of [0, 1, 2]) {
-      let aLastMov = a.motion.location[i] - a.lastMotion.location[i];
-      let bLastMov = b.motion.location[i] - b.lastMotion.location[i];
-
-      let aReflDir = Math.sign(bLastMov - aLastMov);
-      if (aReflDir === 0) {
-        _aOverlap[i] = 0; // x isn't responsible for this collision
-        continue;
-      }
-
-      _aOverlap[i] =
-        aReflDir > 0
-          ? b.worldAABB.max[i] - a.worldAABB.min[i]
-          : b.worldAABB.min[i] - a.worldAABB.max[i];
-    }
+    // For AABB:
+    // fixing collision means we end with two faces touching
+    //    we figure out which faces,
+    //    we can know which face was first pushed in based on the vector of collision,
+    //    and the overlap of each face,
 
     // TODO(@darzu): consider mass
     const aMovRatio = 0.5;
 
-    vec3.add(
-      a.motion.location,
-      a.motion.location,
-      vec3.scale(_mov, _aOverlap, aMovRatio)
-    );
-    vec3.sub(
-      b.motion.location,
-      b.motion.location,
-      vec3.scale(_mov, _aOverlap, 1.0 - aMovRatio)
-    );
+    let minAdjOverlap = Infinity;
+    let minAdjOverlapDim = 0;
+
+    for (let i of [0, 1, 2]) {
+      let aLastMov = a.motion.location[i] - a.lastMotion.location[i];
+      let bLastMov = b.motion.location[i] - b.lastMotion.location[i];
+
+      _collisionVec[i] = bLastMov - aLastMov;
+
+      // if (_collisionVec[i] === 0) {
+      //   _collisionOverlap[i] = 0; // x isn't responsible for this collision
+      //   continue;
+      // }
+
+      _collisionOverlap[i] =
+        _collisionVec[i] > 0
+          ? b.worldAABB.max[i] - a.worldAABB.min[i]
+          : b.worldAABB.min[i] - a.worldAABB.max[i];
+
+      _collisionAdjOverlap[i] = Math.abs(
+        _collisionOverlap[i] / _collisionVec[i]
+      );
+
+      if (_collisionAdjOverlap[i] < minAdjOverlap) {
+        minAdjOverlap = _collisionAdjOverlap[i];
+        minAdjOverlapDim = i;
+      }
+    }
+
+    a.motion.location[minAdjOverlapDim] +=
+      _collisionOverlap[minAdjOverlapDim] * aMovRatio * 1.01;
+    b.motion.location[minAdjOverlapDim] -=
+      _collisionOverlap[minAdjOverlapDim] * (1.0 - aMovRatio) * 1.01;
   }
 
   for (let o of objs) {
