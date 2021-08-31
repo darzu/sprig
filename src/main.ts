@@ -147,6 +147,7 @@ interface Mesh {
     pos: vec3[];
     tri: vec3[];
     colors: vec3[];  // colors per triangle in r,g,b float [0-1] format
+    // format flags:
     usesProvoking?: boolean,
     verticesUnshared?: boolean,
 }
