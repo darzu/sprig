@@ -164,6 +164,7 @@ function unshareVertices(input: Mesh): Mesh {
 // to track offsets into those buffers so we can make modifications and form draw calls.
 interface MeshHandle {
     // handles into the buffers
+    pool: MeshPool,
     vertNumOffset: number,
     indicesNumOffset: number,
     modelUniByteOffset: number,
@@ -247,26 +248,26 @@ const sceneUniBufferSizeExact =
     + bytesPerVec3 * 1 // light pos
 const sceneUniBufferSizeAligned = align(sceneUniBufferSizeExact, 256); // uniform objects must be 256 byte aligned
 
-// defines the limits of our vertex, index, and uniform buffers
-const maxMeshes = 100;
-const maxTris = maxMeshes * 100;
-const maxVerts = maxTris * 3;
+interface MeshPoolOpts {
+    maxMeshes: number,
+    maxTris: number,
+    maxVerts: number,
+}
+interface MeshPool {
+    // options
+    opts: MeshPoolOpts,
+    // buffers
+    verticesBuffer: GPUBuffer,
+    indicesBuffer: GPUBuffer,
+    _meshUniBuffer: GPUBuffer,
+    // data
+    allMeshHandles: MeshHandle[],
+    // handles
+    device: GPUDevice,
+}
 
-// create a directional light and compute it's projection (for shadows) and direction
-const worldOrigin = vec3.fromValues(0, 0, 0);
-const lightPosition = vec3.fromValues(50, 50, 0);
-const upVector = vec3.fromValues(0, 1, 0);
-const lightViewMatrix = mat4.lookAt(mat4.create(), lightPosition, worldOrigin, upVector);
-const lightProjectionMatrix = mat4.ortho(mat4.create(), -80, 80, -80, 80, -200, 300);
-const lightViewProjMatrix = mat4.multiply(mat4.create(), lightProjectionMatrix, lightViewMatrix);
-const lightDir = vec3.subtract(vec3.create(), worldOrigin, lightPosition);
-vec3.normalize(lightDir, lightDir);
-
-type RenderFrameFn = (timeMS: number) => void;
-function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): RenderFrameFn {
-    // configure our canvas backed swapchain
-    const context = canvasRef.getContext('gpupresent')!;
-    context.configure({ device, format: swapChainFormat });
+function createMeshPool(device: GPUDevice, opts: MeshPoolOpts, meshes: Mesh[]): MeshPool {
+    const { maxMeshes, maxTris, maxVerts } = opts;
 
     // log our estimated space usage stats
     console.log(`Mesh space usage for up to ${maxMeshes} meshes, ${maxTris} tris, ${maxVerts} verts:`);
@@ -294,89 +295,128 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
+    const allMeshHandles: MeshHandle[] = [];
+
+    // to modify buffers, we need to map them into JS space; we'll need to unmap later
+    let verticesMap = new Float32Array(verticesBuffer.getMappedRange())
+    let indicesMap = new Uint16Array(indicesBuffer.getMappedRange());
+
+    // add our meshes to the vertex and index buffers
+    let numVerts = 0;
+    let numTris = 0;
+    function addMesh(m: Mesh): MeshHandle {
+        m = unshareVertices(m); // work-around; see TODO inside function
+        if (verticesMap === null)
+            throw "Use preRender() and postRender() functions"
+        if (numVerts + m.pos.length > maxVerts)
+            throw "Too many vertices!"
+        if (numTris + m.tri.length > maxTris)
+            throw "Too many triangles!"
+
+        const vertNumOffset = numVerts;
+        const indicesNumOffset = numTris * 3;
+
+        m.tri.forEach((triInd, i) => {
+            const vOff = (numVerts) * vertElStride
+            const iOff = (numTris) * indicesPerTriangle
+            if (indicesMap) {
+                indicesMap[iOff + 0] = triInd[0]
+                indicesMap[iOff + 1] = triInd[1]
+                indicesMap[iOff + 2] = triInd[2]
+            }
+            const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
+            bufferWriteVertex(verticesMap, vOff + 0 * vertElStride, m.pos[triInd[0]], m.colors[i], normal)
+            bufferWriteVertex(verticesMap, vOff + 1 * vertElStride, m.pos[triInd[1]], m.colors[i], normal)
+            bufferWriteVertex(verticesMap, vOff + 2 * vertElStride, m.pos[triInd[2]], m.colors[i], normal)
+            numVerts += 3;
+            numTris += 1;
+        })
+
+        const transform = mat4.create() as Float32Array;
+
+        const uniOffset = allMeshHandles.length * meshUniByteSizeAligned;
+        device.queue.writeBuffer(_meshUniBuffer, uniOffset, transform.buffer);
+
+        const res: MeshHandle = {
+            vertNumOffset,
+            indicesNumOffset,
+            modelUniByteOffset: uniOffset,
+            transform,
+            triCount: m.tri.length,
+            model: m,
+            pool,
+        }
+
+        allMeshHandles.push(res)
+        return res;
+    }
+
+    const pool: MeshPool = {
+        opts,
+        device,
+        verticesBuffer,
+        indicesBuffer,
+        _meshUniBuffer,
+        allMeshHandles,
+    }
+
+    // TODO(@darzu): support adding meshes after pool creation
+    meshes.forEach(m => addMesh(m))
+
+    // unmap the buffers so the GPU can use them
+    verticesBuffer.unmap()
+    indicesBuffer.unmap()
+
+    return pool;
+}
+
+// utilities for mesh pools
+function gpuBufferWriteMeshTransform(m: MeshHandle) {
+    m.pool.device.queue.writeBuffer(m.pool._meshUniBuffer, m.modelUniByteOffset, (m.transform as Float32Array).buffer);
+}
+
+// create a directional light and compute it's projection (for shadows) and direction
+const worldOrigin = vec3.fromValues(0, 0, 0);
+const lightPosition = vec3.fromValues(50, 50, 0);
+const upVector = vec3.fromValues(0, 1, 0);
+const lightViewMatrix = mat4.lookAt(mat4.create(), lightPosition, worldOrigin, upVector);
+const lightProjectionMatrix = mat4.ortho(mat4.create(), -80, 80, -80, 80, -200, 300);
+const lightViewProjMatrix = mat4.multiply(mat4.create(), lightProjectionMatrix, lightViewMatrix);
+const lightDir = vec3.subtract(vec3.create(), worldOrigin, lightPosition);
+vec3.normalize(lightDir, lightDir);
+
+type RenderFrameFn = (timeMS: number) => void;
+function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): RenderFrameFn {
+    // configure our canvas backed swapchain
+    const context = canvasRef.getContext('gpupresent')!;
+    context.configure({ device, format: swapChainFormat });
+
     // create our scene's uniform buffer
     const sceneUniBuffer = device.createBuffer({
         size: sceneUniBufferSizeAligned,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
-    // utilities for the device queue
-    function gpuBufferWriteMeshTransform(m: MeshHandle) {
-        device.queue.writeBuffer(_meshUniBuffer, m.modelUniByteOffset, (m.transform as Float32Array).buffer);
+    const meshes = [
+        PLANE,
+        CUBE, // player
+    ];
+    for (let i = 0; i < 10; i++) {
+        // create cubes with random colors
+        const color: vec3 = [Math.random(), Math.random(), Math.random()];
+        const coloredCube: Mesh = { ...CUBE, colors: CUBE.colors.map(_ => color) }
+        meshes.push(coloredCube)
     }
 
-    // let's create meshes for our scene and store their data in the vertex, index, and uniform buffers
-    let ground: MeshHandle;
-    let player: MeshHandle;
-    let randomCubes: MeshHandle[] = [];
-    const allMeshHandles: MeshHandle[] = [];
-    {
-        // to modify buffers, we need to map them into JS space; we'll need to unmap later
-        let verticesMap = new Float32Array(verticesBuffer.getMappedRange())
-        let indicesMap = new Uint16Array(indicesBuffer.getMappedRange());
+    const pool = createMeshPool(device, {
+        maxMeshes: 100,
+        maxTris: 300,
+        maxVerts: 900
+    }, meshes);
 
-        // add our meshes to the vertex and index buffers
-        let numVerts = 0;
-        let numTris = 0;
-        function addMesh(m: Mesh): MeshHandle {
-            m = unshareVertices(m); // work-around; see TODO inside function
-            if (verticesMap === null)
-                throw "Use preRender() and postRender() functions"
-            if (numVerts + m.pos.length > maxVerts)
-                throw "Too many vertices!"
-            if (numTris + m.tri.length > maxTris)
-                throw "Too many triangles!"
-
-            const vertNumOffset = numVerts;
-            const indicesNumOffset = numTris * 3;
-
-            m.tri.forEach((triInd, i) => {
-                const vOff = (numVerts) * vertElStride
-                const iOff = (numTris) * indicesPerTriangle
-                if (indicesMap) {
-                    indicesMap[iOff + 0] = triInd[0]
-                    indicesMap[iOff + 1] = triInd[1]
-                    indicesMap[iOff + 2] = triInd[2]
-                }
-                const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
-                bufferWriteVertex(verticesMap, vOff + 0 * vertElStride, m.pos[triInd[0]], m.colors[i], normal)
-                bufferWriteVertex(verticesMap, vOff + 1 * vertElStride, m.pos[triInd[1]], m.colors[i], normal)
-                bufferWriteVertex(verticesMap, vOff + 2 * vertElStride, m.pos[triInd[2]], m.colors[i], normal)
-                numVerts += 3;
-                numTris += 1;
-            })
-
-            const transform = mat4.create() as Float32Array;
-
-            const uniOffset = allMeshHandles.length * meshUniByteSizeAligned;
-            device.queue.writeBuffer(_meshUniBuffer, uniOffset, transform.buffer);
-
-            const res: MeshHandle = {
-                vertNumOffset,
-                indicesNumOffset,
-                modelUniByteOffset: uniOffset,
-                transform,
-                triCount: m.tri.length,
-                model: m,
-            }
-
-            allMeshHandles.push(res)
-            return res;
-        }
-
-        ground = addMesh(PLANE); // ground plane
-        player = addMesh(CUBE); // player movable cube
-        for (let i = 0; i < 10; i++) {
-            // create cubes with random colors
-            const color: vec3 = [Math.random(), Math.random(), Math.random()];
-            const coloredCube: Mesh = { ...CUBE, colors: CUBE.colors.map(_ => color) }
-            randomCubes.push(addMesh(coloredCube))
-        }
-
-        // unmap the buffers so the GPU can use them
-        verticesBuffer.unmap()
-        indicesBuffer.unmap()
-    }
+    const ground = pool.allMeshHandles[0]
+    const player = pool.allMeshHandles[1]
+    const randomCubes = pool.allMeshHandles.slice(2)
 
     // place the ground
     mat4.translate(ground.transform, ground.transform, [0, -3, -8])
@@ -441,7 +481,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         layout: modelUniBindGroupLayout,
         entries: [{
             binding: 0,
-            resource: { buffer: _meshUniBuffer, size: meshUniByteSizeAligned, },
+            resource: { buffer: pool._meshUniBuffer, size: meshUniByteSizeAligned, },
         }],
     });
 
@@ -557,9 +597,9 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     });
     shadowBundleEnc.setPipeline(shadowPipeline);
     shadowBundleEnc.setBindGroup(0, shadowSceneUniBindGroup);
-    shadowBundleEnc.setVertexBuffer(0, verticesBuffer);
-    shadowBundleEnc.setIndexBuffer(indicesBuffer, 'uint16');
-    for (let m of allMeshHandles) {
+    shadowBundleEnc.setVertexBuffer(0, pool.verticesBuffer);
+    shadowBundleEnc.setIndexBuffer(pool.indicesBuffer, 'uint16');
+    for (let m of pool.allMeshHandles) {
         shadowBundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
         shadowBundleEnc.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
     }
@@ -572,9 +612,9 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     });
     bundleEnc.setPipeline(renderPipeline);
     bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
-    bundleEnc.setVertexBuffer(0, verticesBuffer);
-    bundleEnc.setIndexBuffer(indicesBuffer, 'uint16');
-    for (let m of allMeshHandles) {
+    bundleEnc.setVertexBuffer(0, pool.verticesBuffer);
+    bundleEnc.setIndexBuffer(pool.indicesBuffer, 'uint16');
+    for (let m of pool.allMeshHandles) {
         bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
         bundleEnc.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
     }
