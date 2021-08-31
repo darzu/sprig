@@ -271,6 +271,7 @@ function createGrassTileset(opts: GrassTileOpts & GrassTilesetOpts, device: GPUD
 }
 
 function initGrassSystem(device: GPUDevice): GrassSystem {
+    const tilesPerSide = 2;
 
     const tilesetPool = createGrassTileset({
         // tile
@@ -282,8 +283,15 @@ function initGrassSystem(device: GPUDevice): GrassSystem {
         spacing: 0.25,
         tileSize: 10,
         // tileset
-        tilesPerSide: 2
+        tilesPerSide,
     }, device);
+
+    // TODO(@darzu): handle grass tile movement
+    function update(center: vec3) {
+        // compute the N closest centers
+        // compare with current positions
+        // move those that don't match
+    }
 
     const res: GrassSystem = {
         getGrassPools: () => [tilesetPool]

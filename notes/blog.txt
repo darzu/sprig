@@ -34,3 +34,13 @@ Micro entry:
         create a readme.md
         tree shake off unused .ts ?
         copy to blog/ folder
+
+
+Tree shaking:
+    to minimize size of examples
+
+    start from the "exportExample" function
+    collect all the references it depends on,
+    recurse over those
+
+    does this need annotations of which code has side-effects?
