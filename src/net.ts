@@ -195,7 +195,7 @@ export class Net<Inputs> {
     let conn = reliable
       ? this.reliableChannels[server]
       : this.unreliableChannels[server];
-    if (conn) {
+    if (conn && conn.readyState === "open") {
       conn.send(message);
     }
   }

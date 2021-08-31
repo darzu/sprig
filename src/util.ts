@@ -10,6 +10,6 @@ export function zip<T, U>(ts: T[], us: U[]): [T, U][] {
   return ts.map((t, i) => <[T, U]>[t, us[i]]);
 }
 
-export function never(x: never): never {
-  throw new Error("Unexpected object: " + x);
+export function never(x: never, msg?: string): never {
+  throw new Error(msg ?? "Unexpected object: " + x);
 }

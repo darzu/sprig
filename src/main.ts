@@ -26,6 +26,8 @@ import {
 import { _motionPairsLen } from "./phys.js";
 import { BoatProps, createBoatProps, stepBoats } from "./boat.js";
 import { jitter } from "./math.js";
+import { createPlayerProps, PlayerProps, stepPlayers } from "./player.js";
+import { never } from "./util.js";
 
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
@@ -235,9 +237,12 @@ class Bullet extends Cube {
 }
 
 class Player extends Cube {
+  player: PlayerProps;
+
   constructor(id: number, creator: number) {
     super(id, creator);
     this.color = vec3.fromValues(0, 0.2, 0);
+    this.player = createPlayerProps();
   }
 
   syncPriority(): number {
@@ -433,8 +438,10 @@ class CubeGameState extends GameState<Inputs> {
         return new Bullet(id, creator);
       case ObjectType.Player:
         return new Player(id, creator);
+      case ObjectType.Boat:
+        return new Boat(id, creator);
     }
-    throw `No such object type ${typeId}`;
+    never(typeId, `No such object type ${typeId}`);
   }
 
   addObject(obj: GameObject) {
@@ -598,6 +605,13 @@ class CubeGameState extends GameState<Inputs> {
       (o) => o instanceof Boat
     ) as Boat[];
     stepBoats(boats, dt);
+
+    // TODO(@darzu): IMPLEMENT
+    // move players
+    const players = Object.values(this.objects).filter(
+      (o) => o instanceof Player
+    ) as Player[];
+    stepPlayers(players, dt);
 
     // check collisions
     for (let o of Object.values(this.objects)) {
