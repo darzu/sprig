@@ -1,5 +1,4 @@
 import { mat4, vec3 } from '../ext/gl-matrix.js';
-import { clamp, jitter } from '../math.js';
 import { initGrassSystem } from './grass.js';
 
 // Defines shaders in WGSL for the shadow and regular rendering pipelines. Likely you'll want
@@ -57,12 +56,38 @@ const vertexShader = `
         ${vertexShaderOutput}
     };
 
+    fn waterDisplace(pos: vec3<f32>) -> vec3<f32> {
+        return vec3<f32>(0.0, sin(pos.x * 0.5) + cos(pos.z), 0.0);
+    }
+
     [[stage(vertex)]]
     fn main(
         ${vertexInputStruct}
         ) -> VertexOutput {
         var output : VertexOutput;
-        let worldPos: vec4<f32> = model.modelMatrix * vec4<f32>(position, 1.0);
+        let positionL: vec3<f32> = vec3<f32>(position.x - 1.0, position.y, position.z);
+        let positionB: vec3<f32> = vec3<f32>(position.x, position.y, position.z - 1.0);
+        var displacement: vec3<f32> = vec3<f32>(0.0);
+        var displacementL: vec3<f32> = vec3<f32>(0.0);
+        var displacementB: vec3<f32> = vec3<f32>(0.0);
+        if (kind == 1u) {
+            displacement = waterDisplace(position);
+            displacementL = waterDisplace(positionL);
+            displacementB = waterDisplace(positionB);
+        }
+        let dPos: vec3<f32> = position + displacement;
+        let dPosL: vec3<f32> = positionL + displacementL;
+        let dPosB: vec3<f32> = positionB + displacementB;
+
+        var dNorm: vec3<f32> = normal;
+        if (kind == 1u) {
+            // const n = vec3.cross(vec3.create(), vec3.sub(vec3.create(), p2, p1), vec3.sub(vec3.create(), p3, p1))
+            dNorm = normalize(cross(dPosB - dPos, dPosL - dPos));
+            // dNorm = normalize(cross(dPos - dPosB, dPos - dPosL));
+        }
+
+        let worldPos: vec4<f32> = model.modelMatrix * vec4<f32>(dPos, 1.0);
+
         // XY is in (-1, 1) space, Z is in (0, 1) space
         let posFromLight : vec4<f32> = scene.lightViewProjMatrix * worldPos;
         // Convert XY to (0, 1), Y is flipped because texture coords are Y-down.
@@ -70,9 +95,13 @@ const vertexShader = `
             posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5),
             posFromLight.z
         );
+
+        let worldNorm: vec4<f32> = normalize(model.modelMatrix * vec4<f32>(dNorm, 0.0));
+
         output.position = scene.cameraViewProjMatrix * worldPos;
-        output.normal = normalize(model.modelMatrix * vec4<f32>(normal, 0.0)).xyz;
+        output.normal = worldNorm.xyz;
         output.color = color;
+        // output.color = worldNorm.xyz;
         return output;
     }
 `;
@@ -935,7 +964,7 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
     for (let x = 0; x < mapXSize; x++) {
         for (let z = 0; z < mapZSize; z++) {
             const i = idx(x, z)
-            map[i] = Math.sin(x * 0.5) + Math.cos(z) // TODO(@darzu): 
+            map[i] = 0; // Math.sin(x * 0.5) + Math.cos(z) // TODO(@darzu): 
             // map[i] = Math.random() * 2 + x * 0.02 + z * 0.04 - 10 // TODO(@darzu):
         }
     }
@@ -948,10 +977,12 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
 
     // const idx = (xi: number, zi: number) => clamp(zi, 0, mapZSize - 1) * mapXSize + clamp(xi, 0, mapXSize - 1)
 
-    const color: vec3 = [0.1, 0.3, 0.5]
+    const color1: vec3 = [0.1, 0.3, 0.5]
+    const color2: vec3 = color1
+    // const color2: vec3 = [0.1, 0.5, 0.3]
     // const color: vec3 = [Math.random(), Math.random(), Math.random()]
 
-    const spacing = 2.0;
+    const spacing = 1.0;
 
     for (let xi = 0; xi < mapXSize; xi++) {
         for (let zi = 0; zi < mapZSize; zi++) {
@@ -979,8 +1010,8 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
             // TODO(@darzu): compute normal
             const kind = VertexKind.water;
 
-            const vertexData1: VertexData = [[x, y, z], color, norm1, kind]
-            const vertexData2: VertexData = [[x, y, z], color, norm2, kind]
+            const vertexData1: VertexData = [[x, y, z], color1, norm1, kind]
+            const vertexData2: VertexData = [[x, y, z], color2, norm2, kind]
 
             const vOff = builder.numVerts * vertByteSize;
             // builder.verticesMap.set(vertexData, vOff)
@@ -988,6 +1019,7 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
             setVertexData(builder.verticesMap, vertexData2, vOff + vertByteSize)
 
             builder.numVerts += 2;
+            // builder.numVerts += 1;
 
             // const vertexData = [
             //     ...[xi, y, zi], ...color, ...[0, 1, 0],
