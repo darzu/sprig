@@ -1,3 +1,0 @@
-- Bar at the bottom like MacOS or Cities Skylines
-- "Edit" or "Play" button w/ small preview in top left ?
-- "Download Backup" with info icon to learn about storage

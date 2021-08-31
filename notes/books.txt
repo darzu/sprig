@@ -1,4 +1,0 @@
-GPU Gems 3
-
-Computer Graphics from Scratch
-    https://twitter.com/gabrielgambetta
