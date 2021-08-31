@@ -386,6 +386,7 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
             const vOff = (numVerts + triInd[0]) * vertElStride
             const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
             bufferWriteVertex(verticesMap, vOff, m.pos[triInd[0]], m.colors[i], normal)
+            // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
         })
 
         numVerts += m.pos.length;
@@ -423,6 +424,8 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
         // unmap the buffers so the GPU can use them
         verticesBuffer.unmap()
         indicesBuffer.unmap()
+
+        console.log(`Finishing pool with: ${numTris} triangles, ${numVerts} vertices`);
 
         return pool;
     }
