@@ -228,5 +228,6 @@ function doesOverlap(a: AABB, b: AABB) {
 }
 
 
-import dimforgeRapier3d from 'https://cdn.skypack.dev/@dimforge/rapier3d-compat';
-console.dir(dimforgeRapier3d)
+// import dimforgeRapier3d from 'https://cdn.skypack.dev/@dimforge/rapier3d-compat';
+import * as rapier3d from './rapier3d-dz.js';
+console.dir(rapier3d)
