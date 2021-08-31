@@ -1,6 +1,12 @@
 import { pitch } from "./utils-3d.js";
 import { vec3, mat4 } from "./gl-matrix.js";
-import { createMeshPoolBuilder_WebGL, MeshHandle, MeshPoolOpts, MeshUniform, SceneUniform } from "./mesh-pool.js";
+import {
+  createMeshPoolBuilder_WebGL,
+  MeshHandle,
+  MeshPoolOpts,
+  MeshUniform,
+  SceneUniform,
+} from "./mesh-pool.js";
 import { GameObject } from "./state.js";
 // TODO(@darzu): this is a bad dependency:
 import { MeshObj, Renderer, setupScene } from "./render_webgpu.js";
@@ -36,7 +42,7 @@ void main() {
   v_color = a_color + u_tint;
   gl_Position = v_position;
 }
-`
+`;
 
 const fragCode = `
 #extension GL_EXT_shader_texture_lod : enable
@@ -66,20 +72,24 @@ void main() {
   vec3 gammaCorrected = pow(resultColor, vec3(1.0/2.2));
   gl_FragColor = vec4(gammaCorrected, 1.0);
 }
-`
+`;
 
-// TODO(@darzu): 
+// TODO(@darzu):
 // export interface Renderer {
 //   finishInit(): void;
 //   addObject(o: GameObject): MeshObj;
 //   renderFrame(viewMatrix: mat4): void;
 // }
 
-export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxVertices: number): Renderer {
-  let gl = canv.getContext('webgl')!; // TODO: use webgl2
+export function attachToCanvas(
+  canv: HTMLCanvasElement,
+  maxMeshes: number,
+  maxVertices: number
+): Renderer {
+  let gl = canv.getContext("webgl")!; // TODO: use webgl2
 
-  gl.getExtension('OES_standard_derivatives');
-  gl.getExtension('EXT_shader_texture_lod');
+  gl.getExtension("OES_standard_derivatives");
+  gl.getExtension("EXT_shader_texture_lod");
 
   gl.clearColor(0.55, 0.6, 0.8, 1.0);
 
@@ -97,7 +107,7 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxVe
     console.error(gl.getShaderInfoLog(fragShader));
   }
 
-  console.log("made a program!")
+  console.log("made a program!");
   let program = gl.createProgram()!;
   gl.attachShader(program, vertShader);
   gl.attachShader(program, fragShader);
@@ -106,15 +116,21 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxVe
     console.error(gl.getProgramInfoLog(program));
   }
 
-  console.log("linked a program!")
+  console.log("linked a program!");
 
   // scene uniforms locations
-  const u_loc_cameraViewProjMatrix = gl.getUniformLocation(program, "u_cameraViewProjMatrix")
-  const u_loc_lightViewProjMatrix = gl.getUniformLocation(program, "u_lightViewProjMatrix")
-  const u_loc_lightDir = gl.getUniformLocation(program, "u_lightDir")
-  const u_loc_time = gl.getUniformLocation(program, "u_time")
-  const u_loc_playerPos = gl.getUniformLocation(program, "u_playerPos")
-  const u_loc_cameraPos = gl.getUniformLocation(program, "u_cameraPos")
+  const u_loc_cameraViewProjMatrix = gl.getUniformLocation(
+    program,
+    "u_cameraViewProjMatrix"
+  );
+  const u_loc_lightViewProjMatrix = gl.getUniformLocation(
+    program,
+    "u_lightViewProjMatrix"
+  );
+  const u_loc_lightDir = gl.getUniformLocation(program, "u_lightDir");
+  const u_loc_time = gl.getUniformLocation(program, "u_time");
+  const u_loc_playerPos = gl.getUniformLocation(program, "u_playerPos");
+  const u_loc_cameraPos = gl.getUniformLocation(program, "u_cameraPos");
 
   // model uniforms locations
   const u_loc_transform = gl.getUniformLocation(program, "u_transform");
@@ -130,23 +146,22 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxVe
     maxTris: maxVertices,
     maxVerts: maxVertices,
     shiftMeshIndices: true,
-  }
+  };
 
   const builder = createMeshPoolBuilder_WebGL(gl, opts);
   const pool = builder.poolHandle;
 
   let initFinished = false;
 
-  const meshObjs: MeshObj[] = [];
+  const meshObjs: Record<number, MeshObj> = {};
 
   const scene = setupScene();
 
   function finishInit() {
-    console.log("finishInit")
+    console.log("finishInit");
     initFinished = true;
 
     builder.finish();
-
 
     // TODO(@darzu): debugging
     // console.log("will draw:")
@@ -182,27 +197,33 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxVe
     const res = {
       obj: o,
       handle,
-    }
+    };
 
-    meshObjs.push(res);
+    meshObjs[o.id] = res;
 
     return res;
   }
   function addObjectInstance(o: GameObject, oldHandle: MeshHandle): MeshObj {
     console.log(`Adding (instanced) object ${o.id}`);
 
-    const d = MeshUniform.CloneData(oldHandle)
+    const d = MeshUniform.CloneData(oldHandle);
 
-    const newHandle = initFinished ? pool.addMeshInstance(oldHandle, d) : builder.addMeshInstance(oldHandle, d);
+    const newHandle = initFinished
+      ? pool.addMeshInstance(oldHandle, d)
+      : builder.addMeshInstance(oldHandle, d);
 
     const res = {
       obj: o,
       handle: newHandle,
-    }
+    };
 
-    meshObjs.push(res);
+    meshObjs[o.id] = res;
 
     return res;
+  }
+
+  function removeObject(o: GameObject) {
+    delete meshObjs[o.id];
   }
 
   function renderFrame(viewMatrix: mat4) {
@@ -233,8 +254,16 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxVe
     gl.useProgram(program);
 
     // update scene uniform
-    gl.uniformMatrix4fv(u_loc_cameraViewProjMatrix, false, scene.cameraViewProjMatrix);
-    gl.uniformMatrix4fv(u_loc_lightViewProjMatrix, false, scene.lightViewProjMatrix);
+    gl.uniformMatrix4fv(
+      u_loc_cameraViewProjMatrix,
+      false,
+      scene.cameraViewProjMatrix
+    );
+    gl.uniformMatrix4fv(
+      u_loc_lightViewProjMatrix,
+      false,
+      scene.lightViewProjMatrix
+    );
     gl.uniform3fv(u_loc_lightDir, scene.lightDir);
     gl.uniform1f(u_loc_time, scene.time);
     gl.uniform2fv(u_loc_playerPos, scene.playerPos);
@@ -254,11 +283,10 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxVe
     gl.enableVertexAttribArray(a_loc_color);
 
     // update uniforms
-    for (let m of meshObjs) {
-      m.handle.transform = m.obj.transform // TODO(@darzu): this is hacky
+    for (let m of Object.values(meshObjs)) {
+      m.handle.transform = m.obj.transform; // TODO(@darzu): this is hacky
       // TODO(@darzu): this is definitely weird. Need to think about this interaction better.
-      if ((m.obj as any).color)
-        m.handle.tint = (m.obj as any).color
+      if ((m.obj as any).color) m.handle.tint = (m.obj as any).color;
     }
 
     // TODO(@darzu): need to draw update uniform: u_loc_transform
@@ -271,23 +299,28 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxVe
     // gl.uniformMatrix4fv(u_loc_transform, false, mat4.create());
     // gl.drawElements(gl.TRIANGLES, 6 * 6, gl.UNSIGNED_SHORT, 0);
 
-    for (let m of meshObjs) {
+    for (let m of Object.values(meshObjs)) {
       // gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset * 2);
       gl.uniformMatrix4fv(u_loc_transform, false, m.handle.transform);
       gl.uniform3fv(u_loc_tint, m.handle.tint);
       const indicesBytesOffset = m.handle.indicesNumOffset * 2;
-      gl.drawElements(gl.TRIANGLES, m.handle.numTris * 3, gl.UNSIGNED_SHORT, indicesBytesOffset);
+      gl.drawElements(
+        gl.TRIANGLES,
+        m.handle.numTris * 3,
+        gl.UNSIGNED_SHORT,
+        indicesBytesOffset
+      );
       // gl.drawElements(gl.TRIANGLES, m.handle.numTris * 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset);
-      // break; // TODO(@darzu): 
+      // break; // TODO(@darzu):
       // console.log(`t: ${m.handle.transform.join(',')}`)
       // console.log(`count: ${m.handle.numTris * 3} at ${m.handle.indicesNumOffset}`)
     }
-
   }
 
   const renderer: Renderer = {
     addObject,
     addObjectInstance,
+    removeObject,
     renderFrame,
     finishInit,
   };

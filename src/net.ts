@@ -54,11 +54,9 @@ class StateSynchronizer<Inputs> {
 
   private events(): GameEvent[] {
     let events = Object.values(this.net.state.events);
+    console.log(this.objectsKnown);
     return events.filter(
-      (ev) =>
-        ev.authority == this.net.state.me &&
-        !this.objectsKnown.has(ev.id) &&
-        ev.objects.every((id) => this.objectsKnown.has(id))
+      (ev) => ev.authority == this.net.state.me && !this.objectsKnown.has(ev.id)
     );
   }
 
@@ -72,7 +70,7 @@ class StateSynchronizer<Inputs> {
     let objects = Object.values(this.net.state.objects);
     objects = objects.filter(
       (obj) =>
-        obj.authority == this.net.state.me ||
+        (!obj.deleted && obj.authority == this.net.state.me) ||
         (obj.creator == this.net.state.me && !this.objectsKnown.has(obj.id))
     );
     for (let obj of objects) {
@@ -288,9 +286,10 @@ export class Net<Inputs> {
     }
   }
 
-  applyStateUpdate(data: ArrayBuffer) {
+  applyStateUpdate(data: ArrayBuffer): boolean {
     //console.log("In applyStateUpdate");
     //console.log("Applying state update");
+    let applied = true;
     let message = new Deserializer(data);
     let type = message.readUint8();
     if (type !== MessageType.StateUpdate)
@@ -311,7 +310,11 @@ export class Net<Inputs> {
           objects.push(message.readUint32());
         }
         let event: GameEvent = { id, type, objects, authority };
-        if (!this.state.events[id]) {
+        // do we know about all of these object ids?
+        let haveObjects = event.objects.every((id) => !!this.state.objects[id]);
+        if (!haveObjects) {
+          applied = false;
+        } else if (!this.state.events[id]) {
           this.state.events[id] = event;
           this.state.runEvent(event);
         }
@@ -355,6 +358,7 @@ export class Net<Inputs> {
         throw `Unsupported update type ${updateType} in applyStateUpdate`;
       }
     }
+    return applied;
   }
 
   updateState() {
@@ -415,11 +419,13 @@ export class Net<Inputs> {
           this.waiting[server] = false;
         }
         if (this.nextUpdate[server] === seq) {
-          this.applyStateUpdate(data);
-          let ack = new Serializer(8);
-          ack.writeUint8(MessageType.StateUpdateResponse);
-          ack.writeUint32(seq);
-          this.send(server, ack.buffer, false);
+          let applied = this.applyStateUpdate(data);
+          if (applied) {
+            let ack = new Serializer(8);
+            ack.writeUint8(MessageType.StateUpdateResponse);
+            ack.writeUint32(seq);
+            this.send(server, ack.buffer, false);
+          }
         } else {
           // put it back in the buffer, we're not ready yet
           this.stateUpdates[server].unshift({ seq, data });

@@ -1,6 +1,15 @@
 import { GameObject } from "./state.js";
 import { mat4, vec3, quat } from "./gl-matrix.js";
-import { createMeshPoolBuilder_WebGPU, MeshHandle, MeshPoolBuilder_WebGPU, MeshPoolOpts, MeshPool_WebGPU, MeshUniform, SceneUniform, Vertex } from "./mesh-pool.js";
+import {
+  createMeshPoolBuilder_WebGPU,
+  MeshHandle,
+  MeshPoolBuilder_WebGPU,
+  MeshPoolOpts,
+  MeshPool_WebGPU,
+  MeshUniform,
+  SceneUniform,
+  Vertex,
+} from "./mesh-pool.js";
 import { pitch } from "./utils-3d.js";
 
 // TODO: some state lives in global variables when it should live on the Renderer object
@@ -30,7 +39,7 @@ const vertexShader =
 
     [[stage(vertex)]]
     fn main(
-        ${Vertex.GenerateWGSLVertexInputStruct(',')}
+        ${Vertex.GenerateWGSLVertexInputStruct(",")}
         ) -> VertexOutput {
         var output : VertexOutput;
         let worldPos: vec4<f32> = model.transform * vec4<f32>(position, 1.0);
@@ -71,7 +80,7 @@ const depthStencilFormat = "depth24plus-stencil8";
 const backgroundColor = { r: 0.6, g: 0.63, b: 0.6, a: 1.0 };
 
 export interface MeshObj {
-  handle: MeshHandle,
+  handle: MeshHandle;
   obj: GameObject;
 }
 
@@ -80,6 +89,7 @@ export interface Renderer {
   addObject(o: GameObject): MeshObj;
   addObjectInstance(o: GameObject, m: MeshHandle): MeshObj;
   renderFrame(viewMatrix: mat4): void;
+  removeObject(o: GameObject): void;
 }
 
 export class Renderer_WebGPU implements Renderer {
@@ -91,7 +101,7 @@ export class Renderer_WebGPU implements Renderer {
 
   private sceneUniformBuffer: GPUBuffer;
 
-  private meshObjs: MeshObj[];
+  private meshObjs: Record<number, MeshObj> = {};
 
   private initFinished: boolean = false;
   private builder: MeshPoolBuilder_WebGPU;
@@ -109,20 +119,18 @@ export class Renderer_WebGPU implements Renderer {
   private aspectRatio = 1;
 
   public finishInit() {
-    if (this.initFinished)
-      throw 'finishInit called twice'
+    if (this.initFinished) throw "finishInit called twice";
     this.builder.finish();
     this.initFinished = true;
   }
 
   private gpuBufferWriteAllMeshUniforms() {
     // TODO(@darzu): make this update all meshes at once
-    for (let m of this.meshObjs) {
+    for (let m of Object.values(this.meshObjs)) {
       m.handle.transform = m.obj.transform; // TODO(@darzu): this discrepency isn't great...
       // TODO(@darzu): this is definitely weird. Need to think about this interaction better.
-      if ((m.obj as any).color)
-        m.handle.tint = (m.obj as any).color
-      this.pool.updateUniform(m.handle)
+      if ((m.obj as any).color) m.handle.tint = (m.obj as any).color;
+      this.pool.updateUniform(m.handle);
     }
   }
 
@@ -131,11 +139,7 @@ export class Renderer_WebGPU implements Renderer {
     const devicePixelRatio = window.devicePixelRatio || 1;
     const newWidth = this.canvas.clientWidth * devicePixelRatio;
     const newHeight = this.canvas.clientHeight * devicePixelRatio;
-    if (
-      this.lastWidth === newWidth &&
-      this.lastHeight === newHeight
-    )
-      return;
+    if (this.lastWidth === newWidth && this.lastHeight === newHeight) return;
 
     if (this.depthTexture) this.depthTexture.destroy();
     if (this.colorTexture) this.colorTexture.destroy();
@@ -180,14 +184,16 @@ export class Renderer_WebGPU implements Renderer {
     let m = o.mesh();
     // need to introduce a new variable to convince Typescript the mapping is non-null
 
-    const handle = this.initFinished ? this.pool.addMesh(m) : this.builder.addMesh(m);
+    const handle = this.initFinished
+      ? this.pool.addMesh(m)
+      : this.builder.addMesh(m);
 
     const res = {
       obj: o,
       handle,
-    }
+    };
 
-    this.meshObjs.push(res);
+    this.meshObjs[o.id] = res;
 
     this.needsRebundle = true;
     return res;
@@ -195,18 +201,25 @@ export class Renderer_WebGPU implements Renderer {
   public addObjectInstance(o: GameObject, oldHandle: MeshHandle): MeshObj {
     console.log(`Adding (instanced) object ${o.id}`);
 
-    const d = MeshUniform.CloneData(oldHandle)
-    const newHandle = this.initFinished ? this.pool.addMeshInstance(oldHandle, d) : this.builder.addMeshInstance(oldHandle, d);
+    const d = MeshUniform.CloneData(oldHandle);
+    const newHandle = this.initFinished
+      ? this.pool.addMeshInstance(oldHandle, d)
+      : this.builder.addMeshInstance(oldHandle, d);
 
     const res = {
       obj: o,
       handle: newHandle,
-    }
+    };
 
-    this.meshObjs.push(res);
+    this.meshObjs[o.id] = res;
 
     this.needsRebundle = true;
     return res;
+  }
+
+  removeObject(o: GameObject) {
+    delete this.meshObjs[o.id];
+    this.needsRebundle = true;
   }
 
   needsRebundle = false;
@@ -308,8 +321,10 @@ export class Renderer_WebGPU implements Renderer {
     bundleEnc.setVertexBuffer(0, this.pool.verticesBuffer);
     // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
     bundleEnc.setIndexBuffer(this.pool.indicesBuffer, "uint16");
-    for (let m of this.meshObjs) {
-      bundleEnc.setBindGroup(1, modelUniBindGroup, [m.handle.modelUniByteOffset]);
+    for (let m of Object.values(this.meshObjs)) {
+      bundleEnc.setBindGroup(1, modelUniBindGroup, [
+        m.handle.modelUniByteOffset,
+      ]);
       bundleEnc.drawIndexed(
         m.handle.numTris * indicesPerTriangle,
         undefined,
@@ -327,7 +342,7 @@ export class Renderer_WebGPU implements Renderer {
     context: GPUPresentationContext,
     adapter: GPUAdapter,
     maxMeshes: number,
-    maxVertices: number,
+    maxVertices: number
   ) {
     this.canvas = canvas;
     this.device = device;
@@ -340,13 +355,11 @@ export class Renderer_WebGPU implements Renderer {
       maxTris: maxVertices,
       maxVerts: maxVertices,
       shiftMeshIndices: false,
-    }
+    };
 
     this.builder = createMeshPoolBuilder_WebGPU(device, opts);
 
     this.pool = this.builder.poolHandle;
-
-    this.meshObjs = [];
 
     this.sceneUniformBuffer = device.createBuffer({
       size: SceneUniform.ByteSizeAligned,
@@ -379,14 +392,17 @@ export class Renderer_WebGPU implements Renderer {
     this.sceneData.cameraViewProjMatrix = viewProj;
 
     SceneUniform.Serialize(this.scratchSceneUni, 0, this.sceneData);
-    this.device.queue.writeBuffer(this.sceneUniformBuffer, 0, this.scratchSceneUni.buffer);
+    this.device.queue.writeBuffer(
+      this.sceneUniformBuffer,
+      0,
+      this.scratchSceneUni.buffer
+    );
 
     // update all mesh transforms
     this.gpuBufferWriteAllMeshUniforms();
 
     // TODO(@darzu): more fine grain
-    if (this.needsRebundle)
-      this.createRenderBundle();
+    if (this.needsRebundle) this.createRenderBundle();
 
     // start collecting our render commands for this frame
     const commandEncoder = this.device.createCommandEncoder();
@@ -453,5 +469,5 @@ export function setupScene(): SceneUniform.Data {
     time: 0, // updated later
     playerPos: [0, 0], // updated later
     cameraPos: vec3.create(), // updated later
-  }
+  };
 }

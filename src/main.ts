@@ -460,7 +460,8 @@ class CubeGameState extends GameState<Inputs> {
     }
     // check collisions
     for (let o of Object.values(this.objects)) {
-      if (o instanceof Bullet) {
+      // TODO: consider a helper method to get only live objects
+      if (o instanceof Bullet && !o.deleted) {
         // find other bullets this bullet is colliding with. only want to find each collision once
         if (this.collidesWith[o.id]) {
           let collidingBullets = this.collidesWith[o.id]
@@ -485,7 +486,11 @@ class CubeGameState extends GameState<Inputs> {
         for (let id of event.objects) {
           let obj = this.objects[id];
           if (obj && obj instanceof Bullet) {
-            vec3.add(obj.color, obj.color, vec3.fromValues(0.1, 0.0, 0.0));
+            // delete all bullet objects in collision
+            // TODO: figure out how object deletion should really work
+            this.removeObject(obj);
+          } else {
+            throw `Bad id ${id} in event ${event.id}`;
           }
         }
         break;

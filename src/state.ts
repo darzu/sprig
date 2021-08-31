@@ -46,6 +46,7 @@ export abstract class GameObject {
   location_error: vec3;
   rotation_error: quat;
   localAABB: AABB;
+  deleted: boolean = false;
 
   // derivative state:
   // NOTE: it kinda sucks to have duplicate sources of truth on loc & rot,
@@ -189,6 +190,13 @@ export abstract class GameState<Inputs> {
     this.objects[obj.id] = obj;
     this.renderer.addObject(obj);
   }
+
+  removeObject(obj: GameObject) {
+    this.numObjects--;
+    obj.deleted = true;
+    this.renderer.removeObject(obj);
+  }
+
   addObjectInstance(obj: GameObject, otherMesh: MeshHandle) {
     this.numObjects++;
     this.objects[obj.id] = obj;
@@ -229,7 +237,7 @@ export abstract class GameState<Inputs> {
   step(dt: number, inputs: Inputs) {
     this.stepGame(dt, inputs);
 
-    const objs = Object.values(this.objects);
+    const objs = Object.values(this.objects).filter((obj) => !obj.deleted);
 
     // update location and rotation
     let identity_quat = quat.create();
