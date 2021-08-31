@@ -31,23 +31,23 @@ export const vertexDataFormat: GPUVertexAttribute[] = [
 export const vertByteSize = bytesPerVec3/*pos*/ + bytesPerVec3/*color*/ + bytesPerVec3/*normal*/ + bytesPerUint32/*kind*/;
 
 // for performance reasons, we keep scratch buffers around
-const _scratch_setVertexData_f32 = new Float32Array(3 + 3 + 3);
-const _scratch_setVertexData_f32_as_u8 = new Uint8Array(_scratch_setVertexData_f32.buffer);
-const _scratch_setVertexData_u32 = new Uint32Array(1);
-const _scratch_setVertexData_u32_as_u8 = new Uint8Array(_scratch_setVertexData_u32.buffer);
-export function setVertexData(buffer: Uint8Array, byteOffset: number, pos: vec3, color: vec3, normal: vec3, kind: number) {
-    _scratch_setVertexData_f32[0] = pos[0]
-    _scratch_setVertexData_f32[1] = pos[1]
-    _scratch_setVertexData_f32[2] = pos[2]
-    _scratch_setVertexData_f32[3] = color[0]
-    _scratch_setVertexData_f32[4] = color[1]
-    _scratch_setVertexData_f32[5] = color[2]
-    _scratch_setVertexData_f32[6] = normal[0]
-    _scratch_setVertexData_f32[7] = normal[1]
-    _scratch_setVertexData_f32[8] = normal[2]
-    buffer.set(_scratch_setVertexData_f32_as_u8, byteOffset)
-    _scratch_setVertexData_u32[0] = kind
-    buffer.set(_scratch_setVertexData_u32_as_u8, byteOffset + bytesPerVec3 * 3);
+const _scratch_serializeVertex_f32 = new Float32Array(3 + 3 + 3);
+const _scratch_serializeVertex_f32_as_u8 = new Uint8Array(_scratch_serializeVertex_f32.buffer);
+const _scratch_serializeVertex_u32 = new Uint32Array(1);
+const _scratch_serializeVertex_u32_as_u8 = new Uint8Array(_scratch_serializeVertex_u32.buffer);
+export function serializeVertex(buffer: Uint8Array, byteOffset: number, pos: vec3, color: vec3, normal: vec3, kind: number) {
+    _scratch_serializeVertex_f32[0] = pos[0]
+    _scratch_serializeVertex_f32[1] = pos[1]
+    _scratch_serializeVertex_f32[2] = pos[2]
+    _scratch_serializeVertex_f32[3] = color[0]
+    _scratch_serializeVertex_f32[4] = color[1]
+    _scratch_serializeVertex_f32[5] = color[2]
+    _scratch_serializeVertex_f32[6] = normal[0]
+    _scratch_serializeVertex_f32[7] = normal[1]
+    _scratch_serializeVertex_f32[8] = normal[2]
+    buffer.set(_scratch_serializeVertex_f32_as_u8, byteOffset)
+    _scratch_serializeVertex_u32[0] = kind
+    buffer.set(_scratch_serializeVertex_u32_as_u8, byteOffset + bytesPerVec3 * 3);
 }
 
 // TODO(@darzu): MODEL FORMAT
@@ -222,7 +222,7 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
             // set provoking vertex data
             const vOff = (vertNumOffset + triInd[0]) * vertByteSize
             const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
-            setVertexData(verticesMap, vOff, m.pos[triInd[0]], m.colors[i], normal, VertexKind.normal)
+            serializeVertex(verticesMap, vOff, m.pos[triInd[0]], m.colors[i], normal, VertexKind.normal)
             // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
         })
 
@@ -302,7 +302,7 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
             if (finished || meshFinished)
                 throw 'trying to use finished MeshBuilder'
             const vOff = builder.numVerts * vertByteSize
-            setVertexData(builder.verticesMap, vOff, pos, color, normal, kind)
+            serializeVertex(builder.verticesMap, vOff, pos, color, normal, kind)
             builder.numVerts += 1;
 
             // update our aabb min/max

@@ -1,7 +1,7 @@
 import { mat4, vec3 } from '../ext/gl-matrix.js';
 import { align } from '../math.js';
 import { initGrassSystem } from './grass.js';
-import { createMeshPoolBuilder, MeshHandle, MeshPool, meshUniByteSizeAligned, setVertexData, vertByteSize, vertexDataFormat, VertexKind } from './mesh-pool.js';
+import { createMeshPoolBuilder, MeshHandle, MeshPool, meshUniByteSizeAligned, serializeVertex, vertByteSize, vertexDataFormat, VertexKind } from './mesh-pool.js';
 
 const ENABLE_WATER = false;
 
@@ -1167,8 +1167,8 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
 
             const vOff = builder.numVerts * vertByteSize;
             // builder.verticesMap.set(vertexData, vOff)
-            setVertexData(builder.verticesMap, vOff, [x, y, z], color1, norm1, kind)
-            setVertexData(builder.verticesMap, vOff + vertByteSize, [x, y, z], color2, norm2, kind)
+            serializeVertex(builder.verticesMap, vOff, [x, y, z], color1, norm1, kind)
+            serializeVertex(builder.verticesMap, vOff + vertByteSize, [x, y, z], color2, norm2, kind)
 
             builder.numVerts += 2;
             // builder.numVerts += 1;
