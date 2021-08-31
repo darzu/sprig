@@ -431,13 +431,6 @@ interface Mesh {
     // data
     transform: mat4,
     model: MeshModel,
-
-    // properties
-    shadowCaster: boolean,
-
-    // TODO(@darzu): MESH FORMAT
-    // TODO(@darzu): this isn't relevant to all meshes....
-    maxDraw: number,
 }
 
 // TODO(@darzu): we want a nicer interface, but for now since it's 1-1 with the memory pool, just put it in that
@@ -571,21 +564,11 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     function _unmap() {
         // console.log("unmapping") // TODO(@darzu): 
-        if (_vertsMap)
-            _vertBuffer.unmap()
-        if (_indMap && _indexBuffer)
-            _indexBuffer.unmap()
-        _vertsMap = null;
-        _indMap = null;
     }
 
     // TODO(@darzu): misnomer. This doesn't do the mapping
     function _map() {
         // console.log("mapping") // TODO(@darzu): 
-        if (!_vertsMap)
-            _vertsMap = new Float32Array(_vertBuffer.getMappedRange())
-        if (!_indMap && _indexBuffer)
-            _indMap = new Uint16Array(_indexBuffer.getMappedRange());
     }
 
     function addMeshes(meshesToAdd: MeshModel[], shadowCasters: boolean): Mesh[] {
@@ -631,12 +614,7 @@ async function init(canvasRef: HTMLCanvasElement) {
                 modelUniByteOffset: uniOffset,
                 transform: trans,
                 triCount: m.tri.length,
-
-                // TODO(@darzu): hrm
-                shadowCaster: shadowCasters,
-
                 model: m,
-                maxDraw: 0,
             }
             _numVerts += m.pos.length;
             _numTris += m.tri.length;
@@ -648,12 +626,9 @@ async function init(canvasRef: HTMLCanvasElement) {
         _meshes.push(...newMeshes)
 
         return newMeshes
-        // _indexBuffer.unmap();
-        // _vertBuffer.unmap();
     }
 
     function applyMeshTransform(m: Mesh) {
-        // save the transform matrix to the buffer
         // TODO(@darzu): MESH FORMAT
         device.queue.writeBuffer(
             _meshUniBuffer,
@@ -663,37 +638,6 @@ async function init(canvasRef: HTMLCanvasElement) {
             (m.transform as Float32Array).byteLength
         );
     }
-
-    function applyMeshMaxDraw(m: Mesh) {
-        // save the min draw distance to uniform buffer
-        _scratchSingletonFloatBuffer[0] = m.maxDraw;
-        device.queue.writeBuffer(
-            _meshUniBuffer,
-            // TODO(@darzu): MESH FORMAT
-            m.modelUniByteOffset + bytesPerMat4,
-            _scratchSingletonFloatBuffer.buffer,
-            _scratchSingletonFloatBuffer.byteOffset,
-            _scratchSingletonFloatBuffer.byteLength
-        );
-    }
-
-        // const res: MeshMemoryPool = {
-        //     _opts: memoryPoolOpts,
-        //     _vertBuffer,
-        //     _indexBuffer,
-        //     _meshUniBuffer,
-        //     _numVerts,
-        //     _numTris,
-        //     _meshes,
-        //     _vertsMap: () => _vertsMap!,
-        //     _indMap: () => _indMap!,
-        //     _unmap: _unmap,
-        //     _map: _map,
-        //     addMeshes,
-        //     applyMeshTransform,
-        //     applyMeshMaxDraw,
-        // }
-        // return res;
 
     const swapChain = context.configureSwapChain({
         device,
@@ -963,14 +907,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         },
     };
 
-    let shadowRenderBundle: GPURenderBundle;
     let renderBundle: GPURenderBundle;
-
-    const backfaceCulling = true;
-
-    function render(commandEncoder: GPUCommandEncoder, canvasWidth: number, canvasHeight: number) {
-
-    }
 
     resize(device, 100, 100);
 
@@ -982,7 +919,8 @@ async function init(canvasRef: HTMLCanvasElement) {
         cursorLocked = true
     }
 
-    _map()
+    _vertsMap = new Float32Array(_vertBuffer.getMappedRange())
+    _indMap = new Uint16Array(_indexBuffer.getMappedRange());
 
     const [planeHandle] = addMeshes([
         PLANE
@@ -992,7 +930,10 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     const [playerM] = addMeshes([CUBE], true)
 
-    _unmap();
+    _vertBuffer.unmap()
+    _indexBuffer.unmap()
+    _vertsMap = null;
+    _indMap = null;
 
     const cameraPos = mkAffineTransformable();
     cameraPos.pitch(-Math.PI / 4)
@@ -1100,52 +1041,43 @@ async function init(canvasRef: HTMLCanvasElement) {
         );
     }
 
-    {
-        // create render bundle
-        const bundleRenderDesc: GPURenderBundleEncoderDescriptor = {
-            colorFormats: [swapChainFormat],
-            depthStencilFormat: depthStencilFormat,
-            sampleCount,
-        }
-
-        const bundleEncoder = device.createRenderBundleEncoder(bundleRenderDesc);
-
-        if (backfaceCulling)
-            bundleEncoder.setPipeline(renderPipeline);
-        else
-            bundleEncoder.setPipeline(renderPipelineTwosided);
-
-        bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
-        const modelUniBindGroup = device.createBindGroup({
-            layout: modelUniBindGroupLayout,
-            entries: [
-                {
-                    binding: 0,
-                    resource: {
-                        buffer: _meshUniBuffer,
-                        offset: 0, // TODO(@darzu): different offsets per model
-                        // TODO(@darzu): needed?
-                        size: meshUniByteSize,
-                    },
+    const modelUniBindGroup = device.createBindGroup({
+        layout: modelUniBindGroupLayout,
+        entries: [
+            {
+                binding: 0,
+                resource: {
+                    buffer: _meshUniBuffer,
+                    offset: 0, // TODO(@darzu): different offsets per model
+                    // TODO(@darzu): needed?
+                    size: meshUniByteSize,
                 },
-            ],
-        });
-        bundleEncoder.setVertexBuffer(0, _vertBuffer);
-        if (_indexBuffer)
-            bundleEncoder.setIndexBuffer(_indexBuffer, 'uint16');
+            },
+        ],
+    });
+
+    // create render bundle
+    const bundleRenderDesc: GPURenderBundleEncoderDescriptor = {
+        colorFormats: [swapChainFormat],
+        depthStencilFormat: depthStencilFormat,
+        sampleCount,
+    }
+
+    const bundleEncoder = device.createRenderBundleEncoder(bundleRenderDesc);
+
+    bundleEncoder.setPipeline(renderPipeline);
+
+    bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
+    bundleEncoder.setVertexBuffer(0, _vertBuffer);
+    bundleEncoder.setIndexBuffer(_indexBuffer, 'uint16');
         const uniOffset = [0];
         for (let m of _meshes) {
             // TODO(@darzu): set bind group
             uniOffset[0] = m.modelUniByteOffset;
             bundleEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
-            if (_indexBuffer)
-                bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-            else {
-                bundleEncoder.draw(m.triCount * 3, undefined, m.vertNumOffset);
-            }
+            bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
         }
-        renderBundle = bundleEncoder.finish()
-    }
+    renderBundle = bundleEncoder.finish()
 
     let debugDiv = document.getElementById('debug-div') as HTMLDivElement;
 
@@ -1201,75 +1133,41 @@ async function init(canvasRef: HTMLCanvasElement) {
             transformationMatrix.byteLength
         );
 
+        const colorAtt: GPURenderPassColorAttachmentNew = {
+            view: colorTextureView,
+            resolveTarget: swapChain.getCurrentTexture().createView(),
+            loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
+            storeOp: 'store',
+        };
+        const renderPassDescriptor = {
+            colorAttachments: [colorAtt],
+            depthStencilAttachment: {
+                view: depthTextureView,
+                depthLoadValue: 1.0,
+                depthStoreOp: 'store',
+                stencilLoadValue: 0,
+                stencilStoreOp: 'store',
+            },
+        } as const;
+
         const commandEncoder = device.createCommandEncoder();
-        {
-            const colorAtt: GPURenderPassColorAttachmentNew = {
-                view: colorTextureView,
-                resolveTarget: swapChain.getCurrentTexture().createView(),
-                loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
-                storeOp: 'store',
-            };
-            const renderPassDescriptor = {
-                colorAttachments: [colorAtt],
-                depthStencilAttachment: {
-                    view: depthTextureView,
-                    depthLoadValue: 1.0,
-                    depthStoreOp: 'store',
-                    stencilLoadValue: 0,
-                    stencilStoreOp: 'store',
-                },
-            } as const;
+        const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
+        shadowPass.setBindGroup(0, shadowSharedUniBindGroup);
+        shadowPass.setPipeline(shadowPipeline);
 
-            const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
-            // shadowPassEncoder.executeBundles([shadowRenderBundle]);
-            // TODO(@darzu): use bundle
-            {
-                shadowPass.setBindGroup(0, shadowSharedUniBindGroup);
-                if (backfaceCulling)
-                    shadowPass.setPipeline(shadowPipeline);
-                else
-                    shadowPass.setPipeline(shadowPipelineTwosided);
-
-                const modelUniBindGroup = device.createBindGroup({
-                    layout: modelUniBindGroupLayout,
-                    entries: [
-                        {
-                            binding: 0,
-                            resource: {
-                                buffer: _meshUniBuffer,
-                                offset: 0, // TODO(@darzu): different offsets per model
-                                // TODO(@darzu): needed?
-                                size: meshUniByteSize,
-                            },
-                        },
-                    ],
-                });
-                shadowPass.setVertexBuffer(0, _vertBuffer);
-                if (_indexBuffer)
-                    shadowPass.setIndexBuffer(_indexBuffer, 'uint16');
-                // TODO(@darzu): one draw call per mesh?
-                const uniOffset = [0];
-                for (let m of _meshes) {
-                    if (!m.shadowCaster)
-                        continue;
-                    // TODO(@darzu): set bind group
-                    uniOffset[0] = m.modelUniByteOffset;
-                    shadowPass.setBindGroup(1, modelUniBindGroup, uniOffset);
-                    if (_indexBuffer)
-                        shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-                    else {
-                        // console.log(`m.vertNumOffset: ${m.vertNumOffset}`)
-                        shadowPass.draw(m.triCount * 3, undefined, m.vertNumOffset);
-                    }
-                }
-                // shadowRenderBundle = shadowPass.finish()
-            }
-            shadowPass.endPass();
-
-            const renderPassEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
-            renderPassEncoder.executeBundles([renderBundle]);
-            renderPassEncoder.endPass();
+        shadowPass.setVertexBuffer(0, _vertBuffer);
+        shadowPass.setIndexBuffer(_indexBuffer, 'uint16');
+        const uniOffset = [0];
+        for (let m of _meshes) {
+            uniOffset[0] = m.modelUniByteOffset;
+            shadowPass.setBindGroup(1, modelUniBindGroup, uniOffset);
+            shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
         }
+        shadowPass.endPass();
+
+        const renderPassEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+        renderPassEncoder.executeBundles([renderBundle]);
+        renderPassEncoder.endPass();
         device.queue.submit([commandEncoder.finish()]);
 
         const jsTime = performance.now() - start;
