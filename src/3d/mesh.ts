@@ -23,6 +23,30 @@ Abstractions:
         The vertices and uniform buffer choices
         Or is a mesh pool dummer than that?
             Mesh pool only cares about sizes and memory management
+
+Example code:
+
+function OnStart() {
+    let ground = CreateGround(100, 100);
+    let player = CreateBox({ size: 5, color: "white", kind: "player" });
+    MoveWithControls(player);
+    function movePizza() {
+        let pizza = CreateSphere({ size: 3, color: "red", kind: "pizza" });
+        pizza.x = Random(-ground.width / 2, ground.width / 2);
+        pizza.z = Random(-ground.height / 2, ground.height / 2);
+        StartTimer(3)
+    }
+    movePizza()
+    OnTimerElapsed(() => {
+        GameOver("lose")
+    })
+
+    OnOverlap("player", "pizza", (player, pizza) => {
+        Destory(pizza);
+        ChangeScore(1);
+        movePizza();
+    })
+}
 */
 
 

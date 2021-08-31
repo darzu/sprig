@@ -647,3 +647,7 @@ Limitations of D3:
 
 CSS is good?
   https://wizardzines.com/zines/css/
+
+"An open-source creative-coding framework for Rust":
+  https://nannou.cc
+  https://twitter.com/nannoucc

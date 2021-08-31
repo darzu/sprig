@@ -31,3 +31,10 @@ Efficient code is harder to change, from redblob lementing mapgen4:
 
 Visualizing perf:
     https://dubroy.com/blog/visualizing-packrat-parsing/
+
+Animometer Test
+    On Mac M1, WebGPU, soft limit of ~85,000 triangle to stay at 60fps
+    http://austin-eng.com/webgpu-samples/samples/animometer
+    "renderBundles" is essential
+    "dynamicOffsets" has no impact (so far)
+
