@@ -176,8 +176,8 @@ struct VertexOutput {
 [[stage(vertex)]]
 fn main(
     [[location(0)]] position : vec3<f32>,
-    [[location(1)]] normal : vec3<f32>,
-    [[location(2)]] color : vec3<f32>
+    [[location(1)]] color : vec3<f32>,
+    [[location(2)]] color2 : vec3<f32>
     ) -> VertexOutput {
     var output : VertexOutput;
     var pos4: vec4<f32> = vec4<f32>(position, 1.0);
@@ -185,6 +185,8 @@ fn main(
     // output.color = vec4<f32>(normal, 1.0);
     // output.color = 0.5 * (pos4 + vec4<f32>(1.0, 1.0, 1.0, 1.0));
     output.modelPos = sharedUnis.viewProj * pos4;
+    // output.color = color2;
+    // output.color = vec3<f32>(0.2, 0.5, 0.4);
     output.color = color;
 
     return output;
@@ -197,7 +199,7 @@ const maxNumVerts = 1000;
 const maxNumTri = 1000;
 const maxNumModels = 100;
 
-const vertElStride = (3/*pos*/ + 3/*norm*/)
+const vertElStride = (3/*pos*/ + 3/*color*/)
 const vertByteSize = Float32Array.BYTES_PER_ELEMENT * vertElStride
 const triElStride = 3/*ind per tri*/;
 const triByteSize = Uint16Array.BYTES_PER_ELEMENT * triElStride;
@@ -219,22 +221,34 @@ function addMeshToBuffers(m: MeshModel, verts: Float32Array, prevNumVerts: numbe
     const norms = computeNormals(m);
     m.pos.forEach((v, i) => {
         const off = (prevNumVerts + i) * vertElStride
+        // position
         verts[off + 0] = v[0]
         verts[off + 1] = v[1]
         verts[off + 2] = v[2]
-        // TODO(@darzu): normals needed?
-        verts[off + 3] = 0
-        verts[off + 4] = 0
-        verts[off + 5] = 0
     })
+    const vOff = prevNumVerts * vertElStride
     m.tri.forEach((t, i) => {
-        const off = (prevNumTri + i) * triElStride
+        const iOff = (prevNumTri + i) * triElStride
         const indShift = shiftIndices ? prevNumVerts : 0;
-        indices[off + 0] = t[0] + indShift
-        indices[off + 1] = t[1] + indShift
-        indices[off + 2] = t[2] + indShift
-        // set vertex normals for the first vertex per triangle
-        // verts[off + t[0] + 3] = norms[i][0]
+        const vi0 = t[0] + indShift
+        const vi1 = t[1] + indShift
+        const vi2 = t[2] + indShift
+        indices[iOff + 0] = vi0
+        indices[iOff + 1] = vi1
+        indices[iOff + 2] = vi2
+        // set per-face data
+        // color
+        const [r, g, b] = [Math.random(), Math.random(), Math.random()]
+        verts[vOff + vi0 * vertElStride + 3] = r
+        verts[vOff + vi0 * vertElStride + 4] = g
+        verts[vOff + vi0 * vertElStride + 5] = b
+        verts[vOff + vi1 * vertElStride + 3] = r
+        verts[vOff + vi1 * vertElStride + 4] = g
+        verts[vOff + vi1 * vertElStride + 5] = b
+        verts[vOff + vi2 * vertElStride + 3] = r
+        verts[vOff + vi2 * vertElStride + 4] = g
+        verts[vOff + vi2 * vertElStride + 5] = b
+        // TODO(@darzu): normals needed?
     })
 }
 interface Mesh {
@@ -369,11 +383,17 @@ async function init(canvasRef: HTMLCanvasElement) {
                             format: 'float32x3',
                         },
                         {
-                            // normals
+                            // color
                             shaderLocation: 1,
-                            offset: 0,
+                            offset: 4 * 3,
                             format: 'float32x3',
                         },
+                        // {
+                        //     // normals
+                        //     shaderLocation: 1,
+                        //     offset: 0,
+                        //     format: 'float32x3',
+                        // },
                         // {
                         //     // uv
                         //     shaderLocation: 1,
