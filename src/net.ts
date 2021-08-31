@@ -482,7 +482,7 @@ export class Net<Inputs> {
     this.peer.connect(server, true).then((reliableChannel) => {
       this.peer.connect(server, false).then((unreliableChannel) => {
         this.reliableChannels[server] = reliableChannel;
-        this.unreliableChannels[server] = reliableChannel;
+        this.unreliableChannels[server] = unreliableChannel;
         this.setupChannel(server, reliableChannel);
         this.setupChannel(server, unreliableChannel);
         this.peers.push(server);
