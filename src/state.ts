@@ -1,20 +1,14 @@
 import { mat4, vec3, quat } from "./gl-matrix.js";
-import { Renderer } from "./render.js";
 import { Serializer, Deserializer } from "./serialize.js";
+import { Mesh } from "./mesh-pool.js";
+import { Renderer } from "./render_webgpu.js";
 
 const ERROR_SMOOTHING_FACTOR = 0.8;
 const EPSILON = 0.0001;
 
-// defines the geometry and coloring of a mesh
-export interface Mesh {
-  pos: vec3[];
-  tri: vec3[];
-  colors: vec3[]; // colors per triangle in r,g,b float [0-1] format
-}
-
 export function scaleMesh(m: Mesh, by: number): Mesh {
   let pos = m.pos.map((p) => vec3.scale(vec3.create(), p, by));
-  return { pos, tri: m.tri, colors: m.colors };
+  return { ...m, pos };
 }
 
 const working_quat = quat.create();

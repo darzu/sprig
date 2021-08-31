@@ -1,16 +1,19 @@
 import { mat4, vec3, quat } from "./gl-matrix.js";
-import { Mesh, scaleMesh, GameObject, GameState } from "./state.js";
+import { scaleMesh, GameObject, GameState } from "./state.js";
 import { Serializer, Deserializer } from "./serialize.js";
-import { Renderer } from "./render.js";
 import { Net } from "./net.js";
 import { test } from "./test.js";
+import { Renderer, Renderer_WebGPU } from "./render_webgpu.js";
+import { attachToCanvas } from "./render_webgl.js";
+import { Mesh, unshareProvokingVertices } from "./mesh-pool.js";
+
+const USE_WEBGPU = false;
 
 enum ObjectType {
   Plane,
   Player,
   Bullet,
 }
-
 class Plane extends GameObject {
   color: vec3;
 
@@ -20,7 +23,7 @@ class Plane extends GameObject {
   }
 
   mesh(): Mesh {
-    return scaleMesh(
+    return unshareProvokingVertices(scaleMesh(
       {
         pos: [
           [+1, 0, +1],
@@ -37,7 +40,7 @@ class Plane extends GameObject {
         colors: [this.color, this.color, this.color, this.color],
       },
       10
-    );
+    ));
   }
 
   typeId(): number {
@@ -61,6 +64,48 @@ class Plane extends GameObject {
   }
 }
 
+const CUBE = unshareProvokingVertices({
+  pos: [
+    [+1.0, +1.0, +1.0],
+    [-1.0, +1.0, +1.0],
+    [-1.0, -1.0, +1.0],
+    [+1.0, -1.0, +1.0],
+
+    [+1.0, +1.0, -1.0],
+    [-1.0, +1.0, -1.0],
+    [-1.0, -1.0, -1.0],
+    [+1.0, -1.0, -1.0],
+  ],
+  tri: [
+    [0, 1, 2],
+    [0, 2, 3], // front
+    [4, 5, 1],
+    [4, 1, 0], // top
+    [3, 4, 0],
+    [3, 7, 4], // right
+    [2, 1, 5],
+    [2, 5, 6], // left
+    [6, 3, 2],
+    [6, 7, 3], // bottom
+    [5, 4, 7],
+    [5, 7, 6], // back
+  ],
+  colors: [
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+  ],
+});
+
 abstract class Cube extends GameObject {
   color: vec3;
 
@@ -71,46 +116,9 @@ abstract class Cube extends GameObject {
 
   mesh(): Mesh {
     return {
-      pos: [
-        [+1.0, +1.0, +1.0],
-        [-1.0, +1.0, +1.0],
-        [-1.0, -1.0, +1.0],
-        [+1.0, -1.0, +1.0],
-
-        [+1.0, +1.0, -1.0],
-        [-1.0, +1.0, -1.0],
-        [-1.0, -1.0, -1.0],
-        [+1.0, -1.0, -1.0],
-      ],
-      tri: [
-        [0, 1, 2],
-        [0, 2, 3], // front
-        [4, 5, 1],
-        [4, 1, 0], // top
-        [3, 4, 0],
-        [3, 7, 4], // right
-        [2, 1, 5],
-        [2, 5, 6], // left
-        [6, 3, 2],
-        [6, 7, 3], // bottom
-        [5, 4, 7],
-        [5, 7, 6], // back
-      ],
-      colors: [
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-      ],
-    };
+      ...CUBE,
+      colors: CUBE.colors.map(_ => this.color),
+    }
   }
 }
 
@@ -236,7 +244,7 @@ class CubeGameState extends GameState<Inputs> {
       this.addObject(plane);
       this.addPlayer();
       // have added our objects, can unmap buffers
-      this.renderer.unmapGPUBuffers();
+      this.renderer.finishInit();
     }
     this.me = 0;
   }
@@ -554,9 +562,15 @@ async function startGame(host: string | null) {
   onWindowResize();
 
   const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
-  const adapter = await navigator.gpu.requestAdapter();
-  const device = await adapter!.requestDevice();
-  let renderer = new Renderer(canvas, device, 20000);
+
+  let renderer: Renderer;
+  if (USE_WEBGPU) {
+    const adapter = await navigator.gpu.requestAdapter();
+    const device = await adapter!.requestDevice();
+    renderer = new Renderer_WebGPU(canvas, device, 1000);
+  } else {
+    renderer = attachToCanvas(canvas, 1000, 100);
+  }
   let start_of_time = performance.now();
   let gameState = new CubeGameState(renderer, hosting);
   let inputs = inputsReader(canvas);
@@ -631,7 +645,7 @@ async function startGame(host: string | null) {
       navigator.clipboard.writeText(id);
       frame();
     } else {
-      renderer.unmapGPUBuffers();
+      renderer.finishInit();
       frame();
     }
   });
