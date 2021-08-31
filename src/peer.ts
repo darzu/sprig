@@ -58,6 +58,7 @@ export class Peer {
 
   constructor() {
     getId().then((id) => {
+      this.id = id;
       let sock = new WebSocket(
         serverUrl(id, Math.random().toString(36).substr(2))
       );
@@ -90,7 +91,9 @@ export class Peer {
     remotePeerId: string,
     connectionId: string
   ) {
+    console.log("setting up peer connection");
     peerConnection.onicecandidate = (ev) => {
+      console.log("on ice candidate");
       if (!ev.candidate || !ev.candidate.candidate) return;
       //console.log(`Got ICE candidate for ${remotePeerId}`);
       if (!this.sock) {
@@ -197,6 +200,8 @@ export class Peer {
 
   async connect(peerId: string, reliable: boolean): Promise<RTCDataChannel> {
     const peerConnection = new RTCPeerConnection(DEFAULT_CONFIG);
+    let connectionId = `${this.id}-${peerId}-${this.nextId++}`;
+    this.setupPeerConnection(peerConnection, peerId, connectionId);
     const config: RTCDataChannelInit = { ordered: false };
     if (!reliable) {
       config.maxRetransmits = 0;
@@ -208,7 +213,6 @@ export class Peer {
     dataChannel.binaryType = "arraybuffer";
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
-    let connectionId = `${this.id}-${peerId}-${this.nextId++}`;
     this.connections[connectionId] = peerConnection;
     let payload: any = {
       sdp: offer,
