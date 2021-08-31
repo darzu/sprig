@@ -476,6 +476,7 @@ export function createMeshPoolBuilder_WebGPU(device: GPUDevice, opts: MeshPoolOp
 export function createMeshPoolBuilder_WebGL(gl: WebGLRenderingContext, opts: MeshPoolOpts): MeshPoolBuilder_WebGL {
     const { maxMeshes, maxTris, maxVerts } = opts;
 
+    // TODO(@darzu): we shouldn't need to preallocate all this
     const scratchPositions = new Float32Array(maxVerts * 3)
     const scratchNormals = new Float32Array(maxVerts * 3)
     const scratchColors = new Float32Array(maxVerts * 3)
@@ -497,13 +498,15 @@ export function createMeshPoolBuilder_WebGL(gl: WebGLRenderingContext, opts: Mes
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, scratchIndices, gl.DYNAMIC_DRAW);
 
     // our in-memory reflections of the buffers used during the initial build phase
+    // TODO(@darzu): this is too much duplicate data
     let verticesMap = new Uint8Array(maxVerts * Vertex.ByteSize)
     let indicesMap = new Uint16Array(maxTris * 3);
     let uniformMap = new Uint8Array(maxMeshes * MeshUniform.ByteSizeAligned);
 
     function queueUpdateVertices(offset: number, data: Uint8Array) {
-        // TODO(@darzu): 
-        const numVerts = data.length / Vertex.ByteSize;
+        // TODO(@darzu): this is a strange way to compute this, but seems to work conservatively
+        const numVerts = Math.min(data.length / Vertex.ByteSize, Math.max(builder.numVerts, builder.poolHandle.numVerts) + 10)
+        // const numVerts = data.length / Vertex.ByteSize;
         const positions = new Float32Array(numVerts * 3)
         const colors = new Float32Array(numVerts * 3)
         const normals = new Float32Array(numVerts * 3)
@@ -511,6 +514,8 @@ export function createMeshPoolBuilder_WebGL(gl: WebGLRenderingContext, opts: Mes
 
         const vNumOffset = offset / Vertex.ByteSize;
 
+        // TODO(@darzu): debug logging
+        console.log(`positions: #${vNumOffset}: ${positions.slice(0, numVerts * 3).join(',')}`)
         gl.bindBuffer(gl.ARRAY_BUFFER, positionsBuffer);
         gl.bufferSubData(gl.ARRAY_BUFFER, vNumOffset * bytesPerVec3, positions);
         gl.bindBuffer(gl.ARRAY_BUFFER, normalsBuffer);
@@ -519,6 +524,10 @@ export function createMeshPoolBuilder_WebGL(gl: WebGLRenderingContext, opts: Mes
         gl.bufferSubData(gl.ARRAY_BUFFER, vNumOffset * bytesPerVec3, colors);
     }
     function queueUpdateIndices(offset: number, data: Uint8Array) {
+        // TODO(@darzu): again, strange but a useful optimization        
+        const numInd = Math.min(data.length / 2, Math.max(builder.numTris, builder.poolHandle.numTris) * 3 + 10)
+        // TODO(@darzu): debug logging
+        console.log(`indices: #${offset / 2}: ${new Uint16Array(data.buffer).slice(0, numInd).join(',')}`)
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
         gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, offset, data);
     }
@@ -664,10 +673,11 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
             b.addTri(triInd)
 
             // set provoking vertex data
+            // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
+            // TODO(@darzu): mesh builder should set provoking vertex data
             const vOff = (vertNumOffset + triInd[0]) * Vertex.ByteSize
             const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
             Vertex.Serialize(verticesMap, vOff, m.pos[triInd[0]], m.colors[i], normal)
-            // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
         })
 
         const { min, max } = getAABBFromMesh(m)
@@ -702,10 +712,11 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
             b.addTri(triInd)
 
             // set provoking vertex data
+            // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
+            // TODO(@darzu): de-duplicated with mappedAddMesh
             const vOff = triInd[0] * Vertex.ByteSize
             const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
             Vertex.Serialize(data.verticesMap, vOff, m.pos[triInd[0]], m.colors[i], normal)
-            // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
         })
 
         const { min, max } = getAABBFromMesh(m)
