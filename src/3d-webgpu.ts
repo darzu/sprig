@@ -351,6 +351,11 @@ function initGrassSystem(device: GPUDevice): GrassSystem {
         // tileset
         tilesPerSide: 4,
     }
+    const lod0Opts: GrassTilesetOpts & GrassTileOpts = {
+        ...lod1Opts,
+        spacing: lod1Opts.spacing * 0.25,
+        tileSize: lod1Opts.tileSize * 0.25,
+    }
     const lod2Opts: GrassTilesetOpts & GrassTileOpts = {
         ...lod1Opts,
         spacing: lod1Opts.spacing * 2,
@@ -363,17 +368,21 @@ function initGrassSystem(device: GPUDevice): GrassSystem {
     }
     const lod4Opts: GrassTilesetOpts & GrassTileOpts = {
         ...lod1Opts,
+        tilesPerSide: 8,
         spacing: lod1Opts.spacing * 8,
         tileSize: lod1Opts.tileSize * 8,
     }
 
-    const lodOpts = [lod1Opts, lod2Opts, lod3Opts, lod4Opts]
+    const lodOpts = [lod0Opts, lod1Opts, lod2Opts, lod3Opts, lod4Opts]
 
     const tilesets = lodOpts.map(opts => createGrassTileset(opts, device))
 
     function updateAll(target: vec3) {
         tilesets.forEach(t => t.update(target))
     }
+
+    const bladeCount = tilesets.map(s => s.pool._numTris).reduce((p, n) => p + n, 0)
+    console.log(`Creating grass system with ${(bladeCount / 1000).toFixed(0)}k blades of grass.`);
 
     const res: GrassSystem = {
         getGrassPools: () => tilesets.map(t => t.pool),
