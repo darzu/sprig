@@ -1,7 +1,7 @@
 console.log("music time!")
 
 // goals:
-// sequencer, play i-vi cords, play melody notes
+// sequencer, play i-vi Chords, play melody notes
 
 let canvasRef = document.getElementById('sample-canvas') as HTMLCanvasElement;
 let canvasCtx = canvasRef.getContext('2d')!;
@@ -54,44 +54,98 @@ function playNote(n: Note, durSec: number = 0.25, offset: number | null = null) 
     playFreq(f, durSec, offset);
 }
 
-// returns notes
-function constructMajorScale(startNote: number): Note[] {
-    // major scale: whole whole half whole whole whole half
-    const scale = [2, 2, 1, 2, 2, 2].reduce((p, n) => [...p, p[p.length - 1] + n], [startNote])
-    return scale;
+function mkMajorScale(root: Note): Scale {
+    return {
+        root,
+        // major scale: whole whole half whole whole whole half
+        offsets: [2, 2, 1, 2, 2, 2].reduce((p, n) => [...p, p[p.length - 1] + n], [0])
+    }
+}
+function getNotesForScale(s: Scale): Note[] {
+    const notes = s.offsets.map(o => s.root + o)
+    return notes;
 }
 
 type Note = number;
 interface Scale {
-    notes: Note[],
+    root: Note,
+    offsets: number[],
+    // notes: Note[],
 }
-interface Cord {
-    noteIndices: number[],
+interface Chord {
+    octave: number,
+    offsets: number[],
 }
-function isMinor(c: Cord, s: Scale): boolean {
-    throw 'TODO'
+// interface ChordProgression {
+//     chordIndices: number[],
+// }
+function isMinor(c: Chord, s: Scale): boolean {
+    // in minor, it's a gap of 3-4
+    if (c.offsets.length !== 3)
+        return false
+    const ns = getNotesForChord(c, s);
+    return ns[1] - ns[0] === 3 && ns[2] - ns[1] === 4
 }
-function isMajor(c: Cord, s: Scale): boolean {
-    throw 'TODO'
+function isMajor(c: Chord, s: Scale): boolean {
+    // in major, it's a gap of 4-3
+    if (c.offsets.length !== 3)
+        return false
+    const ns = getNotesForChord(c, s);
+    return ns[1] - ns[0] === 4 && ns[2] - ns[1] === 3
 }
-function getPentatonicScale(s: Scale): Scale {
+function mkPentatonicScale(s: Scale): Scale {
     throw `TODO`
 }
-function shiftOctave(n: Note, octaveOffset: number): Note {
-    return n + octaveOffset * 12; // TODO(@darzu): verify
+function mkStandardChords(s: Scale): Chord[] {
+    const chords = [0, 1, 2, 3, 4, 5].map(i => {
+        const c: Chord = {
+            octave: 0,
+            offsets: [0, 2, 4].map(n => n + i),
+        }
+        return c;
+    })
+    return chords;
+}
+// function mkChordProgression(indices: number[]): ChordProgression {
+//     throw `TODO`
+// }
+// function convertChordProgression(prog: ChordProgression, chordSet: Chord[], scale: Scale): Note[] {
+//     // TODO(@darzu): this doesn't include timing
+//     throw `TODO`
+// }
+function getNotesForChord(c: Chord, s: Scale): Note[] {
+    const offsets = c.offsets.map(ci => {
+        let octaveShift = c.octave;
+        // e.g. -1 goes to 6 but one octave down
+        while (ci < 0) {
+            ci += s.offsets.length;
+            octaveShift -= 1;
+        }
+        // e.g. 8 goes to 2 but one octave up
+        while (ci >= s.offsets.length) {
+            ci -= s.offsets.length
+            octaveShift += 1;
+        }
+        return s.offsets[ci] + octaveShift * 12;
+    })
+    return getNotesForScale({
+        root: s.root,
+        offsets,
+    })
 }
 
-// cord, "triad": 1st, 3rd, 5th,
+// Chord, "triad": 1st, 3rd, 5th,
 //      root can be moved so it's any other note from the scale
 //  in major, it's a gap of 4-3
 //  with a 3-4, it is a minor chord
 // minor scale: shift major scale down 3
+// diatonic: "built from that scale"
 // from a scale (1-6), get all the triads, clasify them as major or minor
 // for major scale: major, minor, minor, major, major, minor
 //                  I, ii, iii, IV, V, vi
 // form inversions: cycle the notes in a chord
 //      use inversions to preserve most of the quality but shift the progression to a more consistent range
-//      reinforce subtle flavor change: play the lowest notes of the cord in a lower octave
+//      reinforce subtle flavor change: play the lowest notes of the Chord in a lower octave
 // melodies:
 //  usually played above the chords
 //  string together notes that are in the key
@@ -102,13 +156,16 @@ function shiftOctave(n: Note, octaveOffset: number): Note {
 //  starting from a major scale, remove 4th and 7th degrees
 //  play notes from that pantatonic scale (1,2,3,5,6) over chords from the full scale will typically sound pretty good
 
-function playScale(idx: number, scale: number[], durSec: number = 0.25, offset: number | null = null) {
-    const note = scale[idx]
+function playFromScale(idx: number, scale: Scale, durSec: number = 0.25, offset: number | null = null) {
+    const scaleNotes = getNotesForScale(scale); // TODO(@darzu): don't convert every time
+    const note = scaleNotes[idx]
     playNote(note, durSec, offset)
 }
 
-function playCord(c: number, durSec: number = 0.25, offset: number | null = null) {
-
+function playChord(c: Chord, s: Scale, durSec: number = 0.25, offset: number | null = null) {
+    const notes = getNotesForChord(c, s)
+    for (let n of notes)
+        playNote(n, durSec, offset)
 }
 
 function canvasClick() {
@@ -117,12 +174,28 @@ function canvasClick() {
 
     const start = audioCtx.currentTime;
 
-    const scale = constructMajorScale(0);
-    console.dir({ scale })
+    const scale = mkMajorScale(-5);
+    const stdChords = mkStandardChords(scale)
+    console.dir({
+        scale,
+        stdChords: stdChords.map(c => c.offsets),
+        isMajor: stdChords.map(c => isMajor(c, scale)),
+        isMinor: stdChords.map(c => isMinor(c, scale)),
+    })
 
-    playScale(0, scale, 0.25, start + 0.0);
-    playScale(1, scale, 0.25, start + 0.25);
-    playScale(2, scale, 0.25, start + 0.5);
+    // for (let i = 0; i < stdChords.length; i++)
+        // playChord(stdChords[i], scale, 0.25, start + 0.5 * i)
+
+    const noteSpace = 0.3;
+    const noteLen = 0.7;
+    playChord(stdChords[0], scale, noteLen, start + noteSpace * 0)
+    playChord(stdChords[5], scale, noteLen, start + noteSpace * 1)
+    playChord(stdChords[1], scale, noteLen, start + noteSpace * 2)
+    playChord(stdChords[4], scale, noteLen, start + noteSpace * 3)
+    playChord(stdChords[0], scale, noteLen, start + noteSpace * 4)
+    // playFromScale(0, scale, 0.25, start + 0.0);
+    // playFromScale(1, scale, 0.25, start + 0.25);
+    // playFromScale(2, scale, 0.25, start + 0.5);
 
     // playNote(7, 0.25, start + 0.0);
     // playNote(4, 0.25, start + 0.0);
