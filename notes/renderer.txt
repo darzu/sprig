@@ -80,9 +80,11 @@ Construct:
   https://www.construct.net/en/make-games/showcase
 
 WebGPU
-  https://github.com/gpuweb/gpuweb
-  status:
-    https://github.com/gpuweb/gpuweb/wiki/Implementation-Status
+    https://github.com/gpuweb/gpuweb
+    status:
+        https://github.com/gpuweb/gpuweb/wiki/Implementation-Status
+    spec:
+        https://gpuweb.github.io/gpuweb/
 
 Construct blog:
   https://www.construct.net/en/blogs/ashleys-blog-2/brief-history-graphics-web-1517
@@ -122,7 +124,12 @@ WebGPU on Chrome:
 
 WebGPU tutorials:
     https://alain.xyz/blog/raw-webgpu
+        matrix library: https://github.com/toji/gl-matrix
     https://www.willusher.io/graphics/2020/06/15/0-to-gltf-triangle
+
+WebGPU samples:
+    https://github.com/mikbry/awesome-webgpu
+    http://austin-eng.com/webgpu-samples/samples/computeBoids
 
 Shaders Wow:
     Slime and ants: https://www.youtube.com/watch?v=X-iSQQgOd1A
@@ -143,9 +150,6 @@ Vulkan vs OpenGL:
     https://gamedev.stackexchange.com/questions/96014/what-is-vulkan-and-how-does-it-differ-from-opengl
 
 WebGPU uses Web Shading Language (WSL)
-
-WebGPU boids:
-    http://austin-eng.com/webgpu-samples/samples/computeBoids
 
 webgpu-rs:
     https://github.com/gfx-rs/wgpu-rs
