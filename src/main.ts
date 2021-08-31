@@ -31,6 +31,7 @@ enum ObjectType {
 
 enum EventType {
   BulletBulletCollision,
+  BulletPlayerCollision,
 }
 
 const BLACK = vec3.fromValues(0, 0, 0);
@@ -57,13 +58,11 @@ const PLANE_MESH = unshareProvokingVertices(
 const PLANE_AABB = getAABBFromMesh(PLANE_MESH);
 
 class Plane extends GameObject {
-  defaultColor: vec3;
   color: vec3;
 
   constructor(id: number, creator: number) {
     super(id, creator);
-    this.defaultColor = vec3.fromValues(0.02, 0.02, 0.02);
-    this.color = vec3.create();
+    this.color = vec3.fromValues(0.02, 0.02, 0.02);
     this.localAABB = PLANE_AABB;
   }
 
@@ -136,13 +135,11 @@ const CUBE_MESH = unshareProvokingVertices({
 const CUBE_AABB = getAABBFromMesh(CUBE_MESH);
 
 abstract class Cube extends GameObject {
-  defaultColor: vec3;
   color: vec3;
 
   constructor(id: number, creator: number) {
     super(id, creator);
-    this.defaultColor = vec3.fromValues(0.2, 0, 0);
-    this.color = vec3.create();
+    this.color = vec3.fromValues(0.2, 0, 0);
     this.localAABB = CUBE_AABB;
   }
 
@@ -154,7 +151,7 @@ abstract class Cube extends GameObject {
 class Bullet extends Cube {
   constructor(id: number, creator: number) {
     super(id, creator);
-    this.defaultColor = vec3.fromValues(0.1, 0.1, 0.8);
+    this.color = vec3.fromValues(0.1, 0.1, 0.8);
     this.localAABB = getAABBFromMesh(this.mesh());
   }
 
@@ -202,7 +199,7 @@ class Bullet extends Cube {
 class Player extends Cube {
   constructor(id: number, creator: number) {
     super(id, creator);
-    this.defaultColor = vec3.fromValues(0, 0.2, 0);
+    this.color = vec3.fromValues(0, 0.2, 0);
   }
 
   syncPriority(): number {
@@ -462,15 +459,28 @@ class CubeGameState extends GameState<Inputs> {
     for (let o of Object.values(this.objects)) {
       // TODO: consider a helper method to get only live objects
       if (o instanceof Bullet && !o.deleted) {
-        // find other bullets this bullet is colliding with. only want to find each collision once
         if (this.collidesWith[o.id]) {
-          let collidingBullets = this.collidesWith[o.id]
-            .map((id) => this.objects[id])
-            .filter((obj) => obj instanceof Bullet && obj.id > o.id);
+          let collidingObjects = this.collidesWith[o.id].map(
+            (id) => this.objects[id]
+          );
+          // find other bullets this bullet is colliding with. only want to find each collision once
+          let collidingBullets = collidingObjects.filter(
+            (obj) => obj instanceof Bullet && obj.id > o.id
+          );
           for (let otherBullet of collidingBullets) {
             this.recordEvent(EventType.BulletBulletCollision, [
               o.id,
               otherBullet.id,
+            ]);
+          }
+          // find players this bullet is colliding with, other than the player who shot the bullet
+          let collidingPlayers = collidingObjects.filter(
+            (obj) => obj instanceof Player && obj.authority !== o.creator
+          );
+          for (let player of collidingPlayers) {
+            this.recordEvent(EventType.BulletPlayerCollision, [
+              o.id,
+              player.id,
             ]);
           }
         }
@@ -482,13 +492,26 @@ class CubeGameState extends GameState<Inputs> {
     console.log(`Running event of type ${EventType[event.type]}`);
     switch (event.type as EventType) {
       case EventType.BulletBulletCollision:
-        // TODO: do something more interesting here
         for (let id of event.objects) {
           let obj = this.objects[id];
           if (obj && obj instanceof Bullet) {
             // delete all bullet objects in collision
             // TODO: figure out how object deletion should really work
             this.removeObject(obj);
+          } else {
+            throw `Bad id ${id} in event ${event.id}`;
+          }
+        }
+        break;
+      case EventType.BulletPlayerCollision:
+        for (let id of event.objects) {
+          let obj = this.objects[id];
+          if (obj && obj instanceof Bullet) {
+            // delete all bullet objects in collision
+            // TODO: figure out how object deletion should really work
+            this.removeObject(obj);
+          } else if (obj && obj instanceof Player) {
+            vec3.add(obj.color, obj.color, vec3.fromValues(0.1, 0, 0));
           } else {
             throw `Bad id ${id} in event ${event.id}`;
           }
