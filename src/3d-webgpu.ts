@@ -96,7 +96,15 @@ fn main([[location(0)]] color: vec4<f32>) -> [[location(0)]] vec4<f32> {
     var xTan: vec3<f32> = dpdx(color).xyz;
     var yTan: vec3<f32> = dpdy(color).xyz;
     var norm: vec3<f32> = normalize(cross(xTan, yTan));
-    return vec4<f32>(norm, 1.0);
+
+    var lDirection: vec3<f32> = vec3<f32>(0.5, 0.5, 0.5);
+    var lColor: vec3<f32> = vec3<f32>(0.5, 0.5, 0.5);
+    var ambient: vec4<f32> = vec4<f32>(0.0, 0.2, 0.2, 0.2);
+
+    var diffuse: vec4<f32> = vec4<f32>(max(dot(lDirection, -norm), 0.0) * lColor, 1.0);
+
+    return ambient + diffuse;
+    // return vec4<f32>(norm, 1.0);
 }
 `;
 
