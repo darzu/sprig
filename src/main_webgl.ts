@@ -1,6 +1,4 @@
 import { vec3, mat4 } from "./gl-matrix.js";
-import * as m4 from "./m4.js";
-import { v3, V3 } from "./v3.js";
 
 /*============= Creating a canvas ======================*/
 let canvas = document.getElementById('sample-canvas') as HTMLCanvasElement;
@@ -143,12 +141,12 @@ function render(time: number) {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     const projection = mat4.perspective(mat4.create(), 30 * Math.PI / 180, canv.clientWidth / canv.clientHeight, 0.5, 10);
-    const eye: V3 = v3([1, 4, -6]);
-    const target: V3 = v3([0, 0, 0]);
-    const up: V3 = v3([0, 1, 0]);
+    const eye: vec3 = vec3.fromValues(1, 4, -6) as Float32Array;
+    const target: vec3 = vec3.fromValues(0, 0, 0) as Float32Array;
+    const up: vec3 = vec3.fromValues(0, 1, 0) as Float32Array;
 
-    const camera = m4.lookAt(eye, target, up);
-    const view = m4.inverse(camera);
+    const camera = mat4.lookAt(mat4.create(), eye, target, up) as Float32Array;
+    const view = camera;
     const viewProjection = mat4.multiply(mat4.create(), projection, view);
     const world = updatePos() // m4.rotationY(time);
 
@@ -163,7 +161,7 @@ function render(time: number) {
     gl.uniform1i(u_diffuseLoc, 0);
     gl.uniformMatrix4fv(u_viewInverseLoc, false, camera);
     gl.uniformMatrix4fv(u_worldLoc, false, world);
-    gl.uniformMatrix4fv(u_worldInverseTransposeLoc, false, m4.transpose(m4.inverse(world)));
+    gl.uniformMatrix4fv(u_worldInverseTransposeLoc, false, mat4.transpose(mat4.create(), mat4.invert(mat4.create(), world)));
     gl.uniformMatrix4fv(u_worldViewProjectionLoc, false, mat4.multiply(mat4.create(), viewProjection, world));
 
     gl.activeTexture(gl.TEXTURE0);
@@ -223,16 +221,16 @@ let mouseMove = function (e: MouseEvent) {
     return;
 };
 
-function updatePos(): m4.M4 {
-    let mo_matrix = m4.identity() // todo
+function updatePos(): mat4 {
+    let mo_matrix = mat4.create() // todo
 
     if (!drag) {
         dX *= AMORTIZATION, dY *= AMORTIZATION;
         THETA += dX, PHI += dY;
     }
 
-    m4.rotateY(mo_matrix, THETA, mo_matrix);
-    m4.rotateX(mo_matrix, PHI, mo_matrix);
+    mat4.rotateY(mo_matrix, mo_matrix, THETA);
+    mat4.rotateX(mo_matrix, mo_matrix, PHI);
 
     return mo_matrix
 }
