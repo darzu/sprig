@@ -641,3 +641,9 @@ Creative modes:
   Creatives have two kinds of working: open mode and closed mode.
   Open mode: A state of unfocused play where you discover new ideas. (
   Closed mode: A state of focused work where you work towards a specific outcome.
+
+Limitations of D3:
+  https://medium.com/@Elijah_Meeks/d3-is-not-a-data-visualization-library-67ba549e8520
+
+CSS is good?
+  https://wizardzines.com/zines/css/

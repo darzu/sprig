@@ -450,3 +450,6 @@ Don't have T junctions in meshes:
 
 Compute shader slime mold webgl:
   https://greggman.github.io/doodles/slime/slime.html
+
+Redblob on grass:
+  https://www.redblobgames.com/x/2108-grass-shader/
