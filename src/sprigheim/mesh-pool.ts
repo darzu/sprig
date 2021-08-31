@@ -88,8 +88,8 @@ export interface MeshHandle {
     numTris: number,
     // data
     transform: mat4,
-    modelMin: vec3,
-    modelMax: vec3,
+    aabbMin: vec3,
+    aabbMax: vec3,
     model?: Mesh,
 }
 
@@ -228,7 +228,6 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         const b = buildMesh();
 
         const vertNumOffset = builder.numVerts;
-        const indicesNumOffset = builder.numTris * indicesPerTriangle;
 
         m.pos.forEach((pos, i) => {
             b.addVertex(pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0], Vertex.Kind.normal)
@@ -252,7 +251,7 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
 
     const scratch_uniform_u8 = new Uint8Array(MeshUniform.ByteSizeAligned);
     function _queueSetUniform(m: MeshHandle) {
-        MeshUniform.Serialize(scratch_uniform_u8, 0, m.transform, m.modelMin, m.modelMax)
+        MeshUniform.Serialize(scratch_uniform_u8, 0, m.transform, m.aabbMin, m.aabbMax)
         m.pool.device.queue.writeBuffer(m.pool.uniformBuffer, m.modelUniByteOffset, scratch_uniform_u8);
     }
 
@@ -276,7 +275,7 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
     function updateUniform(m: MeshHandle): void {
         if (finished)
             throw 'trying to use finished MeshBuilder'
-        MeshUniform.Serialize(scratch_uniform_u8, 0, m.transform, m.modelMin, m.modelMax)
+        MeshUniform.Serialize(scratch_uniform_u8, 0, m.transform, m.aabbMin, m.aabbMax)
         builder.uniformMap.set(scratch_uniform_u8, m.modelUniByteOffset);
     }
 
@@ -330,8 +329,8 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
                 indicesNumOffset,
                 modelUniByteOffset: uniOffset,
                 transform: _transform!,
-                modelMin: _aabbMin!,
-                modelMax: _aabbMax!,
+                aabbMin: _aabbMin!,
+                aabbMax: _aabbMax!,
                 numTris: builder.numTris - triNumOffset,
                 model: undefined,
                 pool: builder.poolHandle,

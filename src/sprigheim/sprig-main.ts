@@ -33,9 +33,9 @@ const vertexShaderOutput = `
 `
 const shaderModelStruct = `
     [[block]] struct Model {
-        modelMatrix : mat4x4<f32>;
-        modelMin: vec3<f32>;
-        modelMax: vec3<f32>;
+        transform : mat4x4<f32>;
+        aabbMin: vec3<f32>;
+        aabbMax: vec3<f32>;
     };
 `
 // shader code
@@ -49,7 +49,7 @@ const vertexShaderForShadows = `
 
     [[stage(vertex)]]
     fn main([[location(0)]] position : vec3<f32>) -> [[builtin(position)]] vec4<f32> {
-        return scene.lightViewProjMatrix * model.modelMatrix * vec4<f32>(position, 1.0);
+        return scene.lightViewProjMatrix * model.transform * vec4<f32>(position, 1.0);
     }
 `;
 const fragmentShaderForShadows = `
@@ -94,8 +94,8 @@ const vertexShader = `
 
         // // sample from displacement map
         // // let geometrySize: vec2<f32> = vec2<f32>(100.0, 100.0);
-        // let geometrySize: vec2<f32> = (model.modelMax - model.modelMin).xz;
-        // let fsSampleCoord = vec2<i32>(((position.xz - model.modelMin.xz) / geometrySize) * vec2<f32>(textureDimensions(fsTexture)));
+        // let geometrySize: vec2<f32> = (model.aabbMax - model.aabbMin).xz;
+        // let fsSampleCoord = vec2<i32>(((position.xz - model.aabbMin.xz) / geometrySize) * vec2<f32>(textureDimensions(fsTexture)));
         // let fsSample : vec3<f32> = textureLoad(fsTexture, fsSampleCoord, 0).rgb;
         // let fsSampleQuant = vec3<f32>(quantize(fsSample.x, 0.1), quantize(fsSample.y, 0.1), quantize(fsSample.z, 0.1));
         let positionL: vec3<f32> = vec3<f32>(position.x - 1.0, position.y, position.z);
@@ -128,7 +128,7 @@ const vertexShader = `
         //     dPos2 = position;
         // }
 
-        let worldPos: vec4<f32> = model.modelMatrix * vec4<f32>(dPos, 1.0);
+        let worldPos: vec4<f32> = model.transform * vec4<f32>(dPos, 1.0);
 
         // XY is in (-1, 1) space, Z is in (0, 1) space
         let posFromLight : vec4<f32> = scene.lightViewProjMatrix * worldPos;
@@ -138,7 +138,7 @@ const vertexShader = `
             posFromLight.z
         );
 
-        let worldNorm: vec4<f32> = normalize(model.modelMatrix * vec4<f32>(dNorm, 0.0));
+        let worldNorm: vec4<f32> = normalize(model.transform * vec4<f32>(dNorm, 0.0));
 
         output.worldPos = worldPos.xyz;
         output.position = scene.cameraViewProjMatrix * worldPos;
@@ -146,8 +146,8 @@ const vertexShader = `
         // let xy = (xyz.xy / xyz.z);
         // // output.screenCoord = normalize(xy) * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5);
         output.normal = worldNorm.xyz;
-        // output.color = model.modelMin + model.modelMax;
-        // output.color = model.modelMax;
+        // output.color = model.aabbMin + model.aabbMax;
+        // output.color = model.aabbMax;
         // output.color = vec3<f32>(geometrySize.x, 0.0, geometrySize.y);
         output.color = color;
         // output.color = worldNorm.xyz;
@@ -1217,8 +1217,8 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
 
         // used and updated elsewhere
         transform: mat4.create(),
-        modelMin: vec3.fromValues(0, 0, 0),
-        modelMax: vec3.fromValues(mapXSize * spacing, maxHeight, mapZSize * spacing),
+        aabbMin: vec3.fromValues(0, 0, 0),
+        aabbMax: vec3.fromValues(mapXSize * spacing, maxHeight, mapZSize * spacing),
 
         pool: builder.poolHandle,
         // TODO(@darzu):
