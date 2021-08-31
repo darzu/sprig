@@ -57,6 +57,7 @@ const vertexShader = `
 
     [[group(0), binding(0)]] var<uniform> scene : Scene;
     [[group(1), binding(0)]] var<uniform> model : Model;
+    [[group(0), binding(3)]] var fsTexture: texture_2d<f32>;
 
     struct VertexOutput {
         ${vertexShaderOutput}
@@ -76,11 +77,22 @@ const vertexShader = `
         return vec3<f32>(0.0, y, 0.0);
     }
 
+    fn quantize(n: f32, step: f32) -> f32 {
+        return floor(n / step) * step;
+    }
+
     [[stage(vertex)]]
     fn main(
         ${vertexInputStruct}
         ) -> VertexOutput {
         var output : VertexOutput;
+
+        // sample from displacement map
+        let geometrySize: vec2<f32> = vec2<f32>(100.0, 100.0);
+        let fsSampleCoord = vec2<i32>((position.xy / geometrySize) * vec2<f32>(textureDimensions(fsTexture)));
+        let fsSample : vec3<f32> = textureLoad(fsTexture, fsSampleCoord, 0).rgb;
+        let fsSampleQuant = vec3<f32>(quantize(fsSample.x, 0.1), quantize(fsSample.y, 0.1), quantize(fsSample.z, 0.1));
+
         let positionL: vec3<f32> = vec3<f32>(position.x - 1.0, position.y, position.z);
         let positionB: vec3<f32> = vec3<f32>(position.x, position.y, position.z - 1.0);
         var displacement: vec3<f32> = vec3<f32>(0.0);
@@ -101,6 +113,8 @@ const vertexShader = `
             dNorm = normalize(cross(dPosB - dPos, dPosL - dPos));
             // dNorm = normalize(cross(dPos - dPosB, dPos - dPosL));
         }
+
+        let dPos2 = position + fsSampleQuant * 10.0;
 
         let worldPos: vec4<f32> = model.modelMatrix * vec4<f32>(dPos, 1.0);
 
@@ -149,48 +163,18 @@ const fragmentShader = `
         let shadowVis : f32 = textureSampleCompare(shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
         let sunLight : f32 = shadowVis * clamp(dot(-scene.lightDir, input.normal), 0.0, 1.0);
 
-        // TODO: test fs shader
-        // top left is 0,0
-        let screenCoordinates = input.position.xy / scene.targetSize;
-        let fsSampleCoord = screenCoordinates * vec2<f32>(textureDimensions(fsTexture));
-        // let fsSampleCoord = vec2<f32>(input.position.x, input.position.y);
-        let fsSample : vec3<f32> = textureSample(fsTexture, samp, screenCoordinates).rgb;
-        let fsSampleQuant = vec3<f32>(quantize(fsSample.x, 0.1), quantize(fsSample.y, 0.1), quantize(fsSample.z, 0.1));
+        // // TODO: test fs shader
+        // // top left is 0,0
+        // let screenCoordinates = input.position.xy / scene.targetSize;
+        // let fsSampleCoord = screenCoordinates * vec2<f32>(textureDimensions(fsTexture));
+        // // let fsSampleCoord = vec2<f32>(input.position.x, input.position.y);
+        // let fsSample : vec3<f32> = textureSample(fsTexture, samp, screenCoordinates).rgb;
+        // let fsSampleQuant = vec3<f32>(quantize(fsSample.x, 0.1), quantize(fsSample.y, 0.1), quantize(fsSample.z, 0.1));
 
-        let resultColor: vec3<f32> = input.color * (sunLight * 2.0 + 0.2) + fsSampleQuant * 0.2;
+        let resultColor: vec3<f32> = input.color * (sunLight * 2.0 + 0.2); // + fsSampleQuant * 0.2;
         let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
         return vec4<f32>(gammaCorrected, 1.0);
     }
-
-    // fn hdr(color: vec3<f32>, exposure: f32) -> vec3<f32> {
-    //     return 1.0 - exp(-color * exposure);
-    // }
-
-    // // from David Li's sample
-    // [[stage(fragment)]]
-    // fn main(input: VertexOutput) -> [[location(0)]] vec4<f32> {
-    //     // normal: vec3<f32> = texture2D(u_normalMap, v_coordinates).rgb;
-    //     let normal = normalize(input.normal);
-    //     let u_skyColor = vec3<f32>(3.2, 9.6, 12.8); // what's going on with this color's size??
-    //     let u_oceanColor = vec3<f32>(0.004, 0.016, 0.047);
-    //     let u_exposure = 0.35;
-    //     let u_sunDirection = scene.lightDir;
-    //     let v_position = input.worldPos;
-
-    //     let u_cameraPosition = scene.cameraPos;
-    //     // let u_cameraPosition = scene.cameraViewProjMatrix * vec4<f32>(0.0, 0.0, 0.0, 1.0);
-
-    //     let view: vec3<f32> = normalize(u_cameraPosition.xyz - v_position);
-    //     let fresnel: f32 = 0.02 + 0.98 * pow(1.0 - dot(normal, view), 5.0);
-    //     let sky: vec3<f32> = fresnel * u_skyColor;
-
-    //     let diffuse: f32 = clamp(dot(normal, normalize(u_sunDirection)), 0.0, 1.0);
-    //     let water: vec3<f32> = (1.0 - fresnel) * u_oceanColor * u_skyColor * diffuse;
-
-    //     let color: vec3<f32> = sky + water;
-
-    //     return vec4<f32>(hdr(color, u_exposure), 1.0);
-    // }
 `;
 
 // generates a texture
@@ -254,10 +238,13 @@ const computeForFS = `
     let row: u32 = (groupId.y * 8u) + memberId.y;
     let coord = vec2<i32>(i32(col), i32(row));
 
-    let r = f32(row) / f32(dims.y);
-    let g = f32(col) / f32(dims.x);
-    let b = 0.0;
-    let res = vec4<f32>(r, g, b, 1.0);
+    let x = f32(col) / f32(dims.x);
+    let y = f32(row) / f32(dims.y);
+    let z = 0.0;
+
+    let height = y; // * scene.time * 0.001;
+
+    let res = vec4<f32>(0.0, x, z, 1.0);
 
     textureStore(output, coord, res);
   }

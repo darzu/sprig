@@ -183,3 +183,36 @@ let path = `M 100,400 v -50 ${l2tlCorn} h 50 ${l2rNotch} h 50 ${t2trCorn} v 50 $
 
 blk.setAttribute("d", path);
 world.appendChild(blk);
+
+
+
+
+    // fn hdr(color: vec3<f32>, exposure: f32) -> vec3<f32> {
+    //     return 1.0 - exp(-color * exposure);
+    // }
+
+    // // from David Li's sample
+    // [[stage(fragment)]]
+    // fn main(input: VertexOutput) -> [[location(0)]] vec4<f32> {
+    //     // normal: vec3<f32> = texture2D(u_normalMap, v_coordinates).rgb;
+    //     let normal = normalize(input.normal);
+    //     let u_skyColor = vec3<f32>(3.2, 9.6, 12.8); // what's going on with this color's size??
+    //     let u_oceanColor = vec3<f32>(0.004, 0.016, 0.047);
+    //     let u_exposure = 0.35;
+    //     let u_sunDirection = scene.lightDir;
+    //     let v_position = input.worldPos;
+
+    //     let u_cameraPosition = scene.cameraPos;
+    //     // let u_cameraPosition = scene.cameraViewProjMatrix * vec4<f32>(0.0, 0.0, 0.0, 1.0);
+
+    //     let view: vec3<f32> = normalize(u_cameraPosition.xyz - v_position);
+    //     let fresnel: f32 = 0.02 + 0.98 * pow(1.0 - dot(normal, view), 5.0);
+    //     let sky: vec3<f32> = fresnel * u_skyColor;
+
+    //     let diffuse: f32 = clamp(dot(normal, normalize(u_sunDirection)), 0.0, 1.0);
+    //     let water: vec3<f32> = (1.0 - fresnel) * u_oceanColor * u_skyColor * diffuse;
+
+    //     let color: vec3<f32> = sky + water;
+
+    //     return vec4<f32>(hdr(color, u_exposure), 1.0);
+    // }
