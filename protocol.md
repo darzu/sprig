@@ -49,6 +49,11 @@ players who joined earlier, with the host always winning these conflicts.
 If `u` is accepted, the receiver sets `o.authority = u.authority` and
 `o.authority_seq = u.authority_seq`.
 
+A player claimes authority by incrementing an object's `authority_seq` and
+setting `authority` to its player ID. When to do so is part of game logic; as
+often as possible, in order to minimize visual pops and other artefacts, players
+should have authority over objects they are interacting with.
+
 ## Object update types
 
 There are currently three object update types: full, dynamic, and creation. A
