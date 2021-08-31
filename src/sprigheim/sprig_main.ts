@@ -501,7 +501,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     });
 
     // TODO(@darzu): adding via pool should work...
-    const ground = poolBuilder.addMesh(PLANE);
+    // const ground = poolBuilder.addMesh(PLANE);
     const player = poolBuilder.addMesh(CUBE);
     const randomCubes: MeshHandle[] = [];
     for (let i = 0; i < 10; i++) {
@@ -521,9 +521,9 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     });
 
     // place the ground
-    mat4.translate(ground.transform, ground.transform, [0, -3, -8])
-    mat4.scale(ground.transform, ground.transform, [10, 10, 10])
-    gpuBufferWriteMeshTransform(ground);
+    // mat4.translate(ground.transform, ground.transform, [0, -3, -8])
+    // mat4.scale(ground.transform, ground.transform, [10, 10, 10])
+    // gpuBufferWriteMeshTransform(ground);
 
     // initialize our cubes; each will have a random axis of rotation
     const randomCubesAxis: vec3[] = []
@@ -537,6 +537,9 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
 
     // init grass
     const grass = initGrassSystem(device)
+
+    // init water
+    const water = createWaterSystem(device);
 
     // track which keys are pressed for use in the game loop
     const pressedKeys: { [keycode: string]: boolean } = {}
@@ -704,7 +707,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     });
     bundleEnc.setPipeline(renderPipeline);
     bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
-    for (let p of [pool, ...grass.getGrassPools()]) {
+    for (let p of [pool, ...grass.getGrassPools(), ...water.getMeshPools()]) {
         // TODO(@darzu): not super happy about these being created during bundle time...
         const modelUniBindGroup = device.createBindGroup({
             layout: modelUniBindGroupLayout,
@@ -716,6 +719,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
 
         bundleEnc.setVertexBuffer(0, p.verticesBuffer);
         bundleEnc.setIndexBuffer(p.indicesBuffer, 'uint16');
+        console.log("rendering: " + p.allMeshes.length)
         for (let m of p.allMeshes) {
             bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
             bundleEnc.drawIndexed(m.numTris * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
@@ -896,3 +900,88 @@ Approach:
     different LODs of that mesh
     vertices displaced using displacement map
 */
+
+interface WaterSystem {
+    getMeshPools: () => MeshPool[],
+}
+
+function createWaterSystem(device: GPUDevice): WaterSystem {
+    const mapXSize = 100;
+    const mapZSize = 100;
+    const mapArea = mapXSize * mapZSize;
+
+    const map = new Float32Array(mapXSize * mapZSize);
+    for (let x = 0; x < mapXSize; x++) {
+        for (let z = 0; z < mapZSize; z++) {
+            const i = z * mapXSize + x;
+            map[i] = Math.random() // TODO(@darzu): 
+        }
+    }
+
+    const builder = createMeshPoolBuilder(device, {
+        maxMeshes: 1,
+        maxTris: mapArea,
+        maxVerts: mapArea * 3,
+    })
+
+    for (let x = 0; x < mapXSize; x++) {
+        for (let z = 0; z < mapZSize; z++) {
+
+            const i = z * mapXSize + x;
+            let y = map[i];
+
+            const color: vec3 = [Math.random(), Math.random(), Math.random()]
+            const vertexData = [
+                ...[x, y, z], ...color, ...[0, 1, 0],
+                ...[x + 1, y, z], ...color, ...[0, 1, 0],
+                ...[x, y, z + 1], ...color, ...[0, 1, 0],
+            ]
+            const vOff = builder.numVerts * vertElStride;
+            builder.verticesMap.set(vertexData, vOff)
+
+            const iOff = builder.numTris * 3;
+            // builder.indicesMap.set([2, 1, 0], iOff)
+            builder.indicesMap.set([2 + builder.numVerts, 1 + builder.numVerts, 0 + builder.numVerts], iOff)
+
+            builder.numTris += 1;
+            builder.numVerts += 3;
+        }
+    }
+
+    const prevNumVerts = 0;
+    const prevNumTris = 0;
+    const dbgMesh: MeshHandle = {
+        vertNumOffset: prevNumVerts,
+        indicesNumOffset: prevNumTris * 3,
+        modelUniByteOffset: meshUniByteSizeAligned * builder.allMeshes.length,
+        numTris: builder.numTris,
+
+        // used and updated elsewhere
+        transform: mat4.create(),
+
+        pool: builder.poolHandle,
+        // TODO(@darzu):
+        // maxDraw: opts.maxBladeDraw,
+
+        // TODO(@darzu): what're the implications of this?
+        // shadowCaster: true,
+
+        // not applicable
+        // TODO(@darzu): make this optional?
+        model: undefined,
+    };
+    console.dir(dbgMesh)
+    builder.allMeshes.push(dbgMesh)
+
+    // builder.addMesh(CUBE)
+
+    const pool = builder.finish();
+
+    pool.allMeshes.forEach(m => gpuBufferWriteMeshTransform(m));
+
+    const water: WaterSystem = {
+        getMeshPools: () => [pool]
+    };
+
+    return water;
+}
