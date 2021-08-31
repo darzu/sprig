@@ -1043,20 +1043,9 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     const modelUniBindGroup = device.createBindGroup({
         layout: modelUniBindGroupLayout,
-        entries: [
-            {
-                binding: 0,
-                resource: {
-                    buffer: _meshUniBuffer,
-                    offset: 0, // TODO(@darzu): different offsets per model
-                    // TODO(@darzu): needed?
-                    size: meshUniByteSize,
-                },
-            },
-        ],
+        entries: [{ binding: 0, resource: { buffer: _meshUniBuffer, size: meshUniByteSize, }, },],
     });
 
-    // create render bundle
     const bundleRenderDesc: GPURenderBundleEncoderDescriptor = {
         colorFormats: [swapChainFormat],
         depthStencilFormat: depthStencilFormat,
