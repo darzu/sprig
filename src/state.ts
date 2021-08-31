@@ -7,7 +7,6 @@ import {
   copyMotionProps,
   createMotionProps,
   MotionProps,
-  moveAndCheckObjects,
 } from "./phys_motion.js";
 import { stepPhysics } from "./phys.js";
 
@@ -180,7 +179,7 @@ export abstract class GameState<Inputs> {
     this.objects = {};
     this.deletedObjects = {};
     this.events = {};
-    this.collidesWith = {};
+    this.collidesWith = new Map();
   }
 
   abstract playerObject(playerId: number): GameObject;

@@ -21,7 +21,7 @@ import {
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
 const MAX_VERTICES = 21844;
-const ENABLE_NET = true;
+const ENABLE_NET = false;
 
 enum ObjectType {
   Plane,
@@ -490,10 +490,10 @@ class CubeGameState extends GameState<Inputs> {
     for (let o of Object.values(this.objects)) {
       // TODO: consider a helper method to get only live objects
       if (o instanceof Bullet) {
-        if (this.collidesWith[o.id]) {
-          let collidingObjects = this.collidesWith[o.id].map(
-            (id) => this.objects[id]
-          );
+        if (this.collidesWith.has(o.id)) {
+          let collidingObjects = this.collidesWith
+            .get(o.id)!
+            .map((id) => this.objects[id]);
           // find other bullets this bullet is colliding with. only want to find each collision once
           let collidingBullets = collidingObjects.filter(
             (obj) => obj instanceof Bullet && obj.id > o.id

@@ -50,10 +50,10 @@ export function copyMotionProps(
   dest: MotionProps,
   src: MotionProps
 ): MotionProps {
-  dest.location = vec3.copy(dest.location, src.location);
-  dest.rotation = quat.copy(dest.rotation, src.rotation);
-  dest.linearVelocity = vec3.copy(dest.linearVelocity, src.linearVelocity);
-  dest.angularVelocity = vec3.copy(dest.angularVelocity, src.angularVelocity);
+  vec3.copy(dest.location, src.location);
+  quat.copy(dest.rotation, src.rotation);
+  vec3.copy(dest.linearVelocity, src.linearVelocity);
+  vec3.copy(dest.angularVelocity, src.angularVelocity);
   dest.atRest = dest.atRest;
   return dest;
 }
@@ -79,10 +79,7 @@ let normalizedVelocity = vec3.create();
 let deltaRotation = quat.create();
 
 // TODO(@darzu): physics step
-export function moveAndCheckObjects(
-  set: { motion: MotionProps }[],
-  dt: number
-) {
+export function moveObjects(set: { motion: MotionProps }[], dt: number) {
   for (let { motion: m } of set) {
     // change location according to linear velocity
     delta = vec3.scale(delta, m.linearVelocity, dt);
@@ -95,12 +92,5 @@ export function moveAndCheckObjects(
     quat.normalize(deltaRotation, deltaRotation);
     // note--quat multiplication is not commutative, need to multiply on the left
     quat.multiply(m.rotation, deltaRotation, m.rotation);
-
-    // TODO(@darzu): CHECK FOR AND FIX COLLISIONS
-
-    // remember previous data so we can know if random other code messes
-    //    with our physics values.
-    // TODO(@darzu):
-    // copyMotionProps(lastMotion, m);
   }
 }

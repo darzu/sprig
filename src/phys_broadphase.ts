@@ -5,13 +5,24 @@ import { vec3Floor } from "./utils-3d.js";
 
 const BROAD_PHASE: "N^2" | "OCT" | "GRID" = "OCT";
 
-export interface CollidesWith {
-  // one-to-many GameObject ids
-  [id: number]: number[];
+// export interface CollidesWith {
+//   // one-to-many GameObject ids
+//   [id: number]: number[];
+// }
+export type CollidesWith = Map<number, number[]>;
+
+export function *collisionPairs(collidesWith: CollidesWith): IterableIterator<[number, number]> {
+  // TODO(@darzu): is this effecient?
+  for (let [leftId, rightIds] of collidesWith) {
+    for (let rightId of rightIds) {
+      if (leftId < rightId)
+        yield [leftId, rightId];
+    }
+  }
 }
 
 export let _lastCollisionTestTimeMs = 0; // TODO(@darzu): hack for stat debugging
-let _collidesWith: CollidesWith = {};
+let _collidesWith: CollidesWith = new Map();
 export function checkCollisions(
   objs: { worldAABB: AABB; id: number }[]
 ): CollidesWith {
@@ -23,8 +34,9 @@ export function checkCollisions(
   // TODO(@darzu): also use better memory pooling for aabbs and collidesWith relation
   // reset _collidesWith
   for (let o of objs) {
-    if (!_collidesWith[o.id]) _collidesWith[o.id] = [];
-    else _collidesWith[o.id].length = 0;
+    if (!_collidesWith.has(o.id)) 
+      _collidesWith.set(o.id, []);
+    else _collidesWith.get(o.id)!.length = 0;
   }
   // reset _mapPool
   _nextMap = 0;
@@ -40,8 +52,8 @@ export function checkCollisions(
       for (let i1 = i0 + 1; i1 < objs.length; i1++) {
         const box1 = objs[i1].worldAABB;
         if (doesOverlap(box0, box1)) {
-          _collidesWith[objs[i0].id].push(objs[i1].id);
-          _collidesWith[objs[i1].id].push(objs[i0].id);
+          _collidesWith.get(objs[i0].id)!.push(objs[i1].id);
+          _collidesWith.get(objs[i1].id)!.push(objs[i0].id);
         }
       }
     }
@@ -82,8 +94,8 @@ export function checkCollisions(
       // check this tree
       for (let [id1, box1] of tree.objs) {
         if ((!first || id0 < id1) && doesOverlap(box0, box1)) {
-          _collidesWith[id0].push(id1);
-          _collidesWith[id1].push(id0);
+          _collidesWith.get(id0)!.push(id1);
+          _collidesWith.get(id1)!.push(id0);
         }
       }
       // check down the tree
@@ -273,8 +285,8 @@ function checkPair(
   b: { id: number; aabb: AABB }
 ) {
   if (b.id < a.id && doesOverlap(a.aabb, b.aabb)) {
-    _collidesWith[a.id].push(b.id);
-    _collidesWith[b.id].push(a.id);
+    _collidesWith.get(a.id)!.push(b.id);
+    _collidesWith.get(b.id)!.push(a.id);
   }
 }
 
