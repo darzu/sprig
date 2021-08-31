@@ -1,5 +1,6 @@
-import Peer from "./peerjs.js";
-import { GameObject, NetObject, GameState } from "./state.js";
+import { Peer } from "./peer.js";
+import { GameObject, GameState } from "./state.js";
+import { Serializer, Deserializer, OutOfRoomError } from "./serialize.js";
 import { vec3, quat } from "./gl-matrix.js";
 
 // fraction of state updates to artificially drop
@@ -9,9 +10,7 @@ const DELAY_SENDS = false;
 const SEND_DELAY = 60.0;
 const SEND_DELAY_JITTER = 60.0;
 
-const MAX_OBJECTS_PER_STATE_UPDATE = 16;
-
-type DataConnection = Peer.DataConnection;
+const MAX_MESSAGE_SIZE = 1000;
 
 enum MessageType {
   // Join a game in progress
@@ -20,469 +19,403 @@ enum MessageType {
   // State update
   StateUpdate,
   StateUpdateResponse,
-  // Adds objects to the game
-  AddObjects,
   // Reserve unique object IDs
   ReserveIDs,
   ReserveIDsResponse,
 }
 
-interface Message {
-  type: MessageType;
-}
-
-interface JoinResponse extends Message {
-  type: MessageType.JoinResponse;
-  you: number;
-  peers: ServerId[];
-  objects: any[];
-}
-
-interface StateUpdate extends Message {
-  // todo: add inputs
-  type: MessageType.StateUpdate;
-  from: number;
-  seq: number;
-  data: Array<number>;
-}
-
-interface AddObjects extends Message {
-  type: MessageType.AddObjects;
-  objects: any[];
+enum ObjectUpdateType {
+  Full,
+  Dynamic,
+  Create,
+  Delta, // delta is unused for now
 }
 
 // TODO: change to number?
 type ServerId = string;
 
-/*class ArrayReader<T> {
-  buf: Array<T>;
-  index: number = 0;
-
-  constructor(buf: Array<T>) {
-    this.buf = buf;
-  }
-
-  next(
-}*/
-
-interface ObjectUpdate {
-  id: number;
-  authority: number;
-  authority_seq: number;
-  location: vec3;
-  linear_velocity: vec3;
-  rotation: quat;
-  angular_velocity: vec3;
-  snap_seq: number;
-}
-
-function deserializeVec3(data: Iterator<number>) {
-  let v0 = data.next().value;
-  let v1 = data.next().value;
-  let v2 = data.next().value;
-  return vec3.fromValues(v0, v1, v2);
-}
-
-function deserializeQuat(data: Iterator<number>) {
-  let v0 = data.next().value;
-  let v1 = data.next().value;
-  let v2 = data.next().value;
-  let v3 = data.next().value;
-  return quat.fromValues(v0, v1, v2, v3);
-}
-
-function deserializeObjectUpdates(msg: StateUpdate): ObjectUpdate[] {
-  let updates = [];
-  let data = msg.data.values();
-  while (true) {
-    let next = data.next();
-    if (next.done) {
-      break;
-    }
-    let id = next.value;
-    let authority = msg.from;
-    let authority_seq = data.next().value;
-    let location = deserializeVec3(data);
-    let linear_velocity = deserializeVec3(data);
-    let rotation = deserializeQuat(data);
-    let angular_velocity = deserializeVec3(data);
-    let snap_seq = msg.seq;
-    updates.push({
-      id,
-      authority,
-      authority_seq,
-      location,
-      linear_velocity,
-      rotation,
-      angular_velocity,
-      snap_seq,
-    });
-  }
-  return updates;
-}
-
 // target length for jitter buffer
 const BUFFER_TARGET = 3;
 
-export class Net<Inputs> {
-  private state: GameState<Inputs>;
-  private host: boolean;
-  private peer: Peer;
-  private me: ServerId = "";
-  private peers: ServerId[] = [];
-  private reliableConnections: Record<ServerId, DataConnection> = {};
-  private unreliableConnections: Record<ServerId, DataConnection> = {};
-  private ready: (id: string) => void;
-  private snap_seq: number = 0;
-  private unapplied_updates: Record<number, ObjectUpdate> = {};
-  private object_priorities: Record<number, number> = {};
-  private objects_known: Record<number, ServerId[]> = {};
-  private state_updates: Record<ServerId, StateUpdate[]> = {};
-  private latest_update_applied: Record<ServerId, number> = {};
-  private waiting: Record<ServerId, boolean> = {};
-  private objectsToAdd: Record<number, NetObject> = {};
+// Responsible for sync-ing objects to a *particular* other server.
+class StateSynchronizer<Inputs> {
+  net: Net<Inputs>;
+  remoteId: ServerId;
+  updateSeq: number = 0;
+  objectPriorities: Record<number, number> = {};
+  objectsKnown: Set<number> = new Set();
+  objectsInUpdate: Record<number, Set<number>> = {};
 
-  private objectKnownToServer(obj: GameObject, server: ServerId) {
-    return (
-      this.objects_known[obj.id] && this.objects_known[obj.id].includes(server)
-    );
+  constructor(net: Net<Inputs>, remoteId: ServerId) {
+    this.net = net;
+    this.remoteId = remoteId;
   }
 
-  private syncObject(obj: GameObject) {
-    if (obj.creator !== this.state.me) {
-      // don't try to sync objects we didn't create
-      return;
-    }
-    for (let server of this.peers) {
-      if (!this.objectKnownToServer(obj, server)) {
-        // make sure we send at least one state update for newly-added objects
-        this.object_priorities[obj.id] += 5000;
-        let netObj = obj.netObject();
-        let addObjects: AddObjects = {
-          type: MessageType.AddObjects,
-          objects: [netObj],
-        };
-        this.send(server, addObjects, true);
-        this.recordObjectKnown(obj.id, server);
-      }
-    }
-  }
-
-  private recordObjectKnown(id: number, server: ServerId) {
-    if (!this.objects_known[id]) {
-      this.objects_known[id] = [server];
-    } else if (!this.objects_known[id].includes(server)) {
-      this.objects_known[id].push(server);
-    }
-  }
-
-  private send(server: ServerId, message: Message, reliable: boolean) {
-    if (message.type !== MessageType.StateUpdate) {
-      console.log(
-        `Sending message of type ${MessageType[message.type]} to ${server}`
-      );
-    }
-    let conn = reliable
-      ? this.reliableConnections[server]
-      : this.unreliableConnections[server];
-    conn.send(message);
-  }
-
-  private setupConnection(conn: DataConnection) {
-    conn.on("data", (data) => {
-      this.handleMessage(conn.peer, data);
-    });
-  }
-
-  shouldAcceptUpdate(obj: ObjectUpdate, update: ObjectUpdate) {
-    return (
-      obj.authority_seq < update.authority_seq ||
-      (obj.authority_seq == update.authority_seq &&
-        obj.authority < update.authority) ||
-      (obj.authority == update.authority && obj.snap_seq < update.snap_seq)
-    );
-  }
-
-  private applyUpdate(obj: GameObject, update: ObjectUpdate) {
-    obj.authority = update.authority;
-    obj.authority_seq = update.authority_seq;
-    obj.linear_velocity = update.linear_velocity;
-    obj.angular_velocity = update.angular_velocity;
-    obj.snap_seq = update.snap_seq;
-    obj.snapLocation(update.location);
-    obj.snapRotation(update.rotation);
-  }
-
-  private handleMessage(server: ServerId, message: Message) {
-    if (message.type !== MessageType.StateUpdate) {
-      console.log(
-        `Received message of type ${MessageType[message.type]} from ${server}`
-      );
-    }
-    switch (message.type) {
-      case MessageType.Join: {
-        // no other data associated with a join message
-        let [id, playerNetObj] = this.state.addPlayer();
-        let objects = this.state.netObjects();
-        // the joining server will know about all of the objects we're sending,
-        // no need to tell it about them again
-        objects.forEach((o) => this.recordObjectKnown(o.id, server));
-        let response: JoinResponse = {
-          type: MessageType.JoinResponse,
-          you: id,
-          objects,
-          peers: this.peers,
-        };
-        this.send(server, response, true);
-        let addObjects: AddObjects = {
-          type: MessageType.AddObjects,
-          objects: [playerNetObj],
-        };
-        for (let peer of this.peers) {
-          this.send(peer, addObjects, true);
-        }
-        this.peers.push(server);
-        break;
-      }
-      case MessageType.JoinResponse: {
-        let msg = message as JoinResponse;
-        this.state.me = msg.you;
-        // TODO: this is a hack, need to actually have some system for reserving
-        // object ids at each node
-        this.state.nextObjectId = msg.you * 10000;
-        for (let peer of msg.peers) {
-          this.connectTo(peer);
-        }
-        for (let obj of msg.objects) {
-          this.state.addObjectFromNet(obj);
-          this.recordObjectKnown(obj.id, server);
-          for (let peer of msg.peers) {
-            this.recordObjectKnown(obj.id, peer);
-          }
-        }
-        this.ready(this.me);
-        break;
-      }
-      case MessageType.AddObjects: {
-        let msg = message as AddObjects;
-        for (let netObj of msg.objects) {
-          if (this.state.objects[netObj.id]) {
-            // TODO: this should never happen
-            console.log(`Got known object ${netObj.id} from ${server}`);
-            break;
-          }
-          this.recordObjectKnown(netObj.id, server);
-          let update = this.unapplied_updates[netObj.id];
-          if (update) {
-            let obj = this.state.addObjectFromNet(netObj);
-            if (this.shouldAcceptUpdate(obj, update)) {
-              this.applyUpdate(obj, update);
-            }
-          } else {
-            this.objectsToAdd[netObj.id] = netObj;
-          }
-        }
-        break;
-      }
-      case MessageType.StateUpdate: {
-        let msg = message as StateUpdate;
-        // don't apply this update yet--buffer it for the next time we're ready
-        // for updates
-        if (!this.state_updates[server]) {
-          this.state_updates[server] = [];
-        }
-        let i = 0;
-        while (i < this.state_updates[server].length) {
-          if (msg.seq < this.state_updates[server][i].seq) {
-            break;
-          }
-          i++;
-        }
-        this.state_updates[server].splice(i, 0, msg);
-      }
-    }
-  }
-
-  private updateObjectPriorities() {
-    for (let obj of Object.values(this.state.objects)) {
-      let priority_increase = obj.syncPriority();
-      if (!this.object_priorities[obj.id]) {
-        this.object_priorities[obj.id] = priority_increase;
-      } else {
-        this.object_priorities[obj.id] += priority_increase;
-      }
-    }
-  }
-
-  private objectsToSync(): GameObject[] {
+  private objects(): GameObject[] {
     // TODO: there's gotta be a way to do this faster than O(N log N) in the
     // number of objects.  Could maybe use priority queues? with an efficient
     // heap can get amortized O(1) on key-increase ops, so setting the priorities should be O(N).
     // Then we're removing a constant # of items, so removing should be O(log N) overall?
     // Could also cache this sorted list--order will stay mostly the same so with a sort that's
     // optimized for mostly-ordered data (like TimSort) the sort should be O(N)
-    let objects = Object.values(this.state.objects);
-    objects = objects.filter((obj) => obj.authority == this.state.me);
-    // sort objects in descending order by priority
-    objects.sort(
-      (o1, o2) => this.object_priorities[o2.id] - this.object_priorities[o1.id]
+    let objects = Object.values(this.net.state.objects);
+    objects = objects.filter(
+      (obj) =>
+        obj.authority == this.net.state.me ||
+        (obj.creator == this.net.state.me && !this.objectsKnown.has(obj.id))
     );
-    return objects.slice(0, MAX_OBJECTS_PER_STATE_UPDATE);
+    for (let obj of objects) {
+      let priorityIncrease = obj.syncPriority();
+      if (!this.objectsKnown.has(obj.id)) {
+        // try to sync new objects
+        priorityIncrease += 1000;
+      }
+      if (!this.objectPriorities[obj.id]) {
+        this.objectPriorities[obj.id] = priorityIncrease;
+      } else {
+        this.objectPriorities[obj.id] += priorityIncrease;
+      }
+    }
+    // We always want objects that this remote peer might not know
+    // about to come first. After that, we want objects sorted in priority order.
+    objects.sort((o1, o2) => {
+      return this.objectPriorities[o2.id] - this.objectPriorities[o1.id];
+    });
+    return objects;
   }
 
-  serializeVec3(data: Array<number>, v: vec3) {
-    data.push(v[0]);
-    data.push(v[1]);
-    data.push(v[2]);
+  update() {
+    //console.log("update() called");
+    let message = new Serializer(MAX_MESSAGE_SIZE);
+    let seq = this.updateSeq++;
+    message.writeUint8(MessageType.StateUpdate);
+    message.writeUint32(seq);
+    let objects = this.objects();
+    let numObjects = 0;
+    let numObjectsIndex = message.writeUint8(numObjects);
+    try {
+      for (let obj of objects) {
+        //console.log(`Trying to sync object ${obj.id}`);
+        // TODO: could this be a 16-bit integer instead?
+        message.writeUint32(obj.id);
+        message.writeUint8(obj.authority);
+        message.writeUint32(obj.authority_seq);
+        if (this.objectsKnown.has(obj.id)) {
+          // do a dynamic update
+          message.writeUint8(ObjectUpdateType.Dynamic);
+          obj.serializeDynamic(message);
+        } else {
+          // need to do a full sync
+          if (obj.authority !== this.net.state.me) {
+            message.writeUint8(ObjectUpdateType.Create);
+          } else {
+            message.writeUint8(ObjectUpdateType.Full);
+          }
+          message.writeUint8(obj.typeId());
+          message.writeUint8(obj.creator);
+          obj.serializeFull(message);
+          if (!this.objectsInUpdate[seq]) {
+            this.objectsInUpdate[seq] = new Set();
+          }
+          this.objectsInUpdate[seq].add(obj.id);
+        }
+        this.objectPriorities[obj.id] = 0;
+        numObjects++;
+      }
+    } catch (e) {
+      if (!(e instanceof OutOfRoomError)) throw e;
+    }
+    //console.log(`Update includes ${numObjects} objects`);
+    message.writeUint8(numObjects, numObjectsIndex);
+    this.net.send(this.remoteId, message.buffer, false);
   }
 
-  serializeQuat(data: Array<number>, q: quat) {
-    data.push(q[0]);
-    data.push(q[1]);
-    data.push(q[2]);
-    data.push(q[3]);
+  ackUpdate(seq: number) {
+    //console.log(`${seq} acked`);
+    let ids = this.objectsInUpdate[seq];
+    if (!ids) return;
+    ids.forEach((id) => {
+      //console.log(`Object ${id} is known`);
+      this.objectsKnown.add(id);
+    });
+    // TODO: should probably GC old unacked messages as well to avoid unbounded
+    // memory growth
+    delete this.objectsInUpdate[seq];
+  }
+}
+
+export class Net<Inputs> {
+  state: GameState<Inputs>;
+  private host: boolean;
+  private peer: Peer;
+  private me: ServerId = "";
+  private peers: ServerId[] = [];
+  private reliableChannels: Record<ServerId, RTCDataChannel> = {};
+  private unreliableChannels: Record<ServerId, RTCDataChannel> = {};
+  private ready: (id: string) => void;
+  private stateUpdates: Record<ServerId, { seq: number; data: ArrayBuffer }[]> =
+    {};
+  private synchronizers: Record<ServerId, StateSynchronizer<Inputs>> = {};
+  private nextUpdate: Record<ServerId, number> = {};
+  private waiting: Record<ServerId, boolean> = {};
+  private numDroppedUpdates: number = 0;
+
+  send(server: ServerId, message: ArrayBuffer, reliable: boolean) {
+    // TODO: figure out if we need to do something smarter than just not sending if the connection isn't present
+    let conn = reliable
+      ? this.reliableChannels[server]
+      : this.unreliableChannels[server];
+    if (conn) {
+      conn.send(message);
+    }
+  }
+
+  stats() {
+    let reliableBufferSize = 0;
+    for (let chan of Object.values(this.reliableChannels)) {
+      reliableBufferSize += chan.bufferedAmount;
+    }
+    let unreliableBufferSize = 0;
+    for (let chan of Object.values(this.unreliableChannels)) {
+      unreliableBufferSize += chan.bufferedAmount;
+    }
+    return {
+      reliableBufferSize,
+      unreliableBufferSize,
+      numDroppedUpdates: this.numDroppedUpdates,
+    };
+  }
+
+  private setupChannel(server: string, chan: RTCDataChannel) {
+    chan.onmessage = (ev) => {
+      this.handleMessage(server, ev.data);
+    };
+  }
+
+  private handleMessage(server: ServerId, data: ArrayBuffer) {
+    let deserializer = new Deserializer(data);
+    let type: MessageType = deserializer.readUint8();
+    //console.log(`Received message of type ${MessageType[type]}`);
+    switch (type) {
+      case MessageType.Join: {
+        // no other data associated with a join message
+        let [id, _playerObj] = this.state.addPlayer();
+        let response = new Serializer(MAX_MESSAGE_SIZE);
+        response.writeUint8(MessageType.JoinResponse);
+        response.writeUint8(id);
+        response.writeUint8(this.peers.length);
+        for (let peer of this.peers) {
+          response.writeString(peer);
+        }
+        this.send(server, response.buffer, true);
+        this.peers.push(server);
+        this.synchronizers[server] = new StateSynchronizer(this, server);
+        break;
+      }
+      case MessageType.JoinResponse: {
+        this.state.me = deserializer.readUint8();
+        // TODO: this is a hack, need to actually have some system for reserving
+        // object ids at each node
+        this.state.nextObjectId = this.state.me * 10000;
+        let npeers = deserializer.readUint8();
+        for (let i = 0; i < npeers; i++) {
+          let peer = deserializer.readString();
+          this.connectTo(peer);
+        }
+        this.ready(this.me);
+        break;
+      }
+      case MessageType.StateUpdate: {
+        // don't apply this update yet--buffer it for the next time we're ready
+        // for updates
+        if (!this.stateUpdates[server]) {
+          this.stateUpdates[server] = [];
+        }
+        let seq = deserializer.readUint32();
+        let i = 0;
+        while (i < this.stateUpdates[server].length) {
+          if (seq < this.stateUpdates[server][i].seq) {
+            break;
+          }
+          i++;
+        }
+        this.stateUpdates[server].splice(i, 0, { seq, data });
+        break;
+      }
+      case MessageType.StateUpdateResponse: {
+        let seq = deserializer.readUint32();
+        this.synchronizers[server].ackUpdate(seq);
+      }
+    }
   }
 
   sendStateUpdates() {
-    this.updateObjectPriorities();
-    // make sure we've added objects everywhere we need to
-    for (let obj of Object.values(this.state.objects)) {
-      this.syncObject(obj);
+    for (let synchronizer of Object.values(this.synchronizers)) {
+      synchronizer.update();
     }
-    let objects = this.objectsToSync();
-    // build snapshot
-    let data = new Array();
-    for (let obj of objects) {
-      this.object_priorities[obj.id] = 0;
-      data.push(obj.id);
-      data.push(obj.authority_seq);
-      this.serializeVec3(data, obj.location);
-      this.serializeVec3(data, obj.linear_velocity);
-      this.serializeQuat(data, obj.rotation);
-      this.serializeVec3(data, obj.angular_velocity);
-    }
-    let msg: StateUpdate = {
-      type: MessageType.StateUpdate,
-      seq: this.snap_seq,
-      data: data,
-      from: this.state.me,
-    };
-
-    for (let server of this.peers) {
-      if (Math.random() >= DROP_PROBABILITY) {
-        if (DELAY_SENDS) {
-          setTimeout(
-            () => this.send(server, msg, false),
-            SEND_DELAY + Math.random() * SEND_DELAY_JITTER
-          );
-        } else {
-          this.send(server, msg, false);
-        }
-      }
-    }
-    this.snap_seq++;
   }
 
-  applyStateUpdate(msg: StateUpdate) {
-    let updates = deserializeObjectUpdates(msg);
-    for (let update of updates) {
-      // do we know about this object?
-      let obj = this.state.objects[update.id];
-      if (!obj) {
-        if (this.objectsToAdd[update.id]) {
-          let netObj = this.objectsToAdd[update.id];
-          let obj = this.state.addObjectFromNet(netObj);
-          this.applyUpdate(obj, update);
+  applyStateUpdate(data: ArrayBuffer) {
+    //console.log("In applyStateUpdate");
+    //console.log("Applying state update");
+    let message = new Deserializer(data);
+    let type = message.readUint8();
+    if (type !== MessageType.StateUpdate)
+      throw "Wacky message type in applyStateUpdate";
+    let _seq = message.readUint32();
+    let numObjects = message.readUint8();
+    for (let i = 0; i < numObjects; i++) {
+      // make sure we're not in dummy mode
+      message.dummy = false;
+      let id = message.readUint32();
+      let authority = message.readUint8();
+      let authority_seq = message.readUint32();
+      let updateType: ObjectUpdateType = message.readUint8();
+      if (
+        updateType === ObjectUpdateType.Full ||
+        updateType === ObjectUpdateType.Create
+      ) {
+        //console.log("Full state update");
+        let typeId = message.readUint8();
+        let creator = message.readUint8();
+        let obj = this.state.objects[id];
+        if (!obj) {
+          obj = this.state.objectOfType(typeId, id, creator);
         }
-        // we've never heard of this object before, so we need to save this
-        // update and apply it once we do hear about this object.
-        // BUT: we only want to save the most up-to-date snapshot,
-        // according to both the snapshot and authority sequences!
-        let latest_update = this.unapplied_updates[update.id];
-        if (!latest_update) {
-          this.unapplied_updates[update.id] = update;
-        } else if (this.shouldAcceptUpdate(latest_update, update)) {
-          this.unapplied_updates[update.id] = update;
+        // Don't update an existing object if this was a create message or the authority claim is old
+        if (
+          (this.state.objects[id] && updateType === ObjectUpdateType.Create) ||
+          !obj.claimAuthority(authority, authority_seq)
+        ) {
+          message.dummy = true;
         }
-      } else if (this.shouldAcceptUpdate(obj, update)) {
-        this.applyUpdate(obj, update);
+        obj.deserializeFull(message);
+        if (!this.state.objects[id]) {
+          this.state.addObject(obj);
+        }
+      } else if (updateType === ObjectUpdateType.Dynamic) {
+        //console.log("Dynamic state update");
+        let obj = this.state.objects[id];
+        if (!obj) {
+          throw "Got non-full update for unknown object ${id}";
+        }
+        if (!obj.claimAuthority(authority, authority_seq)) {
+          message.dummy = true;
+        }
+        obj.deserializeDynamic(message);
+      } else {
+        throw `Unsupported update type ${updateType} in applyStateUpdate`;
       }
     }
   }
 
   updateState() {
+    //console.log("In updateState");
     for (let server of this.peers) {
-      console.log(
+      /*console.log(
         `Have ${
-          this.state_updates[server] ? this.state_updates[server].length : 0
+          this.stateUpdates[server] ? this.stateUpdates[server].length : 0
         } buffered state updates`
-      );
-      // first, apply any old updates ASAP
+        );*/
+      //console.log(`Looking for update ${this.nextUpdate[server]}`);
+      if (!this.nextUpdate[server]) {
+        this.nextUpdate[server] = 0;
+      }
+      // first, ignore any old updates
+      // TODO: should we apply these? Doug thinks not--we'd be out of sync.
       while (
-        this.state_updates[server] &&
-        this.state_updates[server].length > 0 &&
-        this.state_updates[server][0].seq < this.latest_update_applied[server]
+        this.stateUpdates[server] &&
+        this.stateUpdates[server].length > 0 &&
+        this.stateUpdates[server][0].seq < this.nextUpdate[server]
       ) {
-        let msg = this.state_updates[server].shift() as StateUpdate;
-        console.log(`Applying old state update ${msg.seq} from ${server}`);
-        this.applyStateUpdate(msg);
-        this.latest_update_applied[server] = msg.seq;
+        let { seq } = this.stateUpdates[server].shift()!;
+        this.numDroppedUpdates++;
+        /*
+        console.log(
+          `Ignoring old state update ${seq} < ${this.nextUpdate[server]} from ${server}`
+        );*/
+      }
+      // then, if we have many buffered updates, drop them until we've caught up
+      if (
+        this.stateUpdates[server] &&
+        this.stateUpdates[server].length > BUFFER_TARGET * 2
+      ) {
+        //console.log("Buffer too large, dropping in order to catch up");
+        while (this.stateUpdates[server].length > BUFFER_TARGET) {
+          this.stateUpdates[server].shift();
+          this.nextUpdate[server]++;
+          this.numDroppedUpdates++;
+        }
       }
       if (
-        !this.state_updates[server] ||
-        this.state_updates[server].length === 0
+        !this.stateUpdates[server] ||
+        this.stateUpdates[server].length === 0
       ) {
         // buffer some state updates from this server
+        //console.log("Buffering for updates");
         this.waiting[server] = true;
         continue;
       } else if (
         !this.waiting[server] ||
-        this.state_updates[server].length >= BUFFER_TARGET
+        this.stateUpdates[server].length >= BUFFER_TARGET
       ) {
-        this.waiting[server] = false;
-        do {
-          let msg = this.state_updates[server].shift() as StateUpdate;
-          this.applyStateUpdate(msg);
-          this.latest_update_applied[server] = msg.seq;
-          // if we've fallen significantly behind, want to catch up now
-        } while (this.state_updates[server].length > BUFFER_TARGET * 2);
+        //console.log("Trying to apply an update");
+        let { seq, data } = this.stateUpdates[server].shift()!;
+        // if we were buffering, we're going to reset our "clock" to whatever we have now
+        if (this.waiting[server]) {
+          this.nextUpdate[server] = seq;
+          this.waiting[server] = false;
+        }
+        if (this.nextUpdate[server] === seq) {
+          this.applyStateUpdate(data);
+          let ack = new Serializer(8);
+          ack.writeUint8(MessageType.StateUpdateResponse);
+          ack.writeUint32(seq);
+          this.send(server, ack.buffer, false);
+        } else {
+          // put it back in the buffer, we're not ready yet
+          this.stateUpdates[server].unshift({ seq, data });
+        }
+      }
+      if (!this.waiting[server]) {
+        this.nextUpdate[server]++;
       }
     }
   }
 
   // listen for incoming connections
   private awaitConnections() {
-    this.peer.on("connection", (conn: DataConnection) => {
-      console.log(
-        `Connection from ${conn.peer} with reliable: ${conn.reliable}`
-      );
-      if (conn.reliable) {
-        this.reliableConnections[conn.peer] = conn;
+    this.peer.onconnection = (server, channel) => {
+      let reliable =
+        channel.maxRetransmits === null || channel.maxRetransmits > 0;
+      //console.log(`Connection from ${server} with reliable: ${reliable}`);
+      if (reliable) {
+        this.reliableChannels[server] = channel;
       } else {
-        this.unreliableConnections[conn.peer] = conn;
+        this.unreliableChannels[server] = channel;
       }
       if (
-        this.reliableConnections[conn.peer] &&
-        this.unreliableConnections[conn.peer] &&
+        this.reliableChannels[server] &&
+        this.unreliableChannels[server] &&
         !this.host
       ) {
-        this.peers.push(conn.peer);
+        this.peers.push(server);
+        this.synchronizers[server] = new StateSynchronizer(this, server);
       }
-      this.setupConnection(conn);
-    });
+      this.setupChannel(server, channel);
+    };
   }
 
   private connectTo(server: ServerId) {
-    console.log(`connecting to ${server}`);
-    var reliableConn = this.peer.connect(server, { reliable: true });
-    reliableConn.on("open", () => {
-      var unreliableConn = this.peer.connect(server, { reliable: false });
-      unreliableConn.on("open", () => {
-        this.reliableConnections[server] = reliableConn;
-        this.unreliableConnections[server] = unreliableConn;
-        this.setupConnection(reliableConn);
-        this.setupConnection(unreliableConn);
+    //console.log(`connecting to ${server}`);
+    this.peer.connect(server, true).then((reliableChannel) => {
+      this.peer.connect(server, false).then((unreliableChannel) => {
+        this.reliableChannels[server] = reliableChannel;
+        this.unreliableChannels[server] = unreliableChannel;
+        this.setupChannel(server, reliableChannel);
+        this.setupChannel(server, unreliableChannel);
         this.peers.push(server);
+        this.synchronizers[server] = new StateSynchronizer(this, server);
       });
     });
   }
@@ -498,29 +431,30 @@ export class Net<Inputs> {
       // we're the host, just start up
       this.host = true;
       this.peer = new Peer();
-      this.peer.on("open", (id: string) => {
+      this.peer.onopen = (id: string) => {
         this.awaitConnections();
         this.ready(id);
-      });
+      };
     } else {
       // we need to connect to another host
       this.host = false;
       this.peers = [host];
       this.peer = new Peer();
-      this.peer.on("open", (id: string) => {
+      this.peer.onopen = () => {
         this.awaitConnections();
-        var reliableConn = this.peer.connect(host, { reliable: true });
-        reliableConn.on("open", () => {
-          var unreliableConn = this.peer.connect(host, { reliable: false });
-          unreliableConn.on("open", () => {
-            this.reliableConnections[host] = reliableConn;
-            this.unreliableConnections[host] = unreliableConn;
-            this.setupConnection(reliableConn);
-            this.setupConnection(unreliableConn);
-            this.send(host, { type: MessageType.Join }, true);
+        this.peer.connect(host, true).then((reliableChannel) => {
+          this.peer.connect(host, false).then((unreliableChannel) => {
+            this.reliableChannels[host] = reliableChannel;
+            this.unreliableChannels[host] = unreliableChannel;
+            this.setupChannel(host, reliableChannel);
+            this.setupChannel(host, unreliableChannel);
+            let message = new Serializer(4);
+            message.writeUint8(MessageType.Join);
+            this.send(host, message.buffer, true);
+            this.synchronizers[host] = new StateSynchronizer(this, host);
           });
         });
-      });
+      };
     }
   }
 }

@@ -1,7 +1,15 @@
 import { mat4, vec3, quat } from "./gl-matrix.js";
-import { Mesh, scaleMesh, GameObject, NetObject, GameState } from "./state.js";
+import { Mesh, scaleMesh, GameObject, GameState } from "./state.js";
+import { Serializer, Deserializer } from "./serialize.js";
 import { Renderer } from "./render.js";
 import { Net } from "./net.js";
+import { test } from "./test.js";
+
+enum ObjectType {
+  Plane,
+  Player,
+  Bullet,
+}
 
 class Plane extends GameObject {
   color: vec3;
@@ -32,14 +40,24 @@ class Plane extends GameObject {
     );
   }
 
-  type(): string {
-    return "plane";
+  typeId(): number {
+    return ObjectType.Plane;
   }
 
-  netObject() {
-    let obj = super.netObject();
-    obj.color = Array.from(this.color);
-    return obj;
+  serializeFull(buffer: Serializer) {
+    buffer.writeVec3(this.location);
+  }
+
+  deserializeFull(buffer: Deserializer) {
+    buffer.readVec3(this.location);
+  }
+
+  serializeDynamic(_buffer: Serializer) {
+    // don't need to write anything at all here, planes never change
+  }
+
+  deserializeDynamic(_buffer: Deserializer) {
+    // don't need to read anything at all here, planes never change
   }
 }
 
@@ -94,49 +112,95 @@ abstract class Cube extends GameObject {
       ],
     };
   }
-
-  netObject() {
-    let obj = super.netObject();
-    obj.color = Array.from(this.color);
-    return obj;
-  }
 }
 
 class Bullet extends Cube {
-  axis: vec3;
-
   constructor(id: number, creator: number) {
     super(id, creator);
-    this.axis = vec3.fromValues(0, 0, 0);
     this.color = vec3.fromValues(0.1, 0.1, 0.8);
   }
 
-  type(): string {
-    return "cube";
-  }
-  netObject() {
-    let obj = super.netObject();
-    obj.axis = Array.from(this.axis);
-    return obj;
-  }
   mesh(): Mesh {
     return scaleMesh(super.mesh(), 0.3);
+  }
+
+  typeId(): number {
+    return ObjectType.Bullet;
+  }
+
+  serializeFull(buffer: Serializer) {
+    buffer.writeVec3(this.location);
+    buffer.writeVec3(this.linear_velocity);
+    buffer.writeQuat(this.rotation);
+    buffer.writeVec3(this.angular_velocity);
+  }
+
+  deserializeFull(buffer: Deserializer) {
+    let location = buffer.readVec3()!;
+    if (!buffer.dummy) {
+      this.snapLocation(location);
+    }
+    buffer.readVec3(this.linear_velocity);
+    let rotation = buffer.readQuat()!;
+    if (!buffer.dummy) {
+      this.snapRotation(rotation);
+    }
+    buffer.readVec3(this.angular_velocity);
+  }
+
+  serializeDynamic(buffer: Serializer) {
+    // rotation and location can both change, but we only really care about syncing location
+    buffer.writeVec3(this.location);
+  }
+
+  deserializeDynamic(buffer: Deserializer) {
+    let location = buffer.readVec3()!;
+    if (!buffer.dummy) {
+      this.snapLocation(location);
+    }
   }
 }
 
 class Player extends Cube {
-  constructor(id: number, creator: number, playerId: number) {
+  constructor(id: number, creator: number) {
     super(id, creator);
-    this.authority = playerId;
     this.color = vec3.fromValues(0, 0.2, 0);
-  }
-
-  type(): string {
-    return "player";
   }
 
   syncPriority(): number {
     return 10000;
+  }
+
+  typeId(): number {
+    return ObjectType.Player;
+  }
+
+  serializeFull(buffer: Serializer) {
+    buffer.writeVec3(this.location);
+    buffer.writeVec3(this.linear_velocity);
+    buffer.writeQuat(this.rotation);
+    buffer.writeVec3(this.angular_velocity);
+  }
+
+  deserializeFull(buffer: Deserializer) {
+    let location = buffer.readVec3()!;
+    if (!buffer.dummy) {
+      this.snapLocation(location);
+    }
+    buffer.readVec3(this.linear_velocity);
+    let rotation = buffer.readQuat()!;
+    if (!buffer.dummy) {
+      this.snapRotation(rotation);
+    }
+    buffer.readVec3(this.angular_velocity);
+  }
+
+  serializeDynamic(buffer: Serializer) {
+    this.serializeFull(buffer);
+  }
+
+  deserializeDynamic(buffer: Deserializer) {
+    this.deserializeFull(buffer);
   }
 }
 
@@ -156,7 +220,6 @@ interface Inputs {
 
 class CubeGameState extends GameState<Inputs> {
   players: Record<number, Player>;
-  bullets: Bullet[];
   cameraRotation: quat;
   cameraLocation: vec3;
 
@@ -167,7 +230,6 @@ class CubeGameState extends GameState<Inputs> {
     quat.rotateX(this.cameraRotation, this.cameraRotation, -Math.PI / 8);
     this.cameraLocation = vec3.fromValues(0, 0, 10);
     this.players = {};
-    this.bullets = [];
     if (createObjects) {
       let plane = new Plane(this.id(), this.me);
       plane.location = vec3.fromValues(0, -3, -8);
@@ -180,33 +242,28 @@ class CubeGameState extends GameState<Inputs> {
   }
 
   playerObject(playerId: number): GameObject {
-    let p = new Player(this.id(), this.me, playerId);
-    this.players[playerId] = p;
+    let p = new Player(this.id(), this.me);
+    p.authority = playerId;
+    p.authority_seq = 1;
     return p;
   }
 
-  objectFromNetObject(netObj: NetObject): GameObject {
-    switch (netObj.type) {
-      case "plane": {
-        let p = new Plane(netObj.id, netObj.creator);
-        p.color = netObj.color;
-        return p;
-      }
-      case "cube": {
-        let c = new Bullet(netObj.id, netObj.creator);
-        c.color = netObj.color;
-        c.axis = netObj.axis;
-        this.bullets.push(c);
-        return c;
-      }
-      case "player": {
-        let p = new Player(netObj.id, netObj.creator, netObj.authority);
-        p.color = netObj.color;
-        this.players[p.authority] = p;
-        return p;
-      }
-      default:
-        throw "Unrecognized object type";
+  objectOfType(typeId: ObjectType, id: number, creator: number) {
+    switch (typeId) {
+      case ObjectType.Plane:
+        return new Plane(id, creator);
+      case ObjectType.Bullet:
+        return new Bullet(id, creator);
+      case ObjectType.Player:
+        return new Player(id, creator);
+    }
+    throw `No such object type ${typeId}`;
+  }
+
+  addObject(obj: GameObject) {
+    super.addObject(obj);
+    if (obj instanceof Player) {
+      this.players[obj.authority] = obj;
     }
   }
 
@@ -287,7 +344,6 @@ class CubeGameState extends GameState<Inputs> {
         bullet_axis,
         this.player().rotation
       );
-      bullet.axis = bullet_axis;
       bullet.location = vec3.clone(this.player().location);
       bullet.rotation = quat.clone(this.player().rotation);
       bullet.linear_velocity = vec3.scale(
@@ -305,7 +361,6 @@ class CubeGameState extends GameState<Inputs> {
         bullet_axis,
         0.01
       );
-      this.bullets.push(bullet);
       this.addObject(bullet);
     }
     if (inputs.rclick) {
@@ -319,7 +374,6 @@ class CubeGameState extends GameState<Inputs> {
             bullet_axis,
             this.player().rotation
           );
-          bullet.axis = bullet_axis;
           bullet.location = vec3.add(
             vec3.create(),
             this.player().location,
@@ -329,7 +383,7 @@ class CubeGameState extends GameState<Inputs> {
           bullet.linear_velocity = vec3.scale(
             bullet.linear_velocity,
             bullet_axis,
-            0.02
+            0.005
           );
           bullet.linear_velocity = vec3.add(
             bullet.linear_velocity,
@@ -341,7 +395,6 @@ class CubeGameState extends GameState<Inputs> {
             bullet_axis,
             0.01
           );
-          this.bullets.push(bullet);
           this.addObject(bullet);
         }
       }
@@ -484,7 +537,7 @@ function inputsReader(canvas: HTMLCanvasElement): () => Inputs {
 }
 
 // ms per network sync (should be the same for all servers)
-const NET_DT = 1000.0 / 20.0;
+const NET_DT = 1000.0 / 20;
 
 async function startGame(host: string | null) {
   let hosting = host === null;
@@ -545,6 +598,8 @@ async function startGame(host: string | null) {
     gameState.renderFrame();
     let jsTime = performance.now() - frame_start_time;
     let frameTime = frame_start_time - previous_frame_time;
+    let { reliableBufferSize, unreliableBufferSize, numDroppedUpdates } =
+      net.stats();
     previous_frame_time = frame_start_time;
     avgJsTime = avgJsTime
       ? (1 - avgWeight) * avgJsTime + avgWeight * jsTime
@@ -561,13 +616,17 @@ async function startGame(host: string | null) {
       `\n` +
       `(js per frame: ${avgJsTime.toFixed(
         2
-      )}ms, net per frame: ${avgNetTime.toFixed(2)}ms, fps: ${avgFPS.toFixed(
+      )}ms, net per frame: ${avgNetTime.toFixed(2)}ms, 
+      fps: ${avgFPS.toFixed(
         1
-      )})`;
+      )}, buffers: r=${reliableBufferSize}/u=${unreliableBufferSize},
+      dropped updates: ${numDroppedUpdates}
+      objects=${gameState.numObjects})`;
     requestAnimationFrame(frame);
   };
   net = new Net(gameState, host, (id: string) => {
     if (hosting) {
+      console.log("hello");
       console.log(`Net up and running with id ${id}`);
       navigator.clipboard.writeText(id);
       frame();
@@ -594,5 +653,7 @@ async function main() {
     controls.hidden = true;
   };
 }
+
+test();
 
 await main();

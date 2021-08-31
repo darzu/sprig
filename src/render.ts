@@ -209,7 +209,10 @@ export class Renderer {
   private gpuBufferWriteAllMeshUniforms() {
     // TODO(@darzu): hack
     for (let m of this.meshHandles) {
-      this._meshUniformBuffer.set((m.obj.transform() as Float32Array), m.modelUniByteOffset / bytesPerFloat)
+      this._meshUniformBuffer.set(
+        m.obj.transform() as Float32Array,
+        m.modelUniByteOffset / bytesPerFloat
+      );
     }
 
     this.device.queue.writeBuffer(
@@ -234,7 +237,7 @@ export class Renderer {
     );
 
     // TODO(@darzu): hack
-    this._meshUniformBufferFloat32Size = meshUniformBuffer.length
+    this._meshUniformBufferFloat32Size = meshUniformBuffer.length;
     this._meshUniformBuffer = new Float32Array(meshUniformBuffer.length);
 
     this.mappedGPUBuffers = {
@@ -303,7 +306,7 @@ export class Renderer {
     TODO: support adding objects when buffers aren't memory-mapped using device.queue
   */
   addObject(o: GameObject): MeshHandle {
-    console.log(`Adding object ${o.id}`);
+    //console.log(`Adding object ${o.id}`);
     let m = o.mesh();
     m = unshareVertices(m); // work-around; see TODO inside function
     // need to introduce a new variable to convince Typescript the mapping is non-null
@@ -626,8 +629,7 @@ export class Renderer {
     this.gpuBufferWriteAllMeshUniforms();
 
     // TODO(@darzu): more fine grain
-    if (this.needsRebundle)
-      this.createRenderBundle();
+    if (this.needsRebundle) this.createRenderBundle();
 
     // start collecting our render commands for this frame
     const commandEncoder = this.device.createCommandEncoder();
