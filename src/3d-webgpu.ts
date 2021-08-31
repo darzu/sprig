@@ -305,93 +305,32 @@ interface Transformable {
 }
 
 function mkTransformable(): Transformable {
-    // const position = vec3.create();
-
-    // const direction: vec3 = new Float32Array([0, 0, 1]);
-
-    // const translation = mat4.create();
-    // const rotation = mat4.create();
-    // const rot = quat.create();
-
     const transform = mat4.create();
     return {
         _transform: transform, // TODO:
         getTransform: () => {
             return mat4.clone(transform);
-
-            // // return mat4.fromRotationTranslationScaleOrigin(mat4.create(), rot, position, scale, [0, 0, 0]);
-
-            // let quatMat = mat4.create();
-            // mat4.fromQuat(quatMat, rot);
-
-            // const dest = mat4.create();
-
-            // mat4.multiply(dest, dest, quatMat);
-
-            // mat4.translate(dest, dest, position);
-            // // mat4.translate(dest, dest, [0, 0, 0]);
-
-
-            // // mat4.translate(dest, dest, negativeOrigin);
-            // return dest;
-
-            // const transform = mat4.create();
-            // // // const invRot = mat4.invert(mat4.create(), rotation);
-            // // // mat4.rotateX(transform, transform, 1);
-            // // mat4.translate(transform, transform, position);
-            // mat4.multiply(transform, translation, transform);
-            // // mat4.multiply(transform, rotation, transform);
-            // // quat.setAxes
-
-            // // mat4.lookAt(transform, position, [0, 0, 0], [0, 1, 0]);
-            // // mat4.targetTo(transform, position, [0, 0, 0], [0, 1, 0]);
-            // // mat4.invert(transform, transform);
-            // return transform;
         },
         lookAt: (target: vec3) => {
-            // mat4.targetTo(rotation, position, target, [0, 1, 0])
-            // mat4.invert(frust, frust);
-            // mat4.multiply(rotation, mat4.create(), frust)
+            // TODO(@darzu): dz
         },
         pitch: (rad: number) => {
             mat4.rotateX(transform, transform, rad)
-            // mat4.rotateX(rotation, rotation, rad)
-            // quat.rotateX(rot, rot, rad)
         },
         yaw: (rad: number) => {
             mat4.rotateY(transform, transform, rad)
-            // mat4.rotateY(rotation, rotation, rad)
-            // quat.rotateY(rot, rot, rad)
         },
         roll: (rad: number) => {
             mat4.rotateZ(transform, transform, rad)
-            // mat4.rotateZ(rotation, rotation, rad)
-            // quat.rotateX(rot, rot, rad)
         },
         moveX: (n: number) => {
             mat4.translate(transform, transform, [n, 0, 0]);
-            // const t: vec3 = [n, 0, 0]
-            // // const t = vec3.transformMat4(vec3.create(), [n, 0, 0], rotation)
-            // mat4.translate(translation, translation, t);
-            // mat4.translate(rotation, rotation, [n, 0, 0]);
-            // position[0] += n
         },
         moveY: (n: number) => {
             mat4.translate(transform, transform, [0, n, 0]);
-            // mat4.multiply(
-            // const t: vec3 = [0, n, 0]
-            // const t = vec3.transformMat4(vec3.create(), [0, n, 0], rotation)
-            // mat4.translate(translation, translation, t);
-            // mat4.translate(rotation, rotation, [0, n, 0]);
-            // position[1] += n
         },
         moveZ: (n: number) => {
             mat4.translate(transform, transform, [0, 0, n]);
-            // const t: vec3 = [0, 0, n]
-            // const t = vec3.transformMat4(vec3.create(), [0, 0, n], rotation)
-            // mat4.translate(translation, translation, t);
-            // mat4.translate(rotation, rotation, [0, 0, n]);
-            // position[2] += n
         },
     }
 }
@@ -806,24 +745,15 @@ async function init(canvasRef: HTMLCanvasElement) {
             t.moveX(1)
         if (pressedKeys['shift'])
             t.moveY(1)
-        if (pressedKeys['control'])
+        if (pressedKeys['c'])
             t.moveY(-1)
         if (pressedKeys['q'])
             t.roll(0.1)
         if (pressedKeys['e'])
             t.roll(-0.1)
         if (pressedKeys['r']) {
-            console.log(t._transform)
             // TODO(@darzu): 
-            // t._transform[12] = -t._transform[12]
-            // t._transform[13] = -t._transform[13]
-            // t._transform[14] = -t._transform[14]
-            // mat4.multiply(t._transform, t._transform, [
-            //     1, 0, 0, 0,
-            //     0, 1, 0, 0,
-            //     0, 0, 1, 0,
-            //     0, 0, 0, 1,
-            // ]);
+            console.log(t._transform)
         }
         // mouse
         if (mouseDeltaX !== 0)
@@ -831,10 +761,6 @@ async function init(canvasRef: HTMLCanvasElement) {
         if (mouseDeltaY !== 0)
             t.pitch(-mouseDeltaY * 0.01);
     }
-
-        // cameraPos.yaw(0.01)
-        // cameraPos.pitch(0.01)
-        // cameraPos.roll(0.01)
 
     const m2 = meshes[4]
     const m2t = mkTransformable();
@@ -845,9 +771,6 @@ async function init(canvasRef: HTMLCanvasElement) {
         // Sample is no longer the active page.
         if (!canvasRef) return;
 
-        // check inputs
-        // TODO(@darzu):
-
         // update model positions
         // TODO(@darzu): real movement
         mat4.translate(meshes[1].transform, meshes[1].transform, [0.1, 0, 0])
@@ -857,7 +780,8 @@ async function init(canvasRef: HTMLCanvasElement) {
         mat4.translate(meshes[3].transform, meshes[3].transform, [0.0, 0, 0.3])
         applyMeshTransform(meshes[3])
 
-        controlTransformable(m2t);
+        controlTransformable(cameraPos);
+        // controlTransformable(m2t);
 
         m2.transform = m2t.getTransform();
         applyMeshTransform(m2)
@@ -868,39 +792,11 @@ async function init(canvasRef: HTMLCanvasElement) {
 
         function getViewProj() {
             const viewProj = mat4.create();
-            // const cameraPosT = new Float32Array([-1, 0, -1.2246468525851679e-16, 0, 0, 1, 0, 0, 1.2246468525851679e-16, 0, -1, 0, 2.4492935992912173e-15, -5, -20, 1])
             const viewMatrix = cameraPos.getTransform()
-
-            // mat4.rotateX(viewMatrix, viewMatrix, Math.PI)
-            // mat4.rotateY(viewMatrix, viewMatrix, Math.PI)
-            // mat4.rotateZ(viewMatrix, viewMatrix, Math.PI)
-
-            // mat4.scale(viewMatrix, viewMatrix, [1, 1, -1])
 
             mat4.invert(viewMatrix, viewMatrix);
 
-            // mat4.multiply(viewMatrix, viewMatrix, [
-            //     -1, 0, 0, 0,
-            //     0, -1, 0, 0,
-            //     0, 0, -1, 0,
-            //     0, 0, 0, 1,
-            // ]);
-
-            // scaleTranslate(viewMatrix, viewMatrix, [-1, -1, -1])
-
-
-            // mat4.multiplyScalar(viewMatrix, viewMatrix, -1)
-            // mat4.adjoint(
-
-            // mat4.transpose(viewMatrix, viewMatrix);
-            // mat4.invert(viewMatrix, viewMatrix);
-
-            // TODO(@darzu): this view matrix is wrong! It's position is inverted, and it's rotation is inverted.
-            // mat4.invert(viewMatrix, viewMatrix);
-
-            // mat4.transpose(viewMatrix, viewMatrix);
             mat4.multiply(viewProj, projectionMatrix, viewMatrix);
-            // mat4.multiply(viewProj, projectionMatrix, cameraPosT);
             return viewProj as Float32Array;
         }
 

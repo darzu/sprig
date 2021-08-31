@@ -378,3 +378,6 @@ Camera transformations:
   https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix
   http://web.cse.ohio-state.edu/~wang.3602/courses/cse5542-2013-spring/6-Transformation_II.pdf
   https://learnopengl.com/Getting-started/Coordinate-Systems
+
+hierarchical modeling:
+  https://www.youtube.com/watch?v=JdhpViedm0g&list=PLQ3UicqQtfNuBjzJ-KEWmG1yjiRMXYKhh&index=5
