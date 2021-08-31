@@ -5,7 +5,7 @@ import { vec3, quat } from "./gl-matrix.js";
 // fraction of state updates to artificially drop
 const DROP_PROBABILITY = 0.0;
 
-const MAX_OBJECTS_PER_STATE_UPDATE = 64;
+const MAX_OBJECTS_PER_STATE_UPDATE = 16;
 
 type DataConnection = Peer.DataConnection;
 
