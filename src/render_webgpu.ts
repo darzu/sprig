@@ -69,7 +69,9 @@ export interface MeshObj {
   obj: GameObject;
 }
 
+export type RenderMode = "normal" | "wireframe";
 export interface Renderer {
+  mode: RenderMode;
   finishInit(): void;
   addObject(o: GameObject): MeshObj;
   addObjectInstance(o: GameObject, m: MeshHandle): MeshObj;
@@ -77,6 +79,8 @@ export interface Renderer {
 }
 
 export class Renderer_WebGPU implements Renderer {
+  public mode: RenderMode = "normal";
+
   private device: GPUDevice;
   private canvas: HTMLCanvasElement;
   private context: GPUPresentationContext;
@@ -204,9 +208,11 @@ export class Renderer_WebGPU implements Renderer {
   }
 
   needsRebundle = false;
+  lastBundleMode: RenderMode = this.mode;
 
   private createRenderBundle() {
-    this.needsRebundle = false; // TODO(@darzu): hack
+    this.needsRebundle = false; // TODO(@darzu): hack?
+    this.lastBundleMode = this.mode;
     const modelUniBindGroupLayout = this.device.createBindGroupLayout({
       entries: [
         {
@@ -300,34 +306,40 @@ export class Renderer_WebGPU implements Renderer {
 
     // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
     // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
-    const bundleEnc_tris = this.device.createRenderBundleEncoder({
+    const bundleEnc = this.device.createRenderBundleEncoder({
       colorFormats: [this.presentationFormat],
       depthStencilFormat: depthStencilFormat,
       sampleCount: antiAliasSampleCount,
     });
-    bundleEnc_tris.setPipeline(renderPipeline_lines);
-    // bundleEnc_tris.setPipeline(renderPipeline_tris);
-    bundleEnc_tris.setBindGroup(0, renderSceneUniBindGroup);
-    bundleEnc_tris.setVertexBuffer(0, this.pool.verticesBuffer);
+    if (this.mode === "normal")
+      bundleEnc.setPipeline(renderPipeline_tris);
+    else
+      bundleEnc.setPipeline(renderPipeline_lines);
+    bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
+    bundleEnc.setVertexBuffer(0, this.pool.verticesBuffer);
     // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
-    // bundleEnc_tris.setIndexBuffer(this.pool.triIndicesBuffer, "uint16");
-    bundleEnc_tris.setIndexBuffer(this.pool.lineIndicesBuffer, "uint16");
+    if (this.mode === "normal")
+      bundleEnc.setIndexBuffer(this.pool.triIndicesBuffer, "uint16");
+    else
+      bundleEnc.setIndexBuffer(this.pool.lineIndicesBuffer, "uint16");
     for (let m of this.meshObjs) {
-      bundleEnc_tris.setBindGroup(1, modelUniBindGroup, [m.handle.modelUniByteOffset]);
-      bundleEnc_tris.drawIndexed(
-        m.handle.numLines * 2,
-        undefined,
-        m.handle.lineIndicesNumOffset,
-        m.handle.vertNumOffset
-      );
-      // bundleEnc_tris.drawIndexed(
-      //   m.handle.numTris * 3,
-      //   undefined,
-      //   m.handle.triIndicesNumOffset,
-      //   m.handle.vertNumOffset
-      // );
+      bundleEnc.setBindGroup(1, modelUniBindGroup, [m.handle.modelUniByteOffset]);
+      if (this.mode === "normal")
+        bundleEnc.drawIndexed(
+          m.handle.numTris * 3,
+          undefined,
+          m.handle.triIndicesNumOffset,
+          m.handle.vertNumOffset
+        );
+      else
+        bundleEnc.drawIndexed(
+          m.handle.numLines * 2,
+          undefined,
+          m.handle.lineIndicesNumOffset,
+          m.handle.vertNumOffset
+        );
     }
-    this.renderBundle = bundleEnc_tris.finish();
+    this.renderBundle = bundleEnc.finish();
     return this.renderBundle;
   }
 

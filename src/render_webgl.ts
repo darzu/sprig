@@ -289,6 +289,7 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxVe
   }
 
   const renderer: Renderer = {
+    mode: "normal", // TODO(@darzu): support wireframe mode in webgl
     addObject,
     addObjectInstance,
     renderFrame,
