@@ -326,7 +326,14 @@ class CubeGameState extends GameState<Inputs> {
         }
       }
       // claim authority?
-      if (min_distance < 8 && min_distance_player == this.me) {
+      if (
+        min_distance < 8 &&
+        min_distance_player == this.me &&
+        cube.authority !== this.me
+      ) {
+        console.log(
+          `Taking authority over cube ${cube.id} from ${cube.authority}`
+        );
         cube.authority = this.me;
         cube.authority_seq += 1;
       }

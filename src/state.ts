@@ -1,6 +1,9 @@
 import { mat4, vec3, quat } from "./gl-matrix.js";
 import { Renderer } from "./render.js";
 
+const ERROR_SMOOTHING_FACTOR = 0.9;
+const EPSILON = 0.0001;
+
 // defines the geometry and coloring of a mesh
 export interface Mesh {
   pos: vec3[];
@@ -23,6 +26,8 @@ export abstract class GameObject {
   authority: number;
   authority_seq: number;
   snap_seq: number;
+  location_error: vec3;
+  rotation_error: quat;
 
   constructor(id: number) {
     this.id = id;
@@ -34,13 +39,42 @@ export abstract class GameObject {
     this.authority = 0;
     this.authority_seq = 0;
     this.snap_seq = -1;
+    this.location_error = vec3.fromValues(0, 0, 0);
+    this.rotation_error = quat.create();
+  }
+
+  snapLocation(location: vec3) {
+    let current_location = vec3.add(
+      vec3.create(),
+      this.location,
+      this.location_error
+    );
+    let location_error = vec3.sub(current_location, current_location, location);
+    this.location = location;
+    this.location_error = location_error;
+  }
+
+  snapRotation(rotation: quat) {
+    let current_rotation = quat.mul(
+      quat.create(),
+      this.rotation,
+      this.rotation_error
+    );
+    let rotation_inverse = quat.invert(quat.create(), rotation);
+    let rotation_error = quat.mul(
+      current_rotation,
+      current_rotation,
+      rotation_inverse
+    );
+    this.rotation = rotation;
+    this.rotation_error = rotation_error;
   }
 
   transform(): mat4 {
     return mat4.fromRotationTranslation(
       mat4.create(),
-      this.rotation,
-      this.location
+      quat.mul(quat.create(), this.rotation, this.rotation_error),
+      vec3.add(vec3.create(), this.location, this.location_error)
     );
   }
 
@@ -140,6 +174,39 @@ export abstract class GameState<Inputs> {
     let dt = time - this.time;
     this.stepGame(dt, inputs);
     for (let o of Object.values(this.objects)) {
+      // reduce error in location and rotation
+      o.location_error = vec3.scale(
+        o.location_error,
+        o.location_error,
+        ERROR_SMOOTHING_FACTOR
+      );
+      let location_error_magnitude = vec3.length(o.location_error);
+      if (
+        location_error_magnitude !== 0 &&
+        location_error_magnitude < EPSILON
+      ) {
+        console.log(`Object ${o.id} reached 0 location error`);
+        o.location_error = vec3.fromValues(0, 0, 0);
+      }
+
+      let identity_quat = quat.create();
+      o.rotation_error = quat.slerp(
+        o.rotation_error,
+        o.rotation_error,
+        identity_quat,
+        1 - ERROR_SMOOTHING_FACTOR
+      );
+      let rotation_error_magnitude = Math.abs(
+        quat.getAngle(o.rotation_error, identity_quat)
+      );
+      if (
+        rotation_error_magnitude !== 0 &&
+        rotation_error_magnitude < EPSILON
+      ) {
+        console.log(`Object ${o.id} reached 0 rotation error`);
+        o.rotation_error = identity_quat;
+      }
+
       // change location according to linear velocity
       let delta = vec3.scale(vec3.create(), o.linear_velocity, dt);
       vec3.add(o.location, o.location, delta);

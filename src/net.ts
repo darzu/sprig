@@ -112,15 +112,6 @@ function deserializeObjectUpdates(msg: StateUpdate): ObjectUpdate[] {
   return updates;
 }
 
-function shouldAcceptUpdate(obj: ObjectUpdate, update: ObjectUpdate) {
-  return (
-    obj.authority_seq < update.authority_seq ||
-    (obj.authority_seq == update.authority_seq &&
-      obj.authority < update.authority) ||
-    (obj.authority == update.authority && obj.snap_seq < update.snap_seq)
-  );
-}
-
 export class Net<Inputs> {
   private state: GameState<Inputs>;
   private host: boolean;
@@ -146,6 +137,26 @@ export class Net<Inputs> {
       this.handleMessage(conn.peer, data);
     });
   }
+
+  shouldAcceptUpdate(obj: ObjectUpdate, update: ObjectUpdate) {
+    return (
+      obj.authority_seq < update.authority_seq ||
+      (obj.authority_seq == update.authority_seq &&
+        obj.authority < update.authority) ||
+      (obj.authority == update.authority && obj.snap_seq < update.snap_seq)
+    );
+  }
+
+  private applyUpdate(obj: GameObject, update: ObjectUpdate) {
+    obj.authority = update.authority;
+    obj.authority_seq = update.authority_seq;
+    obj.linear_velocity = update.linear_velocity;
+    obj.angular_velocity = update.angular_velocity;
+    obj.snap_seq = update.snap_seq;
+    obj.snapLocation(update.location);
+    obj.snapRotation(update.rotation);
+  }
+
   private handleMessage(server: ServerId, message: Message) {
     console.log(`Received message of type ${MessageType[message.type]}`);
     switch (message.type) {
@@ -184,14 +195,8 @@ export class Net<Inputs> {
           let obj = this.state.addObjectFromNet(netObj);
           let update = this.unapplied_updates[obj.id];
           if (update) {
-            if (shouldAcceptUpdate(obj, update)) {
-              obj.authority = update.authority;
-              obj.authority_seq = update.authority_seq;
-              obj.location = update.location;
-              obj.linear_velocity = update.linear_velocity;
-              obj.rotation = update.rotation;
-              obj.angular_velocity = update.angular_velocity;
-              obj.snap_seq = update.snap_seq;
+            if (this.shouldAcceptUpdate(obj, update)) {
+              this.applyUpdate(obj, update);
             }
           }
         }
@@ -211,18 +216,11 @@ export class Net<Inputs> {
             let latest_update = this.unapplied_updates[update.id];
             if (!latest_update) {
               this.unapplied_updates[update.id] = update;
-            } else if (shouldAcceptUpdate(latest_update, update)) {
+            } else if (this.shouldAcceptUpdate(latest_update, update)) {
               this.unapplied_updates[update.id] = update;
             }
-          } else if (shouldAcceptUpdate(obj, update)) {
-            // actually apply the state update
-            obj.authority = update.authority;
-            obj.authority_seq = update.authority_seq;
-            obj.location = update.location;
-            obj.linear_velocity = update.linear_velocity;
-            obj.rotation = update.rotation;
-            obj.angular_velocity = update.angular_velocity;
-            obj.snap_seq = update.snap_seq;
+          } else if (this.shouldAcceptUpdate(obj, update)) {
+            this.applyUpdate(obj, update);
           }
         }
       }
