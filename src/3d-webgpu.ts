@@ -169,46 +169,48 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
             const x4 = x3 + jitter(w * 0.5)
             const z4 = z3 + jitter(w * 0.5)
 
-            const y1 = bladeH + jitter(1)
-            const y2 = y1 * (1.0 + jitter(0.1))
+            const y1 = 0; //-bladeH;
+            const y2 = 0;
+            const y3 = bladeH + jitter(1)
+            const y4 = y3 * (1.0 + jitter(0.1))
 
             // TODO(@darzu): debug coloring
             // const r = 0.2 + jitter(0.02)
             // const g = 0.5 + jitter(0.2)
             // const b = 0.2 + jitter(0.02)
 
-            const p1: vec3 = [x1, 0, z1];
-            const p2: vec3 = [x2, 0, z2];
-            const p3: vec3 = [x3, y1, z3];
-            const p4: vec3 = [x4, y2, z4];
+            const p1: vec3 = [x1, y1, z1];
+            const p2: vec3 = [x2, y2, z2];
+            const p3: vec3 = [x3, y3, z3];
+            const p4: vec3 = [x4, y4, z4];
 
-            const norm1 = vec3.cross(vec3.create(), [x2 - x1, 0, z2 - z1], [x3 - x1, y1, z3 - z1])
-            vec3.normalize(norm1, norm1);
+            // const norm1 = vec3.cross(vec3.create(), [x2 - x1, y2 - y1, z2 - z1], [x3 - x1, y3 - y1, z3 - z1])
+            // vec3.normalize(norm1, norm1);
 
-            addTriToBuffers(
-                [p1, p2, p3],
-                [0, 1, 2],
-                norm1,
-                [
-                    // TODO(@darzu): use proper darkening
-                    [r * 0.5, g * 0.5, b * 0.5],
-                    [r * 0.5, g * 0.5, b * 0.5],
-                    [r, g, b],
-                ],
-                [0, 0, 1.0],
-                grassMeshPool._vertsMap(),
-                grassMeshPool._numVerts,
-                vertElStride,
-                grassMeshPool._indMap(),
-                grassMeshPool._numTris,
-                true);
+            // addTriToBuffers(
+            //     [p1, p2, p3],
+            //     [0, 1, 2],
+            //     norm1,
+            //     [
+            //         // TODO(@darzu): use proper darkening
+            //         [r * 0.5, g * 0.5, b * 0.5],
+            //         [r * 0.5, g * 0.5, b * 0.5],
+            //         [r, g, b],
+            //     ],
+            //     [0, 0, 1.0],
+            //     grassMeshPool._vertsMap(),
+            //     grassMeshPool._numVerts,
+            //     vertElStride,
+            //     grassMeshPool._indMap(),
+            //     grassMeshPool._numTris,
+            //     true);
 
-            grassMeshPool._numTris += 1;
-            grassMeshPool._numVerts += 3;
+            // grassMeshPool._numTris += 1;
+            // grassMeshPool._numVerts += 3;
 
-            i++;
+            // i++;
 
-            const norm2 = vec3.cross(vec3.create(), [x3 - x1, y1, z3 - z1], [x4 - x1, y2, z4 - z1])
+            const norm2 = vec3.cross(vec3.create(), [x3 - x1, y3 - y1, z3 - z1], [x4 - x1, y4 - y1, z4 - z1])
             vec3.normalize(norm2, norm2);
 
             addTriToBuffers(
@@ -273,6 +275,7 @@ function createGrassTileset(opts: GrassTilesetOpts, device: GPUDevice): GrassTil
     const tileCount = tilesPerSide ** 2;
     const totalGrass = grassPerTile * tileCount;
     // const totalGrassTris = totalGrass * 1;
+    // TODO(@darzu): GRASS FORMAT
     const totalGrassTris = totalGrass * 2;
     const pool = createMeshMemoryPool({
         vertByteSize: bytesPerFloat * vertElStride,
@@ -397,12 +400,13 @@ function nearestIntegers(target: number, numInts: number): number[] {
 }
 
 function initGrassSystem(device: GPUDevice): GrassSystem {
+    // TODO(@darzu): try upside down triangles
     const lod1Opts: GrassTilesetOpts = {
         // tile
         // bladeW: 0.2,
         bladeW: 0.2,
         // bladeH: 3,
-        bladeH: 1.0,
+        bladeH: 1.5,
         // bladeH: 1.7,
         // TODO(@darzu): debugging
         // spacing: 1,
@@ -415,7 +419,8 @@ function initGrassSystem(device: GPUDevice): GrassSystem {
     }
     const lod0Opts: GrassTilesetOpts = {
         ...lod1Opts,
-        spacing: lod1Opts.spacing * 0.25,
+        bladeH: lod1Opts.bladeH * 0.5,
+        spacing: lod1Opts.spacing * 0.5,
         tileSize: lod1Opts.tileSize * 0.5,
     }
     const lod2Opts: GrassTilesetOpts = {
@@ -446,10 +451,11 @@ function initGrassSystem(device: GPUDevice): GrassSystem {
     // TODO(@darzu): debugging
     // const lodOpts = [lodDebug]
     const lodOpts = [
-        // lod0Opts,
+        lod0Opts,
         lod1Opts,
+        // lod1Opts,
         lod2Opts,
-        // lod3Opts,
+        lod3Opts,
         lod4Opts
     ]
 
