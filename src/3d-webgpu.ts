@@ -1,5 +1,5 @@
 import { mat4, vec3, vec4, quat } from './ext/gl-matrix.js';
-import { clamp } from './math.js';
+import { align, clamp, jitter } from './math.js';
 import { addTriToBuffers, createMeshMemoryPool, CUBE, mat4ByteSize, Mesh, MeshMemoryPool, MeshMemoryPoolOptions, MeshModel, PLANE, triByteSize, vec3ByteSize } from './3d/mesh.js';
 import { createMeshRenderer } from './3d/mesh-renderer.js';
 // import * as RAPIER from './ext/@dimforge/rapier3d/rapier.js';
@@ -105,16 +105,6 @@ function mkEulerTransformable(): Transformable {
         },
     }
 }
-
-
-function jitter(radius: number): number {
-    return (Math.random() - 0.5) * radius * 2
-}
-
-function align(x: number, size: number): number {
-    return Math.ceil(x / size) * size
-}
-
 
 // TODO(@darzu): grass tiles
 /*
