@@ -1,18 +1,18 @@
 import { mat4, vec3 } from './ext/gl-matrix.js';
 
 // face normals vs vertex normals
-interface Mesh {
+interface MeshModel {
     // vertex positions (x,y,z)
     pos: vec3[];
     // triangles (vert indices, ccw)
     tri: vec3[];
 }
-interface ExpandedMesh extends Mesh {
+interface ExpandedMesh extends MeshModel {
     // face normals, per triangle
     fnorm: vec3[];
 }
 
-const CUBE: Mesh = {
+const CUBE: MeshModel = {
     pos: [
         [+1.0, +1.0, +1.0],
         [-1.0, +1.0, +1.0],
@@ -46,7 +46,7 @@ const CUBE: Mesh = {
     ]
 }
 
-const PLANE: Mesh = {
+const PLANE: MeshModel = {
     pos: [
         [+10, 0, +10],
         [-10, 0, +10],
@@ -80,7 +80,7 @@ function computeNormal([p1, p2, p3]: [vec3, vec3, vec3]): vec3 {
 
     return n;
 }
-function computeNormals(m: Mesh): vec3[] {
+function computeNormals(m: MeshModel): vec3[] {
     const triPoses = m.tri.map(([i0, i1, i2]) => [m.pos[i0], m.pos[i1], m.pos[i2]] as [vec3, vec3, vec3])
     return triPoses.map(computeNormal)
 }
@@ -110,10 +110,14 @@ fn main([[location(0)]] color: vec4<f32>) -> [[location(0)]] vec4<f32> {
 
 const basicVertWGSL =
 `
-[[block]] struct Uniforms {
-    modelViewProjectionMatrix : mat4x4<f32>;
+[[block]] struct SharedUnis {
+    viewProj : mat4x4<f32>;
 };
-[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
+[[binding(0), group(0)]] var<uniform> sharedUnis : SharedUnis;
+[[block]] struct ModelUnis {
+    model : mat4x4<f32>;
+};
+[[binding(0), group(1)]] var<uniform> modelUnis : ModelUnis;
 
 struct VertexOutput {
     [[builtin(position)]] pos : vec4<f32>;
@@ -127,10 +131,10 @@ fn main(
     ) -> VertexOutput {
     var output : VertexOutput;
     var pos4: vec4<f32> = vec4<f32>(position, 1.0);
-    output.pos = uniforms.modelViewProjectionMatrix * pos4;
+    output.pos = sharedUnis.viewProj * modelUnis.model * pos4;
     // output.color = vec4<f32>(normal, 1.0);
     // output.color = 0.5 * (pos4 + vec4<f32>(1.0, 1.0, 1.0, 1.0));
-    output.color = uniforms.modelViewProjectionMatrix * pos4;
+    output.color = sharedUnis.viewProj * pos4;
 
     return output;
 }
@@ -149,7 +153,7 @@ const triSize = Uint16Array.BYTES_PER_ELEMENT * triStride;
 /*
 Adds mesh vertices and indices into buffers. Optionally shifts triangle indicies.
 */
-function addMeshToBuffers(m: Mesh, verts: Float32Array, prevNumVerts: number, indices: Uint16Array, prevNumTri: number, shiftIndices = false): void {
+function addMeshToBuffers(m: MeshModel, verts: Float32Array, prevNumVerts: number, indices: Uint16Array, prevNumTri: number, shiftIndices = false): void {
     const norms = computeNormals(m);
     m.pos.forEach((v, i) => {
         const off = (prevNumVerts + i) * vertStride
@@ -171,10 +175,11 @@ function addMeshToBuffers(m: Mesh, verts: Float32Array, prevNumVerts: number, in
         // verts[off + t[0] + 3] = norms[i][0]
     })
 }
-interface RenderableMesh {
+interface Mesh {
     vertNumOffset: number,
     indicesNumOffset: number,
-    mesh: Mesh,
+    transform: mat4;
+    model: MeshModel,
 }
 
 const sampleCount = 4;
@@ -217,22 +222,28 @@ async function init(canvasRef: HTMLCanvasElement) {
         mappedAtCreation: true,
     });
 
-    const meshes: RenderableMesh[] = []
+    const meshes: Mesh[] = []
     {
         const vertsMap = new Float32Array(verticesBuffer.getMappedRange())
         const indMap = new Uint16Array(indexBuffer.getMappedRange());
 
-        function addMesh(m: Mesh): RenderableMesh {
+        function addMesh(m: MeshModel): Mesh {
             if (numVerts + m.pos.length > maxNumVerts)
                 throw "Too many vertices!"
             if (numTris + m.tri.length > maxNumTri)
                 throw "Too many triangles!"
 
             addMeshToBuffers(m, vertsMap, numVerts, indMap, numTris, false);
-            const res: RenderableMesh = {
+
+            // TODO(@darzu): real transforms
+            const trans = mat4.create();
+            mat4.translate(trans, trans, vec3.fromValues(4 * meshes.length, 0, 0));
+
+            const res: Mesh = {
                 vertNumOffset: numVerts, // TODO(@darzu): 
                 indicesNumOffset: numTris * 3, // TODO(@darzu): 
-                mesh: m,
+                transform: trans,
+                model: m,
             }
             numVerts += m.pos.length;
             numTris += m.tri.length;
@@ -241,8 +252,10 @@ async function init(canvasRef: HTMLCanvasElement) {
 
         {
             // TODO(@darzu): add meshes!
-            meshes.push(addMesh(CUBE))
             meshes.push(addMesh(PLANE))
+            meshes.push(addMesh(CUBE))
+            meshes.push(addMesh(CUBE))
+            meshes.push(addMesh(CUBE))
         }
 
         indexBuffer.unmap();
@@ -287,6 +300,8 @@ async function init(canvasRef: HTMLCanvasElement) {
     //     ],
     //     },
     // ];
+
+    // TODO(@darzu): createBindGroupLayout
 
     const pipeline = device.createRenderPipeline({
         vertex: {
@@ -360,19 +375,39 @@ async function init(canvasRef: HTMLCanvasElement) {
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
 
-    const uniformBufferSize = 4 * 16; // 4x4 matrix
-    const uniformBuffer = device.createBuffer({
-        size: uniformBufferSize,
+    const sharedUniBufferSize = 4 * 16; // 4x4 matrix
+    const sharedUniBuffer = device.createBuffer({
+        size: sharedUniBufferSize,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
-    const uniformBindGroup = device.createBindGroup({
+    const sharedUniBindGroup = device.createBindGroup({
         layout: pipeline.getBindGroupLayout(0),
         entries: [
             {
                 binding: 0,
                 resource: {
-                    buffer: uniformBuffer,
+                    buffer: sharedUniBuffer,
+                },
+            },
+        ],
+    });
+
+
+    const modelUniBufferSize = 4 * 16; // 4x4 matrix
+    const modelUniBuffer = device.createBuffer({
+        size: modelUniBufferSize,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    const modelUniBindGroup = device.createBindGroup({
+        layout: pipeline.getBindGroupLayout(0),
+        entries: [
+            {
+                binding: 0,
+                resource: {
+                    buffer: modelUniBuffer,
+                    offset: 0, // TODO(@darzu): different offsets per model
                 },
             },
         ],
@@ -408,8 +443,6 @@ async function init(canvasRef: HTMLCanvasElement) {
         },
     } as const;
 
-
-
     const aspect = Math.abs(canvasRef.width / canvasRef.height);
     const projectionMatrix = mat4.create();
     mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 1, 100.0);
@@ -425,10 +458,10 @@ async function init(canvasRef: HTMLCanvasElement) {
             vec3.fromValues(Math.sin(now), Math.cos(now), 0)
         );
 
-        const modelViewProjectionMatrix = mat4.create();
-        mat4.multiply(modelViewProjectionMatrix, projectionMatrix, viewMatrix);
+        const viewProj = mat4.create();
+        mat4.multiply(viewProj, projectionMatrix, viewMatrix);
 
-        return modelViewProjectionMatrix as Float32Array;
+        return viewProj as Float32Array;
     }
 
     function frame() {
@@ -437,7 +470,7 @@ async function init(canvasRef: HTMLCanvasElement) {
 
         const transformationMatrix = getTransformationMatrix();
         device.queue.writeBuffer(
-            uniformBuffer,
+            sharedUniBuffer,
             0,
             transformationMatrix.buffer,
             transformationMatrix.byteOffset,
@@ -453,12 +486,21 @@ async function init(canvasRef: HTMLCanvasElement) {
         const commandEncoder = device.createCommandEncoder();
         const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
         passEncoder.setPipeline(pipeline);
-        passEncoder.setBindGroup(0, uniformBindGroup);
+        passEncoder.setBindGroup(0, sharedUniBindGroup);
+        passEncoder.setBindGroup(1, modelUniBindGroup);
         passEncoder.setVertexBuffer(0, verticesBuffer);
         passEncoder.setIndexBuffer(indexBuffer, 'uint16');
         // TODO(@darzu): one draw call per mesh?
         for (let m of meshes) {
-            passEncoder.drawIndexed(m.mesh.tri.length * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+            const transform = m.transform as Float32Array;
+            device.queue.writeBuffer(
+                modelUniBuffer,
+                0,
+                transform.buffer,
+                transform.byteOffset,
+                transform.byteLength
+            );
+            passEncoder.drawIndexed(m.model.tri.length * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
         }
         // passEncoder.drawIndexed(numTris * 3);
         // passEncoder.draw(CUBE.pos.length, 1, 0, 0);

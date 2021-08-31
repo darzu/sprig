@@ -438,3 +438,6 @@ Brackeys:
 
 Learning to code book:
   https://natureofcode.com/book/
+
+Amazing interactive blog posts:
+  https://ciechanow.ski/lights-and-shadows/

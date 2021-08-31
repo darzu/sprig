@@ -54,3 +54,7 @@ How import are animations?
 
 Skinning:
     https://canvas.dartmouth.edu/courses/16840/assignments/82767
+
+Skeletal:
+    https://en.wikipedia.org/wiki/Skeletal_animation
+    http://morpheo.inrialpes.fr/~franco/3dgraphics/practical3.html
