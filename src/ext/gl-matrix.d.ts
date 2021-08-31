@@ -1327,7 +1327,7 @@
          * @param {ReadonlyVec3} up vec3 pointing up
          * @returns {mat4} out
          */
-        export function targetTo(out: mat4, eye: ReadonlyVec3, target: any, up: ReadonlyVec3): mat4;
+        export function targetTo(out: mat4, eye: ReadonlyVec3, target: ReadonlyVec3, up: ReadonlyVec3): mat4;
         /**
          * Returns a string representation of a mat4
          *

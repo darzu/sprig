@@ -454,3 +454,13 @@ A Slower Speed of Light
 Objectives / early result:
   Programming some basic shapes
   Sharing and playing multiplayer
+
+Matrix math:
+  http://web.cse.ohio-state.edu/~wang.3602/courses/cse5542-2013-spring/6-Transformation_II.pdf
+
+Understanding quanternions / rotation:
+  http://acko.net/blog/animate-your-way-to-glory-pt2/
+  https://imadr.github.io/rotations-with-quaternions/
+  https://marctenbosch.com/quaternions/
+  https://rotations.berkeley.edu
+  https://omar-shehata.medium.com/how-to-fix-gimbal-lock-in-n-dimensions-f2f7baec2b5e

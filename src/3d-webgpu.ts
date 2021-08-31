@@ -292,7 +292,11 @@ interface Mesh {
 const sampleCount = 4;
 
 interface Transformable {
-    transform: mat4;
+    position: vec3;
+    // TODO(@darzu): use quanternion?
+    rotation: mat4;
+    getTransform: () => mat4;
+    lookAt: (target: vec3) => void;
     pitch: (rad: number) => void;
     yaw: (rad: number) => void;
     roll: (rad: number) => void;
@@ -302,26 +306,46 @@ interface Transformable {
 }
 
 function mkTransformable(): Transformable {
-    const transform = mat4.create();
+    const position = vec3.create();
+    const rotation = mat4.create();
+    //mat4.tar
     return {
-        transform,
+        position,
+        rotation,
+        getTransform: () => {
+            const transform = mat4.create();
+            // const invRot = mat4.invert(mat4.create(), rotation);
+            // mat4.rotateX(transform, transform, 1);
+            mat4.translate(transform, transform, position);
+            mat4.multiply(transform, rotation, transform);
+
+            // mat4.lookAt(transform, position, [0, 0, 0], [0, 1, 0]);
+            // mat4.targetTo(transform, position, [0, 0, 0], [0, 1, 0]);
+            // mat4.invert(transform, transform);
+            return transform;
+        },
+        lookAt: (target: vec3) => {
+            // mat4.targetTo(rotation, position, target, [0, 1, 0])
+            // mat4.invert(frust, frust);
+            // mat4.multiply(rotation, mat4.create(), frust)
+        },
         pitch: (rad: number) => {
-            mat4.rotateX(transform, transform, rad)
+            mat4.rotateX(rotation, rotation, rad)
         },
         yaw: (rad: number) => {
-            mat4.rotateY(transform, transform, rad)
+            mat4.rotateY(rotation, rotation, rad)
         },
         roll: (rad: number) => {
-            mat4.rotateZ(transform, transform, rad)
+            mat4.rotateZ(rotation, rotation, rad)
         },
         moveX: (n: number) => {
-            mat4.translate(transform, transform, [n, 0, 0])
+            position[0] += n
         },
         moveY: (n: number) => {
-            mat4.translate(transform, transform, [0, n, 0])
+            position[1] += n
         },
         moveZ: (n: number) => {
-            mat4.translate(transform, transform, [0, 0, n])
+            position[2] += n
         },
     }
 }
@@ -677,9 +701,28 @@ async function init(canvasRef: HTMLCanvasElement) {
     }
 
     const cameraPos = mkTransformable();
-    cameraPos.moveZ(-40)
+    cameraPos.moveZ(-20)
+    cameraPos.moveY(-5)
+    // cameraPos.lookAt([0, 0, 0])
 
-    function frame() {
+    // register key stuff
+    window.addEventListener('keydown', function (event: KeyboardEvent) {
+        onKeyDown(event);
+    }, false);
+    window.addEventListener('keyup', function (event: KeyboardEvent) {
+        onKeyUp(event);
+    }, false);
+
+    const pressedKeys: { [keycode: string]: boolean } = {}
+    function onKeyDown(ev: KeyboardEvent) {
+        console.log(ev.key);
+        pressedKeys[ev.key.toLowerCase()] = true
+    }
+    function onKeyUp(ev: KeyboardEvent) {
+        pressedKeys[ev.key.toLowerCase()] = false
+    }
+
+    function frame(time: number) {
         // Sample is no longer the active page.
         if (!canvasRef) return;
 
@@ -691,13 +734,25 @@ async function init(canvasRef: HTMLCanvasElement) {
         mat4.translate(meshes[1].transform, meshes[1].transform, [0.1, 0, 0])
         applyMeshTransform(meshes[1])
 
-        cameraPos.yaw(0.01)
-        cameraPos.pitch(0.01)
-        cameraPos.roll(0.01)
+        if (pressedKeys['w'])
+            cameraPos.moveZ(1)
+        if (pressedKeys['s'])
+            cameraPos.moveZ(-1)
+        if (pressedKeys['a'])
+            cameraPos.moveX(1)
+        if (pressedKeys['d'])
+            cameraPos.moveX(-1)
+        if (pressedKeys['q'])
+            cameraPos.roll(-0.1)
+        if (pressedKeys['e'])
+            cameraPos.roll(0.1)
+        // cameraPos.yaw(0.01)
+        // cameraPos.pitch(0.01)
+        // cameraPos.roll(0.01)
 
         function getViewProj() {
             const viewProj = mat4.create();
-            mat4.multiply(viewProj, projectionMatrix, cameraPos.transform);
+            mat4.multiply(viewProj, projectionMatrix, cameraPos.getTransform());
             return viewProj as Float32Array;
         }
 
@@ -744,10 +799,6 @@ async function init(canvasRef: HTMLCanvasElement) {
 // Attach to html
 let canvas = document.getElementById('my_Canvas') as HTMLCanvasElement;
 await init(canvas)
-
-
-// scratch
-
 
 // TODO: vertex, index, normals
 // {
