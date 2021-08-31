@@ -93,11 +93,19 @@ export class Renderer_WebGPU implements Renderer {
 
   private sceneUniformBuffer: GPUBuffer;
 
-  private meshObjs: MeshObj[];
 
   private initFinished: boolean = false;
-  private builder: MeshPoolBuilder_WebGPU;
+
+  // game meshes
+  private poolBuilder: MeshPoolBuilder_WebGPU;
   private pool: MeshPool_WebGPU;
+  private meshObjs: MeshObj[];
+
+  // debug meshes
+  // private debugPoolBuilder: MeshPoolBuilder_WebGPU;
+  // private debugPool: MeshPool_WebGPU;
+  // private debugMeshObjs: MeshObj[];
+
   private sceneData: SceneUniform.Data;
 
   private renderBundle: GPURenderBundle;
@@ -110,10 +118,52 @@ export class Renderer_WebGPU implements Renderer {
   private lastHeight = 0;
   private aspectRatio = 1;
 
+  constructor(
+    canvas: HTMLCanvasElement,
+    device: GPUDevice,
+    context: GPUPresentationContext,
+    adapter: GPUAdapter,
+    maxMeshes: number,
+    maxVertices: number,
+  ) {
+    this.canvas = canvas;
+    this.device = device;
+    this.context = context;
+    this.adapter = adapter;
+    this.presentationFormat = context.getPreferredFormat(this.adapter);
+
+    const opts: MeshPoolOpts = {
+      maxMeshes,
+      maxTris: maxVertices,
+      maxVerts: maxVertices,
+      maxLines: maxVertices * 2,
+      shiftMeshIndices: false,
+    }
+
+    this.poolBuilder = createMeshPoolBuilder_WebGPU(device, opts);
+    this.pool = this.poolBuilder.poolHandle;
+
+    this.poolBuilder = createMeshPoolBuilder_WebGPU(device, opts);
+    this.pool = this.poolBuilder.poolHandle;
+
+    this.meshObjs = [];
+
+    this.sceneUniformBuffer = device.createBuffer({
+      size: SceneUniform.ByteSizeAligned,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    // setup scene data:
+    this.sceneData = setupScene();
+
+    // workaround because Typescript can't tell this function init's the render bundle
+    this.renderBundle = this.createRenderBundle();
+  }
+
   public finishInit() {
     if (this.initFinished)
       throw 'finishInit called twice'
-    this.builder.finish();
+    this.poolBuilder.finish();
     this.initFinished = true;
   }
 
@@ -181,7 +231,7 @@ export class Renderer_WebGPU implements Renderer {
     let m = o.mesh();
     // need to introduce a new variable to convince Typescript the mapping is non-null
 
-    const handle = this.initFinished ? this.pool.addMesh(m) : this.builder.addMesh(m);
+    const handle = this.initFinished ? this.pool.addMesh(m) : this.poolBuilder.addMesh(m);
 
     const res = {
       obj: o,
@@ -195,7 +245,7 @@ export class Renderer_WebGPU implements Renderer {
   }
   public addObjectInstance(o: ObjectHandle, oldHandle: MeshHandle): MeshObj {
     const d = MeshUniform.CloneData(oldHandle)
-    const newHandle = this.initFinished ? this.pool.addMeshInstance(oldHandle, d) : this.builder.addMeshInstance(oldHandle, d);
+    const newHandle = this.initFinished ? this.pool.addMeshInstance(oldHandle, d) : this.poolBuilder.addMeshInstance(oldHandle, d);
 
     const res = {
       obj: o,
@@ -344,45 +394,6 @@ export class Renderer_WebGPU implements Renderer {
     return this.renderBundle;
   }
 
-  constructor(
-    canvas: HTMLCanvasElement,
-    device: GPUDevice,
-    context: GPUPresentationContext,
-    adapter: GPUAdapter,
-    maxMeshes: number,
-    maxVertices: number,
-  ) {
-    this.canvas = canvas;
-    this.device = device;
-    this.context = context;
-    this.adapter = adapter;
-    this.presentationFormat = context.getPreferredFormat(this.adapter);
-
-    const opts: MeshPoolOpts = {
-      maxMeshes,
-      maxTris: maxVertices,
-      maxVerts: maxVertices,
-      maxLines: maxVertices * 2,
-      shiftMeshIndices: false,
-    }
-
-    this.builder = createMeshPoolBuilder_WebGPU(device, opts);
-
-    this.pool = this.builder.poolHandle;
-
-    this.meshObjs = [];
-
-    this.sceneUniformBuffer = device.createBuffer({
-      size: SceneUniform.ByteSizeAligned,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
-
-    // setup scene data:
-    this.sceneData = setupScene();
-
-    // workaround because Typescript can't tell this function init's the render bundle
-    this.renderBundle = this.createRenderBundle();
-  }
 
   private scratchSceneUni = new Uint8Array(SceneUniform.ByteSizeAligned);
   public renderFrame(viewMatrix: mat4): void {
