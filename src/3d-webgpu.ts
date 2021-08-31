@@ -388,6 +388,8 @@ async function init(canvasRef: HTMLCanvasElement) {
         bindGroupLayouts: [sharedUniBindGroupLayout, modelUniBindGroupLayout],
     });
 
+    const depthStencilFormat = 'depth24plus';
+
     const pipeline = device.createRenderPipeline({
         layout: pipelineLayout,
         vertex: {
@@ -467,7 +469,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         depthStencil: {
             depthWriteEnabled: true,
             depthCompare: 'less',
-            format: 'depth24plus',
+            format: depthStencilFormat,
         },
         multisample: {
             count: sampleCount,
@@ -476,7 +478,7 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     const depthTexture = device.createTexture({
         size: { width: canvasRef.width, height: canvasRef.width },
-        format: 'depth24plus',
+        format: depthStencilFormat,
         sampleCount,
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
@@ -629,6 +631,30 @@ async function init(canvasRef: HTMLCanvasElement) {
     playerM.transform = playerT.getTransform();
     meshPool.applyMeshTransform(playerM)
 
+    // create render bundle
+    const bundleRenderDesc: GPURenderBundleEncoderDescriptor = {
+        colorFormats: [swapChainFormat],
+        depthStencilFormat: depthStencilFormat,
+        sampleCount,
+    }
+
+    const bundleEncoder = device.createRenderBundleEncoder(bundleRenderDesc);
+    // const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+    bundleEncoder.setPipeline(pipeline);
+    bundleEncoder.setBindGroup(0, sharedUniBindGroup);
+    bundleEncoder.setVertexBuffer(0, meshPool._vertBuffer);
+    bundleEncoder.setVertexBuffer(1, instanceDataBuffer);
+    bundleEncoder.setIndexBuffer(meshPool._indexBuffer, 'uint16');
+    // TODO(@darzu): one draw call per mesh?
+    const uniOffset = [0];
+    for (let m of meshPool._meshes) {
+        // TODO(@darzu): set bind group
+        uniOffset[0] = m.modelUniByteOffset;
+        bundleEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
+        bundleEncoder.drawIndexed(m.model.tri.length * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+    }
+    const renderBundle = bundleEncoder.finish()
+
     function frame(time: number) {
         // Sample is no longer the active page.
         if (!canvasRef) return;
@@ -689,23 +715,16 @@ async function init(canvasRef: HTMLCanvasElement) {
 
         const commandEncoder = device.createCommandEncoder();
         const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
-        passEncoder.setPipeline(pipeline);
-        passEncoder.setBindGroup(0, sharedUniBindGroup);
-        passEncoder.setVertexBuffer(0, meshPool._vertBuffer);
-        passEncoder.setVertexBuffer(1, instanceDataBuffer);
-        passEncoder.setIndexBuffer(meshPool._indexBuffer, 'uint16');
-        // TODO(@darzu): one draw call per mesh?
-        const uniOffset = [0];
-        for (let m of meshPool._meshes) {
-            // TODO(@darzu): set bind group
-            uniOffset[0] = m.modelUniByteOffset;
-            passEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
-            passEncoder.drawIndexed(m.model.tri.length * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-        }
-        // passEncoder.drawIndexed(numTris * 3);
-        // passEncoder.draw(CUBE.pos.length, 1, 0, 0);
+
+        passEncoder.executeBundles([renderBundle]);
+
         passEncoder.endPass();
         device.queue.submit([commandEncoder.finish()]);
+
+
+        // passEncoder.drawIndexed(numTris * 3);
+        // passEncoder.draw(CUBE.pos.length, 1, 0, 0);
+        // passEncoder.endPass();
 
         requestAnimationFrame(frame);
     }

@@ -91,7 +91,7 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
     console.log(`   ${maxTris * triByteSize / 1024} KB for indices`);
     console.log(`   ${maxMeshes * meshUniByteSize / 1024} KB for models`);
     const unusedBytesPerModel = 256 - mat4ByteSize % 256
-    console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per model (${unusedBytesPerModel * maxMeshes / 1024} KB total)`);
+    console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per model (${unusedBytesPerModel * maxMeshes / 1024} KB total waste)`);
 
     const _vertBuffer = device.createBuffer({
         size: maxVerts * vertByteSize,
@@ -365,9 +365,11 @@ function addMeshToBuffers(
 
 // TODO(@darzu): rename to MeshHandle ?
 export interface Mesh {
+    // handles into the buffers
     vertNumOffset: number,
     indicesNumOffset: number,
     modelUniByteOffset: number,
+    // data
     transform: mat4;
     model: MeshModel,
 }
