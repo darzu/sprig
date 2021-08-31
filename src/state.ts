@@ -29,6 +29,7 @@ export abstract class GameObject {
   snap_seq: number;
   location_error: vec3;
   rotation_error: quat;
+  private _transform: mat4;
 
   constructor(id: number, creator: number) {
     this.id = id;
@@ -43,6 +44,7 @@ export abstract class GameObject {
     this.snap_seq = -1;
     this.location_error = vec3.fromValues(0, 0, 0);
     this.rotation_error = quat.create();
+    this._transform = mat4.create();
   }
 
   snapLocation(location: vec3) {
@@ -76,7 +78,7 @@ export abstract class GameObject {
 
   transform(): mat4 {
     return mat4.fromRotationTranslation(
-      mat4.create(),
+      this._transform,
       quat.mul(quat.create(), this.rotation, this.rotation_error),
       vec3.add(vec3.create(), this.location, this.location_error)
     );
