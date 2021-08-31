@@ -1,65 +1,6 @@
 import * as m4 from "./m4.js"
 import { v3, V3 } from "./v3.js";
 
-/*
-WebGL
-  https://twgljs.org // tiny layer over webgl
-  https://twgljs.org/examples/twgl-cube.html
-  https://twgljs.org/examples/webgl-cube.html
-  https://github.com/pmndrs/react-three-fiber
-  https://enable3d.io (three.js, ammo.js, capacitor.js, phaser, )
-  https://github.com/tamani-coding/enable3d-physics-examples
-
-Three.js:
-  https://threejs.org
-  https://www.npmtrends.com/babylonjs-vs-three
-
-
-WebGL learning:
-  https://games.greggman.com/game/webgl-3d-cameras/
-  https://webglfundamentals.org/webgl/lessons/webgl-3d-camera.html
-  https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices
-  https://www.tutorialspoint.com/webgl/webgl_interactive_cube.htm
-
-Babylon:
-  https://www.babylonjs.com
-  https://playground.babylonjs.com
-  https://nme.babylonjs.com // material editor (flow based)
-  https://github.com/BabylonJS/SummerFestival
-  https://doc.babylonjs.com/guidedLearning/createAGame
-  https://babylonjs.medium.com/from-unity-to-babylon-js-how-is-the-journey-c71f79482aa3
-
-Three.js tutorial:
-  https://www.youtube.com/watch?v=cp-H_6VODko
-
-HAXE:
-  http://babylonhx.com
-
-Multi-platform:
-  https://github.com/expo/expo/tree/master/packages/expo-gl#expo-gl
-
-PlayCanvas:
-  https://playcanvas.com
-
-Unity Tiny:
-  https://unity.com/solutions/instant-games
-  https://forum.unity.com/threads/project-tiny-0-32-preview-is-available-ui-new-skinned-mesh-renderer-blendshape-sample.1045204/
-  https://tiny.vision/demos/Tiny3D/Wasm/Tiny3D.html (needs Chrome or Safari Preview)
-  https://github.com/Unity-Technologies/ProjectTinySamples/tree/master/Tiny3D
-  (OLD!) https://docs.unity3d.com/Packages/com.unity.tiny@0.13/manual/scripting-systems.html
-  (OLD!) https://docs.unity3d.com/Packages/com.unity.tiny@0.13/manual/intro-for-unity-developers.html
-
-Regl:
-  https://github.com/regl-project/regl
-
-e.g.
-  https://github.com/jacklaplante/bowdown
-  https://github.com/onegeek/webglu
-
-Sketch fab:
-  https://sketchfab.com
-*/
-
 /*============= Creating a canvas ======================*/
 let canvas = document.getElementById('my_Canvas') as HTMLCanvasElement;
 let gl = canvas.getContext('webgl') as WebGLRenderingContext; // TODO: use webgl2

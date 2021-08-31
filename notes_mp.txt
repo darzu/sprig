@@ -270,4 +270,3 @@ RTS networking: https://www.gamasutra.com/view/feature/3094/1500_archers_on_a_28
 Unreal networking: https://docs.unrealengine.com/udk/Three/NetworkingOverview.html
 
 
-

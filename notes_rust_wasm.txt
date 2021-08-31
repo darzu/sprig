@@ -1,0 +1,26 @@
+References:
+https://developer.mozilla.org/en-US/docs/WebAssembly/Rust_to_wasm
+https://rustwasm.github.io/docs/book/
+https://www.rust-lang.org/what/wasm
+
+Rust community stuff:
+    https://youtu.be/XH4sXBa06ig
+
+"WASI"
+    https://wasi.dev
+
+https://wasmtime.dev
+    https://docs.wasmtime.dev/lang-rust.html
+    https://github.com/bytecodealliance/wasmtime/tree/main/cranelift
+
+https://wasmer.io
+    https://wasmer.io/wasmer-vs-wasmtime (wasmer is faster?)
+
+singlepass
+    https://medium.com/wasmer/a-webassembly-compiler-tale-9ef37aa3b537
+
+wasm<->js
+    https://rustwasm.github.io/docs/book/game-of-life/implementing.html
+    Minimizing copying into and out of the WebAssembly linear memory
+    Minimizing serializing and deserializing
+
