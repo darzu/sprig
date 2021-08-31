@@ -31,3 +31,8 @@ multiplayer sequencer:
 References:
     https://developer.mozilla.org/en-US/docs/Web/API/OscillatorNode
     https://marcgg.com/blog/2016/11/01/javascript-audio/#
+
+Drums in JS:
+    https://www.nickwritesablog.com/drum-synthesis-in-javascript/
+
+https://faust.grame.fr
