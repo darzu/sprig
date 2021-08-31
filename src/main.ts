@@ -13,44 +13,20 @@ const CUBE: MeshModel = {
         [+1.0, -1.0, -1.0],
     ],
     tri: [
-        // front
-        [0, 1, 2],
-        [0, 2, 3],
-        // top
-        [4, 5, 1],
-        [4, 1, 0],
-        // right
-        [3, 4, 0],
-        [3, 7, 4],
-        // left
-        [2, 1, 5],
-        [2, 5, 6],
-        // bottom
-        [6, 3, 2],
-        [6, 7, 3],
-        // back
-        [5, 4, 7],
-        [5, 7, 6],
+        [0, 1, 2], [0, 2, 3], // front
+        [4, 5, 1], [4, 1, 0], // top
+        [3, 4, 0], [3, 7, 4], // right
+        [2, 1, 5], [2, 5, 6], // left
+        [6, 3, 2], [6, 7, 3], // bottom
+        [5, 4, 7], [5, 7, 6], // back
     ],
     colors: [
-        // front
-        [0.2, 0.0, 0.0],
-        [0.2, 0.0, 0.0],
-        // top
-        [0.0, 0.2, 0.0],
-        [0.0, 0.2, 0.0],
-        // right
-        [0.0, 0.0, 0.2],
-        [0.0, 0.0, 0.2],
-        // left
-        [0.2, 0.2, 0.0],
-        [0.2, 0.2, 0.0],
-        // bottom
-        [0.0, 0.2, 0.2],
-        [0.0, 0.2, 0.2],
-        // back
-        [0.2, 0.0, 0.2],
-        [0.2, 0.0, 0.2],
+        [0.2, 0.0, 0.0], [0.2, 0.0, 0.0], // front
+        [0.0, 0.2, 0.0], [0.0, 0.2, 0.0], // top
+        [0.0, 0.0, 0.2], [0.0, 0.0, 0.2], // right
+        [0.2, 0.2, 0.0], [0.2, 0.2, 0.0], // left
+        [0.0, 0.2, 0.2], [0.0, 0.2, 0.2], // bottom
+        [0.2, 0.0, 0.2], [0.2, 0.0, 0.2], // back
     ]
 }
 
@@ -62,18 +38,12 @@ const PLANE: MeshModel = {
         [-10, 0, -10],
     ],
     tri: [
-        // top
-        [0, 2, 3],
-        [0, 3, 1],
-        // bottom
-        [3, 2, 0],
-        [1, 3, 0],
+        [0, 2, 3], [0, 3, 1], // top
+        [3, 2, 0], [1, 3, 0], // bottom
     ],
     colors: [
-        [0.05, 0.1, 0.05],
-        [0.05, 0.1, 0.05],
-        [0.05, 0.1, 0.05],
-        [0.05, 0.1, 0.05],
+        [0.05, 0.1, 0.05], [0.05, 0.1, 0.05],
+        [0.05, 0.1, 0.05], [0.05, 0.1, 0.05],
     ],
 }
 
@@ -84,8 +54,8 @@ function align(x: number, size: number): number {
 const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
 const bytesPerMat4 = (4 * 4)/*4x4 mat*/ * 4/*f32*/
 const bytesPerVec3 = 3/*vec3*/ * 4/*f32*/
-const triElStride = 3/*ind per tri*/;
-const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * triElStride;
+const indicesPerTriangle = 3;
+const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
 
 const wgslShaders = {
     vertexShadow: `
@@ -191,10 +161,7 @@ const depthStencilFormat = 'depth24plus-stencil8';
 const shadowDepthStencilFormat = 'depth32float';
 
 const shadowDepthTextureDesc: GPUTextureDescriptor = {
-    size: {
-        width: 2048 * 2,
-        height: 2048 * 2,
-    },
+    size: { width: 2048 * 2, height: 2048 * 2 },
     usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.SAMPLED,
     format: shadowDepthStencilFormat,
 }
@@ -213,10 +180,8 @@ function resize(device: GPUDevice, canvasWidth: number, canvasHeight: number) {
     if (lastWidth === canvasWidth && lastHeight === canvasHeight)
         return;
 
-    if (depthTexture)
-        depthTexture.destroy();
-    if (colorTexture)
-        colorTexture.destroy();
+    if (depthTexture) depthTexture.destroy();
+    if (colorTexture) colorTexture.destroy();
 
     depthTexture = device.createTexture({
         size: { width: canvasWidth, height: canvasHeight },
@@ -242,19 +207,15 @@ function resize(device: GPUDevice, canvasWidth: number, canvasHeight: number) {
     mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 1, 10000.0/*view distance*/);
 }
 
-// face normals vs vertex normals
 interface MeshModel {
-    // vertex positions (x,y,z)
     pos: vec3[];
-    // triangles (vert indices, ccw)
     tri: vec3[];
-    // colors per triangle in r,g,b float [0-1] format
-    colors: vec3[];
+    colors: vec3[];  // colors per triangle in r,g,b float [0-1] format
 }
 
-// TODO(@darzu): this shouldn't be needed once "flat" shading is supported in Chrome's WGSL, 
-//  and/or PrimativeID is supported https://github.com/gpuweb/gpuweb/issues/1786
 function unshareVertices(input: MeshModel): MeshModel {
+    // TODO: this shouldn't be needed once "flat" shading is supported in Chrome's WGSL, 
+    // https://bugs.chromium.org/p/tint/issues/detail?id=746&q=interpolate&can=2
     const pos: vec3[] = []
     const tri: vec3[] = []
     input.tri.forEach(([i0, i1, i2], i) => {
@@ -292,84 +253,65 @@ function computeNormals(m: MeshModel): vec3[] {
     return triPoses.map(computeNormal)
 }
 
-function addTriToBuffers(
-    triPos: [vec3, vec3, vec3],
-    triInd: vec3,
-    triNorms: [vec3, vec3, vec3],
-    triColors: [vec3, vec3, vec3],
-    triSwayHeights: vec3,
-    verts: Float32Array, prevNumVerts: number, vertElStride: number,
-    indices: Uint16Array | null, prevNumTri: number, shiftIndices = false): void {
-    const vOff = prevNumVerts * vertElStride
-    const iOff = prevNumTri * triElStride
-    const indShift = shiftIndices ? prevNumVerts : 0;
-    if (indices) {
-        indices[iOff + 0] = triInd[0] + indShift
-        indices[iOff + 1] = triInd[1] + indShift
-        indices[iOff + 2] = triInd[2] + indShift
-    }
-    // set per-face vertex data
-    // position
-    verts[vOff + 0 * vertElStride + 0] = triPos[0][0]
-    verts[vOff + 0 * vertElStride + 1] = triPos[0][1]
-    verts[vOff + 0 * vertElStride + 2] = triPos[0][2]
-    verts[vOff + 1 * vertElStride + 0] = triPos[1][0]
-    verts[vOff + 1 * vertElStride + 1] = triPos[1][1]
-    verts[vOff + 1 * vertElStride + 2] = triPos[1][2]
-    verts[vOff + 2 * vertElStride + 0] = triPos[2][0]
-    verts[vOff + 2 * vertElStride + 1] = triPos[2][1]
-    verts[vOff + 2 * vertElStride + 2] = triPos[2][2]
-    // color
-    const [r1, g1, b1] = triColors[0]
-    const [r2, g2, b2] = triColors[1]
-    const [r3, g3, b3] = triColors[2]
-    verts[vOff + 0 * vertElStride + 3] = r1
-    verts[vOff + 0 * vertElStride + 4] = g1
-    verts[vOff + 0 * vertElStride + 5] = b1
-    verts[vOff + 1 * vertElStride + 3] = r2
-    verts[vOff + 1 * vertElStride + 4] = g2
-    verts[vOff + 1 * vertElStride + 5] = b2
-    verts[vOff + 2 * vertElStride + 3] = r3
-    verts[vOff + 2 * vertElStride + 4] = g3
-    verts[vOff + 2 * vertElStride + 5] = b3
-    // normals
-    const [nx1, ny1, nz1] = triNorms[0]
-    verts[vOff + 0 * vertElStride + 6] = nx1
-    verts[vOff + 0 * vertElStride + 7] = ny1
-    verts[vOff + 0 * vertElStride + 8] = nz1
-    const [nx2, ny2, nz2] = triNorms[1]
-    verts[vOff + 1 * vertElStride + 6] = nx2
-    verts[vOff + 1 * vertElStride + 7] = ny2
-    verts[vOff + 1 * vertElStride + 8] = nz2
-    const [nx3, ny3, nz3] = triNorms[2]
-    verts[vOff + 2 * vertElStride + 6] = nx3
-    verts[vOff + 2 * vertElStride + 7] = ny3
-    verts[vOff + 2 * vertElStride + 8] = nz3
-    // sway height
-    const [y0, y1, y2] = triSwayHeights
-    verts[vOff + 0 * vertElStride + 9] = y0
-    verts[vOff + 1 * vertElStride + 9] = y1
-    verts[vOff + 2 * vertElStride + 9] = y2
-    }
-
-/*
-Adds mesh vertices and indices into buffers. Optionally shifts triangle indicies.
-*/
 function addMeshToBuffers(
     m: MeshModel,
-    verts: Float32Array, prevNumVerts: number, vertElStride: number,
-    indices: Uint16Array | null, prevNumTri: number, shiftIndices = false): void {
-    // IMPORTANT: assumes unshared vertices
+    verts: Float32Array, prevNumVerts2: number, vertElStride: number,
+    indices: Uint16Array | null, prevNumTri2: number, shiftIndices = false): void {
+    // NOTE: we currently assumes vertices are unshared, this should be fixed by
     const norms = computeNormals(m);
-    m.tri.forEach((t, i) => {
-        addTriToBuffers(
-            [m.pos[t[0]], m.pos[t[1]], m.pos[t[2]]],
-            t,
-            [norms[i], norms[i], norms[i]],
-            [m.colors[i], m.colors[i], m.colors[i]],
-            [0, 0, 0],
-            verts, prevNumVerts + i * 3, vertElStride,
-            indices, prevNumTri + i, shiftIndices);
+    m.tri.forEach((triInd, i) => {
+        const triPos: [vec3, vec3, vec3] = [m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]]];
+        const triNorms: [vec3, vec3, vec3] = [norms[i], norms[i], norms[i]];
+        const triColors: [vec3, vec3, vec3] = [m.colors[i], m.colors[i], m.colors[i]];
+        const prevNumVerts: number = prevNumVerts2 + i * 3;
+        const prevNumTri: number = prevNumTri2 + i;
+        {
+            const vOff = prevNumVerts * vertElStride
+            const iOff = prevNumTri * indicesPerTriangle
+            const indShift = shiftIndices ? prevNumVerts : 0;
+            if (indices) {
+                indices[iOff + 0] = triInd[0] + indShift
+                indices[iOff + 1] = triInd[1] + indShift
+                indices[iOff + 2] = triInd[2] + indShift
+            }
+            // set per-face vertex data
+            // position
+            verts[vOff + 0 * vertElStride + 0] = triPos[0][0]
+            verts[vOff + 0 * vertElStride + 1] = triPos[0][1]
+            verts[vOff + 0 * vertElStride + 2] = triPos[0][2]
+            verts[vOff + 1 * vertElStride + 0] = triPos[1][0]
+            verts[vOff + 1 * vertElStride + 1] = triPos[1][1]
+            verts[vOff + 1 * vertElStride + 2] = triPos[1][2]
+            verts[vOff + 2 * vertElStride + 0] = triPos[2][0]
+            verts[vOff + 2 * vertElStride + 1] = triPos[2][1]
+            verts[vOff + 2 * vertElStride + 2] = triPos[2][2]
+            // color
+            const [r1, g1, b1] = triColors[0]
+            const [r2, g2, b2] = triColors[1]
+            const [r3, g3, b3] = triColors[2]
+            verts[vOff + 0 * vertElStride + 3] = r1
+            verts[vOff + 0 * vertElStride + 4] = g1
+            verts[vOff + 0 * vertElStride + 5] = b1
+            verts[vOff + 1 * vertElStride + 3] = r2
+            verts[vOff + 1 * vertElStride + 4] = g2
+            verts[vOff + 1 * vertElStride + 5] = b2
+            verts[vOff + 2 * vertElStride + 3] = r3
+            verts[vOff + 2 * vertElStride + 4] = g3
+            verts[vOff + 2 * vertElStride + 5] = b3
+            // normals
+            const [nx1, ny1, nz1] = triNorms[0]
+            verts[vOff + 0 * vertElStride + 6] = nx1
+            verts[vOff + 0 * vertElStride + 7] = ny1
+            verts[vOff + 0 * vertElStride + 8] = nz1
+            const [nx2, ny2, nz2] = triNorms[1]
+            verts[vOff + 1 * vertElStride + 6] = nx2
+            verts[vOff + 1 * vertElStride + 7] = ny2
+            verts[vOff + 1 * vertElStride + 8] = nz2
+            const [nx3, ny3, nz3] = triNorms[2]
+            verts[vOff + 2 * vertElStride + 6] = nx3
+            verts[vOff + 2 * vertElStride + 7] = ny3
+            verts[vOff + 2 * vertElStride + 8] = nz3
+        }
     })
 }
 
