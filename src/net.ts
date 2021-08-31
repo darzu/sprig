@@ -138,6 +138,9 @@ class StateSynchronizer<Inputs> {
       //console.log(`Object ${id} is known`);
       this.objectsKnown.add(id);
     });
+    // TODO: should probably GC old unacked messages as well to avoid unbounded
+    // memory growth
+    delete this.objectsInUpdate[seq];
   }
 }
 
