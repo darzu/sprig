@@ -168,30 +168,50 @@ async function init(canvasRef: HTMLCanvasElement) {
         CUBE,
         CUBE,
         CUBE,
-        GRASS,
     ])
 
     // create a field of cubes
-    const grayCube: MeshModel = { ...CUBE, colors: CUBE.colors.map(c => [0.3, 0.3, 0.3]) }
-    const spread = 2;
-    const spacing = 2;
-    const handles: Mesh[] = []
-    for (let x = -spread; x < spread; x++) {
-        for (let y = -spread; y < spread; y++) {
-            for (let z = -spread; z < spread; z++) {
-                meshPool.addMeshes([grayCube])
-                const handle = meshPool._meshes[meshPool._meshes.length - 1] // TODO(@darzu): hack
-                mat4.translate(handle.transform, handle.transform, [x * spacing, (y + spread + 1.5) * spacing, (z - spread * 1.5) * spacing])
-                mat4.rotateX(handle.transform, handle.transform, Math.random() * 2 * Math.PI)
-                mat4.rotateY(handle.transform, handle.transform, Math.random() * 2 * Math.PI)
-                mat4.rotateZ(handle.transform, handle.transform, Math.random() * 2 * Math.PI)
-                handles.push(handle)
+    {
+        const grayCube: MeshModel = { ...CUBE, colors: CUBE.colors.map(c => [0.3, 0.3, 0.3]) }
+        const spread = 2;
+        const spacing = 2;
+        const boxHandles: Mesh[] = []
+        for (let x = -spread; x < spread; x++) {
+            for (let y = -spread; y < spread; y++) {
+                for (let z = -spread; z < spread; z++) {
+                    meshPool.addMeshes([grayCube])
+                    const handle = meshPool._meshes[meshPool._meshes.length - 1] // TODO(@darzu): hack
+                    mat4.translate(handle.transform, handle.transform, [x * spacing, (y + spread + 1.5) * spacing, (z - spread * 1.5) * spacing])
+                    mat4.rotateX(handle.transform, handle.transform, Math.random() * 2 * Math.PI)
+                    mat4.rotateY(handle.transform, handle.transform, Math.random() * 2 * Math.PI)
+                    mat4.rotateZ(handle.transform, handle.transform, Math.random() * 2 * Math.PI)
+                    meshPool.applyMeshTransform(handle);
+                    boxHandles.push(handle)
+                }
             }
         }
     }
 
-    for (let h of handles)
-        meshPool.applyMeshTransform(h);
+    // create grass field
+    {
+        const spread = 20;
+        const spacing = 1;
+        const boxHandles: Mesh[] = []
+        for (let x = -spread; x < spread; x++) {
+            for (let z = -spread; z < spread; z++) {
+                meshPool.addMeshes([GRASS])
+                const handle = meshPool._meshes[meshPool._meshes.length - 1] // TODO(@darzu): hack
+                const jitter = 1.0;
+                const xJitter = (Math.random() - 0.5) * spacing * jitter;
+                const zJitter = (Math.random() - 0.5) * spacing * jitter;
+                mat4.translate(handle.transform, handle.transform, [x * spacing + xJitter, 0, z * spacing + zJitter])
+                mat4.rotateY(handle.transform, handle.transform, (Math.random() - 0.5) * 0.5 * Math.PI)
+                meshPool.applyMeshTransform(handle);
+                boxHandles.push(handle)
+            }
+        }
+    }
+
 
     meshPool.preRender();
 
