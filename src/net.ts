@@ -161,10 +161,13 @@ export class Net<Inputs> {
   private numDroppedUpdates: number = 0;
 
   send(server: ServerId, message: ArrayBuffer, reliable: boolean) {
+    // TODO: figure out if we need to do something smarter than just not sending if the connection isn't present
     let conn = reliable
       ? this.reliableChannels[server]
       : this.unreliableChannels[server];
-    conn.send(message);
+    if (conn) {
+      conn.send(message);
+    }
   }
 
   stats() {
