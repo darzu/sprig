@@ -48,3 +48,6 @@ Loading without tool?
     fetch('/example.wasm'),
     /* { ... } */
     );
+
+Rustcraft uses wgpu:
+    https://github.com/dskart/rustcraft

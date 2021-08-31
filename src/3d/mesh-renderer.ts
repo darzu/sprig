@@ -98,6 +98,7 @@ const wgslShaders = {
     [[location(1)]] fragPos : vec3<f32>;
     [[location(2)]] fragNorm : vec3<f32>;
     [[location(3)]] color : vec3<f32>;
+    [[builtin(front_facing)]] front: bool;
     };
 
     let albedo : vec3<f32> = vec3<f32>(0.9, 0.9, 0.9);
@@ -122,12 +123,15 @@ const wgslShaders = {
     }
     visibility = visibility / 9.0;
 
-    let lambertFactor : f32 = max(dot(normalize(scene.lightPos - input.fragPos), input.fragNorm), 0.0);
+    let normSign: f32 = select(1.0, -1.0, input.front);
+    let norm: vec3<f32> = input.fragNorm * normSign;
+
+    let lambertFactor : f32 = max(dot(normalize(scene.lightPos - input.fragPos), norm), 0.0);
     let lightingFactor : f32 = min(visibility * lambertFactor, 1.0) * 1.5;
     let diffuse: vec3<f32> = lightColor * lightingFactor;
     let ambient: vec3<f32> = vec3<f32>(0.9, 0.9, 0.9) * ambientFactor;
 
-    // return vec4<f32>(input.fragNorm, 1.0);
+    // return vec4<f32>(norm, 1.0);
 
     return vec4<f32>((diffuse + ambient) * input.color, 1.0);
 

@@ -218,9 +218,9 @@ async function init(canvasRef: HTMLCanvasElement) {
     {
         grassMeshPool._map();
 
-        const spacing = 0.4;
-        const bladeW = 0.2;
-        const bladeH = 2;
+        const spacing = 0.2;
+        const bladeW = 0.1;
+        const bladeH = 1.7;
         let i = 0;
         for (let xi = -grassSpread; xi < grassSpread; xi++) {
             for (let zi = -grassSpread; zi < grassSpread; zi++) {
@@ -235,20 +235,21 @@ async function init(canvasRef: HTMLCanvasElement) {
                 const z1 = z + Math.sin(rot) * w
                 const x2 = x + Math.cos(rot + Math.PI) * w
                 const z2 = z + Math.sin(rot + Math.PI) * w
-                const x3 = x + jitter(0.5)
-                const z3 = z + jitter(0.5)
+                const x3 = x + jitter(0.7)
+                const z3 = z + jitter(0.7)
 
-                const y = bladeH + jitter(0.5)
+                const y = bladeH + jitter(1)
 
-                const r = 0.2
-                const g = 0.8
-                const b = 0.2
+                const r = 0.1 + jitter(0.05)
+                const g = 0.4 + jitter(0.2)
+                const b = 0.1 + jitter(0.05)
 
                 const p0: vec3 = [x1, 0, z1];
                 const p1: vec3 = [x2, 0, z2];
                 const p2: vec3 = [x3, y, z3];
 
-                const norm = vec3.cross(vec3.create(), [x1 - x2, 0, z1 - z2], [0, y, 0])
+                const norm = vec3.cross(vec3.create(), [x2 - x1, 0, z2 - z1], [x3 - x1, y, z3 - z1])
+                vec3.normalize(norm, norm);
 
                 // const x = xi * spacing + jitter(0.5);
                 // const z = zi * spacing + jitter(0.5);
