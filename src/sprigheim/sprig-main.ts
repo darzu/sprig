@@ -435,10 +435,6 @@ const PLANE: Mesh = unshareProvokingVertices({
 })
 
 interface Scene {
-    worldOrigin: vec3,
-    lightPosition: vec3,
-    lightViewMatrix: mat4,
-    lightProjectionMatrix: mat4,
     lightViewProjMatrix: mat4,
     lightDir: vec3,
 }
@@ -455,10 +451,6 @@ function createScene(): Scene {
     vec3.normalize(lightDir, lightDir);
 
     return {
-        worldOrigin,
-        lightPosition,
-        lightViewMatrix,
-        lightProjectionMatrix,
         lightViewProjMatrix,
         lightDir,
     }
