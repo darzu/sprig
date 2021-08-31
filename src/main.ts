@@ -202,13 +202,13 @@ class CubeGameState extends GameState<Inputs> {
       this.addObject(plane);
       this.addPlayer();
       let randomCubes: SpinningCube[] = [];
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 20; i++) {
         let cube = new SpinningCube(this.id());
         // create cubes with random colors
         cube.location = vec3.fromValues(
-          Math.random() * 20 - 10,
-          Math.random() * 5,
-          -Math.random() * 10 - 5
+          (Math.random() - 0.5) * 4 * i,
+          Math.random() * 1 * i,
+          i * -Math.random() * 2 - 5
         );
         //cube.linear_velocity = vec3.fromValues(0.002, 0, 0);
         cube.color = vec3.fromValues(
@@ -514,7 +514,7 @@ async function startGame(host: string | null) {
   const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter!.requestDevice();
-  const renderer = new Renderer(canvas, device, 2000);
+  const renderer = new Renderer(canvas, device, 1000);
   const gameState = new CubeGameState(performance.now(), renderer, hosting);
   const inputs = inputsReader(canvas);
   function doLockMouse() {
