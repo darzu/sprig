@@ -68,7 +68,7 @@ export interface Renderer {
     renderFrame(timeMs: number): void;
 }
 
-export function attachToCanvas(canvasRef: HTMLCanvasElement): Renderer {
+export function attachToCanvas(canvasRef: HTMLCanvasElement, pools: MeshPool[]): Renderer {
     let gl = canvasRef.getContext('webgl')!;
     let canv = gl.canvas;// as HTMLCanvasElement
 
@@ -100,29 +100,34 @@ export function attachToCanvas(canvasRef: HTMLCanvasElement): Renderer {
     const positionLoc = gl.getAttribLocation(program, "a_position");
     const normalLoc = gl.getAttribLocation(program, "a_normal");
 
-    // const positionBuffer = gl.createBuffer();
-    // gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-    // const normalBuffer = gl.createBuffer();
-    // gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
-    // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
-    // const indicesBuffer = gl.createBuffer();
-    // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
-    // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+    pools.forEach(p => {
 
-    // gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    // gl.vertexAttribPointer(positionLoc, 3, gl.FLOAT, false, 0, 0);
-    // gl.enableVertexAttribArray(positionLoc);
-    // gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
-    // gl.vertexAttribPointer(normalLoc, 3, gl.FLOAT, false, 0, 0);
-    // gl.enableVertexAttribArray(normalLoc);
-    // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
+
+
+        // const positionBuffer = gl.createBuffer();
+        // gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+        // const normalBuffer = gl.createBuffer();
+        // gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+        // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
+        // const indicesBuffer = gl.createBuffer();
+        // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
+        // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+    })
 
     function updateSceneUniform(scene: SceneUniform.Data) {
     }
 
     function renderFrame(timeMs: number) {
-
+        for (let p of pools) {
+            // gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            // gl.vertexAttribPointer(positionLoc, 3, gl.FLOAT, false, 0, 0);
+            // gl.enableVertexAttribArray(positionLoc);
+            // gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+            // gl.vertexAttribPointer(normalLoc, 3, gl.FLOAT, false, 0, 0);
+            // gl.enableVertexAttribArray(normalLoc);
+            // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
+        }
     }
 
     return {
