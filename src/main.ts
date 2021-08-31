@@ -18,8 +18,8 @@ const vertexShader = shaderSceneStruct + `
     [[group(1), binding(0)]] var<uniform> model : Model;
 
     struct VertexOutput {
-        [[location(0)]] normal : vec3<f32>;
-        [[location(1)]] color : vec3<f32>;
+        [[location(0)]] [[interpolate(flat)]] normal : vec3<f32>;
+        [[location(1)]] [[interpolate(flat)]] color : vec3<f32>;
         [[builtin(position)]] position : vec4<f32>;
     };
 
@@ -41,8 +41,8 @@ const fragmentShader = shaderSceneStruct + `
     [[group(0), binding(0)]] var<uniform> scene : Scene;
 
     struct VertexOutput {
-        [[location(0)]] normal : vec3<f32>;
-        [[location(1)]] color : vec3<f32>;
+        [[location(0)]] [[interpolate(flat)]] normal : vec3<f32>;
+        [[location(1)]] [[interpolate(flat)]] color : vec3<f32>;
     };
 
     [[stage(fragment)]]
@@ -124,23 +124,33 @@ interface Mesh {
     colors: vec3[];  // colors per triangle in r,g,b float [0-1] format
 }
 
-// normally vertices can be shared by triangles, so this duplicates vertices as necessary so they are unshared
-// TODO: this shouldn't be needed once "flat" shading is supported in Chrome's WGSL, see:
-//      https://bugs.chromium.org/p/tint/issues/detail?id=746&q=interpolate&can=2
-function unshareVertices(input: Mesh): Mesh {
-    const pos: vec3[] = []
+function unshareProvokingVertices(input: Mesh): Mesh {
+    const pos: vec3[] = [...input.pos]
     const tri: vec3[] = []
-    input.tri.forEach(([i0, i1, i2], i) => {
-        pos.push(input.pos[i0]);
-        pos.push(input.pos[i1]);
-        pos.push(input.pos[i2]);
-        tri.push([
-            i * 3 + 0,
-            i * 3 + 1,
-            i * 3 + 2,
-        ])
+    const provoking: { [key: number]: boolean } = {}
+    input.tri.forEach(([i0, i1, i2], triI) => {
+        if (!provoking[i0]) {
+            // First vertex is unused as a provoking vertex, so we'll use it for this triangle.
+            provoking[i0] = true;
+            tri.push([i0, i1, i2])
+        } else if (!provoking[i1]) {
+            // First vertex was taken, so let's see if we can rotate the indices to get an unused 
+            // provoking vertex.
+            provoking[i1] = true;
+            tri.push([i1, i2, i0])
+        } else if (!provoking[i2]) {
+            // ditto
+            provoking[i2] = true;
+            tri.push([i2, i0, i1])
+        } else {
+            // All vertices are taken, so create a new one
+            const i3 = pos.length;
+            pos.push(input.pos[i0])
+            provoking[i3] = true;
+            tri.push([i3, i1, i2])
+        }
     })
-    return { pos, tri, colors: input.colors }
+    return { ...input, pos, tri }
 }
 
 // once a mesh has been added to our vertex, triangle, and uniform buffers, we need
@@ -157,7 +167,7 @@ interface MeshHandle {
 }
 
 // define our meshes (ideally these would be imported from a standard format)
-const CUBE: Mesh = {
+const CUBE: Mesh = unshareProvokingVertices({
     pos: [
         [+1.0, +1.0, +1.0],
         [-1.0, +1.0, +1.0],
@@ -185,8 +195,8 @@ const CUBE: Mesh = {
         [0.2, 0, 0], [0.2, 0, 0], // bottom
         [0.2, 0, 0], [0.2, 0, 0], // back
     ]
-}
-const PLANE: Mesh = {
+})
+const PLANE: Mesh = unshareProvokingVertices({
     pos: [
         [+1, 0, +1],
         [-1, 0, +1],
@@ -201,7 +211,7 @@ const PLANE: Mesh = {
         [0.02, 0.02, 0.02], [0.02, 0.02, 0.02],
         [0.02, 0.02, 0.02], [0.02, 0.02, 0.02],
     ],
-}
+})
 
 // define the format of our vertices (this needs to agree with the inputs to the vertex shaders)
 const vertexDataFormat: GPUVertexAttribute[] = [
@@ -293,7 +303,6 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
         let numVerts = 0;
         let numTris = 0;
         function addMesh(m: Mesh): MeshHandle {
-            m = unshareVertices(m); // work-around; see TODO inside function
             if (verticesMap === null)
                 throw "Use preRender() and postRender() functions"
             if (numVerts + m.pos.length > maxVerts)
@@ -304,19 +313,24 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
             const vertNumOffset = numVerts;
             const indicesNumOffset = numTris * 3;
 
-            m.tri.forEach((triInd, i) => {
+            m.pos.forEach((pos, i) => {
                 const vOff = (numVerts) * vertElStride
+                verticesMap.set([...pos, ...[0, 0, 0], ...[0, 0, 0]], vOff)
+                numVerts += 1;
+            })
+
+            m.tri.forEach((triInd, i) => {
+                const vOff = (vertNumOffset + triInd[0]) * vertElStride
                 const iOff = (numTris) * indicesPerTriangle
                 if (indicesMap) {
+                    // update indices
                     indicesMap[iOff + 0] = triInd[0]
                     indicesMap[iOff + 1] = triInd[1]
                     indicesMap[iOff + 2] = triInd[2]
                 }
+                // set provoking vertex
                 const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
-                verticesMap.set([...m.pos[triInd[0]], ...m.colors[i], ...normal], vOff + 0 * vertElStride)
-                verticesMap.set([...m.pos[triInd[1]], ...m.colors[i], ...normal], vOff + 1 * vertElStride)
-                verticesMap.set([...m.pos[triInd[2]], ...m.colors[i], ...normal], vOff + 2 * vertElStride)
-                numVerts += 3;
+                verticesMap.set([...m.pos[triInd[0]], ...m.colors[i], ...normal], vOff)
                 numTris += 1;
             })
 
