@@ -235,6 +235,11 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxTr
     gl.vertexAttribPointer(a_loc_color, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(a_loc_color);
 
+    // update uniforms
+    for (let m of meshObjs) {
+      m.handle.transform = m.obj.transform()
+    }
+
     // TODO(@darzu): need to draw update uniform: u_loc_transform
 
     // bind index buffer
