@@ -181,3 +181,32 @@ Other collision detection ideas:
             http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?f=4&t=9800
             http://www.randygaul.net/2013/08/06/dynamic-aabb-tree/
         multi-axis sweep and prune, 
+
+Dynamics, Collision Detection, Collision Response:
+    https://www.youtube.com/watch?v=-_IspRG548E
+    dynamics:
+        Position, Velocity, Force, Mass
+    collision detection:
+        ea object has a collider
+        find the collision points between each pair
+            the nearest points to ea other,
+            can find depth of collision
+    solvers: 
+        impulse from a collision
+        position correction
+        after finding collision pairs, call solvers
+
+    https://blog.winter.dev/2020/designing-a-physics-engine/
+    https://www.youtube.com/c/TheChernoProject/videos
+    https://www.toptal.com/game/video-game-physics-part-i-an-introduction-to-rigid-body-dynamics
+
+https://pybullet.org/wordpress/
+
+Gilbert–Johnson–Keerthi algorithm (GJK)
+    https://www.youtube.com/watch?v=MDusDn8oTSE
+    detecting collision between convex polygons
+    https://blog.winter.dev/2020/gjk-algorithm/
+
+Expanding Polytope algorithm:
+    respond to collisions
+    https://blog.winter.dev/2020/epa-algorithm/

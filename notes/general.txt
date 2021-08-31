@@ -711,3 +711,6 @@ comments about "the barrier of entry for HTML5 games is absurd compared to what 
 
 lement about the state of web games (top comment), too slow and bug ridden:
   https://news.ycombinator.com/item?id=27634582
+
+Behavior trees:
+  https://www.gamedeveloper.com/programming/behavior-trees-for-ai-how-they-work
