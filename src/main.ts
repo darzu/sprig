@@ -491,7 +491,7 @@ class CubeGameState extends GameState<Inputs> {
       const res = this.renderer.addObject(o)
       return res.handle;
     }, (id) => {
-      console.log("setDebugMesh: " + id) // TODO(@darzu): DEBUG
+      console.log("removeDebugMesh: " + id) // TODO(@darzu): DEBUG
       // TODO(@darzu): delete mesh
     })
   }

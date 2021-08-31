@@ -160,31 +160,43 @@ export function debugCollisions(setDebugMesh: (id: number, m: Mesh, t: mat4) => 
     // console.log(`occupied: ${[..._occupiedCells.keys()].join(',')}`)
     if (BROAD_PHASE === "GRID" && _worldGrid) {
         for (let i of _occupiedCells.keys()) {
-            if (!_worldGrid.grid[i].next) {
-                console.error(`Mismatch between !!_worldGrid.grid[i].next "${!!_worldGrid.grid[i].next}" and _occupiedCells @ ${i}`)
-                const coord = gridCoordFromIdx(vec3.create(), _worldGrid, i);
-                const objMins = Object.values(_objToObjLL).map(o => vec3ToStr(o.minCoord))
-                const objMinIdxs = Object.values(_objToObjLL).map(o => gridIdx(_worldGrid!, o.minCoord))
-                const objMaxs = Object.values(_objToObjLL).map(o => vec3ToStr(o.maxCoord))
-                const objMaxIdxs = Object.values(_objToObjLL).map(o => gridIdx(_worldGrid!, o.maxCoord))
-                console.dir({
-                    coord,
-                    objMins,
-                    objMinIdxs,
-                    objMaxs,
-                    objMaxIdxs,
-                })
-                throw 'stopping'
-            }
+            // TODO(@darzu): DEBUG
+            // if (!_worldGrid.grid[i].next) {
+            //     console.error(`Mismatch between !!_worldGrid.grid[i].next "${!!_worldGrid.grid[i].next}" and _occupiedCells @ ${i}`)
+            //     const coord = gridCoordFromIdx(vec3.create(), _worldGrid, i);
+            //     const objMins = Object.values(_objToObjLL).map(o => vec3ToStr(o.minCoord))
+            //     const objMinIdxs = Object.values(_objToObjLL).map(o => gridIdx(_worldGrid!, o.minCoord))
+            //     const objMaxs = Object.values(_objToObjLL).map(o => vec3ToStr(o.maxCoord))
+            //     const objMaxIdxs = Object.values(_objToObjLL).map(o => gridIdx(_worldGrid!, o.maxCoord))
+            //     console.dir({
+            //         coord,
+            //         objMins,
+            //         objMinIdxs,
+            //         objMaxs,
+            //         objMaxIdxs,
+            //     })
+            //     throw 'stopping'
+            // }
             if (!_debugMeshes[i]) {
-                const c = gridCoordFromIdx(vec3.create(), _worldGrid, i)
+                const coord = gridCoordFromIdx(vec3.create(), _worldGrid, i)
                 const t = mat4.create()
-                mat4.scale(t, t, vec3.scale(_scratchVec3, _worldGrid.cellSize, 0.5));
-                mat4.translate(t, t, [c[0] + 0.5, c[1] + 0.5, c[2] + 0.5])
+                // TODO(@darzu): something is off about this transform
+                console.dir(coord)
+                // mat4.translate(t, t, coord)
+                mat4.translate(t, t, _worldGrid.aabb.min)
+                mat4.scale(t, t, _worldGrid.cellSize);
+                // mat4.scale(t, t, vec3.scale(_scratchVec3, _worldGrid.cellSize, 0.5));
+                mat4.translate(t, t, [coord[0] + 0.5, coord[1] + 0.5, coord[2] + 0.5])
+
+                // TODO(@darzu): DEBUG
+                console.log(`_worldGrid.aabb.min: ${vec3ToStr(_worldGrid.aabb.min)}`)
+                console.log(`(0,0,0): ${vec3ToStr(vec3.transformMat4(_scratchVec3, [0, 0, 0], t))}`)
+
                 _debugMeshes[i] = setDebugMesh(i, CUBE_MESH, t)
             }
-            if (_debugMeshes[i])
-                removeDebugMesh(i)
+            // TODO(@darzu): 
+            // if (_debugMeshes[i])
+            //     removeDebugMesh(i)
         }
     }
 }
@@ -197,7 +209,7 @@ export let _cellChecks = 0;
 interface WorldGrid {
     aabb: AABB,
     cellSize: vec3,
-    dimensions: vec3,
+    cellCount: vec3,
     grid: WorldCell[],
 }
 interface WorldCell {
@@ -213,19 +225,19 @@ interface ObjLL {
 }
 function createWorldGrid(aabb: AABB, cellSize: vec3): WorldGrid {
     console.log(`cellSize: ${cellSize}`) // TODO(@darzu): DEBUG
-    const chunkSize = vec3.sub(vec3.create(), aabb.max, aabb.min)
-    console.log(`chunkSize: ${chunkSize}`) // TODO(@darzu): DEBUG
-    const dims = vec3.div(vec3.create(), chunkSize, cellSize);
-    vec3Floor(dims, dims); // TODO(@darzu): DEBUG
-    console.log(`dims: ${vec3ToStr(dims)}`)
-    const gridLength = dims[0] * dims[1] * dims[2];
+    const worldSize = vec3.sub(vec3.create(), aabb.max, aabb.min)
+    console.log(`worldSize: ${worldSize}`) // TODO(@darzu): DEBUG
+    const cellCount = vec3.div(vec3.create(), worldSize, cellSize);
+    vec3Floor(cellCount, cellCount); // TODO(@darzu): DEBUG
+    console.log(`cellCount: ${vec3ToStr(cellCount)}`)
+    const gridLength = cellCount[0] * cellCount[1] * cellCount[2];
     console.log(`gridLength: ${gridLength}`) // TODO(@darzu): DEBUG
     const grid = range(gridLength).map((_, i) => ({ next: null } as WorldCell));
 
     const result: WorldGrid = {
         aabb,
         cellSize,
-        dimensions: dims,
+        cellCount,
         grid,
     }
 
@@ -256,21 +268,20 @@ function gridRemove(o: ObjLL) {
     o.prev = null;
 }
 function gridIdx(g: WorldGrid, coord: vec3): number {
-    const idx = coord[0] + coord[1] * g.dimensions[0] + coord[2] * g.dimensions[0] * g.dimensions[1]
+    const idx = coord[0] + coord[1] * g.cellCount[0] + coord[2] * g.cellCount[0] * g.cellCount[1]
     if (idx < 0 || g.grid.length <= idx) // TODO(@darzu): for debugging
         throw `object out of bounds! (${coord.join(',')}), idx: ${idx}`
     return idx;
 }
 function gridCoordFromIdx(out: vec3, g: WorldGrid, idx: number): vec3 {
-    // TODO(@darzu): impl
     out[2] = Math.floor(
-        (idx % (g.dimensions[0] * g.dimensions[1] * g.dimensions[2]))
-        / (g.dimensions[0] * g.dimensions[1]))
+        (idx % (g.cellCount[0] * g.cellCount[1] * g.cellCount[2]))
+        / (g.cellCount[0] * g.cellCount[1]))
     out[1] = Math.floor(
-        (idx % (g.dimensions[0] * g.dimensions[1]))
-        / (g.dimensions[0]))
+        (idx % (g.cellCount[0] * g.cellCount[1]))
+        / (g.cellCount[0]))
     out[0] = Math.floor(
-        (idx % (g.dimensions[0]))
+        (idx % (g.cellCount[0]))
         / (1))
     return out;
 }
@@ -278,9 +289,9 @@ function gridCoord(out: vec3, g: WorldGrid, pos: vec3): vec3 {
     vec3.div(out, vec3.sub(out, pos, g.aabb.min), g.cellSize);
     // clamp coordinates onto world grid
     // TODO(@darzu): should we use multiple grids?
-    out[0] = clamp(Math.floor(out[0]), 0, g.dimensions[0] - 1)
-    out[1] = clamp(Math.floor(out[1]), 0, g.dimensions[1] - 1)
-    out[2] = clamp(Math.floor(out[2]), 0, g.dimensions[2] - 1)
+    out[0] = clamp(Math.floor(out[0]), 0, g.cellCount[0] - 1)
+    out[1] = clamp(Math.floor(out[1]), 0, g.cellCount[1] - 1)
+    out[2] = clamp(Math.floor(out[2]), 0, g.cellCount[2] - 1)
     return out;
 }
 function gridPlace(g: WorldGrid, o: ObjLL) {
