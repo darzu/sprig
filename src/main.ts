@@ -91,6 +91,7 @@ const fragmentShader = `
 
 // useful constants
 const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
+const bytesPerUint16 = Uint16Array.BYTES_PER_ELEMENT;
 const bytesPerMat4 = (4 * 4)/*4x4 mat*/ * 4/*f32*/
 const bytesPerVec3 = 3/*vec3*/ * 4/*f32*/
 const indicesPerTriangle = 3;
@@ -315,9 +316,13 @@ interface MeshPool {
     allMeshHandles: MeshHandle[],
     // handles
     device: GPUDevice,
+    addMesh: (m: Mesh) => MeshHandle,
     // TODO:
     // - add via queue
 }
+
+const scratchFloat32Arr = new Float32Array(1000);
+const scratchUint16Arr = new Uint16Array(1000);
 
 function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolBuilder {
     const { maxMeshes, maxTris, maxVerts } = opts;
@@ -335,12 +340,12 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
     // create our mesh buffers (vertex, index, uniform)
     const verticesBuffer = device.createBuffer({
         size: maxVerts * vertByteSize,
-        usage: GPUBufferUsage.VERTEX,
+        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
         mappedAtCreation: true,
     });
     const indicesBuffer = device.createBuffer({
         size: maxTris * bytesPerTri,
-        usage: GPUBufferUsage.INDEX,
+        usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
         mappedAtCreation: true,
     });
     const _meshUniBuffer = device.createBuffer({
@@ -375,16 +380,31 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
 
         m.pos.forEach((pos, i) => {
             const vOff = (numVerts + i) * vertElStride
-            verticesMap.set([...pos, ...[0.5, 0.5, 0.5], ...[1.0, 0.0, 0.0]], vOff)
+            if (directWrite)
+                verticesMap.set([...pos, ...[0.5, 0.5, 0.5], ...[1.0, 0.0, 0.0]], vOff)
+            else {
+                scratchFloat32Arr.set([...pos, ...[0.5, 0.5, 0.5], ...[1.0, 0.0, 0.0]], 0)
+                device.queue.writeBuffer(verticesBuffer, vOff * bytesPerFloat, scratchFloat32Arr, 0, vertByteSize)
+            }
         })
         m.tri.forEach((triInd, i) => {
             const iOff = (numTris + i) * indicesPerTriangle
-            indicesMap[iOff + 0] = triInd[0]
-            indicesMap[iOff + 1] = triInd[1]
-            indicesMap[iOff + 2] = triInd[2]
+            if (directWrite) {
+                indicesMap[iOff + 0] = triInd[0]
+                indicesMap[iOff + 1] = triInd[1]
+                indicesMap[iOff + 2] = triInd[2]
+            } else {
+                scratchUint16Arr.set(triInd, 0)
+                device.queue.writeBuffer(indicesBuffer, iOff * bytesPerUint16, scratchUint16Arr, 0, 3 * bytesPerUint16)
+            }
             const vOff = (numVerts + triInd[0]) * vertElStride
             const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
-            verticesMap.set([...m.pos[triInd[0]], ...m.colors[i], ...normal], vOff)
+            if (directWrite)
+                verticesMap.set([...m.pos[triInd[0]], ...m.colors[i], ...normal], vOff)
+            else {
+                scratchFloat32Arr.set([...m.pos[triInd[0]], ...m.colors[i], ...normal], 0)
+                device.queue.writeBuffer(verticesBuffer, vOff * bytesPerFloat, scratchFloat32Arr, 0, vertByteSize)
+            }
             // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
         })
 
@@ -418,6 +438,7 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
         indicesBuffer,
         _meshUniBuffer,
         allMeshHandles,
+        addMesh: (m: Mesh) => addMesh(m, false),
     }
 
     function finish(): MeshPool {
@@ -437,7 +458,7 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
         verticesMap,
         indicesMap,
         uniformMap,
-        addMesh,
+        addMesh: (m: Mesh) => addMesh(m, true),
         finish,
     };
 
@@ -477,6 +498,8 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         maxVerts: 900
     });
 
+
+    // TODO(@darzu): adding via pool should work...
     const ground = poolBuilder.addMesh(PLANE);
     const player = poolBuilder.addMesh(CUBE);
     const randomCubes: MeshHandle[] = [];
