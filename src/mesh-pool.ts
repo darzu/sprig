@@ -601,6 +601,10 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
             modelUniByteOffset: allMeshes.length * MeshUniform.ByteSizeAligned,
         };
 
+        queues.queueUpdateIndices(idx.indicesNumOffset * 2, new Uint8Array(data.indicesMap.buffer)); // TODO(@darzu): this view shouldn't be necessary
+        queues.queueUpdateUniform(idx.modelUniByteOffset, data.uniformMap);
+        queues.queueUpdateVertices(idx.vertNumOffset * Vertex.ByteSize, data.verticesMap);
+
         const handle = b.finish(idx);
 
         pool.numTris += handle.numTris
