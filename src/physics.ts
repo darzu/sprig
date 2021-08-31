@@ -32,6 +32,46 @@ export function checkCollisions(objs: { worldAABB: AABB, id: number }[]): Collid
     _lastCollisionTestTimeMs = performance.now() - start;
     return _collidesWith;
 }
+interface OctTree {
+    aabb: AABB,
+    objs: Map<number, AABB>,
+    children: (OctTree | null)[],
+}
+const _octtreeMinLen = 1.0;
+
+function octtree(objs: Map<number, AABB>, aabb: AABB): OctTree | null {
+    const myObjs = new Map<number, AABB>();
+    for (let [id, objAABB] of objs.entries()) {
+        if (doesOverlap(objAABB, aabb)) {
+            myObjs.set(id, objAABB)
+            objs.delete(id)
+        }
+    }
+    if (myObjs.size === 0)
+        return null;
+    if (myObjs.size <= 2 || length <= _octtreeMinLen)
+        return { aabb, objs: myObjs, children: [null, null, null, null, null, null, null, null] }
+    const xLen = aabb.max[0] - aabb.min[0]
+    const yLen = aabb.max[1] - aabb.min[1]
+    const zLen = aabb.max[2] - aabb.min[2]
+    const childAABBs: AABB[] = [];
+    for (let xMin of [aabb.min[0], aabb.min[0] + xLen]) {
+        for (let yMin of [aabb.min[1], aabb.min[1] + yLen]) {
+            for (let zMin of [aabb.min[2], aabb.min[2] + zLen]) {
+                childAABBs.push({
+                    min: [xMin, yMin, zMin],
+                    max: [xMin + xLen, yMin + yLen, zMin + zLen],
+                })
+            }
+        }
+    }
+    return {
+        aabb,
+        children: childAABBs.map(aabb => octtree(myObjs, aabb)),
+        objs: myObjs,
+    }
+}
+// function bitree(
 export function doesOverlap(a: AABB, b: AABB) {
     return true
         && b.min[0] <= a.max[0]

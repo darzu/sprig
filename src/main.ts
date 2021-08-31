@@ -6,11 +6,12 @@ import { test } from "./test.js";
 import { Renderer, Renderer_WebGPU } from "./render_webgpu.js";
 import { attachToCanvas } from "./render_webgl.js";
 import { getAABBFromMesh, Mesh, MeshHandle, unshareProvokingVertices } from "./mesh-pool.js";
+import { _lastCollisionTestTimeMs } from "./physics.js";
 
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
 const MAX_VERTICES = 21844;
-const ENABLE_NET = true;
+const ENABLE_NET = false;
 
 enum ObjectType {
   Plane,
@@ -689,14 +690,11 @@ async function startGame(host: string | null) {
     //    means we'll need to do more work to get line breaks.
     debugTxt.nodeValue =
       controlsStr +
-    ` (js per frame: ${avgJsTime.toFixed(
-        2
-    )}ms, net per frame: ${avgNetTime.toFixed(2)}ms, ` +
-    `fps: ${avgFPS.toFixed(
-        1
-      )}, buffers: r=${reliableBufferSize}/u=${unreliableBufferSize}, ` +
+    ` (js: ${avgJsTime.toFixed(2)}ms, net: ${avgNetTime.toFixed(2)}ms, ` +
+    `broad:${_lastCollisionTestTimeMs}ms, fps: ${avgFPS.toFixed(1)}, ` +
+    `buffers: r=${reliableBufferSize}/u=${unreliableBufferSize}, ` +
       `dropped updates: ${numDroppedUpdates}` +
-      `objects=${gameState.numObjects}) ${usingWebGPU ? 'wGPU' : 'wGL'}`;
+      `objects=${gameState.numObjects}) ${usingWebGPU ? 'WebGPU' : 'WebGL'}`;
     requestAnimationFrame(frame);
   };
   if (ENABLE_NET) {
