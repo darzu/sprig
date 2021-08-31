@@ -1,5 +1,8 @@
 import { mat4, vec3, vec4 } from './gl-matrix.js';
-import { align } from './math.js';
+
+function align(x: number, size: number): number {
+    return Math.ceil(x / size) * size
+}
 
 const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
 const bytesPerMat4 = (4 * 4)/*4x4 mat*/ * 4/*f32*/
@@ -48,7 +51,6 @@ const wgslShaders = {
 
     [[block]] struct Model {
         modelMatrix : mat4x4<f32>;
-        maxDraw: f32;
     };
 
     [[group(0), binding(0)]] var<uniform> scene : Scene;
@@ -59,7 +61,6 @@ const wgslShaders = {
         [[location(1)]] fragPos : vec3<f32>;
         [[location(2)]] fragNorm : vec3<f32>;
         [[location(3)]] color : vec3<f32>;
-        [[location(4)]] swayHeight : f32;
 
         [[builtin(position)]] Position : vec4<f32>;
     };
@@ -69,8 +70,6 @@ const wgslShaders = {
         [[location(0)]] position : vec3<f32>,
         [[location(1)]] color : vec3<f32>,
         [[location(2)]] normal : vec3<f32>,
-        // TODO(@darzu): VERTEX FORMAT
-        [[location(3)]] swayHeight : f32,
         ) -> VertexOutput {
         var output : VertexOutput;
 
@@ -86,45 +85,10 @@ const wgslShaders = {
             posFromLight.z
         );
 
-        let dist3ToDisplacer: vec4<f32> = worldPos - vec4<f32>(scene.displacer, 1.0);
-        let distToDisplacer: f32 = distance(vec3<f32>(), dist3ToDisplacer.xyz);
-        let distUntilDraw: f32 = distToDisplacer - model.maxDraw;
-        // let distUntilFullHeight: f32 = distToDisplacer - maxDraw;
-        // TODO(dz): use distUntilDraw
-        let drawFade: f32 = 4.0; // + 5.0 * sin(1.0 * (worldPos.x + worldPos.z));
-        var maxHeight: f32;
-        if (swayHeight > 0.0 && model.maxDraw > 0.0) {
-            if (distUntilDraw > 0.0) {
-                maxHeight = 0.1;
-            } elseif (distUntilDraw > -drawFade) {
-                maxHeight = worldPos.y * max(distUntilDraw / -drawFade, 0.1);
-            } else {
-                maxHeight = worldPos.y;
-            }
-        } else {
-            maxHeight = worldPos.y;
-        }
-        let heightClamper = maxHeight - worldPos.y;
-
-        let displaceStr: f32 = clamp(pow(1.5 / distToDisplacer, 5.0), 0.0, 1.0);
-        let localDisplacement: vec4<f32> = (normalize(dist3ToDisplacer) * displaceStr);
-        let displacerDisplacement: vec4<f32> = vec4<f32>(
-                localDisplacement.x,
-                min(max(-position.y * 0.9, -position.y * displaceStr * 0.4), heightClamper),
-                localDisplacement.z, 0.0
-            ) * swayHeight;
-
-        let swayScale: f32 = swayHeight * 0.12;
-        let timeScale: f32 = scene.time * 0.0015;
-        let xSway: f32 = 2.0 * sin(1.0 * (worldPos.x + worldPos.y + worldPos.z + timeScale)) + 1.0;
-        let zSway: f32 = 1.0 * sin(2.0 * (worldPos.x + worldPos.y + worldPos.z + timeScale)) + 0.5;
-        let sway: vec4<f32> = vec4<f32>(xSway, 0.0, zSway, 0.0) * swayScale;
-        output.Position = scene.cameraViewProjMatrix * (worldPos + sway + displacerDisplacement);
+        output.Position = scene.cameraViewProjMatrix * worldPos;
         output.fragPos = output.Position.xyz;
-        // output.fragNorm = normal;
         output.fragNorm = normalize(model.modelMatrix * vec4<f32>(normal, 0.0)).xyz;
         output.color = color;
-        output.swayHeight = swayHeight;
         return output;
     }
     `,
@@ -140,42 +104,21 @@ const wgslShaders = {
         [[location(1)]] fragPos : vec3<f32>;
         [[location(2)]] fragNorm : vec3<f32>;
         [[location(3)]] color : vec3<f32>;
-        // TODO: use swayHeight?
-        [[location(4)]] swayHeight : f32;
         [[builtin(front_facing)]] front: bool;
     };
 
-    // let albedo : vec3<f32> = vec3<f32>(0.9, 0.9, 0.9);
     let sunStr : f32 = 2.0;
     let sunColor : vec3<f32> =  vec3<f32>(1.0, 1.0, 0.8);
-    // let skydomeLightDir: vec3<f32> = vec3<f32>(1.0, 0.0, 0.0);
     let skydomeStr : f32 = 1.0;
     let skydomeLightDir: vec3<f32> = vec3<f32>(0.0, -1.0, 0.0);
     let sunReflectStr : f32 = 0.2;
-    // let sunReflectLightDir: vec3<f32> = vec3<f32>(-0.5, 0.0, -0.5);
 
     [[stage(fragment)]]
     fn main(input : FragmentInput) -> [[location(0)]] vec4<f32> {
-
-        // let normSign: f32 = select(1.0, -1.0, input.front);
-        // return vec4<f32>(normSign * input.fragNorm, 1.0);
-
-
         // Percentage-closer filtering. Sample texels in the region
         // to smooth the result.
         var shadowVis : f32 = 0.0;
 
-        if (
-            input.shadowPos.x < 0.0
-            || input.shadowPos.x > 0.99
-            || input.shadowPos.y < 0.0
-            || input.shadowPos.y > 0.99
-            || input.shadowPos.z < 0.0
-            || input.shadowPos.z > 0.99
-            ) {
-            // we're outside the shadow box
-            shadowVis = 1.0;
-        } else {
             // we're in the shadow box, do a multi sample
             for (var y : i32 = -1 ; y <= 1 ; y = y + 1) {
                 for (var x : i32 = -1 ; x <= 1 ; x = x + 1) {
@@ -190,78 +133,26 @@ const wgslShaders = {
             }
             shadowVis = shadowVis / 9.0;
 
-        // shadowVis = textureSampleCompare(
-        //         shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
-        }
-
-        // TODO: night time. Maybe we should instead slowly "turn off" the sun as night approaches including the sun reflect
-        //      the shadow factor should only ever scale down the sun factor anyway.
-        //      reflect sun should be sun intensity * 0.2 (~0.3)
-        if (scene.lightDir.y > 0.0) {
-            // sun is down
-            shadowVis = max(shadowVis - scene.lightDir.y * 2.0, 0.0);
-            // TODO: how to fix this with planets?
-        }
-
-        // return vec4<f32>(input.shadowPos.x * 0.5, input.shadowPos.x * 0.5, input.shadowPos.x * 0.5, 1.0);
-
-        // TODO: what is this 0.007 factor?
-        // shadowVis = textureSampleCompare(
-        //     shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
-
-        // shadowVis = 1.0;
-
-        // TODO: what does this "colorize penumbras" do?
-        // let cshadow: vec3<f32> = vec3<f32>(0.7);
-        // let shadowR = pow(shadowVis, 1.0);
-        // let shadowG = pow(shadowVis, 1.2);
-        // let shadowB = pow(shadowVis, 1.5);
-        // let cshadow: vec3<f32> = vec3<f32>(shadowR, shadowG, shadowB);
-
         let normSign: f32 = select(1.0, -1.0, input.front);
-        // let norm: vec3<f32> = input.fragNorm;
         let norm: vec3<f32> = normalize(input.fragNorm) * normSign;
         let antiNorm: vec3<f32> = norm * -1.0;
 
-        // let lightDir: vec3<f32> = normalize(scene.lightPos - input.fragPos);
         let lightDir: vec3<f32> = scene.lightDir;
-        // let sunLight : f32 = dot(-lightDir, norm);
         let sunLight : f32 = max(dot(-lightDir, norm), 0.0);
-        // let antisunLight : f32 = 1.5 - max(dot(-lightDir, antiNorm), 0.0);
-        // let lightingFactor : f32 = sunLight * 1.5;
-        // let lightingFactor : f32 = shadowVis * sunLight * 1.5;
         let skydomeFactor : f32 = clamp(dot(-skydomeLightDir, norm), 0.0, 1.0);
         let sunReflectLightDir: vec3<f32> = vec3<f32>(-lightDir.xy, 0.0);
         let sunReflectFactor : f32 = clamp(dot(-sunReflectLightDir, norm), 0.0, 1.0);
-        // let csSunFactor : vec3<f32> = cshadow * sunLight * sunStr;
-        // let csSunFactor : vec3<f32> = min(cshadow * sunLight, vec3<f32>(1.0,1.0,1.0)) * sunStr;
         let sunFactor : f32 = min(shadowVis * sunLight, 1.0) * sunStr;
         let sunEffect: vec3<f32> = input.color * sunColor * sunFactor;
         let sunIntensity: f32 = pow(max(lightDir.y, 0.0), 2.0);
-        // let chlorophyllFactor: vec3<f32> = input.color * pow(input.swayHeight * sunIntensity, 2.0);
-        // let diffuse: vec3<f32> = ;
-        // let diffuse: vec3<f32> = 1.0 * csSunFactor;
         let ambient: vec3<f32> = sunIntensity * input.color * (skydomeFactor * skydomeStr + sunReflectFactor * sunReflectStr);
 
-        // return vec4<f32>(norm, 1.0);
-
-        // return vec4<f32>(diffuse, 1.0);
-        let resultColor: vec3<f32> = sunEffect + ambient; // + chlorophyllFactor
-        // return vec4<f32>(resultColor, 1.0);
-
-        // TODO: this gamma correction doesn't look good...
+        let resultColor: vec3<f32> = sunEffect + ambient;
         let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
         return vec4<f32>(gammaCorrected, 1.0);
-
-        // return vec4<f32>(lightingFactor * input.color, 1.0);
-        // return vec4<f32>(lightingFactor * albedo, 1.0);
     }
     `,
 }
-
-// const maxNumVerts = 1000;
-// const maxNumTri = 1000;
-// const maxNumModels = 100;
 
 const sampleCount = 4;
 
@@ -277,10 +168,6 @@ const shadowDepthTextureDesc: GPUTextureDescriptor = {
     format: 'depth32float',
 }
 
-const maxNumInstances = 1000;
-const instanceByteSize = bytesPerFloat * 3/*color*/
-
-// TODO(@darzu): depth24plus-stencil8
 const depthStencilFormat = 'depth24plus-stencil8';
 
 // TODO(@darzu): move this out?
@@ -311,23 +198,6 @@ function createMeshRenderer(
         device,
         format: swapChainFormat,
     });
-
-    const instanceDataBuffer = device.createBuffer({
-        size: maxNumInstances * instanceByteSize,
-        usage: GPUBufferUsage.VERTEX,
-        mappedAtCreation: true,
-    });
-    {
-        const instMap = new Float32Array(instanceDataBuffer.getMappedRange())
-        for (let i = 0; i < maxNumInstances; i++) {
-            const off = i * instanceByteSize
-            // TODO(@darzu): colors
-            instMap[off + 0] = Math.random()
-            instMap[off + 1] = Math.random()
-            instMap[off + 2] = Math.random()
-        }
-        instanceDataBuffer.unmap();
-    }
 
     const modelUniBindGroupLayout = device.createBindGroupLayout({
         entries: [
@@ -478,20 +348,6 @@ function createMeshRenderer(
                 //     offset: cubeUVOffset,
                 //     format: 'float32x2',
                 // },
-            ],
-        },
-        // TODO(@darzu): VERTEX FORMAT
-        {
-            // per-instance data
-            stepMode: "instance",
-            arrayStride: instanceByteSize,
-            attributes: [
-                {
-                    // color
-                    shaderLocation: 4,
-                    offset: 0,
-                    format: 'float32x3',
-                },
             ],
         },
     ];
@@ -686,7 +542,6 @@ function createMeshRenderer(
                 ],
             });
             bundleEncoder.setVertexBuffer(0, pool._vertBuffer);
-            bundleEncoder.setVertexBuffer(1, instanceDataBuffer);
             if (pool._indexBuffer)
                 bundleEncoder.setIndexBuffer(pool._indexBuffer, 'uint16');
             const uniOffset = [0];
@@ -756,7 +611,6 @@ function createMeshRenderer(
                     ],
                 });
                 shadowPass.setVertexBuffer(0, pool._vertBuffer);
-                shadowPass.setVertexBuffer(1, instanceDataBuffer);
                 if (pool._indexBuffer)
                     shadowPass.setIndexBuffer(pool._indexBuffer, 'uint16');
                 // TODO(@darzu): one draw call per mesh?
@@ -1073,25 +927,25 @@ const CUBE: MeshModel = {
     ],
     colors: [
         // front
-        [0.5, 0.0, 0.0],
-        [0.5, 0.0, 0.0],
+        [0.2, 0.0, 0.0],
+        [0.2, 0.0, 0.0],
         // top
-        [0.0, 0.5, 0.0],
-        [0.0, 0.5, 0.0],
+        [0.0, 0.2, 0.0],
+        [0.0, 0.2, 0.0],
         // right
-        [0.0, 0.0, 0.5],
-        [0.0, 0.0, 0.5],
+        [0.0, 0.0, 0.2],
+        [0.0, 0.0, 0.2],
         // left
-        [0.5, 0.5, 0.0],
-        [0.5, 0.5, 0.0],
+        [0.2, 0.2, 0.0],
+        [0.2, 0.2, 0.0],
         // bottom
-        [0.0, 0.5, 0.5],
-        [0.0, 0.5, 0.5],
+        [0.0, 0.2, 0.2],
+        [0.0, 0.2, 0.2],
         // back
-        [0.5, 0.0, 0.5],
-        [0.5, 0.0, 0.5],
+        [0.2, 0.0, 0.2],
+        [0.2, 0.0, 0.2],
     ]
-    }
+}
 
 const PLANE: MeshModel = {
     pos: [
@@ -1109,10 +963,10 @@ const PLANE: MeshModel = {
         [1, 3, 0],
     ],
     colors: [
-        [0.1, 0.15, 0.1],
-        [0.1, 0.15, 0.1],
-        [0.1, 0.15, 0.1],
-        [0.1, 0.15, 0.1],
+        [0.05, 0.1, 0.05],
+        [0.05, 0.1, 0.05],
+        [0.05, 0.1, 0.05],
+        [0.05, 0.1, 0.05],
     ],
 }
 
@@ -1349,12 +1203,10 @@ async function init(canvasRef: HTMLCanvasElement) {
     const [planeHandle] = meshPool.addMeshes([
         PLANE
     ], true)
-    const planeSize = 1000;
-    mat4.scale(planeHandle.transform, planeHandle.transform, [planeSize, planeSize, planeSize]);
+    mat4.translate(planeHandle.transform, planeHandle.transform, [0, -3, 0])
     meshPool.applyMeshTransform(planeHandle);
 
-    const playerCubeModel: MeshModel = { ...CUBE, colors: CUBE.colors.map(c => [0.0, 0.1, 0.1]) }
-    const [playerM] = meshPool.addMeshes([playerCubeModel], true)
+    const [playerM] = meshPool.addMeshes([CUBE], true)
 
     meshPool._unmap();
 
