@@ -98,7 +98,6 @@ export module Vertex {
         scratch_u32[0] = kind
         buffer.set(scratch_u32_as_u8, byteOffset + bytesPerVec3 * 3);
     }
-
 }
 
 export module MeshUniform {

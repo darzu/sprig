@@ -48,7 +48,6 @@ const fragmentShaderForShadows = `
 const vertexShader = `
     ${shaderSceneStruct}
 
-
     [[block]] struct Model {
     ${MeshUniform.GenerateWGSLUniformStruct()}
     };
@@ -279,12 +278,6 @@ const computeForFS = `
 
 // useful constants
 const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
-const bytesPerUint16 = Uint16Array.BYTES_PER_ELEMENT;
-const bytesPerUint32 = Uint32Array.BYTES_PER_ELEMENT;
-const bytesPerMat4 = (4 * 4)/*4x4 mat*/ * 4/*f32*/
-const bytesPerVec3 = 3/*vec3*/ * 4/*f32*/
-const indicesPerTriangle = 3;
-const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
 
 // render pipeline parameters
 const antiAliasSampleCount = 4;
