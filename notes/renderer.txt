@@ -321,3 +321,9 @@ Rendering pipeline:
 Flat shading:
   "Provoking vertex" https://www.khronos.org/opengl/wiki/Primitive#Provoking_vertex
   "flat" interpolation qualifier https://www.khronos.org/opengl/wiki/Type_Qualifier_(GLSL)#Interpolation_qualifiers
+  waiting on interplate(flat) support in Chrome's Tint WGSL parser:
+    https://bugs.chromium.org/p/tint/issues/detail?id=746&q=interpolate&can=2
+  https://gamedev.stackexchange.com/questions/154854/how-do-i-implement-flat-shading-in-glsl
+    vec3 xTangent = dFdx( viewPosition );
+    vec3 yTangent = dFdy( viewPosition );
+    vec3 faceNormal = normalize( cross( xTangent, yTangent ) );

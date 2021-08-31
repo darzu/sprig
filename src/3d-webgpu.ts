@@ -69,14 +69,20 @@ function computeNormals(m: Mesh): vec3[] {
 }
 
 function buildVertexBuffer(m: Mesh): Float32Array {
-    const triPoses = m.tri.map(([i0, i1, i2]) => [m.pos[i0], m.pos[i1], m.pos[i2]] as [vec3, vec3, vec3])
-    const norms = triPoses.map(t => [...t, computeNormal(t)]);
-    const verts = triPoses
-        .reduce((p, n) => [...p, ...n], [] as vec3[])
-        .reduce((p, n) => [...p, ...n], [] as number[])
-    const stride = 3/*position*/ + 3/*normal*/
-    const size = m.tri.length * stride
-    return new Float32Array(verts);
+    const norms = computeNormals(m);
+    const stride = 3 + 3
+    const size = m.pos.length * stride
+    const buffer = new Float32Array(size);
+    m.pos.forEach((v, i) => {
+        buffer[i * stride + 0] = v[0]
+        buffer[i * stride + 1] = v[1]
+        buffer[i * stride + 2] = v[2]
+        const n = norms[i]
+        buffer[i * stride + 3] = n[0]
+        buffer[i * stride + 4] = n[1]
+        buffer[i * stride + 5] = n[2]
+    })
+    return buffer;
 }
 
 // TODO: canvas ref
@@ -87,7 +93,10 @@ const vertexPositionColorWGSL =
 `
 [[stage(fragment)]]
 fn main([[location(0)]] color: vec4<f32>) -> [[location(0)]] vec4<f32> {
-    return color;
+    var xTan: vec3<f32> = dpdx(color).xyz;
+    var yTan: vec3<f32> = dpdy(color).xyz;
+    var norm: vec3<f32> = normalize(cross(xTan, yTan));
+    return vec4<f32>(norm, 1.0);
 }
 `;
 
@@ -105,13 +114,15 @@ struct VertexOutput {
 
 [[stage(vertex)]]
 fn main(
-    [[location(0)]] position : vec3<f32>
-    // [[location(1)]] normal : vec3<f32>
+    [[location(0)]] position : vec3<f32>,
+    [[location(1)]] normal : vec3<f32>
     ) -> VertexOutput {
     var output : VertexOutput;
     var pos4: vec4<f32> = vec4<f32>(position, 1.0);
     output.pos = uniforms.modelViewProjectionMatrix * pos4;
-    output.color = 0.5 * (pos4 + vec4<f32>(1.0, 1.0, 1.0, 1.0));
+    // output.color = vec4<f32>(normal, 1.0);
+    // output.color = 0.5 * (pos4 + vec4<f32>(1.0, 1.0, 1.0, 1.0));
+    output.color = uniforms.modelViewProjectionMatrix * pos4;
 
     return output;
 }
@@ -144,12 +155,12 @@ async function init(canvasRef: HTMLCanvasElement) {
     //     verticesBuffer.unmap();
     // }
     // NEW Create a vertex buffer from the cube data.
-    // const cubeVerts = buildVertexBuffer(CUBE)
-    const cubeVerts = new Float32Array(
-        CUBE.pos
-            // .map(p => [p[0], p[1], p[2], 1])
-            .reduce((p, n) => [...p, ...n], [] as number[])
-    )
+    const cubeVerts = buildVertexBuffer(CUBE)
+    // const cubeVerts = new Float32Array(
+    //     CUBE.pos
+    //         // .map(p => [p[0], p[1], p[2], 1])
+    //         .reduce((p, n) => [...p, ...n], [] as number[])
+    // )
     const vertStride = cubeVerts.byteLength / CUBE.pos.length;
     const verticesBuffer = device.createBuffer({
         size: cubeVerts.byteLength,
@@ -238,12 +249,12 @@ async function init(canvasRef: HTMLCanvasElement) {
                             offset: 0,
                             format: 'float32x3',
                         },
-                        // {
-                        //     // normals
-                        //     shaderLocation: 1,
-                        //     offset: 0,
-                        //     format: 'float32x3',
-                        // },
+                        {
+                            // normals
+                            shaderLocation: 1,
+                            offset: 0,
+                            format: 'float32x3',
+                        },
                         // {
                         //     // uv
                         //     shaderLocation: 1,
