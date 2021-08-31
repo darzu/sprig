@@ -1,4 +1,5 @@
 import { mat4, vec3, quat } from "./gl-matrix.js";
+import { Renderer } from "./render.js";
 
 // defines the geometry and coloring of a mesh
 export interface Mesh {
@@ -13,22 +14,26 @@ export function scaleMesh(m: Mesh, by: number): Mesh {
 }
 
 export abstract class GameObject {
+  id: number;
   location: vec3;
   rotation: quat;
   at_rest: boolean;
   linear_velocity: vec3;
   angular_velocity: vec3;
-  owner: number;
   authority: number;
+  authority_seq: number;
+  snap_seq: number;
 
-  constructor() {
+  constructor(id: number) {
+    this.id = id;
     this.location = vec3.fromValues(0, 0, 0);
     this.rotation = quat.identity(quat.create());
     this.linear_velocity = vec3.fromValues(0, 0, 0);
     this.angular_velocity = vec3.fromValues(0, 0, 0);
     this.at_rest = true;
-    this.owner = 0;
     this.authority = 0;
+    this.authority_seq = 0;
+    this.snap_seq = -1;
   }
 
   transform(): mat4 {
@@ -39,31 +44,101 @@ export abstract class GameObject {
     );
   }
 
-  abstract mesh(): Mesh;
-}
-
-export interface GameView {
-  viewMatrix(): mat4;
-  objects(): GameObject[];
-}
-
-export abstract class GameState<Inputs> implements GameView {
-  protected time: number;
-
-  constructor(time: number) {
-    this.time = time;
+  netObject(): NetObject {
+    let obj: any = {
+      id: this.id,
+      location: Array.from(this.location),
+      rotation: Array.from(this.rotation),
+      at_rest: this.at_rest,
+      linear_velocity: Array.from(this.linear_velocity),
+      angular_velocity: Array.from(this.angular_velocity),
+      authority: this.authority,
+      authority_seq: this.authority_seq,
+      type: this.type(),
+    };
+    return obj;
   }
 
-  abstract objects(): GameObject[];
+  abstract mesh(): Mesh;
+
+  abstract type(): string;
+}
+
+export type NetObject = any;
+
+export abstract class GameState<Inputs> {
+  protected time: number;
+  protected nextPlayerId: number;
+  protected nextObjectId: number;
+  protected renderer: Renderer;
+  objects: Record<number, GameObject>;
+  me: number;
+
+  constructor(time: number, renderer: Renderer) {
+    this.me = 0;
+    this.time = time;
+    this.renderer = renderer;
+    this.nextPlayerId = 0;
+    this.nextObjectId = 0;
+    this.objects = [];
+  }
+
+  abstract playerObject(playerId: number): GameObject;
 
   abstract stepGame(dt: number, inputs: Inputs): void;
 
   abstract viewMatrix(): mat4;
 
+  abstract objectFromNetObject(NetObject: any): GameObject;
+
+  addObject(obj: GameObject) {
+    this.objects[obj.id] = obj;
+    this.renderer.addObject(obj);
+  }
+
+  addObjectFromNet(netObj: NetObject) {
+    let obj = this.objectFromNetObject(netObj);
+    obj.id = netObj.id;
+
+    obj.authority = netObj.authority;
+    obj.authority_seq = netObj.authority_seq;
+
+    obj.location = netObj.location;
+    obj.linear_velocity = netObj.linear_velocity;
+
+    obj.at_rest = netObj.at_rest;
+
+    obj.angular_velocity = netObj.angular_velocity;
+    obj.rotation = netObj.rotation;
+    this.addObject(obj);
+  }
+
+  netObjects(): NetObject[] {
+    return Object.values(this.objects).map((obj: GameObject) =>
+      obj.netObject()
+    );
+  }
+
+  renderFrame() {
+    this.renderer.renderFrame(this.viewMatrix());
+  }
+
+  addPlayer(): number {
+    let id = this.nextPlayerId;
+    this.nextPlayerId += 1;
+    let obj = this.playerObject(id);
+    this.addObject(obj);
+    return id;
+  }
+
+  id(): number {
+    return this.nextObjectId++;
+  }
+
   step(time: number, inputs: Inputs) {
     let dt = time - this.time;
     this.stepGame(dt, inputs);
-    for (let o of this.objects()) {
+    for (let o of Object.values(this.objects)) {
       // change location according to linear velocity
       let delta = vec3.scale(vec3.create(), o.linear_velocity, dt);
       vec3.add(o.location, o.location, delta);

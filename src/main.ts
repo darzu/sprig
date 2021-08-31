@@ -1,13 +1,13 @@
 import { mat4, vec3, quat } from "./gl-matrix.js";
-import { Mesh, scaleMesh, GameObject, GameState } from "./state.js";
+import { Mesh, scaleMesh, GameObject, NetObject, GameState } from "./state.js";
 import { Renderer } from "./render.js";
-import Peer from "./peerjs.js";
+import { Net } from "./net.js";
 
 class Plane extends GameObject {
   color: vec3;
 
-  constructor() {
-    super();
+  constructor(id: number) {
+    super(id);
     this.color = vec3.fromValues(0.02, 0.02, 0.02);
   }
 
@@ -31,13 +31,23 @@ class Plane extends GameObject {
       10
     );
   }
+
+  type(): string {
+    return "plane";
+  }
+
+  netObject() {
+    let obj = super.netObject();
+    obj.color = Array.from(this.color);
+    return obj;
+  }
 }
 
-class Cube extends GameObject {
+abstract class Cube extends GameObject {
   color: vec3;
 
-  constructor() {
-    super();
+  constructor(id: number) {
+    super(id);
     this.color = vec3.fromValues(0.2, 0, 0);
   }
 
@@ -84,22 +94,40 @@ class Cube extends GameObject {
       ],
     };
   }
+
+  netObject() {
+    let obj = super.netObject();
+    obj.color = Array.from(this.color);
+    return obj;
+  }
 }
 
 class SpinningCube extends Cube {
   axis: vec3;
 
-  constructor() {
-    super();
+  constructor(id: number) {
+    super(id);
     this.axis = vec3.fromValues(0, 0, 0);
+  }
+
+  type(): string {
+    return "cube";
+  }
+  netObject() {
+    let obj = super.netObject();
+    obj.axis = Array.from(this.axis);
+    return obj;
   }
 }
 
 class Player extends Cube {
-  constructor(id: number) {
-    super();
-    this.authority = id;
-    this.owner = id;
+  constructor(id: number, playerId: number) {
+    super(id);
+    this.authority = playerId;
+  }
+
+  type(): string {
+    return "player";
   }
 }
 
@@ -116,51 +144,91 @@ interface Inputs {
 }
 
 class CubeGameState extends GameState<Inputs> {
-  plane: Plane;
-  players: Player[];
+  players: Record<number, Player>;
   cubes: SpinningCube[];
   cameraRotation: quat;
   cameraLocation: vec3;
-  me: number;
-  sequences: number[];
 
-  constructor(time: number) {
-    super(time);
-    this.plane = new Plane();
-    this.plane.location = vec3.fromValues(0, -3, -8);
-    let player = new Player(0);
-    this.players = [player];
-    let randomCubes: SpinningCube[] = [];
-    for (let i = 0; i < 10; i++) {
-      let cube = new SpinningCube();
-      // create cubes with random colors
-      cube.location = vec3.fromValues(
-        Math.random() * 20 - 10,
-        Math.random() * 5,
-        -Math.random() * 10 - 5
-      );
-      //cube.linear_velocity = vec3.fromValues(0.002, 0, 0);
-      cube.color = vec3.fromValues(Math.random(), Math.random(), Math.random());
-      cube.axis = vec3.normalize(vec3.create(), [
-        Math.random() - 0.5,
-        Math.random() - 0.5,
-        Math.random() - 0.5,
-      ]);
-      cube.angular_velocity = vec3.scale(
-        vec3.create(),
-        cube.axis,
-        Math.PI * 0.001
-      );
-      cube.at_rest = false;
-      randomCubes.push(cube);
-    }
-    this.cubes = randomCubes;
-    this.me = 0;
-    this.sequences = [0];
+  constructor(time: number, renderer: Renderer, createObjects: boolean = true) {
+    super(time, renderer);
     this.time = 0;
+    this.me = 0;
     this.cameraRotation = quat.identity(quat.create());
     quat.rotateX(this.cameraRotation, this.cameraRotation, -Math.PI / 8);
     this.cameraLocation = vec3.fromValues(0, 0, 10);
+    this.players = {};
+    if (createObjects) {
+      let plane = new Plane(this.id());
+      plane.location = vec3.fromValues(0, -3, -8);
+      this.addObject(plane);
+      this.addPlayer();
+      let randomCubes: SpinningCube[] = [];
+      for (let i = 0; i < 10; i++) {
+        let cube = new SpinningCube(this.id());
+        // create cubes with random colors
+        cube.location = vec3.fromValues(
+          Math.random() * 20 - 10,
+          Math.random() * 5,
+          -Math.random() * 10 - 5
+        );
+        //cube.linear_velocity = vec3.fromValues(0.002, 0, 0);
+        cube.color = vec3.fromValues(
+          Math.random(),
+          Math.random(),
+          Math.random()
+        );
+        cube.axis = vec3.normalize(vec3.create(), [
+          Math.random() - 0.5,
+          Math.random() - 0.5,
+          Math.random() - 0.5,
+        ]);
+        cube.angular_velocity = vec3.scale(
+          vec3.create(),
+          cube.axis,
+          Math.PI * 0.001
+        );
+        cube.at_rest = false;
+        randomCubes.push(cube);
+        this.addObject(cube);
+      }
+      this.cubes = randomCubes;
+      // have added our objects, can unmap buffers
+      this.renderer.unmapGPUBuffers();
+    } else {
+      this.cubes = [];
+    }
+    this.me = 0;
+  }
+
+  playerObject(playerId: number): GameObject {
+    let p = new Player(this.id(), playerId);
+    this.players[playerId] = p;
+    return p;
+  }
+
+  objectFromNetObject(netObj: NetObject): GameObject {
+    switch (netObj.type) {
+      case "plane": {
+        let p = new Plane(netObj.id);
+        p.color = netObj.color;
+        return p;
+      }
+      case "cube": {
+        let c = new SpinningCube(netObj.id);
+        c.color = netObj.color;
+        c.axis = netObj.axis;
+        this.cubes.push(c);
+        return c;
+      }
+      case "player": {
+        let p = new Player(netObj.id, netObj.authority);
+        p.color = netObj.color;
+        this.players[p.authority] = p;
+        return p;
+      }
+      default:
+        throw "Unrecognized object type";
+    }
   }
 
   private player() {
@@ -168,111 +236,115 @@ class CubeGameState extends GameState<Inputs> {
   }
 
   stepGame(dt: number, inputs: Inputs) {
-    // move player
-    this.player().linear_velocity = vec3.fromValues(0, 0, 0);
-    let playerSpeed = inputs.accel ? 0.005 : 0.001;
-    let n = playerSpeed * dt;
-    if (inputs.left) {
-      vec3.add(
+    if (this.player()) {
+      // move player
+      this.player().linear_velocity = vec3.fromValues(0, 0, 0);
+      let playerSpeed = inputs.accel ? 0.005 : 0.001;
+      let n = playerSpeed * dt;
+      if (inputs.left) {
+        vec3.add(
+          this.player().linear_velocity,
+          this.player().linear_velocity,
+          vec3.fromValues(-n, 0, 0)
+        );
+      }
+      if (inputs.right) {
+        vec3.add(
+          this.player().linear_velocity,
+          this.player().linear_velocity,
+          vec3.fromValues(n, 0, 0)
+        );
+      }
+      if (inputs.forward) {
+        vec3.add(
+          this.player().linear_velocity,
+          this.player().linear_velocity,
+          vec3.fromValues(0, 0, -n)
+        );
+      }
+      if (inputs.back) {
+        vec3.add(
+          this.player().linear_velocity,
+          this.player().linear_velocity,
+          vec3.fromValues(0, 0, n)
+        );
+      }
+      if (inputs.up) {
+        vec3.add(
+          this.player().linear_velocity,
+          this.player().linear_velocity,
+          vec3.fromValues(0, n, 0)
+        );
+      }
+      if (inputs.down) {
+        vec3.add(
+          this.player().linear_velocity,
+          this.player().linear_velocity,
+          vec3.fromValues(0, -n, 0)
+        );
+      }
+      vec3.transformQuat(
         this.player().linear_velocity,
         this.player().linear_velocity,
-        vec3.fromValues(-n, 0, 0)
+        this.player().rotation
+      );
+      quat.rotateY(
+        this.player().rotation,
+        this.player().rotation,
+        -inputs.mouseX * 0.001
+      );
+      quat.rotateX(
+        this.cameraRotation,
+        this.cameraRotation,
+        -inputs.mouseY * 0.001
       );
     }
-    if (inputs.right) {
-      vec3.add(
-        this.player().linear_velocity,
-        this.player().linear_velocity,
-        vec3.fromValues(n, 0, 0)
-      );
-    }
-    if (inputs.forward) {
-      vec3.add(
-        this.player().linear_velocity,
-        this.player().linear_velocity,
-        vec3.fromValues(0, 0, -n)
-      );
-    }
-    if (inputs.back) {
-      vec3.add(
-        this.player().linear_velocity,
-        this.player().linear_velocity,
-        vec3.fromValues(0, 0, n)
-      );
-    }
-    if (inputs.up) {
-      vec3.add(
-        this.player().linear_velocity,
-        this.player().linear_velocity,
-        vec3.fromValues(0, n, 0)
-      );
-    }
-    if (inputs.down) {
-      vec3.add(
-        this.player().linear_velocity,
-        this.player().linear_velocity,
-        vec3.fromValues(0, -n, 0)
-      );
-    }
-    vec3.transformQuat(
-      this.player().linear_velocity,
-      this.player().linear_velocity,
-      this.player().rotation
-    );
-    quat.rotateY(
-      this.player().rotation,
-      this.player().rotation,
-      -inputs.mouseX * 0.001
-    );
-    quat.rotateX(
-      this.cameraRotation,
-      this.cameraRotation,
-      -inputs.mouseY * 0.001
-    );
-
-    // move cubes in range
+    // move cubes in range of players, and claim authority over the cubes nearest us
     for (let cube of this.cubes) {
       cube.linear_velocity = vec3.fromValues(0, 0, 0);
-      let cube_to_player = vec3.subtract(
-        vec3.create(),
-        this.player().location,
-        cube.location
-      );
-      if (vec3.length(cube_to_player) < 8 && vec3.length(cube_to_player) > 2) {
-        vec3.normalize(cube_to_player, cube_to_player);
-        vec3.scale(cube.linear_velocity, cube_to_player, 0.01);
+      let min_distance = 10;
+      let min_distance_player = -1;
+      for (let player of Object.values(this.players)) {
+        let cube_to_player = vec3.subtract(
+          vec3.create(),
+          player.location,
+          cube.location
+        );
+        let distance = vec3.length(cube_to_player);
+        if (distance < min_distance) {
+          min_distance = distance;
+          min_distance_player = player.authority;
+        }
+        if (
+          vec3.length(cube_to_player) < 8 &&
+          vec3.length(cube_to_player) > 2
+        ) {
+          // each player in range will pull the cube towards them
+          vec3.normalize(cube_to_player, cube_to_player);
+          vec3.scale(cube_to_player, cube_to_player, 0.01);
+          vec3.add(cube.linear_velocity, cube.linear_velocity, cube_to_player);
+        }
+      }
+      // claim authority?
+      if (min_distance < 8 && min_distance_player == this.me) {
+        cube.authority = this.me;
+        cube.authority_seq += 1;
       }
     }
-  }
-
-  snap(snapshot: string, time: number) {
-    let deserialized = JSON.parse(snapshot);
-    this.cubes = deserialized.cubes;
-    this.time = time;
-  }
-
-  objects(): GameObject[] {
-    let r = [];
-    r.push(this.plane);
-    for (let o of this.players) {
-      r.push(o);
-    }
-    for (let o of this.cubes) {
-      r.push(o);
-    }
-    return r;
   }
 
   viewMatrix() {
     //TODO: this calculation feels like it should be simpler but Doug doesn't
     //understand quaternions.
     let viewMatrix = mat4.create();
-    mat4.translate(viewMatrix, viewMatrix, this.player().location);
-    mat4.multiply(
-      viewMatrix,
-      viewMatrix,
-      mat4.fromQuat(mat4.create(), this.player().rotation)
-    );
+    if (this.player()) {
+      mat4.translate(viewMatrix, viewMatrix, this.player().location);
+      mat4.multiply(
+        viewMatrix,
+        viewMatrix,
+        mat4.fromQuat(mat4.create(), this.player().rotation)
+      );
+    }
     mat4.multiply(
       viewMatrix,
       viewMatrix,
@@ -377,12 +449,8 @@ function inputsReader(canvas: HTMLCanvasElement): () => Inputs {
   return getInputs;
 }
 
-async function startServer() {
-  let peer = new Peer();
-  peer.on("open", (id: string) => {
-    console.log(`Peer id is ${id}`);
-  });
-  let gameState = new CubeGameState(performance.now());
+async function startGame(host: string | null) {
+  let hosting = host === null;
   let canvas = document.getElementById("sample-canvas") as HTMLCanvasElement;
   function onWindowResize() {
     canvas.width = window.innerWidth;
@@ -398,7 +466,8 @@ async function startServer() {
   const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter!.requestDevice();
-  let renderer = new Renderer(gameState, canvas, device, 2000);
+  let renderer = new Renderer(canvas, device, 2000);
+  let gameState = new CubeGameState(performance.now(), renderer, hosting);
   let inputs = inputsReader(canvas);
   function doLockMouse() {
     canvas.requestPointerLock();
@@ -410,13 +479,13 @@ async function startServer() {
   let avgJsTime = 0;
   let avgFrameTime = 0;
   let avgWeight = 0.05;
+  let net: Net<Inputs>;
   let frame = () => {
     let start = performance.now();
     gameState.step(performance.now(), inputs());
-    renderer.renderFrame();
+    gameState.renderFrame();
     let jsTime = performance.now() - start;
     let frameTime = start - previousFrameTime;
-    console.log(`frame time is ${frameTime}, previous is ${previousFrameTime}`);
     previousFrameTime = start;
     avgJsTime = avgJsTime
       ? (1 - avgWeight) * avgJsTime + avgWeight * jsTime
@@ -429,9 +498,19 @@ async function startServer() {
       controlsStr +
       `\n` +
       `(js per frame: ${avgJsTime.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)})`;
+    net.sendStateUpdates();
     requestAnimationFrame(frame);
   };
-  frame();
+  net = new Net(gameState, host, (id: string) => {
+    if (hosting) {
+      console.log(`Net up and running with id ${id}`);
+      navigator.clipboard.writeText(id);
+      frame();
+    } else {
+      renderer.unmapGPUBuffers();
+      frame();
+    }
+  });
 }
 
 async function main() {
@@ -439,8 +518,14 @@ async function main() {
   let serverStartButton = document.getElementById(
     "server-start"
   ) as HTMLButtonElement;
-  serverStartButton.onclick = (e: MouseEvent) => {
-    startServer();
+  let connectButton = document.getElementById("connect") as HTMLButtonElement;
+  let serverIdInput = document.getElementById("server-id") as HTMLInputElement;
+  serverStartButton.onclick = () => {
+    startGame(null);
+    controls.hidden = true;
+  };
+  connectButton.onclick = () => {
+    startGame(serverIdInput.value);
     controls.hidden = true;
   };
 }

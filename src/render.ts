@@ -1,4 +1,4 @@
-import { Mesh, GameObject, GameView } from "./state.js";
+import { Mesh, GameObject } from "./state.js";
 import { mat4, vec3, quat } from "./gl-matrix.js";
 
 // TODO: some state lives in global variables when it should live on the Renderer object
@@ -64,8 +64,8 @@ const fragmentShader =
 const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
 const bytesPerMat4 = 4 * 4 /*4x4 mat*/ * 4; /*f32*/
 const bytesPerVec3 = 3 /*vec3*/ * 4; /*f32*/
-const indicesPerTriangle = 3;
-const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
+const indicesPerTriangle = 3; // hack: GPU writes need to be 4-byte aligned
+const bytesPerTri = Uint32Array.BYTES_PER_ELEMENT * indicesPerTriangle;
 
 // render pipeline parameters
 const antiAliasSampleCount = 4;
@@ -160,7 +160,7 @@ interface MappedGPUBuffers {
   vertexBufferOffset: number;
   vertexBuffer: Float32Array;
   indexBufferOffset: number;
-  indexBuffer: Uint16Array;
+  indexBuffer: Uint32Array;
   meshUniformBufferOffset: number;
   meshUniformBuffer: Float32Array;
 }
@@ -170,7 +170,6 @@ export class Renderer {
   maxTris: number;
   maxVerts: number;
 
-  state: GameView;
   device: GPUDevice;
   canvas: HTMLCanvasElement;
   context: GPUCanvasContext;
@@ -210,7 +209,7 @@ export class Renderer {
   // should only be called when GPU buffers are already mapped
   private getMappedRanges() {
     let vertexBuffer = new Float32Array(this.vertexBuffer.getMappedRange());
-    let indexBuffer = new Uint16Array(this.indexBuffer.getMappedRange());
+    let indexBuffer = new Uint32Array(this.indexBuffer.getMappedRange());
     let meshUniformBuffer = new Float32Array(
       this.meshUniformBuffer.getMappedRange()
     );
@@ -234,7 +233,7 @@ export class Renderer {
     this.getMappedRanges();
   }
 
-  private unmapGPUBuffers() {
+  unmapGPUBuffers() {
     this.vertexBuffer.unmap();
     this.indexBuffer.unmap();
     this.meshUniformBuffer.unmap();
@@ -280,32 +279,55 @@ export class Renderer {
     TODO: support adding objects when buffers aren't memory-mapped using device.queue
   */
   addObject(o: GameObject): MeshHandle {
+    console.log(`Adding object ${o.id}`);
     let m = o.mesh();
     m = unshareVertices(m); // work-around; see TODO inside function
-    if (this.mappedGPUBuffers === null) {
-      throw "addObject() called with un-mapped buffers";
-    } else {
-      // need to introduce a new variable to convince Typescript the mapping is non-null
-      let mapped = this.mappedGPUBuffers;
-      if (this.numVerts + m.pos.length > this.maxVerts)
-        throw "Too many vertices!";
-      if (this.numTris + m.tri.length > this.maxTris)
-        throw "Too many triangles!";
+    // need to introduce a new variable to convince Typescript the mapping is non-null
+    let mapped = this.mappedGPUBuffers;
+    if (this.numVerts + m.pos.length > this.maxVerts)
+      throw "Too many vertices!";
+    if (this.numTris + m.tri.length > this.maxTris) throw "Too many triangles!";
 
-      const vertNumOffset = this.numVerts;
-      const indicesNumOffset = this.numTris * 3;
+    const vertNumOffset = this.numVerts;
+    const indicesNumOffset = this.numTris * indicesPerTriangle;
 
-      m.tri.forEach((triInd, i) => {
-        const vOff = this.numVerts * vertElStride;
-        const iOff = this.numTris * indicesPerTriangle;
+    m.tri.forEach((triInd, i) => {
+      const vOff = this.numVerts * vertElStride;
+      const iOff = this.numTris * indicesPerTriangle;
+      if (mapped === null) {
+        // hack because queued writes have to have size be a multiple of 4
+        let buf = new Uint32Array(triInd);
+        this.device.queue.writeBuffer(this.indexBuffer, iOff * 4, buf.buffer);
+      } else {
         mapped.indexBuffer[iOff + 0] = triInd[0];
         mapped.indexBuffer[iOff + 1] = triInd[1];
         mapped.indexBuffer[iOff + 2] = triInd[2];
-        const normal = computeTriangleNormal(
-          m.pos[triInd[0]],
-          m.pos[triInd[1]],
-          m.pos[triInd[2]]
+      }
+      const normal = computeTriangleNormal(
+        m.pos[triInd[0]],
+        m.pos[triInd[1]],
+        m.pos[triInd[2]]
+      );
+      if (mapped === null) {
+        this.device.queue.writeBuffer(
+          this.vertexBuffer,
+          (vOff + 0 * vertElStride) * bytesPerFloat,
+          new Float32Array([...m.pos[triInd[0]], ...m.colors[i], ...normal])
+            .buffer
         );
+        this.device.queue.writeBuffer(
+          this.vertexBuffer,
+          (vOff + 1 * vertElStride) * bytesPerFloat,
+          new Float32Array([...m.pos[triInd[1]], ...m.colors[i], ...normal])
+            .buffer
+        );
+        this.device.queue.writeBuffer(
+          this.vertexBuffer,
+          (vOff + 2 * vertElStride) * bytesPerFloat,
+          new Float32Array([...m.pos[triInd[2]], ...m.colors[i], ...normal])
+            .buffer
+        );
+      } else {
         mapped.vertexBuffer.set(
           [...m.pos[triInd[0]], ...m.colors[i], ...normal],
           vOff + 0 * vertElStride
@@ -318,25 +340,142 @@ export class Renderer {
           [...m.pos[triInd[2]], ...m.colors[i], ...normal],
           vOff + 2 * vertElStride
         );
-        this.numVerts += 3;
-        this.numTris += 1;
-      });
+      }
+      this.numVerts += 3;
+      this.numTris += 1;
+    });
 
-      const uniOffset = this.meshHandles.length * meshUniByteSizeAligned;
+    const uniOffset = this.meshHandles.length * meshUniByteSizeAligned;
+    if (mapped === null) {
+      this.device.queue.writeBuffer(
+        this.meshUniformBuffer,
+        uniOffset,
+        (o.transform() as Float32Array).buffer
+      );
+    } else {
       mapped.meshUniformBuffer.set(
         o.transform() as Float32Array,
         uniOffset / bytesPerFloat
       );
-      const res: MeshHandle = {
-        vertNumOffset,
-        indicesNumOffset,
-        modelUniByteOffset: uniOffset,
-        triCount: m.tri.length,
-        obj: o,
-      };
-      this.meshHandles.push(res);
-      return res;
     }
+    const res: MeshHandle = {
+      vertNumOffset,
+      indicesNumOffset,
+      modelUniByteOffset: uniOffset,
+      triCount: m.tri.length,
+      obj: o,
+    };
+    this.meshHandles.push(res);
+    this.createRenderBundle();
+    return res;
+  }
+
+  private createRenderBundle() {
+    const modelUniBindGroupLayout = this.device.createBindGroupLayout({
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.VERTEX,
+          buffer: {
+            type: "uniform",
+            hasDynamicOffset: true,
+            minBindingSize: meshUniByteSizeAligned,
+          },
+        },
+      ],
+    });
+    const modelUniBindGroup = this.device.createBindGroup({
+      layout: modelUniBindGroupLayout,
+      entries: [
+        {
+          binding: 0,
+          resource: {
+            buffer: this.meshUniformBuffer,
+            size: meshUniByteSizeAligned,
+          },
+        },
+      ],
+    });
+
+    // we'll use a triangle list with backface culling and counter-clockwise triangle indices for both pipelines
+    const primitiveBackcull: GPUPrimitiveState = {
+      topology: "triangle-list",
+      cullMode: "back",
+      frontFace: "ccw",
+    };
+
+    // define the resource bindings for the mesh rendering pipeline
+    const renderSceneUniBindGroupLayout = this.device.createBindGroupLayout({
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          buffer: { type: "uniform" },
+        },
+      ],
+    });
+    const renderSceneUniBindGroup = this.device.createBindGroup({
+      layout: renderSceneUniBindGroupLayout,
+      entries: [{ binding: 0, resource: { buffer: this.sceneUniformBuffer } }],
+    });
+
+    // setup our second phase pipeline which renders meshes to the canvas
+    const renderPipelineDesc: GPURenderPipelineDescriptor = {
+      layout: this.device.createPipelineLayout({
+        bindGroupLayouts: [
+          renderSceneUniBindGroupLayout,
+          modelUniBindGroupLayout,
+        ],
+      }),
+      vertex: {
+        module: this.device.createShaderModule({ code: vertexShader }),
+        entryPoint: "main",
+        buffers: [
+          {
+            arrayStride: vertByteSize,
+            attributes: vertexDataFormat,
+          },
+        ],
+      },
+      fragment: {
+        module: this.device.createShaderModule({ code: fragmentShader }),
+        entryPoint: "main",
+        targets: [{ format: swapChainFormat }],
+      },
+      primitive: primitiveBackcull,
+      depthStencil: {
+        depthWriteEnabled: true,
+        depthCompare: "less",
+        format: depthStencilFormat,
+      },
+      multisample: {
+        count: antiAliasSampleCount,
+      },
+    };
+    const renderPipeline = this.device.createRenderPipeline(renderPipelineDesc);
+
+    // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
+    // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
+    const bundleEnc = this.device.createRenderBundleEncoder({
+      colorFormats: [swapChainFormat],
+      depthStencilFormat: depthStencilFormat,
+      sampleCount: antiAliasSampleCount,
+    });
+    bundleEnc.setPipeline(renderPipeline);
+    bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
+    bundleEnc.setVertexBuffer(0, this.vertexBuffer);
+    bundleEnc.setIndexBuffer(this.indexBuffer, "uint32");
+    for (let m of this.meshHandles) {
+      bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
+      bundleEnc.drawIndexed(
+        m.triCount * indicesPerTriangle,
+        undefined,
+        m.indicesNumOffset,
+        m.vertNumOffset
+      );
+    }
+    this.renderBundle = bundleEnc.finish();
+    return this.renderBundle;
   }
 
   setupSceneBuffer() {
@@ -380,13 +519,11 @@ export class Renderer {
   }
 
   constructor(
-    state: GameView,
     canvas: HTMLCanvasElement,
     device: GPUDevice,
     maxMeshes = 100,
     maxTrisPerMesh = 100
   ) {
-    this.state = state;
     this.canvas = canvas;
     this.device = device;
     this.context = canvas.getContext("gpupresent")!;
@@ -398,12 +535,12 @@ export class Renderer {
 
     this.vertexBuffer = device.createBuffer({
       size: this.maxVerts * vertByteSize,
-      usage: GPUBufferUsage.VERTEX,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
       mappedAtCreation: true,
     });
     this.indexBuffer = device.createBuffer({
       size: this.maxTris * bytesPerTri,
-      usage: GPUBufferUsage.INDEX,
+      usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
       mappedAtCreation: true,
     });
     this.meshUniformBuffer = device.createBuffer({
@@ -422,125 +559,16 @@ export class Renderer {
     this.numVerts = 0;
     this.numTris = 0;
 
-    for (let obj of state.objects()) {
-      this.addObject(obj);
-    }
-    this.unmapGPUBuffers();
-
     this.setupSceneBuffer();
 
     this.cameraOffset = mat4.create();
     pitch(this.cameraOffset, -Math.PI / 8);
-
-    const modelUniBindGroupLayout = device.createBindGroupLayout({
-      entries: [
-        {
-          binding: 0,
-          visibility: GPUShaderStage.VERTEX,
-          buffer: {
-            type: "uniform",
-            hasDynamicOffset: true,
-            minBindingSize: meshUniByteSizeAligned,
-          },
-        },
-      ],
-    });
-    const modelUniBindGroup = device.createBindGroup({
-      layout: modelUniBindGroupLayout,
-      entries: [
-        {
-          binding: 0,
-          resource: {
-            buffer: this.meshUniformBuffer,
-            size: meshUniByteSizeAligned,
-          },
-        },
-      ],
-    });
-
-    // we'll use a triangle list with backface culling and counter-clockwise triangle indices for both pipelines
-    const primitiveBackcull: GPUPrimitiveState = {
-      topology: "triangle-list",
-      cullMode: "back",
-      frontFace: "ccw",
-    };
-
-    // define the resource bindings for the mesh rendering pipeline
-    const renderSceneUniBindGroupLayout = device.createBindGroupLayout({
-      entries: [
-        {
-          binding: 0,
-          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-          buffer: { type: "uniform" },
-        },
-      ],
-    });
-    const renderSceneUniBindGroup = device.createBindGroup({
-      layout: renderSceneUniBindGroupLayout,
-      entries: [{ binding: 0, resource: { buffer: this.sceneUniformBuffer } }],
-    });
-
-    // setup our second phase pipeline which renders meshes to the canvas
-    const renderPipelineDesc: GPURenderPipelineDescriptor = {
-      layout: device.createPipelineLayout({
-        bindGroupLayouts: [
-          renderSceneUniBindGroupLayout,
-          modelUniBindGroupLayout,
-        ],
-      }),
-      vertex: {
-        module: device.createShaderModule({ code: vertexShader }),
-        entryPoint: "main",
-        buffers: [
-          {
-            arrayStride: vertByteSize,
-            attributes: vertexDataFormat,
-          },
-        ],
-      },
-      fragment: {
-        module: device.createShaderModule({ code: fragmentShader }),
-        entryPoint: "main",
-        targets: [{ format: swapChainFormat }],
-      },
-      primitive: primitiveBackcull,
-      depthStencil: {
-        depthWriteEnabled: true,
-        depthCompare: "less",
-        format: depthStencilFormat,
-      },
-      multisample: {
-        count: antiAliasSampleCount,
-      },
-    };
-    const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
-
-    // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
-    // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
-    const bundleEnc = device.createRenderBundleEncoder({
-      colorFormats: [swapChainFormat],
-      depthStencilFormat: depthStencilFormat,
-      sampleCount: antiAliasSampleCount,
-    });
-    bundleEnc.setPipeline(renderPipeline);
-    bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
-    bundleEnc.setVertexBuffer(0, this.vertexBuffer);
-    bundleEnc.setIndexBuffer(this.indexBuffer, "uint16");
-    for (let m of this.meshHandles) {
-      bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
-      bundleEnc.drawIndexed(
-        m.triCount * 3,
-        undefined,
-        m.indicesNumOffset,
-        m.vertNumOffset
-      );
-    }
-    this.renderBundle = bundleEnc.finish();
+    // workaround because Typescript can't tell this function init's the render bundle
+    this.renderBundle = this.createRenderBundle();
   }
 
-  renderFrame() {
+  renderFrame(viewMatrix: mat4) {
     this.checkCanvasResize();
-    const viewMatrix = this.state.viewMatrix();
     const projectionMatrix = mat4.perspective(
       mat4.create(),
       (2 * Math.PI) / 5,
