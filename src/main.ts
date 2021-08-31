@@ -177,14 +177,11 @@ function unshareVertices(input: Mesh): Mesh {
     return { pos, tri, colors: input.colors }
 }
 
-function computeNormals(m: Mesh): vec3[] {
-    const triPoses = m.tri.map(([i0, i1, i2]) => [m.pos[i0], m.pos[i1], m.pos[i2]] as [vec3, vec3, vec3])
-    return triPoses.map(([p1, p2, p3]) => {
-        // cross product of two edges, https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
-        const n = vec3.cross(vec3.create(), vec3.sub(vec3.create(), p2, p1), vec3.sub(vec3.create(), p3, p1))
-        vec3.normalize(n, n)
-        return n;
-    })
+function computeTriangleNormal(p1: vec3, p2: vec3, p3: vec3): vec3 {
+    // cross product of two edges, https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
+    const n = vec3.cross(vec3.create(), vec3.sub(vec3.create(), p2, p1), vec3.sub(vec3.create(), p3, p1))
+    vec3.normalize(n, n)
+    return n;
 }
 
 interface MeshHandle {
@@ -327,8 +324,20 @@ const vertexBuffersLayout: GPUVertexBufferLayout[] = [{
     ],
 }];
 
-function writeMeshTransform(m: MeshHandle) {
+function gpuBufferWriteMeshTransform(m: MeshHandle) {
     device.queue.writeBuffer(_meshUniBuffer, m.modelUniByteOffset, (m.transform as Float32Array).buffer);
+}
+
+function bufferWriteVec3(buffer: Float32Array, offset: number, v: vec3) {
+    buffer[offset + 0] = v[0]
+    buffer[offset + 1] = v[1]
+    buffer[offset + 2] = v[2]
+}
+
+function bufferWriteVertex(buffer: Float32Array, offset: number, position: vec3, color: vec3, normal: vec3) {
+    bufferWriteVec3(buffer, offset + 0, position);
+    bufferWriteVec3(buffer, offset + 3, color);
+    bufferWriteVec3(buffer, offset + 6, normal);
 }
 
 // add our meshes to the vertex and index buffers
@@ -347,11 +356,9 @@ function addMesh(m: Mesh): MeshHandle {
     if (_numTris + m.tri.length > maxTris)
         throw "Too many triangles!"
 
-
     const vertNumOffset = _numVerts;
     const indicesNumOffset = _numTris * 3;
 
-    const norms = computeNormals(m);
     m.tri.forEach((triInd, i) => {
         const vOff = (_numVerts) * vertElStride
         const iOff = (_numTris) * indicesPerTriangle
@@ -360,40 +367,10 @@ function addMesh(m: Mesh): MeshHandle {
             indicesMap[iOff + 1] = triInd[1]
             indicesMap[iOff + 2] = triInd[2]
         }
-        // set per-face vertex data
-        // position
-        verticesMap[vOff + 0 * vertElStride + 0] = m.pos[triInd[0]][0]
-        verticesMap[vOff + 0 * vertElStride + 1] = m.pos[triInd[0]][1]
-        verticesMap[vOff + 0 * vertElStride + 2] = m.pos[triInd[0]][2]
-        verticesMap[vOff + 1 * vertElStride + 0] = m.pos[triInd[1]][0]
-        verticesMap[vOff + 1 * vertElStride + 1] = m.pos[triInd[1]][1]
-        verticesMap[vOff + 1 * vertElStride + 2] = m.pos[triInd[1]][2]
-        verticesMap[vOff + 2 * vertElStride + 0] = m.pos[triInd[2]][0]
-        verticesMap[vOff + 2 * vertElStride + 1] = m.pos[triInd[2]][1]
-        verticesMap[vOff + 2 * vertElStride + 2] = m.pos[triInd[2]][2]
-        // color
-        const [r, g, b] = m.colors[i]
-        verticesMap[vOff + 0 * vertElStride + 3] = r
-        verticesMap[vOff + 0 * vertElStride + 4] = g
-        verticesMap[vOff + 0 * vertElStride + 5] = b
-        verticesMap[vOff + 1 * vertElStride + 3] = r
-        verticesMap[vOff + 1 * vertElStride + 4] = g
-        verticesMap[vOff + 1 * vertElStride + 5] = b
-        verticesMap[vOff + 2 * vertElStride + 3] = r
-        verticesMap[vOff + 2 * vertElStride + 4] = g
-        verticesMap[vOff + 2 * vertElStride + 5] = b
-        // normals
-        const [nx, ny, nz] = norms[i]
-        verticesMap[vOff + 0 * vertElStride + 6] = nx
-        verticesMap[vOff + 0 * vertElStride + 7] = ny
-        verticesMap[vOff + 0 * vertElStride + 8] = nz
-        verticesMap[vOff + 1 * vertElStride + 6] = nx
-        verticesMap[vOff + 1 * vertElStride + 7] = ny
-        verticesMap[vOff + 1 * vertElStride + 8] = nz
-        verticesMap[vOff + 2 * vertElStride + 6] = nx
-        verticesMap[vOff + 2 * vertElStride + 7] = ny
-        verticesMap[vOff + 2 * vertElStride + 8] = nz
-
+        const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
+        bufferWriteVertex(verticesMap, vOff + 0 * vertElStride, m.pos[triInd[0]], m.colors[i], normal)
+        bufferWriteVertex(verticesMap, vOff + 1 * vertElStride, m.pos[triInd[1]], m.colors[i], normal)
+        bufferWriteVertex(verticesMap, vOff + 2 * vertElStride, m.pos[triInd[2]], m.colors[i], normal)
         _numVerts += 3;
         _numTris += 1;
     })
@@ -418,7 +395,7 @@ function addMesh(m: Mesh): MeshHandle {
 
 const planeHandle = addMesh(PLANE);
 mat4.translate(planeHandle.transform, planeHandle.transform, [0, -3, 0])
-writeMeshTransform(planeHandle);
+gpuBufferWriteMeshTransform(planeHandle);
 
 const player = addMesh(CUBE);
 
@@ -455,7 +432,7 @@ canvasRef.addEventListener('click', doLockMouse)
 // the camera will follow behind it.
 const cameraOffset = mat4.create();
 pitch(cameraOffset, -Math.PI / 4)
-writeMeshTransform(player)
+gpuBufferWriteMeshTransform(player)
 
 // create a directional light and compute it's projection (for shadows) and direction
 const origin = vec3.fromValues(0, 0, 0);
@@ -632,7 +609,7 @@ function renderFrame(timeMs: number) {
     pitch(cameraOffset, -mouseY * 0.01);
 
     // apply the players movement by writting to the model uniform buffer
-    writeMeshTransform(player);
+    gpuBufferWriteMeshTransform(player);
 
     // render from the light's point of view to a depth buffer so we know where shadows are
     // TODO(@darzu): try bundled shadows
