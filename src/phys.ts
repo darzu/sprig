@@ -49,10 +49,21 @@ export function stepPhysics(
     const a = objDict[aId];
     const b = objDict[bId];
 
+    let aFrac = Infinity;
+    let bFrac = Infinity;
+
     // for each of X,Y,Z dimensions
     for (let i of [0, 1, 2]) {
-      const left = a.lastMotion.location[i] < b.lastMotion.location[i] ? a : b;
-      const right = a.lastMotion.location[i] < b.lastMotion.location[i] ? b : a;
+      // determine who is to the left in this dimension
+      let left: PhysicsObject;
+      let right: PhysicsObject;
+      if (a.lastMotion.location[i] < b.lastMotion.location[i]) {
+        left = a;
+        right = b;
+      } else {
+        left = b;
+        right = a;
+      }
 
       const overlap = left.worldAABB.max[i] - right.worldAABB.min[i];
       if (overlap < 0) continue; // no overlap to deal with
@@ -75,22 +86,35 @@ export function stepPhysics(
 
       // TODO(@darzu): wait, these fractions are slightly wrong, I need to account for leftFracRemaining
       // find F such that F * (leftMaxContrib + rightMaxContrib) >= overlap
-      const f = Math.min(1.0, overlap / (leftMaxContrib + rightMaxContrib));
+      const f = Math.min(
+        1.0,
+        (overlap + PAD) / (leftMaxContrib + rightMaxContrib)
+      );
       if (f <= 0 || 1 < f)
         // TODO(@darzu): DEBUG
         console.error(
           `Invalid fraction: ${f}, overlap: ${overlap}, leftMaxContrib: ${leftMaxContrib} rightMaxContrib: ${rightMaxContrib}`
         );
 
-      console.log(
-        `f: ${f}, o: ${overlap}, l: ${leftMaxContrib}, r: ${rightMaxContrib}`
-      );
+      // update the dimension-spanning "a" and "b" fractions
+      if (0 < leftMaxContrib) {
+        if (left === a) aFrac = Math.min(aFrac, f);
+        else bFrac = Math.min(bFrac, f);
+      }
+      if (0 < rightMaxContrib) {
+        if (right === a) aFrac = Math.min(aFrac, f);
+        else bFrac = Math.min(bFrac, f);
+      }
 
-      if (0 < leftMaxContrib)
-        objMovFracs[left.id] = Math.max(objMovFracs[left.id] || 0, f);
-      if (0 < rightMaxContrib)
-        objMovFracs[right.id] = Math.max(objMovFracs[right.id] || 0, f);
+      console.log(
+        `f: ${f}, aFrac: ${aFrac} bFrac:${bFrac}, o: ${overlap}, l: ${leftMaxContrib}, r: ${rightMaxContrib}`
+      );
     }
+
+    if (aFrac < Infinity)
+      objMovFracs[aId] = Math.max(objMovFracs[aId] || 0, aFrac);
+    if (bFrac < Infinity)
+      objMovFracs[bId] = Math.max(objMovFracs[bId] || 0, bFrac);
   }
 
   // adjust objects backward to compensate for collisions
