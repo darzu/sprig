@@ -58,3 +58,23 @@ Skinning:
 Skeletal:
     https://en.wikipedia.org/wiki/Skeletal_animation
     http://morpheo.inrialpes.fr/~franco/3dgraphics/practical3.html
+
+Two frame animations:
+    Sword slash: wind up, strike
+    Walking, running: walk left, walk right
+
+    sort of arcade fighting style
+
+    Effects:
+        Tween vertices?
+        glow trails between keyframes?
+            allow user to draw trail?
+            let the user chose: straight path, orbit path, ???
+
+Animation editor:
+    rigging
+    inverse kinimatics
+    poser
+    small number of frames
+    timing defined in code
+    

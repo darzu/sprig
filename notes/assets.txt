@@ -59,7 +59,6 @@ Procedural gen sphere:
 MinionsArt tutorials:
     https://minionsart.github.io/tutorials/
 
-
 Modeling a character (Coding Adventures):
     https://www.youtube.com/watch?v=DiIoWrOlIRw&list=PLFt_AvWsXl0fEx02iXR8uhDsVGhmM9Pse
 
@@ -78,3 +77,20 @@ Compression:
 Forests:
     https://www.google.com/search?q=low+poly+forest
     https://www.pinterest.com/search/pins/?q=low%20poly%20forest
+
+3D editor:
+    quad-based mesh editor:
+        loop cuts
+        extrude
+            normal extrude
+        merge
+        unmerge?
+    side, top, front, perspective view (like tinkerCAD)
+    symetry modes
+    vertices move:
+        edge slide
+        x,y,z slide
+        scale
+    equipment attach points
+        clothing, armor, weapons,
+        mech parts,

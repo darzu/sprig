@@ -2,11 +2,15 @@ import { mat4, vec3 } from './ext/gl-matrix.js';
 
 /*
 TODO:
-    Face painting
+    Face painting:
+        color per defining vertex would be ideal
+        could do uniform buffer data
+        how to do the painting?
+        pick out face color in vertex shader and pass to fragment
+            How do we know which face? We need that prominent vertex thing...
     Refactor into seperate files
         Kill babylonjs?
 */
-
 
 // face normals vs vertex normals
 interface MeshModel {
@@ -96,7 +100,7 @@ function computeNormals(m: MeshModel): vec3[] {
 // TODO: canvas ref
 // TODO: navigator.gpu typings
 //          @webgpu/types
-
+// TODO: frag_depth
 const vertexPositionColorWGSL =
 `
 [[stage(fragment)]]
