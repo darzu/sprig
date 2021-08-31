@@ -51,3 +51,31 @@ Rapier.js
                 Yes? harpoon
         2. Bite the bullet, take on NPM and a bundler
         3. Create a dummy project w/ NPM to bundle dependencies
+
+Can physics be doen on GPU via compute shaders?
+    https://www.reddit.com/r/gamedev/comments/7ppvyg/physics_simulation_on_gpu/
+    https://i.imgur.com/kjVYcvX.gifv
+    https://www.reddit.com/r/Unity3D/comments/7ppldz/physics_simulation_on_gpu_with_compute_shader_in/
+    https://forum.unity.com/threads/asynchronously-getting-data-from-the-gpu-directx-11-with-rendertexture-or-computebuffer.281346/
+    https://www.seas.upenn.edu/~cis565/LECTURE2010/Physics.pdf
+    broad phase on GPU https://developer.nvidia.com/gpugems/gpugems3/part-v-physics-simulation/chapter-32-broad-phase-collision-detection-cuda
+    GPU gems rigid body https://developer.nvidia.com/gpugems/gpugems3/part-v-physics-simulation/chapter-29-real-time-rigid-body-simulation-gpus
+    Why isn't it more common?
+        https://www.quora.com/Is-it-possible-to-make-the-GPU-process-all-the-physics-of-the-game-instead-of-the-low-end-CPU
+        https://gamedev.stackexchange.com/questions/51309/regarding-physics-engines-and-the-gpu
+            basically, CPU->GPU->CPU round trip for gameplay affecting phsysics is too much
+            GPU is still good choice for visual-only stuff (particles)
+
+Physics engine tutorials
+    https://www.toptal.com/game/video-game-physics-part-iii-constrained-rigid-body-simulation
+    A Unified Framework for Rigid Body Dynamics.pdf
+    https://www.gafferongames.com/tags/physics/
+        https://www.gafferongames.com/post/physics_in_3d/
+        https://www.gafferongames.com/post/spring_physics/
+    http://web.archive.org/web/20200323032109/http://www.wildbunny.co.uk/blog/2011/04/06/physics-engines-for-dummies/
+    Broad vs narrow:
+        https://research.ncl.ac.uk/game/mastersdegree/gametechnologies/physicstutorials/6accelerationstructures/Physics%20-%20Spatial%20Acceleration%20Structures.pdf
+
+Noita:
+    GDC talk https://www.youtube.com/watch?v=prXuyMCgbTc
+    "sand games" https://www.youtube.com/watch?v=-dD-EaZ29hs

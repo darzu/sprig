@@ -481,3 +481,13 @@ Voxel engine used by minecraft classic web:
 
 Roblox wannabe?
   https://www.coregames.com
+
+Other game engines:
+  http://www.rpginabox.com
+    voxel, grid-based
+  https://libgdx.com/showcase/
+    java, opengl, mindustry, slay the spire,
+  Minecraft voxel engine
+    http://www.voxeljs.com
+  http://superpowers-html5.com/index.en.html
+    simplish 3D HTML engine

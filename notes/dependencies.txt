@@ -1,0 +1,10 @@
+So far, I've avoided using NPM and a bundler.
+ES6 modules + raw .js files as ES6 modules + .d.ts files for types has worked just fine.
+
+I plan to take a full dependency on:
+    Typescript
+    gl-matrix
+    rapier
+
+I'm getting rid of my dependency on babylonjs likely
+
