@@ -12,10 +12,10 @@ const ENABLE_WATER = false;
 
 import { computeTriangleNormal } from "../3d-util.js";
 import { mat4, vec3 } from "../ext/gl-matrix.js";
-import { createMeshPoolBuilder, MeshHandle, MeshPool, MeshUniform, Vertex } from "./mesh-pool.js";
+import { createMeshPoolBuilder_WebGPU, MeshHandle, MeshPool, MeshPool_WebGPU, MeshUniform, Vertex } from "./mesh-pool.js";
 
 export interface WaterSystem {
-    getMeshPools: () => MeshPool[],
+    getMeshPools: () => MeshPool_WebGPU[],
 }
 
 export function createWaterSystem(device: GPUDevice): WaterSystem {
@@ -37,7 +37,7 @@ export function createWaterSystem(device: GPUDevice): WaterSystem {
         }
     }
 
-    const builder = createMeshPoolBuilder(device, {
+    const builder = createMeshPoolBuilder_WebGPU(device, {
         maxMeshes: 1,
         maxTris: mapArea * 2,
         maxVerts: mapArea * 2,

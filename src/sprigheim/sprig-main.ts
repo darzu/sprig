@@ -2,7 +2,7 @@ import { getPositionFromTransform, moveX, moveY, moveZ, pitch, yaw } from '../3d
 import { mat4, vec3 } from '../ext/gl-matrix.js';
 import { align } from '../math.js';
 import { initGrassSystem } from './grass.js';
-import { createMeshPoolBuilder, MeshHandle, MeshPool, Vertex, MeshUniform, SceneUniform, unshareProvokingVertices, Mesh } from './mesh-pool.js';
+import { createMeshPoolBuilder_WebGPU, MeshHandle, MeshPool, Vertex, MeshUniform, SceneUniform, unshareProvokingVertices, Mesh } from './mesh-pool.js';
 import { createWaterSystem } from './water.js';
 
 // Defines shaders in WGSL for the shadow and regular rendering pipelines. Likely you'll want
@@ -433,7 +433,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         }],
     });
 
-    const poolBuilder = createMeshPoolBuilder(device, {
+    const poolBuilder = createMeshPoolBuilder_WebGPU(device, {
         maxMeshes: 100,
         maxTris: 300,
         maxVerts: 900

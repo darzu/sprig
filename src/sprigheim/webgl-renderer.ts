@@ -113,6 +113,9 @@ export function attachToCanvas(canvasRef: HTMLCanvasElement, pools: MeshPool[]):
         // const indicesBuffer = gl.createBuffer();
         // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
         // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+
+        // to change webgl buffers after creation:
+        // gl.bufferSubData
     })
 
     function updateSceneUniform(scene: SceneUniform.Data) {

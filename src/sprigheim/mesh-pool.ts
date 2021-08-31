@@ -269,6 +269,12 @@ export interface MeshPoolOpts {
     maxTris: number,
     maxVerts: number,
 }
+export interface MeshPoolMaps {
+    // memory mapped buffers
+    verticesMap: Uint8Array,
+    indicesMap: Uint16Array,
+    uniformMap: Uint8Array,
+}
 export interface MeshPoolBuilder {
     // options
     opts: MeshPoolOpts,
@@ -280,7 +286,6 @@ export interface MeshPoolBuilder {
     numVerts: number,
     allMeshes: MeshHandle[],
     // handles
-    device: GPUDevice,
     poolHandle: MeshPool,
     // methods
     addMesh: (m: Mesh) => MeshHandle,
@@ -288,23 +293,30 @@ export interface MeshPoolBuilder {
     updateUniform: (m: MeshHandle) => void,
     finish: () => MeshPool,
 }
+export interface MeshPoolBuilder_WebGPU extends MeshPoolBuilder {
+    device: GPUDevice,
+    finish: () => MeshPool_WebGPU,
+}
+
 export interface MeshPool {
     // options
     opts: MeshPoolOpts,
-    // buffers
-    verticesBuffer: GPUBuffer,
-    indicesBuffer: GPUBuffer,
-    uniformBuffer: GPUBuffer,
     // data
     allMeshes: MeshHandle[],
     numTris: number,
     numVerts: number,
+}
+export interface MeshPoolBuffers_WebGPU {
+    // buffers
+    verticesBuffer: GPUBuffer,
+    indicesBuffer: GPUBuffer,
+    uniformBuffer: GPUBuffer,
     // handles
     device: GPUDevice,
     // methods
     updateUniform: (m: MeshHandle) => void,
 }
-
+export type MeshPool_WebGPU = MeshPool & MeshPoolBuffers_WebGPU;
 
 export interface MeshBuilder {
     poolBuilder: MeshPoolBuilder;
@@ -369,20 +381,8 @@ export function unshareProvokingVertices(input: Mesh): Mesh {
     return { ...input, pos, tri, usesProvoking: true }
 }
 
-export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolBuilder {
+export function createMeshPoolBuilder_WebGPU(device: GPUDevice, opts: MeshPoolOpts): MeshPoolBuilder_WebGPU {
     const { maxMeshes, maxTris, maxVerts } = opts;
-
-    let finished = false;
-
-    // log our estimated space usage stats
-    console.log(`Mesh space usage for up to ${maxMeshes} meshes, ${maxTris} tris, ${maxVerts} verts:`);
-    console.log(`   ${(maxVerts * Vertex.ByteSize / 1024).toFixed(1)} KB for verts`);
-    console.log(`   ${(maxTris * bytesPerTri / 1024).toFixed(1)} KB for indices`);
-    console.log(`   ${(maxMeshes * MeshUniform.ByteSizeAligned / 1024).toFixed(1)} KB for object uniform data`);
-    const unusedBytesPerModel = MeshUniform.ByteSizeAligned - MeshUniform.ByteSizeExact;
-    console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per object (${(unusedBytesPerModel * maxMeshes / 1024).toFixed(1)} KB total waste)`);
-    const totalReservedBytes = maxVerts * Vertex.ByteSize + maxTris * bytesPerTri + maxMeshes * MeshUniform.ByteSizeAligned;
-    console.log(`Total space reserved for objects: ${(totalReservedBytes / 1024).toFixed(1)} KB`);
 
     // create our mesh buffers (vertex, index, uniform)
     const verticesBuffer = device.createBuffer({
@@ -401,28 +401,86 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         mappedAtCreation: true,
     });
 
-    const allMeshes: MeshHandle[] = [];
-
     // to modify buffers, we need to map them into JS space; we'll need to unmap later
     let verticesMap = new Uint8Array(verticesBuffer.getMappedRange())
     let indicesMap = new Uint16Array(indicesBuffer.getMappedRange());
     let uniformMap = new Uint8Array(uniformBuffer.getMappedRange());
 
-    const pool: MeshPool = {
-        opts,
+    const maps: MeshPoolMaps = {
+        verticesMap,
+        indicesMap,
+        uniformMap
+    }
+
+    const buffers: MeshPoolBuffers_WebGPU = {
         device,
         verticesBuffer,
         indicesBuffer,
         uniformBuffer,
+        updateUniform,
+    }
+
+    const builder = createMeshPoolBuilder(opts, maps);
+
+    const scratch_uniform_u8 = new Uint8Array(MeshUniform.ByteSizeAligned);
+    function updateUniform(m: MeshHandle) {
+        MeshUniform.Serialize(scratch_uniform_u8, 0, m.transform, m.aabbMin, m.aabbMax)
+        device.queue.writeBuffer(uniformBuffer, m.modelUniByteOffset, scratch_uniform_u8);
+    }
+
+    const builder_webgpu: MeshPoolBuilder_WebGPU = {
+        ...builder,
+        device,
+        finish, // TODO(@darzu): 
+    }
+
+    function finish(): MeshPool_WebGPU {
+        // unmap the buffers so the GPU can use them
+        verticesBuffer.unmap()
+        indicesBuffer.unmap()
+        uniformBuffer.unmap()
+
+        const pool = builder.finish();
+
+        const result: MeshPool_WebGPU = {
+            ...pool,
+            ...buffers,
+        }
+
+        return result;
+    }
+
+    return builder_webgpu;
+}
+
+function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps): MeshPoolBuilder {
+    const { maxMeshes, maxTris, maxVerts } = opts;
+
+    let finished = false;
+
+    // log our estimated space usage stats
+    console.log(`Mesh space usage for up to ${maxMeshes} meshes, ${maxTris} tris, ${maxVerts} verts:`);
+    console.log(`   ${(maxVerts * Vertex.ByteSize / 1024).toFixed(1)} KB for verts`);
+    console.log(`   ${(maxTris * bytesPerTri / 1024).toFixed(1)} KB for indices`);
+    console.log(`   ${(maxMeshes * MeshUniform.ByteSizeAligned / 1024).toFixed(1)} KB for object uniform data`);
+    const unusedBytesPerModel = MeshUniform.ByteSizeAligned - MeshUniform.ByteSizeExact;
+    console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per object (${(unusedBytesPerModel * maxMeshes / 1024).toFixed(1)} KB total waste)`);
+    const totalReservedBytes = maxVerts * Vertex.ByteSize + maxTris * bytesPerTri + maxMeshes * MeshUniform.ByteSizeAligned;
+    console.log(`Total space reserved for objects: ${(totalReservedBytes / 1024).toFixed(1)} KB`);
+
+    const allMeshes: MeshHandle[] = [];
+
+    const pool: MeshPool = {
+        opts,
         allMeshes,
         numTris: 0,
         numVerts: 0,
-        updateUniform: _queueSetUniform,
     }
+
+    const { verticesMap, indicesMap, uniformMap } = maps;
 
     const builder: MeshPoolBuilder = {
         opts,
-        device,
         verticesMap,
         indicesMap,
         uniformMap,
@@ -435,6 +493,8 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         updateUniform,
         finish,
     };
+
+    // device,
 
     // add our meshes to the vertex and index buffers
     function addMesh(m: Mesh): MeshHandle {
@@ -476,36 +536,10 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         return b.finish();
     }
 
-    const scratch_uniform_u8 = new Uint8Array(MeshUniform.ByteSizeAligned);
-    function _queueSetUniform(m: MeshHandle) {
-        MeshUniform.Serialize(scratch_uniform_u8, 0, m.transform, m.aabbMin, m.aabbMax)
-        m.pool.device.queue.writeBuffer(m.pool.uniformBuffer, m.modelUniByteOffset, scratch_uniform_u8);
-    }
-
     function finish(): MeshPool {
         if (finished)
             throw `trying to use finished MeshPoolBuilder`
         finished = true;
-
-        // TODO(@darzu): debugging deserialization
-        // {
-        //     // before:
-        //     console.log(Vertex.DEBUG_len);
-        //     console.log(Vertex.DEBUG_serialize);
-
-        //     const positions = new Float32Array(builder.numVerts * 3)
-        //     const colors = new Float32Array(builder.numVerts * 3)
-        //     const normals = new Float32Array(builder.numVerts * 3)
-        //     const kinds = new Uint32Array(builder.numVerts * 1)
-        //     Vertex.Deserialize(verticesMap, builder.numVerts, positions, colors, normals, kinds);
-        //     console.log(colors.length)
-        //     console.log(colors.map(c => Math.floor(c * 256)).join(','))
-        // }
-
-        // unmap the buffers so the GPU can use them
-        verticesBuffer.unmap()
-        indicesBuffer.unmap()
-        uniformBuffer.unmap()
 
         pool.numTris = builder.numTris;
         pool.numVerts = builder.numVerts;
@@ -515,6 +549,7 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         return pool;
     }
 
+    const scratch_uniform_u8 = new Uint8Array(MeshUniform.ByteSizeAligned);
     function updateUniform(m: MeshHandle): void {
         if (finished)
             throw 'trying to use finished MeshBuilder'

@@ -1,12 +1,12 @@
 import { getPositionFromTransform } from "../3d-util.js";
 import { mat4, vec3 } from "../ext/gl-matrix.js";
 import { align, jitter } from "../math.js";
-import { createMeshPoolBuilder, MeshHandle, MeshPool, MeshPoolBuilder, Vertex } from "./mesh-pool.js";
+import { createMeshPoolBuilder_WebGPU, MeshHandle, MeshPool, MeshPoolBuilder, MeshPool_WebGPU, Vertex } from "./mesh-pool.js";
 
 const RENDER_GRASS = false;
 
 export interface GrassSystem {
-    getGrassPools: () => MeshPool[],
+    getGrassPools: () => MeshPool_WebGPU[],
     update: (target: vec3) => void,
     // TODO(@darzu): getAABB
 }
@@ -95,7 +95,7 @@ function createGrassTile(opts: GrassTileOpts, builder: MeshPoolBuilder): MeshHan
 }
 
 interface GrassTileset {
-    pool: MeshPool,
+    pool: MeshPool_WebGPU,
     tiles: MeshHandle[],
     update: (target: vec3) => void,
 }
@@ -110,7 +110,7 @@ function createGrassTileset(opts: GrassTilesetOpts, device: GPUDevice): GrassTil
     const totalGrassTris = totalGrass * 1;
     // TODO(@darzu): GRASS FORMAT
     // const totalGrassTris = totalGrass * 2;
-    const builder = createMeshPoolBuilder(device, {
+    const builder = createMeshPoolBuilder_WebGPU(device, {
         maxVerts: align(totalGrassTris * 3, 4),
         maxTris: align(totalGrassTris, 4),
         maxMeshes: tileCount,
