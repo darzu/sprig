@@ -4,7 +4,7 @@ import {
 import * as draw from "./draw.js";
 import { pathToSvg, setPos } from "./draw.js";
 import { emitBlocks } from "./resize.js";
-import { ajax, setStyle } from "./util.js";
+import { ajax, setStyle } from "../util.js";
 import * as bast from "./bast.js";
 import { pxtColors } from "./color.js";
 import { getBarsBottom, makeAllColorBars } from "./color-bars.js";

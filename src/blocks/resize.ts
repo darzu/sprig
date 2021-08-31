@@ -1,9 +1,9 @@
 import {
     BlockCategory, BlockLook, CornerShape
 } from "./legacy-block-ast.js"
-import { add, even, Sized, max, V2, sum } from "./math.js"
+import { add, even, Sized, max, V2, sum } from "../math.js"
 import * as bast from "./bast.js"
-import { never } from "./util.js";
+import { never } from "../util.js";
 import { Color, HSL, RGB } from "./color.js";
 
 // TODO: rework this to be bast-to-sized-bast or something less verbose. Or call it "resizer"

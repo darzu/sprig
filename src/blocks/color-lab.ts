@@ -2,7 +2,7 @@
 // https://drafts.csswg.org/css-color/#color-conversion-code
 
 import { CIELAB, FLRGB, FRGB, LAB, LCH, toV3, XYZD50, XYZD65 } from "./color.js";
-import { Mat, multiplyMatrices } from "./math.js";
+import { Mat, multiplyMatrices } from "../math.js";
 
 // Sample code for color conversions
 // Conversion can also be done using ICC profiles and a Color Management System

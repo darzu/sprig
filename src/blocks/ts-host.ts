@@ -1,7 +1,7 @@
 import { Stmt } from "./bast.js";
-import ts from "./ext/typescript.js";
+import ts from "../ext/typescript.js";
 import { emitFile } from "./ts-to-bast.js";
-import { ajax } from "./util.js";
+import { ajax } from "../util.js";
 
 export function sampleTranspile() {
     const source = "let x: string  = 'string'";

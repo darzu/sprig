@@ -1,11 +1,11 @@
 import { clampHSL, clampLCH, Color, contrastClamp, parseHex, toHex, toHSL, toLCH, white } from "./color.js";
 import { CornerShape } from "./legacy-block-ast.js";
-import { V2, max, Sized, clamp } from "./math.js";
+import { V2, max, Sized, clamp } from "../math";
 import {
     INNER_H_M, INNER_W_M, MOUTH_INDENT, NODE_SPACER,
     Renderable, RenderableBlock, RenderableDropdown, RenderableStack, STACK_GAP
 } from "./resize.js";
-import { edges, never, setStyle } from "./util.js";
+import { edges, never, setStyle } from "../util.js";
 
 // TODO: consider WebGL
 

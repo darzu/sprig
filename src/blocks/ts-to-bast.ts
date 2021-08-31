@@ -1,6 +1,6 @@
 import { Exp, ExpBlock, NumLit, Stmt, StrLit } from "./bast.js";
 import { pxtColors } from "./color.js";
-import ts from "./ext/typescript.js";
+import ts from "../ext/typescript.js";
 
 // TODO(@darzu): emit code blocks
 

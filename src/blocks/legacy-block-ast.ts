@@ -1,10 +1,10 @@
 import { pxtColors, pxtColorsHSL } from "./color.js";
-import { V2, add, max, sum, even } from "./math.js"
+import { V2, add, max, sum, even } from "../math.js"
 import { genDef, getPxtBlockDefs, parseBlocksXml } from "./pxt-parse.js";
 import {
     Renderable, RenderableSection, wrapNodes, sizeOfText
 } from "./resize.js"
-import { ajax, range } from "./util.js"
+import { ajax, range } from "../util.js"
 
 const WRAP_INDENT = 8;
 const INNER_W_M = 8;

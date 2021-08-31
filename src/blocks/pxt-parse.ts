@@ -1,5 +1,5 @@
 import { BlockDef, BlockSectionDef, HOLE } from "./legacy-block-ast.js";
-import { ajax, never } from "./util.js";
+import { ajax, never } from "../util.js";
 
 export namespace pxtblocks {
     // {
