@@ -134,7 +134,7 @@ function createGrassTileset(opts: GrassTilesetOpts, device: GPUDevice): GrassTil
 
     const pool = builder.finish();
 
-    const tiles = builder.allMeshes;
+    const tiles = pool.allMeshes;
 
     // handle grass tile movement
     function update(target: vec3) {

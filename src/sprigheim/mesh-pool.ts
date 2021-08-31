@@ -54,13 +54,34 @@ export interface MeshPool {
     // buffers
     verticesBuffer: GPUBuffer,
     indicesBuffer: GPUBuffer,
-    _meshUniBuffer: GPUBuffer,
+    uniformBuffer: GPUBuffer,
     // data
     allMeshes: MeshHandle[],
     numTris: number,
     numVerts: number,
     // handles
     device: GPUDevice,
+}
+
+interface AABB {
+    min: vec3,
+    max: vec3,
+}
+
+function getAABBFromMesh(m: Mesh): AABB {
+    const min = vec3.fromValues(Infinity, Infinity, Infinity) as Float32Array
+    const max = vec3.fromValues(-Infinity, -Infinity, -Infinity) as Float32Array
+
+    for (let pos of m.pos) {
+        min[0] = Math.min(pos[0], min[0])
+        min[1] = Math.min(pos[1], min[1])
+        min[2] = Math.min(pos[2], min[2])
+        max[0] = Math.max(pos[0], max[0])
+        max[1] = Math.max(pos[1], max[1])
+        max[2] = Math.max(pos[2], max[2])
+    }
+
+    return { min, max }
 }
 
 export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolBuilder {
@@ -89,7 +110,7 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
         mappedAtCreation: true,
     });
-    const _meshUniBuffer = device.createBuffer({
+    const uniformBuffer = device.createBuffer({
         size: meshUniByteSizeAligned * maxMeshes,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         mappedAtCreation: true,
@@ -100,14 +121,14 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
     // to modify buffers, we need to map them into JS space; we'll need to unmap later
     let verticesMap = new Uint8Array(verticesBuffer.getMappedRange())
     let indicesMap = new Uint16Array(indicesBuffer.getMappedRange());
-    let uniformMap = new Uint8Array(_meshUniBuffer.getMappedRange());
+    let uniformMap = new Uint8Array(uniformBuffer.getMappedRange());
 
     const pool: MeshPool = {
         opts,
         device,
         verticesBuffer,
         indicesBuffer,
-        _meshUniBuffer,
+        uniformBuffer,
         allMeshes,
         numTris: 0,
         numVerts: 0,
@@ -171,7 +192,7 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         // unmap the buffers so the GPU can use them
         verticesBuffer.unmap()
         indicesBuffer.unmap()
-        _meshUniBuffer.unmap()
+        uniformBuffer.unmap()
 
         pool.numTris = builder.numTris;
         pool.numVerts = builder.numVerts;
@@ -266,27 +287,6 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
     return builder;
 }
 
-interface AABB {
-    min: vec3,
-    max: vec3,
-}
-
-function getAABBFromMesh(m: Mesh): AABB {
-
-    const min = vec3.fromValues(Infinity, Infinity, Infinity) as Float32Array
-    const max = vec3.fromValues(-Infinity, -Infinity, -Infinity) as Float32Array
-
-    for (let pos of m.pos) {
-        min[0] = Math.min(pos[0], min[0])
-        min[1] = Math.min(pos[1], min[1])
-        min[2] = Math.min(pos[2], min[2])
-        max[0] = Math.max(pos[0], max[0])
-        max[1] = Math.max(pos[1], max[1])
-        max[2] = Math.max(pos[2], max[2])
-    }
-
-    return { min, max }
-}
 
 export interface MeshBuilder {
     poolBuilder: MeshPoolBuilder;
@@ -300,15 +300,15 @@ export interface MeshBuilder {
 // utilities for mesh pools
 // TODO(@darzu): move into pool interface?
 // export function meshApplyTransform(m: MeshHandle) {
-//     m.pool.device.queue.writeBuffer(m.pool._meshUniBuffer, m.modelUniByteOffset, (m.transform as Float32Array).buffer);
+//     m.pool.device.queue.writeBuffer(m.pool.uniformBuffer, m.modelUniByteOffset, (m.transform as Float32Array).buffer);
 // }
 export function meshApplyUniformData(m: MeshHandle) {
     // TODO(@darzu): for some reason doing this seperate for the transform and the AABB box didn't work...
     // TODO(@darzu): MESH FORMAT
     // TODO(@darzu): alignment requirements
     // const offset = m.modelUniByteOffset + bytesPerMat4 /*transform*/
-    // m.pool.device.queue.writeBuffer(m.pool._meshUniBuffer, offset, (m.modelMin as Float32Array).buffer);
-    // m.pool.device.queue.writeBuffer(m.pool._meshUniBuffer, offset + align(bytesPerVec3, 4), (m.modelMax as Float32Array).buffer);
+    // m.pool.device.queue.writeBuffer(m.pool.uniformBuffer, offset, (m.modelMin as Float32Array).buffer);
+    // m.pool.device.queue.writeBuffer(m.pool.uniformBuffer, offset + align(bytesPerVec3, 4), (m.modelMax as Float32Array).buffer);
 
     // const f32Scratch = new Float32Array(4 + 4);
     const f32Scratch = new Float32Array(4 * 4 + 4 + 4);
@@ -318,5 +318,5 @@ export function meshApplyUniformData(m: MeshHandle) {
     f32Scratch.set(m.modelMin, align(4 * 4, 4))
     f32Scratch.set(m.modelMax, align(4 * 4 + 3, 4))
     const u8Scratch = new Uint8Array(f32Scratch.buffer);
-    m.pool.device.queue.writeBuffer(m.pool._meshUniBuffer, m.modelUniByteOffset, u8Scratch);
+    m.pool.device.queue.writeBuffer(m.pool.uniformBuffer, m.modelUniByteOffset, u8Scratch);
 }

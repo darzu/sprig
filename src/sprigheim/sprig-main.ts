@@ -540,7 +540,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         layout: modelUniBindGroupLayout,
         entries: [{
             binding: 0,
-            resource: { buffer: pool._meshUniBuffer, size: meshUniByteSizeAligned, },
+            resource: { buffer: pool.uniformBuffer, size: meshUniByteSizeAligned, },
         }],
     });
 
@@ -893,7 +893,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
             layout: modelUniBindGroupLayout,
             entries: [{
                 binding: 0,
-                resource: { buffer: p._meshUniBuffer, size: meshUniByteSizeAligned, },
+                resource: { buffer: p.uniformBuffer, size: meshUniByteSizeAligned, },
             }],
         });
 
