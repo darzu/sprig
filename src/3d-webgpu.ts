@@ -712,14 +712,22 @@ async function init(canvasRef: HTMLCanvasElement) {
     window.addEventListener('keyup', function (event: KeyboardEvent) {
         onKeyUp(event);
     }, false);
+    window.addEventListener('mousemove', function (event: MouseEvent) {
+        onmousemove(event);
+    }, false);
 
     const pressedKeys: { [keycode: string]: boolean } = {}
     function onKeyDown(ev: KeyboardEvent) {
-        console.log(ev.key);
         pressedKeys[ev.key.toLowerCase()] = true
     }
     function onKeyUp(ev: KeyboardEvent) {
         pressedKeys[ev.key.toLowerCase()] = false
+    }
+    let mouseDeltaX = 0;
+    let mouseDeltaY = 0;
+    function onmousemove(ev: MouseEvent) {
+        mouseDeltaX += ev.movementX
+        mouseDeltaY += ev.movementY
     }
 
     function frame(time: number) {
@@ -734,6 +742,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         mat4.translate(meshes[1].transform, meshes[1].transform, [0.1, 0, 0])
         applyMeshTransform(meshes[1])
 
+        // keys
         if (pressedKeys['w'])
             cameraPos.moveZ(1)
         if (pressedKeys['s'])
@@ -749,6 +758,16 @@ async function init(canvasRef: HTMLCanvasElement) {
         // cameraPos.yaw(0.01)
         // cameraPos.pitch(0.01)
         // cameraPos.roll(0.01)
+        // mouse
+        if (mouseDeltaX !== 0) {
+            cameraPos.yaw(mouseDeltaX * 0.01);
+            mouseDeltaX = 0;
+        }
+        if (mouseDeltaY !== 0) {
+            cameraPos.pitch(mouseDeltaY * 0.01);
+            mouseDeltaY = 0;
+        }
+
 
         function getViewProj() {
             const viewProj = mat4.create();
