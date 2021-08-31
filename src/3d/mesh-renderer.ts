@@ -4,7 +4,7 @@ import { mat4 } from "../ext/gl-matrix.js";
 import { align } from "../math.js";
 import { bytesPerFloat, bytesPerMat4, MeshMemoryPool, MeshMemoryPool as MeshPool, MeshMemoryPoolOptions, bytesPerVec3 } from "./mesh.js";
 
-const shadowDepthTextureSize = 1024 * 2;
+const shadowDepthTextureSize = 1024 * 2 * 4;
 
 // TODO(@darzu): SCENE FORMAT
 const sceneStruct = `
@@ -150,23 +150,7 @@ const wgslShaders = {
         // Percentage-closer filtering. Sample texels in the region
         // to smooth the result.
         var visibility : f32 = 0.0;
-        // for (var y : i32 = -1 ; y <= 1 ; y = y + 1) {
-        //     for (var x : i32 = -1 ; x <= 1 ; x = x + 1) {
-        //         let offset : vec2<f32> = vec2<f32>(
-        //         f32(x) * ${1 / shadowDepthTextureSize},
-        //         f32(y) * ${1 / shadowDepthTextureSize});
 
-        //         visibility = visibility + textureSampleCompare(
-        //         shadowMap, shadowSampler,
-        //         input.shadowPos.xy + offset, input.shadowPos.z - 0.007);
-        //     }
-        // }
-
-        // return vec4<f32>(input.shadowPos.x * 0.5, input.shadowPos.x * 0.5, input.shadowPos.x * 0.5, 1.0);
-
-        // TODO: what is this 0.007 factor?
-        visibility = visibility + textureSampleCompare(
-            shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
         if (
             input.shadowPos.x < 0.0
             || input.shadowPos.x > 0.99
@@ -175,10 +159,40 @@ const wgslShaders = {
             || input.shadowPos.z < 0.0
             || input.shadowPos.z > 0.99
             ) {
+            // we're outside the shadow box
             visibility = 1.0;
+        } else {
+            // we're in the shadow box, do a multi sample
+            for (var y : i32 = -1 ; y <= 1 ; y = y + 1) {
+                for (var x : i32 = -1 ; x <= 1 ; x = x + 1) {
+                    let offset : vec2<f32> = vec2<f32>(
+                    f32(x) * ${1 / shadowDepthTextureSize},
+                    f32(y) * ${1 / shadowDepthTextureSize});
+
+                    visibility = visibility + textureSampleCompare(
+                    shadowMap, shadowSampler,
+                    input.shadowPos.xy + offset, input.shadowPos.z - 0.007);
+                }
+            }
+            visibility = visibility / 9.0;
+
+        // visibility = textureSampleCompare(
+        //         shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
         }
 
-        // visibility = visibility / 9.0;
+        if (scene.lightDir.y > 0.0) {
+            // sun is down
+            visibility = max(visibility - scene.lightDir.y * 2.0, 0.0);
+            // TODO: how to fix this with planets?
+        }
+
+        // return vec4<f32>(input.shadowPos.x * 0.5, input.shadowPos.x * 0.5, input.shadowPos.x * 0.5, 1.0);
+
+        // TODO: what is this 0.007 factor?
+        // visibility = textureSampleCompare(
+        //     shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
+
+
         // visibility = 1.0;
 
         // let normSign: f32 = select(1.0, -1.0, input.front);

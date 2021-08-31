@@ -28,7 +28,8 @@ TODO:
 */
 
 // FLAGS
-const RENDER_GRASS = false;
+// const RENDER_GRASS = false;
+const RENDER_GRASS = true;
 
 // TODO(@darzu): expand faces to have unique vertices
 
