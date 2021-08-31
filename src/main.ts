@@ -40,11 +40,13 @@ const PLANE_MESH = unshareProvokingVertices(scaleMesh(
 const PLANE_AABB = getAABBFromMesh(PLANE_MESH);
 
 class Plane extends GameObject {
+  defaultColor: vec3;
   color: vec3;
 
   constructor(id: number, creator: number) {
     super(id, creator);
-    this.color = vec3.fromValues(0.02, 0.02, 0.02);
+    this.defaultColor = vec3.fromValues(0.02, 0.02, 0.02);
+    this.color = vec3.create();
     this.localAABB = PLANE_AABB;
   }
 
@@ -117,11 +119,13 @@ const CUBE_MESH = unshareProvokingVertices({
 const CUBE_AABB = getAABBFromMesh(CUBE_MESH);
 
 abstract class Cube extends GameObject {
+  defaultColor: vec3;
   color: vec3;
 
   constructor(id: number, creator: number) {
     super(id, creator);
-    this.color = vec3.fromValues(0.2, 0, 0);
+    this.defaultColor = vec3.fromValues(0.2, 0, 0);
+    this.color = vec3.create();
     this.localAABB = CUBE_AABB;
   }
 
@@ -133,7 +137,8 @@ abstract class Cube extends GameObject {
 class Bullet extends Cube {
   constructor(id: number, creator: number) {
     super(id, creator);
-    this.color = vec3.fromValues(0.1, 0.1, 0.8);
+    this.defaultColor = vec3.fromValues(0.1, 0.1, 0.8);
+    this.localAABB = getAABBFromMesh(this.mesh())
   }
 
   mesh(): Mesh {
@@ -180,7 +185,7 @@ class Bullet extends Cube {
 class Player extends Cube {
   constructor(id: number, creator: number) {
     super(id, creator);
-    this.color = vec3.fromValues(0, 0.2, 0);
+    this.defaultColor = vec3.fromValues(0, 0.2, 0);
   }
 
   syncPriority(): number {
@@ -396,9 +401,12 @@ class CubeGameState extends GameState<Inputs> {
       this.addObjectInstance(bullet, this.bulletProto);
     }
     if (inputs.rclick) {
-      const SPREAD = 10;
-      for (let i = 0; i <= SPREAD; i++) {
-        for (let i2 = 0; i2 <= SPREAD; i2++) {
+      const SPREAD = 5;
+      const GAP = 1.0;
+      for (let xi = 0; xi <= SPREAD; xi++) {
+        for (let yi = 0; yi <= SPREAD; yi++) {
+          const x = (xi - SPREAD / 2) * GAP;
+          const y = (yi - SPREAD / 2) * GAP;
           let bullet = new Bullet(this.id(), this.me);
           let bullet_axis = vec3.fromValues(0, 0, -1);
           bullet_axis = vec3.transformQuat(
@@ -409,7 +417,7 @@ class CubeGameState extends GameState<Inputs> {
           bullet.location = vec3.add(
             vec3.create(),
             this.player().location,
-            vec3.fromValues(i - 5, i2 - 5, 0)
+            vec3.fromValues(x, y, 0)
           );
           bullet.rotation = quat.clone(this.player().rotation);
           bullet.linear_velocity = vec3.scale(
@@ -428,6 +436,15 @@ class CubeGameState extends GameState<Inputs> {
             0.01
           );
           this.addObjectInstance(bullet, this.bulletProto);
+        }
+      }
+    }
+    // check collisions
+    for (let o of Object.values(this.objects)) {
+      if (o instanceof Cube || o instanceof Plane) {
+        vec3.copy(o.color, o.defaultColor);
+        if (this.collidesWith[o.id]) {
+          vec3.add(o.color, o.color, vec3.fromValues(0.1, 0.0, 0.0));
         }
       }
     }

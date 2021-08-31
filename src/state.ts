@@ -2,7 +2,7 @@ import { mat4, vec3, quat } from "./gl-matrix.js";
 import { Serializer, Deserializer } from "./serialize.js";
 import { Mesh, MeshHandle } from "./mesh-pool.js";
 import { Renderer } from "./render_webgpu.js";
-import { AABB, checkCollisions } from "./physics.js";
+import { AABB, checkCollisions, CollidesWith } from "./physics.js";
 
 const ERROR_SMOOTHING_FACTOR = 0.8;
 const EPSILON = 0.0001;
@@ -147,6 +147,7 @@ export abstract class GameState<Inputs> {
   objects: Record<number, GameObject>;
   me: number;
   numObjects: number = 0;
+  collidesWith: CollidesWith;
 
   constructor(renderer: Renderer) {
     this.me = 0;
@@ -154,6 +155,7 @@ export abstract class GameState<Inputs> {
     this.nextPlayerId = 0;
     this.nextObjectId = 0;
     this.objects = [];
+    this.collidesWith = {};
   }
 
   abstract playerObject(playerId: number): GameObject;
@@ -274,9 +276,6 @@ export abstract class GameState<Inputs> {
 
     // check collisions
     // TODO(@darzu): hack. also we need AABBs on objects
-    // const collidesWith = checkCollisions(objs);
-    // for (let o of objs) {
-    //   o.color = collidesWith[o.id] ? vec3.fromValues(0.2, 0.0, 0.0) : vec3.fromValues(0.0, 0.2, 0.0)
-    // }
+    this.collidesWith = checkCollisions(objs);
   }
 }
