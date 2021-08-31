@@ -20,6 +20,15 @@ export function scaleMesh(m: Mesh, by: number): Mesh {
 const working_quat = quat.create();
 const working_vec3 = vec3.create();
 
+/* TODO: add "versioning" of objects. 
+Right now we have two types of state updates: full and dynamic. 
+A full update is only guaranteed to happen once, on object creation; 
+we track which nodes have seen each object and try to only sync each 
+object fully once. We could instead track which nodes have seen which 
+*version* of each object; we could then trigger a full sync again by 
+bumping a version number. We could use this for properties that change 
+infrequently.
+ */
 export abstract class GameObject {
   id: number;
   creator: number;
