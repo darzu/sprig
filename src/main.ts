@@ -47,7 +47,7 @@ async function main() {
     console.log("loaded DOM2")
 
     // playing with colors:
-    // makeAllColorBars();
+    makeAllColorBars();
 
     // code render
     refreshCode()
@@ -246,8 +246,8 @@ let rSvg: SVGElement;
 export function refreshCode() {
     if (rSvg)
         world.removeChild(rSvg)
-    let renderableTree = mkRenderable(legacyCodeTree, wwMaxWidth - 50)
-    let renderableTree2 = emitBlocks(codeTree, wwMaxWidth - 50)
+    let renderableTree2 = mkRenderable(legacyCodeTree, wwMaxWidth - 50)
+    // let renderableTree2 = emitBlocks(codeTree, wwMaxWidth - 50)
     // TODO @darzu: :
     // let renderableTree = renderableTree2
     // console.dir(renderableTree)
