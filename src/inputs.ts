@@ -1,36 +1,30 @@
 export interface Inputs {
-  forward: boolean;
-  back: boolean;
-  left: boolean;
-  right: boolean;
-  up: boolean;
-  down: boolean;
   mouseX: number;
   mouseY: number;
   lclick: boolean;
   rclick: boolean;
-  accel: boolean;
   keyClicks: { [key: string]: number };
+  keyDowns: { [key: string]: boolean };
 }
 
 export function createInputsReader(canvas: HTMLCanvasElement): () => Inputs {
   // track which keys are pressed for use in the game loop
-  const pressedKeys: { [keycode: string]: boolean } = {};
+  const keyDowns: { [keycode: string]: boolean } = {};
   const accumulated_keyClicks: { [keycode: string]: number } = {};
   window.addEventListener(
     "keydown",
     (ev) => {
       const k = ev.key.toLowerCase();
-      if (!pressedKeys[k])
+      if (!keyDowns[k])
         accumulated_keyClicks[k] = (accumulated_keyClicks[k] ?? 0) + 1;
-      pressedKeys[k] = true;
+      keyDowns[k] = true;
     },
     false
   );
   window.addEventListener(
     "keyup",
     (ev) => {
-      pressedKeys[ev.key.toLowerCase()] = false;
+      keyDowns[ev.key.toLowerCase()] = false;
     },
     false
   );
@@ -103,18 +97,12 @@ export function createInputsReader(canvas: HTMLCanvasElement): () => Inputs {
     const { x: mouseX, y: mouseY } = takeAccumulatedMouseMovement();
     const { lClicks, rClicks } = takeAccumulatedMouseClicks();
     const keyClicks = takeAccumulatedKeyClicks();
-    let inputs = {
-      forward: pressedKeys["w"],
-      back: pressedKeys["s"],
-      left: pressedKeys["a"],
-      right: pressedKeys["d"],
-      up: pressedKeys["shift"],
-      down: pressedKeys["c"],
-      accel: pressedKeys[" "],
+    let inputs: Inputs = {
       mouseX,
       mouseY,
       lclick: lClicks > 0,
       rclick: rClicks > 0,
+      keyDowns,
       keyClicks,
     };
     return inputs;

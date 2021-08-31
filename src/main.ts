@@ -452,44 +452,44 @@ class CubeGameState extends GameState {
     if (this.player()) {
       // move player
       this.player().motion.linearVelocity = vec3.fromValues(0, 0, 0);
-      let playerSpeed = inputs.accel ? 0.005 : 0.001;
+      let playerSpeed = inputs.keyDowns[" "] ? 0.005 : 0.001;
       let n = playerSpeed * dt;
-      if (inputs.left) {
+      if (inputs.keyDowns["a"]) {
         vec3.add(
           this.player().motion.linearVelocity,
           this.player().motion.linearVelocity,
           vec3.fromValues(-n, 0, 0)
         );
       }
-      if (inputs.right) {
+      if (inputs.keyDowns["d"]) {
         vec3.add(
           this.player().motion.linearVelocity,
           this.player().motion.linearVelocity,
           vec3.fromValues(n, 0, 0)
         );
       }
-      if (inputs.forward) {
+      if (inputs.keyDowns["w"]) {
         vec3.add(
           this.player().motion.linearVelocity,
           this.player().motion.linearVelocity,
           vec3.fromValues(0, 0, -n)
         );
       }
-      if (inputs.back) {
+      if (inputs.keyDowns["s"]) {
         vec3.add(
           this.player().motion.linearVelocity,
           this.player().motion.linearVelocity,
           vec3.fromValues(0, 0, n)
         );
       }
-      if (inputs.up) {
+      if (inputs.keyDowns["shift"]) {
         vec3.add(
           this.player().motion.linearVelocity,
           this.player().motion.linearVelocity,
           vec3.fromValues(0, n, 0)
         );
       }
-      if (inputs.down) {
+      if (inputs.keyDowns["c"]) {
         vec3.add(
           this.player().motion.linearVelocity,
           this.player().motion.linearVelocity,
