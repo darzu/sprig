@@ -25,6 +25,8 @@ interface MeshModel {
     pos: vec3[];
     // triangles (vert indices, ccw)
     tri: vec3[];
+    // colors per triangle in r,g,b float [0-1] format
+    colors: vec3[];
 }
 
 // TODO(@darzu): this shouldn't be needed once "flat" shading is supported in Chrome's WGSL, 
@@ -50,6 +52,7 @@ function unshareVertices(inp: MeshModel): MeshModel {
     return {
         pos: outVerts,
         tri: outTri,
+        colors: inp.colors,
     }
 }
 interface ExpandedMesh extends MeshModel {
@@ -88,6 +91,26 @@ const CUBE: MeshModel = {
         // back
         [5, 4, 7],
         [5, 4, 6],
+    ],
+    colors: [
+        // front
+        [0.5, 0.0, 0.0],
+        [0.5, 0.0, 0.0],
+        // top
+        [0.0, 0.5, 0.0],
+        [0.0, 0.5, 0.0],
+        // right
+        [0.0, 0.0, 0.5],
+        [0.0, 0.0, 0.5],
+        // left
+        [0.5, 0.5, 0.0],
+        [0.5, 0.5, 0.0],
+        // bottom
+        [0.0, 0.5, 0.5],
+        [0.0, 0.5, 0.5],
+        // back
+        [0.5, 0.0, 0.5],
+        [0.5, 0.0, 0.5],
     ]
 }
 
@@ -105,7 +128,13 @@ const PLANE: MeshModel = {
         // bottom
         [3, 2, 0],
         [1, 3, 0],
-    ]
+    ],
+    colors: [
+        [0.2, 0.3, 0.2],
+        [0.2, 0.3, 0.2],
+        [0.2, 0.3, 0.2],
+        [0.2, 0.3, 0.2],
+    ],
 }
 
 function computeNormal([p1, p2, p3]: [vec3, vec3, vec3]): vec3 {
@@ -238,7 +267,7 @@ function addMeshToBuffers(m: MeshModel, verts: Float32Array, prevNumVerts: numbe
         indices[iOff + 2] = vi2
         // set per-face data
         // color
-        const [r, g, b] = [Math.random(), Math.random(), Math.random()]
+        const [r, g, b] = m.colors[i]
         verts[vOff + vi0 * vertElStride + 3] = r
         verts[vOff + vi0 * vertElStride + 4] = g
         verts[vOff + vi0 * vertElStride + 5] = b
