@@ -177,13 +177,12 @@ abstract class Cube extends GameObject {
 class Bullet extends Cube {
   constructor(id: number, creator: number) {
     super(id, creator);
-    // TODO(@darzu): DEBUG
     this.color = vec3.fromValues(0.3, 0.3, 0.8);
     this.localAABB = getAABBFromMesh(this.mesh());
   }
 
   mesh(): Mesh {
-    // TODO(@darzu): DEBUG
+    // TODO(@darzu): this should be computed only once.
     return scaleMesh(super.mesh(), 0.3);
   }
 
