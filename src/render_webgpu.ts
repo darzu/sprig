@@ -307,7 +307,7 @@ export class Renderer_WebGPU implements Renderer {
     bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
     bundleEnc.setVertexBuffer(0, this.pool.verticesBuffer);
     // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
-    bundleEnc.setIndexBuffer(this.pool.indicesBuffer, "uint16");
+    bundleEnc.setIndexBuffer(this.pool.triIndicesBuffer, "uint16");
     for (let m of this.meshObjs) {
       bundleEnc.setBindGroup(1, modelUniBindGroup, [m.handle.modelUniByteOffset]);
       bundleEnc.drawIndexed(

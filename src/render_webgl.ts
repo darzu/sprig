@@ -168,7 +168,7 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxVe
     // gl.bindBuffer(gl.ARRAY_BUFFER, pool.colorsBuffer);
     // gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(colors));
 
-    // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pool.indicesBuffer);
+    // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pool.triIndicesBuffer);
     // gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, new Uint16Array(indices));
   }
 
@@ -264,8 +264,8 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxVe
     // TODO(@darzu): need to draw update uniform: u_loc_transform
 
     // bind index buffer
-    // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pool.indicesBuffer);
-    // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, builder.indicesMap, gl.DYNAMIC_DRAW);
+    // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pool.triIndicesBuffer);
+    // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, builder.triIndicesMap, gl.DYNAMIC_DRAW);
 
     // TODO(@darzu): DEBUG
     // gl.uniformMatrix4fv(u_loc_transform, false, mat4.create());

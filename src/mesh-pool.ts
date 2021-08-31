@@ -9,8 +9,8 @@ import { AABB, getAABBFromPositions } from "./physics.js";
 //       mesh-pool.ts:711 QUEUE builder.allMeshes.length: 5567, builder.numTris: 16, builder.numVerts: 16
 //       mesh-pool.ts:712 QUEUE pool.allMeshes.length: 5567, pool.numTris: 66796, pool.numVerts: 66796
 
-const indicesPerTriangle = 3;
-const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
+const vertsPerTri = 3;
+const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * vertsPerTri;
 const bytesPerMat4 = (4 * 4)/*4x4 mat*/ * 4/*f32*/
 const bytesPerVec3 = 3/*vec3*/ * 4/*f32*/
 const bytesPerVec2 = 2/*vec3*/ * 4/*f32*/
@@ -282,13 +282,13 @@ export interface MeshPoolOpts {
 export interface MeshPoolMaps {
     // memory mapped buffers
     verticesMap: Uint8Array,
-    indicesMap: Uint16Array,
+    triIndicesMap: Uint16Array,
     uniformMap: Uint8Array,
 }
 export interface MeshPoolQueues {
     // asynchronous updates to buffers
     queueUpdateVertices: (offset: number, data: Uint8Array) => void,
-    queueUpdateIndices: (offset: number, data: Uint8Array) => void,
+    queueUpdateTriIndices: (offset: number, data: Uint8Array) => void,
     queueUpdateUniform: (offset: number, data: Uint8Array) => void,
 }
 export interface MeshPoolBuilder {
@@ -296,7 +296,7 @@ export interface MeshPoolBuilder {
     opts: MeshPoolOpts,
     // memory mapped buffers
     verticesMap: Uint8Array,
-    indicesMap: Uint16Array,
+    triIndicesMap: Uint16Array,
     uniformMap: Uint8Array,
     numTris: number,
     numVerts: number,
@@ -332,7 +332,7 @@ export interface MeshPoolBuilder_WebGPU extends MeshPoolBuilder {
 export interface MeshPoolBuffers_WebGPU {
     // buffers
     verticesBuffer: GPUBuffer,
-    indicesBuffer: GPUBuffer,
+    triIndicesBuffer: GPUBuffer,
     uniformBuffer: GPUBuffer,
     // handles
     device: GPUDevice,
@@ -351,7 +351,7 @@ export interface MeshPoolBuffers_WebGL {
     normalsBuffer: WebGLBuffer,
     colorsBuffer: WebGLBuffer,
     // other buffers
-    indicesBuffer: WebGLBuffer,
+    triIndicesBuffer: WebGLBuffer,
     // handles
     gl: WebGLRenderingContext,
 }
@@ -434,7 +434,7 @@ export function createMeshPoolBuilder_WebGPU(device: GPUDevice, opts: MeshPoolOp
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
         mappedAtCreation: true,
     });
-    const indicesBuffer = device.createBuffer({
+    const triIndicesBuffer = device.createBuffer({
         size: maxTris * bytesPerTri,
         usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
         mappedAtCreation: true,
@@ -447,7 +447,7 @@ export function createMeshPoolBuilder_WebGPU(device: GPUDevice, opts: MeshPoolOp
 
     // to modify buffers, we need to map them into JS space; we'll need to unmap later
     let verticesMap = new Uint8Array(verticesBuffer.getMappedRange())
-    let indicesMap = new Uint16Array(indicesBuffer.getMappedRange());
+    let triIndicesMap = new Uint16Array(triIndicesBuffer.getMappedRange());
     let uniformMap = new Uint8Array(uniformBuffer.getMappedRange());
 
     function queueUpdateBuffer(buffer: GPUBuffer, offset: number, data: Uint8Array) {
@@ -456,11 +456,11 @@ export function createMeshPoolBuilder_WebGPU(device: GPUDevice, opts: MeshPoolOp
 
     const maps: MeshPoolMaps = {
         verticesMap,
-        indicesMap,
+        triIndicesMap,
         uniformMap,
     }
     const queues: MeshPoolQueues = {
-        queueUpdateIndices: (offset: number, data: Uint8Array) => queueUpdateBuffer(indicesBuffer, offset, data),
+        queueUpdateTriIndices: (offset: number, data: Uint8Array) => queueUpdateBuffer(triIndicesBuffer, offset, data),
         queueUpdateVertices: (offset: number, data: Uint8Array) => queueUpdateBuffer(verticesBuffer, offset, data),
         queueUpdateUniform: (offset: number, data: Uint8Array) => queueUpdateBuffer(uniformBuffer, offset, data),
     }
@@ -468,7 +468,7 @@ export function createMeshPoolBuilder_WebGPU(device: GPUDevice, opts: MeshPoolOp
     const buffers: MeshPoolBuffers_WebGPU = {
         device,
         verticesBuffer,
-        indicesBuffer,
+        triIndicesBuffer,
         uniformBuffer,
     }
 
@@ -486,7 +486,7 @@ export function createMeshPoolBuilder_WebGPU(device: GPUDevice, opts: MeshPoolOp
     function finish(): MeshPool_WebGPU {
         // unmap the buffers so the GPU can use them
         verticesBuffer.unmap()
-        indicesBuffer.unmap()
+        triIndicesBuffer.unmap()
         uniformBuffer.unmap()
 
         builder.finish();
@@ -517,14 +517,14 @@ export function createMeshPoolBuilder_WebGL(gl: WebGLRenderingContext, opts: Mes
     gl.bindBuffer(gl.ARRAY_BUFFER, colorsBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, scratchColors, gl.DYNAMIC_DRAW);
     // index buffer
-    const indicesBuffer = gl.createBuffer()!;
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
+    const triIndicesBuffer = gl.createBuffer()!;
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triIndicesBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, scratchIndices, gl.DYNAMIC_DRAW);
 
     // our in-memory reflections of the buffers used during the initial build phase
     // TODO(@darzu): this is too much duplicate data
     let verticesMap = new Uint8Array(maxVerts * Vertex.ByteSize)
-    let indicesMap = new Uint16Array(maxTris * 3);
+    let triIndicesMap = new Uint16Array(maxTris * 3);
     let uniformMap = new Uint8Array(maxMeshes * MeshUniform.ByteSizeAligned);
 
     function queueUpdateVertices(offset: number, data: Uint8Array) {
@@ -547,12 +547,12 @@ export function createMeshPoolBuilder_WebGL(gl: WebGLRenderingContext, opts: Mes
         gl.bindBuffer(gl.ARRAY_BUFFER, colorsBuffer);
         gl.bufferSubData(gl.ARRAY_BUFFER, vNumOffset * bytesPerVec3, colors);
     }
-    function queueUpdateIndices(offset: number, data: Uint8Array) {
+    function queueUpdateTriIndices(offset: number, data: Uint8Array) {
         // TODO(@darzu): again, strange but a useful optimization        
         const numInd = Math.min(data.length / 2, Math.max(builder.numTris, builder.poolHandle.numTris) * 3)
         // TODO(@darzu): debug logging
         // console.log(`indices: #${offset / 2}: ${new Uint16Array(data.buffer).slice(0, numInd).join(',')}`)
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triIndicesBuffer);
         gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, offset, data);
     }
     function queueUpdateUniform(offset: number, data: Uint8Array) {
@@ -561,11 +561,11 @@ export function createMeshPoolBuilder_WebGL(gl: WebGLRenderingContext, opts: Mes
 
     const maps: MeshPoolMaps = {
         verticesMap,
-        indicesMap,
+        triIndicesMap,
         uniformMap,
     }
     const queues: MeshPoolQueues = {
-        queueUpdateIndices,
+        queueUpdateTriIndices,
         queueUpdateVertices,
         queueUpdateUniform,
     }
@@ -576,7 +576,7 @@ export function createMeshPoolBuilder_WebGL(gl: WebGLRenderingContext, opts: Mes
         normalsBuffer,
         colorsBuffer,
         // other buffers
-        indicesBuffer,
+        triIndicesBuffer,
     }
 
     const builder = createMeshPoolBuilder(opts, maps, queues);
@@ -592,7 +592,7 @@ export function createMeshPoolBuilder_WebGL(gl: WebGLRenderingContext, opts: Mes
 
     function finish(): MeshPool_WebGL {
         queueUpdateVertices(0, maps.verticesMap);
-        queueUpdateIndices(0, new Uint8Array(maps.indicesMap.buffer));
+        queueUpdateTriIndices(0, new Uint8Array(maps.triIndicesMap.buffer));
 
         builder.finish();
 
@@ -634,12 +634,12 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
         addMeshInstance: queueInstanceMesh,
     }
 
-    const { verticesMap, indicesMap, uniformMap } = maps;
+    const { verticesMap, triIndicesMap, uniformMap } = maps;
 
     const builder: MeshPoolBuilder = {
         opts,
         verticesMap,
-        indicesMap,
+        triIndicesMap,
         uniformMap,
         numTris: 0,
         numVerts: 0,
@@ -738,7 +738,7 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
         const data: MeshPoolMaps = {
             // TODO(@darzu): use scratch arrays
             verticesMap: new Uint8Array(m.pos.length * Vertex.ByteSize),
-            indicesMap: new Uint16Array(m.tri.length * 3),
+            triIndicesMap: new Uint16Array(m.tri.length * 3),
             uniformMap: new Uint8Array(MeshUniform.ByteSizeAligned),
         }
 
@@ -769,7 +769,7 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
             modelUniByteOffset: allMeshes.length * MeshUniform.ByteSizeAligned,
         };
 
-        queues.queueUpdateIndices(idx.indicesNumOffset * 2, new Uint8Array(data.indicesMap.buffer)); // TODO(@darzu): this view shouldn't be necessary
+        queues.queueUpdateTriIndices(idx.indicesNumOffset * 2, new Uint8Array(data.triIndicesMap.buffer)); // TODO(@darzu): this view shouldn't be necessary
         queues.queueUpdateUniform(idx.modelUniByteOffset, data.uniformMap);
         queues.queueUpdateVertices(idx.vertNumOffset * Vertex.ByteSize, data.verticesMap);
 
@@ -863,7 +863,7 @@ function createMeshBuilder(maps: MeshPoolMaps, uByteOff: number, vByteOff: numbe
             _scratchTri[1] = triInd[1] + indicesShift
             _scratchTri[2] = triInd[2] + indicesShift
         }
-        maps.indicesMap.set(indicesShift ? _scratchTri : triInd, currI) // TODO(@darzu): it's kinda weird indices map uses uint16 vs the rest us u8
+        maps.triIndicesMap.set(indicesShift ? _scratchTri : triInd, currI) // TODO(@darzu): it's kinda weird indices map uses uint16 vs the rest us u8
         numTris += 1;
     }
 
