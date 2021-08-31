@@ -552,7 +552,7 @@ function inputsReader(canvas: HTMLCanvasElement): () => Inputs {
     }
   });
 
-  window.addEventListener("click", (ev) => {
+  window.addEventListener("mouseup", (ev) => {
     if (document.pointerLockElement === canvas) {
       if (ev.button === 0) {
         lclick = true;
