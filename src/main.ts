@@ -195,11 +195,18 @@ interface MeshHandle {
     model: Mesh,
 }
 
-// attach to HTML canvas 
+// // attach to HTML canvas 
 let canvasRef = document.getElementById('sample-canvas') as HTMLCanvasElement;
+// //      needed for: resize, click events, pointer lock
 const adapter = await navigator.gpu.requestAdapter();
 const device = await adapter!.requestDevice();
+// //      needed for: vertex/index/uniform createBuffer, queue, createBindGroup, createBindGroupLayout, createTexture, createSampler, 
+// //                   createPipelineLayout, createShaderModule, createRenderPipeline, createRenderBundleEncoder, createCommandEncoder
+// //      tasks: create buffers, update buffers, create pipelines, bind buffers to pipeline, render bundle,  
 const context = canvasRef.getContext('gpupresent')!;
+//      needed for: configure, getCurrentTexture()
+//      tasks: initialize canvas, do render
+// window, needed for: keyboard, mouse events
 
 // resize the canvas when the window resizes
 function onWindowResize() {
@@ -274,11 +281,6 @@ function bufferWriteVertex(buffer: Float32Array, offset: number, position: vec3,
     bufferWriteVec3(buffer, offset + 3, color);
     bufferWriteVec3(buffer, offset + 6, normal);
 }
-// and create the GPU buffer layout
-const vertexBuffersLayout: GPUVertexBufferLayout[] = [{
-    arrayStride: vertByteSize,
-    attributes: vertexDataFormat,
-}];
 
 // define the format of our models' uniform buffer
 const meshUniByteSize = align(
@@ -292,44 +294,50 @@ if (meshUniByteSize % 256 !== 0) {
 const maxVerts = 100000;
 const maxTris = 100000;
 const maxMeshes = 10000;
+function createMeshBuffers(device: GPUDevice) {
+    // space stats
+    console.log(`New mesh pool`);
+    console.log(`   ${maxVerts * vertByteSize / 1024} KB for verts`);
+    console.log(`   ${true ? maxTris * bytesPerTri / 1024 : 0} KB for indices`);
+    console.log(`   ${maxMeshes * meshUniByteSize / 1024} KB for models`);
+    // TODO(@darzu): MESH FORMAT
+    const assumedBytesPerModel =
+        bytesPerMat4 // transform
+        + bytesPerFloat // max draw distance
+    const unusedBytesPerModel = 256 - assumedBytesPerModel % 256
+    console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per model (${(unusedBytesPerModel * maxMeshes / 1024).toFixed(1)} KB total waste)`);
 
-// space stats
-console.log(`New mesh pool`);
-console.log(`   ${maxVerts * vertByteSize / 1024} KB for verts`);
-console.log(`   ${true ? maxTris * bytesPerTri / 1024 : 0} KB for indices`);
-console.log(`   ${maxMeshes * meshUniByteSize / 1024} KB for models`);
-// TODO(@darzu): MESH FORMAT
-const assumedBytesPerModel =
-    bytesPerMat4 // transform
-    + bytesPerFloat // max draw distance
-const unusedBytesPerModel = 256 - assumedBytesPerModel % 256
-console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per model (${(unusedBytesPerModel * maxMeshes / 1024).toFixed(1)} KB total waste)`);
+    const _vertBuffer = device.createBuffer({
+        size: maxVerts * vertByteSize,
+        usage: GPUBufferUsage.VERTEX,
+        mappedAtCreation: true,
+    });
+    const _indexBuffer = device.createBuffer({
+        size: maxTris * bytesPerTri,
+        usage: GPUBufferUsage.INDEX,
+        mappedAtCreation: true,
+    });
+    const meshUniBufferSize = meshUniByteSize * maxMeshes;
+    const _meshUniBuffer = device.createBuffer({
+        size: align(meshUniBufferSize, 256),
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+    return { _vertBuffer, _indexBuffer, _meshUniBuffer };
+}
+const { _vertBuffer, _indexBuffer, _meshUniBuffer } = createMeshBuffers(device);
 
-const _vertBuffer = device.createBuffer({
-    size: maxVerts * vertByteSize,
-    usage: GPUBufferUsage.VERTEX,
-    mappedAtCreation: true,
-});
-const _indexBuffer = device.createBuffer({
-    size: maxTris * bytesPerTri,
-    usage: GPUBufferUsage.INDEX,
-    mappedAtCreation: true,
-});
-
-const meshUniBufferSize = meshUniByteSize * maxMeshes;
-const _meshUniBuffer = device.createBuffer({
-    size: align(meshUniBufferSize, 256),
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-});
-
-// TODO(@darzu): SCENE FORMAT
-const sharedUniBufferSize =
-    bytesPerMat4 * 2 // camera and light projection
-    + bytesPerVec3 * 1 // light pos
-const sharedUniBuffer = device.createBuffer({
-    size: align(sharedUniBufferSize, 256),
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-});
+function createSceneBuffers(device: GPUDevice) {
+    // TODO(@darzu): SCENE FORMAT
+    const sharedUniBufferSize =
+        bytesPerMat4 * 2 // camera and light projection
+        + bytesPerVec3 * 1 // light pos
+    const sharedUniBuffer = device.createBuffer({
+        size: align(sharedUniBufferSize, 256),
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+    return { sharedUniBuffer };
+}
+const { sharedUniBuffer } = createSceneBuffers(device);
 
 function gpuBufferWriteMeshTransform(m: MeshHandle) {
     device.queue.writeBuffer(_meshUniBuffer, m.modelUniByteOffset, (m.transform as Float32Array).buffer);
@@ -506,57 +514,70 @@ const renderSharedUniBindGroup = device.createBindGroup({
     ],
 });
 
-// setup our first phase pipeline which tracks the depth of meshes 
-// from the point of view of the lighting so we know where the shadows are
-const shadowPipelineDesc: GPURenderPipelineDescriptor = {
-    layout: device.createPipelineLayout({
-        bindGroupLayouts: [shadowSharedUniBindGroupLayout, modelUniBindGroupLayout],
-    }),
-    vertex: {
-        module: device.createShaderModule({ code: vertexShaderForShadows }),
-        entryPoint: 'main',
-        buffers: vertexBuffersLayout,
-    },
-    fragment: {
-        module: device.createShaderModule({ code: fragmentShaderForShadows }),
-        entryPoint: 'main',
-        targets: [],
-    },
-    depthStencil: {
-        depthWriteEnabled: true,
-        depthCompare: 'less',
-        format: shadowDepthStencilFormat,
-    },
-    primitive: primitiveBackcull,
-};
-const shadowPipeline = device.createRenderPipeline(shadowPipelineDesc);
+function createShadowRenderPipeline(device: GPUDevice) {
+    // setup our first phase pipeline which tracks the depth of meshes 
+    // from the point of view of the lighting so we know where the shadows are
+    const shadowPipelineDesc: GPURenderPipelineDescriptor = {
+        layout: device.createPipelineLayout({
+            bindGroupLayouts: [shadowSharedUniBindGroupLayout, modelUniBindGroupLayout],
+        }),
+        vertex: {
+            module: device.createShaderModule({ code: vertexShaderForShadows }),
+            entryPoint: 'main',
+            buffers: [{
+                arrayStride: vertByteSize,
+                attributes: vertexDataFormat,
+            }],
+        },
+        fragment: {
+            module: device.createShaderModule({ code: fragmentShaderForShadows }),
+            entryPoint: 'main',
+            targets: [],
+        },
+        depthStencil: {
+            depthWriteEnabled: true,
+            depthCompare: 'less',
+            format: shadowDepthStencilFormat,
+        },
+        primitive: primitiveBackcull,
+    };
+    return device.createRenderPipeline(shadowPipelineDesc);
+}
+const shadowPipeline = createShadowRenderPipeline(device);
 
-// setup our second phase pipeline which renders meshes to the canvas
-const renderPipelineDesc: GPURenderPipelineDescriptor = {
-    layout: device.createPipelineLayout({
-        bindGroupLayouts: [renderSharedUniBindGroupLayout, modelUniBindGroupLayout],
-    }),
-    vertex: {
-        module: device.createShaderModule({ code: vertexShader }),
-        entryPoint: 'main',
-        buffers: vertexBuffersLayout,
-    },
-    fragment: {
-        module: device.createShaderModule({ code: fragmentShader }),
-        entryPoint: 'main',
-        targets: [{ format: swapChainFormat }],
-    },
-    primitive: primitiveBackcull,
-    depthStencil: {
-        depthWriteEnabled: true,
-        depthCompare: 'less',
-        format: depthStencilFormat,
-    },
-    multisample: {
-        count: antiAliasSampleCount,
-    },
-};
-const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
+function createRenderPipeline(device: GPUDevice): GPURenderPipeline {
+    // setup our second phase pipeline which renders meshes to the canvas
+    const renderPipelineDesc: GPURenderPipelineDescriptor = {
+        layout: device.createPipelineLayout({
+            bindGroupLayouts: [renderSharedUniBindGroupLayout, modelUniBindGroupLayout],
+        }),
+        vertex: {
+            module: device.createShaderModule({ code: vertexShader }),
+            entryPoint: 'main',
+            buffers: [{
+                arrayStride: vertByteSize,
+                attributes: vertexDataFormat,
+            }],
+        },
+        fragment: {
+            module: device.createShaderModule({ code: fragmentShader }),
+            entryPoint: 'main',
+            targets: [{ format: swapChainFormat }],
+        },
+        primitive: primitiveBackcull,
+        depthStencil: {
+            depthWriteEnabled: true,
+            depthCompare: 'less',
+            format: depthStencilFormat,
+        },
+        multisample: {
+            count: antiAliasSampleCount,
+        },
+    };
+    const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
+    return renderPipeline;
+}
+const renderPipeline = createRenderPipeline(device);
 
 // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
 // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
