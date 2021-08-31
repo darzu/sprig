@@ -129,6 +129,15 @@ export class Net<Inputs> {
   private snap_seq: number = 0;
   private unapplied_updates: Record<number, ObjectUpdate> = {};
   private object_priorities: Record<number, number> = {};
+  private objects_known: Record<number, ServerId[]> = {};
+
+  private recordObjectKnown(id: number, server: ServerId) {
+    if (!this.objects_known[id]) {
+      this.objects_known[id] = [server];
+    } else if (!this.objects_known[id].includes(server)) {
+      this.objects_known[id].push(server);
+    }
+  }
 
   private send(server: ServerId, message: Message, reliable: boolean) {
     console.log(`Sending message of type ${MessageType[message.type]}`);
@@ -169,10 +178,14 @@ export class Net<Inputs> {
       case MessageType.Join: {
         // no other data associated with a join message
         let [id, playerNetObj] = this.state.addPlayer();
+        let objects = this.state.netObjects();
+        // the joining server will know about all of the objects we're sending,
+        // no need to tell it about them again
+        objects.forEach((o) => this.recordObjectKnown(o.id, server));
         let response: JoinResponse = {
           type: MessageType.JoinResponse,
           you: id,
-          objects: this.state.netObjects(),
+          objects,
           peers: this.peers,
         };
         this.send(server, response, true);
