@@ -683,17 +683,20 @@ async function startGame(host: string | null) {
       ? (1 - avgWeight) * avgNetTime + avgWeight * net_time
       : net_time;
     const avgFPS = 1000 / avgFrameTime;
-    debugDiv.innerText =
+    const debugTxt = debugDiv.firstChild!;
+    // PERF NOTE: using ".innerText =" creates a new DOM element each frame, whereas
+    //    using ".firstChild.nodeValue =" reuses the DOM element. Unfortunately this
+    //    means we'll need to do more work to get line breaks.
+    debugTxt.nodeValue =
       controlsStr +
-      `\n` +
-      `(js per frame: ${avgJsTime.toFixed(
+    ` (js per frame: ${avgJsTime.toFixed(
         2
-      )}ms, net per frame: ${avgNetTime.toFixed(2)}ms, 
-      fps: ${avgFPS.toFixed(
+    )}ms, net per frame: ${avgNetTime.toFixed(2)}ms, ` +
+    `fps: ${avgFPS.toFixed(
         1
-      )}, buffers: r=${reliableBufferSize}/u=${unreliableBufferSize},
-      dropped updates: ${numDroppedUpdates}
-      objects=${gameState.numObjects}) ${usingWebGPU ? 'wGPU' : 'wGL'}`;
+      )}, buffers: r=${reliableBufferSize}/u=${unreliableBufferSize}, ` +
+      `dropped updates: ${numDroppedUpdates}` +
+      `objects=${gameState.numObjects}) ${usingWebGPU ? 'wGPU' : 'wGL'}`;
     requestAnimationFrame(frame);
   };
   if (ENABLE_NET) {

@@ -360,6 +360,7 @@ export class Renderer_WebGPU implements Renderer {
     this.renderBundle = this.createRenderBundle();
   }
 
+  private scratchSceneUni = new Uint8Array(SceneUniform.ByteSizeAligned);
   public renderFrame(viewMatrix: mat4): void {
     this.checkCanvasResize();
     const projectionMatrix = mat4.perspective(
@@ -377,9 +378,8 @@ export class Renderer_WebGPU implements Renderer {
 
     this.sceneData.cameraViewProjMatrix = viewProj;
 
-    const sceneUniScratch = new Uint8Array(SceneUniform.ByteSizeAligned)
-    SceneUniform.Serialize(sceneUniScratch, 0, this.sceneData);
-    this.device.queue.writeBuffer(this.sceneUniformBuffer, 0, sceneUniScratch.buffer);
+    SceneUniform.Serialize(this.scratchSceneUni, 0, this.sceneData);
+    this.device.queue.writeBuffer(this.sceneUniformBuffer, 0, this.scratchSceneUni.buffer);
 
     // update all mesh transforms
     this.gpuBufferWriteAllMeshUniforms();
