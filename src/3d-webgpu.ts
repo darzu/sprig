@@ -227,7 +227,7 @@ async function init(canvasRef: HTMLCanvasElement) {
     const swapChainFormat = 'bgra8unorm';
 
     /*
-    TODO:
+    TODO: we'll probably switch when enga@chromium.org does
     configureSwapChain() is deprecated. Use configure() instead and call getCurrentTexture()
     directly on the context. Note that configure() must also be called if you want to change
     the size of the textures returned by getCurrentTexture()
@@ -720,11 +720,6 @@ async function init(canvasRef: HTMLCanvasElement) {
 
         passEncoder.endPass();
         device.queue.submit([commandEncoder.finish()]);
-
-
-        // passEncoder.drawIndexed(numTris * 3);
-        // passEncoder.draw(CUBE.pos.length, 1, 0, 0);
-        // passEncoder.endPass();
 
         requestAnimationFrame(frame);
     }
