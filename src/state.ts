@@ -16,6 +16,9 @@ export function scaleMesh(m: Mesh, by: number): Mesh {
   return { pos, tri: m.tri, colors: m.colors };
 }
 
+const working_quat = quat.create();
+const working_vec3 = vec3.create();
+
 export abstract class GameObject {
   id: number;
   creator: number;
@@ -79,8 +82,8 @@ export abstract class GameObject {
   transform(): mat4 {
     return mat4.fromRotationTranslation(
       this._transform,
-      quat.mul(quat.create(), this.rotation, this.rotation_error),
-      vec3.add(vec3.create(), this.location, this.location_error)
+      quat.mul(working_quat, this.rotation, this.rotation_error),
+      vec3.add(working_vec3, this.location, this.location_error)
     );
   }
 
