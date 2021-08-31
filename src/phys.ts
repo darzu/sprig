@@ -4,6 +4,8 @@ import {
   checkCollisions,
   CollidesWith,
   collisionPairs,
+  doesOverlap,
+  resetCollidesWithSet,
 } from "./phys_broadphase.js";
 import { copyMotionProps, MotionProps, moveObjects } from "./phys_motion.js";
 
@@ -13,6 +15,7 @@ export interface PhysicsObject {
   lastMotion: MotionProps;
   localAABB: AABB;
   worldAABB: AABB;
+  motionAABB: AABB;
 }
 export interface PhysicsResults {
   collidesWith: CollidesWith;
@@ -31,100 +34,217 @@ export function stepPhysics(
 
   moveObjects(objs, dt);
 
-  let collidesWith: CollidesWith | null = null;
+  // over approximation during motion
+  let motionCollidesWith: CollidesWith | null = null;
 
-  // update AABBs
+  // actuall collisions
+  let collidesWith: CollidesWith = new Map();
+  resetCollidesWithSet(collidesWith, objs);
+  // TODO(@darzu): incorperate this into CollidesWith data struct?
+  let collidesWithHashes: { [idSet: number]: boolean } = {};
+  function idHash(aId: number, bId: number): number {
+    return (aId << 16) & bId;
+  }
+
+  // update motion sweep AABBs
+  for (let o of objs) {
+    for (let i = 0; i < 3; i++) {
+      o.motionAABB.min[i] = Math.min(
+        o.localAABB.min[i] + o.motion.location[i],
+        o.localAABB.min[i] + o.lastMotion.location[i]
+      );
+      o.motionAABB.max[i] = Math.max(
+        o.localAABB.max[i] + o.motion.location[i],
+        o.localAABB.max[i] + o.lastMotion.location[i]
+      );
+    }
+  }
+
+  // update "tight" AABBs
   for (let o of objs) {
     vec3.add(o.worldAABB.min, o.localAABB.min, o.motion.location);
     vec3.add(o.worldAABB.max, o.localAABB.max, o.motion.location);
   }
 
-  collidesWith = checkCollisions(objs);
+  // check for possible collisions using the motion swept AABBs
+  const motionAABBs = objs.map(({ id, motionAABB }) => ({
+    id,
+    aabb: motionAABB,
+  }));
+  motionCollidesWith = checkCollisions(motionAABBs);
+  const motionPairs = [...collisionPairs(motionCollidesWith)];
 
-  const PAD = 0.01;
-  const objMovFracs: { [id: number]: number } = {};
+  // TODO(@darzu): DEBUG
+  // console.log(`pairs: ${motionPairs.map((p) => p.join("v")).join(",")}`);
 
-  // solid object order maintenance
-  for (let [aId, bId] of collisionPairs(collidesWith)) {
-    const a = objDict[aId];
-    const b = objDict[bId];
+  // const PAD = 0.01;
+  const PAD = 0.001; // TODO(@darzu): not sure if this is wanted
+  const COLLISION_ITRS = 100;
 
-    let aFrac = Infinity;
-    let bFrac = Infinity;
+  // we'll track which objects have moved each itr,
+  // since we just ran dynamics assume everything has moved
+  const lastObjMovs: { [id: number]: boolean } = {};
+  for (let o of objs) lastObjMovs[o.id] = true;
 
-    // for each of X,Y,Z dimensions
-    for (let i of [0, 1, 2]) {
-      // determine who is to the left in this dimension
-      let left: PhysicsObject;
-      let right: PhysicsObject;
-      if (a.lastMotion.location[i] < b.lastMotion.location[i]) {
-        left = a;
-        right = b;
-      } else {
-        left = b;
-        right = a;
-      }
+  // we'll track how much each object should be adjusted each itr
+  const nextObjMovFracs: { [id: number]: number } = {};
 
-      const overlap = left.worldAABB.max[i] - right.worldAABB.min[i];
-      if (overlap < 0) continue; // no overlap to deal with
+  // our loop condition
+  let anyMovement = true;
+  let itr = 0;
 
-      const leftMaxContrib = Math.max(
-        0,
-        left.motion.location[i] - left.lastMotion.location[i]
-      );
-      const rightMaxContrib = Math.max(
-        0,
-        right.lastMotion.location[i] - right.motion.location[i]
-      );
-      if (leftMaxContrib + rightMaxContrib < overlap)
-        // we can't get unstuck going backward, so don't try
-        // maybe we'll tunnel through
-        continue;
-      if (leftMaxContrib === 0 && rightMaxContrib === 0)
-        // no movement possible or necessary
-        continue;
+  while (anyMovement && itr < COLLISION_ITRS) {
+    // TODO(@darzu): DEBUG
+    // console.log(`itr: ${itr}`); // TODO(@darzu): DEBUG
 
-      // TODO(@darzu): wait, these fractions are slightly wrong, I need to account for leftFracRemaining
-      // find F such that F * (leftMaxContrib + rightMaxContrib) >= overlap
-      const f = Math.min(
-        1.0,
-        (overlap + PAD) / (leftMaxContrib + rightMaxContrib)
-      );
-      if (f <= 0 || 1 < f)
+    // enumerate the possible collisions, looking for objects that need to pushed apart
+    for (let [aId, bId] of motionPairs) {
+      // TODO(@darzu): this isn't a safe optimization!? :((((
+      // // did one of these objects move?
+      // if (!lastObjMovs[aId] && !lastObjMovs[bId]) continue;
+
+      const a = objDict[aId];
+      const b = objDict[bId];
+
+      if (!doesOverlap(a.worldAABB, b.worldAABB)) {
         // TODO(@darzu): DEBUG
-        console.error(
-          `Invalid fraction: ${f}, overlap: ${overlap}, leftMaxContrib: ${leftMaxContrib} rightMaxContrib: ${rightMaxContrib}`
+        // console.log(`motion miss ${aId}vs${bId}`);
+        // a miss
+        continue;
+      }
+
+      // record the real collision
+      const h = idHash(aId, bId);
+      if (!collidesWithHashes[h]) {
+        collidesWith.get(aId)!.push(bId);
+        collidesWith.get(bId)!.push(aId);
+        collidesWithHashes[h] = true;
+      }
+
+      // determine how to readjust positions
+      let aFrac = Infinity;
+      let bFrac = Infinity;
+
+      // for each of X,Y,Z dimensions
+      // TODO(@darzu): DEBUG
+      // for (let i of [1]) {
+      for (let i of [0, 1, 2]) {
+        // determine who is to the left in this dimension
+        let left: PhysicsObject;
+        let right: PhysicsObject;
+        if (a.lastMotion.location[i] < b.lastMotion.location[i]) {
+          left = a;
+          right = b;
+        } else {
+          left = b;
+          right = a;
+        }
+
+        const overlap = left.worldAABB.max[i] - right.worldAABB.min[i];
+        if (overlap <= 0) continue; // no overlap to deal with
+
+        const leftMaxContrib = Math.max(
+          0,
+          left.motion.location[i] - left.lastMotion.location[i]
         );
+        const rightMaxContrib = Math.max(
+          0,
+          right.lastMotion.location[i] - right.motion.location[i]
+        );
+        if (leftMaxContrib + rightMaxContrib < overlap - PAD * itr) {
+          // we can't get unstuck going backward, so don't try
+          // maybe we'll tunnel through
+          // TODO(@darzu): DEBUG
+          if (i === 1) {
+            console.log(
+              `give up: ${a.id}vs${b.id} i: ${itr} o: ${overlap.toFixed(
+                2
+              )} l: ${leftMaxContrib.toFixed(2)} r: ${rightMaxContrib.toFixed(
+                2
+              )}`
+            );
+            // throw `TUNNELING!!`; // TODO(@darzu):
+          }
+          continue;
+        }
+        if (leftMaxContrib === 0 && rightMaxContrib === 0)
+          // no movement possible or necessary
+          continue;
 
-      // update the dimension-spanning "a" and "b" fractions
-      if (0 < leftMaxContrib) {
-        if (left === a) aFrac = Math.min(aFrac, f);
-        else bFrac = Math.min(bFrac, f);
-      }
-      if (0 < rightMaxContrib) {
-        if (right === a) aFrac = Math.min(aFrac, f);
-        else bFrac = Math.min(bFrac, f);
+        // TODO(@darzu): wait, these fractions are slightly wrong, I need to account for leftFracRemaining
+        // find F such that F * (leftMaxContrib + rightMaxContrib) >= overlap
+        const f = Math.min(
+          1.0,
+          (overlap + PAD) / (leftMaxContrib + rightMaxContrib)
+        );
+        if (f <= 0 || 1 < f)
+          // TODO(@darzu): DEBUG
+          console.error(
+            `Invalid fraction: ${f}, overlap: ${overlap}, leftMaxContrib: ${leftMaxContrib} rightMaxContrib: ${rightMaxContrib}`
+          );
+
+        // update the dimension-spanning "a" and "b" fractions
+        if (0 < leftMaxContrib) {
+          if (left === a) aFrac = Math.min(aFrac, f);
+          else bFrac = Math.min(bFrac, f);
+        }
+        if (0 < rightMaxContrib) {
+          if (right === a) aFrac = Math.min(aFrac, f);
+          else bFrac = Math.min(bFrac, f);
+        }
+
+        // TODO(@darzu): better msg
+        // console.log(
+        //   `f: ${f.toFixed(2)} ${a.id}vs${b.id} i:${itr} aFrac: ${aFrac.toFixed(
+        //     2
+        //   )} bFrac:${bFrac.toFixed(2)} o: ${overlap.toFixed(
+        //     2
+        //   )} l: ${leftMaxContrib.toFixed(2)} r: ${rightMaxContrib.toFixed(2)}`
+        // );
       }
 
-      console.log(
-        `f: ${f}, aFrac: ${aFrac} bFrac:${bFrac}, o: ${overlap}, l: ${leftMaxContrib}, r: ${rightMaxContrib}`
-      );
+      if (aFrac < Infinity)
+        nextObjMovFracs[aId] = Math.max(nextObjMovFracs[aId] || 0, aFrac);
+      if (bFrac < Infinity)
+        nextObjMovFracs[bId] = Math.max(nextObjMovFracs[bId] || 0, bFrac);
     }
 
-    if (aFrac < Infinity)
-      objMovFracs[aId] = Math.max(objMovFracs[aId] || 0, aFrac);
-    if (bFrac < Infinity)
-      objMovFracs[bId] = Math.max(objMovFracs[bId] || 0, bFrac);
-  }
+    // adjust objects backward to compensate for collisions
+    anyMovement = false;
+    for (let o of objs) {
+      let movFrac = nextObjMovFracs[o.id];
+      if (movFrac) {
+        // TODO(@darzu): use last location not linear velocity
+        vec3.sub(_collisionRefl, o.lastMotion.location, o.motion.location);
+        // vec3.scale(_collisionRefl, _collisionRefl, dt);
+        vec3.scale(_collisionRefl, _collisionRefl, movFrac);
+        vec3.add(o.motion.location, o.motion.location, _collisionRefl);
+        // TODO(@darzu): DEBUG
+        // console.log(`moving ${o.id}`);
 
-  // adjust objects backward to compensate for collisions
-  for (let a of objs) {
-    let movFrac = objMovFracs[a.id];
-    if (movFrac) {
-      // TODO(@darzu): use last location not linear velocity
-      vec3.scale(_collisionRefl, a.motion.linearVelocity, -movFrac * dt);
-      vec3.add(a.motion.location, a.motion.location, _collisionRefl);
+        // track that movement occured
+        anyMovement = true;
+      }
     }
+
+    // record which objects moved from this iteration,
+    // reset movement fractions for next iteration
+    for (let o of objs) {
+      lastObjMovs[o.id] = !!nextObjMovFracs[o.id];
+      nextObjMovFracs[o.id] = 0;
+    }
+
+    // update "tight" AABBs
+    for (let o of objs) {
+      if (lastObjMovs[o.id]) {
+        // TODO(@darzu): DEBUG
+        // console.log(`updating worldAABB for ${o.id}`);
+        vec3.add(o.worldAABB.min, o.localAABB.min, o.motion.location);
+        vec3.add(o.worldAABB.max, o.localAABB.max, o.motion.location);
+      }
+    }
+
+    itr++;
   }
 
   for (let o of objs) {
@@ -132,6 +252,6 @@ export function stepPhysics(
   }
 
   return {
-    collidesWith: collidesWith!,
+    collidesWith: motionCollidesWith!,
   };
 }

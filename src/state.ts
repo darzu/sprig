@@ -2,7 +2,12 @@ import { mat4, vec3, quat } from "./gl-matrix.js";
 import { Serializer, Deserializer } from "./serialize.js";
 import { Mesh, MeshHandle } from "./mesh-pool.js";
 import { Renderer } from "./render_webgpu.js";
-import { AABB, checkCollisions, CollidesWith } from "./phys_broadphase.js";
+import {
+  AABB,
+  checkCollisions,
+  CollidesWith,
+  copyAABB,
+} from "./phys_broadphase.js";
 import {
   copyMotionProps,
   createMotionProps,
@@ -12,6 +17,8 @@ import { stepPhysics } from "./phys.js";
 
 const ERROR_SMOOTHING_FACTOR = 0.8;
 const EPSILON = 0.0001;
+
+export const MAX_ID = 32767;
 
 export function scaleMesh(m: Mesh, by: number): Mesh {
   let pos = m.pos.map((p) => vec3.scale(vec3.create(), p, by));
@@ -54,6 +61,7 @@ export abstract class GameObject {
   lastMotion: MotionProps;
   localAABB: AABB;
   worldAABB: AABB;
+  motionAABB: AABB;
 
   // derivative state:
   // NOTE: it kinda sucks to have duplicate sources of truth on loc & rot,
@@ -81,7 +89,8 @@ export abstract class GameObject {
       min: vec3.fromValues(-1, -1, -1),
       max: vec3.fromValues(1, 1, 1),
     };
-    this.worldAABB = { ...this.localAABB };
+    this.worldAABB = copyAABB(this.localAABB);
+    this.motionAABB = copyAABB(this.worldAABB);
   }
 
   snapLocation(location: vec3) {
@@ -229,6 +238,7 @@ export abstract class GameState<Inputs> {
   }
 
   newId(): number {
+    if (this.nextObjectId > MAX_ID) throw `Out of object IDs, max: ${MAX_ID}`;
     return this.nextObjectId++;
   }
 
@@ -239,7 +249,8 @@ export abstract class GameState<Inputs> {
       objs.some((o) => this.me === o.authority) &&
       objs.every((o) => this.me <= o.authority)
     ) {
-      console.log(`Recording event type=${type}`);
+      // TODO(@darzu): DEBUGGING
+      // console.log(`Recording event type=${type}`);
       let id = this.newId();
       let event = { id, type, objects, authority: this.me };
       this.events[id] = event;

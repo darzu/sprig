@@ -21,10 +21,22 @@ export function *collisionPairs(collidesWith: CollidesWith): IterableIterator<[n
   }
 }
 
+export function resetCollidesWithSet(
+  collidesWith: CollidesWith,
+  objs: { id: number }[]
+): void {
+  for (let o of objs) {
+    if (!collidesWith.has(o.id)) collidesWith.set(o.id, []);
+  }
+  for (let [_, ents] of collidesWith) {
+    ents.length = 0;
+  }
+}
+
 export let _lastCollisionTestTimeMs = 0; // TODO(@darzu): hack for stat debugging
 let _collidesWith: CollidesWith = new Map();
 export function checkCollisions(
-  objs: { worldAABB: AABB; id: number }[]
+  objs: { aabb: AABB; id: number }[]
 ): CollidesWith {
   const start = performance.now();
   _doesOverlaps = 0; // TODO(@darzu): debugging
@@ -33,12 +45,8 @@ export function checkCollisions(
   // TODO(@darzu): be more precise than just AABBs. broad & narrow phases.
   // TODO(@darzu): also use better memory pooling for aabbs and collidesWith relation
   // reset _collidesWith
-  for (let [_, ents] of _collidesWith) {
-    ents.length = 0;
-  }
-  for (let o of objs) {
-    if (!_collidesWith.has(o.id)) _collidesWith.set(o.id, []);
-  }
+  resetCollidesWithSet(_collidesWith, objs);
+
   // reset _mapPool
   _nextMap = 0;
   _mapPool.forEach((p) => p.clear());
@@ -49,9 +57,9 @@ export function checkCollisions(
   //      100 objs: <0.1ms, 6,000 overlaps
   if (BROAD_PHASE === "N^2") {
     for (let i0 = 0; i0 < objs.length; i0++) {
-      const box0 = objs[i0].worldAABB;
+      const box0 = objs[i0].aabb;
       for (let i1 = i0 + 1; i1 < objs.length; i1++) {
-        const box1 = objs[i1].worldAABB;
+        const box1 = objs[i1].aabb;
         if (doesOverlap(box0, box1)) {
           _collidesWith.get(objs[i0].id)!.push(objs[i1].id);
           _collidesWith.get(objs[i1].id)!.push(objs[i0].id);
@@ -74,7 +82,7 @@ export function checkCollisions(
   //      1000 objs: 2.6ms, 8,500 overlaps + 53,000 enclosed-bys
   //      100 objs: 0.1ms, 1,200 overlaps + 6,000 enclosed-bys
   if (BROAD_PHASE === "OCT") {
-    const octObjs = new Map<number, AABB>(objs.map((o) => [o.id, o.worldAABB])); // TODO(@darzu): necessary?
+    const octObjs = new Map<number, AABB>(objs.map((o) => [o.id, o.aabb])); // TODO(@darzu): necessary?
     const tree = octtree(octObjs, worldAABB);
     function octCheckOverlap(tree: OctTree) {
       // check ea obj
@@ -123,7 +131,7 @@ export function checkCollisions(
           id: o.id,
           minCoord: vec3.create(),
           maxCoord: vec3.create(),
-          aabb: o.worldAABB,
+          aabb: o.aabb,
           next: null,
           prev: null,
         };
@@ -363,14 +371,15 @@ function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
 export let _doesOverlaps = 0;
 export function doesOverlap(a: AABB, b: AABB) {
   _doesOverlaps++; // TODO(@darzu): debugging
+  // TODO(@darzu): less then or less then and equal?
   return (
     true &&
-    b.min[0] <= a.max[0] &&
-    b.min[1] <= a.max[1] &&
-    b.min[2] <= a.max[2] &&
-    a.min[0] <= b.max[0] &&
-    a.min[1] <= b.max[1] &&
-    a.min[2] <= b.max[2]
+    b.min[0] < a.max[0] &&
+    b.min[1] < a.max[1] &&
+    b.min[2] < a.max[2] &&
+    a.min[0] < b.max[0] &&
+    a.min[1] < b.max[1] &&
+    a.min[2] < b.max[2]
   );
 }
 export let _enclosedBys = 0;
@@ -378,17 +387,23 @@ export function enclosedBy(inner: AABB, outer: AABB) {
   _enclosedBys++; // TODO(@darzu): debugging
   return (
     true &&
-    inner.max[0] <= outer.max[0] &&
-    inner.max[1] <= outer.max[1] &&
-    inner.max[2] <= outer.max[2] &&
-    outer.min[0] <= inner.min[0] &&
-    outer.min[1] <= inner.min[1] &&
-    outer.min[2] <= inner.min[2]
+    inner.max[0] < outer.max[0] &&
+    inner.max[1] < outer.max[1] &&
+    inner.max[2] < outer.max[2] &&
+    outer.min[0] < inner.min[0] &&
+    outer.min[1] < inner.min[1] &&
+    outer.min[2] < inner.min[2]
   );
 }
 export interface AABB {
   min: vec3;
   max: vec3;
+}
+export function copyAABB(a: AABB): AABB {
+  return {
+    min: vec3.clone(a.min),
+    max: vec3.clone(a.max),
+  };
 }
 export function getAABBFromPositions(positions: vec3[]): AABB {
   const min = vec3.fromValues(Infinity, Infinity, Infinity);

@@ -176,12 +176,14 @@ abstract class Cube extends GameObject {
 class Bullet extends Cube {
   constructor(id: number, creator: number) {
     super(id, creator);
-    this.color = vec3.fromValues(0.1, 0.1, 0.8);
+    // TODO(@darzu): DEBUG
+    this.color = vec3.fromValues(0.3, 0.3, 0.8);
     this.localAABB = getAABBFromMesh(this.mesh());
   }
 
   mesh(): Mesh {
-    return scaleMesh(super.mesh(), 0.3);
+    // TODO(@darzu): DEBUG
+    return scaleMesh(super.mesh(), 0.5);
   }
 
   typeId(): number {
@@ -225,6 +227,11 @@ class Player extends Cube {
   constructor(id: number, creator: number) {
     super(id, creator);
     this.color = vec3.fromValues(0, 0.2, 0);
+  }
+
+  mesh() {
+    // TODO(@darzu): DEBUG
+    return scaleMesh(CUBE_MESH, 0);
   }
 
   syncPriority(): number {
@@ -309,22 +316,31 @@ class CubeGameState extends GameState<Inputs> {
       for (let x = 0; x < NUM_PLANES_X; x++) {
         for (let z = 0; z < NUM_PLANES_Z; z++) {
           let plane = new Plane(this.newId(), this.me);
-          const xPos = (x - NUM_PLANES_X / 2) * 20;
+          const xPos = (x - NUM_PLANES_X / 2) * 20 + 10;
           const zPos = (z - NUM_PLANES_Z / 2) * 20;
           const parity = !!((x + z) % 2);
-          plane.motion.location = vec3.fromValues(xPos + 10, -3, -8 + zPos);
+          plane.motion.location = vec3.fromValues(xPos, -3, zPos);
+          // plane.motion.location = vec3.fromValues(xPos + 10, -3, 12 + zPos);
           if (parity) plane.color = LIGHT_GRAY;
           this.addObject(plane);
         }
       }
 
       // create stack of boxes
-      const BOX_STACK_COUNT = 5;
+      const BOX_STACK_COUNT = 200;
       for (let i = 0; i < BOX_STACK_COUNT; i++) {
         let b = new Bullet(this.newId(), this.me);
-        b.motion.location = vec3.fromValues(0, 5 + i * 1, -20);
-        b.motion.linearVelocity[1] = -0.01;
+        // b.motion.location = vec3.fromValues(0, 5 + i * 2, -2);
+        b.motion.location = vec3.fromValues(
+          Math.random() * -20 + 10,
+          i * 2,
+          Math.random() * -20
+        );
+        b.color = vec3.fromValues(Math.random(), Math.random(), Math.random());
+        b.motion.linearVelocity[1] = -0.05;
         this.addObject(b);
+        // TODO(@darzu): debug
+        console.log(`box: ${b.id}`);
       }
 
       // create player
