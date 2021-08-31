@@ -59,3 +59,10 @@ Procedural gen sphere:
 MinionsArt tutorials:
     https://minionsart.github.io/tutorials/
 
+
+Modeling a character (Coding Adventures):
+    https://www.youtube.com/watch?v=DiIoWrOlIRw&list=PLFt_AvWsXl0fEx02iXR8uhDsVGhmM9Pse
+
+Texturing / UV unwrapping:
+    https://www.youtube.com/watch?v=JYBPXTful2g&list=PLFt_AvWsXl0fEx02iXR8uhDsVGhmM9Pse&index=2
+

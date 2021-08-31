@@ -37,3 +37,17 @@ FBX format:
 
 low poly riging:
     https://www.youtube.com/watch?v=srpOeu9UUBU
+
+Programatic animations:
+    Bouncing:
+        https://youtu.be/r_It_X7v-1E?t=25
+    Spider legs:
+        https://youtu.be/--GB9qyZJqg?t=477
+    biped ?
+    
+Animation groups:
+    Biped (human, mech)
+    Quadraped (dog, cat)
+
+How import are animations?
+    Meta: effort should be spent proportial to gameplay

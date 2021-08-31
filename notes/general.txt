@@ -381,3 +381,27 @@ Flash-like animations:
 Portals:
   https://www.youtube.com/watch?v=cWpFZbjtSQg
   https://www.youtube.com/watch?v=ivyseNMVt-4&t=3642s
+
+Game idea generator:
+  https://seblague.github.io/ideagenerator/
+
+Growing plants over time:
+  https://youtu.be/--GB9qyZJqg?t=394
+
+Walking spider via programming
+  https://youtu.be/--GB9qyZJqg?t=478
+
+Orbital mechanics:
+  https://www.youtube.com/watch?v=7axImc1sxa0
+
+Fix float precision issues on big maps:
+  https://youtu.be/7axImc1sxa0?t=662
+
+Minecraft in C from scratch:
+  https://www.youtube.com/watch?v=4O0_-1NaWnY
+
+Minecraft w/ smooth voxels:
+  https://www.youtube.com/watch?v=MazA1SlpwTY
+
+Documentery on Stardew Valley:
+  https://www.youtube.com/watch?v=4-k6j9g5Hzk

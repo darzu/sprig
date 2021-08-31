@@ -359,7 +359,7 @@ BABYLON.SceneLoader.ImportMesh("", "./assets/", "human_anim1.glb", scene, functi
     camera!.target = hero.position;
 
     //Get the Samba animation Group
-    const sambaAnim = scene.getAnimationGroupByName("Walking")!;
+    const sambaAnim = scene.getAnimationGroupByName("LeftStrafe")!;
 
     //Play the Samba animation  
     sambaAnim.start(true, 1.0, sambaAnim.from, sambaAnim.to, false);
