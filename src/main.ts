@@ -3,6 +3,9 @@ import { scaleMesh, GameObject, NetObject, GameState } from "./state.js";
 import { Renderer, Renderer_WebGPU } from "./render_webgpu.js";
 import { Net } from "./net.js";
 import { Mesh, unshareProvokingVertices } from "./mesh-pool.js";
+import { attachToCanvas } from "./render_webgl.js";
+
+const USE_WEBGPU = false;
 
 class Plane extends GameObject {
   color: vec3;
@@ -507,9 +510,15 @@ async function startGame(host: string | null) {
   onWindowResize();
 
   const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
-  const adapter = await navigator.gpu.requestAdapter();
-  const device = await adapter!.requestDevice();
-  let renderer: Renderer = new Renderer_WebGPU(canvas, device, 1000);
+
+  let renderer: Renderer;
+  if (USE_WEBGPU) {
+    const adapter = await navigator.gpu.requestAdapter();
+    const device = await adapter!.requestDevice();
+    renderer = new Renderer_WebGPU(canvas, device, 1000);
+  } else {
+    renderer = attachToCanvas(canvas, 1000, 100);
+  }
   let start_of_time = performance.now();
   let gameState = new CubeGameState(renderer, hosting);
   let inputs = inputsReader(canvas);

@@ -320,44 +320,9 @@ export class Renderer_WebGPU implements Renderer {
     });
 
     // setup scene data:
-    // create a directional light and compute it's projection (for shadows) and direction
-    const worldOrigin = vec3.fromValues(0, 0, 0);
-    const lightPosition = vec3.fromValues(50, 50, 0);
-    const upVector = vec3.fromValues(0, 1, 0);
-    const lightViewMatrix = mat4.lookAt(
-      mat4.create(),
-      lightPosition,
-      worldOrigin,
-      upVector
-    );
-    const lightProjectionMatrix = mat4.ortho(
-      mat4.create(),
-      -80,
-      80,
-      -80,
-      80,
-      -200,
-      300
-    );
-    const lightViewProjMatrix = mat4.multiply(
-      mat4.create(),
-      lightProjectionMatrix,
-      lightViewMatrix
-    );
-    const lightDir = vec3.subtract(vec3.create(), worldOrigin, lightPosition);
-    vec3.normalize(lightDir, lightDir);
+    this.sceneData = setupScene();
+    this.cameraOffset = setupCamera();
 
-    this.sceneData = {
-      cameraViewProjMatrix: mat4.create(), // updated later
-      lightViewProjMatrix,
-      lightDir,
-      time: 0, // updated later
-      playerPos: [0, 0], // updated later
-      cameraPos: vec3.create(), // updated later
-    }
-
-    this.cameraOffset = mat4.create();
-    pitch(this.cameraOffset, -Math.PI / 8);
     // workaround because Typescript can't tell this function init's the render bundle
     this.renderBundle = this.createRenderBundle();
   }
@@ -417,4 +382,48 @@ export class Renderer_WebGPU implements Renderer {
     // submit render passes to GPU
     this.device.queue.submit([commandEncoder.finish()]);
   }
+}
+
+// TODO(@darzu): move somewhere else
+export function setupScene(): SceneUniform.Data {
+  // create a directional light and compute it's projection (for shadows) and direction
+  const worldOrigin = vec3.fromValues(0, 0, 0);
+  const lightPosition = vec3.fromValues(50, 50, 0);
+  const upVector = vec3.fromValues(0, 1, 0);
+  const lightViewMatrix = mat4.lookAt(
+    mat4.create(),
+    lightPosition,
+    worldOrigin,
+    upVector
+  );
+  const lightProjectionMatrix = mat4.ortho(
+    mat4.create(),
+    -80,
+    80,
+    -80,
+    80,
+    -200,
+    300
+  );
+  const lightViewProjMatrix = mat4.multiply(
+    mat4.create(),
+    lightProjectionMatrix,
+    lightViewMatrix
+  );
+  const lightDir = vec3.subtract(vec3.create(), worldOrigin, lightPosition);
+  vec3.normalize(lightDir, lightDir);
+
+  return {
+    cameraViewProjMatrix: mat4.create(), // updated later
+    lightViewProjMatrix,
+    lightDir,
+    time: 0, // updated later
+    playerPos: [0, 0], // updated later
+    cameraPos: vec3.create(), // updated later
+  }
+}
+export function setupCamera(): mat4 {
+  let cameraOffset = mat4.create();
+  pitch(cameraOffset, -Math.PI / 8);
+  return cameraOffset
 }

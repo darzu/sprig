@@ -287,12 +287,6 @@ export interface MeshPoolBuilder {
     updateUniform: (m: MeshHandle) => void,
     finish: () => MeshPool,
 }
-export interface MeshPoolBuilder_WebGPU extends MeshPoolBuilder {
-    device: GPUDevice,
-    poolHandle: MeshPool_WebGPU,
-    finish: () => MeshPool_WebGPU,
-}
-
 export interface MeshPool {
     // options
     opts: MeshPoolOpts,
@@ -304,6 +298,13 @@ export interface MeshPool {
     addMesh: (m: Mesh) => MeshHandle,
     updateUniform: (m: MeshHandle) => void,
 }
+
+// WebGPU stuff
+export interface MeshPoolBuilder_WebGPU extends MeshPoolBuilder {
+    device: GPUDevice,
+    poolHandle: MeshPool_WebGPU,
+    finish: () => MeshPool_WebGPU,
+}
 export interface MeshPoolBuffers_WebGPU {
     // buffers
     verticesBuffer: GPUBuffer,
@@ -313,6 +314,24 @@ export interface MeshPoolBuffers_WebGPU {
     device: GPUDevice,
 }
 export type MeshPool_WebGPU = MeshPool & MeshPoolBuffers_WebGPU;
+
+// WebGL stuff
+export interface MeshPoolBuilder_WebGL extends MeshPoolBuilder {
+    gl: WebGLRenderingContext,
+    poolHandle: MeshPool_WebGL,
+    finish: () => MeshPool_WebGL,
+}
+export interface MeshPoolBuffers_WebGL {
+    // vertex buffers
+    positionsBuffer: WebGLBuffer,
+    normalsBuffer: WebGLBuffer,
+    colorsBuffer: WebGLBuffer,
+    // other buffers
+    indicesBuffer: WebGLBuffer,
+    // handles
+    gl: WebGLRenderingContext,
+}
+export type MeshPool_WebGL = MeshPool & MeshPoolBuffers_WebGL;
 
 export interface MeshBuilder {
     addVertex: (pos: vec3, color: vec3, normal: vec3) => void,
@@ -451,6 +470,89 @@ export function createMeshPoolBuilder_WebGPU(device: GPUDevice, opts: MeshPoolOp
     }
 
     return builder_webgpu;
+}
+
+export function createMeshPoolBuilder_WebGL(gl: WebGLRenderingContext, opts: MeshPoolOpts): MeshPoolBuilder_WebGL {
+    const { maxMeshes, maxTris, maxVerts } = opts;
+
+    // vertex buffers
+    const positionsBuffer = gl.createBuffer()!;
+    const normalsBuffer = gl.createBuffer()!;
+    const colorsBuffer = gl.createBuffer()!;
+    // index buffer
+    const indicesBuffer = gl.createBuffer()!;
+
+    // our in-memory reflections of the buffers used during the initial build phase
+    let verticesMap = new Uint8Array(maxVerts * Vertex.ByteSize)
+    let indicesMap = new Uint16Array(maxTris * 3);
+    let uniformMap = new Uint8Array(maxMeshes * MeshUniform.ByteSizeAligned);
+
+    function queueUpdateVertices(offset: number, data: Uint8Array) {
+        // TODO(@darzu): 
+        const numVerts = data.length / Vertex.ByteSize;
+        const positions = new Float32Array(numVerts * 3)
+        const colors = new Float32Array(numVerts * 3)
+        const normals = new Float32Array(numVerts * 3)
+        Vertex.Deserialize(data, numVerts, positions, colors, normals);
+
+        const vNumOffset = offset / Vertex.ByteSize;
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionsBuffer);
+        gl.bufferSubData(gl.ARRAY_BUFFER, vNumOffset * bytesPerVec3, positions);
+        gl.bindBuffer(gl.ARRAY_BUFFER, normalsBuffer);
+        gl.bufferSubData(gl.ARRAY_BUFFER, vNumOffset * bytesPerVec3, normals);
+        gl.bindBuffer(gl.ARRAY_BUFFER, colorsBuffer);
+        gl.bufferSubData(gl.ARRAY_BUFFER, vNumOffset * bytesPerVec3, colors);
+    }
+    function queueUpdateIndices(offset: number, data: Uint8Array) {
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
+        gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, offset, data);
+    }
+    function queueUpdateUniform(offset: number, data: Uint8Array) {
+        uniformMap.set(data, offset);
+    }
+
+    const maps: MeshPoolMaps = {
+        verticesMap,
+        indicesMap,
+        uniformMap,
+    }
+    const queues: MeshPoolQueues = {
+        queueUpdateIndices,
+        queueUpdateVertices,
+        queueUpdateUniform,
+    }
+
+    const buffers: MeshPoolBuffers_WebGL = {
+        gl,
+        positionsBuffer,
+        normalsBuffer,
+        colorsBuffer,
+        // other buffers
+        indicesBuffer,
+    }
+
+    const builder = createMeshPoolBuilder(opts, maps, queues);
+
+    const poolHandle: MeshPool_WebGL = Object.assign(builder.poolHandle, buffers);
+
+    const builder_webgl: MeshPoolBuilder_WebGL = {
+        ...builder,
+        poolHandle,
+        gl,
+        finish, // TODO(@darzu): 
+    }
+
+    function finish(): MeshPool_WebGL {
+        queueUpdateVertices(0, maps.verticesMap);
+        queueUpdateIndices(0, new Uint8Array(maps.indicesMap.buffer));
+
+        builder.finish();
+
+        return poolHandle;
+    }
+
+    return builder_webgl;
 }
 
 const scratch_uniform_u8 = new Uint8Array(MeshUniform.ByteSizeAligned);
