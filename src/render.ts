@@ -215,7 +215,9 @@ export class Renderer {
     this.device.queue.writeBuffer(
       this.meshUniformBuffer,
       0,
-      this._meshUniformBuffer.buffer
+      this._meshUniformBuffer.buffer,
+      0,
+      this.meshHandles.length * meshUniByteSizeAligned
     );
   }
 
