@@ -32,60 +32,8 @@ function createGrassTile(opts: GrassTileOpts, builder: MeshPoolBuilder): MeshHan
 
     // TODO(@darzu): debug coloring
     const [r, g, b] = [Math.random(), Math.random(), Math.random()];
-    // console.log(r, g, b) // TODO(@darzu): 
-
-    const prevNumTris = builder.numTris;
-    const prevNumVerts = builder.numVerts;
 
     const m = builder.buildMesh();
-
-    // addTriToBuffers(
-    //     [[0, 0, 0], [size, 0, 0], [0, 0, size]],
-    //     [2, 1, 0],
-    //     [[0, 1, 0], [0, 1, 0], [0, 1, 0]],
-    //     [[r, g, b], [r, g, b], [r, g, b]],
-    //     [0, 0, 0], builder.verticesMap, builder.numVerts, vertElStride, builder.indicesMap, builder.numTris, true);
-
-    // const vertexData = [
-    //     ...[0, 0, 0], ...[0, 1, 0], ...[r, g, b],
-    //     ...[size, 0, 0], ...[0, 1, 0], ...[r, g, b],
-    //     ...[0, 0, size], ...[0, 1, 0], ...[r, g, b],
-    // ]
-    // const vOff = builder.numVerts * vertElStride;
-    // console.log(vOff)
-    // builder.verticesMap.set(vertexData, vOff)
-
-    // const iOff = builder.numTris * 3;
-    // console.log(iOff)
-    // builder.indicesMap.set([2, 1, 0], iOff)
-
-    // builder.numTris += 1;
-    // builder.numVerts += 3;
-
-    // const dbgMesh: MeshHandle = {
-    //     vertNumOffset: prevNumVerts,
-    //     indicesNumOffset: prevNumTris * 3,
-    //     modelUniByteOffset: meshUniByteSizeAligned * builder.allMeshes.length,
-    //     numTris: 1,
-
-    //     // used and updated elsewhere
-    //     transform: mat4.create(),
-
-    //     pool: builder.poolHandle,
-    //     // TODO(@darzu):
-    //     // maxDraw: opts.maxBladeDraw,
-
-    //     // TODO(@darzu): what're the implications of this?
-    //     // shadowCaster: true,
-
-    //     // not applicable
-    //     // TODO(@darzu): make this optional?
-    //     model: undefined,
-    // };
-
-    // builder.allMeshes.push(dbgMesh)
-
-    // return dbgMesh
 
     let i = 0;
     for (let xi = 0.0; xi < size; xi += spacing) {
@@ -123,92 +71,16 @@ function createGrassTile(opts: GrassTileOpts, builder: MeshPoolBuilder): MeshHan
             const p3: vec3 = [x3, y3, z3];
             const p4: vec3 = [x4, y4, z4];
 
-            // const norm3 = vec3.fromValues(0, 1, 0);
             const norm0 = vec3.cross(vec3.create(), [x2 - x1, y2 - y1, z2 - z1], [x3 - x1, y3 - y1, z3 - z1])
             vec3.normalize(norm0, norm0);
-            // const norm3 = vec3.cross(vec3.create(), [x2 - x1, y2 - y1, z2 - z1], [x3 - x1, y3 - y1, z3 - z1])
-            // const norm1 = vec3.subtract(vec3.create(), p1, p2)
-            // const norm2 = vec3.subtract(vec3.create(), p2, p1)
-            // vec3.normalize(norm1, norm1);
-            // vec3.normalize(norm2, norm2);
-            // vec3.normalize(norm3, norm3);
 
-            const vertexData1: VertexData = [p1, [r, g, b], norm0, VertexKind.normal]
-            const vertexData2: VertexData = [p2, [r, g, b], norm0, VertexKind.normal]
-            const vertexData3: VertexData = [p3, [r, g, b], norm0, VertexKind.normal]
-            // const vertexData1: VertexData = [[0, 0, 0], [r, g, b], [0, 1, 0], VertexKind.normal]
-            // const vertexData2: VertexData = [[0, 0, size], [r, g, b], [0, 1, 0], VertexKind.normal]
-            // const vertexData3: VertexData = [[size, 0, 0], [r, g, b], [0, 1, 0], VertexKind.normal]
-
-            const vOff = builder.numVerts * vertByteSize;
-            // setVertexData(builder.verticesMap, vertexData1, vOff)
-            // setVertexData(builder.verticesMap, vertexData2, vOff + vertByteSize)
-            // setVertexData(builder.verticesMap, vertexData3, vOff + vertByteSize * 2)
-            m.addVertex(vertexData1)
-            m.addVertex(vertexData2)
-            m.addVertex(vertexData3)
-            // builder.verticesMap.set(vertexData, vOff)
-
-            const iOff = builder.numTris * 3;
-            // builder.indicesMap.set([2 + builder.numVerts, 1 + builder.numVerts, 0 + builder.numVerts], iOff)
+            m.addVertex([p1, [r, g, b], norm0, VertexKind.normal])
+            m.addVertex([p2, [r, g, b], norm0, VertexKind.normal])
+            m.addVertex([p3, [r, g, b], norm0, VertexKind.normal])
             m.addTri([2 + i * 3, 1 + i * 3, 0 + i * 3])
-
-            // builder.numTris += 1;
-            // builder.numVerts += 3;
 
             i++;
             continue;
-
-            // addTriToBuffers(
-            //     [p1, p2, p3],
-            //     [0, 1, 2],
-            //     // [norm1, norm2, norm3],
-            //     [norm0, norm0, norm0],
-            //     [
-            //         // TODO(@darzu): use proper darkening
-            //         // [r * 0.5, g * 0.5, b * 0.5],
-            //         // [r * 0.5, g * 0.5, b * 0.5],
-            //         [r, g, b],
-            //         [r, g, b],
-            //         [r, g, b],
-            //     ],
-            //     [0, 0, 1.0],
-            //     builder.verticesMap,
-            //     builder.numVerts,
-            //     vertElStride,
-            //     builder.indicesMap,
-            //     builder.numTris,
-            //     true);
-
-            // builder.numTris += 1;
-            // builder.numVerts += 3;
-
-            // i++;
-
-            // const norm2 = vec3.cross(vec3.create(), [x3 - x1, y3 - y1, z3 - z1], [x4 - x1, y4 - y1, z4 - z1])
-            // vec3.normalize(norm2, norm2);
-
-            // addTriToBuffers(
-            //     [p1, p3, p4],
-            //     [0, 1, 2],
-            //     norm2,
-            //     [
-            //         [r * 0.5, g * 0.5, b * 0.5],
-            //         [r, g, b],
-            //         [r, g, b],
-            //     ],
-            //     [0.0, 1.0, 1.0],
-            //     grassMeshPool.verticesMap,
-            //     grassMeshPool.numVerts,
-            //     vertElStride,
-            //     grassMeshPool.indicesMap,
-            //     grassMeshPool.numTris,
-            //     true);
-
-            // grassMeshPool.numTris += 1;
-            // grassMeshPool.numVerts += 3;
-
-            // i++;
         }
     }
 
@@ -256,17 +128,7 @@ function createGrassTileset(opts: GrassTilesetOpts, device: GPUDevice): GrassTil
             // console.log(`(${xi}, ${zi})`);
             const tile = createGrassTile(tileOpts, builder);
             mat4.translate(tile.transform, tile.transform, [x, 0, z])
-            // gpuBufferWriteMeshTransform(tile)
-            // TODO(@darzu): 
-
-            // const uniOffset = _meshes.length * meshUniByteSize;
-            // device.queue.writeBuffer(
-            //     _meshUniBuffer,
-            //     uniOffset,
-            //     trans.buffer,
-            //     trans.byteOffset,
-            //     trans.byteLength
-            // );
+            meshApplyUniformData(tile)
         }
     }
 
@@ -358,8 +220,6 @@ export function initGrassSystem(device: GPUDevice): GrassSystem {
 
     // TODO(@darzu): try upside down triangles
     const lod1Opts: GrassTilesetOpts = {
-        // tile
-        // bladeW: 0.2,
         bladeW: 0.2,
         // bladeH: 3,
         // bladeH: 1.6,
@@ -371,7 +231,6 @@ export function initGrassSystem(device: GPUDevice): GrassSystem {
         spacing: 0.25,
         tileSize: 16,
         // tileSize: 10,
-        // tileset
         tilesPerSide: 5,
     }
     const lod0Opts: GrassTilesetOpts = {
@@ -442,72 +301,4 @@ export function initGrassSystem(device: GPUDevice): GrassSystem {
         update: updateAll,
     }
     return res;
-}
-
-export function addTriToBuffers(
-    triPos: [vec3, vec3, vec3],
-    triInd: vec3,
-    triNorms: [vec3, vec3, vec3],
-    triColors: [vec3, vec3, vec3],
-    triSwayHeights: vec3,
-    verts: Float32Array, prevNumVerts: number, vertElStride: number,
-    indices: Uint16Array | null, prevNumTri: number, shiftIndices = false): void {
-    const vOff = prevNumVerts * vertElStride
-    const iOff = prevNumTri * 3
-    const indShift = shiftIndices ? prevNumVerts : 0;
-    if (indices) {
-        indices[iOff + 0] = triInd[0] + indShift
-        indices[iOff + 1] = triInd[1] + indShift
-        indices[iOff + 2] = triInd[2] + indShift
-    }
-
-    const vertexData = [
-        ...triPos[0], ...triNorms[0], ...triColors[0],
-        ...triPos[1], ...triNorms[1], ...triColors[1],
-        ...triPos[2], ...triNorms[2], ...triColors[2],
-    ]
-    verts.set(vertexData, vOff)
-
-    // // set per-face vertex data
-    // // position
-    // verts[vOff + 0 * vertElStride + 0] = triPos[0][0]
-    // verts[vOff + 0 * vertElStride + 1] = triPos[0][1]
-    // verts[vOff + 0 * vertElStride + 2] = triPos[0][2]
-    // verts[vOff + 1 * vertElStride + 0] = triPos[1][0]
-    // verts[vOff + 1 * vertElStride + 1] = triPos[1][1]
-    // verts[vOff + 1 * vertElStride + 2] = triPos[1][2]
-    // verts[vOff + 2 * vertElStride + 0] = triPos[2][0]
-    // verts[vOff + 2 * vertElStride + 1] = triPos[2][1]
-    // verts[vOff + 2 * vertElStride + 2] = triPos[2][2]
-    // // color
-    // const [r1, g1, b1] = triColors[0]
-    // const [r2, g2, b2] = triColors[1]
-    // const [r3, g3, b3] = triColors[2]
-    // verts[vOff + 0 * vertElStride + 3] = r1
-    // verts[vOff + 0 * vertElStride + 4] = g1
-    // verts[vOff + 0 * vertElStride + 5] = b1
-    // verts[vOff + 1 * vertElStride + 3] = r2
-    // verts[vOff + 1 * vertElStride + 4] = g2
-    // verts[vOff + 1 * vertElStride + 5] = b2
-    // verts[vOff + 2 * vertElStride + 3] = r3
-    // verts[vOff + 2 * vertElStride + 4] = g3
-    // verts[vOff + 2 * vertElStride + 5] = b3
-    // // normals
-    // const [nx1, ny1, nz1] = triNorms[0]
-    // verts[vOff + 0 * vertElStride + 6] = nx1
-    // verts[vOff + 0 * vertElStride + 7] = ny1
-    // verts[vOff + 0 * vertElStride + 8] = nz1
-    // const [nx2, ny2, nz2] = triNorms[1]
-    // verts[vOff + 1 * vertElStride + 6] = nx2
-    // verts[vOff + 1 * vertElStride + 7] = ny2
-    // verts[vOff + 1 * vertElStride + 8] = nz2
-    // const [nx3, ny3, nz3] = triNorms[2]
-    // verts[vOff + 2 * vertElStride + 6] = nx3
-    // verts[vOff + 2 * vertElStride + 7] = ny3
-    // verts[vOff + 2 * vertElStride + 8] = nz3
-    // // sway height
-    // const [y0, y1, y2] = triSwayHeights
-    // verts[vOff + 0 * vertElStride + 9] = y0
-    // verts[vOff + 1 * vertElStride + 9] = y1
-    // verts[vOff + 2 * vertElStride + 9] = y2
 }
