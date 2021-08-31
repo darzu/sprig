@@ -1,6 +1,8 @@
 import { mat4, vec3 } from '../ext/gl-matrix.js';
 import { initGrassSystem } from './grass.js';
 
+const ENABLE_WATER = true;
+
 // Defines shaders in WGSL for the shadow and regular rendering pipelines. Likely you'll want
 // these in external files but they've been inlined for redistribution convenience.
 // shader common structs
@@ -122,7 +124,7 @@ const fragmentShader = `
     [[group(0), binding(0)]] var<uniform> scene : Scene;
     [[group(0), binding(1)]] var shadowMap: texture_depth_2d;
     // TODO(@darzu): waiting on this sample to work again: http://austin-eng.com/webgpu-samples/samples/shadowMapping
-    // [[group(0), binding(2)]] var shadowSampler: sampler_comparison;
+    [[group(0), binding(2)]] var shadowSampler: sampler_comparison;
 
     struct VertexOutput {
         ${vertexShaderOutput}
@@ -130,8 +132,8 @@ const fragmentShader = `
 
     [[stage(fragment)]]
     fn main(input: VertexOutput) -> [[location(0)]] vec4<f32> {
-        let shadowVis : f32 = 1.0;
-        // let shadowVis : f32 = textureSampleCompare(shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
+        // let shadowVis : f32 = 1.0;
+        let shadowVis : f32 = textureSampleCompare(shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
         let sunLight : f32 = shadowVis * clamp(dot(-scene.lightDir, input.normal), 0.0, 1.0);
         let resultColor: vec3<f32> = input.color * (sunLight * 2.0 + 0.2);
         let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
@@ -562,7 +564,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     });
 
     // TODO(@darzu): adding via pool should work...
-    // const ground = poolBuilder.addMesh(PLANE);
+    const ground = poolBuilder.addMesh(PLANE);
     const player = poolBuilder.addMesh(CUBE);
     const randomCubes: MeshHandle[] = [];
     for (let i = 0; i < 10; i++) {
@@ -582,9 +584,9 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     });
 
     // place the ground
-    // mat4.translate(ground.transform, ground.transform, [0, -3, -8])
-    // mat4.scale(ground.transform, ground.transform, [10, 10, 10])
-    // gpuBufferWriteMeshTransform(ground);
+    mat4.translate(ground.transform, ground.transform, [0, -3, -8])
+    mat4.scale(ground.transform, ground.transform, [10, 10, 10])
+    gpuBufferWriteMeshTransform(ground);
 
     // initialize our cubes; each will have a random axis of rotation
     const randomCubesAxis: vec3[] = []
@@ -675,7 +677,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
             { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
             { binding: 1, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, texture: { sampleType: 'depth' } },
             // TODO(@darzu): waiting on this sample to work again: http://austin-eng.com/webgpu-samples/samples/shadowMapping
-            // { binding: 2, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, sampler: { type: 'comparison' } },
+            { binding: 2, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, sampler: { type: 'comparison' } },
         ],
     });
     const renderSceneUniBindGroup = device.createBindGroup({
@@ -684,7 +686,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
             { binding: 0, resource: { buffer: sceneUniBuffer } },
             { binding: 1, resource: shadowDepthTextureView },
             // TODO(@darzu): waiting on this sample to work again: http://austin-eng.com/webgpu-samples/samples/shadowMapping
-            // { binding: 2, resource: device.createSampler({ compare: 'less' }) },
+            { binding: 2, resource: device.createSampler({ compare: 'less' }) },
         ],
     });
 
@@ -976,6 +978,9 @@ interface WaterSystem {
 }
 
 function createWaterSystem(device: GPUDevice): WaterSystem {
+    if (!ENABLE_WATER)
+        return { getMeshPools: () => [] }
+
     const mapXSize = 100;
     const mapZSize = 100;
     const mapArea = mapXSize * mapZSize;
