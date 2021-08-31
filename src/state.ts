@@ -45,7 +45,8 @@ export abstract class GameObject {
   snap_seq: number;
   location_error: vec3;
   rotation_error: quat;
-  transform: mat4;
+  transform: mat4; // NOTE: it kinda sucks to have duplicate sources of truth on loc & rot, 
+                   // but it's more important that we don't unnecessarily recompute this transform
 
   constructor(id: number, creator: number) {
     this.id = id;
@@ -101,14 +102,6 @@ export abstract class GameObject {
     );
     this.rotation = rotation;
     this.rotation_error = rotation_error;
-  }
-
-  updateTransform(): void {
-    mat4.fromRotationTranslation(
-      this.transform,
-      quat.mul(working_quat, this.rotation, this.rotation_error),
-      vec3.add(working_vec3, this.location, this.location_error)
-    );
   }
 
   syncPriority(): number {
@@ -195,6 +188,7 @@ export abstract class GameState<Inputs> {
 
     const objs = Object.values(this.objects)
 
+    // update location and rotation
     let identity_quat = quat.create();
     let delta = vec3.create();
     let normalized_velocity = vec3.create();
@@ -252,9 +246,13 @@ export abstract class GameState<Inputs> {
       quat.multiply(o.rotation, deltaRotation, o.rotation);
     }
 
-    // update transforms
+    // update transforms based on new rotations and positions
     for (let o of objs) {
-      o.updateTransform();
+      mat4.fromRotationTranslation(
+        o.transform,
+        quat.mul(working_quat, o.rotation, o.rotation_error),
+        vec3.add(working_vec3, o.location, o.location_error)
+      );
     }
 
     // check collisions
