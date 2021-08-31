@@ -63,7 +63,7 @@ const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
 
 // render pipeline parameters
 const antiAliasSampleCount = 4;
-const swapChainFormat = 'bgra8unorm';
+let presentationFormat: GPUTextureFormat = 'bgra8unorm';
 const depthStencilFormat = 'depth24plus-stencil8';
 const backgroundColor = { r: 0.5, g: 0.5, b: 0.5, a: 1.0 };
 
@@ -77,15 +77,26 @@ let lastHeight = 0;
 let aspectRatio = 1;
 
 // recomputes textures, widths, and aspect ratio on canvas resize
-function checkCanvasResize(device: GPUDevice, canvasWidth: number, canvasHeight: number) {
-    if (lastWidth === canvasWidth && lastHeight === canvasHeight)
+function checkCanvasResize(device: GPUDevice, context: GPUPresentationContext, canvasWidth: number, canvasHeight: number) {
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const newWidth = canvasWidth * devicePixelRatio;
+    const newHeight = canvasHeight * devicePixelRatio;
+    if (lastWidth === newWidth && lastHeight === newHeight)
         return;
 
     if (depthTexture) depthTexture.destroy();
     if (colorTexture) colorTexture.destroy();
 
+    const newSize = [newWidth, newHeight] as const;
+
+    context.configure({
+        device: device,
+        format: presentationFormat,
+        size: newSize,
+    });
+
     depthTexture = device.createTexture({
-        size: { width: canvasWidth, height: canvasHeight },
+        size: newSize,
         format: depthStencilFormat,
         sampleCount: antiAliasSampleCount,
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
@@ -93,17 +104,17 @@ function checkCanvasResize(device: GPUDevice, canvasWidth: number, canvasHeight:
     depthTextureView = depthTexture.createView();
 
     colorTexture = device.createTexture({
-        size: { width: canvasWidth, height: canvasHeight },
+        size: newSize,
         sampleCount: antiAliasSampleCount,
-        format: swapChainFormat,
+        format: presentationFormat,
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
-    });;
+    });
     colorTextureView = colorTexture.createView();
 
-    lastWidth = canvasWidth;
-    lastHeight = canvasHeight;
+    lastWidth = newWidth;
+    lastHeight = newHeight;
 
-    aspectRatio = Math.abs(canvasWidth / canvasHeight);
+    aspectRatio = Math.abs(newWidth / newHeight);
 }
 
 // defines the geometry and coloring of a mesh
@@ -230,10 +241,10 @@ const lightDir = vec3.subtract(vec3.create(), worldOrigin, lightPosition);
 vec3.normalize(lightDir, lightDir);
 
 type RenderFrameFn = (timeMS: number) => void;
-function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): RenderFrameFn {
-    // configure our canvas backed swapchain
-    const context = canvasRef.getContext('gpupresent')!;
-    context.configure({ device, format: swapChainFormat });
+function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context: GPUPresentationContext): RenderFrameFn {
+    // configure our canvas format
+    // TODO(@darzu): 
+    // context.configure({ device, format: presentationFormat });
 
     // log our estimated space usage stats
     console.log(`Mesh space usage for up to ${maxMeshes} meshes, ${maxTris} tris, ${maxVerts} verts:`);
@@ -448,7 +459,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         fragment: {
             module: device.createShaderModule({ code: fragmentShader }),
             entryPoint: 'main',
-            targets: [{ format: swapChainFormat }],
+            targets: [{ format: presentationFormat }],
         },
         primitive: primitiveBackcull,
         depthStencil: {
@@ -465,7 +476,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
     // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
     const bundleEnc = device.createRenderBundleEncoder({
-        colorFormats: [swapChainFormat],
+        colorFormats: [presentationFormat],
         depthStencilFormat: depthStencilFormat,
         sampleCount: antiAliasSampleCount,
     });
@@ -496,7 +507,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         previousFrameTime = timeMs;
 
         // resize (if necessary)
-        checkCanvasResize(device, canvasRef.width, canvasRef.height);
+        checkCanvasResize(device, context, canvasRef.width, canvasRef.height);
 
         // process inputs and move the player & camera
         const playerSpeed = pressedKeys[' '] ? 1.0 : 0.2; // spacebar boosts speed
@@ -594,6 +605,8 @@ async function main() {
     let canvasRef = document.getElementById('sample-canvas') as HTMLCanvasElement;
     const adapter = await navigator.gpu.requestAdapter();
     const device = await adapter!.requestDevice();
+    const context = canvasRef.getContext('webgpu') as any as GPUPresentationContext;
+    presentationFormat = context.getPreferredFormat(adapter!);
 
     // resize the canvas when the window resizes
     function onWindowResize() {
@@ -608,7 +621,7 @@ async function main() {
     onWindowResize();
 
     // build our scene for the canvas
-    const renderFrame = attachToCanvas(canvasRef, device);
+    const renderFrame = attachToCanvas(canvasRef, device, context);
     console.log(`JS init time: ${(performance.now() - start).toFixed(1)}ms`)
 
     // run our game loop using 'requestAnimationFrame`
