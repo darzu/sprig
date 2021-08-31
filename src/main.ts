@@ -251,7 +251,8 @@ class CubeGameState extends GameState<Inputs> {
       this.addObject(plane);
       this.addPlayer();
       // have added our objects, can unmap buffers
-      this.renderer.finishInit();
+      // TODO(@darzu): debug
+      // this.renderer.finishInit();
     }
     this.me = 0;
   }
@@ -646,13 +647,13 @@ async function startGame(host: string | null) {
     requestAnimationFrame(frame);
   };
   net = new Net(gameState, host, (id: string) => {
+    renderer.finishInit(); // TODO(@darzu): debugging
     if (hosting) {
       console.log("hello");
       console.log(`Net up and running with id ${id}`);
       navigator.clipboard.writeText(id);
       frame();
     } else {
-      renderer.finishInit();
       frame();
     }
   });
