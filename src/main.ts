@@ -142,7 +142,6 @@ const shadowDepthTextureDesc: GPUTextureDescriptor = {
 
 const depthStencilFormat = 'depth24plus-stencil8';
 
-// TODO(@darzu): move this out?
 const lightProjectionMatrix = mat4.create();
 {
     const left = -80;
@@ -173,9 +172,6 @@ function resize(device: GPUDevice, canvasWidth: number, canvasHeight: number) {
         depthTexture.destroy();
     if (colorTexture)
         colorTexture.destroy();
-
-    // TODO(@darzu): 
-    // console.log("resizing")
 
     depthTexture = device.createTexture({
         size: { width: canvasWidth, height: canvasHeight },
@@ -213,16 +209,6 @@ interface MeshModel {
     tri: vec3[];
     // colors per triangle in r,g,b float [0-1] format
     colors: vec3[];
-}
-interface MeshMemoryPoolOptions {
-    // TODO(@darzu): vertex structure for shaders?
-    vertByteSize: number, // bytes
-    maxVerts: number,
-    maxTris: number,
-    maxMeshes: number,
-    meshUniByteSize: number,
-    backfaceCulling: boolean,
-    usesIndices: boolean,
 }
 
 const _scratchSingletonFloatBuffer = new Float32Array(1);
@@ -538,18 +524,9 @@ async function init(canvasRef: HTMLCanvasElement) {
         , 256);
     const vertByteSize = bytesPerFloat * vertElStride;
 
-    // TODO(@darzu): VERTEX FORMAT
-
-    const memoryPoolOpts: MeshMemoryPoolOptions = {
-        vertByteSize,
-        maxVerts: 100000,
-        maxTris: 100000,
-        maxMeshes: 10000,
-        meshUniByteSize,
-        backfaceCulling: true,
-        usesIndices: true,
-    };
-    const { maxVerts, maxTris, maxMeshes } = memoryPoolOpts;
+    const maxVerts = 100000;
+    const maxTris = 100000;
+    const maxMeshes = 10000;
 
     if (meshUniByteSize % 256 !== 0) {
         console.error("invalid mesh uni byte size, not 256 byte aligned: " + meshUniByteSize)
@@ -558,7 +535,7 @@ async function init(canvasRef: HTMLCanvasElement) {
     // space stats
     console.log(`New mesh pool`);
     console.log(`   ${maxVerts * vertByteSize / 1024} KB for verts`);
-    console.log(`   ${memoryPoolOpts.usesIndices ? maxTris * bytesPerTri / 1024 : 0} KB for indices`);
+    console.log(`   ${true ? maxTris * bytesPerTri / 1024 : 0} KB for indices`);
     console.log(`   ${maxMeshes * meshUniByteSize / 1024} KB for models`);
     // TODO(@darzu): MESH FORMAT
     const assumedBytesPerModel =
@@ -572,11 +549,11 @@ async function init(canvasRef: HTMLCanvasElement) {
         usage: GPUBufferUsage.VERTEX,
         mappedAtCreation: true,
     });
-    const _indexBuffer = memoryPoolOpts.usesIndices ? device.createBuffer({
+    const _indexBuffer = device.createBuffer({
         size: maxTris * bytesPerTri,
         usage: GPUBufferUsage.INDEX,
         mappedAtCreation: true,
-    }) : null;
+    });
 
     const meshUniBufferSize = meshUniByteSize * maxMeshes;
     const _meshUniBuffer = device.createBuffer({
