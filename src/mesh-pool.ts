@@ -768,11 +768,33 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
     }
     function mappedInstanceMesh(m: MeshHandle, d: MeshUniform.Data): MeshHandle {
         // TODO(@darzu): implement
-        throw 'TODO'
+        if (builder.allMeshes.length + 1 > maxMeshes)
+            throw "Too many meshes!"
+
+        const uniOffset = allMeshes.length * MeshUniform.ByteSizeAligned;
+        const newHandle = {
+            ...m,
+            ...d,
+            modelUniByteOffset: uniOffset
+        }
+        allMeshes.push(newHandle);
+        mappedUpdateUniform(newHandle);
+        return newHandle;
     }
     function queueInstanceMesh(m: MeshHandle, d: MeshUniform.Data): MeshHandle {
         // TODO(@darzu): implement
-        throw 'TODO'
+        if (pool.allMeshes.length + 1 > maxMeshes)
+            throw "Too many meshes!"
+
+        const uniOffset = allMeshes.length * MeshUniform.ByteSizeAligned;
+        const newHandle = {
+            ...m,
+            ...d,
+            modelUniByteOffset: uniOffset
+        }
+        allMeshes.push(newHandle);
+        queueUpdateUniform(newHandle);
+        return newHandle;
     }
 
     function finish(): MeshPool {
