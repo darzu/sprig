@@ -35,10 +35,7 @@ export abstract class GameObject {
   snap_seq: number;
   color: vec3;
 
-  // TODO(@darzu): 
   // physics
-  // gravity: vec3;
-  // world: RAPIER.World;
 
   constructor(id: number) {
     this.id = id;
@@ -50,12 +47,9 @@ export abstract class GameObject {
     this.authority = 0;
     this.authority_seq = 0;
     this.snap_seq = -1;
-    this.color = vec3.fromValues(0, 0, 0);
 
-    // TODO(@darzu): 
-    // physics
-    // this.gravity = vec3.fromValues(0.0, -9.81, 0.0);
-    // this.world = new RAPIER.World(this.gravity);
+    // TODO(@darzu): this is a hack.
+    this.color = vec3.fromValues(0, 0, 0);
   }
 
   transform(): mat4 {
@@ -89,7 +83,6 @@ export abstract class GameObject {
 }
 
 export type NetObject = any;
-
 export abstract class GameState<Inputs> {
   protected time: number;
   protected nextPlayerId: number;
@@ -98,13 +91,26 @@ export abstract class GameState<Inputs> {
   objects: Record<number, GameObject>;
   me: number;
 
+  // physics
+  gravity: vec3;
+  world: RAPIER.World;
+  objectColliders: Record<number, RAPIER.Collider>;
+  objectBodies: Record<number, RAPIER.RigidBody>;
+
   constructor(time: number, renderer: Renderer) {
     this.me = 0;
     this.time = time;
     this.renderer = renderer;
     this.nextPlayerId = 0;
     this.nextObjectId = 0;
-    this.objects = [];
+    this.objects = {};
+
+    // physics
+    console.log("creating world") // TODO(@darzu): 
+    this.gravity = [0, -9.81, 0];
+    this.world = new RAPIER.World(this.gravity);
+    this.objectColliders = {};
+    this.objectBodies = {};
   }
 
   abstract playerObject(playerId: number): GameObject;
@@ -121,13 +127,15 @@ export abstract class GameState<Inputs> {
 
     // physics
     // TODO(@darzu): create physics object
-    // let groundColliderDesc = RAPIER.ColliderDesc.cuboid(10.0, 0.1, 10.0);
-    // world.createCollider(groundColliderDesc);
-    // let rigidBodyDesc = RAPIER.RigidBodyDesc.newDynamic()
-    //   .setTranslation(0.0, 1.0, 0.0);
-    // let rigidBody = world.createRigidBody(rigidBodyDesc);
-    // let colliderDesc = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5);
-    // let collider = world.createCollider(colliderDesc, rigidBody.handle);
+    const rigidBodyDesc = RAPIER.RigidBodyDesc.newDynamic()
+      .setTranslation(obj.location[0], obj.location[1], obj.location[2]);
+    const rigidBody = this.world.createRigidBody(rigidBodyDesc);
+    this.objectBodies[obj.id] = rigidBody;
+
+    const halfSize = vec3.scale(vec3.create(), aabbSize(obj.aabb()), 0.5);
+    const colliderDesc = RAPIER.ColliderDesc.cuboid(halfSize[0], Math.max(halfSize[1], 0.1), halfSize[2]);
+    const collider = this.world.createCollider(colliderDesc, rigidBody.handle);
+    this.objectColliders[obj.id] = collider;
   }
 
   addObjectFromNet(netObj: NetObject): GameObject {
@@ -175,15 +183,30 @@ export abstract class GameState<Inputs> {
     this.stepGame(dt, inputs);
     const os = Object.values(this.objects);
 
-    // TODO(@darzu): step physics
+    // physics
     // let position = rigidBody.translation();
-    // world.step();
+    this.world.step();
 
     for (let o of os) {
-      // change location according to linear velocity
-      let delta = vec3.scale(vec3.create(), o.linear_velocity, dt);
-      vec3.add(o.location, o.location, delta);
+      // update positions based on physics model
+      const body = this.objectBodies[o.id]
+      // const body = _someRigidBody;
+      if (!body)
+        continue;
+      vec3.copy(o.location, body.translation())
+      quat.copy(o.rotation, body.rotation())
+
+      // let position = body.translation();
+      // console.log("Rigid-body position: ", position[0], position[1], position[2]);
+      // break;
     }
+
+
+    // for (let o of os) {
+      // change location according to linear velocity
+      // let delta = vec3.scale(vec3.create(), o.linear_velocity, dt);
+      // vec3.add(o.location, o.location, delta);
+    // }
 
     // check collisions
     const collidesWith = checkCollisions(os);
@@ -192,22 +215,22 @@ export abstract class GameState<Inputs> {
       o.color = collidesWith[o.id] ? vec3.fromValues(0.2, 0.0, 0.0) : vec3.fromValues(0.0, 0.2, 0.0)
     }
 
-    for (let o of os) {
-      // change rotation according to angular velocity
-      let normalized_velocity = vec3.normalize(
-        vec3.create(),
-        o.angular_velocity
-      );
-      let angle = vec3.length(o.angular_velocity) * dt;
-      let deltaRotation = quat.setAxisAngle(
-        quat.create(),
-        normalized_velocity,
-        angle
-      );
-      quat.normalize(deltaRotation, deltaRotation);
-      // note--quat multiplication is not commutative, need to multiply on the left
-      quat.multiply(o.rotation, deltaRotation, o.rotation);
-    }
+    // for (let o of os) {
+    //   // change rotation according to angular velocity
+    //   let normalized_velocity = vec3.normalize(
+    //     vec3.create(),
+    //     o.angular_velocity
+    //   );
+    //   let angle = vec3.length(o.angular_velocity) * dt;
+    //   let deltaRotation = quat.setAxisAngle(
+    //     quat.create(),
+    //     normalized_velocity,
+    //     angle
+    //   );
+    //   quat.normalize(deltaRotation, deltaRotation);
+    //   // note--quat multiplication is not commutative, need to multiply on the left
+    //   quat.multiply(o.rotation, deltaRotation, o.rotation);
+    // }
     this.time = time;
   }
 }
@@ -254,36 +277,42 @@ function doesOverlap(a: AABB, b: AABB) {
     && a.min[1] <= b.max[1]
     && a.min[2] <= b.max[2]
 }
-
-{
-  // Use the RAPIER module here.
-  let gravity: vec3 = [0.0, -9.81, 0.0];
-  let world = new RAPIER.World(gravity);
-
-  // Create the ground
-  let groundColliderDesc = RAPIER.ColliderDesc.cuboid(10.0, 0.1, 10.0);
-  world.createCollider(groundColliderDesc);
-
-  // Create a dynamic rigid-body.
-  let rigidBodyDesc = RAPIER.RigidBodyDesc.newDynamic()
-    .setTranslation(0.0, 1.0, 0.0);
-  let rigidBody = world.createRigidBody(rigidBodyDesc);
-
-  // Create a cuboid collider attached to the dynamic rigidBody.
-  let colliderDesc = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5);
-  let collider = world.createCollider(colliderDesc, rigidBody.handle);
-
-  // Game loop. Replace by your own game loop system.
-  let gameLoop = () => {
-    // Ste the simulation forward.  
-    world.step();
-
-    // Get and print the rigid-body's position.
-    let position = rigidBody.translation();
-    console.log("Rigid-body position: ", position[0], position[1], position[2]);
-
-    setTimeout(gameLoop, 16);
-  };
-
-  gameLoop();
+function aabbSize(a: AABB): vec3 {
+  return vec3.sub(vec3.create(), a.max, a.min);
 }
+
+// TODO(@darzu): for testing Rapier
+// let _someRigidBody: RAPIER.RigidBody;
+// {
+//   // Use the RAPIER module here.
+//   let gravity: vec3 = [0.0, -9.81, 0.0];
+//   let world = new RAPIER.World(gravity);
+
+//   // Create the ground
+//   let groundColliderDesc = RAPIER.ColliderDesc.cuboid(10.0, 0.1, 10.0);
+//   world.createCollider(groundColliderDesc);
+
+//   // Create a dynamic rigid-body.
+//   let rigidBodyDesc = RAPIER.RigidBodyDesc.newDynamic()
+//     .setTranslation(0.0, 1.0, 0.0);
+//   let rigidBody = world.createRigidBody(rigidBodyDesc);
+//   _someRigidBody = rigidBody;
+
+//   // Create a cuboid collider attached to the dynamic rigidBody.
+//   let colliderDesc = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5);
+//   let collider = world.createCollider(colliderDesc, rigidBody.handle);
+
+//   // Game loop. Replace by your own game loop system.
+//   let gameLoop = () => {
+//     // Ste the simulation forward.  
+//     world.step();
+
+//     // Get and print the rigid-body's position.
+//     let position = rigidBody.translation();
+//     // console.log("Rigid-body position: ", position[0], position[1], position[2]);
+
+//     setTimeout(gameLoop, 16);
+//   };
+
+//   gameLoop();
+// }
