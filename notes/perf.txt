@@ -40,3 +40,6 @@ Animometer Test
 
 For automatic lod'ing:
     Maybe convert to volumetric first, then use marching cubes (or square voxels) to create lower detail versions?
+
+GPU architectures:
+    https://rastergrid.com/blog/gpu-tech/2021/07/gpu-architecture-types-explained/
