@@ -202,14 +202,6 @@ interface MeshHandle {
 // TODO(@darzu): VERTEX FORMAT
 const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/ + 1/*swayHeight*/)
 
-// matrix helpers
-const pitch = (m: mat4, rad: number) => mat4.rotateX(m, m, rad);
-const yaw = (m: mat4, rad: number) => mat4.rotateY(m, m, rad);
-const roll = (m: mat4, rad: number) => mat4.rotateZ(m, m, rad);
-const moveX = (m: mat4, n: number) => mat4.translate(m, m, [n, 0, 0]);
-const moveY = (m: mat4, n: number) => mat4.translate(m, m, [0, n, 0]);
-const moveZ = (m: mat4, n: number) => mat4.translate(m, m, [0, 0, n]);
-
 // attach to HTML canvas 
 let canvasRef = document.getElementById('sample-canvas') as HTMLCanvasElement;
 const adapter = await navigator.gpu.requestAdapter();
@@ -746,7 +738,15 @@ if (renderFrame) {
     requestAnimationFrame(_renderFrame);
 }
 
-// utility code
+// math utility code
 function align(x: number, size: number): number {
     return Math.ceil(x / size) * size
 }
+
+// matrix utility code
+function pitch(m: mat4, rad: number) { return mat4.rotateX(m, m, rad); }
+function yaw(m: mat4, rad: number) { return mat4.rotateY(m, m, rad); }
+function roll(m: mat4, rad: number) { return mat4.rotateZ(m, m, rad); }
+function moveX(m: mat4, n: number) { return mat4.translate(m, m, [n, 0, 0]); }
+function moveY(m: mat4, n: number) { return mat4.translate(m, m, [0, n, 0]); }
+function moveZ(m: mat4, n: number) { return mat4.translate(m, m, [0, 0, n]); }
