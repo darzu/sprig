@@ -483,6 +483,7 @@ class CubeGameState extends GameState<Inputs> {
     // TODO(@darzu): disable
     // debug collision stuff
     debugCollisions((id, m, t) => {
+      console.log("setDebugMesh: " + id) // TODO(@darzu): DEBUG
       const o: ObjectHandle = {
         mesh: () => m,
         transform: t
@@ -490,6 +491,7 @@ class CubeGameState extends GameState<Inputs> {
       const res = this.renderer.addObject(o)
       return res.handle;
     }, (id) => {
+      console.log("setDebugMesh: " + id) // TODO(@darzu): DEBUG
       // TODO(@darzu): delete mesh
     })
   }

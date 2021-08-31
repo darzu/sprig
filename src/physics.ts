@@ -100,6 +100,7 @@ export function checkCollisions(objs: { worldAABB: AABB, id: number }[]): Collid
         if (!_worldGrid)
             _worldGrid = createWorldGrid(worldAABB, [10, 10, 10])
         // place objects in grid
+        _occupiedCells.clear();
         for (let o of objs) {
             let ll = _objToObjLL[o.id]
             if (!ll) // new object
@@ -112,6 +113,10 @@ export function checkCollisions(objs: { worldAABB: AABB, id: number }[]): Collid
                     prev: null
                 }
             gridPlace(_worldGrid, ll);
+            // TODO(@darzu): DEBUG
+            if (!_worldGrid.grid[gridIdx(_worldGrid, ll.minCoord)]) {
+                throw `Object not placed correctly!`
+            }
         }
         // check for collisions
         let _numMultiCell = 0;
@@ -150,26 +155,36 @@ export function checkCollisions(objs: { worldAABB: AABB, id: number }[]): Collid
     return _collidesWith;
 }
 
-let _debugMeshes: { [id: number]: MeshHandle } = {}
+let _debugMeshes: { [idx: number]: MeshHandle } = {}
 export function debugCollisions(setDebugMesh: (id: number, m: Mesh, t: mat4) => MeshHandle, removeDebugMesh: (id: number) => void) {
-    // TODO(@darzu): impl
+    // console.log(`occupied: ${[..._occupiedCells.keys()].join(',')}`)
     if (BROAD_PHASE === "GRID" && _worldGrid) {
-        for (let x = 0; x < _worldGrid.dimensions[0]; x++) {
-            for (let y = 0; y < _worldGrid.dimensions[1]; y++) {
-                for (let z = 0; z < _worldGrid.dimensions[2]; z++) {
-                    const i = gridIdx(_worldGrid, [x, y, z])
-                    if (_worldGrid.grid[i].next) {
-                        if (!_debugMeshes[i]) {
-                            const t = mat4.create()
-                            mat4.scale(t, t, vec3.scale(_scratchVec3, _worldGrid.cellSize, 0.5));
-                            mat4.translate(t, t, [x + 0.5, y + 0.5, z + 0.5])
-                            _debugMeshes[i] = setDebugMesh(i, CUBE_MESH, t)
-                        }
-                    } else if (_debugMeshes[i]) {
-                        removeDebugMesh(i)
-                    }
-                }
+        for (let i of _occupiedCells.keys()) {
+            if (!_worldGrid.grid[i].next) {
+                console.error(`Mismatch between !!_worldGrid.grid[i].next "${!!_worldGrid.grid[i].next}" and _occupiedCells @ ${i}`)
+                const coord = gridCoordFromIdx(vec3.create(), _worldGrid, i);
+                const objMins = Object.values(_objToObjLL).map(o => vec3ToStr(o.minCoord))
+                const objMinIdxs = Object.values(_objToObjLL).map(o => gridIdx(_worldGrid!, o.minCoord))
+                const objMaxs = Object.values(_objToObjLL).map(o => vec3ToStr(o.maxCoord))
+                const objMaxIdxs = Object.values(_objToObjLL).map(o => gridIdx(_worldGrid!, o.maxCoord))
+                console.dir({
+                    coord,
+                    objMins,
+                    objMinIdxs,
+                    objMaxs,
+                    objMaxIdxs,
+                })
+                throw 'stopping'
             }
+            if (!_debugMeshes[i]) {
+                const c = gridCoordFromIdx(vec3.create(), _worldGrid, i)
+                const t = mat4.create()
+                mat4.scale(t, t, vec3.scale(_scratchVec3, _worldGrid.cellSize, 0.5));
+                mat4.translate(t, t, [c[0] + 0.5, c[1] + 0.5, c[2] + 0.5])
+                _debugMeshes[i] = setDebugMesh(i, CUBE_MESH, t)
+            }
+            if (_debugMeshes[i])
+                removeDebugMesh(i)
         }
     }
 }
@@ -177,6 +192,7 @@ export function debugCollisions(setDebugMesh: (id: number, m: Mesh, t: mat4) => 
 // grid buckets implementation
 let _worldGrid: WorldGrid | null = null;
 const _objToObjLL: { [id: number]: ObjLL } = {};
+let _occupiedCells: Map<number, boolean> = new Map<number, boolean>();
 export let _cellChecks = 0;
 interface WorldGrid {
     aabb: AABB,
@@ -196,15 +212,15 @@ interface ObjLL {
     prev: WorldCell | ObjLL | null,
 }
 function createWorldGrid(aabb: AABB, cellSize: vec3): WorldGrid {
-    console.log(`cellSize: ${cellSize}`)
+    console.log(`cellSize: ${cellSize}`) // TODO(@darzu): DEBUG
     const chunkSize = vec3.sub(vec3.create(), aabb.max, aabb.min)
-    console.log(`chunkSize: ${chunkSize}`)
+    console.log(`chunkSize: ${chunkSize}`) // TODO(@darzu): DEBUG
     const dims = vec3.div(vec3.create(), chunkSize, cellSize);
-    vec3Floor(dims, dims);
+    vec3Floor(dims, dims); // TODO(@darzu): DEBUG
     console.log(`dims: ${vec3ToStr(dims)}`)
     const gridLength = dims[0] * dims[1] * dims[2];
-    console.log(`gridLength: ${gridLength}`)
-    const grid = range(gridLength).map(_ => ({ next: null } as WorldCell));
+    console.log(`gridLength: ${gridLength}`) // TODO(@darzu): DEBUG
+    const grid = range(gridLength).map((_, i) => ({ next: null } as WorldCell));
 
     const result: WorldGrid = {
         aabb,
@@ -269,13 +285,18 @@ function gridCoord(out: vec3, g: WorldGrid, pos: vec3): vec3 {
 }
 function gridPlace(g: WorldGrid, o: ObjLL) {
     // new placement, update coordinates
+    const prevIdx = gridIdx(g, o.minCoord);
     gridCoord(o.minCoord, g, o.aabb.min);
     gridCoord(o.maxCoord, g, o.aabb.max);
-    if (o.prev && vec3.equals(o.minCoord, o.minCoord)) {
+    const idx = gridIdx(g, o.minCoord);
+    _occupiedCells.set(idx, true);
+    if (o.prev && prevIdx === idx) {
         // same place, do nothing
+        // TODO(@darzu): DEBUG
+        if (!!_occupiedCells.get(idx) !== !!_worldGrid?.grid[idx].next)
+            throw `1: !!_occupiedCells.get(${idx}) !== !!_worldGrid?.grid[${idx}].next`
         return;
     }
-    const idx = gridIdx(g, o.minCoord);
     // console.log(`(${coord.join(',')}), idx: ${idx}`)
     const cell = g.grid[idx]
     if (!cell.next) {
@@ -283,11 +304,14 @@ function gridPlace(g: WorldGrid, o: ObjLL) {
         gridRemove(o)
         cell.next = o;
         o.prev = cell;
+        // TODO(@darzu): DEBUG
+        if (!!_occupiedCells.get(idx) !== !!_worldGrid?.grid[idx].next)
+            throw `2: !!_occupiedCells.get(${idx}) !== !!_worldGrid?.grid[${idx}].next`
         return;
     }
     // traverse to end or self
     let tail = cell.next;
-    while (tail.next !== null && tail.id !== o.id) {
+    while (tail.next !== null) {
         tail = tail.next;
     }
     if (tail.id === o.id) {
@@ -299,6 +323,9 @@ function gridPlace(g: WorldGrid, o: ObjLL) {
     gridRemove(o)
     tail.next = o;
     o.prev = tail;
+    // TODO(@darzu): DEBUG
+    if (!!_occupiedCells.get(idx) !== !!_worldGrid?.grid[idx].next)
+        throw `3: !!_occupiedCells.get(${idx}) !== !!_worldGrid?.grid[${idx}].next`
     return;
 }
 function checkCell(o: ObjLL, c: ObjLL | WorldCell) {
