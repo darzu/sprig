@@ -243,20 +243,20 @@ const computeForFS = `
   // TODO: try workgroup data
   // var<workgroup> tile : array<array<vec3<f32>, 256>, 4>;
 
-  [[stage(compute), workgroup_size(64, 1, 1)]]
+  [[stage(compute), workgroup_size(8, 8, 1)]]
   fn main(
     [[builtin(workgroup_id)]] groupId : vec3<u32>,
     [[builtin(local_invocation_id)]] memberId : vec3<u32>
   ) {
     let dims : vec2<i32> = textureDimensions(output);
 
-    let col: u32 = (groupId.x * 64u) + memberId.x;
-    let row: u32 = (groupId.y * 64u) + memberId.y;
-    let coord = vec2<i32>(i32(row), i32(col));
+    let col: u32 = (groupId.x * 8u) + memberId.x;
+    let row: u32 = (groupId.y * 8u) + memberId.y;
+    let coord = vec2<i32>(i32(col), i32(row));
 
-    let r = 0.0;
+    let r = f32(row) / f32(dims.y);
     let g = f32(col) / f32(dims.x);
-    let b = f32(row) / f32(dims.y);
+    let b = 0.0;
     let res = vec4<f32>(r, g, b, 1.0);
 
     textureStore(output, coord, res);
@@ -946,7 +946,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     // our compute pipeline for generating a texture
     const computeTexWidth = 2048;
     const computeTexHeight = 2048;
-    const computeGroupSize = 64; // TODO(@darzu): is this needed?
+    const computeGroupSize = 8; // TODO(@darzu): is this needed?
     let computeTextureView: GPUTextureView;
     let computeSceneBuffer: GPUBuffer;
     let computePipeline: GPUComputePipeline;
@@ -1002,8 +1002,8 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
             { binding: 0, resource: { buffer: sceneUniBuffer } },
             { binding: 1, resource: shadowDepthTextureView },
             { binding: 2, resource: device.createSampler({ compare: 'less' }) },
-            { binding: 3, resource: fsTextureView },
-            // { binding: 3, resource: computeTextureView },
+            // { binding: 3, resource: fsTextureView },
+            { binding: 3, resource: computeTextureView },
             {
                 binding: 4, resource: device.createSampler({
                     magFilter: 'linear',
