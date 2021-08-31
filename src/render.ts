@@ -3,6 +3,8 @@ import { mat4, vec3, quat } from "./gl-matrix.js";
 
 // TODO: some state lives in global variables when it should live on the Renderer object
 
+// TODO(@darzu): bring in my MeshPool abstraction to decouple much of this and support efficient runtime object add/remove
+
 // shaders
 
 const shaderSceneStruct = `
@@ -516,6 +518,11 @@ export class Renderer {
       bytesPerMat4 * 2,
       (lightDir as Float32Array).buffer
     );
+  }
+
+  destory() {
+    // TODO(@darzu): more neded?
+    this.device.destroy();
   }
 
   constructor(

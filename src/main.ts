@@ -1,3 +1,5 @@
+const jsStartTime = performance.now();
+
 import { mat4, vec3, quat } from "./gl-matrix.js";
 import { Mesh, scaleMesh, GameObject, NetObject, GameState } from "./state.js";
 import { Renderer } from "./render.js";
@@ -192,11 +194,11 @@ class CubeGameState extends GameState<Inputs> {
         this.addObject(cube);
       }
       this.cubes = randomCubes;
-      // have added our objects, can unmap buffers
-      this.renderer.unmapGPUBuffers();
     } else {
       this.cubes = [];
     }
+    // have added our objects, can unmap buffers
+    this.renderer.unmapGPUBuffers();
     this.me = 0;
   }
 
@@ -449,6 +451,15 @@ function inputsReader(canvas: HTMLCanvasElement): () => Inputs {
   return getInputs;
 }
 
+// TODO(@darzu): needed?
+interface Game {
+  gameState: CubeGameState;
+  renderer: Renderer;
+  device: GPUDevice;
+  running: boolean;
+  net: Net<Inputs>;
+}
+
 async function startGame(host: string | null) {
   let hosting = host === null;
   let canvas = document.getElementById("sample-canvas") as HTMLCanvasElement;
@@ -466,9 +477,9 @@ async function startGame(host: string | null) {
   const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter!.requestDevice();
-  let renderer = new Renderer(canvas, device, 2000);
-  let gameState = new CubeGameState(performance.now(), renderer, hosting);
-  let inputs = inputsReader(canvas);
+  const renderer = new Renderer(canvas, device, 2000);
+  const gameState = new CubeGameState(performance.now(), renderer, hosting);
+  const inputs = inputsReader(canvas);
   function doLockMouse() {
     canvas.requestPointerLock();
   }
@@ -478,14 +489,14 @@ async function startGame(host: string | null) {
   let previousFrameTime = performance.now();
   let avgJsTime = 0;
   let avgFrameTime = 0;
-  let avgWeight = 0.05;
+  const avgWeight = 0.05;
   let net: Net<Inputs>;
-  let frame = () => {
-    let start = performance.now();
+  const frame = () => {
+    const start = performance.now();
     gameState.step(performance.now(), inputs());
     gameState.renderFrame();
-    let jsTime = performance.now() - start;
-    let frameTime = start - previousFrameTime;
+    const jsTime = performance.now() - start;
+    const frameTime = start - previousFrameTime;
     previousFrameTime = start;
     avgJsTime = avgJsTime
       ? (1 - avgWeight) * avgJsTime + avgWeight * jsTime
@@ -503,14 +514,14 @@ async function startGame(host: string | null) {
   };
   net = new Net(gameState, host, (id: string) => {
     if (hosting) {
-      console.log(`Net up and running with id ${id}`);
+      console.log(`Net up and running with id ${id} (after ${(performance.now() - jsStartTime).toFixed(1)}ms)`);
       navigator.clipboard.writeText(id);
-      frame();
     } else {
-      renderer.unmapGPUBuffers();
-      frame();
+      // TODO(@darzu): shouldn't be needed
+      // renderer.unmapGPUBuffers();
     }
   });
+  frame();
 }
 
 async function main() {

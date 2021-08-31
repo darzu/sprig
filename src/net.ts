@@ -297,6 +297,11 @@ export class Net<Inputs> {
     });
   }
 
+  public destory() {
+    // TODO(@darzu): needed?
+    this.peer.destroy()
+  }
+
   constructor(
     state: GameState<Inputs>,
     host: ServerId | null,
