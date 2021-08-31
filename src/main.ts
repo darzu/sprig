@@ -22,7 +22,7 @@ import { _motionPairsLen } from "./phys.js";
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
 const MAX_VERTICES = 21844;
-const ENABLE_NET = false;
+const ENABLE_NET = true;
 
 enum ObjectType {
   Plane,
