@@ -24,7 +24,6 @@ export interface MeshHandle {
     model?: Mesh,
 }
 
-
 export interface MeshPoolOpts {
     maxMeshes: number,
     maxTris: number,
@@ -74,7 +73,6 @@ export interface MeshBuilder {
     setUniform: (transform: mat4, aabbMin: vec3, aabbMax: vec3) => void,
     finish: () => MeshHandle;
 }
-
 
 export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolBuilder {
     const { maxMeshes, maxTris, maxVerts } = opts;

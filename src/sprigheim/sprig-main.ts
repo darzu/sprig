@@ -456,13 +456,25 @@ const vertexDataFormat: GPUVertexAttribute[] = [
 ];
 // these help us pack and use vertices in that format
 export const vertByteSize = bytesPerVec3/*pos*/ + bytesPerVec3/*color*/ + bytesPerVec3/*normal*/ + bytesPerUint32/*kind*/;
-// const _scratchF32 = new Float32Array(100);
-// const _scratchU32 = new Uint32Array(100);
+
+// for performance reasons, we keep scratch buffers around
+const _scratch_setVertexData_f32 = new Float32Array(3 + 3 + 3);
+const _scratch_setVertexData_f32_as_u8 = new Uint8Array(_scratch_setVertexData_f32.buffer);
+const _scratch_setVertexData_u32 = new Uint32Array(1);
+const _scratch_setVertexData_u32_as_u8 = new Uint8Array(_scratch_setVertexData_u32.buffer);
 export function setVertexData(buffer: Uint8Array, byteOffset: number, pos: vec3, color: vec3, normal: vec3, kind: number) {
-    const p0 = new Uint8Array(new Float32Array([...pos, ...color, ...normal]).buffer);
-    const p1 = new Uint8Array(new Uint32Array([kind]).buffer);
-    buffer.set(p0, byteOffset)
-    buffer.set(p1, byteOffset + bytesPerVec3 * 3);
+    _scratch_setVertexData_f32[0] = pos[0]
+    _scratch_setVertexData_f32[1] = pos[1]
+    _scratch_setVertexData_f32[2] = pos[2]
+    _scratch_setVertexData_f32[3] = color[0]
+    _scratch_setVertexData_f32[4] = color[1]
+    _scratch_setVertexData_f32[5] = color[2]
+    _scratch_setVertexData_f32[6] = normal[0]
+    _scratch_setVertexData_f32[7] = normal[1]
+    _scratch_setVertexData_f32[8] = normal[2]
+    buffer.set(_scratch_setVertexData_f32_as_u8, byteOffset)
+    _scratch_setVertexData_u32[0] = kind
+    buffer.set(_scratch_setVertexData_u32_as_u8, byteOffset + bytesPerVec3 * 3);
 }
 
 // TODO(@darzu): MODEL FORMAT
