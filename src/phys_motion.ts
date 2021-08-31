@@ -1,4 +1,6 @@
 import { quat, vec3 } from "./gl-matrix.js";
+import { clamp } from "./math.js";
+import { AABB } from "./phys_broadphase.js";
 
 export interface MotionProps {
   location: vec3;
@@ -89,12 +91,23 @@ export function didMove(o: {
 }
 
 // TODO(@darzu): physics step
-export function moveObjects(set: { motion: MotionProps }[], dt: number) {
-  for (let { motion: m } of set) {
+export function moveObjects(
+  set: { motion: MotionProps; worldAABB: AABB }[],
+  dt: number
+) {
+  for (let { motion: m, worldAABB } of set) {
     // TODO(@darzu): IMPLEMENT
     // if (m.atRest) {
     //   continue;
     // }
+
+    // clamp linear velocity based on size
+    const vxMax = (worldAABB.max[0] - worldAABB.min[0]) / dt;
+    const vyMax = (worldAABB.max[1] - worldAABB.min[1]) / dt;
+    const vzMax = (worldAABB.max[2] - worldAABB.min[2]) / dt;
+    m.linearVelocity[0] = clamp(m.linearVelocity[0], -vxMax, vxMax);
+    m.linearVelocity[1] = clamp(m.linearVelocity[1], -vyMax, vyMax);
+    m.linearVelocity[2] = clamp(m.linearVelocity[2], -vzMax, vzMax);
 
     // change location according to linear velocity
     delta = vec3.scale(delta, m.linearVelocity, dt);
