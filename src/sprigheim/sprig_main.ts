@@ -1,5 +1,5 @@
-import { mat4, vec3 } from './ext/gl-matrix.js';
-import { jitter } from './math.js';
+import { mat4, vec3 } from '../ext/gl-matrix.js';
+import { jitter } from '../math.js';
 
 const RENDER_GRASS = true;
 

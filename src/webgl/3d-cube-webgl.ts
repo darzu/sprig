@@ -1,5 +1,5 @@
-import * as m4 from "./m4.js"
-import { v3, V3 } from "./v3.js";
+import * as m4 from "../m4.js"
+import { v3, V3 } from "../v3.js";
 
 /*============= Creating a canvas ======================*/
 let canvas = document.getElementById('my_Canvas') as HTMLCanvasElement;
