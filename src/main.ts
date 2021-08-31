@@ -198,9 +198,6 @@ interface MeshHandle {
     model: Mesh,
 }
 
-// TODO(@darzu): VERTEX FORMAT
-const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/ + 1/*swayHeight*/)
-
 // attach to HTML canvas 
 let canvasRef = document.getElementById('sample-canvas') as HTMLCanvasElement;
 const adapter = await navigator.gpu.requestAdapter();
@@ -270,6 +267,8 @@ const meshUniByteSize = align(
     bytesPerMat4 // transform
     + bytesPerFloat // max draw distance
     , 256);
+
+const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/)
 const vertByteSize = bytesPerFloat * vertElStride;
 
 const maxVerts = 100000;
