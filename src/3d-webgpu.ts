@@ -409,6 +409,16 @@ async function init(canvasRef: HTMLCanvasElement) {
     if (!canvasRef === null) return;
     const context = canvasRef.getContext('gpupresent')!;
 
+    // canvas.requestFullscreen({
+    //     navigationUI: "hide"
+    // })
+    let cursorLocked = false
+    canvas.onclick = (ev) => {
+        if (!cursorLocked)
+            canvas.requestPointerLock();
+        cursorLocked = true
+    }
+
     const swapChainFormat = 'bgra8unorm';
 
     const swapChain = context.configureSwapChain({
