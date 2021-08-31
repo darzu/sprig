@@ -1,5 +1,5 @@
 import Peer from "./peerjs.js";
-import { GameObject, GameState } from "./state.js";
+import { GameObject, NetObject, GameState } from "./state.js";
 import { vec3, quat } from "./gl-matrix.js";
 
 // fraction of state updates to artificially drop
@@ -131,6 +131,29 @@ export class Net<Inputs> {
   private object_priorities: Record<number, number> = {};
   private objects_known: Record<number, ServerId[]> = {};
 
+  private objectKnownToServer(obj: NetObject, server: ServerId) {
+    return (
+      this.objects_known[obj.id] && this.objects_known[obj.id].includes(server)
+    );
+  }
+
+  private syncObject(obj: NetObject) {
+    if (obj.creator !== this.state.me) {
+      // don't try to sync objects we didn't create
+      return;
+    }
+    for (let server of this.peers) {
+      if (!this.objectKnownToServer(obj, server)) {
+        let addObjects: AddObjects = {
+          type: MessageType.AddObjects,
+          objects: [obj],
+        };
+        this.send(server, addObjects, true);
+        this.recordObjectKnown(obj.id, server);
+      }
+    }
+  }
+
   private recordObjectKnown(id: number, server: ServerId) {
     if (!this.objects_known[id]) {
       this.objects_known[id] = [server];
@@ -140,7 +163,11 @@ export class Net<Inputs> {
   }
 
   private send(server: ServerId, message: Message, reliable: boolean) {
-    console.log(`Sending message of type ${MessageType[message.type]}`);
+    if (message.type !== MessageType.StateUpdate) {
+      console.log(
+        `Sending message of type ${MessageType[message.type]} to ${server}`
+      );
+    }
     let conn = reliable
       ? this.reliableConnections[server]
       : this.unreliableConnections[server];
@@ -173,7 +200,11 @@ export class Net<Inputs> {
   }
 
   private handleMessage(server: ServerId, message: Message) {
-    console.log(`Received message of type ${MessageType[message.type]}`);
+    if (message.type !== MessageType.StateUpdate) {
+      console.log(
+        `Received message of type ${MessageType[message.type]} from ${server}`
+      );
+    }
     switch (message.type) {
       case MessageType.Join: {
         // no other data associated with a join message
@@ -202,11 +233,15 @@ export class Net<Inputs> {
       case MessageType.JoinResponse: {
         let msg = message as JoinResponse;
         this.state.me = msg.you;
+        for (let peer of msg.peers) {
+          this.connectTo(peer);
+        }
         for (let obj of msg.objects) {
           this.state.addObjectFromNet(obj);
-        }
-        for (let peer in msg.peers) {
-          this.peers.push(peer);
+          this.recordObjectKnown(obj.id, server);
+          for (let peer of msg.peers) {
+            this.recordObjectKnown(obj.id, peer);
+          }
         }
         this.ready(this.me);
         break;
@@ -214,6 +249,12 @@ export class Net<Inputs> {
       case MessageType.AddObjects: {
         let msg = message as AddObjects;
         for (let netObj of msg.objects) {
+          if (this.state.objects[netObj.id]) {
+            // TODO: this should never happen
+            console.log(`Got known object ${netObj.id} from ${server}`);
+            break;
+          }
+          this.recordObjectKnown(netObj.id, server);
           let obj = this.state.addObjectFromNet(netObj);
           let update = this.unapplied_updates[obj.id];
           if (update) {
@@ -295,6 +336,7 @@ export class Net<Inputs> {
     // build snapshot
     let data = new Array();
     for (let obj of objects) {
+      this.syncObject(obj.netObject());
       data.push(obj.id);
       data.push(obj.authority_seq);
       this.serializeVec3(data, obj.location);
@@ -320,16 +362,27 @@ export class Net<Inputs> {
   // listen for incoming connections
   private awaitConnections() {
     this.peer.on("connection", (conn: DataConnection) => {
+      console.log(
+        `Connection from ${conn.peer} with reliable: ${conn.reliable}`
+      );
       if (conn.reliable) {
         this.reliableConnections[conn.peer] = conn;
       } else {
         this.unreliableConnections[conn.peer] = conn;
+      }
+      if (
+        this.reliableConnections[conn.peer] &&
+        this.unreliableConnections[conn.peer] &&
+        !this.host
+      ) {
+        this.peers.push(conn.peer);
       }
       this.setupConnection(conn);
     });
   }
 
   private connectTo(server: ServerId) {
+    console.log(`connecting to ${server}`);
     var reliableConn = this.peer.connect(server, { reliable: true });
     reliableConn.on("open", () => {
       var unreliableConn = this.peer.connect(server, { reliable: false });
@@ -364,6 +417,7 @@ export class Net<Inputs> {
       this.peers = [host];
       this.peer = new Peer();
       this.peer.on("open", (id: string) => {
+        this.awaitConnections();
         var reliableConn = this.peer.connect(host, { reliable: true });
         reliableConn.on("open", () => {
           var unreliableConn = this.peer.connect(host, { reliable: false });

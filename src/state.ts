@@ -18,6 +18,7 @@ export function scaleMesh(m: Mesh, by: number): Mesh {
 
 export abstract class GameObject {
   id: number;
+  creator: number;
   location: vec3;
   rotation: quat;
   at_rest: boolean;
@@ -29,14 +30,15 @@ export abstract class GameObject {
   location_error: vec3;
   rotation_error: quat;
 
-  constructor(id: number) {
+  constructor(id: number, creator: number) {
     this.id = id;
+    this.creator = creator;
     this.location = vec3.fromValues(0, 0, 0);
     this.rotation = quat.identity(quat.create());
     this.linear_velocity = vec3.fromValues(0, 0, 0);
     this.angular_velocity = vec3.fromValues(0, 0, 0);
     this.at_rest = true;
-    this.authority = 0;
+    this.authority = creator;
     this.authority_seq = 0;
     this.snap_seq = -1;
     this.location_error = vec3.fromValues(0, 0, 0);
@@ -81,6 +83,7 @@ export abstract class GameObject {
   netObject(): NetObject {
     let obj: any = {
       id: this.id,
+      creator: this.creator,
       location: Array.from(this.location),
       rotation: Array.from(this.rotation),
       at_rest: this.at_rest,
@@ -137,6 +140,7 @@ export abstract class GameState<Inputs> {
   addObjectFromNet(netObj: NetObject): GameObject {
     let obj = this.objectFromNetObject(netObj);
     obj.id = netObj.id;
+    obj.creator = netObj.creator;
 
     obj.authority = netObj.authority;
     obj.authority_seq = netObj.authority_seq;
@@ -189,7 +193,7 @@ export abstract class GameState<Inputs> {
         location_error_magnitude !== 0 &&
         location_error_magnitude < EPSILON
       ) {
-        console.log(`Object ${o.id} reached 0 location error`);
+        //console.log(`Object ${o.id} reached 0 location error`);
         o.location_error = vec3.fromValues(0, 0, 0);
       }
 
@@ -207,7 +211,7 @@ export abstract class GameState<Inputs> {
         rotation_error_magnitude !== 0 &&
         rotation_error_magnitude < EPSILON
       ) {
-        console.log(`Object ${o.id} reached 0 rotation error`);
+        //console.log(`Object ${o.id} reached 0 rotation error`);
         o.rotation_error = identity_quat;
       }
 

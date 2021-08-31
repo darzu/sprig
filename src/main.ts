@@ -6,8 +6,8 @@ import { Net } from "./net.js";
 class Plane extends GameObject {
   color: vec3;
 
-  constructor(id: number) {
-    super(id);
+  constructor(id: number, creator: number) {
+    super(id, creator);
     this.color = vec3.fromValues(0.02, 0.02, 0.02);
   }
 
@@ -46,8 +46,8 @@ class Plane extends GameObject {
 abstract class Cube extends GameObject {
   color: vec3;
 
-  constructor(id: number) {
-    super(id);
+  constructor(id: number, creator: number) {
+    super(id, creator);
     this.color = vec3.fromValues(0.2, 0, 0);
   }
 
@@ -105,8 +105,8 @@ abstract class Cube extends GameObject {
 class SpinningCube extends Cube {
   axis: vec3;
 
-  constructor(id: number) {
-    super(id);
+  constructor(id: number, creator: number) {
+    super(id, creator);
     this.axis = vec3.fromValues(0, 0, 0);
   }
 
@@ -121,8 +121,8 @@ class SpinningCube extends Cube {
 }
 
 class Player extends Cube {
-  constructor(id: number, playerId: number) {
-    super(id);
+  constructor(id: number, creator: number, playerId: number) {
+    super(id, creator);
     this.authority = playerId;
   }
 
@@ -162,13 +162,13 @@ class CubeGameState extends GameState<Inputs> {
     this.cameraLocation = vec3.fromValues(0, 0, 10);
     this.players = {};
     if (createObjects) {
-      let plane = new Plane(this.id());
+      let plane = new Plane(this.id(), this.me);
       plane.location = vec3.fromValues(0, -3, -8);
       this.addObject(plane);
       this.addPlayer();
       let randomCubes: SpinningCube[] = [];
       for (let i = 0; i < 200; i++) {
-        let cube = new SpinningCube(this.id());
+        let cube = new SpinningCube(this.id(), this.me);
         // create cubes with random colors
         cube.location = vec3.fromValues(
           Math.random() * 20 - 10,
@@ -205,7 +205,7 @@ class CubeGameState extends GameState<Inputs> {
   }
 
   playerObject(playerId: number): GameObject {
-    let p = new Player(this.id(), playerId);
+    let p = new Player(this.id(), this.me, playerId);
     this.players[playerId] = p;
     return p;
   }
@@ -213,19 +213,19 @@ class CubeGameState extends GameState<Inputs> {
   objectFromNetObject(netObj: NetObject): GameObject {
     switch (netObj.type) {
       case "plane": {
-        let p = new Plane(netObj.id);
+        let p = new Plane(netObj.id, netObj.creator);
         p.color = netObj.color;
         return p;
       }
       case "cube": {
-        let c = new SpinningCube(netObj.id);
+        let c = new SpinningCube(netObj.id, netObj.creator);
         c.color = netObj.color;
         c.axis = netObj.axis;
         this.cubes.push(c);
         return c;
       }
       case "player": {
-        let p = new Player(netObj.id, netObj.authority);
+        let p = new Player(netObj.id, netObj.creator, netObj.authority);
         p.color = netObj.color;
         this.players[p.authority] = p;
         return p;
@@ -335,9 +335,9 @@ class CubeGameState extends GameState<Inputs> {
         min_distance_player == this.me &&
         cube.authority !== this.me
       ) {
-        console.log(
+        /*console.log(
           `Taking authority over cube ${cube.id} from ${cube.authority}`
-        );
+        );*/
         cube.authority = this.me;
         cube.authority_seq += 1;
       }
