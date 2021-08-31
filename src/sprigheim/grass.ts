@@ -1,6 +1,6 @@
 import { mat4, vec3 } from "../ext/gl-matrix.js";
 import { align, jitter } from "../math.js";
-import { createMeshPoolBuilder, getPositionFromTransform, gpuBufferWriteMeshTransform, MeshHandle, MeshPool, MeshPoolBuilder, meshUniByteSizeAligned, setVertexData, vertByteSize, VertexData, VertexKind } from "./sprig_main.js";
+import { createMeshPoolBuilder, getPositionFromTransform, meshApplyUniformData, MeshHandle, MeshPool, MeshPoolBuilder, meshUniByteSizeAligned, setVertexData, vertByteSize, VertexData, VertexKind } from "./sprig_main.js";
 
 const RENDER_GRASS = false;
 
@@ -211,6 +211,8 @@ function createGrassTile(opts: GrassTileOpts, builder: MeshPoolBuilder): MeshHan
 
         // used and updated elsewhere
         transform: mat4.create(),
+        modelMin: vec3.fromValues(-spacing, 0, -spacing),
+        modelMax: vec3.fromValues(size * spacing, bladeH * 2, size * spacing),
 
         pool: builder.poolHandle,
         // TODO(@darzu):
@@ -337,7 +339,7 @@ function createGrassTileset(opts: GrassTilesetOpts, device: GPUDevice): GrassTil
                 const move = vec3.subtract(vec3.create(), targetPos, tilePoses[i])
                 mat4.translate(t.transform, t.transform, move)
                 // console.log(`moving (${tilePoses[i][0]}, ${tilePoses[i][1]}, ${tilePoses[i][2]}) to (${targetPos[0]}, ${targetPos[1]}, ${targetPos[2]}) via (${move[0]}, ${move[1]}, ${move[2]})`)
-                gpuBufferWriteMeshTransform(t)
+                meshApplyUniformData(t)
                 break;
             }
         }

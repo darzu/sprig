@@ -29,13 +29,18 @@ const vertexShaderOutput = `
     [[location(3)]] worldPos : vec3<f32>;
     [[builtin(position)]] position : vec4<f32>;
 `
+const shaderModelStruct = `
+    [[block]] struct Model {
+        modelMatrix : mat4x4<f32>;
+        modelMin: vec3<f32>;
+        modelMax: vec3<f32>;
+    };
+`
 // shader code
 const vertexShaderForShadows = `
     ${shaderSceneStruct}
 
-    [[block]] struct Model {
-        modelMatrix : mat4x4<f32>;
-    };
+    ${shaderModelStruct}
 
     [[group(0), binding(0)]] var<uniform> scene : Scene;
     [[group(1), binding(0)]] var<uniform> model : Model;
@@ -51,9 +56,7 @@ const fragmentShaderForShadows = `
 const vertexShader = `
     ${shaderSceneStruct}
 
-    [[block]] struct Model {
-        modelMatrix : mat4x4<f32>;
-    };
+    ${shaderModelStruct}
 
     [[group(0), binding(0)]] var<uniform> scene : Scene;
     [[group(1), binding(0)]] var<uniform> model : Model;
@@ -88,8 +91,9 @@ const vertexShader = `
         var output : VertexOutput;
 
         // sample from displacement map
-        let geometrySize: vec2<f32> = vec2<f32>(100.0, 100.0);
-        let fsSampleCoord = vec2<i32>((position.xy / geometrySize) * vec2<f32>(textureDimensions(fsTexture)));
+        // let geometrySize: vec2<f32> = vec2<f32>(100.0, 100.0);
+        let geometrySize: vec2<f32> = (model.modelMax - model.modelMin).xz;
+        let fsSampleCoord = vec2<i32>(((position.xz - model.modelMin.xz) / geometrySize) * vec2<f32>(textureDimensions(fsTexture)));
         let fsSample : vec3<f32> = textureLoad(fsTexture, fsSampleCoord, 0).rgb;
         let fsSampleQuant = vec3<f32>(quantize(fsSample.x, 0.1), quantize(fsSample.y, 0.1), quantize(fsSample.z, 0.1));
 
@@ -114,9 +118,16 @@ const vertexShader = `
             // dNorm = normalize(cross(dPos - dPosB, dPos - dPosL));
         }
 
-        let dPos2 = position + fsSampleQuant * 10.0;
+        var dPos2: vec3<f32>;
 
-        let worldPos: vec4<f32> = model.modelMatrix * vec4<f32>(dPos, 1.0);
+        if (kind == 1u) {
+            dPos2 = position + fsSample;
+            // dPos2 = position + fsSampleQuant * 10.0;
+        } else {
+            dPos2 = position;
+        }
+
+        let worldPos: vec4<f32> = model.modelMatrix * vec4<f32>(dPos2, 1.0);
 
         // XY is in (-1, 1) space, Z is in (0, 1) space
         let posFromLight : vec4<f32> = scene.lightViewProjMatrix * worldPos;
@@ -134,6 +145,9 @@ const vertexShader = `
         // let xy = (xyz.xy / xyz.z);
         // // output.screenCoord = normalize(xy) * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5);
         output.normal = worldNorm.xyz;
+        // output.color = model.modelMin + model.modelMax;
+        // output.color = model.modelMax;
+        // output.color = vec3<f32>(geometrySize.x, 0.0, geometrySize.y);
         output.color = color;
         // output.color = worldNorm.xyz;
         return output;
@@ -170,6 +184,8 @@ const fragmentShader = `
         // // let fsSampleCoord = vec2<f32>(input.position.x, input.position.y);
         // let fsSample : vec3<f32> = textureSample(fsTexture, samp, screenCoordinates).rgb;
         // let fsSampleQuant = vec3<f32>(quantize(fsSample.x, 0.1), quantize(fsSample.y, 0.1), quantize(fsSample.z, 0.1));
+
+        // return vec4<f32>(input.color, 1.0);
 
         let resultColor: vec3<f32> = input.color * (sunLight * 2.0 + 0.2); // + fsSampleQuant * 0.2;
         let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
@@ -227,24 +243,42 @@ const computeForFS = `
   // TODO: try workgroup data
   // var<workgroup> tile : array<array<vec3<f32>, 256>, 4>;
 
+  fn waterDisplace(pos: vec3<f32>) -> vec3<f32> {
+    let t = scene.time * 0.004;
+    let xt = pos.x + t;
+    let zt = pos.z + t;
+    let y = 0.0
+        + sin(xt * 0.2)
+        + cos((zt * 2.0 + xt) * 0.1) * 2.0
+        + cos((zt * 0.5 + xt * 0.2) * 0.2) * 4.0
+        + sin((xt * 0.5 + zt) * 0.9) * 0.2
+        + sin((xt - zt * 0.5) * 0.7) * 0.1
+        ;
+    return vec3<f32>(0.0, y, 0.0);
+}
+
   [[stage(compute), workgroup_size(8, 8, 1)]]
   fn main(
     [[builtin(workgroup_id)]] groupId : vec3<u32>,
-    [[builtin(local_invocation_id)]] memberId : vec3<u32>
+    [[builtin(local_invocation_id)]] localId : vec3<u32>,
+    [[builtin(global_invocation_id)]] globalId : vec3<u32>
   ) {
     let dims : vec2<i32> = textureDimensions(output);
 
-    let col: u32 = (groupId.x * 8u) + memberId.x;
-    let row: u32 = (groupId.y * 8u) + memberId.y;
+    let col: u32 = (groupId.x * 8u) + localId.x;
+    let row: u32 = (groupId.y * 8u) + localId.y;
     let coord = vec2<i32>(i32(col), i32(row));
 
     let x = f32(col) / f32(dims.x);
     let y = f32(row) / f32(dims.y);
     let z = 0.0;
 
-    let height = y; // * scene.time * 0.001;
+    let pos = vec3<f32>(f32(col), f32(row), z);
 
-    let res = vec4<f32>(0.0, x, z, 1.0);
+    // let height = y;
+    let height = waterDisplace(pos).y;
+
+    let res = vec4<f32>(0.0, height, 0.0, 1.0);
 
     textureStore(output, coord, res);
   }
@@ -370,6 +404,8 @@ export interface MeshHandle {
     numTris: number,
     // data
     transform: mat4,
+    modelMin: vec3,
+    modelMax: vec3,
     model?: Mesh,
 }
 
@@ -434,7 +470,6 @@ const vertexDataFormat: GPUVertexAttribute[] = [
     { shaderLocation: 3, offset: bytesPerVec3 * 3, format: 'uint32' }, // kind
 ];
 // these help us pack and use vertices in that format
-// export const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/ + 1)
 export const vertByteSize = bytesPerVec3/*pos*/ + bytesPerVec3/*color*/ + bytesPerVec3/*normal*/ + bytesPerUint32;
 export type VertexData = [vec3, vec3, vec3, VertexKind];
 // const _scratchF32 = new Float32Array(100);
@@ -448,9 +483,12 @@ export function setVertexData(buffer: Uint8Array, data: VertexData, byteOffset: 
 
 // TODO(@darzu): MODEL FORMAT
 // define the format of our models' uniform buffer
+// TODO(@darzu): move "kind" into uniform buffer (instead of per-vertex)
+// TODO(@darzu): handle alignment issues
 const meshUniByteSizeExact =
     bytesPerMat4 // transform
-    + bytesPerFloat // max draw distance;
+    + align(bytesPerVec3, 4) // mesh min
+    + align(bytesPerVec3, 4) // mesh max
 export const meshUniByteSizeAligned = align(meshUniByteSizeExact, 256); // uniform objects must be 256 byte aligned
 
 // TODO(@darzu): SCENE FORMAT
@@ -508,7 +546,7 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
     console.log(`   ${(maxVerts * vertByteSize / 1024).toFixed(1)} KB for verts`);
     console.log(`   ${(maxTris * bytesPerTri / 1024).toFixed(1)} KB for indices`);
     console.log(`   ${(maxMeshes * meshUniByteSizeAligned / 1024).toFixed(1)} KB for other object data`);
-    const unusedBytesPerModel = 256 - meshUniByteSizeExact % 256
+    const unusedBytesPerModel = meshUniByteSizeAligned - meshUniByteSizeExact;
     console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per object (${(unusedBytesPerModel * maxMeshes / 1024).toFixed(1)} KB total waste)`);
     const totalReservedBytes = maxVerts * vertByteSize + maxTris * bytesPerTri + maxMeshes * meshUniByteSizeAligned;
     console.log(`Total space reserved for objects: ${(totalReservedBytes / 1024).toFixed(1)} KB`);
@@ -577,7 +615,17 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         const vertNumOffset = builder.numVerts;
         const indicesNumOffset = builder.numTris * indicesPerTriangle;
 
+        const modelMin = vec3.fromValues(99999.0, 99999.0, 99999.0) as Float32Array
+        const modelMax = vec3.fromValues(-99999.0, -99999.0, -99999.0) as Float32Array
         m.pos.forEach((pos, i) => {
+            // track the mesh's min and max vert positions (it's AABB)
+            modelMin[0] = Math.min(pos[0], modelMin[0])
+            modelMin[1] = Math.min(pos[1], modelMin[1])
+            modelMin[2] = Math.min(pos[2], modelMin[2])
+            modelMax[0] = Math.max(pos[0], modelMax[0])
+            modelMax[1] = Math.max(pos[1], modelMax[1])
+            modelMax[2] = Math.max(pos[2], modelMax[2])
+
             const vOff = (builder.numVerts + i) * vertByteSize
             setVertexData(verticesMap, [pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0], VertexKind.normal], vOff)
         })
@@ -598,13 +646,35 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         const transform = mat4.create() as Float32Array;
 
         const uniOffset = allMeshes.length * meshUniByteSizeAligned;
-        uniformMap.set(transform, uniOffset)
+
+        // TODO(@darzu): debugging
+        // minPos[0] = 0.0;
+        // minPos[1] = 0.0;
+        // minPos[2] = 0.0;
+        // maxPos[0] = 0.0;
+        // maxPos[1] = 0.0;
+        // maxPos[2] = 0.0;
+
+        // TODO(@darzu): MESH FORMAT
+        // TODO(@darzu): seems each element needs to be 4-byte aligned
+        const f32Scratch = new Float32Array(4 * 4 + 4 + 4);
+        f32Scratch.set(transform, 0)
+        f32Scratch.set(modelMin, align(4 * 4, 4))
+        f32Scratch.set(modelMax, align(4 * 4 + 3, 4))
+        const u8Scratch = new Uint8Array(f32Scratch.buffer);
+
+        console.dir({ floatBuff: f32Scratch })
+        uniformMap.set(u8Scratch, uniOffset)
+
+        // console.dir(uniformMap.slice(uniOffset, uniOffset + bytesPerMat4 + bytesPerVec3 * 2))
 
         const res: MeshHandle = {
             vertNumOffset,
             indicesNumOffset,
             modelUniByteOffset: uniOffset,
             transform,
+            modelMin,
+            modelMax,
             numTris: m.tri.length,
             model: m,
             pool,
@@ -633,8 +703,26 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
 
 // utilities for mesh pools
 // TODO(@darzu): move into pool interface?
-export function gpuBufferWriteMeshTransform(m: MeshHandle) {
-    m.pool.device.queue.writeBuffer(m.pool._meshUniBuffer, m.modelUniByteOffset, (m.transform as Float32Array).buffer);
+// export function meshApplyTransform(m: MeshHandle) {
+//     m.pool.device.queue.writeBuffer(m.pool._meshUniBuffer, m.modelUniByteOffset, (m.transform as Float32Array).buffer);
+// }
+export function meshApplyUniformData(m: MeshHandle) {
+    // TODO(@darzu): for some reason doing this seperate for the transform and the AABB box didn't work...
+    // TODO(@darzu): MESH FORMAT
+    // TODO(@darzu): alignment requirements
+    // const offset = m.modelUniByteOffset + bytesPerMat4 /*transform*/
+    // m.pool.device.queue.writeBuffer(m.pool._meshUniBuffer, offset, (m.modelMin as Float32Array).buffer);
+    // m.pool.device.queue.writeBuffer(m.pool._meshUniBuffer, offset + align(bytesPerVec3, 4), (m.modelMax as Float32Array).buffer);
+
+    // const f32Scratch = new Float32Array(4 + 4);
+    const f32Scratch = new Float32Array(4 * 4 + 4 + 4);
+    f32Scratch.set(m.transform, 0)
+    // f32Scratch.set(m.modelMin, 0)
+    // f32Scratch.set(m.modelMax, 4)
+    f32Scratch.set(m.modelMin, align(4 * 4, 4))
+    f32Scratch.set(m.modelMax, align(4 * 4 + 3, 4))
+    const u8Scratch = new Uint8Array(f32Scratch.buffer);
+    m.pool.device.queue.writeBuffer(m.pool._meshUniBuffer, m.modelUniByteOffset, u8Scratch);
 }
 
 // create a directional light and compute it's projection (for shadows) and direction
@@ -697,7 +785,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     // place the ground
     mat4.translate(ground.transform, ground.transform, [0, -3, -8])
     mat4.scale(ground.transform, ground.transform, [10, 10, 10])
-    gpuBufferWriteMeshTransform(ground);
+    meshApplyUniformData(ground);
 
     // initialize our cubes; each will have a random axis of rotation
     const randomCubesAxis: vec3[] = []
@@ -706,7 +794,9 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         mat4.translate(m.transform, m.transform, [Math.random() * 20 - 10, Math.random() * 5, -Math.random() * 10 - 5])
         const axis: vec3 = vec3.normalize(vec3.create(), [Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5]);
         randomCubesAxis.push(axis)
-        gpuBufferWriteMeshTransform(m);
+        meshApplyUniformData(m);
+        // TODO(@darzu): debug
+        // meshApplyMinMaxPos(m);
     }
 
     // init grass
@@ -746,7 +836,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     const cameraOffset = mat4.create();
     pitch(cameraOffset, -Math.PI / 8)
     // mat4.rotateY(player.transform, player.transform, Math.PI * 1.25)
-    gpuBufferWriteMeshTransform(player)
+    meshApplyUniformData(player)
 
     // write the light data to the scene uniform buffer
     device.queue.writeBuffer(sceneUniBuffer, bytesPerMat4 * 1, (lightViewProjMatrix as Float32Array).buffer);
@@ -1098,7 +1188,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         pitch(cameraOffset, -mouseY * 0.01);
 
         // apply the players movement by writting to the model uniform buffer
-        gpuBufferWriteMeshTransform(player);
+        meshApplyUniformData(player);
 
         // calculate and write our view and project matrices
         const viewLocMatrix = mat4.create()
@@ -1115,7 +1205,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
             const m = randomCubes[i]
             const axis = randomCubesAxis[i]
             mat4.rotate(m.transform, m.transform, Math.PI * 0.01, axis);
-            gpuBufferWriteMeshTransform(m);
+            meshApplyUniformData(m);
         }
 
         // update grass
@@ -1325,6 +1415,7 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
     // const color: vec3 = [Math.random(), Math.random(), Math.random()]
 
     const spacing = 1.0;
+    const maxHeight = 10.0; // TODO(@darzu): compute?
 
     for (let xi = 0; xi < mapXSize; xi++) {
         for (let zi = 0; zi < mapZSize; zi++) {
@@ -1407,6 +1498,8 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
 
         // used and updated elsewhere
         transform: mat4.create(),
+        modelMin: vec3.fromValues(0, 0, 0),
+        modelMax: vec3.fromValues(mapXSize * spacing, maxHeight, mapZSize * spacing),
 
         pool: builder.poolHandle,
         // TODO(@darzu):
@@ -1429,7 +1522,9 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
     // initial position
     mat4.translate(waterMesh.transform, waterMesh.transform, [-(mapXSize * spacing) * 0.5, -4, -(mapZSize * spacing) * 0.5])
 
-    pool.allMeshes.forEach(m => gpuBufferWriteMeshTransform(m));
+    // TODO(@darzu): these could be done while the builder has mapped buffers
+    pool.allMeshes.forEach(m => meshApplyUniformData(m));
+    // pool.allMeshes.forEach(m => meshApplyMinMaxPos(m));
 
     const water: WaterSystem = {
         getMeshPools: () => [pool]
