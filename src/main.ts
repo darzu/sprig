@@ -16,7 +16,8 @@ import {
   _doesOverlaps,
   _enclosedBys,
   _lastCollisionTestTimeMs,
-} from "./phys_collision.js";
+} from "./phys_broadphase.js";
+import { _motionPairsLen } from "./phys.js";
 
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
@@ -63,12 +64,14 @@ const PLANE_MESH = unshareProvokingVertices(
 );
 const PLANE_AABB = getAABBFromMesh(PLANE_MESH);
 
+const DARK_GRAY = vec3.fromValues(0.02, 0.02, 0.02);
+const LIGHT_GRAY = vec3.fromValues(0.2, 0.2, 0.2);
 class Plane extends GameObject {
   color: vec3;
 
   constructor(id: number, creator: number) {
     super(id, creator);
-    this.color = vec3.fromValues(0.02, 0.02, 0.02);
+    this.color = DARK_GRAY;
     this.localAABB = PLANE_AABB;
   }
 
@@ -81,11 +84,11 @@ class Plane extends GameObject {
   }
 
   serializeFull(buffer: Serializer) {
-    buffer.writeVec3(this.location);
+    buffer.writeVec3(this.motion.location);
   }
 
   deserializeFull(buffer: Deserializer) {
-    buffer.readVec3(this.location);
+    buffer.readVec3(this.motion.location);
   }
 
   serializeDynamic(_buffer: Serializer) {
@@ -174,11 +177,12 @@ abstract class Cube extends GameObject {
 class Bullet extends Cube {
   constructor(id: number, creator: number) {
     super(id, creator);
-    this.color = vec3.fromValues(0.1, 0.1, 0.8);
+    this.color = vec3.fromValues(0.3, 0.3, 0.8);
     this.localAABB = getAABBFromMesh(this.mesh());
   }
 
   mesh(): Mesh {
+    // TODO(@darzu): this should be computed only once.
     return scaleMesh(super.mesh(), 0.3);
   }
 
@@ -187,10 +191,10 @@ class Bullet extends Cube {
   }
 
   serializeFull(buffer: Serializer) {
-    buffer.writeVec3(this.location);
-    buffer.writeVec3(this.linear_velocity);
-    buffer.writeQuat(this.rotation);
-    buffer.writeVec3(this.angular_velocity);
+    buffer.writeVec3(this.motion.location);
+    buffer.writeVec3(this.motion.linearVelocity);
+    buffer.writeQuat(this.motion.rotation);
+    buffer.writeVec3(this.motion.angularVelocity);
   }
 
   deserializeFull(buffer: Deserializer) {
@@ -198,17 +202,17 @@ class Bullet extends Cube {
     if (!buffer.dummy) {
       this.snapLocation(location);
     }
-    buffer.readVec3(this.linear_velocity);
+    buffer.readVec3(this.motion.linearVelocity);
     let rotation = buffer.readQuat()!;
     if (!buffer.dummy) {
       this.snapRotation(rotation);
     }
-    buffer.readVec3(this.angular_velocity);
+    buffer.readVec3(this.motion.angularVelocity);
   }
 
   serializeDynamic(buffer: Serializer) {
     // rotation and location can both change, but we only really care about syncing location
-    buffer.writeVec3(this.location);
+    buffer.writeVec3(this.motion.location);
   }
 
   deserializeDynamic(buffer: Deserializer) {
@@ -234,10 +238,10 @@ class Player extends Cube {
   }
 
   serializeFull(buffer: Serializer) {
-    buffer.writeVec3(this.location);
-    buffer.writeVec3(this.linear_velocity);
-    buffer.writeQuat(this.rotation);
-    buffer.writeVec3(this.angular_velocity);
+    buffer.writeVec3(this.motion.location);
+    buffer.writeVec3(this.motion.linearVelocity);
+    buffer.writeQuat(this.motion.rotation);
+    buffer.writeVec3(this.motion.angularVelocity);
   }
 
   deserializeFull(buffer: Deserializer) {
@@ -245,12 +249,12 @@ class Player extends Cube {
     if (!buffer.dummy) {
       this.snapLocation(location);
     }
-    buffer.readVec3(this.linear_velocity);
+    buffer.readVec3(this.motion.linearVelocity);
     let rotation = buffer.readQuat()!;
     if (!buffer.dummy) {
       this.snapRotation(rotation);
     }
-    buffer.readVec3(this.angular_velocity);
+    buffer.readVec3(this.motion.angularVelocity);
   }
 
   serializeDynamic(buffer: Serializer) {
@@ -294,16 +298,47 @@ class CubeGameState extends GameState<Inputs> {
 
     // create local mesh prototypes
     let bulletProtoObj = this.renderer.addObject(
-      new Bullet(this.id(), this.me)
+      new Bullet(this.newId(), this.me)
     );
     bulletProtoObj.obj.transform = new Float32Array(16); // zero the transforms so it doesn't render
     bulletProtoObj.handle.transform = new Float32Array(16);
     this.bulletProto = bulletProtoObj.handle;
 
     if (createObjects) {
-      let plane = new Plane(this.id(), this.me);
-      plane.location = vec3.fromValues(0, -3, -8);
-      this.addObject(plane);
+      // create checkered grid
+      const NUM_PLANES_X = 1;
+      const NUM_PLANES_Z = 1;
+      for (let x = 0; x < NUM_PLANES_X; x++) {
+        for (let z = 0; z < NUM_PLANES_Z; z++) {
+          let plane = new Plane(this.newId(), this.me);
+          const xPos = (x - NUM_PLANES_X / 2) * 20 + 10;
+          const zPos = (z - NUM_PLANES_Z / 2) * 20;
+          const parity = !!((x + z) % 2);
+          plane.motion.location = vec3.fromValues(xPos, -10, zPos);
+          // plane.motion.location = vec3.fromValues(xPos + 10, -3, 12 + zPos);
+          if (parity) plane.color = LIGHT_GRAY;
+          this.addObject(plane);
+        }
+      }
+
+      // create stack of boxes
+      const BOX_STACK_COUNT = 10;
+      for (let i = 0; i < BOX_STACK_COUNT; i++) {
+        let b = new Bullet(this.newId(), this.me);
+        // b.motion.location = vec3.fromValues(0, 5 + i * 2, -2);
+        b.motion.location = vec3.fromValues(
+          Math.random() * -10 + 10 - 5,
+          i * 2,
+          Math.random() * -10 - 5
+        );
+        b.color = vec3.fromValues(Math.random(), Math.random(), Math.random());
+        b.motion.linearVelocity[1] = -0.03;
+        this.addObject(b);
+        // TODO(@darzu): debug
+        console.log(`box: ${b.id}`);
+      }
+
+      // create player
       this.addPlayer();
       // have added our objects, can unmap buffers
       // TODO(@darzu): debug
@@ -313,7 +348,7 @@ class CubeGameState extends GameState<Inputs> {
   }
 
   playerObject(playerId: number): GameObject {
-    let p = new Player(this.id(), this.me);
+    let p = new Player(this.newId(), this.me);
     p.authority = playerId;
     p.authority_seq = 1;
     return p;
@@ -351,59 +386,59 @@ class CubeGameState extends GameState<Inputs> {
   stepGame(dt: number, inputs: Inputs) {
     if (this.player()) {
       // move player
-      this.player().linear_velocity = vec3.fromValues(0, 0, 0);
+      this.player().motion.linearVelocity = vec3.fromValues(0, 0, 0);
       let playerSpeed = inputs.accel ? 0.005 : 0.001;
       let n = playerSpeed * dt;
       if (inputs.left) {
         vec3.add(
-          this.player().linear_velocity,
-          this.player().linear_velocity,
+          this.player().motion.linearVelocity,
+          this.player().motion.linearVelocity,
           vec3.fromValues(-n, 0, 0)
         );
       }
       if (inputs.right) {
         vec3.add(
-          this.player().linear_velocity,
-          this.player().linear_velocity,
+          this.player().motion.linearVelocity,
+          this.player().motion.linearVelocity,
           vec3.fromValues(n, 0, 0)
         );
       }
       if (inputs.forward) {
         vec3.add(
-          this.player().linear_velocity,
-          this.player().linear_velocity,
+          this.player().motion.linearVelocity,
+          this.player().motion.linearVelocity,
           vec3.fromValues(0, 0, -n)
         );
       }
       if (inputs.back) {
         vec3.add(
-          this.player().linear_velocity,
-          this.player().linear_velocity,
+          this.player().motion.linearVelocity,
+          this.player().motion.linearVelocity,
           vec3.fromValues(0, 0, n)
         );
       }
       if (inputs.up) {
         vec3.add(
-          this.player().linear_velocity,
-          this.player().linear_velocity,
+          this.player().motion.linearVelocity,
+          this.player().motion.linearVelocity,
           vec3.fromValues(0, n, 0)
         );
       }
       if (inputs.down) {
         vec3.add(
-          this.player().linear_velocity,
-          this.player().linear_velocity,
+          this.player().motion.linearVelocity,
+          this.player().motion.linearVelocity,
           vec3.fromValues(0, -n, 0)
         );
       }
       vec3.transformQuat(
-        this.player().linear_velocity,
-        this.player().linear_velocity,
-        this.player().rotation
+        this.player().motion.linearVelocity,
+        this.player().motion.linearVelocity,
+        this.player().motion.rotation
       );
       quat.rotateY(
-        this.player().rotation,
-        this.player().rotation,
+        this.player().motion.rotation,
+        this.player().motion.rotation,
         -inputs.mouseX * 0.001
       );
       quat.rotateX(
@@ -414,27 +449,27 @@ class CubeGameState extends GameState<Inputs> {
     }
     // add bullet on lclick
     if (inputs.lclick) {
-      let bullet = new Bullet(this.id(), this.me);
+      let bullet = new Bullet(this.newId(), this.me);
       let bullet_axis = vec3.fromValues(0, 0, -1);
       bullet_axis = vec3.transformQuat(
         bullet_axis,
         bullet_axis,
-        this.player().rotation
+        this.player().motion.rotation
       );
-      bullet.location = vec3.clone(this.player().location);
-      bullet.rotation = quat.clone(this.player().rotation);
-      bullet.linear_velocity = vec3.scale(
-        bullet.linear_velocity,
+      bullet.motion.location = vec3.clone(this.player().motion.location);
+      bullet.motion.rotation = quat.clone(this.player().motion.rotation);
+      bullet.motion.linearVelocity = vec3.scale(
+        bullet.motion.linearVelocity,
         bullet_axis,
         0.02
       );
-      bullet.linear_velocity = vec3.add(
-        bullet.linear_velocity,
-        bullet.linear_velocity,
-        this.player().linear_velocity
+      bullet.motion.linearVelocity = vec3.add(
+        bullet.motion.linearVelocity,
+        bullet.motion.linearVelocity,
+        this.player().motion.linearVelocity
       );
-      bullet.angular_velocity = vec3.scale(
-        bullet.angular_velocity,
+      bullet.motion.angularVelocity = vec3.scale(
+        bullet.motion.angularVelocity,
         bullet_axis,
         0.01
       );
@@ -447,31 +482,31 @@ class CubeGameState extends GameState<Inputs> {
         for (let yi = 0; yi <= SPREAD; yi++) {
           const x = (xi - SPREAD / 2) * GAP;
           const y = (yi - SPREAD / 2) * GAP;
-          let bullet = new Bullet(this.id(), this.me);
+          let bullet = new Bullet(this.newId(), this.me);
           let bullet_axis = vec3.fromValues(0, 0, -1);
           bullet_axis = vec3.transformQuat(
             bullet_axis,
             bullet_axis,
-            this.player().rotation
+            this.player().motion.rotation
           );
-          bullet.location = vec3.add(
+          bullet.motion.location = vec3.add(
             vec3.create(),
-            this.player().location,
+            this.player().motion.location,
             vec3.fromValues(x, y, 0)
           );
-          bullet.rotation = quat.clone(this.player().rotation);
-          bullet.linear_velocity = vec3.scale(
-            bullet.linear_velocity,
+          bullet.motion.rotation = quat.clone(this.player().motion.rotation);
+          bullet.motion.linearVelocity = vec3.scale(
+            bullet.motion.linearVelocity,
             bullet_axis,
             0.005
           );
-          bullet.linear_velocity = vec3.add(
-            bullet.linear_velocity,
-            bullet.linear_velocity,
-            this.player().linear_velocity
+          bullet.motion.linearVelocity = vec3.add(
+            bullet.motion.linearVelocity,
+            bullet.motion.linearVelocity,
+            this.player().motion.linearVelocity
           );
-          bullet.angular_velocity = vec3.scale(
-            bullet.angular_velocity,
+          bullet.motion.angularVelocity = vec3.scale(
+            bullet.motion.angularVelocity,
             bullet_axis,
             0.01
           );
@@ -489,11 +524,11 @@ class CubeGameState extends GameState<Inputs> {
     // check collisions
     for (let o of Object.values(this.objects)) {
       // TODO: consider a helper method to get only live objects
-      if (o instanceof Bullet && !o.deleted) {
-        if (this.collidesWith[o.id]) {
-          let collidingObjects = this.collidesWith[o.id].map(
-            (id) => this.objects[id]
-          );
+      if (o instanceof Bullet) {
+        if (this.collidesWith.has(o.id)) {
+          let collidingObjects = this.collidesWith
+            .get(o.id)!
+            .map((id) => this.objects[id]);
           // find other bullets this bullet is colliding with. only want to find each collision once
           let collidingBullets = collidingObjects.filter(
             (obj) => obj instanceof Bullet && obj.id > o.id
@@ -520,7 +555,8 @@ class CubeGameState extends GameState<Inputs> {
   }
 
   runEvent(event: GameEvent) {
-    console.log(`Running event of type ${EventType[event.type]}`);
+    // return; // TODO(@darzu): DEBUG, this is very slow when done with >100s of objs.
+    // console.log(`Running event of type ${EventType[event.type]}`);
     switch (event.type as EventType) {
       case EventType.BulletBulletCollision:
         for (let id of event.objects) {
@@ -529,8 +565,8 @@ class CubeGameState extends GameState<Inputs> {
             // delete all bullet objects in collision
             // TODO: figure out how object deletion should really work
             this.removeObject(obj);
-          } else {
-            throw `Bad id ${id} in event ${event.id}`;
+          } else if (!this.deletedObjects[id]) {
+            throw `Bad id ${id} in event ${event.id} (1)`;
           }
         }
         break;
@@ -543,8 +579,8 @@ class CubeGameState extends GameState<Inputs> {
             this.removeObject(obj);
           } else if (obj && obj instanceof Player) {
             vec3.add(obj.color, obj.color, vec3.fromValues(0.1, 0, 0));
-          } else {
-            throw `Bad id ${id} in event ${event.id}`;
+          } else if (!this.deletedObjects[id]) {
+            throw `Bad id ${id} in event ${event.id} (2)`;
           }
         }
         break;
@@ -558,11 +594,11 @@ class CubeGameState extends GameState<Inputs> {
     //understand quaternions.
     let viewMatrix = mat4.create();
     if (this.player()) {
-      mat4.translate(viewMatrix, viewMatrix, this.player().location);
+      mat4.translate(viewMatrix, viewMatrix, this.player().motion.location);
       mat4.multiply(
         viewMatrix,
         viewMatrix,
-        mat4.fromQuat(mat4.create(), this.player().rotation)
+        mat4.fromQuat(mat4.create(), this.player().motion.rotation)
       );
     }
     mat4.multiply(
@@ -699,6 +735,9 @@ function inputsReader(canvas: HTMLCanvasElement): () => Inputs {
 // ms per network sync (should be the same for all servers)
 const NET_DT = 1000.0 / 20;
 
+// local simulation speed
+const SIM_DT = 1000.0 / 60;
+
 async function startGame(host: string | null) {
   let hosting = host === null;
   let canvas = document.getElementById("sample-canvas") as HTMLCanvasElement;
@@ -712,6 +751,16 @@ async function startGame(host: string | null) {
     onWindowResize();
   };
   onWindowResize();
+
+  // This tells Chrome that the canvas should be pixelated instead of blurred.
+  //    this looks better in lower resolution games and gives us full control over
+  //    resolution and blur.
+  // HACK: for some odd reason, setting this on a timeout is the only way I can get
+  //    Chrome to accept this property. Otherwise it'll only apply after the canvas
+  //    is resized by the user. (Version 94.0.4604.0 (Official Build) canary (arm64))
+  setTimeout(() => {
+    canvas.style.imageRendering = `pixelated`;
+  }, 50);
 
   const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
 
@@ -755,36 +804,46 @@ async function startGame(host: string | null) {
   }
   canvas.addEventListener("click", doLockMouse);
 
-  const controlsStr = `controls: WASD, shift/c, mouse, spacebar`;
+  const controlsStr = `[WASD shift/c mouse spacebar]`;
   let avgJsTime = 0;
   let avgNetTime = 0;
+  let avgSimTime = 0;
   let avgFrameTime = 0;
   let avgWeight = 0.05;
   let net: Net<Inputs> | null = null;
-  let time_to_next_sync = NET_DT;
   let previous_frame_time = start_of_time;
+  let net_time_accumulator = 0;
+  let sim_time_accumulator = 0;
   let frame = () => {
     let frame_start_time = performance.now();
-    let time_to_consume = frame_start_time - previous_frame_time;
-    let net_time = 0;
-    while (true) {
-      // need to do some game steps before we render
-      if (time_to_consume > time_to_next_sync) {
-        gameState.step(time_to_next_sync, inputs());
-        let before_net = performance.now();
-        if (net) {
-          net.updateState();
-          net.sendStateUpdates();
-        }
-        net_time += performance.now() - before_net;
-        time_to_consume = time_to_consume - time_to_next_sync;
-        time_to_next_sync = NET_DT;
-      } else {
-        gameState.step(time_to_consume, inputs());
-        time_to_next_sync = time_to_next_sync - time_to_consume;
-        break;
-      }
+    const dt = frame_start_time - previous_frame_time;
+
+    // simulation step(s)
+    sim_time_accumulator += dt;
+    sim_time_accumulator = Math.min(sim_time_accumulator, SIM_DT * 2);
+    let sim_time = 0;
+    while (sim_time_accumulator > SIM_DT) {
+      let before_sim = performance.now();
+      gameState.step(SIM_DT, inputs());
+      sim_time_accumulator -= SIM_DT;
+      sim_time += performance.now() - before_sim;
     }
+
+    // network step(s)
+    net_time_accumulator += dt;
+    net_time_accumulator = Math.min(net_time_accumulator, NET_DT * 2);
+    let net_time = 0;
+    while (net_time_accumulator > NET_DT) {
+      let before_net = performance.now();
+      if (net) {
+        net.updateState();
+        net.sendStateUpdates();
+      }
+      net_time += performance.now() - before_net;
+      net_time_accumulator -= NET_DT;
+    }
+
+    // render
     gameState.renderFrame();
     let jsTime = performance.now() - frame_start_time;
     let frameTime = frame_start_time - previous_frame_time;
@@ -805,6 +864,9 @@ async function startGame(host: string | null) {
     avgNetTime = avgNetTime
       ? (1 - avgWeight) * avgNetTime + avgWeight * net_time
       : net_time;
+    avgSimTime = avgSimTime
+      ? (1 - avgWeight) * avgSimTime + avgWeight * sim_time
+      : sim_time;
     const avgFPS = 1000 / avgFrameTime;
     const debugTxt = debugDiv.firstChild!;
     // PERF NOTE: using ".innerText =" creates a new DOM element each frame, whereas
@@ -812,15 +874,23 @@ async function startGame(host: string | null) {
     //    means we'll need to do more work to get line breaks.
     debugTxt.nodeValue =
       controlsStr +
-      ` (js: ${avgJsTime.toFixed(2)}ms, net: ${avgNetTime.toFixed(2)}ms, ` +
-      `broad:${_lastCollisionTestTimeMs.toFixed(
-        1
-      )}ms (o:${_doesOverlaps}, e:${_enclosedBys}, c: ${_cellChecks}), fps: ${avgFPS.toFixed(
-        1
-      )}, ` +
-      `buffers: r=${reliableBufferSize}/u=${unreliableBufferSize}, ` +
-      `dropped updates: ${numDroppedUpdates}` +
-      `objects=${gameState.numObjects}) ${usingWebGPU ? "WebGPU" : "WebGL"}`;
+      ` ` +
+      `js:${avgJsTime.toFixed(2)}ms ` +
+      `net:${avgNetTime.toFixed(2)}ms ` +
+      `sim:${avgSimTime.toFixed(2)}ms ` +
+      `broad:(${_lastCollisionTestTimeMs.toFixed(1)}ms ` +
+      `o:${_doesOverlaps} e:${_enclosedBys} c:${_cellChecks}) ` +
+      `fps:${avgFPS.toFixed(1)} ` +
+      `buffers:(r=${reliableBufferSize}/u=${unreliableBufferSize}) ` +
+      `dropped:${numDroppedUpdates} ` +
+      `objects:${gameState.numObjects} ` +
+      `${usingWebGPU ? "WebGPU" : "WebGL"}`;
+    // // TODO(@darzu): DEBUG
+    // debugTxt.nodeValue =
+    //   `sim:${avgSimTime.toFixed(2)}ms ` +
+    //   `broad:${_lastCollisionTestTimeMs.toFixed(1)}ms ` +
+    //   `pairs:${_motionPairsLen} ` +
+    //   `o:${_doesOverlaps} e:${_enclosedBys} `;
     requestAnimationFrame(frame);
   };
   if (ENABLE_NET) {
