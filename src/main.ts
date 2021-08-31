@@ -231,26 +231,14 @@ function unshareVertices(input: MeshModel): MeshModel {
     return { pos, tri, colors: input.colors }
 }
 
-function computeNormal([p1, p2, p3]: [vec3, vec3, vec3]): vec3 {
-    // https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
-    // cross product of two edges
-    // edge 1
-    const u: vec3 = [0, 0, 0]
-    vec3.sub(u, p2, p1)
-    // edge 2
-    const v: vec3 = [0, 0, 0]
-    vec3.sub(v, p3, p1)
-    // cross
-    const n: vec3 = [0, 0, 0]
-    vec3.cross(n, u, v)
-
-    vec3.normalize(n, n)
-
-    return n;
-    }
 function computeNormals(m: MeshModel): vec3[] {
     const triPoses = m.tri.map(([i0, i1, i2]) => [m.pos[i0], m.pos[i1], m.pos[i2]] as [vec3, vec3, vec3])
-    return triPoses.map(computeNormal)
+    return triPoses.map(([p1, p2, p3]) => {
+        // cross product of two edges, https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
+        const n = vec3.cross(vec3.create(), vec3.sub(vec3.create(), p2, p1), vec3.sub(vec3.create(), p3, p1))
+        vec3.normalize(n, n)
+        return n;
+    })
 }
 
 function addMeshToBuffers(
