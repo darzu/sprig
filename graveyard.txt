@@ -1,0 +1,185 @@
+
+
+// refreshCode()
+
+// let testSvg = document.createElementNS("http://www.w3.org/2000/svg", "path")
+// testSvg.setAttribute("d", "m 200,300 a 29 29 0 0 1 29 29 a 29 29 0 0 1 -29 29 z") // h -0 a 29 29 0 0 1 0 -58 z")
+// world.appendChild(testSvg)
+
+// let testSvg2 = document.createElementNS("http://www.w3.org/2000/svg", "path")
+// testSvg2.setAttribute("d", "m 200,370 q 29,0 29,29 q 0,29 -29,29 h -0 q -29,0 -29,-29 q 0,-29 29,-29 z")
+// world.appendChild(testSvg2)
+
+// let testSvg3 = document.createElementNS("http://www.w3.org/2000/svg", "path")
+// testSvg3.setAttribute("d", `m 200,460 ${draw.l2tlCirc(29)} h 10 ${draw.t2trCirc(29)} v 10 ${draw.r2brCirc(29)} h -10 ${draw.b2blCirc(29)} z`) // h -0 a 29 29 0 0 1 0 -58 z")
+// world.appendChild(testSvg3)
+
+
+
+    const contrastTarget = 4.5
+    let fillClr: Color = r.color;
+    if (CLAMP_COLORS)
+        fillClr = contrastClamp(toLCH(r.color), white, contrastTarget - 0.1, contrastTarget + 1, ({ l, c, h }) => clampLCH({ l: l - 1, c, h }))
+            ?? contrastClamp(toLCH(r.color), white, contrastTarget - 0.1, contrastTarget + 1, ({ l, c, h }) => clampLCH({ l: l + 1, c, h }))
+            ?? parseHex("#000")
+    let strokeClr: Color;
+    if (CLAMP_COLORS)
+        strokeClr = contrastClamp(toLCH(r.color), white, contrastTarget - 0.1 + 3, contrastTarget + 3 + 1, ({ l, c, h }) => clampLCH({ l: l - 1, c, h }))
+            ?? contrastClamp(toLCH(r.color), white, contrastTarget - 0.1 + 3, contrastTarget + 3 + 1, ({ l, c, h }) => clampLCH({ l: l + 1, c, h }))
+            ?? parseHex("#000")
+    else {
+        strokeClr = toLCH(r.color)
+        strokeClr.l -= 10;
+        strokeClr = clampLCH(strokeClr)
+    }
+
+
+    /** Alias type for value that can be null */
+export type Nullable<T> = T | null;
+/**
+ * Alias type for number that are floats
+ * @ignorenaming
+ */
+export type float = number;
+
+/** Alias type for number array or Float32Array */
+export type FloatArray = number[] | Float32Array;
+/** Alias type for number array or Float32Array or Int32Array or Uint32Array or Uint16Array */
+export type IndicesArray = number[] | Int32Array | Uint32Array | Uint16Array;
+
+
+/**
+ * Type modifier to make all the properties of an object Readonly recursively
+ */
+export type DeepImmutable<T> = T extends Primitive ? T : T extends Array<infer U> ? DeepImmutableArray<U> : DeepImmutableObject<T>;
+
+
+
+blk.setAttribute("d", path);
+
+world.appendChild(blk2)
+world.appendChild(blk)
+
+/*
+{
+          kind: "statement",
+          category: 0,
+          nodes: ["set", {
+            kind: "enum",
+            category: 1,
+            values: ["foobar", "baz"],
+          }, "position", "to", "x", {
+              kind: "number",
+              category: 1,
+              value: 48
+            }, "y", {
+              kind: "number",
+              category: 1,
+              value: 52
+            }]
+        }, {
+          kind: "statement",
+          category: 0,
+          nodes: ["set", "life", "to", {
+            kind: "number",
+            category: 1,
+            value: 4
+          }]
+        }, {
+          kind: "statement",
+          category: 0,
+          nodes: ["move", {
+            kind: "enum",
+            category: 1,
+            values: ["foobar", "baz"],
+          }, "with", "buttons", "vx", {
+              kind: "number",
+              category: 1,
+              value: 370
+            }, "vy", {
+              kind: "number",
+              category: 1,
+              value: 340
+            }]
+        }
+*/
+
+
+let renderTreeReference =
+{
+  cornerShape: "square",
+  color: "green",
+  size: [10, 10],
+  position: [10, 10], // absolute or relative?
+  nodes: [
+    "on", "start",
+    [ // mouth is a list of blocks, single blocks fill a hole
+      {
+        cornerShape: "square",
+        color: "red",
+        nodes: [
+          "set",
+          {
+            cornerShape: "square",
+            color: "red",
+            kind: "enum",
+            value: "foobar"
+          },
+          "to", "\n",
+          {
+            cornerShape: "circular",
+            color: "blue",
+            nodes: [
+              "new", "sprite",
+              {
+                cornerShape: "circular",
+                color: "grey",
+                size: [10, 10],
+                // TODO(dz): include position? Yes. Assume it's needed unless we find a way to remove that need.
+                // wait no. can't if we're doing children first
+                position: [10, 10],
+                kind: "image",
+                value: ":)",
+              },
+              "of", "\n", "kind",
+              {
+                cornerShape: "square",
+                color: "blue",
+                size: [10, 10],
+                position: [10, 10],
+                kind: "enum",
+                value: "player"
+              }
+            ]
+          }
+        ]
+      },
+    ]
+  ]
+}
+
+
+
+//`hsl(${cat.hue}, 60%, 50%)`
+let css = ''
+for (let cName of Object.keys(BlockCategoryProps)) {
+  let props = BlockCategoryProps[cName]
+  css += `
+  .${cName}-block {
+    stroke: hsl(${props.hue}, 71.3%, 32.7);
+    fill: hsl(${props.hue}, 71.3%, 43.7);
+  }
+  `
+}
+var cssNode = document.createElement('style');
+cssNode.innerHTML = css;
+document.body.appendChild(cssNode);
+
+
+
+let blk = document.createElementNS("http://www.w3.org/2000/svg", "path")
+
+let path = `M 100,400 v -50 ${l2tlCorn} h 50 ${l2rNotch} h 50 ${t2trCorn} v 50 ${r2brCorn} h -50 ${r2lNotch} h -8 ${b2tlCorn} v 50 ${r2blCorn} h 8 ${l2rNotch} h50 ${t2trCorn} v 50 ${r2brCorn} h -150 ${b2blCorn} v -10 Z`
+
+blk.setAttribute("d", path);
+world.appendChild(blk);

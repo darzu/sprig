@@ -1,0 +1,368 @@
+document.write("<h1>Hello, World!</h1>");
+
+/*
+<xml xmlns="http://www.w3.org/1999/xhtml">
+    <variables></variables>
+    <block type="event_with_action" x="72" y="83">
+      <value name="someNumber">
+        <shadow type="math_number">
+          <field name="NUM">0</field>
+        </shadow>
+      </value>
+    </block>
+  </xml>
+
+=>
+*/
+
+// RESEARCH:
+// block node types:
+//    label, hole, nested block, image, toggle, text entry, number entry, 
+// dropdowns:
+//    variables, enum values (math operators, sprite kinds, animation state) 
+//    some are drag-out-able, some aren't
+// needs to support custom field editors
+// what to do about "+" and "-" ?
+// mouth hole vs inline hole
+//    if-else statements have multiple mouths
+// IDEAS:
+// - instead of function blocks, have a "create a block" editor
+
+// REQUIREMENTS:
+// - WordWrap
+//  - can WordWrap within labels
+// - Auto-format by default
+// - "Holes" for clicking to add
+// - custom field editors
+// - custom block inner rendering
+// - highlighting
+//    - hover (white) and click (yellow)
+// - context options: Duplicate, Add Comment, Delete Block, Help, Delete All
+// - undo / redo
+// NICE TO HAVE:
+// - keyboard nav
+// - equation builder
+// 
+// BLOCK ORGANIZATION:
+// - Tabs? Collapsing code blocks?
+// - columns, namable
+//    - two finger swipe / horizontal scroll changes column
+
+// BLOCK STRUCTURE:
+// TYPES: control flow (can have mouth), statement, expression
+// namespace Block {
+//   type Shape = "statement" | "event"
+//   type Label = string
+//   type Constraints = "none" // type, shape, 
+//   interface HoleDef {
+//     constraints: Constraints
+//   }
+//   interface CustomNode {
+//     // e.g. image
+//   }
+//   interface MouthHole {
+//   }
+//   type NodeDef = Label | HoleDef | CustomNode | MouthHole
+//   interface BlockDef {
+//     shape: Shape;
+//     nodes: NodeDef[];
+//   }
+// }
+
+// block definition vs block instance
+
+// each block is an svg element?
+// goals: drag and drop, canvas movement
+
+// RENDERING:
+// corner shapes: triangle, "circle", rounded-box
+// stack divot
+// mouth
+// function "hat"
+
+// need:
+// function to draw corner types
+// function to run horizontal
+// function to run verticle
+// function to draw hats and shoes
+// 
+
+// world.addEventListener(
+
+function pCurve(p1: [number, number], p2: [number, number], smooth: number): string {
+  const v2 = (xy: [number, number]): string => { return `${xy.x}, ${xy.y}` };
+  let [x1, y1] = p1;
+  let [x2, y2] = p2
+  let yLen = (y2 - y1);
+  let c1: [number, number] = [x1, y1 + yLen * smooth];
+  let c2: [number, number] = [x2, y2 - yLen * smooth];
+  let p = `M${v2(p1)} C${v2(c1)} ${v2(c2)} ${v2(p2)}`;
+  return p;
+}
+
+// start block: 
+/* 
+m 0,4 // start
+A 4,4 0 0,1 4,0 // top-left corner
+H 156 // top
+a 4,4 0 0,1 4,4 // top-right corner
+v 40  // right 1
+a 4,4 0 0,1 -4,4 // bottom-right corner
+H 64 // inside top
+// start notch (height of 6, corner radius of 4)
+c -2,0 -3,1 -4,2 
+l -4,4 
+c -1,1 -2,2 -4,2 
+h -12 
+c -2,0 -3,-1 -4,-2 
+l -4,-4 
+c -1,-1 -2,-2 -4,-2 
+// end notch
+// inside top notch indent
+h -8  
+// inside top-left corner
+a 4,4 0 0,0 -4,4 
+// inside wall
+v 16 
+// inside bottom-left
+a 4,4 0 0,0 4,4 
+// inside bottom notch indent
+h  8 
+// start bottom notch
+c 2,0 3,1 4,2 
+l 4,4 
+c 1,1 2,2 4,2 
+h 12 
+c 2,0 3,-1 4,-2 
+l 4,-4 
+c 1,-1 2,-2 4,-2 
+// end bottom notch
+// inside bottom
+H 156 
+// corner
+a 4,4 0 0,1 4,4 
+// right
+v 24  
+// corner
+a 4,4 0 0,1 -4,4 
+// bottom
+H 4 
+a 4,4 0 0,1 -4,-4 
+z */
+let blk2 = document.createElementNS("http://www.w3.org/2000/svg", "path")
+// let path = pCurve([10, 10], [200, 200], 0.5);
+let w = 100;
+// let path = `M 100 100 q 0 -20, 20 -20 h 100 q 20 0, 20 20 v 100 q 0 20, -20 20 h -100 q -20 0, -20 -20 v -100`;
+let refNotch = `c 10,0 15,5 20,10 
+l 20,20 
+c 5,5 10,10 20,10 
+h 60 
+c 10,0 15,-5 20,-10 
+l 20,-20 
+c 5,-5 10,-10 20,-10 `.replace("\n", " ");
+refNotch = `c 2,0 3,1 4,2 
+l 4,4 
+c 1,1 2,2 4,2 
+h 12 
+c 2,0 3,-1 4,-2 
+l 4,-4 
+c 1,-1 2,-2 4,-2  `.replace("\n", " ")
+let r2 = 4;
+let path2 = `M 100 252 v -50 a ${r2} ${r2}, 0, 0 1, ${r2} -${r2} h 50 ${refNotch} h 50 v 50 Z`
+blk2.setAttribute("d", path2);
+// FYI: arcs suck
+
+
+// toughest block: wall above, wall below, notch hat and show, triangle corners
+
+// should pre-bake a bunch of paths for common block shapes
+
+// WORD WRAPPING
+// have a standard indent
+let nodes: NodeSize[] = [
+  [50, 50],
+  [60, 60],
+  // "\n",
+  [100, 30],
+  [
+    [50, 50],
+    // "\n",
+    [30, 30],
+  ],
+  [20, 20]
+];
+// returns:
+let positions: [
+  // ...
+]
+// type BreakAfter = number;
+
+// BLOCKS LIFECYCLE:
+// Block defintion =>
+// Block code tree => 
+//    user code + links to block defs
+// Block render tree =>
+//    uses color pallets, determines shapes
+//    sizes, newlines, chunked labels,
+// Block SVG or canvas DOM
+// BLOCK UPDATE LIFECYCLE:
+//   update code tree
+//   compute minimal update to render tree
+//   re-render necessary parts
+//      if canvas, re-render everything touched
+//      if SVG, re-render affected blocks
+// EXAMPLE:
+//    sprite name "foo" => "foobar"
+//    find related part of render tree, 
+//    recompute leaf size,
+//    perculate size change up
+//    re-render relevant parts
+
+
+function getSize(node: BlockNode): V2 {
+  // TODO(dz):
+  return [50, 50]
+}
+
+// outputs path
+// needs to know: block children size, mouth children size, block children size
+
+function renderBlock() {
+  // render:
+  // block, mouth, block, mouth, block
+}
+
+// type JSONValue = string | number | boolean | JSONObject | JSONArray;
+// interface JSONObject {
+//     [x: string]: JSONValue;
+// }
+// interface JSONArray extends Array<JSONValue> { }
+
+// 
+// process:
+// render parent -> child, or child -> parent
+// to render an obj:
+//    get children total size, 
+//    render out block,
+//    return child locations
+// get size -> simple work
+// get child positions -> simplish work
+// compute rendering assuming known child sizes -> simple ish
+// lightning simple resizing ?
+// provided renderers:
+//    parent block, text, drop down, other
+
+// parameters: min height, max width ?
+// inputs: current indent
+// pre-compute: word wrap
+// inputs are: content WxH, mouth count WxH, content WxH
+// compute: block width
+// output: contents TL x,y
+
+// how do holes work?
+//    recieve a max width that's subtracted from the indent level
+//    return a width & height used
+// option A: compute everything without filling the hole, stretch to fit the hole contents
+// option B: pre-compute everything, but be able to resize
+
+// how to handle large expressions:
+//    - like: boolean, math
+//    - nesting: each layer adds width and height indentation
+// example:
+// if ( ( sprite vy (velocity y) > 0 and not is sprite hitting wall bottom) or sprite y < otherSprite top) then
+// becomes:
+// desirable breaking blocks: and, or, < >, break outermost first
+/*
+if (((sprite vy (velocity y) > 0)
+     and not is sprite hitting wall bottom)
+  or sprite y < otherSprite top) then
+  */
+
+// - first break in nodes indents
+// - max width depends on whether or not it is indented (assume you're indented)
+
+// WHY:
+/*
+- better understanding of blockly
+- better understanding of SVG stuff
+- proto wordwrap
+- proto better blockly perf
+- proto phone interface more quickly
+- proto "hole" based block editting
+- high motivation & inspiration
+WHY NOT:
+- ton of work
+- sounds crazy
+*/
+
+
+// TODO: render element size with debug info;
+// TODO: render correct corners and colors and notches
+
+===
+
+Needs:
+    Word wrap
+    first-class cursor navigation
+    hole filling with context sensative filter
+
+    type inference, communication and enforcement
+    local variables
+    higher order functions
+    lambdas
+
+    pattern matching
+
+===
+
+Languages:
+  TS -> TS/w block assignments -> blocks -> nodes -> wrapped/nodes -> render
+
+Hackathon goals:
+  Show word wrapping
+  Show multi-column
+  Show cursor editting
+
+===
+
+consider tsconfig: 
+
+            "es2015.promise",
+            "es2015.collection",
+            "es2015.iterable",
+            "es2015.symbol.wellknown",
+            "es2020.bigint"
+
+======
+Lots of agregated resources: http://www-cs-students.stanford.edu/~amitp/gameprog.html#hex
+
+
+TO INVESTIGATE:
+    quick.js (by ffmpeg guy)
+        can bind native functions
+    VM (from Michal)
+    GLTF
+    Sonic Retro Wiki
+
+LEARNING SHADERS
+https://lettier.github.io/3d-game-shaders-for-beginners/index.html
+https://www.shadertoy.com
+http://www.arteryengine.com/shadron/
+https://learnopengl.com
+https://www.realtimerendering.com
+Borderlands texturing:
+https://www.youtube.com/watch?v=YOQ0aspIn9c
+
+
+// More Types!
+type Vector<Length extends number> = TupleOf<number, Length>
+type Matrix<Rows extends number, Columns extends number> = TupleOf<TupleOf<number, Columns>, Rows>
+
+const v: Vector<2> = [1, 2]
+const m: Matrix<2, 3> = [
+  [1, 2, 3],
+  [1, 2, 3],
+]
+
+Google Game Builder:
+https://github.com/googlearchive/gamebuilder

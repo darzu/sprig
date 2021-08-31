@@ -1,0 +1,33 @@
+Networking
+Although online games are fun to play, be aware that networking will suck your time and that it doesn't only involve sending a message back and forth. Lag compensation, dead-reckoning, bad connections, bad computers, proper physics and preventing cheating are all things to care about for a real-time game. Turn-based multiplayer games are way easier to design.
+Gabriel Gambetta : Client-Server Game Architecture Great first read, but part IV shouldn't be implemented in your first game.
+    http://www.gabrielgambetta.com/client-server-game-architecture.html
+Gafferon Games : What every programmer needs to know about game networking
+    http://gafferongames.com/networking-for-game-programmers/what-every-programmer-needs-to-know-about-game-networking/
+Gafferon Games : Networked Physics
+    http://gafferongames.com/game-physics/networked-physics/
+Gafferon Games : Fix your timestep! How-to have a "deterministic" physics
+    http://gafferongames.com/game-physics/fix-your-timestep/
+Gafferon Games : UDP vs. TCP
+    http://gafferongames.com/networking-for-game-programmers/udp-vs-tcp/
+Gafferon Games : Sending and Receiving Packets
+    http://gafferongames.com/networking-for-game-programmers/sending-and-receiving-packets/
+Gafferon Games : Reliability and Flow Control
+    http://gafferongames.com/networking-for-game-programmers/reliability-and-flow-control/
+The Poor Man's Netcode
+    https://www.gamedev.net/articles/programming/networking-and-multiplayer/the-poor-mans-netcode-r4851/
+Fabien Sanglard : Quake Engine code review He talks about client-side prediction, really interesting since it's probably the first game involving code about hiding latency
+    http://fabiensanglard.net/quakeSource/index.php
+The Quake3 Networking Model Read it at least for the brute-force model :)
+    http://trac.bookofhook.com/bookofhook/trac.cgi/wiki/Quake3Networking
+Source Multiplayer Networking Must-read of course, a bit more complex than q1 or q3. Note that you definitely don't need a server-side history of inputs for a first game.
+    https://developer.valvesoftware.com/wiki/Source_Multiplayer_Networking
+Valve Latency Compensation
+    https://developer.valvesoftware.com/wiki/Latency_Compensating_Methods_in_Client/Server_In-game_Protocol_Design_and_Optimization
+Unreal Networking Architecture
+    https://api.unrealengine.com/udk/Three/NetworkingOverview.html
+GDC : I Shot You First Great talk about AAA networking, but quite a few suggestions apply to indies as well.
+    https://www.gdcvault.com/play/1014345/I-Shot-You-First-Networking
+GDC : Overwatch Gameplay Architecture and Netcode
+    https://youtu.be/W3aieHjyNvw?t=1342
+

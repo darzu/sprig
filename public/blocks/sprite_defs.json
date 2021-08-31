@@ -1,0 +1,806 @@
+[
+    {
+        "id": "sprites.create",
+        "parts": [
+            {
+                "kind": "label",
+                "text": "sprite ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "img",
+                "shadowBlockId": "screen_image_picker",
+                "ref": false
+            },
+            {
+                "kind": "label",
+                "text": " of kind ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "kind",
+                "shadowBlockId": "spritekind",
+                "ref": false
+            }
+        ]
+    },
+    {
+        "id": "images._spriteImage",
+        "parts": [
+            {
+                "kind": "param",
+                "name": "img",
+                "ref": false
+            }
+        ]
+    },
+    {
+        "id": "sprites._spriteKind",
+        "parts": [
+            {
+                "kind": "param",
+                "name": "kind",
+                "ref": true
+            }
+        ]
+    },
+    {
+        "id": "Sprite.setPosition",
+        "parts": [
+            {
+                "kind": "label",
+                "text": "set ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "sprite",
+                "ref": false,
+                "varName": "mySprite"
+            },
+            {
+                "kind": "label",
+                "text": " position to x ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "x",
+                "shadowBlockId": "positionPicker",
+                "ref": false
+            },
+            {
+                "kind": "label",
+                "text": " y ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "y",
+                "shadowBlockId": "positionPicker",
+                "ref": false
+            }
+        ]
+    },
+    {
+        "id": "images.__positionPicker",
+        "parts": [
+            {
+                "kind": "param",
+                "name": "index",
+                "ref": false
+            }
+        ]
+    },
+    {
+        "id": "Sprite.setVelocity",
+        "parts": [
+            {
+                "kind": "label",
+                "text": "set ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "sprite",
+                "ref": false,
+                "varName": "mySprite"
+            },
+            {
+                "kind": "label",
+                "text": " velocity to vx ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "vx",
+                "shadowBlockId": "spriteSpeedPicker",
+                "ref": false
+            },
+            {
+                "kind": "label",
+                "text": " vy ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "vy",
+                "shadowBlockId": "spriteSpeedPicker",
+                "ref": false
+            }
+        ]
+    },
+    {
+        "id": "__internal.__spriteSpeedPicker",
+        "parts": [
+            {
+                "kind": "param",
+                "name": "speed",
+                "ref": false
+            }
+        ]
+    },
+    {
+        "id": "Sprite.number.@get@",
+        "parts": [
+            {
+                "kind": "param",
+                "name": "mySprite",
+                "shadowBlockId": "",
+                "ref": false
+            },
+            {
+                "kind": "label",
+                "text": " ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "property",
+                "ref": false
+            }
+        ]
+    },
+    {
+        "id": "Sprite.number.@change@",
+        "parts": [
+            {
+                "kind": "label",
+                "text": "change ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "mySprite",
+                "shadowBlockId": "",
+                "ref": false
+            },
+            {
+                "kind": "label",
+                "text": " ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "property",
+                "ref": false
+            },
+            {
+                "kind": "label",
+                "text": " by ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "value",
+                "shadowBlockId": "",
+                "ref": false
+            }
+        ]
+    },
+    {
+        "id": "Sprite.number.@set@",
+        "parts": [
+            {
+                "kind": "label",
+                "text": "set ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "mySprite",
+                "shadowBlockId": "",
+                "ref": false
+            },
+            {
+                "kind": "label",
+                "text": " ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "property",
+                "ref": false
+            },
+            {
+                "kind": "label",
+                "text": " to ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "value",
+                "shadowBlockId": "",
+                "ref": false
+            }
+        ]
+    },
+    {
+        "id": "Sprite.follow",
+        "parts": [
+            {
+                "kind": "label",
+                "text": "set ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "sprite",
+                "ref": false,
+                "varName": "myEnemy"
+            },
+            {
+                "kind": "label",
+                "text": " follow ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "target",
+                "shadowBlockId": "variables_get",
+                "ref": false,
+                "varName": "mySprite"
+            },
+            {
+                "kind": "label",
+                "text": " ",
+                "style": []
+            }
+        ]
+    },
+    {
+        "id": "Sprite.startEffect",
+        "parts": [
+            {
+                "kind": "param",
+                "name": "sprite",
+                "ref": false,
+                "varName": "mySprite"
+            },
+            {
+                "kind": "label",
+                "text": " start ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "effect",
+                "ref": false
+            },
+            {
+                "kind": "label",
+                "text": " effect ",
+                "style": []
+            }
+        ]
+    },
+    {
+        "id": "effects.clearParticles",
+        "parts": [
+            {
+                "kind": "label",
+                "text": "clear effects on ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "anchor",
+                "shadowBlockId": "variables_get",
+                "ref": false,
+                "varName": "mySprite"
+            }
+        ]
+    },
+    {
+        "id": "Sprite.destroy",
+        "parts": [
+            {
+                "kind": "label",
+                "text": "destroy ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "sprite",
+                "ref": false,
+                "varName": "mySprite"
+            },
+            {
+                "kind": "label",
+                "text": " ",
+                "style": []
+            }
+        ]
+    },
+    {
+        "id": "Sprite.say",
+        "parts": [
+            {
+                "kind": "param",
+                "name": "sprite",
+                "ref": false,
+                "varName": "mySprite"
+            },
+            {
+                "kind": "label",
+                "text": " say ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "text",
+                "ref": false
+            }
+        ]
+    },
+    {
+        "id": "Sprite.setFlag",
+        "parts": [
+            {
+                "kind": "label",
+                "text": "set ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "sprite",
+                "ref": false,
+                "varName": "mySprite"
+            },
+            {
+                "kind": "label",
+                "text": " ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "flag",
+                "ref": false
+            },
+            {
+                "kind": "label",
+                "text": " ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "on",
+                "shadowBlockId": "toggleOnOff",
+                "ref": false
+            }
+        ]
+    },
+    {
+        "id": "__internal.__onOff",
+        "parts": [
+            {
+                "kind": "param",
+                "name": "on",
+                "ref": false
+            }
+        ]
+    },
+    {
+        "id": "sprites.createProjectileFromSide",
+        "parts": [
+            {
+                "kind": "label",
+                "text": "projectile ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "img",
+                "shadowBlockId": "screen_image_picker",
+                "ref": false
+            },
+            {
+                "kind": "label",
+                "text": " from side with vx ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "vx",
+                "shadowBlockId": "spriteSpeedPicker",
+                "ref": false
+            },
+            {
+                "kind": "label",
+                "text": " vy ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "vy",
+                "shadowBlockId": "spriteSpeedPicker",
+                "ref": false
+            }
+        ]
+    },
+    {
+        "id": "images._spriteImage",
+        "parts": [
+            {
+                "kind": "param",
+                "name": "img",
+                "ref": false
+            }
+        ]
+    },
+    {
+        "id": "__internal.__spriteSpeedPicker",
+        "parts": [
+            {
+                "kind": "param",
+                "name": "speed",
+                "ref": false
+            }
+        ]
+    },
+    {
+        "id": "sprites.createProjectileFromSprite",
+        "parts": [
+            {
+                "kind": "label",
+                "text": "projectile ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "img",
+                "shadowBlockId": "screen_image_picker",
+                "ref": false
+            },
+            {
+                "kind": "label",
+                "text": " from ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "sprite",
+                "shadowBlockId": "variables_get",
+                "ref": false,
+                "varName": "mySprite"
+            },
+            {
+                "kind": "label",
+                "text": " with vx ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "vx",
+                "shadowBlockId": "spriteSpeedPicker",
+                "ref": false
+            },
+            {
+                "kind": "label",
+                "text": " vy ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "vy",
+                "shadowBlockId": "spriteSpeedPicker",
+                "ref": false
+            }
+        ]
+    },
+    {
+        "id": "images._spriteImage",
+        "parts": [
+            {
+                "kind": "param",
+                "name": "img",
+                "ref": false
+            }
+        ]
+    },
+    {
+        "id": "__internal.__spriteSpeedPicker",
+        "parts": [
+            {
+                "kind": "param",
+                "name": "speed",
+                "ref": false
+            }
+        ]
+    },
+    {
+        "id": "sprites.onOverlap",
+        "parts": [
+            {
+                "kind": "label",
+                "text": "on ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "sprite",
+                "ref": true
+            },
+            {
+                "kind": "label",
+                "text": " of kind ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "kind",
+                "shadowBlockId": "spritekind",
+                "ref": true
+            },
+            {
+                "kind": "label",
+                "text": " overlaps ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "otherSprite",
+                "ref": true
+            },
+            {
+                "kind": "label",
+                "text": " of kind ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "otherKind",
+                "shadowBlockId": "spritekind",
+                "ref": true
+            }
+        ]
+    },
+    {
+        "id": "sprites._spriteKind",
+        "parts": [
+            {
+                "kind": "param",
+                "name": "kind",
+                "ref": true
+            }
+        ]
+    },
+    {
+        "id": "Sprite.overlapsWith",
+        "parts": [
+            {
+                "kind": "param",
+                "name": "sprite",
+                "ref": false,
+                "varName": "mySprite"
+            },
+            {
+                "kind": "label",
+                "text": " overlaps with ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "other",
+                "shadowBlockId": "variables_get",
+                "ref": false,
+                "varName": "otherSprite"
+            }
+        ]
+    },
+    {
+        "id": "Sprite.setKind",
+        "parts": [
+            {
+                "kind": "label",
+                "text": "set ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "sprite",
+                "ref": false,
+                "varName": "mySprite"
+            },
+            {
+                "kind": "label",
+                "text": " kind to ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "kind",
+                "shadowBlockId": "spritekind",
+                "ref": false
+            }
+        ]
+    },
+    {
+        "id": "sprites._spriteKind",
+        "parts": [
+            {
+                "kind": "param",
+                "name": "kind",
+                "ref": true
+            }
+        ]
+    },
+    {
+        "id": "Sprite.kind",
+        "parts": [
+            {
+                "kind": "param",
+                "name": "sprite",
+                "ref": false,
+                "varName": "mySprite"
+            },
+            {
+                "kind": "label",
+                "text": " kind",
+                "style": []
+            }
+        ]
+    },
+    {
+        "id": "sprites.onCreated",
+        "parts": [
+            {
+                "kind": "label",
+                "text": "on created ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "sprite",
+                "ref": true
+            },
+            {
+                "kind": "label",
+                "text": " of kind ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "kind",
+                "shadowBlockId": "spritekind",
+                "ref": true
+            }
+        ]
+    },
+    {
+        "id": "sprites._spriteKind",
+        "parts": [
+            {
+                "kind": "param",
+                "name": "kind",
+                "ref": true
+            }
+        ]
+    },
+    {
+        "id": "sprites.onDestroyed",
+        "parts": [
+            {
+                "kind": "label",
+                "text": "on destroyed ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "sprite",
+                "ref": true
+            },
+            {
+                "kind": "label",
+                "text": " of kind ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "kind",
+                "shadowBlockId": "spritekind",
+                "ref": true
+            },
+            {
+                "kind": "label",
+                "text": " ",
+                "style": []
+            }
+        ]
+    },
+    {
+        "id": "sprites._spriteKind",
+        "parts": [
+            {
+                "kind": "param",
+                "name": "kind",
+                "ref": true
+            }
+        ]
+    },
+    {
+        "id": "Sprite.image",
+        "parts": [
+            {
+                "kind": "param",
+                "name": "sprite",
+                "ref": false,
+                "varName": "mySprite"
+            },
+            {
+                "kind": "label",
+                "text": " image",
+                "style": []
+            }
+        ]
+    },
+    {
+        "id": "Sprite.setImage",
+        "parts": [
+            {
+                "kind": "label",
+                "text": "set ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "sprite",
+                "ref": false,
+                "varName": "mySprite"
+            },
+            {
+                "kind": "label",
+                "text": " image to ",
+                "style": []
+            },
+            {
+                "kind": "param",
+                "name": "img",
+                "shadowBlockId": "screen_image_picker",
+                "ref": false
+            }
+        ]
+    },
+    {
+        "id": "images._spriteImage",
+        "parts": [
+            {
+                "kind": "param",
+                "name": "img",
+                "ref": false
+            }
+        ]
+    },
+    {
+        "id": "sprites._spriteKind",
+        "parts": [
+            {
+                "kind": "param",
+                "name": "kind",
+                "ref": true
+            }
+        ]
+    }
+]
