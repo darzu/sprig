@@ -1,6 +1,5 @@
-import { GameObject } from "./state.js";
 import { mat4, vec3, quat } from "./gl-matrix.js";
-import { createMeshPoolBuilder_WebGPU, MeshHandle, MeshPoolBuilder_WebGPU, MeshPoolOpts, MeshPool_WebGPU, MeshUniform, SceneUniform, Vertex } from "./mesh-pool.js";
+import { createMeshPoolBuilder_WebGPU, Mesh, MeshHandle, MeshPoolBuilder_WebGPU, MeshPoolOpts, MeshPool_WebGPU, MeshUniform, SceneUniform, Vertex } from "./mesh-pool.js";
 import { pitch } from "./utils-3d.js";
 
 // TODO: some state lives in global variables when it should live on the Renderer object
@@ -64,17 +63,22 @@ const antiAliasSampleCount = 4;
 const depthStencilFormat = "depth24plus-stencil8";
 const backgroundColor = { r: 0.6, g: 0.63, b: 0.6, a: 1.0 };
 
+export type ObjectHandle = {
+  mesh: () => Mesh,
+  transform: mat4,
+};
 export interface MeshObj {
+  // TODO(@darzu): rename these...
   handle: MeshHandle,
-  obj: GameObject;
+  obj: ObjectHandle;
 }
 
 export type RenderMode = "normal" | "wireframe";
 export interface Renderer {
   mode: RenderMode;
   finishInit(): void;
-  addObject(o: GameObject): MeshObj;
-  addObjectInstance(o: GameObject, m: MeshHandle): MeshObj;
+  addObject(o: ObjectHandle): MeshObj;
+  addObjectInstance(o: ObjectHandle, m: MeshHandle): MeshObj;
   renderFrame(viewMatrix: mat4): void;
 }
 
@@ -173,8 +177,7 @@ export class Renderer_WebGPU implements Renderer {
                   
     TODO: support adding objects when buffers aren't memory-mapped using device.queue
   */
-  public addObject(o: GameObject): MeshObj {
-    console.log(`Adding object ${o.id}`);
+  public addObject(o: ObjectHandle): MeshObj {
     let m = o.mesh();
     // need to introduce a new variable to convince Typescript the mapping is non-null
 
@@ -190,9 +193,7 @@ export class Renderer_WebGPU implements Renderer {
     this.needsRebundle = true;
     return res;
   }
-  public addObjectInstance(o: GameObject, oldHandle: MeshHandle): MeshObj {
-    console.log(`Adding (instanced) object ${o.id}`);
-
+  public addObjectInstance(o: ObjectHandle, oldHandle: MeshHandle): MeshObj {
     const d = MeshUniform.CloneData(oldHandle)
     const newHandle = this.initFinished ? this.pool.addMeshInstance(oldHandle, d) : this.builder.addMeshInstance(oldHandle, d);
 

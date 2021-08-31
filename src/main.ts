@@ -3,10 +3,10 @@ import { scaleMesh, GameObject, GameState } from "./state.js";
 import { Serializer, Deserializer } from "./serialize.js";
 import { Net } from "./net.js";
 import { test } from "./test.js";
-import { Renderer, Renderer_WebGPU } from "./render_webgpu.js";
+import { ObjectHandle, Renderer, Renderer_WebGPU } from "./render_webgpu.js";
 import { attachToCanvas } from "./render_webgl.js";
 import { getAABBFromMesh, Mesh, MeshHandle, unshareProvokingVertices } from "./mesh-pool.js";
-import { _cellChecks, _doesOverlaps, _enclosedBys, _lastCollisionTestTimeMs } from "./physics.js";
+import { debugCollisions, _cellChecks, _doesOverlaps, _enclosedBys, _lastCollisionTestTimeMs } from "./physics.js";
 
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
@@ -82,7 +82,7 @@ class Plane extends GameObject {
   }
 }
 
-const CUBE_MESH = unshareProvokingVertices({
+export const CUBE_MESH = unshareProvokingVertices({
   pos: [
     [+1.0, +1.0, +1.0],
     [-1.0, +1.0, +1.0],
@@ -480,6 +480,18 @@ class CubeGameState extends GameState<Inputs> {
         }
       }
     }
+    // TODO(@darzu): disable
+    // debug collision stuff
+    debugCollisions((id, m, t) => {
+      const o: ObjectHandle = {
+        mesh: () => m,
+        transform: t
+      }
+      const res = this.renderer.addObject(o)
+      return res.handle;
+    }, (id) => {
+      // TODO(@darzu): delete mesh
+    })
   }
 
   viewMatrix() {
