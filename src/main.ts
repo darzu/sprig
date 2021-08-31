@@ -102,12 +102,13 @@ abstract class Cube extends GameObject {
   }
 }
 
-class SpinningCube extends Cube {
+class Bullet extends Cube {
   axis: vec3;
 
   constructor(id: number, creator: number) {
     super(id, creator);
     this.axis = vec3.fromValues(0, 0, 0);
+    this.color = vec3.fromValues(0.1, 0.1, 0.1);
   }
 
   type(): string {
@@ -117,6 +118,9 @@ class SpinningCube extends Cube {
     let obj = super.netObject();
     obj.axis = Array.from(this.axis);
     return obj;
+  }
+  mesh(): Mesh {
+    return scaleMesh(super.mesh(), 0.3);
   }
 }
 
@@ -144,12 +148,14 @@ interface Inputs {
   down: boolean;
   mouseX: number;
   mouseY: number;
+  lclick: boolean;
+  rclick: boolean;
   accel: boolean;
 }
 
 class CubeGameState extends GameState<Inputs> {
   players: Record<number, Player>;
-  cubes: SpinningCube[];
+  bullets: Bullet[];
   cameraRotation: quat;
   cameraLocation: vec3;
 
@@ -161,45 +167,14 @@ class CubeGameState extends GameState<Inputs> {
     quat.rotateX(this.cameraRotation, this.cameraRotation, -Math.PI / 8);
     this.cameraLocation = vec3.fromValues(0, 0, 10);
     this.players = {};
+    this.bullets = [];
     if (createObjects) {
       let plane = new Plane(this.id(), this.me);
       plane.location = vec3.fromValues(0, -3, -8);
       this.addObject(plane);
       this.addPlayer();
-      let randomCubes: SpinningCube[] = [];
-      for (let i = 0; i < 200; i++) {
-        let cube = new SpinningCube(this.id(), this.me);
-        // create cubes with random colors
-        cube.location = vec3.fromValues(
-          Math.random() * 20 - 10,
-          Math.random() * 5,
-          -Math.random() * 10 - 5
-        );
-        //cube.linear_velocity = vec3.fromValues(0.002, 0, 0);
-        cube.color = vec3.fromValues(
-          Math.random(),
-          Math.random(),
-          Math.random()
-        );
-        cube.axis = vec3.normalize(vec3.create(), [
-          Math.random() - 0.5,
-          Math.random() - 0.5,
-          Math.random() - 0.5,
-        ]);
-        cube.angular_velocity = vec3.scale(
-          vec3.create(),
-          cube.axis,
-          Math.PI * 0.001
-        );
-        cube.at_rest = false;
-        randomCubes.push(cube);
-        this.addObject(cube);
-      }
-      this.cubes = randomCubes;
       // have added our objects, can unmap buffers
       this.renderer.unmapGPUBuffers();
-    } else {
-      this.cubes = [];
     }
     this.me = 0;
   }
@@ -218,10 +193,10 @@ class CubeGameState extends GameState<Inputs> {
         return p;
       }
       case "cube": {
-        let c = new SpinningCube(netObj.id, netObj.creator);
+        let c = new Bullet(netObj.id, netObj.creator);
         c.color = netObj.color;
         c.axis = netObj.axis;
-        this.cubes.push(c);
+        this.bullets.push(c);
         return c;
       }
       case "player": {
@@ -303,44 +278,35 @@ class CubeGameState extends GameState<Inputs> {
         -inputs.mouseY * 0.001
       );
     }
-    // move cubes in range of players, and claim authority over the cubes nearest us
-    for (let cube of this.cubes) {
-      cube.linear_velocity = vec3.fromValues(0, 0, 0);
-      let min_distance = 10;
-      let min_distance_player = -1;
-      for (let player of Object.values(this.players)) {
-        let cube_to_player = vec3.subtract(
-          vec3.create(),
-          player.location,
-          cube.location
-        );
-        let distance = vec3.length(cube_to_player);
-        if (distance < min_distance) {
-          min_distance = distance;
-          min_distance_player = player.authority;
-        }
-        if (
-          vec3.length(cube_to_player) < 8 &&
-          vec3.length(cube_to_player) > 2
-        ) {
-          // each player in range will pull the cube towards them
-          vec3.normalize(cube_to_player, cube_to_player);
-          vec3.scale(cube_to_player, cube_to_player, 0.01);
-          vec3.add(cube.linear_velocity, cube.linear_velocity, cube_to_player);
-        }
-      }
-      // claim authority?
-      if (
-        min_distance < 8 &&
-        min_distance_player == this.me &&
-        cube.authority !== this.me
-      ) {
-        /*console.log(
-          `Taking authority over cube ${cube.id} from ${cube.authority}`
-        );*/
-        cube.authority = this.me;
-        cube.authority_seq += 1;
-      }
+    // add bullet on lclick
+    if (inputs.lclick) {
+      let bullet = new Bullet(this.id(), this.me);
+      let bullet_axis = vec3.fromValues(0, 0, -1);
+      bullet_axis = vec3.transformQuat(
+        bullet_axis,
+        bullet_axis,
+        this.player().rotation
+      );
+      bullet.axis = bullet_axis;
+      bullet.location = vec3.clone(this.player().location);
+      bullet.rotation = quat.clone(this.player().rotation);
+      bullet.linear_velocity = vec3.scale(
+        bullet.linear_velocity,
+        bullet_axis,
+        0.02
+      );
+      bullet.linear_velocity = vec3.add(
+        bullet.linear_velocity,
+        bullet.linear_velocity,
+        this.player().linear_velocity
+      );
+      bullet.angular_velocity = vec3.scale(
+        bullet.angular_velocity,
+        bullet_axis,
+        0.01
+      );
+      this.bullets.push(bullet);
+      this.addObject(bullet);
     }
   }
 
@@ -375,6 +341,8 @@ function inputsReader(canvas: HTMLCanvasElement): () => Inputs {
   let up = false;
   let down = false;
   let accel = false;
+  let lclick = false;
+  let rclick = false;
   let mouseX = 0;
   let mouseY = 0;
 
@@ -437,8 +405,21 @@ function inputsReader(canvas: HTMLCanvasElement): () => Inputs {
   });
 
   window.addEventListener("mousemove", (ev) => {
-    mouseX += ev.movementX;
-    mouseY += ev.movementY;
+    if (document.pointerLockElement === canvas) {
+      mouseX += ev.movementX;
+      mouseY += ev.movementY;
+    }
+  });
+
+  window.addEventListener("click", (ev) => {
+    if (document.pointerLockElement === canvas) {
+      if (ev.button === 0) {
+        lclick = true;
+      } else {
+        rclick = true;
+      }
+    }
+    return false;
   });
 
   function getInputs(): Inputs {
@@ -452,9 +433,13 @@ function inputsReader(canvas: HTMLCanvasElement): () => Inputs {
       accel,
       mouseX,
       mouseY,
+      lclick,
+      rclick,
     };
     mouseX = 0;
     mouseY = 0;
+    lclick = false;
+    rclick = false;
     return inputs;
   }
   return getInputs;
@@ -481,7 +466,9 @@ async function startGame(host: string | null) {
   let gameState = new CubeGameState(performance.now(), renderer, hosting);
   let inputs = inputsReader(canvas);
   function doLockMouse() {
-    canvas.requestPointerLock();
+    if (document.pointerLockElement !== canvas) {
+      canvas.requestPointerLock();
+    }
   }
   canvas.addEventListener("click", doLockMouse);
 

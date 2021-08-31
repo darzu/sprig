@@ -110,7 +110,7 @@ export type NetObject = any;
 export abstract class GameState<Inputs> {
   protected time: number;
   protected nextPlayerId: number;
-  protected nextObjectId: number;
+  nextObjectId: number;
   protected renderer: Renderer;
   objects: Record<number, GameObject>;
   me: number;

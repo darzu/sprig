@@ -233,6 +233,9 @@ export class Net<Inputs> {
       case MessageType.JoinResponse: {
         let msg = message as JoinResponse;
         this.state.me = msg.you;
+        // TODO: this is a hack, need to actually have some system for reserving
+        // object ids at each node
+        this.state.nextObjectId = msg.you * 10000;
         for (let peer of msg.peers) {
           this.connectTo(peer);
         }
