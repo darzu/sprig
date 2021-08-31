@@ -143,74 +143,25 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         if (builder.numTris + m.tri.length > maxTris)
             throw "Too many triangles!"
 
+        const b = buildMesh();
+
         const vertNumOffset = builder.numVerts;
         const indicesNumOffset = builder.numTris * indicesPerTriangle;
 
-        const modelMin = vec3.fromValues(99999.0, 99999.0, 99999.0) as Float32Array
-        const modelMax = vec3.fromValues(-99999.0, -99999.0, -99999.0) as Float32Array
         m.pos.forEach((pos, i) => {
-            // track the mesh's min and max vert positions (it's AABB)
-            modelMin[0] = Math.min(pos[0], modelMin[0])
-            modelMin[1] = Math.min(pos[1], modelMin[1])
-            modelMin[2] = Math.min(pos[2], modelMin[2])
-            modelMax[0] = Math.max(pos[0], modelMax[0])
-            modelMax[1] = Math.max(pos[1], modelMax[1])
-            modelMax[2] = Math.max(pos[2], modelMax[2])
-
-            const vOff = (builder.numVerts + i) * vertByteSize
-            setVertexData(verticesMap, [pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0], VertexKind.normal], vOff)
+            b.addVertex([pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0], VertexKind.normal])
         })
         m.tri.forEach((triInd, i) => {
-            const iOff = (builder.numTris + i) * indicesPerTriangle
-            builder.indicesMap.set(triInd, iOff)
-            const vOff = (builder.numVerts + triInd[0]) * vertByteSize
+            b.addTri(triInd)
+
+            // set provoking vertex data
+            const vOff = (vertNumOffset + triInd[0]) * vertByteSize
             const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
             setVertexData(verticesMap, [m.pos[triInd[0]], m.colors[i], normal, VertexKind.normal], vOff)
             // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
         })
 
-        builder.numVerts += m.pos.length;
-        builder.numTris += m.tri.length;
-
-        const transform = mat4.create() as Float32Array;
-
-        const uniOffset = allMeshes.length * meshUniByteSizeAligned;
-
-        // TODO(@darzu): debugging
-        // minPos[0] = 0.0;
-        // minPos[1] = 0.0;
-        // minPos[2] = 0.0;
-        // maxPos[0] = 0.0;
-        // maxPos[1] = 0.0;
-        // maxPos[2] = 0.0;
-
-        // TODO(@darzu): MESH FORMAT
-        // TODO(@darzu): seems each element needs to be 4-byte aligned
-        const f32Scratch = new Float32Array(4 * 4 + 4 + 4);
-        f32Scratch.set(transform, 0)
-        f32Scratch.set(modelMin, align(4 * 4, 4))
-        f32Scratch.set(modelMax, align(4 * 4 + 3, 4))
-        const u8Scratch = new Uint8Array(f32Scratch.buffer);
-
-        console.dir({ floatBuff: f32Scratch })
-        uniformMap.set(u8Scratch, uniOffset)
-
-        // console.dir(uniformMap.slice(uniOffset, uniOffset + bytesPerMat4 + bytesPerVec3 * 2))
-
-        const res: MeshHandle = {
-            vertNumOffset,
-            indicesNumOffset,
-            modelUniByteOffset: uniOffset,
-            transform,
-            modelMin,
-            modelMax,
-            numTris: m.tri.length,
-            model: m,
-            pool,
-        }
-
-        allMeshes.push(res)
-        return res;
+        return b.finish();
     }
 
     function finish(): MeshPool {
@@ -243,7 +194,7 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         const aabbMax = vec3.fromValues(-Infinity, -Infinity, -Infinity) as Float32Array;
 
         function addVertex(data: VertexData): void {
-            if (meshFinished)
+            if (finished || meshFinished)
                 throw 'trying to use finished MeshBuilder'
             const vOff = builder.numVerts * vertByteSize
             setVertexData(builder.verticesMap, data, vOff)
@@ -258,7 +209,7 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
             aabbMax[2] = Math.max(data[0][2], aabbMax[2])
         }
         function addTri(triInd: vec3): void {
-            if (meshFinished)
+            if (finished || meshFinished)
                 throw 'trying to use finished MeshBuilder'
             const iOff = builder.numTris * 3
             builder.indicesMap.set(triInd, iOff)
@@ -267,7 +218,7 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
 
         let _transform: mat4 | undefined = undefined;
         function setUniform(transform: mat4): void {
-            if (meshFinished)
+            if (finished || meshFinished)
                 throw 'trying to use finished MeshBuilder'
             _transform = transform;
             // TODO(@darzu): MESH FORMAT
@@ -282,14 +233,17 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         }
 
         function finish(): MeshHandle {
-            if (meshFinished)
+            if (finished || meshFinished)
                 throw 'trying to use finished MeshBuilder'
+            if (!_transform) {
+                setUniform(mat4.create())
+            }
             meshFinished = true;
             const res: MeshHandle = {
                 vertNumOffset,
                 indicesNumOffset,
                 modelUniByteOffset: uniOffset,
-                transform: _transform ?? mat4.create(),
+                transform: _transform!,
                 modelMin: aabbMin,
                 modelMax: aabbMax,
                 numTris: builder.numTris - triNumOffset,
