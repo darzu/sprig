@@ -78,4 +78,7 @@ Physics engine tutorials
 
 Noita:
     GDC talk https://www.youtube.com/watch?v=prXuyMCgbTc
+
+Sand playground:
+    sandspiel.club
     "sand games" https://www.youtube.com/watch?v=-dD-EaZ29hs

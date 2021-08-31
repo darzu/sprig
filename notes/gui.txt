@@ -12,3 +12,7 @@ ThinMatrix:
         new Transition().xDriver(new SlideTransition(0, 100)).alphaDriver(new SlideTransition(0, 1))
 
     text can word-wrap or scale with container
+
+
+CSS box model:
+    https://twitter.com/b0rk/status/1284132999940968454

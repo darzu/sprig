@@ -475,6 +475,7 @@ Understanding quanternions / rotation:
   https://marctenbosch.com/quaternions/
   https://rotations.berkeley.edu
   https://omar-shehata.medium.com/how-to-fix-gimbal-lock-in-n-dimensions-f2f7baec2b5e
+  https://eater.net/quaternions
 
 Voxel engine used by minecraft classic web:
   https://github.com/andyhall/noa/tree/develop
@@ -524,3 +525,96 @@ Goal: the essential parts of every game can be done by one developer
 
 For animations:
   Graphtoy tool, helps you visual curves
+
+Triangle grids:
+  https://www.boristhebrave.com/2021/05/23/triangle-grids/
+  more on grids:
+    https://www.redblobgames.com/grids/parts/
+
+"NIMBY Rails"
+  https://carloscarrasco.com/nimby-rails-retrospective/
+
+Nvidia Graphics Codex:
+  https://graphicscodex.courses.nvidia.com/app.html?page=rndint
+
+Math notation to diagrams:
+  https://www.cs.cmu.edu/~jssunshi/assets/pdf/penrose.pdf
+
+"research debt":
+  https://distill.pub/2017/research-debt/
+
+Triangle solver:
+  https://acegikmo.com/trianglesolver/
+
+Lots of great visualizations of old math papers:
+  https://twitter.com/gabrielpeyre
+
+10 best visual explanations:
+  https://twitter.com/AlanZucconi/status/1388482480253149184
+
+New debugger viz:
+  https://blog.replit.com/debuggest
+
+About noise:
+  https://varun.ca/noise/
+
+How to make a vizualization like Redblob:
+  https://twitter.com/redblobgames/status/1384561504565952515
+
+Shortest path for car that can't go backwards:
+  https://twitter.com/gabrielpeyre/status/1383284082944081928
+  https://twitter.com/gabrielpeyre/status/1373152325888483328
+
+Procedural gen workshop papers:
+  http://www.pcgworkshop.com/database.php
+
+Make arrow diagrams:
+  https://q.uiver.app
+
+Vector field explorer:
+  https://anvaka.github.io/fieldplay
+  https://twitter.com/redblobgames/status/1310716330278973440
+
+Everybook should start with:
+  https://twitter.com/round/status/1226640915390849024
+
+"Learn how things work":
+  https://jvns.ca/blog/learn-how-things-work/
+
+Twitter search by user and date range:
+  (from:redblobgames) until:2020-01-01 since:2015-01-01
+
+Assign dwarves to jobs:
+  https://twitter.com/gabrielpeyre/status/1372427547821101056
+
+WebGL state diagrams:
+  https://webglfundamentals.org/webgl/lessons/resources/webgl-state-diagram.html
+
+"Octasphere":
+  https://prideout.net/blog/octasphere/
+
+Optical illusion of movement:
+  https://jake.vision/blog/motion-illusions
+
+Game devs advice:
+  https://www.derekyu.com/makegames/archetypes.html
+
+Rough sketches:
+  https://roughjs.com
+
+Comparing 2D Vector Field Visualization Methods: A User Study
+  https://www.cs.unc.edu/~taylorr/Comp715/papers/laidlaw_vector_vis_user_study_01359732.pdf
+  https://prideout.net/blog/streamlines/
+
+Blogs to scan:
+  https://prideout.net
+
+non-square dithering:
+  https://observablehq.com/@mattdzugan/dithering-on-non-square-pixels?collection=@mattdzugan/tilings
+
+Redblob's project workflow:
+  https://simblob.blogspot.com/2021/01/my-personal-information-workflow-part-1.html
+  https://simblob.blogspot.com/2021/01/my-personal-information-workflow-part-2.html
+
+Explanation of marching cubes:
+  https://wordsandbuttons.online/interactive_explanation_of_marching_cubes_and_dual_contouring.html

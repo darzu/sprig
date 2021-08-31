@@ -440,18 +440,8 @@ Virtual texturing:
   http://holger.dammertz.org/stuff/notes_VirtualTexturing.html
   https://computergraphics.stackexchange.com/questions/1768/how-can-virtual-texturing-actually-be-efficient
 
-GPU memory access costs:
-  https://computergraphics.stackexchange.com/questions/37/what-is-the-cost-of-changing-state
-    TODO: read for good GPU perf tips
-  most to least expensive state changes:
-    render target (~60K/s)
-    program (~300K/s)
-    ROP
-    texture bindings (~1.5M/s)
-    vertex format
-    UBO bindings
-    vertex bindings
-    uniform updates (~10M/s)
-
 Don't have T junctions in meshes:
   https://computergraphics.stackexchange.com/questions/1461/why-do-t-junctions-in-meshes-result-in-cracks
+
+Compute shader slime mold webgl:
+  https://greggman.github.io/doodles/slime/slime.html

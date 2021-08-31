@@ -8,3 +8,23 @@ Critique of TSC:
 Rant about JS:
     https://hackernoon.com/how-it-feels-to-learn-javascript-in-2016-d3a717dd577f
     
+GPU memory access costs:
+  https://computergraphics.stackexchange.com/questions/37/what-is-the-cost-of-changing-state
+    TODO: read for good GPU perf tips
+  most to least expensive state changes:
+    render target (~60K/s)
+    program (~300K/s)
+    ROP
+    texture bindings (~1.5M/s)
+    vertex format
+    UBO bindings
+    vertex bindings
+    uniform updates (~10M/s)
+
+On latency (via Redblob):
+    https://pavelfatin.com/typing-with-pleasure/
+    https://www.youtube.com/watch?v=vOvQCPLkPt4
+    https://www.inkandswitch.com/slow-software.html
+
+Efficient code is harder to change, from redblob lementing mapgen4:
+    https://twitter.com/redblobgames/status/1362852520096198656

@@ -1,0 +1,47 @@
+https://www.redblobgames.com/maps/mapgen4/
+https://github.com/redblobgames/mapgen4/
+https://github.com/redblobgames/1843-planet-generation
+http://experilous.com/1/project/planet-generator/2014-09-28/planet-generator.js
+http://bit-player.org/2011/a-slight-discrepancy
+http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/
+https://www.complexity-explorables.org/explorables/baristas-secret/
+
+voronoi:
+    https://en.wikipedia.org/wiki/Voronoi_diagram
+    https://www.redblobgames.com/x/1929-voronoi-percolation/
+
+Don't use noise:
+    https://www.youtube.com/watch?v=ztemzsxso0U&t=1s
+
+phasor patterns:
+  https://www.shadertoy.com/view/WtjfzW
+
+Dungeon gen:
+    https://www.boristhebrave.com/2021/04/10/dungeon-generation-in-unexplored/
+
+Graph rewriting:
+    https://www.boristhebrave.com/2021/04/02/graph-rewriting/
+    https://www.boristhebrave.com/2021/04/02/phantomgrammar-and-ludoscope/
+
+"Wave function collapse":
+    https://github.com/mxgmn/WaveFunctionCollapse
+    https://assetstore.unity.com/packages/tools/level-design/tessera-procedural-tile-based-generator-155425
+
+"Delaunay triangulation of 2D points":
+    Used by Redblob
+    https://github.com/mapbox/delaunator (JS)
+
+Tectonic plates:
+    https://nickmcd.me/2020/12/03/clustered-convection-for-simulating-plate-tectonics/
+
+Sculpting noise:
+    https://www.redblobgames.com/articles/noise/2d/#spectrum
+
+Generating mazes:
+    https://bwinton.github.io/mazes/
+
+Procedural gen as sculpting:
+    https://jobtalle.com/random_procedural_generation.html
+
+Procedural color pallets:
+    https://iquilezles.org/www/articles/palettes/palettes.htm

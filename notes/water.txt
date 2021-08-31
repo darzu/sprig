@@ -15,3 +15,6 @@ AC: Black Flag
 
 Water on a sphere:
     https://www.youtube.com/watch?v=vTMEdHcKgM4
+
+2D waterlines:
+    https://observablehq.com/collection/@oliviafvane/watermarks
