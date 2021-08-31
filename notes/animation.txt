@@ -83,3 +83,7 @@ Rigging -> model via AI:
 
 auto bug walking:
     https://twitter.com/rubna_/status/1370158075798294532
+
+Easing functions:
+    ThinMatrix recommended these over "maths"
+    https://easings.net
