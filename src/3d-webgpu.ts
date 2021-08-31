@@ -2,6 +2,11 @@ import { mat4, vec3 } from './ext/gl-matrix.js';
 
 /*
 TODO:
+    I want some data per:
+        Model (e.g. transform)
+        Face/Triangle (e.g. color, material, normal)
+        Vertex (e.g. ???)
+
     Face painting:
         color per defining vertex would be ideal
         could do uniform buffer data
@@ -11,6 +16,13 @@ TODO:
     Refactor into seperate files
         Kill babylonjs?
 */
+
+// TODO(@darzu): per-face data?
+// interface GPUVertexBufferLayout {
+//     arrayStride: GPUSize64;
+//     stepMode?: GPUInputStepMode;
+//     attributes: Iterable<GPUVertexAttribute>;
+// }
 
 // face normals vs vertex normals
 interface MeshModel {

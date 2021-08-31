@@ -55,6 +55,7 @@ Compute shaders:
 
 Procedural gen sphere:
     https://www.youtube.com/watch?v=lctXaT9pxA0
+    https://www.youtube.com/watch?v=vTMEdHcKgM4
 
 MinionsArt tutorials:
     https://minionsart.github.io/tutorials/
@@ -94,3 +95,11 @@ Forests:
     equipment attach points
         clothing, armor, weapons,
         mech parts,
+
+
+Low Poly advice:
+  https://www.youtube.com/watch?v=H1oNuKChsdU
+    Consider a consistent atom-size
+    Recommends hand-done LODs
+    Consider low-res
+    scrolling UV maps, normal maps

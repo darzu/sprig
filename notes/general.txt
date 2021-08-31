@@ -441,3 +441,16 @@ Learning to code book:
 
 Amazing interactive blog posts:
   https://ciechanow.ski/lights-and-shadows/
+
+Inspiring voxel, marching cubes sphere planet:
+  https://www.youtube.com/watch?v=vTMEdHcKgM4
+  I want sprigland to be able to build something like this
+    this implies that you'll be able to code at the vertex/indices buffer level
+    and with compute shaders
+
+A Slower Speed of Light
+  http://gamelab.mit.edu/games/a-slower-speed-of-light/
+
+Objectives / early result:
+  Programming some basic shapes
+  Sharing and playing multiplayer

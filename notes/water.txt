@@ -12,3 +12,6 @@ GPU simulated water: http://www-evasion.imag.fr/~Fabrice.Neyret/images/fluids-nu
 
 AC: Black Flag
     https://simonschreibt.de/gat/black-flag-waterplane/
+
+Water on a sphere:
+    https://www.youtube.com/watch?v=vTMEdHcKgM4

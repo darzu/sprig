@@ -342,3 +342,9 @@ Why r draw calls expensive?
   "because if you send too little to the GPU, you're CPU bound and the GPU idles"
   https://stackoverflow.com/questions/4853856/why-are-draw-calls-expensive
   https://www.nvidia.com/docs/IO/8228/BatchBatchBatch.pdf
+
+Data per triangle:
+  "instanced vertex attributes"
+  gl_PrimitiveID
+  "texture buffer object (TBO)" for high primitive count
+    texelFetch
