@@ -408,7 +408,7 @@ export class Renderer_WebGPU implements Renderer {
     this.gpuBufferWriteAllMeshUniforms();
 
     // TODO(@darzu): more fine grain
-    if (this.needsRebundle)
+    if (this.needsRebundle || this.mode !== this.lastBundleMode)
       this.createRenderBundle();
 
     // start collecting our render commands for this frame

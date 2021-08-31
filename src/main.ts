@@ -261,6 +261,7 @@ interface Inputs {
   lclick: boolean;
   rclick: boolean;
   accel: boolean;
+  lastNumKey: number;
 }
 
 class CubeGameState extends GameState<Inputs> {
@@ -463,6 +464,13 @@ class CubeGameState extends GameState<Inputs> {
         }
       }
     }
+    // check render mode
+    if (inputs.lastNumKey === 1) {
+      this.renderer.mode = "normal"
+    }
+    if (inputs.lastNumKey === 2) {
+      this.renderer.mode = "wireframe"
+    }
     // check collisions
     for (let o of Object.values(this.objects)) {
       if (o instanceof Cube || o instanceof Plane) {
@@ -509,6 +517,7 @@ function inputsReader(canvas: HTMLCanvasElement): () => Inputs {
   let rclick = false;
   let mouseX = 0;
   let mouseY = 0;
+  let lastNumKey = 0; // TODO(@darzu): this is a little hacky
 
   window.addEventListener("keydown", (ev) => {
     switch (ev.key.toLowerCase()) {
@@ -562,6 +571,12 @@ function inputsReader(canvas: HTMLCanvasElement): () => Inputs {
       case "c":
         down = false;
         break;
+      case "1":
+        lastNumKey = 1;
+        break;
+      case "2":
+        lastNumKey = 2;
+        break;
       case " ":
         accel = false;
         break;
@@ -599,6 +614,7 @@ function inputsReader(canvas: HTMLCanvasElement): () => Inputs {
       mouseY,
       lclick,
       rclick,
+      lastNumKey,
     };
     mouseX = 0;
     mouseY = 0;
