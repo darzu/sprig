@@ -56,3 +56,6 @@ Triangulated sphere:
 
 Big height map stuff:
     https://casual-effects.com/research/McGuire2005Heightfield/index.html
+
+Triangle grids (different from Redblob):
+    https://www.boristhebrave.com/2021/05/23/triangle-grids/
