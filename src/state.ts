@@ -1,6 +1,6 @@
 import { mat4, vec3, quat } from "./gl-matrix.js";
 import { Serializer, Deserializer } from "./serialize.js";
-import { Mesh } from "./mesh-pool.js";
+import { Mesh, MeshHandle } from "./mesh-pool.js";
 import { Renderer } from "./render_webgpu.js";
 import { AABB, checkCollisions } from "./physics.js";
 
@@ -172,6 +172,11 @@ export abstract class GameState<Inputs> {
     this.numObjects++;
     this.objects[obj.id] = obj;
     this.renderer.addObject(obj);
+  }
+  addObjectInstance(obj: GameObject, otherMesh: MeshHandle) {
+    this.numObjects++;
+    this.objects[obj.id] = obj;
+    this.renderer.addObjectInstance(obj, otherMesh);
   }
 
   renderFrame() {

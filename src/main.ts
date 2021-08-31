@@ -5,12 +5,12 @@ import { Net } from "./net.js";
 import { test } from "./test.js";
 import { Renderer, Renderer_WebGPU } from "./render_webgpu.js";
 import { attachToCanvas } from "./render_webgl.js";
-import { getAABBFromMesh, Mesh, unshareProvokingVertices } from "./mesh-pool.js";
+import { getAABBFromMesh, Mesh, MeshHandle, unshareProvokingVertices } from "./mesh-pool.js";
 
 const FORCE_WEBGL = true;
 const MAX_MESHES = 20000;
 const MAX_VERTICES = 21845;
-const ENABLE_NET = false;
+const ENABLE_NET = true;
 
 enum ObjectType {
   Plane,
@@ -241,6 +241,8 @@ class CubeGameState extends GameState<Inputs> {
   cameraRotation: quat;
   cameraLocation: vec3;
 
+  bulletProto: MeshHandle;
+
   constructor(renderer: Renderer, createObjects: boolean = true) {
     super(renderer);
     this.me = 0;
@@ -248,6 +250,13 @@ class CubeGameState extends GameState<Inputs> {
     quat.rotateX(this.cameraRotation, this.cameraRotation, -Math.PI / 8);
     this.cameraLocation = vec3.fromValues(0, 0, 10);
     this.players = {};
+
+    // create local mesh prototypes
+    let bulletProtoObj = this.renderer.addObject(new Bullet(this.id(), this.me))
+    bulletProtoObj.obj.transform = new Float32Array(16); // zero the transforms so it doesn't render
+    bulletProtoObj.handle.transform = new Float32Array(16);
+    this.bulletProto = bulletProtoObj.handle;
+
     if (createObjects) {
       let plane = new Plane(this.id(), this.me);
       plane.location = vec3.fromValues(0, -3, -8);
@@ -281,6 +290,12 @@ class CubeGameState extends GameState<Inputs> {
 
   addObject(obj: GameObject) {
     super.addObject(obj);
+    if (obj instanceof Player) {
+      this.players[obj.authority] = obj;
+    }
+  }
+  addObjectInstance(obj: GameObject, otherMesh: MeshHandle) {
+    super.addObjectInstance(obj, otherMesh);
     if (obj instanceof Player) {
       this.players[obj.authority] = obj;
     }
@@ -380,7 +395,7 @@ class CubeGameState extends GameState<Inputs> {
         bullet_axis,
         0.01
       );
-      this.addObject(bullet);
+      this.addObjectInstance(bullet, this.bulletProto);
     }
     if (inputs.rclick) {
       const SPREAD = 10;
@@ -414,7 +429,7 @@ class CubeGameState extends GameState<Inputs> {
             bullet_axis,
             0.01
           );
-          this.addObject(bullet);
+          this.addObjectInstance(bullet, this.bulletProto);
         }
       }
     }
