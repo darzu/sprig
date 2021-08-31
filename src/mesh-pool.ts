@@ -1,11 +1,13 @@
-
-
-// once a mesh has been added to our vertex, triangle, and uniform buffers, we need
-
 import { computeTriangleNormal } from "./3d-util.js";
 import { mat4, vec3 } from "./gl-matrix.js";
 import { align, sum } from "./math.js";
 import { AABB, getAABBFromPositions } from "./physics.js";
+
+// TODO(@darzu): BUGS:
+// - in WebGL, around object 5566, we get some weird index stuff, even single player.
+//       Adding object 5567
+//       mesh-pool.ts:711 QUEUE builder.allMeshes.length: 5567, builder.numTris: 16, builder.numVerts: 16
+//       mesh-pool.ts:712 QUEUE pool.allMeshes.length: 5567, pool.numTris: 66796, pool.numVerts: 66796
 
 const indicesPerTriangle = 3;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
@@ -404,6 +406,7 @@ export function unshareProvokingVertices(input: Mesh): Mesh {
 
 export function createMeshPoolBuilder_WebGPU(device: GPUDevice, opts: MeshPoolOpts): MeshPoolBuilder_WebGPU {
     const { maxMeshes, maxTris, maxVerts } = opts;
+    // console.log(`maxMeshes: ${maxMeshes}, maxTris: ${maxTris}, maxVerts: ${maxVerts}`)
 
     // create our mesh buffers (vertex, index, uniform)
     const verticesBuffer = device.createBuffer({
@@ -658,10 +661,15 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
             throw `mesh must use provoking vertices`
         if (verticesMap === null)
             throw "Use preRender() and postRender() functions"
+        if (builder.allMeshes.length + 1 > maxMeshes)
+            throw "Too many meshes!"
         if (builder.numVerts + m.pos.length > maxVerts)
             throw "Too many vertices!"
         if (builder.numTris + m.tri.length > maxTris)
             throw "Too many triangles!"
+
+        // console.log(`QUEUE builder.allMeshes.length: ${builder.allMeshes.length}, builder.numTris: ${builder.numTris}, builder.numVerts: ${builder.numVerts}`)
+        // console.log(`QUEUE pool.allMeshes.length: ${pool.allMeshes.length}, pool.numTris: ${pool.numTris}, pool.numVerts: ${pool.numVerts}`)
 
         const b = mappedMeshBuilder();
 
@@ -692,10 +700,15 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
             throw `trying to use unfinished MeshPool`
         if (!m.usesProvoking)
             throw `mesh must use provoking vertices`
+        if (pool.allMeshes.length + 1 > maxMeshes)
+            throw "Too many meshes!"
         if (pool.numVerts + m.pos.length > maxVerts)
             throw "Too many vertices!"
         if (pool.numTris + m.tri.length > maxTris)
             throw "Too many triangles!"
+
+        // console.log(`QUEUE builder.allMeshes.length: ${builder.allMeshes.length}, builder.numTris: ${builder.numTris}, builder.numVerts: ${builder.numVerts}`)
+        // console.log(`QUEUE pool.allMeshes.length: ${pool.allMeshes.length}, pool.numTris: ${pool.numTris}, pool.numVerts: ${pool.numVerts}`)
 
         const data: MeshPoolMaps = {
             // TODO(@darzu): use scratch arrays

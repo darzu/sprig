@@ -293,8 +293,8 @@ export class Renderer_WebGPU implements Renderer {
     canvas: HTMLCanvasElement,
     device: GPUDevice,
     context: GPUCanvasContext,
-    maxMeshes = 100,
-    maxTrisPerMesh = 100
+    maxMeshes: number,
+    maxTrisPerMesh: number,
   ) {
     this.canvas = canvas;
     this.device = device;

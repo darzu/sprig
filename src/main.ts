@@ -7,7 +7,9 @@ import { Renderer, Renderer_WebGPU } from "./render_webgpu.js";
 import { attachToCanvas } from "./render_webgl.js";
 import { getAABBFromMesh, Mesh, unshareProvokingVertices } from "./mesh-pool.js";
 
-const FORCE_WEBGL = false;
+const FORCE_WEBGL = true;
+const MAX_MESHES = 20000;
+const ENABLE_NET = false;
 
 enum ObjectType {
   Plane,
@@ -580,14 +582,14 @@ async function startGame(host: string | null) {
       const device = await adapter.requestDevice();
       const context = canvas.getContext("gpupresent");
       if (context) {
-        rendererInit = new Renderer_WebGPU(canvas, device, context, 1000);
+        rendererInit = new Renderer_WebGPU(canvas, device, context, MAX_MESHES, 100);
         if (rendererInit)
           usingWebGPU = true
       }
     }
   }
   if (!rendererInit) {
-    rendererInit = attachToCanvas(canvas, 20000, 100);
+    rendererInit = attachToCanvas(canvas, MAX_MESHES, 100);
   }
   if (!rendererInit)
     throw 'Unable to create webgl or webgpu renderer'
@@ -608,7 +610,7 @@ async function startGame(host: string | null) {
   let avgNetTime = 0;
   let avgFrameTime = 0;
   let avgWeight = 0.05;
-  let net: Net<Inputs>;
+  let net: Net<Inputs> | null = null;
   let time_to_next_sync = NET_DT;
   let previous_frame_time = start_of_time;
   let frame = () => {
@@ -620,8 +622,10 @@ async function startGame(host: string | null) {
       if (time_to_consume > time_to_next_sync) {
         gameState.step(time_to_next_sync, inputs());
         let before_net = performance.now();
-        net.updateState();
-        net.sendStateUpdates();
+        if (net) {
+          net.updateState();
+          net.sendStateUpdates();
+        }
         net_time += performance.now() - before_net;
         time_to_consume = time_to_consume - time_to_next_sync;
         time_to_next_sync = NET_DT;
@@ -635,7 +639,7 @@ async function startGame(host: string | null) {
     let jsTime = performance.now() - frame_start_time;
     let frameTime = frame_start_time - previous_frame_time;
     let { reliableBufferSize, unreliableBufferSize, numDroppedUpdates } =
-      net.stats();
+      net ? net.stats() : { reliableBufferSize: 0, unreliableBufferSize: 0, numDroppedUpdates: 0 };
     previous_frame_time = frame_start_time;
     avgJsTime = avgJsTime
       ? (1 - avgWeight) * avgJsTime + avgWeight * jsTime
@@ -660,17 +664,22 @@ async function startGame(host: string | null) {
       objects=${gameState.numObjects}) ${usingWebGPU ? 'wGPU' : 'wGL'}`;
     requestAnimationFrame(frame);
   };
-  net = new Net(gameState, host, (id: string) => {
+  if (ENABLE_NET) {
+    net = new Net(gameState, host, (id: string) => {
+      renderer.finishInit(); // TODO(@darzu): debugging
+      if (hosting) {
+        console.log("hello");
+        console.log(`Net up and running with id ${id}`);
+        navigator.clipboard.writeText(id);
+        frame();
+      } else {
+        frame();
+      }
+    });
+  } else {
     renderer.finishInit(); // TODO(@darzu): debugging
-    if (hosting) {
-      console.log("hello");
-      console.log(`Net up and running with id ${id}`);
-      navigator.clipboard.writeText(id);
-      frame();
-    } else {
-      frame();
-    }
-  });
+    frame();
+  }
 }
 
 async function main() {
@@ -680,14 +689,19 @@ async function main() {
   ) as HTMLButtonElement;
   let connectButton = document.getElementById("connect") as HTMLButtonElement;
   let serverIdInput = document.getElementById("server-id") as HTMLInputElement;
-  serverStartButton.onclick = () => {
+  if (ENABLE_NET) {
+    serverStartButton.onclick = () => {
+      startGame(null);
+      controls.hidden = true;
+    };
+    connectButton.onclick = () => {
+      startGame(serverIdInput.value);
+      controls.hidden = true;
+    };
+  } else {
     startGame(null);
     controls.hidden = true;
-  };
-  connectButton.onclick = () => {
-    startGame(serverIdInput.value);
-    controls.hidden = true;
-  };
+  }
 }
 
 test();

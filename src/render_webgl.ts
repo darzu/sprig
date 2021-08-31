@@ -5,26 +5,6 @@ import { GameObject } from "./state.js";
 // TODO(@darzu): this is a bad dependency:
 import { MeshObj, Renderer, setupScene } from "./render_webgpu.js";
 
-// REFERENCE:
-// cameraViewProjMatrix : mat4x4<f32>;
-// lightViewProjMatrix : mat4x4<f32>;
-// lightDir : vec3<f32>;
-// time : f32;
-// playerPos: vec2<f32>;
-// cameraPos : vec3<f32>;
-
-// [[location(0)]] position : vec3<f32>,
-// [[location(1)]] color : vec3<f32>,
-// [[location(2)]] normal : vec3<f32>,
-
-// [[location(0)]] [[interpolate(flat)]] normal : vec3<f32>;
-// [[location(1)]] [[interpolate(flat)]] color : vec3<f32>;
-// [[builtin(position)]] position : vec4<f32>;
-
-//     transform: mat4x4<f32>;
-//     aabbMin: vec3<f32>;
-//     aabbMax: vec3<f32>;
-
 const vertCode = `
 precision mediump float;
 
