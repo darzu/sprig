@@ -69,6 +69,7 @@
   },
   "exclude": [
     "npm-deps",
-    "public"
+    "public",
+    "docs"
   ],
 }
