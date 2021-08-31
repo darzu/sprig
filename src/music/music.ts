@@ -240,7 +240,8 @@ function canvasClick() {
         }
     }
 
-    playChordProgression([0, 5, 1, 4, 0])
+    playChordProgression([3, 3, 3, 1, 3])
+    // playChordProgression([0, 5, 1, 4, 0])
 
     // playChord(stdChords[0], scale, noteLen, start + noteSpace * 0)
     // playChord(lowNote(stdChords[0]), scale, noteLen, start + noteSpace * 0)
