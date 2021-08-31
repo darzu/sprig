@@ -110,12 +110,13 @@ const bytesPerVec3 = 3/*vec3*/ * 4/*f32*/
 const indicesPerTriangle = 3;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
 
+// render pipeline parameters
 const antiAliasSampleCount = 4;
 const swapChainFormat = 'bgra8unorm';
-
 const depthStencilFormat = 'depth24plus-stencil8';
 const shadowDepthStencilFormat = 'depth32float';
 
+// this state is recomputed upon canvas resize
 let depthTexture: GPUTexture;
 let depthTextureView: GPUTextureView;
 let colorTexture: GPUTexture;
@@ -124,7 +125,8 @@ let lastWidth = 0;
 let lastHeight = 0;
 let aspectRatio = 1;
 
-function resize(device: GPUDevice, canvasWidth: number, canvasHeight: number) {
+// recomputes textures, widths, and aspect ratio on canvas resize
+function onCanvasResize(device: GPUDevice, canvasWidth: number, canvasHeight: number) {
     if (lastWidth === canvasWidth && lastHeight === canvasHeight)
         return;
 
@@ -153,15 +155,17 @@ function resize(device: GPUDevice, canvasWidth: number, canvasHeight: number) {
     aspectRatio = Math.abs(canvasWidth / canvasHeight);
 }
 
+// defines the geometry and coloring of a mesh
 interface Mesh {
     pos: vec3[];
     tri: vec3[];
     colors: vec3[];  // colors per triangle in r,g,b float [0-1] format
 }
 
+// normally vertices can be shared by triangles, so this duplicates vertices as necessary so they are unshared
+// TODO: this shouldn't be needed once "flat" shading is supported in Chrome's WGSL, see:
+//      https://bugs.chromium.org/p/tint/issues/detail?id=746&q=interpolate&can=2
 function unshareVertices(input: Mesh): Mesh {
-    // TODO: this shouldn't be needed once "flat" shading is supported in Chrome's WGSL, 
-    // https://bugs.chromium.org/p/tint/issues/detail?id=746&q=interpolate&can=2
     const pos: vec3[] = []
     const tri: vec3[] = []
     input.tri.forEach(([i0, i1, i2], i) => {
@@ -177,13 +181,8 @@ function unshareVertices(input: Mesh): Mesh {
     return { pos, tri, colors: input.colors }
 }
 
-function computeTriangleNormal(p1: vec3, p2: vec3, p3: vec3): vec3 {
-    // cross product of two edges, https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
-    const n = vec3.cross(vec3.create(), vec3.sub(vec3.create(), p2, p1), vec3.sub(vec3.create(), p3, p1))
-    vec3.normalize(n, n)
-    return n;
-}
-
+// once a mesh has been added to our vertex, triangle, and uniform buffers, we need
+// to track offsets into those buffers so we can make modifications and form draw calls.
 interface MeshHandle {
     // handles into the buffers
     vertNumOffset: number,
@@ -266,8 +265,8 @@ if (meshUniByteSize % 256 !== 0) {
     console.error("invalid mesh uni byte size, not 256 byte aligned: " + meshUniByteSize)
 }
 
-// TODO(@darzu): SCENE FORMAT
-const sharedUniBufferSize =
+// defines the format of our scene's uniform data
+const sceneUniBufferSize =
     bytesPerMat4 * 2 // camera and light projection
     + bytesPerVec3 * 1 // light pos
 
@@ -320,8 +319,8 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     });
 
     // TODO(@darzu): SCENE FORMAT
-    const sharedUniBuffer = device.createBuffer({
-        size: align(sharedUniBufferSize, 256),
+    const sceneUniBuffer = device.createBuffer({
+        size: align(sceneUniBufferSize, 256),
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
@@ -423,9 +422,9 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     pitch(cameraOffset, -Math.PI / 4)
     gpuBufferWriteMeshTransform(player)
 
-    // write the light data to the shared uniform buffer
-    device.queue.writeBuffer(sharedUniBuffer, bytesPerMat4 * 1, (lightViewProjMatrix as Float32Array).buffer);
-    device.queue.writeBuffer(sharedUniBuffer, bytesPerMat4 * 2, (lightDir as Float32Array).buffer);
+    // write the light data to the scene uniform buffer
+    device.queue.writeBuffer(sceneUniBuffer, bytesPerMat4 * 1, (lightViewProjMatrix as Float32Array).buffer);
+    device.queue.writeBuffer(sceneUniBuffer, bytesPerMat4 * 2, (lightDir as Float32Array).buffer);
 
     // setup a binding for our per-mesh uniforms
     const modelUniBindGroupLayout = device.createBindGroupLayout({
@@ -451,15 +450,15 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     };
 
     // define the resource bindings for the shadow pipeline
-    const shadowSharedUniBindGroupLayout = device.createBindGroupLayout({
+    const shadowSceneUniBindGroupLayout = device.createBindGroupLayout({
         entries: [
             { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
         ],
     });
-    const shadowSharedUniBindGroup = device.createBindGroup({
-        layout: shadowSharedUniBindGroupLayout,
+    const shadowSceneUniBindGroup = device.createBindGroup({
+        layout: shadowSceneUniBindGroupLayout,
         entries: [
-            { binding: 0, resource: { buffer: sharedUniBuffer } }
+            { binding: 0, resource: { buffer: sceneUniBuffer } }
         ],
     });
 
@@ -472,17 +471,17 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     const shadowDepthTexture = device.createTexture(shadowDepthTextureDesc);
     const shadowDepthTextureView = shadowDepthTexture.createView();
     // define the resource bindings for the mesh rendering pipeline
-    const renderSharedUniBindGroupLayout = device.createBindGroupLayout({
+    const renderSceneUniBindGroupLayout = device.createBindGroupLayout({
         entries: [
             { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
             { binding: 1, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, texture: { sampleType: 'depth' } },
             { binding: 2, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, sampler: { type: 'comparison' } },
         ],
     });
-    const renderSharedUniBindGroup = device.createBindGroup({
-        layout: renderSharedUniBindGroupLayout,
+    const renderSceneUniBindGroup = device.createBindGroup({
+        layout: renderSceneUniBindGroupLayout,
         entries: [
-            { binding: 0, resource: { buffer: sharedUniBuffer } },
+            { binding: 0, resource: { buffer: sceneUniBuffer } },
             { binding: 1, resource: shadowDepthTextureView },
             { binding: 2, resource: device.createSampler({ compare: 'less' }) },
         ],
@@ -492,7 +491,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     // from the point of view of the lighting so we know where the shadows are
     const shadowPipelineDesc: GPURenderPipelineDescriptor = {
         layout: device.createPipelineLayout({
-            bindGroupLayouts: [shadowSharedUniBindGroupLayout, modelUniBindGroupLayout],
+            bindGroupLayouts: [shadowSceneUniBindGroupLayout, modelUniBindGroupLayout],
         }),
         vertex: {
             module: device.createShaderModule({ code: vertexShaderForShadows }),
@@ -519,7 +518,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     // setup our second phase pipeline which renders meshes to the canvas
     const renderPipelineDesc: GPURenderPipelineDescriptor = {
         layout: device.createPipelineLayout({
-            bindGroupLayouts: [renderSharedUniBindGroupLayout, modelUniBindGroupLayout],
+            bindGroupLayouts: [renderSceneUniBindGroupLayout, modelUniBindGroupLayout],
         }),
         vertex: {
             module: device.createShaderModule({ code: vertexShader }),
@@ -554,7 +553,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         sampleCount: antiAliasSampleCount,
     });
     bundleEncoder.setPipeline(renderPipeline);
-    bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
+    bundleEncoder.setBindGroup(0, renderSceneUniBindGroup);
     bundleEncoder.setVertexBuffer(0, _vertBuffer);
     bundleEncoder.setIndexBuffer(_indexBuffer, 'uint16');
     for (let m of meshHandles) {
@@ -577,7 +576,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         previousFrameTime = timeMs;
 
         // resize (if necessary)
-        resize(device, canvasRef.width, canvasRef.height);
+        onCanvasResize(device, canvasRef.width, canvasRef.height);
 
         // process inputs and move the player & camera
         const playerSpeed = pressedKeys[' '] ? 1.0 : 0.2; // spacebar boosts speed
@@ -608,7 +607,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
             },
         };
         const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
-        shadowPass.setBindGroup(0, shadowSharedUniBindGroup);
+        shadowPass.setBindGroup(0, shadowSceneUniBindGroup);
         shadowPass.setPipeline(shadowPipeline);
         shadowPass.setVertexBuffer(0, _vertBuffer);
         shadowPass.setIndexBuffer(_indexBuffer, 'uint16');
@@ -626,7 +625,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         mat4.invert(viewMatrix, viewMatrix);
         const projectionMatrix = mat4.perspective(mat4.create(), (2 * Math.PI) / 5, aspectRatio, 1, 10000.0/*view distance*/);
         const viewProj = mat4.multiply(mat4.create(), projectionMatrix, viewMatrix) as Float32Array
-        device.queue.writeBuffer(sharedUniBuffer, 0, viewProj.buffer);
+        device.queue.writeBuffer(sceneUniBuffer, 0, viewProj.buffer);
 
         // render to the canvas' via our swap-chain
         const renderPassEncoder = commandEncoder.beginRenderPass({
@@ -662,6 +661,12 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
 // math utilities
 function align(x: number, size: number): number {
     return Math.ceil(x / size) * size
+}
+function computeTriangleNormal(p1: vec3, p2: vec3, p3: vec3): vec3 {
+    // cross product of two edges, https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
+    const n = vec3.cross(vec3.create(), vec3.sub(vec3.create(), p2, p1), vec3.sub(vec3.create(), p3, p1))
+    vec3.normalize(n, n)
+    return n;
 }
 
 // matrix utilities
