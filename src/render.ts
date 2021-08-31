@@ -73,47 +73,6 @@ const swapChainFormat = "bgra8unorm";
 const depthStencilFormat = "depth24plus-stencil8";
 const backgroundColor = { r: 0.5, g: 0.5, b: 0.5, a: 1.0 };
 
-let depthTexture: GPUTexture;
-let depthTextureView: GPUTextureView;
-let colorTexture: GPUTexture;
-let colorTextureView: GPUTextureView;
-let lastWidth = 0;
-let lastHeight = 0;
-let aspectRatio = 1;
-
-// recomputes textures, widths, and aspect ratio on canvas resize
-function checkCanvasResize(
-  device: GPUDevice,
-  canvasWidth: number,
-  canvasHeight: number
-) {
-  if (lastWidth === canvasWidth && lastHeight === canvasHeight) return;
-
-  if (depthTexture) depthTexture.destroy();
-  if (colorTexture) colorTexture.destroy();
-
-  depthTexture = device.createTexture({
-    size: { width: canvasWidth, height: canvasHeight },
-    format: depthStencilFormat,
-    sampleCount: antiAliasSampleCount,
-    usage: GPUTextureUsage.RENDER_ATTACHMENT,
-  });
-  depthTextureView = depthTexture.createView();
-
-  colorTexture = device.createTexture({
-    size: { width: canvasWidth, height: canvasHeight },
-    sampleCount: antiAliasSampleCount,
-    format: swapChainFormat,
-    usage: GPUTextureUsage.RENDER_ATTACHMENT,
-  });
-  colorTextureView = colorTexture.createView();
-
-  lastWidth = canvasWidth;
-  lastHeight = canvasHeight;
-
-  aspectRatio = Math.abs(canvasWidth / canvasHeight);
-}
-
 // normally vertices can be shared by triangles, so this duplicates vertices as necessary so they are unshared
 // TODO: this shouldn't be needed once "flat" shading is supported in Chrome's WGSL, see:
 //      https://bugs.chromium.org/p/tint/issues/detail?id=746&q=interpolate&can=2
@@ -163,38 +122,6 @@ const sceneUniBufferSizeExact =
   bytesPerVec3 * 1; // light pos
 const sceneUniBufferSizeAligned = align(sceneUniBufferSizeExact, 256); // uniform objects must be 256 byte aligned
 
-// defines the limits of our vertex, index, and uniform buffers
-const maxMeshes = 100;
-const maxTris = maxMeshes * 100;
-const maxVerts = maxTris * 3;
-
-// create a directional light and compute it's projection (for shadows) and direction
-const worldOrigin = vec3.fromValues(0, 0, 0);
-const lightPosition = vec3.fromValues(50, 50, 0);
-const upVector = vec3.fromValues(0, 1, 0);
-const lightViewMatrix = mat4.lookAt(
-  mat4.create(),
-  lightPosition,
-  worldOrigin,
-  upVector
-);
-const lightProjectionMatrix = mat4.ortho(
-  mat4.create(),
-  -80,
-  80,
-  -80,
-  80,
-  -200,
-  300
-);
-const lightViewProjMatrix = mat4.multiply(
-  mat4.create(),
-  lightProjectionMatrix,
-  lightViewMatrix
-);
-const lightDir = vec3.subtract(vec3.create(), worldOrigin, lightPosition);
-vec3.normalize(lightDir, lightDir);
-
 function align(x: number, size: number): number {
   return Math.ceil(x / size) * size;
 }
@@ -210,7 +137,7 @@ function computeTriangleNormal(p1: vec3, p2: vec3, p3: vec3): vec3 {
 }
 
 // matrix utilities
-export function pitch(m: mat4, rad: number) {
+function pitch(m: mat4, rad: number) {
   return mat4.rotateX(m, m, rad);
 }
 function yaw(m: mat4, rad: number) {
@@ -239,9 +166,9 @@ interface MappedGPUBuffers {
 }
 
 export class Renderer {
-  maxMeshes = 100;
-  maxTris = maxMeshes * 100;
-  maxVerts = maxTris * 3;
+  maxMeshes: number;
+  maxTris: number;
+  maxVerts: number;
 
   state: GameView;
   device: GPUDevice;
@@ -263,6 +190,14 @@ export class Renderer {
   mappedGPUBuffers: MappedGPUBuffers | null = null;
 
   renderBundle: GPURenderBundle;
+
+  depthTexture: GPUTexture | null = null;
+  depthTextureView: GPUTextureView | null = null;
+  colorTexture: GPUTexture | null = null;
+  colorTextureView: GPUTextureView | null = null;
+  lastWidth = 0;
+  lastHeight = 0;
+  aspectRatio = 1;
 
   private gpuBufferWriteMeshTransform(m: MeshHandle) {
     this.device.queue.writeBuffer(
@@ -306,6 +241,39 @@ export class Renderer {
     this.mappedGPUBuffers = null;
   }
 
+  // recomputes textures, widths, and aspect ratio on canvas resize
+  checkCanvasResize() {
+    if (
+      this.lastWidth === this.canvas.width &&
+      this.lastHeight === this.canvas.height
+    )
+      return;
+
+    if (this.depthTexture) this.depthTexture.destroy();
+    if (this.colorTexture) this.colorTexture.destroy();
+
+    this.depthTexture = this.device.createTexture({
+      size: { width: this.canvas.width, height: this.canvas.height },
+      format: depthStencilFormat,
+      sampleCount: antiAliasSampleCount,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    this.depthTextureView = this.depthTexture.createView();
+
+    this.colorTexture = this.device.createTexture({
+      size: { width: this.canvas.width, height: this.canvas.height },
+      sampleCount: antiAliasSampleCount,
+      format: swapChainFormat,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    this.colorTextureView = this.colorTexture.createView();
+
+    this.lastWidth = this.canvas.width;
+    this.lastHeight = this.canvas.height;
+
+    this.aspectRatio = Math.abs(this.canvas.width / this.canvas.height);
+  }
+
   /*
     Adds an object to be rendered. Currently expects the GPU's buffers to be memory-mapped.
                   
@@ -319,8 +287,10 @@ export class Renderer {
     } else {
       // need to introduce a new variable to convince Typescript the mapping is non-null
       let mapped = this.mappedGPUBuffers;
-      if (this.numVerts + m.pos.length > maxVerts) throw "Too many vertices!";
-      if (this.numTris + m.tri.length > maxTris) throw "Too many triangles!";
+      if (this.numVerts + m.pos.length > this.maxVerts)
+        throw "Too many vertices!";
+      if (this.numTris + m.tri.length > this.maxTris)
+        throw "Too many triangles!";
 
       const vertNumOffset = this.numVerts;
       const indicesNumOffset = this.numTris * 3;
@@ -370,6 +340,33 @@ export class Renderer {
   }
 
   setupSceneBuffer() {
+    // create a directional light and compute it's projection (for shadows) and direction
+    const worldOrigin = vec3.fromValues(0, 0, 0);
+    const lightPosition = vec3.fromValues(50, 50, 0);
+    const upVector = vec3.fromValues(0, 1, 0);
+    const lightViewMatrix = mat4.lookAt(
+      mat4.create(),
+      lightPosition,
+      worldOrigin,
+      upVector
+    );
+    const lightProjectionMatrix = mat4.ortho(
+      mat4.create(),
+      -80,
+      80,
+      -80,
+      80,
+      -200,
+      300
+    );
+    const lightViewProjMatrix = mat4.multiply(
+      mat4.create(),
+      lightProjectionMatrix,
+      lightViewMatrix
+    );
+    const lightDir = vec3.subtract(vec3.create(), worldOrigin, lightPosition);
+    vec3.normalize(lightDir, lightDir);
+
     this.device.queue.writeBuffer(
       this.sceneUniformBuffer,
       bytesPerMat4 * 1,
@@ -382,25 +379,35 @@ export class Renderer {
     );
   }
 
-  constructor(state: GameView, canvas: HTMLCanvasElement, device: GPUDevice) {
+  constructor(
+    state: GameView,
+    canvas: HTMLCanvasElement,
+    device: GPUDevice,
+    maxMeshes = 100,
+    maxTrisPerMesh = 100
+  ) {
     this.state = state;
     this.canvas = canvas;
     this.device = device;
     this.context = canvas.getContext("gpupresent")!;
     this.context.configure({ device, format: swapChainFormat });
 
+    this.maxMeshes = maxMeshes;
+    this.maxTris = this.maxMeshes * maxTrisPerMesh;
+    this.maxVerts = this.maxTris * 3;
+
     this.vertexBuffer = device.createBuffer({
-      size: maxVerts * vertByteSize,
+      size: this.maxVerts * vertByteSize,
       usage: GPUBufferUsage.VERTEX,
       mappedAtCreation: true,
     });
     this.indexBuffer = device.createBuffer({
-      size: maxTris * bytesPerTri,
+      size: this.maxTris * bytesPerTri,
       usage: GPUBufferUsage.INDEX,
       mappedAtCreation: true,
     });
     this.meshUniformBuffer = device.createBuffer({
-      size: meshUniByteSizeAligned * maxMeshes,
+      size: meshUniByteSizeAligned * this.maxMeshes,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
       mappedAtCreation: true,
     });
@@ -532,12 +539,12 @@ export class Renderer {
   }
 
   renderFrame() {
-    checkCanvasResize(this.device, this.canvas.width, this.canvas.height);
+    this.checkCanvasResize();
     const viewMatrix = this.state.viewMatrix();
     const projectionMatrix = mat4.perspective(
       mat4.create(),
       (2 * Math.PI) / 5,
-      aspectRatio,
+      this.aspectRatio,
       1,
       10000.0 /*view distance*/
     );
@@ -546,7 +553,6 @@ export class Renderer {
       projectionMatrix,
       viewMatrix
     ) as Float32Array;
-    console.log(viewProj);
     this.device.queue.writeBuffer(this.sceneUniformBuffer, 0, viewProj.buffer);
 
     // update all mesh transforms
@@ -562,14 +568,14 @@ export class Renderer {
     const renderPassEncoder = commandEncoder.beginRenderPass({
       colorAttachments: [
         {
-          view: colorTextureView,
+          view: this.colorTextureView!,
           resolveTarget: this.context.getCurrentTexture().createView(),
           loadValue: backgroundColor,
           storeOp: "store",
         },
       ],
       depthStencilAttachment: {
-        view: depthTextureView,
+        view: this.depthTextureView!,
         depthLoadValue: 1.0,
         depthStoreOp: "store",
         stencilLoadValue: 0,

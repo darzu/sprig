@@ -61,7 +61,6 @@ export abstract class GameState<Inputs> implements GameView {
   abstract viewMatrix(): mat4;
 
   step(time: number, inputs: Inputs) {
-    console.log(`step at time ${time}`);
     let dt = time - this.time;
     this.stepGame(dt, inputs);
     for (let o of this.objects()) {

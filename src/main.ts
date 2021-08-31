@@ -1,6 +1,6 @@
 import { mat4, vec3, quat } from "./gl-matrix.js";
 import { Mesh, scaleMesh, GameObject, GameState } from "./state.js";
-import { Renderer, pitch } from "./render.js";
+import { Renderer } from "./render.js";
 import Peer from "./peerjs.js";
 
 class Plane extends GameObject {
@@ -131,7 +131,7 @@ class CubeGameState extends GameState<Inputs> {
     let player = new Player(0);
     this.players = [player];
     let randomCubes: SpinningCube[] = [];
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 1000; i++) {
       let cube = new SpinningCube();
       // create cubes with random colors
       cube.location = vec3.fromValues(
@@ -369,10 +369,21 @@ async function startServer() {
   });
   let gameState = new CubeGameState(performance.now());
   let canvas = document.getElementById("sample-canvas") as HTMLCanvasElement;
+  function onWindowResize() {
+    canvas.width = window.innerWidth;
+    canvas.style.width = `${window.innerWidth}px`;
+    canvas.height = window.innerHeight;
+    canvas.style.height = `${window.innerHeight}px`;
+  }
+  window.onresize = function () {
+    onWindowResize();
+  };
+  onWindowResize();
+
   const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter!.requestDevice();
-  let renderer = new Renderer(gameState, canvas, device);
+  let renderer = new Renderer(gameState, canvas, device, 2000);
   let inputs = inputsReader(canvas);
   function doLockMouse() {
     canvas.requestPointerLock();
@@ -390,6 +401,8 @@ async function startServer() {
     renderer.renderFrame();
     let jsTime = performance.now() - start;
     let frameTime = start - previousFrameTime;
+    console.log(`frame time is ${frameTime}, previous is ${previousFrameTime}`);
+    previousFrameTime = start;
     avgJsTime = avgJsTime
       ? (1 - avgWeight) * avgJsTime + avgWeight * jsTime
       : jsTime;
@@ -397,7 +410,6 @@ async function startServer() {
       ? (1 - avgWeight) * avgFrameTime + avgWeight * frameTime
       : frameTime;
     const avgFPS = 1000 / avgFrameTime;
-
     debugDiv.innerText =
       controlsStr +
       `\n` +
