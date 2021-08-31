@@ -91,11 +91,11 @@ const fragmentShader = `
 
 // useful constants
 const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
-const bytesPerUint16 = Uint16Array.BYTES_PER_ELEMENT;
+const bytesPerUint32 = Uint32Array.BYTES_PER_ELEMENT;
 const bytesPerMat4 = (4 * 4)/*4x4 mat*/ * 4/*f32*/
 const bytesPerVec3 = 3/*vec3*/ * 4/*f32*/
 const indicesPerTriangle = 3;
-const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
+const bytesPerTri = Uint32Array.BYTES_PER_ELEMENT * indicesPerTriangle;
 
 // render pipeline parameters
 const antiAliasSampleCount = 4;
@@ -297,7 +297,7 @@ interface MeshPoolBuilder {
     opts: MeshPoolOpts,
     // memory mapped buffers
     verticesMap: Float32Array,
-    indicesMap: Uint16Array,
+    indicesMap: Uint32Array,
     uniformMap: Uint8Array,
     // handles
     device: GPUDevice,
@@ -322,7 +322,7 @@ interface MeshPool {
 }
 
 const scratchFloat32Arr = new Float32Array(1000);
-const scratchUint16Arr = new Uint16Array(1000);
+const scratchUint32Arr = new Uint32Array(1000);
 
 function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolBuilder {
     const { maxMeshes, maxTris, maxVerts } = opts;
@@ -358,7 +358,7 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
 
     // to modify buffers, we need to map them into JS space; we'll need to unmap later
     let verticesMap = new Float32Array(verticesBuffer.getMappedRange())
-    let indicesMap = new Uint16Array(indicesBuffer.getMappedRange());
+    let indicesMap = new Uint32Array(indicesBuffer.getMappedRange());
     let uniformMap = new Uint8Array(_meshUniBuffer.getMappedRange());
 
     // add our meshes to the vertex and index buffers
@@ -378,11 +378,19 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
         const vertNumOffset = numVerts;
         const indicesNumOffset = numTris * indicesPerTriangle;
 
+        const provoking: { [key: number]: boolean } = {}
+
+        m.tri.forEach((triInd, i) => {
+            provoking[triInd[0]] = true
+        })
+
         m.pos.forEach((pos, i) => {
             const vOff = (numVerts + i) * vertElStride
             if (directWrite)
                 verticesMap.set([...pos, ...[0.5, 0.5, 0.5], ...[1.0, 0.0, 0.0]], vOff)
             else {
+                if (provoking[i])
+                    return;
                 scratchFloat32Arr.set([...pos, ...[0.5, 0.5, 0.5], ...[1.0, 0.0, 0.0]], 0)
                 device.queue.writeBuffer(verticesBuffer, vOff * bytesPerFloat, scratchFloat32Arr, 0, vertByteSize)
             }
@@ -394,14 +402,15 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
                 indicesMap[iOff + 1] = triInd[1]
                 indicesMap[iOff + 2] = triInd[2]
             } else {
-                scratchUint16Arr.set(triInd, 0)
-                device.queue.writeBuffer(indicesBuffer, iOff * bytesPerUint16, scratchUint16Arr, 0, 3 * bytesPerUint16)
+                scratchUint32Arr.set(triInd, 0)
+                device.queue.writeBuffer(indicesBuffer, iOff * bytesPerUint32, scratchUint32Arr, 0, bytesPerUint32 * 3)
             }
             const vOff = (numVerts + triInd[0]) * vertElStride
             const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
             if (directWrite)
                 verticesMap.set([...m.pos[triInd[0]], ...m.colors[i], ...normal], vOff)
             else {
+                console.log(`about to write: ${triInd[0]} ${m.pos[triInd[0]]}`)
                 scratchFloat32Arr.set([...m.pos[triInd[0]], ...m.colors[i], ...normal], 0)
                 device.queue.writeBuffer(verticesBuffer, vOff * bytesPerFloat, scratchFloat32Arr, 0, vertByteSize)
             }
@@ -414,8 +423,11 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
         const transform = mat4.create() as Float32Array;
 
         const uniOffset = allMeshHandles.length * meshUniByteSizeAligned;
-        uniformMap[uniOffset]
-        uniformMap.set(transform, uniOffset)
+        if (directWrite)
+            uniformMap.set(transform, uniOffset)
+        else {
+            device.queue.writeBuffer(_meshUniBuffer, uniOffset, transform, 0, transform.length)
+        }
 
         const res: MeshHandle = {
             vertNumOffset,
@@ -498,19 +510,20 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         maxVerts: 900
     });
 
-
-    // TODO(@darzu): adding via pool should work...
     const ground = poolBuilder.addMesh(PLANE);
     const player = poolBuilder.addMesh(CUBE);
+
+    const pool = poolBuilder.finish();
+
+    // TODO(@darzu): adding via pool should work...
     const randomCubes: MeshHandle[] = [];
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 1; i++) {
         // create cubes with random colors
         const color: vec3 = [Math.random(), Math.random(), Math.random()];
         const coloredCube: Mesh = { ...CUBE, colors: CUBE.colors.map(_ => color) }
-        randomCubes.push(poolBuilder.addMesh(coloredCube));
+        randomCubes.push(pool.addMesh(coloredCube));
     }
 
-    const pool = poolBuilder.finish();
 
     // place the ground
     mat4.translate(ground.transform, ground.transform, [0, -3, -8])
@@ -694,7 +707,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     shadowBundleEnc.setPipeline(shadowPipeline);
     shadowBundleEnc.setBindGroup(0, shadowSceneUniBindGroup);
     shadowBundleEnc.setVertexBuffer(0, pool.verticesBuffer);
-    shadowBundleEnc.setIndexBuffer(pool.indicesBuffer, 'uint16');
+    shadowBundleEnc.setIndexBuffer(pool.indicesBuffer, 'uint32');
     for (let m of pool.allMeshHandles) {
         shadowBundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
         shadowBundleEnc.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
@@ -709,7 +722,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     bundleEnc.setPipeline(renderPipeline);
     bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
     bundleEnc.setVertexBuffer(0, pool.verticesBuffer);
-    bundleEnc.setIndexBuffer(pool.indicesBuffer, 'uint16');
+    bundleEnc.setIndexBuffer(pool.indicesBuffer, 'uint32');
     for (let m of pool.allMeshHandles) {
         bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
         bundleEnc.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
