@@ -11,6 +11,7 @@ const wgslShaders = {
     cameraViewProjMatrix : mat4x4<f32>;
     lightViewProjMatrix : mat4x4<f32>;
     lightPos : vec3<f32>;
+    time : f32;
   };
 
   [[block]] struct Model {
@@ -38,6 +39,7 @@ const wgslShaders = {
         cameraViewProjMatrix : mat4x4<f32>;
         lightViewProjMatrix : mat4x4<f32>;
         lightPos : vec3<f32>;
+        time : f32;
     };
 
     [[block]] struct Model {
@@ -74,7 +76,11 @@ const wgslShaders = {
         posFromLight.z
     );
 
-    output.Position = scene.cameraViewProjMatrix * model.modelMatrix * vec4<f32>(position, 1.0);
+    let xTimeJitter: f32 = 0.0;
+    let zTimeJitter: f32 = 0.0;
+    // let xTimeJitter: f32 = sin(scene.time * 0.001) * 0.2;
+    // let zTimeJitter: f32 = sin(scene.time * 0.002) * 0.2;
+    output.Position = scene.cameraViewProjMatrix * model.modelMatrix * vec4<f32>(position, 1.0) + vec4<f32>(xTimeJitter, 0.0, zTimeJitter, 0.0);
     output.fragPos = output.Position.xyz;
     // output.fragNorm = normal;
     output.fragNorm = normalize(model.modelMatrix * vec4<f32>(normal, 0.0)).xyz;
@@ -84,9 +90,10 @@ const wgslShaders = {
     `,
     fragment: `
     [[block]] struct Scene {
-    lightViewProjMatrix : mat4x4<f32>;
-    cameraViewProjMatrix : mat4x4<f32>;
-    lightPos : vec3<f32>;
+        lightViewProjMatrix : mat4x4<f32>;
+        cameraViewProjMatrix : mat4x4<f32>;
+        lightPos : vec3<f32>;
+        time : f32;
     };
 
     [[group(0), binding(0)]] var<uniform> scene : Scene;
@@ -284,14 +291,13 @@ export function createMeshRenderer(
     // TODO(@darzu): use
     const shadowDepthTextureView = shadowDepthTexture.createView();
 
-
-
     const sharedUniBufferSize =
         // Two 4x4 viewProj matrices,
         // one for the camera and one for the light.
         // Then a vec3 for the light position.
-        mat4ByteSize * 2 // camera and light pos
-        + vec3ByteSize * 1;
+        mat4ByteSize * 2 // camera and light projection
+        + vec3ByteSize * 1 // light pos
+        + Float32Array.BYTES_PER_ELEMENT * 1 // time;
     const sharedUniBuffer = device.createBuffer({
         size: sharedUniBufferSize,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,

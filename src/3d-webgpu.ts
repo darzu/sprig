@@ -1,6 +1,6 @@
 import { mat4, vec3, quat } from './ext/gl-matrix.js';
 import { clamp } from './math.js';
-import { addTriToBuffers, createMeshMemoryPool, CUBE, mat4ByteSize, Mesh, MeshMemoryPoolOptions, MeshModel, PLANE, triByteSize } from './3d/mesh.js';
+import { addTriToBuffers, createMeshMemoryPool, CUBE, mat4ByteSize, Mesh, MeshMemoryPoolOptions, MeshModel, PLANE, triByteSize, vec3ByteSize } from './3d/mesh.js';
 import { createMeshRenderer } from './3d/mesh-renderer.js';
 // import * as RAPIER from './ext/@dimforge/rapier3d/rapier.js';
 
@@ -502,6 +502,17 @@ async function init(canvasRef: HTMLCanvasElement) {
             transformationMatrix.buffer,
             transformationMatrix.byteOffset,
             transformationMatrix.byteLength
+        );
+
+        // writting time to shared buffer
+        const sharedTime = new Float32Array(1);
+        sharedTime[0] = Math.floor(time); // TODO(@darzu):         
+        device.queue.writeBuffer(
+            meshRenderer.sharedUniBuffer,
+            mat4ByteSize * 2 + vec3ByteSize * 1, // TODO(@darzu): getting these offsets is a pain
+            sharedTime.buffer,
+            sharedTime.byteOffset,
+            sharedTime.byteLength
         );
 
         // meshPool.preRender()
