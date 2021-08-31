@@ -175,6 +175,8 @@ export class Renderer_WebGPU implements Renderer {
       handle,
     }
 
+    this.meshObjs.push(res);
+
     this.needsRebundle = true;
     return res;
   }
@@ -182,6 +184,7 @@ export class Renderer_WebGPU implements Renderer {
   needsRebundle = false;
 
   private createRenderBundle() {
+    console.log('creating render bundle') // TODO(@darzu): dz
     this.needsRebundle = false; // TODO(@darzu): hack
     const modelUniBindGroupLayout = this.device.createBindGroupLayout({
       entries: [
@@ -279,6 +282,7 @@ export class Renderer_WebGPU implements Renderer {
     // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
     bundleEnc.setIndexBuffer(this.pool.indicesBuffer, "uint16");
     for (let m of this.meshObjs) {
+      console.log('rendering mesh') // TODO(@darzu): 
       bundleEnc.setBindGroup(1, modelUniBindGroup, [m.handle.modelUniByteOffset]);
       bundleEnc.drawIndexed(
         m.handle.numTris * indicesPerTriangle,
@@ -380,9 +384,7 @@ export class Renderer_WebGPU implements Renderer {
     this.sceneData.cameraViewProjMatrix = viewProj;
 
     const sceneUniScratch = new Uint8Array(SceneUniform.ByteSizeAligned)
-
     SceneUniform.Serialize(sceneUniScratch, 0, this.sceneData);
-
     this.device.queue.writeBuffer(this.sceneUniformBuffer, 0, sceneUniScratch.buffer);
 
     // update all mesh transforms
