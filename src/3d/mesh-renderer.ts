@@ -53,6 +53,7 @@ const wgslShaders = {
         [[location(1)]] fragPos : vec3<f32>;
         [[location(2)]] fragNorm : vec3<f32>;
         [[location(3)]] color : vec3<f32>;
+        [[location(4)]] swayHeight : f32;
 
         [[builtin(position)]] Position : vec4<f32>;
     };
@@ -95,6 +96,7 @@ const wgslShaders = {
         // output.fragNorm = normal;
         output.fragNorm = normalize(model.modelMatrix * vec4<f32>(normal, 0.0)).xyz;
         output.color = color;
+        output.swayHeight = swayHeight;
         return output;
     }
     `,
@@ -115,6 +117,8 @@ const wgslShaders = {
         [[location(1)]] fragPos : vec3<f32>;
         [[location(2)]] fragNorm : vec3<f32>;
         [[location(3)]] color : vec3<f32>;
+        // TODO: use swayHeight?
+        [[location(4)]] swayHeight : f32;
         [[builtin(front_facing)]] front: bool;
     };
 

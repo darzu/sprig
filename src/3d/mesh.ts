@@ -367,7 +367,7 @@ export function addTriToBuffers(
     triPos: [vec3, vec3, vec3],
     triInd: vec3,
     triNorm: vec3,
-    triColor: vec3,
+    triColors: [vec3, vec3, vec3],
     triSwayHeights: vec3,
     verts: Float32Array, prevNumVerts: number, vertElStride: number,
     indices: Uint16Array | null, prevNumTri: number, shiftIndices = false): void {
@@ -394,16 +394,18 @@ export function addTriToBuffers(
     verts[vOff + vi2 * vertElStride + 1] = triPos[2][1]
     verts[vOff + vi2 * vertElStride + 2] = triPos[2][2]
     // color
-    const [r, g, b] = triColor
-    verts[vOff + vi0 * vertElStride + 3] = r
-    verts[vOff + vi0 * vertElStride + 4] = g
-    verts[vOff + vi0 * vertElStride + 5] = b
-    verts[vOff + vi1 * vertElStride + 3] = r
-    verts[vOff + vi1 * vertElStride + 4] = g
-    verts[vOff + vi1 * vertElStride + 5] = b
-    verts[vOff + vi2 * vertElStride + 3] = r
-    verts[vOff + vi2 * vertElStride + 4] = g
-    verts[vOff + vi2 * vertElStride + 5] = b
+    const [r1, g1, b1] = triColors[0]
+    const [r2, g2, b2] = triColors[1]
+    const [r3, g3, b3] = triColors[2]
+    verts[vOff + vi0 * vertElStride + 3] = r1
+    verts[vOff + vi0 * vertElStride + 4] = g1
+    verts[vOff + vi0 * vertElStride + 5] = b1
+    verts[vOff + vi1 * vertElStride + 3] = r2
+    verts[vOff + vi1 * vertElStride + 4] = g2
+    verts[vOff + vi1 * vertElStride + 5] = b2
+    verts[vOff + vi2 * vertElStride + 3] = r3
+    verts[vOff + vi2 * vertElStride + 4] = g3
+    verts[vOff + vi2 * vertElStride + 5] = b3
     // normals
     const [nx, ny, nz] = triNorm
     verts[vOff + vi0 * vertElStride + 6] = nx
@@ -436,7 +438,7 @@ function addMeshToBuffers(
             [m.pos[t[0]], m.pos[t[1]], m.pos[t[2]]],
             t,
             norms[i],
-            m.colors[i],
+            [m.colors[i], m.colors[i], m.colors[i]],
             [0, 0, 0],
             verts, prevNumVerts, vertElStride,
             indices, prevNumTri + i, shiftIndices);

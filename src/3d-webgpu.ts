@@ -274,7 +274,11 @@ async function init(canvasRef: HTMLCanvasElement) {
                     [p0, p1, p2],
                     [0, 1, 2],
                     norm,
-                    [r, g, b],
+                    [
+                        [r * 0.5, g * 0.5, b * 0.5],
+                        [r * 0.5, g * 0.5, b * 0.5],
+                        [r, g, b],
+                    ],
                     [0, 0, 1.0],
                     grassMeshPool._vertsMap(),
                     grassMeshPool._numVerts,
