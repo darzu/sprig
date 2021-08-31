@@ -1,1 +1,21 @@
-TBD
+Music Theory
+    https://www.youtube.com/watch?v=rgaTLrZGlk0
+
+concepts: 
+    notes, chords, keys (home base?), scales, major (4-3) and minor (3-4) scales, 12 notes, octaves, 7 note subsets (scales), 
+
+    diatonic 6 main chords: using roman numerals w/ uppercase is major lowercase is minor
+    petatonic scale: 5 notes, take major and minor scales and remove 2 most dissonant notes
+    melody notes play over cords with different quality depending if they are within or without that cord
+    rythm is (typically) 4 bars per measure (typically), divide into 8ths using "&" and 16ths using "a" and "e" "1 e & a 2 e & a 3 ...."
+
+    inversion: cycle the letters in a scale or chord? TODO
+
+DIY w/ software:
+    way to set scale
+    select cord progressions (I, ii, iv etc)
+    select melody notes
+
+way to consume midi, decompose it into these concepts?
+
+

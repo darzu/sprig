@@ -26,3 +26,6 @@ Cool 3d sim:
     http://david.li/waves/
     https://github.com/dli/waves
     https://www.youtube.com/watch?v=IrUehq6vJss
+
+stylized water shader:
+    https://alexanderameye.github.io/notes/stylized-water/

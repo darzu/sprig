@@ -121,3 +121,7 @@ MagicaVoxel:
 
     MagicaCSG:
         https://twitter.com/metinse7en/status/1410174115776970753/photo/1
+
+Generative art:
+    https://variable.io
+    https://nodes.io

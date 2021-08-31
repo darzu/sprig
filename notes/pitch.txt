@@ -18,3 +18,10 @@ Programs first and foremost must be UNDERSTANDABLE.
 
 You can't iterate on something you don't understand.
 You shouldn't program something you won't enjoy.
+
+https://twitter.com/andreintg/status/1405771128035954694
+    "the real dream: a Unity/UE competitor based on SDF tech, with standard web deploy. 
+    A game-jam bazooka with strong Flash vibes. The pieces are all out there already."
+    
+    "A game engine like Dreams, but running on PC and exporting to the usual target platforms, 
+    would be very, very, very, very, very, very successful."
