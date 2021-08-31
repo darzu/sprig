@@ -165,9 +165,9 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
             const y = bladeH + jitter(1)
 
             // TODO(@darzu): debug coloring
-            // const r = 0.2 + jitter(0.02)
-            // const g = 0.5 + jitter(0.2)
-            // const b = 0.2 + jitter(0.02)
+            const r = 0.2 + jitter(0.02)
+            const g = 0.5 + jitter(0.2)
+            const b = 0.2 + jitter(0.02)
 
             const p0: vec3 = [x1, 0, z1];
             const p1: vec3 = [x2, 0, z2];
@@ -351,14 +351,23 @@ function initGrassSystem(device: GPUDevice): GrassSystem {
         // tileset
         tilesPerSide: 4,
     }
-
     const lod2Opts: GrassTilesetOpts & GrassTileOpts = {
+        ...lod1Opts,
+        spacing: lod1Opts.spacing * 2,
+        tileSize: lod1Opts.tileSize * 2,
+    }
+    const lod3Opts: GrassTilesetOpts & GrassTileOpts = {
         ...lod1Opts,
         spacing: lod1Opts.spacing * 4,
         tileSize: lod1Opts.tileSize * 4,
     }
+    const lod4Opts: GrassTilesetOpts & GrassTileOpts = {
+        ...lod1Opts,
+        spacing: lod1Opts.spacing * 8,
+        tileSize: lod1Opts.tileSize * 8,
+    }
 
-    const lodOpts = [lod1Opts, lod2Opts]
+    const lodOpts = [lod1Opts, lod2Opts, lod3Opts, lod4Opts]
 
     const tilesets = lodOpts.map(opts => createGrassTileset(opts, device))
 
