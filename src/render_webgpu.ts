@@ -313,7 +313,7 @@ export class Renderer_WebGPU implements Renderer {
       bundleEnc.drawIndexed(
         m.handle.numTris * indicesPerTriangle,
         undefined,
-        m.handle.indicesNumOffset,
+        m.handle.triIndicesNumOffset,
         m.handle.vertNumOffset
       );
     }

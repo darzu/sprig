@@ -1,5 +1,5 @@
 import { computeTriangleNormal } from "./utils-3d.js";
-import { mat4, vec3 } from "./gl-matrix.js";
+import { mat4, vec2, vec3 } from "./gl-matrix.js";
 import { align, sum } from "./math.js";
 import { AABB, getAABBFromPositions } from "./physics.js";
 
@@ -263,7 +263,7 @@ export interface PoolIndex {
     // handle into the pool
     pool: MeshPool,
     vertNumOffset: number,
-    indicesNumOffset: number,
+    triIndicesNumOffset: number,
     modelUniByteOffset: number,
 }
 export interface MeshHandle extends PoolIndex, MeshUniform.Data {
@@ -374,7 +374,8 @@ interface MeshBuilderInternal {
 export interface Mesh {
     pos: vec3[];
     tri: vec3[];
-    colors: vec3[];  // colors per triangle in r,g,b float [0-1] format
+    colors: vec3[]; // colors per triangle in r,g,b float [0-1] format
+    lines?: vec2[];
     // format flags:
     usesProvoking?: boolean,
     verticesUnshared?: boolean, // TODO(@darzu): support
@@ -393,7 +394,7 @@ export function unshareVertices(input: Mesh): Mesh {
             i * 3 + 2,
         ])
     })
-    return { pos, tri, colors: input.colors, verticesUnshared: true }
+    return { ...input, pos, tri, verticesUnshared: true }
 }
 export function unshareProvokingVertices(input: Mesh): Mesh {
     const pos: vec3[] = [...input.pos]
@@ -663,7 +664,7 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
             const idx: PoolIndex = {
                 pool,
                 vertNumOffset: builder.numVerts,
-                indicesNumOffset: builder.numTris * 3,
+                triIndicesNumOffset: builder.numTris * 3,
                 modelUniByteOffset: allMeshes.length * MeshUniform.ByteSizeAligned,
             };
             const m = b.finish(idx)
@@ -765,11 +766,11 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
         const idx: PoolIndex = {
             pool,
             vertNumOffset: pool.numVerts,
-            indicesNumOffset: pool.numTris * 3,
+            triIndicesNumOffset: pool.numTris * 3,
             modelUniByteOffset: allMeshes.length * MeshUniform.ByteSizeAligned,
         };
 
-        queues.queueUpdateTriIndices(idx.indicesNumOffset * 2, new Uint8Array(data.triIndicesMap.buffer)); // TODO(@darzu): this view shouldn't be necessary
+        queues.queueUpdateTriIndices(idx.triIndicesNumOffset * 2, new Uint8Array(data.triIndicesMap.buffer)); // TODO(@darzu): this view shouldn't be necessary
         queues.queueUpdateUniform(idx.modelUniByteOffset, data.uniformMap);
         queues.queueUpdateVertices(idx.vertNumOffset * Vertex.ByteSize, data.verticesMap);
 

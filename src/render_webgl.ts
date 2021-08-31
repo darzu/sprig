@@ -275,7 +275,7 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxVe
       // gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset * 2);
       gl.uniformMatrix4fv(u_loc_transform, false, m.handle.transform);
       gl.uniform3fv(u_loc_tint, m.handle.tint);
-      const indicesBytesOffset = m.handle.indicesNumOffset * 2;
+      const indicesBytesOffset = m.handle.triIndicesNumOffset * 2;
       gl.drawElements(gl.TRIANGLES, m.handle.numTris * 3, gl.UNSIGNED_SHORT, indicesBytesOffset);
       // gl.drawElements(gl.TRIANGLES, m.handle.numTris * 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset);
       // break; // TODO(@darzu): 
