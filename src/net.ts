@@ -35,7 +35,7 @@ enum ObjectUpdateType {
 type ServerId = string;
 
 // target length for jitter buffer
-const BUFFER_TARGET = 4;
+const BUFFER_TARGET = 3;
 
 // Responsible for sync-ing objects to a *particular* other server.
 class StateSynchronizer<Inputs> {
