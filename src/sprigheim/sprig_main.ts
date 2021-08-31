@@ -13,6 +13,7 @@ const shaderSceneStruct = `
         lightDir : vec3<f32>;
         time : f32;
         targetSize: vec2<f32>;
+        cameraPos : vec3<f32>;
     };
 `;
 const vertexInputStruct = `
@@ -25,6 +26,7 @@ const vertexShaderOutput = `
     [[location(0)]] shadowPos : vec3<f32>;
     [[location(1)]] [[interpolate(flat)]] normal : vec3<f32>;
     [[location(2)]] [[interpolate(flat)]] color : vec3<f32>;
+    [[location(3)]] worldPos : vec3<f32>;
     [[builtin(position)]] position : vec4<f32>;
 `
 // shader code
@@ -112,6 +114,7 @@ const vertexShader = `
 
         let worldNorm: vec4<f32> = normalize(model.modelMatrix * vec4<f32>(dNorm, 0.0));
 
+        output.worldPos = worldPos.xyz;
         output.position = scene.cameraViewProjMatrix * worldPos;
         // let xyz = (output.position.xyz / output.position.w);
         // let xy = (xyz.xy / xyz.z);
@@ -158,6 +161,36 @@ const fragmentShader = `
         let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
         return vec4<f32>(gammaCorrected, 1.0);
     }
+
+    // fn hdr(color: vec3<f32>, exposure: f32) -> vec3<f32> {
+    //     return 1.0 - exp(-color * exposure);
+    // }
+
+    // // from David Li's sample
+    // [[stage(fragment)]]
+    // fn main(input: VertexOutput) -> [[location(0)]] vec4<f32> {
+    //     // normal: vec3<f32> = texture2D(u_normalMap, v_coordinates).rgb;
+    //     let normal = normalize(input.normal);
+    //     let u_skyColor = vec3<f32>(3.2, 9.6, 12.8); // what's going on with this color's size??
+    //     let u_oceanColor = vec3<f32>(0.004, 0.016, 0.047);
+    //     let u_exposure = 0.35;
+    //     let u_sunDirection = scene.lightDir;
+    //     let v_position = input.worldPos;
+
+    //     let u_cameraPosition = scene.cameraPos;
+    //     // let u_cameraPosition = scene.cameraViewProjMatrix * vec4<f32>(0.0, 0.0, 0.0, 1.0);
+
+    //     let view: vec3<f32> = normalize(u_cameraPosition.xyz - v_position);
+    //     let fresnel: f32 = 0.02 + 0.98 * pow(1.0 - dot(normal, view), 5.0);
+    //     let sky: vec3<f32> = fresnel * u_skyColor;
+
+    //     let diffuse: f32 = clamp(dot(normal, normalize(u_sunDirection)), 0.0, 1.0);
+    //     let water: vec3<f32> = (1.0 - fresnel) * u_oceanColor * u_skyColor * diffuse;
+
+    //     let color: vec3<f32> = sky + water;
+
+    //     return vec4<f32>(hdr(color, u_exposure), 1.0);
+    // }
 `;
 
 // generates a texture
@@ -424,6 +457,7 @@ const sceneUniBufferSizeExact =
     + bytesPerVec3 * 1 // light pos
     + bytesPerFloat * 1 // time
     + bytesPerFloat * 2 // targetSize
+    + bytesPerVec3 * 1 // camera pos
 export const sceneUniBufferSizeAligned = align(sceneUniBufferSizeExact, 256); // uniform objects must be 256 byte aligned
 
 export interface MeshPoolOpts {
@@ -996,6 +1030,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         checkCanvasResize(device, canvasRef.width, canvasRef.height);
         // TODO(@darzu): integrate this with checkCanvasResize
         // TODO(@darzu): SCENE FORMAT
+        // targetSize
         const sceneUniSizeOffset = bytesPerMat4 * 2 // camera and light projection
             + bytesPerVec3 * 1 // light pos
             + bytesPerFloat * 1 // time
@@ -1019,6 +1054,16 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         // apply the players movement by writting to the model uniform buffer
         gpuBufferWriteMeshTransform(player);
 
+        // calculate and write our view and project matrices
+        const viewLocMatrix = mat4.create()
+        mat4.multiply(viewLocMatrix, viewLocMatrix, player.transform)
+        mat4.multiply(viewLocMatrix, viewLocMatrix, cameraOffset)
+        mat4.translate(viewLocMatrix, viewLocMatrix, [0, 0, 10]) // TODO(@darzu): can this be merged into the camera offset?
+        const viewMatrix = mat4.invert(mat4.create(), viewLocMatrix);
+        const projectionMatrix = mat4.perspective(mat4.create(), (2 * Math.PI) / 5, aspectRatio, 1, 10000.0/*view distance*/);
+        const viewProj = mat4.multiply(mat4.create(), projectionMatrix, viewMatrix) as Float32Array
+        device.queue.writeBuffer(sceneUniBuffer, 0, viewProj.buffer);
+
         // rotate the random cubes
         for (let i = 0; i < randomCubes.length; i++) {
             const m = randomCubes[i]
@@ -1038,6 +1083,15 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         const timeBuffer = new Float32Array(1);
         timeBuffer[0] = timeMs;
         device.queue.writeBuffer(sceneUniBuffer, sceneUniTimeOffset, timeBuffer);
+        const cameraPosOffset =
+            bytesPerMat4 * 2 // camera and light projection
+            + bytesPerVec3 * 1 // light pos
+            + bytesPerFloat * 1 // time
+            + bytesPerFloat * 2 // targetSize
+        // const cameraPos = playerPos as Float32Array;
+        // TODO(@darzu): is this the camera position? seems off in the shader...
+        const cameraPos = getPositionFromTransform(viewLocMatrix) as Float32Array;
+        device.queue.writeBuffer(sceneUniBuffer, cameraPosOffset, cameraPos);
 
         // update fullscreen scene data
         const fsUniTimeOffset = 0
@@ -1072,16 +1126,6 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         });
         shadowRenderPassEncoder.executeBundles([shadowBundle]);
         shadowRenderPassEncoder.endPass();
-
-        // calculate and write our view and project matrices
-        const viewMatrix = mat4.create()
-        mat4.multiply(viewMatrix, viewMatrix, player.transform)
-        mat4.multiply(viewMatrix, viewMatrix, cameraOffset)
-        mat4.translate(viewMatrix, viewMatrix, [0, 0, 10]) // TODO(@darzu): can this be merged into the camera offset?
-        mat4.invert(viewMatrix, viewMatrix);
-        const projectionMatrix = mat4.perspective(mat4.create(), (2 * Math.PI) / 5, aspectRatio, 1, 10000.0/*view distance*/);
-        const viewProj = mat4.multiply(mat4.create(), projectionMatrix, viewMatrix) as Float32Array
-        device.queue.writeBuffer(sceneUniBuffer, 0, viewProj.buffer);
 
         // render to the canvas' via our swap-chain
         const renderPassEncoder = commandEncoder.beginRenderPass({
