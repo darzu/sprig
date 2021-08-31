@@ -149,7 +149,7 @@ interface Mesh {
     colors: vec3[];  // colors per triangle in r,g,b float [0-1] format
     // format flags:
     usesProvoking?: boolean,
-    verticesUnshared?: boolean,
+    verticesUnshared?: boolean, // TODO(@darzu): support
 }
 
 function unshareVertices(input: Mesh): Mesh {
@@ -257,6 +257,7 @@ const PLANE: Mesh = unshareProvokingVertices({
     ],
 })
 
+// TODO(@darzu): VERTEX FORMAT
 // define the format of our vertices (this needs to agree with the inputs to the vertex shaders)
 const vertexDataFormat: GPUVertexAttribute[] = [
     { shaderLocation: 0, offset: bytesPerVec3 * 0, format: 'float32x3' }, // position
@@ -266,11 +267,6 @@ const vertexDataFormat: GPUVertexAttribute[] = [
 // these help us pack and use vertices in that format
 const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/)
 const vertByteSize = bytesPerFloat * vertElStride;
-function bufferWriteVertex(buffer: Float32Array, offset: number, position: vec3, color: vec3, normal: vec3) {
-    bufferWriteVec3(buffer, offset + 0, position);
-    bufferWriteVec3(buffer, offset + 3, color);
-    bufferWriteVec3(buffer, offset + 6, normal);
-}
 
 // define the format of our models' uniform buffer
 const meshUniByteSizeExact =
@@ -301,6 +297,7 @@ interface MeshPoolBuilder {
     // memory mapped buffers
     verticesMap: Float32Array,
     indicesMap: Uint16Array,
+    uniformMap: Uint8Array,
     // handles
     device: GPUDevice,
     // methods
@@ -349,6 +346,7 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
     const _meshUniBuffer = device.createBuffer({
         size: meshUniByteSizeAligned * maxMeshes,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        mappedAtCreation: true,
     });
 
     const allMeshHandles: MeshHandle[] = [];
@@ -356,11 +354,12 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
     // to modify buffers, we need to map them into JS space; we'll need to unmap later
     let verticesMap = new Float32Array(verticesBuffer.getMappedRange())
     let indicesMap = new Uint16Array(indicesBuffer.getMappedRange());
+    let uniformMap = new Uint8Array(_meshUniBuffer.getMappedRange());
 
     // add our meshes to the vertex and index buffers
     let numVerts = 0;
     let numTris = 0;
-    function addMesh(m: Mesh): MeshHandle {
+    function addMesh(m: Mesh, directWrite = false): MeshHandle {
         // m = unshareVertices(m); // work-around; see TODO inside function
         if (!m.usesProvoking)
             m = unshareProvokingVertices(m);
@@ -376,7 +375,7 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
 
         m.pos.forEach((pos, i) => {
             const vOff = (numVerts + i) * vertElStride
-            bufferWriteVertex(verticesMap, vOff, pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0])
+            verticesMap.set([...pos, ...[0.5, 0.5, 0.5], ...[1.0, 0.0, 0.0]], vOff)
         })
         m.tri.forEach((triInd, i) => {
             const iOff = (numTris + i) * indicesPerTriangle
@@ -385,7 +384,7 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
             indicesMap[iOff + 2] = triInd[2]
             const vOff = (numVerts + triInd[0]) * vertElStride
             const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
-            bufferWriteVertex(verticesMap, vOff, m.pos[triInd[0]], m.colors[i], normal)
+            verticesMap.set([...m.pos[triInd[0]], ...m.colors[i], ...normal], vOff)
             // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
         })
 
@@ -395,7 +394,8 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
         const transform = mat4.create() as Float32Array;
 
         const uniOffset = allMeshHandles.length * meshUniByteSizeAligned;
-        device.queue.writeBuffer(_meshUniBuffer, uniOffset, transform.buffer);
+        uniformMap[uniOffset]
+        uniformMap.set(transform, uniOffset)
 
         const res: MeshHandle = {
             vertNumOffset,
@@ -424,6 +424,7 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
         // unmap the buffers so the GPU can use them
         verticesBuffer.unmap()
         indicesBuffer.unmap()
+        _meshUniBuffer.unmap()
 
         console.log(`Finishing pool with: ${numTris} triangles, ${numVerts} vertices`);
 
@@ -435,6 +436,7 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
         device,
         verticesMap,
         indicesMap,
+        uniformMap,
         addMesh,
         finish,
     };
@@ -810,13 +812,6 @@ function roll(m: mat4, rad: number) { return mat4.rotateZ(m, m, rad); }
 function moveX(m: mat4, n: number) { return mat4.translate(m, m, [n, 0, 0]); }
 function moveY(m: mat4, n: number) { return mat4.translate(m, m, [0, n, 0]); }
 function moveZ(m: mat4, n: number) { return mat4.translate(m, m, [0, 0, n]); }
-
-// buffer utilities
-function bufferWriteVec3(buffer: Float32Array, offset: number, v: vec3) {
-    buffer[offset + 0] = v[0]
-    buffer[offset + 1] = v[1]
-    buffer[offset + 2] = v[2]
-}
 
 async function main() {
     const start = performance.now();
