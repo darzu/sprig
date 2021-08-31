@@ -154,7 +154,7 @@ export function attachToCanvas(
 
   let initFinished = false;
 
-  const meshObjs: MeshObj[] = [];
+  const meshObjs: Record<number, MeshObj> = {};
 
   const scene = setupScene();
 
@@ -200,7 +200,7 @@ export function attachToCanvas(
       handle,
     };
 
-    meshObjs.push(res);
+    meshObjs[o.id] = res;
 
     return res;
   }
@@ -218,9 +218,13 @@ export function attachToCanvas(
       handle: newHandle,
     };
 
-    meshObjs.push(res);
+    meshObjs[o.id] = res;
 
     return res;
+  }
+
+  function removeObject(o: GameObject) {
+    delete meshObjs[o.id];
   }
 
   function renderFrame(viewMatrix: mat4) {
@@ -280,7 +284,7 @@ export function attachToCanvas(
     gl.enableVertexAttribArray(a_loc_color);
 
     // update uniforms
-    for (let m of meshObjs) {
+    for (let m of Object.values(meshObjs)) {
       m.handle.transform = m.obj.transform; // TODO(@darzu): this is hacky
       // TODO(@darzu): this is definitely weird. Need to think about this interaction better.
       if ((m.obj as any).color) m.handle.tint = (m.obj as any).color;
@@ -296,7 +300,7 @@ export function attachToCanvas(
     // gl.uniformMatrix4fv(u_loc_transform, false, mat4.create());
     // gl.drawElements(gl.TRIANGLES, 6 * 6, gl.UNSIGNED_SHORT, 0);
 
-    for (let m of meshObjs) {
+    for (let m of Object.values(meshObjs)) {
       // gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset * 2);
       gl.uniformMatrix4fv(u_loc_transform, false, m.handle.transform);
       gl.uniform3fv(u_loc_tint, m.handle.tint);
@@ -320,6 +324,7 @@ export function attachToCanvas(
     mode: "normal", // TODO(@darzu): support wireframe mode in webgl
     addObject,
     addObjectInstance,
+    removeObject,
     renderFrame,
     finishInit,
   };

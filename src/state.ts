@@ -46,6 +46,7 @@ export abstract class GameObject {
   location_error: vec3;
   rotation_error: quat;
   localAABB: AABB;
+  deleted: boolean = false;
 
   // derivative state:
   // NOTE: it kinda sucks to have duplicate sources of truth on loc & rot,
@@ -143,11 +144,19 @@ export abstract class GameObject {
   abstract typeId(): number;
 }
 
+export interface GameEvent {
+  type: number;
+  id: number;
+  objects: number[];
+  authority: number;
+}
+
 export abstract class GameState<Inputs> {
   protected nextPlayerId: number;
   nextObjectId: number;
   protected renderer: Renderer;
   objects: Record<number, GameObject>;
+  events: Record<number, GameEvent>;
   me: number;
   numObjects: number = 0;
   collidesWith: CollidesWith;
@@ -157,13 +166,16 @@ export abstract class GameState<Inputs> {
     this.renderer = renderer;
     this.nextPlayerId = 0;
     this.nextObjectId = 0;
-    this.objects = [];
+    this.objects = {};
+    this.events = {};
     this.collidesWith = {};
   }
 
   abstract playerObject(playerId: number): GameObject;
 
   abstract stepGame(dt: number, inputs: Inputs): void;
+
+  abstract runEvent(event: GameEvent): void;
 
   abstract viewMatrix(): mat4;
 
@@ -178,6 +190,13 @@ export abstract class GameState<Inputs> {
     this.objects[obj.id] = obj;
     this.renderer.addObject(obj);
   }
+
+  removeObject(obj: GameObject) {
+    this.numObjects--;
+    obj.deleted = true;
+    this.renderer.removeObject(obj);
+  }
+
   addObjectInstance(obj: GameObject, otherMesh: MeshHandle) {
     this.numObjects++;
     this.objects[obj.id] = obj;
@@ -200,10 +219,25 @@ export abstract class GameState<Inputs> {
     return this.nextObjectId++;
   }
 
+  recordEvent(type: number, objects: number[]) {
+    // check to see whether we're the authority for this event
+    let objs = objects.map((id) => this.objects[id]);
+    if (
+      objs.some((o) => this.me === o.authority) &&
+      objs.every((o) => this.me <= o.authority)
+    ) {
+      console.log(`Recording event type=${type}`);
+      let id = this.id();
+      let event = { id, type, objects, authority: this.me };
+      this.events[id] = event;
+      this.runEvent(event);
+    }
+  }
+
   step(dt: number, inputs: Inputs) {
     this.stepGame(dt, inputs);
 
-    const objs = Object.values(this.objects);
+    const objs = Object.values(this.objects).filter((obj) => !obj.deleted);
 
     // update location and rotation
     let identity_quat = quat.create();

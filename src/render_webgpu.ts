@@ -85,6 +85,7 @@ export interface Renderer {
   addObject(o: GameObject): MeshObj;
   addObjectInstance(o: GameObject, m: MeshHandle): MeshObj;
   renderFrame(viewMatrix: mat4): void;
+  removeObject(o: GameObject): void;
 }
 
 export class Renderer_WebGPU implements Renderer {
@@ -98,7 +99,7 @@ export class Renderer_WebGPU implements Renderer {
 
   private sceneUniformBuffer: GPUBuffer;
 
-  private meshObjs: MeshObj[];
+  private meshObjs: Record<number, MeshObj> = {};
 
   private initFinished: boolean = false;
   private builder: MeshPoolBuilder_WebGPU;
@@ -123,7 +124,7 @@ export class Renderer_WebGPU implements Renderer {
 
   private gpuBufferWriteAllMeshUniforms() {
     // TODO(@darzu): make this update all meshes at once
-    for (let m of this.meshObjs) {
+    for (let m of Object.values(this.meshObjs)) {
       m.handle.transform = m.obj.transform; // TODO(@darzu): this discrepency isn't great...
       // TODO(@darzu): this is definitely weird. Need to think about this interaction better.
       if ((m.obj as any).color) m.handle.tint = (m.obj as any).color;
@@ -190,7 +191,7 @@ export class Renderer_WebGPU implements Renderer {
       handle,
     };
 
-    this.meshObjs.push(res);
+    this.meshObjs[o.id] = res;
 
     this.needsRebundle = true;
     return res;
@@ -208,10 +209,15 @@ export class Renderer_WebGPU implements Renderer {
       handle: newHandle,
     };
 
-    this.meshObjs.push(res);
+    this.meshObjs[o.id] = res;
 
     this.needsRebundle = true;
     return res;
+  }
+
+  removeObject(o: GameObject) {
+    delete this.meshObjs[o.id];
+    this.needsRebundle = true;
   }
 
   needsRebundle = false;
@@ -330,7 +336,7 @@ export class Renderer_WebGPU implements Renderer {
     if (this.mode === "normal")
       bundleEnc.setIndexBuffer(this.pool.triIndicesBuffer, "uint16");
     else bundleEnc.setIndexBuffer(this.pool.lineIndicesBuffer, "uint16");
-    for (let m of this.meshObjs) {
+    for (let m of Object.values(this.meshObjs)) {
       bundleEnc.setBindGroup(1, modelUniBindGroup, [
         m.handle.modelUniByteOffset,
       ]);
@@ -378,8 +384,6 @@ export class Renderer_WebGPU implements Renderer {
     this.builder = createMeshPoolBuilder_WebGPU(device, opts);
 
     this.pool = this.builder.poolHandle;
-
-    this.meshObjs = [];
 
     this.sceneUniformBuffer = device.createBuffer({
       size: SceneUniform.ByteSizeAligned,
