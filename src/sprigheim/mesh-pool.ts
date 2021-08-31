@@ -266,6 +266,27 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
     return builder;
 }
 
+interface AABB {
+    min: vec3,
+    max: vec3,
+}
+
+function getAABBFromMesh(m: Mesh): AABB {
+
+    const min = vec3.fromValues(Infinity, Infinity, Infinity) as Float32Array
+    const max = vec3.fromValues(-Infinity, -Infinity, -Infinity) as Float32Array
+
+    for (let pos of m.pos) {
+        min[0] = Math.min(pos[0], min[0])
+        min[1] = Math.min(pos[1], min[1])
+        min[2] = Math.min(pos[2], min[2])
+        max[0] = Math.max(pos[0], max[0])
+        max[1] = Math.max(pos[1], max[1])
+        max[2] = Math.max(pos[2], max[2])
+    }
+
+    return { min, max }
+}
 
 export interface MeshBuilder {
     poolBuilder: MeshPoolBuilder;
