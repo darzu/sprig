@@ -587,7 +587,7 @@ async function startGame(host: string | null) {
     }
   }
   if (!rendererInit) {
-    rendererInit = attachToCanvas(canvas, 1000, 100);
+    rendererInit = attachToCanvas(canvas, 20000, 6 * 2);
   }
   if (!rendererInit)
     throw 'Unable to create webgl or webgpu renderer'
