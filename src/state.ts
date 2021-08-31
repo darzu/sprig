@@ -7,6 +7,11 @@ export interface Mesh {
   colors: vec3[]; // colors per triangle in r,g,b float [0-1] format
 }
 
+export function scaleMesh(m: Mesh, by: number): Mesh {
+  let pos = m.pos.map((p) => vec3.scale(vec3.create(), p, by));
+  return { pos, tri: m.tri, colors: m.colors };
+}
+
 export abstract class GameObject {
   location: vec3;
   rotation: quat;

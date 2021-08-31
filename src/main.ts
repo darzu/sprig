@@ -1,7 +1,37 @@
 import { mat4, vec3, quat } from "./gl-matrix.js";
-import { Mesh, GameObject, GameState } from "./state.js";
+import { Mesh, scaleMesh, GameObject, GameState } from "./state.js";
 import { Renderer, pitch } from "./render.js";
 import Peer from "./peerjs.js";
+
+class Plane extends GameObject {
+  color: vec3;
+
+  constructor() {
+    super();
+    this.color = vec3.fromValues(0.02, 0.02, 0.02);
+  }
+
+  mesh(): Mesh {
+    return scaleMesh(
+      {
+        pos: [
+          [+1, 0, +1],
+          [-1, 0, +1],
+          [+1, 0, -1],
+          [-1, 0, -1],
+        ],
+        tri: [
+          [0, 2, 3],
+          [0, 3, 1], // top
+          [3, 2, 0],
+          [1, 3, 0], // bottom
+        ],
+        colors: [this.color, this.color, this.color, this.color],
+      },
+      10
+    );
+  }
+}
 
 class Cube extends GameObject {
   color: vec3;
@@ -86,28 +116,31 @@ interface Inputs {
 }
 
 class CubeGameState extends GameState<Inputs> {
+  plane: Plane;
   players: Player[];
   cubes: SpinningCube[];
-  cameraOffset: mat4;
+  cameraRotation: quat;
+  cameraLocation: vec3;
   me: number;
   sequences: number[];
 
   constructor(time: number) {
     super(time);
+    this.plane = new Plane();
+    this.plane.location = vec3.fromValues(0, -3, -8);
     let player = new Player(0);
     this.players = [player];
     let randomCubes: SpinningCube[] = [];
-    for (let i = 0; i < 1; i++) {
+    for (let i = 0; i < 20; i++) {
       let cube = new SpinningCube();
       // create cubes with random colors
-      cube.location = vec3.fromValues(0, 0, -10 * (i + 1));
+      cube.location = vec3.fromValues(
+        Math.random() * 20 - 10,
+        Math.random() * 5,
+        -Math.random() * 10 - 5
+      );
       //cube.linear_velocity = vec3.fromValues(0.002, 0, 0);
       cube.color = vec3.fromValues(Math.random(), Math.random(), Math.random());
-      cube.color = vec3.fromValues(0, 0, 0);
-      if (i === 0) cube.color = vec3.fromValues(1, 0, 0);
-      if (i === 1) cube.color = vec3.fromValues(0, 1, 0);
-      if (i === 2) cube.color = vec3.fromValues(0, 0, 1);
-      if (i === 3) cube.color = vec3.fromValues(1, 0, 1);
       cube.axis = vec3.normalize(vec3.create(), [
         Math.random() - 0.5,
         Math.random() - 0.5,
@@ -125,11 +158,77 @@ class CubeGameState extends GameState<Inputs> {
     this.me = 0;
     this.sequences = [0];
     this.time = 0;
-    this.cameraOffset = mat4.create();
-    pitch(this.cameraOffset, -Math.PI / 8);
+    this.cameraRotation = quat.identity(quat.create());
+    quat.rotateX(this.cameraRotation, this.cameraRotation, -Math.PI / 8);
+    this.cameraLocation = vec3.fromValues(0, 0, 10);
   }
 
-  stepGame(dt: number, inputs: Inputs) {}
+  private player() {
+    return this.players[this.me];
+  }
+
+  stepGame(dt: number, inputs: Inputs) {
+    this.player().linear_velocity = vec3.fromValues(0, 0, 0);
+    let playerSpeed = inputs.accel ? 0.005 : 0.001;
+    let n = playerSpeed * dt;
+    if (inputs.left) {
+      vec3.add(
+        this.player().linear_velocity,
+        this.player().linear_velocity,
+        vec3.fromValues(-n, 0, 0)
+      );
+    }
+    if (inputs.right) {
+      vec3.add(
+        this.player().linear_velocity,
+        this.player().linear_velocity,
+        vec3.fromValues(n, 0, 0)
+      );
+    }
+    if (inputs.forward) {
+      vec3.add(
+        this.player().linear_velocity,
+        this.player().linear_velocity,
+        vec3.fromValues(0, 0, -n)
+      );
+    }
+    if (inputs.back) {
+      vec3.add(
+        this.player().linear_velocity,
+        this.player().linear_velocity,
+        vec3.fromValues(0, 0, n)
+      );
+    }
+    if (inputs.up) {
+      vec3.add(
+        this.player().linear_velocity,
+        this.player().linear_velocity,
+        vec3.fromValues(0, n, 0)
+      );
+    }
+    if (inputs.down) {
+      vec3.add(
+        this.player().linear_velocity,
+        this.player().linear_velocity,
+        vec3.fromValues(0, -n, 0)
+      );
+    }
+    vec3.transformQuat(
+      this.player().linear_velocity,
+      this.player().linear_velocity,
+      this.player().rotation
+    );
+    quat.rotateY(
+      this.player().rotation,
+      this.player().rotation,
+      -inputs.mouseX * 0.001
+    );
+    quat.rotateX(
+      this.cameraRotation,
+      this.cameraRotation,
+      -inputs.mouseY * 0.001
+    );
+  }
 
   snap(snapshot: string, time: number) {
     let deserialized = JSON.parse(snapshot);
@@ -139,6 +238,7 @@ class CubeGameState extends GameState<Inputs> {
 
   objects(): GameObject[] {
     let r = [];
+    r.push(this.plane);
     for (let o of this.players) {
       r.push(o);
     }
@@ -149,11 +249,21 @@ class CubeGameState extends GameState<Inputs> {
   }
 
   viewMatrix() {
-    const viewMatrix = mat4.create();
-
-    mat4.multiply(viewMatrix, viewMatrix, this.players[this.me].transform());
-    mat4.multiply(viewMatrix, viewMatrix, this.cameraOffset);
-    mat4.translate(viewMatrix, viewMatrix, [0, 0, 10]); // TODO(@darzu): can this be merged into the camera offset?
+    //TODO: this calculation feels like it should be simpler but Doug doesn't
+    //understand quaternions.
+    let viewMatrix = mat4.create();
+    mat4.translate(viewMatrix, viewMatrix, this.player().location);
+    mat4.multiply(
+      viewMatrix,
+      viewMatrix,
+      mat4.fromQuat(mat4.create(), this.player().rotation)
+    );
+    mat4.multiply(
+      viewMatrix,
+      viewMatrix,
+      mat4.fromQuat(mat4.create(), this.cameraRotation)
+    );
+    mat4.translate(viewMatrix, viewMatrix, this.cameraLocation);
     mat4.invert(viewMatrix, viewMatrix);
     return viewMatrix;
   }
@@ -259,13 +369,39 @@ async function startServer() {
   });
   let gameState = new CubeGameState(performance.now());
   let canvas = document.getElementById("sample-canvas") as HTMLCanvasElement;
+  const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter!.requestDevice();
   let renderer = new Renderer(gameState, canvas, device);
   let inputs = inputsReader(canvas);
+  function doLockMouse() {
+    canvas.requestPointerLock();
+  }
+  canvas.addEventListener("click", doLockMouse);
+
+  const controlsStr = `controls: WASD, shift/c, mouse, spacebar`;
+  let previousFrameTime = performance.now();
+  let avgJsTime = 0;
+  let avgFrameTime = 0;
+  let avgWeight = 0.05;
   let frame = () => {
+    let start = performance.now();
     gameState.step(performance.now(), inputs());
     renderer.renderFrame();
+    let jsTime = performance.now() - start;
+    let frameTime = start - previousFrameTime;
+    avgJsTime = avgJsTime
+      ? (1 - avgWeight) * avgJsTime + avgWeight * jsTime
+      : jsTime;
+    avgFrameTime = avgFrameTime
+      ? (1 - avgWeight) * avgFrameTime + avgWeight * frameTime
+      : frameTime;
+    const avgFPS = 1000 / avgFrameTime;
+
+    debugDiv.innerText =
+      controlsStr +
+      `\n` +
+      `(js per frame: ${avgJsTime.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)})`;
     requestAnimationFrame(frame);
   };
   frame();
