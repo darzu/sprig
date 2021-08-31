@@ -818,8 +818,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         // Then a vec3 for the light position.
         bytesPerMat4 * 2 // camera and light projection
         + bytesPerVec3 * 1 // light pos
-        + bytesPerFloat * 1 // time
-        + bytesPerVec3 // displacer
+        // + bytesPerFloat * 1 // time
     const sharedUniBuffer = device.createBuffer({
         size: align(sharedUniBufferSize, 256),
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -1324,28 +1323,17 @@ async function init(canvasRef: HTMLCanvasElement) {
             transformationMatrix.byteLength
         );
 
-        // writting time to shared buffer
-        const sharedTime = new Float32Array(1);
-        sharedTime[0] = Math.floor(timeMs);
-        device.queue.writeBuffer(
-            sharedUniBuffer,
-            bytesPerMat4 * 2 + bytesPerVec3 * 1, // TODO(@darzu): getting these offsets is a pain
-            sharedTime.buffer,
-            sharedTime.byteOffset,
-            sharedTime.byteLength
-        );
-        // TODO(@darzu): SCENE FORMAT
-        const displacer = vec4.transformMat4(vec4.create(), [0, 0, 0, 1], playerT.getTransform()) as Float32Array;
-        // console.log(`(${displacer[0]}, ${displacer[1]}, ${displacer[2]})`);
-        device.queue.writeBuffer(
-            sharedUniBuffer,
-            bytesPerMat4 * 2 + bytesPerVec3 * 1 + bytesPerFloat * 1,
-            displacer.buffer,
-            displacer.byteOffset,
-            displacer.byteLength - 4
-        );
+        // // writting time to shared buffer
+        // const sharedTime = new Float32Array(1);
+        // sharedTime[0] = Math.floor(timeMs);
+        // device.queue.writeBuffer(
+        //     sharedUniBuffer,
+        //     bytesPerMat4 * 2 + bytesPerVec3 * 1, // TODO(@darzu): getting these offsets is a pain
+        //     sharedTime.buffer,
+        //     sharedTime.byteOffset,
+        //     sharedTime.byteLength
+        // );
 
-        // meshpreRender()
         const canvasWidth = canvasRef.clientWidth;
         const canvasHeight = canvasRef.clientHeight;
 
