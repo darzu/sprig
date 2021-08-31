@@ -210,9 +210,10 @@ fn main(
     ) -> VertexOutput {
     var output : VertexOutput;
     var pos4: vec4<f32> = vec4<f32>(position, 1.0);
-    output.pos = sharedUnis.viewProj * modelUnis.model * pos4;
+    output.pos =  sharedUnis.viewProj * modelUnis.model * pos4;
     // output.color = vec4<f32>(normal, 1.0);
     // output.color = 0.5 * (pos4 + vec4<f32>(1.0, 1.0, 1.0, 1.0));
+    // output.modelPos = sharedUnis.viewProj * pos4;
     output.modelPos = sharedUnis.viewProj * pos4;
     // output.color = color2;
     // output.color = vec3<f32>(0.2, 0.5, 0.4);
@@ -746,6 +747,7 @@ async function init(canvasRef: HTMLCanvasElement) {
     const cameraPos = mkTransformable();
     cameraPos.moveZ(-20)
     cameraPos.moveY(5)
+    cameraPos.moveX(5)
     // cameraPos.yaw(Math.PI)
     // // cameraPos.lookAt([0, 0, 0])
 
@@ -839,7 +841,11 @@ async function init(canvasRef: HTMLCanvasElement) {
             // const cameraPosT = new Float32Array([-1, 0, -1.2246468525851679e-16, 0, 0, 1, 0, 0, 1.2246468525851679e-16, 0, -1, 0, 2.4492935992912173e-15, -5, -20, 1])
             const viewMatrix = cameraPos.getTransform()
 
+            // mat4.transpose(viewMatrix, viewMatrix);
+            // mat4.invert(viewMatrix, viewMatrix);
+
             // TODO(@darzu): this view matrix is wrong! It's position is inverted, and it's rotation is inverted.
+            // mat4.invert(viewMatrix, viewMatrix);
 
             // mat4.transpose(viewMatrix, viewMatrix);
             mat4.multiply(viewProj, projectionMatrix, viewMatrix);
