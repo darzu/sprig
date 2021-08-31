@@ -349,8 +349,10 @@ _renderScore(0)
 
 ///// TO SORT
 
+let hero: BABYLON.AbstractMesh | undefined;
+
 BABYLON.SceneLoader.ImportMesh("", "./assets/", "human_anim1.glb", scene, function (newMeshes, particleSystems, skeletons, animationGroups) {
-    var hero = newMeshes[0];
+    hero = newMeshes[0];
 
     //Scale the model down        
     hero.scaling.scaleInPlace(10);
@@ -358,13 +360,20 @@ BABYLON.SceneLoader.ImportMesh("", "./assets/", "human_anim1.glb", scene, functi
     //Lock camera on the character 
     camera!.target = hero.position;
 
-    //Get the Samba animation Group
-    const sambaAnim = scene.getAnimationGroupByName("LeftStrafe")!;
+    //Get an animation
+    const anim = scene.getAnimationGroupByName("LeftStrafe")!;
 
-    //Play the Samba animation  
-    sambaAnim.start(true, 1.0, sambaAnim.from, sambaAnim.to, false);
+    //Play the animation  
+    anim.start(true, 1.0, anim.from, anim.to, false);
 
 });
+
+OnLeftStick((dx, dy) => {
+    // TODO(@darzu): 
+    hero?.moveWithCollisions(new BABYLON.Vector3(dx, dy, 0))
+})
+
+// CameraFollow(
 
 
 ///

@@ -1,0 +1,13 @@
+TO DECIDE:
+    Build our own renderer?
+
+Understand URP:
+    https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@12.0/manual/universalrp-builtin-feature-comparison.html'
+
+GLTF viewers:
+    https://sandbox.babylonjs.com/
+    https://gltf-viewer.donmccurdy.com/
+    https://gltf.insimo.com/
+
+GLTF loader:
+    https://github.com/mrdoob/three.js/blob/a98b9bf/examples/js/loaders/GLTFLoader.js

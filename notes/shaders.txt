@@ -1,7 +1,7 @@
 Wow.
     Slime and ants: https://www.youtube.com/watch?v=X-iSQQgOd1A
 
-TO LEARN:
+TO LEARN COMPUTE SHADERS:
     Limitations ?
     From JS / WASM ?
     What can it be used for?
@@ -9,3 +9,6 @@ TO LEARN:
         Algorithms?
         Celular atomita?
         Procedural gen?
+
+SDFs ?
+    https://joyrok.com/What-Are-SDFs-Anyway
