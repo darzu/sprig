@@ -45,8 +45,11 @@ export abstract class GameObject {
   snap_seq: number;
   location_error: vec3;
   rotation_error: quat;
-  transform: mat4; // NOTE: it kinda sucks to have duplicate sources of truth on loc & rot, 
-                   // but it's more important that we don't unnecessarily recompute this transform
+
+  // derivative state:
+  // NOTE: it kinda sucks to have duplicate sources of truth on loc & rot, 
+  // but it's more important that we don't unnecessarily recompute this transform
+  transform: mat4;
 
   constructor(id: number, creator: number) {
     this.id = id;
