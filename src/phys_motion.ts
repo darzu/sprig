@@ -38,21 +38,27 @@ Motion system:
     
 */
 
-export interface MotionObject {
+export interface MotionProps {
   location: vec3;
   rotation: quat;
   linearVelocity: vec3;
   angularVelocity: vec3;
   atRest: boolean;
-
-  _lastLocation: vec3;
-  _lastRotation: quat;
-  _lastLinearVelocity: vec3;
-  _lastAngularVelocity: vec3;
-  _lastAtRest: boolean;
 }
 
-export function createMotionObject(init: Partial<MotionObject>): MotionObject {
+export function copyMotionProps(
+  dest: MotionProps,
+  src: MotionProps
+): MotionProps {
+  dest.location = vec3.copy(dest.location, src.location);
+  dest.rotation = quat.copy(dest.rotation, src.rotation);
+  dest.linearVelocity = vec3.copy(dest.linearVelocity, src.linearVelocity);
+  dest.angularVelocity = vec3.copy(dest.angularVelocity, src.angularVelocity);
+  dest.atRest = dest.atRest;
+  return dest;
+}
+
+export function createMotionProps(init: Partial<MotionProps>): MotionProps {
   // TODO(@darzu): this is difficult to keep in sync with MotionObject as fields are added/removed/changed
   if (!init.location) init.location = vec3.create();
   if (!init.rotation) init.rotation = quat.create();
@@ -60,38 +66,21 @@ export function createMotionObject(init: Partial<MotionObject>): MotionObject {
   if (!init.angularVelocity) init.angularVelocity = vec3.create();
   if (!init.atRest) init.atRest = false;
 
-  init._lastLocation = vec3.copy(
-    init._lastLocation ?? vec3.create(),
-    init.location
-  );
-  init._lastRotation = quat.copy(
-    init._lastRotation ?? quat.create(),
-    init.rotation
-  );
-  init._lastLinearVelocity = vec3.copy(
-    init._lastLinearVelocity ?? vec3.create(),
-    init.linearVelocity
-  );
-  init._lastAngularVelocity = vec3.copy(
-    init._lastAngularVelocity ?? vec3.create(),
-    init.angularVelocity
-  );
-  init._lastAtRest = init.atRest;
-
-  return init as MotionObject;
+  return init as MotionProps;
 }
 
 // TODO(@darzu): Do we need state besides the list
-interface MotionSet {
-  objs: MotionObject[];
-}
+// interface MotionSet {
+//   objs: MotionProps[];
+// }
 
 let delta = vec3.create();
 let normalizedVelocity = vec3.create();
 let deltaRotation = quat.create();
 
+// TODO(@darzu): physics step
 export function moveAndCheckObjects(
-  set: { motion: MotionObject }[],
+  set: { motion: MotionProps }[],
   dt: number
 ) {
   for (let { motion: m } of set) {
@@ -107,12 +96,11 @@ export function moveAndCheckObjects(
     // note--quat multiplication is not commutative, need to multiply on the left
     quat.multiply(m.rotation, deltaRotation, m.rotation);
 
+    // TODO(@darzu): CHECK FOR AND FIX COLLISIONS
+
     // remember previous data so we can know if random other code messes
     //    with our physics values.
-    vec3.copy(m._lastLocation, m.location);
-    quat.copy(m._lastRotation, m.rotation);
-    vec3.copy(m._lastLinearVelocity, m.linearVelocity);
-    vec3.copy(m._lastAngularVelocity, m.angularVelocity);
-    m._lastAtRest = m.atRest;
+    // TODO(@darzu):
+    // copyMotionProps(lastMotion, m);
   }
 }

@@ -2,12 +2,14 @@ import { mat4, vec3, quat } from "./gl-matrix.js";
 import { Serializer, Deserializer } from "./serialize.js";
 import { Mesh, MeshHandle } from "./mesh-pool.js";
 import { Renderer } from "./render_webgpu.js";
-import { AABB, checkCollisions, CollidesWith } from "./phys_collision.js";
+import { AABB, checkCollisions, CollidesWith } from "./phys_broadphase.js";
 import {
-  createMotionObject,
-  MotionObject,
+  copyMotionProps,
+  createMotionProps,
+  MotionProps,
   moveAndCheckObjects,
 } from "./phys_motion.js";
+import { stepPhysics } from "./phys.js";
 
 const ERROR_SMOOTHING_FACTOR = 0.8;
 const EPSILON = 0.0001;
@@ -41,32 +43,35 @@ export abstract class GameObject {
   id: number;
   creator: number;
 
-  motion: MotionObject;
-
   authority: number;
   authority_seq: number;
   snap_seq: number;
   location_error: vec3;
   rotation_error: quat;
-  localAABB: AABB;
   deleted: boolean = false;
+
+  // physics
+  motion: MotionProps;
+  lastMotion: MotionProps;
+  localAABB: AABB;
+  worldAABB: AABB;
 
   // derivative state:
   // NOTE: it kinda sucks to have duplicate sources of truth on loc & rot,
   // but it's more important that we don't unnecessarily recompute this transform
   transform: mat4;
-  worldAABB: AABB;
 
   constructor(id: number, creator: number) {
     this.id = id;
     this.creator = creator;
-    this.motion = createMotionObject({
+    this.motion = createMotionProps({
       location: vec3.fromValues(0, 0, 0),
       rotation: quat.identity(quat.create()),
       linearVelocity: vec3.fromValues(0, 0, 0),
       angularVelocity: vec3.fromValues(0, 0, 0),
       atRest: true,
     });
+    this.lastMotion = copyMotionProps(createMotionProps({}), this.motion);
     this.authority = creator;
     this.authority_seq = 0;
     this.snap_seq = -1;
@@ -244,13 +249,12 @@ export abstract class GameState<Inputs> {
 
     const objs = Object.values(this.objects).filter((obj) => !obj.deleted);
 
-    // update location and rotation
+    // reduce error in location and rotation
     let identity_quat = quat.create();
     let delta = vec3.create();
     let normalized_velocity = vec3.create();
     let deltaRotation = quat.create();
     for (let o of objs) {
-      // reduce error in location and rotation
       o.location_error = vec3.scale(
         o.location_error,
         o.location_error,
@@ -283,8 +287,9 @@ export abstract class GameState<Inputs> {
       }
     }
 
-    // move objects
-    moveAndCheckObjects(objs, dt);
+    // move, check collisions
+    const physRes = stepPhysics(objs, dt);
+    this.collidesWith = physRes.collidesWith;
 
     // UPDATE DERIVED STATE:
     for (let o of objs) {
@@ -294,15 +299,7 @@ export abstract class GameState<Inputs> {
         quat.mul(working_quat, o.motion.rotation, o.rotation_error),
         vec3.add(working_vec3, o.motion.location, o.location_error)
       );
-
-      // update AABB
-      vec3.add(o.worldAABB.min, o.localAABB.min, o.motion.location);
-      vec3.add(o.worldAABB.max, o.localAABB.max, o.motion.location);
     }
-
-    // check collisions
-    // TODO(@darzu): hack. also we need AABBs on objects
-    this.collidesWith = checkCollisions(objs);
   }
 }
 
