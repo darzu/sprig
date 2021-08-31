@@ -242,10 +242,6 @@ vec3.normalize(lightDir, lightDir);
 
 type RenderFrameFn = (timeMS: number) => void;
 function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context: GPUPresentationContext): RenderFrameFn {
-    // configure our canvas format
-    // TODO(@darzu): 
-    // context.configure({ device, format: presentationFormat });
-
     // log our estimated space usage stats
     console.log(`Mesh space usage for up to ${maxMeshes} meshes, ${maxTris} tris, ${maxVerts} verts:`);
     console.log(`   ${(maxVerts * vertByteSize / 1024).toFixed(1)} KB for verts`);
