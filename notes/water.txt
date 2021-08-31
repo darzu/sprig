@@ -18,3 +18,8 @@ Water on a sphere:
 
 2D waterlines:
     https://observablehq.com/collection/@oliviafvane/watermarks
+
+Cool 3d sim:
+    http://david.li/waves/
+    https://github.com/dli/waves
+    https://www.youtube.com/watch?v=IrUehq6vJss

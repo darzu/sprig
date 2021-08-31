@@ -25,3 +25,7 @@ https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html
 
 Color interpolation viz:
     https://www.alanzucconi.com/2016/01/06/colour-interpolation/
+
+RYB:
+    https://en.wikipedia.org/wiki/RYB_color_model
+    used here: https://david.li/paint/
