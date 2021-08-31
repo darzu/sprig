@@ -89,8 +89,6 @@ export class Renderer_WebGPU implements Renderer {
 
   private sceneUniformBuffer: GPUBuffer;
 
-  private cameraOffset: mat4;
-
   private meshObjs: MeshObj[];
 
   private initFinished: boolean = false;
@@ -322,7 +320,6 @@ export class Renderer_WebGPU implements Renderer {
 
     // setup scene data:
     this.sceneData = setupScene();
-    this.cameraOffset = setupCamera();
 
     // workaround because Typescript can't tell this function init's the render bundle
     this.renderBundle = this.createRenderBundle();
@@ -422,9 +419,4 @@ export function setupScene(): SceneUniform.Data {
     playerPos: [0, 0], // updated later
     cameraPos: vec3.create(), // updated later
   }
-}
-export function setupCamera(): mat4 {
-  let cameraOffset = mat4.create();
-  pitch(cameraOffset, -Math.PI / 8);
-  return cameraOffset
 }

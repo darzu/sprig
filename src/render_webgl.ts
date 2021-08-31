@@ -3,7 +3,7 @@ import { vec3, mat4 } from "./gl-matrix.js";
 import { createMeshPoolBuilder_WebGL, MeshPoolOpts, SceneUniform } from "./mesh-pool.js";
 import { GameObject } from "./state.js";
 // TODO(@darzu): this is a bad dependency:
-import { MeshObj, Renderer, setupCamera, setupScene } from "./render_webgpu.js";
+import { MeshObj, Renderer, setupScene } from "./render_webgpu.js";
 
 // REFERENCE:
 // cameraViewProjMatrix : mat4x4<f32>;
@@ -147,7 +147,6 @@ export function attachToCanvas(canv: HTMLCanvasElement, maxMeshes: number, maxTr
   const meshObjs: MeshObj[] = [];
 
   const scene = setupScene();
-  const cameraOffset = setupCamera();
 
   function finishInit() {
     console.log("finishInit")
