@@ -147,6 +147,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         maxMeshes: 10000,
         meshUniByteSize: Math.ceil(mat4ByteSize / 256) * 256, // align to 256,
         backfaceCulling: true,
+        usesIndices: true,
     }, device);
 
     // TODO(@darzu): 
@@ -217,7 +218,7 @@ async function init(canvasRef: HTMLCanvasElement) {
     }
 
     // create grass field
-    const grassSpread = 60;
+    const grassSpread = 100;
     const grassTris = (grassSpread * 2 + 1) ** 2
     const grassMeshPool = createMeshMemoryPool({
         vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
@@ -226,6 +227,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         maxMeshes: 10,
         meshUniByteSize: align(mat4ByteSize, 256), // align to 256,
         backfaceCulling: false,
+        usesIndices: false,
     }, device);
     {
         grassMeshPool._map();
@@ -252,9 +254,9 @@ async function init(canvasRef: HTMLCanvasElement) {
 
                 const y = bladeH + jitter(1)
 
-                const r = 0.1 + jitter(0.05)
-                const g = 0.4 + jitter(0.2)
-                const b = 0.1 + jitter(0.05)
+                const r = 0.2 + jitter(0.02)
+                const g = 0.5 + jitter(0.2)
+                const b = 0.2 + jitter(0.02)
 
                 const p0: vec3 = [x1, 0, z1];
                 const p1: vec3 = [x2, 0, z2];
@@ -269,7 +271,7 @@ async function init(canvasRef: HTMLCanvasElement) {
                 // TODO(@darzu): turn off back-face culling
                 addTriToBuffers(
                     [p0, p1, p2],
-                    [0, 2, 1],
+                    [0, 1, 2],
                     norm,
                     [r, g, b],
                     grassMeshPool._vertsMap(),

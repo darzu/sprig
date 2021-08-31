@@ -71,12 +71,13 @@ export interface MeshMemoryPoolOptions {
     maxMeshes: number,
     meshUniByteSize: number,
     backfaceCulling: boolean,
+    usesIndices: boolean,
 }
 
 export interface MeshMemoryPool {
     _opts: MeshMemoryPoolOptions,
     _vertBuffer: GPUBuffer,
-    _indexBuffer: GPUBuffer,
+    _indexBuffer: GPUBuffer | null,
     _meshUniBuffer: GPUBuffer,
     _meshes: Mesh[],
     _numVerts: number,
@@ -97,7 +98,7 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
     // space stats
     console.log(`New mesh pool`);
     console.log(`   ${maxVerts * vertByteSize / 1024} KB for verts`);
-    console.log(`   ${maxTris * triByteSize / 1024} KB for indices`);
+    console.log(`   ${opts.usesIndices ? maxTris * triByteSize / 1024 : 0} KB for indices`);
     console.log(`   ${maxMeshes * meshUniByteSize / 1024} KB for models`);
     const unusedBytesPerModel = 256 - mat4ByteSize % 256
     console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per model (${unusedBytesPerModel * maxMeshes / 1024} KB total waste)`);
@@ -107,11 +108,11 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
         usage: GPUBufferUsage.VERTEX,
         mappedAtCreation: true,
     });
-    const _indexBuffer = device.createBuffer({
+    const _indexBuffer = opts.usesIndices ? device.createBuffer({
         size: maxTris * triByteSize,
         usage: GPUBufferUsage.INDEX,
         mappedAtCreation: true,
-    });
+    }) : null;
 
     const meshUniBufferSize = mat4ByteSize * maxMeshes;
     const _meshUniBuffer = device.createBuffer({
@@ -131,7 +132,7 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
         console.log("unmapping") // TODO(@darzu): 
         if (_vertsMap)
             _vertBuffer.unmap()
-        if (_indMap)
+        if (_indMap && _indexBuffer)
             _indexBuffer.unmap()
         _vertsMap = null;
         _indMap = null;
@@ -141,15 +142,13 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
         console.log("mapping") // TODO(@darzu): 
         if (!_vertsMap)
             _vertsMap = new Float32Array(_vertBuffer.getMappedRange())
-        if (!_indMap)
+        if (!_indMap && _indexBuffer)
             _indMap = new Uint16Array(_indexBuffer.getMappedRange());
-        console.log(!!_vertsMap)
-        console.log(!!_indMap)
     }
 
     function addMeshes(meshesToAdd: MeshModel[]) {
         function addMesh(m: MeshModel): Mesh {
-            if (_vertsMap === null || _indMap === null) {
+            if (_vertsMap === null) {
                 throw "Use preRender() and postRender() functions"
             }
 
@@ -370,16 +369,18 @@ export function addTriToBuffers(
     triNorm: vec3,
     triColor: vec3,
     verts: Float32Array, prevNumVerts: number, vertElStride: number,
-    indices: Uint16Array, prevNumTri: number, shiftIndices = false): void {
+    indices: Uint16Array | null, prevNumTri: number, shiftIndices = false): void {
     const vOff = prevNumVerts * vertElStride
     const iOff = prevNumTri * triElStride
     const indShift = shiftIndices ? prevNumVerts : 0;
     const vi0 = triInd[0] + indShift
     const vi1 = triInd[1] + indShift
     const vi2 = triInd[2] + indShift
-    indices[iOff + 0] = vi0
-    indices[iOff + 1] = vi1
-    indices[iOff + 2] = vi2
+    if (indices) {
+        indices[iOff + 0] = vi0
+        indices[iOff + 1] = vi1
+        indices[iOff + 2] = vi2
+    }
     // set per-face vertex data
     // position
     verts[vOff + vi0 * vertElStride + 0] = triPos[0][0]
@@ -420,7 +421,7 @@ Adds mesh vertices and indices into buffers. Optionally shifts triangle indicies
 function addMeshToBuffers(
     m: MeshModel,
     verts: Float32Array, prevNumVerts: number, vertElStride: number,
-    indices: Uint16Array, prevNumTri: number, shiftIndices = false): void {
+    indices: Uint16Array | null, prevNumTri: number, shiftIndices = false): void {
     // IMPORTANT: assumes unshared vertices
     const norms = computeNormals(m);
     const vOff = prevNumVerts * vertElStride

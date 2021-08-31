@@ -1,0 +1,20 @@
+Sprigland blog:
+    the "why", the "what"
+    patreon
+
+    grid of micro blogs entries
+
+Micro entry:
+    Scene
+    Code @ version or hash
+    Dependencies @ version or hash
+    Should be easy to open sample for oneself
+    optional YouTube video link
+    optional written text
+    tags
+
+    future:
+        upgradable
+        web IDE
+        easy dependencies
+    

@@ -568,14 +568,18 @@ export function createMeshRenderer(
             });
             bundleEncoder.setVertexBuffer(0, pool._vertBuffer);
             bundleEncoder.setVertexBuffer(1, instanceDataBuffer);
-            bundleEncoder.setIndexBuffer(pool._indexBuffer, 'uint16');
+            if (pool._indexBuffer)
+                bundleEncoder.setIndexBuffer(pool._indexBuffer, 'uint16');
             // TODO(@darzu): one draw call per mesh?
             const uniOffset = [0];
             for (let m of pool._meshes) {
                 // TODO(@darzu): set bind group
                 uniOffset[0] = m.modelUniByteOffset;
                 bundleEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
-                bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+                if (pool._indexBuffer)
+                    bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+                else
+                    bundleEncoder.draw(m.triCount * 3, undefined, undefined, m.vertNumOffset);
             }
         }
         renderBundle = bundleEncoder.finish()
@@ -634,14 +638,18 @@ export function createMeshRenderer(
                 });
                 shadowPass.setVertexBuffer(0, pool._vertBuffer);
                 shadowPass.setVertexBuffer(1, instanceDataBuffer);
-                shadowPass.setIndexBuffer(pool._indexBuffer, 'uint16');
+                if (pool._indexBuffer)
+                    shadowPass.setIndexBuffer(pool._indexBuffer, 'uint16');
                 // TODO(@darzu): one draw call per mesh?
                 const uniOffset = [0];
                 for (let m of pool._meshes) {
                     // TODO(@darzu): set bind group
                     uniOffset[0] = m.modelUniByteOffset;
                     shadowPass.setBindGroup(1, modelUniBindGroup, uniOffset);
-                    shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+                    if (pool._indexBuffer)
+                        shadowPass.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+                    else
+                        shadowPass.draw(m.triCount * 3, undefined, undefined, m.vertNumOffset);
                 }
             }
             // shadowRenderBundle = shadowPass.finish()
