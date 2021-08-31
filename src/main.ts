@@ -1,7 +1,8 @@
 import { mat4, vec3, quat } from "./gl-matrix.js";
-import { Mesh, scaleMesh, GameObject, NetObject, GameState } from "./state.js";
+import { scaleMesh, GameObject, NetObject, GameState } from "./state.js";
 import { Renderer, Renderer_WebGPU } from "./render_webgpu.js";
 import { Net } from "./net.js";
+import { Mesh, unshareProvokingVertices } from "./mesh-pool.js";
 
 class Plane extends GameObject {
   color: vec3;
@@ -12,7 +13,7 @@ class Plane extends GameObject {
   }
 
   mesh(): Mesh {
-    return scaleMesh(
+    return unshareProvokingVertices(scaleMesh(
       {
         pos: [
           [+1, 0, +1],
@@ -29,7 +30,7 @@ class Plane extends GameObject {
         colors: [this.color, this.color, this.color, this.color],
       },
       10
-    );
+    ));
   }
 
   type(): string {
@@ -43,6 +44,48 @@ class Plane extends GameObject {
   }
 }
 
+const CUBE = unshareProvokingVertices({
+  pos: [
+    [+1.0, +1.0, +1.0],
+    [-1.0, +1.0, +1.0],
+    [-1.0, -1.0, +1.0],
+    [+1.0, -1.0, +1.0],
+
+    [+1.0, +1.0, -1.0],
+    [-1.0, +1.0, -1.0],
+    [-1.0, -1.0, -1.0],
+    [+1.0, -1.0, -1.0],
+  ],
+  tri: [
+    [0, 1, 2],
+    [0, 2, 3], // front
+    [4, 5, 1],
+    [4, 1, 0], // top
+    [3, 4, 0],
+    [3, 7, 4], // right
+    [2, 1, 5],
+    [2, 5, 6], // left
+    [6, 3, 2],
+    [6, 7, 3], // bottom
+    [5, 4, 7],
+    [5, 7, 6], // back
+  ],
+  colors: [
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+    [0.5, 0.5, 0.5],
+  ],
+});
+
 abstract class Cube extends GameObject {
   color: vec3;
 
@@ -53,46 +96,9 @@ abstract class Cube extends GameObject {
 
   mesh(): Mesh {
     return {
-      pos: [
-        [+1.0, +1.0, +1.0],
-        [-1.0, +1.0, +1.0],
-        [-1.0, -1.0, +1.0],
-        [+1.0, -1.0, +1.0],
-
-        [+1.0, +1.0, -1.0],
-        [-1.0, +1.0, -1.0],
-        [-1.0, -1.0, -1.0],
-        [+1.0, -1.0, -1.0],
-      ],
-      tri: [
-        [0, 1, 2],
-        [0, 2, 3], // front
-        [4, 5, 1],
-        [4, 1, 0], // top
-        [3, 4, 0],
-        [3, 7, 4], // right
-        [2, 1, 5],
-        [2, 5, 6], // left
-        [6, 3, 2],
-        [6, 7, 3], // bottom
-        [5, 4, 7],
-        [5, 7, 6], // back
-      ],
-      colors: [
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-      ],
-    };
+      ...CUBE,
+      colors: CUBE.colors.map(_ => this.color),
+    }
   }
 
   netObject() {
@@ -174,7 +180,7 @@ class CubeGameState extends GameState<Inputs> {
       this.addObject(plane);
       this.addPlayer();
       // have added our objects, can unmap buffers
-      this.renderer.unmapGPUBuffers();
+      this.renderer.finishInit();
     }
     this.me = 0;
   }
@@ -572,7 +578,7 @@ async function startGame(host: string | null) {
       navigator.clipboard.writeText(id);
       frame();
     } else {
-      renderer.unmapGPUBuffers();
+      renderer.finishInit();
       frame();
     }
   });

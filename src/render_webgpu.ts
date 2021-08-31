@@ -1,5 +1,7 @@
-import { Mesh, GameObject } from "./state.js";
+import { GameObject } from "./state.js";
 import { mat4, vec3, quat } from "./gl-matrix.js";
+import { createMeshPoolBuilder_WebGPU, MeshHandle, MeshPoolBuilder_WebGPU, MeshPoolOpts, MeshPool_WebGPU, MeshUniform, SceneUniform, Vertex } from "./mesh-pool.js";
+import { pitch } from "./3d-util.js";
 
 // TODO: some state lives in global variables when it should live on the Renderer object
 
@@ -7,16 +9,14 @@ import { mat4, vec3, quat } from "./gl-matrix.js";
 
 const shaderSceneStruct = `
     [[block]] struct Scene {
-        cameraViewProjMatrix : mat4x4<f32>;
-        lightViewProjMatrix : mat4x4<f32>;
-        lightDir : vec3<f32>;
+        ${SceneUniform.GenerateWGSLUniformStruct()}
     };
 `;
 const vertexShader =
   shaderSceneStruct +
   `
     [[block]] struct Model {
-        modelMatrix : mat4x4<f32>;
+        ${MeshUniform.GenerateWGSLUniformStruct()}
     };
 
     [[group(0), binding(0)]] var<uniform> scene : Scene;
@@ -30,14 +30,12 @@ const vertexShader =
 
     [[stage(vertex)]]
     fn main(
-        [[location(0)]] position : vec3<f32>,
-        [[location(1)]] color : vec3<f32>,
-        [[location(2)]] normal : vec3<f32>,
+        ${Vertex.GenerateWGSLVertexInputStruct(',')}
         ) -> VertexOutput {
         var output : VertexOutput;
-        let worldPos: vec4<f32> = model.modelMatrix * vec4<f32>(position, 1.0);
+        let worldPos: vec4<f32> = model.transform * vec4<f32>(position, 1.0);
         output.position = scene.cameraViewProjMatrix * worldPos;
-        output.normal = normalize(model.modelMatrix * vec4<f32>(normal, 0.0)).xyz;
+        output.normal = normalize(model.transform * vec4<f32>(normal, 0.0)).xyz;
         output.color = color;
         return output;
     }
@@ -73,126 +71,32 @@ const swapChainFormat = "bgra8unorm";
 const depthStencilFormat = "depth24plus-stencil8";
 const backgroundColor = { r: 0.5, g: 0.5, b: 0.5, a: 1.0 };
 
-// normally vertices can be shared by triangles, so this duplicates vertices as necessary so they are unshared
-// TODO: this shouldn't be needed once "flat" shading is supported in Chrome's WGSL, see:
-//      https://bugs.chromium.org/p/tint/issues/detail?id=746&q=interpolate&can=2
-function unshareVertices(input: Mesh): Mesh {
-  const pos: vec3[] = [];
-  const tri: vec3[] = [];
-  input.tri.forEach(([i0, i1, i2], i) => {
-    pos.push(input.pos[i0]);
-    pos.push(input.pos[i1]);
-    pos.push(input.pos[i2]);
-    tri.push([i * 3 + 0, i * 3 + 1, i * 3 + 2]);
-  });
-  return { pos, tri, colors: input.colors };
-}
-
-// once a mesh has been added to our vertex, triangle, and uniform buffers, we need
-// to track offsets into those buffers so we can make modifications and form draw calls.
-interface MeshHandle {
-  // handles into the buffers
-  vertNumOffset: number;
-  indicesNumOffset: number;
-  modelUniByteOffset: number;
-  triCount: number;
-  // data
+export interface MeshObj {
+  handle: MeshHandle,
   obj: GameObject;
 }
 
-// define the format of our vertices (this needs to agree with the inputs to the vertex shaders)
-const vertexDataFormat: GPUVertexAttribute[] = [
-  { shaderLocation: 0, offset: bytesPerVec3 * 0, format: "float32x3" }, // position
-  { shaderLocation: 1, offset: bytesPerVec3 * 1, format: "float32x3" }, // color
-  { shaderLocation: 2, offset: bytesPerVec3 * 2, format: "float32x3" }, // normals
-];
-// these help us pack and use vertices in that format
-const vertElStride = 3 /*pos*/ + 3 /*color*/ + 3; /*normal*/
-const vertByteSize = bytesPerFloat * vertElStride;
-
-// define the format of our models' uniform buffer
-const meshUniByteSizeExact =
-  bytesPerMat4 + // transform
-  bytesPerFloat; // max draw distance;
-const meshUniByteSizeAligned = align(meshUniByteSizeExact, 256); // uniform objects must be 256 byte aligned
-
-// defines the format of our scene's uniform data
-const sceneUniBufferSizeExact =
-  bytesPerMat4 * 2 + // camera and light projection
-  bytesPerVec3 * 1; // light pos
-const sceneUniBufferSizeAligned = align(sceneUniBufferSizeExact, 256); // uniform objects must be 256 byte aligned
-
-function align(x: number, size: number): number {
-  return Math.ceil(x / size) * size;
-}
-function computeTriangleNormal(p1: vec3, p2: vec3, p3: vec3): vec3 {
-  // cross product of two edges, https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
-  const n = vec3.cross(
-    vec3.create(),
-    vec3.sub(vec3.create(), p2, p1),
-    vec3.sub(vec3.create(), p3, p1)
-  );
-  vec3.normalize(n, n);
-  return n;
-}
-
-// matrix utilities
-function pitch(m: mat4, rad: number) {
-  return mat4.rotateX(m, m, rad);
-}
-function yaw(m: mat4, rad: number) {
-  return mat4.rotateY(m, m, rad);
-}
-function roll(m: mat4, rad: number) {
-  return mat4.rotateZ(m, m, rad);
-}
-function moveX(m: mat4, n: number) {
-  return mat4.translate(m, m, [n, 0, 0]);
-}
-function moveY(m: mat4, n: number) {
-  return mat4.translate(m, m, [0, n, 0]);
-}
-function moveZ(m: mat4, n: number) {
-  return mat4.translate(m, m, [0, 0, n]);
-}
-
-interface MappedGPUBuffers {
-  vertexBufferOffset: number;
-  vertexBuffer: Float32Array;
-  indexBufferOffset: number;
-  indexBuffer: Uint32Array;
-  meshUniformBufferOffset: number;
-  meshUniformBuffer: Float32Array;
-}
-
 export interface Renderer {
-  unmapGPUBuffers(): void;
-  addObject(o: GameObject): MeshHandle;
+  finishInit(): void;
+  addObject(o: GameObject): MeshObj;
   renderFrame(viewMatrix: mat4): void;
 }
 
-export class Renderer_WebGPU {
-  private maxMeshes: number;
-  private maxTris: number;
-  private maxVerts: number;
-
+export class Renderer_WebGPU implements Renderer {
   private device: GPUDevice;
   private canvas: HTMLCanvasElement;
   private context: GPUCanvasContext;
 
-  private numVerts: number;
-  private numTris: number;
-
-  private vertexBuffer: GPUBuffer;
-  private indexBuffer: GPUBuffer;
-  private meshUniformBuffer: GPUBuffer;
   private sceneUniformBuffer: GPUBuffer;
 
   private cameraOffset: mat4;
 
-  private meshHandles: MeshHandle[];
+  private meshObjs: MeshObj[];
 
-  private mappedGPUBuffers: MappedGPUBuffers | null = null;
+  private initFinished: boolean = false;
+  private builder: MeshPoolBuilder_WebGPU;
+  private pool: MeshPool_WebGPU;
+  private sceneData: SceneUniform.Data;
 
   private renderBundle: GPURenderBundle;
 
@@ -204,70 +108,18 @@ export class Renderer_WebGPU {
   private lastHeight = 0;
   private aspectRatio = 1;
 
-  // private gpuBufferWriteMeshTransform(m: MeshHandle) {
-  //   this.device.queue.writeBuffer(
-  //     this.meshUniformBuffer,
-  //     m.modelUniByteOffset,
-  //     (m.obj.transform() as Float32Array).buffer
-  //   );
-  // }
+  public finishInit() {
+    if (this.initFinished)
+      throw 'finishInit called twice'
+    this.builder.finish();
+    this.initFinished = true;
+  }
 
   private gpuBufferWriteAllMeshUniforms() {
-    // TODO(@darzu): hack
-    for (let m of this.meshHandles) {
-      this._meshUniformBuffer.set((m.obj.transform() as Float32Array), m.modelUniByteOffset / bytesPerFloat)
+    // TODO(@darzu): make this update all meshes at once
+    for (let m of this.meshObjs) {
+      this.pool.updateUniform(m.handle)
     }
-
-    this.device.queue.writeBuffer(
-      this.meshUniformBuffer,
-      0,
-      this._meshUniformBuffer.buffer,
-      0,
-      this.meshHandles.length * meshUniByteSizeAligned
-    );
-  }
-
-  // TODO(@darzu): hack
-  _meshUniformBufferFloat32Size: number = 0;
-  _meshUniformBuffer: Float32Array = new Float32Array();
-
-  // should only be called when GPU buffers are already mapped
-  private getMappedRanges() {
-    let vertexBuffer = new Float32Array(this.vertexBuffer.getMappedRange());
-    let indexBuffer = new Uint32Array(this.indexBuffer.getMappedRange());
-    let meshUniformBuffer = new Float32Array(
-      this.meshUniformBuffer.getMappedRange()
-    );
-
-    // TODO(@darzu): hack
-    this._meshUniformBufferFloat32Size = meshUniformBuffer.length
-    this._meshUniformBuffer = new Float32Array(meshUniformBuffer.length);
-
-    this.mappedGPUBuffers = {
-      vertexBuffer,
-      indexBuffer,
-      meshUniformBuffer,
-      vertexBufferOffset: 0,
-      indexBufferOffset: 0,
-      meshUniformBufferOffset: 0,
-    };
-  }
-
-  // TODO(@darzu): doesn't work..
-  // private async mapGPUBuffers() {
-  //   await Promise.all([
-  //     this.vertexBuffer.mapAsync(GPUMapMode.READ),
-  //     this.indexBuffer.mapAsync(GPUMapMode.READ),
-  //     this.meshUniformBuffer.mapAsync(GPUMapMode.READ),
-  //   ]);
-  //   this.getMappedRanges();
-  // }
-
-  public unmapGPUBuffers(): void {
-    this.vertexBuffer.unmap();
-    this.indexBuffer.unmap();
-    this.meshUniformBuffer.unmap();
-    this.mappedGPUBuffers = null;
   }
 
   // recomputes textures, widths, and aspect ratio on canvas resize
@@ -308,101 +160,21 @@ export class Renderer_WebGPU {
                   
     TODO: support adding objects when buffers aren't memory-mapped using device.queue
   */
-  public addObject(o: GameObject): MeshHandle {
+  public addObject(o: GameObject): MeshObj {
     console.log(`Adding object ${o.id}`);
     let m = o.mesh();
-    m = unshareVertices(m); // work-around; see TODO inside function
     // need to introduce a new variable to convince Typescript the mapping is non-null
-    let mapped = this.mappedGPUBuffers;
-    if (this.numVerts + m.pos.length > this.maxVerts)
-      throw "Too many vertices!";
-    if (this.numTris + m.tri.length > this.maxTris) throw "Too many triangles!";
 
-    const vertNumOffset = this.numVerts;
-    const indicesNumOffset = this.numTris * indicesPerTriangle;
+    if (this.initFinished)
+      throw `TODO: support adding objects late`
 
-    m.tri.forEach((triInd, i) => {
-      const vOff = this.numVerts * vertElStride;
-      const iOff = this.numTris * indicesPerTriangle;
-      if (mapped === null) {
-        // hack because queued writes have to have size be a multiple of 4
-        let buf = new Uint32Array(triInd);
-        this.device.queue.writeBuffer(this.indexBuffer, iOff * 4, buf.buffer);
-      } else {
-        mapped.indexBuffer[iOff + 0] = triInd[0];
-        mapped.indexBuffer[iOff + 1] = triInd[1];
-        mapped.indexBuffer[iOff + 2] = triInd[2];
-      }
-      const normal = computeTriangleNormal(
-        m.pos[triInd[0]],
-        m.pos[triInd[1]],
-        m.pos[triInd[2]]
-      );
-      if (mapped === null) {
-        this.device.queue.writeBuffer(
-          this.vertexBuffer,
-          (vOff + 0 * vertElStride) * bytesPerFloat,
-          new Float32Array([...m.pos[triInd[0]], ...m.colors[i], ...normal])
-            .buffer
-        );
-        this.device.queue.writeBuffer(
-          this.vertexBuffer,
-          (vOff + 1 * vertElStride) * bytesPerFloat,
-          new Float32Array([...m.pos[triInd[1]], ...m.colors[i], ...normal])
-            .buffer
-        );
-        this.device.queue.writeBuffer(
-          this.vertexBuffer,
-          (vOff + 2 * vertElStride) * bytesPerFloat,
-          new Float32Array([...m.pos[triInd[2]], ...m.colors[i], ...normal])
-            .buffer
-        );
-      } else {
-        mapped.vertexBuffer.set(
-          [...m.pos[triInd[0]], ...m.colors[i], ...normal],
-          vOff + 0 * vertElStride
-        );
-        mapped.vertexBuffer.set(
-          [...m.pos[triInd[1]], ...m.colors[i], ...normal],
-          vOff + 1 * vertElStride
-        );
-        mapped.vertexBuffer.set(
-          [...m.pos[triInd[2]], ...m.colors[i], ...normal],
-          vOff + 2 * vertElStride
-        );
-      }
-      this.numVerts += 3;
-      this.numTris += 1;
-    });
+    const handle = this.builder.addMesh(m)
 
-    const uniOffset = this.meshHandles.length * meshUniByteSizeAligned;
-    if (mapped === null) {
-      // TODO(@darzu): hack
-      this._meshUniformBuffer.set(
-        o.transform() as Float32Array,
-        uniOffset / bytesPerFloat
-      );
-      this.device.queue.writeBuffer(
-        this.meshUniformBuffer,
-        uniOffset,
-        (o.transform() as Float32Array).buffer
-      );
-    } else {
-      mapped.meshUniformBuffer.set(
-        o.transform() as Float32Array,
-        uniOffset / bytesPerFloat
-      );
-    }
-    const res: MeshHandle = {
-      vertNumOffset,
-      indicesNumOffset,
-      modelUniByteOffset: uniOffset,
-      triCount: m.tri.length,
+    const res = {
       obj: o,
-    };
-    this.meshHandles.push(res);
-    // TODO(@darzu): hack
-    // this.createRenderBundle();
+      handle,
+    }
+
     this.needsRebundle = true;
     return res;
   }
@@ -419,7 +191,7 @@ export class Renderer_WebGPU {
           buffer: {
             type: "uniform",
             hasDynamicOffset: true,
-            minBindingSize: meshUniByteSizeAligned,
+            minBindingSize: MeshUniform.ByteSizeAligned,
           },
         },
       ],
@@ -430,8 +202,8 @@ export class Renderer_WebGPU {
         {
           binding: 0,
           resource: {
-            buffer: this.meshUniformBuffer,
-            size: meshUniByteSizeAligned,
+            buffer: this.pool.uniformBuffer,
+            size: MeshUniform.ByteSizeAligned,
           },
         },
       ],
@@ -472,8 +244,8 @@ export class Renderer_WebGPU {
         entryPoint: "main",
         buffers: [
           {
-            arrayStride: vertByteSize,
-            attributes: vertexDataFormat,
+            arrayStride: Vertex.ByteSize,
+            attributes: Vertex.WebGPUFormat,
           },
         ],
       },
@@ -503,22 +275,51 @@ export class Renderer_WebGPU {
     });
     bundleEnc.setPipeline(renderPipeline);
     bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
-    bundleEnc.setVertexBuffer(0, this.vertexBuffer);
-    bundleEnc.setIndexBuffer(this.indexBuffer, "uint32");
-    for (let m of this.meshHandles) {
-      bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
+    bundleEnc.setVertexBuffer(0, this.pool.verticesBuffer);
+    // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
+    bundleEnc.setIndexBuffer(this.pool.indicesBuffer, "uint16");
+    for (let m of this.meshObjs) {
+      bundleEnc.setBindGroup(1, modelUniBindGroup, [m.handle.modelUniByteOffset]);
       bundleEnc.drawIndexed(
-        m.triCount * indicesPerTriangle,
+        m.handle.numTris * indicesPerTriangle,
         undefined,
-        m.indicesNumOffset,
-        m.vertNumOffset
+        m.handle.indicesNumOffset,
+        m.handle.vertNumOffset
       );
     }
     this.renderBundle = bundleEnc.finish();
     return this.renderBundle;
   }
 
-  private setupSceneBuffer() {
+  constructor(
+    canvas: HTMLCanvasElement,
+    device: GPUDevice,
+    maxMeshes = 100,
+    maxTrisPerMesh = 100
+  ) {
+    this.canvas = canvas;
+    this.device = device;
+    this.context = canvas.getContext("gpupresent")!;
+    this.context.configure({ device, format: swapChainFormat });
+
+    const opts: MeshPoolOpts = {
+      maxMeshes,
+      maxTris: maxMeshes * maxTrisPerMesh,
+      maxVerts: maxMeshes * maxTrisPerMesh * 3,
+    }
+
+    this.builder = createMeshPoolBuilder_WebGPU(device, opts);
+
+    this.pool = this.builder.poolHandle;
+
+    this.meshObjs = [];
+
+    this.sceneUniformBuffer = device.createBuffer({
+      size: SceneUniform.ByteSizeAligned,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    // setup scene data:
     // create a directional light and compute it's projection (for shadows) and direction
     const worldOrigin = vec3.fromValues(0, 0, 0);
     const lightPosition = vec3.fromValues(50, 50, 0);
@@ -546,60 +347,14 @@ export class Renderer_WebGPU {
     const lightDir = vec3.subtract(vec3.create(), worldOrigin, lightPosition);
     vec3.normalize(lightDir, lightDir);
 
-    this.device.queue.writeBuffer(
-      this.sceneUniformBuffer,
-      bytesPerMat4 * 1,
-      (lightViewProjMatrix as Float32Array).buffer
-    );
-    this.device.queue.writeBuffer(
-      this.sceneUniformBuffer,
-      bytesPerMat4 * 2,
-      (lightDir as Float32Array).buffer
-    );
-  }
-
-  constructor(
-    canvas: HTMLCanvasElement,
-    device: GPUDevice,
-    maxMeshes = 100,
-    maxTrisPerMesh = 100
-  ) {
-    this.canvas = canvas;
-    this.device = device;
-    this.context = canvas.getContext("gpupresent")!;
-    this.context.configure({ device, format: swapChainFormat });
-
-    this.maxMeshes = maxMeshes;
-    this.maxTris = this.maxMeshes * maxTrisPerMesh;
-    this.maxVerts = this.maxTris * 3;
-
-    this.vertexBuffer = device.createBuffer({
-      size: this.maxVerts * vertByteSize,
-      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-      mappedAtCreation: true,
-    });
-    this.indexBuffer = device.createBuffer({
-      size: this.maxTris * bytesPerTri,
-      usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
-      mappedAtCreation: true,
-    });
-    this.meshUniformBuffer = device.createBuffer({
-      size: meshUniByteSizeAligned * this.maxMeshes,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-      mappedAtCreation: true,
-    });
-    this.getMappedRanges();
-    // create our scene's uniform buffer
-    this.sceneUniformBuffer = device.createBuffer({
-      size: sceneUniBufferSizeAligned,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
-
-    this.meshHandles = [];
-    this.numVerts = 0;
-    this.numTris = 0;
-
-    this.setupSceneBuffer();
+    this.sceneData = {
+      cameraViewProjMatrix: mat4.create(), // updated later
+      lightViewProjMatrix,
+      lightDir,
+      time: 0, // updated later
+      playerPos: [0, 0], // updated later
+      cameraPos: vec3.create(), // updated later
+    }
 
     this.cameraOffset = mat4.create();
     pitch(this.cameraOffset, -Math.PI / 8);
@@ -621,14 +376,16 @@ export class Renderer_WebGPU {
       projectionMatrix,
       viewMatrix
     ) as Float32Array;
-    this.device.queue.writeBuffer(this.sceneUniformBuffer, 0, viewProj.buffer);
+
+    this.sceneData.cameraViewProjMatrix = viewProj;
+
+    const sceneUniScratch = new Uint8Array(SceneUniform.ByteSizeAligned)
+
+    SceneUniform.Serialize(sceneUniScratch, 0, this.sceneData);
+
+    this.device.queue.writeBuffer(this.sceneUniformBuffer, 0, sceneUniScratch.buffer);
 
     // update all mesh transforms
-    // TODO: only update when changed
-    // for (let m of this.meshHandles) {
-    //   this.gpuBufferWriteMeshTransform(m);
-    // }
-    // TODO(@darzu): hack
     this.gpuBufferWriteAllMeshUniforms();
 
     // TODO(@darzu): more fine grain
