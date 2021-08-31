@@ -1,6 +1,6 @@
 import { mat4, vec3, quat } from "./gl-matrix.js";
 import { Mesh, scaleMesh, GameObject, NetObject, GameState } from "./state.js";
-import { Renderer } from "./render.js";
+import { Renderer, Renderer_WebGPU } from "./render_webgpu.js";
 import { Net } from "./net.js";
 
 class Plane extends GameObject {
@@ -503,7 +503,7 @@ async function startGame(host: string | null) {
   const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter!.requestDevice();
-  let renderer = new Renderer(canvas, device, 20000);
+  let renderer: Renderer = new Renderer_WebGPU(canvas, device, 20000);
   let start_of_time = performance.now();
   let gameState = new CubeGameState(renderer, hosting);
   let inputs = inputsReader(canvas);

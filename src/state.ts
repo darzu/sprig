@@ -1,5 +1,5 @@
 import { mat4, vec3, quat } from "./gl-matrix.js";
-import { Renderer } from "./render.js";
+import { Renderer } from "./render_webgpu.js";
 
 const ERROR_SMOOTHING_FACTOR = 0.8;
 const EPSILON = 0.0001;

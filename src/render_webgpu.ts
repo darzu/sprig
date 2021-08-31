@@ -165,38 +165,44 @@ interface MappedGPUBuffers {
   meshUniformBuffer: Float32Array;
 }
 
-export class Renderer {
-  maxMeshes: number;
-  maxTris: number;
-  maxVerts: number;
+export interface Renderer {
+  unmapGPUBuffers(): void;
+  addObject(o: GameObject): MeshHandle;
+  renderFrame(viewMatrix: mat4): void;
+}
 
-  device: GPUDevice;
-  canvas: HTMLCanvasElement;
-  context: GPUCanvasContext;
+export class Renderer_WebGPU {
+  private maxMeshes: number;
+  private maxTris: number;
+  private maxVerts: number;
 
-  numVerts: number;
-  numTris: number;
+  private device: GPUDevice;
+  private canvas: HTMLCanvasElement;
+  private context: GPUCanvasContext;
 
-  vertexBuffer: GPUBuffer;
-  indexBuffer: GPUBuffer;
-  meshUniformBuffer: GPUBuffer;
-  sceneUniformBuffer: GPUBuffer;
+  private numVerts: number;
+  private numTris: number;
 
-  cameraOffset: mat4;
+  private vertexBuffer: GPUBuffer;
+  private indexBuffer: GPUBuffer;
+  private meshUniformBuffer: GPUBuffer;
+  private sceneUniformBuffer: GPUBuffer;
 
-  meshHandles: MeshHandle[];
+  private cameraOffset: mat4;
 
-  mappedGPUBuffers: MappedGPUBuffers | null = null;
+  private meshHandles: MeshHandle[];
 
-  renderBundle: GPURenderBundle;
+  private mappedGPUBuffers: MappedGPUBuffers | null = null;
 
-  depthTexture: GPUTexture | null = null;
-  depthTextureView: GPUTextureView | null = null;
-  colorTexture: GPUTexture | null = null;
-  colorTextureView: GPUTextureView | null = null;
-  lastWidth = 0;
-  lastHeight = 0;
-  aspectRatio = 1;
+  private renderBundle: GPURenderBundle;
+
+  private depthTexture: GPUTexture | null = null;
+  private depthTextureView: GPUTextureView | null = null;
+  private colorTexture: GPUTexture | null = null;
+  private colorTextureView: GPUTextureView | null = null;
+  private lastWidth = 0;
+  private lastHeight = 0;
+  private aspectRatio = 1;
 
   // private gpuBufferWriteMeshTransform(m: MeshHandle) {
   //   this.device.queue.writeBuffer(
@@ -257,7 +263,7 @@ export class Renderer {
   //   this.getMappedRanges();
   // }
 
-  unmapGPUBuffers() {
+  public unmapGPUBuffers(): void {
     this.vertexBuffer.unmap();
     this.indexBuffer.unmap();
     this.meshUniformBuffer.unmap();
@@ -265,7 +271,7 @@ export class Renderer {
   }
 
   // recomputes textures, widths, and aspect ratio on canvas resize
-  checkCanvasResize() {
+  private checkCanvasResize() {
     if (
       this.lastWidth === this.canvas.width &&
       this.lastHeight === this.canvas.height
@@ -302,7 +308,7 @@ export class Renderer {
                   
     TODO: support adding objects when buffers aren't memory-mapped using device.queue
   */
-  addObject(o: GameObject): MeshHandle {
+  public addObject(o: GameObject): MeshHandle {
     console.log(`Adding object ${o.id}`);
     let m = o.mesh();
     m = unshareVertices(m); // work-around; see TODO inside function
@@ -512,7 +518,7 @@ export class Renderer {
     return this.renderBundle;
   }
 
-  setupSceneBuffer() {
+  private setupSceneBuffer() {
     // create a directional light and compute it's projection (for shadows) and direction
     const worldOrigin = vec3.fromValues(0, 0, 0);
     const lightPosition = vec3.fromValues(50, 50, 0);
@@ -601,7 +607,7 @@ export class Renderer {
     this.renderBundle = this.createRenderBundle();
   }
 
-  renderFrame(viewMatrix: mat4) {
+  public renderFrame(viewMatrix: mat4): void {
     this.checkCanvasResize();
     const projectionMatrix = mat4.perspective(
       mat4.create(),
