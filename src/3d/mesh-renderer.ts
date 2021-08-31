@@ -11,7 +11,7 @@ const sceneStruct = `
 [[block]] struct Scene {
   cameraViewProjMatrix : mat4x4<f32>;
   lightViewProjMatrix : mat4x4<f32>;
-  lightPos : vec3<f32>;
+  lightDir : vec3<f32>;
   time : f32;
   displacer: vec3<f32>;
 };
@@ -124,14 +124,9 @@ const wgslShaders = {
         return output;
     }
     `,
-    fragment: `
-    [[block]] struct Scene {
-        lightViewProjMatrix : mat4x4<f32>;
-        cameraViewProjMatrix : mat4x4<f32>;
-        lightPos : vec3<f32>;
-        time : f32;
-    };
-
+    fragment:
+        sceneStruct +
+    `
     [[group(0), binding(0)]] var<uniform> scene : Scene;
     [[group(0), binding(1)]] var shadowMap: texture_depth_2d;
     [[group(0), binding(2)]] var shadowSampler: sampler_comparison;
@@ -155,33 +150,43 @@ const wgslShaders = {
         // Percentage-closer filtering. Sample texels in the region
         // to smooth the result.
         var visibility : f32 = 0.0;
-        for (var y : i32 = -1 ; y <= 1 ; y = y + 1) {
-            for (var x : i32 = -1 ; x <= 1 ; x = x + 1) {
-                let offset : vec2<f32> = vec2<f32>(
-                f32(x) * ${1 / shadowDepthTextureSize},
-                f32(y) * ${1 / shadowDepthTextureSize});
+        // for (var y : i32 = -1 ; y <= 1 ; y = y + 1) {
+        //     for (var x : i32 = -1 ; x <= 1 ; x = x + 1) {
+        //         let offset : vec2<f32> = vec2<f32>(
+        //         f32(x) * ${1 / shadowDepthTextureSize},
+        //         f32(y) * ${1 / shadowDepthTextureSize});
 
-                visibility = visibility + textureSampleCompare(
-                shadowMap, shadowSampler,
-                input.shadowPos.xy + offset, input.shadowPos.z - 0.007);
-            }
-        }
-        visibility = visibility / 9.0;
+        //         visibility = visibility + textureSampleCompare(
+        //         shadowMap, shadowSampler,
+        //         input.shadowPos.xy + offset, input.shadowPos.z - 0.007);
+        //     }
+        // }
+        // what is this 0.007 factor?
+        visibility = visibility + textureSampleCompare(
+            shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
+        // visibility = visibility / 9.0;
+        // visibility = 1.0;
 
-        let normSign: f32 = select(1.0, -1.0, input.front);
-        let norm: vec3<f32> = input.fragNorm * normSign;
-        let antiNorm: vec3<f32> = norm * -1.0;
+        // let normSign: f32 = select(1.0, -1.0, input.front);
+        let norm: vec3<f32> = input.fragNorm;
+        // let norm: vec3<f32> = input.fragNorm * normSign;
+        // let antiNorm: vec3<f32> = norm * -1.0;
 
-        let lightDir: vec3<f32> = normalize(scene.lightPos - input.fragPos);
-        let lambert : f32 = max(dot(lightDir, norm), 0.0);
-        let antiLambert : f32 = 1.5 - max(dot(lightDir, antiNorm), 0.0);
-        let lightingFactor : f32 = min(visibility * lambert, 1.0) * 1.5;
+        // let lightDir: vec3<f32> = normalize(scene.lightPos - input.fragPos);
+        let lightDir: vec3<f32> = scene.lightDir;
+        let lambert : f32 = dot(-lightDir, norm);
+        // let lambert : f32 = max(dot(lightDir, norm), 0.0);
+        // let antiLambert : f32 = 1.5 - max(dot(lightDir, antiNorm), 0.0);
+        // let lightingFactor : f32 = lambert * 1.5;
+        let lightingFactor : f32 = visibility * lambert * 1.5;
+        // let lightingFactor : f32 = min(visibility * lambert, 1.0) * 1.5;
         let diffuse: vec3<f32> = lightColor * lightingFactor;
-        let ambient: vec3<f32> = vec3<f32>(1.0, 1.0, 1.0) * ambientFactor * antiLambert;
+        // let ambient: vec3<f32> = vec3<f32>(1.0, 1.0, 1.0) * ambientFactor; // * antiLambert;
 
         // return vec4<f32>(norm, 1.0);
 
-        return vec4<f32>((diffuse + ambient) * input.color, 1.0);
+        return vec4<f32>(diffuse * input.color, 1.0);
+        // return vec4<f32>((diffuse + ambient) * input.color, 1.0);
 
         // return vec4<f32>(lightingFactor * input.color, 1.0);
         // return vec4<f32>(lightingFactor * albedo, 1.0);

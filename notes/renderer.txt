@@ -237,7 +237,10 @@ Defered rendering:
 Shadows:
   Shadow volumes? (aka stencil shadows)
     https://en.wikipedia.org/wiki/Shadow_volume
-  Shadow maps
+  Shadow mapping
+    https://www.youtube.com/watch?v=o6zDfDkOFIc
+    use the normal view frustum to compute the bounding box that should be used for the shadow map
+      compute view frustum with different far-clipping plane to adjust shadow distance
 
 Lighting:
   pixel vs vertex

@@ -19,6 +19,12 @@ TODO:
             How do we know which face? We need that prominent vertex thing...
     Refactor into seperate files
         Kill babylonjs?
+
+    Debug toggles to render:
+        Shadow map
+        Normals
+
+    Curve normals on grass blade
 */
 
 // FLAGS
@@ -734,6 +740,8 @@ async function init(canvasRef: HTMLCanvasElement) {
         }
 
         const lightPosition = vec3.fromValues(lightX, lightY, 0);
+        const lightDir = vec3.subtract(vec3.create(), origin, lightPosition);
+        vec3.normalize(lightDir, lightDir);
         // const lightPosition = vec3.fromValues(50, 100, -100);
         const lightViewMatrix = mat4.create();
         mat4.lookAt(lightViewMatrix, lightPosition, origin, upVector);
@@ -750,7 +758,7 @@ async function init(canvasRef: HTMLCanvasElement) {
             lightMatrixData.byteLength
         );
 
-        const lightData = lightPosition as Float32Array;
+        const lightData = lightDir as Float32Array;
         device.queue.writeBuffer(
             meshRenderer.sharedUniBuffer,
             bytesPerMat4 * 2, // third matrix
