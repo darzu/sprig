@@ -108,7 +108,7 @@ class Bullet extends Cube {
   constructor(id: number, creator: number) {
     super(id, creator);
     this.axis = vec3.fromValues(0, 0, 0);
-    this.color = vec3.fromValues(0.1, 0.1, 0.1);
+    this.color = vec3.fromValues(0.1, 0.1, 0.8);
   }
 
   type(): string {
@@ -128,6 +128,7 @@ class Player extends Cube {
   constructor(id: number, creator: number, playerId: number) {
     super(id, creator);
     this.authority = playerId;
+    this.color = vec3.fromValues(0, 0.2, 0);
   }
 
   type(): string {
