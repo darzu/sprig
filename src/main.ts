@@ -1,52 +1,5 @@
 import { mat4, vec3 } from './gl-matrix.js';
 
-const CUBE: MeshModel = {
-    pos: [
-        [+1.0, +1.0, +1.0],
-        [-1.0, +1.0, +1.0],
-        [-1.0, -1.0, +1.0],
-        [+1.0, -1.0, +1.0],
-
-        [+1.0, +1.0, -1.0],
-        [-1.0, +1.0, -1.0],
-        [-1.0, -1.0, -1.0],
-        [+1.0, -1.0, -1.0],
-    ],
-    tri: [
-        [0, 1, 2], [0, 2, 3], // front
-        [4, 5, 1], [4, 1, 0], // top
-        [3, 4, 0], [3, 7, 4], // right
-        [2, 1, 5], [2, 5, 6], // left
-        [6, 3, 2], [6, 7, 3], // bottom
-        [5, 4, 7], [5, 7, 6], // back
-    ],
-    colors: [
-        [0.2, 0.0, 0.0], [0.2, 0.0, 0.0], // front
-        [0.0, 0.2, 0.0], [0.0, 0.2, 0.0], // top
-        [0.0, 0.0, 0.2], [0.0, 0.0, 0.2], // right
-        [0.2, 0.2, 0.0], [0.2, 0.2, 0.0], // left
-        [0.0, 0.2, 0.2], [0.0, 0.2, 0.2], // bottom
-        [0.2, 0.0, 0.2], [0.2, 0.0, 0.2], // back
-    ]
-}
-
-const PLANE: MeshModel = {
-    pos: [
-        [+10, 0, +10],
-        [-10, 0, +10],
-        [+10, 0, -10],
-        [-10, 0, -10],
-    ],
-    tri: [
-        [0, 2, 3], [0, 3, 1], // top
-        [3, 2, 0], [1, 3, 0], // bottom
-    ],
-    colors: [
-        [0.05, 0.1, 0.05], [0.05, 0.1, 0.05],
-        [0.05, 0.1, 0.05], [0.05, 0.1, 0.05],
-    ],
-}
-
 function align(x: number, size: number): number {
     return Math.ceil(x / size) * size
 }
@@ -139,12 +92,6 @@ const swapChainFormat = 'bgra8unorm';
 
 const depthStencilFormat = 'depth24plus-stencil8';
 const shadowDepthStencilFormat = 'depth32float';
-
-const shadowDepthTextureDesc: GPUTextureDescriptor = {
-    size: { width: 2048 * 2, height: 2048 * 2 },
-    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.SAMPLED,
-    format: shadowDepthStencilFormat,
-}
 
 let depthTexture: GPUTexture;
 let depthTextureView: GPUTextureView;
@@ -320,7 +267,6 @@ interface Transformable {
     moveY: (n: number) => void;
     moveZ: (n: number) => void;
 }
-
 function mkAffineTransformable(): Transformable {
     const transform = mat4.create();
     return {
@@ -348,15 +294,13 @@ function mkAffineTransformable(): Transformable {
     }
 }
 
-
-
-// Attach to html
+// attach to HTML canvas 
 let canvasRef = document.getElementById('sample-canvas') as HTMLCanvasElement;
 const adapter = await navigator.gpu.requestAdapter();
 const device = await adapter!.requestDevice();
-
 const context = canvasRef.getContext('gpupresent')!;
 
+// resize the canvas when the window resizes
 function onWindowResize() {
     canvasRef.width = window.innerWidth;
     canvasRef.style.width = `${window.innerWidth}px`;
@@ -367,6 +311,10 @@ window.onresize = function () {
     onWindowResize();
 }
 onWindowResize();
+
+// TODO(@darzu): mesh stuff
+let _vertsMap: Float32Array | null = null;
+let _indMap: Uint16Array | null = null;
 
 const meshUniByteSize = align(
     bytesPerMat4 // transform
@@ -410,13 +358,10 @@ const _meshUniBuffer = device.createBuffer({
     size: align(meshUniBufferSize, 256),
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 });
+
 const _meshes: Mesh[] = [];
 let _numVerts = 0;
 let _numTris = 0;
-
-let _vertsMap: Float32Array | null = null;
-let _indMap: Uint16Array | null = null;
-
 function addMeshes(meshesToAdd: MeshModel[], shadowCasters: boolean): Mesh[] {
     function addMesh(m: MeshModel): Mesh {
         if (_vertsMap === null)
@@ -456,72 +401,6 @@ function addMeshes(meshesToAdd: MeshModel[], shadowCasters: boolean): Mesh[] {
     return newMeshes
 }
 
-function writeMeshTransform(m: Mesh) {
-    device.queue.writeBuffer(_meshUniBuffer, m.modelUniByteOffset, (m.transform as Float32Array).buffer);
-}
-
-const modelUniBindGroupLayout = device.createBindGroupLayout({
-    entries: [
-        {
-            binding: 0,
-            visibility: GPUShaderStage.VERTEX,
-            buffer: {
-                type: 'uniform',
-                hasDynamicOffset: true,
-                // TODO(@darzu): why have this?
-                minBindingSize: meshUniByteSize,
-            },
-        },
-    ],
-});
-
-const shadowSharedUniBindGroupLayout = device.createBindGroupLayout({
-    entries: [
-        {
-            binding: 0,
-            visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-            buffer: {
-                type: 'uniform',
-                // hasDynamicOffset: true,
-                // TODO(@darzu): why have this?
-                // minBindingSize: 20,
-            },
-        },
-    ],
-});
-
-const renderSharedUniBindGroupLayout = device.createBindGroupLayout({
-    entries: [
-        {
-            binding: 0,
-            visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-            buffer: {
-                type: 'uniform',
-                // hasDynamicOffset: true,
-                // TODO(@darzu): why have this?
-                // minBindingSize: 20,
-            },
-        },
-        {
-            binding: 1,
-            visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-            texture: {
-                sampleType: 'depth',
-            },
-        },
-        {
-            binding: 2,
-            visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-            sampler: {
-                type: 'comparison',
-            },
-        },
-    ],
-});
-
-const shadowDepthTexture = device.createTexture(shadowDepthTextureDesc);
-const shadowDepthTextureView = shadowDepthTexture.createView();
-
 // TODO(@darzu): SCENE FORMAT
 const sharedUniBufferSize =
     bytesPerMat4 * 2 // camera and light projection
@@ -531,6 +410,164 @@ const sharedUniBuffer = device.createBuffer({
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 });
 
+// define the format of our vertices. This needs to agree with the inputs to the vertex shaders
+const vertexBuffersLayout: GPUVertexBufferLayout[] = [{
+    arrayStride: vertByteSize,
+    attributes: [
+        { shaderLocation: 0, offset: bytesPerVec3 * 0, format: 'float32x3' }, // position
+        { shaderLocation: 1, offset: bytesPerVec3 * 1, format: 'float32x3' }, // color
+        { shaderLocation: 2, offset: bytesPerVec3 * 2, format: 'float32x3' }, // normals
+        { shaderLocation: 3, offset: bytesPerVec3 * 3, format: 'float32' }, // sway height
+    ],
+}];
+
+// add our meshes to the vertex and index buffers
+_vertsMap = new Float32Array(_vertBuffer.getMappedRange())
+_indMap = new Uint16Array(_indexBuffer.getMappedRange());
+
+function writeMeshTransform(m: Mesh) {
+    device.queue.writeBuffer(_meshUniBuffer, m.modelUniByteOffset, (m.transform as Float32Array).buffer);
+}
+
+const CUBE: MeshModel = {
+    pos: [
+        [+1.0, +1.0, +1.0],
+        [-1.0, +1.0, +1.0],
+        [-1.0, -1.0, +1.0],
+        [+1.0, -1.0, +1.0],
+
+        [+1.0, +1.0, -1.0],
+        [-1.0, +1.0, -1.0],
+        [-1.0, -1.0, -1.0],
+        [+1.0, -1.0, -1.0],
+    ],
+    tri: [
+        [0, 1, 2], [0, 2, 3], // front
+        [4, 5, 1], [4, 1, 0], // top
+        [3, 4, 0], [3, 7, 4], // right
+        [2, 1, 5], [2, 5, 6], // left
+        [6, 3, 2], [6, 7, 3], // bottom
+        [5, 4, 7], [5, 7, 6], // back
+    ],
+    colors: [
+        [0.2, 0.0, 0.0], [0.2, 0.0, 0.0], // front
+        [0.0, 0.2, 0.0], [0.0, 0.2, 0.0], // top
+        [0.0, 0.0, 0.2], [0.0, 0.0, 0.2], // right
+        [0.2, 0.2, 0.0], [0.2, 0.2, 0.0], // left
+        [0.0, 0.2, 0.2], [0.0, 0.2, 0.2], // bottom
+        [0.2, 0.0, 0.2], [0.2, 0.0, 0.2], // back
+    ]
+}
+
+const PLANE: MeshModel = {
+    pos: [
+        [+10, 0, +10],
+        [-10, 0, +10],
+        [+10, 0, -10],
+        [-10, 0, -10],
+    ],
+    tri: [
+        [0, 2, 3], [0, 3, 1], // top
+        [3, 2, 0], [1, 3, 0], // bottom
+    ],
+    colors: [
+        [0.05, 0.1, 0.05], [0.05, 0.1, 0.05],
+        [0.05, 0.1, 0.05], [0.05, 0.1, 0.05],
+    ],
+}
+
+const [planeHandle] = addMeshes([
+    PLANE
+], true)
+mat4.translate(planeHandle.transform, planeHandle.transform, [0, -3, 0])
+writeMeshTransform(planeHandle);
+
+const [playerM] = addMeshes([CUBE], true)
+
+_vertBuffer.unmap()
+_indexBuffer.unmap()
+_vertsMap = null;
+_indMap = null;
+
+// track which keys are pressed for use in the game loop
+const pressedKeys: { [keycode: string]: boolean } = {}
+window.addEventListener('keydown', (ev) => pressedKeys[ev.key.toLowerCase()] = true, false);
+window.addEventListener('keyup', (ev) => pressedKeys[ev.key.toLowerCase()] = false, false);
+
+// track mouse movement for use in the game loop
+let _mouseAccumulatedX = 0;
+let _mouseAccummulatedY = 0;
+window.addEventListener('mousemove', (ev) => {
+    _mouseAccumulatedX += ev.movementX
+    _mouseAccummulatedY += ev.movementY
+}, false);
+function takeAccumulatedMouseMovement(): { x: number, y: number } {
+    const result = { x: _mouseAccumulatedX, y: _mouseAccummulatedY };
+    _mouseAccumulatedX = 0; // reset accumulators
+    _mouseAccummulatedY = 0;
+    return result
+}
+
+// when the player clicks on the canvas, lock the cursor for better gaming (the browser lets them exit)
+function doLockMouse() {
+    canvasRef.requestPointerLock();
+    canvasRef.removeEventListener('click', doLockMouse)
+}
+canvasRef.addEventListener('click', doLockMouse)
+
+// create the "player", which is an affine matrix tracking position & orientation of a cube
+// the camera will follow behind it.
+const cameraPos = mkAffineTransformable();
+cameraPos.pitch(-Math.PI / 4)
+const playerT = mkAffineTransformable();
+playerM.transform = playerT.getTransform();
+writeMeshTransform(playerM)
+
+// create a directional light and compute it's projection (for shadows) and direction
+const origin = vec3.fromValues(0, 0, 0);
+const lightPosition = vec3.fromValues(50, 50, 0);
+const upVector = vec3.fromValues(0, 1, 0);
+const lightViewMatrix = mat4.lookAt(mat4.create(), lightPosition, origin, upVector);
+const lightProjectionMatrix = mat4.ortho(mat4.create(), -80, 80, -80, 80, -200, 300);
+const lightViewProjMatrix = mat4.multiply(mat4.create(), lightProjectionMatrix, lightViewMatrix);
+const lightDir = vec3.subtract(vec3.create(), origin, lightPosition);
+vec3.normalize(lightDir, lightDir);
+// write the light data to the shared uniform buffer
+device.queue.writeBuffer(sharedUniBuffer, bytesPerMat4 * 1, (lightViewProjMatrix as Float32Array).buffer);
+device.queue.writeBuffer(sharedUniBuffer, bytesPerMat4 * 2, (lightDir as Float32Array).buffer);
+
+// setup a binding for our per-mesh uniforms
+const modelUniBindGroupLayout = device.createBindGroupLayout({
+    entries: [{
+        binding: 0,
+        visibility: GPUShaderStage.VERTEX,
+        buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: meshUniByteSize },
+    }],
+});
+const modelUniBindGroup = device.createBindGroup({
+    layout: modelUniBindGroupLayout,
+    entries: [{
+        binding: 0,
+        resource: { buffer: _meshUniBuffer, size: meshUniByteSize, },
+    }],
+});
+
+// configure our canvas backed swapchain
+const swapChain = context.configureSwapChain({ device, format: swapChainFormat });
+
+// we'll use a triangle list with backface culling and counter-clockwise triangle indices for both pipelines
+const primitiveBackcull: GPUPrimitiveState = {
+    topology: 'triangle-list',
+    cullMode: 'back',
+    frontFace: 'ccw',
+};
+
+// define the resource bindings for the shadow pipeline
+const shadowSharedUniBindGroupLayout = device.createBindGroupLayout({
+    entries: [
+        { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+    ],
+});
 const shadowSharedUniBindGroup = device.createBindGroup({
     layout: shadowSharedUniBindGroupLayout,
     entries: [
@@ -538,6 +575,22 @@ const shadowSharedUniBindGroup = device.createBindGroup({
     ],
 });
 
+// ???
+const shadowDepthTextureDesc: GPUTextureDescriptor = {
+    size: { width: 2048 * 2, height: 2048 * 2 },
+    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.SAMPLED,
+    format: shadowDepthStencilFormat,
+}
+const shadowDepthTexture = device.createTexture(shadowDepthTextureDesc);
+const shadowDepthTextureView = shadowDepthTexture.createView();
+// define the resource bindings for the mesh rendering pipeline
+const renderSharedUniBindGroupLayout = device.createBindGroupLayout({
+    entries: [
+        { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+        { binding: 1, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, texture: { sampleType: 'depth' } },
+        { binding: 2, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, sampler: { type: 'comparison' } },
+    ],
+});
 const renderSharedUniBindGroup = device.createBindGroup({
     layout: renderSharedUniBindGroupLayout,
     entries: [
@@ -547,32 +600,13 @@ const renderSharedUniBindGroup = device.createBindGroup({
     ],
 });
 
-const vertexBuffersLayout: GPUVertexBufferLayout[] = [{
-    arrayStride: vertByteSize,
-    attributes: [
-        // position
-        { shaderLocation: 0, offset: bytesPerVec3 * 0, format: 'float32x3' },
-        // color
-        { shaderLocation: 1, offset: bytesPerVec3 * 1, format: 'float32x3' },
-        // normals
-        { shaderLocation: 2, offset: bytesPerVec3 * 2, format: 'float32x3' },
-        // sway height
-        { shaderLocation: 3, offset: bytesPerVec3 * 3, format: 'float32' },
-    ],
-}];
 
-const primitiveBackcull: GPUPrimitiveState = {
-    topology: 'triangle-list',
-    cullMode: 'back',
-    frontFace: 'ccw',
-};
-
-const shadowPipelineLayout = device.createPipelineLayout({
-    bindGroupLayouts: [shadowSharedUniBindGroupLayout, modelUniBindGroupLayout],
-});
-
+// setup our first phase pipeline which tracks the depth of meshes 
+// from the point of view of the lighting so we know where the shadows are
 const shadowPipelineDesc: GPURenderPipelineDescriptor = {
-    layout: shadowPipelineLayout,
+    layout: device.createPipelineLayout({
+        bindGroupLayouts: [shadowSharedUniBindGroupLayout, modelUniBindGroupLayout],
+    }),
     vertex: {
         module: device.createShaderModule({ code: vertexShaderForShadows }),
         entryPoint: 'main',
@@ -590,15 +624,13 @@ const shadowPipelineDesc: GPURenderPipelineDescriptor = {
     },
     primitive: primitiveBackcull,
 };
-
 const shadowPipeline = device.createRenderPipeline(shadowPipelineDesc);
 
-const renderPipelineLayout = device.createPipelineLayout({
-    bindGroupLayouts: [renderSharedUniBindGroupLayout, modelUniBindGroupLayout],
-});
-
+// setup our second phase pipeline which renders meshes to the canvas
 const renderPipelineDesc: GPURenderPipelineDescriptor = {
-    layout: renderPipelineLayout,
+    layout: device.createPipelineLayout({
+        bindGroupLayouts: [renderSharedUniBindGroupLayout, modelUniBindGroupLayout],
+    }),
     vertex: {
         module: device.createShaderModule({ code: vertexShader }),
         entryPoint: 'main',
@@ -619,100 +651,11 @@ const renderPipelineDesc: GPURenderPipelineDescriptor = {
         count: antiAliasSampleCount,
     },
 };
-
 const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
 
-const shadowPassDescriptor: GPURenderPassDescriptor = {
-    colorAttachments: [],
-    depthStencilAttachment: {
-        view: shadowDepthTextureView,
-        depthLoadValue: 1.0,
-        depthStoreOp: 'store',
-        stencilLoadValue: 0,
-        stencilStoreOp: 'store',
-    },
-};
 
-// cursor lock
-let cursorLocked = false
-canvasRef.onclick = (_) => {
-    if (!cursorLocked)
-        canvasRef.requestPointerLock();
-    cursorLocked = true
-}
-
-_vertsMap = new Float32Array(_vertBuffer.getMappedRange())
-_indMap = new Uint16Array(_indexBuffer.getMappedRange());
-
-const [planeHandle] = addMeshes([
-    PLANE
-], true)
-mat4.translate(planeHandle.transform, planeHandle.transform, [0, -3, 0])
-writeMeshTransform(planeHandle);
-
-const [playerM] = addMeshes([CUBE], true)
-
-_vertBuffer.unmap()
-_indexBuffer.unmap()
-_vertsMap = null;
-_indMap = null;
-
-const cameraPos = mkAffineTransformable();
-cameraPos.pitch(-Math.PI / 4)
-
-// track which keys are pressed 
-window.addEventListener('keydown', onKeyDown, false);
-window.addEventListener('keyup', onKeyUp, false);
-
-const pressedKeys: { [keycode: string]: boolean } = {}
-function onKeyDown(ev: KeyboardEvent) {
-    const k = ev.key.toLowerCase();
-    if (pressedKeys[k] === undefined)
-        console.log(`new key: ${k}`)
-    pressedKeys[k] = true
-}
-function onKeyUp(ev: KeyboardEvent) {
-    pressedKeys[ev.key.toLowerCase()] = false
-}
-
-// track mouse movement
-window.addEventListener('mousemove', onMouseMove, false);
-let _mouseAccumulatedX = 0;
-let _mouseAccummulatedY = 0;
-function onMouseMove(ev: MouseEvent) {
-    _mouseAccumulatedX += ev.movementX
-    _mouseAccummulatedY += ev.movementY
-}
-function getAccumulatedMouseMovement(): { x: number, y: number } {
-    const result = { x: _mouseAccumulatedX, y: _mouseAccummulatedY };
-    _mouseAccumulatedX = 0; // reset accumulators
-    _mouseAccummulatedY = 0;
-    return result
-}
-
-// create a 4x4 matri player
-const playerT = mkAffineTransformable();
-playerM.transform = playerT.getTransform();
-writeMeshTransform(playerM)
-
-// create a directional light and compute it's projection (for shadows) and direction
-const origin = vec3.fromValues(0, 0, 0);
-const lightPosition = vec3.fromValues(50, 50, 0);
-const upVector = vec3.fromValues(0, 1, 0);
-const lightViewMatrix = mat4.lookAt(mat4.create(), lightPosition, origin, upVector);
-const lightProjectionMatrix = mat4.ortho(mat4.create(), -80, 80, -80, 80, -200, 300);
-const lightViewProjMatrix = mat4.multiply(mat4.create(), lightProjectionMatrix, lightViewMatrix);
-const lightDir = vec3.subtract(vec3.create(), origin, lightPosition);
-vec3.normalize(lightDir, lightDir);
-// write the light data to the shared uniform buffer
-device.queue.writeBuffer(sharedUniBuffer, bytesPerMat4 * 1, (lightViewProjMatrix as Float32Array).buffer);
-device.queue.writeBuffer(sharedUniBuffer, bytesPerMat4 * 2, (lightDir as Float32Array).buffer);
-
-const modelUniBindGroup = device.createBindGroup({
-    layout: modelUniBindGroupLayout,
-    entries: [{ binding: 0, resource: { buffer: _meshUniBuffer, size: meshUniByteSize, }, },],
-});
-
+// record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
+// This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
 const bundleEncoder = device.createRenderBundleEncoder({
     colorFormats: [swapChainFormat],
     depthStencilFormat: depthStencilFormat,
@@ -728,11 +671,8 @@ for (let m of _meshes) {
 }
 let renderBundle = bundleEncoder.finish()
 
-const swapChain = context.configureSwapChain({ device, format: swapChainFormat });
-
-let debugDiv = document.getElementById('debug-div') as HTMLDivElement;
-
 // initialize performance metrics
+let debugDiv = document.getElementById('debug-div') as HTMLDivElement;
 let previousFrameTime = 0;
 let avgJsTimeMs = 0
 let avgFrameTimeMs = 0
@@ -755,7 +695,7 @@ function renderFrame(timeMs: number) {
     if (pressedKeys['d']) playerT.moveX(playerSpeed) // right
     if (pressedKeys['shift']) playerT.moveY(playerSpeed) // up
     if (pressedKeys['c']) playerT.moveY(-playerSpeed) // down
-    const { x: mouseX, y: mouseY } = getAccumulatedMouseMovement();
+    const { x: mouseX, y: mouseY } = takeAccumulatedMouseMovement();
     playerT.yaw(-mouseX * 0.01);
     cameraPos.pitch(-mouseY * 0.01);
 
@@ -764,7 +704,18 @@ function renderFrame(timeMs: number) {
     writeMeshTransform(playerM);
 
     // render from the light's point of view to a depth buffer so we know where shadows are
+    // TODO(@darzu): try bundled shadows
     const commandEncoder = device.createCommandEncoder();
+    const shadowPassDescriptor: GPURenderPassDescriptor = {
+        colorAttachments: [],
+        depthStencilAttachment: {
+            view: shadowDepthTextureView,
+            depthLoadValue: 1.0,
+            depthStoreOp: 'store',
+            stencilLoadValue: 0,
+            stencilStoreOp: 'store',
+        },
+    };
     const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
     shadowPass.setBindGroup(0, shadowSharedUniBindGroup);
     shadowPass.setPipeline(shadowPipeline);
@@ -787,7 +738,7 @@ function renderFrame(timeMs: number) {
     const viewProj = mat4.multiply(mat4.create(), projectionMatrix, viewMatrix) as Float32Array
     device.queue.writeBuffer(sharedUniBuffer, 0, viewProj.buffer);
 
-    // render to the canvas' swap-chain
+    // render to the canvas' via our swap-chain
     const renderPassEncoder = commandEncoder.beginRenderPass({
         colorAttachments: [{
             view: colorTextureView,
