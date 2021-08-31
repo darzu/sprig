@@ -2,6 +2,10 @@
 <html>
 
 <style>
+    body {
+        position: absolute;
+    }
+
     * {
         margin: 0;
         padding: 0;
@@ -9,7 +13,16 @@
 
     #debug-div {
         position: absolute;
-        bottom: 24px;
+        bottom: 48px;
+        left: 24px;
+        color: white;
+        font-family: monospace;
+        font-size: 24px;
+    }
+
+    #server-controls {
+        position: absolute;
+        bottom: 12px;
         left: 24px;
         color: white;
         font-family: monospace;
@@ -18,12 +31,12 @@
 </style>
 
 <body>
+    <canvas width="570" height="570" id="sample-canvas"></canvas>
     <div id="server-controls">
-        <button id="server-start">Start server</button>
+        <button id="server-start">Hide controls</button>
         <input type="text" id="server-id"/>
         <button id="connect">Connect to server</button>
     </div>
-    <canvas width="570" height="570" id="sample-canvas"></canvas>
 
     <div id="debug-div"></div>
 

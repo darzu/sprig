@@ -521,13 +521,14 @@ async function main() {
   let connectButton = document.getElementById("connect") as HTMLButtonElement;
   let serverIdInput = document.getElementById("server-id") as HTMLInputElement;
   serverStartButton.onclick = () => {
-    startGame(null);
+    // startGame(null);
     controls.hidden = true;
   };
   connectButton.onclick = () => {
     startGame(serverIdInput.value);
     controls.hidden = true;
   };
+  startGame(null);
 }
 
 await main();
