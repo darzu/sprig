@@ -131,22 +131,23 @@ export class Net<Inputs> {
   private object_priorities: Record<number, number> = {};
   private objects_known: Record<number, ServerId[]> = {};
 
-  private objectKnownToServer(obj: NetObject, server: ServerId) {
+  private objectKnownToServer(obj: GameObject, server: ServerId) {
     return (
       this.objects_known[obj.id] && this.objects_known[obj.id].includes(server)
     );
   }
 
-  private syncObject(obj: NetObject) {
+  private syncObject(obj: GameObject) {
     if (obj.creator !== this.state.me) {
       // don't try to sync objects we didn't create
       return;
     }
     for (let server of this.peers) {
       if (!this.objectKnownToServer(obj, server)) {
+        let netObj = obj.netObject();
         let addObjects: AddObjects = {
           type: MessageType.AddObjects,
-          objects: [obj],
+          objects: [netObj],
         };
         this.send(server, addObjects, true);
         this.recordObjectKnown(obj.id, server);
@@ -335,9 +336,7 @@ export class Net<Inputs> {
 
   sendStateUpdates() {
     // first, make sure we've added objects everywhere we need to
-    Object.values(this.state.objects).forEach((obj) =>
-      this.syncObject(obj.netObject())
-    );
+    Object.values(this.state.objects).forEach((obj) => this.syncObject(obj));
     this.updateObjectPriorities();
     let objects = this.objectsToSync();
     // build snapshot
