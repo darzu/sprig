@@ -673,16 +673,9 @@ _indMap = null;
 const cameraPos = mkAffineTransformable();
 cameraPos.pitch(-Math.PI / 4)
 
-// register key stuff
-window.addEventListener('keydown', function (event: KeyboardEvent) {
-    onKeyDown(event);
-}, false);
-window.addEventListener('keyup', function (event: KeyboardEvent) {
-    onKeyUp(event);
-}, false);
-window.addEventListener('mousemove', function (event: MouseEvent) {
-    onmousemove(event);
-}, false);
+// track which keys are pressed 
+window.addEventListener('keydown', onKeyDown, false);
+window.addEventListener('keyup', onKeyUp, false);
 
 const pressedKeys: { [keycode: string]: boolean } = {}
 function onKeyDown(ev: KeyboardEvent) {
@@ -694,30 +687,37 @@ function onKeyDown(ev: KeyboardEvent) {
 function onKeyUp(ev: KeyboardEvent) {
     pressedKeys[ev.key.toLowerCase()] = false
 }
-let mouseDeltaX = 0;
-let mouseDeltaY = 0;
-function onmousemove(ev: MouseEvent) {
-    mouseDeltaX += ev.movementX
-    mouseDeltaY += ev.movementY
+
+// track mouse movement
+window.addEventListener('mousemove', onMouseMove, false);
+let _mouseAccumulatedX = 0;
+let _mouseAccummulatedY = 0;
+function onMouseMove(ev: MouseEvent) {
+    _mouseAccumulatedX += ev.movementX
+    _mouseAccummulatedY += ev.movementY
+}
+function getAccumulatedMouseMovement(): { x: number, y: number } {
+    const result = { x: _mouseAccumulatedX, y: _mouseAccummulatedY };
+    _mouseAccumulatedX = 0; // reset accumulators
+    _mouseAccummulatedY = 0;
+    return result
 }
 
+// create a 4x4 matri player
 const playerT = mkAffineTransformable();
 playerM.transform = playerT.getTransform();
 writeMeshTransform(playerM)
 
-// write light source
-const lightProjectionMatrix = mat4.ortho(mat4.create(), -80, 80, -80, 80, -200, 300);
-
-// init light
+// create a directional light and compute it's projection (for shadows) and direction
 const origin = vec3.fromValues(0, 0, 0);
 const lightPosition = vec3.fromValues(50, 50, 0);
+const upVector = vec3.fromValues(0, 1, 0);
+const lightViewMatrix = mat4.lookAt(mat4.create(), lightPosition, origin, upVector);
+const lightProjectionMatrix = mat4.ortho(mat4.create(), -80, 80, -80, 80, -200, 300);
+const lightViewProjMatrix = mat4.multiply(mat4.create(), lightProjectionMatrix, lightViewMatrix);
 const lightDir = vec3.subtract(vec3.create(), origin, lightPosition);
 vec3.normalize(lightDir, lightDir);
-const upVector = vec3.fromValues(0, 1, 0);
-const lightViewMatrix = mat4.create();
-mat4.lookAt(lightViewMatrix, lightPosition, origin, upVector);
-const lightViewProjMatrix = mat4.create();
-mat4.multiply(lightViewProjMatrix, lightProjectionMatrix, lightViewMatrix);
+// write the light data to the shared uniform buffer
 device.queue.writeBuffer(sharedUniBuffer, bytesPerMat4 * 1, (lightViewProjMatrix as Float32Array).buffer);
 device.queue.writeBuffer(sharedUniBuffer, bytesPerMat4 * 2, (lightDir as Float32Array).buffer);
 
@@ -735,27 +735,22 @@ bundleEncoder.setPipeline(renderPipeline);
 bundleEncoder.setBindGroup(0, renderSharedUniBindGroup);
 bundleEncoder.setVertexBuffer(0, _vertBuffer);
 bundleEncoder.setIndexBuffer(_indexBuffer, 'uint16');
-const uniOffset = [0];
 for (let m of _meshes) {
-    uniOffset[0] = m.modelUniByteOffset;
-    bundleEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
+    bundleEncoder.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
     bundleEncoder.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
 }
 let renderBundle = bundleEncoder.finish()
 
-const swapChain = context.configureSwapChain({
-    device,
-    format: swapChainFormat,
-});
+const swapChain = context.configureSwapChain({ device, format: swapChainFormat });
 
 let debugDiv = document.getElementById('debug-div') as HTMLDivElement;
 
+// initialize performance metrics
 let previousFrameTime = 0;
 let avgJsTimeMs = 0
 let avgFrameTimeMs = 0
 
-resize(device, 100, 100);
-
+// our main game loop
 function renderFrame(timeMs: number) {
     // track performance metrics
     const start = performance.now();
@@ -766,40 +761,20 @@ function renderFrame(timeMs: number) {
     resize(device, canvasRef.width, canvasRef.height);
 
     // process inputs
-    const playerSpeed = pressedKeys[' '] ? 1.0 : 0.2; // spacebar boosts
-    if (pressedKeys['w']) // forward
-        playerT.moveZ(-playerSpeed)
-    if (pressedKeys['s']) // backward
-        playerT.moveZ(playerSpeed)
-    if (pressedKeys['a']) // left
-        playerT.moveX(-playerSpeed)
-    if (pressedKeys['d']) // right
-        playerT.moveX(playerSpeed)
-    if (pressedKeys['shift']) // up
-        playerT.moveY(playerSpeed)
-    if (pressedKeys['c']) // down
-        playerT.moveY(-playerSpeed)
-    if (mouseDeltaX !== 0)
-        playerT.yaw(-mouseDeltaX * 0.01);
-    if (mouseDeltaY !== 0)
-        cameraPos.pitch(-mouseDeltaY * 0.01);
-
-    // reset accummulated mouse delta
-    mouseDeltaX = 0;
-    mouseDeltaY = 0;
+    const playerSpeed = pressedKeys[' '] ? 1.0 : 0.2; // spacebar boosts speed
+    if (pressedKeys['w']) playerT.moveZ(-playerSpeed) // forward
+    if (pressedKeys['s']) playerT.moveZ(playerSpeed) // backward
+    if (pressedKeys['a']) playerT.moveX(-playerSpeed) // left
+    if (pressedKeys['d']) playerT.moveX(playerSpeed) // right
+    if (pressedKeys['shift']) playerT.moveY(playerSpeed) // up
+    if (pressedKeys['c']) playerT.moveY(-playerSpeed) // down
+    const { x: mouseX, y: mouseY } = getAccumulatedMouseMovement();
+    playerT.yaw(-mouseX * 0.01);
+    cameraPos.pitch(-mouseY * 0.01);
 
     // apply movement to the "player"
     playerM.transform = playerT.getTransform();
     writeMeshTransform(playerM);
-
-    // calculate and write our view matrix
-    const viewMatrix = mat4.create()
-    mat4.multiply(viewMatrix, viewMatrix, playerT.getTransform())
-    mat4.multiply(viewMatrix, viewMatrix, cameraPos.getTransform())
-    mat4.translate(viewMatrix, viewMatrix, [0, 0, 10])
-    mat4.invert(viewMatrix, viewMatrix);
-    const viewProj = mat4.multiply(mat4.create(), projectionMatrix, viewMatrix) as Float32Array
-    device.queue.writeBuffer(sharedUniBuffer, 0, viewProj.buffer);
 
     // render from the light's point of view to a depth buffer so we know where shadows are
     const commandEncoder = device.createCommandEncoder();
@@ -816,6 +791,16 @@ function renderFrame(timeMs: number) {
     }
     shadowPass.endPass();
 
+    // calculate and write our view matrix
+    const viewMatrix = mat4.create()
+    mat4.multiply(viewMatrix, viewMatrix, playerT.getTransform())
+    mat4.multiply(viewMatrix, viewMatrix, cameraPos.getTransform())
+    mat4.translate(viewMatrix, viewMatrix, [0, 0, 10])
+    mat4.invert(viewMatrix, viewMatrix);
+    const viewProj = mat4.multiply(mat4.create(), projectionMatrix, viewMatrix) as Float32Array
+    device.queue.writeBuffer(sharedUniBuffer, 0, viewProj.buffer);
+
+    // render to the canvas' swap-chain
     const renderPassEncoder = commandEncoder.beginRenderPass({
         colorAttachments: [{
             view: colorTextureView,
@@ -835,7 +820,7 @@ function renderFrame(timeMs: number) {
     renderPassEncoder.endPass();
     device.queue.submit([commandEncoder.finish()]);
 
-    // weighted average
+    // calculate performance metrics as running, weighted averages across frames
     const jsTime = performance.now() - start;
     const avgWeight = 0.05
     avgJsTimeMs = avgJsTimeMs ? (1 - avgWeight) * avgJsTimeMs + avgWeight * jsTime : jsTime
@@ -844,6 +829,7 @@ function renderFrame(timeMs: number) {
     debugDiv.innerText = `js: ${avgJsTimeMs.toFixed(2)}ms, frame: ${avgFrameTimeMs.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)}`
 }
 
+// run our game loop using 'requestAnimationFrame`
 if (renderFrame) {
     const _renderFrame = (time: number) => {
         renderFrame(time);
