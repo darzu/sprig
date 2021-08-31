@@ -1,4 +1,3 @@
-declare module "gl-matrix" {
 
     // prettier-ignore
     export type mat2 =
@@ -3207,5 +3206,3 @@ declare module "gl-matrix" {
         export function forEach(a: any, stride: any, offset: any, count: any, fn: any, arg: any): any;
     }
 
-
-}

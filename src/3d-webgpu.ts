@@ -1,4 +1,4 @@
-import { mat4, vec3 } from 'gl-matrix';
+import { mat4, vec3 } from './ext/gl-matrix.js';
 
 // TODO: canvas ref
 // TODO: navigator.gpu typings
@@ -90,10 +90,10 @@ export const cubeVertexArray = new Float32Array([
 
 async function init(canvasRef: HTMLCanvasElement) {
     const adapter = await navigator.gpu.requestAdapter();
-    const device = await adapter.requestDevice();
+    const device = await adapter!.requestDevice();
 
     if (!canvasRef === null) return;
-    const context = canvasRef.getContext('gpupresent');
+    const context = canvasRef.getContext('gpupresent')!;
 
     const swapChainFormat = 'bgra8unorm';
 
@@ -167,7 +167,7 @@ async function init(canvasRef: HTMLCanvasElement) {
     });
 
     const depthTexture = device.createTexture({
-        size: { width: canvasRef.current.width, height: canvasRef.current.width },
+        size: { width: canvasRef.width, height: canvasRef.width },
         format: 'depth24plus',
         usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
@@ -190,15 +190,13 @@ async function init(canvasRef: HTMLCanvasElement) {
         ],
     });
 
+    const colorAtt: GPURenderPassColorAttachmentNew = {
+        view: { __brand: "GPUTextureView", label: "" }, // Assigned later
+        loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
+        storeOp: 'store',
+    };
     const renderPassDescriptor: GPURenderPassDescriptor = {
-        colorAttachments: [
-            {
-                view: undefined, // Assigned later
-
-                loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
-                storeOp: 'store',
-            },
-        ],
+        colorAttachments: [colorAtt],
         depthStencilAttachment: {
             view: depthTexture.createView(),
 
@@ -209,7 +207,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         },
     };
 
-    const aspect = Math.abs(canvasRef.current.width / canvasRef.current.height);
+    const aspect = Math.abs(canvasRef.width / canvasRef.height);
     const projectionMatrix = mat4.create();
     mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 1, 100.0);
 
@@ -232,7 +230,7 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     function frame() {
         // Sample is no longer the active page.
-        if (!canvasRef.current) return;
+        if (!canvasRef) return;
 
         const transformationMatrix = getTransformationMatrix();
         device.queue.writeBuffer(
@@ -242,7 +240,7 @@ async function init(canvasRef: HTMLCanvasElement) {
             transformationMatrix.byteOffset,
             transformationMatrix.byteLength
         );
-        renderPassDescriptor.colorAttachments[0].view = swapChain
+        (renderPassDescriptor.colorAttachments as GPURenderPassColorAttachmentNew[])[0].view = swapChain
             .getCurrentTexture()
             .createView();
 
@@ -260,34 +258,6 @@ async function init(canvasRef: HTMLCanvasElement) {
     requestAnimationFrame(frame);
 };
 
-const RotatingCube: () => JSX.Element = () =>
-    makeSample({
-        name: 'Rotating Cube',
-        description:
-            'This example shows how to upload uniform data every frame to render a rotating object.',
-        init,
-        sources: [
-            {
-                name: __filename.substr(__dirname.length + 1),
-                contents: __SOURCE__,
-            },
-            {
-                name: '../../shaders/basic.vert.wgsl',
-                contents: basicVertWGSL,
-                editable: true,
-            },
-            {
-                name: '../../shaders/vertexPositionColor.frag.wgsl',
-                contents: vertexPositionColorWGSL,
-                editable: true,
-            },
-            {
-                name: '../../meshes/cube.ts',
-                // eslint-disable-next-line @typescript-eslint/no-var-requires
-                contents: require('!!raw-loader!../../meshes/cube.ts').default,
-            },
-        ],
-        filename: __filename,
-    });
-
-export default RotatingCube;
+// Attach to html
+let canvas = document.getElementById('my_Canvas') as HTMLCanvasElement;
+await init(canvas)

@@ -26,11 +26,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 */
-(function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-        typeof define === 'function' && define.amd ? define(['exports'], factory) :
-            (global = global || self, factory(global.glMatrix = {}));
-}(this, (function (exports) {
     'use strict';
 
     /**
@@ -3699,7 +3694,7 @@ THE SOFTWARE.
 
     var sub$3 = subtract$3;
 
-    var mat4 = /*#__PURE__*/Object.freeze({
+export var mat4 = /*#__PURE__*/Object.freeze({
         __proto__: null,
         create: create$3,
         clone: clone$3,
@@ -4537,7 +4532,7 @@ THE SOFTWARE.
         };
     }();
 
-    var vec3 = /*#__PURE__*/Object.freeze({
+export var vec3 = /*#__PURE__*/Object.freeze({
         __proto__: null,
         create: create$4,
         clone: clone$4,
@@ -7596,17 +7591,4 @@ THE SOFTWARE.
         forEach: forEach$2
     });
 
-    exports.glMatrix = common;
-    exports.mat2 = mat2;
-    exports.mat2d = mat2d;
-    exports.mat3 = mat3;
-    exports.mat4 = mat4;
-    exports.quat = quat;
-    exports.quat2 = quat2;
-    exports.vec2 = vec2;
-    exports.vec3 = vec3;
-    exports.vec4 = vec4;
 
-    Object.defineProperty(exports, '__esModule', { value: true });
-
-  })));
