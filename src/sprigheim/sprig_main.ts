@@ -9,6 +9,7 @@ const shaderSceneStruct = `
         cameraViewProjMatrix : mat4x4<f32>;
         lightViewProjMatrix : mat4x4<f32>;
         lightDir : vec3<f32>;
+        time : f32;
     };
 `;
 const vertexInputStruct = `
@@ -57,7 +58,9 @@ const vertexShader = `
     };
 
     fn waterDisplace(pos: vec3<f32>) -> vec3<f32> {
-        return vec3<f32>(0.0, sin(pos.x * 0.5) + cos(pos.z), 0.0);
+        let xt = pos.x + scene.time * 0.001;
+        let zt = pos.z + scene.time * 0.001;
+        return vec3<f32>(0.0, sin(xt * 0.5) + cos(zt), 0.0);
     }
 
     [[stage(vertex)]]
@@ -324,16 +327,19 @@ export function setVertexData(buffer: Uint8Array, data: VertexData, byteOffset: 
     buffer.set(p1, byteOffset + bytesPerVec3 * 3);
 }
 
+// TODO(@darzu): MODEL FORMAT
 // define the format of our models' uniform buffer
 const meshUniByteSizeExact =
     bytesPerMat4 // transform
     + bytesPerFloat // max draw distance;
 export const meshUniByteSizeAligned = align(meshUniByteSizeExact, 256); // uniform objects must be 256 byte aligned
 
+// TODO(@darzu): SCENE FORMAT
 // defines the format of our scene's uniform data
 const sceneUniBufferSizeExact =
     bytesPerMat4 * 2 // camera and light projection
     + bytesPerVec3 * 1 // light pos
+    + bytesPerFloat * 1 // time
 export const sceneUniBufferSizeAligned = align(sceneUniBufferSizeExact, 256); // uniform objects must be 256 byte aligned
 
 export interface MeshPoolOpts {
@@ -820,6 +826,12 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         // update grass
         const playerPos = getPositionFromTransform(player.transform)
         grass.update(playerPos)
+
+        // update scene data
+        // TODO(@darzu): SCENE FORMAT
+        const sceneUniTimeOffset = bytesPerMat4 * 2 // camera and light projection
+            + bytesPerVec3 * 1 // light pos
+        device.queue.writeBuffer(sceneUniBuffer, sceneUniTimeOffset, new Float32Array(timeMs), 0, 1);
 
         // render from the light's point of view to a depth buffer so we know where shadows are
         const commandEncoder = device.createCommandEncoder();
