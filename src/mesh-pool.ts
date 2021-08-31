@@ -234,17 +234,22 @@ export module SceneUniform {
 }
 
 // to track offsets into those buffers so we can make modifications and form draw calls.
-export interface MeshHandle {
+export interface PoolIndex {
+    // handle into the pool
+    pool: MeshPool,
     vertNumOffset: number,
     indicesNumOffset: number,
     modelUniByteOffset: number,
+}
+export interface MeshHandle extends PoolIndex {
+    // this mesh
     numTris: number,
     numVerts: number,
+    model?: Mesh,
     // data
     transform: mat4,
     aabbMin: vec3,
     aabbMax: vec3,
-    model?: Mesh,
 }
 
 export interface MeshPoolOpts {
@@ -313,6 +318,12 @@ export interface MeshBuilder {
     addTri: (ind: vec3) => void,
     setUniform: (transform: mat4, aabbMin: vec3, aabbMax: vec3) => void,
     finish: () => MeshHandle;
+}
+interface MeshBuilderInternal {
+    addVertex: (pos: vec3, color: vec3, normal: vec3) => void,
+    addTri: (ind: vec3) => void,
+    setUniform: (transform: mat4, aabbMin: vec3, aabbMax: vec3) => void,
+    finish: (idx: PoolIndex) => MeshHandle;
 }
 
 // defines the geometry and coloring of a mesh
@@ -492,7 +503,13 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
             builder.numTris * bytesPerTri);
 
         function finish() {
-            const m = b.finish()
+            const idx: PoolIndex = {
+                pool,
+                vertNumOffset: builder.numVerts,
+                indicesNumOffset: builder.numTris * 3,
+                modelUniByteOffset: allMeshes.length * MeshUniform.ByteSizeAligned,
+            };
+            const m = b.finish(idx)
             builder.numVerts += m.numVerts;
             builder.numTris += m.numTris;
             builder.allMeshes.push(m);
@@ -540,6 +557,52 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
 
         return b.finish();
     }
+    function queueAddMesh(m: Mesh): MeshHandle {
+        if (!isUnmapped)
+            throw `trying to use unfinished MeshPool`
+        if (!m.usesProvoking)
+            throw `mesh must use provoking vertices`
+        if (builder.numVerts + m.pos.length > maxVerts)
+            throw "Too many vertices!"
+        if (builder.numTris + m.tri.length > maxTris)
+            throw "Too many triangles!"
+
+        const data: MeshPoolMaps = {
+            verticesMap: new Uint8Array(m.pos.length * Vertex.ByteSize),
+            indicesMap: new Uint16Array(m.tri.length * 3),
+            uniformMap: new Uint8Array(MeshUniform.ByteSizeAligned),
+        }
+
+        const b = createMeshBuilder(maps, 0, 0, 0);
+
+        m.pos.forEach((pos, i) => {
+            b.addVertex(pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0])
+        })
+        m.tri.forEach((triInd, i) => {
+            b.addTri(triInd)
+
+            // set provoking vertex data
+            const vOff = triInd[0] * Vertex.ByteSize
+            const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
+            Vertex.Serialize(data.verticesMap, vOff, m.pos[triInd[0]], m.colors[i], normal)
+            // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
+        })
+
+        const { min, max } = getAABBFromMesh(m)
+
+        b.setUniform(mat4.create(), min, max);
+
+        const idx: PoolIndex = {
+            pool,
+            vertNumOffset: builder.numVerts,
+            indicesNumOffset: builder.numTris * 3,
+            modelUniByteOffset: allMeshes.length * MeshUniform.ByteSizeAligned,
+        };
+
+        const handle = b.finish(idx);
+
+        return handle;
+    }
 
     function finish(): MeshPool {
         if (isUnmapped)
@@ -568,7 +631,7 @@ function createMeshPoolBuilder(opts: MeshPoolOpts, maps: MeshPoolMaps, queues: M
     return builder;
 }
 
-function createMeshBuilder(maps: MeshPoolMaps, uByteOff: number, vByteOff: number, iByteOff: number): MeshBuilder {
+function createMeshBuilder(maps: MeshPoolMaps, uByteOff: number, vByteOff: number, iByteOff: number): MeshBuilderInternal {
     let meshFinished = false;
     let numVerts = 0;
     let numTris = 0;
@@ -601,16 +664,14 @@ function createMeshBuilder(maps: MeshPoolMaps, uByteOff: number, vByteOff: numbe
         MeshUniform.Serialize(maps.uniformMap, uByteOff, transform, aabbMin, aabbMax)
     }
 
-    function finish(): MeshHandle {
+    function finish(idx: PoolIndex): MeshHandle {
         if (meshFinished)
             throw 'trying to use finished MeshBuilder'
         if (!_transform)
             throw 'uniform never set for this mesh!'
         meshFinished = true;
         const res: MeshHandle = {
-            vertNumOffset: vByteOff / Vertex.ByteSize,
-            indicesNumOffset: iByteOff / 2,
-            modelUniByteOffset: uByteOff,
+            ...idx,
             transform: _transform!,
             aabbMin: _aabbMin!,
             aabbMax: _aabbMax!,
