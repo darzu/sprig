@@ -751,7 +751,7 @@ async function init(canvasRef: HTMLCanvasElement) {
     }
 
     const cameraPos = mkTransformable();
-    cameraPos.yaw(Math.PI)
+    // cameraPos.yaw(Math.PI)
     cameraPos.moveZ(40)
     cameraPos.moveY(5)
     cameraPos.moveX(5)
@@ -797,21 +797,21 @@ async function init(canvasRef: HTMLCanvasElement) {
     function controlTransformable(t: Transformable) {
         // keys
         if (pressedKeys['w'])
-            t.moveZ(1)
-        if (pressedKeys['s'])
             t.moveZ(-1)
+        if (pressedKeys['s'])
+            t.moveZ(1)
         if (pressedKeys['a'])
-            t.moveX(1)
-        if (pressedKeys['d'])
             t.moveX(-1)
+        if (pressedKeys['d'])
+            t.moveX(1)
         if (pressedKeys['shift'])
             t.moveY(1)
         if (pressedKeys['control'])
             t.moveY(-1)
         if (pressedKeys['q'])
-            t.roll(-0.1)
-        if (pressedKeys['e'])
             t.roll(0.1)
+        if (pressedKeys['e'])
+            t.roll(-0.1)
         if (pressedKeys['r']) {
             console.log(t._transform)
             // TODO(@darzu): 
@@ -829,7 +829,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         if (mouseDeltaX !== 0)
             t.yaw(-mouseDeltaX * 0.01);
         if (mouseDeltaY !== 0)
-            t.pitch(mouseDeltaY * 0.01);
+            t.pitch(-mouseDeltaY * 0.01);
     }
 
         // cameraPos.yaw(0.01)
