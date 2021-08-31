@@ -68,8 +68,10 @@ const wgslShaders = {
         ) -> VertexOutput {
     var output : VertexOutput;
 
+    let worldPos: vec4<f32> = model.modelMatrix * vec4<f32>(position, 1.0);
+
     // XY is in (-1, 1) space, Z is in (0, 1) space
-    let posFromLight : vec4<f32> = scene.lightViewProjMatrix * model.modelMatrix * vec4<f32>(position, 1.0);
+    let posFromLight : vec4<f32> = scene.lightViewProjMatrix * worldPos;
 
     // Convert XY to (0, 1)
     // Y is flipped because texture coords are Y-down.
@@ -78,11 +80,11 @@ const wgslShaders = {
         posFromLight.z
     );
 
-    // let xTimeJitter: f32 = 0.0;
-    // let zTimeJitter: f32 = 0.0;
-    let xTimeJitter: f32 = sin(scene.time * 0.001) * 0.2 * swayHeight;
-    let zTimeJitter: f32 = sin(scene.time * 0.002) * 0.2 * swayHeight;
-    output.Position = scene.cameraViewProjMatrix * model.modelMatrix * vec4<f32>(position, 1.0) + vec4<f32>(xTimeJitter, 0.0, zTimeJitter, 0.0);
+    let swayScale: f32 = swayHeight * 0.12;
+    let timeScale: f32 = scene.time * 0.003;
+    let xSway: f32 = 2.0 * sin(1.0 * (worldPos.x + worldPos.y + worldPos.z + timeScale)) + 1.0;
+    let zSway: f32 = 1.0 * sin(2.0 * (worldPos.x + worldPos.y + worldPos.z + timeScale)) + 0.5;
+    output.Position = scene.cameraViewProjMatrix * worldPos + vec4<f32>(xSway, 0.0, zSway, 0.0) * swayScale;
     output.fragPos = output.Position.xyz;
     // output.fragNorm = normal;
     output.fragNorm = normalize(model.modelMatrix * vec4<f32>(normal, 0.0)).xyz;

@@ -13,6 +13,9 @@ Micro entry:
     optional written text
     tags
 
+    record and replay user inputs?
+        resize canvas to 128x128 or something
+
     future:
         upgradable
         web IDE
