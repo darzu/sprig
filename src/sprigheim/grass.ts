@@ -48,26 +48,46 @@ function getAABBFromMesh(m: Mesh): AABB {
     return { min, max }
 }
 
-function addMesh(m: Mesh, builder: MeshPoolBuilder): MeshHandle {
+function addVertex(data: VertexData, builder: MeshPoolBuilder): void {
+    const vOff = builder.numVerts * vertByteSize
+    setVertexData(builder.verticesMap, data, vOff)
+    builder.numVerts += 1;
+}
+function addTri(triInd: vec3, builder: MeshPoolBuilder): void {
+    const iOff = builder.numTris * 3
+    builder.indicesMap.set(triInd, iOff)
+    builder.numTris += 1;
+}
+function addUniform(transform: mat4, aabbMin: vec3, aabbMax: vec3, builder: MeshPoolBuilder): void {
+    const uniOffset = builder.allMeshes.length * meshUniByteSizeAligned;
+    // TODO(@darzu): MESH FORMAT
+    // TODO(@darzu): seems each element needs to be 4-byte aligned
+    const f32Scratch = new Float32Array(4 * 4 + 4 + 4);
+    f32Scratch.set(transform, 0)
+    f32Scratch.set(aabbMin, align(4 * 4, 4))
+    f32Scratch.set(aabbMax, align(4 * 4 + 3, 4))
+    const u8Scratch = new Uint8Array(f32Scratch.buffer);
+    // console.dir({ floatBuff: f32Scratch })
+    builder.uniformMap.set(u8Scratch, uniOffset)
+}
 
+function addMesh(m: Mesh, builder: MeshPoolBuilder): MeshHandle {
     const vertNumOffset = builder.numVerts;
     const indicesNumOffset = builder.numTris * 3;
 
     m.pos.forEach((pos, i) => {
-        const vOff = (builder.numVerts + i) * vertByteSize
-        setVertexData(builder.verticesMap, [pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0], VertexKind.normal], vOff)
+        addVertex([pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0], VertexKind.normal], builder);
     })
     m.tri.forEach((triInd, i) => {
-        const iOff = (builder.numTris + i) * 3
-        builder.indicesMap.set(triInd, iOff)
-        const vOff = (builder.numVerts + triInd[0]) * vertByteSize
+        addTri(triInd, builder);
+
+        // set provoking vertex data
+        const vOff = (vertNumOffset + triInd[0]) * vertByteSize
         const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
         setVertexData(builder.verticesMap, [m.pos[triInd[0]], m.colors[i], normal, VertexKind.normal], vOff)
+
         // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
     })
-
-    builder.numVerts += m.pos.length;
-    builder.numTris += m.tri.length;
 
     const transform = mat4.create() as Float32Array;
 
@@ -75,16 +95,7 @@ function addMesh(m: Mesh, builder: MeshPoolBuilder): MeshHandle {
 
     const { min: modelMin, max: modelMax } = getAABBFromMesh(m);
 
-    // TODO(@darzu): MESH FORMAT
-    // TODO(@darzu): seems each element needs to be 4-byte aligned
-    const f32Scratch = new Float32Array(4 * 4 + 4 + 4);
-    f32Scratch.set(transform, 0)
-    f32Scratch.set(modelMin, align(4 * 4, 4))
-    f32Scratch.set(modelMax, align(4 * 4 + 3, 4))
-    const u8Scratch = new Uint8Array(f32Scratch.buffer);
-
-    // console.dir({ floatBuff: f32Scratch })
-    builder.uniformMap.set(u8Scratch, uniOffset)
+    addUniform(transform, modelMax, modelMax, builder);
 
     console.log(`uniOffset: ${uniOffset}`);
 
