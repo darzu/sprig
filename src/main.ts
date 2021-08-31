@@ -19,8 +19,6 @@ const sceneStruct = `
   cameraViewProjMatrix : mat4x4<f32>;
   lightViewProjMatrix : mat4x4<f32>;
   lightDir : vec3<f32>;
-  time : f32;
-  displacer: vec3<f32>;
 };
 `
 
@@ -104,50 +102,27 @@ const wgslShaders = {
         [[location(1)]] fragPos : vec3<f32>;
         [[location(2)]] fragNorm : vec3<f32>;
         [[location(3)]] color : vec3<f32>;
-        [[builtin(front_facing)]] front: bool;
     };
 
     let sunStr : f32 = 2.0;
     let sunColor : vec3<f32> =  vec3<f32>(1.0, 1.0, 0.8);
-    let skydomeStr : f32 = 1.0;
-    let skydomeLightDir: vec3<f32> = vec3<f32>(0.0, -1.0, 0.0);
-    let sunReflectStr : f32 = 0.2;
+    let sunReflectStr : f32 = 0.5;
 
     [[stage(fragment)]]
     fn main(input : FragmentInput) -> [[location(0)]] vec4<f32> {
         // Percentage-closer filtering. Sample texels in the region
         // to smooth the result.
-        var shadowVis : f32 = 0.0;
+        let shadowVis : f32 = textureSampleCompare(shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
 
-            // we're in the shadow box, do a multi sample
-            for (var y : i32 = -1 ; y <= 1 ; y = y + 1) {
-                for (var x : i32 = -1 ; x <= 1 ; x = x + 1) {
-                    let offset : vec2<f32> = vec2<f32>(
-                    f32(x) * ${1 / shadowDepthTextureSize},
-                    f32(y) * ${1 / shadowDepthTextureSize});
-
-                    shadowVis = shadowVis + textureSampleCompare(
-                    shadowMap, shadowSampler,
-                    input.shadowPos.xy + offset, input.shadowPos.z - 0.007);
-                }
-            }
-            shadowVis = shadowVis / 9.0;
-
-        let normSign: f32 = select(1.0, -1.0, input.front);
-        let norm: vec3<f32> = normalize(input.fragNorm) * normSign;
+        let norm: vec3<f32> = normalize(input.fragNorm);
         let antiNorm: vec3<f32> = norm * -1.0;
 
         let lightDir: vec3<f32> = scene.lightDir;
-        let sunLight : f32 = max(dot(-lightDir, norm), 0.0);
-        let skydomeFactor : f32 = clamp(dot(-skydomeLightDir, norm), 0.0, 1.0);
-        let sunReflectLightDir: vec3<f32> = vec3<f32>(-lightDir.xy, 0.0);
-        let sunReflectFactor : f32 = clamp(dot(-sunReflectLightDir, norm), 0.0, 1.0);
-        let sunFactor : f32 = min(shadowVis * sunLight, 1.0) * sunStr;
-        let sunEffect: vec3<f32> = input.color * sunColor * sunFactor;
-        let sunIntensity: f32 = pow(max(lightDir.y, 0.0), 2.0);
-        let ambient: vec3<f32> = sunIntensity * input.color * (skydomeFactor * skydomeStr + sunReflectFactor * sunReflectStr);
+        let sunLight : f32 = shadowVis * clamp(dot(-lightDir, norm), 0.0, 1.0);
 
-        let resultColor: vec3<f32> = sunEffect + ambient;
+        let ambient: f32 = 0.2;
+
+        let resultColor: vec3<f32> = input.color * (sunLight * 2.0 + ambient);
         let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
         return vec4<f32>(gammaCorrected, 1.0);
     }
