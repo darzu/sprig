@@ -1,4 +1,4 @@
-import { mat4, vec3, quat } from './ext/gl-matrix.js';
+import { mat4, vec3, vec4, quat } from './ext/gl-matrix.js';
 import { clamp } from './math.js';
 import { addTriToBuffers, createMeshMemoryPool, CUBE, mat4ByteSize, Mesh, MeshMemoryPoolOptions, MeshModel, PLANE, triByteSize, vec3ByteSize } from './3d/mesh.js';
 import { createMeshRenderer } from './3d/mesh-renderer.js';
@@ -515,6 +515,16 @@ async function init(canvasRef: HTMLCanvasElement) {
             sharedTime.buffer,
             sharedTime.byteOffset,
             sharedTime.byteLength
+        );
+        // TODO(@darzu): SCENE FORMAT
+        const displacer = vec4.transformMat4(vec4.create(), [0, 0, 0, 1], playerT.getTransform()) as Float32Array;
+        // console.log(`(${displacer[0]}, ${displacer[1]}, ${displacer[2]})`);
+        device.queue.writeBuffer(
+            meshRenderer.sharedUniBuffer,
+            mat4ByteSize * 2 + vec3ByteSize * 1 + Float32Array.BYTES_PER_ELEMENT * 1,
+            displacer.buffer,
+            displacer.byteOffset,
+            displacer.byteLength - 4
         );
 
         // meshPool.preRender()

@@ -5,14 +5,19 @@ import { mat4ByteSize, MeshMemoryPool, MeshMemoryPool as MeshPool, MeshMemoryPoo
 
 const shadowDepthTextureSize = 1024 * 2;
 
+// TODO(@darzu): SCENE FORMAT
+const sceneStruct = `
+[[block]] struct Scene {
+  cameraViewProjMatrix : mat4x4<f32>;
+  lightViewProjMatrix : mat4x4<f32>;
+  lightPos : vec3<f32>;
+  time : f32;
+  displacer: vec3<f32>;
+};
+`
+
 const wgslShaders = {
-    vertexShadow: `
-  [[block]] struct Scene {
-    cameraViewProjMatrix : mat4x4<f32>;
-    lightViewProjMatrix : mat4x4<f32>;
-    lightPos : vec3<f32>;
-    time : f32;
-  };
+    vertexShadow: sceneStruct + `
 
   [[block]] struct Model {
     modelMatrix : mat4x4<f32>;
@@ -34,28 +39,22 @@ const wgslShaders = {
   }
   `,
 
-    vertex: `
-    [[block]] struct Scene {
-        cameraViewProjMatrix : mat4x4<f32>;
-        lightViewProjMatrix : mat4x4<f32>;
-        lightPos : vec3<f32>;
-        time : f32;
-    };
+    vertex: sceneStruct + `
 
     [[block]] struct Model {
-    modelMatrix : mat4x4<f32>;
+        modelMatrix : mat4x4<f32>;
     };
 
     [[group(0), binding(0)]] var<uniform> scene : Scene;
     [[group(1), binding(0)]] var<uniform> model : Model;
 
     struct VertexOutput {
-    [[location(0)]] shadowPos : vec3<f32>;
-    [[location(1)]] fragPos : vec3<f32>;
-    [[location(2)]] fragNorm : vec3<f32>;
-    [[location(3)]] color : vec3<f32>;
+        [[location(0)]] shadowPos : vec3<f32>;
+        [[location(1)]] fragPos : vec3<f32>;
+        [[location(2)]] fragNorm : vec3<f32>;
+        [[location(3)]] color : vec3<f32>;
 
-    [[builtin(position)]] Position : vec4<f32>;
+        [[builtin(position)]] Position : vec4<f32>;
     };
 
     [[stage(vertex)]]
@@ -66,30 +65,37 @@ const wgslShaders = {
         // TODO(@darzu): VERTEX FORMAT
         [[location(3)]] swayHeight : f32,
         ) -> VertexOutput {
-    var output : VertexOutput;
+        var output : VertexOutput;
 
-    let worldPos: vec4<f32> = model.modelMatrix * vec4<f32>(position, 1.0);
+        let worldPos: vec4<f32> = model.modelMatrix * vec4<f32>(position, 1.0);
 
-    // XY is in (-1, 1) space, Z is in (0, 1) space
-    let posFromLight : vec4<f32> = scene.lightViewProjMatrix * worldPos;
+        // XY is in (-1, 1) space, Z is in (0, 1) space
+        let posFromLight : vec4<f32> = scene.lightViewProjMatrix * worldPos;
 
-    // Convert XY to (0, 1)
-    // Y is flipped because texture coords are Y-down.
-    output.shadowPos = vec3<f32>(
-        posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5),
-        posFromLight.z
-    );
+        // Convert XY to (0, 1)
+        // Y is flipped because texture coords are Y-down.
+        output.shadowPos = vec3<f32>(
+            posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5),
+            posFromLight.z
+        );
 
-    let swayScale: f32 = swayHeight * 0.12;
-    let timeScale: f32 = scene.time * 0.003;
-    let xSway: f32 = 2.0 * sin(1.0 * (worldPos.x + worldPos.y + worldPos.z + timeScale)) + 1.0;
-    let zSway: f32 = 1.0 * sin(2.0 * (worldPos.x + worldPos.y + worldPos.z + timeScale)) + 0.5;
-    output.Position = scene.cameraViewProjMatrix * worldPos + vec4<f32>(xSway, 0.0, zSway, 0.0) * swayScale;
-    output.fragPos = output.Position.xyz;
-    // output.fragNorm = normal;
-    output.fragNorm = normalize(model.modelMatrix * vec4<f32>(normal, 0.0)).xyz;
-    output.color = color;
-    return output;
+        let dist3ToDisplacer: vec4<f32> = worldPos - vec4<f32>(scene.displacer, 1.0);
+        let distToDisplacer: f32 = distance(vec3<f32>(), dist3ToDisplacer.xyz);
+        let displaceStr: f32 = clamp(1.0 / distToDisplacer, 0.0, 1.0);
+        let localDisplacement: vec4<f32> = (normalize(dist3ToDisplacer) * displaceStr);
+        let displacerDisplacement: vec4<f32> = vec4<f32>(localDisplacement.x, min(0.0, localDisplacement.y) , localDisplacement.z, 0.0) * swayHeight;
+
+        let swayScale: f32 = swayHeight * 0.12;
+        let timeScale: f32 = scene.time * 0.0015;
+        let xSway: f32 = 2.0 * sin(1.0 * (worldPos.x + worldPos.y + worldPos.z + timeScale)) + 1.0;
+        let zSway: f32 = 1.0 * sin(2.0 * (worldPos.x + worldPos.y + worldPos.z + timeScale)) + 0.5;
+        let sway: vec4<f32> = vec4<f32>(xSway, 0.0, zSway, 0.0) * swayScale;
+        output.Position = scene.cameraViewProjMatrix * (worldPos + sway + displacerDisplacement);
+        output.fragPos = output.Position.xyz;
+        // output.fragNorm = normal;
+        output.fragNorm = normalize(model.modelMatrix * vec4<f32>(normal, 0.0)).xyz;
+        output.color = color;
+        return output;
     }
     `,
     fragment: `
@@ -105,11 +111,11 @@ const wgslShaders = {
     [[group(0), binding(2)]] var shadowSampler: sampler_comparison;
 
     struct FragmentInput {
-    [[location(0)]] shadowPos : vec3<f32>;
-    [[location(1)]] fragPos : vec3<f32>;
-    [[location(2)]] fragNorm : vec3<f32>;
-    [[location(3)]] color : vec3<f32>;
-    [[builtin(front_facing)]] front: bool;
+        [[location(0)]] shadowPos : vec3<f32>;
+        [[location(1)]] fragPos : vec3<f32>;
+        [[location(2)]] fragNorm : vec3<f32>;
+        [[location(3)]] color : vec3<f32>;
+        [[builtin(front_facing)]] front: bool;
     };
 
     let albedo : vec3<f32> = vec3<f32>(0.9, 0.9, 0.9);
@@ -118,39 +124,39 @@ const wgslShaders = {
 
     [[stage(fragment)]]
     fn main(input : FragmentInput) -> [[location(0)]] vec4<f32> {
-    // Percentage-closer filtering. Sample texels in the region
-    // to smooth the result.
-    var visibility : f32 = 0.0;
-    for (var y : i32 = -1 ; y <= 1 ; y = y + 1) {
-        for (var x : i32 = -1 ; x <= 1 ; x = x + 1) {
-            let offset : vec2<f32> = vec2<f32>(
-            f32(x) * ${1 / shadowDepthTextureSize},
-            f32(y) * ${1 / shadowDepthTextureSize});
+        // Percentage-closer filtering. Sample texels in the region
+        // to smooth the result.
+        var visibility : f32 = 0.0;
+        for (var y : i32 = -1 ; y <= 1 ; y = y + 1) {
+            for (var x : i32 = -1 ; x <= 1 ; x = x + 1) {
+                let offset : vec2<f32> = vec2<f32>(
+                f32(x) * ${1 / shadowDepthTextureSize},
+                f32(y) * ${1 / shadowDepthTextureSize});
 
-            visibility = visibility + textureSampleCompare(
-            shadowMap, shadowSampler,
-            input.shadowPos.xy + offset, input.shadowPos.z - 0.007);
+                visibility = visibility + textureSampleCompare(
+                shadowMap, shadowSampler,
+                input.shadowPos.xy + offset, input.shadowPos.z - 0.007);
+            }
         }
-    }
-    visibility = visibility / 9.0;
+        visibility = visibility / 9.0;
 
-    let normSign: f32 = select(1.0, -1.0, input.front);
-    let norm: vec3<f32> = input.fragNorm * normSign;
-    let antiNorm: vec3<f32> = norm * -1.0;
+        let normSign: f32 = select(1.0, -1.0, input.front);
+        let norm: vec3<f32> = input.fragNorm * normSign;
+        let antiNorm: vec3<f32> = norm * -1.0;
 
-    let lightDir: vec3<f32> = normalize(scene.lightPos - input.fragPos);
-    let lambert : f32 = max(dot(lightDir, norm), 0.0);
-    let antiLambert : f32 = 1.5 - max(dot(lightDir, antiNorm), 0.0);
-    let lightingFactor : f32 = min(visibility * lambert, 1.0) * 1.5;
-    let diffuse: vec3<f32> = lightColor * lightingFactor;
-    let ambient: vec3<f32> = vec3<f32>(1.0, 1.0, 1.0) * ambientFactor * antiLambert;
+        let lightDir: vec3<f32> = normalize(scene.lightPos - input.fragPos);
+        let lambert : f32 = max(dot(lightDir, norm), 0.0);
+        let antiLambert : f32 = 1.5 - max(dot(lightDir, antiNorm), 0.0);
+        let lightingFactor : f32 = min(visibility * lambert, 1.0) * 1.5;
+        let diffuse: vec3<f32> = lightColor * lightingFactor;
+        let ambient: vec3<f32> = vec3<f32>(1.0, 1.0, 1.0) * ambientFactor * antiLambert;
 
-    // return vec4<f32>(norm, 1.0);
+        // return vec4<f32>(norm, 1.0);
 
-    return vec4<f32>((diffuse + ambient) * input.color, 1.0);
+        return vec4<f32>((diffuse + ambient) * input.color, 1.0);
 
-    // return vec4<f32>(lightingFactor * input.color, 1.0);
-    // return vec4<f32>(lightingFactor * albedo, 1.0);
+        // return vec4<f32>(lightingFactor * input.color, 1.0);
+        // return vec4<f32>(lightingFactor * albedo, 1.0);
     }
     `,
 }
@@ -301,7 +307,9 @@ export function createMeshRenderer(
         // Then a vec3 for the light position.
         mat4ByteSize * 2 // camera and light projection
         + vec3ByteSize * 1 // light pos
-        + Float32Array.BYTES_PER_ELEMENT * 1 // time;
+        + Float32Array.BYTES_PER_ELEMENT * 1 // time
+        // TODO(@darzu): SCENE FORMAT
+        + vec3ByteSize // displacer
     const sharedUniBuffer = device.createBuffer({
         size: sharedUniBufferSize,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,

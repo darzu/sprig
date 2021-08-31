@@ -5247,7 +5247,7 @@ export var vec3 = /*#__PURE__*/Object.freeze({
         };
     }();
 
-    var vec4 = /*#__PURE__*/Object.freeze({
+export var vec4 = /*#__PURE__*/Object.freeze({
         __proto__: null,
         create: create$5,
         clone: clone$5,
