@@ -174,7 +174,7 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
             const y3 = bladeH + jitter(1)
             const y4 = y3 * (0.9 + jitter(0.1))
 
-            // TODO(@darzu): debug coloring
+            // TODO(@darzu): disable for debug coloring
             // const r = 0.2 + jitter(0.02)
             // const g = 0.5 + jitter(0.2)
             // const b = 0.2 + jitter(0.02)
