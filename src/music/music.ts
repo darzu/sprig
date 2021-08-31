@@ -29,7 +29,8 @@ function playFreq(freq: number, durSec: number, offset: number) {
         0.00001, stopTime + 1.0
     )
 
-    o.type = 'sine';
+    // "custom" | "sawtooth" | "sine" | "square" | "triangle";
+    o.type = 'sawtooth';
     o.frequency.setValueAtTime(freq, startTime);
 
     // o.connect(audioCtx.destination);
