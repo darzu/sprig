@@ -33,7 +33,8 @@ import { createInputsReader, Inputs } from "./inputs.js";
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
 const MAX_VERTICES = 21844;
-const ENABLE_NET = false;
+const ENABLE_NET = true;
+const AUTOSTART = true;
 
 enum ObjectType {
   Plane,
@@ -587,7 +588,7 @@ class CubeGameState extends GameState {
 
     // move boats
     const boats = Object.values(this.objects).filter(
-      (o) => o instanceof Boat
+      (o) => o instanceof Boat && o.authority === this.me
     ) as Boat[];
     stepBoats(boats, dt);
 
@@ -695,7 +696,11 @@ const NET_DT = 1000.0 / 20;
 // local simulation speed
 const SIM_DT = 1000.0 / 60;
 
+export let gameStarted = false;
 async function startGame(host: string | null) {
+  if (gameStarted) return;
+  gameStarted = true;
+
   let hosting = host === null;
   let canvas = document.getElementById("sample-canvas") as HTMLCanvasElement;
   function onWindowResize() {
@@ -855,7 +860,10 @@ async function startGame(host: string | null) {
       renderer.finishInit(); // TODO(@darzu): debugging
       if (hosting) {
         console.log("hello");
-        console.log(`Net up and running with id ${id}`);
+        console.log(`Net up and running with id`);
+        console.log(`${id}`);
+        const url = `${window.location.href}?server=${id}`;
+        console.log(url);
         if (navigator.clipboard) navigator.clipboard.writeText(id);
         frame();
       } else {
@@ -869,13 +877,17 @@ async function startGame(host: string | null) {
 }
 
 async function main() {
+  const queryString = Object.fromEntries(
+    new URLSearchParams(window.location.search).entries()
+  );
+
   let controls = document.getElementById("server-controls") as HTMLDivElement;
   let serverStartButton = document.getElementById(
     "server-start"
   ) as HTMLButtonElement;
   let connectButton = document.getElementById("connect") as HTMLButtonElement;
   let serverIdInput = document.getElementById("server-id") as HTMLInputElement;
-  if (ENABLE_NET) {
+  if (ENABLE_NET && !AUTOSTART) {
     serverStartButton.onclick = () => {
       startGame(null);
       controls.hidden = true;
@@ -885,7 +897,8 @@ async function main() {
       controls.hidden = true;
     };
   } else {
-    startGame(null);
+    const serverId = queryString["server"] ?? null;
+    startGame(serverId);
     controls.hidden = true;
   }
 }
