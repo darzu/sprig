@@ -18,8 +18,6 @@ import { stepPhysics } from "./phys.js";
 const ERROR_SMOOTHING_FACTOR = 0.8;
 const EPSILON = 0.0001;
 
-export const MAX_ID = 32767;
-
 export function scaleMesh(m: Mesh, by: number): Mesh {
   let pos = m.pos.map((p) => vec3.scale(vec3.create(), p, by));
   return { ...m, pos };
@@ -238,8 +236,6 @@ export abstract class GameState<Inputs> {
   }
 
   newId(): number {
-    // TODO(@darzu): should we have a MAX_ID?
-    // if (this.nextObjectId > MAX_ID) throw `Out of object IDs, max: ${MAX_ID}`;
     return this.nextObjectId++;
   }
 
