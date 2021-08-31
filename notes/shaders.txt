@@ -238,6 +238,7 @@ Technical challenges #TechnicallyAChallenge:
 
 Technically Art blog, 106 issues:
   https://halisavakis.com/category/technically-art/
+  https://halisavakis.com/my-portfolio/
 
 Hologram effect:
   https://twitter.com/jopilatje/status/1391001257997967360

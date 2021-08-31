@@ -80,3 +80,6 @@ Animation editor:
     
 Rigging -> model via AI:
     http://gvv.mpi-inf.mpg.de/projects/NeuralActor/
+
+auto bug walking:
+    https://twitter.com/rubna_/status/1370158075798294532

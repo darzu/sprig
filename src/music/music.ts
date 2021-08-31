@@ -1,5 +1,8 @@
 console.log("music time!")
 
+// goals:
+// sequencer, play i-vi cords, play melody notes
+
 let canvasRef = document.getElementById('sample-canvas') as HTMLCanvasElement;
 let canvasCtx = canvasRef.getContext('2d')!;
 canvasCtx.fillStyle = "#ddd";
