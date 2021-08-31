@@ -260,6 +260,18 @@ interface MeshPoolOpts {
     maxTris: number,
     maxVerts: number,
 }
+interface MeshPoolBuilder {
+    // options
+    opts: MeshPoolOpts,
+    // memory mapped buffers
+    verticesMap: Float32Array,
+    indicesMap: Uint16Array,
+    // handles
+    device: GPUDevice,
+    // methods
+    addMesh: (m: Mesh) => MeshHandle,
+    finish: () => MeshPool,
+}
 interface MeshPool {
     // options
     opts: MeshPoolOpts,
@@ -271,9 +283,11 @@ interface MeshPool {
     allMeshHandles: MeshHandle[],
     // handles
     device: GPUDevice,
+    // TODO:
+    // - add via queue
 }
 
-function createMeshPool(device: GPUDevice, opts: MeshPoolOpts, meshes: Mesh[]): MeshPool {
+function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolBuilder {
     const { maxMeshes, maxTris, maxVerts } = opts;
 
     // log our estimated space usage stats
@@ -367,14 +381,24 @@ function createMeshPool(device: GPUDevice, opts: MeshPoolOpts, meshes: Mesh[]): 
         allMeshHandles,
     }
 
-    // TODO(@darzu): support adding meshes after pool creation
-    meshes.forEach(m => addMesh(m))
+    function finish(): MeshPool {
+        // unmap the buffers so the GPU can use them
+        verticesBuffer.unmap()
+        indicesBuffer.unmap()
 
-    // unmap the buffers so the GPU can use them
-    verticesBuffer.unmap()
-    indicesBuffer.unmap()
+        return pool;
+    }
 
-    return pool;
+    const builder: MeshPoolBuilder = {
+        opts,
+        device,
+        verticesMap,
+        indicesMap,
+        addMesh,
+        finish,
+    };
+
+    return builder;
 }
 
 // utilities for mesh pools
@@ -404,26 +428,23 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
-    const meshes = [
-        PLANE,
-        CUBE, // player
-    ];
+    const poolBuilder = createMeshPoolBuilder(device, {
+        maxMeshes: 100,
+        maxTris: 300,
+        maxVerts: 900
+    });
+
+    const ground = poolBuilder.addMesh(PLANE);
+    const player = poolBuilder.addMesh(CUBE);
+    const randomCubes: MeshHandle[] = [];
     for (let i = 0; i < 10; i++) {
         // create cubes with random colors
         const color: vec3 = [Math.random(), Math.random(), Math.random()];
         const coloredCube: Mesh = { ...CUBE, colors: CUBE.colors.map(_ => color) }
-        meshes.push(coloredCube)
+        randomCubes.push(poolBuilder.addMesh(coloredCube));
     }
 
-    const pool = createMeshPool(device, {
-        maxMeshes: 100,
-        maxTris: 300,
-        maxVerts: 900
-    }, meshes);
-
-    const ground = pool.allMeshHandles[0]
-    const player = pool.allMeshHandles[1]
-    const randomCubes = pool.allMeshHandles.slice(2)
+    const pool = poolBuilder.finish();
 
     // place the ground
     mat4.translate(ground.transform, ground.transform, [0, -3, -8])

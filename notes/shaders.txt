@@ -112,11 +112,10 @@ Flat shading:
   points transformed to a series of triangles or quads."
     https://www.reddit.com/r/vulkan/comments/c9ws13/do_we_need_geometry_shader_anymore/
   http://www.joshbarczak.com/blog/?p=667 (they are slow)
-
   Maybe also a way of doing per-face data?
   https://docs.microsoft.com/en-us/previous-versions//bb205146(v=vs.85)?redirectedfrom=MSDN
-
   Don't use GS: https://twitter.com/pointinpolygon/status/1270695113967181827
+  Don't use GS: https://github.com/gpuweb/gpuweb/issues/1239
 
 "Mesh shaders":
   https://devblogs.microsoft.com/directx/dev-preview-of-new-directx-12-features/#directx-mesh-shader
