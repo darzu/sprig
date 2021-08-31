@@ -21,6 +21,9 @@ TODO:
         Kill babylonjs?
 */
 
+// FLAGS
+const RENDER_GRASS = false;
+
 // TODO(@darzu): expand faces to have unique vertices
 
 // TODO(@darzu): VERTEX FORMAT
@@ -249,7 +252,7 @@ function createGrassTile(opts: GrassTileOpts, grassMeshPool: MeshMemoryPool): Me
         maxDraw: opts.maxBladeDraw,
 
         // TODO(@darzu): what're the implications of this?
-        shadowCaster: true,
+        shadowCaster: false,
 
         // not applicable
         // TODO(@darzu): make this optional?
@@ -403,6 +406,13 @@ function nearestIntegers(target: number, numInts: number): number[] {
 }
 
 function initGrassSystem(device: GPUDevice): GrassSystem {
+    if (!RENDER_GRASS) {
+        return {
+            getGrassPools: () => [],
+            update: () => { },
+        }
+    }
+
     // TODO(@darzu): try upside down triangles
     const lod1Opts: GrassTilesetOpts = {
         // tile
@@ -834,7 +844,9 @@ async function init(canvasRef: HTMLCanvasElement) {
         const canvasHeight = canvasRef.clientHeight;
 
         const commandEncoder = device.createCommandEncoder();
-        meshRenderer.render(commandEncoder, [meshPool, ...grassSystem.getGrassPools()], canvasWidth, canvasHeight);
+        meshRenderer.render(commandEncoder, [
+            meshPool,
+            ...grassSystem.getGrassPools()], canvasWidth, canvasHeight);
         device.queue.submit([commandEncoder.finish()]);
 
         requestAnimationFrame(frame);
