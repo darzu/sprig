@@ -198,13 +198,30 @@ export class Renderer {
   lastHeight = 0;
   aspectRatio = 1;
 
-  private gpuBufferWriteMeshTransform(m: MeshHandle) {
+  // private gpuBufferWriteMeshTransform(m: MeshHandle) {
+  //   this.device.queue.writeBuffer(
+  //     this.meshUniformBuffer,
+  //     m.modelUniByteOffset,
+  //     (m.obj.transform() as Float32Array).buffer
+  //   );
+  // }
+
+  private gpuBufferWriteAllMeshUniforms() {
+    // TODO(@darzu): hack
+    for (let m of this.meshHandles) {
+      this._meshUniformBuffer.set((m.obj.transform() as Float32Array), m.modelUniByteOffset / bytesPerFloat)
+    }
+
     this.device.queue.writeBuffer(
       this.meshUniformBuffer,
-      m.modelUniByteOffset,
-      (m.obj.transform() as Float32Array).buffer
+      0,
+      this._meshUniformBuffer.buffer
     );
   }
+
+  // TODO(@darzu): hack
+  _meshUniformBufferFloat32Size: number = 0;
+  _meshUniformBuffer: Float32Array = new Float32Array();
 
   // should only be called when GPU buffers are already mapped
   private getMappedRanges() {
@@ -213,6 +230,10 @@ export class Renderer {
     let meshUniformBuffer = new Float32Array(
       this.meshUniformBuffer.getMappedRange()
     );
+
+    // TODO(@darzu): hack
+    this._meshUniformBufferFloat32Size = meshUniformBuffer.length
+    this._meshUniformBuffer = new Float32Array(meshUniformBuffer.length);
 
     this.mappedGPUBuffers = {
       vertexBuffer,
@@ -224,14 +245,15 @@ export class Renderer {
     };
   }
 
-  private async mapGPUBuffers() {
-    await Promise.all([
-      this.vertexBuffer.mapAsync(GPUMapMode.READ),
-      this.indexBuffer.mapAsync(GPUMapMode.READ),
-      this.meshUniformBuffer.mapAsync(GPUMapMode.READ),
-    ]);
-    this.getMappedRanges();
-  }
+  // TODO(@darzu): doesn't work..
+  // private async mapGPUBuffers() {
+  //   await Promise.all([
+  //     this.vertexBuffer.mapAsync(GPUMapMode.READ),
+  //     this.indexBuffer.mapAsync(GPUMapMode.READ),
+  //     this.meshUniformBuffer.mapAsync(GPUMapMode.READ),
+  //   ]);
+  //   this.getMappedRanges();
+  // }
 
   unmapGPUBuffers() {
     this.vertexBuffer.unmap();
@@ -347,6 +369,11 @@ export class Renderer {
 
     const uniOffset = this.meshHandles.length * meshUniByteSizeAligned;
     if (mapped === null) {
+      // TODO(@darzu): hack
+      this._meshUniformBuffer.set(
+        o.transform() as Float32Array,
+        uniOffset / bytesPerFloat
+      );
       this.device.queue.writeBuffer(
         this.meshUniformBuffer,
         uniOffset,
@@ -585,9 +612,11 @@ export class Renderer {
 
     // update all mesh transforms
     // TODO: only update when changed
-    for (let m of this.meshHandles) {
-      this.gpuBufferWriteMeshTransform(m);
-    }
+    // for (let m of this.meshHandles) {
+    //   this.gpuBufferWriteMeshTransform(m);
+    // }
+    // TODO(@darzu): hack
+    this.gpuBufferWriteAllMeshUniforms();
 
     // start collecting our render commands for this frame
     const commandEncoder = this.device.createCommandEncoder();
