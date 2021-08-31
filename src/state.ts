@@ -228,7 +228,7 @@ export abstract class GameState<Inputs> {
     return [id, obj];
   }
 
-  id(): number {
+  newId(): number {
     return this.nextObjectId++;
   }
 
@@ -240,7 +240,7 @@ export abstract class GameState<Inputs> {
       objs.every((o) => this.me <= o.authority)
     ) {
       console.log(`Recording event type=${type}`);
-      let id = this.id();
+      let id = this.newId();
       let event = { id, type, objects, authority: this.me };
       this.events[id] = event;
       this.runEvent(event);

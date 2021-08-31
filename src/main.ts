@@ -63,12 +63,14 @@ const PLANE_MESH = unshareProvokingVertices(
 );
 const PLANE_AABB = getAABBFromMesh(PLANE_MESH);
 
+const DARK_GRAY = vec3.fromValues(0.02, 0.02, 0.02);
+const LIGHT_GRAY = vec3.fromValues(0.2, 0.2, 0.2);
 class Plane extends GameObject {
   color: vec3;
 
   constructor(id: number, creator: number) {
     super(id, creator);
-    this.color = vec3.fromValues(0.02, 0.02, 0.02);
+    this.color = DARK_GRAY;
     this.localAABB = PLANE_AABB;
   }
 
@@ -294,16 +296,29 @@ class CubeGameState extends GameState<Inputs> {
 
     // create local mesh prototypes
     let bulletProtoObj = this.renderer.addObject(
-      new Bullet(this.id(), this.me)
+      new Bullet(this.newId(), this.me)
     );
     bulletProtoObj.obj.transform = new Float32Array(16); // zero the transforms so it doesn't render
     bulletProtoObj.handle.transform = new Float32Array(16);
     this.bulletProto = bulletProtoObj.handle;
 
     if (createObjects) {
-      let plane = new Plane(this.id(), this.me);
-      plane.motion.location = vec3.fromValues(0, -3, -8);
-      this.addObject(plane);
+      // create checkered grid
+      const NUM_PLANES_X = 10;
+      const NUM_PLANES_Z = 10;
+      for (let x = 0; x < NUM_PLANES_X; x++) {
+        for (let z = 0; z < NUM_PLANES_Z; z++) {
+          let plane = new Plane(this.newId(), this.me);
+          const xPos = (x - NUM_PLANES_X / 2) * 20;
+          const zPos = (z - NUM_PLANES_Z / 2) * 20;
+          const parity = !!((x + z) % 2);
+          plane.motion.location = vec3.fromValues(xPos, -3, -8 + zPos);
+          if (parity) plane.color = LIGHT_GRAY;
+          this.addObject(plane);
+        }
+      }
+
+      // create player
       this.addPlayer();
       // have added our objects, can unmap buffers
       // TODO(@darzu): debug
@@ -313,7 +328,7 @@ class CubeGameState extends GameState<Inputs> {
   }
 
   playerObject(playerId: number): GameObject {
-    let p = new Player(this.id(), this.me);
+    let p = new Player(this.newId(), this.me);
     p.authority = playerId;
     p.authority_seq = 1;
     return p;
@@ -414,7 +429,7 @@ class CubeGameState extends GameState<Inputs> {
     }
     // add bullet on lclick
     if (inputs.lclick) {
-      let bullet = new Bullet(this.id(), this.me);
+      let bullet = new Bullet(this.newId(), this.me);
       let bullet_axis = vec3.fromValues(0, 0, -1);
       bullet_axis = vec3.transformQuat(
         bullet_axis,
@@ -447,7 +462,7 @@ class CubeGameState extends GameState<Inputs> {
         for (let yi = 0; yi <= SPREAD; yi++) {
           const x = (xi - SPREAD / 2) * GAP;
           const y = (yi - SPREAD / 2) * GAP;
-          let bullet = new Bullet(this.id(), this.me);
+          let bullet = new Bullet(this.newId(), this.me);
           let bullet_axis = vec3.fromValues(0, 0, -1);
           bullet_axis = vec3.transformQuat(
             bullet_axis,
