@@ -129,6 +129,10 @@ class Player extends Cube {
   type(): string {
     return "player";
   }
+
+  syncPriority(): number {
+    return 10000;
+  }
 }
 
 interface Inputs {
@@ -163,7 +167,7 @@ class CubeGameState extends GameState<Inputs> {
       this.addObject(plane);
       this.addPlayer();
       let randomCubes: SpinningCube[] = [];
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 200; i++) {
         let cube = new SpinningCube(this.id());
         // create cubes with random colors
         cube.location = vec3.fromValues(

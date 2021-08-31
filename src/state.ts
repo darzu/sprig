@@ -93,6 +93,10 @@ export abstract class GameObject {
     return obj;
   }
 
+  syncPriority(): number {
+    return 1;
+  }
+
   abstract mesh(): Mesh;
 
   abstract type(): string;

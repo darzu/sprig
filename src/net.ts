@@ -5,6 +5,8 @@ import { vec3, quat } from "./gl-matrix.js";
 // fraction of state updates to artificially drop
 const DROP_PROBABILITY = 0.0;
 
+const MAX_OBJECTS_PER_STATE_UPDATE = 64;
+
 type DataConnection = Peer.DataConnection;
 
 enum MessageType {
@@ -126,6 +128,7 @@ export class Net<Inputs> {
   private ready: (id: string) => void;
   private snap_seq: number = 0;
   private unapplied_updates: Record<number, ObjectUpdate> = {};
+  private object_priorities: Record<number, number> = {};
 
   private send(server: ServerId, message: Message, reliable: boolean) {
     console.log(`Sending message of type ${MessageType[message.type]}`);
@@ -230,6 +233,33 @@ export class Net<Inputs> {
     }
   }
 
+  private updateObjectPriorities() {
+    for (let obj of Object.values(this.state.objects)) {
+      let priority_increase = obj.syncPriority();
+      if (!this.object_priorities[obj.id]) {
+        this.object_priorities[obj.id] = priority_increase;
+      } else {
+        this.object_priorities[obj.id] += priority_increase;
+      }
+    }
+  }
+
+  private objectsToSync(): GameObject[] {
+    // TODO: there's gotta be a way to do this faster than O(N log N) in the
+    // number of objects.  Could maybe use priority queues? with an efficient
+    // heap can get amortized O(1) on key-increase ops, so setting the priorities should be O(N).
+    // Then we're removing a constant # of items, so removing should be O(log N) overall?
+    // Could also cache this sorted list--order will stay mostly the same so with a sort that's
+    // optimized for mostly-ordered data (like TimSort) the sort should be O(N)
+    let objects = Object.values(this.state.objects);
+    objects = objects.filter((obj) => obj.authority == this.state.me);
+    // sort objects in descending order by priority
+    objects.sort(
+      (o1, o2) => this.object_priorities[o2.id] - this.object_priorities[o1.id]
+    );
+    return objects.slice(0, MAX_OBJECTS_PER_STATE_UPDATE);
+  }
+
   serializeVec3(data: Array<number>, v: vec3) {
     data.push(v[0]);
     data.push(v[1]);
@@ -244,19 +274,17 @@ export class Net<Inputs> {
   }
 
   sendStateUpdates() {
+    this.updateObjectPriorities();
+    let objects = this.objectsToSync();
     // build snapshot
     let data = new Array();
-    for (let obj of Object.values(this.state.objects)) {
-      if (obj.authority === this.state.me) {
-        // TODO: add a way of selectively snapshotting objects. for now, just
-        // sync everything we have authority over
-        data.push(obj.id);
-        data.push(obj.authority_seq);
-        this.serializeVec3(data, obj.location);
-        this.serializeVec3(data, obj.linear_velocity);
-        this.serializeQuat(data, obj.rotation);
-        this.serializeVec3(data, obj.angular_velocity);
-      }
+    for (let obj of objects) {
+      data.push(obj.id);
+      data.push(obj.authority_seq);
+      this.serializeVec3(data, obj.location);
+      this.serializeVec3(data, obj.linear_velocity);
+      this.serializeQuat(data, obj.rotation);
+      this.serializeVec3(data, obj.angular_velocity);
     }
     let msg: StateUpdate = {
       type: MessageType.StateUpdate,
