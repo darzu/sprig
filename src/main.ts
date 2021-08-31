@@ -40,7 +40,10 @@ class Plane extends GameObject {
     if (!this._aabb) {
       this._aabb = getMeshAABB(this.mesh())
     }
-    return this._aabb;
+    return {
+      min: vec3.add(vec3.create(), this._aabb.min, this.location),
+      max: vec3.add(vec3.create(), this._aabb.max, this.location),
+    };
   }
 
   type(): string {
@@ -112,7 +115,10 @@ abstract class Cube extends GameObject {
     if (!this._aabb) {
       this._aabb = getMeshAABB(this.mesh())
     }
-    return this._aabb;
+    return {
+      min: vec3.add(vec3.create(), this._aabb.min, this.location),
+      max: vec3.add(vec3.create(), this._aabb.max, this.location),
+    };
   }
 
   netObject() {
