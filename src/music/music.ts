@@ -196,7 +196,7 @@ function playFromScale(idx: number, scale: Scale, durSec: number = 0.25, offset:
 
 function playChord(c: Chord, s: Scale, durSec: number = 0.25, offset: number | null = null) {
     const notes = getNotesForChord(c, s)
-    console.log(`playing: [${notes.join(',')}]`)
+    console.log(`playing: (${c.offsets.map(o => (o % 7) + 1).join(',')}) [${notes.join(',')}]`)
     for (let n of notes)
         playNote(n, durSec, offset)
 }
@@ -232,16 +232,20 @@ function canvasClick() {
 
     function playChordProgression(chordIds: number[]) {
         const chords = chordIds.map(i => stdChords[i])
-        const lowNotes = chords.map(lowNote)
 
         for (let i = 0; i < chords.length; i++) {
-            playChord(chords[i], scale, noteLen, start + noteSpace * i)
-            playChord(lowNotes[i], scale, noteLen, start + noteSpace * i)
+            const c = chords[i];
+            const notes = getNotesForChord(c, scale)
+            const maxN = Math.max(...notes)
+            const minN = Math.min(...notes)
+            const c2 = rotateChord(chords[i], scale, -Math.floor(minN / 2));
+            playChord(c2, scale, noteLen, start + noteSpace * i)
+            playChord(lowNote(c2), scale, noteLen, start + noteSpace * i)
         }
     }
 
-    playChordProgression([3, 3, 3, 1, 3])
-    // playChordProgression([0, 5, 1, 4, 0])
+    // playChordProgression([3, 3, 3, 1, 3])
+    playChordProgression([0, 5, 1, 4, 0])
 
     // playChord(stdChords[0], scale, noteLen, start + noteSpace * 0)
     // playChord(lowNote(stdChords[0]), scale, noteLen, start + noteSpace * 0)
