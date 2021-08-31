@@ -412,6 +412,11 @@ export class Net<Inputs> {
 
   updateState() {
     for (let server of this.peers) {
+      console.log(
+        `Have ${
+          this.state_updates[server] ? this.state_updates[server].length : 0
+        } buffered state updates`
+      );
       // first, apply any old updates ASAP
       while (
         this.state_updates[server] &&
