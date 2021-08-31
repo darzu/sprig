@@ -171,3 +171,6 @@ Grass shading:
   
 Grass shading:
   https://www.patreon.com/posts/june-2021-update-52054819
+
+Grass via compute shader:
+  https://twitter.com/KelvinvanHoorn/status/1400403927015858176

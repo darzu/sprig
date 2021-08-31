@@ -59,10 +59,12 @@ function canvasClick() {
 
     const start = audioCtx.currentTime;
 
-    playNote(7, 0.25, start + 0);
-    playNote(4, 0.25, start + 0.25);
-    playNote(0, 0.25, start + 0.5);
-    playNote(7, 0.25, start + 0.75);
+    playNote(7, 0.25, start + 0.0);
+    playNote(4, 0.25, start + 0.0);
+    playNote(0, 0.25, start + 0.0);
+    // playNote(4, 0.25, start + 0.0);
+    // playNote(0, 0.25, start + 0.5);
+    // playNote(7, 0.25, start + 0.75);
 
 }
 canvasRef.addEventListener('click', canvasClick)

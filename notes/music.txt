@@ -1,5 +1,11 @@
 Music Theory
     https://www.youtube.com/watch?v=rgaTLrZGlk0
+    1 (Notes) - https://www.youtube.com/watch?v=rgaTLrZGlk0&t=594s
+    2 (chords) - https://www.youtube.com/watch?v=rgaTLrZGlk0&t=917s
+    3 (numbers/degrees) - https://www.youtube.com/watch?v=rgaTLrZGlk0&t=1211s
+    4 (inversions) - https://www.youtube.com/watch?v=rgaTLrZGlk0&t=1424s
+    5 (melody) - https://www.youtube.com/watch?v=rgaTLrZGlk0&t=1628s
+    6 (rhythm) - https://www.youtube.com/watch?v=rgaTLrZGlk0&t=1844s
 
 concepts: 
     notes, chords, keys (home base?), scales, major (4-3) and minor (3-4) scales, 12 notes, octaves, 7 note subsets (scales), 
