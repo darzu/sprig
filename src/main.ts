@@ -58,8 +58,9 @@ const fragmentShader = shaderSceneStruct + `
 const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
 const bytesPerMat4 = (4 * 4)/*4x4 mat*/ * 4/*f32*/
 const bytesPerVec3 = 3/*vec3*/ * 4/*f32*/
-const indicesPerTriangle = 3;
-const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
+const vertsPerTri = 3;
+const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * vertsPerTri;
+const linesPerTri = 6;
 
 // render pipeline parameters
 const antiAliasSampleCount = 4;
@@ -158,7 +159,7 @@ function unshareProvokingVertices(input: Mesh): Mesh {
 interface MeshHandle {
     // handles into the buffers
     vertNumOffset: number,
-    indicesNumOffset: number,
+    triIndicesNumOffset: number,
     modelUniByteOffset: number,
     triCount: number,
     // data
@@ -238,7 +239,7 @@ const sceneUniBufferSizeAligned = align(sceneUniBufferSizeExact, 256); // unifor
 // defines the limits of our vertex, index, and uniform buffers
 const maxMeshes = 100;
 const maxTris = maxMeshes * 100;
-const maxVerts = maxTris * 3;
+const maxVerts = maxTris * vertsPerTri;
 
 // create a directional light and compute it's projection (for shadows) and direction
 const worldOrigin = vec3.fromValues(0, 0, 0);
@@ -311,7 +312,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
                 throw "Too many triangles!"
 
             const vertNumOffset = numVerts;
-            const indicesNumOffset = numTris * 3;
+            const triIndicesNumOffset = numTris * vertsPerTri;
 
             m.pos.forEach((pos, i) => {
                 const vOff = (numVerts) * vertElStride
@@ -321,7 +322,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
 
             m.tri.forEach((triInd, i) => {
                 const provokingVertOffset = (vertNumOffset + triInd[0]) * vertElStride
-                const iOff = (numTris) * indicesPerTriangle
+                const iOff = (numTris) * vertsPerTri
                 if (triIndicesMap) {
                     // update indices
                     triIndicesMap[iOff + 0] = triInd[0]
@@ -341,7 +342,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
 
             const res: MeshHandle = {
                 vertNumOffset,
-                indicesNumOffset,
+                triIndicesNumOffset: triIndicesNumOffset,
                 modelUniByteOffset: uniOffset,
                 transform,
                 triCount: m.tri.length,
@@ -458,8 +459,8 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
         ],
     });
 
-    // setup our second phase pipeline which renders meshes to the canvas
-    const renderPipelineDesc: GPURenderPipelineDescriptor = {
+    // setup our pipeline which renders meshes to the canvas
+    const renderPipelineDesc_solid: GPURenderPipelineDescriptor = {
         layout: device.createPipelineLayout({
             bindGroupLayouts: [renderSceneUniBindGroupLayout, modelUniBindGroupLayout],
         }),
@@ -486,24 +487,47 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
             count: antiAliasSampleCount,
         },
     };
-    const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
+    const renderPipeline_solid = device.createRenderPipeline(renderPipelineDesc_solid);
+
+    // create our wireframe pipeline
+    const renderPipelineDesc_wire: GPURenderPipelineDescriptor = {
+        ...renderPipelineDesc_solid,
+        primitive: prim_lineList,
+    };
+    const renderPipeline_wire = device.createRenderPipeline(renderPipelineDesc_wire);
 
     // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
     // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
-    const bundleEnc = device.createRenderBundleEncoder({
+    const bundleEnc_solid = device.createRenderBundleEncoder({
         colorFormats: [presentationFormat],
         depthStencilFormat: depthStencilFormat,
         sampleCount: antiAliasSampleCount,
     });
-    bundleEnc.setPipeline(renderPipeline);
-    bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
-    bundleEnc.setVertexBuffer(0, verticesBuffer);
-    bundleEnc.setIndexBuffer(triIndicesBuffer, 'uint16');
+    bundleEnc_solid.setPipeline(renderPipeline_solid);
+    bundleEnc_solid.setBindGroup(0, renderSceneUniBindGroup);
+    bundleEnc_solid.setVertexBuffer(0, verticesBuffer);
+    bundleEnc_solid.setIndexBuffer(triIndicesBuffer, 'uint16');
     for (let m of allMeshHandles) {
-        bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
-        bundleEnc.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
+        bundleEnc_solid.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
+        bundleEnc_solid.drawIndexed(m.triCount * vertsPerTri, undefined, m.triIndicesNumOffset, m.vertNumOffset);
     }
-    let renderBundle = bundleEnc.finish()
+    let bundle_solid = bundleEnc_solid.finish()
+
+    // same thing for our wireframe view
+    const bundleEnc_wire = device.createRenderBundleEncoder({
+        colorFormats: [presentationFormat],
+        depthStencilFormat: depthStencilFormat,
+        sampleCount: antiAliasSampleCount,
+    });
+    bundleEnc_wire.setPipeline(renderPipeline_wire);
+    bundleEnc_wire.setBindGroup(0, renderSceneUniBindGroup);
+    bundleEnc_wire.setVertexBuffer(0, verticesBuffer);
+    bundleEnc_wire.setIndexBuffer(triIndicesBuffer, 'uint16');
+    for (let m of allMeshHandles) {
+        bundleEnc_wire.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
+        bundleEnc_wire.drawIndexed(m.triCount * linesPerTri, undefined, m.triIndicesNumOffset, m.vertNumOffset);
+    }
+    let bundle_wire = bundleEnc_wire.finish()
 
     // initialize performance metrics
     let debugDiv = document.getElementById('debug-div') as HTMLDivElement;
@@ -576,7 +600,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
                 stencilStoreOp: 'store',
             },
         });
-        renderPassEncoder.executeBundles([renderBundle]);
+        renderPassEncoder.executeBundles([bundle_solid]);
         renderPassEncoder.endPass();
 
         // submit render passes to GPU
