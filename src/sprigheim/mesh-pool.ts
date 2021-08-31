@@ -4,7 +4,7 @@
 
 import { mat4, vec3 } from "../ext/gl-matrix.js";
 import { align } from "../math.js";
-import { computeTriangleNormal, Mesh, meshUniByteSizeAligned, meshUniByteSizeExact, setVertexData, vertByteSize, VertexKind } from "./sprig-main.js";
+import { computeTriangleNormal, Mesh, meshUniByteSizeAligned, meshUniByteSizeExact, setVertexData, vertByteSize, VertexData, VertexKind } from "./sprig-main.js";
 
 const indicesPerTriangle = 3;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
@@ -45,6 +45,7 @@ export interface MeshPoolBuilder {
     poolHandle: MeshPool,
     // methods
     addMesh: (m: Mesh) => MeshHandle,
+    buildMesh: () => MeshBuilder,
     finish: () => MeshPool,
 }
 export interface MeshPool {
@@ -64,6 +65,8 @@ export interface MeshPool {
 
 export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolBuilder {
     const { maxMeshes, maxTris, maxVerts } = opts;
+
+    let finished = false;
 
     // log our estimated space usage stats
     console.log(`Mesh space usage for up to ${maxMeshes} meshes, ${maxTris} tris, ${maxVerts} verts:`);
@@ -121,11 +124,14 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         allMeshes,
         poolHandle: pool,
         addMesh,
+        buildMesh,
         finish,
     };
 
     // add our meshes to the vertex and index buffers
     function addMesh(m: Mesh): MeshHandle {
+        if (finished)
+            throw `trying to use finished MeshPoolBuilder`
         // m = unshareVertices(m); // work-around; see TODO inside function
         if (!m.usesProvoking)
             throw `mesh must use provoking vertices`
@@ -208,6 +214,9 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
     }
 
     function finish(): MeshPool {
+        if (finished)
+            throw `trying to use finished MeshPoolBuilder`
+        finished = true;
         // unmap the buffers so the GPU can use them
         verticesBuffer.unmap()
         indicesBuffer.unmap()
@@ -221,8 +230,97 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         return pool;
     }
 
+    function buildMesh(): MeshBuilder {
+        if (finished)
+            throw `trying to use finished MeshPoolBuilder`
+        let meshFinished = false;
+        const uniOffset = builder.allMeshes.length * meshUniByteSizeAligned;
+        const vertNumOffset = builder.numVerts;
+        const triNumOffset = builder.numTris;
+        const indicesNumOffset = builder.numTris * 3;
+
+        const aabbMin = vec3.fromValues(Infinity, Infinity, Infinity) as Float32Array;
+        const aabbMax = vec3.fromValues(-Infinity, -Infinity, -Infinity) as Float32Array;
+
+        function addVertex(data: VertexData): void {
+            if (meshFinished)
+                throw 'trying to use finished MeshBuilder'
+            const vOff = builder.numVerts * vertByteSize
+            setVertexData(builder.verticesMap, data, vOff)
+            builder.numVerts += 1;
+
+            // update our aabb min/max
+            aabbMin[0] = Math.min(data[0][0], aabbMin[0])
+            aabbMin[1] = Math.min(data[0][1], aabbMin[1])
+            aabbMin[2] = Math.min(data[0][2], aabbMin[2])
+            aabbMax[0] = Math.max(data[0][0], aabbMax[0])
+            aabbMax[1] = Math.max(data[0][1], aabbMax[1])
+            aabbMax[2] = Math.max(data[0][2], aabbMax[2])
+        }
+        function addTri(triInd: vec3): void {
+            if (meshFinished)
+                throw 'trying to use finished MeshBuilder'
+            const iOff = builder.numTris * 3
+            builder.indicesMap.set(triInd, iOff)
+            builder.numTris += 1;
+        }
+
+        let _transform: mat4 | undefined = undefined;
+        function setUniform(transform: mat4): void {
+            if (meshFinished)
+                throw 'trying to use finished MeshBuilder'
+            _transform = transform;
+            // TODO(@darzu): MESH FORMAT
+            // TODO(@darzu): seems each element needs to be 4-byte aligned
+            const f32Scratch = new Float32Array(4 * 4 + 4 + 4);
+            f32Scratch.set(transform, 0)
+            f32Scratch.set(aabbMin, align(4 * 4, 4))
+            f32Scratch.set(aabbMax, align(4 * 4 + 3, 4))
+            const u8Scratch = new Uint8Array(f32Scratch.buffer);
+            // console.dir({ floatBuff: f32Scratch })
+            builder.uniformMap.set(u8Scratch, uniOffset)
+        }
+
+        function finish(): MeshHandle {
+            if (meshFinished)
+                throw 'trying to use finished MeshBuilder'
+            meshFinished = true;
+            const res: MeshHandle = {
+                vertNumOffset,
+                indicesNumOffset,
+                modelUniByteOffset: uniOffset,
+                transform: _transform ?? mat4.create(),
+                modelMin: aabbMin,
+                modelMax: aabbMax,
+                numTris: builder.numTris - triNumOffset,
+                model: undefined,
+                pool: builder.poolHandle,
+            }
+            builder.allMeshes.push(res)
+            return res;
+        }
+
+        return {
+            poolBuilder: builder,
+            addVertex,
+            addTri,
+            setUniform,
+            finish
+        }
+    }
+
     return builder;
 }
+
+
+export interface MeshBuilder {
+    poolBuilder: MeshPoolBuilder;
+    addVertex: (data: VertexData) => void,
+    addTri: (ind: vec3) => void,
+    setUniform: (transform: mat4) => void,
+    finish: () => MeshHandle;
+}
+
 
 // utilities for mesh pools
 // TODO(@darzu): move into pool interface?

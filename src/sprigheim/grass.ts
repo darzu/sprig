@@ -48,38 +48,16 @@ function getAABBFromMesh(m: Mesh): AABB {
     return { min, max }
 }
 
-function addVertex(data: VertexData, builder: MeshPoolBuilder): void {
-    const vOff = builder.numVerts * vertByteSize
-    setVertexData(builder.verticesMap, data, vOff)
-    builder.numVerts += 1;
-}
-function addTri(triInd: vec3, builder: MeshPoolBuilder): void {
-    const iOff = builder.numTris * 3
-    builder.indicesMap.set(triInd, iOff)
-    builder.numTris += 1;
-}
-function addUniform(transform: mat4, aabbMin: vec3, aabbMax: vec3, builder: MeshPoolBuilder): void {
-    const uniOffset = builder.allMeshes.length * meshUniByteSizeAligned;
-    // TODO(@darzu): MESH FORMAT
-    // TODO(@darzu): seems each element needs to be 4-byte aligned
-    const f32Scratch = new Float32Array(4 * 4 + 4 + 4);
-    f32Scratch.set(transform, 0)
-    f32Scratch.set(aabbMin, align(4 * 4, 4))
-    f32Scratch.set(aabbMax, align(4 * 4 + 3, 4))
-    const u8Scratch = new Uint8Array(f32Scratch.buffer);
-    // console.dir({ floatBuff: f32Scratch })
-    builder.uniformMap.set(u8Scratch, uniOffset)
-}
-
 function addMesh(m: Mesh, builder: MeshPoolBuilder): MeshHandle {
     const vertNumOffset = builder.numVerts;
     const indicesNumOffset = builder.numTris * 3;
 
+    const b = builder.buildMesh()
     m.pos.forEach((pos, i) => {
-        addVertex([pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0], VertexKind.normal], builder);
+        b.addVertex([pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0], VertexKind.normal]);
     })
     m.tri.forEach((triInd, i) => {
-        addTri(triInd, builder);
+        b.addTri(triInd);
 
         // set provoking vertex data
         const vOff = (vertNumOffset + triInd[0]) * vertByteSize
@@ -93,25 +71,27 @@ function addMesh(m: Mesh, builder: MeshPoolBuilder): MeshHandle {
 
     const uniOffset = builder.allMeshes.length * meshUniByteSizeAligned;
 
-    const { min: modelMin, max: modelMax } = getAABBFromMesh(m);
+    // const { min: modelMin, max: modelMax } = getAABBFromMesh(m);
 
-    addUniform(transform, modelMax, modelMax, builder);
+    b.setUniform(transform);
 
     console.log(`uniOffset: ${uniOffset}`);
 
-    const res: MeshHandle = {
-        vertNumOffset,
-        indicesNumOffset,
-        modelUniByteOffset: uniOffset,
-        transform,
-        modelMin,
-        modelMax,
-        numTris: m.tri.length,
-        model: m,
-        pool: builder.poolHandle,
-    }
+    // const res: MeshHandle = {
+    //     vertNumOffset,
+    //     indicesNumOffset,
+    //     modelUniByteOffset: uniOffset,
+    //     transform,
+    //     modelMin,
+    //     modelMax,
+    //     numTris: m.tri.length,
+    //     model: m,
+    //     pool: builder.poolHandle,
+    // }
 
-    builder.allMeshes.push(res)
+    const res = b.finish()
+
+    // builder.allMeshes.push(res)
     return res;
 }
 
