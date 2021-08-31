@@ -303,46 +303,47 @@ interface Transformable {
 }
 
 function mkTransformable(): Transformable {
-    const position = vec3.create();
+    // const position = vec3.create();
 
-    const direction: vec3 = new Float32Array([0, 0, 1]);
+    // const direction: vec3 = new Float32Array([0, 0, 1]);
 
-    const translation = mat4.create();
-    const rotation = mat4.create();
-    const rot = quat.create();
+    // const translation = mat4.create();
+    // const rotation = mat4.create();
+    // const rot = quat.create();
 
     const transform = mat4.create();
     return {
         getTransform: () => {
-
-            // return mat4.fromRotationTranslationScaleOrigin(mat4.create(), rot, position, scale, [0, 0, 0]);
-
-            let quatMat = mat4.create();
-            mat4.fromQuat(quatMat, rot);
-
-            const dest = mat4.create();
-
-            mat4.multiply(dest, dest, quatMat);
-
-            mat4.translate(dest, dest, position);
-            // mat4.translate(dest, dest, [0, 0, 0]);
-
-
-            // mat4.translate(dest, dest, negativeOrigin);
-            return dest;
-
-            const transform = mat4.create();
-            // // const invRot = mat4.invert(mat4.create(), rotation);
-            // // mat4.rotateX(transform, transform, 1);
-            // mat4.translate(transform, transform, position);
-            mat4.multiply(transform, translation, transform);
-            // mat4.multiply(transform, rotation, transform);
-            // quat.setAxes
-
-            // mat4.lookAt(transform, position, [0, 0, 0], [0, 1, 0]);
-            // mat4.targetTo(transform, position, [0, 0, 0], [0, 1, 0]);
-            // mat4.invert(transform, transform);
             return transform;
+
+            // // return mat4.fromRotationTranslationScaleOrigin(mat4.create(), rot, position, scale, [0, 0, 0]);
+
+            // let quatMat = mat4.create();
+            // mat4.fromQuat(quatMat, rot);
+
+            // const dest = mat4.create();
+
+            // mat4.multiply(dest, dest, quatMat);
+
+            // mat4.translate(dest, dest, position);
+            // // mat4.translate(dest, dest, [0, 0, 0]);
+
+
+            // // mat4.translate(dest, dest, negativeOrigin);
+            // return dest;
+
+            // const transform = mat4.create();
+            // // // const invRot = mat4.invert(mat4.create(), rotation);
+            // // // mat4.rotateX(transform, transform, 1);
+            // // mat4.translate(transform, transform, position);
+            // mat4.multiply(transform, translation, transform);
+            // // mat4.multiply(transform, rotation, transform);
+            // // quat.setAxes
+
+            // // mat4.lookAt(transform, position, [0, 0, 0], [0, 1, 0]);
+            // // mat4.targetTo(transform, position, [0, 0, 0], [0, 1, 0]);
+            // // mat4.invert(transform, transform);
+            // return transform;
         },
         lookAt: (target: vec3) => {
             // mat4.targetTo(rotation, position, target, [0, 1, 0])
@@ -350,44 +351,44 @@ function mkTransformable(): Transformable {
             // mat4.multiply(rotation, mat4.create(), frust)
         },
         pitch: (rad: number) => {
-            // mat4.rotateX(transform, transform, rad)
+            mat4.rotateX(transform, transform, rad)
             // mat4.rotateX(rotation, rotation, rad)
-            quat.rotateX(rot, rot, rad)
+            // quat.rotateX(rot, rot, rad)
         },
         yaw: (rad: number) => {
-            // mat4.rotateY(transform, transform, rad)
+            mat4.rotateY(transform, transform, rad)
             // mat4.rotateY(rotation, rotation, rad)
-            quat.rotateY(rot, rot, rad)
+            // quat.rotateY(rot, rot, rad)
         },
         roll: (rad: number) => {
-            // mat4.rotateZ(transform, transform, rad)
+            mat4.rotateZ(transform, transform, rad)
             // mat4.rotateZ(rotation, rotation, rad)
-            quat.rotateX(rot, rot, rad)
+            // quat.rotateX(rot, rot, rad)
         },
         moveX: (n: number) => {
-            // mat4.translate(transform, transform, [n, 0, 0]);
+            mat4.translate(transform, transform, [n, 0, 0]);
             // const t: vec3 = [n, 0, 0]
             // // const t = vec3.transformMat4(vec3.create(), [n, 0, 0], rotation)
             // mat4.translate(translation, translation, t);
             // mat4.translate(rotation, rotation, [n, 0, 0]);
-            position[0] += n
+            // position[0] += n
         },
         moveY: (n: number) => {
-            // mat4.translate(transform, transform, [0, n, 0]);
+            mat4.translate(transform, transform, [0, n, 0]);
             // mat4.multiply(
             // const t: vec3 = [0, n, 0]
             // const t = vec3.transformMat4(vec3.create(), [0, n, 0], rotation)
             // mat4.translate(translation, translation, t);
             // mat4.translate(rotation, rotation, [0, n, 0]);
-            position[1] += n
+            // position[1] += n
         },
         moveZ: (n: number) => {
-            // mat4.translate(transform, transform, [0, 0, n]);
+            mat4.translate(transform, transform, [0, 0, n]);
             // const t: vec3 = [0, 0, n]
             // const t = vec3.transformMat4(vec3.create(), [0, 0, n], rotation)
             // mat4.translate(translation, translation, t);
             // mat4.translate(rotation, rotation, [0, 0, n]);
-            position[2] += n
+            // position[2] += n
         },
     }
 }
@@ -742,11 +743,13 @@ async function init(canvasRef: HTMLCanvasElement) {
         );
     }
 
-    const cameraPos = mkTransformable();
-    cameraPos.moveZ(20)
-    cameraPos.moveY(-5)
-    cameraPos.yaw(Math.PI)
-    // cameraPos.lookAt([0, 0, 0])
+    // const cameraPos = mkTransformable();
+    // cameraPos.moveZ(20)
+    // cameraPos.moveY(-5)
+    // cameraPos.yaw(Math.PI)
+    // // cameraPos.lookAt([0, 0, 0])
+
+    // console.log(cameraPos.getTransform())
 
     // register key stuff
     window.addEventListener('keydown', function (event: KeyboardEvent) {
@@ -833,7 +836,9 @@ async function init(canvasRef: HTMLCanvasElement) {
 
         function getViewProj() {
             const viewProj = mat4.create();
-            mat4.multiply(viewProj, projectionMatrix, cameraPos.getTransform());
+            const cameraPosT = new Float32Array([-1, 0, -1.2246468525851679e-16, 0, 0, 1, 0, 0, 1.2246468525851679e-16, 0, -1, 0, 2.4492935992912173e-15, -5, -20, 1])
+            // mat4.multiply(viewProj, projectionMatrix, cameraPos.getTransform());
+            mat4.multiply(viewProj, projectionMatrix, cameraPosT);
             return viewProj as Float32Array;
         }
 
