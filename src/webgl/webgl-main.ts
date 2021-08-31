@@ -2,7 +2,7 @@ import { vec3, mat4 } from "../ext/gl-matrix.js";
 
 /*============= Creating a canvas ======================*/
 let canvas = document.getElementById('sample-canvas') as HTMLCanvasElement;
-let gl = canvas.getContext('webgl2') as WebGL2RenderingContext; // TODO: use webgl2
+let gl = canvas.getContext('webgl') as WebGLRenderingContext; // TODO: use webgl2
 let canv = gl.canvas as HTMLCanvasElement
 
 let vertCode = `
