@@ -385,3 +385,9 @@ Don't have T junctions in meshes:
 
 Frustum culling:
   https://www.iquilezles.org/www/articles/frustumcorrect/frustumcorrect.htm
+
+ALTERNATE APPROACH:
+  It could be worth considering going for a low-res ray tracing. E.g. maybe just 256x256 pixels, but 
+  ray tracing them all.
+  This would let us drastically simplify the renderer and do the cool RTX techniques
+  Using SDF tech, we could get some very cool meshes and mesh building
