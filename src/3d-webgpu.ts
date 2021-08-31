@@ -218,7 +218,7 @@ async function init(canvasRef: HTMLCanvasElement) {
     }
 
     // create grass field
-    const grassSpread = 100;
+    const grassSpread = 200;
     const grassTris = (grassSpread * 2 + 1) ** 2
     const grassMeshPool = createMeshMemoryPool({
         vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
@@ -316,7 +316,8 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     const aspect = Math.abs(canvasRef.width / canvasRef.height);
     const projectionMatrix = mat4.create();
-    mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 1, 100.0);
+    const viewDistance = 1000.0;
+    mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 1, viewDistance);
 
     const cameraPos = mkAffineTransformable();
     cameraPos.pitch(-Math.PI / 4)

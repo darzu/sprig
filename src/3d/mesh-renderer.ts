@@ -3,7 +3,7 @@
 import { mat4 } from "../ext/gl-matrix.js";
 import { mat4ByteSize, MeshMemoryPool, MeshMemoryPool as MeshPool, MeshMemoryPoolOptions, vec3ByteSize } from "./mesh.js";
 
-const shadowDepthTextureSize = 1024 * 4;
+const shadowDepthTextureSize = 1024 * 2;
 
 const wgslShaders = {
     vertexShadow: `
@@ -129,7 +129,7 @@ const wgslShaders = {
 
     let lightDir: vec3<f32> = normalize(scene.lightPos - input.fragPos);
     let lambert : f32 = max(dot(lightDir, norm), 0.0);
-    let antiLambert : f32 = 1.0 - max(dot(lightDir, antiNorm), 0.0);
+    let antiLambert : f32 = 1.5 - max(dot(lightDir, antiNorm), 0.0);
     let lightingFactor : f32 = min(visibility * lambert, 1.0) * 1.5;
     let diffuse: vec3<f32> = lightColor * lightingFactor;
     let ambient: vec3<f32> = vec3<f32>(1.0, 1.0, 1.0) * ambientFactor * antiLambert;
