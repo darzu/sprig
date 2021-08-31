@@ -337,7 +337,7 @@ class CubeGameState extends GameState<Inputs> {
           Math.random() * -10 - 5
         );
         b.color = vec3.fromValues(Math.random(), Math.random(), Math.random());
-        b.motion.linearVelocity[1] = -0.06;
+        b.motion.linearVelocity[1] = -0.03;
         this.addObject(b);
         // TODO(@darzu): debug
         console.log(`box: ${b.id}`);

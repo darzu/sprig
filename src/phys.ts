@@ -10,10 +10,19 @@ import {
 import {
   checkAtRest,
   copyMotionProps,
+  createMotionProps,
   MotionProps,
   moveObjects,
 } from "./phys_motion.js";
 
+export interface PhysicsObjectUninit {
+  id: number;
+  motion: MotionProps;
+  lastMotion?: MotionProps;
+  localAABB: AABB;
+  worldAABB: AABB;
+  motionAABB: AABB;
+}
 export interface PhysicsObject {
   id: number;
   motion: MotionProps;
@@ -36,11 +45,19 @@ const _collisionRefl = vec3.create();
 const _motionAABBs: { aabb: AABB; id: number }[] = [];
 
 export function stepPhysics(
-  objDict: Record<number, PhysicsObject>,
+  objDictUninit: Record<number, PhysicsObjectUninit>,
   dt: number
 ): PhysicsResults {
+  // ensure all phys objects are fully initialized
+  // TODO(@darzu): this is a little strange
+  for (let o of Object.values(objDictUninit))
+    if (!o.lastMotion)
+      o.lastMotion = copyMotionProps(createMotionProps({}), o.motion);
+  const objDict = objDictUninit as Record<number, PhysicsObject>;
+
   const objs = Object.values(objDict);
 
+  // move objects
   moveObjects(objs, dt);
 
   // over approximation during motion

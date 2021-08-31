@@ -58,7 +58,7 @@ export abstract class GameObject {
 
   // physics
   motion: MotionProps;
-  lastMotion: MotionProps;
+  lastMotion?: MotionProps;
   localAABB: AABB;
   worldAABB: AABB;
   motionAABB: AABB;
@@ -78,7 +78,7 @@ export abstract class GameObject {
       angularVelocity: vec3.fromValues(0, 0, 0),
       atRest: false,
     });
-    this.lastMotion = copyMotionProps(createMotionProps({}), this.motion);
+    this.lastMotion = undefined;
     this.authority = creator;
     this.authority_seq = 0;
     this.snap_seq = -1;
