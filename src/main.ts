@@ -309,38 +309,41 @@ class CubeGameState extends GameState<Inputs> {
       this.addObject(bullet);
     }
     if (inputs.rclick) {
-      for (let i = 0; i <= 10; i++) {
-        let bullet = new Bullet(this.id(), this.me);
-        let bullet_axis = vec3.fromValues(0, 0, -1);
-        bullet_axis = vec3.transformQuat(
-          bullet_axis,
-          bullet_axis,
-          this.player().rotation
-        );
-        bullet.axis = bullet_axis;
-        bullet.location = vec3.add(
-          vec3.create(),
-          this.player().location,
-          vec3.fromValues(i - 5, 0, 0)
-        );
-        bullet.rotation = quat.clone(this.player().rotation);
-        bullet.linear_velocity = vec3.scale(
-          bullet.linear_velocity,
-          bullet_axis,
-          0.02
-        );
-        bullet.linear_velocity = vec3.add(
-          bullet.linear_velocity,
-          bullet.linear_velocity,
-          this.player().linear_velocity
-        );
-        bullet.angular_velocity = vec3.scale(
-          bullet.angular_velocity,
-          bullet_axis,
-          0.01
-        );
-        this.bullets.push(bullet);
-        this.addObject(bullet);
+      const SPREAD = 10;
+      for (let i = 0; i <= SPREAD; i++) {
+        for (let i2 = 0; i2 <= SPREAD; i2++) {
+          let bullet = new Bullet(this.id(), this.me);
+          let bullet_axis = vec3.fromValues(0, 0, -1);
+          bullet_axis = vec3.transformQuat(
+            bullet_axis,
+            bullet_axis,
+            this.player().rotation
+          );
+          bullet.axis = bullet_axis;
+          bullet.location = vec3.add(
+            vec3.create(),
+            this.player().location,
+            vec3.fromValues(i - 5, i2 - 5, 0)
+          );
+          bullet.rotation = quat.clone(this.player().rotation);
+          bullet.linear_velocity = vec3.scale(
+            bullet.linear_velocity,
+            bullet_axis,
+            0.02
+          );
+          bullet.linear_velocity = vec3.add(
+            bullet.linear_velocity,
+            bullet.linear_velocity,
+            this.player().linear_velocity
+          );
+          bullet.angular_velocity = vec3.scale(
+            bullet.angular_velocity,
+            bullet_axis,
+            0.01
+          );
+          this.bullets.push(bullet);
+          this.addObject(bullet);
+        }
       }
     }
   }
@@ -497,7 +500,7 @@ async function startGame(host: string | null) {
   const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter!.requestDevice();
-  let renderer = new Renderer(canvas, device, 2000);
+  let renderer = new Renderer(canvas, device, 20000);
   let gameState = new CubeGameState(performance.now(), renderer, hosting);
   let inputs = inputsReader(canvas);
   function doLockMouse() {
