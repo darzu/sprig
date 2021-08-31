@@ -74,9 +74,9 @@ function createGrassTile(opts: GrassTileOpts, builder: MeshPoolBuilder): MeshHan
             const norm0 = vec3.cross(vec3.create(), [x2 - x1, y2 - y1, z2 - z1], [x3 - x1, y3 - y1, z3 - z1])
             vec3.normalize(norm0, norm0);
 
-            m.addVertex([p1, [r, g, b], norm0, VertexKind.normal])
-            m.addVertex([p2, [r, g, b], norm0, VertexKind.normal])
-            m.addVertex([p3, [r, g, b], norm0, VertexKind.normal])
+            m.addVertex(p1, [r, g, b], norm0, VertexKind.normal)
+            m.addVertex(p2, [r, g, b], norm0, VertexKind.normal)
+            m.addVertex(p3, [r, g, b], norm0, VertexKind.normal)
             m.addTri([2 + i * 3, 1 + i * 3, 0 + i * 3])
 
             i++;

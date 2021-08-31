@@ -455,13 +455,12 @@ const vertexDataFormat: GPUVertexAttribute[] = [
     { shaderLocation: 3, offset: bytesPerVec3 * 3, format: 'uint32' }, // kind
 ];
 // these help us pack and use vertices in that format
-export const vertByteSize = bytesPerVec3/*pos*/ + bytesPerVec3/*color*/ + bytesPerVec3/*normal*/ + bytesPerUint32;
-export type VertexData = [vec3, vec3, vec3, VertexKind];
+export const vertByteSize = bytesPerVec3/*pos*/ + bytesPerVec3/*color*/ + bytesPerVec3/*normal*/ + bytesPerUint32/*kind*/;
 // const _scratchF32 = new Float32Array(100);
 // const _scratchU32 = new Uint32Array(100);
-export function setVertexData(buffer: Uint8Array, data: VertexData, byteOffset: number) {
-    const p0 = new Uint8Array(new Float32Array([...data[0], ...data[1], ...data[2]]).buffer);
-    const p1 = new Uint8Array(new Uint32Array([data[3]]).buffer);
+export function setVertexData(buffer: Uint8Array, byteOffset: number, pos: vec3, color: vec3, normal: vec3, kind: number) {
+    const p0 = new Uint8Array(new Float32Array([...pos, ...color, ...normal]).buffer);
+    const p1 = new Uint8Array(new Uint32Array([kind]).buffer);
     buffer.set(p0, byteOffset)
     buffer.set(p1, byteOffset + bytesPerVec3 * 3);
 }
@@ -1200,13 +1199,10 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
             // TODO(@darzu): compute normal
             const kind = VertexKind.water;
 
-            const vertexData1: VertexData = [[x, y, z], color1, norm1, kind]
-            const vertexData2: VertexData = [[x, y, z], color2, norm2, kind]
-
             const vOff = builder.numVerts * vertByteSize;
             // builder.verticesMap.set(vertexData, vOff)
-            setVertexData(builder.verticesMap, vertexData1, vOff)
-            setVertexData(builder.verticesMap, vertexData2, vOff + vertByteSize)
+            setVertexData(builder.verticesMap, vOff, [x, y, z], color1, norm1, kind)
+            setVertexData(builder.verticesMap, vOff + vertByteSize, [x, y, z], color2, norm2, kind)
 
             builder.numVerts += 2;
             // builder.numVerts += 1;

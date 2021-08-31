@@ -4,7 +4,7 @@
 
 import { mat4, vec3 } from "../ext/gl-matrix.js";
 import { align } from "../math.js";
-import { computeTriangleNormal, Mesh, meshUniByteSizeAligned, meshUniByteSizeExact, setVertexData, vertByteSize, VertexData, VertexKind } from "./sprig-main.js";
+import { computeTriangleNormal, Mesh, meshUniByteSizeAligned, meshUniByteSizeExact, setVertexData, vertByteSize, VertexKind } from "./sprig-main.js";
 
 const indicesPerTriangle = 3;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
@@ -69,7 +69,7 @@ export interface MeshPool {
 
 export interface MeshBuilder {
     poolBuilder: MeshPoolBuilder;
-    addVertex: (data: VertexData) => void,
+    addVertex: (pos: vec3, color: vec3, normal: vec3, kind: number) => void,
     addTri: (ind: vec3) => void,
     setUniform: (transform: mat4, aabbMin: vec3, aabbMax: vec3) => void,
     finish: () => MeshHandle;
@@ -164,7 +164,7 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         const indicesNumOffset = builder.numTris * indicesPerTriangle;
 
         m.pos.forEach((pos, i) => {
-            b.addVertex([pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0], VertexKind.normal])
+            b.addVertex(pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0], VertexKind.normal)
         })
         m.tri.forEach((triInd, i) => {
             b.addTri(triInd)
@@ -172,7 +172,7 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
             // set provoking vertex data
             const vOff = (vertNumOffset + triInd[0]) * vertByteSize
             const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
-            setVertexData(verticesMap, [m.pos[triInd[0]], m.colors[i], normal, VertexKind.normal], vOff)
+            setVertexData(verticesMap, vOff, m.pos[triInd[0]], m.colors[i], normal, VertexKind.normal)
             // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
         })
 
@@ -247,20 +247,21 @@ export function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): Me
         const aabbMin = vec3.fromValues(Infinity, Infinity, Infinity) as Float32Array;
         const aabbMax = vec3.fromValues(-Infinity, -Infinity, -Infinity) as Float32Array;
 
-        function addVertex(data: VertexData): void {
+        // TODO(@darzu): VERTEX FORMAT
+        function addVertex(pos: vec3, color: vec3, normal: vec3, kind: number): void {
             if (finished || meshFinished)
                 throw 'trying to use finished MeshBuilder'
             const vOff = builder.numVerts * vertByteSize
-            setVertexData(builder.verticesMap, data, vOff)
+            setVertexData(builder.verticesMap, vOff, pos, color, normal, kind)
             builder.numVerts += 1;
 
             // update our aabb min/max
-            aabbMin[0] = Math.min(data[0][0], aabbMin[0])
-            aabbMin[1] = Math.min(data[0][1], aabbMin[1])
-            aabbMin[2] = Math.min(data[0][2], aabbMin[2])
-            aabbMax[0] = Math.max(data[0][0], aabbMax[0])
-            aabbMax[1] = Math.max(data[0][1], aabbMax[1])
-            aabbMax[2] = Math.max(data[0][2], aabbMax[2])
+            aabbMin[0] = Math.min(pos[0], aabbMin[0])
+            aabbMin[1] = Math.min(pos[1], aabbMin[1])
+            aabbMin[2] = Math.min(pos[2], aabbMin[2])
+            aabbMax[0] = Math.max(pos[0], aabbMax[0])
+            aabbMax[1] = Math.max(pos[1], aabbMax[1])
+            aabbMax[2] = Math.max(pos[2], aabbMax[2])
         }
         function addTri(triInd: vec3): void {
             if (finished || meshFinished)
