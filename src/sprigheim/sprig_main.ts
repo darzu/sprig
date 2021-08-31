@@ -571,6 +571,7 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
     // the camera will follow behind it.
     const cameraOffset = mat4.create();
     pitch(cameraOffset, -Math.PI / 8)
+    // mat4.rotateY(player.transform, player.transform, Math.PI * 1.25)
     gpuBufferWriteMeshTransform(player)
 
     // write the light data to the scene uniform buffer
@@ -916,7 +917,8 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
     for (let x = 0; x < mapXSize; x++) {
         for (let z = 0; z < mapZSize; z++) {
             const i = idx(x, z)
-            map[i] = Math.random() * 2 + x * 0.02 + z * 0.04 - 10 // TODO(@darzu): 
+            map[i] = Math.sin(x * 0.5) + Math.cos(z) // TODO(@darzu): 
+            // map[i] = Math.random() * 2 + x * 0.02 + z * 0.04 - 10 // TODO(@darzu):
         }
     }
 
@@ -1003,7 +1005,7 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
 
     const prevNumVerts = 0;
     const prevNumTris = 0;
-    const dbgMesh: MeshHandle = {
+    const waterMesh: MeshHandle = {
         vertNumOffset: prevNumVerts,
         indicesNumOffset: prevNumTris * 3,
         modelUniByteOffset: meshUniByteSizeAligned * builder.allMeshes.length,
@@ -1023,12 +1025,15 @@ function createWaterSystem(device: GPUDevice): WaterSystem {
         // TODO(@darzu): make this optional?
         model: undefined,
     };
-    console.dir(dbgMesh)
-    builder.allMeshes.push(dbgMesh)
+    console.dir(waterMesh)
+    builder.allMeshes.push(waterMesh)
 
     // builder.addMesh(CUBE)
 
     const pool = builder.finish();
+
+    // initial position
+    mat4.translate(waterMesh.transform, waterMesh.transform, [-(mapXSize * spacing) * 0.5, -4, -(mapZSize * spacing) * 0.5])
 
     pool.allMeshes.forEach(m => gpuBufferWriteMeshTransform(m));
 
