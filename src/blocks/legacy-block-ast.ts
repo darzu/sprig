@@ -1,5 +1,5 @@
 import { pxtColors, pxtColorsHSL } from "./color.js";
-import { V2, add, max, sum, even } from "../math.js"
+import { V2, max, sum, even } from "../math.js"
 import { genDef, getPxtBlockDefs, parseBlocksXml } from "./pxt-parse.js";
 import {
     Renderable, RenderableSection, wrapNodes, sizeOfText
@@ -165,7 +165,7 @@ function genSampleBlock(def: BlockDef): Value | null {
 
 function sizeOfDropdown(txt: string): V2 {
     // TODO(dz): refine
-    return add({ x: CHAR_W * txt.length + 2/*for arrow*/, y: CHAR_H }, { x: INNER_W_M * 2, y: 0 })
+    return V2.add({ x: CHAR_W * txt.length + 2/*for arrow*/, y: CHAR_H }, { x: INNER_W_M * 2, y: 0 })
 }
 function mkRenderableValue(val: LeafValue): Renderable {
     if (val.kind == "enum") {
@@ -200,7 +200,7 @@ function mkRenderableLabel(val: Label): Renderable {
     return {
         kind: "label",
         text: val,
-        size: add(sizeOfText(val), { x: 0, y: LABEL_MARGIN * 2 })
+        size: V2.add(sizeOfText(val), { x: 0, y: LABEL_MARGIN * 2 })
     }
 }
 
@@ -337,7 +337,7 @@ export function mkRenderable(codeTree: Value, maxWidth: number): Renderable {
         sections.push({
             lines: [],
             innerSize: innerSize,
-            outerSize: add(innerSize, { x: INNER_W_M * 2, y: INNER_H_M * 2 }),
+            outerSize: V2.add(innerSize, { x: INNER_W_M * 2, y: INNER_H_M * 2 }),
             kind: "wrap"
         })
     }

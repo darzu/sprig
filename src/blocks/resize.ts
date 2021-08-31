@@ -1,7 +1,7 @@
 import {
     BlockCategory, BlockLook, CornerShape
 } from "./legacy-block-ast.js"
-import { add, even, Sized, max, V2, sum } from "../math.js"
+import { even, Sized, max, V2, sum } from "../math.js"
 import * as bast from "./bast.js"
 import { never } from "../util.js";
 import { Color, HSL, RGB } from "./color.js";
@@ -110,14 +110,14 @@ function emitLbl(txt: string): Renderable {
     return {
         kind: "label",
         text: txt,
-        size: add(sizeOfText(txt), { x: 0, y: LABEL_MARGIN * 2 })
+        size: V2.add(sizeOfText(txt), { x: 0, y: LABEL_MARGIN * 2 })
     }
 }
 function emitStr(e: bast.StrLit): Renderable {
     return {
         kind: "label",
         text: e.val,
-        size: add(sizeOfText(e.val), { x: 0, y: LABEL_MARGIN * 2 })
+        size: V2.add(sizeOfText(e.val), { x: 0, y: LABEL_MARGIN * 2 })
     }
 }
 
@@ -199,7 +199,7 @@ function emitMulti(e: bast.MultiStmt, maxWidth: number): Renderable {
         sections.push({
             lines: [],
             innerSize,
-            outerSize: add(innerSize, { x: INNER_W_M * 2, y: INNER_H_M * 2 }),
+            outerSize: V2.add(innerSize, { x: INNER_W_M * 2, y: INNER_H_M * 2 }),
             kind: "wrap"
         })
     }
