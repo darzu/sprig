@@ -347,10 +347,14 @@ function addMesh(m: Mesh): MeshHandle {
     if (_numTris + m.tri.length > maxTris)
         throw "Too many triangles!"
 
+
+    const vertNumOffset = _numVerts;
+    const indicesNumOffset = _numTris * 3;
+
     const norms = computeNormals(m);
     m.tri.forEach((triInd, i) => {
-        const vOff = (_numVerts + i * 3) * vertElStride
-        const iOff = (_numTris + i) * indicesPerTriangle
+        const vOff = (_numVerts) * vertElStride
+        const iOff = (_numTris) * indicesPerTriangle
         if (indicesMap) {
             indicesMap[iOff + 0] = triInd[0]
             indicesMap[iOff + 1] = triInd[1]
@@ -389,6 +393,9 @@ function addMesh(m: Mesh): MeshHandle {
         verticesMap[vOff + 2 * vertElStride + 6] = nx
         verticesMap[vOff + 2 * vertElStride + 7] = ny
         verticesMap[vOff + 2 * vertElStride + 8] = nz
+
+        _numVerts += 3;
+        _numTris += 1;
     })
 
     const transform = mat4.create() as Float32Array;
@@ -397,15 +404,13 @@ function addMesh(m: Mesh): MeshHandle {
     device.queue.writeBuffer(_meshUniBuffer, uniOffset, transform.buffer);
 
     const res: MeshHandle = {
-        vertNumOffset: _numVerts,
-        indicesNumOffset: _numTris * 3,
+        vertNumOffset,
+        indicesNumOffset,
         modelUniByteOffset: uniOffset,
         transform,
         triCount: m.tri.length,
         model: m,
     }
-    _numVerts += m.pos.length;
-    _numTris += m.tri.length;
 
     meshHandles.push(res)
     return res;
