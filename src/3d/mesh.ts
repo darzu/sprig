@@ -84,8 +84,8 @@ export interface MeshMemoryPool {
     applyMeshTransform: (m: Mesh) => void,
 
     // TODO: mapping, unmapping, and raw access is pretty odd
-    _vertsMap: Float32Array | null,
-    _indMap: Uint16Array | null,
+    _vertsMap: () => Float32Array,
+    _indMap: () => Uint16Array,
     _unmap: () => void,
     _map: () => void,
 }
@@ -127,6 +127,7 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
     let _indMap: Uint16Array | null = null;
 
     function _unmap() {
+        console.log("unmapping") // TODO(@darzu): 
         if (_vertsMap)
             _vertBuffer.unmap()
         if (_indMap)
@@ -136,10 +137,13 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
     }
 
     function _map() {
+        console.log("mapping") // TODO(@darzu): 
         if (!_vertsMap)
             _vertsMap = new Float32Array(_vertBuffer.getMappedRange())
         if (!_indMap)
             _indMap = new Uint16Array(_indexBuffer.getMappedRange());
+        console.log(!!_vertsMap)
+        console.log(!!_indMap)
     }
 
     function addMeshes(meshesToAdd: MeshModel[]) {
@@ -215,8 +219,8 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
         _numVerts,
         _numTris,
         _meshes,
-        _vertsMap,
-        _indMap,
+        _vertsMap: () => _vertsMap!,
+        _indMap: () => _indMap!,
         _unmap: _unmap,
         _map: _map,
         addMeshes,
@@ -357,7 +361,7 @@ function computeNormals(m: MeshModel): vec3[] {
 }
 
 
-function addTriToBuffers(
+export function addTriToBuffers(
     triPos: [vec3, vec3, vec3],
     triInd: vec3,
     triNorm: vec3,

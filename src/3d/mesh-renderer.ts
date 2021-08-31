@@ -404,7 +404,7 @@ export function createMeshRenderer(
         ],
     });
 
-    const vertexBuffers: GPUVertexBufferLayout[] = [
+    const vertexBuffersLayout: GPUVertexBufferLayout[] = [
         {
             // TODO(@darzu): the buffer index should be connected to the pool probably?
             arrayStride: meshPool._opts.vertByteSize,
@@ -471,7 +471,7 @@ export function createMeshRenderer(
                 code: wgslShaders.vertexShadow,
             }),
             entryPoint: 'main',
-            buffers: vertexBuffers,
+            buffers: vertexBuffersLayout,
         },
         fragment: {
             // This should be omitted and we can use a vertex-only pipeline, but it's
@@ -503,7 +503,7 @@ export function createMeshRenderer(
                 // code: basicVertWGSL,
             }),
             entryPoint: 'main',
-            buffers: vertexBuffers,
+            buffers: vertexBuffersLayout,
         },
         fragment: {
             module: device.createShaderModule({

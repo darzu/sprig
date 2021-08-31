@@ -1,6 +1,6 @@
 import { mat4, vec3, quat } from './ext/gl-matrix.js';
 import { clamp } from './math.js';
-import { createMeshMemoryPool, CUBE, mat4ByteSize, Mesh, MeshMemoryPoolOptions, MeshModel, PLANE, triByteSize } from './3d/mesh.js';
+import { addTriToBuffers, createMeshMemoryPool, CUBE, mat4ByteSize, Mesh, MeshMemoryPoolOptions, MeshModel, PLANE, triByteSize } from './3d/mesh.js';
 import { createMeshRenderer } from './3d/mesh-renderer.js';
 // import * as RAPIER from './ext/@dimforge/rapier3d/rapier.js';
 
@@ -199,7 +199,7 @@ async function init(canvasRef: HTMLCanvasElement) {
         vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
         maxVerts: 30000,
         maxTris: 10000,
-        maxMeshes: 1,
+        maxMeshes: 10,
         meshUniByteSize: Math.ceil(mat4ByteSize / 256) * 256, // align to 256,
     }, device);
     {
@@ -210,16 +210,42 @@ async function init(canvasRef: HTMLCanvasElement) {
         let i = 0;
         for (let x = -spread; x < spread; x++) {
             for (let z = -spread; z < spread; z++) {
+                // TODO(@darzu): turn off back-face culling
+                addTriToBuffers(
+                    [
+                        [x - 1, 0, z],
+                        [x + 1, 0, z],
+                        [x, 3, z],
+                    ],
+                    [0, 2, 1],
+                    [0, 0, -1],
+                    [0.2, 0.8, 0.2],
+                    grassMeshPool._vertsMap(),
+                    grassMeshPool._numVerts,
+                    vertElStride,
+                    grassMeshPool._indMap(),
+                    grassMeshPool._numTris,
+                    false);
 
-                // TODO(@darzu): 
+                grassMeshPool._numTris += 1;
+                grassMeshPool._numVerts += 1;
+
                 i++;
             }
         }
 
+        const trans = mat4.create() as Float32Array;
+        const uniOffset = 0;
+        device.queue.writeBuffer(
+            grassMeshPool._meshUniBuffer,
+            uniOffset,
+            trans.buffer,
+            trans.byteOffset,
+            trans.byteLength
+        );
+
         grassMeshPool._unmap();
     }
-
-
 
     const aspect = Math.abs(canvasRef.width / canvasRef.height);
     const projectionMatrix = mat4.create();
