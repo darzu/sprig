@@ -1,7 +1,7 @@
-import { mat4, vec3, vec4, quat } from './ext/gl-matrix.js';
+import { mat4, vec3, vec4, quat } from './gl-matrix.js';
 import { align, clamp, jitter } from './math.js';
-import { addTriToBuffers, createMeshMemoryPool, CUBE, bytesPerFloat as bytesPerFloat, bytesPerMat4 as bytesPerMat4, Mesh, MeshMemoryPool, MeshMemoryPoolOptions, MeshModel, PLANE, bytesPerTri, bytesPerVec3 } from './3d/mesh.js';
-import { createMeshRenderer } from './3d/mesh-renderer.js';
+import { addTriToBuffers, createMeshMemoryPool, CUBE, bytesPerFloat as bytesPerFloat, bytesPerMat4 as bytesPerMat4, Mesh, MeshMemoryPool, MeshMemoryPoolOptions, MeshModel, PLANE, bytesPerTri, bytesPerVec3 } from './mesh.js';
+import { createMeshRenderer } from './mesh-renderer.js';
 // import * as RAPIER from './ext/@dimforge/rapier3d/rapier.js';
 
 /*

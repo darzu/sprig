@@ -1,7 +1,7 @@
 // rendering pipeline for meshes
 
-import { mat4 } from "../ext/gl-matrix.js";
-import { align } from "../math.js";
+import { mat4 } from "./gl-matrix.js";
+import { align } from "./math.js";
 import { bytesPerFloat, bytesPerMat4, MeshMemoryPool, MeshMemoryPool as MeshPool, MeshMemoryPoolOptions, bytesPerVec3 } from "./mesh.js";
 
 const shadowDepthTextureSize = 1024 * 2 * 4;

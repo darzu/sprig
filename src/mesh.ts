@@ -1,6 +1,6 @@
 
-import { mat4, vec3, quat } from '../ext/gl-matrix.js';
-import { align } from '../math.js';
+import { mat4, vec3, quat } from './gl-matrix.js';
+import { align } from './math.js';
 
 /*
 Abstractions:
