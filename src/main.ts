@@ -9,7 +9,9 @@ const shaderSceneStruct = `
         lightDir : vec3<f32>;
     };
 `;
-const vertexShaderForShadows = shaderSceneStruct + `
+const vertexShaderForShadows = `
+    ${shaderSceneStruct}
+
     [[block]] struct Model {
         modelMatrix : mat4x4<f32>;
     };
@@ -25,7 +27,17 @@ const vertexShaderForShadows = shaderSceneStruct + `
 const fragmentShaderForShadows = `
     [[stage(fragment)]] fn main() { }
 `;
-const vertexShader = shaderSceneStruct + `
+const vertexShaderOutput = `
+    struct VertexOutput {
+        [[location(0)]] shadowPos : vec3<f32>;
+        [[location(1)]] [[interpolate(flat)]] normal : vec3<f32>;
+        [[location(2)]] [[interpolate(flat)]] color : vec3<f32>;
+        [[builtin(position)]] position : vec4<f32>;
+    };
+`
+const vertexShader = `
+    ${shaderSceneStruct}
+
     [[block]] struct Model {
         modelMatrix : mat4x4<f32>;
     };
@@ -33,12 +45,7 @@ const vertexShader = shaderSceneStruct + `
     [[group(0), binding(0)]] var<uniform> scene : Scene;
     [[group(1), binding(0)]] var<uniform> model : Model;
 
-    struct VertexOutput {
-        [[location(0)]] shadowPos : vec3<f32>;
-        [[location(1)]] normal : vec3<f32>;
-        [[location(2)]] color : vec3<f32>;
-        [[builtin(position)]] position : vec4<f32>;
-    };
+    ${vertexShaderOutput}
 
     [[stage(vertex)]]
     fn main(
@@ -61,17 +68,15 @@ const vertexShader = shaderSceneStruct + `
         return output;
     }
 `;
-const fragmentShader = shaderSceneStruct + `
+const fragmentShader = `
+    ${shaderSceneStruct}
+
     [[group(0), binding(0)]] var<uniform> scene : Scene;
     [[group(0), binding(1)]] var shadowMap: texture_depth_2d;
     // TODO(@darzu): waiting on this sample to work again: http://austin-eng.com/webgpu-samples/samples/shadowMapping
     // [[group(0), binding(2)]] var shadowSampler: sampler_comparison;
 
-    struct VertexOutput {
-        [[location(0)]] shadowPos : vec3<f32>;
-        [[location(1)]] normal : vec3<f32>;
-        [[location(2)]] color : vec3<f32>;
-    };
+    ${vertexShaderOutput}
 
     [[stage(fragment)]]
     fn main(input: VertexOutput) -> [[location(0)]] vec4<f32> {
@@ -161,6 +166,35 @@ function unshareVertices(input: Mesh): Mesh {
         ])
     })
     return { pos, tri, colors: input.colors }
+}
+function unshareProvokingVertices(input: Mesh): Mesh {
+    const pos: vec3[] = [...input.pos]
+    const tri: vec3[] = []
+    const provoking: { [key: number]: boolean } = {}
+    input.tri.forEach(([i0, i1, i2], triI) => {
+        if (!provoking[i0]) {
+            // First vertex is unused as a provoking vertex, so we'll use it for this triangle.
+            provoking[i0] = true;
+            tri.push([i0, i1, i2])
+        } else if (!provoking[i1] || !provoking[i2]) {
+            // First vertex was taken, so let's see if we can rotate the indices to get an unused 
+            // provoking vertex.
+            if (!provoking[i1]) {
+                provoking[i1] = true;
+                tri.push([i1, i2, i0])
+            } else {
+                provoking[i2] = true;
+                tri.push([i2, i0, i1])
+            }
+        } else {
+            // All vertices are taken, so create a new one
+            const i3 = pos.length;
+            pos.push(input.pos[i0])
+            provoking[i3] = true;
+            tri.push([i3, i1, i2])
+        }
+    })
+    return { ...input, pos, tri }
 }
 
 // once a mesh has been added to our vertex, triangle, and uniform buffers, we need
@@ -328,7 +362,8 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
     let numVerts = 0;
     let numTris = 0;
     function addMesh(m: Mesh): MeshHandle {
-        m = unshareVertices(m); // work-around; see TODO inside function
+        // m = unshareVertices(m); // work-around; see TODO inside function
+        m = unshareProvokingVertices(m);
         if (verticesMap === null)
             throw "Use preRender() and postRender() functions"
         if (numVerts + m.pos.length > maxVerts)
@@ -337,23 +372,24 @@ function createMeshPoolBuilder(device: GPUDevice, opts: MeshPoolOpts): MeshPoolB
             throw "Too many triangles!"
 
         const vertNumOffset = numVerts;
-        const indicesNumOffset = numTris * 3;
+        const indicesNumOffset = numTris * indicesPerTriangle;
 
-        m.tri.forEach((triInd, i) => {
-            const vOff = (numVerts) * vertElStride
-            const iOff = (numTris) * indicesPerTriangle
-            if (indicesMap) {
-                indicesMap[iOff + 0] = triInd[0]
-                indicesMap[iOff + 1] = triInd[1]
-                indicesMap[iOff + 2] = triInd[2]
-            }
-            const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
-            bufferWriteVertex(verticesMap, vOff + 0 * vertElStride, m.pos[triInd[0]], m.colors[i], normal)
-            bufferWriteVertex(verticesMap, vOff + 1 * vertElStride, m.pos[triInd[1]], m.colors[i], normal)
-            bufferWriteVertex(verticesMap, vOff + 2 * vertElStride, m.pos[triInd[2]], m.colors[i], normal)
-            numVerts += 3;
-            numTris += 1;
+        m.pos.forEach((pos, i) => {
+            const vOff = (numVerts + i) * vertElStride
+            bufferWriteVertex(verticesMap, vOff, pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0])
         })
+        m.tri.forEach((triInd, i) => {
+            const iOff = (numTris + i) * indicesPerTriangle
+            indicesMap[iOff + 0] = triInd[0]
+            indicesMap[iOff + 1] = triInd[1]
+            indicesMap[iOff + 2] = triInd[2]
+            const vOff = (numVerts + triInd[0]) * vertElStride
+            const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
+            bufferWriteVertex(verticesMap, vOff, m.pos[triInd[0]], m.colors[i], normal)
+        })
+
+        numVerts += m.pos.length;
+        numTris += m.tri.length;
 
         const transform = mat4.create() as Float32Array;
 
