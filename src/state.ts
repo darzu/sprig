@@ -153,7 +153,7 @@ export abstract class GameState<Inputs> {
     this.me = 0;
     this.renderer = renderer;
     this.nextPlayerId = 0;
-    this.nextObjectId = 0;
+    this.nextObjectId = 1; // start at 1 b/c it's useful to for the falsy-ness to indicate invalid
     this.objects = [];
     this.collidesWith = {};
   }

@@ -1,9 +1,9 @@
 import { vec3 } from "./gl-matrix.js";
 import { clamp } from "./math.js";
 import { range } from "./util.js";
-import { vec3Floor } from "./utils-3d.js";
+import { vec3Floor, vec3ToStr } from "./utils-3d.js";
 
-const BROAD_PHASE: "N^2" | "OCT" | "GRID" = "OCT";
+const BROAD_PHASE: "N^2" | "OCT" | "GRID" = "GRID";
 
 export interface CollidesWith {
     // one-to-many GameObject ids
@@ -135,8 +135,9 @@ export function checkCollisions(objs: { worldAABB: AABB, id: number }[]): Collid
                 // console.log(`obj in multiple cells! (${o.minCoord.join(',')})->(${o.maxCoord.join(',')})`)
             }
         }
-        console.log(`_cellChecks: ${_cellChecks}`)
-        console.log(`_numMultiCell: ${_numMultiCell}`)
+        // console.log(`_cellChecks: ${_cellChecks}`)
+        // console.log(`_numMultiCell: ${_numMultiCell}`)
+        // console.log(`player minCoord: ${vec3ToStr(_objToObjLL[3].minCoord)}-${vec3ToStr(_objToObjLL[3].maxCoord)} : ${vec3ToStr(_objToObjLL[3].aabb.min)}-${vec3ToStr(_objToObjLL[3].aabb.max)}`)
     }
 
     // TODO(@darzu): debugging
@@ -170,11 +171,14 @@ interface ObjLL {
     prev: WorldCell | ObjLL | null,
 }
 function createWorldGrid(aabb: AABB, cellSize: vec3): WorldGrid {
+    console.log(`cellSize: ${cellSize}`)
     const chunkSize = vec3.sub(vec3.create(), aabb.max, aabb.min)
+    console.log(`chunkSize: ${chunkSize}`)
     const dims = vec3.div(vec3.create(), chunkSize, cellSize);
     vec3Floor(dims, dims);
+    console.log(`dims: ${vec3ToStr(dims)}`)
     const gridLength = dims[0] * dims[1] * dims[2];
-    console.log(gridLength);
+    console.log(`gridLength: ${gridLength}`)
     const grid = range(gridLength).map(_ => ({ next: null } as WorldCell));
     return {
         aabb,
@@ -209,14 +213,13 @@ function gridCoord(out: vec3, g: WorldGrid, pos: vec3): vec3 {
     return out;
 }
 function gridPlace(g: WorldGrid, o: ObjLL) {
-    const minCoord = gridCoord(_scratchVec3, g, o.aabb.min);
-    if (o.prev && vec3.equals(minCoord, o.minCoord)) {
+    // new placement, update coordinates
+    gridCoord(o.minCoord, g, o.aabb.min);
+    gridCoord(o.maxCoord, g, o.aabb.max);
+    if (o.prev && vec3.equals(o.minCoord, o.minCoord)) {
         // same place, do nothing
         return;
     }
-    // new placement, update coordinates
-    vec3.copy(o.minCoord, minCoord);
-    gridCoord(o.maxCoord, g, o.aabb.max);
     const idx = gridIdx(g, o.minCoord);
     // console.log(`(${coord.join(',')}), idx: ${idx}`)
     const cell = g.grid[idx]
@@ -245,6 +248,9 @@ function gridPlace(g: WorldGrid, o: ObjLL) {
 }
 function checkCell(o: ObjLL, c: ObjLL | WorldCell) {
     _cellChecks++ // TODO(@darzu): debugging;
+    // if (o === _objToObjLL[3]) {
+    //     console.log(`checking at for player`)
+    // }
     // check given
     if ((c as ObjLL).id) {
         checkPair(o, c as ObjLL);
