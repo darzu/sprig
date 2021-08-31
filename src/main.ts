@@ -5,7 +5,7 @@ import { Net } from "./net.js";
 import { test } from "./test.js";
 import { Renderer, Renderer_WebGPU } from "./render_webgpu.js";
 import { attachToCanvas } from "./render_webgl.js";
-import { Mesh, unshareProvokingVertices } from "./mesh-pool.js";
+import { getAABBFromMesh, Mesh, unshareProvokingVertices } from "./mesh-pool.js";
 
 const USE_WEBGPU = false;
 
@@ -14,33 +14,38 @@ enum ObjectType {
   Player,
   Bullet,
 }
+
+const PLANE_MESH = unshareProvokingVertices(scaleMesh(
+  {
+    pos: [
+      [+1, 0, +1],
+      [-1, 0, +1],
+      [+1, 0, -1],
+      [-1, 0, -1],
+    ],
+    tri: [
+      [0, 2, 3],
+      [0, 3, 1], // top
+      [3, 2, 0],
+      [1, 3, 0], // bottom
+    ],
+    colors: [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5], [0.5, 0.5, 0.5], [0.5, 0.5, 0.5]],
+  },
+  10
+));
+const PLANE_AABB = getAABBFromMesh(PLANE_MESH);
+
 class Plane extends GameObject {
   color: vec3;
 
   constructor(id: number, creator: number) {
     super(id, creator);
     this.color = vec3.fromValues(0.02, 0.02, 0.02);
+    this.localAABB = PLANE_AABB;
   }
 
   mesh(): Mesh {
-    return unshareProvokingVertices(scaleMesh(
-      {
-        pos: [
-          [+1, 0, +1],
-          [-1, 0, +1],
-          [+1, 0, -1],
-          [-1, 0, -1],
-        ],
-        tri: [
-          [0, 2, 3],
-          [0, 3, 1], // top
-          [3, 2, 0],
-          [1, 3, 0], // bottom
-        ],
-        colors: [this.color, this.color, this.color, this.color],
-      },
-      10
-    ));
+    return { ...PLANE_MESH, colors: PLANE_MESH.colors.map(_ => this.color) }
   }
 
   typeId(): number {
@@ -64,7 +69,7 @@ class Plane extends GameObject {
   }
 }
 
-const CUBE = unshareProvokingVertices({
+const CUBE_MESH = unshareProvokingVertices({
   pos: [
     [+1.0, +1.0, +1.0],
     [-1.0, +1.0, +1.0],
@@ -105,6 +110,7 @@ const CUBE = unshareProvokingVertices({
     [0.5, 0.5, 0.5],
   ],
 });
+const CUBE_AABB = getAABBFromMesh(CUBE_MESH);
 
 abstract class Cube extends GameObject {
   color: vec3;
@@ -112,12 +118,13 @@ abstract class Cube extends GameObject {
   constructor(id: number, creator: number) {
     super(id, creator);
     this.color = vec3.fromValues(0.2, 0, 0);
+    this.localAABB = CUBE_AABB;
   }
 
   mesh(): Mesh {
     return {
-      ...CUBE,
-      colors: CUBE.colors.map(_ => this.color),
+      ...CUBE_MESH,
+      colors: CUBE_MESH.colors.map(_ => this.color),
     }
   }
 }

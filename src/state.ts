@@ -2,7 +2,7 @@ import { mat4, vec3, quat } from "./gl-matrix.js";
 import { Serializer, Deserializer } from "./serialize.js";
 import { Mesh } from "./mesh-pool.js";
 import { Renderer } from "./render_webgpu.js";
-import { checkCollisions } from "./physics.js";
+import { AABB, checkCollisions } from "./physics.js";
 
 const ERROR_SMOOTHING_FACTOR = 0.8;
 const EPSILON = 0.0001;
@@ -45,6 +45,7 @@ export abstract class GameObject {
   snap_seq: number;
   location_error: vec3;
   rotation_error: quat;
+  localAABB: AABB;
 
   // derivative state:
   // NOTE: it kinda sucks to have duplicate sources of truth on loc & rot, 
@@ -65,6 +66,7 @@ export abstract class GameObject {
     this.location_error = vec3.fromValues(0, 0, 0);
     this.rotation_error = quat.create();
     this.transform = mat4.create();
+    this.localAABB = { min: vec3.fromValues(-1, -1, -1), max: vec3.fromValues(1, 1, 1) };
   }
 
   snapLocation(location: vec3) {
