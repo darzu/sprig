@@ -29,6 +29,7 @@ export abstract class GameObject {
   authority: number;
   authority_seq: number;
   snap_seq: number;
+  color: vec3;
 
   constructor(id: number) {
     this.id = id;
@@ -40,6 +41,7 @@ export abstract class GameObject {
     this.authority = 0;
     this.authority_seq = 0;
     this.snap_seq = -1;
+    this.color = vec3.fromValues(0, 0, 0);
   }
 
   transform(): mat4 {
@@ -147,12 +149,21 @@ export abstract class GameState<Inputs> {
   step(time: number, inputs: Inputs) {
     let dt = time - this.time;
     this.stepGame(dt, inputs);
-    for (let o of Object.values(this.objects)) {
-      // TODO(@darzu): collisions, push-back
+    const os = Object.values(this.objects);
+    for (let o of os) {
       // change location according to linear velocity
       let delta = vec3.scale(vec3.create(), o.linear_velocity, dt);
       vec3.add(o.location, o.location, delta);
+    }
 
+    // check collisions
+    const collidesWith = checkCollisions(os);
+    // TODO(@darzu): hack.
+    for (let o of os) {
+      o.color = collidesWith[o.id] ? vec3.fromValues(0.2, 0.0, 0.0) : vec3.fromValues(0.0, 0.2, 0.0)
+    }
+
+    for (let o of os) {
       // change rotation according to angular velocity
       let normalized_velocity = vec3.normalize(
         vec3.create(),
@@ -176,5 +187,41 @@ export abstract class GameState<Inputs> {
 collision detection
   define AABB boxes for everyone
   check for collisions
-
 */
+
+interface CollidesWith {
+  // one-to-many GameObject ids
+  [key: number]: number[]
+}
+export let _lastCollisionTestTimeMs = 0; // TODO(@darzu): hack
+function checkCollisions(os: { aabb: () => AABB, id: number }[]): CollidesWith {
+  const start = performance.now()
+  const aabbs = os.map(o => o.aabb())
+  const collidesWith: CollidesWith = {}
+  // TODO(@darzu): do better than n^2. oct-tree
+  // TODO(@darzu): be more precise than just AABBs. broad & narrow phases.
+  // TODO(@darzu): also use better memory pooling for aabbs and collidesWith relation
+  for (let i0 = 0; i0 < aabbs.length; i0++) {
+    const box0 = aabbs[i0]
+    for (let i1 = i0 + 1; i1 < aabbs.length; i1++) {
+      const box1 = aabbs[i1]
+      if (doesOverlap(box0, box1)) {
+        const id0 = os[i0].id
+        const id1 = os[i1].id
+        collidesWith[id0] = [...(collidesWith[id0] ?? []), id1]
+        collidesWith[id1] = [...(collidesWith[id1] ?? []), id0]
+      }
+    }
+  }
+  _lastCollisionTestTimeMs = performance.now() - start;
+  return collidesWith;
+}
+function doesOverlap(a: AABB, b: AABB) {
+  return true
+    && b.min[0] <= a.max[0]
+    && b.min[1] <= a.max[1]
+    && b.min[2] <= a.max[2]
+    && a.min[0] <= b.max[0]
+    && a.min[1] <= b.max[1]
+    && a.min[2] <= b.max[2]
+}

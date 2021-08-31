@@ -19,6 +19,7 @@ const vertexShader =
   `
     [[block]] struct Model {
         modelMatrix : mat4x4<f32>;
+        tint : vec3<f32>;
     };
 
     [[group(0), binding(0)]] var<uniform> scene : Scene;
@@ -40,7 +41,7 @@ const vertexShader =
         let worldPos: vec4<f32> = model.modelMatrix * vec4<f32>(position, 1.0);
         output.position = scene.cameraViewProjMatrix * worldPos;
         output.normal = normalize(model.modelMatrix * vec4<f32>(normal, 0.0)).xyz;
-        output.color = color;
+        output.color = color + model.tint;
         return output;
     }
 `;
@@ -113,9 +114,10 @@ const vertElStride = 3 /*pos*/ + 3 /*color*/ + 3; /*normal*/
 const vertByteSize = bytesPerFloat * vertElStride;
 
 // define the format of our models' uniform buffer
+  // TODO(@darzu): MODEL FORMAT
 const meshUniByteSizeExact =
   bytesPerMat4 + // transform
-  bytesPerFloat; // max draw distance;
+  bytesPerVec3; // color tint
 const meshUniByteSizeAligned = align(meshUniByteSizeExact, 256); // uniform objects must be 256 byte aligned
 
 // defines the format of our scene's uniform data
@@ -205,6 +207,14 @@ export class Renderer {
       this.meshUniformBuffer,
       m.modelUniByteOffset,
       (m.obj.transform() as Float32Array).buffer
+    );
+  }
+  private gpuBufferWriteMeshColor(m: MeshHandle) {
+    this.device.queue.writeBuffer(
+      this.meshUniformBuffer,
+      // TODO(@darzu): MODEL FORMAT
+      m.modelUniByteOffset + bytesPerMat4,
+      (m.obj.color as Float32Array).buffer
     );
   }
 
@@ -590,10 +600,11 @@ export class Renderer {
     ) as Float32Array;
     this.device.queue.writeBuffer(this.sceneUniformBuffer, 0, viewProj.buffer);
 
-    // update all mesh transforms
-    // TODO: only update when changed
+    // update all mesh uniform data (transforms, color)
+    // TODO: only update when changed to minimize GPU traffic
     for (let m of this.meshHandles) {
       this.gpuBufferWriteMeshTransform(m);
+      this.gpuBufferWriteMeshColor(m);
     }
 
     // start collecting our render commands for this frame

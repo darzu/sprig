@@ -1,13 +1,13 @@
 const jsStartTime = performance.now();
 
 import { mat4, vec3, quat } from "./gl-matrix.js";
-import { Mesh, scaleMesh, GameObject, NetObject, GameState, AABB } from "./state.js";
+import { Mesh, scaleMesh, GameObject, NetObject, GameState, AABB, _lastCollisionTestTimeMs } from "./state.js";
 import { Renderer } from "./render.js";
 import { Net } from "./net.js";
 
-class Plane extends GameObject {
-  color: vec3;
+const BLACK = vec3.fromValues(0.0, 0.0, 0.0);
 
+class Plane extends GameObject {
   constructor(id: number) {
     super(id);
     this.color = vec3.fromValues(0.02, 0.02, 0.02);
@@ -28,7 +28,7 @@ class Plane extends GameObject {
           [3, 2, 0],
           [1, 3, 0], // bottom
         ],
-        colors: [this.color, this.color, this.color, this.color],
+        colors: [BLACK, BLACK, BLACK, BLACK],
       },
       10
     );
@@ -58,8 +58,6 @@ class Plane extends GameObject {
 }
 
 abstract class Cube extends GameObject {
-  color: vec3;
-
   constructor(id: number) {
     super(id);
     this.color = vec3.fromValues(0.2, 0, 0);
@@ -93,18 +91,18 @@ abstract class Cube extends GameObject {
         [5, 7, 6], // back
       ],
       colors: [
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
-        this.color,
+        BLACK,
+        BLACK,
+        BLACK,
+        BLACK,
+        BLACK,
+        BLACK,
+        BLACK,
+        BLACK,
+        BLACK,
+        BLACK,
+        BLACK,
+        BLACK,
       ],
     };
   }
@@ -547,7 +545,7 @@ async function startGame(host: string | null) {
     debugDiv.innerText =
       controlsStr +
       `\n` +
-      `(js per frame: ${avgJsTime.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)})`;
+      `(js per frame: ${avgJsTime.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)}, aabb: ${_lastCollisionTestTimeMs.toFixed(1)}ms)`;
     net.sendStateUpdates();
     requestAnimationFrame(frame);
   };
