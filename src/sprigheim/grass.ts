@@ -221,6 +221,7 @@ export function initGrassSystem(device: GPUDevice): GrassSystem {
             update: () => { },
         }
     }
+    const start = performance.now()
 
     // TODO(@darzu): try upside down triangles
     const lod1Opts: GrassTilesetOpts = {
@@ -287,7 +288,7 @@ export function initGrassSystem(device: GPUDevice): GrassSystem {
         lod1Opts,
         // lod2Opts,
         // lod3Opts,
-        lod4Opts,
+        // lod4Opts,
         // lod5Opts,
     ]
 
@@ -298,7 +299,7 @@ export function initGrassSystem(device: GPUDevice): GrassSystem {
     }
 
     const numTris = tilesets.map(s => s.pool.numTris).reduce((p, n) => p + n, 0)
-    console.log(`Creating grass system with ${(numTris / 1000).toFixed(0)}k triangles.`);
+    console.log(`Created grass system with ${(numTris / 1000).toFixed(0)}k triangles in ${(performance.now() - start).toFixed(0)}ms.`);
 
     const res: GrassSystem = {
         getGrassPools: () => tilesets.map(t => t.pool),
