@@ -27,3 +27,7 @@ way to consume midi, decompose it into these concepts?
 
 multiplayer sequencer:
     https://marcgg.com/blog/2016/11/21/chiptune-sequencer-multiplayer/
+
+References:
+    https://developer.mozilla.org/en-US/docs/Web/API/OscillatorNode
+    https://marcgg.com/blog/2016/11/01/javascript-audio/#
