@@ -1,6 +1,7 @@
 import { mat4, vec3, quat } from "./gl-matrix.js";
 import { Renderer } from "./render.js";
 
+
 // defines the geometry and coloring of a mesh
 export interface Mesh {
   pos: vec3[];
@@ -225,3 +226,7 @@ function doesOverlap(a: AABB, b: AABB) {
     && a.min[1] <= b.max[1]
     && a.min[2] <= b.max[2]
 }
+
+
+import dimforgeRapier3d from 'https://cdn.skypack.dev/@dimforge/rapier3d-compat';
+console.dir(dimforgeRapier3d)
