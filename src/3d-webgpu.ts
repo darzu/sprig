@@ -1,6 +1,7 @@
 import { mat4, vec3, quat } from './ext/gl-matrix.js';
 import { clamp } from './math.js';
 import { createMeshMemoryPool, CUBE, mat4ByteSize, Mesh, MeshMemoryPoolOptions, MeshModel, PLANE, triByteSize } from './3d/mesh.js';
+import { createMeshRenderer } from './3d/mesh-renderer.js';
 // import * as RAPIER from './ext/@dimforge/rapier3d/rapier.js';
 
 /*
@@ -39,79 +40,6 @@ const GRASS: MeshModel = {
     ],
 }
 
-
-// TODO: canvas ref
-// TODO: navigator.gpu typings
-//          @webgpu/types
-// TODO: frag_depth
-const vertexPositionColorWGSL =
-`
-[[stage(fragment)]]
-fn main(
-    [[location(0)]] modelPos: vec4<f32>,
-    [[location(1)]] color: vec3<f32>
-    ) -> [[location(0)]] vec4<f32> {
-    var xTan: vec3<f32> = dpdx(modelPos).xyz;
-    var yTan: vec3<f32> = dpdy(modelPos).xyz;
-    var norm: vec3<f32> = normalize(cross(xTan, yTan));
-
-    var lDirection: vec3<f32> = vec3<f32>(0.5, 0.5, 0.5);
-    var lColor: vec3<f32> = vec3<f32>(0.5, 0.5, 0.5);
-    var ambient: vec4<f32> = vec4<f32>(color, 1.0); // vec4<f32>(0.0, 0.2, 0.2, 0.2);
-
-    var diffuse: vec4<f32> = vec4<f32>(max(dot(lDirection, -norm), 0.0) * lColor, 1.0);
-
-    return ambient + diffuse;
-    // return vec4<f32>(norm, 1.0);
-}
-`;
-
-const basicVertWGSL =
-`
-[[block]] struct SharedUnis {
-    viewProj : mat4x4<f32>;
-};
-[[binding(0), group(0)]] var<uniform> sharedUnis : SharedUnis;
-[[block]] struct ModelUnis {
-    model : mat4x4<f32>;
-};
-[[binding(0), group(1)]] var<uniform> modelUnis : ModelUnis;
-
-struct VertexOutput {
-    [[builtin(position)]] pos : vec4<f32>;
-    [[location(0)]] modelPos: vec4<f32>;
-    [[location(1)]] color: vec3<f32>;
-};
-
-[[stage(vertex)]]
-fn main(
-    [[location(0)]] position : vec3<f32>,
-    [[location(1)]] color : vec3<f32>,
-    [[location(2)]] color2 : vec3<f32>
-    ) -> VertexOutput {
-    var output : VertexOutput;
-    var pos4: vec4<f32> = vec4<f32>(position, 1.0);
-    output.pos =  sharedUnis.viewProj * modelUnis.model * pos4;
-    // output.color = vec4<f32>(normal, 1.0);
-    // output.color = 0.5 * (pos4 + vec4<f32>(1.0, 1.0, 1.0, 1.0));
-    // output.modelPos = sharedUnis.viewProj * pos4;
-    output.modelPos = sharedUnis.viewProj * pos4;
-    // output.color = color2;
-    // output.color = vec3<f32>(0.2, 0.5, 0.4);
-    output.color = color;
-
-    return output;
-}
-`;
-
-const shadowDepthTextureSize = 1024;
-
-// const maxNumVerts = 1000;
-// const maxNumTri = 1000;
-// const maxNumModels = 100;
-
-
-const sampleCount = 4;
 
 interface Transformable {
     getTransform: () => mat4;
@@ -211,6 +139,19 @@ async function init(canvasRef: HTMLCanvasElement) {
     if (!canvasRef === null) return;
     const context = canvasRef.getContext('gpupresent')!;
 
+    const vertElStride = (3/*pos*/ + 3/*color*/)
+    const defaultMeshPoolOpts: MeshMemoryPoolOptions = {
+        vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
+        maxVerts: 1000,
+        maxTris: 1000,
+        maxMeshes: 100,
+        meshUniByteSize: Math.ceil(mat4ByteSize / 256) * 256, // align to 256,
+    }
+    const meshPool = createMeshMemoryPool(defaultMeshPoolOpts, device);
+
+    // TODO(@darzu): 
+    const meshRenderer = createMeshRenderer(meshPool, device, context, canvasRef.width, canvasRef.height);
+
     // TODO(@darzu): physics?
     // console.dir(RAPIER)
 
@@ -224,19 +165,6 @@ async function init(canvasRef: HTMLCanvasElement) {
         cursorLocked = true
     }
 
-    const swapChainFormat = 'bgra8unorm';
-
-    /*
-    TODO: we'll probably switch when enga@chromium.org does
-    configureSwapChain() is deprecated. Use configure() instead and call getCurrentTexture()
-    directly on the context. Note that configure() must also be called if you want to change
-    the size of the textures returned by getCurrentTexture()
-    */
-    const swapChain = context.configureSwapChain({
-        device,
-        format: swapChainFormat,
-    });
-
     /*
     tracking meshes:
         add to vertex & index buffers
@@ -249,19 +177,6 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     // GPUDepthStencilStateDescriptor
 
-    // Create the depth texture for rendering/sampling the shadow map.
-    const shadowDepthTextureDesc: GPUTextureDescriptor = {
-        size: {
-            width: shadowDepthTextureSize,
-            height: shadowDepthTextureSize,
-            // TODO(@darzu): deprecated
-            // depth: 1,
-        },
-        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.SAMPLED,
-        format: 'depth32float',
-    }
-    const shadowDepthTexture = device.createTexture(shadowDepthTextureDesc);
-    const shadowDepthTextureView = shadowDepthTexture.createView();
 
     // // Create some common descriptors used for both the shadow pipeline
     // // and the color rendering pipeline.
@@ -289,233 +204,8 @@ async function init(canvasRef: HTMLCanvasElement) {
 
     // TODO(@darzu): trying per-face data, but this actually ended up being "per instance" data
     // TODO(@darzu): handle this in the mesh pool ?
-    const maxNumInstances = 1000;
-    const instanceByteSize = Float32Array.BYTES_PER_ELEMENT * 3/*color*/
-    const instanceDataBuffer = device.createBuffer({
-        size: maxNumInstances * instanceByteSize,
-        usage: GPUBufferUsage.VERTEX,
-        mappedAtCreation: true,
-    });
-    {
-        const instMap = new Float32Array(instanceDataBuffer.getMappedRange())
-        for (let i = 0; i < maxNumInstances; i++) {
-            const off = i * instanceByteSize
-            // TODO(@darzu): colors
-            instMap[off + 0] = Math.random()
-            instMap[off + 1] = Math.random()
-            instMap[off + 2] = Math.random()
-        }
-        instanceDataBuffer.unmap();
-    }
 
-    const vertElStride = (3/*pos*/ + 3/*color*/)
-    const defaultMeshPoolOpts: MeshMemoryPoolOptions = {
-        vertByteSize: Float32Array.BYTES_PER_ELEMENT * vertElStride,
-        maxVerts: 1000,
-        maxTris: 1000,
-        maxMeshes: 100,
-        meshUniByteSize: Math.ceil(mat4ByteSize / 256) * 256, // align to 256,
-    }
-
-    const meshPool = createMeshMemoryPool(defaultMeshPoolOpts, device);
-
-    const modelUniBindGroupLayout = device.createBindGroupLayout({
-        entries: [
-            {
-                binding: 0,
-                visibility: GPUShaderStage.VERTEX,
-                buffer: {
-                    type: 'uniform',
-                    hasDynamicOffset: true,
-                    // TODO(@darzu): why have this?
-                    minBindingSize: defaultMeshPoolOpts.meshUniByteSize,
-                },
-            },
-        ],
-    });
-
-    // creating binding group
-    // TODO(@darzu): we don't want to use binding groups here
-    const modelUniBindGroup = device.createBindGroup({
-        layout: modelUniBindGroupLayout,
-        entries: [
-            {
-                binding: 0,
-                resource: {
-                    buffer: meshPool._meshUniBuffer,
-                    offset: 0, // TODO(@darzu): different offsets per model
-                    // TODO(@darzu): needed?
-                    size: defaultMeshPoolOpts.meshUniByteSize,
-                },
-            },
-        ],
-    });
-
-    const sharedUniBindGroupLayout = device.createBindGroupLayout({
-        entries: [
-            {
-                binding: 0,
-                visibility: GPUShaderStage.VERTEX,
-                buffer: {
-                    type: 'uniform',
-                    // hasDynamicOffset: true,
-                    // TODO(@darzu): why have this?
-                    // minBindingSize: 20,
-                },
-            },
-        ],
-    });
-
-    const sharedUniBufferSize = 4 * 16; // 4x4 matrix
-    const sharedUniBuffer = device.createBuffer({
-        size: sharedUniBufferSize,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
-
-    const sharedUniBindGroup = device.createBindGroup({
-        layout: sharedUniBindGroupLayout,
-        entries: [
-            {
-                binding: 0,
-                resource: {
-                    buffer: sharedUniBuffer,
-                },
-            },
-        ],
-    });
-
-    const pipelineLayout = device.createPipelineLayout({
-        bindGroupLayouts: [sharedUniBindGroupLayout, modelUniBindGroupLayout],
-    });
-
-    const depthStencilFormat = 'depth24plus';
-
-    const pipeline = device.createRenderPipeline({
-        layout: pipelineLayout,
-        vertex: {
-            module: device.createShaderModule({
-                code: basicVertWGSL,
-            }),
-            entryPoint: 'main',
-            buffers: [
-                {
-                    // TODO(@darzu): the buffer index should be connected to the pool probably?
-                    arrayStride: defaultMeshPoolOpts.vertByteSize,
-                    attributes: [
-                        {
-                            // position
-                            shaderLocation: 0,
-                            offset: 0,
-                            format: 'float32x3',
-                        },
-                        {
-                            // color
-                            shaderLocation: 1,
-                            offset: 4 * 3,
-                            format: 'float32x3',
-                        },
-                        // {
-                        //     // normals
-                        //     shaderLocation: 1,
-                        //     offset: 0,
-                        //     format: 'float32x3',
-                        // },
-                        // {
-                        //     // uv
-                        //     shaderLocation: 1,
-                        //     offset: cubeUVOffset,
-                        //     format: 'float32x2',
-                        // },
-                    ],
-                },
-                {
-                    // per-instance data
-                    stepMode: "instance",
-                    arrayStride: instanceByteSize,
-                    attributes: [
-                        {
-                            // color
-                            shaderLocation: 2,
-                            offset: 0,
-                            format: 'float32x3',
-                        },
-                    ],
-                },
-            ],
-        },
-        fragment: {
-            module: device.createShaderModule({
-                code: vertexPositionColorWGSL,
-            }),
-            entryPoint: 'main',
-            targets: [
-                {
-                    format: swapChainFormat,
-                },
-            ],
-        },
-        primitive: {
-            topology: 'triangle-list',
-
-            // Backface culling since the cube is solid piece of geometry.
-            // Faces pointing away from the camera will be occluded by faces
-            // pointing toward the camera.
-            cullMode: 'back',
-            // frontFace: 'ccw', // TODO(dz):
-        },
-
-        // Enable depth testing so that the fragment closest to the camera
-        // is rendered in front.
-        depthStencil: {
-            depthWriteEnabled: true,
-            depthCompare: 'less',
-            format: depthStencilFormat,
-        },
-        multisample: {
-            count: sampleCount,
-        },
-    });
-
-    const depthTexture = device.createTexture({
-        size: { width: canvasRef.width, height: canvasRef.width },
-        format: depthStencilFormat,
-        sampleCount,
-        usage: GPUTextureUsage.RENDER_ATTACHMENT,
-    });
-
-
-    // Declare swapchain image handles
-    let colorTexture: GPUTexture = device.createTexture({
-        size: {
-            width: canvasRef.width,
-            height: canvasRef.height,
-        },
-        sampleCount,
-        format: swapChainFormat,
-        usage: GPUTextureUsage.RENDER_ATTACHMENT,
-    });;
-    let colorTextureView: GPUTextureView = colorTexture.createView();
-
-    const colorAtt: GPURenderPassColorAttachmentNew = {
-        view: colorTextureView,
-        resolveTarget: swapChain.getCurrentTexture().createView(),
-        loadValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
-        storeOp: 'store',
-    };
-    const renderPassDescriptor = {
-        colorAttachments: [colorAtt],
-        depthStencilAttachment: {
-            view: depthTexture.createView(),
-
-            depthLoadValue: 1.0,
-            depthStoreOp: 'store',
-            stencilLoadValue: 0,
-            stencilStoreOp: 'store',
-        },
-    } as const;
-
-
-    meshPool.doUpdate(pipeline, [
+    meshPool.addMeshes([
         PLANE,
         CUBE,
         CUBE,
@@ -631,29 +321,7 @@ async function init(canvasRef: HTMLCanvasElement) {
     playerM.transform = playerT.getTransform();
     meshPool.applyMeshTransform(playerM)
 
-    // create render bundle
-    const bundleRenderDesc: GPURenderBundleEncoderDescriptor = {
-        colorFormats: [swapChainFormat],
-        depthStencilFormat: depthStencilFormat,
-        sampleCount,
-    }
-
-    const bundleEncoder = device.createRenderBundleEncoder(bundleRenderDesc);
-    // const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
-    bundleEncoder.setPipeline(pipeline);
-    bundleEncoder.setBindGroup(0, sharedUniBindGroup);
-    bundleEncoder.setVertexBuffer(0, meshPool._vertBuffer);
-    bundleEncoder.setVertexBuffer(1, instanceDataBuffer);
-    bundleEncoder.setIndexBuffer(meshPool._indexBuffer, 'uint16');
-    // TODO(@darzu): one draw call per mesh?
-    const uniOffset = [0];
-    for (let m of meshPool._meshes) {
-        // TODO(@darzu): set bind group
-        uniOffset[0] = m.modelUniByteOffset;
-        bundleEncoder.setBindGroup(1, modelUniBindGroup, uniOffset);
-        bundleEncoder.drawIndexed(m.model.tri.length * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-    }
-    const renderBundle = bundleEncoder.finish()
+    const bundle = meshRenderer.createRenderBundle();
 
     function frame(time: number) {
         // Sample is no longer the active page.
@@ -700,25 +368,15 @@ async function init(canvasRef: HTMLCanvasElement) {
         // const transformationMatrix = getTransformationMatrix();
         // console.dir(transformationMatrix)
         device.queue.writeBuffer(
-            sharedUniBuffer,
+            meshRenderer.sharedUniBuffer,
             0,
             transformationMatrix.buffer,
             transformationMatrix.byteOffset,
             transformationMatrix.byteLength
         );
 
-
-        // Acquire next image from swapchain
-        colorTexture = swapChain.getCurrentTexture();
-        colorTextureView = colorTexture.createView();
-        renderPassDescriptor.colorAttachments[0].resolveTarget = colorTextureView;
-
         const commandEncoder = device.createCommandEncoder();
-        const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
-
-        passEncoder.executeBundles([renderBundle]);
-
-        passEncoder.endPass();
+        meshRenderer.renderBundle(commandEncoder, bundle);
         device.queue.submit([commandEncoder.finish()]);
 
         requestAnimationFrame(frame);

@@ -71,14 +71,15 @@ export interface MeshMemoryPoolOptions {
     meshUniByteSize: number,
 }
 
-interface MeshMemoryPool {
+export interface MeshMemoryPool {
+    _opts: MeshMemoryPoolOptions,
     _vertBuffer: GPUBuffer,
     _indexBuffer: GPUBuffer,
     _meshUniBuffer: GPUBuffer,
     _meshes: Mesh[],
     _numVerts: number,
     _numTris: number,
-    doUpdate: (pipeline: GPURenderPipeline, meshesToAdd: MeshModel[]) => void,
+    addMeshes: (meshesToAdd: MeshModel[]) => void,
     applyMeshTransform: (m: Mesh) => void,
 }
 
@@ -115,7 +116,7 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
 
     const vertElStride = vertByteSize / Float32Array.BYTES_PER_ELEMENT;
 
-    function doUpdate(pipeline: GPURenderPipeline, meshesToAdd: MeshModel[]) {
+    function addMeshes(meshesToAdd: MeshModel[]) {
         const vertsMap = new Float32Array(_vertBuffer.getMappedRange())
         const indMap = new Uint16Array(_indexBuffer.getMappedRange());
 
@@ -179,13 +180,14 @@ export function createMeshMemoryPool(opts: MeshMemoryPoolOptions, device: GPUDev
     }
 
     return {
+        _opts: opts,
         _vertBuffer,
         _indexBuffer,
         _meshUniBuffer,
         _numVerts,
         _numTris,
         _meshes,
-        doUpdate,
+        addMeshes: addMeshes,
         applyMeshTransform,
     }
 }
