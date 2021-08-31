@@ -454,11 +454,7 @@ function addMeshes(meshesToAdd: MeshModel[], shadowCasters: boolean): Mesh[] {
         const transform = mat4.create() as Float32Array;
 
         const uniOffset = _meshes.length * meshUniByteSize;
-        device.queue.writeBuffer(
-            _meshUniBuffer,
-            uniOffset,
-            transform.buffer,
-        );
+        device.queue.writeBuffer(_meshUniBuffer, uniOffset, transform.buffer);
 
         const res: Mesh = {
             vertNumOffset: _numVerts,
@@ -481,12 +477,7 @@ function addMeshes(meshesToAdd: MeshModel[], shadowCasters: boolean): Mesh[] {
 }
 
 function writeMeshTransform(m: Mesh) {
-    // TODO(@darzu): MESH FORMAT
-    device.queue.writeBuffer(
-        _meshUniBuffer,
-        m.modelUniByteOffset,
-        (m.transform as Float32Array).buffer,
-    );
+    device.queue.writeBuffer(_meshUniBuffer, m.modelUniByteOffset, (m.transform as Float32Array).buffer);
 }
 
 const modelUniBindGroupLayout = device.createBindGroupLayout({
@@ -730,30 +721,17 @@ writeMeshTransform(playerM)
 const lightProjectionMatrix = mat4.ortho(mat4.create(), -80, 80, -80, 80, -200, 300);
 
 // init light
-const upVector = vec3.fromValues(0, 1, 0);
 const origin = vec3.fromValues(0, 0, 0);
-const lightX = 50;
-const lightY = 50;
-const lightPosition = vec3.fromValues(lightX, lightY, 0);
+const lightPosition = vec3.fromValues(50, 50, 0);
 const lightDir = vec3.subtract(vec3.create(), origin, lightPosition);
 vec3.normalize(lightDir, lightDir);
+const upVector = vec3.fromValues(0, 1, 0);
 const lightViewMatrix = mat4.create();
 mat4.lookAt(lightViewMatrix, lightPosition, origin, upVector);
 const lightViewProjMatrix = mat4.create();
 mat4.multiply(lightViewProjMatrix, lightProjectionMatrix, lightViewMatrix);
-const lightMatrixData = lightViewProjMatrix as Float32Array;
-device.queue.writeBuffer(
-    sharedUniBuffer,
-    bytesPerMat4 * 1, // second matrix
-    lightMatrixData.buffer,
-);
-
-const lightData = lightDir as Float32Array;
-device.queue.writeBuffer(
-    sharedUniBuffer,
-    bytesPerMat4 * 2, // third matrix
-    lightData.buffer,
-);
+device.queue.writeBuffer(sharedUniBuffer, bytesPerMat4 * 1, (lightViewProjMatrix as Float32Array).buffer);
+device.queue.writeBuffer(sharedUniBuffer, bytesPerMat4 * 2, (lightDir as Float32Array).buffer);
 
 const modelUniBindGroup = device.createBindGroup({
     layout: modelUniBindGroupLayout,
@@ -834,11 +812,7 @@ function renderFrame(timeMs: number) {
     mat4.invert(viewMatrix, viewMatrix);
     const viewProj = mat4.multiply(mat4.create(), projectionMatrix, viewMatrix) as Float32Array
 
-    device.queue.writeBuffer(
-        sharedUniBuffer,
-        0,
-        viewProj.buffer,
-    );
+    device.queue.writeBuffer(sharedUniBuffer, 0, viewProj.buffer);
 
     const commandEncoder = device.createCommandEncoder();
     const shadowPass = commandEncoder.beginRenderPass(shadowPassDescriptor);
@@ -874,16 +848,12 @@ function renderFrame(timeMs: number) {
     renderPassEncoder.endPass();
     device.queue.submit([commandEncoder.finish()]);
 
-    const jsTime = performance.now() - start;
-
     // weighted average
+    const jsTime = performance.now() - start;
     const avgWeight = 0.05
     avgJsTimeMs = avgJsTimeMs ? (1 - avgWeight) * avgJsTimeMs + avgWeight * jsTime : jsTime
     avgFrameTimeMs = avgFrameTimeMs ? (1 - avgWeight) * avgFrameTimeMs + avgWeight * frameTimeMs : frameTimeMs
-
     const avgFPS = 1000 / avgFrameTimeMs;
-
-    // TODO(@darzu): triangle, vertex, pixel counts
     debugDiv.innerText = `js: ${avgJsTimeMs.toFixed(2)}ms, frame: ${avgFrameTimeMs.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)}`
 }
 
