@@ -1,3 +1,11 @@
+# About
+More details coming "soon".
+
+See:
+https://twitter.com/sprigland
+https://www.patreon.com/darzu
+https://sprig.land
+
 # Getting Started
 ```
 cd src
