@@ -792,3 +792,40 @@ Cursed Problems in Game Design
 5 years of game dev: https://www.youtube.com/watch?v=NnI_1DOYt2A
   positioning isn't enough
   a hard trio to solve!: fun <-> easy to learn <-> tough to master
+
+Rim world: https://www.youtube.com/watch?v=VdqhHKjepiE
+  If you frame your problem the same way as everyone else, you'll get the same answers
+  If you frame your problem in a new ay, new answers will arise
+  Games attract us because they yield emotional experiences they find full filling
+    Arcade emotions: suspense, triumph, defeat
+  Graphics: not ugly, easily identifiable, minimal noise, intensity hierarchy, fast implementation, leave room for interpretation
+  everything ambiguous is interpreted as tribal, interpersonal politics
+    probably because the part of our mind that interprets social interactions is over developed
+    "germany did this, france did that"
+  storys r made of emotions and intentions
+  apophenia
+  task selection super critical:
+    process: 
+      satisficing (chose first acceptable option)
+      optimizing (compare all options, chose the best)
+    plans are a problem:
+      discard inspiration,
+      discard feedback,
+      discard test learning,
+  Ludeon method:
+    every idea -> MASSIVE ideas reservoir (sort regularly) -> per-person todo list
+    big list is essentially bubble sorted
+    ordering is often changed, nothing is fixed. When something is locked, its your mind not wanting to do work
+    redeciding over time reduces bias, not just one point in time
+    future knowledge advantage: you have the most information possible since ur acting late
+    status quo bias: bias towards keeping the plan
+    ideas fight there way to the top,
+      you might think an idea is really good but it has to compete vs everything else
+    ship-necessary razor: is it possible to ship without?
+      e.g. character animations, turns out, no one cared
+    when doing something contrarian:
+      need deep belief, you won't get as much validation from social stuff around you
+      we try to merge our beliefs with those around us
+    consider that in indie games: middle road beliefs get you middle road results: failure
+     
+  

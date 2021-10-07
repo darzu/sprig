@@ -29,3 +29,38 @@ Cool 3d sim:
 
 stylized water shader:
     https://alexanderameye.github.io/notes/stylized-water/
+
+Atlas water:
+    https://www.youtube.com/watch?v=Dqld965-Vv0
+    based on Tessendorf's "Simulating Ocean Water"
+    Only needs time and parameters,
+        clients and servers can simulate seperately
+        infinite tiles, seamless transitions
+    Downsides:
+        Uses FFTs, "FFTs are expensive"
+        large FFTs -> sacrafice perf
+        small FFTs -> either you see patterns or not enough detail
+        didn't like Phillips Spectrum
+    Used 4 frequency bands
+        These are just 4 tile sizes then combined ?
+    Used:
+        "duel fetch limited JONSWAP spectra"
+            "Joint North Sea Wave Project"
+        artistic control:
+            wind speed, direction, fetch (?),
+            spectrum peaking, directional distribution, override amplitude, low pass filter
+    For buoyancy:
+        Use discrete displacement samples along hull
+        Then use a plane fitting algorithm
+        Use plane as target transform, use spring to filter
+        https://www.geometrictools.com
+            https://www.geometrictools.com/GTE/Mathematics/SymmetricEigensolver3x3.h
+    Foam where displacement maps are swished together (wave tops)
+        "jacobian of displacements per frequency band"
+    Explosions, wakes, don't displace the water
+    Very cool protoype explosions:
+        https://youtu.be/Dqld965-Vv0?t=2578
+    Keeping water out of the boat:
+        use distance fields generated from the boat hull, 
+        don't render within the distance field
+    near land just bring waves down to level

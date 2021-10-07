@@ -77,3 +77,65 @@ Triangle grids (different from Redblob):
 
 Trihex grids / kagome lattices:
     https://www.boristhebrave.com/2021/05/27/some-triangle-grid-extensions/
+
+
+No Man's Sky talk: https://www.youtube.com/watch?v=C9RyEiEzMiU
+    "Engines dictate design decisions"
+    it's bad for progress if everybody uses someone else's engine
+    every new genre was created in a new engine
+    Engine veteran, wanted to write something new:
+        3D terrain (caves and overhangs)
+        procedurally textured
+        populated with buildings, forests, creatures
+        mountains several km tall
+        planets millions of sqr km
+        diverse planet shapes
+        AI flying between planets
+        untestable content
+    Y is no longer up (surprisingly difficult)
+    Always outside the bounds of float point
+    great rant about placing a waypoint mark w/ arbitrary planets:
+        https://youtu.be/C9RyEiEzMiU?t=728
+    2GB download at launch
+        (1.5GB was audio, 200MB UI, 300MB for all planet stuff and textures)
+    "proc gen for web dev is cool area"
+    noise gen (GPU) -> ploygonisation (CPU) -> Render+Physics+Population (CPU+GPU)
+    wanted: surprising, playable, performant
+    attempt 1: trilinear filtered low density layered perlin noise field
+        like minecraft. minecraft worlds are amazing
+        problem: if you don't use blocks, when everything is smooth it looks boring
+    attempt 2: high density perlin noise
+        post processing with feature selection, contrast, etc
+        too repetative, unrealistic
+        gradient is too constant, distribution of shape change isn't realistic
+    attempt 3: alter noise fields using real world DEM data as trainer
+        try to extract shape change data
+        in the real world, feautres are exponentially distributed
+        turns out, the real world is just too boring
+    attempt 4: "uber noise"
+        above experimentation took ~3-4 years
+        common noise methods:
+            perlin,
+                basic noise
+            simplex, 
+            billow, 
+                abs(perlin)
+            ridged, 
+                1-abs(perlin)
+            worley,
+            analytical derivative based alterations,
+                creates realistic erosion
+                have features change in relation to different octaves of noise
+                knowing the slope at a point helps you distribute features much better (e.g. erosion, rivers)
+            domain warping,
+                feeding noise into itself
+                (looks super cool!)
+    "Uber Noise":
+        Domain warping, slope erosion, altitude erosion, ridges, 
+        plateaus, terraces, rolling hills, non-repeating features,
+        analytical derivative,
+        as you go between octaves, have different emphasis on different octaves
+
+
+    when you're generating a single voxel, you cannot query the voxels around you
+        in general you can't get that context
