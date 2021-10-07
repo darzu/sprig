@@ -21,3 +21,8 @@ nodes.io:
     https://nodes.io
 
 https://tylr.fun
+
+TODO:
+- [ ] Render num literal
+- [ ] Render str literal
+- [ ] Render bool literal
