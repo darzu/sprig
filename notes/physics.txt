@@ -348,3 +348,33 @@ Interacting with 3D Geometry:
 Highly optimized collision detection in Titan Fall:
     https://www.youtube.com/watch?v=6BIfqfC1i7U
 
+"Anatomy of a Physics Engine"
+    https://www.gamedevs.org/uploads/anatomy-of-physics-engine.pdf
+        Counter acting goals:
+            Fast Computations / Interactivity
+            Robustness / Works no matter what
+            Accuracy / Physical correct or plausible
+            Problem size / The whole world
+        Common optimizations:
+            Collision Broadphase / Avoid costly narrowphase using
+                1. Approximate bounding shape
+                2. Spatial data structure and/or spatial sorting to avoid n^2 tests
+                Sweep and prune, uniform grid, dynamic BVH tree
+            Constraint Setup
+                Precompute info that is constant during all the iterations 
+                    Friction, jacobian data, cross products
+                Split the constraints for parallel processing (batching)
+            Simulation islands can “go to sleep” when they become stable
+                i.e. when forces and motion remain unchanged
+                When an object enters the island’s bounds...
+                ...the island wakes up
+    https://ubm-twvideo01.s3.amazonaws.com/o1/vault/GDC2014/Presentations/Coumans_Erwin_Physics_for_Game.pdf
+
+TO WATCH:
+    https://www.youtube.com/watch?v=7S-_vuoKgR4
+    https://www.youtube.com/watch?v=P-WP1yMOkc4
+    https://www.youtube.com/watch?v=1RphLzpQiJY
+    "See Gino van den Bergen's talk"
+        https://archive.org/details/GDC2013VanDenBergen_201511 ?
+    "GDC 2013 Physics Tutorial"
+    "Stop my Constraints from Blowing Up!"

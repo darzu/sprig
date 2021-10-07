@@ -95,3 +95,6 @@ Vaccume hose:
 
 Vertex shader for animation:
     https://www.youtube.com/watch?v=EUTE1SoOGrk
+
+TO WATCH:
+    https://www.youtube.com/watch?v=LNidsMesxSE
