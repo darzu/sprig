@@ -12,6 +12,9 @@ const SEND_DELAY_JITTER = 60.0;
 
 const MAX_MESSAGE_SIZE = 1000;
 
+// weight of existing skew measurement vs. new skew measurement
+const SKEW_WEIGHT = 0.9;
+
 enum MessageType {
   // Join a game in progress
   Join,
@@ -22,6 +25,9 @@ enum MessageType {
   // Reserve unique object IDs
   ReserveIDs,
   ReserveIDsResponse,
+  // Estimate clock skew
+  Ping,
+  Pong,
 }
 
 enum ObjectUpdateType {
@@ -189,6 +195,9 @@ export class Net {
   private nextUpdate: Record<ServerId, number> = {};
   private waiting: Record<ServerId, boolean> = {};
   private numDroppedUpdates: number = 0;
+  private pingSeq: number = 0;
+  private pingTime: number = 0;
+  private skewEstimate: Record<ServerId, number> = {};
 
   send(server: ServerId, message: ArrayBuffer, reliable: boolean) {
     // TODO: figure out if we need to do something smarter than just not sending if the connection isn't present
@@ -214,6 +223,19 @@ export class Net {
       unreliableBufferSize,
       numDroppedUpdates: this.numDroppedUpdates,
     };
+  }
+
+  private ping() {
+    this.pingSeq++;
+    let seq = this.pingSeq;
+    let time = performance.now();
+    this.pingTime = time;
+    let message = new Serializer(5);
+    message.writeUint8(MessageType.Ping);
+    message.writeUint32(seq);
+    for (let server of this.peers) {
+      this.send(server, message.buffer, false);
+    }
   }
 
   private setupChannel(server: string, chan: RTCDataChannel) {
@@ -278,6 +300,33 @@ export class Net {
       case MessageType.StateUpdateResponse: {
         let seq = deserializer.readUint32();
         this.synchronizers[server].ackUpdate(seq);
+        break;
+      }
+      case MessageType.Ping: {
+        let seq = deserializer.readUint32();
+        let resp = new Serializer(9);
+        resp.writeUint8(MessageType.Pong);
+        resp.writeUint32(seq);
+        resp.writeFloat32(performance.now());
+        this.send(server, resp.buffer, false);
+        break;
+      }
+      case MessageType.Pong: {
+        let time = performance.now();
+        let seq = deserializer.readUint32();
+        let remoteTime = deserializer.readFloat32();
+        // only want to handle this if it's in response to our latest ping
+        if (seq !== this.pingSeq) {
+          break;
+        }
+        let rtt = time - this.pingTime;
+        let skew = remoteTime - this.pingTime + rtt / 2;
+        if (!this.skewEstimate[server]) {
+          this.skewEstimate[server] = skew;
+        } else {
+          this.skewEstimate[server] =
+            SKEW_WEIGHT * this.skewEstimate[server] + (1 - SKEW_WEIGHT) * skew;
+        }
       }
     }
   }
@@ -486,6 +535,8 @@ export class Net {
   ) {
     this.state = state;
     this.ready = ready;
+    // ping all servers once per second to estimate clock skew
+    setInterval(this.ping, 1000);
     if (host === null) {
       // we're the host, just start up
       this.host = true;
