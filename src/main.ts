@@ -34,7 +34,7 @@ import { copyMotionProps, MotionProps } from "./phys_motion.js";
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
 const MAX_VERTICES = 21844;
-const ENABLE_NET = true;
+const ENABLE_NET = false;
 const AUTOSTART = true;
 
 enum ObjectType {
@@ -750,20 +750,26 @@ async function startGame(host: string | null) {
     requestAnimationFrame(frame);
   };
   if (ENABLE_NET) {
-    net = new Net(gameState, host, (id: string) => {
-      renderer.finishInit(); // TODO(@darzu): debugging
-      if (hosting) {
-        console.log("hello");
-        console.log(`Net up and running with id`);
-        console.log(`${id}`);
-        const url = `${window.location.href}?server=${id}`;
-        console.log(url);
-        if (navigator.clipboard) navigator.clipboard.writeText(id);
-        frame();
-      } else {
-        frame();
-      }
-    });
+    try {
+      net = new Net(gameState, host, (id: string) => {
+        renderer.finishInit(); // TODO(@darzu): debugging
+        if (hosting) {
+          console.log("hello");
+          console.log(`Net up and running with id`);
+          console.log(`${id}`);
+          const url = `${window.location.href}?server=${id}`;
+          console.log(url);
+          if (navigator.clipboard) navigator.clipboard.writeText(id);
+          frame();
+        } else {
+          frame();
+        }
+      });
+    } catch (e) {
+      console.error("Failed to initialize net");
+      console.error(e);
+      net = null;
+    }
   } else {
     renderer.finishInit(); // TODO(@darzu): debugging
     frame();

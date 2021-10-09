@@ -44,6 +44,8 @@ const _collisionRefl = vec3.create();
 
 const _motionAABBs: { aabb: AABB; id: number }[] = [];
 
+const _collidesWith: CollidesWith = new Map();
+
 export function stepPhysics(
   objDictUninit: Record<number, PhysicsObjectUninit>,
   dt: number
@@ -58,14 +60,13 @@ export function stepPhysics(
   const objs = Object.values(objDict);
 
   // move objects
-  moveObjects(objs, dt);
+  moveObjects(objDict, dt, _collidesWith);
 
   // over approximation during motion
   let motionCollidesWith: CollidesWith | null = null;
 
   // actuall collisions
-  let collidesWith: CollidesWith = new Map();
-  resetCollidesWithSet(collidesWith, objs);
+  resetCollidesWithSet(_collidesWith, objs);
   // TODO(@darzu): incorperate this into CollidesWith data struct?
   let collidesWithHashes: { [idSet: number]: boolean } = {};
   function idHash(aId: number, bId: number): number {
@@ -155,8 +156,8 @@ export function stepPhysics(
       // record the real collision
       const h = idHash(aId, bId);
       if (!collidesWithHashes[h]) {
-        collidesWith.get(aId)!.push(bId);
-        collidesWith.get(bId)!.push(aId);
+        _collidesWith.get(aId)!.push(bId);
+        _collidesWith.get(bId)!.push(aId);
         collidesWithHashes[h] = true;
       }
 
@@ -305,6 +306,6 @@ export function stepPhysics(
   }
 
   return {
-    collidesWith: motionCollidesWith!,
+    collidesWith: _collidesWith,
   };
 }

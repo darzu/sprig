@@ -1,6 +1,15 @@
 import { quat, vec3 } from "./gl-matrix.js";
 import { clamp } from "./math.js";
-import { AABB } from "./phys_broadphase.js";
+import { PhysicsObject } from "./phys.js";
+import { AABB, CollidesWith } from "./phys_broadphase.js";
+
+/*
+How to manage sliding on contact ?
+  Track contact pairs
+    track normal of collision
+    if still pushing into each other
+      zero out the normal-of-collision component
+ */
 
 export interface MotionProps {
   location: vec3;
@@ -90,16 +99,30 @@ export function didMove(o: {
   );
 }
 
+// TODO(@darzu):
+// function normalOfCollisions(a: PhysicsObject, b: PhysicsObject) {
+//   const x =
+// }
+
 // TODO(@darzu): physics step
 export function moveObjects(
-  set: { motion: MotionProps; worldAABB: AABB }[],
-  dt: number
+  set: Record<number, { id: number; motion: MotionProps; worldAABB: AABB }>,
+  dt: number,
+  lastCollidesWith: CollidesWith
 ) {
-  for (let { motion: m, worldAABB } of set) {
+  const objs = Object.values(set);
+  for (let { id, motion: m, worldAABB } of objs) {
     // TODO(@darzu): IMPLEMENT
     // if (m.atRest) {
     //   continue;
     // }
+    for (let oId of lastCollidesWith.get(id) ?? []) {
+      const other = set[oId];
+      if (!other) continue;
+
+      // TODO(@darzu): We need normal of collision and nearest points
+      //    we need this in the CollidesWith set. not good to compute here
+    }
 
     // clamp linear velocity based on size
     const vxMax = (worldAABB.max[0] - worldAABB.min[0]) / dt;
