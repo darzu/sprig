@@ -222,6 +222,7 @@ export class Net {
       reliableBufferSize,
       unreliableBufferSize,
       numDroppedUpdates: this.numDroppedUpdates,
+      skew: Object.values(this.skewEstimate),
     };
   }
 
@@ -536,7 +537,7 @@ export class Net {
     this.state = state;
     this.ready = ready;
     // ping all servers once per second to estimate clock skew
-    setInterval(this.ping, 1000);
+    setInterval(() => this.ping(), 1000);
     if (host === null) {
       // we're the host, just start up
       this.host = true;

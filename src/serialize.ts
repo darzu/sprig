@@ -4,8 +4,8 @@ import { vec3, quat } from "./gl-matrix.js";
 const LITTLE_ENDIAN = false;
 
 export class OutOfRoomError extends Error {
-  constructor() {
-    super("Out of room");
+  constructor(at: number) {
+    super(`Out of room (at index ${at}`);
   }
 }
 
@@ -24,15 +24,15 @@ export class Serializer {
 
   private index(at: number | null, length: number): number {
     if (at === null) {
-      if (this.cursor + length >= this.buffer.byteLength) {
-        throw new OutOfRoomError();
+      if (this.cursor + length > this.buffer.byteLength) {
+        throw new OutOfRoomError(this.cursor);
       }
       at = this.cursor;
       this.cursor += length;
       return at;
     }
-    if (at + length >= this.buffer.byteLength) {
-      throw new OutOfRoomError();
+    if (at + length > this.buffer.byteLength) {
+      throw new OutOfRoomError(at);
     }
     return at;
   }
