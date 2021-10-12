@@ -1,6 +1,5 @@
 import { vec3 } from "./gl-matrix.js";
 import { clamp } from "./math.js";
-import { CollidesWith } from "./phys.js";
 import { range } from "./util.js";
 import { vec3Floor } from "./utils-3d.js";
 
@@ -10,6 +9,7 @@ const BROAD_PHASE: "N^2" | "OCT" | "GRID" = "OCT";
 //   // one-to-many GameObject ids
 //   [id: number]: number[];
 // }
+export type CollidesWith = Map<number, number[]>;
 
 export function *collisionPairs(collidesWith: CollidesWith): IterableIterator<[number, number]> {
   // TODO(@darzu): is this effecient?

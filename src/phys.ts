@@ -32,6 +32,7 @@ export interface PhysicsObject {
 }
 export interface PhysicsResults {
   collidesWith: CollidesWith;
+  collidesData: Map<IdPair, CollisionData>;
 }
 
 // TODO(@darzu):
@@ -52,6 +53,14 @@ export interface CollisionData {
 
 export let _motionPairsLen = 0;
 
+export type IdPair = number;
+function idPair(aId: number, bId: number): IdPair {
+  // TODO(@darzu): need a better hash?
+  // TODO(@darzu): for perf, ensure this always produces a V8 SMI when given two <2^16 SMIs.
+  //                Also maybe constrain ids to <2^16
+  return aId < bId ? (aId << 16) & bId : (bId << 16) & aId;
+}
+
 const _collisionVec = vec3.create();
 const _collisionOverlap = vec3.create();
 const _collisionAdjOverlap = vec3.create();
@@ -60,6 +69,7 @@ const _collisionRefl = vec3.create();
 const _motionAABBs: { aabb: AABB; id: number }[] = [];
 
 const _collidesWith: CollidesWith = new Map();
+const _collidesData: Map<IdPair, CollisionData> = new Map();
 
 export function stepPhysics(
   objDictUninit: Record<number, PhysicsObjectUninit>,
@@ -82,12 +92,7 @@ export function stepPhysics(
 
   // actuall collisions
   resetCollidesWithSet(_collidesWith, objs);
-  // TODO(@darzu): incorperate this into CollidesWith data struct?
-  let collidesWithHashes: { [idSet: number]: boolean } = {};
-  function idHash(aId: number, bId: number): number {
-    // TODO(@darzu): need a better hash...
-    return (aId << 16) & bId;
-  }
+  _collidesData.clear();
 
   // update motion sweep AABBs
   for (let o of objs) {
@@ -167,17 +172,18 @@ export function stepPhysics(
       }
 
       // record the real collision
-      const h = idHash(aId, bId);
-      if (!collidesWithHashes[h]) {
+      const h = idPair(aId, bId);
+      if (!_collidesData.has(h)) {
         _collidesWith.get(aId)!.push(bId);
         _collidesWith.get(bId)!.push(aId);
-        collidesWithHashes[h] = true;
       }
 
       // compute collision info
-      const { aRebound, bRebound } = computeCollisionData(a, b, itr);
+      const colData = computeCollisionData(a, b, itr);
+      _collidesData.set(h, colData);
 
       // update how much we need to rebound objects by
+      const { aRebound, bRebound } = colData;
       if (aRebound < Infinity)
         nextObjMovFracs[aId] = Math.max(nextObjMovFracs[aId] || 0, aRebound);
       if (bRebound < Infinity)
@@ -233,6 +239,7 @@ export function stepPhysics(
 
   return {
     collidesWith: _collidesWith,
+    collidesData: _collidesData,
   };
 }
 
