@@ -114,8 +114,6 @@ export function stepPhysics(
   // TODO(@darzu): DEBUG
   // console.log(`pairs: ${motionPairs.map((p) => p.join("v")).join(",")}`);
 
-  // const PAD = 0.01;
-  const PAD = 0.001; // TODO(@darzu): not sure if this is wanted
   const COLLISION_ITRS = 100;
 
   // we'll track which objects have moved each itr,
@@ -161,66 +159,15 @@ export function stepPhysics(
         collidesWithHashes[h] = true;
       }
 
-      // determine how to readjust positions
-      let aFrac = Infinity;
-      let bFrac = Infinity;
+      const { aRebound, bRebound } = computeCollisionData(a, b, itr);
 
-      // for each of X,Y,Z dimensions
-      // TODO(@darzu): DEBUG
-      for (let i of [0, 1, 2]) {
-        // determine who is to the left in this dimension
-        let left: PhysicsObject;
-        let right: PhysicsObject;
-        if (a.lastMotion.location[i] < b.lastMotion.location[i]) {
-          left = a;
-          right = b;
-        } else {
-          left = b;
-          right = a;
-        }
-
-        const overlap = left.worldAABB.max[i] - right.worldAABB.min[i];
-        if (overlap <= 0) continue; // no overlap to deal with
-
-        const leftMaxContrib = Math.max(
-          0,
-          left.motion.location[i] - left.lastMotion.location[i]
-        );
-        const rightMaxContrib = Math.max(
-          0,
-          right.lastMotion.location[i] - right.motion.location[i]
-        );
-        if (leftMaxContrib + rightMaxContrib < overlap - PAD * itr) {
-          continue;
-        }
-        if (leftMaxContrib === 0 && rightMaxContrib === 0)
-          // no movement possible or necessary
-          continue;
-
-        // TODO(@darzu): wait, these fractions are slightly wrong, I need to account for leftFracRemaining
-        const f = Math.min(
-          1.0,
-          (overlap + PAD) / (leftMaxContrib + rightMaxContrib)
-        );
-
-        // update the dimension-spanning "a" and "b" fractions
-        const aMaxContrib = left === a ? leftMaxContrib : rightMaxContrib;
-        const bMaxContrib = left === b ? leftMaxContrib : rightMaxContrib;
-        if (0 < aMaxContrib) {
-          aFrac = Math.min(aFrac, f);
-        }
-        if (0 < bMaxContrib) {
-          bFrac = Math.min(bFrac, f);
-        }
-      }
-
-      if (aFrac < Infinity)
-        nextObjMovFracs[aId] = Math.max(nextObjMovFracs[aId] || 0, aFrac);
-      if (bFrac < Infinity)
-        nextObjMovFracs[bId] = Math.max(nextObjMovFracs[bId] || 0, bFrac);
+      if (aRebound < Infinity)
+        nextObjMovFracs[aId] = Math.max(nextObjMovFracs[aId] || 0, aRebound);
+      if (bRebound < Infinity)
+        nextObjMovFracs[bId] = Math.max(nextObjMovFracs[bId] || 0, bRebound);
     }
 
-    // adjust objects backward to compensate for collisions
+    // adjust objects Rebound to compensate for collisions
     anyMovement = false;
     for (let o of objs) {
       let movFrac = nextObjMovFracs[o.id];
@@ -270,4 +217,95 @@ export function stepPhysics(
   return {
     collidesWith: _collidesWith,
   };
+}
+
+export interface CollisionData {
+  aId: number;
+  bId: number;
+  aRebound: number;
+  bRebound: number;
+  aOverlap: vec3;
+  bOverlap: vec3;
+}
+
+function computeCollisionData(
+  a: PhysicsObject,
+  b: PhysicsObject,
+  itr: number
+): CollisionData {
+  const PAD = 0.001; // TODO(@darzu): not sure if this is wanted
+
+  // determine how to readjust positions
+  let aRebound = Infinity;
+  let aDim = -1;
+  let aOverlapNum = 0;
+  let bRebound = Infinity;
+  let bDim = -1;
+  let bOverlapNum = 0;
+
+  // for each of X,Y,Z dimensions
+  for (let i of [0, 1, 2]) {
+    // determine who is to the left in this dimension
+    let left: PhysicsObject;
+    let right: PhysicsObject;
+    if (a.lastMotion.location[i] < b.lastMotion.location[i]) {
+      left = a;
+      right = b;
+    } else {
+      left = b;
+      right = a;
+    }
+
+    const overlap = left.worldAABB.max[i] - right.worldAABB.min[i];
+    if (overlap <= 0) continue; // no overlap to deal with
+
+    const leftMaxContrib = Math.max(
+      0,
+      left.motion.location[i] - left.lastMotion.location[i]
+    );
+    const rightMaxContrib = Math.max(
+      0,
+      right.lastMotion.location[i] - right.motion.location[i]
+    );
+    if (leftMaxContrib + rightMaxContrib < overlap - PAD * itr) continue;
+    if (leftMaxContrib === 0 && rightMaxContrib === 0)
+      // no movement possible or necessary
+      continue;
+
+    // TODO(@darzu): wait, these fractions are slightly wrong, I need to account for leftFracRemaining
+    const f = Math.min(
+      1.0,
+      (overlap + PAD) / (leftMaxContrib + rightMaxContrib)
+    );
+
+    // update the dimension-spanning "a" and "b" fractions
+    const aMaxContrib = left === a ? leftMaxContrib : rightMaxContrib;
+    const bMaxContrib = left === b ? leftMaxContrib : rightMaxContrib;
+    if (0 < aMaxContrib) {
+      if (f < aRebound) {
+        aRebound = f;
+        aDim = i;
+        aOverlapNum = overlap;
+      }
+    }
+    if (0 < bMaxContrib) {
+      if (f < bRebound) {
+        bRebound = f;
+        bDim = i;
+        bOverlapNum = overlap;
+      }
+    }
+  }
+
+  const aOverlap = vec3.fromValues(0, 0, 0);
+  aOverlap[aDim] =
+    Math.sign(a.lastMotion.location[aDim] - a.motion.location[aDim]) *
+    aOverlapNum;
+
+  const bOverlap = vec3.fromValues(0, 0, 0);
+  bOverlap[bDim] =
+    Math.sign(b.lastMotion.location[bDim] - b.motion.location[bDim]) *
+    bOverlapNum;
+
+  return { aId: a.id, bId: b.id, aRebound, bRebound, aOverlap, bOverlap };
 }
