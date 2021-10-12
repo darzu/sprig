@@ -2,7 +2,6 @@ import { mat4, quat, vec3 } from "./gl-matrix.js";
 import {
   AABB,
   checkCollisions,
-  CollidesWith,
   collisionPairs,
   doesOverlap,
   resetCollidesWithSet,
@@ -33,6 +32,22 @@ export interface PhysicsObject {
 }
 export interface PhysicsResults {
   collidesWith: CollidesWith;
+}
+
+// TODO(@darzu):
+// CollidesWith usage:
+//  is a object colliding?
+//    which objects is it colliding with?
+//  list all colliding pairs
+export type CollidesWith = Map<number, number[]>;
+
+export interface CollisionData {
+  aId: number;
+  bId: number;
+  aRebound: number;
+  bRebound: number;
+  aOverlap: vec3;
+  bOverlap: vec3;
 }
 
 export let _motionPairsLen = 0;
@@ -159,8 +174,10 @@ export function stepPhysics(
         collidesWithHashes[h] = true;
       }
 
+      // compute collision info
       const { aRebound, bRebound } = computeCollisionData(a, b, itr);
 
+      // update how much we need to rebound objects by
       if (aRebound < Infinity)
         nextObjMovFracs[aId] = Math.max(nextObjMovFracs[aId] || 0, aRebound);
       if (bRebound < Infinity)
@@ -217,15 +234,6 @@ export function stepPhysics(
   return {
     collidesWith: _collidesWith,
   };
-}
-
-export interface CollisionData {
-  aId: number;
-  bId: number;
-  aRebound: number;
-  bRebound: number;
-  aOverlap: vec3;
-  bOverlap: vec3;
 }
 
 function computeCollisionData(
@@ -297,7 +305,7 @@ function computeCollisionData(
     }
   }
 
-  const aOverlap = vec3.fromValues(0, 0, 0);
+  const aOverlap = vec3.fromValues(0, 0, 0); // TODO(@darzu): perf; unnecessary alloc
   aOverlap[aDim] =
     Math.sign(a.lastMotion.location[aDim] - a.motion.location[aDim]) *
     aOverlapNum;

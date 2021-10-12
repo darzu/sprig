@@ -2,18 +2,13 @@ import { mat4, vec3, quat } from "./gl-matrix.js";
 import { Serializer, Deserializer } from "./serialize.js";
 import { Mesh, MeshHandle } from "./mesh-pool.js";
 import { Renderer } from "./render_webgpu.js";
-import {
-  AABB,
-  checkCollisions,
-  CollidesWith,
-  copyAABB,
-} from "./phys_broadphase.js";
+import { AABB, checkCollisions, copyAABB } from "./phys_broadphase.js";
 import {
   copyMotionProps,
   createMotionProps,
   MotionProps,
 } from "./phys_motion.js";
-import { stepPhysics } from "./phys.js";
+import { CollidesWith, stepPhysics } from "./phys.js";
 import { Inputs } from "./inputs.js";
 
 const ERROR_SMOOTHING_FACTOR = 0.8;

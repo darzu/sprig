@@ -1,7 +1,7 @@
 import { quat, vec3 } from "./gl-matrix.js";
 import { clamp } from "./math.js";
-import { PhysicsObject } from "./phys.js";
-import { AABB, CollidesWith } from "./phys_broadphase.js";
+import { CollidesWith, PhysicsObject } from "./phys.js";
+import { AABB } from "./phys_broadphase.js";
 
 /*
 How to manage sliding on contact ?
