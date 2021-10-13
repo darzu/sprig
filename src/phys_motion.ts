@@ -147,7 +147,7 @@ export function moveObjects(
       const overlap = data.aId === id ? data.aOverlap : data.bOverlap;
       const reboundDir = vec3.normalize(vec3.create(), overlap);
       vec3.negate(reboundDir, reboundDir);
-      const aInDirOfB = vec3.dot(m.linearVelocity, reboundDir);
+      const aInDirOfB = vec3.dot(constrainedVelocity, reboundDir);
       if (aInDirOfB > 0) {
         // TODO(@darzu): re-enable
         vec3.sub(
@@ -179,7 +179,9 @@ export function moveObjects(
     }
 
     // change location according to linear velocity
+    // TODO(@darzu): DEBUGGING
     delta = vec3.scale(delta, constrainedVelocity, dt);
+    // delta = vec3.scale(delta, m.linearVelocity, dt);
     vec3.add(m.location, m.location, delta);
 
     // change rotation according to angular velocity
