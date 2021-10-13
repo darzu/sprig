@@ -342,6 +342,9 @@ export interface CameraProps {
   location: vec3;
 }
 
+// TODO(@darzu): for debugging
+export let _playerId: number = -1;
+
 class CubeGameState extends GameState {
   players: Record<number, Player>;
   camera: CameraProps;
@@ -419,7 +422,9 @@ class CubeGameState extends GameState {
       }
 
       // create player
-      this.addPlayer();
+      const [_, playerObj] = this.addPlayer();
+      // TODO(@darzu): debug
+      _playerId = playerObj.id;
       // have added our objects, can unmap buffers
       // TODO(@darzu): debug
       // this.renderer.finishInit();

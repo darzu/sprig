@@ -1,4 +1,5 @@
 import { mat4, quat, vec3 } from "./gl-matrix.js";
+import { _playerId } from "./main.js";
 import {
   AABB,
   checkCollisions,
@@ -13,6 +14,7 @@ import {
   MotionProps,
   moveObjects,
 } from "./phys_motion.js";
+import { __isSMI } from "./util.js";
 
 export interface PhysicsObjectUninit {
   id: number;
@@ -54,11 +56,14 @@ export interface CollisionData {
 export let _motionPairsLen = 0;
 
 export type IdPair = number;
-function idPair(aId: number, bId: number): IdPair {
+export function idPair(aId: number, bId: number): IdPair {
   // TODO(@darzu): need a better hash?
   // TODO(@darzu): for perf, ensure this always produces a V8 SMI when given two <2^16 SMIs.
   //                Also maybe constrain ids to <2^16
-  return aId < bId ? (aId << 16) & bId : (bId << 16) & aId;
+  const h = aId < bId ? (aId << 16) ^ bId : (bId << 16) ^ aId;
+  // TODO(@darzu): DEBUGGING for perf, see comments in __isSMI
+  if (!__isSMI(h)) console.error(`id pair hash isn't SMI: ${h}`);
+  return h;
 }
 
 const _collisionVec = vec3.create();
@@ -85,7 +90,7 @@ export function stepPhysics(
   const objs = Object.values(objDict);
 
   // move objects
-  moveObjects(objDict, dt, _collidesWith);
+  moveObjects(objDict, dt, _collidesWith, _collidesData);
 
   // over approximation during motion
   let motionCollidesWith: CollidesWith | null = null;
@@ -154,6 +159,8 @@ export function stepPhysics(
 
     // enumerate the possible collisions, looking for objects that need to pushed apart
     for (let [aId, bId] of motionPairs) {
+      if (bId < aId) throw `a,b id pair in wrong order ${bId} > ${aId}`;
+
       // did one of these objects move?
       if (!lastObjMovs[aId] && !lastObjMovs[bId]) continue;
 
@@ -173,9 +180,18 @@ export function stepPhysics(
 
       // record the real collision
       const h = idPair(aId, bId);
+      // TODO(@darzu): DEBUG
+      // if (_playerId === aId || _playerId === bId) {
+      //   console.log(`new hash w/ ${aId}-${bId}: ${h}`);
+      // }
       if (!_collidesData.has(h)) {
         _collidesWith.get(aId)!.push(bId);
         _collidesWith.get(bId)!.push(aId);
+
+        // TODO(@darzu): DEBUG
+        // if (_playerId === aId || _playerId === bId) {
+        //   console.log(`new col w/ ${aId}-${bId}`);
+        // }
       }
 
       // compute collision info

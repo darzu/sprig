@@ -1,7 +1,9 @@
 import { quat, vec3 } from "./gl-matrix.js";
+import { _playerId } from "./main.js";
 import { clamp } from "./math.js";
-import { CollidesWith, PhysicsObject } from "./phys.js";
+import { CollidesWith, CollisionData, idPair, IdPair } from "./phys.js";
 import { AABB } from "./phys_broadphase.js";
+import { vec3Dbg } from "./utils-3d.js";
 
 /*
 How to manage sliding on contact ?
@@ -108,21 +110,16 @@ export function didMove(o: {
 export function moveObjects(
   set: Record<number, { id: number; motion: MotionProps; worldAABB: AABB }>,
   dt: number,
-  lastCollidesWith: CollidesWith
+  lastCollidesWith: CollidesWith,
+  lastCollidesData: Map<IdPair, CollisionData>
 ) {
   const objs = Object.values(set);
+
   for (let { id, motion: m, worldAABB } of objs) {
     // TODO(@darzu): IMPLEMENT
     // if (m.atRest) {
     //   continue;
     // }
-    for (let oId of lastCollidesWith.get(id) ?? []) {
-      const other = set[oId];
-      if (!other) continue;
-
-      // TODO(@darzu): We need normal of collision and nearest points
-      //    we need this in the CollidesWith set. not good to compute here
-    }
 
     // clamp linear velocity based on size
     const vxMax = (worldAABB.max[0] - worldAABB.min[0]) / dt;
@@ -132,8 +129,57 @@ export function moveObjects(
     m.linearVelocity[1] = clamp(m.linearVelocity[1], -vyMax, vyMax);
     m.linearVelocity[2] = clamp(m.linearVelocity[2], -vzMax, vzMax);
 
+    // check for collision constraints
+    const constrainedVelocity = vec3.clone(m.linearVelocity);
+    for (let oId of lastCollidesWith.get(id) ?? []) {
+      const other = set[oId];
+      if (!other) continue;
+
+      const data = lastCollidesData.get(idPair(id, oId));
+      if (!data) continue;
+
+      // // TODO(@darzu): DEBUG
+      // if (_playerId === id) {
+      //   console.log(`col w/ ${oId}`);
+      // }
+
+      // TODO(@darzu): this is a mess
+      const overlap = data.aId === id ? data.aOverlap : data.bOverlap;
+      const reboundDir = vec3.normalize(vec3.create(), overlap);
+      vec3.negate(reboundDir, reboundDir);
+      const aInDirOfB = vec3.dot(m.linearVelocity, reboundDir);
+      if (aInDirOfB > 0) {
+        // TODO(@darzu): re-enable
+        vec3.sub(
+          constrainedVelocity,
+          constrainedVelocity,
+          vec3.scale(vec3.create(), reboundDir, aInDirOfB)
+        );
+
+        // TODO(@darzu): DEBUG
+        if (id === _playerId) {
+          console.log(
+            `playerV: ${vec3Dbg(m.linearVelocity)}->${vec3Dbg(
+              constrainedVelocity
+            )}`
+          );
+        }
+      } else {
+        // if (_playerId === id) {
+        //   console.log(
+        //     `${vec3Dbg(m.linearVelocity)} dot ${vec3Dbg(
+        //       reboundDir
+        //     )} = aInDirOfB ${aInDirOfB}`
+        //   );
+        // }
+      }
+
+      // TODO(@darzu): We need normal of collision and nearest points
+      //    we need this in the CollidesWith set. not good to compute here
+    }
+
     // change location according to linear velocity
-    delta = vec3.scale(delta, m.linearVelocity, dt);
+    delta = vec3.scale(delta, constrainedVelocity, dt);
     vec3.add(m.location, m.location, delta);
 
     // change rotation according to angular velocity
