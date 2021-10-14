@@ -1,7 +1,7 @@
 import { quat, vec3 } from "./gl-matrix.js";
 import { _playerId } from "./main.js";
 import { clamp } from "./math.js";
-import { CollidesWith, CollisionData, idPair, IdPair } from "./phys.js";
+import { CollidesWith, idPair, IdPair, ContactData } from "./phys.js";
 import { AABB } from "./phys_broadphase.js";
 import { vec3Dbg } from "./utils-3d.js";
 
@@ -111,7 +111,7 @@ export function moveObjects(
   set: Record<number, { id: number; motion: MotionProps; worldAABB: AABB }>,
   dt: number,
   lastCollidesWith: CollidesWith,
-  lastCollidesData: Map<IdPair, CollisionData>
+  lastContactData: Map<IdPair, ContactData>
 ) {
   const objs = Object.values(set);
 
@@ -135,7 +135,7 @@ export function moveObjects(
       const other = set[oId];
       if (!other) continue;
 
-      const data = lastCollidesData.get(idPair(id, oId));
+      const data = lastContactData.get(idPair(id, oId));
       if (!data) continue;
 
       // // TODO(@darzu): DEBUG
@@ -144,9 +144,14 @@ export function moveObjects(
       // }
 
       // TODO(@darzu): this is a mess
-      const overlap = data.aId === id ? data.aOverlap : data.bOverlap;
-      const reboundDir = vec3.normalize(vec3.create(), overlap);
-      vec3.negate(reboundDir, reboundDir);
+      const reboundDir = vec3.clone(data.bToANorm);
+      if (id === data.aId) vec3.negate(reboundDir, reboundDir);
+      // vec3.scale(reboundDir, reboundDir, data.dist);
+
+      // if (id === _playerId) console.log(`rd: ${vec3Dbg(reboundDir)}`);
+      // const overlap = data.aId === id ? data.aOverlap : data.bOverlap;
+      // const reboundDir = vec3.normalize(vec3.create(), overlap);
+      // vec3.negate(reboundDir, reboundDir);
       const aInDirOfB = vec3.dot(constrainedVelocity, reboundDir);
       if (aInDirOfB > 0) {
         // TODO(@darzu): re-enable

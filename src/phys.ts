@@ -35,7 +35,8 @@ export interface PhysicsObject {
 }
 export interface PhysicsResults {
   collidesWith: CollidesWith;
-  collidesData: Map<IdPair, CollisionData>;
+  reboundData: Map<IdPair, ReboundData>;
+  contactData: Map<IdPair, ContactData>;
 }
 
 // TODO(@darzu):
@@ -45,13 +46,20 @@ export interface PhysicsResults {
 //  list all colliding pairs
 export type CollidesWith = Map<number, number[]>;
 
-export interface CollisionData {
+export interface ReboundData {
   aId: number;
   bId: number;
   aRebound: number;
   bRebound: number;
   aOverlap: vec3;
   bOverlap: vec3;
+}
+
+export interface ContactData {
+  aId: number;
+  bId: number;
+  bToANorm: vec3;
+  dist: number;
 }
 
 export let _motionPairsLen = 0;
@@ -72,7 +80,8 @@ const _collisionRefl = vec3.create();
 const _motionAABBs: { aabb: AABB; id: number }[] = [];
 
 const _collidesWith: CollidesWith = new Map();
-const _collidesData: Map<IdPair, CollisionData> = new Map();
+const _reboundData: Map<IdPair, ReboundData> = new Map();
+const _contactData: Map<IdPair, ContactData> = new Map();
 
 const PAD = 0.001; // TODO(@darzu): not sure if this is wanted
 
@@ -90,7 +99,7 @@ export function stepPhysics(
   const objs = Object.values(objDict);
 
   // move objects
-  moveObjects(objDict, dt, _collidesWith, _collidesData);
+  moveObjects(objDict, dt, _collidesWith, _contactData);
 
   // update motion sweep AABBs
   for (let o of objs) {
@@ -167,7 +176,8 @@ export function stepPhysics(
   // }
 
   resetCollidesWithSet(_collidesWith, objs);
-  _collidesData.clear();
+  _reboundData.clear();
+  _contactData.clear();
 
   // check for possible collisions using the motion swept AABBs
   let motionCollidesWith: CollidesWith | null = null;
@@ -235,7 +245,7 @@ export function stepPhysics(
       // if (_playerId === aId || _playerId === bId) {
       //   console.log(`new hash w/ ${aId}-${bId}: ${h}`);
       // }
-      if (!_collidesData.has(h)) {
+      if (!_contactData.has(h)) {
         _collidesWith.get(aId)!.push(bId);
         _collidesWith.get(bId)!.push(aId);
 
@@ -245,12 +255,16 @@ export function stepPhysics(
         // }
       }
 
-      // compute collision info
-      const colData = computeCollisionData(a, b, itr);
-      _collidesData.set(h, colData);
+      // compute rebound info
+      const rebData = computeReboundData(a, b, itr);
+      _reboundData.set(h, rebData);
+
+      // compute contact info
+      const contData = computeContactData(a, b);
+      _contactData.set(h, contData);
 
       // update how much we need to rebound objects by
-      const { aRebound, bRebound } = colData;
+      const { aRebound, bRebound } = rebData;
       if (aRebound < Infinity)
         nextObjMovFracs[aId] = Math.max(nextObjMovFracs[aId] || 0, aRebound);
       if (bRebound < Infinity)
@@ -306,15 +320,56 @@ export function stepPhysics(
 
   return {
     collidesWith: _collidesWith,
-    collidesData: _collidesData,
+    reboundData: _reboundData,
+    contactData: _contactData,
   };
 }
 
-function computeCollisionData(
+function computeContactData(a: PhysicsObject, b: PhysicsObject): ContactData {
+  let dist = -Infinity;
+  let dim = -1;
+  let dir = 0;
+
+  // for each of X,Y,Z dimensions
+  for (let i = 0; i < 3; i++) {
+    // determine who is to the left in this dimension
+    let left: PhysicsObject;
+    let right: PhysicsObject;
+    if (a.lastMotion.location[i] < b.lastMotion.location[i]) {
+      left = a;
+      right = b;
+    } else {
+      left = b;
+      right = a;
+    }
+
+    const newDist = right.worldAABB.min[i] - left.worldAABB.max[i];
+    if (dist < newDist) {
+      dist = newDist;
+      dim = i;
+      dir = a === left ? -1 : 1;
+    }
+  }
+
+  // TODO(@darzu): debug
+  // if (a.id === _playerId || b.id === _playerId) console.log(`dist: ${dist}`);
+
+  const bToANorm = vec3.fromValues(0, 0, 0);
+  if (dim >= 0) bToANorm[dim] = dir;
+
+  return {
+    aId: a.id,
+    bId: b.id,
+    bToANorm,
+    dist,
+  };
+}
+
+function computeReboundData(
   a: PhysicsObject,
   b: PhysicsObject,
   itr: number
-): CollisionData {
+): ReboundData {
   // determine how to readjust positions
   let aRebound = Infinity;
   let aDim = -1;
@@ -324,7 +379,7 @@ function computeCollisionData(
   let bOverlapNum = 0;
 
   // for each of X,Y,Z dimensions
-  for (let i of [0, 1, 2]) {
+  for (let i = 0; i < 3; i++) {
     // determine who is to the left in this dimension
     let left: PhysicsObject;
     let right: PhysicsObject;

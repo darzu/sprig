@@ -8,7 +8,7 @@ import {
   createMotionProps,
   MotionProps,
 } from "./phys_motion.js";
-import { CollidesWith, CollisionData, IdPair, stepPhysics } from "./phys.js";
+import { CollidesWith, ReboundData, IdPair, stepPhysics } from "./phys.js";
 import { Inputs } from "./inputs.js";
 
 const ERROR_SMOOTHING_FACTOR = 0.8;
@@ -177,7 +177,6 @@ export abstract class GameState {
   me: number;
   numObjects: number = 0;
   collidesWith: CollidesWith;
-  collidesData: Map<IdPair, CollisionData>;
 
   constructor(renderer: Renderer) {
     this.me = 0;
@@ -188,7 +187,6 @@ export abstract class GameState {
     this.deletedObjects = {};
     this.events = {};
     this.collidesWith = new Map();
-    this.collidesData = new Map();
   }
 
   abstract playerObject(playerId: number): GameObject;
@@ -304,7 +302,6 @@ export abstract class GameState {
     // move, check collisions
     const physRes = stepPhysics(this.objects, dt);
     this.collidesWith = physRes.collidesWith;
-    this.collidesData = physRes.collidesData;
 
     // UPDATE DERIVED STATE:
     for (let o of objs) {
