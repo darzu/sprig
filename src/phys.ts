@@ -5,6 +5,7 @@ import {
   checkCollisions,
   collisionPairs,
   doesOverlap,
+  doesTouch,
   resetCollidesWithSet,
 } from "./phys_broadphase.js";
 import {
@@ -66,15 +67,14 @@ export function idPair(aId: number, bId: number): IdPair {
   return h;
 }
 
-const _collisionVec = vec3.create();
-const _collisionOverlap = vec3.create();
-const _collisionAdjOverlap = vec3.create();
 const _collisionRefl = vec3.create();
 
 const _motionAABBs: { aabb: AABB; id: number }[] = [];
 
 const _collidesWith: CollidesWith = new Map();
 const _collidesData: Map<IdPair, CollisionData> = new Map();
+
+const PAD = 0.001; // TODO(@darzu): not sure if this is wanted
 
 export function stepPhysics(
   objDictUninit: Record<number, PhysicsObjectUninit>,
@@ -91,13 +91,6 @@ export function stepPhysics(
 
   // move objects
   moveObjects(objDict, dt, _collidesWith, _collidesData);
-
-  // over approximation during motion
-  let motionCollidesWith: CollidesWith | null = null;
-
-  // actuall collisions
-  resetCollidesWithSet(_collidesWith, objs);
-  _collidesData.clear();
 
   // update motion sweep AABBs
   for (let o of objs) {
@@ -119,7 +112,65 @@ export function stepPhysics(
     vec3.add(o.worldAABB.max, o.localAABB.max, o.motion.location);
   }
 
+  // TODO(@darzu): instead of full reseting, we should check
+  //  to see if each pair needs to be renewed
+  // renewal check:
+  //  are objects still adjacent to each other?
+  //  is there any "push" towards each other?
+  // TODO(@darzu): IMPLEMENT. Needs normal of collision and seperation
+  // const toClear: number[] = [];
+  // for (let [aId, bIds] of _collidesWith) {
+  //   for (let bId of bIds) {
+  //     const abId = idPair(aId, bId);
+  //     const lastData = _collidesData.get(abId);
+  //     const a = objDict[aId];
+  //     const b = objDict[bId];
+  //     if (!lastData || !a || !b) {
+  //       console.error(`missing collision data for ${aId}-${bId}`);
+  //       continue;
+  //     }
+
+  //     // colliding again so we don't need any adjacency checks
+  //     if (doesOverlap(a.worldAABB, b.worldAABB)) {
+  //       const newData = computeCollisionData(a, b, 0);
+  //       _collidesData.set(abId, newData);
+  //       continue;
+  //     }
+
+  //     // check for adjacency even if not colliding
+  //     // d2 = ((ax + avx)-(bx + bvx))^2 + (ay-by)^2  < (ax-bx)^2 + (ay-by)^2
+  //     const relMotion = vec3.sub(
+  //       vec3.create(),
+  //       a.motion.linearVelocity,
+  //       b.motion.linearVelocity
+  //     );
+  //     const aSepB = vec3.sub(
+  //       vec3.create(),
+  //       b.motion.location,
+  //       a.motion.location
+  //     );
+  //     const aTowardB = vec3.dot(relMotion, aSepB);
+  //     const aHeadingTowardsB = aTowardB > 0;
+  //     if (aHeadingTowardsB && doesTouch(a.worldAABB, b.worldAABB, 2 * PAD)) {
+  //       // TODO(@darzu): anything todo?
+  //       // we'll keep old collision data
+  //       continue;
+  //     }
+
+  //     // else, this collision isn't valid any more
+  //     _collidesData.delete(abId);
+
+  //     // if overlaps(aVel + (-lastOverlap),
+  //     // if
+  //     // lastData.aOverlap
+  //   }
+  // }
+
+  resetCollidesWithSet(_collidesWith, objs);
+  _collidesData.clear();
+
   // check for possible collisions using the motion swept AABBs
+  let motionCollidesWith: CollidesWith | null = null;
   if (_motionAABBs.length !== objs.length) _motionAABBs.length = objs.length;
   for (let i = 0; i < objs.length; i++) {
     if (!_motionAABBs[i]) {
@@ -264,8 +315,6 @@ function computeCollisionData(
   b: PhysicsObject,
   itr: number
 ): CollisionData {
-  const PAD = 0.001; // TODO(@darzu): not sure if this is wanted
-
   // determine how to readjust positions
   let aRebound = Infinity;
   let aDim = -1;
@@ -329,14 +378,16 @@ function computeCollisionData(
   }
 
   const aOverlap = vec3.fromValues(0, 0, 0); // TODO(@darzu): perf; unnecessary alloc
-  aOverlap[aDim] =
-    Math.sign(a.lastMotion.location[aDim] - a.motion.location[aDim]) *
-    aOverlapNum;
+  if (0 < aDim)
+    aOverlap[aDim] =
+      Math.sign(a.lastMotion.location[aDim] - a.motion.location[aDim]) *
+      aOverlapNum;
 
   const bOverlap = vec3.fromValues(0, 0, 0);
-  bOverlap[bDim] =
-    Math.sign(b.lastMotion.location[bDim] - b.motion.location[bDim]) *
-    bOverlapNum;
+  if (0 < bDim)
+    bOverlap[bDim] =
+      Math.sign(b.lastMotion.location[bDim] - b.motion.location[bDim]) *
+      bOverlapNum;
 
   return { aId: a.id, bId: b.id, aRebound, bRebound, aOverlap, bOverlap };
 }

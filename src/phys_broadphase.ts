@@ -396,6 +396,18 @@ export function enclosedBy(inner: AABB, outer: AABB) {
     outer.min[2] < inner.min[2]
   );
 }
+export function doesTouch(a: AABB, b: AABB, threshold: number) {
+  _doesOverlaps++; // TODO(@darzu): debugging
+  return (
+    true &&
+    b.min[0] + threshold <= a.max[0] &&
+    b.min[1] + threshold <= a.max[1] &&
+    b.min[2] + threshold <= a.max[2] &&
+    a.min[0] + threshold <= b.max[0] &&
+    a.min[1] + threshold <= b.max[1] &&
+    a.min[2] + threshold <= b.max[2]
+  );
+}
 export interface AABB {
   min: vec3;
   max: vec3;
