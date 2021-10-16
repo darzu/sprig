@@ -26,6 +26,15 @@ Graph rewriting:
 "Wave function collapse":
     https://github.com/mxgmn/WaveFunctionCollapse
     https://assetstore.unity.com/packages/tools/level-design/tessera-procedural-tile-based-generator-155425
+    https://www.youtube.com/watch?v=2SuvO4Gi7uY
+        explained like Sodoku
+        References:
+            https://marian42.de/article/wfc/
+            http://oskarstalberg.com/game/wave/wave.html
+            https://robertheaton.com/2018/12/17/wavefunction-collapse-algorithm/
+    https://www.youtube.com/watch?v=0bcZb-SsnrA
+        Bad North
+        
 
 "Delaunay triangulation of 2D points":
     Used by Redblob

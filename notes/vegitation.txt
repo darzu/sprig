@@ -181,4 +181,9 @@ Grass via compute shader:
   Fuzzy grass:
     https://twitter.com/BruteForceGame/status/1375856793088319500
 
+Animal crossing trees / pivot caching:
+  https://www.youtube.com/watch?v=V1nkv8g-oi0
+  one big mesh, store pivot points for each "leaf"
   
+Snow:
+  https://www.youtube.com/watch?v=BXo97H55EhA

@@ -96,5 +96,69 @@ Vaccume hose:
 Vertex shader for animation:
     https://www.youtube.com/watch?v=EUTE1SoOGrk
 
-TO WATCH:
+
+Animation Bootcamp: An Indie Approach to Procedural Animation    
     https://www.youtube.com/watch?v=LNidsMesxSE
+    "Do No Harm" to the gameplay
+        start with physics first
+    If your consistent, players will say "intuitive" and "responsive"
+        interactive means u can interrupt any animation at any time
+    Better to start with mapping gamepad straight to acceleration
+    Acceleration tilt does A LOT
+    2 frame animation wheel
+        pass pose, reach pose
+        match stride to ground
+    then another 2 frames for walking speed
+    then synchronize blend between walking and running
+    bounce: bounce more the slower, less the faster 
+        "b/c gravity is always constant" -> "if you only have have as long in the stride, u fall half as far"
+    interpolate between key frames
+        bicubic interp is better than linear (less jerky?)
+        spacial and velocity continuity
+    added a crouch frame "needed some squash"
+        lerp still isn't good, so used spring
+    added sync for crouch walking
+    2 more frames: jumping, w/ crouching spring
+    1 more frame: ball, for flipping in the air
+    2 more frames: rolling, tuck pose forward, tuck pose to the side
+    movement: 13 key frames
+        nice thing about so few: easy to add variation
+            e.g. variation where he's carying a spear
+    refinement:
+        inverse kinimatics, move joints a little based on terrain ?
+            no library, just a little trig
+    1 key frame for grabbing a ledge,
+        inverse kinimatics for smoothing nicely 
+    refinement:
+        look targets, moving head to track object
+        or moving torso to face enemy
+    refinement: secondary physics, 
+        e.g. cape, scabard, or ears
+        softness parameter for each bone,
+            so arms are little wobly
+    profiling: try different things until you find stuff that looks bad
+        e.g. jumping straight into a wall looked pretty dumb,
+            so changed that into a wall run and now it looks awesome
+    rag dolls:
+        originally box, eventually articulated
+        tried: adding delay, clutching limbs before falling
+        active ragdolls: limbs sorta try to do things before they fall
+        tried: 
+            pose matching, try to maintain pose (joint constraints)
+            animation matching, try to keep walking e.g.
+        animation tree:
+            far from surface, flail
+            close to surface, curl up
+    all these animation tricks work in first person or other animation contexts
+        spring for tweening
+        recoil spring
+    identify repeat animation tasks, extract them out as curves
+    instead of using IK to hold a ball, just use 2 frames: very large ball, very small ball and interpolate
+
+Ubisoft talks inverse kinimatics:
+    https://www.youtube.com/watch?v=KLjTU0yKS00
+    IK Rig: Procedural Pose Animation
+
+Vertex animation textures:
+    https://www.youtube.com/watch?v=NQ5Dllbxbz4
+    https://medium.com/tech-at-wildlife-studios/texture-animation-techniques-1daecb316657#

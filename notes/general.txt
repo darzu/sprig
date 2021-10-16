@@ -827,5 +827,13 @@ Rim world: https://www.youtube.com/watch?v=VdqhHKjepiE
       need deep belief, you won't get as much validation from social stuff around you
       we try to merge our beliefs with those around us
     consider that in indie games: middle road beliefs get you middle road results: failure
-     
-  
+
+TO WATCH / READ:
+  https://www.youtube.com/watch?v=1RphLzpQiJY
+  https://www.youtube.com/watch?v=P-WP1yMOkc4
+  https://www.youtube.com/watch?v=7S-_vuoKgR4
+  https://www.youtube.com/watch?v=KLjTU0yKS00
+  https://www.youtube.com/watch?v=2SuvO4Gi7uY
+  https://www.gamedevs.org/uploads/anatomy-of-physics-engine.pdf
+  https://www.toptal.com/game/video-game-physics-part-ii-collision-detection-for-solid-objects
+  http://realtimecollisiondetection.net
