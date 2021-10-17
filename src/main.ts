@@ -385,7 +385,11 @@ class CubeGameState extends GameState {
           const xPos = (x - NUM_PLANES_X / 2) * 20 + 10;
           const zPos = (z - NUM_PLANES_Z / 2) * 20;
           const parity = !!((x + z) % 2);
-          plane.motion.location = vec3.fromValues(xPos, -10, zPos);
+          plane.motion.location = vec3.fromValues(
+            xPos,
+            x + z - (NUM_PLANES_X + NUM_PLANES_Z),
+            zPos
+          );
           // plane.motion.location = vec3.fromValues(xPos + 10, -3, 12 + zPos);
           plane.color = parity ? LIGHT_BLUE : DARK_BLUE;
           this.addObject(plane);
@@ -424,6 +428,7 @@ class CubeGameState extends GameState {
       // create player
       const [_, playerObj] = this.addPlayer();
       // TODO(@darzu): debug
+      playerObj.motion.location[0] += 5;
       _playerId = playerObj.id;
       // have added our objects, can unmap buffers
       // TODO(@darzu): debug

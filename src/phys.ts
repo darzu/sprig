@@ -16,6 +16,7 @@ import {
   moveObjects,
 } from "./phys_motion.js";
 import { __isSMI } from "./util.js";
+import { vec3Dbg } from "./utils-3d.js";
 
 export interface PhysicsObjectUninit {
   id: number;
@@ -85,10 +86,14 @@ const _contactData: Map<IdPair, ContactData> = new Map();
 
 const PAD = 0.001; // TODO(@darzu): not sure if this is wanted
 
+export let __step = 0; // TODO(@darzu): DEBUG
+
 export function stepPhysics(
   objDictUninit: Record<number, PhysicsObjectUninit>,
   dt: number
 ): PhysicsResults {
+  __step++;
+
   // ensure all phys objects are fully initialized
   // TODO(@darzu): this is a little strange
   for (let o of Object.values(objDictUninit))
@@ -165,10 +170,15 @@ export function stepPhysics(
       // we'll keep old collision data
       const conData = computeContactData(a, b);
       _contactData.set(abId, conData);
+      // TODO(@darzu): dbg
+      // if (aId === _playerId || bId === _playerId)
+      //   console.log(`maintaining contact ${aId}-${bId} ${aTowardB}`);
       continue;
     }
 
     // else, this collision isn't valid any more
+    if (aId === _playerId || bId === _playerId)
+      console.log(`ending contact ${aId}-${bId} ${aTowardB}`);
     _contactData.delete(abId);
   }
 
@@ -263,7 +273,9 @@ export function stepPhysics(
         if (_contactData.has(h)) {
           console.log(
             // `rebounding player: ${rebData.aRebound}-${rebData.bRebound}`
-            `rebounding player w/ contact`
+            `${__step}: rebounding player w/ contact in dir ${vec3Dbg(
+              rebData.aOverlap
+            )}<->${vec3Dbg(rebData.bOverlap)}`
           );
         }
       }

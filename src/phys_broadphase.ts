@@ -400,12 +400,12 @@ export function doesTouch(a: AABB, b: AABB, threshold: number) {
   _doesOverlaps++; // TODO(@darzu): debugging
   return (
     true &&
-    b.min[0] + threshold <= a.max[0] &&
-    b.min[1] + threshold <= a.max[1] &&
-    b.min[2] + threshold <= a.max[2] &&
-    a.min[0] + threshold <= b.max[0] &&
-    a.min[1] + threshold <= b.max[1] &&
-    a.min[2] + threshold <= b.max[2]
+    b.min[0] < a.max[0] + threshold &&
+    b.min[1] < a.max[1] + threshold &&
+    b.min[2] < a.max[2] + threshold &&
+    a.min[0] < b.max[0] + threshold &&
+    a.min[1] < b.max[1] + threshold &&
+    a.min[2] < b.max[2] + threshold
   );
 }
 export interface AABB {

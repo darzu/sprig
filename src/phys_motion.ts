@@ -1,7 +1,7 @@
 import { quat, vec3 } from "./gl-matrix.js";
 import { _playerId } from "./main.js";
 import { clamp } from "./math.js";
-import { CollidesWith, idPair, IdPair, ContactData } from "./phys.js";
+import { CollidesWith, idPair, IdPair, ContactData, __step } from "./phys.js";
 import { AABB } from "./phys_broadphase.js";
 import { vec3Dbg } from "./utils-3d.js";
 
@@ -115,6 +115,58 @@ export function moveObjects(
 ) {
   const objs = Object.values(set);
 
+  // TODO(@darzu): re-use
+  const constrainedVelocities = new Map<number, vec3>();
+
+  // check for collision constraints
+  for (let [abId, data] of lastContactData) {
+    const bReboundDir = vec3.clone(data.bToANorm);
+    const aReboundDir = vec3.negate(vec3.create(), bReboundDir);
+
+    const a = set[data.aId];
+    const b = set[data.bId];
+
+    if (!!a) {
+      const aConVel =
+        constrainedVelocities.get(data.aId) ??
+        vec3.clone(set[data.aId].motion.linearVelocity);
+      const aInDirOfB = vec3.dot(aConVel, aReboundDir);
+      if (aInDirOfB > 0) {
+        vec3.sub(
+          aConVel,
+          aConVel,
+          vec3.scale(vec3.create(), aReboundDir, aInDirOfB)
+        );
+        constrainedVelocities.set(data.aId, aConVel);
+
+        // TODO(@darzu): DEBUG
+        if (data.aId === _playerId) {
+          console.log(`${__step}: playerV: ->${vec3Dbg(aConVel)}`);
+        }
+      }
+    }
+
+    if (!!b) {
+      const bConVel =
+        constrainedVelocities.get(data.bId) ??
+        vec3.clone(set[data.bId].motion.linearVelocity);
+      const bInDirOfA = vec3.dot(bConVel, bReboundDir);
+      if (bInDirOfA > 0) {
+        vec3.sub(
+          bConVel,
+          bConVel,
+          vec3.scale(vec3.create(), bReboundDir, bInDirOfA)
+        );
+        constrainedVelocities.set(data.bId, bConVel);
+
+        // TODO(@darzu): DEBUG
+        if (data.aId === _playerId) {
+          console.log(`${__step}: playerV: ->${vec3Dbg(bConVel)}`);
+        }
+      }
+    }
+  }
+
   for (let { id, motion: m, worldAABB } of objs) {
     // TODO(@darzu): IMPLEMENT
     // if (m.atRest) {
@@ -129,64 +181,12 @@ export function moveObjects(
     m.linearVelocity[1] = clamp(m.linearVelocity[1], -vyMax, vyMax);
     m.linearVelocity[2] = clamp(m.linearVelocity[2], -vzMax, vzMax);
 
-    // check for collision constraints
-    const constrainedVelocity = vec3.clone(m.linearVelocity);
-    for (let oId of lastCollidesWith.get(id) ?? []) {
-      const other = set[oId];
-      if (!other) continue;
-
-      const data = lastContactData.get(idPair(id, oId));
-      if (!data) continue;
-
-      // // TODO(@darzu): DEBUG
-      // if (_playerId === id) {
-      //   console.log(`col w/ ${oId}`);
-      // }
-
-      // TODO(@darzu): this is a mess
-      const reboundDir = vec3.clone(data.bToANorm);
-      if (id === data.aId) vec3.negate(reboundDir, reboundDir);
-      // vec3.scale(reboundDir, reboundDir, data.dist);
-
-      // if (id === _playerId) console.log(`rd: ${vec3Dbg(reboundDir)}`);
-      // const overlap = data.aId === id ? data.aOverlap : data.bOverlap;
-      // const reboundDir = vec3.normalize(vec3.create(), overlap);
-      // vec3.negate(reboundDir, reboundDir);
-      const aInDirOfB = vec3.dot(constrainedVelocity, reboundDir);
-      if (aInDirOfB > 0) {
-        // TODO(@darzu): re-enable
-        vec3.sub(
-          constrainedVelocity,
-          constrainedVelocity,
-          vec3.scale(vec3.create(), reboundDir, aInDirOfB)
-        );
-
-        // TODO(@darzu): DEBUG
-        if (id === _playerId) {
-          console.log(
-            `playerV: ${vec3Dbg(m.linearVelocity)}->${vec3Dbg(
-              constrainedVelocity
-            )}`
-          );
-        }
-      } else {
-        // if (_playerId === id) {
-        //   console.log(
-        //     `${vec3Dbg(m.linearVelocity)} dot ${vec3Dbg(
-        //       reboundDir
-        //     )} = aInDirOfB ${aInDirOfB}`
-        //   );
-        // }
-      }
-
-      // TODO(@darzu): We need normal of collision and nearest points
-      //    we need this in the CollidesWith set. not good to compute here
-    }
-
     // change location according to linear velocity
     // TODO(@darzu): DEBUGGING
-    delta = vec3.scale(delta, constrainedVelocity, dt);
+    const v = constrainedVelocities.get(id) ?? m.linearVelocity;
+    delta = vec3.scale(delta, v, dt);
     // delta = vec3.scale(delta, m.linearVelocity, dt);
+    if (_playerId === id) console.log(`${__step}: moving by ${vec3Dbg(delta)}`); // TODO(@darzu): debg
     vec3.add(m.location, m.location, delta);
 
     // change rotation according to angular velocity
