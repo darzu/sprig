@@ -397,3 +397,6 @@ ALTERNATE APPROACH:
 SDF for text:
   https://www.youtube.com/watch?v=1b5hIMqz_wM
     Material Maker
+
+VFX explosions:
+  https://www.youtube.com/watch?v=dDsb_9n-Gik

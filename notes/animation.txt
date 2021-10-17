@@ -162,3 +162,6 @@ Ubisoft talks inverse kinimatics:
 Vertex animation textures:
     https://www.youtube.com/watch?v=NQ5Dllbxbz4
     https://medium.com/tech-at-wildlife-studios/texture-animation-techniques-1daecb316657#
+
+"Frame Blending with Motion Vectors"
+    http://www.klemenlozar.com/frame-blending-with-motion-vectors/
