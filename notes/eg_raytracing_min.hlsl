@@ -70,38 +70,16 @@ vec2 raycast( in vec3 ro, in vec3 rd )
     return res;
 }
 
-// http://iquilezles.org/www/articles/normalsSDF/normalsSDF.htm
 vec3 calcNormal( in vec3 pos )
 {
-#if 0
-    vec2 e = vec2(1.0,-1.0)*0.5773*0.0005;
-    return normalize( e.xyy*map( pos + e.xyy ).x + 
-					  e.yyx*map( pos + e.yyx ).x + 
-					  e.yxy*map( pos + e.yxy ).x + 
-					  e.xxx*map( pos + e.xxx ).x );
-#else
-    // inspired by tdhooper and klems - a way to prevent the compiler from inlining map() 4 times
     vec3 n = vec3(0.0);
     for( int i=ZERO; i<4; i++ )
     {
         vec3 e = 0.5773*(2.0*vec3((((i+3)>>1)&1),((i>>1)&1),(i&1))-1.0);
         n += e*map(pos+0.0005*e).x;
-      //if( n.x+n.y+n.z>100.0 ) break;
     }
     return normalize(n);
-#endif    
 }
-
-// http://iquilezles.org/www/articles/checkerfiltering/checkerfiltering.htm
-// float checkersGradBox( in vec2 p, in vec2 dpdx, in vec2 dpdy )
-// {
-//     // filter kernel
-//     vec2 w = abs(dpdx)+abs(dpdy) + 0.001;
-//     // analytical integral (box filter)
-//     vec2 i = 2.0*(abs(fract((p-0.5*w)*0.5)-0.5)-abs(fract((p+0.5*w)*0.5)-0.5))/w;
-//     // xor pattern
-//     return 0.5 - 0.5*i.x*i.y;                  
-// }
 
 vec3 render( in vec3 ro, in vec3 rd, in vec3 rdx, in vec3 rdy )
 { 
@@ -115,51 +93,15 @@ vec3 render( in vec3 ro, in vec3 rd, in vec3 rdx, in vec3 rdy )
     if( m>-0.5 )
     {
         vec3 pos = ro + t*rd;
-        vec3 nor = (m<1.5) ? vec3(0.0,1.0,0.0) : calcNormal( pos );
-        vec3 ref = reflect( rd, nor );
+        vec3 nor = calcNormal( pos );
         
         // material        
         col = 0.2 + 0.2*sin( m*2.0 + vec3(0.0,1.0,2.0) );
         float ks = 1.0;
         
-        // if( m<1.5 )
-        // {
-        //     // project pixel footprint into the plane
-        //     vec3 dpdx = ro.y*(rd/rd.y-rdx/rdx.y);
-        //     vec3 dpdy = ro.y*(rd/rd.y-rdy/rdy.y);
-
-        //     float f = checkersGradBox( 3.0*pos.xz, 3.0*dpdx.xz, 3.0*dpdy.xz );
-        //     col = 0.15 + f*vec3(0.05);
-        //     ks = 0.4;
-        // }
-
-        // lighting
-        // float occ = calcAO( pos, nor );
-        float occ = 0.0;
-        
-		vec3 lin = vec3(0.0);
-
         // sun
-        {
-            vec3  lig = normalize( vec3(-0.5, 0.4, -0.6) );
-            vec3  hal = normalize( lig-rd );
-            float dif = clamp( dot( nor, lig ), 0.0, 1.0 );
-          //if( dif>0.0001 )
-        	    //   dif *= calcSoftshadow( pos, lig, 0.02, 2.5 );
-			float spe = pow( clamp( dot( nor, hal ), 0.0, 1.0 ),16.0);
-                  spe *= dif;
-                  spe *= 0.04+0.96*pow(clamp(1.0-dot(hal,lig),0.0,1.0),5.0);
-            lin += col*2.20*dif*vec3(1.30,1.00,0.70);
-            lin +=     5.00*spe*vec3(1.30,1.00,0.70)*ks;
-        }
-        // back
-        {
-        	float dif = clamp( dot( nor, normalize(vec3(0.5,0.0,0.6))), 0.0, 1.0 )*clamp( 1.0-pos.y,0.0,1.0);
-                  dif *= occ;
-        	lin += col*0.55*dif*vec3(0.25,0.25,0.25);
-        }
-        
-		col = lin;
+        vec3  lig = normalize( vec3(-0.5, 0.4, -0.6) );
+        col = col*2.20*clamp( dot( nor, lig ), 0.0, 1.0 )*vec3(1.30,1.00,0.70);
 
         col = mix( col, vec3(0.7,0.7,0.9), 1.0-exp( -0.0001*t*t*t ) );
     }
@@ -187,44 +129,25 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     // camera-to-world transformation
     mat3 ca = setCamera( ro, ta, 0.0 );
 
-    vec3 tot = vec3(0.0);
-#if AA>1
-    for( int m=ZERO; m<AA; m++ )
-    for( int n=ZERO; n<AA; n++ )
-    {
-        // pixel coordinates
-        vec2 o = vec2(float(m),float(n)) / float(AA) - 0.5;
-        vec2 p = (2.0*(fragCoord+o)-iResolution.xy)/iResolution.y;
-#else    
-        vec2 p = (2.0*fragCoord-iResolution.xy)/iResolution.y;
-#endif
+    vec2 p = (2.0*fragCoord-iResolution.xy)/iResolution.y;
 
-        // focal length
-        const float fl = 2.5;
-        
-        // ray direction
-        vec3 rd = ca * normalize( vec3(p,fl) );
-
-         // ray differentials
-        vec2 px = (2.0*(fragCoord+vec2(1.0,0.0))-iResolution.xy)/iResolution.y;
-        vec2 py = (2.0*(fragCoord+vec2(0.0,1.0))-iResolution.xy)/iResolution.y;
-        vec3 rdx = ca * normalize( vec3(px,fl) );
-        vec3 rdy = ca * normalize( vec3(py,fl) );
-        
-        // render	
-        vec3 col = render( ro, rd, rdx, rdy );
-
-        // gain
-        // col = col*3.0/(2.5+col);
-        
-		// gamma
-        col = pow( col, vec3(0.4545) );
-
-        tot += col;
-#if AA>1
-    }
-    tot /= float(AA*AA);
-#endif
+    // focal length
+    const float fl = 2.5;
     
-    fragColor = vec4( tot, 1.0 );
+    // ray direction
+    vec3 rd = ca * normalize( vec3(p,fl) );
+
+    // ray differentials
+    vec2 px = (2.0*(fragCoord+vec2(1.0,0.0))-iResolution.xy)/iResolution.y;
+    vec2 py = (2.0*(fragCoord+vec2(0.0,1.0))-iResolution.xy)/iResolution.y;
+    vec3 rdx = ca * normalize( vec3(px,fl) );
+    vec3 rdy = ca * normalize( vec3(py,fl) );
+    
+    // render	
+    vec3 col = render( ro, rd, rdx, rdy );
+    
+    // gamma
+    col = pow( col, vec3(0.4545) );
+
+    fragColor = vec4( col, 1.0 );
 }
