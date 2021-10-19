@@ -165,7 +165,9 @@ export function stepPhysics(
     const aSepB = vec3.sub(vec3.create(), b.motion.location, a.motion.location);
     const aTowardB = vec3.dot(relMotion, aSepB);
     const aHeadingTowardsB = aTowardB > 0;
-    if (aHeadingTowardsB && doesTouch(a.worldAABB, b.worldAABB, 2 * PAD)) {
+    // TODO(@darzu): is the a towards b requirement important?
+    // aHeadingTowardsB &&
+    if (doesTouch(a.worldAABB, b.worldAABB, 2 * PAD)) {
       // TODO(@darzu): anything todo?
       // we'll keep old collision data
       const conData = computeContactData(a, b);
@@ -270,14 +272,16 @@ export function stepPhysics(
 
       // TODO(@darzu): DEBUG
       if (aId === _playerId || bId === _playerId) {
-        if (_contactData.has(h)) {
-          console.log(
-            // `rebounding player: ${rebData.aRebound}-${rebData.bRebound}`
-            `${__step}: rebounding player w/ contact in dir ${vec3Dbg(
-              rebData.aOverlap
-            )}<->${vec3Dbg(rebData.bOverlap)}`
-          );
-        }
+        // if (_contactData.has(h)) {
+        console.log(
+          // `rebounding player: ${rebData.aRebound}-${rebData.bRebound}`
+          `${__step}: rebounding player in dir ${vec3Dbg(
+            rebData.aOverlap
+          )} or ${vec3Dbg(rebData.bOverlap)} by ${rebData.aRebound} or ${
+            rebData.bRebound
+          }`
+        );
+        // }
       }
 
       // compute contact info
