@@ -34,8 +34,8 @@ import { copyMotionProps, MotionProps } from "./phys_motion.js";
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
 const MAX_VERTICES = 21844;
-const ENABLE_NET = false;
-const AUTOSTART = true;
+const ENABLE_NET = true;
+const AUTOSTART = false;
 
 enum ObjectType {
   Plane,
@@ -790,6 +790,7 @@ async function main() {
   const queryString = Object.fromEntries(
     new URLSearchParams(window.location.search).entries()
   );
+  const urlServerId = queryString["server"] ?? null;
 
   let controls = document.getElementById("server-controls") as HTMLDivElement;
   let serverStartButton = document.getElementById(
@@ -797,7 +798,7 @@ async function main() {
   ) as HTMLButtonElement;
   let connectButton = document.getElementById("connect") as HTMLButtonElement;
   let serverIdInput = document.getElementById("server-id") as HTMLInputElement;
-  if (ENABLE_NET && !AUTOSTART) {
+  if (ENABLE_NET && !AUTOSTART && !urlServerId) {
     serverStartButton.onclick = () => {
       startGame(null);
       controls.hidden = true;
@@ -807,8 +808,7 @@ async function main() {
       controls.hidden = true;
     };
   } else {
-    const serverId = queryString["server"] ?? null;
-    startGame(serverId);
+    startGame(urlServerId);
     controls.hidden = true;
   }
 }
