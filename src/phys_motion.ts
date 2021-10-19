@@ -1,4 +1,9 @@
 import { quat, vec3 } from "./gl-matrix.js";
+import { _playerId } from "./main.js";
+import { clamp } from "./math.js";
+import { CollidesWith, idPair, IdPair, ContactData, __step } from "./phys.js";
+import { AABB } from "./phys_broadphase.js";
+import { vec3Dbg } from "./utils-3d.js";
 
 export interface MotionProps {
   location: vec3;
@@ -30,11 +35,6 @@ export function createMotionProps(init: Partial<MotionProps>): MotionProps {
 
   return init as MotionProps;
 }
-
-// TODO(@darzu): Do we need state besides the list
-// interface MotionSet {
-//   objs: MotionProps[];
-// }
 
 let delta = vec3.create();
 let normalizedVelocity = vec3.create();
@@ -88,16 +88,71 @@ export function didMove(o: {
   );
 }
 
-// TODO(@darzu): physics step
-export function moveObjects(set: { motion: MotionProps }[], dt: number) {
-  for (let { motion: m } of set) {
-    // TODO(@darzu): IMPLEMENT
-    // if (m.atRest) {
-    //   continue;
-    // }
+const _constrainedVelocities = new Map<number, vec3>();
+
+export function moveObjects(
+  set: Record<number, { id: number; motion: MotionProps; worldAABB: AABB }>,
+  dt: number,
+  lastCollidesWith: CollidesWith,
+  lastContactData: Map<IdPair, ContactData>
+) {
+  const objs = Object.values(set);
+
+  _constrainedVelocities.clear();
+
+  // check for collision constraints
+  // TODO(@darzu): this is a velocity constraint and ideally should be nicely extracted
+  for (let [abId, data] of lastContactData) {
+    // TODO(@darzu): we're a bit free with vector creation here, are the memory implications bad?
+    const bReboundDir = vec3.clone(data.bToANorm);
+    const aReboundDir = vec3.negate(vec3.create(), bReboundDir);
+
+    const a = set[data.aId];
+    const b = set[data.bId];
+
+    if (!!a) {
+      const aConVel =
+        _constrainedVelocities.get(data.aId) ??
+        vec3.clone(set[data.aId].motion.linearVelocity);
+      const aInDirOfB = vec3.dot(aConVel, aReboundDir);
+      if (aInDirOfB > 0) {
+        vec3.sub(
+          aConVel,
+          aConVel,
+          vec3.scale(vec3.create(), aReboundDir, aInDirOfB)
+        );
+        _constrainedVelocities.set(data.aId, aConVel);
+      }
+    }
+
+    if (!!b) {
+      const bConVel =
+        _constrainedVelocities.get(data.bId) ??
+        vec3.clone(set[data.bId].motion.linearVelocity);
+      const bInDirOfA = vec3.dot(bConVel, bReboundDir);
+      if (bInDirOfA > 0) {
+        vec3.sub(
+          bConVel,
+          bConVel,
+          vec3.scale(vec3.create(), bReboundDir, bInDirOfA)
+        );
+        _constrainedVelocities.set(data.bId, bConVel);
+      }
+    }
+  }
+
+  for (let { id, motion: m, worldAABB } of objs) {
+    // clamp linear velocity based on size
+    const vxMax = (worldAABB.max[0] - worldAABB.min[0]) / dt;
+    const vyMax = (worldAABB.max[1] - worldAABB.min[1]) / dt;
+    const vzMax = (worldAABB.max[2] - worldAABB.min[2]) / dt;
+    m.linearVelocity[0] = clamp(m.linearVelocity[0], -vxMax, vxMax);
+    m.linearVelocity[1] = clamp(m.linearVelocity[1], -vyMax, vyMax);
+    m.linearVelocity[2] = clamp(m.linearVelocity[2], -vzMax, vzMax);
 
     // change location according to linear velocity
-    delta = vec3.scale(delta, m.linearVelocity, dt);
+    const v = _constrainedVelocities.get(id) ?? m.linearVelocity;
+    delta = vec3.scale(delta, v, dt);
     vec3.add(m.location, m.location, delta);
 
     // change rotation according to angular velocity

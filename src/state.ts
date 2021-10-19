@@ -2,18 +2,14 @@ import { mat4, vec3, quat } from "./gl-matrix.js";
 import { Serializer, Deserializer } from "./serialize.js";
 import { Mesh, MeshHandle } from "./mesh-pool.js";
 import { Renderer } from "./render_webgpu.js";
-import {
-  AABB,
-  checkCollisions,
-  CollidesWith,
-  copyAABB,
-} from "./phys_broadphase.js";
+import { AABB, checkCollisions, copyAABB } from "./phys_broadphase.js";
 import {
   copyMotionProps,
   createMotionProps,
   MotionProps,
 } from "./phys_motion.js";
-import { stepPhysics } from "./phys.js";
+import { CollidesWith, ReboundData, IdPair, stepPhysics } from "./phys.js";
+import { Inputs } from "./inputs.js";
 
 const ERROR_SMOOTHING_FACTOR = 0.8;
 const EPSILON = 0.0001;
@@ -171,7 +167,7 @@ export interface GameEvent {
   authority: number;
 }
 
-export abstract class GameState<Inputs> {
+export abstract class GameState {
   protected nextPlayerId: number;
   nextObjectId: number;
   protected renderer: Renderer;
@@ -231,7 +227,7 @@ export abstract class GameState<Inputs> {
     this.renderer.renderFrame(this.viewMatrix());
   }
 
-  addPlayer(): [number, Object] {
+  addPlayer(): [number, GameObject] {
     let id = this.nextPlayerId;
     this.nextPlayerId += 1;
     let obj = this.playerObject(id);

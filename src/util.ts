@@ -10,6 +10,14 @@ export function zip<T, U>(ts: T[], us: U[]): [T, U][] {
   return ts.map((t, i) => <[T, U]>[t, us[i]]);
 }
 
-export function never(x: never): never {
-  throw new Error("Unexpected object: " + x);
+export function never(x: never, msg?: string): never {
+  throw new Error(msg ?? "Unexpected object: " + x);
+}
+
+export function __isSMI(n: number): boolean {
+  // Checks if a number is within the "small integer" range
+  //  that V8 uses on 64-bit platforms to efficiently represent
+  //  small ints. Keeping numbers within this range _should_
+  //  lead to better perf esp. for arrays.
+  return -(2 ** 31) < n && n < 2 ** 31 - 1;
 }

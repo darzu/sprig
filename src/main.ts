@@ -26,11 +26,16 @@ import {
 import { _motionPairsLen } from "./phys.js";
 import { BoatProps, createBoatProps, stepBoats } from "./boat.js";
 import { jitter } from "./math.js";
+import { createPlayerProps, PlayerProps, stepPlayer } from "./player.js";
+import { never } from "./util.js";
+import { createInputsReader, Inputs } from "./inputs.js";
+import { copyMotionProps, MotionProps } from "./phys_motion.js";
 
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
 const MAX_VERTICES = 21844;
-const ENABLE_NET = false;
+const ENABLE_NET = true;
+const AUTOSTART = false;
 
 enum ObjectType {
   Plane,
@@ -82,7 +87,7 @@ class Plane extends GameObject {
 
   constructor(id: number, creator: number) {
     super(id, creator);
-    this.color = DARK_GRAY;
+    this.color = vec3.clone(DARK_GRAY);
     this.localAABB = PLANE_AABB;
   }
 
@@ -96,17 +101,19 @@ class Plane extends GameObject {
 
   serializeFull(buffer: Serializer) {
     buffer.writeVec3(this.motion.location);
+    buffer.writeVec3(this.color);
   }
 
   deserializeFull(buffer: Deserializer) {
     buffer.readVec3(this.motion.location);
+    buffer.readVec3(this.color);
   }
 
-  serializeDynamic(_buffer: Serializer) {
+  serializeDynamic(buffer: Serializer) {
     // don't need to write anything at all here, planes never change
   }
 
-  deserializeDynamic(_buffer: Deserializer) {
+  deserializeDynamic(buffer: Deserializer) {
     // don't need to read anything at all here, planes never change
   }
 }
@@ -206,6 +213,7 @@ class Bullet extends Cube {
     buffer.writeVec3(this.motion.linearVelocity);
     buffer.writeQuat(this.motion.rotation);
     buffer.writeVec3(this.motion.angularVelocity);
+    buffer.writeVec3(this.color);
   }
 
   deserializeFull(buffer: Deserializer) {
@@ -219,6 +227,7 @@ class Bullet extends Cube {
       this.snapRotation(rotation);
     }
     buffer.readVec3(this.motion.angularVelocity);
+    buffer.readVec3(this.color);
   }
 
   serializeDynamic(buffer: Serializer) {
@@ -235,9 +244,12 @@ class Bullet extends Cube {
 }
 
 class Player extends Cube {
+  player: PlayerProps;
+
   constructor(id: number, creator: number) {
     super(id, creator);
     this.color = vec3.fromValues(0, 0.2, 0);
+    this.player = createPlayerProps();
   }
 
   syncPriority(): number {
@@ -325,34 +337,34 @@ class Boat extends Cube {
   }
 }
 
-interface Inputs {
-  forward: boolean;
-  back: boolean;
-  left: boolean;
-  right: boolean;
-  up: boolean;
-  down: boolean;
-  mouseX: number;
-  mouseY: number;
-  lclick: boolean;
-  rclick: boolean;
-  accel: boolean;
-  lastNumKey: number;
+export interface CameraProps {
+  rotation: quat;
+  location: vec3;
 }
 
-class CubeGameState extends GameState<Inputs> {
+// TODO(@darzu): for debugging
+export let _playerId: number = -1;
+
+class CubeGameState extends GameState {
   players: Record<number, Player>;
-  cameraRotation: quat;
-  cameraLocation: vec3;
+  camera: CameraProps;
 
   bulletProto: MeshHandle;
 
   constructor(renderer: Renderer, createObjects: boolean = true) {
     super(renderer);
+
+    // TODO(@darzu): can we do without this lame javascript-ism?
+    this.spawnBullet = this.spawnBullet.bind(this);
+
     this.me = 0;
-    this.cameraRotation = quat.identity(quat.create());
-    quat.rotateX(this.cameraRotation, this.cameraRotation, -Math.PI / 8);
-    this.cameraLocation = vec3.fromValues(0, 0, 10);
+    let cameraRotation = quat.identity(quat.create());
+    quat.rotateX(cameraRotation, cameraRotation, -Math.PI / 8);
+    let cameraLocation = vec3.fromValues(0, 0, 10);
+    this.camera = {
+      rotation: cameraRotation,
+      location: cameraLocation,
+    };
     this.players = {};
 
     // create local mesh prototypes
@@ -373,7 +385,11 @@ class CubeGameState extends GameState<Inputs> {
           const xPos = (x - NUM_PLANES_X / 2) * 20 + 10;
           const zPos = (z - NUM_PLANES_Z / 2) * 20;
           const parity = !!((x + z) % 2);
-          plane.motion.location = vec3.fromValues(xPos, -10, zPos);
+          plane.motion.location = vec3.fromValues(
+            xPos,
+            x + z - (NUM_PLANES_X + NUM_PLANES_Z),
+            zPos
+          );
           // plane.motion.location = vec3.fromValues(xPos + 10, -3, 12 + zPos);
           plane.color = parity ? LIGHT_BLUE : DARK_BLUE;
           this.addObject(plane);
@@ -410,7 +426,10 @@ class CubeGameState extends GameState<Inputs> {
       }
 
       // create player
-      this.addPlayer();
+      const [_, playerObj] = this.addPlayer();
+      // TODO(@darzu): debug
+      playerObj.motion.location[0] += 5;
+      _playerId = playerObj.id;
       // have added our objects, can unmap buffers
       // TODO(@darzu): debug
       // this.renderer.finishInit();
@@ -433,8 +452,10 @@ class CubeGameState extends GameState<Inputs> {
         return new Bullet(id, creator);
       case ObjectType.Player:
         return new Player(id, creator);
+      case ObjectType.Boat:
+        return new Boat(id, creator);
     }
-    throw `No such object type ${typeId}`;
+    never(typeId, `No such object type ${typeId}`);
   }
 
   addObject(obj: GameObject) {
@@ -454,150 +475,33 @@ class CubeGameState extends GameState<Inputs> {
     return this.players[this.me];
   }
 
+  spawnBullet(motion: MotionProps) {
+    let bullet = new Bullet(this.newId(), this.me);
+    copyMotionProps(bullet.motion, motion);
+    this.addObjectInstance(bullet, this.bulletProto);
+  }
+
   stepGame(dt: number, inputs: Inputs) {
-    if (this.player()) {
-      // move player
-      this.player().motion.linearVelocity = vec3.fromValues(0, 0, 0);
-      let playerSpeed = inputs.accel ? 0.005 : 0.001;
-      let n = playerSpeed * dt;
-      if (inputs.left) {
-        vec3.add(
-          this.player().motion.linearVelocity,
-          this.player().motion.linearVelocity,
-          vec3.fromValues(-n, 0, 0)
-        );
-      }
-      if (inputs.right) {
-        vec3.add(
-          this.player().motion.linearVelocity,
-          this.player().motion.linearVelocity,
-          vec3.fromValues(n, 0, 0)
-        );
-      }
-      if (inputs.forward) {
-        vec3.add(
-          this.player().motion.linearVelocity,
-          this.player().motion.linearVelocity,
-          vec3.fromValues(0, 0, -n)
-        );
-      }
-      if (inputs.back) {
-        vec3.add(
-          this.player().motion.linearVelocity,
-          this.player().motion.linearVelocity,
-          vec3.fromValues(0, 0, n)
-        );
-      }
-      if (inputs.up) {
-        vec3.add(
-          this.player().motion.linearVelocity,
-          this.player().motion.linearVelocity,
-          vec3.fromValues(0, n, 0)
-        );
-      }
-      if (inputs.down) {
-        vec3.add(
-          this.player().motion.linearVelocity,
-          this.player().motion.linearVelocity,
-          vec3.fromValues(0, -n, 0)
-        );
-      }
-      vec3.transformQuat(
-        this.player().motion.linearVelocity,
-        this.player().motion.linearVelocity,
-        this.player().motion.rotation
-      );
-      quat.rotateY(
-        this.player().motion.rotation,
-        this.player().motion.rotation,
-        -inputs.mouseX * 0.001
-      );
-      quat.rotateX(
-        this.cameraRotation,
-        this.cameraRotation,
-        -inputs.mouseY * 0.001
-      );
-    }
-    // add bullet on lclick
-    if (inputs.lclick) {
-      let bullet = new Bullet(this.newId(), this.me);
-      let bullet_axis = vec3.fromValues(0, 0, -1);
-      bullet_axis = vec3.transformQuat(
-        bullet_axis,
-        bullet_axis,
-        this.player().motion.rotation
-      );
-      bullet.motion.location = vec3.clone(this.player().motion.location);
-      bullet.motion.rotation = quat.clone(this.player().motion.rotation);
-      bullet.motion.linearVelocity = vec3.scale(
-        bullet.motion.linearVelocity,
-        bullet_axis,
-        0.02
-      );
-      bullet.motion.linearVelocity = vec3.add(
-        bullet.motion.linearVelocity,
-        bullet.motion.linearVelocity,
-        this.player().motion.linearVelocity
-      );
-      bullet.motion.angularVelocity = vec3.scale(
-        bullet.motion.angularVelocity,
-        bullet_axis,
-        0.01
-      );
-      this.addObjectInstance(bullet, this.bulletProto);
-    }
-    if (inputs.rclick) {
-      const SPREAD = 5;
-      const GAP = 1.0;
-      for (let xi = 0; xi <= SPREAD; xi++) {
-        for (let yi = 0; yi <= SPREAD; yi++) {
-          const x = (xi - SPREAD / 2) * GAP;
-          const y = (yi - SPREAD / 2) * GAP;
-          let bullet = new Bullet(this.newId(), this.me);
-          let bullet_axis = vec3.fromValues(0, 0, -1);
-          bullet_axis = vec3.transformQuat(
-            bullet_axis,
-            bullet_axis,
-            this.player().motion.rotation
-          );
-          bullet.motion.location = vec3.add(
-            vec3.create(),
-            this.player().motion.location,
-            vec3.fromValues(x, y, 0)
-          );
-          bullet.motion.rotation = quat.clone(this.player().motion.rotation);
-          bullet.motion.linearVelocity = vec3.scale(
-            bullet.motion.linearVelocity,
-            bullet_axis,
-            0.005
-          );
-          bullet.motion.linearVelocity = vec3.add(
-            bullet.motion.linearVelocity,
-            bullet.motion.linearVelocity,
-            this.player().motion.linearVelocity
-          );
-          bullet.motion.angularVelocity = vec3.scale(
-            bullet.motion.angularVelocity,
-            bullet_axis,
-            0.01
-          );
-          this.addObjectInstance(bullet, this.bulletProto);
-        }
-      }
-    }
     // check render mode
-    if (inputs.lastNumKey === 1) {
+    if (inputs.keyClicks["1"]) {
       this.renderer.mode = "normal";
-    }
-    if (inputs.lastNumKey === 2) {
+    } else if (inputs.keyClicks["2"]) {
       this.renderer.mode = "wireframe";
     }
 
     // move boats
     const boats = Object.values(this.objects).filter(
-      (o) => o instanceof Boat
+      (o) => o instanceof Boat && o.authority === this.me
     ) as Boat[];
     stepBoats(boats, dt);
+
+    // TODO(@darzu): IMPLEMENT
+    // move player(s)
+    const players = Object.values(this.objects).filter(
+      (o) => o instanceof Player && o.authority === this.me
+    ) as Player[];
+    for (let o of players)
+      stepPlayer(o, dt, inputs, this.camera, this.spawnBullet);
 
     // check collisions
     for (let o of Object.values(this.objects)) {
@@ -682,132 +586,12 @@ class CubeGameState extends GameState<Inputs> {
     mat4.multiply(
       viewMatrix,
       viewMatrix,
-      mat4.fromQuat(mat4.create(), this.cameraRotation)
+      mat4.fromQuat(mat4.create(), this.camera.rotation)
     );
-    mat4.translate(viewMatrix, viewMatrix, this.cameraLocation);
+    mat4.translate(viewMatrix, viewMatrix, this.camera.location);
     mat4.invert(viewMatrix, viewMatrix);
     return viewMatrix;
   }
-}
-
-function inputsReader(canvas: HTMLCanvasElement): () => Inputs {
-  let forward = false;
-  let back = false;
-  let left = false;
-  let right = false;
-  let up = false;
-  let down = false;
-  let accel = false;
-  let lclick = false;
-  let rclick = false;
-  let mouseX = 0;
-  let mouseY = 0;
-  let lastNumKey = 0; // TODO(@darzu): this is a little hacky
-
-  window.addEventListener("keydown", (ev) => {
-    switch (ev.key.toLowerCase()) {
-      case "w":
-        forward = true;
-        back = false;
-        break;
-      case "s":
-        back = true;
-        forward = false;
-        break;
-      case "a":
-        left = true;
-        right = false;
-        break;
-      case "d":
-        right = true;
-        left = false;
-        break;
-      case "shift":
-        up = true;
-        down = false;
-        break;
-      case "c":
-        down = true;
-        up = false;
-        break;
-      case " ":
-        accel = true;
-        break;
-    }
-  });
-
-  window.addEventListener("keyup", (ev) => {
-    switch (ev.key.toLowerCase()) {
-      case "w":
-        forward = false;
-        break;
-      case "s":
-        back = false;
-        break;
-      case "a":
-        left = false;
-        break;
-      case "d":
-        right = false;
-        break;
-      case "shift":
-        up = false;
-        break;
-      case "c":
-        down = false;
-        break;
-      case "1":
-        lastNumKey = 1;
-        break;
-      case "2":
-        lastNumKey = 2;
-        break;
-      case " ":
-        accel = false;
-        break;
-    }
-  });
-
-  window.addEventListener("mousemove", (ev) => {
-    if (document.pointerLockElement === canvas) {
-      mouseX += ev.movementX;
-      mouseY += ev.movementY;
-    }
-  });
-
-  window.addEventListener("mouseup", (ev) => {
-    if (document.pointerLockElement === canvas) {
-      if (ev.button === 0) {
-        lclick = true;
-      } else {
-        rclick = true;
-      }
-    }
-    return false;
-  });
-
-  function getInputs(): Inputs {
-    let inputs = {
-      forward,
-      back,
-      left,
-      right,
-      up,
-      down,
-      accel,
-      mouseX,
-      mouseY,
-      lclick,
-      rclick,
-      lastNumKey,
-    };
-    mouseX = 0;
-    mouseY = 0;
-    lclick = false;
-    rclick = false;
-    return inputs;
-  }
-  return getInputs;
 }
 
 // ms per network sync (should be the same for all servers)
@@ -816,7 +600,11 @@ const NET_DT = 1000.0 / 20;
 // local simulation speed
 const SIM_DT = 1000.0 / 60;
 
+export let gameStarted = false;
 async function startGame(host: string | null) {
+  if (gameStarted) return;
+  gameStarted = true;
+
   let hosting = host === null;
   let canvas = document.getElementById("sample-canvas") as HTMLCanvasElement;
   function onWindowResize() {
@@ -874,7 +662,7 @@ async function startGame(host: string | null) {
   const renderer: Renderer = rendererInit;
   let start_of_time = performance.now();
   let gameState = new CubeGameState(renderer, hosting);
-  let inputs = inputsReader(canvas);
+  let takeInputs = createInputsReader(canvas);
   function doLockMouse() {
     if (document.pointerLockElement !== canvas) {
       canvas.requestPointerLock();
@@ -888,7 +676,7 @@ async function startGame(host: string | null) {
   let avgSimTime = 0;
   let avgFrameTime = 0;
   let avgWeight = 0.05;
-  let net: Net<Inputs> | null = null;
+  let net: Net | null = null;
   let previous_frame_time = start_of_time;
   let net_time_accumulator = 0;
   let sim_time_accumulator = 0;
@@ -902,7 +690,7 @@ async function startGame(host: string | null) {
     let sim_time = 0;
     while (sim_time_accumulator > SIM_DT) {
       let before_sim = performance.now();
-      gameState.step(SIM_DT, inputs());
+      gameState.step(SIM_DT, takeInputs());
       sim_time_accumulator -= SIM_DT;
       sim_time += performance.now() - before_sim;
     }
@@ -972,17 +760,26 @@ async function startGame(host: string | null) {
     requestAnimationFrame(frame);
   };
   if (ENABLE_NET) {
-    net = new Net(gameState, host, (id: string) => {
-      renderer.finishInit(); // TODO(@darzu): debugging
-      if (hosting) {
-        console.log("hello");
-        console.log(`Net up and running with id ${id}`);
-        if (navigator.clipboard) navigator.clipboard.writeText(id);
-        frame();
-      } else {
-        frame();
-      }
-    });
+    try {
+      net = new Net(gameState, host, (id: string) => {
+        renderer.finishInit(); // TODO(@darzu): debugging
+        if (hosting) {
+          console.log("hello");
+          console.log(`Net up and running with id`);
+          console.log(`${id}`);
+          const url = `${window.location.href}?server=${id}`;
+          console.log(url);
+          if (navigator.clipboard) navigator.clipboard.writeText(id);
+          frame();
+        } else {
+          frame();
+        }
+      });
+    } catch (e) {
+      console.error("Failed to initialize net");
+      console.error(e);
+      net = null;
+    }
   } else {
     renderer.finishInit(); // TODO(@darzu): debugging
     frame();
@@ -990,13 +787,18 @@ async function startGame(host: string | null) {
 }
 
 async function main() {
+  const queryString = Object.fromEntries(
+    new URLSearchParams(window.location.search).entries()
+  );
+  const urlServerId = queryString["server"] ?? null;
+
   let controls = document.getElementById("server-controls") as HTMLDivElement;
   let serverStartButton = document.getElementById(
     "server-start"
   ) as HTMLButtonElement;
   let connectButton = document.getElementById("connect") as HTMLButtonElement;
   let serverIdInput = document.getElementById("server-id") as HTMLInputElement;
-  if (ENABLE_NET) {
+  if (ENABLE_NET && !AUTOSTART && !urlServerId) {
     serverStartButton.onclick = () => {
       startGame(null);
       controls.hidden = true;
@@ -1006,7 +808,7 @@ async function main() {
       controls.hidden = true;
     };
   } else {
-    startGame(null);
+    startGame(urlServerId);
     controls.hidden = true;
   }
 }

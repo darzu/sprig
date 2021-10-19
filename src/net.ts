@@ -39,15 +39,15 @@ type ServerId = string;
 const BUFFER_TARGET = 3;
 
 // Responsible for sync-ing objects to a *particular* other server.
-class StateSynchronizer<Inputs> {
-  net: Net<Inputs>;
+class StateSynchronizer {
+  net: Net;
   remoteId: ServerId;
   updateSeq: number = 0;
   objectPriorities: Record<number, number> = {};
   objectsKnown: Set<number> = new Set();
   objectsInUpdate: Record<number, Set<number>> = {};
 
-  constructor(net: Net<Inputs>, remoteId: ServerId) {
+  constructor(net: Net, remoteId: ServerId) {
     this.net = net;
     this.remoteId = remoteId;
   }
@@ -174,8 +174,8 @@ class StateSynchronizer<Inputs> {
   }
 }
 
-export class Net<Inputs> {
-  state: GameState<Inputs>;
+export class Net {
+  state: GameState;
   private host: boolean;
   private peer: Peer;
   private me: ServerId = "";
@@ -185,7 +185,7 @@ export class Net<Inputs> {
   private ready: (id: string) => void;
   private stateUpdates: Record<ServerId, { seq: number; data: ArrayBuffer }[]> =
     {};
-  private synchronizers: Record<ServerId, StateSynchronizer<Inputs>> = {};
+  private synchronizers: Record<ServerId, StateSynchronizer> = {};
   private nextUpdate: Record<ServerId, number> = {};
   private waiting: Record<ServerId, boolean> = {};
   private numDroppedUpdates: number = 0;
@@ -195,7 +195,7 @@ export class Net<Inputs> {
     let conn = reliable
       ? this.reliableChannels[server]
       : this.unreliableChannels[server];
-    if (conn) {
+    if (conn && conn.readyState === "open") {
       conn.send(message);
     }
   }
@@ -480,7 +480,7 @@ export class Net<Inputs> {
   }
 
   constructor(
-    state: GameState<Inputs>,
+    state: GameState,
     host: ServerId | null,
     ready: (id: string) => void
   ) {
