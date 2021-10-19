@@ -127,23 +127,14 @@ export function stepPhysics(
   }
 
   // update in-contact pairs; this is seperate from collision or rebound
-
-  // TODO(@darzu): instead of full reseting, we should check
-  //  to see if each pair needs to be renewed
-  // renewal check:
-  //  are objects still adjacent to each other?
-  //  is there any "push" towards each other?
-  // TODO(@darzu): IMPLEMENT. Needs normal of collision and seperation
-  // const toClear: number[] = [];
   for (let [abId, lastData] of _contactData) {
-    // const abId = idPair(aId, bId);
-    // const lastData = _contactData.get(abId);
     const aId = lastData.aId;
     const bId = lastData.bId;
     const a = objDict[aId];
     const b = objDict[bId];
     if (!lastData || !a || !b) {
-      console.error(`missing contact data for ${aId}-${bId}`);
+      // one of the objects might have been deleted since the last frame,
+      // ignore this contact
       _contactData.delete(abId);
       continue;
     }
@@ -156,39 +147,25 @@ export function stepPhysics(
     }
 
     // check for adjacency even if not colliding
-    // d2 = ((ax + avx)-(bx + bvx))^2 + (ay-by)^2  < (ax-bx)^2 + (ay-by)^2
-    const relMotion = vec3.sub(
-      vec3.create(),
-      a.motion.linearVelocity,
-      b.motion.linearVelocity
-    );
-    const aSepB = vec3.sub(vec3.create(), b.motion.location, a.motion.location);
-    const aTowardB = vec3.dot(relMotion, aSepB);
-    const aHeadingTowardsB = aTowardB > 0;
-    // TODO(@darzu): is the a towards b requirement important?
-    // aHeadingTowardsB &&
+    // TODO(@darzu): do we need to consider relative motions?
+    //    i.e. a check to see if the two objects are pressing into each other?
     if (doesTouch(a.worldAABB, b.worldAABB, 2 * PAD)) {
-      // TODO(@darzu): anything todo?
-      // we'll keep old collision data
       const conData = computeContactData(a, b);
       _contactData.set(abId, conData);
-      // TODO(@darzu): dbg
-      // if (aId === _playerId || bId === _playerId)
-      //   console.log(`maintaining contact ${aId}-${bId} ${aTowardB}`);
       continue;
     }
 
     // else, this collision isn't valid any more
-    if (aId === _playerId || bId === _playerId)
-      console.log(`ending contact ${aId}-${bId} ${aTowardB}`);
+    if (aId === _playerId || bId === _playerId) {
+      // TODO(@darzu): add gameplay events for ending contact?
+      // console.log(`ending contact ${aId}-${bId} ${aTowardB}`);
+    }
     _contactData.delete(abId);
   }
 
   // reset collision data
   resetCollidesWithSet(_collidesWith, objs);
   _reboundData.clear();
-  // TODO(@darzu):
-  // _contactData.clear();
 
   // check for possible collisions using the motion swept AABBs
   let motionCollidesWith: CollidesWith | null = null;
@@ -208,9 +185,6 @@ export function stepPhysics(
   let motionPairs = [...collisionPairs(motionCollidesWith)];
   _motionPairsLen = motionPairs.length;
 
-  // TODO(@darzu): DEBUG
-  // console.log(`pairs: ${motionPairs.map((p) => p.join("v")).join(",")}`);
-
   const COLLISION_ITRS = 100;
 
   // we'll track which objects have moved each itr,
@@ -226,9 +200,6 @@ export function stepPhysics(
   let itr = 0;
 
   while (anyMovement && itr < COLLISION_ITRS) {
-    // TODO(@darzu): DEBUG
-    // console.log(`itr: ${itr}`); // TODO(@darzu): DEBUG
-
     // enumerate the possible collisions, looking for objects that need to pushed apart
     for (let [aId, bId] of motionPairs) {
       if (bId < aId) throw `a,b id pair in wrong order ${bId} > ${aId}`;
@@ -239,50 +210,21 @@ export function stepPhysics(
       const a = objDict[aId];
       const b = objDict[bId];
 
-      // TODO(@darzu): IMPLEMENT
-      // // is one of these objects dynamic?
-      // if (a.motion.atRest && b.motion.atRest) continue;
-
       if (!doesOverlap(a.worldAABB, b.worldAABB)) {
-        // TODO(@darzu): DEBUG
-        // console.log(`motion miss ${aId}vs${bId}`);
         // a miss
         continue;
       }
 
       // record the real collision
       const h = idPair(aId, bId);
-      // TODO(@darzu): DEBUG
-      // if (_playerId === aId || _playerId === bId) {
-      //   console.log(`new hash w/ ${aId}-${bId}: ${h}`);
-      // }
       if (!_reboundData.has(h)) {
         _collidesWith.get(aId)!.push(bId);
         _collidesWith.get(bId)!.push(aId);
-
-        // TODO(@darzu): DEBUG
-        // if (_playerId === aId || _playerId === bId) {
-        //   console.log(`new col w/ ${aId}-${bId}`);
-        // }
       }
 
       // compute rebound info
       const rebData = computeReboundData(a, b, itr);
       _reboundData.set(h, rebData);
-
-      // TODO(@darzu): DEBUG
-      if (aId === _playerId || bId === _playerId) {
-        // if (_contactData.has(h)) {
-        console.log(
-          // `rebounding player: ${rebData.aRebound}-${rebData.bRebound}`
-          `${__step}: rebounding player in dir ${vec3Dbg(
-            rebData.aOverlap
-          )} or ${vec3Dbg(rebData.bOverlap)} by ${rebData.aRebound} or ${
-            rebData.bRebound
-          }`
-        );
-        // }
-      }
 
       // compute contact info
       const contData = computeContactData(a, b);
@@ -301,13 +243,9 @@ export function stepPhysics(
     for (let o of objs) {
       let movFrac = nextObjMovFracs[o.id];
       if (movFrac) {
-        // TODO(@darzu): use last location not linear velocity
         vec3.sub(_collisionRefl, o.lastMotion.location, o.motion.location);
-        // vec3.scale(_collisionRefl, _collisionRefl, dt);
         vec3.scale(_collisionRefl, _collisionRefl, movFrac);
         vec3.add(o.motion.location, o.motion.location, _collisionRefl);
-        // TODO(@darzu): DEBUG
-        // console.log(`moving ${o.id}`);
 
         // track that movement occured
         anyMovement = true;
@@ -324,8 +262,6 @@ export function stepPhysics(
     // update "tight" AABBs
     for (let o of objs) {
       if (lastObjMovs[o.id]) {
-        // TODO(@darzu): DEBUG
-        // console.log(`updating worldAABB for ${o.id}`);
         vec3.add(o.worldAABB.min, o.localAABB.min, o.motion.location);
         vec3.add(o.worldAABB.max, o.localAABB.max, o.motion.location);
       }
@@ -333,10 +269,6 @@ export function stepPhysics(
 
     itr++;
   }
-
-  // TODO(@darzu): IMPLEMENT "atRest"
-  // // check for objects at rest
-  // checkAtRest(objs, dt);
 
   // remember current state for next time
   for (let o of objs) {
@@ -375,9 +307,6 @@ function computeContactData(a: PhysicsObject, b: PhysicsObject): ContactData {
       dir = a === left ? -1 : 1;
     }
   }
-
-  // TODO(@darzu): debug
-  // if (a.id === _playerId || b.id === _playerId) console.log(`dist: ${dist}`);
 
   const bToANorm = vec3.fromValues(0, 0, 0);
   if (dim >= 0) bToANorm[dim] = dir;

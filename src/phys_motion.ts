@@ -5,14 +5,6 @@ import { CollidesWith, idPair, IdPair, ContactData, __step } from "./phys.js";
 import { AABB } from "./phys_broadphase.js";
 import { vec3Dbg } from "./utils-3d.js";
 
-/*
-How to manage sliding on contact ?
-  Track contact pairs
-    track normal of collision
-    if still pushing into each other
-      zero out the normal-of-collision component
- */
-
 export interface MotionProps {
   location: vec3;
   rotation: quat;
@@ -43,11 +35,6 @@ export function createMotionProps(init: Partial<MotionProps>): MotionProps {
 
   return init as MotionProps;
 }
-
-// TODO(@darzu): Do we need state besides the list
-// interface MotionSet {
-//   objs: MotionProps[];
-// }
 
 let delta = vec3.create();
 let normalizedVelocity = vec3.create();
@@ -101,12 +88,8 @@ export function didMove(o: {
   );
 }
 
-// TODO(@darzu):
-// function normalOfCollisions(a: PhysicsObject, b: PhysicsObject) {
-//   const x =
-// }
+const _constrainedVelocities = new Map<number, vec3>();
 
-// TODO(@darzu): physics step
 export function moveObjects(
   set: Record<number, { id: number; motion: MotionProps; worldAABB: AABB }>,
   dt: number,
@@ -115,11 +98,12 @@ export function moveObjects(
 ) {
   const objs = Object.values(set);
 
-  // TODO(@darzu): re-use
-  const constrainedVelocities = new Map<number, vec3>();
+  _constrainedVelocities.clear();
 
   // check for collision constraints
+  // TODO(@darzu): this is a velocity constraint and ideally should be nicely extracted
   for (let [abId, data] of lastContactData) {
+    // TODO(@darzu): we're a bit free with vector creation here, are the memory implications bad?
     const bReboundDir = vec3.clone(data.bToANorm);
     const aReboundDir = vec3.negate(vec3.create(), bReboundDir);
 
@@ -128,7 +112,7 @@ export function moveObjects(
 
     if (!!a) {
       const aConVel =
-        constrainedVelocities.get(data.aId) ??
+        _constrainedVelocities.get(data.aId) ??
         vec3.clone(set[data.aId].motion.linearVelocity);
       const aInDirOfB = vec3.dot(aConVel, aReboundDir);
       if (aInDirOfB > 0) {
@@ -137,18 +121,13 @@ export function moveObjects(
           aConVel,
           vec3.scale(vec3.create(), aReboundDir, aInDirOfB)
         );
-        constrainedVelocities.set(data.aId, aConVel);
-
-        // TODO(@darzu): DEBUG
-        if (data.aId === _playerId) {
-          console.log(`${__step}: playerV: ->${vec3Dbg(aConVel)}`);
-        }
+        _constrainedVelocities.set(data.aId, aConVel);
       }
     }
 
     if (!!b) {
       const bConVel =
-        constrainedVelocities.get(data.bId) ??
+        _constrainedVelocities.get(data.bId) ??
         vec3.clone(set[data.bId].motion.linearVelocity);
       const bInDirOfA = vec3.dot(bConVel, bReboundDir);
       if (bInDirOfA > 0) {
@@ -157,22 +136,12 @@ export function moveObjects(
           bConVel,
           vec3.scale(vec3.create(), bReboundDir, bInDirOfA)
         );
-        constrainedVelocities.set(data.bId, bConVel);
-
-        // TODO(@darzu): DEBUG
-        if (data.aId === _playerId) {
-          console.log(`${__step}: playerV: ->${vec3Dbg(bConVel)}`);
-        }
+        _constrainedVelocities.set(data.bId, bConVel);
       }
     }
   }
 
   for (let { id, motion: m, worldAABB } of objs) {
-    // TODO(@darzu): IMPLEMENT
-    // if (m.atRest) {
-    //   continue;
-    // }
-
     // clamp linear velocity based on size
     const vxMax = (worldAABB.max[0] - worldAABB.min[0]) / dt;
     const vyMax = (worldAABB.max[1] - worldAABB.min[1]) / dt;
@@ -182,11 +151,8 @@ export function moveObjects(
     m.linearVelocity[2] = clamp(m.linearVelocity[2], -vzMax, vzMax);
 
     // change location according to linear velocity
-    // TODO(@darzu): DEBUGGING
-    const v = constrainedVelocities.get(id) ?? m.linearVelocity;
+    const v = _constrainedVelocities.get(id) ?? m.linearVelocity;
     delta = vec3.scale(delta, v, dt);
-    // delta = vec3.scale(delta, m.linearVelocity, dt);
-    if (_playerId === id) console.log(`${__step}: moving by ${vec3Dbg(delta)}`); // TODO(@darzu): debg
     vec3.add(m.location, m.location, delta);
 
     // change rotation according to angular velocity
