@@ -252,341 +252,438 @@ vec3.normalize(lightDir, lightDir);
 
 type RenderFrameFn = (timeMS: number) => void;
 function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context: GPUPresentationContext): RenderFrameFn {
-    // log our estimated space usage stats
-    console.log(`Mesh space usage for up to ${maxMeshes} meshes, ${maxTris} tris, ${maxVerts} verts:`);
-    console.log(`   ${(maxVerts * vertByteSize / 1024).toFixed(1)} KB for verts`);
-    console.log(`   ${(maxTris * bytesPerTri / 1024).toFixed(1)} KB for indices`);
-    console.log(`   ${(maxMeshes * meshUniByteSizeAligned / 1024).toFixed(1)} KB for other object data`);
-    const unusedBytesPerModel = 256 - meshUniByteSizeExact % 256
-    console.log(`   Unused ${unusedBytesPerModel} bytes in uniform buffer per object (${(unusedBytesPerModel * maxMeshes / 1024).toFixed(1)} KB total waste)`);
-    const totalReservedBytes = maxVerts * vertByteSize + maxTris * bytesPerTri + maxMeshes * meshUniByteSizeAligned;
-    console.log(`Total space reserved for objects: ${(totalReservedBytes / 1024).toFixed(1)} KB`);
+  // log our estimated space usage stats
+  console.log(
+    `Mesh space usage for up to ${maxMeshes} meshes, ${maxTris} tris, ${maxVerts} verts:`
+  );
+  console.log(
+    `   ${((maxVerts * vertByteSize) / 1024).toFixed(1)} KB for verts`
+  );
+  console.log(
+    `   ${((maxTris * bytesPerTri) / 1024).toFixed(1)} KB for indices`
+  );
+  console.log(
+    `   ${((maxMeshes * meshUniByteSizeAligned) / 1024).toFixed(
+      1
+    )} KB for other object data`
+  );
+  const unusedBytesPerModel = 256 - (meshUniByteSizeExact % 256);
+  console.log(
+    `   Unused ${unusedBytesPerModel} bytes in uniform buffer per object (${(
+      (unusedBytesPerModel * maxMeshes) /
+      1024
+    ).toFixed(1)} KB total waste)`
+  );
+  const totalReservedBytes =
+    maxVerts * vertByteSize +
+    maxTris * bytesPerTri +
+    maxMeshes * meshUniByteSizeAligned;
+  console.log(
+    `Total space reserved for objects: ${(totalReservedBytes / 1024).toFixed(
+      1
+    )} KB`
+  );
 
-    // create our mesh buffers (vertex, index, uniform)
-    const verticesBuffer = device.createBuffer({
-        size: maxVerts * vertByteSize,
-        usage: GPUBufferUsage.VERTEX,
-        mappedAtCreation: true,
-    });
-    const indicesBuffer = device.createBuffer({
-        size: maxTris * bytesPerTri,
-        usage: GPUBufferUsage.INDEX,
-        mappedAtCreation: true,
-    });
-    const _meshUniBuffer = device.createBuffer({
-        size: meshUniByteSizeAligned * maxMeshes,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
+  // create our mesh buffers (vertex, index, uniform)
+  const verticesBuffer = device.createBuffer({
+    size: maxVerts * vertByteSize,
+    usage: GPUBufferUsage.VERTEX,
+    mappedAtCreation: true,
+  });
+  const indicesBuffer = device.createBuffer({
+    size: maxTris * bytesPerTri,
+    usage: GPUBufferUsage.INDEX,
+    mappedAtCreation: true,
+  });
+  const _meshUniBuffer = device.createBuffer({
+    size: meshUniByteSizeAligned * maxMeshes,
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+  });
 
-    // create our scene's uniform buffer
-    const sceneUniBuffer = device.createBuffer({
-        size: sceneUniBufferSizeAligned,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
+  // create our scene's uniform buffer
+  const sceneUniBuffer = device.createBuffer({
+    size: sceneUniBufferSizeAligned,
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+  });
 
-    // utilities for the device queue
-    function gpuBufferWriteMeshTransform(m: MeshHandle) {
-        device.queue.writeBuffer(_meshUniBuffer, m.modelUniByteOffset, (m.transform as Float32Array).buffer);
-    }
+  // utilities for the device queue
+  function gpuBufferWriteMeshTransform(m: MeshHandle) {
+    device.queue.writeBuffer(
+      _meshUniBuffer,
+      m.modelUniByteOffset,
+      (m.transform as Float32Array).buffer
+    );
+  }
 
-    // let's create meshes for our scene and store their data in the vertex, index, and uniform buffers
-    let ground: MeshHandle;
-    let player: MeshHandle;
-    let randomCubes: MeshHandle[] = [];
-    const allMeshHandles: MeshHandle[] = [];
-    {
-        // to modify buffers, we need to map them into JS space; we'll need to unmap later
-        let verticesMap = new Float32Array(verticesBuffer.getMappedRange())
-        let indicesMap = new Uint16Array(indicesBuffer.getMappedRange());
+  // let's create meshes for our scene and store their data in the vertex, index, and uniform buffers
+  let ground: MeshHandle;
+  let player: MeshHandle;
+  let randomCubes: MeshHandle[] = [];
+  const allMeshHandles: MeshHandle[] = [];
+  {
+    // to modify buffers, we need to map them into JS space; we'll need to unmap later
+    let verticesMap = new Float32Array(verticesBuffer.getMappedRange());
+    let indicesMap = new Uint16Array(indicesBuffer.getMappedRange());
 
-        // add our meshes to the vertex and index buffers
-        let numVerts = 0;
-        let numTris = 0;
-        function addMesh(m: Mesh): MeshHandle {
-            if (verticesMap === null)
-                throw "Use preRender() and postRender() functions"
-            if (numVerts + m.pos.length > maxVerts)
-                throw "Too many vertices!"
-            if (numTris + m.tri.length > maxTris)
-                throw "Too many triangles!"
+    // add our meshes to the vertex and index buffers
+    let numVerts = 0;
+    let numTris = 0;
+    function addMesh(m: Mesh): MeshHandle {
+      if (verticesMap === null)
+        throw "Use preRender() and postRender() functions";
+      if (numVerts + m.pos.length > maxVerts) throw "Too many vertices!";
+      if (numTris + m.tri.length > maxTris) throw "Too many triangles!";
 
-            const vertNumOffset = numVerts;
-            const indicesNumOffset = numTris * 3;
+      const vertNumOffset = numVerts;
+      const indicesNumOffset = numTris * 3;
 
-            m.pos.forEach((pos, i) => {
-                const vOff = (numVerts) * vertElStride
-                verticesMap.set([...pos, ...[0, 0, 0], ...[0, 0, 0]], vOff)
-                numVerts += 1;
-            })
+      m.pos.forEach((pos, i) => {
+        const vOff = numVerts * vertElStride;
+        verticesMap.set([...pos, ...[0, 0, 0], ...[0, 0, 0]], vOff);
+        numVerts += 1;
+      });
 
-            m.tri.forEach((triInd, i) => {
-                const vOff = (vertNumOffset + triInd[0]) * vertElStride
-                const iOff = (numTris) * indicesPerTriangle
-                if (indicesMap) {
-                    // update indices
-                    indicesMap[iOff + 0] = triInd[0]
-                    indicesMap[iOff + 1] = triInd[1]
-                    indicesMap[iOff + 2] = triInd[2]
-                }
-                // set provoking vertex
-                const normal = computeTriangleNormal(m.pos[triInd[0]], m.pos[triInd[1]], m.pos[triInd[2]])
-                verticesMap.set([...m.pos[triInd[0]], ...m.colors[i], ...normal], vOff)
-                numTris += 1;
-            })
-
-            const transform = mat4.create() as Float32Array;
-
-            const uniOffset = allMeshHandles.length * meshUniByteSizeAligned;
-            device.queue.writeBuffer(_meshUniBuffer, uniOffset, transform.buffer);
-
-            const res: MeshHandle = {
-                vertNumOffset,
-                indicesNumOffset,
-                modelUniByteOffset: uniOffset,
-                transform,
-                triCount: m.tri.length,
-                model: m,
-            }
-
-            allMeshHandles.push(res)
-            return res;
+      m.tri.forEach((triInd, i) => {
+        const vOff = (vertNumOffset + triInd[0]) * vertElStride;
+        const iOff = numTris * indicesPerTriangle;
+        if (indicesMap) {
+          // update indices
+          indicesMap[iOff + 0] = triInd[0];
+          indicesMap[iOff + 1] = triInd[1];
+          indicesMap[iOff + 2] = triInd[2];
         }
+        // set provoking vertex
+        const normal = computeTriangleNormal(
+          m.pos[triInd[0]],
+          m.pos[triInd[1]],
+          m.pos[triInd[2]]
+        );
+        verticesMap.set([...m.pos[triInd[0]], ...m.colors[i], ...normal], vOff);
+        numTris += 1;
+      });
 
-        ground = addMesh(PLANE); // ground plane
-        player = addMesh(CUBE); // player movable cube
-        for (let i = 0; i < 10; i++) {
-            // create cubes with random colors
-            const color: vec3 = [Math.random(), Math.random(), Math.random()];
-            const coloredCube: Mesh = { ...CUBE, colors: CUBE.colors.map(_ => color) }
-            randomCubes.push(addMesh(coloredCube))
-        }
+      const transform = mat4.create() as Float32Array;
 
-        // unmap the buffers so the GPU can use them
-        verticesBuffer.unmap()
-        indicesBuffer.unmap()
+      const uniOffset = allMeshHandles.length * meshUniByteSizeAligned;
+      device.queue.writeBuffer(_meshUniBuffer, uniOffset, transform.buffer);
+
+      const res: MeshHandle = {
+        vertNumOffset,
+        indicesNumOffset,
+        modelUniByteOffset: uniOffset,
+        transform,
+        triCount: m.tri.length,
+        model: m,
+      };
+
+      allMeshHandles.push(res);
+      return res;
     }
 
-    // place the ground
-    mat4.translate(ground.transform, ground.transform, [0, -3, -8])
-    mat4.scale(ground.transform, ground.transform, [10, 10, 10])
-    gpuBufferWriteMeshTransform(ground);
-
-    // initialize our cubes; each will have a random axis of rotation
-    const randomCubesAxis: vec3[] = []
-    for (let m of randomCubes) {
-        // place and rotate cubes randomly
-        mat4.translate(m.transform, m.transform, [Math.random() * 20 - 10, Math.random() * 5, -Math.random() * 10 - 5])
-        const axis: vec3 = vec3.normalize(vec3.create(), [Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5]);
-        randomCubesAxis.push(axis)
-        gpuBufferWriteMeshTransform(m);
+    ground = addMesh(PLANE); // ground plane
+    player = addMesh(CUBE); // player movable cube
+    for (let i = 0; i < 10; i++) {
+      // create cubes with random colors
+      const color: vec3 = [Math.random(), Math.random(), Math.random()];
+      const coloredCube: Mesh = {
+        ...CUBE,
+        colors: CUBE.colors.map((_) => color),
+      };
+      randomCubes.push(addMesh(coloredCube));
     }
 
-    // track which keys are pressed for use in the game loop
-    const pressedKeys: { [keycode: string]: boolean } = {}
-    window.addEventListener('keydown', (ev) => pressedKeys[ev.key.toLowerCase()] = true, false);
-    window.addEventListener('keyup', (ev) => pressedKeys[ev.key.toLowerCase()] = false, false);
+    // unmap the buffers so the GPU can use them
+    verticesBuffer.unmap();
+    indicesBuffer.unmap();
+  }
 
-    // track mouse movement for use in the game loop
-    let _mouseAccumulatedX = 0;
-    let _mouseAccummulatedY = 0;
-    window.addEventListener('mousemove', (ev) => {
-        _mouseAccumulatedX += ev.movementX
-        _mouseAccummulatedY += ev.movementY
-    }, false);
-    function takeAccumulatedMouseMovement(): { x: number, y: number } {
-        const result = { x: _mouseAccumulatedX, y: _mouseAccummulatedY };
-        _mouseAccumulatedX = 0; // reset accumulators
-        _mouseAccummulatedY = 0;
-        return result
-    }
+  // place the ground
+  mat4.translate(ground.transform, ground.transform, [0, -3, -8]);
+  mat4.scale(ground.transform, ground.transform, [10, 10, 10]);
+  gpuBufferWriteMeshTransform(ground);
 
-    // when the player clicks on the canvas, lock the cursor for better gaming (the browser lets them exit)
-    function doLockMouse() {
-        canvasRef.requestPointerLock();
-        canvasRef.removeEventListener('click', doLockMouse)
-    }
-    canvasRef.addEventListener('click', doLockMouse)
+  // initialize our cubes; each will have a random axis of rotation
+  const randomCubesAxis: vec3[] = [];
+  for (let m of randomCubes) {
+    // place and rotate cubes randomly
+    mat4.translate(m.transform, m.transform, [
+      Math.random() * 20 - 10,
+      Math.random() * 5,
+      -Math.random() * 10 - 5,
+    ]);
+    const axis: vec3 = vec3.normalize(vec3.create(), [
+      Math.random() - 0.5,
+      Math.random() - 0.5,
+      Math.random() - 0.5,
+    ]);
+    randomCubesAxis.push(axis);
+    gpuBufferWriteMeshTransform(m);
+  }
 
-    // create the "player", which is an affine matrix tracking position & orientation of a cube
-    // the camera will follow behind it.
-    const cameraOffset = mat4.create();
-    pitch(cameraOffset, -Math.PI / 8)
-    gpuBufferWriteMeshTransform(player)
+  // track which keys are pressed for use in the game loop
+  const pressedKeys: { [keycode: string]: boolean } = {};
+  window.addEventListener(
+    "keydown",
+    (ev) => (pressedKeys[ev.key.toLowerCase()] = true),
+    false
+  );
+  window.addEventListener(
+    "keyup",
+    (ev) => (pressedKeys[ev.key.toLowerCase()] = false),
+    false
+  );
 
-    // write the light data to the scene uniform buffer
-    device.queue.writeBuffer(sceneUniBuffer, bytesPerMat4 * 1, (lightViewProjMatrix as Float32Array).buffer);
-    device.queue.writeBuffer(sceneUniBuffer, bytesPerMat4 * 2, (lightDir as Float32Array).buffer);
+  // track mouse movement for use in the game loop
+  let _mouseAccumulatedX = 0;
+  let _mouseAccummulatedY = 0;
+  window.addEventListener(
+    "mousemove",
+    (ev) => {
+      _mouseAccumulatedX += ev.movementX;
+      _mouseAccummulatedY += ev.movementY;
+    },
+    false
+  );
+  function takeAccumulatedMouseMovement(): { x: number; y: number } {
+    const result = { x: _mouseAccumulatedX, y: _mouseAccummulatedY };
+    _mouseAccumulatedX = 0; // reset accumulators
+    _mouseAccummulatedY = 0;
+    return result;
+  }
 
-    // setup a binding for our per-mesh uniforms
-    const modelUniBindGroupLayout = device.createBindGroupLayout({
-        entries: [{
-            binding: 0,
-            visibility: GPUShaderStage.VERTEX,
-            buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: meshUniByteSizeAligned },
-        }],
-    });
-    const modelUniBindGroup = device.createBindGroup({
-        layout: modelUniBindGroupLayout,
-        entries: [{
-            binding: 0,
-            resource: { buffer: _meshUniBuffer, size: meshUniByteSizeAligned, },
-        }],
-    });
+  // when the player clicks on the canvas, lock the cursor for better gaming (the browser lets them exit)
+  function doLockMouse() {
+    canvasRef.requestPointerLock();
+    canvasRef.removeEventListener("click", doLockMouse);
+  }
+  canvasRef.addEventListener("click", doLockMouse);
 
-    // we'll use a triangle list with backface culling and counter-clockwise triangle indices for both pipelines
-    const primitiveBackcull: GPUPrimitiveState = {
-        topology: 'triangle-list',
-        cullMode: 'back',
-        frontFace: 'ccw',
-    };
+  // create the "player", which is an affine matrix tracking position & orientation of a cube
+  // the camera will follow behind it.
+  const cameraOffset = mat4.create();
+  pitch(cameraOffset, -Math.PI / 8);
+  gpuBufferWriteMeshTransform(player);
 
-    // define the resource bindings for the mesh rendering pipeline
-    const renderSceneUniBindGroupLayout = device.createBindGroupLayout({
-        entries: [
-            { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-        ],
-    });
-    const renderSceneUniBindGroup = device.createBindGroup({
-        layout: renderSceneUniBindGroupLayout,
-        entries: [
-            { binding: 0, resource: { buffer: sceneUniBuffer } },
-        ],
-    });
+  // write the light data to the scene uniform buffer
+  device.queue.writeBuffer(
+    sceneUniBuffer,
+    bytesPerMat4 * 1,
+    (lightViewProjMatrix as Float32Array).buffer
+  );
+  device.queue.writeBuffer(
+    sceneUniBuffer,
+    bytesPerMat4 * 2,
+    (lightDir as Float32Array).buffer
+  );
 
-    // setup our second phase pipeline which renders meshes to the canvas
-    const renderPipelineDesc: GPURenderPipelineDescriptor = {
-        layout: device.createPipelineLayout({
-            bindGroupLayouts: [renderSceneUniBindGroupLayout, modelUniBindGroupLayout],
-        }),
-        vertex: {
-            module: device.createShaderModule({ code: vertexShader }),
-            entryPoint: 'main',
-            buffers: [{
-                arrayStride: vertByteSize,
-                attributes: vertexDataFormat,
-            }],
+  // setup a binding for our per-mesh uniforms
+  const modelUniBindGroupLayout = device.createBindGroupLayout({
+    entries: [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.VERTEX,
+        buffer: {
+          type: "uniform",
+          hasDynamicOffset: true,
+          minBindingSize: meshUniByteSizeAligned,
         },
-        fragment: {
-            module: device.createShaderModule({ code: fragmentShader }),
-            entryPoint: 'main',
-            targets: [{ format: presentationFormat }],
-        },
-        primitive: primitiveBackcull,
-        depthStencil: {
-            depthWriteEnabled: true,
-            depthCompare: 'less',
-            format: depthStencilFormat,
-        },
-        multisample: {
-            count: antiAliasSampleCount,
-        },
-    };
-    const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
+      },
+    ],
+  });
+  const modelUniBindGroup = device.createBindGroup({
+    layout: modelUniBindGroupLayout,
+    entries: [
+      {
+        binding: 0,
+        resource: { buffer: _meshUniBuffer, size: meshUniByteSizeAligned },
+      },
+    ],
+  });
 
-    // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
-    // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
-    const bundleEnc = device.createRenderBundleEncoder({
-        colorFormats: [presentationFormat],
-        depthStencilFormat: depthStencilFormat,
-        sampleCount: antiAliasSampleCount,
+  // we'll use a triangle list with backface culling and counter-clockwise triangle indices for both pipelines
+  const primitiveBackcull: GPUPrimitiveState = {
+    topology: "triangle-list",
+    cullMode: "back",
+    frontFace: "ccw",
+  };
+
+  // define the resource bindings for the mesh rendering pipeline
+  const renderSceneUniBindGroupLayout = device.createBindGroupLayout({
+    entries: [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+        buffer: { type: "uniform" },
+      },
+    ],
+  });
+  const renderSceneUniBindGroup = device.createBindGroup({
+    layout: renderSceneUniBindGroupLayout,
+    entries: [{ binding: 0, resource: { buffer: sceneUniBuffer } }],
+  });
+
+  // setup our second phase pipeline which renders meshes to the canvas
+  const renderPipelineDesc: GPURenderPipelineDescriptor = {
+    layout: device.createPipelineLayout({
+      bindGroupLayouts: [
+        renderSceneUniBindGroupLayout,
+        modelUniBindGroupLayout,
+      ],
+    }),
+    vertex: {
+      module: device.createShaderModule({ code: vertexShader }),
+      entryPoint: "main",
+      buffers: [
+        {
+          arrayStride: vertByteSize,
+          attributes: vertexDataFormat,
+        },
+      ],
+    },
+    fragment: {
+      module: device.createShaderModule({ code: fragmentShader }),
+      entryPoint: "main",
+      targets: [{ format: presentationFormat }],
+    },
+    primitive: primitiveBackcull,
+    depthStencil: {
+      depthWriteEnabled: true,
+      depthCompare: "less",
+      format: depthStencilFormat,
+    },
+    multisample: {
+      count: antiAliasSampleCount,
+    },
+  };
+  const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
+
+  // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
+  // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
+  const bundleEnc = device.createRenderBundleEncoder({
+    colorFormats: [presentationFormat],
+    depthStencilFormat: depthStencilFormat,
+    sampleCount: antiAliasSampleCount,
+  });
+  bundleEnc.setPipeline(renderPipeline);
+  bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
+  bundleEnc.setVertexBuffer(0, verticesBuffer);
+  bundleEnc.setIndexBuffer(indicesBuffer, "uint16");
+  for (let m of allMeshHandles) {
+    bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
+    bundleEnc.drawIndexed(
+      m.triCount * 3,
+      undefined,
+      m.indicesNumOffset,
+      m.vertNumOffset
+    );
+  }
+  let renderBundle = bundleEnc.finish();
+
+  // initialize performance metrics
+  let debugDiv = document.getElementById("debug-div") as HTMLDivElement;
+  let previousFrameTime = 0;
+  let avgJsTimeMs = 0;
+  let avgFrameTimeMs = 0;
+
+  // controls for this demo
+  const controlsStr = `controls: WASD, shift/c, mouse, spacebar`;
+
+  // our main game loop
+  function renderFrame(timeMs: number) {
+    // track performance metrics
+    const start = performance.now();
+    const frameTimeMs = previousFrameTime ? timeMs - previousFrameTime : 0;
+    previousFrameTime = timeMs;
+
+    // resize (if necessary)
+    checkCanvasResize(device, context, canvasRef.width, canvasRef.height);
+
+    // process inputs and move the player & camera
+    const playerSpeed = pressedKeys[" "] ? 1.0 : 0.2; // spacebar boosts speed
+    if (pressedKeys["w"]) moveZ(player.transform, -playerSpeed); // forward
+    if (pressedKeys["s"]) moveZ(player.transform, playerSpeed); // backward
+    if (pressedKeys["a"]) moveX(player.transform, -playerSpeed); // left
+    if (pressedKeys["d"]) moveX(player.transform, playerSpeed); // right
+    if (pressedKeys["shift"]) moveY(player.transform, playerSpeed); // up
+    if (pressedKeys["c"]) moveY(player.transform, -playerSpeed); // down
+    const { x: mouseX, y: mouseY } = takeAccumulatedMouseMovement();
+    yaw(player.transform, -mouseX * 0.01);
+    pitch(cameraOffset, -mouseY * 0.01);
+
+    // apply the players movement by writting to the model uniform buffer
+    gpuBufferWriteMeshTransform(player);
+
+    // rotate the random cubes
+    for (let i = 0; i < randomCubes.length; i++) {
+      const m = randomCubes[i];
+      const axis = randomCubesAxis[i];
+      mat4.rotate(m.transform, m.transform, Math.PI * 0.01, axis);
+      gpuBufferWriteMeshTransform(m);
+    }
+
+    // calculate and write our view and project matrices
+    const viewMatrix = mat4.create();
+    mat4.multiply(viewMatrix, viewMatrix, player.transform);
+    mat4.multiply(viewMatrix, viewMatrix, cameraOffset);
+    mat4.translate(viewMatrix, viewMatrix, [0, 0, 10]); // TODO(@darzu): can this be merged into the camera offset?
+    mat4.invert(viewMatrix, viewMatrix);
+    const projectionMatrix = mat4.perspective(
+      mat4.create(),
+      (2 * Math.PI) / 5,
+      aspectRatio,
+      1,
+      10000.0 /*view distance*/
+    );
+    const viewProj = mat4.multiply(
+      mat4.create(),
+      projectionMatrix,
+      viewMatrix
+    ) as Float32Array;
+    device.queue.writeBuffer(sceneUniBuffer, 0, viewProj.buffer);
+
+    // start collecting our render commands for this frame
+    const commandEncoder = device.createCommandEncoder();
+
+    // render to the canvas' via our swap-chain
+    const renderPassEncoder = commandEncoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: colorTextureView,
+          resolveTarget: context.getCurrentTexture().createView(),
+          loadValue: backgroundColor,
+          storeOp: "store",
+        },
+      ],
+      depthStencilAttachment: {
+        view: depthTextureView,
+        depthLoadValue: 1.0,
+        depthStoreOp: "store",
+        stencilLoadValue: 0,
+        stencilStoreOp: "store",
+      },
     });
-    bundleEnc.setPipeline(renderPipeline);
-    bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
-    bundleEnc.setVertexBuffer(0, verticesBuffer);
-    bundleEnc.setIndexBuffer(indicesBuffer, 'uint16');
-    for (let m of allMeshHandles) {
-        bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
-        bundleEnc.drawIndexed(m.triCount * 3, undefined, m.indicesNumOffset, m.vertNumOffset);
-    }
-    let renderBundle = bundleEnc.finish()
+    renderPassEncoder.executeBundles([renderBundle]);
+    renderPassEncoder.endPass();
 
-    // initialize performance metrics
-    let debugDiv = document.getElementById('debug-div') as HTMLDivElement;
-    let previousFrameTime = 0;
-    let avgJsTimeMs = 0
-    let avgFrameTimeMs = 0
+    // submit render passes to GPU
+    device.queue.submit([commandEncoder.finish()]);
 
-    // controls for this demo
-    const controlsStr = `controls: WASD, shift/c, mouse, spacebar`
-
-    // our main game loop
-    function renderFrame(timeMs: number) {
-        // track performance metrics
-        const start = performance.now();
-        const frameTimeMs = previousFrameTime ? timeMs - previousFrameTime : 0;
-        previousFrameTime = timeMs;
-
-        // resize (if necessary)
-        checkCanvasResize(device, context, canvasRef.width, canvasRef.height);
-
-        // process inputs and move the player & camera
-        const playerSpeed = pressedKeys[' '] ? 1.0 : 0.2; // spacebar boosts speed
-        if (pressedKeys['w']) moveZ(player.transform, -playerSpeed) // forward
-        if (pressedKeys['s']) moveZ(player.transform, playerSpeed) // backward
-        if (pressedKeys['a']) moveX(player.transform, -playerSpeed) // left
-        if (pressedKeys['d']) moveX(player.transform, playerSpeed) // right
-        if (pressedKeys['shift']) moveY(player.transform, playerSpeed) // up
-        if (pressedKeys['c']) moveY(player.transform, -playerSpeed) // down
-        const { x: mouseX, y: mouseY } = takeAccumulatedMouseMovement();
-        yaw(player.transform, -mouseX * 0.01);
-        pitch(cameraOffset, -mouseY * 0.01);
-
-        // apply the players movement by writting to the model uniform buffer
-        gpuBufferWriteMeshTransform(player);
-
-        // rotate the random cubes
-        for (let i = 0; i < randomCubes.length; i++) {
-            const m = randomCubes[i]
-            const axis = randomCubesAxis[i]
-            mat4.rotate(m.transform, m.transform, Math.PI * 0.01, axis);
-            gpuBufferWriteMeshTransform(m);
-        }
-
-        // calculate and write our view and project matrices
-        const viewMatrix = mat4.create()
-        mat4.multiply(viewMatrix, viewMatrix, player.transform)
-        mat4.multiply(viewMatrix, viewMatrix, cameraOffset)
-        mat4.translate(viewMatrix, viewMatrix, [0, 0, 10]) // TODO(@darzu): can this be merged into the camera offset?
-        mat4.invert(viewMatrix, viewMatrix);
-        const projectionMatrix = mat4.perspective(mat4.create(), (2 * Math.PI) / 5, aspectRatio, 1, 10000.0/*view distance*/);
-        const viewProj = mat4.multiply(mat4.create(), projectionMatrix, viewMatrix) as Float32Array
-        device.queue.writeBuffer(sceneUniBuffer, 0, viewProj.buffer);
-
-        // start collecting our render commands for this frame
-        const commandEncoder = device.createCommandEncoder();
-
-        // render to the canvas' via our swap-chain
-        const renderPassEncoder = commandEncoder.beginRenderPass({
-            colorAttachments: [{
-                view: colorTextureView,
-                resolveTarget: context.getCurrentTexture().createView(),
-                loadValue: backgroundColor,
-                storeOp: 'store',
-            }],
-            depthStencilAttachment: {
-                view: depthTextureView,
-                depthLoadValue: 1.0,
-                depthStoreOp: 'store',
-                stencilLoadValue: 0,
-                stencilStoreOp: 'store',
-            },
-        });
-        renderPassEncoder.executeBundles([renderBundle]);
-        renderPassEncoder.endPass();
-
-        // submit render passes to GPU
-        device.queue.submit([commandEncoder.finish()]);
-
-        // calculate performance metrics as running, weighted averages across frames
-        const jsTime = performance.now() - start;
-        const avgWeight = 0.05
-        avgJsTimeMs = avgJsTimeMs ? (1 - avgWeight) * avgJsTimeMs + avgWeight * jsTime : jsTime
-        avgFrameTimeMs = avgFrameTimeMs ? (1 - avgWeight) * avgFrameTimeMs + avgWeight * frameTimeMs : frameTimeMs
-        const avgFPS = 1000 / avgFrameTimeMs;
-        debugDiv.innerText = controlsStr
-            + `\n` + `(js per frame: ${avgJsTimeMs.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)})`
-    }
-    return renderFrame;
+    // calculate performance metrics as running, weighted averages across frames
+    const jsTime = performance.now() - start;
+    const avgWeight = 0.05;
+    avgJsTimeMs = avgJsTimeMs
+      ? (1 - avgWeight) * avgJsTimeMs + avgWeight * jsTime
+      : jsTime;
+    avgFrameTimeMs = avgFrameTimeMs
+      ? (1 - avgWeight) * avgFrameTimeMs + avgWeight * frameTimeMs
+      : frameTimeMs;
+    const avgFPS = 1000 / avgFrameTimeMs;
+    debugDiv.innerText =
+      controlsStr +
+      `\n` +
+      `(js per frame: ${avgJsTimeMs.toFixed(2)}ms, fps: ${avgFPS.toFixed(1)})`;
+  }
+  return renderFrame;
 }
 
 // math utilities
