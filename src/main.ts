@@ -684,7 +684,7 @@ function attachToCanvas(
         binding: 0,
         visibility: GPUShaderStage.VERTEX,
         buffer: {
-          type: 'uniform',
+          type: "uniform",
         },
       },
     ],
@@ -700,7 +700,7 @@ function attachToCanvas(
       module: device.createShaderModule({
         code: vertexShaderForShadows,
       }),
-      entryPoint: 'main',
+      entryPoint: "main",
       buffers: [
         {
           arrayStride: vertByteSize,
@@ -714,38 +714,37 @@ function attachToCanvas(
       module: device.createShaderModule({
         code: fragmentShaderForShadows,
       }),
-      entryPoint: 'main',
+      entryPoint: "main",
       targets: [],
     },
     depthStencil: {
       depthWriteEnabled: true,
-      depthCompare: 'less',
-      format: 'depth32float',
+      depthCompare: "less",
+      format: "depth32float",
     },
     primitive: primitiveBackcull,
   };
   const shadowPipeline = device.createRenderPipeline(shadowPipelineDesc);
 
-//   // TODO(@darzu): figure out shadow bundle?
-//   const shadowBundleEnc = device.createRenderBundleEncoder({
-//     colorFormats: [presentationFormat],
-//     depthStencilFormat: depthStencilFormat,
-//     sampleCount: antiAliasSampleCount,
-//   });
-//   shadowBundleEnc.setPipeline(renderPipeline);
-//   shadowBundleEnc.setBindGroup(0, renderSceneUniBindGroup);
-//   shadowBundleEnc.setVertexBuffer(0, verticesBuffer);
-//   shadowBundleEnc.setIndexBuffer(indicesBuffer, "uint16");
-//   for (let m of allMeshHandles) {
-//     shadowBundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
-//     shadowBundleEnc.drawIndexed(
-//       m.triCount * 3,
-//       undefined,
-//       m.indicesNumOffset,
-//       m.vertNumOffset
-//     );
-//   }
-//   let renderBundle = shadowBundleEnc.finish();
+  // TODO(@darzu): figure out shadow bundle?
+  // const shadowBundleEnc = device.createRenderBundleEncoder({
+  //   colorFormats: [],
+  //   depthStencilFormat: shadowDepthStencilFormat,
+  // });
+  // shadowBundleEnc.setPipeline(shadowPipeline);
+  // shadowBundleEnc.setBindGroup(0, shadowSceneUniBindGroup);
+  // shadowBundleEnc.setVertexBuffer(0, verticesBuffer);
+  // shadowBundleEnc.setIndexBuffer(indicesBuffer, "uint16");
+  // for (let m of allMeshHandles) {
+  //   shadowBundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
+  //   shadowBundleEnc.drawIndexed(
+  //     m.triCount * 3,
+  //     undefined,
+  //     m.indicesNumOffset,
+  //     m.vertNumOffset
+  //   );
+  // }
+  // let shadowBundle = shadowBundleEnc.finish();
 
   // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
   // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
