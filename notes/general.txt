@@ -837,3 +837,10 @@ TO WATCH / READ:
   https://www.gamedevs.org/uploads/anatomy-of-physics-engine.pdf
   https://www.toptal.com/game/video-game-physics-part-ii-collision-detection-for-solid-objects
   http://realtimecollisiondetection.net
+
+At the top of every guide have a compact studycard-style summary
+  great for Reference
+  can look at a glance to see if the article will teach you anything new
+  nice table of contents for the guide
+  shareable, tweetable, "viral"
+  printable?

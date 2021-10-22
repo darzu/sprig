@@ -400,3 +400,6 @@ SDF for text:
 
 VFX explosions:
   https://www.youtube.com/watch?v=dDsb_9n-Gik
+
+Flow maps and gradient maps for moving textures:
+  https://www.youtube.com/watch?v=KfphtLRoUB0

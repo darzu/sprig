@@ -148,3 +148,26 @@ No Man's Sky talk: https://www.youtube.com/watch?v=C9RyEiEzMiU
 
     when you're generating a single voxel, you cannot query the voxels around you
         in general you can't get that context
+
+Loading large world, Ghost of Tsushima:
+    https://www.youtube.com/watch?v=Ur53sJdS8rQ
+    initial estimates: ~12mb per tile, 100m tiles, 6,400 tiles
+    break down goals:
+        3->2.5mb terrain
+        24->0mb terrain physics
+        12->1mb vegitation
+        0.5->0.1mb lighting
+        6->3mb pathing
+    new tech:
+        large scale/robust editting?
+        proc-gen tools
+        mission tools
+        optimized instance overhead?
+        more data in shared core
+        needed fine grain streaming??
+    final disc:
+        textures: 18g, mesh: 2.8g, terrain: 5.2g, streamed mesh: 0.9g, movies: 6.8g,
+        cutscenes: 2.5g, music: 2.1g, dialog: 2g
+        total: 56g
+    memory break down: https://youtu.be/Ur53sJdS8rQ?t=450
+    

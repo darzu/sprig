@@ -108,3 +108,6 @@ Elements kinds in V8: https://v8.dev/blog/elements-kinds
 
 Check for more perf tips:
     https://v8.dev/blog
+
+In a big world with float problems: subtact before multiply
+    https://youtu.be/Ur53sJdS8rQ?t=812

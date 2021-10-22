@@ -158,6 +158,7 @@ Animation Bootcamp: An Indie Approach to Procedural Animation
 Ubisoft talks inverse kinimatics:
     https://www.youtube.com/watch?v=KLjTU0yKS00
     IK Rig: Procedural Pose Animation
+    very programaticly dynamic characters
 
 Vertex animation textures:
     https://www.youtube.com/watch?v=NQ5Dllbxbz4
