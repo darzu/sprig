@@ -689,6 +689,20 @@ function attachToCanvas(
       },
     ],
   });
+  // define the resource bindings for the shadow pipeline
+  const shadowSceneUniBindGroupLayout = device.createBindGroupLayout({
+    entries: [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+        buffer: { type: "uniform" },
+      },
+    ],
+  });
+  const shadowSceneUniBindGroup = device.createBindGroup({
+    layout: shadowSceneUniBindGroupLayout,
+    entries: [{ binding: 0, resource: { buffer: sceneUniBuffer } }],
+  });
   const shadowPipelineDesc: GPURenderPipelineDescriptor = {
     layout: device.createPipelineLayout({
       bindGroupLayouts: [
@@ -727,24 +741,24 @@ function attachToCanvas(
   const shadowPipeline = device.createRenderPipeline(shadowPipelineDesc);
 
   // TODO(@darzu): figure out shadow bundle?
-  // const shadowBundleEnc = device.createRenderBundleEncoder({
-  //   colorFormats: [],
-  //   depthStencilFormat: shadowDepthStencilFormat,
-  // });
-  // shadowBundleEnc.setPipeline(shadowPipeline);
-  // shadowBundleEnc.setBindGroup(0, shadowSceneUniBindGroup);
-  // shadowBundleEnc.setVertexBuffer(0, verticesBuffer);
-  // shadowBundleEnc.setIndexBuffer(indicesBuffer, "uint16");
-  // for (let m of allMeshHandles) {
-  //   shadowBundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
-  //   shadowBundleEnc.drawIndexed(
-  //     m.triCount * 3,
-  //     undefined,
-  //     m.indicesNumOffset,
-  //     m.vertNumOffset
-  //   );
-  // }
-  // let shadowBundle = shadowBundleEnc.finish();
+  const shadowBundleEnc = device.createRenderBundleEncoder({
+    colorFormats: [],
+    depthStencilFormat: shadowDepthStencilFormat,
+  });
+  shadowBundleEnc.setPipeline(shadowPipeline);
+  shadowBundleEnc.setBindGroup(0, shadowSceneUniBindGroup);
+  shadowBundleEnc.setVertexBuffer(0, verticesBuffer);
+  shadowBundleEnc.setIndexBuffer(indicesBuffer, "uint16");
+  for (let m of allMeshHandles) {
+    shadowBundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
+    shadowBundleEnc.drawIndexed(
+      m.triCount * 3,
+      undefined,
+      m.indicesNumOffset,
+      m.vertNumOffset
+    );
+  }
+  let shadowBundle = shadowBundleEnc.finish();
 
   // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
   // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
