@@ -265,7 +265,9 @@ vec3.normalize(lightDir, lightDir);
 type RenderFrameFn = (timeMS: number) => void;
 function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): RenderFrameFn {
     // configure our canvas backed swapchain
-    const context = canvasRef.getContext('gpupresent')!;
+    const context = canvasRef.getContext(
+      "webgpu"
+    ) as any as GPUPresentationContext;
     context.configure({ device, format: swapChainFormat });
 
     // log our estimated space usage stats
