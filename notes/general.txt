@@ -844,3 +844,38 @@ At the top of every guide have a compact studycard-style summary
   nice table of contents for the guide
   shareable, tweetable, "viral"
   printable?
+
+viking sailing mini game space:
+  isometric
+  local coop
+  playable on joycon
+  all modeling done in Kenshape?
+    space background?
+    done with shaders
+  scaling difficulty:
+    scale difficulty of encounters
+    ! scale down the size of ship
+      leave the graph of connectivity
+  camera doesn't move relative to the player
+  render the cross section
+  failure mode:
+    connect extra controller, move up to the crows nest
+  how to player crows nest:
+    eva from crows nest
+    resource harvest
+    ziplining
+    sniping
+  whale-ing in space
+  mining astroids
+  light sailing
+  sea monsters
+  trading
+  chose lenght of mission
+  encourage more players:
+    level lock ?
+    like valheim: mining and fighting and transporting is a lot
+  TODO:
+    [ ] Kenshape -> sprigland
+    [ ] interactivity w/ stations
+    [ ] isometric rendering
+    [ ] 
