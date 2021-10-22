@@ -9,7 +9,9 @@ const shaderSceneStruct = `
         lightDir : vec3<f32>;
     };
 `;
-const vertexShader = shaderSceneStruct + `
+const vertexShader =
+  shaderSceneStruct +
+  `
     [[block]] struct Model {
         modelMatrix : mat4x4<f32>;
     };
@@ -20,6 +22,7 @@ const vertexShader = shaderSceneStruct + `
     struct VertexOutput {
         [[location(0)]] [[interpolate(flat)]] normal : vec3<f32>;
         [[location(1)]] [[interpolate(flat)]] color : vec3<f32>;
+        [[location(2)]] shadowPos : vec3<f32>;
         [[builtin(position)]] position : vec4<f32>;
     };
 
@@ -31,6 +34,17 @@ const vertexShader = shaderSceneStruct + `
         ) -> VertexOutput {
         var output : VertexOutput;
         let worldPos: vec4<f32> = model.modelMatrix * vec4<f32>(position, 1.0);
+
+        // TODO(@darzu): SHADOW
+        // XY is in (-1, 1) space, Z is in (0, 1) space
+        let posFromLight : vec4<f32> = scene.lightViewProjMatrix * model.modelMatrix * vec4<f32>(position, 1.0);
+        // Convert XY to (0, 1)
+        // Y is flipped because texture coords are Y-down.
+        output.shadowPos = vec3<f32>(
+            posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5),
+            posFromLight.z
+        );
+
         output.position = scene.cameraViewProjMatrix * worldPos;
         output.normal = normalize(model.modelMatrix * vec4<f32>(normal, 0.0)).xyz;
         output.color = color;
@@ -47,14 +61,22 @@ const fragmentShader =
     struct VertexOutput {
         [[location(0)]] [[interpolate(flat)]] normal : vec3<f32>;
         [[location(1)]] [[interpolate(flat)]] color : vec3<f32>;
+        [[location(2)]] shadowPos : vec3<f32>;
     };
 
     [[stage(fragment)]]
     fn main(input: VertexOutput) -> [[location(0)]] vec4<f32> {
-        let sunLight : f32 = clamp(dot(-scene.lightDir, input.normal), 0.0, 1.0);
+        let shadowVis : f32 = textureSampleCompare(
+            shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
+        let sunLight : f32 = shadowVis * clamp(dot(-scene.lightDir, input.normal), 0.0, 1.0);
         let resultColor: vec3<f32> = input.color * (sunLight * 2.0 + 0.2);
+
+        // let sunLight : f32 = clamp(dot(-scene.lightDir, input.normal), 0.0, 1.0);
+        // let resultColor: vec3<f32> = input.color * (sunLight * 2.0 + 0.2);
+
         let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
         return vec4<f32>(gammaCorrected, 1.0);
+
     }
 `;
 
