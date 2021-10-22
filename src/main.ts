@@ -37,9 +37,8 @@ const vertexShader =
 
         // TODO(@darzu): SHADOW
         // XY is in (-1, 1) space, Z is in (0, 1) space
-        let posFromLight : vec4<f32> = scene.lightViewProjMatrix * model.modelMatrix * vec4<f32>(position, 1.0);
-        // Convert XY to (0, 1)
-        // Y is flipped because texture coords are Y-down.
+        let posFromLight : vec4<f32> = scene.lightViewProjMatrix * worldPos;
+        // Convert XY to (0, 1), Y is flipped because texture coords are Y-down.
         output.shadowPos = vec3<f32>(
             posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5),
             posFromLight.z
