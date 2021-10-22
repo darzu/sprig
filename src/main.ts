@@ -469,10 +469,11 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice): Render
 
     // create the texture that our shadow pass will render to
     const shadowDepthTextureDesc: GPUTextureDescriptor = {
-        size: { width: 2048 * 2, height: 2048 * 2 },
-        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.SAMPLED,
-        format: shadowDepthStencilFormat,
-    }
+      size: { width: 2048 * 2, height: 2048 * 2 },
+      usage:
+        GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+      format: shadowDepthStencilFormat,
+    };
     const shadowDepthTexture = device.createTexture(shadowDepthTextureDesc);
     const shadowDepthTextureView = shadowDepthTexture.createView();
 
