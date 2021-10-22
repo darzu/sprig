@@ -1,4 +1,4 @@
-import { mat4, vec3 } from './gl-matrix.js';
+import { mat4, vec3 } from "./gl-matrix.js";
 
 // Defines shaders in WGSL for the shadow and regular rendering pipelines. Likely you'll want
 // these in external files but they've been inlined for redistribution convenience.
@@ -895,56 +895,74 @@ function attachToCanvas(
 
 // math utilities
 function align(x: number, size: number): number {
-    return Math.ceil(x / size) * size
+  return Math.ceil(x / size) * size;
 }
 function computeTriangleNormal(p1: vec3, p2: vec3, p3: vec3): vec3 {
-    // cross product of two edges, https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
-    const n = vec3.cross(vec3.create(), vec3.sub(vec3.create(), p2, p1), vec3.sub(vec3.create(), p3, p1))
-    vec3.normalize(n, n)
-    return n;
+  // cross product of two edges, https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
+  const n = vec3.cross(
+    vec3.create(),
+    vec3.sub(vec3.create(), p2, p1),
+    vec3.sub(vec3.create(), p3, p1)
+  );
+  vec3.normalize(n, n);
+  return n;
 }
 
 // matrix utilities
-function pitch(m: mat4, rad: number) { return mat4.rotateX(m, m, rad); }
-function yaw(m: mat4, rad: number) { return mat4.rotateY(m, m, rad); }
-function roll(m: mat4, rad: number) { return mat4.rotateZ(m, m, rad); }
-function moveX(m: mat4, n: number) { return mat4.translate(m, m, [n, 0, 0]); }
-function moveY(m: mat4, n: number) { return mat4.translate(m, m, [0, n, 0]); }
-function moveZ(m: mat4, n: number) { return mat4.translate(m, m, [0, 0, n]); }
+function pitch(m: mat4, rad: number) {
+  return mat4.rotateX(m, m, rad);
+}
+function yaw(m: mat4, rad: number) {
+  return mat4.rotateY(m, m, rad);
+}
+function roll(m: mat4, rad: number) {
+  return mat4.rotateZ(m, m, rad);
+}
+function moveX(m: mat4, n: number) {
+  return mat4.translate(m, m, [n, 0, 0]);
+}
+function moveY(m: mat4, n: number) {
+  return mat4.translate(m, m, [0, n, 0]);
+}
+function moveZ(m: mat4, n: number) {
+  return mat4.translate(m, m, [0, 0, n]);
+}
 
 async function main() {
-    const start = performance.now();
+  const start = performance.now();
 
-    // attach to HTML canvas 
-    let canvasRef = document.getElementById('sample-canvas') as HTMLCanvasElement;
-    const adapter = await navigator.gpu.requestAdapter();
-    const device = await adapter!.requestDevice();
-    const context = canvasRef.getContext('webgpu') as any as GPUPresentationContext;
-    presentationFormat = context.getPreferredFormat(adapter!);
+  // attach to HTML canvas
+  let canvasRef = document.getElementById("sample-canvas") as HTMLCanvasElement;
+  const adapter = await navigator.gpu.requestAdapter();
+  const device = await adapter!.requestDevice();
+  const context = canvasRef.getContext(
+    "webgpu"
+  ) as any as GPUPresentationContext;
+  presentationFormat = context.getPreferredFormat(adapter!);
 
-    // resize the canvas when the window resizes
-    function onWindowResize() {
-        canvasRef.width = window.innerWidth;
-        canvasRef.style.width = `${window.innerWidth}px`;
-        canvasRef.height = window.innerHeight;
-        canvasRef.style.height = `${window.innerHeight}px`;
-    }
-    window.onresize = function () {
-        onWindowResize();
-    }
+  // resize the canvas when the window resizes
+  function onWindowResize() {
+    canvasRef.width = window.innerWidth;
+    canvasRef.style.width = `${window.innerWidth}px`;
+    canvasRef.height = window.innerHeight;
+    canvasRef.style.height = `${window.innerHeight}px`;
+  }
+  window.onresize = function () {
     onWindowResize();
+  };
+  onWindowResize();
 
-    // build our scene for the canvas
-    const renderFrame = attachToCanvas(canvasRef, device, context);
-    console.log(`JS init time: ${(performance.now() - start).toFixed(1)}ms`)
+  // build our scene for the canvas
+  const renderFrame = attachToCanvas(canvasRef, device, context);
+  console.log(`JS init time: ${(performance.now() - start).toFixed(1)}ms`);
 
-    // run our game loop using 'requestAnimationFrame`
-    if (renderFrame) {
-        const _renderFrame = (time: number) => {
-            renderFrame(time);
-            requestAnimationFrame(_renderFrame);
-        }
-        requestAnimationFrame(_renderFrame);
-    }
+  // run our game loop using 'requestAnimationFrame`
+  if (renderFrame) {
+    const _renderFrame = (time: number) => {
+      renderFrame(time);
+      requestAnimationFrame(_renderFrame);
+    };
+    requestAnimationFrame(_renderFrame);
+  }
 }
-await main()
+await main();
