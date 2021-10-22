@@ -79,6 +79,24 @@ const fragmentShader =
     }
 `;
 
+// TODO(@darzu): SHADOW
+const vertexShaderForShadows = shaderSceneStruct + `
+    [[block]] struct Model {
+        modelMatrix : mat4x4<f32>;
+    };
+
+    [[group(0), binding(0)]] var<uniform> scene : Scene;
+    [[group(1), binding(0)]] var<uniform> model : Model;
+
+    [[stage(vertex)]]
+    fn main([[location(0)]] position : vec3<f32>) -> [[builtin(position)]] vec4<f32> {
+        return scene.lightViewProjMatrix * model.modelMatrix * vec4<f32>(position, 1.0);
+    }
+`;
+const fragmentShaderForShadows = `
+    [[stage(fragment)]] fn main() { }
+`;
+
 // useful constants
 const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
 const bytesPerMat4 = 4 * 4 /*4x4 mat*/ * 4; /*f32*/
@@ -657,6 +675,77 @@ function attachToCanvas(
     },
   };
   const renderPipeline = device.createRenderPipeline(renderPipelineDesc);
+
+  // TODO(@darzu): SHADOWS
+  // TODO(@darzu): is this BindGrouopLayout redundant?
+  const uniformBufferBindGroupLayout = device.createBindGroupLayout({
+    entries: [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.VERTEX,
+        buffer: {
+          type: 'uniform',
+        },
+      },
+    ],
+  });
+  const shadowPipelineDesc: GPURenderPipelineDescriptor = {
+    layout: device.createPipelineLayout({
+      bindGroupLayouts: [
+        uniformBufferBindGroupLayout,
+        uniformBufferBindGroupLayout,
+      ],
+    }),
+    vertex: {
+      module: device.createShaderModule({
+        code: vertexShaderForShadows,
+      }),
+      entryPoint: 'main',
+      buffers: [
+        {
+          arrayStride: vertByteSize,
+          attributes: vertexDataFormat,
+        },
+      ],
+    },
+    fragment: {
+      // This should be omitted and we can use a vertex-only pipeline, but it's
+      // not yet implemented.
+      module: device.createShaderModule({
+        code: fragmentShaderForShadows,
+      }),
+      entryPoint: 'main',
+      targets: [],
+    },
+    depthStencil: {
+      depthWriteEnabled: true,
+      depthCompare: 'less',
+      format: 'depth32float',
+    },
+    primitive: primitiveBackcull,
+  };
+  const shadowPipeline = device.createRenderPipeline(shadowPipelineDesc);
+
+//   // TODO(@darzu): figure out shadow bundle?
+//   const shadowBundleEnc = device.createRenderBundleEncoder({
+//     colorFormats: [presentationFormat],
+//     depthStencilFormat: depthStencilFormat,
+//     sampleCount: antiAliasSampleCount,
+//   });
+//   shadowBundleEnc.setPipeline(renderPipeline);
+//   shadowBundleEnc.setBindGroup(0, renderSceneUniBindGroup);
+//   shadowBundleEnc.setVertexBuffer(0, verticesBuffer);
+//   shadowBundleEnc.setIndexBuffer(indicesBuffer, "uint16");
+//   for (let m of allMeshHandles) {
+//     shadowBundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
+//     shadowBundleEnc.drawIndexed(
+//       m.triCount * 3,
+//       undefined,
+//       m.indicesNumOffset,
+//       m.vertNumOffset
+//     );
+//   }
+//   let renderBundle = shadowBundleEnc.finish();
 
   // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
   // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
