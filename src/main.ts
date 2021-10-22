@@ -678,17 +678,6 @@ function attachToCanvas(
 
   // TODO(@darzu): SHADOWS
   // TODO(@darzu): is this BindGrouopLayout redundant?
-  const uniformBufferBindGroupLayout = device.createBindGroupLayout({
-    entries: [
-      {
-        binding: 0,
-        visibility: GPUShaderStage.VERTEX,
-        buffer: {
-          type: "uniform",
-        },
-      },
-    ],
-  });
   // define the resource bindings for the shadow pipeline
   const shadowSceneUniBindGroupLayout = device.createBindGroupLayout({
     entries: [
@@ -706,8 +695,8 @@ function attachToCanvas(
   const shadowPipelineDesc: GPURenderPipelineDescriptor = {
     layout: device.createPipelineLayout({
       bindGroupLayouts: [
-        uniformBufferBindGroupLayout,
-        uniformBufferBindGroupLayout,
+        shadowSceneUniBindGroupLayout,
+        modelUniBindGroupLayout,
       ],
     }),
     vertex: {
@@ -743,7 +732,7 @@ function attachToCanvas(
   // TODO(@darzu): figure out shadow bundle?
   const shadowBundleEnc = device.createRenderBundleEncoder({
     colorFormats: [],
-    depthStencilFormat: shadowDepthStencilFormat,
+    depthStencilFormat: "depth32float",
   });
   shadowBundleEnc.setPipeline(shadowPipeline);
   shadowBundleEnc.setBindGroup(0, shadowSceneUniBindGroup);
@@ -849,18 +838,18 @@ function attachToCanvas(
 
     // fill shadow map texture
     // TODO(@darzu): SHADOW
-    // const shadowRenderPassEncoder = commandEncoder.beginRenderPass({
-    //     colorAttachments: [],
-    //     depthStencilAttachment: {
-    //         view: shadowDepthTextureView,
-    //         depthLoadValue: 1.0,
-    //         depthStoreOp: 'store',
-    //         stencilLoadValue: 0,
-    //         stencilStoreOp: 'store',
-    //     },
-    // });
-    // shadowRenderPassEncoder.executeBundles([shadowBundle]);
-    // shadowRenderPassEncoder.endPass();
+    const shadowRenderPassEncoder = commandEncoder.beginRenderPass({
+      colorAttachments: [],
+      depthStencilAttachment: {
+        view: shadowDepthTextureView,
+        depthLoadValue: 1.0,
+        depthStoreOp: "store",
+        stencilLoadValue: 0,
+        stencilStoreOp: "store",
+      },
+    });
+    shadowRenderPassEncoder.executeBundles([shadowBundle]);
+    shadowRenderPassEncoder.endPass();
 
     // render to the canvas' via our swap-chain
     const renderPassEncoder = commandEncoder.beginRenderPass({
