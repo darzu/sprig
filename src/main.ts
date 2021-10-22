@@ -37,8 +37,12 @@ const vertexShader = shaderSceneStruct + `
         return output;
     }
 `;
-const fragmentShader = shaderSceneStruct + `
+const fragmentShader =
+  shaderSceneStruct +
+  `
     [[group(0), binding(0)]] var<uniform> scene : Scene;
+    [[group(0), binding(1)]] var shadowMap: texture_depth_2d;
+    [[group(0), binding(2)]] var shadowSampler: sampler_comparison;
 
     struct VertexOutput {
         [[location(0)]] [[interpolate(flat)]] normal : vec3<f32>;
@@ -56,15 +60,15 @@ const fragmentShader = shaderSceneStruct + `
 
 // useful constants
 const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
-const bytesPerMat4 = (4 * 4)/*4x4 mat*/ * 4/*f32*/
-const bytesPerVec3 = 3/*vec3*/ * 4/*f32*/
+const bytesPerMat4 = 4 * 4 /*4x4 mat*/ * 4; /*f32*/
+const bytesPerVec3 = 3 /*vec3*/ * 4; /*f32*/
 const indicesPerTriangle = 3;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
 
 // render pipeline parameters
 const antiAliasSampleCount = 4;
-let presentationFormat: GPUTextureFormat = 'bgra8unorm';
-const depthStencilFormat = 'depth24plus-stencil8';
+let presentationFormat: GPUTextureFormat = "bgra8unorm";
+const depthStencilFormat = "depth24plus-stencil8";
 const backgroundColor = { r: 0.5, g: 0.5, b: 0.5, a: 1.0 };
 
 // this state is recomputed upon canvas resize
@@ -77,162 +81,182 @@ let lastHeight = 0;
 let aspectRatio = 1;
 
 // recomputes textures, widths, and aspect ratio on canvas resize
-function checkCanvasResize(device: GPUDevice, context: GPUPresentationContext, canvasWidth: number, canvasHeight: number) {
-    const devicePixelRatio = window.devicePixelRatio || 1;
-    const newWidth = canvasWidth * devicePixelRatio;
-    const newHeight = canvasHeight * devicePixelRatio;
-    if (lastWidth === newWidth && lastHeight === newHeight)
-        return;
+function checkCanvasResize(
+  device: GPUDevice,
+  context: GPUPresentationContext,
+  canvasWidth: number,
+  canvasHeight: number
+) {
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  const newWidth = canvasWidth * devicePixelRatio;
+  const newHeight = canvasHeight * devicePixelRatio;
+  if (lastWidth === newWidth && lastHeight === newHeight) return;
 
-    if (depthTexture) depthTexture.destroy();
-    if (colorTexture) colorTexture.destroy();
+  if (depthTexture) depthTexture.destroy();
+  if (colorTexture) colorTexture.destroy();
 
-    const newSize = [newWidth, newHeight] as const;
+  const newSize = [newWidth, newHeight] as const;
 
-    context.configure({
-        device: device,
-        format: presentationFormat,
-        size: newSize,
-    });
+  context.configure({
+    device: device,
+    format: presentationFormat,
+    size: newSize,
+  });
 
-    depthTexture = device.createTexture({
-        size: newSize,
-        format: depthStencilFormat,
-        sampleCount: antiAliasSampleCount,
-        usage: GPUTextureUsage.RENDER_ATTACHMENT,
-    });
-    depthTextureView = depthTexture.createView();
+  depthTexture = device.createTexture({
+    size: newSize,
+    format: depthStencilFormat,
+    sampleCount: antiAliasSampleCount,
+    usage: GPUTextureUsage.RENDER_ATTACHMENT,
+  });
+  depthTextureView = depthTexture.createView();
 
-    colorTexture = device.createTexture({
-        size: newSize,
-        sampleCount: antiAliasSampleCount,
-        format: presentationFormat,
-        usage: GPUTextureUsage.RENDER_ATTACHMENT,
-    });
-    colorTextureView = colorTexture.createView();
+  colorTexture = device.createTexture({
+    size: newSize,
+    sampleCount: antiAliasSampleCount,
+    format: presentationFormat,
+    usage: GPUTextureUsage.RENDER_ATTACHMENT,
+  });
+  colorTextureView = colorTexture.createView();
 
-    lastWidth = newWidth;
-    lastHeight = newHeight;
+  lastWidth = newWidth;
+  lastHeight = newHeight;
 
-    aspectRatio = Math.abs(newWidth / newHeight);
+  aspectRatio = Math.abs(newWidth / newHeight);
 }
 
 // defines the geometry and coloring of a mesh
 interface Mesh {
-    pos: vec3[];
-    tri: vec3[];
-    colors: vec3[];  // colors per triangle in r,g,b float [0-1] format
+  pos: vec3[];
+  tri: vec3[];
+  colors: vec3[]; // colors per triangle in r,g,b float [0-1] format
 }
 
 function unshareProvokingVertices(input: Mesh): Mesh {
-    const pos: vec3[] = [...input.pos]
-    const tri: vec3[] = []
-    const provoking: { [key: number]: boolean } = {}
-    input.tri.forEach(([i0, i1, i2], triI) => {
-        if (!provoking[i0]) {
-            // First vertex is unused as a provoking vertex, so we'll use it for this triangle.
-            provoking[i0] = true;
-            tri.push([i0, i1, i2])
-        } else if (!provoking[i1]) {
-            // First vertex was taken, so let's see if we can rotate the indices to get an unused 
-            // provoking vertex.
-            provoking[i1] = true;
-            tri.push([i1, i2, i0])
-        } else if (!provoking[i2]) {
-            // ditto
-            provoking[i2] = true;
-            tri.push([i2, i0, i1])
-        } else {
-            // All vertices are taken, so create a new one
-            const i3 = pos.length;
-            pos.push(input.pos[i0])
-            provoking[i3] = true;
-            tri.push([i3, i1, i2])
-        }
-    })
-    return { ...input, pos, tri }
+  const pos: vec3[] = [...input.pos];
+  const tri: vec3[] = [];
+  const provoking: { [key: number]: boolean } = {};
+  input.tri.forEach(([i0, i1, i2], triI) => {
+    if (!provoking[i0]) {
+      // First vertex is unused as a provoking vertex, so we'll use it for this triangle.
+      provoking[i0] = true;
+      tri.push([i0, i1, i2]);
+    } else if (!provoking[i1]) {
+      // First vertex was taken, so let's see if we can rotate the indices to get an unused
+      // provoking vertex.
+      provoking[i1] = true;
+      tri.push([i1, i2, i0]);
+    } else if (!provoking[i2]) {
+      // ditto
+      provoking[i2] = true;
+      tri.push([i2, i0, i1]);
+    } else {
+      // All vertices are taken, so create a new one
+      const i3 = pos.length;
+      pos.push(input.pos[i0]);
+      provoking[i3] = true;
+      tri.push([i3, i1, i2]);
+    }
+  });
+  return { ...input, pos, tri };
 }
 
 // once a mesh has been added to our vertex, triangle, and uniform buffers, we need
 // to track offsets into those buffers so we can make modifications and form draw calls.
 interface MeshHandle {
-    // handles into the buffers
-    vertNumOffset: number,
-    indicesNumOffset: number,
-    modelUniByteOffset: number,
-    triCount: number,
-    // data
-    transform: mat4,
-    model: Mesh,
+  // handles into the buffers
+  vertNumOffset: number;
+  indicesNumOffset: number;
+  modelUniByteOffset: number;
+  triCount: number;
+  // data
+  transform: mat4;
+  model: Mesh;
 }
 
 // define our meshes (ideally these would be imported from a standard format)
 const CUBE: Mesh = unshareProvokingVertices({
-    pos: [
-        [+1.0, +1.0, +1.0],
-        [-1.0, +1.0, +1.0],
-        [-1.0, -1.0, +1.0],
-        [+1.0, -1.0, +1.0],
+  pos: [
+    [+1.0, +1.0, +1.0],
+    [-1.0, +1.0, +1.0],
+    [-1.0, -1.0, +1.0],
+    [+1.0, -1.0, +1.0],
 
-        [+1.0, +1.0, -1.0],
-        [-1.0, +1.0, -1.0],
-        [-1.0, -1.0, -1.0],
-        [+1.0, -1.0, -1.0],
-    ],
-    tri: [
-        [0, 1, 2], [0, 2, 3], // front
-        [4, 5, 1], [4, 1, 0], // top
-        [3, 4, 0], [3, 7, 4], // right
-        [2, 1, 5], [2, 5, 6], // left
-        [6, 3, 2], [6, 7, 3], // bottom
-        [5, 4, 7], [5, 7, 6], // back
-    ],
-    colors: [
-        [0.2, 0, 0], [0.2, 0, 0], // front
-        [0.2, 0, 0], [0.2, 0, 0], // top
-        [0.2, 0, 0], [0.2, 0, 0], // right
-        [0.2, 0, 0], [0.2, 0, 0], // left
-        [0.2, 0, 0], [0.2, 0, 0], // bottom
-        [0.2, 0, 0], [0.2, 0, 0], // back
-    ]
-})
+    [+1.0, +1.0, -1.0],
+    [-1.0, +1.0, -1.0],
+    [-1.0, -1.0, -1.0],
+    [+1.0, -1.0, -1.0],
+  ],
+  tri: [
+    [0, 1, 2],
+    [0, 2, 3], // front
+    [4, 5, 1],
+    [4, 1, 0], // top
+    [3, 4, 0],
+    [3, 7, 4], // right
+    [2, 1, 5],
+    [2, 5, 6], // left
+    [6, 3, 2],
+    [6, 7, 3], // bottom
+    [5, 4, 7],
+    [5, 7, 6], // back
+  ],
+  colors: [
+    [0.2, 0, 0],
+    [0.2, 0, 0], // front
+    [0.2, 0, 0],
+    [0.2, 0, 0], // top
+    [0.2, 0, 0],
+    [0.2, 0, 0], // right
+    [0.2, 0, 0],
+    [0.2, 0, 0], // left
+    [0.2, 0, 0],
+    [0.2, 0, 0], // bottom
+    [0.2, 0, 0],
+    [0.2, 0, 0], // back
+  ],
+});
 const PLANE: Mesh = unshareProvokingVertices({
-    pos: [
-        [+1, 0, +1],
-        [-1, 0, +1],
-        [+1, 0, -1],
-        [-1, 0, -1],
-    ],
-    tri: [
-        [0, 2, 3], [0, 3, 1], // top
-        [3, 2, 0], [1, 3, 0], // bottom
-    ],
-    colors: [
-        [0.02, 0.02, 0.02], [0.02, 0.02, 0.02],
-        [0.02, 0.02, 0.02], [0.02, 0.02, 0.02],
-    ],
-})
+  pos: [
+    [+1, 0, +1],
+    [-1, 0, +1],
+    [+1, 0, -1],
+    [-1, 0, -1],
+  ],
+  tri: [
+    [0, 2, 3],
+    [0, 3, 1], // top
+    [3, 2, 0],
+    [1, 3, 0], // bottom
+  ],
+  colors: [
+    [0.02, 0.02, 0.02],
+    [0.02, 0.02, 0.02],
+    [0.02, 0.02, 0.02],
+    [0.02, 0.02, 0.02],
+  ],
+});
 
 // define the format of our vertices (this needs to agree with the inputs to the vertex shaders)
 const vertexDataFormat: GPUVertexAttribute[] = [
-    { shaderLocation: 0, offset: bytesPerVec3 * 0, format: 'float32x3' }, // position
-    { shaderLocation: 1, offset: bytesPerVec3 * 1, format: 'float32x3' }, // color
-    { shaderLocation: 2, offset: bytesPerVec3 * 2, format: 'float32x3' }, // normals
+  { shaderLocation: 0, offset: bytesPerVec3 * 0, format: "float32x3" }, // position
+  { shaderLocation: 1, offset: bytesPerVec3 * 1, format: "float32x3" }, // color
+  { shaderLocation: 2, offset: bytesPerVec3 * 2, format: "float32x3" }, // normals
 ];
 // these help us pack and use vertices in that format
-const vertElStride = (3/*pos*/ + 3/*color*/ + 3/*normal*/)
+const vertElStride = 3 /*pos*/ + 3 /*color*/ + 3; /*normal*/
 const vertByteSize = bytesPerFloat * vertElStride;
 
 // define the format of our models' uniform buffer
 const meshUniByteSizeExact =
-    bytesPerMat4 // transform
-    + bytesPerFloat // max draw distance;
+  bytesPerMat4 + // transform
+  bytesPerFloat; // max draw distance;
 const meshUniByteSizeAligned = align(meshUniByteSizeExact, 256); // uniform objects must be 256 byte aligned
 
 // defines the format of our scene's uniform data
 const sceneUniBufferSizeExact =
-    bytesPerMat4 * 2 // camera and light projection
-    + bytesPerVec3 * 1 // light pos
+  bytesPerMat4 * 2 + // camera and light projection
+  bytesPerVec3 * 1; // light pos
 const sceneUniBufferSizeAligned = align(sceneUniBufferSizeExact, 256); // uniform objects must be 256 byte aligned
 
 // defines the limits of our vertex, index, and uniform buffers
@@ -244,14 +268,35 @@ const maxVerts = maxTris * 3;
 const worldOrigin = vec3.fromValues(0, 0, 0);
 const lightPosition = vec3.fromValues(50, 50, 0);
 const upVector = vec3.fromValues(0, 1, 0);
-const lightViewMatrix = mat4.lookAt(mat4.create(), lightPosition, worldOrigin, upVector);
-const lightProjectionMatrix = mat4.ortho(mat4.create(), -80, 80, -80, 80, -200, 300);
-const lightViewProjMatrix = mat4.multiply(mat4.create(), lightProjectionMatrix, lightViewMatrix);
+const lightViewMatrix = mat4.lookAt(
+  mat4.create(),
+  lightPosition,
+  worldOrigin,
+  upVector
+);
+const lightProjectionMatrix = mat4.ortho(
+  mat4.create(),
+  -80,
+  80,
+  -80,
+  80,
+  -200,
+  300
+);
+const lightViewProjMatrix = mat4.multiply(
+  mat4.create(),
+  lightProjectionMatrix,
+  lightViewMatrix
+);
 const lightDir = vec3.subtract(vec3.create(), worldOrigin, lightPosition);
 vec3.normalize(lightDir, lightDir);
 
 type RenderFrameFn = (timeMS: number) => void;
-function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context: GPUPresentationContext): RenderFrameFn {
+function attachToCanvas(
+  canvasRef: HTMLCanvasElement,
+  device: GPUDevice,
+  context: GPUPresentationContext
+): RenderFrameFn {
   // log our estimated space usage stats
   console.log(
     `Mesh space usage for up to ${maxMeshes} meshes, ${maxTris} tris, ${maxVerts} verts:`
@@ -476,6 +521,16 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
     (lightDir as Float32Array).buffer
   );
 
+  // TODO(@darzu): TODO
+  const shadowDepthTextureSize = 1024;
+  const shadowDepthTexture = device.createTexture({
+    size: [shadowDepthTextureSize, shadowDepthTextureSize, 1],
+    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+    format: "depth32float",
+  });
+  const shadowDepthTextureView = shadowDepthTexture.createView();
+  // TODO(@darzu): TODO
+
   // setup a binding for our per-mesh uniforms
   const modelUniBindGroupLayout = device.createBindGroupLayout({
     entries: [
@@ -515,11 +570,36 @@ function attachToCanvas(canvasRef: HTMLCanvasElement, device: GPUDevice, context
         visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
         buffer: { type: "uniform" },
       },
+      // TODO(@darzu): SHADOWS
+      {
+        binding: 1,
+        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+        texture: { sampleType: "depth" },
+      },
+      {
+        binding: 2,
+        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+        sampler: { type: "comparison" },
+      },
     ],
   });
   const renderSceneUniBindGroup = device.createBindGroup({
     layout: renderSceneUniBindGroupLayout,
-    entries: [{ binding: 0, resource: { buffer: sceneUniBuffer } }],
+    entries: [
+      {
+        binding: 0,
+        resource: { buffer: sceneUniBuffer },
+      },
+      // TODO(@darzu): SHADOWS
+      {
+        binding: 1,
+        resource: shadowDepthTextureView,
+      },
+      {
+        binding: 2,
+        resource: device.createSampler({ compare: "less" }),
+      },
+    ],
   });
 
   // setup our second phase pipeline which renders meshes to the canvas

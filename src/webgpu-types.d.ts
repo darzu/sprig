@@ -2272,6 +2272,7 @@ interface GPUTextureUsage {
   readonly SAMPLED: GPUFlagsConstant;
   readonly STORAGE: GPUFlagsConstant;
   readonly RENDER_ATTACHMENT: GPUFlagsConstant;
+  readonly TEXTURE_BINDING: GPUFlagsConstant;
 }
 
 declare var GPUTextureUsage: {
@@ -2281,6 +2282,7 @@ declare var GPUTextureUsage: {
   readonly SAMPLED: GPUFlagsConstant;
   readonly STORAGE: GPUFlagsConstant;
   readonly RENDER_ATTACHMENT: GPUFlagsConstant;
+  readonly TEXTURE_BINDING: GPUFlagsConstant;
 };
 
 interface GPUTextureView
