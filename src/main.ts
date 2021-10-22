@@ -834,6 +834,21 @@ function attachToCanvas(
     // start collecting our render commands for this frame
     const commandEncoder = device.createCommandEncoder();
 
+    // fill shadow map texture
+    // TODO(@darzu): SHADOW
+    // const shadowRenderPassEncoder = commandEncoder.beginRenderPass({
+    //     colorAttachments: [],
+    //     depthStencilAttachment: {
+    //         view: shadowDepthTextureView,
+    //         depthLoadValue: 1.0,
+    //         depthStoreOp: 'store',
+    //         stencilLoadValue: 0,
+    //         stencilStoreOp: 'store',
+    //     },
+    // });
+    // shadowRenderPassEncoder.executeBundles([shadowBundle]);
+    // shadowRenderPassEncoder.endPass();
+
     // render to the canvas' via our swap-chain
     const renderPassEncoder = commandEncoder.beginRenderPass({
       colorAttachments: [
