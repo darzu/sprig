@@ -684,6 +684,9 @@ async function startGame(host: string | null) {
     let frame_start_time = performance.now();
     const dt = frame_start_time - previous_frame_time;
 
+    // apply any state updates from the network
+    if (net) net.updateState(previous_frame_time);
+
     // simulation step(s)
     sim_time_accumulator += dt;
     sim_time_accumulator = Math.min(sim_time_accumulator, SIM_DT * 2);
@@ -695,14 +698,13 @@ async function startGame(host: string | null) {
       sim_time += performance.now() - before_sim;
     }
 
-    // network step(s)
+    // send updates out to network (if necessary)
     net_time_accumulator += dt;
     net_time_accumulator = Math.min(net_time_accumulator, NET_DT * 2);
     let net_time = 0;
     while (net_time_accumulator > NET_DT) {
       let before_net = performance.now();
       if (net) {
-        net.updateState();
         net.sendStateUpdates();
       }
       net_time += performance.now() - before_net;

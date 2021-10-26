@@ -107,6 +107,7 @@ class StateSynchronizer {
     let seq = this.updateSeq++;
     message.writeUint8(MessageType.StateUpdate);
     message.writeUint32(seq);
+    message.writeFloat32(performance.now());
     let events = this.events();
     let objects = this.objects();
     let numObjects = 0;
@@ -338,7 +339,7 @@ export class Net {
     }
   }
 
-  applyStateUpdate(data: ArrayBuffer): boolean {
+  applyStateUpdate(data: ArrayBuffer, atTime: number): boolean {
     //console.log("In applyStateUpdate");
     //console.log("Applying state update");
     let applied = true;
@@ -346,7 +347,9 @@ export class Net {
     let type = message.readUint8();
     if (type !== MessageType.StateUpdate)
       throw "Wacky message type in applyStateUpdate";
-    let _seq = message.readUint32();
+    let seq = message.readUint32();
+    let ts = message.readFloat32();
+    let dt = atTime - ts;
     let numObjects = message.readUint8();
     for (let i = 0; i < numObjects; i++) {
       // make sure we're not in dummy mode
@@ -389,11 +392,14 @@ export class Net {
         // Don't update an existing object if this was a create message or the authority claim is old
         if (
           (objExisted && updateType === ObjectUpdateType.Create) ||
-          !obj.claimAuthority(authority, authority_seq)
+          !obj.claimAuthority(authority, authority_seq, seq)
         ) {
           message.dummy = true;
         }
         obj.deserializeFull(message);
+        if (!message.dummy) {
+          obj.simulate(dt);
+        }
         if (!objExisted) {
           this.state.addObject(obj);
         }
@@ -405,10 +411,13 @@ export class Net {
         if (!obj) {
           throw "Got non-full update for unknown object ${id}";
         }
-        if (!obj.claimAuthority(authority, authority_seq)) {
+        if (!obj.claimAuthority(authority, authority_seq, seq)) {
           message.dummy = true;
         }
         obj.deserializeDynamic(message);
+        if (!message.dummy) {
+          obj.simulate(dt);
+        }
       } else {
         throw `Unsupported update type ${updateType} in applyStateUpdate`;
       }
@@ -416,7 +425,7 @@ export class Net {
     return applied;
   }
 
-  updateState() {
+  updateState(atTime: number) {
     //console.log("In updateState");
     for (let server of this.peers) {
       /*console.log(
@@ -425,69 +434,21 @@ export class Net {
         } buffered state updates`
         );*/
       //console.log(`Looking for update ${this.nextUpdate[server]}`);
-      if (!this.nextUpdate[server]) {
-        this.nextUpdate[server] = 0;
-      }
-      // first, ignore any old updates
-      // TODO: should we apply these? Doug thinks not--we'd be out of sync.
       while (
         this.stateUpdates[server] &&
-        this.stateUpdates[server].length > 0 &&
-        this.stateUpdates[server][0].seq < this.nextUpdate[server]
+        this.stateUpdates[server].length > 0
       ) {
-        let { seq } = this.stateUpdates[server].shift()!;
-        this.numDroppedUpdates++;
-        /*
-        console.log(
-          `Ignoring old state update ${seq} < ${this.nextUpdate[server]} from ${server}`
-        );*/
-      }
-      // then, if we have many buffered updates, drop them until we've caught up
-      if (
-        this.stateUpdates[server] &&
-        this.stateUpdates[server].length > BUFFER_TARGET * 2
-      ) {
-        //console.log("Buffer too large, dropping in order to catch up");
-        while (this.stateUpdates[server].length > BUFFER_TARGET) {
-          this.stateUpdates[server].shift();
-          this.nextUpdate[server]++;
-          this.numDroppedUpdates++;
-        }
-      }
-      if (
-        !this.stateUpdates[server] ||
-        this.stateUpdates[server].length === 0
-      ) {
-        // buffer some state updates from this server
-        //console.log("Buffering for updates");
-        this.waiting[server] = true;
-        continue;
-      } else if (
-        !this.waiting[server] ||
-        this.stateUpdates[server].length >= BUFFER_TARGET
-      ) {
-        //console.log("Trying to apply an update");
         let { seq, data } = this.stateUpdates[server].shift()!;
-        // if we were buffering, we're going to reset our "clock" to whatever we have now
-        if (this.waiting[server]) {
-          this.nextUpdate[server] = seq;
-          this.waiting[server] = false;
+        let applied = this.applyStateUpdate(
+          data,
+          atTime - (this.skewEstimate[server] || 0)
+        );
+        if (applied) {
+          let ack = new Serializer(8);
+          ack.writeUint8(MessageType.StateUpdateResponse);
+          ack.writeUint32(seq);
+          this.send(server, ack.buffer, false);
         }
-        if (this.nextUpdate[server] === seq) {
-          let applied = this.applyStateUpdate(data);
-          if (applied) {
-            let ack = new Serializer(8);
-            ack.writeUint8(MessageType.StateUpdateResponse);
-            ack.writeUint32(seq);
-            this.send(server, ack.buffer, false);
-          }
-        } else {
-          // put it back in the buffer, we're not ready yet
-          this.stateUpdates[server].unshift({ seq, data });
-        }
-      }
-      if (!this.waiting[server]) {
-        this.nextUpdate[server]++;
       }
     }
   }
