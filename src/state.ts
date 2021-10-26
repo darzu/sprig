@@ -155,6 +155,7 @@ export abstract class GameObject {
 
   // By default, simulate ballistic motion. Subclasses can override
   simulate(dt: number) {
+    console.log(`simulating forward ${dt} ms`);
     vec3.scale(working_vec3, this.motion.linearVelocity, dt);
     this.snapLocation(
       vec3.add(working_vec3, this.motion.location, working_vec3)

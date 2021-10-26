@@ -13,7 +13,7 @@ const SEND_DELAY_JITTER = 60.0;
 const MAX_MESSAGE_SIZE = 1000;
 
 // weight of existing skew measurement vs. new skew measurement
-const SKEW_WEIGHT = 0.9;
+const SKEW_WEIGHT = 0.5;
 
 enum MessageType {
   // Join a game in progress
@@ -322,7 +322,7 @@ export class Net {
           break;
         }
         let rtt = time - this.pingTime;
-        let skew = remoteTime - this.pingTime + rtt / 2;
+        let skew = remoteTime - (this.pingTime + rtt / 2);
         if (!this.skewEstimate[server]) {
           this.skewEstimate[server] = skew;
         } else {
@@ -397,7 +397,7 @@ export class Net {
           message.dummy = true;
         }
         obj.deserializeFull(message);
-        if (!message.dummy) {
+        if (!message.dummy && dt > 0) {
           obj.simulate(dt);
         }
         if (!objExisted) {
@@ -415,7 +415,7 @@ export class Net {
           message.dummy = true;
         }
         obj.deserializeDynamic(message);
-        if (!message.dummy) {
+        if (!message.dummy && dt > 0) {
           obj.simulate(dt);
         }
       } else {
@@ -428,11 +428,11 @@ export class Net {
   updateState(atTime: number) {
     //console.log("In updateState");
     for (let server of this.peers) {
-      /*console.log(
+      console.log(
         `Have ${
           this.stateUpdates[server] ? this.stateUpdates[server].length : 0
         } buffered state updates`
-        );*/
+      );
       //console.log(`Looking for update ${this.nextUpdate[server]}`);
       while (
         this.stateUpdates[server] &&
@@ -441,7 +441,7 @@ export class Net {
         let { seq, data } = this.stateUpdates[server].shift()!;
         let applied = this.applyStateUpdate(
           data,
-          atTime - (this.skewEstimate[server] || 0)
+          atTime + (this.skewEstimate[server] || 0)
         );
         if (applied) {
           let ack = new Serializer(8);

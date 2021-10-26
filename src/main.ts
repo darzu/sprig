@@ -595,7 +595,7 @@ class CubeGameState extends GameState {
 }
 
 // ms per network sync (should be the same for all servers)
-const NET_DT = 1000.0 / 20;
+const NET_DT = 1000.0 / 1;
 
 // local simulation speed
 const SIM_DT = 1000.0 / 60;
