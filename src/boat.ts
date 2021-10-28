@@ -26,8 +26,9 @@ export function stepBoats(objDict: Record<number, BoatObj>, dt: number) {
     // TODO(@darzu): IMPLEMENT
     // o.motion.linearVelocity[0] = o.boat.speed;
 
+    // TODO(@darzu): hack to init boat direction
     if (vec3.exactEquals(o.motion.linearVelocity, [0, 0, 0]))
-      o.motion.linearVelocity[0] = o.boat.speed;
+      o.motion.linearVelocity[0] = 1.0;
 
     vec3.normalize(o.motion.linearVelocity, o.motion.linearVelocity);
     vec3.scale(o.motion.linearVelocity, o.motion.linearVelocity, o.boat.speed);
