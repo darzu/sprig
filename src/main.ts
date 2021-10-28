@@ -725,15 +725,21 @@ async function startGame(host: string | null) {
     gameState.renderFrame();
     let jsTime = performance.now() - frame_start_time;
     let frameTime = frame_start_time - previous_frame_time;
-    let { reliableBufferSize, unreliableBufferSize, numDroppedUpdates, skew } =
-      net
-        ? net.stats()
-        : {
-            reliableBufferSize: 0,
-            unreliableBufferSize: 0,
-            numDroppedUpdates: 0,
-            skew: [],
-          };
+    let {
+      reliableBufferSize,
+      unreliableBufferSize,
+      numDroppedUpdates,
+      skew,
+      ping,
+    } = net
+      ? net.stats()
+      : {
+          reliableBufferSize: 0,
+          unreliableBufferSize: 0,
+          numDroppedUpdates: 0,
+          skew: [],
+          ping: [],
+        };
     previous_frame_time = frame_start_time;
     avgJsTime = avgJsTime
       ? (1 - avgWeight) * avgJsTime + avgWeight * jsTime
@@ -764,7 +770,8 @@ async function startGame(host: string | null) {
       //`buffers:(r=${reliableBufferSize}/u=${unreliableBufferSize}) ` +
       `dropped:${numDroppedUpdates} ` +
       `objects:${gameState.numObjects} ` +
-      `skew: ${skew.join(",")}` +
+      `skew: ${skew.join(",")} ` +
+      `ping: ${ping.join(",")} ` +
       `${usingWebGPU ? "WebGPU" : "WebGL"}`;
     // // TODO(@darzu): DEBUG
     // debugTxt.nodeValue =

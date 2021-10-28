@@ -201,6 +201,7 @@ export class Net {
   private pingSeq: number = 0;
   private pingTime: number = 0;
   private skewEstimate: Record<ServerId, number> = {};
+  private pingEstimate: Record<ServerId, number> = {};
 
   send(server: ServerId, message: ArrayBuffer, reliable: boolean) {
     // TODO: figure out if we need to do something smarter than just not sending if the connection isn't present
@@ -235,6 +236,7 @@ export class Net {
       unreliableBufferSize,
       numDroppedUpdates: this.numDroppedUpdates,
       skew: Object.values(this.skewEstimate),
+      ping: Object.values(this.skewEstimate),
     };
   }
 
@@ -336,9 +338,13 @@ export class Net {
         let skew = remoteTime - (this.pingTime + rtt / 2);
         if (!this.skewEstimate[server]) {
           this.skewEstimate[server] = skew;
+          this.pingEstimate[server] = rtt / 2;
         } else {
           this.skewEstimate[server] =
             SKEW_WEIGHT * this.skewEstimate[server] + (1 - SKEW_WEIGHT) * skew;
+          this.pingEstimate[server] =
+            SKEW_WEIGHT * this.pingEstimate[server] +
+            (1 - SKEW_WEIGHT) * (rtt / 2);
         }
       }
     }
@@ -429,6 +435,7 @@ export class Net {
         }
         obj.deserializeDynamic(message);
         if (!message.dummy && dt > 0) {
+          //console.log(`simulating forward ${dt}ms`);
           obj.simulate(dt);
         }
       } else {
