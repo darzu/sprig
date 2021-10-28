@@ -118,7 +118,7 @@ class Plane extends GameObject {
   }
 
   deserializeDynamic(buffer: Deserializer) {
-    console.log("Deserializing plane");
+    //console.log("Deserializing plane");
     // don't need to read anything at all here, planes never change
   }
 }

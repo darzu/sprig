@@ -7,7 +7,7 @@ import { vec3, quat } from "./gl-matrix.js";
 const DROP_PROBABILITY = 0.1;
 
 const DELAY_SENDS = false;
-const SEND_DELAY = 60.0;
+const SEND_DELAY = 500.0;
 const SEND_DELAY_JITTER = 10.0;
 
 const MAX_MESSAGE_SIZE = 1000;
@@ -209,7 +209,7 @@ export class Net {
       : this.unreliableChannels[server];
     if (conn && conn.readyState === "open") {
       if (DELAY_SENDS) {
-        if (Math.random() > DROP_PROBABILITY) {
+        if (reliable || Math.random() > DROP_PROBABILITY) {
           setTimeout(
             () => conn.send(message),
             SEND_DELAY + SEND_DELAY_JITTER * Math.random()
@@ -366,10 +366,10 @@ export class Net {
       // make sure we're not in dummy mode
       message.dummy = false;
       let id = message.readUint32();
-      console.log(`State update for ${id}`);
+      //console.log(`State update for ${id}`);
       let updateType: ObjectUpdateType = message.readUint8();
       if (updateType === ObjectUpdateType.Event) {
-        console.log("Applying event");
+        //console.log("Applying event");
         let type = message.readUint8();
         let authority = message.readUint8();
         let numObjectsInEvent = message.readUint8();
@@ -392,7 +392,7 @@ export class Net {
         updateType === ObjectUpdateType.Full ||
         updateType === ObjectUpdateType.Create
       ) {
-        console.log("Full state update");
+        //console.log("Full state update");
         let authority = message.readUint8();
         let authority_seq = message.readUint32();
         let typeId = message.readUint8();
@@ -452,7 +452,7 @@ export class Net {
         this.stateUpdates[server].length > 0
       ) {
         let { seq, data } = this.stateUpdates[server].shift()!;
-        console.log(`Applying ${seq}`);
+        //console.log(`Applying ${seq}`);
         let applied = this.applyStateUpdate(
           data,
           atTime + (this.skewEstimate[server] || 0)
