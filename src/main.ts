@@ -215,7 +215,9 @@ class Bullet extends Cube {
 
   serializeFull(buffer: Serializer) {
     buffer.writeVec3(this.motion.location);
-    buffer.writeVec3(this.motion.linearVelocity);
+    // TODO: sync actual bullet velocity
+    //buffer.writeVec3(this.motion.linearVelocity);
+    buffer.writeVec3(vec3.fromValues(0, 0, 0));
     buffer.writeQuat(this.motion.rotation);
     buffer.writeVec3(this.motion.angularVelocity);
     buffer.writeVec3(this.color);
