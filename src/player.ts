@@ -90,11 +90,12 @@ export function stepPlayer(
       bullet_axis,
       0.02
     );
-    bulletMotion.linearVelocity = vec3.add(
-      bulletMotion.linearVelocity,
-      bulletMotion.linearVelocity,
-      player.motion.linearVelocity
-    );
+    // TODO(@darzu): adds player motion
+    // bulletMotion.linearVelocity = vec3.add(
+    //   bulletMotion.linearVelocity,
+    //   bulletMotion.linearVelocity,
+    //   player.motion.linearVelocity
+    // );
     bulletMotion.angularVelocity = vec3.scale(
       bulletMotion.angularVelocity,
       bullet_axis,

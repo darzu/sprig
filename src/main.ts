@@ -35,7 +35,7 @@ const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
 const MAX_VERTICES = 21844;
 const ENABLE_NET = true;
-const AUTOSTART = false;
+const AUTOSTART = true;
 
 enum ObjectType {
   Plane,
