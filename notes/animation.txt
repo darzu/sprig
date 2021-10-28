@@ -166,3 +166,6 @@ Vertex animation textures:
 
 "Frame Blending with Motion Vectors"
     http://www.klemenlozar.com/frame-blending-with-motion-vectors/
+
+Very cool low-poly insect-y procedural animation:
+    https://youtu.be/kRVQYb9wzaU?t=358

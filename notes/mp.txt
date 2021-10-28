@@ -389,6 +389,16 @@ https://johanhelsing.studio/posts/introducing-matchbox
     web Rust, peer-to-peer webrtc
 
 
+Reconnect and save/loading:
+    Server has in a worker thread a listner that listens to all network traffic
+        and records state update deltas with periodic snapshots
+    This should be pretty close to the logic we need for a full match replay and history rewind system
+    The local storage listener can send back out messages that represent the full state of the game
+    When the host loads a saved game this should be semantically the same as a new player joining an existing game
+    Saving and loading a game should use exactly the same serialize/deserialize paths as the net code
+
+
+    
 
 
   
