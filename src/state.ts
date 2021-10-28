@@ -92,47 +92,15 @@ export abstract class GameObject {
   }
 
   snapLocation(location: vec3) {
-    // TODO: this is a hack to see if we're setting our location for the first time
-    if (vec3.length(this.motion.location) === 0) {
-      this.motion.location = location;
-      return;
-    }
-    let current_location = vec3.add(
-      this.motion.location,
-      this.motion.location,
-      this.location_error
-    );
-    let location_error = vec3.sub(current_location, current_location, location);
-    this.motion.location = location;
-    this.location_error = location_error;
+    this.motion.location = vec3.copy(this.motion.location, location);
   }
 
   snapRotation(rotation: quat) {
-    // TODO: this is a hack to see if we're setting our rotation for the first time
-    let id = quat.identity(working_quat);
-    if (quat.equals(rotation, id)) {
-      this.motion.rotation = rotation;
-      return;
-    }
-    let current_rotation = quat.mul(
-      this.motion.rotation,
-      this.motion.rotation,
-      this.rotation_error
-    );
-    // sort of a hack--reuse our current rotation error quat to store the
-    // rotation inverse to avoid a quat allocation
-    let rotation_inverse = quat.invert(this.rotation_error, rotation);
-    let rotation_error = quat.mul(
-      current_rotation,
-      current_rotation,
-      rotation_inverse
-    );
-    this.motion.rotation = rotation;
-    this.rotation_error = rotation_error;
+    this.motion.rotation = quat.copy(this.motion.rotation, rotation);
   }
 
-  syncPriority(): number {
-    return 1;
+  syncPriority(firstSync: boolean): number {
+    return 10;
   }
 
   claimAuthority(
@@ -284,44 +252,6 @@ export abstract class GameState {
 
     const objs = Object.values(this.objects);
 
-    // reduce error in location and rotation
-    let identity_quat = quat.create();
-    let delta = vec3.create();
-    let normalized_velocity = vec3.create();
-    let deltaRotation = quat.create();
-    for (let o of objs) {
-      o.location_error = vec3.scale(
-        o.location_error,
-        o.location_error,
-        ERROR_SMOOTHING_FACTOR
-      );
-      let location_error_magnitude = vec3.length(o.location_error);
-      if (
-        location_error_magnitude !== 0 &&
-        location_error_magnitude < EPSILON
-      ) {
-        //console.log(`Object ${o.id} reached 0 location error`);
-        o.location_error = vec3.fromValues(0, 0, 0);
-      }
-
-      o.rotation_error = quat.slerp(
-        o.rotation_error,
-        o.rotation_error,
-        identity_quat,
-        1 - ERROR_SMOOTHING_FACTOR
-      );
-      let rotation_error_magnitude = Math.abs(
-        quat.getAngle(o.rotation_error, identity_quat)
-      );
-      if (
-        rotation_error_magnitude !== 0 &&
-        rotation_error_magnitude < EPSILON
-      ) {
-        //console.log(`Object ${o.id} reached 0 rotation error`);
-        o.rotation_error = identity_quat;
-      }
-    }
-
     // move, check collisions
     const physRes = stepPhysics(this.objects, dt);
     this.collidesWith = physRes.collidesWith;
@@ -331,8 +261,8 @@ export abstract class GameState {
       // update transform based on new rotations and positions
       mat4.fromRotationTranslation(
         o.transform,
-        quat.mul(working_quat, o.motion.rotation, o.rotation_error),
-        vec3.add(working_vec3, o.motion.location, o.location_error)
+        o.motion.rotation,
+        o.motion.location
       );
     }
   }

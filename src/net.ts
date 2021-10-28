@@ -4,11 +4,11 @@ import { Serializer, Deserializer, OutOfRoomError } from "./serialize.js";
 import { vec3, quat } from "./gl-matrix.js";
 
 // fraction of state updates to artificially drop
-const DROP_PROBABILITY = 0.0;
+const DROP_PROBABILITY = 0.1;
 
 const DELAY_SENDS = false;
 const SEND_DELAY = 60.0;
-const SEND_DELAY_JITTER = 60.0;
+const SEND_DELAY_JITTER = 10.0;
 
 const MAX_MESSAGE_SIZE = 1000;
 
@@ -82,7 +82,8 @@ class StateSynchronizer {
         (obj.creator == this.net.state.me && !this.objectsKnown.has(obj.id))
     );
     for (let obj of allObjects) {
-      let priorityIncrease = obj.syncPriority();
+      let priorityIncrease;
+      priorityIncrease = obj.syncPriority(!this.objectsKnown.has(obj.id));
       if (!this.objectsKnown.has(obj.id)) {
         // try to sync new objects
         priorityIncrease += 1000;
@@ -172,6 +173,7 @@ class StateSynchronizer {
     let ids = this.objectsInUpdate[seq];
     if (!ids) return;
     ids.forEach((id) => {
+      //console.log(`${id} known`);
       //console.log(`Object ${id} is known`);
       this.objectsKnown.add(id);
     });
@@ -206,7 +208,16 @@ export class Net {
       ? this.reliableChannels[server]
       : this.unreliableChannels[server];
     if (conn && conn.readyState === "open") {
-      conn.send(message);
+      if (DELAY_SENDS) {
+        if (Math.random() > DROP_PROBABILITY) {
+          setTimeout(
+            () => conn.send(message),
+            SEND_DELAY + SEND_DELAY_JITTER * Math.random()
+          );
+        }
+      } else {
+        conn.send(message);
+      }
     }
   }
 
@@ -355,8 +366,10 @@ export class Net {
       // make sure we're not in dummy mode
       message.dummy = false;
       let id = message.readUint32();
+      console.log(`State update for ${id}`);
       let updateType: ObjectUpdateType = message.readUint8();
       if (updateType === ObjectUpdateType.Event) {
+        console.log("Applying event");
         let type = message.readUint8();
         let authority = message.readUint8();
         let numObjectsInEvent = message.readUint8();
@@ -379,7 +392,7 @@ export class Net {
         updateType === ObjectUpdateType.Full ||
         updateType === ObjectUpdateType.Create
       ) {
-        //console.log("Full state update");
+        console.log("Full state update");
         let authority = message.readUint8();
         let authority_seq = message.readUint32();
         let typeId = message.readUint8();
@@ -428,17 +441,18 @@ export class Net {
   updateState(atTime: number) {
     //console.log("In updateState");
     for (let server of this.peers) {
-      console.log(
-        `Have ${
-          this.stateUpdates[server] ? this.stateUpdates[server].length : 0
-        } buffered state updates`
-      );
+      // console.log(
+      //   `Have ${
+      //     this.stateUpdates[server] ? this.stateUpdates[server].length : 0
+      //   } buffered state updates`
+      // );
       //console.log(`Looking for update ${this.nextUpdate[server]}`);
       while (
         this.stateUpdates[server] &&
         this.stateUpdates[server].length > 0
       ) {
         let { seq, data } = this.stateUpdates[server].shift()!;
+        console.log(`Applying ${seq}`);
         let applied = this.applyStateUpdate(
           data,
           atTime + (this.skewEstimate[server] || 0)
@@ -446,6 +460,7 @@ export class Net {
         if (applied) {
           let ack = new Serializer(8);
           ack.writeUint8(MessageType.StateUpdateResponse);
+          //console.log(`Acking ${seq}`);
           ack.writeUint32(seq);
           this.send(server, ack.buffer, false);
         }

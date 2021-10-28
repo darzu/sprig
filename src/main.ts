@@ -99,6 +99,10 @@ class Plane extends GameObject {
     return ObjectType.Plane;
   }
 
+  syncPriority(firstSync: boolean) {
+    return firstSync ? 10000 : 1;
+  }
+
   serializeFull(buffer: Serializer) {
     buffer.writeVec3(this.motion.location);
     buffer.writeVec3(this.color);
@@ -114,6 +118,7 @@ class Plane extends GameObject {
   }
 
   deserializeDynamic(buffer: Deserializer) {
+    console.log("Deserializing plane");
     // don't need to read anything at all here, planes never change
   }
 }
@@ -252,8 +257,8 @@ class Player extends Cube {
     this.player = createPlayerProps();
   }
 
-  syncPriority(): number {
-    return 10000;
+  syncPriority(firstSync: boolean): number {
+    return firstSync ? 1 : 10000;
   }
 
   typeId(): number {
@@ -262,7 +267,9 @@ class Player extends Cube {
 
   serializeFull(buffer: Serializer) {
     buffer.writeVec3(this.motion.location);
-    buffer.writeVec3(this.motion.linearVelocity);
+    // TODO: this is very hacky. we should sync real player velocities
+    //buffer.writeVec3(this.motion.linearVelocity);
+    buffer.writeVec3(vec3.fromValues(0, 0, 0));
     buffer.writeQuat(this.motion.rotation);
     buffer.writeVec3(this.motion.angularVelocity);
   }
@@ -500,6 +507,7 @@ class CubeGameState extends GameState {
     const players = Object.values(this.objects).filter(
       (o) => o instanceof Player && o.authority === this.me
     ) as Player[];
+    //console.log(`Stepping ${players.length} players`);
     for (let o of players)
       stepPlayer(o, dt, inputs, this.camera, this.spawnBullet);
 
@@ -595,7 +603,7 @@ class CubeGameState extends GameState {
 }
 
 // ms per network sync (should be the same for all servers)
-const NET_DT = 1000.0 / 1;
+const NET_DT = 1000.0 / 20;
 
 // local simulation speed
 const SIM_DT = 1000.0 / 60;
