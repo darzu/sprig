@@ -236,7 +236,7 @@ export class Net {
       unreliableBufferSize,
       numDroppedUpdates: this.numDroppedUpdates,
       skew: Object.values(this.skewEstimate),
-      ping: Object.values(this.skewEstimate),
+      ping: Object.values(this.pingEstimate),
     };
   }
 
