@@ -215,9 +215,8 @@ class Bullet extends Cube {
 
   serializeFull(buffer: Serializer) {
     buffer.writeVec3(this.motion.location);
-    // TODO: sync actual bullet velocity
-    //buffer.writeVec3(this.motion.linearVelocity);
-    buffer.writeVec3(vec3.fromValues(0, 0, 0));
+    buffer.writeVec3(this.motion.linearVelocity);
+    //buffer.writeVec3(vec3.fromValues(0, 0, 0));
     buffer.writeQuat(this.motion.rotation);
     buffer.writeVec3(this.motion.angularVelocity);
     buffer.writeVec3(this.color);
@@ -695,7 +694,7 @@ async function startGame(host: string | null) {
     const dt = frame_start_time - previous_frame_time;
 
     // apply any state updates from the network
-    if (net) net.updateState(frame_start_time);
+    if (net) net.updateState(previous_frame_time);
 
     // simulation step(s)
     sim_time_accumulator += dt;
