@@ -695,7 +695,7 @@ async function startGame(host: string | null) {
     const dt = frame_start_time - previous_frame_time;
 
     // apply any state updates from the network
-    if (net) net.updateState(previous_frame_time);
+    if (net) net.updateState(frame_start_time);
 
     // simulation step(s)
     sim_time_accumulator += dt;
