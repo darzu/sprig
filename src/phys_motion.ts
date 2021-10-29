@@ -5,23 +5,23 @@ import { CollidesWith, idPair, IdPair, ContactData, __step } from "./phys.js";
 import { AABB } from "./phys_broadphase.js";
 import { vec3Dbg } from "./utils-3d.js";
 
-export interface MotionProps {
-  location: vec3;
-  rotation: quat;
+export interface VelocityProps {
   linearVelocity: vec3;
   angularVelocity: vec3;
-  atRest: boolean;
+}
+export interface MotionProps extends VelocityProps {
+  location: vec3;
+  rotation: quat;
 }
 
 export function copyMotionProps(
   dest: MotionProps,
-  src: MotionProps
+  src: Partial<MotionProps>
 ): MotionProps {
-  vec3.copy(dest.location, src.location);
-  quat.copy(dest.rotation, src.rotation);
-  vec3.copy(dest.linearVelocity, src.linearVelocity);
-  vec3.copy(dest.angularVelocity, src.angularVelocity);
-  dest.atRest = dest.atRest;
+  if (src.location) vec3.copy(dest.location, src.location);
+  if (src.rotation) quat.copy(dest.rotation, src.rotation);
+  if (src.linearVelocity) vec3.copy(dest.linearVelocity, src.linearVelocity);
+  if (src.angularVelocity) vec3.copy(dest.angularVelocity, src.angularVelocity);
   return dest;
 }
 
@@ -31,7 +31,6 @@ export function createMotionProps(init: Partial<MotionProps>): MotionProps {
   if (!init.rotation) init.rotation = quat.create();
   if (!init.linearVelocity) init.linearVelocity = vec3.create();
   if (!init.angularVelocity) init.angularVelocity = vec3.create();
-  if (!init.atRest) init.atRest = false;
 
   return init as MotionProps;
 }
@@ -40,40 +39,7 @@ let delta = vec3.create();
 let normalizedVelocity = vec3.create();
 let deltaRotation = quat.create();
 
-export function checkAtRest(
-  set: { motion: MotionProps; lastMotion: MotionProps }[],
-  dt: number
-) {
-  // TODO(@darzu): IMPLEMENT. A lot more thought is needed for
-  // putting objects to sleep and waking them up.
-  for (let o of set) {
-    const { motion: m, lastMotion: lm } = o;
-    if (m.atRest) {
-      // awake an object if its velocity changes
-      if (
-        !vec3.exactEquals(m.linearVelocity, lm.linearVelocity) ||
-        !vec3.exactEquals(m.angularVelocity, lm.angularVelocity)
-      ) {
-        // console.log("awaken");
-        m.atRest = false;
-      }
-    } else {
-      if (
-        // m.linearVelocity === lm.linearVelocity &&
-        // m.angularVelocity === lm.angularVelocity &&
-        !didMove(o)
-      ) {
-        // if we didn't move, we must have bumped into something
-        // if that something is static, we're truely going to stay at rest
-        // if that something is dynamic, we will count on it to awaken us
-        //    a dynamic object that prevents another object from moving must awaken that object
-        //    this is required of all constraint solvers
-        // console.log("to sleep");
-        m.atRest = true;
-      }
-    }
-  }
-}
+// TODO(@darzu): implement checkAtRest (deleted in this commit)
 
 export function didMove(o: {
   motion: MotionProps;
@@ -90,14 +56,27 @@ export function didMove(o: {
 
 const _constrainedVelocities = new Map<number, vec3>();
 
+export interface MotionObj {
+  id: number;
+  motion: MotionProps;
+  desiredMotion: VelocityProps;
+  worldAABB: AABB;
+}
+
 export function moveObjects(
-  set: Record<number, { id: number; motion: MotionProps; worldAABB: AABB }>,
+  set: Record<number, MotionObj>,
   dt: number,
   lastCollidesWith: CollidesWith,
   lastContactData: Map<IdPair, ContactData>
 ) {
   const objs = Object.values(set);
 
+  // copy .desiredMotion to .motion; we want to try to meet the gameplay wants
+  for (let o of objs) {
+    copyMotionProps(o.motion, o.desiredMotion);
+  }
+
+  // TODO(@darzu): probably don't need this intermediate _constrainedVelocities
   _constrainedVelocities.clear();
 
   // check for collision constraints
@@ -141,6 +120,12 @@ export function moveObjects(
     }
   }
 
+  // update velocity with constraints
+  for (let { id, motion: m } of objs) {
+    if (_constrainedVelocities.has(id))
+      vec3.copy(m.linearVelocity, _constrainedVelocities.get(id)!);
+  }
+
   for (let { id, motion: m, worldAABB } of objs) {
     // clamp linear velocity based on size
     const vxMax = (worldAABB.max[0] - worldAABB.min[0]) / dt;
@@ -151,8 +136,7 @@ export function moveObjects(
     m.linearVelocity[2] = clamp(m.linearVelocity[2], -vzMax, vzMax);
 
     // change location according to linear velocity
-    const v = _constrainedVelocities.get(id) ?? m.linearVelocity;
-    delta = vec3.scale(delta, v, dt);
+    delta = vec3.scale(delta, m.linearVelocity, dt);
     vec3.add(m.location, m.location, delta);
 
     // change rotation according to angular velocity
