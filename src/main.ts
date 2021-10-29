@@ -268,9 +268,7 @@ class Player extends Cube {
 
   serializeFull(buffer: Serializer) {
     buffer.writeVec3(this.motion.location);
-    // TODO: this is very hacky. we should sync real player velocities
-    //buffer.writeVec3(this.motion.linearVelocity);
-    buffer.writeVec3(vec3.fromValues(0, 0, 0));
+    buffer.writeVec3(this.motion.linearVelocity);
     buffer.writeQuat(this.motion.rotation);
     buffer.writeVec3(this.motion.angularVelocity);
   }
@@ -281,11 +279,13 @@ class Player extends Cube {
       this.snapLocation(location);
     }
     buffer.readVec3(this.motion.linearVelocity);
+    vec3.copy(this.desiredMotion.linearVelocity, this.motion.linearVelocity);
     let rotation = buffer.readQuat()!;
     if (!buffer.dummy) {
       this.snapRotation(rotation);
     }
     buffer.readVec3(this.motion.angularVelocity);
+    vec3.copy(this.desiredMotion.angularVelocity, this.motion.angularVelocity);
   }
 
   serializeDynamic(buffer: Serializer) {
