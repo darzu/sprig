@@ -29,7 +29,7 @@ import { jitter } from "./math.js";
 import { createPlayerProps, PlayerProps, stepPlayer } from "./player.js";
 import { never } from "./util.js";
 import { createInputsReader, Inputs } from "./inputs.js";
-import { copyMotionProps, MotionProps, VelocityProps } from "./phys_motion.js";
+import { copyMotionProps, MotionProps } from "./phys_motion.js";
 
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
@@ -279,13 +279,13 @@ class Player extends Cube {
       this.snapLocation(location);
     }
     buffer.readVec3(this.motion.linearVelocity);
-    vec3.copy(this.desiredMotion.linearVelocity, this.motion.linearVelocity);
+    vec3.copy(this.motion.linearVelocity, this.motion.linearVelocity);
     let rotation = buffer.readQuat()!;
     if (!buffer.dummy) {
       this.snapRotation(rotation);
     }
     buffer.readVec3(this.motion.angularVelocity);
-    vec3.copy(this.desiredMotion.angularVelocity, this.motion.angularVelocity);
+    vec3.copy(this.motion.angularVelocity, this.motion.angularVelocity);
   }
 
   serializeDynamic(buffer: Serializer) {
@@ -427,7 +427,7 @@ class CubeGameState extends GameState {
           Math.random() * -10 - 5
         );
         b.color = vec3.fromValues(Math.random(), Math.random(), Math.random());
-        b.desiredMotion.linearVelocity[1] = -0.03;
+        b.motion.linearVelocity[1] = -0.03;
         this.addObject(b);
         // TODO(@darzu): debug
         console.log(`box: ${b.id}`);
@@ -486,8 +486,8 @@ class CubeGameState extends GameState {
   spawnBullet(motion: MotionProps) {
     let bullet = new Bullet(this.newId(), this.me);
     copyMotionProps(bullet.motion, motion);
-    vec3.copy(bullet.desiredMotion.linearVelocity, motion.linearVelocity);
-    vec3.copy(bullet.desiredMotion.angularVelocity, motion.angularVelocity);
+    vec3.copy(bullet.motion.linearVelocity, motion.linearVelocity);
+    vec3.copy(bullet.motion.angularVelocity, motion.angularVelocity);
     this.addObjectInstance(bullet, this.bulletProto);
   }
 

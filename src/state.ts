@@ -7,7 +7,6 @@ import {
   copyMotionProps,
   createMotionProps,
   MotionProps,
-  VelocityProps,
 } from "./phys_motion.js";
 import { CollidesWith, ReboundData, IdPair, stepPhysics } from "./phys.js";
 import { Inputs } from "./inputs.js";
@@ -60,7 +59,6 @@ export abstract class GameObject {
   // physics
   motion: MotionProps;
   lastMotion?: MotionProps;
-  desiredMotion: VelocityProps;
   localAABB: AABB;
   worldAABB: AABB;
   motionAABB: AABB;
@@ -73,10 +71,6 @@ export abstract class GameObject {
   constructor(id: number, creator: number) {
     this.id = id;
     this.creator = creator;
-    this.desiredMotion = {
-      linearVelocity: vec3.fromValues(0, 0, 0),
-      angularVelocity: vec3.fromValues(0, 0, 0),
-    };
     this.motion = createMotionProps({
       location: vec3.fromValues(0, 0, 0),
       rotation: quat.identity(quat.create()),

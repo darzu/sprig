@@ -4,12 +4,9 @@ import { clamp } from "./math.js";
 import { CollidesWith, idPair, IdPair, ContactData, __step } from "./phys.js";
 import { AABB } from "./phys_broadphase.js";
 import { vec3Dbg } from "./utils-3d.js";
-
-export interface VelocityProps {
+export interface MotionProps {
   linearVelocity: vec3;
   angularVelocity: vec3;
-}
-export interface MotionProps extends VelocityProps {
   location: vec3;
   rotation: quat;
 }
@@ -59,7 +56,6 @@ const _constrainedVelocities = new Map<number, vec3>();
 export interface MotionObj {
   id: number;
   motion: MotionProps;
-  desiredMotion: VelocityProps;
   worldAABB: AABB;
 }
 
@@ -71,9 +67,9 @@ export function moveObjects(
 ) {
   const objs = Object.values(set);
 
-  // copy .desiredMotion to .motion; we want to try to meet the gameplay wants
+  // copy .motion to .motion; we want to try to meet the gameplay wants
   for (let o of objs) {
-    copyMotionProps(o.motion, o.desiredMotion);
+    copyMotionProps(o.motion, o.motion);
   }
 
   // TODO(@darzu): probably don't need this intermediate _constrainedVelocities

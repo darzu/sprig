@@ -13,7 +13,6 @@ import {
   createMotionProps,
   MotionProps,
   moveObjects,
-  VelocityProps,
 } from "./phys_motion.js";
 import { __isSMI } from "./util.js";
 import { vec3Dbg } from "./utils-3d.js";
@@ -29,7 +28,6 @@ export interface PhysicsObjectUninit {
 export interface PhysicsObject {
   id: number;
   motion: MotionProps;
-  desiredMotion: VelocityProps;
   lastMotion: MotionProps;
   localAABB: AABB;
   worldAABB: AABB;

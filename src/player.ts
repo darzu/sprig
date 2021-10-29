@@ -3,11 +3,7 @@
 import { quat, vec3 } from "./gl-matrix.js";
 import { Inputs } from "./inputs.js";
 import { CameraProps } from "./main.js";
-import {
-  createMotionProps,
-  MotionProps,
-  VelocityProps,
-} from "./phys_motion.js";
+import { createMotionProps, MotionProps } from "./phys_motion.js";
 
 export interface PlayerProps {
   jumpSpeed: number;
@@ -25,7 +21,6 @@ export interface PlayerObj {
   id: number;
   player: PlayerProps;
   motion: MotionProps;
-  desiredMotion: VelocityProps;
 }
 
 export function stepPlayer(
@@ -36,7 +31,7 @@ export function stepPlayer(
   spawnBullet: (motion: MotionProps) => void
 ) {
   // fall with gravity
-  player.desiredMotion.linearVelocity[1] -= player.player.gravity * dt;
+  player.motion.linearVelocity[1] -= player.player.gravity * dt;
 
   // move player
   let vel = vec3.fromValues(0, 0, 0);
@@ -61,16 +56,16 @@ export function stepPlayer(
   //   vec3.add(vel, vel, vec3.fromValues(0, -n, 0));
   // }
   if (inputs.keyClicks[" "]) {
-    player.desiredMotion.linearVelocity[1] = player.player.jumpSpeed * dt;
+    player.motion.linearVelocity[1] = player.player.jumpSpeed * dt;
   }
 
   vec3.transformQuat(vel, vel, player.motion.rotation);
 
-  // vec3.add(player.desiredMotion.linearVelocity, player.desiredMotion.linearVelocity, vel);
+  // vec3.add(player.motion.linearVelocity, player.motion.linearVelocity, vel);
 
   // x and z from local movement
-  player.desiredMotion.linearVelocity[0] = vel[0];
-  player.desiredMotion.linearVelocity[2] = vel[2];
+  player.motion.linearVelocity[0] = vel[0];
+  player.motion.linearVelocity[2] = vel[2];
 
   quat.rotateY(
     player.motion.rotation,
