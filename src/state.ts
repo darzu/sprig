@@ -12,6 +12,7 @@ import {
 import { CollidesWith, ReboundData, IdPair, stepPhysics } from "./phys.js";
 import { Inputs } from "./inputs.js";
 
+const SMOOTH = true;
 const ERROR_SMOOTHING_FACTOR = 0.9 ** (60 / 1000);
 const EPSILON = 0.0001;
 
@@ -342,13 +343,21 @@ export abstract class GameState {
     // UPDATE DERIVED STATE:
     for (let o of objs) {
       // update transform based on new rotations and positions
-      quat.mul(working_quat, o.motion.rotation, o.rotation_error);
-      quat.normalize(working_quat, working_quat);
-      mat4.fromRotationTranslation(
-        o.transform,
-        working_quat,
-        vec3.add(working_vec3, o.motion.location, o.location_error)
-      );
+      if (SMOOTH) {
+        quat.mul(working_quat, o.motion.rotation, o.rotation_error);
+        quat.normalize(working_quat, working_quat);
+        mat4.fromRotationTranslation(
+          o.transform,
+          working_quat,
+          vec3.add(working_vec3, o.motion.location, o.location_error)
+        );
+      } else {
+        mat4.fromRotationTranslation(
+          o.transform,
+          o.motion.rotation,
+          o.motion.location
+        );
+      }
     }
   }
 }
