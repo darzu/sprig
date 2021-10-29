@@ -436,7 +436,7 @@ export class Net {
         obj.deserializeDynamic(message);
         if (!message.dummy && dt > 0) {
           if (seq % 20 == 0) {
-            console.log(`simulating forward ${dt}ms`);
+            //console.log(`simulating forward ${dt}ms`);
           }
           obj.simulate(dt);
         }
