@@ -1,7 +1,10 @@
 // Import .obj files into sprig format
 // https://people.cs.clemson.edu/~dhouse/courses/405/docs/brief-obj-file-format.html
 
+import { vec3 } from "./gl-matrix.js";
 import { Mesh } from "./mesh-pool.js";
+import { assert } from "./test.js";
+import { isString } from "./util.js";
 
 /*
 Notes:
@@ -17,18 +20,48 @@ usemtl NAME <- starting a material
 */
 
 export function testImporters() {
-  const res = importObj(HAT_OBJ);
+  // invalid
+  assert(importObj("oijawlidjoiwad") === "empty mesh");
+  assert(importObj("") === "empty mesh");
+
+  // valid
+  assert(!isParseError(importObj("v 0 1 2")));
+
+  // valid, complex
+  const hat = importObj(HAT_OBJ);
+  console.dir(hat);
 }
 
-export function importObj(obj: string): Mesh {
+export type ParseError = string; // TODO(@darzu): more sophisticated error format?
+
+export function isParseError(m: Mesh | ParseError): m is ParseError {
+  return isString(m);
+}
+
+export function importObj(obj: string): Mesh | ParseError {
+  // TODO(@darzu): implement a streaming parser for better perf
+  const pos: vec3[] = [];
+  const tri: vec3[] = [];
+  const colors: vec3[] = [];
+
   const lns = obj.split("\n");
-  console.dir(lns);
-  // TODO(@darzu): implement
-  return {
-    pos: [],
-    tri: [],
-    colors: [],
-  };
+  for (let l of lns) {
+    const [kind, ...p] = l.split(" ");
+    if (kind === "v") {
+      // parse vertex
+      const nums = p.map((s) => parseFloat(s));
+      if (nums.some((n) => isNaN(n) || !isFinite(n)))
+        return `invalid vertex format: ${l}`;
+      if (nums.length !== 3) return `invalid vertex format: ${l}`;
+      pos.push(nums as vec3);
+    } else {
+      console.warn(`unknown .obj line format:\n${l}`);
+    }
+  }
+
+  if (!pos.length) return "empty mesh";
+
+  return { pos, tri, colors };
 }
 
 // Example hat, straight from blender:
