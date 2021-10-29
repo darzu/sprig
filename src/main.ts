@@ -513,7 +513,9 @@ class CubeGameState extends GameState {
     //console.log(`Stepping ${players.length} players`);
     for (let o of players)
       stepPlayer(o, dt, inputs, this.camera, this.spawnBullet);
+  }
 
+  handleCollisions() {
     // check collisions
     for (let o of Object.values(this.objects)) {
       // TODO: consider a helper method to get only live objects

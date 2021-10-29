@@ -226,6 +226,8 @@ export abstract class GameState {
 
   abstract stepGame(dt: number, inputs: Inputs): void;
 
+  abstract handleCollisions(): void;
+
   abstract runEvent(event: GameEvent): void;
 
   abstract viewMatrix(): mat4;
@@ -333,6 +335,9 @@ export abstract class GameState {
     // move, check collisions
     const physRes = stepPhysics(this.objects, dt);
     this.collidesWith = physRes.collidesWith;
+
+    // deal with any collisions
+    this.handleCollisions();
 
     // UPDATE DERIVED STATE:
     for (let o of objs) {
