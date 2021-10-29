@@ -5,36 +5,61 @@ export interface Inputs {
   rclick: boolean;
   keyClicks: { [key: string]: number };
   keyDowns: { [key: string]: boolean };
+  keyTimes: { [key: string]: number };
 }
 
 export function createInputsReader(canvas: HTMLCanvasElement): () => Inputs {
   // track which keys are pressed for use in the game loop
   const keyDowns: { [keycode: string]: boolean } = {};
-  const accumulated_keyClicks: { [keycode: string]: number } = {};
+  const accumulatedKeyClicks: { [keycode: string]: number } = {};
+  const accumulatedKeyTimes: { [keycode: string]: number } = {};
+  const keyDownTimes: { [keycode: string]: number } = {};
   window.addEventListener(
     "keydown",
     (ev) => {
       const k = ev.key.toLowerCase();
       if (!keyDowns[k])
-        accumulated_keyClicks[k] = (accumulated_keyClicks[k] ?? 0) + 1;
+        accumulatedKeyClicks[k] = (accumulatedKeyClicks[k] ?? 0) + 1;
       keyDowns[k] = true;
+      if (!keyDownTimes[k]) {
+        keyDownTimes[k] = performance.now();
+      }
+      if (k == " ") {
+        console.log("space down");
+      }
     },
     false
   );
   window.addEventListener(
     "keyup",
     (ev) => {
-      keyDowns[ev.key.toLowerCase()] = false;
+      let k = ev.key.toLowerCase();
+      keyDowns[k] = false;
+      accumulatedKeyTimes[k] = performance.now() - keyDownTimes[k];
+      delete keyDownTimes[k];
+      if (k == " ") {
+        console.log("space up");
+        console.log(performance.now() - keyDownTimes[k]);
+      }
     },
     false
   );
-  const _result_keyClicks: { [keycode: string]: number } = {};
+  const _resultKeyClicks: { [keycode: string]: number } = {};
   function takeAccumulatedKeyClicks(): { [keycode: string]: number } {
-    for (let k in accumulated_keyClicks) {
-      _result_keyClicks[k] = accumulated_keyClicks[k];
-      accumulated_keyClicks[k] = 0;
+    for (let k in accumulatedKeyClicks) {
+      _resultKeyClicks[k] = accumulatedKeyClicks[k];
+      accumulatedKeyClicks[k] = 0;
     }
-    return _result_keyClicks;
+    return _resultKeyClicks;
+  }
+
+  const _resultKeyTimes: { [keycode: string]: number } = {};
+  function takeAccumulatedKeyTimes(): { [keycode: string]: number } {
+    for (let k in accumulatedKeyTimes) {
+      _resultKeyTimes[k] = accumulatedKeyTimes[k];
+      accumulatedKeyTimes[k] = 0;
+    }
+    return _resultKeyTimes;
   }
 
   // track mouse movement for use in the game loop
@@ -97,6 +122,7 @@ export function createInputsReader(canvas: HTMLCanvasElement): () => Inputs {
     const { x: mouseX, y: mouseY } = takeAccumulatedMouseMovement();
     const { lClicks, rClicks } = takeAccumulatedMouseClicks();
     const keyClicks = takeAccumulatedKeyClicks();
+    const keyTimes = takeAccumulatedKeyTimes();
     let inputs: Inputs = {
       mouseX,
       mouseY,
@@ -104,6 +130,7 @@ export function createInputsReader(canvas: HTMLCanvasElement): () => Inputs {
       rclick: rClicks > 0,
       keyDowns,
       keyClicks,
+      keyTimes,
     };
     return inputs;
   }

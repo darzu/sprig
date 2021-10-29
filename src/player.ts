@@ -12,7 +12,7 @@ export interface PlayerProps {
 
 export function createPlayerProps(): PlayerProps {
   return {
-    jumpSpeed: 0.003,
+    jumpSpeed: 0.0003,
     gravity: 0.0001,
   };
 }
@@ -55,8 +55,10 @@ export function stepPlayer(
   // if (inputs.keyDowns["c"]) {
   //   vec3.add(vel, vel, vec3.fromValues(0, -n, 0));
   // }
-  if (inputs.keyClicks[" "]) {
-    player.motion.linearVelocity[1] = player.player.jumpSpeed * dt;
+  player.motion.linearVelocity[1] +=
+    player.player.jumpSpeed * (inputs.keyTimes[" "] || 0);
+  if (inputs.keyTimes[" "] > 0) {
+    console.log(inputs.keyTimes[" "]);
   }
 
   vec3.transformQuat(vel, vel, player.motion.rotation);
