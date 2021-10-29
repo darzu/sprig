@@ -35,7 +35,7 @@ const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
 const MAX_VERTICES = 21844;
 const ENABLE_NET = true;
-const AUTOSTART = false;
+const AUTOSTART = true;
 
 enum ObjectType {
   Plane,
@@ -99,6 +99,10 @@ class Plane extends GameObject {
     return ObjectType.Plane;
   }
 
+  syncPriority(firstSync: boolean) {
+    return firstSync ? 10000 : 1;
+  }
+
   serializeFull(buffer: Serializer) {
     buffer.writeVec3(this.motion.location);
     buffer.writeVec3(this.color);
@@ -114,6 +118,7 @@ class Plane extends GameObject {
   }
 
   deserializeDynamic(buffer: Deserializer) {
+    //console.log("Deserializing plane");
     // don't need to read anything at all here, planes never change
   }
 }
@@ -211,6 +216,7 @@ class Bullet extends Cube {
   serializeFull(buffer: Serializer) {
     buffer.writeVec3(this.motion.location);
     buffer.writeVec3(this.motion.linearVelocity);
+    //buffer.writeVec3(vec3.fromValues(0, 0, 0));
     buffer.writeQuat(this.motion.rotation);
     buffer.writeVec3(this.motion.angularVelocity);
     buffer.writeVec3(this.color);
@@ -252,8 +258,8 @@ class Player extends Cube {
     this.player = createPlayerProps();
   }
 
-  syncPriority(): number {
-    return 10000;
+  syncPriority(firstSync: boolean): number {
+    return firstSync ? 1 : 10000;
   }
 
   typeId(): number {
@@ -262,7 +268,9 @@ class Player extends Cube {
 
   serializeFull(buffer: Serializer) {
     buffer.writeVec3(this.motion.location);
-    buffer.writeVec3(this.motion.linearVelocity);
+    // TODO: this is very hacky. we should sync real player velocities
+    //buffer.writeVec3(this.motion.linearVelocity);
+    buffer.writeVec3(vec3.fromValues(0, 0, 0));
     buffer.writeQuat(this.motion.rotation);
     buffer.writeVec3(this.motion.angularVelocity);
   }
@@ -500,6 +508,7 @@ class CubeGameState extends GameState {
     const players = Object.values(this.objects).filter(
       (o) => o instanceof Player && o.authority === this.me
     ) as Player[];
+    //console.log(`Stepping ${players.length} players`);
     for (let o of players)
       stepPlayer(o, dt, inputs, this.camera, this.spawnBullet);
 
@@ -684,6 +693,9 @@ async function startGame(host: string | null) {
     let frame_start_time = performance.now();
     const dt = frame_start_time - previous_frame_time;
 
+    // apply any state updates from the network
+    if (net) net.updateState(previous_frame_time);
+
     // simulation step(s)
     sim_time_accumulator += dt;
     sim_time_accumulator = Math.min(sim_time_accumulator, SIM_DT * 2);
@@ -695,14 +707,13 @@ async function startGame(host: string | null) {
       sim_time += performance.now() - before_sim;
     }
 
-    // network step(s)
+    // send updates out to network (if necessary)
     net_time_accumulator += dt;
     net_time_accumulator = Math.min(net_time_accumulator, NET_DT * 2);
     let net_time = 0;
     while (net_time_accumulator > NET_DT) {
       let before_net = performance.now();
       if (net) {
-        net.updateState();
         net.sendStateUpdates();
       }
       net_time += performance.now() - before_net;
@@ -713,12 +724,20 @@ async function startGame(host: string | null) {
     gameState.renderFrame();
     let jsTime = performance.now() - frame_start_time;
     let frameTime = frame_start_time - previous_frame_time;
-    let { reliableBufferSize, unreliableBufferSize, numDroppedUpdates } = net
+    let {
+      reliableBufferSize,
+      unreliableBufferSize,
+      numDroppedUpdates,
+      skew,
+      ping,
+    } = net
       ? net.stats()
       : {
           reliableBufferSize: 0,
           unreliableBufferSize: 0,
           numDroppedUpdates: 0,
+          skew: [],
+          ping: [],
         };
     previous_frame_time = frame_start_time;
     avgJsTime = avgJsTime
@@ -747,9 +766,11 @@ async function startGame(host: string | null) {
       `broad:(${_lastCollisionTestTimeMs.toFixed(1)}ms ` +
       `o:${_doesOverlaps} e:${_enclosedBys} c:${_cellChecks}) ` +
       `fps:${avgFPS.toFixed(1)} ` +
-      `buffers:(r=${reliableBufferSize}/u=${unreliableBufferSize}) ` +
+      //`buffers:(r=${reliableBufferSize}/u=${unreliableBufferSize}) ` +
       `dropped:${numDroppedUpdates} ` +
       `objects:${gameState.numObjects} ` +
+      `skew: ${skew.join(",")} ` +
+      `ping: ${ping.join(",")} ` +
       `${usingWebGPU ? "WebGPU" : "WebGL"}`;
     // // TODO(@darzu): DEBUG
     // debugTxt.nodeValue =

@@ -4,13 +4,16 @@ import { Serializer, Deserializer, OutOfRoomError } from "./serialize.js";
 import { vec3, quat } from "./gl-matrix.js";
 
 // fraction of state updates to artificially drop
-const DROP_PROBABILITY = 0.0;
+const DROP_PROBABILITY = 0.1;
 
 const DELAY_SENDS = false;
-const SEND_DELAY = 60.0;
-const SEND_DELAY_JITTER = 60.0;
+const SEND_DELAY = 500.0;
+const SEND_DELAY_JITTER = 10.0;
 
 const MAX_MESSAGE_SIZE = 1000;
+
+// weight of existing skew measurement vs. new skew measurement
+const SKEW_WEIGHT = 0.5;
 
 enum MessageType {
   // Join a game in progress
@@ -22,6 +25,9 @@ enum MessageType {
   // Reserve unique object IDs
   ReserveIDs,
   ReserveIDsResponse,
+  // Estimate clock skew
+  Ping,
+  Pong,
 }
 
 enum ObjectUpdateType {
@@ -76,7 +82,8 @@ class StateSynchronizer {
         (obj.creator == this.net.state.me && !this.objectsKnown.has(obj.id))
     );
     for (let obj of allObjects) {
-      let priorityIncrease = obj.syncPriority();
+      let priorityIncrease;
+      priorityIncrease = obj.syncPriority(!this.objectsKnown.has(obj.id));
       if (!this.objectsKnown.has(obj.id)) {
         // try to sync new objects
         priorityIncrease += 1000;
@@ -101,6 +108,7 @@ class StateSynchronizer {
     let seq = this.updateSeq++;
     message.writeUint8(MessageType.StateUpdate);
     message.writeUint32(seq);
+    message.writeFloat32(performance.now());
     let events = this.events();
     let objects = this.objects();
     let numObjects = 0;
@@ -165,6 +173,7 @@ class StateSynchronizer {
     let ids = this.objectsInUpdate[seq];
     if (!ids) return;
     ids.forEach((id) => {
+      //console.log(`${id} known`);
       //console.log(`Object ${id} is known`);
       this.objectsKnown.add(id);
     });
@@ -189,6 +198,10 @@ export class Net {
   private nextUpdate: Record<ServerId, number> = {};
   private waiting: Record<ServerId, boolean> = {};
   private numDroppedUpdates: number = 0;
+  private pingSeq: number = 0;
+  private pingTime: number = 0;
+  private skewEstimate: Record<ServerId, number> = {};
+  private pingEstimate: Record<ServerId, number> = {};
 
   send(server: ServerId, message: ArrayBuffer, reliable: boolean) {
     // TODO: figure out if we need to do something smarter than just not sending if the connection isn't present
@@ -196,7 +209,16 @@ export class Net {
       ? this.reliableChannels[server]
       : this.unreliableChannels[server];
     if (conn && conn.readyState === "open") {
-      conn.send(message);
+      if (DELAY_SENDS) {
+        if (reliable || Math.random() > DROP_PROBABILITY) {
+          setTimeout(
+            () => conn.send(message),
+            SEND_DELAY + SEND_DELAY_JITTER * Math.random()
+          );
+        }
+      } else {
+        conn.send(message);
+      }
     }
   }
 
@@ -213,7 +235,22 @@ export class Net {
       reliableBufferSize,
       unreliableBufferSize,
       numDroppedUpdates: this.numDroppedUpdates,
+      skew: Object.values(this.skewEstimate),
+      ping: Object.values(this.pingEstimate),
     };
+  }
+
+  private ping() {
+    this.pingSeq++;
+    let seq = this.pingSeq;
+    let time = performance.now();
+    this.pingTime = time;
+    let message = new Serializer(5);
+    message.writeUint8(MessageType.Ping);
+    message.writeUint32(seq);
+    for (let server of this.peers) {
+      this.send(server, message.buffer, false);
+    }
   }
 
   private setupChannel(server: string, chan: RTCDataChannel) {
@@ -278,6 +315,37 @@ export class Net {
       case MessageType.StateUpdateResponse: {
         let seq = deserializer.readUint32();
         this.synchronizers[server].ackUpdate(seq);
+        break;
+      }
+      case MessageType.Ping: {
+        let seq = deserializer.readUint32();
+        let resp = new Serializer(9);
+        resp.writeUint8(MessageType.Pong);
+        resp.writeUint32(seq);
+        resp.writeFloat32(performance.now());
+        this.send(server, resp.buffer, false);
+        break;
+      }
+      case MessageType.Pong: {
+        let time = performance.now();
+        let seq = deserializer.readUint32();
+        let remoteTime = deserializer.readFloat32();
+        // only want to handle this if it's in response to our latest ping
+        if (seq !== this.pingSeq) {
+          break;
+        }
+        let rtt = time - this.pingTime;
+        let skew = remoteTime - (this.pingTime + rtt / 2);
+        if (!this.skewEstimate[server]) {
+          this.skewEstimate[server] = skew;
+          this.pingEstimate[server] = rtt / 2;
+        } else {
+          this.skewEstimate[server] =
+            SKEW_WEIGHT * this.skewEstimate[server] + (1 - SKEW_WEIGHT) * skew;
+          this.pingEstimate[server] =
+            SKEW_WEIGHT * this.pingEstimate[server] +
+            (1 - SKEW_WEIGHT) * (rtt / 2);
+        }
       }
     }
   }
@@ -288,7 +356,7 @@ export class Net {
     }
   }
 
-  applyStateUpdate(data: ArrayBuffer): boolean {
+  applyStateUpdate(data: ArrayBuffer, atTime: number): boolean {
     //console.log("In applyStateUpdate");
     //console.log("Applying state update");
     let applied = true;
@@ -296,14 +364,18 @@ export class Net {
     let type = message.readUint8();
     if (type !== MessageType.StateUpdate)
       throw "Wacky message type in applyStateUpdate";
-    let _seq = message.readUint32();
+    let seq = message.readUint32();
+    let ts = message.readFloat32();
+    let dt = atTime - ts;
     let numObjects = message.readUint8();
     for (let i = 0; i < numObjects; i++) {
       // make sure we're not in dummy mode
       message.dummy = false;
       let id = message.readUint32();
+      //console.log(`State update for ${id}`);
       let updateType: ObjectUpdateType = message.readUint8();
       if (updateType === ObjectUpdateType.Event) {
+        //console.log("Applying event");
         let type = message.readUint8();
         let authority = message.readUint8();
         let numObjectsInEvent = message.readUint8();
@@ -339,11 +411,14 @@ export class Net {
         // Don't update an existing object if this was a create message or the authority claim is old
         if (
           (objExisted && updateType === ObjectUpdateType.Create) ||
-          !obj.claimAuthority(authority, authority_seq)
+          !obj.claimAuthority(authority, authority_seq, seq)
         ) {
           message.dummy = true;
         }
         obj.deserializeFull(message);
+        if (!message.dummy && dt > 0) {
+          obj.simulate(dt);
+        }
         if (!objExisted) {
           this.state.addObject(obj);
         }
@@ -355,10 +430,16 @@ export class Net {
         if (!obj) {
           throw "Got non-full update for unknown object ${id}";
         }
-        if (!obj.claimAuthority(authority, authority_seq)) {
+        if (!obj.claimAuthority(authority, authority_seq, seq)) {
           message.dummy = true;
         }
         obj.deserializeDynamic(message);
+        if (!message.dummy && dt > 0) {
+          if (seq % 20 == 0) {
+            //console.log(`simulating forward ${dt}ms`);
+          }
+          obj.simulate(dt);
+        }
       } else {
         throw `Unsupported update type ${updateType} in applyStateUpdate`;
       }
@@ -366,78 +447,32 @@ export class Net {
     return applied;
   }
 
-  updateState() {
+  updateState(atTime: number) {
     //console.log("In updateState");
     for (let server of this.peers) {
-      /*console.log(
-        `Have ${
-          this.stateUpdates[server] ? this.stateUpdates[server].length : 0
-        } buffered state updates`
-        );*/
+      // console.log(
+      //   `Have ${
+      //     this.stateUpdates[server] ? this.stateUpdates[server].length : 0
+      //   } buffered state updates`
+      // );
       //console.log(`Looking for update ${this.nextUpdate[server]}`);
-      if (!this.nextUpdate[server]) {
-        this.nextUpdate[server] = 0;
-      }
-      // first, ignore any old updates
-      // TODO: should we apply these? Doug thinks not--we'd be out of sync.
       while (
         this.stateUpdates[server] &&
-        this.stateUpdates[server].length > 0 &&
-        this.stateUpdates[server][0].seq < this.nextUpdate[server]
+        this.stateUpdates[server].length > 0
       ) {
-        let { seq } = this.stateUpdates[server].shift()!;
-        this.numDroppedUpdates++;
-        /*
-        console.log(
-          `Ignoring old state update ${seq} < ${this.nextUpdate[server]} from ${server}`
-        );*/
-      }
-      // then, if we have many buffered updates, drop them until we've caught up
-      if (
-        this.stateUpdates[server] &&
-        this.stateUpdates[server].length > BUFFER_TARGET * 2
-      ) {
-        //console.log("Buffer too large, dropping in order to catch up");
-        while (this.stateUpdates[server].length > BUFFER_TARGET) {
-          this.stateUpdates[server].shift();
-          this.nextUpdate[server]++;
-          this.numDroppedUpdates++;
-        }
-      }
-      if (
-        !this.stateUpdates[server] ||
-        this.stateUpdates[server].length === 0
-      ) {
-        // buffer some state updates from this server
-        //console.log("Buffering for updates");
-        this.waiting[server] = true;
-        continue;
-      } else if (
-        !this.waiting[server] ||
-        this.stateUpdates[server].length >= BUFFER_TARGET
-      ) {
-        //console.log("Trying to apply an update");
         let { seq, data } = this.stateUpdates[server].shift()!;
-        // if we were buffering, we're going to reset our "clock" to whatever we have now
-        if (this.waiting[server]) {
-          this.nextUpdate[server] = seq;
-          this.waiting[server] = false;
+        //console.log(`Applying ${seq}`);
+        let applied = this.applyStateUpdate(
+          data,
+          atTime + (this.skewEstimate[server] || 0)
+        );
+        if (applied) {
+          let ack = new Serializer(8);
+          ack.writeUint8(MessageType.StateUpdateResponse);
+          //console.log(`Acking ${seq}`);
+          ack.writeUint32(seq);
+          this.send(server, ack.buffer, false);
         }
-        if (this.nextUpdate[server] === seq) {
-          let applied = this.applyStateUpdate(data);
-          if (applied) {
-            let ack = new Serializer(8);
-            ack.writeUint8(MessageType.StateUpdateResponse);
-            ack.writeUint32(seq);
-            this.send(server, ack.buffer, false);
-          }
-        } else {
-          // put it back in the buffer, we're not ready yet
-          this.stateUpdates[server].unshift({ seq, data });
-        }
-      }
-      if (!this.waiting[server]) {
-        this.nextUpdate[server]++;
       }
     }
   }
@@ -486,6 +521,8 @@ export class Net {
   ) {
     this.state = state;
     this.ready = ready;
+    // ping all servers once per second to estimate clock skew
+    setInterval(() => this.ping(), 1000);
     if (host === null) {
       // we're the host, just start up
       this.host = true;

@@ -13,7 +13,7 @@ export interface PlayerProps {
 export function createPlayerProps(): PlayerProps {
   return {
     jumpSpeed: 0.003,
-    gravity: 0.0003,
+    gravity: 0.0001,
   };
 }
 
@@ -90,11 +90,12 @@ export function stepPlayer(
       bullet_axis,
       0.02
     );
-    bulletMotion.linearVelocity = vec3.add(
-      bulletMotion.linearVelocity,
-      bulletMotion.linearVelocity,
-      player.motion.linearVelocity
-    );
+    // TODO(@darzu): adds player motion
+    // bulletMotion.linearVelocity = vec3.add(
+    //   bulletMotion.linearVelocity,
+    //   bulletMotion.linearVelocity,
+    //   player.motion.linearVelocity
+    // );
     bulletMotion.angularVelocity = vec3.scale(
       bulletMotion.angularVelocity,
       bullet_axis,

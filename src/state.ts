@@ -11,7 +11,7 @@ import {
 import { CollidesWith, ReboundData, IdPair, stepPhysics } from "./phys.js";
 import { Inputs } from "./inputs.js";
 
-const ERROR_SMOOTHING_FACTOR = 0.8;
+const ERROR_SMOOTHING_FACTOR = 0.9 ** (60 / 1000);
 const EPSILON = 0.0001;
 
 export function scaleMesh(m: Mesh, by: number): Mesh {
@@ -24,6 +24,7 @@ export function scaleMesh3(m: Mesh, by: vec3): Mesh {
 }
 
 const working_quat = quat.create();
+const identity_quat = quat.create();
 const working_vec3 = vec3.create();
 
 /* TODO: add "versioning" of objects. 
@@ -94,7 +95,7 @@ export abstract class GameObject {
   snapLocation(location: vec3) {
     // TODO: this is a hack to see if we're setting our location for the first time
     if (vec3.length(this.motion.location) === 0) {
-      this.motion.location = location;
+      this.motion.location = vec3.copy(this.motion.location, location);
       return;
     }
     let current_location = vec3.add(
@@ -103,15 +104,20 @@ export abstract class GameObject {
       this.location_error
     );
     let location_error = vec3.sub(current_location, current_location, location);
-    this.motion.location = location;
-    this.location_error = location_error;
+
+    // The order of these copies is important. At this point, the calculated
+    // location error actually lives in this.motion.location. So we copy it over
+    // to this.location_error, then copy the new location into this.motion.location.
+
+    this.location_error = vec3.copy(this.location_error, location_error);
+    this.motion.location = vec3.copy(this.motion.location, location);
   }
 
   snapRotation(rotation: quat) {
     // TODO: this is a hack to see if we're setting our rotation for the first time
-    let id = quat.identity(working_quat);
+    let id = identity_quat;
     if (quat.equals(rotation, id)) {
-      this.motion.rotation = rotation;
+      this.motion.rotation = quat.copy(this.motion.rotation, rotation);
       return;
     }
     let current_rotation = quat.mul(
@@ -127,24 +133,51 @@ export abstract class GameObject {
       current_rotation,
       rotation_inverse
     );
-    this.motion.rotation = rotation;
-    this.rotation_error = rotation_error;
+
+    // The order of these copies is important--see the similar comment in
+    // snapLocation above.
+
+    this.rotation_error = quat.copy(this.rotation_error, rotation_error);
+    this.motion.rotation = quat.copy(this.motion.rotation, rotation);
   }
 
-  syncPriority(): number {
-    return 1;
+  syncPriority(firstSync: boolean): number {
+    return 10;
   }
 
-  claimAuthority(authority: number, authority_seq: number): boolean {
+  claimAuthority(
+    authority: number,
+    authority_seq: number,
+    snap_seq: number
+  ): boolean {
     if (
-      this.authority_seq < authority_seq ||
-      (this.authority_seq == authority_seq && authority <= this.authority)
+      snap_seq >= this.snap_seq &&
+      (this.authority_seq < authority_seq ||
+        (this.authority_seq == authority_seq && authority <= this.authority))
     ) {
       this.authority = authority;
       this.authority_seq = authority_seq;
+      this.snap_seq = snap_seq;
       return true;
     }
     return false;
+  }
+
+  // By default, simulate ballistic motion. Subclasses can override
+  simulate(dt: number) {
+    //console.log(`simulating forward ${dt} ms`);
+    vec3.scale(working_vec3, this.motion.linearVelocity, dt);
+    this.snapLocation(
+      vec3.add(working_vec3, this.motion.location, working_vec3)
+    );
+
+    let axis = vec3.normalize(working_vec3, this.motion.angularVelocity);
+    let angle = vec3.length(this.motion.angularVelocity) * dt;
+    let deltaRotation = quat.setAxisAngle(working_quat, axis, angle);
+    quat.normalize(deltaRotation, deltaRotation);
+    quat.multiply(working_quat, deltaRotation, this.motion.rotation);
+    quat.normalize(working_quat, working_quat);
+    this.snapRotation(working_quat);
   }
 
   abstract serializeFull(buf: Serializer): void;
@@ -262,15 +295,13 @@ export abstract class GameState {
     const objs = Object.values(this.objects);
 
     // reduce error in location and rotation
-    let identity_quat = quat.create();
-    let delta = vec3.create();
-    let normalized_velocity = vec3.create();
-    let deltaRotation = quat.create();
+    let identity_quat = quat.set(working_quat, 0, 0, 0, 1);
+
     for (let o of objs) {
       o.location_error = vec3.scale(
         o.location_error,
         o.location_error,
-        ERROR_SMOOTHING_FACTOR
+        ERROR_SMOOTHING_FACTOR ** dt
       );
       let location_error_magnitude = vec3.length(o.location_error);
       if (
@@ -278,15 +309,15 @@ export abstract class GameState {
         location_error_magnitude < EPSILON
       ) {
         //console.log(`Object ${o.id} reached 0 location error`);
-        o.location_error = vec3.fromValues(0, 0, 0);
+        o.location_error = vec3.set(o.location_error, 0, 0, 0);
       }
-
       o.rotation_error = quat.slerp(
         o.rotation_error,
         o.rotation_error,
         identity_quat,
-        1 - ERROR_SMOOTHING_FACTOR
+        1 - ERROR_SMOOTHING_FACTOR ** dt
       );
+      quat.normalize(o.rotation_error, o.rotation_error);
       let rotation_error_magnitude = Math.abs(
         quat.getAngle(o.rotation_error, identity_quat)
       );
@@ -295,7 +326,7 @@ export abstract class GameState {
         rotation_error_magnitude < EPSILON
       ) {
         //console.log(`Object ${o.id} reached 0 rotation error`);
-        o.rotation_error = identity_quat;
+        o.rotation_error = quat.copy(o.rotation_error, identity_quat);
       }
     }
 
@@ -306,12 +337,13 @@ export abstract class GameState {
     // UPDATE DERIVED STATE:
     for (let o of objs) {
       // update transform based on new rotations and positions
+      quat.mul(working_quat, o.motion.rotation, o.rotation_error);
+      quat.normalize(working_quat, working_quat);
       mat4.fromRotationTranslation(
         o.transform,
-        quat.mul(working_quat, o.motion.rotation, o.rotation_error),
+        working_quat,
         vec3.add(working_vec3, o.motion.location, o.location_error)
       );
     }
   }
 }
-
