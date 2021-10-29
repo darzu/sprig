@@ -3,12 +3,14 @@ import { MotionProps } from "./phys_motion.js";
 
 export interface BoatProps {
   speed: number;
+  wheelSpeed: number;
   wheelDir: number;
 }
 
 export function createBoatProps(): BoatProps {
   return {
     speed: 0,
+    wheelSpeed: 0,
     wheelDir: 0,
   };
 }
@@ -23,25 +25,18 @@ export function stepBoats(objDict: Record<number, BoatObj>, dt: number) {
   const objs = Object.values(objDict);
 
   for (let o of objs) {
-    // TODO(@darzu): IMPLEMENT
-    // o.motion.linearVelocity[0] = o.boat.speed;
+    const rad = o.boat.wheelSpeed * dt;
+    o.boat.wheelDir += rad;
 
-    // TODO(@darzu): hack to init boat direction
-    if (vec3.exactEquals(o.motion.linearVelocity, [0, 0, 0]))
-      o.motion.linearVelocity[0] = 1.0;
+    // rotate
+    quat.rotateY(o.motion.rotation, o.motion.rotation, rad);
 
-    vec3.normalize(o.motion.linearVelocity, o.motion.linearVelocity);
-    vec3.scale(o.motion.linearVelocity, o.motion.linearVelocity, o.boat.speed);
-
-    const rad = o.boat.wheelDir * dt;
-
+    // rotate velocity
     vec3.rotateY(
       o.motion.linearVelocity,
-      o.motion.linearVelocity,
+      [o.boat.speed, 0, 0],
       [0, 0, 0],
-      rad
+      o.boat.wheelDir
     );
-
-    quat.rotateY(o.motion.rotation, o.motion.rotation, rad);
   }
 }

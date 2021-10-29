@@ -412,7 +412,7 @@ class CubeGameState extends GameState {
         boat.motion.location[0] = (Math.random() - 0.5) * 20 - 10;
         boat.motion.location[2] = (Math.random() - 0.5) * 20 - 20;
         boat.boat.speed = 0.01 + jitter(0.01);
-        boat.boat.wheelDir = jitter(0.002);
+        boat.boat.wheelSpeed = jitter(0.002);
         this.addObject(boat);
       }
 
