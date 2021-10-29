@@ -792,7 +792,7 @@ async function startGame(host: string | null) {
           console.log(`${id}`);
           const url = `${window.location.href}?server=${id}`;
           console.log(url);
-          if (navigator.clipboard) navigator.clipboard.writeText(id);
+          if (navigator.clipboard) navigator.clipboard.writeText(url);
           frame();
         } else {
           frame();
