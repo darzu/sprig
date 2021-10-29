@@ -19,23 +19,20 @@ f v1/t1/n1 v2/t2/n2 .... vn/tn/nn <- face
 usemtl NAME <- starting a material
 */
 
-export function testImporters() {
-  // invalid
-  assert(importObj("oijawlidjoiwad") === "empty mesh");
-  assert(importObj("") === "empty mesh");
-
-  // valid
-  assert(!isParseError(importObj("v 0 1 2")));
-
-  // valid, complex
-  const hat = importObj(HAT_OBJ);
-  console.dir(hat);
-}
-
 export type ParseError = string; // TODO(@darzu): more sophisticated error format?
 
-export function isParseError(m: Mesh | ParseError): m is ParseError {
+export function isParseError(m: any | ParseError): m is ParseError {
   return isString(m);
+}
+
+// TODO(@darzu): can we do cool tuple typing generic sh*t here?
+export function parseVec(p: string[], len: number): number[] | ParseError {
+  const nums = p.map((s) => parseFloat(s));
+  if (nums.some((n) => isNaN(n) || !isFinite(n)))
+    return `invalid vector-${len} format: ${p.join(" ")}`;
+  if (nums.length !== len)
+    return `invalid vector-${len} format: ${p.join(" ")}`;
+  return nums;
 }
 
 export function importObj(obj: string): Mesh | ParseError {
@@ -47,13 +44,28 @@ export function importObj(obj: string): Mesh | ParseError {
   const lns = obj.split("\n");
   for (let l of lns) {
     const [kind, ...p] = l.split(" ");
-    if (kind === "v") {
+    if (!kind) {
+      continue;
+    } else if (kind === "v") {
       // parse vertex
-      const nums = p.map((s) => parseFloat(s));
-      if (nums.some((n) => isNaN(n) || !isFinite(n)))
-        return `invalid vertex format: ${l}`;
-      if (nums.length !== 3) return `invalid vertex format: ${l}`;
+      const nums = parseVec(p, 3);
+      if (isParseError(nums)) return nums;
       pos.push(nums as vec3);
+    } else if (kind === "vn") {
+      // parse normal
+    } else if (kind === "usemtl") {
+      // parse material assignment
+    } else if (kind === "f") {
+      // parse face
+    } else if (
+      kind === "#" || // comment
+      kind === "mtllib" || // accompanying .mtl file name
+      kind === "o" || // object name
+      kind === "vt" || // texture coordinate
+      kind === "s" || // TODO(@darzu): What does "s" mean?
+      false
+    ) {
+      // ignore it
     } else {
       console.warn(`unknown .obj line format:\n${l}`);
     }
@@ -62,6 +74,36 @@ export function importObj(obj: string): Mesh | ParseError {
   if (!pos.length) return "empty mesh";
 
   return { pos, tri, colors };
+}
+
+// TESTS
+
+function assertObjError(obj: string, e: ParseError): void {
+  const m = importObj(obj);
+  assert(
+    isString(m) && m === e,
+    `error mismatch, actual: ${m} vs expected: ${e}`
+  );
+}
+function assertObjSuccess(obj: string): Mesh {
+  const m = importObj(obj);
+  assert(!isParseError(m), `failed to import obj: ${m}`);
+  return m;
+}
+
+export function testImporters() {
+  // invalid
+  assertObjError("oijawlidjoiwad", "empty mesh");
+  assertObjError("", "empty mesh");
+  assertObjError("v foo bar", "invalid vector-3 format: foo bar");
+  assertObjError("v 1 2 3 4", "invalid vector-3 format: 1 2 3 4");
+
+  // valid
+  assertObjSuccess("v 0 1 2");
+
+  // valid, complex
+  const hat = assertObjSuccess(HAT_OBJ);
+  console.dir(hat);
 }
 
 // Example hat, straight from blender:
