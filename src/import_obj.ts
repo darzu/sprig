@@ -9,13 +9,20 @@ Notes:
  - .mtl file is a materials file
 
 format:
-v <- geo vertex (x, y, z)
-vn <- normal (vn, dx, dy, dz)
-vt <- texture vertex (vt, u, v)
-f <- face (v1/t1/n1 v2/t2/n2 .... vn/tn/nn)
+v x y z <- geo vertex
+vn vi dx dy dz <- normal
+vt vi u v <- texture vertex
+f v1/t1/n1 v2/t2/n2 .... vn/tn/nn <- face
+usemtl NAME <- starting a material
 */
 
+export function testImporters() {
+  const res = importObj(HAT_OBJ);
+}
+
 export function importObj(obj: string): Mesh {
+  const lns = obj.split("\n");
+  console.dir(lns);
   // TODO(@darzu): implement
   return {
     pos: [],

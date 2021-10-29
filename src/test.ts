@@ -1,5 +1,6 @@
 // Some serialization and deserialization tests
 
+import { testImporters } from "./import_obj.js";
 import { Serializer, Deserializer } from "./serialize.js";
 
 function testBasics() {
@@ -16,5 +17,14 @@ function testBasics() {
 }
 
 export function test() {
+  const start = performance.now();
+  console.log(`>>> STARTING TESTS`);
+
   testBasics();
+  testImporters();
+
+  const end = performance.now();
+  console.log(`<<< ENDING TESTS (${(end - start).toFixed(1)}ms)`);
+  if (end - start > 1000)
+    throw `tests took longer than 1 second! shame on you.`;
 }
