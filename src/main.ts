@@ -100,7 +100,7 @@ class Plane extends GameObject {
   }
 
   syncPriority(firstSync: boolean) {
-    return firstSync ? 10000 : 1;
+    return firstSync ? 20000 : 1;
   }
 
   serializeFull(buffer: Serializer) {
@@ -259,7 +259,7 @@ class Player extends Cube {
   }
 
   syncPriority(firstSync: boolean): number {
-    return firstSync ? 1 : 10000;
+    return 10000;
   }
 
   typeId(): number {
