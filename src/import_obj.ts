@@ -49,6 +49,7 @@ function parseFace(p: string[]): vec3[] | ParseError {
   return verts as vec3[];
 }
 
+const FLIP_FACES = true;
 export function importObj(obj: string): Mesh | ParseError {
   // TODO(@darzu): implement a streaming parser for better perf
   const pos: vec3[] = [];
@@ -75,6 +76,7 @@ export function importObj(obj: string): Mesh | ParseError {
     } else if (kind === "usemtl") {
       // parse material assignment
       //    usemtl MATERIAL_NAME
+      // TODO(@darzu): implement
     } else if (kind === "f") {
       // parse face
       //    f v1/t1/n1 v2/t2/n2 .... vn/tn/nn
@@ -87,13 +89,23 @@ export function importObj(obj: string): Mesh | ParseError {
       if (inds.length === 3) {
         // triangle
         // TODO(@darzu): clockwise or counter clockwise?
-        tri.push(inds as vec3);
+        if (FLIP_FACES) {
+          tri.push(reverse(inds as vec3));
+        } else {
+          tri.push(inds as vec3);
+        }
       } else if (inds.length === 4) {
         // quad
-        // TODO(@darzu): clockwise or counter clockwise?
         // assuming clockwise, then we want 0,1,3 and 1,2,3
-        tri.push([inds[0], inds[1], inds[3]]);
-        tri.push([inds[1], inds[2], inds[3]]);
+        const tri1: vec3 = [inds[0], inds[1], inds[3]];
+        const tri2: vec3 = [inds[1], inds[2], inds[3]];
+        if (FLIP_FACES) {
+          tri.push(reverse(tri1));
+          tri.push(reverse(tri2));
+        } else {
+          tri.push(tri1);
+          tri.push(tri2);
+        }
       } else {
         return `unsupported: ${faceOpt.length}-sided face`;
       }
@@ -113,6 +125,13 @@ export function importObj(obj: string): Mesh | ParseError {
 
   if (!pos.length) return "empty mesh";
 
+  // TODO(@darzu): for debugging, assign each face a different shade
+  const colorStep = 0.5 / tri.length;
+  for (let i = 0; i < tri.length; i++) {
+    const shade = colorStep * i + 0.1;
+    colors.push([shade, shade, shade]);
+  }
+
   return { pos, tri, colors };
 
   function checkIndices(
@@ -122,6 +141,9 @@ export function importObj(obj: string): Mesh | ParseError {
     for (let vi of inds)
       if (vi < 0 || maxInd < vi) return `invalid vertex index '${vi + 1}'`;
     return null;
+  }
+  function reverse(v: vec3): vec3 {
+    return [v[2], v[1], v[0]];
   }
 }
 
@@ -192,7 +214,7 @@ export function testImporters() {
 }
 
 // Example hat, straight from blender:
-const HAT_OBJ = `
+export const HAT_OBJ = `
 # Blender v2.92.0 OBJ File: 'hat.blend'
 # www.blender.org
 mtllib hat.mtl
