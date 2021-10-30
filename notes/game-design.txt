@@ -40,3 +40,19 @@ from: https://www.youtube.com/watch?v=4LTtr45y7P0
     Be honest
     Sell your hook
     Know your scope
+
+local coop, single screen, one joy-con games:
+    dungeon crawler (twin sticks but not)
+    overcooked
+    fighting
+        duck game
+        smash bros
+    unrailed
+    
+We need log on server:
+    with hats,
+        someone has authority over hats
+        event authority is hat owner
+        interacting with field on player that gets synced
+    RPC with server
+    
