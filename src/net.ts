@@ -203,7 +203,7 @@ export class Net {
   private skewEstimate: Record<ServerId, number> = {};
   private pingEstimate: Record<ServerId, number> = {};
 
-  send(server: ServerId, message: ArrayBuffer, reliable: boolean) {
+  send(server: ServerId, message: ArrayBufferView, reliable: boolean) {
     // TODO: figure out if we need to do something smarter than just not sending if the connection isn't present
     let conn = reliable
       ? this.reliableChannels[server]

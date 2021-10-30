@@ -10,7 +10,7 @@ export class OutOfRoomError extends Error {
 }
 
 export class Serializer {
-  buffer: ArrayBuffer;
+  private _buffer: ArrayBuffer;
   private dataView: DataView;
   private cursor: number = 0;
 
@@ -18,20 +18,24 @@ export class Serializer {
     if (size <= 0) {
       throw "Serializer size must be >= 0";
     }
-    this.buffer = new ArrayBuffer(size);
-    this.dataView = new DataView(this.buffer);
+    this._buffer = new ArrayBuffer(size);
+    this.dataView = new DataView(this._buffer);
+  }
+
+  get buffer() {
+    return new DataView(this._buffer, 0, this.cursor);
   }
 
   private index(at: number | null, length: number): number {
     if (at === null) {
-      if (this.cursor + length > this.buffer.byteLength) {
+      if (this.cursor + length > this._buffer.byteLength) {
         throw new OutOfRoomError(this.cursor);
       }
       at = this.cursor;
       this.cursor += length;
       return at;
     }
-    if (at + length > this.buffer.byteLength) {
+    if (at + length > this._buffer.byteLength) {
       throw new OutOfRoomError(at);
     }
     return at;

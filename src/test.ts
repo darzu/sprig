@@ -9,7 +9,7 @@ function testBasics() {
   s.writeUint16(45);
   s.writeUint32(57, second);
 
-  let d = new Deserializer(s.buffer);
+  let d = new Deserializer(s.buffer.buffer);
   if (d.readUint32() !== 42) throw "test failure";
   if (d.readUint32() !== 57) throw "test failure";
   if (d.readUint16() !== 45) throw "test failure";
