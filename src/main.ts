@@ -540,12 +540,22 @@ class CubeGameState extends GameState {
           );
           for (let player of collidingPlayers) {
             this.recordEvent(EventType.BulletPlayerCollision, [
-              o.id,
               player.id,
+              o.id,
             ]);
           }
         }
       }
+    }
+  }
+
+  eventAuthority(type: EventType, objects: GameObject[]) {
+    switch (type) {
+      // Players always have authority over bullets that hit them
+      case EventType.BulletPlayerCollision:
+        return objects[0].authority;
+      default:
+        return super.eventAuthority(type, objects);
     }
   }
 
@@ -566,6 +576,8 @@ class CubeGameState extends GameState {
         }
         break;
       case EventType.BulletPlayerCollision:
+        // TODO: this code is unnecessarily complicated--the player is always
+        // the first object, bullet is second
         for (let id of event.objects) {
           let obj = this.objects[id];
           if (obj && obj instanceof Bullet) {

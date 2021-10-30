@@ -276,12 +276,9 @@ export abstract class GameState {
 
   recordEvent(type: number, objects: number[]) {
     // return; // TODO(@darzu): TO DEBUG this fn is costing a ton of memory
-    // check to see whether we're the authority for this event
     let objs = objects.map((id) => this.objects[id] ?? this.deletedObjects[id]);
-    if (
-      objs.some((o) => this.me === o.authority) &&
-      objs.every((o) => this.me <= o.authority)
-    ) {
+    // check to see whether we're the authority for this event
+    if (this.eventAuthority(type, objs) == this.me) {
       // TODO(@darzu): DEBUGGING
       // console.log(`Recording event type=${type}`);
       let id = this.newId();
@@ -289,6 +286,11 @@ export abstract class GameState {
       this.events[id] = event;
       this.runEvent(event);
     }
+  }
+
+  // Subclasses can override this to handle authority differently depending on the event type
+  eventAuthority(type: number, objects: GameObject[]) {
+    return Math.min(...objects.map((o) => o.authority));
   }
 
   step(dt: number, inputs: Inputs) {
