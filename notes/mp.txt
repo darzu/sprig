@@ -398,7 +398,7 @@ Reconnect and save/loading:
     Saving and loading a game should use exactly the same serialize/deserialize paths as the net code
 
 
-Event ambiguity:
+"in contact" event ambiguity:
     player 2 has obj hit the ground
     event is:
         id, type, list of object ids
