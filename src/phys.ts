@@ -108,14 +108,16 @@ export function stepPhysics(
   // update motion sweep AABBs
   for (let o of objs) {
     for (let i = 0; i < 3; i++) {
-      o.motionAABB.min[i] = Math.min(
-        o.localAABB.min[i] + o.motion.location[i],
-        o.localAABB.min[i] + o.lastMotion.location[i]
-      );
-      o.motionAABB.max[i] = Math.max(
-        o.localAABB.max[i] + o.motion.location[i],
-        o.localAABB.max[i] + o.lastMotion.location[i]
-      );
+      o.motionAABB.min[i] =
+        Math.min(
+          o.localAABB.min[i] + o.motion.location[i],
+          o.localAABB.min[i] + o.lastMotion.location[i]
+        ) - PAD;
+      o.motionAABB.max[i] =
+        Math.max(
+          o.localAABB.max[i] + o.motion.location[i],
+          o.localAABB.max[i] + o.lastMotion.location[i]
+        ) + PAD;
     }
   }
 
@@ -139,6 +141,7 @@ export function stepPhysics(
     }
 
     // colliding again so we don't need any adjacency checks
+    // TODO(@darzu): do we need this if we're doing a doesTouch check below?
     if (doesOverlap(a.worldAABB, b.worldAABB)) {
       const conData = computeContactData(a, b);
       _contactData.set(abId, conData);
@@ -209,7 +212,9 @@ export function stepPhysics(
       const a = objDict[aId];
       const b = objDict[bId];
 
-      if (!doesOverlap(a.worldAABB, b.worldAABB)) {
+      // TODO(@darzu):
+      // if (!doesOverlap(a.worldAABB, b.worldAABB)) {
+      if (!doesTouch(a.worldAABB, b.worldAABB, PAD * 2)) {
         // a miss
         continue;
       }
