@@ -37,16 +37,22 @@ const MAX_VERTICES = 21844;
 const ENABLE_NET = true;
 const AUTOSTART = true;
 
+const INTERACTION_DISTANCE = 5;
+const INTERACTION_ANGLE = Math.PI / 6;
+
 enum ObjectType {
   Plane,
   Player,
   Bullet,
   Boat,
+  Hat,
 }
 
 enum EventType {
   BulletBulletCollision,
   BulletPlayerCollision,
+  HatGet,
+  HatDrop,
 }
 
 const BLACK = vec3.fromValues(0, 0, 0);
@@ -249,12 +255,58 @@ class Bullet extends Cube {
   }
 }
 
+class Hat extends Cube {
+  constructor(id: number, creator: number) {
+    super(id, creator);
+    this.color = vec3.fromValues(Math.random(), Math.random(), Math.random());
+    this.localAABB = getAABBFromMesh(this.mesh());
+  }
+
+  mesh(): Mesh {
+    // TODO(@darzu): this should be computed only once.
+    return scaleMesh(super.mesh(), 0.5);
+  }
+
+  typeId(): number {
+    return ObjectType.Hat;
+  }
+
+  serializeFull(buffer: Serializer) {
+    buffer.writeVec3(this.color);
+    buffer.writeVec3(this.motion.location);
+  }
+
+  deserializeFull(buffer: Deserializer) {
+    buffer.readVec3(this.color);
+    let location = buffer.readVec3()!;
+    if (!buffer.dummy) {
+      this.snapLocation(location);
+    }
+  }
+
+  serializeDynamic(buffer: Serializer) {
+    // rotation and location can both change, but we only really care about syncing location
+    buffer.writeVec3(this.motion.location);
+  }
+
+  deserializeDynamic(buffer: Deserializer) {
+    let location = buffer.readVec3()!;
+    if (!buffer.dummy) {
+      this.snapLocation(location);
+    }
+  }
+}
+
 class Player extends Cube {
   player: PlayerProps;
+  hat: number;
+  interactingWith: number;
 
   constructor(id: number, creator: number) {
     super(id, creator);
     this.color = vec3.fromValues(0, 0.2, 0);
+    this.hat = 0;
+    this.interactingWith = 0;
     this.player = createPlayerProps();
   }
 
@@ -271,6 +323,7 @@ class Player extends Cube {
     buffer.writeVec3(this.motion.linearVelocity);
     buffer.writeQuat(this.motion.rotation);
     buffer.writeVec3(this.motion.angularVelocity);
+    buffer.writeUint32(this.interactingWith);
   }
 
   deserializeFull(buffer: Deserializer) {
@@ -286,6 +339,7 @@ class Player extends Cube {
     }
     buffer.readVec3(this.motion.angularVelocity);
     vec3.copy(this.motion.angularVelocity, this.motion.angularVelocity);
+    this.interactingWith = buffer.readUint32();
   }
 
   serializeDynamic(buffer: Serializer) {
@@ -419,15 +473,13 @@ class CubeGameState extends GameState {
       // create stack of boxes
       const BOX_STACK_COUNT = 10;
       for (let i = 0; i < BOX_STACK_COUNT; i++) {
-        let b = new Bullet(this.newId(), this.me);
+        let b = new Hat(this.newId(), this.me);
         // b.motion.location = vec3.fromValues(0, 5 + i * 2, -2);
         b.motion.location = vec3.fromValues(
           Math.random() * -10 + 10 - 5,
-          i * 2,
+          0,
           Math.random() * -10 - 5
         );
-        b.color = vec3.fromValues(Math.random(), Math.random(), Math.random());
-        b.motion.linearVelocity[1] = -0.03;
         this.addObject(b);
         // TODO(@darzu): debug
         console.log(`box: ${b.id}`);
@@ -452,7 +504,7 @@ class CubeGameState extends GameState {
     return p;
   }
 
-  objectOfType(typeId: ObjectType, id: number, creator: number) {
+  objectOfType(typeId: ObjectType, id: number, creator: number): GameObject {
     switch (typeId) {
       case ObjectType.Plane:
         return new Plane(id, creator);
@@ -462,8 +514,11 @@ class CubeGameState extends GameState {
         return new Player(id, creator);
       case ObjectType.Boat:
         return new Boat(id, creator);
+      case ObjectType.Hat:
+        return new Hat(id, creator);
+      default:
+        return never(typeId, `No such object type ${typeId}`);
     }
-    never(typeId, `No such object type ${typeId}`);
   }
 
   addObject(obj: GameObject) {
@@ -491,6 +546,38 @@ class CubeGameState extends GameState {
     this.addObjectInstance(bullet, this.bulletProto);
   }
 
+  // TODO: this function is very bad. It should probably use an oct-tree or something.
+  getInteractionObject(player: Player): number {
+    let bestDistance = INTERACTION_DISTANCE;
+    let bestObj = 0;
+    for (let obj of Object.values(this.objects)) {
+      if (obj instanceof Hat && obj.inWorld) {
+        let to = vec3.sub(
+          vec3.create(),
+          obj.motion.location,
+          player.motion.location
+        );
+        let distance = vec3.len(to);
+        if (distance < bestDistance) {
+          let direction = vec3.normalize(to, to);
+          let playerDirection = vec3.fromValues(0, 0, -1);
+          vec3.transformQuat(
+            playerDirection,
+            playerDirection,
+            player.motion.rotation
+          );
+          if (
+            Math.abs(vec3.angle(direction, playerDirection)) < INTERACTION_ANGLE
+          ) {
+            bestDistance = distance;
+            bestObj = obj.id;
+          }
+        }
+      }
+    }
+    return bestObj;
+  }
+
   stepGame(dt: number, inputs: Inputs) {
     // check render mode
     if (inputs.keyClicks["1"]) {
@@ -511,8 +598,21 @@ class CubeGameState extends GameState {
       (o) => o instanceof Player && o.authority === this.me
     ) as Player[];
     //console.log(`Stepping ${players.length} players`);
-    for (let o of players)
-      stepPlayer(o, dt, inputs, this.camera, this.spawnBullet);
+
+    for (let player of players) {
+      let interactionObject = this.getInteractionObject(player);
+      if (interactionObject > 0) {
+        console.log(`Interaction object is ${interactionObject}`);
+      }
+      stepPlayer(
+        player,
+        interactionObject,
+        dt,
+        inputs,
+        this.camera,
+        this.spawnBullet
+      );
+    }
   }
 
   handleCollisions() {
@@ -546,6 +646,11 @@ class CubeGameState extends GameState {
           }
         }
       }
+      if (o instanceof Player) {
+        if (o.interactingWith > 0) {
+          this.recordEvent(EventType.HatGet, [o.interactingWith, o.id]);
+        }
+      }
     }
   }
 
@@ -553,6 +658,9 @@ class CubeGameState extends GameState {
     switch (type) {
       // Players always have authority over bullets that hit them
       case EventType.BulletPlayerCollision:
+        return objects[0].authority;
+      // Hats always have authority over getting got
+      case EventType.HatGet:
         return objects[0].authority;
       default:
         return super.eventAuthority(type, objects);
@@ -590,6 +698,13 @@ class CubeGameState extends GameState {
             throw `Bad id ${id} in event ${event.id} (2)`;
           }
         }
+        break;
+      case EventType.HatGet:
+        let hat = this.objects[event.objects[0]] as Hat;
+        let player = this.objects[event.objects[1]] as Player;
+        hat.inWorld = false;
+        player.color = hat.color;
+        player.hat = hat.id;
         break;
       default:
         throw `Bad event type ${event.type} for event ${event.id}`;

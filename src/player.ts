@@ -3,6 +3,7 @@
 import { quat, vec3 } from "./gl-matrix.js";
 import { Inputs } from "./inputs.js";
 import { CameraProps } from "./main.js";
+import { GameObject } from "./state.js";
 import { createMotionProps, MotionProps } from "./phys_motion.js";
 
 export interface PlayerProps {
@@ -21,10 +22,12 @@ export interface PlayerObj {
   id: number;
   player: PlayerProps;
   motion: MotionProps;
+  interactingWith: number;
 }
 
 export function stepPlayer(
   player: PlayerObj,
+  interactionObject: number,
   dt: number,
   inputs: Inputs,
   camera: CameraProps,
@@ -48,6 +51,9 @@ export function stepPlayer(
   }
   if (inputs.keyDowns["s"]) {
     vec3.add(vel, vel, vec3.fromValues(0, 0, n));
+  }
+  if (inputs.keyDowns["e"]) {
+    player.interactingWith = interactionObject;
   }
   // if (inputs.keyDowns["shift"]) {
   //   vec3.add(vel, vel, vec3.fromValues(0, n, 0));

@@ -54,6 +54,7 @@ export abstract class GameObject {
   snap_seq: number;
   location_error: vec3;
   rotation_error: quat;
+  inWorld: boolean = true;
   deleted: boolean = false;
 
   // physics
@@ -215,7 +216,7 @@ export abstract class GameState {
     this.me = 0;
     this.renderer = renderer;
     this.nextPlayerId = 0;
-    this.nextObjectId = 0;
+    this.nextObjectId = 1;
     this.objects = {};
     this.deletedObjects = {};
     this.events = {};
