@@ -398,7 +398,21 @@ Reconnect and save/loading:
     Saving and loading a game should use exactly the same serialize/deserialize paths as the net code
 
 
-    
+Event ambiguity:
+    player 2 has obj hit the ground
+    event is:
+        id, type, list of object ids
+    the game has interpretation of what each type means
+    for each obj id, the smallest authority wins
+    refinement:
+        the game has interpretation of how each type resolves authority
+    we need incremental obj vs previous state physics checks
+    possibly soft cap on velocity based on ping
+        max distance for error
+        network physics position error tolerance
+    if we do physics for forward sim, we could ship desired veloicty
+
+    for now: physics touching check
 
 
   

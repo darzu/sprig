@@ -1,0 +1,4 @@
+OBJ:
+    https://en.wikipedia.org/wiki/Wavefront_.obj_file
+    https://all3dp.com/1/obj-file-format-3d-printing-cad/
+    https://people.cs.clemson.edu/~dhouse/courses/405/docs/brief-obj-file-format.html
