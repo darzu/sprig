@@ -20,6 +20,7 @@ enum MessageType {
   Join,
   JoinResponse,
   // State update
+  Event,
   StateUpdate,
   StateUpdateResponse,
   // Reserve unique object IDs
@@ -31,7 +32,6 @@ enum MessageType {
 }
 
 enum ObjectUpdateType {
-  Event,
   Full,
   Dynamic,
   Create,
@@ -104,32 +104,30 @@ class StateSynchronizer {
 
   update() {
     //console.log("update() called");
+    let events = this.events();
+    for (let ev of events) {
+      let message = new Serializer(MAX_MESSAGE_SIZE);
+      message.writeUint8(MessageType.Event);
+      message.writeUint32(ev.id);
+      message.writeUint8(ev.type);
+      message.writeUint8(ev.authority);
+      message.writeUint8(ev.objects.length);
+      for (let id of ev.objects) {
+        message.writeUint32(id);
+      }
+      this.net.send(this.remoteId, message.buffer, true);
+      this.objectsKnown.add(ev.id);
+    }
     let message = new Serializer(MAX_MESSAGE_SIZE);
     let seq = this.updateSeq++;
     message.writeUint8(MessageType.StateUpdate);
     message.writeUint32(seq);
     message.writeFloat32(performance.now());
-    let events = this.events();
     let objects = this.objects();
     let numObjects = 0;
     let numObjectsIndex = message.writeUint8(numObjects);
     try {
       // events always get synced before objects
-      for (let ev of events) {
-        message.writeUint32(ev.id);
-        message.writeUint8(ObjectUpdateType.Event);
-        message.writeUint8(ev.type);
-        message.writeUint8(ev.authority);
-        message.writeUint8(ev.objects.length);
-        for (let id of ev.objects) {
-          message.writeUint32(id);
-        }
-        if (!this.objectsInUpdate[seq]) {
-          this.objectsInUpdate[seq] = new Set();
-        }
-        this.objectsInUpdate[seq].add(ev.id);
-        numObjects++;
-      }
       for (let obj of objects) {
         //console.log(`Trying to sync object ${obj.id}`);
         // TODO: could this be a 16-bit integer instead?
@@ -194,9 +192,8 @@ export class Net {
   private ready: (id: string) => void;
   private stateUpdates: Record<ServerId, { seq: number; data: ArrayBuffer }[]> =
     {};
+  private events: ArrayBuffer[] = [];
   private synchronizers: Record<ServerId, StateSynchronizer> = {};
-  private nextUpdate: Record<ServerId, number> = {};
-  private waiting: Record<ServerId, boolean> = {};
   private numDroppedUpdates: number = 0;
   private pingSeq: number = 0;
   private pingTime: number = 0;
@@ -312,6 +309,10 @@ export class Net {
         this.stateUpdates[server].splice(i, 0, { seq, data });
         break;
       }
+      case MessageType.Event: {
+        this.events.push(data);
+        break;
+      }
       case MessageType.StateUpdateResponse: {
         let seq = deserializer.readUint32();
         this.synchronizers[server].ackUpdate(seq);
@@ -374,31 +375,11 @@ export class Net {
       let id = message.readUint32();
       //console.log(`State update for ${id}`);
       let updateType: ObjectUpdateType = message.readUint8();
-      if (updateType === ObjectUpdateType.Event) {
-        //console.log("Applying event");
-        let type = message.readUint8();
-        let authority = message.readUint8();
-        let numObjectsInEvent = message.readUint8();
-        let objects = [];
-        for (let i = 0; i < numObjectsInEvent; i++) {
-          objects.push(message.readUint32());
-        }
-        let event: GameEvent = { id, type, objects, authority };
-        // do we know about all of these object ids?
-        let haveObjects = event.objects.every(
-          (id) => !!this.state.objects[id] || !!this.state.deletedObjects[id]
-        );
-        if (!haveObjects) {
-          applied = false;
-        } else if (!this.state.events[id]) {
-          this.state.events[id] = event;
-          this.state.runEvent(event);
-        }
-      } else if (
+      if (
         updateType === ObjectUpdateType.Full ||
         updateType === ObjectUpdateType.Create
       ) {
-        //console.log("Full state update");
+        //console.log(`Full state update for ${id}`);
         let authority = message.readUint8();
         let authority_seq = message.readUint32();
         let typeId = message.readUint8();
@@ -447,8 +428,45 @@ export class Net {
     return applied;
   }
 
+  applyEvent(data: ArrayBuffer) {
+    let message = new Deserializer(data);
+    let messageType = message.readUint8();
+    if (messageType !== MessageType.Event)
+      throw "Wacky message type in applyEvent";
+
+    let id = message.readUint32();
+    let type = message.readUint8();
+    let authority = message.readUint8();
+    let numObjectsInEvent = message.readUint8();
+    let objects = [];
+    for (let i = 0; i < numObjectsInEvent; i++) {
+      objects.push(message.readUint32());
+    }
+    let event: GameEvent = { id, type, objects, authority };
+    // do we know about all of these object ids?
+    let haveObjects = event.objects.every(
+      (id) => !!this.state.objects[id] || !!this.state.deletedObjects[id]
+    );
+    if (!haveObjects) {
+      return false;
+    }
+    if (!this.state.events[id]) {
+      this.state.events[id] = event;
+      this.state.runEvent(event);
+    }
+    return true;
+  }
+
   updateState(atTime: number) {
     //console.log("In updateState");
+    let eventsToRetry = [];
+    while (this.events.length > 0) {
+      let data = this.events.shift()!;
+      if (!this.applyEvent(data)) {
+        eventsToRetry.push(data);
+      }
+    }
+    this.events = eventsToRetry;
     for (let server of this.peers) {
       // console.log(
       //   `Have ${
