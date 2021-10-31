@@ -31,6 +31,7 @@ import { never } from "./util.js";
 import { createInputsReader, Inputs } from "./inputs.js";
 import { copyMotionProps, MotionProps } from "./phys_motion.js";
 import { exportObj, HAT_OBJ, importObj, isParseError } from "./import_obj.js";
+import { setupObjImportExporter } from "./download.js";
 
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
@@ -864,6 +865,11 @@ async function main() {
 }
 
 test();
+
+// dom dependant stuff
+window.onload = () => {
+  setupObjImportExporter();
+};
 
 (async () => {
   // TODO(@darzu): work around for lack of top-level await in Safari
