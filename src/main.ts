@@ -675,6 +675,24 @@ class CubeGameState extends GameState {
     }
   }
 
+  legalEvent(event: GameEvent): boolean {
+    switch (event.type) {
+      // Players always have authority over bullets that hit them
+      case EventType.BulletPlayerCollision:
+        return !this.objects[event.objects[1]].deleted;
+      case EventType.BulletBulletCollision:
+        return (
+          !this.objects[event.objects[0]].deleted &&
+          !this.objects[event.objects[0]].deleted
+        );
+      // Hats always have authority over getting got
+      case EventType.HatGet:
+        return this.objects[event.objects[0]].inWorld;
+      default:
+        return super.legalEvent(event);
+    }
+  }
+
   runEvent(event: GameEvent) {
     // return; // TODO(@darzu): DEBUG, this is very slow when done with >100s of objs.
     // console.log(`Running event of type ${EventType[event.type]}`);
@@ -844,6 +862,10 @@ async function startGame(host: string | null) {
       gameState.step(SIM_DT, takeInputs());
       sim_time_accumulator -= SIM_DT;
       sim_time += performance.now() - before_sim;
+    }
+
+    if (net) {
+      net.handleEventRequests();
     }
 
     // send updates out to network (if necessary)

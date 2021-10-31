@@ -207,7 +207,7 @@ export abstract class GameState {
   protected renderer: Renderer;
   objects: Record<number, GameObject>;
   deletedObjects: Record<number, GameObject>;
-  events: Record<number, GameEvent>;
+  requestedEvents: GameEvent[];
   me: number;
   numObjects: number = 0;
   collidesWith: CollidesWith;
@@ -219,7 +219,7 @@ export abstract class GameState {
     this.nextObjectId = 1;
     this.objects = {};
     this.deletedObjects = {};
-    this.events = {};
+    this.requestedEvents = [];
     this.collidesWith = new Map();
   }
 
@@ -284,9 +284,12 @@ export abstract class GameState {
       // console.log(`Recording event type=${type}`);
       let id = this.newId();
       let event = { id, type, objects, authority: this.me };
-      this.events[id] = event;
-      this.runEvent(event);
+      this.requestedEvents.push(event);
     }
+  }
+
+  legalEvent(event: GameEvent) {
+    return true;
   }
 
   // Subclasses can override this to handle authority differently depending on the event type
