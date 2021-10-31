@@ -296,14 +296,6 @@ class Player extends Cube {
   deserializeDynamic(buffer: Deserializer) {
     this.deserializeFull(buffer);
   }
-
-  mesh(): Mesh {
-    // TODO(@darzu): player is hat
-    const hatRaw = importObj(HAT_OBJ);
-    if (isParseError(hatRaw)) throw hatRaw;
-    const hat = unshareProvokingVertices(hatRaw);
-    return hat;
-  }
 }
 
 class Boat extends Cube {
