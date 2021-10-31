@@ -256,6 +256,8 @@ class Bullet extends Cube {
   }
 }
 
+let _hatMesh: Mesh | null = null;
+
 class Hat extends Cube {
   constructor(id: number, creator: number) {
     super(id, creator);
@@ -264,8 +266,13 @@ class Hat extends Cube {
   }
 
   mesh(): Mesh {
-    // TODO(@darzu): this should be computed only once.
-    return scaleMesh(super.mesh(), 0.5);
+    if (!_hatMesh) {
+      const hatRaw = importObj(HAT_OBJ);
+      if (isParseError(hatRaw)) throw hatRaw;
+      const hat = unshareProvokingVertices(hatRaw);
+      _hatMesh = hat;
+    }
+    return _hatMesh;
   }
 
   typeId(): number {
