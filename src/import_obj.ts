@@ -1,5 +1,6 @@
 // Import .obj files into sprig format
 // https://people.cs.clemson.edu/~dhouse/courses/405/docs/brief-obj-file-format.html
+// http://paulbourke.net/dataformats/obj/
 
 import { vec3 } from "./gl-matrix.js";
 import { Mesh } from "./mesh-pool.js";
@@ -128,9 +129,11 @@ export function importObj(obj: string): Mesh | ParseError {
     } else if (
       kind === "#" || // comment
       kind === "mtllib" || // accompanying .mtl file name
+      kind === "usemap" || // texture map
       kind === "o" || // object name
       kind === "vt" || // texture coordinate
       kind === "s" || // TODO(@darzu): What does "s" mean?
+      kind === "g" || // group
       false
     ) {
       // ignore it

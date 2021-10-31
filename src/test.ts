@@ -2,7 +2,6 @@
 
 import { testImporters } from "./import_obj.js";
 import { Serializer, Deserializer } from "./serialize.js";
-import { triggerDownload } from "./util.js";
 
 function testBasics() {
   let s = new Serializer(100);

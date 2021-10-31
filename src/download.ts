@@ -1,14 +1,42 @@
+import { exportObj, importObj, isParseError } from "./import_obj.js";
+import { unshareProvokingVertices } from "./mesh-pool.js";
+
 export function setupObjImportExporter() {
   function ondrag() {
-    console.log("drag!");
+    // console.log("drag!");
     document.body.style.opacity = "0.5";
   }
   async function onfile(f: File) {
-    console.log("drop!");
+    // console.log("drop!");
     document.body.style.opacity = "unset";
 
+    if (!f.name.endsWith(".obj")) {
+      console.warn(`only .obj file imports are supported right now`);
+      // TODO(@darzu): implement?
+      return;
+    }
+
+    // load the file
     const txt = await f.text();
-    console.log(txt);
+
+    // import the mesh
+    const meshOpt = importObj(txt);
+    if (isParseError(meshOpt)) {
+      console.error(`Failed to import .obj mesh file because:\n${meshOpt}`);
+      return;
+    }
+
+    // make any changes we want for perf or size
+    // TODO(@darzu): do we want to unshare here? makes file a little bigger
+    // const mesh = unshareProvokingVertices(meshOpt);
+    const mesh = meshOpt;
+
+    // export it again
+    const meshExp = exportObj(mesh);
+
+    // download it
+    const newName = f.name.replace(".obj", ".sprig.obj");
+    triggerDownload(newName, meshExp);
   }
 
   setDropHandlersOnElement(document.body, ondrag, onfile);
@@ -65,4 +93,18 @@ function setDropHandlersOnElementInternal(
 
   el.setAttribute("ondrop", "window.__sprigondrop(event);");
   el.setAttribute("ondragover", "window.__sprigondrag(event);");
+}
+
+export function triggerDownload(filename: string, body: string) {
+  const fakeBtn = document.createElement("a");
+  fakeBtn.setAttribute(
+    "href",
+    "data:text/plain;charset=utf-8," + encodeURIComponent(body)
+  );
+  fakeBtn.setAttribute("download", filename);
+  document.body.appendChild(fakeBtn);
+  fakeBtn.click();
+  setTimeout(() => {
+    document.removeChild(fakeBtn);
+  }, 500);
 }
