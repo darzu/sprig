@@ -39,14 +39,30 @@ function parseFaceVert(s: string): vec3 | ParseError {
   // parse v1/t1/n1 into [v1, t1, n1]
   const parts = s.split("/");
   if (parts.length !== 3) return `invalid face vertex: ${s}`;
-  const nums = parseVec(parts, 3);
-  if (isParseError(nums)) return `invalid face vertex: ${s}`;
+  const nums = parts.map((s) => parseFloat(s)) as vec3;
   return nums;
 }
 function parseFace(p: string[]): vec3[] | ParseError {
   const verts = p.map((s) => parseFaceVert(s));
   for (let v of verts) if (isParseError(v)) return v;
   return verts as vec3[];
+}
+
+export function exportObj(m: Mesh): string {
+  let resLns = [
+    `# sprigland exported mesh (${m.pos.length} verts, ${m.tri.length} faces)`,
+  ];
+
+  // output vertices
+  for (let v of m.pos) {
+    resLns.push(`v ${v[0].toFixed(2)} ${v[1].toFixed(2)} ${v[2].toFixed(2)}`);
+  }
+  // output faces
+  for (let f of m.tri) {
+    resLns.push(`f ${f[0] + 1}// ${f[1] + 1}// ${f[2] + 1}//`);
+  }
+
+  return resLns.join("\n");
 }
 
 const FLIP_FACES = false;
@@ -139,7 +155,8 @@ export function importObj(obj: string): Mesh | ParseError {
     maxInd: number
   ): ParseError | null {
     for (let vi of inds)
-      if (vi < 0 || maxInd < vi) return `invalid vertex index '${vi + 1}'`;
+      if (isNaN(vi) || vi < 0 || maxInd < vi)
+        return `invalid vertex index '${vi + 1}'`;
     return null;
   }
   function reverse(v: vec3): vec3 {
@@ -169,9 +186,6 @@ export function testImporters() {
   assertObjError("v foo bar", "invalid vector-3 format: foo bar");
   assertObjError("v 1 2 3 4", "invalid vector-3 format: 1 2 3 4");
   assertObjError("f foo", "invalid face vertex: foo");
-  assertObjError("f 1//2", "invalid face vertex: 1//2");
-  assertObjError("f 1", "invalid face vertex: 1");
-  assertObjError("f /1/", "invalid face vertex: /1/");
   assertObjError(
     `
     v 1 2 3
@@ -210,7 +224,13 @@ export function testImporters() {
 
   // valid, complex
   const hat = assertObjSuccess(HAT_OBJ);
-  console.dir(hat);
+
+  // exporting
+  const hatOut = exportObj(hat);
+  console.log(hatOut);
+
+  // importing our export
+  assertObjSuccess(hatOut);
 }
 
 // Example hat, straight from blender:

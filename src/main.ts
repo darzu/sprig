@@ -30,7 +30,7 @@ import { createPlayerProps, PlayerProps, stepPlayer } from "./player.js";
 import { never } from "./util.js";
 import { createInputsReader, Inputs } from "./inputs.js";
 import { copyMotionProps, MotionProps } from "./phys_motion.js";
-import { HAT_OBJ, importObj, isParseError } from "./import_obj.js";
+import { exportObj, HAT_OBJ, importObj, isParseError } from "./import_obj.js";
 
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
@@ -295,6 +295,18 @@ class Player extends Cube {
 
   deserializeDynamic(buffer: Deserializer) {
     this.deserializeFull(buffer);
+  }
+
+  mesh(): Mesh {
+    // TODO(@darzu): player is hat
+    const hatRaw = importObj(HAT_OBJ);
+    if (isParseError(hatRaw)) throw hatRaw;
+    const hat = unshareProvokingVertices(hatRaw);
+    return hat;
+    // const hat2Str = exportObj(hat);
+    // const hat2 = importObj(hat2Str);
+    // if (isParseError(hat2)) throw hat2;
+    // return unshareProvokingVertices(hat2);
   }
 }
 
