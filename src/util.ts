@@ -25,3 +25,17 @@ export function __isSMI(n: number): boolean {
 export function isString(val: any): val is string {
   return typeof val === "string";
 }
+
+export function triggerDownload(filename: string, body: string) {
+  const fakeBtn = document.createElement("a");
+  fakeBtn.setAttribute(
+    "href",
+    "data:text/plain;charset=utf-8, " + encodeURIComponent(body)
+  );
+  fakeBtn.setAttribute("download", filename);
+  document.body.appendChild(fakeBtn);
+  fakeBtn.click();
+  setTimeout(() => {
+    document.removeChild(fakeBtn);
+  }, 500);
+}
