@@ -184,7 +184,7 @@ export class Renderer_WebGPU implements Renderer {
     TODO: support adding objects when buffers aren't memory-mapped using device.queue
   */
   public addObject(o: GameObject): MeshObj {
-    console.log(`Adding object ${o.id}`);
+    // console.log(`Adding object ${o.id}`);
     let m = o.mesh();
     // need to introduce a new variable to convince Typescript the mapping is non-null
 

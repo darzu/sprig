@@ -1,5 +1,6 @@
 // Some serialization and deserialization tests
 
+import { testImporters } from "./import_obj.js";
 import { Serializer, Deserializer } from "./serialize.js";
 
 function testBasics() {
@@ -15,6 +16,23 @@ function testBasics() {
   if (d.readUint16() !== 45) throw "test failure";
 }
 
+export function assert(cond: any, msg?: string): asserts cond {
+  // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#assertion-functions
+  if (!cond)
+    throw (
+      msg ??
+      "Assertion failed; please add a helpful msg and yell at the lazy dev who didn't."
+    );
+}
+
 export function test() {
+  const start = performance.now();
+  console.log(`>>> STARTING TESTS`);
+
   testBasics();
+  testImporters();
+
+  const end = performance.now();
+  console.log(`<<< ENDING TESTS (${(end - start).toFixed(1)}ms)`);
+  assert(end - start < 1000, `tests took longer than 1 second! shame on you.`);
 }
