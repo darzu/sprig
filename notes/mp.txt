@@ -414,5 +414,7 @@ Reconnect and save/loading:
 
     for now: physics touching check
 
-
-  
+events:
+    everyone can see that it might have happened
+    can request that it happens
+    
