@@ -21,3 +21,7 @@ export function __isSMI(n: number): boolean {
   //  lead to better perf esp. for arrays.
   return -(2 ** 31) < n && n < 2 ** 31 - 1;
 }
+
+export function isString(val: any): val is string {
+  return typeof val === "string";
+}

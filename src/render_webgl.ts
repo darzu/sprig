@@ -189,7 +189,7 @@ export function attachToCanvas(
   }
 
   function addObject(o: GameObject): MeshObj {
-    console.log(`Adding object ${o.id}`);
+    // console.log(`Adding object ${o.id}`);
     let m = o.mesh();
     // need to introduce a new variable to convince Typescript the mapping is non-null
 

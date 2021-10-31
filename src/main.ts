@@ -30,6 +30,7 @@ import { createPlayerProps, PlayerProps, stepPlayer } from "./player.js";
 import { never } from "./util.js";
 import { createInputsReader, Inputs } from "./inputs.js";
 import { copyMotionProps, MotionProps } from "./phys_motion.js";
+import { HAT_OBJ, importObj, isParseError } from "./import_obj.js";
 
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
