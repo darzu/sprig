@@ -1,4 +1,5 @@
 import { exportObj, importObj, isParseError } from "./import_obj.js";
+import { exportSprigMesh } from "./import_sprigmesh.js";
 import { unshareProvokingVertices } from "./mesh-pool.js";
 
 export function setupObjImportExporter() {
@@ -31,12 +32,20 @@ export function setupObjImportExporter() {
     // const mesh = unshareProvokingVertices(meshOpt);
     const mesh = meshOpt;
 
+    // let dataView = new DataView(buf);
+    // dataView.setFloat32(
+    // btoa
+    // atob
+
     // export it again
-    const meshExp = exportObj(mesh);
+    const meshExpStr = exportObj(mesh);
+    // TODO(@darzu): sprigland custom mesh format doesn't seem worth it yet
+    // const meshExp = exportSprigMesh(mesh);
+    // const meshExpStr = JSON.stringify(meshExp);
 
     // download it
     const newName = f.name.replace(".obj", ".sprig.obj");
-    triggerDownload(newName, meshExp);
+    triggerDownload(newName, meshExpStr);
   }
 
   setDropHandlersOnElement(document.body, ondrag, onfile);
