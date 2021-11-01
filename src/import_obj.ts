@@ -230,7 +230,7 @@ export function testImporters() {
 
   // exporting
   const hatOut = exportObj(hat);
-  console.log(hatOut);
+  // console.log(hatOut);
 
   // importing our export
   assertObjSuccess(hatOut);
