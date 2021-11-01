@@ -544,6 +544,8 @@ class CubeGameState extends GameState {
         return new Player(id, creator);
       case ObjectType.Boat:
         return new Boat(id, creator);
+      case ObjectType.Ship:
+        return new Ship(id, creator);
     }
     never(typeId, `No such object type ${typeId}`);
   }
