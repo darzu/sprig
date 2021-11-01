@@ -5,24 +5,32 @@ import { getText } from "./webget.js";
 
 export interface GameAssets {
   ship: Mesh;
+  sword: Mesh;
+}
+
+async function loadAssetInternal(path: string): Promise<Mesh> {
+  // download
+  const txt = await getText(path);
+
+  // parse
+  const opt = importObj(txt);
+  assert(
+    !!opt && !isParseError(opt),
+    `unable to parse asset (${path}):\n${opt}`
+  );
+
+  // clean up
+  const obj = unshareProvokingVertices(opt);
+
+  return obj;
 }
 
 export async function loadAssets(): Promise<GameAssets> {
   const start = performance.now();
 
-  // download
   // TODO(@darzu): parallel download for many objs
-  const shipTxt = await getText("/assets/ship.sprig.obj");
-
-  // parse
-  const shipOpt = importObj(shipTxt);
-  assert(
-    !!shipOpt && !isParseError(shipOpt),
-    `unable to parse ship:\n${shipOpt}`
-  );
-
-  // clean up
-  const ship = unshareProvokingVertices(shipOpt);
+  const ship = await loadAssetInternal("/assets/ship.sprig.obj");
+  const sword = await loadAssetInternal("/assets/sword.sprig.obj");
 
   // perf tracking
   const elapsed = performance.now() - start;
@@ -31,5 +39,6 @@ export async function loadAssets(): Promise<GameAssets> {
   // done
   return {
     ship,
+    sword,
   };
 }
