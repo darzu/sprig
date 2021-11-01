@@ -52,8 +52,10 @@ export function stepPlayer(
   if (inputs.keyDowns["s"]) {
     vec3.add(vel, vel, vec3.fromValues(0, 0, n));
   }
-  if (inputs.keyDowns["e"]) {
+  if (inputs.keyClicks["e"]) {
     player.interactingWith = interactionObject;
+  } else {
+    player.interactingWith = 0;
   }
   // if (inputs.keyDowns["shift"]) {
   //   vec3.add(vel, vel, vec3.fromValues(0, n, 0));

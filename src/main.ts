@@ -331,7 +331,6 @@ class Player extends Cube {
     buffer.writeVec3(this.motion.linearVelocity);
     buffer.writeQuat(this.motion.rotation);
     buffer.writeVec3(this.motion.angularVelocity);
-    buffer.writeUint32(this.interactingWith);
   }
 
   deserializeFull(buffer: Deserializer) {
@@ -347,7 +346,6 @@ class Player extends Cube {
     }
     buffer.readVec3(this.motion.angularVelocity);
     vec3.copy(this.motion.angularVelocity, this.motion.angularVelocity);
-    this.interactingWith = buffer.readUint32();
   }
 
   serializeDynamic(buffer: Serializer) {
@@ -656,6 +654,7 @@ class CubeGameState extends GameState {
       }
       if (o instanceof Player) {
         if (o.interactingWith > 0) {
+          //console.log("hat get?");
           this.recordEvent(EventType.HatGet, [o.interactingWith, o.id]);
         }
       }
@@ -667,9 +666,9 @@ class CubeGameState extends GameState {
       // Players always have authority over bullets that hit them
       case EventType.BulletPlayerCollision:
         return objects[0].authority;
-      // Hats always have authority over getting got
+      // Players always have authority over getting a hat
       case EventType.HatGet:
-        return objects[0].authority;
+        return objects[1].authority;
       default:
         return super.eventAuthority(type, objects);
     }
@@ -677,7 +676,6 @@ class CubeGameState extends GameState {
 
   legalEvent(event: GameEvent): boolean {
     switch (event.type) {
-      // Players always have authority over bullets that hit them
       case EventType.BulletPlayerCollision:
         return !this.objects[event.objects[1]].deleted;
       case EventType.BulletBulletCollision:
@@ -685,7 +683,6 @@ class CubeGameState extends GameState {
           !this.objects[event.objects[0]].deleted &&
           !this.objects[event.objects[0]].deleted
         );
-      // Hats always have authority over getting got
       case EventType.HatGet:
         return this.objects[event.objects[0]].inWorld;
       default:
