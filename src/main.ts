@@ -578,9 +578,16 @@ class CubeGameState extends GameState {
   stepGame(dt: number, inputs: Inputs) {
     // check render mode
     if (inputs.keyClicks["1"]) {
-      this.renderer.mode = "normal";
+      this.renderer.wireMode = "normal";
     } else if (inputs.keyClicks["2"]) {
-      this.renderer.mode = "wireframe";
+      this.renderer.wireMode = "wireframe";
+    }
+
+    // check render mode
+    if (inputs.keyClicks["3"]) {
+      this.renderer.perspectiveMode = "perspective";
+    } else if (inputs.keyClicks["4"]) {
+      this.renderer.perspectiveMode = "ortho";
     }
 
     // move boats

@@ -321,7 +321,8 @@ export function attachToCanvas(
   }
 
   const renderer: Renderer = {
-    mode: "normal", // TODO(@darzu): support wireframe mode in webgl
+    wireMode: "normal", // TODO(@darzu): support wireframe mode in webgl
+    perspectiveMode: "perspective", // TODO(@darzu): support ortho mode in webgl
     addObject,
     addObjectInstance,
     removeObject,
