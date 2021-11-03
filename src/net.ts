@@ -56,6 +56,8 @@ function writeEvent(message: Serializer, event: GameEvent) {
   if (event.location) {
     message.writeUint8(1);
     message.writeVec3(event.location);
+  } else {
+    message.writeUint8(0);
   }
 }
 

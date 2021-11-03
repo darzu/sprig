@@ -649,7 +649,7 @@ class CubeGameState extends GameState {
         }
       }
       if (o instanceof Player) {
-        if (o.interactingWith > 0) {
+        if (o.hat === 0 && o.interactingWith > 0) {
           this.recordEvent(EventType.HatGet, [o.id, o.interactingWith]);
         }
         if (o.hat > 0 && o.dropping) {
@@ -671,7 +671,7 @@ class CubeGameState extends GameState {
       case EventType.HatGet:
         return objects[0].authority;
       // Players always have authority over dropping a hat
-      case EventType.HatGet:
+      case EventType.HatDrop:
         return objects[0].authority;
       default:
         return super.eventAuthority(type, objects);

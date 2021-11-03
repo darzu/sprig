@@ -288,6 +288,9 @@ export abstract class GameState {
       // console.log(`Recording event type=${type}`);
       let id = this.newId();
       let event = { id, type, objects, authority: this.me, location };
+      if (!this.legalEvent(event)) {
+        throw "Ilegal event in recordEvent--game logic should prevent this";
+      }
       this.requestedEvents.push(event);
     }
   }
