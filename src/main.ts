@@ -653,7 +653,10 @@ class CubeGameState extends GameState {
           this.recordEvent(EventType.HatGet, [o.id, o.interactingWith]);
         }
         if (o.hat > 0 && o.dropping) {
-          this.recordEvent(EventType.HatDrop, [o.id, o.hat], o.motion.location);
+          let dropLocation = vec3.fromValues(0, 0, -5);
+          vec3.transformQuat(dropLocation, dropLocation, o.motion.rotation);
+          vec3.add(dropLocation, dropLocation, o.motion.location);
+          this.recordEvent(EventType.HatDrop, [o.id, o.hat], dropLocation);
         }
       }
     }
