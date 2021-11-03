@@ -53,6 +53,10 @@ function writeEvent(message: Serializer, event: GameEvent) {
   for (let id of event.objects) {
     message.writeUint32(id);
   }
+  if (event.location) {
+    message.writeUint8(1);
+    message.writeVec3(event.location);
+  }
 }
 
 function readEvent(message: Deserializer): GameEvent {
@@ -64,7 +68,11 @@ function readEvent(message: Deserializer): GameEvent {
   for (let i = 0; i < numObjectsInEvent; i++) {
     objects.push(message.readUint32());
   }
-  return { id, type, objects, authority };
+  let location = null;
+  if (message.readUint8()) {
+    location = message.readVec3();
+  }
+  return { id, type, objects, authority, location };
 }
 
 // Responsible for sync-ing objects to a *particular* other server.

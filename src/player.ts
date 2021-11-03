@@ -23,6 +23,7 @@ export interface PlayerObj {
   player: PlayerProps;
   motion: MotionProps;
   interactingWith: number;
+  dropping: boolean;
 }
 
 export function stepPlayer(
@@ -57,6 +58,7 @@ export function stepPlayer(
   } else {
     player.interactingWith = 0;
   }
+  player.dropping = (inputs.keyClicks["q"] || 0) > 0;
   // if (inputs.keyDowns["shift"]) {
   //   vec3.add(vel, vel, vec3.fromValues(0, n, 0));
   // }

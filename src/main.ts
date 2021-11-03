@@ -292,33 +292,29 @@ class Hat extends Cube {
     }
   }
 
-  serializeDynamic(buffer: Serializer) {
-    // rotation and location can both change, but we only really care about syncing location
-    buffer.writeVec3(this.motion.location);
-  }
+  // after they are created, hats will only change via events
+  // TODO: stop syncing empty objects
+  serializeDynamic(_buffer: Serializer) {}
 
-  deserializeDynamic(buffer: Deserializer) {
-    let location = buffer.readVec3()!;
-    if (!buffer.dummy) {
-      this.snapLocation(location);
-    }
-  }
+  deserializeDynamic(_buffer: Deserializer) {}
 }
 
 class Player extends Cube {
   player: PlayerProps;
   hat: number;
   interactingWith: number;
+  dropping: boolean;
 
   constructor(id: number, creator: number) {
     super(id, creator);
     this.color = vec3.fromValues(0, 0.2, 0);
     this.hat = 0;
     this.interactingWith = 0;
+    this.dropping = false;
     this.player = createPlayerProps();
   }
 
-  syncPriority(firstSync: boolean): number {
+  syncPriority(_firstSync: boolean): number {
     return 10000;
   }
 
@@ -654,8 +650,10 @@ class CubeGameState extends GameState {
       }
       if (o instanceof Player) {
         if (o.interactingWith > 0) {
-          //console.log("hat get?");
-          this.recordEvent(EventType.HatGet, [o.interactingWith, o.id]);
+          this.recordEvent(EventType.HatGet, [o.id, o.interactingWith]);
+        }
+        if (o.hat > 0 && o.dropping) {
+          this.recordEvent(EventType.HatDrop, [o.id, o.hat], o.motion.location);
         }
       }
     }
@@ -668,7 +666,10 @@ class CubeGameState extends GameState {
         return objects[0].authority;
       // Players always have authority over getting a hat
       case EventType.HatGet:
-        return objects[1].authority;
+        return objects[0].authority;
+      // Players always have authority over dropping a hat
+      case EventType.HatGet:
+        return objects[0].authority;
       default:
         return super.eventAuthority(type, objects);
     }
@@ -684,7 +685,11 @@ class CubeGameState extends GameState {
           !this.objects[event.objects[0]].deleted
         );
       case EventType.HatGet:
-        return this.objects[event.objects[0]].inWorld;
+        return this.objects[event.objects[1]].inWorld;
+      case EventType.HatDrop:
+        return (
+          (this.objects[event.objects[0]] as Player).hat === event.objects[1]
+        );
       default:
         return super.legalEvent(event);
     }
@@ -722,13 +727,24 @@ class CubeGameState extends GameState {
           }
         }
         break;
-      case EventType.HatGet:
-        let hat = this.objects[event.objects[0]] as Hat;
-        let player = this.objects[event.objects[1]] as Player;
+      case EventType.HatGet: {
+        let player = this.objects[event.objects[0]] as Player;
+        let hat = this.objects[event.objects[1]] as Hat;
+        hat.parent = player.id;
         hat.inWorld = false;
-        player.color = hat.color;
+        vec3.set(hat.motion.location, 0, 1, 0);
         player.hat = hat.id;
         break;
+      }
+      case EventType.HatDrop: {
+        let player = this.objects[event.objects[0]] as Player;
+        let hat = this.objects[event.objects[1]] as Hat;
+        hat.inWorld = true;
+        hat.parent = 0;
+        vec3.copy(hat.motion.location, event.location!);
+        player.hat = 0;
+        break;
+      }
       default:
         throw `Bad event type ${event.type} for event ${event.id}`;
     }
