@@ -6,7 +6,7 @@
 import { vec3 } from "./gl-matrix.js";
 import { AABB } from "./phys_broadphase.js";
 
-export type ColliderShape = "AABB" | "Sphere" | "Box" | "Capsule";
+export type ColliderShape = "AABB" | "Sphere" | "Box" | "Capsule" | "Union";
 
 export interface Collider {
   shape: ColliderShape;
@@ -35,4 +35,9 @@ export interface CapsuleCollider extends Collider {
   height: number;
   radius: number;
   axis: 0 | 1 | 2;
+}
+
+export interface UnionCollider extends Collider {
+  shape: "Union";
+  children: Collider[];
 }
