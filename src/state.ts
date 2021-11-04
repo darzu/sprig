@@ -54,7 +54,9 @@ export abstract class GameObject {
   snap_seq: number;
   location_error: vec3;
   rotation_error: quat;
+  inWorld: boolean = true;
   deleted: boolean = false;
+  parent: number = 0;
 
   // physics
   motion: MotionProps;
@@ -198,15 +200,17 @@ export interface GameEvent {
   id: number;
   objects: number[];
   authority: number;
+  location: vec3 | null;
 }
 
 export abstract class GameState {
   protected nextPlayerId: number;
   nextObjectId: number;
   protected renderer: Renderer;
+  // TODO: make this a Map
   objects: Record<number, GameObject>;
   deletedObjects: Record<number, GameObject>;
-  events: Record<number, GameEvent>;
+  requestedEvents: GameEvent[];
   me: number;
   numObjects: number = 0;
   collidesWith: CollidesWith;
@@ -215,10 +219,10 @@ export abstract class GameState {
     this.me = 0;
     this.renderer = renderer;
     this.nextPlayerId = 0;
-    this.nextObjectId = 0;
+    this.nextObjectId = 1;
     this.objects = {};
     this.deletedObjects = {};
-    this.events = {};
+    this.requestedEvents = [];
     this.collidesWith = new Map();
   }
 
@@ -274,7 +278,8 @@ export abstract class GameState {
     return this.nextObjectId++;
   }
 
-  recordEvent(type: number, objects: number[]) {
+  recordEvent(type: number, objects: number[], location?: vec3 | null) {
+    if (!location) location = null;
     // return; // TODO(@darzu): TO DEBUG this fn is costing a ton of memory
     let objs = objects.map((id) => this.objects[id] ?? this.deletedObjects[id]);
     // check to see whether we're the authority for this event
@@ -282,21 +287,58 @@ export abstract class GameState {
       // TODO(@darzu): DEBUGGING
       // console.log(`Recording event type=${type}`);
       let id = this.newId();
-      let event = { id, type, objects, authority: this.me };
-      this.events[id] = event;
-      this.runEvent(event);
+      let event = { id, type, objects, authority: this.me, location };
+      if (!this.legalEvent(event)) {
+        throw "Ilegal event in recordEvent--game logic should prevent this";
+      }
+      this.requestedEvents.push(event);
     }
   }
 
+  legalEvent(_event: GameEvent) {
+    return true;
+  }
+
+  // Does a topological sort on objects according to the parent relationship
+  // TODO: optimize this
+  private sortedObjects(): GameObject[] {
+    let objects: GameObject[] = Object.values(this.objects);
+    let children: { [id: number]: number[] } = {};
+    let sources: GameObject[] = [];
+    let output: GameObject[] = [];
+    // find each object's children
+    for (let o of objects) {
+      let parent = o.parent;
+      if (parent > 0) {
+        if (!children[parent]) {
+          children[parent] = [];
+        }
+        children[parent].push(o.id);
+      } else {
+        sources.push(o);
+      }
+    }
+    while (sources.length > 0) {
+      let o = sources.pop()!;
+      output.push(o);
+      if (children[o.id]) {
+        for (let c of children[o.id]) {
+          sources.push(this.objects[c]);
+        }
+      }
+    }
+    return output;
+  }
+
   // Subclasses can override this to handle authority differently depending on the event type
-  eventAuthority(type: number, objects: GameObject[]) {
+  eventAuthority(_type: number, objects: GameObject[]) {
     return Math.min(...objects.map((o) => o.authority));
   }
 
   step(dt: number, inputs: Inputs) {
     this.stepGame(dt, inputs);
 
-    const objs = Object.values(this.objects);
+    const objs = this.sortedObjects();
 
     // reduce error in location and rotation
     let identity_quat = quat.set(working_quat, 0, 0, 0, 1);
@@ -344,7 +386,14 @@ export abstract class GameState {
     // UPDATE DERIVED STATE:
     for (let o of objs) {
       // update transform based on new rotations and positions
-      if (SMOOTH) {
+      if (o.parent > 0) {
+        mat4.fromRotationTranslation(
+          o.transform,
+          o.motion.rotation,
+          o.motion.location
+        );
+        mat4.mul(o.transform, this.objects[o.parent].transform, o.transform);
+      } else if (SMOOTH) {
         quat.mul(working_quat, o.motion.rotation, o.rotation_error);
         quat.normalize(working_quat, working_quat);
         mat4.fromRotationTranslation(
