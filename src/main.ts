@@ -361,8 +361,7 @@ class Ship extends Cube {
   }
 
   mesh(): Mesh {
-    return _GAME_ASSETS?.spaceore!;
-    // return _GAME_ASSETS?.ship!;
+    return _GAME_ASSETS?.ship!;
   }
 }
 
