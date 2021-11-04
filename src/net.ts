@@ -99,10 +99,8 @@ class StateSynchronizer {
     // Then we're removing a constant # of items, so removing should be O(log N) overall?
     // Could also cache this sorted list--order will stay mostly the same so with a sort that's
     // optimized for mostly-ordered data (like TimSort) the sort should be O(N)
-    let allObjects = [
-      ...Object.values(this.net.state.objects),
-      ...Object.values(this.net.state.deletedObjects),
-    ];
+
+    let allObjects = this.net.state.allObjects();
     allObjects = allObjects.filter(
       (obj) =>
         (!obj.deleted && obj.authority == this.net.state.me) ||
@@ -420,7 +418,7 @@ export class Net {
         let authority_seq = message.readUint32();
         let typeId = message.readUint8();
         let creator = message.readUint8();
-        let obj = this.state.objects[id] ?? this.state.deletedObjects[id];
+        let obj = this.state.getObject(id);
         let objExisted = !!obj;
         if (!obj) {
           obj = this.state.objectOfType(typeId, id, creator);
@@ -443,7 +441,7 @@ export class Net {
         //console.log("Dynamic state update");
         let authority = message.readUint8();
         let authority_seq = message.readUint32();
-        let obj = this.state.objects[id] ?? this.state.deletedObjects[id];
+        let obj = this.state.getObject(id);
         if (!obj) {
           throw "Got non-full update for unknown object ${id}";
         }
@@ -494,9 +492,7 @@ export class Net {
   }
 
   applyEvent(event: GameEvent, check?: boolean): boolean {
-    let haveObjects = event.objects.every(
-      (id) => !!this.state.objects[id] || !!this.state.deletedObjects[id]
-    );
+    let haveObjects = event.objects.every((id) => !!this.state.getObject(id));
     if (!haveObjects) {
       return false;
     }

@@ -88,19 +88,19 @@ const PAD = 0.001; // TODO(@darzu): not sure if this is wanted
 export let __step = 0; // TODO(@darzu): DEBUG
 
 export function stepPhysics(
-  objDictUninit: Record<number, PhysicsObjectUninit>,
+  objDictUninit: Map<number, PhysicsObjectUninit>,
   dt: number
 ): PhysicsResults {
   __step++;
 
   // ensure all phys objects are fully initialized
   // TODO(@darzu): this is a little strange
-  for (let o of Object.values(objDictUninit))
+  for (let o of objDictUninit.values())
     if (!o.lastMotion)
       o.lastMotion = copyMotionProps(createMotionProps({}), o.motion);
-  const objDict = objDictUninit as Record<number, PhysicsObject>;
+  const objDict = objDictUninit as Map<number, PhysicsObject>;
 
-  const objs = Object.values(objDict);
+  const objs = Array.from(objDict.values());
 
   // move objects
   moveObjects(objDict, dt, _collidesWith, _contactData);
@@ -129,8 +129,8 @@ export function stepPhysics(
   for (let [abId, lastData] of _contactData) {
     const aId = lastData.aId;
     const bId = lastData.bId;
-    const a = objDict[aId];
-    const b = objDict[bId];
+    const a = objDict.get(aId);
+    const b = objDict.get(bId);
     if (!lastData || !a || !b) {
       // one of the objects might have been deleted since the last frame,
       // ignore this contact
@@ -206,8 +206,8 @@ export function stepPhysics(
       // did one of these objects move?
       if (!lastObjMovs[aId] && !lastObjMovs[bId]) continue;
 
-      const a = objDict[aId];
-      const b = objDict[bId];
+      const a = objDict.get(aId)!;
+      const b = objDict.get(bId)!;
 
       if (!doesOverlap(a.worldAABB, b.worldAABB)) {
         // a miss
