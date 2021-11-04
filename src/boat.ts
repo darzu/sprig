@@ -21,9 +21,7 @@ export interface BoatObj {
   motion: MotionProps;
 }
 
-export function stepBoats(objDict: Record<number, BoatObj>, dt: number) {
-  const objs = Object.values(objDict);
-
+export function stepBoats(objs: BoatObj[], dt: number) {
   for (let o of objs) {
     const rad = o.boat.wheelSpeed * dt;
     o.boat.wheelDir += rad;

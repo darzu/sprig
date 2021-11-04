@@ -600,7 +600,7 @@ class CubeGameState extends GameState {
       case ObjectType.Hat:
         return new Hat(id, creator);
       case ObjectType.Ship:
-        return new Ship(id, creator);        
+        return new Ship(id, creator);
       default:
         return never(typeId, `No such object type ${typeId}`);
     }
@@ -635,7 +635,7 @@ class CubeGameState extends GameState {
   getInteractionObject(player: Player): number {
     let bestDistance = INTERACTION_DISTANCE;
     let bestObj = 0;
-    for (let obj of Object.values(this.objects)) {
+    for (let obj of this.liveObjects()) {
       if (obj instanceof Hat && obj.inWorld) {
         let to = vec3.sub(
           vec3.create(),
@@ -679,14 +679,14 @@ class CubeGameState extends GameState {
     }
 
     // move boats
-    const boats = Object.values(this.objects).filter(
+    const boats = this.liveObjects().filter(
       (o) => o instanceof Boat && o.authority === this.me
     ) as Boat[];
     stepBoats(boats, dt);
 
     // TODO(@darzu): IMPLEMENT
     // move player(s)
-    const players = Object.values(this.objects).filter(
+    const players = this.liveObjects().filter(
       (o) => o instanceof Player && o.authority === this.me
     ) as Player[];
     //console.log(`Stepping ${players.length} players`);
@@ -709,13 +709,12 @@ class CubeGameState extends GameState {
 
   handleCollisions() {
     // check collisions
-    for (let o of Object.values(this.objects)) {
-      // TODO: consider a helper method to get only live objects
+    for (let o of this.liveObjects()) {
       if (o instanceof Bullet) {
         if (this.collidesWith.has(o.id)) {
           let collidingObjects = this.collidesWith
             .get(o.id)!
-            .map((id) => this.objects[id]);
+            .map((id) => this.getObject(id)!);
           // find other bullets this bullet is colliding with. only want to find each collision once
           let collidingBullets = collidingObjects.filter(
             (obj) => obj instanceof Bullet && obj.id > o.id
@@ -771,17 +770,17 @@ class CubeGameState extends GameState {
   legalEvent(event: GameEvent): boolean {
     switch (event.type) {
       case EventType.BulletPlayerCollision:
-        return !this.objects[event.objects[1]].deleted;
+        return !this.getObject(event.objects[0])!.deleted;
       case EventType.BulletBulletCollision:
         return (
-          !this.objects[event.objects[0]].deleted &&
-          !this.objects[event.objects[0]].deleted
+          !this.getObject(event.objects[0])!.deleted &&
+          !this.getObject(event.objects[1])!.deleted
         );
       case EventType.HatGet:
-        return this.objects[event.objects[1]].inWorld;
+        return this.getObject(event.objects[1])!.inWorld;
       case EventType.HatDrop:
         return (
-          (this.objects[event.objects[0]] as Player).hat === event.objects[1]
+          (this.getObject(event.objects[0]) as Player).hat === event.objects[1]
         );
       default:
         return super.legalEvent(event);
@@ -794,13 +793,11 @@ class CubeGameState extends GameState {
     switch (event.type as EventType) {
       case EventType.BulletBulletCollision:
         for (let id of event.objects) {
-          let obj = this.objects[id];
+          let obj = this.getObject(id);
           if (obj && obj instanceof Bullet) {
             // delete all bullet objects in collision
             // TODO: figure out how object deletion should really work
             this.removeObject(obj);
-          } else if (!this.deletedObjects[id]) {
-            throw `Bad id ${id} in event ${event.id} (1)`;
           }
         }
         break;
@@ -808,21 +805,19 @@ class CubeGameState extends GameState {
         // TODO: this code is unnecessarily complicated--the player is always
         // the first object, bullet is second
         for (let id of event.objects) {
-          let obj = this.objects[id];
+          let obj = this.getObject(id);
           if (obj && obj instanceof Bullet) {
             // delete all bullet objects in collision
             // TODO: figure out how object deletion should really work
             this.removeObject(obj);
           } else if (obj && obj instanceof Player) {
             vec3.add(obj.color, obj.color, vec3.fromValues(0.1, 0, 0));
-          } else if (!this.deletedObjects[id]) {
-            throw `Bad id ${id} in event ${event.id} (2)`;
           }
         }
         break;
       case EventType.HatGet: {
-        let player = this.objects[event.objects[0]] as Player;
-        let hat = this.objects[event.objects[1]] as Hat;
+        let player = this.getObject(event.objects[0]) as Player;
+        let hat = this.getObject(event.objects[1]) as Hat;
         hat.parent = player.id;
         hat.inWorld = false;
         vec3.set(hat.motion.location, 0, 1, 0);
@@ -830,8 +825,8 @@ class CubeGameState extends GameState {
         break;
       }
       case EventType.HatDrop: {
-        let player = this.objects[event.objects[0]] as Player;
-        let hat = this.objects[event.objects[1]] as Hat;
+        let player = this.getObject(event.objects[0]) as Player;
+        let hat = this.getObject(event.objects[1]) as Hat;
         hat.inWorld = true;
         hat.parent = 0;
         vec3.copy(hat.motion.location, event.location!);

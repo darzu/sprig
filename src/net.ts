@@ -99,10 +99,8 @@ class StateSynchronizer {
     // Then we're removing a constant # of items, so removing should be O(log N) overall?
     // Could also cache this sorted list--order will stay mostly the same so with a sort that's
     // optimized for mostly-ordered data (like TimSort) the sort should be O(N)
-    let allObjects = [
-      ...Object.values(this.net.state.objects),
-      ...Object.values(this.net.state.deletedObjects),
-    ];
+
+    let allObjects = this.net.state.allObjects();
     allObjects = allObjects.filter(
       (obj) =>
         (!obj.deleted && obj.authority == this.net.state.me) ||
@@ -420,7 +418,7 @@ export class Net {
         let authority_seq = message.readUint32();
         let typeId = message.readUint8();
         let creator = message.readUint8();
-        let obj = this.state.objects[id] ?? this.state.deletedObjects[id];
+        let obj = this.state.getObject(id);
         let objExisted = !!obj;
         if (!obj) {
           obj = this.state.objectOfType(typeId, id, creator);
@@ -443,7 +441,7 @@ export class Net {
         //console.log("Dynamic state update");
         let authority = message.readUint8();
         let authority_seq = message.readUint32();
-        let obj = this.state.objects[id] ?? this.state.deletedObjects[id];
+        let obj = this.state.getObject(id);
         if (!obj) {
           throw "Got non-full update for unknown object ${id}";
         }
@@ -480,6 +478,7 @@ export class Net {
     }
     // process incoming event requests
     if (this.host) {
+      let eventRequestsToRetry = [];
       while (this.eventRequests.length != 0) {
         let data = this.eventRequests.shift()!;
         let message = new Deserializer(data);
@@ -487,25 +486,30 @@ export class Net {
         if (type !== MessageType.EventRequest)
           throw "Wacky message type in handleEventRequests";
         let event = readEvent(message);
-        this.applyEvent(event, true);
+        if (!this.haveAllObjects(event)) {
+          // We're not ready to handle this event request; try again next frame
+          eventRequestsToRetry.push(data);
+        } else if (this.state.legalEvent(event)) {
+          // This event is consistent with the state, so apply it
+          this.applyEvent(event);
+        }
+        // Otherwise, we have the objects in the event but it isn't
+        // consistent. drop it on the floor. This is a normal occurrence--for
+        // instance, it will happen on an object-pickup event if another player
+        // picked up the object in the interim.
       }
+      this.eventRequests = eventRequestsToRetry;
       this.sendEvents();
     }
   }
 
-  applyEvent(event: GameEvent, check?: boolean): boolean {
-    let haveObjects = event.objects.every(
-      (id) => !!this.state.objects[id] || !!this.state.deletedObjects[id]
-    );
-    if (!haveObjects) {
-      return false;
-    }
-    if (check && !this.state.legalEvent(event)) {
-      return false;
-    }
+  haveAllObjects(event: GameEvent): boolean {
+    return event.objects.every((id) => !!this.state.getObject(id));
+  }
+
+  applyEvent(event: GameEvent) {
     this.eventLog.push(event);
     this.state.runEvent(event);
-    return true;
   }
 
   applyEventFromServer(data: ArrayBuffer): boolean {
@@ -513,7 +517,7 @@ export class Net {
     let messageType = message.readUint8();
     let index = message.readUint32();
     if (messageType !== MessageType.Event)
-      throw "Wacky message type in applyEvent";
+      throw "Wacky message type in applyEventFromServer";
     if (index < this.eventLog.length) {
       // we've already processed this event
       return true;
@@ -524,7 +528,11 @@ export class Net {
     }
     let event = readEvent(message);
     // do we know about all of these object ids?
-    return this.applyEvent(event);
+    if (!this.haveAllObjects(event)) {
+      return false;
+    }
+    this.applyEvent(event);
+    return true;
   }
 
   updateState(atTime: number) {

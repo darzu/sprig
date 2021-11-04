@@ -208,8 +208,8 @@ export abstract class GameState {
   nextObjectId: number;
   protected renderer: Renderer;
   // TODO: make this a Map
-  objects: Record<number, GameObject>;
-  deletedObjects: Record<number, GameObject>;
+  private _objects: Map<number, GameObject>;
+  private _liveObjects: GameObject[];
   requestedEvents: GameEvent[];
   me: number;
   numObjects: number = 0;
@@ -220,8 +220,8 @@ export abstract class GameState {
     this.renderer = renderer;
     this.nextPlayerId = 0;
     this.nextObjectId = 1;
-    this.objects = {};
-    this.deletedObjects = {};
+    this._objects = new Map();
+    this._liveObjects = [];
     this.requestedEvents = [];
     this.collidesWith = new Map();
   }
@@ -244,22 +244,50 @@ export abstract class GameState {
 
   addObject(obj: GameObject) {
     this.numObjects++;
-    this.objects[obj.id] = obj;
+    this._objects.set(obj.id, obj);
     this.renderer.addObject(obj);
+    this._liveObjects.push(obj);
+  }
+
+  addObjectInstance(obj: GameObject, otherMesh: MeshHandle) {
+    this.numObjects++;
+    this._objects.set(obj.id, obj);
+    this.renderer.addObjectInstance(obj, otherMesh);
+    this._liveObjects.push(obj);
+  }
+
+  private computeLiveObjects() {
+    this._liveObjects = [];
+    for (let obj of this._objects.values()) {
+      if (!obj.deleted) this._liveObjects.push(obj);
+    }
   }
 
   removeObject(obj: GameObject) {
     this.numObjects--;
     obj.deleted = true;
-    delete this.objects[obj.id];
-    this.deletedObjects[obj.id] = obj;
+    this.computeLiveObjects();
     this.renderer.removeObject(obj);
   }
 
-  addObjectInstance(obj: GameObject, otherMesh: MeshHandle) {
-    this.numObjects++;
-    this.objects[obj.id] = obj;
-    this.renderer.addObjectInstance(obj, otherMesh);
+  getObject(id: number) {
+    return this._objects.get(id);
+  }
+
+  allObjects(): GameObject[] {
+    return Array.from(this._objects.values());
+  }
+
+  liveObjects(): GameObject[] {
+    return this._liveObjects;
+  }
+
+  liveObjectsMap(): Map<number, GameObject> {
+    let output = new Map();
+    for (let obj of this._objects.values()) {
+      if (!obj.deleted) output.set(obj.id, obj);
+    }
+    return output;
   }
 
   renderFrame() {
@@ -281,7 +309,7 @@ export abstract class GameState {
   recordEvent(type: number, objects: number[], location?: vec3 | null) {
     if (!location) location = null;
     // return; // TODO(@darzu): TO DEBUG this fn is costing a ton of memory
-    let objs = objects.map((id) => this.objects[id] ?? this.deletedObjects[id]);
+    let objs = objects.map((id) => this._objects.get(id)!);
     // check to see whether we're the authority for this event
     if (this.eventAuthority(type, objs) == this.me) {
       // TODO(@darzu): DEBUGGING
@@ -302,12 +330,13 @@ export abstract class GameState {
   // Does a topological sort on objects according to the parent relationship
   // TODO: optimize this
   private sortedObjects(): GameObject[] {
-    let objects: GameObject[] = Object.values(this.objects);
+    let objects = this._objects.values();
     let children: { [id: number]: number[] } = {};
     let sources: GameObject[] = [];
     let output: GameObject[] = [];
     // find each object's children
     for (let o of objects) {
+      if (o.deleted) continue;
       let parent = o.parent;
       if (parent > 0) {
         if (!children[parent]) {
@@ -323,7 +352,7 @@ export abstract class GameState {
       output.push(o);
       if (children[o.id]) {
         for (let c of children[o.id]) {
-          sources.push(this.objects[c]);
+          sources.push(this._objects.get(c)!);
         }
       }
     }
@@ -377,7 +406,7 @@ export abstract class GameState {
     }
 
     // move, check collisions
-    const physRes = stepPhysics(this.objects, dt);
+    const physRes = stepPhysics(this.liveObjectsMap(), dt);
     this.collidesWith = physRes.collidesWith;
 
     // deal with any collisions
@@ -392,7 +421,11 @@ export abstract class GameState {
           o.motion.rotation,
           o.motion.location
         );
-        mat4.mul(o.transform, this.objects[o.parent].transform, o.transform);
+        mat4.mul(
+          o.transform,
+          this._objects.get(o.parent)!.transform,
+          o.transform
+        );
       } else if (SMOOTH) {
         quat.mul(working_quat, o.motion.rotation, o.rotation_error);
         quat.normalize(working_quat, working_quat);
