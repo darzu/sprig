@@ -30,7 +30,9 @@ import { createPlayerProps, PlayerProps, stepPlayer } from "./player.js";
 import { never } from "./util.js";
 import { createInputsReader, Inputs } from "./inputs.js";
 import { copyMotionProps, MotionProps } from "./phys_motion.js";
-import { HAT_OBJ, importObj, isParseError } from "./import_obj.js";
+import { exportObj, HAT_OBJ, importObj, isParseError } from "./import_obj.js";
+import { setupObjImportExporter } from "./download.js";
+import { GameAssets, loadAssets } from "./assets.js";
 
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
@@ -47,6 +49,7 @@ enum ObjectType {
   Bullet,
   Boat,
   Hat,
+  Ship,
 }
 
 enum EventType {
@@ -351,6 +354,70 @@ class Player extends Cube {
   deserializeDynamic(buffer: Deserializer) {
     this.deserializeFull(buffer);
   }
+
+  // mesh(): Mesh {
+  //   // TODO(@darzu): player is ship
+  //   const ship = _GAME_ASSETS?.ship!;
+  //   return scaleMesh(ship, 0.1);
+
+  //   // TODO(@darzu): player is hat
+  //   // const hatRaw = importObj(HAT_OBJ);
+  //   // if (isParseError(hatRaw)) throw hatRaw;
+  //   // const hat = unshareProvokingVertices(hatRaw);
+  //   // return hat;
+  //   // const hat2Str = exportObj(hat);
+  //   // const hat2 = importObj(hat2Str);
+  //   // if (isParseError(hat2)) throw hat2;
+  //   // return unshareProvokingVertices(hat2);
+  // }
+}
+
+class Ship extends Cube {
+  constructor(id: number, creator: number) {
+    super(id, creator);
+    this.color = vec3.fromValues(0.3, 0.3, 0.1);
+    // TODO(@darzu): we need colliders for this ship
+    this.localAABB = {
+      min: [0, 0, 0],
+      max: [0, 0, 0],
+    };
+  }
+
+  typeId(): number {
+    return ObjectType.Ship;
+  }
+
+  serializeFull(buffer: Serializer) {
+    buffer.writeVec3(this.motion.location);
+    buffer.writeVec3(this.motion.linearVelocity);
+    buffer.writeQuat(this.motion.rotation);
+    buffer.writeVec3(this.motion.angularVelocity);
+  }
+
+  deserializeFull(buffer: Deserializer) {
+    let location = buffer.readVec3()!;
+    if (!buffer.dummy) {
+      this.snapLocation(location);
+    }
+    buffer.readVec3(this.motion.linearVelocity);
+    let rotation = buffer.readQuat()!;
+    if (!buffer.dummy) {
+      this.snapRotation(rotation);
+    }
+    buffer.readVec3(this.motion.angularVelocity);
+  }
+
+  serializeDynamic(buffer: Serializer) {
+    this.serializeFull(buffer);
+  }
+
+  deserializeDynamic(buffer: Deserializer) {
+    this.deserializeFull(buffer);
+  }
+
+  mesh(): Mesh {
+    return _GAME_ASSETS?.ship!;
+  }
 }
 
 class Boat extends Cube {
@@ -472,6 +539,20 @@ class CubeGameState extends GameState {
         this.addObject(boat);
       }
 
+      // create ship
+      {
+        const ship = new Ship(this.newId(), this.me);
+        ship.motion.location[0] = -40;
+        ship.motion.location[1] = -10;
+        ship.motion.location[2] = -60;
+        quat.rotateY(
+          ship.motion.rotation,
+          ship.motion.rotation,
+          Math.PI * -0.4
+        );
+        this.addObject(ship);
+      }
+
       // create stack of boxes
       const BOX_STACK_COUNT = 10;
       for (let i = 0; i < BOX_STACK_COUNT; i++) {
@@ -518,6 +599,8 @@ class CubeGameState extends GameState {
         return new Boat(id, creator);
       case ObjectType.Hat:
         return new Hat(id, creator);
+      case ObjectType.Ship:
+        return new Ship(id, creator);        
       default:
         return never(typeId, `No such object type ${typeId}`);
     }
@@ -583,9 +666,16 @@ class CubeGameState extends GameState {
   stepGame(dt: number, inputs: Inputs) {
     // check render mode
     if (inputs.keyClicks["1"]) {
-      this.renderer.mode = "normal";
+      this.renderer.wireMode = "normal";
     } else if (inputs.keyClicks["2"]) {
-      this.renderer.mode = "wireframe";
+      this.renderer.wireMode = "wireframe";
+    }
+
+    // check render mode
+    if (inputs.keyClicks["3"]) {
+      this.renderer.perspectiveMode = "perspective";
+    } else if (inputs.keyClicks["4"]) {
+      this.renderer.perspectiveMode = "ortho";
     }
 
     // move boats
@@ -782,10 +872,16 @@ const NET_DT = 1000.0 / 20;
 // local simulation speed
 const SIM_DT = 1000.0 / 60;
 
+// TODO(@darzu): very hacky way to pass these around
+export let _GAME_ASSETS: GameAssets | null = null;
+
 export let gameStarted = false;
 async function startGame(host: string | null) {
   if (gameStarted) return;
   gameStarted = true;
+
+  // TODO(@darzu): stream in assets
+  _GAME_ASSETS = await loadAssets();
 
   let hosting = host === null;
   let canvas = document.getElementById("sample-canvas") as HTMLCanvasElement;
@@ -1012,6 +1108,11 @@ async function main() {
 }
 
 test();
+
+// dom dependant stuff
+window.onload = () => {
+  setupObjImportExporter();
+};
 
 (async () => {
   // TODO(@darzu): work around for lack of top-level await in Safari
