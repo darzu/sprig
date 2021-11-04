@@ -323,9 +323,9 @@ class Ship extends Cube {
     this.color = vec3.fromValues(0.3, 0.3, 0.1);
     // TODO(@darzu): we need colliders for this ship
     this.localAABB = {
-      min: [0,0,0],
-      max: [0,0,0],
-    }
+      min: [0, 0, 0],
+      max: [0, 0, 0],
+    };
   }
 
   typeId(): number {
@@ -361,7 +361,8 @@ class Ship extends Cube {
   }
 
   mesh(): Mesh {
-    return _GAME_ASSETS?.ship!;
+    return _GAME_ASSETS?.spaceore!;
+    // return _GAME_ASSETS?.ship!;
   }
 }
 
@@ -488,7 +489,7 @@ class CubeGameState extends GameState {
       {
         const ship = new Ship(this.newId(), this.me);
         ship.motion.location[0] = -40;
-        ship.motion.location[1] = -20;
+        ship.motion.location[1] = -10;
         ship.motion.location[2] = -60;
         quat.rotateY(
           ship.motion.rotation,
