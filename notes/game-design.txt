@@ -56,3 +56,71 @@ We need log on server:
         interacting with field on player that gets synced
     RPC with server
     
+Unrailed Post Mortem:
+    https://www.youtube.com/watch?v=eXdNYkB90hk
+    timeline:
+        first did a mock up in blender
+        then created a physical board game prototype
+        then basic game as a student project
+        then funding for bigger game
+    problem: not clear enough goal
+    solution 1: short term goals:
+        make it to the next station
+        secondary objective
+        the bolt (quest)
+    the incentives for those became a currency for upgrades
+    the shop:
+        originally idea was that players could vote on upgrades
+        instead it became obvious what peoples intents where based on position
+        and you could "vote" against them by dashing into them forcing them to drop the wagon
+    biomes:
+        originally random, with monotonic increasing speed
+        now: biomes are progression with speed reset
+        push your luck mechanic of staying in biome to get more bolts
+    mp:
+        communication via emojis
+    map gen:
+        "we are pretty certain they are solvable"
+    felt most demotivated towards release it seemed?
+        having a new partner helped motivation (bilibili)
+    working on game for 9 mon before early access
+    down to 3 people 2 weeks before launch
+    expectations:
+        no financial success, end after release
+    players per day was steadily downward after launch
+    their game was mentioned on some game show
+    saved games:
+        didn't think people would play for long stints
+        introduced one-time saves
+    high scores
+    online replay of high scores (!)
+    single player:
+        tried doing a singleplayer bot
+    the mysterious keys for the final station were a big hit and draw for having a goal
+    for UI:
+        got more and more complex
+        implemented their own style sheet
+    used MonoGame (not Unity)
+    console porting:
+        C#->IL->C++->platform toolchains
+        did switch port themselves
+            the most technically difficult b/c of memory issues and other
+        handed of the other ports to special companies
+    exhibitions: 15 (incl GDC, Pax )
+        7 by publisher alone
+        made merch and cut out paper stuff
+    did some dev log filming for the publisher, but thought they were too cringy
+    favoreable review by Concerned Ape on steam
+    if u could do it over:
+        use unity
+            monogame -> c++ tool chain didn't work well
+        target certain partners earlier
+        start w/ online from day 1
+    cross play:
+        tedious certification agreements w/ console manufacturers
+
+    Daryl big take aways:
+        prototype scene in blender
+
+FTL post mortem:
+    https://www.youtube.com/watch?v=P4Um97AUqp4

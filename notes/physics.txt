@@ -378,3 +378,22 @@ TO WATCH:
         https://archive.org/details/GDC2013VanDenBergen_201511 ?
     "GDC 2013 Physics Tutorial"
     "Stop my Constraints from Blowing Up!"
+
+Colliders & rigidbody architecture:
+    colliders have:
+    - shape, size info, position info, physics on/off
+    - if an object has multiple physics colliders, it is essentially the same as having a union collider of all of those
+        - maybe objects only have one physics collider and one of the types of physics colliders it can have is a composite (union) collider
+    - in Unity, objects can have children that are automatically position relative
+        - when a collider has an event, we could traverse to the parent
+    
+In unity:
+    ea obj has a transform
+    ea obj can have children objs
+    ea obj can have N components
+
+    box collider: center xyz, size xyz
+    sphere collider: center xyz, radius
+    mesh collider: convex yes/no,
+    capsule: center xyz, radius, height, direction x-axis, y-axis, z-axis
+
