@@ -56,11 +56,11 @@ const _constrainedVelocities = new Map<number, vec3>();
 export interface MotionObj {
   id: number;
   motion: MotionProps;
+  world: AABB;
 }
 
 export function moveObjects(
   motions: Record<number, MotionObj>,
-  aabbs: Map<number, { world: AABB }>,
   dt: number,
   lastCollidesWith: CollidesWith,
   lastContactData: Map<IdPair, ContactData>
@@ -122,8 +122,7 @@ export function moveObjects(
       vec3.copy(m.linearVelocity, _constrainedVelocities.get(id)!);
   }
 
-  for (let { id, motion: m } of objs) {
-    const world = aabbs.get(id)?.world!;
+  for (let { id, motion: m, world } of objs) {
     // clamp linear velocity based on size
     const vxMax = (world.max[0] - world.min[0]) / dt;
     const vyMax = (world.max[1] - world.min[1]) / dt;

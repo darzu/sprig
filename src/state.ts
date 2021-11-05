@@ -60,7 +60,6 @@ export abstract class GameObject {
   // physics
   motion: MotionProps;
   lastMotion?: MotionProps;
-
   collider: Collider;
 
   // derivative state:

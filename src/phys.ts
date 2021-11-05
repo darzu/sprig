@@ -21,14 +21,19 @@ import { vec3Dbg } from "./utils-3d.js";
 export interface PhysicsObjectUninit {
   id: number;
   motion: MotionProps;
-  lastMotion?: MotionProps;
   collider: Collider;
 }
-export interface PhysicsObject {
+
+interface PhysicsObject {
   id: number;
   motion: MotionProps;
-  lastMotion: MotionProps;
   collider: Collider;
+
+  // physics system maintained state
+  lastMotion: MotionProps;
+  local: AABB;
+  world: AABB;
+  sweep: AABB;
 }
 export interface PhysicsResults {
   collidesWith: CollidesWith;
@@ -72,13 +77,6 @@ export function idPair(aId: number, bId: number): IdPair {
   return h;
 }
 
-export interface AABBState {
-  id: number;
-  local: AABB;
-  world: AABB;
-  sweep: AABB;
-}
-
 const _collisionRefl = vec3.create();
 
 const _motionAABBs: { aabb: AABB; id: number }[] = [];
@@ -87,7 +85,7 @@ const _collidesWith: CollidesWith = new Map();
 const _reboundData: Map<IdPair, ReboundData> = new Map();
 const _contactData: Map<IdPair, ContactData> = new Map();
 
-const _aabbState: Map<number, AABBState> = new Map();
+const _physObjects: Record<number, PhysicsObject> = {};
 
 const PAD = 0.001; // TODO(@darzu): not sure if this is wanted
 
@@ -97,23 +95,21 @@ export function stepPhysics(
   objDictUninit: Record<number, PhysicsObjectUninit>,
   dt: number
 ): PhysicsResults {
-  __step++;
+  // TODO(@darzu): maybe this "internal" state should just be components we
+  //  add onto the entity and the "physics init" system creates these if they don't exist
+  //  and the real physics system operates on these when they do. That way we don't have systems
+  //  maintaining shadow state and all game state is captured in the ECS system. I think this is
+  //  how Overwatch does it.
 
-  // ensure all phys objects are fully initialized
-  // TODO(@darzu): this is a little strange
-  for (let o of Object.values(objDictUninit))
-    if (!o.lastMotion)
-      o.lastMotion = copyMotionProps(createMotionProps({}), o.motion);
-  const objDict = objDictUninit as Record<number, PhysicsObject>;
+  // initialize or update physics object's internal state
+  for (let o of Object.values(objDictUninit)) {
+    if (!_physObjects[o.id]) {
+      // never seen
+      // lastMotion
+      const lastMotion = copyMotionProps(createMotionProps({}), o.motion);
 
-  const objs = Object.values(objDict);
-
-  // init AABB state
-  // TODO(@darzu): impl
-  for (let o of objs) {
-    if (!_aabbState.has(o.id)) {
+      // AABBs (collider derived)
       let local: AABB;
-
       if (o.collider.shape === "AABB") {
         local = copyAABB(o.collider.aabb);
       } else if (o.collider.shape === "Empty") {
@@ -122,45 +118,64 @@ export function stepPhysics(
       } else {
         throw `Unimplemented collider shape: ${o.collider.shape}`;
       }
-
       const world: AABB = copyAABB(local);
       const sweep: AABB = copyAABB(local);
 
-      _aabbState.set(o.id, {
+      _physObjects[o.id] = {
         id: o.id,
+        motion: o.motion,
+        collider: o.collider,
+        lastMotion,
         local,
         world,
         sweep,
-      });
+      };
+    } else {
+      // update shared pointers
+      const phys = _physObjects[o.id];
+      phys.collider = o.collider;
+      phys.motion = o.motion;
     }
   }
   // and clear out outdated AABB state
-  for (let [id, _] of _aabbState) {
-    if (!objDict[id]) _aabbState.delete(id);
+  for (let { id } of Object.values(_physObjects)) {
+    if (!objDictUninit[id]) {
+      delete _physObjects[id];
+    }
   }
 
+  // the real physics step
+  return stepPhysicsInternal(_physObjects, dt);
+}
+
+function stepPhysicsInternal(
+  objDict: Record<number, PhysicsObject>,
+  dt: number
+): PhysicsResults {
+  __step++; // TODO(@darzu): hack for debugging purposes
+
+  const objs = Object.values(objDict);
+
   // move objects
-  moveObjects(objDict, _aabbState, dt, _collidesWith, _contactData);
+  moveObjects(objDict, dt, _collidesWith, _contactData);
 
   // update AABB state after motion
-  for (let { id, motion, lastMotion } of objs) {
-    const o = _aabbState.get(id)!;
-
+  for (let { id, motion, lastMotion, local, sweep, world } of objs) {
     //update motion sweep AABBs
     for (let i = 0; i < 3; i++) {
-      o.sweep.min[i] = Math.min(
-        o.local.min[i] + motion.location[i],
-        o.local.min[i] + lastMotion.location[i]
+      sweep.min[i] = Math.min(
+        local.min[i] + motion.location[i],
+        local.min[i] + lastMotion.location[i]
       );
-      o.sweep.max[i] = Math.max(
-        o.local.max[i] + motion.location[i],
-        o.local.max[i] + lastMotion.location[i]
+      sweep.max[i] = Math.max(
+        local.max[i] + motion.location[i],
+        local.max[i] + lastMotion.location[i]
       );
     }
 
     // update "tight" AABBs
-    vec3.add(o.world.min, o.local.min, motion.location);
-    vec3.add(o.world.max, o.local.max, motion.location);
+    vec3.add(world.min, local.min, motion.location);
+    vec3.add(world.max, local.max, motion.location);
   }
 
   // update in-contact pairs; this is seperate from collision or rebound
@@ -175,12 +190,10 @@ export function stepPhysics(
       _contactData.delete(abId);
       continue;
     }
-    const aAABBs = _aabbState.get(aId)!;
-    const bAABBs = _aabbState.get(bId)!;
 
     // colliding again so we don't need any adjacency checks
-    if (doesOverlap(aAABBs.world, bAABBs.world)) {
-      const conData = computeContactData(a, aAABBs, b, bAABBs);
+    if (doesOverlap(a.world, b.world)) {
+      const conData = computeContactData(a, b);
       _contactData.set(abId, conData);
       continue;
     }
@@ -188,8 +201,8 @@ export function stepPhysics(
     // check for adjacency even if not colliding
     // TODO(@darzu): do we need to consider relative motions?
     //    i.e. a check to see if the two objects are pressing into each other?
-    if (doesTouch(aAABBs.world, bAABBs.world, 2 * PAD)) {
-      const conData = computeContactData(a, aAABBs, b, bAABBs);
+    if (doesTouch(a.world, b.world, 2 * PAD)) {
+      const conData = computeContactData(a, b);
       _contactData.set(abId, conData);
       continue;
     }
@@ -210,8 +223,7 @@ export function stepPhysics(
   let motionCollidesWith: CollidesWith | null = null;
   if (_motionAABBs.length !== objs.length) _motionAABBs.length = objs.length;
   for (let i = 0; i < objs.length; i++) {
-    const id = objs[i].id;
-    const aabb = _aabbState.get(id)!.sweep;
+    const { id, world: aabb } = objs[i];
     if (!_motionAABBs[i]) {
       _motionAABBs[i] = {
         id: id,
@@ -250,10 +262,8 @@ export function stepPhysics(
 
       const a = objDict[aId];
       const b = objDict[bId];
-      const aAABBs = _aabbState.get(aId)!;
-      const bAABBs = _aabbState.get(bId)!;
 
-      if (!doesOverlap(aAABBs.world, bAABBs.world)) {
+      if (!doesOverlap(a.world, b.world)) {
         // a miss
         continue;
       }
@@ -266,11 +276,11 @@ export function stepPhysics(
       }
 
       // compute rebound info
-      const rebData = computeReboundData(a, aAABBs, b, bAABBs, itr);
+      const rebData = computeReboundData(a, b, itr);
       _reboundData.set(h, rebData);
 
       // compute contact info
-      const contData = computeContactData(a, aAABBs, b, bAABBs);
+      const contData = computeContactData(a, b);
       _contactData.set(h, contData);
 
       // update how much we need to rebound objects by
@@ -303,11 +313,10 @@ export function stepPhysics(
     }
 
     // update "tight" AABBs
-    for (let { id, motion } of objs) {
+    for (let { id, motion, world, local } of objs) {
       if (lastObjMovs[id]) {
-        const o = _aabbState.get(id)!;
-        vec3.add(o.world.min, o.local.min, motion.location);
-        vec3.add(o.world.max, o.local.max, motion.location);
+        vec3.add(world.min, local.min, motion.location);
+        vec3.add(world.max, local.max, motion.location);
       }
     }
 
@@ -326,12 +335,7 @@ export function stepPhysics(
   };
 }
 
-function computeContactData(
-  a: PhysicsObject,
-  aC: AABBState,
-  b: PhysicsObject,
-  bC: AABBState
-): ContactData {
+function computeContactData(a: PhysicsObject, b: PhysicsObject): ContactData {
   let dist = -Infinity;
   let dim = -1;
   let dir = 0;
@@ -340,22 +344,16 @@ function computeContactData(
   for (let i = 0; i < 3; i++) {
     // determine who is to the left in this dimension
     let left: PhysicsObject;
-    let leftC: AABBState;
     let right: PhysicsObject;
-    let rightC: AABBState;
     if (a.lastMotion.location[i] < b.lastMotion.location[i]) {
       left = a;
-      leftC = aC;
       right = b;
-      rightC = bC;
     } else {
       left = b;
-      leftC = bC;
       right = a;
-      rightC = aC;
     }
 
-    const newDist = rightC.world.min[i] - leftC.world.max[i];
+    const newDist = right.world.min[i] - left.world.max[i];
     if (dist < newDist) {
       dist = newDist;
       dim = i;
@@ -376,9 +374,7 @@ function computeContactData(
 
 function computeReboundData(
   a: PhysicsObject,
-  aC: AABBState,
   b: PhysicsObject,
-  bC: AABBState,
   itr: number
 ): ReboundData {
   // determine how to readjust positions
@@ -393,22 +389,16 @@ function computeReboundData(
   for (let i = 0; i < 3; i++) {
     // determine who is to the left in this dimension
     let left: PhysicsObject;
-    let leftC: AABBState;
     let right: PhysicsObject;
-    let rightC: AABBState;
     if (a.lastMotion.location[i] < b.lastMotion.location[i]) {
       left = a;
-      leftC = aC;
       right = b;
-      rightC = bC;
     } else {
       left = b;
-      leftC = bC;
       right = a;
-      rightC = aC;
     }
 
-    const overlap = leftC.world.max[i] - rightC.world.min[i];
+    const overlap = left.world.max[i] - right.world.min[i];
     if (overlap <= 0) continue; // no overlap to deal with
 
     const leftMaxContrib = Math.max(
