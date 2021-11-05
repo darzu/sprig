@@ -40,17 +40,23 @@ const MAX_VERTICES = 21844;
 const ENABLE_NET = true;
 const AUTOSTART = true;
 
+const INTERACTION_DISTANCE = 5;
+const INTERACTION_ANGLE = Math.PI / 6;
+
 enum ObjectType {
   Plane,
   Player,
   Bullet,
   Boat,
+  Hat,
   Ship,
 }
 
 enum EventType {
   BulletBulletCollision,
   BulletPlayerCollision,
+  HatGet,
+  HatDrop,
 }
 
 const BLACK = vec3.fromValues(0, 0, 0);
@@ -265,16 +271,69 @@ class Bullet extends Cube {
   }
 }
 
+let _hatMesh: Mesh | null = null;
+
+class Hat extends Cube {
+  constructor(id: number, creator: number) {
+    super(id, creator);
+    this.color = vec3.fromValues(Math.random(), Math.random(), Math.random());
+    this.collider = {
+      shape: "AABB",
+      solid: false,
+      aabb: getAABBFromMesh(this.mesh()),
+    };
+  }
+
+  mesh(): Mesh {
+    if (!_hatMesh) {
+      const hatRaw = importObj(HAT_OBJ);
+      if (isParseError(hatRaw)) throw hatRaw;
+      const hat = unshareProvokingVertices(hatRaw);
+      _hatMesh = hat;
+    }
+    return _hatMesh;
+  }
+
+  typeId(): number {
+    return ObjectType.Hat;
+  }
+
+  serializeFull(buffer: Serializer) {
+    buffer.writeVec3(this.color);
+    buffer.writeVec3(this.motion.location);
+  }
+
+  deserializeFull(buffer: Deserializer) {
+    buffer.readVec3(this.color);
+    let location = buffer.readVec3()!;
+    if (!buffer.dummy) {
+      this.snapLocation(location);
+    }
+  }
+
+  // after they are created, hats will only change via events
+  // TODO: stop syncing empty objects
+  serializeDynamic(_buffer: Serializer) {}
+
+  deserializeDynamic(_buffer: Deserializer) {}
+}
+
 class Player extends Cube {
   player: PlayerProps;
+  hat: number;
+  interactingWith: number;
+  dropping: boolean;
 
   constructor(id: number, creator: number) {
     super(id, creator);
     this.color = vec3.fromValues(0, 0.2, 0);
+    this.hat = 0;
+    this.interactingWith = 0;
+    this.dropping = false;
     this.player = createPlayerProps();
   }
 
-  syncPriority(firstSync: boolean): number {
+  syncPriority(_firstSync: boolean): number {
     return 10000;
   }
 
@@ -508,7 +567,7 @@ class CubeGameState extends GameState {
       {
         const ship = new Ship(this.newId(), this.me);
         ship.motion.location[0] = -40;
-        ship.motion.location[1] = -20;
+        ship.motion.location[1] = -10;
         ship.motion.location[2] = -60;
         quat.rotateY(
           ship.motion.rotation,
@@ -521,15 +580,13 @@ class CubeGameState extends GameState {
       // create stack of boxes
       const BOX_STACK_COUNT = 10;
       for (let i = 0; i < BOX_STACK_COUNT; i++) {
-        let b = new Bullet(this.newId(), this.me);
+        let b = new Hat(this.newId(), this.me);
         // b.motion.location = vec3.fromValues(0, 5 + i * 2, -2);
         b.motion.location = vec3.fromValues(
           Math.random() * -10 + 10 - 5,
-          i * 2,
+          0,
           Math.random() * -10 - 5
         );
-        b.color = vec3.fromValues(Math.random(), Math.random(), Math.random());
-        b.motion.linearVelocity[1] = -0.03;
         this.addObject(b);
         // TODO(@darzu): debug
         console.log(`box: ${b.id}`);
@@ -554,7 +611,7 @@ class CubeGameState extends GameState {
     return p;
   }
 
-  objectOfType(typeId: ObjectType, id: number, creator: number) {
+  objectOfType(typeId: ObjectType, id: number, creator: number): GameObject {
     switch (typeId) {
       case ObjectType.Plane:
         return new Plane(id, creator);
@@ -564,10 +621,13 @@ class CubeGameState extends GameState {
         return new Player(id, creator);
       case ObjectType.Boat:
         return new Boat(id, creator);
+      case ObjectType.Hat:
+        return new Hat(id, creator);
       case ObjectType.Ship:
         return new Ship(id, creator);
+      default:
+        return never(typeId, `No such object type ${typeId}`);
     }
-    never(typeId, `No such object type ${typeId}`);
   }
 
   addObject(obj: GameObject) {
@@ -595,6 +655,38 @@ class CubeGameState extends GameState {
     this.addObjectInstance(bullet, this.bulletProto);
   }
 
+  // TODO: this function is very bad. It should probably use an oct-tree or something.
+  getInteractionObject(player: Player): number {
+    let bestDistance = INTERACTION_DISTANCE;
+    let bestObj = 0;
+    for (let obj of this.liveObjects()) {
+      if (obj instanceof Hat && obj.inWorld) {
+        let to = vec3.sub(
+          vec3.create(),
+          obj.motion.location,
+          player.motion.location
+        );
+        let distance = vec3.len(to);
+        if (distance < bestDistance) {
+          let direction = vec3.normalize(to, to);
+          let playerDirection = vec3.fromValues(0, 0, -1);
+          vec3.transformQuat(
+            playerDirection,
+            playerDirection,
+            player.motion.rotation
+          );
+          if (
+            Math.abs(vec3.angle(direction, playerDirection)) < INTERACTION_ANGLE
+          ) {
+            bestDistance = distance;
+            bestObj = obj.id;
+          }
+        }
+      }
+    }
+    return bestObj;
+  }
+
   stepGame(dt: number, inputs: Inputs) {
     // check render mode
     if (inputs.keyClicks["1"]) {
@@ -611,30 +703,42 @@ class CubeGameState extends GameState {
     }
 
     // move boats
-    const boats = Object.values(this.objects).filter(
+    const boats = this.liveObjects().filter(
       (o) => o instanceof Boat && o.authority === this.me
     ) as Boat[];
     stepBoats(boats, dt);
 
     // TODO(@darzu): IMPLEMENT
     // move player(s)
-    const players = Object.values(this.objects).filter(
+    const players = this.liveObjects().filter(
       (o) => o instanceof Player && o.authority === this.me
     ) as Player[];
     //console.log(`Stepping ${players.length} players`);
-    for (let o of players)
-      stepPlayer(o, dt, inputs, this.camera, this.spawnBullet);
+
+    for (let player of players) {
+      let interactionObject = this.getInteractionObject(player);
+      if (interactionObject > 0) {
+        console.log(`Interaction object is ${interactionObject}`);
+      }
+      stepPlayer(
+        player,
+        interactionObject,
+        dt,
+        inputs,
+        this.camera,
+        this.spawnBullet
+      );
+    }
   }
 
   handleCollisions() {
     // check collisions
-    for (let o of Object.values(this.objects)) {
-      // TODO: consider a helper method to get only live objects
+    for (let o of this.liveObjects()) {
       if (o instanceof Bullet) {
         if (this.collidesWith.has(o.id)) {
           let collidingObjects = this.collidesWith
             .get(o.id)!
-            .map((id) => this.objects[id]);
+            .map((id) => this.getObject(id)!);
           // find other bullets this bullet is colliding with. only want to find each collision once
           let collidingBullets = collidingObjects.filter(
             (obj) => obj instanceof Bullet && obj.id > o.id
@@ -657,6 +761,17 @@ class CubeGameState extends GameState {
           }
         }
       }
+      if (o instanceof Player) {
+        if (o.hat === 0 && o.interactingWith > 0) {
+          this.recordEvent(EventType.HatGet, [o.id, o.interactingWith]);
+        }
+        if (o.hat > 0 && o.dropping) {
+          let dropLocation = vec3.fromValues(0, 0, -5);
+          vec3.transformQuat(dropLocation, dropLocation, o.motion.rotation);
+          vec3.add(dropLocation, dropLocation, o.motion.location);
+          this.recordEvent(EventType.HatDrop, [o.id, o.hat], dropLocation);
+        }
+      }
     }
   }
 
@@ -665,8 +780,34 @@ class CubeGameState extends GameState {
       // Players always have authority over bullets that hit them
       case EventType.BulletPlayerCollision:
         return objects[0].authority;
+      // Players always have authority over getting a hat
+      case EventType.HatGet:
+        return objects[0].authority;
+      // Players always have authority over dropping a hat
+      case EventType.HatDrop:
+        return objects[0].authority;
       default:
         return super.eventAuthority(type, objects);
+    }
+  }
+
+  legalEvent(event: GameEvent): boolean {
+    switch (event.type) {
+      case EventType.BulletPlayerCollision:
+        return !this.getObject(event.objects[0])!.deleted;
+      case EventType.BulletBulletCollision:
+        return (
+          !this.getObject(event.objects[0])!.deleted &&
+          !this.getObject(event.objects[1])!.deleted
+        );
+      case EventType.HatGet:
+        return this.getObject(event.objects[1])!.inWorld;
+      case EventType.HatDrop:
+        return (
+          (this.getObject(event.objects[0]) as Player).hat === event.objects[1]
+        );
+      default:
+        return super.legalEvent(event);
     }
   }
 
@@ -676,13 +817,11 @@ class CubeGameState extends GameState {
     switch (event.type as EventType) {
       case EventType.BulletBulletCollision:
         for (let id of event.objects) {
-          let obj = this.objects[id];
+          let obj = this.getObject(id);
           if (obj && obj instanceof Bullet) {
             // delete all bullet objects in collision
             // TODO: figure out how object deletion should really work
             this.removeObject(obj);
-          } else if (!this.deletedObjects[id]) {
-            throw `Bad id ${id} in event ${event.id} (1)`;
           }
         }
         break;
@@ -690,18 +829,34 @@ class CubeGameState extends GameState {
         // TODO: this code is unnecessarily complicated--the player is always
         // the first object, bullet is second
         for (let id of event.objects) {
-          let obj = this.objects[id];
+          let obj = this.getObject(id);
           if (obj && obj instanceof Bullet) {
             // delete all bullet objects in collision
             // TODO: figure out how object deletion should really work
             this.removeObject(obj);
           } else if (obj && obj instanceof Player) {
             vec3.add(obj.color, obj.color, vec3.fromValues(0.1, 0, 0));
-          } else if (!this.deletedObjects[id]) {
-            throw `Bad id ${id} in event ${event.id} (2)`;
           }
         }
         break;
+      case EventType.HatGet: {
+        let player = this.getObject(event.objects[0]) as Player;
+        let hat = this.getObject(event.objects[1]) as Hat;
+        hat.parent = player.id;
+        hat.inWorld = false;
+        vec3.set(hat.motion.location, 0, 1, 0);
+        player.hat = hat.id;
+        break;
+      }
+      case EventType.HatDrop: {
+        let player = this.getObject(event.objects[0]) as Player;
+        let hat = this.getObject(event.objects[1]) as Hat;
+        hat.inWorld = true;
+        hat.parent = 0;
+        vec3.copy(hat.motion.location, event.location!);
+        player.hat = 0;
+        break;
+      }
       default:
         throw `Bad event type ${event.type} for event ${event.id}`;
     }
@@ -838,6 +993,10 @@ async function startGame(host: string | null) {
       gameState.step(SIM_DT, takeInputs());
       sim_time_accumulator -= SIM_DT;
       sim_time += performance.now() - before_sim;
+    }
+
+    if (net) {
+      net.handleEventRequests();
     }
 
     // send updates out to network (if necessary)

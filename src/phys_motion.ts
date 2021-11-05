@@ -62,14 +62,15 @@ export interface MotionObj {
 }
 
 export function moveObjects(
-  motions: Record<number, MotionObj>,
+  objDict: Map<number, MotionObj>,
   dt: number,
   lastCollidesWith: CollidesWith,
   lastContactData: Map<IdPair, ContactData>
 ) {
-  const objs = Object.values(motions);
+  const objs = Array.from(objDict.values());
 
   // copy .motion to .motion; we want to try to meet the gameplay wants
+  // TODO(@darzu): lol, clean this up
   for (let o of objs) {
     copyMotionProps(o.motion, o.motion);
   }
@@ -84,13 +85,13 @@ export function moveObjects(
     const bReboundDir = vec3.clone(data.bToANorm);
     const aReboundDir = vec3.negate(vec3.create(), bReboundDir);
 
-    const a = motions[data.aId];
-    const b = motions[data.bId];
+    const a = objDict.get(data.aId);
+    const b = objDict.get(data.bId);
 
     if (!!a && a.collider.solid) {
       const aConVel =
         _constrainedVelocities.get(data.aId) ??
-        vec3.clone(motions[data.aId].motion.linearVelocity);
+        vec3.clone(objDict.get(data.aId)!.motion.linearVelocity);
       const aInDirOfB = vec3.dot(aConVel, aReboundDir);
       if (aInDirOfB > 0) {
         vec3.sub(
@@ -105,7 +106,7 @@ export function moveObjects(
     if (!!b && b.collider.solid) {
       const bConVel =
         _constrainedVelocities.get(data.bId) ??
-        vec3.clone(motions[data.bId].motion.linearVelocity);
+        vec3.clone(objDict.get(data.bId)!.motion.linearVelocity);
       const bInDirOfA = vec3.dot(bConVel, bReboundDir);
       if (bInDirOfA > 0) {
         vec3.sub(

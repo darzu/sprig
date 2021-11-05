@@ -86,14 +86,14 @@ const _collisionPairs: Set<IdPair> = new Set();
 const _reboundData: Map<IdPair, ReboundData> = new Map();
 const _contactData: Map<IdPair, ContactData> = new Map();
 
-const _physObjects: Record<number, PhysicsObject> = {};
+const _physObjects: Map<number, PhysicsObject> = new Map();
 
 const PAD = 0.001; // TODO(@darzu): not sure if this is wanted
 
 export let __step = 0; // TODO(@darzu): DEBUG
 
 export function stepPhysics(
-  objDictUninit: Record<number, PhysicsObjectUninit>,
+  objDictUninit: Map<number, PhysicsObjectUninit>,
   dt: number
 ): PhysicsResults {
   // TODO(@darzu): maybe this "internal" state should just be components we
@@ -103,8 +103,8 @@ export function stepPhysics(
   //  how Overwatch does it.
 
   // initialize or update physics object's internal state
-  for (let o of Object.values(objDictUninit)) {
-    if (!_physObjects[o.id]) {
+  for (let o of objDictUninit.values()) {
+    if (!_physObjects.has(o.id)) {
       // never seen
       // lastMotion
       const lastMotion = copyMotionProps(createMotionProps({}), o.motion);
@@ -119,7 +119,7 @@ export function stepPhysics(
       const world: AABB = copyAABB(local);
       const sweep: AABB = copyAABB(local);
 
-      _physObjects[o.id] = {
+      _physObjects.set(o.id, {
         id: o.id,
         motion: o.motion,
         collider: o.collider,
@@ -127,18 +127,18 @@ export function stepPhysics(
         local,
         world,
         sweep,
-      };
+      });
     } else {
       // update shared pointers
-      const phys = _physObjects[o.id];
+      const phys = _physObjects.get(o.id)!;
       phys.collider = o.collider;
       phys.motion = o.motion;
     }
   }
   // and clear out outdated AABB state
-  for (let { id } of Object.values(_physObjects)) {
-    if (!objDictUninit[id]) {
-      delete _physObjects[id];
+  for (let { id } of _physObjects.values()) {
+    if (!objDictUninit.has(id)) {
+      _physObjects.delete(id);
     }
   }
 
@@ -147,12 +147,12 @@ export function stepPhysics(
 }
 
 function stepPhysicsInternal(
-  objDict: Record<number, PhysicsObject>,
+  objDict: Map<number, PhysicsObject>,
   dt: number
 ): PhysicsResults {
   __step++; // TODO(@darzu): hack for debugging purposes
 
-  const objs = Object.values(objDict);
+  const objs = Array.from(objDict.values());
 
   // move objects
   moveObjects(objDict, dt, _collidesWith, _contactData);
@@ -180,8 +180,8 @@ function stepPhysicsInternal(
   for (let [abId, lastData] of _contactData) {
     const aId = lastData.aId;
     const bId = lastData.bId;
-    const a = objDict[aId];
-    const b = objDict[bId];
+    const a = objDict.get(aId);
+    const b = objDict.get(bId);
     if (!lastData || !a || !b) {
       // one of the objects might have been deleted since the last frame,
       // ignore this contact
@@ -259,8 +259,8 @@ function stepPhysicsInternal(
       // did one of these objects move?
       if (!lastObjMovs[aId] && !lastObjMovs[bId]) continue;
 
-      const a = objDict[aId];
-      const b = objDict[bId];
+      const a = objDict.get(aId)!;
+      const b = objDict.get(bId)!;
 
       if (!doesOverlap(a.world, b.world)) {
         // a miss
