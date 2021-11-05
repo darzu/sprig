@@ -1,3 +1,4 @@
+import { Collider } from "./collider.js";
 import { quat, vec3 } from "./gl-matrix.js";
 import { _playerId } from "./main.js";
 import { clamp } from "./math.js";
@@ -56,6 +57,7 @@ const _constrainedVelocities = new Map<number, vec3>();
 export interface MotionObj {
   id: number;
   motion: MotionProps;
+  collider: Collider;
   world: AABB;
 }
 
@@ -85,7 +87,7 @@ export function moveObjects(
     const a = motions[data.aId];
     const b = motions[data.bId];
 
-    if (!!a) {
+    if (!!a && a.collider.solid) {
       const aConVel =
         _constrainedVelocities.get(data.aId) ??
         vec3.clone(motions[data.aId].motion.linearVelocity);
@@ -100,7 +102,7 @@ export function moveObjects(
       }
     }
 
-    if (!!b) {
+    if (!!b && b.collider.solid) {
       const bConVel =
         _constrainedVelocities.get(data.bId) ??
         vec3.clone(motions[data.bId].motion.linearVelocity);

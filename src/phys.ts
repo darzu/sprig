@@ -280,10 +280,7 @@ function stepPhysicsInternal(
       _contactData.set(h, contData);
 
       // solid objects rebound
-      if (
-        (a.collider.solid && b.collider.solid) ||
-        true // TODO(@darzu): implement non-solid
-      ) {
+      if (a.collider.solid && b.collider.solid) {
         // compute rebound info
         const rebData = computeReboundData(a, b, itr);
         _reboundData.set(h, rebData);
