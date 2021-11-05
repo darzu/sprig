@@ -22,30 +22,28 @@ sprig:
 import { vec3 } from "./gl-matrix.js";
 import { AABB } from "./phys_broadphase.js";
 
-export type ColliderShape = "AABB" | "Sphere" | "Box" | "Capsule" | "Union";
-
-export interface Collider {
-  shape: ColliderShape;
+export interface EmptyCollider {
+  shape: "Empty";
 }
 
-export interface AABBCollider extends Collider {
+export interface AABBCollider {
   shape: "AABB";
   aabb: AABB;
 }
 
-export interface BoxCollider extends Collider {
+export interface BoxCollider {
   shape: "Box";
   center: vec3;
   size: vec3;
 }
 
-export interface SphereCollider extends Collider {
+export interface SphereCollider {
   shape: "Sphere";
   center: vec3;
   radius: number;
 }
 
-export interface CapsuleCollider extends Collider {
+export interface CapsuleCollider {
   shape: "Capsule";
   center: vec3;
   height: number;
@@ -53,7 +51,15 @@ export interface CapsuleCollider extends Collider {
   axis: 0 | 1 | 2;
 }
 
-export interface UnionCollider extends Collider {
+export interface UnionCollider {
   shape: "Union";
   children: Collider[];
 }
+
+export type Collider =
+  | EmptyCollider
+  | AABBCollider
+  | BoxCollider
+  | SphereCollider
+  | CapsuleCollider
+  | UnionCollider;

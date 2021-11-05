@@ -56,16 +56,16 @@ const _constrainedVelocities = new Map<number, vec3>();
 export interface MotionObj {
   id: number;
   motion: MotionProps;
-  worldAABB: AABB;
 }
 
 export function moveObjects(
-  set: Record<number, MotionObj>,
+  motions: Record<number, MotionObj>,
+  aabbs: Map<number, { worldAABB: AABB }>,
   dt: number,
   lastCollidesWith: CollidesWith,
   lastContactData: Map<IdPair, ContactData>
 ) {
-  const objs = Object.values(set);
+  const objs = Object.values(motions);
 
   // copy .motion to .motion; we want to try to meet the gameplay wants
   for (let o of objs) {
@@ -82,13 +82,13 @@ export function moveObjects(
     const bReboundDir = vec3.clone(data.bToANorm);
     const aReboundDir = vec3.negate(vec3.create(), bReboundDir);
 
-    const a = set[data.aId];
-    const b = set[data.bId];
+    const a = motions[data.aId];
+    const b = motions[data.bId];
 
     if (!!a) {
       const aConVel =
         _constrainedVelocities.get(data.aId) ??
-        vec3.clone(set[data.aId].motion.linearVelocity);
+        vec3.clone(motions[data.aId].motion.linearVelocity);
       const aInDirOfB = vec3.dot(aConVel, aReboundDir);
       if (aInDirOfB > 0) {
         vec3.sub(
@@ -103,7 +103,7 @@ export function moveObjects(
     if (!!b) {
       const bConVel =
         _constrainedVelocities.get(data.bId) ??
-        vec3.clone(set[data.bId].motion.linearVelocity);
+        vec3.clone(motions[data.bId].motion.linearVelocity);
       const bInDirOfA = vec3.dot(bConVel, bReboundDir);
       if (bInDirOfA > 0) {
         vec3.sub(
@@ -122,7 +122,8 @@ export function moveObjects(
       vec3.copy(m.linearVelocity, _constrainedVelocities.get(id)!);
   }
 
-  for (let { id, motion: m, worldAABB } of objs) {
+  for (let { id, motion: m } of objs) {
+    const worldAABB = aabbs.get(id)?.worldAABB!;
     // clamp linear velocity based on size
     const vxMax = (worldAABB.max[0] - worldAABB.min[0]) / dt;
     const vyMax = (worldAABB.max[1] - worldAABB.min[1]) / dt;

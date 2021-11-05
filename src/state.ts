@@ -10,6 +10,7 @@ import {
 } from "./phys_motion.js";
 import { CollidesWith, ReboundData, IdPair, stepPhysics } from "./phys.js";
 import { Inputs } from "./inputs.js";
+import { Collider } from "./collider.js";
 
 const SMOOTH = true;
 const ERROR_SMOOTHING_FACTOR = 0.9 ** (60 / 1000);
@@ -59,9 +60,8 @@ export abstract class GameObject {
   // physics
   motion: MotionProps;
   lastMotion?: MotionProps;
-  localAABB: AABB;
-  worldAABB: AABB;
-  motionAABB: AABB;
+
+  collider: Collider;
 
   // derivative state:
   // NOTE: it kinda sucks to have duplicate sources of truth on loc & rot,
@@ -84,12 +84,7 @@ export abstract class GameObject {
     this.location_error = vec3.fromValues(0, 0, 0);
     this.rotation_error = quat.create();
     this.transform = mat4.create();
-    this.localAABB = {
-      min: vec3.fromValues(-1, -1, -1),
-      max: vec3.fromValues(1, 1, 1),
-    };
-    this.worldAABB = copyAABB(this.localAABB);
-    this.motionAABB = copyAABB(this.worldAABB);
+    this.collider = { shape: "Empty" };
   }
 
   snapLocation(location: vec3) {

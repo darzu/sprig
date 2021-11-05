@@ -1,9 +1,11 @@
+import { Collider } from "./collider.js";
 import { mat4, quat, vec3 } from "./gl-matrix.js";
 import { _playerId } from "./main.js";
 import {
   AABB,
   checkCollisions,
   collisionPairs,
+  copyAABB,
   doesOverlap,
   doesTouch,
   resetCollidesWithSet,
@@ -16,22 +18,17 @@ import {
 } from "./phys_motion.js";
 import { __isSMI } from "./util.js";
 import { vec3Dbg } from "./utils-3d.js";
-
 export interface PhysicsObjectUninit {
   id: number;
   motion: MotionProps;
   lastMotion?: MotionProps;
-  localAABB: AABB;
-  worldAABB: AABB;
-  motionAABB: AABB;
+  collider: Collider;
 }
 export interface PhysicsObject {
   id: number;
   motion: MotionProps;
   lastMotion: MotionProps;
-  localAABB: AABB;
-  worldAABB: AABB;
-  motionAABB: AABB;
+  collider: Collider;
 }
 export interface PhysicsResults {
   collidesWith: CollidesWith;
@@ -75,6 +72,13 @@ export function idPair(aId: number, bId: number): IdPair {
   return h;
 }
 
+export interface AABBState {
+  id: number;
+  localAABB: AABB;
+  worldAABB: AABB;
+  motionAABB: AABB;
+}
+
 const _collisionRefl = vec3.create();
 
 const _motionAABBs: { aabb: AABB; id: number }[] = [];
@@ -82,6 +86,8 @@ const _motionAABBs: { aabb: AABB; id: number }[] = [];
 const _collidesWith: CollidesWith = new Map();
 const _reboundData: Map<IdPair, ReboundData> = new Map();
 const _contactData: Map<IdPair, ContactData> = new Map();
+
+const _aabbState: Map<number, AABBState> = new Map();
 
 const PAD = 0.001; // TODO(@darzu): not sure if this is wanted
 
@@ -102,27 +108,59 @@ export function stepPhysics(
 
   const objs = Object.values(objDict);
 
-  // move objects
-  moveObjects(objDict, dt, _collidesWith, _contactData);
-
-  // update motion sweep AABBs
+  // init AABB state
+  // TODO(@darzu): impl
   for (let o of objs) {
-    for (let i = 0; i < 3; i++) {
-      o.motionAABB.min[i] = Math.min(
-        o.localAABB.min[i] + o.motion.location[i],
-        o.localAABB.min[i] + o.lastMotion.location[i]
-      );
-      o.motionAABB.max[i] = Math.max(
-        o.localAABB.max[i] + o.motion.location[i],
-        o.localAABB.max[i] + o.lastMotion.location[i]
-      );
+    if (!_aabbState.has(o.id)) {
+      let localAABB: AABB;
+
+      if (o.collider.shape === "AABB") {
+        localAABB = copyAABB(o.collider.aabb);
+      } else if (o.collider.shape === "Empty") {
+        // TODO(@darzu): is this really how we want to handle empty colliders?
+        localAABB = { min: [0, 0, 0], max: [0, 0, 0] };
+      } else {
+        throw `Unimplemented collider shape: ${o.collider.shape}`;
+      }
+
+      const worldAABB: AABB = copyAABB(localAABB);
+      const motionAABB: AABB = copyAABB(localAABB);
+
+      _aabbState.set(o.id, {
+        id: o.id,
+        localAABB,
+        worldAABB,
+        motionAABB,
+      });
     }
   }
+  // and clear out outdated AABB state
+  for (let [id, _] of _aabbState) {
+    if (!objDict[id]) _aabbState.delete(id);
+  }
 
-  // update "tight" AABBs
-  for (let o of objs) {
-    vec3.add(o.worldAABB.min, o.localAABB.min, o.motion.location);
-    vec3.add(o.worldAABB.max, o.localAABB.max, o.motion.location);
+  // move objects
+  moveObjects(objDict, _aabbState, dt, _collidesWith, _contactData);
+
+  // update AABB state after motion
+  for (let { id, motion, lastMotion } of objs) {
+    const o = _aabbState.get(id)!;
+
+    //update  motion sweep AABBs and "tight" AABBs
+    for (let i = 0; i < 3; i++) {
+      o.motionAABB.min[i] = Math.min(
+        o.localAABB.min[i] + motion.location[i],
+        o.localAABB.min[i] + lastMotion.location[i]
+      );
+      o.motionAABB.max[i] = Math.max(
+        o.localAABB.max[i] + motion.location[i],
+        o.localAABB.max[i] + lastMotion.location[i]
+      );
+    }
+
+    // update "tight" AABBs
+    vec3.add(o.worldAABB.min, o.localAABB.min, motion.location);
+    vec3.add(o.worldAABB.max, o.localAABB.max, motion.location);
   }
 
   // update in-contact pairs; this is seperate from collision or rebound
@@ -137,10 +175,12 @@ export function stepPhysics(
       _contactData.delete(abId);
       continue;
     }
+    const aAABBs = _aabbState.get(aId)!;
+    const bAABBs = _aabbState.get(bId)!;
 
     // colliding again so we don't need any adjacency checks
-    if (doesOverlap(a.worldAABB, b.worldAABB)) {
-      const conData = computeContactData(a, b);
+    if (doesOverlap(aAABBs.worldAABB, bAABBs.worldAABB)) {
+      const conData = computeContactData(a, aAABBs, b, bAABBs);
       _contactData.set(abId, conData);
       continue;
     }
@@ -148,8 +188,8 @@ export function stepPhysics(
     // check for adjacency even if not colliding
     // TODO(@darzu): do we need to consider relative motions?
     //    i.e. a check to see if the two objects are pressing into each other?
-    if (doesTouch(a.worldAABB, b.worldAABB, 2 * PAD)) {
-      const conData = computeContactData(a, b);
+    if (doesTouch(aAABBs.worldAABB, bAABBs.worldAABB, 2 * PAD)) {
+      const conData = computeContactData(a, aAABBs, b, bAABBs);
       _contactData.set(abId, conData);
       continue;
     }
@@ -170,14 +210,16 @@ export function stepPhysics(
   let motionCollidesWith: CollidesWith | null = null;
   if (_motionAABBs.length !== objs.length) _motionAABBs.length = objs.length;
   for (let i = 0; i < objs.length; i++) {
+    const id = objs[i].id;
+    const aabb = _aabbState.get(id)!.motionAABB;
     if (!_motionAABBs[i]) {
       _motionAABBs[i] = {
-        id: objs[i].id,
-        aabb: objs[i].motionAABB,
+        id: id,
+        aabb: aabb,
       };
     } else {
-      _motionAABBs[i].id = objs[i].id;
-      _motionAABBs[i].aabb = objs[i].motionAABB;
+      _motionAABBs[i].id = id;
+      _motionAABBs[i].aabb = aabb;
     }
   }
   motionCollidesWith = checkCollisions(_motionAABBs);
@@ -208,8 +250,10 @@ export function stepPhysics(
 
       const a = objDict[aId];
       const b = objDict[bId];
+      const aAABBs = _aabbState.get(aId)!;
+      const bAABBs = _aabbState.get(bId)!;
 
-      if (!doesOverlap(a.worldAABB, b.worldAABB)) {
+      if (!doesOverlap(aAABBs.worldAABB, bAABBs.worldAABB)) {
         // a miss
         continue;
       }
@@ -222,11 +266,11 @@ export function stepPhysics(
       }
 
       // compute rebound info
-      const rebData = computeReboundData(a, b, itr);
+      const rebData = computeReboundData(a, aAABBs, b, bAABBs, itr);
       _reboundData.set(h, rebData);
 
       // compute contact info
-      const contData = computeContactData(a, b);
+      const contData = computeContactData(a, aAABBs, b, bAABBs);
       _contactData.set(h, contData);
 
       // update how much we need to rebound objects by
@@ -259,10 +303,11 @@ export function stepPhysics(
     }
 
     // update "tight" AABBs
-    for (let o of objs) {
-      if (lastObjMovs[o.id]) {
-        vec3.add(o.worldAABB.min, o.localAABB.min, o.motion.location);
-        vec3.add(o.worldAABB.max, o.localAABB.max, o.motion.location);
+    for (let { id, motion } of objs) {
+      if (lastObjMovs[id]) {
+        const o = _aabbState.get(id)!;
+        vec3.add(o.worldAABB.min, o.localAABB.min, motion.location);
+        vec3.add(o.worldAABB.max, o.localAABB.max, motion.location);
       }
     }
 
@@ -281,7 +326,12 @@ export function stepPhysics(
   };
 }
 
-function computeContactData(a: PhysicsObject, b: PhysicsObject): ContactData {
+function computeContactData(
+  a: PhysicsObject,
+  aC: AABBState,
+  b: PhysicsObject,
+  bC: AABBState
+): ContactData {
   let dist = -Infinity;
   let dim = -1;
   let dir = 0;
@@ -290,16 +340,22 @@ function computeContactData(a: PhysicsObject, b: PhysicsObject): ContactData {
   for (let i = 0; i < 3; i++) {
     // determine who is to the left in this dimension
     let left: PhysicsObject;
+    let leftC: AABBState;
     let right: PhysicsObject;
+    let rightC: AABBState;
     if (a.lastMotion.location[i] < b.lastMotion.location[i]) {
       left = a;
+      leftC = aC;
       right = b;
+      rightC = bC;
     } else {
       left = b;
+      leftC = bC;
       right = a;
+      rightC = aC;
     }
 
-    const newDist = right.worldAABB.min[i] - left.worldAABB.max[i];
+    const newDist = rightC.worldAABB.min[i] - leftC.worldAABB.max[i];
     if (dist < newDist) {
       dist = newDist;
       dim = i;
@@ -320,7 +376,9 @@ function computeContactData(a: PhysicsObject, b: PhysicsObject): ContactData {
 
 function computeReboundData(
   a: PhysicsObject,
+  aC: AABBState,
   b: PhysicsObject,
+  bC: AABBState,
   itr: number
 ): ReboundData {
   // determine how to readjust positions
@@ -335,16 +393,22 @@ function computeReboundData(
   for (let i = 0; i < 3; i++) {
     // determine who is to the left in this dimension
     let left: PhysicsObject;
+    let leftC: AABBState;
     let right: PhysicsObject;
+    let rightC: AABBState;
     if (a.lastMotion.location[i] < b.lastMotion.location[i]) {
       left = a;
+      leftC = aC;
       right = b;
+      rightC = bC;
     } else {
       left = b;
+      leftC = bC;
       right = a;
+      rightC = aC;
     }
 
-    const overlap = left.worldAABB.max[i] - right.worldAABB.min[i];
+    const overlap = leftC.worldAABB.max[i] - rightC.worldAABB.min[i];
     if (overlap <= 0) continue; // no overlap to deal with
 
     const leftMaxContrib = Math.max(

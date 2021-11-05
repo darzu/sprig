@@ -92,7 +92,10 @@ class Plane extends GameObject {
   constructor(id: number, creator: number) {
     super(id, creator);
     this.color = vec3.clone(DARK_GRAY);
-    this.localAABB = PLANE_AABB;
+    this.collider = {
+      shape: "AABB",
+      aabb: PLANE_AABB,
+    };
   }
 
   mesh(): Mesh {
@@ -193,7 +196,10 @@ abstract class Cube extends GameObject {
   constructor(id: number, creator: number) {
     super(id, creator);
     this.color = vec3.fromValues(0.2, 0, 0);
-    this.localAABB = CUBE_AABB;
+    this.collider = {
+      shape: "AABB",
+      aabb: CUBE_AABB,
+    };
   }
 
   mesh(): Mesh {
@@ -205,7 +211,10 @@ class Bullet extends Cube {
   constructor(id: number, creator: number) {
     super(id, creator);
     this.color = vec3.fromValues(0.3, 0.3, 0.8);
-    this.localAABB = getAABBFromMesh(this.mesh());
+    this.collider = {
+      shape: "AABB",
+      aabb: getAABBFromMesh(this.mesh()),
+    };
   }
 
   mesh(): Mesh {
@@ -322,10 +331,13 @@ class Ship extends Cube {
     super(id, creator);
     this.color = vec3.fromValues(0.3, 0.3, 0.1);
     // TODO(@darzu): we need colliders for this ship
-    this.localAABB = {
-      min: [0,0,0],
-      max: [0,0,0],
-    }
+    this.collider = {
+      shape: "AABB",
+      aabb: {
+        min: [0, 0, 0],
+        max: [0, 0, 0],
+      },
+    };
   }
 
   typeId(): number {
@@ -371,7 +383,10 @@ class Boat extends Cube {
   constructor(id: number, creator: number) {
     super(id, creator);
     this.color = vec3.fromValues(0.2, 0.1, 0.05);
-    this.localAABB = getAABBFromMesh(this.mesh());
+    this.collider = {
+      shape: "AABB",
+      aabb: getAABBFromMesh(this.mesh()),
+    };
     this.boat = createBoatProps();
   }
 
