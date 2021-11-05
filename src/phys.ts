@@ -82,6 +82,7 @@ const _collisionRefl = vec3.create();
 const _motionAABBs: { aabb: AABB; id: number }[] = [];
 
 const _collidesWith: CollidesWith = new Map();
+const _collisionPairs: Set<IdPair> = new Set();
 const _reboundData: Map<IdPair, ReboundData> = new Map();
 const _contactData: Map<IdPair, ContactData> = new Map();
 
@@ -112,9 +113,6 @@ export function stepPhysics(
       let local: AABB;
       if (o.collider.shape === "AABB") {
         local = copyAABB(o.collider.aabb);
-      } else if (o.collider.shape === "Empty") {
-        // TODO(@darzu): is this really how we want to handle empty colliders?
-        local = { min: [0, 0, 0], max: [0, 0, 0] };
       } else {
         throw `Unimplemented collider shape: ${o.collider.shape}`;
       }
@@ -218,6 +216,7 @@ function stepPhysicsInternal(
   // reset collision data
   resetCollidesWithSet(_collidesWith, objs);
   _reboundData.clear();
+  _collisionPairs.clear();
 
   // check for possible collisions using the motion swept AABBs
   let motionCollidesWith: CollidesWith | null = null;
@@ -270,25 +269,32 @@ function stepPhysicsInternal(
 
       // record the real collision
       const h = idPair(aId, bId);
-      if (!_reboundData.has(h)) {
+      if (!_collisionPairs.has(h)) {
+        _collisionPairs.add(h);
         _collidesWith.get(aId)!.push(bId);
         _collidesWith.get(bId)!.push(aId);
       }
-
-      // compute rebound info
-      const rebData = computeReboundData(a, b, itr);
-      _reboundData.set(h, rebData);
 
       // compute contact info
       const contData = computeContactData(a, b);
       _contactData.set(h, contData);
 
-      // update how much we need to rebound objects by
-      const { aRebound, bRebound } = rebData;
-      if (aRebound < Infinity)
-        nextObjMovFracs[aId] = Math.max(nextObjMovFracs[aId] || 0, aRebound);
-      if (bRebound < Infinity)
-        nextObjMovFracs[bId] = Math.max(nextObjMovFracs[bId] || 0, bRebound);
+      // solid objects rebound
+      if (
+        (a.collider.solid && b.collider.solid) ||
+        true // TODO(@darzu): implement non-solid
+      ) {
+        // compute rebound info
+        const rebData = computeReboundData(a, b, itr);
+        _reboundData.set(h, rebData);
+
+        // update how much we need to rebound objects by
+        const { aRebound, bRebound } = rebData;
+        if (aRebound < Infinity)
+          nextObjMovFracs[aId] = Math.max(nextObjMovFracs[aId] || 0, aRebound);
+        if (bRebound < Infinity)
+          nextObjMovFracs[bId] = Math.max(nextObjMovFracs[bId] || 0, bRebound);
+      }
     }
 
     // adjust objects Rebound to compensate for collisions

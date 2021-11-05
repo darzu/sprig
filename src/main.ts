@@ -94,6 +94,7 @@ class Plane extends GameObject {
     this.color = vec3.clone(DARK_GRAY);
     this.collider = {
       shape: "AABB",
+      solid: true,
       aabb: PLANE_AABB,
     };
   }
@@ -198,6 +199,7 @@ abstract class Cube extends GameObject {
     this.color = vec3.fromValues(0.2, 0, 0);
     this.collider = {
       shape: "AABB",
+      solid: true,
       aabb: CUBE_AABB,
     };
   }
@@ -213,6 +215,7 @@ class Bullet extends Cube {
     this.color = vec3.fromValues(0.3, 0.3, 0.8);
     this.collider = {
       shape: "AABB",
+      solid: false,
       aabb: getAABBFromMesh(this.mesh()),
     };
   }
@@ -333,6 +336,7 @@ class Ship extends Cube {
     // TODO(@darzu): we need colliders for this ship
     this.collider = {
       shape: "AABB",
+      solid: true,
       aabb: {
         min: [0, 0, 0],
         max: [0, 0, 0],
@@ -385,6 +389,7 @@ class Boat extends Cube {
     this.color = vec3.fromValues(0.2, 0.1, 0.05);
     this.collider = {
       shape: "AABB",
+      solid: true,
       aabb: getAABBFromMesh(this.mesh()),
     };
     this.boat = createBoatProps();

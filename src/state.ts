@@ -83,7 +83,7 @@ export abstract class GameObject {
     this.location_error = vec3.fromValues(0, 0, 0);
     this.rotation_error = quat.create();
     this.transform = mat4.create();
-    this.collider = { shape: "Empty" };
+    this.collider = { shape: "Empty", solid: false };
   }
 
   snapLocation(location: vec3) {
