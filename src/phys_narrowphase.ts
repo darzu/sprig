@@ -26,7 +26,7 @@ import { AABB } from "./phys_broadphase.js";
 
 interface BoxCollider {
   motion: { location: vec3; rotation: quat };
-  worldAABB: AABB;
+  world: AABB;
 }
 
 function doesOverlap(a: BoxCollider, b: BoxCollider) {

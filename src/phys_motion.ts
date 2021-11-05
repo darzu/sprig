@@ -60,7 +60,7 @@ export interface MotionObj {
 
 export function moveObjects(
   motions: Record<number, MotionObj>,
-  aabbs: Map<number, { worldAABB: AABB }>,
+  aabbs: Map<number, { world: AABB }>,
   dt: number,
   lastCollidesWith: CollidesWith,
   lastContactData: Map<IdPair, ContactData>
@@ -123,11 +123,11 @@ export function moveObjects(
   }
 
   for (let { id, motion: m } of objs) {
-    const worldAABB = aabbs.get(id)?.worldAABB!;
+    const world = aabbs.get(id)?.world!;
     // clamp linear velocity based on size
-    const vxMax = (worldAABB.max[0] - worldAABB.min[0]) / dt;
-    const vyMax = (worldAABB.max[1] - worldAABB.min[1]) / dt;
-    const vzMax = (worldAABB.max[2] - worldAABB.min[2]) / dt;
+    const vxMax = (world.max[0] - world.min[0]) / dt;
+    const vyMax = (world.max[1] - world.min[1]) / dt;
+    const vzMax = (world.max[2] - world.min[2]) / dt;
     m.linearVelocity[0] = clamp(m.linearVelocity[0], -vxMax, vxMax);
     m.linearVelocity[1] = clamp(m.linearVelocity[1], -vyMax, vyMax);
     m.linearVelocity[2] = clamp(m.linearVelocity[2], -vzMax, vzMax);

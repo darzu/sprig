@@ -74,9 +74,9 @@ export function idPair(aId: number, bId: number): IdPair {
 
 export interface AABBState {
   id: number;
-  localAABB: AABB;
-  worldAABB: AABB;
-  motionAABB: AABB;
+  local: AABB;
+  world: AABB;
+  sweep: AABB;
 }
 
 const _collisionRefl = vec3.create();
@@ -112,25 +112,25 @@ export function stepPhysics(
   // TODO(@darzu): impl
   for (let o of objs) {
     if (!_aabbState.has(o.id)) {
-      let localAABB: AABB;
+      let local: AABB;
 
       if (o.collider.shape === "AABB") {
-        localAABB = copyAABB(o.collider.aabb);
+        local = copyAABB(o.collider.aabb);
       } else if (o.collider.shape === "Empty") {
         // TODO(@darzu): is this really how we want to handle empty colliders?
-        localAABB = { min: [0, 0, 0], max: [0, 0, 0] };
+        local = { min: [0, 0, 0], max: [0, 0, 0] };
       } else {
         throw `Unimplemented collider shape: ${o.collider.shape}`;
       }
 
-      const worldAABB: AABB = copyAABB(localAABB);
-      const motionAABB: AABB = copyAABB(localAABB);
+      const world: AABB = copyAABB(local);
+      const sweep: AABB = copyAABB(local);
 
       _aabbState.set(o.id, {
         id: o.id,
-        localAABB,
-        worldAABB,
-        motionAABB,
+        local,
+        world,
+        sweep,
       });
     }
   }
@@ -146,21 +146,21 @@ export function stepPhysics(
   for (let { id, motion, lastMotion } of objs) {
     const o = _aabbState.get(id)!;
 
-    //update  motion sweep AABBs and "tight" AABBs
+    //update motion sweep AABBs
     for (let i = 0; i < 3; i++) {
-      o.motionAABB.min[i] = Math.min(
-        o.localAABB.min[i] + motion.location[i],
-        o.localAABB.min[i] + lastMotion.location[i]
+      o.sweep.min[i] = Math.min(
+        o.local.min[i] + motion.location[i],
+        o.local.min[i] + lastMotion.location[i]
       );
-      o.motionAABB.max[i] = Math.max(
-        o.localAABB.max[i] + motion.location[i],
-        o.localAABB.max[i] + lastMotion.location[i]
+      o.sweep.max[i] = Math.max(
+        o.local.max[i] + motion.location[i],
+        o.local.max[i] + lastMotion.location[i]
       );
     }
 
     // update "tight" AABBs
-    vec3.add(o.worldAABB.min, o.localAABB.min, motion.location);
-    vec3.add(o.worldAABB.max, o.localAABB.max, motion.location);
+    vec3.add(o.world.min, o.local.min, motion.location);
+    vec3.add(o.world.max, o.local.max, motion.location);
   }
 
   // update in-contact pairs; this is seperate from collision or rebound
@@ -179,7 +179,7 @@ export function stepPhysics(
     const bAABBs = _aabbState.get(bId)!;
 
     // colliding again so we don't need any adjacency checks
-    if (doesOverlap(aAABBs.worldAABB, bAABBs.worldAABB)) {
+    if (doesOverlap(aAABBs.world, bAABBs.world)) {
       const conData = computeContactData(a, aAABBs, b, bAABBs);
       _contactData.set(abId, conData);
       continue;
@@ -188,7 +188,7 @@ export function stepPhysics(
     // check for adjacency even if not colliding
     // TODO(@darzu): do we need to consider relative motions?
     //    i.e. a check to see if the two objects are pressing into each other?
-    if (doesTouch(aAABBs.worldAABB, bAABBs.worldAABB, 2 * PAD)) {
+    if (doesTouch(aAABBs.world, bAABBs.world, 2 * PAD)) {
       const conData = computeContactData(a, aAABBs, b, bAABBs);
       _contactData.set(abId, conData);
       continue;
@@ -211,7 +211,7 @@ export function stepPhysics(
   if (_motionAABBs.length !== objs.length) _motionAABBs.length = objs.length;
   for (let i = 0; i < objs.length; i++) {
     const id = objs[i].id;
-    const aabb = _aabbState.get(id)!.motionAABB;
+    const aabb = _aabbState.get(id)!.sweep;
     if (!_motionAABBs[i]) {
       _motionAABBs[i] = {
         id: id,
@@ -253,7 +253,7 @@ export function stepPhysics(
       const aAABBs = _aabbState.get(aId)!;
       const bAABBs = _aabbState.get(bId)!;
 
-      if (!doesOverlap(aAABBs.worldAABB, bAABBs.worldAABB)) {
+      if (!doesOverlap(aAABBs.world, bAABBs.world)) {
         // a miss
         continue;
       }
@@ -306,8 +306,8 @@ export function stepPhysics(
     for (let { id, motion } of objs) {
       if (lastObjMovs[id]) {
         const o = _aabbState.get(id)!;
-        vec3.add(o.worldAABB.min, o.localAABB.min, motion.location);
-        vec3.add(o.worldAABB.max, o.localAABB.max, motion.location);
+        vec3.add(o.world.min, o.local.min, motion.location);
+        vec3.add(o.world.max, o.local.max, motion.location);
       }
     }
 
@@ -355,7 +355,7 @@ function computeContactData(
       rightC = aC;
     }
 
-    const newDist = rightC.worldAABB.min[i] - leftC.worldAABB.max[i];
+    const newDist = rightC.world.min[i] - leftC.world.max[i];
     if (dist < newDist) {
       dist = newDist;
       dim = i;
@@ -408,7 +408,7 @@ function computeReboundData(
       rightC = aC;
     }
 
-    const overlap = leftC.worldAABB.max[i] - rightC.worldAABB.min[i];
+    const overlap = leftC.world.max[i] - rightC.world.min[i];
     if (overlap <= 0) continue; // no overlap to deal with
 
     const leftMaxContrib = Math.max(
