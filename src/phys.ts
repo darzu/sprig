@@ -24,7 +24,7 @@ export interface PhysicsObjectUninit {
   collider: Collider;
 }
 
-interface PhysicsObject {
+export interface PhysicsObject {
   id: number;
   motion: MotionProps;
   collider: Collider;
