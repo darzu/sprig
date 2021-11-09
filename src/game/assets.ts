@@ -1,7 +1,7 @@
-import { importObj, isParseError } from "./import_obj.js";
-import { Mesh, unshareProvokingVertices } from "./mesh-pool.js";
-import { assert } from "./test.js";
-import { getText } from "./webget.js";
+import { importObj, isParseError } from "../import_obj.js";
+import { Mesh, unshareProvokingVertices } from "../mesh-pool.js";
+import { assert } from "../test.js";
+import { getText } from "../webget.js";
 
 export interface GameAssets {
   ship: Mesh;

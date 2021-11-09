@@ -32,7 +32,7 @@ import { createInputsReader, Inputs } from "./inputs.js";
 import { copyMotionProps, MotionProps } from "./phys_motion.js";
 import { exportObj, HAT_OBJ, importObj, isParseError } from "./import_obj.js";
 import { setupObjImportExporter } from "./download.js";
-import { GameAssets, loadAssets } from "./assets.js";
+import { GameAssets, loadAssets } from "./game/assets.js";
 import { CubeGameState } from "./game/game.js";
 
 const FORCE_WEBGL = false;
