@@ -1,5 +1,5 @@
-import { quat, vec3 } from "./gl-matrix.js";
-import { MotionProps } from "./phys_motion.js";
+import { quat, vec3 } from "../gl-matrix.js";
+import { MotionProps } from "../phys_motion.js";
 
 export interface BoatProps {
   speed: number;

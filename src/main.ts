@@ -24,9 +24,9 @@ import {
   _lastCollisionTestTimeMs,
 } from "./phys_broadphase.js";
 import { _motionPairsLen } from "./phys.js";
-import { BoatProps, createBoatProps, stepBoats } from "./boat.js";
+import { BoatProps, createBoatProps, stepBoats } from "./game/boat.js";
 import { jitter } from "./math.js";
-import { createPlayerProps, PlayerProps, stepPlayer } from "./player.js";
+import { createPlayerProps, PlayerProps, stepPlayer } from "./game/player.js";
 import { never } from "./util.js";
 import { createInputsReader, Inputs } from "./inputs.js";
 import { copyMotionProps, MotionProps } from "./phys_motion.js";

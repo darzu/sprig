@@ -1,10 +1,10 @@
 // player controller component and system
 
-import { quat, vec3 } from "./gl-matrix.js";
-import { Inputs } from "./inputs.js";
-import { CameraProps } from "./main.js";
-import { GameObject } from "./state.js";
-import { createMotionProps, MotionProps } from "./phys_motion.js";
+import { quat, vec3 } from "../gl-matrix.js";
+import { Inputs } from "../inputs.js";
+import { CameraProps } from "../main.js";
+import { GameObject } from "../state.js";
+import { createMotionProps, MotionProps } from "../phys_motion.js";
 
 export interface PlayerProps {
   jumpSpeed: number;
