@@ -1,6 +1,6 @@
 import { Collider } from "./collider.js";
 import { mat4, quat, vec3 } from "./gl-matrix.js";
-import { _playerId } from "./main.js";
+import { _playerId } from "./game/game.js";
 import {
   AABB,
   checkCollisions,
