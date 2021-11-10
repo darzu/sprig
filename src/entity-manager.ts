@@ -12,6 +12,7 @@ systems DAG?
 */
 
 import { Serializer, Deserializer } from "./serialize.js";
+import { hashCode } from "./util.js";
 
 export interface Entity {
   readonly id: number;
@@ -66,7 +67,7 @@ export class EntityManager {
     name: N,
     construct: () => P
   ): ComponentDef<N, P> {
-    const id = 0; // TODO: get hash code
+    const id = hashCode(name);
     if (this.components.has(id)) {
       throw `Component with id ${id} already defined--hash collision?`;
     }
