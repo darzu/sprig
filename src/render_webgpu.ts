@@ -1,7 +1,7 @@
-import { GameObject } from "./state.js";
 import { mat4, vec3, quat } from "./gl-matrix.js";
 import {
   createMeshPoolBuilder_WebGPU,
+  Mesh,
   MeshHandle,
   MeshPoolBuilder_WebGPU,
   MeshPoolOpts,
@@ -77,7 +77,13 @@ const backgroundColor = { r: 0.6, g: 0.63, b: 0.6, a: 1.0 };
 
 export interface MeshObj {
   handle: MeshHandle;
-  obj: GameObject;
+  obj: RenderObj;
+}
+
+export interface RenderObj {
+  id: number;
+  mesh: () => Mesh;
+  transform: mat4;
 }
 
 export type RenderMode = "normal" | "wireframe";
@@ -86,10 +92,10 @@ export interface Renderer {
   wireMode: RenderMode;
   perspectiveMode: CameraMode;
   finishInit(): void;
-  addObject(o: GameObject): MeshObj;
-  addObjectInstance(o: GameObject, m: MeshHandle): MeshObj;
+  addObject(o: RenderObj): MeshObj;
+  addObjectInstance(o: RenderObj, m: MeshHandle): MeshObj;
   renderFrame(viewMatrix: mat4): void;
-  removeObject(o: GameObject): void;
+  removeObject(o: RenderObj): void;
 }
 
 export class Renderer_WebGPU implements Renderer {
@@ -186,7 +192,7 @@ export class Renderer_WebGPU implements Renderer {
                   
     TODO: support adding objects when buffers aren't memory-mapped using device.queue
   */
-  public addObject(o: GameObject): MeshObj {
+  public addObject(o: RenderObj): MeshObj {
     // console.log(`Adding object ${o.id}`);
     let m = o.mesh();
     // need to introduce a new variable to convince Typescript the mapping is non-null
@@ -205,7 +211,7 @@ export class Renderer_WebGPU implements Renderer {
     this.needsRebundle = true;
     return res;
   }
-  public addObjectInstance(o: GameObject, oldHandle: MeshHandle): MeshObj {
+  public addObjectInstance(o: RenderObj, oldHandle: MeshHandle): MeshObj {
     console.log(`Adding (instanced) object ${o.id}`);
 
     const d = MeshUniform.CloneData(oldHandle);
@@ -224,7 +230,7 @@ export class Renderer_WebGPU implements Renderer {
     return res;
   }
 
-  removeObject(o: GameObject) {
+  removeObject(o: RenderObj) {
     delete this.meshObjs[o.id];
     this.needsRebundle = true;
   }

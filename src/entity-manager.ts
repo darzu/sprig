@@ -58,10 +58,20 @@ export function DefineComponent<N extends string, P>(
 
 export class EntityManager {
   entities: Entity[] = [{ id: 0 }];
-  nextId = 1;
   systems: System<any, any>[] = [];
+  nextId = -1;
+  maxId = -1;
+
+  public setIdRange(next: number, max: number) {
+    this.nextId = next;
+    this.maxId = max;
+  }
 
   public newEntity(): number {
+    if (this.nextId === -1)
+      throw `EntityManager hasn't been given an id range!`;
+    if (this.nextId >= this.maxId)
+      throw `EntityManager has exceeded its id range!`;
     const e = { id: this.nextId++ };
     this.entities[e.id] = e;
     return e.id;

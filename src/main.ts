@@ -14,6 +14,7 @@ import { createInputsReader } from "./inputs.js";
 import { setupObjImportExporter } from "./download.js";
 import { GameAssets, loadAssets } from "./game/assets.js";
 import { CubeGameState } from "./game/game.js";
+import { EM, TimeDef } from "./entity-manager.js";
 
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
@@ -99,6 +100,15 @@ async function startGame(host: string | null) {
   console.log(`Renderer: ${usingWebGPU ? "webGPU" : "webGL"}`);
   const renderer: Renderer = rendererInit;
   let start_of_time = performance.now();
+
+  // TODO(@darzu): ECS stuff
+  // init ECS
+  if (hosting) {
+    // TODO(@darzu): ECS
+    EM.setIdRange(1, 10000);
+  }
+  EM.addSingletonComponent(TimeDef);
+
   let gameState = new CubeGameState(renderer, hosting);
   let takeInputs = createInputsReader(canvas);
   function doLockMouse() {
@@ -213,6 +223,7 @@ async function startGame(host: string | null) {
     //   `o:${_doesOverlaps} e:${_enclosedBys} `;
     requestAnimationFrame(frame);
   };
+
   if (ENABLE_NET) {
     try {
       net = new Net(gameState, host, (id: string) => {

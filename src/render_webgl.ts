@@ -7,9 +7,8 @@ import {
   MeshUniform,
   SceneUniform,
 } from "./mesh-pool.js";
-import { GameObject } from "./state.js";
 // TODO(@darzu): this is a bad dependency:
-import { MeshObj, Renderer, setupScene } from "./render_webgpu.js";
+import { MeshObj, Renderer, RenderObj, setupScene } from "./render_webgpu.js";
 
 const vertCode = `
 precision mediump float;
@@ -188,7 +187,7 @@ export function attachToCanvas(
     // gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, new Uint16Array(indices));
   }
 
-  function addObject(o: GameObject): MeshObj {
+  function addObject(o: RenderObj): MeshObj {
     // console.log(`Adding object ${o.id}`);
     let m = o.mesh();
     // need to introduce a new variable to convince Typescript the mapping is non-null
@@ -204,7 +203,7 @@ export function attachToCanvas(
 
     return res;
   }
-  function addObjectInstance(o: GameObject, oldHandle: MeshHandle): MeshObj {
+  function addObjectInstance(o: RenderObj, oldHandle: MeshHandle): MeshObj {
     console.log(`Adding (instanced) object ${o.id}`);
 
     const d = MeshUniform.CloneData(oldHandle);
@@ -223,7 +222,7 @@ export function attachToCanvas(
     return res;
   }
 
-  function removeObject(o: GameObject) {
+  function removeObject(o: RenderObj) {
     delete meshObjs[o.id];
   }
 

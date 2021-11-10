@@ -530,9 +530,6 @@ export class CubeGameState extends GameState {
         }
       }
 
-      // TODO(@darzu): ECS stuff
-      const time = EM.addSingletonComponent(TimeDef);
-
       // create boat(s)
       const BOAT_COUNT = 4;
       for (let i = 0; i < BOAT_COUNT; i++) {
@@ -545,6 +542,7 @@ export class CubeGameState extends GameState {
         this.addObject(boat);
 
         // TODO(@darzu): ECS hack
+        console.log("create ent");
         const id = EM.newEntity();
         let boatC = EM.addComponent(id, BoatDef);
         Object.assign(boatC, boat.boat);

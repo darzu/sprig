@@ -2,6 +2,7 @@ import { Peer } from "./peer.js";
 import { GameObject, GameEvent, GameState } from "./state.js";
 import { Serializer, Deserializer, OutOfRoomError } from "./serialize.js";
 import { vec3, quat } from "./gl-matrix.js";
+import { EM, TimeDef } from "./entity-manager.js";
 
 // fraction of state updates to artificially drop
 const DROP_PROBABILITY = 0.1;
@@ -307,7 +308,10 @@ export class Net {
         this.state.me = deserializer.readUint8();
         // TODO: this is a hack, need to actually have some system for reserving
         // object ids at each node
-        this.state.nextObjectId = this.state.me * 10000;
+        const nextObjectId = this.state.me * 10000;
+        EM.setIdRange(nextObjectId, nextObjectId + 10000);
+        this.state.nextObjectId = nextObjectId;
+
         let npeers = deserializer.readUint8();
         for (let i = 0; i < npeers; i++) {
           let peer = deserializer.readString();

@@ -17,10 +17,10 @@ export const BoatDef = DefineComponent("boat", () => {
 });
 
 export function stepBoats(
-  objs: { boat: Boat; motion: Motion }[],
+  boats: { boat: Boat; motion: Motion }[],
   { time }: { time: { dt: number } }
 ) {
-  for (let o of objs) {
+  for (let o of boats) {
     const rad = o.boat.wheelSpeed * time.dt;
     o.boat.wheelDir += rad;
 
