@@ -11,7 +11,7 @@ systems DAG?
 
 */
 
-import { Inputs } from "./inputs.js";
+import { Serializer, Deserializer } from "./serialize.js";
 
 export interface Entity {
   readonly id: number;
@@ -20,6 +20,7 @@ export interface Entity {
 export interface ComponentDef<N extends string = string, P = any> {
   readonly name: N;
   construct: () => P;
+  id: number;
 }
 
 type Intersect<A> = A extends [infer X, ...infer Y] ? X & Intersect<Y> : {};
@@ -46,21 +47,85 @@ type System<CS extends ComponentDef[], RS extends ComponentDef[]> = {
 // const t: TEST;
 // t[0].
 
-export function DefineComponent<N extends string, P>(
-  name: N,
-  construct: () => P
-) {
-  return {
-    name,
-    construct,
-  };
-}
-
 export class EntityManager {
   entities: Entity[] = [{ id: 0 }];
   systems: System<any, any>[] = [];
+  components: Map<number, ComponentDef<any, any>> = new Map();
+  serializers: Map<
+    number,
+    {
+      serialize: (obj: any, buf: Serializer) => void;
+      deserialize: (obj: any, buf: Deserializer) => void;
+    }
+  > = new Map();
+
   nextId = -1;
   maxId = -1;
+
+  public defineComponent<N extends string, P>(
+    name: N,
+    construct: () => P
+  ): ComponentDef<N, P> {
+    const id = 0; // TODO: get hash code
+    if (this.components.has(id)) {
+      throw `Component with id ${id} already defined--hash collision?`;
+    }
+    const component = {
+      name,
+      construct,
+      id,
+    };
+    this.components.set(id, component);
+    return component;
+  }
+
+  private checkComponent<N extends string, P>(def: ComponentDef<N, P>) {
+    if (!this.components.has(def.id))
+      throw `Component ${def.name} (id ${def.id}) not found`;
+    if (this.components.get(def.id)!.name !== def.name)
+      throw `Component id ${def.id} has name ${
+        this.components.get(def.id)!.name
+      }, not ${def.name}`;
+  }
+
+  public registerSerializerPair<N extends string, P>(
+    def: ComponentDef<N, P>,
+    serialize: (obj: P, buf: Serializer) => void,
+    deserialize: (obj: P, buf: Deserializer) => void
+  ) {
+    this.serializers.set(def.id, { serialize, deserialize });
+  }
+
+  public serialize(id: number, componentId: number, buf: Serializer) {
+    const def = this.components.get(componentId);
+    if (!def) throw `Trying to serialize unknown component id ${componentId}`;
+    const entity = this.findEntity(id, [def]);
+    if (!entity)
+      throw `Trying to serialize component ${def.name} on entity ${id}, which doesn't have it`;
+    const serializerPair = this.serializers.get(componentId);
+    if (!serializerPair)
+      throw `No serializer for component ${def.name} (for entity ${id})`;
+    serializerPair.serialize(entity[def.name], buf);
+  }
+
+  public deserialize(id: number, componentId: number, buf: Deserializer) {
+    const def = this.components.get(componentId);
+    if (!def) throw `Trying to serialize unknown component id ${componentId}`;
+    if (!this.hasEntity(id)) {
+      this.registerEntity(id);
+    }
+    let entity = this.findEntity(id, [def]);
+    let component;
+    if (!entity) {
+      component = this.addComponent(id, def);
+    } else {
+      component = entity[def.name];
+    }
+    const serializerPair = this.serializers.get(componentId);
+    if (!serializerPair)
+      throw `No deserializer for component ${def.name} (for entity ${id})`;
+    serializerPair.deserialize(component, buf);
+  }
 
   public setIdRange(next: number, max: number) {
     this.nextId = next;
@@ -91,6 +156,7 @@ export class EntityManager {
     id: number,
     def: ComponentDef<N, P>
   ): P {
+    this.checkComponent(def);
     if (id === 0) throw `hey, use addSingletonComponent!`;
     const c = def.construct();
     const e = this.entities[id];
@@ -103,6 +169,7 @@ export class EntityManager {
   public addSingletonComponent<N extends string, P>(
     def: ComponentDef<N, P>
   ): P {
+    this.checkComponent(def);
     const c = def.construct();
     const e = this.entities[0];
     if (def.name in e)
@@ -118,6 +185,21 @@ export class EntityManager {
       return e as any;
     }
     throw `can't find singleton component: ${c.name}`;
+  }
+
+  public hasEntity(id: number) {
+    return !!this.entities[id];
+  }
+
+  public findEntity<CS extends ComponentDef[]>(
+    id: number,
+    cs: [...CS]
+  ): HasMany<CS> | undefined {
+    const e = this.entities[id];
+    if (e && !cs.every((c) => c.name in e)) {
+      return undefined;
+    }
+    return e as HasMany<CS>;
   }
 
   private filterEntities<CS extends ComponentDef[]>(cs: [...CS]): Entities<CS> {
@@ -168,4 +250,4 @@ export const EM = new EntityManager();
 
 // TODO(@darzu):  move these elsewher
 
-export const TimeDef = DefineComponent("time", () => ({ dt: 0 }));
+export const TimeDef = EM.defineComponent("time", () => ({ dt: 0 }));
