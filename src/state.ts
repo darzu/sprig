@@ -3,11 +3,7 @@ import { Serializer, Deserializer } from "./serialize.js";
 import { Mesh, MeshHandle } from "./mesh-pool.js";
 import { Renderer } from "./render_webgpu.js";
 import { AABB, checkCollisions, copyAABB } from "./phys_broadphase.js";
-import {
-  copyMotionProps,
-  createMotionProps,
-  MotionProps,
-} from "./phys_motion.js";
+import { copyMotionProps, createMotionProps, Motion } from "./phys_motion.js";
 import { CollidesWith, ReboundData, IdPair, stepPhysics } from "./phys.js";
 import { Inputs } from "./inputs.js";
 import { Collider } from "./collider.js";
@@ -60,8 +56,8 @@ export abstract class GameObject {
   parent: number = 0;
 
   // physics
-  motion: MotionProps;
-  lastMotion?: MotionProps;
+  motion: Motion;
+  lastMotion?: Motion;
   collider: Collider;
 
   // derivative state:

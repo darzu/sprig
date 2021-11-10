@@ -5,17 +5,22 @@ import { clamp } from "./math.js";
 import { CollidesWith, idPair, IdPair, ContactData, __step } from "./phys.js";
 import { AABB } from "./phys_broadphase.js";
 import { vec3Dbg } from "./utils-3d.js";
-export interface MotionProps {
+import { DefineComponent } from "./entity-manager.js";
+export interface Motion {
   linearVelocity: vec3;
   angularVelocity: vec3;
   location: vec3;
   rotation: quat;
 }
 
-export function copyMotionProps(
-  dest: MotionProps,
-  src: Partial<MotionProps>
-): MotionProps {
+export const MotionDef = DefineComponent("motion", () => ({
+  linearVelocity: vec3.create(),
+  angularVelocity: vec3.create(),
+  location: vec3.create(),
+  rotation: quat.create(),
+}));
+
+export function copyMotionProps(dest: Motion, src: Partial<Motion>): Motion {
   if (src.location) vec3.copy(dest.location, src.location);
   if (src.rotation) quat.copy(dest.rotation, src.rotation);
   if (src.linearVelocity) vec3.copy(dest.linearVelocity, src.linearVelocity);
@@ -23,14 +28,14 @@ export function copyMotionProps(
   return dest;
 }
 
-export function createMotionProps(init: Partial<MotionProps>): MotionProps {
+export function createMotionProps(init: Partial<Motion>): Motion {
   // TODO(@darzu): this is difficult to keep in sync with MotionObject as fields are added/removed/changed
   if (!init.location) init.location = vec3.create();
   if (!init.rotation) init.rotation = quat.create();
   if (!init.linearVelocity) init.linearVelocity = vec3.create();
   if (!init.angularVelocity) init.angularVelocity = vec3.create();
 
-  return init as MotionProps;
+  return init as Motion;
 }
 
 let delta = vec3.create();
@@ -39,10 +44,7 @@ let deltaRotation = quat.create();
 
 // TODO(@darzu): implement checkAtRest (deleted in this commit)
 
-export function didMove(o: {
-  motion: MotionProps;
-  lastMotion: MotionProps;
-}): boolean {
+export function didMove(o: { motion: Motion; lastMotion: Motion }): boolean {
   // TODO(@darzu): this might be redundent with vec3.equals which does a epsilon check
   const EPSILON = 0.01;
   return (
@@ -56,7 +58,7 @@ const _constrainedVelocities = new Map<number, vec3>();
 
 export interface MotionObj {
   id: number;
-  motion: MotionProps;
+  motion: Motion;
   collider: Collider;
   world: AABB;
 }

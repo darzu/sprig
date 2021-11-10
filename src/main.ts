@@ -1,22 +1,8 @@
-import { mat4, vec3, quat } from "./gl-matrix.js";
-import {
-  scaleMesh,
-  GameObject,
-  GameEvent,
-  GameState,
-  scaleMesh3,
-} from "./state.js";
-import { Serializer, Deserializer } from "./serialize.js";
+import { vec3, quat } from "./gl-matrix.js";
 import { Net } from "./net.js";
 import { test } from "./test.js";
 import { Renderer, Renderer_WebGPU } from "./render_webgpu.js";
 import { attachToCanvas } from "./render_webgl.js";
-import {
-  getAABBFromMesh,
-  Mesh,
-  MeshHandle,
-  unshareProvokingVertices,
-} from "./mesh-pool.js";
 import {
   _cellChecks,
   _doesOverlaps,
@@ -24,13 +10,7 @@ import {
   _lastCollisionTestTimeMs,
 } from "./phys_broadphase.js";
 import { _motionPairsLen } from "./phys.js";
-import { BoatProps, createBoatProps, stepBoats } from "./game/boat.js";
-import { jitter } from "./math.js";
-import { createPlayerProps, PlayerProps, stepPlayer } from "./game/player.js";
-import { never } from "./util.js";
-import { createInputsReader, Inputs } from "./inputs.js";
-import { copyMotionProps, MotionProps } from "./phys_motion.js";
-import { exportObj, HAT_OBJ, importObj, isParseError } from "./import_obj.js";
+import { createInputsReader } from "./inputs.js";
 import { setupObjImportExporter } from "./download.js";
 import { GameAssets, loadAssets } from "./game/assets.js";
 import { CubeGameState } from "./game/game.js";

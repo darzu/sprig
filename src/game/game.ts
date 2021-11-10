@@ -1,3 +1,4 @@
+import { TimeDef, EM } from "../entity-manager.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { importObj, HAT_OBJ, isParseError } from "../import_obj.js";
 import { Inputs } from "../inputs.js";
@@ -9,7 +10,7 @@ import {
   Mesh,
   MeshHandle,
 } from "../mesh-pool.js";
-import { MotionProps, copyMotionProps } from "../phys_motion.js";
+import { Motion, copyMotionProps, MotionDef } from "../phys_motion.js";
 import { Renderer } from "../render_webgpu.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import {
@@ -20,7 +21,7 @@ import {
   GameState,
 } from "../state.js";
 import { never } from "../util.js";
-import { BoatProps, createBoatProps, stepBoats } from "./boat.js";
+import { Boat, BoatDef, stepBoats } from "./boat.js";
 import { PlayerProps, createPlayerProps, stepPlayer } from "./player.js";
 
 const INTERACTION_DISTANCE = 5;
@@ -423,8 +424,8 @@ class Ship extends Cube {
   }
 }
 
-class Boat extends Cube {
-  public boat: BoatProps;
+class BoatClass extends Cube {
+  public boat: Boat;
 
   constructor(id: number, creator: number) {
     super(id, creator);
@@ -434,7 +435,7 @@ class Boat extends Cube {
       solid: true,
       aabb: getAABBFromMesh(this.mesh()),
     };
-    this.boat = createBoatProps();
+    this.boat = BoatDef.construct();
   }
 
   mesh(): Mesh {
@@ -529,17 +530,29 @@ export class CubeGameState extends GameState {
         }
       }
 
+      // TODO(@darzu): ECS stuff
+      const time = EM.addSingletonComponent(TimeDef);
+
       // create boat(s)
       const BOAT_COUNT = 4;
       for (let i = 0; i < BOAT_COUNT; i++) {
-        const boat = new Boat(this.newId(), this.me);
+        const boat = new BoatClass(this.newId(), this.me);
         boat.motion.location[1] = -9;
         boat.motion.location[0] = (Math.random() - 0.5) * 20 - 10;
         boat.motion.location[2] = (Math.random() - 0.5) * 20 - 20;
         boat.boat.speed = 0.01 + jitter(0.01);
         boat.boat.wheelSpeed = jitter(0.002);
         this.addObject(boat);
+
+        // TODO(@darzu): ECS hack
+        const id = EM.newEntity();
+        let boatC = EM.addComponent(id, BoatDef);
+        Object.assign(boatC, boat.boat);
+        let boatM = EM.addComponent(id, MotionDef);
+        Object.assign(boatM, boat.motion);
       }
+      // TODO(@darzu): ECS stuff
+      EM.registerSystem([BoatDef, MotionDef], [TimeDef], stepBoats);
 
       // create ship
       {
@@ -598,7 +611,7 @@ export class CubeGameState extends GameState {
       case ObjectType.Player:
         return new Player(id, creator);
       case ObjectType.Boat:
-        return new Boat(id, creator);
+        return new BoatClass(id, creator);
       case ObjectType.Hat:
         return new Hat(id, creator);
       case ObjectType.Ship:
@@ -625,7 +638,7 @@ export class CubeGameState extends GameState {
     return this.players[this.me];
   }
 
-  spawnBullet(motion: MotionProps) {
+  spawnBullet(motion: Motion) {
     let bullet = new Bullet(this.newId(), this.me);
     copyMotionProps(bullet.motion, motion);
     vec3.copy(bullet.motion.linearVelocity, motion.linearVelocity);
@@ -680,11 +693,16 @@ export class CubeGameState extends GameState {
       this.renderer.perspectiveMode = "ortho";
     }
 
+    // TODO(@darzu): wierd ECS
+    const { time } = EM.findSingletonEntity(TimeDef);
+    time.dt = dt;
+
     // move boats
-    const boats = this.liveObjects().filter(
-      (o) => o instanceof Boat && o.authority === this.me
-    ) as Boat[];
-    stepBoats(boats, dt);
+    // const boats = this.liveObjects().filter(
+    //   (o) => o instanceof BoatClass && o.authority === this.me
+    // ) as BoatClass[];
+    // stepBoats(boats, { time: { dt: dt } });
+    EM.callSystems();
 
     // TODO(@darzu): IMPLEMENT
     // move player(s)

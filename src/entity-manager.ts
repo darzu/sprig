@@ -22,27 +22,6 @@ export interface ComponentDef<N extends string = string, P = any> {
   construct: () => P;
 }
 
-// type Has2<N, P> = D extends ComponentDef<infer N, infer P> ? { [k in N]: P } : never;
-
-interface Boat {
-  turnSpeed: number;
-}
-// type HasBoat = {
-//   boat: Boat;
-// };
-
-const BoatDef = DefineComponent("boat", () => ({
-  turnSpeed: -1,
-}));
-const PlayerDef = DefineComponent("player", () => ({
-  health: 1,
-}));
-
-// let b2: Entity & Has<typeof BoatDef>;
-
-// let b2: Entity & HasBoat;
-// b2.
-
 type Intersect<A> = A extends [infer X, ...infer Y] ? X & Intersect<Y> : {};
 
 type Has<D> = D extends ComponentDef<infer N, infer P>
@@ -77,7 +56,7 @@ export function DefineComponent<N extends string, P>(
   };
 }
 
-class EntityManager {
+export class EntityManager {
   entities: Entity[] = [{ id: 0 }];
   nextId = 1;
   systems: System<any, any>[] = [];
@@ -112,7 +91,8 @@ class EntityManager {
     return c;
   }
 
-  private findSingletonEntity<C extends ComponentDef>(c: C): Entity & Has<C> {
+  // TODO(@darzu): should this be public??
+  public findSingletonEntity<C extends ComponentDef>(c: C): Entity & Has<C> {
     const e = this.entities[0];
     if (c.name in e) {
       return e as any;
@@ -142,7 +122,7 @@ class EntityManager {
     });
   }
 
-  callSystems(dt: number, inputs: Inputs) {
+  callSystems() {
     // dispatch to all the systems
     for (let s of this.systems) {
       const es = this.filterEntities(s.cs);
@@ -155,12 +135,9 @@ class EntityManager {
   }
 }
 
-const em = new EntityManager();
+// TODO(@darzu): where to put this?
+export const EM = new EntityManager();
 
-const a = em.newEntity();
-const aBoat = em.addComponent(a, BoatDef);
+// TODO(@darzu):  move these elsewher
 
-em.registerSystem([BoatDef], [PlayerDef], (boats, { player }) => {
-  const b1 = boats[0];
-  player.health = 100;
-});
+export const TimeDef = DefineComponent("time", () => ({ dt: 0 }));

@@ -13,24 +13,24 @@ import {
 import {
   copyMotionProps,
   createMotionProps,
-  MotionProps,
+  Motion,
   moveObjects,
 } from "./phys_motion.js";
 import { __isSMI } from "./util.js";
 import { vec3Dbg } from "./utils-3d.js";
 export interface PhysicsObjectUninit {
   id: number;
-  motion: MotionProps;
+  motion: Motion;
   collider: Collider;
 }
 
 interface PhysicsObject {
   id: number;
-  motion: MotionProps;
+  motion: Motion;
   collider: Collider;
 
   // physics system maintained state
-  lastMotion: MotionProps;
+  lastMotion: Motion;
   local: AABB;
   world: AABB;
   sweep: AABB;

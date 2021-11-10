@@ -1,29 +1,27 @@
+import { DefineComponent, EM, EntityManager } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
-import { MotionProps } from "../phys_motion.js";
+import { Motion } from "../phys_motion.js";
 
-export interface BoatProps {
+export interface Boat {
   speed: number;
   wheelSpeed: number;
   wheelDir: number;
 }
 
-export function createBoatProps(): BoatProps {
+export const BoatDef = DefineComponent("boat", () => {
   return {
     speed: 0,
     wheelSpeed: 0,
     wheelDir: 0,
   };
-}
+});
 
-export interface BoatObj {
-  id: number;
-  boat: BoatProps;
-  motion: MotionProps;
-}
-
-export function stepBoats(objs: BoatObj[], dt: number) {
+export function stepBoats(
+  objs: { boat: Boat; motion: Motion }[],
+  { time }: { time: { dt: number } }
+) {
   for (let o of objs) {
-    const rad = o.boat.wheelSpeed * dt;
+    const rad = o.boat.wheelSpeed * time.dt;
     o.boat.wheelDir += rad;
 
     // rotate

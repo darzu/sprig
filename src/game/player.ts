@@ -4,7 +4,7 @@ import { quat, vec3 } from "../gl-matrix.js";
 import { Inputs } from "../inputs.js";
 import { CameraProps } from "../main.js";
 import { GameObject } from "../state.js";
-import { createMotionProps, MotionProps } from "../phys_motion.js";
+import { createMotionProps, Motion } from "../phys_motion.js";
 
 export interface PlayerProps {
   jumpSpeed: number;
@@ -21,7 +21,7 @@ export function createPlayerProps(): PlayerProps {
 export interface PlayerObj {
   id: number;
   player: PlayerProps;
-  motion: MotionProps;
+  motion: Motion;
   interactingWith: number;
   dropping: boolean;
 }
@@ -32,7 +32,7 @@ export function stepPlayer(
   dt: number,
   inputs: Inputs,
   camera: CameraProps,
-  spawnBullet: (motion: MotionProps) => void
+  spawnBullet: (motion: Motion) => void
 ) {
   // fall with gravity
   player.motion.linearVelocity[1] -= player.player.gravity * dt;
