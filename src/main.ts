@@ -9,7 +9,6 @@ import {
   _enclosedBys,
   _lastCollisionTestTimeMs,
 } from "./phys_broadphase.js";
-import { _motionPairsLen } from "./phys.js";
 import { createInputsReader } from "./inputs.js";
 import { setupObjImportExporter } from "./download.js";
 import { GameAssets, loadAssets } from "./game/assets.js";

@@ -2,7 +2,7 @@ import { Collider } from "./collider.js";
 import { quat, vec3 } from "./gl-matrix.js";
 import { _playerId } from "./game/game.js";
 import { clamp } from "./math.js";
-import { CollidesWith, idPair, IdPair, ContactData, __step } from "./phys.js";
+import { CollidesWith, idPair, IdPair, ContactData } from "./phys.js";
 import { AABB } from "./phys_broadphase.js";
 import { vec3Dbg } from "./utils-3d.js";
 import { DefineComponent } from "./entity-manager.js";
@@ -56,7 +56,9 @@ export interface MotionObj {
   id: number;
   motion: Motion;
   collider: Collider;
-  world: AABB;
+  _phys: {
+    world: AABB;
+  };
 }
 
 export function moveObjects(
@@ -123,7 +125,11 @@ export function moveObjects(
       vec3.copy(m.linearVelocity, _constrainedVelocities.get(id)!);
   }
 
-  for (let { id, motion: m, world } of objs) {
+  for (let {
+    id,
+    motion: m,
+    _phys: { world },
+  } of objs) {
     // clamp linear velocity based on size
     const vxMax = (world.max[0] - world.min[0]) / dt;
     const vyMax = (world.max[1] - world.min[1]) / dt;

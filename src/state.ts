@@ -9,9 +9,9 @@ import {
   Motion,
   MotionDef,
 } from "./phys_motion.js";
-import { CollidesWith, ReboundData, IdPair, stepPhysics } from "./phys.js";
+import { CollidesWith, ReboundData, IdPair } from "./phys.js";
 import { Inputs } from "./inputs.js";
-import { Collider } from "./collider.js";
+import { Collider, ColliderDef } from "./collider.js";
 import { EM, Entity } from "./entity-manager.js";
 import {
   MotionErrorDef,
@@ -21,6 +21,11 @@ import {
   RenderableDef,
   TransformDef,
 } from "./renderer.js";
+import {
+  PhysicsResultsDef,
+  PhysicsState,
+  PhysicsStateDef,
+} from "./phys_esc.js";
 
 const SMOOTH = true;
 const ERROR_SMOOTHING_FACTOR = 0.9 ** (60 / 1000);
@@ -67,10 +72,6 @@ export abstract class GameObject {
   inWorld: boolean = true;
   deleted: boolean = false;
 
-  // physics
-  lastMotion?: Motion;
-  collider: Collider;
-
   // ECS controlled stuff below this
   get id() {
     return this.entity.id;
@@ -90,6 +91,17 @@ export abstract class GameObject {
   mesh() {
     return this.renderable.mesh;
   }
+  _phys: PhysicsState;
+  get lastMotion() {
+    return this._phys.lastMotion;
+  }
+  _collider: Collider;
+  set collider(c: Collider) {
+    Object.assign(this._collider, c);
+  }
+  get collider() {
+    return this._collider;
+  }
 
   constructor(e: Entity, creator: number) {
     this.creator = creator;
@@ -108,12 +120,16 @@ export abstract class GameObject {
 
     this.renderable = EM.addComponent(this.id, RenderableDef);
 
+    this._phys = EM.addComponent(this.id, PhysicsStateDef);
+
+    this._collider = EM.addComponent(this.id, ColliderDef);
+
     // TODO(@darzu): ECS this shit
-    this.lastMotion = undefined;
+    // this.lastMotion = undefined;
     this.authority = creator;
     this.authority_seq = 0;
     this.snap_seq = -1;
-    this.collider = { shape: "Empty", solid: false };
+    // this.collider = { shape: "Empty", solid: false };
   }
 
   snapLocation(location: vec3) {
@@ -426,8 +442,9 @@ export abstract class GameState {
     }
 
     // move, check collisions
-    const physRes = stepPhysics(this.liveObjectsMap(), dt);
-    this.collidesWith = physRes.collidesWith;
+    // TODO(@darzu): Remove after ECS stuff
+    const { physicsResults } = EM.findSingletonEntity(PhysicsResultsDef);
+    this.collidesWith = physicsResults.collidesWith;
 
     // deal with any collisions
     this.handleCollisions();

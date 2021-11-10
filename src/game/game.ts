@@ -10,6 +10,7 @@ import {
   Mesh,
   MeshHandle,
 } from "../mesh-pool.js";
+import { registerPhysicsSystems } from "../phys_esc.js";
 import { Motion, copyMotionProps, MotionDef } from "../phys_motion.js";
 import { registerUpdateTransforms } from "../renderer.js";
 import { Renderer } from "../render_webgpu.js";
@@ -417,14 +418,13 @@ class BoatClass extends Cube {
   constructor(e: Entity, creator: number) {
     super(e, creator);
     this.color = vec3.fromValues(0.2, 0.1, 0.05);
+    this.renderable.mesh = scaleMesh3(super.mesh(), [5, 0.3, 2.5]);
     this.collider = {
       shape: "AABB",
       solid: true,
       aabb: getAABBFromMesh(this.mesh()),
     };
     this.boat = BoatDef.construct();
-
-    this.renderable.mesh = scaleMesh3(super.mesh(), [5, 0.3, 2.5]);
   }
 
   typeId(): number {
@@ -536,6 +536,7 @@ export class CubeGameState extends GameState {
       // TODO(@darzu): ECS stuff
       registerStepBoats(EM);
       registerUpdateTransforms(EM);
+      registerPhysicsSystems(EM);
 
       // create ship
       {
