@@ -13,7 +13,7 @@ systems DAG?
 
 import { Inputs } from "./inputs.js";
 
-interface Entity {
+export interface Entity {
   readonly id: number;
 }
 
@@ -67,14 +67,24 @@ export class EntityManager {
     this.maxId = max;
   }
 
-  public newEntity(): number {
+  // TODO(@darzu): dont return the entity!
+  public newEntity(): Entity {
     if (this.nextId === -1)
       throw `EntityManager hasn't been given an id range!`;
     if (this.nextId >= this.maxId)
       throw `EntityManager has exceeded its id range!`;
     const e = { id: this.nextId++ };
     this.entities[e.id] = e;
-    return e.id;
+    return e;
+  }
+
+  public registerEntity(id: number): Entity {
+    if (id in this.entities) throw `EntityManager already has id ${id}!`;
+    if (this.nextId <= id && id < this.maxId)
+      throw `EntityManager cannot register foreign ids inside its local range; ${this.nextId} <= ${id} && ${id} < ${this.maxId}!`;
+    const e = { id: id };
+    this.entities[e.id] = e;
+    return e;
   }
 
   public addComponent<N extends string, P>(
@@ -115,6 +125,14 @@ export class EntityManager {
     for (let e of this.entities) {
       if (cs.every((c) => c.name in e)) {
         res.push(e as HasMany<CS>);
+      } else {
+        // TODO(@darzu): easier way to help identify these errors?
+        // console.log(
+        //   `${e.id} is missing ${cs
+        //     .filter((c) => !(c.name in e))
+        //     .map((c) => c.name)
+        //     .join(".")}`
+        // );
       }
     }
     return res;

@@ -1,6 +1,11 @@
-import { DefineComponent, EM, EntityManager } from "../entity-manager.js";
+import {
+  DefineComponent,
+  EM,
+  EntityManager,
+  TimeDef,
+} from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
-import { Motion } from "../phys_motion.js";
+import { Motion, MotionDef } from "../phys_motion.js";
 
 export interface Boat {
   speed: number;
@@ -16,7 +21,7 @@ export const BoatDef = DefineComponent("boat", () => {
   };
 });
 
-export function stepBoats(
+function stepBoats(
   boats: { boat: Boat; motion: Motion }[],
   { time }: { time: { dt: number } }
 ) {
@@ -35,4 +40,8 @@ export function stepBoats(
       o.boat.wheelDir
     );
   }
+}
+
+export function registerStepBoats(em: EntityManager) {
+  EM.registerSystem([BoatDef, MotionDef], [TimeDef], stepBoats);
 }

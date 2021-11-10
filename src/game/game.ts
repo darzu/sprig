@@ -1,4 +1,4 @@
-import { TimeDef, EM } from "../entity-manager.js";
+import { TimeDef, EM, Entity } from "../entity-manager.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { importObj, HAT_OBJ, isParseError } from "../import_obj.js";
 import { Inputs } from "../inputs.js";
@@ -11,6 +11,7 @@ import {
   MeshHandle,
 } from "../mesh-pool.js";
 import { Motion, copyMotionProps, MotionDef } from "../phys_motion.js";
+import { registerUpdateTransforms } from "../renderer.js";
 import { Renderer } from "../render_webgpu.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import {
@@ -21,7 +22,7 @@ import {
   GameState,
 } from "../state.js";
 import { never } from "../util.js";
-import { Boat, BoatDef, stepBoats } from "./boat.js";
+import { Boat, BoatDef, registerStepBoats } from "./boat.js";
 import { PlayerProps, createPlayerProps, stepPlayer } from "./player.js";
 
 const INTERACTION_DISTANCE = 5;
@@ -79,18 +80,15 @@ const LIGHT_BLUE = vec3.fromValues(0.05, 0.05, 0.2);
 class Plane extends GameObject {
   color: vec3;
 
-  constructor(id: number, creator: number) {
-    super(id, creator);
+  constructor(e: Entity, creator: number) {
+    super(e, creator);
     this.color = vec3.clone(DARK_GRAY);
     this.collider = {
       shape: "AABB",
       solid: true,
       aabb: PLANE_AABB,
     };
-  }
-
-  mesh(): Mesh {
-    return PLANE_MESH;
+    this.renderable.mesh = PLANE_MESH;
   }
 
   typeId(): number {
@@ -184,35 +182,28 @@ const CUBE_AABB = getAABBFromMesh(CUBE_MESH);
 abstract class Cube extends GameObject {
   color: vec3;
 
-  constructor(id: number, creator: number) {
-    super(id, creator);
+  constructor(e: Entity, creator: number) {
+    super(e, creator);
     this.color = vec3.fromValues(0.2, 0, 0);
     this.collider = {
       shape: "AABB",
       solid: true,
       aabb: CUBE_AABB,
     };
-  }
-
-  mesh(): Mesh {
-    return CUBE_MESH;
+    this.renderable.mesh = CUBE_MESH;
   }
 }
 
 class Bullet extends Cube {
-  constructor(id: number, creator: number) {
-    super(id, creator);
+  constructor(e: Entity, creator: number) {
+    super(e, creator);
     this.color = vec3.fromValues(0.3, 0.3, 0.8);
     this.collider = {
       shape: "AABB",
       solid: false,
       aabb: getAABBFromMesh(this.mesh()),
     };
-  }
-
-  mesh(): Mesh {
-    // TODO(@darzu): this should be computed only once.
-    return scaleMesh(super.mesh(), 0.3);
+    this.renderable.mesh = scaleMesh(super.mesh(), 0.3);
   }
 
   typeId(): number {
@@ -258,24 +249,22 @@ class Bullet extends Cube {
 let _hatMesh: Mesh | null = null;
 
 class Hat extends Cube {
-  constructor(id: number, creator: number) {
-    super(id, creator);
+  constructor(e: Entity, creator: number) {
+    super(e, creator);
     this.color = vec3.fromValues(Math.random(), Math.random(), Math.random());
     this.collider = {
       shape: "AABB",
       solid: false,
       aabb: getAABBFromMesh(this.mesh()),
     };
-  }
 
-  mesh(): Mesh {
     if (!_hatMesh) {
       const hatRaw = importObj(HAT_OBJ);
       if (isParseError(hatRaw)) throw hatRaw;
       const hat = unshareProvokingVertices(hatRaw);
       _hatMesh = hat;
     }
-    return _hatMesh;
+    this.renderable.mesh = _hatMesh;
   }
 
   typeId(): number {
@@ -308,8 +297,8 @@ class Player extends Cube {
   interactingWith: number;
   dropping: boolean;
 
-  constructor(id: number, creator: number) {
-    super(id, creator);
+  constructor(e: Entity, creator: number) {
+    super(e, creator);
     this.color = vec3.fromValues(0, 0.2, 0);
     this.hat = 0;
     this.interactingWith = 0;
@@ -373,8 +362,8 @@ class Player extends Cube {
 }
 
 class Ship extends Cube {
-  constructor(id: number, creator: number) {
-    super(id, creator);
+  constructor(e: Entity, creator: number) {
+    super(e, creator);
     this.color = vec3.fromValues(0.3, 0.3, 0.1);
     // TODO(@darzu): we need colliders for this ship
     this.collider = {
@@ -385,6 +374,8 @@ class Ship extends Cube {
         max: [0, 0, 0],
       },
     };
+
+    this.renderable.mesh = _GAME_ASSETS?.ship!;
   }
 
   typeId(): number {
@@ -418,17 +409,13 @@ class Ship extends Cube {
   deserializeDynamic(buffer: Deserializer) {
     this.deserializeFull(buffer);
   }
-
-  mesh(): Mesh {
-    return _GAME_ASSETS?.ship!;
-  }
 }
 
 class BoatClass extends Cube {
   public boat: Boat;
 
-  constructor(id: number, creator: number) {
-    super(id, creator);
+  constructor(e: Entity, creator: number) {
+    super(e, creator);
     this.color = vec3.fromValues(0.2, 0.1, 0.05);
     this.collider = {
       shape: "AABB",
@@ -436,11 +423,8 @@ class BoatClass extends Cube {
       aabb: getAABBFromMesh(this.mesh()),
     };
     this.boat = BoatDef.construct();
-  }
 
-  mesh(): Mesh {
-    // TODO(@darzu): this should be computed only once.
-    return scaleMesh3(super.mesh(), [5, 0.3, 2.5]);
+    this.renderable.mesh = scaleMesh3(super.mesh(), [5, 0.3, 2.5]);
   }
 
   typeId(): number {
@@ -503,10 +487,10 @@ export class CubeGameState extends GameState {
 
     // create local mesh prototypes
     let bulletProtoObj = this.renderer.addObject(
-      new Bullet(this.newId(), this.me)
+      new Bullet(EM.newEntity(), this.me)
     );
-    bulletProtoObj.obj.transform = new Float32Array(16); // zero the transforms so it doesn't render
-    bulletProtoObj.handle.transform = new Float32Array(16);
+    mat4.copy(bulletProtoObj.obj.transform, new Float32Array(16)); // zero the transforms so it doesn't render
+    mat4.copy(bulletProtoObj.handle.transform, new Float32Array(16));
     this.bulletProto = bulletProtoObj.handle;
 
     if (createObjects) {
@@ -515,14 +499,13 @@ export class CubeGameState extends GameState {
       const NUM_PLANES_Z = 10;
       for (let x = 0; x < NUM_PLANES_X; x++) {
         for (let z = 0; z < NUM_PLANES_Z; z++) {
-          let plane = new Plane(this.newId(), this.me);
+          let plane = new Plane(EM.newEntity(), this.me);
           const xPos = (x - NUM_PLANES_X / 2) * 20 + 10;
           const zPos = (z - NUM_PLANES_Z / 2) * 20;
           const parity = !!((x + z) % 2);
-          plane.motion.location = vec3.fromValues(
-            xPos,
-            x + z - (NUM_PLANES_X + NUM_PLANES_Z),
-            zPos
+          vec3.copy(
+            plane.motion.location,
+            vec3.fromValues(xPos, x + z - (NUM_PLANES_X + NUM_PLANES_Z), zPos)
           );
           // plane.motion.location = vec3.fromValues(xPos + 10, -3, 12 + zPos);
           plane.color = parity ? LIGHT_BLUE : DARK_BLUE;
@@ -533,7 +516,7 @@ export class CubeGameState extends GameState {
       // create boat(s)
       const BOAT_COUNT = 4;
       for (let i = 0; i < BOAT_COUNT; i++) {
-        const boat = new BoatClass(this.newId(), this.me);
+        const boat = new BoatClass(EM.newEntity(), this.me);
         boat.motion.location[1] = -9;
         boat.motion.location[0] = (Math.random() - 0.5) * 20 - 10;
         boat.motion.location[2] = (Math.random() - 0.5) * 20 - 20;
@@ -543,18 +526,20 @@ export class CubeGameState extends GameState {
 
         // TODO(@darzu): ECS hack
         console.log("create ent");
-        const id = EM.newEntity();
-        let boatC = EM.addComponent(id, BoatDef);
+        const e = EM.newEntity();
+        let boatC = EM.addComponent(e.id, BoatDef);
         Object.assign(boatC, boat.boat);
-        let boatM = EM.addComponent(id, MotionDef);
+        let boatM = EM.addComponent(e.id, MotionDef);
         Object.assign(boatM, boat.motion);
       }
+
       // TODO(@darzu): ECS stuff
-      EM.registerSystem([BoatDef, MotionDef], [TimeDef], stepBoats);
+      registerStepBoats(EM);
+      registerUpdateTransforms(EM);
 
       // create ship
       {
-        const ship = new Ship(this.newId(), this.me);
+        const ship = new Ship(EM.newEntity(), this.me);
         ship.motion.location[0] = -40;
         ship.motion.location[1] = -10;
         ship.motion.location[2] = -60;
@@ -569,7 +554,7 @@ export class CubeGameState extends GameState {
       // create stack of boxes
       const BOX_STACK_COUNT = 10;
       for (let i = 0; i < BOX_STACK_COUNT; i++) {
-        let b = new Hat(this.newId(), this.me);
+        let b = new Hat(EM.newEntity(), this.me);
         // b.motion.location = vec3.fromValues(0, 5 + i * 2, -2);
         b.motion.location = vec3.fromValues(
           Math.random() * -10 + 10 - 5,
@@ -594,26 +579,28 @@ export class CubeGameState extends GameState {
   }
 
   playerObject(playerId: number): GameObject {
-    let p = new Player(this.newId(), this.me);
+    let p = new Player(EM.newEntity(), this.me);
     p.authority = playerId;
     p.authority_seq = 1;
     return p;
   }
 
   objectOfType(typeId: ObjectType, id: number, creator: number): GameObject {
+    const e = EM.registerEntity(id);
+
     switch (typeId) {
       case ObjectType.Plane:
-        return new Plane(id, creator);
+        return new Plane(e, creator);
       case ObjectType.Bullet:
-        return new Bullet(id, creator);
+        return new Bullet(e, creator);
       case ObjectType.Player:
-        return new Player(id, creator);
+        return new Player(e, creator);
       case ObjectType.Boat:
-        return new BoatClass(id, creator);
+        return new BoatClass(e, creator);
       case ObjectType.Hat:
-        return new Hat(id, creator);
+        return new Hat(e, creator);
       case ObjectType.Ship:
-        return new Ship(id, creator);
+        return new Ship(e, creator);
       default:
         return never(typeId, `No such object type ${typeId}`);
     }
@@ -637,7 +624,8 @@ export class CubeGameState extends GameState {
   }
 
   spawnBullet(motion: Motion) {
-    let bullet = new Bullet(this.newId(), this.me);
+    const e = EM.newEntity();
+    let bullet = new Bullet(e, this.me);
     copyMotionProps(bullet.motion, motion);
     vec3.copy(bullet.motion.linearVelocity, motion.linearVelocity);
     vec3.copy(bullet.motion.angularVelocity, motion.angularVelocity);

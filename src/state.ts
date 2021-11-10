@@ -3,10 +3,24 @@ import { Serializer, Deserializer } from "./serialize.js";
 import { Mesh, MeshHandle } from "./mesh-pool.js";
 import { Renderer } from "./render_webgpu.js";
 import { AABB, checkCollisions, copyAABB } from "./phys_broadphase.js";
-import { copyMotionProps, createMotionProps, Motion } from "./phys_motion.js";
+import {
+  copyMotionProps,
+  createMotionProps,
+  Motion,
+  MotionDef,
+} from "./phys_motion.js";
 import { CollidesWith, ReboundData, IdPair, stepPhysics } from "./phys.js";
 import { Inputs } from "./inputs.js";
 import { Collider } from "./collider.js";
+import { EM, Entity } from "./entity-manager.js";
+import {
+  MotionErrorDef,
+  Parent,
+  ParentDef,
+  Renderable,
+  RenderableDef,
+  TransformDef,
+} from "./renderer.js";
 
 const SMOOTH = true;
 const ERROR_SMOOTHING_FACTOR = 0.9 ** (60 / 1000);
@@ -43,51 +57,69 @@ For both of these, should use typescript's getters and setters to make sure
 everything gets updated in the right place.
  */
 export abstract class GameObject {
-  id: number;
+  entity: Entity;
+
   creator: number;
 
   authority: number;
   authority_seq: number;
   snap_seq: number;
-  location_error: vec3;
-  rotation_error: quat;
   inWorld: boolean = true;
   deleted: boolean = false;
-  parent: number = 0;
 
   // physics
-  motion: Motion;
   lastMotion?: Motion;
   collider: Collider;
 
-  // derivative state:
-  // NOTE: it kinda sucks to have duplicate sources of truth on loc & rot,
-  // but it's more important that we don't unnecessarily recompute this transform
+  // ECS controlled stuff below this
+  get id() {
+    return this.entity.id;
+  }
+  motion: Motion;
+  location_error: vec3;
+  rotation_error: quat;
   transform: mat4;
+  _parent: Parent;
+  get parent() {
+    return this._parent.id;
+  }
+  set parent(id: number) {
+    this._parent.id = id;
+  }
+  renderable: Renderable;
+  mesh() {
+    return this.renderable.mesh;
+  }
 
-  constructor(id: number, creator: number) {
-    this.id = id;
+  constructor(e: Entity, creator: number) {
     this.creator = creator;
-    this.motion = createMotionProps({
-      location: vec3.fromValues(0, 0, 0),
-      rotation: quat.identity(quat.create()),
-      linearVelocity: vec3.fromValues(0, 0, 0),
-      angularVelocity: vec3.fromValues(0, 0, 0),
-    });
+
+    this.entity = e;
+
+    this.motion = EM.addComponent(this.id, MotionDef);
+
+    const err = EM.addComponent(this.id, MotionErrorDef);
+    this.location_error = err.location_error;
+    this.rotation_error = err.rotation_error;
+
+    this.transform = EM.addComponent(this.id, TransformDef);
+
+    this._parent = EM.addComponent(this.id, ParentDef);
+
+    this.renderable = EM.addComponent(this.id, RenderableDef);
+
+    // TODO(@darzu): ECS this shit
     this.lastMotion = undefined;
     this.authority = creator;
     this.authority_seq = 0;
     this.snap_seq = -1;
-    this.location_error = vec3.fromValues(0, 0, 0);
-    this.rotation_error = quat.create();
-    this.transform = mat4.create();
     this.collider = { shape: "Empty", solid: false };
   }
 
   snapLocation(location: vec3) {
     // TODO: this is a hack to see if we're setting our location for the first time
     if (vec3.length(this.motion.location) === 0) {
-      this.motion.location = vec3.copy(this.motion.location, location);
+      vec3.copy(this.motion.location, location);
       return;
     }
     let current_location = vec3.add(
@@ -101,8 +133,8 @@ export abstract class GameObject {
     // location error actually lives in this.motion.location. So we copy it over
     // to this.location_error, then copy the new location into this.motion.location.
 
-    this.location_error = vec3.copy(this.location_error, location_error);
-    this.motion.location = vec3.copy(this.motion.location, location);
+    vec3.copy(this.location_error, location_error);
+    vec3.copy(this.motion.location, location);
   }
 
   snapRotation(rotation: quat) {
@@ -179,8 +211,6 @@ export abstract class GameObject {
   abstract deserializeFull(buf: Deserializer): void;
 
   abstract deserializeDynamic(buf: Deserializer): void;
-
-  abstract mesh(): Mesh;
 
   abstract typeId(): number;
 }
@@ -401,36 +431,5 @@ export abstract class GameState {
 
     // deal with any collisions
     this.handleCollisions();
-
-    // UPDATE DERIVED STATE:
-    for (let o of objs) {
-      // update transform based on new rotations and positions
-      if (o.parent > 0) {
-        mat4.fromRotationTranslation(
-          o.transform,
-          o.motion.rotation,
-          o.motion.location
-        );
-        mat4.mul(
-          o.transform,
-          this._objects.get(o.parent)!.transform,
-          o.transform
-        );
-      } else if (SMOOTH) {
-        quat.mul(working_quat, o.motion.rotation, o.rotation_error);
-        quat.normalize(working_quat, working_quat);
-        mat4.fromRotationTranslation(
-          o.transform,
-          working_quat,
-          vec3.add(working_vec3, o.motion.location, o.location_error)
-        );
-      } else {
-        mat4.fromRotationTranslation(
-          o.transform,
-          o.motion.rotation,
-          o.motion.location
-        );
-      }
-    }
   }
 }
