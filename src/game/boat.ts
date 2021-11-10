@@ -1,9 +1,4 @@
-import {
-  DefineComponent,
-  EM,
-  EntityManager,
-  TimeDef,
-} from "../entity-manager.js";
+import { EM, EntityManager, TimeDef } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { Motion, MotionDef } from "../phys_motion.js";
 
@@ -13,7 +8,7 @@ export interface Boat {
   wheelDir: number;
 }
 
-export const BoatDef = DefineComponent("boat", () => {
+export const BoatDef = EM.defineComponent("boat", () => {
   return {
     speed: 0,
     wheelSpeed: 0,

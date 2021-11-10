@@ -5,10 +5,10 @@ import { clamp } from "./math.js";
 import { CollidesWith, idPair, IdPair, ContactData, __step } from "./phys.js";
 import { AABB } from "./phys_broadphase.js";
 import { vec3Dbg } from "./utils-3d.js";
-import { DefineComponent } from "./entity-manager.js";
+import { EM } from "./entity-manager.js";
 import { Component } from "./renderer.js";
 
-export const MotionDef = DefineComponent("motion", () => ({
+export const MotionDef = EM.defineComponent("motion", () => ({
   linearVelocity: vec3.create(),
   angularVelocity: vec3.create(),
   location: vec3.create(),

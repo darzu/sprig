@@ -1,8 +1,4 @@
-import {
-  ComponentDef,
-  DefineComponent,
-  EntityManager,
-} from "./entity-manager.js";
+import { ComponentDef, EntityManager, EM } from "./entity-manager.js";
 import { mat4, quat, vec3 } from "./gl-matrix.js";
 import { Mesh } from "./mesh-pool.js";
 import { Motion, MotionDef } from "./phys_motion.js";
@@ -12,12 +8,12 @@ export type Component<DEF> = DEF extends ComponentDef<any, infer P> ? P : never;
 
 const SMOOTH = true;
 
-export const TransformDef = DefineComponent("transform", () => {
+export const TransformDef = EM.defineComponent("transform", () => {
   return mat4.create();
 });
 export type Transform = mat4;
 
-export const MotionErrorDef = DefineComponent("motionError", () => {
+export const MotionErrorDef = EM.defineComponent("motionError", () => {
   return {
     rotation_error: quat.create(),
     location_error: vec3.create(),
@@ -25,12 +21,12 @@ export const MotionErrorDef = DefineComponent("motionError", () => {
 });
 export type MotionError = Component<typeof MotionErrorDef>;
 
-export const ParentDef = DefineComponent("parent", () => {
+export const ParentDef = EM.defineComponent("parent", () => {
   return { id: 0 };
 });
 export type Parent = Component<typeof ParentDef>;
 
-export const RenderableDef = DefineComponent("renderable", () => {
+export const RenderableDef = EM.defineComponent("renderable", () => {
   return {
     mesh: {
       pos: [],
