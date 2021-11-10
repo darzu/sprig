@@ -38,3 +38,8 @@ export function isString(val: any): val is string {
   }
   return hash;
 };
+declare global {
+  interface String {
+    hashCode(): number;
+  }
+}
