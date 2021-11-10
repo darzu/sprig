@@ -6,12 +6,7 @@ import { CollidesWith, idPair, IdPair, ContactData, __step } from "./phys.js";
 import { AABB } from "./phys_broadphase.js";
 import { vec3Dbg } from "./utils-3d.js";
 import { DefineComponent } from "./entity-manager.js";
-export interface Motion {
-  linearVelocity: vec3;
-  angularVelocity: vec3;
-  location: vec3;
-  rotation: quat;
-}
+import { Component } from "./renderer.js";
 
 export const MotionDef = DefineComponent("motion", () => ({
   linearVelocity: vec3.create(),
@@ -19,6 +14,7 @@ export const MotionDef = DefineComponent("motion", () => ({
   location: vec3.create(),
   rotation: quat.create(),
 }));
+export type Motion = Component<typeof MotionDef>;
 
 export function copyMotionProps(dest: Motion, src: Partial<Motion>): Motion {
   if (src.location) vec3.copy(dest.location, src.location);
