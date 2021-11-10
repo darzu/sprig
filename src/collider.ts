@@ -1,4 +1,4 @@
-import { DefineComponent } from "./entity-manager.js";
+import { EM } from "./entity-manager.js";
 import { vec3 } from "./gl-matrix.js";
 import { AABB } from "./phys_broadphase.js";
 import { Component } from "./renderer.js";
@@ -58,7 +58,7 @@ export type Collider =
   | CapsuleCollider
   | UnionCollider;
 
-export const ColliderDef = DefineComponent("collider", () => {
+export const ColliderDef = EM.defineComponent("collider", () => {
   return {
     shape: "Empty",
     solid: false,

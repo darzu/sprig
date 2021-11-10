@@ -1,11 +1,5 @@
 import { Collider, ColliderDef } from "./collider.js";
-import {
-  ComponentDef,
-  DefineComponent,
-  EM,
-  EntityManager,
-  TimeDef,
-} from "./entity-manager.js";
+import { ComponentDef, EM, EntityManager, TimeDef } from "./entity-manager.js";
 import { _playerId } from "./game/game.js";
 import { vec3 } from "./gl-matrix.js";
 import {
@@ -36,7 +30,7 @@ import {
 } from "./phys_motion.js";
 import { Component } from "./renderer.js";
 
-export const PhysicsResultsDef = DefineComponent("physicsResults", () => {
+export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {
   return {
     collidesWith: new Map<number, number[]>() as CollidesWith,
     reboundData: new Map<IdPair, ReboundData>(),
@@ -45,7 +39,7 @@ export const PhysicsResultsDef = DefineComponent("physicsResults", () => {
 });
 export type PhysicsResults = Component<typeof PhysicsResultsDef>;
 
-export const PhysicsStateDef = DefineComponent("_phys", () => {
+export const PhysicsStateDef = EM.defineComponent("_phys", () => {
   return {
     lastMotion: MotionDef.construct(),
     init: false,
