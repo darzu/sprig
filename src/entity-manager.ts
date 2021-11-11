@@ -11,6 +11,7 @@ systems DAG?
 
 */
 
+import { Component } from "./renderer.js";
 import { Serializer, Deserializer } from "./serialize.js";
 import { hashCode } from "./util.js";
 
@@ -32,12 +33,12 @@ type Has<D> = D extends ComponentDef<infer N, infer P>
 type HasMany<CS extends ComponentDef[]> = Entity &
   Intersect<{ [P in keyof CS]: Has<CS[P]> }>;
 type Entities<CS extends ComponentDef[]> = HasMany<CS>[];
-type SystemFN<CS extends ComponentDef[], RS extends ComponentDef[]> = (
-  es: Entities<CS>,
+type SystemFN<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = (
+  es: CS extends ComponentDef[] ? Entities<CS> : [],
   resources: HasMany<RS>
 ) => void;
 
-type System<CS extends ComponentDef[], RS extends ComponentDef[]> = {
+type System<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = {
   cs: CS;
   rs: RS;
   callback: SystemFN<CS, RS>;
@@ -50,7 +51,7 @@ type System<CS extends ComponentDef[], RS extends ComponentDef[]> = {
 
 export class EntityManager {
   entities: Entity[] = [{ id: 0 }];
-  systems: System<any, any>[] = [];
+  systems: System<any[] | null, any[]>[] = [];
   components: Map<number, ComponentDef<any, any>> = new Map();
   serializers: Map<
     number,
@@ -180,6 +181,7 @@ export class EntityManager {
   }
 
   // TODO(@darzu): should this be public??
+  // TODO(@darzu): rename to findSingletonComponent
   public findSingletonEntity<C extends ComponentDef>(c: C): Entity & Has<C> {
     const e = this.entities[0];
     if (c.name in e) {
@@ -203,8 +205,11 @@ export class EntityManager {
     return e as HasMany<CS>;
   }
 
-  public filterEntities<CS extends ComponentDef[]>(cs: [...CS]): Entities<CS> {
+  public filterEntities<CS extends ComponentDef[]>(
+    cs: [...CS] | null
+  ): Entities<CS> {
     const res: Entities<CS> = [];
+    if (cs === null) return res;
     for (let e of this.entities) {
       if (cs.every((c) => c.name in e)) {
         res.push(e as HasMany<CS>);
@@ -225,7 +230,17 @@ export class EntityManager {
     cs: [...CS],
     rs: [...RS],
     callback: SystemFN<CS, RS>
-  ) {
+  ): void;
+  public registerSystem<CS extends null, RS extends ComponentDef[]>(
+    cs: CS,
+    rs: [...RS],
+    callback: SystemFN<CS, RS>
+  ): void;
+  public registerSystem<CS extends ComponentDef[], RS extends ComponentDef[]>(
+    cs: [...CS] | null,
+    rs: [...RS],
+    callback: SystemFN<CS, RS>
+  ): void {
     this.systems.push({
       cs,
       rs,
@@ -252,3 +267,4 @@ export const EM = new EntityManager();
 // TODO(@darzu):  move these elsewher
 
 export const TimeDef = EM.defineComponent("time", () => ({ dt: 0 }));
+export type Time = Component<typeof TimeDef>;

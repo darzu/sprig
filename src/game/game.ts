@@ -1,8 +1,8 @@
 import { TimeDef, EM, Entity } from "../entity-manager.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { importObj, HAT_OBJ, isParseError } from "../import_obj.js";
-import { Inputs } from "../inputs.js";
-import { CameraProps, _GAME_ASSETS } from "../main.js";
+import { InputsDef } from "../inputs.js";
+import { _GAME_ASSETS } from "../main.js";
 import { jitter } from "../math.js";
 import {
   unshareProvokingVertices,
@@ -12,7 +12,7 @@ import {
 } from "../mesh-pool.js";
 import { registerPhysicsSystems } from "../phys_esc.js";
 import { Motion, copyMotionProps, MotionDef } from "../phys_motion.js";
-import { registerUpdateTransforms } from "../renderer.js";
+import { registerRenderer, registerUpdateTransforms } from "../renderer.js";
 import { Renderer } from "../render_webgpu.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import {
@@ -24,10 +24,13 @@ import {
 } from "../state.js";
 import { never } from "../util.js";
 import { Boat, BoatDef, registerStepBoats } from "./boat.js";
-import { PlayerProps, createPlayerProps, stepPlayer } from "./player.js";
-
-const INTERACTION_DISTANCE = 5;
-const INTERACTION_ANGLE = Math.PI / 6;
+import {
+  CameraDef,
+  CameraProps,
+  PlayerEnt,
+  PlayerEntDef,
+  registerStepPlayers,
+} from "./player.js";
 
 enum ObjectType {
   Plane,
@@ -195,7 +198,7 @@ abstract class Cube extends GameObject {
   }
 }
 
-class Bullet extends Cube {
+export class Bullet extends Cube {
   constructor(e: Entity, creator: number) {
     super(e, creator);
     this.color = vec3.fromValues(0.3, 0.3, 0.8);
@@ -249,7 +252,9 @@ class Bullet extends Cube {
 
 let _hatMesh: Mesh | null = null;
 
-class Hat extends Cube {
+export const HatDef = EM.defineComponent("hat", () => true);
+
+export class HatClass extends Cube {
   constructor(e: Entity, creator: number) {
     super(e, creator);
     this.color = vec3.fromValues(Math.random(), Math.random(), Math.random());
@@ -258,6 +263,8 @@ class Hat extends Cube {
       solid: false,
       aabb: getAABBFromMesh(this.mesh()),
     };
+
+    EM.addComponent(e.id, HatDef);
 
     if (!_hatMesh) {
       const hatRaw = importObj(HAT_OBJ);
@@ -292,19 +299,29 @@ class Hat extends Cube {
   deserializeDynamic(_buffer: Deserializer) {}
 }
 
-class Player extends Cube {
-  player: PlayerProps;
+export class PlayerClass extends Cube {
   hat: number;
-  interactingWith: number;
-  dropping: boolean;
+
+  // ECS shims:
+  _player: PlayerEnt;
+
+  get player() {
+    return this._player;
+  }
+  get interactingWith() {
+    return this._player.interactingWith;
+  }
+  get dropping() {
+    return this._player.dropping;
+  }
 
   constructor(e: Entity, creator: number) {
     super(e, creator);
     this.color = vec3.fromValues(0, 0.2, 0);
     this.hat = 0;
-    this.interactingWith = 0;
-    this.dropping = false;
-    this.player = createPlayerProps();
+
+    const playerEnt = EM.addComponent(e.id, PlayerEntDef);
+    this._player = playerEnt;
   }
 
   syncPriority(_firstSync: boolean): number {
@@ -464,25 +481,29 @@ class BoatClass extends Cube {
 export let _playerId: number = -1;
 
 export class CubeGameState extends GameState {
-  players: Record<number, Player>;
-  camera: CameraProps;
+  players: Record<number, PlayerClass>;
 
   bulletProto: MeshHandle;
+
+  // ECS:
+  camera: CameraProps;
 
   constructor(renderer: Renderer, createObjects: boolean = true) {
     super(renderer);
 
     // TODO(@darzu): can we do without this lame javascript-ism?
-    this.spawnBullet = this.spawnBullet.bind(this);
+    // this.spawnBullet = this.spawnBullet.bind(this);
 
     this.me = 0;
     let cameraRotation = quat.identity(quat.create());
     quat.rotateX(cameraRotation, cameraRotation, -Math.PI / 8);
     let cameraLocation = vec3.fromValues(0, 0, 10);
-    this.camera = {
-      rotation: cameraRotation,
-      location: cameraLocation,
-    };
+
+    // ECS:
+    this.camera = EM.addSingletonComponent(CameraDef);
+    this.camera.rotation = cameraRotation;
+    this.camera.location = cameraLocation;
+
     this.players = {};
 
     // create local mesh prototypes
@@ -535,8 +556,11 @@ export class CubeGameState extends GameState {
 
       // TODO(@darzu): ECS stuff
       registerStepBoats(EM);
-      registerUpdateTransforms(EM);
+      // TODO(@darzu): ECS
+      registerStepPlayers(EM);
       registerPhysicsSystems(EM);
+      registerUpdateTransforms(EM);
+      registerRenderer(EM);
 
       // create ship
       {
@@ -555,7 +579,7 @@ export class CubeGameState extends GameState {
       // create stack of boxes
       const BOX_STACK_COUNT = 10;
       for (let i = 0; i < BOX_STACK_COUNT; i++) {
-        let b = new Hat(EM.newEntity(), this.me);
+        let b = new HatClass(EM.newEntity(), this.me);
         // b.motion.location = vec3.fromValues(0, 5 + i * 2, -2);
         b.motion.location = vec3.fromValues(
           Math.random() * -10 + 10 - 5,
@@ -580,7 +604,7 @@ export class CubeGameState extends GameState {
   }
 
   playerObject(playerId: number): GameObject {
-    let p = new Player(EM.newEntity(), this.me);
+    let p = new PlayerClass(EM.newEntity(), this.me);
     p.authority = playerId;
     p.authority_seq = 1;
     return p;
@@ -595,11 +619,11 @@ export class CubeGameState extends GameState {
       case ObjectType.Bullet:
         return new Bullet(e, creator);
       case ObjectType.Player:
-        return new Player(e, creator);
+        return new PlayerClass(e, creator);
       case ObjectType.Boat:
         return new BoatClass(e, creator);
       case ObjectType.Hat:
-        return new Hat(e, creator);
+        return new HatClass(e, creator);
       case ObjectType.Ship:
         return new Ship(e, creator);
       default:
@@ -609,63 +633,21 @@ export class CubeGameState extends GameState {
 
   addObject(obj: GameObject) {
     super.addObject(obj);
-    if (obj instanceof Player) {
+    if (obj instanceof PlayerClass) {
       this.players[obj.authority] = obj;
     }
   }
   addObjectInstance(obj: GameObject, otherMesh: MeshHandle) {
     super.addObjectInstance(obj, otherMesh);
-    if (obj instanceof Player) {
+    if (obj instanceof PlayerClass) {
       this.players[obj.authority] = obj;
     }
   }
 
-  private player() {
-    return this.players[this.me];
-  }
+  stepGame(dt: number) {
+    // TODO(@darzu): this should all be a system
+    const { inputs } = EM.findSingletonEntity(InputsDef);
 
-  spawnBullet(motion: Motion) {
-    const e = EM.newEntity();
-    let bullet = new Bullet(e, this.me);
-    copyMotionProps(bullet.motion, motion);
-    vec3.copy(bullet.motion.linearVelocity, motion.linearVelocity);
-    vec3.copy(bullet.motion.angularVelocity, motion.angularVelocity);
-    this.addObjectInstance(bullet, this.bulletProto);
-  }
-
-  // TODO: this function is very bad. It should probably use an oct-tree or something.
-  getInteractionObject(player: Player): number {
-    let bestDistance = INTERACTION_DISTANCE;
-    let bestObj = 0;
-    for (let obj of this.liveObjects()) {
-      if (obj instanceof Hat && obj.inWorld) {
-        let to = vec3.sub(
-          vec3.create(),
-          obj.motion.location,
-          player.motion.location
-        );
-        let distance = vec3.len(to);
-        if (distance < bestDistance) {
-          let direction = vec3.normalize(to, to);
-          let playerDirection = vec3.fromValues(0, 0, -1);
-          vec3.transformQuat(
-            playerDirection,
-            playerDirection,
-            player.motion.rotation
-          );
-          if (
-            Math.abs(vec3.angle(direction, playerDirection)) < INTERACTION_ANGLE
-          ) {
-            bestDistance = distance;
-            bestObj = obj.id;
-          }
-        }
-      }
-    }
-    return bestObj;
-  }
-
-  stepGame(dt: number, inputs: Inputs) {
     // check render mode
     if (inputs.keyClicks["1"]) {
       this.renderer.wireMode = "normal";
@@ -684,34 +666,7 @@ export class CubeGameState extends GameState {
     const { time } = EM.findSingletonEntity(TimeDef);
     time.dt = dt;
 
-    // move boats
-    // const boats = this.liveObjects().filter(
-    //   (o) => o instanceof BoatClass && o.authority === this.me
-    // ) as BoatClass[];
-    // stepBoats(boats, { time: { dt: dt } });
     EM.callSystems();
-
-    // TODO(@darzu): IMPLEMENT
-    // move player(s)
-    const players = this.liveObjects().filter(
-      (o) => o instanceof Player && o.authority === this.me
-    ) as Player[];
-    //console.log(`Stepping ${players.length} players`);
-
-    for (let player of players) {
-      let interactionObject = this.getInteractionObject(player);
-      if (interactionObject > 0) {
-        console.log(`Interaction object is ${interactionObject}`);
-      }
-      stepPlayer(
-        player,
-        interactionObject,
-        dt,
-        inputs,
-        this.camera,
-        this.spawnBullet
-      );
-    }
   }
 
   handleCollisions() {
@@ -734,7 +689,7 @@ export class CubeGameState extends GameState {
           }
           // find players this bullet is colliding with, other than the player who shot the bullet
           let collidingPlayers = collidingObjects.filter(
-            (obj) => obj instanceof Player && obj.authority !== o.creator
+            (obj) => obj instanceof PlayerClass && obj.authority !== o.creator
           );
           for (let player of collidingPlayers) {
             this.recordEvent(EventType.BulletPlayerCollision, [
@@ -744,7 +699,7 @@ export class CubeGameState extends GameState {
           }
         }
       }
-      if (o instanceof Player) {
+      if (o instanceof PlayerClass) {
         if (o.hat === 0 && o.interactingWith > 0) {
           this.recordEvent(EventType.HatGet, [o.id, o.interactingWith]);
         }
@@ -787,7 +742,8 @@ export class CubeGameState extends GameState {
         return this.getObject(event.objects[1])!.inWorld;
       case EventType.HatDrop:
         return (
-          (this.getObject(event.objects[0]) as Player).hat === event.objects[1]
+          (this.getObject(event.objects[0]) as PlayerClass).hat ===
+          event.objects[1]
         );
       default:
         return super.legalEvent(event);
@@ -817,14 +773,14 @@ export class CubeGameState extends GameState {
             // delete all bullet objects in collision
             // TODO: figure out how object deletion should really work
             this.removeObject(obj);
-          } else if (obj && obj instanceof Player) {
+          } else if (obj && obj instanceof PlayerClass) {
             vec3.add(obj.color, obj.color, vec3.fromValues(0.1, 0, 0));
           }
         }
         break;
       case EventType.HatGet: {
-        let player = this.getObject(event.objects[0]) as Player;
-        let hat = this.getObject(event.objects[1]) as Hat;
+        let player = this.getObject(event.objects[0]) as PlayerClass;
+        let hat = this.getObject(event.objects[1]) as HatClass;
         hat.parent = player.id;
         hat.inWorld = false;
         vec3.set(hat.motion.location, 0, 1, 0);
@@ -832,8 +788,8 @@ export class CubeGameState extends GameState {
         break;
       }
       case EventType.HatDrop: {
-        let player = this.getObject(event.objects[0]) as Player;
-        let hat = this.getObject(event.objects[1]) as Hat;
+        let player = this.getObject(event.objects[0]) as PlayerClass;
+        let hat = this.getObject(event.objects[1]) as HatClass;
         hat.inWorld = true;
         hat.parent = 0;
         vec3.copy(hat.motion.location, event.location!);
@@ -843,27 +799,5 @@ export class CubeGameState extends GameState {
       default:
         throw `Bad event type ${event.type} for event ${event.id}`;
     }
-  }
-
-  viewMatrix() {
-    //TODO: this calculation feels like it should be simpler but Doug doesn't
-    //understand quaternions.
-    let viewMatrix = mat4.create();
-    if (this.player()) {
-      mat4.translate(viewMatrix, viewMatrix, this.player().motion.location);
-      mat4.multiply(
-        viewMatrix,
-        viewMatrix,
-        mat4.fromQuat(mat4.create(), this.player().motion.rotation)
-      );
-    }
-    mat4.multiply(
-      viewMatrix,
-      viewMatrix,
-      mat4.fromQuat(mat4.create(), this.camera.rotation)
-    );
-    mat4.translate(viewMatrix, viewMatrix, this.camera.location);
-    mat4.invert(viewMatrix, viewMatrix);
-    return viewMatrix;
   }
 }

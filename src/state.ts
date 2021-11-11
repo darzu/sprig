@@ -10,10 +10,10 @@ import {
   MotionDef,
 } from "./phys_motion.js";
 import { CollidesWith, ReboundData, IdPair } from "./phys.js";
-import { Inputs } from "./inputs.js";
 import { Collider, ColliderDef } from "./collider.js";
 import { EM, Entity } from "./entity-manager.js";
 import {
+  Component,
   MotionErrorDef,
   Parent,
   ParentDef,
@@ -44,6 +44,9 @@ const working_quat = quat.create();
 const identity_quat = quat.create();
 const working_vec3 = vec3.create();
 
+export const InWorldDef = EM.defineComponent("inWorld", () => ({ is: false }));
+export type InWorld = Component<typeof InWorldDef>;
+
 /* TODO: add "versioning" of objects. 
 Right now we have two types of state updates: full and dynamic. 
 A full update is only guaranteed to happen once, on object creation; 
@@ -69,10 +72,16 @@ export abstract class GameObject {
   authority: number;
   authority_seq: number;
   snap_seq: number;
-  inWorld: boolean = true;
   deleted: boolean = false;
 
   // ECS controlled stuff below this
+  _inWorld: InWorld;
+  get inWorld() {
+    return this._inWorld.is;
+  }
+  set inWorld(b) {
+    this._inWorld.is = b;
+  }
   get id() {
     return this.entity.id;
   }
@@ -123,6 +132,9 @@ export abstract class GameObject {
     this._phys = EM.addComponent(this.id, PhysicsStateDef);
 
     this._collider = EM.addComponent(this.id, ColliderDef);
+
+    this._inWorld = EM.addComponent(this.id, InWorldDef);
+    this._inWorld.is = true;
 
     // TODO(@darzu): ECS this shit
     // this.lastMotion = undefined;
@@ -264,13 +276,14 @@ export abstract class GameState {
 
   abstract playerObject(playerId: number): GameObject;
 
-  abstract stepGame(dt: number, inputs: Inputs): void;
+  abstract stepGame(dt: number): void;
 
   abstract handleCollisions(): void;
 
   abstract runEvent(event: GameEvent): void;
 
-  abstract viewMatrix(): mat4;
+  // TODO(@darzu):
+  // abstract viewMatrix(): mat4;
 
   abstract objectOfType(
     typeID: number,
@@ -326,9 +339,10 @@ export abstract class GameState {
     return output;
   }
 
-  renderFrame() {
-    this.renderer.renderFrame(this.viewMatrix());
-  }
+  // TODO(@darzu):
+  // renderFrame() {
+  //   this.renderer.renderFrame(this.viewMatrix());
+  // }
 
   addPlayer(): [number, GameObject] {
     let id = this.nextPlayerId;
@@ -400,8 +414,8 @@ export abstract class GameState {
     return Math.min(...objects.map((o) => o.authority));
   }
 
-  step(dt: number, inputs: Inputs) {
-    this.stepGame(dt, inputs);
+  step(dt: number) {
+    this.stepGame(dt);
 
     const objs = this.sortedObjects();
 

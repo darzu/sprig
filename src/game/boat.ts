@@ -1,12 +1,7 @@
 import { EM, EntityManager, TimeDef } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { Motion, MotionDef } from "../phys_motion.js";
-
-export interface Boat {
-  speed: number;
-  wheelSpeed: number;
-  wheelDir: number;
-}
+import { Component } from "../renderer.js";
 
 export const BoatDef = EM.defineComponent("boat", () => {
   return {
@@ -15,6 +10,7 @@ export const BoatDef = EM.defineComponent("boat", () => {
     wheelDir: 0,
   };
 });
+export type Boat = Component<typeof BoatDef>;
 
 function stepBoats(
   boats: { boat: Boat; motion: Motion }[],
