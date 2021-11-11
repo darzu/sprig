@@ -180,6 +180,7 @@ export class EntityManager {
   }
 
   // TODO(@darzu): should this be public??
+  // TODO(@darzu): rename to findSingletonComponent
   public findSingletonEntity<C extends ComponentDef>(c: C): Entity & Has<C> {
     const e = this.entities[0];
     if (c.name in e) {

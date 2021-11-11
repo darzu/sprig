@@ -1,4 +1,4 @@
-import { ComponentDef, EntityManager, EM } from "./entity-manager.js";
+import { ComponentDef, EntityManager, EM, TimeDef } from "./entity-manager.js";
 import { mat4, quat, vec3 } from "./gl-matrix.js";
 import { Mesh } from "./mesh-pool.js";
 import { Motion, MotionDef } from "./phys_motion.js";
@@ -106,4 +106,20 @@ export function registerUpdateTransforms(em: EntityManager) {
     [],
     updateTransforms
   );
+}
+
+interface RenderableObj {
+  renderable: Renderable;
+  transform: Transform;
+}
+
+function stepRenderer(
+  objs: RenderableObj[],
+  { time }: { time: { dt: number } }
+) {
+  // TODO(@darzu):
+}
+
+export function registerRenderer() {
+  EM.registerSystem([RenderableDef, TransformDef], [TimeDef], stepRenderer);
 }
