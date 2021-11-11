@@ -111,9 +111,9 @@ export class EntityManager {
 
   public deserialize(id: number, componentId: number, buf: Deserializer) {
     const def = this.components.get(componentId);
-    if (!def) throw `Trying to serialize unknown component id ${componentId}`;
+    if (!def) throw `Trying to deserialize unknown component id ${componentId}`;
     if (!this.hasEntity(id)) {
-      this.registerEntity(id);
+      throw `Trying to deserialize component ${def.name} of unknown entity ${id}`;
     }
     let entity = this.findEntity(id, [def]);
     let component;
