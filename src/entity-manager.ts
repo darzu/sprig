@@ -203,7 +203,7 @@ export class EntityManager {
     return e as HasMany<CS>;
   }
 
-  private filterEntities<CS extends ComponentDef[]>(cs: [...CS]): Entities<CS> {
+  public filterEntities<CS extends ComponentDef[]>(cs: [...CS]): Entities<CS> {
     const res: Entities<CS> = [];
     for (let e of this.entities) {
       if (cs.every((c) => c.name in e)) {
