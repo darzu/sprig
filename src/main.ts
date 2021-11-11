@@ -9,22 +9,17 @@ import {
   _enclosedBys,
   _lastCollisionTestTimeMs,
 } from "./phys_broadphase.js";
-import { createInputsReader } from "./inputs.js";
 import { setupObjImportExporter } from "./download.js";
 import { GameAssets, loadAssets } from "./game/assets.js";
 import { CubeGameState } from "./game/game.js";
 import { EM, TimeDef } from "./entity-manager.js";
+import { InputsDef, registerInputsSystem } from "./inputs.js";
 
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
 const MAX_VERTICES = 21844;
 const ENABLE_NET = true;
 const AUTOSTART = true;
-
-export interface CameraProps {
-  rotation: quat;
-  location: vec3;
-}
 
 // ms per network sync (should be the same for all servers)
 const NET_DT = 1000.0 / 20;
@@ -34,6 +29,10 @@ const SIM_DT = 1000.0 / 60;
 
 // TODO(@darzu): very hacky way to pass these around
 export let _GAME_ASSETS: GameAssets | null = null;
+
+// TODO(@darzu): this should be moved into systems and components
+export let _renderer: Renderer;
+export let _gameState: CubeGameState;
 
 export let gameStarted = false;
 async function startGame(host: string | null) {
@@ -97,7 +96,7 @@ async function startGame(host: string | null) {
   }
   if (!rendererInit) throw "Unable to create webgl or webgpu renderer";
   console.log(`Renderer: ${usingWebGPU ? "webGPU" : "webGL"}`);
-  const renderer: Renderer = rendererInit;
+  _renderer = rendererInit;
   let start_of_time = performance.now();
 
   // TODO(@darzu): ECS stuff
@@ -108,8 +107,13 @@ async function startGame(host: string | null) {
   }
   EM.addSingletonComponent(TimeDef);
 
-  let gameState = new CubeGameState(renderer, hosting);
-  let takeInputs = createInputsReader(canvas);
+  _gameState = new CubeGameState(_renderer, hosting);
+
+  // TODO(@darzu): clean up ECS
+  // let takeInputs = createInputsReader(canvas);
+  EM.addSingletonComponent(InputsDef);
+  registerInputsSystem(canvas);
+
   function doLockMouse() {
     if (document.pointerLockElement !== canvas) {
       canvas.requestPointerLock();
@@ -140,7 +144,7 @@ async function startGame(host: string | null) {
     let sim_time = 0;
     while (sim_time_accumulator > SIM_DT) {
       let before_sim = performance.now();
-      gameState.step(SIM_DT, takeInputs());
+      _gameState.step(SIM_DT);
       sim_time_accumulator -= SIM_DT;
       sim_time += performance.now() - before_sim;
     }
@@ -163,7 +167,8 @@ async function startGame(host: string | null) {
     }
 
     // render
-    gameState.renderFrame();
+    // TODO(@darzu):
+    // gameState.renderFrame();
     let jsTime = performance.now() - frame_start_time;
     let frameTime = frame_start_time - previous_frame_time;
     let {
@@ -210,7 +215,7 @@ async function startGame(host: string | null) {
       `fps:${avgFPS.toFixed(1)} ` +
       //`buffers:(r=${reliableBufferSize}/u=${unreliableBufferSize}) ` +
       `dropped:${numDroppedUpdates} ` +
-      `objects:${gameState.numObjects} ` +
+      `objects:${_gameState.numObjects} ` +
       `skew: ${skew.join(",")} ` +
       `ping: ${ping.join(",")} ` +
       `${usingWebGPU ? "WebGPU" : "WebGL"}`;
@@ -225,8 +230,8 @@ async function startGame(host: string | null) {
 
   if (ENABLE_NET) {
     try {
-      net = new Net(gameState, host, (id: string) => {
-        renderer.finishInit(); // TODO(@darzu): debugging
+      net = new Net(_gameState, host, (id: string) => {
+        _renderer.finishInit(); // TODO(@darzu): debugging
         if (hosting) {
           console.log("hello");
           console.log(`Net up and running with id`);
@@ -245,7 +250,7 @@ async function startGame(host: string | null) {
       net = null;
     }
   } else {
-    renderer.finishInit(); // TODO(@darzu): debugging
+    _renderer.finishInit(); // TODO(@darzu): debugging
     frame();
   }
 }

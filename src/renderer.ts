@@ -1,5 +1,18 @@
-import { ComponentDef, EntityManager, EM, TimeDef } from "./entity-manager.js";
+import {
+  ComponentDef,
+  EntityManager,
+  EM,
+  TimeDef,
+  Entity,
+} from "./entity-manager.js";
+import {
+  CameraDef,
+  CameraProps,
+  PlayerEnt,
+  PlayerEntDef,
+} from "./game/player.js";
 import { mat4, quat, vec3 } from "./gl-matrix.js";
+import { _gameState, _renderer } from "./main.js";
 import { Mesh } from "./mesh-pool.js";
 import { Motion, MotionDef } from "./phys_motion.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
@@ -108,6 +121,13 @@ export function registerUpdateTransforms(em: EntityManager) {
   );
 }
 
+export const PlayerViewDef = EM.defineComponent("playerView", () => {
+  return {
+    viewMat: mat4.create(),
+  };
+});
+export type PlayerView = Component<typeof PlayerViewDef>;
+
 interface RenderableObj {
   renderable: Renderable;
   transform: Transform;
@@ -115,11 +135,59 @@ interface RenderableObj {
 
 function stepRenderer(
   objs: RenderableObj[],
-  { time }: { time: { dt: number } }
+  { time, playerView }: { time: { dt: number }; playerView: PlayerView }
 ) {
-  // TODO(@darzu):
+  _renderer.renderFrame(playerView.viewMat);
 }
 
-export function registerRenderer() {
-  EM.registerSystem([RenderableDef, TransformDef], [TimeDef], stepRenderer);
+function updatePlayerView(
+  players: { player: PlayerEnt; motion: Motion }[],
+  resources: { playerView: PlayerView; camera: CameraProps }
+) {
+  const {
+    playerView: { viewMat },
+    camera,
+  } = resources;
+
+  // TODO(@darzu): ECS check authority and me state
+  const mePlayer = players.filter(
+    (p) => p === (_gameState.players[_gameState.me]?.entity as any)
+  )[0];
+
+  //TODO: this calculation feels like it should be simpler but Doug doesn't
+  //understand quaternions.
+  let viewMatrix = viewMat;
+  mat4.identity(viewMatrix);
+  if (mePlayer) {
+    mat4.translate(viewMatrix, viewMatrix, mePlayer.motion.location);
+    mat4.multiply(
+      viewMatrix,
+      viewMatrix,
+      mat4.fromQuat(mat4.create(), mePlayer.motion.rotation)
+    );
+  }
+  mat4.multiply(
+    viewMatrix,
+    viewMatrix,
+    mat4.fromQuat(mat4.create(), camera.rotation)
+  );
+  mat4.translate(viewMatrix, viewMatrix, camera.location);
+  mat4.invert(viewMatrix, viewMatrix);
+  return viewMatrix;
+}
+
+export function registerRenderer(em: EntityManager) {
+  em.addSingletonComponent(PlayerViewDef);
+
+  em.registerSystem(
+    [RenderableDef, TransformDef],
+    [TimeDef, PlayerViewDef],
+    stepRenderer
+  );
+
+  em.registerSystem(
+    [PlayerEntDef, MotionDef],
+    [PlayerViewDef, CameraDef],
+    updatePlayerView
+  );
 }

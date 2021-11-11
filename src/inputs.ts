@@ -1,13 +1,30 @@
-export interface Inputs {
-  mouseX: number;
-  mouseY: number;
-  lclick: boolean;
-  rclick: boolean;
-  keyClicks: { [key: string]: number };
-  keyDowns: { [key: string]: boolean };
+import { EM, EntityManager } from "./entity-manager.js";
+import { Component } from "./renderer.js";
+
+export const InputsDef = EM.defineComponent("inputs", () => {
+  return {
+    mouseX: 0,
+    mouseY: 0,
+    lclick: false,
+    rclick: false,
+    keyClicks: {} as { [key: string]: number },
+    keyDowns: {} as { [key: string]: boolean },
+  };
+});
+
+export type Inputs = Component<typeof InputsDef>;
+
+export function registerInputsSystem(canvas: HTMLCanvasElement): void {
+  // TODO(@darzu): should this creation be part of a one-shot system?
+  const inputsReader = createInputsReader(canvas);
+
+  EM.registerSystem(null, [InputsDef], (_: [], { inputs }) => {
+    // TODO(@darzu): handle pause and menus?
+    Object.assign(inputs, inputsReader());
+  });
 }
 
-export function createInputsReader(canvas: HTMLCanvasElement): () => Inputs {
+function createInputsReader(canvas: HTMLCanvasElement): () => Inputs {
   // track which keys are pressed for use in the game loop
   const keyDowns: { [keycode: string]: boolean } = {};
   const accumulated_keyClicks: { [keycode: string]: number } = {};

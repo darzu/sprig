@@ -1,8 +1,8 @@
 import { TimeDef, EM, Entity } from "../entity-manager.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { importObj, HAT_OBJ, isParseError } from "../import_obj.js";
-import { Inputs } from "../inputs.js";
-import { CameraProps, _GAME_ASSETS } from "../main.js";
+import { InputsDef } from "../inputs.js";
+import { _GAME_ASSETS } from "../main.js";
 import { jitter } from "../math.js";
 import {
   unshareProvokingVertices,
@@ -12,7 +12,7 @@ import {
 } from "../mesh-pool.js";
 import { registerPhysicsSystems } from "../phys_esc.js";
 import { Motion, copyMotionProps, MotionDef } from "../phys_motion.js";
-import { registerUpdateTransforms } from "../renderer.js";
+import { registerRenderer, registerUpdateTransforms } from "../renderer.js";
 import { Renderer } from "../render_webgpu.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import {
@@ -24,7 +24,13 @@ import {
 } from "../state.js";
 import { never } from "../util.js";
 import { Boat, BoatDef, registerStepBoats } from "./boat.js";
-import { PlayerProps, createPlayerProps, stepPlayer } from "./player.js";
+import {
+  CameraDef,
+  CameraProps,
+  PlayerEnt,
+  PlayerEntDef,
+  registerStepPlayers,
+} from "./player.js";
 
 const INTERACTION_DISTANCE = 5;
 const INTERACTION_ANGLE = Math.PI / 6;
@@ -195,7 +201,7 @@ abstract class Cube extends GameObject {
   }
 }
 
-class Bullet extends Cube {
+export class Bullet extends Cube {
   constructor(e: Entity, creator: number) {
     super(e, creator);
     this.color = vec3.fromValues(0.3, 0.3, 0.8);
@@ -293,18 +299,28 @@ class Hat extends Cube {
 }
 
 class Player extends Cube {
-  player: PlayerProps;
   hat: number;
-  interactingWith: number;
-  dropping: boolean;
+
+  // ECS shims:
+  _player: PlayerEnt;
+
+  get player() {
+    return this._player;
+  }
+  get interactingWith() {
+    return this._player.interactingWith;
+  }
+  get dropping() {
+    return this._player.dropping;
+  }
 
   constructor(e: Entity, creator: number) {
     super(e, creator);
     this.color = vec3.fromValues(0, 0.2, 0);
     this.hat = 0;
-    this.interactingWith = 0;
-    this.dropping = false;
-    this.player = createPlayerProps();
+
+    const playerEnt = EM.addComponent(e.id, PlayerEntDef);
+    this._player = playerEnt;
   }
 
   syncPriority(_firstSync: boolean): number {
@@ -465,24 +481,28 @@ export let _playerId: number = -1;
 
 export class CubeGameState extends GameState {
   players: Record<number, Player>;
-  camera: CameraProps;
 
   bulletProto: MeshHandle;
+
+  // ECS:
+  camera: CameraProps;
 
   constructor(renderer: Renderer, createObjects: boolean = true) {
     super(renderer);
 
     // TODO(@darzu): can we do without this lame javascript-ism?
-    this.spawnBullet = this.spawnBullet.bind(this);
+    // this.spawnBullet = this.spawnBullet.bind(this);
 
     this.me = 0;
     let cameraRotation = quat.identity(quat.create());
     quat.rotateX(cameraRotation, cameraRotation, -Math.PI / 8);
     let cameraLocation = vec3.fromValues(0, 0, 10);
-    this.camera = {
-      rotation: cameraRotation,
-      location: cameraLocation,
-    };
+
+    // ECS:
+    this.camera = EM.addSingletonComponent(CameraDef);
+    this.camera.rotation = cameraRotation;
+    this.camera.location = cameraLocation;
+
     this.players = {};
 
     // create local mesh prototypes
@@ -535,8 +555,11 @@ export class CubeGameState extends GameState {
 
       // TODO(@darzu): ECS stuff
       registerStepBoats(EM);
-      registerUpdateTransforms(EM);
+      // TODO(@darzu): ECS
+      registerStepPlayers(EM);
       registerPhysicsSystems(EM);
+      registerUpdateTransforms(EM);
+      registerRenderer(EM);
 
       // create ship
       {
@@ -624,15 +647,6 @@ export class CubeGameState extends GameState {
     return this.players[this.me];
   }
 
-  spawnBullet(motion: Motion) {
-    const e = EM.newEntity();
-    let bullet = new Bullet(e, this.me);
-    copyMotionProps(bullet.motion, motion);
-    vec3.copy(bullet.motion.linearVelocity, motion.linearVelocity);
-    vec3.copy(bullet.motion.angularVelocity, motion.angularVelocity);
-    this.addObjectInstance(bullet, this.bulletProto);
-  }
-
   // TODO: this function is very bad. It should probably use an oct-tree or something.
   getInteractionObject(player: Player): number {
     let bestDistance = INTERACTION_DISTANCE;
@@ -665,7 +679,10 @@ export class CubeGameState extends GameState {
     return bestObj;
   }
 
-  stepGame(dt: number, inputs: Inputs) {
+  stepGame(dt: number) {
+    // TODO(@darzu): this should all be a system
+    const { inputs } = EM.findSingletonEntity(InputsDef);
+
     // check render mode
     if (inputs.keyClicks["1"]) {
       this.renderer.wireMode = "normal";
@@ -703,14 +720,15 @@ export class CubeGameState extends GameState {
       if (interactionObject > 0) {
         console.log(`Interaction object is ${interactionObject}`);
       }
-      stepPlayer(
-        player,
-        interactionObject,
-        dt,
-        inputs,
-        this.camera,
-        this.spawnBullet
-      );
+      // TODO(@darzu): interaction objects
+      // stepPlayer(
+      //   player,
+      //   interactionObject,
+      //   dt,
+      //   inputs,
+      //   this.camera,
+      //   this.spawnBullet
+      // );
     }
   }
 
@@ -845,25 +863,6 @@ export class CubeGameState extends GameState {
     }
   }
 
-  viewMatrix() {
-    //TODO: this calculation feels like it should be simpler but Doug doesn't
-    //understand quaternions.
-    let viewMatrix = mat4.create();
-    if (this.player()) {
-      mat4.translate(viewMatrix, viewMatrix, this.player().motion.location);
-      mat4.multiply(
-        viewMatrix,
-        viewMatrix,
-        mat4.fromQuat(mat4.create(), this.player().motion.rotation)
-      );
-    }
-    mat4.multiply(
-      viewMatrix,
-      viewMatrix,
-      mat4.fromQuat(mat4.create(), this.camera.rotation)
-    );
-    mat4.translate(viewMatrix, viewMatrix, this.camera.location);
-    mat4.invert(viewMatrix, viewMatrix);
-    return viewMatrix;
-  }
+  // viewMatrix() {
+  // }
 }
