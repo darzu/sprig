@@ -13,6 +13,7 @@ import { CollidesWith, ReboundData, IdPair } from "./phys.js";
 import { Collider, ColliderDef } from "./collider.js";
 import { EM, Entity } from "./entity-manager.js";
 import {
+  Component,
   MotionErrorDef,
   Parent,
   ParentDef,
@@ -43,6 +44,9 @@ const working_quat = quat.create();
 const identity_quat = quat.create();
 const working_vec3 = vec3.create();
 
+export const InWorldDef = EM.defineComponent("inWorld", () => ({ is: false }));
+export type InWorld = Component<typeof InWorldDef>;
+
 /* TODO: add "versioning" of objects. 
 Right now we have two types of state updates: full and dynamic. 
 A full update is only guaranteed to happen once, on object creation; 
@@ -68,10 +72,16 @@ export abstract class GameObject {
   authority: number;
   authority_seq: number;
   snap_seq: number;
-  inWorld: boolean = true;
   deleted: boolean = false;
 
   // ECS controlled stuff below this
+  _inWorld: InWorld;
+  get inWorld() {
+    return this._inWorld.is;
+  }
+  set inWorld(b) {
+    this._inWorld.is = b;
+  }
   get id() {
     return this.entity.id;
   }
@@ -122,6 +132,9 @@ export abstract class GameObject {
     this._phys = EM.addComponent(this.id, PhysicsStateDef);
 
     this._collider = EM.addComponent(this.id, ColliderDef);
+
+    this._inWorld = EM.addComponent(this.id, InWorldDef);
+    this._inWorld.is = true;
 
     // TODO(@darzu): ECS this shit
     // this.lastMotion = undefined;

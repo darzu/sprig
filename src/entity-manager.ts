@@ -205,7 +205,7 @@ export class EntityManager {
     return e as HasMany<CS>;
   }
 
-  private filterEntities<CS extends ComponentDef[]>(
+  public filterEntities<CS extends ComponentDef[]>(
     cs: [...CS] | null
   ): Entities<CS> {
     const res: Entities<CS> = [];

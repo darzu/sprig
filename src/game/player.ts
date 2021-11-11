@@ -3,7 +3,7 @@
 import { quat, vec3 } from "../gl-matrix.js";
 import { Inputs, InputsDef } from "../inputs.js";
 import { _gameState } from "../main.js";
-import { GameObject } from "../state.js";
+import { GameObject, InWorld, InWorldDef } from "../state.js";
 import {
   copyMotionProps,
   createMotionProps,
@@ -12,7 +12,7 @@ import {
 } from "../phys_motion.js";
 import { EM, EntityManager, Time, TimeDef } from "../entity-manager.js";
 import { Component } from "../renderer.js";
-import { Bullet } from "./game.js";
+import { Bullet, HatDef } from "./game.js";
 
 export const PlayerEntDef = EM.defineComponent("player", () => {
   return {
@@ -58,15 +58,56 @@ export function registerStepPlayers(em: EntityManager) {
   );
 }
 
+const INTERACTION_DISTANCE = 5;
+const INTERACTION_ANGLE = Math.PI / 6;
+// TODO: this function is very bad. It should probably use an oct-tree or something.
+function getInteractionObject(
+  playerMotion: Motion,
+  hats: { id: number; motion: Motion; inWorld: InWorld }[]
+): number {
+  let bestDistance = INTERACTION_DISTANCE;
+  let bestObj = 0;
+
+  for (let hat of hats) {
+    if (hat.inWorld.is) {
+      let to = vec3.sub(
+        vec3.create(),
+        hat.motion.location,
+        playerMotion.location
+      );
+      let distance = vec3.len(to);
+      if (distance < bestDistance) {
+        let direction = vec3.normalize(to, to);
+        let playerDirection = vec3.fromValues(0, 0, -1);
+        vec3.transformQuat(
+          playerDirection,
+          playerDirection,
+          playerMotion.rotation
+        );
+        if (
+          Math.abs(vec3.angle(direction, playerDirection)) < INTERACTION_ANGLE
+        ) {
+          bestDistance = distance;
+          bestObj = hat.id;
+        }
+      }
+    }
+  }
+  return bestObj;
+}
+
 function stepPlayers(
   players: PlayerObj[],
   resources: { time: Time; camera: CameraProps; inputs: Inputs }
 ) {
-  let {
+  const {
     time: { dt },
     inputs,
     camera,
   } = resources;
+
+  const hats = EM.filterEntities([HatDef, MotionDef, InWorldDef]);
+
   for (let p of players) {
     // fall with gravity
     p.motion.linearVelocity[1] -= p.player.gravity * dt;
@@ -87,10 +128,13 @@ function stepPlayers(
     if (inputs.keyDowns["s"]) {
       vec3.add(vel, vel, vec3.fromValues(0, 0, n));
     }
+
+    // TODO(@darzu): rework to use phsyiscs colliders
     if (inputs.keyClicks["e"]) {
-      // TODO(@darzu): re-enable hat pickup
-      p.player.interactingWith = 0;
-      // p.player.interactingWith = interactionObject;
+      const interactionObject = getInteractionObject(p.motion, hats);
+      if (interactionObject)
+        console.log(`interactionObject: ${interactionObject}`);
+      p.player.interactingWith = interactionObject;
     } else {
       p.player.interactingWith = 0;
     }
