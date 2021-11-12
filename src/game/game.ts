@@ -17,7 +17,11 @@ import {
   registerUpdateSmoothingTargetSnapChange,
 } from "../phys_esc.js";
 import { Motion, copyMotionProps, MotionDef } from "../phys_motion.js";
-import { registerRenderer, registerUpdateTransforms } from "../renderer.js";
+import {
+  Component,
+  registerRenderer,
+  registerUpdateTransforms,
+} from "../renderer.js";
 import { Renderer } from "../render_webgpu.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import {
@@ -117,25 +121,6 @@ class Plane extends GameObject {
   syncPriority(firstSync: boolean) {
     return firstSync ? 20000 : 1;
   }
-
-  serializeFull(buffer: Serializer) {
-    buffer.writeVec3(this.motion.location);
-    buffer.writeVec3(this.color);
-  }
-
-  deserializeFull(buffer: Deserializer) {
-    buffer.readVec3(this.motion.location);
-    buffer.readVec3(this.color);
-  }
-
-  serializeDynamic(buffer: Serializer) {
-    // don't need to write anything at all here, planes never change
-  }
-
-  deserializeDynamic(buffer: Deserializer) {
-    //console.log("Deserializing plane");
-    // don't need to read anything at all here, planes never change
-  }
 }
 
 const CUBE_MESH = unshareProvokingVertices({
@@ -199,6 +184,15 @@ const CUBE_MESH = unshareProvokingVertices({
 const CUBE_AABB = getAABBFromMesh(CUBE_MESH);
 
 export const ColorDef = EM.defineComponent("color", () => vec3.create());
+export type Color = Component<typeof ColorDef>;
+
+function serializeColor(o: Color, buf: Serializer) {
+  buf.writeVec3(o);
+}
+function deserializeColor(o: Color, buf: Deserializer) {
+  buf.readVec3(o);
+}
+EM.registerSerializerPair(ColorDef, serializeColor, deserializeColor);
 
 abstract class Cube extends GameObject {
   set color(v: vec3) {
@@ -236,31 +230,7 @@ export class Bullet extends Cube {
     return ObjectType.Bullet;
   }
 
-  serializeFull(buffer: Serializer) {
-    buffer.writeVec3(this.motion.location);
-    buffer.writeVec3(this.motion.linearVelocity);
-    //buffer.writeVec3(vec3.fromValues(0, 0, 0));
-    buffer.writeQuat(this.motion.rotation);
-    buffer.writeVec3(this.motion.angularVelocity);
-    buffer.writeVec3(this.color);
-  }
-
-  deserializeFull(buffer: Deserializer) {
-    buffer.readVec3(this.motion.location);
-    buffer.readVec3(this.motion.linearVelocity);
-    buffer.readQuat(this.motion.rotation);
-    buffer.readVec3(this.motion.angularVelocity);
-    buffer.readVec3(this.color);
-  }
-
-  serializeDynamic(buffer: Serializer) {
-    // rotation and location can both change, but we only really care about syncing location
-    buffer.writeVec3(this.motion.location);
-  }
-
-  deserializeDynamic(buffer: Deserializer) {
-    buffer.readVec3(this.motion.location);
-  }
+  // TODO(@darzu): what to do about bullet location-only syncing on bullets
 }
 
 let _hatMesh: Mesh | null = null;
@@ -291,22 +261,6 @@ export class HatClass extends Cube {
   typeId(): number {
     return ObjectType.Hat;
   }
-
-  serializeFull(buffer: Serializer) {
-    buffer.writeVec3(this.color);
-    buffer.writeVec3(this.motion.location);
-  }
-
-  deserializeFull(buffer: Deserializer) {
-    buffer.readVec3(this.color);
-    buffer.readVec3(this.motion.location);
-  }
-
-  // after they are created, hats will only change via events
-  // TODO: stop syncing empty objects
-  serializeDynamic(_buffer: Serializer) {}
-
-  deserializeDynamic(_buffer: Deserializer) {}
 }
 
 export class PlayerClass extends Cube {
@@ -340,28 +294,6 @@ export class PlayerClass extends Cube {
 
   typeId(): number {
     return ObjectType.Player;
-  }
-
-  serializeFull(buffer: Serializer) {
-    buffer.writeVec3(this.motion.location);
-    buffer.writeVec3(this.motion.linearVelocity);
-    buffer.writeQuat(this.motion.rotation);
-    buffer.writeVec3(this.motion.angularVelocity);
-  }
-
-  deserializeFull(buffer: Deserializer) {
-    buffer.readVec3(this.motion.location);
-    buffer.readVec3(this.motion.linearVelocity);
-    buffer.readQuat(this.motion.rotation);
-    buffer.readVec3(this.motion.angularVelocity);
-  }
-
-  serializeDynamic(buffer: Serializer) {
-    this.serializeFull(buffer);
-  }
-
-  deserializeDynamic(buffer: Deserializer) {
-    this.deserializeFull(buffer);
   }
 
   // mesh(): Mesh {
@@ -401,28 +333,6 @@ class Ship extends Cube {
   typeId(): number {
     return ObjectType.Ship;
   }
-
-  serializeFull(buffer: Serializer) {
-    buffer.writeVec3(this.motion.location);
-    buffer.writeVec3(this.motion.linearVelocity);
-    buffer.writeQuat(this.motion.rotation);
-    buffer.writeVec3(this.motion.angularVelocity);
-  }
-
-  deserializeFull(buffer: Deserializer) {
-    buffer.readVec3(this.motion.location);
-    buffer.readVec3(this.motion.linearVelocity);
-    buffer.readQuat(this.motion.rotation);
-    buffer.readVec3(this.motion.angularVelocity);
-  }
-
-  serializeDynamic(buffer: Serializer) {
-    this.serializeFull(buffer);
-  }
-
-  deserializeDynamic(buffer: Deserializer) {
-    this.deserializeFull(buffer);
-  }
 }
 
 class BoatClass extends Cube {
@@ -442,28 +352,6 @@ class BoatClass extends Cube {
 
   typeId(): number {
     return ObjectType.Boat;
-  }
-
-  serializeFull(buffer: Serializer) {
-    buffer.writeVec3(this.motion.location);
-    buffer.writeVec3(this.motion.linearVelocity);
-    buffer.writeQuat(this.motion.rotation);
-    buffer.writeVec3(this.motion.angularVelocity);
-  }
-
-  deserializeFull(buffer: Deserializer) {
-    buffer.readVec3(this.motion.location);
-    buffer.readVec3(this.motion.linearVelocity);
-    buffer.readQuat(this.motion.rotation);
-    buffer.readVec3(this.motion.angularVelocity);
-  }
-
-  serializeDynamic(buffer: Serializer) {
-    this.serializeFull(buffer);
-  }
-
-  deserializeDynamic(buffer: Deserializer) {
-    this.deserializeFull(buffer);
   }
 }
 

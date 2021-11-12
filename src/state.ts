@@ -179,13 +179,12 @@ export abstract class GameObject {
     quat.normalize(this.motion.rotation, this.motion.rotation);
   }
 
-  abstract serializeFull(buf: Serializer): void;
-
-  abstract serializeDynamic(buf: Serializer): void;
-
-  abstract deserializeFull(buf: Deserializer): void;
-
-  abstract deserializeDynamic(buf: Deserializer): void;
+  // TODO(@darzu): dummy definitions, just here until Doug changes how we serialize things
+  // TODO(@darzu): delete these
+  serializeFull(buf: Serializer) {}
+  deserializeFull(buf: Deserializer) {}
+  serializeDynamic(buf: Serializer) {}
+  deserializeDynamic(buf: Deserializer) {}
 
   abstract typeId(): number;
 }
