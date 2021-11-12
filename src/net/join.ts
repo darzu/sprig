@@ -13,8 +13,8 @@ import {
   Inbox,
   OutboxDef,
   Outbox,
-  JoiningDef,
-  Joining,
+  JoinDef,
+  Join,
   NetworkReadyDef,
   JoinedDef,
   EventsToNetworkDef,
@@ -25,18 +25,15 @@ import { MessageType, MAX_MESSAGE_SIZE } from "./message.js";
 function registerConnectToServer(em: EntityManager) {
   let f = (
     peers: { peer: Peer }[],
-    {
-      joining,
-      eventsToNetwork,
-    }: { joining: Joining; eventsToNetwork: ToNetworkEvent[] }
+    { join, eventsToNetwork }: { join: Join; eventsToNetwork: ToNetworkEvent[] }
   ) => {
-    switch (joining.state) {
+    switch (join.state) {
       case "start":
         eventsToNetwork.push({
           type: NetworkEventType.Connect,
-          address: joining.address,
+          address: join.address,
         });
-        joining.state = "connecting";
+        join.state = "connecting";
         break;
       case "connecting":
         // TODO: this is a hacky way to tell if we're connected.
@@ -46,16 +43,17 @@ function registerConnectToServer(em: EntityManager) {
           message.writeUint8(MessageType.Join);
           eventsToNetwork.push({
             type: NetworkEventType.MessageSend,
-            to: joining.address,
+            to: join.address,
             reliable: true,
             buf: message.buffer,
           });
+          em.removeSingletonComponent(JoinDef);
         }
     }
   };
   em.registerSystem(
     [PeerDef],
-    [JoiningDef, NetworkReadyDef, EventsToNetworkDef],
+    [JoinDef, NetworkReadyDef, EventsToNetworkDef],
     f
   );
 }
@@ -67,6 +65,7 @@ function registerHandleJoin(em: EntityManager) {
   ) => {
     for (let { peer, inbox, outbox } of peers) {
       while ((inbox.get(MessageType.Join) || []).length > 0) {
+        console.log("Received join");
         if (peer.joined) {
           console.log("Got join message for node that already joined");
           continue;
@@ -89,7 +88,7 @@ function registerHandleJoin(em: EntityManager) {
       }
     }
   };
-  em.registerSystem([PeerDef, InboxDef, OutboxDef, JoinedDef], [MeDef], f);
+  em.registerSystem([PeerDef, InboxDef, OutboxDef], [MeDef], f);
 }
 
 function registerHandleJoinResponse(em: EntityManager) {
@@ -111,15 +110,15 @@ function registerHandleJoinResponse(em: EntityManager) {
           let address = message.readString();
           eventsToNetwork.push({ type: NetworkEventType.Connect, address });
         }
-        let me = em.addSingletonComponent(MeDef);
-        me.host = false;
-        me.pid = pid;
+        em.addSingletonComponent(MeDef, pid, false);
       }
     }
   };
-  em.registerSystem(
-    [PeerDef, InboxDef, OutboxDef, JoinedDef],
-    [EventsToNetworkDef],
-    f
-  );
+  em.registerSystem([PeerDef, InboxDef, OutboxDef], [EventsToNetworkDef], f);
+}
+
+export function registerJoinSystems(em: EntityManager) {
+  registerConnectToServer(em);
+  registerHandleJoin(em);
+  registerHandleJoinResponse(em);
 }

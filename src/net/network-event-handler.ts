@@ -26,11 +26,10 @@ export function registerHandleNetworkEvents(em: EntityManager) {
       switch (event.type) {
         case NetworkEventType.Ready:
           console.log(`localhost:4321/?server=${event.address}`);
-          // Add this sentinel component to start network processing
-          let { id } = em.newEntity();
-          em.addComponent(id, NetworkReadyDef);
+          em.addSingletonComponent(NetworkReadyDef);
           break;
         case NetworkEventType.NewConnection: {
+          console.log("new connection");
           let { id } = em.newEntity();
           let peer = em.addComponent(id, PeerDef);
           peer.address = event.address;
@@ -40,6 +39,7 @@ export function registerHandleNetworkEvents(em: EntityManager) {
           break;
         }
         case NetworkEventType.MessageRecv: {
+          console.log("message received");
           let id = _peerIDs[event.from];
           if (!id) throw `Received message from unknown peer ${event.from}`;
           let { inbox } = em.findEntity(id, [InboxDef])!;

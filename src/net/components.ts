@@ -75,9 +75,9 @@ export function claimAuthority(
 
 export const DeletedDef = EM.defineComponent("deleted", () => true);
 
-export const MeDef = EM.defineComponent("me", () => ({
-  pid: 0,
-  host: false,
+export const MeDef = EM.defineComponent("me", (pid: number, host: boolean) => ({
+  pid,
+  host,
 }));
 
 export const InboxDef = EM.defineComponent(
@@ -124,10 +124,10 @@ export const EventsToNetworkDef = EM.defineComponent(
 export type EventsToNetwork = Component<typeof EventsToNetworkDef>;
 
 export const NetworkReadyDef = EM.defineComponent("networkReady", () => true);
-export const JoiningDef = EM.defineComponent("joining", () => ({
-  address: "",
+export const JoinDef = EM.defineComponent("join", (address: string) => ({
+  address,
   state: "start" as "start" | "connecting",
 }));
-export type Joining = Component<typeof JoiningDef>;
+export type Join = Component<typeof JoinDef>;
 
 export const JoinedDef = EM.defineComponent("joined", () => true);
