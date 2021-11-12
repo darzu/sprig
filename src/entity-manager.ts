@@ -145,7 +145,6 @@ export class EntityManager {
       throw `EntityManager has exceeded its id range!`;
     const e = { id: range.nextId++ };
     this.entities.set(e.id, e);
-    console.log(e);
     return e;
   }
 
