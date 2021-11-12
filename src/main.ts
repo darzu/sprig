@@ -18,7 +18,7 @@ import { InputsDef, registerInputsSystem } from "./inputs.js";
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
 const MAX_VERTICES = 21844;
-const ENABLE_NET = true;
+const ENABLE_NET = false;
 const AUTOSTART = true;
 
 // ms per network sync (should be the same for all servers)
@@ -99,11 +99,14 @@ async function startGame(host: string | null) {
   _renderer = rendererInit;
   let start_of_time = performance.now();
 
+  EM.setDefaultRange("local");
+  EM.setIdRange("local", 1, 10000);
   // TODO(@darzu): ECS stuff
   // init ECS
   if (hosting) {
     // TODO(@darzu): ECS
-    EM.setIdRange(1, 10000);
+    EM.setDefaultRange("net");
+    EM.setIdRange("net", 10001, 20000);
   }
   EM.addSingletonComponent(TimeDef);
 
@@ -127,7 +130,7 @@ async function startGame(host: string | null) {
   let avgSimTime = 0;
   let avgFrameTime = 0;
   let avgWeight = 0.05;
-  let net: Net | null = null;
+  //let net: Net | null = null;
   let previous_frame_time = start_of_time;
   let net_time_accumulator = 0;
   let sim_time_accumulator = 0;
@@ -136,7 +139,7 @@ async function startGame(host: string | null) {
     const dt = frame_start_time - previous_frame_time;
 
     // apply any state updates from the network
-    if (net) net.updateState(previous_frame_time);
+    //if (net) net.updateState(previous_frame_time);
 
     // simulation step(s)
     sim_time_accumulator += dt;
@@ -149,14 +152,18 @@ async function startGame(host: string | null) {
       sim_time += performance.now() - before_sim;
     }
 
+    /*
     if (net) {
       net.handleEventRequests();
-    }
+    }*/
 
     // send updates out to network (if necessary)
+    /*
     net_time_accumulator += dt;
     net_time_accumulator = Math.min(net_time_accumulator, NET_DT * 2);
+    */
     let net_time = 0;
+    /*
     while (net_time_accumulator > NET_DT) {
       let before_net = performance.now();
       if (net) {
@@ -164,7 +171,7 @@ async function startGame(host: string | null) {
       }
       net_time += performance.now() - before_net;
       net_time_accumulator -= NET_DT;
-    }
+    }*/
 
     // render
     // TODO(@darzu):
@@ -177,15 +184,15 @@ async function startGame(host: string | null) {
       numDroppedUpdates,
       skew,
       ping,
-    } = net
+    } = /*net
       ? net.stats()
-      : {
-          reliableBufferSize: 0,
-          unreliableBufferSize: 0,
-          numDroppedUpdates: 0,
-          skew: [],
-          ping: [],
-        };
+      : */ {
+      reliableBufferSize: 0,
+      unreliableBufferSize: 0,
+      numDroppedUpdates: 0,
+      skew: [],
+      ping: [],
+    };
     previous_frame_time = frame_start_time;
     avgJsTime = avgJsTime
       ? (1 - avgWeight) * avgJsTime + avgWeight * jsTime
@@ -230,6 +237,7 @@ async function startGame(host: string | null) {
 
   if (ENABLE_NET) {
     try {
+      /*
       net = new Net(_gameState, host, (id: string) => {
         _renderer.finishInit(); // TODO(@darzu): debugging
         if (hosting) {
@@ -243,11 +251,11 @@ async function startGame(host: string | null) {
         } else {
           frame();
         }
-      });
+      });*/
     } catch (e) {
       console.error("Failed to initialize net");
       console.error(e);
-      net = null;
+      //net = null;
     }
   } else {
     _renderer.finishInit(); // TODO(@darzu): debugging

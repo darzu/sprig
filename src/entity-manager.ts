@@ -41,7 +41,7 @@ type System<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = {
 // t[0].
 
 export class EntityManager {
-  entities: Entity[] = [{ id: 0 }];
+  entities: Map<number, Entity> = new Map();
   systems: System<any[] | null, any[]>[] = [];
   components: Map<number, ComponentDef<any, any>> = new Map();
   serializers: Map<
@@ -52,8 +52,12 @@ export class EntityManager {
     }
   > = new Map();
 
-  nextId = -1;
-  maxId = -1;
+  ranges: Record<string, { nextId: number; maxId: number }> = {};
+  defaultRange: string = "";
+
+  constructor() {
+    this.entities.set(0, { id: 0 });
+  }
 
   public defineComponent<N extends string, P, Pargs extends any[]>(
     name: N,
@@ -122,28 +126,36 @@ export class EntityManager {
     serializerPair.deserialize(component, buf);
   }
 
-  public setIdRange(next: number, max: number) {
-    this.nextId = next;
-    this.maxId = max;
+  public setDefaultRange(rangeName: string) {
+    this.defaultRange = rangeName;
+  }
+
+  public setIdRange(rangeName: string, nextId: number, maxId: number) {
+    this.ranges[rangeName] = { nextId, maxId };
   }
 
   // TODO(@darzu): dont return the entity!
-  public newEntity(): Entity {
-    if (this.nextId === -1)
-      throw `EntityManager hasn't been given an id range!`;
-    if (this.nextId >= this.maxId)
+  public newEntity(rangeName?: string): Entity {
+    if (rangeName === undefined) rangeName = this.defaultRange;
+    const range = this.ranges[rangeName];
+    if (!range) {
+      throw `Entity manager has no ID range (range specifier is ${rangeName})`;
+    }
+    if (range.nextId >= range.maxId)
       throw `EntityManager has exceeded its id range!`;
-    const e = { id: this.nextId++ };
-    this.entities[e.id] = e;
+    const e = { id: range.nextId++ };
+    this.entities.set(e.id, e);
     return e;
   }
 
   public registerEntity(id: number): Entity {
     if (id in this.entities) throw `EntityManager already has id ${id}!`;
+    /* TODO: should we do the check below but for all ranges?
     if (this.nextId <= id && id < this.maxId)
-      throw `EntityManager cannot register foreign ids inside its local range; ${this.nextId} <= ${id} && ${id} < ${this.maxId}!`;
+    throw `EntityManager cannot register foreign ids inside its local range; ${this.nextId} <= ${id} && ${id} < ${this.maxId}!`;
+    */
     const e = { id: id };
-    this.entities[e.id] = e;
+    this.entities.set(e.id, e);
     return e;
   }
 
@@ -155,7 +167,7 @@ export class EntityManager {
     this.checkComponent(def);
     if (id === 0) throw `hey, use addSingletonComponent!`;
     const c = def.construct(...args);
-    const e = this.entities[id];
+    const e = this.entities.get(id)!;
     if (def.name in e)
       throw `double defining component ${def.name} on ${e.id}!`;
     (e as any)[def.name] = c;
@@ -169,7 +181,7 @@ export class EntityManager {
   >(def: ComponentDef<N, P, Pargs>, ...args: Pargs): P {
     this.checkComponent(def);
     const c = def.construct(...args);
-    const e = this.entities[0];
+    const e = this.entities.get(0)!;
     if (def.name in e)
       throw `double defining singleton component ${def.name} on ${e.id}!`;
     (e as any)[def.name] = c;
@@ -181,7 +193,7 @@ export class EntityManager {
   public findSingletonEntity<C extends ComponentDef>(
     c: C
   ): (Entity & Has<C>) | undefined {
-    const e = this.entities[0];
+    const e = this.entities.get(0)!;
     if (c.name in e) {
       return e as any;
     }
@@ -189,14 +201,14 @@ export class EntityManager {
   }
 
   public hasEntity(id: number) {
-    return !!this.entities[id];
+    return this.entities.has(id);
   }
 
   public findEntity<CS extends ComponentDef[]>(
     id: number,
     cs: [...CS]
   ): HasMany<CS> | undefined {
-    const e = this.entities[id];
+    const e = this.entities.get(id);
     if (e && !cs.every((c) => c.name in e)) {
       return undefined;
     }
@@ -208,7 +220,7 @@ export class EntityManager {
   ): Entities<CS> {
     const res: Entities<CS> = [];
     if (cs === null) return res;
-    for (let e of this.entities) {
+    for (let e of this.entities.values()) {
       if (cs.every((c) => c.name in e)) {
         res.push(e as HasMany<CS>);
       } else {
@@ -256,7 +268,7 @@ export class EntityManager {
         haveAllResources &&= !!this.findSingletonEntity(r);
       }
       if (haveAllResources) {
-        s.callback(es, this.entities[0] as any);
+        s.callback(es, this.entities.get(0)! as any);
       }
     }
   }
@@ -264,6 +276,8 @@ export class EntityManager {
 
 // TODO(@darzu): where to put this?
 export const EM = new EntityManager();
+
+(window as any).EM = EM;
 
 // TODO(@darzu):  move these elsewher
 

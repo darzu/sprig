@@ -308,8 +308,9 @@ export class Net {
         this.state.me = deserializer.readUint8();
         // TODO: this is a hack, need to actually have some system for reserving
         // object ids at each node
-        const nextObjectId = this.state.me * 10000;
-        EM.setIdRange(nextObjectId, nextObjectId + 10000);
+        const nextObjectId = (this.state.me + 1) * 10000;
+        EM.setDefaultRange("net");
+        EM.setIdRange("net", nextObjectId, nextObjectId + 10000);
         this.state.nextObjectId = nextObjectId;
 
         let npeers = deserializer.readUint8();
