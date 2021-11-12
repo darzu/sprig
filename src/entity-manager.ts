@@ -220,7 +220,6 @@ export class EntityManager {
   ): Entities<CS> {
     const res: Entities<CS> = [];
     if (cs === null) return res;
-    console.log(this.entities);
     for (let e of this.entities.values()) {
       if (cs.every((c) => c.name in e)) {
         res.push(e as HasMany<CS>);
