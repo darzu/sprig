@@ -1,8 +1,27 @@
 import { EM } from "../entity-manager.js";
 import { Component } from "../renderer.js";
+import { Deserializer } from "../serialize.js";
 import { MessageType } from "./message.js";
+import { FromNetworkEvent, ToNetworkEvent } from "./network-events.js";
 
-export const SyncDef = EM.defineComponent("sync", () => ({
+export const NetIdsDef = EM.defineComponent(
+  "netIds",
+  (start: number, end: number) => ({
+    start: start,
+    end: end,
+    nextId: start,
+  })
+);
+
+export type NetIds = Component<typeof NetIdsDef>;
+
+export function getNetId(netIds: NetIds): number {
+  if (netIds.nextId >= netIds.end) throw `Out of net IDS as ${netIds.nextId}`;
+  return netIds.nextId++;
+}
+
+export const SyncDef = EM.defineComponent("sync", (netId: number) => ({
+  netId,
   priorityIncrementFull: 1000,
   priorityIncrementDynamic: 10,
   fullComponents: [],
@@ -13,11 +32,9 @@ export type Sync = Component<typeof SyncDef>;
 
 export const PeerDef = EM.defineComponent("peer", () => ({
   address: "",
-  host: false,
-  ping: 0,
-  skew: 0,
 
   // TODO: consider moving this state to another component
+  joined: false,
   updateSeq: 0,
   entityPriorities: new Map<number, number>(),
   entitiesKnown: new Set<number>(),
@@ -65,7 +82,7 @@ export const MeDef = EM.defineComponent("me", () => ({
 
 export const InboxDef = EM.defineComponent(
   "inbox",
-  () => new Map<MessageType, ArrayBuffer[]>()
+  () => new Map<MessageType, Deserializer[]>()
 );
 
 export type Inbox = Component<typeof InboxDef>;
@@ -84,3 +101,33 @@ export function send(outbox: Outbox, buffer: DataView, reliable: boolean) {
     outbox.unreliable.push(buffer);
   }
 }
+
+export const NetStatsDef = EM.defineComponent("netStats", () => ({
+  skewEstimate: {} as Record<string, number>,
+  pingEstimate: {} as Record<string, number>,
+}));
+
+export type NetStats = Component<typeof NetStatsDef>;
+
+export const EventsFromNetworkDef = EM.defineComponent(
+  "eventsFromNetwork",
+  () => [] as FromNetworkEvent[]
+);
+
+export type EventsFromNetwork = Component<typeof EventsFromNetworkDef>;
+
+export const EventsToNetworkDef = EM.defineComponent(
+  "eventsToNetwork",
+  () => [] as ToNetworkEvent[]
+);
+
+export type EventsToNetwork = Component<typeof EventsToNetworkDef>;
+
+export const NetworkReadyDef = EM.defineComponent("networkReady", () => true);
+export const JoiningDef = EM.defineComponent("joining", () => ({
+  address: "",
+  state: "start" as "start" | "connecting",
+}));
+export type Joining = Component<typeof JoiningDef>;
+
+export const JoinedDef = EM.defineComponent("joined", () => true);
