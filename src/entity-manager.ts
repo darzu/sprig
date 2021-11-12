@@ -277,6 +277,8 @@ export class EntityManager {
 // TODO(@darzu): where to put this?
 export const EM = new EntityManager();
 
+(window as any).EM = EM;
+
 // TODO(@darzu):  move these elsewher
 
 export const TimeDef = EM.defineComponent("time", () => ({ dt: 0 }));
