@@ -99,11 +99,14 @@ async function startGame(host: string | null) {
   _renderer = rendererInit;
   let start_of_time = performance.now();
 
+  EM.setDefaultRange("local");
+  EM.setIdRange("local", 1, 10000);
   // TODO(@darzu): ECS stuff
   // init ECS
   if (hosting) {
     // TODO(@darzu): ECS
-    EM.setIdRange(1, 10000);
+    EM.setDefaultRange("net");
+    EM.setIdRange("net", 10001, 20000);
   }
   EM.addSingletonComponent(TimeDef);
 
