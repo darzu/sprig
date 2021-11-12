@@ -31,6 +31,11 @@ import {
   PlayerEntDef,
   registerStepPlayers,
 } from "./player.js";
+import { registerNetSystems } from "../net/net.js";
+import {
+  registerHandleNetworkEvents,
+  registerSendOutboxes,
+} from "../net/network-event-handler.js";
 
 enum ObjectType {
   Plane,
@@ -524,6 +529,17 @@ export class CubeGameState extends GameState {
     );
     mat4.copy(this.bulletProto.transform, new Float32Array(16)); // zero the transforms so it doesn't render
 
+    registerNetSystems(EM);
+    registerHandleNetworkEvents(EM);
+    registerSendOutboxes(EM);
+    // TODO(@darzu): ECS stuff
+    registerStepBoats(EM);
+    // TODO(@darzu): ECS
+    registerStepPlayers(EM);
+    registerPhysicsSystems(EM);
+    registerUpdateTransforms(EM);
+    registerRenderer(EM);
+
     if (createObjects) {
       // create checkered grid
       const NUM_PLANES_X = 10;
@@ -563,14 +579,6 @@ export class CubeGameState extends GameState {
         let boatM = EM.addComponent(e.id, MotionDef);
         Object.assign(boatM, boat.motion);
       }
-
-      // TODO(@darzu): ECS stuff
-      registerStepBoats(EM);
-      // TODO(@darzu): ECS
-      registerStepPlayers(EM);
-      registerPhysicsSystems(EM);
-      registerUpdateTransforms(EM);
-      registerRenderer(EM);
 
       // create ship
       {
