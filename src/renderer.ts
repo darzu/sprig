@@ -5,6 +5,7 @@ import {
   TimeDef,
   Entity,
 } from "./entity-manager.js";
+import { ColorDef } from "./game/game.js";
 import {
   CameraDef,
   CameraProps,
@@ -13,7 +14,7 @@ import {
 } from "./game/player.js";
 import { mat4, quat, vec3 } from "./gl-matrix.js";
 import { _gameState, _renderer } from "./main.js";
-import { Mesh } from "./mesh-pool.js";
+import { Mesh, MeshHandle, MeshHandleDef } from "./mesh-pool.js";
 import { Motion, MotionDef } from "./phys_motion.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
 
@@ -129,15 +130,32 @@ export const PlayerViewDef = EM.defineComponent("playerView", () => {
 export type PlayerView = Component<typeof PlayerViewDef>;
 
 interface RenderableObj {
+  id: number;
   renderable: Renderable;
   transform: Transform;
+  meshHandle: MeshHandle;
 }
 
 function stepRenderer(
   objs: RenderableObj[],
   { time, playerView }: { time: { dt: number }; playerView: PlayerView }
 ) {
-  _renderer.renderFrame(playerView.viewMat);
+  // ensure our mesh handle is up to date
+  for (let o of objs) {
+    // TODO(@darzu): color:
+    const colorEnt = EM.findEntity(o.id, [ColorDef]);
+    if (colorEnt) {
+      vec3.copy(o.meshHandle.tint, colorEnt.color);
+    }
+
+    mat4.copy(o.meshHandle.transform, o.transform);
+  }
+
+  // render
+  _renderer.renderFrame(
+    playerView.viewMat,
+    objs.map((o) => o.meshHandle)
+  );
 }
 
 function updatePlayerView(
@@ -180,7 +198,7 @@ export function registerRenderer(em: EntityManager) {
   em.addSingletonComponent(PlayerViewDef);
 
   em.registerSystem(
-    [RenderableDef, TransformDef],
+    [RenderableDef, TransformDef, MeshHandleDef],
     [TimeDef, PlayerViewDef],
     stepRenderer
   );

@@ -19,9 +19,13 @@ export interface Entity {
   readonly id: number;
 }
 
-export interface ComponentDef<N extends string = string, P = any> {
+export interface ComponentDef<
+  N extends string = string,
+  P = any,
+  Pargs extends any[] = any[]
+> {
   readonly name: N;
-  construct: () => P;
+  construct: (...args: Pargs) => P;
   id: number;
 }
 
@@ -64,10 +68,10 @@ export class EntityManager {
   nextId = -1;
   maxId = -1;
 
-  public defineComponent<N extends string, P>(
+  public defineComponent<N extends string, P, Pargs extends any[]>(
     name: N,
-    construct: () => P
-  ): ComponentDef<N, P> {
+    construct: (...args: Pargs) => P
+  ): ComponentDef<N, P, Pargs> {
     const id = hashCode(name);
     if (this.components.has(id)) {
       throw `Component with id ${id} already defined--hash collision?`;
@@ -81,7 +85,9 @@ export class EntityManager {
     return component;
   }
 
-  private checkComponent<N extends string, P>(def: ComponentDef<N, P>) {
+  private checkComponent<N extends string, P, Pargs extends any[]>(
+    def: ComponentDef<N, P, Pargs>
+  ) {
     if (!this.components.has(def.id))
       throw `Component ${def.name} (id ${def.id}) not found`;
     if (this.components.get(def.id)!.name !== def.name)
@@ -154,13 +160,14 @@ export class EntityManager {
     return e;
   }
 
-  public addComponent<N extends string, P>(
+  public addComponent<N extends string, P, Pargs extends any[] = any[]>(
     id: number,
-    def: ComponentDef<N, P>
+    def: ComponentDef<N, P, Pargs>,
+    ...args: Pargs
   ): P {
     this.checkComponent(def);
     if (id === 0) throw `hey, use addSingletonComponent!`;
-    const c = def.construct();
+    const c = def.construct(...args);
     const e = this.entities[id];
     if (def.name in e)
       throw `double defining component ${def.name} on ${e.id}!`;
@@ -168,11 +175,13 @@ export class EntityManager {
     return c;
   }
 
-  public addSingletonComponent<N extends string, P>(
-    def: ComponentDef<N, P>
-  ): P {
+  public addSingletonComponent<
+    N extends string,
+    P,
+    Pargs extends any[] = any[]
+  >(def: ComponentDef<N, P, Pargs>, ...args: Pargs): P {
     this.checkComponent(def);
-    const c = def.construct();
+    const c = def.construct(...args);
     const e = this.entities[0];
     if (def.name in e)
       throw `double defining singleton component ${def.name} on ${e.id}!`;

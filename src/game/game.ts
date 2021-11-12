@@ -82,11 +82,16 @@ const LIGHT_GRAY = vec3.fromValues(0.2, 0.2, 0.2);
 const DARK_BLUE = vec3.fromValues(0.03, 0.03, 0.2);
 const LIGHT_BLUE = vec3.fromValues(0.05, 0.05, 0.2);
 class Plane extends GameObject {
-  color: vec3;
+  set color(v: vec3) {
+    vec3.copy(this._color, v);
+  }
+
+  _color: vec3;
 
   constructor(e: Entity, creator: number) {
     super(e, creator);
-    this.color = vec3.clone(DARK_GRAY);
+    this._color = EM.addComponent(e.id, ColorDef);
+    vec3.copy(this._color, DARK_GRAY);
     this.collider = {
       shape: "AABB",
       solid: true,
@@ -183,12 +188,19 @@ const CUBE_MESH = unshareProvokingVertices({
 });
 const CUBE_AABB = getAABBFromMesh(CUBE_MESH);
 
+export const ColorDef = EM.defineComponent("color", () => vec3.create());
+
 abstract class Cube extends GameObject {
-  color: vec3;
+  set color(v: vec3) {
+    vec3.copy(this._color, v);
+  }
+
+  _color: vec3;
 
   constructor(e: Entity, creator: number) {
     super(e, creator);
-    this.color = vec3.fromValues(0.2, 0, 0);
+    this._color = EM.addComponent(e.id, ColorDef);
+    vec3.copy(this._color, vec3.fromValues(0.2, 0, 0));
     this.collider = {
       shape: "AABB",
       solid: true,
@@ -507,12 +519,10 @@ export class CubeGameState extends GameState {
     this.players = {};
 
     // create local mesh prototypes
-    let bulletProtoObj = this.renderer.addObject(
-      new Bullet(EM.newEntity(), this.me)
+    this.bulletProto = this.renderer.addMesh(
+      new Bullet(EM.newEntity(), this.me).mesh()
     );
-    mat4.copy(bulletProtoObj.obj.transform, new Float32Array(16)); // zero the transforms so it doesn't render
-    mat4.copy(bulletProtoObj.handle.transform, new Float32Array(16));
-    this.bulletProto = bulletProtoObj.handle;
+    mat4.copy(this.bulletProto.transform, new Float32Array(16)); // zero the transforms so it doesn't render
 
     if (createObjects) {
       // create checkered grid

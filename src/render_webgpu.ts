@@ -10,6 +10,7 @@ import {
   SceneUniform,
   Vertex,
 } from "./mesh-pool.js";
+import { Renderable } from "./renderer.js";
 import { pitch } from "./utils-3d.js";
 
 const PIXEL_PER_PX: number | null = null; // 0.5;
@@ -75,16 +76,12 @@ const antiAliasSampleCount = 4;
 const depthStencilFormat = "depth24plus-stencil8";
 const backgroundColor = { r: 0.6, g: 0.63, b: 0.6, a: 1.0 };
 
-export interface MeshObj {
-  handle: MeshHandle;
-  obj: RenderObj;
-}
-
-export interface RenderObj {
-  id: number;
-  mesh: () => Mesh;
-  transform: mat4;
-}
+// export interface MeshObj {
+//   id: number;
+//   meshHandle: MeshHandle;
+//   transform: mat4;
+//   renderable: Renderable;
+// }
 
 export type RenderMode = "normal" | "wireframe";
 export type CameraMode = "perspective" | "ortho";
@@ -92,10 +89,10 @@ export interface Renderer {
   wireMode: RenderMode;
   perspectiveMode: CameraMode;
   finishInit(): void;
-  addObject(o: RenderObj): MeshObj;
-  addObjectInstance(o: RenderObj, m: MeshHandle): MeshObj;
-  renderFrame(viewMatrix: mat4): void;
-  removeObject(o: RenderObj): void;
+  addMesh(m: Mesh): MeshHandle;
+  addMeshInstance(h: MeshHandle): MeshHandle;
+  renderFrame(viewMatrix: mat4, handles: MeshHandle[]): void;
+  removeMesh(h: MeshHandle): void;
 }
 
 export class Renderer_WebGPU implements Renderer {
@@ -110,7 +107,7 @@ export class Renderer_WebGPU implements Renderer {
 
   private sceneUniformBuffer: GPUBuffer;
 
-  private meshObjs: Record<number, MeshObj> = {};
+  // private handles: MeshObj[] = {};
 
   private initFinished: boolean = false;
   private builder: MeshPoolBuilder_WebGPU;
@@ -133,13 +130,14 @@ export class Renderer_WebGPU implements Renderer {
     this.initFinished = true;
   }
 
-  private gpuBufferWriteAllMeshUniforms() {
+  private gpuBufferWriteAllMeshUniforms(handles: MeshHandle[]) {
     // TODO(@darzu): make this update all meshes at once
-    for (let m of Object.values(this.meshObjs)) {
-      m.handle.transform = m.obj.transform; // TODO(@darzu): this discrepency isn't great...
+    for (let m of handles) {
       // TODO(@darzu): this is definitely weird. Need to think about this interaction better.
-      if ((m.obj as any).color) m.handle.tint = (m.obj as any).color;
-      this.pool.updateUniform(m.handle);
+      // TODO(@darzu): ensure color is handled
+      // if ((m.renderable as any).color)
+      //   m.meshHandle.tint = (m.renderable as any).color;
+      this.pool.updateUniform(m);
     }
   }
 
@@ -192,54 +190,48 @@ export class Renderer_WebGPU implements Renderer {
                   
     TODO: support adding objects when buffers aren't memory-mapped using device.queue
   */
-  public addObject(o: RenderObj): MeshObj {
-    // console.log(`Adding object ${o.id}`);
-    let m = o.mesh();
-    // need to introduce a new variable to convince Typescript the mapping is non-null
-
-    const handle = this.initFinished
+  public addMesh(m: Mesh): MeshHandle {
+    const handle: MeshHandle = this.initFinished
       ? this.pool.addMesh(m)
       : this.builder.addMesh(m);
 
-    const res = {
-      obj: o,
-      handle,
-    };
-
-    this.meshObjs[o.id] = res;
-
-    this.needsRebundle = true;
-    return res;
+    // TODO(@darzu): determine rebundle
+    // this.needsRebundle = true;
+    return handle;
   }
-  public addObjectInstance(o: RenderObj, oldHandle: MeshHandle): MeshObj {
-    console.log(`Adding (instanced) object ${o.id}`);
+  public addMeshInstance(oldHandle: MeshHandle): MeshHandle {
+    // console.log(`Adding (instanced) object ${o.id}`);
 
     const d = MeshUniform.CloneData(oldHandle);
     const newHandle = this.initFinished
       ? this.pool.addMeshInstance(oldHandle, d)
       : this.builder.addMeshInstance(oldHandle, d);
 
-    const res = {
-      obj: o,
-      handle: newHandle,
-    };
+    // handles[o.id] = res;
 
-    this.meshObjs[o.id] = res;
-
-    this.needsRebundle = true;
-    return res;
+    // TODO(@darzu): determine rebundle
+    // this.needsRebundle = true;
+    return newHandle;
   }
 
-  removeObject(o: RenderObj) {
-    delete this.meshObjs[o.id];
+  removeMesh(h: MeshHandle) {
+    // TODO(@darzu): we need to free up vertices
+    // delete handles[o.id];
+    // TODO(@darzu): determine rebundle a different way
     this.needsRebundle = true;
+    console.warn(`TODO: impl removeMesh`);
   }
 
+  bundledMIds = new Set<number>();
   needsRebundle = false;
   lastWireMode: RenderMode = this.wireMode;
 
-  private createRenderBundle() {
+  private createRenderBundle(handles: MeshHandle[]) {
     this.needsRebundle = false; // TODO(@darzu): hack?
+
+    this.bundledMIds.clear();
+    handles.forEach((h) => this.bundledMIds.add(h.mId));
+
     this.lastWireMode = this.wireMode;
     const modelUniBindGroupLayout = this.device.createBindGroupLayout({
       entries: [
@@ -351,23 +343,21 @@ export class Renderer_WebGPU implements Renderer {
     if (this.wireMode === "normal")
       bundleEnc.setIndexBuffer(this.pool.triIndicesBuffer, "uint16");
     else bundleEnc.setIndexBuffer(this.pool.lineIndicesBuffer, "uint16");
-    for (let m of Object.values(this.meshObjs)) {
-      bundleEnc.setBindGroup(1, modelUniBindGroup, [
-        m.handle.modelUniByteOffset,
-      ]);
+    for (let m of Object.values(handles)) {
+      bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
       if (this.wireMode === "normal")
         bundleEnc.drawIndexed(
-          m.handle.numTris * 3,
+          m.numTris * 3,
           undefined,
-          m.handle.triIndicesNumOffset,
-          m.handle.vertNumOffset
+          m.triIndicesNumOffset,
+          m.vertNumOffset
         );
       else
         bundleEnc.drawIndexed(
-          m.handle.numLines * 2,
+          m.numLines * 2,
           undefined,
-          m.handle.lineIndicesNumOffset,
-          m.handle.vertNumOffset
+          m.lineIndicesNumOffset,
+          m.vertNumOffset
         );
     }
     this.renderBundle = bundleEnc.finish();
@@ -408,12 +398,11 @@ export class Renderer_WebGPU implements Renderer {
     // setup scene data:
     this.sceneData = setupScene();
 
-    // workaround because Typescript can't tell this function init's the render bundle
-    this.renderBundle = this.createRenderBundle();
+    this.renderBundle = this.createRenderBundle([]);
   }
 
   private scratchSceneUni = new Uint8Array(SceneUniform.ByteSizeAligned);
-  public renderFrame(viewMatrix: mat4): void {
+  public renderFrame(viewMatrix: mat4, handles: MeshHandle[]): void {
     this.checkCanvasResize();
     const projectionMatrix = mat4.create();
     if (this.perspectiveMode === "ortho") {
@@ -452,11 +441,21 @@ export class Renderer_WebGPU implements Renderer {
     );
 
     // update all mesh transforms
-    this.gpuBufferWriteAllMeshUniforms();
+    this.gpuBufferWriteAllMeshUniforms(handles);
 
     // TODO(@darzu): more fine grain
+    this.needsRebundle =
+      this.needsRebundle || handles.length !== this.bundledMIds.size;
+    if (!this.needsRebundle) {
+      for (let id of handles.map((o) => o.mId)) {
+        if (!this.bundledMIds.has(id)) {
+          this.needsRebundle = true;
+          break;
+        }
+      }
+    }
     if (this.needsRebundle || this.wireMode !== this.lastWireMode)
-      this.createRenderBundle();
+      this.createRenderBundle(handles);
 
     // start collecting our render commands for this frame
     const commandEncoder = this.device.createCommandEncoder();

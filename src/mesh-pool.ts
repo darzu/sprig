@@ -2,6 +2,7 @@ import { computeTriangleNormal } from "./utils-3d.js";
 import { mat4, vec2, vec3 } from "./gl-matrix.js";
 import { align, sum } from "./math.js";
 import { AABB, getAABBFromPositions } from "./phys_broadphase.js";
+import { EM } from "./entity-manager.js";
 
 // TODO(@darzu): BUGS:
 // - in WebGL, around object 5566, we get some weird index stuff, even single player.
@@ -141,10 +142,10 @@ export module Vertex {
 
 export module MeshUniform {
   export interface Data {
-    transform: mat4;
-    aabbMin: vec3;
-    aabbMax: vec3;
-    tint: vec3;
+    readonly transform: mat4;
+    readonly aabbMin: vec3;
+    readonly aabbMax: vec3;
+    readonly tint: vec3;
   }
 
   const _counts = [
@@ -273,19 +274,28 @@ export module SceneUniform {
 // to track offsets into those buffers so we can make modifications and form draw calls.
 export interface PoolIndex {
   // handle into the pool
-  pool: MeshPool;
-  vertNumOffset: number;
-  triIndicesNumOffset: number;
-  modelUniByteOffset: number;
-  lineIndicesNumOffset: number; // for wireframe
+  readonly pool: MeshPool;
+  readonly vertNumOffset: number;
+  readonly triIndicesNumOffset: number;
+  readonly modelUniByteOffset: number;
+  readonly lineIndicesNumOffset: number; // for wireframe
 }
 export interface MeshHandle extends PoolIndex, MeshUniform.Data {
+  readonly mId: number; // mesh id
   // this mesh
-  numTris: number;
-  numVerts: number;
-  numLines: number; // for wireframe
-  model?: Mesh;
+  readonly numTris: number;
+  readonly numVerts: number;
+  readonly numLines: number; // for wireframe
+  readonly model?: Mesh;
 }
+
+// TODO(@darzu): ECS component; should be moved out of here?
+export const MeshHandleDef = EM.defineComponent(
+  "meshHandle",
+  (h: MeshHandle) => {
+    return h;
+  }
+);
 
 export interface MeshPoolOpts {
   maxMeshes: number;
@@ -1009,6 +1019,9 @@ function createMeshPoolBuilder(
   return builder;
 }
 
+// TODO(@darzu): not totally sure we want this state
+let nextMeshId = 0;
+
 function createMeshBuilder(
   maps: MeshPoolMaps,
   uByteOff: number,
@@ -1086,6 +1099,7 @@ function createMeshBuilder(
     meshFinished = true;
     const res: MeshHandle = {
       ...idx,
+      mId: nextMeshId++,
       transform: _transform!,
       aabbMin: _aabbMin!,
       aabbMax: _aabbMax!,

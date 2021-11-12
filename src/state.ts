@@ -1,6 +1,6 @@
 import { mat4, vec3, quat } from "./gl-matrix.js";
 import { Serializer, Deserializer } from "./serialize.js";
-import { Mesh, MeshHandle } from "./mesh-pool.js";
+import { Mesh, MeshHandle, MeshHandleDef } from "./mesh-pool.js";
 import { Renderer } from "./render_webgpu.js";
 import { AABB, checkCollisions, copyAABB } from "./phys_broadphase.js";
 import {
@@ -44,7 +44,9 @@ const working_quat = quat.create();
 const identity_quat = quat.create();
 const working_vec3 = vec3.create();
 
-export const InWorldDef = EM.defineComponent("inWorld", () => ({ is: false }));
+export const InWorldDef = EM.defineComponent("inWorld", (is: boolean) => ({
+  is,
+}));
 export type InWorld = Component<typeof InWorldDef>;
 
 /* TODO: add "versioning" of objects. 
@@ -133,8 +135,7 @@ export abstract class GameObject {
 
     this._collider = EM.addComponent(this.id, ColliderDef);
 
-    this._inWorld = EM.addComponent(this.id, InWorldDef);
-    this._inWorld.is = true;
+    this._inWorld = EM.addComponent(this.id, InWorldDef, true);
 
     // TODO(@darzu): ECS this shit
     // this.lastMotion = undefined;
@@ -294,14 +295,22 @@ export abstract class GameState {
   addObject(obj: GameObject) {
     this.numObjects++;
     this._objects.set(obj.id, obj);
-    this.renderer.addObject(obj);
+
+    // TODO(@darzu): adding the MeshHandle outside the constructor is a little wierd
+    const meshHandle = this.renderer.addMesh(obj.mesh());
+    EM.addComponent(obj.entity.id, MeshHandleDef, meshHandle);
+
     this._liveObjects.push(obj);
   }
 
   addObjectInstance(obj: GameObject, otherMesh: MeshHandle) {
     this.numObjects++;
     this._objects.set(obj.id, obj);
-    this.renderer.addObjectInstance(obj, otherMesh);
+
+    // TODO(@darzu): adding the MeshHandle outside the constructor is a little wierd
+    const meshHandle = this.renderer.addMeshInstance(otherMesh);
+    EM.addComponent(obj.entity.id, MeshHandleDef, meshHandle);
+
     this._liveObjects.push(obj);
   }
 
@@ -316,7 +325,10 @@ export abstract class GameState {
     this.numObjects--;
     obj.deleted = true;
     this.computeLiveObjects();
-    this.renderer.removeObject(obj);
+
+    const { meshHandle } = EM.findEntity(obj.id, [MeshHandleDef])!;
+
+    this.renderer.removeMesh(meshHandle);
   }
 
   getObject(id: number) {
