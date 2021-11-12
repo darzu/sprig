@@ -1,7 +1,7 @@
 import { Collider, ColliderDef } from "./collider.js";
-import { ComponentDef, EM, EntityManager, TimeDef } from "./entity-manager.js";
+import { EM, EntityManager, Time, TimeDef } from "./entity-manager.js";
 import { _playerId } from "./game/game.js";
-import { vec3 } from "./gl-matrix.js";
+import { quat, vec3 } from "./gl-matrix.js";
 import {
   CollidesWith,
   computeContactData,
@@ -28,7 +28,8 @@ import {
   MotionDef,
   moveObjects,
 } from "./phys_motion.js";
-import { Component } from "./renderer.js";
+import { Component, MotionSmoothing, MotionSmoothingDef } from "./renderer.js";
+import { identity_quat } from "./state.js";
 
 export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {
   return {
@@ -293,6 +294,123 @@ function stepsPhysics(
   for (let o of objs) {
     copyMotionProps(o._phys.lastMotion, o.motion);
   }
+}
+
+function updateLocSmoothingTarget(
+  oldTarget: vec3,
+  diff: vec3,
+  newTarget: vec3
+) {
+  vec3.add(oldTarget, oldTarget, diff);
+  vec3.sub(oldTarget, oldTarget, newTarget);
+  // The order of these copies is important. At this point, the calculated
+  // location error actually lives in loc. So we copy it over
+  // to locErr, then copy the new location into loc.
+  vec3.copy(diff, oldTarget);
+  vec3.copy(oldTarget, newTarget);
+}
+function updateRotSmoothingTarget(
+  oldTarget: quat,
+  diff: quat,
+  newTarget: quat
+) {
+  quat.mul(oldTarget, oldTarget, diff);
+  // sort of a hack--reuse our current rotation error quat to store the
+  // rotation inverse to avoid a quat allocation
+  quat.invert(diff, newTarget);
+  quat.mul(oldTarget, oldTarget, diff);
+  // The order of these copies is important--see the similar comment in
+  // snapLocation above.
+  quat.copy(diff, oldTarget);
+  oldTarget = quat.copy(oldTarget, newTarget);
+}
+
+function updateSmoothingTargetSmoothChange(
+  objs: {
+    motion: Motion;
+    motionSmoothing: MotionSmoothing;
+  }[]
+) {
+  for (let o of objs) {
+    updateLocSmoothingTarget(
+      o.motionSmoothing.locationTarget,
+      o.motionSmoothing.locationDiff,
+      o.motion.location
+    );
+    updateRotSmoothingTarget(
+      o.motionSmoothing.rotationTarget,
+      o.motionSmoothing.rotationDiff,
+      o.motion.rotation
+    );
+  }
+}
+function updateSmoothingTargetSnapChange(
+  objs: {
+    motion: Motion;
+    motionSmoothing: MotionSmoothing;
+  }[]
+) {
+  for (let o of objs) {
+    vec3.copy(o.motionSmoothing.locationTarget, o.motion.location);
+    quat.copy(o.motionSmoothing.rotationTarget, o.motion.rotation);
+  }
+}
+
+const ERROR_SMOOTHING_FACTOR = 0.9 ** (60 / 1000);
+const EPSILON = 0.0001;
+
+function updateSmoothingLerp(
+  objs: {
+    motionSmoothing: MotionSmoothing;
+  }[],
+  { time }: { time: Time }
+) {
+  const dt = time.dt;
+
+  for (let o of objs) {
+    // lerp location
+    const { locationDiff, rotationDiff } = o.motionSmoothing;
+    vec3.scale(locationDiff, locationDiff, ERROR_SMOOTHING_FACTOR ** dt);
+    let location_error_magnitude = vec3.length(locationDiff);
+    if (location_error_magnitude !== 0 && location_error_magnitude < EPSILON) {
+      //console.log(`Object ${id} reached 0 location error`);
+      vec3.set(locationDiff, 0, 0, 0);
+    }
+
+    // lerp rotation
+    quat.slerp(
+      rotationDiff,
+      rotationDiff,
+      identity_quat,
+      1 - ERROR_SMOOTHING_FACTOR ** dt
+    );
+    quat.normalize(rotationDiff, rotationDiff);
+    let rotation_error_magnitude = Math.abs(
+      quat.getAngle(rotationDiff, identity_quat)
+    );
+    if (rotation_error_magnitude !== 0 && rotation_error_magnitude < EPSILON) {
+      //console.log(`Object ${id} reached 0 rotation error`);
+      quat.copy(rotationDiff, identity_quat);
+    }
+  }
+}
+
+export function registerUpdateSmoothingTargetSnapChange(em: EntityManager) {
+  em.registerSystem(
+    [MotionDef, MotionSmoothingDef],
+    [],
+    updateSmoothingTargetSnapChange
+  );
+}
+export function registerUpdateSmoothingTargetSmoothChange(em: EntityManager) {
+  em.registerSystem(
+    [MotionDef, MotionSmoothingDef],
+    [],
+    updateSmoothingTargetSmoothChange
+  );
+}
+export function registerUpdateSmoothingLerp(em: EntityManager) {
+  em.registerSystem([MotionSmoothingDef], [TimeDef], updateSmoothingLerp);
 }
 
 // ECS register

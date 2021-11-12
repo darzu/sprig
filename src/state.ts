@@ -14,7 +14,7 @@ import { Collider, ColliderDef } from "./collider.js";
 import { EM, Entity } from "./entity-manager.js";
 import {
   Component,
-  MotionErrorDef,
+  MotionSmoothingDef,
   Parent,
   ParentDef,
   Renderable,
@@ -28,8 +28,6 @@ import {
 } from "./phys_esc.js";
 
 const SMOOTH = true;
-const ERROR_SMOOTHING_FACTOR = 0.9 ** (60 / 1000);
-const EPSILON = 0.0001;
 
 export function scaleMesh(m: Mesh, by: number): Mesh {
   let pos = m.pos.map((p) => vec3.scale(vec3.create(), p, by));
@@ -41,7 +39,7 @@ export function scaleMesh3(m: Mesh, by: vec3): Mesh {
 }
 
 const working_quat = quat.create();
-const identity_quat = quat.create();
+export const identity_quat = quat.create();
 const working_vec3 = vec3.create();
 
 export const InWorldDef = EM.defineComponent("inWorld", (is: boolean) => ({
@@ -88,8 +86,8 @@ export abstract class GameObject {
     return this.entity.id;
   }
   motion: Motion;
-  location_error: vec3;
-  rotation_error: quat;
+  smoothedLocationDiff: vec3;
+  smoothedRotationDiff: quat;
   transform: mat4;
   _parent: Parent;
   get parent() {
@@ -121,9 +119,9 @@ export abstract class GameObject {
 
     this.motion = EM.addComponent(this.id, MotionDef);
 
-    const err = EM.addComponent(this.id, MotionErrorDef);
-    this.location_error = err.location_error;
-    this.rotation_error = err.rotation_error;
+    const err = EM.addComponent(this.id, MotionSmoothingDef);
+    this.smoothedLocationDiff = err.locationDiff;
+    this.smoothedRotationDiff = err.rotationDiff;
 
     this.transform = EM.addComponent(this.id, TransformDef);
 
@@ -143,55 +141,6 @@ export abstract class GameObject {
     this.authority_seq = 0;
     this.snap_seq = -1;
     // this.collider = { shape: "Empty", solid: false };
-  }
-
-  snapLocation(location: vec3) {
-    // TODO: this is a hack to see if we're setting our location for the first time
-    if (vec3.length(this.motion.location) === 0) {
-      vec3.copy(this.motion.location, location);
-      return;
-    }
-    let current_location = vec3.add(
-      this.motion.location,
-      this.motion.location,
-      this.location_error
-    );
-    let location_error = vec3.sub(current_location, current_location, location);
-
-    // The order of these copies is important. At this point, the calculated
-    // location error actually lives in this.motion.location. So we copy it over
-    // to this.location_error, then copy the new location into this.motion.location.
-
-    vec3.copy(this.location_error, location_error);
-    vec3.copy(this.motion.location, location);
-  }
-
-  snapRotation(rotation: quat) {
-    // TODO: this is a hack to see if we're setting our rotation for the first time
-    let id = identity_quat;
-    if (quat.equals(rotation, id)) {
-      this.motion.rotation = quat.copy(this.motion.rotation, rotation);
-      return;
-    }
-    let current_rotation = quat.mul(
-      this.motion.rotation,
-      this.motion.rotation,
-      this.rotation_error
-    );
-    // sort of a hack--reuse our current rotation error quat to store the
-    // rotation inverse to avoid a quat allocation
-    let rotation_inverse = quat.invert(this.rotation_error, rotation);
-    let rotation_error = quat.mul(
-      current_rotation,
-      current_rotation,
-      rotation_inverse
-    );
-
-    // The order of these copies is important--see the similar comment in
-    // snapLocation above.
-
-    this.rotation_error = quat.copy(this.rotation_error, rotation_error);
-    this.motion.rotation = quat.copy(this.motion.rotation, rotation);
   }
 
   syncPriority(firstSync: boolean): number {
@@ -220,17 +169,14 @@ export abstract class GameObject {
   simulate(dt: number) {
     //console.log(`simulating forward ${dt} ms`);
     vec3.scale(working_vec3, this.motion.linearVelocity, dt);
-    this.snapLocation(
-      vec3.add(working_vec3, this.motion.location, working_vec3)
-    );
+    vec3.add(this.motion.location, this.motion.location, working_vec3);
 
     let axis = vec3.normalize(working_vec3, this.motion.angularVelocity);
     let angle = vec3.length(this.motion.angularVelocity) * dt;
     let deltaRotation = quat.setAxisAngle(working_quat, axis, angle);
     quat.normalize(deltaRotation, deltaRotation);
-    quat.multiply(working_quat, deltaRotation, this.motion.rotation);
-    quat.normalize(working_quat, working_quat);
-    this.snapRotation(working_quat);
+    quat.multiply(this.motion.rotation, deltaRotation, this.motion.rotation);
+    quat.normalize(this.motion.rotation, this.motion.rotation);
   }
 
   abstract serializeFull(buf: Serializer): void;
@@ -282,9 +228,6 @@ export abstract class GameState {
   abstract handleCollisions(): void;
 
   abstract runEvent(event: GameEvent): void;
-
-  // TODO(@darzu):
-  // abstract viewMatrix(): mat4;
 
   abstract objectOfType(
     typeID: number,
@@ -351,11 +294,6 @@ export abstract class GameState {
     return output;
   }
 
-  // TODO(@darzu):
-  // renderFrame() {
-  //   this.renderer.renderFrame(this.viewMatrix());
-  // }
-
   addPlayer(): [number, GameObject] {
     let id = this.nextPlayerId;
     this.nextPlayerId += 1;
@@ -389,38 +327,6 @@ export abstract class GameState {
     return true;
   }
 
-  // Does a topological sort on objects according to the parent relationship
-  // TODO: optimize this
-  private sortedObjects(): GameObject[] {
-    let objects = this._objects.values();
-    let children: { [id: number]: number[] } = {};
-    let sources: GameObject[] = [];
-    let output: GameObject[] = [];
-    // find each object's children
-    for (let o of objects) {
-      if (o.deleted) continue;
-      let parent = o.parent;
-      if (parent > 0) {
-        if (!children[parent]) {
-          children[parent] = [];
-        }
-        children[parent].push(o.id);
-      } else {
-        sources.push(o);
-      }
-    }
-    while (sources.length > 0) {
-      let o = sources.pop()!;
-      output.push(o);
-      if (children[o.id]) {
-        for (let c of children[o.id]) {
-          sources.push(this._objects.get(c)!);
-        }
-      }
-    }
-    return output;
-  }
-
   // Subclasses can override this to handle authority differently depending on the event type
   eventAuthority(_type: number, objects: GameObject[]) {
     return Math.min(...objects.map((o) => o.authority));
@@ -428,44 +334,6 @@ export abstract class GameState {
 
   step(dt: number) {
     this.stepGame(dt);
-
-    const objs = this.sortedObjects();
-
-    // reduce error in location and rotation
-    let identity_quat = quat.set(working_quat, 0, 0, 0, 1);
-
-    for (let o of objs) {
-      o.location_error = vec3.scale(
-        o.location_error,
-        o.location_error,
-        ERROR_SMOOTHING_FACTOR ** dt
-      );
-      let location_error_magnitude = vec3.length(o.location_error);
-      if (
-        location_error_magnitude !== 0 &&
-        location_error_magnitude < EPSILON
-      ) {
-        //console.log(`Object ${o.id} reached 0 location error`);
-        o.location_error = vec3.set(o.location_error, 0, 0, 0);
-      }
-      o.rotation_error = quat.slerp(
-        o.rotation_error,
-        o.rotation_error,
-        identity_quat,
-        1 - ERROR_SMOOTHING_FACTOR ** dt
-      );
-      quat.normalize(o.rotation_error, o.rotation_error);
-      let rotation_error_magnitude = Math.abs(
-        quat.getAngle(o.rotation_error, identity_quat)
-      );
-      if (
-        rotation_error_magnitude !== 0 &&
-        rotation_error_magnitude < EPSILON
-      ) {
-        //console.log(`Object ${o.id} reached 0 rotation error`);
-        o.rotation_error = quat.copy(o.rotation_error, identity_quat);
-      }
-    }
 
     // move, check collisions
     // TODO(@darzu): Remove after ECS stuff

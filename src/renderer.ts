@@ -27,13 +27,15 @@ export const TransformDef = EM.defineComponent("transform", () => {
 });
 export type Transform = mat4;
 
-export const MotionErrorDef = EM.defineComponent("motionError", () => {
+export const MotionSmoothingDef = EM.defineComponent("motionSmoothing", () => {
   return {
-    rotation_error: quat.create(),
-    location_error: vec3.create(),
+    locationTarget: vec3.create(),
+    locationDiff: vec3.create(),
+    rotationTarget: quat.create(),
+    rotationDiff: quat.create(),
   };
 });
-export type MotionError = Component<typeof MotionErrorDef>;
+export type MotionSmoothing = Component<typeof MotionSmoothingDef>;
 
 export const ParentDef = EM.defineComponent("parent", () => {
   return { id: 0 };
@@ -57,7 +59,7 @@ type Transformable = {
   transform: Transform;
   renderable: Renderable;
   parent: Parent;
-  motionError: MotionError;
+  motionSmoothing: MotionSmoothing;
 };
 
 const _transformables: Map<number, Transformable> = new Map();
@@ -83,12 +85,12 @@ function updateTransform(o: Transformable) {
     );
   } else if (SMOOTH) {
     const working_quat = tempQuat();
-    quat.mul(working_quat, o.motion.rotation, o.motionError.rotation_error);
+    quat.mul(working_quat, o.motion.rotation, o.motionSmoothing.rotationDiff);
     quat.normalize(working_quat, working_quat);
     mat4.fromRotationTranslation(
       o.transform,
       working_quat,
-      vec3.add(tempVec(), o.motion.location, o.motionError.location_error)
+      vec3.add(tempVec(), o.motion.location, o.motionSmoothing.locationDiff)
     );
   } else {
     mat4.fromRotationTranslation(
@@ -116,7 +118,7 @@ function updateTransforms(objs: Transformable[]) {
 
 export function registerUpdateTransforms(em: EntityManager) {
   em.registerSystem(
-    [MotionDef, TransformDef, RenderableDef, ParentDef, MotionErrorDef],
+    [MotionDef, TransformDef, RenderableDef, ParentDef, MotionSmoothingDef],
     [],
     updateTransforms
   );

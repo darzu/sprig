@@ -7,6 +7,7 @@ import { AABB } from "./phys_broadphase.js";
 import { vec3Dbg } from "./utils-3d.js";
 import { EM } from "./entity-manager.js";
 import { Component } from "./renderer.js";
+import { Deserializer, Serializer } from "./serialize.js";
 
 export const MotionDef = EM.defineComponent("motion", () => ({
   linearVelocity: vec3.create(),
@@ -15,6 +16,21 @@ export const MotionDef = EM.defineComponent("motion", () => ({
   rotation: quat.create(),
 }));
 export type Motion = Component<typeof MotionDef>;
+
+function serializeMotion(o: Motion, buf: Serializer) {
+  buf.writeVec3(o.location);
+  buf.writeVec3(o.linearVelocity);
+  buf.writeQuat(o.rotation);
+  buf.writeVec3(o.angularVelocity);
+}
+function deserializeMotion(o: Motion, buf: Deserializer) {
+  buf.readVec3(o.location);
+  buf.readVec3(o.linearVelocity);
+  buf.readQuat(o.rotation);
+  buf.readVec3(o.angularVelocity);
+}
+EM.registerSerializerPair(MotionDef, serializeMotion, deserializeMotion);
+
 
 export function copyMotionProps(dest: Motion, src: Partial<Motion>): Motion {
   if (src.location) vec3.copy(dest.location, src.location);

@@ -10,7 +10,12 @@ import {
   Mesh,
   MeshHandle,
 } from "../mesh-pool.js";
-import { registerPhysicsSystems } from "../phys_esc.js";
+import {
+  registerPhysicsSystems,
+  registerUpdateSmoothingLerp,
+  registerUpdateSmoothingTargetSmoothChange,
+  registerUpdateSmoothingTargetSnapChange,
+} from "../phys_esc.js";
 import { Motion, copyMotionProps, MotionDef } from "../phys_motion.js";
 import { registerRenderer, registerUpdateTransforms } from "../renderer.js";
 import { Renderer } from "../render_webgpu.js";
@@ -236,15 +241,9 @@ export class Bullet extends Cube {
   }
 
   deserializeFull(buffer: Deserializer) {
-    let location = buffer.readVec3()!;
-    if (!buffer.dummy) {
-      this.snapLocation(location);
-    }
+    buffer.readVec3(this.motion.location);
     buffer.readVec3(this.motion.linearVelocity);
-    let rotation = buffer.readQuat()!;
-    if (!buffer.dummy) {
-      this.snapRotation(rotation);
-    }
+    buffer.readQuat(this.motion.rotation);
     buffer.readVec3(this.motion.angularVelocity);
     buffer.readVec3(this.color);
   }
@@ -255,10 +254,7 @@ export class Bullet extends Cube {
   }
 
   deserializeDynamic(buffer: Deserializer) {
-    let location = buffer.readVec3()!;
-    if (!buffer.dummy) {
-      this.snapLocation(location);
-    }
+    buffer.readVec3(this.motion.location);
   }
 }
 
@@ -298,10 +294,7 @@ export class HatClass extends Cube {
 
   deserializeFull(buffer: Deserializer) {
     buffer.readVec3(this.color);
-    let location = buffer.readVec3()!;
-    if (!buffer.dummy) {
-      this.snapLocation(location);
-    }
+    buffer.readVec3(this.motion.location);
   }
 
   // after they are created, hats will only change via events
@@ -352,18 +345,10 @@ export class PlayerClass extends Cube {
   }
 
   deserializeFull(buffer: Deserializer) {
-    let location = buffer.readVec3()!;
-    if (!buffer.dummy) {
-      this.snapLocation(location);
-    }
+    buffer.readVec3(this.motion.location);
     buffer.readVec3(this.motion.linearVelocity);
-    vec3.copy(this.motion.linearVelocity, this.motion.linearVelocity);
-    let rotation = buffer.readQuat()!;
-    if (!buffer.dummy) {
-      this.snapRotation(rotation);
-    }
+    buffer.readQuat(this.motion.rotation);
     buffer.readVec3(this.motion.angularVelocity);
-    vec3.copy(this.motion.angularVelocity, this.motion.angularVelocity);
   }
 
   serializeDynamic(buffer: Serializer) {
@@ -420,15 +405,9 @@ class Ship extends Cube {
   }
 
   deserializeFull(buffer: Deserializer) {
-    let location = buffer.readVec3()!;
-    if (!buffer.dummy) {
-      this.snapLocation(location);
-    }
+    buffer.readVec3(this.motion.location);
     buffer.readVec3(this.motion.linearVelocity);
-    let rotation = buffer.readQuat()!;
-    if (!buffer.dummy) {
-      this.snapRotation(rotation);
-    }
+    buffer.readQuat(this.motion.rotation);
     buffer.readVec3(this.motion.angularVelocity);
   }
 
@@ -468,15 +447,9 @@ class BoatClass extends Cube {
   }
 
   deserializeFull(buffer: Deserializer) {
-    let location = buffer.readVec3()!;
-    if (!buffer.dummy) {
-      this.snapLocation(location);
-    }
+    buffer.readVec3(this.motion.location);
     buffer.readVec3(this.motion.linearVelocity);
-    let rotation = buffer.readQuat()!;
-    if (!buffer.dummy) {
-      this.snapRotation(rotation);
-    }
+    buffer.readQuat(this.motion.rotation);
     buffer.readVec3(this.motion.angularVelocity);
   }
 
@@ -568,6 +541,10 @@ export class CubeGameState extends GameState {
       registerStepBoats(EM);
       // TODO(@darzu): ECS
       registerStepPlayers(EM);
+      registerUpdateSmoothingTargetSnapChange(EM);
+      // TODO: put network location updates between these two
+      registerUpdateSmoothingTargetSmoothChange(EM);
+      registerUpdateSmoothingLerp(EM);
       registerPhysicsSystems(EM);
       registerUpdateTransforms(EM);
       registerRenderer(EM);
