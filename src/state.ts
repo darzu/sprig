@@ -457,7 +457,7 @@ export abstract class GameState {
 
     // move, check collisions
     // TODO(@darzu): Remove after ECS stuff
-    const { physicsResults } = EM.findSingletonEntity(PhysicsResultsDef);
+    const { physicsResults } = EM.findSingletonEntity(PhysicsResultsDef)!;
     this.collidesWith = physicsResults.collidesWith;
 
     // deal with any collisions

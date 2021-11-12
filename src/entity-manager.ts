@@ -182,12 +182,14 @@ export class EntityManager {
 
   // TODO(@darzu): should this be public??
   // TODO(@darzu): rename to findSingletonComponent
-  public findSingletonEntity<C extends ComponentDef>(c: C): Entity & Has<C> {
+  public findSingletonEntity<C extends ComponentDef>(
+    c: C
+  ): (Entity & Has<C>) | undefined {
     const e = this.entities[0];
     if (c.name in e) {
       return e as any;
     }
-    throw `can't find singleton component: ${c.name}`;
+    return undefined;
   }
 
   public hasEntity(id: number) {
@@ -252,11 +254,14 @@ export class EntityManager {
     // dispatch to all the systems
     for (let s of this.systems) {
       const es = this.filterEntities(s.cs);
+      let haveAllResources = true;
       for (let r of s.rs) {
         // note this is just to verify it exists
-        const _ = this.findSingletonEntity(r);
+        haveAllResources &&= !!this.findSingletonEntity(r);
       }
-      s.callback(es, this.entities[0] as any);
+      if (haveAllResources) {
+        s.callback(es, this.entities[0] as any);
+      }
     }
   }
 }

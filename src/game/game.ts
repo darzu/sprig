@@ -646,7 +646,7 @@ export class CubeGameState extends GameState {
 
   stepGame(dt: number) {
     // TODO(@darzu): this should all be a system
-    const { inputs } = EM.findSingletonEntity(InputsDef);
+    const { inputs } = EM.findSingletonEntity(InputsDef)!;
 
     // check render mode
     if (inputs.keyClicks["1"]) {
@@ -663,7 +663,7 @@ export class CubeGameState extends GameState {
     }
 
     // TODO(@darzu): wierd ECS
-    const { time } = EM.findSingletonEntity(TimeDef);
+    const { time } = EM.findSingletonEntity(TimeDef)!;
     time.dt = dt;
 
     EM.callSystems();
