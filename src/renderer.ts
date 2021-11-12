@@ -198,14 +198,14 @@ export function registerRenderer(em: EntityManager) {
   em.addSingletonComponent(PlayerViewDef);
 
   em.registerSystem(
-    [RenderableDef, TransformDef, MeshHandleDef],
-    [TimeDef, PlayerViewDef],
-    stepRenderer
-  );
-
-  em.registerSystem(
     [PlayerEntDef, MotionDef],
     [PlayerViewDef, CameraDef],
     updatePlayerView
+  );
+
+  em.registerSystem(
+    [RenderableDef, TransformDef, MeshHandleDef],
+    [TimeDef, PlayerViewDef],
+    stepRenderer
   );
 }
