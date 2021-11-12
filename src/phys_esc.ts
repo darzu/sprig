@@ -100,7 +100,7 @@ function stepsPhysics(
   // get singleton data
   const {
     physicsResults: { collidesWith, contactData, reboundData },
-  } = EM.findSingletonEntity(PhysicsResultsDef);
+  } = EM.findSingletonEntity(PhysicsResultsDef)!;
 
   // move objects
   moveObjects(_objDict, dt, collidesWith, contactData);
