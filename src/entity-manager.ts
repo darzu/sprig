@@ -188,6 +188,15 @@ export class EntityManager {
     return c;
   }
 
+  public removeSingletonComponent<C extends ComponentDef>(def: C) {
+    const e = this.entities.get(0)! as any;
+    if (def.name in e) {
+      delete e[def.name];
+    } else {
+      throw `Tried to remove absent singleton component ${def.name}`;
+    }
+  }
+
   // TODO(@darzu): should this be public??
   // TODO(@darzu): rename to findSingletonComponent
   public findSingletonEntity<C extends ComponentDef>(
@@ -223,6 +232,27 @@ export class EntityManager {
     for (let e of this.entities.values()) {
       if (cs.every((c) => c.name in e)) {
         res.push(e as HasMany<CS>);
+      } else {
+        // TODO(@darzu): easier way to help identify these errors?
+        // console.log(
+        //   `${e.id} is missing ${cs
+        //     .filter((c) => !(c.name in e))
+        //     .map((c) => c.name)
+        //     .join(".")}`
+        // );
+      }
+    }
+    return res;
+  }
+
+  public filterEntitiesByKey(cs: string[]): Entities<any> {
+    console.log(
+      "filterEntitiesByKey called--should only be called from console"
+    );
+    const res: Entities<any> = [];
+    for (let e of this.entities.values()) {
+      if (cs.every((c) => c in e)) {
+        res.push(e as HasMany<any>);
       } else {
         // TODO(@darzu): easier way to help identify these errors?
         // console.log(

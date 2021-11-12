@@ -1,4 +1,4 @@
-import { EM } from "../entity-manager.js";
+import { EntityManager } from "../entity-manager.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import { AuthorityDef, Authority, claimAuthority, Sync } from "./components.js";
 
@@ -28,6 +28,7 @@ export enum EntityUpdateType {
 export const MAX_MESSAGE_SIZE = 1024;
 
 export function serializeEntity(
+  em: EntityManager,
   ent: { id: number; authority: Authority; sync: Sync },
   message: Serializer,
   type: EntityUpdateType
@@ -48,11 +49,15 @@ export function serializeEntity(
     ? ent.sync.dynamicComponents
     : ent.sync.fullComponents) {
     message.writeUint32(componentId);
-    EM.serialize(ent.id, componentId, message);
+    em.serialize(ent.id, componentId, message);
   }
 }
 
-export function deserializeEntity(updateSeq: number, message: Deserializer) {
+export function deserializeEntity(
+  em: EntityManager,
+  updateSeq: number,
+  message: Deserializer
+) {
   let type: EntityUpdateType = message.readUint8();
   let id = message.readUint8();
   let authorityPid = message.readUint8();
@@ -61,7 +66,7 @@ export function deserializeEntity(updateSeq: number, message: Deserializer) {
   if (type === EntityUpdateType.Full || type === EntityUpdateType.Create) {
     creatorPid = message.readUint8();
   }
-  let ent = EM.findEntity(id, [AuthorityDef]);
+  let ent = em.findEntity(id, [AuthorityDef]);
   let entExisted = !!ent;
   let authority = ent && ent.authority;
   if (!ent && type === EntityUpdateType.Dynamic)
@@ -69,8 +74,8 @@ export function deserializeEntity(updateSeq: number, message: Deserializer) {
   if (!ent) {
     if (type === EntityUpdateType.Dynamic)
       throw `Got non-full update for unknown entity ${id}`;
-    EM.registerEntity(id);
-    authority = EM.addComponent(id, AuthorityDef);
+    em.registerEntity(id);
+    authority = em.addComponent(id, AuthorityDef);
     authority.pid = authorityPid;
     authority.seq = authoritySeq;
     authority.creatorPid = creatorPid!;
@@ -84,7 +89,7 @@ export function deserializeEntity(updateSeq: number, message: Deserializer) {
   let numComponents = message.readUint8();
   for (let i = 0; i < numComponents; i++) {
     let componentId = message.readUint32();
-    EM.deserialize(id, componentId, message);
+    em.deserialize(id, componentId, message);
   }
 }
 

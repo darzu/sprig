@@ -94,9 +94,9 @@ export class Peer {
     remotePeerId: string,
     connectionId: string
   ) {
-    console.log("setting up peer connection");
+    //console.log("setting up peer connection");
     peerConnection.onicecandidate = (ev) => {
-      console.log("on ice candidate");
+      //console.log("on ice candidate");
       if (!ev.candidate || !ev.candidate.candidate) return;
       //console.log(`Got ICE candidate for ${remotePeerId}`);
       if (!this.sock) {

@@ -45,6 +45,8 @@ import {
   registerHandleNetworkEvents,
   registerSendOutboxes,
 } from "../net/network-event-handler.js";
+import { registerJoinSystems } from "../net/join.js";
+import { registerSyncSystem, registerUpdateSystem } from "../net/sync.js";
 
 enum ObjectType {
   Plane,
@@ -392,7 +394,8 @@ export class CubeGameState extends GameState {
 
     registerNetSystems(EM);
     registerHandleNetworkEvents(EM);
-    registerSendOutboxes(EM);
+    registerUpdateSystem(EM);
+    registerJoinSystems(EM);
     registerStepBoats(EM);
     registerStepPlayers(EM);
     registerUpdateSmoothingTargetSnapChange(EM);
@@ -400,6 +403,8 @@ export class CubeGameState extends GameState {
     registerUpdateSmoothingTargetSmoothChange(EM);
     registerUpdateSmoothingLerp(EM);
     registerPhysicsSystems(EM);
+    registerSyncSystem(EM);
+    registerSendOutboxes(EM);
     registerUpdateTransforms(EM);
     registerRenderer(EM);
 
