@@ -592,9 +592,11 @@ export function createMeshPoolBuilder_WebGL(
   const triIndicesBuffer = gl.createBuffer()!;
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triIndicesBuffer);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, scratchTriIndices, gl.DYNAMIC_DRAW);
+
   const lineIndicesBuffer = gl.createBuffer()!;
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, lineIndicesBuffer);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, scratchLineIndices, gl.DYNAMIC_DRAW);
+  // TODO(@darzu): line indices don't work right. they interfere with regular tri indices.
+  // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, lineIndicesBuffer);
+  // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, scratchLineIndices, gl.DYNAMIC_DRAW);
 
   // our in-memory reflections of the buffers used during the initial build phase
   // TODO(@darzu): this is too much duplicate data
@@ -632,8 +634,9 @@ export function createMeshPoolBuilder_WebGL(
     gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, offset, data);
   }
   function queueUpdateLineIndices(offset: number, data: Uint8Array) {
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, lineIndicesBuffer);
-    gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, offset, data);
+    // TODO(@darzu): line indices don't work right. they interfere with regular tri indices.
+    // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, lineIndicesBuffer);
+    // gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, offset, data);
   }
   function queueUpdateUniform(offset: number, data: Uint8Array) {
     uniformMap.set(data, offset);
