@@ -316,6 +316,45 @@ function createPlayer(em: EntityManager) {
   _playerId = e.id;
 }
 
+function createPlane(em: EntityManager, loc: vec3, color: vec3) {
+  const e = em.newEntity();
+
+  em.addComponent(e.id, MotionDef, loc);
+  em.addComponent(e.id, MotionSmoothingDef);
+  em.addComponent(e.id, TransformDef);
+  em.addComponent(e.id, ParentDef);
+  em.addComponent(e.id, RenderableDef, PLANE_MESH);
+  const meshHandle = _renderer.addMesh(PLANE_MESH);
+  em.addComponent(e.id, MeshHandleDef, meshHandle);
+  em.addComponent(e.id, PhysicsStateDef);
+  em.addComponent(e.id, ColliderDef, {
+    shape: "AABB",
+    solid: true,
+    aabb: PLANE_AABB,
+  });
+  em.addComponent(e.id, ColorDef, color);
+}
+
+function createGround(em: EntityManager) {
+  // create checkered grid
+  const NUM_PLANES_X = 10;
+  const NUM_PLANES_Z = 10;
+  for (let x = 0; x < NUM_PLANES_X; x++) {
+    for (let z = 0; z < NUM_PLANES_Z; z++) {
+      const xPos = (x - NUM_PLANES_X / 2) * 20 + 10;
+      const zPos = (z - NUM_PLANES_Z / 2) * 20;
+      const parity = !!((x + z) % 2);
+      const loc = vec3.fromValues(
+        xPos,
+        x + z - (NUM_PLANES_X + NUM_PLANES_Z),
+        zPos
+      );
+      const color = parity ? LIGHT_BLUE : DARK_BLUE;
+      createPlane(em, loc, color);
+    }
+  }
+}
+
 export class PlayerClass extends Cube {
   hat: number;
 
@@ -470,6 +509,7 @@ export function createGameObjects(em: EntityManager) {
   em.addComponent(cubeId, CubeConstructDef, 3, LIGHT_BLUE);
 
   createPlayer(em);
+  createGround(em);
 }
 
 export class CubeGameState extends GameState {
@@ -638,26 +678,6 @@ function createCamera(em: EntityManager) {
   let camera = EM.addSingletonComponent(CameraDef);
   camera.rotation = cameraRotation;
   camera.location = cameraLocation;
-}
-function createGround(em: EntityManager, creator: number) {
-  // create checkered grid
-  const NUM_PLANES_X = 10;
-  const NUM_PLANES_Z = 10;
-  for (let x = 0; x < NUM_PLANES_X; x++) {
-    for (let z = 0; z < NUM_PLANES_Z; z++) {
-      let plane = new Plane(EM.newEntity(), creator);
-      const xPos = (x - NUM_PLANES_X / 2) * 20 + 10;
-      const zPos = (z - NUM_PLANES_Z / 2) * 20;
-      const parity = !!((x + z) % 2);
-      vec3.copy(
-        plane.motion.location,
-        vec3.fromValues(xPos, x + z - (NUM_PLANES_X + NUM_PLANES_Z), zPos)
-      );
-      // plane.motion.location = vec3.fromValues(xPos + 10, -3, 12 + zPos);
-      plane.color = parity ? LIGHT_BLUE : DARK_BLUE;
-      // addObject(plane);
-    }
-  }
 }
 function createBoats(em: EntityManager, creator: number) {
   // create boat(s)
