@@ -1,5 +1,4 @@
-import { EM, EntityManager } from "./entity-manager.js";
-import { Component } from "./renderer.js";
+import { Component, EM, EntityManager } from "./entity-manager.js";
 
 const PHYSICS_PERIOD = 1000.0 / 60.0;
 const NET_PERIOD = 1000.0 / 20.0;

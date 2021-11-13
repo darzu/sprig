@@ -11,9 +11,8 @@ import {
 } from "./phys_motion.js";
 import { CollidesWith, ReboundData, IdPair } from "./phys.js";
 import { Collider, ColliderDef } from "./collider.js";
-import { EM, Entity } from "./entity-manager.js";
+import { Component, EM, Entity } from "./entity-manager.js";
 import {
-  Component,
   MotionSmoothingDef,
   Parent,
   ParentDef,

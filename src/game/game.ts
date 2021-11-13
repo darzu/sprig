@@ -1,4 +1,4 @@
-import { EM, Entity, EntityManager } from "../entity-manager.js";
+import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { TimeDef } from "../time.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { importObj, HAT_OBJ, isParseError } from "../import_obj.js";
@@ -19,11 +19,7 @@ import {
   registerUpdateSmoothingTargetSnapChange,
 } from "../phys_esc.js";
 import { Motion, copyMotionProps, MotionDef } from "../phys_motion.js";
-import {
-  Component,
-  registerRenderer,
-  registerUpdateTransforms,
-} from "../renderer.js";
+import { registerRenderer, registerUpdateTransforms } from "../renderer.js";
 import { Renderer } from "../render_webgpu.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import {

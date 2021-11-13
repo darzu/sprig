@@ -1,7 +1,6 @@
-import { EM } from "./entity-manager.js";
+import { Component, EM } from "./entity-manager.js";
 import { vec3 } from "./gl-matrix.js";
 import { AABB } from "./phys_broadphase.js";
-import { Component } from "./renderer.js";
 
 export type ColliderShape =
   | "Empty"

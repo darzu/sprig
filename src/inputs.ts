@@ -1,5 +1,4 @@
-import { EM, EntityManager } from "./entity-manager.js";
-import { Component } from "./renderer.js";
+import { Component, EM, EntityManager } from "./entity-manager.js";
 
 export const InputsDef = EM.defineComponent("inputs", () => {
   return {

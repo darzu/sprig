@@ -1,5 +1,4 @@
-import { EM } from "../entity-manager.js";
-import { Component } from "../renderer.js";
+import { EM, Component } from "../entity-manager.js";
 import { Deserializer } from "../serialize.js";
 import { MessageType } from "./message.js";
 import { FromNetworkEvent, ToNetworkEvent } from "./network-events.js";

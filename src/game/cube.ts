@@ -1,10 +1,9 @@
 import { ColliderDef } from "../collider.js";
-import { EM, EntityManager } from "../entity-manager.js";
+import { Component, EM, EntityManager } from "../entity-manager.js";
 import { vec3 } from "../gl-matrix.js";
 import { PhysicsStateDef } from "../phys_esc.js";
 import { Motion, MotionDef } from "../phys_motion.js";
 import {
-  Component,
   MotionSmoothingDef,
   ParentDef,
   RenderableDef,

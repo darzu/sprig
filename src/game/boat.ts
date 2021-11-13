@@ -1,8 +1,7 @@
-import { EM, EntityManager } from "../entity-manager.js";
+import { EM, EntityManager, Component } from "../entity-manager.js";
 import { TimeDef } from "../time.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { Motion, MotionDef } from "../phys_motion.js";
-import { Component } from "../renderer.js";
 
 export const BoatDef = EM.defineComponent("boat", () => {
   return {

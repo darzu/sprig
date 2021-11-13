@@ -5,8 +5,7 @@ import { clamp } from "./math.js";
 import { CollidesWith, idPair, IdPair, ContactData } from "./phys.js";
 import { AABB } from "./phys_broadphase.js";
 import { vec3Dbg } from "./utils-3d.js";
-import { EM } from "./entity-manager.js";
-import { Component } from "./renderer.js";
+import { Component, EM } from "./entity-manager.js";
 import { Deserializer, Serializer } from "./serialize.js";
 
 export const MotionDef = EM.defineComponent("motion", () => ({

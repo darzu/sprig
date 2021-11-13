@@ -10,9 +10,8 @@ import {
   Motion,
   MotionDef,
 } from "../phys_motion.js";
-import { EM, EntityManager } from "../entity-manager.js";
+import { Component, EM, EntityManager } from "../entity-manager.js";
 import { Time, TimeDef } from "../time.js";
-import { Component } from "../renderer.js";
 import { Bullet, HatDef } from "./game.js";
 
 export const PlayerEntDef = EM.defineComponent("player", () => {

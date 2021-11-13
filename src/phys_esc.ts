@@ -1,5 +1,5 @@
 import { Collider, ColliderDef } from "./collider.js";
-import { EM, EntityManager } from "./entity-manager.js";
+import { Component, EM, EntityManager } from "./entity-manager.js";
 import { Time, TimeDef } from "./time.js";
 import { _playerId } from "./game/game.js";
 import { quat, vec3 } from "./gl-matrix.js";
@@ -29,7 +29,7 @@ import {
   MotionDef,
   moveObjects,
 } from "./phys_motion.js";
-import { Component, MotionSmoothing, MotionSmoothingDef } from "./renderer.js";
+import { MotionSmoothing, MotionSmoothingDef } from "./renderer.js";
 import { identity_quat } from "./state.js";
 
 export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {

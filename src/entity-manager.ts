@@ -1,4 +1,3 @@
-import { Component } from "./renderer.js";
 import { Serializer, Deserializer } from "./serialize.js";
 import { hashCode } from "./util.js";
 
@@ -15,18 +14,19 @@ export interface ComponentDef<
   construct: (...args: Pargs) => P;
   id: number;
 }
+export type Component<DEF> = DEF extends ComponentDef<any, infer P> ? P : never;
 
 type Intersect<A> = A extends [infer X, ...infer Y] ? X & Intersect<Y> : {};
 
-type Has<D> = D extends ComponentDef<infer N, infer P>
+type WithComponent<D> = D extends ComponentDef<infer N, infer P>
   ? { readonly [k in N]: P }
   : never;
-type HasMany<CS extends ComponentDef[]> = Entity &
-  Intersect<{ [P in keyof CS]: Has<CS[P]> }>;
-type Entities<CS extends ComponentDef[]> = HasMany<CS>[];
+type EntityW<CS extends ComponentDef[]> = Entity &
+  Intersect<{ [P in keyof CS]: WithComponent<CS[P]> }>;
+type Entities<CS extends ComponentDef[]> = EntityW<CS>[];
 type SystemFN<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = (
   es: CS extends ComponentDef[] ? Entities<CS> : [],
-  resources: HasMany<RS>
+  resources: EntityW<RS>
 ) => void;
 
 type System<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = {
@@ -201,7 +201,7 @@ export class EntityManager {
   // TODO(@darzu): rename to findSingletonComponent
   public findSingletonEntity<C extends ComponentDef>(
     c: C
-  ): (Entity & Has<C>) | undefined {
+  ): EntityW<[C]> | undefined {
     const e = this.entities.get(0)!;
     if (c.name in e) {
       return e as any;
@@ -223,12 +223,12 @@ export class EntityManager {
   public findEntity<CS extends ComponentDef[]>(
     id: number,
     cs: [...CS]
-  ): HasMany<CS> | undefined {
+  ): EntityW<CS> | undefined {
     const e = this.entities.get(id);
     if (e && !cs.every((c) => c.name in e)) {
       return undefined;
     }
-    return e as HasMany<CS>;
+    return e as EntityW<CS>;
   }
 
   public filterEntities<CS extends ComponentDef[]>(
@@ -238,7 +238,7 @@ export class EntityManager {
     if (cs === null) return res;
     for (let e of this.entities.values()) {
       if (cs.every((c) => c.name in e)) {
-        res.push(e as HasMany<CS>);
+        res.push(e as EntityW<CS>);
       } else {
         // TODO(@darzu): easier way to help identify these errors?
         // console.log(
@@ -259,7 +259,7 @@ export class EntityManager {
     const res: Entities<any> = [];
     for (let e of this.entities.values()) {
       if (cs.every((c) => c in e)) {
-        res.push(e as HasMany<any>);
+        res.push(e as EntityW<any>);
       } else {
         // TODO(@darzu): easier way to help identify these errors?
         // console.log(
@@ -310,6 +310,21 @@ export class EntityManager {
     }
   }
 }
+
+// public findEntity<CS extends ComponentDef[]>(
+//   id: number,
+//   cs: [...CS]
+// ): HasMany<CS> | undefined {
+//   const e = this.entities.get(id);
+//   if (e && !cs.every((c) => c.name in e)) {
+//     return undefined;
+//   }
+//   return e as HasMany<CS>;
+// }
+
+type EDef<ID extends number, CS extends ComponentDef[]> = [ID, ...CS];
+
+// function findEntitySet<ES extends EDef[]>(...es: [...ES]): {};
 
 // TODO(@darzu): where to put this?
 export const EM = new EntityManager();
