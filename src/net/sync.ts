@@ -1,29 +1,27 @@
 import { EntityManager, TimeDef } from "../entity-manager.js";
-import { Component } from "../renderer.js";
-import { Net } from "../net.js";
-import { Serializer, Deserializer, OutOfRoomError } from "../serialize.js";
+import { OutOfRoomError, Serializer } from "../serialize.js";
 import {
-  SyncDef,
-  Sync,
-  AuthorityDef,
   Authority,
-  PeerDef,
-  Peer,
+  AuthorityDef,
   DeletedDef,
-  MeDef,
-  InboxDef,
   Inbox,
-  OutboxDef,
+  InboxDef,
+  MeDef,
   Outbox,
+  OutboxDef,
+  Peer,
+  PeerDef,
   send,
+  Sync,
+  SyncDef,
 } from "./components.js";
 import {
-  MessageType,
-  MAX_MESSAGE_SIZE,
-  EntityUpdateType,
-  serializeEntity,
-  deserializeEntity,
   Ack,
+  deserializeEntity,
+  EntityUpdateType,
+  MAX_MESSAGE_SIZE,
+  MessageType,
+  serializeEntity,
 } from "./message.js";
 
 export function registerSyncSystem(em: EntityManager) {
