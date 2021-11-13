@@ -400,15 +400,14 @@ export class CubeGameState extends GameState {
 
     registerNetSystems(EM);
     registerHandleNetworkEvents(EM);
+    registerUpdateSmoothingTargetSnapChange(EM);
     registerUpdateSystem(EM);
+    registerUpdateSmoothingTargetSmoothChange(EM);
     registerJoinSystems(EM);
     registerBuildCubesSystem(EM);
     registerMoveCubesSystem(EM);
     registerStepBoats(EM);
     registerStepPlayers(EM);
-    registerUpdateSmoothingTargetSnapChange(EM);
-    // TODO: put network location updates between these two
-    registerUpdateSmoothingTargetSmoothChange(EM);
     registerUpdateSmoothingLerp(EM);
     registerPhysicsSystems(EM);
     registerSyncSystem(EM);
