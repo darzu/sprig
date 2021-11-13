@@ -1,9 +1,9 @@
-import { EM, Entity } from "../entity-manager.js";
+import { EM, Entity, EntityManager } from "../entity-manager.js";
 import { TimeDef } from "../time.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { importObj, HAT_OBJ, isParseError } from "../import_obj.js";
 import { InputsDef } from "../inputs.js";
-import { _GAME_ASSETS } from "../main.js";
+import { _GAME_ASSETS, _renderer } from "../main.js";
 import { jitter } from "../math.js";
 import {
   unshareProvokingVertices,
@@ -12,6 +12,7 @@ import {
   MeshHandle,
 } from "../mesh-pool.js";
 import {
+  PhysicsResultsDef,
   registerPhysicsSystems,
   registerUpdateSmoothingLerp,
   registerUpdateSmoothingTargetSmoothChange,
@@ -228,6 +229,9 @@ abstract class Cube extends GameObject {
   }
 }
 
+export const BULLET_MESH = scaleMesh(CUBE_MESH, 0.3);
+
+export const BulletDef = EM.defineComponent("bullet", () => true);
 export class Bullet extends Cube {
   constructor(e: Entity, creator: number) {
     super(e, creator);
@@ -372,6 +376,49 @@ class BoatClass extends Cube {
 // TODO(@darzu): for debugging
 export let _playerId: number = -1;
 
+// TODO(@darzu): integrate
+export function registerAllSystems(em: EntityManager) {
+  registerTimeSystem(EM);
+  registerNetSystems(EM);
+  registerHandleNetworkEvents(EM);
+  registerUpdateSmoothingTargetSnapChange(EM);
+  registerUpdateSystem(EM);
+  registerUpdateSmoothingTargetSmoothChange(EM);
+  registerJoinSystems(EM);
+  registerBuildCubesSystem(EM);
+  registerMoveCubesSystem(EM);
+  registerStepBoats(EM);
+  registerStepPlayers(EM);
+  registerUpdateSmoothingLerp(EM);
+  registerPhysicsSystems(EM);
+  registerBulletCollisionHandler(EM);
+  registerPlayerHatCollisionHandler(EM);
+  registerAckUpdateSystem(EM);
+  registerSyncSystem(EM);
+  registerSendOutboxes(EM);
+  registerUpdateTransforms(EM);
+  registerRenderViewController(EM);
+  registerRenderer(EM);
+}
+
+function registerRenderViewController(em: EntityManager) {
+  em.registerSystem([], [TimeDef, InputsDef], (_, { time, inputs }) => {
+    // check render mode
+    if (inputs.keyClicks["1"]) {
+      _renderer.wireMode = "normal";
+    } else if (inputs.keyClicks["2"]) {
+      _renderer.wireMode = "wireframe";
+    }
+
+    // check render mode
+    if (inputs.keyClicks["3"]) {
+      _renderer.perspectiveMode = "perspective";
+    } else if (inputs.keyClicks["4"]) {
+      _renderer.perspectiveMode = "ortho";
+    }
+  });
+}
+
 export class CubeGameState extends GameState {
   players: Record<number, PlayerClass>;
 
@@ -404,107 +451,9 @@ export class CubeGameState extends GameState {
     );
     mat4.copy(this.bulletProto.transform, new Float32Array(16)); // zero the transforms so it doesn't render
 
-    registerTimeSystem(EM);
-    registerNetSystems(EM);
-    registerHandleNetworkEvents(EM);
-    registerUpdateSmoothingTargetSnapChange(EM);
-    registerUpdateSystem(EM);
-    registerUpdateSmoothingTargetSmoothChange(EM);
-    registerJoinSystems(EM);
-    registerBuildCubesSystem(EM);
-    registerMoveCubesSystem(EM);
-    registerStepBoats(EM);
-    registerStepPlayers(EM);
-    registerUpdateSmoothingLerp(EM);
-    registerPhysicsSystems(EM);
-    registerAckUpdateSystem(EM);
-    registerSyncSystem(EM);
-    registerSendOutboxes(EM);
-    registerUpdateTransforms(EM);
-    registerRenderer(EM);
-
-    addTimeComponents(EM);
-
     if (createObjects) {
       let { id } = EM.newEntity();
       EM.addComponent(id, CubeConstructDef, 3, LIGHT_BLUE);
-      /*
-      // create checkered grid
-      const NUM_PLANES_X = 10;
-      const NUM_PLANES_Z = 10;
-      for (let x = 0; x < NUM_PLANES_X; x++) {
-        for (let z = 0; z < NUM_PLANES_Z; z++) {
-          let plane = new Plane(EM.newEntity(), this.me);
-          const xPos = (x - NUM_PLANES_X / 2) * 20 + 10;
-          const zPos = (z - NUM_PLANES_Z / 2) * 20;
-          const parity = !!((x + z) % 2);
-          vec3.copy(
-            plane.motion.location,
-            vec3.fromValues(xPos, x + z - (NUM_PLANES_X + NUM_PLANES_Z), zPos)
-          );
-          // plane.motion.location = vec3.fromValues(xPos + 10, -3, 12 + zPos);
-          plane.color = parity ? LIGHT_BLUE : DARK_BLUE;
-          this.addObject(plane);
-        }
-      }
-
-      // create boat(s)
-      const BOAT_COUNT = 4;
-      for (let i = 0; i < BOAT_COUNT; i++) {
-        const boat = new BoatClass(EM.newEntity(), this.me);
-        boat.motion.location[1] = -9;
-        boat.motion.location[0] = (Math.random() - 0.5) * 20 - 10;
-        boat.motion.location[2] = (Math.random() - 0.5) * 20 - 20;
-        boat.boat.speed = 0.01 + jitter(0.01);
-        boat.boat.wheelSpeed = jitter(0.002);
-        this.addObject(boat);
-
-        // TODO(@darzu): ECS hack
-        console.log("create ent");
-        const e = EM.newEntity();
-        let boatC = EM.addComponent(e.id, BoatDef);
-        Object.assign(boatC, boat.boat);
-        let boatM = EM.addComponent(e.id, MotionDef);
-        Object.assign(boatM, boat.motion);
-      }
-
-      // create ship
-      {
-        const ship = new Ship(EM.newEntity(), this.me);
-        ship.motion.location[0] = -40;
-        ship.motion.location[1] = -10;
-        ship.motion.location[2] = -60;
-        quat.rotateY(
-          ship.motion.rotation,
-          ship.motion.rotation,
-          Math.PI * -0.4
-        );
-        this.addObject(ship);
-      }
-
-      // create stack of boxes
-      const BOX_STACK_COUNT = 10;
-      for (let i = 0; i < BOX_STACK_COUNT; i++) {
-        let b = new HatClass(EM.newEntity(), this.me);
-        // b.motion.location = vec3.fromValues(0, 5 + i * 2, -2);
-        b.motion.location = vec3.fromValues(
-          Math.random() * -10 + 10 - 5,
-          0,
-          Math.random() * -10 - 5
-        );
-        this.addObject(b);
-        // TODO(@darzu): debug
-        console.log(`box: ${b.id}`);
-      }
-      // create player
-      const [_, playerObj] = this.addPlayer();
-      // TODO(@darzu): debug
-      playerObj.motion.location[0] += 5;
-      _playerId = playerObj.id;
-      // have added our objects, can unmap buffers
-      // TODO(@darzu): debug
-      // this.renderer.finishInit();
-      */
     }
     this.me = 0;
   }
@@ -553,66 +502,10 @@ export class CubeGameState extends GameState {
   stepGame(dt: number) {
     // TODO(@darzu): this should all be a system
     const { inputs } = EM.findSingletonEntity(InputsDef)!;
-
-    // check render mode
-    if (inputs.keyClicks["1"]) {
-      this.renderer.wireMode = "normal";
-    } else if (inputs.keyClicks["2"]) {
-      this.renderer.wireMode = "wireframe";
-    }
-
-    // check render mode
-    if (inputs.keyClicks["3"]) {
-      this.renderer.perspectiveMode = "perspective";
-    } else if (inputs.keyClicks["4"]) {
-      this.renderer.perspectiveMode = "ortho";
-    }
-
-    EM.callSystems();
   }
 
   handleCollisions() {
-    // check collisions
-    for (let o of this.liveObjects()) {
-      if (o instanceof Bullet) {
-        if (this.collidesWith.has(o.id)) {
-          let collidingObjects = this.collidesWith
-            .get(o.id)!
-            .map((id) => this.getObject(id)!);
-          // find other bullets this bullet is colliding with. only want to find each collision once
-          let collidingBullets = collidingObjects.filter(
-            (obj) => obj instanceof Bullet && obj.id > o.id
-          );
-          for (let otherBullet of collidingBullets) {
-            this.recordEvent(EventType.BulletBulletCollision, [
-              o.id,
-              otherBullet.id,
-            ]);
-          }
-          // find players this bullet is colliding with, other than the player who shot the bullet
-          let collidingPlayers = collidingObjects.filter(
-            (obj) => obj instanceof PlayerClass && obj.authority !== o.creator
-          );
-          for (let player of collidingPlayers) {
-            this.recordEvent(EventType.BulletPlayerCollision, [
-              player.id,
-              o.id,
-            ]);
-          }
-        }
-      }
-      if (o instanceof PlayerClass) {
-        if (o.hat === 0 && o.interactingWith > 0) {
-          this.recordEvent(EventType.HatGet, [o.id, o.interactingWith]);
-        }
-        if (o.hat > 0 && o.dropping) {
-          let dropLocation = vec3.fromValues(0, 0, -5);
-          vec3.transformQuat(dropLocation, dropLocation, o.motion.rotation);
-          vec3.add(dropLocation, dropLocation, o.motion.location);
-          this.recordEvent(EventType.HatDrop, [o.id, o.hat], dropLocation);
-        }
-      }
-    }
+    // TODO(@darzu): PARTLY RE-WORKED! See below
   }
 
   eventAuthority(type: EventType, objects: GameObject[]) {
@@ -703,3 +596,174 @@ export class CubeGameState extends GameState {
     }
   }
 }
+
+// const meshHandle = _renderer.addMesh(obj.mesh());
+// EM.addComponent(obj.entity.id, MeshHandleDef, meshHandle);
+
+function createCamera(em: EntityManager) {
+  let cameraRotation = quat.identity(quat.create());
+  quat.rotateX(cameraRotation, cameraRotation, -Math.PI / 8);
+  let cameraLocation = vec3.fromValues(0, 0, 10);
+
+  let camera = EM.addSingletonComponent(CameraDef);
+  camera.rotation = cameraRotation;
+  camera.location = cameraLocation;
+}
+function createGround(em: EntityManager, creator: number) {
+  // create checkered grid
+  const NUM_PLANES_X = 10;
+  const NUM_PLANES_Z = 10;
+  for (let x = 0; x < NUM_PLANES_X; x++) {
+    for (let z = 0; z < NUM_PLANES_Z; z++) {
+      let plane = new Plane(EM.newEntity(), creator);
+      const xPos = (x - NUM_PLANES_X / 2) * 20 + 10;
+      const zPos = (z - NUM_PLANES_Z / 2) * 20;
+      const parity = !!((x + z) % 2);
+      vec3.copy(
+        plane.motion.location,
+        vec3.fromValues(xPos, x + z - (NUM_PLANES_X + NUM_PLANES_Z), zPos)
+      );
+      // plane.motion.location = vec3.fromValues(xPos + 10, -3, 12 + zPos);
+      plane.color = parity ? LIGHT_BLUE : DARK_BLUE;
+      // addObject(plane);
+    }
+  }
+}
+function createBoats(em: EntityManager, creator: number) {
+  // create boat(s)
+  const BOAT_COUNT = 4;
+  for (let i = 0; i < BOAT_COUNT; i++) {
+    const boat = new BoatClass(EM.newEntity(), creator);
+    boat.motion.location[1] = -9;
+    boat.motion.location[0] = (Math.random() - 0.5) * 20 - 10;
+    boat.motion.location[2] = (Math.random() - 0.5) * 20 - 20;
+    boat.boat.speed = 0.01 + jitter(0.01);
+    boat.boat.wheelSpeed = jitter(0.002);
+    // addObject(boat);
+
+    // TODO(@darzu): ECS hack
+    console.log("create ent");
+    const e = EM.newEntity();
+    let boatC = EM.addComponent(e.id, BoatDef);
+    Object.assign(boatC, boat.boat);
+    let boatM = EM.addComponent(e.id, MotionDef);
+    Object.assign(boatM, boat.motion);
+  }
+}
+function createShip(em: EntityManager, creator: number) {
+  // create ship
+  const ship = new Ship(EM.newEntity(), creator);
+  ship.motion.location[0] = -40;
+  ship.motion.location[1] = -10;
+  ship.motion.location[2] = -60;
+  quat.rotateY(ship.motion.rotation, ship.motion.rotation, Math.PI * -0.4);
+  // addObject(ship);
+}
+function createCubeStack(em: EntityManager, creator: number) {
+  // create stack of boxes
+  const BOX_STACK_COUNT = 10;
+  for (let i = 0; i < BOX_STACK_COUNT; i++) {
+    let b = new HatClass(EM.newEntity(), creator);
+    // b.motion.location = vec3.fromValues(0, 5 + i * 2, -2);
+    b.motion.location = vec3.fromValues(
+      Math.random() * -10 + 10 - 5,
+      0,
+      Math.random() * -10 - 5
+    );
+    // addObject(b);
+    // TODO(@darzu): debug
+    console.log(`box: ${b.id}`);
+  }
+}
+function createPlayer(em: EntityManager, creator: number) {
+  // create player
+  const playerObj = new PlayerClass(EM.newEntity(), creator);
+  // addObject(playerObj);
+  // TODO(@darzu): debug
+  playerObj.motion.location[0] += 5;
+  // TODO(@darzu):  move _playerId to a LocalPlayer component or something
+  _playerId = playerObj.id;
+
+  // TODO(@darzu): what's up with our renderer init?
+  // have added our objects, can unmap buffers
+  // TODO(@darzu): debug
+  // __renderer.finishInit();
+
+  // TODO(@darzu): how do we handle authority on creating players?
+}
+
+// // create local mesh prototypes
+// let bulletProto = _renderer.addMesh(BULLET_MESH);
+// mat4.copy(bulletProto.transform, new Float32Array(16)); // zero the transforms so it doesn't render
+
+// if (createObjects) {
+//   createGround(em, me);
+//   createBoats(em, me);
+//   createShip(em, me);
+//   createCubeStack(em, me);
+//   createPlayer(em, me);
+// }
+
+function registerBulletCollisionHandler(em: EntityManager) {
+  // TODO(@darzu):
+  em.registerSystem([BulletDef], [PhysicsResultsDef], (bullets, resources) => {
+    const { collidesWith } = resources.physicsResults;
+
+    for (let o of bullets) {
+      if (collidesWith.has(o.id)) {
+        let otherIds = collidesWith.get(o.id)!;
+        let otherBullets = otherIds.map(
+          (id) => id > o.id && em.findEntity(id, [BulletDef])
+        );
+        // find other bullets this bullet is colliding with. only want to find each collision once
+        for (let otherBullet of otherBullets) {
+          if (otherBullet) {
+            // TODO: Doug, call new recordEvent
+            // recordEvent(EventType.BulletBulletCollision, [
+            //   o.id,
+            //   otherBullet.id,
+            // ]);
+          }
+        }
+
+        // find players this bullet is colliding with, other than the player who shot the bullet
+        let otherPlayers = otherIds.map((id) =>
+          em.findEntity(id, [PlayerEntDef])
+        );
+        for (let otherPlayer of otherPlayers) {
+          // if (obj.authority !== o.creator)
+          //   recordEvent(EventType.BulletPlayerCollision, [player.id, o.id]);
+        }
+      }
+    }
+  });
+}
+
+function registerPlayerHatCollisionHandler(em: EntityManager) {
+  em.registerSystem(
+    [PlayerEntDef],
+    [PhysicsResultsDef],
+    (players, resources) => {
+      const { collidesWith } = resources.physicsResults;
+      // TODO(@darzu): handle hat pickup
+      // // check collisions
+      // for (let o of this.liveObjects()) {
+      //   if (o instanceof Bullet) {
+      //   }
+      //   if (o instanceof PlayerClass) {
+      //     if (o.hat === 0 && o.interactingWith > 0) {
+      //       this.recordEvent(EventType.HatGet, [o.id, o.interactingWith]);
+      //     }
+      //     if (o.hat > 0 && o.dropping) {
+      //       let dropLocation = vec3.fromValues(0, 0, -5);
+      //       vec3.transformQuat(dropLocation, dropLocation, o.motion.rotation);
+      //       vec3.add(dropLocation, dropLocation, o.motion.location);
+      //       this.recordEvent(EventType.HatDrop, [o.id, o.hat], dropLocation);
+      //     }
+      //   }
+      // }
+    }
+  );
+}
+
+// registerAllSystems(EM);

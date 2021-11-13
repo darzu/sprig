@@ -11,9 +11,9 @@ import {
 } from "./phys_broadphase.js";
 import { setupObjImportExporter } from "./download.js";
 import { GameAssets, loadAssets } from "./game/assets.js";
-import { CubeGameState } from "./game/game.js";
+import { CubeGameState, registerAllSystems } from "./game/game.js";
 import { EM } from "./entity-manager.js";
-import { TimeDef } from "./time.js";
+import { addTimeComponents, TimeDef } from "./time.js";
 import { InputsDef, registerInputsSystem } from "./inputs.js";
 import { MeDef, JoinDef } from "./net/components.js";
 
@@ -114,6 +114,10 @@ async function startGame(host: string | null) {
     EM.addSingletonComponent(JoinDef, host!);
   }
 
+  registerAllSystems(EM);
+
+  addTimeComponents(EM);
+
   _gameState = new CubeGameState(_renderer, hosting);
 
   // TODO(@darzu): clean up ECS
@@ -152,6 +156,7 @@ async function startGame(host: string | null) {
     while (sim_time_accumulator > SIM_DT) {
       let before_sim = performance.now();
       _gameState.step(SIM_DT);
+      EM.callSystems();
       sim_time_accumulator -= SIM_DT;
       sim_time += performance.now() - before_sim;
     }

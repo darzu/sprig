@@ -65,7 +65,7 @@ export class EntityManager {
   ): ComponentDef<N, P, Pargs> {
     const id = hashCode(name);
     if (this.components.has(id)) {
-      throw `Component with id ${id} already defined--hash collision?`;
+      throw `Component with name ${name} already defined--hash collision?`;
     }
     const component = {
       name,
