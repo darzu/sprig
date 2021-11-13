@@ -1,10 +1,4 @@
-import {
-  ComponentDef,
-  EntityManager,
-  EM,
-  TimeDef,
-  Entity,
-} from "./entity-manager.js";
+import { ComponentDef, EntityManager, EM, Entity } from "./entity-manager.js";
 import { ColorDef } from "./game/game.js";
 import {
   CameraDef,
@@ -17,6 +11,7 @@ import { _gameState, _renderer } from "./main.js";
 import { Mesh, MeshHandle, MeshHandleDef } from "./mesh-pool.js";
 import { Motion, MotionDef } from "./phys_motion.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
+import { TimeDef } from "./time.js";
 
 export type Component<DEF> = DEF extends ComponentDef<any, infer P> ? P : never;
 

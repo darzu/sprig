@@ -10,7 +10,8 @@ import {
   Motion,
   MotionDef,
 } from "../phys_motion.js";
-import { EM, EntityManager, Time, TimeDef } from "../entity-manager.js";
+import { EM, EntityManager } from "../entity-manager.js";
+import { Time, TimeDef } from "../time.js";
 import { Component } from "../renderer.js";
 import { Bullet, HatDef } from "./game.js";
 

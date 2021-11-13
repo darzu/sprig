@@ -12,7 +12,8 @@ import {
 import { setupObjImportExporter } from "./download.js";
 import { GameAssets, loadAssets } from "./game/assets.js";
 import { CubeGameState } from "./game/game.js";
-import { EM, TimeDef } from "./entity-manager.js";
+import { EM } from "./entity-manager.js";
+import { TimeDef } from "./time.js";
 import { InputsDef, registerInputsSystem } from "./inputs.js";
 import { MeDef, JoinDef } from "./net/components.js";
 
@@ -112,7 +113,6 @@ async function startGame(host: string | null) {
   } else {
     EM.addSingletonComponent(JoinDef, host!);
   }
-  EM.addSingletonComponent(TimeDef);
 
   _gameState = new CubeGameState(_renderer, hosting);
 

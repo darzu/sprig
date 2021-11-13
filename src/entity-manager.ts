@@ -315,8 +315,3 @@ export class EntityManager {
 export const EM = new EntityManager();
 
 (window as any).EM = EM;
-
-// TODO(@darzu):  move these elsewher
-
-export const TimeDef = EM.defineComponent("time", () => ({ dt: 0 }));
-export type Time = Component<typeof TimeDef>;

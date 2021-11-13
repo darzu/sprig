@@ -1,4 +1,4 @@
-import { EntityManager, TimeDef } from "../entity-manager.js";
+import { EntityManager } from "../entity-manager.js";
 import { OutOfRoomError, Serializer } from "../serialize.js";
 import {
   Authority,
@@ -23,72 +23,88 @@ import {
   MessageType,
   serializeEntity,
 } from "./message.js";
+import { Time, TimeDef, Timer, NetTimerDef } from "../time.js";
 
 export function registerSyncSystem(em: EntityManager) {
   function sync(
     ents: { id: number; sync: Sync; authority: Authority }[],
-    { time, me }: { time: { dt: number }; me: { pid: number; host: boolean } }
+    {
+      time,
+      netTimer,
+      me,
+    }: {
+      time: Time;
+      me: { pid: number; host: boolean };
+      netTimer: Timer;
+    }
   ) {
-    const peers = em.filterEntities([PeerDef, OutboxDef]);
-    for (let { peer, outbox } of peers) {
-      if (me.host && !peer.joined) continue;
-      const entities = ents.filter(
-        (ent) =>
-          (!em.findEntity(ent.id, [DeletedDef]) &&
-            ent.authority.pid == me.pid) ||
-          (ent.authority.creatorPid == me.pid &&
-            !peer.entitiesKnown.has(ent.id))
-      );
-      for (let ent of entities) {
-        const priorityIncrease = peer.entitiesKnown.has(ent.id)
-          ? ent.sync.priorityIncrementDynamic
-          : ent.sync.priorityIncrementFull;
-        peer.entityPriorities.set(
-          ent.id,
-          priorityIncrease + (peer.entityPriorities.get(ent.id) || 0)
+    for (let i = 0; i < netTimer.steps; i++) {
+      const peers = em.filterEntities([PeerDef, OutboxDef]);
+      for (let { peer, outbox } of peers) {
+        if (me.host && !peer.joined) continue;
+        const entities = ents.filter(
+          (ent) =>
+            (!em.findEntity(ent.id, [DeletedDef]) &&
+              ent.authority.pid == me.pid) ||
+            (ent.authority.creatorPid == me.pid &&
+              !peer.entitiesKnown.has(ent.id))
         );
-      }
-      entities.sort((o1, o2) => {
-        return (
-          peer.entityPriorities.get(o2.id)! - peer.entityPriorities.get(o1.id)!
-        );
-      });
-      let message = new Serializer(MAX_MESSAGE_SIZE);
-      let seq = peer.updateSeq++;
-      message.writeUint8(MessageType.StateUpdate);
-      message.writeUint32(seq);
-      message.writeFloat32(performance.now());
-      let numEntities = 0;
-      let numEntitiesIndex = message.writeUint8(numEntities);
-      try {
-        // events always get synced before entities
         for (let ent of entities) {
-          //console.log(`Trying to sync object ${obj.id}`);
-          // TODO: could this be a 16-bit integer instead?
-          let type = peer.entitiesKnown.has(ent.id)
-            ? EntityUpdateType.Dynamic
-            : ent.authority.pid === me.pid
-            ? EntityUpdateType.Full
-            : EntityUpdateType.Create;
-          serializeEntity(em, ent, message, type);
-          if (
-            type !== EntityUpdateType.Dynamic &&
-            !peer.entitiesInUpdate.has(seq)
-          ) {
-            peer.entitiesInUpdate.set(seq, new Set());
-            peer.entitiesInUpdate.get(seq)!.add(ent.id);
-          }
-          peer.entityPriorities.set(ent.id, 0);
-          numEntities++;
+          const priorityIncrease = peer.entitiesKnown.has(ent.id)
+            ? ent.sync.priorityIncrementDynamic
+            : ent.sync.priorityIncrementFull;
+          peer.entityPriorities.set(
+            ent.id,
+            priorityIncrease + (peer.entityPriorities.get(ent.id) || 0)
+          );
         }
-      } catch (e) {
-        if (!(e instanceof OutOfRoomError)) throw e;
+        entities.sort((o1, o2) => {
+          return (
+            peer.entityPriorities.get(o2.id)! -
+            peer.entityPriorities.get(o1.id)!
+          );
+        });
+        let message = new Serializer(MAX_MESSAGE_SIZE);
+        let seq = peer.updateSeq++;
+        message.writeUint8(MessageType.StateUpdate);
+        message.writeUint32(seq);
+        message.writeFloat32(time.time);
+        let numEntities = 0;
+        let numEntitiesIndex = message.writeUint8(numEntities);
+        try {
+          // events always get synced before entities
+          for (let ent of entities) {
+            //console.log(`Trying to sync object ${obj.id}`);
+            // TODO: could this be a 16-bit integer instead?
+            let type = peer.entitiesKnown.has(ent.id)
+              ? EntityUpdateType.Dynamic
+              : ent.authority.pid === me.pid
+              ? EntityUpdateType.Full
+              : EntityUpdateType.Create;
+            serializeEntity(em, ent, message, type);
+            if (
+              type !== EntityUpdateType.Dynamic &&
+              !peer.entitiesInUpdate.has(seq)
+            ) {
+              peer.entitiesInUpdate.set(seq, new Set());
+              peer.entitiesInUpdate.get(seq)!.add(ent.id);
+            }
+            peer.entityPriorities.set(ent.id, 0);
+            numEntities++;
+          }
+        } catch (e) {
+          if (!(e instanceof OutOfRoomError)) throw e;
+        }
+        message.writeUint8(numEntities, numEntitiesIndex);
+        send(outbox, message.buffer, false);
       }
-      message.writeUint8(numEntities, numEntitiesIndex);
-      send(outbox, message.buffer, false);
     }
   }
-  em.registerSystem([AuthorityDef, SyncDef], [TimeDef, MeDef], sync);
+  em.registerSystem(
+    [AuthorityDef, SyncDef],
+    [TimeDef, NetTimerDef, MeDef],
+    sync
+  );
 }
 
 export function registerUpdateSystem(em: EntityManager) {
@@ -96,15 +112,11 @@ export function registerUpdateSystem(em: EntityManager) {
     peers: { peer: { address: string }; inbox: Inbox; outbox: Outbox }[],
     {
       time,
-      me,
     }: {
-      time: { dt: number };
-      me: { pid: number };
+      time: Time;
     }
   ) {
     //console.log("update");
-    // TODO: this should be the time at the beginning of the frame
-    let atTime = performance.now();
     for (let {
       peer: { address },
       inbox,
@@ -116,12 +128,12 @@ export function registerUpdateSystem(em: EntityManager) {
         let message = updates.shift()!;
         let seq = message.readUint32();
         let ts = message.readFloat32();
-        let dt = atTime - ts;
+        let dt = time.lastTime - ts;
         let numEntities = message.readUint8();
         for (let i = 0; i < numEntities; i++) {
           deserializeEntity(em, seq, message);
         }
-        // TODO: queue entity for prediction
+        // TODO: queue entity for prediction (using dt)
         let ack = Ack(seq);
         send(outbox, ack.buffer, false);
       }

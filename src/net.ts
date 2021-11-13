@@ -2,7 +2,7 @@ import { Peer } from "./peer.js";
 import { GameObject, GameEvent, GameState } from "./state.js";
 import { Serializer, Deserializer, OutOfRoomError } from "./serialize.js";
 import { vec3, quat } from "./gl-matrix.js";
-import { EM, TimeDef } from "./entity-manager.js";
+import { EM } from "./entity-manager.js";
 
 // fraction of state updates to artificially drop
 const DROP_PROBABILITY = 0.1;

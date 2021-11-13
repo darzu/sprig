@@ -1,5 +1,6 @@
 import { Collider, ColliderDef } from "./collider.js";
-import { EM, EntityManager, Time, TimeDef } from "./entity-manager.js";
+import { EM, EntityManager } from "./entity-manager.js";
+import { Time, TimeDef } from "./time.js";
 import { _playerId } from "./game/game.js";
 import { quat, vec3 } from "./gl-matrix.js";
 import {

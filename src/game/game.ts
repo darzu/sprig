@@ -1,4 +1,5 @@
-import { TimeDef, EM, Entity } from "../entity-manager.js";
+import { EM, Entity } from "../entity-manager.js";
+import { TimeDef } from "../time.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { importObj, HAT_OBJ, isParseError } from "../import_obj.js";
 import { InputsDef } from "../inputs.js";
@@ -57,6 +58,7 @@ import {
   CubeConstruct,
   CubeConstructDef,
 } from "./cube.js";
+import { registerTimeSystem, addTimeComponents } from "../time.js";
 
 enum ObjectType {
   Plane,
@@ -402,6 +404,7 @@ export class CubeGameState extends GameState {
     );
     mat4.copy(this.bulletProto.transform, new Float32Array(16)); // zero the transforms so it doesn't render
 
+    registerTimeSystem(EM);
     registerNetSystems(EM);
     registerHandleNetworkEvents(EM);
     registerUpdateSmoothingTargetSnapChange(EM);
@@ -419,6 +422,8 @@ export class CubeGameState extends GameState {
     registerSendOutboxes(EM);
     registerUpdateTransforms(EM);
     registerRenderer(EM);
+
+    addTimeComponents(EM);
 
     if (createObjects) {
       let { id } = EM.newEntity();
@@ -562,10 +567,6 @@ export class CubeGameState extends GameState {
     } else if (inputs.keyClicks["4"]) {
       this.renderer.perspectiveMode = "ortho";
     }
-
-    // TODO(@darzu): wierd ECS
-    const { time } = EM.findSingletonEntity(TimeDef)!;
-    time.dt = dt;
 
     EM.callSystems();
   }
