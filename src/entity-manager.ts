@@ -213,6 +213,13 @@ export class EntityManager {
     return this.entities.has(id);
   }
 
+  public hasComponents<CS extends ComponentDef[]>(
+    e: Entity,
+    cs: [...CS]
+  ): boolean {
+    return cs.every((c) => c.name in e);
+  }
+
   public findEntity<CS extends ComponentDef[]>(
     id: number,
     cs: [...CS]

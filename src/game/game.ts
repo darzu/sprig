@@ -47,6 +47,12 @@ import {
 } from "../net/network-event-handler.js";
 import { registerJoinSystems } from "../net/join.js";
 import { registerSyncSystem, registerUpdateSystem } from "../net/sync.js";
+import {
+  registerBuildCubesSystem,
+  registerMoveCubesSystem,
+  CubeConstruct,
+  CubeConstructDef,
+} from "./cube.js";
 
 enum ObjectType {
   Plane,
@@ -396,6 +402,8 @@ export class CubeGameState extends GameState {
     registerHandleNetworkEvents(EM);
     registerUpdateSystem(EM);
     registerJoinSystems(EM);
+    registerBuildCubesSystem(EM);
+    registerMoveCubesSystem(EM);
     registerStepBoats(EM);
     registerStepPlayers(EM);
     registerUpdateSmoothingTargetSnapChange(EM);
@@ -409,6 +417,9 @@ export class CubeGameState extends GameState {
     registerRenderer(EM);
 
     if (createObjects) {
+      let { id } = EM.newEntity();
+      EM.addComponent(id, CubeConstructDef, 3, LIGHT_BLUE);
+      /*
       // create checkered grid
       const NUM_PLANES_X = 10;
       const NUM_PLANES_Z = 10;
@@ -476,7 +487,6 @@ export class CubeGameState extends GameState {
         // TODO(@darzu): debug
         console.log(`box: ${b.id}`);
       }
-
       // create player
       const [_, playerObj] = this.addPlayer();
       // TODO(@darzu): debug
@@ -485,6 +495,7 @@ export class CubeGameState extends GameState {
       // have added our objects, can unmap buffers
       // TODO(@darzu): debug
       // this.renderer.finishInit();
+      */
     }
     this.me = 0;
   }

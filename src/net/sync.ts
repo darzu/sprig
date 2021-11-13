@@ -14,7 +14,6 @@ import {
   Inbox,
   OutboxDef,
   Outbox,
-  JoinedDef,
   send,
 } from "./components.js";
 import {
@@ -90,7 +89,7 @@ export function registerSyncSystem(em: EntityManager) {
       send(outbox, message.buffer, false);
     }
   }
-  em.registerSystem([AuthorityDef, SyncDef], [TimeDef, MeDef, JoinedDef], sync);
+  em.registerSystem([AuthorityDef, SyncDef], [TimeDef, MeDef], sync);
 }
 
 export function registerUpdateSystem(em: EntityManager) {
@@ -104,6 +103,7 @@ export function registerUpdateSystem(em: EntityManager) {
       me: { pid: number };
     }
   ) {
+    //console.log("update");
     // TODO: this should be the time at the beginning of the frame
     let atTime = performance.now();
     for (let {
@@ -129,9 +129,5 @@ export function registerUpdateSystem(em: EntityManager) {
     }
   }
 
-  em.registerSystem(
-    [PeerDef, InboxDef, OutboxDef],
-    [TimeDef, MeDef, JoinedDef],
-    update
-  );
+  em.registerSystem([PeerDef, InboxDef, OutboxDef], [TimeDef, MeDef], update);
 }

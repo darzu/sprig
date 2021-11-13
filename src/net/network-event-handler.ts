@@ -39,7 +39,6 @@ export function registerHandleNetworkEvents(em: EntityManager) {
           break;
         }
         case NetworkEventType.MessageRecv: {
-          console.log("message received");
           let id = _peerIDs[event.from];
           if (!id) throw `Received message from unknown peer ${event.from}`;
           let { inbox } = em.findEntity(id, [InboxDef])!;

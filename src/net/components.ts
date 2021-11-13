@@ -4,28 +4,11 @@ import { Deserializer } from "../serialize.js";
 import { MessageType } from "./message.js";
 import { FromNetworkEvent, ToNetworkEvent } from "./network-events.js";
 
-export const NetIdsDef = EM.defineComponent(
-  "netIds",
-  (start: number, end: number) => ({
-    start: start,
-    end: end,
-    nextId: start,
-  })
-);
-
-export type NetIds = Component<typeof NetIdsDef>;
-
-export function getNetId(netIds: NetIds): number {
-  if (netIds.nextId >= netIds.end) throw `Out of net IDS as ${netIds.nextId}`;
-  return netIds.nextId++;
-}
-
-export const SyncDef = EM.defineComponent("sync", (netId: number) => ({
-  netId,
+export const SyncDef = EM.defineComponent("sync", () => ({
   priorityIncrementFull: 1000,
   priorityIncrementDynamic: 10,
-  fullComponents: [],
-  dynamicComponents: [],
+  fullComponents: [] as number[],
+  dynamicComponents: [] as number[],
 }));
 
 export type Sync = Component<typeof SyncDef>;
@@ -43,12 +26,15 @@ export const PeerDef = EM.defineComponent("peer", () => ({
 
 export type Peer = Component<typeof PeerDef>;
 
-export const AuthorityDef = EM.defineComponent("authority", () => ({
-  creatorPid: 0,
-  pid: 0,
-  seq: 0,
-  updateSeq: 0,
-}));
+export const AuthorityDef = EM.defineComponent(
+  "authority",
+  (creator, authority) => ({
+    creatorPid: 0,
+    pid: 0,
+    seq: 0,
+    updateSeq: 0,
+  })
+);
 
 export type Authority = Component<typeof AuthorityDef>;
 
@@ -79,6 +65,8 @@ export const MeDef = EM.defineComponent("me", (pid: number, host: boolean) => ({
   pid,
   host,
 }));
+
+export type Me = Component<typeof MeDef>;
 
 export const InboxDef = EM.defineComponent(
   "inbox",
@@ -129,5 +117,3 @@ export const JoinDef = EM.defineComponent("join", (address: string) => ({
   state: "start" as "start" | "connecting",
 }));
 export type Join = Component<typeof JoinDef>;
-
-export const JoinedDef = EM.defineComponent("joined", () => true);

@@ -40,14 +40,12 @@ export function serializeEntity(
   if (type === EntityUpdateType.Full || type === EntityUpdateType.Create)
     message.writeUint8(ent.authority.creatorPid);
 
-  message.writeUint8(
+  const components =
     type === EntityUpdateType.Dynamic
-      ? ent.sync.dynamicComponents.length
-      : ent.sync.fullComponents.length
-  );
-  for (let componentId of type === EntityUpdateType.Dynamic
-    ? ent.sync.dynamicComponents
-    : ent.sync.fullComponents) {
+      ? ent.sync.dynamicComponents
+      : ent.sync.fullComponents.concat(ent.sync.dynamicComponents);
+  message.writeUint8(components.length);
+  for (let componentId of components) {
     message.writeUint32(componentId);
     em.serialize(ent.id, componentId, message);
   }
@@ -59,7 +57,7 @@ export function deserializeEntity(
   message: Deserializer
 ) {
   let type: EntityUpdateType = message.readUint8();
-  let id = message.readUint8();
+  let id = message.readUint32();
   let authorityPid = message.readUint8();
   let authoritySeq = message.readUint32();
   let creatorPid: number | undefined;
@@ -75,10 +73,8 @@ export function deserializeEntity(
     if (type === EntityUpdateType.Dynamic)
       throw `Got non-full update for unknown entity ${id}`;
     em.registerEntity(id);
-    authority = em.addComponent(id, AuthorityDef);
-    authority.pid = authorityPid;
+    authority = em.addComponent(id, AuthorityDef, creatorPid, authorityPid);
     authority.seq = authoritySeq;
-    authority.creatorPid = creatorPid!;
   }
   if (
     (entExisted && type === EntityUpdateType.Create) ||

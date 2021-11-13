@@ -35,6 +35,8 @@ export function hashCode(s: string) {
     chr = s.charCodeAt(i);
     hash = (hash << 5) - hash + chr;
     hash |= 0; // Convert to 32bit integer
+    // TODO: is the next line necessary?
+    hash >>>= 0; // Convert to unsigned
   }
   return hash;
 }

@@ -16,7 +16,6 @@ import {
   JoinDef,
   Join,
   NetworkReadyDef,
-  JoinedDef,
   EventsToNetworkDef,
   send,
 } from "./components.js";

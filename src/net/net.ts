@@ -35,9 +35,6 @@ class Net {
   public processEvents(queue: ToNetworkEvent[]) {
     while (queue.length > 0) {
       const event = queue.shift()!;
-      console.log(
-        `Processing to-network event ${NetworkEventType[event.type]}`
-      );
       switch (event.type) {
         case NetworkEventType.Connect:
           this.connect(event.address);
