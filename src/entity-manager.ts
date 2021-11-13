@@ -1,6 +1,19 @@
 import { Serializer, Deserializer } from "./serialize.js";
 import { hashCode } from "./util.js";
 
+type Intersect<A> = A extends [infer X, ...infer Y] ? X & Intersect<Y> : {};
+type Union<A> = A extends [infer X, ...infer Y] ? X | Union<Y> : never;
+
+// TODO(@darzu): consider using a non recursive definition for performance
+type TupleN<T, N extends number> = N extends N
+  ? number extends N
+    ? T[]
+    : _TupleN<T, N, []>
+  : never;
+type _TupleN<T, N extends number, R extends unknown[]> = R["length"] extends N
+  ? R
+  : _TupleN<T, N, [T, ...R]>;
+
 export interface Entity {
   readonly id: number;
 }
@@ -16,13 +29,12 @@ export interface ComponentDef<
 }
 export type Component<DEF> = DEF extends ComponentDef<any, infer P> ? P : never;
 
-type Intersect<A> = A extends [infer X, ...infer Y] ? X & Intersect<Y> : {};
-
 type WithComponent<D> = D extends ComponentDef<infer N, infer P>
   ? { readonly [k in N]: P }
   : never;
-type EntityW<CS extends ComponentDef[]> = Entity &
-  Intersect<{ [P in keyof CS]: WithComponent<CS[P]> }>;
+type EntityW<CS extends ComponentDef[], ID extends number = number> = {
+  id: ID;
+} & Intersect<{ [P in keyof CS]: WithComponent<CS[P]> }>;
 type Entities<CS extends ComponentDef[]> = EntityW<CS>[];
 type SystemFN<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = (
   es: CS extends ComponentDef[] ? Entities<CS> : [],
@@ -35,10 +47,12 @@ type System<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = {
   callback: SystemFN<CS, RS>;
 };
 
-// type TEST = Entities<[typeof BoatDef, typeof PlayerDef]>;
-
-// const t: TEST;
-// t[0].
+type EDef<ID extends number, CS extends ComponentDef[]> = [ID, ...CS];
+type ESet<DS extends EDef<number, any>[]> = {
+  [K in keyof DS]: DS[K] extends EDef<infer ID, infer CS>
+    ? EntityW<CS, ID>
+    : never;
+};
 
 export class EntityManager {
   entities: Map<number, Entity> = new Map();
@@ -201,7 +215,7 @@ export class EntityManager {
   // TODO(@darzu): rename to findSingletonComponent
   public findSingletonEntity<C extends ComponentDef>(
     c: C
-  ): EntityW<[C]> | undefined {
+  ): EntityW<[C], 0> | undefined {
     const e = this.entities.get(0)!;
     if (c.name in e) {
       return e as any;
@@ -220,15 +234,25 @@ export class EntityManager {
     return cs.every((c) => c.name in e);
   }
 
-  public findEntity<CS extends ComponentDef[]>(
-    id: number,
+  public findEntity<CS extends ComponentDef[], ID extends number>(
+    id: ID,
     cs: [...CS]
-  ): EntityW<CS> | undefined {
+  ): EntityW<CS, ID> | undefined {
     const e = this.entities.get(id);
     if (e && !cs.every((c) => c.name in e)) {
       return undefined;
     }
-    return e as EntityW<CS>;
+    return e as EntityW<CS, ID>;
+  }
+
+  public findEntitySet<ES extends EDef<number, any>[]>(
+    ...es: [...ES]
+  ): ESet<ES> {
+    const res = [];
+    for (let [id, ...cs] of es) {
+      res.push(this.findEntity(id, cs));
+    }
+    return res as ESet<ES>;
   }
 
   public filterEntities<CS extends ComponentDef[]>(
@@ -311,22 +335,8 @@ export class EntityManager {
   }
 }
 
-// public findEntity<CS extends ComponentDef[]>(
-//   id: number,
-//   cs: [...CS]
-// ): HasMany<CS> | undefined {
-//   const e = this.entities.get(id);
-//   if (e && !cs.every((c) => c.name in e)) {
-//     return undefined;
-//   }
-//   return e as HasMany<CS>;
-// }
-
-type EDef<ID extends number, CS extends ComponentDef[]> = [ID, ...CS];
-
-// function findEntitySet<ES extends EDef[]>(...es: [...ES]): {};
-
 // TODO(@darzu): where to put this?
 export const EM = new EntityManager();
 
 (window as any).EM = EM;
+
