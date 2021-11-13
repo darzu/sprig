@@ -5,7 +5,7 @@ import {
   TimeDef,
   Entity,
 } from "./entity-manager.js";
-import { ColorDef } from "./game/game.js";
+import { ColorDef, _playerId } from "./game/game.js";
 import {
   CameraDef,
   CameraProps,
@@ -13,7 +13,7 @@ import {
   PlayerEntDef,
 } from "./game/player.js";
 import { mat4, quat, vec3 } from "./gl-matrix.js";
-import { _gameState, _renderer } from "./main.js";
+import { _gameState2, _renderer } from "./main.js";
 import { Mesh, MeshHandle, MeshHandleDef } from "./mesh-pool.js";
 import { Motion, MotionDef } from "./phys_motion.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
@@ -161,7 +161,7 @@ function stepRenderer(
 }
 
 function updatePlayerView(
-  players: { player: PlayerEnt; motion: Motion }[],
+  players: { id: number; player: PlayerEnt; motion: Motion }[],
   resources: { playerView: PlayerView; camera: CameraProps }
 ) {
   const {
@@ -169,10 +169,9 @@ function updatePlayerView(
     camera,
   } = resources;
 
-  // TODO(@darzu): ECS check authority and me state
-  const mePlayer = players.filter(
-    (p) => p === (_gameState.players[_gameState.me]?.entity as any)
-  )[0];
+  // TODO(@darzu): _playerId should be on component
+  const mePlayer = players.filter((p) => p.id === _playerId)[0];
+  if (!mePlayer) return;
 
   //TODO: this calculation feels like it should be simpler but Doug doesn't
   //understand quaternions.

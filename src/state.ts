@@ -11,7 +11,7 @@ import {
 } from "./phys_motion.js";
 import { CollidesWith, ReboundData, IdPair } from "./phys.js";
 import { Collider, ColliderDef } from "./collider.js";
-import { EM, Entity } from "./entity-manager.js";
+import { EM, Entity, EntityManager } from "./entity-manager.js";
 import {
   Component,
   MotionSmoothingDef,
@@ -197,149 +197,119 @@ export interface GameEvent {
   location: vec3 | null;
 }
 
-export abstract class GameState {
-  protected nextPlayerId: number;
-  nextObjectId: number;
-  protected renderer: Renderer;
+// function recordEvent(type: number, objects: number[], location?: vec3 | null) {
+//   if (!location) location = null;
+//   // return; // TODO(@darzu): TO DEBUG this fn is costing a ton of memory
+//   let objs = objects.map((id) => this._objects.get(id)!);
+//   // check to see whether we're the authority for this event
+//   if (this.eventAuthority(type, objs) == this.me) {
+//     // TODO(@darzu): DEBUGGING
+//     // console.log(`Recording event type=${type}`);
+//     let id = this.newId();
+//     let event = { id, type, objects, authority: this.me, location };
+//     if (!this.legalEvent(event)) {
+//       throw "Ilegal event in recordEvent--game logic should prevent this";
+//     }
+//     this.requestedEvents.push(event);
+//   }
+// }
+
+// function legalEvent(_event: GameEvent) {
+//   return true;
+// }
+
+// export abstract class GameState {
+  // protected nextPlayerId: number;
+  // nextObjectId: number;
+  // protected renderer: Renderer;
   // TODO: make this a Map
-  private _objects: Map<number, GameObject>;
-  private _liveObjects: GameObject[];
-  requestedEvents: GameEvent[];
-  me: number;
-  numObjects: number = 0;
-  collidesWith: CollidesWith;
+  // private _objects: Map<number, GameObject>;
+  // private _liveObjects: GameObject[];
+  // requestedEvents: GameEvent[];
+  // me: number;
+  // numObjects: number = 0;
+  // collidesWith: CollidesWith;
 
-  constructor(renderer: Renderer) {
-    this.me = 0;
-    this.renderer = renderer;
-    this.nextPlayerId = 0;
-    this.nextObjectId = 1;
-    this._objects = new Map();
-    this._liveObjects = [];
-    this.requestedEvents = [];
-    this.collidesWith = new Map();
-  }
+  // constructor(renderer: Renderer) {
+  //   // this.me = 0;
+  //   // this.renderer = renderer;
+  //   this.nextPlayerId = 0;
+  //   this.nextObjectId = 1;
+  //   // this._objects = new Map();
+  //   // this._liveObjects = [];
+  //   this.requestedEvents = [];
+  //   this.collidesWith = new Map();
+  // }
 
-  abstract playerObject(playerId: number): GameObject;
+  // abstract playerObject(playerId: number): GameObject;
 
-  abstract stepGame(dt: number): void;
+  // abstract stepGame(dt: number): void;
 
-  abstract handleCollisions(): void;
+  // abstract handleCollisions(): void;
 
-  abstract runEvent(event: GameEvent): void;
+  // abstract runEvent(event: GameEvent): void;
 
-  abstract objectOfType(
-    typeID: number,
-    id: number,
-    creator: number
-  ): GameObject;
+  // abstract objectOfType(
+  //   typeID: number,
+  //   id: number,
+  //   creator: number
+  // ): GameObject;
 
-  addObject(obj: GameObject) {
-    this.numObjects++;
-    this._objects.set(obj.id, obj);
+  // private computeLiveObjects() {
+  //   this._liveObjects = [];
+  //   for (let obj of this._objects.values()) {
+  //     if (!obj.deleted) this._liveObjects.push(obj);
+  //   }
+  // }
 
-    // TODO(@darzu): adding the MeshHandle outside the constructor is a little wierd
-    const meshHandle = this.renderer.addMesh(obj.mesh());
-    EM.addComponent(obj.entity.id, MeshHandleDef, meshHandle);
+  // removeObject(obj: GameObject) {
+  //   this.numObjects--;
+  //   obj.deleted = true;
+  //   this.computeLiveObjects();
 
-    this._liveObjects.push(obj);
-  }
+  //   const { meshHandle } = EM.findEntity(obj.id, [MeshHandleDef])!;
 
-  addObjectInstance(obj: GameObject, otherMesh: MeshHandle) {
-    this.numObjects++;
-    this._objects.set(obj.id, obj);
+  //   this.renderer.removeMesh(meshHandle);
+  // }
 
-    // TODO(@darzu): adding the MeshHandle outside the constructor is a little wierd
-    const meshHandle = this.renderer.addMeshInstance(otherMesh);
-    EM.addComponent(obj.entity.id, MeshHandleDef, meshHandle);
+  // getObject(id: number) {
+  //   return this._objects.get(id);
+  // }
 
-    this._liveObjects.push(obj);
-  }
+  // allObjects(): GameObject[] {
+  //   return Array.from(this._objects.values());
+  // }
 
-  private computeLiveObjects() {
-    this._liveObjects = [];
-    for (let obj of this._objects.values()) {
-      if (!obj.deleted) this._liveObjects.push(obj);
-    }
-  }
+  // liveObjects(): GameObject[] {
+  //   return this._liveObjects;
+  // }
 
-  removeObject(obj: GameObject) {
-    this.numObjects--;
-    obj.deleted = true;
-    this.computeLiveObjects();
+  // liveObjectsMap(): Map<number, GameObject> {
+  //   let output = new Map();
+  //   for (let obj of this._objects.values()) {
+  //     if (!obj.deleted) output.set(obj.id, obj);
+  //   }
+  //   return output;
+  // }
 
-    const { meshHandle } = EM.findEntity(obj.id, [MeshHandleDef])!;
-
-    this.renderer.removeMesh(meshHandle);
-  }
-
-  getObject(id: number) {
-    return this._objects.get(id);
-  }
-
-  allObjects(): GameObject[] {
-    return Array.from(this._objects.values());
-  }
-
-  liveObjects(): GameObject[] {
-    return this._liveObjects;
-  }
-
-  liveObjectsMap(): Map<number, GameObject> {
-    let output = new Map();
-    for (let obj of this._objects.values()) {
-      if (!obj.deleted) output.set(obj.id, obj);
-    }
-    return output;
-  }
-
-  addPlayer(): [number, GameObject] {
-    let id = this.nextPlayerId;
-    this.nextPlayerId += 1;
-    let obj = this.playerObject(id);
-    this.addObject(obj);
-    return [id, obj];
-  }
-
-  newId(): number {
-    return this.nextObjectId++;
-  }
-
-  recordEvent(type: number, objects: number[], location?: vec3 | null) {
-    if (!location) location = null;
-    // return; // TODO(@darzu): TO DEBUG this fn is costing a ton of memory
-    let objs = objects.map((id) => this._objects.get(id)!);
-    // check to see whether we're the authority for this event
-    if (this.eventAuthority(type, objs) == this.me) {
-      // TODO(@darzu): DEBUGGING
-      // console.log(`Recording event type=${type}`);
-      let id = this.newId();
-      let event = { id, type, objects, authority: this.me, location };
-      if (!this.legalEvent(event)) {
-        throw "Ilegal event in recordEvent--game logic should prevent this";
-      }
-      this.requestedEvents.push(event);
-    }
-  }
-
-  legalEvent(_event: GameEvent) {
-    return true;
-  }
+  // newId(): number {
+  //   return this.nextObjectId++;
+  // }
 
   // Subclasses can override this to handle authority differently depending on the event type
-  eventAuthority(_type: number, objects: GameObject[]) {
-    return Math.min(...objects.map((o) => o.authority));
-  }
+  // eventAuthority(_type: number, objects: GameObject[]) {
+  //   return Math.min(...objects.map((o) => o.authority));
+  // }
 
-  step(dt: number) {
-    this.stepGame(dt);
+  // step(dt: number) {
+  //   this.stepGame(dt);
 
-    // move, check collisions
-    // TODO(@darzu): Remove after ECS stuff
-    const { physicsResults } = EM.findSingletonEntity(PhysicsResultsDef)!;
-    this.collidesWith = physicsResults.collidesWith;
+  //   // move, check collisions
+  //   // TODO(@darzu): Remove after ECS stuff
+  //   const { physicsResults } = EM.findSingletonEntity(PhysicsResultsDef)!;
+  //   this.collidesWith = physicsResults.collidesWith;
 
-    // deal with any collisions
-    this.handleCollisions();
-  }
-}
+  //   // deal with any collisions
+  //   this.handleCollisions();
+  // }
+// }

@@ -11,7 +11,11 @@ import {
 } from "./phys_broadphase.js";
 import { setupObjImportExporter } from "./download.js";
 import { GameAssets, loadAssets } from "./game/assets.js";
-import { CubeGameState } from "./game/game.js";
+import {
+  CubeGameState2,
+  initCubeGameState,
+  registerAllSystems,
+} from "./game/game.js";
 import { EM, TimeDef } from "./entity-manager.js";
 import { InputsDef, registerInputsSystem } from "./inputs.js";
 import { MeDef, JoinDef, JoinedDef } from "./net/components.js";
@@ -33,7 +37,8 @@ export let _GAME_ASSETS: GameAssets | null = null;
 
 // TODO(@darzu): this should be moved into systems and components
 export let _renderer: Renderer;
-export let _gameState: CubeGameState;
+// export let _gameState: CubeGameState;
+export let _gameState2: CubeGameState2;
 
 export let gameStarted = false;
 async function startGame(host: string | null) {
@@ -115,7 +120,10 @@ async function startGame(host: string | null) {
   }
   EM.addSingletonComponent(TimeDef);
 
-  _gameState = new CubeGameState(_renderer, hosting);
+  registerAllSystems(EM);
+
+  // _gameState = new CubeGameState(_renderer, hosting);
+  _gameState2 = initCubeGameState(EM, hosting);
 
   // TODO(@darzu): clean up ECS
   // let takeInputs = createInputsReader(canvas);
@@ -152,7 +160,12 @@ async function startGame(host: string | null) {
     let sim_time = 0;
     while (sim_time_accumulator > SIM_DT) {
       let before_sim = performance.now();
-      _gameState.step(SIM_DT);
+
+      const { time } = EM.findSingletonEntity(TimeDef)!;
+      time.dt = SIM_DT;
+      EM.callSystems();
+
+      // _gameState.step(SIM_DT);
       sim_time_accumulator -= SIM_DT;
       sim_time += performance.now() - before_sim;
     }
@@ -227,7 +240,8 @@ async function startGame(host: string | null) {
       `fps:${avgFPS.toFixed(1)} ` +
       //`buffers:(r=${reliableBufferSize}/u=${unreliableBufferSize}) ` +
       `dropped:${numDroppedUpdates} ` +
-      `objects:${_gameState.numObjects} ` +
+      // TODO(@darzu): recompute number of objects
+      // `objects:${_gameState.numObjects} ` +
       `skew: ${skew.join(",")} ` +
       `ping: ${ping.join(",")} ` +
       `${usingWebGPU ? "WebGPU" : "WebGL"}`;

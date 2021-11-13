@@ -2,7 +2,6 @@
 
 import { quat, vec3 } from "../gl-matrix.js";
 import { Inputs, InputsDef } from "../inputs.js";
-import { _gameState } from "../main.js";
 import { GameObject, InWorld, InWorldDef } from "../state.js";
 import {
   copyMotionProps,
@@ -12,7 +11,8 @@ import {
 } from "../phys_motion.js";
 import { EM, EntityManager, Time, TimeDef } from "../entity-manager.js";
 import { Component } from "../renderer.js";
-import { Bullet, HatDef } from "./game.js";
+import { addObjectInstance, Bullet, HatDef } from "./game.js";
+import { _gameState2 } from "../main.js";
 
 export const PlayerEntDef = EM.defineComponent("player", () => {
   return {
@@ -47,7 +47,7 @@ function spawnBullet(em: EntityManager, motion: Motion, creator: number) {
   vec3.copy(bullet.motion.linearVelocity, motion.linearVelocity);
   vec3.copy(bullet.motion.angularVelocity, motion.angularVelocity);
   // TODO(@darzu): don't reach to global
-  _gameState.addObjectInstance(bullet, _gameState.bulletProto);
+  addObjectInstance(bullet, _gameState2.bulletProto);
 }
 
 export function registerStepPlayers(em: EntityManager) {
@@ -187,7 +187,7 @@ function stepPlayers(
         bullet_axis,
         0.01
       );
-      spawnBullet(EM, bulletMotion, _gameState.me);
+      spawnBullet(EM, bulletMotion, _gameState2.me);
     }
     if (inputs.rclick) {
       const SPREAD = 5;
@@ -224,7 +224,7 @@ function stepPlayers(
             bullet_axis,
             0.01
           );
-          spawnBullet(EM, bulletMotion, _gameState.me);
+          spawnBullet(EM, bulletMotion, _gameState2.me);
         }
       }
     }
