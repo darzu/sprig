@@ -8,6 +8,7 @@ import {
   AuthorityDef,
   Authority,
   PeerDef,
+  Peer,
   DeletedDef,
   MeDef,
   InboxDef,
@@ -77,8 +78,8 @@ export function registerSyncSystem(em: EntityManager) {
             !peer.entitiesInUpdate.has(seq)
           ) {
             peer.entitiesInUpdate.set(seq, new Set());
+            peer.entitiesInUpdate.get(seq)!.add(ent.id);
           }
-          peer.entitiesInUpdate.get(seq)!.add(ent.id);
           peer.entityPriorities.set(ent.id, 0);
           numEntities++;
         }
@@ -130,4 +131,32 @@ export function registerUpdateSystem(em: EntityManager) {
   }
 
   em.registerSystem([PeerDef, InboxDef, OutboxDef], [TimeDef, MeDef], update);
+}
+
+export function registerAckUpdateSystem(em: EntityManager) {
+  function ack(
+    peers: { peer: Peer; inbox: Inbox }[],
+    {
+      time,
+      me,
+    }: {
+      time: { dt: number };
+      me: { pid: number };
+    }
+  ) {
+    for (let { peer, inbox } of peers) {
+      const acks = inbox.get(MessageType.StateUpdateResponse) || [];
+      while (acks.length > 0) {
+        let message = acks.shift()!;
+        let seq = message.readUint32();
+        let entities = peer.entitiesInUpdate.get(seq);
+        if (entities) {
+          for (let entity of entities) {
+            peer.entitiesKnown.add(entity);
+          }
+        }
+      }
+    }
+  }
+  em.registerSystem([PeerDef, InboxDef], [TimeDef, MeDef], ack);
 }

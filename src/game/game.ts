@@ -46,7 +46,11 @@ import {
   registerSendOutboxes,
 } from "../net/network-event-handler.js";
 import { registerJoinSystems } from "../net/join.js";
-import { registerSyncSystem, registerUpdateSystem } from "../net/sync.js";
+import {
+  registerSyncSystem,
+  registerUpdateSystem,
+  registerAckUpdateSystem,
+} from "../net/sync.js";
 import {
   registerBuildCubesSystem,
   registerMoveCubesSystem,
@@ -410,6 +414,7 @@ export class CubeGameState extends GameState {
     registerStepPlayers(EM);
     registerUpdateSmoothingLerp(EM);
     registerPhysicsSystems(EM);
+    registerAckUpdateSystem(EM);
     registerSyncSystem(EM);
     registerSendOutboxes(EM);
     registerUpdateTransforms(EM);
