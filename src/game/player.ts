@@ -12,12 +12,12 @@ import {
 } from "../phys_motion.js";
 import { Component, EM, EntityManager } from "../entity-manager.js";
 import { Time, TimeDef } from "../time.js";
-import { Bullet, HatDef } from "./game.js";
+import { Bullet, HatDef, _bulletProto } from "./game.js";
 
-export const PlayerEntDef = EM.defineComponent("player", () => {
+export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {
     jumpSpeed: 0.003,
-    gravity: 0.0001,
+    gravity: gravity ?? 0.1,
     // hat stuff
     // TODO(@darzu): better abstraction
     interactingWith: 0,
@@ -47,7 +47,7 @@ function spawnBullet(em: EntityManager, motion: Motion, creator: number) {
   vec3.copy(bullet.motion.linearVelocity, motion.linearVelocity);
   vec3.copy(bullet.motion.angularVelocity, motion.angularVelocity);
   // TODO(@darzu): don't reach to global
-  _gameState.addObjectInstance(bullet, _gameState.bulletProto);
+  _gameState.addObjectInstance(bullet, _bulletProto);
 }
 
 export function registerStepPlayers(em: EntityManager) {
@@ -108,9 +108,12 @@ function stepPlayers(
 
   const hats = EM.filterEntities([HatDef, MotionDef, InWorldDef]);
 
+  console.log(`${players.length} players, ${hats.length} hats`);
+
   for (let p of players) {
     // fall with gravity
-    p.motion.linearVelocity[1] -= p.player.gravity * dt;
+    // TODO(@darzu): what r the units of gravity here?
+    p.motion.linearVelocity[1] -= (p.player.gravity / 1000) * dt;
 
     // move player
     let vel = vec3.fromValues(0, 0, 0);

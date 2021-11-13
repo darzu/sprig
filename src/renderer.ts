@@ -41,13 +41,15 @@ export const ParentDef = EM.defineComponent("parent", () => {
 });
 export type Parent = Component<typeof ParentDef>;
 
-export const RenderableDef = EM.defineComponent("renderable", () => {
+export const RenderableDef = EM.defineComponent("renderable", (mesh?: Mesh) => {
   return {
-    mesh: {
-      pos: [],
-      tri: [],
-      colors: [],
-    } as Mesh,
+    mesh:
+      mesh ??
+      ({
+        pos: [],
+        tri: [],
+        colors: [],
+      } as Mesh),
   };
 });
 export type Renderable = Component<typeof RenderableDef>;
@@ -169,9 +171,8 @@ function updatePlayerView(
   } = resources;
 
   // TODO(@darzu): ECS check authority and me state
-  const mePlayer = players.filter(
-    (p) => p === (_gameState.players[_gameState.me]?.entity as any)
-  )[0];
+  const mePlayer = players[0];
+  if (!mePlayer) return;
 
   //TODO: this calculation feels like it should be simpler but Doug doesn't
   //understand quaternions.
@@ -195,15 +196,16 @@ function updatePlayerView(
   return viewMatrix;
 }
 
-export function registerRenderer(em: EntityManager) {
+export function registerUpdatePlayerView(em: EntityManager) {
   em.addSingletonComponent(PlayerViewDef);
-
   em.registerSystem(
     [PlayerEntDef, MotionDef],
     [PlayerViewDef, CameraDef],
     updatePlayerView
   );
+}
 
+export function registerRenderer(em: EntityManager) {
   em.registerSystem(
     [RenderableDef, TransformDef, MeshHandleDef],
     [TimeDef, PlayerViewDef],

@@ -57,11 +57,14 @@ export type Collider =
   | CapsuleCollider
   | UnionCollider;
 
-export const ColliderDef = EM.defineComponent("collider", () => {
-  return {
-    shape: "Empty",
-    solid: false,
-  } as Collider;
+export const ColliderDef = EM.defineComponent("collider", (c?: Collider) => {
+  return (
+    c ??
+    ({
+      shape: "Empty",
+      solid: false,
+    } as Collider)
+  );
 });
 const COLLIDER_ASSERT: Component<typeof ColliderDef> extends Collider
   ? true

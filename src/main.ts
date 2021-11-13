@@ -11,7 +11,12 @@ import {
 } from "./phys_broadphase.js";
 import { setupObjImportExporter } from "./download.js";
 import { GameAssets, loadAssets } from "./game/assets.js";
-import { CubeGameState, registerAllSystems } from "./game/game.js";
+import {
+  createGameObjects,
+  CubeGameState,
+  initGame,
+  registerAllSystems,
+} from "./game/game.js";
 import { EM } from "./entity-manager.js";
 import { addTimeComponents, TimeDef } from "./time.js";
 import { InputsDef, registerInputsSystem } from "./inputs.js";
@@ -118,12 +123,16 @@ async function startGame(host: string | null) {
 
   addTimeComponents(EM);
 
-  _gameState = new CubeGameState(_renderer, hosting);
+  initGame(EM);
 
-  // TODO(@darzu): clean up ECS
-  // let takeInputs = createInputsReader(canvas);
+  if (hosting) {
+    createGameObjects(EM);
+  }
+
   EM.addSingletonComponent(InputsDef);
   registerInputsSystem(canvas);
+
+  _gameState = new CubeGameState(_renderer, hosting);
 
   function doLockMouse() {
     if (document.pointerLockElement !== canvas) {

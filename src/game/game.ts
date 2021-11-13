@@ -10,16 +10,26 @@ import {
   getAABBFromMesh,
   Mesh,
   MeshHandle,
+  MeshHandleDef,
 } from "../mesh-pool.js";
 import {
   PhysicsResultsDef,
+  PhysicsStateDef,
   registerPhysicsSystems,
   registerUpdateSmoothingLerp,
   registerUpdateSmoothingTargetSmoothChange,
   registerUpdateSmoothingTargetSnapChange,
 } from "../phys_esc.js";
 import { Motion, copyMotionProps, MotionDef } from "../phys_motion.js";
-import { registerRenderer, registerUpdateTransforms } from "../renderer.js";
+import {
+  MotionSmoothingDef,
+  ParentDef,
+  registerRenderer,
+  registerUpdatePlayerView,
+  registerUpdateTransforms,
+  RenderableDef,
+  TransformDef,
+} from "../renderer.js";
 import { Renderer } from "../render_webgpu.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import {
@@ -28,6 +38,7 @@ import {
   scaleMesh3,
   GameEvent,
   GameState,
+  InWorldDef,
 } from "../state.js";
 import { never } from "../util.js";
 import { Boat, BoatDef, registerStepBoats } from "./boat.js";
@@ -56,6 +67,7 @@ import {
   CubeConstructDef,
 } from "./cube.js";
 import { registerTimeSystem, addTimeComponents } from "../time.js";
+import { ColliderDef } from "../collider.js";
 
 enum ObjectType {
   Plane,
@@ -194,7 +206,10 @@ const CUBE_MESH = unshareProvokingVertices({
 });
 const CUBE_AABB = getAABBFromMesh(CUBE_MESH);
 
-export const ColorDef = EM.defineComponent("color", () => vec3.create());
+export const ColorDef = EM.defineComponent(
+  "color",
+  (c?: vec3) => c ?? vec3.create()
+);
 export type Color = Component<typeof ColorDef>;
 
 function serializeColor(o: Color, buf: Serializer) {
@@ -275,6 +290,30 @@ export class HatClass extends Cube {
   typeId(): number {
     return ObjectType.Hat;
   }
+}
+
+function createPlayer(em: EntityManager) {
+  const e = em.newEntity();
+
+  em.addComponent(e.id, MotionDef, vec3.fromValues(5, 0, 0));
+  em.addComponent(e.id, MotionSmoothingDef);
+  em.addComponent(e.id, TransformDef);
+  em.addComponent(e.id, ParentDef);
+  em.addComponent(e.id, RenderableDef, CUBE_MESH);
+  const meshHandle = _renderer.addMesh(CUBE_MESH);
+  em.addComponent(e.id, MeshHandleDef, meshHandle);
+  em.addComponent(e.id, PhysicsStateDef);
+  em.addComponent(e.id, ColliderDef, {
+    shape: "AABB",
+    solid: true,
+    aabb: CUBE_AABB,
+  });
+  em.addComponent(e.id, InWorldDef, true);
+  em.addComponent(e.id, PlayerEntDef, 0.1);
+  em.addComponent(e.id, ColorDef, vec3.fromValues(0, 0.2, 0));
+
+  // TODO(@darzu):  move _playerId to a LocalPlayer component or something
+  _playerId = e.id;
 }
 
 export class PlayerClass extends Cube {
@@ -394,6 +433,7 @@ export function registerAllSystems(em: EntityManager) {
   registerSendOutboxes(EM);
   registerUpdateTransforms(EM);
   registerRenderViewController(EM);
+  registerUpdatePlayerView(EM);
   registerRenderer(EM);
 }
 
@@ -415,13 +455,25 @@ function registerRenderViewController(em: EntityManager) {
   });
 }
 
+export let _bulletProto: MeshHandle;
+export function initGame(em: EntityManager) {
+  // re-usable bullet mesh
+  _bulletProto = _renderer.addMesh(BULLET_MESH);
+  mat4.copy(_bulletProto.transform, new Float32Array(16)); // zero the transforms so it doesn't render
+
+  // init camera
+  createCamera(em);
+}
+
+export function createGameObjects(em: EntityManager) {
+  let { id: cubeId } = em.newEntity();
+  em.addComponent(cubeId, CubeConstructDef, 3, LIGHT_BLUE);
+
+  createPlayer(em);
+}
+
 export class CubeGameState extends GameState {
   players: Record<number, PlayerClass>;
-
-  bulletProto: MeshHandle;
-
-  // ECS:
-  camera: CameraProps;
 
   constructor(renderer: Renderer, createObjects: boolean = true) {
     super(renderer);
@@ -430,27 +482,9 @@ export class CubeGameState extends GameState {
     // this.spawnBullet = this.spawnBullet.bind(this);
 
     this.me = 0;
-    let cameraRotation = quat.identity(quat.create());
-    quat.rotateX(cameraRotation, cameraRotation, -Math.PI / 8);
-    let cameraLocation = vec3.fromValues(0, 0, 10);
-
-    // ECS:
-    this.camera = EM.addSingletonComponent(CameraDef);
-    this.camera.rotation = cameraRotation;
-    this.camera.location = cameraLocation;
 
     this.players = {};
 
-    // create local mesh prototypes
-    this.bulletProto = this.renderer.addMesh(
-      new Bullet(EM.newEntity(), this.me).mesh()
-    );
-    mat4.copy(this.bulletProto.transform, new Float32Array(16)); // zero the transforms so it doesn't render
-
-    if (createObjects) {
-      let { id } = EM.newEntity();
-      EM.addComponent(id, CubeConstructDef, 3, LIGHT_BLUE);
-    }
     this.me = 0;
   }
 
@@ -671,22 +705,22 @@ function createCubeStack(em: EntityManager, creator: number) {
     console.log(`box: ${b.id}`);
   }
 }
-function createPlayer(em: EntityManager, creator: number) {
-  // create player
-  const playerObj = new PlayerClass(EM.newEntity(), creator);
-  // addObject(playerObj);
-  // TODO(@darzu): debug
-  playerObj.motion.location[0] += 5;
-  // TODO(@darzu):  move _playerId to a LocalPlayer component or something
-  _playerId = playerObj.id;
+// function createPlayer(em: EntityManager, creator: number) {
+//   // create player
+//   const playerObj = new PlayerClass(EM.newEntity(), creator);
+//   // addObject(playerObj);
+//   // TODO(@darzu): debug
+//   playerObj.motion.location[0] += 5;
+//   // TODO(@darzu):  move _playerId to a LocalPlayer component or something
+//   _playerId = playerObj.id;
 
-  // TODO(@darzu): what's up with our renderer init?
-  // have added our objects, can unmap buffers
-  // TODO(@darzu): debug
-  // __renderer.finishInit();
+//   // TODO(@darzu): what's up with our renderer init?
+//   // have added our objects, can unmap buffers
+//   // TODO(@darzu): debug
+//   // __renderer.finishInit();
 
-  // TODO(@darzu): how do we handle authority on creating players?
-}
+//   // TODO(@darzu): how do we handle authority on creating players?
+// }
 
 // // create local mesh prototypes
 // let bulletProto = _renderer.addMesh(BULLET_MESH);

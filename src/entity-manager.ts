@@ -50,7 +50,7 @@ type System<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = {
 type EDef<ID extends number, CS extends ComponentDef[]> = [ID, ...CS];
 type ESet<DS extends EDef<number, any>[]> = {
   [K in keyof DS]: DS[K] extends EDef<infer ID, infer CS>
-    ? EntityW<CS, ID>
+    ? EntityW<CS, ID> | undefined
     : never;
 };
 
