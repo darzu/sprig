@@ -60,6 +60,7 @@ import {
   registerUpdateSystem,
   registerAckUpdateSystem,
 } from "../net/sync.js";
+import { registerEventSystems } from "../net/events.js";
 import {
   registerBuildCubesSystem,
   registerMoveCubesSystem,
@@ -415,6 +416,7 @@ export let _playerId: number = -1;
 export function registerAllSystems(em: EntityManager) {
   registerTimeSystem(EM);
   registerNetSystems(EM);
+  registerEventSystems(EM);
   registerHandleNetworkEvents(EM);
   registerUpdateSmoothingTargetSnapChange(EM);
   registerUpdateSystem(EM);

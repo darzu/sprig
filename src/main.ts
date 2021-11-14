@@ -20,7 +20,8 @@ import {
 import { EM } from "./entity-manager.js";
 import { addTimeComponents, TimeDef } from "./time.js";
 import { InputsDef, registerInputsSystem } from "./inputs.js";
-import { MeDef, JoinDef } from "./net/components.js";
+import { MeDef, JoinDef, HostDef } from "./net/components.js";
+import { addEventComponents } from "./net/events.js";
 
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
@@ -115,6 +116,7 @@ async function startGame(host: string | null) {
     EM.setDefaultRange("net");
     EM.setIdRange("net", 10001, 20000);
     EM.addSingletonComponent(MeDef, 0, true);
+    EM.addSingletonComponent(HostDef);
   } else {
     EM.addSingletonComponent(JoinDef, host!);
   }
@@ -122,6 +124,7 @@ async function startGame(host: string | null) {
   registerAllSystems(EM);
 
   addTimeComponents(EM);
+  addEventComponents(EM);
 
   initGame(EM);
 

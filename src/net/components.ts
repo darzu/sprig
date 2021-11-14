@@ -21,15 +21,18 @@ export const PeerDef = EM.defineComponent("peer", () => ({
   entityPriorities: new Map<number, number>(),
   entitiesKnown: new Set<number>(),
   entitiesInUpdate: new Map<number, Set<number>>(),
+  lastEvent: -1,
 }));
 
 export type Peer = Component<typeof PeerDef>;
 
+export const HostDef = EM.defineComponent("host", () => true);
+
 export const AuthorityDef = EM.defineComponent(
   "authority",
-  (creator, authority) => ({
-    creatorPid: 0,
-    pid: 0,
+  (creatorPid?, pid?) => ({
+    creatorPid: creatorPid || 0,
+    pid: pid || 0,
     seq: 0,
     updateSeq: 0,
   })
