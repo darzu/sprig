@@ -108,7 +108,7 @@ function stepPlayers(
 
   const hats = EM.filterEntities([HatDef, MotionDef, InWorldDef]);
 
-  console.log(`${players.length} players, ${hats.length} hats`);
+  //console.log(`${players.length} players, ${hats.length} hats`);
 
   for (let p of players) {
     // fall with gravity
