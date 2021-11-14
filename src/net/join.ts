@@ -17,13 +17,14 @@ import {
   Join,
   NetworkReadyDef,
   EventsToNetworkDef,
+  HostDef,
   send,
 } from "./components.js";
 import { MessageType, MAX_MESSAGE_SIZE } from "./message.js";
 
 function registerConnectToServer(em: EntityManager) {
   let f = (
-    peers: { peer: Peer }[],
+    peers: { id: number; peer: Peer }[],
     { join, eventsToNetwork }: { join: Join; eventsToNetwork: ToNetworkEvent[] }
   ) => {
     switch (join.state) {
@@ -37,6 +38,7 @@ function registerConnectToServer(em: EntityManager) {
       case "connecting":
         // TODO: this is a hacky way to tell if we're connected.
         if (peers.length > 0) {
+          em.addComponent(peers[0].id, HostDef);
           // TODO: consider putting this message into the outbox rather than directly on the event queue
           let message = new Serializer(8);
           message.writeUint8(MessageType.Join);
