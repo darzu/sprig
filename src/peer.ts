@@ -238,7 +238,7 @@ export class Peer {
         resolve(dataChannel);
       };
       dataChannel.onerror = (ev) => {
-        reject(ev.error);
+        reject(ev);
       };
     });
   }
