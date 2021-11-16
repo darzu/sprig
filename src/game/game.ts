@@ -321,9 +321,7 @@ function createPlane(em: EntityManager, loc: vec3, color: vec3) {
   const e = em.newEntity();
 
   em.addComponent(e.id, MotionDef, loc);
-  em.addComponent(e.id, MotionSmoothingDef);
   em.addComponent(e.id, TransformDef);
-  em.addComponent(e.id, ParentDef);
   em.addComponent(e.id, RenderableDef, PLANE_MESH);
   const meshHandle = _renderer.addMesh(PLANE_MESH);
   em.addComponent(e.id, MeshHandleDef, meshHandle);

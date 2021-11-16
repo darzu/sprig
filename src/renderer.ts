@@ -59,8 +59,10 @@ type Transformable = {
   motion: Motion;
   transform: Transform;
   renderable: Renderable;
-  parent: Parent;
-  motionSmoothing: MotionSmoothing;
+  // optional components
+  // TODO(@darzu): let the query system specify optional components
+  parent?: Parent;
+  motionSmoothing?: MotionSmoothing;
 };
 
 const _transformables: Map<number, Transformable> = new Map();
@@ -70,7 +72,7 @@ function updateTransform(o: Transformable) {
   if (_hasTransformed.has(o.id)) return;
 
   // update transform based on new rotations and positions
-  if (o.parent.id > 0) {
+  if (o.parent && o.parent.id > 0) {
     if (!_hasTransformed.has(o.parent.id))
       updateTransform(_transformables.get(o.parent.id)!);
 
@@ -84,7 +86,7 @@ function updateTransform(o: Transformable) {
       _transformables.get(o.parent.id)!.transform,
       o.transform
     );
-  } else if (SMOOTH) {
+  } else if (SMOOTH && o.motionSmoothing) {
     const working_quat = tempQuat();
     quat.mul(working_quat, o.motion.rotation, o.motionSmoothing.rotationDiff);
     quat.normalize(working_quat, working_quat);
@@ -119,7 +121,7 @@ function updateTransforms(objs: Transformable[]) {
 
 export function registerUpdateTransforms(em: EntityManager) {
   em.registerSystem(
-    [MotionDef, TransformDef, RenderableDef, ParentDef, MotionSmoothingDef],
+    [MotionDef, TransformDef, RenderableDef],
     [],
     updateTransforms
   );
