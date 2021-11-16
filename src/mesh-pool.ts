@@ -1129,3 +1129,13 @@ function createMeshBuilder(
 export function getAABBFromMesh(m: Mesh): AABB {
   return getAABBFromPositions(m.pos);
 }
+
+export function scaleMesh(m: Mesh, by: number): Mesh {
+  let pos = m.pos.map((p) => vec3.scale(vec3.create(), p, by));
+  return { ...m, pos };
+}
+export function scaleMesh3(m: Mesh, by: vec3): Mesh {
+  let pos = m.pos.map((p) => vec3.multiply(vec3.create(), p, by));
+  return { ...m, pos };
+}
+

@@ -28,15 +28,6 @@ import {
 
 const SMOOTH = true;
 
-export function scaleMesh(m: Mesh, by: number): Mesh {
-  let pos = m.pos.map((p) => vec3.scale(vec3.create(), p, by));
-  return { ...m, pos };
-}
-export function scaleMesh3(m: Mesh, by: vec3): Mesh {
-  let pos = m.pos.map((p) => vec3.multiply(vec3.create(), p, by));
-  return { ...m, pos };
-}
-
 const working_quat = quat.create();
 export const identity_quat = quat.create();
 const working_vec3 = vec3.create();

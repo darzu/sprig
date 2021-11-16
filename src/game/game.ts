@@ -11,6 +11,8 @@ import {
   Mesh,
   MeshHandle,
   MeshHandleDef,
+  scaleMesh,
+  scaleMesh3,
 } from "../mesh-pool.js";
 import {
   PhysicsResultsDef,
@@ -32,14 +34,7 @@ import {
 } from "../renderer.js";
 import { Renderer } from "../render_webgpu.js";
 import { Serializer, Deserializer } from "../serialize.js";
-import {
-  scaleMesh,
-  GameObject,
-  scaleMesh3,
-  GameEvent,
-  GameState,
-  InWorldDef,
-} from "../state.js";
+import { GameObject, GameEvent, GameState, InWorldDef } from "../state.js";
 import { never } from "../util.js";
 import { Boat, BoatDef, registerStepBoats } from "./boat.js";
 import {
@@ -69,6 +64,7 @@ import {
 } from "./cube.js";
 import { registerTimeSystem, addTimeComponents } from "../time.js";
 import { ColliderDef } from "../collider.js";
+import { PlaneConstructDef, registerBuildPlanesSystem } from "./plane.js";
 
 enum ObjectType {
   Plane,
@@ -317,23 +313,6 @@ function createPlayer(em: EntityManager) {
   _playerId = e.id;
 }
 
-function createPlane(em: EntityManager, loc: vec3, color: vec3) {
-  const e = em.newEntity();
-
-  em.addComponent(e.id, MotionDef, loc);
-  em.addComponent(e.id, TransformDef);
-  em.addComponent(e.id, RenderableDef, PLANE_MESH);
-  const meshHandle = _renderer.addMesh(PLANE_MESH);
-  em.addComponent(e.id, MeshHandleDef, meshHandle);
-  em.addComponent(e.id, PhysicsStateDef);
-  em.addComponent(e.id, ColliderDef, {
-    shape: "AABB",
-    solid: true,
-    aabb: PLANE_AABB,
-  });
-  em.addComponent(e.id, ColorDef, color);
-}
-
 function createGround(em: EntityManager) {
   // create checkered grid
   const NUM_PLANES_X = 10;
@@ -349,7 +328,8 @@ function createGround(em: EntityManager) {
         zPos
       );
       const color = parity ? LIGHT_BLUE : DARK_BLUE;
-      createPlane(em, loc, color);
+      let { id } = em.newEntity();
+      em.addComponent(id, PlaneConstructDef, loc, color);
     }
   }
 }
@@ -459,6 +439,7 @@ export function registerAllSystems(em: EntityManager) {
   registerUpdateSystem(EM);
   registerUpdateSmoothingTargetSmoothChange(EM);
   registerJoinSystems(EM);
+  registerBuildPlanesSystem(EM);
   registerBuildCubesSystem(EM);
   registerMoveCubesSystem(EM);
   registerStepBoats(EM);
