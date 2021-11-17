@@ -144,6 +144,27 @@ export const EventsDef = EM.defineComponent("events", () => ({
   last: -1,
 }));
 
+// TODO: this function is bad and we should find a way to do without it
+function takeEventsWithKnownObjects<E extends DetectedEvent>(
+  em: EntityManager,
+  events: E[]
+): E[] {
+  const result = [];
+  const remainingEvents = [];
+  while (events.length > 0) {
+    let event = events.shift()!;
+    if (event.entities.every((id) => em.hasEntity(id))) {
+      result.push(event);
+    } else {
+      remainingEvents.push(event);
+    }
+  }
+  while (remainingEvents.length > 0) {
+    events.push(remainingEvents.shift()!);
+  }
+  return result;
+}
+
 export function registerEventSystems(em: EntityManager) {
   function detectedEventsToRequestedEvents(
     [],
@@ -181,8 +202,8 @@ export function registerEventSystems(em: EntityManager) {
       events,
     }: { requestedEvents: DetectedEvent[]; events: { log: Event[] } }
   ) {
-    while (requestedEvents.length > 0) {
-      const detectedEvent = requestedEvents.shift()!;
+    const q = takeEventsWithKnownObjects(em, requestedEvents);
+    for (let detectedEvent of q.values()) {
       if (legalEvent(detectedEvent.type, em, detectedEvent)) {
         let event = detectedEvent as Event;
         event.seq = events.log.length;
@@ -203,8 +224,8 @@ export function registerEventSystems(em: EntityManager) {
   ) {
     if (hostOutboxes.length === 0) return;
     const outbox = hostOutboxes[0].outbox;
-    while (requestedEvents.length > 0) {
-      const detectedEvent = requestedEvents.shift()!;
+    const q = takeEventsWithKnownObjects(em, requestedEvents);
+    for (let detectedEvent of q.values()) {
       if (legalEvent(detectedEvent.type, em, detectedEvent)) {
         const message = new Serializer(MAX_MESSAGE_SIZE);
         message.writeUint8(MessageType.EventRequest);
@@ -282,6 +303,9 @@ export function registerEventSystems(em: EntityManager) {
       for (let event of newEvents) {
         // If we have an undefined event we've got a hole in the log.
         if (!event) break;
+        // If we don't know about all of these objects, we're not ready to run
+        // this event (or subsequent events)
+        if (!event.entities.every((id) => em.hasEntity(id))) break;
         runEvent(event.type, em, event);
         events.last = event.seq;
       }
