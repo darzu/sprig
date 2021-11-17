@@ -83,10 +83,9 @@ function deserializeDetectedEvent(buf: Deserializer): DetectedEvent {
 
 export interface EventHandler {
   eventAuthorityEntity: (entities: number[]) => number;
-  legalEvent: (em: EntityManager, type: string, entities: number[]) => boolean;
+  legalEvent: (em: EntityManager, entities: number[]) => boolean;
   runEvent: (
     em: EntityManager,
-    type: string,
     entities: number[],
     location: vec3 | null
   ) => void;
@@ -115,18 +114,13 @@ function eventAuthorityEntity(type: string, entities: number[]): number {
 function legalEvent(type: string, em: EntityManager, event: DetectedEvent) {
   if (!EVENT_HANDLERS.has(type))
     throw `No event handler registered for event type ${type}`;
-  return EVENT_HANDLERS.get(type)!.legalEvent(em, event.type, event.entities);
+  return EVENT_HANDLERS.get(type)!.legalEvent(em, event.entities);
 }
 
 function runEvent(type: string, em: EntityManager, event: Event) {
   if (!EVENT_HANDLERS.has(type))
     throw `No event handler registered for event type ${type}`;
-  return EVENT_HANDLERS.get(type)!.runEvent(
-    em,
-    event.type,
-    event.entities,
-    event.location
-  );
+  return EVENT_HANDLERS.get(type)!.runEvent(em, event.entities, event.location);
 }
 
 export const DetectedEventsDef = EM.defineComponent(
