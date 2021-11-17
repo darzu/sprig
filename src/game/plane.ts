@@ -112,9 +112,6 @@ export function registerBuildPlanesSystem(em: EntityManager) {
       if (!RenderableDef.isOn(plane)) {
         const renderable = em.addComponent(plane.id, RenderableDef);
         renderable.mesh = PLANE_MESH;
-        // TODO: renderer system that adds mesh handles
-        const meshHandle = _renderer.addMesh(renderable.mesh);
-        em.addComponent(plane.id, MeshHandleDef, meshHandle);
       }
       if (!PhysicsStateDef.isOn(plane))
         em.addComponent(plane.id, PhysicsStateDef);

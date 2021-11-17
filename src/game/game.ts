@@ -26,6 +26,7 @@ import { Motion, copyMotionProps, MotionDef } from "../phys_motion.js";
 import {
   MotionSmoothingDef,
   ParentDef,
+  registerAddMeshHandleSystem,
   registerRenderer,
   registerUpdatePlayerView,
   registerUpdateTransforms,
@@ -454,6 +455,7 @@ export function registerAllSystems(em: EntityManager) {
   registerUpdateTransforms(EM);
   registerRenderViewController(EM);
   registerUpdatePlayerView(EM);
+  registerAddMeshHandleSystem(EM);
   registerRenderer(EM);
 }
 

@@ -148,9 +148,6 @@ export function registerBuildCubesSystem(em: EntityManager) {
       if (!em.hasComponents(cube, [RenderableDef])) {
         const renderable = em.addComponent(cube.id, RenderableDef);
         renderable.mesh = scaleMesh(CUBE_MESH, cube.cubeConstruct.size);
-        // TODO: renderer system that adds mesh handles
-        const meshHandle = _renderer.addMesh(renderable.mesh);
-        em.addComponent(cube.id, MeshHandleDef, meshHandle);
       }
       if (!em.hasComponents(cube, [PhysicsStateDef]))
         em.addComponent(cube.id, PhysicsStateDef);

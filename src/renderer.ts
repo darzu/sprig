@@ -214,3 +214,16 @@ export function registerRenderer(em: EntityManager) {
     stepRenderer
   );
 }
+
+export function registerAddMeshHandleSystem(em: EntityManager) {
+  em.registerSystem([RenderableDef], [], (es) => {
+    for (let e of es) {
+      if (!MeshHandleDef.isOn(e)) {
+        // TODO(@darzu): how should we handle instancing?
+        // TODO(@darzu): this seems somewhat inefficient to look for this every frame
+        const meshHandle = _renderer.addMesh(e.renderable.mesh);
+        em.addComponent(e.id, MeshHandleDef, meshHandle);
+      }
+    }
+  });
+}
