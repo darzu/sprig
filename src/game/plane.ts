@@ -98,40 +98,38 @@ export function registerBuildPlanesSystem(em: EntityManager) {
     { me: { pid } }: { me: Me }
   ) {
     for (let plane of planes) {
-      if (em.hasComponents(plane, [FinishedDef])) continue;
+      if (FinishedDef.isOn(plane)) continue;
 
-      if (!em.hasComponents(plane, [MotionDef])) {
+      if (!MotionDef.isOn(plane)) {
         const motion = em.addComponent(plane.id, MotionDef);
         vec3.copy(motion.location, plane.planeConstruct.location);
       }
-      if (!em.hasComponents(plane, [ColorDef])) {
+      if (!ColorDef.isOn(plane)) {
         const color = em.addComponent(plane.id, ColorDef);
         vec3.copy(color, plane.planeConstruct.color);
       }
-      if (!em.hasComponents(plane, [MotionSmoothingDef]))
+      if (!MotionSmoothingDef.isOn(plane))
         em.addComponent(plane.id, MotionSmoothingDef);
-      if (!em.hasComponents(plane, [TransformDef]))
-        em.addComponent(plane.id, TransformDef);
-      if (!em.hasComponents(plane, [ParentDef]))
-        em.addComponent(plane.id, ParentDef);
-      if (!em.hasComponents(plane, [RenderableDef])) {
+      if (!TransformDef.isOn(plane)) em.addComponent(plane.id, TransformDef);
+      if (!ParentDef.isOn(plane)) em.addComponent(plane.id, ParentDef);
+      if (!RenderableDef.isOn(plane)) {
         const renderable = em.addComponent(plane.id, RenderableDef);
         renderable.mesh = PLANE_MESH;
         // TODO: renderer system that adds mesh handles
         const meshHandle = _renderer.addMesh(renderable.mesh);
         em.addComponent(plane.id, MeshHandleDef, meshHandle);
       }
-      if (!em.hasComponents(plane, [PhysicsStateDef]))
+      if (!PhysicsStateDef.isOn(plane))
         em.addComponent(plane.id, PhysicsStateDef);
-      if (!em.hasComponents(plane, [ColliderDef])) {
+      if (!ColliderDef.isOn(plane)) {
         const collider = em.addComponent(plane.id, ColliderDef);
         collider.shape = "AABB";
         collider.solid = false;
         (collider as AABBCollider).aabb = PLANE_AABB;
       }
-      if (!em.hasComponents(plane, [AuthorityDef]))
+      if (!AuthorityDef.isOn(plane))
         em.addComponent(plane.id, AuthorityDef, pid, pid);
-      if (!em.hasComponents(plane, [SyncDef])) {
+      if (!SyncDef.isOn(plane)) {
         const sync = em.addComponent(plane.id, SyncDef);
         sync.fullComponents.push(PlaneConstructDef.id);
         sync.dynamicComponents.push(MotionDef.id);

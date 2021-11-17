@@ -26,6 +26,7 @@ export interface ComponentDef<
   readonly name: N;
   construct: (...args: Pargs) => P;
   id: number;
+  isOn: <E extends Entity>(e: E) => e is E & { [K in N]: P };
 }
 export type Component<DEF> = DEF extends ComponentDef<any, infer P> ? P : never;
 
@@ -85,6 +86,7 @@ export class EntityManager {
       name,
       construct,
       id,
+      isOn: <E extends Entity>(e: E): e is E & { [K in N]: P } => name in e,
     };
     this.components.set(id, component);
     return component;
@@ -227,10 +229,10 @@ export class EntityManager {
     return this.entities.has(id);
   }
 
-  public hasComponents<CS extends ComponentDef[]>(
-    e: Entity,
+  public hasComponents<CS extends ComponentDef[], E extends Entity>(
+    e: E,
     cs: [...CS]
-  ): boolean {
+  ): e is E & EntityW<CS> {
     return cs.every((c) => c.name in e);
   }
 
