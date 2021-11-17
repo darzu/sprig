@@ -14,16 +14,19 @@ import {
   InboxDef,
   AuthorityDef,
 } from "./components.js";
+import { hashCode } from "../util.js";
 
 export interface Event {
-  type: number;
+  type: string;
   seq: number;
   entities: number[];
   location: vec3 | null;
 }
 
+const EVENT_TYPES: Map<number, string> = new Map();
+
 function serializeEvent(event: Event, buf: Serializer) {
-  buf.writeUint8(event.type);
+  buf.writeUint32(hashCode(event.type));
   buf.writeUint32(event.seq);
   buf.writeUint8(event.entities.length);
   for (const id of event.entities) buf.writeUint32(id);
@@ -36,7 +39,11 @@ function serializeEvent(event: Event, buf: Serializer) {
 }
 
 function deserializeEvent(buf: Deserializer): Event {
-  const type = buf.readUint8();
+  let typeCode = buf.readUint32();
+  if (!EVENT_TYPES.has(typeCode)) {
+    throw `Tried to deserialize unrecognized event type ${typeCode}`;
+  }
+  const type = EVENT_TYPES.get(typeCode)!;
   const seq = buf.readUint32();
   const entities = [];
   const numEntities = buf.readUint8();
@@ -49,7 +56,7 @@ function deserializeEvent(buf: Deserializer): Event {
 export type DetectedEvent = Pick<Event, "type" | "entities" | "location">;
 
 function serializeDetectedEvent(event: DetectedEvent, buf: Serializer) {
-  buf.writeUint8(event.type);
+  buf.writeUint32(hashCode(event.type));
   buf.writeUint8(event.entities.length);
   for (const id of event.entities) buf.writeUint32(id);
   if (event.location) {
@@ -61,7 +68,11 @@ function serializeDetectedEvent(event: DetectedEvent, buf: Serializer) {
 }
 
 function deserializeDetectedEvent(buf: Deserializer): DetectedEvent {
-  const type = buf.readUint8();
+  let typeCode = buf.readUint32();
+  if (!EVENT_TYPES.has(typeCode)) {
+    throw `Tried to deserialize unrecognized event type ${typeCode}`;
+  }
+  const type = EVENT_TYPES.get(typeCode)!;
   const entities = [];
   const numEntities = buf.readUint8();
   for (let i = 0; i < numEntities; i++) entities.push(buf.readUint32());
@@ -72,16 +83,22 @@ function deserializeDetectedEvent(buf: Deserializer): DetectedEvent {
 
 export interface EventHandler {
   eventAuthorityEntity: (entities: number[]) => number;
-  legalEvent: (em: EntityManager, event: DetectedEvent) => boolean;
-  runEvent: (em: EntityManager, event: Event) => void;
+  legalEvent: (em: EntityManager, type: string, entities: number[]) => boolean;
+  runEvent: (
+    em: EntityManager,
+    type: string,
+    entities: number[],
+    location: vec3 | null
+  ) => void;
 }
 
-let _eventHandlers: Map<number, EventHandler> = new Map();
-export function registerEventHandler(type: number, handler: EventHandler) {
-  _eventHandlers.set(type, handler);
+const EVENT_HANDLERS: Map<string, EventHandler> = new Map();
+export function registerEventHandler(type: string, handler: EventHandler) {
+  EVENT_TYPES.set(hashCode(type), type);
+  EVENT_HANDLERS.set(type, handler);
 }
 
-registerEventHandler(0, {
+registerEventHandler("test", {
   eventAuthorityEntity: (l: number[]) => l[0],
   legalEvent: () => true,
   runEvent: () => {
@@ -89,22 +106,27 @@ registerEventHandler(0, {
   },
 });
 
-function eventAuthorityEntity(type: number, entities: number[]): number {
-  if (!_eventHandlers.has(type))
+function eventAuthorityEntity(type: string, entities: number[]): number {
+  if (!EVENT_HANDLERS.has(type))
     throw `No event handler registered for event type ${type}`;
-  return _eventHandlers.get(type)!.eventAuthorityEntity(entities);
+  return EVENT_HANDLERS.get(type)!.eventAuthorityEntity(entities);
 }
 
-function legalEvent(type: number, em: EntityManager, event: DetectedEvent) {
-  if (!_eventHandlers.has(type))
+function legalEvent(type: string, em: EntityManager, event: DetectedEvent) {
+  if (!EVENT_HANDLERS.has(type))
     throw `No event handler registered for event type ${type}`;
-  return _eventHandlers.get(type)!.legalEvent(em, event);
+  return EVENT_HANDLERS.get(type)!.legalEvent(em, event.type, event.entities);
 }
 
-function runEvent(type: number, em: EntityManager, event: Event) {
-  if (!_eventHandlers.has(type))
+function runEvent(type: string, em: EntityManager, event: Event) {
+  if (!EVENT_HANDLERS.has(type))
     throw `No event handler registered for event type ${type}`;
-  return _eventHandlers.get(type)!.runEvent(em, event);
+  return EVENT_HANDLERS.get(type)!.runEvent(
+    em,
+    event.type,
+    event.entities,
+    event.location
+  );
 }
 
 export const DetectedEventsDef = EM.defineComponent(
