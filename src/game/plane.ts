@@ -108,10 +108,7 @@ export function registerBuildPlanesSystem(em: EntityManager) {
         const color = em.addComponent(plane.id, ColorDef);
         vec3.copy(color, plane.planeConstruct.color);
       }
-      if (!MotionSmoothingDef.isOn(plane))
-        em.addComponent(plane.id, MotionSmoothingDef);
       if (!TransformDef.isOn(plane)) em.addComponent(plane.id, TransformDef);
-      if (!ParentDef.isOn(plane)) em.addComponent(plane.id, ParentDef);
       if (!RenderableDef.isOn(plane)) {
         const renderable = em.addComponent(plane.id, RenderableDef);
         renderable.mesh = PLANE_MESH;
@@ -124,7 +121,7 @@ export function registerBuildPlanesSystem(em: EntityManager) {
       if (!ColliderDef.isOn(plane)) {
         const collider = em.addComponent(plane.id, ColliderDef);
         collider.shape = "AABB";
-        collider.solid = false;
+        collider.solid = true;
         (collider as AABBCollider).aabb = PLANE_AABB;
       }
       if (!AuthorityDef.isOn(plane))
