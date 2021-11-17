@@ -1,5 +1,4 @@
 import { vec3, quat } from "./gl-matrix.js";
-import { Net } from "./net.js";
 import { test } from "./test.js";
 import { Renderer, Renderer_WebGPU } from "./render_webgpu.js";
 import { attachToCanvas } from "./render_webgl.js";
