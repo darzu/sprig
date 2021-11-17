@@ -66,6 +66,7 @@ import {
 import { registerTimeSystem, addTimeComponents } from "../time.js";
 import { ColliderDef } from "../collider.js";
 import { PlaneConstructDef, registerBuildPlanesSystem } from "./plane.js";
+import { registerItemPickupSystem } from "./pickup.js";
 
 enum ObjectType {
   Plane,
@@ -448,7 +449,7 @@ export function registerAllSystems(em: EntityManager) {
   registerUpdateSmoothingLerp(EM);
   registerPhysicsSystems(EM);
   registerBulletCollisionHandler(EM);
-  registerPlayerHatCollisionHandler(EM);
+  registerItemPickupSystem(EM);
   registerAckUpdateSystem(EM);
   registerSyncSystem(EM);
   registerSendOutboxes(EM);
@@ -770,33 +771,6 @@ function registerBulletCollisionHandler(em: EntityManager) {
       }
     }
   });
-}
-
-function registerPlayerHatCollisionHandler(em: EntityManager) {
-  em.registerSystem(
-    [PlayerEntDef],
-    [PhysicsResultsDef],
-    (players, resources) => {
-      const { collidesWith } = resources.physicsResults;
-      // TODO(@darzu): handle hat pickup
-      // // check collisions
-      // for (let o of this.liveObjects()) {
-      //   if (o instanceof Bullet) {
-      //   }
-      //   if (o instanceof PlayerClass) {
-      //     if (o.hat === 0 && o.interactingWith > 0) {
-      //       this.recordEvent(EventType.HatGet, [o.id, o.interactingWith]);
-      //     }
-      //     if (o.hat > 0 && o.dropping) {
-      //       let dropLocation = vec3.fromValues(0, 0, -5);
-      //       vec3.transformQuat(dropLocation, dropLocation, o.motion.rotation);
-      //       vec3.add(dropLocation, dropLocation, o.motion.location);
-      //       this.recordEvent(EventType.HatDrop, [o.id, o.hat], dropLocation);
-      //     }
-      //   }
-      // }
-    }
-  );
 }
 
 // registerAllSystems(EM);

@@ -20,6 +20,7 @@ export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
     gravity: gravity ?? 0.1,
     // hat stuff
     // TODO(@darzu): better abstraction
+    hat: 0,
     interactingWith: 0,
     dropping: false,
   };
