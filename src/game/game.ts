@@ -67,6 +67,7 @@ import { registerTimeSystem, addTimeComponents } from "../time.js";
 import { ColliderDef } from "../collider.js";
 import { PlaneConstructDef, registerBuildPlanesSystem } from "./plane.js";
 import { registerItemPickupSystem } from "./pickup.js";
+import { registerBulletCollisionSystem } from "./bullet-collision.js";
 
 enum ObjectType {
   Plane,
@@ -448,7 +449,7 @@ export function registerAllSystems(em: EntityManager) {
   registerStepPlayers(EM);
   registerUpdateSmoothingLerp(EM);
   registerPhysicsSystems(EM);
-  registerBulletCollisionHandler(EM);
+  registerBulletCollisionSystem(EM);
   registerItemPickupSystem(EM);
   registerAckUpdateSystem(EM);
   registerSyncSystem(EM);
@@ -737,40 +738,5 @@ function createCubeStack(em: EntityManager, creator: number) {
 //   createCubeStack(em, me);
 //   createPlayer(em, me);
 // }
-
-function registerBulletCollisionHandler(em: EntityManager) {
-  // TODO(@darzu):
-  em.registerSystem([BulletDef], [PhysicsResultsDef], (bullets, resources) => {
-    const { collidesWith } = resources.physicsResults;
-
-    for (let o of bullets) {
-      if (collidesWith.has(o.id)) {
-        let otherIds = collidesWith.get(o.id)!;
-        let otherBullets = otherIds.map(
-          (id) => id > o.id && em.findEntity(id, [BulletDef])
-        );
-        // find other bullets this bullet is colliding with. only want to find each collision once
-        for (let otherBullet of otherBullets) {
-          if (otherBullet) {
-            // TODO: Doug, call new recordEvent
-            // recordEvent(EventType.BulletBulletCollision, [
-            //   o.id,
-            //   otherBullet.id,
-            // ]);
-          }
-        }
-
-        // find players this bullet is colliding with, other than the player who shot the bullet
-        let otherPlayers = otherIds.map((id) =>
-          em.findEntity(id, [PlayerEntDef])
-        );
-        for (let otherPlayer of otherPlayers) {
-          // if (obj.authority !== o.creator)
-          //   recordEvent(EventType.BulletPlayerCollision, [player.id, o.id]);
-        }
-      }
-    }
-  });
-}
 
 // registerAllSystems(EM);
