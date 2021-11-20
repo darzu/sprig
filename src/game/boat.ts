@@ -15,6 +15,7 @@ import { AABBCollider, ColliderDef } from "../collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { getAABBFromMesh, Mesh, scaleMesh3 } from "../mesh-pool.js";
 import { AABB } from "../phys_broadphase.js";
+import { Deserializer, Serializer } from "../serialize.js";
 
 export const BoatDef = EM.defineComponent("boat", () => {
   return {
@@ -50,7 +51,7 @@ export function registerStepBoats(em: EntityManager) {
   EM.registerSystem([BoatDef, MotionDef], [TimeDef], stepBoats);
 }
 
-export const BoatConstructorDef = EM.defineComponent(
+export const BoatConstructDef = EM.defineComponent(
   "boatConstruct",
   (loc?: vec3, speed?: number, wheelSpeed?: number, wheelDir?: number) => {
     return {
@@ -61,7 +62,30 @@ export const BoatConstructorDef = EM.defineComponent(
     };
   }
 );
-export type BoatConstructor = Component<typeof BoatConstructorDef>;
+export type BoatConstruct = Component<typeof BoatConstructDef>;
+
+function serializeBoatConstruct(boatConstruct: BoatConstruct, buf: Serializer) {
+  buf.writeVec3(boatConstruct.location);
+  buf.writeFloat32(boatConstruct.speed);
+  buf.writeFloat32(boatConstruct.wheelSpeed);
+  buf.writeFloat32(boatConstruct.wheelDir);
+}
+
+function deserializeBoatConstruct(
+  boatConstruct: BoatConstruct,
+  buf: Deserializer
+) {
+  buf.readVec3(boatConstruct.location);
+  boatConstruct.speed = buf.readFloat32();
+  boatConstruct.wheelSpeed = buf.readFloat32();
+  boatConstruct.wheelDir = buf.readFloat32();
+}
+
+EM.registerSerializerPair(
+  BoatConstructDef,
+  serializeBoatConstruct,
+  deserializeBoatConstruct
+);
 
 // TODO(@darzu): move these to the asset system
 let _boatMesh: Mesh | undefined = undefined;
@@ -77,7 +101,7 @@ function getBoatAABB(): AABB {
 
 function createBoat(
   em: EntityManager,
-  e: Entity & { boatConstruct: BoatConstructor },
+  e: Entity & { boatConstruct: BoatConstruct },
   pid: number
 ) {
   if (FinishedDef.isOn(e)) return;
@@ -104,14 +128,14 @@ function createBoat(
   }
   if (!SyncDef.isOn(e)) {
     const sync = em.addComponent(e.id, SyncDef);
-    sync.fullComponents.push(BoatConstructorDef.id);
+    sync.fullComponents.push(BoatConstructDef.id);
     sync.dynamicComponents.push(MotionDef.id);
   }
   em.addComponent(e.id, FinishedDef);
 }
 
 export function registerCreateBoats(em: EntityManager) {
-  em.registerSystem([BoatConstructorDef], [MeDef], (boats, res) => {
+  em.registerSystem([BoatConstructDef], [MeDef], (boats, res) => {
     for (let b of boats) createBoat(em, b, res.me.pid);
   });
 }

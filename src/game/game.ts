@@ -39,7 +39,7 @@ import { GameObject, GameEvent, GameState, InWorldDef } from "../state.js";
 import { never } from "../util.js";
 import {
   Boat,
-  BoatConstructorDef,
+  BoatConstructDef,
   BoatDef,
   registerCreateBoats as registerBuildBoatsSystem,
   registerStepBoats,
@@ -74,7 +74,7 @@ import { ColliderDef } from "../collider.js";
 import { PlaneConstructDef, registerBuildPlanesSystem } from "./plane.js";
 import { registerItemPickupSystem } from "./pickup.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
-import { registerBuildShipSystem, ShipConstructorDef } from "./ship.js";
+import { registerBuildShipSystem, ShipConstructDef } from "./ship.js";
 
 enum ObjectType {
   Plane,
@@ -678,7 +678,7 @@ function createCamera(em: EntityManager) {
 function createShips(em: EntityManager) {
   const rot = quat.create();
   quat.rotateY(rot, rot, Math.PI * -0.4);
-  em.addComponent(em.newEntity().id, ShipConstructorDef, [-40, -10, -60], rot);
+  em.addComponent(em.newEntity().id, ShipConstructDef, [-40, -10, -60], rot);
 }
 function createCubeStack(em: EntityManager, creator: number) {
   // create stack of boxes
@@ -700,7 +700,7 @@ function createBoats(em: EntityManager) {
   // create boat(s)
   const BOAT_COUNT = 4;
   for (let i = 0; i < BOAT_COUNT; i++) {
-    const boatCon = em.addComponent(em.newEntity().id, BoatConstructorDef);
+    const boatCon = em.addComponent(em.newEntity().id, BoatConstructDef);
     boatCon.location[1] = -9;
     boatCon.location[0] = (Math.random() - 0.5) * 20 - 10;
     boatCon.location[2] = (Math.random() - 0.5) * 20 - 20;

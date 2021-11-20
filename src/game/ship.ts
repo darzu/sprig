@@ -6,9 +6,10 @@ import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { PhysicsStateDef } from "../phys_esc.js";
 import { MotionDef } from "../phys_motion.js";
 import { RenderableDef, TransformDef } from "../renderer.js";
+import { Deserializer, Serializer } from "../serialize.js";
 import { ColorDef } from "./game.js";
 
-export const ShipConstructorDef = EM.defineComponent(
+export const ShipConstructDef = EM.defineComponent(
   "shipConstruct",
   (loc?: vec3, rot?: quat) => {
     return {
@@ -17,11 +18,30 @@ export const ShipConstructorDef = EM.defineComponent(
     };
   }
 );
-export type ShipConstructor = Component<typeof ShipConstructorDef>;
+export type ShipConstruct = Component<typeof ShipConstructDef>;
+
+function serializeShipConstruct(shipConstruct: ShipConstruct, buf: Serializer) {
+  buf.writeVec3(shipConstruct.loc);
+  buf.writeQuat(shipConstruct.rot);
+}
+
+function deserializeShipConstruct(
+  shipConstruct: ShipConstruct,
+  buf: Deserializer
+) {
+  buf.readVec3(shipConstruct.loc);
+  buf.readQuat(shipConstruct.rot);
+}
+
+EM.registerSerializerPair(
+  ShipConstructDef,
+  serializeShipConstruct,
+  deserializeShipConstruct
+);
 
 function createShip(
   em: EntityManager,
-  e: Entity & { shipConstruct: ShipConstructor },
+  e: Entity & { shipConstruct: ShipConstruct },
   pid: number
 ) {
   if (FinishedDef.isOn(e)) return;
@@ -35,14 +55,14 @@ function createShip(
   if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid, pid);
   if (!SyncDef.isOn(e)) {
     const sync = em.addComponent(e.id, SyncDef);
-    sync.fullComponents.push(ShipConstructorDef.id);
+    sync.fullComponents.push(ShipConstructDef.id);
     sync.dynamicComponents.push(MotionDef.id);
   }
   em.addComponent(e.id, FinishedDef);
 }
 
 export function registerBuildShipSystem(em: EntityManager) {
-  em.registerSystem([ShipConstructorDef], [MeDef], (ships, res) => {
+  em.registerSystem([ShipConstructDef], [MeDef], (ships, res) => {
     for (let s of ships) createShip(em, s, res.me.pid);
   });
 }
