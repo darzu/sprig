@@ -75,6 +75,7 @@ import { PlaneConstructDef, registerBuildPlanesSystem } from "./plane.js";
 import { registerItemPickupSystem } from "./pickup.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
 import { registerBuildShipSystem, ShipConstructDef } from "./ship.js";
+import { HatConstructDef, registerBuildHatSystem } from "./hat.js";
 
 enum ObjectType {
   Plane,
@@ -441,33 +442,34 @@ export let _playerId: number = -1;
 
 // TODO(@darzu): integrate
 export function registerAllSystems(em: EntityManager) {
-  registerTimeSystem(EM);
-  registerNetSystems(EM);
-  registerEventSystems(EM);
-  registerHandleNetworkEvents(EM);
-  registerUpdateSmoothingTargetSnapChange(EM);
-  registerUpdateSystem(EM);
-  registerUpdateSmoothingTargetSmoothChange(EM);
-  registerJoinSystems(EM);
-  registerBuildPlanesSystem(EM);
-  registerBuildCubesSystem(EM);
-  registerBuildBoatsSystem(EM);
-  registerBuildShipSystem(EM);
-  registerMoveCubesSystem(EM);
-  registerStepBoats(EM);
-  registerStepPlayers(EM);
-  registerUpdateSmoothingLerp(EM);
-  registerPhysicsSystems(EM);
-  registerBulletCollisionSystem(EM);
-  registerItemPickupSystem(EM);
-  registerAckUpdateSystem(EM);
-  registerSyncSystem(EM);
-  registerSendOutboxes(EM);
-  registerUpdateTransforms(EM);
-  registerRenderViewController(EM);
-  registerUpdatePlayerView(EM);
-  registerAddMeshHandleSystem(EM);
-  registerRenderer(EM);
+  registerTimeSystem(em);
+  registerNetSystems(em);
+  registerEventSystems(em);
+  registerHandleNetworkEvents(em);
+  registerUpdateSmoothingTargetSnapChange(em);
+  registerUpdateSystem(em);
+  registerUpdateSmoothingTargetSmoothChange(em);
+  registerJoinSystems(em);
+  registerBuildPlanesSystem(em);
+  registerBuildCubesSystem(em);
+  registerBuildBoatsSystem(em);
+  registerBuildShipSystem(em);
+  registerBuildHatSystem(em);
+  registerMoveCubesSystem(em);
+  registerStepBoats(em);
+  registerStepPlayers(em);
+  registerUpdateSmoothingLerp(em);
+  registerPhysicsSystems(em);
+  registerBulletCollisionSystem(em);
+  registerItemPickupSystem(em);
+  registerAckUpdateSystem(em);
+  registerSyncSystem(em);
+  registerSendOutboxes(em);
+  registerUpdateTransforms(em);
+  registerRenderViewController(em);
+  registerUpdatePlayerView(em);
+  registerAddMeshHandleSystem(em);
+  registerRenderer(em);
 }
 
 function registerRenderViewController(em: EntityManager) {
@@ -506,6 +508,7 @@ export function createGameObjects(em: EntityManager) {
   createGround(em);
   createBoats(em);
   createShips(em);
+  createHats(em);
 }
 
 export class CubeGameState extends GameState {
@@ -680,22 +683,6 @@ function createShips(em: EntityManager) {
   quat.rotateY(rot, rot, Math.PI * -0.4);
   em.addComponent(em.newEntity().id, ShipConstructDef, [-40, -10, -60], rot);
 }
-function createCubeStack(em: EntityManager, creator: number) {
-  // create stack of boxes
-  const BOX_STACK_COUNT = 10;
-  for (let i = 0; i < BOX_STACK_COUNT; i++) {
-    let b = new HatClass(EM.newEntity(), creator);
-    // b.motion.location = vec3.fromValues(0, 5 + i * 2, -2);
-    b.motion.location = vec3.fromValues(
-      Math.random() * -10 + 10 - 5,
-      0,
-      Math.random() * -10 - 5
-    );
-    // addObject(b);
-    // TODO(@darzu): debug
-    console.log(`box: ${b.id}`);
-  }
-}
 function createBoats(em: EntityManager) {
   // create boat(s)
   const BOAT_COUNT = 4;
@@ -707,6 +694,18 @@ function createBoats(em: EntityManager) {
     boatCon.speed = 0.01 + jitter(0.01);
     boatCon.wheelSpeed = jitter(0.002);
     boatCon.wheelDir = 0;
+  }
+}
+
+function createHats(em: EntityManager) {
+  const BOX_STACK_COUNT = 10;
+  for (let i = 0; i < BOX_STACK_COUNT; i++) {
+    const loc = vec3.fromValues(
+      Math.random() * -10 + 10 - 5,
+      0,
+      Math.random() * -10 - 5
+    );
+    em.addComponent(em.newEntity().id, HatConstructDef, loc);
   }
 }
 // function createPlayer(em: EntityManager, creator: number) {

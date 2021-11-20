@@ -64,21 +64,18 @@ export const BoatConstructDef = EM.defineComponent(
 );
 export type BoatConstruct = Component<typeof BoatConstructDef>;
 
-function serializeBoatConstruct(boatConstruct: BoatConstruct, buf: Serializer) {
-  buf.writeVec3(boatConstruct.location);
-  buf.writeFloat32(boatConstruct.speed);
-  buf.writeFloat32(boatConstruct.wheelSpeed);
-  buf.writeFloat32(boatConstruct.wheelDir);
+function serializeBoatConstruct(c: BoatConstruct, buf: Serializer) {
+  buf.writeVec3(c.location);
+  buf.writeFloat32(c.speed);
+  buf.writeFloat32(c.wheelSpeed);
+  buf.writeFloat32(c.wheelDir);
 }
 
-function deserializeBoatConstruct(
-  boatConstruct: BoatConstruct,
-  buf: Deserializer
-) {
-  buf.readVec3(boatConstruct.location);
-  boatConstruct.speed = buf.readFloat32();
-  boatConstruct.wheelSpeed = buf.readFloat32();
-  boatConstruct.wheelDir = buf.readFloat32();
+function deserializeBoatConstruct(c: BoatConstruct, buf: Deserializer) {
+  buf.readVec3(c.location);
+  c.speed = buf.readFloat32();
+  c.wheelSpeed = buf.readFloat32();
+  c.wheelDir = buf.readFloat32();
 }
 
 EM.registerSerializerPair(

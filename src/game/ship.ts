@@ -20,17 +20,14 @@ export const ShipConstructDef = EM.defineComponent(
 );
 export type ShipConstruct = Component<typeof ShipConstructDef>;
 
-function serializeShipConstruct(shipConstruct: ShipConstruct, buf: Serializer) {
-  buf.writeVec3(shipConstruct.loc);
-  buf.writeQuat(shipConstruct.rot);
+function serializeShipConstruct(c: ShipConstruct, buf: Serializer) {
+  buf.writeVec3(c.loc);
+  buf.writeQuat(c.rot);
 }
 
-function deserializeShipConstruct(
-  shipConstruct: ShipConstruct,
-  buf: Deserializer
-) {
-  buf.readVec3(shipConstruct.loc);
-  buf.readQuat(shipConstruct.rot);
+function deserializeShipConstruct(c: ShipConstruct, buf: Deserializer) {
+  buf.readVec3(c.loc);
+  buf.readQuat(c.rot);
 }
 
 EM.registerSerializerPair(
