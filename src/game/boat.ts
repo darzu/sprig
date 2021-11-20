@@ -12,7 +12,13 @@ import {
 } from "../renderer.js";
 import { PhysicsStateDef } from "../phys_esc.js";
 import { AABBCollider, ColliderDef } from "../collider.js";
-import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
+import {
+  Authority,
+  AuthorityDef,
+  Me,
+  MeDef,
+  SyncDef,
+} from "../net/components.js";
 import { getAABBFromMesh, Mesh, scaleMesh3 } from "../mesh-pool.js";
 import { AABB } from "../phys_broadphase.js";
 import { Deserializer, Serializer } from "../serialize.js";
@@ -27,10 +33,12 @@ export const BoatDef = EM.defineComponent("boat", () => {
 export type Boat = Component<typeof BoatDef>;
 
 function stepBoats(
-  boats: { boat: Boat; motion: Motion }[],
-  { time }: { time: { dt: number } }
+  boats: { boat: Boat; motion: Motion; authority: Authority }[],
+  { time, me }: { time: { dt: number }; me: Me }
 ) {
   for (let o of boats) {
+    if (o.authority.pid !== me.pid) continue;
+
     const rad = o.boat.wheelSpeed * time.dt;
     o.boat.wheelDir += rad;
 
@@ -48,7 +56,11 @@ function stepBoats(
 }
 
 export function registerStepBoats(em: EntityManager) {
-  EM.registerSystem([BoatDef, MotionDef], [TimeDef], stepBoats);
+  EM.registerSystem(
+    [BoatDef, MotionDef, AuthorityDef],
+    [TimeDef, MeDef],
+    stepBoats
+  );
 }
 
 export const BoatConstructDef = EM.defineComponent(
@@ -110,7 +122,11 @@ function createBoat(
   if (!RenderableDef.isOn(e))
     em.addComponent(e.id, RenderableDef, getBoatMesh());
   if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
-  if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid, pid);
+  if (!AuthorityDef.isOn(e)) {
+    // TODO(@darzu): debug why boats have jerky movement
+    console.log(`claiming authority of boat ${e.id}`);
+    em.addComponent(e.id, AuthorityDef, pid, pid);
+  }
   if (!BoatDef.isOn(e)) {
     const boat = em.addComponent(e.id, BoatDef);
     boat.speed = props.speed;
