@@ -74,6 +74,7 @@ import { ColliderDef } from "../collider.js";
 import { PlaneConstructDef, registerBuildPlanesSystem } from "./plane.js";
 import { registerItemPickupSystem } from "./pickup.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
+import { registerBuildShipSystem, ShipConstructorDef } from "./ship.js";
 
 enum ObjectType {
   Plane,
@@ -451,6 +452,7 @@ export function registerAllSystems(em: EntityManager) {
   registerBuildPlanesSystem(EM);
   registerBuildCubesSystem(EM);
   registerBuildBoatsSystem(EM);
+  registerBuildShipSystem(EM);
   registerMoveCubesSystem(EM);
   registerStepBoats(EM);
   registerStepPlayers(EM);
@@ -503,6 +505,7 @@ export function createGameObjects(em: EntityManager) {
   createPlayer(em);
   createGround(em);
   createBoats(em);
+  createShips(em);
 }
 
 export class CubeGameState extends GameState {
@@ -672,14 +675,10 @@ function createCamera(em: EntityManager) {
   camera.rotation = cameraRotation;
   camera.location = cameraLocation;
 }
-function createShip(em: EntityManager, creator: number) {
-  // create ship
-  const ship = new Ship(EM.newEntity(), creator);
-  ship.motion.location[0] = -40;
-  ship.motion.location[1] = -10;
-  ship.motion.location[2] = -60;
-  quat.rotateY(ship.motion.rotation, ship.motion.rotation, Math.PI * -0.4);
-  // addObject(ship);
+function createShips(em: EntityManager) {
+  const rot = quat.create();
+  quat.rotateY(rot, rot, Math.PI * -0.4);
+  em.addComponent(em.newEntity().id, ShipConstructorDef, [-40, -10, -60], rot);
 }
 function createCubeStack(em: EntityManager, creator: number) {
   // create stack of boxes

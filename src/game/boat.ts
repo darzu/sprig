@@ -1,10 +1,4 @@
-import {
-  EM,
-  EntityManager,
-  Component,
-  Entity,
-  EntityW,
-} from "../entity-manager.js";
+import { EM, EntityManager, Component, Entity } from "../entity-manager.js";
 import { TimeDef } from "../time.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { Motion, MotionDef } from "../phys_motion.js";
@@ -87,7 +81,6 @@ function createBoat(
   pid: number
 ) {
   if (FinishedDef.isOn(e)) return;
-  console.log(`building boat: ${e.id}`);
   const props = e.boatConstruct;
   if (!MotionDef.isOn(e)) em.addComponent(e.id, MotionDef, props.location);
   if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.2, 0.1, 0.05]);
