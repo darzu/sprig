@@ -11,10 +11,10 @@ import { Deserializer, Serializer } from "./serialize.js";
 export const MotionDef = EM.defineComponent(
   "motion",
   (l?: vec3, r?: quat, lv?: vec3, rv?: vec3) => ({
-    linearVelocity: lv ?? vec3.create(),
-    angularVelocity: rv ?? vec3.create(),
     location: l ?? vec3.create(),
     rotation: r ?? quat.create(),
+    linearVelocity: lv ?? vec3.create(),
+    angularVelocity: rv ?? vec3.create(),
   })
 );
 export type Motion = Component<typeof MotionDef>;

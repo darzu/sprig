@@ -1,7 +1,26 @@
-import { EM, EntityManager, Component, Entity } from "../entity-manager.js";
+import {
+  EM,
+  EntityManager,
+  Component,
+  Entity,
+  EntityW,
+} from "../entity-manager.js";
 import { TimeDef } from "../time.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { Motion, MotionDef } from "../phys_motion.js";
+import { jitter } from "../math.js";
+import { FinishedDef } from "../build.js";
+import { ColorDef, CUBE_MESH } from "./game.js";
+import {
+  MotionSmoothingDef,
+  RenderableDef,
+  TransformDef,
+} from "../renderer.js";
+import { PhysicsStateDef } from "../phys_esc.js";
+import { AABBCollider, ColliderDef } from "../collider.js";
+import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
+import { getAABBFromMesh, Mesh, scaleMesh3 } from "../mesh-pool.js";
+import { AABB } from "../phys_broadphase.js";
 
 export const BoatDef = EM.defineComponent("boat", () => {
   return {
@@ -37,42 +56,69 @@ export function registerStepBoats(em: EntityManager) {
   EM.registerSystem([BoatDef, MotionDef], [TimeDef], stepBoats);
 }
 
-// function createBoats(em: EntityManager, creator: number) {
-//   // create boat(s)
-//   const BOAT_COUNT = 4;
-//   for (let i = 0; i < BOAT_COUNT; i++) {
-//     const boat = new BoatClass(EM.newEntity(), creator);
-//     boat.motion.location[1] = -9;
-//     boat.motion.location[0] = (Math.random() - 0.5) * 20 - 10;
-//     boat.motion.location[2] = (Math.random() - 0.5) * 20 - 20;
-//     boat.boat.speed = 0.01 + jitter(0.01);
-//     boat.boat.wheelSpeed = jitter(0.002);
-//     // addObject(boat);
-
-//     // TODO(@darzu): ECS hack
-//     console.log("create ent");
-//     const e = EM.newEntity();
-//     let boatC = EM.addComponent(e.id, BoatDef);
-//     Object.assign(boatC, boat.boat);
-//     let boatM = EM.addComponent(e.id, MotionDef);
-//     Object.assign(boatM, boat.motion);
-//   }
-// }
-
 export const BoatConstructorDef = EM.defineComponent(
   "boatConstruct",
-  (loc?: vec3, speed?: number, wheelSpeed?: number) => {
+  (loc?: vec3, speed?: number, wheelSpeed?: number, wheelDir?: number) => {
     return {
       location: loc ?? vec3.fromValues(0, 0, 0),
       speed: speed ?? 0.01,
       wheelSpeed: wheelSpeed ?? 0.0,
+      wheelDir: wheelDir ?? 0.0,
     };
   }
 );
 export type BoatConstructor = Component<typeof BoatConstructorDef>;
 
-function createBoat(e: Entity & BoatConstructor) {
-  //
+// TODO(@darzu): move these to the asset system
+let _boatMesh: Mesh | undefined = undefined;
+let _boatAABB: AABB | undefined = undefined;
+function getBoatMesh(): Mesh {
+  if (!_boatMesh) _boatMesh = scaleMesh3(CUBE_MESH, [5, 0.3, 2.5]);
+  return _boatMesh;
+}
+function getBoatAABB(): AABB {
+  if (!_boatAABB) _boatAABB = getAABBFromMesh(getBoatMesh());
+  return _boatAABB;
 }
 
-export function registerCreateBoats(em: EntityManager) {}
+function createBoat(
+  em: EntityManager,
+  e: Entity & { boatConstruct: BoatConstructor },
+  pid: number
+) {
+  if (FinishedDef.isOn(e)) return;
+  console.log(`building boat: ${e.id}`);
+  const props = e.boatConstruct;
+  if (!MotionDef.isOn(e)) em.addComponent(e.id, MotionDef, props.location);
+  if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.2, 0.1, 0.05]);
+  if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
+  if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
+  if (!RenderableDef.isOn(e))
+    em.addComponent(e.id, RenderableDef, getBoatMesh());
+  if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
+  if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid, pid);
+  if (!BoatDef.isOn(e)) {
+    const boat = em.addComponent(e.id, BoatDef);
+    boat.speed = props.speed;
+    boat.wheelDir = props.wheelDir;
+    boat.wheelSpeed = props.wheelSpeed;
+  }
+  if (!ColliderDef.isOn(e)) {
+    const collider = em.addComponent(e.id, ColliderDef);
+    collider.shape = "AABB";
+    collider.solid = true;
+    (collider as AABBCollider).aabb = getBoatAABB();
+  }
+  if (!SyncDef.isOn(e)) {
+    const sync = em.addComponent(e.id, SyncDef);
+    sync.fullComponents.push(BoatConstructorDef.id);
+    sync.dynamicComponents.push(MotionDef.id);
+  }
+  em.addComponent(e.id, FinishedDef);
+}
+
+export function registerCreateBoats(em: EntityManager) {
+  em.registerSystem([BoatConstructorDef], [MeDef], (boats, res) => {
+    for (let b of boats) createBoat(em, b, res.me.pid);
+  });
+}

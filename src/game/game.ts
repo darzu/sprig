@@ -37,7 +37,13 @@ import { Renderer } from "../render_webgpu.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import { GameObject, GameEvent, GameState, InWorldDef } from "../state.js";
 import { never } from "../util.js";
-import { Boat, BoatDef, registerStepBoats } from "./boat.js";
+import {
+  Boat,
+  BoatConstructorDef,
+  BoatDef,
+  registerCreateBoats as registerBuildBoatsSystem,
+  registerStepBoats,
+} from "./boat.js";
 import {
   CameraDef,
   CameraProps,
@@ -146,7 +152,7 @@ class Plane extends GameObject {
   }
 }
 
-const CUBE_MESH = unshareProvokingVertices({
+export const CUBE_MESH = unshareProvokingVertices({
   pos: [
     [+1.0, +1.0, +1.0],
     [-1.0, +1.0, +1.0],
@@ -444,6 +450,7 @@ export function registerAllSystems(em: EntityManager) {
   registerJoinSystems(EM);
   registerBuildPlanesSystem(EM);
   registerBuildCubesSystem(EM);
+  registerBuildBoatsSystem(EM);
   registerMoveCubesSystem(EM);
   registerStepBoats(EM);
   registerStepPlayers(EM);
@@ -495,6 +502,7 @@ export function createGameObjects(em: EntityManager) {
 
   createPlayer(em);
   createGround(em);
+  createBoats(em);
 }
 
 export class CubeGameState extends GameState {
@@ -687,6 +695,19 @@ function createCubeStack(em: EntityManager, creator: number) {
     // addObject(b);
     // TODO(@darzu): debug
     console.log(`box: ${b.id}`);
+  }
+}
+function createBoats(em: EntityManager) {
+  // create boat(s)
+  const BOAT_COUNT = 4;
+  for (let i = 0; i < BOAT_COUNT; i++) {
+    const boatCon = em.addComponent(em.newEntity().id, BoatConstructorDef);
+    boatCon.location[1] = -9;
+    boatCon.location[0] = (Math.random() - 0.5) * 20 - 10;
+    boatCon.location[2] = (Math.random() - 0.5) * 20 - 20;
+    boatCon.speed = 0.01 + jitter(0.01);
+    boatCon.wheelSpeed = jitter(0.002);
+    boatCon.wheelDir = 0;
   }
 }
 // function createPlayer(em: EntityManager, creator: number) {
