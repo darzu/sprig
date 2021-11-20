@@ -63,8 +63,8 @@ const PLANE_AABB = getAABBFromMesh(PLANE_MESH);
 export const PlaneConstructDef = EM.defineComponent(
   "planeConstruct",
   (location?: vec3, color?: vec3) => ({
-    location: location || vec3.fromValues(0, 0, 0),
-    color: color || vec3.fromValues(0, 0, 0),
+    location: location ?? vec3.fromValues(0, 0, 0),
+    color: color ?? vec3.fromValues(0, 0, 0),
   })
 );
 

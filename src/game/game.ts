@@ -663,27 +663,6 @@ function createCamera(em: EntityManager) {
   camera.rotation = cameraRotation;
   camera.location = cameraLocation;
 }
-function createBoats(em: EntityManager, creator: number) {
-  // create boat(s)
-  const BOAT_COUNT = 4;
-  for (let i = 0; i < BOAT_COUNT; i++) {
-    const boat = new BoatClass(EM.newEntity(), creator);
-    boat.motion.location[1] = -9;
-    boat.motion.location[0] = (Math.random() - 0.5) * 20 - 10;
-    boat.motion.location[2] = (Math.random() - 0.5) * 20 - 20;
-    boat.boat.speed = 0.01 + jitter(0.01);
-    boat.boat.wheelSpeed = jitter(0.002);
-    // addObject(boat);
-
-    // TODO(@darzu): ECS hack
-    console.log("create ent");
-    const e = EM.newEntity();
-    let boatC = EM.addComponent(e.id, BoatDef);
-    Object.assign(boatC, boat.boat);
-    let boatM = EM.addComponent(e.id, MotionDef);
-    Object.assign(boatM, boat.motion);
-  }
-}
 function createShip(em: EntityManager, creator: number) {
   // create ship
   const ship = new Ship(EM.newEntity(), creator);
