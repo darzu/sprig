@@ -2,8 +2,8 @@ import { vec3, quat } from "./gl-matrix.js";
 // use network byte order
 const LITTLE_ENDIAN = false;
 export class OutOfRoomError extends Error {
-    constructor() {
-        super("Out of room");
+    constructor(at) {
+        super(`Out of room (at index ${at}`);
     }
 }
 export class Serializer {
@@ -12,20 +12,23 @@ export class Serializer {
         if (size <= 0) {
             throw "Serializer size must be >= 0";
         }
-        this.buffer = new ArrayBuffer(size);
-        this.dataView = new DataView(this.buffer);
+        this._buffer = new ArrayBuffer(size);
+        this.dataView = new DataView(this._buffer);
+    }
+    get buffer() {
+        return new DataView(this._buffer, 0, this.cursor);
     }
     index(at, length) {
         if (at === null) {
-            if (this.cursor + length >= this.buffer.byteLength) {
-                throw new OutOfRoomError();
+            if (this.cursor + length > this._buffer.byteLength) {
+                throw new OutOfRoomError(this.cursor);
             }
             at = this.cursor;
             this.cursor += length;
             return at;
         }
-        if (at + length >= this.buffer.byteLength) {
-            throw new OutOfRoomError();
+        if (at + length > this._buffer.byteLength) {
+            throw new OutOfRoomError(at);
         }
         return at;
     }
@@ -140,3 +143,4 @@ export class Deserializer {
         return s;
     }
 }
+//# sourceMappingURL=serialize.js.map

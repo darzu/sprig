@@ -20,7 +20,7 @@ export function checkCollisions(objs) {
     }
     // reset _mapPool
     _nextMap = 0;
-    _mapPool.forEach(p => p.clear());
+    _mapPool.forEach((p) => p.clear());
     // naive n^2
     //      3000 objs: 44.6ms, 4,800,000 overlaps
     //      1000 objs: 5.8ms, 500,000 overlaps
@@ -39,7 +39,10 @@ export function checkCollisions(objs) {
     }
     const maxHorizontalDist = 1000;
     const maxVerticalDist = 100;
-    const worldAABB = { min: [-maxHorizontalDist, -maxVerticalDist, -maxHorizontalDist], max: [maxHorizontalDist, maxVerticalDist, maxHorizontalDist] };
+    const worldAABB = {
+        min: [-maxHorizontalDist, -maxVerticalDist, -maxHorizontalDist],
+        max: [maxHorizontalDist, maxVerticalDist, maxHorizontalDist],
+    };
     // naive oct-tree
     //      5000 objs: 12.5ms, 56,000 overlaps + 235,000 enclosed-bys
     //      3000 objs: 7.6ms, 21,000 overlaps + 186,000 enclosed-bys
@@ -47,7 +50,7 @@ export function checkCollisions(objs) {
     //      1000 objs: 2.6ms, 8,500 overlaps + 53,000 enclosed-bys
     //      100 objs: 0.1ms, 1,200 overlaps + 6,000 enclosed-bys
     if (BROAD_PHASE === "OCT") {
-        const octObjs = new Map(objs.map(o => [o.id, o.worldAABB])); // TODO(@darzu): necessary?
+        const octObjs = new Map(objs.map((o) => [o.id, o.worldAABB])); // TODO(@darzu): necessary?
         const tree = octtree(octObjs, worldAABB);
         function octCheckOverlap(tree) {
             // check ea obj
@@ -88,14 +91,15 @@ export function checkCollisions(objs) {
         // place objects in grid
         for (let o of objs) {
             let ll = _objToObjLL[o.id];
-            if (!ll) // new object
+            if (!ll)
+                // new object
                 ll = _objToObjLL[o.id] = {
                     id: o.id,
                     minCoord: vec3.create(),
                     maxCoord: vec3.create(),
                     aabb: o.worldAABB,
                     next: null,
-                    prev: null
+                    prev: null,
                 };
             gridPlace(_worldGrid, ll);
         }
@@ -142,7 +146,7 @@ function createWorldGrid(aabb, cellSize) {
     vec3Floor(dims, dims);
     const gridLength = dims[0] * dims[1] * dims[2];
     console.log(gridLength);
-    const grid = range(gridLength).map(_ => ({ next: null }));
+    const grid = range(gridLength).map((_) => ({ next: null }));
     return {
         aabb,
         cellSize,
@@ -161,9 +165,12 @@ function gridRemove(o) {
     o.prev = null;
 }
 function gridIdx(g, coord) {
-    const idx = coord[0] + coord[1] * g.dimensions[0] + coord[2] * g.dimensions[0] * g.dimensions[1];
-    if (idx < 0 || g.grid.length <= idx) // TODO(@darzu): for debugging
-        throw `object out of bounds! (${coord.join(',')}), idx: ${idx}`;
+    const idx = coord[0] +
+        coord[1] * g.dimensions[0] +
+        coord[2] * g.dimensions[0] * g.dimensions[1];
+    if (idx < 0 || g.grid.length <= idx)
+        // TODO(@darzu): for debugging
+        throw `object out of bounds! (${coord.join(",")}), idx: ${idx}`;
     return idx;
 }
 function gridCoord(out, g, pos) {
@@ -202,7 +209,7 @@ function gridPlace(g, o) {
     if (tail.id === o.id) {
         // we shouldn't find ourself
         // TODO(@darzu): debugging
-        throw `gridPlace: Incorrectly found ourselves at: ${o.minCoord.join(',')}`;
+        throw `gridPlace: Incorrectly found ourselves at: ${o.minCoord.join(",")}`;
     }
     // add us to the end
     gridRemove(o);
@@ -239,10 +246,15 @@ const _octtreeMinLen = 1.0;
 function debugOcttree(tree) {
     if (!tree)
         return [];
-    return [tree.objs.size, ...tree.children.map(debugOcttree).reduce((p, n) => [...p, ...n], [])];
+    return [
+        tree.objs.size,
+        ...tree.children
+            .map(debugOcttree)
+            .reduce((p, n) => [...p, ...n], []),
+    ];
 }
 const _mapPoolSize = 2000;
-const _mapPool = range(_mapPoolSize).map(_ => new Map());
+const _mapPool = range(_mapPoolSize).map((_) => new Map());
 let _nextMap = 0;
 const _scratchVec3 = vec3.create();
 function octtree(parentObjs, aabb) {
@@ -262,7 +274,11 @@ function octtree(parentObjs, aabb) {
     }
     const nextLen = vec3.scale(_scratchVec3, vec3.sub(_scratchVec3, aabb.max, aabb.min), 0.5);
     if (thisObjs.size <= 2 || nextLen[0] <= _octtreeMinLen)
-        return { aabb, objs: thisObjs, children: [null, null, null, null, null, null, null, null] };
+        return {
+            aabb,
+            objs: thisObjs,
+            children: [null, null, null, null, null, null, null, null],
+        };
     const childAABBs = [];
     for (let xMin of [aabb.min[0], aabb.min[0] + nextLen[0]]) {
         for (let yMin of [aabb.min[1], aabb.min[1] + nextLen[1]]) {
@@ -276,7 +292,7 @@ function octtree(parentObjs, aabb) {
     }
     return {
         aabb,
-        children: childAABBs.map(aabb => octtree(thisObjs, aabb)),
+        children: childAABBs.map((aabb) => octtree(thisObjs, aabb)),
         objs: thisObjs,
     };
 }
@@ -284,24 +300,24 @@ function octtree(parentObjs, aabb) {
 export let _doesOverlaps = 0;
 export function doesOverlap(a, b) {
     _doesOverlaps++; // TODO(@darzu): debugging
-    return true
-        && b.min[0] <= a.max[0]
-        && b.min[1] <= a.max[1]
-        && b.min[2] <= a.max[2]
-        && a.min[0] <= b.max[0]
-        && a.min[1] <= b.max[1]
-        && a.min[2] <= b.max[2];
+    return (true &&
+        b.min[0] <= a.max[0] &&
+        b.min[1] <= a.max[1] &&
+        b.min[2] <= a.max[2] &&
+        a.min[0] <= b.max[0] &&
+        a.min[1] <= b.max[1] &&
+        a.min[2] <= b.max[2]);
 }
 export let _enclosedBys = 0;
 export function enclosedBy(inner, outer) {
     _enclosedBys++; // TODO(@darzu): debugging
-    return true
-        && inner.max[0] <= outer.max[0]
-        && inner.max[1] <= outer.max[1]
-        && inner.max[2] <= outer.max[2]
-        && outer.min[0] <= inner.min[0]
-        && outer.min[1] <= inner.min[1]
-        && outer.min[2] <= inner.min[2];
+    return (true &&
+        inner.max[0] <= outer.max[0] &&
+        inner.max[1] <= outer.max[1] &&
+        inner.max[2] <= outer.max[2] &&
+        outer.min[0] <= inner.min[0] &&
+        outer.min[1] <= inner.min[1] &&
+        outer.min[2] <= inner.min[2]);
 }
 export function getAABBFromPositions(positions) {
     const min = vec3.fromValues(Infinity, Infinity, Infinity);
@@ -316,4 +332,4 @@ export function getAABBFromPositions(positions) {
     }
     return { min, max };
 }
-//# sourceMappingURL=physics.js.map
+//# sourceMappingURL=phys_collision.js.map

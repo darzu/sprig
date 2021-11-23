@@ -1,5 +1,5 @@
 import { mat4 } from "./gl-matrix.js";
-import { createMeshPoolBuilder_WebGL, MeshUniform } from "./mesh-pool.js";
+import { createMeshPoolBuilder_WebGL, MeshUniform, } from "./mesh-pool.js";
 // TODO(@darzu): this is a bad dependency:
 import { setupScene } from "./render_webgpu.js";
 const vertCode = `
@@ -63,16 +63,16 @@ void main() {
   gl_FragColor = vec4(gammaCorrected, 1.0);
 }
 `;
-// TODO(@darzu): 
+// TODO(@darzu):
 // export interface Renderer {
 //   finishInit(): void;
 //   addObject(o: GameObject): MeshObj;
 //   renderFrame(viewMatrix: mat4): void;
 // }
 export function attachToCanvas(canv, maxMeshes, maxVertices) {
-    let gl = canv.getContext('webgl'); // TODO: use webgl2
-    gl.getExtension('OES_standard_derivatives');
-    gl.getExtension('EXT_shader_texture_lod');
+    let gl = canv.getContext("webgl"); // TODO: use webgl2
+    gl.getExtension("OES_standard_derivatives");
+    gl.getExtension("EXT_shader_texture_lod");
     gl.clearColor(0.55, 0.6, 0.8, 1.0);
     let vertShader = gl.createShader(gl.VERTEX_SHADER);
     gl.shaderSource(vertShader, vertCode);
@@ -113,12 +113,13 @@ export function attachToCanvas(canv, maxMeshes, maxVertices) {
         maxMeshes,
         maxTris: maxVertices,
         maxVerts: maxVertices,
+        maxLines: maxVertices * 2,
         shiftMeshIndices: true,
     };
     const builder = createMeshPoolBuilder_WebGL(gl, opts);
     const pool = builder.poolHandle;
     let initFinished = false;
-    const meshObjs = [];
+    const meshObjs = {};
     const scene = setupScene();
     function finishInit() {
         console.log("finishInit");
@@ -141,11 +142,11 @@ export function attachToCanvas(canv, maxMeshes, maxVertices) {
         // gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(normals));
         // gl.bindBuffer(gl.ARRAY_BUFFER, pool.colorsBuffer);
         // gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(colors));
-        // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pool.indicesBuffer);
+        // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pool.triIndicesBuffer);
         // gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, new Uint16Array(indices));
     }
     function addObject(o) {
-        console.log(`Adding object ${o.id}`);
+        // console.log(`Adding object ${o.id}`);
         let m = o.mesh();
         // need to introduce a new variable to convince Typescript the mapping is non-null
         const handle = initFinished ? pool.addMesh(m) : builder.addMesh(m);
@@ -153,19 +154,24 @@ export function attachToCanvas(canv, maxMeshes, maxVertices) {
             obj: o,
             handle,
         };
-        meshObjs.push(res);
+        meshObjs[o.id] = res;
         return res;
     }
     function addObjectInstance(o, oldHandle) {
         console.log(`Adding (instanced) object ${o.id}`);
         const d = MeshUniform.CloneData(oldHandle);
-        const newHandle = initFinished ? pool.addMeshInstance(oldHandle, d) : builder.addMeshInstance(oldHandle, d);
+        const newHandle = initFinished
+            ? pool.addMeshInstance(oldHandle, d)
+            : builder.addMeshInstance(oldHandle, d);
         const res = {
             obj: o,
             handle: newHandle,
         };
-        meshObjs.push(res);
+        meshObjs[o.id] = res;
         return res;
+    }
+    function removeObject(o) {
+        delete meshObjs[o.id];
     }
     function renderFrame(viewMatrix) {
         let aspectRatio = Math.abs(canv.width / canv.height);
@@ -197,7 +203,7 @@ export function attachToCanvas(canv, maxMeshes, maxVertices) {
         gl.vertexAttribPointer(a_loc_color, 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(a_loc_color);
         // update uniforms
-        for (let m of meshObjs) {
+        for (let m of Object.values(meshObjs)) {
             m.handle.transform = m.obj.transform; // TODO(@darzu): this is hacky
             // TODO(@darzu): this is definitely weird. Need to think about this interaction better.
             if (m.obj.color)
@@ -205,28 +211,33 @@ export function attachToCanvas(canv, maxMeshes, maxVertices) {
         }
         // TODO(@darzu): need to draw update uniform: u_loc_transform
         // bind index buffer
-        // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pool.indicesBuffer);
-        // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, builder.indicesMap, gl.DYNAMIC_DRAW);
+        // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pool.triIndicesBuffer);
+        // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, builder.triIndicesMap, gl.DYNAMIC_DRAW);
         // TODO(@darzu): DEBUG
         // gl.uniformMatrix4fv(u_loc_transform, false, mat4.create());
         // gl.drawElements(gl.TRIANGLES, 6 * 6, gl.UNSIGNED_SHORT, 0);
-        for (let m of meshObjs) {
+        for (let m of Object.values(meshObjs)) {
             // gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset * 2);
             gl.uniformMatrix4fv(u_loc_transform, false, m.handle.transform);
             gl.uniform3fv(u_loc_tint, m.handle.tint);
-            const indicesBytesOffset = m.handle.indicesNumOffset * 2;
+            const indicesBytesOffset = m.handle.triIndicesNumOffset * 2;
             gl.drawElements(gl.TRIANGLES, m.handle.numTris * 3, gl.UNSIGNED_SHORT, indicesBytesOffset);
+            // TODO(@darzu): support draw lines
             // gl.drawElements(gl.TRIANGLES, m.handle.numTris * 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset);
-            // break; // TODO(@darzu): 
+            // break; // TODO(@darzu):
             // console.log(`t: ${m.handle.transform.join(',')}`)
             // console.log(`count: ${m.handle.numTris * 3} at ${m.handle.indicesNumOffset}`)
         }
     }
     const renderer = {
+        wireMode: "normal",
+        perspectiveMode: "perspective",
         addObject,
         addObjectInstance,
+        removeObject,
         renderFrame,
         finishInit,
     };
     return renderer;
 }
+//# sourceMappingURL=render_webgl.js.map

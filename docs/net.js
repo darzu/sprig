@@ -1,22 +1,29 @@
 import { Peer } from "./peer.js";
 import { Serializer, Deserializer, OutOfRoomError } from "./serialize.js";
 // fraction of state updates to artificially drop
-const DROP_PROBABILITY = 0.0;
+const DROP_PROBABILITY = 0.1;
 const DELAY_SENDS = false;
-const SEND_DELAY = 60.0;
-const SEND_DELAY_JITTER = 60.0;
+const SEND_DELAY = 500.0;
+const SEND_DELAY_JITTER = 10.0;
 const MAX_MESSAGE_SIZE = 1000;
+// weight of existing skew measurement vs. new skew measurement
+const SKEW_WEIGHT = 0.5;
 var MessageType;
 (function (MessageType) {
     // Join a game in progress
     MessageType[MessageType["Join"] = 0] = "Join";
     MessageType[MessageType["JoinResponse"] = 1] = "JoinResponse";
     // State update
-    MessageType[MessageType["StateUpdate"] = 2] = "StateUpdate";
-    MessageType[MessageType["StateUpdateResponse"] = 3] = "StateUpdateResponse";
+    MessageType[MessageType["Event"] = 2] = "Event";
+    MessageType[MessageType["EventRequest"] = 3] = "EventRequest";
+    MessageType[MessageType["StateUpdate"] = 4] = "StateUpdate";
+    MessageType[MessageType["StateUpdateResponse"] = 5] = "StateUpdateResponse";
     // Reserve unique object IDs
-    MessageType[MessageType["ReserveIDs"] = 4] = "ReserveIDs";
-    MessageType[MessageType["ReserveIDsResponse"] = 5] = "ReserveIDsResponse";
+    MessageType[MessageType["ReserveIDs"] = 6] = "ReserveIDs";
+    MessageType[MessageType["ReserveIDsResponse"] = 7] = "ReserveIDsResponse";
+    // Estimate clock skew
+    MessageType[MessageType["Ping"] = 8] = "Ping";
+    MessageType[MessageType["Pong"] = 9] = "Pong";
 })(MessageType || (MessageType = {}));
 var ObjectUpdateType;
 (function (ObjectUpdateType) {
@@ -27,6 +34,37 @@ var ObjectUpdateType;
 })(ObjectUpdateType || (ObjectUpdateType = {}));
 // target length for jitter buffer
 const BUFFER_TARGET = 3;
+function writeEvent(message, event) {
+    message.writeUint32(event.id);
+    message.writeUint8(event.type);
+    message.writeUint8(event.authority);
+    message.writeUint8(event.objects.length);
+    for (let id of event.objects) {
+        message.writeUint32(id);
+    }
+    if (event.location) {
+        message.writeUint8(1);
+        message.writeVec3(event.location);
+    }
+    else {
+        message.writeUint8(0);
+    }
+}
+function readEvent(message) {
+    let id = message.readUint32();
+    let type = message.readUint8();
+    let authority = message.readUint8();
+    let numObjectsInEvent = message.readUint8();
+    let objects = [];
+    for (let i = 0; i < numObjectsInEvent; i++) {
+        objects.push(message.readUint32());
+    }
+    let location = null;
+    if (message.readUint8()) {
+        location = message.readVec3();
+    }
+    return { id, type, objects, authority, location };
+}
 // Responsible for sync-ing objects to a *particular* other server.
 class StateSynchronizer {
     constructor(net, remoteId) {
@@ -34,6 +72,7 @@ class StateSynchronizer {
         this.objectPriorities = {};
         this.objectsKnown = new Set();
         this.objectsInUpdate = {};
+        this.eventIndex = 0;
         this.net = net;
         this.remoteId = remoteId;
     }
@@ -44,11 +83,12 @@ class StateSynchronizer {
         // Then we're removing a constant # of items, so removing should be O(log N) overall?
         // Could also cache this sorted list--order will stay mostly the same so with a sort that's
         // optimized for mostly-ordered data (like TimSort) the sort should be O(N)
-        let objects = Object.values(this.net.state.objects);
-        objects = objects.filter((obj) => obj.authority == this.net.state.me ||
+        let allObjects = this.net.state.allObjects();
+        allObjects = allObjects.filter((obj) => (!obj.deleted && obj.authority == this.net.state.me) ||
             (obj.creator == this.net.state.me && !this.objectsKnown.has(obj.id)));
-        for (let obj of objects) {
-            let priorityIncrease = obj.syncPriority();
+        for (let obj of allObjects) {
+            let priorityIncrease;
+            priorityIncrease = obj.syncPriority(!this.objectsKnown.has(obj.id));
             if (!this.objectsKnown.has(obj.id)) {
                 // try to sync new objects
                 priorityIncrease += 1000;
@@ -62,10 +102,20 @@ class StateSynchronizer {
         }
         // We always want objects that this remote peer might not know
         // about to come first. After that, we want objects sorted in priority order.
-        objects.sort((o1, o2) => {
+        allObjects.sort((o1, o2) => {
             return this.objectPriorities[o2.id] - this.objectPriorities[o1.id];
         });
-        return objects;
+        return allObjects;
+    }
+    sendEvents() {
+        while (this.eventIndex < this.net.eventLog.length) {
+            let message = new Serializer(MAX_MESSAGE_SIZE);
+            message.writeUint8(MessageType.Event);
+            message.writeUint32(this.eventIndex);
+            writeEvent(message, this.net.eventLog[this.eventIndex]);
+            this.net.send(this.remoteId, message.buffer, true);
+            this.eventIndex++;
+        }
     }
     update() {
         //console.log("update() called");
@@ -73,19 +123,21 @@ class StateSynchronizer {
         let seq = this.updateSeq++;
         message.writeUint8(MessageType.StateUpdate);
         message.writeUint32(seq);
+        message.writeFloat32(performance.now());
         let objects = this.objects();
         let numObjects = 0;
         let numObjectsIndex = message.writeUint8(numObjects);
         try {
+            // events always get synced before objects
             for (let obj of objects) {
                 //console.log(`Trying to sync object ${obj.id}`);
                 // TODO: could this be a 16-bit integer instead?
                 message.writeUint32(obj.id);
-                message.writeUint8(obj.authority);
-                message.writeUint32(obj.authority_seq);
                 if (this.objectsKnown.has(obj.id)) {
                     // do a dynamic update
                     message.writeUint8(ObjectUpdateType.Dynamic);
+                    message.writeUint8(obj.authority);
+                    message.writeUint32(obj.authority_seq);
                     obj.serializeDynamic(message);
                 }
                 else {
@@ -96,6 +148,8 @@ class StateSynchronizer {
                     else {
                         message.writeUint8(ObjectUpdateType.Full);
                     }
+                    message.writeUint8(obj.authority);
+                    message.writeUint32(obj.authority_seq);
                     message.writeUint8(obj.typeId());
                     message.writeUint8(obj.creator);
                     obj.serializeFull(message);
@@ -122,6 +176,7 @@ class StateSynchronizer {
         if (!ids)
             return;
         ids.forEach((id) => {
+            //console.log(`${id} known`);
             //console.log(`Object ${id} is known`);
             this.objectsKnown.add(id);
         });
@@ -137,12 +192,19 @@ export class Net {
         this.reliableChannels = {};
         this.unreliableChannels = {};
         this.stateUpdates = {};
+        this.eventLog = [];
+        this.eventRequests = [];
+        this.events = [];
         this.synchronizers = {};
-        this.nextUpdate = {};
-        this.waiting = {};
         this.numDroppedUpdates = 0;
+        this.pingSeq = 0;
+        this.pingTime = 0;
+        this.skewEstimate = {};
+        this.pingEstimate = {};
         this.state = state;
         this.ready = ready;
+        // ping all servers once per second to estimate clock skew
+        setInterval(() => this.ping(), 1000);
         if (host === null) {
             // we're the host, just start up
             this.host = true;
@@ -179,8 +241,15 @@ export class Net {
         let conn = reliable
             ? this.reliableChannels[server]
             : this.unreliableChannels[server];
-        if (conn) {
-            conn.send(message);
+        if (conn && conn.readyState === "open") {
+            if (DELAY_SENDS) {
+                if (reliable || Math.random() > DROP_PROBABILITY) {
+                    setTimeout(() => conn.send(message), SEND_DELAY + SEND_DELAY_JITTER * Math.random());
+                }
+            }
+            else {
+                conn.send(message);
+            }
         }
     }
     stats() {
@@ -196,11 +265,27 @@ export class Net {
             reliableBufferSize,
             unreliableBufferSize,
             numDroppedUpdates: this.numDroppedUpdates,
+            skew: Object.values(this.skewEstimate),
+            ping: Object.values(this.pingEstimate),
         };
+    }
+    ping() {
+        this.pingSeq++;
+        let seq = this.pingSeq;
+        let time = performance.now();
+        this.pingTime = time;
+        let message = new Serializer(5);
+        message.writeUint8(MessageType.Ping);
+        message.writeUint32(seq);
+        for (let server of this.peers) {
+            this.send(server, message.buffer, false);
+        }
     }
     setupChannel(server, chan) {
         chan.onmessage = async (ev) => {
-            const buff = ev.data.arrayBuffer ? await ev.data.arrayBuffer() : ev.data;
+            const buff = ev.data.arrayBuffer
+                ? await ev.data.arrayBuffer()
+                : ev.data;
             this.handleMessage(server, buff);
         };
     }
@@ -254,10 +339,55 @@ export class Net {
                 this.stateUpdates[server].splice(i, 0, { seq, data });
                 break;
             }
+            case MessageType.Event: {
+                this.events.push(data);
+                break;
+            }
+            case MessageType.EventRequest: {
+                this.eventRequests.push(data);
+                break;
+            }
             case MessageType.StateUpdateResponse: {
                 let seq = deserializer.readUint32();
                 this.synchronizers[server].ackUpdate(seq);
+                break;
             }
+            case MessageType.Ping: {
+                let seq = deserializer.readUint32();
+                let resp = new Serializer(9);
+                resp.writeUint8(MessageType.Pong);
+                resp.writeUint32(seq);
+                resp.writeFloat32(performance.now());
+                this.send(server, resp.buffer, false);
+                break;
+            }
+            case MessageType.Pong: {
+                let time = performance.now();
+                let seq = deserializer.readUint32();
+                let remoteTime = deserializer.readFloat32();
+                // only want to handle this if it's in response to our latest ping
+                if (seq !== this.pingSeq) {
+                    break;
+                }
+                let rtt = time - this.pingTime;
+                let skew = remoteTime - (this.pingTime + rtt / 2);
+                if (!this.skewEstimate[server]) {
+                    this.skewEstimate[server] = skew;
+                    this.pingEstimate[server] = rtt / 2;
+                }
+                else {
+                    this.skewEstimate[server] =
+                        SKEW_WEIGHT * this.skewEstimate[server] + (1 - SKEW_WEIGHT) * skew;
+                    this.pingEstimate[server] =
+                        SKEW_WEIGHT * this.pingEstimate[server] +
+                            (1 - SKEW_WEIGHT) * (rtt / 2);
+                }
+            }
+        }
+    }
+    sendEvents() {
+        for (let synchronizer of Object.values(this.synchronizers)) {
+            synchronizer.sendEvents();
         }
     }
     sendStateUpdates() {
@@ -265,121 +395,173 @@ export class Net {
             synchronizer.update();
         }
     }
-    applyStateUpdate(data) {
+    applyStateUpdate(data, atTime) {
         //console.log("In applyStateUpdate");
         //console.log("Applying state update");
+        let applied = true;
         let message = new Deserializer(data);
         let type = message.readUint8();
         if (type !== MessageType.StateUpdate)
             throw "Wacky message type in applyStateUpdate";
-        let _seq = message.readUint32();
+        let seq = message.readUint32();
+        let ts = message.readFloat32();
+        let dt = atTime - ts;
         let numObjects = message.readUint8();
         for (let i = 0; i < numObjects; i++) {
             // make sure we're not in dummy mode
             message.dummy = false;
             let id = message.readUint32();
-            let authority = message.readUint8();
-            let authority_seq = message.readUint32();
+            //console.log(`State update for ${id}`);
             let updateType = message.readUint8();
             if (updateType === ObjectUpdateType.Full ||
                 updateType === ObjectUpdateType.Create) {
-                //console.log("Full state update");
+                //console.log(`Full state update for ${id}`);
+                let authority = message.readUint8();
+                let authority_seq = message.readUint32();
                 let typeId = message.readUint8();
                 let creator = message.readUint8();
-                let obj = this.state.objects[id];
+                let obj = this.state.getObject(id);
+                let objExisted = !!obj;
                 if (!obj) {
                     obj = this.state.objectOfType(typeId, id, creator);
                 }
                 // Don't update an existing object if this was a create message or the authority claim is old
-                if ((this.state.objects[id] && updateType === ObjectUpdateType.Create) ||
-                    !obj.claimAuthority(authority, authority_seq)) {
+                if ((objExisted && updateType === ObjectUpdateType.Create) ||
+                    !obj.claimAuthority(authority, authority_seq, seq)) {
                     message.dummy = true;
                 }
                 obj.deserializeFull(message);
-                if (!this.state.objects[id]) {
+                if (!message.dummy && dt > 0) {
+                    obj.simulate(dt);
+                }
+                if (!objExisted) {
                     this.state.addObject(obj);
                 }
             }
             else if (updateType === ObjectUpdateType.Dynamic) {
                 //console.log("Dynamic state update");
-                let obj = this.state.objects[id];
+                let authority = message.readUint8();
+                let authority_seq = message.readUint32();
+                let obj = this.state.getObject(id);
                 if (!obj) {
                     throw "Got non-full update for unknown object ${id}";
                 }
-                if (!obj.claimAuthority(authority, authority_seq)) {
+                if (!obj.claimAuthority(authority, authority_seq, seq)) {
                     message.dummy = true;
                 }
                 obj.deserializeDynamic(message);
+                if (!message.dummy && dt > 0) {
+                    if (seq % 20 == 0) {
+                        //console.log(`simulating forward ${dt}ms`);
+                    }
+                    obj.simulate(dt);
+                }
             }
             else {
                 throw `Unsupported update type ${updateType} in applyStateUpdate`;
             }
         }
+        return applied;
     }
-    updateState() {
+    handleEventRequests() {
+        // hosts immediately process events, other nodes send requests
+        while (this.state.requestedEvents.length != 0) {
+            let event = this.state.requestedEvents.shift();
+            if (this.host) {
+                this.eventLog.push(event);
+                this.state.runEvent(event);
+            }
+            else {
+                let message = new Serializer(MAX_MESSAGE_SIZE);
+                message.writeUint8(MessageType.EventRequest);
+                writeEvent(message, event);
+                this.send(this.peers[0], message.buffer, true);
+            }
+        }
+        // process incoming event requests
+        if (this.host) {
+            let eventRequestsToRetry = [];
+            while (this.eventRequests.length != 0) {
+                let data = this.eventRequests.shift();
+                let message = new Deserializer(data);
+                let type = message.readUint8();
+                if (type !== MessageType.EventRequest)
+                    throw "Wacky message type in handleEventRequests";
+                let event = readEvent(message);
+                if (!this.haveAllObjects(event)) {
+                    // We're not ready to handle this event request; try again next frame
+                    eventRequestsToRetry.push(data);
+                }
+                else if (this.state.legalEvent(event)) {
+                    // This event is consistent with the state, so apply it
+                    this.applyEvent(event);
+                }
+                // Otherwise, we have the objects in the event but it isn't
+                // consistent. drop it on the floor. This is a normal occurrence--for
+                // instance, it will happen on an object-pickup event if another player
+                // picked up the object in the interim.
+            }
+            this.eventRequests = eventRequestsToRetry;
+            this.sendEvents();
+        }
+    }
+    haveAllObjects(event) {
+        return event.objects.every((id) => !!this.state.getObject(id));
+    }
+    applyEvent(event) {
+        this.eventLog.push(event);
+        this.state.runEvent(event);
+    }
+    applyEventFromServer(data) {
+        let message = new Deserializer(data);
+        let messageType = message.readUint8();
+        let index = message.readUint32();
+        if (messageType !== MessageType.Event)
+            throw "Wacky message type in applyEventFromServer";
+        if (index < this.eventLog.length) {
+            // we've already processed this event
+            return true;
+        }
+        if (index > this.eventLog.length) {
+            // we're not ready to process this event
+            return false;
+        }
+        let event = readEvent(message);
+        // do we know about all of these object ids?
+        if (!this.haveAllObjects(event)) {
+            return false;
+        }
+        this.applyEvent(event);
+        return true;
+    }
+    updateState(atTime) {
         //console.log("In updateState");
+        while (this.events.length > 0) {
+            let data = this.events.shift();
+            if (!this.applyEventFromServer(data)) {
+                this.events.unshift(data);
+                break;
+            }
+        }
         for (let server of this.peers) {
-            /*console.log(
-              `Have ${
-                this.stateUpdates[server] ? this.stateUpdates[server].length : 0
-              } buffered state updates`
-              );*/
+            // console.log(
+            //   `Have ${
+            //     this.stateUpdates[server] ? this.stateUpdates[server].length : 0
+            //   } buffered state updates`
+            // );
             //console.log(`Looking for update ${this.nextUpdate[server]}`);
-            if (!this.nextUpdate[server]) {
-                this.nextUpdate[server] = 0;
-            }
-            // first, ignore any old updates
-            // TODO: should we apply these? Doug thinks not--we'd be out of sync.
             while (this.stateUpdates[server] &&
-                this.stateUpdates[server].length > 0 &&
-                this.stateUpdates[server][0].seq < this.nextUpdate[server]) {
-                let { seq } = this.stateUpdates[server].shift();
-                this.numDroppedUpdates++;
-                /*
-                console.log(
-                  `Ignoring old state update ${seq} < ${this.nextUpdate[server]} from ${server}`
-                );*/
-            }
-            // then, if we have many buffered updates, drop them until we've caught up
-            if (this.stateUpdates[server] &&
-                this.stateUpdates[server].length > BUFFER_TARGET * 2) {
-                //console.log("Buffer too large, dropping in order to catch up");
-                while (this.stateUpdates[server].length > BUFFER_TARGET) {
-                    this.stateUpdates[server].shift();
-                    this.nextUpdate[server]++;
-                    this.numDroppedUpdates++;
-                }
-            }
-            if (!this.stateUpdates[server] ||
-                this.stateUpdates[server].length === 0) {
-                // buffer some state updates from this server
-                //console.log("Buffering for updates");
-                this.waiting[server] = true;
-                continue;
-            }
-            else if (!this.waiting[server] ||
-                this.stateUpdates[server].length >= BUFFER_TARGET) {
-                //console.log("Trying to apply an update");
+                this.stateUpdates[server].length > 0) {
                 let { seq, data } = this.stateUpdates[server].shift();
-                // if we were buffering, we're going to reset our "clock" to whatever we have now
-                if (this.waiting[server]) {
-                    this.nextUpdate[server] = seq;
-                    this.waiting[server] = false;
-                }
-                if (this.nextUpdate[server] === seq) {
-                    this.applyStateUpdate(data);
+                //console.log(`Applying ${seq}`);
+                let applied = this.applyStateUpdate(data, atTime + (this.skewEstimate[server] || 0));
+                if (applied) {
                     let ack = new Serializer(8);
                     ack.writeUint8(MessageType.StateUpdateResponse);
+                    //console.log(`Acking ${seq}`);
                     ack.writeUint32(seq);
                     this.send(server, ack.buffer, false);
                 }
-                else {
-                    // put it back in the buffer, we're not ready yet
-                    this.stateUpdates[server].unshift({ seq, data });
-                }
-            }
-            if (!this.waiting[server]) {
-                this.nextUpdate[server]++;
             }
         }
     }
@@ -417,3 +599,4 @@ export class Net {
         });
     }
 }
+//# sourceMappingURL=net.js.map

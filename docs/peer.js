@@ -47,17 +47,24 @@ export class Peer {
             sock.onmessage = (event) => {
                 this.handleServerMessage(JSON.parse(event.data));
             };
+            let heartbeatHandle = 0;
             sock.onopen = () => {
                 //console.log("Socket opened");
                 // PeerJS sends a heartbeat to the server every 5 seconds--I assume the
                 // server will eventually close the connection otherwise
-                setInterval(() => sock.send(JSON.stringify({ type: ServerMessageType.Heartbeat })), SERVER_HEARTBEAT_INTERVAL);
+                heartbeatHandle = setInterval(() => {
+                    sock.send(JSON.stringify({ type: ServerMessageType.Heartbeat }));
+                }, SERVER_HEARTBEAT_INTERVAL);
                 if (this.onopen) {
                     this.onopen(id);
                 }
             };
             sock.onclose = () => {
                 console.log("Socket closed");
+                if (heartbeatHandle) {
+                    clearInterval(heartbeatHandle);
+                    heartbeatHandle = 0;
+                }
             };
             this.sock = sock;
         });
@@ -197,3 +204,4 @@ export class Peer {
         });
     }
 }
+//# sourceMappingURL=peer.js.map

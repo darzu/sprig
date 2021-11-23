@@ -7,12 +7,24 @@ export function computeTriangleNormal(p1, p2, p3) {
     return n;
 }
 // matrix utilities
-export function pitch(m, rad) { return mat4.rotateX(m, m, rad); }
-export function yaw(m, rad) { return mat4.rotateY(m, m, rad); }
-export function roll(m, rad) { return mat4.rotateZ(m, m, rad); }
-export function moveX(m, n) { return mat4.translate(m, m, [n, 0, 0]); }
-export function moveY(m, n) { return mat4.translate(m, m, [0, n, 0]); }
-export function moveZ(m, n) { return mat4.translate(m, m, [0, 0, n]); }
+export function pitch(m, rad) {
+    return mat4.rotateX(m, m, rad);
+}
+export function yaw(m, rad) {
+    return mat4.rotateY(m, m, rad);
+}
+export function roll(m, rad) {
+    return mat4.rotateZ(m, m, rad);
+}
+export function moveX(m, n) {
+    return mat4.translate(m, m, [n, 0, 0]);
+}
+export function moveY(m, n) {
+    return mat4.translate(m, m, [0, n, 0]);
+}
+export function moveZ(m, n) {
+    return mat4.translate(m, m, [0, 0, n]);
+}
 export function getPositionFromTransform(t) {
     // TODO(@darzu): not really necessary
     const pos = vec3.create();
@@ -26,3 +38,7 @@ export function vec3Floor(out, v) {
     out[2] = Math.floor(v[2]);
     return out;
 }
+export function vec3Dbg(v) {
+    return `(${v[0].toFixed(2)},${v[1].toFixed(2)},${v[2].toFixed(2)})`;
+}
+//# sourceMappingURL=utils-3d.js.map
