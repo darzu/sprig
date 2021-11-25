@@ -105,8 +105,11 @@ function createBullet(
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e))
     em.addComponent(e.id, RenderableDef, getBulletMesh());
-  if (!MeshHandleDef.isOn(e))
-    em.addComponent(e.id, MeshHandleDef, getBulletProto());
+  if (!MeshHandleDef.isOn(e)) {
+    // TODO(@darzu): handle in AddMeshHandleSystem
+    const meshHandle = _renderer.addMeshInstance(getBulletProto());
+    em.addComponent(e.id, MeshHandleDef, meshHandle);
+  }
   if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
   if (!AuthorityDef.isOn(e)) {
     em.addComponent(e.id, AuthorityDef, pid, pid);
