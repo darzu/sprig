@@ -15,6 +15,7 @@ import {
 import { mat4, quat, vec3 } from "./gl-matrix.js";
 import { _gameState, _renderer } from "./main.js";
 import { Mesh, MeshHandle, MeshHandleDef } from "./mesh-pool.js";
+import { Authority, AuthorityDef, Me, MeDef } from "./net/components.js";
 import { Motion, MotionDef } from "./phys_motion.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
 import { TimeDef } from "./time.js";
@@ -164,16 +165,17 @@ function stepRenderer(
 }
 
 function updatePlayerView(
-  players: { player: PlayerEnt; motion: Motion }[],
-  resources: { playerView: PlayerView; camera: CameraProps }
+  players: { player: PlayerEnt; motion: Motion; authority: Authority }[],
+  resources: { playerView: PlayerView; camera: CameraProps; me: Me }
 ) {
   const {
     playerView: { viewMat },
     camera,
+    me,
   } = resources;
 
   // TODO(@darzu): ECS check authority and me state
-  const mePlayer = players[0];
+  const mePlayer = players.filter((p) => p.authority.pid === me.pid)[0];
   if (!mePlayer) return;
 
   //TODO: this calculation feels like it should be simpler but Doug doesn't
@@ -201,8 +203,8 @@ function updatePlayerView(
 export function registerUpdatePlayerView(em: EntityManager) {
   em.addSingletonComponent(PlayerViewDef);
   em.registerSystem(
-    [PlayerEntDef, MotionDef],
-    [PlayerViewDef, CameraDef],
+    [PlayerEntDef, MotionDef, AuthorityDef],
+    [PlayerViewDef, CameraDef, MeDef],
     updatePlayerView
   );
 }
