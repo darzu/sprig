@@ -22,7 +22,13 @@ import {
 } from "../renderer.js";
 import { CUBE_AABB, CUBE_MESH } from "./cube.js";
 import { PhysicsStateDef } from "../phys_esc.js";
-import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
+import {
+  Authority,
+  AuthorityDef,
+  Me,
+  MeDef,
+  SyncDef,
+} from "../net/components.js";
 import { AABBCollider, ColliderDef } from "../collider.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
@@ -62,6 +68,7 @@ interface PlayerObj {
   id: number;
   player: PlayerEnt;
   motion: Motion;
+  authority: Authority;
 }
 
 export const CameraDef = EM.defineComponent("camera", () => {
@@ -74,8 +81,8 @@ export type CameraProps = Component<typeof CameraDef>;
 
 export function registerStepPlayers(em: EntityManager) {
   em.registerSystem(
-    [PlayerEntDef, MotionDef],
-    [TimeDef, CameraDef, InputsDef],
+    [PlayerEntDef, MotionDef, AuthorityDef],
+    [TimeDef, CameraDef, InputsDef, MeDef],
     stepPlayers
   );
 }
@@ -120,7 +127,7 @@ function getInteractionObject(
 
 function stepPlayers(
   players: PlayerObj[],
-  resources: { time: Time; camera: CameraProps; inputs: Inputs }
+  resources: { time: Time; camera: CameraProps; inputs: Inputs; me: Me }
 ) {
   const {
     time: { dt },
@@ -133,6 +140,7 @@ function stepPlayers(
   //console.log(`${players.length} players, ${hats.length} hats`);
 
   for (let p of players) {
+    if (p.authority.pid !== resources.me.pid) continue;
     // fall with gravity
     // TODO(@darzu): what r the units of gravity here?
     p.motion.linearVelocity[1] -= (p.player.gravity / 1000) * dt;
