@@ -47,8 +47,10 @@ import {
 import {
   CameraDef,
   CameraProps,
+  PlayerConstructDef,
   PlayerEnt,
   PlayerEntDef,
+  registerBuildPlayersSystem,
   registerStepPlayers,
 } from "./player.js";
 import { registerNetSystems } from "../net/net.js";
@@ -303,23 +305,7 @@ export class HatClass extends Cube {
 
 function createPlayer(em: EntityManager) {
   const e = em.newEntity();
-
-  em.addComponent(e.id, MotionDef, vec3.fromValues(5, 0, 0));
-  em.addComponent(e.id, MotionSmoothingDef);
-  em.addComponent(e.id, TransformDef);
-  em.addComponent(e.id, ParentDef);
-  em.addComponent(e.id, RenderableDef, CUBE_MESH);
-  const meshHandle = _renderer.addMesh(CUBE_MESH);
-  em.addComponent(e.id, MeshHandleDef, meshHandle);
-  em.addComponent(e.id, PhysicsStateDef);
-  em.addComponent(e.id, ColliderDef, {
-    shape: "AABB",
-    solid: true,
-    aabb: CUBE_AABB,
-  });
-  em.addComponent(e.id, InWorldDef, true);
-  em.addComponent(e.id, PlayerEntDef, 0.1);
-  em.addComponent(e.id, ColorDef, vec3.fromValues(0, 0.2, 0));
+  em.addComponent(e.id, PlayerConstructDef, vec3.fromValues(5, 0, 0));
 
   // TODO(@darzu):  move _playerId to a LocalPlayer component or something
   _playerId = e.id;
@@ -451,6 +437,7 @@ export function registerAllSystems(em: EntityManager) {
   registerUpdateSystem(em);
   registerUpdateSmoothingTargetSmoothChange(em);
   registerJoinSystems(em);
+  registerBuildPlayersSystem(em);
   registerBuildPlanesSystem(em);
   registerBuildCubesSystem(em);
   registerBuildBoatsSystem(em);
@@ -538,6 +525,9 @@ export class CubeGameState extends GameState {
 
   objectOfType(typeId: ObjectType, id: number, creator: number): GameObject {
     const e = EM.registerEntity(id);
+
+    // TODO(@darzu): is this being run?
+    console.log("OLD: objectOfType()");
 
     switch (typeId) {
       case ObjectType.Plane:

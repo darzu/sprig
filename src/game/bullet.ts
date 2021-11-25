@@ -51,10 +51,12 @@ EM.registerSerializerPair(
   (c, writer) => {
     writer.writeVec3(c.location);
     writer.writeVec3(c.linearVelocity);
+    writer.writeVec3(c.angularVelocity);
   },
   (c, reader) => {
     reader.readVec3(c.location);
     reader.readVec3(c.linearVelocity);
+    reader.readVec3(c.angularVelocity);
   }
 );
 

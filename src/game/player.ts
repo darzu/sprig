@@ -10,10 +10,20 @@ import {
   Motion,
   MotionDef,
 } from "../phys_motion.js";
-import { Component, EM, EntityManager } from "../entity-manager.js";
+import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { Time, TimeDef } from "../time.js";
-import { BulletClass, HatDef, _bulletProto } from "./game.js";
+import { BulletClass, ColorDef, HatDef } from "./game.js";
 import { spawnBullet } from "./bullet.js";
+import { FinishedDef } from "../build.js";
+import {
+  MotionSmoothingDef,
+  RenderableDef,
+  TransformDef,
+} from "../renderer.js";
+import { CUBE_AABB, CUBE_MESH } from "./cube.js";
+import { PhysicsStateDef } from "../phys_esc.js";
+import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
+import { AABBCollider, ColliderDef } from "../collider.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {
@@ -28,7 +38,27 @@ export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
 });
 export type PlayerEnt = Component<typeof PlayerEntDef>;
 
-export interface PlayerObj {
+export const PlayerConstructDef = EM.defineComponent(
+  "playerConstruct",
+  (loc?: vec3) => {
+    return {
+      location: loc ?? vec3.create(),
+    };
+  }
+);
+export type PlayerConstruct = Component<typeof PlayerConstructDef>;
+
+EM.registerSerializerPair(
+  PlayerConstructDef,
+  (c, writer) => {
+    writer.writeVec3(c.location);
+  },
+  (c, reader) => {
+    reader.readVec3(c.location);
+  }
+);
+
+interface PlayerObj {
   id: number;
   player: PlayerEnt;
   motion: Motion;
@@ -224,4 +254,40 @@ function stepPlayers(
       }
     }
   }
+}
+
+function createPlayer(
+  em: EntityManager,
+  e: Entity & { playerConstruct: PlayerConstruct },
+  pid: number
+) {
+  if (FinishedDef.isOn(e)) return;
+  const props = e.playerConstruct;
+  if (!MotionDef.isOn(e)) em.addComponent(e.id, MotionDef, props.location);
+  if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0, 0.2, 0]);
+  if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
+  if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
+  if (!RenderableDef.isOn(e)) em.addComponent(e.id, RenderableDef, CUBE_MESH);
+  if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
+  if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid, pid);
+  if (!PlayerEntDef.isOn(e)) em.addComponent(e.id, PlayerEntDef);
+  if (!InWorldDef.isOn(e)) em.addComponent(e.id, InWorldDef, true);
+  if (!ColliderDef.isOn(e)) {
+    const collider = em.addComponent(e.id, ColliderDef);
+    collider.shape = "AABB";
+    collider.solid = true;
+    (collider as AABBCollider).aabb = CUBE_AABB;
+  }
+  if (!SyncDef.isOn(e)) {
+    const sync = em.addComponent(e.id, SyncDef);
+    sync.fullComponents.push(PlayerConstructDef.id);
+    sync.dynamicComponents.push(MotionDef.id);
+  }
+  em.addComponent(e.id, FinishedDef);
+}
+
+export function registerBuildPlayersSystem(em: EntityManager) {
+  em.registerSystem([PlayerConstructDef], [MeDef], (players, res) => {
+    for (let p of players) createPlayer(em, p, res.me.pid);
+  });
 }

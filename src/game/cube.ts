@@ -33,7 +33,7 @@ import { FinishedDef } from "../build.js";
 
 const BLACK = vec3.fromValues(0, 0, 0);
 
-const CUBE_MESH = unshareProvokingVertices({
+export const CUBE_MESH = unshareProvokingVertices({
   pos: [
     [+1.0, +1.0, +1.0],
     [-1.0, +1.0, +1.0],
@@ -91,7 +91,7 @@ const CUBE_MESH = unshareProvokingVertices({
     BLACK,
   ],
 });
-const CUBE_AABB = getAABBFromMesh(CUBE_MESH);
+export const CUBE_AABB = getAABBFromMesh(CUBE_MESH);
 
 export const CubeConstructDef = EM.defineComponent(
   "cubeConstruct",
