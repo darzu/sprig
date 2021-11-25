@@ -147,7 +147,7 @@ function createBoat(
   em.addComponent(e.id, FinishedDef);
 }
 
-export function registerCreateBoats(em: EntityManager) {
+export function registerBuildBoatsSystem(em: EntityManager) {
   em.registerSystem([BoatConstructDef], [MeDef], (boats, res) => {
     for (let b of boats) createBoat(em, b, res.me.pid);
   });

@@ -41,7 +41,7 @@ import {
   Boat,
   BoatConstructDef,
   BoatDef,
-  registerCreateBoats as registerBuildBoatsSystem,
+  registerBuildBoatsSystem,
   registerStepBoats,
 } from "./boat.js";
 import {
@@ -76,6 +76,7 @@ import { registerItemPickupSystem } from "./pickup.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
 import { registerBuildShipSystem, ShipConstructDef } from "./ship.js";
 import { HatConstructDef, registerBuildHatSystem } from "./hat.js";
+import { registerBuildBulletsSystem } from "./bullet.js";
 
 enum ObjectType {
   Plane,
@@ -250,8 +251,8 @@ abstract class Cube extends GameObject {
 
 export const BULLET_MESH = scaleMesh(CUBE_MESH, 0.3);
 
-export const BulletDef = EM.defineComponent("bullet", () => true);
-export class Bullet extends Cube {
+// export const BulletDef = EM.defineComponent("bullet", () => true);
+export class BulletClass extends Cube {
   constructor(e: Entity, creator: number) {
     super(e, creator);
     this.color = vec3.fromValues(0.3, 0.3, 0.8);
@@ -455,6 +456,7 @@ export function registerAllSystems(em: EntityManager) {
   registerBuildBoatsSystem(em);
   registerBuildShipSystem(em);
   registerBuildHatSystem(em);
+  registerBuildBulletsSystem(em);
   registerMoveCubesSystem(em);
   registerStepBoats(em);
   registerStepPlayers(em);
@@ -541,7 +543,7 @@ export class CubeGameState extends GameState {
       case ObjectType.Plane:
         return new Plane(e, creator);
       case ObjectType.Bullet:
-        return new Bullet(e, creator);
+        return new BulletClass(e, creator);
       case ObjectType.Player:
         return new PlayerClass(e, creator);
       case ObjectType.Boat:
@@ -621,7 +623,7 @@ export class CubeGameState extends GameState {
       case EventType.BulletBulletCollision:
         for (let id of event.objects) {
           let obj = this.getObject(id);
-          if (obj && obj instanceof Bullet) {
+          if (obj && obj instanceof BulletClass) {
             // delete all bullet objects in collision
             // TODO: figure out how object deletion should really work
             this.removeObject(obj);
@@ -633,7 +635,7 @@ export class CubeGameState extends GameState {
         // the first object, bullet is second
         for (let id of event.objects) {
           let obj = this.getObject(id);
-          if (obj && obj instanceof Bullet) {
+          if (obj && obj instanceof BulletClass) {
             // delete all bullet objects in collision
             // TODO: figure out how object deletion should really work
             this.removeObject(obj);

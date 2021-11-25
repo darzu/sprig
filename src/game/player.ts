@@ -12,7 +12,8 @@ import {
 } from "../phys_motion.js";
 import { Component, EM, EntityManager } from "../entity-manager.js";
 import { Time, TimeDef } from "../time.js";
-import { Bullet, HatDef, _bulletProto } from "./game.js";
+import { BulletClass, HatDef, _bulletProto } from "./game.js";
+import { spawnBullet } from "./bullet.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {
@@ -40,16 +41,6 @@ export const CameraDef = EM.defineComponent("camera", () => {
   };
 });
 export type CameraProps = Component<typeof CameraDef>;
-
-function spawnBullet(em: EntityManager, motion: Motion, creator: number) {
-  const e = em.newEntity();
-  let bullet = new Bullet(e, creator);
-  copyMotionProps(bullet.motion, motion);
-  vec3.copy(bullet.motion.linearVelocity, motion.linearVelocity);
-  vec3.copy(bullet.motion.angularVelocity, motion.angularVelocity);
-  // TODO(@darzu): don't reach to global
-  _gameState.addObjectInstance(bullet, _bulletProto);
-}
 
 export function registerStepPlayers(em: EntityManager) {
   em.registerSystem(
@@ -191,7 +182,7 @@ function stepPlayers(
         bullet_axis,
         0.01
       );
-      spawnBullet(EM, bulletMotion, _gameState.me);
+      spawnBullet(EM, bulletMotion);
     }
     if (inputs.rclick) {
       const SPREAD = 5;
@@ -228,7 +219,7 @@ function stepPlayers(
             bullet_axis,
             0.01
           );
-          spawnBullet(EM, bulletMotion, _gameState.me);
+          spawnBullet(EM, bulletMotion);
         }
       }
     }

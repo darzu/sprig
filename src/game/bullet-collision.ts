@@ -10,8 +10,8 @@ import { MotionDef } from "../phys_motion.js";
 import { InWorldDef } from "../state.js";
 import { ParentDef } from "../renderer.js";
 import { vec3 } from "../gl-matrix.js";
-import { BulletDef } from "./game.js";
 import { AuthorityDef } from "../net/components.js";
+import { BulletDef } from "./bullet.js";
 
 export function registerBulletCollisionSystem(em: EntityManager) {
   // TODO(@darzu):
