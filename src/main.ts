@@ -11,7 +11,8 @@ import {
 import { setupObjImportExporter } from "./download.js";
 import { GameAssets, loadAssets } from "./game/assets.js";
 import {
-  createGameObjects,
+  createLocalObjects,
+  createServerObjects,
   CubeGameState,
   initGame,
   registerAllSystems,
@@ -128,7 +129,9 @@ async function startGame(host: string | null) {
   initGame(EM);
 
   if (hosting) {
-    createGameObjects(EM);
+    createServerObjects(EM);
+  } else {
+    createLocalObjects(EM);
   }
 
   EM.addSingletonComponent(InputsDef);

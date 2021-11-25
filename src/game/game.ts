@@ -489,7 +489,7 @@ export function initGame(em: EntityManager) {
   createCamera(em);
 }
 
-export function createGameObjects(em: EntityManager) {
+export function createServerObjects(em: EntityManager) {
   let { id: cubeId } = em.newEntity();
   em.addComponent(cubeId, CubeConstructDef, 3, LIGHT_BLUE);
 
@@ -498,6 +498,9 @@ export function createGameObjects(em: EntityManager) {
   createBoats(em);
   createShips(em);
   createHats(em);
+}
+export function createLocalObjects(em: EntityManager) {
+  createPlayer(em);
 }
 
 export class CubeGameState extends GameState {
