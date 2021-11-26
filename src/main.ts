@@ -22,6 +22,7 @@ import { addTimeComponents, TimeDef } from "./time.js";
 import { InputsDef, registerInputsSystem } from "./inputs.js";
 import { MeDef, JoinDef, HostDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";
+import { dbg } from "./debugger.js";
 
 const FORCE_WEBGL = false;
 const MAX_MESHES = 20000;
@@ -328,3 +329,7 @@ window.onload = () => {
     console.error(e);
   }
 })();
+
+// for debugging
+(window as any).dbg = dbg;
+(window as any).EM = EM;

@@ -55,6 +55,10 @@ type ESet<DS extends EDef<number, any>[]> = {
     : never;
 };
 
+function nameToId(name: string): number {
+  return hashCode(name);
+}
+
 export class EntityManager {
   entities: Map<number, Entity> = new Map();
   systems: System<any[] | null, any[]>[] = [];
@@ -78,7 +82,7 @@ export class EntityManager {
     name: N,
     construct: (...args: Pargs) => P
   ): ComponentDef<N, P, Pargs> {
-    const id = hashCode(name);
+    const id = nameToId(name);
     if (this.components.has(id)) {
       throw `Component with name ${name} already defined--hash collision?`;
     }
@@ -339,6 +343,4 @@ export class EntityManager {
 
 // TODO(@darzu): where to put this?
 export const EM = new EntityManager();
-
-(window as any).EM = EM;
 
