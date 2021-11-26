@@ -45,7 +45,7 @@ let dbgEntSingleton: DbgEnt = { id: 0, cmps: () => [] };
 
 const dbgCmpsAllById: Map<number, DbgCmp> = new Map();
 const dbgCmpsAllByName: Map<string, DbgCmp> = new Map();
-const dbgCmpsAllByAbv: Map<string, DbgCmp> = new Map();
+let dbgCmpsAllByAbv: Map<string, DbgCmp> = new Map();
 const dbgCmps: Map<string, DbgCmp> = new Map();
 const dbgCmpsSingleton: Map<string, DbgCmp> = new Map();
 
@@ -75,6 +75,32 @@ function mkDbgEnt(id: number): DbgEnt {
   // else dbgEnts.set(id, de);
   return de;
 }
+type Named = { name: string };
+function createAbvs<N extends Named>(strs: N[]): Map<string, N> {
+  // TODO(@darzu): better strategy for ____ & ____Construct
+  const strToAbv: Map<N, string> = new Map();
+  const abvToStr: Map<string, N> = new Map();
+  for (let s of strs) {
+    for (let i = 3; i < s.name.length; i++) {
+      const abv = s.name.substr(0, i);
+      if (!abvToStr.has(abv)) {
+        abvToStr.set(abv, s);
+        strToAbv.set(s, abv);
+        break;
+      } else {
+        // abreviation taken
+        const other = abvToStr.get(abv)!;
+        abvToStr.delete(abv);
+        strToAbv.delete(s);
+        const newAbv = other.name.substr(0, i + 1);
+        abvToStr.set(newAbv, other);
+        strToAbv.set(other, newAbv);
+        continue;
+      }
+    }
+  }
+  return abvToStr;
+}
 function updateCmps() {
   dbgEntSingleton = mkDbgEnt(0);
 
@@ -82,36 +108,18 @@ function updateCmps() {
     dbgCmpsAllById.clear();
     dbgCmps.clear();
     dbgCmpsSingleton.clear();
-    dbgCmpsAllByAbv.clear();
+
     for (let id of EM.components.keys()) {
       const dc = mkDbgCmp(id);
       dbgCmpsAllById.set(id, dc);
       dbgCmpsAllByName.set(dc.name, dc);
-      // create abreviations
-      for (let i = 3; i < dc.name.length; i++) {
-        const abv = mkAbv(dc, i);
-        if (!dbgCmpsAllByAbv.has(abv)) {
-          dbgCmpsAllByAbv.set(abv, dc);
-          break;
-        } else {
-          // abreviation taken
-          const other = dbgCmpsAllByAbv.get(abv)!;
-          dbgCmpsAllByAbv.delete(abv);
-          dbgCmpsAllByAbv.set(mkAbv(other, i + 1), other);
-          continue;
-        }
-      }
 
       if (dc.name in dbgEntSingleton) dbgCmpsSingleton.set(dc.name, dc);
       else dbgCmps.set(dc.name, dc);
     }
-    for (let [abv, c] of dbgCmpsAllByAbv) {
-      c.abv = abv;
-    }
-  }
 
-  function mkAbv(c: DbgCmp, len: number) {
-    return c.name.substr(0, len);
+    dbgCmpsAllByAbv = createAbvs([...dbgCmpsAllById.values()]);
+    for (let [abv, c] of dbgCmpsAllByAbv) c.abv = abv;
   }
 }
 function updateEnts() {
@@ -141,15 +149,14 @@ function cmpByName(name: string): DbgCmp {
 export const dbg = {
   listCmps: () => {
     updateCmps();
-    const cStr = [...dbgCmps.values()].map((c) => c.name).join("\n");
+    const cStr = [...dbgCmps.values()]
+      .map((c) => `${c.name} (${c.abv})`)
+      .join("\n");
     console.log(cStr);
   },
   listEnts: (...cs: string[]) => {
     updateEnts();
     updateCmps();
-    console.log("singleton:");
-    console.dir(dbgEntSingleton);
-    console.log("non-singleton:");
     const eTable = [...dbgEnts.values()]
       .filter((e) => cs.every((c) => c in e))
       .map((e) => {
@@ -161,6 +168,10 @@ export const dbg = {
       });
     // console.log(eStr);
     console.table(eTable);
+    return eTable;
+  },
+  ent0: () => {
+    return dbgEntSingleton;
   },
   ent: (id: number) => {
     return mkDbgEnt(id);
