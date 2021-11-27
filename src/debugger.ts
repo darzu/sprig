@@ -21,7 +21,7 @@ interface DbgCmp extends ComponentDef {
   abv: string;
 }
 interface DbgEnt extends Entity {
-  cmps: () => DbgCmp[];
+  _cmps: () => DbgCmp[];
 }
 
 // meshHandle,time,netTimer,physicsTimer,inputs,collider,motion,inWorld,finished,sync,
@@ -30,18 +30,9 @@ interface DbgEnt extends Entity {
 // playerConstruct,camera,transform,motionSmoothing,parent,renderable,playerView,
 // physicsResults,_phys,boat,boatConstruct,detectedEvents,requestedEvents,events,
 // planeConstruct,shipConstruct,hatConstruct,color,hat
-const ignoreCmps = [
-  MeshHandleDef,
-  ColliderDef,
-  MotionDef,
-  FinishedDef,
-  SyncDef,
-  AuthorityDef,
-  DeletedDef,
-];
 
 const dbgEnts: Map<number, DbgEnt> = new Map();
-let dbgEntSingleton: DbgEnt = { id: 0, cmps: () => [] };
+let dbgEntSingleton: DbgEnt = { id: 0, _cmps: () => [] };
 
 const dbgCmpsAllById: Map<number, DbgCmp> = new Map();
 const dbgCmpsAllByName: Map<string, DbgCmp> = new Map();
@@ -62,7 +53,7 @@ function mkDbgEnt(id: number): DbgEnt {
   // if (dbgEnts.has(id)) return dbgEnts.get(id)!;
   const e = EM.entities.get(id);
   if (!e) throw `No entity by id ${id}`;
-  const cmps = () => {
+  const _cmps = () => {
     const res: DbgCmp[] = [];
     for (let p of Object.keys(e)) {
       const c = (id === 0 ? dbgCmpsSingleton : dbgCmps).get(p);
@@ -70,36 +61,92 @@ function mkDbgEnt(id: number): DbgEnt {
     }
     return res;
   };
-  const de = Object.assign(e, { cmps });
+  const de = Object.assign(e, { _cmps });
   // if (id === 0) dbgEntSingleton = de;
   // else dbgEnts.set(id, de);
   return de;
 }
 type Named = { name: string };
-function createAbvs<N extends Named>(strs: N[]): Map<string, N> {
-  // TODO(@darzu): better strategy for ____ & ____Construct
-  const strToAbv: Map<N, string> = new Map();
-  const abvToStr: Map<string, N> = new Map();
-  for (let s of strs) {
-    for (let i = 3; i < s.name.length; i++) {
-      const abv = s.name.substr(0, i);
-      if (!abvToStr.has(abv)) {
-        abvToStr.set(abv, s);
-        strToAbv.set(s, abv);
-        break;
-      } else {
-        // abreviation taken
-        const other = abvToStr.get(abv)!;
-        abvToStr.delete(abv);
-        strToAbv.delete(s);
-        const newAbv = other.name.substr(0, i + 1);
-        abvToStr.set(newAbv, other);
-        strToAbv.set(other, newAbv);
-        continue;
-      }
+type Abv = string;
+function createAbvs<N extends Named>(named: N[]): Map<Abv, N> {
+  // sort first for more stable output
+  named.sort((a, b) => {
+    const aNm = a.name.toUpperCase();
+    const bNm = b.name.toUpperCase();
+    if (aNm < bNm) return -1;
+    if (aNm > bNm) return 1;
+    return 0;
+  });
+
+  // split names into parts
+  const allParts = named.map((s) => wordParts(s.name));
+  const firstParts = allParts.map((ps) => ps[0]).filter((p) => !!p);
+  const latterParts = allParts
+    .map((ps) => ps.slice(1))
+    .filter((p) => !!p && p.length)
+    .reduce((p, n) => [...p, ...n], []);
+
+  // for each part, find an abv
+  const strToAbv: Map<string, Abv> = new Map();
+  const abvToStr: Map<Abv, string> = new Map();
+  firstParts.forEach((s) => findNewAbv(s, 3));
+  latterParts.forEach((s) => findNewAbv(s, 1));
+
+  // build map from abv to N
+  const res: Map<Abv, N> = new Map();
+  named.forEach((n, i) => {
+    const ps = allParts[i];
+    const abvs = ps.map((p) => strToAbv.get(p)!);
+    const abv = abvs.join("");
+    res.set(abv, n);
+  });
+  return res;
+
+  function findNewAbv(s: string, preferedLen: number) {
+    if (strToAbv.has(s)) return; // already have one
+    if (s.length <= preferedLen) {
+      // we're as short as we can get
+      abvToStr.set(s, s);
+      strToAbv.set(s, s);
+      return;
+    }
+    const abv = s.substr(0, preferedLen);
+    if (!abvToStr.has(abv)) {
+      // not taken
+      abvToStr.set(abv, s);
+      strToAbv.set(s, abv);
+    } else {
+      // abreviation taken
+      const other = abvToStr.get(abv)!;
+      // undo other
+      abvToStr.delete(abv);
+      strToAbv.delete(other);
+      // find a new for other
+      findNewAbv(other, preferedLen + 1);
+      // find a new abv for this
+      findNewAbv(s, preferedLen + 1);
     }
   }
-  return abvToStr;
+  function wordParts(s: string): string[] {
+    // assume camel case
+    const parts: string[] = [];
+    let next = "";
+    for (let i = 0; i < s.length; i++) {
+      const c = s.charAt(i);
+      if (isUpper(c)) {
+        // new part
+        parts.push(next);
+        next = "";
+      }
+      next += c;
+    }
+    parts.push(next);
+
+    return parts.filter((p) => !!p);
+  }
+  function isUpper(s: string): boolean {
+    return "A" <= s && s <= "Z";
+  }
 }
 function updateCmps() {
   dbgEntSingleton = mkDbgEnt(0);
@@ -137,19 +184,19 @@ function filterEnts(...cmpNames: string[]): Entity[] {
   return EM.filterEntitiesByKey(cmpNames);
 }
 function cmpByName(name: string): DbgCmp {
-  if (!dbgCmps.has(name))
-    // side-effect: populates dbgCmpsByName
-    updateCmps();
-  if (!dbgCmps.has(name))
+  let res = dbgCmps.get(name) ?? dbgCmpsAllByAbv.get(name);
+  if (!res) updateCmps();
+  res = dbgCmps.get(name) ?? dbgCmpsAllByAbv.get(name);
+  if (!res)
     // TODO(@darzu): fuzzy match?
-    throw `No component by name ${name}`;
-  return dbgCmps.get(name)!;
+    throw `No component by name or abv ${name}`;
+  return res;
 }
 
 export const dbg = {
   listCmps: () => {
     updateCmps();
-    const cStr = [...dbgCmps.values()]
+    const cStr = [...dbgCmps.values(), ...dbgCmpsSingleton.values()]
       .map((c) => `${c.name} (${c.abv})`)
       .join("\n");
     console.log(cStr);
@@ -157,18 +204,21 @@ export const dbg = {
   listEnts: (...cs: string[]) => {
     updateEnts();
     updateCmps();
-    const eTable = [...dbgEnts.values()]
-      .filter((e) => cs.every((c) => c in e))
-      .map((e) => {
-        const res: any = { id: e.id };
-        for (let c of e.cmps()) {
-          res[c.abv] = (e as any)[c.name];
-        }
-        return res;
-      });
+    const es = [...dbgEnts.values()].filter((e) =>
+      cs.every(
+        (c) => c in e || (dbgCmpsAllByAbv.get(c)?.name ?? "INVALID") in e
+      )
+    );
+    const eTable = es.map((e) => {
+      const res: any = { id: e.id };
+      for (let c of e._cmps()) {
+        res[c.abv] = (e as any)[c.name];
+      }
+      return res;
+    });
     // console.log(eStr);
     console.table(eTable);
-    return eTable;
+    return es;
   },
   ent0: () => {
     return dbgEntSingleton;
