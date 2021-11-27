@@ -66,17 +66,20 @@ function mkDbgEnt(id: number): DbgEnt {
   // else dbgEnts.set(id, de);
   return de;
 }
-type Named = { name: string };
-type Abv = string;
-function createAbvs<N extends Named>(named: N[]): Map<Abv, N> {
-  // sort first for more stable output
-  named.sort((a, b) => {
-    const aNm = a.name.toUpperCase();
-    const bNm = b.name.toUpperCase();
+function sortByName<N extends string>(ls: { [P in N]: string }[], n: N) {
+  ls.sort((a, b) => {
+    const aNm = a[n].toUpperCase();
+    const bNm = b[n].toUpperCase();
     if (aNm < bNm) return -1;
     if (aNm > bNm) return 1;
     return 0;
   });
+}
+type Named = { name: string };
+type Abv = string;
+function createAbvs<N extends Named>(named: N[]): Map<Abv, N> {
+  // sort first for more stable output
+  sortByName(named, "name");
 
   // split names into parts
   const allParts = named.map((s) => wordParts(s.name));
@@ -196,10 +199,10 @@ function cmpByName(name: string): DbgCmp {
 export const dbg = {
   listCmps: () => {
     updateCmps();
-    const cStr = [...dbgCmps.values(), ...dbgCmpsSingleton.values()]
-      .map((c) => `${c.name} (${c.abv})`)
-      .join("\n");
-    console.log(cStr);
+    const cmps = [...dbgCmps.values(), ...dbgCmpsSingleton.values()];
+    sortByName(cmps, "name");
+    const cStr = cmps.map((c) => `${c.name}\t(${c.abv})`).join("\n");
+    console.table(cStr);
   },
   listEnts: (...cs: string[]) => {
     updateEnts();
