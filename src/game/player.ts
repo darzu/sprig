@@ -2,7 +2,6 @@
 
 import { quat, vec3 } from "../gl-matrix.js";
 import { Inputs, InputsDef } from "../inputs.js";
-import { _gameState } from "../main.js";
 import { GameObject, InWorld, InWorldDef } from "../state.js";
 import {
   copyMotionProps,

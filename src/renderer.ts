@@ -13,7 +13,7 @@ import {
   PlayerEntDef,
 } from "./game/player.js";
 import { mat4, quat, vec3 } from "./gl-matrix.js";
-import { _gameState, _renderer } from "./main.js";
+import { _renderer } from "./main.js";
 import { Mesh, MeshHandle, MeshHandleDef } from "./mesh-pool.js";
 import { Authority, AuthorityDef, Me, MeDef } from "./net/components.js";
 import { Motion, MotionDef } from "./phys_motion.js";
