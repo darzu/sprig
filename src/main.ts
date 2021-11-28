@@ -29,12 +29,6 @@ const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-// ms per network sync (should be the same for all servers)
-const NET_DT = 1000.0 / 20;
-
-// local simulation speed
-const SIM_DT = 1000.0 / 60;
-
 // TODO(@darzu): very hacky way to pass these around
 export let _GAME_ASSETS: GameAssets | null = null;
 
@@ -137,8 +131,6 @@ async function startGame(host: string | null) {
   EM.addSingletonComponent(InputsDef);
   registerInputsSystem(canvas);
 
-  // _gameState = new CubeGameState(_renderer, hosting);
-
   function doLockMouse() {
     if (document.pointerLockElement !== canvas) {
       canvas.requestPointerLock();
@@ -154,26 +146,15 @@ async function startGame(host: string | null) {
   let avgWeight = 0.05;
   //let net: Net | null = null;
   let previous_frame_time = start_of_time;
-  let net_time_accumulator = 0;
-  let sim_time_accumulator = 0;
   let frame = () => {
     let frame_start_time = performance.now();
-    const dt = frame_start_time - previous_frame_time;
-
     // apply any state updates from the network
     //if (net) net.updateState(previous_frame_time);
 
-    // simulation step(s)
-    sim_time_accumulator += dt;
-    sim_time_accumulator = Math.min(sim_time_accumulator, SIM_DT * 2);
     let sim_time = 0;
-    while (sim_time_accumulator > SIM_DT) {
-      let before_sim = performance.now();
-      // _gameState.step(SIM_DT);
-      EM.callSystems();
-      sim_time_accumulator -= SIM_DT;
-      sim_time += performance.now() - before_sim;
-    }
+    let before_sim = performance.now();
+    EM.callSystems();
+    sim_time += performance.now() - before_sim;
 
     /*
     if (net) {
@@ -181,20 +162,14 @@ async function startGame(host: string | null) {
     }*/
 
     // send updates out to network (if necessary)
-    /*
-    net_time_accumulator += dt;
-    net_time_accumulator = Math.min(net_time_accumulator, NET_DT * 2);
-    */
     let net_time = 0;
     /*
-    while (net_time_accumulator > NET_DT) {
-      let before_net = performance.now();
-      if (net) {
-        net.sendStateUpdates();
-      }
-      net_time += performance.now() - before_net;
-      net_time_accumulator -= NET_DT;
-    }*/
+    let before_net = performance.now();
+    if (net) {
+      net.sendStateUpdates();
+    }
+    net_time += performance.now() - before_net;
+    */
 
     // render
     // TODO(@darzu):
