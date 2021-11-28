@@ -68,11 +68,9 @@ import { registerEventSystems } from "../net/events.js";
 import {
   registerBuildCubesSystem,
   registerMoveCubesSystem,
-  CubeConstruct,
   CubeConstructDef,
 } from "./cube.js";
 import { registerTimeSystem, addTimeComponents } from "../time.js";
-import { ColliderDef } from "../collider.js";
 import { PlaneConstructDef, registerBuildPlanesSystem } from "./plane.js";
 import { registerItemPickupSystem } from "./pickup.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
@@ -231,78 +229,6 @@ function deserializeColor(o: Color, buf: Deserializer) {
 }
 EM.registerSerializerPair(ColorDef, serializeColor, deserializeColor);
 
-abstract class Cube extends GameObject {
-  set color(v: vec3) {
-    vec3.copy(this._color, v);
-  }
-
-  _color: vec3;
-
-  constructor(e: Entity, creator: number) {
-    super(e, creator);
-    this._color = EM.addComponent(e.id, ColorDef);
-    vec3.copy(this._color, vec3.fromValues(0.2, 0, 0));
-    this.collider = {
-      shape: "AABB",
-      solid: true,
-      aabb: CUBE_AABB,
-    };
-    this.renderable.mesh = CUBE_MESH;
-  }
-}
-
-export const BULLET_MESH = scaleMesh(CUBE_MESH, 0.3);
-
-// export const BulletDef = EM.defineComponent("bullet", () => true);
-export class BulletClass extends Cube {
-  constructor(e: Entity, creator: number) {
-    super(e, creator);
-    this.color = vec3.fromValues(0.3, 0.3, 0.8);
-    this.collider = {
-      shape: "AABB",
-      solid: false,
-      aabb: getAABBFromMesh(this.mesh()),
-    };
-    this.renderable.mesh = scaleMesh(super.mesh(), 0.3);
-  }
-
-  typeId(): number {
-    return ObjectType.Bullet;
-  }
-
-  // TODO(@darzu): what to do about bullet location-only syncing on bullets
-}
-
-let _hatMesh: Mesh | null = null;
-
-export const HatDef = EM.defineComponent("hat", () => true);
-
-export class HatClass extends Cube {
-  constructor(e: Entity, creator: number) {
-    super(e, creator);
-    this.color = vec3.fromValues(Math.random(), Math.random(), Math.random());
-    this.collider = {
-      shape: "AABB",
-      solid: false,
-      aabb: getAABBFromMesh(this.mesh()),
-    };
-
-    EM.addComponent(e.id, HatDef);
-
-    if (!_hatMesh) {
-      const hatRaw = importObj(HAT_OBJ);
-      if (isParseError(hatRaw)) throw hatRaw;
-      const hat = unshareProvokingVertices(hatRaw);
-      _hatMesh = hat;
-    }
-    this.renderable.mesh = _hatMesh;
-  }
-
-  typeId(): number {
-    return ObjectType.Hat;
-  }
-}
-
 function createPlayer(em: EntityManager) {
   const e = em.newEntity();
   em.addComponent(e.id, PlayerConstructDef, vec3.fromValues(5, 0, 0));
@@ -387,12 +313,7 @@ function registerRenderViewController(em: EntityManager) {
   });
 }
 
-export let _bulletProto: MeshHandle;
 export function initGame(em: EntityManager) {
-  // re-usable bullet mesh
-  _bulletProto = _renderer.addMesh(BULLET_MESH);
-  mat4.copy(_bulletProto.transform, new Float32Array(16)); // zero the transforms so it doesn't render
-
   // init camera
   createCamera(em);
 }

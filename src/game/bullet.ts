@@ -3,7 +3,7 @@ import { TimeDef } from "../time.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { Motion, MotionDef } from "../phys_motion.js";
 import { FinishedDef } from "../build.js";
-import { BULLET_MESH, ColorDef, CUBE_MESH } from "./game.js";
+import { ColorDef, CUBE_MESH } from "./game.js";
 import {
   MotionSmoothingDef,
   RenderableDef,
@@ -76,7 +76,7 @@ function getBulletProto(): MeshHandle {
   if (!_bulletProto) {
     // re-usable bullet mesh
     // TODO(@darzu): DON'T REACH FOR GLOBAL _renderer
-    _bulletProto = _renderer.addMesh(BULLET_MESH);
+    _bulletProto = _renderer.addMesh(getBulletMesh());
     mat4.copy(_bulletProto.transform, new Float32Array(16)); // zero the transforms so it doesn't render
   }
   return _bulletProto;

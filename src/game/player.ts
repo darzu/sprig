@@ -2,16 +2,11 @@
 
 import { quat, vec3 } from "../gl-matrix.js";
 import { Inputs, InputsDef } from "../inputs.js";
-import { GameObject, InWorld, InWorldDef } from "../state.js";
-import {
-  copyMotionProps,
-  createMotionProps,
-  Motion,
-  MotionDef,
-} from "../phys_motion.js";
+import { InWorld, InWorldDef } from "../state.js";
+import { createMotionProps, Motion, MotionDef } from "../phys_motion.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { Time, TimeDef } from "../time.js";
-import { BulletClass, ColorDef, HatDef } from "./game.js";
+import { ColorDef } from "./game.js";
 import { spawnBullet } from "./bullet.js";
 import { FinishedDef } from "../build.js";
 import {
@@ -29,6 +24,7 @@ import {
   SyncDef,
 } from "../net/components.js";
 import { AABBCollider, ColliderDef } from "../collider.js";
+import { HatDef } from "./hat.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {

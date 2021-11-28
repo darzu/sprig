@@ -21,6 +21,8 @@ import {
 } from "../renderer.js";
 import { ColorDef } from "./game.js";
 
+export const HatDef = EM.defineComponent("hat", () => true);
+
 export const HatConstructDef = EM.defineComponent(
   "hatConstruct",
   (loc?: vec3) => {
