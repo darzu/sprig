@@ -2,11 +2,10 @@
 
 import { quat, vec3 } from "../gl-matrix.js";
 import { Inputs, InputsDef } from "../inputs.js";
-import { InWorld, InWorldDef } from "../state.js";
 import { createMotionProps, Motion, MotionDef } from "../phys_motion.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { Time, TimeDef } from "../time.js";
-import { ColorDef } from "./game.js";
+import { ColorDef, InWorld, InWorldDef } from "./game.js";
 import { spawnBullet } from "./bullet.js";
 import { FinishedDef } from "../build.js";
 import {

@@ -7,9 +7,9 @@ import { EntityManager } from "../entity-manager.js";
 import { PlayerEntDef } from "./player.js";
 import { PhysicsResultsDef } from "../phys_esc.js";
 import { MotionDef } from "../phys_motion.js";
-import { InWorldDef } from "../state.js";
 import { ParentDef } from "../renderer.js";
 import { vec3 } from "../gl-matrix.js";
+import { InWorldDef } from "./game.js";
 
 export function registerItemPickupSystem(em: EntityManager) {
   em.registerSystem(

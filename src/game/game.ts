@@ -1,55 +1,29 @@
-import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
+import { Component, EM, EntityManager } from "../entity-manager.js";
 import { TimeDef } from "../time.js";
-import { mat4, quat, vec3 } from "../gl-matrix.js";
-import { importObj, HAT_OBJ, isParseError } from "../import_obj.js";
+import { quat, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { _GAME_ASSETS, _renderer } from "../main.js";
 import { jitter } from "../math.js";
 import {
-  unshareProvokingVertices,
-  getAABBFromMesh,
-  Mesh,
-  MeshHandle,
-  MeshHandleDef,
-  scaleMesh,
-  scaleMesh3,
-} from "../mesh-pool.js";
-import {
-  PhysicsResultsDef,
-  PhysicsStateDef,
   registerPhysicsSystems,
   registerUpdateSmoothingLerp,
   registerUpdateSmoothingTargetSmoothChange,
   registerUpdateSmoothingTargetSnapChange,
 } from "../phys_esc.js";
-import { Motion, copyMotionProps, MotionDef } from "../phys_motion.js";
 import {
-  MotionSmoothingDef,
-  ParentDef,
   registerAddMeshHandleSystem,
   registerRenderer,
   registerUpdatePlayerView,
   registerUpdateTransforms,
-  RenderableDef,
-  TransformDef,
 } from "../renderer.js";
-import { Renderer } from "../render_webgpu.js";
-import { Serializer, Deserializer } from "../serialize.js";
-import { GameObject, GameEvent, GameState, InWorldDef } from "../state.js";
-import { never } from "../util.js";
 import {
-  Boat,
   BoatConstructDef,
-  BoatDef,
   registerBuildBoatsSystem,
   registerStepBoats,
 } from "./boat.js";
 import {
   CameraDef,
-  CameraProps,
   PlayerConstructDef,
-  PlayerEnt,
-  PlayerEntDef,
   registerBuildPlayersSystem,
   registerStepPlayers,
 } from "./player.js";
@@ -70,7 +44,7 @@ import {
   registerMoveCubesSystem,
   CubeConstructDef,
 } from "./cube.js";
-import { registerTimeSystem, addTimeComponents } from "../time.js";
+import { registerTimeSystem } from "../time.js";
 import { PlaneConstructDef, registerBuildPlanesSystem } from "./plane.js";
 import { registerItemPickupSystem } from "./pickup.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
@@ -110,6 +84,11 @@ EM.registerSerializerPair(
     reader.readVec3(o);
   }
 );
+
+export const InWorldDef = EM.defineComponent("inWorld", (is: boolean) => ({
+  is,
+}));
+export type InWorld = Component<typeof InWorldDef>;
 
 function createPlayer(em: EntityManager) {
   const e = em.newEntity();

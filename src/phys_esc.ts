@@ -30,7 +30,7 @@ import {
   moveObjects,
 } from "./phys_motion.js";
 import { MotionSmoothing, MotionSmoothingDef } from "./renderer.js";
-import { identity_quat } from "./state.js";
+import { tempQuat } from "./temp-pool.js";
 
 export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {
   return {
@@ -379,6 +379,7 @@ function updateSmoothingLerp(
     }
 
     // lerp rotation
+    const identity_quat = quat.identity(tempQuat());
     quat.slerp(
       rotationDiff,
       rotationDiff,
