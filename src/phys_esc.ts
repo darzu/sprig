@@ -1,6 +1,6 @@
 import { Collider, ColliderDef } from "./collider.js";
 import { Component, EM, EntityManager } from "./entity-manager.js";
-import { PhysicsTimerDef, Time, TimeDef, Timer } from "./time.js";
+import { PhysicsTimerDef, Timer } from "./time.js";
 import { _playerId } from "./game/game.js";
 import { quat, vec3 } from "./gl-matrix.js";
 import {
@@ -361,9 +361,11 @@ function updateSmoothingLerp(
   objs: {
     motionSmoothing: MotionSmoothing;
   }[],
-  { time }: { time: Time }
+  resources: { physicsTimer: Timer }
 ) {
-  const dt = time.dt;
+  const {
+    physicsTimer: { period: dt },
+  } = resources;
 
   for (let o of objs) {
     // lerp location
@@ -409,7 +411,10 @@ export function registerUpdateSmoothingTargetSmoothChange(em: EntityManager) {
   );
 }
 export function registerUpdateSmoothingLerp(em: EntityManager) {
-  em.registerSystem([MotionSmoothingDef], [TimeDef], updateSmoothingLerp);
+  em.registerSystem([MotionSmoothingDef], [PhysicsTimerDef], (objs, res) => {
+    for (let i = 0; i < res.physicsTimer.steps; i++)
+      updateSmoothingLerp(objs, res);
+  });
 }
 
 // ECS register

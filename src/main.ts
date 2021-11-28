@@ -17,7 +17,7 @@ import {
   registerAllSystems,
 } from "./game/game.js";
 import { EM } from "./entity-manager.js";
-import { addTimeComponents, TimeDef } from "./time.js";
+import { addTimeComponents } from "./time.js";
 import { InputsDef, registerInputsSystem } from "./inputs.js";
 import { MeDef, JoinDef, HostDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";

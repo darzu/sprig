@@ -18,7 +18,7 @@ import { Mesh, MeshHandle, MeshHandleDef } from "./mesh-pool.js";
 import { Authority, AuthorityDef, Me, MeDef } from "./net/components.js";
 import { Motion, MotionDef } from "./phys_motion.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
-import { TimeDef } from "./time.js";
+import { PhysicsTimerDef, Timer } from "./time.js";
 
 const SMOOTH = true;
 
@@ -144,7 +144,7 @@ interface RenderableObj {
 
 function stepRenderer(
   objs: RenderableObj[],
-  { time, playerView }: { time: { dt: number }; playerView: PlayerView }
+  { playerView }: { playerView: PlayerView }
 ) {
   // ensure our mesh handle is up to date
   for (let o of objs) {
@@ -212,8 +212,10 @@ export function registerUpdatePlayerView(em: EntityManager) {
 export function registerRenderer(em: EntityManager) {
   em.registerSystem(
     [RenderableDef, TransformDef, MeshHandleDef],
-    [TimeDef, PlayerViewDef],
-    stepRenderer
+    [PlayerViewDef, PhysicsTimerDef],
+    (objs, res) => {
+      if (res.physicsTimer.steps > 0) stepRenderer(objs, res);
+    }
   );
 }
 

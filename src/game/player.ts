@@ -4,7 +4,7 @@ import { quat, vec3 } from "../gl-matrix.js";
 import { Inputs, InputsDef } from "../inputs.js";
 import { createMotionProps, Motion, MotionDef } from "../phys_motion.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
-import { Time, TimeDef } from "../time.js";
+import { PhysicsTimerDef, Timer } from "../time.js";
 import { ColorDef, InWorld, InWorldDef } from "./game.js";
 import { spawnBullet } from "./bullet.js";
 import { FinishedDef } from "../build.js";
@@ -76,8 +76,10 @@ export type CameraProps = Component<typeof CameraDef>;
 export function registerStepPlayers(em: EntityManager) {
   em.registerSystem(
     [PlayerEntDef, MotionDef, AuthorityDef],
-    [TimeDef, CameraDef, InputsDef, MeDef],
-    stepPlayers
+    [PhysicsTimerDef, CameraDef, InputsDef, MeDef],
+    (objs, res) => {
+      for (let i = 0; i < res.physicsTimer.steps; i++) stepPlayers(objs, res);
+    }
   );
 }
 
@@ -121,10 +123,15 @@ function getInteractionObject(
 
 function stepPlayers(
   players: PlayerObj[],
-  resources: { time: Time; camera: CameraProps; inputs: Inputs; me: Me }
+  resources: {
+    physicsTimer: Timer;
+    camera: CameraProps;
+    inputs: Inputs;
+    me: Me;
+  }
 ) {
   const {
-    time: { dt },
+    physicsTimer: { period: dt },
     inputs,
     camera,
   } = resources;

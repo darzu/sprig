@@ -1,5 +1,4 @@
 import { EM, EntityManager, Component, Entity } from "../entity-manager.js";
-import { TimeDef } from "../time.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { Motion, MotionDef } from "../phys_motion.js";
 import { FinishedDef } from "../build.js";

@@ -15,6 +15,9 @@ interface TimerInternal {
   accumulated: number;
   period: number;
   steps: number;
+  // max steps is important if the OS suspends our thread for a long time we don't want
+  // to run 1000s of steps all at once.
+  maxSteps: number;
 }
 
 export interface Timer {
@@ -22,25 +25,25 @@ export interface Timer {
   steps: number;
 }
 
-export const NetTimerDef = EM.defineComponent(
-  "netTimer",
-  () =>
-    ({
-      accumulated: 0,
-      period: NET_PERIOD,
-      steps: 0,
-    } as Timer)
-);
+export const NetTimerDef = EM.defineComponent("netTimer", () => {
+  const timer: TimerInternal = {
+    accumulated: 0,
+    period: NET_PERIOD,
+    steps: 0,
+    maxSteps: Infinity,
+  };
+  return timer as Timer;
+});
 
-export const PhysicsTimerDef = EM.defineComponent(
-  "physicsTimer",
-  () =>
-    ({
-      accumulated: 0,
-      period: PHYSICS_PERIOD,
-      steps: 0,
-    } as Timer)
-);
+export const PhysicsTimerDef = EM.defineComponent("physicsTimer", () => {
+  const timer: TimerInternal = {
+    accumulated: 0,
+    period: PHYSICS_PERIOD,
+    steps: 0,
+    maxSteps: 5,
+  };
+  return timer as Timer;
+});
 
 function updateTimer(timer: TimerInternal, dt: number) {
   timer.steps = 0;
@@ -48,6 +51,7 @@ function updateTimer(timer: TimerInternal, dt: number) {
   while (timer.accumulated >= timer.period) {
     timer.accumulated -= timer.period;
     timer.steps += 1;
+    timer.steps = Math.min(timer.steps, timer.maxSteps);
   }
 }
 

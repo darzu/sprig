@@ -1,5 +1,5 @@
 import { EM, EntityManager, Component, Entity } from "../entity-manager.js";
-import { TimeDef } from "../time.js";
+import { PhysicsTimerDef, Timer } from "../time.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { Motion, MotionDef } from "../phys_motion.js";
 import { jitter } from "../math.js";
@@ -35,12 +35,12 @@ export type Boat = Component<typeof BoatDef>;
 
 function stepBoats(
   boats: { boat: Boat; motion: Motion; authority: Authority }[],
-  { time, me }: { time: { dt: number }; me: Me }
+  { physicsTimer, me }: { physicsTimer: Timer; me: Me }
 ) {
   for (let o of boats) {
     if (o.authority.pid !== me.pid) continue;
 
-    const rad = o.boat.wheelSpeed * time.dt;
+    const rad = o.boat.wheelSpeed * physicsTimer.period;
     o.boat.wheelDir += rad;
 
     // rotate
@@ -59,8 +59,12 @@ function stepBoats(
 export function registerStepBoats(em: EntityManager) {
   EM.registerSystem(
     [BoatDef, MotionDef, AuthorityDef],
-    [TimeDef, MeDef],
-    stepBoats
+    [PhysicsTimerDef, MeDef],
+    (objs, res) => {
+      for (let i = 0; i < res.physicsTimer.steps; i++) {
+        stepBoats(objs, res);
+      }
+    }
   );
 }
 

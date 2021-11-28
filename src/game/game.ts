@@ -1,5 +1,4 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { TimeDef } from "../time.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { _GAME_ASSETS, _renderer } from "../main.js";
@@ -141,7 +140,7 @@ export function registerAllSystems(em: EntityManager) {
 }
 
 function registerRenderViewController(em: EntityManager) {
-  em.registerSystem([], [TimeDef, InputsDef], (_, { time, inputs }) => {
+  em.registerSystem([], [InputsDef], (_, { inputs }) => {
     // check render mode
     if (inputs.keyClicks["1"]) {
       _renderer.wireMode = "normal";

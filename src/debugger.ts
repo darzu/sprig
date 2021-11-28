@@ -1,20 +1,4 @@
-import { FinishedDef } from "./build.js";
-import { ColliderDef } from "./collider.js";
 import { ComponentDef, EM, Entity } from "./entity-manager.js";
-import { InputsDef } from "./inputs.js";
-import { MeshHandleDef } from "./mesh-pool.js";
-import {
-  AuthorityDef,
-  DeletedDef,
-  InboxDef,
-  MeDef,
-  NetStatsDef,
-  OutboxDef,
-  PeerDef,
-  SyncDef,
-} from "./net/components.js";
-import { MotionDef } from "./phys_motion.js";
-import { NetTimerDef, PhysicsTimerDef, TimeDef } from "./time.js";
 
 // TODO(@darzu): debugging helpers
 interface DbgCmp extends ComponentDef {
