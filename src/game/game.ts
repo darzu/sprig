@@ -53,22 +53,6 @@ import { HatConstructDef, registerBuildHatSystem } from "./hat.js";
 import { registerBuildBulletsSystem } from "./bullet.js";
 import { DARK_BLUE, LIGHT_BLUE } from "./assets.js";
 
-enum ObjectType {
-  Plane,
-  Player,
-  Bullet,
-  Boat,
-  Hat,
-  Ship,
-}
-
-enum EventType {
-  BulletBulletCollision,
-  BulletPlayerCollision,
-  HatGet,
-  HatDrop,
-}
-
 export const ColorDef = EM.defineComponent(
   "color",
   (c?: vec3) => c ?? vec3.create()

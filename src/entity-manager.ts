@@ -219,7 +219,7 @@ export class EntityManager {
 
   // TODO(@darzu): should this be public??
   // TODO(@darzu): rename to findSingletonComponent
-  public findSingletonEntity<C extends ComponentDef>(
+  public findSingletonComponent<C extends ComponentDef>(
     c: C
   ): EntityW<[C], 0> | undefined {
     const e = this.entities.get(0)!;
@@ -332,7 +332,7 @@ export class EntityManager {
       let haveAllResources = true;
       for (let r of s.rs) {
         // note this is just to verify it exists
-        haveAllResources &&= !!this.findSingletonEntity(r);
+        haveAllResources &&= !!this.findSingletonComponent(r);
       }
       if (haveAllResources) {
         s.callback(es, this.entities.get(0)! as any);

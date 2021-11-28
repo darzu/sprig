@@ -73,3 +73,19 @@ everything gets updated in the right place.
 //     this.requestedEvents.push(event);
 //   }
 // }
+
+// enum ObjectType {
+//   Plane,
+//   Player,
+//   Bullet,
+//   Boat,
+//   Hat,
+//   Ship,
+// }
+
+// enum EventType {
+//   BulletBulletCollision,
+//   BulletPlayerCollision,
+//   HatGet,
+//   HatDrop,
+// }
