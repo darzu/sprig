@@ -30,68 +30,7 @@ import { AABBCollider } from "../collider.js";
 import { _renderer } from "../main.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import { FinishedDef } from "../build.js";
-
-const BLACK = vec3.fromValues(0, 0, 0);
-
-export const CUBE_MESH = unshareProvokingVertices({
-  pos: [
-    [+1.0, +1.0, +1.0],
-    [-1.0, +1.0, +1.0],
-    [-1.0, -1.0, +1.0],
-    [+1.0, -1.0, +1.0],
-
-    [+1.0, +1.0, -1.0],
-    [-1.0, +1.0, -1.0],
-    [-1.0, -1.0, -1.0],
-    [+1.0, -1.0, -1.0],
-  ],
-  tri: [
-    [0, 1, 2],
-    [0, 2, 3], // front
-    [4, 5, 1],
-    [4, 1, 0], // top
-    [3, 4, 0],
-    [3, 7, 4], // right
-    [2, 1, 5],
-    [2, 5, 6], // left
-    [6, 3, 2],
-    [6, 7, 3], // bottom
-    [5, 4, 7],
-    [5, 7, 6], // back
-  ],
-  lines: [
-    // top
-    [0, 1],
-    [1, 2],
-    [2, 3],
-    [3, 0],
-    // bottom
-    [4, 5],
-    [5, 6],
-    [6, 7],
-    [7, 4],
-    // connectors
-    [0, 4],
-    [1, 5],
-    [2, 6],
-    [3, 7],
-  ],
-  colors: [
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-  ],
-});
-export const CUBE_AABB = getAABBFromMesh(CUBE_MESH);
+import { CUBE_AABB, CUBE_MESH } from "./assets.js";
 
 export const CubeConstructDef = EM.defineComponent(
   "cubeConstruct",

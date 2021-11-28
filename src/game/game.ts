@@ -77,6 +77,7 @@ import { registerBulletCollisionSystem } from "./bullet-collision.js";
 import { registerBuildShipSystem, ShipConstructDef } from "./ship.js";
 import { HatConstructDef, registerBuildHatSystem } from "./hat.js";
 import { registerBuildBulletsSystem } from "./bullet.js";
+import { DARK_BLUE, LIGHT_BLUE } from "./assets.js";
 
 enum ObjectType {
   Plane,
@@ -94,140 +95,21 @@ enum EventType {
   HatDrop,
 }
 
-const BLACK = vec3.fromValues(0, 0, 0);
-const PLANE_MESH = unshareProvokingVertices(
-  scaleMesh(
-    {
-      pos: [
-        [+1, 0, +1],
-        [-1, 0, +1],
-        [+1, 0, -1],
-        [-1, 0, -1],
-      ],
-      tri: [
-        [0, 2, 3],
-        [0, 3, 1], // top
-        [3, 2, 0],
-        [1, 3, 0], // bottom
-      ],
-      lines: [
-        [0, 1],
-        [0, 2],
-        [1, 3],
-        [2, 3],
-      ],
-      colors: [BLACK, BLACK, BLACK, BLACK],
-    },
-    10
-  )
-);
-const PLANE_AABB = getAABBFromMesh(PLANE_MESH);
-
-const DARK_GRAY = vec3.fromValues(0.02, 0.02, 0.02);
-const LIGHT_GRAY = vec3.fromValues(0.2, 0.2, 0.2);
-const DARK_BLUE = vec3.fromValues(0.03, 0.03, 0.2);
-const LIGHT_BLUE = vec3.fromValues(0.05, 0.05, 0.2);
-class Plane extends GameObject {
-  set color(v: vec3) {
-    vec3.copy(this._color, v);
-  }
-
-  _color: vec3;
-
-  constructor(e: Entity, creator: number) {
-    super(e, creator);
-    this._color = EM.addComponent(e.id, ColorDef);
-    vec3.copy(this._color, DARK_GRAY);
-    this.collider = {
-      shape: "AABB",
-      solid: true,
-      aabb: PLANE_AABB,
-    };
-    this.renderable.mesh = PLANE_MESH;
-  }
-
-  typeId(): number {
-    return ObjectType.Plane;
-  }
-
-  syncPriority(firstSync: boolean) {
-    return firstSync ? 20000 : 1;
-  }
-}
-
-export const CUBE_MESH = unshareProvokingVertices({
-  pos: [
-    [+1.0, +1.0, +1.0],
-    [-1.0, +1.0, +1.0],
-    [-1.0, -1.0, +1.0],
-    [+1.0, -1.0, +1.0],
-
-    [+1.0, +1.0, -1.0],
-    [-1.0, +1.0, -1.0],
-    [-1.0, -1.0, -1.0],
-    [+1.0, -1.0, -1.0],
-  ],
-  tri: [
-    [0, 1, 2],
-    [0, 2, 3], // front
-    [4, 5, 1],
-    [4, 1, 0], // top
-    [3, 4, 0],
-    [3, 7, 4], // right
-    [2, 1, 5],
-    [2, 5, 6], // left
-    [6, 3, 2],
-    [6, 7, 3], // bottom
-    [5, 4, 7],
-    [5, 7, 6], // back
-  ],
-  lines: [
-    // top
-    [0, 1],
-    [1, 2],
-    [2, 3],
-    [3, 0],
-    // bottom
-    [4, 5],
-    [5, 6],
-    [6, 7],
-    [7, 4],
-    // connectors
-    [0, 4],
-    [1, 5],
-    [2, 6],
-    [3, 7],
-  ],
-  colors: [
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-  ],
-});
-const CUBE_AABB = getAABBFromMesh(CUBE_MESH);
-
 export const ColorDef = EM.defineComponent(
   "color",
   (c?: vec3) => c ?? vec3.create()
 );
 export type Color = Component<typeof ColorDef>;
 
-function serializeColor(o: Color, buf: Serializer) {
-  buf.writeVec3(o);
-}
-function deserializeColor(o: Color, buf: Deserializer) {
-  buf.readVec3(o);
-}
-EM.registerSerializerPair(ColorDef, serializeColor, deserializeColor);
+EM.registerSerializerPair(
+  ColorDef,
+  (o, writer) => {
+    writer.writeVec3(o);
+  },
+  (o, reader) => {
+    reader.readVec3(o);
+  }
+);
 
 function createPlayer(em: EntityManager) {
   const e = em.newEntity();

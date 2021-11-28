@@ -14,7 +14,6 @@ import {
   RenderableDef,
   TransformDef,
 } from "../renderer.js";
-import { CUBE_AABB, CUBE_MESH } from "./cube.js";
 import { PhysicsStateDef } from "../phys_esc.js";
 import {
   Authority,
@@ -25,6 +24,7 @@ import {
 } from "../net/components.js";
 import { AABBCollider, ColliderDef } from "../collider.js";
 import { HatDef } from "./hat.js";
+import { CUBE_AABB, CUBE_MESH } from "./assets.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {

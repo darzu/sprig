@@ -3,7 +3,7 @@ import { TimeDef } from "../time.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { Motion, MotionDef } from "../phys_motion.js";
 import { FinishedDef } from "../build.js";
-import { ColorDef, CUBE_MESH } from "./game.js";
+import { ColorDef } from "./game.js";
 import {
   MotionSmoothingDef,
   RenderableDef,
@@ -28,6 +28,7 @@ import {
 } from "../mesh-pool.js";
 import { AABB } from "../phys_broadphase.js";
 import { _renderer } from "../main.js";
+import { CUBE_MESH } from "./assets.js";
 
 export const BulletDef = EM.defineComponent("bullet", () => {
   return true;

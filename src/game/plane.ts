@@ -30,35 +30,7 @@ import { AABBCollider } from "../collider.js";
 import { _renderer } from "../main.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import { FinishedDef } from "../build.js";
-
-const BLACK = vec3.fromValues(0, 0, 0);
-const PLANE_MESH = unshareProvokingVertices(
-  scaleMesh(
-    {
-      pos: [
-        [+1, 0, +1],
-        [-1, 0, +1],
-        [+1, 0, -1],
-        [-1, 0, -1],
-      ],
-      tri: [
-        [0, 2, 3],
-        [0, 3, 1], // top
-        [3, 2, 0],
-        [1, 3, 0], // bottom
-      ],
-      lines: [
-        [0, 1],
-        [0, 2],
-        [1, 3],
-        [2, 3],
-      ],
-      colors: [BLACK, BLACK, BLACK, BLACK],
-    },
-    10
-  )
-);
-const PLANE_AABB = getAABBFromMesh(PLANE_MESH);
+import { PLANE_AABB, PLANE_MESH } from "./assets.js";
 
 export const PlaneConstructDef = EM.defineComponent(
   "planeConstruct",
