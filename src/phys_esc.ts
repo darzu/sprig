@@ -1,6 +1,6 @@
 import { Collider, ColliderDef } from "./collider.js";
 import { Component, EM, EntityManager } from "./entity-manager.js";
-import { Time, TimeDef } from "./time.js";
+import { PhysicsTimerDef, Time, TimeDef, Timer } from "./time.js";
 import { _playerId } from "./game/game.js";
 import { quat, vec3 } from "./gl-matrix.js";
 import {
@@ -89,10 +89,7 @@ export let _motionPairsLen = 0; // TODO(@darzu): debug
 
 const _objDict: Map<number, PhysicsObject> = new Map();
 
-function stepsPhysics(
-  objs: PhysicsObject[],
-  { time: { dt } }: { time: { dt: number } }
-): void {
+function stepsPhysics(objs: PhysicsObject[], dt: number): void {
   __step++; // TODO(@darzu): hack for debugging purposes
 
   // build a dict
@@ -425,7 +422,11 @@ export function registerPhysicsSystems(em: EntityManager) {
 
   em.registerSystem(
     [MotionDef, ColliderDef, PhysicsStateDef],
-    [TimeDef],
-    stepsPhysics
+    [PhysicsTimerDef],
+    (objs, res) => {
+      for (let si = 0; si < res.physicsTimer.steps; si++) {
+        stepsPhysics(objs, res.physicsTimer.period);
+      }
+    }
   );
 }

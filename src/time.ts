@@ -18,6 +18,7 @@ interface TimerInternal {
 }
 
 export interface Timer {
+  period: number;
   steps: number;
 }
 
