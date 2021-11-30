@@ -13,7 +13,7 @@ import { InWorldDef } from "./game.js";
 
 export function registerItemPickupSystem(em: EntityManager) {
   em.registerSystem(
-    [PlayerEntDef],
+    [PlayerEntDef, MotionDef],
     [DetectedEventsDef],
     (players, resources) => {
       for (let player of players) {
@@ -24,25 +24,21 @@ export function registerItemPickupSystem(em: EntityManager) {
             entities: [player.id, player.player.interactingWith],
             location: null,
           });
+        } else if (player.player.hat > 0 && player.player.dropping) {
+          let dropLocation = vec3.fromValues(0, 0, -5);
+          vec3.transformQuat(
+            dropLocation,
+            dropLocation,
+            player.motion.rotation
+          );
+          vec3.add(dropLocation, dropLocation, player.motion.location);
+          resources.detectedEvents.push({
+            type: "drop",
+            entities: [player.id, player.player.hat],
+            location: dropLocation,
+          });
         }
       }
-      // TODO(@darzu): handle hat pickup
-      // // check collisions
-      // for (let o of this.liveObjects()) {
-      //   if (o instanceof Bullet) {
-      //   }
-      //   if (o instanceof PlayerClass) {
-      //     if (o.hat === 0 && o.interactingWith > 0) {
-      //       this.recordEvent(EventType.HatGet, [o.id, o.interactingWith]);
-      //     }
-      //     if (o.hat > 0 && o.dropping) {
-      //       let dropLocation = vec3.fromValues(0, 0, -5);
-      //       vec3.transformQuat(dropLocation, dropLocation, o.motion.rotation);
-      //       vec3.add(dropLocation, dropLocation, o.motion.location);
-      //       this.recordEvent(EventType.HatDrop, [o.id, o.hat], dropLocation);
-      //     }
-      //   }
-      // }
     }
   );
 }
@@ -55,12 +51,27 @@ registerEventHandler("pickup", {
     return player.hat === 0 && inWorld.is;
   },
   runEvent: (em, entities) => {
-    console.log("running pickup");
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
     let hat = em.findEntity(entities[1], [InWorldDef, MotionDef, ParentDef])!;
     hat.parent.id = player.id;
     hat.inWorld.is = false;
     vec3.set(hat.motion.location, 0, 1, 0);
     player.player.hat = hat.id;
+  },
+});
+
+registerEventHandler("drop", {
+  eventAuthorityEntity: (entities) => entities[0],
+  legalEvent: (em, entities) => {
+    let { player } = em.findEntity(entities[0], [PlayerEntDef])!;
+    return player.hat === entities[1];
+  },
+  runEvent: (em, entities, location) => {
+    let player = em.findEntity(entities[0], [PlayerEntDef])!;
+    let hat = em.findEntity(entities[1], [InWorldDef, MotionDef, ParentDef])!;
+    hat.parent.id = 0;
+    hat.inWorld.is = true;
+    vec3.copy(hat.motion.location, location!);
+    player.player.hat = 0;
   },
 });
