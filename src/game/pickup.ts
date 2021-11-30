@@ -14,11 +14,11 @@ import { InWorldDef } from "./game.js";
 export function registerItemPickupSystem(em: EntityManager) {
   em.registerSystem(
     [PlayerEntDef],
-    [PhysicsResultsDef, DetectedEventsDef],
+    [DetectedEventsDef],
     (players, resources) => {
-      const { collidesWith } = resources.physicsResults;
       for (let player of players) {
         if (player.player.hat === 0 && player.player.interactingWith > 0) {
+          console.log("detecting pickup");
           resources.detectedEvents.push({
             type: "pickup",
             entities: [player.id, player.player.interactingWith],
