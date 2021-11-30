@@ -1,33 +1,12 @@
 import { ColliderDef } from "../collider.js";
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { vec3, vec4 } from "../gl-matrix.js";
+import { vec3 } from "../gl-matrix.js";
 import { PhysicsStateDef } from "../phys_esc.js";
-import { Motion, MotionDef } from "../phys_motion.js";
-import {
-  MotionSmoothingDef,
-  ParentDef,
-  RenderableDef,
-  TransformDef,
-} from "../renderer.js";
+import { MotionDef } from "../phys_motion.js";
+import { RenderableDef, TransformDef } from "../renderer.js";
 import { ColorDef } from "./game.js";
-import {
-  unshareProvokingVertices,
-  getAABBFromMesh,
-  Mesh,
-  MeshHandle,
-  MeshHandleDef,
-  scaleMesh,
-} from "../mesh-pool.js";
-import {
-  Sync,
-  SyncDef,
-  Authority,
-  AuthorityDef,
-  Me,
-  MeDef,
-} from "../net/components.js";
+import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { AABBCollider } from "../collider.js";
-import { _renderer } from "../main.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import { FinishedDef } from "../build.js";
 import { PLANE_AABB, PLANE_MESH } from "./assets.js";

@@ -27,7 +27,6 @@ import {
   MeDef,
 } from "../net/components.js";
 import { AABBCollider } from "../collider.js";
-import { _renderer } from "../main.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import { FinishedDef } from "../build.js";
 import { CUBE_AABB, CUBE_MESH } from "./assets.js";

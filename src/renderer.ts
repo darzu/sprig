@@ -13,10 +13,11 @@ import {
   PlayerEntDef,
 } from "./game/player.js";
 import { mat4, quat, vec3 } from "./gl-matrix.js";
-import { _renderer } from "./main.js";
 import { Mesh, MeshHandle, MeshHandleDef } from "./mesh-pool.js";
 import { Authority, AuthorityDef, Me, MeDef } from "./net/components.js";
 import { Motion, MotionDef } from "./phys_motion.js";
+import { RendererDef } from "./render_init.js";
+import { Renderer } from "./render_webgpu.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
 import { PhysicsTimerDef, Timer } from "./time.js";
 
@@ -143,8 +144,9 @@ interface RenderableObj {
 }
 
 function stepRenderer(
+  renderer: Renderer,
   objs: RenderableObj[],
-  { playerView }: { playerView: PlayerView }
+  playerView: PlayerView
 ) {
   // ensure our mesh handle is up to date
   for (let o of objs) {
@@ -158,7 +160,7 @@ function stepRenderer(
   }
 
   // render
-  _renderer.renderFrame(
+  renderer.renderFrame(
     playerView.viewMat,
     objs.map((o) => o.meshHandle)
   );
@@ -174,7 +176,6 @@ function updatePlayerView(
     me,
   } = resources;
 
-  // TODO(@darzu): ECS check authority and me state
   const mePlayer = players.filter((p) => p.authority.pid === me.pid)[0];
   if (!mePlayer) return;
 
@@ -212,20 +213,21 @@ export function registerUpdatePlayerView(em: EntityManager) {
 export function registerRenderer(em: EntityManager) {
   em.registerSystem(
     [RenderableDef, TransformDef, MeshHandleDef],
-    [PlayerViewDef, PhysicsTimerDef],
+    [PlayerViewDef, PhysicsTimerDef, RendererDef],
     (objs, res) => {
-      if (res.physicsTimer.steps > 0) stepRenderer(objs, res);
+      if (res.physicsTimer.steps > 0)
+        stepRenderer(res.renderer.renderer, objs, res.playerView);
     }
   );
 }
 
 export function registerAddMeshHandleSystem(em: EntityManager) {
-  em.registerSystem([RenderableDef], [], (es) => {
+  em.registerSystem([RenderableDef], [RendererDef], (es, res) => {
     for (let e of es) {
       if (!MeshHandleDef.isOn(e)) {
         // TODO(@darzu): how should we handle instancing?
         // TODO(@darzu): this seems somewhat inefficient to look for this every frame
-        const meshHandle = _renderer.addMesh(e.renderable.mesh);
+        const meshHandle = res.renderer.renderer.addMesh(e.renderable.mesh);
         em.addComponent(e.id, MeshHandleDef, meshHandle);
       }
     }

@@ -22,19 +22,16 @@ import { InputsDef, registerInputsSystem } from "./inputs.js";
 import { MeDef, JoinDef, HostDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";
 import { dbg } from "./debugger.js";
+import { RendererDef } from "./render_init.js";
 
-const FORCE_WEBGL = false;
-const MAX_MESHES = 20000;
-const MAX_VERTICES = 21844;
+export const FORCE_WEBGL = false;
+export const MAX_MESHES = 20000;
+export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
 // TODO(@darzu): very hacky way to pass these around
 export let _GAME_ASSETS: GameAssets | null = null;
-
-// TODO(@darzu): this should be moved into systems and components
-export let _renderer: Renderer;
-// export let _gameState: CubeGameState;
 
 export let gameStarted = false;
 async function startGame(host: string | null) {
@@ -45,60 +42,9 @@ async function startGame(host: string | null) {
   _GAME_ASSETS = await loadAssets();
 
   let hosting = host === null;
-  let canvas = document.getElementById("sample-canvas") as HTMLCanvasElement;
-  function onWindowResize() {
-    canvas.width = window.innerWidth;
-    canvas.style.width = `${window.innerWidth}px`;
-    canvas.height = window.innerHeight;
-    canvas.style.height = `${window.innerHeight}px`;
-  }
-  window.onresize = function () {
-    onWindowResize();
-  };
-  onWindowResize();
-
-  // This tells Chrome that the canvas should be pixelated instead of blurred.
-  //    this looks better in lower resolution games and gives us full control over
-  //    resolution and blur.
-  // HACK: for some odd reason, setting this on a timeout is the only way I can get
-  //    Chrome to accept this property. Otherwise it'll only apply after the canvas
-  //    is resized by the user. (Version 94.0.4604.0 (Official Build) canary (arm64))
-  setTimeout(() => {
-    canvas.style.imageRendering = `pixelated`;
-  }, 50);
 
   const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
 
-  let rendererInit: Renderer | undefined = undefined;
-  let usingWebGPU = false;
-  if (!FORCE_WEBGL) {
-    // try webgpu
-    const adapter = await navigator.gpu?.requestAdapter();
-    if (adapter) {
-      const device = await adapter.requestDevice();
-      // TODO(@darzu): uses cast while waiting for webgpu-types.d.ts to be updated
-      const context = canvas.getContext(
-        "webgpu"
-      ) as any as GPUPresentationContext;
-      if (context) {
-        rendererInit = new Renderer_WebGPU(
-          canvas,
-          device,
-          context,
-          adapter,
-          MAX_MESHES,
-          MAX_VERTICES
-        );
-        if (rendererInit) usingWebGPU = true;
-      }
-    }
-  }
-  if (!rendererInit) {
-    rendererInit = attachToCanvas(canvas, MAX_MESHES, MAX_VERTICES);
-  }
-  if (!rendererInit) throw "Unable to create webgl or webgpu renderer";
-  console.log(`Renderer: ${usingWebGPU ? "webGPU" : "webGL"}`);
-  _renderer = rendererInit;
   let start_of_time = performance.now();
 
   EM.setDefaultRange("local");
@@ -129,14 +75,7 @@ async function startGame(host: string | null) {
   }
 
   EM.addSingletonComponent(InputsDef);
-  registerInputsSystem(canvas);
-
-  function doLockMouse() {
-    if (document.pointerLockElement !== canvas) {
-      canvas.requestPointerLock();
-    }
-  }
-  canvas.addEventListener("click", doLockMouse);
+  registerInputsSystem(EM);
 
   const controlsStr = `[WASD shift/c mouse spacebar]`;
   let avgJsTime = 0;
@@ -209,6 +148,8 @@ async function startGame(host: string | null) {
     // PERF NOTE: using ".innerText =" creates a new DOM element each frame, whereas
     //    using ".firstChild.nodeValue =" reuses the DOM element. Unfortunately this
     //    means we'll need to do more work to get line breaks.
+    const usingWebGPU =
+      EM.findSingletonComponent(RendererDef)?.renderer?.usingWebGPU;
     debugTxt.nodeValue =
       controlsStr +
       ` ` +
@@ -256,7 +197,6 @@ async function startGame(host: string | null) {
       //net = null;
     }
   } else {
-    _renderer.finishInit(); // TODO(@darzu): debugging
     frame();
   }
 }

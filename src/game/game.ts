@@ -1,7 +1,7 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
-import { _GAME_ASSETS, _renderer } from "../main.js";
+import { _GAME_ASSETS } from "../main.js";
 import { jitter } from "../math.js";
 import {
   registerPhysicsSystems,
@@ -51,6 +51,8 @@ import { registerBuildShipSystem, ShipConstructDef } from "./ship.js";
 import { HatConstructDef, registerBuildHatSystem } from "./hat.js";
 import { registerBuildBulletsSystem } from "./bullet.js";
 import { DARK_BLUE, LIGHT_BLUE } from "./assets.js";
+import { registerInitCanvasSystem } from "../canvas.js";
+import { registerRenderInitSystem, RendererDef } from "../render_init.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -110,6 +112,8 @@ export function registerAllSystems(em: EntityManager) {
   registerTimeSystem(em);
   registerNetSystems(em);
   registerEventSystems(em);
+  registerInitCanvasSystem(em);
+  registerRenderInitSystem(em);
   registerHandleNetworkEvents(em);
   registerUpdateSmoothingTargetSnapChange(em);
   registerUpdateSystem(em);
@@ -140,19 +144,19 @@ export function registerAllSystems(em: EntityManager) {
 }
 
 function registerRenderViewController(em: EntityManager) {
-  em.registerSystem([], [InputsDef], (_, { inputs }) => {
+  em.registerSystem([], [InputsDef, RendererDef], (_, { inputs, renderer }) => {
     // check render mode
     if (inputs.keyClicks["1"]) {
-      _renderer.wireMode = "normal";
+      renderer.renderer.wireMode = "normal";
     } else if (inputs.keyClicks["2"]) {
-      _renderer.wireMode = "wireframe";
+      renderer.renderer.wireMode = "wireframe";
     }
 
     // check render mode
     if (inputs.keyClicks["3"]) {
-      _renderer.perspectiveMode = "perspective";
+      renderer.renderer.perspectiveMode = "perspective";
     } else if (inputs.keyClicks["4"]) {
-      _renderer.perspectiveMode = "ortho";
+      renderer.renderer.perspectiveMode = "ortho";
     }
   });
 }

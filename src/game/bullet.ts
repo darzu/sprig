@@ -26,8 +26,9 @@ import {
   scaleMesh3,
 } from "../mesh-pool.js";
 import { AABB } from "../phys_broadphase.js";
-import { _renderer } from "../main.js";
 import { CUBE_MESH } from "./assets.js";
+import { RendererDef } from "../render_init.js";
+import { Renderer } from "../render_webgpu.js";
 
 export const BulletDef = EM.defineComponent("bullet", () => {
   return true;
@@ -72,11 +73,11 @@ function getBulletAABB(): AABB {
   return _bulletAABB;
 }
 let _bulletProto: MeshHandle | undefined = undefined;
-function getBulletProto(): MeshHandle {
+function getBulletProto(renderer: Renderer): MeshHandle {
   if (!_bulletProto) {
     // re-usable bullet mesh
     // TODO(@darzu): DON'T REACH FOR GLOBAL _renderer
-    _bulletProto = _renderer.addMesh(getBulletMesh());
+    _bulletProto = renderer.addMesh(getBulletMesh());
     mat4.copy(_bulletProto.transform, new Float32Array(16)); // zero the transforms so it doesn't render
   }
   return _bulletProto;
@@ -87,7 +88,8 @@ const BULLET_COLOR: vec3 = [0.3, 0.3, 0.8];
 function createBullet(
   em: EntityManager,
   e: Entity & { bulletConstruct: BulletConstruct },
-  pid: number
+  pid: number,
+  renderer: Renderer
 ) {
   if (FinishedDef.isOn(e)) return;
   const props = e.bulletConstruct;
@@ -107,7 +109,7 @@ function createBullet(
     em.addComponent(e.id, RenderableDef, getBulletMesh());
   if (!MeshHandleDef.isOn(e)) {
     // TODO(@darzu): handle in AddMeshHandleSystem
-    const meshHandle = _renderer.addMeshInstance(getBulletProto());
+    const meshHandle = renderer.addMeshInstance(getBulletProto(renderer));
     em.addComponent(e.id, MeshHandleDef, meshHandle);
   }
   if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
@@ -132,9 +134,14 @@ function createBullet(
 }
 
 export function registerBuildBulletsSystem(em: EntityManager) {
-  em.registerSystem([BulletConstructDef], [MeDef], (bullets, res) => {
-    for (let b of bullets) createBullet(em, b, res.me.pid);
-  });
+  em.registerSystem(
+    [BulletConstructDef],
+    [MeDef, RendererDef],
+    (bullets, res) => {
+      for (let b of bullets)
+        createBullet(em, b, res.me.pid, res.renderer.renderer);
+    }
+  );
 }
 
 export function spawnBullet(em: EntityManager, motion: Motion) {

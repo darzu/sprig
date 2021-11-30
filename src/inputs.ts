@@ -1,3 +1,4 @@
+import { CanvasDef } from "./canvas.js";
 import { Component, EM, EntityManager } from "./entity-manager.js";
 
 export const InputsDef = EM.defineComponent("inputs", () => {
@@ -13,14 +14,18 @@ export const InputsDef = EM.defineComponent("inputs", () => {
 
 export type Inputs = Component<typeof InputsDef>;
 
-export function registerInputsSystem(canvas: HTMLCanvasElement): void {
-  // TODO(@darzu): should this creation be part of a one-shot system?
-  const inputsReader = createInputsReader(canvas);
+export function registerInputsSystem(em: EntityManager): void {
+  let inputsReader: (() => Inputs) | null = null;
 
-  EM.registerSystem(null, [InputsDef], (_: [], { inputs }) => {
-    // TODO(@darzu): handle pause and menus?
-    Object.assign(inputs, inputsReader());
-  });
+  em.registerSystem(
+    null,
+    [InputsDef, CanvasDef],
+    (_: [], { inputs, htmlCanvas }) => {
+      if (!inputsReader) inputsReader = createInputsReader(htmlCanvas.canvas);
+      // TODO(@darzu): handle pause and menus?
+      Object.assign(inputs, inputsReader());
+    }
+  );
 }
 
 function createInputsReader(canvas: HTMLCanvasElement): () => Inputs {
