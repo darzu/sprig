@@ -20,6 +20,7 @@ import {
   TransformDef,
 } from "../renderer.js";
 import { ColorDef } from "./game.js";
+import { InWorldDef } from "./game.js";
 
 export const HatDef = EM.defineComponent("hat", () => true);
 
@@ -87,6 +88,12 @@ function createHat(
     const sync = em.addComponent(e.id, SyncDef);
     sync.fullComponents.push(HatConstructDef.id);
     sync.dynamicComponents.push(MotionDef.id);
+  }
+  if (!HatDef.isOn(e)) {
+    em.addComponent(e.id, HatDef);
+  }
+  if (!InWorldDef.isOn(e)) {
+    em.addComponent(e.id, InWorldDef, true);
   }
   em.addComponent(e.id, FinishedDef);
 }
