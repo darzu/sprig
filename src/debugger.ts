@@ -185,7 +185,7 @@ export const dbg = {
     updateCmps();
     const cmps = [...dbgCmps.values(), ...dbgCmpsSingleton.values()];
     sortByName(cmps, "name");
-    const cStr = cmps.map((c) => `${c.name}\t(${c.abv})`).join("\n");
+    const cStr = cmps.map((c) => `${c.name}\t(${c.abv}, ${c.id})`).join("\n");
     console.table(cStr);
   },
   listEnts: (...cs: string[]) => {
