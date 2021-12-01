@@ -28,15 +28,11 @@ export type Peer = Component<typeof PeerDef>;
 
 export const HostDef = EM.defineComponent("host", () => true);
 
-export const AuthorityDef = EM.defineComponent(
-  "authority",
-  (creatorPid?, pid?) => ({
-    creatorPid: creatorPid || 0,
-    pid: pid || 0,
-    seq: 0,
-    updateSeq: 0,
-  })
-);
+export const AuthorityDef = EM.defineComponent("authority", (pid?) => ({
+  pid: pid || 0,
+  seq: 0,
+  updateSeq: 0,
+}));
 
 export type Authority = Component<typeof AuthorityDef>;
 
@@ -60,8 +56,6 @@ export function claimAuthority(
   }
   return false;
 }
-
-export const DeletedDef = EM.defineComponent("deleted", () => true);
 
 export const MeDef = EM.defineComponent("me", (pid: number, host: boolean) => ({
   pid,

@@ -114,7 +114,7 @@ function createBullet(
   }
   if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
   if (!AuthorityDef.isOn(e)) {
-    em.addComponent(e.id, AuthorityDef, pid, pid);
+    em.addComponent(e.id, AuthorityDef, pid);
   }
   if (!BulletDef.isOn(e)) {
     em.addComponent(e.id, BulletDef);

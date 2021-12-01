@@ -96,7 +96,7 @@ export function registerBuildCubesSystem(em: EntityManager) {
         (collider as AABBCollider).aabb = CUBE_AABB;
       }
       if (!em.hasComponents(cube, [AuthorityDef]))
-        em.addComponent(cube.id, AuthorityDef, pid, pid);
+        em.addComponent(cube.id, AuthorityDef, pid);
       if (!em.hasComponents(cube, [SyncDef])) {
         const sync = em.addComponent(cube.id, SyncDef);
         sync.fullComponents.push(CubeConstructDef.id);

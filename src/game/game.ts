@@ -53,6 +53,7 @@ import { registerBuildBulletsSystem } from "./bullet.js";
 import { DARK_BLUE, LIGHT_BLUE } from "./assets.js";
 import { registerInitCanvasSystem } from "../canvas.js";
 import { registerRenderInitSystem, RendererDef } from "../render_init.js";
+import { registerDeleteEntitiesSystem } from "../delete.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -111,7 +112,6 @@ export let _playerId: number = -1;
 export function registerAllSystems(em: EntityManager) {
   registerTimeSystem(em);
   registerNetSystems(em);
-  registerEventSystems(em);
   registerInitCanvasSystem(em);
   registerRenderInitSystem(em);
   registerHandleNetworkEvents(em);
@@ -136,6 +136,8 @@ export function registerAllSystems(em: EntityManager) {
   registerAckUpdateSystem(em);
   registerSyncSystem(em);
   registerSendOutboxes(em);
+  registerEventSystems(em);
+  registerDeleteEntitiesSystem(em);
   registerUpdateTransforms(em);
   registerRenderViewController(em);
   registerUpdatePlayerView(em);

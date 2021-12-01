@@ -83,7 +83,7 @@ function createHat(
     collider.solid = false;
     (collider as AABBCollider).aabb = getHatAABB();
   }
-  if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid, pid);
+  if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid);
   if (!SyncDef.isOn(e)) {
     const sync = em.addComponent(e.id, SyncDef);
     sync.fullComponents.push(HatConstructDef.id);

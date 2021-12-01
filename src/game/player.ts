@@ -278,7 +278,7 @@ function createPlayer(
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e)) em.addComponent(e.id, RenderableDef, CUBE_MESH);
   if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
-  if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid, pid);
+  if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid);
   if (!PlayerEntDef.isOn(e)) em.addComponent(e.id, PlayerEntDef);
   if (!InWorldDef.isOn(e)) em.addComponent(e.id, InWorldDef, true);
   if (!ColliderDef.isOn(e)) {

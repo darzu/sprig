@@ -22,7 +22,6 @@ export enum MessageType {
 export enum EntityUpdateType {
   Full,
   Dynamic,
-  Create,
 }
 
 export const MAX_MESSAGE_SIZE = 1024;
@@ -37,8 +36,6 @@ export function serializeEntity(
   message.writeUint32(ent.id);
   message.writeUint8(ent.authority.pid);
   message.writeUint32(ent.authority.seq);
-  if (type === EntityUpdateType.Full || type === EntityUpdateType.Create)
-    message.writeUint8(ent.authority.creatorPid);
 
   const components =
     type === EntityUpdateType.Dynamic
@@ -60,25 +57,28 @@ export function deserializeEntity(
   let id = message.readUint32();
   let authorityPid = message.readUint8();
   let authoritySeq = message.readUint32();
-  let creatorPid: number | undefined;
-  if (type === EntityUpdateType.Full || type === EntityUpdateType.Create) {
-    creatorPid = message.readUint8();
-  }
-  let ent = em.findEntity(id, [AuthorityDef]);
-  let entExisted = !!ent;
-  let authority = ent && ent.authority;
-  if (!ent && type === EntityUpdateType.Dynamic)
+  let haveEnt = em.hasEntity(id);
+  if (!haveEnt && type === EntityUpdateType.Dynamic) {
     throw `Got non-full update for unknown entity ${id}`;
-  if (!ent) {
-    if (type === EntityUpdateType.Dynamic)
-      throw `Got non-full update for unknown entity ${id}`;
-    em.registerEntity(id);
-    authority = em.addComponent(id, AuthorityDef, creatorPid, authorityPid);
-    authority.seq = authoritySeq;
   }
+  let authority;
+  if (!haveEnt) {
+    em.registerEntity(id);
+    authority = em.addComponent(id, AuthorityDef, authorityPid);
+    authority.seq = authoritySeq;
+  } else {
+    authority = em.findEntity(id, [AuthorityDef])?.authority;
+  }
+  // We want to set message.dummy if either:
+  //
+  // - There's no authority component. This means we have this entity but its
+  //   authority got deleted, which means the entity is no more
+  //
+  // - There's an authority component but our authority claim fails, meaning
+  //   this message is out of date
   if (
-    (entExisted && type === EntityUpdateType.Create) ||
-    !claimAuthority(authority!, authorityPid, authoritySeq, updateSeq)
+    !authority ||
+    !claimAuthority(authority, authorityPid, authoritySeq, updateSeq)
   ) {
     message.dummy = true;
   }

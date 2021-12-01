@@ -73,7 +73,7 @@ export function registerBuildPlanesSystem(em: EntityManager) {
         (collider as AABBCollider).aabb = PLANE_AABB;
       }
       if (!AuthorityDef.isOn(plane))
-        em.addComponent(plane.id, AuthorityDef, pid, pid);
+        em.addComponent(plane.id, AuthorityDef, pid);
       if (!SyncDef.isOn(plane)) {
         const sync = em.addComponent(plane.id, SyncDef);
         sync.fullComponents.push(PlaneConstructDef.id);

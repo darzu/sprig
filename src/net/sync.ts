@@ -3,7 +3,6 @@ import { OutOfRoomError, Serializer } from "../serialize.js";
 import {
   Authority,
   AuthorityDef,
-  DeletedDef,
   Inbox,
   InboxDef,
   MeDef,
@@ -42,13 +41,7 @@ export function registerSyncSystem(em: EntityManager) {
       const peers = em.filterEntities([PeerDef, OutboxDef]);
       for (let { peer, outbox } of peers) {
         if (me.host && !peer.joined) continue;
-        const entities = ents.filter(
-          (ent) =>
-            (!em.findEntity(ent.id, [DeletedDef]) &&
-              ent.authority.pid == me.pid) ||
-            (ent.authority.creatorPid == me.pid &&
-              !peer.entitiesKnown.has(ent.id))
-        );
+        const entities = ents.filter((ent) => ent.authority.pid == me.pid);
         for (let ent of entities) {
           const priorityIncrease = peer.entitiesKnown.has(ent.id)
             ? ent.sync.priorityIncrementDynamic
@@ -72,21 +65,15 @@ export function registerSyncSystem(em: EntityManager) {
         let numEntities = 0;
         let numEntitiesIndex = message.writeUint8(numEntities);
         try {
-          // events always get synced before entities
           for (let ent of entities) {
-            //console.log(`Trying to sync object ${obj.id}`);
-            // TODO: could this be a 16-bit integer instead?
             let type = peer.entitiesKnown.has(ent.id)
               ? EntityUpdateType.Dynamic
-              : ent.authority.pid === me.pid
-              ? EntityUpdateType.Full
-              : EntityUpdateType.Create;
+              : EntityUpdateType.Full;
             serializeEntity(em, ent, message, type);
-            if (
-              type !== EntityUpdateType.Dynamic &&
-              !peer.entitiesInUpdate.has(seq)
-            ) {
-              peer.entitiesInUpdate.set(seq, new Set());
+            if (type === EntityUpdateType.Full) {
+              if (!peer.entitiesInUpdate.has(seq)) {
+                peer.entitiesInUpdate.set(seq, new Set());
+              }
               peer.entitiesInUpdate.get(seq)!.add(ent.id);
             }
             peer.entityPriorities.set(ent.id, 0);

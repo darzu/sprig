@@ -46,9 +46,14 @@ export function registerItemPickupSystem(em: EntityManager) {
 registerEventHandler("pickup", {
   eventAuthorityEntity: (entities) => entities[0],
   legalEvent: (em, entities) => {
-    let { player } = em.findEntity(entities[0], [PlayerEntDef])!;
-    let { inWorld } = em.findEntity(entities[1], [InWorldDef])!;
-    return player.hat === 0 && inWorld.is;
+    let player = em.findEntity(entities[0], [PlayerEntDef]);
+    let hat = em.findEntity(entities[1], [InWorldDef]);
+    return (
+      player !== undefined &&
+      hat !== undefined &&
+      player.player.hat === 0 &&
+      hat.inWorld.is
+    );
   },
   runEvent: (em, entities) => {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
@@ -63,8 +68,8 @@ registerEventHandler("pickup", {
 registerEventHandler("drop", {
   eventAuthorityEntity: (entities) => entities[0],
   legalEvent: (em, entities) => {
-    let { player } = em.findEntity(entities[0], [PlayerEntDef])!;
-    return player.hat === entities[1];
+    let player = em.findEntity(entities[0], [PlayerEntDef]);
+    return player !== undefined && player.player.hat === entities[1];
   },
   runEvent: (em, entities, location) => {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
