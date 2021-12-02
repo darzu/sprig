@@ -1,6 +1,12 @@
 import { EntityManager } from "../entity-manager.js";
 import { Serializer, Deserializer } from "../serialize.js";
-import { AuthorityDef, Authority, claimAuthority, Sync } from "./components.js";
+import {
+  AuthorityDef,
+  Authority,
+  claimAuthority,
+  Sync,
+  PredictDef,
+} from "./components.js";
 
 export enum MessageType {
   // Join a game in progress
@@ -48,7 +54,8 @@ export function serializeEntity(
 export function deserializeEntity(
   em: EntityManager,
   updateSeq: number,
-  message: Deserializer
+  message: Deserializer,
+  dt: number
 ) {
   let type: EntityUpdateType = message.readUint8();
   let id = message.readUint32();
@@ -83,6 +90,12 @@ export function deserializeEntity(
   for (let i = 0; i < numComponents; i++) {
     let componentId = message.readUint32();
     em.deserialize(id, componentId, message);
+  }
+  if (!message.dummy) {
+    let predict = em.findEntity(id, [PredictDef])?.predict;
+    if (predict) {
+      predict.dt += dt;
+    }
   }
 }
 

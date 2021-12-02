@@ -113,3 +113,11 @@ export const JoinDef = EM.defineComponent("join", (address: string) => ({
   state: "start" as "start" | "connecting",
 }));
 export type Join = Component<typeof JoinDef>;
+
+// This component should be present on entities that want to participate in the
+// prediction system
+export const PredictDef = EM.defineComponent("predict", () => ({
+  dt: 0,
+}));
+
+export type Predict = Component<typeof PredictDef>;

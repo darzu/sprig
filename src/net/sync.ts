@@ -13,6 +13,8 @@ import {
   send,
   Sync,
   SyncDef,
+  NetStatsDef,
+  NetStats,
 } from "./components.js";
 import {
   Ack,
@@ -106,8 +108,10 @@ export function registerUpdateSystem(em: EntityManager) {
     peers: { peer: { address: string }; inbox: Inbox; outbox: Outbox }[],
     {
       time,
+      netStats,
     }: {
       time: Time;
+      netStats: NetStats;
     }
   ) {
     //console.log("update");
@@ -122,19 +126,24 @@ export function registerUpdateSystem(em: EntityManager) {
         let message = updates.shift()!;
         let seq = message.readUint32();
         let ts = message.readFloat32();
-        let dt = time.lastTime - ts;
+        let dt = time.lastTime - (ts - netStats.skewEstimate[address]);
         let numEntities = message.readUint8();
         for (let i = 0; i < numEntities; i++) {
-          deserializeEntity(em, seq, message);
+          deserializeEntity(em, seq, message, dt);
+          // reset message.dummy
+          message.dummy = false;
         }
-        // TODO: queue entity for prediction (using dt)
         let ack = Ack(seq);
         send(outbox, ack.buffer, false);
       }
     }
   }
 
-  em.registerSystem([PeerDef, InboxDef, OutboxDef], [TimeDef, MeDef], update);
+  em.registerSystem(
+    [PeerDef, InboxDef, OutboxDef],
+    [TimeDef, MeDef, NetStatsDef],
+    update
+  );
 }
 
 export function registerAckUpdateSystem(em: EntityManager) {

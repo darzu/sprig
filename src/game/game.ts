@@ -37,6 +37,7 @@ import {
   registerUpdateSystem,
   registerAckUpdateSystem,
 } from "../net/sync.js";
+import { registerPredictSystem } from "../net/predict.js";
 import { registerEventSystems } from "../net/events.js";
 import {
   registerBuildCubesSystem,
@@ -117,6 +118,7 @@ export function registerAllSystems(em: EntityManager) {
   registerHandleNetworkEvents(em);
   registerUpdateSmoothingTargetSnapChange(em);
   registerUpdateSystem(em);
+  registerPredictSystem(em);
   registerUpdateSmoothingTargetSmoothChange(em);
   registerJoinSystems(em);
   registerBuildPlayersSystem(em);

@@ -16,6 +16,7 @@ import {
   Me,
   MeDef,
   SyncDef,
+  PredictDef,
 } from "../net/components.js";
 import {
   getAABBFromMesh,
@@ -130,6 +131,7 @@ function createBullet(
     sync.fullComponents.push(BulletConstructDef.id);
     sync.dynamicComponents.push(MotionDef.id);
   }
+  if (!PredictDef.isOn(e)) em.addComponent(e.id, PredictDef);
   em.addComponent(e.id, FinishedDef);
 }
 
