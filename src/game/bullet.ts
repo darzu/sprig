@@ -1,6 +1,6 @@
 import { EM, EntityManager, Component, Entity } from "../entity-manager.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
-import { Motion, MotionDef } from "../phys_motion.js";
+import { createMotionProps, Motion, MotionDef } from "../phys_motion.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import {
@@ -155,4 +155,31 @@ export function spawnBullet(em: EntityManager, motion: Motion) {
     motion.linearVelocity,
     motion.angularVelocity
   );
+}
+
+export function fireBullet(
+  em: EntityManager,
+  location: vec3,
+  rotation: quat,
+  speed?: number,
+  rotationSpeed?: number
+) {
+  speed = speed || 0.02;
+  rotationSpeed = rotationSpeed || 0.02;
+  let bulletAxis = vec3.fromValues(0, 0, -1);
+  vec3.transformQuat(bulletAxis, bulletAxis, rotation);
+  let bulletMotion = createMotionProps({});
+  bulletMotion.location = vec3.clone(location);
+  bulletMotion.rotation = quat.clone(rotation);
+  bulletMotion.linearVelocity = vec3.scale(
+    bulletMotion.linearVelocity,
+    bulletAxis,
+    speed
+  );
+  bulletMotion.angularVelocity = vec3.scale(
+    bulletMotion.angularVelocity,
+    bulletAxis,
+    rotationSpeed
+  );
+  spawnBullet(em, bulletMotion);
 }

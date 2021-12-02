@@ -55,6 +55,11 @@ import { DARK_BLUE, LIGHT_BLUE } from "./assets.js";
 import { registerInitCanvasSystem } from "../canvas.js";
 import { registerRenderInitSystem, RendererDef } from "../render_init.js";
 import { registerDeleteEntitiesSystem } from "../delete.js";
+import {
+  CannonConstructDef,
+  registerBuildCannonsSystem,
+  registerStepCannonsSystem,
+} from "./cannon.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -128,9 +133,11 @@ export function registerAllSystems(em: EntityManager) {
   registerBuildShipSystem(em);
   registerBuildHatSystem(em);
   registerBuildBulletsSystem(em);
+  registerBuildCannonsSystem(em);
   registerMoveCubesSystem(em);
   registerStepBoats(em);
   registerStepPlayers(em);
+  registerStepCannonsSystem(em);
   registerUpdateSmoothingLerp(em);
   registerPhysicsSystems(em);
   registerBulletCollisionSystem(em);
@@ -179,6 +186,7 @@ export function createServerObjects(em: EntityManager) {
   createBoats(em);
   createShips(em);
   createHats(em);
+  createCannons(em);
 }
 export function createLocalObjects(em: EntityManager) {
   createPlayer(em);
@@ -222,4 +230,8 @@ function createHats(em: EntityManager) {
     );
     em.addComponent(em.newEntity().id, HatConstructDef, loc);
   }
+}
+
+function createCannons(em: EntityManager) {
+  em.addComponent(em.newEntity().id, CannonConstructDef, [-40, 10, 0]);
 }
