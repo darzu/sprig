@@ -69,15 +69,22 @@ export function registerSyncSystem(em: EntityManager) {
             let type = peer.entitiesKnown.has(ent.id)
               ? EntityUpdateType.Dynamic
               : EntityUpdateType.Full;
-            serializeEntity(em, ent, message, type);
-            if (type === EntityUpdateType.Full) {
-              if (!peer.entitiesInUpdate.has(seq)) {
-                peer.entitiesInUpdate.set(seq, new Set());
+            const components =
+              type === EntityUpdateType.Dynamic
+                ? ent.sync.dynamicComponents
+                : ent.sync.fullComponents.concat(ent.sync.dynamicComponents);
+            // don't write anything at all if no components need to be synced
+            if (components.length > 0) {
+              serializeEntity(em, ent, message, type, components);
+              if (type === EntityUpdateType.Full) {
+                if (!peer.entitiesInUpdate.has(seq)) {
+                  peer.entitiesInUpdate.set(seq, new Set());
+                }
+                peer.entitiesInUpdate.get(seq)!.add(ent.id);
               }
-              peer.entitiesInUpdate.get(seq)!.add(ent.id);
+              peer.entityPriorities.set(ent.id, 0);
+              numEntities++;
             }
-            peer.entityPriorities.set(ent.id, 0);
-            numEntities++;
           }
         } catch (e) {
           if (!(e instanceof OutOfRoomError)) throw e;

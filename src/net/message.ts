@@ -30,17 +30,14 @@ export function serializeEntity(
   em: EntityManager,
   ent: { id: number; authority: Authority; sync: Sync },
   message: Serializer,
-  type: EntityUpdateType
+  type: EntityUpdateType,
+  components: number[]
 ) {
   message.writeUint8(type);
   message.writeUint32(ent.id);
   message.writeUint8(ent.authority.pid);
   message.writeUint32(ent.authority.seq);
 
-  const components =
-    type === EntityUpdateType.Dynamic
-      ? ent.sync.dynamicComponents
-      : ent.sync.fullComponents.concat(ent.sync.dynamicComponents);
   message.writeUint8(components.length);
   for (let componentId of components) {
     message.writeUint32(componentId);

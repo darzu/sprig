@@ -77,7 +77,7 @@ export function registerBuildPlanesSystem(em: EntityManager) {
       if (!SyncDef.isOn(plane)) {
         const sync = em.addComponent(plane.id, SyncDef);
         sync.fullComponents.push(PlaneConstructDef.id);
-        sync.dynamicComponents.push(MotionDef.id);
+        sync.fullComponents.push(MotionDef.id);
       }
       em.addComponent(plane.id, FinishedDef);
     }
