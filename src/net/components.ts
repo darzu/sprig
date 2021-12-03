@@ -57,10 +57,13 @@ export function claimAuthority(
   return false;
 }
 
-export const MeDef = EM.defineComponent("me", (pid: number, host: boolean) => ({
-  pid,
-  host,
-}));
+export const MeDef = EM.defineComponent(
+  "me",
+  (pid?: number, host?: boolean) => ({
+    pid: pid || 1,
+    host: host || false,
+  })
+);
 
 export type Me = Component<typeof MeDef>;
 

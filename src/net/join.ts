@@ -79,7 +79,7 @@ function registerHandleJoin(em: EntityManager) {
         let response = new Serializer(MAX_MESSAGE_SIZE);
         response.writeUint8(MessageType.JoinResponse);
         // PID of joining player
-        response.writeUint8(peers.length) + 1;
+        response.writeUint8(peers.length + 1);
         response.writeUint8(peer_addresses.length);
         for (let peer of peer_addresses) {
           response.writeString(peer);
