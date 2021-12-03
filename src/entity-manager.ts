@@ -196,6 +196,20 @@ export class EntityManager {
     return c;
   }
 
+  public ensureComponent<N extends string, P, Pargs extends any[] = any[]>(
+    id: number,
+    def: ComponentDef<N, P, Pargs>,
+    ...args: Pargs
+  ): P {
+    this.checkComponent(def);
+    if (id === 0) throw `hey, use addSingletonComponent!`;
+    const e = this.entities.get(id)!;
+    if (!(def.name in e)) {
+      (e as any)[def.name] = def.construct(...args);
+    }
+    return (e as any)[def.name];
+  }
+
   public addSingletonComponent<
     N extends string,
     P,
@@ -233,6 +247,15 @@ export class EntityManager {
 
   public hasEntity(id: number) {
     return this.entities.has(id);
+  }
+
+  public removeComponent<C extends ComponentDef>(id: number, def: C) {
+    const e = this.entities.get(id)! as any;
+    if (def.name in e) {
+      delete e[def.name];
+    } else {
+      throw `Tried to remove absent singleton component ${def.name} from entity ${id}`;
+    }
   }
 
   public removeAllComponents(id: number) {

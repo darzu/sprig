@@ -20,7 +20,10 @@ import {
   TransformDef,
 } from "../renderer.js";
 import { ColorDef } from "./game.js";
-import { InWorldDef } from "./game.js";
+import { InteractingDef } from "./interact.js";
+import { registerEventHandler, DetectedEventsDef } from "../net/events.js";
+import { PlayerEntDef } from "./player.js";
+import { InteractableDef } from "./interact.js";
 
 export const HatDef = EM.defineComponent("hat", () => true);
 
@@ -92,9 +95,7 @@ function createHat(
   if (!HatDef.isOn(e)) {
     em.addComponent(e.id, HatDef);
   }
-  if (!InWorldDef.isOn(e)) {
-    em.addComponent(e.id, InWorldDef, true);
-  }
+  em.ensureComponent(e.id, InteractableDef);
   em.addComponent(e.id, FinishedDef);
 }
 
@@ -103,3 +104,78 @@ export function registerBuildHatSystem(em: EntityManager) {
     for (let s of hats) createHat(em, s, res.me.pid);
   });
 }
+
+export function registerHatPickupSystem(em: EntityManager) {
+  em.registerSystem(
+    [HatDef, InteractingDef],
+    [DetectedEventsDef],
+    (hats, resources) => {
+      for (let { interacting, id } of hats) {
+        let player = EM.findEntity(interacting.id, [PlayerEntDef])!;
+        if (player.player.hat === 0) {
+          console.log("detecting pickup");
+          em.removeComponent(id, InteractingDef);
+          resources.detectedEvents.push({
+            type: "hat-pickup",
+            entities: [player.id, id],
+            location: null,
+          });
+        }
+      }
+    }
+  );
+}
+
+export function registerHatDropSystem(em: EntityManager) {
+  em.registerSystem(
+    [PlayerEntDef, MotionDef],
+    [DetectedEventsDef],
+    (players, { detectedEvents }) => {
+      for (let { player, id, motion } of players) {
+        if (player.dropping && player.hat > 0) {
+          let dropLocation = vec3.fromValues(0, 0, -5);
+          vec3.transformQuat(dropLocation, dropLocation, motion.rotation);
+          vec3.add(dropLocation, dropLocation, motion.location);
+          detectedEvents.push({
+            type: "hat-drop",
+            entities: [id, player.hat],
+            location: dropLocation,
+          });
+        }
+      }
+    }
+  );
+}
+
+registerEventHandler("hat-pickup", {
+  eventAuthorityEntity: (entities) => entities[0],
+  legalEvent: (em, entities) => {
+    let player = em.findEntity(entities[0], [PlayerEntDef]);
+    let hat = em.findEntity(entities[1], [InteractableDef]);
+    return player !== undefined && hat !== undefined && player.player.hat === 0;
+  },
+  runEvent: (em, entities) => {
+    let player = em.findEntity(entities[0], [PlayerEntDef])!;
+    let hat = em.findEntity(entities[1], [MotionDef, ParentDef])!;
+    hat.parent.id = player.id;
+    em.removeComponent(hat.id, InteractableDef);
+    vec3.set(hat.motion.location, 0, 1, 0);
+    player.player.hat = hat.id;
+  },
+});
+
+registerEventHandler("hat-drop", {
+  eventAuthorityEntity: (entities) => entities[0],
+  legalEvent: (em, entities) => {
+    let player = em.findEntity(entities[0], [PlayerEntDef]);
+    return player !== undefined && player.player.hat === entities[1];
+  },
+  runEvent: (em, entities, location) => {
+    let player = em.findEntity(entities[0], [PlayerEntDef])!;
+    let hat = em.findEntity(entities[1], [MotionDef, ParentDef])!;
+    hat.parent.id = 0;
+    em.addComponent(hat.id, InteractableDef);
+    vec3.copy(hat.motion.location, location!);
+    player.player.hat = 0;
+  },
+});

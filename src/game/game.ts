@@ -46,10 +46,14 @@ import {
 } from "./cube.js";
 import { registerTimeSystem } from "../time.js";
 import { PlaneConstructDef, registerBuildPlanesSystem } from "./plane.js";
-import { registerItemPickupSystem } from "./pickup.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
 import { registerBuildShipSystem, ShipConstructDef } from "./ship.js";
-import { HatConstructDef, registerBuildHatSystem } from "./hat.js";
+import {
+  HatConstructDef,
+  registerBuildHatSystem,
+  registerHatPickupSystem,
+  registerHatDropSystem,
+} from "./hat.js";
 import { registerBuildBulletsSystem } from "./bullet.js";
 import { DARK_BLUE, LIGHT_BLUE } from "./assets.js";
 import { registerInitCanvasSystem } from "../canvas.js";
@@ -60,6 +64,7 @@ import {
   registerBuildCannonsSystem,
   registerStepCannonsSystem,
 } from "./cannon.js";
+import { registerInteractionSystem } from "./interact.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -76,11 +81,6 @@ EM.registerSerializerPair(
     reader.readVec3(o);
   }
 );
-
-export const InWorldDef = EM.defineComponent("inWorld", (is: boolean) => ({
-  is,
-}));
-export type InWorld = Component<typeof InWorldDef>;
 
 function createPlayer(em: EntityManager) {
   const e = em.newEntity();
@@ -137,11 +137,13 @@ export function registerAllSystems(em: EntityManager) {
   registerMoveCubesSystem(em);
   registerStepBoats(em);
   registerStepPlayers(em);
+  registerInteractionSystem(em);
   registerStepCannonsSystem(em);
   registerUpdateSmoothingLerp(em);
   registerPhysicsSystems(em);
   registerBulletCollisionSystem(em);
-  registerItemPickupSystem(em);
+  registerHatPickupSystem(em);
+  registerHatDropSystem(em);
   registerAckUpdateSystem(em);
   registerSyncSystem(em);
   registerSendOutboxes(em);
