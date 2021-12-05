@@ -1,21 +1,40 @@
 import { Collider } from "./collider.js";
 import { quat, vec3 } from "./gl-matrix.js";
-import { _playerId } from "./main.js";
+import { _playerId } from "./game/game.js";
 import { clamp } from "./math.js";
-import { CollidesWith, idPair, IdPair, ContactData, __step } from "./phys.js";
+import { CollidesWith, idPair, IdPair, ContactData } from "./phys.js";
 import { AABB } from "./phys_broadphase.js";
 import { vec3Dbg } from "./utils-3d.js";
-export interface MotionProps {
-  linearVelocity: vec3;
-  angularVelocity: vec3;
-  location: vec3;
-  rotation: quat;
-}
+import { Component, EM } from "./entity-manager.js";
+import { Deserializer, Serializer } from "./serialize.js";
 
-export function copyMotionProps(
-  dest: MotionProps,
-  src: Partial<MotionProps>
-): MotionProps {
+export const MotionDef = EM.defineComponent(
+  "motion",
+  (l?: vec3, r?: quat, lv?: vec3, rv?: vec3) => ({
+    location: l ?? vec3.create(),
+    rotation: r ?? quat.create(),
+    linearVelocity: lv ?? vec3.create(),
+    angularVelocity: rv ?? vec3.create(),
+  })
+);
+export type Motion = Component<typeof MotionDef>;
+
+function serializeMotion(o: Motion, buf: Serializer) {
+  buf.writeVec3(o.location);
+  buf.writeVec3(o.linearVelocity);
+  buf.writeQuat(o.rotation);
+  buf.writeVec3(o.angularVelocity);
+}
+function deserializeMotion(o: Motion, buf: Deserializer) {
+  buf.readVec3(o.location);
+  buf.readVec3(o.linearVelocity);
+  buf.readQuat(o.rotation);
+  buf.readVec3(o.angularVelocity);
+}
+EM.registerSerializerPair(MotionDef, serializeMotion, deserializeMotion);
+
+
+export function copyMotionProps(dest: Motion, src: Partial<Motion>): Motion {
   if (src.location) vec3.copy(dest.location, src.location);
   if (src.rotation) quat.copy(dest.rotation, src.rotation);
   if (src.linearVelocity) vec3.copy(dest.linearVelocity, src.linearVelocity);
@@ -23,14 +42,14 @@ export function copyMotionProps(
   return dest;
 }
 
-export function createMotionProps(init: Partial<MotionProps>): MotionProps {
+export function createMotionProps(init: Partial<Motion>): Motion {
   // TODO(@darzu): this is difficult to keep in sync with MotionObject as fields are added/removed/changed
   if (!init.location) init.location = vec3.create();
   if (!init.rotation) init.rotation = quat.create();
   if (!init.linearVelocity) init.linearVelocity = vec3.create();
   if (!init.angularVelocity) init.angularVelocity = vec3.create();
 
-  return init as MotionProps;
+  return init as Motion;
 }
 
 let delta = vec3.create();
@@ -39,10 +58,7 @@ let deltaRotation = quat.create();
 
 // TODO(@darzu): implement checkAtRest (deleted in this commit)
 
-export function didMove(o: {
-  motion: MotionProps;
-  lastMotion: MotionProps;
-}): boolean {
+export function didMove(o: { motion: Motion; lastMotion: Motion }): boolean {
   // TODO(@darzu): this might be redundent with vec3.equals which does a epsilon check
   const EPSILON = 0.01;
   return (
@@ -56,9 +72,11 @@ const _constrainedVelocities = new Map<number, vec3>();
 
 export interface MotionObj {
   id: number;
-  motion: MotionProps;
+  motion: Motion;
   collider: Collider;
-  world: AABB;
+  _phys: {
+    world: AABB;
+  };
 }
 
 export function moveObjects(
@@ -125,7 +143,11 @@ export function moveObjects(
       vec3.copy(m.linearVelocity, _constrainedVelocities.get(id)!);
   }
 
-  for (let { id, motion: m, world } of objs) {
+  for (let {
+    id,
+    motion: m,
+    _phys: { world },
+  } of objs) {
     // clamp linear velocity based on size
     const vxMax = (world.max[0] - world.min[0]) / dt;
     const vyMax = (world.max[1] - world.min[1]) / dt;

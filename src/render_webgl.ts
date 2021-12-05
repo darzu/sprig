@@ -2,14 +2,14 @@ import { pitch } from "./utils-3d.js";
 import { vec3, mat4 } from "./gl-matrix.js";
 import {
   createMeshPoolBuilder_WebGL,
+  Mesh,
   MeshHandle,
   MeshPoolOpts,
   MeshUniform,
   SceneUniform,
 } from "./mesh-pool.js";
-import { GameObject } from "./state.js";
 // TODO(@darzu): this is a bad dependency:
-import { MeshObj, Renderer, setupScene } from "./render_webgpu.js";
+import { Renderer, setupScene } from "./render_webgpu.js";
 
 const vertCode = `
 precision mediump float;
@@ -154,8 +154,6 @@ export function attachToCanvas(
 
   let initFinished = false;
 
-  const meshObjs: Record<number, MeshObj> = {};
-
   const scene = setupScene();
 
   function finishInit() {
@@ -188,46 +186,34 @@ export function attachToCanvas(
     // gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, new Uint16Array(indices));
   }
 
-  function addObject(o: GameObject): MeshObj {
+  function addMesh(m: Mesh): MeshHandle {
     // console.log(`Adding object ${o.id}`);
-    let m = o.mesh();
     // need to introduce a new variable to convince Typescript the mapping is non-null
 
     const handle = initFinished ? pool.addMesh(m) : builder.addMesh(m);
 
-    const res = {
-      obj: o,
-      handle,
-    };
-
-    meshObjs[o.id] = res;
-
-    return res;
+    return handle;
   }
-  function addObjectInstance(o: GameObject, oldHandle: MeshHandle): MeshObj {
-    console.log(`Adding (instanced) object ${o.id}`);
-
+  function addMeshInstance(oldHandle: MeshHandle): MeshHandle {
     const d = MeshUniform.CloneData(oldHandle);
 
     const newHandle = initFinished
       ? pool.addMeshInstance(oldHandle, d)
       : builder.addMeshInstance(oldHandle, d);
 
-    const res = {
-      obj: o,
-      handle: newHandle,
-    };
+    // TODO(@darzu):
+    // meshObjs[o.id] = res;
 
-    meshObjs[o.id] = res;
-
-    return res;
+    return newHandle;
   }
 
-  function removeObject(o: GameObject) {
-    delete meshObjs[o.id];
+  function removeMesh(h: MeshHandle) {
+    // TODO(@darzu):
+    // delete meshObjs[o.id];
+    console.warn(`TODO: impl removeMesh`);
   }
 
-  function renderFrame(viewMatrix: mat4) {
+  function renderFrame(viewMatrix: mat4, meshHandles: MeshHandle[]) {
     let aspectRatio = Math.abs(canv.width / canv.height);
     const projectionMatrix = mat4.perspective(
       mat4.create(),
@@ -283,13 +269,6 @@ export function attachToCanvas(
     gl.vertexAttribPointer(a_loc_color, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(a_loc_color);
 
-    // update uniforms
-    for (let m of Object.values(meshObjs)) {
-      m.handle.transform = m.obj.transform; // TODO(@darzu): this is hacky
-      // TODO(@darzu): this is definitely weird. Need to think about this interaction better.
-      if ((m.obj as any).color) m.handle.tint = (m.obj as any).color;
-    }
-
     // TODO(@darzu): need to draw update uniform: u_loc_transform
 
     // bind index buffer
@@ -300,14 +279,14 @@ export function attachToCanvas(
     // gl.uniformMatrix4fv(u_loc_transform, false, mat4.create());
     // gl.drawElements(gl.TRIANGLES, 6 * 6, gl.UNSIGNED_SHORT, 0);
 
-    for (let m of Object.values(meshObjs)) {
+    for (let m of meshHandles) {
       // gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset * 2);
-      gl.uniformMatrix4fv(u_loc_transform, false, m.handle.transform);
-      gl.uniform3fv(u_loc_tint, m.handle.tint);
-      const indicesBytesOffset = m.handle.triIndicesNumOffset * 2;
+      gl.uniformMatrix4fv(u_loc_transform, false, m.transform);
+      gl.uniform3fv(u_loc_tint, m.tint);
+      const indicesBytesOffset = m.triIndicesNumOffset * 2;
       gl.drawElements(
         gl.TRIANGLES,
-        m.handle.numTris * 3,
+        m.numTris * 3,
         gl.UNSIGNED_SHORT,
         indicesBytesOffset
       );
@@ -323,9 +302,9 @@ export function attachToCanvas(
   const renderer: Renderer = {
     wireMode: "normal", // TODO(@darzu): support wireframe mode in webgl
     perspectiveMode: "perspective", // TODO(@darzu): support ortho mode in webgl
-    addObject,
-    addObjectInstance,
-    removeObject,
+    addMesh,
+    addMeshInstance,
+    removeMesh,
     renderFrame,
     finishInit,
   };

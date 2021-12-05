@@ -412,6 +412,12 @@ export interface AABB {
   min: vec3;
   max: vec3;
 }
+export function createAABB(): AABB {
+  return {
+    min: vec3.create(),
+    max: vec3.create(),
+  };
+}
 export function copyAABB(a: AABB): AABB {
   return {
     min: vec3.clone(a.min),

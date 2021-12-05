@@ -1,3 +1,4 @@
+import { Component, EM } from "./entity-manager.js";
 import { vec3 } from "./gl-matrix.js";
 import { AABB } from "./phys_broadphase.js";
 
@@ -55,3 +56,16 @@ export type Collider =
   | SphereCollider
   | CapsuleCollider
   | UnionCollider;
+
+export const ColliderDef = EM.defineComponent("collider", (c?: Collider) => {
+  return (
+    c ??
+    ({
+      shape: "Empty",
+      solid: false,
+    } as Collider)
+  );
+});
+const COLLIDER_ASSERT: Component<typeof ColliderDef> extends Collider
+  ? true
+  : false = true;

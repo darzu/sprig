@@ -25,3 +25,18 @@ export function __isSMI(n: number): boolean {
 export function isString(val: any): val is string {
   return typeof val === "string";
 }
+
+export function hashCode(s: string) {
+  var hash = 0,
+    i,
+    chr;
+  if (s.length === 0) return hash;
+  for (i = 0; i < s.length; i++) {
+    chr = s.charCodeAt(i);
+    hash = (hash << 5) - hash + chr;
+    hash |= 0; // Convert to 32bit integer
+    // TODO: is the next line necessary?
+    hash >>>= 0; // Convert to unsigned
+  }
+  return hash;
+}
