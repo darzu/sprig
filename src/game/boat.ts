@@ -130,7 +130,7 @@ function createBoat(
   if (!AuthorityDef.isOn(e)) {
     // TODO(@darzu): debug why boats have jerky movement
     console.log(`claiming authority of boat ${e.id}`);
-    em.addComponent(e.id, AuthorityDef, pid, pid);
+    em.addComponent(e.id, AuthorityDef, pid);
   }
   if (!BoatDef.isOn(e)) {
     const boat = em.addComponent(e.id, BoatDef);

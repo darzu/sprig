@@ -216,7 +216,7 @@ export class Renderer_WebGPU implements Renderer {
 
   removeMesh(h: MeshHandle) {
     // TODO(@darzu): we need to free up vertices
-    // delete handles[o.id];
+    //delete handles[o.id];
     // TODO(@darzu): determine rebundle a different way
     this.needsRebundle = true;
     console.warn(`TODO: impl removeMesh`);

@@ -28,15 +28,11 @@ export type Peer = Component<typeof PeerDef>;
 
 export const HostDef = EM.defineComponent("host", () => true);
 
-export const AuthorityDef = EM.defineComponent(
-  "authority",
-  (creatorPid?, pid?) => ({
-    creatorPid: creatorPid || 0,
-    pid: pid || 0,
-    seq: 0,
-    updateSeq: 0,
-  })
-);
+export const AuthorityDef = EM.defineComponent("authority", (pid?) => ({
+  pid: pid || 0,
+  seq: 0,
+  updateSeq: 0,
+}));
 
 export type Authority = Component<typeof AuthorityDef>;
 
@@ -61,12 +57,13 @@ export function claimAuthority(
   return false;
 }
 
-export const DeletedDef = EM.defineComponent("deleted", () => true);
-
-export const MeDef = EM.defineComponent("me", (pid: number, host: boolean) => ({
-  pid,
-  host,
-}));
+export const MeDef = EM.defineComponent(
+  "me",
+  (pid?: number, host?: boolean) => ({
+    pid: pid || 1,
+    host: host || false,
+  })
+);
 
 export type Me = Component<typeof MeDef>;
 
@@ -119,3 +116,11 @@ export const JoinDef = EM.defineComponent("join", (address: string) => ({
   state: "start" as "start" | "connecting",
 }));
 export type Join = Component<typeof JoinDef>;
+
+// This component should be present on entities that want to participate in the
+// prediction system
+export const PredictDef = EM.defineComponent("predict", () => ({
+  dt: 0,
+}));
+
+export type Predict = Component<typeof PredictDef>;

@@ -49,7 +49,7 @@ function createShip(
   if (!RenderableDef.isOn(e))
     em.addComponent(e.id, RenderableDef, _GAME_ASSETS?.ship!);
   if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
-  if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid, pid);
+  if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid);
   if (!SyncDef.isOn(e)) {
     const sync = em.addComponent(e.id, SyncDef);
     sync.fullComponents.push(ShipConstructDef.id);

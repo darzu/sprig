@@ -5,7 +5,7 @@ import { Inputs, InputsDef } from "../inputs.js";
 import { createMotionProps, Motion, MotionDef } from "../phys_motion.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { PhysicsTimerDef, Timer } from "../time.js";
-import { ColorDef, InWorld, InWorldDef } from "./game.js";
+import { ColorDef } from "./game.js";
 import { spawnBullet } from "./bullet.js";
 import { FinishedDef } from "../build.js";
 import {
@@ -32,7 +32,7 @@ export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
     // hat stuff
     // TODO(@darzu): better abstraction
     hat: 0,
-    interactingWith: 0,
+    interacting: false,
     dropping: false,
   };
 });
@@ -83,44 +83,6 @@ export function registerStepPlayers(em: EntityManager) {
   );
 }
 
-const INTERACTION_DISTANCE = 5;
-const INTERACTION_ANGLE = Math.PI / 6;
-// TODO: this function is very bad. It should probably use an oct-tree or something.
-function getInteractionObject(
-  playerMotion: Motion,
-  hats: { id: number; motion: Motion; inWorld: InWorld }[]
-): number {
-  let bestDistance = INTERACTION_DISTANCE;
-  let bestObj = 0;
-
-  for (let hat of hats) {
-    if (hat.inWorld.is) {
-      let to = vec3.sub(
-        vec3.create(),
-        hat.motion.location,
-        playerMotion.location
-      );
-      let distance = vec3.len(to);
-      if (distance < bestDistance) {
-        let direction = vec3.normalize(to, to);
-        let playerDirection = vec3.fromValues(0, 0, -1);
-        vec3.transformQuat(
-          playerDirection,
-          playerDirection,
-          playerMotion.rotation
-        );
-        if (
-          Math.abs(vec3.angle(direction, playerDirection)) < INTERACTION_ANGLE
-        ) {
-          bestDistance = distance;
-          bestObj = hat.id;
-        }
-      }
-    }
-  }
-  return bestObj;
-}
-
 function stepPlayers(
   players: PlayerObj[],
   resources: {
@@ -135,8 +97,6 @@ function stepPlayers(
     inputs,
     camera,
   } = resources;
-
-  const hats = EM.filterEntities([HatDef, MotionDef, InWorldDef]);
 
   //console.log(`${players.length} players, ${hats.length} hats`);
 
@@ -165,12 +125,9 @@ function stepPlayers(
 
     // TODO(@darzu): rework to use phsyiscs colliders
     if (inputs.keyClicks["e"]) {
-      const interactionObject = getInteractionObject(p.motion, hats);
-      if (interactionObject)
-        console.log(`interactionObject: ${interactionObject}`);
-      p.player.interactingWith = interactionObject;
+      p.player.interacting = true;
     } else {
-      p.player.interactingWith = 0;
+      p.player.interacting = false;
     }
     p.player.dropping = (inputs.keyClicks["q"] || 0) > 0;
     // if (inputs.keyDowns["shift"]) {
@@ -278,9 +235,8 @@ function createPlayer(
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e)) em.addComponent(e.id, RenderableDef, CUBE_MESH);
   if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
-  if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid, pid);
+  if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid);
   if (!PlayerEntDef.isOn(e)) em.addComponent(e.id, PlayerEntDef);
-  if (!InWorldDef.isOn(e)) em.addComponent(e.id, InWorldDef, true);
   if (!ColliderDef.isOn(e)) {
     const collider = em.addComponent(e.id, ColliderDef);
     collider.shape = "AABB";

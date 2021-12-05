@@ -135,7 +135,9 @@ export class EntityManager {
     }
     let entity = this.findEntity(id, [def]);
     let component;
-    if (!entity) {
+    if (buf.dummy) {
+      component = {} as any;
+    } else if (!entity) {
       component = this.addComponent(id, def);
     } else {
       component = entity[def.name];
@@ -194,6 +196,20 @@ export class EntityManager {
     return c;
   }
 
+  public ensureComponent<N extends string, P, Pargs extends any[] = any[]>(
+    id: number,
+    def: ComponentDef<N, P, Pargs>,
+    ...args: Pargs
+  ): P {
+    this.checkComponent(def);
+    if (id === 0) throw `hey, use addSingletonComponent!`;
+    const e = this.entities.get(id)!;
+    if (!(def.name in e)) {
+      (e as any)[def.name] = def.construct(...args);
+    }
+    return (e as any)[def.name];
+  }
+
   public addSingletonComponent<
     N extends string,
     P,
@@ -231,6 +247,25 @@ export class EntityManager {
 
   public hasEntity(id: number) {
     return this.entities.has(id);
+  }
+
+  public removeComponent<C extends ComponentDef>(id: number, def: C) {
+    const e = this.entities.get(id)! as any;
+    if (def.name in e) {
+      delete e[def.name];
+    } else {
+      throw `Tried to remove absent singleton component ${def.name} from entity ${id}`;
+    }
+  }
+
+  public removeAllComponents(id: number) {
+    let ent = this.entities.get(id) as any;
+    if (!ent) throw `Tried to delete non-existent entity ${id}`;
+    for (let component of this.components.values()) {
+      if (ent[component.name]) {
+        delete ent[component.name];
+      }
+    }
   }
 
   public hasComponents<CS extends ComponentDef[], E extends Entity>(
@@ -343,4 +378,3 @@ export class EntityManager {
 
 // TODO(@darzu): where to put this?
 export const EM = new EntityManager();
-

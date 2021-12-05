@@ -37,6 +37,7 @@ import {
   registerUpdateSystem,
   registerAckUpdateSystem,
 } from "../net/sync.js";
+import { registerPredictSystem } from "../net/predict.js";
 import { registerEventSystems } from "../net/events.js";
 import {
   registerBuildCubesSystem,
@@ -45,14 +46,25 @@ import {
 } from "./cube.js";
 import { registerTimeSystem } from "../time.js";
 import { PlaneConstructDef, registerBuildPlanesSystem } from "./plane.js";
-import { registerItemPickupSystem } from "./pickup.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
 import { registerBuildShipSystem, ShipConstructDef } from "./ship.js";
-import { HatConstructDef, registerBuildHatSystem } from "./hat.js";
+import {
+  HatConstructDef,
+  registerBuildHatSystem,
+  registerHatPickupSystem,
+  registerHatDropSystem,
+} from "./hat.js";
 import { registerBuildBulletsSystem } from "./bullet.js";
 import { DARK_BLUE, LIGHT_BLUE } from "./assets.js";
 import { registerInitCanvasSystem } from "../canvas.js";
 import { registerRenderInitSystem, RendererDef } from "../render_init.js";
+import { registerDeleteEntitiesSystem } from "../delete.js";
+import {
+  CannonConstructDef,
+  registerBuildCannonsSystem,
+  registerStepCannonsSystem,
+} from "./cannon.js";
+import { registerInteractionSystem } from "./interact.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -69,11 +81,6 @@ EM.registerSerializerPair(
     reader.readVec3(o);
   }
 );
-
-export const InWorldDef = EM.defineComponent("inWorld", (is: boolean) => ({
-  is,
-}));
-export type InWorld = Component<typeof InWorldDef>;
 
 function createPlayer(em: EntityManager) {
   const e = em.newEntity();
@@ -111,12 +118,12 @@ export let _playerId: number = -1;
 export function registerAllSystems(em: EntityManager) {
   registerTimeSystem(em);
   registerNetSystems(em);
-  registerEventSystems(em);
   registerInitCanvasSystem(em);
   registerRenderInitSystem(em);
   registerHandleNetworkEvents(em);
   registerUpdateSmoothingTargetSnapChange(em);
   registerUpdateSystem(em);
+  registerPredictSystem(em);
   registerUpdateSmoothingTargetSmoothChange(em);
   registerJoinSystems(em);
   registerBuildPlayersSystem(em);
@@ -126,16 +133,22 @@ export function registerAllSystems(em: EntityManager) {
   registerBuildShipSystem(em);
   registerBuildHatSystem(em);
   registerBuildBulletsSystem(em);
+  registerBuildCannonsSystem(em);
   registerMoveCubesSystem(em);
   registerStepBoats(em);
   registerStepPlayers(em);
+  registerInteractionSystem(em);
+  registerStepCannonsSystem(em);
   registerUpdateSmoothingLerp(em);
   registerPhysicsSystems(em);
   registerBulletCollisionSystem(em);
-  registerItemPickupSystem(em);
+  registerHatPickupSystem(em);
+  registerHatDropSystem(em);
   registerAckUpdateSystem(em);
   registerSyncSystem(em);
   registerSendOutboxes(em);
+  registerEventSystems(em);
+  registerDeleteEntitiesSystem(em);
   registerUpdateTransforms(em);
   registerRenderViewController(em);
   registerUpdatePlayerView(em);
@@ -175,6 +188,7 @@ export function createServerObjects(em: EntityManager) {
   createBoats(em);
   createShips(em);
   createHats(em);
+  createCannons(em);
 }
 export function createLocalObjects(em: EntityManager) {
   createPlayer(em);
@@ -218,4 +232,8 @@ function createHats(em: EntityManager) {
     );
     em.addComponent(em.newEntity().id, HatConstructDef, loc);
   }
+}
+
+function createCannons(em: EntityManager) {
+  em.addComponent(em.newEntity().id, CannonConstructDef, [-40, 10, 0]);
 }

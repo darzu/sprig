@@ -3,7 +3,6 @@ import { OutOfRoomError, Serializer } from "../serialize.js";
 import {
   Authority,
   AuthorityDef,
-  DeletedDef,
   Inbox,
   InboxDef,
   MeDef,
@@ -14,6 +13,8 @@ import {
   send,
   Sync,
   SyncDef,
+  NetStatsDef,
+  NetStats,
 } from "./components.js";
 import {
   Ack,
@@ -42,13 +43,7 @@ export function registerSyncSystem(em: EntityManager) {
       const peers = em.filterEntities([PeerDef, OutboxDef]);
       for (let { peer, outbox } of peers) {
         if (me.host && !peer.joined) continue;
-        const entities = ents.filter(
-          (ent) =>
-            (!em.findEntity(ent.id, [DeletedDef]) &&
-              ent.authority.pid == me.pid) ||
-            (ent.authority.creatorPid == me.pid &&
-              !peer.entitiesKnown.has(ent.id))
-        );
+        const entities = ents.filter((ent) => ent.authority.pid == me.pid);
         for (let ent of entities) {
           const priorityIncrease = peer.entitiesKnown.has(ent.id)
             ? ent.sync.priorityIncrementDynamic
@@ -72,25 +67,26 @@ export function registerSyncSystem(em: EntityManager) {
         let numEntities = 0;
         let numEntitiesIndex = message.writeUint8(numEntities);
         try {
-          // events always get synced before entities
           for (let ent of entities) {
-            //console.log(`Trying to sync object ${obj.id}`);
-            // TODO: could this be a 16-bit integer instead?
             let type = peer.entitiesKnown.has(ent.id)
               ? EntityUpdateType.Dynamic
-              : ent.authority.pid === me.pid
-              ? EntityUpdateType.Full
-              : EntityUpdateType.Create;
-            serializeEntity(em, ent, message, type);
-            if (
-              type !== EntityUpdateType.Dynamic &&
-              !peer.entitiesInUpdate.has(seq)
-            ) {
-              peer.entitiesInUpdate.set(seq, new Set());
-              peer.entitiesInUpdate.get(seq)!.add(ent.id);
+              : EntityUpdateType.Full;
+            const components =
+              type === EntityUpdateType.Dynamic
+                ? ent.sync.dynamicComponents
+                : ent.sync.fullComponents.concat(ent.sync.dynamicComponents);
+            // don't write anything at all if no components need to be synced
+            if (components.length > 0) {
+              serializeEntity(em, ent, message, type, components);
+              if (type === EntityUpdateType.Full) {
+                if (!peer.entitiesInUpdate.has(seq)) {
+                  peer.entitiesInUpdate.set(seq, new Set());
+                }
+                peer.entitiesInUpdate.get(seq)!.add(ent.id);
+              }
+              peer.entityPriorities.set(ent.id, 0);
+              numEntities++;
             }
-            peer.entityPriorities.set(ent.id, 0);
-            numEntities++;
           }
         } catch (e) {
           if (!(e instanceof OutOfRoomError)) throw e;
@@ -112,8 +108,10 @@ export function registerUpdateSystem(em: EntityManager) {
     peers: { peer: { address: string }; inbox: Inbox; outbox: Outbox }[],
     {
       time,
+      netStats,
     }: {
       time: Time;
+      netStats: NetStats;
     }
   ) {
     //console.log("update");
@@ -128,19 +126,24 @@ export function registerUpdateSystem(em: EntityManager) {
         let message = updates.shift()!;
         let seq = message.readUint32();
         let ts = message.readFloat32();
-        let dt = time.lastTime - ts;
+        let dt = time.lastTime - (ts - netStats.skewEstimate[address]);
         let numEntities = message.readUint8();
         for (let i = 0; i < numEntities; i++) {
-          deserializeEntity(em, seq, message);
+          deserializeEntity(em, seq, message, dt);
+          // reset message.dummy
+          message.dummy = false;
         }
-        // TODO: queue entity for prediction (using dt)
         let ack = Ack(seq);
         send(outbox, ack.buffer, false);
       }
     }
   }
 
-  em.registerSystem([PeerDef, InboxDef, OutboxDef], [TimeDef, MeDef], update);
+  em.registerSystem(
+    [PeerDef, InboxDef, OutboxDef],
+    [TimeDef, MeDef, NetStatsDef],
+    update
+  );
 }
 
 export function registerAckUpdateSystem(em: EntityManager) {

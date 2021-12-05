@@ -11,6 +11,7 @@ import { ParentDef } from "../renderer.js";
 import { vec3 } from "../gl-matrix.js";
 import { AuthorityDef } from "../net/components.js";
 import { BulletDef } from "./bullet.js";
+import { DeletedDef } from "../delete.js";
 
 export function registerBulletCollisionSystem(em: EntityManager) {
   // TODO(@darzu):
@@ -42,7 +43,7 @@ export function registerBulletCollisionSystem(em: EntityManager) {
             .map((id) => em.findEntity(id, [PlayerEntDef, AuthorityDef]))
             .filter((p) => p !== undefined);
           for (let otherPlayer of otherPlayers) {
-            if (otherPlayer!.authority.pid !== o.authority.creatorPid)
+            if (otherPlayer!.authority.pid !== o.authority.pid)
               resources.detectedEvents.push({
                 type: "bullet-player",
                 entities: [otherPlayer!.id, o.id],
@@ -58,19 +59,24 @@ export function registerBulletCollisionSystem(em: EntityManager) {
 registerEventHandler("bullet-bullet", {
   // The authority entity is the one with the lowest id
   eventAuthorityEntity: (entities) => Math.min(...entities),
-  // TODO: check to see if either bullet is deleted
-  legalEvent: (em, entities) => true,
+  legalEvent: (em, entities) => {
+    // all entities are valid bullets
+    return entities.every((id) => em.findEntity(id, [BulletDef]));
+  },
   runEvent: (em, entities) => {
-    // TODO: delete bullets
+    for (let id of entities) {
+      em.addComponent(id, DeletedDef);
+    }
   },
 });
 
 registerEventHandler("bullet-player", {
-  // The authority entity is the one with the lowest id
-  eventAuthorityEntity: (entities) => entities[0],
-  // TODO: check to see if the bullet is deleted
-  legalEvent: (em, entities) => true,
+  // The authority entity is the bullet
+  eventAuthorityEntity: (entities) => entities[1],
+  legalEvent: (em, entities) => {
+    return em.findEntity(entities[1], [BulletDef]) !== undefined;
+  },
   runEvent: (em, entities) => {
-    // TODO: delete bullet, adjust player health
+    em.addComponent(entities[1], DeletedDef);
   },
 });
