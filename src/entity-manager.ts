@@ -33,7 +33,7 @@ export type Component<DEF> = DEF extends ComponentDef<any, infer P> ? P : never;
 type WithComponent<D> = D extends ComponentDef<infer N, infer P>
   ? { readonly [k in N]: P }
   : never;
-type EntityW<CS extends ComponentDef[], ID extends number = number> = {
+export type EntityW<CS extends ComponentDef[], ID extends number = number> = {
   id: ID;
 } & Intersect<{ [P in keyof CS]: WithComponent<CS[P]> }>;
 type Entities<CS extends ComponentDef[]> = EntityW<CS>[];

@@ -1,4 +1,5 @@
-import { ComponentDef, EM, Entity } from "./entity-manager.js";
+import { ComponentDef, EM, Entity, EntityW } from "./entity-manager.js";
+import { SyncDef } from "./net/components.js";
 
 // TODO(@darzu): debugging helpers
 interface DbgCmp extends ComponentDef {
@@ -45,7 +46,13 @@ function mkDbgEnt(id: number): DbgEnt {
     }
     return res;
   };
-  const de = Object.assign(e, { _cmps });
+  const _addSync = (nickname: string) => {
+    if ("sync" in e) {
+      const c = cmpByName(nickname);
+      if (c) (e as EntityW<[typeof SyncDef]>).sync.dynamicComponents.push(c.id);
+    }
+  };
+  const de = Object.assign(e, { _cmps, _addSync });
   // if (id === 0) dbgEntSingleton = de;
   // else dbgEnts.set(id, de);
   return de;
@@ -170,13 +177,13 @@ function updateEnts() {
 function filterEnts(...cmpNames: string[]): Entity[] {
   return EM.filterEntitiesByKey(cmpNames);
 }
-function cmpByName(name: string): DbgCmp {
+function cmpByName(name: string): DbgCmp | null {
   let res = dbgCmps.get(name) ?? dbgCmpsAllByAbv.get(name);
   if (!res) updateCmps();
   res = dbgCmps.get(name) ?? dbgCmpsAllByAbv.get(name);
   if (!res)
     // TODO(@darzu): fuzzy match?
-    throw `No component by name or abv ${name}`;
+    return null;
   return res;
 }
 
