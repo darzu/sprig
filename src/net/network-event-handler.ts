@@ -38,7 +38,7 @@ export function registerHandleNetworkEvents(em: EntityManager) {
           em.addComponent(id, InboxDef);
           em.addComponent(id, OutboxDef);
           _peerIDs[peer.address] = id;
-          for (let event of _undeliverableMessages[id] || []) {
+          for (let event of _undeliverableMessages[peer.address] || []) {
             eventsFromNetwork.push(event);
           }
           delete _undeliverableMessages[id];
@@ -47,8 +47,9 @@ export function registerHandleNetworkEvents(em: EntityManager) {
         case NetworkEventType.MessageRecv: {
           let id = _peerIDs[event.from];
           if (!id) {
-            if (!_undeliverableMessages[id]) _undeliverableMessages[id] = [];
-            _undeliverableMessages[id].push(event);
+            if (!_undeliverableMessages[event.from])
+              _undeliverableMessages[event.from] = [];
+            _undeliverableMessages[event.from].push(event);
             break;
           }
           let { inbox } = em.findEntity(id, [InboxDef])!;
