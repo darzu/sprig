@@ -254,7 +254,7 @@ export class EntityManager {
     if (def.name in e) {
       delete e[def.name];
     } else {
-      throw `Tried to remove absent singleton component ${def.name} from entity ${id}`;
+      throw `Tried to remove absent component ${def.name} from entity ${id}`;
     }
   }
 
