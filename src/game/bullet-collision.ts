@@ -65,7 +65,8 @@ registerEventHandler("bullet-bullet", {
   },
   runEvent: (em, entities) => {
     for (let id of entities) {
-      em.addComponent(id, DeletedDef);
+      // This bullet might have already been deleted via the sync system
+      em.ensureComponent(id, DeletedDef);
     }
   },
 });
@@ -77,6 +78,6 @@ registerEventHandler("bullet-player", {
     return em.findEntity(entities[1], [BulletDef]) !== undefined;
   },
   runEvent: (em, entities) => {
-    em.addComponent(entities[1], DeletedDef);
+    em.ensureComponent(entities[1], DeletedDef);
   },
 });

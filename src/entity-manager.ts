@@ -258,11 +258,14 @@ export class EntityManager {
     }
   }
 
-  public removeAllComponents(id: number) {
+  public keepOnlyComponents<CS extends ComponentDef[]>(
+    id: number,
+    cs: [...CS]
+  ) {
     let ent = this.entities.get(id) as any;
     if (!ent) throw `Tried to delete non-existent entity ${id}`;
     for (let component of this.components.values()) {
-      if (ent[component.name]) {
+      if (!cs.includes(component) && ent[component.name]) {
         delete ent[component.name];
       }
     }
