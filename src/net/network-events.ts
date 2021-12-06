@@ -20,7 +20,7 @@ interface NewConnection {
   address: string;
 }
 
-interface MessageRecv {
+export interface MessageRecv {
   type: NetworkEventType.MessageRecv;
   from: string;
   message: {
