@@ -204,8 +204,13 @@ function createCamera(em: EntityManager) {
   camera.location = cameraLocation;
 }
 function createShips(em: EntityManager) {
+  // options for getting boat bounding areas:
+  // 1. algorithim to find cubes
+  // 2. sprigland native cube editor
+  // 3. blender, export new ship with bound boxes
+  // 4.
   const rot = quat.create();
-  quat.rotateY(rot, rot, Math.PI * -0.4);
+  quat.rotateY(rot, rot, Math.PI * 0.5);
   const loc: vec3 = [0, -20, 0];
   em.addComponent(em.newEntity().id, ShipConstructDef, loc, rot);
 }
