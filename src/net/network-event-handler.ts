@@ -41,7 +41,7 @@ export function registerHandleNetworkEvents(em: EntityManager) {
           for (let event of _undeliverableMessages[peer.address] || []) {
             eventsFromNetwork.push(event);
           }
-          delete _undeliverableMessages[id];
+          delete _undeliverableMessages[peer.address];
           break;
         }
         case NetworkEventType.MessageRecv: {
