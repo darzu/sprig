@@ -90,7 +90,6 @@ function createHat(
   if (!SyncDef.isOn(e)) {
     const sync = em.addComponent(e.id, SyncDef);
     sync.fullComponents.push(HatConstructDef.id);
-    sync.dynamicComponents.push(MotionDef.id);
   }
   if (!HatDef.isOn(e)) {
     em.addComponent(e.id, HatDef);
