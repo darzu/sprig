@@ -114,13 +114,13 @@ export function registerHatPickupSystem(em: EntityManager) {
         let player = EM.findEntity(interacting.id, [PlayerEntDef])!;
         if (player.player.hat === 0) {
           console.log("detecting pickup");
-          em.removeComponent(id, InteractingDef);
           resources.detectedEvents.push({
             type: "hat-pickup",
             entities: [player.id, id],
             location: null,
           });
         }
+        em.removeComponent(id, InteractingDef);
       }
     }
   );
