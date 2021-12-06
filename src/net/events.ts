@@ -294,6 +294,7 @@ export function registerEventSystems(em: EntityManager) {
 
   em.registerSystem([InboxDef, HostDef], [EventsDef], receiveEvents);
 
+  // TODO: this probably doesn't need to run at the host (it should always no-op there)
   function runEvents(
     [],
     { events }: { events: { last: number; log: Event[] } }
