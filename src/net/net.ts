@@ -201,7 +201,7 @@ function getStatsFromNet(net: Net) {
       netStats.skewEstimate[k] = net.skewEstimate[k];
     }
     for (let k of Object.keys(net.pingEstimate)) {
-      netStats.skewEstimate[k] = net.skewEstimate[k];
+      netStats.pingEstimate[k] = net.pingEstimate[k];
     }
   };
 }
