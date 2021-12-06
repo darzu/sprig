@@ -194,7 +194,10 @@ export function registerEventSystems(em: EntityManager) {
     {
       requestedEvents,
       events,
-    }: { requestedEvents: DetectedEvent[]; events: { log: Event[] } }
+    }: {
+      requestedEvents: DetectedEvent[];
+      events: { log: Event[]; last: number };
+    }
   ) {
     const q = takeEventsWithKnownObjects(em, requestedEvents);
     for (let detectedEvent of q.values()) {
@@ -202,6 +205,9 @@ export function registerEventSystems(em: EntityManager) {
         let event = detectedEvent as Event;
         event.seq = events.log.length;
         events.log.push(event);
+        // run event immediately. TODO: is there a cleaner way to separate this out?
+        runEvent(event.type, em, event);
+        events.last = event.seq;
       }
     }
   }
