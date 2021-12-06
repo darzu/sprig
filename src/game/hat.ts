@@ -76,7 +76,6 @@ function createHat(
   if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.4, 0.1, 0.1]);
   if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
   if (!ParentDef.isOn(e)) em.addComponent(e.id, ParentDef);
-  if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e))
     em.addComponent(e.id, RenderableDef, getHatMesh());
   if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
