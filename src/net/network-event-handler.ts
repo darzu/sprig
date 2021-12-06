@@ -18,7 +18,7 @@ import {
 
 export function registerHandleNetworkEvents(em: EntityManager) {
   let _peerIDs: Record<string, number> = {};
-  let _undeliverableMessages: Record<string, MessageRecv[]>;
+  let _undeliverableMessages: Record<string, MessageRecv[]> = {};
   function handleNetworkEvents(
     [],
     { eventsFromNetwork }: { eventsFromNetwork: FromNetworkEvent[] }
