@@ -13,7 +13,11 @@ import {
   RenderableDef,
   TransformDef,
 } from "../renderer.js";
-import { PhysicsStateDef } from "../phys_esc.js";
+import {
+  PhysicsResults,
+  PhysicsResultsDef,
+  PhysicsStateDef,
+} from "../phys_esc.js";
 import {
   Authority,
   AuthorityDef,
@@ -24,6 +28,8 @@ import {
 import { AABBCollider, ColliderDef } from "../collider.js";
 import { HatDef } from "./hat.js";
 import { CUBE_AABB, CUBE_MESH } from "./assets.js";
+import { Ray } from "../phys_broadphase.js";
+import { tempVec } from "../temp-pool.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {
@@ -76,7 +82,7 @@ export type CameraProps = Component<typeof CameraDef>;
 export function registerStepPlayers(em: EntityManager) {
   em.registerSystem(
     [PlayerEntDef, MotionDef, AuthorityDef],
-    [PhysicsTimerDef, CameraDef, InputsDef, MeDef],
+    [PhysicsTimerDef, CameraDef, InputsDef, MeDef, PhysicsResultsDef],
     (objs, res) => {
       for (let i = 0; i < res.physicsTimer.steps; i++) stepPlayers(objs, res);
     }
@@ -89,6 +95,7 @@ function stepPlayers(
     physicsTimer: Timer;
     camera: CameraProps;
     inputs: Inputs;
+    physicsResults: PhysicsResults;
     me: Me;
   }
 ) {
@@ -96,6 +103,7 @@ function stepPlayers(
     physicsTimer: { period: dt },
     inputs,
     camera,
+    physicsResults: { checkRay },
   } = resources;
 
   //console.log(`${players.length} players, ${hats.length} hats`);
@@ -151,20 +159,17 @@ function stepPlayers(
     quat.rotateY(p.motion.rotation, p.motion.rotation, -inputs.mouseX * 0.001);
     quat.rotateX(camera.rotation, camera.rotation, -inputs.mouseY * 0.001);
 
+    let facingDir = vec3.fromValues(0, 0, -1);
+    facingDir = vec3.transformQuat(facingDir, facingDir, p.motion.rotation);
+
     // add bullet on lclick
     if (inputs.lclick) {
-      let bullet_axis = vec3.fromValues(0, 0, -1);
-      bullet_axis = vec3.transformQuat(
-        bullet_axis,
-        bullet_axis,
-        p.motion.rotation
-      );
       let bulletMotion = createMotionProps({});
       bulletMotion.location = vec3.clone(p.motion.location);
       bulletMotion.rotation = quat.clone(p.motion.rotation);
       bulletMotion.linearVelocity = vec3.scale(
         bulletMotion.linearVelocity,
-        bullet_axis,
+        facingDir,
         0.02
       );
       // TODO(@darzu): adds player motion
@@ -175,7 +180,7 @@ function stepPlayers(
       // );
       bulletMotion.angularVelocity = vec3.scale(
         bulletMotion.angularVelocity,
-        bullet_axis,
+        facingDir,
         0.01
       );
       spawnBullet(EM, bulletMotion);
@@ -216,6 +221,27 @@ function stepPlayers(
             0.01
           );
           spawnBullet(EM, bulletMotion);
+        }
+      }
+    }
+
+    // shoot a ray
+    if (inputs.keyClicks["r"]) {
+      const r: Ray = {
+        org: vec3.add(
+          tempVec(),
+          p.motion.location,
+          vec3.scale(tempVec(), facingDir, 3.0)
+        ),
+        dir: facingDir,
+      };
+      const hits = checkRay(r);
+      // TODO(@darzu): this seems pretty hacky and cross cutting
+      for (let { id, dist } of hits) {
+        const e = EM.findEntity(id, [ColorDef]);
+        if (e) {
+          // increase green
+          e.color[1] += 0.1;
         }
       }
     }
