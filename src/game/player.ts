@@ -253,24 +253,35 @@ function stepPlayers(
 
       // draw our ray
       const rayDist = firstHit?.dist || 1000;
-      const re = EM.newEntity();
-      EM.addComponent(re.id, ColorDef, firstHit ? [0, 1, 0] : [1, 0, 0]);
+      const color: vec3 = firstHit ? [0, 1, 0] : [1, 0, 0];
       const endPoint = vec3.add(
         vec3.create(),
         r.org,
         vec3.scale(tempVec(), facingDir, rayDist)
       );
-      const m: Mesh = {
-        pos: [r.org, endPoint],
-        tri: [],
-        colors: [],
-        lines: [[0, 1]],
-        usesProvoking: true,
-      };
-      EM.addComponent(re.id, RenderableDef, m);
-      EM.addComponent(re.id, TransformDef);
+      drawLine(EM, r.org, endPoint, color);
     }
   }
+}
+
+// TODO(@darzu): move this helper elsewhere?
+export function drawLine(
+  em: EntityManager,
+  start: vec3,
+  end: vec3,
+  color: vec3
+) {
+  const { id } = em.newEntity();
+  em.addComponent(id, ColorDef, color);
+  const m: Mesh = {
+    pos: [start, end],
+    tri: [],
+    colors: [],
+    lines: [[0, 1]],
+    usesProvoking: true,
+  };
+  em.addComponent(id, RenderableDef, m);
+  em.addComponent(id, TransformDef);
 }
 
 function createPlayer(
