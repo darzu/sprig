@@ -60,7 +60,9 @@ import { registerInitCanvasSystem } from "../canvas.js";
 import { registerRenderInitSystem, RendererDef } from "../render_init.js";
 import { registerDeleteEntitiesSystem } from "../delete.js";
 import {
+  AmmunitionConstructDef,
   CannonConstructDef,
+  registerBuildAmmunitionSystem,
   registerBuildCannonsSystem,
   registerStepCannonsSystem,
 } from "./cannon.js";
@@ -134,6 +136,7 @@ export function registerAllSystems(em: EntityManager) {
   registerBuildHatSystem(em);
   registerBuildBulletsSystem(em);
   registerBuildCannonsSystem(em);
+  registerBuildAmmunitionSystem(em);
   registerMoveCubesSystem(em);
   registerStepBoats(em);
   registerStepPlayers(em);
@@ -236,4 +239,5 @@ function createHats(em: EntityManager) {
 
 function createCannons(em: EntityManager) {
   em.addComponent(em.newEntity().id, CannonConstructDef, [-40, 10, 0]);
+  em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -9, 0], 3);
 }

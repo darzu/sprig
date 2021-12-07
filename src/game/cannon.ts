@@ -18,10 +18,16 @@ import {
   MeDef,
   SyncDef,
 } from "../net/components.js";
-import { getAABBFromMesh, Mesh, scaleMesh3 } from "../mesh-pool.js";
+import {
+  getAABBFromMesh,
+  Mesh,
+  scaleMesh3,
+  unshareProvokingVertices,
+} from "../mesh-pool.js";
 import { AABB } from "../phys_broadphase.js";
 import { Deserializer, Serializer } from "../serialize.js";
 import { CUBE_MESH } from "./assets.js";
+import { _GAME_ASSETS } from "../main.js";
 import { DetectedEventsDef } from "../net/events.js";
 import { fireBullet } from "./bullet.js";
 import { registerEventHandler } from "../net/events.js";
@@ -175,5 +181,71 @@ function createCannon(
 export function registerBuildCannonsSystem(em: EntityManager) {
   em.registerSystem([CannonConstructDef], [MeDef], (cannons, res) => {
     for (let b of cannons) createCannon(em, b, res.me.pid);
+  });
+}
+
+export const AmmunitionDef = EM.defineComponent(
+  "ammunition",
+  (amount?: number) => {
+    return {
+      amount: amount || 0,
+    };
+  }
+);
+export type Ammunition = Component<typeof AmmunitionDef>;
+
+export const AmmunitionConstructDef = EM.defineComponent(
+  "ammunitionConstruct",
+  (loc?: vec3, amount?: number) => {
+    return {
+      location: loc ?? vec3.fromValues(0, 0, 0),
+      amount: amount || 0,
+    };
+  }
+);
+
+let _ammunitionMesh: Mesh | undefined = undefined;
+let _ammunitionAABB: AABB | undefined = undefined;
+function getAmmunitionMesh(): Mesh {
+  if (!_ammunitionMesh) _ammunitionMesh = _GAME_ASSETS?.ammunitionBox!;
+  return _ammunitionMesh;
+}
+function getAmmunitionAABB(): AABB {
+  if (!_ammunitionAABB) _ammunitionAABB = getAABBFromMesh(getAmmunitionMesh());
+  return _ammunitionAABB;
+}
+
+export function registerBuildAmmunitionSystem(em: EntityManager) {
+  em.registerSystem([AmmunitionConstructDef], [MeDef], (boxes, res) => {
+    for (let e of boxes) {
+      if (FinishedDef.isOn(e)) return;
+      const props = e.ammunitionConstruct;
+      if (!MotionDef.isOn(e)) {
+        let motion = em.addComponent(e.id, MotionDef, props.location);
+        // TODO: the asset is upside down. should probably fix the asset
+        quat.rotateX(motion.rotation, motion.rotation, Math.PI);
+        quat.normalize(motion.rotation, motion.rotation);
+      }
+      if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.2, 0.1, 0.05]);
+      if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
+      if (!RenderableDef.isOn(e))
+        em.addComponent(e.id, RenderableDef, getAmmunitionMesh());
+      if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
+      if (!AuthorityDef.isOn(e))
+        em.addComponent(e.id, AuthorityDef, res.me.pid);
+      if (!AmmunitionDef.isOn(e))
+        em.addComponent(e.id, AmmunitionDef, props.amount);
+      if (!ColliderDef.isOn(e)) {
+        const collider = em.addComponent(e.id, ColliderDef);
+        collider.shape = "AABB";
+        collider.solid = true;
+        (collider as AABBCollider).aabb = getAmmunitionAABB();
+      }
+      if (!SyncDef.isOn(e)) {
+        const sync = em.addComponent(e.id, SyncDef);
+        sync.fullComponents.push(AmmunitionConstructDef.id);
+      }
+      em.addComponent(e.id, FinishedDef);
+    }
   });
 }
