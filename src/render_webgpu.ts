@@ -83,11 +83,9 @@ const backgroundColor = { r: 0.6, g: 0.63, b: 0.6, a: 1.0 };
 //   renderable: Renderable;
 // }
 
-export type CameraMode = "perspective" | "ortho";
 export interface Renderer {
   drawLines: boolean;
   drawTris: boolean;
-  perspectiveMode: CameraMode;
   finishInit(): void;
   addMesh(m: Mesh): MeshHandle;
   addMeshInstance(h: MeshHandle): MeshHandle;
@@ -98,7 +96,6 @@ export interface Renderer {
 export class Renderer_WebGPU implements Renderer {
   public drawLines = true;
   public drawTris = true;
-  public perspectiveMode: CameraMode = "perspective";
 
   private device: GPUDevice;
   private canvas: HTMLCanvasElement;
@@ -123,7 +120,6 @@ export class Renderer_WebGPU implements Renderer {
   private colorTextureView: GPUTextureView | null = null;
   private lastWidth = 0;
   private lastHeight = 0;
-  private aspectRatio = 1;
 
   public finishInit() {
     if (this.initFinished) throw "finishInit called twice";
@@ -182,8 +178,6 @@ export class Renderer_WebGPU implements Renderer {
 
     this.lastWidth = newWidth;
     this.lastHeight = newHeight;
-
-    this.aspectRatio = Math.abs(newWidth / newHeight);
   }
 
   /*
@@ -415,34 +409,8 @@ export class Renderer_WebGPU implements Renderer {
   }
 
   private scratchSceneUni = new Uint8Array(SceneUniform.ByteSizeAligned);
-  public renderFrame(viewMatrix: mat4, handles: MeshHandle[]): void {
+  public renderFrame(viewProj: mat4, handles: MeshHandle[]): void {
     this.checkCanvasResize();
-    const projectionMatrix = mat4.create();
-    if (this.perspectiveMode === "ortho") {
-      const ORTHO_SIZE = 40;
-      mat4.ortho(
-        projectionMatrix,
-        -ORTHO_SIZE,
-        ORTHO_SIZE,
-        -ORTHO_SIZE,
-        ORTHO_SIZE,
-        -400,
-        200
-      );
-    } else {
-      mat4.perspective(
-        projectionMatrix,
-        (2 * Math.PI) / 5,
-        this.aspectRatio,
-        1,
-        10000.0 /*view distance*/
-      );
-    }
-    const viewProj = mat4.multiply(
-      mat4.create(),
-      projectionMatrix,
-      viewMatrix
-    ) as Float32Array;
 
     this.sceneData.cameraViewProjMatrix = viewProj;
 

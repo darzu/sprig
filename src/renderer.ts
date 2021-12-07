@@ -1,3 +1,4 @@
+import { Canvas, CanvasDef } from "./canvas.js";
 import {
   ComponentDef,
   EntityManager,
@@ -129,12 +130,13 @@ export function registerUpdateTransforms(em: EntityManager) {
   );
 }
 
-export const PlayerViewDef = EM.defineComponent("playerView", () => {
+export const CameraViewDef = EM.defineComponent("cameraView", () => {
   return {
-    viewMat: mat4.create(),
+    aspectRatio: 1,
+    viewProjMat: mat4.create(),
   };
 });
-export type PlayerView = Component<typeof PlayerViewDef>;
+export type CameraView = Component<typeof CameraViewDef>;
 
 interface RenderableObj {
   id: number;
@@ -146,7 +148,7 @@ interface RenderableObj {
 function stepRenderer(
   renderer: Renderer,
   objs: RenderableObj[],
-  playerView: PlayerView
+  cameraView: CameraView
 ) {
   // ensure our mesh handle is up to date
   for (let o of objs) {
@@ -161,28 +163,33 @@ function stepRenderer(
 
   // render
   renderer.renderFrame(
-    playerView.viewMat,
+    cameraView.viewProjMat,
     objs.map((o) => o.meshHandle)
   );
 }
 
-function updatePlayerView(
+function updateCameraView(
   players: { player: PlayerEnt; motion: Motion; authority: Authority }[],
-  resources: { playerView: PlayerView; camera: CameraProps; me: Me }
+  resources: {
+    cameraView: CameraView;
+    camera: CameraProps;
+    me: Me;
+    htmlCanvas: Canvas;
+  }
 ) {
-  const {
-    playerView: { viewMat },
-    camera,
-    me,
-  } = resources;
+  const { cameraView, camera, me, htmlCanvas } = resources;
 
   const mePlayer = players.filter((p) => p.authority.pid === me.pid)[0];
   if (!mePlayer) return;
 
+  // update aspect ratio
+  cameraView.aspectRatio = Math.abs(
+    htmlCanvas.canvas.width / htmlCanvas.canvas.height
+  );
+
   //TODO: this calculation feels like it should be simpler but Doug doesn't
   //understand quaternions.
-  let viewMatrix = viewMat;
-  mat4.identity(viewMatrix);
+  let viewMatrix = mat4.create();
   if (mePlayer) {
     mat4.translate(viewMatrix, viewMatrix, mePlayer.motion.location);
     mat4.multiply(
@@ -198,25 +205,53 @@ function updatePlayerView(
   );
   mat4.translate(viewMatrix, viewMatrix, camera.location);
   mat4.invert(viewMatrix, viewMatrix);
-  return viewMatrix;
+
+  const projectionMatrix = mat4.create();
+  if (camera.perspectiveMode === "ortho") {
+    const ORTHO_SIZE = 40;
+    mat4.ortho(
+      projectionMatrix,
+      -ORTHO_SIZE,
+      ORTHO_SIZE,
+      -ORTHO_SIZE,
+      ORTHO_SIZE,
+      -400,
+      200
+    );
+  } else {
+    mat4.perspective(
+      projectionMatrix,
+      (2 * Math.PI) / 5,
+      cameraView.aspectRatio,
+      1,
+      10000.0 /*view distance*/
+    );
+  }
+  const viewProj = mat4.multiply(
+    mat4.create(),
+    projectionMatrix,
+    viewMatrix
+  ) as Float32Array;
+
+  cameraView.viewProjMat = viewProj;
 }
 
-export function registerUpdatePlayerView(em: EntityManager) {
-  em.addSingletonComponent(PlayerViewDef);
+export function registerUpdateCameraView(em: EntityManager) {
+  em.addSingletonComponent(CameraViewDef);
   em.registerSystem(
     [PlayerEntDef, MotionDef, AuthorityDef],
-    [PlayerViewDef, CameraDef, MeDef],
-    updatePlayerView
+    [CameraViewDef, CameraDef, MeDef, CanvasDef],
+    updateCameraView
   );
 }
 
 export function registerRenderer(em: EntityManager) {
   em.registerSystem(
     [RenderableDef, TransformDef, MeshHandleDef],
-    [PlayerViewDef, PhysicsTimerDef, RendererDef],
+    [CameraViewDef, PhysicsTimerDef, RendererDef],
     (objs, res) => {
       if (res.physicsTimer.steps > 0)
-        stepRenderer(res.renderer.renderer, objs, res.playerView);
+        stepRenderer(res.renderer.renderer, objs, res.cameraView);
     }
   );
 }

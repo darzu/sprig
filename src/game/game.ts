@@ -12,7 +12,7 @@ import {
 import {
   registerAddMeshHandleSystem,
   registerRenderer,
-  registerUpdatePlayerView,
+  registerUpdateCameraView,
   registerUpdateTransforms,
 } from "../renderer.js";
 import {
@@ -154,31 +154,35 @@ export function registerAllSystems(em: EntityManager) {
   registerDeleteEntitiesSystem(em);
   registerUpdateTransforms(em);
   registerRenderViewController(em);
-  registerUpdatePlayerView(em);
+  registerUpdateCameraView(em);
   registerAddMeshHandleSystem(em);
   registerRenderer(em);
 }
 
 function registerRenderViewController(em: EntityManager) {
-  em.registerSystem([], [InputsDef, RendererDef], (_, { inputs, renderer }) => {
-    // check render mode
-    if (inputs.keyClicks["1"]) {
-      // both lines and tris
-      renderer.renderer.drawLines = true;
-      renderer.renderer.drawTris = true;
-    } else if (inputs.keyClicks["2"]) {
-      // "wireframe", lines only
-      renderer.renderer.drawLines = true;
-      renderer.renderer.drawTris = false;
-    }
+  em.registerSystem(
+    [],
+    [InputsDef, RendererDef, CameraDef],
+    (_, { inputs, renderer, camera }) => {
+      // check render mode
+      if (inputs.keyClicks["1"]) {
+        // both lines and tris
+        renderer.renderer.drawLines = true;
+        renderer.renderer.drawTris = true;
+      } else if (inputs.keyClicks["2"]) {
+        // "wireframe", lines only
+        renderer.renderer.drawLines = true;
+        renderer.renderer.drawTris = false;
+      }
 
-    // check render mode
-    if (inputs.keyClicks["3"]) {
-      renderer.renderer.perspectiveMode = "perspective";
-    } else if (inputs.keyClicks["4"]) {
-      renderer.renderer.perspectiveMode = "ortho";
+      // check render mode
+      if (inputs.keyClicks["3"]) {
+        camera.perspectiveMode = "perspective";
+      } else if (inputs.keyClicks["4"]) {
+        camera.perspectiveMode = "ortho";
+      }
     }
-  });
+  );
 }
 
 export function initGame(em: EntityManager) {

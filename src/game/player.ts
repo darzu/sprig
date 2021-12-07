@@ -10,6 +10,8 @@ import { spawnBullet } from "./bullet.js";
 import { FinishedDef } from "../build.js";
 import {
   MotionSmoothingDef,
+  CameraView,
+  CameraViewDef,
   RenderableDef,
   TransformDef,
 } from "../renderer.js";
@@ -72,10 +74,13 @@ interface PlayerObj {
   authority: Authority;
 }
 
+export type CameraMode = "perspective" | "ortho";
+
 export const CameraDef = EM.defineComponent("camera", () => {
   return {
     rotation: quat.create(),
     location: vec3.create(),
+    perspectiveMode: "perspective" as CameraMode,
   };
 });
 export type CameraProps = Component<typeof CameraDef>;
@@ -83,7 +88,14 @@ export type CameraProps = Component<typeof CameraDef>;
 export function registerStepPlayers(em: EntityManager) {
   em.registerSystem(
     [PlayerEntDef, MotionDef, AuthorityDef],
-    [PhysicsTimerDef, CameraDef, InputsDef, MeDef, PhysicsResultsDef],
+    [
+      PhysicsTimerDef,
+      CameraDef,
+      InputsDef,
+      MeDef,
+      PhysicsResultsDef,
+      CameraViewDef,
+    ],
     (objs, res) => {
       for (let i = 0; i < res.physicsTimer.steps; i++) stepPlayers(objs, res);
     }
@@ -97,6 +109,7 @@ function stepPlayers(
     camera: CameraProps;
     inputs: Inputs;
     physicsResults: PhysicsResults;
+    cameraView: CameraView;
     me: Me;
   }
 ) {
@@ -105,6 +118,7 @@ function stepPlayers(
     inputs,
     camera,
     physicsResults: { checkRay },
+    cameraView,
   } = resources;
 
   //console.log(`${players.length} players, ${hats.length} hats`);
@@ -226,6 +240,12 @@ function stepPlayers(
       }
     }
 
+    // select object
+    if (inputs.lclick) {
+      // TODO(@darzu): create ray from mouse position ?
+      // cameraView.viewProjMat;
+    }
+
     // shoot a ray
     if (inputs.keyClicks["r"]) {
       // create our ray
@@ -237,7 +257,10 @@ function stepPlayers(
         ),
         dir: facingDir,
       };
+      playerShootRay(r);
+    }
 
+    function playerShootRay(r: Ray) {
       // check for hits
       const hits = checkRay(r);
       // TODO(@darzu): this seems pretty hacky and cross cutting
