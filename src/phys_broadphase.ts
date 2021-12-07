@@ -1,5 +1,6 @@
 import { vec3 } from "./gl-matrix.js";
 import { clamp } from "./math.js";
+import { tempVec } from "./temp-pool.js";
 import { range } from "./util.js";
 import { vec3Floor } from "./utils-3d.js";
 
@@ -11,12 +12,13 @@ const BROAD_PHASE: "N^2" | "OCT" | "GRID" = "OCT";
 // }
 export type CollidesWith = Map<number, number[]>;
 
-export function *collisionPairs(collidesWith: CollidesWith): IterableIterator<[number, number]> {
+export function* collisionPairs(
+  collidesWith: CollidesWith
+): IterableIterator<[number, number]> {
   // TODO(@darzu): is this effecient?
   for (let [leftId, rightIds] of collidesWith) {
     for (let rightId of rightIds) {
-      if (leftId < rightId)
-        yield [leftId, rightId];
+      if (leftId < rightId) yield [leftId, rightId];
     }
   }
 }
@@ -33,14 +35,21 @@ export function resetCollidesWithSet(
   }
 }
 
+export interface BroadphaseResult {
+  collidesWith: CollidesWith;
+  checkRay: (r: Ray) => RayHit[];
+}
+
 export let _lastCollisionTestTimeMs = 0; // TODO(@darzu): hack for stat debugging
 let _collidesWith: CollidesWith = new Map();
-export function checkCollisions(
+export function checkBroadphase(
   objs: { aabb: AABB; id: number }[]
-): CollidesWith {
+): BroadphaseResult {
   const start = performance.now();
   _doesOverlaps = 0; // TODO(@darzu): debugging
   _enclosedBys = 0; // TODO(@darzu): debugging
+  // TODO(@darzu): impl checkRay for non-oct tree broad phase strategies
+  let checkRay = (_: Ray) => [] as RayHit[];
 
   // TODO(@darzu): be more precise than just AABBs. broad & narrow phases.
   // TODO(@darzu): also use better memory pooling for aabbs and collidesWith relation
@@ -114,7 +123,10 @@ export function checkCollisions(
         }
       }
     }
-    if (tree) octCheckOverlap(tree);
+    if (tree) {
+      octCheckOverlap(tree);
+      checkRay = (r: Ray) => checkRayVsOct(tree, r);
+    }
   }
 
   // grid / buckets / spacial hash
@@ -169,7 +181,10 @@ export function checkCollisions(
   // console.log(`num oct-trees: ${debugOcttree(tree).length}`);
 
   _lastCollisionTestTimeMs = performance.now() - start;
-  return _collidesWith;
+  return {
+    collidesWith: _collidesWith,
+    checkRay,
+  };
 }
 let _worldGrid: WorldGrid | null = null;
 const _objToObjLL: { [id: number]: ObjLL } = {};
@@ -300,6 +315,37 @@ function checkPair(
 }
 
 // OctTree implementation
+export interface Ray {
+  org: vec3;
+  dir: vec3;
+}
+export interface RayHit {
+  id: number;
+  dist: number;
+}
+function checkRayVsOct(tree: OctTree, ray: Ray): RayHit[] {
+  // check this node's AABB
+  const d = rayHitDist(tree.aabb, ray);
+  if (isNaN(d)) return [];
+
+  let hits: RayHit[] = [];
+
+  // check this node's objects
+  for (let [id, b] of tree.objs.entries()) {
+    const dist = rayHitDist(b, ray);
+    if (!isNaN(d)) hits.push({ id, dist });
+  }
+
+  // check this node's children nodes
+  for (let t of tree.children) {
+    if (t) {
+      hits = [...hits, ...checkRayVsOct(t, ray)];
+    }
+  }
+
+  return hits;
+}
+
 // TODO(@darzu): collisions groups and "atRest"
 interface OctTree {
   aabb: AABB;
@@ -369,6 +415,37 @@ function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
 }
 
 // AABB utils
+// returns NaN if they don't hit
+export function rayHitDist(b: AABB, r: Ray): number {
+  // TODO(@darzu): can be made faster using inverse ray direction:
+  //    https://tavianator.com/2011/ray_box.html
+  //    https://tavianator.com/2015/ray_box_nan.html
+  let tmin = -Infinity;
+  let tmax = Infinity;
+
+  for (let d = 0; d < 3; d++) {
+    if (r.dir[0] !== 0) {
+      // these are the maximum and minimum distances we
+      // could travel along the ray in dimension d, which
+      // is either we could travel to the box's minimum bound
+      // or it's maximum bound in d.
+      const travel1 = (b.min[d] - r.org[d]) / r.dir[d];
+      const travel2 = (b.max[d] - r.org[d]) / r.dir[d];
+
+      // update or total min & max travel distances
+      tmin = Math.max(tmin, Math.min(travel1, travel2));
+      tmax = Math.min(tmax, Math.max(travel1, travel2));
+    } else if (r.org[d] <= b.min[d] || r.org[d] >= b.max[d]) {
+      // if it's right on the bounds, consider it a miss
+      return NaN;
+    }
+  }
+
+  if (tmin < tmax && 0.0 < tmax) return Math.max(tmin, 0);
+
+  return NaN;
+}
+
 export let _doesOverlaps = 0;
 export function doesOverlap(a: AABB, b: AABB) {
   _doesOverlaps++; // TODO(@darzu): debugging

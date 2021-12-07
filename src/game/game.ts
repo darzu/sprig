@@ -163,9 +163,13 @@ function registerRenderViewController(em: EntityManager) {
   em.registerSystem([], [InputsDef, RendererDef], (_, { inputs, renderer }) => {
     // check render mode
     if (inputs.keyClicks["1"]) {
-      renderer.renderer.wireMode = "normal";
+      // both lines and tris
+      renderer.renderer.drawLines = true;
+      renderer.renderer.drawTris = true;
     } else if (inputs.keyClicks["2"]) {
-      renderer.renderer.wireMode = "wireframe";
+      // "wireframe", lines only
+      renderer.renderer.drawLines = true;
+      renderer.renderer.drawTris = false;
     }
 
     // check render mode

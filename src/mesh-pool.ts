@@ -22,6 +22,8 @@ const bytesPerUint16 = Uint16Array.BYTES_PER_ELEMENT;
 const bytesPerUint32 = Uint32Array.BYTES_PER_ELEMENT;
 const MAX_INDICES = 65535; // Since we're using u16 index type, this is our max indices count
 
+const DEFAULT_VERT_COLOR: vec3 = [0.0, 0.0, 0.0];
+
 // Everything to do with our vertex format must be in this module (minus downstream
 //  places that should get type errors when this module changes.)
 // TODO(@darzu): code gen some of this so code changes are less error prone.
@@ -824,7 +826,7 @@ function createMeshPoolBuilder(
     const vertNumOffset = builder.numVerts;
 
     m.pos.forEach((pos, i) => {
-      b.addVertex(pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0]);
+      b.addVertex(pos, DEFAULT_VERT_COLOR, [1.0, 0.0, 0.0]);
     });
     m.tri.forEach((triInd, i) => {
       b.addTri(triInd);
@@ -874,7 +876,7 @@ function createMeshPoolBuilder(
       // TODO(@darzu): use scratch arrays
       verticesMap: new Uint8Array(m.pos.length * Vertex.ByteSize),
       triIndicesMap: new Uint16Array(m.tri.length * 3),
-      lineIndicesMap: new Uint16Array((m.lines?.length ?? 12) * 3), // TODO(@darzu): make optional?
+      lineIndicesMap: new Uint16Array((m.lines?.length ?? 2) * 2), // TODO(@darzu): make optional?
       uniformMap: new Uint8Array(MeshUniform.ByteSizeAligned),
     };
 
@@ -888,7 +890,7 @@ function createMeshPoolBuilder(
     );
 
     m.pos.forEach((pos, i) => {
-      b.addVertex(pos, [0.5, 0.5, 0.5], [1.0, 0.0, 0.0]);
+      b.addVertex(pos, DEFAULT_VERT_COLOR, [1.0, 0.0, 0.0]);
     });
     m.tri.forEach((triInd, i) => {
       b.addTri(triInd);
@@ -924,7 +926,7 @@ function createMeshPoolBuilder(
       pool,
       vertNumOffset: pool.numVerts,
       triIndicesNumOffset: pool.numTris * 3,
-      lineIndicesNumOffset: pool.numLines * 3,
+      lineIndicesNumOffset: pool.numLines * 2,
       modelUniByteOffset: allMeshes.length * MeshUniform.ByteSizeAligned,
     };
 

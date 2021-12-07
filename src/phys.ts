@@ -1,23 +1,6 @@
-import { Collider } from "./collider.js";
-import { mat4, quat, vec3 } from "./gl-matrix.js";
+import { vec3 } from "./gl-matrix.js";
 import { _playerId } from "./game/game.js";
-import {
-  AABB,
-  checkCollisions,
-  collisionPairs,
-  copyAABB,
-  doesOverlap,
-  doesTouch,
-  resetCollidesWithSet,
-} from "./phys_broadphase.js";
-import {
-  copyMotionProps,
-  createMotionProps,
-  Motion,
-  moveObjects,
-} from "./phys_motion.js";
 import { __isSMI } from "./util.js";
-import { vec3Dbg } from "./utils-3d.js";
 import { PhysicsObject } from "./phys_esc.js";
 
 // export interface PhysicsResults {
