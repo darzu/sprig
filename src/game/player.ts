@@ -1,6 +1,6 @@
 // player controller component and system
 
-import { quat, vec3 } from "../gl-matrix.js";
+import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { Inputs, InputsDef } from "../inputs.js";
 import { createMotionProps, Motion, MotionDef } from "../phys_motion.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
@@ -33,6 +33,8 @@ import { CUBE_AABB, CUBE_MESH } from "./assets.js";
 import { Ray, RayHit } from "../phys_broadphase.js";
 import { tempVec } from "../temp-pool.js";
 import { Mesh } from "../mesh-pool.js";
+import { vec3Dbg } from "../utils-3d.js";
+import { mathMap } from "../math.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {
@@ -171,8 +173,12 @@ function stepPlayers(
     p.motion.linearVelocity[0] = vel[0];
     p.motion.linearVelocity[2] = vel[2];
 
-    quat.rotateY(p.motion.rotation, p.motion.rotation, -inputs.mouseX * 0.001);
-    quat.rotateX(camera.rotation, camera.rotation, -inputs.mouseY * 0.001);
+    quat.rotateY(
+      p.motion.rotation,
+      p.motion.rotation,
+      -inputs.mouseMovX * 0.001
+    );
+    quat.rotateX(camera.rotation, camera.rotation, -inputs.mouseMovY * 0.001);
 
     let facingDir = vec3.fromValues(0, 0, -1);
     facingDir = vec3.transformQuat(facingDir, facingDir, p.motion.rotation);
@@ -242,8 +248,27 @@ function stepPlayers(
 
     // select object
     if (inputs.lclick) {
-      // TODO(@darzu): create ray from mouse position ?
-      // cameraView.viewProjMat;
+      const invViewProj = mat4.invert(mat4.create(), cameraView.viewProjMat);
+      // TODO(@darzu): positions need to be moved to 0-1
+      const mouseViewX = mathMap(inputs.mousePosX, 0, cameraView.width, -1, 1);
+      const mouseViewY =
+        mathMap(inputs.mousePosY, 0, cameraView.height, -1, 1) * -1;
+      const mousePos0: vec3 = [mouseViewX, mouseViewY, 0];
+      const mousePos1: vec3 = [mouseViewX, mouseViewY, 0.5];
+
+      console.log(vec3Dbg(mousePos0));
+
+      const ray0 = vec3.transformMat4(vec3.create(), mousePos0, invViewProj);
+      const ray1 = vec3.transformMat4(vec3.create(), mousePos1, invViewProj);
+
+      const dir: vec3 = vec3.sub(vec3.create(), ray1, ray0);
+      vec3.normalize(dir, dir);
+
+      const r: Ray = {
+        org: ray0,
+        dir,
+      };
+      playerShootRay(r);
     }
 
     // shoot a ray
@@ -280,7 +305,7 @@ function stepPlayers(
       const endPoint = vec3.add(
         vec3.create(),
         r.org,
-        vec3.scale(tempVec(), facingDir, rayDist)
+        vec3.scale(tempVec(), r.dir, rayDist)
       );
       drawLine(EM, r.org, endPoint, color);
     }

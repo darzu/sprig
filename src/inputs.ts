@@ -3,8 +3,10 @@ import { Component, EM, EntityManager } from "./entity-manager.js";
 
 export const InputsDef = EM.defineComponent("inputs", () => {
   return {
-    mouseX: 0,
-    mouseY: 0,
+    mouseMovX: 0,
+    mouseMovY: 0,
+    mousePosX: 0,
+    mousePosY: 0,
     lclick: false,
     rclick: false,
     keyClicks: {} as { [key: string]: number },
@@ -59,20 +61,24 @@ function createInputsReader(canvas: HTMLCanvasElement): () => Inputs {
   }
 
   // track mouse movement for use in the game loop
-  let accumulated_mouseX = 0;
-  let accumulated_mouseY = 0;
+  let accumulated_mouseMovX = 0;
+  let accumulated_mouseMovY = 0;
+  let lastMouseX = 0;
+  let lastMouseY = 0;
   window.addEventListener(
     "mousemove",
     (ev) => {
-      accumulated_mouseX += ev.movementX;
-      accumulated_mouseY += ev.movementY;
+      accumulated_mouseMovX += ev.movementX;
+      accumulated_mouseMovY += ev.movementY;
+      lastMouseX = ev.offsetX;
+      lastMouseY = ev.offsetY;
     },
     false
   );
   function takeAccumulatedMouseMovement(): { x: number; y: number } {
-    const result = { x: accumulated_mouseX, y: accumulated_mouseY };
-    accumulated_mouseX = 0; // reset accumulators
-    accumulated_mouseY = 0;
+    const result = { x: accumulated_mouseMovX, y: accumulated_mouseMovY };
+    accumulated_mouseMovX = 0; // reset accumulators
+    accumulated_mouseMovY = 0;
     return result;
   }
 
@@ -82,25 +88,25 @@ function createInputsReader(canvas: HTMLCanvasElement): () => Inputs {
   let isLMouseDown = false;
   let isRMouseDown = false;
   window.addEventListener("mousedown", (ev) => {
-    if (document.pointerLockElement === canvas) {
-      if (ev.button === 0) {
-        if (!isLMouseDown) accumulated_lClicks += 1;
-        isLMouseDown = true;
-      } else {
-        if (!isRMouseDown) accumulated_rClicks += 1;
-        isRMouseDown = true;
-      }
+    // if (document.pointerLockElement === canvas) {
+    if (ev.button === 0) {
+      if (!isLMouseDown) accumulated_lClicks += 1;
+      isLMouseDown = true;
+    } else {
+      if (!isRMouseDown) accumulated_rClicks += 1;
+      isRMouseDown = true;
     }
+    // }
     return false;
   });
   window.addEventListener("mouseup", (ev) => {
-    if (document.pointerLockElement === canvas) {
-      if (ev.button === 0) {
-        isLMouseDown = false;
-      } else {
-        isRMouseDown = false;
-      }
+    // if (document.pointerLockElement === canvas) {
+    if (ev.button === 0) {
+      isLMouseDown = false;
+    } else {
+      isRMouseDown = false;
     }
+    // }
     return false;
   });
 
@@ -115,12 +121,14 @@ function createInputsReader(canvas: HTMLCanvasElement): () => Inputs {
   }
 
   function takeInputs(): Inputs {
-    const { x: mouseX, y: mouseY } = takeAccumulatedMouseMovement();
+    const { x: mouseMovX, y: mouseMovY } = takeAccumulatedMouseMovement();
     const { lClicks, rClicks } = takeAccumulatedMouseClicks();
     const keyClicks = takeAccumulatedKeyClicks();
     let inputs: Inputs = {
-      mouseX,
-      mouseY,
+      mouseMovX,
+      mouseMovY,
+      mousePosX: lastMouseX,
+      mousePosY: lastMouseY,
       lclick: lClicks > 0,
       rclick: rClicks > 0,
       keyDowns,

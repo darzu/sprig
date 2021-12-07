@@ -47,12 +47,13 @@ function init(): HTMLCanvasElement {
   }, 50);
 
   // TODO(@darzu): this should probably be managed elsewhere
-  function doLockMouse() {
-    if (document.pointerLockElement !== canvas) {
-      canvas.requestPointerLock();
-    }
-  }
-  canvas.addEventListener("click", doLockMouse);
+  // TODO(@darzu): re-enable
+  // function doLockMouse() {
+  //   if (document.pointerLockElement !== canvas) {
+  //     canvas.requestPointerLock();
+  //   }
+  // }
+  // canvas.addEventListener("click", doLockMouse);
 
   return canvas;
 }

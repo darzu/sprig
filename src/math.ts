@@ -1,3 +1,5 @@
+import { assert } from "./test.js";
+
 // functions
 export function sum(ns: number[]): number {
   return ns.reduce((p, n) => p + n, 0);
@@ -28,4 +30,19 @@ export function jitter(radius: number): number {
 
 export function align(x: number, size: number): number {
   return Math.ceil(x / size) * size;
+}
+
+// maps a number from [inMin, inMax] to [outMin, outMax]
+export function mathMap(
+  n: number,
+  inMin: number,
+  inMax: number,
+  outMin: number,
+  outMax: number
+): number {
+  assert(inMin < inMax, "must be: inMin < inMax");
+  assert(outMin < outMax, "must be: outMin < outMax");
+  assert(inMin <= n && n <= inMax, "must be: inMin <= n && n <= inMax");
+  const s = (n - inMin) / (inMax - inMin);
+  return s * (outMax - outMin) + outMin;
 }

@@ -133,6 +133,8 @@ export function registerUpdateTransforms(em: EntityManager) {
 export const CameraViewDef = EM.defineComponent("cameraView", () => {
   return {
     aspectRatio: 1,
+    width: 100,
+    height: 100,
     viewProjMat: mat4.create(),
   };
 });
@@ -182,10 +184,12 @@ function updateCameraView(
   const mePlayer = players.filter((p) => p.authority.pid === me.pid)[0];
   if (!mePlayer) return;
 
-  // update aspect ratio
+  // update aspect ratio and size
   cameraView.aspectRatio = Math.abs(
     htmlCanvas.canvas.width / htmlCanvas.canvas.height
   );
+  cameraView.width = htmlCanvas.canvas.width;
+  cameraView.height = htmlCanvas.canvas.height;
 
   //TODO: this calculation feels like it should be simpler but Doug doesn't
   //understand quaternions.
