@@ -1,5 +1,6 @@
 import { vec3 } from "./gl-matrix.js";
 import { clamp } from "./math.js";
+import { tempVec } from "./temp-pool.js";
 import { range } from "./util.js";
 import { vec3Floor } from "./utils-3d.js";
 
@@ -11,12 +12,13 @@ const BROAD_PHASE: "N^2" | "OCT" | "GRID" = "OCT";
 // }
 export type CollidesWith = Map<number, number[]>;
 
-export function *collisionPairs(collidesWith: CollidesWith): IterableIterator<[number, number]> {
+export function* collisionPairs(
+  collidesWith: CollidesWith
+): IterableIterator<[number, number]> {
   // TODO(@darzu): is this effecient?
   for (let [leftId, rightIds] of collidesWith) {
     for (let rightId of rightIds) {
-      if (leftId < rightId)
-        yield [leftId, rightId];
+      if (leftId < rightId) yield [leftId, rightId];
     }
   }
 }
@@ -300,6 +302,14 @@ function checkPair(
 }
 
 // OctTree implementation
+interface Ray {
+  org: vec3;
+  dir: vec3;
+}
+function checkRay(tree: OctTree, ray: Ray) {
+  // TODO(@darzu):
+}
+
 // TODO(@darzu): collisions groups and "atRest"
 interface OctTree {
   aabb: AABB;
@@ -369,6 +379,36 @@ function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
 }
 
 // AABB utils
+export function rayHitDist(b: AABB, r: Ray): number | null {
+  // TODO(@darzu): can be made faster using inverse ray direction:
+  //    https://tavianator.com/2011/ray_box.html
+  //    https://tavianator.com/2015/ray_box_nan.html
+  let tmin = -Infinity;
+  let tmax = Infinity;
+
+  for (let d = 0; d < 3; d++) {
+    if (r.dir[0] !== 0) {
+      // these are the maximum and minimum distances we
+      // could travel along the ray in dimension d, which
+      // is either we could travel to the box's minimum bound
+      // or it's maximum bound in d.
+      const travel1 = (b.min[d] - r.org[d]) / r.dir[d];
+      const travel2 = (b.max[d] - r.org[d]) / r.dir[d];
+
+      // update or total min & max travel distances
+      tmin = Math.max(tmin, Math.min(travel1, travel2));
+      tmax = Math.min(tmax, Math.max(travel1, travel2));
+    } else if (r.org[d] <= b.min[d] || r.org[d] >= b.max[d]) {
+      // if it's right on the bounds, consider it a miss
+      return null;
+    }
+  }
+
+  if (tmin < tmax && 0.0 < tmax) return Math.max(tmin, 0);
+
+  return null;
+}
+
 export let _doesOverlaps = 0;
 export function doesOverlap(a: AABB, b: AABB) {
   _doesOverlaps++; // TODO(@darzu): debugging
