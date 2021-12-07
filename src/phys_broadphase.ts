@@ -306,8 +306,54 @@ interface Ray {
   org: vec3;
   dir: vec3;
 }
-function checkRay(tree: OctTree, ray: Ray) {
-  // TODO(@darzu):
+type RayHit =
+  | {
+      didHit: true;
+      id: number;
+      dist: number;
+    }
+  | {
+      didHit: false;
+    };
+export function checkRay(tree: OctTree, ray: Ray): RayHit {
+  const [id, dist] = checkRayInternal(tree, ray);
+  if (dist < Infinity)
+    return {
+      didHit: true,
+      dist,
+      id,
+    };
+  else return { didHit: false };
+}
+function checkRayInternal(tree: OctTree, ray: Ray): [number, number] {
+  // check this node's AABB
+  const d = rayHitDist(tree.aabb, ray);
+  if (isNaN(d)) return [-1, NaN];
+
+  let minD = Infinity;
+  let hitId = -1;
+
+  // check this node's objects
+  for (let [id, b] of tree.objs.entries()) {
+    const d = rayHitDist(b, ray);
+    if (!isNaN(d) && d < minD) {
+      minD = d;
+      hitId = id;
+    }
+  }
+
+  // check this node's children nodes
+  for (let t of tree.children) {
+    if (t) {
+      const [id, d] = checkRayInternal(t, ray);
+      if (!isNaN(d) && d < minD) {
+        minD = d;
+        hitId = id;
+      }
+    }
+  }
+
+  return [hitId, minD];
 }
 
 // TODO(@darzu): collisions groups and "atRest"
@@ -379,7 +425,8 @@ function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
 }
 
 // AABB utils
-export function rayHitDist(b: AABB, r: Ray): number | null {
+// returns NaN if they don't hit
+export function rayHitDist(b: AABB, r: Ray): number {
   // TODO(@darzu): can be made faster using inverse ray direction:
   //    https://tavianator.com/2011/ray_box.html
   //    https://tavianator.com/2015/ray_box_nan.html
@@ -400,13 +447,13 @@ export function rayHitDist(b: AABB, r: Ray): number | null {
       tmax = Math.min(tmax, Math.max(travel1, travel2));
     } else if (r.org[d] <= b.min[d] || r.org[d] >= b.max[d]) {
       // if it's right on the bounds, consider it a miss
-      return null;
+      return NaN;
     }
   }
 
   if (tmin < tmax && 0.0 < tmax) return Math.max(tmin, 0);
 
-  return null;
+  return NaN;
 }
 
 export let _doesOverlaps = 0;
