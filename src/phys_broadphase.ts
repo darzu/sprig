@@ -35,14 +35,21 @@ export function resetCollidesWithSet(
   }
 }
 
+export interface BroadphaseResult {
+  collidesWith: CollidesWith;
+  checkRay: (r: Ray) => RayHit[];
+}
+
 export let _lastCollisionTestTimeMs = 0; // TODO(@darzu): hack for stat debugging
 let _collidesWith: CollidesWith = new Map();
-export function checkCollisions(
+export function checkBroadphase(
   objs: { aabb: AABB; id: number }[]
-): CollidesWith {
+): BroadphaseResult {
   const start = performance.now();
   _doesOverlaps = 0; // TODO(@darzu): debugging
   _enclosedBys = 0; // TODO(@darzu): debugging
+  // TODO(@darzu): impl checkRay for non-oct tree broad phase strategies
+  let checkRay = (_: Ray) => [] as RayHit[];
 
   // TODO(@darzu): be more precise than just AABBs. broad & narrow phases.
   // TODO(@darzu): also use better memory pooling for aabbs and collidesWith relation
@@ -116,7 +123,10 @@ export function checkCollisions(
         }
       }
     }
-    if (tree) octCheckOverlap(tree);
+    if (tree) {
+      octCheckOverlap(tree);
+      checkRay = (r: Ray) => checkRayVsOct(tree, r);
+    }
   }
 
   // grid / buckets / spacial hash
@@ -171,7 +181,10 @@ export function checkCollisions(
   // console.log(`num oct-trees: ${debugOcttree(tree).length}`);
 
   _lastCollisionTestTimeMs = performance.now() - start;
-  return _collidesWith;
+  return {
+    collidesWith: _collidesWith,
+    checkRay,
+  };
 }
 let _worldGrid: WorldGrid | null = null;
 const _objToObjLL: { [id: number]: ObjLL } = {};
@@ -302,58 +315,35 @@ function checkPair(
 }
 
 // OctTree implementation
-interface Ray {
+export interface Ray {
   org: vec3;
   dir: vec3;
 }
-type RayHit =
-  | {
-      didHit: true;
-      id: number;
-      dist: number;
-    }
-  | {
-      didHit: false;
-    };
-export function checkRay(tree: OctTree, ray: Ray): RayHit {
-  const [id, dist] = checkRayInternal(tree, ray);
-  if (dist < Infinity)
-    return {
-      didHit: true,
-      dist,
-      id,
-    };
-  else return { didHit: false };
+export interface RayHit {
+  id: number;
+  dist: number;
 }
-function checkRayInternal(tree: OctTree, ray: Ray): [number, number] {
+function checkRayVsOct(tree: OctTree, ray: Ray): RayHit[] {
   // check this node's AABB
   const d = rayHitDist(tree.aabb, ray);
-  if (isNaN(d)) return [-1, NaN];
+  if (isNaN(d)) return [];
 
-  let minD = Infinity;
-  let hitId = -1;
+  let hits: RayHit[] = [];
 
   // check this node's objects
   for (let [id, b] of tree.objs.entries()) {
-    const d = rayHitDist(b, ray);
-    if (!isNaN(d) && d < minD) {
-      minD = d;
-      hitId = id;
-    }
+    const dist = rayHitDist(b, ray);
+    if (!isNaN(d)) hits.push({ id, dist });
   }
 
   // check this node's children nodes
   for (let t of tree.children) {
     if (t) {
-      const [id, d] = checkRayInternal(t, ray);
-      if (!isNaN(d) && d < minD) {
-        minD = d;
-        hitId = id;
-      }
+      hits = [...hits, ...checkRayVsOct(t, ray)];
     }
   }
 
-  return [hitId, minD];
+  return hits;
 }
 
 // TODO(@darzu): collisions groups and "atRest"
