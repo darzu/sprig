@@ -28,8 +28,9 @@ import {
 import { AABBCollider, ColliderDef } from "../collider.js";
 import { HatDef } from "./hat.js";
 import { CUBE_AABB, CUBE_MESH } from "./assets.js";
-import { Ray } from "../phys_broadphase.js";
+import { Ray, RayHit } from "../phys_broadphase.js";
 import { tempVec } from "../temp-pool.js";
+import { Mesh } from "../mesh-pool.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {
@@ -227,23 +228,47 @@ function stepPlayers(
 
     // shoot a ray
     if (inputs.keyClicks["r"]) {
+      // create our ray
       const r: Ray = {
         org: vec3.add(
-          tempVec(),
+          vec3.create(),
           p.motion.location,
           vec3.scale(tempVec(), facingDir, 3.0)
         ),
         dir: facingDir,
       };
+
+      // check for hits
       const hits = checkRay(r);
       // TODO(@darzu): this seems pretty hacky and cross cutting
-      for (let { id, dist } of hits) {
-        const e = EM.findEntity(id, [ColorDef]);
+      hits.sort((a, b) => a.dist - b.dist);
+      const firstHit: RayHit | undefined = hits[0];
+      if (firstHit) {
+        // increase green
+        const e = EM.findEntity(firstHit.id, [ColorDef]);
         if (e) {
-          // increase green
           e.color[1] += 0.1;
         }
       }
+
+      // draw our ray
+      const rayDist = firstHit?.dist || 1000;
+      const re = EM.newEntity();
+      EM.addComponent(re.id, ColorDef, firstHit ? [0, 1, 0] : [1, 0, 0]);
+      const endPoint = vec3.add(
+        vec3.create(),
+        r.org,
+        vec3.scale(tempVec(), facingDir, rayDist)
+      );
+      const m: Mesh = {
+        pos: [r.org, endPoint],
+        tri: [],
+        colors: [],
+        lines: [[0, 1]],
+        usesProvoking: true,
+      };
+      EM.addComponent(re.id, RenderableDef, m);
+      EM.addComponent(re.id, TransformDef);
     }
   }
 }
