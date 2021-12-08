@@ -83,11 +83,9 @@ const backgroundColor = { r: 0.6, g: 0.63, b: 0.6, a: 1.0 };
 //   renderable: Renderable;
 // }
 
-export type RenderMode = "normal" | "wireframe";
-export type CameraMode = "perspective" | "ortho";
 export interface Renderer {
-  wireMode: RenderMode;
-  perspectiveMode: CameraMode;
+  drawLines: boolean;
+  drawTris: boolean;
   finishInit(): void;
   addMesh(m: Mesh): MeshHandle;
   addMeshInstance(h: MeshHandle): MeshHandle;
@@ -96,8 +94,8 @@ export interface Renderer {
 }
 
 export class Renderer_WebGPU implements Renderer {
-  public wireMode: RenderMode = "normal";
-  public perspectiveMode: CameraMode = "perspective";
+  public drawLines = true;
+  public drawTris = true;
 
   private device: GPUDevice;
   private canvas: HTMLCanvasElement;
@@ -122,7 +120,6 @@ export class Renderer_WebGPU implements Renderer {
   private colorTextureView: GPUTextureView | null = null;
   private lastWidth = 0;
   private lastHeight = 0;
-  private aspectRatio = 1;
 
   public finishInit() {
     if (this.initFinished) throw "finishInit called twice";
@@ -181,8 +178,6 @@ export class Renderer_WebGPU implements Renderer {
 
     this.lastWidth = newWidth;
     this.lastHeight = newHeight;
-
-    this.aspectRatio = Math.abs(newWidth / newHeight);
   }
 
   /*
@@ -224,7 +219,7 @@ export class Renderer_WebGPU implements Renderer {
 
   bundledMIds = new Set<number>();
   needsRebundle = false;
-  lastWireMode: RenderMode = this.wireMode;
+  lastWireMode: [boolean, boolean] = [this.drawLines, this.drawTris];
 
   private createRenderBundle(handles: MeshHandle[]) {
     this.needsRebundle = false; // TODO(@darzu): hack?
@@ -232,7 +227,7 @@ export class Renderer_WebGPU implements Renderer {
     this.bundledMIds.clear();
     handles.forEach((h) => this.bundledMIds.add(h.mId));
 
-    this.lastWireMode = this.wireMode;
+    this.lastWireMode = [this.drawLines, this.drawTris];
     const modelUniBindGroupLayout = this.device.createBindGroupLayout({
       entries: [
         {
@@ -335,31 +330,43 @@ export class Renderer_WebGPU implements Renderer {
       depthStencilFormat: depthStencilFormat,
       sampleCount: antiAliasSampleCount,
     });
-    if (this.wireMode === "normal") bundleEnc.setPipeline(renderPipeline_tris);
-    else bundleEnc.setPipeline(renderPipeline_lines);
+
+    // render triangles and lines
     bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
     bundleEnc.setVertexBuffer(0, this.pool.verticesBuffer);
-    // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
-    if (this.wireMode === "normal")
+
+    // render triangles first
+    if (this.drawTris) {
+      bundleEnc.setPipeline(renderPipeline_tris);
+      // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
       bundleEnc.setIndexBuffer(this.pool.triIndicesBuffer, "uint16");
-    else bundleEnc.setIndexBuffer(this.pool.lineIndicesBuffer, "uint16");
-    for (let m of Object.values(handles)) {
-      bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
-      if (this.wireMode === "normal")
+      for (let m of Object.values(handles)) {
+        bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
         bundleEnc.drawIndexed(
           m.numTris * 3,
           undefined,
           m.triIndicesNumOffset,
           m.vertNumOffset
         );
-      else
+      }
+    }
+
+    // then render lines
+    if (this.drawLines) {
+      bundleEnc.setPipeline(renderPipeline_lines);
+      // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
+      bundleEnc.setIndexBuffer(this.pool.lineIndicesBuffer, "uint16");
+      for (let m of Object.values(handles)) {
+        bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
         bundleEnc.drawIndexed(
           m.numLines * 2,
           undefined,
           m.lineIndicesNumOffset,
           m.vertNumOffset
         );
+      }
     }
+
     this.renderBundle = bundleEnc.finish();
     return this.renderBundle;
   }
@@ -402,34 +409,8 @@ export class Renderer_WebGPU implements Renderer {
   }
 
   private scratchSceneUni = new Uint8Array(SceneUniform.ByteSizeAligned);
-  public renderFrame(viewMatrix: mat4, handles: MeshHandle[]): void {
+  public renderFrame(viewProj: mat4, handles: MeshHandle[]): void {
     this.checkCanvasResize();
-    const projectionMatrix = mat4.create();
-    if (this.perspectiveMode === "ortho") {
-      const ORTHO_SIZE = 40;
-      mat4.ortho(
-        projectionMatrix,
-        -ORTHO_SIZE,
-        ORTHO_SIZE,
-        -ORTHO_SIZE,
-        ORTHO_SIZE,
-        -400,
-        200
-      );
-    } else {
-      mat4.perspective(
-        projectionMatrix,
-        (2 * Math.PI) / 5,
-        this.aspectRatio,
-        1,
-        10000.0 /*view distance*/
-      );
-    }
-    const viewProj = mat4.multiply(
-      mat4.create(),
-      projectionMatrix,
-      viewMatrix
-    ) as Float32Array;
 
     this.sceneData.cameraViewProjMatrix = viewProj;
 
@@ -454,7 +435,11 @@ export class Renderer_WebGPU implements Renderer {
         }
       }
     }
-    if (this.needsRebundle || this.wireMode !== this.lastWireMode)
+    if (
+      this.needsRebundle ||
+      this.drawLines !== this.lastWireMode[0] ||
+      this.drawTris !== this.lastWireMode[1]
+    )
       this.createRenderBundle(handles);
 
     // start collecting our render commands for this frame

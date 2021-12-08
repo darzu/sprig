@@ -213,21 +213,7 @@ export function attachToCanvas(
     console.warn(`TODO: impl removeMesh`);
   }
 
-  function renderFrame(viewMatrix: mat4, meshHandles: MeshHandle[]) {
-    let aspectRatio = Math.abs(canv.width / canv.height);
-    const projectionMatrix = mat4.perspective(
-      mat4.create(),
-      (2 * Math.PI) / 5,
-      aspectRatio,
-      1,
-      10000.0 /*view distance*/
-    );
-    const viewProj = mat4.multiply(
-      mat4.create(),
-      projectionMatrix,
-      viewMatrix
-    ) as Float32Array;
-
+  function renderFrame(viewProj: mat4, meshHandles: MeshHandle[]) {
     scene.cameraViewProjMatrix = viewProj;
 
     gl.viewport(0, 0, canv.width, canv.height);
@@ -300,8 +286,8 @@ export function attachToCanvas(
   }
 
   const renderer: Renderer = {
-    wireMode: "normal", // TODO(@darzu): support wireframe mode in webgl
-    perspectiveMode: "perspective", // TODO(@darzu): support ortho mode in webgl
+    drawLines: true, // TODO(@darzu): support wireframe mode in webgl
+    drawTris: true,
     addMesh,
     addMeshInstance,
     removeMesh,

@@ -15,12 +15,15 @@ import {
 } from "./phys.js";
 import {
   AABB,
-  checkCollisions,
+  checkBroadphase,
   collisionPairs,
   copyAABB,
   createAABB,
   doesOverlap,
   doesTouch,
+  Ray,
+  RayHit,
+  rayHitDist,
   resetCollidesWithSet,
 } from "./phys_broadphase.js";
 import {
@@ -37,6 +40,7 @@ export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {
     collidesWith: new Map<number, number[]>() as CollidesWith,
     reboundData: new Map<IdPair, ReboundData>(),
     contactData: new Map<IdPair, ContactData>(),
+    checkRay: (r: Ray) => [] as RayHit[],
   };
 });
 export type PhysicsResults = Component<typeof PhysicsResultsDef>;
@@ -97,9 +101,8 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
   for (let o of objs) _objDict.set(o.id, o);
 
   // get singleton data
-  const {
-    physicsResults: { collidesWith, contactData, reboundData },
-  } = EM.findSingletonComponent(PhysicsResultsDef)!;
+  const { physicsResults } = EM.findSingletonComponent(PhysicsResultsDef)!;
+  const { collidesWith, contactData, reboundData } = physicsResults;
 
   // move objects
   moveObjects(_objDict, dt, collidesWith, contactData);
@@ -170,7 +173,6 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
   _collisionPairs.clear();
 
   // check for possible collisions using the motion swept AABBs
-  let motionCollidesWith: CollidesWith | null = null;
   if (_motionAABBs.length !== objs.length) _motionAABBs.length = objs.length;
   for (let i = 0; i < objs.length; i++) {
     const {
@@ -187,7 +189,8 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
       _motionAABBs[i].aabb = aabb;
     }
   }
-  motionCollidesWith = checkCollisions(_motionAABBs);
+  const { collidesWith: motionCollidesWith, checkRay: motionCheckRay } =
+    checkBroadphase(_motionAABBs);
   let motionPairs = [...collisionPairs(motionCollidesWith)];
   _motionPairsLen = motionPairs.length;
 
@@ -292,6 +295,18 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
   for (let o of objs) {
     copyMotionProps(o._phys.lastMotion, o.motion);
   }
+
+  // update out checkRay function
+  physicsResults.checkRay = (r: Ray) => {
+    const motHits = motionCheckRay(r);
+    const hits: RayHit[] = [];
+    for (let mh of motHits) {
+      const o = _objDict.get(mh.id)!;
+      const dist = rayHitDist(o._phys.world, r);
+      if (!isNaN(dist)) hits.push({ id: o.id, dist });
+    }
+    return hits;
+  };
 }
 
 function updateLocSmoothingTarget(

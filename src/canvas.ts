@@ -1,4 +1,4 @@
-import { EM, EntityManager } from "./entity-manager.js";
+import { Component, EM, EntityManager } from "./entity-manager.js";
 
 export const CanvasDef = EM.defineComponent(
   "htmlCanvas",
@@ -8,6 +8,7 @@ export const CanvasDef = EM.defineComponent(
     };
   }
 );
+export type Canvas = Component<typeof CanvasDef>;
 
 export function registerInitCanvasSystem(em: EntityManager) {
   em.registerSystem([], [], () => {
