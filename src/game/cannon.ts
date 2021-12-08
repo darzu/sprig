@@ -33,13 +33,14 @@ import { DetectedEventsDef } from "../net/events.js";
 import { fireBullet } from "./bullet.js";
 import { registerEventHandler } from "../net/events.js";
 import { ToolDef } from "./tool.js";
-import { InteractableDef } from "./interact.js";
+import { InteractableDef, InteractingDef } from "./interact.js";
+import { PlayerEntDef } from "./player.js";
 
 const CANNON_FRAMES = 180;
 
 export const CannonDef = EM.defineComponent("cannon", () => {
   return {
-    loaded: true,
+    loaded: false,
     firing: false,
     countdown: 0,
   };
@@ -80,14 +81,46 @@ export function registerStepCannonsSystem(em: EntityManager) {
   );
 }
 
+export function registerPlayerCannonSystem(em: EntityManager) {
+  em.registerSystem(
+    [CannonDef, InteractingDef],
+    [DetectedEventsDef],
+    (cannons, { detectedEvents }) => {
+      for (let { cannon, interacting, id } of cannons) {
+        console.log("someone is interacting with the cannon");
+        let player = EM.findEntity(interacting.id, [PlayerEntDef])!;
+        if (player.player.tool) {
+          let tool = EM.findEntity(player.player.tool, [ToolDef])!;
+          if (AmmunitionDef.isOn(tool) && !cannon.loaded) {
+            let ammunition = EM.findEntity(tool.id, [
+              AmmunitionDef,
+            ])!.ammunition;
+            if (ammunition.amount > 0) {
+              detectedEvents.push({
+                type: "load-cannon",
+                entities: [interacting.id, id, tool.id],
+                location: null,
+              });
+            }
+          }
+        }
+        EM.removeComponent(id, InteractingDef);
+      }
+    }
+  );
+}
+
 export function registerCannonEventHandlers() {
   registerEventHandler("load-cannon", {
     eventAuthorityEntity: (entities) => entities[0],
     legalEvent: (em, entities) =>
-      !em.findEntity(entities[0], [CannonDef])!.cannon!.loaded,
+      !em.findEntity(entities[1], [CannonDef])!.cannon!.loaded &&
+      em.findEntity(entities[2], [AmmunitionDef])!.ammunition.amount > 0,
     runEvent: (em, entities) => {
       let cannon = em.findEntity(entities[1], [CannonDef])!.cannon;
+      let ammunition = em.findEntity(entities[2], [AmmunitionDef])!.ammunition;
       cannon.loaded = true;
+      ammunition.amount -= 1;
     },
   });
 
@@ -173,6 +206,9 @@ function createCannon(
     collider.shape = "AABB";
     collider.solid = true;
     (collider as AABBCollider).aabb = getCannonAABB();
+  }
+  if (!InteractableDef.isOn(e)) {
+    em.addComponent(e.id, InteractableDef);
   }
   if (!SyncDef.isOn(e)) {
     const sync = em.addComponent(e.id, SyncDef);

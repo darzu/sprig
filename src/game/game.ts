@@ -64,6 +64,7 @@ import {
   CannonConstructDef,
   registerBuildAmmunitionSystem,
   registerBuildCannonsSystem,
+  registerPlayerCannonSystem,
   registerStepCannonsSystem,
 } from "./cannon.js";
 import { registerInteractionSystem } from "./interact.js";
@@ -143,6 +144,7 @@ export function registerAllSystems(em: EntityManager) {
   registerStepPlayers(em);
   registerInteractionSystem(em);
   registerStepCannonsSystem(em);
+  registerPlayerCannonSystem(em);
   registerUpdateSmoothingLerp(em);
   registerPhysicsSystems(em);
   registerBulletCollisionSystem(em);
