@@ -66,6 +66,6 @@ export const ColliderDef = EM.defineComponent("collider", (c?: Collider) => {
     } as Collider)
   );
 });
-const COLLIDER_ASSERT: Component<typeof ColliderDef> extends Collider
+const __COLLIDER_ASSERT: Component<typeof ColliderDef> extends Collider
   ? true
   : false = true;

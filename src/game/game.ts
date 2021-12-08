@@ -70,6 +70,7 @@ import {
 import { registerInteractionSystem } from "./interact.js";
 import { registerModeler } from "./modeler.js";
 import { registerToolDropSystem, registerToolPickupSystem } from "./tool.js";
+import { registerPhysicsDebuggerSystem } from "../phys_debug.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -162,6 +163,7 @@ export function registerAllSystems(em: EntityManager) {
   registerUpdateTransforms(em);
   registerRenderViewController(em);
   registerUpdateCameraView(em);
+  registerPhysicsDebuggerSystem(em);
   registerAddMeshHandleSystem(em);
   registerRenderer(em);
 }

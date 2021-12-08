@@ -1132,12 +1132,14 @@ export function getAABBFromMesh(m: Mesh): AABB {
   return getAABBFromPositions(m.pos);
 }
 
-export function scaleMesh(m: Mesh, by: number): Mesh {
-  let pos = m.pos.map((p) => vec3.scale(vec3.create(), p, by));
+export function mapMeshPositions(m: Mesh, map: (p: vec3) => vec3): Mesh {
+  let pos = m.pos.map(map);
   return { ...m, pos };
 }
+export function scaleMesh(m: Mesh, by: number): Mesh {
+  return mapMeshPositions(m, (p) => vec3.scale(vec3.create(), p, by));
+}
 export function scaleMesh3(m: Mesh, by: vec3): Mesh {
-  let pos = m.pos.map((p) => vec3.multiply(vec3.create(), p, by));
-  return { ...m, pos };
+  return mapMeshPositions(m, (p) => vec3.multiply(vec3.create(), p, by));
 }
 

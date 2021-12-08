@@ -215,6 +215,7 @@ export const dbg = {
     return es;
   },
   ent0: () => {
+    updateEnts();
     return dbgEntSingleton;
   },
   ent: (id: number) => {

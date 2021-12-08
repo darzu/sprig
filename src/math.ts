@@ -41,7 +41,7 @@ export function mathMap(
   outMax: number
 ): number {
   assert(inMin < inMax, "must be: inMin < inMax");
-  assert(outMin < outMax, "must be: outMin < outMax");
+  assert(outMin <= outMax, "must be: outMin <= outMax");
   assert(inMin <= n && n <= inMax, "must be: inMin <= n && n <= inMax");
   const s = (n - inMin) / (inMax - inMin);
   return s * (outMax - outMin) + outMin;

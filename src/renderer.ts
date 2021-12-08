@@ -1,11 +1,5 @@
 import { Canvas, CanvasDef } from "./canvas.js";
-import {
-  ComponentDef,
-  EntityManager,
-  EM,
-  Entity,
-  Component,
-} from "./entity-manager.js";
+import { EntityManager, EM, Component } from "./entity-manager.js";
 import { ColorDef } from "./game/game.js";
 import {
   CameraDef,
@@ -21,7 +15,7 @@ import { RendererDef } from "./render_init.js";
 import { Renderer } from "./render_webgpu.js";
 import { Scale, ScaleDef } from "./scale.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
-import { PhysicsTimerDef, Timer } from "./time.js";
+import { PhysicsTimerDef } from "./time.js";
 
 const SMOOTH = true;
 
@@ -40,29 +34,32 @@ export const MotionSmoothingDef = EM.defineComponent("motionSmoothing", () => {
 });
 export type MotionSmoothing = Component<typeof MotionSmoothingDef>;
 
-export const ParentDef = EM.defineComponent("parent", () => {
-  return { id: 0 };
+export const ParentDef = EM.defineComponent("parent", (p?: number) => {
+  return { id: p || 0 };
 });
 export type Parent = Component<typeof ParentDef>;
 
-export const RenderableDef = EM.defineComponent("renderable", (mesh?: Mesh) => {
-  return {
-    mesh:
-      mesh ??
-      ({
-        pos: [],
-        tri: [],
-        colors: [],
-      } as Mesh),
-  };
-});
+export const RenderableDef = EM.defineComponent(
+  "renderable",
+  (mesh?: Mesh, enabled: boolean = true) => {
+    return {
+      enabled,
+      mesh:
+        mesh ??
+        ({
+          pos: [],
+          tri: [],
+          colors: [],
+        } as Mesh),
+    };
+  }
+);
 export type Renderable = Component<typeof RenderableDef>;
 
 type Transformable = {
   id: number;
-  motion: Motion;
+  motion?: Motion;
   transform: Transform;
-  renderable: Renderable;
   // optional components
   // TODO(@darzu): let the query system specify optional components
   parent?: Parent;
@@ -76,24 +73,30 @@ const _hasTransformed: Set<number> = new Set();
 function updateTransform(o: Transformable) {
   if (_hasTransformed.has(o.id)) return;
 
-  let scale = o.scale ? o.scale.by : vec3.set(tempVec(), 1, 1, 1);
-  // update transform based on new rotations and positions
-  if (o.parent && o.parent.id > 0) {
-    if (!_hasTransformed.has(o.parent.id))
-      updateTransform(_transformables.get(o.parent.id)!);
+  let scale = ScaleDef.isOn(o) ? o.scale.by : vec3.set(tempVec(), 1, 1, 1);
 
+  // first, update from motion (optionally)
+  if (MotionDef.isOn(o)) {
     mat4.fromRotationTranslationScale(
       o.transform,
       o.motion.rotation,
       o.motion.location,
       scale
     );
+  }
+
+  if (ParentDef.isOn(o) && o.parent.id > 0) {
+    // update relative to parent
+    if (!_hasTransformed.has(o.parent.id))
+      updateTransform(_transformables.get(o.parent.id)!);
+
     mat4.mul(
       o.transform,
       _transformables.get(o.parent.id)!.transform,
       o.transform
     );
-  } else if (SMOOTH && o.motionSmoothing) {
+  } else if (SMOOTH && o.motionSmoothing && MotionDef.isOn(o)) {
+    // update with smoothing
     const working_quat = tempQuat();
     quat.mul(working_quat, o.motion.rotation, o.motionSmoothing.rotationDiff);
     quat.normalize(working_quat, working_quat);
@@ -101,13 +104,6 @@ function updateTransform(o: Transformable) {
       o.transform,
       working_quat,
       vec3.add(tempVec(), o.motion.location, o.motionSmoothing.locationDiff),
-      scale
-    );
-  } else {
-    mat4.fromRotationTranslationScale(
-      o.transform,
-      o.motion.rotation,
-      o.motion.location,
       scale
     );
   }
@@ -129,11 +125,7 @@ function updateTransforms(objs: Transformable[]) {
 }
 
 export function registerUpdateTransforms(em: EntityManager) {
-  em.registerSystem(
-    [MotionDef, TransformDef, RenderableDef],
-    [],
-    updateTransforms
-  );
+  em.registerSystem([TransformDef], [], updateTransforms);
 }
 
 export const CameraViewDef = EM.defineComponent("cameraView", () => {
@@ -161,13 +153,16 @@ function stepRenderer(
   // ensure our mesh handle is up to date
   for (let o of objs) {
     // TODO(@darzu): color:
-    const colorEnt = EM.findEntity(o.id, [ColorDef]);
-    if (colorEnt) {
-      vec3.copy(o.meshHandle.tint, colorEnt.color);
+    if (ColorDef.isOn(o)) {
+      vec3.copy(o.meshHandle.tint, o.color);
     }
 
     mat4.copy(o.meshHandle.transform, o.transform);
   }
+
+  // sort and filter objects
+  // TODO(@darzu): implement sort
+  objs = objs.filter((o) => o.renderable.enabled);
 
   // render
   renderer.renderFrame(

@@ -19,9 +19,8 @@ export function registerDeleteEntitiesSystem(em: EntityManager) {
       // TODO: remove from renderer
       em.keepOnlyComponents(entity.id, [DeletedDef, SyncDef]);
       if (SyncDef.isOn(entity)) {
-        const sync = em.findEntity(entity.id, [SyncDef])!.sync;
-        sync.dynamicComponents = [];
-        sync.fullComponents = [DeletedDef.id];
+        entity.sync.dynamicComponents = [];
+        entity.sync.fullComponents = [DeletedDef.id];
       }
     }
   });
