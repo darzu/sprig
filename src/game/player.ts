@@ -246,31 +246,6 @@ function stepPlayers(
       }
     }
 
-    // select object
-    if (inputs.lclick) {
-      const invViewProj = mat4.invert(mat4.create(), cameraView.viewProjMat);
-      // TODO(@darzu): positions need to be moved to 0-1
-      const mouseViewX = mathMap(inputs.mousePosX, 0, cameraView.width, -1, 1);
-      const mouseViewY =
-        mathMap(inputs.mousePosY, 0, cameraView.height, -1, 1) * -1;
-      const mousePos0: vec3 = [mouseViewX, mouseViewY, 0];
-      const mousePos1: vec3 = [mouseViewX, mouseViewY, 0.5];
-
-      console.log(vec3Dbg(mousePos0));
-
-      const ray0 = vec3.transformMat4(vec3.create(), mousePos0, invViewProj);
-      const ray1 = vec3.transformMat4(vec3.create(), mousePos1, invViewProj);
-
-      const dir: vec3 = vec3.sub(vec3.create(), ray1, ray0);
-      vec3.normalize(dir, dir);
-
-      const r: Ray = {
-        org: ray0,
-        dir,
-      };
-      playerShootRay(r);
-    }
-
     // shoot a ray
     if (inputs.keyClicks["r"]) {
       // create our ray

@@ -67,6 +67,7 @@ import {
   registerStepCannonsSystem,
 } from "./cannon.js";
 import { registerInteractionSystem } from "./interact.js";
+import { registerModeler } from "./modeler.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -145,6 +146,7 @@ export function registerAllSystems(em: EntityManager) {
   registerUpdateSmoothingLerp(em);
   registerPhysicsSystems(em);
   registerBulletCollisionSystem(em);
+  registerModeler(em);
   registerHatPickupSystem(em);
   registerHatDropSystem(em);
   registerAckUpdateSystem(em);
