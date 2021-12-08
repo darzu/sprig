@@ -41,9 +41,10 @@ export type Parent = Component<typeof ParentDef>;
 
 export const RenderableDef = EM.defineComponent(
   "renderable",
-  (mesh?: Mesh, enabled: boolean = true) => {
+  (mesh?: Mesh, enabled: boolean = true, layer = 0) => {
     return {
       enabled,
+      layer,
       mesh:
         mesh ??
         ({
@@ -160,9 +161,11 @@ function stepRenderer(
     mat4.copy(o.meshHandle.transform, o.transform);
   }
 
-  // sort and filter objects
-  // TODO(@darzu): implement sort
+  // filter
   objs = objs.filter((o) => o.renderable.enabled);
+
+  // sort
+  objs.sort((a, b) => b.renderable.layer - a.renderable.layer);
 
   // render
   renderer.renderFrame(

@@ -42,7 +42,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
 
           // with a wireframe mesh
           const m = meshFromAABB(e.collider.aabb);
-          em.addComponent(dbgE.id, RenderableDef, m, false);
+          em.addComponent(dbgE.id, RenderableDef, m, false, 1);
 
           // colored
           em.addComponent(dbgE.id, ColorDef, [0, 1, 0]);
