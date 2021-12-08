@@ -18,6 +18,7 @@ import { Authority, AuthorityDef, Me, MeDef } from "./net/components.js";
 import { Motion, MotionDef } from "./phys_motion.js";
 import { RendererDef } from "./render_init.js";
 import { Renderer } from "./render_webgpu.js";
+import { Scale, ScaleDef } from "./scale.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
 import { PhysicsTimerDef, Timer } from "./time.js";
 
@@ -65,6 +66,7 @@ type Transformable = {
   // TODO(@darzu): let the query system specify optional components
   parent?: Parent;
   motionSmoothing?: MotionSmoothing;
+  scale?: Scale;
 };
 
 const _transformables: Map<number, Transformable> = new Map();
@@ -73,15 +75,17 @@ const _hasTransformed: Set<number> = new Set();
 function updateTransform(o: Transformable) {
   if (_hasTransformed.has(o.id)) return;
 
+  let scale = o.scale ? o.scale.by : vec3.set(tempVec(), 1, 1, 1);
   // update transform based on new rotations and positions
   if (o.parent && o.parent.id > 0) {
     if (!_hasTransformed.has(o.parent.id))
       updateTransform(_transformables.get(o.parent.id)!);
 
-    mat4.fromRotationTranslation(
+    mat4.fromRotationTranslationScale(
       o.transform,
       o.motion.rotation,
-      o.motion.location
+      o.motion.location,
+      scale
     );
     mat4.mul(
       o.transform,
@@ -92,16 +96,18 @@ function updateTransform(o: Transformable) {
     const working_quat = tempQuat();
     quat.mul(working_quat, o.motion.rotation, o.motionSmoothing.rotationDiff);
     quat.normalize(working_quat, working_quat);
-    mat4.fromRotationTranslation(
+    mat4.fromRotationTranslationScale(
       o.transform,
       working_quat,
-      vec3.add(tempVec(), o.motion.location, o.motionSmoothing.locationDiff)
+      vec3.add(tempVec(), o.motion.location, o.motionSmoothing.locationDiff),
+      scale
     );
   } else {
-    mat4.fromRotationTranslation(
+    mat4.fromRotationTranslationScale(
       o.transform,
       o.motion.rotation,
-      o.motion.location
+      o.motion.location,
+      scale
     );
   }
 
