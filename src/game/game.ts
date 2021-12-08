@@ -64,10 +64,12 @@ import {
   CannonConstructDef,
   registerBuildAmmunitionSystem,
   registerBuildCannonsSystem,
+  registerPlayerCannonSystem,
   registerStepCannonsSystem,
 } from "./cannon.js";
 import { registerInteractionSystem } from "./interact.js";
 import { registerModeler } from "./modeler.js";
+import { registerToolDropSystem, registerToolPickupSystem } from "./tool.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -143,12 +145,15 @@ export function registerAllSystems(em: EntityManager) {
   registerStepPlayers(em);
   registerInteractionSystem(em);
   registerStepCannonsSystem(em);
+  registerPlayerCannonSystem(em);
   registerUpdateSmoothingLerp(em);
   registerPhysicsSystems(em);
   registerBulletCollisionSystem(em);
   registerModeler(em);
   registerHatPickupSystem(em);
   registerHatDropSystem(em);
+  registerToolPickupSystem(em);
+  registerToolDropSystem(em);
   registerAckUpdateSystem(em);
   registerSyncSystem(em);
   registerSendOutboxes(em);

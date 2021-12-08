@@ -196,6 +196,17 @@ export class EntityManager {
     return c;
   }
 
+  public addComponentByName(id: number, name: string, ...args: any): any {
+    console.log(
+      "addComponentByName called, should only be called for debugging"
+    );
+    let component = this.components.get(nameToId(name));
+    if (!component) {
+      throw `no component named ${name}`;
+    }
+    return this.addComponent(id, component, ...args);
+  }
+
   public ensureComponent<N extends string, P, Pargs extends any[] = any[]>(
     id: number,
     def: ComponentDef<N, P, Pargs>,

@@ -130,7 +130,8 @@ export function registerHatDropSystem(em: EntityManager) {
     [DetectedEventsDef],
     (players, { detectedEvents }) => {
       for (let { player, id, motion } of players) {
-        if (player.dropping && player.hat > 0) {
+        // only drop a hat if we don't have a tool
+        if (player.dropping && player.hat > 0 && player.tool === 0) {
           let dropLocation = vec3.fromValues(0, 0, -5);
           vec3.transformQuat(dropLocation, dropLocation, motion.rotation);
           vec3.add(dropLocation, dropLocation, motion.location);
