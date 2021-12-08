@@ -92,9 +92,7 @@ export function registerPlayerCannonSystem(em: EntityManager) {
         if (player.player.tool) {
           let tool = EM.findEntity(player.player.tool, [ToolDef])!;
           if (AmmunitionDef.isOn(tool) && !cannon.loaded) {
-            let ammunition = EM.findEntity(tool.id, [
-              AmmunitionDef,
-            ])!.ammunition;
+            let ammunition = tool.ammunition;
             if (ammunition.amount > 0) {
               detectedEvents.push({
                 type: "load-cannon",
