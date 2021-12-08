@@ -6,6 +6,7 @@ import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import {
   MotionSmoothingDef,
+  ParentDef,
   RenderableDef,
   TransformDef,
 } from "../renderer.js";
@@ -31,6 +32,8 @@ import { _GAME_ASSETS } from "../main.js";
 import { DetectedEventsDef } from "../net/events.js";
 import { fireBullet } from "./bullet.js";
 import { registerEventHandler } from "../net/events.js";
+import { ToolDef } from "./tool.js";
+import { InteractableDef } from "./interact.js";
 
 const CANNON_FRAMES = 180;
 
@@ -228,6 +231,7 @@ export function registerBuildAmmunitionSystem(em: EntityManager) {
       }
       if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.2, 0.1, 0.05]);
       if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
+      if (!ParentDef.isOn(e)) em.addComponent(e.id, ParentDef);
       if (!RenderableDef.isOn(e))
         em.addComponent(e.id, RenderableDef, getAmmunitionMesh());
       if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
@@ -241,6 +245,11 @@ export function registerBuildAmmunitionSystem(em: EntityManager) {
         collider.solid = true;
         (collider as AABBCollider).aabb = getAmmunitionAABB();
       }
+      if (!ToolDef.isOn(e)) {
+        const tool = em.addComponent(e.id, ToolDef);
+        tool.type = "ammunition";
+      }
+      if (!InteractableDef.isOn(e)) em.addComponent(e.id, InteractableDef);
       if (!SyncDef.isOn(e)) {
         const sync = em.addComponent(e.id, SyncDef);
         sync.fullComponents.push(AmmunitionConstructDef.id);

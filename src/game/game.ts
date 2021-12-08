@@ -67,6 +67,7 @@ import {
   registerStepCannonsSystem,
 } from "./cannon.js";
 import { registerInteractionSystem } from "./interact.js";
+import { registerToolDropSystem, registerToolPickupSystem } from "./tool.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -147,6 +148,8 @@ export function registerAllSystems(em: EntityManager) {
   registerBulletCollisionSystem(em);
   registerHatPickupSystem(em);
   registerHatDropSystem(em);
+  registerToolPickupSystem(em);
+  registerToolDropSystem(em);
   registerAckUpdateSystem(em);
   registerSyncSystem(em);
   registerSendOutboxes(em);
