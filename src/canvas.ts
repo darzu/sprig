@@ -5,6 +5,8 @@ export const CanvasDef = EM.defineComponent(
   (canvas: HTMLCanvasElement) => {
     return {
       canvas,
+      shouldLockMouse: true,
+      unlockMouse: () => {},
     };
   }
 );
@@ -14,7 +16,22 @@ export function registerInitCanvasSystem(em: EntityManager) {
   em.registerSystem([], [], () => {
     if (!!em.findSingletonComponent(CanvasDef)) return;
     const canvas = init();
-    em.addSingletonComponent(CanvasDef, canvas);
+
+    const comp = em.addSingletonComponent(CanvasDef, canvas);
+
+    comp.unlockMouse = () => {
+      comp.shouldLockMouse = false;
+      document.exitPointerLock();
+    };
+
+    // TODO(@darzu): this should probably be managed elsewhere
+    // TODO(@darzu): re-enable
+    function tryMouseLock() {
+      if (comp.shouldLockMouse && document.pointerLockElement !== canvas) {
+        canvas.requestPointerLock();
+      }
+    }
+    canvas.addEventListener("click", tryMouseLock);
   });
 }
 
@@ -45,15 +62,6 @@ function init(): HTMLCanvasElement {
   _imgPixelatedTimeoutHandle = setTimeout(() => {
     canvas.style.imageRendering = `pixelated`;
   }, 50);
-
-  // TODO(@darzu): this should probably be managed elsewhere
-  // TODO(@darzu): re-enable
-  // function doLockMouse() {
-  //   if (document.pointerLockElement !== canvas) {
-  //     canvas.requestPointerLock();
-  //   }
-  // }
-  // canvas.addEventListener("click", doLockMouse);
 
   return canvas;
 }

@@ -1,3 +1,4 @@
+import { CanvasDef } from "../canvas.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { mat4, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
@@ -20,9 +21,14 @@ export function registerModeler(em: EntityManager) {
   em.addSingletonComponent(ModelerDef);
 
   // listen for modeler on/off
-  em.registerSystem([], [ModelerDef, InputsDef], (_, res) => {
+  em.registerSystem([], [ModelerDef, InputsDef, CanvasDef], (_, res) => {
     if (res.inputs.keyClicks["m"]) {
       res.modeler.enabled = !res.modeler.enabled;
+      if (res.modeler.enabled) {
+        res.htmlCanvas.unlockMouse();
+      } else {
+        res.htmlCanvas.shouldLockMouse = true;
+      }
     }
   });
 
