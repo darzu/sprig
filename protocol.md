@@ -1,4 +1,25 @@
-# The Sprigland network protocol
+# Thoughts on reconnect
+
+- Each player has a name ( : string)
+  - Game prompts player for name on open, saved in localStorage
+- On join, send name
+- Host tracks map from name -> player ID
+- When host receives a join from a new player: same as existing flow
+  - Add new name -> player ID mapping
+- When host receives join from existing player:
+  - Claim / clear objects with that player's authority
+  - Respond to join: here's your player ID, here's a list of entities you should claim
+- On join response:
+  - Connect to servers and start receiving syncs
+  - If we have entities to claim, don't create anything (wait for entities to come in)
+  - Otherwise, create player object
+
+- Detect disconnect w/ hearbeat message
+- Host never initiates reconnect, only players do
+  - Host can still detect disconnect and claim objects early; needs to be an event
+- Need a separate mechanism for changing hosts
+
+# The Sprigland network protocol (OUT OF DATE)
 
 The basic goal of the sprigland network protocol is to make sure that all
 players approximately agree on the behavior of all objects at all times, while
