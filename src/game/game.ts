@@ -228,8 +228,10 @@ function createCamera(_em: EntityManager) {
 }
 function createShips(em: EntityManager) {
   const rot = quat.create();
-  quat.rotateY(rot, rot, Math.PI * -0.4);
-  em.addComponent(em.newEntity().id, ShipConstructDef, [-40, -10, -60], rot);
+  // quat.rotateY(rot, rot, Math.PI * -0.4);
+  // const pos: vec3 = [-40, -10, -60];
+  const pos: vec3 = [0, -14, 0];
+  em.addComponent(em.newEntity().id, ShipConstructDef, pos, rot);
 }
 function createBoats(em: EntityManager) {
   // create boat(s)
