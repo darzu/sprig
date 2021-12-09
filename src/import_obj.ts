@@ -2,8 +2,9 @@
 // https://people.cs.clemson.edu/~dhouse/courses/405/docs/brief-obj-file-format.html
 // http://paulbourke.net/dataformats/obj/
 
-import { vec3 } from "./gl-matrix.js";
+import { vec2, vec3 } from "./gl-matrix.js";
 import { Mesh } from "./mesh-pool.js";
+import { idPair, IdPair } from "./phys.js";
 import { assert } from "./test.js";
 import { isString } from "./util.js";
 
@@ -26,6 +27,7 @@ export function isParseError(m: any | ParseError): m is ParseError {
   return isString(m);
 }
 
+function parseVec(p: string[], len: 2): vec2 | ParseError;
 function parseVec(p: string[], len: 3): vec3 | ParseError;
 function parseVec(p: string[], len: number): number[] | vec3 | ParseError {
   const nums = p.map((s) => parseFloat(s));
@@ -49,6 +51,19 @@ function parseFace(p: string[]): vec3[] | ParseError {
   return verts as vec3[];
 }
 
+function parseLineVert(s: string): vec2 | ParseError {
+  // parse v1/t1 into [v1, t1]
+  const parts = s.split("/");
+  if (parts.length !== 2) return `invalid line vertex: ${s}`;
+  const nums = parts.map((s) => parseFloat(s)) as vec2;
+  return nums;
+}
+function parseLine(p: string[]): vec2[] | ParseError {
+  const verts = p.map((s) => parseLineVert(s));
+  for (let v of verts) if (isParseError(v)) return v;
+  return verts as vec2[];
+}
+
 export function exportObj(m: Mesh): string {
   let resLns = [
     `# sprigland exported mesh (${m.pos.length} verts, ${m.tri.length} faces)`,
@@ -62,6 +77,10 @@ export function exportObj(m: Mesh): string {
   for (let f of m.tri) {
     resLns.push(`f ${f[0] + 1}// ${f[1] + 1}// ${f[2] + 1}//`);
   }
+  // output lines
+  for (let l of m.lines ?? []) {
+    resLns.push(`l ${l[0] + 1}/ ${l[1] + 1}/`);
+  }
 
   return resLns.join("\n");
 }
@@ -72,8 +91,14 @@ export function importObj(obj: string): Mesh | ParseError {
   const pos: vec3[] = [];
   const tri: vec3[] = [];
   const colors: vec3[] = [];
+  // TODO(@darzu): compute lines
+  const lines: vec2[] = [];
+  const seenLines: Set<IdPair> = new Set();
 
   const lns = obj.split("\n");
+  const alreadyHasLines = lns.some((l) => l.trim().startsWith("l "));
+  const shouldGenerateLines = !alreadyHasLines;
+
   for (let rawL of lns) {
     const l = rawL.trim();
     const [kind, ...p] = l.split(" ");
@@ -94,6 +119,16 @@ export function importObj(obj: string): Mesh | ParseError {
       // parse material assignment
       //    usemtl MATERIAL_NAME
       // TODO(@darzu): implement
+    } else if (kind === "l") {
+      // parse line
+      //    l v1/t1 v2/t2
+      const lineOpt = parseLine(p);
+      if (isParseError(lineOpt)) return lineOpt;
+      const inds = lineOpt.map((v) => v[0] - 1);
+      const indsErr = checkIndices(inds, pos.length - 1);
+      if (isParseError(indsErr)) return indsErr + ` in line: ${p.join(" ")}`;
+      if (inds.length !== 2) return `Too many indices in line: ${p.join(" ")}`;
+      lines.push(inds as vec2);
     } else if (kind === "f") {
       // parse face
       //    f v1/t1/n1 v2/t2/n2 .... vn/tn/nn
@@ -126,6 +161,10 @@ export function importObj(obj: string): Mesh | ParseError {
       } else {
         return `unsupported: ${faceOpt.length}-sided face`;
       }
+
+      if (shouldGenerateLines) {
+        generateLines(inds);
+      }
     } else if (
       kind === "#" || // comment
       kind === "mtllib" || // accompanying .mtl file name
@@ -151,7 +190,7 @@ export function importObj(obj: string): Mesh | ParseError {
     colors.push([shade, shade, shade]);
   }
 
-  return { pos, tri, colors };
+  return { pos, tri, colors, lines };
 
   function checkIndices(
     inds: vec3 | number[],
@@ -164,6 +203,57 @@ export function importObj(obj: string): Mesh | ParseError {
   }
   function reverse(v: vec3): vec3 {
     return [v[2], v[1], v[0]];
+  }
+  function sortByGreedyDistance(inds: number[]) {
+    // TODO(@darzu): improve perf?
+    const res: number[] = [inds[0]];
+
+    let nextInds = inds.slice(1, inds.length);
+    let i0 = inds[0];
+    while (true) {
+      // console.log(`NIs: ${nextInds.join(",")}`);
+      const p0 = pos[i0];
+
+      let minD = Infinity;
+      let minII = -1;
+      nextInds.forEach((i1, i1i) => {
+        const p1 = pos[i1];
+        const d = vec3.sqrDist(p0, p1);
+        if (d < minD) {
+          minD = d;
+          minII = i1i;
+        }
+      });
+      if (minD < Infinity) {
+        i0 = nextInds[minII];
+        res.push(i0);
+        nextInds.splice(minII, 1);
+      } else {
+        break;
+      }
+    }
+
+    return res;
+  }
+  function generateLines(inds: number[]) {
+    // try to sort the indices so that we don't zig-zag
+    if (inds.length > 3) {
+      // console.log(`${inds.join(",")} ->`);
+      inds = sortByGreedyDistance(inds);
+      // console.log(`${inds.join(",")}`);
+    }
+
+    const indPairs: vec2[] = [];
+    for (let i = 0; i < inds.length; i++) {
+      indPairs.push([inds[i], inds[i + 1 === inds.length ? 0 : i + 1]]);
+    }
+    for (let [i0, i1] of indPairs) {
+      const hash = idPair(i0, i1);
+      if (!seenLines.has(hash)) {
+        lines.push([i0, i1]);
+        seenLines.add(hash);
+      }
+    }
   }
 }
 
@@ -224,6 +314,16 @@ export function testImporters() {
   f 1/0/0 2/0/0 3/0/0 4/0/0
   `);
   assert(good2.tri.length === 2, "test expects 2 tris");
+  const good3 = assertObjSuccess(`
+    v 0 1 2
+    v 0 1 2
+    v 0 1 2
+    l 1/0 2/0
+  `);
+  assert(
+    good3.tri.length === 0 && good3.lines?.length === 1,
+    "test expects 0 tri, 1 line"
+  );
 
   // valid, complex
   const hat = assertObjSuccess(HAT_OBJ);

@@ -1,4 +1,5 @@
 import { mat4, vec3 } from "./gl-matrix.js";
+import { avg } from "./math.js";
 
 // math utilities
 export function computeTriangleNormal(p1: vec3, p2: vec3, p3: vec3): vec3 {
@@ -57,4 +58,10 @@ export function mat4Dbg(v: mat4): string {
  ${ns[8]},${ns[9]},${ns[10]},${ns[11]}
  ${ns[12]},${ns[13]},${ns[14]},${ns[15]}]`
   );
+}
+export function centroid(vs: vec3[]): vec3 {
+  const avgX = avg(vs.map((v) => v[0]));
+  const avgY = avg(vs.map((v) => v[1]));
+  const avgZ = avg(vs.map((v) => v[2]));
+  return vec3.fromValues(avgX, avgY, avgZ);
 }
