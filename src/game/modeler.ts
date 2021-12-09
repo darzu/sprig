@@ -5,7 +5,7 @@ import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
 import { Ray, RayHit } from "../phys_broadphase.js";
 import { PhysicsResultsDef } from "../phys_esc.js";
-import { CameraViewDef } from "../renderer.js";
+import { CameraViewDef, RenderableDef } from "../renderer.js";
 import { tempVec } from "../temp-pool.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { ColorDef } from "./game.js";
@@ -17,8 +17,21 @@ export const ModelerDef = EM.defineComponent("modeler", () => {
   };
 });
 
+export const CursorDef = EM.defineComponent("cursor3d", () => {
+  return true;
+});
+
 export function registerModeler(em: EntityManager) {
+  // create our modeler
   em.addSingletonComponent(ModelerDef);
+
+  // create our cursor
+  {
+    const cursor = em.newEntity();
+    em.addComponent(cursor.id, CursorDef);
+    // em.addComponent(cursor.id, RenderableDef
+    // TODO(@darzu): IMPLEMENT 3D CURSOR
+  }
 
   // listen for modeler on/off
   em.registerSystem([], [ModelerDef, InputsDef, CanvasDef], (_, res) => {
