@@ -848,6 +848,9 @@ function createMeshPoolBuilder(
         normal
       );
     });
+    // Each mesh's triangles need to start 4-byte (i.e., 2-index) aligned. So, we add dummy triangles.
+    // TODO: could save a few bytes by tracking offsets into this buffer separately
+    builder.numTris = align(builder.numTris, 2);
     if (m.lines) {
       m.lines.forEach((inds, i) => {
         b.addLine(inds);
@@ -875,7 +878,8 @@ function createMeshPoolBuilder(
     const data: MeshPoolMaps = {
       // TODO(@darzu): use scratch arrays
       verticesMap: new Uint8Array(m.pos.length * Vertex.ByteSize),
-      triIndicesMap: new Uint16Array(m.tri.length * 3),
+      // pad triangles array to make sure it's a multiple of 4 *bytes*
+      triIndicesMap: new Uint16Array(align(m.tri.length * 3, 2)),
       lineIndicesMap: new Uint16Array((m.lines?.length ?? 2) * 2), // TODO(@darzu): make optional?
       uniformMap: new Uint8Array(MeshUniform.ByteSizeAligned),
     };
@@ -947,6 +951,10 @@ function createMeshPoolBuilder(
     const handle = b.finish(idx);
 
     pool.numTris += handle.numTris;
+    // See the comment over the similar lign in mappedAddMesh--a
+    // mesh's triangles need to be 4-byte aligned.
+    // TODO: see similar TODO in mappedAddMesh
+    pool.numTris = align(pool.numTris, 2);
     pool.numLines += handle.numLines;
     pool.numVerts += handle.numVerts;
     pool.allMeshes.push(handle);
@@ -1142,4 +1150,3 @@ export function scaleMesh(m: Mesh, by: number): Mesh {
 export function scaleMesh3(m: Mesh, by: vec3): Mesh {
   return mapMeshPositions(m, (p) => vec3.multiply(vec3.create(), p, by));
 }
-

@@ -62,8 +62,10 @@ import { registerDeleteEntitiesSystem } from "../delete.js";
 import {
   AmmunitionConstructDef,
   CannonConstructDef,
+  LinstockConstructDef,
   registerBuildAmmunitionSystem,
   registerBuildCannonsSystem,
+  registerBuildLinstockSystem,
   registerPlayerCannonSystem,
   registerStepCannonsSystem,
 } from "./cannon.js";
@@ -141,6 +143,7 @@ export function registerAllSystems(em: EntityManager) {
   registerBuildBulletsSystem(em);
   registerBuildCannonsSystem(em);
   registerBuildAmmunitionSystem(em);
+  registerBuildLinstockSystem(em);
   registerMoveCubesSystem(em);
   registerStepBoats(em);
   registerStepPlayers(em);
@@ -255,6 +258,7 @@ function createHats(em: EntityManager) {
 }
 
 function createCannons(em: EntityManager) {
-  em.addComponent(em.newEntity().id, CannonConstructDef, [-40, 10, 0]);
-  em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -9, 0], 3);
+  em.addComponent(em.newEntity().id, CannonConstructDef, [-50, -10, 0]);
+  em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
+  em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2], 3);
 }
