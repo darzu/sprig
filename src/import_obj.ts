@@ -184,10 +184,13 @@ export function importObj(obj: string): Mesh | ParseError {
   if (!pos.length) return "empty mesh";
 
   // TODO(@darzu): for debugging, assign each face a different shade
-  const colorStep = 0.5 / tri.length;
+  // const colorStep = 0.5 / tri.length;
+  // for (let i = 0; i < tri.length; i++) {
+  //   const shade = colorStep * i + 0.1;
+  //   colors.push([shade, shade, shade]);
+  // }
   for (let i = 0; i < tri.length; i++) {
-    const shade = colorStep * i + 0.1;
-    colors.push([shade, shade, shade]);
+    colors.push([0.2, 0.2, 0.2]);
   }
 
   return { pos, tri, colors, lines };
