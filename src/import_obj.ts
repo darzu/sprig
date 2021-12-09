@@ -4,6 +4,7 @@
 
 import { vec2, vec3 } from "./gl-matrix.js";
 import { Mesh } from "./mesh-pool.js";
+import { idPair, IdPair } from "./phys.js";
 import { assert } from "./test.js";
 import { isString } from "./util.js";
 
@@ -76,6 +77,10 @@ export function exportObj(m: Mesh): string {
   for (let f of m.tri) {
     resLns.push(`f ${f[0] + 1}// ${f[1] + 1}// ${f[2] + 1}//`);
   }
+  // output lines
+  for (let l of m.lines ?? []) {
+    resLns.push(`l ${l[0] + 1}/ ${l[1] + 1}/`);
+  }
 
   return resLns.join("\n");
 }
@@ -88,10 +93,11 @@ export function importObj(obj: string): Mesh | ParseError {
   const colors: vec3[] = [];
   // TODO(@darzu): compute lines
   const lines: vec2[] = [];
+  const seenLines: Set<IdPair> = new Set();
 
   const lns = obj.split("\n");
   const alreadyHasLines = lns.some((l) => l.trim().startsWith("l "));
-  const generateLines = !alreadyHasLines;
+  const shouldGenerateLines = !alreadyHasLines;
 
   for (let rawL of lns) {
     const l = rawL.trim();
@@ -155,6 +161,10 @@ export function importObj(obj: string): Mesh | ParseError {
       } else {
         return `unsupported: ${faceOpt.length}-sided face`;
       }
+
+      if (shouldGenerateLines) {
+        generateLines(inds);
+      }
     } else if (
       kind === "#" || // comment
       kind === "mtllib" || // accompanying .mtl file name
@@ -193,6 +203,57 @@ export function importObj(obj: string): Mesh | ParseError {
   }
   function reverse(v: vec3): vec3 {
     return [v[2], v[1], v[0]];
+  }
+  function sortByGreedyDistance(inds: number[]) {
+    // TODO(@darzu): improve perf?
+    const res: number[] = [inds[0]];
+
+    let nextInds = inds.slice(1, inds.length);
+    let i0 = inds[0];
+    while (true) {
+      // console.log(`NIs: ${nextInds.join(",")}`);
+      const p0 = pos[i0];
+
+      let minD = Infinity;
+      let minII = -1;
+      nextInds.forEach((i1, i1i) => {
+        const p1 = pos[i1];
+        const d = vec3.sqrDist(p0, p1);
+        if (d < minD) {
+          minD = d;
+          minII = i1i;
+        }
+      });
+      if (minD < Infinity) {
+        i0 = nextInds[minII];
+        res.push(i0);
+        nextInds.splice(minII, 1);
+      } else {
+        break;
+      }
+    }
+
+    return res;
+  }
+  function generateLines(inds: number[]) {
+    // try to sort the indices so that we don't zig-zag
+    if (inds.length > 3) {
+      // console.log(`${inds.join(",")} ->`);
+      inds = sortByGreedyDistance(inds);
+      // console.log(`${inds.join(",")}`);
+    }
+
+    const indPairs: vec2[] = [];
+    for (let i = 0; i < inds.length; i++) {
+      indPairs.push([inds[i], inds[i + 1 === inds.length ? 0 : i + 1]]);
+    }
+    for (let [i0, i1] of indPairs) {
+      const hash = idPair(i0, i1);
+      if (!seenLines.has(hash)) {
+        lines.push([i0, i1]);
+        seenLines.add(hash);
+      }
+    }
   }
 }
 
