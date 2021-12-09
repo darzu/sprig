@@ -217,7 +217,7 @@ export function createLocalObjects(em: EntityManager) {
   createPlayer(em);
 }
 
-function createCamera(em: EntityManager) {
+function createCamera(_em: EntityManager) {
   let cameraRotation = quat.identity(quat.create());
   quat.rotateX(cameraRotation, cameraRotation, -Math.PI / 8);
   let cameraLocation = vec3.fromValues(0, 0, 10);
