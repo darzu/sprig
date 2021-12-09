@@ -100,6 +100,12 @@ export function registerPlayerCannonSystem(em: EntityManager) {
                 location: null,
               });
             }
+          } else if (LinstockDef.isOn(tool) && cannon.loaded) {
+            detectedEvents.push({
+              type: "fire-cannon",
+              entities: [interacting.id, id],
+              location: null,
+            });
           }
         }
         EM.removeComponent(id, InteractingDef);
@@ -125,7 +131,7 @@ export function registerCannonEventHandlers() {
   registerEventHandler("fire-cannon", {
     eventAuthorityEntity: (entities) => entities[0],
     legalEvent: (em, entities) =>
-      !!em.findEntity(entities[0], [CannonDef])!.cannon!.loaded,
+      !!em.findEntity(entities[1], [CannonDef])!.cannon!.loaded,
     runEvent: (em, entities) => {
       let { cannon, authority } = em.findEntity(entities[1], [
         CannonDef,
@@ -135,7 +141,7 @@ export function registerCannonEventHandlers() {
       cannon.firing = true;
       cannon.countdown = CANNON_FRAMES;
       // TODO: this is maybe weird?
-      authority.pid = entities[0];
+      authority.pid = em.findEntity(entities[0], [AuthorityDef])!.authority.pid;
       authority.seq++;
       authority.updateSeq = 0;
     },
@@ -287,6 +293,72 @@ export function registerBuildAmmunitionSystem(em: EntityManager) {
       if (!SyncDef.isOn(e)) {
         const sync = em.addComponent(e.id, SyncDef);
         sync.fullComponents.push(AmmunitionConstructDef.id);
+      }
+      em.addComponent(e.id, FinishedDef);
+    }
+  });
+}
+
+export const LinstockDef = EM.defineComponent("linstock", (amount?: number) => {
+  return {
+    amount: amount || 0,
+  };
+});
+export type Linstock = Component<typeof LinstockDef>;
+
+export const LinstockConstructDef = EM.defineComponent(
+  "linstockConstruct",
+  (loc?: vec3, amount?: number) => {
+    return {
+      location: loc ?? vec3.fromValues(0, 0, 0),
+      amount: amount || 0,
+    };
+  }
+);
+
+let _linstockMesh: Mesh | undefined = undefined;
+let _linstockAABB: AABB | undefined = undefined;
+function getLinstockMesh(): Mesh {
+  if (!_linstockMesh) _linstockMesh = _GAME_ASSETS?.linstock!;
+  return _linstockMesh;
+}
+function getLinstockAABB(): AABB {
+  if (!_linstockAABB) _linstockAABB = getAABBFromMesh(getLinstockMesh());
+  return _linstockAABB;
+}
+
+export function registerBuildLinstockSystem(em: EntityManager) {
+  em.registerSystem([LinstockConstructDef], [MeDef], (boxes, res) => {
+    for (let e of boxes) {
+      if (FinishedDef.isOn(e)) return;
+      const props = e.linstockConstruct;
+      if (!MotionDef.isOn(e)) {
+        let motion = em.addComponent(e.id, MotionDef, props.location);
+      }
+      if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.0, 0.0, 0.0]);
+      if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
+      if (!ParentDef.isOn(e)) em.addComponent(e.id, ParentDef);
+      if (!RenderableDef.isOn(e))
+        em.addComponent(e.id, RenderableDef, getLinstockMesh());
+      if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
+      if (!AuthorityDef.isOn(e))
+        em.addComponent(e.id, AuthorityDef, res.me.pid);
+      if (!LinstockDef.isOn(e))
+        em.addComponent(e.id, LinstockDef, props.amount);
+      if (!ColliderDef.isOn(e)) {
+        const collider = em.addComponent(e.id, ColliderDef);
+        collider.shape = "AABB";
+        collider.solid = true;
+        (collider as AABBCollider).aabb = getLinstockAABB();
+      }
+      if (!ToolDef.isOn(e)) {
+        const tool = em.addComponent(e.id, ToolDef);
+        tool.type = "linstock";
+      }
+      if (!InteractableDef.isOn(e)) em.addComponent(e.id, InteractableDef);
+      if (!SyncDef.isOn(e)) {
+        const sync = em.addComponent(e.id, SyncDef);
+        sync.fullComponents.push(LinstockConstructDef.id);
       }
       em.addComponent(e.id, FinishedDef);
     }

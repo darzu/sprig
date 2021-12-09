@@ -9,7 +9,7 @@ export const InteractingDef = EM.defineComponent(
   (id?: number) => ({ id: id || 0 })
 );
 
-const INTERACTION_DISTANCE = 5;
+const INTERACTION_DISTANCE = 10;
 const INTERACTION_ANGLE = Math.PI / 6;
 // TODO: this function is very bad. It should probably use an oct-tree or something.
 function getInteractionEntity(
