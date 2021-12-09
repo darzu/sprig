@@ -1,33 +1,16 @@
 import { EM, EntityManager, Component, Entity } from "../entity-manager.js";
-import { PhysicsTimerDef, Timer } from "../time.js";
-import { quat, vec3 } from "../gl-matrix.js";
-import { Motion, MotionDef } from "../phys_motion.js";
+import { PhysicsTimerDef } from "../time.js";
+import { mat4, quat, vec3 } from "../gl-matrix.js";
+import { MotionDef } from "../phys_motion.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
-import {
-  MotionSmoothingDef,
-  ParentDef,
-  RenderableDef,
-  TransformDef,
-} from "../renderer.js";
+import { ParentDef, RenderableDef, TransformDef } from "../renderer.js";
 import { PhysicsStateDef } from "../phys_esc.js";
 import { AABBCollider, ColliderDef } from "../collider.js";
-import {
-  Authority,
-  AuthorityDef,
-  Me,
-  MeDef,
-  SyncDef,
-} from "../net/components.js";
-import {
-  getAABBFromMesh,
-  Mesh,
-  scaleMesh3,
-  unshareProvokingVertices,
-} from "../mesh-pool.js";
+import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
+import { getAABBFromMesh, Mesh, transformMesh } from "../mesh-pool.js";
 import { AABB } from "../phys_broadphase.js";
 import { Deserializer, Serializer } from "../serialize.js";
-import { CUBE_MESH } from "./assets.js";
 import { _GAME_ASSETS } from "../main.js";
 import { DetectedEventsDef } from "../net/events.js";
 import { fireBullet } from "./bullet.js";
@@ -180,7 +163,10 @@ EM.registerSerializerPair(
 let _cannonMesh: Mesh | undefined = undefined;
 let _cannonAABB: AABB | undefined = undefined;
 function getCannonMesh(): Mesh {
-  if (!_cannonMesh) _cannonMesh = scaleMesh3(CUBE_MESH, [1.5, 1.5, 5]);
+  if (!_cannonMesh) {
+    const rot = mat4.fromRotation(mat4.create(), -Math.PI / 2, [0, 1, 0]);
+    _cannonMesh = transformMesh(_GAME_ASSETS!.cannon, rot);
+  }
   return _cannonMesh;
 }
 function getCannonAABB(): AABB {

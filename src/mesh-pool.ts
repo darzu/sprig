@@ -1150,3 +1150,6 @@ export function scaleMesh(m: Mesh, by: number): Mesh {
 export function scaleMesh3(m: Mesh, by: vec3): Mesh {
   return mapMeshPositions(m, (p) => vec3.multiply(vec3.create(), p, by));
 }
+export function transformMesh(m: Mesh, t: mat4): Mesh {
+  return mapMeshPositions(m, (p) => vec3.transformMat4(vec3.create(), p, t));
+}

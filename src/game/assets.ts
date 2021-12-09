@@ -22,6 +22,7 @@ export interface GameAssets {
   spacerock: Mesh;
   ammunitionBox: Mesh;
   linstock: Mesh;
+  cannon: Mesh;
 }
 
 async function loadAssetInternal(path: string): Promise<Mesh> {
@@ -56,6 +57,7 @@ export async function loadAssets(): Promise<GameAssets> {
     await loadAssetInternal("/assets/linstock.sprig.obj"),
     0.1
   );
+  const cannon = await loadAssetInternal("/assets/cannon.sprig.obj");
 
   // perf tracking
   const elapsed = performance.now() - start;
@@ -69,6 +71,7 @@ export async function loadAssets(): Promise<GameAssets> {
     spacerock,
     ammunitionBox,
     linstock,
+    cannon,
   };
 }
 
