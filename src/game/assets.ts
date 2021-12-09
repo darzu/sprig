@@ -17,6 +17,7 @@ export const LIGHT_BLUE = vec3.fromValues(0.05, 0.05, 0.2);
 
 export interface GameAssets {
   ship: Mesh;
+  ball: Mesh;
   pick: Mesh;
   spaceore: Mesh;
   spacerock: Mesh;
@@ -47,6 +48,7 @@ export async function loadAssets(): Promise<GameAssets> {
 
   // TODO(@darzu): parallel download for many objs
   const ship = await loadAssetInternal("/assets/ship.sprig.obj");
+  const ball = await loadAssetInternal("/assets/ball.sprig.obj");
   const pick = await loadAssetInternal("/assets/pick.sprig.obj");
   const spaceore = await loadAssetInternal("/assets/spaceore.sprig.obj");
   const spacerock = await loadAssetInternal("/assets/spacerock.sprig.obj");
@@ -66,6 +68,7 @@ export async function loadAssets(): Promise<GameAssets> {
   // done
   return {
     ship,
+    ball,
     pick,
     spaceore,
     spacerock,
