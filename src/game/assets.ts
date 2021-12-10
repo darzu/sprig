@@ -15,6 +15,9 @@ export const LIGHT_GRAY = vec3.fromValues(0.2, 0.2, 0.2);
 export const DARK_BLUE = vec3.fromValues(0.03, 0.03, 0.2);
 export const LIGHT_BLUE = vec3.fromValues(0.05, 0.05, 0.2);
 
+const DEFAULT_ASSET_PATH = "/assets/";
+const BACKUP_ASSET_PATH = "https://sprig.land/assets/";
+
 export interface GameAssets {
   ship: Mesh;
   ball: Mesh;
@@ -26,15 +29,22 @@ export interface GameAssets {
   cannon: Mesh;
 }
 
-async function loadAssetInternal(path: string): Promise<Mesh> {
+async function loadAssetInternal(relPath: string): Promise<Mesh> {
   // download
-  const txt = await getText(path);
+  // TODO(@darzu): perf: parallalize this
+  // TODO(@darzu): perf: check DEFAULT_ASSET_PATH once
+  let txt;
+  try {
+    txt = await getText(DEFAULT_ASSET_PATH + relPath);
+  } catch (_) {
+    txt = await getText(BACKUP_ASSET_PATH + relPath);
+  }
 
   // parse
   const opt = importObj(txt);
   assert(
     !!opt && !isParseError(opt),
-    `unable to parse asset (${path}):\n${opt}`
+    `unable to parse asset (${relPath}):\n${opt}`
   );
 
   // clean up
@@ -47,21 +57,17 @@ export async function loadAssets(): Promise<GameAssets> {
   const start = performance.now();
 
   // TODO(@darzu): parallel download for many objs
-  const ship = await loadAssetInternal("/sprig-assets/ship.sprig.obj");
-  const ball = await loadAssetInternal("/sprig-assets/ball.sprig.obj");
-  const pick = await loadAssetInternal("/sprig-assets/pick.sprig.obj");
-  const spaceore = await loadAssetInternal("/sprig-assets/spaceore.sprig.obj");
-  const spacerock = await loadAssetInternal(
-    "/sprig-assets/spacerock.sprig.obj"
-  );
-  const ammunitionBox = await loadAssetInternal(
-    "/sprig-assets/ammunition_box.sprig.obj"
-  );
+  const ship = await loadAssetInternal("ship.sprig.obj");
+  const ball = await loadAssetInternal("ball.sprig.obj");
+  const pick = await loadAssetInternal("pick.sprig.obj");
+  const spaceore = await loadAssetInternal("spaceore.sprig.obj");
+  const spacerock = await loadAssetInternal("spacerock.sprig.obj");
+  const ammunitionBox = await loadAssetInternal("ammunition_box.sprig.obj");
   const linstock = scaleMesh(
-    await loadAssetInternal("/sprig-assets/linstock.sprig.obj"),
+    await loadAssetInternal("linstock.sprig.obj"),
     0.1
   );
-  const cannon = await loadAssetInternal("/sprig-assets/cannon.sprig.obj");
+  const cannon = await loadAssetInternal("cannon.sprig.obj");
 
   // perf tracking
   const elapsed = performance.now() - start;
