@@ -242,8 +242,11 @@ export const dbg = {
     callTimes.sort((x, y) => y.t - x.t);
     let out = "";
     for (let { s, t } of callTimes) {
-      out += s + ": " + t / totalTime + "\n";
+      out += s + ": " + t / totalTime + " (" + t / EM.loops + "ms)" + "\n";
     }
+
+    out += "\n";
+    out += "time per frame: " + totalTime / EM.loops;
     console.log(out);
   },
 };
