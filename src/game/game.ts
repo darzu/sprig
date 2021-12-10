@@ -263,5 +263,5 @@ function createHats(em: EntityManager) {
 function createCannons(em: EntityManager) {
   em.addComponent(em.newEntity().id, CannonConstructDef, [-50, -10, 0]);
   em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
-  em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2], 3);
+  em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2]);
 }
