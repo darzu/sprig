@@ -43,11 +43,11 @@ export function hashCode(s: string) {
 
 export function objMap<A, V1 extends A[keyof A], V2>(
   a: A,
-  map: (v1: V1, n?: string) => V2
+  map: (v1: V1, n?: keyof A) => V2
 ): { [P in keyof A]: V2 } {
   const res: { [k: string]: V2 } = {};
   Object.entries(a).forEach(([n, v1]) => {
-    res[n] = map(v1, n);
+    res[n] = map(v1, n as keyof A);
   });
   return res as { [P in keyof A]: V2 };
 }

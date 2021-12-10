@@ -1,10 +1,12 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { vec3 } from "../gl-matrix.js";
+import { mat4, vec3 } from "../gl-matrix.js";
 import { importObj, isParseError } from "../import_obj.js";
 import {
   getAABBFromMesh,
+  mapMeshPositions,
   Mesh,
   scaleMesh,
+  transformMesh,
   unshareProvokingVertices,
 } from "../mesh-pool.js";
 import { AABB } from "../phys_broadphase.js";
@@ -21,7 +23,7 @@ export const LIGHT_BLUE = vec3.fromValues(0.05, 0.05, 0.2);
 const DEFAULT_ASSET_PATH = "/assets/";
 const BACKUP_ASSET_PATH = "https://sprig.land/assets/";
 
-const AllAssetPaths = {
+const AssetPaths = {
   ship: "ship.sprig.obj",
   ball: "ball.sprig.obj",
   pick: "pick.sprig.obj",
@@ -32,7 +34,13 @@ const AllAssetPaths = {
   cannon: "cannon.sprig.obj",
 } as const;
 
-type GameMeshes = { [P in keyof typeof AllAssetPaths]: Mesh };
+type AssetSymbols = keyof typeof AssetPaths;
+
+const AssetTransforms: Partial<{ [P in AssetSymbols]: mat4 }> = {
+  linstock: mat4.fromScaling(mat4.create(), [0.1, 0.1, 0.1]),
+};
+
+type GameMeshes = { [P in AssetSymbols]: Mesh };
 
 const AssetLoaderDef = EM.defineComponent("assetLoader", () => {
   return {
@@ -102,13 +110,18 @@ async function loadAssetInternal(relPath: string): Promise<Mesh> {
 async function loadAssets(): Promise<GameMeshes> {
   const start = performance.now();
 
-  const allPromises = objMap(AllAssetPaths, (p) => loadAssetInternal(p));
+  const allPromises = objMap(AssetPaths, (p) => loadAssetInternal(p));
   const allPromisesList = Object.entries(allPromises);
   const allMeshes = await Promise.all(allPromisesList.map(([_, p]) => p));
 
   const result = objMap(allPromises, (_, n) => {
     const idx = allPromisesList.findIndex(([n2, _]) => n === n2);
-    return allMeshes[idx];
+    const rawMesh = allMeshes[idx];
+    let mesh: Mesh;
+    const t = AssetTransforms[n!];
+    if (t) mesh = transformMesh(rawMesh, t);
+    else mesh = rawMesh;
+    return mesh;
   });
 
   // perf tracking

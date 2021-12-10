@@ -342,9 +342,8 @@ export function registerBuildLinstockSystem(em: EntityManager) {
         if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
         if (!ParentDef.isOn(e)) em.addComponent(e.id, ParentDef);
         // TODO(@darzu): allow scaling to be configured on the asset import
-        const mesh = scaleMesh(res.assets.meshes.linstock, 0.1);
-        const aabb = getAABBFromMesh(mesh);
-        if (!RenderableDef.isOn(e)) em.addComponent(e.id, RenderableDef, mesh);
+        if (!RenderableDef.isOn(e))
+          em.addComponent(e.id, RenderableDef, res.assets.meshes.linstock);
         if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
         if (!AuthorityDef.isOn(e))
           em.addComponent(e.id, AuthorityDef, res.me.pid);
@@ -353,7 +352,7 @@ export function registerBuildLinstockSystem(em: EntityManager) {
           const collider = em.addComponent(e.id, ColliderDef);
           collider.shape = "AABB";
           collider.solid = true;
-          (collider as AABBCollider).aabb = aabb;
+          (collider as AABBCollider).aabb = res.assets.aabbs.linstock;
         }
         if (!ToolDef.isOn(e)) {
           const tool = em.addComponent(e.id, ToolDef);
