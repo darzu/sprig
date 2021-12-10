@@ -455,7 +455,7 @@ export class EntityManager {
           .get(s.name)!
           .map((id) => this.entities.get(id)! as EntityW<any[]>);
       else {
-        throw `System ${s.name} doesn't have a query cache!`
+        throw `System ${s.name} doesn't have a query cache!`;
         // es = this.filterEntities(s.cs);
       }
 
