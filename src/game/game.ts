@@ -1,7 +1,6 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
-import { _GAME_ASSETS } from "../main.js";
 import { jitter } from "../math.js";
 import {
   registerPhysicsSystems,
@@ -55,7 +54,7 @@ import {
   registerHatDropSystem,
 } from "./hat.js";
 import { registerBuildBulletsSystem } from "./bullet.js";
-import { DARK_BLUE, LIGHT_BLUE } from "./assets.js";
+import { DARK_BLUE, LIGHT_BLUE, registerAssetLoader } from "./assets.js";
 import { registerInitCanvasSystem } from "../canvas.js";
 import { registerRenderInitSystem, RendererDef } from "../render_init.js";
 import { registerDeleteEntitiesSystem } from "../delete.js";
@@ -134,6 +133,7 @@ export function registerAllSystems(em: EntityManager) {
   registerPredictSystem(em);
   registerUpdateSmoothingTargetSmoothChange(em);
   registerJoinSystems(em);
+  registerAssetLoader(em);
   registerBuildPlayersSystem(em);
   registerBuildPlanesSystem(em);
   registerBuildCubesSystem(em);

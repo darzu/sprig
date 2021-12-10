@@ -29,7 +29,7 @@ export function registerModeler(em: EntityManager) {
   {
     const cursor = em.newEntity();
     em.addComponent(cursor.id, CursorDef);
-    // em.addComponent(cursor.id, RenderableDef
+    // em.addComponent(cursor.id, RenderableDef,
     // TODO(@darzu): IMPLEMENT 3D CURSOR
   }
 

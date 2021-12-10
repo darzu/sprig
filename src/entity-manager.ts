@@ -84,9 +84,9 @@ export class EntityManager {
   stats: Record<string, SystemStats> = {};
   loops: number = 0;
 
-  _systemsToEntities: Map<string, number[]> = new Map();
-  _systemsToComponents: Map<string, string[]> = new Map();
-  _componentToSystems: Map<string, string[]> = new Map();
+  private _systemsToEntities: Map<string, number[]> = new Map();
+  private _systemsToComponents: Map<string, string[]> = new Map();
+  private _componentToSystems: Map<string, string[]> = new Map();
 
   constructor() {
     this.entities.set(0, { id: 0 });
