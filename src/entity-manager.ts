@@ -84,6 +84,10 @@ export class EntityManager {
   stats: Record<string, SystemStats> = {};
   loops: number = 0;
 
+  _systemsToEntities: Map<string, number[]> = new Map();
+  _systemsToComponents: Map<string, string[]> = new Map();
+  _componentToSystems: Map<string, string[]> = new Map();
+
   constructor() {
     this.entities.set(0, { id: 0 });
   }
@@ -205,6 +209,16 @@ export class EntityManager {
     if (def.name in e)
       throw `double defining component ${def.name} on ${e.id}!`;
     (e as any)[def.name] = c;
+
+    // update query caches
+    const systems = this._componentToSystems.get(def.name);
+    for (let name of systems ?? []) {
+      const allNeededCs = this._systemsToComponents.get(name);
+      if (allNeededCs?.every((n) => n in e)) {
+        this._systemsToEntities.get(name)?.push(id);
+      }
+    }
+
     return c;
   }
 
@@ -224,13 +238,13 @@ export class EntityManager {
     def: ComponentDef<N, P, Pargs>,
     ...args: Pargs
   ): P {
-    this.checkComponent(def);
-    if (id === 0) throw `hey, use addSingletonComponent!`;
     const e = this.entities.get(id)!;
-    if (!(def.name in e)) {
-      (e as any)[def.name] = def.construct(...args);
+    const alreadyHas = def.name in e;
+    if (!alreadyHas) {
+      return this.addComponent(id, def, ...args);
+    } else {
+      return (e as any)[def.name];
     }
-    return (e as any)[def.name];
   }
 
   public addSingletonComponent<
@@ -279,6 +293,16 @@ export class EntityManager {
     } else {
       throw `Tried to remove absent component ${def.name} from entity ${id}`;
     }
+
+    // update query cache
+    const systems = this._componentToSystems.get(def.name);
+    for (let name of systems ?? []) {
+      const es = this._systemsToEntities.get(name);
+      if (es) {
+        const indx = es.findIndex((v) => v === id);
+        if (indx > 0) es.splice(indx, 1);
+      }
+    }
   }
 
   public keepOnlyComponents<CS extends ComponentDef[]>(
@@ -289,7 +313,7 @@ export class EntityManager {
     if (!ent) throw `Tried to delete non-existent entity ${id}`;
     for (let component of this.components.values()) {
       if (!cs.includes(component) && ent[component.name]) {
-        delete ent[component.name];
+        this.removeComponent(id, component);
       }
     }
   }
@@ -396,13 +420,45 @@ export class EntityManager {
       name,
     });
     this.stats[name] = { calls: 0, queries: 0, callTime: 0, queryTime: 0 };
+
+    // update query cache:
+    //  pre-compute entities for this system for quicker queries; these caches will be maintained
+    //  by add/remove/ensure component calls
+    // TODO(@darzu): ability to toggle this optimization on/off for better debugging
+    const es = this.filterEntities(cs);
+    this._systemsToEntities.set(
+      name,
+      es.map((e) => e.id)
+    );
+    if (cs) {
+      for (let c of cs) {
+        if (!this._componentToSystems.has(c.name))
+          this._componentToSystems.set(c.name, [name]);
+        else this._componentToSystems.get(c.name)!.push(name);
+      }
+      this._systemsToComponents.set(
+        name,
+        cs.map((c) => c.name)
+      );
+    }
   }
 
   callSystems() {
     // dispatch to all the systems
     for (let s of this.systems) {
       let start = performance.now();
-      const es = this.filterEntities(s.cs);
+
+      // try looking up in the query cache
+      let es: Entities<any[]>;
+      if (this._systemsToEntities.has(s.name))
+        es = this._systemsToEntities
+          .get(s.name)!
+          .map((id) => this.entities.get(id)! as EntityW<any[]>);
+      else {
+        throw `System ${s.name} doesn't have a query cache!`
+        // es = this.filterEntities(s.cs);
+      }
+
       let haveAllResources = true;
       for (let r of s.rs) {
         // note this is just to verify it exists
