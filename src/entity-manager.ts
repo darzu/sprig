@@ -300,7 +300,9 @@ export class EntityManager {
       const es = this._systemsToEntities.get(name);
       if (es) {
         const indx = es.findIndex((v) => v === id);
-        if (indx > 0) es.splice(indx, 1);
+        if (indx >= 0) {
+          es.splice(indx, 1);
+        }
       }
     }
   }
