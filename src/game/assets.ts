@@ -47,19 +47,21 @@ export async function loadAssets(): Promise<GameAssets> {
   const start = performance.now();
 
   // TODO(@darzu): parallel download for many objs
-  const ship = await loadAssetInternal("/assets/ship.sprig.obj");
-  const ball = await loadAssetInternal("/assets/ball.sprig.obj");
-  const pick = await loadAssetInternal("/assets/pick.sprig.obj");
-  const spaceore = await loadAssetInternal("/assets/spaceore.sprig.obj");
-  const spacerock = await loadAssetInternal("/assets/spacerock.sprig.obj");
+  const ship = await loadAssetInternal("/sprig-assets/ship.sprig.obj");
+  const ball = await loadAssetInternal("/sprig-assets/ball.sprig.obj");
+  const pick = await loadAssetInternal("/sprig-assets/pick.sprig.obj");
+  const spaceore = await loadAssetInternal("/sprig-assets/spaceore.sprig.obj");
+  const spacerock = await loadAssetInternal(
+    "/sprig-assets/spacerock.sprig.obj"
+  );
   const ammunitionBox = await loadAssetInternal(
-    "/assets/ammunition_box.sprig.obj"
+    "/sprig-assets/ammunition_box.sprig.obj"
   );
   const linstock = scaleMesh(
-    await loadAssetInternal("/assets/linstock.sprig.obj"),
+    await loadAssetInternal("/sprig-assets/linstock.sprig.obj"),
     0.1
   );
-  const cannon = await loadAssetInternal("/assets/cannon.sprig.obj");
+  const cannon = await loadAssetInternal("/sprig-assets/cannon.sprig.obj");
 
   // perf tracking
   const elapsed = performance.now() - start;

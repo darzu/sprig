@@ -1,5 +1,6 @@
 *.js
 *.js.map
+/public/sprig-assets
 !/public/gl-matrix.js
 .DS_Store
 !docs/
