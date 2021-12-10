@@ -1,3 +1,4 @@
+import { Component, EM, EntityManager } from "../entity-manager.js";
 import { vec3 } from "../gl-matrix.js";
 import { importObj, isParseError } from "../import_obj.js";
 import {
@@ -6,7 +7,9 @@ import {
   scaleMesh,
   unshareProvokingVertices,
 } from "../mesh-pool.js";
+import { AABB } from "../phys_broadphase.js";
 import { assert } from "../test.js";
+import { objMap } from "../util.js";
 import { getText } from "../webget.js";
 
 export const BLACK = vec3.fromValues(0, 0, 0);
@@ -18,15 +21,58 @@ export const LIGHT_BLUE = vec3.fromValues(0.05, 0.05, 0.2);
 const DEFAULT_ASSET_PATH = "/assets/";
 const BACKUP_ASSET_PATH = "https://sprig.land/assets/";
 
-export interface GameAssets {
-  ship: Mesh;
-  ball: Mesh;
-  pick: Mesh;
-  spaceore: Mesh;
-  spacerock: Mesh;
-  ammunitionBox: Mesh;
-  linstock: Mesh;
-  cannon: Mesh;
+const AllAssetPaths = {
+  ship: "ship.sprig.obj",
+  ball: "ball.sprig.obj",
+  pick: "pick.sprig.obj",
+  spaceore: "spaceore.sprig.obj",
+  spacerock: "spacerock.sprig.obj",
+  ammunitionBox: "ammunition_box.sprig.obj",
+  linstock: "linstock.sprig.obj",
+  cannon: "cannon.sprig.obj",
+} as const;
+
+type GameMeshes = { [P in keyof typeof AllAssetPaths]: Mesh };
+
+const AssetLoaderDef = EM.defineComponent("assetLoader", () => {
+  return {
+    promise: null as Promise<GameMeshes> | null,
+  };
+});
+
+export const AssetsDef = EM.defineComponent("assets", (meshes: GameMeshes) => {
+  const aabbs = objMap(meshes, (m) => getAABBFromMesh(m));
+  return {
+    meshes,
+    aabbs,
+  };
+});
+export type Assets = Component<typeof AssetsDef>;
+
+export function registerAssetLoader(em: EntityManager) {
+  em.addSingletonComponent(AssetLoaderDef);
+
+  // start loading of assets
+  em.registerSystem(
+    [],
+    [AssetLoaderDef],
+    (_, { assetLoader }) => {
+      if (!assetLoader.promise) {
+        const assetsPromise = loadAssets();
+        assetLoader.promise = assetsPromise;
+        assetsPromise.then(
+          (result) => {
+            em.addSingletonComponent(AssetsDef, result);
+          },
+          (failureReason) => {
+            // TODO(@darzu): fail more gracefully
+            throw `Failed to load assets: ${failureReason}`;
+          }
+        );
+      }
+    },
+    "assetLoader"
+  );
 }
 
 async function loadAssetInternal(relPath: string): Promise<Mesh> {
@@ -53,39 +99,26 @@ async function loadAssetInternal(relPath: string): Promise<Mesh> {
   return obj;
 }
 
-export async function loadAssets(): Promise<GameAssets> {
+async function loadAssets(): Promise<GameMeshes> {
   const start = performance.now();
 
-  // TODO(@darzu): parallel download for many objs
-  const ship = await loadAssetInternal("ship.sprig.obj");
-  const ball = await loadAssetInternal("ball.sprig.obj");
-  const pick = await loadAssetInternal("pick.sprig.obj");
-  const spaceore = await loadAssetInternal("spaceore.sprig.obj");
-  const spacerock = await loadAssetInternal("spacerock.sprig.obj");
-  const ammunitionBox = await loadAssetInternal("ammunition_box.sprig.obj");
-  const linstock = scaleMesh(
-    await loadAssetInternal("linstock.sprig.obj"),
-    0.1
-  );
-  const cannon = await loadAssetInternal("cannon.sprig.obj");
+  const allPromises = objMap(AllAssetPaths, (p) => loadAssetInternal(p));
+  const allPromisesList = Object.entries(allPromises);
+  const allMeshes = await Promise.all(allPromisesList.map(([_, p]) => p));
+
+  const result = objMap(allPromises, (_, n) => {
+    const idx = allPromisesList.findIndex(([n2, _]) => n === n2);
+    return allMeshes[idx];
+  });
 
   // perf tracking
   const elapsed = performance.now() - start;
   console.log(`took ${elapsed.toFixed(1)}ms to load assets.`);
 
-  // done
-  return {
-    ship,
-    ball,
-    pick,
-    spaceore,
-    spacerock,
-    ammunitionBox,
-    linstock,
-    cannon,
-  };
+  return result;
 }
 
+// TODO(@darzu): move these into Assets component
 export const CUBE_MESH = unshareProvokingVertices({
   pos: [
     [+1.0, +1.0, +1.0],

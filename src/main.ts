@@ -6,7 +6,6 @@ import {
   _lastCollisionTestTimeMs,
 } from "./phys_broadphase.js";
 import { setupObjImportExporter } from "./download.js";
-import { GameAssets, loadAssets } from "./game/assets.js";
 import {
   createLocalObjects,
   createServerObjects,
@@ -27,16 +26,10 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-// TODO(@darzu): very hacky way to pass these around
-export let _GAME_ASSETS: GameAssets | null = null;
-
 export let gameStarted = false;
 async function startGame(host: string | null) {
   if (gameStarted) return;
   gameStarted = true;
-
-  // TODO(@darzu): stream in assets
-  _GAME_ASSETS = await loadAssets();
 
   let hosting = host === null;
 

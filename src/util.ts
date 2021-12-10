@@ -40,3 +40,23 @@ export function hashCode(s: string) {
   }
   return hash;
 }
+
+export function objMap<A, V1 extends A[keyof A], V2>(
+  a: A,
+  map: (v1: V1, n?: string) => V2
+): { [P in keyof A]: V2 } {
+  const res: { [k: string]: V2 } = {};
+  Object.entries(a).forEach(([n, v1]) => {
+    res[n] = map(v1, n);
+  });
+  return res as { [P in keyof A]: V2 };
+}
+export function toRecord<A, V>(
+  as: A[],
+  key: (a: A) => string,
+  val: (a: A) => V
+): { [k: string]: V } {
+  const res: { [k: string]: V } = {};
+  as.forEach((a) => (res[key(a)] = val(a)));
+  return res;
+}

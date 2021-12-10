@@ -8,16 +8,21 @@ import { ParentDef, RenderableDef, TransformDef } from "../renderer.js";
 import { PhysicsStateDef } from "../phys_esc.js";
 import { AABBCollider, ColliderDef } from "../collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
-import { getAABBFromMesh, Mesh, transformMesh } from "../mesh-pool.js";
+import {
+  getAABBFromMesh,
+  Mesh,
+  scaleMesh,
+  transformMesh,
+} from "../mesh-pool.js";
 import { AABB } from "../phys_broadphase.js";
 import { Deserializer, Serializer } from "../serialize.js";
-import { _GAME_ASSETS } from "../main.js";
 import { DetectedEventsDef } from "../net/events.js";
 import { fireBullet } from "./bullet.js";
 import { registerEventHandler } from "../net/events.js";
 import { ToolDef } from "./tool.js";
 import { InteractableDef, InteractingDef } from "./interact.js";
 import { PlayerEntDef } from "./player.js";
+import { Assets, AssetsDef } from "./assets.js";
 
 const CANNON_FRAMES = 180;
 
@@ -161,25 +166,11 @@ EM.registerSerializerPair(
   deserializeCannonConstruct
 );
 
-// TODO(@darzu): move these to the asset system
-let _cannonMesh: Mesh | undefined = undefined;
-let _cannonAABB: AABB | undefined = undefined;
-function getCannonMesh(): Mesh {
-  if (!_cannonMesh) {
-    const rot = mat4.fromRotation(mat4.create(), -Math.PI / 2, [0, 1, 0]);
-    _cannonMesh = transformMesh(_GAME_ASSETS!.cannon, rot);
-  }
-  return _cannonMesh;
-}
-function getCannonAABB(): AABB {
-  if (!_cannonAABB) _cannonAABB = getAABBFromMesh(getCannonMesh());
-  return _cannonAABB;
-}
-
 function createCannon(
   em: EntityManager,
   e: Entity & { cannonConstruct: CannonConstruct },
-  pid: number
+  pid: number,
+  assets: Assets
 ) {
   if (FinishedDef.isOn(e)) return;
   const props = e.cannonConstruct;
@@ -189,7 +180,7 @@ function createCannon(
   //TODO: do we need motion smoothing?
   //if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e))
-    em.addComponent(e.id, RenderableDef, getCannonMesh());
+    em.addComponent(e.id, RenderableDef, assets.meshes.cannon);
   if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
   if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid);
   if (!CannonDef.isOn(e)) em.addComponent(e.id, CannonDef);
@@ -197,7 +188,7 @@ function createCannon(
     const collider = em.addComponent(e.id, ColliderDef);
     collider.shape = "AABB";
     collider.solid = true;
-    (collider as AABBCollider).aabb = getCannonAABB();
+    (collider as AABBCollider).aabb = assets.aabbs.cannon;
   }
   if (!InteractableDef.isOn(e)) {
     em.addComponent(e.id, InteractableDef);
@@ -212,9 +203,9 @@ function createCannon(
 export function registerBuildCannonsSystem(em: EntityManager) {
   em.registerSystem(
     [CannonConstructDef],
-    [MeDef],
+    [MeDef, AssetsDef],
     (cannons, res) => {
-      for (let b of cannons) createCannon(em, b, res.me.pid);
+      for (let b of cannons) createCannon(em, b, res.me.pid, res.assets);
     },
     "buildCannons"
   );
@@ -261,21 +252,10 @@ EM.registerSerializerPair(
   deserializeAmmunitionConstruct
 );
 
-let _ammunitionMesh: Mesh | undefined = undefined;
-let _ammunitionAABB: AABB | undefined = undefined;
-function getAmmunitionMesh(): Mesh {
-  if (!_ammunitionMesh) _ammunitionMesh = _GAME_ASSETS?.ammunitionBox!;
-  return _ammunitionMesh;
-}
-function getAmmunitionAABB(): AABB {
-  if (!_ammunitionAABB) _ammunitionAABB = getAABBFromMesh(getAmmunitionMesh());
-  return _ammunitionAABB;
-}
-
 export function registerBuildAmmunitionSystem(em: EntityManager) {
   em.registerSystem(
     [AmmunitionConstructDef],
-    [MeDef],
+    [MeDef, AssetsDef],
     (boxes, res) => {
       for (let e of boxes) {
         if (FinishedDef.isOn(e)) return;
@@ -291,7 +271,7 @@ export function registerBuildAmmunitionSystem(em: EntityManager) {
         if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
         if (!ParentDef.isOn(e)) em.addComponent(e.id, ParentDef);
         if (!RenderableDef.isOn(e))
-          em.addComponent(e.id, RenderableDef, getAmmunitionMesh());
+          em.addComponent(e.id, RenderableDef, res.assets.meshes.ammunitionBox);
         if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
         if (!AuthorityDef.isOn(e))
           em.addComponent(e.id, AuthorityDef, res.me.pid);
@@ -301,7 +281,7 @@ export function registerBuildAmmunitionSystem(em: EntityManager) {
           const collider = em.addComponent(e.id, ColliderDef);
           collider.shape = "AABB";
           collider.solid = true;
-          (collider as AABBCollider).aabb = getAmmunitionAABB();
+          (collider as AABBCollider).aabb = res.assets.aabbs.ammunitionBox;
         }
         if (!ToolDef.isOn(e)) {
           const tool = em.addComponent(e.id, ToolDef);
@@ -347,21 +327,10 @@ EM.registerSerializerPair(
   deserializeLinstockConstruct
 );
 
-let _linstockMesh: Mesh | undefined = undefined;
-let _linstockAABB: AABB | undefined = undefined;
-function getLinstockMesh(): Mesh {
-  if (!_linstockMesh) _linstockMesh = _GAME_ASSETS?.linstock!;
-  return _linstockMesh;
-}
-function getLinstockAABB(): AABB {
-  if (!_linstockAABB) _linstockAABB = getAABBFromMesh(getLinstockMesh());
-  return _linstockAABB;
-}
-
 export function registerBuildLinstockSystem(em: EntityManager) {
   em.registerSystem(
     [LinstockConstructDef],
-    [MeDef],
+    [MeDef, AssetsDef],
     (boxes, res) => {
       for (let e of boxes) {
         if (FinishedDef.isOn(e)) return;
@@ -372,8 +341,10 @@ export function registerBuildLinstockSystem(em: EntityManager) {
         if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.0, 0.0, 0.0]);
         if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
         if (!ParentDef.isOn(e)) em.addComponent(e.id, ParentDef);
-        if (!RenderableDef.isOn(e))
-          em.addComponent(e.id, RenderableDef, getLinstockMesh());
+        // TODO(@darzu): allow scaling to be configured on the asset import
+        const mesh = scaleMesh(res.assets.meshes.linstock, 0.1);
+        const aabb = getAABBFromMesh(mesh);
+        if (!RenderableDef.isOn(e)) em.addComponent(e.id, RenderableDef, mesh);
         if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
         if (!AuthorityDef.isOn(e))
           em.addComponent(e.id, AuthorityDef, res.me.pid);
@@ -382,7 +353,7 @@ export function registerBuildLinstockSystem(em: EntityManager) {
           const collider = em.addComponent(e.id, ColliderDef);
           collider.shape = "AABB";
           collider.solid = true;
-          (collider as AABBCollider).aabb = getLinstockAABB();
+          (collider as AABBCollider).aabb = aabb;
         }
         if (!ToolDef.isOn(e)) {
           const tool = em.addComponent(e.id, ToolDef);

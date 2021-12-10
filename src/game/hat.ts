@@ -3,7 +3,6 @@ import { AABBCollider, ColliderDef } from "../collider.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { HAT_OBJ, importObj, isParseError } from "../import_obj.js";
-import { _GAME_ASSETS } from "../main.js";
 import {
   getAABBFromMesh,
   Mesh,
