@@ -224,4 +224,26 @@ export const dbg = {
   cmp: (name: string) => {
     return cmpByName(name);
   },
+
+  summarizeStats: () => {
+    let stats = EM.stats;
+    let totalQueryTime = Object.values(stats)
+      .map((s) => s.queryTime)
+      .reduce((x, y) => x + y);
+    let totalCallTime = Object.values(stats)
+      .map((s) => s.callTime)
+      .reduce((x, y) => x + y);
+    let totalTime = totalQueryTime + totalCallTime;
+    let callTimes = [];
+    for (let s of Object.keys(stats)) {
+      callTimes.push({ s, t: stats[s].callTime });
+    }
+    callTimes.push({ s: "allQueries", t: totalQueryTime });
+    callTimes.sort((x, y) => y.t - x.t);
+    let out = "";
+    for (let { s, t } of callTimes) {
+      out += s + ": " + t / totalTime + "\n";
+    }
+    console.log(out);
+  },
 };
