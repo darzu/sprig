@@ -216,11 +216,6 @@ export class EntityManager {
       const allNeededCs = this._systemsToComponents.get(name);
       if (allNeededCs?.every((n) => n in e)) {
         this._systemsToEntities.get(name)?.push(id);
-
-        // TODO(@darzu): DEBUGGING
-        if (name === "moveCubes") {
-          console.log(`adding ${id} to cache for ${name}`);
-        }
       }
     }
 
@@ -306,14 +301,7 @@ export class EntityManager {
       if (es) {
         const indx = es.findIndex((v) => v === id);
         if (indx > 0) es.splice(indx, 1);
-
-        // TODO(@darzu): DEBUGGING
-        // throw `Query cache in invalid state: ${id} w/ ${def.name} is missing from cache for ${name}`;
       }
-
-      // TODO(@darzu): DEBUGGING
-      if (def.name === "transform")
-        console.log(`removing ${def.name} from ${id}`);
     }
   }
 
@@ -453,14 +441,6 @@ export class EntityManager {
         cs.map((c) => c.name)
       );
     }
-
-    // TODO(@darzu): DEBUGGING
-    if (name === "moveCubes") {
-      console.log(`cached es: ${es.map((e) => e.id).join(",")}`);
-      for (let c of cs ?? []) {
-        console.log(`component: ${c.id}, ${c.name}`);
-      }
-    }
   }
 
   callSystems() {
@@ -474,23 +454,9 @@ export class EntityManager {
         es = this._systemsToEntities
           .get(s.name)!
           .map((id) => this.entities.get(id)! as EntityW<any[]>);
-      else es = this.filterEntities(s.cs);
-      if (!es || es.some((e) => !e)) {
-        throw `query cache corrupt: while calling ${s.name}! ${es
-          .map((e, i) => [e, i] as const)
-          .filter(([e, i]) => !e)
-          .map(([_, i]) => this._systemsToEntities.get(s.name)![i])
-          .join(",")} doesn't have ent`;
-      }
-      for (let e of es) {
-        const cs = s.cs as ComponentDef[] | null;
-        if (cs && !cs.every((c) => c.name in e)) {
-          throw `query cache corrupt: ${e.id} is in cache for ${
-            s.name
-          }, but is missing: ${cs
-            .filter((c) => !(c.name in e))
-            .map((c) => c.name)}`;
-        }
+      else {
+        throw `System ${s.name} doesn't have a query cache!`
+        // es = this.filterEntities(s.cs);
       }
 
       let haveAllResources = true;
