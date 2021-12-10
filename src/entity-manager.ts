@@ -331,11 +331,12 @@ export class EntityManager {
     return res;
   }
 
-  public filterEntitiesByKey(cs: string[]): Entities<any> {
+  public filterEntitiesByKey(cs: string | string[]): Entities<any> {
     console.log(
       "filterEntitiesByKey called--should only be called from console"
     );
     const res: Entities<any> = [];
+    if (typeof cs === "string") cs = [cs];
     for (let e of this.entities.values()) {
       if (cs.every((c) => c in e)) {
         res.push(e as EntityW<any>);
