@@ -34,16 +34,21 @@ export function registerModeler(em: EntityManager) {
   }
 
   // listen for modeler on/off
-  em.registerSystem([], [ModelerDef, InputsDef, CanvasDef], (_, res) => {
-    if (res.inputs.keyClicks["m"]) {
-      res.modeler.enabled = !res.modeler.enabled;
-      if (res.modeler.enabled) {
-        res.htmlCanvas.unlockMouse();
-      } else {
-        res.htmlCanvas.shouldLockMouse = true;
+  em.registerSystem(
+    [],
+    [ModelerDef, InputsDef, CanvasDef],
+    (_, res) => {
+      if (res.inputs.keyClicks["m"]) {
+        res.modeler.enabled = !res.modeler.enabled;
+        if (res.modeler.enabled) {
+          res.htmlCanvas.unlockMouse();
+        } else {
+          res.htmlCanvas.shouldLockMouse = true;
+        }
       }
-    }
-  });
+    },
+    "modelerOnOff"
+  );
 
   // look for object clicks
   em.registerSystem(
@@ -107,6 +112,7 @@ export function registerModeler(em: EntityManager) {
         );
         drawLine(EM, r.org, endPoint, color);
       }
-    }
+    },
+    "modelerClicks"
   );
 }

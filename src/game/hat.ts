@@ -98,9 +98,14 @@ function createHat(
 }
 
 export function registerBuildHatSystem(em: EntityManager) {
-  em.registerSystem([HatConstructDef], [MeDef], (hats, res) => {
-    for (let s of hats) createHat(em, s, res.me.pid);
-  });
+  em.registerSystem(
+    [HatConstructDef],
+    [MeDef],
+    (hats, res) => {
+      for (let s of hats) createHat(em, s, res.me.pid);
+    },
+    "buildHats"
+  );
 }
 
 export function registerHatPickupSystem(em: EntityManager) {
@@ -120,7 +125,8 @@ export function registerHatPickupSystem(em: EntityManager) {
         }
         em.removeComponent(id, InteractingDef);
       }
-    }
+    },
+    "hatPickup"
   );
 }
 
@@ -142,7 +148,8 @@ export function registerHatDropSystem(em: EntityManager) {
           });
         }
       }
-    }
+    },
+    "hatDrop"
   );
 }
 

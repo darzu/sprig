@@ -426,19 +426,29 @@ export function registerUpdateSmoothingTargetSmoothChange(em: EntityManager) {
   );
 }
 export function registerUpdateSmoothingLerp(em: EntityManager) {
-  em.registerSystem([MotionSmoothingDef], [PhysicsTimerDef], (objs, res) => {
-    for (let i = 0; i < res.physicsTimer.steps; i++)
-      updateSmoothingLerp(objs, res);
-  });
+  em.registerSystem(
+    [MotionSmoothingDef],
+    [PhysicsTimerDef],
+    (objs, res) => {
+      for (let i = 0; i < res.physicsTimer.steps; i++)
+        updateSmoothingLerp(objs, res);
+    },
+    "updateSmoothingLerp"
+  );
 }
 
 // ECS register
 export function registerPhysicsSystems(em: EntityManager) {
   em.addSingletonComponent(PhysicsResultsDef);
 
-  em.registerSystem([MotionDef, ColliderDef, PhysicsStateDef], [], (objs) => {
-    for (let o of objs) if (!o._phys.init) initPhysicsObj(o);
-  });
+  em.registerSystem(
+    [MotionDef, ColliderDef, PhysicsStateDef],
+    [],
+    (objs) => {
+      for (let o of objs) if (!o._phys.init) initPhysicsObj(o);
+    },
+    "initPhysics"
+  );
 
   em.registerSystem(
     [MotionDef, ColliderDef, PhysicsStateDef],
@@ -447,6 +457,7 @@ export function registerPhysicsSystems(em: EntityManager) {
       for (let si = 0; si < res.physicsTimer.steps; si++) {
         stepsPhysics(objs, res.physicsTimer.period);
       }
-    }
+    },
+    "stepPhysics"
   );
 }

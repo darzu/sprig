@@ -86,6 +86,7 @@ export function registerInteractionSystem(em: EntityManager) {
           }
         }
       }
-    }
+    },
+    "interaction"
   );
 }

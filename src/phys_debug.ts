@@ -33,41 +33,46 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
   em.addSingletonComponent(PhysicsDbgDef);
 
   // add collider meshes
-  em.registerSystem([ColliderDef], [PhysicsDbgDef], (es, res) => {
-    for (let e of es) {
-      if (!res._physDbgState.colliderMeshes.has(e.id)) {
-        if (e.collider.shape === "AABB") {
-          // create debug entity
-          const dbgE = em.newEntity();
+  em.registerSystem(
+    [ColliderDef],
+    [PhysicsDbgDef],
+    (es, res) => {
+      for (let e of es) {
+        if (!res._physDbgState.colliderMeshes.has(e.id)) {
+          if (e.collider.shape === "AABB") {
+            // create debug entity
+            const dbgE = em.newEntity();
 
-          // with a wireframe mesh
-          const m = meshFromAABB(e.collider.aabb);
-          em.addComponent(
-            dbgE.id,
-            RenderableDef,
-            m,
-            res._physDbgState.showAABBs,
-            1
-          );
+            // with a wireframe mesh
+            const m = meshFromAABB(e.collider.aabb);
+            em.addComponent(
+              dbgE.id,
+              RenderableDef,
+              m,
+              res._physDbgState.showAABBs,
+              1
+            );
 
-          // colored
-          em.addComponent(dbgE.id, ColorDef, [0, 1, 0]);
+            // colored
+            em.addComponent(dbgE.id, ColorDef, [0, 1, 0]);
 
-          // transformed
-          em.addComponent(dbgE.id, TransformDef);
+            // transformed
+            em.addComponent(dbgE.id, TransformDef);
 
-          // NOTE: we don't use the normal parent transform mechanism b/c
-          //  colliders especially AABBs are only translated, not full matrix
-          //  transform'ed
-          em.addComponent(dbgE.id, DbgMeshDef, e.id);
+            // NOTE: we don't use the normal parent transform mechanism b/c
+            //  colliders especially AABBs are only translated, not full matrix
+            //  transform'ed
+            em.addComponent(dbgE.id, DbgMeshDef, e.id);
 
-          // remember
-          res._physDbgState.colliderMeshes.set(e.id, dbgE.id);
+            // remember
+            res._physDbgState.colliderMeshes.set(e.id, dbgE.id);
+          }
+          // TODO(@darzu): handle other collider shapes
         }
-        // TODO(@darzu): handle other collider shapes
       }
-    }
-  });
+    },
+    "colliderMeshes"
+  );
 
   // toggle debug meshes on and off
   em.registerSystem(
@@ -82,20 +87,26 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
           e.renderable.enabled = newState;
         }
       }
-    }
+    },
+    "debugMeshes"
   );
 
   // update transform based on parent collider
-  em.registerSystem([DbgMeshDef, TransformDef], [], (es, res) => {
-    for (let e of es) {
-      const parent = em.findEntity(e._physDbgMesh.parent, [
-        PhysicsStateDef,
-      ])?._phys;
-      if (parent) {
-        mat4.fromTranslation(e.transform, parent.world.min);
+  em.registerSystem(
+    [DbgMeshDef, TransformDef],
+    [],
+    (es, res) => {
+      for (let e of es) {
+        const parent = em.findEntity(e._physDbgMesh.parent, [
+          PhysicsStateDef,
+        ])?._phys;
+        if (parent) {
+          mat4.fromTranslation(e.transform, parent.world.min);
+        }
       }
-    }
-  });
+    },
+    "debugMeshTransform"
+  );
 }
 
 // TODO(@darzu): use instancing

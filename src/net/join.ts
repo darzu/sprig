@@ -23,7 +23,7 @@ import {
 import { MessageType, MAX_MESSAGE_SIZE } from "./message.js";
 
 function registerConnectToServer(em: EntityManager) {
-  let f = (
+  let connectToServer = (
     peers: { id: number; peer: Peer }[],
     { join, eventsToNetwork }: { join: Join; eventsToNetwork: ToNetworkEvent[] }
   ) => {
@@ -55,12 +55,12 @@ function registerConnectToServer(em: EntityManager) {
   em.registerSystem(
     [PeerDef],
     [JoinDef, NetworkReadyDef, EventsToNetworkDef],
-    f
+    connectToServer
   );
 }
 
 function registerHandleJoin(em: EntityManager) {
-  let f = (
+  let handleJoin = (
     peers: { peer: Peer; inbox: Inbox; outbox: Outbox }[],
     { me }: { me: { pid: number; host: boolean } }
   ) => {
@@ -89,11 +89,11 @@ function registerHandleJoin(em: EntityManager) {
       }
     }
   };
-  em.registerSystem([PeerDef, InboxDef, OutboxDef], [MeDef], f);
+  em.registerSystem([PeerDef, InboxDef, OutboxDef], [MeDef], handleJoin);
 }
 
 function registerHandleJoinResponse(em: EntityManager) {
-  let f = (
+  let handleJoinResponse = (
     peers: { peer: Peer; inbox: Inbox; outbox: Outbox }[],
     { eventsToNetwork }: { eventsToNetwork: ToNetworkEvent[] }
   ) => {
@@ -115,7 +115,11 @@ function registerHandleJoinResponse(em: EntityManager) {
       }
     }
   };
-  em.registerSystem([PeerDef, InboxDef, OutboxDef], [EventsToNetworkDef], f);
+  em.registerSystem(
+    [PeerDef, InboxDef, OutboxDef],
+    [EventsToNetworkDef],
+    handleJoinResponse
+  );
 }
 
 export function registerJoinSystems(em: EntityManager) {

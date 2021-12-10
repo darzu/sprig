@@ -46,6 +46,7 @@ type System<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = {
   cs: CS;
   rs: RS;
   callback: SystemFN<CS, RS>;
+  name: string;
 };
 
 type EDef<ID extends number, CS extends ComponentDef[]> = [ID, ...CS];
@@ -57,6 +58,13 @@ type ESet<DS extends EDef<number, any>[]> = {
 
 function nameToId(name: string): number {
   return hashCode(name);
+}
+
+interface SystemStats {
+  queryTime: number;
+  callTime: number;
+  queries: number;
+  calls: number;
 }
 
 export class EntityManager {
@@ -73,6 +81,8 @@ export class EntityManager {
 
   ranges: Record<string, { nextId: number; maxId: number }> = {};
   defaultRange: string = "";
+  stats: Record<string, SystemStats> = {};
+  loops: number = 0;
 
   constructor() {
     this.entities.set(0, { id: 0 });
@@ -356,38 +366,57 @@ export class EntityManager {
   public registerSystem<CS extends ComponentDef[], RS extends ComponentDef[]>(
     cs: [...CS],
     rs: [...RS],
-    callback: SystemFN<CS, RS>
+    callback: SystemFN<CS, RS>,
+    name?: string
   ): void;
   public registerSystem<CS extends null, RS extends ComponentDef[]>(
     cs: CS,
     rs: [...RS],
-    callback: SystemFN<CS, RS>
+    callback: SystemFN<CS, RS>,
+    name?: string
   ): void;
   public registerSystem<CS extends ComponentDef[], RS extends ComponentDef[]>(
     cs: [...CS] | null,
     rs: [...RS],
-    callback: SystemFN<CS, RS>
+    callback: SystemFN<CS, RS>,
+    name?: string
   ): void {
+    name = name || callback.name;
+    if (name === "") {
+      throw `To define a system with an anonymous function, pass an explicit name`;
+    }
+    if (this.systems.find((sys) => sys.name === name))
+      throw `System named ${name} already defined. Try explicitly passing a name`;
     this.systems.push({
       cs,
       rs,
       callback,
+      name,
     });
+    this.stats[name] = { calls: 0, queries: 0, callTime: 0, queryTime: 0 };
   }
 
   callSystems() {
     // dispatch to all the systems
     for (let s of this.systems) {
+      let start = performance.now();
       const es = this.filterEntities(s.cs);
       let haveAllResources = true;
       for (let r of s.rs) {
         // note this is just to verify it exists
         haveAllResources &&= !!this.findSingletonComponent(r);
       }
+      let afterQuery = performance.now();
+      this.stats[s.name].queries++;
+      this.stats[s.name].queryTime += afterQuery - start;
       if (haveAllResources) {
         s.callback(es, this.entities.get(0)! as any);
+        let afterCall = performance.now();
+        this.stats[s.name].calls++;
+        this.stats[s.name].callTime += afterCall - afterQuery;
       }
     }
+    this.loops++;
   }
 }
 

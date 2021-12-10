@@ -14,14 +14,19 @@ EM.registerSerializerPair(
 );
 
 export function registerDeleteEntitiesSystem(em: EntityManager) {
-  em.registerSystem([DeletedDef], [], (entities) => {
-    for (let entity of entities) {
-      // TODO: remove from renderer
-      em.keepOnlyComponents(entity.id, [DeletedDef, SyncDef]);
-      if (SyncDef.isOn(entity)) {
-        entity.sync.dynamicComponents = [];
-        entity.sync.fullComponents = [DeletedDef.id];
+  em.registerSystem(
+    [DeletedDef],
+    [],
+    (entities) => {
+      for (let entity of entities) {
+        // TODO: remove from renderer
+        em.keepOnlyComponents(entity.id, [DeletedDef, SyncDef]);
+        if (SyncDef.isOn(entity)) {
+          entity.sync.dynamicComponents = [];
+          entity.sync.fullComponents = [DeletedDef.id];
+        }
       }
-    }
-  });
+    },
+    "delete"
+  );
 }

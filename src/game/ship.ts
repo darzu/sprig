@@ -59,7 +59,12 @@ function createShip(
 }
 
 export function registerBuildShipSystem(em: EntityManager) {
-  em.registerSystem([ShipConstructDef], [MeDef], (ships, res) => {
-    for (let s of ships) createShip(em, s, res.me.pid);
-  });
+  em.registerSystem(
+    [ShipConstructDef],
+    [MeDef],
+    (ships, res) => {
+      for (let s of ships) createShip(em, s, res.me.pid);
+    },
+    "buildShips"
+  );
 }

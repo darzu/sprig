@@ -56,7 +56,7 @@ function updateTimer(timer: TimerInternal, dt: number) {
 }
 
 export function registerTimeSystem(em: EntityManager) {
-  function f(
+  function time(
     [],
     {
       time,
@@ -70,7 +70,7 @@ export function registerTimeSystem(em: EntityManager) {
     updateTimer(netTimer as TimerInternal, time.dt);
     updateTimer(physicsTimer as TimerInternal, time.dt);
   }
-  em.registerSystem(null, [TimeDef, NetTimerDef, PhysicsTimerDef], f);
+  em.registerSystem(null, [TimeDef, NetTimerDef, PhysicsTimerDef], time);
 }
 
 export function addTimeComponents(em: EntityManager) {

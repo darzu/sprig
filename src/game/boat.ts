@@ -64,7 +64,8 @@ export function registerStepBoats(em: EntityManager) {
       for (let i = 0; i < res.physicsTimer.steps; i++) {
         stepBoats(objs, res);
       }
-    }
+    },
+    "stepBoats"
   );
 }
 
@@ -153,7 +154,12 @@ function createBoat(
 }
 
 export function registerBuildBoatsSystem(em: EntityManager) {
-  em.registerSystem([BoatConstructDef], [MeDef], (boats, res) => {
-    for (let b of boats) createBoat(em, b, res.me.pid);
-  });
+  em.registerSystem(
+    [BoatConstructDef],
+    [MeDef],
+    (boats, res) => {
+      for (let b of boats) createBoat(em, b, res.me.pid);
+    },
+    "buildBoats"
+  );
 }

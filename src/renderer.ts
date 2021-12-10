@@ -260,19 +260,25 @@ export function registerRenderer(em: EntityManager) {
     (objs, res) => {
       if (res.physicsTimer.steps > 0)
         stepRenderer(res.renderer.renderer, objs, res.cameraView);
-    }
+    },
+    "stepRenderer"
   );
 }
 
 export function registerAddMeshHandleSystem(em: EntityManager) {
-  em.registerSystem([RenderableDef], [RendererDef], (es, res) => {
-    for (let e of es) {
-      if (!MeshHandleDef.isOn(e)) {
-        // TODO(@darzu): how should we handle instancing?
-        // TODO(@darzu): this seems somewhat inefficient to look for this every frame
-        const meshHandle = res.renderer.renderer.addMesh(e.renderable.mesh);
-        em.addComponent(e.id, MeshHandleDef, meshHandle);
+  em.registerSystem(
+    [RenderableDef],
+    [RendererDef],
+    (es, res) => {
+      for (let e of es) {
+        if (!MeshHandleDef.isOn(e)) {
+          // TODO(@darzu): how should we handle instancing?
+          // TODO(@darzu): this seems somewhat inefficient to look for this every frame
+          const meshHandle = res.renderer.renderer.addMesh(e.renderable.mesh);
+          em.addComponent(e.id, MeshHandleDef, meshHandle);
+        }
       }
-    }
-  });
+    },
+    "addMeshHandle"
+  );
 }

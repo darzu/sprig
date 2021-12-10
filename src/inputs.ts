@@ -26,7 +26,8 @@ export function registerInputsSystem(em: EntityManager): void {
       if (!inputsReader) inputsReader = createInputsReader(htmlCanvas.canvas);
       // TODO(@darzu): handle pause and menus?
       Object.assign(inputs, inputsReader());
-    }
+    },
+    "inputs"
   );
 }
 

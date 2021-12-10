@@ -142,7 +142,8 @@ export function registerBuildBulletsSystem(em: EntityManager) {
     (bullets, res) => {
       for (let b of bullets)
         createBullet(em, b, res.me.pid, res.renderer.renderer);
-    }
+    },
+    "buildBullets"
   );
 }
 

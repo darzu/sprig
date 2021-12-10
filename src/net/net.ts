@@ -240,7 +240,22 @@ export function registerNetSystems(em: EntityManager) {
   em.addSingletonComponent(NetStatsDef);
   em.addSingletonComponent(EventsFromNetworkDef);
   em.addSingletonComponent(EventsToNetworkDef);
-  em.registerSystem(null, [NetStatsDef], getStatsFromNet(net));
-  em.registerSystem(null, [EventsFromNetworkDef], getEventsFromNet(net));
-  em.registerSystem(null, [EventsToNetworkDef], sendEventsToNet(net));
+  em.registerSystem(
+    null,
+    [NetStatsDef],
+    getStatsFromNet(net),
+    "getStatsFromNet"
+  );
+  em.registerSystem(
+    null,
+    [EventsFromNetworkDef],
+    getEventsFromNet(net),
+    "getEventsFromNet"
+  );
+  em.registerSystem(
+    null,
+    [EventsToNetworkDef],
+    sendEventsToNet(net),
+    "sendEventsToNet"
+  );
 }

@@ -193,7 +193,8 @@ function registerRenderViewController(em: EntityManager) {
       } else if (inputs.keyClicks["4"]) {
         camera.perspectiveMode = "ortho";
       }
-    }
+    },
+    "renderView"
   );
 }
 

@@ -21,11 +21,16 @@ export const RendererDef = EM.defineComponent(
 let _rendererPromise: Promise<void> | null = null;
 
 export function registerRenderInitSystem(em: EntityManager) {
-  em.registerSystem([], [CanvasDef], (_, res) => {
-    if (!!em.findSingletonComponent(RenderableDef)) return; // already init
-    if (!!_rendererPromise) return;
-    _rendererPromise = init(em, res.htmlCanvas.canvas);
-  });
+  em.registerSystem(
+    [],
+    [CanvasDef],
+    (_, res) => {
+      if (!!em.findSingletonComponent(RenderableDef)) return; // already init
+      if (!!_rendererPromise) return;
+      _rendererPromise = init(em, res.htmlCanvas.canvas);
+    },
+    "renderInit"
+  );
 }
 
 async function init(

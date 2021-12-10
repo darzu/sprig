@@ -46,7 +46,8 @@ export function registerToolPickupSystem(em: EntityManager) {
         }
         em.removeComponent(id, InteractingDef);
       }
-    }
+    },
+    "toolPickup"
   );
 }
 
@@ -67,7 +68,8 @@ export function registerToolDropSystem(em: EntityManager) {
           });
         }
       }
-    }
+    },
+    "toolDrop"
   );
 }
 

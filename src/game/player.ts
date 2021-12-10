@@ -101,7 +101,8 @@ export function registerStepPlayers(em: EntityManager) {
     ],
     (objs, res) => {
       for (let i = 0; i < res.physicsTimer.steps; i++) stepPlayers(objs, res);
-    }
+    },
+    "stepPlayers"
   );
 }
 
@@ -338,7 +339,12 @@ function createPlayer(
 }
 
 export function registerBuildPlayersSystem(em: EntityManager) {
-  em.registerSystem([PlayerConstructDef], [MeDef], (players, res) => {
-    for (let p of players) createPlayer(em, p, res.me.pid);
-  });
+  em.registerSystem(
+    [PlayerConstructDef],
+    [MeDef],
+    (players, res) => {
+      for (let p of players) createPlayer(em, p, res.me.pid);
+    },
+    "buildPlayers"
+  );
 }

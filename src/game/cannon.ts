@@ -60,7 +60,8 @@ export function registerStepCannonsSystem(em: EntityManager) {
           }
         }
       }
-    }
+    },
+    "stepCannons"
   );
 }
 
@@ -93,7 +94,8 @@ export function registerPlayerCannonSystem(em: EntityManager) {
         }
         EM.removeComponent(id, InteractingDef);
       }
-    }
+    },
+    "playerCannon"
   );
 }
 
@@ -208,9 +210,14 @@ function createCannon(
 }
 
 export function registerBuildCannonsSystem(em: EntityManager) {
-  em.registerSystem([CannonConstructDef], [MeDef], (cannons, res) => {
-    for (let b of cannons) createCannon(em, b, res.me.pid);
-  });
+  em.registerSystem(
+    [CannonConstructDef],
+    [MeDef],
+    (cannons, res) => {
+      for (let b of cannons) createCannon(em, b, res.me.pid);
+    },
+    "buildCannons"
+  );
 }
 
 export const AmmunitionDef = EM.defineComponent(
@@ -245,44 +252,50 @@ function getAmmunitionAABB(): AABB {
 }
 
 export function registerBuildAmmunitionSystem(em: EntityManager) {
-  em.registerSystem([AmmunitionConstructDef], [MeDef], (boxes, res) => {
-    for (let e of boxes) {
-      if (FinishedDef.isOn(e)) return;
-      const props = e.ammunitionConstruct;
-      if (!MotionDef.isOn(e)) {
-        let motion = em.addComponent(e.id, MotionDef, props.location);
-        // TODO: the asset is upside down. should probably fix the asset
-        quat.rotateX(motion.rotation, motion.rotation, Math.PI);
-        quat.normalize(motion.rotation, motion.rotation);
+  em.registerSystem(
+    [AmmunitionConstructDef],
+    [MeDef],
+    (boxes, res) => {
+      for (let e of boxes) {
+        if (FinishedDef.isOn(e)) return;
+        const props = e.ammunitionConstruct;
+        if (!MotionDef.isOn(e)) {
+          let motion = em.addComponent(e.id, MotionDef, props.location);
+          // TODO: the asset is upside down. should probably fix the asset
+          quat.rotateX(motion.rotation, motion.rotation, Math.PI);
+          quat.normalize(motion.rotation, motion.rotation);
+        }
+        if (!ColorDef.isOn(e))
+          em.addComponent(e.id, ColorDef, [0.2, 0.1, 0.05]);
+        if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
+        if (!ParentDef.isOn(e)) em.addComponent(e.id, ParentDef);
+        if (!RenderableDef.isOn(e))
+          em.addComponent(e.id, RenderableDef, getAmmunitionMesh());
+        if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
+        if (!AuthorityDef.isOn(e))
+          em.addComponent(e.id, AuthorityDef, res.me.pid);
+        if (!AmmunitionDef.isOn(e))
+          em.addComponent(e.id, AmmunitionDef, props.amount);
+        if (!ColliderDef.isOn(e)) {
+          const collider = em.addComponent(e.id, ColliderDef);
+          collider.shape = "AABB";
+          collider.solid = true;
+          (collider as AABBCollider).aabb = getAmmunitionAABB();
+        }
+        if (!ToolDef.isOn(e)) {
+          const tool = em.addComponent(e.id, ToolDef);
+          tool.type = "ammunition";
+        }
+        if (!InteractableDef.isOn(e)) em.addComponent(e.id, InteractableDef);
+        if (!SyncDef.isOn(e)) {
+          const sync = em.addComponent(e.id, SyncDef);
+          sync.fullComponents.push(AmmunitionConstructDef.id);
+        }
+        em.addComponent(e.id, FinishedDef);
       }
-      if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.2, 0.1, 0.05]);
-      if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
-      if (!ParentDef.isOn(e)) em.addComponent(e.id, ParentDef);
-      if (!RenderableDef.isOn(e))
-        em.addComponent(e.id, RenderableDef, getAmmunitionMesh());
-      if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
-      if (!AuthorityDef.isOn(e))
-        em.addComponent(e.id, AuthorityDef, res.me.pid);
-      if (!AmmunitionDef.isOn(e))
-        em.addComponent(e.id, AmmunitionDef, props.amount);
-      if (!ColliderDef.isOn(e)) {
-        const collider = em.addComponent(e.id, ColliderDef);
-        collider.shape = "AABB";
-        collider.solid = true;
-        (collider as AABBCollider).aabb = getAmmunitionAABB();
-      }
-      if (!ToolDef.isOn(e)) {
-        const tool = em.addComponent(e.id, ToolDef);
-        tool.type = "ammunition";
-      }
-      if (!InteractableDef.isOn(e)) em.addComponent(e.id, InteractableDef);
-      if (!SyncDef.isOn(e)) {
-        const sync = em.addComponent(e.id, SyncDef);
-        sync.fullComponents.push(AmmunitionConstructDef.id);
-      }
-      em.addComponent(e.id, FinishedDef);
-    }
-  });
+    },
+    "buildAmmunition"
+  );
 }
 
 export const LinstockDef = EM.defineComponent("linstock", (amount?: number) => {
@@ -314,39 +327,44 @@ function getLinstockAABB(): AABB {
 }
 
 export function registerBuildLinstockSystem(em: EntityManager) {
-  em.registerSystem([LinstockConstructDef], [MeDef], (boxes, res) => {
-    for (let e of boxes) {
-      if (FinishedDef.isOn(e)) return;
-      const props = e.linstockConstruct;
-      if (!MotionDef.isOn(e)) {
-        let motion = em.addComponent(e.id, MotionDef, props.location);
+  em.registerSystem(
+    [LinstockConstructDef],
+    [MeDef],
+    (boxes, res) => {
+      for (let e of boxes) {
+        if (FinishedDef.isOn(e)) return;
+        const props = e.linstockConstruct;
+        if (!MotionDef.isOn(e)) {
+          let motion = em.addComponent(e.id, MotionDef, props.location);
+        }
+        if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.0, 0.0, 0.0]);
+        if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
+        if (!ParentDef.isOn(e)) em.addComponent(e.id, ParentDef);
+        if (!RenderableDef.isOn(e))
+          em.addComponent(e.id, RenderableDef, getLinstockMesh());
+        if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
+        if (!AuthorityDef.isOn(e))
+          em.addComponent(e.id, AuthorityDef, res.me.pid);
+        if (!LinstockDef.isOn(e))
+          em.addComponent(e.id, LinstockDef, props.amount);
+        if (!ColliderDef.isOn(e)) {
+          const collider = em.addComponent(e.id, ColliderDef);
+          collider.shape = "AABB";
+          collider.solid = true;
+          (collider as AABBCollider).aabb = getLinstockAABB();
+        }
+        if (!ToolDef.isOn(e)) {
+          const tool = em.addComponent(e.id, ToolDef);
+          tool.type = "linstock";
+        }
+        if (!InteractableDef.isOn(e)) em.addComponent(e.id, InteractableDef);
+        if (!SyncDef.isOn(e)) {
+          const sync = em.addComponent(e.id, SyncDef);
+          sync.fullComponents.push(LinstockConstructDef.id);
+        }
+        em.addComponent(e.id, FinishedDef);
       }
-      if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.0, 0.0, 0.0]);
-      if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
-      if (!ParentDef.isOn(e)) em.addComponent(e.id, ParentDef);
-      if (!RenderableDef.isOn(e))
-        em.addComponent(e.id, RenderableDef, getLinstockMesh());
-      if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
-      if (!AuthorityDef.isOn(e))
-        em.addComponent(e.id, AuthorityDef, res.me.pid);
-      if (!LinstockDef.isOn(e))
-        em.addComponent(e.id, LinstockDef, props.amount);
-      if (!ColliderDef.isOn(e)) {
-        const collider = em.addComponent(e.id, ColliderDef);
-        collider.shape = "AABB";
-        collider.solid = true;
-        (collider as AABBCollider).aabb = getLinstockAABB();
-      }
-      if (!ToolDef.isOn(e)) {
-        const tool = em.addComponent(e.id, ToolDef);
-        tool.type = "linstock";
-      }
-      if (!InteractableDef.isOn(e)) em.addComponent(e.id, InteractableDef);
-      if (!SyncDef.isOn(e)) {
-        const sync = em.addComponent(e.id, SyncDef);
-        sync.fullComponents.push(LinstockConstructDef.id);
-      }
-      em.addComponent(e.id, FinishedDef);
-    }
-  });
+    },
+    "buildLinstock"
+  );
 }

@@ -52,7 +52,8 @@ export function registerBulletCollisionSystem(em: EntityManager) {
           }
         }
       }
-    }
+    },
+    "bulletCollision"
   );
 }
 
