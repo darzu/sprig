@@ -238,15 +238,23 @@ export const dbg = {
     for (let s of Object.keys(stats)) {
       callTimes.push({ s, t: stats[s].callTime });
     }
-    callTimes.push({ s: "allQueries", t: totalQueryTime });
+    callTimes.push({ s: "ALL QUERIES", t: totalQueryTime });
     callTimes.sort((x, y) => y.t - x.t);
     let out = "";
     for (let { s, t } of callTimes) {
-      out += s + ": " + t / totalTime + " (" + t / EM.loops + "ms)" + "\n";
+      out +=
+        s +
+        ": " +
+        ((t * 100) / totalTime).toPrecision(2) +
+        "%" +
+        " (" +
+        (t / EM.loops).toPrecision(2) +
+        "ms)" +
+        "\n";
     }
 
     out += "\n";
-    out += "time per frame: " + totalTime / EM.loops;
+    out += "time per frame: " + (totalTime / EM.loops).toPrecision(3) + "ms";
     console.log(out);
   },
 };
