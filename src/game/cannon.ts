@@ -240,6 +240,27 @@ export const AmmunitionConstructDef = EM.defineComponent(
   }
 );
 
+export type AmmunitionConstruct = Component<typeof AmmunitionConstructDef>;
+
+function serializeAmmunitionConstruct(c: AmmunitionConstruct, buf: Serializer) {
+  buf.writeVec3(c.location);
+  buf.writeUint16(c.amount);
+}
+
+function deserializeAmmunitionConstruct(
+  c: AmmunitionConstruct,
+  buf: Deserializer
+) {
+  buf.readVec3(c.location);
+  c.amount = buf.readUint16();
+}
+
+EM.registerSerializerPair(
+  AmmunitionConstructDef,
+  serializeAmmunitionConstruct,
+  deserializeAmmunitionConstruct
+);
+
 let _ammunitionMesh: Mesh | undefined = undefined;
 let _ammunitionAABB: AABB | undefined = undefined;
 function getAmmunitionMesh(): Mesh {
@@ -298,21 +319,32 @@ export function registerBuildAmmunitionSystem(em: EntityManager) {
   );
 }
 
-export const LinstockDef = EM.defineComponent("linstock", (amount?: number) => {
-  return {
-    amount: amount || 0,
-  };
-});
+export const LinstockDef = EM.defineComponent("linstock", () => true);
 export type Linstock = Component<typeof LinstockDef>;
 
 export const LinstockConstructDef = EM.defineComponent(
   "linstockConstruct",
-  (loc?: vec3, amount?: number) => {
+  (loc?: vec3) => {
     return {
       location: loc ?? vec3.fromValues(0, 0, 0),
-      amount: amount || 0,
     };
   }
+);
+
+export type LinstockConstruct = Component<typeof LinstockConstructDef>;
+
+function serializeLinstockConstruct(c: LinstockConstruct, buf: Serializer) {
+  buf.writeVec3(c.location);
+}
+
+function deserializeLinstockConstruct(c: LinstockConstruct, buf: Deserializer) {
+  buf.readVec3(c.location);
+}
+
+EM.registerSerializerPair(
+  LinstockConstructDef,
+  serializeLinstockConstruct,
+  deserializeLinstockConstruct
 );
 
 let _linstockMesh: Mesh | undefined = undefined;
@@ -345,8 +377,7 @@ export function registerBuildLinstockSystem(em: EntityManager) {
         if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
         if (!AuthorityDef.isOn(e))
           em.addComponent(e.id, AuthorityDef, res.me.pid);
-        if (!LinstockDef.isOn(e))
-          em.addComponent(e.id, LinstockDef, props.amount);
+        if (!LinstockDef.isOn(e)) em.addComponent(e.id, LinstockDef);
         if (!ColliderDef.isOn(e)) {
           const collider = em.addComponent(e.id, ColliderDef);
           collider.shape = "AABB";

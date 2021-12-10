@@ -145,6 +145,8 @@ export class EntityManager {
     }
     let entity = this.findEntity(id, [def]);
     let component;
+    // TODO: because of this usage of dummy, deserializers don't
+    // actually need to read buf.dummy
     if (buf.dummy) {
       component = {} as any;
     } else if (!entity) {
