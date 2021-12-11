@@ -72,20 +72,10 @@ export function registerSendOutboxes(em: EntityManager) {
       peer: { address },
       outbox,
     } of peers) {
-      while (outbox.reliable.length > 0) {
-        const message = outbox.reliable.shift()!;
+      while (outbox.length > 0) {
+        const message = outbox.shift()!;
         eventsToNetwork.push({
           type: NetworkEventType.MessageSend,
-          reliable: true,
-          to: address,
-          buf: message,
-        });
-      }
-      while (outbox.unreliable.length > 0) {
-        const message = outbox.unreliable.shift()!;
-        eventsToNetwork.push({
-          type: NetworkEventType.MessageSend,
-          reliable: false,
           to: address,
           buf: message,
         });

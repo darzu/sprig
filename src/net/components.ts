@@ -74,19 +74,12 @@ export const InboxDef = EM.defineComponent(
 
 export type Inbox = Component<typeof InboxDef>;
 
-export const OutboxDef = EM.defineComponent("outbox", () => ({
-  reliable: [] as DataView[],
-  unreliable: [] as DataView[],
-}));
+export const OutboxDef = EM.defineComponent("outbox", () => [] as DataView[]);
 
 export type Outbox = Component<typeof OutboxDef>;
 
-export function send(outbox: Outbox, buffer: DataView, reliable: boolean) {
-  if (reliable) {
-    outbox.reliable.push(buffer);
-  } else {
-    outbox.unreliable.push(buffer);
-  }
+export function send(outbox: Outbox, buffer: DataView) {
+  outbox.push(buffer);
 }
 
 export const NetStatsDef = EM.defineComponent("netStats", () => ({

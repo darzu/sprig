@@ -31,7 +31,6 @@ export interface MessageRecv {
 
 interface MessageSend {
   type: NetworkEventType.MessageSend;
-  reliable: boolean;
   to: string;
   buf: ArrayBufferView;
 }

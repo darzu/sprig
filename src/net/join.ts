@@ -45,7 +45,6 @@ function registerConnectToServer(em: EntityManager) {
           eventsToNetwork.push({
             type: NetworkEventType.MessageSend,
             to: join.address,
-            reliable: true,
             buf: message.buffer,
           });
           em.removeSingletonComponent(JoinDef);
@@ -84,7 +83,7 @@ function registerHandleJoin(em: EntityManager) {
         for (let peer of peer_addresses) {
           response.writeString(peer);
         }
-        send(outbox, response.buffer, true);
+        send(outbox, response.buffer);
         peer.joined = true;
       }
     }

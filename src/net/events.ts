@@ -7,6 +7,7 @@ import {
   Me,
   Outbox,
   OutboxDef,
+  send,
   Peer,
   PeerDef,
   HostDef,
@@ -230,7 +231,7 @@ export function registerEventSystems(em: EntityManager) {
         const message = new Serializer(MAX_MESSAGE_SIZE);
         message.writeUint8(MessageType.EventRequest);
         serializeDetectedEvent(detectedEvent, message);
-        outbox.reliable.push(message.buffer);
+        send(outbox, message.buffer);
       }
     }
   }
@@ -270,7 +271,7 @@ export function registerEventSystems(em: EntityManager) {
           const message = new Serializer(MAX_MESSAGE_SIZE);
           message.writeUint8(MessageType.Event);
           serializeEvent(event, message);
-          peer.outbox.reliable.push(message.buffer);
+          send(peer.outbox, message.buffer);
         }
         peer.peer.lastEvent = last;
       }
