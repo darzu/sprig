@@ -16,7 +16,11 @@ import { Renderer } from "./render_webgpu.js";
 import { Scale, ScaleDef } from "./scale.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
 import { PhysicsTimerDef } from "./time.js";
-import { Parent, TransformWorld, TransformWorldDef } from "./transform.js";
+import {
+  ParentTransform,
+  TransformWorld,
+  TransformWorldDef,
+} from "./transform.js";
 
 export const RenderableDef = EM.defineComponent(
   "renderable",

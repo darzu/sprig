@@ -15,7 +15,7 @@ import { MotionDef } from "../phys_motion.js";
 import { RenderableDef } from "../renderer.js";
 import {
   MotionSmoothingDef,
-  ParentDef,
+  ParentTransformDef,
   TransformWorldDef,
 } from "../transform.js";
 import { ColorDef } from "./game.js";
@@ -74,7 +74,7 @@ function createHat(
   if (!MotionDef.isOn(e)) em.addComponent(e.id, MotionDef, props.loc);
   if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.4, 0.1, 0.1]);
   if (!TransformWorldDef.isOn(e)) em.addComponent(e.id, TransformWorldDef);
-  if (!ParentDef.isOn(e)) em.addComponent(e.id, ParentDef);
+  if (!ParentTransformDef.isOn(e)) em.addComponent(e.id, ParentTransformDef);
   if (!RenderableDef.isOn(e))
     em.addComponent(e.id, RenderableDef, getHatMesh());
   if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
@@ -161,8 +161,8 @@ registerEventHandler("hat-pickup", {
   },
   runEvent: (em, entities) => {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
-    let hat = em.findEntity(entities[1], [MotionDef, ParentDef])!;
-    hat.parent.id = player.id;
+    let hat = em.findEntity(entities[1], [MotionDef, ParentTransformDef])!;
+    hat.parentTransform.id = player.id;
     em.removeComponent(hat.id, InteractableDef);
     vec3.set(hat.motion.location, 0, 1, 0);
     player.player.hat = hat.id;
@@ -177,8 +177,8 @@ registerEventHandler("hat-drop", {
   },
   runEvent: (em, entities, location) => {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
-    let hat = em.findEntity(entities[1], [MotionDef, ParentDef])!;
-    hat.parent.id = 0;
+    let hat = em.findEntity(entities[1], [MotionDef, ParentTransformDef])!;
+    hat.parentTransform.id = 0;
     em.addComponent(hat.id, InteractableDef);
     vec3.copy(hat.motion.location, location!);
     player.player.hat = 0;

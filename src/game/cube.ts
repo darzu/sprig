@@ -6,7 +6,7 @@ import { Motion, MotionDef } from "../phys_motion.js";
 import { RenderableDef } from "../renderer.js";
 import {
   MotionSmoothingDef,
-  ParentDef,
+  ParentTransformDef,
   TransformWorldDef,
 } from "../transform.js";
 import { ColorDef } from "./game.js";
@@ -81,8 +81,8 @@ export function registerBuildCubesSystem(em: EntityManager) {
         em.addComponent(cube.id, MotionSmoothingDef);
       if (!em.hasComponents(cube, [TransformWorldDef]))
         em.addComponent(cube.id, TransformWorldDef);
-      if (!em.hasComponents(cube, [ParentDef]))
-        em.addComponent(cube.id, ParentDef);
+      if (!em.hasComponents(cube, [ParentTransformDef]))
+        em.addComponent(cube.id, ParentTransformDef);
       const mesh = scaleMesh(assets.cube.mesh, cube.cubeConstruct.size);
       if (!em.hasComponents(cube, [RenderableDef])) {
         const renderable = em.addComponent(cube.id, RenderableDef, mesh);

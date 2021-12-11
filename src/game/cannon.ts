@@ -5,7 +5,7 @@ import { MotionDef } from "../phys_motion.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import { RenderableDef } from "../renderer.js";
-import { ParentDef, TransformWorldDef } from "../transform.js";
+import { ParentTransformDef, TransformWorldDef } from "../transform.js";
 import { PhysicsStateDef } from "../phys_esc.js";
 import { AABBCollider, ColliderDef } from "../collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
@@ -271,7 +271,8 @@ export function registerBuildAmmunitionSystem(em: EntityManager) {
           em.addComponent(e.id, ColorDef, [0.2, 0.1, 0.05]);
         if (!TransformWorldDef.isOn(e))
           em.addComponent(e.id, TransformWorldDef);
-        if (!ParentDef.isOn(e)) em.addComponent(e.id, ParentDef);
+        if (!ParentTransformDef.isOn(e))
+          em.addComponent(e.id, ParentTransformDef);
         if (!RenderableDef.isOn(e))
           em.addComponent(e.id, RenderableDef, res.assets.ammunitionBox.mesh);
         if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
@@ -343,7 +344,8 @@ export function registerBuildLinstockSystem(em: EntityManager) {
         if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.0, 0.0, 0.0]);
         if (!TransformWorldDef.isOn(e))
           em.addComponent(e.id, TransformWorldDef);
-        if (!ParentDef.isOn(e)) em.addComponent(e.id, ParentDef);
+        if (!ParentTransformDef.isOn(e))
+          em.addComponent(e.id, ParentTransformDef);
         // TODO(@darzu): allow scaling to be configured on the asset import
         if (!RenderableDef.isOn(e))
           em.addComponent(e.id, RenderableDef, res.assets.linstock.mesh);

@@ -11,10 +11,13 @@ export const TransformWorldDef = EM.defineComponent("transformWorld", () => {
 });
 export type TransformWorld = mat4;
 
-export const ParentDef = EM.defineComponent("parent", (p?: number) => {
-  return { id: p || 0 };
-});
-export type Parent = Component<typeof ParentDef>;
+export const ParentTransformDef = EM.defineComponent(
+  "parentTransform",
+  (p?: number) => {
+    return { id: p || 0 };
+  }
+);
+export type ParentTransform = Component<typeof ParentTransformDef>;
 
 export const MotionSmoothingDef = EM.defineComponent("motionSmoothing", () => {
   return {
@@ -32,7 +35,7 @@ type Transformable = {
   transformWorld: TransformWorld;
   // optional components
   // TODO(@darzu): let the query system specify optional components
-  parent?: Parent;
+  parentTransform?: ParentTransform;
   motionSmoothing?: MotionSmoothing;
   scale?: Scale;
 };
@@ -55,14 +58,14 @@ function updateTransform(o: Transformable) {
     );
   }
 
-  if (ParentDef.isOn(o) && o.parent.id > 0) {
+  if (ParentTransformDef.isOn(o) && o.parentTransform.id > 0) {
     // update relative to parent
-    if (!_hasTransformed.has(o.parent.id))
-      updateTransform(_transformables.get(o.parent.id)!);
+    if (!_hasTransformed.has(o.parentTransform.id))
+      updateTransform(_transformables.get(o.parentTransform.id)!);
 
     mat4.mul(
       o.transformWorld,
-      _transformables.get(o.parent.id)!.transformWorld,
+      _transformables.get(o.parentTransform.id)!.transformWorld,
       o.transformWorld
     );
   } else if (DO_SMOOTH && o.motionSmoothing && MotionDef.isOn(o)) {

@@ -15,7 +15,7 @@ import { MotionDef } from "../phys_motion.js";
 import { RenderableDef } from "../renderer.js";
 import {
   MotionSmoothingDef,
-  ParentDef,
+  ParentTransformDef,
   TransformWorldDef,
 } from "../transform.js";
 import { ColorDef } from "./game.js";
@@ -83,8 +83,8 @@ registerEventHandler("tool-pickup", {
   },
   runEvent: (em, entities) => {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
-    let tool = em.findEntity(entities[1], [MotionDef, ParentDef])!;
-    tool.parent.id = player.id;
+    let tool = em.findEntity(entities[1], [MotionDef, ParentTransformDef])!;
+    tool.parentTransform.id = player.id;
     em.removeComponent(tool.id, InteractableDef);
     vec3.set(tool.motion.location, 0, 0, -1.5);
     let scale = em.ensureComponent(tool.id, ScaleDef);
@@ -101,8 +101,8 @@ registerEventHandler("tool-drop", {
   },
   runEvent: (em, entities, location) => {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
-    let tool = em.findEntity(entities[1], [MotionDef, ParentDef])!;
-    tool.parent.id = 0;
+    let tool = em.findEntity(entities[1], [MotionDef, ParentTransformDef])!;
+    tool.parentTransform.id = 0;
     em.addComponent(tool.id, InteractableDef);
     vec3.copy(tool.motion.location, location!);
     let scale = em.ensureComponent(tool.id, ScaleDef);
