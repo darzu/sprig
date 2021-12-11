@@ -37,6 +37,7 @@ export type MotionSmoothing = Component<typeof MotionSmoothingDef>;
 type Transformable = {
   id: number;
   motion?: Motion;
+  // transformLocal: TransformLocal;
   transformWorld: TransformWorld;
   // optional components
   // TODO(@darzu): let the query system specify optional components
@@ -89,9 +90,27 @@ function updateWorldTransform(o: Transformable) {
   _hasTransformed.add(o.id);
 }
 
-export function registerUpdateWorldTransforms(em: EntityManager) {
+export function registerUpdateTransforms(em: EntityManager) {
+  // all transformLocal components need a transformWorld
   em.registerSystem(
-    [TransformWorldDef],
+    [TransformLocalDef],
+    [],
+    (objs) => {
+      for (let o of objs) {
+        if (!TransformWorldDef.isOn(o))
+          em.addComponent(o.id, TransformWorldDef);
+      }
+    },
+    "createWorldTransforms"
+  );
+
+  // calculate the world transform
+  em.registerSystem(
+    [
+      TransformWorldDef,
+      // TODO(@darzu): USE transformLocal
+      // TransformLocalDef,
+    ],
     [],
     (objs) => {
       _transformables.clear();
