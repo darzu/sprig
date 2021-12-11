@@ -13,7 +13,11 @@ import { AABB } from "../phys_broadphase.js";
 import { PhysicsStateDef } from "../phys_esc.js";
 import { MotionDef } from "../phys_motion.js";
 import { RenderableDef } from "../renderer.js";
-import { MotionSmoothingDef, ParentDef, TransformDef } from "../transform.js";
+import {
+  MotionSmoothingDef,
+  ParentDef,
+  TransformWorldDef,
+} from "../transform.js";
 import { ColorDef } from "./game.js";
 import { InteractingDef } from "./interact.js";
 import { registerEventHandler, DetectedEventsDef } from "../net/events.js";

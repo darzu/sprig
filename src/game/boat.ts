@@ -6,7 +6,7 @@ import { jitter } from "../math.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import { RenderableDef } from "../renderer.js";
-import { MotionSmoothingDef, TransformDef } from "../transform.js";
+import { MotionSmoothingDef, TransformWorldDef } from "../transform.js";
 import { PhysicsStateDef } from "../phys_esc.js";
 import { AABBCollider, ColliderDef } from "../collider.js";
 import {
@@ -109,7 +109,7 @@ function createBoat(
   const props = e.boatConstruct;
   if (!MotionDef.isOn(e)) em.addComponent(e.id, MotionDef, props.location);
   if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.2, 0.1, 0.05]);
-  if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
+  if (!TransformWorldDef.isOn(e)) em.addComponent(e.id, TransformWorldDef);
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e))
     em.addComponent(e.id, RenderableDef, assets.boat.mesh);

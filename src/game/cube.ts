@@ -4,7 +4,11 @@ import { vec3 } from "../gl-matrix.js";
 import { PhysicsStateDef } from "../phys_esc.js";
 import { Motion, MotionDef } from "../phys_motion.js";
 import { RenderableDef } from "../renderer.js";
-import { MotionSmoothingDef, ParentDef, TransformDef } from "../transform.js";
+import {
+  MotionSmoothingDef,
+  ParentDef,
+  TransformWorldDef,
+} from "../transform.js";
 import { ColorDef } from "./game.js";
 import {
   unshareProvokingVertices,
@@ -75,8 +79,8 @@ export function registerBuildCubesSystem(em: EntityManager) {
       }
       if (!em.hasComponents(cube, [MotionSmoothingDef]))
         em.addComponent(cube.id, MotionSmoothingDef);
-      if (!em.hasComponents(cube, [TransformDef]))
-        em.addComponent(cube.id, TransformDef);
+      if (!em.hasComponents(cube, [TransformWorldDef]))
+        em.addComponent(cube.id, TransformWorldDef);
       if (!em.hasComponents(cube, [ParentDef]))
         em.addComponent(cube.id, ParentDef);
       const mesh = scaleMesh(assets.cube.mesh, cube.cubeConstruct.size);

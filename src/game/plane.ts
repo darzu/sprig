@@ -4,7 +4,7 @@ import { vec3 } from "../gl-matrix.js";
 import { PhysicsStateDef } from "../phys_esc.js";
 import { MotionDef } from "../phys_motion.js";
 import { RenderableDef } from "../renderer.js";
-import { TransformDef } from "../transform.js";
+import { TransformWorldDef } from "../transform.js";
 import { ColorDef } from "./game.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { AABBCollider } from "../collider.js";
@@ -60,7 +60,8 @@ export function registerBuildPlanesSystem(em: EntityManager) {
         const color = em.addComponent(plane.id, ColorDef);
         vec3.copy(color, plane.planeConstruct.color);
       }
-      if (!TransformDef.isOn(plane)) em.addComponent(plane.id, TransformDef);
+      if (!TransformWorldDef.isOn(plane))
+        em.addComponent(plane.id, TransformWorldDef);
       if (!RenderableDef.isOn(plane))
         em.addComponent(plane.id, RenderableDef, assets.plane.proto);
       if (!PhysicsStateDef.isOn(plane))

@@ -4,7 +4,7 @@ import { createMotionProps, Motion, MotionDef } from "../phys_motion.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import { RenderableDef } from "../renderer.js";
-import { MotionSmoothingDef, TransformDef } from "../transform.js";
+import { MotionSmoothingDef, TransformWorldDef } from "../transform.js";
 import { PhysicsStateDef } from "../phys_esc.js";
 import { AABBCollider, ColliderDef } from "../collider.js";
 import {
@@ -80,7 +80,7 @@ function createBullet(
       props.angularVelocity
     );
   if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, BULLET_COLOR);
-  if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
+  if (!TransformWorldDef.isOn(e)) em.addComponent(e.id, TransformWorldDef);
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e))
     em.addComponent(e.id, RenderableDef, assets.bullet.proto);

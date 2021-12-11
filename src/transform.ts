@@ -6,10 +6,10 @@ import { tempVec, tempQuat } from "./temp-pool.js";
 
 const DO_SMOOTH = true;
 
-export const TransformDef = EM.defineComponent("transform", () => {
+export const TransformWorldDef = EM.defineComponent("transformWorld", () => {
   return mat4.create();
 });
-export type Transform = mat4;
+export type TransformWorld = mat4;
 
 export const ParentDef = EM.defineComponent("parent", (p?: number) => {
   return { id: p || 0 };
@@ -29,7 +29,7 @@ export type MotionSmoothing = Component<typeof MotionSmoothingDef>;
 type Transformable = {
   id: number;
   motion?: Motion;
-  transform: Transform;
+  transformWorld: TransformWorld;
   // optional components
   // TODO(@darzu): let the query system specify optional components
   parent?: Parent;
@@ -48,7 +48,7 @@ function updateTransform(o: Transformable) {
   // first, update from motion (optionally)
   if (MotionDef.isOn(o)) {
     mat4.fromRotationTranslationScale(
-      o.transform,
+      o.transformWorld,
       o.motion.rotation,
       o.motion.location,
       scale
@@ -61,9 +61,9 @@ function updateTransform(o: Transformable) {
       updateTransform(_transformables.get(o.parent.id)!);
 
     mat4.mul(
-      o.transform,
-      _transformables.get(o.parent.id)!.transform,
-      o.transform
+      o.transformWorld,
+      _transformables.get(o.parent.id)!.transformWorld,
+      o.transformWorld
     );
   } else if (DO_SMOOTH && o.motionSmoothing && MotionDef.isOn(o)) {
     // update with smoothing
@@ -71,7 +71,7 @@ function updateTransform(o: Transformable) {
     quat.mul(working_quat, o.motion.rotation, o.motionSmoothing.rotationDiff);
     quat.normalize(working_quat, working_quat);
     mat4.fromRotationTranslationScale(
-      o.transform,
+      o.transformWorld,
       working_quat,
       vec3.add(tempVec(), o.motion.location, o.motionSmoothing.locationDiff),
       scale
@@ -95,5 +95,5 @@ function updateTransforms(objs: Transformable[]) {
 }
 
 export function registerUpdateTransforms(em: EntityManager) {
-  em.registerSystem([TransformDef], [], updateTransforms);
+  em.registerSystem([TransformWorldDef], [], updateTransforms);
 }

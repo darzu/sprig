@@ -13,7 +13,11 @@ import { AABB } from "../phys_broadphase.js";
 import { PhysicsStateDef } from "../phys_esc.js";
 import { MotionDef } from "../phys_motion.js";
 import { RenderableDef } from "../renderer.js";
-import { MotionSmoothingDef, ParentDef, TransformDef } from "../transform.js";
+import {
+  MotionSmoothingDef,
+  ParentDef,
+  TransformWorldDef,
+} from "../transform.js";
 import { ColorDef } from "./game.js";
 import { InteractingDef } from "./interact.js";
 import { registerEventHandler, DetectedEventsDef } from "../net/events.js";
@@ -69,7 +73,7 @@ function createHat(
   const props = e.hatConstruct;
   if (!MotionDef.isOn(e)) em.addComponent(e.id, MotionDef, props.loc);
   if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.4, 0.1, 0.1]);
-  if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
+  if (!TransformWorldDef.isOn(e)) em.addComponent(e.id, TransformWorldDef);
   if (!ParentDef.isOn(e)) em.addComponent(e.id, ParentDef);
   if (!RenderableDef.isOn(e))
     em.addComponent(e.id, RenderableDef, getHatMesh());

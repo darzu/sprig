@@ -5,7 +5,7 @@ import { MotionDef } from "../phys_motion.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import { RenderableDef } from "../renderer.js";
-import { ParentDef, TransformDef } from "../transform.js";
+import { ParentDef, TransformWorldDef } from "../transform.js";
 import { PhysicsStateDef } from "../phys_esc.js";
 import { AABBCollider, ColliderDef } from "../collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
@@ -177,7 +177,7 @@ function createCannon(
   const props = e.cannonConstruct;
   if (!MotionDef.isOn(e)) em.addComponent(e.id, MotionDef, props.location);
   if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0, 0, 0]);
-  if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
+  if (!TransformWorldDef.isOn(e)) em.addComponent(e.id, TransformWorldDef);
   //TODO: do we need motion smoothing?
   //if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e))
@@ -269,7 +269,8 @@ export function registerBuildAmmunitionSystem(em: EntityManager) {
         }
         if (!ColorDef.isOn(e))
           em.addComponent(e.id, ColorDef, [0.2, 0.1, 0.05]);
-        if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
+        if (!TransformWorldDef.isOn(e))
+          em.addComponent(e.id, TransformWorldDef);
         if (!ParentDef.isOn(e)) em.addComponent(e.id, ParentDef);
         if (!RenderableDef.isOn(e))
           em.addComponent(e.id, RenderableDef, res.assets.ammunitionBox.mesh);
@@ -340,7 +341,8 @@ export function registerBuildLinstockSystem(em: EntityManager) {
           let motion = em.addComponent(e.id, MotionDef, props.location);
         }
         if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.0, 0.0, 0.0]);
-        if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
+        if (!TransformWorldDef.isOn(e))
+          em.addComponent(e.id, TransformWorldDef);
         if (!ParentDef.isOn(e)) em.addComponent(e.id, ParentDef);
         // TODO(@darzu): allow scaling to be configured on the asset import
         if (!RenderableDef.isOn(e))

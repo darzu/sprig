@@ -9,7 +9,7 @@ import { ColorDef } from "./game.js";
 import { spawnBullet } from "./bullet.js";
 import { FinishedDef } from "../build.js";
 import { CameraView, CameraViewDef, RenderableDef } from "../renderer.js";
-import { MotionSmoothingDef, TransformDef } from "../transform.js";
+import { MotionSmoothingDef, TransformWorldDef } from "../transform.js";
 import {
   PhysicsResults,
   PhysicsResultsDef,
@@ -303,7 +303,7 @@ export function drawLine(
     usesProvoking: true,
   };
   em.addComponent(id, RenderableDef, m);
-  em.addComponent(id, TransformDef);
+  em.addComponent(id, TransformWorldDef);
 }
 
 function createPlayer(
@@ -316,7 +316,7 @@ function createPlayer(
   const props = e.playerConstruct;
   if (!MotionDef.isOn(e)) em.addComponent(e.id, MotionDef, props.location);
   if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0, 0.2, 0]);
-  if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
+  if (!TransformWorldDef.isOn(e)) em.addComponent(e.id, TransformWorldDef);
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e))
     em.addComponent(e.id, RenderableDef, assets.cube.mesh);
