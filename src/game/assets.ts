@@ -124,7 +124,7 @@ const PLANE_MESH = unshareProvokingVertices(
   )
 );
 
-const LocalMeshes = {
+export const LocalMeshes = {
   cube: CUBE_MESH,
   plane: PLANE_MESH,
   boat: scaleMesh3(CUBE_MESH, [5, 0.3, 2.5]),
