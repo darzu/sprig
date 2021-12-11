@@ -29,12 +29,12 @@ import {
 } from "../net/components.js";
 import { AABBCollider, ColliderDef } from "../collider.js";
 import { HatDef } from "./hat.js";
-import { CUBE_AABB, CUBE_MESH } from "./assets.js";
 import { Ray, RayHit } from "../phys_broadphase.js";
 import { tempVec } from "../temp-pool.js";
 import { Mesh } from "../mesh-pool.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { mathMap } from "../math.js";
+import { Assets, AssetsDef } from "./assets.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {
@@ -314,7 +314,8 @@ export function drawLine(
 function createPlayer(
   em: EntityManager,
   e: Entity & { playerConstruct: PlayerConstruct },
-  pid: number
+  pid: number,
+  assets: Assets
 ) {
   if (FinishedDef.isOn(e)) return;
   const props = e.playerConstruct;
@@ -322,7 +323,8 @@ function createPlayer(
   if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0, 0.2, 0]);
   if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
-  if (!RenderableDef.isOn(e)) em.addComponent(e.id, RenderableDef, CUBE_MESH);
+  if (!RenderableDef.isOn(e))
+    em.addComponent(e.id, RenderableDef, assets.meshes.cube);
   if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
   if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid);
   if (!PlayerEntDef.isOn(e)) em.addComponent(e.id, PlayerEntDef);
@@ -330,7 +332,7 @@ function createPlayer(
     const collider = em.addComponent(e.id, ColliderDef);
     collider.shape = "AABB";
     collider.solid = true;
-    (collider as AABBCollider).aabb = CUBE_AABB;
+    (collider as AABBCollider).aabb = assets.aabbs.cube;
   }
   if (!SyncDef.isOn(e)) {
     const sync = em.addComponent(e.id, SyncDef);
@@ -343,9 +345,9 @@ function createPlayer(
 export function registerBuildPlayersSystem(em: EntityManager) {
   em.registerSystem(
     [PlayerConstructDef],
-    [MeDef],
+    [MeDef, AssetsDef],
     (players, res) => {
-      for (let p of players) createPlayer(em, p, res.me.pid);
+      for (let p of players) createPlayer(em, p, res.me.pid, res.assets);
     },
     "buildPlayers"
   );

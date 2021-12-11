@@ -23,7 +23,7 @@ export const LIGHT_BLUE = vec3.fromValues(0.05, 0.05, 0.2);
 const DEFAULT_ASSET_PATH = "/assets/";
 const BACKUP_ASSET_PATH = "https://sprig.land/assets/";
 
-const AssetPaths = {
+const RemoteMeshes = {
   ship: "ship.sprig.obj",
   ball: "ball.sprig.obj",
   pick: "pick.sprig.obj",
@@ -34,11 +34,101 @@ const AssetPaths = {
   cannon: "cannon.sprig.obj",
 } as const;
 
-type AssetSymbols = keyof typeof AssetPaths;
-
-const AssetTransforms: Partial<{ [P in AssetSymbols]: mat4 }> = {
+const AssetTransforms: Partial<{ [P in keyof typeof RemoteMeshes]: mat4 }> = {
   linstock: mat4.fromScaling(mat4.create(), [0.1, 0.1, 0.1]),
 };
+
+const CUBE_MESH = unshareProvokingVertices({
+  pos: [
+    [+1.0, +1.0, +1.0],
+    [-1.0, +1.0, +1.0],
+    [-1.0, -1.0, +1.0],
+    [+1.0, -1.0, +1.0],
+
+    [+1.0, +1.0, -1.0],
+    [-1.0, +1.0, -1.0],
+    [-1.0, -1.0, -1.0],
+    [+1.0, -1.0, -1.0],
+  ],
+  tri: [
+    [0, 1, 2],
+    [0, 2, 3], // front
+    [4, 5, 1],
+    [4, 1, 0], // top
+    [3, 4, 0],
+    [3, 7, 4], // right
+    [2, 1, 5],
+    [2, 5, 6], // left
+    [6, 3, 2],
+    [6, 7, 3], // bottom
+    [5, 4, 7],
+    [5, 7, 6], // back
+  ],
+  lines: [
+    // top
+    [0, 1],
+    [1, 2],
+    [2, 3],
+    [3, 0],
+    // bottom
+    [4, 5],
+    [5, 6],
+    [6, 7],
+    [7, 4],
+    // connectors
+    [0, 4],
+    [1, 5],
+    [2, 6],
+    [3, 7],
+  ],
+  colors: [
+    BLACK,
+    BLACK,
+    BLACK,
+    BLACK,
+    BLACK,
+    BLACK,
+    BLACK,
+    BLACK,
+    BLACK,
+    BLACK,
+    BLACK,
+    BLACK,
+  ],
+});
+const PLANE_MESH = unshareProvokingVertices(
+  scaleMesh(
+    {
+      pos: [
+        [+1, 0, +1],
+        [-1, 0, +1],
+        [+1, 0, -1],
+        [-1, 0, -1],
+      ],
+      tri: [
+        [0, 2, 3],
+        [0, 3, 1], // top
+        [3, 2, 0],
+        [1, 3, 0], // bottom
+      ],
+      lines: [
+        [0, 1],
+        [0, 2],
+        [1, 3],
+        [2, 3],
+      ],
+      colors: [BLACK, BLACK, BLACK, BLACK],
+    },
+    10
+  )
+);
+
+const LocalMeshes = {
+  cube: CUBE_MESH,
+  plane: PLANE_MESH,
+} as const;
+
+type AssetSymbols = keyof typeof RemoteMeshes | keyof typeof LocalMeshes;
 
 type GameMeshes = { [P in AssetSymbols]: Mesh };
 
@@ -110,112 +200,23 @@ async function loadAssetInternal(relPath: string): Promise<Mesh> {
 async function loadAssets(): Promise<GameMeshes> {
   const start = performance.now();
 
-  const allPromises = objMap(AssetPaths, (p) => loadAssetInternal(p));
-  const allPromisesList = Object.entries(allPromises);
-  const allMeshes = await Promise.all(allPromisesList.map(([_, p]) => p));
+  const promises = objMap(RemoteMeshes, (p) => loadAssetInternal(p));
+  const promisesList = Object.entries(promises);
+  const remoteMeshes = await Promise.all(promisesList.map(([_, p]) => p));
 
-  const result = objMap(allPromises, (_, n) => {
-    const idx = allPromisesList.findIndex(([n2, _]) => n === n2);
-    const rawMesh = allMeshes[idx];
-    let mesh: Mesh;
+  const remoteResults = objMap(promises, (_, n) => {
+    const idx = promisesList.findIndex(([n2, _]) => n === n2);
+    const rawMesh = remoteMeshes[idx];
     const t = AssetTransforms[n!];
-    if (t) mesh = transformMesh(rawMesh, t);
-    else mesh = rawMesh;
-    return mesh;
+    return t ? transformMesh(rawMesh, t) : rawMesh;
   });
+
+  const localResults = LocalMeshes;
 
   // perf tracking
   const elapsed = performance.now() - start;
   console.log(`took ${elapsed.toFixed(1)}ms to load assets.`);
 
-  return result;
+  return { ...remoteResults, ...localResults };
 }
 
-// TODO(@darzu): move these into Assets component
-export const CUBE_MESH = unshareProvokingVertices({
-  pos: [
-    [+1.0, +1.0, +1.0],
-    [-1.0, +1.0, +1.0],
-    [-1.0, -1.0, +1.0],
-    [+1.0, -1.0, +1.0],
-
-    [+1.0, +1.0, -1.0],
-    [-1.0, +1.0, -1.0],
-    [-1.0, -1.0, -1.0],
-    [+1.0, -1.0, -1.0],
-  ],
-  tri: [
-    [0, 1, 2],
-    [0, 2, 3], // front
-    [4, 5, 1],
-    [4, 1, 0], // top
-    [3, 4, 0],
-    [3, 7, 4], // right
-    [2, 1, 5],
-    [2, 5, 6], // left
-    [6, 3, 2],
-    [6, 7, 3], // bottom
-    [5, 4, 7],
-    [5, 7, 6], // back
-  ],
-  lines: [
-    // top
-    [0, 1],
-    [1, 2],
-    [2, 3],
-    [3, 0],
-    // bottom
-    [4, 5],
-    [5, 6],
-    [6, 7],
-    [7, 4],
-    // connectors
-    [0, 4],
-    [1, 5],
-    [2, 6],
-    [3, 7],
-  ],
-  colors: [
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-    BLACK,
-  ],
-});
-export const CUBE_AABB = getAABBFromMesh(CUBE_MESH);
-
-export const PLANE_MESH = unshareProvokingVertices(
-  scaleMesh(
-    {
-      pos: [
-        [+1, 0, +1],
-        [-1, 0, +1],
-        [+1, 0, -1],
-        [-1, 0, -1],
-      ],
-      tri: [
-        [0, 2, 3],
-        [0, 3, 1], // top
-        [3, 2, 0],
-        [1, 3, 0], // bottom
-      ],
-      lines: [
-        [0, 1],
-        [0, 2],
-        [1, 3],
-        [2, 3],
-      ],
-      colors: [BLACK, BLACK, BLACK, BLACK],
-    },
-    10
-  )
-);
-export const PLANE_AABB = getAABBFromMesh(PLANE_MESH);

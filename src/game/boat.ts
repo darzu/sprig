@@ -22,7 +22,7 @@ import {
 import { getAABBFromMesh, Mesh, scaleMesh3 } from "../mesh-pool.js";
 import { AABB } from "../phys_broadphase.js";
 import { Deserializer, Serializer } from "../serialize.js";
-import { CUBE_MESH } from "./assets.js";
+import { Assets, AssetsDef } from "./assets.js";
 
 export const BoatDef = EM.defineComponent("boat", () => {
   return {
@@ -102,22 +102,14 @@ EM.registerSerializerPair(
   deserializeBoatConstruct
 );
 
-// TODO(@darzu): move these to the asset system
-let _boatMesh: Mesh | undefined = undefined;
-let _boatAABB: AABB | undefined = undefined;
-function getBoatMesh(): Mesh {
-  if (!_boatMesh) _boatMesh = scaleMesh3(CUBE_MESH, [5, 0.3, 2.5]);
-  return _boatMesh;
-}
-function getBoatAABB(): AABB {
-  if (!_boatAABB) _boatAABB = getAABBFromMesh(getBoatMesh());
-  return _boatAABB;
-}
+// TODO(@darzu): BOAT
+//  [5, 0.3, 2.5]
 
 function createBoat(
   em: EntityManager,
   e: Entity & { boatConstruct: BoatConstruct },
-  pid: number
+  pid: number,
+  assets: Assets
 ) {
   if (FinishedDef.isOn(e)) return;
   const props = e.boatConstruct;
@@ -126,7 +118,7 @@ function createBoat(
   if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e))
-    em.addComponent(e.id, RenderableDef, getBoatMesh());
+    em.addComponent(e.id, RenderableDef, assets.meshes.cube);
   if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
   if (!AuthorityDef.isOn(e)) {
     // TODO(@darzu): debug why boats have jerky movement
@@ -143,7 +135,7 @@ function createBoat(
     const collider = em.addComponent(e.id, ColliderDef);
     collider.shape = "AABB";
     collider.solid = true;
-    (collider as AABBCollider).aabb = getBoatAABB();
+    (collider as AABBCollider).aabb = assets.aabbs.cube;
   }
   if (!SyncDef.isOn(e)) {
     const sync = em.addComponent(e.id, SyncDef);
@@ -156,9 +148,9 @@ function createBoat(
 export function registerBuildBoatsSystem(em: EntityManager) {
   em.registerSystem(
     [BoatConstructDef],
-    [MeDef],
+    [MeDef, AssetsDef],
     (boats, res) => {
-      for (let b of boats) createBoat(em, b, res.me.pid);
+      for (let b of boats) createBoat(em, b, res.me.pid, res.assets);
     },
     "buildBoats"
   );

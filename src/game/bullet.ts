@@ -27,9 +27,9 @@ import {
   scaleMesh3,
 } from "../mesh-pool.js";
 import { AABB } from "../phys_broadphase.js";
-import { CUBE_MESH } from "./assets.js";
 import { RendererDef } from "../render_init.js";
 import { Renderer } from "../render_webgpu.js";
+import { Assets, AssetsDef } from "./assets.js";
 
 export const BulletDef = EM.defineComponent("bullet", () => {
   return true;
@@ -62,23 +62,15 @@ EM.registerSerializerPair(
   }
 );
 
-// TODO(@darzu): move these to the asset system
-let _bulletMesh: Mesh | undefined = undefined;
-let _bulletAABB: AABB | undefined = undefined;
-function getBulletMesh(): Mesh {
-  if (!_bulletMesh) _bulletMesh = scaleMesh(CUBE_MESH, 0.3);
-  return _bulletMesh;
-}
-function getBulletAABB(): AABB {
-  if (!_bulletAABB) _bulletAABB = getAABBFromMesh(getBulletMesh());
-  return _bulletAABB;
-}
+// TODO(@darzu): BULLET
+//    scaleMesh(CUBE_MESH, 0.3);
+
 let _bulletProto: MeshHandle | undefined = undefined;
-function getBulletProto(renderer: Renderer): MeshHandle {
+function getBulletProto(cube: Mesh, renderer: Renderer): MeshHandle {
   if (!_bulletProto) {
     // re-usable bullet mesh
     // TODO(@darzu): DON'T REACH FOR GLOBAL _renderer
-    _bulletProto = renderer.addMesh(getBulletMesh());
+    _bulletProto = renderer.addMesh(cube);
     mat4.copy(_bulletProto.transform, new Float32Array(16)); // zero the transforms so it doesn't render
   }
   return _bulletProto;
@@ -90,7 +82,8 @@ function createBullet(
   em: EntityManager,
   e: Entity & { bulletConstruct: BulletConstruct },
   pid: number,
-  renderer: Renderer
+  renderer: Renderer,
+  assets: Assets
 ) {
   if (FinishedDef.isOn(e)) return;
   const props = e.bulletConstruct;
@@ -107,10 +100,12 @@ function createBullet(
   if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e))
-    em.addComponent(e.id, RenderableDef, getBulletMesh());
+    em.addComponent(e.id, RenderableDef, assets.meshes.cube);
   if (!MeshHandleDef.isOn(e)) {
     // TODO(@darzu): handle in AddMeshHandleSystem
-    const meshHandle = renderer.addMeshInstance(getBulletProto(renderer));
+    const meshHandle = renderer.addMeshInstance(
+      getBulletProto(assets.meshes.cube, renderer)
+    );
     em.addComponent(e.id, MeshHandleDef, meshHandle);
   }
   if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
@@ -124,7 +119,7 @@ function createBullet(
     const collider = em.addComponent(e.id, ColliderDef);
     collider.shape = "AABB";
     collider.solid = false;
-    (collider as AABBCollider).aabb = getBulletAABB();
+    (collider as AABBCollider).aabb = assets.aabbs.cube;
   }
   if (!SyncDef.isOn(e)) {
     const sync = em.addComponent(e.id, SyncDef);
@@ -138,10 +133,10 @@ function createBullet(
 export function registerBuildBulletsSystem(em: EntityManager) {
   em.registerSystem(
     [BulletConstructDef],
-    [MeDef, RendererDef],
+    [MeDef, RendererDef, AssetsDef],
     (bullets, res) => {
       for (let b of bullets)
-        createBullet(em, b, res.me.pid, res.renderer.renderer);
+        createBullet(em, b, res.me.pid, res.renderer.renderer, res.assets);
     },
     "buildBullets"
   );

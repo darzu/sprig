@@ -1,6 +1,6 @@
 import { ColliderDef } from "./collider.js";
 import { EM, EntityManager } from "./entity-manager.js";
-import { CUBE_MESH } from "./game/assets.js";
+import { AssetsDef } from "./game/assets.js";
 import { BoatDef } from "./game/boat.js";
 import { ColorDef } from "./game/game.js";
 import { mat4, vec3 } from "./gl-matrix.js";
@@ -35,7 +35,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
   // add collider meshes
   em.registerSystem(
     [ColliderDef],
-    [PhysicsDbgDef],
+    [PhysicsDbgDef, AssetsDef],
     (es, res) => {
       for (let e of es) {
         if (!res._physDbgState.colliderMeshes.has(e.id)) {
@@ -44,7 +44,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
             const dbgE = em.newEntity();
 
             // with a wireframe mesh
-            const m = meshFromAABB(e.collider.aabb);
+            const m = meshFromAABB(res.assets.meshes.cube, e.collider.aabb);
             em.addComponent(
               dbgE.id,
               RenderableDef,
@@ -110,9 +110,9 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
 }
 
 // TODO(@darzu): use instancing
-function meshFromAABB(aabb: AABB): Mesh {
+function meshFromAABB(cube: Mesh, aabb: AABB): Mesh {
   // resize
-  let m = mapMeshPositions(CUBE_MESH, (p) => [
+  let m = mapMeshPositions(cube, (p) => [
     mathMap(p[0], -1, 1, 0, aabb.max[0] - aabb.min[0]),
     mathMap(p[1], -1, 1, 0, aabb.max[1] - aabb.min[1]),
     mathMap(p[2], -1, 1, 0, aabb.max[2] - aabb.min[2]),

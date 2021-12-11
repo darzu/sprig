@@ -9,7 +9,7 @@ import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { AABBCollider } from "../collider.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import { FinishedDef } from "../build.js";
-import { PLANE_AABB, PLANE_MESH } from "./assets.js";
+import { Assets, AssetsDef } from "./assets.js";
 
 export const PlaneConstructDef = EM.defineComponent(
   "planeConstruct",
@@ -46,7 +46,7 @@ EM.registerSerializerPair(
 export function registerBuildPlanesSystem(em: EntityManager) {
   function buildPlanes(
     planes: { id: number; planeConstruct: PlaneConstruct }[],
-    { me: { pid } }: { me: Me }
+    { me: { pid }, assets }: { me: Me; assets: Assets }
   ) {
     for (let plane of planes) {
       if (FinishedDef.isOn(plane)) continue;
@@ -62,7 +62,7 @@ export function registerBuildPlanesSystem(em: EntityManager) {
       if (!TransformDef.isOn(plane)) em.addComponent(plane.id, TransformDef);
       if (!RenderableDef.isOn(plane)) {
         const renderable = em.addComponent(plane.id, RenderableDef);
-        renderable.mesh = PLANE_MESH;
+        renderable.mesh = assets.meshes.plane;
       }
       if (!PhysicsStateDef.isOn(plane))
         em.addComponent(plane.id, PhysicsStateDef);
@@ -70,7 +70,7 @@ export function registerBuildPlanesSystem(em: EntityManager) {
         const collider = em.addComponent(plane.id, ColliderDef);
         collider.shape = "AABB";
         collider.solid = true;
-        (collider as AABBCollider).aabb = PLANE_AABB;
+        (collider as AABBCollider).aabb = assets.aabbs.plane;
       }
       if (!AuthorityDef.isOn(plane))
         em.addComponent(plane.id, AuthorityDef, pid);
@@ -83,5 +83,5 @@ export function registerBuildPlanesSystem(em: EntityManager) {
     }
   }
 
-  em.registerSystem([PlaneConstructDef], [MeDef], buildPlanes);
+  em.registerSystem([PlaneConstructDef], [MeDef, AssetsDef], buildPlanes);
 }

@@ -29,7 +29,7 @@ import {
 import { AABBCollider } from "../collider.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import { FinishedDef } from "../build.js";
-import { CUBE_AABB, CUBE_MESH } from "./assets.js";
+import { Assets, AssetsDef } from "./assets.js";
 
 export const CubeConstructDef = EM.defineComponent(
   "cubeConstruct",
@@ -64,7 +64,7 @@ EM.registerSerializerPair(
 export function registerBuildCubesSystem(em: EntityManager) {
   function buildCubes(
     cubes: { id: number; cubeConstruct: CubeConstruct }[],
-    { me: { pid } }: { me: Me }
+    { me: { pid }, assets }: { me: Me; assets: Assets }
   ) {
     for (let cube of cubes) {
       if (em.hasComponents(cube, [FinishedDef])) continue;
@@ -85,7 +85,10 @@ export function registerBuildCubesSystem(em: EntityManager) {
         em.addComponent(cube.id, ParentDef);
       if (!em.hasComponents(cube, [RenderableDef])) {
         const renderable = em.addComponent(cube.id, RenderableDef);
-        renderable.mesh = scaleMesh(CUBE_MESH, cube.cubeConstruct.size);
+        renderable.mesh = scaleMesh(
+          assets.meshes.cube,
+          cube.cubeConstruct.size
+        );
       }
       if (!em.hasComponents(cube, [PhysicsStateDef]))
         em.addComponent(cube.id, PhysicsStateDef);
@@ -93,7 +96,7 @@ export function registerBuildCubesSystem(em: EntityManager) {
         const collider = em.addComponent(cube.id, ColliderDef);
         collider.shape = "AABB";
         collider.solid = false;
-        (collider as AABBCollider).aabb = CUBE_AABB;
+        (collider as AABBCollider).aabb = assets.aabbs.cube;
       }
       if (!em.hasComponents(cube, [AuthorityDef]))
         em.addComponent(cube.id, AuthorityDef, pid);
@@ -106,7 +109,7 @@ export function registerBuildCubesSystem(em: EntityManager) {
     }
   }
 
-  em.registerSystem([CubeConstructDef], [MeDef], buildCubes);
+  em.registerSystem([CubeConstructDef], [MeDef, AssetsDef], buildCubes);
 }
 
 export function registerMoveCubesSystem(em: EntityManager) {
