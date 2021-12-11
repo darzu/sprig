@@ -11,6 +11,11 @@ export const TransformWorldDef = EM.defineComponent("transformWorld", () => {
 });
 export type TransformWorld = mat4;
 
+export const TransformLocalDef = EM.defineComponent("transformLocal", () => {
+  return mat4.create();
+});
+export type TransformLocal = mat4;
+
 export const ParentTransformDef = EM.defineComponent(
   "parentTransform",
   (p?: number) => {
@@ -43,7 +48,7 @@ type Transformable = {
 const _transformables: Map<number, Transformable> = new Map();
 const _hasTransformed: Set<number> = new Set();
 
-function updateTransform(o: Transformable) {
+function updateWorldTransform(o: Transformable) {
   if (_hasTransformed.has(o.id)) return;
 
   let scale = ScaleDef.isOn(o) ? o.scale.by : vec3.set(tempVec(), 1, 1, 1);
@@ -61,14 +66,14 @@ function updateTransform(o: Transformable) {
   if (ParentTransformDef.isOn(o) && o.parentTransform.id > 0) {
     // update relative to parent
     if (!_hasTransformed.has(o.parentTransform.id))
-      updateTransform(_transformables.get(o.parentTransform.id)!);
+      updateWorldTransform(_transformables.get(o.parentTransform.id)!);
 
     mat4.mul(
       o.transformWorld,
       _transformables.get(o.parentTransform.id)!.transformWorld,
       o.transformWorld
     );
-  } else if (DO_SMOOTH && o.motionSmoothing && MotionDef.isOn(o)) {
+  } else if (DO_SMOOTH && MotionSmoothingDef.isOn(o) && MotionDef.isOn(o)) {
     // update with smoothing
     const working_quat = tempQuat();
     quat.mul(working_quat, o.motion.rotation, o.motionSmoothing.rotationDiff);
@@ -84,19 +89,22 @@ function updateTransform(o: Transformable) {
   _hasTransformed.add(o.id);
 }
 
-function updateTransforms(objs: Transformable[]) {
-  _transformables.clear();
-  _hasTransformed.clear();
+export function registerUpdateWorldTransforms(em: EntityManager) {
+  em.registerSystem(
+    [TransformWorldDef],
+    [],
+    (objs) => {
+      _transformables.clear();
+      _hasTransformed.clear();
 
-  for (let o of objs) {
-    _transformables.set(o.id, o);
-  }
+      for (let o of objs) {
+        _transformables.set(o.id, o);
+      }
 
-  for (let o of objs) {
-    updateTransform(o);
-  }
-}
-
-export function registerUpdateTransforms(em: EntityManager) {
-  em.registerSystem([TransformWorldDef], [], updateTransforms);
+      for (let o of objs) {
+        updateWorldTransform(o);
+      }
+    },
+    "updateWorldTransforms"
+  );
 }

@@ -13,7 +13,7 @@ import {
   registerRenderer,
   registerUpdateCameraView,
 } from "../renderer.js";
-import { registerUpdateTransforms } from "../transform.js";
+import { registerUpdateWorldTransforms } from "../transform.js";
 import {
   BoatConstructDef,
   registerBuildBoatsSystem,
@@ -163,7 +163,7 @@ export function registerAllSystems(em: EntityManager) {
   registerSendOutboxes(em);
   registerEventSystems(em);
   registerDeleteEntitiesSystem(em);
-  registerUpdateTransforms(em);
+  registerUpdateWorldTransforms(em);
   registerRenderViewController(em);
   registerUpdateCameraView(em);
   registerPhysicsDebuggerSystem(em);
