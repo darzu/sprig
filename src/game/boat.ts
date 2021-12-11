@@ -115,7 +115,7 @@ function createBoat(
   if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e))
-    em.addComponent(e.id, RenderableDef, assets.meshes.boat);
+    em.addComponent(e.id, RenderableDef, assets.boat.mesh);
   if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
   if (!AuthorityDef.isOn(e)) {
     // TODO(@darzu): debug why boats have jerky movement
@@ -132,7 +132,7 @@ function createBoat(
     const collider = em.addComponent(e.id, ColliderDef);
     collider.shape = "AABB";
     collider.solid = true;
-    (collider as AABBCollider).aabb = assets.aabbs.boat;
+    (collider as AABBCollider).aabb = assets.boat.aabb;
   }
   if (!SyncDef.isOn(e)) {
     const sync = em.addComponent(e.id, SyncDef);

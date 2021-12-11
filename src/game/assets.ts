@@ -5,12 +5,15 @@ import {
   getAABBFromMesh,
   mapMeshPositions,
   Mesh,
+  MeshHandle,
   scaleMesh,
   scaleMesh3,
   transformMesh,
   unshareProvokingVertices,
 } from "../mesh-pool.js";
 import { AABB } from "../phys_broadphase.js";
+import { RendererDef } from "../render_init.js";
+import { Renderer } from "../render_webgpu.js";
 import { assert } from "../test.js";
 import { objMap } from "../util.js";
 import { getText } from "../webget.js";
@@ -133,20 +136,22 @@ export const LocalMeshes = {
 
 type AssetSymbols = keyof typeof RemoteMeshes | keyof typeof LocalMeshes;
 
-type GameMeshes = { [P in AssetSymbols]: Mesh };
+type Asset = {
+  mesh: Mesh;
+  aabb: AABB;
+  proto: MeshHandle;
+};
+
+type GameAssets = { [P in AssetSymbols]: Asset };
 
 const AssetLoaderDef = EM.defineComponent("assetLoader", () => {
   return {
-    promise: null as Promise<GameMeshes> | null,
+    promise: null as Promise<GameAssets> | null,
   };
 });
 
-export const AssetsDef = EM.defineComponent("assets", (meshes: GameMeshes) => {
-  const aabbs = objMap(meshes, (m) => getAABBFromMesh(m));
-  return {
-    meshes,
-    aabbs,
-  };
+export const AssetsDef = EM.defineComponent("assets", (assets: GameAssets) => {
+  return assets;
 });
 export type Assets = Component<typeof AssetsDef>;
 
@@ -156,10 +161,10 @@ export function registerAssetLoader(em: EntityManager) {
   // start loading of assets
   em.registerSystem(
     [],
-    [AssetLoaderDef],
-    (_, { assetLoader }) => {
+    [AssetLoaderDef, RendererDef],
+    (_, { assetLoader, renderer }) => {
       if (!assetLoader.promise) {
-        const assetsPromise = loadAssets();
+        const assetsPromise = loadAssets(renderer.renderer);
         assetLoader.promise = assetsPromise;
         assetsPromise.then(
           (result) => {
@@ -200,26 +205,36 @@ async function loadAssetInternal(relPath: string): Promise<Mesh> {
   return obj;
 }
 
-async function loadAssets(): Promise<GameMeshes> {
+async function loadAssets(renderer: Renderer): Promise<GameAssets> {
   const start = performance.now();
 
   const promises = objMap(RemoteMeshes, (p) => loadAssetInternal(p));
   const promisesList = Object.entries(promises);
-  const remoteMeshes = await Promise.all(promisesList.map(([_, p]) => p));
+  const remoteMeshList = await Promise.all(promisesList.map(([_, p]) => p));
 
-  const remoteResults = objMap(promises, (_, n) => {
+  const remoteMeshes = objMap(promises, (_, n) => {
     const idx = promisesList.findIndex(([n2, _]) => n === n2);
-    const rawMesh = remoteMeshes[idx];
+    const rawMesh = remoteMeshList[idx];
     const t = AssetTransforms[n!];
     return t ? transformMesh(rawMesh, t) : rawMesh;
   });
 
-  const localResults = LocalMeshes;
+  const allMeshes = { ...remoteMeshes, ...LocalMeshes };
+
+  const result = objMap(allMeshes, (mesh, n) => {
+    const aabb = getAABBFromMesh(mesh);
+    const proto = renderer.addMesh(mesh);
+    return {
+      mesh,
+      aabb,
+      proto,
+    };
+  });
 
   // perf tracking
   const elapsed = performance.now() - start;
   console.log(`took ${elapsed.toFixed(1)}ms to load assets.`);
 
-  return { ...remoteResults, ...localResults };
+  return result;
 }
 

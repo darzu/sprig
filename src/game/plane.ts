@@ -60,17 +60,15 @@ export function registerBuildPlanesSystem(em: EntityManager) {
         vec3.copy(color, plane.planeConstruct.color);
       }
       if (!TransformDef.isOn(plane)) em.addComponent(plane.id, TransformDef);
-      if (!RenderableDef.isOn(plane)) {
-        const renderable = em.addComponent(plane.id, RenderableDef);
-        renderable.mesh = assets.meshes.plane;
-      }
+      if (!RenderableDef.isOn(plane))
+        em.addComponent(plane.id, RenderableDef, assets.plane.proto);
       if (!PhysicsStateDef.isOn(plane))
         em.addComponent(plane.id, PhysicsStateDef);
       if (!ColliderDef.isOn(plane)) {
         const collider = em.addComponent(plane.id, ColliderDef);
         collider.shape = "AABB";
         collider.solid = true;
-        (collider as AABBCollider).aabb = assets.aabbs.plane;
+        (collider as AABBCollider).aabb = assets.plane.aabb;
       }
       if (!AuthorityDef.isOn(plane))
         em.addComponent(plane.id, AuthorityDef, pid);

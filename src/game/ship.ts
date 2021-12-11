@@ -48,7 +48,7 @@ function createShip(
     em.addComponent(e.id, MotionDef, props.loc, props.rot);
   if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
   if (!RenderableDef.isOn(e))
-    em.addComponent(e.id, RenderableDef, assets.meshes.ship);
+    em.addComponent(e.id, RenderableDef, assets.ship.mesh);
   if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
   if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid);
   if (!SyncDef.isOn(e)) {

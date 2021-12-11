@@ -291,6 +291,10 @@ export interface MeshHandle extends PoolIndex, MeshUniform.Data {
   readonly model?: Mesh;
 }
 
+export function isMeshHandle(m: any): m is MeshHandle {
+  return "mId" in m;
+}
+
 // TODO(@darzu): ECS component; should be moved out of here?
 export const MeshHandleDef = EM.defineComponent(
   "meshHandle",

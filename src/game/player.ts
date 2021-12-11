@@ -324,7 +324,7 @@ function createPlayer(
   if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e))
-    em.addComponent(e.id, RenderableDef, assets.meshes.cube);
+    em.addComponent(e.id, RenderableDef, assets.cube.mesh);
   if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
   if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid);
   if (!PlayerEntDef.isOn(e)) em.addComponent(e.id, PlayerEntDef);
@@ -332,7 +332,7 @@ function createPlayer(
     const collider = em.addComponent(e.id, ColliderDef);
     collider.shape = "AABB";
     collider.solid = true;
-    (collider as AABBCollider).aabb = assets.aabbs.cube;
+    (collider as AABBCollider).aabb = assets.cube.aabb;
   }
   if (!SyncDef.isOn(e)) {
     const sync = em.addComponent(e.id, SyncDef);

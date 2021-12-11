@@ -8,7 +8,7 @@ import {
   PlayerEntDef,
 } from "./game/player.js";
 import { mat4, quat, vec3 } from "./gl-matrix.js";
-import { Mesh, MeshHandle, MeshHandleDef } from "./mesh-pool.js";
+import { isMeshHandle, Mesh, MeshHandle, MeshHandleDef } from "./mesh-pool.js";
 import { Authority, AuthorityDef, Me, MeDef } from "./net/components.js";
 import { Motion, MotionDef } from "./phys_motion.js";
 import { RendererDef } from "./render_init.js";
@@ -41,17 +41,17 @@ export type Parent = Component<typeof ParentDef>;
 
 export const RenderableDef = EM.defineComponent(
   "renderable",
-  (mesh?: Mesh, enabled: boolean = true, layer = 0) => {
+  (meshOrProto?: Mesh | MeshHandle, enabled: boolean = true, layer = 0) => {
     return {
       enabled,
       layer,
-      mesh:
-        mesh ??
+      meshOrProto:
+        meshOrProto ??
         ({
           pos: [],
           tri: [],
           colors: [],
-        } as Mesh),
+        } as Mesh | MeshHandle),
     };
   }
 );
@@ -274,7 +274,15 @@ export function registerAddMeshHandleSystem(em: EntityManager) {
         if (!MeshHandleDef.isOn(e)) {
           // TODO(@darzu): how should we handle instancing?
           // TODO(@darzu): this seems somewhat inefficient to look for this every frame
-          const meshHandle = res.renderer.renderer.addMesh(e.renderable.mesh);
+          let meshHandle: MeshHandle;
+          if (isMeshHandle(e.renderable.meshOrProto)) {
+            meshHandle = res.renderer.renderer.addMeshInstance(
+              e.renderable.meshOrProto
+            );
+          } else
+            meshHandle = res.renderer.renderer.addMesh(
+              e.renderable.meshOrProto
+            );
           em.addComponent(e.id, MeshHandleDef, meshHandle);
         }
       }

@@ -83,12 +83,9 @@ export function registerBuildCubesSystem(em: EntityManager) {
         em.addComponent(cube.id, TransformDef);
       if (!em.hasComponents(cube, [ParentDef]))
         em.addComponent(cube.id, ParentDef);
+      const mesh = scaleMesh(assets.cube.mesh, cube.cubeConstruct.size);
       if (!em.hasComponents(cube, [RenderableDef])) {
-        const renderable = em.addComponent(cube.id, RenderableDef);
-        renderable.mesh = scaleMesh(
-          assets.meshes.cube,
-          cube.cubeConstruct.size
-        );
+        const renderable = em.addComponent(cube.id, RenderableDef, mesh);
       }
       if (!em.hasComponents(cube, [PhysicsStateDef]))
         em.addComponent(cube.id, PhysicsStateDef);
@@ -96,7 +93,7 @@ export function registerBuildCubesSystem(em: EntityManager) {
         const collider = em.addComponent(cube.id, ColliderDef);
         collider.shape = "AABB";
         collider.solid = false;
-        (collider as AABBCollider).aabb = assets.aabbs.cube;
+        (collider as AABBCollider).aabb = getAABBFromMesh(mesh);
       }
       if (!em.hasComponents(cube, [AuthorityDef]))
         em.addComponent(cube.id, AuthorityDef, pid);

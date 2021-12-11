@@ -62,17 +62,6 @@ EM.registerSerializerPair(
   }
 );
 
-let _bulletProto: MeshHandle | undefined = undefined;
-function getBulletProto(cube: Mesh, renderer: Renderer): MeshHandle {
-  if (!_bulletProto) {
-    // re-usable bullet mesh
-    // TODO(@darzu): DON'T REACH FOR GLOBAL _renderer
-    _bulletProto = renderer.addMesh(cube);
-    mat4.copy(_bulletProto.transform, new Float32Array(16)); // zero the transforms so it doesn't render
-  }
-  return _bulletProto;
-}
-
 const BULLET_COLOR: vec3 = [0.3, 0.3, 0.8];
 
 function createBullet(
@@ -97,14 +86,7 @@ function createBullet(
   if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e))
-    em.addComponent(e.id, RenderableDef, assets.meshes.bullet);
-  if (!MeshHandleDef.isOn(e)) {
-    // TODO(@darzu): handle in AddMeshHandleSystem
-    const meshHandle = renderer.addMeshInstance(
-      getBulletProto(assets.meshes.bullet, renderer)
-    );
-    em.addComponent(e.id, MeshHandleDef, meshHandle);
-  }
+    em.addComponent(e.id, RenderableDef, assets.bullet.proto);
   if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
   if (!AuthorityDef.isOn(e)) {
     em.addComponent(e.id, AuthorityDef, pid);
@@ -116,7 +98,7 @@ function createBullet(
     const collider = em.addComponent(e.id, ColliderDef);
     collider.shape = "AABB";
     collider.solid = false;
-    (collider as AABBCollider).aabb = assets.aabbs.bullet;
+    (collider as AABBCollider).aabb = assets.bullet.aabb;
   }
   if (!SyncDef.isOn(e)) {
     const sync = em.addComponent(e.id, SyncDef);

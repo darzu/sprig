@@ -180,7 +180,7 @@ function createCannon(
   //TODO: do we need motion smoothing?
   //if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e))
-    em.addComponent(e.id, RenderableDef, assets.meshes.cannon);
+    em.addComponent(e.id, RenderableDef, assets.cannon.mesh);
   if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
   if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid);
   if (!CannonDef.isOn(e)) em.addComponent(e.id, CannonDef);
@@ -188,7 +188,7 @@ function createCannon(
     const collider = em.addComponent(e.id, ColliderDef);
     collider.shape = "AABB";
     collider.solid = true;
-    (collider as AABBCollider).aabb = assets.aabbs.cannon;
+    (collider as AABBCollider).aabb = assets.cannon.aabb;
   }
   if (!InteractableDef.isOn(e)) {
     em.addComponent(e.id, InteractableDef);
@@ -271,7 +271,7 @@ export function registerBuildAmmunitionSystem(em: EntityManager) {
         if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
         if (!ParentDef.isOn(e)) em.addComponent(e.id, ParentDef);
         if (!RenderableDef.isOn(e))
-          em.addComponent(e.id, RenderableDef, res.assets.meshes.ammunitionBox);
+          em.addComponent(e.id, RenderableDef, res.assets.ammunitionBox.mesh);
         if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
         if (!AuthorityDef.isOn(e))
           em.addComponent(e.id, AuthorityDef, res.me.pid);
@@ -281,7 +281,7 @@ export function registerBuildAmmunitionSystem(em: EntityManager) {
           const collider = em.addComponent(e.id, ColliderDef);
           collider.shape = "AABB";
           collider.solid = true;
-          (collider as AABBCollider).aabb = res.assets.aabbs.ammunitionBox;
+          (collider as AABBCollider).aabb = res.assets.ammunitionBox.aabb;
         }
         if (!ToolDef.isOn(e)) {
           const tool = em.addComponent(e.id, ToolDef);
@@ -343,7 +343,7 @@ export function registerBuildLinstockSystem(em: EntityManager) {
         if (!ParentDef.isOn(e)) em.addComponent(e.id, ParentDef);
         // TODO(@darzu): allow scaling to be configured on the asset import
         if (!RenderableDef.isOn(e))
-          em.addComponent(e.id, RenderableDef, res.assets.meshes.linstock);
+          em.addComponent(e.id, RenderableDef, res.assets.linstock.mesh);
         if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
         if (!AuthorityDef.isOn(e))
           em.addComponent(e.id, AuthorityDef, res.me.pid);
@@ -352,7 +352,7 @@ export function registerBuildLinstockSystem(em: EntityManager) {
           const collider = em.addComponent(e.id, ColliderDef);
           collider.shape = "AABB";
           collider.solid = true;
-          (collider as AABBCollider).aabb = res.assets.aabbs.linstock;
+          (collider as AABBCollider).aabb = res.assets.linstock.aabb;
         }
         if (!ToolDef.isOn(e)) {
           const tool = em.addComponent(e.id, ToolDef);
