@@ -12,8 +12,8 @@ import {
   registerAddMeshHandleSystem,
   registerRenderer,
   registerUpdateCameraView,
-  registerUpdateTransforms,
 } from "../renderer.js";
+import { registerUpdateTransforms } from "../transform.js";
 import {
   BoatConstructDef,
   registerBuildBoatsSystem,

@@ -10,7 +10,8 @@ import { mapMeshPositions, Mesh, MeshHandleDef } from "./mesh-pool.js";
 import { AABB } from "./phys_broadphase.js";
 import { PhysicsStateDef } from "./phys_esc.js";
 import { MotionDef } from "./phys_motion.js";
-import { ParentDef, RenderableDef, TransformDef } from "./renderer.js";
+import { RenderableDef } from "./renderer.js";
+import { TransformDef } from "./transform.js";
 import { RendererDef } from "./render_init.js";
 
 export const PhysicsDbgDef = EM.defineComponent("_physDbgState", () => {
@@ -44,6 +45,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
             const dbgE = em.newEntity();
 
             // with a wireframe mesh
+            // TODO(@darzu): USE PROTOTYPES HERE
             const m = meshFromAABB(e.collider.aabb);
             em.addComponent(
               dbgE.id,

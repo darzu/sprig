@@ -12,12 +12,8 @@ import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { AABB } from "../phys_broadphase.js";
 import { PhysicsStateDef } from "../phys_esc.js";
 import { MotionDef } from "../phys_motion.js";
-import {
-  MotionSmoothingDef,
-  ParentDef,
-  RenderableDef,
-  TransformDef,
-} from "../renderer.js";
+import { RenderableDef } from "../renderer.js";
+import { MotionSmoothingDef, ParentDef, TransformDef } from "../transform.js";
 import { ColorDef } from "./game.js";
 import { InteractingDef } from "./interact.js";
 import { registerEventHandler, DetectedEventsDef } from "../net/events.js";

@@ -16,28 +16,7 @@ import { Renderer } from "./render_webgpu.js";
 import { Scale, ScaleDef } from "./scale.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
 import { PhysicsTimerDef } from "./time.js";
-
-const SMOOTH = true;
-
-export const TransformDef = EM.defineComponent("transform", () => {
-  return mat4.create();
-});
-export type Transform = mat4;
-
-export const MotionSmoothingDef = EM.defineComponent("motionSmoothing", () => {
-  return {
-    locationTarget: vec3.create(),
-    locationDiff: vec3.create(),
-    rotationTarget: quat.create(),
-    rotationDiff: quat.create(),
-  };
-});
-export type MotionSmoothing = Component<typeof MotionSmoothingDef>;
-
-export const ParentDef = EM.defineComponent("parent", (p?: number) => {
-  return { id: p || 0 };
-});
-export type Parent = Component<typeof ParentDef>;
+import { Parent, Transform, TransformDef } from "./transform.js";
 
 export const RenderableDef = EM.defineComponent(
   "renderable",
@@ -57,78 +36,6 @@ export const RenderableDef = EM.defineComponent(
 );
 export type Renderable = Component<typeof RenderableDef>;
 
-type Transformable = {
-  id: number;
-  motion?: Motion;
-  transform: Transform;
-  // optional components
-  // TODO(@darzu): let the query system specify optional components
-  parent?: Parent;
-  motionSmoothing?: MotionSmoothing;
-  scale?: Scale;
-};
-
-const _transformables: Map<number, Transformable> = new Map();
-const _hasTransformed: Set<number> = new Set();
-
-function updateTransform(o: Transformable) {
-  if (_hasTransformed.has(o.id)) return;
-
-  let scale = ScaleDef.isOn(o) ? o.scale.by : vec3.set(tempVec(), 1, 1, 1);
-
-  // first, update from motion (optionally)
-  if (MotionDef.isOn(o)) {
-    mat4.fromRotationTranslationScale(
-      o.transform,
-      o.motion.rotation,
-      o.motion.location,
-      scale
-    );
-  }
-
-  if (ParentDef.isOn(o) && o.parent.id > 0) {
-    // update relative to parent
-    if (!_hasTransformed.has(o.parent.id))
-      updateTransform(_transformables.get(o.parent.id)!);
-
-    mat4.mul(
-      o.transform,
-      _transformables.get(o.parent.id)!.transform,
-      o.transform
-    );
-  } else if (SMOOTH && o.motionSmoothing && MotionDef.isOn(o)) {
-    // update with smoothing
-    const working_quat = tempQuat();
-    quat.mul(working_quat, o.motion.rotation, o.motionSmoothing.rotationDiff);
-    quat.normalize(working_quat, working_quat);
-    mat4.fromRotationTranslationScale(
-      o.transform,
-      working_quat,
-      vec3.add(tempVec(), o.motion.location, o.motionSmoothing.locationDiff),
-      scale
-    );
-  }
-
-  _hasTransformed.add(o.id);
-}
-
-function updateTransforms(objs: Transformable[]) {
-  _transformables.clear();
-  _hasTransformed.clear();
-
-  for (let o of objs) {
-    _transformables.set(o.id, o);
-  }
-
-  for (let o of objs) {
-    updateTransform(o);
-  }
-}
-
-export function registerUpdateTransforms(em: EntityManager) {
-  em.registerSystem([TransformDef], [], updateTransforms);
-}
-
 export const CameraViewDef = EM.defineComponent("cameraView", () => {
   return {
     aspectRatio: 1,
@@ -138,7 +45,6 @@ export const CameraViewDef = EM.defineComponent("cameraView", () => {
   };
 });
 export type CameraView = Component<typeof CameraViewDef>;
-
 interface RenderableObj {
   id: number;
   renderable: Renderable;
@@ -275,14 +181,15 @@ export function registerAddMeshHandleSystem(em: EntityManager) {
           // TODO(@darzu): how should we handle instancing?
           // TODO(@darzu): this seems somewhat inefficient to look for this every frame
           let meshHandle: MeshHandle;
-          if (isMeshHandle(e.renderable.meshOrProto)) {
+          if (isMeshHandle(e.renderable.meshOrProto))
             meshHandle = res.renderer.renderer.addMeshInstance(
               e.renderable.meshOrProto
             );
-          } else
+          else
             meshHandle = res.renderer.renderer.addMesh(
               e.renderable.meshOrProto
             );
+
           em.addComponent(e.id, MeshHandleDef, meshHandle);
         }
       }

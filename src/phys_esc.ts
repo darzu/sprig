@@ -32,7 +32,7 @@ import {
   MotionDef,
   moveObjects,
 } from "./phys_motion.js";
-import { MotionSmoothing, MotionSmoothingDef } from "./renderer.js";
+import { MotionSmoothing, MotionSmoothingDef } from "./transform.js";
 import { tempQuat } from "./temp-pool.js";
 
 export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {

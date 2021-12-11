@@ -3,12 +3,8 @@ import { Component, EM, EntityManager } from "../entity-manager.js";
 import { vec3 } from "../gl-matrix.js";
 import { PhysicsStateDef } from "../phys_esc.js";
 import { Motion, MotionDef } from "../phys_motion.js";
-import {
-  MotionSmoothingDef,
-  ParentDef,
-  RenderableDef,
-  TransformDef,
-} from "../renderer.js";
+import { RenderableDef } from "../renderer.js";
+import { MotionSmoothingDef, ParentDef, TransformDef } from "../transform.js";
 import { ColorDef } from "./game.js";
 import {
   unshareProvokingVertices,

@@ -3,11 +3,8 @@ import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { createMotionProps, Motion, MotionDef } from "../phys_motion.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
-import {
-  MotionSmoothingDef,
-  RenderableDef,
-  TransformDef,
-} from "../renderer.js";
+import { RenderableDef } from "../renderer.js";
+import { MotionSmoothingDef, TransformDef } from "../transform.js";
 import { PhysicsStateDef } from "../phys_esc.js";
 import { AABBCollider, ColliderDef } from "../collider.js";
 import {

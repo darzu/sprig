@@ -8,13 +8,8 @@ import { PhysicsTimerDef, Timer } from "../time.js";
 import { ColorDef } from "./game.js";
 import { spawnBullet } from "./bullet.js";
 import { FinishedDef } from "../build.js";
-import {
-  MotionSmoothingDef,
-  CameraView,
-  CameraViewDef,
-  RenderableDef,
-  TransformDef,
-} from "../renderer.js";
+import { CameraView, CameraViewDef, RenderableDef } from "../renderer.js";
+import { MotionSmoothingDef, TransformDef } from "../transform.js";
 import {
   PhysicsResults,
   PhysicsResultsDef,
