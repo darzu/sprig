@@ -13,8 +13,10 @@ export enum MessageType {
   Join,
   JoinResponse,
   // State update
-  Event,
-  EventRequest,
+  Events,
+  AckEvents,
+  EventRequests,
+  AckEventRequests,
   StateUpdate,
   StateUpdateResponse,
   // Reserve unique object IDs

@@ -238,6 +238,7 @@ export class EntityManager {
     def: ComponentDef<N, P, Pargs>,
     ...args: Pargs
   ): P {
+    this.checkComponent(def);
     const e = this.entities.get(id)!;
     const alreadyHas = def.name in e;
     if (!alreadyHas) {
@@ -259,6 +260,21 @@ export class EntityManager {
       throw `double defining singleton component ${def.name} on ${e.id}!`;
     (e as any)[def.name] = c;
     return c;
+  }
+
+  public ensureSingletonComponent<
+    N extends string,
+    P,
+    Pargs extends any[] = any[]
+  >(def: ComponentDef<N, P, Pargs>, ...args: Pargs): P {
+    this.checkComponent(def);
+    const e = this.entities.get(0)!;
+    const alreadyHas = def.name in e;
+    if (!alreadyHas) {
+      return this.addSingletonComponent(def, ...args);
+    } else {
+      return (e as any)[def.name];
+    }
   }
 
   public removeSingletonComponent<C extends ComponentDef>(def: C) {

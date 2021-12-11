@@ -21,7 +21,6 @@ export const PeerDef = EM.defineComponent("peer", () => ({
   entityPriorities: new Map<number, number>(),
   entitiesKnown: new Set<number>(),
   entitiesInUpdate: new Map<number, Set<number>>(),
-  lastEvent: -1,
 }));
 
 export type Peer = Component<typeof PeerDef>;
