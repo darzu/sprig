@@ -6,6 +6,7 @@ import {
   mapMeshPositions,
   Mesh,
   scaleMesh,
+  scaleMesh3,
   transformMesh,
   unshareProvokingVertices,
 } from "../mesh-pool.js";
@@ -126,6 +127,8 @@ const PLANE_MESH = unshareProvokingVertices(
 const LocalMeshes = {
   cube: CUBE_MESH,
   plane: PLANE_MESH,
+  boat: scaleMesh3(CUBE_MESH, [5, 0.3, 2.5]),
+  bullet: scaleMesh(CUBE_MESH, 0.3),
 } as const;
 
 type AssetSymbols = keyof typeof RemoteMeshes | keyof typeof LocalMeshes;

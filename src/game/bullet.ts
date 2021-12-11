@@ -62,9 +62,6 @@ EM.registerSerializerPair(
   }
 );
 
-// TODO(@darzu): BULLET
-//    scaleMesh(CUBE_MESH, 0.3);
-
 let _bulletProto: MeshHandle | undefined = undefined;
 function getBulletProto(cube: Mesh, renderer: Renderer): MeshHandle {
   if (!_bulletProto) {
@@ -100,11 +97,11 @@ function createBullet(
   if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e))
-    em.addComponent(e.id, RenderableDef, assets.meshes.cube);
+    em.addComponent(e.id, RenderableDef, assets.meshes.bullet);
   if (!MeshHandleDef.isOn(e)) {
     // TODO(@darzu): handle in AddMeshHandleSystem
     const meshHandle = renderer.addMeshInstance(
-      getBulletProto(assets.meshes.cube, renderer)
+      getBulletProto(assets.meshes.bullet, renderer)
     );
     em.addComponent(e.id, MeshHandleDef, meshHandle);
   }
@@ -119,7 +116,7 @@ function createBullet(
     const collider = em.addComponent(e.id, ColliderDef);
     collider.shape = "AABB";
     collider.solid = false;
-    (collider as AABBCollider).aabb = assets.aabbs.cube;
+    (collider as AABBCollider).aabb = assets.aabbs.bullet;
   }
   if (!SyncDef.isOn(e)) {
     const sync = em.addComponent(e.id, SyncDef);

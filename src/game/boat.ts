@@ -102,9 +102,6 @@ EM.registerSerializerPair(
   deserializeBoatConstruct
 );
 
-// TODO(@darzu): BOAT
-//  [5, 0.3, 2.5]
-
 function createBoat(
   em: EntityManager,
   e: Entity & { boatConstruct: BoatConstruct },
@@ -118,7 +115,7 @@ function createBoat(
   if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e))
-    em.addComponent(e.id, RenderableDef, assets.meshes.cube);
+    em.addComponent(e.id, RenderableDef, assets.meshes.boat);
   if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
   if (!AuthorityDef.isOn(e)) {
     // TODO(@darzu): debug why boats have jerky movement
@@ -135,7 +132,7 @@ function createBoat(
     const collider = em.addComponent(e.id, ColliderDef);
     collider.shape = "AABB";
     collider.solid = true;
-    (collider as AABBCollider).aabb = assets.aabbs.cube;
+    (collider as AABBCollider).aabb = assets.aabbs.boat;
   }
   if (!SyncDef.isOn(e)) {
     const sync = em.addComponent(e.id, SyncDef);
