@@ -207,6 +207,8 @@ function stepPlayers(
         0.01
       );
       spawnBullet(EM, bulletMotion);
+      // TODO: figure out a better way to do this
+      inputs.lclick = false;
     }
     if (inputs.rclick) {
       const SPREAD = 5;
