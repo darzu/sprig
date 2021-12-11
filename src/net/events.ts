@@ -153,7 +153,7 @@ const RequestedEventsDef = EM.defineComponent(
 
 // TODO: find a better name for this
 // Attached to each peer by the event system at the host
-const EventSyncDef = EM.defineComponent("eventRequestState", () => ({
+const EventSyncDef = EM.defineComponent("eventSync", () => ({
   // The next unacked event ID from this peer
   nextId: 0,
   // The next event sequence number this peer should see
@@ -222,8 +222,11 @@ export function registerEventSystems(em: EntityManager) {
       if (
         outgoingEventRequests.events.length > 0 &&
         (newEvents ||
-          outgoingEventRequests.lastSendTime + EVENT_RETRANSMIT_MS > time.time)
+          outgoingEventRequests.lastSendTime + EVENT_RETRANSMIT_MS < time.time)
       ) {
+        console.log(
+          `Sending ${outgoingEventRequests.events.length} event requests (newEvents=${newEvents}, lastSendTime=${outgoingEventRequests.lastSendTime}, time=${time.time}`
+        );
         let message = new Serializer(MAX_MESSAGE_SIZE);
         message.writeUint8(MessageType.EventRequests);
         message.writeUint32(outgoingEventRequests.events[0].id);
@@ -370,7 +373,7 @@ export function registerEventSystems(em: EntityManager) {
         if (
           syncState.nextSeq <= events.last &&
           (events.newEvents ||
-            syncState.lastSendTime + EVENT_RETRANSMIT_MS > time.time)
+            syncState.lastSendTime + EVENT_RETRANSMIT_MS < time.time)
         ) {
           const log = events.log.slice(syncState.nextSeq);
           const message = new Serializer(MAX_MESSAGE_SIZE);
@@ -398,15 +401,15 @@ export function registerEventSystems(em: EntityManager) {
 
   // Runs only at non-host, handles events from host
   em.registerSystem(
-    [InboxDef, HostDef],
+    [InboxDef, HostDef, OutboxDef],
     [EventsDef],
     (hosts, { events }) => {
       if (hosts.length === 0) return;
-      const inbox = hosts[0].inbox;
-      const nextSeq = events.log.length;
+      const { inbox, outbox } = hosts[0];
       let shouldAck = false;
       while ((inbox.get(MessageType.Events) || []).length > 0) {
         shouldAck = true;
+        const nextSeq = events.log.length;
         const message = inbox.get(MessageType.Events)!.shift()!;
         const firstSeq = message.readUint32();
         const numEvents = message.readUint8();
@@ -424,6 +427,8 @@ export function registerEventSystems(em: EntityManager) {
           ) {
             const event = deserializeEvent(message);
             if (currentSeq >= nextSeq) {
+              if (event.seq !== events.log.length)
+                throw `Oh no!! firstSeq=${firstSeq} currentSeq=${currentSeq} nextSeq=${nextSeq}`;
               events.log.push(event);
             }
           }
@@ -433,6 +438,7 @@ export function registerEventSystems(em: EntityManager) {
         const message = new Serializer(8);
         message.writeUint8(MessageType.AckEvents);
         message.writeUint32(events.log.length);
+        send(outbox, message.buffer);
       }
     },
     "handleEvents"
@@ -449,6 +455,7 @@ export function registerEventSystems(em: EntityManager) {
         while (acks.length > 0) {
           const message = acks.shift()!;
           const nextSeq = message.readUint32();
+          console.log(`Acked @ ${nextSeq}`);
           syncState.nextSeq = Math.max(syncState.nextSeq, nextSeq);
         }
       }
