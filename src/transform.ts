@@ -11,10 +11,18 @@ export const TransformWorldDef = EM.defineComponent("transformWorld", () => {
 });
 export type TransformWorld = mat4;
 
-export const TransformLocalDef = EM.defineComponent("transformLocal", () => {
+// TODO(@darzu): implement local transform instead of Motion's position & rotation?
+//  one problem is that the order in which you interleave rotation/translations matters if it
+//  is all in one matrix
+// transforms we might care about:
+//  on mesh load, one time transform it
+//  object placement in "local" space (what motion did)
+//  final object placement in "global" space for the renderer
+//  final object placement in "global" space for physics
+const TransformLocalDef = EM.defineComponent("transformLocal", () => {
   return mat4.create();
 });
-export type TransformLocal = mat4;
+type TransformLocal = mat4;
 
 export const ParentTransformDef = EM.defineComponent(
   "parentTransform",
@@ -33,6 +41,7 @@ export const MotionSmoothingDef = EM.defineComponent("motionSmoothing", () => {
   };
 });
 export type MotionSmoothing = Component<typeof MotionSmoothingDef>;
+
 
 type Transformable = {
   id: number;

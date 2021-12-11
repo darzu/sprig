@@ -183,7 +183,6 @@ export function registerAssetLoader(em: EntityManager) {
 
 async function loadAssetInternal(relPath: string): Promise<Mesh> {
   // download
-  // TODO(@darzu): perf: parallalize this
   // TODO(@darzu): perf: check DEFAULT_ASSET_PATH once
   let txt;
   try {
