@@ -48,9 +48,6 @@ export type PhysicsResults = Component<typeof PhysicsResultsDef>;
 export const PhysicsStateDef = EM.defineComponent("_phys", () => {
   return {
     lastPosition: PositionDef.construct(),
-    lastRotation: RotationDef.construct(),
-    lastLinearVelocity: LinearVelocityDef.construct(),
-    lastAngularVelocity: AngularVelocityDef.construct(),
     init: false,
     local: createAABB(),
     world: createAABB(),
@@ -62,26 +59,15 @@ export type PhysicsState = Component<typeof PhysicsStateDef>;
 export interface PhysicsObject {
   id: number;
   position: Position;
-  linearVelocity?: LinearVelocity;
-  rotation?: Rotation;
-  angularVelocity?: AngularVelocity;
   collider: Collider;
   _phys: PhysicsState;
-}
-
-function updateLastMotion(o: PhysicsObject) {
-  vec3.copy(o._phys.lastPosition, o.position);
-  if (o.rotation) quat.copy(o._phys.lastRotation, o.rotation);
-  if (o.linearVelocity) vec3.copy(o._phys.lastLinearVelocity, o.linearVelocity);
-  if (o.angularVelocity)
-    vec3.copy(o._phys.lastAngularVelocity, o.angularVelocity);
 }
 
 function initPhysicsObj(o: PhysicsObject) {
   // TODO(@darzu): do we really need this?
   o._phys.init = true;
 
-  updateLastMotion(o);
+  vec3.copy(o._phys.lastPosition, o.position);
 
   // AABBs (collider derived)
   if (o.collider.shape === "AABB") {
@@ -299,7 +285,7 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
 
   // remember current state for next time
   for (let o of objs) {
-    updateLastMotion(o);
+    vec3.copy(o._phys.lastPosition, o.position);
   }
 
   // update out checkRay function
