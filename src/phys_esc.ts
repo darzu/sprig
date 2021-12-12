@@ -1,7 +1,6 @@
 import { Collider, ColliderDef } from "./collider.js";
 import { Component, EM, EntityManager } from "./entity-manager.js";
 import { PhysicsTimerDef, Timer } from "./time.js";
-import { _playerId } from "./game/game.js";
 import { quat, vec3 } from "./gl-matrix.js";
 import {
   CollidesWith,
@@ -175,10 +174,6 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
     }
 
     // else, this collision isn't valid any more
-    if (aId === _playerId || bId === _playerId) {
-      // TODO(@darzu): add gameplay events for ending contact?
-      // console.log(`ending contact ${aId}-${bId} ${aTowardB}`);
-    }
     contactData.delete(abId);
   }
 

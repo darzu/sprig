@@ -1,6 +1,5 @@
 import { Collider } from "./collider.js";
 import { quat, vec3 } from "./gl-matrix.js";
-import { _playerId } from "./game/game.js";
 import { clamp } from "./math.js";
 import { CollidesWith, idPair, IdPair, ContactData } from "./phys.js";
 import { AABB } from "./phys_broadphase.js";

@@ -93,9 +93,6 @@ EM.registerSerializerPair(
 function createPlayer(em: EntityManager) {
   const e = em.newEntity();
   em.addComponent(e.id, PlayerConstructDef, vec3.fromValues(5, 0, 0));
-
-  // TODO(@darzu):  move _playerId to a LocalPlayer component or something
-  _playerId = e.id;
 }
 
 function createGround(em: EntityManager) {
@@ -119,10 +116,6 @@ function createGround(em: EntityManager) {
   }
 }
 
-// TODO(@darzu): for debugging
-export let _playerId: number = -1;
-
-// TODO(@darzu): integrate
 export function registerAllSystems(em: EntityManager) {
   registerTimeSystem(em);
   registerNetSystems(em);

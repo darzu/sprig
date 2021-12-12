@@ -1,5 +1,4 @@
 import { vec3 } from "./gl-matrix.js";
-import { _playerId } from "./game/game.js";
 import { __isSMI } from "./util.js";
 import { PhysicsObject } from "./phys_esc.js";
 
