@@ -6,7 +6,6 @@ import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import { RenderableDef } from "../renderer.js";
 import {
-  MotionSmoothingDef,
   PositionDef,
   Rotation,
   RotationDef,
@@ -26,6 +25,7 @@ import { AABB } from "../phys_broadphase.js";
 import { Deserializer, Serializer } from "../serialize.js";
 import { Assets, AssetsDef } from "./assets.js";
 import { LinearVelocity, LinearVelocityDef } from "../motion.js";
+import { MotionSmoothingDef } from "../smoothing.js";
 
 export const BoatDef = EM.defineComponent("boat", () => {
   return {

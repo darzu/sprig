@@ -9,7 +9,6 @@ import { spawnBullet } from "./bullet.js";
 import { FinishedDef } from "../build.js";
 import { CameraView, CameraViewDef, RenderableDef } from "../renderer.js";
 import {
-  MotionSmoothingDef,
   Position,
   PositionDef,
   Rotation,
@@ -37,6 +36,7 @@ import { vec3Dbg } from "../utils-3d.js";
 import { mathMap } from "../math.js";
 import { Assets, AssetsDef } from "./assets.js";
 import { LinearVelocity, LinearVelocityDef } from "../motion.js";
+import { MotionSmoothingDef } from "../smoothing.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {

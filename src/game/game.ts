@@ -2,12 +2,7 @@ import { Component, EM, EntityManager } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { jitter } from "../math.js";
-import {
-  registerPhysicsSystems,
-  registerUpdateSmoothingLerp,
-  registerUpdateSmoothingTargetSmoothChange,
-  registerUpdateSmoothingTargetSnapChange,
-} from "../phys_esc.js";
+import { registerPhysicsSystems } from "../phys_esc.js";
 import {
   registerAddMeshHandleSystem,
   registerRenderer,
@@ -72,6 +67,12 @@ import { registerInteractionSystem } from "./interact.js";
 import { registerModeler } from "./modeler.js";
 import { registerToolDropSystem, registerToolPickupSystem } from "./tool.js";
 import { registerPhysicsDebuggerSystem } from "../phys_debug.js";
+import {
+  registerUpdateSmoothingTargetSnapChange,
+  registerUpdateSmoothingTargetSmoothChange,
+  registerUpdateSmoothingLerp,
+  registerUpdateSmoothedTransform,
+} from "../smoothing.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -164,6 +165,7 @@ export function registerAllSystems(em: EntityManager) {
   registerEventSystems(em);
   registerDeleteEntitiesSystem(em);
   registerUpdateTransforms(em);
+  registerUpdateSmoothedTransform(em);
   registerRenderViewController(em);
   registerUpdateCameraView(em);
   registerPhysicsDebuggerSystem(em);

@@ -13,7 +13,6 @@ import { AABB } from "../phys_broadphase.js";
 import { PhysicsStateDef } from "../phys_esc.js";
 import { RenderableDef } from "../renderer.js";
 import {
-  MotionSmoothingDef,
   ParentTransformDef,
   PositionDef,
   RotationDef,
