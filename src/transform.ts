@@ -120,6 +120,7 @@ function updateWorldTransform(o: Transformable) {
     );
   } else if (DO_SMOOTH && MotionSmoothingDef.isOn(o) && PositionDef.isOn(o)) {
     // update with smoothing
+    // TODO(@darzu): seperate the smoothed result from the snapped result for rendering vs physics respectively
     const smoothRot = tempQuat();
     quat.mul(smoothRot, rotation, o.motionSmoothing.rotationDiff);
     quat.normalize(smoothRot, smoothRot);
