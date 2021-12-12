@@ -1,4 +1,4 @@
-/* TODO: add "versioning" of objects. 
+TODO: add "versioning" of objects. 
 Right now we have two types of state updates: full and dynamic. 
 A full update is only guaranteed to happen once, on object creation; 
 we track which nodes have seen each object and try to only sync each 
@@ -14,4 +14,3 @@ nodes all log entries we think they might not have seen.
 
 For both of these, should use typescript's getters and setters to make sure
 everything gets updated in the right place.
- */
