@@ -2,8 +2,6 @@ import { Component, EM, EntityManager } from "./entity-manager.js";
 import { mat4, quat, vec3 } from "./gl-matrix.js";
 import { tempVec, tempQuat } from "./temp-pool.js";
 
-const DO_SMOOTH = true;
-
 export const TransformWorldDef = EM.defineComponent("transformWorld", () => {
   return mat4.create();
 });
@@ -66,16 +64,6 @@ export const ParentTransformDef = EM.defineComponent(
 );
 export type ParentTransform = Component<typeof ParentTransformDef>;
 
-export const MotionSmoothingDef = EM.defineComponent("motionSmoothing", () => {
-  return {
-    positionTarget: vec3.create(),
-    positionDiff: vec3.create(),
-    rotationTarget: quat.create(),
-    rotationDiff: quat.create(),
-  };
-});
-export type MotionSmoothing = Component<typeof MotionSmoothingDef>;
-
 type Transformable = {
   id: number;
   position?: Position;
@@ -85,7 +73,6 @@ type Transformable = {
   // optional components
   // TODO(@darzu): let the query system specify optional components
   parentTransform?: ParentTransform;
-  motionSmoothing?: MotionSmoothing;
   scale?: Scale;
 };
 
@@ -95,16 +82,13 @@ const _hasTransformed: Set<number> = new Set();
 function updateWorldTransform(o: Transformable) {
   if (_hasTransformed.has(o.id)) return;
 
-  const scale = ScaleDef.isOn(o) ? o.scale : vec3.set(tempVec(), 1, 1, 1);
-  const rotation = RotationDef.isOn(o) ? o.rotation : quat.identity(tempQuat());
-
   // first, update from motion (optionally)
   if (PositionDef.isOn(o)) {
     mat4.fromRotationTranslationScale(
       o.transformWorld,
-      rotation,
+      RotationDef.isOn(o) ? o.rotation : quat.identity(tempQuat()),
       o.position,
-      scale
+      ScaleDef.isOn(o) ? o.scale : vec3.set(tempVec(), 1, 1, 1)
     );
   }
 
@@ -117,17 +101,6 @@ function updateWorldTransform(o: Transformable) {
       o.transformWorld,
       _transformables.get(o.parentTransform.id)!.transformWorld,
       o.transformWorld
-    );
-  } else if (DO_SMOOTH && MotionSmoothingDef.isOn(o) && PositionDef.isOn(o)) {
-    // update with smoothing
-    const smoothRot = tempQuat();
-    quat.mul(smoothRot, rotation, o.motionSmoothing.rotationDiff);
-    quat.normalize(smoothRot, smoothRot);
-    mat4.fromRotationTranslationScale(
-      o.transformWorld,
-      smoothRot,
-      vec3.add(tempVec(), o.position, o.motionSmoothing.positionDiff),
-      scale
     );
   }
 

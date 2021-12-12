@@ -4,7 +4,6 @@ import { vec3 } from "../gl-matrix.js";
 import { PhysicsStateDef } from "../phys_esc.js";
 import { RenderableDef } from "../renderer.js";
 import {
-  MotionSmoothingDef,
   ParentTransformDef,
   Position,
   PositionDef,
@@ -31,6 +30,7 @@ import { AABBCollider } from "../collider.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import { FinishedDef } from "../build.js";
 import { Assets, AssetsDef } from "./assets.js";
+import { MotionSmoothingDef } from "../smoothing.js";
 
 export const CubeConstructDef = EM.defineComponent(
   "cubeConstruct",

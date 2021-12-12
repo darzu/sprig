@@ -4,7 +4,6 @@ import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import { RenderableDef } from "../renderer.js";
 import {
-  MotionSmoothingDef,
   Position,
   PositionDef,
   RotationDef,
@@ -38,6 +37,7 @@ import {
   LinearVelocity,
   LinearVelocityDef,
 } from "../motion.js";
+import { MotionSmoothingDef } from "../smoothing.js";
 
 export const BulletDef = EM.defineComponent("bullet", () => {
   return true;
