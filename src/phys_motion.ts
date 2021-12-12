@@ -13,19 +13,6 @@ let deltaRotation = quat.create();
 
 // TODO(@darzu): implement checkAtRest (deleted in this commit)
 
-export function didMove(o: {
-  location: Position;
-  lastLocation: Position;
-}): boolean {
-  // TODO(@darzu): this might be redundent with vec3.equals which does a epsilon check
-  const EPSILON = 0.01;
-  return (
-    Math.abs(o.location[0] - o.lastLocation[0]) > EPSILON ||
-    Math.abs(o.location[1] - o.lastLocation[1]) > EPSILON ||
-    Math.abs(o.location[2] - o.lastLocation[2]) > EPSILON
-  );
-}
-
 const _constrainedVelocities = new Map<number, vec3>();
 
 export interface MotionObj {
@@ -116,7 +103,7 @@ export function moveObjects(
       linearVelocity[2] = clamp(linearVelocity[2], -vzMax, vzMax);
     }
 
-    // change location according to linear velocity
+    // change position according to linear velocity
     if (linearVelocity) {
       delta = vec3.scale(delta, linearVelocity, dt);
       vec3.add(position, position, delta);
