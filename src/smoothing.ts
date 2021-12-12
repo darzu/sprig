@@ -163,10 +163,9 @@ export function registerUpdateSmoothedTransform(em: EntityManager) {
       [],
       (objs) => {
         for (let o of objs) {
-          if (
-            ParentTransformDef.isOn(o) // don't smooth when parented
-          )
-            return;
+          // don't smooth when parented
+          if (ParentTransformDef.isOn(o)) return;
+
           // update with smoothing
           // TODO(@darzu): seperate the smoothed result from the snapped result for rendering vs physics respectively
           const rotation = RotationDef.isOn(o)
