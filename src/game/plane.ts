@@ -2,9 +2,8 @@ import { ColliderDef } from "../collider.js";
 import { Component, EM, EntityManager } from "../entity-manager.js";
 import { vec3 } from "../gl-matrix.js";
 import { PhysicsStateDef } from "../phys_esc.js";
-import { MotionDef } from "../phys_motion.js";
 import { RenderableDef } from "../renderer.js";
-import { TransformWorldDef } from "../transform.js";
+import { PositionDef, TransformWorldDef } from "../transform.js";
 import { ColorDef } from "./game.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { AABBCollider } from "../collider.js";
@@ -52,32 +51,31 @@ export function registerBuildPlanesSystem(em: EntityManager) {
     for (let plane of planes) {
       if (FinishedDef.isOn(plane)) continue;
 
-      if (!MotionDef.isOn(plane)) {
-        const motion = em.addComponent(plane.id, MotionDef);
-        vec3.copy(motion.location, plane.planeConstruct.location);
-      }
-      if (!ColorDef.isOn(plane)) {
-        const color = em.addComponent(plane.id, ColorDef);
-        vec3.copy(color, plane.planeConstruct.color);
-      }
+      if (!PositionDef.isOn(plane))
+        em.addComponent(plane.id, PositionDef, plane.planeConstruct.location);
+      if (!ColorDef.isOn(plane))
+        em.addComponent(plane.id, ColorDef, plane.planeConstruct.color);
       if (!TransformWorldDef.isOn(plane))
         em.addComponent(plane.id, TransformWorldDef);
       if (!RenderableDef.isOn(plane))
         em.addComponent(plane.id, RenderableDef, assets.plane.proto);
       if (!PhysicsStateDef.isOn(plane))
         em.addComponent(plane.id, PhysicsStateDef);
-      if (!ColliderDef.isOn(plane)) {
-        const collider = em.addComponent(plane.id, ColliderDef);
-        collider.shape = "AABB";
-        collider.solid = true;
-        (collider as AABBCollider).aabb = assets.plane.aabb;
-      }
+      if (!ColliderDef.isOn(plane))
+        em.addComponent(plane.id, ColliderDef, {
+          shape: "AABB",
+          solid: true,
+          aabb: assets.plane.aabb,
+        });
       if (!AuthorityDef.isOn(plane))
         em.addComponent(plane.id, AuthorityDef, pid);
       if (!SyncDef.isOn(plane)) {
-        const sync = em.addComponent(plane.id, SyncDef);
-        sync.fullComponents.push(PlaneConstructDef.id);
-        sync.fullComponents.push(MotionDef.id);
+        em.addComponent(
+          plane.id,
+          SyncDef,
+          [PlaneConstructDef.id],
+          [PositionDef.id]
+        );
       }
       em.addComponent(plane.id, FinishedDef);
     }

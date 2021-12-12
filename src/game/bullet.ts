@@ -1,10 +1,15 @@
 import { EM, EntityManager, Component, Entity } from "../entity-manager.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
-import { createMotionProps, Motion, MotionDef } from "../phys_motion.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import { RenderableDef } from "../renderer.js";
-import { MotionSmoothingDef, TransformWorldDef } from "../transform.js";
+import {
+  MotionSmoothingDef,
+  Position,
+  PositionDef,
+  RotationDef,
+  TransformWorldDef,
+} from "../transform.js";
 import { PhysicsStateDef } from "../phys_esc.js";
 import { AABBCollider, ColliderDef } from "../collider.js";
 import {
@@ -27,6 +32,12 @@ import { AABB } from "../phys_broadphase.js";
 import { RendererDef } from "../render_init.js";
 import { Renderer } from "../render_webgpu.js";
 import { Assets, AssetsDef } from "./assets.js";
+import {
+  AngularVelocity,
+  AngularVelocityDef,
+  LinearVelocity,
+  LinearVelocityDef,
+} from "../motion.js";
 
 export const BulletDef = EM.defineComponent("bullet", () => {
   return true;
@@ -65,67 +76,55 @@ function createBullet(
   em: EntityManager,
   e: Entity & { bulletConstruct: BulletConstruct },
   pid: number,
-  renderer: Renderer,
   assets: Assets
 ) {
   if (FinishedDef.isOn(e)) return;
   const props = e.bulletConstruct;
-  if (!MotionDef.isOn(e))
-    em.addComponent(
-      e.id,
-      MotionDef,
-      props.location,
-      quat.create(),
-      props.linearVelocity,
-      props.angularVelocity
-    );
-  if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, BULLET_COLOR);
-  if (!TransformWorldDef.isOn(e)) em.addComponent(e.id, TransformWorldDef);
-  if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
-  if (!RenderableDef.isOn(e))
-    em.addComponent(e.id, RenderableDef, assets.bullet.proto);
-  if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
-  if (!AuthorityDef.isOn(e)) {
-    em.addComponent(e.id, AuthorityDef, pid);
-  }
-  if (!BulletDef.isOn(e)) {
-    em.addComponent(e.id, BulletDef);
-  }
-  if (!ColliderDef.isOn(e)) {
-    const collider = em.addComponent(e.id, ColliderDef);
-    collider.shape = "AABB";
-    collider.solid = false;
-    (collider as AABBCollider).aabb = assets.bullet.aabb;
-  }
-  if (!SyncDef.isOn(e)) {
-    const sync = em.addComponent(e.id, SyncDef);
-    sync.fullComponents.push(BulletConstructDef.id);
-    sync.dynamicComponents.push(MotionDef.id);
-  }
-  if (!PredictDef.isOn(e)) em.addComponent(e.id, PredictDef);
+  em.ensureComponent(e.id, PositionDef, props.location);
+  em.ensureComponent(e.id, RotationDef);
+  em.ensureComponent(e.id, LinearVelocityDef, props.linearVelocity);
+  em.ensureComponent(e.id, AngularVelocityDef, props.angularVelocity);
+  em.ensureComponent(e.id, ColorDef, BULLET_COLOR);
+  em.ensureComponent(e.id, TransformWorldDef);
+  em.ensureComponent(e.id, MotionSmoothingDef);
+  em.ensureComponent(e.id, RenderableDef, assets.bullet.proto);
+  em.ensureComponent(e.id, PhysicsStateDef);
+  em.ensureComponent(e.id, AuthorityDef, pid);
+  em.ensureComponent(e.id, BulletDef);
+  em.ensureComponent(e.id, ColliderDef, {
+    shape: "AABB",
+    solid: false,
+    aabb: assets.bullet.aabb,
+  });
+  em.ensureComponent(e.id, SyncDef, [BulletConstructDef.id], [PositionDef.id]);
+  em.ensureComponent(e.id, PredictDef);
   em.addComponent(e.id, FinishedDef);
 }
 
 export function registerBuildBulletsSystem(em: EntityManager) {
   em.registerSystem(
     [BulletConstructDef],
-    [MeDef, RendererDef, AssetsDef],
+    [MeDef, AssetsDef],
     (bullets, res) => {
-      for (let b of bullets)
-        createBullet(em, b, res.me.pid, res.renderer.renderer, res.assets);
+      for (let b of bullets) createBullet(em, b, res.me.pid, res.assets);
     },
     "buildBullets"
   );
 }
 
-export function spawnBullet(em: EntityManager, motion: Motion) {
+export function spawnBullet(
+  em: EntityManager,
+  position: Position,
+  linearVelocity: LinearVelocity,
+  angularVelocity: AngularVelocity
+) {
   const e = em.newEntity();
   em.addComponent(
     e.id,
     BulletConstructDef,
-    motion.location,
-    motion.linearVelocity,
-    motion.angularVelocity
+    position,
+    linearVelocity,
+    angularVelocity
   );
 }
 
@@ -140,18 +139,7 @@ export function fireBullet(
   rotationSpeed = rotationSpeed || 0.02;
   let bulletAxis = vec3.fromValues(0, 0, -1);
   vec3.transformQuat(bulletAxis, bulletAxis, rotation);
-  let bulletMotion = createMotionProps({});
-  bulletMotion.location = vec3.clone(location);
-  bulletMotion.rotation = quat.clone(rotation);
-  bulletMotion.linearVelocity = vec3.scale(
-    bulletMotion.linearVelocity,
-    bulletAxis,
-    speed
-  );
-  bulletMotion.angularVelocity = vec3.scale(
-    bulletMotion.angularVelocity,
-    bulletAxis,
-    rotationSpeed
-  );
-  spawnBullet(em, bulletMotion);
+  const linearVelocity = vec3.scale(vec3.create(), bulletAxis, speed);
+  const angularVelocity = vec3.scale(vec3.create(), bulletAxis, rotationSpeed);
+  spawnBullet(em, vec3.clone(location), linearVelocity, angularVelocity);
 }

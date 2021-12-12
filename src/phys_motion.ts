@@ -5,53 +5,8 @@ import { clamp } from "./math.js";
 import { CollidesWith, idPair, IdPair, ContactData } from "./phys.js";
 import { AABB } from "./phys_broadphase.js";
 import { vec3Dbg } from "./utils-3d.js";
-import { Component, EM } from "./entity-manager.js";
-import { Deserializer, Serializer } from "./serialize.js";
-
-export const MotionDef = EM.defineComponent(
-  "motion",
-  (l?: vec3, r?: quat, lv?: vec3, rv?: vec3) => ({
-    location: l ?? vec3.create(),
-    rotation: r ?? quat.create(),
-    linearVelocity: lv ?? vec3.create(),
-    angularVelocity: rv ?? vec3.create(),
-  })
-);
-export type Motion = Component<typeof MotionDef>;
-
-EM.registerSerializerPair(
-  MotionDef,
-  (o, buf) => {
-    buf.writeVec3(o.location);
-    buf.writeVec3(o.linearVelocity);
-    buf.writeQuat(o.rotation);
-    buf.writeVec3(o.angularVelocity);
-  },
-  (o, buf) => {
-    buf.readVec3(o.location);
-    buf.readVec3(o.linearVelocity);
-    buf.readQuat(o.rotation);
-    buf.readVec3(o.angularVelocity);
-  }
-);
-
-export function copyMotionProps(dest: Motion, src: Partial<Motion>): Motion {
-  if (src.location) vec3.copy(dest.location, src.location);
-  if (src.rotation) quat.copy(dest.rotation, src.rotation);
-  if (src.linearVelocity) vec3.copy(dest.linearVelocity, src.linearVelocity);
-  if (src.angularVelocity) vec3.copy(dest.angularVelocity, src.angularVelocity);
-  return dest;
-}
-
-export function createMotionProps(init: Partial<Motion>): Motion {
-  // TODO(@darzu): this is difficult to keep in sync with MotionObject as fields are added/removed/changed
-  if (!init.location) init.location = vec3.create();
-  if (!init.rotation) init.rotation = quat.create();
-  if (!init.linearVelocity) init.linearVelocity = vec3.create();
-  if (!init.angularVelocity) init.angularVelocity = vec3.create();
-
-  return init as Motion;
-}
+import { Position, Rotation } from "./transform.js";
+import { AngularVelocity, LinearVelocity } from "./motion.js";
 
 let delta = vec3.create();
 let normalizedVelocity = vec3.create();
@@ -59,13 +14,16 @@ let deltaRotation = quat.create();
 
 // TODO(@darzu): implement checkAtRest (deleted in this commit)
 
-export function didMove(o: { motion: Motion; lastMotion: Motion }): boolean {
+export function didMove(o: {
+  location: Position;
+  lastLocation: Position;
+}): boolean {
   // TODO(@darzu): this might be redundent with vec3.equals which does a epsilon check
   const EPSILON = 0.01;
   return (
-    Math.abs(o.motion.location[0] - o.lastMotion.location[0]) > EPSILON ||
-    Math.abs(o.motion.location[1] - o.lastMotion.location[1]) > EPSILON ||
-    Math.abs(o.motion.location[2] - o.lastMotion.location[2]) > EPSILON
+    Math.abs(o.location[0] - o.lastLocation[0]) > EPSILON ||
+    Math.abs(o.location[1] - o.lastLocation[1]) > EPSILON ||
+    Math.abs(o.location[2] - o.lastLocation[2]) > EPSILON
   );
 }
 
@@ -73,7 +31,10 @@ const _constrainedVelocities = new Map<number, vec3>();
 
 export interface MotionObj {
   id: number;
-  motion: Motion;
+  position: Position;
+  linearVelocity?: LinearVelocity;
+  rotation?: Rotation;
+  angularVelocity?: AngularVelocity;
   collider: Collider;
   _phys: {
     world: AABB;
@@ -87,12 +48,6 @@ export function moveObjects(
   lastContactData: Map<IdPair, ContactData>
 ) {
   const objs = Array.from(objDict.values());
-
-  // copy .motion to .motion; we want to try to meet the gameplay wants
-  // TODO(@darzu): lol, clean this up
-  for (let o of objs) {
-    copyMotionProps(o.motion, o.motion);
-  }
 
   // TODO(@darzu): probably don't need this intermediate _constrainedVelocities
   _constrainedVelocities.clear();
@@ -110,7 +65,7 @@ export function moveObjects(
     if (!!a && a.collider.solid) {
       const aConVel =
         _constrainedVelocities.get(data.aId) ??
-        vec3.clone(objDict.get(data.aId)!.motion.linearVelocity);
+        vec3.clone(objDict.get(data.aId)!.linearVelocity ?? vec3.create());
       const aInDirOfB = vec3.dot(aConVel, aReboundDir);
       if (aInDirOfB > 0) {
         vec3.sub(
@@ -125,7 +80,7 @@ export function moveObjects(
     if (!!b && b.collider.solid) {
       const bConVel =
         _constrainedVelocities.get(data.bId) ??
-        vec3.clone(objDict.get(data.bId)!.motion.linearVelocity);
+        vec3.clone(objDict.get(data.bId)!.linearVelocity ?? vec3.create());
       const bInDirOfA = vec3.dot(bConVel, bReboundDir);
       if (bInDirOfA > 0) {
         vec3.sub(
@@ -139,34 +94,47 @@ export function moveObjects(
   }
 
   // update velocity with constraints
-  for (let { id, motion: m } of objs) {
-    if (_constrainedVelocities.has(id))
-      vec3.copy(m.linearVelocity, _constrainedVelocities.get(id)!);
+  for (let { id, linearVelocity } of objs) {
+    if (_constrainedVelocities.has(id) && linearVelocity)
+      vec3.copy(linearVelocity, _constrainedVelocities.get(id)!);
   }
 
   for (let {
     id,
-    motion: m,
+    position,
+    linearVelocity,
+    angularVelocity,
+    rotation,
     _phys: { world },
   } of objs) {
     // clamp linear velocity based on size
-    const vxMax = (world.max[0] - world.min[0]) / dt;
-    const vyMax = (world.max[1] - world.min[1]) / dt;
-    const vzMax = (world.max[2] - world.min[2]) / dt;
-    m.linearVelocity[0] = clamp(m.linearVelocity[0], -vxMax, vxMax);
-    m.linearVelocity[1] = clamp(m.linearVelocity[1], -vyMax, vyMax);
-    m.linearVelocity[2] = clamp(m.linearVelocity[2], -vzMax, vzMax);
+    if (linearVelocity) {
+      const vxMax = (world.max[0] - world.min[0]) / dt;
+      const vyMax = (world.max[1] - world.min[1]) / dt;
+      const vzMax = (world.max[2] - world.min[2]) / dt;
+      linearVelocity[0] = clamp(linearVelocity[0], -vxMax, vxMax);
+      linearVelocity[1] = clamp(linearVelocity[1], -vyMax, vyMax);
+      linearVelocity[2] = clamp(linearVelocity[2], -vzMax, vzMax);
+    }
 
     // change location according to linear velocity
-    delta = vec3.scale(delta, m.linearVelocity, dt);
-    vec3.add(m.location, m.location, delta);
+    if (linearVelocity) {
+      delta = vec3.scale(delta, linearVelocity, dt);
+      vec3.add(position, position, delta);
+    }
 
     // change rotation according to angular velocity
-    normalizedVelocity = vec3.normalize(normalizedVelocity, m.angularVelocity);
-    let angle = vec3.length(m.angularVelocity) * dt;
-    deltaRotation = quat.setAxisAngle(deltaRotation, normalizedVelocity, angle);
-    quat.normalize(deltaRotation, deltaRotation);
-    // note--quat multiplication is not commutative, need to multiply on the left
-    quat.multiply(m.rotation, deltaRotation, m.rotation);
+    if (angularVelocity && rotation) {
+      normalizedVelocity = vec3.normalize(normalizedVelocity, angularVelocity);
+      let angle = vec3.length(angularVelocity) * dt;
+      deltaRotation = quat.setAxisAngle(
+        deltaRotation,
+        normalizedVelocity,
+        angle
+      );
+      quat.normalize(deltaRotation, deltaRotation);
+      // note--quat multiplication is not commutative, need to multiply on the left
+      quat.multiply(rotation, deltaRotation, rotation);
+    }
   }
 }

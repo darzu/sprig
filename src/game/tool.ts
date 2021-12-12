@@ -11,11 +11,13 @@ import {
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { AABB } from "../phys_broadphase.js";
 import { PhysicsStateDef } from "../phys_esc.js";
-import { MotionDef } from "../phys_motion.js";
 import { RenderableDef } from "../renderer.js";
 import {
   MotionSmoothingDef,
   ParentTransformDef,
+  PositionDef,
+  RotationDef,
+  ScaleDef,
   TransformWorldDef,
 } from "../transform.js";
 import { ColorDef } from "./game.js";
@@ -23,7 +25,6 @@ import { InteractingDef } from "./interact.js";
 import { registerEventHandler, DetectedEventsDef } from "../net/events.js";
 import { PlayerEntDef } from "./player.js";
 import { InteractableDef } from "./interact.js";
-import { ScaleDef } from "../scale.js";
 
 export const ToolDef = EM.defineComponent("tool", (type?: string) => ({
   type,
@@ -52,14 +53,14 @@ export function registerToolPickupSystem(em: EntityManager) {
 
 export function registerToolDropSystem(em: EntityManager) {
   em.registerSystem(
-    [PlayerEntDef, MotionDef],
+    [PlayerEntDef, PositionDef, RotationDef],
     [DetectedEventsDef],
     (players, { detectedEvents }) => {
-      for (let { player, id, motion } of players) {
+      for (let { player, id, position, rotation } of players) {
         if (player.dropping && player.tool > 0) {
           let dropLocation = vec3.fromValues(0, 0, -5);
-          vec3.transformQuat(dropLocation, dropLocation, motion.rotation);
-          vec3.add(dropLocation, dropLocation, motion.location);
+          vec3.transformQuat(dropLocation, dropLocation, rotation);
+          vec3.add(dropLocation, dropLocation, position);
           detectedEvents.push({
             type: "tool-drop",
             entities: [id, player.tool],
@@ -83,12 +84,12 @@ registerEventHandler("tool-pickup", {
   },
   runEvent: (em, entities) => {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
-    let tool = em.findEntity(entities[1], [MotionDef, ParentTransformDef])!;
+    let tool = em.findEntity(entities[1], [PositionDef, ParentTransformDef])!;
     tool.parentTransform.id = player.id;
     em.removeComponent(tool.id, InteractableDef);
-    vec3.set(tool.motion.location, 0, 0, -1.5);
+    vec3.set(tool.position, 0, 0, -1.5);
     let scale = em.ensureComponent(tool.id, ScaleDef);
-    vec3.set(scale.by, 0.5, 0.5, 0.5);
+    vec3.set(scale, 0.5, 0.5, 0.5);
     player.player.tool = tool.id;
   },
 });
@@ -101,12 +102,12 @@ registerEventHandler("tool-drop", {
   },
   runEvent: (em, entities, location) => {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
-    let tool = em.findEntity(entities[1], [MotionDef, ParentTransformDef])!;
+    let tool = em.findEntity(entities[1], [PositionDef, ParentTransformDef])!;
     tool.parentTransform.id = 0;
     em.addComponent(tool.id, InteractableDef);
-    vec3.copy(tool.motion.location, location!);
+    vec3.copy(tool.position, location!);
     let scale = em.ensureComponent(tool.id, ScaleDef);
-    vec3.set(scale.by, 1, 1, 1);
+    vec3.set(scale, 1, 1, 1);
     player.player.tool = 0;
   },
 });

@@ -26,14 +26,22 @@ import {
   rayHitDist,
   resetCollidesWithSet,
 } from "./phys_broadphase.js";
+import { moveObjects } from "./phys_motion.js";
 import {
-  copyMotionProps,
-  Motion,
-  MotionDef,
-  moveObjects,
-} from "./phys_motion.js";
-import { MotionSmoothing, MotionSmoothingDef } from "./transform.js";
+  MotionSmoothing,
+  MotionSmoothingDef,
+  Position,
+  PositionDef,
+  Rotation,
+  RotationDef,
+} from "./transform.js";
 import { tempQuat } from "./temp-pool.js";
+import {
+  LinearVelocityDef,
+  AngularVelocityDef,
+  AngularVelocity,
+  LinearVelocity,
+} from "./motion.js";
 
 export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {
   return {
@@ -47,7 +55,10 @@ export type PhysicsResults = Component<typeof PhysicsResultsDef>;
 
 export const PhysicsStateDef = EM.defineComponent("_phys", () => {
   return {
-    lastMotion: MotionDef.construct(),
+    lastPosition: PositionDef.construct(),
+    lastRotation: RotationDef.construct(),
+    lastLinearVelocity: LinearVelocityDef.construct(),
+    lastAngularVelocity: AngularVelocityDef.construct(),
     init: false,
     local: createAABB(),
     world: createAABB(),
@@ -58,16 +69,27 @@ export type PhysicsState = Component<typeof PhysicsStateDef>;
 
 export interface PhysicsObject {
   id: number;
-  motion: Motion;
+  position: Position;
+  linearVelocity?: LinearVelocity;
+  rotation?: Rotation;
+  angularVelocity?: AngularVelocity;
   collider: Collider;
   _phys: PhysicsState;
+}
+
+function updateLastMotion(o: PhysicsObject) {
+  vec3.copy(o._phys.lastPosition, o.position);
+  if (o.rotation) quat.copy(o._phys.lastRotation, o.rotation);
+  if (o.linearVelocity) vec3.copy(o._phys.lastLinearVelocity, o.linearVelocity);
+  if (o.angularVelocity)
+    vec3.copy(o._phys.lastAngularVelocity, o.angularVelocity);
 }
 
 function initPhysicsObj(o: PhysicsObject) {
   // TODO(@darzu): do we really need this?
   o._phys.init = true;
 
-  copyMotionProps(o._phys.lastMotion, o.motion);
+  updateLastMotion(o);
 
   // AABBs (collider derived)
   if (o.collider.shape === "AABB") {
@@ -110,24 +132,24 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
   // update AABB state after motion
   for (let {
     id,
-    motion,
-    _phys: { lastMotion, local, sweep, world },
+    position,
+    _phys: { lastPosition, local, sweep, world },
   } of objs) {
     //update motion sweep AABBs
     for (let i = 0; i < 3; i++) {
       sweep.min[i] = Math.min(
-        local.min[i] + motion.location[i],
-        local.min[i] + lastMotion.location[i]
+        local.min[i] + position[i],
+        local.min[i] + position[i]
       );
       sweep.max[i] = Math.max(
-        local.max[i] + motion.location[i],
-        local.max[i] + lastMotion.location[i]
+        local.max[i] + position[i],
+        local.max[i] + lastPosition[i]
       );
     }
 
     // update "tight" AABBs
-    vec3.add(world.min, local.min, motion.location);
-    vec3.add(world.max, local.max, motion.location);
+    vec3.add(world.min, local.min, position);
+    vec3.add(world.max, local.max, position);
   }
 
   // update in-contact pairs; this is seperate from collision or rebound
@@ -256,13 +278,9 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
     for (let o of objs) {
       let movFrac = nextObjMovFracs[o.id];
       if (movFrac) {
-        vec3.sub(
-          _collisionRefl,
-          o._phys.lastMotion.location,
-          o.motion.location
-        );
+        vec3.sub(_collisionRefl, o._phys.lastPosition, o.position);
         vec3.scale(_collisionRefl, _collisionRefl, movFrac);
-        vec3.add(o.motion.location, o.motion.location, _collisionRefl);
+        vec3.add(o.position, o.position, _collisionRefl);
 
         // track that movement occured
         anyMovement = true;
@@ -279,12 +297,12 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
     // update "tight" AABBs
     for (let {
       id,
-      motion,
+      position,
       _phys: { world, local },
     } of objs) {
       if (lastObjMovs[id]) {
-        vec3.add(world.min, local.min, motion.location);
-        vec3.add(world.max, local.max, motion.location);
+        vec3.add(world.min, local.min, position);
+        vec3.add(world.max, local.max, position);
       }
     }
 
@@ -293,7 +311,7 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
 
   // remember current state for next time
   for (let o of objs) {
-    copyMotionProps(o._phys.lastMotion, o.motion);
+    updateLastMotion(o);
   }
 
   // update out checkRay function
@@ -317,8 +335,8 @@ function updateLocSmoothingTarget(
   vec3.add(oldTarget, oldTarget, diff);
   vec3.sub(oldTarget, oldTarget, newTarget);
   // The order of these copies is important. At this point, the calculated
-  // location error actually lives in loc. So we copy it over
-  // to locErr, then copy the new location into loc.
+  // position error actually lives in loc. So we copy it over
+  // to locErr, then copy the new position into loc.
   vec3.copy(diff, oldTarget);
   vec3.copy(oldTarget, newTarget);
 }
@@ -329,7 +347,7 @@ function updateRotSmoothingTarget(
 ) {
   quat.mul(oldTarget, oldTarget, diff);
   // sort of a hack--reuse our current rotation error quat to store the
-  // rotation inverse to avoid a quat allocation
+  // rotation inverse to avoid a quat alposition
   quat.invert(diff, newTarget);
   quat.mul(oldTarget, oldTarget, diff);
   // The order of these copies is important--see the similar comment in
@@ -340,32 +358,36 @@ function updateRotSmoothingTarget(
 
 function updateSmoothingTargetSmoothChange(
   objs: {
-    motion: Motion;
+    position: Position;
+    rotation?: Rotation;
     motionSmoothing: MotionSmoothing;
   }[]
 ) {
   for (let o of objs) {
     updateLocSmoothingTarget(
-      o.motionSmoothing.locationTarget,
-      o.motionSmoothing.locationDiff,
-      o.motion.location
+      o.motionSmoothing.positionTarget,
+      o.motionSmoothing.positionDiff,
+      o.position
     );
-    updateRotSmoothingTarget(
-      o.motionSmoothing.rotationTarget,
-      o.motionSmoothing.rotationDiff,
-      o.motion.rotation
-    );
+    if (o.rotation) {
+      updateRotSmoothingTarget(
+        o.motionSmoothing.rotationTarget,
+        o.motionSmoothing.rotationDiff,
+        o.rotation
+      );
+    }
   }
 }
 function updateSmoothingTargetSnapChange(
   objs: {
-    motion: Motion;
+    position: Position;
+    rotation?: Rotation;
     motionSmoothing: MotionSmoothing;
   }[]
 ) {
   for (let o of objs) {
-    vec3.copy(o.motionSmoothing.locationTarget, o.motion.location);
-    quat.copy(o.motionSmoothing.rotationTarget, o.motion.rotation);
+    vec3.copy(o.motionSmoothing.positionTarget, o.position);
+    if (o.rotation) quat.copy(o.motionSmoothing.rotationTarget, o.rotation);
   }
 }
 
@@ -383,13 +405,13 @@ function updateSmoothingLerp(
   } = resources;
 
   for (let o of objs) {
-    // lerp location
-    const { locationDiff, rotationDiff } = o.motionSmoothing;
-    vec3.scale(locationDiff, locationDiff, ERROR_SMOOTHING_FACTOR ** dt);
-    let location_error_magnitude = vec3.length(locationDiff);
-    if (location_error_magnitude !== 0 && location_error_magnitude < EPSILON) {
-      //console.log(`Object ${id} reached 0 location error`);
-      vec3.set(locationDiff, 0, 0, 0);
+    // lerp position
+    const { positionDiff, rotationDiff } = o.motionSmoothing;
+    vec3.scale(positionDiff, positionDiff, ERROR_SMOOTHING_FACTOR ** dt);
+    let position_error_magnitude = vec3.length(positionDiff);
+    if (position_error_magnitude !== 0 && position_error_magnitude < EPSILON) {
+      //console.log(`Object ${id} reached 0 position error`);
+      vec3.set(positionDiff, 0, 0, 0);
     }
 
     // lerp rotation
@@ -413,14 +435,14 @@ function updateSmoothingLerp(
 
 export function registerUpdateSmoothingTargetSnapChange(em: EntityManager) {
   em.registerSystem(
-    [MotionDef, MotionSmoothingDef],
+    [PositionDef, MotionSmoothingDef],
     [],
     updateSmoothingTargetSnapChange
   );
 }
 export function registerUpdateSmoothingTargetSmoothChange(em: EntityManager) {
   em.registerSystem(
-    [MotionDef, MotionSmoothingDef],
+    [PositionDef, MotionSmoothingDef],
     [],
     updateSmoothingTargetSmoothChange
   );
@@ -442,7 +464,7 @@ export function registerPhysicsSystems(em: EntityManager) {
   em.addSingletonComponent(PhysicsResultsDef);
 
   em.registerSystem(
-    [MotionDef, ColliderDef, PhysicsStateDef],
+    [PositionDef, ColliderDef, PhysicsStateDef],
     [],
     (objs) => {
       for (let o of objs) if (!o._phys.init) initPhysicsObj(o);
@@ -451,7 +473,7 @@ export function registerPhysicsSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [MotionDef, ColliderDef, PhysicsStateDef],
+    [PositionDef, ColliderDef, PhysicsStateDef],
     [PhysicsTimerDef],
     (objs, res) => {
       for (let si = 0; si < res.physicsTimer.steps; si++) {

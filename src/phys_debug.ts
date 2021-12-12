@@ -9,7 +9,6 @@ import { mathMap } from "./math.js";
 import { mapMeshPositions, Mesh, MeshHandleDef } from "./mesh-pool.js";
 import { AABB } from "./phys_broadphase.js";
 import { PhysicsStateDef } from "./phys_esc.js";
-import { MotionDef } from "./phys_motion.js";
 import { RenderableDef } from "./renderer.js";
 import { TransformWorldDef } from "./transform.js";
 import { RendererDef } from "./render_init.js";

@@ -2,14 +2,20 @@
 
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { Inputs, InputsDef } from "../inputs.js";
-import { createMotionProps, Motion, MotionDef } from "../phys_motion.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { PhysicsTimerDef, Timer } from "../time.js";
 import { ColorDef } from "./game.js";
 import { spawnBullet } from "./bullet.js";
 import { FinishedDef } from "../build.js";
 import { CameraView, CameraViewDef, RenderableDef } from "../renderer.js";
-import { MotionSmoothingDef, TransformWorldDef } from "../transform.js";
+import {
+  MotionSmoothingDef,
+  Position,
+  PositionDef,
+  Rotation,
+  RotationDef,
+  TransformWorldDef,
+} from "../transform.js";
 import {
   PhysicsResults,
   PhysicsResultsDef,
@@ -30,6 +36,7 @@ import { Mesh } from "../mesh-pool.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { mathMap } from "../math.js";
 import { Assets, AssetsDef } from "./assets.js";
+import { LinearVelocity, LinearVelocityDef } from "../motion.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {
@@ -68,7 +75,9 @@ EM.registerSerializerPair(
 interface PlayerObj {
   id: number;
   player: PlayerEnt;
-  motion: Motion;
+  position: Position;
+  rotation: Rotation;
+  linearVelocity: LinearVelocity;
   authority: Authority;
 }
 
@@ -85,7 +94,7 @@ export type CameraProps = Component<typeof CameraDef>;
 
 export function registerStepPlayers(em: EntityManager) {
   em.registerSystem(
-    [PlayerEntDef, MotionDef, AuthorityDef],
+    [PlayerEntDef, PositionDef, RotationDef, LinearVelocityDef, AuthorityDef],
     [
       PhysicsTimerDef,
       CameraDef,
@@ -126,7 +135,7 @@ function stepPlayers(
     if (p.authority.pid !== resources.me.pid) continue;
     // fall with gravity
     // TODO(@darzu): what r the units of gravity here?
-    p.motion.linearVelocity[1] -= (p.player.gravity / 1000) * dt;
+    p.linearVelocity[1] -= (p.player.gravity / 1000) * dt;
 
     // move player
     let vel = vec3.fromValues(0, 0, 0);
@@ -159,49 +168,34 @@ function stepPlayers(
     //   vec3.add(vel, vel, vec3.fromValues(0, -n, 0));
     // }
     if (inputs.keyClicks[" "]) {
-      p.motion.linearVelocity[1] = p.player.jumpSpeed * dt;
+      p.linearVelocity[1] = p.player.jumpSpeed * dt;
     }
 
-    vec3.transformQuat(vel, vel, p.motion.rotation);
+    vec3.transformQuat(vel, vel, p.rotation);
 
-    // vec3.add(player.motion.linearVelocity, player.motion.linearVelocity, vel);
+    // vec3.add(player.linearVelocity, player.linearVelocity, vel);
 
     // x and z from local movement
-    p.motion.linearVelocity[0] = vel[0];
-    p.motion.linearVelocity[2] = vel[2];
+    p.linearVelocity[0] = vel[0];
+    p.linearVelocity[2] = vel[2];
 
-    quat.rotateY(
-      p.motion.rotation,
-      p.motion.rotation,
-      -inputs.mouseMovX * 0.001
-    );
+    quat.rotateY(p.rotation, p.rotation, -inputs.mouseMovX * 0.001);
     quat.rotateX(camera.rotation, camera.rotation, -inputs.mouseMovY * 0.001);
 
     let facingDir = vec3.fromValues(0, 0, -1);
-    facingDir = vec3.transformQuat(facingDir, facingDir, p.motion.rotation);
+    facingDir = vec3.transformQuat(facingDir, facingDir, p.rotation);
 
     // add bullet on lclick
     if (inputs.lclick) {
-      let bulletMotion = createMotionProps({});
-      bulletMotion.location = vec3.clone(p.motion.location);
-      bulletMotion.rotation = quat.clone(p.motion.rotation);
-      bulletMotion.linearVelocity = vec3.scale(
-        bulletMotion.linearVelocity,
-        facingDir,
-        0.02
-      );
+      const linearVelocity = vec3.scale(vec3.create(), facingDir, 0.02);
       // TODO(@darzu): adds player motion
       // bulletMotion.linearVelocity = vec3.add(
       //   bulletMotion.linearVelocity,
       //   bulletMotion.linearVelocity,
-      //   player.motion.linearVelocity
+      //   player.linearVelocity
       // );
-      bulletMotion.angularVelocity = vec3.scale(
-        bulletMotion.angularVelocity,
-        facingDir,
-        0.01
-      );
-      spawnBullet(EM, bulletMotion);
+      const angularVelocity = vec3.scale(vec3.create(), facingDir, 0.01);
+      spawnBullet(EM, vec3.clone(p.position), linearVelocity, angularVelocity);
       // TODO: figure out a better way to do this
       inputs.lclick = false;
     }
@@ -216,31 +210,17 @@ function stepPlayers(
           bullet_axis = vec3.transformQuat(
             bullet_axis,
             bullet_axis,
-            p.motion.rotation
+            p.rotation
           );
-          let bulletMotion = createMotionProps({});
-          bulletMotion.location = vec3.add(
+          const position = vec3.add(
             vec3.create(),
-            p.motion.location,
+            p.position,
             vec3.fromValues(x, y, 0)
           );
-          bulletMotion.rotation = quat.clone(p.motion.rotation);
-          bulletMotion.linearVelocity = vec3.scale(
-            bulletMotion.linearVelocity,
-            bullet_axis,
-            0.005
-          );
-          bulletMotion.linearVelocity = vec3.add(
-            bulletMotion.linearVelocity,
-            bulletMotion.linearVelocity,
-            p.motion.linearVelocity
-          );
-          bulletMotion.angularVelocity = vec3.scale(
-            bulletMotion.angularVelocity,
-            bullet_axis,
-            0.01
-          );
-          spawnBullet(EM, bulletMotion);
+          const linearVelocity = vec3.scale(vec3.create(), bullet_axis, 0.005);
+          vec3.add(linearVelocity, linearVelocity, p.linearVelocity);
+          const angularVelocity = vec3.scale(vec3.create(), bullet_axis, 0.01);
+          spawnBullet(EM, position, linearVelocity, angularVelocity);
         }
       }
     }
@@ -251,7 +231,7 @@ function stepPlayers(
       const r: Ray = {
         org: vec3.add(
           vec3.create(),
-          p.motion.location,
+          p.position,
           vec3.scale(tempVec(), facingDir, 3.0)
         ),
         dir: facingDir,
@@ -314,7 +294,9 @@ function createPlayer(
 ) {
   if (FinishedDef.isOn(e)) return;
   const props = e.playerConstruct;
-  if (!MotionDef.isOn(e)) em.addComponent(e.id, MotionDef, props.location);
+  if (!PositionDef.isOn(e)) em.addComponent(e.id, PositionDef, props.location);
+  if (!RotationDef.isOn(e)) em.addComponent(e.id, RotationDef);
+  if (!LinearVelocityDef.isOn(e)) em.addComponent(e.id, LinearVelocityDef);
   if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0, 0.2, 0]);
   if (!TransformWorldDef.isOn(e)) em.addComponent(e.id, TransformWorldDef);
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
@@ -332,7 +314,9 @@ function createPlayer(
   if (!SyncDef.isOn(e)) {
     const sync = em.addComponent(e.id, SyncDef);
     sync.fullComponents.push(PlayerConstructDef.id);
-    sync.dynamicComponents.push(MotionDef.id);
+    sync.dynamicComponents.push(PositionDef.id);
+    sync.dynamicComponents.push(RotationDef.id);
+    sync.dynamicComponents.push(LinearVelocityDef.id);
   }
   em.addComponent(e.id, FinishedDef);
 }

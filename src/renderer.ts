@@ -10,14 +10,16 @@ import {
 import { mat4, quat, vec3 } from "./gl-matrix.js";
 import { isMeshHandle, Mesh, MeshHandle, MeshHandleDef } from "./mesh-pool.js";
 import { Authority, AuthorityDef, Me, MeDef } from "./net/components.js";
-import { Motion, MotionDef } from "./phys_motion.js";
 import { RendererDef } from "./render_init.js";
 import { Renderer } from "./render_webgpu.js";
-import { Scale, ScaleDef } from "./scale.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
 import { PhysicsTimerDef } from "./time.js";
 import {
   ParentTransform,
+  Position,
+  PositionDef,
+  Rotation,
+  RotationDef,
   TransformWorld,
   TransformWorldDef,
 } from "./transform.js";
@@ -85,7 +87,12 @@ function stepRenderer(
 }
 
 function updateCameraView(
-  players: { player: PlayerEnt; motion: Motion; authority: Authority }[],
+  players: {
+    player: PlayerEnt;
+    position: Position;
+    rotation: Rotation;
+    authority: Authority;
+  }[],
   resources: {
     cameraView: CameraView;
     camera: CameraProps;
@@ -109,11 +116,11 @@ function updateCameraView(
   //understand quaternions.
   let viewMatrix = mat4.create();
   if (mePlayer) {
-    mat4.translate(viewMatrix, viewMatrix, mePlayer.motion.location);
+    mat4.translate(viewMatrix, viewMatrix, mePlayer.position);
     mat4.multiply(
       viewMatrix,
       viewMatrix,
-      mat4.fromQuat(mat4.create(), mePlayer.motion.rotation)
+      mat4.fromQuat(mat4.create(), mePlayer.rotation)
     );
   }
   mat4.multiply(
@@ -157,7 +164,7 @@ function updateCameraView(
 export function registerUpdateCameraView(em: EntityManager) {
   em.addSingletonComponent(CameraViewDef);
   em.registerSystem(
-    [PlayerEntDef, MotionDef, AuthorityDef],
+    [PlayerEntDef, PositionDef, RotationDef, AuthorityDef],
     [CameraViewDef, CameraDef, MeDef, CanvasDef],
     updateCameraView
   );
