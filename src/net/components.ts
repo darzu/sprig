@@ -3,12 +3,15 @@ import { Deserializer } from "../serialize.js";
 import { MessageType } from "./message.js";
 import { FromNetworkEvent, ToNetworkEvent } from "./network-events.js";
 
-export const SyncDef = EM.defineComponent("sync", () => ({
-  priorityIncrementFull: 1000,
-  priorityIncrementDynamic: 10,
-  fullComponents: [] as number[],
-  dynamicComponents: [] as number[],
-}));
+export const SyncDef = EM.defineComponent(
+  "sync",
+  (full?: number[], dynamic?: number[]) => ({
+    priorityIncrementFull: 1000,
+    priorityIncrementDynamic: 10,
+    fullComponents: full ?? [],
+    dynamicComponents: dynamic ?? [],
+  })
+);
 
 export type Sync = Component<typeof SyncDef>;
 

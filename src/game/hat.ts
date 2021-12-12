@@ -11,9 +11,14 @@ import {
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { AABB } from "../phys_broadphase.js";
 import { PhysicsStateDef } from "../phys_esc.js";
-import { MotionDef } from "../phys_motion.js";
 import { RenderableDef } from "../renderer.js";
-import { MotionSmoothingDef, ParentDef, TransformDef } from "../transform.js";
+import {
+  MotionSmoothingDef,
+  ParentTransformDef,
+  PositionDef,
+  RotationDef,
+  TransformWorldDef,
+} from "../transform.js";
 import { ColorDef } from "./game.js";
 import { InteractingDef } from "./interact.js";
 import { registerEventHandler, DetectedEventsDef } from "../net/events.js";
@@ -67,10 +72,11 @@ function createHat(
 ) {
   if (FinishedDef.isOn(e)) return;
   const props = e.hatConstruct;
-  if (!MotionDef.isOn(e)) em.addComponent(e.id, MotionDef, props.loc);
+  if (!PositionDef.isOn(e)) em.addComponent(e.id, PositionDef, props.loc);
+  if (!RotationDef.isOn(e)) em.addComponent(e.id, RotationDef);
   if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.4, 0.1, 0.1]);
-  if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
-  if (!ParentDef.isOn(e)) em.addComponent(e.id, ParentDef);
+  if (!TransformWorldDef.isOn(e)) em.addComponent(e.id, TransformWorldDef);
+  if (!ParentTransformDef.isOn(e)) em.addComponent(e.id, ParentTransformDef);
   if (!RenderableDef.isOn(e))
     em.addComponent(e.id, RenderableDef, getHatMesh());
   if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
@@ -127,15 +133,15 @@ export function registerHatPickupSystem(em: EntityManager) {
 
 export function registerHatDropSystem(em: EntityManager) {
   em.registerSystem(
-    [PlayerEntDef, MotionDef],
+    [PlayerEntDef, PositionDef, RotationDef],
     [DetectedEventsDef],
     (players, { detectedEvents }) => {
-      for (let { player, id, motion } of players) {
+      for (let { player, id, position, rotation } of players) {
         // only drop a hat if we don't have a tool
         if (player.dropping && player.hat > 0 && player.tool === 0) {
           let dropLocation = vec3.fromValues(0, 0, -5);
-          vec3.transformQuat(dropLocation, dropLocation, motion.rotation);
-          vec3.add(dropLocation, dropLocation, motion.location);
+          vec3.transformQuat(dropLocation, dropLocation, rotation);
+          vec3.add(dropLocation, dropLocation, position);
           detectedEvents.push({
             type: "hat-drop",
             entities: [id, player.hat],
@@ -157,10 +163,10 @@ registerEventHandler("hat-pickup", {
   },
   runEvent: (em, entities) => {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
-    let hat = em.findEntity(entities[1], [MotionDef, ParentDef])!;
-    hat.parent.id = player.id;
+    let hat = em.findEntity(entities[1], [PositionDef, ParentTransformDef])!;
+    hat.parentTransform.id = player.id;
     em.removeComponent(hat.id, InteractableDef);
-    vec3.set(hat.motion.location, 0, 1, 0);
+    vec3.set(hat.position, 0, 1, 0);
     player.player.hat = hat.id;
   },
 });
@@ -173,10 +179,10 @@ registerEventHandler("hat-drop", {
   },
   runEvent: (em, entities, location) => {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
-    let hat = em.findEntity(entities[1], [MotionDef, ParentDef])!;
-    hat.parent.id = 0;
+    let hat = em.findEntity(entities[1], [PositionDef, ParentTransformDef])!;
+    hat.parentTransform.id = 0;
     em.addComponent(hat.id, InteractableDef);
-    vec3.copy(hat.motion.location, location!);
+    vec3.copy(hat.position, location!);
     player.player.hat = 0;
   },
 });

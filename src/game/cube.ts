@@ -2,9 +2,14 @@ import { ColliderDef } from "../collider.js";
 import { Component, EM, EntityManager } from "../entity-manager.js";
 import { vec3 } from "../gl-matrix.js";
 import { PhysicsStateDef } from "../phys_esc.js";
-import { Motion, MotionDef } from "../phys_motion.js";
 import { RenderableDef } from "../renderer.js";
-import { MotionSmoothingDef, ParentDef, TransformDef } from "../transform.js";
+import {
+  MotionSmoothingDef,
+  ParentTransformDef,
+  Position,
+  PositionDef,
+  TransformWorldDef,
+} from "../transform.js";
 import { ColorDef } from "./game.js";
 import {
   unshareProvokingVertices,
@@ -65,20 +70,18 @@ export function registerBuildCubesSystem(em: EntityManager) {
     for (let cube of cubes) {
       if (em.hasComponents(cube, [FinishedDef])) continue;
 
-      if (!em.hasComponents(cube, [MotionDef])) {
-        const motion = em.addComponent(cube.id, MotionDef);
-        motion.location = [0, 0, 0];
-      }
+      if (!em.hasComponents(cube, [PositionDef]))
+        em.addComponent(cube.id, PositionDef);
       if (!em.hasComponents(cube, [ColorDef])) {
         const color = em.addComponent(cube.id, ColorDef);
         vec3.copy(color, cube.cubeConstruct.color);
       }
       if (!em.hasComponents(cube, [MotionSmoothingDef]))
         em.addComponent(cube.id, MotionSmoothingDef);
-      if (!em.hasComponents(cube, [TransformDef]))
-        em.addComponent(cube.id, TransformDef);
-      if (!em.hasComponents(cube, [ParentDef]))
-        em.addComponent(cube.id, ParentDef);
+      if (!em.hasComponents(cube, [TransformWorldDef]))
+        em.addComponent(cube.id, TransformWorldDef);
+      if (!em.hasComponents(cube, [ParentTransformDef]))
+        em.addComponent(cube.id, ParentTransformDef);
       const mesh = scaleMesh(assets.cube.mesh, cube.cubeConstruct.size);
       if (!em.hasComponents(cube, [RenderableDef])) {
         const renderable = em.addComponent(cube.id, RenderableDef, mesh);
@@ -96,7 +99,7 @@ export function registerBuildCubesSystem(em: EntityManager) {
       if (!em.hasComponents(cube, [SyncDef])) {
         const sync = em.addComponent(cube.id, SyncDef);
         sync.fullComponents.push(CubeConstructDef.id);
-        sync.dynamicComponents.push(MotionDef.id);
+        sync.dynamicComponents.push(PositionDef.id);
       }
       em.addComponent(cube.id, FinishedDef);
     }
@@ -111,18 +114,18 @@ export function registerMoveCubesSystem(em: EntityManager) {
       id: number;
       cubeConstruct: CubeConstruct;
       authority: Authority;
-      motion: Motion;
+      position: Position;
     }[],
     { me }: { me: Me }
   ) {
     for (let cube of cubes) {
       if (cube.authority.pid == me.pid) {
-        cube.motion.location[2] -= 0.01;
+        cube.position[2] -= 0.01;
       }
     }
   }
   em.registerSystem(
-    [CubeConstructDef, AuthorityDef, MotionDef, FinishedDef],
+    [CubeConstructDef, AuthorityDef, PositionDef, FinishedDef],
     [MeDef],
     moveCubes
   );

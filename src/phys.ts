@@ -58,7 +58,7 @@ export function computeContactData(
     // determine who is to the left in this dimension
     let left: PhysicsObject;
     let right: PhysicsObject;
-    if (a._phys.lastMotion.location[i] < b._phys.lastMotion.location[i]) {
+    if (a._phys.lastPosition[i] < b._phys.lastPosition[i]) {
       left = a;
       right = b;
     } else {
@@ -103,7 +103,7 @@ export function computeReboundData(
     // determine who is to the left in this dimension
     let left: PhysicsObject;
     let right: PhysicsObject;
-    if (a._phys.lastMotion.location[i] < b._phys.lastMotion.location[i]) {
+    if (a._phys.lastPosition[i] < b._phys.lastPosition[i]) {
       left = a;
       right = b;
     } else {
@@ -116,11 +116,11 @@ export function computeReboundData(
 
     const leftMaxContrib = Math.max(
       0,
-      left.motion.location[i] - left._phys.lastMotion.location[i]
+      left.position[i] - left._phys.lastPosition[i]
     );
     const rightMaxContrib = Math.max(
       0,
-      right._phys.lastMotion.location[i] - right.motion.location[i]
+      right._phys.lastPosition[i] - right.position[i]
     );
     if (leftMaxContrib + rightMaxContrib < overlap - PAD * itr) continue;
     if (leftMaxContrib === 0 && rightMaxContrib === 0)
@@ -155,14 +155,12 @@ export function computeReboundData(
   const aOverlap = vec3.fromValues(0, 0, 0); // TODO(@darzu): perf; unnecessary alloc
   if (0 < aDim)
     aOverlap[aDim] =
-      Math.sign(a._phys.lastMotion.location[aDim] - a.motion.location[aDim]) *
-      aOverlapNum;
+      Math.sign(a._phys.lastPosition[aDim] - a.position[aDim]) * aOverlapNum;
 
   const bOverlap = vec3.fromValues(0, 0, 0);
   if (0 < bDim)
     bOverlap[bDim] =
-      Math.sign(b._phys.lastMotion.location[bDim] - b.motion.location[bDim]) *
-      bOverlapNum;
+      Math.sign(b._phys.lastPosition[bDim] - b.position[bDim]) * bOverlapNum;
 
   return { aId: a.id, bId: b.id, aRebound, bRebound, aOverlap, bOverlap };
 }

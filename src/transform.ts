@@ -1,25 +1,75 @@
 import { Component, EM, EntityManager } from "./entity-manager.js";
 import { mat4, quat, vec3 } from "./gl-matrix.js";
-import { Motion, MotionDef } from "./phys_motion.js";
-import { Scale, ScaleDef } from "./scale.js";
 import { tempVec, tempQuat } from "./temp-pool.js";
 
 const DO_SMOOTH = true;
 
-export const TransformDef = EM.defineComponent("transform", () => {
+export const TransformWorldDef = EM.defineComponent("transformWorld", () => {
   return mat4.create();
 });
-export type Transform = mat4;
+export type TransformWorld = mat4;
 
-export const ParentDef = EM.defineComponent("parent", (p?: number) => {
-  return { id: p || 0 };
-});
-export type Parent = Component<typeof ParentDef>;
+// TODO(@darzu): implement local transform instead of Motion's position & rotation?
+//  one problem is that the order in which you interleave rotation/translations matters if it
+//  is all in one matrix
+// transforms we might care about:
+//  on mesh load, one time transform it
+//  object placement in "local" space (what motion did)
+//  final object placement in "global" space for the renderer
+//  final object placement in "global" space for physics
+// const TransformLocalDef = EM.defineComponent("transformLocal", () => {
+//   return mat4.create();
+// });
+// type TransformLocal = mat4;
+
+// POSITION
+export const PositionDef = EM.defineComponent(
+  "position",
+  (p?: vec3) => p || vec3.fromValues(0, 0, 0)
+);
+export type Position = Component<typeof PositionDef>;
+EM.registerSerializerPair(
+  PositionDef,
+  (o, buf) => buf.writeVec3(o),
+  (o, buf) => buf.readVec3(o)
+);
+
+// ROTATION
+export const RotationDef = EM.defineComponent(
+  "rotation",
+  (r?: quat) => r || quat.create()
+);
+export type Rotation = Component<typeof RotationDef>;
+EM.registerSerializerPair(
+  RotationDef,
+  (o, buf) => buf.writeQuat(o),
+  (o, buf) => buf.readQuat(o)
+);
+
+// SCALE
+export const ScaleDef = EM.defineComponent(
+  "scale",
+  (by?: vec3) => by || vec3.fromValues(1, 1, 1)
+);
+export type Scale = Component<typeof ScaleDef>;
+EM.registerSerializerPair(
+  ScaleDef,
+  (o, buf) => buf.writeVec3(o),
+  (o, buf) => buf.readVec3(o)
+);
+
+export const ParentTransformDef = EM.defineComponent(
+  "parentTransform",
+  (p?: number) => {
+    return { id: p || 0 };
+  }
+);
+export type ParentTransform = Component<typeof ParentTransformDef>;
 
 export const MotionSmoothingDef = EM.defineComponent("motionSmoothing", () => {
   return {
-    locationTarget: vec3.create(),
-    locationDiff: vec3.create(),
+    positionTarget: vec3.create(),
+    positionDiff: vec3.create(),
     rotationTarget: quat.create(),
     rotationDiff: quat.create(),
   };
@@ -28,11 +78,13 @@ export type MotionSmoothing = Component<typeof MotionSmoothingDef>;
 
 type Transformable = {
   id: number;
-  motion?: Motion;
-  transform: Transform;
+  position?: Position;
+  rotation?: Rotation;
+  // transformLocal: TransformLocal;
+  transformWorld: TransformWorld;
   // optional components
   // TODO(@darzu): let the query system specify optional components
-  parent?: Parent;
+  parentTransform?: ParentTransform;
   motionSmoothing?: MotionSmoothing;
   scale?: Scale;
 };
@@ -40,40 +92,41 @@ type Transformable = {
 const _transformables: Map<number, Transformable> = new Map();
 const _hasTransformed: Set<number> = new Set();
 
-function updateTransform(o: Transformable) {
+function updateWorldTransform(o: Transformable) {
   if (_hasTransformed.has(o.id)) return;
 
-  let scale = ScaleDef.isOn(o) ? o.scale.by : vec3.set(tempVec(), 1, 1, 1);
+  const scale = ScaleDef.isOn(o) ? o.scale : vec3.set(tempVec(), 1, 1, 1);
+  const rotation = RotationDef.isOn(o) ? o.rotation : quat.identity(tempQuat());
 
   // first, update from motion (optionally)
-  if (MotionDef.isOn(o)) {
+  if (PositionDef.isOn(o)) {
     mat4.fromRotationTranslationScale(
-      o.transform,
-      o.motion.rotation,
-      o.motion.location,
+      o.transformWorld,
+      rotation,
+      o.position,
       scale
     );
   }
 
-  if (ParentDef.isOn(o) && o.parent.id > 0) {
+  if (ParentTransformDef.isOn(o) && o.parentTransform.id > 0) {
     // update relative to parent
-    if (!_hasTransformed.has(o.parent.id))
-      updateTransform(_transformables.get(o.parent.id)!);
+    if (!_hasTransformed.has(o.parentTransform.id))
+      updateWorldTransform(_transformables.get(o.parentTransform.id)!);
 
     mat4.mul(
-      o.transform,
-      _transformables.get(o.parent.id)!.transform,
-      o.transform
+      o.transformWorld,
+      _transformables.get(o.parentTransform.id)!.transformWorld,
+      o.transformWorld
     );
-  } else if (DO_SMOOTH && o.motionSmoothing && MotionDef.isOn(o)) {
+  } else if (DO_SMOOTH && MotionSmoothingDef.isOn(o) && PositionDef.isOn(o)) {
     // update with smoothing
-    const working_quat = tempQuat();
-    quat.mul(working_quat, o.motion.rotation, o.motionSmoothing.rotationDiff);
-    quat.normalize(working_quat, working_quat);
+    const smoothRot = tempQuat();
+    quat.mul(smoothRot, rotation, o.motionSmoothing.rotationDiff);
+    quat.normalize(smoothRot, smoothRot);
     mat4.fromRotationTranslationScale(
-      o.transform,
-      working_quat,
-      vec3.add(tempVec(), o.motion.location, o.motionSmoothing.locationDiff),
+      o.transformWorld,
+      smoothRot,
+      vec3.add(tempVec(), o.position, o.motionSmoothing.positionDiff),
       scale
     );
   }
@@ -81,19 +134,41 @@ function updateTransform(o: Transformable) {
   _hasTransformed.add(o.id);
 }
 
-function updateTransforms(objs: Transformable[]) {
-  _transformables.clear();
-  _hasTransformed.clear();
-
-  for (let o of objs) {
-    _transformables.set(o.id, o);
-  }
-
-  for (let o of objs) {
-    updateTransform(o);
-  }
-}
-
 export function registerUpdateTransforms(em: EntityManager) {
-  em.registerSystem([TransformDef], [], updateTransforms);
+  // TODO(@darzu): do this for location, rotation, etc
+  // // all transformLocal components need a transformWorld
+  // em.registerSystem(
+  //   [TransformLocalDef],
+  //   [],
+  //   (objs) => {
+  //     for (let o of objs) {
+  //       if (!TransformWorldDef.isOn(o))
+  //         em.addComponent(o.id, TransformWorldDef);
+  //     }
+  //   },
+  //   "createWorldTransforms"
+  // );
+
+  // calculate the world transform
+  em.registerSystem(
+    [
+      TransformWorldDef,
+      // TODO(@darzu): USE transformLocal
+      // TransformLocalDef,
+    ],
+    [],
+    (objs) => {
+      _transformables.clear();
+      _hasTransformed.clear();
+
+      for (let o of objs) {
+        _transformables.set(o.id, o);
+      }
+
+      for (let o of objs) {
+        updateWorldTransform(o);
+      }
+    },
+    "updateWorldTransforms"
+  );
 }
