@@ -18,7 +18,6 @@ import {
 
 export function registerHandleNetworkEvents(em: EntityManager) {
   let _peerIDs: Record<string, number> = {};
-  let _undeliverableMessages: Record<string, MessageRecv[]> = {};
   function handleNetworkEvents(
     [],
     { eventsFromNetwork }: { eventsFromNetwork: FromNetworkEvent[] }
@@ -38,20 +37,10 @@ export function registerHandleNetworkEvents(em: EntityManager) {
           em.addComponent(id, InboxDef);
           em.addComponent(id, OutboxDef);
           _peerIDs[peer.address] = id;
-          for (let event of _undeliverableMessages[peer.address] || []) {
-            eventsFromNetwork.push(event);
-          }
-          delete _undeliverableMessages[peer.address];
           break;
         }
         case NetworkEventType.MessageRecv: {
           let id = _peerIDs[event.from];
-          if (!id) {
-            if (!_undeliverableMessages[event.from])
-              _undeliverableMessages[event.from] = [];
-            _undeliverableMessages[event.from].push(event);
-            break;
-          }
           let { inbox } = em.findEntity(id, [InboxDef])!;
           let message = event.message;
           if (!inbox.has(message.type)) inbox.set(message.type, []);
