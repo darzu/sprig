@@ -124,6 +124,7 @@ export class Peer {
         case "closed":
         case "disconnected":
           console.log("ICE failed in some way");
+          peerConnection.close();
           break;
       }
     };
