@@ -2,6 +2,16 @@ import { vec3 } from "./gl-matrix.js";
 import { __isSMI } from "./util.js";
 import { PhysicsObject } from "./phys_esc.js";
 
+// TODO(@darzu): CLEAN UP PHYSICS SYSTEMS
+// physics systems:
+//  rotate objects
+//  translate objects
+//  update world position, world linear velocity
+//  constrain velocity b/c of contacts
+//  (assume position etc was moved outside of phys system)
+//  rebound based on translation since last time
+//  create checkRay based on last broad phase
+
 // export interface PhysicsResults {
 //   collidesWith: CollidesWith;
 //   reboundData: Map<IdPair, ReboundData>;
