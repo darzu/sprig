@@ -47,6 +47,8 @@ export type PhysicsResults = Component<typeof PhysicsResultsDef>;
 
 export const PhysicsStateDef = EM.defineComponent("_phys", () => {
   return {
+    // TODO(@darzu): make these world positions
+    position: PositionDef.construct(),
     lastPosition: PositionDef.construct(),
     init: false,
     local: createAABB(),
@@ -58,25 +60,9 @@ export type PhysicsState = Component<typeof PhysicsStateDef>;
 
 export interface PhysicsObject {
   id: number;
-  position: Position;
   collider: Collider;
+  position: Position; // TODO(@darzu): remove in favor of the one in _phys
   _phys: PhysicsState;
-}
-
-function initPhysicsObj(o: PhysicsObject) {
-  // TODO(@darzu): do we really need this?
-  o._phys.init = true;
-
-  vec3.copy(o._phys.lastPosition, o.position);
-
-  // AABBs (collider derived)
-  if (o.collider.shape === "AABB") {
-    o._phys.local = copyAABB(o.collider.aabb);
-  } else {
-    throw `Unimplemented collider shape: ${o.collider.shape}`;
-  }
-  o._phys.world = copyAABB(o._phys.local);
-  o._phys.sweep = copyAABB(o._phys.local);
 }
 
 export let __step = 0; // TODO(@darzu): singleton component this
@@ -107,11 +93,15 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
   // move objects
   moveObjects(_objDict, dt, collidesWith, contactData);
 
+  // update our cached world state
+  for (let { id, position, _phys } of objs) {
+    vec3.copy(_phys.position, position);
+  }
+
   // update AABB state after motion
   for (let {
     id,
-    position,
-    _phys: { lastPosition, local, sweep, world },
+    _phys: { position, lastPosition, local, sweep, world },
   } of objs) {
     //update motion sweep AABBs
     for (let i = 0; i < 3; i++) {
@@ -252,9 +242,9 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
     for (let o of objs) {
       let movFrac = nextObjMovFracs[o.id];
       if (movFrac) {
-        vec3.sub(_collisionRefl, o._phys.lastPosition, o.position);
+        vec3.sub(_collisionRefl, o._phys.lastPosition, o._phys.position);
         vec3.scale(_collisionRefl, _collisionRefl, movFrac);
-        vec3.add(o.position, o.position, _collisionRefl);
+        vec3.add(o._phys.position, o._phys.position, _collisionRefl);
 
         // track that movement occured
         anyMovement = true;
@@ -271,8 +261,7 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
     // update "tight" AABBs
     for (let {
       id,
-      position,
-      _phys: { world, local },
+      _phys: { world, local, position },
     } of objs) {
       if (lastObjMovs[id]) {
         vec3.add(world.min, local.min, position);
@@ -285,7 +274,12 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
 
   // remember current state for next time
   for (let o of objs) {
-    vec3.copy(o._phys.lastPosition, o.position);
+    vec3.copy(o._phys.lastPosition, o._phys.position);
+  }
+
+  // copy out changes we made
+  for (let o of objs) {
+    vec3.copy(o.position, o._phys.position);
   }
 
   // update out checkRay function
@@ -309,7 +303,23 @@ export function registerPhysicsSystems(em: EntityManager) {
     [PositionDef, ColliderDef, PhysicsStateDef],
     [],
     (objs) => {
-      for (let o of objs) if (!o._phys.init) initPhysicsObj(o);
+      for (let o of objs)
+        if (!o._phys.init) {
+          // TODO(@darzu): do we really need this?
+          o._phys.init = true;
+
+          vec3.copy(o._phys.position, o.position);
+          vec3.copy(o._phys.lastPosition, o.position);
+
+          // AABBs (collider derived)
+          if (o.collider.shape === "AABB") {
+            o._phys.local = copyAABB(o.collider.aabb);
+          } else {
+            throw `Unimplemented collider shape: ${o.collider.shape}`;
+          }
+          o._phys.world = copyAABB(o._phys.local);
+          o._phys.sweep = copyAABB(o._phys.local);
+        }
     },
     "initPhysics"
   );
