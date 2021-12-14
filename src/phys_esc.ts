@@ -1,7 +1,7 @@
 import { Collider, ColliderDef } from "./collider.js";
 import { Component, EM, EntityManager } from "./entity-manager.js";
 import { PhysicsTimerDef, Timer } from "./time.js";
-import { quat, vec3 } from "./gl-matrix.js";
+import { mat4, quat, vec3 } from "./gl-matrix.js";
 import {
   CollidesWith,
   computeContactData,
@@ -26,8 +26,15 @@ import {
   resetCollidesWithSet,
 } from "./phys_broadphase.js";
 import { moveObjects } from "./phys_motion.js";
-import { Position, PositionDef, Rotation, RotationDef } from "./transform.js";
-import { tempQuat } from "./temp-pool.js";
+import {
+  Position,
+  PositionDef,
+  Rotation,
+  RotationDef,
+  TransformWorld,
+  TransformWorldDef,
+} from "./transform.js";
+import { tempQuat, tempVec } from "./temp-pool.js";
 import {
   LinearVelocityDef,
   AngularVelocityDef,
@@ -48,9 +55,8 @@ export type PhysicsResults = Component<typeof PhysicsResultsDef>;
 export const PhysicsStateDef = EM.defineComponent("_phys", () => {
   return {
     // TODO(@darzu): make these world positions
-    position: PositionDef.construct(),
-    lastPosition: PositionDef.construct(),
-    init: false,
+    worldPosition: PositionDef.construct(),
+    lastWorldPosition: PositionDef.construct(),
     local: createAABB(),
     world: createAABB(),
     sweep: createAABB(),
@@ -62,6 +68,7 @@ export interface PhysicsObject {
   id: number;
   collider: Collider;
   position: Position; // TODO(@darzu): remove in favor of the one in _phys
+  transformWorld: TransformWorld;
   _phys: PhysicsState;
 }
 
@@ -90,34 +97,33 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
   const { physicsResults } = EM.findSingletonComponent(PhysicsResultsDef)!;
   const { collidesWith, contactData, reboundData } = physicsResults;
 
-  // move objects
-  moveObjects(_objDict, dt, collidesWith, contactData);
-
-  // update our cached world state
-  for (let { id, position, _phys } of objs) {
-    vec3.copy(_phys.position, position);
+  // update our working world state
+  for (let { id, position, transformWorld, _phys } of objs) {
+    vec3.transformMat4(_phys.worldPosition, [0, 0, 0], transformWorld);
+    // TODO(@darzu):
+    // vec3.copy(_phys.worldPosition, position);
   }
 
   // update AABB state after motion
   for (let {
     id,
-    _phys: { position, lastPosition, local, sweep, world },
+    _phys: { worldPosition, lastWorldPosition, local, sweep, world },
   } of objs) {
     //update motion sweep AABBs
     for (let i = 0; i < 3; i++) {
       sweep.min[i] = Math.min(
-        local.min[i] + position[i],
-        local.min[i] + position[i]
+        local.min[i] + worldPosition[i],
+        local.min[i] + worldPosition[i]
       );
       sweep.max[i] = Math.max(
-        local.max[i] + position[i],
-        local.max[i] + lastPosition[i]
+        local.max[i] + worldPosition[i],
+        local.max[i] + lastWorldPosition[i]
       );
     }
 
     // update "tight" AABBs
-    vec3.add(world.min, local.min, position);
-    vec3.add(world.max, local.max, position);
+    vec3.add(world.min, local.min, worldPosition);
+    vec3.add(world.max, local.max, worldPosition);
   }
 
   // update in-contact pairs; this is seperate from collision or rebound
@@ -242,9 +248,13 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
     for (let o of objs) {
       let movFrac = nextObjMovFracs[o.id];
       if (movFrac) {
-        vec3.sub(_collisionRefl, o._phys.lastPosition, o._phys.position);
+        vec3.sub(
+          _collisionRefl,
+          o._phys.lastWorldPosition,
+          o._phys.worldPosition
+        );
         vec3.scale(_collisionRefl, _collisionRefl, movFrac);
-        vec3.add(o._phys.position, o._phys.position, _collisionRefl);
+        vec3.add(o._phys.worldPosition, o._phys.worldPosition, _collisionRefl);
 
         // track that movement occured
         anyMovement = true;
@@ -261,11 +271,11 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
     // update "tight" AABBs
     for (let {
       id,
-      _phys: { world, local, position },
+      _phys: { world, local, worldPosition },
     } of objs) {
       if (lastObjMovs[id]) {
-        vec3.add(world.min, local.min, position);
-        vec3.add(world.max, local.max, position);
+        vec3.add(world.min, local.min, worldPosition);
+        vec3.add(world.max, local.max, worldPosition);
       }
     }
 
@@ -274,12 +284,26 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
 
   // remember current state for next time
   for (let o of objs) {
-    vec3.copy(o._phys.lastPosition, o._phys.position);
+    vec3.copy(o._phys.lastWorldPosition, o._phys.worldPosition);
   }
 
   // copy out changes we made
   for (let o of objs) {
-    vec3.copy(o.position, o._phys.position);
+    // TODO(@darzu): cache this inverse matrix?
+    const oldWorldPos = vec3.transformMat4(
+      tempVec(),
+      [0, 0, 0],
+      o.transformWorld
+    );
+    const delta = vec3.sub(tempVec(), o._phys.worldPosition, oldWorldPos);
+    vec3.add(o.position, o.position, delta);
+    // const worldInv = mat4.create();
+    // mat4.invert(worldInv, o.transformWorld);
+    // const delta = vec3.create();
+    // vec3.transformMat4(delta, o._phys.worldPosition, worldInv);
+    // vec3.add(o.position, o.position, delta);
+    // TODO(@darzu):
+    // vec3.copy(o.position, o._phys.worldPosition);
   }
 
   // update out checkRay function
@@ -295,37 +319,61 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
   };
 }
 
+export function registerPhysicsMoveObjects(em: EntityManager) {
+  em.registerSystem(
+    [PositionDef, ColliderDef, PhysicsStateDef, TransformWorldDef],
+    [PhysicsTimerDef, PhysicsResultsDef],
+    (objs, res) => {
+      for (let si = 0; si < res.physicsTimer.steps; si++) {
+        // build a dict
+        // TODO(@darzu): would be great of EntityManager handled this
+        _objDict.clear();
+        for (let o of objs) _objDict.set(o.id, o);
+
+        // TODO(@darzu): moveObjects needs to be moved out so that we can update the
+        //    world transform afterward
+        // move objects
+        moveObjects(
+          _objDict,
+          res.physicsTimer.period,
+          res.physicsResults.contactData
+        );
+      }
+    },
+    "physicsMove"
+  );
+}
+
 // ECS register
 export function registerPhysicsSystems(em: EntityManager) {
   em.addSingletonComponent(PhysicsResultsDef);
 
   em.registerSystem(
-    [PositionDef, ColliderDef, PhysicsStateDef],
+    [PositionDef, ColliderDef],
     [],
     (objs) => {
       for (let o of objs)
-        if (!o._phys.init) {
-          // TODO(@darzu): do we really need this?
-          o._phys.init = true;
+        if (!PhysicsStateDef.isOn(o)) {
+          const _phys = em.addComponent(o.id, PhysicsStateDef);
 
-          vec3.copy(o._phys.position, o.position);
-          vec3.copy(o._phys.lastPosition, o.position);
+          vec3.copy(_phys.worldPosition, o.position);
+          vec3.copy(_phys.lastWorldPosition, o.position);
 
           // AABBs (collider derived)
           if (o.collider.shape === "AABB") {
-            o._phys.local = copyAABB(o.collider.aabb);
+            _phys.local = copyAABB(o.collider.aabb);
           } else {
             throw `Unimplemented collider shape: ${o.collider.shape}`;
           }
-          o._phys.world = copyAABB(o._phys.local);
-          o._phys.sweep = copyAABB(o._phys.local);
+          _phys.world = copyAABB(_phys.local);
+          _phys.sweep = copyAABB(_phys.local);
         }
     },
     "initPhysics"
   );
 
   em.registerSystem(
-    [PositionDef, ColliderDef, PhysicsStateDef],
+    [PositionDef, ColliderDef, PhysicsStateDef, TransformWorldDef],
     [PhysicsTimerDef],
     (objs, res) => {
       for (let si = 0; si < res.physicsTimer.steps; si++) {

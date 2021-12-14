@@ -10,7 +10,6 @@ import {
 } from "../mesh-pool.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { AABB } from "../phys_broadphase.js";
-import { PhysicsStateDef } from "../phys_esc.js";
 import { RenderableDef } from "../renderer.js";
 import {
   ParentTransformDef,

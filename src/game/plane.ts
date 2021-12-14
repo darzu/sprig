@@ -1,12 +1,10 @@
 import { ColliderDef } from "../collider.js";
 import { Component, EM, EntityManager } from "../entity-manager.js";
 import { vec3 } from "../gl-matrix.js";
-import { PhysicsStateDef } from "../phys_esc.js";
 import { RenderableDef } from "../renderer.js";
 import { PositionDef, TransformWorldDef } from "../transform.js";
 import { ColorDef } from "./game.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
-import { AABBCollider } from "../collider.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import { FinishedDef } from "../build.js";
 import { Assets, AssetsDef } from "./assets.js";
@@ -59,8 +57,6 @@ export function registerBuildPlanesSystem(em: EntityManager) {
         em.addComponent(plane.id, TransformWorldDef);
       if (!RenderableDef.isOn(plane))
         em.addComponent(plane.id, RenderableDef, assets.plane.proto);
-      if (!PhysicsStateDef.isOn(plane))
-        em.addComponent(plane.id, PhysicsStateDef);
       if (!ColliderDef.isOn(plane))
         em.addComponent(plane.id, ColliderDef, {
           shape: "AABB",

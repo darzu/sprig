@@ -11,7 +11,6 @@ import {
   RotationDef,
   TransformWorldDef,
 } from "../transform.js";
-import { PhysicsStateDef } from "../phys_esc.js";
 import { AABBCollider, ColliderDef } from "../collider.js";
 import {
   Authority,
@@ -122,7 +121,6 @@ function createBoat(
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e))
     em.addComponent(e.id, RenderableDef, assets.boat.mesh);
-  if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
   if (!AuthorityDef.isOn(e)) {
     // TODO(@darzu): debug why boats have jerky movement
     console.log(`claiming authority of boat ${e.id}`);

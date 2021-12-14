@@ -1,6 +1,6 @@
 import { EM, EntityManager, Component, Entity } from "../entity-manager.js";
 import { PhysicsTimerDef } from "../time.js";
-import { mat4, quat, vec3 } from "../gl-matrix.js";
+import { quat, vec3 } from "../gl-matrix.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import { RenderableDef } from "../renderer.js";
@@ -10,16 +10,8 @@ import {
   RotationDef,
   TransformWorldDef,
 } from "../transform.js";
-import { PhysicsStateDef } from "../phys_esc.js";
 import { AABBCollider, ColliderDef } from "../collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
-import {
-  getAABBFromMesh,
-  Mesh,
-  scaleMesh,
-  transformMesh,
-} from "../mesh-pool.js";
-import { AABB } from "../phys_broadphase.js";
 import { Deserializer, Serializer } from "../serialize.js";
 import { DetectedEventsDef } from "../net/events.js";
 import { fireBullet } from "./bullet.js";
@@ -186,7 +178,6 @@ function createCannon(
   //TODO: do we need motion smoothing?
   //if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   em.ensureComponent(e.id, RenderableDef, assets.cannon.mesh);
-  em.ensureComponent(e.id, PhysicsStateDef);
   em.ensureComponent(e.id, AuthorityDef, pid);
   em.ensureComponent(e.id, CannonDef);
   em.ensureComponent(e.id, ColliderDef, {
@@ -277,7 +268,6 @@ export function registerBuildAmmunitionSystem(em: EntityManager) {
           em.addComponent(e.id, ParentTransformDef);
         if (!RenderableDef.isOn(e))
           em.addComponent(e.id, RenderableDef, res.assets.ammunitionBox.mesh);
-        if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
         if (!AuthorityDef.isOn(e))
           em.addComponent(e.id, AuthorityDef, res.me.pid);
         if (!AmmunitionDef.isOn(e))
@@ -350,7 +340,6 @@ export function registerBuildLinstockSystem(em: EntityManager) {
         // TODO(@darzu): allow scaling to be configured on the asset import
         if (!RenderableDef.isOn(e))
           em.addComponent(e.id, RenderableDef, res.assets.linstock.mesh);
-        if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
         if (!AuthorityDef.isOn(e))
           em.addComponent(e.id, AuthorityDef, res.me.pid);
         if (!LinstockDef.isOn(e)) em.addComponent(e.id, LinstockDef);

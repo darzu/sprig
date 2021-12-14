@@ -9,7 +9,6 @@ import {
   RotationDef,
   TransformWorldDef,
 } from "../transform.js";
-import { PhysicsStateDef } from "../phys_esc.js";
 import { AABBCollider, ColliderDef } from "../collider.js";
 import {
   Authority,
@@ -88,7 +87,6 @@ function createBullet(
   em.ensureComponent(e.id, TransformWorldDef);
   em.ensureComponent(e.id, MotionSmoothingDef);
   em.ensureComponent(e.id, RenderableDef, assets.bullet.proto);
-  em.ensureComponent(e.id, PhysicsStateDef);
   em.ensureComponent(e.id, AuthorityDef, pid);
   em.ensureComponent(e.id, BulletDef);
   em.ensureComponent(e.id, ColliderDef, {

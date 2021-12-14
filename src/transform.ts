@@ -107,7 +107,7 @@ function updateWorldTransform(o: Transformable) {
   _hasTransformed.add(o.id);
 }
 
-export function registerUpdateTransforms(em: EntityManager) {
+export function registerUpdateTransforms(em: EntityManager, suffix: string) {
   // TODO(@darzu): do this for location, rotation, etc
   // // all transformLocal components need a transformWorld
   // em.registerSystem(
@@ -142,6 +142,6 @@ export function registerUpdateTransforms(em: EntityManager) {
         updateWorldTransform(o);
       }
     },
-    "updateWorldTransforms"
+    "updateWorldTransforms" + suffix
   );
 }

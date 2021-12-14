@@ -2,7 +2,10 @@ import { Component, EM, EntityManager } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { jitter } from "../math.js";
-import { registerPhysicsSystems } from "../phys_esc.js";
+import {
+  registerPhysicsMoveObjects,
+  registerPhysicsSystems,
+} from "../phys_esc.js";
 import {
   registerAddMeshHandleSystem,
   registerRenderer,
@@ -145,7 +148,11 @@ export function registerAllSystems(em: EntityManager) {
   registerStepCannonsSystem(em);
   registerPlayerCannonSystem(em);
   registerUpdateSmoothingLerp(em);
+  // TODO(@darzu): do we have to run update transforms twice?
+  registerPhysicsMoveObjects(em);
+  registerUpdateTransforms(em, "1");
   registerPhysicsSystems(em);
+  registerUpdateTransforms(em, "2");
   registerBulletCollisionSystem(em);
   registerModeler(em);
   registerHatPickupSystem(em);
@@ -157,7 +164,6 @@ export function registerAllSystems(em: EntityManager) {
   registerSendOutboxes(em);
   registerEventSystems(em);
   registerDeleteEntitiesSystem(em);
-  registerUpdateTransforms(em);
   registerUpdateSmoothedTransform(em);
   registerRenderViewController(em);
   registerUpdateCameraView(em);

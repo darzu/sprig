@@ -1,6 +1,6 @@
 // player controller component and system
 
-import { mat4, quat, vec3 } from "../gl-matrix.js";
+import { quat, vec3 } from "../gl-matrix.js";
 import { Inputs, InputsDef } from "../inputs.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { PhysicsTimerDef, Timer } from "../time.js";
@@ -15,11 +15,7 @@ import {
   RotationDef,
   TransformWorldDef,
 } from "../transform.js";
-import {
-  PhysicsResults,
-  PhysicsResultsDef,
-  PhysicsStateDef,
-} from "../phys_esc.js";
+import { PhysicsResults, PhysicsResultsDef } from "../phys_esc.js";
 import {
   Authority,
   AuthorityDef,
@@ -28,12 +24,9 @@ import {
   SyncDef,
 } from "../net/components.js";
 import { AABBCollider, ColliderDef } from "../collider.js";
-import { HatDef } from "./hat.js";
 import { Ray, RayHit } from "../phys_broadphase.js";
 import { tempVec } from "../temp-pool.js";
 import { Mesh } from "../mesh-pool.js";
-import { vec3Dbg } from "../utils-3d.js";
-import { mathMap } from "../math.js";
 import { Assets, AssetsDef } from "./assets.js";
 import { LinearVelocity, LinearVelocityDef } from "../motion.js";
 import { MotionSmoothingDef } from "../smoothing.js";
@@ -302,7 +295,6 @@ function createPlayer(
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e))
     em.addComponent(e.id, RenderableDef, assets.cube.mesh);
-  if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
   if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid);
   if (!PlayerEntDef.isOn(e)) em.addComponent(e.id, PlayerEntDef);
   if (!ColliderDef.isOn(e)) {

@@ -6,6 +6,7 @@ import { AABB } from "./phys_broadphase.js";
 import { vec3Dbg } from "./utils-3d.js";
 import { Position, Rotation } from "./transform.js";
 import { AngularVelocity, LinearVelocity } from "./motion.js";
+import { BulletDef } from "./game/bullet.js";
 
 let delta = vec3.create();
 let normalizedVelocity = vec3.create();
@@ -30,7 +31,6 @@ export interface MotionObj {
 export function moveObjects(
   objDict: Map<number, MotionObj>,
   dt: number,
-  lastCollidesWith: CollidesWith,
   lastContactData: Map<IdPair, ContactData>
 ) {
   const objs = Array.from(objDict.values());
@@ -80,19 +80,33 @@ export function moveObjects(
   }
 
   // update velocity with constraints
-  for (let { id, linearVelocity } of objs) {
-    if (_constrainedVelocities.has(id) && linearVelocity)
+  for (let o of objs) {
+    const { id, linearVelocity } = o;
+    if (_constrainedVelocities.has(id) && linearVelocity) {
+      if (BulletDef.isOn(o))
+        console.log(
+          `bullet ${vec3Dbg(linearVelocity)} => ${vec3Dbg(
+            _constrainedVelocities.get(id)!
+          )}`
+        );
       vec3.copy(linearVelocity, _constrainedVelocities.get(id)!);
+    }
   }
 
-  for (let {
-    id,
-    position,
-    linearVelocity,
-    angularVelocity,
-    rotation,
-    _phys: { world },
-  } of objs) {
+  for (let o of objs) {
+    const {
+      id,
+      position,
+      linearVelocity,
+      angularVelocity,
+      rotation,
+      _phys: { world },
+    } = o;
+
+    if (BulletDef.isOn(o)) {
+      console.log(`bullet: ${linearVelocity ? vec3Dbg(linearVelocity) : null}`);
+    }
+
     // clamp linear velocity based on size
     if (linearVelocity) {
       const vxMax = (world.max[0] - world.min[0]) / dt;
@@ -101,6 +115,12 @@ export function moveObjects(
       linearVelocity[0] = clamp(linearVelocity[0], -vxMax, vxMax);
       linearVelocity[1] = clamp(linearVelocity[1], -vyMax, vyMax);
       linearVelocity[2] = clamp(linearVelocity[2], -vzMax, vzMax);
+
+      if (BulletDef.isOn(o)) {
+        console.log(
+          `bullet (clamped): ${linearVelocity ? vec3Dbg(linearVelocity) : null}`
+        );
+      }
     }
 
     // change position according to linear velocity

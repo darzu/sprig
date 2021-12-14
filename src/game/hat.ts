@@ -78,7 +78,6 @@ function createHat(
   if (!ParentTransformDef.isOn(e)) em.addComponent(e.id, ParentTransformDef);
   if (!RenderableDef.isOn(e))
     em.addComponent(e.id, RenderableDef, getHatMesh());
-  if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
   if (!ColliderDef.isOn(e)) {
     const collider = em.addComponent(e.id, ColliderDef);
     collider.shape = "AABB";
