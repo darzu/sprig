@@ -80,33 +80,20 @@ export function moveObjects(
   }
 
   // update velocity with constraints
-  for (let o of objs) {
-    const { id, linearVelocity } = o;
+  for (let { id, linearVelocity } of objs) {
     if (_constrainedVelocities.has(id) && linearVelocity) {
-      if (BulletDef.isOn(o))
-        console.log(
-          `bullet ${vec3Dbg(linearVelocity)} => ${vec3Dbg(
-            _constrainedVelocities.get(id)!
-          )}`
-        );
       vec3.copy(linearVelocity, _constrainedVelocities.get(id)!);
     }
   }
 
-  for (let o of objs) {
-    const {
-      id,
-      position,
-      linearVelocity,
-      angularVelocity,
-      rotation,
-      _phys: { world },
-    } = o;
-
-    if (BulletDef.isOn(o)) {
-      console.log(`bullet: ${linearVelocity ? vec3Dbg(linearVelocity) : null}`);
-    }
-
+  for (let {
+    id,
+    position,
+    linearVelocity,
+    angularVelocity,
+    rotation,
+    _phys: { world },
+  } of objs) {
     // clamp linear velocity based on size
     if (linearVelocity) {
       const vxMax = (world.max[0] - world.min[0]) / dt;
@@ -115,12 +102,6 @@ export function moveObjects(
       linearVelocity[0] = clamp(linearVelocity[0], -vxMax, vxMax);
       linearVelocity[1] = clamp(linearVelocity[1], -vyMax, vyMax);
       linearVelocity[2] = clamp(linearVelocity[2], -vzMax, vzMax);
-
-      if (BulletDef.isOn(o)) {
-        console.log(
-          `bullet (clamped): ${linearVelocity ? vec3Dbg(linearVelocity) : null}`
-        );
-      }
     }
 
     // change position according to linear velocity
