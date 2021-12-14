@@ -54,9 +54,8 @@ export type PhysicsResults = Component<typeof PhysicsResultsDef>;
 
 export const PhysicsStateDef = EM.defineComponent("_phys", () => {
   return {
-    // TODO(@darzu): make these world positions
-    worldPosition: PositionDef.construct(),
-    lastWorldPosition: PositionDef.construct(),
+    wPos: PositionDef.construct(),
+    lastWPos: PositionDef.construct(),
     local: createAABB(),
     world: createAABB(),
     sweep: createAABB(),
@@ -99,31 +98,28 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
 
   // update our working world state
   for (let { id, position, transformWorld, _phys } of objs) {
-    vec3.transformMat4(_phys.worldPosition, [0, 0, 0], transformWorld);
+    vec3.transformMat4(_phys.wPos, [0, 0, 0], transformWorld);
     // TODO(@darzu):
-    // vec3.copy(_phys.worldPosition, position);
+    // vec3.copy(_phys.wPos, position);
   }
 
   // update AABB state after motion
   for (let {
     id,
-    _phys: { worldPosition, lastWorldPosition, local, sweep, world },
+    _phys: { wPos, lastWPos, local, sweep, world },
   } of objs) {
     //update motion sweep AABBs
     for (let i = 0; i < 3; i++) {
-      sweep.min[i] = Math.min(
-        local.min[i] + worldPosition[i],
-        local.min[i] + worldPosition[i]
-      );
+      sweep.min[i] = Math.min(local.min[i] + wPos[i], local.min[i] + wPos[i]);
       sweep.max[i] = Math.max(
-        local.max[i] + worldPosition[i],
-        local.max[i] + lastWorldPosition[i]
+        local.max[i] + wPos[i],
+        local.max[i] + lastWPos[i]
       );
     }
 
     // update "tight" AABBs
-    vec3.add(world.min, local.min, worldPosition);
-    vec3.add(world.max, local.max, worldPosition);
+    vec3.add(world.min, local.min, wPos);
+    vec3.add(world.max, local.max, wPos);
   }
 
   // update in-contact pairs; this is seperate from collision or rebound
@@ -248,13 +244,9 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
     for (let o of objs) {
       let movFrac = nextObjMovFracs[o.id];
       if (movFrac) {
-        vec3.sub(
-          _collisionRefl,
-          o._phys.lastWorldPosition,
-          o._phys.worldPosition
-        );
+        vec3.sub(_collisionRefl, o._phys.lastWPos, o._phys.wPos);
         vec3.scale(_collisionRefl, _collisionRefl, movFrac);
-        vec3.add(o._phys.worldPosition, o._phys.worldPosition, _collisionRefl);
+        vec3.add(o._phys.wPos, o._phys.wPos, _collisionRefl);
 
         // track that movement occured
         anyMovement = true;
@@ -271,11 +263,11 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
     // update "tight" AABBs
     for (let {
       id,
-      _phys: { world, local, worldPosition },
+      _phys: { world, local, wPos },
     } of objs) {
       if (lastObjMovs[id]) {
-        vec3.add(world.min, local.min, worldPosition);
-        vec3.add(world.max, local.max, worldPosition);
+        vec3.add(world.min, local.min, wPos);
+        vec3.add(world.max, local.max, wPos);
       }
     }
 
@@ -284,7 +276,7 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
 
   // remember current state for next time
   for (let o of objs) {
-    vec3.copy(o._phys.lastWorldPosition, o._phys.worldPosition);
+    vec3.copy(o._phys.lastWPos, o._phys.wPos);
   }
 
   // copy out changes we made
@@ -295,15 +287,15 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
       [0, 0, 0],
       o.transformWorld
     );
-    const delta = vec3.sub(tempVec(), o._phys.worldPosition, oldWorldPos);
+    const delta = vec3.sub(tempVec(), o._phys.wPos, oldWorldPos);
     vec3.add(o.position, o.position, delta);
     // const worldInv = mat4.create();
     // mat4.invert(worldInv, o.transformWorld);
     // const delta = vec3.create();
-    // vec3.transformMat4(delta, o._phys.worldPosition, worldInv);
+    // vec3.transformMat4(delta, o._phys.wPos, worldInv);
     // vec3.add(o.position, o.position, delta);
     // TODO(@darzu):
-    // vec3.copy(o.position, o._phys.worldPosition);
+    // vec3.copy(o.position, o._phys.wPos);
   }
 
   // update out checkRay function
@@ -356,8 +348,8 @@ export function registerPhysicsSystems(em: EntityManager) {
         if (!PhysicsStateDef.isOn(o)) {
           const _phys = em.addComponent(o.id, PhysicsStateDef);
 
-          vec3.copy(_phys.worldPosition, o.position);
-          vec3.copy(_phys.lastWorldPosition, o.position);
+          vec3.copy(_phys.wPos, o.position);
+          vec3.copy(_phys.lastWPos, o.position);
 
           // AABBs (collider derived)
           if (o.collider.shape === "AABB") {
