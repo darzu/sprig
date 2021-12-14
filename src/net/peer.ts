@@ -38,15 +38,6 @@ function serverUrl(id: string, token: string) {
   return `wss://0.peerjs.com:443/peerjs?key=peerjs&id=${id}&token=${token}`;
 }
 
-async function getId() {
-  const response = await fetch(
-    `https://0.peerjs.com:443/peerjs/id?ts=${
-      new Date().getTime() + "" + Math.random()
-    }`
-  );
-  return response.text();
-}
-
 export class Peer {
   connections: Record<string, RTCPeerConnection> = {};
   nextId: number = 0;
@@ -56,37 +47,36 @@ export class Peer {
   onconnection: ((peerId: string, channel: RTCDataChannel) => void) | null =
     null;
 
-  constructor() {
-    getId().then((id) => {
-      this.id = id;
-      let sock = new WebSocket(
-        serverUrl(id, Math.random().toString(36).substr(2))
-      );
-      sock.onmessage = (event) => {
-        this.handleServerMessage(JSON.parse(event.data));
-      };
+  constructor(id: string) {
+    this.id = id;
+    let sock = new WebSocket(
+      serverUrl("sprig-" + id, Math.random().toString(36).substr(2))
+    );
+    sock.onmessage = (event) => {
+      console.log(event.data);
+      this.handleServerMessage(JSON.parse(event.data));
+    };
 
-      let heartbeatHandle = 0;
-      sock.onopen = () => {
-        //console.log("Socket opened");
-        // PeerJS sends a heartbeat to the server every 5 seconds--I assume the
-        // server will eventually close the connection otherwise
-        heartbeatHandle = setInterval(() => {
-          sock.send(JSON.stringify({ type: ServerMessageType.Heartbeat }));
-        }, SERVER_HEARTBEAT_INTERVAL);
-        if (this.onopen) {
-          this.onopen(id);
-        }
-      };
-      sock.onclose = () => {
-        console.log("Socket closed");
-        if (heartbeatHandle) {
-          clearInterval(heartbeatHandle);
-          heartbeatHandle = 0;
-        }
-      };
-      this.sock = sock;
-    });
+    let heartbeatHandle = 0;
+    sock.onopen = () => {
+      //console.log("Socket opened");
+      // PeerJS sends a heartbeat to the server every 5 seconds--I assume the
+      // server will eventually close the connection otherwise
+      heartbeatHandle = setInterval(() => {
+        sock.send(JSON.stringify({ type: ServerMessageType.Heartbeat }));
+      }, SERVER_HEARTBEAT_INTERVAL);
+      if (this.onopen) {
+        this.onopen(id);
+      }
+    };
+    sock.onclose = () => {
+      console.log("Socket closed");
+      if (heartbeatHandle) {
+        clearInterval(heartbeatHandle);
+        heartbeatHandle = 0;
+      }
+    };
+    this.sock = sock;
   }
 
   private setupPeerConnection(
@@ -204,6 +194,7 @@ export class Peer {
 
   async connect(peerId: string, reliable: boolean): Promise<RTCDataChannel> {
     const peerConnection = new RTCPeerConnection(DEFAULT_CONFIG);
+    peerId = "sprig-" + peerId;
     let connectionId = `${this.id}-${peerId}-${this.nextId++}`;
     this.setupPeerConnection(peerConnection, peerId, connectionId);
     const config: RTCDataChannelInit = { ordered: false };

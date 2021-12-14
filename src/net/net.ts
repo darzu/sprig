@@ -20,7 +20,7 @@ const PING_INTERVAL = 1000;
 
 // fraction of state updates to artificially drop
 const DROP_PROBABILITY = 0.3;
-const DELAY_SENDS = true;
+const DELAY_SENDS = false;
 const SEND_DELAY = 0;
 const SEND_DELAY_JITTER = 50.0;
 
@@ -48,8 +48,8 @@ class Net {
     }
   }
 
-  constructor() {
-    this.peer = new Peer();
+  constructor(id: string) {
+    this.peer = new Peer(id);
     this.peer.onopen = (address: string) => {
       this.outgoingEvents.push({ type: NetworkEventType.Ready, address });
       this.awaitConnections();
@@ -213,8 +213,22 @@ function sendEventsToNet(net: Net) {
   };
 }
 
+// from https://gist.github.com/jed/982883#gistcomment-2403369
+
 export function registerNetSystems(em: EntityManager) {
-  const net = new Net();
+  const queryString = Object.fromEntries(
+    new URLSearchParams(window.location.search).entries()
+  );
+  const user = queryString["user"] || "default";
+  let peerId = localStorage.getItem("peerId-" + user);
+  if (!peerId) {
+    // TODO: better random ID generation, or get them from a server
+    const rand = crypto.getRandomValues(new Uint8Array(16));
+    peerId = rand.join("");
+    localStorage.setItem("peerId-" + user, peerId);
+  }
+
+  const net = new Net(peerId);
   // TODO: startup system to set up components
   em.addSingletonComponent(NetStatsDef);
   em.addSingletonComponent(EventsFromNetworkDef);
