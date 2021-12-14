@@ -53,7 +53,7 @@ export class Peer {
       serverUrl("sprig-" + id, Math.random().toString(36).substr(2))
     );
     sock.onmessage = (event) => {
-      console.log(event.data);
+      //console.log(event.data);
       this.handleServerMessage(JSON.parse(event.data));
     };
 

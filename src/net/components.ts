@@ -17,6 +17,7 @@ export const PeerDef = EM.defineComponent("peer", () => ({
 
   // TODO: consider moving this state to another component
   joined: false,
+  pid: 0,
   updateSeq: 0,
   entityPriorities: new Map<number, number>(),
   entitiesKnown: new Set<number>(),
@@ -105,7 +106,8 @@ export type EventsToNetwork = Component<typeof EventsToNetworkDef>;
 export const NetworkReadyDef = EM.defineComponent("networkReady", () => true);
 export const JoinDef = EM.defineComponent("join", (address: string) => ({
   address,
-  state: "start" as "start" | "connecting",
+  state: "start" as "start" | "connecting" | "joining",
+  lastSendTime: 0,
 }));
 export type Join = Component<typeof JoinDef>;
 

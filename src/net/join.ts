@@ -21,40 +21,54 @@ import {
   send,
 } from "./components.js";
 import { MessageType, MAX_MESSAGE_SIZE } from "./message.js";
+import { TimeDef } from "../time.js";
+
+const JOIN_RETRANSMIT = 100;
 
 function registerConnectToServer(em: EntityManager) {
-  let connectToServer = (
-    peers: { id: number; peer: Peer }[],
-    { join, eventsToNetwork }: { join: Join; eventsToNetwork: ToNetworkEvent[] }
-  ) => {
-    switch (join.state) {
-      case "start":
-        eventsToNetwork.push({
-          type: NetworkEventType.Connect,
-          address: join.address,
-        });
-        join.state = "connecting";
-        break;
-      case "connecting":
-        // TODO: this is a hacky way to tell if we're connected.
-        if (peers.length > 0) {
-          em.addComponent(peers[0].id, HostDef);
-          // TODO: consider putting this message into the outbox rather than directly on the event queue
-          let message = new Serializer(8);
-          message.writeUint8(MessageType.Join);
-          eventsToNetwork.push({
-            type: NetworkEventType.MessageSend,
-            to: join.address,
-            buf: message.buffer,
-          });
-          em.removeSingletonComponent(JoinDef);
-        }
-    }
-  };
   em.registerSystem(
     [PeerDef],
-    [JoinDef, NetworkReadyDef, EventsToNetworkDef],
-    connectToServer
+    [JoinDef, NetworkReadyDef, EventsToNetworkDef, TimeDef],
+    (peers, { join, eventsToNetwork, time }) => {
+      switch (join.state) {
+        case "start":
+          eventsToNetwork.push({
+            type: NetworkEventType.Connect,
+            address: join.address,
+          });
+          join.state = "connecting";
+          break;
+        case "connecting":
+          // TODO: this is a hacky way to tell if we're connected.
+          if (peers.length > 0) {
+            em.addComponent(peers[0].id, HostDef);
+            // TODO: consider putting this message into the outbox rather than directly on the event queue
+            let message = new Serializer(8);
+            message.writeUint8(MessageType.Join);
+            eventsToNetwork.push({
+              type: NetworkEventType.MessageSend,
+              to: join.address,
+              buf: message.buffer,
+            });
+            join.state = "joining";
+            join.lastSendTime = time.time;
+          }
+          break;
+        case "joining":
+          if (join.lastSendTime + JOIN_RETRANSMIT < time.time) {
+            let message = new Serializer(8);
+            message.writeUint8(MessageType.Join);
+            eventsToNetwork.push({
+              type: NetworkEventType.MessageSend,
+              to: join.address,
+              buf: message.buffer,
+            });
+            join.state = "joining";
+            join.lastSendTime = time.time;
+          }
+      }
+    },
+    "connectToServer"
   );
 }
 
@@ -66,19 +80,21 @@ function registerHandleJoin(em: EntityManager) {
     for (let { peer, inbox, outbox } of peers) {
       while ((inbox.get(MessageType.Join) || []).length > 0) {
         console.log("Received join");
-        if (peer.joined) {
-          console.log("Got join message for node that already joined");
-          continue;
-        }
         let peer_addresses = peers
-          .filter((peer) => peer.peer.joined)
+          .filter(
+            (otherPeer) =>
+              otherPeer.peer.joined && otherPeer.peer.address !== peer.address
+          )
           .map((peer) => peer.peer.address);
+        if (!peer.joined) {
+          peer.pid = peers.length + 1;
+          peer.joined = true;
+        }
         let message = inbox.get(MessageType.Join)!.shift();
-        // TODO: add player object
         let response = new Serializer(MAX_MESSAGE_SIZE);
         response.writeUint8(MessageType.JoinResponse);
         // PID of joining player
-        response.writeUint8(peers.length + 1);
+        response.writeUint8(peer.pid);
         response.writeUint8(peer_addresses.length);
         for (let peer of peer_addresses) {
           response.writeString(peer);
@@ -98,19 +114,24 @@ function registerHandleJoinResponse(em: EntityManager) {
   ) => {
     for (let { peer, inbox, outbox } of peers) {
       while ((inbox.get(MessageType.JoinResponse) || []).length > 0) {
+        console.log("received join response");
         let message = inbox.get(MessageType.JoinResponse)!.shift()!;
+        let join = em.findSingletonComponent(JoinDef);
         // TODO: add player object
         // TODO: this is a hack, need to actually have some system for reserving
         // object ids at each node
-        let pid = message.readUint8();
-        em.setDefaultRange("net");
-        em.setIdRange("net", (pid + 1) * 10000, (pid + 1) * 10000 + 10000);
-        let npeers = message.readUint8();
-        for (let i = 0; i < npeers; i++) {
-          let address = message.readString();
-          eventsToNetwork.push({ type: NetworkEventType.Connect, address });
+        if (join) {
+          let pid = message.readUint8();
+          em.setDefaultRange("net");
+          em.setIdRange("net", (pid + 1) * 10000, (pid + 1) * 10000 + 10000);
+          let npeers = message.readUint8();
+          for (let i = 0; i < npeers; i++) {
+            let address = message.readString();
+            eventsToNetwork.push({ type: NetworkEventType.Connect, address });
+          }
+          em.addSingletonComponent(MeDef, pid, false);
+          em.removeSingletonComponent(JoinDef);
         }
-        em.addSingletonComponent(MeDef, pid, false);
       }
     }
   };

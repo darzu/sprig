@@ -19,9 +19,9 @@ import {
 const PING_INTERVAL = 1000;
 
 // fraction of state updates to artificially drop
-const DROP_PROBABILITY = 0.3;
+const DROP_PROBABILITY = 0.9;
 const DELAY_SENDS = false;
-const SEND_DELAY = 0;
+const SEND_DELAY = 10.0;
 const SEND_DELAY_JITTER = 50.0;
 
 // weight of existing skew measurement vs. new skew measurement
