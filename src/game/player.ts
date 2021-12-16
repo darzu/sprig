@@ -144,6 +144,9 @@ export function registerStepPlayers(em: EntityManager) {
               { dist: Infinity, id: -1 }
             );
             cursorDistance = nearestHit.dist;
+            vec3.copy(c.color, [0, 1, 0]);
+          } else {
+            vec3.copy(c.color, [0, 1, 1]);
           }
 
           // place the cursor
