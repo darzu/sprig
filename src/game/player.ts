@@ -93,7 +93,7 @@ export const CameraDef = EM.defineComponent("camera", () => {
       -Math.PI / 8
     ),
     offset: vec3.create(),
-    cameraMode: "thirdPerson" as CameraMode,
+    cameraMode: "thirdPersonOverShoulder" as CameraMode,
     perspectiveMode: "perspective" as PerspectiveMode,
   };
 });
