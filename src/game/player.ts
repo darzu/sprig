@@ -1,6 +1,6 @@
 // player controller component and system
 
-import { quat, vec3 } from "../gl-matrix.js";
+import { quat, vec2, vec3 } from "../gl-matrix.js";
 import { Inputs, InputsDef } from "../inputs.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { PhysicsTimerDef, Timer } from "../time.js";
@@ -31,6 +31,7 @@ import { Assets, AssetsDef } from "./assets.js";
 import { LinearVelocity, LinearVelocityDef } from "../motion.js";
 import { MotionSmoothingDef } from "../smoothing.js";
 import { GlobalCursor3dDef } from "./cursor.js";
+import { screenPosToRay } from "./modeler.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {
@@ -111,7 +112,7 @@ export function registerStepPlayers(em: EntityManager) {
 
   em.registerSystem(
     [PlayerEntDef, PositionDef, RotationDef, AuthorityDef],
-    [CameraViewDef, CameraDef, GlobalCursor3dDef, MeDef],
+    [CameraViewDef, CameraDef, GlobalCursor3dDef, MeDef, PhysicsResultsDef],
     (players, res) => {
       const p = players.filter((p) => p.authority.pid === res.me.pid)[0];
       const c = em.findEntity(res.globalCursor3d.entityId, [
@@ -126,6 +127,31 @@ export function registerStepPlayers(em: EntityManager) {
         } else {
           // show the cursor
           c.renderable.enabled = true;
+
+          // shoot a ray from screen center to figure out where to put the cursor
+          const screenMid: vec2 = [
+            res.cameraView.width * 0.5,
+            res.cameraView.height * 0.4,
+          ];
+          const r = screenPosToRay(screenMid, res.cameraView);
+          let cursorDistance = 100;
+
+          // if we hit something with that ray, put the cursor there
+          const hits = res.physicsResults.checkRay(r);
+          if (hits.length) {
+            const nearestHit = hits.reduce(
+              (p, n) => (n.dist < p.dist ? n : p),
+              { dist: Infinity, id: -1 }
+            );
+            cursorDistance = nearestHit.dist;
+          }
+
+          // place the cursor
+          vec3.add(
+            c.position,
+            r.org,
+            vec3.scale(tempVec(), r.dir, cursorDistance)
+          );
         }
       }
     },
@@ -265,10 +291,13 @@ function stepPlayers(
     function playerShootRay(r: Ray) {
       // check for hits
       const hits = checkRay(r);
-      // TODO(@darzu): this seems pretty hacky and cross cutting
-      hits.sort((a, b) => a.dist - b.dist);
-      const firstHit: RayHit | undefined = hits[0];
-      if (firstHit) {
+      const firstHit = hits.reduce((p, n) => (n.dist < p.dist ? n : p), {
+        dist: Infinity,
+        id: -1,
+      });
+      const doesHit = firstHit.id !== -1;
+
+      if (doesHit) {
         // increase green
         const e = EM.findEntity(firstHit.id, [ColorDef]);
         if (e) {
@@ -277,8 +306,8 @@ function stepPlayers(
       }
 
       // draw our ray
-      const rayDist = firstHit?.dist || 1000;
-      const color: vec3 = firstHit ? [0, 1, 0] : [1, 0, 0];
+      const rayDist = doesHit ? firstHit.dist : 1000;
+      const color: vec3 = doesHit ? [0, 1, 0] : [1, 0, 0];
       const endPoint = vec3.add(
         vec3.create(),
         r.org,
