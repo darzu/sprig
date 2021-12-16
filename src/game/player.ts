@@ -9,6 +9,8 @@ import { spawnBullet } from "./bullet.js";
 import { FinishedDef } from "../build.js";
 import { CameraView, CameraViewDef, RenderableDef } from "../renderer.js";
 import {
+  PhysicsParent,
+  PhysicsParentDef,
   Position,
   PositionDef,
   Rotation,
@@ -32,6 +34,7 @@ import { LinearVelocity, LinearVelocityDef } from "../motion.js";
 import { MotionSmoothingDef } from "../smoothing.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { screenPosToRay } from "./modeler.js";
+import { PhysicsDbgDef } from "../phys_debug.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {
@@ -43,6 +46,7 @@ export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
     tool: 0,
     interacting: false,
     dropping: false,
+    targetCursor: -1,
     targetEnt: -1,
   };
 });
@@ -75,6 +79,7 @@ interface PlayerObj {
   rotation: Rotation;
   linearVelocity: LinearVelocity;
   authority: Authority;
+  physicsParent: PhysicsParent;
 }
 
 export type PerspectiveMode = "perspective" | "ortho";
@@ -96,7 +101,14 @@ export type CameraProps = Component<typeof CameraDef>;
 
 export function registerStepPlayers(em: EntityManager) {
   em.registerSystem(
-    [PlayerEntDef, PositionDef, RotationDef, LinearVelocityDef, AuthorityDef],
+    [
+      PlayerEntDef,
+      PositionDef,
+      RotationDef,
+      LinearVelocityDef,
+      AuthorityDef,
+      PhysicsParentDef,
+    ],
     [
       PhysicsTimerDef,
       CameraDef,
@@ -133,13 +145,14 @@ export function registerStepPlayers(em: EntityManager) {
           // hide the cursor
           c.renderable.enabled = false;
           // target nothing
+          p.player.targetCursor = -1;
           p.player.targetEnt = -1;
         } else {
           // show the cursor
           c.renderable.enabled = true;
 
           // target the cursor
-          p.player.targetEnt = c.id;
+          p.player.targetCursor = c.id;
 
           // shoot a ray from screen center to figure out where to put the cursor
           const screenMid: vec2 = [
@@ -159,6 +172,9 @@ export function registerStepPlayers(em: EntityManager) {
             );
             cursorDistance = nearestHit.dist;
             vec3.copy(c.color, [0, 1, 0]);
+
+            // remember what we hit
+            p.player.targetEnt = nearestHit.id;
           } else {
             vec3.copy(c.color, [0, 1, 1]);
           }
@@ -251,9 +267,9 @@ function stepPlayers(
     let facingDir = vec3.fromValues(0, 0, -1);
     vec3.transformQuat(facingDir, facingDir, p.rotation);
 
-    const target = EM.findEntity(p.player.targetEnt, [PositionDef]);
-    if (target) {
-      vec3.sub(facingDir, target.position, p.position);
+    const targetCursor = EM.findEntity(p.player.targetCursor, [PositionDef]);
+    if (targetCursor) {
+      vec3.sub(facingDir, targetCursor.position, p.position);
       vec3.normalize(facingDir, facingDir);
     }
 
@@ -309,6 +325,25 @@ function stepPlayers(
         dir: facingDir,
       };
       playerShootRay(r);
+    }
+
+    // change physics parent
+    if (inputs.keyClicks["p"]) {
+      const targetEnt = EM.findEntity(p.player.targetEnt, [
+        PositionDef,
+        ColliderDef,
+      ]);
+      if (targetEnt) {
+        p.physicsParent.id = targetEnt.id;
+        vec3.copy(p.position, [0, 0, 0]);
+        if (targetEnt.collider.shape === "AABB") {
+          // move above the obj
+          p.position[1] = targetEnt.collider.aabb.max[1] + 3;
+        }
+      } else {
+        // unparent
+        p.physicsParent.id = 0;
+      }
     }
 
     function playerShootRay(r: Ray) {
@@ -391,6 +426,7 @@ function createPlayer(
     sync.dynamicComponents.push(RotationDef.id);
     sync.dynamicComponents.push(LinearVelocityDef.id);
   }
+  em.ensureComponent(e.id, PhysicsParentDef);
   em.addComponent(e.id, FinishedDef);
 }
 
