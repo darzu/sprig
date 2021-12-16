@@ -30,6 +30,7 @@ import { Mesh } from "../mesh-pool.js";
 import { Assets, AssetsDef } from "./assets.js";
 import { LinearVelocity, LinearVelocityDef } from "../motion.js";
 import { MotionSmoothingDef } from "../smoothing.js";
+import { GlobalCursor3dDef } from "./cursor.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {
@@ -106,6 +107,29 @@ export function registerStepPlayers(em: EntityManager) {
       for (let i = 0; i < res.physicsTimer.steps; i++) stepPlayers(objs, res);
     },
     "stepPlayers"
+  );
+
+  em.registerSystem(
+    [PlayerEntDef, PositionDef, RotationDef, AuthorityDef],
+    [CameraViewDef, CameraDef, GlobalCursor3dDef, MeDef],
+    (players, res) => {
+      const p = players.filter((p) => p.authority.pid === res.me.pid)[0];
+      const c = em.findEntity(res.globalCursor3d.entityId, [
+        PositionDef,
+        RenderableDef,
+        ColorDef,
+      ]);
+      if (p && c) {
+        if (res.camera.cameraMode !== "thirdPersonOverShoulder") {
+          // hide the cursor
+          c.renderable.enabled = false;
+        } else {
+          // show the cursor
+          c.renderable.enabled = true;
+        }
+      }
+    },
+    "playerCursorUpdate"
   );
 }
 

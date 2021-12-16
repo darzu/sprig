@@ -17,21 +17,17 @@ export const ModelerDef = EM.defineComponent("modeler", () => {
   };
 });
 
-export const CursorDef = EM.defineComponent("cursor3d", () => {
-  return true;
-});
-
 export function registerModeler(em: EntityManager) {
   // create our modeler
   em.addSingletonComponent(ModelerDef);
 
-  // create our cursor
-  {
-    const cursor = em.newEntity();
-    em.addComponent(cursor.id, CursorDef);
-    // em.addComponent(cursor.id, RenderableDef,
-    // TODO(@darzu): IMPLEMENT 3D CURSOR
-  }
+  // // create our cursor
+  // {
+  //   const cursor = em.newEntity();
+  //   em.addComponent(cursor.id, CursorDef);
+  //   // em.addComponent(cursor.id, RenderableDef,
+  //   // TODO(@darzu): IMPLEMENT 3D CURSOR
+  // }
 
   // listen for modeler on/off
   em.registerSystem(

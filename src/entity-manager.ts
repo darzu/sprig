@@ -451,14 +451,16 @@ export class EntityManager {
       let start = performance.now();
 
       // try looking up in the query cache
-      let es: Entities<any[]>;
-      if (this._systemsToEntities.has(s.name))
-        es = this._systemsToEntities
-          .get(s.name)!
-          .map((id) => this.entities.get(id)! as EntityW<any[]>);
-      else {
-        throw `System ${s.name} doesn't have a query cache!`;
-        // es = this.filterEntities(s.cs);
+      let es: Entities<any[]> = [];
+      if (s.cs) {
+        if (this._systemsToEntities.has(s.name))
+          es = this._systemsToEntities
+            .get(s.name)!
+            .map((id) => this.entities.get(id)! as EntityW<any[]>);
+        else {
+          throw `System ${s.name} doesn't have a query cache!`;
+          // es = this.filterEntities(s.cs);
+        }
       }
 
       let haveAllResources = true;

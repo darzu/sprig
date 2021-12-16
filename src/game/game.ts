@@ -80,6 +80,7 @@ import {
   registerUpdateSmoothingLerp,
   registerUpdateSmoothedTransform,
 } from "../smoothing.js";
+import { registerBuildCursor } from "./cursor.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -145,6 +146,7 @@ export function registerAllSystems(em: EntityManager) {
   registerBuildCannonsSystem(em);
   registerBuildAmmunitionSystem(em);
   registerBuildLinstockSystem(em);
+  registerBuildCursor(em);
   registerInitTransforms(em);
   registerMoveCubesSystem(em);
   registerStepBoats(em);
