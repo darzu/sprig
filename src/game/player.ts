@@ -25,7 +25,7 @@ import {
 } from "../net/components.js";
 import { AABBCollider, ColliderDef } from "../collider.js";
 import { Ray, RayHit } from "../phys_broadphase.js";
-import { tempVec } from "../temp-pool.js";
+import { tempQuat, tempVec } from "../temp-pool.js";
 import { Mesh } from "../mesh-pool.js";
 import { Assets, AssetsDef } from "./assets.js";
 import { LinearVelocity, LinearVelocityDef } from "../motion.js";
@@ -79,7 +79,11 @@ export type CameraMode = "thirdPerson" | "thirdPersonOverShoulder";
 
 export const CameraDef = EM.defineComponent("camera", () => {
   return {
-    rotation: quat.create(),
+    rotation: quat.rotateX(
+      quat.create(),
+      quat.identity(tempQuat()),
+      -Math.PI / 8
+    ),
     offset: vec3.create(),
     cameraMode: "thirdPerson" as CameraMode,
     perspectiveMode: "perspective" as PerspectiveMode,

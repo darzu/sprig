@@ -113,10 +113,8 @@ function updateCameraView(
   cameraView.height = htmlCanvas.canvas.height;
 
   if (camera.cameraMode === "thirdPerson") {
-    quat.rotateX(camera.rotation, quat.identity(tempQuat()), -Math.PI / 8);
     vec3.copy(camera.offset, [0, 0, 10]);
   } else if (camera.cameraMode === "thirdPersonOverShoulder") {
-    quat.rotateX(camera.rotation, quat.identity(tempQuat()), -Math.PI / 8);
     vec3.copy(camera.offset, [2, 2, 8]);
   }
 
