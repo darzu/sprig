@@ -43,6 +43,7 @@ export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
     tool: 0,
     interacting: false,
     dropping: false,
+    targetEnt: -1,
   };
 });
 export type PlayerEnt = Component<typeof PlayerEntDef>;
@@ -131,9 +132,14 @@ export function registerStepPlayers(em: EntityManager) {
         if (res.camera.cameraMode !== "thirdPersonOverShoulder") {
           // hide the cursor
           c.renderable.enabled = false;
+          // target nothing
+          p.player.targetEnt = -1;
         } else {
           // show the cursor
           c.renderable.enabled = true;
+
+          // target the cursor
+          p.player.targetEnt = c.id;
 
           // shoot a ray from screen center to figure out where to put the cursor
           const screenMid: vec2 = [
@@ -163,21 +169,6 @@ export function registerStepPlayers(em: EntityManager) {
             r.org,
             vec3.scale(tempVec(), r.dir, cursorDistance)
           );
-
-          // press "r" to draw line
-          if (res.inputs.keyClicks["r"]) {
-            drawLine(
-              EM,
-              p.position,
-              c.position,
-              vec3.copy(vec3.create(), c.color)
-            );
-            // color target green
-            if (hits.length) {
-              const h = em.findEntity(nearestHit.id, [ColorDef]);
-              if (h) h.color[1] += 0.1;
-            }
-          }
         }
       }
     },
@@ -258,7 +249,13 @@ function stepPlayers(
     quat.rotateX(camera.rotation, camera.rotation, -inputs.mouseMovY * 0.001);
 
     let facingDir = vec3.fromValues(0, 0, -1);
-    facingDir = vec3.transformQuat(facingDir, facingDir, p.rotation);
+    vec3.transformQuat(facingDir, facingDir, p.rotation);
+
+    const target = EM.findEntity(p.player.targetEnt, [PositionDef]);
+    if (target) {
+      vec3.sub(facingDir, target.position, p.position);
+      vec3.normalize(facingDir, facingDir);
+    }
 
     // add bullet on lclick
     if (inputs.lclick) {
@@ -301,7 +298,7 @@ function stepPlayers(
     }
 
     // shoot a ray
-    if (inputs.keyClicks["r"] && camera.cameraMode === "thirdPerson") {
+    if (inputs.keyClicks["r"]) {
       // create our ray
       const r: Ray = {
         org: vec3.add(
