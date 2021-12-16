@@ -1844,7 +1844,7 @@ THE SOFTWARE.
 
     var sub$2 = subtract$2;
 
-    var mat3 = /*#__PURE__*/Object.freeze({
+export var mat3 = /*#__PURE__*/Object.freeze({
         __proto__: null,
         create: create$2,
         fromMat4: fromMat4,
