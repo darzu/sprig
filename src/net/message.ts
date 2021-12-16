@@ -11,12 +11,14 @@ import {
 export enum MessageType {
   // Join a game in progress
   Join,
+  Rejoin,
   JoinResponse,
-  // State update
+  // Events
   Events,
   AckEvents,
   EventRequests,
   AckEventRequests,
+  // State update
   StateUpdate,
   StateUpdateResponse,
   // Reserve unique object IDs

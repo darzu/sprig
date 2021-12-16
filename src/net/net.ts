@@ -14,6 +14,7 @@ import {
   NetStatsDef,
   EventsFromNetworkDef,
   EventsToNetworkDef,
+  PeerNameDef,
 } from "./components.js";
 
 const PING_INTERVAL = 1000;
@@ -48,8 +49,8 @@ class Net {
     }
   }
 
-  constructor(id: string) {
-    this.peer = new Peer(id);
+  constructor(peerName: string) {
+    this.peer = new Peer(peerName);
     this.peer.onopen = (address: string) => {
       this.outgoingEvents.push({ type: NetworkEventType.Ready, address });
       this.awaitConnections();
@@ -77,7 +78,7 @@ class Net {
   }
 
   private send(address: string, message: ArrayBufferView) {
-    // TODO: figure out if we need to do something smarter than just not sending if the connection isn't present
+    // TODO: figure out if we need to do something smarter than just not sending if the connection isn't present and open
     let conn = this.channels[address];
     if (conn && conn.readyState === "open") {
       if (DELAY_SENDS) {
@@ -216,19 +217,11 @@ function sendEventsToNet(net: Net) {
 // from https://gist.github.com/jed/982883#gistcomment-2403369
 
 export function registerNetSystems(em: EntityManager) {
-  const queryString = Object.fromEntries(
-    new URLSearchParams(window.location.search).entries()
-  );
-  const user = queryString["user"] || "default";
-  let peerId = localStorage.getItem("peerId-" + user);
-  if (!peerId) {
-    // TODO: better random ID generation, or get them from a server
-    const rand = crypto.getRandomValues(new Uint8Array(16));
-    peerId = rand.join("");
-    localStorage.setItem("peerId-" + user, peerId);
+  const peerName = em.findSingletonComponent(PeerNameDef)?.peerName.name;
+  if (!peerName) {
+    throw "Peer name not set before net initialized";
   }
-
-  const net = new Net(peerId);
+  const net = new Net(peerName);
   // TODO: startup system to set up components
   em.addSingletonComponent(NetStatsDef);
   em.addSingletonComponent(EventsFromNetworkDef);

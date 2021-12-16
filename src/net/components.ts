@@ -57,6 +57,12 @@ export function claimAuthority(
   return false;
 }
 
+export const PeerNameDef = EM.defineComponent("peerName", (name?: string) => ({
+  name: name || "",
+}));
+
+export type PeerName = Component<typeof PeerNameDef>;
+
 export const MeDef = EM.defineComponent(
   "me",
   (pid?: number, host?: boolean) => ({

@@ -49,6 +49,7 @@ export class Peer {
 
   constructor(id: string) {
     this.id = id;
+    // TODO: if this fails, make it possible to get a different valid id
     let sock = new WebSocket(
       serverUrl("sprig-" + id, Math.random().toString(36).substr(2))
     );
@@ -75,6 +76,8 @@ export class Peer {
         clearInterval(heartbeatHandle);
         heartbeatHandle = 0;
       }
+      // Close all connections if connection to server goes down
+      Object.values(this.connections).forEach((conn) => conn.close());
     };
     this.sock = sock;
   }
