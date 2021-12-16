@@ -1,11 +1,11 @@
 import { CanvasDef } from "../canvas.js";
-import { EM, EntityManager } from "../entity-manager.js";
-import { mat4, vec3 } from "../gl-matrix.js";
+import { EM, EntityManager, EntityW } from "../entity-manager.js";
+import { mat4, vec2, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
 import { Ray, RayHit } from "../phys_broadphase.js";
 import { PhysicsResultsDef } from "../phys_esc.js";
-import { CameraViewDef, RenderableDef } from "../renderer.js";
+import { CameraView, CameraViewDef, RenderableDef } from "../renderer.js";
 import { tempVec } from "../temp-pool.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { ColorDef } from "./game.js";
@@ -54,35 +54,9 @@ export function registerModeler(em: EntityManager) {
       if (!res.modeler.enabled) return;
 
       if (res.inputs.lclick) {
-        const invViewProj = mat4.invert(
-          mat4.create(),
-          res.cameraView.viewProjMat
-        );
-        // TODO(@darzu): positions need to be moved to 0-1
-        const mouseViewX = mathMap(
-          res.inputs.mousePosX,
-          0,
-          res.cameraView.width,
-          -1,
-          1
-        );
-        const mouseViewY =
-          mathMap(res.inputs.mousePosY, 0, res.cameraView.height, -1, 1) * -1;
-        const mousePos0: vec3 = [mouseViewX, mouseViewY, 0];
-        const mousePos1: vec3 = [mouseViewX, mouseViewY, 0.5];
+        const screenPos: vec2 = [res.inputs.mousePosX, res.inputs.mousePosY];
 
-        console.log(vec3Dbg(mousePos0));
-
-        const ray0 = vec3.transformMat4(vec3.create(), mousePos0, invViewProj);
-        const ray1 = vec3.transformMat4(vec3.create(), mousePos1, invViewProj);
-
-        const dir: vec3 = vec3.sub(vec3.create(), ray1, ray0);
-        vec3.normalize(dir, dir);
-
-        const r: Ray = {
-          org: ray0,
-          dir,
-        };
+        const r = screenPosToRay(screenPos, res.cameraView);
 
         // check for hits
         const hits = res.physicsResults.checkRay(r);
@@ -111,4 +85,25 @@ export function registerModeler(em: EntityManager) {
     },
     "modelerClicks"
   );
+}
+
+export function screenPosToRay(screenPos: vec2, cameraView: CameraView): Ray {
+  const invViewProj = mat4.invert(mat4.create(), cameraView.viewProjMat);
+  const viewX = mathMap(screenPos[0], 0, cameraView.width, -1, 1);
+  const viewY = mathMap(screenPos[1], 0, cameraView.height, -1, 1) * -1;
+  const pos0: vec3 = [viewX, viewY, 0];
+  const pos1: vec3 = [viewX, viewY, 0.5];
+
+  const ray0 = vec3.transformMat4(vec3.create(), pos0, invViewProj);
+  const ray1 = vec3.transformMat4(vec3.create(), pos1, invViewProj);
+
+  const dir: vec3 = vec3.sub(vec3.create(), ray1, ray0);
+  vec3.normalize(dir, dir);
+
+  const r: Ray = {
+    org: ray0,
+    dir,
+  };
+
+  return r;
 }
