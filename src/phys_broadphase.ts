@@ -441,7 +441,7 @@ export function rayHitDist(b: AABB, r: Ray): number {
     }
   }
 
-  if (tmin < tmax && 0.0 < tmax) return Math.max(tmin, 0);
+  if (tmin <= tmax && 0.0 < tmax) return Math.max(tmin, 0);
 
   return NaN;
 }
