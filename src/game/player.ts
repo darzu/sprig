@@ -112,7 +112,14 @@ export function registerStepPlayers(em: EntityManager) {
 
   em.registerSystem(
     [PlayerEntDef, PositionDef, RotationDef, AuthorityDef],
-    [CameraViewDef, CameraDef, GlobalCursor3dDef, MeDef, PhysicsResultsDef],
+    [
+      CameraViewDef,
+      CameraDef,
+      GlobalCursor3dDef,
+      MeDef,
+      PhysicsResultsDef,
+      InputsDef,
+    ],
     (players, res) => {
       const p = players.filter((p) => p.authority.pid === res.me.pid)[0];
       const c = em.findEntity(res.globalCursor3d.entityId, [
@@ -138,10 +145,11 @@ export function registerStepPlayers(em: EntityManager) {
 
           // if we hit something with that ray, put the cursor there
           const hits = res.physicsResults.checkRay(r);
+          let nearestHit: RayHit = { dist: Infinity, id: -1 };
           if (hits.length) {
-            const nearestHit = hits.reduce(
+            nearestHit = hits.reduce(
               (p, n) => (n.dist < p.dist ? n : p),
-              { dist: Infinity, id: -1 }
+              nearestHit
             );
             cursorDistance = nearestHit.dist;
             vec3.copy(c.color, [0, 1, 0]);
@@ -155,6 +163,21 @@ export function registerStepPlayers(em: EntityManager) {
             r.org,
             vec3.scale(tempVec(), r.dir, cursorDistance)
           );
+
+          // press "r" to draw line
+          if (res.inputs.keyClicks["r"]) {
+            drawLine(
+              EM,
+              p.position,
+              c.position,
+              vec3.copy(vec3.create(), c.color)
+            );
+            // color target green
+            if (hits.length) {
+              const h = em.findEntity(nearestHit.id, [ColorDef]);
+              if (h) h.color[1] += 0.1;
+            }
+          }
         }
       }
     },
@@ -278,7 +301,7 @@ function stepPlayers(
     }
 
     // shoot a ray
-    if (inputs.keyClicks["r"]) {
+    if (inputs.keyClicks["r"] && camera.cameraMode === "thirdPerson") {
       // create our ray
       const r: Ray = {
         org: vec3.add(
