@@ -2,7 +2,7 @@ import { ColliderDef } from "../collider.js";
 import { Component, EM, EntityManager } from "../entity-manager.js";
 import { vec3 } from "../gl-matrix.js";
 import { RenderableDef } from "../renderer.js";
-import { PositionDef, TransformWorldDef } from "../transform.js";
+import { PositionDef } from "../transform.js";
 import { ColorDef } from "./game.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../serialize.js";
@@ -53,8 +53,6 @@ export function registerBuildPlanesSystem(em: EntityManager) {
         em.addComponent(plane.id, PositionDef, plane.planeConstruct.location);
       if (!ColorDef.isOn(plane))
         em.addComponent(plane.id, ColorDef, plane.planeConstruct.color);
-      if (!TransformWorldDef.isOn(plane))
-        em.addComponent(plane.id, TransformWorldDef);
       if (!RenderableDef.isOn(plane))
         em.addComponent(plane.id, RenderableDef, assets.plane.proto);
       if (!ColliderDef.isOn(plane))

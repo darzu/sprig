@@ -15,13 +15,13 @@ import { Renderer } from "./render_webgpu.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
 import { PhysicsTimerDef } from "./time.js";
 import {
-  ParentTransform,
+  PhysicsParent,
   Position,
   PositionDef,
   Rotation,
   RotationDef,
-  TransformWorld,
-  TransformWorldDef,
+  WorldTransform,
+  WorldTransformDef,
 } from "./transform.js";
 
 export const RenderableDef = EM.defineComponent(
@@ -54,7 +54,7 @@ export type CameraView = Component<typeof CameraViewDef>;
 interface RenderableObj {
   id: number;
   renderable: Renderable;
-  transformWorld: TransformWorld;
+  worldTransform: WorldTransform;
   meshHandle: MeshHandle;
 }
 
@@ -70,7 +70,7 @@ function stepRenderer(
       vec3.copy(o.meshHandle.tint, o.color);
     }
 
-    mat4.copy(o.meshHandle.transform, o.transformWorld);
+    mat4.copy(o.meshHandle.transform, o.worldTransform);
   }
 
   // filter
@@ -172,7 +172,7 @@ export function registerUpdateCameraView(em: EntityManager) {
 
 export function registerRenderer(em: EntityManager) {
   em.registerSystem(
-    [RenderableDef, TransformWorldDef, MeshHandleDef],
+    [RenderableDef, WorldTransformDef, MeshHandleDef],
     [CameraViewDef, PhysicsTimerDef, RendererDef],
     (objs, res) => {
       if (res.physicsTimer.steps > 0)

@@ -3,6 +3,7 @@ import { quat, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { jitter } from "../math.js";
 import {
+  registerPhysicsLocalToWorldCompute,
   registerPhysicsMoveObjects,
   registerPhysicsSystems,
 } from "../phys_esc.js";
@@ -11,7 +12,10 @@ import {
   registerRenderer,
   registerUpdateCameraView,
 } from "../renderer.js";
-import { registerUpdateTransforms } from "../transform.js";
+import {
+  registerInitTransforms,
+  registerUpdateTransforms,
+} from "../transform.js";
 import {
   BoatConstructDef,
   registerBuildBoatsSystem,
@@ -141,6 +145,7 @@ export function registerAllSystems(em: EntityManager) {
   registerBuildCannonsSystem(em);
   registerBuildAmmunitionSystem(em);
   registerBuildLinstockSystem(em);
+  registerInitTransforms(em);
   registerMoveCubesSystem(em);
   registerStepBoats(em);
   registerStepPlayers(em);
@@ -149,6 +154,8 @@ export function registerAllSystems(em: EntityManager) {
   registerPlayerCannonSystem(em);
   registerUpdateSmoothingLerp(em);
   // TODO(@darzu): do we have to run update transforms twice?
+  registerUpdateTransforms(em, "0");
+  registerPhysicsLocalToWorldCompute(em);
   registerPhysicsMoveObjects(em);
   registerUpdateTransforms(em, "1");
   registerPhysicsSystems(em);

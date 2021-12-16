@@ -4,12 +4,7 @@ import { quat, vec3 } from "../gl-matrix.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import { RenderableDef } from "../renderer.js";
-import {
-  ParentTransformDef,
-  PositionDef,
-  RotationDef,
-  TransformWorldDef,
-} from "../transform.js";
+import { PhysicsParentDef, PositionDef, RotationDef } from "../transform.js";
 import { AABBCollider, ColliderDef } from "../collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { Deserializer, Serializer } from "../serialize.js";
@@ -174,7 +169,6 @@ function createCannon(
   em.ensureComponent(e.id, PositionDef, props.location);
   em.ensureComponent(e.id, RotationDef);
   em.ensureComponent(e.id, ColorDef, [0, 0, 0]);
-  em.ensureComponent(e.id, TransformWorldDef);
   //TODO: do we need motion smoothing?
   //if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   em.ensureComponent(e.id, RenderableDef, assets.cannon.mesh);
@@ -262,10 +256,7 @@ export function registerBuildAmmunitionSystem(em: EntityManager) {
         }
         if (!ColorDef.isOn(e))
           em.addComponent(e.id, ColorDef, [0.2, 0.1, 0.05]);
-        if (!TransformWorldDef.isOn(e))
-          em.addComponent(e.id, TransformWorldDef);
-        if (!ParentTransformDef.isOn(e))
-          em.addComponent(e.id, ParentTransformDef);
+        if (!PhysicsParentDef.isOn(e)) em.addComponent(e.id, PhysicsParentDef);
         if (!RenderableDef.isOn(e))
           em.addComponent(e.id, RenderableDef, res.assets.ammunitionBox.mesh);
         if (!AuthorityDef.isOn(e))
@@ -333,10 +324,7 @@ export function registerBuildLinstockSystem(em: EntityManager) {
         if (!PositionDef.isOn(e))
           em.addComponent(e.id, PositionDef, props.location);
         if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.0, 0.0, 0.0]);
-        if (!TransformWorldDef.isOn(e))
-          em.addComponent(e.id, TransformWorldDef);
-        if (!ParentTransformDef.isOn(e))
-          em.addComponent(e.id, ParentTransformDef);
+        if (!PhysicsParentDef.isOn(e)) em.addComponent(e.id, PhysicsParentDef);
         // TODO(@darzu): allow scaling to be configured on the asset import
         if (!RenderableDef.isOn(e))
           em.addComponent(e.id, RenderableDef, res.assets.linstock.mesh);

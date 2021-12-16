@@ -10,7 +10,7 @@ import { mapMeshPositions, Mesh, MeshHandleDef } from "./mesh-pool.js";
 import { AABB } from "./phys_broadphase.js";
 import { PhysicsStateDef } from "./phys_esc.js";
 import { RenderableDef } from "./renderer.js";
-import { TransformWorldDef } from "./transform.js";
+import { WorldTransformDef } from "./transform.js";
 import { RendererDef } from "./render_init.js";
 
 export const PhysicsDbgDef = EM.defineComponent("_physDbgState", () => {
@@ -58,7 +58,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
             em.addComponent(dbgE.id, ColorDef, [0, 1, 0]);
 
             // transformed
-            em.addComponent(dbgE.id, TransformWorldDef);
+            em.addComponent(dbgE.id, WorldTransformDef);
 
             // NOTE: we don't use the normal parent transform mechanism b/c
             //  colliders especially AABBs are only translated, not full matrix
@@ -94,7 +94,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
 
   // update transform based on parent collider
   em.registerSystem(
-    [DbgMeshDef, TransformWorldDef],
+    [DbgMeshDef, WorldTransformDef],
     [],
     (es, res) => {
       for (let e of es) {
@@ -102,7 +102,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
           PhysicsStateDef,
         ])?._phys;
         if (parent) {
-          mat4.fromTranslation(e.transformWorld, parent.world.min);
+          mat4.fromTranslation(e.worldTransform, parent.world.min);
         }
       }
     },

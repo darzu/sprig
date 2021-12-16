@@ -2,11 +2,6 @@ import { Component, EM, EntityManager } from "./entity-manager.js";
 import { mat4, quat, vec3 } from "./gl-matrix.js";
 import { tempVec, tempQuat } from "./temp-pool.js";
 
-export const TransformWorldDef = EM.defineComponent("transformWorld", () => {
-  return mat4.create();
-});
-export type TransformWorld = mat4;
-
 // TODO(@darzu): implement local transform instead of Motion's position & rotation?
 //  one problem is that the order in which you interleave rotation/translations matters if it
 //  is all in one matrix
@@ -19,6 +14,12 @@ export type TransformWorld = mat4;
 //   return mat4.create();
 // });
 // type TransformLocal = mat4;
+
+// WORLD TRANSFORM
+export const WorldTransformDef = EM.defineComponent("worldTransform", () => {
+  return mat4.create();
+});
+export type WorldTransform = mat4;
 
 // POSITION
 export const PositionDef = EM.defineComponent(
@@ -56,23 +57,29 @@ EM.registerSerializerPair(
   (o, buf) => buf.readVec3(o)
 );
 
-export const ParentTransformDef = EM.defineComponent(
-  "parentTransform",
+// PARENT
+export const PhysicsParentDef = EM.defineComponent(
+  "physicsParent",
   (p?: number) => {
     return { id: p || 0 };
   }
 );
-export type ParentTransform = Component<typeof ParentTransformDef>;
+export type PhysicsParent = Component<typeof PhysicsParentDef>;
+
+// PARENT TRANSFORM
+export const ParentTransformDef = EM.defineComponent("parentTransform", () => {
+  return mat4.create();
+});
 
 type Transformable = {
   id: number;
   position?: Position;
   rotation?: Rotation;
   // transformLocal: TransformLocal;
-  transformWorld: TransformWorld;
+  worldTransform: WorldTransform;
   // optional components
   // TODO(@darzu): let the query system specify optional components
-  parentTransform?: ParentTransform;
+  physicsParent?: PhysicsParent;
   scale?: Scale;
 };
 
@@ -85,47 +92,51 @@ function updateWorldTransform(o: Transformable) {
   // first, update from motion (optionally)
   if (PositionDef.isOn(o)) {
     mat4.fromRotationTranslationScale(
-      o.transformWorld,
+      o.worldTransform,
       RotationDef.isOn(o) ? o.rotation : quat.identity(tempQuat()),
       o.position,
       ScaleDef.isOn(o) ? o.scale : vec3.set(tempVec(), 1, 1, 1)
     );
   }
 
-  if (ParentTransformDef.isOn(o) && o.parentTransform.id > 0) {
+  if (PhysicsParentDef.isOn(o) && o.physicsParent.id > 0 && ParentTransformDef.isOn(o)) {
+    const parent = _transformables.get(o.physicsParent.id);
+    if (!parent)
+      throw `physicsParent ${o.physicsParent.id} doesn't have a worldTransform!`
+
     // update relative to parent
-    if (!_hasTransformed.has(o.parentTransform.id))
-      updateWorldTransform(_transformables.get(o.parentTransform.id)!);
+    if (!_hasTransformed.has(o.physicsParent.id)) {
+      updateWorldTransform(parent);
+      o.parentTransform = parent.worldTransform;
+    }
 
     mat4.mul(
-      o.transformWorld,
-      _transformables.get(o.parentTransform.id)!.transformWorld,
-      o.transformWorld
+      o.worldTransform,
+      parent.worldTransform,
+      o.worldTransform
     );
   }
 
   _hasTransformed.add(o.id);
 }
 
-export function registerUpdateTransforms(em: EntityManager, suffix: string) {
-  // TODO(@darzu): do this for location, rotation, etc
-  // // all transformLocal components need a transformWorld
-  // em.registerSystem(
-  //   [TransformLocalDef],
-  //   [],
-  //   (objs) => {
-  //     for (let o of objs) {
-  //       if (!TransformWorldDef.isOn(o))
-  //         em.addComponent(o.id, TransformWorldDef);
-  //     }
-  //   },
-  //   "createWorldTransforms"
-  // );
+export function registerInitTransforms(em: EntityManager) {
+  // ensure we have a world transform if we're using the physics system
+  // TODO(@darzu): have some sort of "usePhysics" marker component instead of pos?
+  em.registerSystem([PositionDef], [], (objs) => {
+    for (let o of objs) em.ensureComponent(o.id, WorldTransformDef);
+  }, "ensureWorldTransform");
 
+  // ensure we have a parent world transform if we have a physics parent
+  em.registerSystem([PhysicsParentDef], [], (objs) => {
+    for (let o of objs) em.ensureComponent(o.id, ParentTransformDef);
+  }, "ensureParentTransform");
+}
+export function registerUpdateTransforms(em: EntityManager, suffix: string) {
   // calculate the world transform
   em.registerSystem(
     [
-      TransformWorldDef,
+      WorldTransformDef,
       // TODO(@darzu): USE transformLocal
       // TransformLocalDef,
     ],

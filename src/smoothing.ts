@@ -6,8 +6,8 @@ import {
   Position,
   Rotation,
   PositionDef,
-  TransformWorldDef,
-  ParentTransformDef,
+  WorldTransformDef,
+  PhysicsParentDef,
   RotationDef,
   ScaleDef,
 } from "./transform.js";
@@ -159,12 +159,12 @@ export function registerUpdateSmoothingLerp(em: EntityManager) {
 export function registerUpdateSmoothedTransform(em: EntityManager) {
   if (DO_SMOOTH)
     em.registerSystem(
-      [TransformWorldDef, MotionSmoothingDef, PositionDef],
+      [WorldTransformDef, MotionSmoothingDef, PositionDef],
       [],
       (objs) => {
         for (let o of objs) {
           // don't smooth when parented
-          if (ParentTransformDef.isOn(o)) return;
+          if (PhysicsParentDef.isOn(o)) return;
 
           // update with smoothing
           // TODO(@darzu): seperate the smoothed result from the snapped result for rendering vs physics respectively
@@ -175,7 +175,7 @@ export function registerUpdateSmoothedTransform(em: EntityManager) {
           quat.mul(smoothRot, rotation, o.motionSmoothing.rotationDiff);
           quat.normalize(smoothRot, smoothRot);
           mat4.fromRotationTranslationScale(
-            o.transformWorld,
+            o.worldTransform,
             smoothRot,
             vec3.add(tempVec(), o.position, o.motionSmoothing.positionDiff),
             ScaleDef.isOn(o) ? o.scale : vec3.set(tempVec(), 1, 1, 1)

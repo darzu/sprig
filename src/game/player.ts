@@ -13,7 +13,7 @@ import {
   PositionDef,
   Rotation,
   RotationDef,
-  TransformWorldDef,
+  WorldTransformDef,
 } from "../transform.js";
 import { PhysicsResults, PhysicsResultsDef } from "../phys_esc.js";
 import {
@@ -276,7 +276,7 @@ export function drawLine(
     usesProvoking: true,
   };
   em.addComponent(id, RenderableDef, m);
-  em.addComponent(id, TransformWorldDef);
+  em.addComponent(id, WorldTransformDef);
 }
 
 function createPlayer(
@@ -291,7 +291,6 @@ function createPlayer(
   if (!RotationDef.isOn(e)) em.addComponent(e.id, RotationDef);
   if (!LinearVelocityDef.isOn(e)) em.addComponent(e.id, LinearVelocityDef);
   if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0, 0.2, 0]);
-  if (!TransformWorldDef.isOn(e)) em.addComponent(e.id, TransformWorldDef);
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e))
     em.addComponent(e.id, RenderableDef, assets.cube.mesh);

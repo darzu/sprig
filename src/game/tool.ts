@@ -12,11 +12,10 @@ import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { AABB } from "../phys_broadphase.js";
 import { RenderableDef } from "../renderer.js";
 import {
-  ParentTransformDef,
+  PhysicsParentDef,
   PositionDef,
   RotationDef,
   ScaleDef,
-  TransformWorldDef,
 } from "../transform.js";
 import { ColorDef } from "./game.js";
 import { InteractingDef } from "./interact.js";
@@ -82,8 +81,8 @@ registerEventHandler("tool-pickup", {
   },
   runEvent: (em, entities) => {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
-    let tool = em.findEntity(entities[1], [PositionDef, ParentTransformDef])!;
-    tool.parentTransform.id = player.id;
+    let tool = em.findEntity(entities[1], [PositionDef, PhysicsParentDef])!;
+    tool.physicsParent.id = player.id;
     em.removeComponent(tool.id, InteractableDef);
     vec3.set(tool.position, 0, 0, -1.5);
     let scale = em.ensureComponent(tool.id, ScaleDef);
@@ -100,8 +99,8 @@ registerEventHandler("tool-drop", {
   },
   runEvent: (em, entities, location) => {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
-    let tool = em.findEntity(entities[1], [PositionDef, ParentTransformDef])!;
-    tool.parentTransform.id = 0;
+    let tool = em.findEntity(entities[1], [PositionDef, PhysicsParentDef])!;
+    tool.physicsParent.id = 0;
     em.addComponent(tool.id, InteractableDef);
     vec3.copy(tool.position, location!);
     let scale = em.ensureComponent(tool.id, ScaleDef);

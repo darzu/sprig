@@ -1,7 +1,7 @@
 import { Collider, ColliderDef } from "./collider.js";
 import { Component, EM, EntityManager } from "./entity-manager.js";
 import { PhysicsTimerDef, Timer } from "./time.js";
-import { mat4, quat, vec3 } from "./gl-matrix.js";
+import { mat3, mat4, quat, vec3 } from "./gl-matrix.js";
 import {
   CollidesWith,
   computeContactData,
@@ -27,12 +27,14 @@ import {
 } from "./phys_broadphase.js";
 import { moveObjects } from "./phys_motion.js";
 import {
+  ParentTransformDef,
   Position,
   PositionDef,
   Rotation,
   RotationDef,
-  TransformWorld,
-  TransformWorldDef,
+  ScaleDef,
+  WorldTransform,
+  WorldTransformDef,
 } from "./transform.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
 import {
@@ -41,6 +43,8 @@ import {
   AngularVelocity,
   LinearVelocity,
 } from "./motion.js";
+import { PlayerEntDef } from "./game/player.js";
+import { quatDbg, vec3Dbg } from "./utils-3d.js";
 
 export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {
   return {
@@ -54,8 +58,15 @@ export type PhysicsResults = Component<typeof PhysicsResultsDef>;
 
 export const PhysicsStateDef = EM.defineComponent("_phys", () => {
   return {
+    // world-space physics properties
     wPos: PositionDef.construct(),
+    wRot: RotationDef.construct(),
+    wLinVel: LinearVelocityDef.construct(),
+    wAngVel: AngularVelocityDef.construct(),
+    wScale: ScaleDef.construct(),
+    // track last stats so we can diff
     lastWPos: PositionDef.construct(),
+    // AABBs
     local: createAABB(),
     world: createAABB(),
     sweep: createAABB(),
@@ -67,7 +78,7 @@ export interface PhysicsObject {
   id: number;
   collider: Collider;
   position: Position; // TODO(@darzu): remove in favor of the one in _phys
-  transformWorld: TransformWorld;
+  worldTransform: WorldTransform;
   _phys: PhysicsState;
 }
 
@@ -85,6 +96,105 @@ export let _motionPairsLen = 0; // TODO(@darzu): debug
 
 const _objDict: Map<number, PhysicsObject> = new Map();
 
+const MAT4_ID = mat4.identity(mat4.create());
+
+export function registerPhysicsLocalToWorldCompute(em: EntityManager) {
+  em.registerSystem(
+    [PositionDef, PhysicsStateDef, WorldTransformDef],
+    [PhysicsTimerDef],
+    (objs, res) => {
+      for (let i = 0; i < res.physicsTimer.steps; i++) {
+        for (let o of objs) {
+          const parentT = ParentTransformDef.isOn(o)
+            ? o.parentTransform
+            : MAT4_ID;
+
+          // TAKE 3
+          vec3.transformMat4(o._phys.wPos, o.position, parentT);
+          if (RotationDef.isOn(o))
+            mat4.getRotation(o._phys.wRot, o.worldTransform);
+          if (ScaleDef.isOn(o))
+            mat4.getScaling(o._phys.wScale, o.worldTransform);
+          if (LinearVelocityDef.isOn(o)) {
+            vec3.transformMat4(o._phys.wLinVel, o.linearVelocity, parentT);
+            const parentTranslation = mat4.getTranslation(tempVec(), parentT);
+            vec3.sub(o._phys.wLinVel, o._phys.wLinVel, parentTranslation);
+            // TODO(@darzu): scale velocity?
+          }
+
+          // TAKE 2
+          // mat4.getTranslation(o._phys.wPos, o.worldTransform);
+          // if (RotationDef.isOn(o))
+          //   mat4.getRotation(o._phys.wRot, o.worldTransform);
+          // if (ScaleDef.isOn(o))
+          //   mat4.getScaling(o._phys.wScale, o.worldTransform);
+          // if (LinearVelocityDef.isOn(o)) {
+          //   vec3.transformQuat(o._phys.wLinVel, o.linearVelocity, o._phys.wRot);
+          //   // TODO(@darzu): scale velocity?
+          // }
+
+          // TAKE 1
+          // const wTrans3 = mat3.fromMat4(mat3.create(), o.worldTransform);
+          // mat4.getRotation
+          // // position
+          // vec3.transformMat4(o._phys.wPos, [0, 0, 0], o.worldTransform);
+          // // rotation
+          // quat.fromMat3(o._phys.wRot, wTrans3);
+          // // linear velocity
+          // if (LinearVelocityDef.isOn(o)) {
+          //   vec3.f(o._phys.wLinVel, o.linearVelocity, wTrans3);
+          // } else {
+          //   vec3.copy(o._phys.wLinVel, [0, 0, 0]);
+          // }
+          // // angular velocity
+          // if (AngularVelocityDef.isOn(o)) {
+          //   const axis = vec3.normalize(tempVec(), o.angularVelocity);
+          //   const rad = vec3.length(o.angularVelocity);
+          //   const newAxis = vec3.transformMat3(tempVec(), axis, wTrans3);
+          //   vec3.normalize(newAxis, newAxis);
+          //   vec3.scale(o._phys.wAngVel, newAxis, rad);
+          // } else {
+          //   vec3.copy(o._phys.wAngVel, [0, 0, 0]);
+          // }
+
+          if (FALSE()) {
+            // TODO(@darzu): debugging
+            if (
+              PlayerEntDef.isOn(o) &&
+              LinearVelocityDef.isOn(o) &&
+              RotationDef.isOn(o) &&
+              vec3.length(o.linearVelocity) > 0.01
+            ) {
+              const axis = tempVec();
+              const n = quat.getAxisAngle(axis, o.rotation);
+              console.log(
+                `pos: local=${vec3Dbg(o.position)} world=${vec3Dbg(
+                  o._phys.wPos
+                )}\n` +
+                  `rot: local=${quatDbg(o.rotation)} world=${quatDbg(
+                    o._phys.wRot
+                  )}\n` +
+                  `linvel: local=${vec3Dbg(
+                    vec3.scale(tempVec(), o.linearVelocity, 100)
+                  )} world=${vec3Dbg(
+                    vec3.scale(tempVec(), o._phys.wLinVel, 100)
+                  )}\n`
+              );
+            }
+          }
+        }
+      }
+    },
+    "physicsLocalToWorldCompute"
+  );
+}
+
+// TODO(@darzu): this is is a work around for the fact that just using "false"
+//  causes type narrowing not to work right in unreachable code
+function FALSE() {
+  return false;
+}
+
 function stepsPhysics(objs: PhysicsObject[], dt: number): void {
   __step++; // TODO(@darzu): hack for debugging purposes
 
@@ -97,8 +207,8 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
   const { collidesWith, contactData, reboundData } = physicsResults;
 
   // update our working world state
-  for (let { id, position, transformWorld, _phys } of objs) {
-    vec3.transformMat4(_phys.wPos, [0, 0, 0], transformWorld);
+  for (let { id, position, worldTransform, _phys } of objs) {
+    vec3.transformMat4(_phys.wPos, [0, 0, 0], worldTransform);
     // TODO(@darzu):
     // vec3.copy(_phys.wPos, position);
   }
@@ -285,12 +395,12 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
     const oldWorldPos = vec3.transformMat4(
       tempVec(),
       [0, 0, 0],
-      o.transformWorld
+      o.worldTransform
     );
     const delta = vec3.sub(tempVec(), o._phys.wPos, oldWorldPos);
     vec3.add(o.position, o.position, delta);
     // const worldInv = mat4.create();
-    // mat4.invert(worldInv, o.transformWorld);
+    // mat4.invert(worldInv, o.worldTransform);
     // const delta = vec3.create();
     // vec3.transformMat4(delta, o._phys.wPos, worldInv);
     // vec3.add(o.position, o.position, delta);
@@ -313,7 +423,7 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
 
 export function registerPhysicsMoveObjects(em: EntityManager) {
   em.registerSystem(
-    [PositionDef, ColliderDef, PhysicsStateDef, TransformWorldDef],
+    [PositionDef, ColliderDef, PhysicsStateDef, WorldTransformDef],
     [PhysicsTimerDef, PhysicsResultsDef],
     (objs, res) => {
       for (let si = 0; si < res.physicsTimer.steps; si++) {
@@ -352,6 +462,7 @@ export function registerPhysicsSystems(em: EntityManager) {
           vec3.copy(_phys.lastWPos, o.position);
 
           // AABBs (collider derived)
+          // TODO(@darzu): handle scale
           if (o.collider.shape === "AABB") {
             _phys.local = copyAABB(o.collider.aabb);
           } else {
@@ -361,17 +472,17 @@ export function registerPhysicsSystems(em: EntityManager) {
           _phys.sweep = copyAABB(_phys.local);
         }
     },
-    "initPhysics"
+    "physicsInit"
   );
 
   em.registerSystem(
-    [PositionDef, ColliderDef, PhysicsStateDef, TransformWorldDef],
+    [PositionDef, ColliderDef, PhysicsStateDef, WorldTransformDef],
     [PhysicsTimerDef],
     (objs, res) => {
       for (let si = 0; si < res.physicsTimer.steps; si++) {
         stepsPhysics(objs, res.physicsTimer.period);
       }
     },
-    "stepPhysics"
+    "physicsStep"
   );
 }

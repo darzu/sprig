@@ -3,7 +3,7 @@ import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { RenderableDef } from "../renderer.js";
-import { PositionDef, RotationDef, TransformWorldDef } from "../transform.js";
+import { PositionDef, RotationDef } from "../transform.js";
 import { Deserializer, Serializer } from "../serialize.js";
 import { Assets, AssetsDef } from "./assets.js";
 
@@ -44,7 +44,6 @@ function createShip(
   const props = e.shipConstruct;
   if (!PositionDef.isOn(e)) em.addComponent(e.id, PositionDef, props.loc);
   if (!RotationDef.isOn(e)) em.addComponent(e.id, RotationDef, props.rot);
-  if (!TransformWorldDef.isOn(e)) em.addComponent(e.id, TransformWorldDef);
   if (!RenderableDef.isOn(e))
     em.addComponent(e.id, RenderableDef, assets.ship.mesh);
   if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid);
