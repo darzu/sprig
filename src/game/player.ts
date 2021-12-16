@@ -74,13 +74,15 @@ interface PlayerObj {
   authority: Authority;
 }
 
-export type CameraMode = "perspective" | "ortho";
+export type PerspectiveMode = "perspective" | "ortho";
+export type CameraMode = "thirdPerson" | "thirdPersonOverShoulder";
 
 export const CameraDef = EM.defineComponent("camera", () => {
   return {
     rotation: quat.create(),
-    location: vec3.create(),
-    perspectiveMode: "perspective" as CameraMode,
+    offset: vec3.create(),
+    cameraMode: "thirdPerson" as CameraMode,
+    perspectiveMode: "perspective" as PerspectiveMode,
   };
 });
 export type CameraProps = Component<typeof CameraDef>;

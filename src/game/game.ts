@@ -195,11 +195,18 @@ function registerRenderViewController(em: EntityManager) {
         renderer.renderer.drawTris = false;
       }
 
-      // check render mode
+      // check perspective mode
       if (inputs.keyClicks["3"]) {
-        camera.perspectiveMode = "perspective";
-      } else if (inputs.keyClicks["4"]) {
-        camera.perspectiveMode = "ortho";
+        if (camera.perspectiveMode === "ortho")
+          camera.perspectiveMode = "perspective";
+        else camera.perspectiveMode = "ortho";
+      }
+
+      // check camera mode
+      if (inputs.keyClicks["4"]) {
+        if (camera.cameraMode === "thirdPerson")
+          camera.cameraMode = "thirdPersonOverShoulder";
+        else camera.cameraMode = "thirdPerson";
       }
     },
     "renderView"
@@ -227,13 +234,7 @@ export function createLocalObjects(em: EntityManager) {
 }
 
 function createCamera(_em: EntityManager) {
-  let cameraRotation = quat.identity(quat.create());
-  quat.rotateX(cameraRotation, cameraRotation, -Math.PI / 8);
-  let cameraLocation = vec3.fromValues(0, 0, 10);
-
-  let camera = EM.addSingletonComponent(CameraDef);
-  camera.rotation = cameraRotation;
-  camera.location = cameraLocation;
+  EM.addSingletonComponent(CameraDef);
 }
 function createShips(em: EntityManager) {
   const rot = quat.create();

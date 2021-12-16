@@ -112,6 +112,14 @@ function updateCameraView(
   cameraView.width = htmlCanvas.canvas.width;
   cameraView.height = htmlCanvas.canvas.height;
 
+  if (camera.cameraMode === "thirdPerson") {
+    quat.rotateX(camera.rotation, quat.identity(tempQuat()), -Math.PI / 8);
+    vec3.copy(camera.offset, [0, 0, 10]);
+  } else if (camera.cameraMode === "thirdPersonOverShoulder") {
+    quat.rotateX(camera.rotation, quat.identity(tempQuat()), -Math.PI / 8);
+    vec3.copy(camera.offset, [2, 2, 8]);
+  }
+
   //TODO: this calculation feels like it should be simpler but Doug doesn't
   //understand quaternions.
   let viewMatrix = mat4.create();
@@ -128,7 +136,7 @@ function updateCameraView(
     viewMatrix,
     mat4.fromQuat(mat4.create(), camera.rotation)
   );
-  mat4.translate(viewMatrix, viewMatrix, camera.location);
+  mat4.translate(viewMatrix, viewMatrix, camera.offset);
   mat4.invert(viewMatrix, viewMatrix);
 
   const projectionMatrix = mat4.create();
