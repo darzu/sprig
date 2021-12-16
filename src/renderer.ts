@@ -89,6 +89,7 @@ function stepRenderer(
 function updateCameraView(
   players: {
     player: PlayerEnt;
+    worldTransform: WorldTransform;
     position: Position;
     rotation: Rotation;
     authority: Authority;
@@ -118,16 +119,9 @@ function updateCameraView(
     vec3.copy(camera.offset, [2, 2, 8]);
   }
 
-  //TODO: this calculation feels like it should be simpler but Doug doesn't
-  //understand quaternions.
   let viewMatrix = mat4.create();
   if (mePlayer) {
-    mat4.translate(viewMatrix, viewMatrix, mePlayer.position);
-    mat4.multiply(
-      viewMatrix,
-      viewMatrix,
-      mat4.fromQuat(mat4.create(), mePlayer.rotation)
-    );
+    mat4.copy(viewMatrix, mePlayer.worldTransform);
   }
   mat4.multiply(
     viewMatrix,
@@ -170,7 +164,7 @@ function updateCameraView(
 export function registerUpdateCameraView(em: EntityManager) {
   em.addSingletonComponent(CameraViewDef);
   em.registerSystem(
-    [PlayerEntDef, PositionDef, RotationDef, AuthorityDef],
+    [PlayerEntDef, PositionDef, RotationDef, AuthorityDef, WorldTransformDef],
     [CameraViewDef, CameraDef, MeDef, CanvasDef],
     updateCameraView
   );
