@@ -37,12 +37,7 @@ import {
   WorldTransformDef,
 } from "./transform.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
-import {
-  LinearVelocityDef,
-  AngularVelocityDef,
-  AngularVelocity,
-  LinearVelocity,
-} from "./motion.js";
+import { LinearVelocityDef, AngularVelocityDef } from "./motion.js";
 import { PlayerEntDef } from "./game/player.js";
 import { quatDbg, vec3Dbg } from "./utils-3d.js";
 
@@ -77,8 +72,6 @@ export type PhysicsState = Component<typeof PhysicsStateDef>;
 export interface PhysicsObject {
   id: number;
   collider: Collider;
-  position: Position; // TODO(@darzu): remove in favor of the one in _phys
-  worldTransform: WorldTransform;
   _phys: PhysicsState;
 }
 
@@ -109,7 +102,6 @@ export function registerPhysicsLocalToWorldCompute(em: EntityManager) {
             ? o.parentTransform
             : MAT4_ID;
 
-          // TAKE 3
           vec3.transformMat4(o._phys.wPos, o.position, parentT);
           if (RotationDef.isOn(o))
             mat4.getRotation(o._phys.wRot, o.worldTransform);
@@ -121,71 +113,40 @@ export function registerPhysicsLocalToWorldCompute(em: EntityManager) {
             vec3.sub(o._phys.wLinVel, o._phys.wLinVel, parentTranslation);
             // TODO(@darzu): scale velocity?
           }
+        }
+      }
+    },
+    "physicsLocalToWorldCompute"
+  );
+}
+export function registerPhysicsWorldToLocalCompute(em: EntityManager) {
+  em.registerSystem(
+    [PositionDef, PhysicsStateDef, WorldTransformDef],
+    [PhysicsTimerDef],
+    (objs, res) => {
+      for (let i = 0; i < res.physicsTimer.steps; i++) {
+        for (let o of objs) {
+          const parentT = ParentTransformDef.isOn(o)
+            ? o.parentTransform
+            : MAT4_ID;
+          const parentInv = mat4.invert(mat4.create(), parentT);
 
-          // TAKE 2
-          // mat4.getTranslation(o._phys.wPos, o.worldTransform);
+          vec3.transformMat4(o.position, o._phys.wPos, parentInv);
+          // TODO(@darzu):
           // if (RotationDef.isOn(o))
           //   mat4.getRotation(o._phys.wRot, o.worldTransform);
           // if (ScaleDef.isOn(o))
           //   mat4.getScaling(o._phys.wScale, o.worldTransform);
           // if (LinearVelocityDef.isOn(o)) {
-          //   vec3.transformQuat(o._phys.wLinVel, o.linearVelocity, o._phys.wRot);
+          //   vec3.transformMat4(o._phys.wLinVel, o.linearVelocity, parentT);
+          //   const parentTranslation = mat4.getTranslation(tempVec(), parentT);
+          //   vec3.sub(o._phys.wLinVel, o._phys.wLinVel, parentTranslation);
           //   // TODO(@darzu): scale velocity?
           // }
-
-          // TAKE 1
-          // const wTrans3 = mat3.fromMat4(mat3.create(), o.worldTransform);
-          // mat4.getRotation
-          // // position
-          // vec3.transformMat4(o._phys.wPos, [0, 0, 0], o.worldTransform);
-          // // rotation
-          // quat.fromMat3(o._phys.wRot, wTrans3);
-          // // linear velocity
-          // if (LinearVelocityDef.isOn(o)) {
-          //   vec3.f(o._phys.wLinVel, o.linearVelocity, wTrans3);
-          // } else {
-          //   vec3.copy(o._phys.wLinVel, [0, 0, 0]);
-          // }
-          // // angular velocity
-          // if (AngularVelocityDef.isOn(o)) {
-          //   const axis = vec3.normalize(tempVec(), o.angularVelocity);
-          //   const rad = vec3.length(o.angularVelocity);
-          //   const newAxis = vec3.transformMat3(tempVec(), axis, wTrans3);
-          //   vec3.normalize(newAxis, newAxis);
-          //   vec3.scale(o._phys.wAngVel, newAxis, rad);
-          // } else {
-          //   vec3.copy(o._phys.wAngVel, [0, 0, 0]);
-          // }
-
-          if (FALSE()) {
-            // TODO(@darzu): debugging
-            if (
-              PlayerEntDef.isOn(o) &&
-              LinearVelocityDef.isOn(o) &&
-              RotationDef.isOn(o) &&
-              vec3.length(o.linearVelocity) > 0.01
-            ) {
-              const axis = tempVec();
-              const n = quat.getAxisAngle(axis, o.rotation);
-              console.log(
-                `pos: local=${vec3Dbg(o.position)} world=${vec3Dbg(
-                  o._phys.wPos
-                )}\n` +
-                  `rot: local=${quatDbg(o.rotation)} world=${quatDbg(
-                    o._phys.wRot
-                  )}\n` +
-                  `linvel: local=${vec3Dbg(
-                    vec3.scale(tempVec(), o.linearVelocity, 100)
-                  )} world=${vec3Dbg(
-                    vec3.scale(tempVec(), o._phys.wLinVel, 100)
-                  )}\n`
-              );
-            }
-          }
         }
       }
     },
-    "physicsLocalToWorldCompute"
+    "physicsWorldToLocalCompute"
   );
 }
 
@@ -205,13 +166,6 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
   // get singleton data
   const { physicsResults } = EM.findSingletonComponent(PhysicsResultsDef)!;
   const { collidesWith, contactData, reboundData } = physicsResults;
-
-  // update our working world state
-  for (let { id, position, worldTransform, _phys } of objs) {
-    vec3.transformMat4(_phys.wPos, [0, 0, 0], worldTransform);
-    // TODO(@darzu):
-    // vec3.copy(_phys.wPos, position);
-  }
 
   // update AABB state after motion
   for (let {
@@ -389,24 +343,24 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
     vec3.copy(o._phys.lastWPos, o._phys.wPos);
   }
 
-  // copy out changes we made
-  for (let o of objs) {
-    // TODO(@darzu): cache this inverse matrix?
-    const oldWorldPos = vec3.transformMat4(
-      tempVec(),
-      [0, 0, 0],
-      o.worldTransform
-    );
-    const delta = vec3.sub(tempVec(), o._phys.wPos, oldWorldPos);
-    vec3.add(o.position, o.position, delta);
-    // const worldInv = mat4.create();
-    // mat4.invert(worldInv, o.worldTransform);
-    // const delta = vec3.create();
-    // vec3.transformMat4(delta, o._phys.wPos, worldInv);
-    // vec3.add(o.position, o.position, delta);
-    // TODO(@darzu):
-    // vec3.copy(o.position, o._phys.wPos);
-  }
+  // // copy out changes we made
+  // for (let o of objs) {
+  //   // TODO(@darzu): cache this inverse matrix?
+  //   const oldWorldPos = vec3.transformMat4(
+  //     tempVec(),
+  //     [0, 0, 0],
+  //     o.worldTransform
+  //   );
+  //   const delta = vec3.sub(tempVec(), o._phys.wPos, oldWorldPos);
+  //   vec3.add(o.position, o.position, delta);
+  //   // const worldInv = mat4.create();
+  //   // mat4.invert(worldInv, o.worldTransform);
+  //   // const delta = vec3.create();
+  //   // vec3.transformMat4(delta, o._phys.wPos, worldInv);
+  //   // vec3.add(o.position, o.position, delta);
+  //   // TODO(@darzu):
+  //   // vec3.copy(o.position, o._phys.wPos);
+  // }
 
   // update out checkRay function
   physicsResults.checkRay = (r: Ray) => {
@@ -423,7 +377,7 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
 
 export function registerPhysicsMoveObjects(em: EntityManager) {
   em.registerSystem(
-    [PositionDef, ColliderDef, PhysicsStateDef, WorldTransformDef],
+    [ColliderDef, PhysicsStateDef],
     [PhysicsTimerDef, PhysicsResultsDef],
     (objs, res) => {
       for (let si = 0; si < res.physicsTimer.steps; si++) {
@@ -446,8 +400,7 @@ export function registerPhysicsMoveObjects(em: EntityManager) {
   );
 }
 
-// ECS register
-export function registerPhysicsSystems(em: EntityManager) {
+export function registerPhysicsInit(em: EntityManager) {
   em.addSingletonComponent(PhysicsResultsDef);
 
   em.registerSystem(
@@ -457,9 +410,6 @@ export function registerPhysicsSystems(em: EntityManager) {
       for (let o of objs)
         if (!PhysicsStateDef.isOn(o)) {
           const _phys = em.addComponent(o.id, PhysicsStateDef);
-
-          vec3.copy(_phys.wPos, o.position);
-          vec3.copy(_phys.lastWPos, o.position);
 
           // AABBs (collider derived)
           // TODO(@darzu): handle scale
@@ -474,7 +424,10 @@ export function registerPhysicsSystems(em: EntityManager) {
     },
     "physicsInit"
   );
+}
 
+// ECS register
+export function registerPhysicsSystems(em: EntityManager) {
   em.registerSystem(
     [PositionDef, ColliderDef, PhysicsStateDef, WorldTransformDef],
     [PhysicsTimerDef],

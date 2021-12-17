@@ -3,9 +3,11 @@ import { quat, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { jitter } from "../math.js";
 import {
+  registerPhysicsInit,
   registerPhysicsLocalToWorldCompute,
   registerPhysicsMoveObjects,
   registerPhysicsSystems,
+  registerPhysicsWorldToLocalCompute,
 } from "../phys_esc.js";
 import {
   registerAddMeshHandleSystem,
@@ -157,11 +159,12 @@ export function registerAllSystems(em: EntityManager) {
   registerUpdateSmoothingLerp(em);
   // TODO(@darzu): do we have to run update transforms twice?
   registerUpdateTransforms(em, "0");
+  registerPhysicsInit(em);
   registerPhysicsLocalToWorldCompute(em);
   registerPhysicsMoveObjects(em);
-  registerUpdateTransforms(em, "1");
   registerPhysicsSystems(em);
-  registerUpdateTransforms(em, "2");
+  registerPhysicsWorldToLocalCompute(em);
+  registerUpdateTransforms(em, "1");
   registerBulletCollisionSystem(em);
   registerModeler(em);
   registerHatPickupSystem(em);

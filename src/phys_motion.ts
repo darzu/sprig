@@ -1,12 +1,8 @@
 import { Collider } from "./collider.js";
 import { quat, vec3 } from "./gl-matrix.js";
 import { clamp } from "./math.js";
-import { CollidesWith, idPair, IdPair, ContactData } from "./phys.js";
-import { AABB } from "./phys_broadphase.js";
-import { vec3Dbg } from "./utils-3d.js";
-import { Position, Rotation } from "./transform.js";
-import { AngularVelocity, LinearVelocity } from "./motion.js";
-import { BulletDef } from "./game/bullet.js";
+import { IdPair, ContactData } from "./phys.js";
+import { PhysicsState } from "./phys_esc.js";
 
 let delta = vec3.create();
 let normalizedVelocity = vec3.create();
@@ -18,14 +14,8 @@ const _constrainedVelocities = new Map<number, vec3>();
 
 export interface MotionObj {
   id: number;
-  position: Position;
-  linearVelocity?: LinearVelocity;
-  rotation?: Rotation;
-  angularVelocity?: AngularVelocity;
   collider: Collider;
-  _phys: {
-    world: AABB;
-  };
+  _phys: PhysicsState;
 }
 
 export function moveObjects(
@@ -51,7 +41,7 @@ export function moveObjects(
     if (!!a && a.collider.solid) {
       const aConVel =
         _constrainedVelocities.get(data.aId) ??
-        vec3.clone(objDict.get(data.aId)!.linearVelocity ?? vec3.create());
+        vec3.clone(objDict.get(data.aId)!._phys.wLinVel ?? vec3.create());
       const aInDirOfB = vec3.dot(aConVel, aReboundDir);
       if (aInDirOfB > 0) {
         vec3.sub(
@@ -66,7 +56,7 @@ export function moveObjects(
     if (!!b && b.collider.solid) {
       const bConVel =
         _constrainedVelocities.get(data.bId) ??
-        vec3.clone(objDict.get(data.bId)!.linearVelocity ?? vec3.create());
+        vec3.clone(objDict.get(data.bId)!._phys.wLinVel ?? vec3.create());
       const bInDirOfA = vec3.dot(bConVel, bReboundDir);
       if (bInDirOfA > 0) {
         vec3.sub(
@@ -80,40 +70,33 @@ export function moveObjects(
   }
 
   // update velocity with constraints
-  for (let { id, linearVelocity } of objs) {
-    if (_constrainedVelocities.has(id) && linearVelocity) {
-      vec3.copy(linearVelocity, _constrainedVelocities.get(id)!);
+  for (let { id, _phys } of objs) {
+    if (_constrainedVelocities.has(id) && _phys.wLinVel) {
+      vec3.copy(_phys.wLinVel, _constrainedVelocities.get(id)!);
     }
   }
 
-  for (let {
-    id,
-    position,
-    linearVelocity,
-    angularVelocity,
-    rotation,
-    _phys: { world },
-  } of objs) {
+  for (let { id, _phys } of objs) {
     // clamp linear velocity based on size
-    if (linearVelocity) {
-      const vxMax = (world.max[0] - world.min[0]) / dt;
-      const vyMax = (world.max[1] - world.min[1]) / dt;
-      const vzMax = (world.max[2] - world.min[2]) / dt;
-      linearVelocity[0] = clamp(linearVelocity[0], -vxMax, vxMax);
-      linearVelocity[1] = clamp(linearVelocity[1], -vyMax, vyMax);
-      linearVelocity[2] = clamp(linearVelocity[2], -vzMax, vzMax);
+    if (_phys.wLinVel) {
+      const vxMax = (_phys.world.max[0] - _phys.world.min[0]) / dt;
+      const vyMax = (_phys.world.max[1] - _phys.world.min[1]) / dt;
+      const vzMax = (_phys.world.max[2] - _phys.world.min[2]) / dt;
+      _phys.wLinVel[0] = clamp(_phys.wLinVel[0], -vxMax, vxMax);
+      _phys.wLinVel[1] = clamp(_phys.wLinVel[1], -vyMax, vyMax);
+      _phys.wLinVel[2] = clamp(_phys.wLinVel[2], -vzMax, vzMax);
     }
 
     // change position according to linear velocity
-    if (linearVelocity) {
-      delta = vec3.scale(delta, linearVelocity, dt);
-      vec3.add(position, position, delta);
+    if (_phys.wLinVel) {
+      delta = vec3.scale(delta, _phys.wLinVel, dt);
+      vec3.add(_phys.wPos, _phys.wPos, delta);
     }
 
     // change rotation according to angular velocity
-    if (angularVelocity && rotation) {
-      normalizedVelocity = vec3.normalize(normalizedVelocity, angularVelocity);
-      let angle = vec3.length(angularVelocity) * dt;
+    if (_phys.wAngVel && _phys.wRot) {
+      normalizedVelocity = vec3.normalize(normalizedVelocity, _phys.wAngVel);
+      let angle = vec3.length(_phys.wAngVel) * dt;
       deltaRotation = quat.setAxisAngle(
         deltaRotation,
         normalizedVelocity,
@@ -121,7 +104,7 @@ export function moveObjects(
       );
       quat.normalize(deltaRotation, deltaRotation);
       // note--quat multiplication is not commutative, need to multiply on the left
-      quat.multiply(rotation, deltaRotation, rotation);
+      quat.multiply(_phys.wRot, deltaRotation, _phys.wRot);
     }
   }
 }
