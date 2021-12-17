@@ -14,3 +14,12 @@ sunless skies:
 
 starfleet commander:
     shield and power management
+
+"PS1 style fantasy console":
+  https://news.ycombinator.com/item?id=29486066
+  https://www.david-colson.com/2021/11/30/ps1-style-renderer.html
+  podcast re lowpoly:
+    https://www.vice.com/en/article/3an385/were-in-the-beginning-of-a-ps1-aesthetics-renaissance
+
+Complaint about lack of PS1-like content in WebGL:
+  https://news.ycombinator.com/item?id=29490393

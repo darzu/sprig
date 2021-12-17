@@ -879,3 +879,12 @@ viking sailing mini game space:
     [ ] interactivity w/ stations
     [ ] isometric rendering
     [ ] 
+
+Cool particle trials on GPU using webgpu:
+  https://observablehq.com/@rreusser/stranged
+
+sword slash:
+  https://www.cyanilux.com/tutorials/sword-slash-shader-breakdown/
+
+Getting file list from github PR:
+  [...document.getElementsByClassName("js-jump-to-menu-item")].map(c => c.children[1].children[1].innerText).join('\n')

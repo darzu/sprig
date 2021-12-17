@@ -22,3 +22,6 @@ Cheap:
             Inter-Region Cache Fill: 2 GiB
             USD 0.88
             Total Estimated Cost: USD 0.88 per 1 month
+        Or maybe just:
+          raw.githubusercontent.com ?
+          or ghcr.io / https://github.com/features/packages?

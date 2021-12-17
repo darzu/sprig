@@ -124,3 +124,11 @@ Unrailed Post Mortem:
 
 FTL post mortem:
     https://www.youtube.com/watch?v=P4Um97AUqp4
+
+    high premium on everything on screen at once
+    over and over kept simplifying
+        e.g. instead of subgrid within room, just have one room
+    their conclusions:
+        one core experience guides the project
+        nothing but main goal is set in stone
+        iterate and follow the fun

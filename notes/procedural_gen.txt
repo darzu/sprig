@@ -171,3 +171,5 @@ Loading large world, Ghost of Tsushima:
         total: 56g
     memory break down: https://youtu.be/Ur53sJdS8rQ?t=450
     
+Procedural wall:
+  https://www.artstation.com/blogs/marcchevry/YMYR/making-of-minimoys-procedural-wall

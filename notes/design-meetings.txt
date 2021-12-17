@@ -47,3 +47,8 @@ talk with Doug oct 19th:
       [ ] better looking materials
 
   TO FIX: webgl
+
+EVENTS AGAIN:
+  1. distributed event resolution based on who could possibly be involved in the event (instead of always the host)
+  2. add sequence numbers to entities so that we can sync w/o syncing the whole log
+  3. cannonical / non-reorderable state must be updated by events only

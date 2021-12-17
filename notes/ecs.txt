@@ -40,3 +40,9 @@ Example from Mozilla ECSY:
       components: [Velocity, Position]
     }
   }
+
+ECS cadences
+  Cadences can be disjoint (renderer vs simulation) 
+  or multiples of each other (net to simulation)
+
+callSystem
