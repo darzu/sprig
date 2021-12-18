@@ -246,6 +246,17 @@ export class EntityManager {
       return (e as any)[def.name];
     }
   }
+  // TODO(@darzu): do we want to make this the standard way we do ensureComponent and addComponent ?
+  public ensureComponentOn<N extends string, P, Pargs extends any[] = any[]>(
+    e: Entity,
+    def: ComponentDef<N, P, Pargs>,
+    ...args: Pargs
+  ): asserts e is EntityW<[ComponentDef<N, P, Pargs>]> {
+    const alreadyHas = def.name in e;
+    if (!alreadyHas) {
+      this.addComponent(e.id, def, ...args);
+    }
+  }
 
   public addSingletonComponent<
     N extends string,
