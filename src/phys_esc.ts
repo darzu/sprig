@@ -103,15 +103,14 @@ export function registerPhysicsLocalToWorldCompute(em: EntityManager) {
             : MAT4_ID;
 
           vec3.transformMat4(o._phys.wPos, o.position, parentT);
-          if (RotationDef.isOn(o))
-            mat4.getRotation(o._phys.wRot, o.worldTransform);
-          if (ScaleDef.isOn(o))
-            mat4.getScaling(o._phys.wScale, o.worldTransform);
+          // if (RotationDef.isOn(o))
+          mat4.getRotation(o._phys.wRot, o.worldTransform);
+          // if (ScaleDef.isOn(o))
+          mat4.getScaling(o._phys.wScale, o.worldTransform);
           if (LinearVelocityDef.isOn(o)) {
             vec3.transformMat4(o._phys.wLinVel, o.linearVelocity, parentT);
             const parentTranslation = mat4.getTranslation(tempVec(), parentT);
             vec3.sub(o._phys.wLinVel, o._phys.wLinVel, parentTranslation);
-            // TODO(@darzu): scale velocity?
           }
         }
       }
@@ -126,23 +125,36 @@ export function registerPhysicsWorldToLocalCompute(em: EntityManager) {
     (objs, res) => {
       for (let i = 0; i < res.physicsTimer.steps; i++) {
         for (let o of objs) {
-          const parentT = ParentTransformDef.isOn(o)
+          const parentToWorld = ParentTransformDef.isOn(o)
             ? o.parentTransform
             : MAT4_ID;
-          const parentInv = mat4.invert(mat4.create(), parentT);
+          const worldToParent = mat4.invert(mat4.create(), parentToWorld);
 
-          vec3.transformMat4(o.position, o._phys.wPos, parentInv);
-          // TODO(@darzu):
-          // if (RotationDef.isOn(o))
-          //   mat4.getRotation(o._phys.wRot, o.worldTransform);
-          // if (ScaleDef.isOn(o))
-          //   mat4.getScaling(o._phys.wScale, o.worldTransform);
-          // if (LinearVelocityDef.isOn(o)) {
-          //   vec3.transformMat4(o._phys.wLinVel, o.linearVelocity, parentT);
-          //   const parentTranslation = mat4.getTranslation(tempVec(), parentT);
-          //   vec3.sub(o._phys.wLinVel, o._phys.wLinVel, parentTranslation);
-          //   // TODO(@darzu): scale velocity?
-          // }
+          // new world transform
+          const localToWorld = mat4.fromRotationTranslationScale(
+            o.worldTransform,
+            o._phys.wRot,
+            o._phys.wPos,
+            o._phys.wScale
+          );
+
+          const worldToLocal = mat4.invert(mat4.create(), o.worldTransform);
+
+          const localToParent = mat4.multiply(
+            mat4.create(),
+            worldToParent,
+            localToWorld
+          );
+
+          mat4.getTranslation(o.position, localToParent);
+          em.ensureComponentOn(o, RotationDef);
+          mat4.getRotation(o.rotation, localToParent);
+          em.ensureComponentOn(o, ScaleDef);
+          mat4.getScaling(o.scale, localToParent);
+
+          em.ensureComponentOn(o, LinearVelocityDef);
+          const worldToParent3 = mat3.fromMat4(mat3.create(), worldToParent);
+          vec3.transformMat3(o.linearVelocity, o._phys.wLinVel, worldToParent3);
         }
       }
     },
