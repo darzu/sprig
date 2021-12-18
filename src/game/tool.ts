@@ -85,8 +85,7 @@ registerEventHandler("tool-pickup", {
     tool.physicsParent.id = player.id;
     em.removeComponent(tool.id, InteractableDef);
     vec3.set(tool.position, 0, 0, -1.5);
-    let scale = em.ensureComponent(tool.id, ScaleDef);
-    vec3.set(scale, 0.5, 0.5, 0.5);
+    em.ensureComponent(tool.id, ScaleDef, vec3.fromValues(0.5, 0.5, 0.5));
     player.player.tool = tool.id;
   },
 });
@@ -103,8 +102,7 @@ registerEventHandler("tool-drop", {
     tool.physicsParent.id = 0;
     em.addComponent(tool.id, InteractableDef);
     vec3.copy(tool.position, location!);
-    let scale = em.ensureComponent(tool.id, ScaleDef);
-    vec3.set(scale, 1, 1, 1);
+    em.ensureComponent(tool.id, ScaleDef, vec3.fromValues(1, 1, 1));
     player.player.tool = 0;
   },
 });

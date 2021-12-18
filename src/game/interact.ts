@@ -69,8 +69,7 @@ export function registerInteractionSystem(em: EntityManager) {
         );
         if (interactionId > 0) {
           if (player.player.interacting) {
-            let interacting = em.ensureComponent(interactionId, InteractingDef);
-            interacting.id = player.id;
+            em.ensureComponent(interactionId, InteractingDef, player.id);
           } else {
             let interactable = em.findEntity(interactionId, [
               InteractableDef,
