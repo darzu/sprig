@@ -1226,7 +1226,12 @@
          * @param {ReadonlyVec3} s Scaling vector
          * @returns {mat4} out
          */
-        export function fromRotationTranslationScale(out: mat4, q: any, v: ReadonlyVec3, s: ReadonlyVec3): mat4;
+        export function fromRotationTranslationScale(
+          out: mat4,
+          q: quat,
+          v: ReadonlyVec3,
+          s: ReadonlyVec3
+        ): mat4;
         /**
          * Creates a matrix from a quaternion rotation, vector translation and vector scale, rotating and scaling around the given origin
          * This is equivalent to (but much faster than):
