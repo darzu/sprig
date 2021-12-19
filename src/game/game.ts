@@ -1,5 +1,5 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { quat, vec3 } from "../gl-matrix.js";
+import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { jitter } from "../math.js";
 import {
@@ -13,10 +13,12 @@ import {
   registerAddMeshHandleSystem,
   registerRenderer,
   registerUpdateCameraView,
+  RenderableDef,
 } from "../renderer.js";
 import {
   registerInitTransforms,
   registerUpdateTransforms,
+  WorldTransformDef,
 } from "../transform.js";
 import {
   BoatConstructDef,
@@ -58,7 +60,12 @@ import {
   registerHatDropSystem,
 } from "./hat.js";
 import { registerBuildBulletsSystem } from "./bullet.js";
-import { DARK_BLUE, LIGHT_BLUE, registerAssetLoader } from "./assets.js";
+import {
+  AssetsDef,
+  DARK_BLUE,
+  LIGHT_BLUE,
+  registerAssetLoader,
+} from "./assets.js";
 import { registerInitCanvasSystem } from "../canvas.js";
 import { registerRenderInitSystem, RendererDef } from "../render_init.js";
 import { registerDeleteEntitiesSystem } from "../delete.js";
@@ -83,6 +90,7 @@ import {
   registerUpdateSmoothedTransform,
 } from "../smoothing.js";
 import { registerBuildCursor } from "./cursor.js";
+import { ColliderDef } from "../collider.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -124,6 +132,39 @@ function createGround(em: EntityManager) {
       em.addComponent(id, PlaneConstructDef, loc, color);
     }
   }
+}
+
+function createWorldPlanes(em: EntityManager) {
+  const p1 = em.newEntity();
+  const r = quat.fromEuler(quat.create(), 0, 0, Math.PI * 0.5);
+  const t = mat4.fromRotationTranslationScale(
+    mat4.create(),
+    r,
+    [100, 0, -100],
+    [20, 20, 20]
+  );
+
+  const worldPlaneDef = em.defineComponent("worldPlane", () => true);
+
+  em.ensureComponentOn(p1, WorldTransformDef, t);
+  em.ensureComponentOn(p1, worldPlaneDef);
+  em.ensureComponentOn(p1, ColorDef, [1, 0, 1]);
+
+  em.registerSystem(
+    [worldPlaneDef],
+    [AssetsDef],
+    (es, res) => {
+      for (let e of es) {
+        em.ensureComponentOn(e, RenderableDef, res.assets.gridPlane.mesh);
+        em.ensureComponentOn(e, ColliderDef, {
+          shape: "AABB",
+          solid: true,
+          aabb: res.assets.gridPlane.aabb,
+        });
+      }
+    },
+    "buildWorldPlanes"
+  );
 }
 
 export function registerAllSystems(em: EntityManager) {
@@ -233,6 +274,7 @@ export function createServerObjects(em: EntityManager) {
   createShips(em);
   createHats(em);
   createCannons(em);
+  createWorldPlanes(em);
 }
 export function createLocalObjects(em: EntityManager) {
   createPlayer(em);
