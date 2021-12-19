@@ -160,6 +160,7 @@ export const LocalMeshes = {
   boat: scaleMesh3(CUBE_MESH, [5, 0.3, 2.5]),
   bullet: scaleMesh(CUBE_MESH, 0.3),
   gridPlane: GRID_PLANE_MESH,
+  wireCube: { ...CUBE_MESH, tri: [] } as Mesh,
 } as const;
 
 type AssetSymbols = keyof typeof RemoteMeshes | keyof typeof LocalMeshes;

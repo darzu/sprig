@@ -20,6 +20,7 @@ import {
   createAABB,
   doesOverlap,
   doesTouch,
+  getAABBFromPositions,
   Ray,
   RayHit,
   rayHitDist,
@@ -64,6 +65,7 @@ export const PhysicsStateDef = EM.defineComponent("_phys", () => {
     // AABBs
     local: createAABB(),
     world: createAABB(),
+    lastWorld: createAABB(),
     sweep: createAABB(),
   };
 });
@@ -110,6 +112,12 @@ export function registerPhysicsLocalToWorldCompute(em: EntityManager) {
             const parentTranslation = mat4.getTranslation(tempVec(), parentT);
             vec3.sub(o._phys.wLinVel, o._phys.wLinVel, parentTranslation);
           }
+
+          // update AABBs
+          const wCorners = getAABBCorners(o._phys.local).map((p) =>
+            vec3.transformMat4(p, p, o.worldTransform)
+          );
+          o._phys.world = getAABBFromPositions(wCorners);
         }
       }
     },
@@ -166,6 +174,21 @@ function FALSE() {
   return false;
 }
 
+function getAABBCorners(aabb: AABB): vec3[] {
+  const points: vec3[] = [
+    [aabb.max[0], aabb.max[1], aabb.max[2]],
+    [aabb.max[0], aabb.max[1], aabb.min[2]],
+    [aabb.max[0], aabb.min[1], aabb.max[2]],
+    [aabb.max[0], aabb.min[1], aabb.min[2]],
+
+    [aabb.min[0], aabb.max[1], aabb.max[2]],
+    [aabb.min[0], aabb.max[1], aabb.min[2]],
+    [aabb.min[0], aabb.min[1], aabb.max[2]],
+    [aabb.min[0], aabb.min[1], aabb.min[2]],
+  ];
+  return points;
+}
+
 function stepsPhysics(objs: PhysicsObject[], dt: number): void {
   __step++; // TODO(@darzu): hack for debugging purposes
 
@@ -180,20 +203,13 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
   // update AABB state after motion
   for (let {
     id,
-    _phys: { wPos, lastWPos, local, sweep, world },
+    _phys: { wPos, lastWPos, local, sweep, world, lastWorld },
   } of objs) {
     //update motion sweep AABBs
     for (let i = 0; i < 3; i++) {
-      sweep.min[i] = Math.min(local.min[i] + wPos[i], local.min[i] + wPos[i]);
-      sweep.max[i] = Math.max(
-        local.max[i] + wPos[i],
-        local.max[i] + lastWPos[i]
-      );
+      sweep.min[i] = Math.min(lastWorld.min[i], world.min[i]);
+      sweep.max[i] = Math.max(lastWorld.max[i], world.max[i]);
     }
-
-    // update "tight" AABBs
-    vec3.add(world.min, local.min, wPos);
-    vec3.add(world.max, local.max, wPos);
   }
 
   // update in-contact pairs; this is seperate from collision or rebound
@@ -351,6 +367,8 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
   // remember current state for next time
   for (let o of objs) {
     vec3.copy(o._phys.lastWPos, o._phys.wPos);
+    vec3.copy(o._phys.lastWorld.min, o._phys.world.min);
+    vec3.copy(o._phys.lastWorld.max, o._phys.world.max);
   }
 
   // // copy out changes we made

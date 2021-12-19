@@ -5,12 +5,12 @@ import { BoatDef } from "./game/boat.js";
 import { ColorDef } from "./game/game.js";
 import { mat4, vec3 } from "./gl-matrix.js";
 import { InputsDef } from "./inputs.js";
-import { mathMap } from "./math.js";
+import { avg, mathMap } from "./math.js";
 import { mapMeshPositions, Mesh, MeshHandleDef } from "./mesh-pool.js";
 import { AABB } from "./phys_broadphase.js";
 import { PhysicsStateDef } from "./phys_esc.js";
 import { RenderableDef } from "./renderer.js";
-import { WorldTransformDef } from "./transform.js";
+import { PositionDef, ScaleDef, WorldTransformDef } from "./transform.js";
 import { RendererDef } from "./render_init.js";
 
 export const PhysicsDbgDef = EM.defineComponent("_physDbgState", () => {
@@ -44,12 +44,10 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
             const dbgE = em.newEntity();
 
             // with a wireframe mesh
-            // TODO(@darzu): USE PROTOTYPES HERE
-            const m = meshFromAABB(e.collider.aabb);
             em.addComponent(
               dbgE.id,
               RenderableDef,
-              m,
+              res.assets.wireCube.proto,
               res._physDbgState.showAABBs,
               1
             );
@@ -57,8 +55,9 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
             // colored
             em.addComponent(dbgE.id, ColorDef, [0, 1, 0]);
 
-            // transformed
-            em.addComponent(dbgE.id, WorldTransformDef);
+            // positioned and scaled
+            em.ensureComponentOn(dbgE, PositionDef);
+            em.ensureComponentOn(dbgE, ScaleDef);
 
             // NOTE: we don't use the normal parent transform mechanism b/c
             //  colliders especially AABBs are only translated, not full matrix
@@ -94,7 +93,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
 
   // update transform based on parent collider
   em.registerSystem(
-    [DbgMeshDef, WorldTransformDef],
+    [DbgMeshDef, PositionDef, ScaleDef],
     [],
     (es, res) => {
       for (let e of es) {
@@ -102,7 +101,11 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
           PhysicsStateDef,
         ])?._phys;
         if (parent) {
-          mat4.fromTranslation(e.worldTransform, parent.world.min);
+          for (let i = 0; i < 3; i++)
+            e.position[i] = (parent.world.min[i] + parent.world.max[i]) * 0.5;
+          for (let i = 0; i < 3; i++)
+            // cube scale 1 means length 2 sides
+            e.scale[i] = (parent.world.max[i] - parent.world.min[i]) * 0.5;
         }
       }
     },
