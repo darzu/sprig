@@ -16,9 +16,12 @@ import { tempVec, tempQuat } from "./temp-pool.js";
 // type TransformLocal = mat4;
 
 // WORLD TRANSFORM
-export const WorldTransformDef = EM.defineComponent("worldTransform", () => {
-  return mat4.create();
-});
+export const WorldTransformDef = EM.defineComponent(
+  "worldTransform",
+  (t?: mat4) => {
+    return t ?? mat4.create();
+  }
+);
 export type WorldTransform = mat4;
 
 // POSITION
