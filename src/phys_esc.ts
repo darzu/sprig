@@ -93,7 +93,7 @@ const MAT4_ID = mat4.identity(mat4.create());
 
 export function registerPhysicsLocalToWorldCompute(em: EntityManager) {
   em.registerSystem(
-    [PositionDef, PhysicsStateDef, WorldTransformDef],
+    [PhysicsStateDef, WorldTransformDef],
     [PhysicsTimerDef],
     (objs, res) => {
       for (let i = 0; i < res.physicsTimer.steps; i++) {
@@ -102,10 +102,8 @@ export function registerPhysicsLocalToWorldCompute(em: EntityManager) {
             ? o.parentTransform
             : MAT4_ID;
 
-          vec3.transformMat4(o._phys.wPos, o.position, parentT);
-          // if (RotationDef.isOn(o))
+          mat4.getTranslation(o._phys.wPos, o.worldTransform);
           mat4.getRotation(o._phys.wRot, o.worldTransform);
-          // if (ScaleDef.isOn(o))
           mat4.getScaling(o._phys.wScale, o.worldTransform);
           if (LinearVelocityDef.isOn(o)) {
             vec3.transformMat4(o._phys.wLinVel, o.linearVelocity, parentT);
@@ -416,7 +414,7 @@ export function registerPhysicsInit(em: EntityManager) {
   em.addSingletonComponent(PhysicsResultsDef);
 
   em.registerSystem(
-    [PositionDef, ColliderDef],
+    [ColliderDef],
     [],
     (objs) => {
       for (let o of objs)
