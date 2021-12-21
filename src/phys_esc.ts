@@ -194,7 +194,7 @@ function getAABBCorners(aabb: AABB): vec3[] {
   return points;
 }
 
-function stepsPhysics(objs: PhysicsObject[], dt: number): void {
+function stepConstraints(objs: PhysicsObject[], dt: number): void {
   __step++; // TODO(@darzu): hack for debugging purposes
 
   // build a dict
@@ -447,7 +447,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
     [PhysicsTimerDef],
     (objs, res) => {
       for (let si = 0; si < res.physicsTimer.steps; si++) {
-        stepsPhysics(objs, res.physicsTimer.period);
+        stepConstraints(objs, res.physicsTimer.period);
       }
     },
     "physicsStepContact"
