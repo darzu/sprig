@@ -41,6 +41,7 @@ import { tempQuat, tempVec } from "./temp-pool.js";
 import { LinearVelocityDef, AngularVelocityDef } from "./motion.js";
 import { PlayerEntDef } from "./game/player.js";
 import { quatDbg, vec3Dbg } from "./utils-3d.js";
+import { assert } from "./test.js";
 
 export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {
   return {
@@ -93,7 +94,10 @@ const _objDict: Map<number, PhysicsObject> = new Map();
 
 const MAT4_ID = mat4.identity(mat4.create());
 
-export function registerPhysicsLocalToWorldCompute(em: EntityManager) {
+export function registerPhysicsLocalToWorldCompute(
+  em: EntityManager,
+  s: string
+) {
   em.registerSystem(
     [PhysicsStateDef, WorldTransformDef],
     [PhysicsTimerDef],
@@ -113,18 +117,25 @@ export function registerPhysicsLocalToWorldCompute(em: EntityManager) {
             vec3.sub(o._phys.wLinVel, o._phys.wLinVel, parentTranslation);
           }
 
-          // update AABBs
-          const wCorners = getAABBCorners(o._phys.local).map((p) =>
+          // update world AABBs
+          const { local, world, lastWorld, sweep } = o._phys;
+          const wCorners = getAABBCorners(local).map((p) =>
             vec3.transformMat4(p, p, o.worldTransform)
           );
-          o._phys.world = getAABBFromPositions(wCorners);
+          copyAABB(world, getAABBFromPositions(wCorners));
+
+          // update sweep AABBs
+          for (let i = 0; i < 3; i++) {
+            sweep.min[i] = Math.min(lastWorld.min[i], world.min[i]);
+            sweep.max[i] = Math.max(lastWorld.max[i], world.max[i]);
+          }
         }
       }
     },
-    "physicsLocalToWorldCompute"
+    "physicsLocalToWorldCompute" + s
   );
 }
-export function registerPhysicsWorldToLocalCompute(em: EntityManager) {
+export function registerPhysicsWorldToLocalCompute(em: EntityManager, s: string) {
   em.registerSystem(
     [PositionDef, PhysicsStateDef, WorldTransformDef],
     [PhysicsTimerDef],
@@ -164,14 +175,8 @@ export function registerPhysicsWorldToLocalCompute(em: EntityManager) {
         }
       }
     },
-    "physicsWorldToLocalCompute"
+    "physicsWorldToLocalCompute" + s
   );
-}
-
-// TODO(@darzu): this is is a work around for the fact that just using "false"
-//  causes type narrowing not to work right in unreachable code
-function FALSE() {
-  return false;
 }
 
 function getAABBCorners(aabb: AABB): vec3[] {
@@ -199,18 +204,6 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
   // get singleton data
   const { physicsResults } = EM.findSingletonComponent(PhysicsResultsDef)!;
   const { collidesWith, contactData, reboundData } = physicsResults;
-
-  // update AABB state after motion
-  for (let {
-    id,
-    _phys: { wPos, lastWPos, local, sweep, world, lastWorld },
-  } of objs) {
-    //update motion sweep AABBs
-    for (let i = 0; i < 3; i++) {
-      sweep.min[i] = Math.min(lastWorld.min[i], world.min[i]);
-      sweep.max[i] = Math.max(lastWorld.max[i], world.max[i]);
-    }
-  }
 
   // update in-contact pairs; this is seperate from collision or rebound
   for (let [abId, lastData] of contactData) {
@@ -334,31 +327,24 @@ function stepsPhysics(objs: PhysicsObject[], dt: number): void {
     for (let o of objs) {
       let movFrac = nextObjMovFracs[o.id];
       if (movFrac) {
+        // TODO(@darzu): MUTATING WORLD POS. We probably shouldn't do that here
         vec3.sub(_collisionRefl, o._phys.lastWPos, o._phys.wPos);
         vec3.scale(_collisionRefl, _collisionRefl, movFrac);
         vec3.add(o._phys.wPos, o._phys.wPos, _collisionRefl);
 
+        // translate non-sweep AABBs
+        // TODO(@darzu): update these the "right" way
+        vec3.add(o._phys.world.min, o._phys.world.min, _collisionRefl);
+        vec3.add(o._phys.world.max, o._phys.world.max, _collisionRefl);
+
         // track that movement occured
         anyMovement = true;
       }
-    }
 
-    // record which objects moved from this iteration,
-    // reset movement fractions for next iteration
-    for (let o of objs) {
+      // record which objects moved from this iteration,
+      // reset movement fractions for next iteration
       lastObjMovs[o.id] = !!nextObjMovFracs[o.id];
       nextObjMovFracs[o.id] = 0;
-    }
-
-    // update "tight" AABBs
-    for (let {
-      id,
-      _phys: { world, local, wPos },
-    } of objs) {
-      if (lastObjMovs[id]) {
-        vec3.add(world.min, local.min, wPos);
-        vec3.add(world.max, local.max, wPos);
-      }
     }
 
     itr++;
@@ -441,13 +427,13 @@ export function registerPhysicsInit(em: EntityManager) {
 
           // AABBs (collider derived)
           // TODO(@darzu): handle scale
-          if (o.collider.shape === "AABB") {
-            _phys.local = copyAABB(o.collider.aabb);
-          } else {
-            throw `Unimplemented collider shape: ${o.collider.shape}`;
-          }
-          _phys.world = copyAABB(_phys.local);
-          _phys.sweep = copyAABB(_phys.local);
+          assert(
+            o.collider.shape === "AABB",
+            `Unimplemented collider shape: ${o.collider.shape}`
+          );
+          copyAABB(_phys.local, o.collider.aabb);
+          copyAABB(_phys.world, _phys.local);
+          copyAABB(_phys.sweep, _phys.local);
         }
     },
     "physicsInit"

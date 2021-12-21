@@ -94,6 +94,8 @@ export function moveObjects(
     }
 
     // change rotation according to angular velocity
+    // TODO(@darzu): rotation needs to be seperated out so we can do collision
+    //   detection on rotation.
     if (_phys.wAngVel && _phys.wRot) {
       normalizedVelocity = vec3.normalize(normalizedVelocity, _phys.wAngVel);
       let angle = vec3.length(_phys.wAngVel) * dt;

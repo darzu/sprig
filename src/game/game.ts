@@ -201,11 +201,16 @@ export function registerAllSystems(em: EntityManager) {
   // TODO(@darzu): do we have to run update transforms twice?
   registerUpdateTransforms(em, "0");
   registerPhysicsInit(em);
-  registerPhysicsLocalToWorldCompute(em);
+  registerPhysicsLocalToWorldCompute(em, "0");
   registerPhysicsMoveObjects(em);
+  registerPhysicsWorldToLocalCompute(em, "0");
+  registerPhysicsLocalToWorldCompute(em, "1");
   registerPhysicsSystems(em);
-  registerPhysicsWorldToLocalCompute(em);
+  registerPhysicsWorldToLocalCompute(em, "1");
   registerUpdateTransforms(em, "1");
+  registerPhysicsLocalToWorldCompute(em, "2");
+  registerPhysicsDebuggerSystem(em);
+  registerUpdateTransforms(em, "2");
   registerBulletCollisionSystem(em);
   registerModeler(em);
   registerHatPickupSystem(em);
@@ -220,7 +225,6 @@ export function registerAllSystems(em: EntityManager) {
   registerUpdateSmoothedTransform(em);
   registerRenderViewController(em);
   registerUpdateCameraView(em);
-  registerPhysicsDebuggerSystem(em);
   registerAddMeshHandleSystem(em);
   registerRenderer(em);
 }

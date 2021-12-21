@@ -495,11 +495,9 @@ export function createAABB(): AABB {
     max: vec3.create(),
   };
 }
-export function copyAABB(a: AABB): AABB {
-  return {
-    min: vec3.clone(a.min),
-    max: vec3.clone(a.max),
-  };
+export function copyAABB(out: AABB, a: AABB) {
+  vec3.copy(out.min, a.min);
+  vec3.copy(out.max, a.max);
 }
 export function getAABBFromPositions(positions: vec3[]): AABB {
   const min = vec3.fromValues(Infinity, Infinity, Infinity);
