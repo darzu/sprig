@@ -441,7 +441,7 @@ export function registerPhysicsInit(em: EntityManager) {
 }
 
 // ECS register
-export function registerPhysicsSystems(em: EntityManager) {
+export function registerPhysicsContactSystems(em: EntityManager) {
   em.registerSystem(
     [PositionDef, ColliderDef, PhysicsStateDef, WorldTransformDef],
     [PhysicsTimerDef],
@@ -450,6 +450,6 @@ export function registerPhysicsSystems(em: EntityManager) {
         stepsPhysics(objs, res.physicsTimer.period);
       }
     },
-    "physicsStep"
+    "physicsStepContact"
   );
 }

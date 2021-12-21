@@ -329,10 +329,7 @@ function stepPlayers(
 
     // change physics parent
     if (inputs.keyClicks["p"]) {
-      const targetEnt = EM.findEntity(p.player.targetEnt, [
-        PositionDef,
-        ColliderDef,
-      ]);
+      const targetEnt = EM.findEntity(p.player.targetEnt, [ColliderDef]);
       if (targetEnt) {
         p.physicsParent.id = targetEnt.id;
         vec3.copy(p.position, [0, 0, 0]);

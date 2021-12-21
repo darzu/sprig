@@ -6,7 +6,7 @@ import {
   registerPhysicsInit,
   registerPhysicsLocalToWorldCompute,
   registerPhysicsMoveObjects,
-  registerPhysicsSystems,
+  registerPhysicsContactSystems,
   registerPhysicsWorldToLocalCompute,
 } from "../phys_esc.js";
 import {
@@ -205,7 +205,7 @@ export function registerAllSystems(em: EntityManager) {
   registerPhysicsMoveObjects(em);
   registerPhysicsWorldToLocalCompute(em, "0");
   registerPhysicsLocalToWorldCompute(em, "1");
-  registerPhysicsSystems(em);
+  registerPhysicsContactSystems(em);
   registerPhysicsWorldToLocalCompute(em, "1");
   registerUpdateTransforms(em, "1");
   registerPhysicsLocalToWorldCompute(em, "2");
