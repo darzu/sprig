@@ -19,26 +19,16 @@ export const PlaneConstructDef = EM.defineComponent(
 
 export type PlaneConstruct = Component<typeof PlaneConstructDef>;
 
-function serializePlaneConstruct(
-  planeConstruct: PlaneConstruct,
-  buf: Serializer
-) {
-  buf.writeVec3(planeConstruct.location);
-  buf.writeVec3(planeConstruct.color);
-}
-
-function deserializePlaneConstruct(
-  planeConstruct: PlaneConstruct,
-  buf: Deserializer
-) {
-  buf.readVec3(planeConstruct.location);
-  buf.readVec3(planeConstruct.color);
-}
-
 EM.registerSerializerPair(
   PlaneConstructDef,
-  serializePlaneConstruct,
-  deserializePlaneConstruct
+  (planeConstruct, buf) => {
+    buf.writeVec3(planeConstruct.location);
+    buf.writeVec3(planeConstruct.color);
+  },
+  (planeConstruct, buf) => {
+    buf.readVec3(planeConstruct.location);
+    buf.readVec3(planeConstruct.color);
+  }
 );
 
 export function registerBuildPlanesSystem(em: EntityManager) {
