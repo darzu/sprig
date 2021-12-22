@@ -43,6 +43,11 @@ import { PlayerEntDef } from "./game/player.js";
 import { quatDbg, vec3Dbg } from "./utils-3d.js";
 import { assert } from "./test.js";
 
+// TODO(@darzu): PHYSICS TODO:
+// - parent to the "world planes" (BEFORE MERGE)
+// - seperate rotation and motion w/ constraint checking between them
+// - impl GJK
+
 export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {
   return {
     collidesWith: new Map<number, number[]>() as CollidesWith,
