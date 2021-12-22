@@ -84,7 +84,7 @@ export function checkBroadphase(
     max: [maxHorizontalDist, maxVerticalDist, maxHorizontalDist],
   };
 
-  // naive oct-tree
+  // naive oct-tree (last measured 68482c94)
   //      5000 objs: 12.5ms, 56,000 overlaps + 235,000 enclosed-bys
   //      3000 objs: 7.6ms, 21,000 overlaps + 186,000 enclosed-bys
   //      3000 objs @[2000, 200, 2000]: 5ms, 26,000 + 120,000 enclosed-bys ?
