@@ -77,12 +77,18 @@ export function checkBroadphase(
     }
   }
 
-  const maxHorizontalDist = 1000;
-  const maxVerticalDist = 100;
-  const worldAABB: AABB = {
-    min: [-maxHorizontalDist, -maxVerticalDist, -maxHorizontalDist],
-    max: [maxHorizontalDist, maxVerticalDist, maxHorizontalDist],
-  };
+  // determine our bounds
+  const worldAABB = createAABB();
+  for (let o of objs) {
+    for (let i = 0; i < 3; i++) {
+      worldAABB.min[i] = Math.min(worldAABB.min[i], o.aabb.min[i]);
+      worldAABB.max[i] = Math.max(worldAABB.max[i], o.aabb.max[i]);
+    }
+  }
+  for (let i = 0; i < 3; i++) {
+    worldAABB.min[i] -= 10;
+    worldAABB.max[i] += 10;
+  }
 
   // naive oct-tree (last measured 68482c94)
   //      5000 objs: 12.5ms, 56,000 overlaps + 235,000 enclosed-bys

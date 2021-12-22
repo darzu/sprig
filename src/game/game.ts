@@ -143,9 +143,9 @@ function createWorldPlanes(em: EntityManager) {
     r,
     [100, 0, -100],
     // TODO(@darzu): Intersting, 9s work but 10s don't. probably oct-tree issue
-    [9, 9, 9]
+    // [9, 9, 9]
     // [10, 10, 10]
-    // [20, 20, 20]
+    [20, 20, 20]
   );
 
   const worldPlaneDef = em.defineComponent("worldPlane", () => true);
