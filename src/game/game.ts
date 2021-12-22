@@ -136,12 +136,16 @@ function createGround(em: EntityManager) {
 
 function createWorldPlanes(em: EntityManager) {
   const p1 = em.newEntity();
+  // const r = quat.create();
   const r = quat.fromEuler(quat.create(), 0, 0, Math.PI * 0.5);
   const t = mat4.fromRotationTranslationScale(
     mat4.create(),
     r,
     [100, 0, -100],
-    [20, 20, 20]
+    // TODO(@darzu): Intersting, 9s work but 10s don't. probably oct-tree issue
+    [9, 9, 9]
+    // [10, 10, 10]
+    // [20, 20, 20]
   );
 
   const worldPlaneDef = em.defineComponent("worldPlane", () => true);

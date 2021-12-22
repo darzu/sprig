@@ -99,8 +99,6 @@ const _motionAABBs: { aabb: AABB; id: number }[] = [];
 
 const _collisionPairs: Set<IdPair> = new Set();
 
-const _physObjects: Map<number, PhysicsObject> = new Map();
-
 export let _motionPairsLen = 0; // TODO(@darzu): debug
 
 const _objDict: Map<number, PhysicsObject> = new Map();
@@ -149,7 +147,12 @@ export function registerPhysicsLocalToWorldCompute(
     "physicsLocalToWorldCompute" + s
   );
 }
-export function registerPhysicsWorldToLocalCompute(em: EntityManager, s: string) {
+
+// TODO(@darzu): notes: mutates worldTransform, position, rotation, scale, linearVelocity
+export function registerPhysicsWorldToLocalCompute(
+  em: EntityManager,
+  s: string
+) {
   em.registerSystem(
     [PositionDef, PhysicsStateDef, WorldTransformDef],
     [PhysicsTimerDef],
@@ -214,7 +217,7 @@ function getAABBCorners(aabb: AABB): vec3[] {
   return points;
 }
 
-function stepConstraints(objs: PhysicsObject[], dt: number): void {
+function stepConstraints(objs: PhysicsObject[]): void {
   __step++; // TODO(@darzu): hack for debugging purposes
 
   // build a dict
@@ -401,9 +404,11 @@ function stepConstraints(objs: PhysicsObject[], dt: number): void {
     const motHits = motionCheckRay(r);
     const hits: RayHit[] = [];
     for (let mh of motHits) {
-      const o = _objDict.get(mh.id)!;
-      const dist = rayHitDist(o._phys.world, r);
-      if (!isNaN(dist)) hits.push({ id: o.id, dist });
+      const o = EM.findEntity(mh.id, [PhysicsStateDef]);
+      if (o) {
+        const dist = rayHitDist(o._phys.world, r);
+        if (!isNaN(dist)) hits.push({ id: o.id, dist });
+      }
     }
     return hits;
   };
@@ -463,11 +468,12 @@ export function registerPhysicsInit(em: EntityManager) {
 // ECS register
 export function registerPhysicsContactSystems(em: EntityManager) {
   em.registerSystem(
-    [PositionDef, ColliderDef, PhysicsStateDef, WorldTransformDef],
+    [ColliderDef, PhysicsStateDef],
     [PhysicsTimerDef],
     (objs, res) => {
-      for (let si = 0; si < res.physicsTimer.steps; si++) {
-        stepConstraints(objs, res.physicsTimer.period);
+      // TODO(@darzu): interestingly, this system doesn't need the step count
+      if (res.physicsTimer.steps > 0) {
+        stepConstraints(objs);
       }
     },
     "physicsStepContact"
