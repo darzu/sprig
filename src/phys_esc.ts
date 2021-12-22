@@ -54,6 +54,7 @@ import { assert } from "./test.js";
 //          such that the frame is always consistent
 //      otherwise we have a "recomputeTransform" or "recomputeYYY" to rebuild parts from the others
 //      ideally there would be some flags to help know what is out of sync
+//    is it possible Frames could be read-only and all mutation could be pushed back to the "truth" fields?
 
 export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {
   return {
