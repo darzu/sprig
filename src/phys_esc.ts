@@ -47,6 +47,13 @@ import { assert } from "./test.js";
 // - parent to the "world planes" (BEFORE MERGE)
 // - seperate rotation and motion w/ constraint checking between them
 // - impl GJK
+// - re-work the pos-rot-scale & transform dichotomy into something u can reason about
+//    perhaps "Frames":
+//      a frame has all of: pos, rot, scale, lin vel, ang vel, transform
+//      if there are few enough ways in which the frame is mutated, we can provide helpers
+//          such that the frame is always consistent
+//      otherwise we have a "recomputeTransform" or "recomputeYYY" to rebuild parts from the others
+//      ideally there would be some flags to help know what is out of sync
 
 export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {
   return {
