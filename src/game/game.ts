@@ -204,6 +204,7 @@ export function registerAllSystems(em: EntityManager) {
   registerPhysicsLocalToWorldCompute(em, "0");
   registerPhysicsMoveObjects(em);
   registerPhysicsWorldToLocalCompute(em, "0");
+  registerUpdateTransforms(em, "0b");
   registerPhysicsLocalToWorldCompute(em, "1");
   registerPhysicsContactSystems(em);
   registerPhysicsWorldToLocalCompute(em, "1");

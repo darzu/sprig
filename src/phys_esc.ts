@@ -94,6 +94,7 @@ const _objDict: Map<number, PhysicsObject> = new Map();
 
 const MAT4_ID = mat4.identity(mat4.create());
 
+// TODO(@darzu): PRECONDITION: assumes updateTransforms has just run
 export function registerPhysicsLocalToWorldCompute(
   em: EntityManager,
   s: string
@@ -155,7 +156,7 @@ export function registerPhysicsWorldToLocalCompute(em: EntityManager, s: string)
             o._phys.wScale
           );
 
-          const worldToLocal = mat4.invert(mat4.create(), o.worldTransform);
+          // const worldToLocal = mat4.invert(mat4.create(), o.worldTransform);
 
           const localToParent = mat4.multiply(
             mat4.create(),
@@ -169,9 +170,15 @@ export function registerPhysicsWorldToLocalCompute(em: EntityManager, s: string)
           em.ensureComponentOn(o, ScaleDef);
           mat4.getScaling(o.scale, localToParent);
 
-          em.ensureComponentOn(o, LinearVelocityDef);
-          const worldToParent3 = mat3.fromMat4(mat3.create(), worldToParent);
-          vec3.transformMat3(o.linearVelocity, o._phys.wLinVel, worldToParent3);
+          if (vec3.sqrLen(o._phys.wLinVel) > 0) {
+            em.ensureComponentOn(o, LinearVelocityDef);
+            const worldToParent3 = mat3.fromMat4(mat3.create(), worldToParent);
+            vec3.transformMat3(
+              o.linearVelocity,
+              o._phys.wLinVel,
+              worldToParent3
+            );
+          }
         }
       }
     },
