@@ -21,6 +21,7 @@ interface ServerMessage {
 }
 
 const SERVER_HEARTBEAT_INTERVAL = 5000;
+const RECONNECT_TIME = 1000;
 
 const DEFAULT_CONFIG = {
   iceServers: [
@@ -39,19 +40,24 @@ function serverUrl(id: string, token: string) {
 }
 
 export class Peer {
+  id: string;
+
   connections: Record<string, RTCPeerConnection> = {};
   nextId: number = 0;
   sock: WebSocket | null = null;
-  id: string | null = null;
   onopen: ((id: string) => void) | null = null;
   onconnection: ((peerId: string, channel: RTCDataChannel) => void) | null =
     null;
 
   constructor(id: string) {
     this.id = id;
+    this.connectToServer();
+  }
+
+  private connectToServer() {
     // TODO: if this fails, make it possible to get a different valid id
     let sock = new WebSocket(
-      serverUrl("sprig-" + id, Math.random().toString(36).substr(2))
+      serverUrl("sprig-" + this.id, Math.random().toString(36).substr(2))
     );
     sock.onmessage = (event) => {
       //console.log(event.data);
@@ -67,10 +73,10 @@ export class Peer {
         sock.send(JSON.stringify({ type: ServerMessageType.Heartbeat }));
       }, SERVER_HEARTBEAT_INTERVAL);
       if (this.onopen) {
-        this.onopen(id);
+        this.onopen(this.id);
       }
     };
-    sock.onclose = () => {
+    const onclose = () => {
       console.log("Socket closed");
       if (heartbeatHandle) {
         clearInterval(heartbeatHandle);
@@ -78,60 +84,14 @@ export class Peer {
       }
       // Close all connections if connection to server goes down
       Object.values(this.connections).forEach((conn) => conn.close());
+      setTimeout(() => this.connectToServer(), RECONNECT_TIME);
     };
+    sock.onclose = onclose;
     this.sock = sock;
   }
 
-  private setupPeerConnection(
-    peerConnection: RTCPeerConnection,
-    remotePeerId: string,
-    connectionId: string
-  ) {
-    //console.log("setting up peer connection");
-    peerConnection.onicecandidate = (ev) => {
-      //console.log("on ice candidate");
-      if (!ev.candidate || !ev.candidate.candidate) return;
-      //console.log(`Got ICE candidate for ${remotePeerId}`);
-      if (!this.sock) {
-        throw "no sock";
-      }
-      this.sock.send(
-        JSON.stringify({
-          type: ServerMessageType.Candidate,
-          payload: {
-            candidate: ev.candidate,
-            type: "data",
-            connectionId,
-          },
-          dst: remotePeerId,
-        })
-      );
-    };
-
-    peerConnection.oniceconnectionstatechange = () => {
-      switch (peerConnection.iceConnectionState) {
-        case "completed":
-          peerConnection.onicecandidate = () => {};
-          break;
-        case "failed":
-        case "closed":
-        case "disconnected":
-          console.log("ICE failed in some way");
-          peerConnection.close();
-          break;
-      }
-    };
-
-    peerConnection.ondatachannel = (ev) => {
-      //console.log("Received data channel");
-      if (this.onconnection) {
-        this.onconnection(remotePeerId, ev.channel);
-      }
-    };
-  }
-
   private async handleServerMessage(msg: ServerMessage) {
-    //console.log(`Received message of type: ${msg.type}`);
+    console.log(`Received server message of type: ${msg.type}`);
     let payload = msg.payload;
     let remotePeerId = msg.src;
     switch (msg.type) {
@@ -193,6 +153,54 @@ export class Peer {
         await peerConnection.setRemoteDescription(sdp);
       }
     }
+  }
+
+  private setupPeerConnection(
+    peerConnection: RTCPeerConnection,
+    remotePeerId: string,
+    connectionId: string
+  ) {
+    //console.log("setting up peer connection");
+    peerConnection.onicecandidate = (ev) => {
+      //console.log("on ice candidate");
+      if (!ev.candidate || !ev.candidate.candidate) return;
+      //console.log(`Got ICE candidate for ${remotePeerId}`);
+      if (!this.sock) {
+        throw "no sock";
+      }
+      this.sock.send(
+        JSON.stringify({
+          type: ServerMessageType.Candidate,
+          payload: {
+            candidate: ev.candidate,
+            type: "data",
+            connectionId,
+          },
+          dst: remotePeerId,
+        })
+      );
+    };
+
+    peerConnection.oniceconnectionstatechange = () => {
+      switch (peerConnection.iceConnectionState) {
+        case "completed":
+          peerConnection.onicecandidate = () => {};
+          break;
+        case "failed":
+        case "closed":
+        case "disconnected":
+          console.log("ICE failed in some way");
+          peerConnection.close();
+          break;
+      }
+    };
+
+    peerConnection.ondatachannel = (ev) => {
+      //console.log("Received data channel");
+      if (this.onconnection) {
+        this.onconnection(remotePeerId, ev.channel);
+      }
+    };
   }
 
   async connect(peerId: string, reliable: boolean): Promise<RTCDataChannel> {
