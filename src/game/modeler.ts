@@ -88,7 +88,13 @@ export function registerModeler(em: EntityManager) {
 }
 
 export function screenPosToRay(screenPos: vec2, cameraView: CameraView): Ray {
-  const invViewProj = mat4.invert(mat4.create(), cameraView.viewProjMat);
+  const invViewProj = mat4.create();
+  mat4.invert(invViewProj, cameraView.viewProjMat);
+  if (invViewProj === null) {
+    // TODO(@darzu): debugging
+    throw `invViewProj is null`;
+  }
+
   const viewX = mathMap(screenPos[0], 0, cameraView.width, -1, 1);
   const viewY = mathMap(screenPos[1], 0, cameraView.height, -1, 1) * -1;
   const pos0: vec3 = [viewX, viewY, -1];

@@ -42,11 +42,11 @@ export function registerBuildPlanesSystem(em: EntityManager) {
       em.ensureComponent(plane.id, PositionDef, plane.planeConstruct.location);
       // TODO(@darzu): rotation for debugging
       // if (!RotationDef.isOn(plane)) {
-      //   const r =
-      //     Math.random() > 0.5
-      //       ? quat.fromEuler(quat.create(), 0, 0, Math.PI * 0.5)
-      //       : quat.create();
-      //   // const r = quat.fromEuler(quat.create(), 0, 0, Math.PI * Math.random());
+      //   // const r =
+      //   //   Math.random() > 0.5
+      //   //     ? quat.fromEuler(quat.create(), 0, 0, Math.PI * 0.5)
+      //   //     : quat.create();
+      //   const r = quat.fromEuler(quat.create(), 0, 0, Math.PI * Math.random());
       //   em.ensureComponent(plane.id, RotationDef, r);
       // }
       em.ensureComponent(plane.id, ColorDef, plane.planeConstruct.color);

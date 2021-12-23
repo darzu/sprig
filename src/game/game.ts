@@ -16,8 +16,11 @@ import {
   RenderableDef,
 } from "../renderer.js";
 import {
+  PositionDef,
   registerInitTransforms,
   registerUpdateTransforms,
+  RotationDef,
+  ScaleDef,
   WorldTransformDef,
 } from "../transform.js";
 import {
@@ -91,6 +94,8 @@ import {
 } from "../smoothing.js";
 import { registerBuildCursor } from "./cursor.js";
 import { ColliderDef } from "../collider.js";
+import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
+import { FinishedDef } from "../build.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -134,37 +139,58 @@ function createGround(em: EntityManager) {
   }
 }
 
+const WorldPlaneDef = EM.defineComponent("worldPlane", () => true);
+
 function createWorldPlanes(em: EntityManager) {
   const p1 = em.newEntity();
-  // const r = quat.create();
-  const r = quat.fromEuler(quat.create(), 0, 0, Math.PI * 0.5);
-  const t = mat4.fromRotationTranslationScale(
-    mat4.create(),
-    r,
-    [100, 0, -100],
-    // TODO(@darzu): Intersting, 9s work but 10s don't. probably oct-tree issue
-    // [9, 9, 9]
-    // [10, 10, 10]
-    [20, 20, 20]
-  );
+  em.ensureComponentOn(p1, WorldPlaneDef);
+}
 
-  const worldPlaneDef = em.defineComponent("worldPlane", () => true);
-
-  em.ensureComponentOn(p1, WorldTransformDef, t);
-  em.ensureComponentOn(p1, worldPlaneDef);
-  em.ensureComponentOn(p1, ColorDef, [1, 0, 1]);
-
+function registerBuildWorldPlanes(em: EntityManager) {
+  // TODO(@darzu): lots of wierd behavior with world planes:
+  //  - if position is added before the constructor, wierd thing happen
+  //  - saw some angular velocity added somehow from nowhere
+  //  - being placed on top of the plane doesn't seem to work
   em.registerSystem(
-    [worldPlaneDef],
-    [AssetsDef],
+    [WorldPlaneDef],
+    [AssetsDef, MeDef],
     (es, res) => {
       for (let e of es) {
+        if (FinishedDef.isOn(e)) continue;
+
+        // const r = quat.create();
+        const r = quat.fromEuler(quat.create(), 0, 0, Math.PI * 0.5);
+        const p = vec3.fromValues(20, 0, -20);
+        // const p = vec3.fromValues(100, 0, -100);
+        // const s: vec3 = [0.1, 0.1, 0.1];
+        // const s: vec3 = [20, 20, 20];
+        // const s: vec3 = [2, 2, 2];
+        const s: vec3 = [1, 1, 1];
+        const t = mat4.fromRotationTranslationScale(
+          mat4.create(),
+          r,
+          p,
+          s
+          // [10, 10, 10]
+          // [20, 20, 20]
+        );
+
+        em.ensureComponentOn(e, PositionDef, p);
+        // em.ensureComponentOn(e, RotationDef, r);
+        // em.ensureComponentOn(e, ScaleDef, s);
+        // em.ensureComponentOn(e, WorldTransformDef, t);
+        em.ensureComponentOn(e, ColorDef, [1, 0, 1]);
+
         em.ensureComponentOn(e, RenderableDef, res.assets.gridPlane.mesh);
         em.ensureComponentOn(e, ColliderDef, {
           shape: "AABB",
           solid: true,
           aabb: res.assets.gridPlane.aabb,
         });
+
+        em.ensureComponent(e.id, AuthorityDef, res.me.pid);
+        em.ensureComponent(e.id, SyncDef, [], [PositionDef.id]);
+        em.ensureComponent(e.id, FinishedDef);
       }
     },
     "buildWorldPlanes"
@@ -185,6 +211,7 @@ export function registerAllSystems(em: EntityManager) {
   registerAssetLoader(em);
   registerBuildPlayersSystem(em);
   registerBuildPlanesSystem(em);
+  registerBuildWorldPlanes(em);
   registerBuildCubesSystem(em);
   registerBuildBoatsSystem(em);
   registerBuildShipSystem(em);

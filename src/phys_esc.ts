@@ -114,33 +114,31 @@ export function registerPhysicsLocalToWorldCompute(
     [PhysicsStateDef, WorldTransformDef],
     [PhysicsTimerDef],
     (objs, res) => {
-      for (let i = 0; i < res.physicsTimer.steps; i++) {
-        for (let o of objs) {
-          const parentT = ParentTransformDef.isOn(o)
-            ? o.parentTransform
-            : MAT4_ID;
+      for (let o of objs) {
+        const parentT = ParentTransformDef.isOn(o)
+          ? o.parentTransform
+          : MAT4_ID;
 
-          mat4.getTranslation(o._phys.wPos, o.worldTransform);
-          mat4.getRotation(o._phys.wRot, o.worldTransform);
-          mat4.getScaling(o._phys.wScale, o.worldTransform);
-          if (LinearVelocityDef.isOn(o)) {
-            vec3.transformMat4(o._phys.wLinVel, o.linearVelocity, parentT);
-            const parentTranslation = mat4.getTranslation(tempVec(), parentT);
-            vec3.sub(o._phys.wLinVel, o._phys.wLinVel, parentTranslation);
-          }
+        mat4.getTranslation(o._phys.wPos, o.worldTransform);
+        mat4.getRotation(o._phys.wRot, o.worldTransform);
+        mat4.getScaling(o._phys.wScale, o.worldTransform);
+        if (LinearVelocityDef.isOn(o)) {
+          vec3.transformMat4(o._phys.wLinVel, o.linearVelocity, parentT);
+          const parentTranslation = mat4.getTranslation(tempVec(), parentT);
+          vec3.sub(o._phys.wLinVel, o._phys.wLinVel, parentTranslation);
+        }
 
-          // update world AABBs
-          const { local, world, lastWorld, sweep } = o._phys;
-          const wCorners = getAABBCorners(local).map((p) =>
-            vec3.transformMat4(p, p, o.worldTransform)
-          );
-          copyAABB(world, getAABBFromPositions(wCorners));
+        // update world AABBs
+        const { local, world, lastWorld, sweep } = o._phys;
+        const wCorners = getAABBCorners(local).map((p) =>
+          vec3.transformMat4(p, p, o.worldTransform)
+        );
+        copyAABB(world, getAABBFromPositions(wCorners));
 
-          // update sweep AABBs
-          for (let i = 0; i < 3; i++) {
-            sweep.min[i] = Math.min(lastWorld.min[i], world.min[i]);
-            sweep.max[i] = Math.max(lastWorld.max[i], world.max[i]);
-          }
+        // update sweep AABBs
+        for (let i = 0; i < 3; i++) {
+          sweep.min[i] = Math.min(lastWorld.min[i], world.min[i]);
+          sweep.max[i] = Math.max(lastWorld.max[i], world.max[i]);
         }
       }
     },
@@ -154,47 +152,43 @@ export function registerPhysicsWorldToLocalCompute(
   s: string
 ) {
   em.registerSystem(
-    [PositionDef, PhysicsStateDef, WorldTransformDef],
+    [PhysicsStateDef, WorldTransformDef],
     [PhysicsTimerDef],
     (objs, res) => {
-      for (let i = 0; i < res.physicsTimer.steps; i++) {
-        for (let o of objs) {
-          const parentToWorld = ParentTransformDef.isOn(o)
-            ? o.parentTransform
-            : MAT4_ID;
-          const worldToParent = mat4.invert(mat4.create(), parentToWorld);
+      for (let o of objs) {
+        const parentToWorld = ParentTransformDef.isOn(o)
+          ? o.parentTransform
+          : MAT4_ID;
+        const worldToParent = mat4.invert(mat4.create(), parentToWorld);
 
-          // new world transform
-          const localToWorld = mat4.fromRotationTranslationScale(
-            o.worldTransform,
-            o._phys.wRot,
-            o._phys.wPos,
-            o._phys.wScale
-          );
+        // new world transform
+        const localToWorld = mat4.fromRotationTranslationScale(
+          o.worldTransform,
+          o._phys.wRot,
+          o._phys.wPos,
+          o._phys.wScale
+        );
 
-          // const worldToLocal = mat4.invert(mat4.create(), o.worldTransform);
+        // const worldToLocal = mat4.invert(mat4.create(), o.worldTransform);
 
-          const localToParent = mat4.multiply(
-            mat4.create(),
-            worldToParent,
-            localToWorld
-          );
+        const localToParent = mat4.multiply(
+          mat4.create(),
+          worldToParent,
+          localToWorld
+        );
 
-          mat4.getTranslation(o.position, localToParent);
-          em.ensureComponentOn(o, RotationDef);
-          mat4.getRotation(o.rotation, localToParent);
-          em.ensureComponentOn(o, ScaleDef);
-          mat4.getScaling(o.scale, localToParent);
+        // TODO(@darzu): is this necessary to "ensure" all these?
+        em.ensureComponentOn(o, PositionDef);
+        mat4.getTranslation(o.position, localToParent);
+        em.ensureComponentOn(o, RotationDef);
+        mat4.getRotation(o.rotation, localToParent);
+        em.ensureComponentOn(o, ScaleDef);
+        mat4.getScaling(o.scale, localToParent);
 
-          if (vec3.sqrLen(o._phys.wLinVel) > 0) {
-            em.ensureComponentOn(o, LinearVelocityDef);
-            const worldToParent3 = mat3.fromMat4(mat3.create(), worldToParent);
-            vec3.transformMat3(
-              o.linearVelocity,
-              o._phys.wLinVel,
-              worldToParent3
-            );
-          }
+        if (vec3.sqrLen(o._phys.wLinVel) > 0) {
+          em.ensureComponentOn(o, LinearVelocityDef);
+          const worldToParent3 = mat3.fromMat4(mat3.create(), worldToParent);
+          vec3.transformMat3(o.linearVelocity, o._phys.wLinVel, worldToParent3);
         }
       }
     },
