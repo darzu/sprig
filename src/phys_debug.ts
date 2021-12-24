@@ -102,10 +102,12 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
         ])?._phys;
         if (parent) {
           for (let i = 0; i < 3; i++)
-            e.position[i] = (parent.world.min[i] + parent.world.max[i]) * 0.5;
+            e.position[i] =
+              (parent.worldAABB.min[i] + parent.worldAABB.max[i]) * 0.5;
           for (let i = 0; i < 3; i++)
             // cube scale 1 means length 2 sides
-            e.scale[i] = (parent.world.max[i] - parent.world.min[i]) * 0.5;
+            e.scale[i] =
+              (parent.worldAABB.max[i] - parent.worldAABB.min[i]) * 0.5;
         }
       }
     },

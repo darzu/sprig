@@ -108,10 +108,10 @@ export const PhysicsStateDef = EM.defineComponent("_phys", () => {
     // track last stats so we can diff
     lastWPos: PositionDef.construct(),
     // AABBs
-    local: createAABB(),
-    world: createAABB(),
-    lastWorld: createAABB(),
-    sweep: createAABB(),
+    localAABB: createAABB(),
+    worldAABB: createAABB(),
+    lastWorldAABB: createAABB(),
+    sweepAABB: createAABB(),
   };
 });
 export type PhysicsState = Component<typeof PhysicsStateDef>;
@@ -160,16 +160,16 @@ export function registerPhysicsLocalToWorldCompute(
         }
 
         // update world AABBs
-        const { local, world, lastWorld, sweep } = o._phys;
-        const wCorners = getAABBCorners(local).map((p) =>
+        const { localAABB, worldAABB, lastWorldAABB, sweepAABB } = o._phys;
+        const wCorners = getAABBCorners(localAABB).map((p) =>
           vec3.transformMat4(p, p, o.worldTransform)
         );
-        copyAABB(world, getAABBFromPositions(wCorners));
+        copyAABB(worldAABB, getAABBFromPositions(wCorners));
 
         // update sweep AABBs
         for (let i = 0; i < 3; i++) {
-          sweep.min[i] = Math.min(lastWorld.min[i], world.min[i]);
-          sweep.max[i] = Math.max(lastWorld.max[i], world.max[i]);
+          sweepAABB.min[i] = Math.min(lastWorldAABB.min[i], worldAABB.min[i]);
+          sweepAABB.max[i] = Math.max(lastWorldAABB.max[i], worldAABB.max[i]);
         }
       }
     },
@@ -267,7 +267,7 @@ function stepConstraints(objs: PhysicsObject[]): void {
     }
 
     // colliding again so we don't need any adjacency checks
-    if (doesOverlap(a._phys.world, b._phys.world)) {
+    if (doesOverlap(a._phys.worldAABB, b._phys.worldAABB)) {
       const conData = computeContactData(a, b);
       contactData.set(abId, conData);
       continue;
@@ -276,7 +276,7 @@ function stepConstraints(objs: PhysicsObject[]): void {
     // check for adjacency even if not colliding
     // TODO(@darzu): do we need to consider relative motions?
     //    i.e. a check to see if the two objects are pressing into each other?
-    if (doesTouch(a._phys.world, b._phys.world, 2 * PAD)) {
+    if (doesTouch(a._phys.worldAABB, b._phys.worldAABB, 2 * PAD)) {
       const conData = computeContactData(a, b);
       contactData.set(abId, conData);
       continue;
@@ -296,7 +296,7 @@ function stepConstraints(objs: PhysicsObject[]): void {
   for (let i = 0; i < objs.length; i++) {
     const {
       id,
-      _phys: { world: aabb },
+      _phys: { worldAABB: aabb },
     } = objs[i];
     if (!_motionAABBs[i]) {
       _motionAABBs[i] = {
@@ -338,7 +338,7 @@ function stepConstraints(objs: PhysicsObject[]): void {
       const a = _objDict.get(aId)!;
       const b = _objDict.get(bId)!;
 
-      if (!doesOverlap(a._phys.world, b._phys.world)) {
+      if (!doesOverlap(a._phys.worldAABB, b._phys.worldAABB)) {
         // a miss
         continue;
       }
@@ -382,8 +382,8 @@ function stepConstraints(objs: PhysicsObject[]): void {
 
         // translate non-sweep AABBs
         // TODO(@darzu): update these the "right" way
-        vec3.add(o._phys.world.min, o._phys.world.min, _collisionRefl);
-        vec3.add(o._phys.world.max, o._phys.world.max, _collisionRefl);
+        vec3.add(o._phys.worldAABB.min, o._phys.worldAABB.min, _collisionRefl);
+        vec3.add(o._phys.worldAABB.max, o._phys.worldAABB.max, _collisionRefl);
 
         // track that movement occured
         anyMovement = true;
@@ -401,8 +401,8 @@ function stepConstraints(objs: PhysicsObject[]): void {
   // remember current state for next time
   for (let o of objs) {
     vec3.copy(o._phys.lastWPos, o._phys.wPos);
-    vec3.copy(o._phys.lastWorld.min, o._phys.world.min);
-    vec3.copy(o._phys.lastWorld.max, o._phys.world.max);
+    vec3.copy(o._phys.lastWorldAABB.min, o._phys.worldAABB.min);
+    vec3.copy(o._phys.lastWorldAABB.max, o._phys.worldAABB.max);
   }
 
   // // copy out changes we made
@@ -431,7 +431,7 @@ function stepConstraints(objs: PhysicsObject[]): void {
     for (let mh of motHits) {
       const o = EM.findEntity(mh.id, [PhysicsStateDef]);
       if (o) {
-        const dist = rayHitDist(o._phys.world, r);
+        const dist = rayHitDist(o._phys.worldAABB, r);
         if (!isNaN(dist)) hits.push({ id: o.id, dist });
       }
     }
@@ -481,9 +481,9 @@ export function registerPhysicsInit(em: EntityManager) {
             o.collider.shape === "AABB",
             `Unimplemented collider shape: ${o.collider.shape}`
           );
-          copyAABB(_phys.local, o.collider.aabb);
-          copyAABB(_phys.world, _phys.local);
-          copyAABB(_phys.sweep, _phys.local);
+          copyAABB(_phys.localAABB, o.collider.aabb);
+          copyAABB(_phys.worldAABB, _phys.localAABB);
+          copyAABB(_phys.sweepAABB, _phys.localAABB);
         }
     },
     "physicsInit"

@@ -79,9 +79,9 @@ export function moveObjects(
   for (let { id, _phys } of objs) {
     // clamp linear velocity based on size
     if (_phys.wLinVel) {
-      const vxMax = (_phys.world.max[0] - _phys.world.min[0]) / dt;
-      const vyMax = (_phys.world.max[1] - _phys.world.min[1]) / dt;
-      const vzMax = (_phys.world.max[2] - _phys.world.min[2]) / dt;
+      const vxMax = (_phys.worldAABB.max[0] - _phys.worldAABB.min[0]) / dt;
+      const vyMax = (_phys.worldAABB.max[1] - _phys.worldAABB.min[1]) / dt;
+      const vzMax = (_phys.worldAABB.max[2] - _phys.worldAABB.min[2]) / dt;
       _phys.wLinVel[0] = clamp(_phys.wLinVel[0], -vxMax, vxMax);
       _phys.wLinVel[1] = clamp(_phys.wLinVel[1], -vyMax, vyMax);
       _phys.wLinVel[2] = clamp(_phys.wLinVel[2], -vzMax, vzMax);

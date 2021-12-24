@@ -75,7 +75,7 @@ export function computeContactData(
       right = a;
     }
 
-    const newDist = right._phys.world.min[i] - left._phys.world.max[i];
+    const newDist = right._phys.worldAABB.min[i] - left._phys.worldAABB.max[i];
     if (dist < newDist) {
       dist = newDist;
       dim = i;
@@ -120,7 +120,7 @@ export function computeReboundData(
       right = a;
     }
 
-    const overlap = left._phys.world.max[i] - right._phys.world.min[i];
+    const overlap = left._phys.worldAABB.max[i] - right._phys.worldAABB.min[i];
     if (overlap <= 0) continue; // no overlap to deal with
 
     const leftMaxContrib = Math.max(
