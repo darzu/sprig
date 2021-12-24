@@ -1288,7 +1288,7 @@
        */
       export function fromRotationTranslationScale(
         out: mat4,
-        q: quat,
+        q: ReadonlyQuat,
         v: ReadonlyVec3,
         s: ReadonlyVec3
       ): mat4;
