@@ -56,6 +56,37 @@ import { assert } from "./test.js";
 //      ideally there would be some flags to help know what is out of sync
 //    is it possible Frames could be read-only and all mutation could be pushed back to the "truth" fields?
 
+export interface Frame {
+  transform: mat4;
+  position?: vec3;
+  rotation?: quat;
+  scale?: vec3;
+}
+
+export function updateFrameFromTransform(
+  f: Partial<Frame>
+): asserts f is Frame {
+  if (!f.transform) f.transform = mat4.create();
+  if (!f.position) f.position = vec3.create();
+  mat4.getTranslation(f.position, f.transform);
+  if (!f.rotation) f.rotation = quat.create();
+  mat4.getRotation(f.rotation, f.transform);
+  if (!f.scale) f.scale = vec3.create();
+  mat4.getScaling(f.scale, f.transform);
+}
+
+export function updateFrameFromPosRotScale(
+  f: Partial<Frame>
+): asserts f is Partial<Frame> & { transform: mat4 } {
+  if (!f.transform) f.transform = mat4.create();
+  mat4.fromRotationTranslationScale(
+    f.transform,
+    f.rotation ?? quat.IDENTITY,
+    f.position ?? vec3.ZEROS,
+    f.scale ?? vec3.ONES
+  );
+}
+
 export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {
   return {
     collidesWith: new Map<number, number[]>() as CollidesWith,
