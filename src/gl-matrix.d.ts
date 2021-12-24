@@ -1546,6 +1546,10 @@
          * @returns {vec3} a new 3D vector
          */
         export function create(): vec3;
+
+        export const ZEROS: ReadonlyVec3;
+        export const ONES: ReadonlyVec3;
+
         /**
          * Creates a new vec3 initialized with values from an existing vector
          *
@@ -2303,7 +2307,7 @@
         export function identity(out: quat): quat;
 
         export const IDENTITY: ReadonlyQuat;
-        
+
         /**
          * Sets a quat from the given angle and rotation axis,
          * then returns it.

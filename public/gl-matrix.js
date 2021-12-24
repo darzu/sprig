@@ -4556,6 +4556,8 @@ export var mat4 = /*#__PURE__*/Object.freeze({
 export var vec3 = /*#__PURE__*/Object.freeze({
         __proto__: null,
         create: create$4,
+        ZEROS: [0,0,0],
+        ONES: [0,0,0],
         clone: clone$4,
         length: length,
         fromValues: fromValues$4,
