@@ -1,12 +1,12 @@
 import { EntityManager, EM, Component } from "./entity-manager.js";
 import { vec3, quat, mat4 } from "./gl-matrix.js";
+import { WorldFrameDef } from "./phys_esc.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
 import { Timer, PhysicsTimerDef } from "./time.js";
 import {
   Position,
   Rotation,
   PositionDef,
-  WorldTransformDef,
   PhysicsParentDef,
   RotationDef,
   ScaleDef,
@@ -159,7 +159,7 @@ export function registerUpdateSmoothingLerp(em: EntityManager) {
 export function registerUpdateSmoothedTransform(em: EntityManager) {
   if (DO_SMOOTH)
     em.registerSystem(
-      [WorldTransformDef, MotionSmoothingDef, PositionDef],
+      [WorldFrameDef, MotionSmoothingDef, PositionDef],
       [],
       (objs) => {
         for (let o of objs) {
@@ -174,8 +174,9 @@ export function registerUpdateSmoothedTransform(em: EntityManager) {
           const smoothRot = tempQuat();
           quat.mul(smoothRot, rotation, o.motionSmoothing.rotationDiff);
           quat.normalize(smoothRot, smoothRot);
+          // TODO(@darzu): don't mutate the world frame here
           mat4.fromRotationTranslationScale(
-            o.worldTransform,
+            o.world.transform,
             smoothRot,
             vec3.add(tempVec(), o.position, o.motionSmoothing.positionDiff),
             ScaleDef.isOn(o) ? o.scale : vec3.set(tempVec(), 1, 1, 1)

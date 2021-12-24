@@ -2,7 +2,7 @@ import { Collider } from "./collider.js";
 import { quat, vec3 } from "./gl-matrix.js";
 import { clamp } from "./math.js";
 import { IdPair, ContactData } from "./phys.js";
-import { PhysicsState } from "./phys_esc.js";
+import { Frame, PhysicsState } from "./phys_esc.js";
 
 let delta = vec3.create();
 let normalizedVelocity = vec3.create();
@@ -16,6 +16,7 @@ export interface MotionObj {
   id: number;
   collider: Collider;
   _phys: PhysicsState;
+  world: Frame;
 }
 
 export function moveObjects(
@@ -76,7 +77,7 @@ export function moveObjects(
     }
   }
 
-  for (let { id, _phys } of objs) {
+  for (let { id, _phys, world } of objs) {
     // clamp linear velocity based on size
     if (_phys.wLinVel) {
       const vxMax = (_phys.worldAABB.max[0] - _phys.worldAABB.min[0]) / dt;
@@ -90,13 +91,13 @@ export function moveObjects(
     // change position according to linear velocity
     if (_phys.wLinVel) {
       delta = vec3.scale(delta, _phys.wLinVel, dt);
-      vec3.add(_phys.wPos, _phys.wPos, delta);
+      vec3.add(world.position, world.position, delta);
     }
 
     // change rotation according to angular velocity
     // TODO(@darzu): rotation needs to be seperated out so we can do collision
     //   detection on rotation.
-    if (_phys.wAngVel && _phys.wRot) {
+    if (_phys.wAngVel && world.rotation) {
       normalizedVelocity = vec3.normalize(normalizedVelocity, _phys.wAngVel);
       let angle = vec3.length(_phys.wAngVel) * dt;
       deltaRotation = quat.setAxisAngle(
@@ -106,7 +107,7 @@ export function moveObjects(
       );
       quat.normalize(deltaRotation, deltaRotation);
       // note--quat multiplication is not commutative, need to multiply on the left
-      quat.multiply(_phys.wRot, deltaRotation, _phys.wRot);
+      quat.multiply(world.rotation, deltaRotation, world.rotation);
     }
   }
 }

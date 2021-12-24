@@ -10,6 +10,7 @@ import {
 import { mat4, quat, vec3 } from "./gl-matrix.js";
 import { isMeshHandle, Mesh, MeshHandle, MeshHandleDef } from "./mesh-pool.js";
 import { Authority, AuthorityDef, Me, MeDef } from "./net/components.js";
+import { Frame, WorldFrameDef } from "./phys_esc.js";
 import { RendererDef } from "./render_init.js";
 import { Renderer } from "./render_webgpu.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
@@ -20,8 +21,6 @@ import {
   PositionDef,
   Rotation,
   RotationDef,
-  WorldTransform,
-  WorldTransformDef,
 } from "./transform.js";
 
 export const RenderableDef = EM.defineComponent(
@@ -54,8 +53,8 @@ export type CameraView = Component<typeof CameraViewDef>;
 interface RenderableObj {
   id: number;
   renderable: Renderable;
-  worldTransform: WorldTransform;
   meshHandle: MeshHandle;
+  world: Frame;
 }
 
 function stepRenderer(
@@ -70,7 +69,7 @@ function stepRenderer(
       vec3.copy(o.meshHandle.tint, o.color);
     }
 
-    mat4.copy(o.meshHandle.transform, o.worldTransform);
+    mat4.copy(o.meshHandle.transform, o.world.transform);
   }
 
   // filter
@@ -89,10 +88,10 @@ function stepRenderer(
 function updateCameraView(
   players: {
     player: PlayerEnt;
-    worldTransform: WorldTransform;
     position: Position;
     rotation: Rotation;
     authority: Authority;
+    world: Frame;
   }[],
   resources: {
     cameraView: CameraView;
@@ -121,7 +120,7 @@ function updateCameraView(
 
   let viewMatrix = mat4.create();
   if (mePlayer) {
-    mat4.copy(viewMatrix, mePlayer.worldTransform);
+    mat4.copy(viewMatrix, mePlayer.world.transform);
   }
   mat4.multiply(
     viewMatrix,
@@ -164,7 +163,7 @@ function updateCameraView(
 export function registerUpdateCameraView(em: EntityManager) {
   em.addSingletonComponent(CameraViewDef);
   em.registerSystem(
-    [PlayerEntDef, PositionDef, RotationDef, AuthorityDef, WorldTransformDef],
+    [PlayerEntDef, PositionDef, RotationDef, AuthorityDef, WorldFrameDef],
     [CameraViewDef, CameraDef, MeDef, CanvasDef],
     updateCameraView
   );
@@ -172,7 +171,7 @@ export function registerUpdateCameraView(em: EntityManager) {
 
 export function registerRenderer(em: EntityManager) {
   em.registerSystem(
-    [RenderableDef, WorldTransformDef, MeshHandleDef],
+    [RenderableDef, WorldFrameDef, MeshHandleDef],
     [CameraViewDef, PhysicsTimerDef, RendererDef],
     (objs, res) => {
       if (res.physicsTimer.steps > 0)

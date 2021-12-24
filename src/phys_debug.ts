@@ -10,7 +10,7 @@ import { mapMeshPositions, Mesh, MeshHandleDef } from "./mesh-pool.js";
 import { AABB } from "./phys_broadphase.js";
 import { PhysicsStateDef } from "./phys_esc.js";
 import { RenderableDef } from "./renderer.js";
-import { PositionDef, ScaleDef, WorldTransformDef } from "./transform.js";
+import { PositionDef, ScaleDef } from "./transform.js";
 import { RendererDef } from "./render_init.js";
 
 export const PhysicsDbgDef = EM.defineComponent("_physDbgState", () => {

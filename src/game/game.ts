@@ -21,7 +21,6 @@ import {
   registerUpdateTransforms,
   RotationDef,
   ScaleDef,
-  WorldTransformDef,
 } from "../transform.js";
 import {
   BoatConstructDef,
@@ -178,7 +177,7 @@ function registerBuildWorldPlanes(em: EntityManager) {
         em.ensureComponentOn(e, PositionDef, p);
         // em.ensureComponentOn(e, RotationDef, r);
         // em.ensureComponentOn(e, ScaleDef, s);
-        // em.ensureComponentOn(e, WorldTransformDef, t);
+        // em.ensureComponentOn(e, WorldFrameDef, t);
         em.ensureComponentOn(e, ColorDef, [1, 0, 1]);
 
         em.ensureComponentOn(e, RenderableDef, res.assets.gridPlane.mesh);

@@ -34,8 +34,6 @@ import {
   Rotation,
   RotationDef,
   ScaleDef,
-  WorldTransform,
-  WorldTransformDef,
 } from "./transform.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
 import { LinearVelocityDef, AngularVelocityDef } from "./motion.js";
@@ -58,29 +56,25 @@ import { assert } from "./test.js";
 
 export interface Frame {
   transform: mat4;
-  position?: vec3;
-  rotation?: quat;
-  scale?: vec3;
+  position: vec3;
+  rotation: quat;
+  scale: vec3;
 }
 
 export function updateFrameFromTransform(
   f: Partial<Frame>
 ): asserts f is Frame {
-  if (!f.transform) f.transform = mat4.create();
-  if (!f.position) f.position = vec3.create();
-  mat4.getTranslation(f.position, f.transform);
-  if (!f.rotation) f.rotation = quat.create();
-  mat4.getRotation(f.rotation, f.transform);
-  if (!f.scale) f.scale = vec3.create();
-  mat4.getScaling(f.scale, f.transform);
+  f.transform = f.transform ?? mat4.create();
+  f.position = mat4.getTranslation(f.position ?? vec3.create(), f.transform);
+  f.rotation = mat4.getRotation(f.rotation ?? quat.create(), f.transform);
+  f.scale = mat4.getScaling(f.scale ?? vec3.create(), f.transform);
 }
 
 export function updateFrameFromPosRotScale(
   f: Partial<Frame>
 ): asserts f is Partial<Frame> & { transform: mat4 } {
-  if (!f.transform) f.transform = mat4.create();
-  mat4.fromRotationTranslationScale(
-    f.transform,
+  f.transform = mat4.fromRotationTranslationScale(
+    f.transform ?? mat4.create(),
     f.rotation ?? quat.IDENTITY,
     f.position ?? vec3.ZEROS,
     f.scale ?? vec3.ONES
@@ -97,14 +91,20 @@ export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {
 });
 export type PhysicsResults = Component<typeof PhysicsResultsDef>;
 
+export const WorldFrameDef = EM.defineComponent("world", () => {
+  return {
+    position: vec3.create(),
+    rotation: quat.create(),
+    scale: vec3.fromValues(1, 1, 1),
+    transform: mat4.create(),
+  } as Frame;
+});
+
 export const PhysicsStateDef = EM.defineComponent("_phys", () => {
   return {
     // world-space physics properties
-    wPos: PositionDef.construct(),
-    wRot: RotationDef.construct(),
     wLinVel: LinearVelocityDef.construct(),
     wAngVel: AngularVelocityDef.construct(),
-    wScale: ScaleDef.construct(),
     // track last stats so we can diff
     lastWPos: PositionDef.construct(),
     // AABBs
@@ -120,6 +120,7 @@ export interface PhysicsObject {
   id: number;
   collider: Collider;
   _phys: PhysicsState;
+  world: Frame;
 }
 
 export let __step = 0; // TODO(@darzu): singleton component this
@@ -142,7 +143,7 @@ export function registerPhysicsLocalToWorldCompute(
   s: string
 ) {
   em.registerSystem(
-    [PhysicsStateDef, WorldTransformDef],
+    [PhysicsStateDef, WorldFrameDef, WorldFrameDef],
     [PhysicsTimerDef],
     (objs, res) => {
       for (let o of objs) {
@@ -150,9 +151,9 @@ export function registerPhysicsLocalToWorldCompute(
           ? o.parentTransform
           : MAT4_ID;
 
-        mat4.getTranslation(o._phys.wPos, o.worldTransform);
-        mat4.getRotation(o._phys.wRot, o.worldTransform);
-        mat4.getScaling(o._phys.wScale, o.worldTransform);
+        mat4.getTranslation(o.world.position, o.world.transform);
+        mat4.getRotation(o.world.rotation, o.world.transform);
+        mat4.getScaling(o.world.scale, o.world.transform);
         if (LinearVelocityDef.isOn(o)) {
           vec3.transformMat4(o._phys.wLinVel, o.linearVelocity, parentT);
           const parentTranslation = mat4.getTranslation(tempVec(), parentT);
@@ -162,7 +163,7 @@ export function registerPhysicsLocalToWorldCompute(
         // update world AABBs
         const { localAABB, worldAABB, lastWorldAABB, sweepAABB } = o._phys;
         const wCorners = getAABBCorners(localAABB).map((p) =>
-          vec3.transformMat4(p, p, o.worldTransform)
+          vec3.transformMat4(p, p, o.world.transform)
         );
         copyAABB(worldAABB, getAABBFromPositions(wCorners));
 
@@ -183,7 +184,7 @@ export function registerPhysicsWorldToLocalCompute(
   s: string
 ) {
   em.registerSystem(
-    [PhysicsStateDef, WorldTransformDef],
+    [PhysicsStateDef, WorldFrameDef, WorldFrameDef],
     [PhysicsTimerDef],
     (objs, res) => {
       for (let o of objs) {
@@ -194,13 +195,13 @@ export function registerPhysicsWorldToLocalCompute(
 
         // new world transform
         const localToWorld = mat4.fromRotationTranslationScale(
-          o.worldTransform,
-          o._phys.wRot,
-          o._phys.wPos,
-          o._phys.wScale
+          o.world.transform,
+          o.world.rotation,
+          o.world.position,
+          o.world.scale
         );
 
-        // const worldToLocal = mat4.invert(mat4.create(), o.worldTransform);
+        // const worldToLocal = mat4.invert(mat4.create(), o.world.transform);
 
         const localToParent = mat4.multiply(
           mat4.create(),
@@ -376,9 +377,9 @@ function stepConstraints(objs: PhysicsObject[]): void {
       let movFrac = nextObjMovFracs[o.id];
       if (movFrac) {
         // TODO(@darzu): MUTATING WORLD POS. We probably shouldn't do that here
-        vec3.sub(_collisionRefl, o._phys.lastWPos, o._phys.wPos);
+        vec3.sub(_collisionRefl, o._phys.lastWPos, o.world.position);
         vec3.scale(_collisionRefl, _collisionRefl, movFrac);
-        vec3.add(o._phys.wPos, o._phys.wPos, _collisionRefl);
+        vec3.add(o.world.position, o.world.position, _collisionRefl);
 
         // translate non-sweep AABBs
         // TODO(@darzu): update these the "right" way
@@ -400,7 +401,7 @@ function stepConstraints(objs: PhysicsObject[]): void {
 
   // remember current state for next time
   for (let o of objs) {
-    vec3.copy(o._phys.lastWPos, o._phys.wPos);
+    vec3.copy(o._phys.lastWPos, o.world.position);
     vec3.copy(o._phys.lastWorldAABB.min, o._phys.worldAABB.min);
     vec3.copy(o._phys.lastWorldAABB.max, o._phys.worldAABB.max);
   }
@@ -411,17 +412,17 @@ function stepConstraints(objs: PhysicsObject[]): void {
   //   const oldWorldPos = vec3.transformMat4(
   //     tempVec(),
   //     [0, 0, 0],
-  //     o.worldTransform
+  //     o.world.transform
   //   );
-  //   const delta = vec3.sub(tempVec(), o._phys.wPos, oldWorldPos);
+  //   const delta = vec3.sub(tempVec(), o.world.position, oldWorldPos);
   //   vec3.add(o.position, o.position, delta);
   //   // const worldInv = mat4.create();
-  //   // mat4.invert(worldInv, o.worldTransform);
+  //   // mat4.invert(worldInv, o.world.transform);
   //   // const delta = vec3.create();
-  //   // vec3.transformMat4(delta, o._phys.wPos, worldInv);
+  //   // vec3.transformMat4(delta, o.world.position, worldInv);
   //   // vec3.add(o.position, o.position, delta);
   //   // TODO(@darzu):
-  //   // vec3.copy(o.position, o._phys.wPos);
+  //   // vec3.copy(o.position, o.world.position);
   // }
 
   // update out checkRay function
@@ -441,7 +442,7 @@ function stepConstraints(objs: PhysicsObject[]): void {
 
 export function registerPhysicsMoveObjects(em: EntityManager) {
   em.registerSystem(
-    [ColliderDef, PhysicsStateDef],
+    [ColliderDef, PhysicsStateDef, WorldFrameDef],
     [PhysicsTimerDef, PhysicsResultsDef],
     (objs, res) => {
       for (let si = 0; si < res.physicsTimer.steps; si++) {
@@ -493,7 +494,7 @@ export function registerPhysicsInit(em: EntityManager) {
 // ECS register
 export function registerPhysicsContactSystems(em: EntityManager) {
   em.registerSystem(
-    [ColliderDef, PhysicsStateDef],
+    [ColliderDef, PhysicsStateDef, WorldFrameDef],
     [PhysicsTimerDef],
     (objs, res) => {
       // TODO(@darzu): interestingly, this system doesn't need the step count

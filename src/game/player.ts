@@ -15,9 +15,12 @@ import {
   PositionDef,
   Rotation,
   RotationDef,
-  WorldTransformDef,
 } from "../transform.js";
-import { PhysicsResults, PhysicsResultsDef } from "../phys_esc.js";
+import {
+  PhysicsResults,
+  PhysicsResultsDef,
+  WorldFrameDef,
+} from "../phys_esc.js";
 import {
   Authority,
   AuthorityDef,
@@ -390,7 +393,7 @@ export function drawLine(
     usesProvoking: true,
   };
   em.addComponent(id, RenderableDef, m);
-  em.addComponent(id, WorldTransformDef);
+  em.addComponent(id, WorldFrameDef);
 }
 
 function createPlayer(
