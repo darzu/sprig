@@ -2079,6 +2079,26 @@ export var mat3 = /*#__PURE__*/Object.freeze({
         out[15] = 1;
         return out;
     }
+    
+    const IDENTITY$3 = [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+    ];
+
     /**
      * Transpose the values of a mat4
      *
@@ -3702,6 +3722,7 @@ export var mat4 = /*#__PURE__*/Object.freeze({
         fromValues: fromValues$3,
         set: set$3,
         identity: identity$3,
+        IDENTITY: IDENTITY$3,
         transpose: transpose$2,
         invert: invert$3,
         adjoint: adjoint$2,
@@ -5329,6 +5350,13 @@ export var vec4 = /*#__PURE__*/Object.freeze({
         out[3] = 1;
         return out;
     }
+
+    const IDENTITY$4 = [
+        0,
+        0,
+        0,
+        1,
+    ];
     /**
      * Sets a quat from the given angle and rotation axis,
      * then returns it.
@@ -5973,6 +6001,7 @@ export var quat = /*#__PURE__*/Object.freeze({
         __proto__: null,
         create: create$6,
         identity: identity$4,
+        IDENTITY: IDENTITY$4,
         setAxisAngle: setAxisAngle,
         getAxisAngle: getAxisAngle,
         getAngle: getAngle,
