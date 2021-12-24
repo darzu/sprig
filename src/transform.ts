@@ -1,6 +1,6 @@
 import { Component, EM, EntityManager } from "./entity-manager.js";
 import { mat4, quat, vec3 } from "./gl-matrix.js";
-import { Frame, WorldFrameDef } from "./phys_esc.js";
+import { WorldFrameDef } from "./phys_esc.js";
 import { tempVec, tempQuat } from "./temp-pool.js";
 
 // TODO(@darzu): implement local transform instead of Motion's position & rotation?
@@ -15,6 +15,34 @@ import { tempVec, tempQuat } from "./temp-pool.js";
 //   return mat4.create();
 // });
 // type TransformLocal = mat4;
+
+// FRAME
+export interface Frame {
+  transform: mat4;
+  position: vec3;
+  rotation: quat;
+  scale: vec3;
+}
+
+export function updateFrameFromTransform(
+  f: Partial<Frame>
+): asserts f is Frame {
+  f.transform = f.transform ?? mat4.create();
+  f.position = mat4.getTranslation(f.position ?? vec3.create(), f.transform);
+  f.rotation = mat4.getRotation(f.rotation ?? quat.create(), f.transform);
+  f.scale = mat4.getScaling(f.scale ?? vec3.create(), f.transform);
+}
+
+export function updateFrameFromPosRotScale(
+  f: Partial<Frame>
+): asserts f is Partial<Frame> & { transform: mat4 } {
+  f.transform = mat4.fromRotationTranslationScale(
+    f.transform ?? mat4.create(),
+    f.rotation ?? quat.IDENTITY,
+    f.position ?? vec3.ZEROS,
+    f.scale ?? vec3.ONES
+  );
+}
 
 // TRANSFORM
 export const TransformDef = EM.defineComponent("transform", (t?: mat4) => {

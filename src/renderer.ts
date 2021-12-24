@@ -10,7 +10,7 @@ import {
 import { mat4, quat, vec3 } from "./gl-matrix.js";
 import { isMeshHandle, Mesh, MeshHandle, MeshHandleDef } from "./mesh-pool.js";
 import { Authority, AuthorityDef, Me, MeDef } from "./net/components.js";
-import { Frame, WorldFrameDef } from "./phys_esc.js";
+import { WorldFrameDef } from "./phys_esc.js";
 import { RendererDef } from "./render_init.js";
 import { Renderer } from "./render_webgpu.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
@@ -21,6 +21,7 @@ import {
   PositionDef,
   Rotation,
   RotationDef,
+  Frame,
 } from "./transform.js";
 
 export const RenderableDef = EM.defineComponent(
