@@ -3,7 +3,7 @@ import { quat, vec3 } from "./gl-matrix.js";
 import { clamp } from "./math.js";
 import { IdPair, ContactData } from "./phys.js";
 import { PhysicsState } from "./phys_esc.js";
-import { Frame } from "./transform.js";
+import { Frame, updateFrameFromPosRotScale } from "./transform.js";
 
 let delta = vec3.create();
 let normalizedVelocity = vec3.create();

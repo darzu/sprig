@@ -4,10 +4,11 @@ import { InputsDef } from "../inputs.js";
 import { jitter } from "../math.js";
 import {
   registerPhysicsInit,
-  registerPhysicsLocalToWorldCompute,
+  registerUpdateWorldPhysicsFromLocalAndParent,
   registerPhysicsMoveObjects,
   registerPhysicsContactSystems,
-  registerPhysicsWorldToLocalCompute,
+  registerUpdateLocalPhysicsFromWorldAndParent,
+  registerUpdateWorldFromPosRotScale,
 } from "../phys_esc.js";
 import {
   registerAddMeshHandleSystem,
@@ -18,7 +19,8 @@ import {
 import {
   PositionDef,
   registerInitTransforms,
-  registerUpdateTransforms,
+  registerUpdateLocalFromPosRotScale,
+  registerUpdateWorldFromLocalAndParent,
   RotationDef,
   ScaleDef,
 } from "../transform.js";
@@ -228,20 +230,20 @@ export function registerAllSystems(em: EntityManager) {
   registerStepCannonsSystem(em);
   registerPlayerCannonSystem(em);
   registerUpdateSmoothingLerp(em);
-  // TODO(@darzu): do we have to run update transforms twice?
-  registerUpdateTransforms(em, "0");
-  registerPhysicsInit(em);
-  registerPhysicsLocalToWorldCompute(em, "0");
-  registerPhysicsMoveObjects(em);
-  registerPhysicsWorldToLocalCompute(em, "0");
-  registerUpdateTransforms(em, "0b");
-  registerPhysicsLocalToWorldCompute(em, "1");
-  registerPhysicsContactSystems(em);
-  registerPhysicsWorldToLocalCompute(em, "1");
-  registerUpdateTransforms(em, "1");
-  registerPhysicsLocalToWorldCompute(em, "2");
-  registerPhysicsDebuggerSystem(em);
-  registerUpdateTransforms(em, "2");
+
+  {
+    // Physics
+    registerUpdateLocalFromPosRotScale(em);
+    registerUpdateWorldFromLocalAndParent(em);
+    registerPhysicsInit(em);
+    registerUpdateWorldPhysicsFromLocalAndParent(em);
+    registerPhysicsMoveObjects(em);
+    registerPhysicsContactSystems(em);
+    registerUpdateWorldFromPosRotScale(em);
+    registerUpdateLocalPhysicsFromWorldAndParent(em);
+    registerPhysicsDebuggerSystem(em);
+  }
+
   registerBulletCollisionSystem(em);
   registerModeler(em);
   registerHatPickupSystem(em);
@@ -253,7 +255,8 @@ export function registerAllSystems(em: EntityManager) {
   registerSendOutboxes(em);
   registerEventSystems(em);
   registerDeleteEntitiesSystem(em);
-  registerUpdateSmoothedTransform(em);
+  // TODO(@darzu): re-enable smoothing
+  // registerUpdateSmoothedTransform(em);
   registerRenderViewController(em);
   registerUpdateCameraView(em);
   registerAddMeshHandleSystem(em);

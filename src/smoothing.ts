@@ -12,8 +12,6 @@ import {
   ScaleDef,
 } from "./transform.js";
 
-const DO_SMOOTH = true;
-
 const ERROR_SMOOTHING_FACTOR = 0.9 ** (60 / 1000);
 const EPSILON = 0.0001;
 
@@ -157,32 +155,31 @@ export function registerUpdateSmoothingLerp(em: EntityManager) {
 }
 
 export function registerUpdateSmoothedTransform(em: EntityManager) {
-  if (DO_SMOOTH)
-    em.registerSystem(
-      [WorldFrameDef, MotionSmoothingDef, PositionDef],
-      [],
-      (objs) => {
-        for (let o of objs) {
-          // don't smooth when parented
-          if (PhysicsParentDef.isOn(o)) return;
+  em.registerSystem(
+    [WorldFrameDef, MotionSmoothingDef, PositionDef],
+    [],
+    (objs) => {
+      for (let o of objs) {
+        // don't smooth when parented
+        if (PhysicsParentDef.isOn(o)) return;
 
-          // update with smoothing
-          // TODO(@darzu): seperate the smoothed result from the snapped result for rendering vs physics respectively
-          const rotation = RotationDef.isOn(o)
-            ? o.rotation
-            : quat.identity(tempQuat());
-          const smoothRot = tempQuat();
-          quat.mul(smoothRot, rotation, o.motionSmoothing.rotationDiff);
-          quat.normalize(smoothRot, smoothRot);
-          // TODO(@darzu): don't mutate the world frame here
-          mat4.fromRotationTranslationScale(
-            o.world.transform,
-            smoothRot,
-            vec3.add(tempVec(), o.position, o.motionSmoothing.positionDiff),
-            ScaleDef.isOn(o) ? o.scale : vec3.set(tempVec(), 1, 1, 1)
-          );
-        }
-      },
-      "updateSmoothedTransform"
-    );
+        // update with smoothing
+        // TODO(@darzu): seperate the smoothed result from the snapped result for rendering vs physics respectively
+        const rotation = RotationDef.isOn(o)
+          ? o.rotation
+          : quat.identity(tempQuat());
+        const smoothRot = tempQuat();
+        quat.mul(smoothRot, rotation, o.motionSmoothing.rotationDiff);
+        quat.normalize(smoothRot, smoothRot);
+        // TODO(@darzu): don't mutate the world frame here
+        mat4.fromRotationTranslationScale(
+          o.world.transform,
+          smoothRot,
+          vec3.add(tempVec(), o.position, o.motionSmoothing.positionDiff),
+          ScaleDef.isOn(o) ? o.scale : vec3.set(tempVec(), 1, 1, 1)
+        );
+      }
+    },
+    "updateSmoothedTransform"
+  );
 }

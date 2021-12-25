@@ -1,5 +1,11 @@
 import { Collider, ColliderDef } from "./collider.js";
-import { Component, EM, EntityManager } from "./entity-manager.js";
+import {
+  Component,
+  EM,
+  Entity,
+  EntityManager,
+  EntityW,
+} from "./entity-manager.js";
 import { PhysicsTimerDef, Timer } from "./time.js";
 import { mat3, mat4, quat, vec3 } from "./gl-matrix.js";
 import {
@@ -29,12 +35,18 @@ import {
 import { moveObjects } from "./phys_motion.js";
 import {
   Frame,
-  ParentTransformDef,
+  IDENTITY_FRAME,
+  PhysicsParent,
+  PhysicsParentDef,
   Position,
   PositionDef,
+  ReadonlyFrame,
   Rotation,
   RotationDef,
   ScaleDef,
+  TransformDef,
+  updateFrameFromPosRotScale,
+  updateFrameFromTransform,
 } from "./transform.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
 import { LinearVelocityDef, AngularVelocityDef } from "./motion.js";
@@ -109,33 +121,42 @@ export let _motionPairsLen = 0; // TODO(@darzu): debug
 
 const _objDict: Map<number, PhysicsObject> = new Map();
 
-const MAT4_ID = mat4.identity(mat4.create());
+function getParentFrame(
+  o: Entity & { physicsParent?: PhysicsParent }
+): ReadonlyFrame {
+  if (o.physicsParent) {
+    const parent = EM.findEntity(o.physicsParent.id, [WorldFrameDef]);
+    if (parent) return parent.world;
+  }
+  return IDENTITY_FRAME;
+}
 
-// TODO(@darzu): PRECONDITION: assumes updateTransforms has just run
-export function registerPhysicsLocalToWorldCompute(
+// TODO(@darzu): PRECONDITION: assumes world frames are all up to date
+export function registerUpdateWorldPhysicsFromLocalAndParent(
   em: EntityManager,
-  s: string
+  s: string = ""
 ) {
   em.registerSystem(
-    [PhysicsStateDef, WorldFrameDef, WorldFrameDef],
+    [PhysicsStateDef, WorldFrameDef],
     [PhysicsTimerDef],
     (objs, res) => {
       for (let o of objs) {
-        const parentT = ParentTransformDef.isOn(o)
-          ? o.parentTransform
-          : MAT4_ID;
+        // grab the parent frame
+        const parentFrame = getParentFrame(o);
 
-        mat4.getTranslation(o.world.position, o.world.transform);
-        mat4.getRotation(o.world.rotation, o.world.transform);
-        mat4.getScaling(o.world.scale, o.world.transform);
+        // update velocity
         if (LinearVelocityDef.isOn(o)) {
-          vec3.transformMat4(o._phys.wLinVel, o.linearVelocity, parentT);
-          const parentTranslation = mat4.getTranslation(tempVec(), parentT);
-          vec3.sub(o._phys.wLinVel, o._phys.wLinVel, parentTranslation);
+          vec3.transformMat4(
+            o._phys.wLinVel,
+            o.linearVelocity,
+            parentFrame.transform
+          );
+          vec3.sub(o._phys.wLinVel, o._phys.wLinVel, parentFrame.position);
         }
 
         // update world AABBs
         const { localAABB, worldAABB, lastWorldAABB, sweepAABB } = o._phys;
+        // TODO(@darzu): highly inefficient
         const wCorners = getAABBCorners(localAABB).map((p) =>
           vec3.transformMat4(p, p, o.world.transform)
         );
@@ -148,57 +169,83 @@ export function registerPhysicsLocalToWorldCompute(
         }
       }
     },
-    "physicsLocalToWorldCompute" + s
+    "updateWorldPhysicsFromLocalAndParent" + s
   );
 }
 
-// TODO(@darzu): notes: mutates worldTransform, position, rotation, scale, linearVelocity
-export function registerPhysicsWorldToLocalCompute(
-  em: EntityManager,
-  s: string
-) {
+export function registerUpdateWorldFromPosRotScale(em: EntityManager) {
   em.registerSystem(
-    [PhysicsStateDef, WorldFrameDef, WorldFrameDef],
+    [WorldFrameDef],
+    [],
+    (objs) => {
+      for (let o of objs) updateFrameFromPosRotScale(o.world);
+    },
+    "updateWorldFromPosRotScale"
+  );
+}
+
+export function registerUpdateLocalPhysicsFromWorldAndParent(
+  em: EntityManager,
+  s: string = ""
+) {
+  // TODO(@darzu): do we need topo-sort ?
+  // const isUpdated: Set<number> = new Set();
+
+  // function updateLocalPhysicsFromWorldAndParent(
+  //   o: EntityW<
+  //     [typeof PhysicsStateDef, typeof WorldFrameDef, typeof TransformDef]
+  //   >
+  // ) {
+  //   if (isUpdated.has(o.id)) throw `Double visiting ${o.id}`;
+
+  //   let parentFrame: ReadonlyFrame;
+  //   if (PhysicsParentDef.isOn(o) && !isUpdated.has(o.physicsParent.id)) {
+  //     const p = em.findEntity(o.physicsParent.id, [
+  //       PhysicsStateDef,
+  //       WorldFrameDef,
+  //       TransformDef,
+  //     ]);
+  //     if (!p) throw `Parent ${o.physicsParent.id} is uninited!`;
+  //     updateLocalPhysicsFromWorldAndParent(p);
+  //     parentFrame = p.world;
+  //   } else {
+  //     parentFrame = IDENTITY_FRAME;
+  //   }
+
+  // }
+
+  em.registerSystem(
+    [PhysicsStateDef, WorldFrameDef, TransformDef],
     [PhysicsTimerDef],
     (objs, res) => {
       for (let o of objs) {
-        const parentToWorld = ParentTransformDef.isOn(o)
-          ? o.parentTransform
-          : MAT4_ID;
-        const worldToParent = mat4.invert(mat4.create(), parentToWorld);
+        const parentFrame = getParentFrame(o);
 
-        // new world transform
-        const localToWorld = mat4.fromRotationTranslationScale(
-          o.world.transform,
-          o.world.rotation,
-          o.world.position,
-          o.world.scale
-        );
+        const parentToWorld = parentFrame.transform;
+        const worldToParent =
+          parentFrame.transform === mat4.IDENTITY
+            ? mat4.IDENTITY
+            : mat4.invert(mat4.create(), parentToWorld);
 
-        // const worldToLocal = mat4.invert(mat4.create(), o.world.transform);
+        const localToWorld = o.world.transform;
 
-        const localToParent = mat4.multiply(
-          mat4.create(),
-          worldToParent,
-          localToWorld
-        );
+        // const worldToLocal = mat4.invert(mat4.create(), localToWorld);
 
-        // TODO(@darzu): is this necessary to "ensure" all these?
-        em.ensureComponentOn(o, PositionDef);
-        mat4.getTranslation(o.position, localToParent);
-        em.ensureComponentOn(o, RotationDef);
-        mat4.getRotation(o.rotation, localToParent);
-        em.ensureComponentOn(o, ScaleDef);
-        mat4.getScaling(o.scale, localToParent);
+        mat4.multiply(o.transform, worldToParent, localToWorld);
+        updateFrameFromTransform(o);
+
+        const localToParent = o.transform;
 
         if (vec3.sqrLen(o._phys.wLinVel) > 0) {
           em.ensureComponentOn(o, LinearVelocityDef);
           const worldToParent3 = mat3.fromMat4(mat3.create(), worldToParent);
           vec3.transformMat3(o.linearVelocity, o._phys.wLinVel, worldToParent3);
         }
+
+        // TODO(@darzu): angular velocity
       }
     },
-    "physicsWorldToLocalCompute" + s
+    "updateLocalPhysicsFromWorldAndParent" + s
   );
 }
 

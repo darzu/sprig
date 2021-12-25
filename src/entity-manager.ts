@@ -422,7 +422,9 @@ export class EntityManager {
   ): void {
     name = name || callback.name;
     if (name === "") {
-      throw `To define a system with an anonymous function, pass an explicit name`;
+      throw new Error(
+        `To define a system with an anonymous function, pass an explicit name`
+      );
     }
     if (this.systems.find((sys) => sys.name === name))
       throw `System named ${name} already defined. Try explicitly passing a name`;
