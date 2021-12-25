@@ -20,14 +20,14 @@ const PIXEL_PER_PX: number | null = null; // 0.5;
 // shaders
 
 const shaderSceneStruct = `
-    [[block]] struct Scene {
+    struct Scene {
         ${SceneUniform.GenerateWGSLUniformStruct()}
     };
 `;
 const vertexShader =
   shaderSceneStruct +
   `
-    [[block]] struct Model {
+    struct Model {
         ${MeshUniform.GenerateWGSLUniformStruct()}
     };
 
