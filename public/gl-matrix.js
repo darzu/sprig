@@ -4557,7 +4557,7 @@ export var vec3 = /*#__PURE__*/Object.freeze({
         __proto__: null,
         create: create$4,
         ZEROS: [0,0,0],
-        ONES: [0,0,0],
+        ONES: [1,1,1],
         clone: clone$4,
         length: length,
         fromValues: fromValues$4,
