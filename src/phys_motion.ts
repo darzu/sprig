@@ -89,15 +89,18 @@ export function moveObjects(
       _phys.wLinVel[2] = clamp(_phys.wLinVel[2], -vzMax, vzMax);
     }
 
-    // change position according to linear velocity
+    // translate position and AABB according to linear velocity
     if (_phys.wLinVel) {
       delta = vec3.scale(delta, _phys.wLinVel, dt);
       vec3.add(world.position, world.position, delta);
+      vec3.add(_phys.worldAABB.min, _phys.worldAABB.min, delta);
+      vec3.add(_phys.worldAABB.max, _phys.worldAABB.max, delta);
     }
 
     // change rotation according to angular velocity
     // TODO(@darzu): rotation needs to be seperated out so we can do collision
     //   detection on rotation.
+    // TODO(@darzu): update AABB based on rotation
     if (_phys.wAngVel && world.rotation) {
       normalizedVelocity = vec3.normalize(normalizedVelocity, _phys.wAngVel);
       let angle = vec3.length(_phys.wAngVel) * dt;
