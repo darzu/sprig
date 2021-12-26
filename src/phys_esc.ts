@@ -32,7 +32,7 @@ import {
   rayHitDist,
   resetCollidesWithSet,
 } from "./phys_broadphase.js";
-import { moveObjects } from "./phys_motion.js";
+import { moveObjects } from "./phys_velocity.js";
 import {
   Frame,
   IDENTITY_FRAME,
