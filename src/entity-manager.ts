@@ -343,7 +343,7 @@ export class EntityManager {
     cs: [...CS]
   ): EntityW<CS, ID> | undefined {
     const e = this.entities.get(id);
-    if (e && !cs.every((c) => c.name in e)) {
+    if (!e || !cs.every((c) => c.name in e)) {
       return undefined;
     }
     return e as EntityW<CS, ID>;
