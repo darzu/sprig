@@ -9,6 +9,7 @@ import {
   PhysicsStateDef,
   WorldFrameDef,
 } from "./phys_esc.js";
+import { tempVec } from "./temp-pool.js";
 import { PhysicsTimerDef } from "./time.js";
 import { Frame, updateFrameFromPosRotScale } from "./transform.js";
 
@@ -57,14 +58,12 @@ export function registerPhysicsMoveObjects(em: EntityManager) {
           // both objects must be solid
           if (!a.collider.solid || !b.collider.solid) continue;
 
-          // TODO(@darzu): we're a bit free with vector creation here, are the memory implications bad?
-
           const bInDirOfA = vec3.dot(b._phys.wLinVel, data.bToANorm);
           if (bInDirOfA > 0) {
             vec3.sub(
               b._phys.wLinVel,
               b._phys.wLinVel,
-              vec3.scale(vec3.create(), data.bToANorm, bInDirOfA)
+              vec3.scale(tempVec(), data.bToANorm, bInDirOfA)
             );
           }
 
@@ -73,7 +72,7 @@ export function registerPhysicsMoveObjects(em: EntityManager) {
             vec3.sub(
               a._phys.wLinVel,
               a._phys.wLinVel,
-              vec3.scale(vec3.create(), data.bToANorm, -aInDirOfB)
+              vec3.scale(tempVec(), data.bToANorm, -aInDirOfB)
             );
           }
         }
