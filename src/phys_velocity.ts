@@ -1,8 +1,15 @@
-import { Collider } from "./collider.js";
+import { Collider, ColliderDef } from "./collider.js";
+import { EntityManager } from "./entity-manager.js";
 import { quat, vec3 } from "./gl-matrix.js";
 import { clamp } from "./math.js";
 import { IdPair, ContactData } from "./phys.js";
-import { PhysicsState } from "./phys_esc.js";
+import {
+  PhysicsResultsDef,
+  PhysicsState,
+  PhysicsStateDef,
+  WorldFrameDef,
+} from "./phys_esc.js";
+import { PhysicsTimerDef } from "./time.js";
 import { Frame, updateFrameFromPosRotScale } from "./transform.js";
 
 let delta = vec3.create();
@@ -18,6 +25,33 @@ export interface MotionObj {
   collider: Collider;
   _phys: PhysicsState;
   world: Frame;
+}
+
+const _objDict: Map<number, MotionObj> = new Map();
+
+export function registerPhysicsMoveObjects(em: EntityManager) {
+  em.registerSystem(
+    [ColliderDef, PhysicsStateDef, WorldFrameDef],
+    [PhysicsTimerDef, PhysicsResultsDef],
+    (objs, res) => {
+      for (let si = 0; si < res.physicsTimer.steps; si++) {
+        // build a dict
+        // TODO(@darzu): would be great of EntityManager handled this
+        _objDict.clear();
+        for (let o of objs) _objDict.set(o.id, o);
+
+        // TODO(@darzu): moveObjects needs to be moved out so that we can update the
+        //    world transform afterward
+        // move objects
+        moveObjects(
+          _objDict,
+          res.physicsTimer.period,
+          res.physicsResults.contactData
+        );
+      }
+    },
+    "physicsMove"
+  );
 }
 
 export function moveObjects(

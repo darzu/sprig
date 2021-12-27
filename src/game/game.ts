@@ -5,7 +5,6 @@ import { jitter } from "../math.js";
 import {
   registerPhysicsInit,
   registerUpdateWorldPhysicsFromLocalAndParent,
-  registerPhysicsMoveObjects,
   registerPhysicsContactSystems,
   registerUpdateLocalPhysicsFromWorldAndParent,
   registerUpdateWorldFromPosRotScale,
@@ -97,6 +96,7 @@ import { registerBuildCursor } from "./cursor.js";
 import { ColliderDef } from "../collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { FinishedDef } from "../build.js";
+import { registerPhysicsMoveObjects } from "../phys_velocity.js";
 
 export const ColorDef = EM.defineComponent(
   "color",

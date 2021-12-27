@@ -461,31 +461,6 @@ function stepConstraints(objs: PhysicsObject[]): void {
   };
 }
 
-export function registerPhysicsMoveObjects(em: EntityManager) {
-  em.registerSystem(
-    [ColliderDef, PhysicsStateDef, WorldFrameDef],
-    [PhysicsTimerDef, PhysicsResultsDef],
-    (objs, res) => {
-      for (let si = 0; si < res.physicsTimer.steps; si++) {
-        // build a dict
-        // TODO(@darzu): would be great of EntityManager handled this
-        _objDict.clear();
-        for (let o of objs) _objDict.set(o.id, o);
-
-        // TODO(@darzu): moveObjects needs to be moved out so that we can update the
-        //    world transform afterward
-        // move objects
-        moveObjects(
-          _objDict,
-          res.physicsTimer.period,
-          res.physicsResults.contactData
-        );
-      }
-    },
-    "physicsMove"
-  );
-}
-
 export function registerPhysicsInit(em: EntityManager) {
   em.addSingletonComponent(PhysicsResultsDef);
 
