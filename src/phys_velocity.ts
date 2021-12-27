@@ -37,14 +37,12 @@ export function registerPhysicsMoveObjects(em: EntityManager) {
       _objDict.clear();
       for (let o of objs) _objDict.set(o.id, o);
 
+      const dt = res.physicsTimer.period;
+      const lastContactData = res.physicsResults.contactData;
+
       for (let si = 0; si < res.physicsTimer.steps; si++) {
         // build a dict
         // TODO(@darzu): would be great of EntityManager handled this
-
-        // move objects
-        const objDict = _objDict;
-        const dt = res.physicsTimer.period;
-        const lastContactData = res.physicsResults.contactData;
 
         // TODO(@darzu): probably don't need this intermediate _constrainedVelocities
         _constrainedVelocities.clear();
@@ -52,48 +50,31 @@ export function registerPhysicsMoveObjects(em: EntityManager) {
         // check for collision constraints
         // TODO(@darzu): this is a velocity constraint and ideally should be nicely extracted
         for (let [abId, data] of lastContactData) {
+          const a = _objDict.get(data.aId);
+          const b = _objDict.get(data.bId);
+          if (!a || !b) continue;
+          if (!a.collider.solid || !b.collider.solid) continue;
+
           // TODO(@darzu): we're a bit free with vector creation here, are the memory implications bad?
           const bReboundDir = vec3.clone(data.bToANorm);
           const aReboundDir = vec3.negate(vec3.create(), bReboundDir);
 
-          const a = objDict.get(data.aId);
-          const b = objDict.get(data.bId);
-
-          if (!!a && a.collider.solid) {
-            const aConVel =
-              _constrainedVelocities.get(data.aId) ??
-              vec3.clone(objDict.get(data.aId)!._phys.wLinVel ?? vec3.create());
-            const aInDirOfB = vec3.dot(aConVel, aReboundDir);
-            if (aInDirOfB > 0) {
-              vec3.sub(
-                aConVel,
-                aConVel,
-                vec3.scale(vec3.create(), aReboundDir, aInDirOfB)
-              );
-              _constrainedVelocities.set(data.aId, aConVel);
-            }
+          const aInDirOfB = vec3.dot(a._phys.wLinVel, aReboundDir);
+          if (aInDirOfB > 0) {
+            vec3.sub(
+              a._phys.wLinVel,
+              a._phys.wLinVel,
+              vec3.scale(vec3.create(), aReboundDir, aInDirOfB)
+            );
           }
 
-          if (!!b && b.collider.solid) {
-            const bConVel =
-              _constrainedVelocities.get(data.bId) ??
-              vec3.clone(objDict.get(data.bId)!._phys.wLinVel ?? vec3.create());
-            const bInDirOfA = vec3.dot(bConVel, bReboundDir);
-            if (bInDirOfA > 0) {
-              vec3.sub(
-                bConVel,
-                bConVel,
-                vec3.scale(vec3.create(), bReboundDir, bInDirOfA)
-              );
-              _constrainedVelocities.set(data.bId, bConVel);
-            }
-          }
-        }
-
-        // update velocity with constraints
-        for (let { id, _phys } of objs) {
-          if (_constrainedVelocities.has(id) && _phys.wLinVel) {
-            vec3.copy(_phys.wLinVel, _constrainedVelocities.get(id)!);
+          const bInDirOfA = vec3.dot(b._phys.wLinVel, bReboundDir);
+          if (bInDirOfA > 0) {
+            vec3.sub(
+              b._phys.wLinVel,
+              b._phys.wLinVel,
+              vec3.scale(vec3.create(), bReboundDir, bInDirOfA)
+            );
           }
         }
 
