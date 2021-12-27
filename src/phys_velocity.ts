@@ -52,28 +52,28 @@ export function registerPhysicsMoveObjects(em: EntityManager) {
         for (let [abId, data] of lastContactData) {
           const a = _objDict.get(data.aId);
           const b = _objDict.get(data.bId);
+          // both objects must still exist
           if (!a || !b) continue;
+          // both objects must be solid
           if (!a.collider.solid || !b.collider.solid) continue;
 
           // TODO(@darzu): we're a bit free with vector creation here, are the memory implications bad?
-          const bReboundDir = vec3.clone(data.bToANorm);
-          const aReboundDir = vec3.negate(vec3.create(), bReboundDir);
 
-          const aInDirOfB = vec3.dot(a._phys.wLinVel, aReboundDir);
-          if (aInDirOfB > 0) {
-            vec3.sub(
-              a._phys.wLinVel,
-              a._phys.wLinVel,
-              vec3.scale(vec3.create(), aReboundDir, aInDirOfB)
-            );
-          }
-
-          const bInDirOfA = vec3.dot(b._phys.wLinVel, bReboundDir);
+          const bInDirOfA = vec3.dot(b._phys.wLinVel, data.bToANorm);
           if (bInDirOfA > 0) {
             vec3.sub(
               b._phys.wLinVel,
               b._phys.wLinVel,
-              vec3.scale(vec3.create(), bReboundDir, bInDirOfA)
+              vec3.scale(vec3.create(), data.bToANorm, bInDirOfA)
+            );
+          }
+
+          const aInDirOfB = -vec3.dot(a._phys.wLinVel, data.bToANorm);
+          if (aInDirOfB > 0) {
+            vec3.sub(
+              a._phys.wLinVel,
+              a._phys.wLinVel,
+              vec3.scale(vec3.create(), data.bToANorm, -aInDirOfB)
             );
           }
         }
