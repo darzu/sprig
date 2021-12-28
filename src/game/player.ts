@@ -9,6 +9,7 @@ import { spawnBullet } from "./bullet.js";
 import { FinishedDef } from "../build.js";
 import { CameraView, CameraViewDef, RenderableDef } from "../renderer.js";
 import {
+  Frame,
   PhysicsParent,
   PhysicsParentDef,
   Position,
@@ -83,6 +84,7 @@ interface PlayerObj {
   linearVelocity: LinearVelocity;
   authority: Authority;
   physicsParent: PhysicsParent;
+  world: Frame;
 }
 
 export type PerspectiveMode = "perspective" | "ortho";
@@ -111,6 +113,7 @@ export function registerStepPlayers(em: EntityManager) {
       LinearVelocityDef,
       AuthorityDef,
       PhysicsParentDef,
+      WorldFrameDef,
     ],
     [
       PhysicsTimerDef,
@@ -268,11 +271,11 @@ function stepPlayers(
     quat.rotateX(camera.rotation, camera.rotation, -inputs.mouseMovY * 0.001);
 
     let facingDir = vec3.fromValues(0, 0, -1);
-    vec3.transformQuat(facingDir, facingDir, p.rotation);
+    vec3.transformQuat(facingDir, facingDir, p.world.rotation);
 
-    const targetCursor = EM.findEntity(p.player.targetCursor, [PositionDef]);
+    const targetCursor = EM.findEntity(p.player.targetCursor, [WorldFrameDef]);
     if (targetCursor) {
-      vec3.sub(facingDir, targetCursor.position, p.position);
+      vec3.sub(facingDir, targetCursor.world.position, p.world.position);
       vec3.normalize(facingDir, facingDir);
     }
 
@@ -286,7 +289,12 @@ function stepPlayers(
       //   player.linearVelocity
       // );
       const angularVelocity = vec3.scale(vec3.create(), facingDir, 0.01);
-      spawnBullet(EM, vec3.clone(p.position), linearVelocity, angularVelocity);
+      spawnBullet(
+        EM,
+        vec3.clone(p.world.position),
+        linearVelocity,
+        angularVelocity
+      );
       // TODO: figure out a better way to do this
       inputs.lclick = false;
     }
@@ -305,7 +313,7 @@ function stepPlayers(
           );
           const position = vec3.add(
             vec3.create(),
-            p.position,
+            p.world.position,
             vec3.fromValues(x, y, 0)
           );
           const linearVelocity = vec3.scale(vec3.create(), bullet_axis, 0.005);
@@ -322,8 +330,12 @@ function stepPlayers(
       const r: Ray = {
         org: vec3.add(
           vec3.create(),
-          p.position,
-          vec3.scale(tempVec(), facingDir, 3.0)
+          p.world.position,
+          vec3.scale(
+            tempVec(),
+            vec3.multiply(tempVec(), facingDir, p.world.scale),
+            3.0
+          )
         ),
         dir: facingDir,
       };
