@@ -166,12 +166,13 @@ function registerBuildWorldPlanes(em: EntityManager) {
 
         // const r = quat.create();
         const r = quat.fromEuler(quat.create(), 0, 0, Math.PI * 0.5);
-        const p = vec3.fromValues(20, 0, -20);
-        // const p = vec3.fromValues(100, 0, -100);
+        // const p = vec3.fromValues(20, 0, -20);
+        const p = vec3.fromValues(100, 0, -100);
         // const s: vec3 = [0.1, 0.1, 0.1];
         // const s: vec3 = [20, 20, 20];
+        const s: vec3 = [10, 10, 10];
         // const s: vec3 = [2, 2, 2];
-        const s: vec3 = [1, 1, 1];
+        // const s: vec3 = [1, 1, 1];
         const t = mat4.fromRotationTranslationScale(
           mat4.create(),
           r,
@@ -182,9 +183,8 @@ function registerBuildWorldPlanes(em: EntityManager) {
         );
 
         em.ensureComponentOn(e, PositionDef, p);
-        // em.ensureComponentOn(e, RotationDef, r);
-        // em.ensureComponentOn(e, ScaleDef, s);
-        // em.ensureComponentOn(e, WorldFrameDef, t);
+        em.ensureComponentOn(e, RotationDef, r);
+        em.ensureComponentOn(e, ScaleDef, s);
         em.ensureComponentOn(e, ColorDef, [1, 0, 1]);
 
         em.ensureComponentOn(e, RenderableDef, res.assets.gridPlane.mesh);
