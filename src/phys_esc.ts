@@ -132,18 +132,12 @@ function getParentFrame(
 }
 
 // TODO(@darzu): PRECONDITION: assumes world frames are all up to date
-export function registerUpdateWorldPhysicsFromLocalAndParent(
-  em: EntityManager,
-  s: string = ""
-) {
+export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
   em.registerSystem(
     [PhysicsStateDef, WorldFrameDef],
     [PhysicsTimerDef],
     (objs, res) => {
       for (let o of objs) {
-        // grab the parent frame
-        const parentFrame = getParentFrame(o);
-
         // update world AABBs
         const { localAABB, worldAABB, lastWorldAABB, sweepAABB } = o._phys;
         // TODO(@darzu): highly inefficient
@@ -159,7 +153,7 @@ export function registerUpdateWorldPhysicsFromLocalAndParent(
         }
       }
     },
-    "updateWorldPhysicsFromLocalAndParent" + s
+    "registerUpdateWorldAABBs" + s
   );
 }
 

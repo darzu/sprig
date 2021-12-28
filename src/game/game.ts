@@ -4,7 +4,7 @@ import { InputsDef } from "../inputs.js";
 import { jitter } from "../math.js";
 import {
   registerPhysicsInit,
-  registerUpdateWorldPhysicsFromLocalAndParent,
+  registerUpdateWorldAABBs,
   registerPhysicsContactSystems,
   registerUpdateLocalPhysicsFromWorldAndParent,
   registerUpdateWorldFromPosRotScale,
@@ -232,18 +232,17 @@ export function registerAllSystems(em: EntityManager) {
   registerUpdateSmoothingLerp(em);
 
   {
+    // TODO(@darzu): re-org into wrapper?
     // Physics
     registerPhysicsInit(em);
+    registerPhysicsMoveObjects(em);
     registerUpdateLocalFromPosRotScale(em);
     registerUpdateWorldFromLocalAndParent(em);
-    registerUpdateWorldPhysicsFromLocalAndParent(em);
-    registerPhysicsMoveObjects(em);
-    registerUpdateLocalFromPosRotScale(em, "1");
-    registerUpdateWorldFromLocalAndParent(em, "1");
-    registerUpdateWorldPhysicsFromLocalAndParent(em, "1");
+    registerUpdateWorldAABBs(em);
     registerPhysicsContactSystems(em);
     registerUpdateWorldFromPosRotScale(em);
     registerUpdateLocalPhysicsFromWorldAndParent(em);
+
     registerPhysicsDebuggerSystem(em);
   }
 

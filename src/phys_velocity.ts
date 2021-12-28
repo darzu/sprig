@@ -143,21 +143,6 @@ export function registerPhysicsMoveObjects(em: EntityManager) {
           if (linearVelocity && position) {
             linVelDelta = vec3.scale(linVelDelta, linearVelocity, dt);
             vec3.add(position, position, linVelDelta);
-            // TODO(@darzu): must translate worldAABB
-            // TODO(@darzu): this is inefficient esp with the matrix inversion
-            let wLinVelDelta = tempVec();
-            vec3.copy(wLinVelDelta, linVelDelta);
-            // TODO(@darzu): this parent finding is inefficient and repeated
-            if (PhysicsParentDef.isOn(o) && o.physicsParent.id) {
-              const p = em.findEntity(o.physicsParent.id, [WorldFrameDef]);
-              if (!p)
-                throw `Parent ${o.physicsParent.id} doesnt have WorldFrame`;
-              const p3 = mat3.fromMat4(mat3.create(), p.world.transform);
-              const worldToParent3 = mat3.invert(mat3.create(), p3);
-              vec3.transformMat3(wLinVelDelta, linVelDelta, worldToParent3);
-            }
-            vec3.add(_phys.worldAABB.min, _phys.worldAABB.min, wLinVelDelta);
-            vec3.add(_phys.worldAABB.max, _phys.worldAABB.max, wLinVelDelta);
           }
 
           // change rotation according to angular velocity
