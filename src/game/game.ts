@@ -233,11 +233,14 @@ export function registerAllSystems(em: EntityManager) {
 
   {
     // Physics
+    registerPhysicsInit(em);
     registerUpdateLocalFromPosRotScale(em);
     registerUpdateWorldFromLocalAndParent(em);
-    registerPhysicsInit(em);
     registerUpdateWorldPhysicsFromLocalAndParent(em);
     registerPhysicsMoveObjects(em);
+    registerUpdateLocalFromPosRotScale(em, "1");
+    registerUpdateWorldFromLocalAndParent(em, "1");
+    registerUpdateWorldPhysicsFromLocalAndParent(em, "1");
     registerPhysicsContactSystems(em);
     registerUpdateWorldFromPosRotScale(em);
     registerUpdateLocalPhysicsFromWorldAndParent(em);

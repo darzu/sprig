@@ -85,10 +85,11 @@ export const WorldFrameDef = EM.defineComponent("world", () => {
   } as Frame;
 });
 
+// TODO(@darzu): break this up into the specific use cases
 export const PhysicsStateDef = EM.defineComponent("_phys", () => {
   return {
     // world-space physics properties
-    wLinVel: LinearVelocityDef.construct(),
+    // TODO(@darzu): remove wAngVel
     wAngVel: AngularVelocityDef.construct(),
     // track last stats so we can diff
     lastWPos: PositionDef.construct(),
@@ -142,16 +143,6 @@ export function registerUpdateWorldPhysicsFromLocalAndParent(
       for (let o of objs) {
         // grab the parent frame
         const parentFrame = getParentFrame(o);
-
-        // update velocity
-        if (LinearVelocityDef.isOn(o)) {
-          vec3.transformMat4(
-            o._phys.wLinVel,
-            o.linearVelocity,
-            parentFrame.transform
-          );
-          vec3.sub(o._phys.wLinVel, o._phys.wLinVel, parentFrame.position);
-        }
 
         // update world AABBs
         const { localAABB, worldAABB, lastWorldAABB, sweepAABB } = o._phys;
@@ -235,11 +226,6 @@ export function registerUpdateLocalPhysicsFromWorldAndParent(
 
         const localToParent = o.transform;
 
-        if (vec3.sqrLen(o._phys.wLinVel) > 0) {
-          em.ensureComponentOn(o, LinearVelocityDef);
-          const worldToParent3 = mat3.fromMat4(mat3.create(), worldToParent);
-          vec3.transformMat3(o.linearVelocity, o._phys.wLinVel, worldToParent3);
-        }
 
         // TODO(@darzu): angular velocity
       }

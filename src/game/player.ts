@@ -396,6 +396,8 @@ export function drawLine(
   em.addComponent(id, WorldFrameDef);
 }
 
+export let __lastPlayerId = 0;
+
 function createPlayer(
   em: EntityManager,
   e: Entity & { playerConstruct: PlayerConstruct },
@@ -403,6 +405,7 @@ function createPlayer(
   assets: Assets
 ) {
   if (FinishedDef.isOn(e)) return;
+  __lastPlayerId = e.id; // TODO(@darzu): debugging
   const props = e.playerConstruct;
   if (!PositionDef.isOn(e)) em.addComponent(e.id, PositionDef, props.location);
   if (!RotationDef.isOn(e)) em.addComponent(e.id, RotationDef);
