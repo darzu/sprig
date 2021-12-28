@@ -14,7 +14,7 @@ import {
   PhysicsState,
   PhysicsStateDef,
   WorldFrameDef,
-} from "./phys_esc.js";
+} from "./phys_nonintersection.js";
 import { tempVec } from "./temp-pool.js";
 import { PhysicsTimerDef } from "./time.js";
 import {

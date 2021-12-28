@@ -8,7 +8,7 @@ import { InputsDef } from "./inputs.js";
 import { avg, mathMap } from "./math.js";
 import { mapMeshPositions, Mesh, MeshHandleDef } from "./mesh-pool.js";
 import { AABB } from "./phys_broadphase.js";
-import { PhysicsStateDef, WorldFrameDef } from "./phys_esc.js";
+import { PhysicsStateDef, WorldFrameDef } from "./phys_nonintersection.js";
 import { RenderableDef } from "./renderer.js";
 import {
   copyFrame,

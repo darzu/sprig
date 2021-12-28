@@ -8,7 +8,7 @@ import {
   registerPhysicsContactSystems,
   registerUpdateLocalPhysicsFromWorldAndParent,
   registerUpdateWorldFromPosRotScale,
-} from "../phys_esc.js";
+} from "../phys_nonintersection.js";
 import {
   registerAddMeshHandleSystem,
   registerRenderer,

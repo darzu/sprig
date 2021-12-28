@@ -7,7 +7,7 @@ import {
   ReadonlyVec3,
   vec3,
 } from "./gl-matrix.js";
-import { WorldFrameDef } from "./phys_esc.js";
+import { WorldFrameDef } from "./phys_nonintersection.js";
 import { tempVec, tempQuat } from "./temp-pool.js";
 import { FALSE } from "./util.js";
 

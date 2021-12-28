@@ -20,7 +20,7 @@ import {
   PhysicsResults,
   PhysicsResultsDef,
   WorldFrameDef,
-} from "../phys_esc.js";
+} from "../phys_nonintersection.js";
 import {
   Authority,
   AuthorityDef,

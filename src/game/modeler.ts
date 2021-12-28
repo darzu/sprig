@@ -4,7 +4,7 @@ import { mat4, vec2, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
 import { Ray, RayHit } from "../phys_broadphase.js";
-import { PhysicsResultsDef } from "../phys_esc.js";
+import { PhysicsResultsDef } from "../phys_nonintersection.js";
 import { CameraView, CameraViewDef, RenderableDef } from "../renderer.js";
 import { tempVec } from "../temp-pool.js";
 import { vec3Dbg } from "../utils-3d.js";

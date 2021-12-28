@@ -1,6 +1,6 @@
 import { vec3 } from "./gl-matrix.js";
 import { __isSMI } from "./util.js";
-import { PhysicsObject } from "./phys_esc.js";
+import { PhysicsObject } from "./phys_nonintersection.js";
 
 // TODO(@darzu): CLEAN UP PHYSICS SYSTEMS
 // physics systems:
