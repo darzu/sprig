@@ -88,9 +88,6 @@ export const WorldFrameDef = EM.defineComponent("world", () => {
 // TODO(@darzu): break this up into the specific use cases
 export const PhysicsStateDef = EM.defineComponent("_phys", () => {
   return {
-    // world-space physics properties
-    // TODO(@darzu): remove wAngVel
-    wAngVel: AngularVelocityDef.construct(),
     // track last stats so we can diff
     lastWPos: PositionDef.construct(),
     // AABBs

@@ -23,6 +23,7 @@ import {
   PhysicsParentDef,
   Position,
   PositionDef,
+  RotationDef,
   updateFrameFromPosRotScale,
 } from "./transform.js";
 
@@ -157,37 +158,25 @@ export function registerPhysicsApplyLinearVelocity(em: EntityManager) {
 
 export function registerPhysicsApplyAngularVelocity(em: EntityManager) {
   em.registerSystem(
-    [AngularVelocityDef, WorldFrameDef, PhysicsStateDef],
+    [AngularVelocityDef, RotationDef],
     [PhysicsTimerDef],
     (objs, res) => {
       // TODO(@darzu): we really need this physics timer loop to be moved out of individual systems
       if (!res.physicsTimer.steps) return;
       const dt = res.physicsTimer.period * res.physicsTimer.steps;
 
-      for (let si = 0; si < res.physicsTimer.steps; si++) {
-        for (let o of objs) {
-          const { _phys, world } = o;
-
-          // change rotation according to angular velocity
-          // TODO(@darzu): rotation needs to be seperated out so we can do collision
-          //   detection on rotation.
-          // TODO(@darzu): update AABB based on rotation
-          if (_phys.wAngVel && world.rotation) {
-            normalizedVelocity = vec3.normalize(
-              normalizedVelocity,
-              _phys.wAngVel
-            );
-            let angle = vec3.length(_phys.wAngVel) * dt;
-            deltaRotation = quat.setAxisAngle(
-              deltaRotation,
-              normalizedVelocity,
-              angle
-            );
-            quat.normalize(deltaRotation, deltaRotation);
-            // note--quat multiplication is not commutative, need to multiply on the left
-            quat.multiply(world.rotation, deltaRotation, world.rotation);
-          }
-        }
+      for (let o of objs) {
+        // change rotation according to angular velocity
+        vec3.normalize(normalizedVelocity, o.angularVelocity);
+        let angle = vec3.length(o.angularVelocity) * dt;
+        deltaRotation = quat.setAxisAngle(
+          deltaRotation,
+          normalizedVelocity,
+          angle
+        );
+        quat.normalize(deltaRotation, deltaRotation);
+        // note--quat multiplication is not commutative, need to multiply on the left
+        quat.multiply(o.rotation, deltaRotation, o.rotation);
       }
     },
     "physicsApplyAngularVelocity"
