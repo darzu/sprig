@@ -96,7 +96,12 @@ import { registerBuildCursor } from "./cursor.js";
 import { ColliderDef } from "../collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { FinishedDef } from "../build.js";
-import { registerPhysicsMoveObjects } from "../phys_velocity.js";
+import {
+  registerPhysicsApplyAngularVelocity,
+  registerPhysicsApplyLinearVelocity,
+  registerPhysicsClampVelocityByContact,
+  registerPhysicsClampVelocityBySize,
+} from "../phys_velocity.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -235,7 +240,10 @@ export function registerAllSystems(em: EntityManager) {
     // TODO(@darzu): re-org into wrapper?
     // Physics
     registerPhysicsInit(em);
-    registerPhysicsMoveObjects(em);
+    registerPhysicsClampVelocityByContact(em);
+    registerPhysicsClampVelocityBySize(em);
+    registerPhysicsApplyLinearVelocity(em);
+    registerPhysicsApplyAngularVelocity(em);
     registerUpdateLocalFromPosRotScale(em);
     registerUpdateWorldFromLocalAndParent(em);
     registerUpdateWorldAABBs(em);
