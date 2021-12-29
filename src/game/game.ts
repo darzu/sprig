@@ -6,8 +6,8 @@ import {
   registerPhysicsInit,
   registerUpdateWorldAABBs,
   registerPhysicsContactSystems,
-  registerUpdateLocalPhysicsFromWorldAndParent,
   registerUpdateWorldFromPosRotScale,
+  registerUpdateLocalPhysicsAfterRebound,
 } from "../phys_nonintersection.js";
 import {
   registerAddMeshHandleSystem,
@@ -249,7 +249,8 @@ export function registerAllSystems(em: EntityManager) {
     registerUpdateWorldAABBs(em);
     registerPhysicsContactSystems(em);
     registerUpdateWorldFromPosRotScale(em);
-    registerUpdateLocalPhysicsFromWorldAndParent(em);
+    registerUpdateLocalPhysicsAfterRebound(em);
+    registerUpdateWorldFromLocalAndParent(em, "2");
 
     registerPhysicsDebuggerSystem(em);
   }

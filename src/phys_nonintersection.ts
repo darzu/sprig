@@ -7,7 +7,7 @@ import {
   EntityW,
 } from "./entity-manager.js";
 import { PhysicsTimerDef, Timer } from "./time.js";
-import { mat3, mat4, quat, vec3 } from "./gl-matrix.js";
+import { mat3, mat4, quat, ReadonlyMat4, vec3 } from "./gl-matrix.js";
 import {
   CollidesWith,
   computeContactData,
@@ -54,17 +54,11 @@ import { quatDbg, vec3Dbg } from "./utils-3d.js";
 import { assert } from "./test.js";
 
 // TODO(@darzu): PHYSICS TODO:
-// - parent to the "world planes" (BEFORE MERGE)
 // - seperate rotation and motion w/ constraint checking between them
 // - impl GJK
-// - re-work the pos-rot-scale & transform dichotomy into something u can reason about
-//    perhaps "Frames":
-//      a frame has all of: pos, rot, scale, lin vel, ang vel, transform
-//      if there are few enough ways in which the frame is mutated, we can provide helpers
-//          such that the frame is always consistent
-//      otherwise we have a "recomputeTransform" or "recomputeYYY" to rebuild parts from the others
-//      ideally there would be some flags to help know what is out of sync
-//    is it possible Frames could be read-only and all mutation could be pushed back to the "truth" fields?
+// - keep simplifying the systems
+// - seperate out PhysicsResults and PhysicsState into component parts
+// - re-name and re-org files
 
 // TODO(@darzu): break up PhysicsResults
 export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {
@@ -164,62 +158,45 @@ export function registerUpdateWorldFromPosRotScale(em: EntityManager) {
   );
 }
 
-export function registerUpdateLocalPhysicsFromWorldAndParent(
+export function registerUpdateLocalPhysicsAfterRebound(
   em: EntityManager,
   s: string = ""
 ) {
-  // TODO(@darzu): do we need topo-sort ?
-  // const isUpdated: Set<number> = new Set();
-
-  // function updateLocalPhysicsFromWorldAndParent(
-  //   o: EntityW<
-  //     [typeof PhysicsStateDef, typeof WorldFrameDef, typeof TransformDef]
-  //   >
-  // ) {
-  //   if (isUpdated.has(o.id)) throw `Double visiting ${o.id}`;
-
-  //   let parentFrame: ReadonlyFrame;
-  //   if (PhysicsParentDef.isOn(o) && !isUpdated.has(o.physicsParent.id)) {
-  //     const p = em.findEntity(o.physicsParent.id, [
-  //       PhysicsStateDef,
-  //       WorldFrameDef,
-  //       TransformDef,
-  //     ]);
-  //     if (!p) throw `Parent ${o.physicsParent.id} is uninited!`;
-  //     updateLocalPhysicsFromWorldAndParent(p);
-  //     parentFrame = p.world;
-  //   } else {
-  //     parentFrame = IDENTITY_FRAME;
-  //   }
-
-  // }
-
   em.registerSystem(
     [PhysicsStateDef, WorldFrameDef, TransformDef],
-    [PhysicsTimerDef],
+    [PhysicsTimerDef, PhysicsResultsDef],
     (objs, res) => {
-      for (let o of objs) {
-        const parentFrame = getParentFrame(o);
+      if (!res.physicsTimer.steps) return;
 
-        const parentToWorld = parentFrame.transform;
-        const worldToParent =
-          parentFrame.transform === mat4.IDENTITY
-            ? mat4.IDENTITY
-            : mat4.invert(mat4.create(), parentToWorld);
+      // TODO(@darzu):  move this into reboundData?
+      const hasRebound: Set<number> = new Set();
+      for (let [_, data] of res.physicsResults.reboundData) {
+        if (data.aRebound < Infinity) hasRebound.add(data.aId);
+        if (data.bRebound < Infinity) hasRebound.add(data.bId);
+      }
+
+      for (let o of objs) {
+        if (!hasRebound.has(o.id)) continue;
+
+        // find parent transforms
+        // TODO(@darzu): matrix inversion should be done once per parent
+        let worldToParent = mat4.IDENTITY;
+        let parentToWorld = mat4.IDENTITY;
+        if (PhysicsParentDef.isOn(o)) {
+          const parent = EM.findEntity(o.physicsParent.id, [WorldFrameDef]);
+          if (parent) {
+            parentToWorld = parent.world.transform;
+            worldToParent = mat4.invert(mat4.create(), parent.world.transform);
+          }
+        }
 
         const localToWorld = o.world.transform;
-
-        // const worldToLocal = mat4.invert(mat4.create(), localToWorld);
-
         mat4.multiply(o.transform, worldToParent, localToWorld);
+
         updateFrameFromTransform(o);
-
-        const localToParent = o.transform;
-
-        // TODO(@darzu): angular velocity
       }
     },
-    "updateLocalPhysicsFromWorldAndParent" + s
+    "registerUpdateLocalPhysicsAfterRebound" + s
   );
 }
 
@@ -264,7 +241,6 @@ export function registerPhysicsInit(em: EntityManager) {
   );
 }
 
-// ECS register
 export function registerPhysicsContactSystems(em: EntityManager) {
   em.registerSystem(
     [ColliderDef, PhysicsStateDef, WorldFrameDef],
@@ -447,25 +423,6 @@ export function registerPhysicsContactSystems(em: EntityManager) {
         vec3.copy(o._phys.lastWorldAABB.min, o._phys.worldAABB.min);
         vec3.copy(o._phys.lastWorldAABB.max, o._phys.worldAABB.max);
       }
-
-      // // copy out changes we made
-      // for (let o of objs) {
-      //   // TODO(@darzu): cache this inverse matrix?
-      //   const oldWorldPos = vec3.transformMat4(
-      //     tempVec(),
-      //     [0, 0, 0],
-      //     o.world.transform
-      //   );
-      //   const delta = vec3.sub(tempVec(), o.world.position, oldWorldPos);
-      //   vec3.add(o.position, o.position, delta);
-      //   // const worldInv = mat4.create();
-      //   // mat4.invert(worldInv, o.world.transform);
-      //   // const delta = vec3.create();
-      //   // vec3.transformMat4(delta, o.world.position, worldInv);
-      //   // vec3.add(o.position, o.position, delta);
-      //   // TODO(@darzu):
-      //   // vec3.copy(o.position, o.world.position);
-      // }
 
       // update out checkRay function
       physicsResults.checkRay = (r: Ray) => {
