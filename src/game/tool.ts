@@ -87,6 +87,7 @@ registerEventHandler("tool-pickup", {
     vec3.set(tool.position, 0, 0, -1.5);
     em.ensureComponent(tool.id, ScaleDef, vec3.fromValues(0.5, 0.5, 0.5));
     player.player.tool = tool.id;
+    if (ColliderDef.isOn(tool)) tool.collider.solid = false;
   },
 });
 
@@ -104,5 +105,6 @@ registerEventHandler("tool-drop", {
     vec3.copy(tool.position, location!);
     em.ensureComponent(tool.id, ScaleDef, vec3.fromValues(1, 1, 1));
     player.player.tool = 0;
+    if (ColliderDef.isOn(tool)) tool.collider.solid = true;
   },
 });
