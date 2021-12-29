@@ -151,7 +151,10 @@ function createGridPlane(width: number, height: number): Mesh {
     m.lines!.push([i, i + 1]);
   }
 
-  return scaleMesh(m, 10 / Math.min(width, height));
+  return scaleMesh(
+    mapMeshPositions(m, (p) => [p[0] - width / 2, p[1], p[2] - height / 2]),
+    10 / Math.min(width, height)
+  );
 }
 
 export const LocalMeshes = {

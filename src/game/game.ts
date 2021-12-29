@@ -161,16 +161,30 @@ EM.registerSerializerPair(
 );
 
 function createWorldPlanes(em: EntityManager) {
-  const p = em.newEntity();
+  const ts = [
+    mat4.fromRotationTranslationScale(
+      mat4.create(),
+      quat.fromEuler(quat.create(), 0, 0, Math.PI * 0.5),
+      [100, 50, -100],
+      [10, 10, 10]
+    ),
+    mat4.fromRotationTranslationScale(
+      mat4.create(),
+      quat.fromEuler(quat.create(), 0, 0, 0),
+      [0, -1000, -0],
+      [100, 100, 100]
+    ),
+    mat4.fromRotationTranslationScale(
+      mat4.create(),
+      quat.fromEuler(quat.create(), 0, 0, Math.PI * 1),
+      [10, -2, 10],
+      [0.2, 0.2, 0.2]
+    ),
+  ];
 
-  const t = mat4.fromRotationTranslationScale(
-    mat4.create(),
-    quat.fromEuler(quat.create(), 0, 0, Math.PI * 0.5),
-    [100, 0, -100],
-    [10, 10, 10]
-  );
-
-  em.ensureComponentOn(p, WorldPlaneConstDef, t);
+  for (let t of ts) {
+    em.ensureComponentOn(em.newEntity(), WorldPlaneConstDef, t);
+  }
 }
 
 function registerBuildWorldPlanes(em: EntityManager) {
