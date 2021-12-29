@@ -343,7 +343,7 @@ function stepPlayers(
     }
 
     // change physics parent
-    if (inputs.keyClicks["p"]) {
+    if (inputs.keyClicks["t"]) {
       const targetEnt = EM.findEntity(p.player.targetEnt, [ColliderDef]);
       if (targetEnt) {
         p.physicsParent.id = targetEnt.id;
@@ -352,6 +352,7 @@ function stepPlayers(
           // move above the obj
           p.position[1] = targetEnt.collider.aabb.max[1] + 3;
         }
+        vec3.copy(p.linearVelocity, vec3.ZEROS);
       } else {
         // unparent
         p.physicsParent.id = 0;
