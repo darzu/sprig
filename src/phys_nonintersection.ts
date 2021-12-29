@@ -53,13 +53,6 @@ import { PlayerEntDef } from "./game/player.js";
 import { quatDbg, vec3Dbg } from "./utils-3d.js";
 import { assert } from "./test.js";
 
-// TODO(@darzu): PHYSICS TODO:
-// - seperate rotation and motion w/ constraint checking between them
-// - impl GJK
-// - keep simplifying the systems
-// - seperate out PhysicsResults and PhysicsState into component parts
-// - re-name and re-org files
-
 // TODO(@darzu): break up PhysicsResults
 export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {
   return {

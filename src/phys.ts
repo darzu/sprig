@@ -1,30 +1,53 @@
 import { vec3 } from "./gl-matrix.js";
 import { __isSMI } from "./util.js";
-import { PhysicsObject } from "./phys_nonintersection.js";
+import {
+  PhysicsObject,
+  registerPhysicsContactSystems,
+  registerPhysicsInit,
+  registerUpdateLocalPhysicsAfterRebound,
+  registerUpdateWorldAABBs,
+  registerUpdateWorldFromPosRotScale,
+} from "./phys_nonintersection.js";
+import { EntityManager } from "./entity-manager.js";
+import { registerPhysicsDebuggerSystem } from "./phys_debug.js";
+import {
+  registerPhysicsClampVelocityByContact,
+  registerPhysicsClampVelocityBySize,
+  registerPhysicsApplyLinearVelocity,
+  registerPhysicsApplyAngularVelocity,
+} from "./phys_velocity.js";
+import {
+  registerUpdateLocalFromPosRotScale,
+  registerUpdateWorldFromLocalAndParent,
+} from "./transform.js";
 
-// TODO(@darzu): CLEAN UP PHYSICS SYSTEMS
-// physics systems:
-//  rotate objects
-//  translate objects
-//  update world position, world linear velocity
-//  constrain velocity b/c of contacts
-//  (assume position etc was moved outside of phys system)
-//  rebound based on translation since last time
-//  create checkRay based on last broad phase
+// TODO(@darzu): PHYSICS TODO:
+// - seperate rotation and motion w/ constraint checking between them
+// - impl GJK
+// - keep simplifying the systems
+// - seperate out PhysicsResults and PhysicsState into component parts
+// - re-name and re-org files
 
-// export interface PhysicsResults {
-//   collidesWith: CollidesWith;
-//   reboundData: Map<IdPair, ReboundData>;
-//   contactData: Map<IdPair, ContactData>;
-// }
+export function registerPhysicsSystems(em: EntityManager) {
+  registerPhysicsInit(em);
 
-// TODO(@darzu):
-// CollidesWith usage:
-//  is a object colliding?
-//    which objects is it colliding with?
-//  list all colliding pairs
+  registerPhysicsClampVelocityByContact(em);
+  registerPhysicsClampVelocityBySize(em);
+  registerPhysicsApplyLinearVelocity(em);
+  registerPhysicsApplyAngularVelocity(em);
+  registerUpdateLocalFromPosRotScale(em);
+  registerUpdateWorldFromLocalAndParent(em);
+  registerUpdateWorldAABBs(em);
+  registerPhysicsContactSystems(em);
+  registerUpdateWorldFromPosRotScale(em);
+  registerUpdateLocalPhysicsAfterRebound(em);
+  // TODO(@darzu): get rid of this duplicate call?
+  registerUpdateWorldFromLocalAndParent(em, "2");
+
+  registerPhysicsDebuggerSystem(em);
+}
+
 export type CollidesWith = Map<number, number[]>;
-
 export interface ReboundData {
   aId: number;
   bId: number;

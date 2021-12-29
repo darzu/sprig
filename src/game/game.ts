@@ -102,6 +102,7 @@ import {
   registerPhysicsClampVelocityByContact,
   registerPhysicsClampVelocityBySize,
 } from "../phys_velocity.js";
+import { registerPhysicsSystems } from "../phys.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -235,26 +236,7 @@ export function registerAllSystems(em: EntityManager) {
   registerStepCannonsSystem(em);
   registerPlayerCannonSystem(em);
   registerUpdateSmoothingLerp(em);
-
-  {
-    // TODO(@darzu): re-org into wrapper?
-    // Physics
-    registerPhysicsInit(em);
-    registerPhysicsClampVelocityByContact(em);
-    registerPhysicsClampVelocityBySize(em);
-    registerPhysicsApplyLinearVelocity(em);
-    registerPhysicsApplyAngularVelocity(em);
-    registerUpdateLocalFromPosRotScale(em);
-    registerUpdateWorldFromLocalAndParent(em);
-    registerUpdateWorldAABBs(em);
-    registerPhysicsContactSystems(em);
-    registerUpdateWorldFromPosRotScale(em);
-    registerUpdateLocalPhysicsAfterRebound(em);
-    registerUpdateWorldFromLocalAndParent(em, "2");
-
-    registerPhysicsDebuggerSystem(em);
-  }
-
+  registerPhysicsSystems(em);
   registerBulletCollisionSystem(em);
   registerModeler(em);
   registerHatPickupSystem(em);
@@ -266,8 +248,7 @@ export function registerAllSystems(em: EntityManager) {
   registerSendOutboxes(em);
   registerEventSystems(em);
   registerDeleteEntitiesSystem(em);
-  // TODO(@darzu): re-enable smoothing
-  // registerUpdateSmoothedTransform(em);
+  registerUpdateSmoothedTransform(em);
   registerRenderViewController(em);
   registerUpdateCameraView(em);
   registerAddMeshHandleSystem(em);
