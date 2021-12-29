@@ -10,14 +10,9 @@ import {
 } from "../mesh-pool.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { AABB } from "../phys_broadphase.js";
-import { PhysicsStateDef } from "../phys_esc.js";
+import { PhysicsStateDef } from "../phys_nonintersection.js";
 import { RenderableDef } from "../renderer.js";
-import {
-  ParentTransformDef,
-  PositionDef,
-  RotationDef,
-  TransformWorldDef,
-} from "../transform.js";
+import { PhysicsParentDef, PositionDef, RotationDef } from "../transform.js";
 import { ColorDef } from "./game.js";
 import { InteractingDef } from "./interact.js";
 import { registerEventHandler, DetectedEventsDef } from "../net/events.js";
@@ -74,11 +69,9 @@ function createHat(
   if (!PositionDef.isOn(e)) em.addComponent(e.id, PositionDef, props.loc);
   if (!RotationDef.isOn(e)) em.addComponent(e.id, RotationDef);
   if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.4, 0.1, 0.1]);
-  if (!TransformWorldDef.isOn(e)) em.addComponent(e.id, TransformWorldDef);
-  if (!ParentTransformDef.isOn(e)) em.addComponent(e.id, ParentTransformDef);
+  if (!PhysicsParentDef.isOn(e)) em.addComponent(e.id, PhysicsParentDef);
   if (!RenderableDef.isOn(e))
     em.addComponent(e.id, RenderableDef, getHatMesh());
-  if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
   if (!ColliderDef.isOn(e)) {
     const collider = em.addComponent(e.id, ColliderDef);
     collider.shape = "AABB";
@@ -162,8 +155,8 @@ registerEventHandler("hat-pickup", {
   },
   runEvent: (em, entities) => {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
-    let hat = em.findEntity(entities[1], [PositionDef, ParentTransformDef])!;
-    hat.parentTransform.id = player.id;
+    let hat = em.findEntity(entities[1], [PositionDef, PhysicsParentDef])!;
+    hat.physicsParent.id = player.id;
     em.removeComponent(hat.id, InteractableDef);
     vec3.set(hat.position, 0, 1, 0);
     player.player.hat = hat.id;
@@ -178,8 +171,8 @@ registerEventHandler("hat-drop", {
   },
   runEvent: (em, entities, location) => {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
-    let hat = em.findEntity(entities[1], [PositionDef, ParentTransformDef])!;
-    hat.parentTransform.id = 0;
+    let hat = em.findEntity(entities[1], [PositionDef, PhysicsParentDef])!;
+    hat.physicsParent.id = 0;
     em.addComponent(hat.id, InteractableDef);
     vec3.copy(hat.position, location!);
     player.player.hat = 0;

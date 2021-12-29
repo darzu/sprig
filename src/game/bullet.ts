@@ -3,13 +3,7 @@ import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import { RenderableDef } from "../renderer.js";
-import {
-  Position,
-  PositionDef,
-  RotationDef,
-  TransformWorldDef,
-} from "../transform.js";
-import { PhysicsStateDef } from "../phys_esc.js";
+import { Position, PositionDef, RotationDef } from "../transform.js";
 import { AABBCollider, ColliderDef } from "../collider.js";
 import {
   Authority,
@@ -85,10 +79,8 @@ function createBullet(
   em.ensureComponent(e.id, LinearVelocityDef, props.linearVelocity);
   em.ensureComponent(e.id, AngularVelocityDef, props.angularVelocity);
   em.ensureComponent(e.id, ColorDef, BULLET_COLOR);
-  em.ensureComponent(e.id, TransformWorldDef);
   em.ensureComponent(e.id, MotionSmoothingDef);
   em.ensureComponent(e.id, RenderableDef, assets.bullet.proto);
-  em.ensureComponent(e.id, PhysicsStateDef);
   em.ensureComponent(e.id, AuthorityDef, pid);
   em.ensureComponent(e.id, BulletDef);
   em.ensureComponent(e.id, ColliderDef, {

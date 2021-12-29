@@ -127,11 +127,43 @@ const PLANE_MESH = unshareProvokingVertices(
   )
 );
 
+const GRID_PLANE_MESH = unshareProvokingVertices(createGridPlane(30, 30));
+
+function createGridPlane(width: number, height: number): Mesh {
+  const m: Mesh = {
+    pos: [],
+    tri: [],
+    colors: [],
+    lines: [],
+  };
+
+  for (let x = 0; x <= width; x++) {
+    const i = m.pos.length;
+    m.pos.push([x, 0, 0]);
+    m.pos.push([x, 0, height]);
+    m.lines!.push([i, i + 1]);
+  }
+
+  for (let z = 0; z <= height; z++) {
+    const i = m.pos.length;
+    m.pos.push([0, 0, z]);
+    m.pos.push([width, 0, z]);
+    m.lines!.push([i, i + 1]);
+  }
+
+  return scaleMesh(
+    mapMeshPositions(m, (p) => [p[0] - width / 2, p[1], p[2] - height / 2]),
+    10 / Math.min(width, height)
+  );
+}
+
 export const LocalMeshes = {
   cube: CUBE_MESH,
   plane: PLANE_MESH,
   boat: scaleMesh3(CUBE_MESH, [5, 0.3, 2.5]),
   bullet: scaleMesh(CUBE_MESH, 0.3),
+  gridPlane: GRID_PLANE_MESH,
+  wireCube: { ...CUBE_MESH, tri: [] } as Mesh,
 } as const;
 
 type AssetSymbols = keyof typeof RemoteMeshes | keyof typeof LocalMeshes;

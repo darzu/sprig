@@ -10,18 +10,18 @@ import {
 import { mat4, quat, vec3 } from "./gl-matrix.js";
 import { isMeshHandle, Mesh, MeshHandle, MeshHandleDef } from "./mesh-pool.js";
 import { Authority, AuthorityDef, Me, MeDef } from "./net/components.js";
+import { WorldFrameDef } from "./phys_nonintersection.js";
 import { RendererDef } from "./render_init.js";
 import { Renderer } from "./render_webgpu.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
 import { PhysicsTimerDef } from "./time.js";
 import {
-  ParentTransform,
+  PhysicsParent,
   Position,
   PositionDef,
   Rotation,
   RotationDef,
-  TransformWorld,
-  TransformWorldDef,
+  Frame,
 } from "./transform.js";
 
 export const RenderableDef = EM.defineComponent(
@@ -54,8 +54,8 @@ export type CameraView = Component<typeof CameraViewDef>;
 interface RenderableObj {
   id: number;
   renderable: Renderable;
-  transformWorld: TransformWorld;
   meshHandle: MeshHandle;
+  world: Frame;
 }
 
 function stepRenderer(
@@ -70,7 +70,7 @@ function stepRenderer(
       vec3.copy(o.meshHandle.tint, o.color);
     }
 
-    mat4.copy(o.meshHandle.transform, o.transformWorld);
+    mat4.copy(o.meshHandle.transform, o.world.transform);
   }
 
   // filter
@@ -92,6 +92,7 @@ function updateCameraView(
     position: Position;
     rotation: Rotation;
     authority: Authority;
+    world: Frame;
   }[],
   resources: {
     cameraView: CameraView;
@@ -112,23 +113,22 @@ function updateCameraView(
   cameraView.width = htmlCanvas.canvas.width;
   cameraView.height = htmlCanvas.canvas.height;
 
-  //TODO: this calculation feels like it should be simpler but Doug doesn't
-  //understand quaternions.
+  if (camera.cameraMode === "thirdPerson") {
+    vec3.copy(camera.offset, [0, 0, 10]);
+  } else if (camera.cameraMode === "thirdPersonOverShoulder") {
+    vec3.copy(camera.offset, [2, 2, 8]);
+  }
+
   let viewMatrix = mat4.create();
   if (mePlayer) {
-    mat4.translate(viewMatrix, viewMatrix, mePlayer.position);
-    mat4.multiply(
-      viewMatrix,
-      viewMatrix,
-      mat4.fromQuat(mat4.create(), mePlayer.rotation)
-    );
+    mat4.copy(viewMatrix, mePlayer.world.transform);
   }
   mat4.multiply(
     viewMatrix,
     viewMatrix,
     mat4.fromQuat(mat4.create(), camera.rotation)
   );
-  mat4.translate(viewMatrix, viewMatrix, camera.location);
+  mat4.translate(viewMatrix, viewMatrix, camera.offset);
   mat4.invert(viewMatrix, viewMatrix);
 
   const projectionMatrix = mat4.create();
@@ -164,7 +164,7 @@ function updateCameraView(
 export function registerUpdateCameraView(em: EntityManager) {
   em.addSingletonComponent(CameraViewDef);
   em.registerSystem(
-    [PlayerEntDef, PositionDef, RotationDef, AuthorityDef],
+    [PlayerEntDef, PositionDef, RotationDef, AuthorityDef, WorldFrameDef],
     [CameraViewDef, CameraDef, MeDef, CanvasDef],
     updateCameraView
   );
@@ -172,7 +172,7 @@ export function registerUpdateCameraView(em: EntityManager) {
 
 export function registerRenderer(em: EntityManager) {
   em.registerSystem(
-    [RenderableDef, TransformWorldDef, MeshHandleDef],
+    [RenderableDef, WorldFrameDef, MeshHandleDef],
     [CameraViewDef, PhysicsTimerDef, RendererDef],
     (objs, res) => {
       if (res.physicsTimer.steps > 0)

@@ -1,25 +1,11 @@
 import { ColliderDef } from "../collider.js";
 import { Component, EM, EntityManager } from "../entity-manager.js";
 import { vec3 } from "../gl-matrix.js";
-import { PhysicsStateDef } from "../phys_esc.js";
 import { RenderableDef } from "../renderer.js";
-import {
-  ParentTransformDef,
-  Position,
-  PositionDef,
-  TransformWorldDef,
-} from "../transform.js";
+import { PhysicsParentDef, Position, PositionDef } from "../transform.js";
 import { ColorDef } from "./game.js";
+import { getAABBFromMesh, scaleMesh } from "../mesh-pool.js";
 import {
-  unshareProvokingVertices,
-  getAABBFromMesh,
-  Mesh,
-  MeshHandle,
-  MeshHandleDef,
-  scaleMesh,
-} from "../mesh-pool.js";
-import {
-  Sync,
   SyncDef,
   Authority,
   AuthorityDef,
@@ -78,16 +64,12 @@ export function registerBuildCubesSystem(em: EntityManager) {
       }
       if (!em.hasComponents(cube, [MotionSmoothingDef]))
         em.addComponent(cube.id, MotionSmoothingDef);
-      if (!em.hasComponents(cube, [TransformWorldDef]))
-        em.addComponent(cube.id, TransformWorldDef);
-      if (!em.hasComponents(cube, [ParentTransformDef]))
-        em.addComponent(cube.id, ParentTransformDef);
+      if (!em.hasComponents(cube, [PhysicsParentDef]))
+        em.addComponent(cube.id, PhysicsParentDef);
       const mesh = scaleMesh(assets.cube.mesh, cube.cubeConstruct.size);
       if (!em.hasComponents(cube, [RenderableDef])) {
         const renderable = em.addComponent(cube.id, RenderableDef, mesh);
       }
-      if (!em.hasComponents(cube, [PhysicsStateDef]))
-        em.addComponent(cube.id, PhysicsStateDef);
       if (!em.hasComponents(cube, [ColliderDef])) {
         const collider = em.addComponent(cube.id, ColliderDef);
         collider.shape = "AABB";

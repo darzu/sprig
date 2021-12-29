@@ -4,6 +4,7 @@ import { vec3 } from "../gl-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { ColorDef } from "./game.js";
 import { Position, PositionDef, Rotation, RotationDef } from "../transform.js";
+import { WorldFrameDef } from "../phys_nonintersection.js";
 
 export const InteractableDef = EM.defineComponent("interaction", () => ({
   inRange: false,
@@ -19,12 +20,15 @@ const INTERACTION_ANGLE = Math.PI / 6;
 function getInteractionEntity(
   playerPosition: Position,
   playerRotation: Rotation,
-  interactables: { position: Position; id: number }[]
+  interactables: { world: { position: Position }; id: number }[]
 ): number {
   let bestDistance = INTERACTION_DISTANCE;
   let bestId = 0;
 
-  for (let { position, id } of interactables) {
+  for (let {
+    world: { position },
+    id,
+  } of interactables) {
     let to = vec3.sub(vec3.create(), position, playerPosition);
     let distance = vec3.len(to);
     if (distance < bestDistance) {
@@ -46,10 +50,10 @@ const INTERACTION_TINT = vec3.fromValues(0.1, 0.2, 0.1);
 
 export function registerInteractionSystem(em: EntityManager) {
   em.registerSystem(
-    [PlayerEntDef, AuthorityDef, PositionDef, RotationDef],
+    [PlayerEntDef, AuthorityDef, WorldFrameDef],
     [MeDef],
     (players, resources) => {
-      let interactables = em.filterEntities([InteractableDef, PositionDef]);
+      let interactables = em.filterEntities([InteractableDef, WorldFrameDef]);
       for (let interactable of interactables) {
         if (interactable.interaction.inRange && ColorDef.isOn(interactable)) {
           vec3.subtract(
@@ -63,14 +67,13 @@ export function registerInteractionSystem(em: EntityManager) {
       for (let player of players) {
         if (player.authority.pid !== resources.me.pid) continue;
         let interactionId = getInteractionEntity(
-          player.position,
-          player.rotation,
+          player.world.position,
+          player.world.rotation,
           interactables
         );
         if (interactionId > 0) {
           if (player.player.interacting) {
-            let interacting = em.ensureComponent(interactionId, InteractingDef);
-            interacting.id = player.id;
+            em.ensureComponent(interactionId, InteractingDef, player.id);
           } else {
             let interactable = em.findEntity(interactionId, [
               InteractableDef,

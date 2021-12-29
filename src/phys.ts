@@ -1,30 +1,53 @@
 import { vec3 } from "./gl-matrix.js";
 import { __isSMI } from "./util.js";
-import { PhysicsObject } from "./phys_esc.js";
+import {
+  PhysicsObject,
+  registerPhysicsContactSystems,
+  registerPhysicsStateInit,
+  registerUpdateLocalPhysicsAfterRebound,
+  registerUpdateWorldAABBs,
+  registerUpdateWorldFromPosRotScale,
+} from "./phys_nonintersection.js";
+import { EntityManager } from "./entity-manager.js";
+import { registerPhysicsDebuggerSystem } from "./phys_debug.js";
+import {
+  registerPhysicsClampVelocityByContact,
+  registerPhysicsClampVelocityBySize,
+  registerPhysicsApplyLinearVelocity,
+  registerPhysicsApplyAngularVelocity,
+} from "./phys_velocity.js";
+import {
+  registerUpdateLocalFromPosRotScale,
+  registerUpdateWorldFromLocalAndParent,
+} from "./transform.js";
 
-// TODO(@darzu): CLEAN UP PHYSICS SYSTEMS
-// physics systems:
-//  rotate objects
-//  translate objects
-//  update world position, world linear velocity
-//  constrain velocity b/c of contacts
-//  (assume position etc was moved outside of phys system)
-//  rebound based on translation since last time
-//  create checkRay based on last broad phase
+// TODO(@darzu): PHYSICS TODO:
+// - seperate rotation and motion w/ constraint checking between them
+// - impl GJK
+// - keep simplifying the systems
+// - seperate out PhysicsResults and PhysicsState into component parts
+// - re-name and re-org files
 
-// export interface PhysicsResults {
-//   collidesWith: CollidesWith;
-//   reboundData: Map<IdPair, ReboundData>;
-//   contactData: Map<IdPair, ContactData>;
-// }
+export function registerPhysicsSystems(em: EntityManager) {
+  registerPhysicsStateInit(em);
 
-// TODO(@darzu):
-// CollidesWith usage:
-//  is a object colliding?
-//    which objects is it colliding with?
-//  list all colliding pairs
+  registerPhysicsClampVelocityByContact(em);
+  registerPhysicsClampVelocityBySize(em);
+  registerPhysicsApplyLinearVelocity(em);
+  registerPhysicsApplyAngularVelocity(em);
+  registerUpdateLocalFromPosRotScale(em);
+  registerUpdateWorldFromLocalAndParent(em);
+  registerUpdateWorldAABBs(em);
+  registerPhysicsContactSystems(em);
+  // registerUpdateWorldFromPosRotScale(em);
+  registerUpdateLocalPhysicsAfterRebound(em);
+  // TODO(@darzu): get rid of this duplicate call?
+  registerUpdateWorldFromLocalAndParent(em, "2");
+
+  registerPhysicsDebuggerSystem(em);
+}
+
 export type CollidesWith = Map<number, number[]>;
-
 export interface ReboundData {
   aId: number;
   bId: number;
@@ -67,7 +90,7 @@ export function computeContactData(
     // determine who is to the left in this dimension
     let left: PhysicsObject;
     let right: PhysicsObject;
-    if (a._phys.lastPosition[i] < b._phys.lastPosition[i]) {
+    if (a._phys.lastWPos[i] < b._phys.lastWPos[i]) {
       left = a;
       right = b;
     } else {
@@ -75,7 +98,7 @@ export function computeContactData(
       right = a;
     }
 
-    const newDist = right._phys.world.min[i] - left._phys.world.max[i];
+    const newDist = right._phys.worldAABB.min[i] - left._phys.worldAABB.max[i];
     if (dist < newDist) {
       dist = newDist;
       dim = i;
@@ -112,7 +135,7 @@ export function computeReboundData(
     // determine who is to the left in this dimension
     let left: PhysicsObject;
     let right: PhysicsObject;
-    if (a._phys.lastPosition[i] < b._phys.lastPosition[i]) {
+    if (a._phys.lastWPos[i] < b._phys.lastWPos[i]) {
       left = a;
       right = b;
     } else {
@@ -120,16 +143,16 @@ export function computeReboundData(
       right = a;
     }
 
-    const overlap = left._phys.world.max[i] - right._phys.world.min[i];
+    const overlap = left._phys.worldAABB.max[i] - right._phys.worldAABB.min[i];
     if (overlap <= 0) continue; // no overlap to deal with
 
     const leftMaxContrib = Math.max(
       0,
-      left._phys.position[i] - left._phys.lastPosition[i]
+      left.world.position[i] - left._phys.lastWPos[i]
     );
     const rightMaxContrib = Math.max(
       0,
-      right._phys.lastPosition[i] - right._phys.position[i]
+      right._phys.lastWPos[i] - right.world.position[i]
     );
     if (leftMaxContrib + rightMaxContrib < overlap - PAD * itr) continue;
     if (leftMaxContrib === 0 && rightMaxContrib === 0)
@@ -164,14 +187,12 @@ export function computeReboundData(
   const aOverlap = vec3.fromValues(0, 0, 0); // TODO(@darzu): perf; unnecessary alloc
   if (0 < aDim)
     aOverlap[aDim] =
-      Math.sign(a._phys.lastPosition[aDim] - a._phys.position[aDim]) *
-      aOverlapNum;
+      Math.sign(a._phys.lastWPos[aDim] - a.world.position[aDim]) * aOverlapNum;
 
   const bOverlap = vec3.fromValues(0, 0, 0);
   if (0 < bDim)
     bOverlap[bDim] =
-      Math.sign(b._phys.lastPosition[bDim] - b._phys.position[bDim]) *
-      bOverlapNum;
+      Math.sign(b._phys.lastWPos[bDim] - b.world.position[bDim]) * bOverlapNum;
 
   return { aId: a.id, bId: b.id, aRebound, bRebound, aOverlap, bOverlap };
 }

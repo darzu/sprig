@@ -5,13 +5,7 @@ import { jitter } from "../math.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import { RenderableDef } from "../renderer.js";
-import {
-  PositionDef,
-  Rotation,
-  RotationDef,
-  TransformWorldDef,
-} from "../transform.js";
-import { PhysicsStateDef } from "../phys_esc.js";
+import { PositionDef, Rotation, RotationDef } from "../transform.js";
 import { AABBCollider, ColliderDef } from "../collider.js";
 import {
   Authority,
@@ -118,11 +112,9 @@ function createBoat(
   if (!RotationDef.isOn(e)) em.addComponent(e.id, RotationDef);
   if (!LinearVelocityDef.isOn(e)) em.addComponent(e.id, LinearVelocityDef);
   if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.2, 0.1, 0.05]);
-  if (!TransformWorldDef.isOn(e)) em.addComponent(e.id, TransformWorldDef);
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e))
     em.addComponent(e.id, RenderableDef, assets.boat.mesh);
-  if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
   if (!AuthorityDef.isOn(e)) {
     // TODO(@darzu): debug why boats have jerky movement
     console.log(`claiming authority of boat ${e.id}`);

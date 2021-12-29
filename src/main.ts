@@ -67,7 +67,7 @@ async function startGame(host: string | null) {
   EM.addSingletonComponent(InputsDef);
   registerInputsSystem(EM);
 
-  const controlsStr = `[WASD shift/c mouse spacebar]`;
+  const controlsStr = `[WASD space 1 2 3 4 5 r t]`;
   let avgJsTime = 0;
   let avgNetTime = 0;
   let avgSimTime = 0;

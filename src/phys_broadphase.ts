@@ -77,14 +77,20 @@ export function checkBroadphase(
     }
   }
 
-  const maxHorizontalDist = 1000;
-  const maxVerticalDist = 100;
-  const worldAABB: AABB = {
-    min: [-maxHorizontalDist, -maxVerticalDist, -maxHorizontalDist],
-    max: [maxHorizontalDist, maxVerticalDist, maxHorizontalDist],
-  };
+  // determine our bounds
+  const worldAABB = createAABB();
+  for (let o of objs) {
+    for (let i = 0; i < 3; i++) {
+      worldAABB.min[i] = Math.min(worldAABB.min[i], o.aabb.min[i]);
+      worldAABB.max[i] = Math.max(worldAABB.max[i], o.aabb.max[i]);
+    }
+  }
+  for (let i = 0; i < 3; i++) {
+    worldAABB.min[i] -= 10;
+    worldAABB.max[i] += 10;
+  }
 
-  // naive oct-tree
+  // naive oct-tree (last measured 68482c94)
   //      5000 objs: 12.5ms, 56,000 overlaps + 235,000 enclosed-bys
   //      3000 objs: 7.6ms, 21,000 overlaps + 186,000 enclosed-bys
   //      3000 objs @[2000, 200, 2000]: 5ms, 26,000 + 120,000 enclosed-bys ?
@@ -441,7 +447,7 @@ export function rayHitDist(b: AABB, r: Ray): number {
     }
   }
 
-  if (tmin < tmax && 0.0 < tmax) return Math.max(tmin, 0);
+  if (tmin <= tmax && 0.0 < tmax) return Math.max(tmin, 0);
 
   return NaN;
 }
@@ -495,11 +501,9 @@ export function createAABB(): AABB {
     max: vec3.create(),
   };
 }
-export function copyAABB(a: AABB): AABB {
-  return {
-    min: vec3.clone(a.min),
-    max: vec3.clone(a.max),
-  };
+export function copyAABB(out: AABB, a: AABB) {
+  vec3.copy(out.min, a.min);
+  vec3.copy(out.max, a.max);
 }
 export function getAABBFromPositions(positions: vec3[]): AABB {
   const min = vec3.fromValues(Infinity, Infinity, Infinity);

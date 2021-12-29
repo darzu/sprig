@@ -1,14 +1,31 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { quat, vec3 } from "../gl-matrix.js";
+import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { jitter } from "../math.js";
-import { registerPhysicsSystems } from "../phys_esc.js";
+import {
+  registerPhysicsStateInit,
+  registerUpdateWorldAABBs,
+  registerPhysicsContactSystems,
+  registerUpdateWorldFromPosRotScale,
+  registerUpdateLocalPhysicsAfterRebound,
+  WorldFrameDef,
+} from "../phys_nonintersection.js";
 import {
   registerAddMeshHandleSystem,
   registerRenderer,
   registerUpdateCameraView,
+  RenderableDef,
 } from "../renderer.js";
-import { registerUpdateTransforms } from "../transform.js";
+import {
+  PositionDef,
+  registerInitTransforms,
+  registerUpdateLocalFromPosRotScale,
+  registerUpdateWorldFromLocalAndParent,
+  RotationDef,
+  ScaleDef,
+  TransformDef,
+  updateFrameFromTransform,
+} from "../transform.js";
 import {
   BoatConstructDef,
   registerBuildBoatsSystem,
@@ -49,7 +66,12 @@ import {
   registerHatDropSystem,
 } from "./hat.js";
 import { registerBuildBulletsSystem } from "./bullet.js";
-import { DARK_BLUE, LIGHT_BLUE, registerAssetLoader } from "./assets.js";
+import {
+  AssetsDef,
+  DARK_BLUE,
+  LIGHT_BLUE,
+  registerAssetLoader,
+} from "./assets.js";
 import { registerInitCanvasSystem } from "../canvas.js";
 import { registerRenderInitSystem, RendererDef } from "../render_init.js";
 import { registerDeleteEntitiesSystem } from "../delete.js";
@@ -73,6 +95,17 @@ import {
   registerUpdateSmoothingLerp,
   registerUpdateSmoothedTransform,
 } from "../smoothing.js";
+import { registerBuildCursor } from "./cursor.js";
+import { ColliderDef } from "../collider.js";
+import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
+import { FinishedDef } from "../build.js";
+import {
+  registerPhysicsApplyAngularVelocity,
+  registerPhysicsApplyLinearVelocity,
+  registerPhysicsClampVelocityByContact,
+  registerPhysicsClampVelocityBySize,
+} from "../phys_velocity.js";
+import { registerPhysicsSystems } from "../phys.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -116,6 +149,68 @@ function createGround(em: EntityManager) {
   }
 }
 
+const WorldPlaneConstDef = EM.defineComponent("worldPlane", (t?: mat4) => {
+  return {
+    transform: t ?? mat4.create(),
+  };
+});
+EM.registerSerializerPair(
+  WorldPlaneConstDef,
+  (o, buf) => buf.writeMat4(o.transform),
+  (o, buf) => buf.readMat4(o.transform)
+);
+
+function createWorldPlanes(em: EntityManager) {
+  const ts = [
+    mat4.fromRotationTranslationScale(
+      mat4.create(),
+      quat.fromEuler(quat.create(), 0, 0, Math.PI * 0.5),
+      [100, 50, -100],
+      [10, 10, 10]
+    ),
+    mat4.fromRotationTranslationScale(
+      mat4.create(),
+      quat.fromEuler(quat.create(), 0, 0, 0),
+      [0, -1000, -0],
+      [100, 100, 100]
+    ),
+    mat4.fromRotationTranslationScale(
+      mat4.create(),
+      quat.fromEuler(quat.create(), 0, 0, Math.PI * 1),
+      [10, -2, 10],
+      [0.2, 0.2, 0.2]
+    ),
+  ];
+
+  for (let t of ts) {
+    em.ensureComponentOn(em.newEntity(), WorldPlaneConstDef, t);
+  }
+}
+
+function registerBuildWorldPlanes(em: EntityManager) {
+  em.registerSystem(
+    [WorldPlaneConstDef],
+    [AssetsDef, MeDef],
+    (es, res) => {
+      for (let e of es) {
+        if (FinishedDef.isOn(e)) continue;
+        em.ensureComponentOn(e, TransformDef, e.worldPlane.transform);
+        em.ensureComponentOn(e, ColorDef, [1, 0, 1]);
+        em.ensureComponentOn(e, RenderableDef, res.assets.gridPlane.mesh);
+        em.ensureComponentOn(e, ColliderDef, {
+          shape: "AABB",
+          solid: true,
+          aabb: res.assets.gridPlane.aabb,
+        });
+        em.ensureComponentOn(e, SyncDef, [WorldPlaneConstDef.id], []);
+        em.ensureComponentOn(e, AuthorityDef, res.me.pid);
+        em.ensureComponentOn(e, FinishedDef);
+      }
+    },
+    "buildWorldPlanes"
+  );
+}
+
 export function registerAllSystems(em: EntityManager) {
   registerTimeSystem(em);
   registerNetSystems(em);
@@ -130,6 +225,7 @@ export function registerAllSystems(em: EntityManager) {
   registerAssetLoader(em);
   registerBuildPlayersSystem(em);
   registerBuildPlanesSystem(em);
+  registerBuildWorldPlanes(em);
   registerBuildCubesSystem(em);
   registerBuildBoatsSystem(em);
   registerBuildShipSystem(em);
@@ -138,6 +234,8 @@ export function registerAllSystems(em: EntityManager) {
   registerBuildCannonsSystem(em);
   registerBuildAmmunitionSystem(em);
   registerBuildLinstockSystem(em);
+  registerBuildCursor(em);
+  registerInitTransforms(em);
   registerMoveCubesSystem(em);
   registerStepBoats(em);
   registerStepPlayers(em);
@@ -157,11 +255,10 @@ export function registerAllSystems(em: EntityManager) {
   registerSendOutboxes(em);
   registerEventSystems(em);
   registerDeleteEntitiesSystem(em);
-  registerUpdateTransforms(em);
-  registerUpdateSmoothedTransform(em);
+  // TODO(@darzu): confirm this all works
+  // registerUpdateSmoothedTransform(em);
   registerRenderViewController(em);
   registerUpdateCameraView(em);
-  registerPhysicsDebuggerSystem(em);
   registerAddMeshHandleSystem(em);
   registerRenderer(em);
 }
@@ -182,11 +279,18 @@ function registerRenderViewController(em: EntityManager) {
         renderer.renderer.drawTris = false;
       }
 
-      // check render mode
+      // check perspective mode
       if (inputs.keyClicks["3"]) {
-        camera.perspectiveMode = "perspective";
-      } else if (inputs.keyClicks["4"]) {
-        camera.perspectiveMode = "ortho";
+        if (camera.perspectiveMode === "ortho")
+          camera.perspectiveMode = "perspective";
+        else camera.perspectiveMode = "ortho";
+      }
+
+      // check camera mode
+      if (inputs.keyClicks["4"]) {
+        if (camera.cameraMode === "thirdPerson")
+          camera.cameraMode = "thirdPersonOverShoulder";
+        else camera.cameraMode = "thirdPerson";
       }
     },
     "renderView"
@@ -208,19 +312,14 @@ export function createServerObjects(em: EntityManager) {
   createShips(em);
   createHats(em);
   createCannons(em);
+  createWorldPlanes(em);
 }
 export function createLocalObjects(em: EntityManager) {
   createPlayer(em);
 }
 
 function createCamera(_em: EntityManager) {
-  let cameraRotation = quat.identity(quat.create());
-  quat.rotateX(cameraRotation, cameraRotation, -Math.PI / 8);
-  let cameraLocation = vec3.fromValues(0, 0, 10);
-
-  let camera = EM.addSingletonComponent(CameraDef);
-  camera.rotation = cameraRotation;
-  camera.location = cameraLocation;
+  EM.addSingletonComponent(CameraDef);
 }
 function createShips(em: EntityManager) {
   const rot = quat.create();
@@ -231,14 +330,14 @@ function createShips(em: EntityManager) {
 }
 function createBoats(em: EntityManager) {
   // create boat(s)
-  const BOAT_COUNT = 4;
+  const BOAT_COUNT = 10;
   for (let i = 0; i < BOAT_COUNT; i++) {
     const boatCon = em.addComponent(em.newEntity().id, BoatConstructDef);
     boatCon.location[1] = -9;
-    boatCon.location[0] = (Math.random() - 0.5) * 20 - 10;
-    boatCon.location[2] = (Math.random() - 0.5) * 20 - 20;
-    boatCon.speed = 0.01 + jitter(0.01);
-    boatCon.wheelSpeed = jitter(0.002);
+    boatCon.location[0] = (Math.random() - 0.5) * 40 - 20;
+    boatCon.location[2] = (Math.random() - 0.5) * 40 - 20;
+    boatCon.speed = 0.005 + jitter(0.005);
+    boatCon.wheelSpeed = jitter(0.001);
     boatCon.wheelDir = 0;
   }
 }

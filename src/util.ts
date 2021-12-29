@@ -60,3 +60,8 @@ export function toRecord<A, V>(
   as.forEach((a) => (res[key(a)] = val(a)));
   return res;
 }
+
+// TODO(@darzu): this is is a typescript hack for the fact that just using "false"
+//  causes type inference (specifically type narrowing) to not work right in
+//  dead code sometimes (last tested with tsc v4.2.3)
+export const FALSE: boolean = false;

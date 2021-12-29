@@ -2,12 +2,10 @@ import { FinishedDef } from "../build.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
-import { PhysicsStateDef } from "../phys_esc.js";
 import { RenderableDef } from "../renderer.js";
-import { PositionDef, RotationDef, TransformWorldDef } from "../transform.js";
+import { PositionDef, RotationDef } from "../transform.js";
 import { Deserializer, Serializer } from "../serialize.js";
 import { Assets, AssetsDef } from "./assets.js";
-import { ColorDef } from "./game.js";
 
 export const ShipConstructDef = EM.defineComponent(
   "shipConstruct",
@@ -46,10 +44,8 @@ function createShip(
   const props = e.shipConstruct;
   if (!PositionDef.isOn(e)) em.addComponent(e.id, PositionDef, props.loc);
   if (!RotationDef.isOn(e)) em.addComponent(e.id, RotationDef, props.rot);
-  if (!TransformWorldDef.isOn(e)) em.addComponent(e.id, TransformWorldDef);
   if (!RenderableDef.isOn(e))
     em.addComponent(e.id, RenderableDef, assets.ship.mesh);
-  if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
   if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid);
   if (!SyncDef.isOn(e)) {
     const sync = em.addComponent(e.id, SyncDef);

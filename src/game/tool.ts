@@ -10,14 +10,12 @@ import {
 } from "../mesh-pool.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { AABB } from "../phys_broadphase.js";
-import { PhysicsStateDef } from "../phys_esc.js";
 import { RenderableDef } from "../renderer.js";
 import {
-  ParentTransformDef,
+  PhysicsParentDef,
   PositionDef,
   RotationDef,
   ScaleDef,
-  TransformWorldDef,
 } from "../transform.js";
 import { ColorDef } from "./game.js";
 import { InteractingDef } from "./interact.js";
@@ -83,13 +81,14 @@ registerEventHandler("tool-pickup", {
   },
   runEvent: (em, entities) => {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
-    let tool = em.findEntity(entities[1], [PositionDef, ParentTransformDef])!;
-    tool.parentTransform.id = player.id;
+    let tool = em.findEntity(entities[1], [PositionDef, PhysicsParentDef])!;
+    tool.physicsParent.id = player.id;
     em.removeComponent(tool.id, InteractableDef);
     vec3.set(tool.position, 0, 0, -1.5);
-    let scale = em.ensureComponent(tool.id, ScaleDef);
-    vec3.set(scale, 0.5, 0.5, 0.5);
+    em.ensureComponent(tool.id, ScaleDef);
+    if (ScaleDef.isOn(tool)) vec3.copy(tool.scale, [0.5, 0.5, 0.5]);
     player.player.tool = tool.id;
+    if (ColliderDef.isOn(tool)) tool.collider.solid = false;
   },
 });
 
@@ -101,12 +100,13 @@ registerEventHandler("tool-drop", {
   },
   runEvent: (em, entities, location) => {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
-    let tool = em.findEntity(entities[1], [PositionDef, ParentTransformDef])!;
-    tool.parentTransform.id = 0;
+    let tool = em.findEntity(entities[1], [PositionDef, PhysicsParentDef])!;
+    tool.physicsParent.id = 0;
     em.addComponent(tool.id, InteractableDef);
     vec3.copy(tool.position, location!);
-    let scale = em.ensureComponent(tool.id, ScaleDef);
-    vec3.set(scale, 1, 1, 1);
+    em.ensureComponent(tool.id, ScaleDef);
+    if (ScaleDef.isOn(tool)) vec3.copy(tool.scale, [1, 1, 1]);
     player.player.tool = 0;
+    if (ColliderDef.isOn(tool)) tool.collider.solid = true;
   },
 });

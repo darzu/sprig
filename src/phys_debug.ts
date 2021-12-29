@@ -5,13 +5,19 @@ import { BoatDef } from "./game/boat.js";
 import { ColorDef } from "./game/game.js";
 import { mat4, vec3 } from "./gl-matrix.js";
 import { InputsDef } from "./inputs.js";
-import { mathMap } from "./math.js";
+import { avg, mathMap } from "./math.js";
 import { mapMeshPositions, Mesh, MeshHandleDef } from "./mesh-pool.js";
 import { AABB } from "./phys_broadphase.js";
-import { PhysicsStateDef } from "./phys_esc.js";
+import { PhysicsStateDef, WorldFrameDef } from "./phys_nonintersection.js";
 import { RenderableDef } from "./renderer.js";
-import { TransformWorldDef } from "./transform.js";
+import {
+  copyFrame,
+  PositionDef,
+  ScaleDef,
+  updateFrameFromPosRotScale,
+} from "./transform.js";
 import { RendererDef } from "./render_init.js";
+import { tempVec } from "./temp-pool.js";
 
 export const PhysicsDbgDef = EM.defineComponent("_physDbgState", () => {
   return {
@@ -44,12 +50,10 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
             const dbgE = em.newEntity();
 
             // with a wireframe mesh
-            // TODO(@darzu): USE PROTOTYPES HERE
-            const m = meshFromAABB(e.collider.aabb);
             em.addComponent(
               dbgE.id,
               RenderableDef,
-              m,
+              res.assets.wireCube.proto,
               res._physDbgState.showAABBs,
               1
             );
@@ -57,8 +61,9 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
             // colored
             em.addComponent(dbgE.id, ColorDef, [0, 1, 0]);
 
-            // transformed
-            em.addComponent(dbgE.id, TransformWorldDef);
+            // positioned and scaled
+            em.ensureComponentOn(dbgE, PositionDef);
+            em.ensureComponentOn(dbgE, ScaleDef);
 
             // NOTE: we don't use the normal parent transform mechanism b/c
             //  colliders especially AABBs are only translated, not full matrix
@@ -94,15 +99,32 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
 
   // update transform based on parent collider
   em.registerSystem(
-    [DbgMeshDef, TransformWorldDef],
+    [DbgMeshDef, PositionDef, ScaleDef, WorldFrameDef],
     [],
     (es, res) => {
       for (let e of es) {
         const parent = em.findEntity(e._physDbgMesh.parent, [
           PhysicsStateDef,
-        ])?._phys;
+          WorldFrameDef,
+        ]);
         if (parent) {
-          mat4.fromTranslation(e.transformWorld, parent.world.min);
+          for (let i = 0; i < 3; i++) {
+            // e.position[i] = parent.world.position[i];
+            e.position[i] =
+              (parent._phys.worldAABB.min[i] + parent._phys.worldAABB.max[i]) *
+              0.5;
+          }
+          for (let i = 0; i < 3; i++)
+            // cube scale 1 means length 2 sides
+            e.scale[i] =
+              (parent._phys.worldAABB.max[i] - parent._phys.worldAABB.min[i]) *
+              0.5;
+
+          // ensure this debug mesh is up to date
+          // NOTE: we can't wait for the normal local-world transform update cycle
+          //  since we're trying to get debug info after all physics has run
+          updateFrameFromPosRotScale(e);
+          copyFrame(e.world, e);
         }
       }
     },
