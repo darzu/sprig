@@ -410,47 +410,50 @@ export function drawLine(
 
 export let __lastPlayerId = 0;
 
-function createPlayer(
-  em: EntityManager,
-  e: Entity & { playerConstruct: PlayerConstruct },
-  pid: number,
-  assets: Assets
-) {
-  if (FinishedDef.isOn(e)) return;
-  __lastPlayerId = e.id; // TODO(@darzu): debugging
-  const props = e.playerConstruct;
-  if (!PositionDef.isOn(e)) em.addComponent(e.id, PositionDef, props.location);
-  if (!RotationDef.isOn(e)) em.addComponent(e.id, RotationDef);
-  if (!LinearVelocityDef.isOn(e)) em.addComponent(e.id, LinearVelocityDef);
-  if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0, 0.2, 0]);
-  if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
-  if (!RenderableDef.isOn(e))
-    em.addComponent(e.id, RenderableDef, assets.cube.mesh);
-  if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid);
-  if (!PlayerEntDef.isOn(e)) em.addComponent(e.id, PlayerEntDef);
-  if (!ColliderDef.isOn(e)) {
-    const collider = em.addComponent(e.id, ColliderDef);
-    collider.shape = "AABB";
-    collider.solid = true;
-    (collider as AABBCollider).aabb = assets.cube.aabb;
-  }
-  if (!SyncDef.isOn(e)) {
-    const sync = em.addComponent(e.id, SyncDef);
-    sync.fullComponents.push(PlayerConstructDef.id);
-    sync.dynamicComponents.push(PositionDef.id);
-    sync.dynamicComponents.push(RotationDef.id);
-    sync.dynamicComponents.push(LinearVelocityDef.id);
-  }
-  em.ensureComponent(e.id, PhysicsParentDef);
-  em.addComponent(e.id, FinishedDef);
-}
-
 export function registerBuildPlayersSystem(em: EntityManager) {
   em.registerSystem(
     [PlayerConstructDef],
     [MeDef, AssetsDef],
     (players, res) => {
-      for (let p of players) createPlayer(em, p, res.me.pid, res.assets);
+      for (let e of players) {
+        if (FinishedDef.isOn(e)) return;
+        __lastPlayerId = e.id; // TODO(@darzu): debugging
+        const props = e.playerConstruct;
+        if (!PositionDef.isOn(e))
+          em.addComponent(e.id, PositionDef, props.location);
+        if (!RotationDef.isOn(e)) em.addComponent(e.id, RotationDef);
+        if (!LinearVelocityDef.isOn(e))
+          em.addComponent(e.id, LinearVelocityDef);
+        if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0, 0.2, 0]);
+        if (!MotionSmoothingDef.isOn(e))
+          em.addComponent(e.id, MotionSmoothingDef);
+        if (!RenderableDef.isOn(e))
+          em.addComponent(e.id, RenderableDef, res.assets.cube.mesh);
+        if (!AuthorityDef.isOn(e))
+          em.addComponent(e.id, AuthorityDef, res.me.pid);
+        if (!PlayerEntDef.isOn(e)) em.addComponent(e.id, PlayerEntDef);
+        if (!ColliderDef.isOn(e)) {
+          const collider = em.addComponent(e.id, ColliderDef);
+          collider.shape = "AABB";
+          collider.solid = true;
+          (collider as AABBCollider).aabb = res.assets.cube.aabb;
+        }
+        if (!SyncDef.isOn(e)) {
+          em.addComponent(
+            e.id,
+            SyncDef,
+            [PlayerConstructDef.id],
+            [
+              PositionDef.id,
+              RotationDef.id,
+              LinearVelocityDef.id,
+              PhysicsParentDef.id,
+            ]
+          );
+        }
+        em.ensureComponent(e.id, PhysicsParentDef);
+        em.addComponent(e.id, FinishedDef);
+      }
     },
     "buildPlayers"
   );
