@@ -48,6 +48,7 @@ export const IDENTITY_FRAME: ReadonlyFrame = {
 export function updateFrameFromTransform(
   f: Partial<Frame>
 ): asserts f is Frame {
+  // TODO(@darzu): oh shoot, this skips EM's addComponent which is needed for query updates
   f.transform = f.transform ?? mat4.create();
   f.position = mat4.getTranslation(f.position ?? vec3.create(), f.transform);
   f.rotation = mat4.getRotation(f.rotation ?? quat.create(), f.transform);

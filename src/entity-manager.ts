@@ -475,6 +475,8 @@ export class EntityManager {
           // es = this.filterEntities(s.cs);
         }
       }
+      // TODO(@darzu): uncomment to debug query cache issues
+      // es = this.filterEntities(s.cs);
 
       let haveAllResources = true;
       for (let r of s.rs) {
