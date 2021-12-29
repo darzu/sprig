@@ -4,8 +4,12 @@ import { quat, vec3 } from "../gl-matrix.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import { RenderableDef } from "../renderer.js";
-import { PhysicsParentDef, PositionDef, RotationDef } from "../transform.js";
-import { AABBCollider, ColliderDef } from "../collider.js";
+import {
+  PhysicsParentDef,
+  PositionDef,
+  RotationDef,
+} from "../physics/transform.js";
+import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { Deserializer, Serializer } from "../serialize.js";
 import { DetectedEventsDef } from "../net/events.js";

@@ -1,5 +1,5 @@
-import { EM, Component } from "./entity-manager.js";
-import { vec3 } from "./gl-matrix.js";
+import { EM, Component } from "../entity-manager.js";
+import { vec3 } from "../gl-matrix.js";
 
 export const LinearVelocityDef = EM.defineComponent(
   "linearVelocity",

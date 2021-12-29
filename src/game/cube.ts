@@ -1,8 +1,12 @@
-import { ColliderDef } from "../collider.js";
+import { ColliderDef } from "../physics/collider.js";
 import { Component, EM, EntityManager } from "../entity-manager.js";
 import { vec3 } from "../gl-matrix.js";
 import { RenderableDef } from "../renderer.js";
-import { PhysicsParentDef, Position, PositionDef } from "../transform.js";
+import {
+  PhysicsParentDef,
+  Position,
+  PositionDef,
+} from "../physics/transform.js";
 import { ColorDef } from "./game.js";
 import { getAABBFromMesh, scaleMesh } from "../mesh-pool.js";
 import {
@@ -12,7 +16,7 @@ import {
   Me,
   MeDef,
 } from "../net/components.js";
-import { AABBCollider } from "../collider.js";
+import { AABBCollider } from "../physics/collider.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import { FinishedDef } from "../build.js";
 import { Assets, AssetsDef } from "./assets.js";

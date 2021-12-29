@@ -3,8 +3,8 @@ import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import { RenderableDef } from "../renderer.js";
-import { Position, PositionDef, RotationDef } from "../transform.js";
-import { AABBCollider, ColliderDef } from "../collider.js";
+import { Position, PositionDef, RotationDef } from "../physics/transform.js";
+import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import {
   Authority,
   AuthorityDef,
@@ -21,7 +21,7 @@ import {
   scaleMesh,
   scaleMesh3,
 } from "../mesh-pool.js";
-import { AABB } from "../phys_broadphase.js";
+import { AABB } from "../physics/phys_broadphase.js";
 import { RendererDef } from "../render_init.js";
 import { Renderer } from "../render_webgpu.js";
 import { Assets, AssetsDef } from "./assets.js";
@@ -30,7 +30,7 @@ import {
   AngularVelocityDef,
   LinearVelocity,
   LinearVelocityDef,
-} from "../motion.js";
+} from "../physics/motion.js";
 import { MotionSmoothingDef } from "../smoothing.js";
 
 export const BulletDef = EM.defineComponent("bullet", () => {

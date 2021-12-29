@@ -1,8 +1,8 @@
 import { Collider, ColliderDef } from "./collider.js";
-import { EntityManager } from "./entity-manager.js";
-import { __lastPlayerId } from "./game/player.js";
-import { mat3, mat4, quat, vec3 } from "./gl-matrix.js";
-import { clamp } from "./math.js";
+import { EntityManager } from "../entity-manager.js";
+import { __lastPlayerId } from "../game/player.js";
+import { mat3, mat4, quat, vec3 } from "../gl-matrix.js";
+import { clamp } from "../math.js";
 import {
   AngularVelocityDef,
   LinearVelocity,
@@ -15,8 +15,8 @@ import {
   PhysicsStateDef,
   WorldFrameDef,
 } from "./phys_nonintersection.js";
-import { tempVec } from "./temp-pool.js";
-import { PhysicsTimerDef } from "./time.js";
+import { tempVec } from "../temp-pool.js";
+import { PhysicsTimerDef } from "../time.js";
 import {
   Frame,
   PhysicsParent,

@@ -4,7 +4,7 @@ import {
   _doesOverlaps,
   _enclosedBys,
   _lastCollisionTestTimeMs,
-} from "./phys_broadphase.js";
+} from "./physics/phys_broadphase.js";
 import { setupObjImportExporter } from "./download.js";
 import {
   createLocalObjects,

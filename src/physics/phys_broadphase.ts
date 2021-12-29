@@ -1,8 +1,8 @@
-import { vec3 } from "./gl-matrix.js";
-import { clamp } from "./math.js";
-import { tempVec } from "./temp-pool.js";
-import { range } from "./util.js";
-import { vec3Floor } from "./utils-3d.js";
+import { vec3 } from "../gl-matrix.js";
+import { clamp } from "../math.js";
+import { tempVec } from "../temp-pool.js";
+import { range } from "../util.js";
+import { vec3Floor } from "../utils-3d.js";
 
 const BROAD_PHASE: "N^2" | "OCT" | "GRID" = "OCT";
 

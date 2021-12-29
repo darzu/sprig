@@ -11,7 +11,7 @@ import {
   transformMesh,
   unshareProvokingVertices,
 } from "../mesh-pool.js";
-import { AABB } from "../phys_broadphase.js";
+import { AABB } from "../physics/phys_broadphase.js";
 import { RendererDef } from "../render_init.js";
 import { Renderer } from "../render_webgpu.js";
 import { assert } from "../test.js";

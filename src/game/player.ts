@@ -16,12 +16,12 @@ import {
   PositionDef,
   Rotation,
   RotationDef,
-} from "../transform.js";
+} from "../physics/transform.js";
 import {
   PhysicsResults,
   PhysicsResultsDef,
   WorldFrameDef,
-} from "../phys_nonintersection.js";
+} from "../physics/phys_nonintersection.js";
 import {
   Authority,
   AuthorityDef,
@@ -29,16 +29,16 @@ import {
   MeDef,
   SyncDef,
 } from "../net/components.js";
-import { AABBCollider, ColliderDef } from "../collider.js";
-import { Ray, RayHit } from "../phys_broadphase.js";
+import { AABBCollider, ColliderDef } from "../physics/collider.js";
+import { Ray, RayHit } from "../physics/phys_broadphase.js";
 import { tempQuat, tempVec } from "../temp-pool.js";
 import { Mesh } from "../mesh-pool.js";
 import { Assets, AssetsDef } from "./assets.js";
-import { LinearVelocity, LinearVelocityDef } from "../motion.js";
+import { LinearVelocity, LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../smoothing.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { screenPosToRay } from "./modeler.js";
-import { PhysicsDbgDef } from "../phys_debug.js";
+import { PhysicsDbgDef } from "../physics/phys_debug.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {

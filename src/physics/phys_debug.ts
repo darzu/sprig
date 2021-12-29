@@ -1,23 +1,23 @@
 import { ColliderDef } from "./collider.js";
-import { EM, EntityManager } from "./entity-manager.js";
-import { AssetsDef, LocalMeshes } from "./game/assets.js";
-import { BoatDef } from "./game/boat.js";
-import { ColorDef } from "./game/game.js";
-import { mat4, vec3 } from "./gl-matrix.js";
-import { InputsDef } from "./inputs.js";
-import { avg, mathMap } from "./math.js";
-import { mapMeshPositions, Mesh, MeshHandleDef } from "./mesh-pool.js";
+import { EM, EntityManager } from "../entity-manager.js";
+import { AssetsDef, LocalMeshes } from "../game/assets.js";
+import { BoatDef } from "../game/boat.js";
+import { ColorDef } from "../game/game.js";
+import { mat4, vec3 } from "../gl-matrix.js";
+import { InputsDef } from "../inputs.js";
+import { avg, mathMap } from "../math.js";
+import { mapMeshPositions, Mesh, MeshHandleDef } from "../mesh-pool.js";
 import { AABB } from "./phys_broadphase.js";
 import { PhysicsStateDef, WorldFrameDef } from "./phys_nonintersection.js";
-import { RenderableDef } from "./renderer.js";
+import { RenderableDef } from "../renderer.js";
 import {
   copyFrame,
   PositionDef,
   ScaleDef,
   updateFrameFromPosRotScale,
 } from "./transform.js";
-import { RendererDef } from "./render_init.js";
-import { tempVec } from "./temp-pool.js";
+import { RendererDef } from "../render_init.js";
+import { tempVec } from "../temp-pool.js";
 
 export const PhysicsDbgDef = EM.defineComponent("_physDbgState", () => {
   return {

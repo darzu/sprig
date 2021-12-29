@@ -1,5 +1,5 @@
-import { vec3 } from "./gl-matrix.js";
-import { __isSMI } from "./util.js";
+import { vec3 } from "../gl-matrix.js";
+import { __isSMI } from "../util.js";
 import {
   PhysicsObject,
   registerPhysicsContactSystems,
@@ -8,7 +8,7 @@ import {
   registerUpdateWorldAABBs,
   registerUpdateWorldFromPosRotScale,
 } from "./phys_nonintersection.js";
-import { EntityManager } from "./entity-manager.js";
+import { EntityManager } from "../entity-manager.js";
 import { registerPhysicsDebuggerSystem } from "./phys_debug.js";
 import {
   registerPhysicsClampVelocityByContact,

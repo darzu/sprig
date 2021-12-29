@@ -1,5 +1,5 @@
 import { FinishedDef } from "../build.js";
-import { AABBCollider, ColliderDef } from "../collider.js";
+import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { HAT_OBJ, importObj, isParseError } from "../import_obj.js";
@@ -9,14 +9,14 @@ import {
   unshareProvokingVertices,
 } from "../mesh-pool.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
-import { AABB } from "../phys_broadphase.js";
+import { AABB } from "../physics/phys_broadphase.js";
 import { RenderableDef } from "../renderer.js";
 import {
   PhysicsParentDef,
   PositionDef,
   RotationDef,
   ScaleDef,
-} from "../transform.js";
+} from "../physics/transform.js";
 import { ColorDef } from "./game.js";
 import { InteractingDef } from "./interact.js";
 import { registerEventHandler, DetectedEventsDef } from "../net/events.js";

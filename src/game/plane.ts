@@ -1,8 +1,8 @@
-import { ColliderDef } from "../collider.js";
+import { ColliderDef } from "../physics/collider.js";
 import { Component, EM, EntityManager } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { RenderableDef } from "../renderer.js";
-import { PositionDef, RotationDef } from "../transform.js";
+import { PositionDef, RotationDef } from "../physics/transform.js";
 import { ColorDef } from "./game.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../serialize.js";

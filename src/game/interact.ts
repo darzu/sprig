@@ -3,8 +3,13 @@ import { PlayerEntDef } from "./player.js";
 import { vec3 } from "../gl-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { ColorDef } from "./game.js";
-import { Position, PositionDef, Rotation, RotationDef } from "../transform.js";
-import { WorldFrameDef } from "../phys_nonintersection.js";
+import {
+  Position,
+  PositionDef,
+  Rotation,
+  RotationDef,
+} from "../physics/transform.js";
+import { WorldFrameDef } from "../physics/phys_nonintersection.js";
 
 export const InteractableDef = EM.defineComponent("interaction", () => ({
   inRange: false,

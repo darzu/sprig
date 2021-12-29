@@ -2,8 +2,8 @@ import { EntityManager } from "../entity-manager.js";
 import { PredictDef } from "./components.js";
 import { vec3, quat } from "../gl-matrix.js";
 import { tempVec, tempQuat } from "../temp-pool.js";
-import { PositionDef, RotationDef } from "../transform.js";
-import { AngularVelocityDef, LinearVelocityDef } from "../motion.js";
+import { PositionDef, RotationDef } from "../physics/transform.js";
+import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 
 export function registerPredictSystem(em: EntityManager) {
   em.registerSystem(

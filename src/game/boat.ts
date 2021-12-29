@@ -5,8 +5,8 @@ import { jitter } from "../math.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import { RenderableDef } from "../renderer.js";
-import { PositionDef, Rotation, RotationDef } from "../transform.js";
-import { AABBCollider, ColliderDef } from "../collider.js";
+import { PositionDef, Rotation, RotationDef } from "../physics/transform.js";
+import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import {
   Authority,
   AuthorityDef,
@@ -15,10 +15,10 @@ import {
   SyncDef,
 } from "../net/components.js";
 import { getAABBFromMesh, Mesh, scaleMesh3 } from "../mesh-pool.js";
-import { AABB } from "../phys_broadphase.js";
+import { AABB } from "../physics/phys_broadphase.js";
 import { Deserializer, Serializer } from "../serialize.js";
 import { Assets, AssetsDef } from "./assets.js";
-import { LinearVelocity, LinearVelocityDef } from "../motion.js";
+import { LinearVelocity, LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../smoothing.js";
 
 export const BoatDef = EM.defineComponent("boat", () => {

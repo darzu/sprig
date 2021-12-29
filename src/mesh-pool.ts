@@ -1,7 +1,7 @@
 import { computeTriangleNormal } from "./utils-3d.js";
 import { mat4, vec2, vec3 } from "./gl-matrix.js";
 import { align, sum } from "./math.js";
-import { AABB, getAABBFromPositions } from "./phys_broadphase.js";
+import { AABB, getAABBFromPositions } from "./physics/phys_broadphase.js";
 import { EM } from "./entity-manager.js";
 
 // TODO(@darzu): BUGS:

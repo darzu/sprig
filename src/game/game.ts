@@ -9,7 +9,7 @@ import {
   registerUpdateWorldFromPosRotScale,
   registerUpdateLocalPhysicsAfterRebound,
   WorldFrameDef,
-} from "../phys_nonintersection.js";
+} from "../physics/phys_nonintersection.js";
 import {
   registerAddMeshHandleSystem,
   registerRenderer,
@@ -25,7 +25,7 @@ import {
   ScaleDef,
   TransformDef,
   updateFrameFromTransform,
-} from "../transform.js";
+} from "../physics/transform.js";
 import {
   BoatConstructDef,
   registerBuildBoatsSystem,
@@ -88,7 +88,7 @@ import {
 import { registerInteractionSystem } from "./interact.js";
 import { registerModeler } from "./modeler.js";
 import { registerToolDropSystem, registerToolPickupSystem } from "./tool.js";
-import { registerPhysicsDebuggerSystem } from "../phys_debug.js";
+import { registerPhysicsDebuggerSystem } from "../physics/phys_debug.js";
 import {
   registerUpdateSmoothingTargetSnapChange,
   registerUpdateSmoothingTargetSmoothChange,
@@ -96,7 +96,7 @@ import {
   registerUpdateSmoothedTransform,
 } from "../smoothing.js";
 import { registerBuildCursor } from "./cursor.js";
-import { ColliderDef } from "../collider.js";
+import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { FinishedDef } from "../build.js";
 import {
@@ -104,8 +104,8 @@ import {
   registerPhysicsApplyLinearVelocity,
   registerPhysicsClampVelocityByContact,
   registerPhysicsClampVelocityBySize,
-} from "../phys_velocity.js";
-import { registerPhysicsSystems } from "../phys.js";
+} from "../physics/phys_velocity.js";
+import { registerPhysicsSystems } from "../physics/phys.js";
 
 export const ColorDef = EM.defineComponent(
   "color",

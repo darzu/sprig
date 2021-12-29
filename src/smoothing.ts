@@ -1,6 +1,6 @@
 import { EntityManager, EM, Component } from "./entity-manager.js";
 import { vec3, quat, mat4 } from "./gl-matrix.js";
-import { WorldFrameDef } from "./phys_nonintersection.js";
+import { WorldFrameDef } from "./physics/phys_nonintersection.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
 import { Timer, PhysicsTimerDef } from "./time.js";
 import {
@@ -10,7 +10,7 @@ import {
   PhysicsParentDef,
   RotationDef,
   ScaleDef,
-} from "./transform.js";
+} from "./physics/transform.js";
 
 const ERROR_SMOOTHING_FACTOR = 0.9 ** (60 / 1000);
 const EPSILON = 0.0001;

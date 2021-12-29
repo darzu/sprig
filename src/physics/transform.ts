@@ -1,4 +1,4 @@
-import { Component, EM, EntityManager } from "./entity-manager.js";
+import { Component, EM, EntityManager } from "../entity-manager.js";
 import {
   mat4,
   quat,
@@ -6,10 +6,10 @@ import {
   ReadonlyQuat,
   ReadonlyVec3,
   vec3,
-} from "./gl-matrix.js";
+} from "../gl-matrix.js";
 import { WorldFrameDef } from "./phys_nonintersection.js";
-import { tempVec, tempQuat } from "./temp-pool.js";
-import { FALSE } from "./util.js";
+import { tempVec, tempQuat } from "../temp-pool.js";
+import { FALSE } from "../util.js";
 
 // TODO(@darzu): implement local transform instead of Motion's position & rotation?
 //  one problem is that the order in which you interleave rotation/translations matters if it
