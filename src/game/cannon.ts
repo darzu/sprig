@@ -242,7 +242,7 @@ export function registerBuildAmmunitionSystem(em: EntityManager) {
     [MeDef, AssetsDef],
     (boxes, res) => {
       for (let e of boxes) {
-        if (FinishedDef.isOn(e)) return;
+        if (FinishedDef.isOn(e)) continue;
         const props = e.ammunitionConstruct;
         if (!PositionDef.isOn(e)) {
           em.addComponent(e.id, PositionDef, props.location);
@@ -319,7 +319,7 @@ export function registerBuildLinstockSystem(em: EntityManager) {
     [MeDef, AssetsDef],
     (boxes, res) => {
       for (let e of boxes) {
-        if (FinishedDef.isOn(e)) return;
+        if (FinishedDef.isOn(e)) continue;
         const props = e.linstockConstruct;
         if (!PositionDef.isOn(e))
           em.addComponent(e.id, PositionDef, props.location);

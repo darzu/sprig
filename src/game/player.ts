@@ -417,7 +417,7 @@ export function registerBuildPlayersSystem(em: EntityManager) {
     [MeDef, AssetsDef],
     (players, res) => {
       for (let e of players) {
-        if (FinishedDef.isOn(e)) return;
+        if (FinishedDef.isOn(e)) continue;
         __lastPlayerId = e.id; // TODO(@darzu): debugging
         const props = e.playerConstruct;
         if (!PositionDef.isOn(e))
