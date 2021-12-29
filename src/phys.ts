@@ -3,7 +3,7 @@ import { __isSMI } from "./util.js";
 import {
   PhysicsObject,
   registerPhysicsContactSystems,
-  registerPhysicsInit,
+  registerPhysicsStateInit,
   registerUpdateLocalPhysicsAfterRebound,
   registerUpdateWorldAABBs,
   registerUpdateWorldFromPosRotScale,
@@ -29,7 +29,7 @@ import {
 // - re-name and re-org files
 
 export function registerPhysicsSystems(em: EntityManager) {
-  registerPhysicsInit(em);
+  registerPhysicsStateInit(em);
 
   registerPhysicsClampVelocityByContact(em);
   registerPhysicsClampVelocityBySize(em);
@@ -39,7 +39,7 @@ export function registerPhysicsSystems(em: EntityManager) {
   registerUpdateWorldFromLocalAndParent(em);
   registerUpdateWorldAABBs(em);
   registerPhysicsContactSystems(em);
-  registerUpdateWorldFromPosRotScale(em);
+  // registerUpdateWorldFromPosRotScale(em);
   registerUpdateLocalPhysicsAfterRebound(em);
   // TODO(@darzu): get rid of this duplicate call?
   registerUpdateWorldFromLocalAndParent(em, "2");

@@ -3,11 +3,12 @@ import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { jitter } from "../math.js";
 import {
-  registerPhysicsInit,
+  registerPhysicsStateInit,
   registerUpdateWorldAABBs,
   registerPhysicsContactSystems,
   registerUpdateWorldFromPosRotScale,
   registerUpdateLocalPhysicsAfterRebound,
+  WorldFrameDef,
 } from "../phys_nonintersection.js";
 import {
   registerAddMeshHandleSystem,
@@ -22,6 +23,8 @@ import {
   registerUpdateWorldFromLocalAndParent,
   RotationDef,
   ScaleDef,
+  TransformDef,
+  updateFrameFromTransform,
 } from "../transform.js";
 import {
   BoatConstructDef,
@@ -146,58 +149,48 @@ function createGround(em: EntityManager) {
   }
 }
 
-const WorldPlaneDef = EM.defineComponent("worldPlane", () => true);
+const WorldPlaneConstDef = EM.defineComponent("worldPlane", (t?: mat4) => {
+  return {
+    transform: t ?? mat4.create(),
+  };
+});
+EM.registerSerializerPair(
+  WorldPlaneConstDef,
+  (o, buf) => buf.writeMat4(o.transform),
+  (o, buf) => buf.readMat4(o.transform)
+);
 
 function createWorldPlanes(em: EntityManager) {
-  const p1 = em.newEntity();
-  em.ensureComponentOn(p1, WorldPlaneDef);
+  const p = em.newEntity();
+
+  const t = mat4.fromRotationTranslationScale(
+    mat4.create(),
+    quat.fromEuler(quat.create(), 0, 0, Math.PI * 0.5),
+    [100, 0, -100],
+    [10, 10, 10]
+  );
+
+  em.ensureComponentOn(p, WorldPlaneConstDef, t);
 }
 
 function registerBuildWorldPlanes(em: EntityManager) {
-  // TODO(@darzu): lots of wierd behavior with world planes:
-  //  - if position is added before the constructor, wierd thing happen
-  //  - saw some angular velocity added somehow from nowhere
-  //  - being placed on top of the plane doesn't seem to work
   em.registerSystem(
-    [WorldPlaneDef],
+    [WorldPlaneConstDef],
     [AssetsDef, MeDef],
     (es, res) => {
       for (let e of es) {
         if (FinishedDef.isOn(e)) continue;
-
-        // const r = quat.create();
-        const r = quat.fromEuler(quat.create(), 0, 0, Math.PI * 0.5);
-        // const p = vec3.fromValues(20, 0, -20);
-        const p = vec3.fromValues(100, 0, -100);
-        // const s: vec3 = [0.1, 0.1, 0.1];
-        // const s: vec3 = [20, 20, 20];
-        const s: vec3 = [10, 10, 10];
-        // const s: vec3 = [2, 2, 2];
-        // const s: vec3 = [1, 1, 1];
-        const t = mat4.fromRotationTranslationScale(
-          mat4.create(),
-          r,
-          p,
-          s
-          // [10, 10, 10]
-          // [20, 20, 20]
-        );
-
-        em.ensureComponentOn(e, PositionDef, p);
-        em.ensureComponentOn(e, RotationDef, r);
-        em.ensureComponentOn(e, ScaleDef, s);
+        em.ensureComponentOn(e, TransformDef, e.worldPlane.transform);
         em.ensureComponentOn(e, ColorDef, [1, 0, 1]);
-
         em.ensureComponentOn(e, RenderableDef, res.assets.gridPlane.mesh);
         em.ensureComponentOn(e, ColliderDef, {
           shape: "AABB",
           solid: true,
           aabb: res.assets.gridPlane.aabb,
         });
-
-        em.ensureComponent(e.id, AuthorityDef, res.me.pid);
-        em.ensureComponent(e.id, SyncDef, [], [PositionDef.id]);
-        em.ensureComponent(e.id, FinishedDef);
+        em.ensureComponentOn(e, SyncDef, [WorldPlaneConstDef.id], []);
+        em.ensureComponentOn(e, AuthorityDef, res.me.pid);
+        em.ensureComponentOn(e, FinishedDef);
       }
     },
     "buildWorldPlanes"
@@ -248,7 +241,8 @@ export function registerAllSystems(em: EntityManager) {
   registerSendOutboxes(em);
   registerEventSystems(em);
   registerDeleteEntitiesSystem(em);
-  registerUpdateSmoothedTransform(em);
+  // TODO(@darzu): confirm this all works
+  // registerUpdateSmoothedTransform(em);
   registerRenderViewController(em);
   registerUpdateCameraView(em);
   registerAddMeshHandleSystem(em);

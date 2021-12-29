@@ -64,14 +64,16 @@ export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {
 });
 export type PhysicsResults = Component<typeof PhysicsResultsDef>;
 
-export const WorldFrameDef = EM.defineComponent("world", () => {
+function createFrame(): Frame {
   return {
     position: vec3.create(),
     rotation: quat.create(),
     scale: vec3.fromValues(1, 1, 1),
     transform: mat4.create(),
-  } as Frame;
-});
+  };
+}
+
+export const WorldFrameDef = EM.defineComponent("world", () => createFrame());
 
 // TODO(@darzu): break this up into the specific use cases
 export const PhysicsStateDef = EM.defineComponent("_phys", () => {
@@ -168,6 +170,9 @@ export function registerUpdateLocalPhysicsAfterRebound(
         if (data.bRebound < Infinity) hasRebound.add(data.bId);
       }
 
+      for (let o of objs)
+        if (hasRebound.has(o.id)) updateFrameFromPosRotScale(o.world);
+
       for (let o of objs) {
         if (!hasRebound.has(o.id)) continue;
 
@@ -208,7 +213,7 @@ function getAABBCorners(aabb: AABB): vec3[] {
   return points;
 }
 
-export function registerPhysicsInit(em: EntityManager) {
+export function registerPhysicsStateInit(em: EntityManager) {
   em.addSingletonComponent(PhysicsResultsDef);
 
   em.registerSystem(

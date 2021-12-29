@@ -135,6 +135,11 @@ export const PhysicsParentDef = EM.defineComponent(
   }
 );
 export type PhysicsParent = Component<typeof PhysicsParentDef>;
+EM.registerSerializerPair(
+  PhysicsParentDef,
+  (o, buf) => buf.writeUint32(o.id),
+  (o, buf) => (o.id = buf.readUint32())
+);
 
 type Transformable = {
   id: number;
@@ -142,7 +147,7 @@ type Transformable = {
   world: Frame;
   // optional components
   // TODO(@darzu): let the query system specify optional components
-  transform: mat4;
+  transform?: mat4;
   physicsParent?: PhysicsParent;
 };
 
@@ -152,23 +157,22 @@ const _hasTransformed: Set<number> = new Set();
 function updateWorldFromLocalAndParent(o: Transformable) {
   if (_hasTransformed.has(o.id)) return;
 
-  if (PhysicsParentDef.isOn(o) && o.physicsParent.id > 0) {
-    const parent = _transformables.get(o.physicsParent.id);
-    if (!parent)
-      throw `physicsParent ${o.physicsParent.id} doesn't have a worldTransform!`;
+  if (TransformDef.isOn(o))
+    if (PhysicsParentDef.isOn(o) && _transformables.has(o.physicsParent.id)) {
+      const parent = _transformables.get(o.physicsParent.id)!;
 
-    // update parent first
-    if (!_hasTransformed.has(o.physicsParent.id)) {
-      updateWorldFromLocalAndParent(parent);
+      // update parent first
+      if (!_hasTransformed.has(o.physicsParent.id)) {
+        updateWorldFromLocalAndParent(parent);
+      }
+
+      // update relative to parent
+      mat4.mul(o.world.transform, parent.world.transform, o.transform);
+      updateFrameFromTransform(o.world);
+    } else {
+      // no parent
+      copyFrame(o.world, o);
     }
-
-    // update relative to parent
-    mat4.mul(o.world.transform, parent.world.transform, o.transform);
-    updateFrameFromTransform(o.world);
-  } else {
-    // no parent
-    copyFrame(o.world, o);
-  }
 
   _hasTransformed.add(o.id);
 }
@@ -180,7 +184,11 @@ export function registerInitTransforms(em: EntityManager) {
     [PositionDef],
     [],
     (objs) => {
-      for (let o of objs) em.ensureComponent(o.id, TransformDef);
+      for (let o of objs)
+        if (!TransformDef.isOn(o)) {
+          em.ensureComponentOn(o, TransformDef);
+          updateFrameFromPosRotScale(o);
+        }
     },
     "ensureTransform"
   );
@@ -190,7 +198,15 @@ export function registerInitTransforms(em: EntityManager) {
     [TransformDef],
     [],
     (objs) => {
-      for (let o of objs) em.ensureComponent(o.id, WorldFrameDef);
+      for (let o of objs) {
+        if (!PositionDef.isOn(o))
+          // TODO(@darzu): it'd be great if we didn't have to force PosRotScale on every entity
+          updateFrameFromTransform(o);
+        if (!WorldFrameDef.isOn(o)) {
+          em.ensureComponentOn(o, WorldFrameDef);
+          copyFrame(o.world, o);
+        }
+      }
     },
     "ensureWorldFrame"
   );
@@ -201,7 +217,7 @@ export function registerUpdateLocalFromPosRotScale(
 ) {
   // calculate the world transform
   em.registerSystem(
-    [TransformDef],
+    [TransformDef, PositionDef],
     [],
     (objs) => {
       for (let o of objs) updateFrameFromPosRotScale(o);
@@ -215,7 +231,7 @@ export function registerUpdateWorldFromLocalAndParent(
 ) {
   // calculate the world transform
   em.registerSystem(
-    [WorldFrameDef, TransformDef],
+    [WorldFrameDef],
     [],
     (objs) => {
       _transformables.clear();
