@@ -13,6 +13,14 @@
   - Connect to servers and start receiving syncs
   - If we have entities to claim, don't create anything (wait for entities to come in)
   - Otherwise, create player object
+- If we are reconnecting (after our prev connection to host closes for some reason):
+  - Send Rejoin message
+  - Host responds with current peer list
+
+- Host sends Heartbeat message to all peers every 100ms with:
+   - Current peer list
+   - Peers only process messages from peers in this peer list
+   - Peers ensure connections with higher-numbered peers in list
 
 - Detect disconnect w/ hearbeat message
 - Host never initiates reconnect, only players do
