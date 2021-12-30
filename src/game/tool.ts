@@ -9,7 +9,7 @@ import {
   unshareProvokingVertices,
 } from "../mesh-pool.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
-import { AABB } from "../physics/phys_broadphase.js";
+import { AABB } from "../physics/broadphase.js";
 import { RenderableDef } from "../renderer.js";
 import {
   PhysicsParentDef,

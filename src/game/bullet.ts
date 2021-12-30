@@ -21,7 +21,7 @@ import {
   scaleMesh,
   scaleMesh3,
 } from "../mesh-pool.js";
-import { AABB } from "../physics/phys_broadphase.js";
+import { AABB } from "../physics/broadphase.js";
 import { RendererDef } from "../render_init.js";
 import { Renderer } from "../render_webgpu.js";
 import { Assets, AssetsDef } from "./assets.js";

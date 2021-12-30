@@ -9,7 +9,7 @@ import {
   Rotation,
   RotationDef,
 } from "../physics/transform.js";
-import { WorldFrameDef } from "../physics/phys_nonintersection.js";
+import { WorldFrameDef } from "../physics/nonintersection.js";
 
 export const InteractableDef = EM.defineComponent("interaction", () => ({
   inRange: false,

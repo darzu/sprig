@@ -7,15 +7,15 @@ import {
   registerUpdateLocalPhysicsAfterRebound,
   registerUpdateWorldAABBs,
   registerUpdateWorldFromPosRotScale,
-} from "./phys_nonintersection.js";
+} from "./nonintersection.js";
 import { EntityManager } from "../entity-manager.js";
-import { registerPhysicsDebuggerSystem } from "./phys_debug.js";
+import { registerPhysicsDebuggerSystem } from "./phys-debug.js";
 import {
   registerPhysicsClampVelocityByContact,
   registerPhysicsClampVelocityBySize,
   registerPhysicsApplyLinearVelocity,
   registerPhysicsApplyAngularVelocity,
-} from "./phys_velocity.js";
+} from "./velocity-system.js";
 import {
   registerUpdateLocalFromPosRotScale,
   registerUpdateWorldFromLocalAndParent,

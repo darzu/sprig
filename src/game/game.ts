@@ -9,7 +9,7 @@ import {
   registerUpdateWorldFromPosRotScale,
   registerUpdateLocalPhysicsAfterRebound,
   WorldFrameDef,
-} from "../physics/phys_nonintersection.js";
+} from "../physics/nonintersection.js";
 import {
   registerAddMeshHandleSystem,
   registerRenderer,
@@ -88,7 +88,7 @@ import {
 import { registerInteractionSystem } from "./interact.js";
 import { registerModeler } from "./modeler.js";
 import { registerToolDropSystem, registerToolPickupSystem } from "./tool.js";
-import { registerPhysicsDebuggerSystem } from "../physics/phys_debug.js";
+import { registerPhysicsDebuggerSystem } from "../physics/phys-debug.js";
 import {
   registerUpdateSmoothingTargetSnapChange,
   registerUpdateSmoothingTargetSmoothChange,
@@ -104,7 +104,7 @@ import {
   registerPhysicsApplyLinearVelocity,
   registerPhysicsClampVelocityByContact,
   registerPhysicsClampVelocityBySize,
-} from "../physics/phys_velocity.js";
+} from "../physics/velocity-system.js";
 import { registerPhysicsSystems } from "../physics/phys.js";
 
 export const ColorDef = EM.defineComponent(

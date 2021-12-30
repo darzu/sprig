@@ -31,7 +31,7 @@ import {
   RayHit,
   rayHitDist,
   resetCollidesWithSet,
-} from "./phys_broadphase.js";
+} from "./broadphase.js";
 import {
   Frame,
   IDENTITY_FRAME,

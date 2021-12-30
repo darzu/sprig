@@ -5,7 +5,7 @@ import {
 } from "../net/events.js";
 import { EntityManager } from "../entity-manager.js";
 import { PlayerEntDef } from "./player.js";
-import { PhysicsResultsDef } from "../physics/phys_nonintersection.js";
+import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { AuthorityDef } from "../net/components.js";
 import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../delete.js";

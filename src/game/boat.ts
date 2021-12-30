@@ -15,7 +15,7 @@ import {
   SyncDef,
 } from "../net/components.js";
 import { getAABBFromMesh, Mesh, scaleMesh3 } from "../mesh-pool.js";
-import { AABB } from "../physics/phys_broadphase.js";
+import { AABB } from "../physics/broadphase.js";
 import { Deserializer, Serializer } from "../serialize.js";
 import { Assets, AssetsDef } from "./assets.js";
 import { LinearVelocity, LinearVelocityDef } from "../physics/motion.js";
