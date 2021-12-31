@@ -303,8 +303,8 @@ export function initGame(em: EntityManager) {
 }
 
 export function createServerObjects(em: EntityManager) {
-  let { id: cubeId } = em.newEntity();
-  em.addComponent(cubeId, CubeConstructDef, 3, LIGHT_BLUE);
+  // let { id: cubeId } = em.newEntity();
+  // em.addComponent(cubeId, CubeConstructDef, 3, LIGHT_BLUE);
 
   createPlayer(em);
   createGround(em);

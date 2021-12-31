@@ -37,7 +37,7 @@ import { Assets, AssetsDef } from "./assets.js";
 import { LinearVelocity, LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../smoothing.js";
 import { GlobalCursor3dDef } from "./cursor.js";
-import { screenPosToRay } from "./modeler.js";
+import { ModelerDef, screenPosToRay } from "./modeler.js";
 import { PhysicsDbgDef } from "../physics/phys-debug.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
@@ -122,9 +122,206 @@ export function registerStepPlayers(em: EntityManager) {
       MeDef,
       PhysicsResultsDef,
       CameraViewDef,
+      ModelerDef,
     ],
-    (objs, res) => {
-      for (let i = 0; i < res.physicsTimer.steps; i++) stepPlayers(objs, res);
+    (players, res) => {
+      for (let i = 0; i < res.physicsTimer.steps; i++) {
+        const {
+          physicsTimer: { period: dt },
+          inputs,
+          camera,
+          physicsResults: { checkRay },
+          cameraView,
+        } = res;
+        //console.log(`${players.length} players, ${hats.length} hats`);
+
+        for (let p of players) {
+          if (p.authority.pid !== res.me.pid) continue;
+          // fall with gravity
+          // TODO(@darzu): what r the units of gravity here?
+          p.linearVelocity[1] -= (p.player.gravity / 1000) * dt;
+
+          // move player
+          let vel = vec3.fromValues(0, 0, 0);
+          let playerSpeed = 0.001;
+          let n = playerSpeed * dt;
+          if (inputs.keyDowns["a"]) {
+            vec3.add(vel, vel, vec3.fromValues(-n, 0, 0));
+          }
+          if (inputs.keyDowns["d"]) {
+            vec3.add(vel, vel, vec3.fromValues(n, 0, 0));
+          }
+          if (inputs.keyDowns["w"]) {
+            vec3.add(vel, vel, vec3.fromValues(0, 0, -n));
+          }
+          if (inputs.keyDowns["s"]) {
+            vec3.add(vel, vel, vec3.fromValues(0, 0, n));
+          }
+
+          // TODO(@darzu): rework to use phsyiscs colliders
+          if (inputs.keyClicks["e"]) {
+            p.player.interacting = true;
+          } else {
+            p.player.interacting = false;
+          }
+          p.player.dropping = (inputs.keyClicks["q"] || 0) > 0;
+          // if (inputs.keyDowns["shift"]) {
+          //   vec3.add(vel, vel, vec3.fromValues(0, n, 0));
+          // }
+          // if (inputs.keyDowns["c"]) {
+          //   vec3.add(vel, vel, vec3.fromValues(0, -n, 0));
+          // }
+          if (inputs.keyClicks[" "]) {
+            p.linearVelocity[1] = p.player.jumpSpeed * dt;
+          }
+
+          vec3.transformQuat(vel, vel, p.rotation);
+
+          // vec3.add(player.linearVelocity, player.linearVelocity, vel);
+
+          // x and z from local movement
+          p.linearVelocity[0] = vel[0];
+          p.linearVelocity[2] = vel[2];
+
+          // TODO(@darzu): we need a better way, maybe some sort of stack,
+          //    to hand off mouse etc between systems
+          if (res.modeler.mode === "") {
+            quat.rotateY(p.rotation, p.rotation, -inputs.mouseMovX * 0.001);
+            quat.rotateX(
+              camera.rotation,
+              camera.rotation,
+              -inputs.mouseMovY * 0.001
+            );
+          }
+
+          let facingDir = vec3.fromValues(0, 0, -1);
+          vec3.transformQuat(facingDir, facingDir, p.world.rotation);
+
+          const targetCursor = EM.findEntity(p.player.targetCursor, [
+            WorldFrameDef,
+          ]);
+          if (targetCursor) {
+            vec3.sub(facingDir, targetCursor.world.position, p.world.position);
+            vec3.normalize(facingDir, facingDir);
+          }
+
+          // add bullet on lclick
+          if (inputs.lclick) {
+            const linearVelocity = vec3.scale(vec3.create(), facingDir, 0.02);
+            // TODO(@darzu): adds player motion
+            // bulletMotion.linearVelocity = vec3.add(
+            //   bulletMotion.linearVelocity,
+            //   bulletMotion.linearVelocity,
+            //   player.linearVelocity
+            // );
+            const angularVelocity = vec3.scale(vec3.create(), facingDir, 0.01);
+            spawnBullet(
+              EM,
+              vec3.clone(p.world.position),
+              linearVelocity,
+              angularVelocity
+            );
+            // TODO: figure out a better way to do this
+            inputs.lclick = false;
+          }
+          if (inputs.rclick) {
+            const SPREAD = 5;
+            const GAP = 1.0;
+            for (let xi = 0; xi <= SPREAD; xi++) {
+              for (let yi = 0; yi <= SPREAD; yi++) {
+                const x = (xi - SPREAD / 2) * GAP;
+                const y = (yi - SPREAD / 2) * GAP;
+                let bullet_axis = vec3.fromValues(0, 0, -1);
+                bullet_axis = vec3.transformQuat(
+                  bullet_axis,
+                  bullet_axis,
+                  p.rotation
+                );
+                const position = vec3.add(
+                  vec3.create(),
+                  p.world.position,
+                  vec3.fromValues(x, y, 0)
+                );
+                const linearVelocity = vec3.scale(
+                  vec3.create(),
+                  bullet_axis,
+                  0.005
+                );
+                vec3.add(linearVelocity, linearVelocity, p.linearVelocity);
+                const angularVelocity = vec3.scale(
+                  vec3.create(),
+                  bullet_axis,
+                  0.01
+                );
+                spawnBullet(EM, position, linearVelocity, angularVelocity);
+              }
+            }
+          }
+
+          // shoot a ray
+          if (inputs.keyClicks["r"]) {
+            // create our ray
+            const r: Ray = {
+              org: vec3.add(
+                vec3.create(),
+                p.world.position,
+                vec3.scale(
+                  tempVec(),
+                  vec3.multiply(tempVec(), facingDir, p.world.scale),
+                  3.0
+                )
+              ),
+              dir: facingDir,
+            };
+            playerShootRay(r);
+          }
+
+          // change physics parent
+          if (inputs.keyClicks["t"]) {
+            const targetEnt = EM.findEntity(p.player.targetEnt, [ColliderDef]);
+            if (targetEnt) {
+              p.physicsParent.id = targetEnt.id;
+              vec3.copy(p.position, [0, 0, 0]);
+              if (targetEnt.collider.shape === "AABB") {
+                // move above the obj
+                p.position[1] = targetEnt.collider.aabb.max[1] + 3;
+              }
+              vec3.copy(p.linearVelocity, vec3.ZEROS);
+            } else {
+              // unparent
+              p.physicsParent.id = 0;
+            }
+          }
+
+          function playerShootRay(r: Ray) {
+            // check for hits
+            const hits = checkRay(r);
+            const firstHit = hits.reduce((p, n) => (n.dist < p.dist ? n : p), {
+              dist: Infinity,
+              id: -1,
+            });
+            const doesHit = firstHit.id !== -1;
+
+            if (doesHit) {
+              // increase green
+              const e = EM.findEntity(firstHit.id, [ColorDef]);
+              if (e) {
+                e.color[1] += 0.1;
+              }
+            }
+
+            // draw our ray
+            const rayDist = doesHit ? firstHit.dist : 1000;
+            const color: vec3 = doesHit ? [0, 1, 0] : [1, 0, 0];
+            const endPoint = vec3.add(
+              vec3.create(),
+              r.org,
+              vec3.scale(tempVec(), r.dir, rayDist)
+            );
+            drawLine(EM, r.org, endPoint, color);
+          }
+        }
+      }
     },
     "stepPlayers"
   );
@@ -196,197 +393,6 @@ export function registerStepPlayers(em: EntityManager) {
     },
     "playerCursorUpdate"
   );
-}
-
-function stepPlayers(
-  players: PlayerObj[],
-  resources: {
-    physicsTimer: Timer;
-    camera: CameraProps;
-    inputs: Inputs;
-    physicsResults: PhysicsResults;
-    cameraView: CameraView;
-    me: Me;
-  }
-) {
-  const {
-    physicsTimer: { period: dt },
-    inputs,
-    camera,
-    physicsResults: { checkRay },
-    cameraView,
-  } = resources;
-
-  //console.log(`${players.length} players, ${hats.length} hats`);
-
-  for (let p of players) {
-    if (p.authority.pid !== resources.me.pid) continue;
-    // fall with gravity
-    // TODO(@darzu): what r the units of gravity here?
-    p.linearVelocity[1] -= (p.player.gravity / 1000) * dt;
-
-    // move player
-    let vel = vec3.fromValues(0, 0, 0);
-    let playerSpeed = 0.001;
-    let n = playerSpeed * dt;
-    if (inputs.keyDowns["a"]) {
-      vec3.add(vel, vel, vec3.fromValues(-n, 0, 0));
-    }
-    if (inputs.keyDowns["d"]) {
-      vec3.add(vel, vel, vec3.fromValues(n, 0, 0));
-    }
-    if (inputs.keyDowns["w"]) {
-      vec3.add(vel, vel, vec3.fromValues(0, 0, -n));
-    }
-    if (inputs.keyDowns["s"]) {
-      vec3.add(vel, vel, vec3.fromValues(0, 0, n));
-    }
-
-    // TODO(@darzu): rework to use phsyiscs colliders
-    if (inputs.keyClicks["e"]) {
-      p.player.interacting = true;
-    } else {
-      p.player.interacting = false;
-    }
-    p.player.dropping = (inputs.keyClicks["q"] || 0) > 0;
-    // if (inputs.keyDowns["shift"]) {
-    //   vec3.add(vel, vel, vec3.fromValues(0, n, 0));
-    // }
-    // if (inputs.keyDowns["c"]) {
-    //   vec3.add(vel, vel, vec3.fromValues(0, -n, 0));
-    // }
-    if (inputs.keyClicks[" "]) {
-      p.linearVelocity[1] = p.player.jumpSpeed * dt;
-    }
-
-    vec3.transformQuat(vel, vel, p.rotation);
-
-    // vec3.add(player.linearVelocity, player.linearVelocity, vel);
-
-    // x and z from local movement
-    p.linearVelocity[0] = vel[0];
-    p.linearVelocity[2] = vel[2];
-
-    quat.rotateY(p.rotation, p.rotation, -inputs.mouseMovX * 0.001);
-    quat.rotateX(camera.rotation, camera.rotation, -inputs.mouseMovY * 0.001);
-
-    let facingDir = vec3.fromValues(0, 0, -1);
-    vec3.transformQuat(facingDir, facingDir, p.world.rotation);
-
-    const targetCursor = EM.findEntity(p.player.targetCursor, [WorldFrameDef]);
-    if (targetCursor) {
-      vec3.sub(facingDir, targetCursor.world.position, p.world.position);
-      vec3.normalize(facingDir, facingDir);
-    }
-
-    // add bullet on lclick
-    if (inputs.lclick) {
-      const linearVelocity = vec3.scale(vec3.create(), facingDir, 0.02);
-      // TODO(@darzu): adds player motion
-      // bulletMotion.linearVelocity = vec3.add(
-      //   bulletMotion.linearVelocity,
-      //   bulletMotion.linearVelocity,
-      //   player.linearVelocity
-      // );
-      const angularVelocity = vec3.scale(vec3.create(), facingDir, 0.01);
-      spawnBullet(
-        EM,
-        vec3.clone(p.world.position),
-        linearVelocity,
-        angularVelocity
-      );
-      // TODO: figure out a better way to do this
-      inputs.lclick = false;
-    }
-    if (inputs.rclick) {
-      const SPREAD = 5;
-      const GAP = 1.0;
-      for (let xi = 0; xi <= SPREAD; xi++) {
-        for (let yi = 0; yi <= SPREAD; yi++) {
-          const x = (xi - SPREAD / 2) * GAP;
-          const y = (yi - SPREAD / 2) * GAP;
-          let bullet_axis = vec3.fromValues(0, 0, -1);
-          bullet_axis = vec3.transformQuat(
-            bullet_axis,
-            bullet_axis,
-            p.rotation
-          );
-          const position = vec3.add(
-            vec3.create(),
-            p.world.position,
-            vec3.fromValues(x, y, 0)
-          );
-          const linearVelocity = vec3.scale(vec3.create(), bullet_axis, 0.005);
-          vec3.add(linearVelocity, linearVelocity, p.linearVelocity);
-          const angularVelocity = vec3.scale(vec3.create(), bullet_axis, 0.01);
-          spawnBullet(EM, position, linearVelocity, angularVelocity);
-        }
-      }
-    }
-
-    // shoot a ray
-    if (inputs.keyClicks["r"]) {
-      // create our ray
-      const r: Ray = {
-        org: vec3.add(
-          vec3.create(),
-          p.world.position,
-          vec3.scale(
-            tempVec(),
-            vec3.multiply(tempVec(), facingDir, p.world.scale),
-            3.0
-          )
-        ),
-        dir: facingDir,
-      };
-      playerShootRay(r);
-    }
-
-    // change physics parent
-    if (inputs.keyClicks["t"]) {
-      const targetEnt = EM.findEntity(p.player.targetEnt, [ColliderDef]);
-      if (targetEnt) {
-        p.physicsParent.id = targetEnt.id;
-        vec3.copy(p.position, [0, 0, 0]);
-        if (targetEnt.collider.shape === "AABB") {
-          // move above the obj
-          p.position[1] = targetEnt.collider.aabb.max[1] + 3;
-        }
-        vec3.copy(p.linearVelocity, vec3.ZEROS);
-      } else {
-        // unparent
-        p.physicsParent.id = 0;
-      }
-    }
-
-    function playerShootRay(r: Ray) {
-      // check for hits
-      const hits = checkRay(r);
-      const firstHit = hits.reduce((p, n) => (n.dist < p.dist ? n : p), {
-        dist: Infinity,
-        id: -1,
-      });
-      const doesHit = firstHit.id !== -1;
-
-      if (doesHit) {
-        // increase green
-        const e = EM.findEntity(firstHit.id, [ColorDef]);
-        if (e) {
-          e.color[1] += 0.1;
-        }
-      }
-
-      // draw our ray
-      const rayDist = doesHit ? firstHit.dist : 1000;
-      const color: vec3 = doesHit ? [0, 1, 0] : [1, 0, 0];
-      const endPoint = vec3.add(
-        vec3.create(),
-        r.org,
-        vec3.scale(tempVec(), r.dir, rayDist)
-      );
-      drawLine(EM, r.org, endPoint, color);
-    }
-  }
 }
 
 // TODO(@darzu): move this helper elsewhere?

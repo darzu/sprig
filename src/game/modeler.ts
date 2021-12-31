@@ -5,38 +5,35 @@ import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
 import { Ray, RayHit } from "../physics/broadphase.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
+import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { CameraView, CameraViewDef, RenderableDef } from "../renderer.js";
 import { tempVec } from "../temp-pool.js";
 import { vec3Dbg } from "../utils-3d.js";
+import { AssetsDef } from "./assets.js";
 import { ColorDef } from "./game.js";
 import { drawLine } from "./player.js";
 
 export const ModelerDef = EM.defineComponent("modeler", () => {
   return {
-    enabled: false,
+    clickerEnabled: false,
+    latestBoxId: -1,
+    mode: "" as "" | "move" | "scale",
   };
 });
 
-export function registerModeler(em: EntityManager) {
-  // create our modeler
-  em.addSingletonComponent(ModelerDef);
+export const ModelBoxDef = EM.defineComponent("modelBox", () => {
+  return true;
+});
 
-  // // create our cursor
-  // {
-  //   const cursor = em.newEntity();
-  //   em.addComponent(cursor.id, CursorDef);
-  //   // em.addComponent(cursor.id, RenderableDef,
-  //   // TODO(@darzu): IMPLEMENT 3D CURSOR
-  // }
-
+function registerObjClicker(em: EntityManager) {
   // listen for modeler on/off
   em.registerSystem(
-    [],
+    null,
     [ModelerDef, InputsDef, CanvasDef],
     (_, res) => {
       if (res.inputs.keyClicks["m"]) {
-        res.modeler.enabled = !res.modeler.enabled;
-        if (res.modeler.enabled) {
+        res.modeler.clickerEnabled = !res.modeler.clickerEnabled;
+        if (res.modeler.clickerEnabled) {
           res.htmlCanvas.unlockMouse();
         } else {
           res.htmlCanvas.shouldLockMouse = true;
@@ -48,10 +45,10 @@ export function registerModeler(em: EntityManager) {
 
   // look for object clicks
   em.registerSystem(
-    [],
+    null,
     [ModelerDef, CameraViewDef, InputsDef, PhysicsResultsDef],
     (_, res) => {
-      if (!res.modeler.enabled) return;
+      if (!res.modeler.clickerEnabled) return;
 
       if (res.inputs.lclick) {
         const screenPos: vec2 = [res.inputs.mousePosX, res.inputs.mousePosY];
@@ -84,6 +81,74 @@ export function registerModeler(em: EntityManager) {
       }
     },
     "modelerClicks"
+  );
+}
+
+export function registerModeler(em: EntityManager) {
+  // create our modeler
+  em.addSingletonComponent(ModelerDef);
+
+  registerObjClicker(em);
+  registerAABBBuilder(em);
+}
+
+function registerAABBBuilder(em: EntityManager) {
+  em.registerSystem(
+    null,
+    [InputsDef, ModelerDef, AssetsDef],
+    (_, res) => {
+      // create a new box
+      if (res.inputs.keyClicks["b"]) {
+        const b = em.newEntity();
+
+        em.ensureComponentOn(b, ModelBoxDef);
+        em.ensureComponentOn(b, PositionDef, [0, 0, 0]);
+        em.ensureComponentOn(b, ScaleDef, [2, 1, 1]);
+        em.ensureComponentOn(b, ColorDef, [0.1, 0.3, 0.2]);
+        em.ensureComponentOn(b, RenderableDef, res.assets.cube.proto);
+
+        res.modeler.latestBoxId = b.id;
+      }
+
+      // check for mov / scale mode
+      if (
+        res.inputs.keyDowns["x"] ||
+        res.inputs.keyDowns["z"] ||
+        res.inputs.keyDowns["y"]
+      )
+        if (res.inputs.keyDowns["shift"]) res.modeler.mode = "scale";
+        else res.modeler.mode = "move";
+      else res.modeler.mode = "";
+
+      if (res.modeler.mode === "move" || res.modeler.mode === "scale") {
+        const delta = res.inputs.mouseMovX;
+        const dim = res.inputs.keyDowns["x"]
+          ? 0
+          : res.inputs.keyDowns["y"]
+          ? 1
+          : 2;
+
+        // do move
+        if (res.modeler.mode === "move") {
+          const b = em.findEntity(res.modeler.latestBoxId, [PositionDef]);
+          if (b) {
+            b.position[dim] += delta * 0.1;
+          }
+        }
+
+        // do scale
+        if (res.modeler.mode === "scale") {
+          const b = em.findEntity(res.modeler.latestBoxId, [ScaleDef]);
+          if (b) {
+            const currentSize = b.scale[dim] * 2;
+            const newSize = currentSize + delta * 0.1;
+            const newScale = newSize / 2;
+            b.scale[dim] = newScale;
+          }
+        }
+      }
+    },
+    "aabbBuilder"
   );
 }
 
