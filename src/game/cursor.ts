@@ -1,4 +1,4 @@
-import { EM, EntityManager } from "../entity-manager.js";
+import { ComponentDef, EM, EntityManager, EntityW } from "../entity-manager.js";
 import { Mesh } from "../mesh-pool.js";
 import { RenderableDef } from "../renderer.js";
 import { PositionDef } from "../physics/transform.js";
@@ -12,6 +12,16 @@ export const GlobalCursor3dDef = EM.defineComponent("globalCursor3d", () => {
 });
 
 export const Cursor3dDef = EM.defineComponent("cursor3d", () => true);
+
+export function getCursor<CS extends ComponentDef[]>(
+  em: EntityManager,
+  cs: [...CS]
+): EntityW<[typeof Cursor3dDef, ...CS]> | undefined {
+  const gb = em.findSingletonComponent(GlobalCursor3dDef);
+  if (!gb) return undefined;
+  const e = em.findEntity(gb.globalCursor3d.entityId, [Cursor3dDef, ...cs]);
+  return e;
+}
 
 export function registerBuildCursor(em: EntityManager) {
   em.addSingletonComponent(GlobalCursor3dDef);
