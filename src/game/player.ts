@@ -36,9 +36,10 @@ import { Mesh } from "../mesh-pool.js";
 import { Assets, AssetsDef } from "./assets.js";
 import { LinearVelocity, LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../smoothing.js";
-import { GlobalCursor3dDef } from "./cursor.js";
+import { getCursor, GlobalCursor3dDef } from "./cursor.js";
 import { ModelerDef, screenPosToRay } from "./modeler.js";
 import { PhysicsDbgDef } from "../physics/phys-debug.js";
+import { DeletedDef } from "../delete.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {
@@ -307,6 +308,11 @@ export function registerStepPlayers(em: EntityManager) {
             }
           }
 
+          // delete object
+          if (res.inputs.keyClicks["backspace"] && p.player.targetEnt > 0) {
+            em.ensureComponent(p.player.targetEnt, DeletedDef);
+          }
+
           function playerShootRay(r: Ray) {
             // check for hits
             const hits = checkRay(r);
@@ -352,11 +358,7 @@ export function registerStepPlayers(em: EntityManager) {
     ],
     (players, res) => {
       const p = players.filter((p) => p.authority.pid === res.me.pid)[0];
-      const c = em.findEntity(res.globalCursor3d.entityId, [
-        PositionDef,
-        RenderableDef,
-        ColorDef,
-      ]);
+      const c = getCursor(em, [PositionDef, RenderableDef, ColorDef]);
       if (p && c) {
         if (res.camera.cameraMode !== "thirdPersonOverShoulder") {
           // hide the cursor
