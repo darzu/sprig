@@ -3,8 +3,12 @@ import { EM, EntityManager, EntityW } from "../entity-manager.js";
 import { mat4, vec2, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
-import { Ray, RayHit } from "../physics/broadphase.js";
-import { PhysicsResultsDef } from "../physics/nonintersection.js";
+import { AABB, Ray, RayHit } from "../physics/broadphase.js";
+import { ColliderDef } from "../physics/collider.js";
+import {
+  PhysicsResultsDef,
+  PhysicsStateDef,
+} from "../physics/nonintersection.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { CameraView, CameraViewDef, RenderableDef } from "../renderer.js";
 import { tempVec } from "../temp-pool.js";
@@ -16,6 +20,7 @@ import { drawLine } from "./player.js";
 export const ModelerDef = EM.defineComponent("modeler", () => {
   return {
     clickerEnabled: false,
+    currentBoxes: [] as number[],
     latestBoxId: -1,
     mode: "" as "" | "move" | "scale",
   };
@@ -99,15 +104,60 @@ function registerAABBBuilder(em: EntityManager) {
     (_, res) => {
       // create a new box
       if (res.inputs.keyClicks["b"]) {
-        const b = em.newEntity();
+        if (res.inputs.keyDowns["shift"]) {
+          // export
+          let resStr = "";
+          resStr += `const aabbs: AABB[] = [`;
+          for (let id of res.modeler.currentBoxes) {
+            const b = em.findEntity(id, [
+              PhysicsStateDef,
+              ColliderDef,
+              ColorDef,
+            ]);
+            if (!b) throw `Invalid modeler state`;
+            resStr += `{min: ${vec3Dbg(b?._phys.worldAABB.min)}, max: ${vec3Dbg(
+              b?._phys.worldAABB.max
+            )}},`;
+            vec3.copy(b.color, [0.3, 0.1, 0.2]);
+            b.collider.solid = true;
+          }
+          resStr += `];`;
+          console.log(resStr);
+        } else {
+          // create new box
+          const b = em.newEntity();
+          const lastB = em.findEntity(res.modeler.latestBoxId, [
+            PositionDef,
+            ScaleDef,
+          ]);
 
-        em.ensureComponentOn(b, ModelBoxDef);
-        em.ensureComponentOn(b, PositionDef, [0, 0, 0]);
-        em.ensureComponentOn(b, ScaleDef, [2, 1, 1]);
-        em.ensureComponentOn(b, ColorDef, [0.1, 0.3, 0.2]);
-        em.ensureComponentOn(b, RenderableDef, res.assets.cube.proto);
+          em.ensureComponentOn(b, ModelBoxDef);
+          if (lastB) {
+            em.ensureComponentOn(
+              b,
+              ScaleDef,
+              vec3.copy(vec3.create(), lastB.scale)
+            );
+            em.ensureComponentOn(
+              b,
+              PositionDef,
+              vec3.copy(vec3.create(), lastB.position)
+            );
+          } else {
+            em.ensureComponentOn(b, ScaleDef, [2, 1, 1]);
+            em.ensureComponentOn(b, PositionDef, [0, 0, 0]);
+          }
+          em.ensureComponentOn(b, ColorDef, [0.1, 0.3, 0.2]);
+          em.ensureComponentOn(b, RenderableDef, res.assets.cube.proto);
+          em.ensureComponentOn(b, ColliderDef, {
+            shape: "AABB",
+            solid: false,
+            aabb: res.assets.cube.aabb,
+          });
 
-        res.modeler.latestBoxId = b.id;
+          res.modeler.latestBoxId = b.id;
+          res.modeler.currentBoxes.push(b.id);
+        }
       }
 
       // check for mov / scale mode

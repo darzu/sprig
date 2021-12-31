@@ -48,7 +48,7 @@ export function vec3Floor(out: vec3, v: vec3): vec3 {
 }
 
 export function vec3Dbg(v: vec3): string {
-  return `(${v[0].toFixed(2)},${v[1].toFixed(2)},${v[2].toFixed(2)})`;
+  return `[${v[0].toFixed(2)},${v[1].toFixed(2)},${v[2].toFixed(2)}]`;
 }
 export function quatDbg(q: quat): string {
   const axis = tempVec();
