@@ -42,6 +42,7 @@ import { PhysicsDbgDef } from "../physics/phys-debug.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {
+    mode: "jumping" as "jumping" | "flying",
     jumpSpeed: 0.003,
     gravity: gravity ?? 0.1,
     // hat stuff
@@ -137,42 +138,46 @@ export function registerStepPlayers(em: EntityManager) {
 
         for (let p of players) {
           if (p.authority.pid !== res.me.pid) continue;
+
+          if (inputs.keyClicks["f"])
+            p.player.mode = p.player.mode === "jumping" ? "flying" : "jumping";
+
           // fall with gravity
-          // TODO(@darzu): what r the units of gravity here?
-          p.linearVelocity[1] -= (p.player.gravity / 1000) * dt;
+          if (p.player.mode === "jumping") {
+            // TODO(@darzu): what r the units of gravity here?
+            p.linearVelocity[1] -= (p.player.gravity / 1000) * dt;
+          } else {
+            p.linearVelocity[1] = 0;
+          }
 
           // move player
           let vel = vec3.fromValues(0, 0, 0);
           let playerSpeed = 0.001;
-          let n = playerSpeed * dt;
+          if (inputs.keyDowns["shift"]) playerSpeed *= 3;
+          let trans = playerSpeed * dt;
           if (inputs.keyDowns["a"]) {
-            vec3.add(vel, vel, vec3.fromValues(-n, 0, 0));
+            vec3.add(vel, vel, vec3.fromValues(-trans, 0, 0));
           }
           if (inputs.keyDowns["d"]) {
-            vec3.add(vel, vel, vec3.fromValues(n, 0, 0));
+            vec3.add(vel, vel, vec3.fromValues(trans, 0, 0));
           }
           if (inputs.keyDowns["w"]) {
-            vec3.add(vel, vel, vec3.fromValues(0, 0, -n));
+            vec3.add(vel, vel, vec3.fromValues(0, 0, -trans));
           }
           if (inputs.keyDowns["s"]) {
-            vec3.add(vel, vel, vec3.fromValues(0, 0, n));
+            vec3.add(vel, vel, vec3.fromValues(0, 0, trans));
           }
 
-          // TODO(@darzu): rework to use phsyiscs colliders
-          if (inputs.keyClicks["e"]) {
-            p.player.interacting = true;
+          if (p.player.mode === "jumping") {
+            if (inputs.keyClicks[" "]) {
+              p.linearVelocity[1] = p.player.jumpSpeed * dt;
+            }
           } else {
-            p.player.interacting = false;
-          }
-          p.player.dropping = (inputs.keyClicks["q"] || 0) > 0;
-          // if (inputs.keyDowns["shift"]) {
-          //   vec3.add(vel, vel, vec3.fromValues(0, n, 0));
-          // }
-          // if (inputs.keyDowns["c"]) {
-          //   vec3.add(vel, vel, vec3.fromValues(0, -n, 0));
-          // }
-          if (inputs.keyClicks[" "]) {
-            p.linearVelocity[1] = p.player.jumpSpeed * dt;
+            if (inputs.keyDowns[" "]) {
+              vec3.add(vel, vel, vec3.fromValues(0, trans, 0));
+            } else if (inputs.keyDowns["c"]) {
+              vec3.add(vel, vel, vec3.fromValues(0, -trans, 0));
+            }
           }
 
           vec3.transformQuat(vel, vel, p.rotation);
@@ -182,6 +187,15 @@ export function registerStepPlayers(em: EntityManager) {
           // x and z from local movement
           p.linearVelocity[0] = vel[0];
           p.linearVelocity[2] = vel[2];
+          if (p.player.mode === "flying") p.linearVelocity[1] = vel[1];
+
+          // TODO(@darzu): rework to use phsyiscs colliders
+          if (inputs.keyClicks["e"]) {
+            p.player.interacting = true;
+          } else {
+            p.player.interacting = false;
+          }
+          p.player.dropping = (inputs.keyClicks["q"] || 0) > 0;
 
           // TODO(@darzu): we need a better way, maybe some sort of stack,
           //    to hand off mouse etc between systems
