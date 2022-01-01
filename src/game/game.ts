@@ -71,6 +71,7 @@ import {
   DARK_BLUE,
   LIGHT_BLUE,
   registerAssetLoader,
+  SHIP_AABBS,
 } from "./assets.js";
 import { registerInitCanvasSystem } from "../canvas.js";
 import { registerRenderInitSystem, RendererDef } from "../render_init.js";

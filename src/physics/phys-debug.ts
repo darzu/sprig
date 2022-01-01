@@ -12,7 +12,9 @@ import { PhysicsStateDef, WorldFrameDef } from "./nonintersection.js";
 import { RenderableDef } from "../renderer.js";
 import {
   copyFrame,
+  Position,
   PositionDef,
+  Scale,
   ScaleDef,
   updateFrameFromPosRotScale,
 } from "./transform.js";
@@ -108,17 +110,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
           WorldFrameDef,
         ]);
         if (parent) {
-          for (let i = 0; i < 3; i++) {
-            // e.position[i] = parent.world.position[i];
-            e.position[i] =
-              (parent._phys.worldAABB.min[i] + parent._phys.worldAABB.max[i]) *
-              0.5;
-          }
-          for (let i = 0; i < 3; i++)
-            // cube scale 1 means length 2 sides
-            e.scale[i] =
-              (parent._phys.worldAABB.max[i] - parent._phys.worldAABB.min[i]) *
-              0.5;
+          setCubePosScaleToAABB(e, parent._phys.worldAABB);
 
           // ensure this debug mesh is up to date
           // NOTE: we can't wait for the normal local-world transform update cycle
@@ -130,6 +122,15 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
     },
     "debugMeshTransform"
   );
+}
+
+export function setCubePosScaleToAABB(
+  e: { position: Position; scale: Scale },
+  aabb: AABB
+) {
+  // cube scale 1 means length 2 sides
+  for (let i = 0; i < 3; i++) e.position[i] = (aabb.min[i] + aabb.max[i]) * 0.5;
+  for (let i = 0; i < 3; i++) e.scale[i] = (aabb.max[i] - aabb.min[i]) * 0.5;
 }
 
 // TODO(@darzu): use instancing
