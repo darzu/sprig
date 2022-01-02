@@ -56,8 +56,6 @@ export interface ReboundData {
   bId: number;
   aRebound: number;
   bRebound: number;
-  aOverlap: vec3;
-  bOverlap: vec3;
 }
 
 export interface ContactData {
@@ -136,11 +134,7 @@ export function computeReboundData(
 ): ReboundData {
   // determine how to readjust positions
   let aRebound = Infinity;
-  let aDim = -1;
-  let aOverlapNum = 0;
   let bRebound = Infinity;
-  let bDim = -1;
-  let bOverlapNum = 0;
 
   // for each of X,Y,Z dimensions
   for (let i = 0; i < 3; i++) {
@@ -166,12 +160,13 @@ export function computeReboundData(
       0,
       right._phys.lastWPos[i] - right.world.position[i]
     );
-    if (leftMaxContrib + rightMaxContrib < overlap - PAD * itr) continue;
+    if (leftMaxContrib + rightMaxContrib < overlap - PAD * itr) 
+      // rebounding wouldn't fix our collision so don't try
+      continue;
     if (leftMaxContrib === 0 && rightMaxContrib === 0)
       // no movement possible or necessary
       continue;
 
-    // TODO(@darzu): wait, these fractions are slightly wrong, I need to account for leftFracRemaining
     const f = Math.min(
       1.0,
       (overlap + PAD) / (leftMaxContrib + rightMaxContrib)
@@ -180,31 +175,90 @@ export function computeReboundData(
     // update the dimension-spanning "a" and "b" fractions
     const aMaxContrib = left === a ? leftMaxContrib : rightMaxContrib;
     const bMaxContrib = left === b ? leftMaxContrib : rightMaxContrib;
-    if (0 < aMaxContrib) {
-      if (f < aRebound) {
-        aRebound = f;
-        aDim = i;
-        aOverlapNum = overlap;
-      }
-    }
-    if (0 < bMaxContrib) {
-      if (f < bRebound) {
-        bRebound = f;
-        bDim = i;
-        bOverlapNum = overlap;
-      }
-    }
+    if (0 < aMaxContrib && f < aRebound) aRebound = f;
+    if (0 < bMaxContrib && f < bRebound) bRebound = f;
   }
 
-  const aOverlap = vec3.fromValues(0, 0, 0); // TODO(@darzu): perf; unnecessary alloc
-  if (0 < aDim)
-    aOverlap[aDim] =
-      Math.sign(a._phys.lastWPos[aDim] - a.world.position[aDim]) * aOverlapNum;
-
-  const bOverlap = vec3.fromValues(0, 0, 0);
-  if (0 < bDim)
-    bOverlap[bDim] =
-      Math.sign(b._phys.lastWPos[bDim] - b.world.position[bDim]) * bOverlapNum;
-
-  return { aId: a.id, bId: b.id, aRebound, bRebound, aOverlap, bOverlap };
+  return { aId: a.id, bId: b.id, aRebound, bRebound };
 }
+
+// TODO(@darzu): Do we need overlap? For some reason our impl is more complicated
+// export function computeOverlapData(
+//   a: ReboundObj,
+//   b: ReboundObj,
+//   itr: number
+// ): ReboundData {
+//   // determine how to readjust positions
+//   let aRebound = Infinity;
+//   let aDim = -1;
+//   let aOverlapNum = 0;
+//   let bRebound = Infinity;
+//   let bDim = -1;
+//   let bOverlapNum = 0;
+
+//   // for each of X,Y,Z dimensions
+//   for (let i = 0; i < 3; i++) {
+//     // determine who is to the left in this dimension
+//     let left: ReboundObj;
+//     let right: ReboundObj;
+//     if (a._phys.lastWPos[i] < b._phys.lastWPos[i]) {
+//       left = a;
+//       right = b;
+//     } else {
+//       left = b;
+//       right = a;
+//     }
+
+//     const overlap = left._phys.worldAABB.max[i] - right._phys.worldAABB.min[i];
+//     if (overlap <= 0) continue; // no overlap to deal with
+
+//     const leftMaxContrib = Math.max(
+//       0,
+//       left.world.position[i] - left._phys.lastWPos[i]
+//     );
+//     const rightMaxContrib = Math.max(
+//       0,
+//       right._phys.lastWPos[i] - right.world.position[i]
+//     );
+//     if (leftMaxContrib + rightMaxContrib < overlap - PAD * itr) continue;
+//     if (leftMaxContrib === 0 && rightMaxContrib === 0)
+//       // no movement possible or necessary
+//       continue;
+
+//     // TODO(@darzu): wait, these fractions are slightly wrong, I need to account for leftFracRemaining
+//     const f = Math.min(
+//       1.0,
+//       (overlap + PAD) / (leftMaxContrib + rightMaxContrib)
+//     );
+
+//     // update the dimension-spanning "a" and "b" fractions
+//     const aMaxContrib = left === a ? leftMaxContrib : rightMaxContrib;
+//     const bMaxContrib = left === b ? leftMaxContrib : rightMaxContrib;
+//     if (0 < aMaxContrib) {
+//       if (f < aRebound) {
+//         aRebound = f;
+//         aDim = i;
+//         aOverlapNum = overlap;
+//       }
+//     }
+//     if (0 < bMaxContrib) {
+//       if (f < bRebound) {
+//         bRebound = f;
+//         bDim = i;
+//         bOverlapNum = overlap;
+//       }
+//     }
+//   }
+
+//   const aOverlap = vec3.fromValues(0, 0, 0); // TODO(@darzu): perf; unnecessary alloc
+//   if (0 < aDim)
+//     aOverlap[aDim] =
+//       Math.sign(a._phys.lastWPos[aDim] - a.world.position[aDim]) * aOverlapNum;
+
+//   const bOverlap = vec3.fromValues(0, 0, 0);
+//   if (0 < bDim)
+//     bOverlap[bDim] =
+//       Math.sign(b._phys.lastWPos[bDim] - b.world.position[bDim]) * bOverlapNum;
+
+//   return { aId: a.id, bId: b.id, aRebound, bRebound, aOverlap, bOverlap };
+// }
