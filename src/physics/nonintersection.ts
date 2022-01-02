@@ -53,6 +53,8 @@ import { PlayerEntDef } from "../game/player.js";
 import { quatDbg, vec3Dbg } from "../utils-3d.js";
 import { assert } from "../test.js";
 
+// TODO(@darzu): we use "object", "obj", "o" everywhere in here, we should use "entity", "ent", "e"
+
 // TODO(@darzu): break up PhysicsResults
 export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {
   return {
@@ -98,11 +100,10 @@ export interface PhysicsObject {
 
 const _collisionRefl = vec3.create();
 
-const _motionAABBs: { aabb: AABB; id: number }[] = [];
+const _colliders: { aabb: AABB; id: number }[] = [];
+const _colliderIdxToObjId: number[] = [];
 
 const _collisionPairs: Set<IdPair> = new Set();
-
-export let _motionPairsLen = 0; // TODO(@darzu): debug
 
 const _objDict: Map<number, PhysicsObject> = new Map();
 
@@ -294,35 +295,33 @@ export function registerPhysicsContactSystems(em: EntityManager) {
       _collisionPairs.clear();
 
       // check for possible collisions using the motion swept AABBs
-      if (_motionAABBs.length !== objs.length)
-        _motionAABBs.length = objs.length;
-      for (let i = 0; i < objs.length; i++) {
-        const {
-          id,
+      // TODO(@darzu): add support for multi-colliders (not 1-1
+      if (_colliders.length !== objs.length) {
+        _colliders.length = objs.length;
+        _colliderIdxToObjId.length = objs.length;
+      }
+      for (let cIdx = 0; cIdx < _colliders.length; cIdx++) {
+        // TODO(@darzu): perf: is this doing unnecessary object creation?
+        _colliders[cIdx] = {
+          // id: objs[cIdx].id,
+          id: cIdx,
           // TODO(@darzu): wait, shouldn't this be sweepAABB???
           //  TODO: spelunk through git history and figure out
           //  when this changed and if it was intentional
-          _phys: { worldAABB: aabb },
-        } = objs[i];
-        if (!_motionAABBs[i]) {
-          _motionAABBs[i] = {
-            id: id,
-            aabb: aabb,
-          };
-        } else {
-          _motionAABBs[i].id = id;
-          _motionAABBs[i].aabb = aabb;
-        }
+          aabb: objs[cIdx]._phys.worldAABB,
+        };
+        _colliderIdxToObjId[cIdx] = objs[cIdx].id;
       }
-      const { collidesWith: motionCollidesWith, checkRay: motionCheckRay } =
-        checkBroadphase(_motionAABBs);
-      let motionPairs = [...collisionPairs(motionCollidesWith)];
-      _motionPairsLen = motionPairs.length;
+      const { collidesWith: colliderCollisions, checkRay: collidersCheckRay } =
+        checkBroadphase(_colliders);
+      // TODO(@darzu): perf: big array creation
+      let colliderPairs = [...collisionPairs(colliderCollisions)];
 
-      const COLLISION_ITRS = 100;
+      const COLLISION_MAX_ITRS = 100;
 
       // we'll track which objects have moved each itr,
       // since we just ran dynamics assume everything has moved
+      // TODO(@darzu): perf: would narrowing this to actually moved objs help?
       const lastObjMovs: { [id: number]: boolean } = {};
       for (let o of objs) lastObjMovs[o.id] = true;
 
@@ -333,10 +332,15 @@ export function registerPhysicsContactSystems(em: EntityManager) {
       let anyMovement = true;
       let itr = 0;
 
-      while (anyMovement && itr < COLLISION_ITRS) {
+      while (anyMovement && itr < COLLISION_MAX_ITRS) {
         // enumerate the possible collisions, looking for objects that need to pushed apart
-        for (let [aId, bId] of motionPairs) {
-          if (bId < aId) throw `a,b id pair in wrong order ${bId} > ${aId}`;
+        for (let [aCIdx, bCIdx] of colliderPairs) {
+          if (bCIdx < aCIdx)
+            throw `a,b id pair in wrong order ${bCIdx} > ${aCIdx}`;
+
+          // find our object IDs from our collider indices
+          const aId = _colliderIdxToObjId[aCIdx];
+          const bId = _colliderIdxToObjId[bCIdx];
 
           // did one of these objects move?
           if (!lastObjMovs[aId] && !lastObjMovs[bId]) continue;
@@ -427,10 +431,13 @@ export function registerPhysicsContactSystems(em: EntityManager) {
 
       // update out checkRay function
       physicsResults.checkRay = (r: Ray) => {
-        const motHits = motionCheckRay(r);
+        const motHits = collidersCheckRay(r);
         const hits: RayHit[] = [];
         for (let mh of motHits) {
-          const o = EM.findEntity(mh.id, [PhysicsStateDef]);
+          // NOTE: the IDs in the RayHits from collidersCheckRay 
+          //  are collider indices not entity IDs
+          const eId = _colliderIdxToObjId[mh.id];
+          const o = EM.findEntity(eId, [PhysicsStateDef]);
           if (o) {
             const dist = rayHitDist(o._phys.worldAABB, r);
             if (!isNaN(dist)) hits.push({ id: o.id, dist });
