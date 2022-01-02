@@ -103,6 +103,7 @@ export function computeContactData(a: ContactObj, b: ContactObj): ContactData {
       right = a;
     }
 
+    // update min distance and its dimension
     const newDist = right._phys.worldAABB.min[i] - left._phys.worldAABB.max[i];
     if (dist < newDist) {
       dist = newDist;
@@ -122,9 +123,15 @@ export function computeContactData(a: ContactObj, b: ContactObj): ContactData {
   };
 }
 
+export interface ReboundObj {
+  id: number;
+  _phys: { lastWPos: vec3; worldAABB: AABB };
+  world: { position: vec3 };
+}
+
 export function computeReboundData(
-  a: PhysicsObject,
-  b: PhysicsObject,
+  a: ReboundObj,
+  b: ReboundObj,
   itr: number
 ): ReboundData {
   // determine how to readjust positions
@@ -138,8 +145,8 @@ export function computeReboundData(
   // for each of X,Y,Z dimensions
   for (let i = 0; i < 3; i++) {
     // determine who is to the left in this dimension
-    let left: PhysicsObject;
-    let right: PhysicsObject;
+    let left: ReboundObj;
+    let right: ReboundObj;
     if (a._phys.lastWPos[i] < b._phys.lastWPos[i]) {
       left = a;
       right = b;
