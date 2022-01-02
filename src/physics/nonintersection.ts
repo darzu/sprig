@@ -299,6 +299,9 @@ export function registerPhysicsContactSystems(em: EntityManager) {
       for (let i = 0; i < objs.length; i++) {
         const {
           id,
+          // TODO(@darzu): wait, shouldn't this be sweepAABB???
+          //  TODO: spelunk through git history and figure out
+          //  when this changed and if it was intentional
           _phys: { worldAABB: aabb },
         } = objs[i];
         if (!_motionAABBs[i]) {
