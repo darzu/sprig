@@ -1,13 +1,7 @@
 import { Collider, ColliderDef } from "./collider.js";
-import {
-  Component,
-  EM,
-  Entity,
-  EntityManager,
-  EntityW,
-} from "../entity-manager.js";
-import { PhysicsTimerDef, Timer } from "../time.js";
-import { mat3, mat4, quat, ReadonlyMat4, vec3 } from "../gl-matrix.js";
+import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
+import { PhysicsTimerDef } from "../time.js";
+import { mat4, quat, vec3 } from "../gl-matrix.js";
 import {
   CollidesWith,
   computeContactData,
@@ -37,20 +31,12 @@ import {
   IDENTITY_FRAME,
   PhysicsParent,
   PhysicsParentDef,
-  Position,
   PositionDef,
   ReadonlyFrame,
-  Rotation,
-  RotationDef,
-  ScaleDef,
   TransformDef,
   updateFrameFromPosRotScale,
   updateFrameFromTransform,
 } from "./transform.js";
-import { tempQuat, tempVec } from "../temp-pool.js";
-import { LinearVelocityDef, AngularVelocityDef } from "./motion.js";
-import { PlayerEntDef } from "../game/player.js";
-import { quatDbg, vec3Dbg } from "../utils-3d.js";
 import { assert } from "../test.js";
 
 // TODO(@darzu): we use "object", "obj", "o" everywhere in here, we should use "entity", "ent", "e"

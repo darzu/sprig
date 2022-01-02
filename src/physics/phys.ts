@@ -6,7 +6,6 @@ import {
   registerPhysicsStateInit,
   registerUpdateLocalPhysicsAfterRebound,
   registerUpdateWorldAABBs,
-  registerUpdateWorldFromPosRotScale,
 } from "./nonintersection.js";
 import { EntityManager } from "../entity-manager.js";
 import { registerPhysicsDebuggerSystem } from "./phys-debug.js";
