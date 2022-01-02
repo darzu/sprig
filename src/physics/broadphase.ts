@@ -78,16 +78,16 @@ export function checkBroadphase(
   }
 
   // determine our bounds
-  const worldAABB = createAABB();
+  const universeAABB = createAABB();
   for (let o of objs) {
     for (let i = 0; i < 3; i++) {
-      worldAABB.min[i] = Math.min(worldAABB.min[i], o.aabb.min[i]);
-      worldAABB.max[i] = Math.max(worldAABB.max[i], o.aabb.max[i]);
+      universeAABB.min[i] = Math.min(universeAABB.min[i], o.aabb.min[i]);
+      universeAABB.max[i] = Math.max(universeAABB.max[i], o.aabb.max[i]);
     }
   }
   for (let i = 0; i < 3; i++) {
-    worldAABB.min[i] -= 10;
-    worldAABB.max[i] += 10;
+    universeAABB.min[i] -= 10;
+    universeAABB.max[i] += 10;
   }
 
   // naive oct-tree (last measured 68482c94)
@@ -98,7 +98,7 @@ export function checkBroadphase(
   //      100 objs: 0.1ms, 1,200 overlaps + 6,000 enclosed-bys
   if (BROAD_PHASE === "OCT") {
     const octObjs = new Map<number, AABB>(objs.map((o) => [o.id, o.aabb])); // TODO(@darzu): necessary?
-    const tree = octtree(octObjs, worldAABB);
+    const tree = octtree(octObjs, universeAABB);
     function octCheckOverlap(tree: OctTree) {
       // check ea obj
       for (let obj of tree.objs.entries()) {
@@ -139,7 +139,7 @@ export function checkBroadphase(
   //      3000 objs @[2000, 200, 2000]: 1.2-7.6ms, 180,000-400,000 overlaps, 4,400 cell checks
   if (BROAD_PHASE === "GRID") {
     // initialize world
-    if (!_worldGrid) _worldGrid = createWorldGrid(worldAABB, [10, 10, 10]);
+    if (!_worldGrid) _worldGrid = createWorldGrid(universeAABB, [10, 10, 10]);
     // place objects in grid
     for (let o of objs) {
       let ll = _objToObjLL[o.id];

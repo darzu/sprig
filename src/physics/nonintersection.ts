@@ -334,6 +334,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
           const a = _objDict.get(aId)!;
           const b = _objDict.get(bId)!;
 
+          // TODO(@darzu): this is one of the places we would replace with narrow-phase checking
           if (!doesOverlap(a._phys.worldAABB, b._phys.worldAABB)) {
             // a miss
             continue;
@@ -411,8 +412,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
       // remember current state for next time
       for (let o of objs) {
         vec3.copy(o._phys.lastWPos, o.world.position);
-        vec3.copy(o._phys.lastWorldAABB.min, o._phys.worldAABB.min);
-        vec3.copy(o._phys.lastWorldAABB.max, o._phys.worldAABB.max);
+        copyAABB(o._phys.lastWorldAABB, o._phys.worldAABB);
       }
 
       // update out checkRay function
@@ -420,11 +420,12 @@ export function registerPhysicsContactSystems(em: EntityManager) {
         const motHits = collidersCheckRay(r);
         const hits: RayHit[] = [];
         for (let mh of motHits) {
-          // NOTE: the IDs in the RayHits from collidersCheckRay 
+          // NOTE: the IDs in the RayHits from collidersCheckRay
           //  are collider indices not entity IDs
           const eId = _colliderIdxToObjId[mh.id];
           const o = EM.findEntity(eId, [PhysicsStateDef]);
           if (o) {
+            // TODO(@darzu): this is one of the places we would replace with narrow phase
             const dist = rayHitDist(o._phys.worldAABB, r);
             if (!isNaN(dist)) hits.push({ id: o.id, dist });
           }

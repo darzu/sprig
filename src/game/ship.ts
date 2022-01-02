@@ -6,7 +6,11 @@ import { RenderableDef } from "../renderer.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { Deserializer, Serializer } from "../serialize.js";
 import { Assets, AssetsDef, SHIP_AABBS } from "./assets.js";
-import { ColliderDef } from "../physics/collider.js";
+import {
+  AABBCollider,
+  ColliderDef,
+  MultiCollider,
+} from "../physics/collider.js";
 import { copyAABB, createAABB } from "../physics/broadphase.js";
 import { ColorDef } from "./game.js";
 import { setCubePosScaleToAABB } from "../physics/phys-debug.js";
@@ -58,6 +62,19 @@ function createShip(
     sync.dynamicComponents.push(RotationDef.id);
   }
   em.addComponent(e.id, FinishedDef);
+
+  // TODO(@darzu): multi collider
+  const mc: MultiCollider = {
+    shape: "Multi",
+    solid: false,
+    // TODO(@darzu): integrate these in the assets pipeline
+    children: SHIP_AABBS.map((aabb) => ({
+      shape: "AABB",
+      solid: false,
+      aabb,
+    })),
+  };
+  // em.ensureComponentOn(e, ColliderDef, mc);
 
   // TODO(@darzu): handle AABB lists differently
   for (let aabb of SHIP_AABBS) {
