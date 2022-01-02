@@ -2,6 +2,7 @@ import { vec3 } from "../gl-matrix.js";
 import { __isSMI } from "../util.js";
 import {
   PhysicsObject,
+  PhysicsState,
   registerPhysicsContactSystems,
   registerPhysicsStateInit,
   registerUpdateLocalPhysicsAfterRebound,
@@ -16,9 +17,12 @@ import {
   registerPhysicsApplyAngularVelocity,
 } from "./velocity-system.js";
 import {
+  Frame,
   registerUpdateLocalFromPosRotScale,
   registerUpdateWorldFromLocalAndParent,
 } from "./transform.js";
+import { Collider } from "./collider.js";
+import { AABB } from "./broadphase.js";
 
 // TODO(@darzu): PHYSICS TODO:
 // - seperate rotation and motion w/ constraint checking between them
@@ -74,12 +78,14 @@ export function idPair(aId: number, bId: number): IdPair {
   return h;
 }
 
-export const PAD = 0.001; // TODO(@darzu): not sure if this is wanted
+export const PAD = 0.001; // TODO(@darzu): not sure if we can get away without this
 
-export function computeContactData(
-  a: PhysicsObject,
-  b: PhysicsObject
-): ContactData {
+export interface ContactObj {
+  id: number;
+  _phys: { lastWPos: vec3; worldAABB: AABB };
+}
+
+export function computeContactData(a: ContactObj, b: ContactObj): ContactData {
   let dist = -Infinity;
   let dim = -1;
   let dir = 0;
@@ -87,8 +93,8 @@ export function computeContactData(
   // for each of X,Y,Z dimensions
   for (let i = 0; i < 3; i++) {
     // determine who is to the left in this dimension
-    let left: PhysicsObject;
-    let right: PhysicsObject;
+    let left: ContactObj;
+    let right: ContactObj;
     if (a._phys.lastWPos[i] < b._phys.lastWPos[i]) {
       left = a;
       right = b;
