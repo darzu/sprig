@@ -47,7 +47,8 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
     (es, res) => {
       for (let e of es) {
         if (!res._physDbgState.colliderMeshes.has(e.id)) {
-          if (e.collider.shape === "AABB") {
+          // TODO(@darzu): proper multi support
+          if (e.collider.shape === "AABB" || e.collider.shape === "Multi") {
             // create debug entity
             const dbgE = em.newEntity();
 

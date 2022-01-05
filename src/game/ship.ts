@@ -66,31 +66,16 @@ function createShip(
   // TODO(@darzu): multi collider
   const mc: MultiCollider = {
     shape: "Multi",
-    solid: false,
+    solid: true,
     // TODO(@darzu): integrate these in the assets pipeline
     children: SHIP_AABBS.map((aabb) => ({
       shape: "AABB",
-      solid: false,
+      solid: true,
       aabb,
     })),
   };
-  // em.ensureComponentOn(e, ColliderDef, mc);
+  em.ensureComponentOn(e, ColliderDef, mc);
 
-  // TODO(@darzu): handle AABB lists differently
-  for (let aabb of SHIP_AABBS) {
-    const b = em.newEntity();
-    em.ensureComponentOn(b, PositionDef);
-    em.ensureComponentOn(b, ScaleDef);
-    em.ensureComponentOn(b, RenderableDef, assets.cube.proto);
-    em.ensureComponentOn(b, ColliderDef, {
-      shape: "AABB",
-      solid: false,
-      aabb: copyAABB(createAABB(), aabb),
-    });
-    em.ensureComponentOn(b, ColorDef, [0.1, 0.2, 0.3]);
-
-    setCubePosScaleToAABB(b, aabb);
-  }
 }
 
 export function registerBuildShipSystem(em: EntityManager) {
