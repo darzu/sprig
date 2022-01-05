@@ -6,6 +6,7 @@ import { mathMap } from "../math.js";
 import { AABB, Ray, RayHit } from "../physics/broadphase.js";
 import { ColliderDef } from "../physics/collider.js";
 import {
+  PhysicsBroadCollidersDef,
   PhysicsResultsDef,
   PhysicsStateDef,
 } from "../physics/nonintersection.js";
@@ -100,7 +101,7 @@ export function registerModeler(em: EntityManager) {
 function registerAABBBuilder(em: EntityManager) {
   em.registerSystem(
     null,
-    [InputsDef, ModelerDef, AssetsDef],
+    [InputsDef, ModelerDef, AssetsDef, PhysicsBroadCollidersDef],
     (_, res) => {
       // create a new box
       if (res.inputs.keyClicks["b"]) {
@@ -115,8 +116,9 @@ function registerAABBBuilder(em: EntityManager) {
               ColorDef,
             ]);
             if (!b) throw `Invalid modeler state`;
-            resStr += `{min: ${vec3Dbg(b?._phys.worldAABB.min)}, max: ${vec3Dbg(
-              b?._phys.worldAABB.max
+            const c = res._physBColliders.colliders[b._phys.worldAABBs[0]];
+            resStr += `{min: ${vec3Dbg(c.aabb.min)}, max: ${vec3Dbg(
+              c.aabb.max
             )}},`;
             vec3.copy(b.color, [0.3, 0.1, 0.2]);
             b.collider.solid = true;

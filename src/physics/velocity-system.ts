@@ -10,6 +10,7 @@ import {
 } from "./motion.js";
 import { IdPair, ContactData } from "./phys.js";
 import {
+  PhysicsBroadCollidersDef,
   PhysicsResultsDef,
   PhysicsState,
   PhysicsStateDef,
@@ -36,7 +37,7 @@ let deltaRotation = quat.create();
 export function registerPhysicsClampVelocityByContact(em: EntityManager) {
   em.registerSystem(
     null,
-    [PhysicsTimerDef, PhysicsResultsDef],
+    [PhysicsTimerDef, PhysicsResultsDef, PhysicsBroadCollidersDef],
     (objs, res) => {
       if (!res.physicsTimer.steps) return;
 
@@ -45,8 +46,10 @@ export function registerPhysicsClampVelocityByContact(em: EntityManager) {
       // check for collision constraints
       // TODO(@darzu): this is a velocity constraint and ideally should be nicely extracted
       for (let [abId, data] of lastContactData) {
-        const a = em.findEntity(data.aId, [ColliderDef]);
-        const b = em.findEntity(data.bId, [ColliderDef]);
+        const ac = res._physBColliders.colliders[data.aCId];
+        const bc = res._physBColliders.colliders[data.bCId];
+        const a = em.findEntity(ac.oId, [ColliderDef]);
+        const b = em.findEntity(bc.oId, [ColliderDef]);
         // both objects must still exist and have colliders
         if (!a || !b) continue;
         // both objects must be solid

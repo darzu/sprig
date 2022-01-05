@@ -6,7 +6,11 @@ import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
 import { mapMeshPositions, Mesh } from "../mesh-pool.js";
 import { AABB } from "./broadphase.js";
-import { PhysicsStateDef, WorldFrameDef } from "./nonintersection.js";
+import {
+  PhysicsBroadCollidersDef,
+  PhysicsStateDef,
+  WorldFrameDef,
+} from "./nonintersection.js";
 import { RenderableDef } from "../renderer.js";
 import {
   copyFrame,
@@ -98,15 +102,18 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
   // update transform based on parent collider
   em.registerSystem(
     [DbgMeshDef, PositionDef, ScaleDef, WorldFrameDef],
-    [],
+    [PhysicsBroadCollidersDef],
     (es, res) => {
       for (let e of es) {
         const parent = em.findEntity(e._physDbgMesh.parent, [
           PhysicsStateDef,
           WorldFrameDef,
         ]);
-        if (parent) {
-          setCubePosScaleToAABB(e, parent._phys.worldAABB);
+        if (parent && parent._phys.worldAABBs.length) {
+          // TODO(@darzu): support multi-colliders
+          const cId = parent._phys.worldAABBs[0];
+          const c = res._physBColliders.colliders[cId];
+          setCubePosScaleToAABB(e, c.aabb);
 
           // ensure this debug mesh is up to date
           // NOTE: we can't wait for the normal local-world transform update cycle

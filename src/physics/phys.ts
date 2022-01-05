@@ -51,19 +51,24 @@ export function registerPhysicsSystems(em: EntityManager) {
 }
 
 export type CollidesWith = Map<number, number[]>;
-export interface ReboundData {
-  aId: number;
-  bId: number;
+export interface ReboundResult {
   aRebound: number;
   bRebound: number;
 }
+export interface ReboundData extends ReboundResult {
+  aCId: number;
+  bCId: number;
+}
 
-export interface ContactData {
-  aId: number;
-  bId: number;
+export interface ContactResult {
   bToANorm: vec3;
   dist: number;
 }
+export interface ContactData extends ContactResult {
+  aCId: number;
+  bCId: number;
+}
+
 
 export type IdPair = number;
 export function idPair(aId: number, bId: number): IdPair {
@@ -78,12 +83,7 @@ export function idPair(aId: number, bId: number): IdPair {
 
 export const PAD = 0.001; // TODO(@darzu): not sure if we can get away without this
 
-export interface ContactObj {
-  id: number;
-  _phys: { lastWPos: vec3; worldAABB: AABB };
-}
-
-export function computeContactData(a: ContactObj, b: ContactObj): ContactData {
+export function computeContactData(a: {aabb: AABB}, aLastPos: vec3, b: {aabb: AABB}, bLastPos: vec3): ContactResult {
   let dist = -Infinity;
   let dim = -1;
   let dir = 0;
@@ -91,9 +91,9 @@ export function computeContactData(a: ContactObj, b: ContactObj): ContactData {
   // for each of X,Y,Z dimensions
   for (let i = 0; i < 3; i++) {
     // determine who is to the left in this dimension
-    let left: ContactObj;
-    let right: ContactObj;
-    if (a._phys.lastWPos[i] < b._phys.lastWPos[i]) {
+    let left: {aabb: AABB};
+    let right: {aabb: AABB};
+    if (aLastPos[i] < bLastPos[i]) {
       left = a;
       right = b;
     } else {
@@ -102,7 +102,7 @@ export function computeContactData(a: ContactObj, b: ContactObj): ContactData {
     }
 
     // update min distance and its dimension
-    const newDist = right._phys.worldAABB.min[i] - left._phys.worldAABB.max[i];
+    const newDist = right.aabb.min[i] - left.aabb.max[i];
     if (dist < newDist) {
       dist = newDist;
       dim = i;
@@ -114,24 +114,20 @@ export function computeContactData(a: ContactObj, b: ContactObj): ContactData {
   if (dim >= 0) bToANorm[dim] = dir;
 
   return {
-    aId: a.id,
-    bId: b.id,
     bToANorm,
     dist,
   };
 }
 
-export interface ReboundObj {
-  id: number;
-  _phys: { lastWPos: vec3; worldAABB: AABB };
-  world: { position: vec3 };
-}
-
 export function computeReboundData(
-  a: ReboundObj,
-  b: ReboundObj,
+  a: {aabb: AABB},
+  aLastPos: vec3,
+  aCurrPos: vec3,
+  b: {aabb: AABB},
+  bLastPos: vec3,
+  bCurrPos: vec3,
   itr: number
-): ReboundData {
+): ReboundResult {
   // determine how to readjust positions
   let aRebound = Infinity;
   let bRebound = Infinity;
@@ -139,26 +135,26 @@ export function computeReboundData(
   // for each of X,Y,Z dimensions
   for (let i = 0; i < 3; i++) {
     // determine who is to the left in this dimension
-    let left: ReboundObj;
-    let right: ReboundObj;
-    if (a._phys.lastWPos[i] < b._phys.lastWPos[i]) {
-      left = a;
-      right = b;
-    } else {
-      left = b;
-      right = a;
-    }
+    const aIsLeft = aLastPos[i] < bLastPos[i];
+    const left = aIsLeft ? a : b;
+    const leftLastPos = aIsLeft ? aLastPos : bLastPos;
+    const leftCurrPos = aIsLeft ? aCurrPos : bCurrPos;
+    const right = !aIsLeft ? a : b;
+    const rightLastPos = !aIsLeft ? aLastPos : bLastPos;
+    const rightCurrPos = !aIsLeft ? aCurrPos : bCurrPos;
 
-    const overlap = left._phys.worldAABB.max[i] - right._phys.worldAABB.min[i];
+    // check overlap
+    const overlap = left.aabb.max[i] - right.aabb.min[i];
     if (overlap <= 0) continue; // no overlap to deal with
 
+    // determine possible contributions
     const leftMaxContrib = Math.max(
       0,
-      left.world.position[i] - left._phys.lastWPos[i]
+      leftCurrPos[i] - leftLastPos[i]
     );
     const rightMaxContrib = Math.max(
       0,
-      right._phys.lastWPos[i] - right.world.position[i]
+      rightLastPos[i] - rightCurrPos[i]
     );
     if (leftMaxContrib + rightMaxContrib < overlap - PAD * itr) 
       // rebounding wouldn't fix our collision so don't try
@@ -179,10 +175,10 @@ export function computeReboundData(
     if (0 < bMaxContrib && f < bRebound) bRebound = f;
   }
 
-  return { aId: a.id, bId: b.id, aRebound, bRebound };
+  return { aRebound, bRebound };
 }
 
-// TODO(@darzu): Do we need overlap? For some reason our impl is more complicated
+// TODO(@darzu): Do we ever need overlap?
 // export function computeOverlapData(
 //   a: ReboundObj,
 //   b: ReboundObj,
@@ -201,7 +197,7 @@ export function computeReboundData(
 //     // determine who is to the left in this dimension
 //     let left: ReboundObj;
 //     let right: ReboundObj;
-//     if (a._phys.lastWPos[i] < b._phys.lastWPos[i]) {
+//     if (a.lastPos[i] < b.lastPos[i]) {
 //       left = a;
 //       right = b;
 //     } else {
@@ -209,16 +205,16 @@ export function computeReboundData(
 //       right = a;
 //     }
 
-//     const overlap = left._phys.worldAABB.max[i] - right._phys.worldAABB.min[i];
+//     const overlap = left.aabb.max[i] - right.aabb.min[i];
 //     if (overlap <= 0) continue; // no overlap to deal with
 
 //     const leftMaxContrib = Math.max(
 //       0,
-//       left.world.position[i] - left._phys.lastWPos[i]
+//       left.currPos[i] - left.lastPos[i]
 //     );
 //     const rightMaxContrib = Math.max(
 //       0,
-//       right._phys.lastWPos[i] - right.world.position[i]
+//       right.lastPos[i] - right.currPos[i]
 //     );
 //     if (leftMaxContrib + rightMaxContrib < overlap - PAD * itr) continue;
 //     if (leftMaxContrib === 0 && rightMaxContrib === 0)
@@ -253,12 +249,12 @@ export function computeReboundData(
 //   const aOverlap = vec3.fromValues(0, 0, 0); // TODO(@darzu): perf; unnecessary alloc
 //   if (0 < aDim)
 //     aOverlap[aDim] =
-//       Math.sign(a._phys.lastWPos[aDim] - a.world.position[aDim]) * aOverlapNum;
+//       Math.sign(a.lastPos[aDim] - a.currPos[aDim]) * aOverlapNum;
 
 //   const bOverlap = vec3.fromValues(0, 0, 0);
 //   if (0 < bDim)
 //     bOverlap[bDim] =
-//       Math.sign(b._phys.lastWPos[bDim] - b.world.position[bDim]) * bOverlapNum;
+//       Math.sign(b.lastPos[bDim] - b.currPos[bDim]) * bOverlapNum;
 
 //   return { aId: a.id, bId: b.id, aRebound, bRebound, aOverlap, bOverlap };
 // }
