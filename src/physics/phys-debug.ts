@@ -30,9 +30,9 @@ export const PhysicsDbgDef = EM.defineComponent("_physDbgState", () => {
 
 export const DbgMeshDef = EM.defineComponent(
   "_physDbgMesh",
-  (parent?: number) => {
+  (colliderId?: number) => {
     return {
-      parent: parent || 0,
+      colliderId: colliderId || -1,
     };
   }
 );
@@ -42,13 +42,12 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
 
   // add collider meshes
   em.registerSystem(
-    [ColliderDef],
+    [PhysicsStateDef],
     [PhysicsDbgDef, AssetsDef],
     (es, res) => {
       for (let e of es) {
         if (!res._physDbgState.colliderMeshes.has(e.id)) {
-          // TODO(@darzu): proper multi support
-          if (e.collider.shape === "AABB" || e.collider.shape === "Multi") {
+          for (let cId of e._phys.worldAABBs) {
             // create debug entity
             const dbgE = em.newEntity();
 
@@ -71,7 +70,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
             // NOTE: we don't use the normal parent transform mechanism b/c
             //  colliders especially AABBs are only translated, not full matrix
             //  transform'ed
-            em.addComponent(dbgE.id, DbgMeshDef, e.id);
+            em.addComponent(dbgE.id, DbgMeshDef, cId);
 
             // remember
             res._physDbgState.colliderMeshes.set(e.id, dbgE.id);
@@ -106,14 +105,9 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
     [PhysicsBroadCollidersDef],
     (es, res) => {
       for (let e of es) {
-        const parent = em.findEntity(e._physDbgMesh.parent, [
-          PhysicsStateDef,
-          WorldFrameDef,
-        ]);
-        if (parent && parent._phys.worldAABBs.length) {
+        const c = res._physBColliders.colliders[e._physDbgMesh.colliderId];
+        if (c) {
           // TODO(@darzu): support multi-colliders
-          const cId = parent._phys.worldAABBs[0];
-          const c = res._physBColliders.colliders[cId];
           setCubePosScaleToAABB(e, c.aabb);
 
           // ensure this debug mesh is up to date
