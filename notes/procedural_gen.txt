@@ -173,3 +173,7 @@ Loading large world, Ghost of Tsushima:
     
 Procedural wall:
   https://www.artstation.com/blogs/marcchevry/YMYR/making-of-minimoys-procedural-wall
+
+Procedural terrain w/ errosion:
+  https://github.com/dandrino/terrain-erosion-3-ways
+  https://news.ycombinator.com/item?id=29724597

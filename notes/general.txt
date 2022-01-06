@@ -888,3 +888,6 @@ sword slash:
 
 Getting file list from github PR:
   [...document.getElementsByClassName("js-jump-to-menu-item")].map(c => c.children[1].children[1].innerText).join('\n')
+
+Printer and paper rec:
+  P800 & hot press bright

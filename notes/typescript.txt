@@ -5,3 +5,7 @@ https://github.com/microsoft/TypeScript/wiki/Architectural-Overview
 https://github.com/Microsoft/TypeScript/wiki/Using-the-Language-Service-API
 https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API
 
+Refactors I want to be able to do:
+  Inline funcition: splat the body of a function into it's call site
+  program slice: chop away everything that isn't needed to make this one thing work
+  

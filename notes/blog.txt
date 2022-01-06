@@ -116,3 +116,10 @@ Tree shaking:
 
 profile Website goals:
     https://halisavakis.carrd.co
+
+Topic article format:
+  - first few sentences are wikipedia style summary of what the topic is
+  - then some form of interactive demo (w/ gif fallback?) to demonstrate (w/ link to code)
+  - then mention it's placement amongst other articles and the dependencies of this article
+  - then explain building the thing with intermediate interactables and code links if possible
+  - then have a see more section

@@ -403,3 +403,10 @@ VFX explosions:
 
 Flow maps and gradient maps for moving textures:
   https://www.youtube.com/watch?v=KfphtLRoUB0
+
+Outlines:
+  Jump flooding
+  https://bgolus.medium.com/the-quest-for-very-wide-outlines-ba82ed442cd9
+  https://prideout.net/blog/distance_fields/
+  https://blog.demofox.org/2016/02/29/fast-voronoi-diagrams-and-distance-dield-textures-on-the-gpu-with-the-jump-flooding-algorithm/
+  https://shaderbits.com/blog/various-distance-field-generation-techniques
