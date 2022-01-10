@@ -376,6 +376,9 @@ export function registerPhysicsContactSystems(em: EntityManager) {
           const aId = ac.oId;
           const bId = bc.oId;
 
+          // self collision, ignore
+          if (aId === bId) continue;
+
           // did one of these objects move?
           if (!lastObjMovs[aId] && !lastObjMovs[bId]) continue;
 
@@ -486,13 +489,9 @@ export function registerPhysicsContactSystems(em: EntityManager) {
           // NOTE: the IDs in the RayHits from collidersCheckRay
           //  are collider indices not entity IDs
           const c = res._physBColliders.colliders[mh.id];
-          const eId = c.oId;
-          const o = EM.findEntity(eId, [PhysicsStateDef]);
-          if (o) {
-            // TODO(@darzu): this is one of the places we would replace with narrow phase
-            const dist = rayHitDist(c.aabb, r);
-            if (!isNaN(dist)) hits.push({ id: o.id, dist });
-          }
+          // TODO(@darzu): this is one of the places we would replace with narrow phase
+          const dist = rayHitDist(c.aabb, r);
+          if (!isNaN(dist)) hits.push({ id: c.oId, dist });
         }
         return hits;
       };
