@@ -45,7 +45,7 @@ export function registerPhysicsClampVelocityByContact(em: EntityManager) {
 
       // check for collision constraints
       // TODO(@darzu): this is a velocity constraint and ideally should be nicely extracted
-      for (let [abId, data] of lastContactData) {
+      for (let [_, data] of lastContactData) {
         const ac = res._physBColliders.colliders[data.aCId];
         const bc = res._physBColliders.colliders[data.bCId];
         const a = em.findEntity(ac.oId, [ColliderDef]);

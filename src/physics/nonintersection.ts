@@ -288,7 +288,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
       const { collidesWith, contactData, reboundData } = physicsResults;
 
       // update in-contact pairs; this is seperate from collision or rebound
-      for (let [abId, lastData] of contactData) {
+      for (let [contactId, lastData] of contactData) {
         const ac = res._physBColliders.colliders[lastData.aCId];
         const bc = res._physBColliders.colliders[lastData.bCId];
         const a = _objDict.get(ac.oId);
@@ -296,7 +296,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
         if (!a || !b) {
           // one of the objects might have been deleted since the last frame,
           // ignore this contact
-          contactData.delete(abId);
+          contactData.delete(contactId);
           continue;
         }
 
@@ -308,7 +308,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
             bc,
             b._phys.lastPos
           );
-          contactData.set(abId, { ...lastData, ...newData });
+          contactData.set(contactId, { ...lastData, ...newData });
           continue;
         }
 
@@ -323,12 +323,12 @@ export function registerPhysicsContactSystems(em: EntityManager) {
             bc,
             b._phys.lastPos
           );
-          contactData.set(abId, { ...lastData, ...newData });
+          contactData.set(contactId, { ...lastData, ...newData });
           continue;
         }
 
         // else, this collision isn't valid any more
-        contactData.delete(abId);
+        contactData.delete(contactId);
       }
 
       // reset collision data
@@ -365,22 +365,21 @@ export function registerPhysicsContactSystems(em: EntityManager) {
 
       while (anyMovement && itr < COLLISION_MAX_ITRS) {
         // enumerate the possible collisions, looking for objects that need to pushed apart
-        for (let [aCIdx, bCIdx] of colliderPairs) {
-          if (bCIdx < aCIdx)
-            throw `a,b id pair in wrong order ${bCIdx} > ${aCIdx}`;
+        for (let [aCId, bCId] of colliderPairs) {
+          if (bCId < aCId) throw `a,b id pair in wrong order ${bCId} < ${aCId}`;
 
-          const ac = res._physBColliders.colliders[aCIdx];
-          const bc = res._physBColliders.colliders[bCIdx];
+          const ac = res._physBColliders.colliders[aCId];
+          const bc = res._physBColliders.colliders[bCId];
 
           // find our object IDs from our collider indices
-          const aId = ac.oId;
-          const bId = bc.oId;
+          const aOId = ac.oId;
+          const bOId = bc.oId;
 
           // self collision, ignore
-          if (aId === bId) continue;
+          if (aOId === bOId) continue;
 
           // did one of these objects move?
-          if (!lastObjMovs[aId] && !lastObjMovs[bId]) continue;
+          if (!lastObjMovs[aOId] && !lastObjMovs[bOId]) continue;
 
           // TODO(@darzu): this is one of the places we would replace with narrow-phase checking
           if (!doesOverlap(ac.aabb, bc.aabb)) {
@@ -388,15 +387,20 @@ export function registerPhysicsContactSystems(em: EntityManager) {
             continue;
           }
 
-          const a = _objDict.get(aId)!;
-          const b = _objDict.get(bId)!;
+          const a = _objDict.get(aOId)!;
+          const b = _objDict.get(bOId)!;
 
-          // record the real collision
-          const abId = idPair(aId, bId);
-          if (!_collisionPairs.has(abId)) {
-            _collisionPairs.add(abId);
-            collidesWith.get(aId)!.push(bId);
-            collidesWith.get(bId)!.push(aId);
+          // uniquely identify this pair of objects
+          const abOId = idPair(aOId, bOId);
+
+          // uniquely identify this pair of colliders
+          const abCId = idPair(aCId, bCId);
+
+          // record the real collision, per objects
+          if (!_collisionPairs.has(abOId)) {
+            _collisionPairs.add(abOId);
+            collidesWith.get(aOId)!.push(bOId);
+            collidesWith.get(bOId)!.push(aOId);
           }
 
           // compute contact info
@@ -410,11 +414,11 @@ export function registerPhysicsContactSystems(em: EntityManager) {
           );
           const contData: ContactData = {
             ...contRes,
-            aCId: aCIdx,
-            bCId: bCIdx,
+            aCId: aCId,
+            bCId: bCId,
           };
           // TODO(@darzu): this just keeps the latest contact data, should we keep all?
-          contactData.set(abId, contData);
+          contactData.set(abCId, contData);
 
           // solid objects rebound
           if (a.collider.solid && b.collider.solid) {
@@ -429,18 +433,18 @@ export function registerPhysicsContactSystems(em: EntityManager) {
               b.world.position,
               itr
             );
-            reboundData.set(abId, { ...rebData, aCId: aCIdx, bCId: bCIdx });
+            reboundData.set(abCId, { ...rebData, aCId, bCId });
 
             // update how much we need to rebound objects by
             const { aRebound, bRebound } = rebData;
             if (aRebound < Infinity)
-              nextObjMovFracs[aId] = Math.max(
-                nextObjMovFracs[aId] || 0,
+              nextObjMovFracs[aOId] = Math.max(
+                nextObjMovFracs[aOId] || 0,
                 aRebound
               );
             if (bRebound < Infinity)
-              nextObjMovFracs[bId] = Math.max(
-                nextObjMovFracs[bId] || 0,
+              nextObjMovFracs[bOId] = Math.max(
+                nextObjMovFracs[bOId] || 0,
                 bRebound
               );
           }
