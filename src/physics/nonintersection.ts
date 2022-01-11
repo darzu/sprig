@@ -14,6 +14,7 @@ import {
 } from "./phys.js";
 import {
   AABB,
+  aabbCenter,
   checkBroadphase,
   collisionPairs,
   copyAABB,
@@ -67,6 +68,8 @@ export interface IndexedAABB {
   id: number;
   oId: number;
   aabb: AABB;
+  pos: vec3;
+  lastPos: vec3;
 }
 
 // TODO(@darzu): break this up into the specific use cases
@@ -122,6 +125,9 @@ export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
             vec3.transformMat4(p, p, o.world.transform)
           );
           copyAABB(wc.aabb, getAABBFromPositions(wCorners));
+          // TODO(@darzu): do we want to update lastPos here? different than obj last pos
+          vec3.copy(wc.lastPos, wc.pos);
+          aabbCenter(wc.pos, wc.aabb);
         }
         // const { localAABB, worldAABB, lastWorldAABB, sweepAABB } = o._phys;
 
@@ -263,6 +269,8 @@ export function registerPhysicsStateInit(em: EntityManager) {
           id: cId,
           oId,
           aabb: copyAABB(createAABB(), aabb),
+          pos: aabbCenter(vec3.create(), aabb),
+          lastPos: aabbCenter(vec3.create(), aabb),
         });
         return cId;
       }
@@ -302,12 +310,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
 
         // colliding again so we don't need any adjacency checks
         if (doesOverlap(ac.aabb, bc.aabb)) {
-          const newData = computeContactData(
-            ac,
-            a._phys.lastPos,
-            bc,
-            b._phys.lastPos
-          );
+          const newData = computeContactData(ac, ac.lastPos, bc, bc.lastPos);
           contactData.set(contactId, { ...lastData, ...newData });
           continue;
         }
@@ -317,12 +320,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
         //    i.e. a check to see if the two objects are pressing into each other?
         //    for now I'm ignoring this b/c it doesn't seem harmful to consider non-pressing as contact
         if (doesTouch(ac.aabb, bc.aabb, 2 * PAD)) {
-          const newData = computeContactData(
-            ac,
-            a._phys.lastPos,
-            bc,
-            b._phys.lastPos
-          );
+          const newData = computeContactData(ac, ac.lastPos, bc, bc.lastPos);
           contactData.set(contactId, { ...lastData, ...newData });
           continue;
         }
@@ -406,12 +404,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
           // compute contact info
           // TODO(@darzu): aggregate contact data as one dir per other obj
           // TODO(@darzu): maybe the winning direction in a multi-direction battle should be the one with the biggest rebound
-          const contRes = computeContactData(
-            ac,
-            a._phys.lastPos,
-            bc,
-            b._phys.lastPos
-          );
+          const contRes = computeContactData(ac, ac.lastPos, bc, bc.lastPos);
           const contData: ContactData = {
             ...contRes,
             aCId: aCId,
@@ -426,11 +419,11 @@ export function registerPhysicsContactSystems(em: EntityManager) {
             // TODO(@darzu): rebound calc per collider, move-frac aggregated per object
             const rebData = computeReboundData(
               ac,
-              a._phys.lastPos,
-              a.world.position,
+              ac.lastPos,
+              ac.pos,
               bc,
-              b._phys.lastPos,
-              b.world.position,
+              bc.lastPos,
+              bc.pos,
               itr
             );
             reboundData.set(abCId, { ...rebData, aCId, bCId });
@@ -465,6 +458,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
               const c = res._physBColliders.colliders[cId];
               vec3.add(c.aabb.min, c.aabb.min, _collisionRefl);
               vec3.add(c.aabb.max, c.aabb.max, _collisionRefl);
+              vec3.add(c.pos, c.pos, _collisionRefl);
             }
 
             // track that movement occured
@@ -481,6 +475,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
       }
 
       // remember current state for next time
+      // TODO(@darzu): needed any more since colliders track these now?
       for (let o of objs) {
         vec3.copy(o._phys.lastPos, o.world.position);
       }

@@ -506,6 +506,12 @@ export function copyAABB(out: AABB, a: AABB) {
   vec3.copy(out.max, a.max);
   return out;
 }
+export function aabbCenter(out: vec3, a: AABB): vec3 {
+  out[0] = (a.min[0] + a.max[0]) * 0.5;
+  out[1] = (a.min[1] + a.max[1]) * 0.5;
+  out[2] = (a.min[2] + a.max[2]) * 0.5;
+  return out;
+}
 export function getAABBFromPositions(positions: vec3[]): AABB {
   const min = vec3.fromValues(Infinity, Infinity, Infinity);
   const max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
