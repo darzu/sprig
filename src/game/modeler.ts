@@ -6,6 +6,7 @@ import { mathMap } from "../math.js";
 import { AABB, Ray, RayHit } from "../physics/broadphase.js";
 import { ColliderDef } from "../physics/collider.js";
 import {
+  PhysicsBroadCollidersDef,
   PhysicsResultsDef,
   PhysicsStateDef,
 } from "../physics/nonintersection.js";
@@ -97,32 +98,42 @@ export function registerModeler(em: EntityManager) {
   registerAABBBuilder(em);
 }
 
+export function aabbListToStr(aabbs: AABB[]): string {
+  let resStr = "";
+  resStr += `const aabbs: AABB[] = [`;
+  for (let aabb of aabbs) {
+    resStr += `{min: ${vec3Dbg(aabb.min)}, max: ${vec3Dbg(aabb.max)}},`;
+  }
+  resStr += `];`;
+  return resStr;
+}
+
 function registerAABBBuilder(em: EntityManager) {
   em.registerSystem(
     null,
-    [InputsDef, ModelerDef, AssetsDef],
+    [InputsDef, ModelerDef, AssetsDef, PhysicsBroadCollidersDef],
     (_, res) => {
       // create a new box
       if (res.inputs.keyClicks["b"]) {
         if (res.inputs.keyDowns["shift"]) {
           // export
-          let resStr = "";
-          resStr += `const aabbs: AABB[] = [`;
-          for (let id of res.modeler.currentBoxes) {
+          const bs = res.modeler.currentBoxes.map((id) => {
             const b = em.findEntity(id, [
               PhysicsStateDef,
               ColliderDef,
               ColorDef,
             ]);
             if (!b) throw `Invalid modeler state`;
-            resStr += `{min: ${vec3Dbg(b?._phys.worldAABB.min)}, max: ${vec3Dbg(
-              b?._phys.worldAABB.max
-            )}},`;
+            return b;
+          });
+          const aabbs = bs.map(
+            (b) => res._physBColliders.colliders[b._phys.worldAABBs[0]].aabb
+          );
+          console.log(aabbListToStr(aabbs));
+          for (let b of bs) {
             vec3.copy(b.color, [0.3, 0.1, 0.2]);
             b.collider.solid = true;
           }
-          resStr += `];`;
-          console.log(resStr);
         } else {
           // create new box
           const b = em.newEntity();

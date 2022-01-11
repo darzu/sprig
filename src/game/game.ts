@@ -3,29 +3,12 @@ import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { jitter } from "../math.js";
 import {
-  registerPhysicsStateInit,
-  registerUpdateWorldAABBs,
-  registerPhysicsContactSystems,
-  registerUpdateWorldFromPosRotScale,
-  registerUpdateLocalPhysicsAfterRebound,
-  WorldFrameDef,
-} from "../physics/nonintersection.js";
-import {
   registerAddMeshHandleSystem,
   registerRenderer,
   registerUpdateCameraView,
   RenderableDef,
 } from "../renderer.js";
-import {
-  PositionDef,
-  registerInitTransforms,
-  registerUpdateLocalFromPosRotScale,
-  registerUpdateWorldFromLocalAndParent,
-  RotationDef,
-  ScaleDef,
-  TransformDef,
-  updateFrameFromTransform,
-} from "../physics/transform.js";
+import { registerInitTransforms, TransformDef } from "../physics/transform.js";
 import {
   BoatConstructDef,
   registerBuildBoatsSystem,
@@ -50,11 +33,7 @@ import {
 } from "../net/sync.js";
 import { registerPredictSystem } from "../net/predict.js";
 import { registerEventSystems } from "../net/events.js";
-import {
-  registerBuildCubesSystem,
-  registerMoveCubesSystem,
-  CubeConstructDef,
-} from "./cube.js";
+import { registerBuildCubesSystem, registerMoveCubesSystem } from "./cube.js";
 import { registerTimeSystem } from "../time.js";
 import { PlaneConstructDef, registerBuildPlanesSystem } from "./plane.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
@@ -71,7 +50,6 @@ import {
   DARK_BLUE,
   LIGHT_BLUE,
   registerAssetLoader,
-  SHIP_AABBS,
 } from "./assets.js";
 import { registerInitCanvasSystem } from "../canvas.js";
 import { registerRenderInitSystem, RendererDef } from "../render_init.js";
@@ -89,23 +67,15 @@ import {
 import { registerInteractionSystem } from "./interact.js";
 import { registerModeler } from "./modeler.js";
 import { registerToolDropSystem, registerToolPickupSystem } from "./tool.js";
-import { registerPhysicsDebuggerSystem } from "../physics/phys-debug.js";
 import {
   registerUpdateSmoothingTargetSnapChange,
   registerUpdateSmoothingTargetSmoothChange,
   registerUpdateSmoothingLerp,
-  registerUpdateSmoothedTransform,
 } from "../smoothing.js";
 import { registerBuildCursor } from "./cursor.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { FinishedDef } from "../build.js";
-import {
-  registerPhysicsApplyAngularVelocity,
-  registerPhysicsApplyLinearVelocity,
-  registerPhysicsClampVelocityByContact,
-  registerPhysicsClampVelocityBySize,
-} from "../physics/velocity-system.js";
 import { registerPhysicsSystems } from "../physics/phys.js";
 
 export const ColorDef = EM.defineComponent(
@@ -326,7 +296,7 @@ function createShips(em: EntityManager) {
   const rot = quat.create();
   // quat.rotateY(rot, rot, Math.PI * -0.4);
   // const pos: vec3 = [-40, -10, -60];
-  const pos: vec3 = [0, 50, 0];
+  const pos: vec3 = [0, -10, 130];
   em.addComponent(em.newEntity().id, ShipConstructDef, pos, rot);
 }
 function createBoats(em: EntityManager) {
