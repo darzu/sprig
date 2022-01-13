@@ -71,6 +71,7 @@ import {
   registerUpdateSmoothingTargetSnapChange,
   registerUpdateSmoothingTargetSmoothChange,
   registerUpdateSmoothingLerp,
+  registerUpdateSmoothedTransform,
 } from "../smoothing.js";
 import { registerBuildCursor } from "./cursor.js";
 import { ColliderDef } from "../physics/collider.js";
@@ -227,7 +228,7 @@ export function registerAllSystems(em: EntityManager) {
   registerEventSystems(em);
   registerDeleteEntitiesSystem(em);
   // TODO(@darzu): confirm this all works
-  // registerUpdateSmoothedTransform(em);
+  registerUpdateSmoothedTransform(em);
   registerRenderViewController(em);
   registerUpdateCameraView(em);
   registerAddMeshHandleSystem(em);
