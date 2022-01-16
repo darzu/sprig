@@ -4,7 +4,7 @@ import {
   _doesOverlaps,
   _enclosedBys,
   _lastCollisionTestTimeMs,
-} from "./phys_broadphase.js";
+} from "./physics/broadphase.js";
 import { setupObjImportExporter } from "./download.js";
 import {
   createLocalObjects,
@@ -68,7 +68,7 @@ async function startGame(localPeerName: string, host: string | null) {
   EM.addSingletonComponent(InputsDef);
   registerInputsSystem(EM);
 
-  const controlsStr = `[WASD shift/c mouse spacebar]`;
+  const controlsStr = `[WASD space 1 2 3 4 5 r t]`;
   let avgJsTime = 0;
   let avgNetTime = 0;
   let avgSimTime = 0;

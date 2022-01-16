@@ -1,6 +1,9 @@
 import { CanvasDef } from "./canvas.js";
 import { Component, EM, EntityManager } from "./entity-manager.js";
 
+const DEBUG_INPUTS = false as const;
+const _seenKeyCodes: Set<string> = new Set();
+
 export const InputsDef = EM.defineComponent("inputs", () => {
   return {
     mouseMovX: 0,
@@ -39,6 +42,12 @@ function createInputsReader(canvas: HTMLCanvasElement): () => Inputs {
     "keydown",
     (ev) => {
       const k = ev.key.toLowerCase();
+      if (DEBUG_INPUTS) {
+        if (!_seenKeyCodes.has(k)) {
+          _seenKeyCodes.add(k);
+          console.log("new key: " + k);
+        }
+      }
       if (!keyDowns[k])
         accumulated_keyClicks[k] = (accumulated_keyClicks[k] ?? 0) + 1;
       keyDowns[k] = true;

@@ -1,20 +1,16 @@
 import { EM, EntityManager, Component, Entity } from "../entity-manager.js";
 import { PhysicsTimerDef } from "../time.js";
-import { mat4, quat, vec3 } from "../gl-matrix.js";
-import { MotionDef } from "../phys_motion.js";
+import { quat, vec3 } from "../gl-matrix.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
-import { ParentDef, RenderableDef, TransformDef } from "../renderer.js";
-import { PhysicsStateDef } from "../phys_esc.js";
-import { AABBCollider, ColliderDef } from "../collider.js";
-import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
+import { RenderableDef } from "../renderer.js";
 import {
-  getAABBFromMesh,
-  Mesh,
-  scaleMesh,
-  transformMesh,
-} from "../mesh-pool.js";
-import { AABB } from "../phys_broadphase.js";
+  PhysicsParentDef,
+  PositionDef,
+  RotationDef,
+} from "../physics/transform.js";
+import { AABBCollider, ColliderDef } from "../physics/collider.js";
+import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { Deserializer, Serializer } from "../serialize.js";
 import { DetectedEventsDef } from "../net/events.js";
 import { fireBullet } from "./bullet.js";
@@ -46,17 +42,17 @@ export const CannonConstructDef = EM.defineComponent(
 
 export function registerStepCannonsSystem(em: EntityManager) {
   em.registerSystem(
-    [CannonDef, MotionDef, AuthorityDef],
+    [CannonDef, PositionDef, RotationDef, AuthorityDef],
     [DetectedEventsDef, PhysicsTimerDef, MeDef],
     (cannons, { detectedEvents, physicsTimer, me }) => {
-      for (let { cannon, authority, motion, id } of cannons) {
+      for (let { cannon, authority, position, rotation, id } of cannons) {
         if (cannon.firing) {
           cannon.countdown -= physicsTimer.steps;
           if (cannon.countdown <= 0) {
             // TODO: cannon firing animation
             if (authority.pid === me.pid) {
               cannon.firing = false;
-              fireBullet(em, motion.location, motion.rotation);
+              fireBullet(em, position, rotation);
               detectedEvents.push({
                 type: "fired-cannon",
                 entities: [id],
@@ -176,29 +172,21 @@ function createCannon(
 ) {
   if (FinishedDef.isOn(e)) return;
   const props = e.cannonConstruct;
-  if (!MotionDef.isOn(e)) em.addComponent(e.id, MotionDef, props.location);
-  if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0, 0, 0]);
-  if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
+  em.ensureComponent(e.id, PositionDef, props.location);
+  em.ensureComponent(e.id, RotationDef);
+  em.ensureComponent(e.id, ColorDef, [0, 0, 0]);
   //TODO: do we need motion smoothing?
   //if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
-  if (!RenderableDef.isOn(e))
-    em.addComponent(e.id, RenderableDef, assets.meshes.cannon);
-  if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
-  if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid);
-  if (!CannonDef.isOn(e)) em.addComponent(e.id, CannonDef);
-  if (!ColliderDef.isOn(e)) {
-    const collider = em.addComponent(e.id, ColliderDef);
-    collider.shape = "AABB";
-    collider.solid = true;
-    (collider as AABBCollider).aabb = assets.aabbs.cannon;
-  }
-  if (!InteractableDef.isOn(e)) {
-    em.addComponent(e.id, InteractableDef);
-  }
-  if (!SyncDef.isOn(e)) {
-    const sync = em.addComponent(e.id, SyncDef);
-    sync.fullComponents.push(CannonConstructDef.id);
-  }
+  em.ensureComponent(e.id, RenderableDef, assets.cannon.mesh);
+  em.ensureComponent(e.id, AuthorityDef, pid);
+  em.ensureComponent(e.id, CannonDef);
+  em.ensureComponent(e.id, ColliderDef, {
+    shape: "AABB",
+    solid: true,
+    aabb: assets.cannon.aabb,
+  });
+  em.ensureComponent(e.id, InteractableDef);
+  em.ensureComponent(e.id, SyncDef, [CannonConstructDef.id]);
   em.addComponent(e.id, FinishedDef);
 }
 
@@ -260,21 +248,23 @@ export function registerBuildAmmunitionSystem(em: EntityManager) {
     [MeDef, AssetsDef],
     (boxes, res) => {
       for (let e of boxes) {
-        if (FinishedDef.isOn(e)) return;
+        if (FinishedDef.isOn(e)) continue;
         const props = e.ammunitionConstruct;
-        if (!MotionDef.isOn(e)) {
-          let motion = em.addComponent(e.id, MotionDef, props.location);
+        if (!PositionDef.isOn(e)) {
+          em.addComponent(e.id, PositionDef, props.location);
+        }
+        if (!RotationDef.isOn(e)) {
           // TODO: the asset is upside down. should probably fix the asset
-          quat.rotateX(motion.rotation, motion.rotation, Math.PI);
-          quat.normalize(motion.rotation, motion.rotation);
+          const rotation = quat.create();
+          quat.rotateX(rotation, rotation, Math.PI);
+          quat.normalize(rotation, rotation);
+          em.addComponent(e.id, RotationDef, rotation);
         }
         if (!ColorDef.isOn(e))
           em.addComponent(e.id, ColorDef, [0.2, 0.1, 0.05]);
-        if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
-        if (!ParentDef.isOn(e)) em.addComponent(e.id, ParentDef);
+        if (!PhysicsParentDef.isOn(e)) em.addComponent(e.id, PhysicsParentDef);
         if (!RenderableDef.isOn(e))
-          em.addComponent(e.id, RenderableDef, res.assets.meshes.ammunitionBox);
-        if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
+          em.addComponent(e.id, RenderableDef, res.assets.ammunitionBox.mesh);
         if (!AuthorityDef.isOn(e))
           em.addComponent(e.id, AuthorityDef, res.me.pid);
         if (!AmmunitionDef.isOn(e))
@@ -283,7 +273,7 @@ export function registerBuildAmmunitionSystem(em: EntityManager) {
           const collider = em.addComponent(e.id, ColliderDef);
           collider.shape = "AABB";
           collider.solid = true;
-          (collider as AABBCollider).aabb = res.assets.aabbs.ammunitionBox;
+          (collider as AABBCollider).aabb = res.assets.ammunitionBox.aabb;
         }
         if (!ToolDef.isOn(e)) {
           const tool = em.addComponent(e.id, ToolDef);
@@ -335,18 +325,15 @@ export function registerBuildLinstockSystem(em: EntityManager) {
     [MeDef, AssetsDef],
     (boxes, res) => {
       for (let e of boxes) {
-        if (FinishedDef.isOn(e)) return;
+        if (FinishedDef.isOn(e)) continue;
         const props = e.linstockConstruct;
-        if (!MotionDef.isOn(e)) {
-          let motion = em.addComponent(e.id, MotionDef, props.location);
-        }
+        if (!PositionDef.isOn(e))
+          em.addComponent(e.id, PositionDef, props.location);
         if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.0, 0.0, 0.0]);
-        if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
-        if (!ParentDef.isOn(e)) em.addComponent(e.id, ParentDef);
+        if (!PhysicsParentDef.isOn(e)) em.addComponent(e.id, PhysicsParentDef);
         // TODO(@darzu): allow scaling to be configured on the asset import
         if (!RenderableDef.isOn(e))
-          em.addComponent(e.id, RenderableDef, res.assets.meshes.linstock);
-        if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
+          em.addComponent(e.id, RenderableDef, res.assets.linstock.mesh);
         if (!AuthorityDef.isOn(e))
           em.addComponent(e.id, AuthorityDef, res.me.pid);
         if (!LinstockDef.isOn(e)) em.addComponent(e.id, LinstockDef);
@@ -354,7 +341,7 @@ export function registerBuildLinstockSystem(em: EntityManager) {
           const collider = em.addComponent(e.id, ColliderDef);
           collider.shape = "AABB";
           collider.solid = true;
-          (collider as AABBCollider).aabb = res.assets.aabbs.linstock;
+          (collider as AABBCollider).aabb = res.assets.linstock.aabb;
         }
         if (!ToolDef.isOn(e)) {
           const tool = em.addComponent(e.id, ToolDef);

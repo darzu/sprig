@@ -2,8 +2,8 @@
 // https://www.youtube.com/watch?v=ajv46BSqcK4
 
 import { BoxCollider } from "./collider.js";
-import { quat, vec3 } from "./gl-matrix.js";
-import { AABB } from "./phys_broadphase.js";
+import { quat, vec3 } from "../gl-matrix.js";
+import { AABB } from "./broadphase.js";
 
 // TODO(@darzu): interfaces worth thinking about:
 // export interface ContactData {

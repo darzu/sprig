@@ -20,14 +20,14 @@ const PIXEL_PER_PX: number | null = null; // 0.5;
 // shaders
 
 const shaderSceneStruct = `
-    [[block]] struct Scene {
+    struct Scene {
         ${SceneUniform.GenerateWGSLUniformStruct()}
     };
 `;
 const vertexShader =
   shaderSceneStruct +
   `
-    [[block]] struct Model {
+    struct Model {
         ${MeshUniform.GenerateWGSLUniformStruct()}
     };
 
@@ -195,7 +195,7 @@ export class Renderer_WebGPU implements Renderer {
     return handle;
   }
   public addMeshInstance(oldHandle: MeshHandle): MeshHandle {
-    // console.log(`Adding (instanced) object ${o.id}`);
+    // console.log(`Adding (instanced) object`);
 
     const d = MeshUniform.CloneData(oldHandle);
     const newHandle = this.initFinished

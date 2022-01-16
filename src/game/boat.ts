@@ -1,17 +1,12 @@
 import { EM, EntityManager, Component, Entity } from "../entity-manager.js";
 import { PhysicsTimerDef, Timer } from "../time.js";
 import { quat, vec3 } from "../gl-matrix.js";
-import { Motion, MotionDef } from "../phys_motion.js";
 import { jitter } from "../math.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
-import {
-  MotionSmoothingDef,
-  RenderableDef,
-  TransformDef,
-} from "../renderer.js";
-import { PhysicsStateDef } from "../phys_esc.js";
-import { AABBCollider, ColliderDef } from "../collider.js";
+import { RenderableDef } from "../renderer.js";
+import { PositionDef, Rotation, RotationDef } from "../physics/transform.js";
+import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import {
   Authority,
   AuthorityDef,
@@ -20,9 +15,11 @@ import {
   SyncDef,
 } from "../net/components.js";
 import { getAABBFromMesh, Mesh, scaleMesh3 } from "../mesh-pool.js";
-import { AABB } from "../phys_broadphase.js";
+import { AABB } from "../physics/broadphase.js";
 import { Deserializer, Serializer } from "../serialize.js";
-import { CUBE_MESH } from "./assets.js";
+import { Assets, AssetsDef } from "./assets.js";
+import { LinearVelocity, LinearVelocityDef } from "../physics/motion.js";
+import { MotionSmoothingDef } from "../smoothing.js";
 
 export const BoatDef = EM.defineComponent("boat", () => {
   return {
@@ -34,7 +31,12 @@ export const BoatDef = EM.defineComponent("boat", () => {
 export type Boat = Component<typeof BoatDef>;
 
 function stepBoats(
-  boats: { boat: Boat; motion: Motion; authority: Authority }[],
+  boats: {
+    boat: Boat;
+    rotation: Rotation;
+    linearVelocity: LinearVelocity;
+    authority: Authority;
+  }[],
   { physicsTimer, me }: { physicsTimer: Timer; me: Me }
 ) {
   for (let o of boats) {
@@ -44,11 +46,11 @@ function stepBoats(
     o.boat.wheelDir += rad;
 
     // rotate
-    quat.rotateY(o.motion.rotation, o.motion.rotation, rad);
+    quat.rotateY(o.rotation, o.rotation, rad);
 
     // rotate velocity
     vec3.rotateY(
-      o.motion.linearVelocity,
+      o.linearVelocity,
       [o.boat.speed, 0, 0],
       [0, 0, 0],
       o.boat.wheelDir
@@ -58,7 +60,7 @@ function stepBoats(
 
 export function registerStepBoats(em: EntityManager) {
   EM.registerSystem(
-    [BoatDef, MotionDef, AuthorityDef],
+    [BoatDef, RotationDef, LinearVelocityDef, AuthorityDef],
     [PhysicsTimerDef, MeDef],
     (objs, res) => {
       for (let i = 0; i < res.physicsTimer.steps; i++) {
@@ -82,52 +84,37 @@ export const BoatConstructDef = EM.defineComponent(
 );
 export type BoatConstruct = Component<typeof BoatConstructDef>;
 
-function serializeBoatConstruct(c: BoatConstruct, buf: Serializer) {
-  buf.writeVec3(c.location);
-  buf.writeFloat32(c.speed);
-  buf.writeFloat32(c.wheelSpeed);
-  buf.writeFloat32(c.wheelDir);
-}
-
-function deserializeBoatConstruct(c: BoatConstruct, buf: Deserializer) {
-  buf.readVec3(c.location);
-  c.speed = buf.readFloat32();
-  c.wheelSpeed = buf.readFloat32();
-  c.wheelDir = buf.readFloat32();
-}
-
 EM.registerSerializerPair(
   BoatConstructDef,
-  serializeBoatConstruct,
-  deserializeBoatConstruct
+  (c, buf) => {
+    buf.writeVec3(c.location);
+    buf.writeFloat32(c.speed);
+    buf.writeFloat32(c.wheelSpeed);
+    buf.writeFloat32(c.wheelDir);
+  },
+  (c, buf) => {
+    buf.readVec3(c.location);
+    c.speed = buf.readFloat32();
+    c.wheelSpeed = buf.readFloat32();
+    c.wheelDir = buf.readFloat32();
+  }
 );
-
-// TODO(@darzu): move these to the asset system
-let _boatMesh: Mesh | undefined = undefined;
-let _boatAABB: AABB | undefined = undefined;
-function getBoatMesh(): Mesh {
-  if (!_boatMesh) _boatMesh = scaleMesh3(CUBE_MESH, [5, 0.3, 2.5]);
-  return _boatMesh;
-}
-function getBoatAABB(): AABB {
-  if (!_boatAABB) _boatAABB = getAABBFromMesh(getBoatMesh());
-  return _boatAABB;
-}
 
 function createBoat(
   em: EntityManager,
   e: Entity & { boatConstruct: BoatConstruct },
-  pid: number
+  pid: number,
+  assets: Assets
 ) {
   if (FinishedDef.isOn(e)) return;
   const props = e.boatConstruct;
-  if (!MotionDef.isOn(e)) em.addComponent(e.id, MotionDef, props.location);
+  if (!PositionDef.isOn(e)) em.addComponent(e.id, PositionDef, props.location);
+  if (!RotationDef.isOn(e)) em.addComponent(e.id, RotationDef);
+  if (!LinearVelocityDef.isOn(e)) em.addComponent(e.id, LinearVelocityDef);
   if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.2, 0.1, 0.05]);
-  if (!TransformDef.isOn(e)) em.addComponent(e.id, TransformDef);
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableDef.isOn(e))
-    em.addComponent(e.id, RenderableDef, getBoatMesh());
-  if (!PhysicsStateDef.isOn(e)) em.addComponent(e.id, PhysicsStateDef);
+    em.addComponent(e.id, RenderableDef, assets.boat.mesh);
   if (!AuthorityDef.isOn(e)) {
     // TODO(@darzu): debug why boats have jerky movement
     console.log(`claiming authority of boat ${e.id}`);
@@ -143,12 +130,14 @@ function createBoat(
     const collider = em.addComponent(e.id, ColliderDef);
     collider.shape = "AABB";
     collider.solid = true;
-    (collider as AABBCollider).aabb = getBoatAABB();
+    (collider as AABBCollider).aabb = assets.boat.aabb;
   }
   if (!SyncDef.isOn(e)) {
     const sync = em.addComponent(e.id, SyncDef);
     sync.fullComponents.push(BoatConstructDef.id);
-    sync.dynamicComponents.push(MotionDef.id);
+    sync.dynamicComponents.push(PositionDef.id);
+    sync.dynamicComponents.push(RotationDef.id);
+    sync.dynamicComponents.push(LinearVelocityDef.id);
   }
   em.addComponent(e.id, FinishedDef);
 }
@@ -156,9 +145,9 @@ function createBoat(
 export function registerBuildBoatsSystem(em: EntityManager) {
   em.registerSystem(
     [BoatConstructDef],
-    [MeDef],
+    [MeDef, AssetsDef],
     (boats, res) => {
-      for (let b of boats) createBoat(em, b, res.me.pid);
+      for (let b of boats) createBoat(em, b, res.me.pid, res.assets);
     },
     "buildBoats"
   );

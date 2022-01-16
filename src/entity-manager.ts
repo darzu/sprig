@@ -247,6 +247,17 @@ export class EntityManager {
       return (e as any)[def.name];
     }
   }
+  // TODO(@darzu): do we want to make this the standard way we do ensureComponent and addComponent ?
+  public ensureComponentOn<N extends string, P, Pargs extends any[] = any[]>(
+    e: Entity,
+    def: ComponentDef<N, P, Pargs>,
+    ...args: Pargs
+  ): asserts e is EntityW<[ComponentDef<N, P, Pargs>]> {
+    const alreadyHas = def.name in e;
+    if (!alreadyHas) {
+      this.addComponent(e.id, def, ...args);
+    }
+  }
 
   public addSingletonComponent<
     N extends string,
@@ -348,7 +359,7 @@ export class EntityManager {
     cs: [...CS]
   ): EntityW<CS, ID> | undefined {
     const e = this.entities.get(id);
-    if (e && !cs.every((c) => c.name in e)) {
+    if (!e || !cs.every((c) => c.name in e)) {
       return undefined;
     }
     return e as EntityW<CS, ID>;
@@ -427,7 +438,9 @@ export class EntityManager {
   ): void {
     name = name || callback.name;
     if (name === "") {
-      throw `To define a system with an anonymous function, pass an explicit name`;
+      throw new Error(
+        `To define a system with an anonymous function, pass an explicit name`
+      );
     }
     if (this.systems.find((sys) => sys.name === name))
       throw `System named ${name} already defined. Try explicitly passing a name`;
@@ -467,15 +480,19 @@ export class EntityManager {
       let start = performance.now();
 
       // try looking up in the query cache
-      let es: Entities<any[]>;
-      if (this._systemsToEntities.has(s.name))
-        es = this._systemsToEntities
-          .get(s.name)!
-          .map((id) => this.entities.get(id)! as EntityW<any[]>);
-      else {
-        throw `System ${s.name} doesn't have a query cache!`;
-        // es = this.filterEntities(s.cs);
+      let es: Entities<any[]> = [];
+      if (s.cs) {
+        if (this._systemsToEntities.has(s.name))
+          es = this._systemsToEntities
+            .get(s.name)!
+            .map((id) => this.entities.get(id)! as EntityW<any[]>);
+        else {
+          throw `System ${s.name} doesn't have a query cache!`;
+          // es = this.filterEntities(s.cs);
+        }
       }
+      // TODO(@darzu): uncomment to debug query cache issues
+      // es = this.filterEntities(s.cs);
 
       let haveAllResources = true;
       for (let r of s.rs) {

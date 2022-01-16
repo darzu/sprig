@@ -1,5 +1,5 @@
 import { FinishedDef } from "../build.js";
-import { AABBCollider, ColliderDef } from "../collider.js";
+import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { HAT_OBJ, importObj, isParseError } from "../import_obj.js";
@@ -9,21 +9,19 @@ import {
   unshareProvokingVertices,
 } from "../mesh-pool.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
-import { AABB } from "../phys_broadphase.js";
-import { PhysicsStateDef } from "../phys_esc.js";
-import { MotionDef } from "../phys_motion.js";
+import { AABB } from "../physics/broadphase.js";
+import { RenderableDef } from "../renderer.js";
 import {
-  MotionSmoothingDef,
-  ParentDef,
-  RenderableDef,
-  TransformDef,
-} from "../renderer.js";
+  PhysicsParentDef,
+  PositionDef,
+  RotationDef,
+  ScaleDef,
+} from "../physics/transform.js";
 import { ColorDef } from "./game.js";
 import { InteractingDef } from "./interact.js";
 import { registerEventHandler, DetectedEventsDef } from "../net/events.js";
 import { PlayerEntDef } from "./player.js";
 import { InteractableDef } from "./interact.js";
-import { ScaleDef } from "../scale.js";
 
 export const ToolDef = EM.defineComponent("tool", (type?: string) => ({
   type,
@@ -52,14 +50,14 @@ export function registerToolPickupSystem(em: EntityManager) {
 
 export function registerToolDropSystem(em: EntityManager) {
   em.registerSystem(
-    [PlayerEntDef, MotionDef],
+    [PlayerEntDef, PositionDef, RotationDef],
     [DetectedEventsDef],
     (players, { detectedEvents }) => {
-      for (let { player, id, motion } of players) {
+      for (let { player, id, position, rotation } of players) {
         if (player.dropping && player.tool > 0) {
           let dropLocation = vec3.fromValues(0, 0, -5);
-          vec3.transformQuat(dropLocation, dropLocation, motion.rotation);
-          vec3.add(dropLocation, dropLocation, motion.location);
+          vec3.transformQuat(dropLocation, dropLocation, rotation);
+          vec3.add(dropLocation, dropLocation, position);
           detectedEvents.push({
             type: "tool-drop",
             entities: [id, player.tool],
@@ -83,13 +81,14 @@ registerEventHandler("tool-pickup", {
   },
   runEvent: (em, entities) => {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
-    let tool = em.findEntity(entities[1], [MotionDef, ParentDef])!;
-    tool.parent.id = player.id;
+    let tool = em.findEntity(entities[1], [PositionDef, PhysicsParentDef])!;
+    tool.physicsParent.id = player.id;
     em.removeComponent(tool.id, InteractableDef);
-    vec3.set(tool.motion.location, 0, 0, -1.5);
-    let scale = em.ensureComponent(tool.id, ScaleDef);
-    vec3.set(scale.by, 0.5, 0.5, 0.5);
+    vec3.set(tool.position, 0, 0, -1.5);
+    em.ensureComponent(tool.id, ScaleDef);
+    if (ScaleDef.isOn(tool)) vec3.copy(tool.scale, [0.5, 0.5, 0.5]);
     player.player.tool = tool.id;
+    if (ColliderDef.isOn(tool)) tool.collider.solid = false;
   },
 });
 
@@ -101,12 +100,13 @@ registerEventHandler("tool-drop", {
   },
   runEvent: (em, entities, location) => {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
-    let tool = em.findEntity(entities[1], [MotionDef, ParentDef])!;
-    tool.parent.id = 0;
+    let tool = em.findEntity(entities[1], [PositionDef, PhysicsParentDef])!;
+    tool.physicsParent.id = 0;
     em.addComponent(tool.id, InteractableDef);
-    vec3.copy(tool.motion.location, location!);
-    let scale = em.ensureComponent(tool.id, ScaleDef);
-    vec3.set(scale.by, 1, 1, 1);
+    vec3.copy(tool.position, location!);
+    em.ensureComponent(tool.id, ScaleDef);
+    if (ScaleDef.isOn(tool)) vec3.copy(tool.scale, [1, 1, 1]);
     player.player.tool = 0;
+    if (ColliderDef.isOn(tool)) tool.collider.solid = true;
   },
 });

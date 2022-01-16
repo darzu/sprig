@@ -1,5 +1,6 @@
-import { mat4, vec3 } from "./gl-matrix.js";
+import { mat4, quat, vec3 } from "./gl-matrix.js";
 import { avg } from "./math.js";
+import { tempVec } from "./temp-pool.js";
 
 // math utilities
 export function computeTriangleNormal(p1: vec3, p2: vec3, p3: vec3): vec3 {
@@ -47,7 +48,12 @@ export function vec3Floor(out: vec3, v: vec3): vec3 {
 }
 
 export function vec3Dbg(v: vec3): string {
-  return `(${v[0].toFixed(2)},${v[1].toFixed(2)},${v[2].toFixed(2)})`;
+  return `[${v[0].toFixed(2)},${v[1].toFixed(2)},${v[2].toFixed(2)}]`;
+}
+export function quatDbg(q: quat): string {
+  const axis = tempVec();
+  const n = quat.getAxisAngle(axis, q);
+  return `${vec3Dbg(axis)}*${n.toFixed(2)}`;
 }
 export function mat4Dbg(v: mat4): string {
   const ns = [...v].map((n) => n.toFixed(2));

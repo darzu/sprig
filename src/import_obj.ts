@@ -4,7 +4,7 @@
 
 import { vec2, vec3 } from "./gl-matrix.js";
 import { Mesh } from "./mesh-pool.js";
-import { idPair, IdPair } from "./phys.js";
+import { idPair, IdPair } from "./physics/phys.js";
 import { assert } from "./test.js";
 import { isString } from "./util.js";
 

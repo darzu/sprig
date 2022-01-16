@@ -1,6 +1,6 @@
-import { Component, EM } from "./entity-manager.js";
-import { vec3 } from "./gl-matrix.js";
-import { AABB } from "./phys_broadphase.js";
+import { Component, EM } from "../entity-manager.js";
+import { vec3 } from "../gl-matrix.js";
+import { AABB } from "./broadphase.js";
 
 export type ColliderShape =
   | "Empty"
@@ -8,7 +8,7 @@ export type ColliderShape =
   | "Box"
   | "Sphere"
   | "Capsule"
-  | "Union";
+  | "Multi";
 
 interface ColliderBase {
   shape: ColliderShape;
@@ -44,8 +44,8 @@ export interface CapsuleCollider extends ColliderBase {
   axis: 0 | 1 | 2;
 }
 
-export interface UnionCollider extends ColliderBase {
-  shape: "Union";
+export interface MultiCollider extends ColliderBase {
+  shape: "Multi";
   children: Collider[];
 }
 
@@ -55,7 +55,7 @@ export type Collider =
   | BoxCollider
   | SphereCollider
   | CapsuleCollider
-  | UnionCollider;
+  | MultiCollider;
 
 export const ColliderDef = EM.defineComponent("collider", (c?: Collider) => {
   return (

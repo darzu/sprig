@@ -43,7 +43,7 @@ export function hashCode(s: string) {
 
 export function objMap<A, V1 extends A[keyof A], V2>(
   a: A,
-  map: (v1: V1, n?: keyof A) => V2
+  map: (v1: V1, n: keyof A) => V2
 ): { [P in keyof A]: V2 } {
   const res: { [k: string]: V2 } = {};
   Object.entries(a).forEach(([n, v1]) => {
@@ -60,3 +60,8 @@ export function toRecord<A, V>(
   as.forEach((a) => (res[key(a)] = val(a)));
   return res;
 }
+
+// TODO(@darzu): this is is a typescript hack for the fact that just using "false"
+//  causes type inference (specifically type narrowing) to not work right in
+//  dead code sometimes (last tested with tsc v4.2.3)
+export const FALSE: boolean = false;

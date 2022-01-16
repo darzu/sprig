@@ -1,8 +1,8 @@
-import { vec3 } from "./gl-matrix.js";
-import { clamp } from "./math.js";
-import { tempVec } from "./temp-pool.js";
-import { range } from "./util.js";
-import { vec3Floor } from "./utils-3d.js";
+import { vec3 } from "../gl-matrix.js";
+import { clamp } from "../math.js";
+import { tempVec } from "../temp-pool.js";
+import { range } from "../util.js";
+import { vec3Floor } from "../utils-3d.js";
 
 const BROAD_PHASE: "N^2" | "OCT" | "GRID" = "OCT";
 
@@ -77,14 +77,20 @@ export function checkBroadphase(
     }
   }
 
-  const maxHorizontalDist = 1000;
-  const maxVerticalDist = 100;
-  const worldAABB: AABB = {
-    min: [-maxHorizontalDist, -maxVerticalDist, -maxHorizontalDist],
-    max: [maxHorizontalDist, maxVerticalDist, maxHorizontalDist],
-  };
+  // determine our bounds
+  const universeAABB = createAABB();
+  for (let o of objs) {
+    for (let i = 0; i < 3; i++) {
+      universeAABB.min[i] = Math.min(universeAABB.min[i], o.aabb.min[i]);
+      universeAABB.max[i] = Math.max(universeAABB.max[i], o.aabb.max[i]);
+    }
+  }
+  for (let i = 0; i < 3; i++) {
+    universeAABB.min[i] -= 10;
+    universeAABB.max[i] += 10;
+  }
 
-  // naive oct-tree
+  // naive oct-tree (last measured 68482c94)
   //      5000 objs: 12.5ms, 56,000 overlaps + 235,000 enclosed-bys
   //      3000 objs: 7.6ms, 21,000 overlaps + 186,000 enclosed-bys
   //      3000 objs @[2000, 200, 2000]: 5ms, 26,000 + 120,000 enclosed-bys ?
@@ -92,7 +98,7 @@ export function checkBroadphase(
   //      100 objs: 0.1ms, 1,200 overlaps + 6,000 enclosed-bys
   if (BROAD_PHASE === "OCT") {
     const octObjs = new Map<number, AABB>(objs.map((o) => [o.id, o.aabb])); // TODO(@darzu): necessary?
-    const tree = octtree(octObjs, worldAABB);
+    const tree = octtree(octObjs, universeAABB);
     function octCheckOverlap(tree: OctTree) {
       // check ea obj
       for (let obj of tree.objs.entries()) {
@@ -133,7 +139,7 @@ export function checkBroadphase(
   //      3000 objs @[2000, 200, 2000]: 1.2-7.6ms, 180,000-400,000 overlaps, 4,400 cell checks
   if (BROAD_PHASE === "GRID") {
     // initialize world
-    if (!_worldGrid) _worldGrid = createWorldGrid(worldAABB, [10, 10, 10]);
+    if (!_worldGrid) _worldGrid = createWorldGrid(universeAABB, [10, 10, 10]);
     // place objects in grid
     for (let o of objs) {
       let ll = _objToObjLL[o.id];
@@ -441,7 +447,7 @@ export function rayHitDist(b: AABB, r: Ray): number {
     }
   }
 
-  if (tmin < tmax && 0.0 < tmax) return Math.max(tmin, 0);
+  if (tmin <= tmax && 0.0 < tmax) return Math.max(tmin, 0);
 
   return NaN;
 }
@@ -495,11 +501,16 @@ export function createAABB(): AABB {
     max: vec3.create(),
   };
 }
-export function copyAABB(a: AABB): AABB {
-  return {
-    min: vec3.clone(a.min),
-    max: vec3.clone(a.max),
-  };
+export function copyAABB(out: AABB, a: AABB) {
+  vec3.copy(out.min, a.min);
+  vec3.copy(out.max, a.max);
+  return out;
+}
+export function aabbCenter(out: vec3, a: AABB): vec3 {
+  out[0] = (a.min[0] + a.max[0]) * 0.5;
+  out[1] = (a.min[1] + a.max[1]) * 0.5;
+  out[2] = (a.min[2] + a.max[2]) * 0.5;
+  return out;
 }
 export function getAABBFromPositions(positions: vec3[]): AABB {
   const min = vec3.fromValues(Infinity, Infinity, Infinity);

@@ -1,7 +1,7 @@
 import { computeTriangleNormal } from "./utils-3d.js";
 import { mat4, vec2, vec3 } from "./gl-matrix.js";
 import { align, sum } from "./math.js";
-import { AABB, getAABBFromPositions } from "./phys_broadphase.js";
+import { AABB, getAABBFromPositions } from "./physics/broadphase.js";
 import { EM } from "./entity-manager.js";
 
 // TODO(@darzu): BUGS:
@@ -289,6 +289,10 @@ export interface MeshHandle extends PoolIndex, MeshUniform.Data {
   readonly numVerts: number;
   readonly numLines: number; // for wireframe
   readonly model?: Mesh;
+}
+
+export function isMeshHandle(m: any): m is MeshHandle {
+  return "mId" in m;
 }
 
 // TODO(@darzu): ECS component; should be moved out of here?

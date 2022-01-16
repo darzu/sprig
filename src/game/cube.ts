@@ -1,35 +1,26 @@
-import { ColliderDef } from "../collider.js";
+import { ColliderDef } from "../physics/collider.js";
 import { Component, EM, EntityManager } from "../entity-manager.js";
 import { vec3 } from "../gl-matrix.js";
-import { PhysicsStateDef } from "../phys_esc.js";
-import { Motion, MotionDef } from "../phys_motion.js";
+import { RenderableDef } from "../renderer.js";
 import {
-  MotionSmoothingDef,
-  ParentDef,
-  RenderableDef,
-  TransformDef,
-} from "../renderer.js";
+  PhysicsParentDef,
+  Position,
+  PositionDef,
+} from "../physics/transform.js";
 import { ColorDef } from "./game.js";
+import { getAABBFromMesh, scaleMesh } from "../mesh-pool.js";
 import {
-  unshareProvokingVertices,
-  getAABBFromMesh,
-  Mesh,
-  MeshHandle,
-  MeshHandleDef,
-  scaleMesh,
-} from "../mesh-pool.js";
-import {
-  Sync,
   SyncDef,
   Authority,
   AuthorityDef,
   Me,
   MeDef,
 } from "../net/components.js";
-import { AABBCollider } from "../collider.js";
+import { AABBCollider } from "../physics/collider.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import { FinishedDef } from "../build.js";
-import { CUBE_AABB, CUBE_MESH } from "./assets.js";
+import { Assets, AssetsDef } from "./assets.js";
+import { MotionSmoothingDef } from "../smoothing.js";
 
 export const CubeConstructDef = EM.defineComponent(
   "cubeConstruct",
@@ -63,49 +54,43 @@ EM.registerSerializerPair(
 export function registerBuildCubesSystem(em: EntityManager) {
   function buildCubes(
     cubes: { id: number; cubeConstruct: CubeConstruct }[],
-    { me: { pid } }: { me: Me }
+    { me: { pid }, assets }: { me: Me; assets: Assets }
   ) {
     for (let cube of cubes) {
       if (em.hasComponents(cube, [FinishedDef])) continue;
 
-      if (!em.hasComponents(cube, [MotionDef])) {
-        const motion = em.addComponent(cube.id, MotionDef);
-        motion.location = [0, 0, 0];
-      }
+      if (!em.hasComponents(cube, [PositionDef]))
+        em.addComponent(cube.id, PositionDef);
       if (!em.hasComponents(cube, [ColorDef])) {
         const color = em.addComponent(cube.id, ColorDef);
         vec3.copy(color, cube.cubeConstruct.color);
       }
       if (!em.hasComponents(cube, [MotionSmoothingDef]))
         em.addComponent(cube.id, MotionSmoothingDef);
-      if (!em.hasComponents(cube, [TransformDef]))
-        em.addComponent(cube.id, TransformDef);
-      if (!em.hasComponents(cube, [ParentDef]))
-        em.addComponent(cube.id, ParentDef);
+      if (!em.hasComponents(cube, [PhysicsParentDef]))
+        em.addComponent(cube.id, PhysicsParentDef);
+      const mesh = scaleMesh(assets.cube.mesh, cube.cubeConstruct.size);
       if (!em.hasComponents(cube, [RenderableDef])) {
-        const renderable = em.addComponent(cube.id, RenderableDef);
-        renderable.mesh = scaleMesh(CUBE_MESH, cube.cubeConstruct.size);
+        const renderable = em.addComponent(cube.id, RenderableDef, mesh);
       }
-      if (!em.hasComponents(cube, [PhysicsStateDef]))
-        em.addComponent(cube.id, PhysicsStateDef);
       if (!em.hasComponents(cube, [ColliderDef])) {
         const collider = em.addComponent(cube.id, ColliderDef);
         collider.shape = "AABB";
         collider.solid = false;
-        (collider as AABBCollider).aabb = CUBE_AABB;
+        (collider as AABBCollider).aabb = getAABBFromMesh(mesh);
       }
       if (!em.hasComponents(cube, [AuthorityDef]))
         em.addComponent(cube.id, AuthorityDef, pid);
       if (!em.hasComponents(cube, [SyncDef])) {
         const sync = em.addComponent(cube.id, SyncDef);
         sync.fullComponents.push(CubeConstructDef.id);
-        sync.dynamicComponents.push(MotionDef.id);
+        sync.dynamicComponents.push(PositionDef.id);
       }
       em.addComponent(cube.id, FinishedDef);
     }
   }
 
-  em.registerSystem([CubeConstructDef], [MeDef], buildCubes);
+  em.registerSystem([CubeConstructDef], [MeDef, AssetsDef], buildCubes);
 }
 
 export function registerMoveCubesSystem(em: EntityManager) {
@@ -114,18 +99,18 @@ export function registerMoveCubesSystem(em: EntityManager) {
       id: number;
       cubeConstruct: CubeConstruct;
       authority: Authority;
-      motion: Motion;
+      position: Position;
     }[],
     { me }: { me: Me }
   ) {
     for (let cube of cubes) {
       if (cube.authority.pid == me.pid) {
-        cube.motion.location[2] -= 0.01;
+        cube.position[2] -= 0.01;
       }
     }
   }
   em.registerSystem(
-    [CubeConstructDef, AuthorityDef, MotionDef, FinishedDef],
+    [CubeConstructDef, AuthorityDef, PositionDef, FinishedDef],
     [MeDef],
     moveCubes
   );
