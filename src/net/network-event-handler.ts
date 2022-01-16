@@ -26,7 +26,7 @@ export function registerHandleNetworkEvents(em: EntityManager) {
       const event = eventsFromNetwork.shift()!;
       switch (event.type) {
         case NetworkEventType.Ready:
-          console.log(`localhost:4321/?server=${event.address}`);
+          console.log(`localhost:4321/?server=${event.address}&user=2`);
           em.addSingletonComponent(NetworkReadyDef);
           break;
         case NetworkEventType.NewConnection: {
