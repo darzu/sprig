@@ -14,15 +14,16 @@ import {
   NetStatsDef,
   EventsFromNetworkDef,
   EventsToNetworkDef,
+  PeerNameDef,
 } from "./components.js";
 
 const PING_INTERVAL = 1000;
 
 // fraction of state updates to artificially drop
-const DROP_PROBABILITY = 0.1;
+const DROP_PROBABILITY = 0.9;
 const DELAY_SENDS = false;
-const SEND_DELAY = 500.0;
-const SEND_DELAY_JITTER = 10.0;
+const SEND_DELAY = 10.0;
+const SEND_DELAY_JITTER = 50.0;
 
 // weight of existing skew measurement vs. new skew measurement
 const SKEW_WEIGHT = 0.5;
@@ -40,7 +41,7 @@ class Net {
           this.connect(event.address);
           break;
         case NetworkEventType.MessageSend:
-          this.send(event.to, event.buf, event.reliable);
+          this.send(event.to, event.buf);
           break;
         default:
           never(event, `Bad network event type ${(event as any).type}`);
@@ -48,8 +49,8 @@ class Net {
     }
   }
 
-  constructor() {
-    this.peer = new Peer();
+  constructor(peerName: string) {
+    this.peer = new Peer(peerName);
     this.peer.onopen = (address: string) => {
       this.outgoingEvents.push({ type: NetworkEventType.Ready, address });
       this.awaitConnections();
@@ -59,8 +60,7 @@ class Net {
 
   private peer: Peer;
   private peers: string[] = [];
-  private reliableChannels: Record<string, RTCDataChannel> = {};
-  private unreliableChannels: Record<string, RTCDataChannel> = {};
+  private channels: Record<string, RTCDataChannel> = {};
   private pingSeq: number = 0;
   private pingTime: number = 0;
 
@@ -73,18 +73,16 @@ class Net {
     message.writeUint8(MessageType.Ping);
     message.writeUint32(seq);
     for (let address of this.peers) {
-      this.send(address, message.buffer, false);
+      this.send(address, message.buffer);
     }
   }
 
-  private send(address: string, message: ArrayBufferView, reliable: boolean) {
-    // TODO: figure out if we need to do something smarter than just not sending if the connection isn't present
-    let conn = reliable
-      ? this.reliableChannels[address]
-      : this.unreliableChannels[address];
+  private send(address: string, message: ArrayBufferView) {
+    // TODO: figure out if we need to do something smarter than just not sending if the connection isn't present and open
+    let conn = this.channels[address];
     if (conn && conn.readyState === "open") {
       if (DELAY_SENDS) {
-        if (reliable || Math.random() > DROP_PROBABILITY) {
+        if (Math.random() > DROP_PROBABILITY) {
           setTimeout(
             () => conn.send(message),
             SEND_DELAY + SEND_DELAY_JITTER * Math.random()
@@ -94,15 +92,6 @@ class Net {
         conn.send(message);
       }
     }
-  }
-
-  private setupChannel(address: string, chan: RTCDataChannel) {
-    chan.onmessage = async (ev) => {
-      const buf = (ev.data as Blob).arrayBuffer
-        ? await (ev.data as Blob).arrayBuffer()
-        : (ev.data as ArrayBuffer);
-      this.handleMessage(address, buf);
-    };
   }
 
   private handleMessage(address: string, buf: ArrayBuffer) {
@@ -115,7 +104,7 @@ class Net {
         resp.writeUint8(MessageType.Pong);
         resp.writeUint32(seq);
         resp.writeFloat32(performance.now());
-        this.send(address, resp.buffer, false);
+        this.send(address, resp.buffer);
         break;
       }
       case MessageType.Pong: {
@@ -148,39 +137,30 @@ class Net {
         });
     }
   }
-
-  private peerConnected(address: string) {
+  private peerConnected(address: string, chan: RTCDataChannel) {
     this.peers.push(address);
     this.outgoingEvents.push({ type: NetworkEventType.NewConnection, address });
+    chan.onmessage = async (ev) => {
+      const buf = (ev.data as Blob).arrayBuffer
+        ? await (ev.data as Blob).arrayBuffer()
+        : (ev.data as ArrayBuffer);
+      this.handleMessage(address, buf);
+    };
   }
 
   // listen for incoming connections
   private awaitConnections() {
     this.peer.onconnection = (address, channel) => {
-      let reliable =
-        channel.maxRetransmits === null || channel.maxRetransmits > 0;
-      if (reliable) {
-        this.reliableChannels[address] = channel;
-      } else {
-        this.unreliableChannels[address] = channel;
-      }
-      if (this.reliableChannels[address] && this.unreliableChannels[address]) {
-        this.peerConnected(address);
-      }
-      this.setupChannel(address, channel);
+      this.channels[address] = channel;
+      this.peerConnected(address, channel);
     };
   }
 
   private connect(address: string) {
     //console.log(`connecting to ${address}`);
-    this.peer.connect(address, true).then((reliableChannel) => {
-      this.peer.connect(address, false).then((unreliableChannel) => {
-        this.reliableChannels[address] = reliableChannel;
-        this.unreliableChannels[address] = unreliableChannel;
-        this.setupChannel(address, reliableChannel);
-        this.setupChannel(address, unreliableChannel);
-        this.peerConnected(address);
-      });
+    this.peer.connect(address, false).then((channel) => {
+      this.channels[address] = channel;
+      this.peerConnected(address, channel);
     });
   }
 }
@@ -234,8 +214,14 @@ function sendEventsToNet(net: Net) {
   };
 }
 
+// from https://gist.github.com/jed/982883#gistcomment-2403369
+
 export function registerNetSystems(em: EntityManager) {
-  const net = new Net();
+  const peerName = em.findSingletonComponent(PeerNameDef)?.peerName.name;
+  if (!peerName) {
+    throw "Peer name not set before net initialized";
+  }
+  const net = new Net(peerName);
   // TODO: startup system to set up components
   em.addSingletonComponent(NetStatsDef);
   em.addSingletonComponent(EventsFromNetworkDef);

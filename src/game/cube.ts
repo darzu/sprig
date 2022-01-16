@@ -42,7 +42,6 @@ function deserializeCubeConstruct(
   buf: Deserializer
 ) {
   if (!buf.dummy) cubeConstruct.size = buf.readUint8();
-  console.log("going to read a vector");
   buf.readVec3(cubeConstruct.color);
 }
 

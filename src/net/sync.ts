@@ -92,7 +92,7 @@ export function registerSyncSystem(em: EntityManager) {
           if (!(e instanceof OutOfRoomError)) throw e;
         }
         message.writeUint8(numEntities, numEntitiesIndex);
-        send(outbox, message.buffer, false);
+        send(outbox, message.buffer);
       }
     }
   }
@@ -134,7 +134,7 @@ export function registerUpdateSystem(em: EntityManager) {
           message.dummy = false;
         }
         let ack = Ack(seq);
-        send(outbox, ack.buffer, false);
+        send(outbox, ack.buffer);
       }
     }
   }

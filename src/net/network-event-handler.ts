@@ -18,7 +18,6 @@ import {
 
 export function registerHandleNetworkEvents(em: EntityManager) {
   let _peerIDs: Record<string, number> = {};
-  let _undeliverableMessages: Record<string, MessageRecv[]> = {};
   function handleNetworkEvents(
     [],
     { eventsFromNetwork }: { eventsFromNetwork: FromNetworkEvent[] }
@@ -27,7 +26,7 @@ export function registerHandleNetworkEvents(em: EntityManager) {
       const event = eventsFromNetwork.shift()!;
       switch (event.type) {
         case NetworkEventType.Ready:
-          console.log(`localhost:4321/?server=${event.address}`);
+          console.log(`localhost:4321/?server=${event.address}&user=2`);
           em.addSingletonComponent(NetworkReadyDef);
           break;
         case NetworkEventType.NewConnection: {
@@ -38,20 +37,10 @@ export function registerHandleNetworkEvents(em: EntityManager) {
           em.addComponent(id, InboxDef);
           em.addComponent(id, OutboxDef);
           _peerIDs[peer.address] = id;
-          for (let event of _undeliverableMessages[peer.address] || []) {
-            eventsFromNetwork.push(event);
-          }
-          delete _undeliverableMessages[peer.address];
           break;
         }
         case NetworkEventType.MessageRecv: {
           let id = _peerIDs[event.from];
-          if (!id) {
-            if (!_undeliverableMessages[event.from])
-              _undeliverableMessages[event.from] = [];
-            _undeliverableMessages[event.from].push(event);
-            break;
-          }
           let { inbox } = em.findEntity(id, [InboxDef])!;
           let message = event.message;
           if (!inbox.has(message.type)) inbox.set(message.type, []);
@@ -72,20 +61,10 @@ export function registerSendOutboxes(em: EntityManager) {
       peer: { address },
       outbox,
     } of peers) {
-      while (outbox.reliable.length > 0) {
-        const message = outbox.reliable.shift()!;
+      while (outbox.length > 0) {
+        const message = outbox.shift()!;
         eventsToNetwork.push({
           type: NetworkEventType.MessageSend,
-          reliable: true,
-          to: address,
-          buf: message,
-        });
-      }
-      while (outbox.unreliable.length > 0) {
-        const message = outbox.unreliable.shift()!;
-        eventsToNetwork.push({
-          type: NetworkEventType.MessageSend,
-          reliable: false,
           to: address,
           buf: message,
         });

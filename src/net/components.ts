@@ -20,11 +20,11 @@ export const PeerDef = EM.defineComponent("peer", () => ({
 
   // TODO: consider moving this state to another component
   joined: false,
+  pid: 0,
   updateSeq: 0,
   entityPriorities: new Map<number, number>(),
   entitiesKnown: new Set<number>(),
   entitiesInUpdate: new Map<number, Set<number>>(),
-  lastEvent: -1,
 }));
 
 export type Peer = Component<typeof PeerDef>;
@@ -60,6 +60,12 @@ export function claimAuthority(
   return false;
 }
 
+export const PeerNameDef = EM.defineComponent("peerName", (name?: string) => ({
+  name: name || "",
+}));
+
+export type PeerName = Component<typeof PeerNameDef>;
+
 export const MeDef = EM.defineComponent(
   "me",
   (pid?: number, host?: boolean) => ({
@@ -77,19 +83,12 @@ export const InboxDef = EM.defineComponent(
 
 export type Inbox = Component<typeof InboxDef>;
 
-export const OutboxDef = EM.defineComponent("outbox", () => ({
-  reliable: [] as DataView[],
-  unreliable: [] as DataView[],
-}));
+export const OutboxDef = EM.defineComponent("outbox", () => [] as DataView[]);
 
 export type Outbox = Component<typeof OutboxDef>;
 
-export function send(outbox: Outbox, buffer: DataView, reliable: boolean) {
-  if (reliable) {
-    outbox.reliable.push(buffer);
-  } else {
-    outbox.unreliable.push(buffer);
-  }
+export function send(outbox: Outbox, buffer: DataView) {
+  outbox.push(buffer);
 }
 
 export const NetStatsDef = EM.defineComponent("netStats", () => ({
@@ -116,7 +115,8 @@ export type EventsToNetwork = Component<typeof EventsToNetworkDef>;
 export const NetworkReadyDef = EM.defineComponent("networkReady", () => true);
 export const JoinDef = EM.defineComponent("join", (address: string) => ({
   address,
-  state: "start" as "start" | "connecting",
+  state: "start" as "start" | "connecting" | "joining",
+  lastSendTime: 0,
 }));
 export type Join = Component<typeof JoinDef>;
 

@@ -15,7 +15,7 @@ import {
 import { EM } from "./entity-manager.js";
 import { addTimeComponents } from "./time.js";
 import { InputsDef, registerInputsSystem } from "./inputs.js";
-import { MeDef, JoinDef, HostDef } from "./net/components.js";
+import { MeDef, JoinDef, HostDef, PeerNameDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";
 import { dbg } from "./debugger.js";
 import { RendererDef } from "./render_init.js";
@@ -27,7 +27,7 @@ const ENABLE_NET = false;
 const AUTOSTART = true;
 
 export let gameStarted = false;
-async function startGame(host: string | null) {
+async function startGame(localPeerName: string, host: string | null) {
   if (gameStarted) return;
   gameStarted = true;
 
@@ -41,6 +41,7 @@ async function startGame(host: string | null) {
   EM.setIdRange("local", 1, 10000);
   // TODO(@darzu): ECS stuff
   // init ECS
+  EM.addSingletonComponent(PeerNameDef, localPeerName);
   if (hosting) {
     // TODO(@darzu): ECS
     EM.setDefaultRange("net");
@@ -191,11 +192,25 @@ async function startGame(host: string | null) {
   }
 }
 
+function getPeerName(queryString: { [k: string]: string }): string {
+  const user = queryString["user"] || "default";
+  let peerName = localStorage.getItem("peerName-" + user);
+  if (!peerName) {
+    // TODO: better random peer name generation, or get peer name from server
+    const rand = crypto.getRandomValues(new Uint8Array(16));
+    peerName = rand.join("");
+    localStorage.setItem("peerName-" + user, peerName);
+  }
+  return peerName;
+}
+
 async function main() {
   const queryString = Object.fromEntries(
     new URLSearchParams(window.location.search).entries()
   );
   const urlServerId = queryString["server"] ?? null;
+
+  const peerName = getPeerName(queryString);
 
   let controls = document.getElementById("server-controls") as HTMLDivElement;
   let serverStartButton = document.getElementById(
@@ -205,15 +220,15 @@ async function main() {
   let serverIdInput = document.getElementById("server-id") as HTMLInputElement;
   if (ENABLE_NET && !AUTOSTART && !urlServerId) {
     serverStartButton.onclick = () => {
-      startGame(null);
+      startGame(peerName, null);
       controls.hidden = true;
     };
     connectButton.onclick = () => {
-      startGame(serverIdInput.value);
+      startGame(peerName, serverIdInput.value);
       controls.hidden = true;
     };
   } else {
-    startGame(urlServerId);
+    startGame(peerName, urlServerId);
     controls.hidden = true;
   }
 }

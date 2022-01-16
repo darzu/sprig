@@ -51,6 +51,7 @@ export function registerStepCannonsSystem(em: EntityManager) {
           if (cannon.countdown <= 0) {
             // TODO: cannon firing animation
             if (authority.pid === me.pid) {
+              cannon.firing = false;
               fireBullet(em, position, rotation);
               detectedEvents.push({
                 type: "fired-cannon",
@@ -133,6 +134,7 @@ export function registerCannonEventHandlers() {
     },
   });
 
+  // TODO: figure out authority etc. for this event
   registerEventHandler("fired-cannon", {
     eventAuthorityEntity: (entities) => entities[0],
     legalEvent: (_em, _entities) => true,

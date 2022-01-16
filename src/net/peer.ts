@@ -21,6 +21,7 @@ interface ServerMessage {
 }
 
 const SERVER_HEARTBEAT_INTERVAL = 5000;
+const RECONNECT_TIME = 1000;
 
 const DEFAULT_CONFIG = {
   iceServers: [
@@ -38,106 +39,59 @@ function serverUrl(id: string, token: string) {
   return `wss://0.peerjs.com:443/peerjs?key=peerjs&id=${id}&token=${token}`;
 }
 
-async function getId() {
-  const response = await fetch(
-    `https://0.peerjs.com:443/peerjs/id?ts=${
-      new Date().getTime() + "" + Math.random()
-    }`
-  );
-  return response.text();
-}
-
 export class Peer {
+  id: string;
+
   connections: Record<string, RTCPeerConnection> = {};
   nextId: number = 0;
   sock: WebSocket | null = null;
-  id: string | null = null;
   onopen: ((id: string) => void) | null = null;
   onconnection: ((peerId: string, channel: RTCDataChannel) => void) | null =
     null;
 
-  constructor() {
-    getId().then((id) => {
-      this.id = id;
-      let sock = new WebSocket(
-        serverUrl(id, Math.random().toString(36).substr(2))
-      );
-      sock.onmessage = (event) => {
-        this.handleServerMessage(JSON.parse(event.data));
-      };
-
-      let heartbeatHandle = 0;
-      sock.onopen = () => {
-        //console.log("Socket opened");
-        // PeerJS sends a heartbeat to the server every 5 seconds--I assume the
-        // server will eventually close the connection otherwise
-        heartbeatHandle = setInterval(() => {
-          sock.send(JSON.stringify({ type: ServerMessageType.Heartbeat }));
-        }, SERVER_HEARTBEAT_INTERVAL);
-        if (this.onopen) {
-          this.onopen(id);
-        }
-      };
-      sock.onclose = () => {
-        console.log("Socket closed");
-        if (heartbeatHandle) {
-          clearInterval(heartbeatHandle);
-          heartbeatHandle = 0;
-        }
-      };
-      this.sock = sock;
-    });
+  constructor(id: string) {
+    this.id = id;
+    this.connectToServer();
   }
 
-  private setupPeerConnection(
-    peerConnection: RTCPeerConnection,
-    remotePeerId: string,
-    connectionId: string
-  ) {
-    //console.log("setting up peer connection");
-    peerConnection.onicecandidate = (ev) => {
-      //console.log("on ice candidate");
-      if (!ev.candidate || !ev.candidate.candidate) return;
-      //console.log(`Got ICE candidate for ${remotePeerId}`);
-      if (!this.sock) {
-        throw "no sock";
-      }
-      this.sock.send(
-        JSON.stringify({
-          type: ServerMessageType.Candidate,
-          payload: {
-            candidate: ev.candidate,
-            type: "data",
-            connectionId,
-          },
-          dst: remotePeerId,
-        })
-      );
+  private connectToServer() {
+    // TODO: if this fails, make it possible to get a different valid id
+    let sock = new WebSocket(
+      serverUrl("sprig-" + this.id, Math.random().toString(36).substr(2))
+    );
+    sock.onmessage = (event) => {
+      //console.log(event.data);
+      this.handleServerMessage(JSON.parse(event.data));
     };
 
-    peerConnection.oniceconnectionstatechange = () => {
-      switch (peerConnection.iceConnectionState) {
-        case "completed":
-          peerConnection.onicecandidate = () => {};
-          break;
-        case "failed":
-        case "closed":
-        case "disconnected":
-          console.log("ICE failed in some way");
-          break;
+    let heartbeatHandle = 0;
+    sock.onopen = () => {
+      //console.log("Socket opened");
+      // PeerJS sends a heartbeat to the server every 5 seconds--I assume the
+      // server will eventually close the connection otherwise
+      heartbeatHandle = setInterval(() => {
+        sock.send(JSON.stringify({ type: ServerMessageType.Heartbeat }));
+      }, SERVER_HEARTBEAT_INTERVAL);
+      if (this.onopen) {
+        this.onopen(this.id);
       }
     };
-
-    peerConnection.ondatachannel = (ev) => {
-      //console.log("Received data channel");
-      if (this.onconnection) {
-        this.onconnection(remotePeerId, ev.channel);
+    const onclose = () => {
+      console.log("Socket closed");
+      if (heartbeatHandle) {
+        clearInterval(heartbeatHandle);
+        heartbeatHandle = 0;
       }
+      // Close all connections if connection to server goes down
+      Object.values(this.connections).forEach((conn) => conn.close());
+      setTimeout(() => this.connectToServer(), RECONNECT_TIME);
     };
+    sock.onclose = onclose;
+    this.sock = sock;
   }
 
   private async handleServerMessage(msg: ServerMessage) {
-    //console.log(`Received message of type: ${msg.type}`);
+    console.log(`Received server message of type: ${msg.type}`);
     let payload = msg.payload;
     let remotePeerId = msg.src;
     switch (msg.type) {
@@ -201,8 +155,57 @@ export class Peer {
     }
   }
 
+  private setupPeerConnection(
+    peerConnection: RTCPeerConnection,
+    remotePeerId: string,
+    connectionId: string
+  ) {
+    //console.log("setting up peer connection");
+    peerConnection.onicecandidate = (ev) => {
+      //console.log("on ice candidate");
+      if (!ev.candidate || !ev.candidate.candidate) return;
+      //console.log(`Got ICE candidate for ${remotePeerId}`);
+      if (!this.sock) {
+        throw "no sock";
+      }
+      this.sock.send(
+        JSON.stringify({
+          type: ServerMessageType.Candidate,
+          payload: {
+            candidate: ev.candidate,
+            type: "data",
+            connectionId,
+          },
+          dst: remotePeerId,
+        })
+      );
+    };
+
+    peerConnection.oniceconnectionstatechange = () => {
+      switch (peerConnection.iceConnectionState) {
+        case "completed":
+          peerConnection.onicecandidate = () => {};
+          break;
+        case "failed":
+        case "closed":
+        case "disconnected":
+          console.log("ICE failed in some way");
+          peerConnection.close();
+          break;
+      }
+    };
+
+    peerConnection.ondatachannel = (ev) => {
+      //console.log("Received data channel");
+      if (this.onconnection) {
+        this.onconnection(remotePeerId, ev.channel);
+      }
+    };
+  }
+
   async connect(peerId: string, reliable: boolean): Promise<RTCDataChannel> {
     const peerConnection = new RTCPeerConnection(DEFAULT_CONFIG);
+    peerId = "sprig-" + peerId;
     let connectionId = `${this.id}-${peerId}-${this.nextId++}`;
     this.setupPeerConnection(peerConnection, peerId, connectionId);
     const config: RTCDataChannelInit = { ordered: false };
