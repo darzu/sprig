@@ -175,6 +175,7 @@ export function registerRenderer(em: EntityManager) {
     [RenderableDef, WorldFrameDef, MeshHandleDef],
     [CameraViewDef, PhysicsTimerDef, RendererDef],
     (objs, res) => {
+      // TODO: should we just render on every frame?
       if (res.physicsTimer.steps > 0)
         stepRenderer(res.renderer.renderer, objs, res.cameraView);
     },
