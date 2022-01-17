@@ -1,8 +1,10 @@
 import { vec3 } from "../gl-matrix.js";
 import { tempVec } from "../temp-pool.js";
+import { EM, EntityManager } from "../entity-manager.js";
+import { PhysicsTimerDef } from "../time.js";
 
 // An MxN rectangular grid of points, connected via springs.
-interface SpringGrid {
+export interface SpringGrid {
   rows: number;
   columns: number;
   positions: vec3[];
@@ -13,7 +15,39 @@ interface SpringGrid {
   distance: number;
   // the strength of each spring (k as in F = kx in Hooke's Law)
   k: number;
+  // The sum of any external forces acting on the system
+  // (e.g. gravity, drag, wind)
+  externalForce: vec3;
 }
+
+export const SpringGridDef = EM.defineComponent(
+  "springGrid",
+  (
+    rows?: number,
+    columns?: number,
+    fixed?: Iterable<number>,
+    distance?: number,
+    k?: number
+  ) => {
+    rows = rows || 0;
+    columns = columns || 0;
+    fixed = fixed || [];
+    distance = distance || 1;
+    k = k || 1;
+    const positions = new Array(rows * columns);
+    const externalForce = vec3.create();
+    const fixedSet = new Set(fixed);
+    return {
+      rows,
+      columns,
+      positions,
+      fixed: fixedSet,
+      distance,
+      k,
+      externalForce,
+    };
+  }
+);
 
 enum Direction {
   Up,
@@ -71,15 +105,30 @@ function addSpringForce(g: SpringGrid, point: number, force: vec3) {
   }
 }
 
-export function stepSystem(g: SpringGrid, externalForce: vec3, dt: number) {
+export function stepSprings(g: SpringGrid, dt: number) {
   const forceVec = tempVec();
   for (let point = 0; point < g.rows * g.columns; point++) {
     if (g.fixed.has(point)) {
       continue;
     }
-    vec3.copy(forceVec, externalForce);
+    vec3.copy(forceVec, g.externalForce);
     addSpringForce(g, point, forceVec);
     vec3.scale(forceVec, forceVec, dt);
     vec3.add(g.positions[point], g.positions[point], forceVec);
   }
+}
+
+function registerSpringSystem(em: EntityManager) {
+  em.registerSystem(
+    [SpringGridDef],
+    [PhysicsTimerDef],
+    (springs, { physicsTimer }) => {
+      const dt = physicsTimer.period;
+      for (let i = 0; i < physicsTimer.steps; i++) {
+        for (let { springGrid } of springs) {
+          stepSprings(springGrid, dt);
+        }
+      }
+    }
+  );
 }
