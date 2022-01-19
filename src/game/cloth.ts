@@ -1,6 +1,6 @@
 import { ColliderDef } from "../physics/collider.js";
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { quat, vec3 } from "../gl-matrix.js";
+import { quat, vec2, vec3 } from "../gl-matrix.js";
 import { RenderableDef } from "../renderer.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { ColorDef } from "./game.js";
@@ -54,6 +54,7 @@ function clothMesh(cloth: ClothConstruct): Mesh {
   const pos: vec3[] = [];
   const tri: vec3[] = [];
   const colors: vec3[] = [];
+  const lines: vec2[] = [];
   while (y < cloth.rows) {
     if (x == cloth.columns) {
       x = 0;
@@ -64,18 +65,33 @@ function clothMesh(cloth: ClothConstruct): Mesh {
     // add triangles
     if (y > 0) {
       if (x > 0) {
+        // front
         tri.push(vec3.fromValues(i, i - 1, i - cloth.columns));
+        colors.push(vec3.fromValues(0, 0, 0));
+        // back
+        tri.push(vec3.fromValues(i - cloth.columns, i - 1, i));
         colors.push(vec3.fromValues(0, 0, 0));
       }
       if (x < cloth.columns - 1) {
+        // front
         tri.push(vec3.fromValues(i, i - cloth.columns, i - cloth.columns + 1));
         colors.push(vec3.fromValues(0, 0, 0));
+        // back
+        tri.push(vec3.fromValues(i - cloth.columns + 1, i - cloth.columns, i));
+        colors.push(vec3.fromValues(0, 0, 0));
       }
+    }
+    // add lines
+    if (x > 0) {
+      lines.push([i - 1, i]);
+    }
+    if (y > 0) {
+      lines.push([i - cloth.columns, i]);
     }
     x = x + 1;
     i = i + 1;
   }
-  return unshareProvokingVertices({ pos, tri, colors });
+  return unshareProvokingVertices({ pos, tri, colors, lines });
 }
 
 export function registerBuildClothsSystem(em: EntityManager) {
