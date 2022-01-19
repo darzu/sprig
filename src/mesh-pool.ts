@@ -423,6 +423,9 @@ interface MeshBuilderInternal {
 // defines the geometry and coloring of a mesh
 export interface Mesh {
   pos: vec3[];
+  // for an unshared mesh, records a mapping between new position
+  // indices and old position indices
+  posMap?: Map<number, number>;
   tri: vec3[];
   colors: vec3[]; // colors per triangle in r,g,b float [0-1] format
   lines?: vec2[];
@@ -433,19 +436,25 @@ export interface Mesh {
 
 export function unshareVertices(input: Mesh): Mesh {
   const pos: vec3[] = [];
+  const posMap: Map<number, number> = new Map();
   const tri: vec3[] = [];
   input.tri.forEach(([i0, i1, i2], i) => {
+    posMap.set(pos.length, i0);
     pos.push(input.pos[i0]);
+    posMap.set(pos.length, i1);
     pos.push(input.pos[i1]);
+    posMap.set(pos.length, i2);
     pos.push(input.pos[i2]);
     tri.push([i * 3 + 0, i * 3 + 1, i * 3 + 2]);
   });
-  return { ...input, pos, tri, verticesUnshared: true };
+  return { ...input, pos, posMap, tri, verticesUnshared: true };
 }
 export function unshareProvokingVertices(input: Mesh): Mesh {
   const pos: vec3[] = [...input.pos];
   const tri: vec3[] = [];
   const provoking: { [key: number]: boolean } = {};
+  const posMap: Map<number, number> = new Map();
+  pos.forEach((_, i) => posMap.set(i, i));
   input.tri.forEach(([i0, i1, i2], triI) => {
     if (!provoking[i0]) {
       // First vertex is unused as a provoking vertex, so we'll use it for this triangle.
@@ -464,11 +473,12 @@ export function unshareProvokingVertices(input: Mesh): Mesh {
       // All vertices are taken, so create a new one
       const i3 = pos.length;
       pos.push(input.pos[i0]);
+      posMap.set(i3, i0);
       provoking[i3] = true;
       tri.push([i3, i1, i2]);
     }
   });
-  return { ...input, pos, tri, usesProvoking: true };
+  return { ...input, pos, posMap, tri, usesProvoking: true };
 }
 
 export function createMeshPoolBuilder_WebGPU(
