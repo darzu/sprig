@@ -8,6 +8,7 @@ export interface SpringGrid {
   rows: number;
   columns: number;
   positions: vec3[];
+  nextPositions: vec3[];
   // indices of points whose position should not change (i.e., they
   // are affixed to something)
   fixed: Set<number>;
@@ -34,13 +35,21 @@ export const SpringGridDef = EM.defineComponent(
     fixed = fixed || [];
     distance = distance || 1;
     k = k || 1;
-    const positions = new Array(rows * columns);
+    const positions: vec3[] = [];
+    const nextPositions: vec3[] = [];
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < columns; x++) {
+        positions.push(vec3.fromValues(x * distance, y * distance, 0));
+        nextPositions.push(vec3.create());
+      }
+    }
     const externalForce = vec3.create();
     const fixedSet = new Set(fixed);
     return {
       rows,
       columns,
       positions,
+      nextPositions,
       fixed: fixedSet,
       distance,
       k,
@@ -113,8 +122,13 @@ export function stepSprings(g: SpringGrid, dt: number) {
     }
     vec3.copy(forceVec, g.externalForce);
     addSpringForce(g, point, forceVec);
-    vec3.scale(forceVec, forceVec, dt);
-    vec3.add(g.positions[point], g.positions[point], forceVec);
+    if (vec3.length(forceVec) !== 0) {
+      vec3.scale(forceVec, forceVec, dt);
+      vec3.add(g.nextPositions[point], g.positions[point], forceVec);
+    }
+  }
+  for (let point = 0; point < g.rows * g.columns; point++) {
+    vec3.copy(g.positions[point], g.nextPositions[point]);
   }
 }
 
