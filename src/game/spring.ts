@@ -118,7 +118,7 @@ export function stepSprings(g: SpringGrid, dt: number) {
   }
 }
 
-function registerSpringSystem(em: EntityManager) {
+export function registerSpringSystem(em: EntityManager) {
   em.registerSystem(
     [SpringGridDef],
     [PhysicsTimerDef],
@@ -129,6 +129,7 @@ function registerSpringSystem(em: EntityManager) {
           stepSprings(springGrid, dt);
         }
       }
-    }
+    },
+    "spring"
   );
 }

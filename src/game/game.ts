@@ -78,6 +78,8 @@ import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { FinishedDef } from "../build.js";
 import { registerPhysicsSystems } from "../physics/phys.js";
+import { ClothConstructDef, registerBuildClothsSystem } from "./cloth.js";
+import { registerSpringSystem } from "./spring.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -206,6 +208,7 @@ export function registerAllSystems(em: EntityManager) {
   registerBuildCannonsSystem(em);
   registerBuildAmmunitionSystem(em);
   registerBuildLinstockSystem(em);
+  registerBuildClothsSystem(em);
   registerBuildCursor(em);
   registerInitTransforms(em);
   registerMoveCubesSystem(em);
@@ -217,6 +220,7 @@ export function registerAllSystems(em: EntityManager) {
   registerUpdateSmoothingLerp(em);
   registerPhysicsSystems(em);
   registerBulletCollisionSystem(em);
+  registerSpringSystem(em);
   registerModeler(em);
   registerHatPickupSystem(em);
   registerHatDropSystem(em);
@@ -299,7 +303,16 @@ function createShips(em: EntityManager) {
   // const pos: vec3 = [-40, -10, -60];
   const pos: vec3 = [0, -10, 130];
   em.addComponent(em.newEntity().id, ShipConstructDef, pos, rot);
+  em.addComponent(
+    em.newEntity().id,
+    ClothConstructDef,
+    [0, 0, 0],
+    [0.9, 0.9, 0.8],
+    10,
+    10
+  );
 }
+
 function createBoats(em: EntityManager) {
   // create boat(s)
   const BOAT_COUNT = 10;
