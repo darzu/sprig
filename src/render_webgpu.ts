@@ -91,6 +91,7 @@ export interface Renderer {
   addMeshInstance(h: MeshHandle): MeshHandle;
   renderFrame(viewMatrix: mat4, handles: MeshHandle[]): void;
   removeMesh(h: MeshHandle): void;
+  updateMesh(h: MeshHandle, m: Mesh): void;
 }
 
 export class Renderer_WebGPU implements Renderer {
@@ -215,6 +216,13 @@ export class Renderer_WebGPU implements Renderer {
     // TODO(@darzu): determine rebundle a different way
     this.needsRebundle = true;
     console.warn(`TODO: impl removeMesh`);
+  }
+
+  public updateMesh(h: MeshHandle, m: Mesh) {
+    if (!this.initFinished) {
+      throw "updateMesh called before init finished";
+    }
+    this.pool.updateMesh(h, m);
   }
 
   bundledMIds = new Set<number>();

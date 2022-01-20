@@ -213,6 +213,12 @@ export function attachToCanvas(
     console.warn(`TODO: impl removeMesh`);
   }
 
+  function updateMesh(h: MeshHandle) {
+    // TODO(@darzu):
+    // delete meshObjs[o.id];
+    throw "updateMesh not yet supported under WebGL";
+  }
+
   function renderFrame(viewProj: mat4, meshHandles: MeshHandle[]) {
     scene.cameraViewProjMatrix = viewProj;
 
@@ -289,6 +295,7 @@ export function attachToCanvas(
     drawLines: true, // TODO(@darzu): support wireframe mode in webgl
     drawTris: true,
     addMesh,
+    updateMesh,
     addMeshInstance,
     removeMesh,
     renderFrame,

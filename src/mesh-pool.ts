@@ -357,6 +357,7 @@ export interface MeshPool {
   addMesh: (m: Mesh) => MeshHandle;
   addMeshInstance: (m: MeshHandle, d: MeshUniform.Data) => MeshHandle;
   updateUniform: (m: MeshHandle) => void;
+  updateMesh: (h: MeshHandle, m: Mesh) => void;
 }
 
 // WebGPU stuff
@@ -765,6 +766,7 @@ function createMeshPoolBuilder(
     numVerts: 0,
     numLines: 0,
     updateUniform: queueUpdateUniform,
+    updateMesh: queueUpdateMesh,
     addMesh: queueAddMesh,
     addMeshInstance: queueInstanceMesh,
   };
@@ -975,6 +977,88 @@ function createMeshPoolBuilder(
 
     return handle;
   }
+
+  function queueUpdateMesh(h: MeshHandle, m: Mesh) {
+    if (!isUnmapped) throw `trying to use unfinished MeshPool`;
+    if (!m.usesProvoking) throw `mesh must use provoking vertices`;
+    if (h.numVerts !== m.pos.length)
+      throw "Updated mesh must have same number of vertices";
+    if (h.numTris !== m.tri.length)
+      throw "Updated mesh must have same number of triangles";
+    if (h.numLines !== m.lines?.length ?? 0)
+      throw "Updated mesh must have same number of lines";
+
+    // console.log(`QUEUE builder.allMeshes.length: ${builder.allMeshes.length}, builder.numTris: ${builder.numTris}, builder.numVerts: ${builder.numVerts}`)
+    // console.log(`QUEUE pool.allMeshes.length: ${pool.allMeshes.length}, pool.numTris: ${pool.numTris}, pool.numVerts: ${pool.numVerts}`)
+
+    const data: MeshPoolMaps = {
+      // TODO(@darzu): use scratch arrays
+      verticesMap: new Uint8Array(m.pos.length * Vertex.ByteSize),
+      // pad triangles array to make sure it's a multiple of 4 *bytes*
+      triIndicesMap: new Uint16Array(align(m.tri.length * 3, 2)),
+      lineIndicesMap: new Uint16Array((m.lines?.length ?? 2) * 2), // TODO(@darzu): make optional?
+      uniformMap: new Uint8Array(MeshUniform.ByteSizeAligned),
+    };
+
+    const b = createMeshBuilder(
+      data,
+      0,
+      0,
+      0,
+      0,
+      opts.shiftMeshIndices ? h.vertNumOffset : undefined
+    );
+
+    m.pos.forEach((pos, i) => {
+      b.addVertex(pos, DEFAULT_VERT_COLOR, [1.0, 0.0, 0.0]);
+    });
+    m.tri.forEach((triInd, i) => {
+      b.addTri(triInd);
+
+      // set provoking vertex data
+      // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
+      // TODO(@darzu): de-duplicated with mappedAddMesh
+      const vOff = triInd[0] * Vertex.ByteSize;
+      const normal = computeTriangleNormal(
+        m.pos[triInd[0]],
+        m.pos[triInd[1]],
+        m.pos[triInd[2]]
+      );
+      Vertex.Serialize(
+        data.verticesMap,
+        vOff,
+        m.pos[triInd[0]],
+        m.colors[i],
+        normal
+      );
+    });
+    if (m.lines) {
+      m.lines.forEach((inds, i) => {
+        b.addLine(inds);
+      });
+    }
+
+    const { min, max } = getAABBFromMesh(m);
+
+    b.setUniform(mat4.create(), min, max, vec3.create());
+
+    const idx: PoolIndex = h;
+
+    queues.queueUpdateTriIndices(
+      idx.triIndicesNumOffset * 2,
+      new Uint8Array(data.triIndicesMap.buffer)
+    ); // TODO(@darzu): this view shouldn't be necessary
+    queues.queueUpdateLineIndices(
+      idx.lineIndicesNumOffset * 2,
+      new Uint8Array(data.lineIndicesMap.buffer)
+    ); // TODO(@darzu): this view shouldn't be necessary
+    queues.queueUpdateUniform(idx.modelUniByteOffset, data.uniformMap);
+    queues.queueUpdateVertices(
+      idx.vertNumOffset * Vertex.ByteSize,
+      data.verticesMap
+    );
+  }
+
   function mappedInstanceMesh(m: MeshHandle, d: MeshUniform.Data): MeshHandle {
     // TODO(@darzu): implement
     if (builder.allMeshes.length + 1 > maxMeshes) throw "Too many meshes!";
