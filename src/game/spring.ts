@@ -34,7 +34,7 @@ export const SpringGridDef = EM.defineComponent(
     columns = columns || 0;
     fixed = fixed || [];
     distance = distance || 1;
-    k = k || 1;
+    k = k || 0.0001;
     const positions: vec3[] = [];
     const nextPositions: vec3[] = [];
     for (let y = 0; y < rows; y++) {
@@ -86,7 +86,7 @@ function neighbor(
       x = x + 1;
       break;
   }
-  if (x > 0 && x < g.columns && y > 0 && y < g.columns) {
+  if (x >= 0 && x < g.columns && y >= 0 && y < g.rows) {
     return y * g.columns + x;
   }
   return null;
@@ -118,6 +118,7 @@ export function stepSprings(g: SpringGrid, dt: number) {
   const forceVec = tempVec();
   for (let point = 0; point < g.rows * g.columns; point++) {
     if (g.fixed.has(point)) {
+      vec3.copy(g.nextPositions[point], g.positions[point]);
       continue;
     }
     vec3.copy(forceVec, g.externalForce);
@@ -125,6 +126,8 @@ export function stepSprings(g: SpringGrid, dt: number) {
     if (vec3.length(forceVec) !== 0) {
       vec3.scale(forceVec, forceVec, dt);
       vec3.add(g.nextPositions[point], g.positions[point], forceVec);
+    } else {
+      vec3.copy(g.nextPositions[point], g.positions[point]);
     }
   }
   for (let point = 0; point < g.rows * g.columns; point++) {

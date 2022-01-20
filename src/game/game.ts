@@ -78,7 +78,11 @@ import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { FinishedDef } from "../build.js";
 import { registerPhysicsSystems } from "../physics/phys.js";
-import { ClothConstructDef, registerBuildClothsSystem } from "./cloth.js";
+import {
+  ClothConstructDef,
+  registerBuildClothsSystem,
+  registerUpdateClothMeshSystem,
+} from "./cloth.js";
 import { registerSpringSystem } from "./spring.js";
 
 export const ColorDef = EM.defineComponent(
@@ -221,6 +225,7 @@ export function registerAllSystems(em: EntityManager) {
   registerPhysicsSystems(em);
   registerBulletCollisionSystem(em);
   registerSpringSystem(em);
+  registerUpdateClothMeshSystem(em);
   registerModeler(em);
   registerHatPickupSystem(em);
   registerHatDropSystem(em);
@@ -308,8 +313,9 @@ function createShips(em: EntityManager) {
     ClothConstructDef,
     [0, 0, 0],
     [0.9, 0.9, 0.8],
-    10,
-    10
+    4,
+    4,
+    2
   );
 }
 

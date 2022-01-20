@@ -8,8 +8,14 @@ import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import { FinishedDef } from "../build.js";
 import { Assets, AssetsDef } from "./assets.js";
-import { Mesh, unshareProvokingVertices } from "../mesh-pool.js";
+import {
+  isMeshHandle,
+  Mesh,
+  MeshHandleDef,
+  unshareProvokingVertices,
+} from "../mesh-pool.js";
 import { SpringGridDef } from "./spring.js";
+import { RendererDef } from "../render_init.js";
 
 export const ClothConstructDef = EM.defineComponent(
   "clothConstruct",
@@ -114,7 +120,12 @@ export function registerBuildClothsSystem(em: EntityManager) {
         SpringGridDef,
         cloth.clothConstruct.rows,
         cloth.clothConstruct.columns,
-        [0, cloth.clothConstruct.columns - 1],
+        [
+          0,
+          cloth.clothConstruct.columns - 1,
+          cloth.clothConstruct.rows * (cloth.clothConstruct.columns - 1),
+          cloth.clothConstruct.rows * cloth.clothConstruct.columns - 1,
+        ],
         cloth.clothConstruct.distance
       );
       em.ensureComponent(cloth.id, AuthorityDef, pid);
@@ -129,4 +140,30 @@ export function registerBuildClothsSystem(em: EntityManager) {
   }
 
   em.registerSystem([ClothConstructDef], [MeDef, AssetsDef], buildCloths);
+}
+
+export function registerUpdateClothMeshSystem(em: EntityManager) {
+  em.registerSystem(
+    [ClothConstructDef, SpringGridDef, RenderableDef, MeshHandleDef],
+    [RendererDef],
+    (cloths, { renderer }) => {
+      for (let cloth of cloths) {
+        if (isMeshHandle(cloth.renderable.meshOrProto)) {
+          throw "Instancing not supported for cloth";
+        }
+        for (let i = 0; i < cloth.renderable.meshOrProto.pos.length; i++) {
+          const originalIndex = cloth.renderable.meshOrProto.posMap!.get(i)!;
+          vec3.copy(
+            cloth.renderable.meshOrProto.pos[i],
+            cloth.springGrid.positions[originalIndex]
+          );
+        }
+        renderer.renderer.updateMesh(
+          cloth.meshHandle,
+          cloth.renderable.meshOrProto
+        );
+      }
+    },
+    "updateClothMesh"
+  );
 }
