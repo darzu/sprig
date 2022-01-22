@@ -5,6 +5,11 @@ import { PhysicsTimerDef } from "../time.js";
 
 const EPSILON = 0.00001;
 
+let DEBUG = false;
+
+function log(s: any) {
+  if (DEBUG) console.log(s);
+}
 
 // An MxN rectangular grid of points, connected via springs.
 export interface SpringGrid {
@@ -132,18 +137,18 @@ function addSpringForce(g: SpringGrid, point: number, force: vec3) {
     Direction.Left,
     Direction.Right,
   ]) {
-    //console.log(`spring force on ${point}`);
+    log(`spring force on ${point}`);
     let o = neighbor(g, point, direction);
     if (o === null) continue;
 
     targetLocation(g, o, direction, distanceVec);
-    //console.log("vectors");
-    //console.log(Direction[direction]);
-    //console.log(distanceVec);
-    //console.log(g.positions[point]);
-    vec3.sub(distanceVec, g.positions[point], distanceVec);
+    log("vectors");
+    log(Direction[direction]);
+    log(distanceVec);
+    log(g.positions[point]);
+    vec3.sub(distanceVec, distanceVec, g.positions[point]);
 
-    // distanceVec now stores the distance between this point and
+    // distanceVec now stores the vector between this point and
     // where it "should" be as far as this neighbor is concerned.  We
     // want to apply a restoring force to try to get it back to that
     // position.
@@ -169,7 +174,7 @@ export function stepSprings(g: SpringGrid, dt: number) {
   for (let point = 0; point < g.rows * g.columns; point++) {
     if (g.fixed.has(point)) {
       vec3.copy(g.nextPositions[point], g.positions[point]);
-      //console.log(`${point} fixed`);
+      log(`${point} fixed`);
       continue;
     }
     vec3.copy(forceVec, g.externalForce);
