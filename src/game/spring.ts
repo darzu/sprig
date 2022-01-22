@@ -131,7 +131,7 @@ function addSpringForce(g: SpringGrid, point: number, force: vec3) {
   ]) {
     //console.log(`spring force on ${point}`);
     let o = neighbor(g, point, direction);
-    if (!o) continue;
+    if (o === null) continue;
 
     targetLocation(g, o, direction, distanceVec);
     //console.log("vectors");
