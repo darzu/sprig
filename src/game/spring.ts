@@ -145,7 +145,18 @@ function addSpringForce(g: SpringGrid, point: number, force: vec3) {
     // want to apply a restoring force to try to get it back to that
     // position.
 
-    vec3.scale(distanceVec, distanceVec, -g.kOnAxis);
+    switch (direction) {
+      case Direction.Up:
+      case Direction.Down:
+        distanceVec[0] = distanceVec[0] * g.kOffAxis;
+        distanceVec[1] = distanceVec[1] * g.kOnAxis;
+        break;
+      case Direction.Left:
+      case Direction.Right:
+        distanceVec[0] = distanceVec[0] * g.kOnAxis;
+        distanceVec[1] = distanceVec[1] * g.kOffAxis;
+    }
+    distanceVec[2] = distanceVec[2] * g.kOffAxis;
     vec3.add(force, force, distanceVec);
   }
 }
