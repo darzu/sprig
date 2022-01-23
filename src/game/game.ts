@@ -313,9 +313,9 @@ function createShips(em: EntityManager) {
     ClothConstructDef,
     [0, 0, 0],
     [0.9, 0.9, 0.8],
-    4,
-    4,
-    2
+    10,
+    10,
+    1
   );
 }
 
