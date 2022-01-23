@@ -72,6 +72,14 @@ export const SpringGridDef = EM.defineComponent(
   }
 );
 
+export const ForceDef = EM.defineComponent("force", () => vec3.create());
+
+EM.registerSerializerPair(
+  ForceDef,
+  (f, buf) => buf.writeVec3(f),
+  (f, buf) => buf.readVec3(f)
+);
+
 enum Direction {
   Up,
   Down,
@@ -194,12 +202,13 @@ export function stepSprings(g: SpringGrid, dt: number) {
 
 export function registerSpringSystem(em: EntityManager) {
   em.registerSystem(
-    [SpringGridDef],
+    [SpringGridDef, ForceDef],
     [PhysicsTimerDef],
     (springs, { physicsTimer }) => {
       const dt = physicsTimer.period;
       for (let i = 0; i < physicsTimer.steps; i++) {
-        for (let { springGrid } of springs) {
+        for (let { springGrid, force } of springs) {
+          vec3.copy(springGrid.externalForce, force);
           stepSprings(springGrid, dt);
         }
       }

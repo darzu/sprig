@@ -14,7 +14,7 @@ import {
   MeshHandleDef,
   unshareProvokingVertices,
 } from "../mesh-pool.js";
-import { SpringGridDef } from "./spring.js";
+import { SpringGridDef, ForceDef } from "./spring.js";
 import { RendererDef } from "../render_init.js";
 
 export const ClothConstructDef = EM.defineComponent(
@@ -128,12 +128,13 @@ export function registerBuildClothsSystem(em: EntityManager) {
         ],
         cloth.clothConstruct.distance
       );
+      em.ensureComponent(cloth.id, ForceDef);
       em.ensureComponent(cloth.id, AuthorityDef, pid);
       em.ensureComponent(
         cloth.id,
         SyncDef,
         [ClothConstructDef.id],
-        [PositionDef.id]
+        [PositionDef.id, ForceDef.id]
       );
       em.ensureComponent(cloth.id, FinishedDef);
     }
