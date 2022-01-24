@@ -173,6 +173,7 @@ function addSpringForce(g: SpringGrid, point: number, force: vec3) {
         distanceVec[1] = distanceVec[1] * g.kOffAxis;
     }
     distanceVec[2] = distanceVec[2] * g.kOffAxis;
+    vec3.scale(distanceVec, distanceVec, vec3.length(distanceVec));
     vec3.scale(distanceVec, distanceVec, 1.0 / neighbors.length);
     vec3.add(force, force, distanceVec);
   }
