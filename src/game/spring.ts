@@ -3,7 +3,7 @@ import { tempVec } from "../temp-pool.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { PhysicsTimerDef } from "../time.js";
 
-const EPSILON = 0.00001;
+const EPSILON = 0.0001;
 
 let DEBUG = false;
 
@@ -188,7 +188,7 @@ export function stepSprings(g: SpringGrid, dt: number) {
     vec3.copy(forceVec, g.externalForce);
     addSpringForce(g, point, forceVec);
     if (vec3.length(forceVec) > EPSILON) {
-      console.log("applying a force");
+      //console.log("applying a force");
       vec3.scale(forceVec, forceVec, dt);
       vec3.add(g.nextPositions[point], g.positions[point], forceVec);
     } else {
