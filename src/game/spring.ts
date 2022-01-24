@@ -139,19 +139,19 @@ function targetLocation(
 
 function addSpringForce(g: SpringGrid, point: number, force: vec3) {
   const distanceVec = tempVec();
-  for (let direction of [
+  let directions = [
     Direction.Up,
     Direction.Down,
     Direction.Left,
     Direction.Right,
-  ]) {
+  ];
+  let neighbors: [Direction, number][] = directions
+    .map((d) => [d, neighbor(g, point, d)] as [Direction, number])
+    .filter(([d, o]) => o !== null);
+  for (let [direction, o] of neighbors) {
     log(`spring force on ${point}`);
-    let o = neighbor(g, point, direction);
-    if (o === null) continue;
-
     targetLocation(g, o, direction, distanceVec);
     log("vectors");
-    log(Direction[direction]);
     log(distanceVec);
     log(g.positions[point]);
     vec3.sub(distanceVec, distanceVec, g.positions[point]);
@@ -173,6 +173,7 @@ function addSpringForce(g: SpringGrid, point: number, force: vec3) {
         distanceVec[1] = distanceVec[1] * g.kOffAxis;
     }
     distanceVec[2] = distanceVec[2] * g.kOffAxis;
+    vec3.scale(distanceVec, distanceVec, 1.0 / neighbors.length);
     vec3.add(force, force, distanceVec);
   }
 }
