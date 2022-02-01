@@ -3,7 +3,8 @@ import { tempVec } from "../temp-pool.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { PhysicsTimerDef } from "../time.js";
 
-const EPSILON = 0.000000001;
+const EPSILON = 0.0000000000000000001;
+const VELOCITY_CAP = 1;
 
 let DEBUG = false;
 
@@ -21,7 +22,8 @@ export interface SpringGrid {
   rows: number;
   columns: number;
   positions: vec3[];
-  velocities: vec3[];
+  prevPositions: vec3[];
+  nextPositions: vec3[];
   // indices of points whose position should not change (i.e., they
   // are affixed to something)
   fixed: Set<number>;
@@ -54,14 +56,17 @@ export const SpringGridDef = EM.defineComponent(
     columns = columns || 0;
     fixed = fixed || [];
     distance = distance || 1;
-    kOnAxis = kOnAxis || 0.01;
+    kOnAxis = kOnAxis || 5000;
     kOffAxis = kOffAxis || kOnAxis;
     const positions: vec3[] = [];
-    const velocities: vec3[] = [];
+    const prevPositions: vec3[] = [];
+    const nextPositions: vec3[] = [];
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < columns; x++) {
-        positions.push(vec3.fromValues(x * distance, y * distance, 0));
-        velocities.push(vec3.create());
+        let pos = vec3.fromValues(x * distance, y * distance, 0);
+        positions.push(pos);
+        prevPositions.push(vec3.clone(pos));
+        nextPositions.push(vec3.create());
       }
     }
     const externalForce = vec3.create();
@@ -70,7 +75,8 @@ export const SpringGridDef = EM.defineComponent(
       rows,
       columns,
       positions,
-      velocities,
+      prevPositions,
+      nextPositions,
       fixed: fixedSet,
       distance,
       kOnAxis,
@@ -201,23 +207,40 @@ function addSpringForce(g: SpringGrid, point: number, force: vec3) {
 }
 
 export function stepSprings(g: SpringGrid, dt: number) {
+  dt = dt / 1000;
   const forceVec = tempVec();
+  const velocityVec = tempVec();
   for (let point = 0; point < g.rows * g.columns; point++) {
+    vec3.copy(g.nextPositions[point], g.positions[point]);
     if (g.fixed.has(point)) {
       log(`${point} fixed`);
       continue;
     }
+    vec3.sub(velocityVec, g.positions[point], g.prevPositions[point]);
+    vec3.scale(velocityVec, velocityVec, dt);
+    //console.log("applying a force");
     vec3.copy(forceVec, g.externalForce);
     addSpringForce(g, point, forceVec);
-    if (vec3.length(forceVec) > EPSILON) {
-      //console.log("applying a force");
-      vec3.scale(forceVec, forceVec, dt);
-      vec3.add(g.velocities[point], g.velocities[point], forceVec);
+    vec3.scale(forceVec, forceVec, dt * dt);
+    if (vec3.length(velocityVec) > EPSILON) {
+      vec3.add(g.nextPositions[point], g.nextPositions[point], velocityVec);
     }
+    if (vec3.length(forceVec) > EPSILON) {
+      vec3.add(g.nextPositions[point], g.nextPositions[point], forceVec);
+    }
+    // vec3.add(g.velocities[point], g.velocities[point], forceVec);
+    // const speed = vec3.length(g.velocities[point]);
+    // if (speed > VELOCITY_CAP) {
+    //   console.log("scaling velocity");
+    //   vec3.scale(
+    //     g.velocities[point],
+    //     g.velocities[point],
+    //     VELOCITY_CAP / speed
+    //   );
   }
   for (let point = 0; point < g.rows * g.columns; point++) {
-    vec3.scale(forceVec, g.velocities[point], dt);
-    vec3.add(g.positions[point], g.positions[point], forceVec);
+    vec3.copy(g.prevPositions[point], g.positions[point]);
+    vec3.copy(g.positions[point], g.nextPositions[point]);
   }
 }
 
