@@ -18,4 +18,13 @@ create mesh,
 
 #3:
   bezier curve
+
+simple start:
+  one line, two end points, you just control the position of those two points
+  noodle renderer has a uniform that places the two end points
+  endpoints are always the same orientation (for now)
+
 */
+
+function createNoodle() {
+}
