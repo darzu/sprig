@@ -56,10 +56,10 @@ export module Vertex {
   export function GenerateWGSLVertexInputStruct(terminator: "," | ";"): string {
     // Example output:
     // `
-    // [[location(0)]] position : vec3<f32>,
-    // [[location(1)]] color : vec3<f32>,
-    // [[location(2)]] normal : vec3<f32>,
-    // [[location(3)]] kind : u32,
+    // @location(0) position : vec3<f32>,
+    // @location(1) color : vec3<f32>,
+    // @location(2) normal : vec3<f32>,
+    // @location(3) kind : u32,
     // `
 
     let res = ``;
@@ -72,7 +72,7 @@ export module Vertex {
       const t = formatToWgslType[f.format];
       const n = names[i];
       if (!t) throw `Unknown vertex type -> wgls type '${f.format}'`;
-      res += `[[location(${f.shaderLocation})]] ${n} : ${t}${terminator}\n`;
+      res += `@location(${f.shaderLocation}) ${n} : ${t}${terminator}\n`;
     }
 
     return res;
