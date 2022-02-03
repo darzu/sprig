@@ -31,16 +31,16 @@ const vertexShader =
         ${MeshUniform.GenerateWGSLUniformStruct()}
     };
 
-    [[group(0), binding(0)]] var<uniform> scene : Scene;
-    [[group(1), binding(0)]] var<uniform> model : Model;
+    @group(0) @binding(0) var<uniform> scene : Scene;
+    @group(1) @binding(0) var<uniform> model : Model;
 
     struct VertexOutput {
-        [[location(0)]] [[interpolate(flat)]] normal : vec3<f32>;
-        [[location(1)]] [[interpolate(flat)]] color : vec3<f32>;
-        [[builtin(position)]] position : vec4<f32>;
+        @location(0) @interpolate(flat) normal : vec3<f32>;
+        @location(1) @interpolate(flat) color : vec3<f32>;
+        @builtin(position) position : vec4<f32>;
     };
 
-    [[stage(vertex)]]
+    @stage(vertex)
     fn main(
         ${Vertex.GenerateWGSLVertexInputStruct(",")}
         ) -> VertexOutput {
@@ -55,15 +55,15 @@ const vertexShader =
 const fragmentShader =
   shaderSceneStruct +
   `
-    [[group(0), binding(0)]] var<uniform> scene : Scene;
+    @group(0) @binding(0) var<uniform> scene : Scene;
 
     struct VertexOutput {
-        [[location(0)]] [[interpolate(flat)]] normal : vec3<f32>;
-        [[location(1)]] [[interpolate(flat)]] color : vec3<f32>;
+        @location(0) @interpolate(flat) normal : vec3<f32>;
+        @location(1) @interpolate(flat) color : vec3<f32>;
     };
 
-    [[stage(fragment)]]
-    fn main(input: VertexOutput) -> [[location(0)]] vec4<f32> {
+    @stage(fragment)
+    fn main(input: VertexOutput) -> @location(0) vec4<f32> {
         let sunLight : f32 = clamp(dot(-scene.lightDir, input.normal), 0.0, 1.0);
         let resultColor: vec3<f32> = input.color * (sunLight * 2.0 + 0.2);
         let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
