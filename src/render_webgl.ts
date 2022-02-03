@@ -195,7 +195,7 @@ export function attachToCanvas(
     return handle;
   }
   function addMeshInstance(oldHandle: MeshHandle): MeshHandle {
-    const d = MeshUniform.CloneData(oldHandle);
+    const d = MeshUniform.CloneData(oldHandle.shaderData);
 
     const newHandle = initFinished
       ? pool.addMeshInstance(oldHandle, d)
@@ -267,8 +267,8 @@ export function attachToCanvas(
 
     for (let m of meshHandles) {
       // gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset * 2);
-      gl.uniformMatrix4fv(u_loc_transform, false, m.transform);
-      gl.uniform3fv(u_loc_tint, m.tint);
+      gl.uniformMatrix4fv(u_loc_transform, false, m.shaderData.transform);
+      gl.uniform3fv(u_loc_tint, m.shaderData.tint);
       const indicesBytesOffset = m.triIndicesNumOffset * 2;
       gl.drawElements(
         gl.TRIANGLES,

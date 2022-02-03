@@ -130,10 +130,6 @@ export class Renderer_WebGPU implements Renderer {
   private gpuBufferWriteAllMeshUniforms(handles: MeshHandle[]) {
     // TODO(@darzu): make this update all meshes at once
     for (let m of handles) {
-      // TODO(@darzu): this is definitely weird. Need to think about this interaction better.
-      // TODO(@darzu): ensure color is handled
-      // if ((m.renderable as any).color)
-      //   m.meshHandle.tint = (m.renderable as any).color;
       this.pool.updateUniform(m);
     }
   }
@@ -197,7 +193,7 @@ export class Renderer_WebGPU implements Renderer {
   public addMeshInstance(oldHandle: MeshHandle): MeshHandle {
     // console.log(`Adding (instanced) object`);
 
-    const d = MeshUniform.CloneData(oldHandle);
+    const d = MeshUniform.CloneData(oldHandle.shaderData);
     const newHandle = this.initFinished
       ? this.pool.addMeshInstance(oldHandle, d)
       : this.builder.addMeshInstance(oldHandle, d);

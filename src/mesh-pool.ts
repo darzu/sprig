@@ -4,11 +4,12 @@ import { align, sum } from "./math.js";
 import { AABB, getAABBFromPositions } from "./physics/broadphase.js";
 import { EM } from "./entity-manager.js";
 
-// TODO(@darzu): BUGS:
-// - in WebGL, around object 5566, we get some weird index stuff, even single player.
-//       Adding object 5567
-//       mesh-pool.ts:711 QUEUE builder.allMeshes.length: 5567, builder.numTris: 16, builder.numVerts: 16
-//       mesh-pool.ts:712 QUEUE pool.allMeshes.length: 5567, pool.numTris: 66796, pool.numVerts: 66796
+// TODO(@darzu): abstraction refinement:
+//  [ ] do we really need mapped update and queued update? 
+//    it adds a frusterating amount of indirection. 
+//    TS's "go to definition" doesn't traverse it well.
+//  [ ] how do we handle multiple shaders with different mesh
+//    uniforms? e.g. water, noodles, cloth, regular objects, grass
 
 const vertsPerTri = 3;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * vertsPerTri;
@@ -142,6 +143,61 @@ export module Vertex {
   }
 }
 
+// TODO(@darzu): WORK IN PROGRESS. Unclear this is how we want to do different shader uniforms
+export module NoodleUniform {
+  export interface Data {
+    readonly transform: mat4;
+    readonly tint: vec3;
+  }
+
+  const _counts = [
+    align(4 * 4, 4), // transform
+    align(3, 4), // tint
+  ];
+  const _names = ["transform", "tint"];
+  const _types = ["mat4x4<f32>", "vec3<f32>"];
+
+  const _offsets = _counts.reduce((p, n) => [...p, p[p.length - 1] + n], [0]);
+
+  export const ByteSizeExact = sum(_counts) * bytesPerFloat;
+
+  export const ByteSizeAligned = align(ByteSizeExact, 256); // uniform objects must be 256 byte aligned
+
+  const scratch_f32 = new Float32Array(sum(_counts));
+  const scratch_f32_as_u8 = new Uint8Array(scratch_f32.buffer);
+  export function Serialize(
+    buffer: Uint8Array,
+    byteOffset: number,
+    transform: mat4,
+    tint: vec3
+  ): void {
+    scratch_f32.set(transform, _offsets[0]);
+    scratch_f32.set(tint, _offsets[1]);
+    buffer.set(scratch_f32_as_u8, byteOffset);
+  }
+
+  export function GenerateWGSLUniformStruct() {
+    // TODO(@darzu): share this code?
+    if (_names.length !== _types.length)
+      throw `mismatch between names and sizes for mesh uniform format`;
+    let res = ``;
+
+    for (let i = 0; i < _names.length; i++) {
+      const n = _names[i];
+      const t = _types[i];
+      res += `${n}: ${t};\n`;
+    }
+
+    return res;
+  }
+
+  export function CloneData(d: Data): Data {
+    return {
+      transform: mat4.clone(d.transform),
+      tint: vec3.clone(d.tint),
+    };
+  }
+}
 export module MeshUniform {
   export interface Data {
     readonly transform: mat4;
@@ -282,13 +338,17 @@ export interface PoolIndex {
   readonly modelUniByteOffset: number;
   readonly lineIndicesNumOffset: number; // for wireframe
 }
-export interface MeshHandle extends PoolIndex, MeshUniform.Data {
+export interface MeshHandle extends PoolIndex {
   readonly mId: number; // mesh id
   // this mesh
   readonly numTris: number;
   readonly numVerts: number;
   readonly numLines: number; // for wireframe
   readonly model?: Mesh;
+
+  // used as the uniform for this mesh
+  shaderData: MeshUniform.Data;
+  // TODO(@darzu): specify which shader to use
 }
 
 export function isMeshHandle(m: any): m is MeshHandle {
@@ -970,9 +1030,9 @@ function createMeshPoolBuilder(
     if (builder.allMeshes.length + 1 > maxMeshes) throw "Too many meshes!";
 
     const uniOffset = allMeshes.length * MeshUniform.ByteSizeAligned;
-    const newHandle = {
+    const newHandle: MeshHandle = {
       ...m,
-      ...d,
+      shaderData: d,
       modelUniByteOffset: uniOffset,
     };
     allMeshes.push(newHandle);
@@ -986,7 +1046,7 @@ function createMeshPoolBuilder(
     const uniOffset = allMeshes.length * MeshUniform.ByteSizeAligned;
     const newHandle = {
       ...m,
-      ...d,
+      shaderData: d,
       modelUniByteOffset: uniOffset,
     };
     allMeshes.push(newHandle);
@@ -1013,10 +1073,10 @@ function createMeshPoolBuilder(
     MeshUniform.Serialize(
       scratch_uniform_u8,
       0,
-      m.transform,
-      m.aabbMin,
-      m.aabbMax,
-      m.tint
+      m.shaderData.transform,
+      m.shaderData.aabbMin,
+      m.shaderData.aabbMax,
+      m.shaderData.tint
     );
     queues.queueUpdateUniform(m.modelUniByteOffset, scratch_uniform_u8);
   }
@@ -1025,10 +1085,10 @@ function createMeshPoolBuilder(
     MeshUniform.Serialize(
       scratch_uniform_u8,
       0,
-      m.transform,
-      m.aabbMin,
-      m.aabbMax,
-      m.tint
+      m.shaderData.transform,
+      m.shaderData.aabbMin,
+      m.shaderData.aabbMax,
+      m.shaderData.tint
     );
     builder.uniformMap.set(scratch_uniform_u8, m.modelUniByteOffset);
   }
@@ -1117,10 +1177,12 @@ function createMeshBuilder(
     const res: MeshHandle = {
       ...idx,
       mId: nextMeshId++,
-      transform: _transform!,
-      aabbMin: _aabbMin!,
-      aabbMax: _aabbMax!,
-      tint: _tint!,
+      shaderData: {
+        transform: _transform!,
+        aabbMin: _aabbMin!,
+        aabbMax: _aabbMax!,
+        tint: _tint!,
+      },
       numTris,
       numVerts,
       numLines,

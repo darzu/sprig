@@ -71,10 +71,10 @@ function stepRenderer(
   for (let o of objs) {
     // TODO(@darzu): color:
     if (ColorDef.isOn(o)) {
-      vec3.copy(o.meshHandle.tint, o.color);
+      vec3.copy(o.meshHandle.shaderData.tint, o.color);
     }
 
-    mat4.copy(o.meshHandle.transform, o.world.transform);
+    mat4.copy(o.meshHandle.shaderData.transform, o.world.transform);
   }
 
   // filter
