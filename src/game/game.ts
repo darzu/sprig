@@ -78,6 +78,7 @@ import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { FinishedDef } from "../build.js";
 import { registerPhysicsSystems } from "../physics/phys.js";
+import { testCreateNoodles } from "./noodles.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -272,6 +273,9 @@ function registerRenderViewController(em: EntityManager) {
 export function initGame(em: EntityManager) {
   // init camera
   createCamera(em);
+
+  // TODO(@darzu): DEBUGGING
+  testCreateNoodles(em);
 }
 
 export function createServerObjects(em: EntityManager) {

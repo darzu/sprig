@@ -26,7 +26,11 @@ import {
 
 export const RenderableDef = EM.defineComponent(
   "renderable",
-  (meshOrProto?: Mesh | MeshHandle, enabled: boolean = true, layer = 0) => {
+  (
+    meshOrProto?: Mesh | MeshHandle,
+    enabled: boolean = true,
+    layer: number = 0
+  ) => {
     return {
       enabled,
       layer,
