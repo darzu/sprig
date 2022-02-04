@@ -3,6 +3,7 @@ import { mat4, vec2, vec3 } from "../gl-matrix.js";
 import { align, sum } from "../math.js";
 import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
 import { EM } from "../entity-manager.js";
+import { MeshUniformMod } from "./shader_obj.js";
 
 // TODO(@darzu): abstraction refinement:
 //  [ ] do we really need mapped update and queued update?
@@ -25,6 +26,17 @@ const MAX_INDICES = 65535; // Since we're using u16 index type, this is our max 
 
 const DEFAULT_VERT_COLOR: vec3 = [0.0, 0.0, 0.0];
 
+const formatToWgslType: Partial<Record<GPUVertexFormat, string>> = {
+  float16x2: "vec2<f16>",
+  float16x4: "vec2<f16>",
+  float32: "f32",
+  float32x2: "vec2<f32>",
+  float32x3: "vec3<f32>",
+  float32x4: "vec4<f32>",
+  uint32: "u32",
+  sint32: "i32",
+};
+
 // Everything to do with our vertex format must be in this module (minus downstream
 //  places that should get type errors when this module changes.)
 // TODO(@darzu): code gen some of this so code changes are less error prone.
@@ -42,17 +54,6 @@ export module Vertex {
   ];
 
   const names = ["position", "color", "normal"];
-
-  const formatToWgslType: Partial<Record<GPUVertexFormat, string>> = {
-    float16x2: "vec2<f16>",
-    float16x4: "vec2<f16>",
-    float32: "f32",
-    float32x2: "vec2<f32>",
-    float32x3: "vec3<f32>",
-    float32x4: "vec4<f32>",
-    uint32: "u32",
-    sint32: "i32",
-  };
 
   export function GenerateWGSLVertexInputStruct(terminator: "," | ";"): string {
     // Example output:
@@ -143,72 +144,6 @@ export module Vertex {
   }
 }
 
-export module MeshUniformMod {
-  export interface Data {
-    readonly transform: mat4;
-    readonly aabbMin: vec3;
-    readonly aabbMax: vec3;
-    readonly tint: vec3;
-  }
-
-  const _counts = [
-    align(4 * 4, 4), // transform
-    align(3, 4), // aabb min
-    align(3, 4), // aabb max
-    align(3, 4), // tint
-  ];
-  const _names = ["transform", "aabbMin", "aabbMax", "tint"];
-  const _types = ["mat4x4<f32>", "vec3<f32>", "vec3<f32>", "vec3<f32>"];
-
-  const _offsets = _counts.reduce((p, n) => [...p, p[p.length - 1] + n], [0]);
-
-  export const byteSizeExact = sum(_counts) * bytesPerFloat;
-
-  export const byteSizeAligned = align(byteSizeExact, 256); // uniform objects must be 256 byte aligned
-
-  const scratch_f32 = new Float32Array(sum(_counts));
-  const scratch_f32_as_u8 = new Uint8Array(scratch_f32.buffer);
-  export function serialize(
-    buffer: Uint8Array,
-    byteOffset: number,
-    d: Data
-  ): void {
-    scratch_f32.set(d.transform, _offsets[0]);
-    scratch_f32.set(d.aabbMin, _offsets[1]);
-    scratch_f32.set(d.aabbMax, _offsets[2]);
-    scratch_f32.set(d.tint, _offsets[3]);
-    buffer.set(scratch_f32_as_u8, byteOffset);
-  }
-
-  export function generateWGSLUniformStruct() {
-    // Example:
-    //     transform: mat4x4<f32>;
-    //     aabbMin: vec3<f32>;
-    //     aabbMax: vec3<f32>;
-    //     tint: vec3<f32>;
-    if (_names.length !== _types.length)
-      throw `mismatch between names and sizes for mesh uniform format`;
-    let res = ``;
-
-    for (let i = 0; i < _names.length; i++) {
-      const n = _names[i];
-      const t = _types[i];
-      res += `${n}: ${t};\n`;
-    }
-
-    return res;
-  }
-
-  export function CloneData(d: Data): Data {
-    return {
-      aabbMin: vec3.clone(d.aabbMin),
-      aabbMax: vec3.clone(d.aabbMax),
-      transform: mat4.clone(d.transform),
-      tint: vec3.clone(d.tint),
-    };
-  }
-}
-
 export module SceneUniform {
   export interface Data {
     cameraViewProjMatrix: mat4;
@@ -232,7 +167,7 @@ export module SceneUniform {
 
   // TODO(@darzu): SCENE FORMAT
   // defines the format of our scene's uniform data
-  export const ByteSizeExact = sum(_counts) * bytesPerFloat;
+  export const ByteSizeExact = sum(_counts) * Float32Array.BYTES_PER_ELEMENT;
   export const ByteSizeAligned = align(ByteSizeExact, 256); // uniform objects must be 256 byte aligned
 
   export function generateWGSLUniformStruct() {
