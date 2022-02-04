@@ -7,7 +7,7 @@ import {
   registerRenderer,
   registerUpdateCameraView,
   RenderableDef,
-} from "../renderer.js";
+} from "../render/renderer.js";
 import { registerInitTransforms, TransformDef } from "../physics/transform.js";
 import {
   BoatConstructDef,
@@ -52,7 +52,10 @@ import {
   registerAssetLoader,
 } from "./assets.js";
 import { registerInitCanvasSystem } from "../canvas.js";
-import { registerRenderInitSystem, RendererDef } from "../render_init.js";
+import {
+  registerRenderInitSystem,
+  RendererDef,
+} from "../render/render_init.js";
 import { registerDeleteEntitiesSystem } from "../delete.js";
 import {
   AmmunitionConstructDef,

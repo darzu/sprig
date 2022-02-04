@@ -1,4 +1,4 @@
-import { mat4, vec3, quat } from "./gl-matrix.js";
+import { mat4, vec3, quat } from "../gl-matrix.js";
 import {
   createMeshPoolBuilder_WebGPU,
   Mesh,
@@ -11,7 +11,7 @@ import {
   Vertex,
 } from "./mesh-pool.js";
 import { Renderable } from "./renderer.js";
-import { pitch } from "./utils-3d.js";
+import { pitch } from "../utils-3d.js";
 
 const PIXEL_PER_PX: number | null = null; // 0.5;
 

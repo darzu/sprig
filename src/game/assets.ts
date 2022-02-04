@@ -10,10 +10,10 @@ import {
   scaleMesh3,
   transformMesh,
   unshareProvokingVertices,
-} from "../mesh-pool.js";
+} from "../render/mesh-pool.js";
 import { AABB } from "../physics/broadphase.js";
-import { RendererDef } from "../render_init.js";
-import { Renderer } from "../render_webgpu.js";
+import { RendererDef } from "../render/render_init.js";
+import { Renderer } from "../render/render_webgpu.js";
 import { assert } from "../test.js";
 import { objMap } from "../util.js";
 import { getText } from "../webget.js";

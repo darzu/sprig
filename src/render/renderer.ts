@@ -1,20 +1,20 @@
-import { Canvas, CanvasDef } from "./canvas.js";
-import { EntityManager, EM, Component } from "./entity-manager.js";
-import { ColorDef } from "./game/game.js";
+import { Canvas, CanvasDef } from "../canvas.js";
+import { EntityManager, EM, Component } from "../entity-manager.js";
+import { ColorDef } from "../game/game.js";
 import {
   CameraDef,
   CameraProps,
   PlayerEnt,
   PlayerEntDef,
-} from "./game/player.js";
-import { mat4, quat, vec3 } from "./gl-matrix.js";
+} from "../game/player.js";
+import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { isMeshHandle, Mesh, MeshHandle, MeshHandleDef } from "./mesh-pool.js";
-import { Authority, AuthorityDef, Me, MeDef } from "./net/components.js";
-import { WorldFrameDef } from "./physics/nonintersection.js";
+import { Authority, AuthorityDef, Me, MeDef } from "../net/components.js";
+import { WorldFrameDef } from "../physics/nonintersection.js";
 import { RendererDef } from "./render_init.js";
 import { Renderer } from "./render_webgpu.js";
-import { tempQuat, tempVec } from "./temp-pool.js";
-import { PhysicsTimerDef } from "./time.js";
+import { tempQuat, tempVec } from "../temp-pool.js";
+import { PhysicsTimerDef } from "../time.js";
 import {
   PhysicsParent,
   Position,
@@ -22,7 +22,7 @@ import {
   Rotation,
   RotationDef,
   Frame,
-} from "./physics/transform.js";
+} from "../physics/transform.js";
 
 export const RenderableDef = EM.defineComponent(
   "renderable",

@@ -1,7 +1,7 @@
 import { EntityManager } from "../entity-manager.js";
-import { Mesh, unshareProvokingVertices } from "../mesh-pool.js";
+import { Mesh, unshareProvokingVertices } from "../render/mesh-pool.js";
 import { PositionDef } from "../physics/transform.js";
-import { RenderableDef } from "../renderer.js";
+import { RenderableDef } from "../render/renderer.js";
 
 // function createNoodleMesh(numPoints: number): Mesh {
 //   const radius = 0.2;

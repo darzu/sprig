@@ -3,7 +3,7 @@ import { PhysicsTimerDef } from "../time.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
-import { RenderableDef } from "../renderer.js";
+import { RenderableDef } from "../render/renderer.js";
 import {
   PhysicsParentDef,
   PositionDef,

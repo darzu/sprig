@@ -1,14 +1,14 @@
 import { ColliderDef } from "../physics/collider.js";
 import { Component, EM, EntityManager } from "../entity-manager.js";
 import { vec3 } from "../gl-matrix.js";
-import { RenderableDef } from "../renderer.js";
+import { RenderableDef } from "../render/renderer.js";
 import {
   PhysicsParentDef,
   Position,
   PositionDef,
 } from "../physics/transform.js";
 import { ColorDef } from "./game.js";
-import { getAABBFromMesh, scaleMesh } from "../mesh-pool.js";
+import { getAABBFromMesh, scaleMesh } from "../render/mesh-pool.js";
 import {
   SyncDef,
   Authority,

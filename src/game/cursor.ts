@@ -1,6 +1,6 @@
 import { ComponentDef, EM, EntityManager, EntityW } from "../entity-manager.js";
-import { Mesh } from "../mesh-pool.js";
-import { RenderableDef } from "../renderer.js";
+import { Mesh } from "../render/mesh-pool.js";
+import { RenderableDef } from "../render/renderer.js";
 import { PositionDef } from "../physics/transform.js";
 import { AssetsDef } from "./assets.js";
 import { ColorDef } from "./game.js";

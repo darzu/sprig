@@ -1,12 +1,12 @@
-import { computeTriangleNormal } from "./utils-3d.js";
-import { mat4, vec2, vec3 } from "./gl-matrix.js";
-import { align, sum } from "./math.js";
-import { AABB, getAABBFromPositions } from "./physics/broadphase.js";
-import { EM } from "./entity-manager.js";
+import { computeTriangleNormal } from "../utils-3d.js";
+import { mat4, vec2, vec3 } from "../gl-matrix.js";
+import { align, sum } from "../math.js";
+import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
+import { EM } from "../entity-manager.js";
 
 // TODO(@darzu): abstraction refinement:
-//  [ ] do we really need mapped update and queued update? 
-//    it adds a frusterating amount of indirection. 
+//  [ ] do we really need mapped update and queued update?
+//    it adds a frusterating amount of indirection.
 //    TS's "go to definition" doesn't traverse it well.
 //  [ ] how do we handle multiple shaders with different mesh
 //    uniforms? e.g. water, noodles, cloth, regular objects, grass

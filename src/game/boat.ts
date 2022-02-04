@@ -4,7 +4,7 @@ import { quat, vec3 } from "../gl-matrix.js";
 import { jitter } from "../math.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
-import { RenderableDef } from "../renderer.js";
+import { RenderableDef } from "../render/renderer.js";
 import { PositionDef, Rotation, RotationDef } from "../physics/transform.js";
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import {
@@ -14,7 +14,7 @@ import {
   MeDef,
   SyncDef,
 } from "../net/components.js";
-import { getAABBFromMesh, Mesh, scaleMesh3 } from "../mesh-pool.js";
+import { getAABBFromMesh, Mesh, scaleMesh3 } from "../render/mesh-pool.js";
 import { AABB } from "../physics/broadphase.js";
 import { Deserializer, Serializer } from "../serialize.js";
 import { Assets, AssetsDef } from "./assets.js";

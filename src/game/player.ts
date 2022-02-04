@@ -7,7 +7,11 @@ import { PhysicsTimerDef, Timer } from "../time.js";
 import { ColorDef } from "./game.js";
 import { spawnBullet } from "./bullet.js";
 import { FinishedDef } from "../build.js";
-import { CameraView, CameraViewDef, RenderableDef } from "../renderer.js";
+import {
+  CameraView,
+  CameraViewDef,
+  RenderableDef,
+} from "../render/renderer.js";
 import {
   Frame,
   PhysicsParent,
@@ -32,7 +36,7 @@ import {
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import { Ray, RayHit } from "../physics/broadphase.js";
 import { tempQuat, tempVec } from "../temp-pool.js";
-import { Mesh } from "../mesh-pool.js";
+import { Mesh } from "../render/mesh-pool.js";
 import { Assets, AssetsDef } from "./assets.js";
 import { LinearVelocity, LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../smoothing.js";

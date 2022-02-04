@@ -1,5 +1,5 @@
-import { pitch } from "./utils-3d.js";
-import { vec3, mat4 } from "./gl-matrix.js";
+import { pitch } from "../utils-3d.js";
+import { vec3, mat4 } from "../gl-matrix.js";
 import {
   createMeshPoolBuilder_WebGL,
   Mesh,

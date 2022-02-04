@@ -2,7 +2,7 @@ import { EM, EntityManager, Component, Entity } from "../entity-manager.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
-import { RenderableDef } from "../renderer.js";
+import { RenderableDef } from "../render/renderer.js";
 import { Position, PositionDef, RotationDef } from "../physics/transform.js";
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import {
@@ -20,10 +20,10 @@ import {
   MeshHandleDef,
   scaleMesh,
   scaleMesh3,
-} from "../mesh-pool.js";
+} from "../render/mesh-pool.js";
 import { AABB } from "../physics/broadphase.js";
-import { RendererDef } from "../render_init.js";
-import { Renderer } from "../render_webgpu.js";
+import { RendererDef } from "../render/render_init.js";
+import { Renderer } from "../render/render_webgpu.js";
 import { Assets, AssetsDef } from "./assets.js";
 import {
   AngularVelocity,

@@ -2,7 +2,7 @@ import { FinishedDef } from "../build.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
-import { RenderableDef } from "../renderer.js";
+import { RenderableDef } from "../render/renderer.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { Deserializer, Serializer } from "../serialize.js";
 import { Assets, AssetsDef, SHIP_AABBS } from "./assets.js";
