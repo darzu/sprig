@@ -6,7 +6,7 @@ import {
   MeshPoolBuilder_WebGPU,
   MeshPoolOpts,
   MeshPool_WebGPU,
-  MeshUniform,
+  MeshUniformMod,
   SceneUniform,
   Vertex,
 } from "./mesh-pool.js";
@@ -21,14 +21,14 @@ const PIXEL_PER_PX: number | null = null; // 0.5;
 
 const shaderSceneStruct = `
     struct Scene {
-        ${SceneUniform.GenerateWGSLUniformStruct()}
+        ${SceneUniform.generateWGSLUniformStruct()}
     };
 `;
 const vertexShader =
   shaderSceneStruct +
   `
     struct Model {
-        ${MeshUniform.GenerateWGSLUniformStruct()}
+        ${MeshUniformMod.generateWGSLUniformStruct()}
     };
 
     @group(0) @binding(0) var<uniform> scene : Scene;
@@ -193,7 +193,7 @@ export class Renderer_WebGPU implements Renderer {
   public addMeshInstance(oldHandle: MeshHandle): MeshHandle {
     // console.log(`Adding (instanced) object`);
 
-    const d = MeshUniform.CloneData(oldHandle.shaderData);
+    const d = MeshUniformMod.CloneData(oldHandle.shaderData);
     const newHandle = this.initFinished
       ? this.pool.addMeshInstance(oldHandle, d)
       : this.builder.addMeshInstance(oldHandle, d);
@@ -232,7 +232,7 @@ export class Renderer_WebGPU implements Renderer {
           buffer: {
             type: "uniform",
             hasDynamicOffset: true,
-            minBindingSize: MeshUniform.ByteSizeAligned,
+            minBindingSize: MeshUniformMod.byteSizeAligned,
           },
         },
       ],
@@ -244,7 +244,7 @@ export class Renderer_WebGPU implements Renderer {
           binding: 0,
           resource: {
             buffer: this.pool.uniformBuffer,
-            size: MeshUniform.ByteSizeAligned,
+            size: MeshUniformMod.byteSizeAligned,
           },
         },
       ],
@@ -410,7 +410,7 @@ export class Renderer_WebGPU implements Renderer {
 
     this.sceneData.cameraViewProjMatrix = viewProj;
 
-    SceneUniform.Serialize(this.scratchSceneUni, 0, this.sceneData);
+    SceneUniform.serialize(this.scratchSceneUni, 0, this.sceneData);
     this.device.queue.writeBuffer(
       this.sceneUniformBuffer,
       0,

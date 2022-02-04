@@ -5,7 +5,7 @@ import {
   Mesh,
   MeshHandle,
   MeshPoolOpts,
-  MeshUniform,
+  MeshUniformMod,
   SceneUniform,
 } from "./mesh-pool.js";
 // TODO(@darzu): this is a bad dependency:
@@ -195,7 +195,7 @@ export function attachToCanvas(
     return handle;
   }
   function addMeshInstance(oldHandle: MeshHandle): MeshHandle {
-    const d = MeshUniform.CloneData(oldHandle.shaderData);
+    const d = MeshUniformMod.CloneData(oldHandle.shaderData);
 
     const newHandle = initFinished
       ? pool.addMeshInstance(oldHandle, d)

@@ -88,7 +88,7 @@ export module Vertex {
   const scratch_f32_as_u8 = new Uint8Array(scratch_f32.buffer);
   const scratch_u32 = new Uint32Array(1);
   const scratch_u32_as_u8 = new Uint8Array(scratch_u32.buffer);
-  export function Serialize(
+  export function serialize(
     buffer: Uint8Array,
     byteOffset: number,
     pos: vec3,
@@ -143,62 +143,7 @@ export module Vertex {
   }
 }
 
-// TODO(@darzu): WORK IN PROGRESS. Unclear this is how we want to do different shader uniforms
-export module NoodleUniform {
-  export interface Data {
-    readonly transform: mat4;
-    readonly tint: vec3;
-  }
-
-  const _counts = [
-    align(4 * 4, 4), // transform
-    align(3, 4), // tint
-  ];
-  const _names = ["transform", "tint"];
-  const _types = ["mat4x4<f32>", "vec3<f32>"];
-
-  const _offsets = _counts.reduce((p, n) => [...p, p[p.length - 1] + n], [0]);
-
-  export const ByteSizeExact = sum(_counts) * bytesPerFloat;
-
-  export const ByteSizeAligned = align(ByteSizeExact, 256); // uniform objects must be 256 byte aligned
-
-  const scratch_f32 = new Float32Array(sum(_counts));
-  const scratch_f32_as_u8 = new Uint8Array(scratch_f32.buffer);
-  export function Serialize(
-    buffer: Uint8Array,
-    byteOffset: number,
-    transform: mat4,
-    tint: vec3
-  ): void {
-    scratch_f32.set(transform, _offsets[0]);
-    scratch_f32.set(tint, _offsets[1]);
-    buffer.set(scratch_f32_as_u8, byteOffset);
-  }
-
-  export function GenerateWGSLUniformStruct() {
-    // TODO(@darzu): share this code?
-    if (_names.length !== _types.length)
-      throw `mismatch between names and sizes for mesh uniform format`;
-    let res = ``;
-
-    for (let i = 0; i < _names.length; i++) {
-      const n = _names[i];
-      const t = _types[i];
-      res += `${n}: ${t};\n`;
-    }
-
-    return res;
-  }
-
-  export function CloneData(d: Data): Data {
-    return {
-      transform: mat4.clone(d.transform),
-      tint: vec3.clone(d.tint),
-    };
-  }
-}
-export module MeshUniform {
+export module MeshUniformMod {
   export interface Data {
     readonly transform: mat4;
     readonly aabbMin: vec3;
@@ -217,28 +162,25 @@ export module MeshUniform {
 
   const _offsets = _counts.reduce((p, n) => [...p, p[p.length - 1] + n], [0]);
 
-  export const ByteSizeExact = sum(_counts) * bytesPerFloat;
+  export const byteSizeExact = sum(_counts) * bytesPerFloat;
 
-  export const ByteSizeAligned = align(ByteSizeExact, 256); // uniform objects must be 256 byte aligned
+  export const byteSizeAligned = align(byteSizeExact, 256); // uniform objects must be 256 byte aligned
 
   const scratch_f32 = new Float32Array(sum(_counts));
   const scratch_f32_as_u8 = new Uint8Array(scratch_f32.buffer);
-  export function Serialize(
+  export function serialize(
     buffer: Uint8Array,
     byteOffset: number,
-    transform: mat4,
-    aabbMin: vec3,
-    aabbMax: vec3,
-    tint: vec3
+    d: Data
   ): void {
-    scratch_f32.set(transform, _offsets[0]);
-    scratch_f32.set(aabbMin, _offsets[1]);
-    scratch_f32.set(aabbMax, _offsets[2]);
-    scratch_f32.set(tint, _offsets[3]);
+    scratch_f32.set(d.transform, _offsets[0]);
+    scratch_f32.set(d.aabbMin, _offsets[1]);
+    scratch_f32.set(d.aabbMax, _offsets[2]);
+    scratch_f32.set(d.tint, _offsets[3]);
     buffer.set(scratch_f32_as_u8, byteOffset);
   }
 
-  export function GenerateWGSLUniformStruct() {
+  export function generateWGSLUniformStruct() {
     // Example:
     //     transform: mat4x4<f32>;
     //     aabbMin: vec3<f32>;
@@ -293,7 +235,7 @@ export module SceneUniform {
   export const ByteSizeExact = sum(_counts) * bytesPerFloat;
   export const ByteSizeAligned = align(ByteSizeExact, 256); // uniform objects must be 256 byte aligned
 
-  export function GenerateWGSLUniformStruct() {
+  export function generateWGSLUniformStruct() {
     // Example
     //     cameraViewProjMatrix : mat4x4<f32>;
     //     lightViewProjMatrix : mat4x4<f32>;
@@ -314,7 +256,7 @@ export module SceneUniform {
 
   const scratch_f32 = new Float32Array(sum(_counts));
   const scratch_f32_as_u8 = new Uint8Array(scratch_f32.buffer);
-  export function Serialize(
+  export function serialize(
     buffer: Uint8Array,
     byteOffset: number,
     data: Data
@@ -328,6 +270,28 @@ export module SceneUniform {
     buffer.set(scratch_f32_as_u8, byteOffset);
   }
 }
+
+// TODO(@darzu): WORK IN PROGRESS. Unclear this is how we want to do different shader uniforms
+// TODO(@darzu): WIP interfaces for shaders
+export interface GPUData<D> {
+  byteSizeExact: number;
+  byteSizeAligned: number;
+  generateWGSLUniformStruct(): string;
+  serialize(buffer: Uint8Array, byteOffset: number, data: D): void;
+}
+export const MeshUniform: GPUData<MeshUniformMod.Data> = MeshUniformMod;
+
+export interface ShaderDescription {
+  // TODO(@darzu):
+  uniformByteSizeAligned: number;
+  uniformByteSizeExact: number;
+}
+
+// export const OBJ_SHADER: ShaderDescription = {
+//   // TODO(@darzu):
+//   uniformByteSizeAligned: MeshUniform.ByteSizeAligned,
+//   uniformByteSizeExact: MeshUniform.ByteSizeExact,
+// };
 
 // to track offsets into those buffers so we can make modifications and form draw calls.
 export interface PoolIndex {
@@ -347,7 +311,7 @@ export interface MeshHandle extends PoolIndex {
   readonly model?: Mesh;
 
   // used as the uniform for this mesh
-  shaderData: MeshUniform.Data;
+  shaderData: MeshUniformMod.Data;
   // TODO(@darzu): specify which shader to use
 }
 
@@ -400,7 +364,7 @@ export interface MeshPoolBuilder {
   poolHandle: MeshPool;
   // methods
   addMesh: (m: Mesh) => MeshHandle;
-  addMeshInstance: (m: MeshHandle, d: MeshUniform.Data) => MeshHandle;
+  addMeshInstance: (m: MeshHandle, d: MeshUniformMod.Data) => MeshHandle;
   buildMesh: () => MeshBuilder;
   updateUniform: (m: MeshHandle) => void;
   finish: () => MeshPool;
@@ -415,7 +379,7 @@ export interface MeshPool {
   numLines: number;
   // methods
   addMesh: (m: Mesh) => MeshHandle;
-  addMeshInstance: (m: MeshHandle, d: MeshUniform.Data) => MeshHandle;
+  addMeshInstance: (m: MeshHandle, d: MeshUniformMod.Data) => MeshHandle;
   updateUniform: (m: MeshHandle) => void;
 }
 
@@ -556,7 +520,7 @@ export function createMeshPoolBuilder_WebGPU(
     mappedAtCreation: true,
   });
   const uniformBuffer = device.createBuffer({
-    size: MeshUniform.ByteSizeAligned * maxMeshes,
+    size: MeshUniformMod.byteSizeAligned * maxMeshes,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     mappedAtCreation: true,
   });
@@ -669,7 +633,7 @@ export function createMeshPoolBuilder_WebGL(
   let verticesMap = new Uint8Array(maxVerts * Vertex.ByteSize);
   let triIndicesMap = new Uint16Array(maxTris * 3);
   let lineIndicesMap = new Uint16Array(maxLines * 2);
-  let uniformMap = new Uint8Array(maxMeshes * MeshUniform.ByteSizeAligned);
+  let uniformMap = new Uint8Array(maxMeshes * MeshUniformMod.byteSizeAligned);
 
   function queueUpdateVertices(offset: number, data: Uint8Array) {
     // TODO(@darzu): this is a strange way to compute this, but seems to work conservatively
@@ -755,7 +719,7 @@ export function createMeshPoolBuilder_WebGL(
   return builder_webgl;
 }
 
-const scratch_uniform_u8 = new Uint8Array(MeshUniform.ByteSizeAligned);
+const scratch_uniform_u8 = new Uint8Array(MeshUniformMod.byteSizeAligned);
 
 function createMeshPoolBuilder(
   opts: MeshPoolOpts,
@@ -783,12 +747,12 @@ function createMeshPoolBuilder(
     `   ${((maxLines * bytesPerLine) / 1024).toFixed(1)} KB for line indices`
   );
   console.log(
-    `   ${((maxMeshes * MeshUniform.ByteSizeAligned) / 1024).toFixed(
+    `   ${((maxMeshes * MeshUniformMod.byteSizeAligned) / 1024).toFixed(
       1
     )} KB for object uniform data`
   );
   const unusedBytesPerModel =
-    MeshUniform.ByteSizeAligned - MeshUniform.ByteSizeExact;
+    MeshUniformMod.byteSizeAligned - MeshUniformMod.byteSizeExact;
   console.log(
     `   Unused ${unusedBytesPerModel} bytes in uniform buffer per object (${(
       (unusedBytesPerModel * maxMeshes) /
@@ -799,7 +763,7 @@ function createMeshPoolBuilder(
     maxVerts * Vertex.ByteSize +
     maxTris * bytesPerTri +
     maxLines * bytesPerLine +
-    maxMeshes * MeshUniform.ByteSizeAligned;
+    maxMeshes * MeshUniformMod.byteSizeAligned;
   console.log(
     `Total space reserved for objects: ${(totalReservedBytes / 1024).toFixed(
       1
@@ -842,7 +806,7 @@ function createMeshPoolBuilder(
   function mappedMeshBuilder(): MeshBuilder {
     const b = createMeshBuilder(
       maps,
-      allMeshes.length * MeshUniform.ByteSizeAligned,
+      allMeshes.length * MeshUniformMod.byteSizeAligned,
       builder.numVerts * Vertex.ByteSize,
       builder.numTris * bytesPerTri,
       builder.numLines * bytesPerLine,
@@ -855,7 +819,7 @@ function createMeshPoolBuilder(
         vertNumOffset: builder.numVerts,
         triIndicesNumOffset: builder.numTris * 3,
         lineIndicesNumOffset: builder.numLines * 2,
-        modelUniByteOffset: allMeshes.length * MeshUniform.ByteSizeAligned,
+        modelUniByteOffset: allMeshes.length * MeshUniformMod.byteSizeAligned,
       };
       const m = b.finish(idx);
       builder.numVerts += m.numVerts;
@@ -904,7 +868,7 @@ function createMeshPoolBuilder(
         m.pos[triInd[1]],
         m.pos[triInd[2]]
       );
-      Vertex.Serialize(
+      Vertex.serialize(
         verticesMap,
         vOff,
         m.pos[triInd[0]],
@@ -945,7 +909,7 @@ function createMeshPoolBuilder(
       // pad triangles array to make sure it's a multiple of 4 *bytes*
       triIndicesMap: new Uint16Array(align(m.tri.length * 3, 2)),
       lineIndicesMap: new Uint16Array((m.lines?.length ?? 2) * 2), // TODO(@darzu): make optional?
-      uniformMap: new Uint8Array(MeshUniform.ByteSizeAligned),
+      uniformMap: new Uint8Array(MeshUniformMod.byteSizeAligned),
     };
 
     const b = createMeshBuilder(
@@ -972,7 +936,7 @@ function createMeshPoolBuilder(
         m.pos[triInd[1]],
         m.pos[triInd[2]]
       );
-      Vertex.Serialize(
+      Vertex.serialize(
         data.verticesMap,
         vOff,
         m.pos[triInd[0]],
@@ -995,7 +959,7 @@ function createMeshPoolBuilder(
       vertNumOffset: pool.numVerts,
       triIndicesNumOffset: pool.numTris * 3,
       lineIndicesNumOffset: pool.numLines * 2,
-      modelUniByteOffset: allMeshes.length * MeshUniform.ByteSizeAligned,
+      modelUniByteOffset: allMeshes.length * MeshUniformMod.byteSizeAligned,
     };
 
     queues.queueUpdateTriIndices(
@@ -1025,11 +989,14 @@ function createMeshPoolBuilder(
 
     return handle;
   }
-  function mappedInstanceMesh(m: MeshHandle, d: MeshUniform.Data): MeshHandle {
+  function mappedInstanceMesh(
+    m: MeshHandle,
+    d: MeshUniformMod.Data
+  ): MeshHandle {
     // TODO(@darzu): implement
     if (builder.allMeshes.length + 1 > maxMeshes) throw "Too many meshes!";
 
-    const uniOffset = allMeshes.length * MeshUniform.ByteSizeAligned;
+    const uniOffset = allMeshes.length * MeshUniformMod.byteSizeAligned;
     const newHandle: MeshHandle = {
       ...m,
       shaderData: d,
@@ -1039,11 +1006,14 @@ function createMeshPoolBuilder(
     mappedUpdateUniform(newHandle);
     return newHandle;
   }
-  function queueInstanceMesh(m: MeshHandle, d: MeshUniform.Data): MeshHandle {
+  function queueInstanceMesh(
+    m: MeshHandle,
+    d: MeshUniformMod.Data
+  ): MeshHandle {
     // TODO(@darzu): implement
     if (pool.allMeshes.length + 1 > maxMeshes) throw "Too many meshes!";
 
-    const uniOffset = allMeshes.length * MeshUniform.ByteSizeAligned;
+    const uniOffset = allMeshes.length * MeshUniformMod.byteSizeAligned;
     const newHandle = {
       ...m,
       shaderData: d,
@@ -1070,26 +1040,12 @@ function createMeshPoolBuilder(
   }
 
   function queueUpdateUniform(m: MeshHandle): void {
-    MeshUniform.Serialize(
-      scratch_uniform_u8,
-      0,
-      m.shaderData.transform,
-      m.shaderData.aabbMin,
-      m.shaderData.aabbMax,
-      m.shaderData.tint
-    );
+    MeshUniformMod.serialize(scratch_uniform_u8, 0, m.shaderData);
     queues.queueUpdateUniform(m.modelUniByteOffset, scratch_uniform_u8);
   }
   function mappedUpdateUniform(m: MeshHandle): void {
     if (isUnmapped) throw "trying to use finished MeshBuilder";
-    MeshUniform.Serialize(
-      scratch_uniform_u8,
-      0,
-      m.shaderData.transform,
-      m.shaderData.aabbMin,
-      m.shaderData.aabbMax,
-      m.shaderData.tint
-    );
+    MeshUniformMod.serialize(scratch_uniform_u8, 0, m.shaderData);
     builder.uniformMap.set(scratch_uniform_u8, m.modelUniByteOffset);
   }
 
@@ -1116,7 +1072,7 @@ function createMeshBuilder(
   function addVertex(pos: vec3, color: vec3, normal: vec3): void {
     if (meshFinished) throw "trying to use finished MeshBuilder";
     const vOff = vByteOff + numVerts * Vertex.ByteSize;
-    Vertex.Serialize(maps.verticesMap, vOff, pos, color, normal);
+    Vertex.serialize(maps.verticesMap, vOff, pos, color, normal);
     numVerts += 1;
   }
   let _scratchTri = vec3.create();
@@ -1160,14 +1116,12 @@ function createMeshBuilder(
     _aabbMin = aabbMin;
     _aabbMax = aabbMax;
     _tint = tint;
-    MeshUniform.Serialize(
-      maps.uniformMap,
-      uByteOff,
+    MeshUniformMod.serialize(maps.uniformMap, uByteOff, {
       transform,
       aabbMin,
       aabbMax,
-      tint
-    );
+      tint,
+    });
   }
 
   function finish(idx: PoolIndex): MeshHandle {
