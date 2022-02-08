@@ -140,9 +140,7 @@ export class Renderer_WebGPU implements Renderer {
     TODO: support adding objects when buffers aren't memory-mapped using device.queue
   */
   public addMesh(m: Mesh): MeshHandle {
-    const handle: MeshHandle = this.initFinished
-      ? this.pool.addMesh(m)
-      : this.builder.addMesh(m);
+    const handle: MeshHandle = this.pool.addMesh(m)
 
     // TODO(@darzu): determine rebundle
     // this.needsRebundle = true;
@@ -152,9 +150,7 @@ export class Renderer_WebGPU implements Renderer {
     // console.log(`Adding (instanced) object`);
 
     const d = MeshUniformMod.CloneData(oldHandle.shaderData);
-    const newHandle = this.initFinished
-      ? this.pool.addMeshInstance(oldHandle, d)
-      : this.builder.addMeshInstance(oldHandle, d);
+    const newHandle = this.pool.addMeshInstance(oldHandle, d)
 
     // handles[o.id] = res;
 

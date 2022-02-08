@@ -190,16 +190,14 @@ export function attachToCanvas(
     // console.log(`Adding object ${o.id}`);
     // need to introduce a new variable to convince Typescript the mapping is non-null
 
-    const handle = initFinished ? pool.addMesh(m) : builder.addMesh(m);
+    const handle = pool.addMesh(m);
 
     return handle;
   }
   function addMeshInstance(oldHandle: MeshHandle): MeshHandle {
     const d = MeshUniformMod.CloneData(oldHandle.shaderData);
 
-    const newHandle = initFinished
-      ? pool.addMeshInstance(oldHandle, d)
-      : builder.addMeshInstance(oldHandle, d);
+    const newHandle = pool.addMeshInstance(oldHandle, d);
 
     // TODO(@darzu):
     // meshObjs[o.id] = res;
