@@ -1,7 +1,7 @@
 import { pitch } from "../utils-3d.js";
 import { vec3, mat4 } from "../gl-matrix.js";
 import {
-  createMeshPoolBuilder_WebGL,
+  createMeshPool_WebGL,
   Mesh,
   MeshHandle,
   MeshPoolOpts,
@@ -149,42 +149,32 @@ export function attachToCanvas(
     shiftMeshIndices: true,
   };
 
-  const builder = createMeshPoolBuilder_WebGL(gl, opts);
-  const pool = builder.poolHandle;
-
-  let initFinished = false;
+  const pool = createMeshPool_WebGL(gl, opts);
 
   const scene = setupScene();
 
-  function finishInit() {
-    console.log("finishInit");
-    initFinished = true;
+  // TODO(@darzu): debugging
+  // console.log("will draw:")
+  // for (let m of meshObjs) {
+  //   console.log(`t: ${m.handle.transform.join(',')}`)
+  //   console.log(`count: ${m.handle.numTris * 3} at ${m.handle.indicesNumOffset}`)
+  // }
 
-    builder.finish();
+  // TODO(@darzu): DEBUG
+  // const positions = [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1];
+  // const normals = [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1];
+  // const colors = normals.map(_ => 0.5);
+  // const indices = [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23];
 
-    // TODO(@darzu): debugging
-    // console.log("will draw:")
-    // for (let m of meshObjs) {
-    //   console.log(`t: ${m.handle.transform.join(',')}`)
-    //   console.log(`count: ${m.handle.numTris * 3} at ${m.handle.indicesNumOffset}`)
-    // }
+  // gl.bindBuffer(gl.ARRAY_BUFFER, pool.positionsBuffer);
+  // gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(positions));
+  // gl.bindBuffer(gl.ARRAY_BUFFER, pool.normalsBuffer);
+  // gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(normals));
+  // gl.bindBuffer(gl.ARRAY_BUFFER, pool.colorsBuffer);
+  // gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(colors));
 
-    // TODO(@darzu): DEBUG
-    // const positions = [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1];
-    // const normals = [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1];
-    // const colors = normals.map(_ => 0.5);
-    // const indices = [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23];
-
-    // gl.bindBuffer(gl.ARRAY_BUFFER, pool.positionsBuffer);
-    // gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(positions));
-    // gl.bindBuffer(gl.ARRAY_BUFFER, pool.normalsBuffer);
-    // gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(normals));
-    // gl.bindBuffer(gl.ARRAY_BUFFER, pool.colorsBuffer);
-    // gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(colors));
-
-    // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pool.triIndicesBuffer);
-    // gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, new Uint16Array(indices));
-  }
+  // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pool.triIndicesBuffer);
+  // gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, new Uint16Array(indices));
 
   function addMesh(m: Mesh): MeshHandle {
     // console.log(`Adding object ${o.id}`);
@@ -290,7 +280,6 @@ export function attachToCanvas(
     addMeshInstance,
     removeMesh,
     renderFrame,
-    finishInit,
   };
 
   return renderer;

@@ -66,9 +66,6 @@ async function init(
   if (!rendererInit) throw "Unable to create webgl or webgpu renderer";
   console.log(`Renderer: ${usingWebGPU ? "webGPU" : "webGL"}`);
 
-  // TODO(@darzu): where to do this?
-  rendererInit.finishInit();
-
   // add to ECS
   // TODO(@darzu): this is a little wierd to do this in an async callback
   em.addSingletonComponent(RendererDef, rendererInit, usingWebGPU);

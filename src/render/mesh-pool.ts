@@ -275,22 +275,10 @@ export interface MeshPoolMaps {
 }
 export interface MeshPoolQueues {
   // asynchronous updates to buffers
-  queueUpdateVertices: (offset: number, data: Uint8Array) => void;
-  queueUpdateTriIndices: (offset: number, data: Uint8Array) => void;
-  queueUpdateLineIndices: (offset: number, data: Uint8Array) => void;
-  queueUpdateUniform: (offset: number, data: Uint8Array) => void;
-}
-export interface MeshPoolBuilder {
-  // options
-  opts: MeshPoolOpts;
-  numTris: number;
-  numVerts: number;
-  numLines: number;
-  allMeshes: MeshHandle[];
-  // handles
-  poolHandle: MeshPool;
-  // methods
-  finish: () => MeshPool;
+  updateVertices: (offset: number, data: Uint8Array) => void;
+  updateTriIndices: (offset: number, data: Uint8Array) => void;
+  updateLineIndices: (offset: number, data: Uint8Array) => void;
+  updateUniform: (offset: number, data: Uint8Array) => void;
 }
 export interface MeshPool {
   // options
@@ -307,11 +295,6 @@ export interface MeshPool {
 }
 
 // WebGPU stuff
-export interface MeshPoolBuilder_WebGPU extends MeshPoolBuilder {
-  device: GPUDevice;
-  poolHandle: MeshPool_WebGPU;
-  finish: () => MeshPool_WebGPU;
-}
 export interface MeshPoolBuffers_WebGPU {
   // buffers
   verticesBuffer: GPUBuffer;
@@ -324,11 +307,6 @@ export interface MeshPoolBuffers_WebGPU {
 export type MeshPool_WebGPU = MeshPool & MeshPoolBuffers_WebGPU;
 
 // WebGL stuff
-export interface MeshPoolBuilder_WebGL extends MeshPoolBuilder {
-  gl: WebGLRenderingContext;
-  poolHandle: MeshPool_WebGL;
-  finish: () => MeshPool_WebGL;
-}
 export interface MeshPoolBuffers_WebGL {
   // vertex buffers
   positionsBuffer: WebGLBuffer;
@@ -418,10 +396,10 @@ export function unshareProvokingVertices(input: Mesh): Mesh {
   return { ...input, pos, tri, usesProvoking: true };
 }
 
-export function createMeshPoolBuilder_WebGPU(
+export function createMeshPool_WebGPU(
   device: GPUDevice,
   opts: MeshPoolOpts
-): MeshPoolBuilder_WebGPU {
+): MeshPool_WebGPU {
   const { maxMeshes, maxTris, maxVerts, maxLines } = opts;
   // console.log(`maxMeshes: ${maxMeshes}, maxTris: ${maxTris}, maxVerts: ${maxVerts}`)
 
@@ -454,23 +432,17 @@ export function createMeshPoolBuilder_WebGPU(
     mappedAtCreation: false,
   });
 
-  function queueUpdateBuffer(
-    buffer: GPUBuffer,
-    offset: number,
-    data: Uint8Array
-  ) {
+  function updateBuf(buffer: GPUBuffer, offset: number, data: Uint8Array) {
     device.queue.writeBuffer(buffer, offset, data);
   }
 
   const queues: MeshPoolQueues = {
-    queueUpdateTriIndices: (offset: number, data: Uint8Array) =>
-      queueUpdateBuffer(triIndicesBuffer, offset, data),
-    queueUpdateLineIndices: (offset: number, data: Uint8Array) =>
-      queueUpdateBuffer(lineIndicesBuffer, offset, data),
-    queueUpdateVertices: (offset: number, data: Uint8Array) =>
-      queueUpdateBuffer(verticesBuffer, offset, data),
-    queueUpdateUniform: (offset: number, data: Uint8Array) =>
-      queueUpdateBuffer(uniformBuffer, offset, data),
+    updateTriIndices: (offset, data) =>
+      updateBuf(triIndicesBuffer, offset, data),
+    updateLineIndices: (offset, data) =>
+      updateBuf(lineIndicesBuffer, offset, data),
+    updateVertices: (offset, data) => updateBuf(verticesBuffer, offset, data),
+    updateUniform: (offset, data) => updateBuf(uniformBuffer, offset, data),
   };
 
   const buffers: MeshPoolBuffers_WebGPU = {
@@ -481,33 +453,17 @@ export function createMeshPoolBuilder_WebGPU(
     uniformBuffer,
   };
 
-  const builder = createMeshPoolBuilder(opts, queues);
+  const pool = createMeshPool(opts, queues);
 
-  const poolHandle: MeshPool_WebGPU = Object.assign(
-    builder.poolHandle,
-    buffers
-  );
+  const pool_webgpu: MeshPool_WebGPU = { ...pool, ...buffers };
 
-  const builder_webgpu: MeshPoolBuilder_WebGPU = {
-    ...builder,
-    poolHandle,
-    device,
-    finish, // TODO(@darzu):
-  };
-
-  function finish(): MeshPool_WebGPU {
-    builder.finish();
-
-    return poolHandle;
-  }
-
-  return builder_webgpu;
+  return pool_webgpu;
 }
 
-export function createMeshPoolBuilder_WebGL(
+export function createMeshPool_WebGL(
   gl: WebGLRenderingContext,
   opts: MeshPoolOpts
-): MeshPoolBuilder_WebGL {
+): MeshPool_WebGL {
   const { maxMeshes, maxTris, maxVerts, maxLines } = opts;
 
   // TODO(@darzu): we shouldn't need to preallocate all this
@@ -541,12 +497,12 @@ export function createMeshPoolBuilder_WebGL(
 
   // our in-memory reflections of the buffers used during the initial build phase
   // TODO(@darzu): this is too much duplicate data
-  let verticesMap = new Uint8Array(maxVerts * Vertex.ByteSize);
-  let triIndicesMap = new Uint16Array(maxTris * 3);
-  let lineIndicesMap = new Uint16Array(maxLines * 2);
+  // let verticesMap = new Uint8Array(maxVerts * Vertex.ByteSize);
+  // let triIndicesMap = new Uint16Array(maxTris * 3);
+  // let lineIndicesMap = new Uint16Array(maxLines * 2);
   let uniformMap = new Uint8Array(maxMeshes * MeshUniformMod.byteSizeAligned);
 
-  function queueUpdateVertices(offset: number, data: Uint8Array) {
+  function updateVertices(offset: number, data: Uint8Array) {
     // TODO(@darzu): this is a strange way to compute this, but seems to work conservatively
     // const numVerts = Math.min(data.length / Vertex.ByteSize, Math.max(builder.numVerts, builder.poolHandle.numVerts))
     const numVerts = data.length / Vertex.ByteSize;
@@ -566,7 +522,7 @@ export function createMeshPoolBuilder_WebGL(
     gl.bindBuffer(gl.ARRAY_BUFFER, colorsBuffer);
     gl.bufferSubData(gl.ARRAY_BUFFER, vNumOffset * bytesPerVec3, colors);
   }
-  function queueUpdateTriIndices(offset: number, data: Uint8Array) {
+  function updateTriIndices(offset: number, data: Uint8Array) {
     // TODO(@darzu): again, strange but a useful optimization
     // const numInd = Math.min(data.length / 2, Math.max(builder.numTris, builder.poolHandle.numTris) * 3)
     // TODO(@darzu): debug logging
@@ -574,20 +530,20 @@ export function createMeshPoolBuilder_WebGL(
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triIndicesBuffer);
     gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, offset, data);
   }
-  function queueUpdateLineIndices(offset: number, data: Uint8Array) {
+  function updateLineIndices(offset: number, data: Uint8Array) {
     // TODO(@darzu): line indices don't work right. they interfere with regular tri indices.
     // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, lineIndicesBuffer);
     // gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, offset, data);
   }
-  function queueUpdateUniform(offset: number, data: Uint8Array) {
+  function updateUniform(offset: number, data: Uint8Array) {
     uniformMap.set(data, offset);
   }
 
   const queues: MeshPoolQueues = {
-    queueUpdateTriIndices,
-    queueUpdateLineIndices,
-    queueUpdateVertices,
-    queueUpdateUniform,
+    updateTriIndices,
+    updateLineIndices,
+    updateVertices,
+    updateUniform,
   };
 
   const buffers: MeshPoolBuffers_WebGL = {
@@ -600,39 +556,20 @@ export function createMeshPoolBuilder_WebGL(
     lineIndicesBuffer,
   };
 
-  const builder = createMeshPoolBuilder(opts, queues);
+  const pool = createMeshPool(opts, queues);
 
-  const poolHandle: MeshPool_WebGL = Object.assign(builder.poolHandle, buffers);
+  const pool_webgl: MeshPool_WebGL = { ...pool, ...buffers };
 
-  const builder_webgl: MeshPoolBuilder_WebGL = {
-    ...builder,
-    poolHandle,
-    gl,
-    finish, // TODO(@darzu):
-  };
-
-  function finish(): MeshPool_WebGL {
-
-    builder.finish();
-
-    return poolHandle;
-  }
-
-  return builder_webgl;
+  return pool_webgl;
 }
 
 const scratch_uniform_u8 = new Uint8Array(MeshUniformMod.byteSizeAligned);
 
-function createMeshPoolBuilder(
-  opts: MeshPoolOpts,
-  queues: MeshPoolQueues
-): MeshPoolBuilder {
+function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
   const { maxMeshes, maxTris, maxVerts, maxLines } = opts;
 
   if (MAX_INDICES < maxVerts)
     throw `Too many vertices (${maxVerts})! W/ Uint16, we can only support '${maxVerts}' verts`;
-
-  let isUnmapped = false;
 
   // log our estimated space usage stats
   console.log(
@@ -684,19 +621,7 @@ function createMeshPoolBuilder(
     addMeshInstance,
   };
 
-
-  const builder: MeshPoolBuilder = {
-    opts,
-    numTris: 0,
-    numVerts: 0,
-    numLines: 0,
-    allMeshes,
-    poolHandle: pool,
-    finish,
-  };
-
   function addMesh(m: Mesh): MeshHandle {
-    if (!isUnmapped) throw `trying to use unfinished MeshPool`;
     if (!m.usesProvoking) throw `mesh must use provoking vertices`;
     if (pool.allMeshes.length + 1 > maxMeshes) throw "Too many meshes!";
     if (pool.numVerts + m.pos.length > maxVerts) throw "Too many vertices!";
@@ -765,16 +690,16 @@ function createMeshPoolBuilder(
       modelUniByteOffset: allMeshes.length * MeshUniformMod.byteSizeAligned,
     };
 
-    queues.queueUpdateTriIndices(
+    queues.updateTriIndices(
       idx.triIndicesNumOffset * 2,
       new Uint8Array(data.triIndicesMap.buffer)
     ); // TODO(@darzu): this view shouldn't be necessary
-    queues.queueUpdateLineIndices(
+    queues.updateLineIndices(
       idx.lineIndicesNumOffset * 2,
       new Uint8Array(data.lineIndicesMap.buffer)
     ); // TODO(@darzu): this view shouldn't be necessary
-    queues.queueUpdateUniform(idx.modelUniByteOffset, data.uniformMap);
-    queues.queueUpdateVertices(
+    queues.updateUniform(idx.modelUniByteOffset, data.uniformMap);
+    queues.updateVertices(
       idx.vertNumOffset * Vertex.ByteSize,
       data.verticesMap
     );
@@ -792,7 +717,6 @@ function createMeshPoolBuilder(
     return handle;
   }
   function addMeshInstance(m: MeshHandle, d: MeshUniformMod.Data): MeshHandle {
-    if (!isUnmapped) throw `cannot add instance mesh to unfinished mesh pool`;
     if (pool.allMeshes.length + 1 > maxMeshes) throw "Too many meshes!";
 
     const uniOffset = allMeshes.length * MeshUniformMod.byteSizeAligned;
@@ -806,27 +730,12 @@ function createMeshPoolBuilder(
     return newHandle;
   }
 
-  function finish(): MeshPool {
-    if (isUnmapped) throw `trying to use finished MeshPoolBuilder`;
-    isUnmapped = true;
-
-    pool.numTris = builder.numTris;
-    pool.numLines = builder.numLines;
-    pool.numVerts = builder.numVerts;
-
-    console.log(
-      `Finishing pool with: ${builder.numTris} triangles, ${builder.numVerts} vertices, ${builder.numLines} lines`
-    );
-
-    return pool;
-  }
-
   function updateUniform(m: MeshHandle): void {
     MeshUniformMod.serialize(scratch_uniform_u8, 0, m.shaderData);
-    queues.queueUpdateUniform(m.modelUniByteOffset, scratch_uniform_u8);
+    queues.updateUniform(m.modelUniByteOffset, scratch_uniform_u8);
   }
 
-  return builder;
+  return pool;
 }
 
 // TODO(@darzu): not totally sure we want this state

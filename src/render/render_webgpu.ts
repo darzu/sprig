@@ -1,9 +1,8 @@
 import { mat4, vec3, quat } from "../gl-matrix.js";
 import {
-  createMeshPoolBuilder_WebGPU,
+  createMeshPool_WebGPU,
   Mesh,
   MeshHandle,
-  MeshPoolBuilder_WebGPU,
   MeshPoolOpts,
   MeshPool_WebGPU,
   SceneUniform,
@@ -44,7 +43,6 @@ const backgroundColor = { r: 0.6, g: 0.63, b: 0.6, a: 1.0 };
 export interface Renderer {
   drawLines: boolean;
   drawTris: boolean;
-  finishInit(): void;
   addMesh(m: Mesh): MeshHandle;
   addMeshInstance(h: MeshHandle): MeshHandle;
   renderFrame(viewMatrix: mat4, handles: MeshHandle[]): void;
@@ -65,8 +63,6 @@ export class Renderer_WebGPU implements Renderer {
 
   // private handles: MeshObj[] = {};
 
-  private initFinished: boolean = false;
-  private builder: MeshPoolBuilder_WebGPU;
   private pool: MeshPool_WebGPU;
   private sceneData: SceneUniform.Data;
 
@@ -78,12 +74,6 @@ export class Renderer_WebGPU implements Renderer {
   private colorTextureView: GPUTextureView | null = null;
   private lastWidth = 0;
   private lastHeight = 0;
-
-  public finishInit() {
-    if (this.initFinished) throw "finishInit called twice";
-    this.builder.finish();
-    this.initFinished = true;
-  }
 
   private gpuBufferWriteAllMeshUniforms(handles: MeshHandle[]) {
     // TODO(@darzu): make this update all meshes at once
@@ -140,7 +130,7 @@ export class Renderer_WebGPU implements Renderer {
     TODO: support adding objects when buffers aren't memory-mapped using device.queue
   */
   public addMesh(m: Mesh): MeshHandle {
-    const handle: MeshHandle = this.pool.addMesh(m)
+    const handle: MeshHandle = this.pool.addMesh(m);
 
     // TODO(@darzu): determine rebundle
     // this.needsRebundle = true;
@@ -150,7 +140,7 @@ export class Renderer_WebGPU implements Renderer {
     // console.log(`Adding (instanced) object`);
 
     const d = MeshUniformMod.CloneData(oldHandle.shaderData);
-    const newHandle = this.pool.addMeshInstance(oldHandle, d)
+    const newHandle = this.pool.addMeshInstance(oldHandle, d);
 
     // handles[o.id] = res;
 
@@ -343,13 +333,12 @@ export class Renderer_WebGPU implements Renderer {
       shiftMeshIndices: false,
     };
 
-    this.builder = createMeshPoolBuilder_WebGPU(device, opts);
-
-    this.pool = this.builder.poolHandle;
+    this.pool = createMeshPool_WebGPU(device, opts);
 
     this.sceneUniformBuffer = device.createBuffer({
       size: SceneUniform.ByteSizeAligned,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      mappedAtCreation: false,
     });
 
     // setup scene data:
