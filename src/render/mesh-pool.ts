@@ -429,30 +429,30 @@ export function createMeshPoolBuilder_WebGPU(
   const verticesBuffer = device.createBuffer({
     size: maxVerts * Vertex.ByteSize,
     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-    mappedAtCreation: true,
+    // NOTE(@darzu): with WebGPU we have the option to modify the full buffers in memory before
+    //  handing them over to the GPU. This could be good for large initial sets of data, instead of
+    //  sending that over later via the queues. See commit 4862a7c and it's successors. Pre those
+    //  commits, we had a way to add mesh data to either via initial memory maps or queues. The
+    //  memory mapped way was removed to simplify the abstractions since we weren't noticing speed
+    //  benefits at the time.
+    mappedAtCreation: false,
   });
   const triIndicesBuffer = device.createBuffer({
     size: maxTris * bytesPerTri,
     usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
-    mappedAtCreation: true,
+    mappedAtCreation: false,
   });
   // TODO(@darzu): make creating this buffer optional on whether we're using line indices or not
   const lineIndicesBuffer = device.createBuffer({
     size: maxLines * bytesPerLine,
     usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
-    mappedAtCreation: true,
+    mappedAtCreation: false,
   });
   const uniformBuffer = device.createBuffer({
     size: MeshUniformMod.byteSizeAligned * maxMeshes,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    mappedAtCreation: true,
+    mappedAtCreation: false,
   });
-
-  // to modify buffers, we need to map them into JS space; we'll need to unmap later
-  let verticesMap = new Uint8Array(verticesBuffer.getMappedRange());
-  let triIndicesMap = new Uint16Array(triIndicesBuffer.getMappedRange());
-  let lineIndicesMap = new Uint16Array(lineIndicesBuffer.getMappedRange());
-  let uniformMap = new Uint8Array(uniformBuffer.getMappedRange());
 
   function queueUpdateBuffer(
     buffer: GPUBuffer,
@@ -496,12 +496,6 @@ export function createMeshPoolBuilder_WebGPU(
   };
 
   function finish(): MeshPool_WebGPU {
-    // unmap the buffers so the GPU can use them
-    verticesBuffer.unmap();
-    triIndicesBuffer.unmap();
-    lineIndicesBuffer.unmap();
-    uniformBuffer.unmap();
-
     builder.finish();
 
     return poolHandle;
