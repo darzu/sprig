@@ -12,7 +12,6 @@ import { isMeshHandle, Mesh, MeshHandle, MeshHandleDef } from "./mesh-pool.js";
 import { Authority, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { RendererDef } from "./render_init.js";
-import { Renderer } from "./render_webgpu.js";
 import { tempQuat, tempVec } from "../temp-pool.js";
 import { PhysicsTimerDef } from "../time.js";
 import {
@@ -212,4 +211,15 @@ export function registerAddMeshHandleSystem(em: EntityManager) {
     },
     "addMeshHandle"
   );
+}
+
+export interface Renderer {
+  // opts
+  drawLines: boolean;
+  drawTris: boolean;
+
+  addMesh(m: Mesh): MeshHandle;
+  addMeshInstance(h: MeshHandle): MeshHandle;
+  renderFrame(viewMatrix: mat4, handles: MeshHandle[]): void;
+  removeMesh(h: MeshHandle): void;
 }

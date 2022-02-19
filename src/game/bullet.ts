@@ -1,29 +1,11 @@
 import { EM, EntityManager, Component, Entity } from "../entity-manager.js";
-import { mat4, quat, vec3 } from "../gl-matrix.js";
+import { quat, vec3 } from "../gl-matrix.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import { RenderableDef } from "../render/renderer.js";
 import { Position, PositionDef, RotationDef } from "../physics/transform.js";
-import { AABBCollider, ColliderDef } from "../physics/collider.js";
-import {
-  Authority,
-  AuthorityDef,
-  Me,
-  MeDef,
-  SyncDef,
-  PredictDef,
-} from "../net/components.js";
-import {
-  getAABBFromMesh,
-  Mesh,
-  MeshHandle,
-  MeshHandleDef,
-  scaleMesh,
-  scaleMesh3,
-} from "../render/mesh-pool.js";
-import { AABB } from "../physics/broadphase.js";
-import { RendererDef } from "../render/render_init.js";
-import { Renderer } from "../render/render_webgpu.js";
+import { ColliderDef } from "../physics/collider.js";
+import { AuthorityDef, MeDef, SyncDef, PredictDef } from "../net/components.js";
 import { Assets, AssetsDef } from "./assets.js";
 import {
   AngularVelocity,

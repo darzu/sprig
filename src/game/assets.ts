@@ -13,7 +13,7 @@ import {
 } from "../render/mesh-pool.js";
 import { AABB } from "../physics/broadphase.js";
 import { RendererDef } from "../render/render_init.js";
-import { Renderer } from "../render/render_webgpu.js";
+import { Renderer } from "../render/renderer.js";
 import { assert } from "../test.js";
 import { objMap } from "../util.js";
 import { getText } from "../webget.js";
@@ -290,6 +290,8 @@ async function loadAssets(renderer: Renderer): Promise<GameAssets> {
 
   const allMeshes = { ...remoteMeshes, ...LocalMeshes };
 
+  // TODO(@darzu): this shouldn't directly add to a mesh pool, we don't know which pool it should
+  //  go to
   const result = objMap(allMeshes, (mesh, n) => {
     const aabb = getAABBFromMesh(mesh);
     const proto = renderer.addMesh(mesh);

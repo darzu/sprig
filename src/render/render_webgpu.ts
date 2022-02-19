@@ -8,7 +8,7 @@ import {
   SceneUniform,
   Vertex,
 } from "./mesh-pool.js";
-import { Renderable } from "./renderer.js";
+import { Renderable, Renderer } from "./renderer.js";
 import { pitch } from "../utils-3d.js";
 import {
   MeshUniformMod,
@@ -39,15 +39,6 @@ const backgroundColor = { r: 0.6, g: 0.63, b: 0.6, a: 1.0 };
 //   transform: mat4;
 //   renderable: Renderable;
 // }
-
-export interface Renderer {
-  drawLines: boolean;
-  drawTris: boolean;
-  addMesh(m: Mesh): MeshHandle;
-  addMeshInstance(h: MeshHandle): MeshHandle;
-  renderFrame(viewMatrix: mat4, handles: MeshHandle[]): void;
-  removeMesh(h: MeshHandle): void;
-}
 
 export class Renderer_WebGPU implements Renderer {
   public drawLines = true;

@@ -8,8 +8,9 @@ import {
   SceneUniform,
 } from "./mesh-pool.js";
 // TODO(@darzu): this is a bad dependency:
-import { Renderer, setupScene } from "./render_webgpu.js";
+import { setupScene } from "./render_webgpu.js";
 import { MeshUniformMod } from "./shader_obj.js";
+import { Renderer } from "./renderer.js";
 
 const vertCode = `
 precision mediump float;
