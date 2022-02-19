@@ -1,5 +1,9 @@
-import { EntityManager } from "../entity-manager.js";
-import { Mesh, unshareProvokingVertices } from "../render/mesh-pool.js";
+import { EM, EntityManager } from "../entity-manager.js";
+import {
+  createMeshPool_WebGPU,
+  Mesh,
+  unshareProvokingVertices,
+} from "../render/mesh-pool.js";
 import { PositionDef } from "../physics/transform.js";
 import { RenderableDef } from "../render/renderer.js";
 
@@ -30,6 +34,15 @@ simple start:
 create a mesh with a seperate render pass
 
 */
+
+// TODO(@darzu): abstract/generalize into a multi-shader renderables system
+const NoodlePool = EM.defineComponent("noodlePool", () => {
+  // TODO(@darzu): we need a way to get access to mesh pools besides just the
+  //  singleton one currently in renderable
+  return {
+    // pool: createMeshPool_WebGPU(
+  };
+});
 
 // TODO(@darzu): DEBUGGING
 export function testCreateNoodles(em: EntityManager) {
