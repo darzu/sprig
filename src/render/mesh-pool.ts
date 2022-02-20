@@ -289,6 +289,9 @@ export interface MeshPool {
   numVerts: number;
   numLines: number;
   // methods
+  // TODO(@darzu): instead of addMesh, mesh pools need a way to add
+  //    vertices and triangles with custom formats. The addMesh impl
+  //    below has hard-coded assumptions about vertex size.
   addMesh: (m: Mesh) => MeshHandle;
   addMeshInstance: (m: MeshHandle, d: MeshUniformMod.Data) => MeshHandle;
   updateUniform: (m: MeshHandle) => void;
