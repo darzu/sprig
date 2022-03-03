@@ -33,6 +33,14 @@ simple start:
 
 create a mesh with a seperate render pass
 
+mega shader ideas:
+ - verts can have target locations, a smoothing function, and a time component
+
+w/o shaders:
+
+update positions in the mesh, like Doug
+
+
 */
 
 // TODO(@darzu): abstract/generalize into a multi-shader renderables system
