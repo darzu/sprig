@@ -149,7 +149,7 @@ type GPUFrontFace =
 type GPUIndexFormat =
   | "uint16"
   | "uint32";
-type GPULoadOp = "load";
+type GPULoadOp = "load" | "clear"; // TODO(@darzu): 
 type GPUPipelineStatisticName =
   | "vertex-shader-invocations"
   | "clipper-invocations"
@@ -675,9 +675,8 @@ interface GPURenderPassColorAttachment {
    * to prior to executing the render pass.
    * Note: It is recommended to prefer a clear-value; see {@link GPULoadOp#"load"}.
    */
-  loadValue:
-    | GPULoadOp
-    | GPUColor;
+  loadOp: GPULoadOp;
+  clearValue: GPUColor; // TODO(@darzu):
   /**
    * The store operation to perform on {@link GPURenderPassColorAttachment#view}
    * after executing the render pass.
@@ -699,9 +698,8 @@ interface GPURenderPassDepthStencilAttachment {
    * depth component to prior to executing the render pass.
    * Note: It is recommended to prefer a clear-value; see {@link GPULoadOp#"load"}.
    */
-  depthLoadValue:
-    | GPULoadOp
-    | number;
+  depthLoadOp: GPULoadOp;
+  depthClearValue: number; // TODO(@darzu):
   /**
    * The store operation to perform on {@link GPURenderPassDepthStencilAttachment#view}'s
    * depth component after executing the render pass.
@@ -721,9 +719,8 @@ interface GPURenderPassDepthStencilAttachment {
    * {@link GPURenderPassDepthStencilAttachment#view}'s stencil component to prior to
    * executing the render pass.
    */
-  stencilLoadValue:
-    | GPULoadOp
-    | GPUStencilValue;
+  stencilLoadOp: GPULoadOp;
+  stencilClearValue: GPUStencilValue; // TODO(@darzu):
   /**
    * The store operation to perform on {@link GPURenderPassDepthStencilAttachment#view}'s
    * stencil component after executing the render pass.
@@ -736,8 +733,7 @@ interface GPURenderPassDepthStencilAttachment {
   stencilReadOnly?: boolean;
 }
 
-interface GPURenderPassDescriptor
-  extends GPUObjectDescriptorBase {
+interface GPURenderPassDescriptor extends GPUObjectDescriptorBase {
   /**
    * The set of {@link GPURenderPassColorAttachment} values in this sequence defines which
    * color attachments will be output to when executing this render pass.
@@ -754,15 +750,13 @@ interface GPURenderPassDescriptor
   occlusionQuerySet?: GPUQuerySet;
 }
 
-interface GPURenderPassLayout
-  extends GPUObjectDescriptorBase {
+interface GPURenderPassLayout extends GPUObjectDescriptorBase {
   colorFormats: Iterable<GPUTextureFormat>;
   depthStencilFormat?: GPUTextureFormat;
   sampleCount?: GPUSize32;
 }
 
-interface GPURenderPipelineDescriptor
-  extends GPUPipelineDescriptorBase {
+interface GPURenderPipelineDescriptor extends GPUPipelineDescriptorBase {
   vertex: GPUVertexState;
   primitive?: GPUPrimitiveState;
   depthStencil?: GPUDepthStencilState;
@@ -782,8 +776,7 @@ interface GPUSamplerBindingLayout {
   type?: GPUSamplerBindingType;
 }
 
-interface GPUSamplerDescriptor
-  extends GPUObjectDescriptorBase {
+interface GPUSamplerDescriptor extends GPUObjectDescriptorBase {
   addressModeU?: GPUAddressMode;
   addressModeV?: GPUAddressMode;
   addressModeW?: GPUAddressMode;
@@ -799,14 +792,12 @@ interface GPUSamplerDescriptor
 type GPUShaderModuleDescriptor =
   | GPUShaderModuleDescriptorWGSL
   | GPUShaderModuleDescriptorSPIRV;
-interface GPUShaderModuleDescriptorWGSL
-  extends GPUObjectDescriptorBase {
+interface GPUShaderModuleDescriptorWGSL extends GPUObjectDescriptorBase {
   code: string;
   sourceMap?: object;
 }
 /** @deprecated */
-interface GPUShaderModuleDescriptorSPIRV
-  extends GPUObjectDescriptorBase {
+interface GPUShaderModuleDescriptorSPIRV extends GPUObjectDescriptorBase {
   /** @deprecated */ code: Uint32Array;
 }
 
@@ -856,8 +847,7 @@ interface GPUTextureBindingLayout {
   multisampled?: boolean;
 }
 
-interface GPUTextureDescriptor
-  extends GPUObjectDescriptorBase {
+interface GPUTextureDescriptor extends GPUObjectDescriptorBase {
   size: GPUExtent3DStrict;
   mipLevelCount?: GPUIntegerCoordinate;
   sampleCount?: GPUSize32;
@@ -866,8 +856,7 @@ interface GPUTextureDescriptor
   usage: GPUTextureUsageFlags;
 }
 
-interface GPUTextureViewDescriptor
-  extends GPUObjectDescriptorBase {
+interface GPUTextureViewDescriptor extends GPUObjectDescriptorBase {
   format?: GPUTextureFormat;
   dimension?: GPUTextureViewDimension;
   aspect?: GPUTextureAspect;
@@ -877,8 +866,7 @@ interface GPUTextureViewDescriptor
   arrayLayerCount?: GPUIntegerCoordinate;
 }
 
-interface GPUUncapturedErrorEventInit
-  extends EventInit {
+interface GPUUncapturedErrorEventInit extends EventInit {
   error: GPUError;
 }
 
@@ -894,8 +882,7 @@ interface GPUVertexBufferLayout {
   attributes: Iterable<GPUVertexAttribute>;
 }
 
-interface GPUVertexState
-  extends GPUProgrammableStage {
+interface GPUVertexState extends GPUProgrammableStage {
   buffers?: Iterable<GPUVertexBufferLayout | null>;
 }
 
@@ -907,9 +894,7 @@ interface GPUObjectBase {
    * It has no specified format, and therefore cannot be reliably machine-parsed.
    * In any given situation, the user agent may or may not choose to use this label.
    */
-  label:
-    | string
-    | null;
+  label: string | null;
 }
 
 interface GPUPipelineBase {
@@ -919,9 +904,7 @@ interface GPUPipelineBase {
    * @param index - Index into the pipeline layout's {@link GPUPipelineLayout#[[bindGroupLayouts]]}
    * 	sequence.
    */
-  getBindGroupLayout(
-    index: number
-  ): GPUBindGroupLayout;
+  getBindGroupLayout(index: number): GPUBindGroupLayout;
 }
 
 interface GPUProgrammablePassEncoder {
@@ -962,9 +945,7 @@ interface GPUProgrammablePassEncoder {
    * Marks the beginning of a labeled group of commands for the {@link GPUProgrammablePassEncoder}.
    * @param groupLabel - The label for the command group.
    */
-  pushDebugGroup(
-    groupLabel: string
-  ): undefined;
+  pushDebugGroup(groupLabel: string): undefined;
   /**
    * Marks the end of a labeled group of commands for the {@link GPUProgrammablePassEncoder}.
    */
@@ -973,9 +954,7 @@ interface GPUProgrammablePassEncoder {
    * Inserts a single debug marker label into the {@link GPUProgrammablePassEncoder}'s commands sequence.
    * @param markerLabel - The label to insert.
    */
-  insertDebugMarker(
-    markerLabel: string
-  ): undefined;
+  insertDebugMarker(markerLabel: string): undefined;
 }
 
 interface GPURenderEncoderBase {
@@ -983,9 +962,7 @@ interface GPURenderEncoderBase {
    * Sets the current {@link GPURenderPipeline}.
    * @param pipeline - The render pipeline to use for subsequent drawing commands.
    */
-  setPipeline(
-    pipeline: GPURenderPipeline
-  ): undefined;
+  setPipeline(pipeline: GPURenderPipeline): undefined;
   /**
    * Sets the current index buffer.
    * @param buffer - Buffer containing index data to use for subsequent drawing commands.
@@ -1052,10 +1029,7 @@ interface GPURenderEncoderBase {
    * @param indirectBuffer - Buffer containing the indirect draw parameters.
    * @param indirectOffset - Offset in bytes into `indirectBuffer` where the drawing data begins.
    */
-  drawIndirect(
-    indirectBuffer: GPUBuffer,
-    indirectOffset: GPUSize64
-  ): undefined;
+  drawIndirect(indirectBuffer: GPUBuffer, indirectOffset: GPUSize64): undefined;
   /**
    * Draws indexed primitives using parameters read from a {@link GPUBuffer}.
    * See [[#rendering-operations]] for the detailed specification.
@@ -1125,9 +1099,7 @@ interface GPUAdapter {
    * Requests a device from the adapter.
    * @param descriptor - Description of the {@link GPUDevice} to request.
    */
-  requestDevice(
-    descriptor?: GPUDeviceDescriptor
-  ): Promise<GPUDevice>;
+  requestDevice(descriptor?: GPUDeviceDescriptor): Promise<GPUDevice>;
 }
 
 declare var GPUAdapter: {
@@ -1135,8 +1107,7 @@ declare var GPUAdapter: {
   new (): never;
 };
 
-interface GPUBindGroup
-  extends GPUObjectBase {
+interface GPUBindGroup extends GPUObjectBase {
   /**
    * Nominal type branding.
    * https://github.com/microsoft/TypeScript/pull/33038
@@ -1150,8 +1121,7 @@ declare var GPUBindGroup: {
   new (): never;
 };
 
-interface GPUBindGroupLayout
-  extends GPUObjectBase {
+interface GPUBindGroupLayout extends GPUObjectBase {
   /**
    * Nominal type branding.
    * https://github.com/microsoft/TypeScript/pull/33038
@@ -1165,8 +1135,7 @@ declare var GPUBindGroupLayout: {
   new (): never;
 };
 
-interface GPUBuffer
-  extends GPUObjectBase {
+interface GPUBuffer extends GPUObjectBase {
   /**
    * Nominal type branding.
    * https://github.com/microsoft/TypeScript/pull/33038
@@ -1190,10 +1159,7 @@ interface GPUBuffer
    * @param offset - Offset in bytes into the buffer to return buffer contents from.
    * @param size - Size in bytes of the {@link ArrayBuffer} to return.
    */
-  getMappedRange(
-    offset?: GPUSize64,
-    size?: GPUSize64
-  ): ArrayBuffer;
+  getMappedRange(offset?: GPUSize64, size?: GPUSize64): ArrayBuffer;
   /**
    * Unmaps the mapped range of the {@link GPUBuffer} and makes it's contents available for use by the
    * GPU again.
@@ -1253,17 +1219,13 @@ interface GPUCanvasContext {
   /**
    * The canvas this context was created from.
    */
-  readonly canvas:
-    | HTMLCanvasElement
-    | OffscreenCanvas;
+  readonly canvas: HTMLCanvasElement | OffscreenCanvas;
   /**
    * Configures the context for this canvas. Destroys any textures produced with a previous
    * configuration.
    * @param configuration - Desired configuration for the context.
    */
-  configure(
-    configuration: GPUCanvasConfiguration
-  ): undefined;
+  configure(configuration: GPUCanvasConfiguration): undefined;
   /**
    * Removes the context configuration. Destroys any textures produced while configured.
    */
@@ -1273,9 +1235,7 @@ interface GPUCanvasContext {
    * the given adapter.
    * @param adapter - Adapter the format should be queried for.
    */
-  getPreferredFormat(
-    adapter: GPUAdapter
-  ): GPUTextureFormat;
+  getPreferredFormat(adapter: GPUAdapter): GPUTextureFormat;
   /**
    * Get the {@link GPUTexture} that will be composited to the document by the {@link GPUCanvasContext}
    * next.
@@ -1314,8 +1274,7 @@ declare var GPUColorWrite: {
   readonly ALL: GPUFlagsConstant;
 };
 
-interface GPUCommandBuffer
-  extends GPUObjectBase {
+interface GPUCommandBuffer extends GPUObjectBase {
   /**
    * Nominal type branding.
    * https://github.com/microsoft/TypeScript/pull/33038
@@ -1349,8 +1308,7 @@ declare var GPUCommandBuffer: {
   new (): never;
 };
 
-interface GPUCommandEncoder
-  extends GPUObjectBase {
+interface GPUCommandEncoder extends GPUObjectBase {
   /**
    * Nominal type branding.
    * https://github.com/microsoft/TypeScript/pull/33038
@@ -1361,9 +1319,7 @@ interface GPUCommandEncoder
    * Begins encoding a render pass described by `descriptor`.
    * @param descriptor - Description of the {@link GPURenderPassEncoder} to create.
    */
-  beginRenderPass(
-    descriptor: GPURenderPassDescriptor
-  ): GPURenderPassEncoder;
+  beginRenderPass(descriptor: GPURenderPassDescriptor): GPURenderPassEncoder;
   /**
    * Begins encoding a compute pass described by `descriptor`.
    * 	descriptor:
@@ -1428,9 +1384,7 @@ interface GPUCommandEncoder
    * Marks the beginning of a labeled group of commands for the {@link GPUCommandEncoder}.
    * @param groupLabel - The label for the command group.
    */
-  pushDebugGroup(
-    groupLabel: string
-  ): undefined;
+  pushDebugGroup(groupLabel: string): undefined;
   /**
    * Marks the end of a labeled group of commands for the {@link GPUCommandEncoder}.
    */
@@ -1439,18 +1393,13 @@ interface GPUCommandEncoder
    * Marks a point in a stream of commands with a label string.
    * @param markerLabel - The label to insert.
    */
-  insertDebugMarker(
-    markerLabel: string
-  ): undefined;
+  insertDebugMarker(markerLabel: string): undefined;
   /**
    * Writes a timestamp value into `querySet` when all previous commands have completed executing.
    * @param querySet - The query set that will store the timestamp values.
    * @param queryIndex - The index of the query in the query set.
    */
-  writeTimestamp(
-    querySet: GPUQuerySet,
-    queryIndex: GPUSize32
-  ): undefined;
+  writeTimestamp(querySet: GPUQuerySet, queryIndex: GPUSize32): undefined;
   /**
    * 	querySet:
    * 	firstQuery:
@@ -1469,9 +1418,7 @@ interface GPUCommandEncoder
    * Completes recording of the commands sequence and returns a corresponding {@link GPUCommandBuffer}.
    * 	descriptor:
    */
-  finish(
-    descriptor?: GPUCommandBufferDescriptor
-  ): GPUCommandBuffer;
+  finish(descriptor?: GPUCommandBufferDescriptor): GPUCommandBuffer;
 }
 
 declare var GPUCommandEncoder: {
@@ -1563,9 +1510,7 @@ interface GPUComputePassEncoder
    * Sets the current {@link GPUComputePipeline}.
    * @param pipeline - The compute pipeline to use for subsequent dispatch commands.
    */
-  setPipeline(
-    pipeline: GPUComputePipeline
-  ): undefined;
+  setPipeline(pipeline: GPUComputePipeline): undefined;
   /**
    * Dispatch work to be performed with the current {@link GPUComputePipeline}.
    * See [[#computing-operations]] for the detailed specification.
@@ -1573,11 +1518,7 @@ interface GPUComputePassEncoder
    * @param y - Y dimension of the grid of workgroups to dispatch.
    * @param z - Z dimension of the grid of workgroups to dispatch.
    */
-  dispatch(
-    x: GPUSize32,
-    y?: GPUSize32,
-    z?: GPUSize32
-  ): undefined;
+  dispatch(x: GPUSize32, y?: GPUSize32, z?: GPUSize32): undefined;
   /**
    * Dispatch work to be performed with the current {@link GPUComputePipeline} using parameters read
    * from a {@link GPUBuffer}.
@@ -1607,14 +1548,11 @@ interface GPUComputePassEncoder
    * @param querySet - The query set that will store the timestamp values.
    * @param queryIndex - The index of the query in the query set.
    */
-  writeTimestamp(
-    querySet: GPUQuerySet,
-    queryIndex: GPUSize32
-  ): undefined;
+  writeTimestamp(querySet: GPUQuerySet, queryIndex: GPUSize32): undefined;
   /**
    * Completes recording of the compute pass commands sequence.
    */
-  endPass(): undefined;
+  end(): undefined;
 }
 
 declare var GPUComputePassEncoder: {
@@ -1622,9 +1560,7 @@ declare var GPUComputePassEncoder: {
   new (): never;
 };
 
-interface GPUComputePipeline
-  extends GPUObjectBase,
-    GPUPipelineBase {
+interface GPUComputePipeline extends GPUObjectBase, GPUPipelineBase {
   /**
    * Nominal type branding.
    * https://github.com/microsoft/TypeScript/pull/33038
@@ -1638,9 +1574,7 @@ declare var GPUComputePipeline: {
   new (): never;
 };
 
-interface GPUDevice
-  extends EventTarget,
-    GPUObjectBase {
+interface GPUDevice extends EventTarget, GPUObjectBase {
   /**
    * Nominal type branding.
    * https://github.com/microsoft/TypeScript/pull/33038
@@ -1673,23 +1607,17 @@ interface GPUDevice
    * Creates a {@link GPUBuffer}.
    * @param descriptor - Description of the {@link GPUBuffer} to create.
    */
-  createBuffer(
-    descriptor: GPUBufferDescriptor
-  ): GPUBuffer;
+  createBuffer(descriptor: GPUBufferDescriptor): GPUBuffer;
   /**
    * Creates a {@link GPUTexture}.
    * @param descriptor - Description of the {@link GPUTexture} to create.
    */
-  createTexture(
-    descriptor: GPUTextureDescriptor
-  ): GPUTexture;
+  createTexture(descriptor: GPUTextureDescriptor): GPUTexture;
   /**
    * Creates a {@link GPUBindGroupLayout}.
    * @param descriptor - Description of the {@link GPUSampler} to create.
    */
-  createSampler(
-    descriptor?: GPUSamplerDescriptor
-  ): GPUSampler;
+  createSampler(descriptor?: GPUSamplerDescriptor): GPUSampler;
   /**
    * Creates a {@link GPUExternalTexture} wrapping the provided image source.
    * @param descriptor - Provides the external image source object (and any creation options).
@@ -1715,16 +1643,12 @@ interface GPUDevice
    * Creates a {@link GPUBindGroup}.
    * @param descriptor - Description of the {@link GPUBindGroup} to create.
    */
-  createBindGroup(
-    descriptor: GPUBindGroupDescriptor
-  ): GPUBindGroup;
+  createBindGroup(descriptor: GPUBindGroupDescriptor): GPUBindGroup;
   /**
    * Creates a {@link GPUShaderModule}.
    * @param descriptor - Description of the {@link GPUShaderModule} to create.
    */
-  createShaderModule(
-    descriptor: GPUShaderModuleDescriptor
-  ): GPUShaderModule;
+  createShaderModule(descriptor: GPUShaderModuleDescriptor): GPUShaderModule;
   /**
    * Creates a {@link GPUComputePipeline}.
    * @param descriptor - Description of the {@link GPUComputePipeline} to create.
@@ -1779,16 +1703,12 @@ interface GPUDevice
    * Creates a {@link GPUQuerySet}.
    * @param descriptor - Description of the {@link GPUQuerySet} to create.
    */
-  createQuerySet(
-    descriptor: GPUQuerySetDescriptor
-  ): GPUQuerySet;
+  createQuerySet(descriptor: GPUQuerySetDescriptor): GPUQuerySet;
   readonly lost: Promise<GPUDeviceLostInfo>;
   /**
    * Issue: Define pushErrorScope.
    */
-  pushErrorScope(
-    filter: GPUErrorFilter
-  ): undefined;
+  pushErrorScope(filter: GPUErrorFilter): undefined;
   /**
    * Issue: Define popErrorScope.
    * Rejects with {@link OperationError} if:
@@ -1797,10 +1717,7 @@ interface GPUDevice
    */
   popErrorScope(): Promise<GPUError | null>;
   onuncapturederror:
-    | ((
-        this: GPUDevice,
-        ev: GPUUncapturedErrorEvent
-      ) => any)
+    | ((this: GPUDevice, ev: GPUUncapturedErrorEvent) => any)
     | null;
 }
 
@@ -1816,9 +1733,7 @@ interface GPUDeviceLostInfo {
    * @internal
    */
   readonly __brand: "GPUDeviceLostInfo";
-  readonly reason:
-    | GPUDeviceLostReason
-    | undefined;
+  readonly reason: GPUDeviceLostReason | undefined;
   readonly message: string;
 }
 
@@ -1827,8 +1742,7 @@ declare var GPUDeviceLostInfo: {
   new (): never;
 };
 
-interface GPUExternalTexture
-  extends GPUObjectBase {
+interface GPUExternalTexture extends GPUObjectBase {
   /**
    * Nominal type branding.
    * https://github.com/microsoft/TypeScript/pull/33038
@@ -1874,8 +1788,7 @@ declare var GPUOutOfMemoryError: {
   new (): GPUOutOfMemoryError;
 };
 
-interface GPUPipelineLayout
-  extends GPUObjectBase {
+interface GPUPipelineLayout extends GPUObjectBase {
   /**
    * Nominal type branding.
    * https://github.com/microsoft/TypeScript/pull/33038
@@ -1889,8 +1802,7 @@ declare var GPUPipelineLayout: {
   new (): never;
 };
 
-interface GPUQuerySet
-  extends GPUObjectBase {
+interface GPUQuerySet extends GPUObjectBase {
   /**
    * Nominal type branding.
    * https://github.com/microsoft/TypeScript/pull/33038
@@ -1908,8 +1820,7 @@ declare var GPUQuerySet: {
   new (): never;
 };
 
-interface GPUQueue
-  extends GPUObjectBase {
+interface GPUQueue extends GPUObjectBase {
   /**
    * Nominal type branding.
    * https://github.com/microsoft/TypeScript/pull/33038
@@ -1920,9 +1831,7 @@ interface GPUQueue
    * Schedules the execution of the command buffers by the GPU on this queue.
    * 	`commandBuffers`:
    */
-  submit(
-    commandBuffers: Iterable<GPUCommandBuffer>
-  ): undefined;
+  submit(commandBuffers: Iterable<GPUCommandBuffer>): undefined;
   /**
    * Returns a {@link Promise} that resolves once this queue finishes processing all the work submitted
    * up to this moment.
@@ -1941,9 +1850,7 @@ interface GPUQueue
   writeBuffer(
     buffer: GPUBuffer,
     bufferOffset: GPUSize64,
-    data:
-      | BufferSource
-      | SharedArrayBuffer,
+    data: BufferSource | SharedArrayBuffer,
     dataOffset?: GPUSize64,
     size?: GPUSize64
   ): undefined;
@@ -1956,9 +1863,7 @@ interface GPUQueue
    */
   writeTexture(
     destination: GPUImageCopyTexture,
-    data:
-      | BufferSource
-      | SharedArrayBuffer,
+    data: BufferSource | SharedArrayBuffer,
     dataLayout: GPUImageDataLayout,
     size: GPUExtent3DStrict
   ): undefined;
@@ -1981,8 +1886,7 @@ declare var GPUQueue: {
   new (): never;
 };
 
-interface GPURenderBundle
-  extends GPUObjectBase {
+interface GPURenderBundle extends GPUObjectBase {
   /**
    * Nominal type branding.
    * https://github.com/microsoft/TypeScript/pull/33038
@@ -2010,9 +1914,7 @@ interface GPURenderBundleEncoder
    * Completes recording of the render bundle commands sequence.
    * 	descriptor:
    */
-  finish(
-    descriptor?: GPURenderBundleDescriptor
-  ): GPURenderBundle;
+  finish(descriptor?: GPURenderBundleDescriptor): GPURenderBundle;
 }
 
 declare var GPURenderBundleEncoder: {
@@ -2068,23 +1970,17 @@ interface GPURenderPassEncoder
    * and {@link GPUBlendFactor#"one-minus-constant"} {@link GPUBlendFactor}s.
    * @param color - The color to use when blending.
    */
-  setBlendConstant(
-    color: GPUColor
-  ): undefined;
+  setBlendConstant(color: GPUColor): undefined;
   /**
    * Sets the stencil reference value used during stencil tests with the the
    * {@link GPUStencilOperation#"replace"} {@link GPUStencilOperation}.
    * @param reference - The stencil reference value.
    */
-  setStencilReference(
-    reference: GPUStencilValue
-  ): undefined;
+  setStencilReference(reference: GPUStencilValue): undefined;
   /**
    * @param queryIndex - The index of the query in the query set.
    */
-  beginOcclusionQuery(
-    queryIndex: GPUSize32
-  ): undefined;
+  beginOcclusionQuery(queryIndex: GPUSize32): undefined;
   /**
    */
   endOcclusionQuery(): undefined;
@@ -2104,10 +2000,7 @@ interface GPURenderPassEncoder
    * @param querySet - The query set that will store the timestamp values.
    * @param queryIndex - The index of the query in the query set.
    */
-  writeTimestamp(
-    querySet: GPUQuerySet,
-    queryIndex: GPUSize32
-  ): undefined;
+  writeTimestamp(querySet: GPUQuerySet, queryIndex: GPUSize32): undefined;
   /**
    * Executes the commands previously recorded into the given {@link GPURenderBundle}s as part of
    * this render pass.
@@ -2117,13 +2010,11 @@ interface GPURenderPassEncoder
    * Note: state is cleared even if zero {@link GPURenderBundle|GPURenderBundles} are executed.
    * @param bundles - List of render bundles to execute.
    */
-  executeBundles(
-    bundles: Iterable<GPURenderBundle>
-  ): undefined;
+  executeBundles(bundles: Iterable<GPURenderBundle>): undefined;
   /**
    * Completes recording of the render pass commands sequence.
    */
-  endPass(): undefined;
+  end(): undefined;
 }
 
 declare var GPURenderPassEncoder: {

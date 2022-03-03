@@ -381,20 +381,23 @@ export class Renderer_WebGPU implements Renderer {
         {
           view: this.colorTextureView!,
           resolveTarget: this.context.getCurrentTexture().createView(),
-          loadValue: backgroundColor,
+          loadOp: "clear",
+          clearValue: backgroundColor,
           storeOp: "store",
         },
       ],
       depthStencilAttachment: {
         view: this.depthTextureView!,
-        depthLoadValue: 1.0,
+        depthLoadOp: "clear",
+        depthClearValue: 1.0,
         depthStoreOp: "store",
-        stencilLoadValue: 0,
+        stencilLoadOp: "clear",
+        stencilClearValue: 0,
         stencilStoreOp: "store",
       },
     });
     renderPassEncoder.executeBundles([this.renderBundle]);
-    renderPassEncoder.endPass();
+    renderPassEncoder.end();
 
     // submit render passes to GPU
     this.device.queue.submit([commandEncoder.finish()]);
