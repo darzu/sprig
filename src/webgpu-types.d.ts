@@ -8,19 +8,23 @@
 
 interface HTMLCanvasElement {
   getContext(
-    contextId: "gpupresent"
+    contextId:
+      | "webgpu"
+      | "gpupresent"
   ):
     | (GPUPresentationContext &
-      GPUCanvasContext)
+        GPUCanvasContext)
     | null;
 }
 
 interface OffscreenCanvas {
   getContext(
-    contextId: "gpupresent"
+    contextId:
+      | "webgpu"
+      | "gpupresent"
   ):
     | (GPUPresentationContext &
-      GPUCanvasContext)
+        GPUCanvasContext)
     | null;
 }
 
@@ -145,9 +149,6 @@ type GPUFrontFace =
 type GPUIndexFormat =
   | "uint16"
   | "uint32";
-type GPUInputStepMode =
-  | "vertex"
-  | "instance";
 type GPULoadOp = "load";
 type GPUPipelineStatisticName =
   | "vertex-shader-invocations"
@@ -183,18 +184,16 @@ type GPUStencilOperation =
   | "increment-wrap"
   | "decrement-wrap";
 type GPUStorageTextureAccess =
+  | GPUStorageTextureAccessNew
+  | GPUStorageTextureAccessOld;
+type GPUStorageTextureAccessNew = "write-only";
+/** @deprecated */
+type GPUStorageTextureAccessOld =
   | "read-only"
   | "write-only";
 type GPUStoreOp =
-  | GPUStoreOpNew
-  | GPUStoreOpOld;
-type GPUStoreOpNew =
   | "store"
   | "discard";
-/** @deprecated */
-type GPUStoreOpOld =
-  | "store"
-  | "clear";
 type GPUTextureAspect =
   | "all"
   | "stencil-only"
@@ -305,6 +304,9 @@ type GPUVertexFormat =
   | "sint32x2"
   | "sint32x3"
   | "sint32x4";
+type GPUVertexStepMode =
+  | "vertex"
+  | "instance";
 
 interface GPUBindGroupDescriptor
   extends GPUObjectDescriptorBase {
@@ -401,6 +403,15 @@ interface GPUBufferDescriptor
   mappedAtCreation?: boolean;
 }
 
+interface GPUCanvasConfiguration {
+  device: GPUDevice;
+  format: GPUTextureFormat;
+  usage?: GPUTextureUsageFlags;
+  colorSpace?: GPUPredefinedColorSpace;
+  compositingAlphaMode?: GPUCanvasCompositingAlphaMode;
+  size?: GPUExtent3D;
+}
+
 interface GPUColorDict {
   r: number;
   g: number;
@@ -453,27 +464,20 @@ interface GPUDeviceDescriptor
    * of API calls on the resulting device.
    */
   requiredFeatures?: Iterable<GPUFeatureName>;
-  /** @deprecated */
-  nonGuaranteedFeatures?: Iterable<GPUFeatureName>;
   /**
    * Specifies the limits that are required by the device request.
    * The request will fail if the adapter cannot provide these limits.
    * Each key must be the name of a member of supported limits.
    * Exactly the specified limits, and no limit/better or worse,
    * will be allowed in validation of API calls on the resulting device.
-   * <!-- If we ever need limit types other than GPUSize32, we can change the value type to
-   * `double` or `any` in the future and write out the type conversion explicitly (by reference
-   * to WebIDL spec). Or change the entire type to `any` and add back a `dictionary GPULimits`
-   * and define the conversion of the whole object by reference to WebIDL. -->
+   * <!-- If we ever need limit types other than GPUSize32/GPUSize64, we can change the value
+   * type to `double` or `any` in the future and write out the type conversion explicitly (by
+   * reference to WebIDL spec). Or change the entire type to `any` and add back a `dictionary
+   * GPULimits` and define the conversion of the whole object by reference to WebIDL. -->
    */
   requiredLimits?: Record<
     string,
-    GPUSize32
-  >;
-  /** @deprecated */
-  nonGuaranteedLimits?: Record<
-    string,
-    GPUSize32
+    GPUSize64
   >;
 }
 
@@ -483,7 +487,7 @@ interface GPUExtent3DDict {
   depthOrArrayLayers?: GPUIntegerCoordinate;
 }
 
-interface GPUExternalTextureBindingLayout { }
+interface GPUExternalTextureBindingLayout {}
 
 interface GPUExternalTextureDescriptor
   extends GPUObjectDescriptorBase {
@@ -507,9 +511,9 @@ interface GPUImageCopyExternalImage {
    * {@link GPUQueue#copyExternalImageToTexture} is issued.
    */
   source:
-  | ImageBitmap
-  | HTMLCanvasElement
-  | OffscreenCanvas;
+    | ImageBitmap
+    | HTMLCanvasElement
+    | OffscreenCanvas;
   /**
    * Defines the origin of the copy - the minimum corner of the source sub-region to copy from.
    * Together with `copySize`, defines the full copy sub-region.
@@ -611,15 +615,6 @@ interface GPUPipelineLayoutDescriptor
   bindGroupLayouts: Iterable<GPUBindGroupLayout>;
 }
 
-interface GPUPresentationConfiguration
-  extends GPUObjectDescriptorBase {
-  device: GPUDevice;
-  format: GPUTextureFormat;
-  usage?: GPUTextureUsageFlags;
-  compositingAlphaMode?: GPUCanvasCompositingAlphaMode;
-  size?: GPUExtent3DStrict;
-}
-
 interface GPUPrimitiveState {
   topology?: GPUPrimitiveTopology;
   stripIndexFormat?: GPUIndexFormat;
@@ -656,10 +651,9 @@ interface GPUQuerySetDescriptor
 type GPURenderBundleDescriptor = GPUObjectDescriptorBase;
 
 interface GPURenderBundleEncoderDescriptor
-  extends GPUObjectDescriptorBase {
-  colorFormats: Iterable<GPUTextureFormat>;
-  depthStencilFormat?: GPUTextureFormat;
-  sampleCount?: GPUSize32;
+  extends GPURenderPassLayout {
+  depthReadOnly?: boolean;
+  stencilReadOnly?: boolean;
 }
 
 interface GPURenderPassColorAttachment {
@@ -682,8 +676,8 @@ interface GPURenderPassColorAttachment {
    * Note: It is recommended to prefer a clear-value; see {@link GPULoadOp#"load"}.
    */
   loadValue:
-  | GPULoadOp
-  | GPUColor;
+    | GPULoadOp
+    | GPUColor;
   /**
    * The store operation to perform on {@link GPURenderPassColorAttachment#view}
    * after executing the render pass.
@@ -706,8 +700,8 @@ interface GPURenderPassDepthStencilAttachment {
    * Note: It is recommended to prefer a clear-value; see {@link GPULoadOp#"load"}.
    */
   depthLoadValue:
-  | GPULoadOp
-  | number;
+    | GPULoadOp
+    | number;
   /**
    * The store operation to perform on {@link GPURenderPassDepthStencilAttachment#view}'s
    * depth component after executing the render pass.
@@ -728,8 +722,8 @@ interface GPURenderPassDepthStencilAttachment {
    * executing the render pass.
    */
   stencilLoadValue:
-  | GPULoadOp
-  | GPUStencilValue;
+    | GPULoadOp
+    | GPUStencilValue;
   /**
    * The store operation to perform on {@link GPURenderPassDepthStencilAttachment#view}'s
    * stencil component after executing the render pass.
@@ -758,6 +752,13 @@ interface GPURenderPassDescriptor
    * The {@link GPUQuerySet} value defines where the occlusion query results will be stored for this pass.
    */
   occlusionQuerySet?: GPUQuerySet;
+}
+
+interface GPURenderPassLayout
+  extends GPUObjectDescriptorBase {
+  colorFormats: Iterable<GPUTextureFormat>;
+  depthStencilFormat?: GPUTextureFormat;
+  sampleCount?: GPUSize32;
 }
 
 interface GPURenderPipelineDescriptor
@@ -821,7 +822,7 @@ interface GPUStorageTextureBindingLayout {
    * Indicates whether texture views bound to this binding will be bound for read-only or
    * write-only access.
    */
-  access: GPUStorageTextureAccess;
+  access?: GPUStorageTextureAccess;
   /**
    * The required {@link GPUTextureViewDescriptor#format} of texture views bound to this binding.
    */
@@ -889,7 +890,7 @@ interface GPUVertexAttribute {
 
 interface GPUVertexBufferLayout {
   arrayStride: GPUSize64;
-  stepMode?: GPUInputStepMode;
+  stepMode?: GPUVertexStepMode;
   attributes: Iterable<GPUVertexAttribute>;
 }
 
@@ -907,8 +908,8 @@ interface GPUObjectBase {
    * In any given situation, the user agent may or may not choose to use this label.
    */
   label:
-  | string
-  | null;
+    | string
+    | null;
 }
 
 interface GPUPipelineBase {
@@ -989,9 +990,9 @@ interface GPURenderEncoderBase {
    * Sets the current index buffer.
    * @param buffer - Buffer containing index data to use for subsequent drawing commands.
    * @param indexFormat - Format of the index data contained in `buffer`.
-   * @param offset - Offset in bytes into `buffer` where the index data begins.
+   * @param offset - Offset in bytes into `buffer` where the index data begins. Defaults to `0`.
    * @param size - Size in bytes of the index data in `buffer`.
-   * 	If `0`, `buffer.size` - `offset` is used.
+   * 	Defaults to the size of the buffer minus the offset.
    */
   setIndexBuffer(
     buffer: GPUBuffer,
@@ -1003,9 +1004,9 @@ interface GPURenderEncoderBase {
    * Sets the current vertex buffer for the given slot.
    * @param slot - The vertex buffer slot to set the vertex buffer for.
    * @param buffer - Buffer containing vertex data to use for subsequent drawing commands.
-   * @param offset - Offset in bytes into `buffer` where the vertex data begins.
+   * @param offset - Offset in bytes into `buffer` where the vertex data begins. Defaults to `0`.
    * @param size - Size in bytes of the vertex data in `buffer`.
-   * 	If `0`, `buffer.size` - `offset` is used.
+   * 	Defaults to the size of the buffer minus the offset.
    */
   setVertexBuffer(
     slot: GPUIndex32,
@@ -1093,7 +1094,7 @@ interface GPU {
 
 declare var GPU: {
   prototype: GPU;
-  new(): never;
+  new (): never;
 };
 
 interface GPUAdapter {
@@ -1131,7 +1132,7 @@ interface GPUAdapter {
 
 declare var GPUAdapter: {
   prototype: GPUAdapter;
-  new(): never;
+  new (): never;
 };
 
 interface GPUBindGroup
@@ -1146,7 +1147,7 @@ interface GPUBindGroup
 
 declare var GPUBindGroup: {
   prototype: GPUBindGroup;
-  new(): never;
+  new (): never;
 };
 
 interface GPUBindGroupLayout
@@ -1161,7 +1162,7 @@ interface GPUBindGroupLayout
 
 declare var GPUBindGroupLayout: {
   prototype: GPUBindGroupLayout;
-  new(): never;
+  new (): never;
 };
 
 interface GPUBuffer
@@ -1206,7 +1207,7 @@ interface GPUBuffer
 
 declare var GPUBuffer: {
   prototype: GPUBuffer;
-  new(): never;
+  new (): never;
 };
 
 interface GPUBufferUsage {
@@ -1240,6 +1241,54 @@ declare var GPUBufferUsage: {
   readonly STORAGE: GPUFlagsConstant;
   readonly INDIRECT: GPUFlagsConstant;
   readonly QUERY_RESOLVE: GPUFlagsConstant;
+};
+
+interface GPUCanvasContext {
+  /**
+   * Nominal type branding.
+   * https://github.com/microsoft/TypeScript/pull/33038
+   * @internal
+   */
+  readonly __brand: "GPUCanvasContext";
+  /**
+   * The canvas this context was created from.
+   */
+  readonly canvas:
+    | HTMLCanvasElement
+    | OffscreenCanvas;
+  /**
+   * Configures the context for this canvas. Destroys any textures produced with a previous
+   * configuration.
+   * @param configuration - Desired configuration for the context.
+   */
+  configure(
+    configuration: GPUCanvasConfiguration
+  ): undefined;
+  /**
+   * Removes the context configuration. Destroys any textures produced while configured.
+   */
+  unconfigure(): undefined;
+  /**
+   * Returns an optimal {@link GPUTextureFormat} to use with this context and devices created from
+   * the given adapter.
+   * @param adapter - Adapter the format should be queried for.
+   */
+  getPreferredFormat(
+    adapter: GPUAdapter
+  ): GPUTextureFormat;
+  /**
+   * Get the {@link GPUTexture} that will be composited to the document by the {@link GPUCanvasContext}
+   * next.
+   * Note: Developers can expect that the same {@link GPUTexture} object will be returned by every
+   * call to {@link GPUCanvasContext#getCurrentTexture} made within the same frame (i.e. between
+   * invocations of Update the rendering) unless {@link GPUCanvasContext#configure} is called.
+   */
+  getCurrentTexture(): GPUTexture;
+}
+
+declare var GPUCanvasContext: {
+  prototype: GPUCanvasContext;
+  new (): never;
 };
 
 interface GPUColorWrite {
@@ -1297,7 +1346,7 @@ interface GPUCommandBuffer
 
 declare var GPUCommandBuffer: {
   prototype: GPUCommandBuffer;
-  new(): never;
+  new (): never;
 };
 
 interface GPUCommandEncoder
@@ -1427,7 +1476,7 @@ interface GPUCommandEncoder
 
 declare var GPUCommandEncoder: {
   prototype: GPUCommandEncoder;
-  new(): never;
+  new (): never;
 };
 
 interface GPUCompilationInfo {
@@ -1442,7 +1491,7 @@ interface GPUCompilationInfo {
 
 declare var GPUCompilationInfo: {
   prototype: GPUCompilationInfo;
-  new(): never;
+  new (): never;
 };
 
 interface GPUCompilationMessage {
@@ -1454,7 +1503,6 @@ interface GPUCompilationMessage {
   readonly __brand: "GPUCompilationMessage";
   /**
    * A human-readable string containing the message generated during the shader compilation.
-   *
    */
   readonly message: string;
   /**
@@ -1465,7 +1513,6 @@ interface GPUCompilationMessage {
    * The line number in the shader {@link GPUShaderModuleDescriptor#code} the
    * {@link GPUCompilationMessage#message} corresponds to. Value is one-based, such that a lineNum of
    * `1` indicates the first line of the shader {@link GPUShaderModuleDescriptor#code}.
-   *
    * If the {@link GPUCompilationMessage#message} corresponds to a substring this points to
    * the line on which the substring begins. Must be `0` if the {@link GPUCompilationMessage#message}
    * does not correspond to any specific point in the shader {@link GPUShaderModuleDescriptor#code}.
@@ -1500,12 +1547,12 @@ interface GPUCompilationMessage {
 
 declare var GPUCompilationMessage: {
   prototype: GPUCompilationMessage;
-  new(): never;
+  new (): never;
 };
 
 interface GPUComputePassEncoder
   extends GPUObjectBase,
-  GPUProgrammablePassEncoder {
+    GPUProgrammablePassEncoder {
   /**
    * Nominal type branding.
    * https://github.com/microsoft/TypeScript/pull/33038
@@ -1572,12 +1619,12 @@ interface GPUComputePassEncoder
 
 declare var GPUComputePassEncoder: {
   prototype: GPUComputePassEncoder;
-  new(): never;
+  new (): never;
 };
 
 interface GPUComputePipeline
   extends GPUObjectBase,
-  GPUPipelineBase {
+    GPUPipelineBase {
   /**
    * Nominal type branding.
    * https://github.com/microsoft/TypeScript/pull/33038
@@ -1588,12 +1635,12 @@ interface GPUComputePipeline
 
 declare var GPUComputePipeline: {
   prototype: GPUComputePipeline;
-  new(): never;
+  new (): never;
 };
 
 interface GPUDevice
   extends EventTarget,
-  GPUObjectBase {
+    GPUObjectBase {
   /**
    * Nominal type branding.
    * https://github.com/microsoft/TypeScript/pull/33038
@@ -1750,16 +1797,16 @@ interface GPUDevice
    */
   popErrorScope(): Promise<GPUError | null>;
   onuncapturederror:
-  | ((
-    this: GPUDevice,
-    ev: GPUUncapturedErrorEvent
-  ) => any)
-  | null;
+    | ((
+        this: GPUDevice,
+        ev: GPUUncapturedErrorEvent
+      ) => any)
+    | null;
 }
 
 declare var GPUDevice: {
   prototype: GPUDevice;
-  new(): never;
+  new (): never;
 };
 
 interface GPUDeviceLostInfo {
@@ -1770,14 +1817,14 @@ interface GPUDeviceLostInfo {
    */
   readonly __brand: "GPUDeviceLostInfo";
   readonly reason:
-  | GPUDeviceLostReason
-  | undefined;
+    | GPUDeviceLostReason
+    | undefined;
   readonly message: string;
 }
 
 declare var GPUDeviceLostInfo: {
   prototype: GPUDeviceLostInfo;
-  new(): never;
+  new (): never;
 };
 
 interface GPUExternalTexture
@@ -1792,7 +1839,7 @@ interface GPUExternalTexture
 
 declare var GPUExternalTexture: {
   prototype: GPUExternalTexture;
-  new(): never;
+  new (): never;
 };
 
 interface GPUMapMode {
@@ -1808,7 +1855,7 @@ interface GPUMapMode {
 
 declare var GPUMapMode: {
   prototype: GPUMapMode;
-  new(): never;
+  new (): never;
   readonly READ: GPUFlagsConstant;
   readonly WRITE: GPUFlagsConstant;
 };
@@ -1824,7 +1871,7 @@ interface GPUOutOfMemoryError {
 
 declare var GPUOutOfMemoryError: {
   prototype: GPUOutOfMemoryError;
-  new(): GPUOutOfMemoryError;
+  new (): GPUOutOfMemoryError;
 };
 
 interface GPUPipelineLayout
@@ -1839,49 +1886,7 @@ interface GPUPipelineLayout
 
 declare var GPUPipelineLayout: {
   prototype: GPUPipelineLayout;
-  new(): never;
-};
-
-interface GPUPresentationContext {
-  /**
-   * Nominal type branding.
-   * https://github.com/microsoft/TypeScript/pull/33038
-   * @internal
-   */
-  readonly __brand: "GPUPresentationContext";
-  /**
-   * Configures the presentation context for this canvas. Destroys any textures produced with a
-   * previous configuration.
-   * @param configuration - Desired configuration for the presentation context.
-   */
-  configure(
-    configuration: GPUPresentationConfiguration
-  ): undefined;
-  /**
-   * Removes the presentation context configuration. Destroys any textures produced while configured.
-   */
-  unconfigure(): undefined;
-  /**
-   * Returns an optimal {@link GPUTextureFormat} to use with this presentation context and devices
-   * created from the given adapter.
-   * @param adapter - Adapter the format should be queried for.
-   */
-  getPreferredFormat(
-    adapter: GPUAdapter
-  ): GPUTextureFormat;
-  /**
-   * Get the {@link GPUTexture} that will be composited to the document by the {@link GPUPresentationContext}
-   * next.
-   * Note: Developers can expect that the same {@link GPUTexture} object will be returned by every
-   * call to {@link GPUPresentationContext#getCurrentTexture} made within the same frame (i.e. between
-   * invocations of Update the rendering) unless {@link GPUPresentationContext#configure} is called.
-   */
-  getCurrentTexture(): GPUTexture;
-}
-
-declare var GPUPresentationContext: {
-  prototype: GPUPresentationContext;
-  new(): never;
+  new (): never;
 };
 
 interface GPUQuerySet
@@ -1900,7 +1905,7 @@ interface GPUQuerySet
 
 declare var GPUQuerySet: {
   prototype: GPUQuerySet;
-  new(): never;
+  new (): never;
 };
 
 interface GPUQueue
@@ -1969,18 +1974,11 @@ interface GPUQueue
     destination: GPUImageCopyTextureTagged,
     copySize: GPUExtent3DStrict
   ): undefined;
-
-  /** @deprecated use copyExternalImageToTexture instead */
-  copyImageBitmapToTexture(
-    source: GPUImageCopyImageBitmap,
-    destination: GPUImageCopyTexture,
-    copySize: GPUExtent3DStrict
-  ): undefined;
 }
 
 declare var GPUQueue: {
   prototype: GPUQueue;
-  new(): never;
+  new (): never;
 };
 
 interface GPURenderBundle
@@ -1995,13 +1993,13 @@ interface GPURenderBundle
 
 declare var GPURenderBundle: {
   prototype: GPURenderBundle;
-  new(): never;
+  new (): never;
 };
 
 interface GPURenderBundleEncoder
   extends GPUObjectBase,
-  GPUProgrammablePassEncoder,
-  GPURenderEncoderBase {
+    GPUProgrammablePassEncoder,
+    GPURenderEncoderBase {
   /**
    * Nominal type branding.
    * https://github.com/microsoft/TypeScript/pull/33038
@@ -2019,13 +2017,13 @@ interface GPURenderBundleEncoder
 
 declare var GPURenderBundleEncoder: {
   prototype: GPURenderBundleEncoder;
-  new(): never;
+  new (): never;
 };
 
 interface GPURenderPassEncoder
   extends GPUObjectBase,
-  GPUProgrammablePassEncoder,
-  GPURenderEncoderBase {
+    GPUProgrammablePassEncoder,
+    GPURenderEncoderBase {
   /**
    * Nominal type branding.
    * https://github.com/microsoft/TypeScript/pull/33038
@@ -2130,12 +2128,12 @@ interface GPURenderPassEncoder
 
 declare var GPURenderPassEncoder: {
   prototype: GPURenderPassEncoder;
-  new(): never;
+  new (): never;
 };
 
 interface GPURenderPipeline
   extends GPUObjectBase,
-  GPUPipelineBase {
+    GPUPipelineBase {
   /**
    * Nominal type branding.
    * https://github.com/microsoft/TypeScript/pull/33038
@@ -2146,7 +2144,7 @@ interface GPURenderPipeline
 
 declare var GPURenderPipeline: {
   prototype: GPURenderPipeline;
-  new(): never;
+  new (): never;
 };
 
 interface GPUSampler
@@ -2161,7 +2159,7 @@ interface GPUSampler
 
 declare var GPUSampler: {
   prototype: GPUSampler;
-  new(): never;
+  new (): never;
 };
 
 interface GPUShaderModule
@@ -2180,7 +2178,7 @@ interface GPUShaderModule
 
 declare var GPUShaderModule: {
   prototype: GPUShaderModule;
-  new(): never;
+  new (): never;
 };
 
 interface GPUShaderStage {
@@ -2225,9 +2223,18 @@ interface GPUSupportedLimits {
   readonly maxUniformBuffersPerShaderStage: number;
   readonly maxUniformBufferBindingSize: number;
   readonly maxStorageBufferBindingSize: number;
+  readonly minUniformBufferOffsetAlignment: number;
+  readonly minStorageBufferOffsetAlignment: number;
   readonly maxVertexBuffers: number;
   readonly maxVertexAttributes: number;
   readonly maxVertexBufferArrayStride: number;
+  readonly maxInterStageShaderComponents: number;
+  readonly maxComputeWorkgroupStorageSize: number;
+  readonly maxComputeInvocationsPerWorkgroup: number;
+  readonly maxComputeWorkgroupSizeX: number;
+  readonly maxComputeWorkgroupSizeY: number;
+  readonly maxComputeWorkgroupSizeZ: number;
+  readonly maxComputeWorkgroupsPerDimension: number;
 }
 
 declare var GPUSupportedLimits: {
@@ -2257,7 +2264,7 @@ interface GPUTexture
 
 declare var GPUTexture: {
   prototype: GPUTexture;
-  new(): never;
+  new (): never;
 };
 
 interface GPUTextureUsage {
@@ -2269,7 +2276,11 @@ interface GPUTextureUsage {
   readonly __brand: "GPUTextureUsage";
   readonly COPY_SRC: GPUFlagsConstant;
   readonly COPY_DST: GPUFlagsConstant;
+  readonly TEXTURE_BINDING: GPUFlagsConstant;
+  readonly STORAGE_BINDING: GPUFlagsConstant;
+  /** @deprecated Use TEXTURE_BINDING instead */
   readonly SAMPLED: GPUFlagsConstant;
+  /** @deprecated Use STORAGE_BINDING instead */
   readonly STORAGE: GPUFlagsConstant;
   readonly RENDER_ATTACHMENT: GPUFlagsConstant;
 }
@@ -2278,7 +2289,11 @@ declare var GPUTextureUsage: {
   prototype: GPUTextureUsage;
   readonly COPY_SRC: GPUFlagsConstant;
   readonly COPY_DST: GPUFlagsConstant;
+  readonly TEXTURE_BINDING: GPUFlagsConstant;
+  readonly STORAGE_BINDING: GPUFlagsConstant;
+  /** @deprecated Use TEXTURE_BINDING instead */
   readonly SAMPLED: GPUFlagsConstant;
+  /** @deprecated Use STORAGE_BINDING instead */
   readonly STORAGE: GPUFlagsConstant;
   readonly RENDER_ATTACHMENT: GPUFlagsConstant;
 };
@@ -2295,7 +2310,7 @@ interface GPUTextureView
 
 declare var GPUTextureView: {
   prototype: GPUTextureView;
-  new(): never;
+  new (): never;
 };
 
 interface GPUUncapturedErrorEvent
@@ -2311,7 +2326,7 @@ interface GPUUncapturedErrorEvent
 
 declare var GPUUncapturedErrorEvent: {
   prototype: GPUUncapturedErrorEvent;
-  new(
+  new (
     type: string,
     gpuUncapturedErrorEventInitDict: GPUUncapturedErrorEventInit
   ): GPUUncapturedErrorEvent;
@@ -2329,78 +2344,26 @@ interface GPUValidationError {
 
 declare var GPUValidationError: {
   prototype: GPUValidationError;
-  new(
+  new (
     message: string
   ): GPUValidationError;
 };
 
 interface Navigator
-  extends NavigatorGPU { }
+  extends NavigatorGPU {}
 
 interface WorkerNavigator
-  extends NavigatorGPU { }
+  extends NavigatorGPU {}
 
 // *********************************************************************************************
 // Deprecated
 // *********************************************************************************************
 
-/** @deprecated Use GPUPresentationContext instead */
-interface GPUCanvasContext {
-  /**
-   * @deprecated
-   */
-  configureSwapChain(
-    descriptor: GPUSwapChainDescriptor
-  ): GPUSwapChain;
-  /**
-   * @deprecated
-   */
-  getSwapChainPreferredFormat(
-    adapter: GPUAdapter
-  ): GPUTextureFormat;
-  /** @deprecated */
-  getSwapChainPreferredFormat(
-    device: GPUDevice
-  ): Promise<GPUTextureFormat>;
-}
+/** @deprecated Use GPUVertexStepMode instead */
+type GPUInputStepMode = GPUVertexStepMode;
+
+/** @deprecated Use GPUCanvasContext instead */
+type GPUPresentationContext = GPUCanvasContext;
 
 /** @deprecated */
-declare var GPUCanvasContext: {
-  prototype: GPUCanvasContext;
-  new(): never;
-};
-
-/** @deprecated */
-type GPUSwapChainDescriptor = GPUPresentationConfiguration;
-
-/** @deprecated Use GPUPresentationContext instead */
-interface GPUSwapChain
-  extends GPUObjectBase {
-  /**
-   * Nominal type branding.
-   * https://github.com/microsoft/TypeScript/pull/33038
-   * @internal
-   */
-  readonly __brand: "GPUSwapChain";
-  /**
-   * Get the {@link GPUTexture} that will be composited to the document by the {@link GPUCanvasContext}
-   * that created this swap chain next.
-   * Note: Developers can expect that the same {@link GPUTexture} object will be returned by every
-   * call to {@link GPUSwapChain#getCurrentTexture} made within the same frame (i.e. between
-   * invocations of Update the rendering).
-   */
-  getCurrentTexture(): GPUTexture;
-}
-
-declare var GPUSwapChain: {
-  prototype: GPUSwapChain;
-  new(): never;
-};
-
-/** @deprecated */
-interface GPUImageCopyImageBitmap {
-  /** @deprecated */
-  imageBitmap: ImageBitmap;
-  /** @deprecated */
-  origin?: GPUOrigin2D;
-}
+type GPUPresentationConfiguration = GPUCanvasConfiguration;
