@@ -364,6 +364,7 @@ function attachToCanvas(
   let ground: MeshHandle;
   let player: MeshHandle;
   let randomCubes: MeshHandle[] = [];
+  let noodle: MeshHandle;
   const allMeshHandles: MeshHandle[] = [];
   {
     // to modify buffers, we need to map them into JS space; we'll need to unmap later
@@ -437,6 +438,13 @@ function attachToCanvas(
       randomCubes.push(addMesh(coloredCube));
     }
 
+    const noodleMesh: Mesh = {
+      ...CUBE,
+      pos: CUBE.pos.map((p) => [p[0] * 0.1, p[1] * 0.1, p[2]]),
+      colors: CUBE.colors.map((_) => [0.1, 0.1, 0.5]),
+    };
+    noodle = addMesh(noodleMesh); // player movable cube
+
     // unmap the buffers so the GPU can use them
     verticesBuffer.unmap();
     indicesBuffer.unmap();
@@ -446,6 +454,10 @@ function attachToCanvas(
   mat4.translate(ground.transform, ground.transform, [0, -3, -8]);
   mat4.scale(ground.transform, ground.transform, [10, 10, 10]);
   gpuBufferWriteMeshTransform(ground);
+
+  // place the noodle
+  mat4.translate(noodle.transform, noodle.transform, [0, 0, 2]);
+  gpuBufferWriteMeshTransform(noodle);
 
   // initialize our cubes; each will have a random axis of rotation
   const randomCubesAxis: vec3[] = [];
