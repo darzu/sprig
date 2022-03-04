@@ -40,6 +40,9 @@ w/o shaders:
 
 update positions in the mesh, like Doug
 
+noodle arms:
+  hand end points on a grid
+  should end points on.. shoulders
 
 */
 
