@@ -695,20 +695,23 @@ function attachToCanvas(
         {
           view: colorTextureView,
           resolveTarget: context.getCurrentTexture().createView(),
-          loadValue: backgroundColor,
+          loadOp: "clear",
+          clearValue: backgroundColor,
           storeOp: "store",
         },
       ],
       depthStencilAttachment: {
         view: depthTextureView,
-        depthLoadValue: 1.0,
+        depthLoadOp: "clear",
+        depthClearValue: 1.0,
         depthStoreOp: "store",
-        stencilLoadValue: 0,
+        stencilLoadOp: "clear",
+        stencilClearValue: 0,
         stencilStoreOp: "store",
       },
     });
     renderPassEncoder.executeBundles([renderBundle]);
-    renderPassEncoder.endPass();
+    renderPassEncoder.end();
 
     // submit render passes to GPU
     device.queue.submit([commandEncoder.finish()]);
