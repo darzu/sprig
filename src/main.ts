@@ -438,12 +438,46 @@ function attachToCanvas(
       randomCubes.push(addMesh(coloredCube));
     }
 
+    // noodle limbs
+    // TODO(@darzu): skinned animations
+    //  bone positions in a texture, over time
+    //  vertex-to-bone indices
+    //  OR
+    //  vertex positions over time
+
+    // vertex has bone assignment
+    // animation atlas:
+    //  compute all stages of an animation ahead of time,
+    //    bone xyz offsets stored as rgb
+    //    image where each row is a bone node position (xyz -> rgb), columns represent time
+    //  index in via a texture look up
+    // per object / uniform:
+    //  animation indx
+    //  animation time
+    // animation atlas
+
+    /*
+    animation atlas rgb texture:
+      each row is a different bone end, 
+      each column is a timestep,
+      rgb -> xyz offset of that bone end
+    vertex buf / ea vert has:
+      - bone offset (animation index + bone offset = row in animation atlas)
+      - (also mesh position, normal etc.)
+    uniform buf / ea obj has:
+      - animation index
+      - animation time
+      - (also obj mat4 etc.)
+
+    in theory the bone offset could be fractional and the texture sampling would
+    sample an avg xyz which should give u nice lerped positions. Ditto for timestep.
+    */
     const noodleMesh: Mesh = {
       ...CUBE,
       pos: CUBE.pos.map((p) => [p[0] * 0.1, p[1] * 0.1, p[2]]),
       colors: CUBE.colors.map((_) => [0.1, 0.1, 0.5]),
     };
-    noodle = addMesh(noodleMesh); // player movable cube
+    noodle = addMesh(noodleMesh);
 
     // unmap the buffers so the GPU can use them
     verticesBuffer.unmap();
