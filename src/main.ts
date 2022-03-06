@@ -471,6 +471,16 @@ function attachToCanvas(
 
     in theory the bone offset could be fractional and the texture sampling would
     sample an avg xyz which should give u nice lerped positions. Ditto for timestep.
+
+    TODO:
+    [ ] generate a texture w/ a compute shader
+    [ ] display that texture to the screen
+    [ ] read from this texture in a vertex shader
+      [ ] use it to offset the vertices
+    [ ] generate an animation atlas as a texture
+    [ ] read from the correct spot in this atlas in the vertex shader
+    [ ] animations work :)
+    [ ] reverse engineer Mixamo
     */
     const noodleMesh: Mesh = {
       ...CUBE,
