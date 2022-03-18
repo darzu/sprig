@@ -1,4 +1,5 @@
 import { mat4, vec3 } from "./gl-matrix.js";
+import { createTextureRBundle } from "./tex-render.js";
 
 // Defines shaders in WGSL for the shadow and regular rendering pipelines. Likely you'll want
 // these in external files but they've been inlined for redistribution convenience.
@@ -59,9 +60,9 @@ const fragmentShader =
 `;
 
 // useful constants
-const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
-const bytesPerMat4 = 4 * 4 /*4x4 mat*/ * 4; /*f32*/
-const bytesPerVec3 = 3 /*vec3*/ * 4; /*f32*/
+export const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
+export const bytesPerMat4 = 4 * 4 /*4x4 mat*/ * 4; /*f32*/
+export const bytesPerVec3 = 3 /*vec3*/ * 4; /*f32*/
 const indicesPerTriangle = 3;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * indicesPerTriangle;
 
@@ -74,8 +75,10 @@ const backgroundColor = { r: 0.5, g: 0.5, b: 0.5, a: 1.0 };
 // this state is recomputed upon canvas resize
 let depthTexture: GPUTexture;
 let depthTextureView: GPUTextureView;
-let colorTexture: GPUTexture;
-let colorTextureView: GPUTextureView;
+let screenAATexture: GPUTexture;
+let screenAATextureView: GPUTextureView;
+let screenTexture: GPUTexture;
+let screenTextureView: GPUTextureView;
 let lastWidth = 0;
 let lastHeight = 0;
 let aspectRatio = 1;
@@ -93,10 +96,12 @@ function checkCanvasResize(
   if (lastWidth === newWidth && lastHeight === newHeight) return;
 
   if (depthTexture) depthTexture.destroy();
-  if (colorTexture) colorTexture.destroy();
+  if (screenAATexture) screenAATexture.destroy();
+  if (screenTexture) screenTexture.destroy();
 
   const newSize = [newWidth, newHeight] as const;
 
+  console.log(`context config: ${presentationFormat}, size: ${newSize}`);
   context.configure({
     device: device,
     format: presentationFormat,
@@ -111,13 +116,20 @@ function checkCanvasResize(
   });
   depthTextureView = depthTexture.createView();
 
-  colorTexture = device.createTexture({
+  screenAATexture = device.createTexture({
     size: newSize,
     sampleCount: antiAliasSampleCount,
     format: presentationFormat,
     usage: GPUTextureUsage.RENDER_ATTACHMENT,
   });
-  colorTextureView = colorTexture.createView();
+  screenAATextureView = screenAATexture.createView();
+
+  screenTexture = device.createTexture({
+    size: newSize,
+    format: presentationFormat,
+    usage: GPUTextureUsage.RENDER_ATTACHMENT,
+  });
+  screenTextureView = screenTexture.createView();
 
   lastWidth = newWidth;
   lastHeight = newHeight;
@@ -689,6 +701,9 @@ function attachToCanvas(
   // controls for this demo
   const controlsStr = `controls: WASD, shift/c, mouse, spacebar`;
 
+  console.log(`bundled with ${presentationFormat}`);
+  const texBundle = createTextureRBundle(device, presentationFormat);
+
   // our main game loop
   function renderFrame(timeMs: number) {
     // track performance metrics
@@ -745,29 +760,45 @@ function attachToCanvas(
     // start collecting our render commands for this frame
     const commandEncoder = device.createCommandEncoder();
 
-    // render to the canvas' via our swap-chain
-    const renderPassEncoder = commandEncoder.beginRenderPass({
+    // render our example texture
+    const texPassEncoder = commandEncoder.beginRenderPass({
       colorAttachments: [
         {
-          view: colorTextureView,
-          resolveTarget: context.getCurrentTexture().createView(),
+          view: context.getCurrentTexture().createView(),
+          // resolveTarget: context.getCurrentTexture().createView(),
           loadOp: "clear",
-          clearValue: backgroundColor,
+          clearValue: backgroundColor, //{ r: 0.1, g: 0.1, b: 0.1, a: 1.0 },
           storeOp: "store",
         },
       ],
-      depthStencilAttachment: {
-        view: depthTextureView,
-        depthLoadOp: "clear",
-        depthClearValue: 1.0,
-        depthStoreOp: "store",
-        stencilLoadOp: "clear",
-        stencilClearValue: 0,
-        stencilStoreOp: "store",
-      },
     });
-    renderPassEncoder.executeBundles([renderBundle]);
-    renderPassEncoder.end();
+    texPassEncoder.executeBundles([texBundle]);
+    texPassEncoder.end();
+
+    // TODO(@darzu):
+    // // render to the canvas' via our swap-chain
+    // const renderPassEncoder = commandEncoder.beginRenderPass({
+    //   colorAttachments: [
+    //     {
+    //       view: screenTextureView,
+    //       resolveTarget: context.getCurrentTexture().createView(),
+    //       loadOp: "clear",
+    //       clearValue: backgroundColor,
+    //       storeOp: "store",
+    //     },
+    //   ],
+    //   depthStencilAttachment: {
+    //     view: depthTextureView,
+    //     depthLoadOp: "clear",
+    //     depthClearValue: 1.0,
+    //     depthStoreOp: "store",
+    //     stencilLoadOp: "clear",
+    //     stencilClearValue: 0,
+    //     stencilStoreOp: "store",
+    //   },
+    // });
+    // renderPassEncoder.executeBundles([renderBundle]);
+    // renderPassEncoder.end();
 
     // submit render passes to GPU
     device.queue.submit([commandEncoder.finish()]);
@@ -791,7 +822,7 @@ function attachToCanvas(
 }
 
 // math utilities
-function align(x: number, size: number): number {
+export function align(x: number, size: number): number {
   return Math.ceil(x / size) * size;
 }
 function computeTriangleNormal(p1: vec3, p2: vec3, p3: vec3): vec3 {
@@ -836,6 +867,7 @@ async function main() {
     "webgpu"
   ) as any as GPUPresentationContext;
   presentationFormat = context.getPreferredFormat(adapter!);
+  console.log(`preferred format: ${presentationFormat}`);
 
   // resize the canvas when the window resizes
   function onWindowResize() {
