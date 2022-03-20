@@ -1,5 +1,47 @@
 import { align, bytesPerFloat, bytesPerMat4, bytesPerVec3 } from "./main.js";
 
+
+// TODO(@darzu): REFERENCE
+const vertexShaderForFS = `
+    [[block]] struct Scene {
+        time : f32;
+    };
+
+    struct VertexOutput {
+        [[builtin(position)]] position: vec4<f32>;
+        [[location(0)]] coordinate: vec2<f32>;
+    };
+
+    [[group(0), binding(0)]] var<uniform> scene : Scene;
+
+    [[stage(vertex)]]
+    fn main([[location(0)]] position : vec2<f32>) -> VertexOutput {
+        // TODO:
+        var output: VertexOutput;
+        output.position = vec4<f32>(position, 0.0, 1.0);
+        output.coordinate = position * 0.5 + 0.5;
+        return output;
+    }
+`;
+const fragmentShaderForFS = `
+    struct VertexOutput {
+        [[builtin(position)]] position: vec4<f32>;
+        [[location(0)]] coordinate: vec2<f32>;
+    };
+
+    [[stage(fragment)]]
+    fn main(
+        input: VertexOutput
+    ) -> [[location(0)]] vec4<f32> {
+        // let r = input.position.x / 2048.0; /// (2048.0 * 2.0); // * 0.5 + 0.5;
+        let r = input.coordinate.x; // * 0.5 + 0.5;
+        let g = input.coordinate.y; // 0.0; //position.y;
+        let b = 0.0;
+        return vec4<f32>(r, g, b, 1.0);
+     }
+`;
+
+
 const shaderSceneStruct = `
   struct Scene {
       cameraViewProjMatrix : mat4x4<f32>;
@@ -31,7 +73,9 @@ const fragmentShader =
   @stage(fragment)
   fn main(@builtin(position) coord : vec4<f32>)
      -> @location(0) vec4<f32> {
-      return coord;
+      let r = coord.x / 1836.0;
+      let g = coord.y / 1592.0;
+      return vec4(r,g,0.0,1.0);
   }
   `;
 
