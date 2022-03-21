@@ -1,22 +1,27 @@
-# sprig
+# sprig dev
 
-Clone sprig-assets as well, or copy contents from sprig.land/sprig-assets/.
-symlink to sprig-assets/docs/ to public/sprig-assets/ or copy assets into public/sprig-assets/
-E.g.:
+## build
+Ensure you have `tsc` (Typescript CLI) in your path.
 ```
-ln -s ~/sprig-assets/docs ~/sprig/public/sprig-assets
+tsc -w
 ```
+## serve
 
 ```
 cd public
 python -m SimpleHTTPServer 4321 # or any other static server
 ```
+## Local assets (optional)
 
-Ensure you have `tsc` (Typescript CLI) in your path.
-```
-tsc -w
-```
+Original blender files etc. are stored with git LFS here https://github.com/darzu/sprig-assets.
 
+Published assets are stored here https://github.com/darzu/assets. This repo has no git LFS and we need to keep it smaller than ~1gb forever or github might get mad at us.
+
+For a good local dev workflow, symblink from darzu/assets repo root to sprig/public/assets/ or copy assets into public/assets/
+E.g. (if u clone darzu/assets as assets-public):
+```
+ln -s ~/assets-public/ ~/sprig/public/assets
+```
 # Multiplayer
 If you start a server in one browser window, the ID will be copied to your
 clipboard (and also logged to the console). You can use that ID to connect in
