@@ -23,6 +23,12 @@ import {
   Frame,
 } from "../physics/transform.js";
 
+export interface Renderable {
+  enabled: boolean;
+  layer: number;
+  meshOrProto: Mesh | MeshHandle;
+}
+
 export const RenderableDef = EM.defineComponent(
   "renderable",
   (
@@ -30,7 +36,7 @@ export const RenderableDef = EM.defineComponent(
     enabled: boolean = true,
     layer: number = 0
   ) => {
-    return {
+    const r: Renderable = {
       enabled,
       layer,
       meshOrProto:
@@ -41,9 +47,9 @@ export const RenderableDef = EM.defineComponent(
           colors: [],
         } as Mesh | MeshHandle),
     };
+    return r;
   }
 );
-export type Renderable = Component<typeof RenderableDef>;
 
 export const CameraViewDef = EM.defineComponent("cameraView", () => {
   return {

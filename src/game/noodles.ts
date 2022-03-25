@@ -1,11 +1,13 @@
 import { EM, EntityManager } from "../entity-manager.js";
 import {
   createMeshPool_WebGPU,
+  isMeshHandle,
   Mesh,
   unshareProvokingVertices,
 } from "../render/mesh-pool.js";
 import { PositionDef } from "../physics/transform.js";
 import { RenderableDef } from "../render/renderer.js";
+import { assert } from "../test.js";
 
 export const NoodleDef = EM.defineComponent("noodle", () => {});
 
@@ -19,6 +21,14 @@ export function debugCreateNoodles(em: EntityManager) {
 
   em.registerSystem([NoodleDef, RenderableDef], [], (es, rs) => {
     // TODO(@darzu): update the noodle mesh
+    for (let e of es) {
+      assert(
+        !isMeshHandle(e.renderable.meshOrProto),
+        "noodle setup with a mesh handle"
+      );
+      const m: Mesh = e.renderable.meshOrProto;
+      // m.
+    }
   });
 }
 
