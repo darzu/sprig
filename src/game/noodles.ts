@@ -7,12 +7,19 @@ import {
 import { PositionDef } from "../physics/transform.js";
 import { RenderableDef } from "../render/renderer.js";
 
+export const NoodleDef = EM.defineComponent("noodle", () => {});
+
 // TODO(@darzu): DEBUGGING
-export function testCreateNoodles(em: EntityManager) {
+export function debugCreateNoodles(em: EntityManager) {
   const e = em.newEntity();
   const m = createNoodleMesh();
+  em.ensureComponentOn(e, NoodleDef);
   em.ensureComponentOn(e, RenderableDef, m);
   em.ensureComponentOn(e, PositionDef, [0, 0, 0]);
+
+  em.registerSystem([NoodleDef, RenderableDef], [], (es, rs) => {
+    // TODO(@darzu): update the noodle mesh
+  });
 }
 
 function createNoodleMesh(): Mesh {
