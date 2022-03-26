@@ -8,7 +8,7 @@ import {
   SceneUniform,
   Vertex,
 } from "./mesh-pool.js";
-import { Renderable, Renderer } from "./renderer.js";
+import { RenderableConstruct, Renderer } from "./renderer.js";
 import { pitch } from "../utils-3d.js";
 import {
   MeshUniformMod,

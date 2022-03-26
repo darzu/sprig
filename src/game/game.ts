@@ -3,10 +3,10 @@ import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { jitter } from "../math.js";
 import {
-  registerAddMeshHandleSystem,
+  registerConstructRenderablesSystem,
   registerRenderer,
   registerUpdateCameraView,
-  RenderableDef,
+  RenderableConstructDef,
 } from "../render/renderer.js";
 import { registerInitTransforms, TransformDef } from "../physics/transform.js";
 import {
@@ -172,7 +172,11 @@ function registerBuildWorldPlanes(em: EntityManager) {
         if (FinishedDef.isOn(e)) continue;
         em.ensureComponentOn(e, TransformDef, e.worldPlane.transform);
         em.ensureComponentOn(e, ColorDef, [1, 0, 1]);
-        em.ensureComponentOn(e, RenderableDef, res.assets.gridPlane.mesh);
+        em.ensureComponentOn(
+          e,
+          RenderableConstructDef,
+          res.assets.gridPlane.mesh
+        );
         em.ensureComponentOn(e, ColliderDef, {
           shape: "AABB",
           solid: true,
@@ -235,7 +239,7 @@ export function registerAllSystems(em: EntityManager) {
   registerUpdateSmoothedTransform(em);
   registerRenderViewController(em);
   registerUpdateCameraView(em);
-  registerAddMeshHandleSystem(em);
+  registerConstructRenderablesSystem(em);
   registerRenderer(em);
 }
 

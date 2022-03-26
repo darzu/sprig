@@ -4,7 +4,7 @@ import { quat, vec3 } from "../gl-matrix.js";
 import { jitter } from "../math.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
-import { RenderableDef } from "../render/renderer.js";
+import { RenderableConstructDef } from "../render/renderer.js";
 import { PositionDef, Rotation, RotationDef } from "../physics/transform.js";
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import {
@@ -113,8 +113,8 @@ function createBoat(
   if (!LinearVelocityDef.isOn(e)) em.addComponent(e.id, LinearVelocityDef);
   if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.2, 0.1, 0.05]);
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
-  if (!RenderableDef.isOn(e))
-    em.addComponent(e.id, RenderableDef, assets.boat.mesh);
+  if (!RenderableConstructDef.isOn(e))
+    em.addComponent(e.id, RenderableConstructDef, assets.boat.mesh);
   if (!AuthorityDef.isOn(e)) {
     // TODO(@darzu): debug why boats have jerky movement
     console.log(`claiming authority of boat ${e.id}`);

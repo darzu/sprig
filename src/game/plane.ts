@@ -1,7 +1,7 @@
 import { ColliderDef } from "../physics/collider.js";
 import { Component, EM, EntityManager } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
-import { RenderableDef } from "../render/renderer.js";
+import { RenderableConstructDef } from "../render/renderer.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { ColorDef } from "./game.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
@@ -50,7 +50,7 @@ export function registerBuildPlanesSystem(em: EntityManager) {
       //   em.ensureComponent(plane.id, RotationDef, r);
       // }
       em.ensureComponent(plane.id, ColorDef, plane.planeConstruct.color);
-      em.ensureComponent(plane.id, RenderableDef, assets.plane.proto);
+      em.ensureComponent(plane.id, RenderableConstructDef, assets.plane.proto);
       em.ensureComponent(plane.id, ColliderDef, {
         shape: "AABB",
         solid: true,

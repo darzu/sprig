@@ -2,7 +2,7 @@ import { EM, EntityManager, Component, Entity } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
-import { RenderableDef } from "../render/renderer.js";
+import { RenderableConstructDef } from "../render/renderer.js";
 import { Position, PositionDef, RotationDef } from "../physics/transform.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef, SyncDef, PredictDef } from "../net/components.js";
@@ -62,7 +62,7 @@ function createBullet(
   em.ensureComponent(e.id, AngularVelocityDef, props.angularVelocity);
   em.ensureComponent(e.id, ColorDef, BULLET_COLOR);
   em.ensureComponent(e.id, MotionSmoothingDef);
-  em.ensureComponent(e.id, RenderableDef, assets.bullet.proto);
+  em.ensureComponent(e.id, RenderableConstructDef, assets.bullet.proto);
   em.ensureComponent(e.id, AuthorityDef, pid);
   em.ensureComponent(e.id, BulletDef);
   em.ensureComponent(e.id, ColliderDef, {

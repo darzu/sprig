@@ -6,7 +6,7 @@ import {
   unshareProvokingVertices,
 } from "../render/mesh-pool.js";
 import { PositionDef } from "../physics/transform.js";
-import { RenderableDef } from "../render/renderer.js";
+import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
 import { assert } from "../test.js";
 
 export const NoodleDef = EM.defineComponent("noodle", () => {});
@@ -16,38 +16,39 @@ export function debugCreateNoodles(em: EntityManager) {
   const e = em.newEntity();
   const m = createNoodleMesh();
   em.ensureComponentOn(e, NoodleDef);
-  em.ensureComponentOn(e, RenderableDef, m);
+  em.ensureComponentOn(e, RenderableConstructDef, m);
   em.ensureComponentOn(e, PositionDef, [0, 0, 0]);
 
-  em.registerSystem([NoodleDef, RenderableDef], [], (es, rs) => {
-    for (let e of es) {
-      assert(
-        !isMeshHandle(e.renderable.meshOrProto),
-        "noodle setup with a mesh handle"
-      );
-      const m: Mesh = e.renderable.meshOrProto;
-      // TODO(@darzu): update mesh data
-      // const vOff = vByteOff + numVerts * Vertex.ByteSize;
-      // Vertex.serialize(maps.verticesMap, vOff, pos, color, normal)
-      //  [ ] we shouldn't have Mesh | MeshHandle; everything should have a MeshHandle
-      //    and maybe a readonly view of the original Mesh
-      //  - currently vertex serialization happens in the context of full mesh knowledge
-      //    so vertices might be unshared etc. Normal calculations depend on neighbors.
-      //  - how bad would it be if we just updated the whole mesh's data?
-      //    - with hundreds of animated meshes moving around this would be pretty inefficient
-      //  - what's the benefit of CPU-based just-in-time animations? Instead of having it
-      //    part of asset creation (e.g. a fixed set of animations).
-      //      - limb climbing stairs without IK
-      //      - holding an obj, placing the hands in the right position
-      //  - more generally, this is about morphing a mesh without a preconfigured animation
-      //  - eventually we should have some heirarchy of mesh types e.g. DeformableMesh, StaticMesh, etc.
-      //  - normals really complicate things
-      //  - GOAL: deformable meshes, either GPU (grass, ocean) or CPU (limbs, sails?)
+  em.registerSystem(
+    [NoodleDef, RenderableDef],
+    [],
+    (es, rs) => {
+      for (let e of es) {
+        const m = e.renderable.meshHandle.readonlyMesh;
+        // TODO(@darzu): update mesh data
+        // const vOff = vByteOff + numVerts * Vertex.ByteSize;
+        // Vertex.serialize(maps.verticesMap, vOff, pos, color, normal)
+        //  [ ] we shouldn't have Mesh | MeshHandle; everything should have a MeshHandle
+        //    and maybe a readonly view of the original Mesh
+        //  - currently vertex serialization happens in the context of full mesh knowledge
+        //    so vertices might be unshared etc. Normal calculations depend on neighbors.
+        //  - how bad would it be if we just updated the whole mesh's data?
+        //    - with hundreds of animated meshes moving around this would be pretty inefficient
+        //  - what's the benefit of CPU-based just-in-time animations? Instead of having it
+        //    part of asset creation (e.g. a fixed set of animations).
+        //      - limb climbing stairs without IK
+        //      - holding an obj, placing the hands in the right position
+        //  - more generally, this is about morphing a mesh without a preconfigured animation
+        //  - eventually we should have some heirarchy of mesh types e.g. DeformableMesh, StaticMesh, etc.
+        //  - normals really complicate things
+        //  - GOAL: deformable meshes, either GPU (grass, ocean) or CPU (limbs, sails?)
 
-      // TODO: OR, we could have optional mesh offsets that are updated
-      //
-    }
-  });
+        // TODO: OR, we could have optional mesh offsets that are updated
+        //
+      }
+    },
+    "updateNoodles"
+  );
 }
 
 function createNoodleMesh(): Mesh {

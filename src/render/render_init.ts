@@ -1,7 +1,7 @@
 import { CanvasDef } from "../canvas.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { FORCE_WEBGL, MAX_MESHES, MAX_VERTICES } from "../main.js";
-import { RenderableDef, Renderer } from "./renderer.js";
+import { RenderableConstructDef, Renderer } from "./renderer.js";
 import { attachToCanvas } from "./render_webgl.js";
 import { Renderer_WebGPU } from "./render_webgpu.js";
 
@@ -25,7 +25,7 @@ export function registerRenderInitSystem(em: EntityManager) {
     [],
     [CanvasDef],
     (_, res) => {
-      if (!!em.findSingletonComponent(RenderableDef)) return; // already init
+      if (!!em.findSingletonComponent(RendererDef)) return; // already init
       if (!!_rendererPromise) return;
       _rendererPromise = init(em, res.htmlCanvas.canvas);
     },

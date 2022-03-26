@@ -11,7 +11,7 @@ import {
   PhysicsStateDef,
   WorldFrameDef,
 } from "./nonintersection.js";
-import { RenderableDef } from "../render/renderer.js";
+import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
 import {
   copyFrame,
   Position,
@@ -54,7 +54,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
             // with a wireframe mesh
             em.addComponent(
               dbgE.id,
-              RenderableDef,
+              RenderableConstructDef,
               res.assets.wireCube.proto,
               res._physDbgState.showAABBs,
               1

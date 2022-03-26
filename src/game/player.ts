@@ -10,6 +10,7 @@ import { FinishedDef } from "../build.js";
 import {
   CameraView,
   CameraViewDef,
+  RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer.js";
 import {
@@ -431,7 +432,7 @@ export function drawLine(
     lines: [[0, 1]],
     usesProvoking: true,
   };
-  em.addComponent(id, RenderableDef, m);
+  em.addComponent(id, RenderableConstructDef, m);
   em.addComponent(id, WorldFrameDef);
 }
 
@@ -454,8 +455,8 @@ export function registerBuildPlayersSystem(em: EntityManager) {
         if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0, 0.2, 0]);
         if (!MotionSmoothingDef.isOn(e))
           em.addComponent(e.id, MotionSmoothingDef);
-        if (!RenderableDef.isOn(e))
-          em.addComponent(e.id, RenderableDef, res.assets.cube.mesh);
+        if (!RenderableConstructDef.isOn(e))
+          em.addComponent(e.id, RenderableConstructDef, res.assets.cube.mesh);
         if (!AuthorityDef.isOn(e))
           em.addComponent(e.id, AuthorityDef, res.me.pid);
         if (!PlayerEntDef.isOn(e)) em.addComponent(e.id, PlayerEntDef);

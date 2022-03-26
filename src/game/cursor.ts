@@ -1,6 +1,6 @@
 import { ComponentDef, EM, EntityManager, EntityW } from "../entity-manager.js";
 import { Mesh } from "../render/mesh-pool.js";
-import { RenderableDef } from "../render/renderer.js";
+import { RenderableConstructDef } from "../render/renderer.js";
 import { PositionDef } from "../physics/transform.js";
 import { AssetsDef } from "./assets.js";
 import { ColorDef } from "./game.js";
@@ -37,7 +37,7 @@ export function registerBuildCursor(em: EntityManager) {
         em.addComponent(id, Cursor3dDef);
         em.addComponent(id, PositionDef);
         const wireframe: Mesh = { ...res.assets.ball.mesh, tri: [] };
-        em.addComponent(id, RenderableDef, wireframe, false);
+        em.addComponent(id, RenderableConstructDef, wireframe, false);
         em.addComponent(id, ColorDef, [0, 1, 1]);
       }
     },

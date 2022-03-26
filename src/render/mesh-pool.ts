@@ -240,7 +240,7 @@ export interface MeshHandle extends PoolIndex {
   readonly numTris: number;
   readonly numVerts: number;
   readonly numLines: number; // for wireframe
-  readonly model?: Mesh;
+  readonly readonlyMesh?: Mesh;
 
   // used as the uniform for this mesh
   shaderData: MeshUniformMod.Data;
@@ -250,14 +250,6 @@ export interface MeshHandle extends PoolIndex {
 export function isMeshHandle(m: any): m is MeshHandle {
   return "mId" in m;
 }
-
-// TODO(@darzu): ECS component; should be moved out of here?
-export const MeshHandleDef = EM.defineComponent(
-  "meshHandle",
-  (h: MeshHandle) => {
-    return h;
-  }
-);
 
 export interface MeshPoolOpts {
   maxMeshes: number;
@@ -650,7 +642,8 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
       0,
       0,
       0,
-      opts.shiftMeshIndices ? pool.numVerts : undefined
+      opts.shiftMeshIndices ? pool.numVerts : undefined,
+      m
     );
 
     m.pos.forEach((pos, i) => {
@@ -750,7 +743,8 @@ function createMeshBuilder(
   vByteOff: number,
   iByteOff: number,
   lByteOff: number,
-  indicesShift: number | undefined
+  indicesShift: number | undefined,
+  mesh: Mesh | undefined
 ): MeshBuilderInternal {
   let meshFinished = false;
   let numVerts = 0;
@@ -829,7 +823,7 @@ function createMeshBuilder(
       numTris,
       numVerts,
       numLines,
-      model: undefined,
+      readonlyMesh: mesh,
     };
     return res;
   }
