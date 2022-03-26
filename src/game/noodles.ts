@@ -2,6 +2,7 @@ import { EM, EntityManager } from "../entity-manager.js";
 import {
   createMeshPool_WebGPU,
   isMeshHandle,
+  mapMeshPositions,
   Mesh,
   unshareProvokingVertices,
 } from "../render/mesh-pool.js";
@@ -25,6 +26,8 @@ export function debugCreateNoodles(em: EntityManager) {
     (es, rs) => {
       for (let e of es) {
         const m = e.renderable.meshHandle.readonlyMesh;
+        assert(!!m, "Cannot find mesh for noodle");
+        mapMeshPositions(m, (p, i) => p);
         // TODO(@darzu): update mesh data
         // const vOff = vByteOff + numVerts * Vertex.ByteSize;
         // Vertex.serialize(maps.verticesMap, vOff, pos, color, normal)

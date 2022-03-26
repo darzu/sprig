@@ -617,7 +617,6 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
   };
 
   function addMesh(m: Mesh): MeshHandle {
-    if (!m.usesProvoking) throw `mesh must use provoking vertices`;
     if (pool.allMeshes.length + 1 > maxMeshes) throw "Too many meshes!";
     if (pool.numVerts + m.pos.length > maxVerts) throw "Too many vertices!";
     if (pool.numTris + m.tri.length > maxTris) throw "Too many triangles!";
@@ -638,35 +637,15 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
 
     const b = createMeshBuilder(
       data,
-      0,
-      0,
-      0,
-      0,
-      opts.shiftMeshIndices ? pool.numVerts : undefined,
+      opts.shiftMeshIndices ? pool.numVerts : 0,
       m
     );
-
     m.pos.forEach((pos, i) => {
+      // this is placeholder vert data which will be updated later by serializeMeshVertices
       b.addVertex(pos, DEFAULT_VERT_COLOR, [1.0, 0.0, 0.0]);
     });
     m.tri.forEach((triInd, i) => {
       b.addTri(triInd);
-
-      // set provoking vertex data
-      // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
-      const vOff = triInd[0] * Vertex.ByteSize;
-      const normal = computeTriangleNormal(
-        m.pos[triInd[0]],
-        m.pos[triInd[1]],
-        m.pos[triInd[2]]
-      );
-      Vertex.serialize(
-        data.verticesMap,
-        vOff,
-        m.pos[triInd[0]],
-        m.colors[i],
-        normal
-      );
     });
     if (m.lines) {
       m.lines.forEach((inds, i) => {
@@ -674,8 +653,8 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
       });
     }
 
+    // initial uniform data
     const { min, max } = getAABBFromMesh(m);
-
     b.setUniform(mat4.create(), min, max, vec3.create());
 
     const idx: PoolIndex = {
@@ -686,6 +665,11 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
       modelUniByteOffset: allMeshes.length * MeshUniformMod.byteSizeAligned,
     };
 
+    const handle = b.finish(idx);
+
+    // update vertex data
+    serializeMeshVertices(m, data.verticesMap);
+
     queues.updateTriIndices(
       idx.triIndicesNumOffset * 2,
       new Uint8Array(data.triIndicesMap.buffer)
@@ -694,13 +678,12 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
       idx.lineIndicesNumOffset * 2,
       new Uint8Array(data.lineIndicesMap.buffer)
     ); // TODO(@darzu): this view shouldn't be necessary
-    queues.updateUniform(idx.modelUniByteOffset, data.uniformMap);
     queues.updateVertices(
       idx.vertNumOffset * Vertex.ByteSize,
       data.verticesMap
     );
 
-    const handle = b.finish(idx);
+    queues.updateUniform(idx.modelUniByteOffset, data.uniformMap);
 
     pool.numTris += handle.numTris;
     // See the comment over the similar lign in mappedAddMesh--a
@@ -734,18 +717,47 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
   return pool;
 }
 
+function serializeMeshVertices(m: Mesh, verticesMap: Uint8Array) {
+  if (!m.usesProvoking) throw `mesh must use provoking vertices`;
+
+  m.pos.forEach((pos, i) => {
+    const vOff = i * Vertex.ByteSize;
+    Vertex.serialize(
+      verticesMap,
+      vOff,
+      pos,
+      DEFAULT_VERT_COLOR,
+      [1.0, 0.0, 0.0]
+    );
+  });
+  m.tri.forEach((triInd, i) => {
+    // set provoking vertex data
+    // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
+    const vOff = triInd[0] * Vertex.ByteSize;
+    const normal = computeTriangleNormal(
+      m.pos[triInd[0]],
+      m.pos[triInd[1]],
+      m.pos[triInd[2]]
+    );
+    Vertex.serialize(verticesMap, vOff, m.pos[triInd[0]], m.colors[i], normal);
+  });
+}
+
 // TODO(@darzu): not totally sure we want this state
 let nextMeshId = 0;
 
 function createMeshBuilder(
   maps: MeshPoolMaps,
-  uByteOff: number,
-  vByteOff: number,
-  iByteOff: number,
-  lByteOff: number,
-  indicesShift: number | undefined,
+  indicesShift: number,
   mesh: Mesh | undefined
 ): MeshBuilderInternal {
+  // TODO(@darzu): these used to be parameters and can be again if we want to
+  //  work inside some bigger array
+  const uByteOff: number = 0;
+  const vByteOff: number = 0;
+  const iByteOff: number = 0;
+  const lByteOff: number = 0;
+
   let meshFinished = false;
   let numVerts = 0;
   let numTris = 0;
@@ -843,7 +855,10 @@ export function getAABBFromMesh(m: Mesh): AABB {
   return getAABBFromPositions(m.pos);
 }
 
-export function mapMeshPositions(m: Mesh, map: (p: vec3) => vec3): Mesh {
+export function mapMeshPositions(
+  m: Mesh,
+  map: (p: vec3, i?: number) => vec3
+): Mesh {
   let pos = m.pos.map(map);
   return { ...m, pos };
 }
