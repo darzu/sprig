@@ -864,10 +864,7 @@ export function getAABBFromMesh(m: Mesh): AABB {
   return getAABBFromPositions(m.pos);
 }
 
-export function mapMeshPositions(
-  m: Mesh,
-  map: (p: vec3, i?: number) => vec3
-): Mesh {
+export function mapMeshPositions(m: Mesh, map: (p: vec3, i: number) => vec3): Mesh {
   let pos = m.pos.map(map);
   return { ...m, pos };
 }
