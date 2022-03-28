@@ -52,26 +52,6 @@ export function debugCreateNoodles(em: EntityManager) {
           return vec3.add(vec3.create(), p, seg);
         });
         rs.renderer.renderer.updateMesh(e.renderable.meshHandle, newM);
-        // TODO(@darzu): update mesh data
-        // const vOff = vByteOff + numVerts * Vertex.ByteSize;
-        // Vertex.serialize(maps.verticesMap, vOff, pos, color, normal)
-        //  [ ] we shouldn't have Mesh | MeshHandle; everything should have a MeshHandle
-        //    and maybe a readonly view of the original Mesh
-        //  - currently vertex serialization happens in the context of full mesh knowledge
-        //    so vertices might be unshared etc. Normal calculations depend on neighbors.
-        //  - how bad would it be if we just updated the whole mesh's data?
-        //    - with hundreds of animated meshes moving around this would be pretty inefficient
-        //  - what's the benefit of CPU-based just-in-time animations? Instead of having it
-        //    part of asset creation (e.g. a fixed set of animations).
-        //      - limb climbing stairs without IK
-        //      - holding an obj, placing the hands in the right position
-        //  - more generally, this is about morphing a mesh without a preconfigured animation
-        //  - eventually we should have some heirarchy of mesh types e.g. DeformableMesh, StaticMesh, etc.
-        //  - normals really complicate things
-        //  - GOAL: deformable meshes, either GPU (grass, ocean) or CPU (limbs, sails?)
-
-        // TODO: OR, we could have optional mesh offsets that are updated
-        //
       }
     },
     "updateNoodles"
