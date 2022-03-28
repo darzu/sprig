@@ -4,13 +4,17 @@ import {
   isMeshHandle,
   mapMeshPositions,
   Mesh,
+  scaleMesh,
   unshareProvokingVertices,
 } from "../render/mesh-pool.js";
 import { PositionDef } from "../physics/transform.js";
 import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
 import { assert } from "../test.js";
+import { RendererDef } from "../render/render_init.js";
 
-export const NoodleDef = EM.defineComponent("noodle", () => {});
+export const NoodleDef = EM.defineComponent("noodle", () => ({
+  size: 1.0,
+}));
 
 // TODO(@darzu): DEBUGGING
 export function debugCreateNoodles(em: EntityManager) {
@@ -18,16 +22,19 @@ export function debugCreateNoodles(em: EntityManager) {
   const m = createNoodleMesh();
   em.ensureComponentOn(e, NoodleDef);
   em.ensureComponentOn(e, RenderableConstructDef, m);
-  em.ensureComponentOn(e, PositionDef, [0, 0, 0]);
+  em.ensureComponentOn(e, PositionDef, [5, -5, 0]);
 
   em.registerSystem(
     [NoodleDef, RenderableDef],
-    [],
+    [RendererDef],
     (es, rs) => {
       for (let e of es) {
         const m = e.renderable.meshHandle.readonlyMesh;
         assert(!!m, "Cannot find mesh for noodle");
-        mapMeshPositions(m, (p, i) => p);
+        // mapMeshPositions(m, (p, i) => p);
+        e.noodle.size *= 1.01;
+        const newM = scaleMesh(m, e.noodle.size);
+        rs.renderer.renderer.updateMesh(e.renderable.meshHandle, newM);
         // TODO(@darzu): update mesh data
         // const vOff = vByteOff + numVerts * Vertex.ByteSize;
         // Vertex.serialize(maps.verticesMap, vOff, pos, color, normal)

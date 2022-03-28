@@ -139,6 +139,9 @@ export class Renderer_WebGPU implements Renderer {
     // this.needsRebundle = true;
     return newHandle;
   }
+  public updateMesh(handle: MeshHandle, newMeshData: Mesh) {
+    this.pool.updateMeshVertices(handle, newMeshData);
+  }
 
   removeMesh(h: MeshHandle) {
     // TODO(@darzu): we need to free up vertices

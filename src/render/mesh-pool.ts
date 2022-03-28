@@ -287,6 +287,7 @@ export interface MeshPool {
   addMesh: (m: Mesh) => MeshHandle;
   addMeshInstance: (m: MeshHandle, d: MeshUniformMod.Data) => MeshHandle;
   updateUniform: (m: MeshHandle) => void;
+  updateMeshVertices: (handle: MeshHandle, newMeshData: Mesh) => void;
 }
 
 // WebGPU stuff
@@ -614,6 +615,7 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
     updateUniform,
     addMesh,
     addMeshInstance,
+    updateMeshVertices,
   };
 
   function addMesh(m: Mesh): MeshHandle {
@@ -707,6 +709,13 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
     allMeshes.push(newHandle);
     updateUniform(newHandle);
     return newHandle;
+  }
+
+  function updateMeshVertices(handle: MeshHandle, newMesh: Mesh) {
+    // TODO(@darzu): use scratch array
+    const verticesMap = new Uint8Array(newMesh.pos.length * Vertex.ByteSize);
+    serializeMeshVertices(newMesh, verticesMap);
+    queues.updateVertices(handle.vertNumOffset * Vertex.ByteSize, verticesMap);
   }
 
   function updateUniform(m: MeshHandle): void {

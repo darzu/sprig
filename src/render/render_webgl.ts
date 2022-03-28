@@ -195,6 +195,9 @@ export function attachToCanvas(
 
     return newHandle;
   }
+  function updateMesh(handle: MeshHandle, newMeshData: Mesh) {
+    pool.updateMeshVertices(handle, newMeshData);
+  }
 
   function removeMesh(h: MeshHandle) {
     // TODO(@darzu):
@@ -279,6 +282,7 @@ export function attachToCanvas(
     drawTris: true,
     addMesh,
     addMeshInstance,
+    updateMesh,
     removeMesh,
     renderFrame,
   };
