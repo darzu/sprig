@@ -21,19 +21,20 @@ export const NoodleDef = EM.defineComponent("noodle", (segments: vec3[]) => ({
 // TODO(@darzu): DEBUGGING
 export function debugCreateNoodles(em: EntityManager) {
   const e = em.newEntity();
+  em.ensureComponentOn(e, NoodleDef, [
+    [0, 0, 0],
+    [2, 2, 2],
+  ]);
   const m = createNoodleMesh();
+  em.ensureComponentOn(e, RenderableConstructDef, m);
+  em.ensureComponentOn(e, PositionDef, [5, -5, 0]);
+
   const posIdxToSegIdx = [
     // start
     0, 0,
     // end
     1, 1,
   ];
-  em.ensureComponentOn(e, NoodleDef, [
-    [0, 0, 0],
-    [2, 2, 2],
-  ]);
-  em.ensureComponentOn(e, RenderableConstructDef, m);
-  em.ensureComponentOn(e, PositionDef, [5, -5, 0]);
 
   em.registerSystem(
     [NoodleDef, RenderableDef],
@@ -44,7 +45,7 @@ export function debugCreateNoodles(em: EntityManager) {
         assert(!!originalM, "Cannot find mesh for noodle");
         // mapMeshPositions(m, (p, i) => p);
         // e.noodle.size *= 1.01;
-        vec3.add(e.noodle.segments[0], e.noodle.segments[0], [0.01, 0, 0.01]);
+        // vec3.add(e.noodle.segments[0], e.noodle.segments[0], [0.01, 0, 0.01]);
         const newM = mapMeshPositions(originalM, (p, i) => {
           const segIdx = posIdxToSegIdx[i];
           const seg = e.noodle.segments[segIdx];
@@ -58,16 +59,17 @@ export function debugCreateNoodles(em: EntityManager) {
   );
 }
 
-function createNoodleMesh(): Mesh {
-  const THICKNESS = 0.1;
-  const LEN = 1;
+export function createNoodleMesh(): Mesh {
+  const T = 0.1;
+
+  // TODO(@darzu):  work on this shape
 
   const m: Mesh = {
     pos: [
-      [-LEN, THICKNESS, 0],
-      [-LEN, -THICKNESS, 0],
-      [+LEN, THICKNESS, 0],
-      [+LEN, -THICKNESS, 0],
+      [0, 0, T],
+      [0, 0, -T],
+      [0, 0, T],
+      [0, 0, -T],
     ],
     tri: [
       [0, 1, 2],
