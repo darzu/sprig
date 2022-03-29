@@ -45,7 +45,9 @@ import { getCursor, GlobalCursor3dDef } from "./cursor.js";
 import { ModelerDef, screenPosToRay } from "./modeler.js";
 import { PhysicsDbgDef } from "../physics/phys-debug.js";
 import { DeletedDef } from "../delete.js";
-import { createNoodleMesh, NoodleDef } from "./noodles.js";
+import { createNoodleMesh, NoodleDef, NoodleSeg } from "./noodles.js";
+import { assert } from "../test.js";
+import { vec3Dbg } from "../utils-3d.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {
@@ -418,6 +420,34 @@ export function registerStepPlayers(em: EntityManager) {
     },
     "playerCursorUpdate"
   );
+
+  em.registerSystem(
+    [PlayerEntDef, WorldFrameDef, PositionDef],
+    [],
+    (players, res) => {
+      for (let p of players) {
+        const leftLeg = em.findEntity(p.player.legLeftId, [NoodleDef]);
+        const rightLeg = em.findEntity(p.player.legRightId, [NoodleDef]);
+        if (!leftLeg || !rightLeg) continue;
+
+        const gridSize = 4.0;
+        const xDelta = Math.abs(p.position[0] % gridSize);
+        // const xDelta = p.world.position[0] % 1.0;
+        // const zDelta = p.world.position[2] % 2.0;
+
+        const leftFoot = leftLeg.noodle.segments[1];
+        leftFoot.pos[0] = -xDelta + gridSize * 0.5;
+        // leftFoot[0] = 0;
+        // leftFoot[2] = -zDelta;
+        // console.log(
+        //   `${p.world.position[0]} -> ${p.world.position[0] % 1.0} = ${
+        //     leftFoot[0]
+        //   }`
+        // );
+      }
+    },
+    "updateLimbs"
+  );
 }
 
 // TODO(@darzu): move this helper elsewhere?
@@ -473,25 +503,29 @@ export function registerBuildPlayersSystem(em: EntityManager) {
           // create limbs
           const noodleM = createNoodleMesh();
 
+          const legSegs: () => NoodleSeg[] = () => [
+            {
+              pos: [0, 0, 0],
+              dir: [0, 1, 0],
+            },
+            {
+              pos: [0, -2, 0],
+              dir: [0, -1, 0],
+            },
+          ];
           const leftLeg = em.newEntity();
           em.ensureComponentOn(leftLeg, RenderableConstructDef, noodleM);
           em.ensureComponentOn(leftLeg, PositionDef, [-0.7, 0, 0]);
-          em.ensureComponentOn(leftLeg, NoodleDef, [
-            [0, 0, 0],
-            [0, -2, 0],
-          ]);
+          em.ensureComponentOn(leftLeg, NoodleDef, legSegs());
           em.ensureComponentOn(leftLeg, PhysicsParentDef, e.id);
           e.player.legLeftId = leftLeg.id;
 
           const rightLeg = em.newEntity();
           em.ensureComponentOn(rightLeg, RenderableConstructDef, noodleM);
           em.ensureComponentOn(rightLeg, PositionDef, [0.7, 0, 0]);
-          em.ensureComponentOn(rightLeg, NoodleDef, [
-            [0, 0, 0],
-            [0, -2, 0],
-          ]);
+          em.ensureComponentOn(rightLeg, NoodleDef, legSegs());
           em.ensureComponentOn(rightLeg, PhysicsParentDef, e.id);
-          e.player.legLeftId = rightLeg.id;
+          e.player.legRightId = rightLeg.id;
         }
         if (!ColliderDef.isOn(e)) {
           const collider = em.addComponent(e.id, ColliderDef);

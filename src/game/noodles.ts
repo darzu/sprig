@@ -14,16 +14,30 @@ import { RendererDef } from "../render/render_init.js";
 import { vec3 } from "../gl-matrix.js";
 import { vec3Dbg } from "../utils-3d.js";
 
-export const NoodleDef = EM.defineComponent("noodle", (segments: vec3[]) => ({
-  segments,
-}));
+export interface NoodleSeg {
+  pos: vec3;
+  dir: vec3;
+}
+
+export const NoodleDef = EM.defineComponent(
+  "noodle",
+  (segments: NoodleSeg[]) => ({
+    segments,
+  })
+);
 
 // TODO(@darzu): DEBUGGING
 export function debugCreateNoodles(em: EntityManager) {
   const e = em.newEntity();
   em.ensureComponentOn(e, NoodleDef, [
-    [0, 0, 0],
-    [2, 2, 2],
+    {
+      pos: [0, 0, 0],
+      dir: [0, -1, 0],
+    },
+    {
+      pos: [2, 2, 2],
+      dir: [0, 1, 0],
+    },
   ]);
   const m = createNoodleMesh();
   em.ensureComponentOn(e, RenderableConstructDef, m);
@@ -50,7 +64,8 @@ export function debugCreateNoodles(em: EntityManager) {
           const segIdx = posIdxToSegIdx[i];
           const seg = e.noodle.segments[segIdx];
           // TODO(@darzu): PERF, don't create vecs here
-          return vec3.add(vec3.create(), p, seg);
+          // TODO(@darzu): rotate around .dir
+          return vec3.add(vec3.create(), p, seg.pos);
         });
         rs.renderer.renderer.updateMesh(e.renderable.meshHandle, newM);
       }
