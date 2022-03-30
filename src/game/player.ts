@@ -1,6 +1,6 @@
 // player controller component and system
 
-import { quat, vec2, vec3 } from "../gl-matrix.js";
+import { mat4, quat, vec2, vec3 } from "../gl-matrix.js";
 import { Inputs, InputsDef } from "../inputs.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { PhysicsTimerDef, Timer } from "../time.js";
@@ -48,6 +48,7 @@ import { DeletedDef } from "../delete.js";
 import { createNoodleMesh, NoodleDef, NoodleSeg } from "./noodles.js";
 import { assert } from "../test.js";
 import { vec3Dbg } from "../utils-3d.js";
+import { min } from "../math.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {
@@ -63,8 +64,10 @@ export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
     targetCursor: -1,
     targetEnt: -1,
     // noodle limbs
-    legLeftId: 0,
-    legRightId: 0,
+    leftLegId: 0,
+    leftFootWorldPos: [0, 0, 0] as vec3,
+    rightLegId: 0,
+    rightFootWorldPos: [0, 0, 0] as vec3,
   };
 });
 export type PlayerEnt = Component<typeof PlayerEntDef>;
@@ -164,7 +167,7 @@ export function registerStepPlayers(em: EntityManager) {
 
           // move player
           let vel = vec3.fromValues(0, 0, 0);
-          let playerSpeed = 0.001;
+          let playerSpeed = 0.0005;
           if (inputs.keyDowns["shift"]) playerSpeed *= 3;
           let trans = playerSpeed * dt;
           if (inputs.keyDowns["a"]) {
@@ -421,22 +424,92 @@ export function registerStepPlayers(em: EntityManager) {
     "playerCursorUpdate"
   );
 
+  // TODO(@darzu): ideally we could impose an ordering constraint on this system,
+  //    it should run after the world frame has been updated, before render
   em.registerSystem(
     [PlayerEntDef, WorldFrameDef, PositionDef],
-    [],
+    [PhysicsResultsDef],
     (players, res) => {
       for (let p of players) {
-        const leftLeg = em.findEntity(p.player.legLeftId, [NoodleDef]);
-        const rightLeg = em.findEntity(p.player.legRightId, [NoodleDef]);
+        const leftLeg = em.findEntity(p.player.leftLegId, [NoodleDef]);
+        const rightLeg = em.findEntity(p.player.rightLegId, [NoodleDef]);
         if (!leftLeg || !rightLeg) continue;
 
-        const gridSize = 4.0;
-        const xDelta = Math.abs(p.position[0] % gridSize);
-        // const xDelta = p.world.position[0] % 1.0;
-        // const zDelta = p.world.position[2] % 2.0;
+        const maxReachLen2 = 20.0;
 
-        const leftFoot = leftLeg.noodle.segments[1];
-        leftFoot.pos[0] = -xDelta + gridSize * 0.5;
+        const leftFootDist2 = vec3.sqrDist(
+          p.world.position,
+          p.player.leftFootWorldPos
+        );
+        if (leftFootDist2 > maxReachLen2) {
+          // cast a ray to see where the foot should go
+          const leftHipLocal = leftLeg.noodle.segments[0].pos;
+          const leftHipWorld = vec3.transformMat4(
+            vec3.create(),
+            leftHipLocal,
+            p.world.transform
+          );
+
+          // TODO(@darzu):debug
+          vec3.add(leftHipWorld, leftHipWorld, [0, 2, 0]);
+
+          const legDirLocal: vec3 = vec3.normalize(tempVec(), [0, -1, -0.1]);
+          // TODO(@darzu): we really shouldn't use transform quat since this doesn't account for scale or skew
+          const legDirWorld = vec3.transformQuat(
+            vec3.create(),
+            legDirLocal,
+            p.world.rotation
+          );
+
+          const legRayWorld: Ray = {
+            org: leftHipWorld,
+            dir: legDirWorld,
+          };
+
+          const legRayEndWorld = vec3.add(
+            vec3.create(),
+            legRayWorld.org,
+            vec3.scale(tempVec(), legRayWorld.dir, 2.0)
+          );
+
+          // TODO(@darzu): debug; ray test (green)
+          drawLine(EM, legRayWorld.org, legRayEndWorld, [0, 1, 0]);
+
+          const hits = res.physicsResults.checkRay(legRayWorld);
+          const minDistWorld = min(
+            hits.map((h) => (h.id === p.id ? Infinity : h.dist))
+          );
+          if (minDistWorld < maxReachLen2) {
+            // update left foot pos
+            vec3.add(
+              p.player.leftFootWorldPos,
+              legRayWorld.org,
+              vec3.scale(tempVec(), legRayWorld.dir, minDistWorld)
+            );
+
+            // TODO(@darzu): debug; new location found (blue)
+            drawLine(EM, leftHipWorld, p.player.leftFootWorldPos, [0, 0, 1]);
+          }
+        }
+
+        // update local foot position from world position
+        // TODO(@darzu): this would be easiest if we had world->local
+        //    transforms (e.g. the inverse of our world.transform)
+        // TODO(@darzu): PERF, very slow
+        const worldInv = mat4.invert(mat4.create(), p.world.transform);
+        vec3.transformMat4(
+          leftLeg.noodle.segments[1].pos,
+          p.player.leftFootWorldPos,
+          worldInv
+        );
+
+        // const gridSize = 4.0;
+        // const xDelta = p.position[0] % gridSize;
+        // // const xDelta = p.world.position[0] % 1.0;
+        // // const zDelta = p.world.position[2] % 2.0;
+
+        // const leftFoot = leftLeg.noodle.segments[1];
+        // leftFoot.pos[0] = -xDelta;
         // leftFoot[0] = 0;
         // leftFoot[2] = -zDelta;
         // console.log(
@@ -515,17 +588,17 @@ export function registerBuildPlayersSystem(em: EntityManager) {
           ];
           const leftLeg = em.newEntity();
           em.ensureComponentOn(leftLeg, RenderableConstructDef, noodleM);
-          em.ensureComponentOn(leftLeg, PositionDef, [-0.7, 0, 0]);
+          em.ensureComponentOn(leftLeg, PositionDef, [-0.7, -0.8, 0]);
           em.ensureComponentOn(leftLeg, NoodleDef, legSegs());
           em.ensureComponentOn(leftLeg, PhysicsParentDef, e.id);
-          e.player.legLeftId = leftLeg.id;
+          e.player.leftLegId = leftLeg.id;
 
           const rightLeg = em.newEntity();
           em.ensureComponentOn(rightLeg, RenderableConstructDef, noodleM);
-          em.ensureComponentOn(rightLeg, PositionDef, [0.7, 0, 0]);
+          em.ensureComponentOn(rightLeg, PositionDef, [0.7, -0.8, 0]);
           em.ensureComponentOn(rightLeg, NoodleDef, legSegs());
           em.ensureComponentOn(rightLeg, PhysicsParentDef, e.id);
-          e.player.legRightId = rightLeg.id;
+          e.player.rightLegId = rightLeg.id;
         }
         if (!ColliderDef.isOn(e)) {
           const collider = em.addComponent(e.id, ColliderDef);
