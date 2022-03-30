@@ -1,10 +1,12 @@
 import { EM, EntityManager } from "../entity-manager.js";
 import {
+  cloneMesh,
   createMeshPool_WebGPU,
   isMeshHandle,
   mapMeshPositions,
   Mesh,
   scaleMesh,
+  scaleMesh3,
   unshareProvokingVertices,
 } from "../render/mesh-pool.js";
 import { PositionDef } from "../physics/transform.js";
@@ -13,6 +15,7 @@ import { assert } from "../test.js";
 import { RendererDef } from "../render/render_init.js";
 import { vec3 } from "../gl-matrix.js";
 import { vec3Dbg } from "../utils-3d.js";
+import { CUBE_FACES, CUBE_MESH } from "./assets.js";
 
 export interface NoodleSeg {
   pos: vec3;
@@ -39,16 +42,24 @@ export function debugCreateNoodles(em: EntityManager) {
       dir: [0, 1, 0],
     },
   ]);
-  const m = createNoodleMesh();
+  const m = createNoodleMesh(0.1, [0.2, 0.05, 0.05]);
   em.ensureComponentOn(e, RenderableConstructDef, m);
   em.ensureComponentOn(e, PositionDef, [5, -5, 0]);
 
-  const posIdxToSegIdx = [
-    // start
-    0, 0,
-    // end
-    1, 1,
-  ];
+  const posIdxToSegIdx: Map<number, number> = new Map();
+  CUBE_MESH.pos.forEach((p, i) => {
+    if (p[1] > 0) posIdxToSegIdx.set(i, 0);
+    else posIdxToSegIdx.set(i, 1);
+  });
+
+  // TODO(@darzu): test cube faces (update: they are correct)
+  // const cube = em.newEntity();
+  // em.ensureComponentOn(cube, PositionDef, [0, -2, 0]);
+  // const cubeM = cloneMesh(CUBE_MESH);
+  // for (let triIdx of CUBE_FACES.bottom) {
+  //   cubeM.colors[triIdx] = [0, 0, 0.5];
+  // }
+  // em.ensureComponentOn(cube, RenderableConstructDef, cubeM);
 
   em.registerSystem(
     [NoodleDef, RenderableDef],
@@ -61,7 +72,8 @@ export function debugCreateNoodles(em: EntityManager) {
         // e.noodle.size *= 1.01;
         // vec3.add(e.noodle.segments[0], e.noodle.segments[0], [0.01, 0, 0.01]);
         const newM = mapMeshPositions(originalM, (p, i) => {
-          const segIdx = posIdxToSegIdx[i];
+          const segIdx = posIdxToSegIdx.get(i);
+          assert(segIdx !== undefined, `missing posIdxToSegIdx for ${i}`);
           const seg = e.noodle.segments[segIdx];
           // TODO(@darzu): PERF, don't create vecs here
           // TODO(@darzu): rotate around .dir
@@ -74,33 +86,8 @@ export function debugCreateNoodles(em: EntityManager) {
   );
 }
 
-export function createNoodleMesh(): Mesh {
-  const T = 0.1;
-
-  // TODO(@darzu):  work on this shape
-
-  const m: Mesh = {
-    pos: [
-      [0, 0, T],
-      [0, 0, -T],
-      [0, 0, T],
-      [0, 0, -T],
-    ],
-    tri: [
-      [0, 1, 2],
-      [1, 3, 2],
-      // reverse, so visible from all directions
-      // TODO(@darzu): just turn off back-face culling?
-      [2, 1, 0],
-      [2, 3, 1],
-    ],
-    colors: [
-      [0.2, 0.05, 0.05],
-      [0.2, 0.05, 0.05],
-      [0.2, 0.05, 0.05],
-      [0.2, 0.05, 0.05],
-    ],
-  };
-
-  return unshareProvokingVertices(m);
+export function createNoodleMesh(thickness: number, color: vec3): Mesh {
+  const m = cloneMesh(CUBE_MESH);
+  m.colors.forEach((c) => vec3.copy(c, color));
+  return scaleMesh3(m, [thickness, 0.0, thickness]);
 }

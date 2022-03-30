@@ -877,3 +877,12 @@ export function scaleMesh3(m: Mesh, by: vec3): Mesh {
 export function transformMesh(m: Mesh, t: mat4): Mesh {
   return mapMeshPositions(m, (p) => vec3.transformMat4(vec3.create(), p, t));
 }
+export function cloneMesh(m: Mesh): Mesh {
+  return {
+    ...m,
+    pos: m.pos.map((p) => vec3.clone(p)),
+    tri: m.tri.map((p) => vec3.clone(p)),
+    colors: m.colors.map((p) => vec3.clone(p)),
+    lines: m.lines ? m.lines.map((p) => vec2.clone(p)) : undefined,
+  };
+}

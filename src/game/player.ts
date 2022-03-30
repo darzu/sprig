@@ -37,8 +37,8 @@ import {
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import { copyAABB, createAABB, Ray, RayHit } from "../physics/broadphase.js";
 import { tempQuat, tempVec } from "../temp-pool.js";
-import { Mesh, scaleMesh } from "../render/mesh-pool.js";
-import { Assets, AssetsDef } from "./assets.js";
+import { Mesh, scaleMesh, scaleMesh3 } from "../render/mesh-pool.js";
+import { Assets, AssetsDef, CUBE_FACES } from "./assets.js";
 import { LinearVelocity, LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../smoothing.js";
 import { getCursor, GlobalCursor3dDef } from "./cursor.js";
@@ -560,19 +560,17 @@ export function registerBuildPlayersSystem(em: EntityManager) {
         if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0, 0.2, 0]);
         if (!MotionSmoothingDef.isOn(e))
           em.addComponent(e.id, MotionSmoothingDef);
-        if (!RenderableConstructDef.isOn(e))
-          em.addComponent(
-            e.id,
-            RenderableConstructDef,
-            scaleMesh(res.assets.cube.mesh, 0.75)
-          );
+        if (!RenderableConstructDef.isOn(e)) {
+          const m = scaleMesh3(res.assets.cube.mesh, [0.75, 0.75, 0.4]);
+          em.addComponent(e.id, RenderableConstructDef, m);
+        }
         if (!AuthorityDef.isOn(e))
           em.addComponent(e.id, AuthorityDef, res.me.pid);
         if (!PlayerEntDef.isOn(e)) {
           em.ensureComponentOn(e, PlayerEntDef);
 
           // create limbs
-          const noodleM = createNoodleMesh();
+          const noodleM = createNoodleMesh(0.05, [0.2, 0.05, 0.05]);
 
           const legSegs: () => NoodleSeg[] = () => [
             {
@@ -586,14 +584,14 @@ export function registerBuildPlayersSystem(em: EntityManager) {
           ];
           const leftLeg = em.newEntity();
           em.ensureComponentOn(leftLeg, RenderableConstructDef, noodleM);
-          em.ensureComponentOn(leftLeg, PositionDef, [-0.7, -0.8, 0]);
+          em.ensureComponentOn(leftLeg, PositionDef, [-0.5, -0.8, 0]);
           em.ensureComponentOn(leftLeg, NoodleDef, legSegs());
           em.ensureComponentOn(leftLeg, PhysicsParentDef, e.id);
           e.player.leftLegId = leftLeg.id;
 
           const rightLeg = em.newEntity();
           em.ensureComponentOn(rightLeg, RenderableConstructDef, noodleM);
-          em.ensureComponentOn(rightLeg, PositionDef, [0.7, -0.8, 0]);
+          em.ensureComponentOn(rightLeg, PositionDef, [0.5, -0.8, 0]);
           em.ensureComponentOn(rightLeg, NoodleDef, legSegs());
           em.ensureComponentOn(rightLeg, PhysicsParentDef, e.id);
           e.player.rightLegId = rightLeg.id;
