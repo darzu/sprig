@@ -430,7 +430,7 @@ export function rayHitDist(b: AABB, r: Ray): number {
   let tmax = Infinity;
 
   for (let d = 0; d < 3; d++) {
-    if (r.dir[0] !== 0) {
+    if (r.dir[d] !== 0) {
       // these are the maximum and minimum distances we
       // could travel along the ray in dimension d, which
       // is either we could travel to the box's minimum bound
