@@ -1,4 +1,4 @@
-import { EM, EntityManager } from "../entity-manager.js";
+import { Component, EM, EntityManager } from "../entity-manager.js";
 import {
   cloneMesh,
   createMeshPool_WebGPU,
@@ -28,6 +28,7 @@ export const NoodleDef = EM.defineComponent(
     segments,
   })
 );
+export type Noodle = Component<typeof NoodleDef>;
 
 // TODO(@darzu): DEBUGGING
 export function debugCreateNoodles(em: EntityManager) {

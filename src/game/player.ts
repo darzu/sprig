@@ -45,7 +45,7 @@ import { getCursor, GlobalCursor3dDef } from "./cursor.js";
 import { ModelerDef, screenPosToRay } from "./modeler.js";
 import { PhysicsDbgDef } from "../physics/phys-debug.js";
 import { DeletedDef } from "../delete.js";
-import { createNoodleMesh, NoodleDef, NoodleSeg } from "./noodles.js";
+import { createNoodleMesh, Noodle, NoodleDef, NoodleSeg } from "./noodles.js";
 import { assert } from "../test.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { min } from "../math.js";
@@ -424,10 +424,14 @@ export function registerStepPlayers(em: EntityManager) {
     "playerCursorUpdate"
   );
 
+  function updateLeg(leg: Noodle, targetDir: vec3) {
+    // TODO(@darzu): impl
+  }
+
   // TODO(@darzu): ideally we could impose an ordering constraint on this system,
   //    it should run after the world frame has been updated, before render
   em.registerSystem(
-    [PlayerEntDef, WorldFrameDef, PositionDef],
+    [PlayerEntDef, WorldFrameDef, PositionDef, LinearVelocityDef, RotationDef],
     [PhysicsResultsDef],
     (players, res) => {
       for (let p of players) {
@@ -435,7 +439,7 @@ export function registerStepPlayers(em: EntityManager) {
         const rightLeg = em.findEntity(p.player.rightLegId, [NoodleDef]);
         if (!leftLeg || !rightLeg) continue;
 
-        const maxReachLen2 = 9.0;
+        const maxReachLen2 = 7.0;
 
         const leftFootDist2 = vec3.sqrDist(
           p.world.position,
@@ -450,8 +454,18 @@ export function registerStepPlayers(em: EntityManager) {
             p.world.transform
           );
 
-          // TODO(@darzu): use velocity here instead of just infront
-          const legDirLocal: vec3 = vec3.normalize(tempVec(), [0, -1, -0.5]);
+          // TODO(@darzu): PERF, inverting quat here
+          const invRot = quat.invert(quat.create(), p.rotation);
+          const legDirLocal = vec3.transformQuat(
+            vec3.create(),
+            p.linearVelocity,
+            invRot
+          );
+          vec3.normalize(legDirLocal, legDirLocal);
+          vec3.add(legDirLocal, legDirLocal, [0, -0.8, 0]);
+          vec3.normalize(legDirLocal, legDirLocal);
+          // const legDirLocal: vec3 = vec3.normalize(tempVec(), [0, -1, -0.5]);
+
           // TODO(@darzu): we really shouldn't use transform quat since this doesn't account for scale or skew
           const legDirWorld = vec3.transformQuat(
             vec3.create(),
@@ -477,7 +491,7 @@ export function registerStepPlayers(em: EntityManager) {
           const minDistWorld = min(
             hits.map((h) => (h.id === p.id ? Infinity : h.dist))
           );
-          if (minDistWorld * minDistWorld < maxReachLen2) {
+          if (minDistWorld * minDistWorld < leftFootDist2) {
             // update left foot pos
             vec3.add(
               p.player.leftFootWorldPos,
