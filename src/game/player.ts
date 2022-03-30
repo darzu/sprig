@@ -435,7 +435,7 @@ export function registerStepPlayers(em: EntityManager) {
         const rightLeg = em.findEntity(p.player.rightLegId, [NoodleDef]);
         if (!leftLeg || !rightLeg) continue;
 
-        const maxReachLen2 = 20.0;
+        const maxReachLen2 = 9.0;
 
         const leftFootDist2 = vec3.sqrDist(
           p.world.position,
@@ -450,10 +450,8 @@ export function registerStepPlayers(em: EntityManager) {
             p.world.transform
           );
 
-          // TODO(@darzu):debug
-          vec3.add(leftHipWorld, leftHipWorld, [0, 2, 0]);
-
-          const legDirLocal: vec3 = vec3.normalize(tempVec(), [0, -1, -0.1]);
+          // TODO(@darzu): use velocity here instead of just infront
+          const legDirLocal: vec3 = vec3.normalize(tempVec(), [0, -1, -0.5]);
           // TODO(@darzu): we really shouldn't use transform quat since this doesn't account for scale or skew
           const legDirWorld = vec3.transformQuat(
             vec3.create(),
@@ -472,14 +470,14 @@ export function registerStepPlayers(em: EntityManager) {
             vec3.scale(tempVec(), legRayWorld.dir, 2.0)
           );
 
-          // TODO(@darzu): debug; ray test (green)
-          drawLine(EM, legRayWorld.org, legRayEndWorld, [0, 1, 0]);
+          // TODO(@darzu): DEBUG; ray test (green)
+          // drawLine(EM, legRayWorld.org, legRayEndWorld, [0, 1, 0]);
 
           const hits = res.physicsResults.checkRay(legRayWorld);
           const minDistWorld = min(
             hits.map((h) => (h.id === p.id ? Infinity : h.dist))
           );
-          if (minDistWorld < maxReachLen2) {
+          if (minDistWorld * minDistWorld < maxReachLen2) {
             // update left foot pos
             vec3.add(
               p.player.leftFootWorldPos,
@@ -487,8 +485,8 @@ export function registerStepPlayers(em: EntityManager) {
               vec3.scale(tempVec(), legRayWorld.dir, minDistWorld)
             );
 
-            // TODO(@darzu): debug; new location found (blue)
-            drawLine(EM, leftHipWorld, p.player.leftFootWorldPos, [0, 0, 1]);
+            // TODO(@darzu): DEBUG; new location found (blue)
+            // drawLine(EM, leftHipWorld, p.player.leftFootWorldPos, [0, 0, 1]);
           }
         }
 
