@@ -71,3 +71,10 @@ export function centroid(vs: vec3[]): vec3 {
   const avgZ = avg(vs.map((v) => v[2]));
   return vec3.fromValues(avgX, avgY, avgZ);
 }
+// TODO(@darzu):  move into gl-matrix?
+export function vec3Mid(out: vec3, a: vec3, b: vec3): vec3 {
+  out[0] = (a[0] + b[0]) * 0.5;
+  out[1] = (a[1] + b[1]) * 0.5;
+  out[2] = (a[2] + b[2]) * 0.5;
+  return out;
+}

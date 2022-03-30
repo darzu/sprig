@@ -47,7 +47,7 @@ import { PhysicsDbgDef } from "../physics/phys-debug.js";
 import { DeletedDef } from "../delete.js";
 import { createNoodleMesh, Noodle, NoodleDef, NoodleSeg } from "./noodles.js";
 import { assert } from "../test.js";
-import { vec3Dbg } from "../utils-3d.js";
+import { vec3Dbg, vec3Mid } from "../utils-3d.js";
 import { min } from "../math.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
@@ -424,10 +424,10 @@ export function registerStepPlayers(em: EntityManager) {
     "playerCursorUpdate"
   );
 
-  function updateLeg(leg: Noodle, targetDir: vec3) {
-    // TODO(@darzu): impl
-  }
+  registerUpdateLegs(em);
+}
 
+function registerUpdateLegs(em: EntityManager) {
   // TODO(@darzu): ideally we could impose an ordering constraint on this system,
   //    it should run after the world frame has been updated, before render
   em.registerSystem(
@@ -439,18 +439,43 @@ export function registerStepPlayers(em: EntityManager) {
         const rightLeg = em.findEntity(p.player.rightLegId, [NoodleDef]);
         if (!leftLeg || !rightLeg) continue;
 
-        const maxReachLen2 = 7.0;
-
-        const leftFootDist2 = vec3.sqrDist(
-          p.world.position,
-          p.player.leftFootWorldPos
+        const centerOfPlayerWorld = vec3.clone(p.world.position);
+        const centerOfFeet = vec3Mid(
+          vec3.create(),
+          p.player.leftFootWorldPos,
+          p.player.rightFootWorldPos
         );
-        if (leftFootDist2 > maxReachLen2) {
+        centerOfPlayerWorld[1] = centerOfFeet[1]; // ignore Y component
+        const massOverhangDist2 = vec3.sqrDist(
+          centerOfPlayerWorld,
+          centerOfFeet
+        );
+
+        const massOverhangDistThreshold2 = 8;
+
+        // do we need to move a leg?
+        // TODO(@darzu): also move feet when extending beyond max leg reach
+        if (massOverhangDist2 > massOverhangDistThreshold2) {
+          // which leg? move the one farther from the center
+          const leftLegDist2 = vec3.sqrDist(
+            centerOfPlayerWorld,
+            p.player.leftFootWorldPos
+          );
+          const rightLegDist2 = vec3.sqrDist(
+            centerOfPlayerWorld,
+            p.player.rightFootWorldPos
+          );
+          const leg = leftLegDist2 < rightLegDist2 ? rightLeg : leftLeg;
+          const footWorldPos =
+            leg === leftLeg
+              ? p.player.leftFootWorldPos
+              : p.player.rightFootWorldPos;
+
           // cast a ray to see where the foot should go
-          const leftHipLocal = leftLeg.noodle.segments[0].pos;
-          const leftHipWorld = vec3.transformMat4(
+          const hipLocal = leg.noodle.segments[0].pos;
+          const hipWorld = vec3.transformMat4(
             vec3.create(),
-            leftHipLocal,
+            hipLocal,
             p.world.transform
           );
 
@@ -474,7 +499,7 @@ export function registerStepPlayers(em: EntityManager) {
           );
 
           const legRayWorld: Ray = {
-            org: leftHipWorld,
+            org: hipWorld,
             dir: legDirWorld,
           };
 
@@ -491,10 +516,12 @@ export function registerStepPlayers(em: EntityManager) {
           const minDistWorld = min(
             hits.map((h) => (h.id === p.id ? Infinity : h.dist))
           );
-          if (minDistWorld * minDistWorld < leftFootDist2) {
-            // update left foot pos
+          const minDistWorld2 = minDistWorld ** 2;
+          // TODO(@darzu): check for length < leg length? else flying?
+          if (minDistWorld2 < Infinity) {
+            // update foot pos
             vec3.add(
-              p.player.leftFootWorldPos,
+              footWorldPos,
               legRayWorld.org,
               vec3.scale(tempVec(), legRayWorld.dir, minDistWorld)
             );
@@ -512,6 +539,11 @@ export function registerStepPlayers(em: EntityManager) {
         vec3.transformMat4(
           leftLeg.noodle.segments[1].pos,
           p.player.leftFootWorldPos,
+          worldInv
+        );
+        vec3.transformMat4(
+          rightLeg.noodle.segments[1].pos,
+          p.player.rightFootWorldPos,
           worldInv
         );
 
@@ -534,6 +566,7 @@ export function registerStepPlayers(em: EntityManager) {
     "updateLimbs"
   );
 }
+
 
 // TODO(@darzu): move this helper elsewhere?
 export function drawLine(
