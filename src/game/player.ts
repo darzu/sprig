@@ -457,7 +457,8 @@ function registerUpdateLegs(em: EntityManager) {
           centerOfFeet
         );
 
-        const massOverhangDistThreshold2 = 4;
+        const massOverhangDistThreshold = 2;
+        const massOverhangDistThreshold2 = massOverhangDistThreshold ** 2;
 
         const leftLegDist2 = vec3.sqrDist(
           centerOfPlayerWorld,
@@ -487,8 +488,10 @@ function registerUpdateLegs(em: EntityManager) {
               ? p.player.leftFootWorldPos
               : p.player.rightFootWorldPos;
 
-          // TODO(@darzu): scale
-          const velComp = vec3.scale(tempVec(), p.linearVelocity, 20.0);
+          // TODO(@darzu): it's unclear this is contributing a lot, or at least
+          //    not consistent
+          const velComp = vec3.normalize(tempVec(), p.linearVelocity);
+          vec3.scale(velComp, velComp, massOverhangDistThreshold * 0.8);
           const targetCenterOfMass = vec3.add(
             tempVec(),
             centerOfPlayerWorld,
