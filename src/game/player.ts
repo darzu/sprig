@@ -435,8 +435,14 @@ function registerUpdateLegs(em: EntityManager) {
     [PhysicsResultsDef],
     (players, res) => {
       for (let p of players) {
-        const leftLeg = em.findEntity(p.player.leftLegId, [NoodleDef]);
-        const rightLeg = em.findEntity(p.player.rightLegId, [NoodleDef]);
+        const leftLeg = em.findEntity(p.player.leftLegId, [
+          NoodleDef,
+          PositionDef,
+        ]);
+        const rightLeg = em.findEntity(p.player.rightLegId, [
+          NoodleDef,
+          PositionDef,
+        ]);
         if (!leftLeg || !rightLeg) continue;
 
         const centerOfPlayerWorld = vec3.clone(p.world.position);
@@ -451,7 +457,7 @@ function registerUpdateLegs(em: EntityManager) {
           centerOfFeet
         );
 
-        const massOverhangDistThreshold2 = 8;
+        const massOverhangDistThreshold2 = 4;
 
         const leftLegDist2 = vec3.sqrDist(
           centerOfPlayerWorld,
@@ -481,13 +487,22 @@ function registerUpdateLegs(em: EntityManager) {
               ? p.player.leftFootWorldPos
               : p.player.rightFootWorldPos;
 
-          // cast a ray to see where the foot should go
-          const hipLocal = leg.noodle.segments[0].pos;
-          const hipWorld = vec3.transformMat4(
-            vec3.create(),
-            hipLocal,
-            p.world.transform
+          // TODO(@darzu): scale
+          const velComp = vec3.scale(tempVec(), p.linearVelocity, 20.0);
+          const targetCenterOfMass = vec3.add(
+            tempVec(),
+            centerOfPlayerWorld,
+            velComp
           );
+          targetCenterOfMass[1] = centerOfPlayerWorld[1]; // ignore y
+
+          // cast a ray to see where the foot should go
+          // const hipLocal = leg.noodle.segments[0].pos;
+          // const hipWorld = vec3.transformMat4(
+          //   vec3.create(),
+          //   hipLocal,
+          //   p.world.transform
+          // );
 
           // TODO(@darzu): PERF, inverting quat here
           // const invRot = quat.invert(quat.create(), p.rotation);
@@ -511,23 +526,23 @@ function registerUpdateLegs(em: EntityManager) {
           // reflect the other foot over the center of mass
           const otherToCenter = vec3.sub(
             tempVec(),
-            centerOfPlayerWorld,
+            targetCenterOfMass,
             otherFootWorldPos
           );
           const legTargetWorldXZ = vec3.add(
             tempVec(),
-            centerOfPlayerWorld,
+            targetCenterOfMass,
             otherToCenter
           );
           // TODO(@darzu): ignore the y component
-          legTargetWorldXZ[1] = centerOfPlayerWorld[1];
+          legTargetWorldXZ[1] = targetCenterOfMass[1];
 
-          let newDist2 = vec3.sqrDist(legTargetWorldXZ, centerOfPlayerWorld);
+          let newDist2 = vec3.sqrDist(legTargetWorldXZ, targetCenterOfMass);
           if (newDist2 > legDist2Threshold) {
             // too far, move it in
             const towardCenter = vec3.sub(
               tempVec(),
-              centerOfPlayerWorld,
+              targetCenterOfMass,
               legTargetWorldXZ
             );
             const movDist = Math.sqrt(newDist2 - legDist2Threshold);
@@ -547,14 +562,14 @@ function registerUpdateLegs(em: EntityManager) {
             dir: [0, -1, 0],
           };
 
-          const legRayEndWorld = vec3.add(
-            vec3.create(),
-            legRayWorld.org,
-            vec3.scale(tempVec(), legRayWorld.dir, 2.0)
-          );
+          // const legRayEndWorld = vec3.add(
+          //   vec3.create(),
+          //   legRayWorld.org,
+          //   vec3.scale(tempVec(), legRayWorld.dir, 2.0)
+          // );
 
           // TODO(@darzu): DEBUG; ray test (green)
-          drawLine(EM, legRayWorld.org, legRayEndWorld, [0, 1, 0]);
+          // drawLine(EM, legRayWorld.org, legRayEndWorld, [0, 1, 0]);
 
           const hits = res.physicsResults.checkRay(legRayWorld);
           const minDistWorld = min(
@@ -571,7 +586,7 @@ function registerUpdateLegs(em: EntityManager) {
             );
 
             // TODO(@darzu): DEBUG; new location found (blue)
-            // drawLine(EM, leftHipWorld, p.player.leftFootWorldPos, [0, 0, 1]);
+            drawLine(EM, legRayWorld.org, footWorldPos, [1, 0, 0]);
           }
         }
 
@@ -585,10 +600,22 @@ function registerUpdateLegs(em: EntityManager) {
           p.player.leftFootWorldPos,
           worldInv
         );
+        // shift by the relative offset
+        // TODO(@darzu): feels hacky
+        vec3.sub(
+          leftLeg.noodle.segments[1].pos,
+          leftLeg.noodle.segments[1].pos,
+          leftLeg.position
+        );
         vec3.transformMat4(
           rightLeg.noodle.segments[1].pos,
           p.player.rightFootWorldPos,
           worldInv
+        );
+        vec3.sub(
+          rightLeg.noodle.segments[1].pos,
+          rightLeg.noodle.segments[1].pos,
+          rightLeg.position
         );
 
         // const gridSize = 4.0;
@@ -610,7 +637,6 @@ function registerUpdateLegs(em: EntityManager) {
     "updateLimbs"
   );
 }
-
 
 // TODO(@darzu): move this helper elsewhere?
 export function drawLine(
@@ -661,7 +687,7 @@ export function registerBuildPlayersSystem(em: EntityManager) {
           em.ensureComponentOn(e, PlayerEntDef);
 
           // create limbs
-          const noodleM = createNoodleMesh(0.05, [0.2, 0.05, 0.05]);
+          const noodleM = createNoodleMesh(0.15, [0.01, 0.01, 0.01]);
 
           const legSegs: () => NoodleSeg[] = () => [
             {
