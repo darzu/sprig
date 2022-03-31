@@ -445,7 +445,7 @@ function registerUpdateLegs(em: EntityManager) {
           p.player.leftFootWorldPos,
           p.player.rightFootWorldPos
         );
-        centerOfPlayerWorld[1] = centerOfFeet[1]; // ignore Y component
+        centerOfFeet[1] = centerOfPlayerWorld[1]; // ignore Y component
         const massOverhangDist2 = vec3.sqrDist(
           centerOfPlayerWorld,
           centerOfFeet
@@ -453,21 +453,31 @@ function registerUpdateLegs(em: EntityManager) {
 
         const massOverhangDistThreshold2 = 8;
 
+        const leftLegDist2 = vec3.sqrDist(
+          centerOfPlayerWorld,
+          p.player.leftFootWorldPos
+        );
+        const rightLegDist2 = vec3.sqrDist(
+          centerOfPlayerWorld,
+          p.player.rightFootWorldPos
+        );
+
+        const legDist2Threshold = 16;
+
         // do we need to move a leg?
-        // TODO(@darzu): also move feet when extending beyond max leg reach
-        if (massOverhangDist2 > massOverhangDistThreshold2) {
+        if (
+          massOverhangDist2 > massOverhangDistThreshold2 ||
+          leftLegDist2 > legDist2Threshold ||
+          rightLegDist2 > legDist2Threshold
+        ) {
           // which leg? move the one farther from the center
-          const leftLegDist2 = vec3.sqrDist(
-            centerOfPlayerWorld,
-            p.player.leftFootWorldPos
-          );
-          const rightLegDist2 = vec3.sqrDist(
-            centerOfPlayerWorld,
-            p.player.rightFootWorldPos
-          );
           const leg = leftLegDist2 < rightLegDist2 ? rightLeg : leftLeg;
           const footWorldPos =
             leg === leftLeg
+              ? p.player.leftFootWorldPos
+              : p.player.rightFootWorldPos;
+          const otherFootWorldPos =
+            leg !== leftLeg
               ? p.player.leftFootWorldPos
               : p.player.rightFootWorldPos;
 
@@ -480,27 +490,61 @@ function registerUpdateLegs(em: EntityManager) {
           );
 
           // TODO(@darzu): PERF, inverting quat here
-          const invRot = quat.invert(quat.create(), p.rotation);
-          const legDirLocal = vec3.transformQuat(
-            vec3.create(),
-            p.linearVelocity,
-            invRot
-          );
-          vec3.normalize(legDirLocal, legDirLocal);
-          vec3.add(legDirLocal, legDirLocal, [0, -0.8, 0]);
-          vec3.normalize(legDirLocal, legDirLocal);
-          // const legDirLocal: vec3 = vec3.normalize(tempVec(), [0, -1, -0.5]);
+          // const invRot = quat.invert(quat.create(), p.rotation);
+          // const legDirLocal = vec3.transformQuat(
+          //   vec3.create(),
+          //   p.linearVelocity,
+          //   invRot
+          // );
+          // vec3.normalize(legDirLocal, legDirLocal);
+          // vec3.add(legDirLocal, legDirLocal, [0, -0.8, 0]);
+          // vec3.normalize(legDirLocal, legDirLocal);
+          // // const legDirLocal: vec3 = vec3.normalize(tempVec(), [0, -1, -0.5]);
 
-          // TODO(@darzu): we really shouldn't use transform quat since this doesn't account for scale or skew
-          const legDirWorld = vec3.transformQuat(
-            vec3.create(),
-            legDirLocal,
-            p.world.rotation
+          // // TODO(@darzu): we really shouldn't use transform quat since this doesn't account for scale or skew
+          // const legDirWorld = vec3.transformQuat(
+          //   vec3.create(),
+          //   legDirLocal,
+          //   p.world.rotation
+          // );
+
+          // reflect the other foot over the center of mass
+          const otherToCenter = vec3.sub(
+            tempVec(),
+            centerOfPlayerWorld,
+            otherFootWorldPos
           );
+          const legTargetWorldXZ = vec3.add(
+            tempVec(),
+            centerOfPlayerWorld,
+            otherToCenter
+          );
+          // TODO(@darzu): ignore the y component
+          legTargetWorldXZ[1] = centerOfPlayerWorld[1];
+
+          let newDist2 = vec3.sqrDist(legTargetWorldXZ, centerOfPlayerWorld);
+          if (newDist2 > legDist2Threshold) {
+            // too far, move it in
+            const towardCenter = vec3.sub(
+              tempVec(),
+              centerOfPlayerWorld,
+              legTargetWorldXZ
+            );
+            const movDist = Math.sqrt(newDist2 - legDist2Threshold);
+            vec3.normalize(towardCenter, towardCenter);
+            vec3.scale(towardCenter, towardCenter, movDist);
+            vec3.add(legTargetWorldXZ, legTargetWorldXZ, towardCenter);
+          }
+
+          // TODO(@darzu):
+          // drawLine(EM, hipWorld, legTargetWorldXZ, [0, 0, 1]);
+
+          // const legDirWorld = vec3.sub(tempVec(), legTargetWorldXZ, hipWorld);
+          // vec3.normalize(legDirWorld, legDirWorld);
 
           const legRayWorld: Ray = {
-            org: hipWorld,
-            dir: legDirWorld,
+            org: legTargetWorldXZ,
+            dir: [0, -1, 0],
           };
 
           const legRayEndWorld = vec3.add(
@@ -510,7 +554,7 @@ function registerUpdateLegs(em: EntityManager) {
           );
 
           // TODO(@darzu): DEBUG; ray test (green)
-          // drawLine(EM, legRayWorld.org, legRayEndWorld, [0, 1, 0]);
+          drawLine(EM, legRayWorld.org, legRayEndWorld, [0, 1, 0]);
 
           const hits = res.physicsResults.checkRay(legRayWorld);
           const minDistWorld = min(
