@@ -37,7 +37,7 @@ const RemoteMeshes = {
   spacerock: "spacerock.sprig.obj",
   ammunitionBox: "ammunition_box.sprig.obj",
   linstock: "linstock.sprig.obj",
-  cannon: "cannon.sprig.obj",
+  cannon: "cannon_simple.sprig.obj",
 } as const;
 
 const AssetTransforms: Partial<{ [P in keyof typeof RemoteMeshes]: mat4 }> = {
