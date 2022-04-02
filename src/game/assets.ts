@@ -206,7 +206,7 @@ export const SHIP_AABBS: AABB[] = RAW_SHIP_AABBS.map((aabb) => {
 export const LocalMeshes = {
   cube: CUBE_MESH,
   plane: PLANE_MESH,
-  boat: scaleMesh3(CUBE_MESH, [5, 0.3, 2.5]),
+  boat: scaleMesh3(CUBE_MESH, [10, 0.6, 5]),
   bullet: scaleMesh(CUBE_MESH, 0.3),
   gridPlane: GRID_PLANE_MESH,
   wireCube: { ...CUBE_MESH, tri: [] } as Mesh,

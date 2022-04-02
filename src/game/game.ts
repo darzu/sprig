@@ -104,7 +104,7 @@ function createPlayer(em: EntityManager) {
 }
 
 function createGround(em: EntityManager) {
-  const loc = vec3.fromValues(0, -10, 0);
+  const loc = vec3.fromValues(0, -7, 0);
   const color = LIGHT_BLUE;
   let { id } = em.newEntity();
   em.addComponent(id, GroundConstructDef, loc, color);
