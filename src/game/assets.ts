@@ -63,6 +63,7 @@ const MeshTransforms: Partial<{
 }> = {
   ship: blackoutColor,
   ball: blackoutColor,
+  boat_broken: blackoutColor,
 };
 
 // which triangles belong to which faces
