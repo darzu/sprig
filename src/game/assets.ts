@@ -40,7 +40,17 @@ const RemoteMeshes = {
   cannon: "cannon_simple.sprig.obj",
 } as const;
 
-const AssetTransforms: Partial<{ [P in keyof typeof RemoteMeshes]: mat4 }> = {
+type RemoteMeshSymbols = keyof typeof RemoteMeshes;
+
+const RemoteMesheSets = {
+  boat_broken: "boat_broken.sprig.obj",
+} as const;
+
+type RemoteMeshSetSymbols = keyof typeof RemoteMesheSets;
+
+const AssetTransforms: Partial<{
+  [P in RemoteMeshSymbols | RemoteMeshSetSymbols]: mat4;
+}> = {
   linstock: mat4.fromScaling(mat4.create(), [0.1, 0.1, 0.1]),
   ship: mat4.fromScaling(mat4.create(), [3, 3, 3]),
 };
@@ -49,7 +59,7 @@ const blackoutColor: (m: Mesh) => Mesh = (m: Mesh) => {
   return m;
 };
 const MeshTransforms: Partial<{
-  [P in keyof typeof RemoteMeshes]: (m: Mesh) => Mesh;
+  [P in RemoteMeshSymbols | RemoteMeshSetSymbols]: (m: Mesh) => Mesh;
 }> = {
   ship: blackoutColor,
   ball: blackoutColor,
@@ -212,24 +222,26 @@ export const LocalMeshes = {
   wireCube: { ...CUBE_MESH, tri: [] } as Mesh,
 } as const;
 
-type AssetSymbols = keyof typeof RemoteMeshes | keyof typeof LocalMeshes;
+type LocalMeshSymbols = keyof typeof LocalMeshes;
 
-type Asset = {
+type GameMesh = {
   mesh: Mesh;
   aabb: AABB;
   proto: MeshHandle;
 };
 
-type GameAssets = { [P in AssetSymbols]: Asset };
+type GameMeshes = { [P in RemoteMeshSymbols | LocalMeshSymbols]: GameMesh } & {
+  [P in RemoteMeshSetSymbols]: GameMesh[];
+};
 
 const AssetLoaderDef = EM.defineComponent("assetLoader", () => {
   return {
-    promise: null as Promise<GameAssets> | null,
+    promise: null as Promise<GameMeshes> | null,
   };
 });
 
-export const AssetsDef = EM.defineComponent("assets", (assets: GameAssets) => {
-  return assets;
+export const AssetsDef = EM.defineComponent("assets", (meshes: GameMeshes) => {
+  return meshes;
 });
 export type Assets = Component<typeof AssetsDef>;
 
@@ -259,7 +271,7 @@ export function registerAssetLoader(em: EntityManager) {
   );
 }
 
-async function loadAssetInternal(relPath: string): Promise<Mesh> {
+async function loadTxtInternal(relPath: string): Promise<string> {
   // download
   // TODO(@darzu): perf: check DEFAULT_ASSET_PATH once
   let txt;
@@ -269,41 +281,81 @@ async function loadAssetInternal(relPath: string): Promise<Mesh> {
     txt = await getText(BACKUP_ASSET_PATH + relPath);
   }
 
+  return txt;
+}
+async function loadMeshInternal(relPath: string): Promise<Mesh> {
+  // download
+  // TODO(@darzu): perf: check DEFAULT_ASSET_PATH once
+  let txt = await loadTxtInternal(relPath);
+
   // parse
   const opt = importObj(txt);
   assert(
     !!opt && !isParseError(opt),
     `unable to parse asset (${relPath}):\n${opt}`
   );
+  assert(opt.length === 1, "too many meshes; use loadMeshSet for multi meshes");
 
   // clean up
-  const obj = unshareProvokingVertices(opt);
+  const obj = unshareProvokingVertices(opt[0]);
 
   return obj;
 }
+async function loadMeshSetInternal(relPath: string): Promise<Mesh[]> {
+  // download
+  let txt = await loadTxtInternal(relPath);
 
-async function loadAssets(renderer: Renderer): Promise<GameAssets> {
+  // parse
+  // console.log(txt);
+  const opt = importObj(txt);
+  // console.log("importMultiObj");
+  // console.dir(opt);
+  assert(
+    !!opt && !isParseError(opt),
+    `unable to parse asset set (${relPath}):\n${opt}`
+  );
+
+  // clean up
+  const objs = opt.map((o) => unshareProvokingVertices(o));
+
+  return objs;
+}
+
+async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
   const start = performance.now();
 
-  const promises = objMap(RemoteMeshes, (p) => loadAssetInternal(p));
-  const promisesList = Object.entries(promises);
-  const remoteMeshList = await Promise.all(promisesList.map(([_, p]) => p));
+  const singlePromises = objMap(RemoteMeshes, (p) => loadMeshInternal(p));
+  const setPromises = objMap(RemoteMesheSets, (p) => loadMeshSetInternal(p));
+  const singlesList = Object.entries(singlePromises);
+  const singlesMeshList = await Promise.all(singlesList.map(([_, p]) => p));
 
-  const remoteMeshes = objMap(promises, (_, n) => {
-    const idx = promisesList.findIndex(([n2, _]) => n === n2);
-    const rawMesh = remoteMeshList[idx];
-    const t = AssetTransforms[n!];
-    let m = t ? transformMesh(rawMesh, t) : rawMesh;
-    const mt = MeshTransforms[n!];
-    m = mt ? mt(m) : m;
+  const singleMeshes = objMap(singlePromises, (_, n) => {
+    const idx = singlesList.findIndex(([n2, _]) => n === n2);
+    let m = singlesMeshList[idx];
+    const t1 = AssetTransforms[n!];
+    if (t1) m = transformMesh(m, t1);
+    const t2 = MeshTransforms[n!];
+    if (t2) m = t2(m);
     return m;
   });
 
-  const allMeshes = { ...remoteMeshes, ...LocalMeshes };
+  const setsList = Object.entries(setPromises);
+  const setsMeshList = await Promise.all(setsList.map(([_, p]) => p));
+  const setMeshes = objMap(setPromises, (_, n) => {
+    const idx = setsList.findIndex(([n2, _]) => n === n2);
+    let ms = setsMeshList[idx];
+    const t1 = AssetTransforms[n!];
+    if (t1) ms = ms.map((m) => transformMesh(m, t1));
+    const t2 = MeshTransforms[n!];
+    if (t2) ms = ms.map((m) => t2(m));
+    return ms;
+  });
+
+  const allSingleMeshes = { ...singleMeshes, ...LocalMeshes };
 
   // TODO(@darzu): this shouldn't directly add to a mesh pool, we don't know which pool it should
   //  go to
-  const result = objMap(allMeshes, (mesh, n) => {
+  function gameMeshFromMesh(mesh: Mesh): GameMesh {
     const aabb = getAABBFromMesh(mesh);
     const proto = renderer.addMesh(mesh);
     return {
@@ -311,7 +363,11 @@ async function loadAssets(renderer: Renderer): Promise<GameAssets> {
       aabb,
       proto,
     };
-  });
+  }
+  const allSingleAssets = objMap(allSingleMeshes, gameMeshFromMesh);
+  const allSetAssets = objMap(setMeshes, (ms, n) => ms.map(gameMeshFromMesh));
+
+  const result = { ...allSingleAssets, ...allSetAssets };
 
   // perf tracking
   const elapsed = performance.now() - start;

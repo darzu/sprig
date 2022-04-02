@@ -886,3 +886,47 @@ export function cloneMesh(m: Mesh): Mesh {
     lines: m.lines ? m.lines.map((p) => vec2.clone(p)) : undefined,
   };
 }
+// split mesh by connectivity
+// TODO(@darzu): actually, we probably don't need this function
+export function splitMesh(m: Mesh): Mesh[] {
+  // each vertex is a seperate island
+  let vertIslands: Set<number>[] = [];
+  for (let i = 0; i < m.pos.length; i++)
+  vertIslands[i] = new Set<number>([i]);
+  
+  // tris and lines define connectivity, so
+  //    merge together islands
+  for (let tri of m.tri) {
+    mergeIslands(tri[0], tri[1])
+    mergeIslands(tri[0], tri[2])
+  }
+  if (m.lines)
+  for (let line of m.lines) {
+    mergeIslands(line[0], line[1])
+  }
+  
+  const uniqueIslands = uniqueRefs(vertIslands);
+  console.dir(uniqueIslands);
+
+  // TODO(@darzu): FINISH IMPL
+  return [m]
+
+  function mergeIslands(idx0: number, idx1: number) {
+    const s0 = vertIslands[idx0]
+    const s1 = vertIslands[idx1]
+    if (s0 !== s1) {
+      // merge s0 and s1
+      for (let i of s1)
+        s0.add(i)
+      vertIslands[idx1] = s0
+    }
+  }
+}
+function uniqueRefs<T>(ts: T[]): T[] {
+  const res: T[] = [];
+  for (let t1 of ts) {
+    if (res.every(t2 => t2 !== t1))
+        res.push(t1)
+  }
+  return res;
+}

@@ -50,7 +50,7 @@ function getHatMesh(): Mesh {
   if (!_hatMesh) {
     const hatRaw = importObj(HAT_OBJ);
     if (isParseError(hatRaw)) throw hatRaw;
-    const hat = unshareProvokingVertices(hatRaw);
+    const hat = unshareProvokingVertices(hatRaw[0]);
     _hatMesh = hat;
   }
   return _hatMesh;

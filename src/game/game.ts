@@ -81,6 +81,7 @@ import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { FinishedDef } from "../build.js";
 import { registerPhysicsSystems } from "../physics/phys.js";
 import { debugCreateNoodles, registerNoodleSystem } from "./noodles.js";
+import { splitMesh } from "../render/mesh-pool.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -267,6 +268,25 @@ export function initGame(em: EntityManager) {
 
   // TODO(@darzu): DEBUGGING
   // debugCreateNoodles(em);
+  debugBoatParts(em);
+}
+
+function debugBoatParts(em: EntityManager) {
+  let once = false;
+  em.registerSystem(
+    [],
+    [AssetsDef],
+    (_, res) => {
+      if (once) return;
+      once = true;
+
+      const bigM = res.assets.boat_broken;
+      console.dir(bigM);
+
+      // splitMesh(bigM);
+    },
+    "debugBoatParts"
+  );
 }
 
 export function createServerObjects(em: EntityManager) {
