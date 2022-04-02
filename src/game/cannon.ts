@@ -26,9 +26,7 @@ const CANNON_FRAMES = 180;
 
 export const CannonDef = EM.defineComponent("cannon", () => {
   return {
-    loaded: false,
-    firing: false,
-    countdown: 0,
+    loaded: true,
   };
 });
 export type Cannon = Component<typeof CannonDef>;
@@ -41,33 +39,6 @@ export const CannonConstructDef = EM.defineComponent(
     };
   }
 );
-
-export function registerStepCannonsSystem(em: EntityManager) {
-  em.registerSystem(
-    [CannonDef, PositionDef, RotationDef, AuthorityDef],
-    [DetectedEventsDef, PhysicsTimerDef, MeDef],
-    (cannons, { detectedEvents, physicsTimer, me }) => {
-      for (let { cannon, authority, position, rotation, id } of cannons) {
-        if (cannon.firing) {
-          cannon.countdown -= physicsTimer.steps;
-          if (cannon.countdown <= 0) {
-            // TODO: cannon firing animation
-            if (authority.pid === me.pid) {
-              cannon.firing = false;
-              fireBullet(em, position, rotation);
-              detectedEvents.push({
-                type: "fired-cannon",
-                entities: [id],
-                location: null,
-              });
-            }
-          }
-        }
-      }
-    },
-    "stepCannons"
-  );
-}
 
 export function registerPlayerCannonSystem(em: EntityManager) {
   // em.registerSystem(
@@ -87,31 +58,24 @@ export function registerPlayerCannonSystem(em: EntityManager) {
   // );
 
   em.registerSystem(
-    [CannonDef, InteractingDef],
+    [CannonDef, InteractingDef, PositionDef, RotationDef],
     [DetectedEventsDef],
     (cannons, { detectedEvents }) => {
-      for (let { cannon, interacting, id } of cannons) {
+      for (let { cannon, position, rotation, interacting, id } of cannons) {
         console.log("someone is interacting with the cannon");
-        let player = EM.findEntity(interacting.id, [PlayerEntDef])!;
-        if (player.player.tool) {
-          let tool = EM.findEntity(player.player.tool, [ToolDef])!;
-          if (AmmunitionDef.isOn(tool) && !cannon.loaded) {
-            let ammunition = tool.ammunition;
-            if (ammunition.amount > 0) {
-              detectedEvents.push({
-                type: "load-cannon",
-                entities: [interacting.id, id, tool.id],
-                location: null,
-              });
-            }
-          } else if (LinstockDef.isOn(tool) && cannon.loaded) {
-            detectedEvents.push({
-              type: "fire-cannon",
-              entities: [interacting.id, id],
-              location: null,
-            });
-          }
-        }
+        // let player = EM.findEntity(interacting.id, [PlayerEntDef])!;
+
+        // TODO(@darzu): capture this elsewhere
+        const fireDir = quat.create();
+        quat.rotateY(fireDir, rotation, Math.PI * 0.5);
+        const firePos = vec3.add(vec3.create(), position, [-2, 0, 0]);
+
+        fireBullet(em, firePos, fireDir);
+        detectedEvents.push({
+          type: "fire-cannon",
+          entities: [interacting.id, id],
+          location: null,
+        });
         EM.removeComponent(id, InteractingDef);
       }
     },
@@ -120,18 +84,18 @@ export function registerPlayerCannonSystem(em: EntityManager) {
 }
 
 export function registerCannonEventHandlers() {
-  registerEventHandler("load-cannon", {
-    eventAuthorityEntity: (entities) => entities[0],
-    legalEvent: (em, entities) =>
-      !em.findEntity(entities[1], [CannonDef])!.cannon!.loaded &&
-      em.findEntity(entities[2], [AmmunitionDef])!.ammunition.amount > 0,
-    runEvent: (em, entities) => {
-      let cannon = em.findEntity(entities[1], [CannonDef])!.cannon;
-      let ammunition = em.findEntity(entities[2], [AmmunitionDef])!.ammunition;
-      cannon.loaded = true;
-      ammunition.amount -= 1;
-    },
-  });
+  // registerEventHandler("load-cannon", {
+  //   eventAuthorityEntity: (entities) => entities[0],
+  //   legalEvent: (em, entities) =>
+  //     !em.findEntity(entities[1], [CannonDef])!.cannon!.loaded &&
+  //     em.findEntity(entities[2], [AmmunitionDef])!.ammunition.amount > 0,
+  //   runEvent: (em, entities) => {
+  //     let cannon = em.findEntity(entities[1], [CannonDef])!.cannon;
+  //     let ammunition = em.findEntity(entities[2], [AmmunitionDef])!.ammunition;
+  //     cannon.loaded = true;
+  //     ammunition.amount -= 1;
+  //   },
+  // });
 
   registerEventHandler("fire-cannon", {
     eventAuthorityEntity: (entities) => entities[0],
@@ -142,9 +106,9 @@ export function registerCannonEventHandlers() {
         CannonDef,
         AuthorityDef,
       ])!;
-      cannon.loaded = false;
-      cannon.firing = true;
-      cannon.countdown = CANNON_FRAMES;
+      // cannon.loaded = false;
+      // cannon.firing = true;
+      // cannon.countdown = CANNON_FRAMES;
       // TODO: this is maybe weird?
       authority.pid = em.findEntity(entities[0], [AuthorityDef])!.authority.pid;
       authority.seq++;
@@ -153,14 +117,14 @@ export function registerCannonEventHandlers() {
   });
 
   // TODO: figure out authority etc. for this event
-  registerEventHandler("fired-cannon", {
-    eventAuthorityEntity: (entities) => entities[0],
-    legalEvent: (_em, _entities) => true,
-    runEvent: (em, entities) => {
-      let cannon = em.findEntity(entities[0], [CannonDef])!.cannon;
-      cannon.firing = false;
-    },
-  });
+  // registerEventHandler("fired-cannon", {
+  //   eventAuthorityEntity: (entities) => entities[0],
+  //   legalEvent: (_em, _entities) => true,
+  //   runEvent: (em, entities) => {
+  //     let cannon = em.findEntity(entities[0], [CannonDef])!.cannon;
+  //     // cannon.firing = false;
+  //   },
+  // });
 }
 
 // TODO: call this from game somewhere?

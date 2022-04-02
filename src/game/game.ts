@@ -65,7 +65,6 @@ import {
   registerBuildCannonsSystem,
   registerBuildLinstockSystem,
   registerPlayerCannonSystem,
-  registerStepCannonsSystem,
 } from "./cannon.js";
 import { registerInteractionSystem } from "./interact.js";
 import { registerModeler } from "./modeler.js";
@@ -206,7 +205,7 @@ export function registerAllSystems(em: EntityManager) {
   registerStepPlayers(em);
   registerNoodleSystem(em);
   registerInteractionSystem(em);
-  registerStepCannonsSystem(em);
+  // registerStepCannonsSystem(em);
   registerPlayerCannonSystem(em);
   registerUpdateSmoothingLerp(em);
   registerPhysicsSystems(em);
