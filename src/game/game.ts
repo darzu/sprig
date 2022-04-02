@@ -298,16 +298,11 @@ function createShips(em: EntityManager) {
 }
 function createBoats(em: EntityManager) {
   // create boat(s)
-  const BOAT_COUNT = 10;
-  for (let i = 0; i < BOAT_COUNT; i++) {
-    const boatCon = em.addComponent(em.newEntity().id, BoatConstructDef);
-    boatCon.location[1] = -9;
-    boatCon.location[0] = (Math.random() - 0.5) * 40 - 20;
-    boatCon.location[2] = (Math.random() - 0.5) * 40 - 20;
-    boatCon.speed = 0.005 + jitter(0.005);
-    boatCon.wheelSpeed = 0; //jitter(0.001);
-    boatCon.wheelDir = Math.PI / 2;
-  }
+  const boatCon = em.addComponent(em.newEntity().id, BoatConstructDef);
+  boatCon.location = vec3.fromValues(-20, -5, 30);
+  boatCon.speed = 0.005;
+  boatCon.wheelSpeed = 0; //jitter(0.001);
+  boatCon.wheelDir = Math.PI / 2;
 }
 
 function createHats(em: EntityManager) {
