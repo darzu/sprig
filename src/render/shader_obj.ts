@@ -53,7 +53,7 @@ export module MeshUniformMod {
     for (let i = 0; i < _names.length; i++) {
       const n = _names[i];
       const t = _types[i];
-      res += `${n}: ${t};\n`;
+      res += `${n}: ${t},\n`;
     }
 
     return res;
@@ -80,9 +80,9 @@ export const obj_vertShader = () =>
     @group(1) @binding(0) var<uniform> model : Model;
 
     struct VertexOutput {
-        @location(0) @interpolate(flat) normal : vec3<f32>;
-        @location(1) @interpolate(flat) color : vec3<f32>;
-        @builtin(position) position : vec4<f32>;
+        @location(0) @interpolate(flat) normal : vec3<f32>,
+        @location(1) @interpolate(flat) color : vec3<f32>,
+        @builtin(position) position : vec4<f32>,
     };
 
     @stage(vertex)
@@ -103,8 +103,8 @@ export const obj_fragShader = () =>
     @group(0) @binding(0) var<uniform> scene : Scene;
 
     struct VertexOutput {
-        @location(0) @interpolate(flat) normal : vec3<f32>;
-        @location(1) @interpolate(flat) color : vec3<f32>;
+        @location(0) @interpolate(flat) normal : vec3<f32>,
+        @location(1) @interpolate(flat) color : vec3<f32>,
     };
 
     @stage(fragment)

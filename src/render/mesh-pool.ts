@@ -177,12 +177,12 @@ export module SceneUniform {
     //     cameraPos : vec3<f32>;
     // TODO(@darzu): enforce agreement w/ Scene interface
     return `
-            cameraViewProjMatrix : mat4x4<f32>;
-            lightViewProjMatrix : mat4x4<f32>;
-            lightDir : vec3<f32>;
-            time : f32;
-            playerPos: vec2<f32>;
-            cameraPos : vec3<f32>;
+            cameraViewProjMatrix : mat4x4<f32>,
+            lightViewProjMatrix : mat4x4<f32>,
+            lightDir : vec3<f32>,
+            time : f32,
+            playerPos: vec2<f32>,
+            cameraPos : vec3<f32>,
         `;
   }
 
