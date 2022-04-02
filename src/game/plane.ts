@@ -8,6 +8,7 @@ import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import { FinishedDef } from "../build.js";
 import { Assets, AssetsDef } from "./assets.js";
+import { cloneMesh, getAABBFromMesh, scaleMesh } from "../render/mesh-pool.js";
 
 export const PlaneConstructDef = EM.defineComponent(
   "planeConstruct",
@@ -50,11 +51,14 @@ export function registerBuildPlanesSystem(em: EntityManager) {
       //   em.ensureComponent(plane.id, RotationDef, r);
       // }
       em.ensureComponent(plane.id, ColorDef, plane.planeConstruct.color);
-      em.ensureComponent(plane.id, RenderableConstructDef, assets.plane.proto);
+      let m = cloneMesh(assets.plane.mesh);
+      m = scaleMesh(m, 10.0);
+      em.ensureComponent(plane.id, RenderableConstructDef, m);
+      const aabb = getAABBFromMesh(m);
       em.ensureComponent(plane.id, ColliderDef, {
         shape: "AABB",
         solid: true,
-        aabb: assets.plane.aabb,
+        aabb,
       });
       em.ensureComponent(plane.id, AuthorityDef, pid);
       em.ensureComponent(

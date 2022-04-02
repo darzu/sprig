@@ -101,28 +101,14 @@ EM.registerSerializerPair(
 
 function createPlayer(em: EntityManager) {
   const e = em.newEntity();
-  em.addComponent(e.id, PlayerConstructDef, vec3.fromValues(5, 0, 0));
+  em.addComponent(e.id, PlayerConstructDef, vec3.fromValues(0, 5, 0));
 }
 
 function createGround(em: EntityManager) {
-  // create checkered grid
-  const NUM_PLANES_X = 10;
-  const NUM_PLANES_Z = 10;
-  for (let x = 0; x < NUM_PLANES_X; x++) {
-    for (let z = 0; z < NUM_PLANES_Z; z++) {
-      const xPos = (x - NUM_PLANES_X / 2) * 20 + 10;
-      const zPos = (z - NUM_PLANES_Z / 2) * 20;
-      const parity = !!((x + z) % 2);
-      const loc = vec3.fromValues(
-        xPos,
-        x + z - (NUM_PLANES_X + NUM_PLANES_Z),
-        zPos
-      );
-      const color = parity ? LIGHT_BLUE : DARK_BLUE;
-      let { id } = em.newEntity();
-      em.addComponent(id, PlaneConstructDef, loc, color);
-    }
-  }
+  const loc = vec3.fromValues(0, 0, 0);
+  const color = LIGHT_BLUE;
+  let { id } = em.newEntity();
+  em.addComponent(id, PlaneConstructDef, loc, color);
 }
 
 const WorldPlaneConstDef = EM.defineComponent("worldPlane", (t?: mat4) => {
@@ -209,7 +195,6 @@ export function registerAllSystems(em: EntityManager) {
   registerBuildCubesSystem(em);
   registerBuildBoatsSystem(em);
   registerBuildShipSystem(em);
-  registerBuildHatSystem(em);
   registerBuildBulletsSystem(em);
   registerBuildCannonsSystem(em);
   registerBuildAmmunitionSystem(em);
@@ -226,8 +211,6 @@ export function registerAllSystems(em: EntityManager) {
   registerPhysicsSystems(em);
   registerBulletCollisionSystem(em);
   registerModeler(em);
-  registerHatPickupSystem(em);
-  registerHatDropSystem(em);
   registerToolPickupSystem(em);
   registerToolDropSystem(em);
   registerAckUpdateSystem(em);
@@ -293,9 +276,9 @@ export function createServerObjects(em: EntityManager) {
   createGround(em);
   createBoats(em);
   createShips(em);
-  createHats(em);
+  // createHats(em);
   createCannons(em);
-  createWorldPlanes(em);
+  // createWorldPlanes(em);
 }
 export function createLocalObjects(em: EntityManager) {
   createPlayer(em);
