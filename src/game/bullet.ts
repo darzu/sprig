@@ -46,7 +46,7 @@ EM.registerSerializerPair(
   }
 );
 
-const BULLET_COLOR: vec3 = [0.3, 0.3, 0.8];
+const BULLET_COLOR: vec3 = [0.02, 0.02, 0.02];
 
 function createBullet(
   em: EntityManager,
@@ -62,13 +62,13 @@ function createBullet(
   em.ensureComponent(e.id, AngularVelocityDef, props.angularVelocity);
   em.ensureComponent(e.id, ColorDef, BULLET_COLOR);
   em.ensureComponent(e.id, MotionSmoothingDef);
-  em.ensureComponent(e.id, RenderableConstructDef, assets.bullet.proto);
+  em.ensureComponent(e.id, RenderableConstructDef, assets.ball.proto);
   em.ensureComponent(e.id, AuthorityDef, pid);
   em.ensureComponent(e.id, BulletDef);
   em.ensureComponent(e.id, ColliderDef, {
     shape: "AABB",
     solid: false,
-    aabb: assets.bullet.aabb,
+    aabb: assets.ball.aabb,
   });
   em.ensureComponent(e.id, SyncDef, [BulletConstructDef.id], [PositionDef.id]);
   em.ensureComponent(e.id, PredictDef);

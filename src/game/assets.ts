@@ -44,13 +44,15 @@ const AssetTransforms: Partial<{ [P in keyof typeof RemoteMeshes]: mat4 }> = {
   linstock: mat4.fromScaling(mat4.create(), [0.1, 0.1, 0.1]),
   ship: mat4.fromScaling(mat4.create(), [3, 3, 3]),
 };
+const blackoutColor: (m: Mesh) => Mesh = (m: Mesh) => {
+  m.colors.map((c) => vec3.zero(c));
+  return m;
+};
 const MeshTransforms: Partial<{
   [P in keyof typeof RemoteMeshes]: (m: Mesh) => Mesh;
 }> = {
-  ship: (m: Mesh) => {
-    m.colors.map((c) => vec3.zero(c));
-    return m;
-  },
+  ship: blackoutColor,
+  ball: blackoutColor,
 };
 
 // which triangles belong to which faces
