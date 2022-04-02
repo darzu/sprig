@@ -44,7 +44,7 @@ import {
   registerHatPickupSystem,
   registerHatDropSystem,
 } from "./hat.js";
-import { registerBuildBulletsSystem } from "./bullet.js";
+import { registerBuildBulletsSystem, registerBulletUpdate } from "./bullet.js";
 import {
   AssetsDef,
   DARK_BLUE,
@@ -203,6 +203,7 @@ export function registerAllSystems(em: EntityManager) {
   registerMoveCubesSystem(em);
   registerStepBoats(em);
   registerStepPlayers(em);
+  registerBulletUpdate(em);
   registerNoodleSystem(em);
   registerInteractionSystem(em);
   // registerStepCannonsSystem(em);
@@ -317,8 +318,17 @@ function createHats(em: EntityManager) {
 }
 
 function createCannons(em: EntityManager) {
-  em.addComponent(em.newEntity().id, CannonConstructDef, [-4, -1.5, -2]);
+  const cRight = em.newEntity();
+  const right = quat.create();
+  quat.rotateZ(right, quat.IDENTITY, Math.PI * -0.1);
+  em.addComponent(cRight.id, CannonConstructDef, [-4, -1.5, -5], right);
 
-  em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
-  em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2]);
+  const cLeft = em.newEntity();
+  const left = quat.create();
+  quat.rotateY(left, left, Math.PI);
+  quat.rotateZ(left, left, Math.PI * -0.1);
+  em.addComponent(cLeft.id, CannonConstructDef, [10, -1.5, -5], left);
+
+  // em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
+  // em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2]);
 }

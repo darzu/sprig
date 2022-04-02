@@ -14,6 +14,7 @@ import {
   LinearVelocityDef,
 } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../smoothing.js";
+import { PhysicsTimerDef } from "../time.js";
 
 export const BulletDef = EM.defineComponent("bullet", () => {
   return true;
@@ -86,6 +87,19 @@ export function registerBuildBulletsSystem(em: EntityManager) {
   );
 }
 
+export function registerBulletUpdate(em: EntityManager) {
+  em.registerSystem(
+    [BulletDef, PositionDef, LinearVelocityDef],
+    [PhysicsTimerDef],
+    (bullets, res) => {
+      for (let b of bullets) {
+        b.linearVelocity[1] -= 0.001 * res.physicsTimer.steps;
+      }
+    },
+    "updateBullets"
+  );
+}
+
 export function spawnBullet(
   em: EntityManager,
   position: Position,
@@ -106,13 +120,12 @@ export function fireBullet(
   em: EntityManager,
   location: vec3,
   rotation: quat,
-  speed?: number,
-  rotationSpeed?: number
+  speed: number = 0.02,
+  rotationSpeed: number = 0.02
 ) {
-  speed = speed || 0.02;
-  rotationSpeed = rotationSpeed || 0.02;
   let bulletAxis = vec3.fromValues(0, 0, -1);
   vec3.transformQuat(bulletAxis, bulletAxis, rotation);
+  vec3.normalize(bulletAxis, bulletAxis);
   const linearVelocity = vec3.scale(vec3.create(), bulletAxis, speed);
   const angularVelocity = vec3.scale(vec3.create(), bulletAxis, rotationSpeed);
   spawnBullet(em, vec3.clone(location), linearVelocity, angularVelocity);

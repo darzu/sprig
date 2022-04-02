@@ -33,9 +33,10 @@ export type Cannon = Component<typeof CannonDef>;
 
 export const CannonConstructDef = EM.defineComponent(
   "cannonConstruct",
-  (loc?: vec3) => {
+  (loc?: vec3, rot?: quat) => {
     return {
       location: loc ?? vec3.fromValues(0, 0, 0),
+      rotation: rot ?? quat.create(),
     };
   }
 );
@@ -68,9 +69,12 @@ export function registerPlayerCannonSystem(em: EntityManager) {
         // TODO(@darzu): capture this elsewhere
         const fireDir = quat.create();
         quat.rotateY(fireDir, rotation, Math.PI * 0.5);
-        const firePos = vec3.add(vec3.create(), position, [-2, 0, 0]);
+        const firePos = vec3.create();
+        vec3.transformQuat(firePos, firePos, fireDir);
+        vec3.add(firePos, firePos, position);
 
-        fireBullet(em, firePos, fireDir);
+        // fireBullet(em, firePos, fireDir, 0.1);
+        fireBullet(em, firePos, fireDir, 0.05);
         detectedEvents.push({
           type: "fire-cannon",
           entities: [interacting.id, id],
@@ -134,10 +138,12 @@ export type CannonConstruct = Component<typeof CannonConstructDef>;
 
 function serializeCannonConstruct(c: CannonConstruct, buf: Serializer) {
   buf.writeVec3(c.location);
+  buf.writeQuat(c.rotation);
 }
 
 function deserializeCannonConstruct(c: CannonConstruct, buf: Deserializer) {
   buf.readVec3(c.location);
+  buf.readQuat(c.rotation);
 }
 
 EM.registerSerializerPair(
@@ -155,7 +161,7 @@ function createCannon(
   if (FinishedDef.isOn(e)) return;
   const props = e.cannonConstruct;
   em.ensureComponent(e.id, PositionDef, props.location);
-  em.ensureComponent(e.id, RotationDef);
+  em.ensureComponent(e.id, RotationDef, props.rotation);
   em.ensureComponent(e.id, ColorDef, [0, 0, 0]);
   //TODO: do we need motion smoothing?
   //if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
@@ -167,7 +173,7 @@ function createCannon(
     solid: true,
     aabb: assets.cannon.aabb,
   });
-  em.ensureComponent(e.id, SyncDef, [CannonConstructDef.id]);
+  em.ensureComponent(e.id, SyncDef, [CannonConstructDef.id, RotationDef.id]);
   em.addComponent(e.id, FinishedDef);
 
   // create seperate hitbox for interacting with the cannon
