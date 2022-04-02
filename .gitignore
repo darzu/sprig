@@ -3,6 +3,4 @@
 /public/assets
 !/public/gl-matrix.js
 .DS_Store
-!docs/
-!docs/*.js
-!docs/*.js.map
+!docs/**/*
