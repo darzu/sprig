@@ -18,6 +18,7 @@ import { assert } from "../test.js";
 import { objMap } from "../util.js";
 import { getText } from "../webget.js";
 import { aabbListToStr } from "./modeler.js";
+import { min } from "../math.js";
 
 export const BLACK = vec3.fromValues(0, 0, 0);
 export const DARK_GRAY = vec3.fromValues(0.02, 0.02, 0.02);
@@ -188,6 +189,9 @@ export const SHIP_AABBS: AABB[] = RAW_SHIP_AABBS.map((aabb) => {
   vec3.scale(aabb.max, aabb.max, 3 / 5);
   return aabb;
 });
+// const shipMinX = min(SHIP_AABBS.map((a) => a.min[0]));
+// const shipMaxX = min(SHIP_AABBS.map((a) => a.max[0]));
+// console.log(`${(shipMaxX + shipMinX) / 2}`);
 
 export const LocalMeshes = {
   cube: CUBE_MESH,

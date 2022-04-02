@@ -61,7 +61,7 @@ export function registerBuildShipSystem(em: EntityManager) {
         if (!SyncDef.isOn(e)) {
           const sync = em.addComponent(e.id, SyncDef);
           sync.fullComponents.push(ShipConstructDef.id);
-          sync.dynamicComponents.push(PositionDef.id);
+          // sync.dynamicComponents.push(PositionDef.id);
           sync.dynamicComponents.push(RotationDef.id);
         }
         em.addComponent(e.id, FinishedDef);

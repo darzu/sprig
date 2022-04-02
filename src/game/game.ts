@@ -105,7 +105,7 @@ function createPlayer(em: EntityManager) {
 }
 
 function createGround(em: EntityManager) {
-  const loc = vec3.fromValues(0, 0, 0);
+  const loc = vec3.fromValues(0, -10, 0);
   const color = LIGHT_BLUE;
   let { id } = em.newEntity();
   em.addComponent(id, GroundConstructDef, loc, color);
@@ -291,7 +291,7 @@ function createShips(em: EntityManager) {
   const rot = quat.create();
   // quat.rotateY(rot, rot, Math.PI * -0.4);
   // const pos: vec3 = [-40, -10, -60];
-  const pos: vec3 = [0, 5, 0];
+  const pos: vec3 = vec3.fromValues(-2, -4, 0);
   // const pos: vec3 = [0, -10, 130];
   em.addComponent(em.newEntity().id, ShipConstructDef, pos, rot);
 }
