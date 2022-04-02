@@ -299,7 +299,7 @@ function createShips(em: EntityManager) {
 function createBoats(em: EntityManager) {
   // create boat(s)
   const boatCon = em.addComponent(em.newEntity().id, BoatConstructDef);
-  boatCon.location = vec3.fromValues(-20, -5, 30);
+  boatCon.location = vec3.fromValues(-25, -5, 30);
   boatCon.speed = 0.005;
   boatCon.wheelSpeed = 0; //jitter(0.001);
   boatCon.wheelDir = Math.PI / 2;
@@ -318,16 +318,18 @@ function createHats(em: EntityManager) {
 }
 
 function createCannons(em: EntityManager) {
+  const pitch = Math.PI * -0.05;
+
   const cRight = em.newEntity();
   const right = quat.create();
-  quat.rotateZ(right, quat.IDENTITY, Math.PI * -0.1);
-  em.addComponent(cRight.id, CannonConstructDef, [-4, -1.5, -5], right);
+  quat.rotateZ(right, right, pitch);
+  em.addComponent(cRight.id, CannonConstructDef, [-3, -1.5, -5], right);
 
   const cLeft = em.newEntity();
   const left = quat.create();
   quat.rotateY(left, left, Math.PI);
-  quat.rotateZ(left, left, Math.PI * -0.1);
-  em.addComponent(cLeft.id, CannonConstructDef, [10, -1.5, -5], left);
+  quat.rotateZ(left, left, pitch);
+  em.addComponent(cLeft.id, CannonConstructDef, [9, -1.5, -5], left);
 
   // em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
   // em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2]);
