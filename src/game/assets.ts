@@ -29,7 +29,7 @@ const DEFAULT_ASSET_PATH = "/assets/";
 const BACKUP_ASSET_PATH = "https://sprig.land/assets/";
 
 const RemoteMeshes = {
-  ship: "ship.sprig.obj",
+  ship: "barge.sprig.obj",
   ball: "ball.sprig.obj",
   pick: "pick.sprig.obj",
   spaceore: "spaceore.sprig.obj",
@@ -41,6 +41,7 @@ const RemoteMeshes = {
 
 const AssetTransforms: Partial<{ [P in keyof typeof RemoteMeshes]: mat4 }> = {
   linstock: mat4.fromScaling(mat4.create(), [0.1, 0.1, 0.1]),
+  ship: mat4.fromScaling(mat4.create(), [5, 5, 5]),
 };
 
 // which triangles belong to which faces
@@ -168,6 +169,7 @@ function createGridPlane(width: number, height: number): Mesh {
   );
 }
 
+// TODO(@darzu): recompute these
 export const SHIP_AABBS: AABB[] = [
   { min: [-20.3, 1.7, -31.3], max: [13.5, 3.75, 16.9] },
   { min: [-11.6, -2.7, 17.2], max: [4.8, 13.75, 42.8] },
