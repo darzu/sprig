@@ -93,6 +93,8 @@ export class Renderer_WebGPU implements Renderer {
       device: this.device,
       format: this.presentationFormat, // this.presentationFormat
       size: newSize,
+      // TODO(@darzu): support transparency?
+      compositingAlphaMode: "opaque",
     });
 
     this.depthTexture = this.device.createTexture({
