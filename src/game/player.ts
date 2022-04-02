@@ -445,7 +445,36 @@ function registerUpdateLegs(em: EntityManager) {
         ]);
         if (!leftLeg || !rightLeg) continue;
 
+        const legLen = 2;
+        const footDistThreshold = 4;
+        const footDist2Threshold = footDistThreshold ** 2;
+
         const centerOfPlayerWorld = vec3.clone(p.world.position);
+
+        // are we flying?
+        const playerDown: Ray = {
+          org: centerOfPlayerWorld,
+          dir: [0, -1, 0],
+        };
+        const belowPlayerHits = res.physicsResults.checkRay(playerDown);
+        const nearestBelowPlayerDist = min(
+          belowPlayerHits.map((h) => (h.id === p.id ? Infinity : h.dist))
+        );
+        if (nearestBelowPlayerDist > legLen + footDistThreshold) {
+          // flying
+          vec3.add(
+            leftLeg.noodle.segments[1].pos,
+            leftLeg.noodle.segments[0].pos,
+            [0, -legLen, 0]
+          );
+          vec3.add(
+            rightLeg.noodle.segments[1].pos,
+            rightLeg.noodle.segments[0].pos,
+            [0, -legLen, 0]
+          );
+          continue;
+        }
+
         const centerOfFeet = vec3Mid(
           vec3.create(),
           p.player.leftFootWorldPos,
@@ -469,13 +498,11 @@ function registerUpdateLegs(em: EntityManager) {
           p.player.rightFootWorldPos
         );
 
-        const legDist2Threshold = 16;
-
         // do we need to move a leg?
         if (
           massOverhangDist2 > massOverhangDistThreshold2 ||
-          leftLegDist2 > legDist2Threshold ||
-          rightLegDist2 > legDist2Threshold
+          leftLegDist2 > footDist2Threshold ||
+          rightLegDist2 > footDist2Threshold
         ) {
           // which leg? move the one farther from the center
           const leg = leftLegDist2 < rightLegDist2 ? rightLeg : leftLeg;
@@ -500,12 +527,6 @@ function registerUpdateLegs(em: EntityManager) {
           targetCenterOfMass[1] = centerOfPlayerWorld[1]; // ignore y
 
           // cast a ray to see where the foot should go
-          // const hipLocal = leg.noodle.segments[0].pos;
-          // const hipWorld = vec3.transformMat4(
-          //   vec3.create(),
-          //   hipLocal,
-          //   p.world.transform
-          // );
 
           // TODO(@darzu): PERF, inverting quat here
           // const invRot = quat.invert(quat.create(), p.rotation);
@@ -541,14 +562,14 @@ function registerUpdateLegs(em: EntityManager) {
           legTargetWorldXZ[1] = targetCenterOfMass[1];
 
           let newDist2 = vec3.sqrDist(legTargetWorldXZ, targetCenterOfMass);
-          if (newDist2 > legDist2Threshold) {
+          if (newDist2 > footDist2Threshold) {
             // too far, move it in
             const towardCenter = vec3.sub(
               tempVec(),
               targetCenterOfMass,
               legTargetWorldXZ
             );
-            const movDist = Math.sqrt(newDist2 - legDist2Threshold);
+            const movDist = Math.sqrt(newDist2 - footDist2Threshold);
             vec3.normalize(towardCenter, towardCenter);
             vec3.scale(towardCenter, towardCenter, movDist);
             vec3.add(legTargetWorldXZ, legTargetWorldXZ, towardCenter);
@@ -581,12 +602,24 @@ function registerUpdateLegs(em: EntityManager) {
           const minDistWorld2 = minDistWorld ** 2;
           // TODO(@darzu): check for length < leg length? else flying?
           if (minDistWorld2 < Infinity) {
+            // if (minDistWorld2 > legDist2Threshold) {
+            //   // flying
+            //   const hipLocal = leg.noodle.segments[0].pos;
+            //   const hipWorld = vec3.transformMat4(
+            //     vec3.create(),
+            //     hipLocal,
+            //     p.world.transform
+            //   );
+
+            //   vec3.add(footWorldPos, hipWorld, [0, -2, 0]);
+            // } else {
             // update foot pos
             vec3.add(
               footWorldPos,
               legRayWorld.org,
               vec3.scale(tempVec(), legRayWorld.dir, minDistWorld)
             );
+            // }
 
             // TODO(@darzu): DEBUG; new location found (blue)
             // drawLine(EM, legRayWorld.org, footWorldPos, [1, 0, 0]);
