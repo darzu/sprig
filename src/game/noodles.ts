@@ -47,12 +47,6 @@ export function debugCreateNoodles(em: EntityManager) {
   em.ensureComponentOn(e, RenderableConstructDef, m);
   em.ensureComponentOn(e, PositionDef, [5, -5, 0]);
 
-  const posIdxToSegIdx: Map<number, number> = new Map();
-  CUBE_MESH.pos.forEach((p, i) => {
-    if (p[1] > 0) posIdxToSegIdx.set(i, 0);
-    else posIdxToSegIdx.set(i, 1);
-  });
-
   // TODO(@darzu): test cube faces (update: they are correct)
   // const cube = em.newEntity();
   // em.ensureComponentOn(cube, PositionDef, [0, -2, 0]);
@@ -61,6 +55,14 @@ export function debugCreateNoodles(em: EntityManager) {
   //   cubeM.colors[triIdx] = [0, 0, 0.5];
   // }
   // em.ensureComponentOn(cube, RenderableConstructDef, cubeM);
+}
+
+export function registerNoodleSystem(em: EntityManager) {
+  const posIdxToSegIdx: Map<number, number> = new Map();
+  CUBE_MESH.pos.forEach((p, i) => {
+    if (p[1] > 0) posIdxToSegIdx.set(i, 0);
+    else posIdxToSegIdx.set(i, 1);
+  });
 
   em.registerSystem(
     [NoodleDef, RenderableDef],

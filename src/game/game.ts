@@ -81,7 +81,7 @@ import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { FinishedDef } from "../build.js";
 import { registerPhysicsSystems } from "../physics/phys.js";
-import { debugCreateNoodles } from "./noodles.js";
+import { debugCreateNoodles, registerNoodleSystem } from "./noodles.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -204,6 +204,7 @@ export function registerAllSystems(em: EntityManager) {
   registerMoveCubesSystem(em);
   registerStepBoats(em);
   registerStepPlayers(em);
+  registerNoodleSystem(em);
   registerInteractionSystem(em);
   registerStepCannonsSystem(em);
   registerPlayerCannonSystem(em);
