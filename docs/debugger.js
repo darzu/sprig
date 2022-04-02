@@ -4,7 +4,7 @@ import { EM } from "./entity-manager.js";
 // eventsToNetwork,networkReady,join,bullet,bulletConstruct,cubeConstruct,player,
 // playerConstruct,camera,transform,motionSmoothing,parent,renderable,cameraView,
 // physicsResults,_phys,boat,boatConstruct,detectedEvents,requestedEvents,events,
-// planeConstruct,shipConstruct,hatConstruct,color,hat
+// groundConstruct,shipConstruct,hatConstruct,color,hat
 const dbgEnts = new Map();
 let dbgEntSingleton = { id: 0, _cmps: () => [] };
 const dbgCmpsAllById = new Map();

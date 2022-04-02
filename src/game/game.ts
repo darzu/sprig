@@ -35,7 +35,7 @@ import { registerPredictSystem } from "../net/predict.js";
 import { registerEventSystems } from "../net/events.js";
 import { registerBuildCubesSystem, registerMoveCubesSystem } from "./cube.js";
 import { registerTimeSystem } from "../time.js";
-import { PlaneConstructDef, registerBuildPlanesSystem } from "./plane.js";
+import { GroundConstructDef, registerBuildGroundSystem } from "./ground.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
 import { registerBuildShipSystem, ShipConstructDef } from "./ship.js";
 import {
@@ -108,7 +108,7 @@ function createGround(em: EntityManager) {
   const loc = vec3.fromValues(0, 0, 0);
   const color = LIGHT_BLUE;
   let { id } = em.newEntity();
-  em.addComponent(id, PlaneConstructDef, loc, color);
+  em.addComponent(id, GroundConstructDef, loc, color);
 }
 
 const WorldPlaneConstDef = EM.defineComponent("worldPlane", (t?: mat4) => {
@@ -190,7 +190,7 @@ export function registerAllSystems(em: EntityManager) {
   registerJoinSystems(em);
   registerAssetLoader(em);
   registerBuildPlayersSystem(em);
-  registerBuildPlanesSystem(em);
+  registerBuildGroundSystem(em);
   registerBuildWorldPlanes(em);
   registerBuildCubesSystem(em);
   registerBuildBoatsSystem(em);

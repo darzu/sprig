@@ -8,39 +8,46 @@ import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import { FinishedDef } from "../build.js";
 import { Assets, AssetsDef } from "./assets.js";
-import { cloneMesh, getAABBFromMesh, scaleMesh } from "../render/mesh-pool.js";
+import {
+  cloneMesh,
+  getAABBFromMesh,
+  scaleMesh,
+  scaleMesh3,
+} from "../render/mesh-pool.js";
 
-export const PlaneConstructDef = EM.defineComponent(
-  "planeConstruct",
+const SIZE = 40;
+
+export const GroundConstructDef = EM.defineComponent(
+  "groundConstruct",
   (location?: vec3, color?: vec3) => ({
     location: location ?? vec3.fromValues(0, 0, 0),
     color: color ?? vec3.fromValues(0, 0, 0),
   })
 );
 
-export type PlaneConstruct = Component<typeof PlaneConstructDef>;
+export type GroundConstruct = Component<typeof GroundConstructDef>;
 
 EM.registerSerializerPair(
-  PlaneConstructDef,
-  (planeConstruct, buf) => {
-    buf.writeVec3(planeConstruct.location);
-    buf.writeVec3(planeConstruct.color);
+  GroundConstructDef,
+  (groundConstruct, buf) => {
+    buf.writeVec3(groundConstruct.location);
+    buf.writeVec3(groundConstruct.color);
   },
-  (planeConstruct, buf) => {
-    buf.readVec3(planeConstruct.location);
-    buf.readVec3(planeConstruct.color);
+  (groundConstruct, buf) => {
+    buf.readVec3(groundConstruct.location);
+    buf.readVec3(groundConstruct.color);
   }
 );
 
-export function registerBuildPlanesSystem(em: EntityManager) {
-  function buildPlanes(
-    planes: { id: number; planeConstruct: PlaneConstruct }[],
+export function registerBuildGroundSystem(em: EntityManager) {
+  function buildGround(
+    ground: { id: number; groundConstruct: GroundConstruct }[],
     { me: { pid }, assets }: { me: Me; assets: Assets }
   ) {
-    for (let plane of planes) {
-      if (FinishedDef.isOn(plane)) continue;
+    for (let g of ground) {
+      if (FinishedDef.isOn(g)) continue;
 
-      em.ensureComponent(plane.id, PositionDef, plane.planeConstruct.location);
+      em.ensureComponent(g.id, PositionDef, g.groundConstruct.location);
       // TODO(@darzu): rotation for debugging
       // if (!RotationDef.isOn(plane)) {
       //   // const r =
@@ -50,26 +57,26 @@ export function registerBuildPlanesSystem(em: EntityManager) {
       //   const r = quat.fromEuler(quat.create(), 0, 0, Math.PI * Math.random());
       //   em.ensureComponent(plane.id, RotationDef, r);
       // }
-      em.ensureComponent(plane.id, ColorDef, plane.planeConstruct.color);
-      let m = cloneMesh(assets.plane.mesh);
-      m = scaleMesh(m, 10.0);
-      em.ensureComponent(plane.id, RenderableConstructDef, m);
+      em.ensureComponent(g.id, ColorDef, g.groundConstruct.color);
+      let m = cloneMesh(assets.cube.mesh);
+      m = scaleMesh3(m, [SIZE, 1, SIZE]);
+      em.ensureComponent(g.id, RenderableConstructDef, m);
       const aabb = getAABBFromMesh(m);
-      em.ensureComponent(plane.id, ColliderDef, {
+      em.ensureComponent(g.id, ColliderDef, {
         shape: "AABB",
         solid: true,
         aabb,
       });
-      em.ensureComponent(plane.id, AuthorityDef, pid);
+      em.ensureComponent(g.id, AuthorityDef, pid);
       em.ensureComponent(
-        plane.id,
+        g.id,
         SyncDef,
-        [PlaneConstructDef.id],
+        [GroundConstructDef.id],
         [PositionDef.id]
       );
-      em.ensureComponent(plane.id, FinishedDef);
+      em.ensureComponent(g.id, FinishedDef);
     }
   }
 
-  em.registerSystem([PlaneConstructDef], [MeDef, AssetsDef], buildPlanes);
+  em.registerSystem([GroundConstructDef], [MeDef, AssetsDef], buildGround);
 }

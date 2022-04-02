@@ -14,7 +14,7 @@ interface DbgEnt extends Entity {
 // eventsToNetwork,networkReady,join,bullet,bulletConstruct,cubeConstruct,player,
 // playerConstruct,camera,transform,motionSmoothing,parent,renderable,cameraView,
 // physicsResults,_phys,boat,boatConstruct,detectedEvents,requestedEvents,events,
-// planeConstruct,shipConstruct,hatConstruct,color,hat
+// groundConstruct,shipConstruct,hatConstruct,color,hat
 
 const dbgEnts: Map<number, DbgEnt> = new Map();
 let dbgEntSingleton: DbgEnt = { id: 0, _cmps: () => [] };
