@@ -8,7 +8,11 @@ import {
   registerUpdateCameraView,
   RenderableConstructDef,
 } from "../render/renderer.js";
-import { registerInitTransforms, TransformDef } from "../physics/transform.js";
+import {
+  PositionDef,
+  registerInitTransforms,
+  TransformDef,
+} from "../physics/transform.js";
 import {
   BoatConstructDef,
   registerBuildBoatsSystem,
@@ -280,10 +284,13 @@ function debugBoatParts(em: EntityManager) {
       if (once) return;
       once = true;
 
-      const bigM = res.assets.boat_broken;
-      console.dir(bigM);
-
-      // splitMesh(bigM);
+      // TODO(@darzu): this works!
+      // const bigM = res.assets.boat_broken;
+      // for (let i = 0; i < bigM.length; i++) {
+      //   const e = em.newEntity();
+      //   em.ensureComponentOn(e, RenderableConstructDef, bigM[i].mesh);
+      //   em.ensureComponentOn(e, PositionDef, [0, 0, 0]);
+      // }
     },
     "debugBoatParts"
   );
