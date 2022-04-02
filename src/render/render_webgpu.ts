@@ -9,7 +9,6 @@ import {
   Vertex,
 } from "./mesh-pool.js";
 import { RenderableConstruct, Renderer } from "./renderer.js";
-import { pitch } from "../utils-3d.js";
 import {
   MeshUniformMod,
   obj_fragShader,
