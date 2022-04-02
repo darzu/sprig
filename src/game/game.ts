@@ -101,7 +101,7 @@ EM.registerSerializerPair(
 
 function createPlayer(em: EntityManager) {
   const e = em.newEntity();
-  em.addComponent(e.id, PlayerConstructDef, vec3.fromValues(0, 5, 0));
+  em.addComponent(e.id, PlayerConstructDef, vec3.fromValues(0, 5, -20));
 }
 
 function createGround(em: EntityManager) {
@@ -265,7 +265,7 @@ export function initGame(em: EntityManager) {
   createCamera(em);
 
   // TODO(@darzu): DEBUGGING
-  debugCreateNoodles(em);
+  // debugCreateNoodles(em);
 }
 
 export function createServerObjects(em: EntityManager) {
@@ -291,7 +291,7 @@ function createShips(em: EntityManager) {
   const rot = quat.create();
   // quat.rotateY(rot, rot, Math.PI * -0.4);
   // const pos: vec3 = [-40, -10, -60];
-  const pos: vec3 = vec3.fromValues(-2, -4, 0);
+  const pos: vec3 = vec3.fromValues(-2, -3, 0);
   // const pos: vec3 = [0, -10, 130];
   em.addComponent(em.newEntity().id, ShipConstructDef, pos, rot);
 }
@@ -304,8 +304,8 @@ function createBoats(em: EntityManager) {
     boatCon.location[0] = (Math.random() - 0.5) * 40 - 20;
     boatCon.location[2] = (Math.random() - 0.5) * 40 - 20;
     boatCon.speed = 0.005 + jitter(0.005);
-    boatCon.wheelSpeed = jitter(0.001);
-    boatCon.wheelDir = 0;
+    boatCon.wheelSpeed = 0; //jitter(0.001);
+    boatCon.wheelDir = Math.PI / 2;
   }
 }
 

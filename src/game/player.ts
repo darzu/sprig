@@ -674,7 +674,12 @@ export function registerBuildPlayersSystem(em: EntityManager) {
         const props = e.playerConstruct;
         if (!PositionDef.isOn(e))
           em.addComponent(e.id, PositionDef, props.location);
-        if (!RotationDef.isOn(e)) em.addComponent(e.id, RotationDef);
+        if (!RotationDef.isOn(e))
+          em.addComponent(
+            e.id,
+            RotationDef,
+            quat.rotateY(quat.create(), quat.IDENTITY, Math.PI)
+          );
         if (!LinearVelocityDef.isOn(e))
           em.addComponent(e.id, LinearVelocityDef);
         if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0, 0.2, 0]);

@@ -14,6 +14,7 @@ import {
 import { copyAABB, createAABB } from "../physics/broadphase.js";
 import { ColorDef } from "./game.js";
 import { setCubePosScaleToAABB } from "../physics/phys-debug.js";
+import { BOAT_COLOR } from "./boat.js";
 
 export const ShipConstructDef = EM.defineComponent(
   "shipConstruct",
@@ -55,6 +56,7 @@ export function registerBuildShipSystem(em: EntityManager) {
         const props = e.shipConstruct;
         if (!PositionDef.isOn(e)) em.addComponent(e.id, PositionDef, props.loc);
         if (!RotationDef.isOn(e)) em.addComponent(e.id, RotationDef, props.rot);
+        if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, BOAT_COLOR);
         if (!RenderableConstructDef.isOn(e))
           em.addComponent(e.id, RenderableConstructDef, assets.ship.mesh);
         if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid);

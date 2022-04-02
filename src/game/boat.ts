@@ -30,6 +30,8 @@ export const BoatDef = EM.defineComponent("boat", () => {
 });
 export type Boat = Component<typeof BoatDef>;
 
+export const BOAT_COLOR: vec3 = [0.2, 0.1, 0.05];
+
 function stepBoats(
   boats: {
     boat: Boat;
@@ -46,7 +48,7 @@ function stepBoats(
     o.boat.wheelDir += rad;
 
     // rotate
-    quat.rotateY(o.rotation, o.rotation, rad);
+    quat.rotateY(o.rotation, quat.IDENTITY, o.boat.wheelDir);
 
     // rotate velocity
     vec3.rotateY(
@@ -111,7 +113,7 @@ function createBoat(
   if (!PositionDef.isOn(e)) em.addComponent(e.id, PositionDef, props.location);
   if (!RotationDef.isOn(e)) em.addComponent(e.id, RotationDef);
   if (!LinearVelocityDef.isOn(e)) em.addComponent(e.id, LinearVelocityDef);
-  if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.2, 0.1, 0.05]);
+  if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, BOAT_COLOR);
   if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   if (!RenderableConstructDef.isOn(e))
     em.addComponent(e.id, RenderableConstructDef, assets.boat.mesh);
