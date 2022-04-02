@@ -17,7 +17,7 @@ precision mediump float;
 
 // scene
 uniform mat4 u_cameraViewProjMatrix;
-uniform mat4 u_lightViewProjMatrix;
+// uniform mat4 u_lightViewProjMatrix;
 uniform vec3 u_light1Dir;
 uniform vec3 u_light2Dir;
 uniform vec3 u_light3Dir;
@@ -72,8 +72,12 @@ void main() {
   // ANNOYING: flat interpolation isn't supported in webgl so let's just compute it
   vec3 norm = -normalize(cross(dFdx(v_position.xyz), dFdy(v_position.xyz)));
 
-  float sunLight = clamp(dot(-u_light1Dir, norm), 0.0, 1.0);
-  vec3 resultColor = v_color * (sunLight * 2.0 + 0.2);
+  // TODO this isn't working right yet; lights move with camera??!
+  float light1 = clamp(dot(-u_light1Dir, norm), 0.0, 1.0);
+  float light2 = clamp(dot(-u_light2Dir, norm), 0.0, 1.0);
+  float light3 = clamp(dot(-u_light3Dir, norm), 0.0, 1.0);
+  vec3 resultColor = v_color 
+    * (light1 * 2.0 + 0.2);
   vec3 gammaCorrected = pow(resultColor, vec3(1.0/2.2));
   gl_FragColor = vec4(gammaCorrected, 1.0);
 }
@@ -128,10 +132,10 @@ export function attachToCanvas(
     program,
     "u_cameraViewProjMatrix"
   );
-  const u_loc_lightViewProjMatrix = gl.getUniformLocation(
-    program,
-    "u_lightViewProjMatrix"
-  );
+  // const u_loc_lightViewProjMatrix = gl.getUniformLocation(
+  //   program,
+  //   "u_lightViewProjMatrix"
+  // );
   const u_loc_light1Dir = gl.getUniformLocation(program, "u_light1Dir");
   const u_loc_light2Dir = gl.getUniformLocation(program, "u_light2Dir");
   const u_loc_light3Dir = gl.getUniformLocation(program, "u_light3Dir");

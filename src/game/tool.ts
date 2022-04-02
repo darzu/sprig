@@ -83,7 +83,8 @@ registerEventHandler("tool-pickup", {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
     let tool = em.findEntity(entities[1], [PositionDef, PhysicsParentDef])!;
     tool.physicsParent.id = player.id;
-    em.removeComponent(tool.id, InteractableDef);
+    // TODO(@darzu): add interact box
+    // em.removeComponent(tool.id, InteractableDef);
     vec3.set(tool.position, 0, 0, -1.5);
     em.ensureComponent(tool.id, ScaleDef);
     if (ScaleDef.isOn(tool)) vec3.copy(tool.scale, [0.5, 0.5, 0.5]);
@@ -102,7 +103,8 @@ registerEventHandler("tool-drop", {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
     let tool = em.findEntity(entities[1], [PositionDef, PhysicsParentDef])!;
     tool.physicsParent.id = 0;
-    em.addComponent(tool.id, InteractableDef);
+    // TODO(@darzu): add interact box
+    // em.addComponent(tool.id, InteractableDef);
     vec3.copy(tool.position, location!);
     em.ensureComponent(tool.id, ScaleDef);
     if (ScaleDef.isOn(tool)) vec3.copy(tool.scale, [1, 1, 1]);

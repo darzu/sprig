@@ -19,6 +19,8 @@ import { ToolDef } from "./tool.js";
 import { InteractableDef, InteractingDef } from "./interact.js";
 import { PlayerEntDef } from "./player.js";
 import { Assets, AssetsDef } from "./assets.js";
+import { copyAABB, createAABB } from "../physics/broadphase.js";
+import { PhysicsResultsDef } from "../physics/nonintersection.js";
 
 const CANNON_FRAMES = 180;
 
@@ -68,6 +70,22 @@ export function registerStepCannonsSystem(em: EntityManager) {
 }
 
 export function registerPlayerCannonSystem(em: EntityManager) {
+  // em.registerSystem(
+  //   [CannonDef, InteractableDef],
+  //   [PhysicsResultsDef],
+  //   (cannons, res) => {
+  //     for (let c of cannons) {
+  //       const otherHits =
+  //         res.physicsResults.collidesWith.get(c.cannon.interactBox) ?? [];
+  //       for (let o of otherHits) {
+  //         let player = EM.findEntity(o, [PlayerEntDef])!;
+  //         if (player) console.log(player);
+  //       }
+  //     }
+  //   },
+  //   "playerCannon2"
+  // );
+
   em.registerSystem(
     [CannonDef, InteractingDef],
     [DetectedEventsDef],
@@ -179,15 +197,30 @@ function createCannon(
   //if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   em.ensureComponent(e.id, RenderableConstructDef, assets.cannon.mesh);
   em.ensureComponent(e.id, AuthorityDef, pid);
-  em.ensureComponent(e.id, CannonDef);
+  em.ensureComponentOn(e, CannonDef);
   em.ensureComponent(e.id, ColliderDef, {
     shape: "AABB",
     solid: true,
     aabb: assets.cannon.aabb,
   });
-  em.ensureComponent(e.id, InteractableDef);
   em.ensureComponent(e.id, SyncDef, [CannonConstructDef.id]);
   em.addComponent(e.id, FinishedDef);
+
+  // create seperate hitbox for interacting with the cannon
+  const interactBox = em.newEntity();
+  const interactAABB = copyAABB(createAABB(), assets.cannon.aabb);
+  interactAABB.max[0] += 1;
+  vec3.scale(interactAABB.min, interactAABB.min, 1.5);
+  vec3.scale(interactAABB.max, interactAABB.max, 1.5);
+  em.ensureComponentOn(interactBox, PhysicsParentDef, e.id);
+  em.ensureComponentOn(interactBox, PositionDef, [0, 0, 0]);
+  em.ensureComponentOn(interactBox, ColliderDef, {
+    shape: "AABB",
+    solid: false,
+    aabb: interactAABB,
+  });
+
+  em.ensureComponent(e.id, InteractableDef, interactBox.id);
 }
 
 export function registerBuildCannonsSystem(em: EntityManager) {
@@ -283,7 +316,7 @@ export function registerBuildAmmunitionSystem(em: EntityManager) {
           const tool = em.addComponent(e.id, ToolDef);
           tool.type = "ammunition";
         }
-        if (!InteractableDef.isOn(e)) em.addComponent(e.id, InteractableDef);
+        // if (!InteractableDef.isOn(e)) em.addComponent(e.id, InteractableDef);
         if (!SyncDef.isOn(e)) {
           const sync = em.addComponent(e.id, SyncDef);
           sync.fullComponents.push(AmmunitionConstructDef.id);
@@ -355,7 +388,7 @@ export function registerBuildLinstockSystem(em: EntityManager) {
           const tool = em.addComponent(e.id, ToolDef);
           tool.type = "linstock";
         }
-        if (!InteractableDef.isOn(e)) em.addComponent(e.id, InteractableDef);
+        // if (!InteractableDef.isOn(e)) em.addComponent(e.id, InteractableDef);
         if (!SyncDef.isOn(e)) {
           const sync = em.addComponent(e.id, SyncDef);
           sync.fullComponents.push(LinstockConstructDef.id);
