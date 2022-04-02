@@ -101,6 +101,10 @@ function stepRenderer(
   objs.sort((a, b) => b.renderable.layer - a.renderable.layer);
 
   // render
+  // TODO(@darzu):
+  // const m24 = objs.filter((o) => o.renderable.meshHandle.mId === 24);
+  // const e10003 = objs.filter((o) => o.id === 10003);
+  // console.log(`mId 24: ${!!m24.length}, e10003: ${!!e10003.length}`);
   renderer.renderFrame(
     cameraView.viewProjMat,
     objs.map((o) => o.renderable.meshHandle)

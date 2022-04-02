@@ -703,6 +703,7 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
     const uniOffset = allMeshes.length * MeshUniformMod.byteSizeAligned;
     const newHandle = {
       ...m,
+      mId: nextMeshId++,
       shaderData: d,
       modelUniByteOffset: uniOffset,
     };

@@ -20,6 +20,9 @@ import { Deserializer, Serializer } from "../serialize.js";
 import { Assets, AssetsDef } from "./assets.js";
 import { LinearVelocity, LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../smoothing.js";
+import { PhysicsResultsDef } from "../physics/nonintersection.js";
+import { BulletDef } from "./bullet.js";
+import { DeletedDef } from "../delete.js";
 
 export const BoatDef = EM.defineComponent("boat", () => {
   return {
@@ -61,7 +64,7 @@ function stepBoats(
 }
 
 export function registerStepBoats(em: EntityManager) {
-  EM.registerSystem(
+  em.registerSystem(
     [BoatDef, RotationDef, LinearVelocityDef, AuthorityDef],
     [PhysicsTimerDef, MeDef],
     (objs, res) => {
@@ -70,6 +73,21 @@ export function registerStepBoats(em: EntityManager) {
       }
     },
     "stepBoats"
+  );
+
+  em.registerSystem(
+    [BoatDef],
+    [PhysicsResultsDef],
+    (objs, res) => {
+      for (let b of objs) {
+        const hits = res.physicsResults.collidesWith.get(b.id);
+        if (hits && hits.some((h) => em.findEntity(h, [BulletDef]))) {
+          console.log("HIT!");
+          em.ensureComponentOn(b, DeletedDef);
+        }
+      }
+    },
+    "breakBoats"
   );
 }
 

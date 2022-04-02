@@ -342,6 +342,8 @@ export class Renderer_WebGPU implements Renderer {
     this.renderBundle = this.createRenderBundle([]);
   }
 
+  private scratchMIDs = new Set<number>();
+
   private scratchSceneUni = new Uint8Array(SceneUniform.ByteSizeAligned);
   public renderFrame(viewProj: mat4, handles: MeshHandle[]): void {
     this.checkCanvasResize();
@@ -360,21 +362,41 @@ export class Renderer_WebGPU implements Renderer {
 
     // TODO(@darzu): more fine grain
     this.needsRebundle =
-      this.needsRebundle || handles.length !== this.bundledMIds.size;
+      this.needsRebundle ||
+      this.bundledMIds.size !== handles.length ||
+      this.drawLines !== this.lastWireMode[0] ||
+      this.drawTris !== this.lastWireMode[1];
     if (!this.needsRebundle) {
-      for (let id of handles.map((o) => o.mId)) {
-        if (!this.bundledMIds.has(id)) {
+      for (let mId of handles.map((o) => o.mId)) {
+        if (!this.bundledMIds.has(mId)) {
           this.needsRebundle = true;
           break;
         }
       }
+      // this.scratchMIDs.clear();
+      // // console.log(`r mId 24: ${!!m24.length}`);
+      // // console.log(`webgpu rendering boat mId: ${this.bundledMIds.has(24)}`);
+      // for (let mId of handles.map((o) => o.mId)) {
+      //   this.scratchMIDs.add(mId);
+      // }
+
+      // for (let mId of this.scratchMIDs.values()) {
+      //   if (!this.bundledMIds.has(mId)) {
+      //     this.needsRebundle = true;
+      //     break;
+      //   }
+      // }
+      // for (let mId of this.bundledMIds.values()) {
+      //   if (!this.scratchMIDs.has(mId)) {
+      //     this.needsRebundle = true;
+      //     break;
+      //   }
+      // }
     }
-    if (
-      this.needsRebundle ||
-      this.drawLines !== this.lastWireMode[0] ||
-      this.drawTris !== this.lastWireMode[1]
-    )
+    if (this.needsRebundle) {
+      // console.log("rebundeling");
       this.createRenderBundle(handles);
+    }
 
     // start collecting our render commands for this frame
     const commandEncoder = this.device.createCommandEncoder();
