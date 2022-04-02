@@ -18,7 +18,9 @@ precision mediump float;
 // scene
 uniform mat4 u_cameraViewProjMatrix;
 uniform mat4 u_lightViewProjMatrix;
-uniform vec3 u_lightDir;
+uniform vec3 u_light1Dir;
+uniform vec3 u_light2Dir;
+uniform vec3 u_light3Dir;
 uniform float u_time;
 uniform vec2 u_playerPos;
 uniform vec3 u_cameraPos;
@@ -54,7 +56,9 @@ precision mediump float;
 // scene
 uniform mat4 u_cameraViewProjMatrix;
 uniform mat4 u_lightViewProjMatrix;
-uniform vec3 u_lightDir;
+uniform vec3 u_light1Dir;
+uniform vec3 u_light2Dir;
+uniform vec3 u_light3Dir;
 uniform float u_time;
 uniform vec2 u_playerPos;
 uniform vec3 u_cameraPos;
@@ -68,7 +72,7 @@ void main() {
   // ANNOYING: flat interpolation isn't supported in webgl so let's just compute it
   vec3 norm = -normalize(cross(dFdx(v_position.xyz), dFdy(v_position.xyz)));
 
-  float sunLight = clamp(dot(-u_lightDir, norm), 0.0, 1.0);
+  float sunLight = clamp(dot(-u_light1Dir, norm), 0.0, 1.0);
   vec3 resultColor = v_color * (sunLight * 2.0 + 0.2);
   vec3 gammaCorrected = pow(resultColor, vec3(1.0/2.2));
   gl_FragColor = vec4(gammaCorrected, 1.0);
@@ -128,7 +132,9 @@ export function attachToCanvas(
     program,
     "u_lightViewProjMatrix"
   );
-  const u_loc_lightDir = gl.getUniformLocation(program, "u_lightDir");
+  const u_loc_light1Dir = gl.getUniformLocation(program, "u_light1Dir");
+  const u_loc_light2Dir = gl.getUniformLocation(program, "u_light2Dir");
+  const u_loc_light3Dir = gl.getUniformLocation(program, "u_light3Dir");
   const u_loc_time = gl.getUniformLocation(program, "u_time");
   const u_loc_playerPos = gl.getUniformLocation(program, "u_playerPos");
   const u_loc_cameraPos = gl.getUniformLocation(program, "u_cameraPos");
@@ -224,12 +230,14 @@ export function attachToCanvas(
       false,
       scene.cameraViewProjMatrix
     );
-    gl.uniformMatrix4fv(
-      u_loc_lightViewProjMatrix,
-      false,
-      scene.lightViewProjMatrix
-    );
-    gl.uniform3fv(u_loc_lightDir, scene.lightDir);
+    // gl.uniformMatrix4fv(
+    //   u_loc_lightViewProjMatrix,
+    //   false,
+    //   scene.lightViewProjMatrix
+    // );
+    gl.uniform3fv(u_loc_light1Dir, scene.light1Dir);
+    gl.uniform3fv(u_loc_light2Dir, scene.light2Dir);
+    gl.uniform3fv(u_loc_light3Dir, scene.light3Dir);
     gl.uniform1f(u_loc_time, scene.time);
     gl.uniform2fv(u_loc_playerPos, scene.playerPos);
     gl.uniform3fv(u_loc_cameraPos, scene.cameraPos);

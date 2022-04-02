@@ -144,8 +144,10 @@ export module Vertex {
 export module SceneUniform {
   export interface Data {
     cameraViewProjMatrix: mat4;
-    lightViewProjMatrix: mat4;
-    lightDir: vec3;
+    // lightViewProjMatrix: mat4;
+    light1Dir: vec3;
+    light2Dir: vec3;
+    light3Dir: vec3;
     time: number /*f32*/;
     playerPos: [number, number];
     cameraPos: vec3;
@@ -153,8 +155,9 @@ export module SceneUniform {
 
   const _counts = [
     4 * 4, // camera projection
-    4 * 4, // light projection
-    3, // light dir
+    3, // light dir 1
+    3, // light dir 2
+    3, // light dir 3
     1, // time
     2, // playerPos
     3, // camera pos
@@ -168,18 +171,13 @@ export module SceneUniform {
   export const ByteSizeAligned = align(ByteSizeExact, 256); // uniform objects must be 256 byte aligned
 
   export function generateWGSLUniformStruct() {
-    // Example
-    //     cameraViewProjMatrix : mat4x4<f32>;
-    //     lightViewProjMatrix : mat4x4<f32>;
-    //     lightDir : vec3<f32>;
-    //     time : f32;
-    //     playerPos: vec2<f32>;
-    //     cameraPos : vec3<f32>;
     // TODO(@darzu): enforce agreement w/ Scene interface
     return `
             cameraViewProjMatrix : mat4x4<f32>,
-            lightViewProjMatrix : mat4x4<f32>,
-            lightDir : vec3<f32>,
+            // lightViewProjMatrix : mat4x4<f32>,
+            light1Dir : vec3<f32>,
+            light2Dir : vec3<f32>,
+            light3Dir : vec3<f32>,
             time : f32,
             playerPos: vec2<f32>,
             cameraPos : vec3<f32>,
@@ -194,11 +192,13 @@ export module SceneUniform {
     data: Data
   ) {
     scratch_f32.set(data.cameraViewProjMatrix, _offsets[0]);
-    scratch_f32.set(data.lightViewProjMatrix, _offsets[1]);
-    scratch_f32.set(data.lightDir, _offsets[2]);
-    scratch_f32[_offsets[3]] = data.time;
-    scratch_f32.set(data.playerPos, _offsets[4]);
-    scratch_f32.set(data.cameraPos, _offsets[5]);
+    // scratch_f32.set(data.lightViewProjMatrix, _offsets[1]);
+    scratch_f32.set(data.light1Dir, _offsets[1]);
+    scratch_f32.set(data.light2Dir, _offsets[2]);
+    scratch_f32.set(data.light3Dir, _offsets[3]);
+    scratch_f32[_offsets[4]] = data.time;
+    scratch_f32.set(data.playerPos, _offsets[5]);
+    scratch_f32.set(data.cameraPos, _offsets[6]);
     buffer.set(scratch_f32_as_u8, byteOffset);
   }
 }

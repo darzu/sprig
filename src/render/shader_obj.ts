@@ -109,8 +109,11 @@ export const obj_fragShader = () =>
 
     @stage(fragment)
     fn main(input: VertexOutput) -> @location(0) vec4<f32> {
-        let sunLight : f32 = clamp(dot(-scene.lightDir, input.normal), 0.0, 1.0);
-        let resultColor: vec3<f32> = input.color * (sunLight * 2.0 + 0.2);
+        let light1 : f32 = clamp(dot(-scene.light1Dir, input.normal), 0.0, 1.0);
+        let light2 : f32 = clamp(dot(-scene.light2Dir, input.normal), 0.0, 1.0);
+        let light3 : f32 = clamp(dot(-scene.light3Dir, input.normal), 0.0, 1.0);
+        let resultColor: vec3<f32> = input.color 
+          * (light1 * 1.5 + light2 * 0.5 + light3 * 0.2 + 0.1);
         let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
         return vec4<f32>(gammaCorrected, 1.0);
     }

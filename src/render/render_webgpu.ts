@@ -413,35 +413,44 @@ export class Renderer_WebGPU implements Renderer {
 export function setupScene(): SceneUniform.Data {
   // create a directional light and compute it's projection (for shadows) and direction
   const worldOrigin = vec3.fromValues(0, 0, 0);
-  const lightPosition = vec3.fromValues(50, 50, 0);
+  const D = 50;
+  const light1Pos = vec3.fromValues(D, D * 2, D);
+  const light2Pos = vec3.fromValues(-D, D * 1, D);
+  const light3Pos = vec3.fromValues(0, D * 0.5, -D);
   const upVector = vec3.fromValues(0, 1, 0);
-  const lightViewMatrix = mat4.lookAt(
-    mat4.create(),
-    lightPosition,
-    worldOrigin,
-    upVector
-  );
-  const lightProjectionMatrix = mat4.ortho(
-    mat4.create(),
-    -80,
-    80,
-    -80,
-    80,
-    -200,
-    300
-  );
-  const lightViewProjMatrix = mat4.multiply(
-    mat4.create(),
-    lightProjectionMatrix,
-    lightViewMatrix
-  );
-  const lightDir = vec3.subtract(vec3.create(), worldOrigin, lightPosition);
-  vec3.normalize(lightDir, lightDir);
+  // const lightViewMatrix = mat4.lookAt(
+  //   mat4.create(),
+  //   light1Pos,
+  //   worldOrigin,
+  //   upVector
+  // );
+  // const lightProjectionMatrix = mat4.ortho(
+  //   mat4.create(),
+  //   -80,
+  //   80,
+  //   -80,
+  //   80,
+  //   -200,
+  //   300
+  // );
+  // const lightViewProjMatrix = mat4.multiply(
+  //   mat4.create(),
+  //   lightProjectionMatrix,
+  //   lightViewMatrix
+  // );
+  const light1Dir = vec3.subtract(vec3.create(), worldOrigin, light1Pos);
+  vec3.normalize(light1Dir, light1Dir);
+  const light2Dir = vec3.subtract(vec3.create(), worldOrigin, light2Pos);
+  vec3.normalize(light2Dir, light2Dir);
+  const light3Dir = vec3.subtract(vec3.create(), worldOrigin, light3Pos);
+  vec3.normalize(light3Dir, light3Dir);
 
   return {
     cameraViewProjMatrix: mat4.create(), // updated later
-    lightViewProjMatrix,
-    lightDir,
+    // lightViewProjMatrix,
+    light1Dir,
+    light2Dir,
+    light3Dir,
     time: 0, // updated later
     playerPos: [0, 0], // updated later
     cameraPos: vec3.create(), // updated later
