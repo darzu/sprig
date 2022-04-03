@@ -39,7 +39,11 @@ import { registerPredictSystem } from "../net/predict.js";
 import { registerEventSystems } from "../net/events.js";
 import { registerBuildCubesSystem, registerMoveCubesSystem } from "./cube.js";
 import { PhysicsTimerDef, registerTimeSystem } from "../time.js";
-import { GroundConstructDef, registerGroundSystems } from "./ground.js";
+import {
+  GroundConstructDef,
+  GroundSystemDef,
+  registerGroundSystems,
+} from "./ground.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
 import { registerShipSystems, ShipConstructDef } from "./ship.js";
 import {
@@ -337,7 +341,7 @@ function registerBoatSpawnerSystem(em: EntityManager) {
 
   em.registerSystem(
     null,
-    [BoatSpawnerDef, PhysicsTimerDef],
+    [BoatSpawnerDef, PhysicsTimerDef, GroundSystemDef],
     (_, res) => {
       const ms = res.physicsTimer.period * res.physicsTimer.steps;
       res.boatSpawner.timerMs -= ms;
@@ -349,7 +353,8 @@ function registerBoatSpawnerSystem(em: EntityManager) {
         // create boat(s)
         const boatCon = em.addComponent(em.newEntity().id, BoatConstructDef);
         const left = Math.random() < 0.5;
-        boatCon.location = vec3.fromValues(-25, -5, 30);
+        const z = res.groundSystem.nextScore + 60;
+        boatCon.location = vec3.fromValues(-25, -5, z);
         boatCon.speed = 0.005 + jitter(0.002);
         boatCon.wheelDir = (Math.PI / 2) * (1 + jitter(0.1));
         boatCon.wheelSpeed = jitter(0.0001);

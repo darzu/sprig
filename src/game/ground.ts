@@ -14,9 +14,11 @@ import {
   scaleMesh,
   scaleMesh3,
 } from "../render/mesh-pool.js";
+import { ShipDef } from "./ship.js";
 
 const HALFSIZE = 16;
 const SIZE = HALFSIZE * 2;
+const THIRDSIZE = SIZE / 3;
 
 export const GroundConstructDef = EM.defineComponent(
   "groundConstruct",
@@ -45,6 +47,8 @@ EM.registerSerializerPair(
 export const GroundSystemDef = EM.defineComponent("groundSystem", () => {
   return {
     groundPool: [] as number[],
+    nextScore: THIRDSIZE * 2,
+    nextGroundIdx: 0,
   };
 });
 
@@ -53,27 +57,55 @@ export function registerGroundSystems(em: EntityManager) {
 
   const NUM_X = 3;
   const NUM_Z = 4;
+  let totalPlaced = 0;
   em.registerSystem(
-    [GroundDef],
+    [ShipDef, PositionDef],
     [GroundSystemDef],
-    (grounds, { groundSystem }) => {
-      if (groundSystem.groundPool.length === 0) {
-        // init ground system
+    (ships, { groundSystem: sys }) => {
+      // init ground system
+      if (sys.groundPool.length === 0) {
+        let idx = 0;
         for (let x = 0; x < NUM_X; x++) {
           for (let z = 0; z < NUM_Z; z++) {
-            const loc = vec3.fromValues((x - 1) * SIZE, -7, z * SIZE);
+            const loc = calcLoc(totalPlaced);
             const color = (x + z) % 2 === 0 ? LIGHT_BLUE : DARK_BLUE;
             const g = em.newEntity();
             em.ensureComponentOn(g, GroundConstructDef, loc, color);
-            groundSystem.groundPool.push(g.id);
+            sys.groundPool.push(g.id);
+            totalPlaced += 1;
           }
         }
       }
 
-      // TODO(@darzu):
+      // ship progress
+      if (ships.length) {
+        const ship = ships.reduce(
+          (p, n) => (n.position[2] > p.position[2] ? n : p),
+          ships[0]
+        );
+        const score = ship.position[2];
+        if (score > sys.nextScore) {
+          // move ground
+          const gId = sys.groundPool[sys.nextGroundIdx];
+          const g = em.findEntity(gId, [GroundDef, PositionDef]);
+          if (g) {
+            vec3.copy(g.position, calcLoc(totalPlaced));
+
+            sys.nextGroundIdx = (sys.nextGroundIdx + 1) % sys.groundPool.length;
+            totalPlaced += 1;
+            sys.nextScore += THIRDSIZE;
+          }
+        }
+      }
     },
     "groundSystem"
   );
+
+  function calcLoc(num: number): vec3 {
+    const x = num % NUM_X;
+    const z = Math.floor(num / NUM_X);
+    return [(x - 1) * SIZE, -7, z * SIZE];
+  }
 
   em.registerSystem(
     [GroundConstructDef],

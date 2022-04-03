@@ -437,14 +437,14 @@ export function registerStepPlayers(em: EntityManager) {
           .get(p.id)
           ?.map((h) => em.findEntity(h, [ShipDef, ColliderDef]));
 
-        console.log(`player hits: ${shipHits?.length}`);
         if (shipHits && shipHits.length && shipHits[0]) {
-          console.log("player on ship!");
           const ship = shipHits[0];
 
           // already on this ship
           if (PhysicsParentDef.isOn(p))
             if (p.physicsParent.id === ship.id) continue;
+
+          console.log("player on new ship!");
 
           em.ensureComponentOn(p, PhysicsParentDef);
 
