@@ -39,7 +39,7 @@ import { registerPredictSystem } from "../net/predict.js";
 import { registerEventSystems } from "../net/events.js";
 import { registerBuildCubesSystem, registerMoveCubesSystem } from "./cube.js";
 import { PhysicsTimerDef, registerTimeSystem } from "../time.js";
-import { GroundConstructDef, registerBuildGroundSystem } from "./ground.js";
+import { GroundConstructDef, registerGroundSystems } from "./ground.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
 import { registerShipSystems, ShipConstructDef } from "./ship.js";
 import {
@@ -196,7 +196,7 @@ export function registerAllSystems(em: EntityManager) {
   registerJoinSystems(em);
   registerAssetLoader(em);
   registerBuildPlayersSystem(em);
-  registerBuildGroundSystem(em);
+  registerGroundSystems(em);
   registerBuildWorldPlanes(em);
   registerBuildCubesSystem(em);
   registerBuildBoatsSystem(em);
@@ -305,7 +305,7 @@ export function createServerObjects(em: EntityManager) {
   // em.addComponent(cubeId, CubeConstructDef, 3, LIGHT_BLUE);
 
   createPlayer(em);
-  createGround(em);
+  // createGround(em);
   registerBoatSpawnerSystem(em);
   createShips(em);
   // createHats(em);

@@ -465,249 +465,225 @@ export function registerStepPlayers(em: EntityManager) {
 function registerUpdateLegs(em: EntityManager) {
   // TODO(@darzu): ideally we could impose an ordering constraint on this system,
   //    it should run after the world frame has been updated, before render
-  em.registerSystem(
-    [PlayerEntDef, WorldFrameDef, PositionDef, LinearVelocityDef, RotationDef],
-    [PhysicsResultsDef],
-    (players, res) => {
-      for (let p of players) {
-        const leftLeg = em.findEntity(p.player.leftLegId, [
-          NoodleDef,
-          PositionDef,
-        ]);
-        const rightLeg = em.findEntity(p.player.rightLegId, [
-          NoodleDef,
-          PositionDef,
-        ]);
-        if (!leftLeg || !rightLeg) continue;
-
-        const legLen = 2;
-        const footDistThreshold = 4;
-        const footDist2Threshold = footDistThreshold ** 2;
-
-        const centerOfPlayerWorld = vec3.clone(p.world.position);
-
-        // are we flying?
-        const playerDown: Ray = {
-          org: centerOfPlayerWorld,
-          dir: [0, -1, 0],
-        };
-        const belowPlayerHits = res.physicsResults.checkRay(playerDown);
-        const nearestBelowPlayerDist = min(
-          belowPlayerHits.map((h) => (h.id === p.id ? Infinity : h.dist))
-        );
-        // TODO(@darzu): re-enable legs
-        if (nearestBelowPlayerDist > legLen + footDistThreshold || true) {
-          // flying
-          vec3.add(
-            leftLeg.noodle.segments[1].pos,
-            leftLeg.noodle.segments[0].pos,
-            [0, -legLen, 0]
-          );
-          vec3.add(
-            rightLeg.noodle.segments[1].pos,
-            rightLeg.noodle.segments[0].pos,
-            [0, -legLen, 0]
-          );
-          continue;
-        }
-
-        const centerOfFeet = vec3Mid(
-          vec3.create(),
-          p.player.leftFootWorldPos,
-          p.player.rightFootWorldPos
-        );
-        centerOfFeet[1] = centerOfPlayerWorld[1]; // ignore Y component
-        const massOverhangDist2 = vec3.sqrDist(
-          centerOfPlayerWorld,
-          centerOfFeet
-        );
-
-        const massOverhangDistThreshold = 2;
-        const massOverhangDistThreshold2 = massOverhangDistThreshold ** 2;
-
-        const leftLegDist2 = vec3.sqrDist(
-          centerOfPlayerWorld,
-          p.player.leftFootWorldPos
-        );
-        const rightLegDist2 = vec3.sqrDist(
-          centerOfPlayerWorld,
-          p.player.rightFootWorldPos
-        );
-
-        // do we need to move a leg?
-        if (
-          massOverhangDist2 > massOverhangDistThreshold2 ||
-          leftLegDist2 > footDist2Threshold ||
-          rightLegDist2 > footDist2Threshold
-        ) {
-          // which leg? move the one farther from the center
-          const leg = leftLegDist2 < rightLegDist2 ? rightLeg : leftLeg;
-          const footWorldPos =
-            leg === leftLeg
-              ? p.player.leftFootWorldPos
-              : p.player.rightFootWorldPos;
-          const otherFootWorldPos =
-            leg !== leftLeg
-              ? p.player.leftFootWorldPos
-              : p.player.rightFootWorldPos;
-
-          // TODO(@darzu): it's unclear this is contributing a lot, or at least
-          //    not consistent
-          const velComp = vec3.normalize(tempVec(), p.linearVelocity);
-          vec3.scale(velComp, velComp, massOverhangDistThreshold * 0.8);
-          const targetCenterOfMass = vec3.add(
-            tempVec(),
-            centerOfPlayerWorld,
-            velComp
-          );
-          targetCenterOfMass[1] = centerOfPlayerWorld[1]; // ignore y
-
-          // cast a ray to see where the foot should go
-
-          // TODO(@darzu): PERF, inverting quat here
-          // const invRot = quat.invert(quat.create(), p.rotation);
-          // const legDirLocal = vec3.transformQuat(
-          //   vec3.create(),
-          //   p.linearVelocity,
-          //   invRot
-          // );
-          // vec3.normalize(legDirLocal, legDirLocal);
-          // vec3.add(legDirLocal, legDirLocal, [0, -0.8, 0]);
-          // vec3.normalize(legDirLocal, legDirLocal);
-          // // const legDirLocal: vec3 = vec3.normalize(tempVec(), [0, -1, -0.5]);
-
-          // // TODO(@darzu): we really shouldn't use transform quat since this doesn't account for scale or skew
-          // const legDirWorld = vec3.transformQuat(
-          //   vec3.create(),
-          //   legDirLocal,
-          //   p.world.rotation
-          // );
-
-          // reflect the other foot over the center of mass
-          const otherToCenter = vec3.sub(
-            tempVec(),
-            targetCenterOfMass,
-            otherFootWorldPos
-          );
-          const legTargetWorldXZ = vec3.add(
-            tempVec(),
-            targetCenterOfMass,
-            otherToCenter
-          );
-          // TODO(@darzu): ignore the y component
-          legTargetWorldXZ[1] = targetCenterOfMass[1];
-
-          let newDist2 = vec3.sqrDist(legTargetWorldXZ, targetCenterOfMass);
-          if (newDist2 > footDist2Threshold) {
-            // too far, move it in
-            const towardCenter = vec3.sub(
-              tempVec(),
-              targetCenterOfMass,
-              legTargetWorldXZ
-            );
-            const movDist = Math.sqrt(newDist2 - footDist2Threshold);
-            vec3.normalize(towardCenter, towardCenter);
-            vec3.scale(towardCenter, towardCenter, movDist);
-            vec3.add(legTargetWorldXZ, legTargetWorldXZ, towardCenter);
-          }
-
-          // TODO(@darzu):
-          // drawLine(EM, hipWorld, legTargetWorldXZ, [0, 0, 1]);
-
-          // const legDirWorld = vec3.sub(tempVec(), legTargetWorldXZ, hipWorld);
-          // vec3.normalize(legDirWorld, legDirWorld);
-
-          const legRayWorld: Ray = {
-            org: legTargetWorldXZ,
-            dir: [0, -1, 0],
-          };
-
-          // const legRayEndWorld = vec3.add(
-          //   vec3.create(),
-          //   legRayWorld.org,
-          //   vec3.scale(tempVec(), legRayWorld.dir, 2.0)
-          // );
-
-          // TODO(@darzu): DEBUG; ray test (green)
-          // drawLine(EM, legRayWorld.org, legRayEndWorld, [0, 1, 0]);
-
-          const hits = res.physicsResults.checkRay(legRayWorld);
-          const minDistWorld = min(
-            hits.map((h) => (h.id === p.id ? Infinity : h.dist))
-          );
-          const minDistWorld2 = minDistWorld ** 2;
-          // TODO(@darzu): check for length < leg length? else flying?
-          if (minDistWorld2 < Infinity) {
-            // if (minDistWorld2 > legDist2Threshold) {
-            //   // flying
-            //   const hipLocal = leg.noodle.segments[0].pos;
-            //   const hipWorld = vec3.transformMat4(
-            //     vec3.create(),
-            //     hipLocal,
-            //     p.world.transform
-            //   );
-
-            //   vec3.add(footWorldPos, hipWorld, [0, -2, 0]);
-            // } else {
-            // update foot pos
-            vec3.add(
-              footWorldPos,
-              legRayWorld.org,
-              vec3.scale(tempVec(), legRayWorld.dir, minDistWorld)
-            );
-            // }
-
-            // TODO(@darzu): DEBUG; new location found (blue)
-            // drawLine(EM, legRayWorld.org, footWorldPos, [1, 0, 0]);
-          }
-        }
-
-        // update local foot position from world position
-        // TODO(@darzu): this would be easiest if we had world->local
-        //    transforms (e.g. the inverse of our world.transform)
-        // TODO(@darzu): PERF, very slow
-        const worldInv = mat4.invert(mat4.create(), p.world.transform);
-        vec3.transformMat4(
-          leftLeg.noodle.segments[1].pos,
-          p.player.leftFootWorldPos,
-          worldInv
-        );
-        // shift by the relative offset
-        // TODO(@darzu): feels hacky
-        vec3.sub(
-          leftLeg.noodle.segments[1].pos,
-          leftLeg.noodle.segments[1].pos,
-          leftLeg.position
-        );
-        vec3.transformMat4(
-          rightLeg.noodle.segments[1].pos,
-          p.player.rightFootWorldPos,
-          worldInv
-        );
-        vec3.sub(
-          rightLeg.noodle.segments[1].pos,
-          rightLeg.noodle.segments[1].pos,
-          rightLeg.position
-        );
-
-        // const gridSize = 4.0;
-        // const xDelta = p.position[0] % gridSize;
-        // // const xDelta = p.world.position[0] % 1.0;
-        // // const zDelta = p.world.position[2] % 2.0;
-
-        // const leftFoot = leftLeg.noodle.segments[1];
-        // leftFoot.pos[0] = -xDelta;
-        // leftFoot[0] = 0;
-        // leftFoot[2] = -zDelta;
-        // console.log(
-        //   `${p.world.position[0]} -> ${p.world.position[0] % 1.0} = ${
-        //     leftFoot[0]
-        //   }`
-        // );
-      }
-    },
-    "updateLimbs"
-  );
+  // em.registerSystem(
+  //   [PlayerEntDef, WorldFrameDef, PositionDef, LinearVelocityDef, RotationDef],
+  //   [PhysicsResultsDef],
+  //   (players, res) => {
+  //     for (let p of players) {
+  //       const leftLeg = em.findEntity(p.player.leftLegId, [
+  //         NoodleDef,
+  //         PositionDef,
+  //       ]);
+  //       const rightLeg = em.findEntity(p.player.rightLegId, [
+  //         NoodleDef,
+  //         PositionDef,
+  //       ]);
+  //       if (!leftLeg || !rightLeg) continue;
+  //       const legLen = 2;
+  //       const footDistThreshold = 4;
+  //       const footDist2Threshold = footDistThreshold ** 2;
+  //       const centerOfPlayerWorld = vec3.clone(p.world.position);
+  //       // are we flying?
+  //       const playerDown: Ray = {
+  //         org: centerOfPlayerWorld,
+  //         dir: [0, -1, 0],
+  //       };
+  //       const belowPlayerHits = res.physicsResults.checkRay(playerDown);
+  //       const nearestBelowPlayerDist = min(
+  //         belowPlayerHits.map((h) => (h.id === p.id ? Infinity : h.dist))
+  //       );
+  //       // TODO(@darzu): re-enable legs
+  //       if (nearestBelowPlayerDist > legLen + footDistThreshold || true) {
+  //         // flying
+  //         vec3.add(
+  //           leftLeg.noodle.segments[1].pos,
+  //           leftLeg.noodle.segments[0].pos,
+  //           [0, -legLen, 0]
+  //         );
+  //         vec3.add(
+  //           rightLeg.noodle.segments[1].pos,
+  //           rightLeg.noodle.segments[0].pos,
+  //           [0, -legLen, 0]
+  //         );
+  //         continue;
+  //       }
+  //       const centerOfFeet = vec3Mid(
+  //         vec3.create(),
+  //         p.player.leftFootWorldPos,
+  //         p.player.rightFootWorldPos
+  //       );
+  //       centerOfFeet[1] = centerOfPlayerWorld[1]; // ignore Y component
+  //       const massOverhangDist2 = vec3.sqrDist(
+  //         centerOfPlayerWorld,
+  //         centerOfFeet
+  //       );
+  //       const massOverhangDistThreshold = 2;
+  //       const massOverhangDistThreshold2 = massOverhangDistThreshold ** 2;
+  //       const leftLegDist2 = vec3.sqrDist(
+  //         centerOfPlayerWorld,
+  //         p.player.leftFootWorldPos
+  //       );
+  //       const rightLegDist2 = vec3.sqrDist(
+  //         centerOfPlayerWorld,
+  //         p.player.rightFootWorldPos
+  //       );
+  //       // do we need to move a leg?
+  //       if (
+  //         massOverhangDist2 > massOverhangDistThreshold2 ||
+  //         leftLegDist2 > footDist2Threshold ||
+  //         rightLegDist2 > footDist2Threshold
+  //       ) {
+  //         // which leg? move the one farther from the center
+  //         const leg = leftLegDist2 < rightLegDist2 ? rightLeg : leftLeg;
+  //         const footWorldPos =
+  //           leg === leftLeg
+  //             ? p.player.leftFootWorldPos
+  //             : p.player.rightFootWorldPos;
+  //         const otherFootWorldPos =
+  //           leg !== leftLeg
+  //             ? p.player.leftFootWorldPos
+  //             : p.player.rightFootWorldPos;
+  //         // TODO(@darzu): it's unclear this is contributing a lot, or at least
+  //         //    not consistent
+  //         const velComp = vec3.normalize(tempVec(), p.linearVelocity);
+  //         vec3.scale(velComp, velComp, massOverhangDistThreshold * 0.8);
+  //         const targetCenterOfMass = vec3.add(
+  //           tempVec(),
+  //           centerOfPlayerWorld,
+  //           velComp
+  //         );
+  //         targetCenterOfMass[1] = centerOfPlayerWorld[1]; // ignore y
+  //         // cast a ray to see where the foot should go
+  //         // TODO(@darzu): PERF, inverting quat here
+  //         // const invRot = quat.invert(quat.create(), p.rotation);
+  //         // const legDirLocal = vec3.transformQuat(
+  //         //   vec3.create(),
+  //         //   p.linearVelocity,
+  //         //   invRot
+  //         // );
+  //         // vec3.normalize(legDirLocal, legDirLocal);
+  //         // vec3.add(legDirLocal, legDirLocal, [0, -0.8, 0]);
+  //         // vec3.normalize(legDirLocal, legDirLocal);
+  //         // // const legDirLocal: vec3 = vec3.normalize(tempVec(), [0, -1, -0.5]);
+  //         // // TODO(@darzu): we really shouldn't use transform quat since this doesn't account for scale or skew
+  //         // const legDirWorld = vec3.transformQuat(
+  //         //   vec3.create(),
+  //         //   legDirLocal,
+  //         //   p.world.rotation
+  //         // );
+  //         // reflect the other foot over the center of mass
+  //         const otherToCenter = vec3.sub(
+  //           tempVec(),
+  //           targetCenterOfMass,
+  //           otherFootWorldPos
+  //         );
+  //         const legTargetWorldXZ = vec3.add(
+  //           tempVec(),
+  //           targetCenterOfMass,
+  //           otherToCenter
+  //         );
+  //         // TODO(@darzu): ignore the y component
+  //         legTargetWorldXZ[1] = targetCenterOfMass[1];
+  //         let newDist2 = vec3.sqrDist(legTargetWorldXZ, targetCenterOfMass);
+  //         if (newDist2 > footDist2Threshold) {
+  //           // too far, move it in
+  //           const towardCenter = vec3.sub(
+  //             tempVec(),
+  //             targetCenterOfMass,
+  //             legTargetWorldXZ
+  //           );
+  //           const movDist = Math.sqrt(newDist2 - footDist2Threshold);
+  //           vec3.normalize(towardCenter, towardCenter);
+  //           vec3.scale(towardCenter, towardCenter, movDist);
+  //           vec3.add(legTargetWorldXZ, legTargetWorldXZ, towardCenter);
+  //         }
+  //         // TODO(@darzu):
+  //         // drawLine(EM, hipWorld, legTargetWorldXZ, [0, 0, 1]);
+  //         // const legDirWorld = vec3.sub(tempVec(), legTargetWorldXZ, hipWorld);
+  //         // vec3.normalize(legDirWorld, legDirWorld);
+  //         const legRayWorld: Ray = {
+  //           org: legTargetWorldXZ,
+  //           dir: [0, -1, 0],
+  //         };
+  //         // const legRayEndWorld = vec3.add(
+  //         //   vec3.create(),
+  //         //   legRayWorld.org,
+  //         //   vec3.scale(tempVec(), legRayWorld.dir, 2.0)
+  //         // );
+  //         // TODO(@darzu): DEBUG; ray test (green)
+  //         // drawLine(EM, legRayWorld.org, legRayEndWorld, [0, 1, 0]);
+  //         const hits = res.physicsResults.checkRay(legRayWorld);
+  //         const minDistWorld = min(
+  //           hits.map((h) => (h.id === p.id ? Infinity : h.dist))
+  //         );
+  //         const minDistWorld2 = minDistWorld ** 2;
+  //         // TODO(@darzu): check for length < leg length? else flying?
+  //         if (minDistWorld2 < Infinity) {
+  //           // if (minDistWorld2 > legDist2Threshold) {
+  //           //   // flying
+  //           //   const hipLocal = leg.noodle.segments[0].pos;
+  //           //   const hipWorld = vec3.transformMat4(
+  //           //     vec3.create(),
+  //           //     hipLocal,
+  //           //     p.world.transform
+  //           //   );
+  //           //   vec3.add(footWorldPos, hipWorld, [0, -2, 0]);
+  //           // } else {
+  //           // update foot pos
+  //           vec3.add(
+  //             footWorldPos,
+  //             legRayWorld.org,
+  //             vec3.scale(tempVec(), legRayWorld.dir, minDistWorld)
+  //           );
+  //           // }
+  //           // TODO(@darzu): DEBUG; new location found (blue)
+  //           // drawLine(EM, legRayWorld.org, footWorldPos, [1, 0, 0]);
+  //         }
+  //       }
+  //       // update local foot position from world position
+  //       // TODO(@darzu): this would be easiest if we had world->local
+  //       //    transforms (e.g. the inverse of our world.transform)
+  //       // TODO(@darzu): PERF, very slow
+  //       const worldInv = mat4.invert(mat4.create(), p.world.transform);
+  //       vec3.transformMat4(
+  //         leftLeg.noodle.segments[1].pos,
+  //         p.player.leftFootWorldPos,
+  //         worldInv
+  //       );
+  //       // shift by the relative offset
+  //       // TODO(@darzu): feels hacky
+  //       vec3.sub(
+  //         leftLeg.noodle.segments[1].pos,
+  //         leftLeg.noodle.segments[1].pos,
+  //         leftLeg.position
+  //       );
+  //       vec3.transformMat4(
+  //         rightLeg.noodle.segments[1].pos,
+  //         p.player.rightFootWorldPos,
+  //         worldInv
+  //       );
+  //       vec3.sub(
+  //         rightLeg.noodle.segments[1].pos,
+  //         rightLeg.noodle.segments[1].pos,
+  //         rightLeg.position
+  //       );
+  //       // const gridSize = 4.0;
+  //       // const xDelta = p.position[0] % gridSize;
+  //       // // const xDelta = p.world.position[0] % 1.0;
+  //       // // const zDelta = p.world.position[2] % 2.0;
+  //       // const leftFoot = leftLeg.noodle.segments[1];
+  //       // leftFoot.pos[0] = -xDelta;
+  //       // leftFoot[0] = 0;
+  //       // leftFoot[2] = -zDelta;
+  //       // console.log(
+  //       //   `${p.world.position[0]} -> ${p.world.position[0] % 1.0} = ${
+  //       //     leftFoot[0]
+  //       //   }`
+  //       // );
+  //     }
+  //   },
+  //   "updateLimbs"
+  // );
 }
 
 // TODO(@darzu): move this helper elsewhere?

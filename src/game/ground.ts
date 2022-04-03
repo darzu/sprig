@@ -7,7 +7,7 @@ import { ColorDef } from "./game.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import { FinishedDef } from "../build.js";
-import { Assets, AssetsDef } from "./assets.js";
+import { Assets, AssetsDef, DARK_BLUE, LIGHT_BLUE } from "./assets.js";
 import {
   cloneMesh,
   getAABBFromMesh,
@@ -15,7 +15,8 @@ import {
   scaleMesh3,
 } from "../render/mesh-pool.js";
 
-const SIZE = 40;
+const HALFSIZE = 16;
+const SIZE = HALFSIZE * 2;
 
 export const GroundConstructDef = EM.defineComponent(
   "groundConstruct",
@@ -26,6 +27,8 @@ export const GroundConstructDef = EM.defineComponent(
 );
 
 export type GroundConstruct = Component<typeof GroundConstructDef>;
+
+export const GroundDef = EM.defineComponent("ground", () => {});
 
 EM.registerSerializerPair(
   GroundConstructDef,
@@ -39,44 +42,78 @@ EM.registerSerializerPair(
   }
 );
 
-export function registerBuildGroundSystem(em: EntityManager) {
-  function buildGround(
-    ground: { id: number; groundConstruct: GroundConstruct }[],
-    { me: { pid }, assets }: { me: Me; assets: Assets }
-  ) {
-    for (let g of ground) {
-      if (FinishedDef.isOn(g)) continue;
+export const GroundSystemDef = EM.defineComponent("groundSystem", () => {
+  return {
+    groundPool: [] as number[],
+  };
+});
 
-      em.ensureComponent(g.id, PositionDef, g.groundConstruct.location);
-      // TODO(@darzu): rotation for debugging
-      // if (!RotationDef.isOn(plane)) {
-      //   // const r =
-      //   //   Math.random() > 0.5
-      //   //     ? quat.fromEuler(quat.create(), 0, 0, Math.PI * 0.5)
-      //   //     : quat.create();
-      //   const r = quat.fromEuler(quat.create(), 0, 0, Math.PI * Math.random());
-      //   em.ensureComponent(plane.id, RotationDef, r);
-      // }
-      em.ensureComponent(g.id, ColorDef, g.groundConstruct.color);
-      let m = cloneMesh(assets.cube.mesh);
-      m = scaleMesh3(m, [SIZE, 1, SIZE]);
-      em.ensureComponent(g.id, RenderableConstructDef, m);
-      const aabb = getAABBFromMesh(m);
-      em.ensureComponent(g.id, ColliderDef, {
-        shape: "AABB",
-        solid: true,
-        aabb,
-      });
-      em.ensureComponent(g.id, AuthorityDef, pid);
-      em.ensureComponent(
-        g.id,
-        SyncDef,
-        [GroundConstructDef.id],
-        [PositionDef.id]
-      );
-      em.ensureComponent(g.id, FinishedDef);
-    }
-  }
+export function registerGroundSystems(em: EntityManager) {
+  em.addSingletonComponent(GroundSystemDef);
 
-  em.registerSystem([GroundConstructDef], [MeDef, AssetsDef], buildGround);
+  const NUM_X = 3;
+  const NUM_Z = 4;
+  em.registerSystem(
+    [GroundDef],
+    [GroundSystemDef],
+    (grounds, { groundSystem }) => {
+      if (groundSystem.groundPool.length === 0) {
+        // init ground system
+        for (let x = 0; x < NUM_X; x++) {
+          for (let z = 0; z < NUM_Z; z++) {
+            const loc = vec3.fromValues((x - 1) * SIZE, -7, z * SIZE);
+            const color = (x + z) % 2 === 0 ? LIGHT_BLUE : DARK_BLUE;
+            const g = em.newEntity();
+            em.ensureComponentOn(g, GroundConstructDef, loc, color);
+            groundSystem.groundPool.push(g.id);
+          }
+        }
+      }
+
+      // TODO(@darzu):
+    },
+    "groundSystem"
+  );
+
+  em.registerSystem(
+    [GroundConstructDef],
+    [MeDef, AssetsDef],
+    (ground: { id: number; groundConstruct: GroundConstruct }[], res) => {
+      for (let g of ground) {
+        if (FinishedDef.isOn(g)) continue;
+
+        em.ensureComponent(g.id, PositionDef, g.groundConstruct.location);
+        // TODO(@darzu): rotation for debugging
+        // if (!RotationDef.isOn(plane)) {
+        //   // const r =
+        //   //   Math.random() > 0.5
+        //   //     ? quat.fromEuler(quat.create(), 0, 0, Math.PI * 0.5)
+        //   //     : quat.create();
+        //   const r = quat.fromEuler(quat.create(), 0, 0, Math.PI * Math.random());
+        //   em.ensureComponent(plane.id, RotationDef, r);
+        // }
+        em.ensureComponent(g.id, ColorDef, g.groundConstruct.color);
+        let m = cloneMesh(res.assets.cube.mesh);
+        m = scaleMesh3(m, [HALFSIZE, 1, HALFSIZE]);
+        em.ensureComponent(g.id, RenderableConstructDef, m);
+        const aabb = getAABBFromMesh(m);
+        em.ensureComponent(g.id, ColliderDef, {
+          shape: "AABB",
+          solid: true,
+          aabb,
+        });
+        em.ensureComponent(g.id, AuthorityDef, res.me.pid);
+        em.ensureComponent(
+          g.id,
+          SyncDef,
+          [GroundConstructDef.id],
+          [PositionDef.id]
+        );
+        em.ensureComponentOn(g, GroundDef);
+
+        em.ensureComponent(g.id, FinishedDef);
+      }
+    },
+    "buildGround"
+  );
 }
