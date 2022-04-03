@@ -121,14 +121,16 @@ export function registerShipSystems(em: EntityManager) {
     (ships, res) => {
       for (let s of ships) {
         for (let partId of s.ship.partIds) {
-          const bullets = res.physicsResults.collidesWith
-            .get(partId)
-            ?.map((h) => em.findEntity(h, [BulletDef]))
-            .filter((h) => h && h.bullet.team === 2);
-          if (bullets && bullets.length) {
-            for (let b of bullets) if (b) em.ensureComponent(b.id, DeletedDef);
-            const part = em.findEntity(partId, [ColorDef, RenderableDef]);
-            if (part) {
+          const part = em.findEntity(partId, [ColorDef, RenderableDef]);
+          if (part) {
+            if (!part.renderable.enabled) continue;
+            const bullets = res.physicsResults.collidesWith
+              .get(partId)
+              ?.map((h) => em.findEntity(h, [BulletDef]))
+              .filter((h) => h && h.bullet.team === 2);
+            if (bullets && bullets.length) {
+              for (let b of bullets)
+                if (b) em.ensureComponent(b.id, DeletedDef);
               // part.color[0] += 0.1;
               part.renderable.enabled = false;
             }
