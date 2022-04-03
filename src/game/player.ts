@@ -2,7 +2,13 @@
 
 import { mat4, quat, vec2, vec3 } from "../gl-matrix.js";
 import { Inputs, InputsDef } from "../inputs.js";
-import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
+import {
+  Component,
+  EM,
+  Entity,
+  EntityManager,
+  EntityW,
+} from "../entity-manager.js";
 import { PhysicsTimerDef, Timer } from "../time.js";
 import { ColorDef } from "./game.js";
 import { FinishedDef } from "../build.js";
@@ -33,7 +39,7 @@ import {
   MeDef,
   SyncDef,
 } from "../net/components.js";
-import { AABBCollider, ColliderDef } from "../physics/collider.js";
+import { AABBCollider, Collider, ColliderDef } from "../physics/collider.js";
 import { copyAABB, createAABB, Ray, RayHit } from "../physics/broadphase.js";
 import { tempQuat, tempVec } from "../temp-pool.js";
 import { Mesh, scaleMesh, scaleMesh3 } from "../render/mesh-pool.js";
@@ -49,6 +55,7 @@ import { assert } from "../test.js";
 import { vec3Dbg, vec3Mid } from "../utils-3d.js";
 import { min } from "../math.js";
 import { ShipDef } from "./ship.js";
+import { GroundDef } from "./ground.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {
@@ -433,29 +440,44 @@ export function registerStepPlayers(em: EntityManager) {
       for (let p of players) {
         if (p.authority.pid !== res.me.pid) continue;
 
+        function changeParent(parent: EntityW<[typeof ColliderDef]>) {
+          // already on this ship
+          if (PhysicsParentDef.isOn(p))
+            if (p.physicsParent.id === parent.id) return;
+
+          console.log(`new parent: ${parent.id}`);
+
+          em.ensureComponentOn(p, PhysicsParentDef);
+
+          p.physicsParent.id = parent.id;
+          vec3.copy(p.position, [0, 0, 0]);
+          if (parent.collider.shape === "AABB") {
+            // move above the obj
+            p.position[1] = parent.collider.aabb.max[1] + 3;
+          }
+          vec3.copy(p.linearVelocity, vec3.ZEROS);
+        }
+
         const shipHits = res.physicsResults.collidesWith
           .get(p.id)
           ?.map((h) => em.findEntity(h, [ShipDef, ColliderDef]));
 
         if (shipHits && shipHits.length && shipHits[0]) {
           const ship = shipHits[0];
-
-          // already on this ship
-          if (PhysicsParentDef.isOn(p))
-            if (p.physicsParent.id === ship.id) continue;
-
-          console.log("player on new ship!");
-
-          em.ensureComponentOn(p, PhysicsParentDef);
-
-          p.physicsParent.id = ship.id;
-          vec3.copy(p.position, [0, 0, 0]);
-          if (ship.collider.shape === "AABB") {
-            // move above the obj
-            p.position[1] = ship.collider.aabb.max[1] + 3;
-          }
-          vec3.copy(p.linearVelocity, vec3.ZEROS);
+          changeParent(ship);
+          continue;
         }
+
+        // TODO(@darzu): trying to reparent to the ground, doesnt work
+        // const groundHits = res.physicsResults.collidesWith
+        //   .get(p.id)
+        //   ?.map((h) => em.findEntity(h, [GroundDef, ColliderDef]));
+
+        // if (groundHits && groundHits.length && groundHits[0]) {
+        //   const ground = groundHits[0];
+        //   changeParent(ground);
+        //   continue;
+        // }
       }
     },
     "playerOnShip"
