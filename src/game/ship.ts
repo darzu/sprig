@@ -16,13 +16,14 @@ import {
   ColliderDef,
   MultiCollider,
 } from "../physics/collider.js";
-import { copyAABB, createAABB } from "../physics/broadphase.js";
+import { AABB, copyAABB, createAABB } from "../physics/broadphase.js";
 import { ColorDef } from "./game.js";
 import { setCubePosScaleToAABB } from "../physics/phys-debug.js";
 import { BOAT_COLOR } from "./boat.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../delete.js";
+import { min } from "../math.js";
 
 export const ShipConstructDef = EM.defineComponent(
   "shipConstruct",
@@ -75,28 +76,6 @@ export function registerShipSystems(em: EntityManager) {
         // if (!RenderableConstructDef.isOn(e))
         //   em.addComponent(e.id, RenderableConstructDef, assets.ship.mesh);
         em.ensureComponentOn(e, ShipDef);
-        for (let m of res.assets.ship_broken) {
-          const part = em.newEntity();
-          em.ensureComponentOn(part, PhysicsParentDef, e.id);
-          em.ensureComponentOn(part, RenderableConstructDef, m.proto);
-          em.ensureComponentOn(part, ColorDef, vec3.clone(BOAT_COLOR));
-          em.ensureComponentOn(part, PositionDef, [0, 0, 0]);
-          em.ensureComponentOn(part, ShipPartDef);
-          em.ensureComponentOn(part, ColliderDef, {
-            shape: "AABB",
-            solid: false,
-            aabb: m.aabb,
-          });
-          e.ship.partIds.push(part.id);
-        }
-        if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid);
-        if (!SyncDef.isOn(e)) {
-          const sync = em.addComponent(e.id, SyncDef);
-          sync.fullComponents.push(ShipConstructDef.id);
-          // sync.dynamicComponents.push(PositionDef.id);
-          sync.dynamicComponents.push(RotationDef.id);
-        }
-        em.addComponent(e.id, FinishedDef);
 
         // TODO(@darzu): multi collider
         const mc: MultiCollider = {
@@ -110,6 +89,33 @@ export function registerShipSystems(em: EntityManager) {
           })),
         };
         em.ensureComponentOn(e, ColliderDef, mc);
+
+        const boatFloor = min(
+          mc.children.map((c) => (c as AABBCollider).aabb.max[1])
+        );
+        for (let m of res.assets.ship_broken) {
+          const part = em.newEntity();
+          em.ensureComponentOn(part, PhysicsParentDef, e.id);
+          em.ensureComponentOn(part, RenderableConstructDef, m.proto);
+          em.ensureComponentOn(part, ColorDef, vec3.clone(BOAT_COLOR));
+          em.ensureComponentOn(part, PositionDef, [0, 0, 0]);
+          em.ensureComponentOn(part, ShipPartDef);
+          em.ensureComponentOn(part, ColliderDef, {
+            shape: "AABB",
+            solid: false,
+            aabb: m.aabb,
+          });
+          (part.collider as AABBCollider).aabb.max[1] = boatFloor;
+          e.ship.partIds.push(part.id);
+        }
+        if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid);
+        if (!SyncDef.isOn(e)) {
+          const sync = em.addComponent(e.id, SyncDef);
+          sync.fullComponents.push(ShipConstructDef.id);
+          // sync.dynamicComponents.push(PositionDef.id);
+          sync.dynamicComponents.push(RotationDef.id);
+        }
+        em.addComponent(e.id, FinishedDef);
       }
     },
     "buildShips"

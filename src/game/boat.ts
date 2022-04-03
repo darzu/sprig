@@ -51,6 +51,8 @@ export const BoatDef = EM.defineComponent("boat", () => {
     childEnemyId: 0,
     fireDelay: 2000,
     fireRate: 3000,
+    // fireDelay: 0,
+    // fireRate: 500,
     fireZoneId: 0,
   };
 });
