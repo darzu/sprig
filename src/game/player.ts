@@ -57,6 +57,8 @@ import { min } from "../math.js";
 import { ShipDef } from "./ship.js";
 import { GroundDef } from "./ground.js";
 
+export const CHEAT = false;
+
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {
     mode: "jumping" as "jumping" | "flying",
@@ -67,6 +69,7 @@ export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
     hat: 0,
     tool: 0,
     interacting: false,
+    manning: false,
     dropping: false,
     targetCursor: -1,
     targetEnt: -1,
@@ -123,6 +126,7 @@ export const CameraDef = EM.defineComponent("camera", () => {
     offset: vec3.create(),
     cameraMode: "thirdPersonOverShoulder" as CameraMode,
     perspectiveMode: "perspective" as PerspectiveMode,
+    targetId: 0,
   };
 });
 export type CameraProps = Component<typeof CameraDef>;
@@ -161,7 +165,7 @@ export function registerStepPlayers(em: EntityManager) {
         for (let p of players) {
           if (p.authority.pid !== res.me.pid) continue;
 
-          if (inputs.keyClicks["f"])
+          if (CHEAT && inputs.keyClicks["f"])
             p.player.mode = p.player.mode === "jumping" ? "flying" : "jumping";
 
           // fall with gravity
@@ -191,7 +195,7 @@ export function registerStepPlayers(em: EntityManager) {
           }
 
           if (p.player.mode === "jumping") {
-            if (inputs.keyClicks[" "]) {
+            if (CHEAT && inputs.keyClicks[" "]) {
               p.linearVelocity[1] = p.player.jumpSpeed * dt;
             }
           } else {
@@ -221,7 +225,7 @@ export function registerStepPlayers(em: EntityManager) {
 
           // TODO(@darzu): we need a better way, maybe some sort of stack,
           //    to hand off mouse etc between systems
-          if (res.modeler.mode === "") {
+          if (res.modeler.mode === "" && !p.player.manning) {
             quat.rotateY(p.rotation, p.rotation, -inputs.mouseMovX * 0.001);
             quat.rotateX(
               camera.rotation,
@@ -242,7 +246,7 @@ export function registerStepPlayers(em: EntityManager) {
           }
 
           // add bullet on lclick
-          if (inputs.lclick) {
+          if (CHEAT && inputs.lclick) {
             const linearVelocity = vec3.scale(vec3.create(), facingDir, 0.02);
             // TODO(@darzu): adds player motion
             // bulletMotion.linearVelocity = vec3.add(
@@ -260,7 +264,7 @@ export function registerStepPlayers(em: EntityManager) {
             // TODO: figure out a better way to do this
             inputs.lclick = false;
           }
-          if (inputs.rclick) {
+          if (CHEAT && inputs.rclick) {
             const SPREAD = 5;
             const GAP = 1.0;
             for (let xi = 0; xi <= SPREAD; xi++) {
@@ -295,7 +299,7 @@ export function registerStepPlayers(em: EntityManager) {
           }
 
           // shoot a ray
-          if (inputs.keyClicks["r"]) {
+          if (CHEAT && inputs.keyClicks["r"]) {
             // create our ray
             const r: Ray = {
               org: vec3.add(
@@ -313,7 +317,7 @@ export function registerStepPlayers(em: EntityManager) {
           }
 
           // change physics parent
-          if (inputs.keyClicks["t"]) {
+          if (CHEAT && inputs.keyClicks["t"]) {
             const targetEnt = EM.findEntity(p.player.targetEnt, [ColliderDef]);
             if (targetEnt) {
               p.physicsParent.id = targetEnt.id;
@@ -330,7 +334,11 @@ export function registerStepPlayers(em: EntityManager) {
           }
 
           // delete object
-          if (res.inputs.keyClicks["backspace"] && p.player.targetEnt > 0) {
+          if (
+            CHEAT &&
+            res.inputs.keyClicks["backspace"] &&
+            p.player.targetEnt > 0
+          ) {
             em.ensureComponent(p.player.targetEnt, DeletedDef);
           }
 

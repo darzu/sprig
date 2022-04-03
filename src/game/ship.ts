@@ -161,16 +161,23 @@ export function registerShipSystems(em: EntityManager) {
         const cannonPitch = Math.PI * -0.05;
 
         const cannonR = em.newEntity();
-        const cTurnRight = quat.create();
-        quat.rotateZ(cTurnRight, cTurnRight, cannonPitch);
         em.ensureComponentOn(cannonR, PhysicsParentDef, e.id);
-        em.addComponent(cannonR.id, CannonConstructDef, [-6, 3, 5], cTurnRight);
+        em.addComponent(
+          cannonR.id,
+          CannonConstructDef,
+          [-6, 3, 5],
+          0,
+          cannonPitch
+        );
         const cannonL = em.newEntity();
-        const cTurnLeft = quat.create();
-        quat.rotateY(cTurnLeft, cTurnLeft, Math.PI);
-        quat.rotateZ(cTurnLeft, cTurnLeft, cannonPitch);
         em.ensureComponentOn(cannonL, PhysicsParentDef, e.id);
-        em.addComponent(cannonL.id, CannonConstructDef, [6, 3, 5], cTurnLeft);
+        em.addComponent(
+          cannonL.id,
+          CannonConstructDef,
+          [6, 3, 5],
+          Math.PI,
+          cannonPitch
+        );
 
         // em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
         // em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2]);

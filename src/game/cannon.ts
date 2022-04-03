@@ -1,6 +1,6 @@
 import { EM, EntityManager, Component, Entity } from "../entity-manager.js";
 import { PhysicsTimerDef } from "../time.js";
-import { quat, vec3 } from "../gl-matrix.js";
+import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import { RenderableConstructDef } from "../render/renderer.js";
@@ -18,7 +18,7 @@ import { fireBullet } from "./bullet.js";
 import { registerEventHandler } from "../net/events.js";
 import { ToolDef } from "./tool.js";
 import { InteractableDef, InteractingDef } from "./interact.js";
-import { PlayerEntDef } from "./player.js";
+import { CameraDef, PlayerEntDef } from "./player.js";
 import { Assets, AssetsDef } from "./assets.js";
 import { copyAABB, createAABB } from "../physics/broadphase.js";
 import {
@@ -26,22 +26,28 @@ import {
   WorldFrameDef,
 } from "../physics/nonintersection.js";
 import { MusicDef, randChordId } from "../music.js";
+import { InputsDef } from "../inputs.js";
+import { pitch } from "../utils-3d.js";
 
 const CANNON_FRAMES = 180;
 
 export const CannonDef = EM.defineComponent("cannon", () => {
   return {
     loaded: true,
+    mannedId: 0,
+    pitch: 0,
+    yaw: 0,
   };
 });
 export type Cannon = Component<typeof CannonDef>;
 
 export const CannonConstructDef = EM.defineComponent(
   "cannonConstruct",
-  (loc?: vec3, rot?: quat) => {
+  (loc?: vec3, yaw?: number, pitch?: number) => {
     return {
       location: loc ?? vec3.fromValues(0, 0, 0),
-      rotation: rot ?? quat.create(),
+      yaw: yaw ?? 0,
+      pitch: pitch ?? 0,
     };
   }
 );
@@ -64,21 +70,99 @@ export function registerPlayerCannonSystem(em: EntityManager) {
   // );
 
   em.registerSystem(
-    [CannonDef, InteractingDef, WorldFrameDef],
-    [DetectedEventsDef, MusicDef],
+    [CannonDef, RotationDef],
+    [CameraDef],
     (cannons, res) => {
-      for (let { cannon, world, interacting, id } of cannons) {
-        console.log("someone is interacting with the cannon");
-        // let player = EM.findEntity(interacting.id, [PlayerEntDef])!;
+      for (let c of cannons) {
+        quat.copy(c.rotation, quat.IDENTITY);
+        quat.rotateY(c.rotation, c.rotation, c.cannon.yaw);
+        quat.rotateZ(c.rotation, c.rotation, c.cannon.pitch);
+        // quat.fromEuler(c.rotation, 0, c.cannon.yaw, c.cannon.pitch);
+      }
+    },
+    "rotateCannons"
+  );
 
-        // TODO(@darzu): cannon fire sound
+  em.registerSystem(
+    [CannonDef, WorldFrameDef, InteractableDef, RotationDef],
+    [
+      DetectedEventsDef,
+      MusicDef,
+      InputsDef,
+      PhysicsResultsDef,
+      MeDef,
+      CameraDef,
+    ],
+    (cannons, res) => {
+      for (let c of cannons) {
+        const { cannon, world, id, interaction } = c;
+        const players = res.physicsResults.collidesWith
+          .get(interaction.colliderId)
+          ?.map((h) => em.findEntity(h, [PlayerEntDef, AuthorityDef]))
+          .filter((p) => p && p.authority.pid === res.me.pid);
 
-        fireFromCannon(em, world);
+        if (!players?.length) {
+          if (c.cannon.mannedId) unman();
+          continue;
+        }
 
-        const chord = randChordId();
-        res.music.playChords([chord], "major", 2.0, 3.0, -2);
+        const player = players[0]!;
 
-        em.removeComponent(id, InteractingDef);
+        function unman() {
+          const oldManner = em.findEntity(c.cannon.mannedId, [PlayerEntDef]);
+          if (oldManner && oldManner.player.manning) {
+            oldManner.player.manning = false;
+            quat.identity(res.camera.rotation);
+          }
+          res.camera.targetId = 0;
+          c.cannon.mannedId = 0;
+        }
+        function doman() {
+          player.player.manning = true;
+          c.cannon.mannedId = player.id;
+        }
+
+        if (res.inputs.keyClicks["e"]) {
+          if (c.cannon.mannedId) {
+            unman();
+          } else {
+            doman();
+          }
+        }
+
+        if (res.inputs.lclick) {
+          // console.log("someone is interacting with the cannon");
+          // let player = EM.findEntity(interacting.id, [PlayerEntDef])!;
+
+          // TODO(@darzu): cannon fire sound
+
+          fireFromCannon(em, world);
+
+          const chord = randChordId();
+          res.music.playChords([chord], "major", 2.0, 3.0, -2);
+        }
+
+        if (c.cannon.mannedId) {
+          c.cannon.yaw += -res.inputs.mouseMovX * 0.005;
+          c.cannon.pitch += res.inputs.mouseMovY * 0.002;
+
+          res.camera.targetId = c.id;
+          quat.rotateY(res.camera.rotation, quat.IDENTITY, +Math.PI / 2);
+          quat.rotateX(
+            res.camera.rotation,
+            res.camera.rotation,
+            -Math.PI * 0.15
+          );
+        }
+        // quat.rotateZ(c.rotation, c.rotation, -res.inputs.mouseMovY * 0.005);
+        // quat.rotateY(c.rotation, c.rotation, -res.inputs.mouseMovX * 0.005);
+        // quat.rotateX(
+        //   camera.rotation,
+        //   camera.rotation,
+        //   -inputs.mouseMovY * 0.001
+        // );
+
+        // em.removeComponent(id, InteractingDef);
       }
     },
     "playerCannon"
@@ -93,7 +177,7 @@ export function fireFromCannon(em: EntityManager, cannon: Frame) {
   vec3.transformQuat(firePos, firePos, fireDir);
   vec3.add(firePos, firePos, cannon.position);
 
-  fireBullet(em, 1, firePos, fireDir, 0.05);
+  fireBullet(em, 1, firePos, fireDir, 0.1);
 
   // TODO(@darzu): do we need events?
   // detectedEvents: DetectedEvents,
@@ -155,12 +239,14 @@ export type CannonConstruct = Component<typeof CannonConstructDef>;
 
 function serializeCannonConstruct(c: CannonConstruct, buf: Serializer) {
   buf.writeVec3(c.location);
-  buf.writeQuat(c.rotation);
+  buf.writeFloat32(c.yaw);
+  buf.writeFloat32(c.pitch);
 }
 
 function deserializeCannonConstruct(c: CannonConstruct, buf: Deserializer) {
   buf.readVec3(c.location);
-  buf.readQuat(c.rotation);
+  c.yaw = buf.readFloat32();
+  c.pitch = buf.readFloat32();
 }
 
 EM.registerSerializerPair(
@@ -178,13 +264,15 @@ export function createPlayerCannon(
   if (FinishedDef.isOn(e)) return;
   const props = e.cannonConstruct;
   em.ensureComponent(e.id, PositionDef, props.location);
-  em.ensureComponent(e.id, RotationDef, props.rotation);
+  em.ensureComponent(e.id, RotationDef);
   em.ensureComponent(e.id, ColorDef, [0, 0, 0]);
   //TODO: do we need motion smoothing?
   //if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   em.ensureComponent(e.id, RenderableConstructDef, assets.cannon.mesh);
   em.ensureComponent(e.id, AuthorityDef, pid);
   em.ensureComponentOn(e, CannonDef);
+  e.cannon.yaw = props.yaw;
+  e.cannon.pitch = props.pitch;
   em.ensureComponent(e.id, ColliderDef, {
     shape: "AABB",
     solid: true,
@@ -196,9 +284,9 @@ export function createPlayerCannon(
   // create seperate hitbox for interacting with the cannon
   const interactBox = em.newEntity();
   const interactAABB = copyAABB(createAABB(), assets.cannon.aabb);
-  interactAABB.max[0] += 1;
-  vec3.scale(interactAABB.min, interactAABB.min, 1.5);
-  vec3.scale(interactAABB.max, interactAABB.max, 1.5);
+  // interactAABB.max[0] += 1;
+  vec3.scale(interactAABB.min, interactAABB.min, 2);
+  vec3.scale(interactAABB.max, interactAABB.max, 2);
   em.ensureComponentOn(interactBox, PhysicsParentDef, e.id);
   em.ensureComponentOn(interactBox, PositionDef, [0, 0, 0]);
   em.ensureComponentOn(interactBox, ColliderDef, {
