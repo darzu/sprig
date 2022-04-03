@@ -182,7 +182,7 @@ export function registerShipSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [ShipDef],
+    [ShipDef, PositionDef],
     [],
     (ships, res) => {
       const numCritical = criticalPartIdxes.length;
@@ -203,8 +203,9 @@ export function registerShipSystems(em: EntityManager) {
           if (gem) {
             // ship broken!
             // TODO(@darzu): RUN OVER
+            const score = Math.round(ship.position[2]);
             setTimeout(() => {
-              alert("Game over");
+              alert(`Game over (distance: ${score})`);
             }, 2000);
             vec3.copy(gem.position, gem.world.position);
             em.ensureComponentOn(gem, RotationDef);
