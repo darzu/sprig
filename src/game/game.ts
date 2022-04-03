@@ -346,22 +346,24 @@ function registerBoatSpawnerSystem(em: EntityManager) {
       if (res.boatSpawner.timerMs < 0) {
         res.boatSpawner.timerMs = res.boatSpawner.timerIntervalMs;
 
-        // TODO(@darzu):
-        createBoat();
+        // console.log("boat ");
+        // create boat(s)
+        const boatCon = em.addComponent(em.newEntity().id, BoatConstructDef);
+        const left = Math.random() < 0.5;
+        boatCon.location = vec3.fromValues(-25, -5, 30);
+        boatCon.speed = 0.005 + jitter(0.002);
+        boatCon.wheelDir = (Math.PI / 2) * (1 + jitter(0.1));
+        boatCon.wheelSpeed = jitter(0.0001);
+        if (left) {
+          boatCon.location[0] *= -1;
+          boatCon.speed *= -1;
+          boatCon.wheelDir *= -1;
+        }
+        // boatCon.wheelSpeed = 0;
       }
     },
     "spawnBoats"
   );
-
-  function createBoat() {
-    console.log("createBoat");
-    // create boat(s)
-    const boatCon = em.addComponent(em.newEntity().id, BoatConstructDef);
-    boatCon.location = vec3.fromValues(-25, -5, 30);
-    boatCon.speed = 0.005;
-    boatCon.wheelSpeed = 0; //jitter(0.001);
-    boatCon.wheelDir = Math.PI / 2;
-  }
 }
 
 function createHats(em: EntityManager) {
