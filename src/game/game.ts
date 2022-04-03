@@ -376,7 +376,11 @@ function registerBoatSpawnerSystem(em: EntityManager) {
         const boatCon = em.addComponent(em.newEntity().id, BoatConstructDef);
         const left = Math.random() < 0.5;
         const z = res.groundSystem.nextScore + 60;
-        boatCon.location = vec3.fromValues(-1.0 * GROUNDSIZE, -5, z);
+        boatCon.location = vec3.fromValues(
+          -(Math.random() * 0.5 + 0.5) * GROUNDSIZE,
+          -5,
+          z
+        );
         boatCon.speed = 0.005 + jitter(0.002);
         boatCon.wheelDir = (Math.PI / 2) * (1 + jitter(0.1));
         boatCon.wheelSpeed = jitter(0.0001);
