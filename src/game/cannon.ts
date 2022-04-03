@@ -42,6 +42,9 @@ export const CannonDef = EM.defineComponent("cannon", () => {
     maxYaw: +Math.PI * 0.5,
     minPitch: -Math.PI * 0.3,
     maxPitch: Math.PI * 0.1,
+    fireMs: 0,
+    fireDelayMs: 1000,
+    loadedId: 0,
   };
 });
 export type Cannon = Component<typeof CannonDef>;
@@ -86,6 +89,19 @@ export function registerPlayerCannonSystem(em: EntityManager) {
       }
     },
     "rotateCannons"
+  );
+
+  em.registerSystem(
+    [CannonDef],
+    [PhysicsTimerDef],
+    (cannons, res) => {
+      for (let c of cannons) {
+        if (c.cannon.fireMs > 0) {
+          c.cannon.fireMs -= res.physicsTimer.period * res.physicsTimer.steps;
+        }
+      }
+    },
+    "reloadCannon"
   );
 
   em.registerSystem(
@@ -135,7 +151,8 @@ export function registerPlayerCannonSystem(em: EntityManager) {
           }
         }
 
-        if (res.inputs.lclick) {
+        if (res.inputs.lclick && cannon.fireMs <= 0) {
+          cannon.fireMs = cannon.fireDelayMs;
           // console.log("someone is interacting with the cannon");
           // let player = EM.findEntity(interacting.id, [PlayerEntDef])!;
 
@@ -259,6 +276,7 @@ function deserializeCannonConstruct(c: CannonConstruct, buf: Deserializer) {
   c.yaw = buf.readFloat32();
   c.pitch = buf.readFloat32();
 }
+
 
 EM.registerSerializerPair(
   CannonConstructDef,
