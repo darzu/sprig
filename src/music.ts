@@ -34,7 +34,8 @@ function playFreq(freq: number, durSec: number, offset: number) {
   g.gain.exponentialRampToValueAtTime(0.00001, stopTime + 1.0);
 
   // "custom" | "sawtooth" | "sine" | "square" | "triangle";
-  o.type = "sawtooth";
+  o.type = "sine";
+  // o.type = "sawtooth";
   o.frequency.setValueAtTime(freq, startTime);
 
   // o.connect(audioCtx.destination);

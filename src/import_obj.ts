@@ -196,7 +196,7 @@ export function importObj(obj: string): Mesh[] | ParseError {
     } else if (kind === "o") {
       // object name
       // TODO(@darzu):
-      console.log(`new obj: ${p}`);
+      // console.log(`new obj: ${p}`);
       nextMesh();
     } else if (
       kind === "#" || // comment
