@@ -2,8 +2,13 @@ import { FinishedDef } from "../build.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
-import { RenderableConstructDef } from "../render/renderer.js";
-import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
+import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
+import {
+  PhysicsParentDef,
+  PositionDef,
+  RotationDef,
+  ScaleDef,
+} from "../physics/transform.js";
 import { Deserializer, Serializer } from "../serialize.js";
 import { Assets, AssetsDef, SHIP_AABBS } from "./assets.js";
 import {
@@ -15,6 +20,9 @@ import { copyAABB, createAABB } from "../physics/broadphase.js";
 import { ColorDef } from "./game.js";
 import { setCubePosScaleToAABB } from "../physics/phys-debug.js";
 import { BOAT_COLOR } from "./boat.js";
+import { PhysicsResultsDef } from "../physics/nonintersection.js";
+import { BulletDef } from "./bullet.js";
+import { DeletedDef } from "../delete.js";
 
 export const ShipConstructDef = EM.defineComponent(
   "shipConstruct",
@@ -26,6 +34,14 @@ export const ShipConstructDef = EM.defineComponent(
   }
 );
 export type ShipConstruct = Component<typeof ShipConstructDef>;
+
+export const ShipDef = EM.defineComponent("ship", () => {
+  return {
+    partIds: [] as number[],
+  };
+});
+
+export const ShipPartDef = EM.defineComponent("shipPart", () => {});
 
 function serializeShipConstruct(c: ShipConstruct, buf: Serializer) {
   buf.writeVec3(c.loc);
@@ -43,7 +59,7 @@ EM.registerSerializerPair(
   deserializeShipConstruct
 );
 
-export function registerBuildShipSystem(em: EntityManager) {
+export function registerShipSystems(em: EntityManager) {
   em.registerSystem(
     [ShipConstructDef],
     [MeDef, AssetsDef],
@@ -51,14 +67,28 @@ export function registerBuildShipSystem(em: EntityManager) {
       for (let e of ships) {
         // createShip(em, s, res.me.pid, res.assets);
         const pid = res.me.pid;
-        const assets = res.assets;
         if (FinishedDef.isOn(e)) return;
         const props = e.shipConstruct;
         if (!PositionDef.isOn(e)) em.addComponent(e.id, PositionDef, props.loc);
         if (!RotationDef.isOn(e)) em.addComponent(e.id, RotationDef, props.rot);
         if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, BOAT_COLOR);
-        if (!RenderableConstructDef.isOn(e))
-          em.addComponent(e.id, RenderableConstructDef, assets.ship.mesh);
+        // if (!RenderableConstructDef.isOn(e))
+        //   em.addComponent(e.id, RenderableConstructDef, assets.ship.mesh);
+        em.ensureComponentOn(e, ShipDef);
+        for (let m of res.assets.ship_broken) {
+          const part = em.newEntity();
+          em.ensureComponentOn(part, PhysicsParentDef, e.id);
+          em.ensureComponentOn(part, RenderableConstructDef, m.proto);
+          em.ensureComponentOn(part, ColorDef, vec3.clone(BOAT_COLOR));
+          em.ensureComponentOn(part, PositionDef, [0, 0, 0]);
+          em.ensureComponentOn(part, ShipPartDef);
+          em.ensureComponentOn(part, ColliderDef, {
+            shape: "AABB",
+            solid: false,
+            aabb: m.aabb,
+          });
+          e.ship.partIds.push(part.id);
+        }
         if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid);
         if (!SyncDef.isOn(e)) {
           const sync = em.addComponent(e.id, SyncDef);
@@ -83,5 +113,29 @@ export function registerBuildShipSystem(em: EntityManager) {
       }
     },
     "buildShips"
+  );
+
+  em.registerSystem(
+    [ShipDef],
+    [PhysicsResultsDef],
+    (ships, res) => {
+      for (let s of ships) {
+        for (let partId of s.ship.partIds) {
+          const bullets = res.physicsResults.collidesWith
+            .get(partId)
+            ?.map((h) => em.findEntity(h, [BulletDef]))
+            .filter((h) => h && h.bullet.team === 2);
+          if (bullets && bullets.length) {
+            for (let b of bullets) if (b) em.ensureComponent(b.id, DeletedDef);
+            const part = em.findEntity(partId, [ColorDef, RenderableDef]);
+            if (part) {
+              // part.color[0] += 0.1;
+              part.renderable.enabled = false;
+            }
+          }
+        }
+      }
+    },
+    "shipBreakParts"
   );
 }

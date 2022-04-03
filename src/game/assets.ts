@@ -44,6 +44,7 @@ type RemoteMeshSymbols = keyof typeof RemoteMeshes;
 
 const RemoteMesheSets = {
   boat_broken: "boat_broken.sprig.obj",
+  ship_broken: "barge1_broken.sprig.obj",
 } as const;
 
 type RemoteMeshSetSymbols = keyof typeof RemoteMesheSets;
@@ -53,6 +54,7 @@ const AssetTransforms: Partial<{
 }> = {
   linstock: mat4.fromScaling(mat4.create(), [0.1, 0.1, 0.1]),
   ship: mat4.fromScaling(mat4.create(), [3, 3, 3]),
+  ship_broken: mat4.fromScaling(mat4.create(), [3, 3, 3]),
 };
 const blackoutColor: (m: Mesh) => Mesh = (m: Mesh) => {
   m.colors.map((c) => vec3.zero(c));
@@ -67,6 +69,7 @@ const MeshTransforms: Partial<{
   ship: blackoutColor,
   ball: blackoutColor,
   boat_broken: blackoutColor,
+  ship_broken: blackoutColor,
 };
 
 // which triangles belong to which faces

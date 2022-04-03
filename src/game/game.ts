@@ -41,7 +41,7 @@ import { registerBuildCubesSystem, registerMoveCubesSystem } from "./cube.js";
 import { registerTimeSystem } from "../time.js";
 import { GroundConstructDef, registerBuildGroundSystem } from "./ground.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
-import { registerBuildShipSystem, ShipConstructDef } from "./ship.js";
+import { registerShipSystems, ShipConstructDef } from "./ship.js";
 import {
   HatConstructDef,
   registerBuildHatSystem,
@@ -200,7 +200,7 @@ export function registerAllSystems(em: EntityManager) {
   registerBuildWorldPlanes(em);
   registerBuildCubesSystem(em);
   registerBuildBoatsSystem(em);
-  registerBuildShipSystem(em);
+  registerShipSystems(em);
   registerBuildBulletsSystem(em);
   registerBuildCannonsSystem(em);
   registerBuildAmmunitionSystem(em);
