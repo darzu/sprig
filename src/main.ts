@@ -141,21 +141,24 @@ async function startGame(localPeerName: string, host: string | null) {
     //    means we'll need to do more work to get line breaks.
     const usingWebGPU =
       EM.findSingletonComponent(RendererDef)?.renderer?.usingWebGPU;
-    debugTxt.nodeValue =
-      controlsStr +
-      ` ` +
-      `js:${avgJsTime.toFixed(2)}ms ` +
-      `net:${avgNetTime.toFixed(2)}ms ` +
-      `sim:${avgSimTime.toFixed(2)}ms ` +
-      `broad:(${_lastCollisionTestTimeMs.toFixed(1)}ms ` +
-      `o:${_doesOverlaps} e:${_enclosedBys} c:${_cellChecks}) ` +
-      `fps:${avgFPS.toFixed(1)} ` +
-      //`buffers:(r=${reliableBufferSize}/u=${unreliableBufferSize}) ` +
-      `dropped:${numDroppedUpdates} ` +
-      `entities:${EM.entities.size} ` +
-      `skew: ${skew.join(",")} ` +
-      `ping: ${ping.join(",")} ` +
-      `${usingWebGPU ? "WebGPU" : "WebGL"}`;
+    debugTxt.nodeValue = `move: WASD, mouse; cannon: e, left-click; fps:${avgFPS.toFixed(
+      1
+    )}`;
+    // debugTxt.nodeValue =
+    //   controlsStr +
+    //   ` ` +
+    //   `js:${avgJsTime.toFixed(2)}ms ` +
+    //   `net:${avgNetTime.toFixed(2)}ms ` +
+    //   `sim:${avgSimTime.toFixed(2)}ms ` +
+    //   `broad:(${_lastCollisionTestTimeMs.toFixed(1)}ms ` +
+    //   `o:${_doesOverlaps} e:${_enclosedBys} c:${_cellChecks}) ` +
+    //   `fps:${avgFPS.toFixed(1)} ` +
+    //   //`buffers:(r=${reliableBufferSize}/u=${unreliableBufferSize}) ` +
+    //   `dropped:${numDroppedUpdates} ` +
+    //   `entities:${EM.entities.size} ` +
+    //   `skew: ${skew.join(",")} ` +
+    //   `ping: ${ping.join(",")} ` +
+    //   `${usingWebGPU ? "WebGPU" : "WebGL"}`;
     // // TODO(@darzu): DEBUG
     // debugTxt.nodeValue =
     //   `sim:${avgSimTime.toFixed(2)}ms ` +
