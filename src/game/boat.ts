@@ -5,7 +5,12 @@ import { jitter } from "../math.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import { RenderableConstructDef } from "../render/renderer.js";
-import { PositionDef, Rotation, RotationDef } from "../physics/transform.js";
+import {
+  PhysicsParentDef,
+  PositionDef,
+  Rotation,
+  RotationDef,
+} from "../physics/transform.js";
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import {
   Authority,
@@ -24,17 +29,24 @@ import {
   LinearVelocityDef,
 } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../smoothing.js";
-import { PhysicsResultsDef } from "../physics/nonintersection.js";
+import {
+  PhysicsResultsDef,
+  WorldFrameDef,
+} from "../physics/nonintersection.js";
 import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../delete.js";
 import { tempVec } from "../temp-pool.js";
 import { LifetimeDef } from "./lifetime.js";
+import { CannonConstructDef } from "./cannon.js";
+import { EnemyConstructDef, EnemyDef } from "./enemy.js";
 
 export const BoatDef = EM.defineComponent("boat", () => {
   return {
     speed: 0,
     wheelSpeed: 0,
     wheelDir: 0,
+    childCannonId: 0,
+    childEnemyId: 0,
   };
 });
 export type Boat = Component<typeof BoatDef>;
@@ -92,7 +104,24 @@ export function registerStepBoats(em: EntityManager) {
           if (balls.length) {
             console.log("HIT!");
             em.ensureComponentOn(boat, DeletedDef);
+            em.ensureComponent(boat.boat.childCannonId, DeletedDef);
             for (let ball of balls) em.ensureComponent(ball, DeletedDef);
+
+            const child = em.findEntity(boat.boat.childEnemyId, [
+              WorldFrameDef,
+              PositionDef,
+              RotationDef,
+              EnemyDef,
+            ]);
+            if (child) {
+              em.ensureComponent(child.id, LifetimeDef, 4000);
+              em.ensureComponent(child.enemy.leftLegId, LifetimeDef, 4000);
+              em.ensureComponent(child.enemy.rightLegId, LifetimeDef, 4000);
+              em.removeComponent(child.id, PhysicsParentDef);
+              vec3.copy(child.position, child.world.position);
+              quat.copy(child.rotation, child.world.rotation);
+              em.ensureComponentOn(child, LinearVelocityDef, [0, -0.002, 0]);
+            }
 
             for (let part of res.assets.boat_broken) {
               const pe = em.newEntity();
@@ -189,6 +218,24 @@ function createBoat(
     boat.speed = props.speed;
     boat.wheelDir = props.wheelDir;
     boat.wheelSpeed = props.wheelSpeed;
+
+    // child cannon
+    const cannon = em.newEntity();
+    em.ensureComponentOn(cannon, RenderableConstructDef, assets.cannon.proto);
+    em.ensureComponentOn(cannon, PhysicsParentDef, e.id);
+    em.ensureComponentOn(cannon, PositionDef, [0, 2, 0]);
+    em.ensureComponentOn(
+      cannon,
+      RotationDef,
+      quat.rotateY(quat.create(), quat.IDENTITY, Math.PI * 0.5)
+    );
+    boat.childCannonId = cannon.id;
+
+    boat.childCannonId = cannon.id;
+    // child enemy
+    const en = em.newEntity();
+    em.ensureComponentOn(en, EnemyConstructDef, e.id, [2, 3, 0]);
+    boat.childEnemyId = en.id;
   }
   if (!ColliderDef.isOn(e)) {
     const collider = em.addComponent(e.id, ColliderDef);
@@ -203,6 +250,7 @@ function createBoat(
     sync.dynamicComponents.push(RotationDef.id);
     sync.dynamicComponents.push(LinearVelocityDef.id);
   }
+
   em.addComponent(e.id, FinishedDef);
 }
 

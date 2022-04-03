@@ -59,8 +59,11 @@ const blackoutColor: (m: Mesh) => Mesh = (m: Mesh) => {
   return m;
 };
 const MeshTransforms: Partial<{
-  [P in RemoteMeshSymbols | RemoteMeshSetSymbols]: (m: Mesh) => Mesh;
+  [P in RemoteMeshSymbols | RemoteMeshSetSymbols | LocalMeshSymbols]: (
+    m: Mesh
+  ) => Mesh;
 }> = {
+  cube: blackoutColor,
   ship: blackoutColor,
   ball: blackoutColor,
   boat_broken: blackoutColor,
@@ -333,11 +336,11 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
   const singleMeshes = objMap(singlePromises, (_, n) => {
     const idx = singlesList.findIndex(([n2, _]) => n === n2);
     let m = singlesMeshList[idx];
-    const t1 = AssetTransforms[n!];
-    if (t1) m = transformMesh(m, t1);
-    const t2 = MeshTransforms[n!];
-    if (t2) m = t2(m);
-    return m;
+    return processMesh(n, m);
+  });
+
+  const localMeshes = objMap(LocalMeshes, (m, n) => {
+    return processMesh(n, m);
   });
 
   const setsList = Object.entries(setPromises);
@@ -345,14 +348,18 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
   const setMeshes = objMap(setPromises, (_, n) => {
     const idx = setsList.findIndex(([n2, _]) => n === n2);
     let ms = setsMeshList[idx];
-    const t1 = AssetTransforms[n!];
-    if (t1) ms = ms.map((m) => transformMesh(m, t1));
-    const t2 = MeshTransforms[n!];
-    if (t2) ms = ms.map((m) => t2(m));
-    return ms;
+    return ms.map((m) => processMesh(n, m));
   });
 
-  const allSingleMeshes = { ...singleMeshes, ...LocalMeshes };
+  function processMesh(n: string, m: Mesh): Mesh {
+    const t1 = (AssetTransforms as { [key: string]: mat4 })[n];
+    if (t1) m = transformMesh(m, t1);
+    const t2 = (MeshTransforms as { [key: string]: (m: Mesh) => Mesh })[n];
+    if (t2) m = t2(m);
+    return m;
+  }
+
+  const allSingleMeshes = { ...singleMeshes, ...localMeshes };
 
   // TODO(@darzu): this shouldn't directly add to a mesh pool, we don't know which pool it should
   //  go to
