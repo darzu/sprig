@@ -20,10 +20,16 @@ import { AABB, copyAABB, createAABB } from "../physics/broadphase.js";
 import { ColorDef } from "./game.js";
 import { setCubePosScaleToAABB } from "../physics/phys-debug.js";
 import { BOAT_COLOR } from "./boat.js";
-import { PhysicsResultsDef } from "../physics/nonintersection.js";
+import {
+  PhysicsResultsDef,
+  WorldFrameDef,
+} from "../physics/nonintersection.js";
 import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../delete.js";
 import { min } from "../math.js";
+import { assert } from "../test.js";
+import { LinearVelocityDef } from "../physics/motion.js";
+import { LifetimeDef } from "./lifetime.js";
 
 export const ShipConstructDef = EM.defineComponent(
   "shipConstruct",
@@ -43,7 +49,13 @@ export const ShipDef = EM.defineComponent("ship", () => {
   };
 });
 
-export const ShipPartDef = EM.defineComponent("shipPart", () => {});
+export const ShipPartDef = EM.defineComponent(
+  "shipPart",
+  (critical: boolean) => ({
+    critical,
+    damaged: false,
+  })
+);
 
 function serializeShipConstruct(c: ShipConstruct, buf: Serializer) {
   buf.writeVec3(c.loc);
@@ -64,6 +76,8 @@ EM.registerSerializerPair(
 export const GemDef = EM.defineComponent("gem", () => {
   // TODO(@darzu):
 });
+
+const criticalPartIdxes = [0, 3, 5, 6];
 
 export function registerShipSystems(em: EntityManager) {
   em.registerSystem(
@@ -98,13 +112,15 @@ export function registerShipSystems(em: EntityManager) {
         const boatFloor = min(
           mc.children.map((c) => (c as AABBCollider).aabb.max[1])
         );
-        for (let m of res.assets.ship_broken) {
+        for (let i = 0; i < res.assets.ship_broken.length; i++) {
+          const m = res.assets.ship_broken[i];
           const part = em.newEntity();
           em.ensureComponentOn(part, PhysicsParentDef, e.id);
           em.ensureComponentOn(part, RenderableConstructDef, m.proto);
           em.ensureComponentOn(part, ColorDef, vec3.clone(BOAT_COLOR));
           em.ensureComponentOn(part, PositionDef, [0, 0, 0]);
-          em.ensureComponentOn(part, ShipPartDef);
+          const isCritical = criticalPartIdxes.includes(i);
+          em.ensureComponentOn(part, ShipPartDef, isCritical);
           em.ensureComponentOn(part, ColliderDef, {
             shape: "AABB",
             solid: false,
@@ -141,11 +157,53 @@ export function registerShipSystems(em: EntityManager) {
 
   em.registerSystem(
     [ShipDef],
+    [],
+    (ships, res) => {
+      const numCritical = criticalPartIdxes.length;
+      for (let ship of ships) {
+        let numCriticalDamaged = 0;
+        for (let partId of ship.ship.partIds) {
+          const part = em.findEntity(partId, [ShipPartDef]);
+          if (part && part.shipPart.critical && part.shipPart.damaged) {
+            numCriticalDamaged += 1;
+          }
+        }
+        if (numCriticalDamaged === numCritical) {
+          const gem = em.findEntity(ship.ship.gemId, [
+            WorldFrameDef,
+            PositionDef,
+            PhysicsParentDef,
+          ]);
+          if (gem) {
+            // ship broken!
+            // TODO(@darzu): RUN OVER
+            setTimeout(() => {
+              alert("Game over");
+            }, 2000);
+            vec3.copy(gem.position, gem.world.position);
+            em.ensureComponentOn(gem, RotationDef);
+            quat.copy(gem.rotation, gem.world.rotation);
+            em.ensureComponentOn(gem, LinearVelocityDef, [0, -0.01, 0]);
+            em.removeComponent(gem.id, PhysicsParentDef);
+            em.ensureComponentOn(gem, LifetimeDef, 4000);
+          }
+        }
+      }
+    },
+    "shipDead"
+  );
+
+  em.registerSystem(
+    [ShipDef],
     [PhysicsResultsDef],
     (ships, res) => {
       for (let s of ships) {
         for (let partId of s.ship.partIds) {
-          const part = em.findEntity(partId, [ColorDef, RenderableDef]);
+          const part = em.findEntity(partId, [
+            ShipPartDef,
+            ColorDef,
+            RenderableDef,
+          ]);
           if (part) {
             if (!part.renderable.enabled) continue;
             const bullets = res.physicsResults.collidesWith
@@ -157,6 +215,7 @@ export function registerShipSystems(em: EntityManager) {
                 if (b) em.ensureComponent(b.id, DeletedDef);
               // part.color[0] += 0.1;
               part.renderable.enabled = false;
+              part.shipPart.damaged = true;
             }
           }
         }

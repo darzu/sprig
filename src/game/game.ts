@@ -346,6 +346,7 @@ function registerBoatSpawnerSystem(em: EntityManager) {
       if (res.boatSpawner.timerMs < 0) {
         res.boatSpawner.timerMs = res.boatSpawner.timerIntervalMs;
 
+        // TODO(@darzu):
         createBoat();
       }
     },
