@@ -5,7 +5,6 @@ import { Inputs, InputsDef } from "../inputs.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { PhysicsTimerDef, Timer } from "../time.js";
 import { ColorDef } from "./game.js";
-import { spawnBullet } from "./bullet.js";
 import { FinishedDef } from "../build.js";
 import {
   CameraView,
@@ -244,12 +243,12 @@ export function registerStepPlayers(em: EntityManager) {
             //   player.linearVelocity
             // );
             const angularVelocity = vec3.scale(vec3.create(), facingDir, 0.01);
-            spawnBullet(
-              EM,
-              vec3.clone(p.world.position),
-              linearVelocity,
-              angularVelocity
-            );
+            // spawnBullet(
+            //   EM,
+            //   vec3.clone(p.world.position),
+            //   linearVelocity,
+            //   angularVelocity
+            // );
             // TODO: figure out a better way to do this
             inputs.lclick = false;
           }
@@ -282,7 +281,7 @@ export function registerStepPlayers(em: EntityManager) {
                   bullet_axis,
                   0.01
                 );
-                spawnBullet(EM, position, linearVelocity, angularVelocity);
+                // spawnBullet(EM, position, linearVelocity, angularVelocity);
               }
             }
           }

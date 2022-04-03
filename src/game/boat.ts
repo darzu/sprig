@@ -33,12 +33,14 @@ import {
   PhysicsResultsDef,
   WorldFrameDef,
 } from "../physics/nonintersection.js";
-import { BulletDef } from "./bullet.js";
+import { BulletDef, fireBullet } from "./bullet.js";
 import { DeletedDef } from "../delete.js";
 import { tempVec } from "../temp-pool.js";
 import { LifetimeDef } from "./lifetime.js";
 import { CannonConstructDef } from "./cannon.js";
 import { EnemyConstructDef, EnemyDef } from "./enemy.js";
+import { PlayerEntDef } from "./player.js";
+import { ShipConstructDef } from "./ship.js";
 
 export const BoatDef = EM.defineComponent("boat", () => {
   return {
@@ -47,50 +49,74 @@ export const BoatDef = EM.defineComponent("boat", () => {
     wheelDir: 0,
     childCannonId: 0,
     childEnemyId: 0,
+    fireDelay: 2000,
+    fireRate: 3000,
+    fireZoneId: 0,
   };
 });
 export type Boat = Component<typeof BoatDef>;
 
 export const BOAT_COLOR: vec3 = [0.2, 0.1, 0.05];
 
-function stepBoats(
-  boats: {
-    boat: Boat;
-    rotation: Rotation;
-    linearVelocity: LinearVelocity;
-    authority: Authority;
-  }[],
-  { physicsTimer, me }: { physicsTimer: Timer; me: Me }
-) {
-  for (let o of boats) {
-    if (o.authority.pid !== me.pid) continue;
-
-    const rad = o.boat.wheelSpeed * physicsTimer.period;
-    o.boat.wheelDir += rad;
-
-    // rotate
-    quat.rotateY(o.rotation, quat.IDENTITY, o.boat.wheelDir);
-
-    // rotate velocity
-    vec3.rotateY(
-      o.linearVelocity,
-      [o.boat.speed, 0, 0],
-      [0, 0, 0],
-      o.boat.wheelDir
-    );
-  }
-}
-
 export function registerStepBoats(em: EntityManager) {
   em.registerSystem(
     [BoatDef, RotationDef, LinearVelocityDef, AuthorityDef],
     [PhysicsTimerDef, MeDef],
-    (objs, res) => {
+    (boats, res) => {
       for (let i = 0; i < res.physicsTimer.steps; i++) {
-        stepBoats(objs, res);
+        for (let o of boats) {
+          if (o.authority.pid !== res.me.pid) continue;
+
+          const rad = o.boat.wheelSpeed * res.physicsTimer.period;
+          o.boat.wheelDir += rad;
+
+          // rotate
+          quat.rotateY(o.rotation, quat.IDENTITY, o.boat.wheelDir);
+
+          // rotate velocity
+          vec3.rotateY(
+            o.linearVelocity,
+            [o.boat.speed, 0, 0],
+            [0, 0, 0],
+            o.boat.wheelDir
+          );
+        }
       }
     },
     "stepBoats"
+  );
+
+  em.registerSystem(
+    [BoatDef, AuthorityDef],
+    [PhysicsTimerDef, MeDef, PhysicsResultsDef],
+    (boats, res) => {
+      const ms = res.physicsTimer.period * res.physicsTimer.steps;
+      for (let o of boats) {
+        if (o.authority.pid !== res.me.pid) continue;
+
+        // TODO(@darzu): COUNT DOWN FIREZONE
+        const hits = res.physicsResults.collidesWith.get(o.boat.fireZoneId);
+        const seesPlayer = hits?.some(
+          (h) => !!em.findEntity(h, [ShipConstructDef])
+        );
+        if (seesPlayer) {
+          o.boat.fireDelay -= ms;
+          // console.log(o.boat.fireDelay);
+        }
+
+        if (o.boat.fireDelay < 0) {
+          o.boat.fireDelay += o.boat.fireRate;
+
+          const cannon = em.findEntity(o.boat.childCannonId, [WorldFrameDef]);
+          if (cannon) {
+            const rot = quat.create();
+            quat.rotateY(rot, cannon.world.rotation, Math.PI * 0.5);
+            fireBullet(em, 2, cannon.world.position, rot, 0.05);
+          }
+        }
+      }
+    },
+    "boatsFire"
   );
 
   em.registerSystem(
@@ -100,7 +126,9 @@ export function registerStepBoats(em: EntityManager) {
       for (let boat of objs) {
         const hits = res.physicsResults.collidesWith.get(boat.id);
         if (hits) {
-          const balls = hits.filter((h) => em.findEntity(h, [BulletDef]));
+          const balls = hits.filter(
+            (h) => em.findEntity(h, [BulletDef])?.bullet.team === 1
+          );
           if (balls.length) {
             console.log("HIT!");
             em.ensureComponentOn(boat, DeletedDef);
@@ -122,6 +150,8 @@ export function registerStepBoats(em: EntityManager) {
               quat.copy(child.rotation, child.world.rotation);
               em.ensureComponentOn(child, LinearVelocityDef, [0, -0.002, 0]);
             }
+            if (boat.boat.fireZoneId)
+              em.ensureComponent(boat.boat.fireZoneId, DeletedDef);
 
             for (let part of res.assets.boat_broken) {
               const pe = em.newEntity();
@@ -193,6 +223,8 @@ EM.registerSerializerPair(
   }
 );
 
+export const FireZoneDef = EM.defineComponent("firezone", () => {});
+
 function createBoat(
   em: EntityManager,
   e: Entity & { boatConstruct: BoatConstruct },
@@ -224,18 +256,33 @@ function createBoat(
     em.ensureComponentOn(cannon, RenderableConstructDef, assets.cannon.proto);
     em.ensureComponentOn(cannon, PhysicsParentDef, e.id);
     em.ensureComponentOn(cannon, PositionDef, [0, 2, 0]);
-    em.ensureComponentOn(
-      cannon,
-      RotationDef,
-      quat.rotateY(quat.create(), quat.IDENTITY, Math.PI * 0.5)
-    );
+
+    const cannonRot = quat.create();
+    const pitch = Math.PI * -0.08;
+    quat.rotateY(cannonRot, cannonRot, Math.PI * 0.5);
+    quat.rotateZ(cannonRot, cannonRot, pitch);
+    em.ensureComponentOn(cannon, RotationDef, cannonRot);
     boat.childCannonId = cannon.id;
 
-    boat.childCannonId = cannon.id;
     // child enemy
     const en = em.newEntity();
     em.ensureComponentOn(en, EnemyConstructDef, e.id, [2, 3, 0]);
     boat.childEnemyId = en.id;
+
+    // fire zone
+    const fireZone = em.newEntity();
+    em.ensureComponentOn(fireZone, ColliderDef, {
+      solid: false,
+      shape: "AABB",
+      aabb: {
+        min: [-2, -2, -12],
+        max: [2, 2, 12],
+      },
+    });
+    em.ensureComponentOn(fireZone, PhysicsParentDef, e.id);
+    em.ensureComponentOn(fireZone, PositionDef, [0, 0, 20]);
+    em.ensureComponentOn(fireZone, FireZoneDef);
+    boat.fireZoneId = fireZone.id;
   }
   if (!ColliderDef.isOn(e)) {
     const collider = em.addComponent(e.id, ColliderDef);

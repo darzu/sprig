@@ -17,18 +17,21 @@ import { MotionSmoothingDef } from "../smoothing.js";
 import { PhysicsTimerDef } from "../time.js";
 import { LifetimeDef } from "./lifetime.js";
 
-export const BulletDef = EM.defineComponent("bullet", () => {
-  return true;
+export const BulletDef = EM.defineComponent("bullet", (team?: number) => {
+  return {
+    team,
+  };
 });
 export type Bullet = Component<typeof BulletDef>;
 
 export const BulletConstructDef = EM.defineComponent(
   "bulletConstruct",
-  (loc?: vec3, vel?: vec3, angVel?: vec3) => {
+  (loc?: vec3, vel?: vec3, angVel?: vec3, team?: number) => {
     return {
       location: loc ?? vec3.fromValues(0, 0, 0),
       linearVelocity: vel ?? vec3.fromValues(0, 1, 0),
       angularVelocity: angVel ?? vec3.fromValues(0, 0, 0),
+      team,
     };
   }
 );
@@ -66,7 +69,7 @@ function createBullet(
   em.ensureComponent(e.id, MotionSmoothingDef);
   em.ensureComponent(e.id, RenderableConstructDef, assets.ball.proto);
   em.ensureComponent(e.id, AuthorityDef, pid);
-  em.ensureComponent(e.id, BulletDef);
+  em.ensureComponent(e.id, BulletDef, props.team);
   em.ensureComponent(e.id, ColliderDef, {
     shape: "AABB",
     solid: false,
@@ -102,24 +105,9 @@ export function registerBulletUpdate(em: EntityManager) {
   );
 }
 
-export function spawnBullet(
-  em: EntityManager,
-  position: Position,
-  linearVelocity: LinearVelocity,
-  angularVelocity: AngularVelocity
-) {
-  const e = em.newEntity();
-  em.addComponent(
-    e.id,
-    BulletConstructDef,
-    position,
-    linearVelocity,
-    angularVelocity
-  );
-}
-
 export function fireBullet(
   em: EntityManager,
+  team: number,
   location: vec3,
   rotation: quat,
   speed: number = 0.02,
@@ -130,5 +118,13 @@ export function fireBullet(
   vec3.normalize(bulletAxis, bulletAxis);
   const linearVelocity = vec3.scale(vec3.create(), bulletAxis, speed);
   const angularVelocity = vec3.scale(vec3.create(), bulletAxis, rotationSpeed);
-  spawnBullet(em, vec3.clone(location), linearVelocity, angularVelocity);
+  const e = em.newEntity();
+  em.addComponent(
+    e.id,
+    BulletConstructDef,
+    vec3.clone(location),
+    linearVelocity,
+    angularVelocity,
+    team
+  );
 }

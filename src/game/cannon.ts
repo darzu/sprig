@@ -74,7 +74,7 @@ export function registerPlayerCannonSystem(em: EntityManager) {
         vec3.add(firePos, firePos, position);
 
         // fireBullet(em, firePos, fireDir, 0.1);
-        fireBullet(em, firePos, fireDir, 0.05);
+        fireBullet(em, 1, firePos, fireDir, 0.05);
         detectedEvents.push({
           type: "fire-cannon",
           entities: [interacting.id, id],
