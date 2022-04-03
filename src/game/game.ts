@@ -107,7 +107,7 @@ EM.registerSerializerPair(
 
 function createPlayer(em: EntityManager) {
   const e = em.newEntity();
-  em.addComponent(e.id, PlayerConstructDef, vec3.fromValues(0, 5, -20));
+  em.addComponent(e.id, PlayerConstructDef, vec3.fromValues(0, 5, 0));
 }
 
 function createGround(em: EntityManager) {
@@ -322,7 +322,7 @@ function createShips(em: EntityManager) {
   const rot = quat.create();
   // quat.rotateY(rot, rot, Math.PI * -0.4);
   // const pos: vec3 = [-40, -10, -60];
-  const pos: vec3 = vec3.fromValues(-2, -3, 0);
+  const pos: vec3 = vec3.fromValues(0, -2, 0);
   // const pos: vec3 = [0, -10, 130];
   em.addComponent(em.newEntity().id, ShipConstructDef, pos, rot);
 }

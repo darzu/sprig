@@ -53,10 +53,12 @@ const AssetTransforms: Partial<{
   [P in RemoteMeshSymbols | RemoteMeshSetSymbols]: mat4;
 }> = {
   linstock: mat4.fromScaling(mat4.create(), [0.1, 0.1, 0.1]),
-  ship: mat4.fromScaling(mat4.create(), [3, 3, 3]),
-  ship_broken: mat4.fromScaling(mat4.create(), [3, 3, 3]),
+  // ship: mat4.fromScaling(mat4.create(), [3, 3, 3]),
+  // ship_broken: mat4.fromScaling(mat4.create(), [3, 3, 3]),
   spacerock: mat4.fromScaling(mat4.create(), [1.5, 1.5, 1.5]),
 };
+
+const SHIP_OFFSET: vec3 = [3.85 - 2.16, -0.33 - 0.13, -8.79 + 4.63];
 const blackoutColor: (m: Mesh) => Mesh = (m: Mesh) => {
   m.colors.map((c) => vec3.zero(c));
   return m;
@@ -81,8 +83,15 @@ const MeshTransforms: Partial<{
   // ship: blackoutColor,
   // ball: blackoutColor,
   // boat_broken: blackoutColor,
+  ship: (m) => {
+    m.lines = [];
+    m = scaleMesh(m, 3);
+    return m;
+  },
   ship_broken: (m) => {
     m.lines = [];
+    m.pos = m.pos.map((p) => vec3.subtract(vec3.create(), p, SHIP_OFFSET));
+    m = scaleMesh(m, 3);
     return m;
   },
 };
@@ -227,8 +236,14 @@ export const SHIP_AABBS: AABB[] = RAW_SHIP_AABBS.map((aabb) => {
   aabb.min[2] += zShift;
   aabb.max[2] += zShift;
 
-  vec3.scale(aabb.min, aabb.min, 3 / 5);
-  vec3.scale(aabb.max, aabb.max, 3 / 5);
+  vec3.scale(aabb.min, aabb.min, 1 / 5);
+  vec3.scale(aabb.max, aabb.max, 1 / 5);
+
+  vec3.subtract(aabb.min, aabb.min, SHIP_OFFSET);
+  vec3.subtract(aabb.max, aabb.max, SHIP_OFFSET);
+
+  vec3.scale(aabb.min, aabb.min, 3);
+  vec3.scale(aabb.max, aabb.max, 3);
   return aabb;
 });
 // const shipMinX = min(SHIP_AABBS.map((a) => a.min[0]));

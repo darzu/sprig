@@ -81,6 +81,7 @@ export const GemDef = EM.defineComponent("gem", () => {
 
 const criticalPartIdxes = [0, 3, 5, 6];
 
+
 export function registerShipSystems(em: EntityManager) {
   em.registerSystem(
     [ShipConstructDef],
@@ -93,9 +94,9 @@ export function registerShipSystems(em: EntityManager) {
         const props = e.shipConstruct;
         if (!PositionDef.isOn(e)) em.addComponent(e.id, PositionDef, props.loc);
         if (!RotationDef.isOn(e)) em.addComponent(e.id, RotationDef, props.rot);
-        if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, BOAT_COLOR);
+        // if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.2, 0.1, 0.1]);
         // if (!RenderableConstructDef.isOn(e))
-        //   em.addComponent(e.id, RenderableConstructDef, assets.ship.mesh);
+        //   em.addComponent(e.id, RenderableConstructDef, res.assets.ship.mesh);
         em.ensureComponentOn(e, ShipDef);
         e.ship.speed = 0.005;
 
@@ -150,7 +151,7 @@ export function registerShipSystems(em: EntityManager) {
           RenderableConstructDef,
           res.assets.spacerock.proto
         );
-        em.ensureComponentOn(gem, PositionDef, [4, -1, -12]);
+        em.ensureComponentOn(gem, PositionDef, [0, 0, -1]);
         em.ensureComponentOn(gem, PhysicsParentDef, e.id);
         em.ensureComponentOn(gem, GemDef);
         e.ship.gemId = gem.id;
@@ -163,18 +164,13 @@ export function registerShipSystems(em: EntityManager) {
         const cTurnRight = quat.create();
         quat.rotateZ(cTurnRight, cTurnRight, cannonPitch);
         em.ensureComponentOn(cannonR, PhysicsParentDef, e.id);
-        em.addComponent(
-          cannonR.id,
-          CannonConstructDef,
-          [-1, 2, -5],
-          cTurnRight
-        );
+        em.addComponent(cannonR.id, CannonConstructDef, [-6, 3, 5], cTurnRight);
         const cannonL = em.newEntity();
         const cTurnLeft = quat.create();
         quat.rotateY(cTurnLeft, cTurnLeft, Math.PI);
         quat.rotateZ(cTurnLeft, cTurnLeft, cannonPitch);
         em.ensureComponentOn(cannonL, PhysicsParentDef, e.id);
-        em.addComponent(cannonL.id, CannonConstructDef, [11, 2, -5], cTurnLeft);
+        em.addComponent(cannonL.id, CannonConstructDef, [6, 3, 5], cTurnLeft);
 
         // em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
         // em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2]);
