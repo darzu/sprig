@@ -78,7 +78,7 @@ export function registerStepBoats(em: EntityManager) {
           // rotate velocity
           vec3.rotateY(
             o.linearVelocity,
-            [o.boat.speed, 0, 0],
+            [o.boat.speed, -0.01, 0],
             [0, 0, 0],
             o.boat.wheelDir
           );
