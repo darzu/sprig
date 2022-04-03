@@ -15,6 +15,7 @@ import {
 } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../smoothing.js";
 import { PhysicsTimerDef } from "../time.js";
+import { LifetimeDef } from "./lifetime.js";
 
 export const BulletDef = EM.defineComponent("bullet", () => {
   return true;
@@ -71,6 +72,7 @@ function createBullet(
     solid: false,
     aabb: assets.ball.aabb,
   });
+  em.ensureComponent(e.id, LifetimeDef, 4000);
   em.ensureComponent(e.id, SyncDef, [BulletConstructDef.id], [PositionDef.id]);
   em.ensureComponent(e.id, PredictDef);
   em.addComponent(e.id, FinishedDef);

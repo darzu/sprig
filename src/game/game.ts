@@ -86,6 +86,7 @@ import { FinishedDef } from "../build.js";
 import { registerPhysicsSystems } from "../physics/phys.js";
 import { debugCreateNoodles, registerNoodleSystem } from "./noodles.js";
 import { splitMesh } from "../render/mesh-pool.js";
+import { registerUpdateLifetimes } from "./lifetime.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -210,6 +211,7 @@ export function registerAllSystems(em: EntityManager) {
   registerStepPlayers(em);
   registerBulletUpdate(em);
   registerNoodleSystem(em);
+  registerUpdateLifetimes(em);
   registerInteractionSystem(em);
   // registerStepCannonsSystem(em);
   registerPlayerCannonSystem(em);

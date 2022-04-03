@@ -28,6 +28,7 @@ import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../delete.js";
 import { tempVec } from "../temp-pool.js";
+import { LifetimeDef } from "./lifetime.js";
 
 export const BoatDef = EM.defineComponent("boat", () => {
   return {
@@ -122,6 +123,7 @@ export function registerStepBoats(em: EntityManager) {
               vec3.normalize(spin, spin);
               vec3.scale(spin, spin, 0.001);
               em.ensureComponentOn(pe, AngularVelocityDef, spin);
+              em.ensureComponentOn(pe, LifetimeDef, 2000);
             }
           }
         }
