@@ -351,7 +351,7 @@ function createShips(em: EntityManager) {
 }
 
 export const BoatSpawnerDef = EM.defineComponent("boatSpawner", () => ({
-  timerMs: 0,
+  timerMs: 3000,
   timerIntervalMs: 5000,
 }));
 
@@ -367,6 +367,8 @@ function registerBoatSpawnerSystem(em: EntityManager) {
       // console.log("res.boatSpawner.timerMs:" + res.boatSpawner.timerMs);
       if (res.boatSpawner.timerMs < 0) {
         res.boatSpawner.timerMs = res.boatSpawner.timerIntervalMs;
+        // ramp up difficulty
+        res.boatSpawner.timerIntervalMs *= 0.95;
 
         // console.log("boat ");
         // create boat(s)
