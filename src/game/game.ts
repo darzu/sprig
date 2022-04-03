@@ -192,6 +192,7 @@ export function registerAllSystems(em: EntityManager) {
   registerTimeSystem(em);
   registerNetSystems(em);
   registerInitCanvasSystem(em);
+  registerUISystems(em);
   registerRenderInitSystem(em);
   registerMusicSystems(em);
   registerHandleNetworkEvents(em);
@@ -240,6 +241,22 @@ export function registerAllSystems(em: EntityManager) {
   registerUpdateCameraView(em);
   registerConstructRenderablesSystem(em);
   registerRenderer(em);
+}
+
+export const TextDef = EM.defineComponent("text", () => {
+  return {
+    setText: (s: string) => {},
+  };
+});
+
+export function registerUISystems(em: EntityManager) {
+  const txt = em.addSingletonComponent(TextDef);
+
+  const titleDiv = document.getElementById("title-div") as HTMLDivElement;
+
+  txt.setText = (s: string) => {
+    titleDiv.firstChild!.nodeValue = s;
+  };
 }
 
 function registerRenderViewController(em: EntityManager) {

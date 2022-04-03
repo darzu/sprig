@@ -17,7 +17,7 @@ import {
   MultiCollider,
 } from "../physics/collider.js";
 import { AABB, copyAABB, createAABB } from "../physics/broadphase.js";
-import { ColorDef } from "./game.js";
+import { ColorDef, TextDef } from "./game.js";
 import { setCubePosScaleToAABB } from "../physics/phys-debug.js";
 import { BOAT_COLOR } from "./boat.js";
 import {
@@ -26,7 +26,7 @@ import {
 } from "../physics/nonintersection.js";
 import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../delete.js";
-import { min } from "../math.js";
+import { max, min } from "../math.js";
 import { assert } from "../test.js";
 import { LinearVelocityDef } from "../physics/motion.js";
 import { LifetimeDef } from "./lifetime.js";
@@ -203,7 +203,7 @@ export function registerShipSystems(em: EntityManager) {
           if (gem) {
             // ship broken!
             // TODO(@darzu): RUN OVER
-            const score = Math.round(ship.position[2]);
+            const score = Math.round(ship.position[2] / 10);
             setTimeout(() => {
               // TODO(@darzu): game over music
               res.music.playChords([1, 2, 3, 4, 4], "minor");
@@ -232,6 +232,19 @@ export function registerShipSystems(em: EntityManager) {
       }
     },
     "shipMove"
+  );
+
+  em.registerSystem(
+    [ShipDef, PositionDef],
+    [TextDef],
+    (ships, res) => {
+      const score = max(ships.map((s) => s.position[2]));
+
+      // update score
+      const roundScore = Math.round(score / 10);
+      res.text.setText(`${roundScore}`);
+    },
+    "shipUI"
   );
 
   em.registerSystem(
