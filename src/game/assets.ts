@@ -27,7 +27,7 @@ export const DARK_BLUE = vec3.fromValues(0.03, 0.03, 0.2);
 export const LIGHT_BLUE = vec3.fromValues(0.05, 0.05, 0.2);
 
 const DEFAULT_ASSET_PATH = "/assets/";
-const BACKUP_ASSET_PATH = "https://sprig.land/assets/";
+const BACKUP_ASSET_PATH = "http://sprig.land/assets/";
 
 const RemoteMeshes = {
   ship: "barge.sprig.obj",
