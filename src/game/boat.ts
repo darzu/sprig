@@ -122,7 +122,8 @@ export function registerStepBoats(em: EntityManager) {
           if (cannon) {
             const rot = quat.create();
             quat.rotateY(rot, cannon.world.rotation, Math.PI * 0.5);
-            fireBullet(em, 2, cannon.world.position, rot, 0.05);
+            const bulletSpeed = jitter(0.025) + 0.075;
+            fireBullet(em, 2, cannon.world.position, rot, bulletSpeed);
           }
         }
       }
@@ -280,16 +281,17 @@ function createBoat(
 
     // fire zone
     const fireZone = em.newEntity();
+    const fireZoneSize = 40;
     em.ensureComponentOn(fireZone, ColliderDef, {
       solid: false,
       shape: "AABB",
       aabb: {
-        min: [-2, -2, -12],
-        max: [2, 2, 12],
+        min: [-2, -2, -fireZoneSize],
+        max: [2, 2, fireZoneSize],
       },
     });
     em.ensureComponentOn(fireZone, PhysicsParentDef, e.id);
-    em.ensureComponentOn(fireZone, PositionDef, [0, 0, 20]);
+    em.ensureComponentOn(fireZone, PositionDef, [0, 0, fireZoneSize]);
     em.ensureComponentOn(fireZone, FireZoneDef);
     boat.fireZoneId = fireZone.id;
   }

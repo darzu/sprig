@@ -16,7 +16,9 @@ import {
 } from "../render/mesh-pool.js";
 import { ShipDef } from "./ship.js";
 
-const HALFSIZE = 16;
+export const GROUNDSIZE = 48;
+
+const HALFSIZE = GROUNDSIZE / 2;
 const SIZE = HALFSIZE * 2;
 const THIRDSIZE = SIZE / 3;
 
