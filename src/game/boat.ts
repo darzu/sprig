@@ -96,15 +96,17 @@ export function registerStepBoats(em: EntityManager) {
 
             for (let part of res.assets.boat_broken) {
               const pe = em.newEntity();
+              // TODO(@darzu): use some sort of chunks particle system, we don't
+              //  need entity ids for these.
               em.ensureComponentOn(pe, RenderableConstructDef, part.proto);
               em.ensureComponentOn(pe, ColorDef, BOAT_COLOR);
               em.ensureComponentOn(pe, RotationDef, quat.clone(boat.rotation));
               em.ensureComponentOn(pe, PositionDef, vec3.clone(boat.position));
-              em.ensureComponentOn(pe, ColliderDef, {
-                shape: "AABB",
-                solid: false,
-                aabb: part.aabb,
-              });
+              // em.ensureComponentOn(pe, ColliderDef, {
+              //   shape: "AABB",
+              //   solid: false,
+              //   aabb: part.aabb,
+              // });
               const com = aabbCenter(vec3.create(), part.aabb);
               vec3.transformQuat(com, com, boat.rotation);
               // vec3.add(com, com, boat.position);
