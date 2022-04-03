@@ -5,6 +5,7 @@ import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import { RenderableConstructDef } from "../render/renderer.js";
 import {
+  Frame,
   PhysicsParentDef,
   PositionDef,
   RotationDef,
@@ -12,7 +13,7 @@ import {
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { Deserializer, Serializer } from "../serialize.js";
-import { DetectedEventsDef } from "../net/events.js";
+import { DetectedEvents, DetectedEventsDef } from "../net/events.js";
 import { fireBullet } from "./bullet.js";
 import { registerEventHandler } from "../net/events.js";
 import { ToolDef } from "./tool.js";
@@ -69,25 +70,32 @@ export function registerPlayerCannonSystem(em: EntityManager) {
         console.log("someone is interacting with the cannon");
         // let player = EM.findEntity(interacting.id, [PlayerEntDef])!;
 
-        // TODO(@darzu): capture this elsewhere
-        const fireDir = quat.create();
-        quat.rotateY(fireDir, world.rotation, Math.PI * 0.5);
-        const firePos = vec3.create();
-        vec3.transformQuat(firePos, firePos, fireDir);
-        vec3.add(firePos, firePos, world.position);
+        fireFromCannon(em, world);
 
-        // fireBullet(em, firePos, fireDir, 0.1);
-        fireBullet(em, 1, firePos, fireDir, 0.05);
-        detectedEvents.push({
-          type: "fire-cannon",
-          entities: [interacting.id, id],
-          location: null,
-        });
-        EM.removeComponent(id, InteractingDef);
+        em.removeComponent(id, InteractingDef);
       }
     },
     "playerCannon"
   );
+}
+
+export function fireFromCannon(em: EntityManager, cannon: Frame) {
+  // TODO(@darzu): capture this elsewhere
+  const fireDir = quat.create();
+  quat.rotateY(fireDir, cannon.rotation, Math.PI * 0.5);
+  const firePos = vec3.create();
+  vec3.transformQuat(firePos, firePos, fireDir);
+  vec3.add(firePos, firePos, cannon.position);
+
+  fireBullet(em, 1, firePos, fireDir, 0.05);
+
+  // TODO(@darzu): do we need events?
+  // detectedEvents: DetectedEvents,
+  // detectedEvents.push({
+  //   type: "fire-cannon",
+  //   entities: [interacting.id, id],
+  //   location: null,
+  // });
 }
 
 export function registerCannonEventHandlers() {

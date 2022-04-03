@@ -1,4 +1,10 @@
-import { EM, EntityManager, Component, Entity } from "../entity-manager.js";
+import {
+  EM,
+  EntityManager,
+  Component,
+  Entity,
+  EntityW,
+} from "../entity-manager.js";
 import { PhysicsTimerDef, Timer } from "../time.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { jitter } from "../math.js";
@@ -6,7 +12,9 @@ import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import { RenderableConstructDef } from "../render/renderer.js";
 import {
+  Frame,
   PhysicsParentDef,
+  Position,
   PositionDef,
   Rotation,
   RotationDef,
@@ -22,7 +30,7 @@ import {
 import { getAABBFromMesh, Mesh, scaleMesh3 } from "../render/mesh-pool.js";
 import { AABB, aabbCenter } from "../physics/broadphase.js";
 import { Deserializer, Serializer } from "../serialize.js";
-import { Assets, AssetsDef } from "./assets.js";
+import { Assets, AssetsDef, GameMesh } from "./assets.js";
 import {
   AngularVelocityDef,
   LinearVelocity,
@@ -40,7 +48,7 @@ import { LifetimeDef } from "./lifetime.js";
 import { CannonConstructDef } from "./cannon.js";
 import { EnemyConstructDef, EnemyDef } from "./enemy.js";
 import { PlayerEntDef } from "./player.js";
-import { ShipConstructDef } from "./ship.js";
+import { ShipConstructDef, ShipDef } from "./ship.js";
 
 export const BoatDef = EM.defineComponent("boat", () => {
   return {
@@ -133,48 +141,62 @@ export function registerStepBoats(em: EntityManager) {
           );
           if (balls.length) {
             console.log("HIT!");
-            em.ensureComponentOn(boat, DeletedDef);
             for (let ball of balls) em.ensureComponent(ball, DeletedDef);
+            breakBoat(em, boat, res.assets.boat_broken);
+          }
 
-            for (let part of res.assets.boat_broken) {
-              const pe = em.newEntity();
-              // TODO(@darzu): use some sort of chunks particle system, we don't
-              //  need entity ids for these.
-              em.ensureComponentOn(pe, RenderableConstructDef, part.proto);
-              em.ensureComponentOn(pe, ColorDef, BOAT_COLOR);
-              em.ensureComponentOn(pe, RotationDef, quat.clone(boat.rotation));
-              em.ensureComponentOn(pe, PositionDef, vec3.clone(boat.position));
-              // em.ensureComponentOn(pe, ColliderDef, {
-              //   shape: "AABB",
-              //   solid: false,
-              //   aabb: part.aabb,
-              // });
-              const com = aabbCenter(vec3.create(), part.aabb);
-              vec3.transformQuat(com, com, boat.rotation);
-              // vec3.add(com, com, boat.position);
-              // vec3.transformQuat(com, com, boat.rotation);
-              const vel = com;
-              // const vel = vec3.sub(vec3.create(), com, boat.position);
-              vec3.normalize(vel, vel);
-              vec3.add(vel, vel, [0, -0.6, 0]);
-              vec3.scale(vel, vel, 0.005);
-              em.ensureComponentOn(pe, LinearVelocityDef, vel);
-              const spin = vec3.fromValues(
-                Math.random() - 0.5,
-                Math.random() - 0.5,
-                Math.random() - 0.5
-              );
-              vec3.normalize(spin, spin);
-              vec3.scale(spin, spin, 0.001);
-              em.ensureComponentOn(pe, AngularVelocityDef, spin);
-              em.ensureComponentOn(pe, LifetimeDef, 2000);
-            }
+          const ships = hits.filter((h) => em.findEntity(h, [ShipDef]));
+          if (ships.length) {
+            console.log("HIT SHIP!");
+            breakBoat(em, boat, res.assets.boat_broken);
           }
         }
       }
     },
     "breakBoats"
   );
+}
+
+export function breakBoat(
+  em: EntityManager,
+  boat: Entity & { position: Position; rotation: Rotation },
+  boatParts: GameMesh[]
+) {
+  em.ensureComponentOn(boat, DeletedDef);
+
+  for (let part of boatParts) {
+    const pe = em.newEntity();
+    // TODO(@darzu): use some sort of chunks particle system, we don't
+    //  need entity ids for these.
+    em.ensureComponentOn(pe, RenderableConstructDef, part.proto);
+    em.ensureComponentOn(pe, ColorDef, BOAT_COLOR);
+    em.ensureComponentOn(pe, RotationDef, quat.clone(boat.rotation));
+    em.ensureComponentOn(pe, PositionDef, vec3.clone(boat.position));
+    // em.ensureComponentOn(pe, ColliderDef, {
+    //   shape: "AABB",
+    //   solid: false,
+    //   aabb: part.aabb,
+    // });
+    const com = aabbCenter(vec3.create(), part.aabb);
+    vec3.transformQuat(com, com, boat.rotation);
+    // vec3.add(com, com, boat.position);
+    // vec3.transformQuat(com, com, boat.rotation);
+    const vel = com;
+    // const vel = vec3.sub(vec3.create(), com, boat.position);
+    vec3.normalize(vel, vel);
+    vec3.add(vel, vel, [0, -0.6, 0]);
+    vec3.scale(vel, vel, 0.005);
+    em.ensureComponentOn(pe, LinearVelocityDef, vel);
+    const spin = vec3.fromValues(
+      Math.random() - 0.5,
+      Math.random() - 0.5,
+      Math.random() - 0.5
+    );
+    vec3.normalize(spin, spin);
+    vec3.scale(spin, spin, 0.001);
+    em.ensureComponentOn(pe, AngularVelocityDef, spin);
+    em.ensureComponentOn(pe, LifetimeDef, 2000);
+  }
 }
 
 export const BoatConstructDef = EM.defineComponent(

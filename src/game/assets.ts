@@ -261,7 +261,7 @@ export const LocalMeshes = {
 
 type LocalMeshSymbols = keyof typeof LocalMeshes;
 
-type GameMesh = {
+export type GameMesh = {
   mesh: Mesh;
   aabb: AABB;
   proto: MeshHandle;
