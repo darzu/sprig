@@ -25,6 +25,7 @@ import {
   PhysicsResultsDef,
   WorldFrameDef,
 } from "../physics/nonintersection.js";
+import { MusicDef } from "../music.js";
 
 const CANNON_FRAMES = 180;
 
@@ -64,13 +65,17 @@ export function registerPlayerCannonSystem(em: EntityManager) {
 
   em.registerSystem(
     [CannonDef, InteractingDef, WorldFrameDef],
-    [DetectedEventsDef],
-    (cannons, { detectedEvents }) => {
+    [DetectedEventsDef, MusicDef],
+    (cannons, res) => {
       for (let { cannon, world, interacting, id } of cannons) {
         console.log("someone is interacting with the cannon");
         // let player = EM.findEntity(interacting.id, [PlayerEntDef])!;
 
+        // TODO(@darzu): cannon fire sound
+
         fireFromCannon(em, world);
+
+        res.music.playChords([3], "major", 2.0, 3.0, -2);
 
         em.removeComponent(id, InteractingDef);
       }

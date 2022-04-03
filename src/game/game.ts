@@ -92,6 +92,7 @@ import { debugCreateNoodles, registerNoodleSystem } from "./noodles.js";
 import { splitMesh } from "../render/mesh-pool.js";
 import { registerUpdateLifetimes } from "./lifetime.js";
 import { registerCreateEnemies } from "./enemy.js";
+import { registerMusicSystems } from "../music.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -192,6 +193,7 @@ export function registerAllSystems(em: EntityManager) {
   registerNetSystems(em);
   registerInitCanvasSystem(em);
   registerRenderInitSystem(em);
+  registerMusicSystems(em);
   registerHandleNetworkEvents(em);
   registerUpdateSmoothingTargetSnapChange(em);
   registerUpdateSystem(em);

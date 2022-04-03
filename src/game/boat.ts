@@ -49,6 +49,7 @@ import { CannonConstructDef } from "./cannon.js";
 import { EnemyConstructDef, EnemyDef } from "./enemy.js";
 import { PlayerEntDef } from "./player.js";
 import { ShipConstructDef, ShipDef } from "./ship.js";
+import { Music, MusicDef } from "../music.js";
 
 export const BoatDef = EM.defineComponent("boat", () => {
   return {
@@ -131,7 +132,7 @@ export function registerStepBoats(em: EntityManager) {
 
   em.registerSystem(
     [BoatDef, PositionDef, RotationDef],
-    [PhysicsResultsDef, AssetsDef],
+    [PhysicsResultsDef, AssetsDef, MusicDef],
     (objs, res) => {
       for (let boat of objs) {
         const hits = res.physicsResults.collidesWith.get(boat.id);
@@ -142,13 +143,13 @@ export function registerStepBoats(em: EntityManager) {
           if (balls.length) {
             console.log("HIT!");
             for (let ball of balls) em.ensureComponent(ball, DeletedDef);
-            breakBoat(em, boat, res.assets.boat_broken);
+            breakBoat(em, boat, res.assets.boat_broken, res.music);
           }
 
           const ships = hits.filter((h) => em.findEntity(h, [ShipDef]));
           if (ships.length) {
             console.log("HIT SHIP!");
-            breakBoat(em, boat, res.assets.boat_broken);
+            breakBoat(em, boat, res.assets.boat_broken, res.music);
           }
         }
       }
@@ -160,9 +161,12 @@ export function registerStepBoats(em: EntityManager) {
 export function breakBoat(
   em: EntityManager,
   boat: Entity & { position: Position; rotation: Rotation },
-  boatParts: GameMesh[]
+  boatParts: GameMesh[],
+  music: Music
 ) {
   em.ensureComponentOn(boat, DeletedDef);
+
+  music.playChords([3], "minor", 2.0, 5.0, -1);
 
   for (let part of boatParts) {
     const pe = em.newEntity();

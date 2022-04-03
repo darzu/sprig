@@ -31,6 +31,7 @@ import { assert } from "../test.js";
 import { LinearVelocityDef } from "../physics/motion.js";
 import { LifetimeDef } from "./lifetime.js";
 import { CannonConstructDef } from "./cannon.js";
+import { MusicDef } from "../music.js";
 
 export const ShipConstructDef = EM.defineComponent(
   "shipConstruct",
@@ -80,7 +81,6 @@ export const GemDef = EM.defineComponent("gem", () => {
 });
 
 const criticalPartIdxes = [0, 3, 5, 6];
-
 
 export function registerShipSystems(em: EntityManager) {
   em.registerSystem(
@@ -183,7 +183,7 @@ export function registerShipSystems(em: EntityManager) {
 
   em.registerSystem(
     [ShipDef, PositionDef],
-    [],
+    [MusicDef],
     (ships, res) => {
       const numCritical = criticalPartIdxes.length;
       for (let ship of ships) {
@@ -205,6 +205,8 @@ export function registerShipSystems(em: EntityManager) {
             // TODO(@darzu): RUN OVER
             const score = Math.round(ship.position[2]);
             setTimeout(() => {
+              // TODO(@darzu): game over music
+              res.music.playChords([1, 2, 3, 4, 4], "minor");
               alert(`Game over (distance: ${score})`);
             }, 2000);
             vec3.copy(gem.position, gem.world.position);
