@@ -20,7 +20,10 @@ import { InteractableDef, InteractingDef } from "./interact.js";
 import { PlayerEntDef } from "./player.js";
 import { Assets, AssetsDef } from "./assets.js";
 import { copyAABB, createAABB } from "../physics/broadphase.js";
-import { PhysicsResultsDef } from "../physics/nonintersection.js";
+import {
+  PhysicsResultsDef,
+  WorldFrameDef,
+} from "../physics/nonintersection.js";
 
 const CANNON_FRAMES = 180;
 
@@ -59,19 +62,19 @@ export function registerPlayerCannonSystem(em: EntityManager) {
   // );
 
   em.registerSystem(
-    [CannonDef, InteractingDef, PositionDef, RotationDef],
+    [CannonDef, InteractingDef, WorldFrameDef],
     [DetectedEventsDef],
     (cannons, { detectedEvents }) => {
-      for (let { cannon, position, rotation, interacting, id } of cannons) {
+      for (let { cannon, world, interacting, id } of cannons) {
         console.log("someone is interacting with the cannon");
         // let player = EM.findEntity(interacting.id, [PlayerEntDef])!;
 
         // TODO(@darzu): capture this elsewhere
         const fireDir = quat.create();
-        quat.rotateY(fireDir, rotation, Math.PI * 0.5);
+        quat.rotateY(fireDir, world.rotation, Math.PI * 0.5);
         const firePos = vec3.create();
         vec3.transformQuat(firePos, firePos, fireDir);
-        vec3.add(firePos, firePos, position);
+        vec3.add(firePos, firePos, world.position);
 
         // fireBullet(em, firePos, fireDir, 0.1);
         fireBullet(em, 1, firePos, fireDir, 0.05);
@@ -152,7 +155,7 @@ EM.registerSerializerPair(
   deserializeCannonConstruct
 );
 
-function createCannon(
+export function createPlayerCannon(
   em: EntityManager,
   e: Entity & { cannonConstruct: CannonConstruct },
   pid: number,
@@ -198,7 +201,7 @@ export function registerBuildCannonsSystem(em: EntityManager) {
     [CannonConstructDef],
     [MeDef, AssetsDef],
     (cannons, res) => {
-      for (let b of cannons) createCannon(em, b, res.me.pid, res.assets);
+      for (let b of cannons) createPlayerCannon(em, b, res.me.pid, res.assets);
     },
     "buildCannons"
   );

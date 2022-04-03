@@ -48,6 +48,7 @@ import { createNoodleMesh, Noodle, NoodleDef, NoodleSeg } from "./noodles.js";
 import { assert } from "../test.js";
 import { vec3Dbg, vec3Mid } from "../utils-3d.js";
 import { min } from "../math.js";
+import { ShipDef } from "./ship.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {
@@ -424,6 +425,41 @@ export function registerStepPlayers(em: EntityManager) {
   );
 
   registerUpdateLegs(em);
+
+  em.registerSystem(
+    [PlayerEntDef, AuthorityDef, PositionDef, LinearVelocityDef],
+    [PhysicsResultsDef, MeDef],
+    (players, res) => {
+      for (let p of players) {
+        if (p.authority.pid !== res.me.pid) continue;
+
+        const shipHits = res.physicsResults.collidesWith
+          .get(p.id)
+          ?.map((h) => em.findEntity(h, [ShipDef, ColliderDef]));
+
+        console.log(`player hits: ${shipHits?.length}`);
+        if (shipHits && shipHits.length && shipHits[0]) {
+          console.log("player on ship!");
+          const ship = shipHits[0];
+
+          // already on this ship
+          if (PhysicsParentDef.isOn(p))
+            if (p.physicsParent.id === ship.id) continue;
+
+          em.ensureComponentOn(p, PhysicsParentDef);
+
+          p.physicsParent.id = ship.id;
+          vec3.copy(p.position, [0, 0, 0]);
+          if (ship.collider.shape === "AABB") {
+            // move above the obj
+            p.position[1] = ship.collider.aabb.max[1] + 3;
+          }
+          vec3.copy(p.linearVelocity, vec3.ZEROS);
+        }
+      }
+    },
+    "playerOnShip"
+  );
 }
 
 function registerUpdateLegs(em: EntityManager) {
@@ -459,7 +495,8 @@ function registerUpdateLegs(em: EntityManager) {
         const nearestBelowPlayerDist = min(
           belowPlayerHits.map((h) => (h.id === p.id ? Infinity : h.dist))
         );
-        if (nearestBelowPlayerDist > legLen + footDistThreshold) {
+        // TODO(@darzu): re-enable legs
+        if (nearestBelowPlayerDist > legLen + footDistThreshold || true) {
           // flying
           vec3.add(
             leftLeg.noodle.segments[1].pos,

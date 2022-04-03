@@ -30,6 +30,7 @@ import { min } from "../math.js";
 import { assert } from "../test.js";
 import { LinearVelocityDef } from "../physics/motion.js";
 import { LifetimeDef } from "./lifetime.js";
+import { CannonConstructDef } from "./cannon.js";
 
 export const ShipConstructDef = EM.defineComponent(
   "shipConstruct",
@@ -46,6 +47,7 @@ export const ShipDef = EM.defineComponent("ship", () => {
   return {
     partIds: [] as number[],
     gemId: 0,
+    speed: 0,
   };
 });
 
@@ -95,6 +97,7 @@ export function registerShipSystems(em: EntityManager) {
         // if (!RenderableConstructDef.isOn(e))
         //   em.addComponent(e.id, RenderableConstructDef, assets.ship.mesh);
         em.ensureComponentOn(e, ShipDef);
+        e.ship.speed = 0.005;
 
         // TODO(@darzu): multi collider
         const mc: MultiCollider = {
@@ -137,6 +140,9 @@ export function registerShipSystems(em: EntityManager) {
           sync.dynamicComponents.push(RotationDef.id);
         }
 
+        // TODO(@darzu): ship movement
+        em.ensureComponentOn(e, LinearVelocityDef, [0, -0.01, 0]);
+
         // create gem
         const gem = em.newEntity();
         em.ensureComponentOn(
@@ -148,6 +154,30 @@ export function registerShipSystems(em: EntityManager) {
         em.ensureComponentOn(gem, PhysicsParentDef, e.id);
         em.ensureComponentOn(gem, GemDef);
         e.ship.gemId = gem.id;
+
+        // create cannons
+
+        const cannonPitch = Math.PI * -0.05;
+
+        const cannonR = em.newEntity();
+        const cTurnRight = quat.create();
+        quat.rotateZ(cTurnRight, cTurnRight, cannonPitch);
+        em.ensureComponentOn(cannonR, PhysicsParentDef, e.id);
+        em.addComponent(
+          cannonR.id,
+          CannonConstructDef,
+          [-1, 2, -5],
+          cTurnRight
+        );
+        const cannonL = em.newEntity();
+        const cTurnLeft = quat.create();
+        quat.rotateY(cTurnLeft, cTurnLeft, Math.PI);
+        quat.rotateZ(cTurnLeft, cTurnLeft, cannonPitch);
+        em.ensureComponentOn(cannonL, PhysicsParentDef, e.id);
+        em.addComponent(cannonL.id, CannonConstructDef, [11, 2, -5], cTurnLeft);
+
+        // em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
+        // em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2]);
 
         em.addComponent(e.id, FinishedDef);
       }
@@ -191,6 +221,18 @@ export function registerShipSystems(em: EntityManager) {
       }
     },
     "shipDead"
+  );
+
+  em.registerSystem(
+    [ShipDef, LinearVelocityDef],
+    [],
+    (ships, res) => {
+      for (let s of ships) {
+        s.linearVelocity[2] = s.ship.speed;
+        s.linearVelocity[1] = -0.01;
+      }
+    },
+    "shipMove"
   );
 
   em.registerSystem(

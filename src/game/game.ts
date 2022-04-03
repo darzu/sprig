@@ -309,7 +309,6 @@ export function createServerObjects(em: EntityManager) {
   registerBoatSpawnerSystem(em);
   createShips(em);
   // createHats(em);
-  createCannons(em);
   // createWorldPlanes(em);
 }
 export function createLocalObjects(em: EntityManager) {
@@ -376,22 +375,4 @@ function createHats(em: EntityManager) {
     );
     em.addComponent(em.newEntity().id, HatConstructDef, loc);
   }
-}
-
-function createCannons(em: EntityManager) {
-  const pitch = Math.PI * -0.05;
-
-  const cRight = em.newEntity();
-  const right = quat.create();
-  quat.rotateZ(right, right, pitch);
-  em.addComponent(cRight.id, CannonConstructDef, [-3, -1.5, -5], right);
-
-  const cLeft = em.newEntity();
-  const left = quat.create();
-  quat.rotateY(left, left, Math.PI);
-  quat.rotateZ(left, left, pitch);
-  em.addComponent(cLeft.id, CannonConstructDef, [9, -1.5, -5], left);
-
-  // em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
-  // em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2]);
 }
