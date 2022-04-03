@@ -236,7 +236,7 @@ export function registerShipSystems(em: EntityManager) {
 
   em.registerSystem(
     [ShipDef],
-    [PhysicsResultsDef],
+    [PhysicsResultsDef, MusicDef],
     (ships, res) => {
       for (let s of ships) {
         for (let partId of s.ship.partIds) {
@@ -257,6 +257,8 @@ export function registerShipSystems(em: EntityManager) {
               // part.color[0] += 0.1;
               part.renderable.enabled = false;
               part.shipPart.damaged = true;
+
+              res.music.playChords([2, 3], "minor", 0.2, 5.0, -2);
             }
           }
         }
