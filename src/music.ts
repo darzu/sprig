@@ -17,7 +17,7 @@ const audioCtx = new AudioContext();
 // create Oscillator node
 let oscillator: OscillatorNode | null;
 
-const MAX_VOLUME = 0.2;
+const MAX_VOLUME = 0.02;
 
 function playFreq(freq: number, durSec: number, offset: number) {
   const startTime = offset;
