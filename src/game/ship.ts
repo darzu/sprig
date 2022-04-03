@@ -39,6 +39,7 @@ export type ShipConstruct = Component<typeof ShipConstructDef>;
 export const ShipDef = EM.defineComponent("ship", () => {
   return {
     partIds: [] as number[],
+    gemId: 0,
   };
 });
 
@@ -59,6 +60,10 @@ EM.registerSerializerPair(
   serializeShipConstruct,
   deserializeShipConstruct
 );
+
+export const GemDef = EM.defineComponent("gem", () => {
+  // TODO(@darzu):
+});
 
 export function registerShipSystems(em: EntityManager) {
   em.registerSystem(
@@ -115,6 +120,19 @@ export function registerShipSystems(em: EntityManager) {
           // sync.dynamicComponents.push(PositionDef.id);
           sync.dynamicComponents.push(RotationDef.id);
         }
+
+        // create gem
+        const gem = em.newEntity();
+        em.ensureComponentOn(
+          gem,
+          RenderableConstructDef,
+          res.assets.spacerock.proto
+        );
+        em.ensureComponentOn(gem, PositionDef, [4, -1, -12]);
+        em.ensureComponentOn(gem, PhysicsParentDef, e.id);
+        em.ensureComponentOn(gem, GemDef);
+        e.ship.gemId = gem.id;
+
         em.addComponent(e.id, FinishedDef);
       }
     },

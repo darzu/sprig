@@ -108,7 +108,8 @@ export function importObj(obj: string): Mesh[] | ParseError {
     // finish mesh
     for (let i = 0; i < tri.length; i++) {
       // TODO(@darzu): import color
-      colors.push([0.2, 0.2, 0.2]);
+      colors.push([0.0, 0.0, 0.0]);
+      // colors.push([0.2, 0.2, 0.2]);
     }
     const m: Mesh = { pos, tri, colors, lines };
     meshes.push(m);
