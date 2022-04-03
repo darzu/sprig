@@ -11,7 +11,7 @@ import { setupScene } from "./render_webgpu.js";
 import { MeshUniformMod } from "./shader_obj.js";
 import { Renderer } from "./renderer.js";
 
-const vertCode = `
+const vertCode = `#version 300 es
 precision mediump float;
 
 // scene
@@ -29,26 +29,26 @@ uniform mat4 u_transform;
 uniform vec3 u_tint;
 
 // vertex
-attribute vec3 a_position;
-attribute vec3 a_color;
-attribute vec3 a_normal;
+in vec3 a_position;
+in vec3 a_color;
+in vec3 a_normal;
 
 // vertex out / fragment in
-varying vec3 v_normal;
-varying vec3 v_color;
-varying vec4 v_position;
+flat out vec3 v_normal;
+out vec3 v_color;
+out vec4 v_worldPos;
 
 void main() {
-  v_position = u_cameraViewProjMatrix * u_transform * vec4(a_position, 1.0);
+  v_worldPos = u_transform * vec4(a_position, 1.0);
   v_normal = normalize(u_transform * vec4(a_normal, 0.0)).xyz;
   v_color = a_color + u_tint;
-  gl_Position = v_position;
+  gl_Position = u_cameraViewProjMatrix * u_transform * vec4(a_position, 1.0);
 }
 `;
 
-const fragCode = `
-#extension GL_EXT_shader_texture_lod : enable
-#extension GL_OES_standard_derivatives : enable
+const fragCode = `#version 300 es
+// #extension GL_EXT_shader_texture_lod : enable
+// #extension GL_OES_standard_derivatives : enable
 
 precision mediump float;
 
@@ -63,22 +63,25 @@ uniform vec2 u_playerPos;
 uniform vec3 u_cameraPos;
 
 // vertex out / fragment in
-varying vec3 v_normal;
-varying vec3 v_color;
-varying vec4 v_position;
+flat in vec3 v_normal;
+in vec3 v_color;
+in vec4 v_worldPos;
+out vec4 fragColor;
 
 void main() {
   // ANNOYING: flat interpolation isn't supported in webgl so let's just compute it
-  vec3 norm = -normalize(cross(dFdx(v_position.xyz), dFdy(v_position.xyz)));
+  // TODO: okay we have flat, but it isn't working?
+  vec3 norm = -normalize(cross(dFdx(v_worldPos.xyz), -dFdy(v_worldPos.xyz)));
+  // vec3 norm = v_normal;
 
   // TODO this isn't working right yet; lights move with camera??!
   float light1 = clamp(dot(-u_light1Dir, norm), 0.0, 1.0);
   float light2 = clamp(dot(-u_light2Dir, norm), 0.0, 1.0);
   float light3 = clamp(dot(-u_light3Dir, norm), 0.0, 1.0);
   vec3 resultColor = v_color 
-    * (light1 * 2.0 + 0.2);
+    * (light1 * 1.5 + light2 * 0.5 + light3 * 0.2 + 0.1);
   vec3 gammaCorrected = pow(resultColor, vec3(1.0/2.2));
-  gl_FragColor = vec4(gammaCorrected, 1.0);
+  fragColor = vec4(gammaCorrected, 1.0);
 }
 `;
 
@@ -94,10 +97,10 @@ export function attachToCanvas(
   maxMeshes: number,
   maxVertices: number
 ): Renderer {
-  let gl = canv.getContext("webgl")!; // TODO: use webgl2
+  let gl = canv.getContext("webgl2")!;
 
-  gl.getExtension("OES_standard_derivatives");
-  gl.getExtension("EXT_shader_texture_lod");
+  // gl.getExtension("OES_standard_derivatives");
+  // gl.getExtension("EXT_shader_texture_lod");
 
   gl.clearColor(0.55, 0.6, 0.8, 1.0);
 
