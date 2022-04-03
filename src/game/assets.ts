@@ -74,13 +74,17 @@ const MeshTransforms: Partial<{
     m.colors = m.colors.map((c) => [0.05, 0.15, 0.2]);
     const t = mat4.fromYRotation(mat4.create(), Math.PI * 0.2);
     m = transformMesh(m, t);
+    m.lines = [];
     return m;
   },
   // cube: blackoutColor,
   // ship: blackoutColor,
   // ball: blackoutColor,
   // boat_broken: blackoutColor,
-  // ship_broken: blackoutColor,
+  ship_broken: (m) => {
+    m.lines = [];
+    return m;
+  },
 };
 
 // which triangles belong to which faces
