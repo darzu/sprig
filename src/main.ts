@@ -141,7 +141,7 @@ async function startGame(localPeerName: string, host: string | null) {
     //    means we'll need to do more work to get line breaks.
     const usingWebGPU =
       EM.findSingletonComponent(RendererDef)?.renderer?.usingWebGPU;
-    debugTxt.nodeValue = `You are the last hope of Oogie, keep the gemheart alive! Failure is inevitable. move: WASD, mouse; cannon: e, left-click; fps:${avgFPS.toFixed(
+    debugTxt.nodeValue = `Belgus, you are the last hope of the Squindles, keep the gemheart alive! Failure is inevitable. move: WASD, mouse; cannon: e, left-click; fps:${avgFPS.toFixed(
       1
     )}`;
     // debugTxt.nodeValue =
