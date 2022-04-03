@@ -244,6 +244,10 @@ export const MusicDef = EM.defineComponent("music", () => {
 });
 export type Music = Component<typeof MusicDef>;
 
+export function randChordId() {
+  return Math.floor(Math.random() * 6);
+}
+
 export function registerMusicSystems(em: EntityManager) {
   em.addSingletonComponent(MusicDef);
 

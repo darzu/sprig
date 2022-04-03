@@ -25,7 +25,7 @@ import {
   PhysicsResultsDef,
   WorldFrameDef,
 } from "../physics/nonintersection.js";
-import { MusicDef } from "../music.js";
+import { MusicDef, randChordId } from "../music.js";
 
 const CANNON_FRAMES = 180;
 
@@ -75,7 +75,8 @@ export function registerPlayerCannonSystem(em: EntityManager) {
 
         fireFromCannon(em, world);
 
-        res.music.playChords([3], "major", 2.0, 3.0, -2);
+        const chord = randChordId();
+        res.music.playChords([chord], "major", 2.0, 3.0, -2);
 
         em.removeComponent(id, InteractingDef);
       }
