@@ -38,7 +38,7 @@ import {
 import { registerPredictSystem } from "../net/predict.js";
 import { registerEventSystems } from "../net/events.js";
 import { registerBuildCubesSystem, registerMoveCubesSystem } from "./cube.js";
-import { registerTimeSystem } from "../time.js";
+import { PhysicsTimerDef, registerTimeSystem } from "../time.js";
 import { GroundConstructDef, registerBuildGroundSystem } from "./ground.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
 import { registerShipSystems, ShipConstructDef } from "./ship.js";
@@ -306,7 +306,7 @@ export function createServerObjects(em: EntityManager) {
 
   createPlayer(em);
   createGround(em);
-  createBoats(em);
+  registerBoatSpawnerSystem(em);
   createShips(em);
   // createHats(em);
   createCannons(em);
@@ -327,13 +327,40 @@ function createShips(em: EntityManager) {
   // const pos: vec3 = [0, -10, 130];
   em.addComponent(em.newEntity().id, ShipConstructDef, pos, rot);
 }
-function createBoats(em: EntityManager) {
-  // create boat(s)
-  const boatCon = em.addComponent(em.newEntity().id, BoatConstructDef);
-  boatCon.location = vec3.fromValues(-25, -5, 30);
-  boatCon.speed = 0.005;
-  boatCon.wheelSpeed = 0; //jitter(0.001);
-  boatCon.wheelDir = Math.PI / 2;
+
+export const BoatSpawnerDef = EM.defineComponent("boatSpawner", () => ({
+  timerMs: 0,
+  timerIntervalMs: 5000,
+}));
+
+function registerBoatSpawnerSystem(em: EntityManager) {
+  em.addSingletonComponent(BoatSpawnerDef);
+
+  em.registerSystem(
+    null,
+    [BoatSpawnerDef, PhysicsTimerDef],
+    (_, res) => {
+      const ms = res.physicsTimer.period * res.physicsTimer.steps;
+      res.boatSpawner.timerMs -= ms;
+      // console.log("res.boatSpawner.timerMs:" + res.boatSpawner.timerMs);
+      if (res.boatSpawner.timerMs < 0) {
+        res.boatSpawner.timerMs = res.boatSpawner.timerIntervalMs;
+
+        createBoat();
+      }
+    },
+    "spawnBoats"
+  );
+
+  function createBoat() {
+    console.log("createBoat");
+    // create boat(s)
+    const boatCon = em.addComponent(em.newEntity().id, BoatConstructDef);
+    boatCon.location = vec3.fromValues(-25, -5, 30);
+    boatCon.speed = 0.005;
+    boatCon.wheelSpeed = 0; //jitter(0.001);
+    boatCon.wheelDir = Math.PI / 2;
+  }
 }
 
 function createHats(em: EntityManager) {

@@ -34,7 +34,7 @@ import {
   WorldFrameDef,
 } from "../physics/nonintersection.js";
 import { BulletDef, fireBullet } from "./bullet.js";
-import { DeletedDef } from "../delete.js";
+import { DeletedDef, OnDeleteDef } from "../delete.js";
 import { tempVec } from "../temp-pool.js";
 import { LifetimeDef } from "./lifetime.js";
 import { CannonConstructDef } from "./cannon.js";
@@ -134,26 +134,7 @@ export function registerStepBoats(em: EntityManager) {
           if (balls.length) {
             console.log("HIT!");
             em.ensureComponentOn(boat, DeletedDef);
-            em.ensureComponent(boat.boat.childCannonId, DeletedDef);
             for (let ball of balls) em.ensureComponent(ball, DeletedDef);
-
-            const child = em.findEntity(boat.boat.childEnemyId, [
-              WorldFrameDef,
-              PositionDef,
-              RotationDef,
-              EnemyDef,
-            ]);
-            if (child) {
-              em.ensureComponent(child.id, LifetimeDef, 4000);
-              em.ensureComponent(child.enemy.leftLegId, LifetimeDef, 4000);
-              em.ensureComponent(child.enemy.rightLegId, LifetimeDef, 4000);
-              em.removeComponent(child.id, PhysicsParentDef);
-              vec3.copy(child.position, child.world.position);
-              quat.copy(child.rotation, child.world.rotation);
-              em.ensureComponentOn(child, LinearVelocityDef, [0, -0.002, 0]);
-            }
-            if (boat.boat.fireZoneId)
-              em.ensureComponent(boat.boat.fireZoneId, DeletedDef);
 
             for (let part of res.assets.boat_broken) {
               const pe = em.newEntity();
@@ -286,6 +267,28 @@ function createBoat(
     em.ensureComponentOn(fireZone, FireZoneDef);
     boat.fireZoneId = fireZone.id;
   }
+  em.ensureComponentOn(e, OnDeleteDef, (id) => {
+    if (BoatDef.isOn(e)) {
+      em.ensureComponent(e.boat.childCannonId, DeletedDef);
+      em.ensureComponent(e.boat.fireZoneId, DeletedDef);
+
+      const child = em.findEntity(e.boat.childEnemyId, [
+        WorldFrameDef,
+        PositionDef,
+        RotationDef,
+        EnemyDef,
+      ]);
+      if (child) {
+        em.ensureComponent(child.id, LifetimeDef, 4000);
+        em.ensureComponent(child.enemy.leftLegId, LifetimeDef, 4000);
+        em.ensureComponent(child.enemy.rightLegId, LifetimeDef, 4000);
+        em.removeComponent(child.id, PhysicsParentDef);
+        vec3.copy(child.position, child.world.position);
+        quat.copy(child.rotation, child.world.rotation);
+        em.ensureComponentOn(child, LinearVelocityDef, [0, -0.002, 0]);
+      }
+    }
+  });
   if (!ColliderDef.isOn(e)) {
     const collider = em.addComponent(e.id, ColliderDef);
     collider.shape = "AABB";
@@ -299,6 +302,8 @@ function createBoat(
     sync.dynamicComponents.push(RotationDef.id);
     sync.dynamicComponents.push(LinearVelocityDef.id);
   }
+  // destory after 1 minute
+  em.ensureComponentOn(e, LifetimeDef, 1000 * 60);
 
   em.addComponent(e.id, FinishedDef);
 }
