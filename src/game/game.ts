@@ -369,7 +369,7 @@ function registerBoatSpawnerSystem(em: EntityManager) {
       if (res.boatSpawner.timerMs < 0) {
         res.boatSpawner.timerMs = res.boatSpawner.timerIntervalMs;
         // ramp up difficulty
-        res.boatSpawner.timerIntervalMs *= 0.95;
+        res.boatSpawner.timerIntervalMs *= 0.97;
         // ~1 second minimum
         res.boatSpawner.timerIntervalMs = Math.max(
           1500,
