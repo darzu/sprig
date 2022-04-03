@@ -90,4 +90,3 @@ function meshFromAABB(aabb) {
     m = { ...m, tri: [], colors: [] };
     return m;
 }
-//# sourceMappingURL=phys-debug.js.map

@@ -31,4 +31,3 @@ export function registerBuildCursor(em) {
         }
     }, "buildCursor");
 }
-//# sourceMappingURL=cursor.js.map

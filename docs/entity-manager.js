@@ -351,4 +351,3 @@ export class EntityManager {
 }
 // TODO(@darzu): where to put this?
 export const EM = new EntityManager();
-//# sourceMappingURL=entity-manager.js.map

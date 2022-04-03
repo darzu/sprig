@@ -116,4 +116,3 @@ export function registerPhysicsApplyAngularVelocity(em) {
         }
     }, "physicsApplyAngularVelocity");
 }
-//# sourceMappingURL=velocity-system.js.map

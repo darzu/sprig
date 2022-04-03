@@ -14,28 +14,41 @@ export function setupObjImportExporter() {
         }
         // load the file
         const txt = await f.text();
-        // import the mesh
-        const meshOpt = importObj(txt);
-        if (isParseError(meshOpt)) {
-            console.error(`Failed to import .obj mesh file because:\n${meshOpt}`);
+        // import the mesh(es)
+        const meshesOpt = importObj(txt);
+        if (isParseError(meshesOpt)) {
+            console.error(`Failed to import .obj mesh file because:\n${meshesOpt}`);
             return;
         }
-        // make any changes we want for perf or size
-        // TODO(@darzu): do we want to unshare here? makes file a little bigger
-        // const mesh = unshareProvokingVertices(meshOpt);
-        const mesh = meshOpt;
-        // let dataView = new DataView(buf);
-        // dataView.setFloat32(
-        // btoa
-        // atob
-        // export it again
-        const meshExpStr = exportObj(mesh);
-        // TODO(@darzu): sprigland custom mesh format doesn't seem worth it yet
-        // const meshExp = exportSprigMesh(mesh);
-        // const meshExpStr = JSON.stringify(meshExp);
+        let allMeshStrs = [];
+        let idxOffset = 0;
+        for (let i = 0; i < meshesOpt.length; i++) {
+            const opt = meshesOpt[i];
+            // make any changes we want for perf or size
+            // TODO(@darzu): do we want to unshare here? makes file a little bigger
+            // const mesh = unshareProvokingVertices(meshOpt);
+            const mesh = opt;
+            // let dataView = new DataView(buf);
+            // dataView.setFloat32(
+            // btoa
+            // atob
+            // export it again
+            if (mesh.pos.length) {
+                let meshExpStr = exportObj(mesh, idxOffset);
+                if (allMeshStrs.length > 0)
+                    // append object name
+                    meshExpStr = `o obj${i}\n${meshExpStr}`;
+                allMeshStrs.push(meshExpStr);
+                idxOffset += mesh.pos.length;
+            }
+            // TODO(@darzu): sprigland custom mesh format doesn't seem worth it yet
+            // const meshExp = exportSprigMesh(mesh);
+            // const meshExpStr = JSON.stringify(meshExp);
+        }
+        const res = allMeshStrs.join("\n");
         // download it
         const newName = f.name.replace(".obj", ".sprig.obj");
-        triggerDownload(newName, meshExpStr);
+        triggerDownload(newName, res);
     }
     setDropHandlersOnElement(document.body, ondrag, onfile);
 }
@@ -89,4 +102,3 @@ export function triggerDownload(filename, body) {
         document.removeChild(fakeBtn);
     }, 500);
 }
-//# sourceMappingURL=download.js.map

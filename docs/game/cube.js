@@ -70,4 +70,3 @@ export function registerMoveCubesSystem(em) {
     }
     em.registerSystem([CubeConstructDef, AuthorityDef, PositionDef, FinishedDef], [MeDef], moveCubes);
 }
-//# sourceMappingURL=cube.js.map

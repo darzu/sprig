@@ -21,4 +21,3 @@ class _TempPool {
 const pool = new _TempPool(100, 100);
 export const tempVec = pool.vec.bind(pool);
 export const tempQuat = pool.quat.bind(pool);
-//# sourceMappingURL=temp-pool.js.map

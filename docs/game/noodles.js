@@ -25,13 +25,6 @@ export function debugCreateNoodles(em) {
     const m = createNoodleMesh(0.1, [0.2, 0.05, 0.05]);
     em.ensureComponentOn(e, RenderableConstructDef, m);
     em.ensureComponentOn(e, PositionDef, [5, -5, 0]);
-    const posIdxToSegIdx = new Map();
-    CUBE_MESH.pos.forEach((p, i) => {
-        if (p[1] > 0)
-            posIdxToSegIdx.set(i, 0);
-        else
-            posIdxToSegIdx.set(i, 1);
-    });
     // TODO(@darzu): test cube faces (update: they are correct)
     // const cube = em.newEntity();
     // em.ensureComponentOn(cube, PositionDef, [0, -2, 0]);
@@ -40,6 +33,15 @@ export function debugCreateNoodles(em) {
     //   cubeM.colors[triIdx] = [0, 0, 0.5];
     // }
     // em.ensureComponentOn(cube, RenderableConstructDef, cubeM);
+}
+export function registerNoodleSystem(em) {
+    const posIdxToSegIdx = new Map();
+    CUBE_MESH.pos.forEach((p, i) => {
+        if (p[1] > 0)
+            posIdxToSegIdx.set(i, 0);
+        else
+            posIdxToSegIdx.set(i, 1);
+    });
     em.registerSystem([NoodleDef, RenderableDef], [RendererDef], (es, rs) => {
         for (let e of es) {
             const originalM = e.renderable.meshHandle.readonlyMesh;
@@ -64,4 +66,3 @@ export function createNoodleMesh(thickness, color) {
     m.colors.forEach((c) => vec3.copy(c, color));
     return scaleMesh3(m, [thickness, 0.0, thickness]);
 }
-//# sourceMappingURL=noodles.js.map

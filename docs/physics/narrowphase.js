@@ -39,4 +39,3 @@ sprig:
     - have one or more child objects (positioned relative to u) w/ a different collider
     - use a union composite collider type that is just one collider built out of the union of multiple other colliders (e.g. the ship)
 */
-//# sourceMappingURL=narrowphase.js.map

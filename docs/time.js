@@ -73,4 +73,3 @@ export function ready(timer: Timer): boolean {
   return false;
 }
 */
-//# sourceMappingURL=time.js.map

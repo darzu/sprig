@@ -37,4 +37,3 @@ export function mathMap(n, inMin, inMax, outMin, outMax) {
     const s = (n - inMin) / (inMax - inMin);
     return s * (outMax - outMin) + outMin;
 }
-//# sourceMappingURL=math.js.map

@@ -6,4 +6,3 @@ export const ColliderDef = EM.defineComponent("collider", (c) => {
     });
 });
 const __COLLIDER_ASSERT = true;
-//# sourceMappingURL=collider.js.map

@@ -126,4 +126,3 @@ function createInputsReader(canvas) {
     }
     return takeInputs;
 }
-//# sourceMappingURL=inputs.js.map

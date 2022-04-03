@@ -113,4 +113,3 @@ export function registerUpdateWorldFromLocalAndParent(em, suffix = "") {
         }
     }, "updateWorldFromLocalAndParent" + suffix);
 }
-//# sourceMappingURL=transform.js.map

@@ -362,4 +362,3 @@ export function addEventComponents(em) {
     em.addSingletonComponent(DetectedEventsDef);
     em.addSingletonComponent(EventsDef);
 }
-//# sourceMappingURL=events.js.map

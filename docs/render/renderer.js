@@ -47,44 +47,51 @@ function stepRenderer(renderer, objs, cameraView) {
     // sort
     objs.sort((a, b) => b.renderable.layer - a.renderable.layer);
     // render
+    // TODO(@darzu):
+    // const m24 = objs.filter((o) => o.renderable.meshHandle.mId === 24);
+    // const e10003 = objs.filter((o) => o.id === 10003);
+    // console.log(`mId 24: ${!!m24.length}, e10003: ${!!e10003.length}`);
     renderer.renderFrame(cameraView.viewProjMat, objs.map((o) => o.renderable.meshHandle));
-}
-function updateCameraView(players, resources) {
-    const { cameraView, camera, me, htmlCanvas } = resources;
-    const mePlayer = players.filter((p) => p.authority.pid === me.pid)[0];
-    if (!mePlayer)
-        return;
-    // update aspect ratio and size
-    cameraView.aspectRatio = Math.abs(htmlCanvas.canvas.width / htmlCanvas.canvas.height);
-    cameraView.width = htmlCanvas.canvas.width;
-    cameraView.height = htmlCanvas.canvas.height;
-    if (camera.cameraMode === "thirdPerson") {
-        vec3.copy(camera.offset, [0, 0, 10]);
-    }
-    else if (camera.cameraMode === "thirdPersonOverShoulder") {
-        vec3.copy(camera.offset, [2, 2, 8]);
-    }
-    let viewMatrix = mat4.create();
-    if (mePlayer) {
-        mat4.copy(viewMatrix, mePlayer.world.transform);
-    }
-    mat4.multiply(viewMatrix, viewMatrix, mat4.fromQuat(mat4.create(), camera.rotation));
-    mat4.translate(viewMatrix, viewMatrix, camera.offset);
-    mat4.invert(viewMatrix, viewMatrix);
-    const projectionMatrix = mat4.create();
-    if (camera.perspectiveMode === "ortho") {
-        const ORTHO_SIZE = 40;
-        mat4.ortho(projectionMatrix, -ORTHO_SIZE, ORTHO_SIZE, -ORTHO_SIZE, ORTHO_SIZE, -400, 200);
-    }
-    else {
-        mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, cameraView.aspectRatio, 1, 10000.0 /*view distance*/);
-    }
-    const viewProj = mat4.multiply(mat4.create(), projectionMatrix, viewMatrix);
-    cameraView.viewProjMat = viewProj;
 }
 export function registerUpdateCameraView(em) {
     em.addSingletonComponent(CameraViewDef);
-    em.registerSystem([PlayerEntDef, PositionDef, RotationDef, AuthorityDef, WorldFrameDef], [CameraViewDef, CameraDef, MeDef, CanvasDef], updateCameraView);
+    em.registerSystem([PlayerEntDef, PositionDef, RotationDef, AuthorityDef, WorldFrameDef], [CameraViewDef, CameraDef, MeDef, CanvasDef], (players, resources) => {
+        const { cameraView, camera, me, htmlCanvas } = resources;
+        // if (camera.targetId) console.log(`target: ${camera.targetId}`);
+        let targetEnt = em.findEntity(camera.targetId, [WorldFrameDef]);
+        // default to player
+        if (!targetEnt)
+            targetEnt = players.filter((p) => p.authority.pid === me.pid)[0];
+        if (!targetEnt)
+            return;
+        // update aspect ratio and size
+        cameraView.aspectRatio = Math.abs(htmlCanvas.canvas.width / htmlCanvas.canvas.height);
+        cameraView.width = htmlCanvas.canvas.width;
+        cameraView.height = htmlCanvas.canvas.height;
+        if (camera.cameraMode === "thirdPerson") {
+            vec3.copy(camera.offset, [0, 0, 10]);
+        }
+        else if (camera.cameraMode === "thirdPersonOverShoulder") {
+            vec3.copy(camera.offset, [2, 2, 8]);
+        }
+        let viewMatrix = mat4.create();
+        if (targetEnt) {
+            mat4.copy(viewMatrix, targetEnt.world.transform);
+        }
+        mat4.multiply(viewMatrix, viewMatrix, mat4.fromQuat(mat4.create(), camera.rotation));
+        mat4.translate(viewMatrix, viewMatrix, camera.offset);
+        mat4.invert(viewMatrix, viewMatrix);
+        const projectionMatrix = mat4.create();
+        if (camera.perspectiveMode === "ortho") {
+            const ORTHO_SIZE = 40;
+            mat4.ortho(projectionMatrix, -ORTHO_SIZE, ORTHO_SIZE, -ORTHO_SIZE, ORTHO_SIZE, -400, 200);
+        }
+        else {
+            mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, cameraView.aspectRatio, 1, 10000.0 /*view distance*/);
+        }
+        const viewProj = mat4.multiply(mat4.create(), projectionMatrix, viewMatrix);
+        cameraView.viewProjMat = viewProj;
+    }, "updateCameraView");
 }
 export function registerRenderer(em) {
     em.registerSystem([WorldFrameDef, RenderableDef], [CameraViewDef, PhysicsTimerDef, RendererDef], (objs, res) => {
@@ -113,4 +120,3 @@ export function registerConstructRenderablesSystem(em) {
         }
     }, "constructRenderables");
 }
-//# sourceMappingURL=renderer.js.map

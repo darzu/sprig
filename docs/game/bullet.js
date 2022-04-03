@@ -9,14 +9,19 @@ import { AuthorityDef, MeDef, SyncDef, PredictDef } from "../net/components.js";
 import { AssetsDef } from "./assets.js";
 import { AngularVelocityDef, LinearVelocityDef, } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../smoothing.js";
-export const BulletDef = EM.defineComponent("bullet", () => {
-    return true;
+import { PhysicsTimerDef } from "../time.js";
+import { LifetimeDef } from "./lifetime.js";
+export const BulletDef = EM.defineComponent("bullet", (team) => {
+    return {
+        team,
+    };
 });
-export const BulletConstructDef = EM.defineComponent("bulletConstruct", (loc, vel, angVel) => {
+export const BulletConstructDef = EM.defineComponent("bulletConstruct", (loc, vel, angVel, team) => {
     return {
         location: loc !== null && loc !== void 0 ? loc : vec3.fromValues(0, 0, 0),
         linearVelocity: vel !== null && vel !== void 0 ? vel : vec3.fromValues(0, 1, 0),
         angularVelocity: angVel !== null && angVel !== void 0 ? angVel : vec3.fromValues(0, 0, 0),
+        team,
     };
 });
 EM.registerSerializerPair(BulletConstructDef, (c, writer) => {
@@ -28,7 +33,7 @@ EM.registerSerializerPair(BulletConstructDef, (c, writer) => {
     reader.readVec3(c.linearVelocity);
     reader.readVec3(c.angularVelocity);
 });
-const BULLET_COLOR = [0.3, 0.3, 0.8];
+const BULLET_COLOR = [0.02, 0.02, 0.02];
 function createBullet(em, e, pid, assets) {
     if (FinishedDef.isOn(e))
         return;
@@ -39,14 +44,15 @@ function createBullet(em, e, pid, assets) {
     em.ensureComponent(e.id, AngularVelocityDef, props.angularVelocity);
     em.ensureComponent(e.id, ColorDef, BULLET_COLOR);
     em.ensureComponent(e.id, MotionSmoothingDef);
-    em.ensureComponent(e.id, RenderableConstructDef, assets.bullet.proto);
+    em.ensureComponent(e.id, RenderableConstructDef, assets.ball.proto);
     em.ensureComponent(e.id, AuthorityDef, pid);
-    em.ensureComponent(e.id, BulletDef);
+    em.ensureComponent(e.id, BulletDef, props.team);
     em.ensureComponent(e.id, ColliderDef, {
         shape: "AABB",
         solid: false,
-        aabb: assets.bullet.aabb,
+        aabb: assets.ball.aabb,
     });
+    em.ensureComponent(e.id, LifetimeDef, 4000);
     em.ensureComponent(e.id, SyncDef, [BulletConstructDef.id], [PositionDef.id]);
     em.ensureComponent(e.id, PredictDef);
     em.addComponent(e.id, FinishedDef);
@@ -57,17 +63,19 @@ export function registerBuildBulletsSystem(em) {
             createBullet(em, b, res.me.pid, res.assets);
     }, "buildBullets");
 }
-export function spawnBullet(em, position, linearVelocity, angularVelocity) {
-    const e = em.newEntity();
-    em.addComponent(e.id, BulletConstructDef, position, linearVelocity, angularVelocity);
+export function registerBulletUpdate(em) {
+    em.registerSystem([BulletDef, PositionDef, LinearVelocityDef], [PhysicsTimerDef], (bullets, res) => {
+        for (let b of bullets) {
+            b.linearVelocity[1] -= 0.001 * res.physicsTimer.steps;
+        }
+    }, "updateBullets");
 }
-export function fireBullet(em, location, rotation, speed, rotationSpeed) {
-    speed = speed || 0.02;
-    rotationSpeed = rotationSpeed || 0.02;
+export function fireBullet(em, team, location, rotation, speed = 0.02, rotationSpeed = 0.02) {
     let bulletAxis = vec3.fromValues(0, 0, -1);
     vec3.transformQuat(bulletAxis, bulletAxis, rotation);
+    vec3.normalize(bulletAxis, bulletAxis);
     const linearVelocity = vec3.scale(vec3.create(), bulletAxis, speed);
     const angularVelocity = vec3.scale(vec3.create(), bulletAxis, rotationSpeed);
-    spawnBullet(em, vec3.clone(location), linearVelocity, angularVelocity);
+    const e = em.newEntity();
+    em.addComponent(e.id, BulletConstructDef, vec3.clone(location), linearVelocity, angularVelocity, team);
 }
-//# sourceMappingURL=bullet.js.map

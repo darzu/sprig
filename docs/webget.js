@@ -37,4 +37,3 @@ export function getText(url) {
 export function getXml(url) {
     return getFile(url, "document").then((xmlResp) => xmlResp.documentElement);
 }
-//# sourceMappingURL=webget.js.map

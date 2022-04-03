@@ -176,4 +176,3 @@ export function registerNetSystems(em) {
     em.registerSystem(null, [EventsFromNetworkDef], getEventsFromNet(net), "getEventsFromNet");
     em.registerSystem(null, [EventsToNetworkDef], sendEventsToNet(net), "sendEventsToNet");
 }
-//# sourceMappingURL=net.js.map

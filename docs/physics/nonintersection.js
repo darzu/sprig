@@ -349,4 +349,3 @@ export function registerPhysicsContactSystems(em) {
         };
     }, "physicsStepContact");
 }
-//# sourceMappingURL=nonintersection.js.map

@@ -1,5 +1,4 @@
 import { test } from "./test.js";
-import { _cellChecks, _doesOverlaps, _enclosedBys, _lastCollisionTestTimeMs, } from "./physics/broadphase.js";
 import { setupObjImportExporter } from "./download.js";
 import { createLocalObjects, createServerObjects, initGame, registerAllSystems, } from "./game/game.js";
 import { EM } from "./entity-manager.js";
@@ -112,21 +111,22 @@ async function startGame(localPeerName, host) {
         //    using ".firstChild.nodeValue =" reuses the DOM element. Unfortunately this
         //    means we'll need to do more work to get line breaks.
         const usingWebGPU = (_b = (_a = EM.findSingletonComponent(RendererDef)) === null || _a === void 0 ? void 0 : _a.renderer) === null || _b === void 0 ? void 0 : _b.usingWebGPU;
-        debugTxt.nodeValue =
-            controlsStr +
-                ` ` +
-                `js:${avgJsTime.toFixed(2)}ms ` +
-                `net:${avgNetTime.toFixed(2)}ms ` +
-                `sim:${avgSimTime.toFixed(2)}ms ` +
-                `broad:(${_lastCollisionTestTimeMs.toFixed(1)}ms ` +
-                `o:${_doesOverlaps} e:${_enclosedBys} c:${_cellChecks}) ` +
-                `fps:${avgFPS.toFixed(1)} ` +
-                //`buffers:(r=${reliableBufferSize}/u=${unreliableBufferSize}) ` +
-                `dropped:${numDroppedUpdates} ` +
-                `entities:${EM.entities.size} ` +
-                `skew: ${skew.join(",")} ` +
-                `ping: ${ping.join(",")} ` +
-                `${usingWebGPU ? "WebGPU" : "WebGL"}`;
+        debugTxt.nodeValue = `You are the last hope of Oogie, keep the gemheart alive! Failure is inevitable. move: WASD, mouse; cannon: e, left-click; fps:${avgFPS.toFixed(1)}`;
+        // debugTxt.nodeValue =
+        //   controlsStr +
+        //   ` ` +
+        //   `js:${avgJsTime.toFixed(2)}ms ` +
+        //   `net:${avgNetTime.toFixed(2)}ms ` +
+        //   `sim:${avgSimTime.toFixed(2)}ms ` +
+        //   `broad:(${_lastCollisionTestTimeMs.toFixed(1)}ms ` +
+        //   `o:${_doesOverlaps} e:${_enclosedBys} c:${_cellChecks}) ` +
+        //   `fps:${avgFPS.toFixed(1)} ` +
+        //   //`buffers:(r=${reliableBufferSize}/u=${unreliableBufferSize}) ` +
+        //   `dropped:${numDroppedUpdates} ` +
+        //   `entities:${EM.entities.size} ` +
+        //   `skew: ${skew.join(",")} ` +
+        //   `ping: ${ping.join(",")} ` +
+        //   `${usingWebGPU ? "WebGPU" : "WebGL"}`;
         // // TODO(@darzu): DEBUG
         // debugTxt.nodeValue =
         //   `sim:${avgSimTime.toFixed(2)}ms ` +
@@ -215,4 +215,3 @@ window.onload = () => {
 // for debugging
 window.dbg = dbg;
 window.EM = EM;
-//# sourceMappingURL=main.js.map

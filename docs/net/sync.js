@@ -102,4 +102,3 @@ export function registerAckUpdateSystem(em) {
     }
     em.registerSystem([PeerDef, InboxDef], [TimeDef, MeDef], ack);
 }
-//# sourceMappingURL=sync.js.map

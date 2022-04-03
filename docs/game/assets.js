@@ -14,17 +14,57 @@ export const LIGHT_BLUE = vec3.fromValues(0.05, 0.05, 0.2);
 const DEFAULT_ASSET_PATH = "/assets/";
 const BACKUP_ASSET_PATH = "https://sprig.land/assets/";
 const RemoteMeshes = {
-    ship: "ship.sprig.obj",
+    ship: "barge.sprig.obj",
     ball: "ball.sprig.obj",
     pick: "pick.sprig.obj",
     spaceore: "spaceore.sprig.obj",
     spacerock: "spacerock.sprig.obj",
     ammunitionBox: "ammunition_box.sprig.obj",
     linstock: "linstock.sprig.obj",
-    cannon: "cannon.sprig.obj",
+    cannon: "cannon_simple.sprig.obj",
+};
+const RemoteMesheSets = {
+    boat_broken: "boat_broken.sprig.obj",
+    ship_broken: "barge1_broken.sprig.obj",
 };
 const AssetTransforms = {
     linstock: mat4.fromScaling(mat4.create(), [0.1, 0.1, 0.1]),
+    // ship: mat4.fromScaling(mat4.create(), [3, 3, 3]),
+    // ship_broken: mat4.fromScaling(mat4.create(), [3, 3, 3]),
+    spacerock: mat4.fromScaling(mat4.create(), [1.5, 1.5, 1.5]),
+};
+const SHIP_OFFSET = [3.85 - 2.16, -0.33 - 0.13, -8.79 + 4.63];
+const blackoutColor = (m) => {
+    m.colors.map((c) => vec3.zero(c));
+    return m;
+};
+const MeshTransforms = {
+    cannon: (m) => {
+        m.colors = m.colors.map((c) => [0.2, 0.2, 0.2]);
+        return m;
+    },
+    spacerock: (m) => {
+        m.colors = m.colors.map((c) => [0.05, 0.15, 0.2]);
+        const t = mat4.fromYRotation(mat4.create(), Math.PI * 0.2);
+        m = transformMesh(m, t);
+        m.lines = [];
+        return m;
+    },
+    // cube: blackoutColor,
+    // ship: blackoutColor,
+    // ball: blackoutColor,
+    // boat_broken: blackoutColor,
+    ship: (m) => {
+        m.lines = [];
+        m = scaleMesh(m, 3);
+        return m;
+    },
+    ship_broken: (m) => {
+        m.lines = [];
+        m.pos = m.pos.map((p) => vec3.subtract(vec3.create(), p, SHIP_OFFSET));
+        m = scaleMesh(m, 3);
+        return m;
+    },
 };
 // which triangles belong to which faces
 // TODO(@darzu): should these be standardized for all meshes?
@@ -34,7 +74,7 @@ export const CUBE_FACES = {
     right: [4, 5],
     left: [6, 7],
     bottom: [8, 9],
-    back: [10, 11]
+    back: [10, 11],
 };
 export const CUBE_MESH = unshareProvokingVertices({
     pos: [
@@ -136,46 +176,35 @@ function createGridPlane(width, height) {
     }
     return scaleMesh(mapMeshPositions(m, (p) => [p[0] - width / 2, p[1], p[2] - height / 2]), 10 / Math.min(width, height));
 }
-export const SHIP_AABBS = [
-    { min: [-20.3, 1.7, -31.3], max: [13.5, 3.75, 16.9] },
-    { min: [-11.6, -2.7, 17.2], max: [4.8, 13.75, 42.8] },
-    { min: [-11.6, 13.1, 16.4], max: [4.8, 15.4, 18.0] },
-    { min: [-21.7, 13.8, 42.3], max: [13.7, 17.6, 43.3] },
-    { min: [-12.9, 13.6, 16.4], max: [-11.1, 15.4, 25.6] },
-    { min: [3.1, 13.6, 16.4], max: [4.9, 15.4, 25.6] },
-    { min: [13.1, 13.4, 20.9], max: [14.9, 16.4, 42.7] },
-    { min: [-23.1, 13.4, 20.9], max: [-21.3, 16.4, 42.7] },
-    { min: [-21.7, 0.4, 22.5], max: [13.7, 13.75, 42.7] },
-    { min: [-21.7, -5.6, -35.7], max: [13.7, 3.75, 16.9] },
-    { min: [-22.55, -2.8, -12.4], max: [-20.65, 6.75, 16.0] },
-    { min: [12.65, 0.65, -12.4], max: [14.55, 6.75, 16.0] },
-    { min: [12.25, 0.65, -29.9], max: [14.55, 6.75, -18.1] },
-    { min: [-22.55, 0.65, -29.9], max: [-20.25, 6.75, -18.1] },
-    { min: [-21.45, 0.65, -34.7], max: [-16.95, 6.75, -29.7] },
-    { min: [-17.85, 0.65, -39.7], max: [-13.35, 6.75, -34.7] },
-    { min: [-13.45, 0.65, -44.7], max: [-8.95, 6.75, -39.7] },
-    { min: [-8.95, 0.65, -49.5], max: [0.95, 6.75, -44.5] },
-    { min: [0.05, 0.65, -44.7], max: [5.15, 6.75, -39.7] },
-    { min: [4.85, 0.65, -39.7], max: [9.95, 6.75, -34.7] },
-    { min: [9.25, 0.65, -34.7], max: [14.35, 6.75, -29.7] },
-    { min: [-13.35, -2.35, -44.9], max: [4.55, 3.75, -35.5] },
-    { min: [12.35, 0.65, -18.2], max: [15.25, 4.35, -12.2] },
-    { min: [-23.45, 0.65, -18.2], max: [-20.55, 4.35, -12.2] },
-    { min: [-21.15, 2.05, 16.9], max: [-12.85, 5.75, 19.1] },
-    { min: [-21.15, 4.05, 18.3], max: [-12.85, 7.75, 20.5] },
-    { min: [-21.15, 6.05, 19.7], max: [-12.85, 9.75, 21.9] },
-    { min: [-21.15, 8.05, 20.9], max: [-12.85, 11.75, 23.1] },
-    { min: [4.85, 8.05, 20.9], max: [13.15, 11.75, 23.1] },
-    { min: [4.85, 6.05, 19.7], max: [13.15, 9.75, 21.9] },
-    { min: [4.85, 4.05, 18.3], max: [13.15, 7.75, 20.5] },
-    { min: [4.85, 2.05, 16.9], max: [13.15, 5.75, 19.1] },
-    { min: [12.95, 6.45, 15.9], max: [14.65, 13.75, 20.9] },
-    { min: [-22.65, 6.45, 15.9], max: [-20.95, 13.75, 20.9] },
+const RAW_SHIP_AABBS = [
+    { min: [-5.1, -13.6, 83.35], max: [22.1, -11.6, 135.05] },
+    { min: [19.2, -11.5, 83.35], max: [22.0, -9.5, 135.05] },
+    { min: [-5.1, -11.5, 83.35], max: [-2.3, -9.5, 135.05] },
+    { min: [-2.95, -11.5, 83.35], max: [19.55, -9.5, 86.05] },
+    { min: [-2.95, -11.5, 132.25], max: [19.55, -9.5, 134.95] },
 ];
+export const SHIP_AABBS = RAW_SHIP_AABBS.map((aabb) => {
+    const yShift = 10;
+    aabb.min[1] += yShift;
+    aabb.max[1] += yShift;
+    const zShift = -130;
+    aabb.min[2] += zShift;
+    aabb.max[2] += zShift;
+    vec3.scale(aabb.min, aabb.min, 1 / 5);
+    vec3.scale(aabb.max, aabb.max, 1 / 5);
+    vec3.subtract(aabb.min, aabb.min, SHIP_OFFSET);
+    vec3.subtract(aabb.max, aabb.max, SHIP_OFFSET);
+    vec3.scale(aabb.min, aabb.min, 3);
+    vec3.scale(aabb.max, aabb.max, 3);
+    return aabb;
+});
+// const shipMinX = min(SHIP_AABBS.map((a) => a.min[0]));
+// const shipMaxX = min(SHIP_AABBS.map((a) => a.max[0]));
+// console.log(`${(shipMaxX + shipMinX) / 2}`);
 export const LocalMeshes = {
     cube: CUBE_MESH,
     plane: PLANE_MESH,
-    boat: scaleMesh3(CUBE_MESH, [5, 0.3, 2.5]),
+    boat: scaleMesh3(CUBE_MESH, [10, 0.6, 5]),
     bullet: scaleMesh(CUBE_MESH, 0.3),
     gridPlane: GRID_PLANE_MESH,
     wireCube: { ...CUBE_MESH, tri: [] },
@@ -185,8 +214,8 @@ const AssetLoaderDef = EM.defineComponent("assetLoader", () => {
         promise: null,
     };
 });
-export const AssetsDef = EM.defineComponent("assets", (assets) => {
-    return assets;
+export const AssetsDef = EM.defineComponent("assets", (meshes) => {
+    return meshes;
 });
 export function registerAssetLoader(em) {
     em.addSingletonComponent(AssetLoaderDef);
@@ -204,7 +233,7 @@ export function registerAssetLoader(em) {
         }
     }, "assetLoader");
 }
-async function loadAssetInternal(relPath) {
+async function loadTxtInternal(relPath) {
     // download
     // TODO(@darzu): perf: check DEFAULT_ASSET_PATH once
     let txt;
@@ -214,28 +243,67 @@ async function loadAssetInternal(relPath) {
     catch (_) {
         txt = await getText(BACKUP_ASSET_PATH + relPath);
     }
+    return txt;
+}
+async function loadMeshInternal(relPath) {
+    // download
+    // TODO(@darzu): perf: check DEFAULT_ASSET_PATH once
+    let txt = await loadTxtInternal(relPath);
     // parse
     const opt = importObj(txt);
     assert(!!opt && !isParseError(opt), `unable to parse asset (${relPath}):\n${opt}`);
+    assert(opt.length === 1, "too many meshes; use loadMeshSet for multi meshes");
     // clean up
-    const obj = unshareProvokingVertices(opt);
+    const obj = unshareProvokingVertices(opt[0]);
     return obj;
+}
+async function loadMeshSetInternal(relPath) {
+    // download
+    let txt = await loadTxtInternal(relPath);
+    // parse
+    // console.log(txt);
+    const opt = importObj(txt);
+    // console.log("importMultiObj");
+    // console.dir(opt);
+    assert(!!opt && !isParseError(opt), `unable to parse asset set (${relPath}):\n${opt}`);
+    // clean up
+    const objs = opt.map((o) => unshareProvokingVertices(o));
+    return objs;
 }
 async function loadAssets(renderer) {
     const start = performance.now();
-    const promises = objMap(RemoteMeshes, (p) => loadAssetInternal(p));
-    const promisesList = Object.entries(promises);
-    const remoteMeshList = await Promise.all(promisesList.map(([_, p]) => p));
-    const remoteMeshes = objMap(promises, (_, n) => {
-        const idx = promisesList.findIndex(([n2, _]) => n === n2);
-        const rawMesh = remoteMeshList[idx];
-        const t = AssetTransforms[n];
-        return t ? transformMesh(rawMesh, t) : rawMesh;
+    const singlePromises = objMap(RemoteMeshes, (p) => loadMeshInternal(p));
+    const setPromises = objMap(RemoteMesheSets, (p) => loadMeshSetInternal(p));
+    const singlesList = Object.entries(singlePromises);
+    const singlesMeshList = await Promise.all(singlesList.map(([_, p]) => p));
+    const singleMeshes = objMap(singlePromises, (_, n) => {
+        const idx = singlesList.findIndex(([n2, _]) => n === n2);
+        let m = singlesMeshList[idx];
+        return processMesh(n, m);
     });
-    const allMeshes = { ...remoteMeshes, ...LocalMeshes };
+    const localMeshes = objMap(LocalMeshes, (m, n) => {
+        return processMesh(n, m);
+    });
+    const setsList = Object.entries(setPromises);
+    const setsMeshList = await Promise.all(setsList.map(([_, p]) => p));
+    const setMeshes = objMap(setPromises, (_, n) => {
+        const idx = setsList.findIndex(([n2, _]) => n === n2);
+        let ms = setsMeshList[idx];
+        return ms.map((m) => processMesh(n, m));
+    });
+    function processMesh(n, m) {
+        const t1 = AssetTransforms[n];
+        if (t1)
+            m = transformMesh(m, t1);
+        const t2 = MeshTransforms[n];
+        if (t2)
+            m = t2(m);
+        return m;
+    }
+    const allSingleMeshes = { ...singleMeshes, ...localMeshes };
     // TODO(@darzu): this shouldn't directly add to a mesh pool, we don't know which pool it should
     //  go to
-    const result = objMap(allMeshes, (mesh, n) => {
+    function gameMeshFromMesh(mesh) {
         const aabb = getAABBFromMesh(mesh);
         const proto = renderer.addMesh(mesh);
         return {
@@ -243,10 +311,12 @@ async function loadAssets(renderer) {
             aabb,
             proto,
         };
-    });
+    }
+    const allSingleAssets = objMap(allSingleMeshes, gameMeshFromMesh);
+    const allSetAssets = objMap(setMeshes, (ms, n) => ms.map(gameMeshFromMesh));
+    const result = { ...allSingleAssets, ...allSetAssets };
     // perf tracking
     const elapsed = performance.now() - start;
     console.log(`took ${elapsed.toFixed(1)}ms to load assets.`);
     return result;
 }
-//# sourceMappingURL=assets.js.map

@@ -49,4 +49,3 @@ export function toRecord(as, key, val) {
 //  causes type inference (specifically type narrowing) to not work right in
 //  dead code sometimes (last tested with tsc v4.2.3)
 export const FALSE = false;
-//# sourceMappingURL=util.js.map

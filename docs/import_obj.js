@@ -46,7 +46,7 @@ function parseLine(p) {
             return v;
     return verts;
 }
-export function exportObj(m) {
+export function exportObj(m, iOff = 0) {
     var _a;
     let resLns = [
         `# sprigland exported mesh (${m.pos.length} verts, ${m.tri.length} faces)`,
@@ -57,23 +57,45 @@ export function exportObj(m) {
     }
     // output faces
     for (let f of m.tri) {
-        resLns.push(`f ${f[0] + 1}// ${f[1] + 1}// ${f[2] + 1}//`);
+        resLns.push(`f ${f[0] + 1 + iOff}// ${f[1] + 1 + iOff}// ${f[2] + 1 + iOff}//`);
     }
     // output lines
     for (let l of (_a = m.lines) !== null && _a !== void 0 ? _a : []) {
-        resLns.push(`l ${l[0] + 1}/ ${l[1] + 1}/`);
+        resLns.push(`l ${l[0] + 1 + iOff}/ ${l[1] + 1 + iOff}/`);
     }
     return resLns.join("\n");
 }
 const FLIP_FACES = false;
 export function importObj(obj) {
     // TODO(@darzu): implement a streaming parser for better perf
-    const pos = [];
-    const tri = [];
-    const colors = [];
+    let pos = [];
+    let tri = [];
+    let colors = [];
     // TODO(@darzu): compute lines
-    const lines = [];
-    const seenLines = new Set();
+    let lines = [];
+    let seenLines = new Set();
+    let idxOffset = 0;
+    const meshes = [];
+    function nextMesh() {
+        // no mesh data, skip
+        if (pos.length === 0)
+            return;
+        // finish mesh
+        for (let i = 0; i < tri.length; i++) {
+            // TODO(@darzu): import color
+            colors.push([0.0, 0.0, 0.0]);
+            // colors.push([0.2, 0.2, 0.2]);
+        }
+        const m = { pos, tri, colors, lines };
+        meshes.push(m);
+        // start a new mesh
+        idxOffset += pos.length;
+        pos = [];
+        tri = [];
+        colors = [];
+        lines = [];
+        seenLines = new Set();
+    }
     const lns = obj.split("\n");
     const alreadyHasLines = lns.some((l) => l.trim().startsWith("l "));
     const shouldGenerateLines = !alreadyHasLines;
@@ -108,7 +130,7 @@ export function importObj(obj) {
             const lineOpt = parseLine(p);
             if (isParseError(lineOpt))
                 return lineOpt;
-            const inds = lineOpt.map((v) => v[0] - 1);
+            const inds = lineOpt.map((v) => v[0] - 1 - idxOffset);
             const indsErr = checkIndices(inds, pos.length - 1);
             if (isParseError(indsErr))
                 return indsErr + ` in line: ${p.join(" ")}`;
@@ -123,7 +145,7 @@ export function importObj(obj) {
             const faceOpt = parseFace(p);
             if (isParseError(faceOpt))
                 return faceOpt;
-            const inds = faceOpt.map((v) => v[0] - 1);
+            const inds = faceOpt.map((v) => v[0] - 1 - idxOffset);
             const indsErr = checkIndices(inds, pos.length - 1);
             if (isParseError(indsErr))
                 return indsErr + ` in face: ${p.join(" ")}`;
@@ -158,10 +180,15 @@ export function importObj(obj) {
                 generateLines(inds);
             }
         }
+        else if (kind === "o") {
+            // object name
+            // TODO(@darzu):
+            // console.log(`new obj: ${p}`);
+            nextMesh();
+        }
         else if (kind === "#" || // comment
             kind === "mtllib" || // accompanying .mtl file name
             kind === "usemap" || // texture map
-            kind === "o" || // object name
             kind === "vt" || // texture coordinate
             kind === "s" || // TODO(@darzu): What does "s" mean?
             kind === "g" || // group
@@ -180,10 +207,8 @@ export function importObj(obj) {
     //   const shade = colorStep * i + 0.1;
     //   colors.push([shade, shade, shade]);
     // }
-    for (let i = 0; i < tri.length; i++) {
-        colors.push([0.2, 0.2, 0.2]);
-    }
-    return { pos, tri, colors, lines };
+    nextMesh();
+    return meshes;
     function checkIndices(inds, maxInd) {
         for (let vi of inds)
             if (isNaN(vi) || vi < 0 || maxInd < vi)
@@ -247,14 +272,16 @@ function assertObjError(obj, e) {
     const m = importObj(obj);
     assert(isString(m) && m === e, `error mismatch for: ${obj}\n  actual:\t${m}\nexpected:\t${e}`);
 }
-function assertObjSuccess(obj) {
+function assertSingleObjSuccess(obj) {
     const m = importObj(obj);
     assert(!isParseError(m), `failed to import obj: ${m}`);
-    return m;
+    assert(m.length === 1, `Too many obj: ${m.length}`);
+    return m[0];
 }
 export function testImporters() {
     var _a;
     // invalid
+    // TODO(@darzu):
     assertObjError("oijawlidjoiwad", "empty mesh");
     assertObjError("", "empty mesh");
     assertObjError("v foo bar", "invalid vector-3 format: foo bar");
@@ -272,15 +299,15 @@ export function testImporters() {
     f 1/0/0 2/0/0 4/0/0
     `, "invalid vertex index '4' in face: 1/0/0 2/0/0 4/0/0");
     // valid
-    assertObjSuccess("v 0 1 2");
-    const good1 = assertObjSuccess(`
+    assertSingleObjSuccess("v 0 1 2");
+    const good1 = assertSingleObjSuccess(`
     v 0 1 2
     v 0 1 2
     v 0 1 2
     f 1/0/0 2/0/0 3/0/0
   `);
     assert(good1.tri.length === 1, "test expects 1 tri");
-    const good2 = assertObjSuccess(`
+    const good2 = assertSingleObjSuccess(`
   v 0 1 2
   v 0 1 2
   v 0 1 2
@@ -288,7 +315,7 @@ export function testImporters() {
   f 1/0/0 2/0/0 3/0/0 4/0/0
   `);
     assert(good2.tri.length === 2, "test expects 2 tris");
-    const good3 = assertObjSuccess(`
+    const good3 = assertSingleObjSuccess(`
     v 0 1 2
     v 0 1 2
     v 0 1 2
@@ -296,12 +323,12 @@ export function testImporters() {
   `);
     assert(good3.tri.length === 0 && ((_a = good3.lines) === null || _a === void 0 ? void 0 : _a.length) === 1, "test expects 0 tri, 1 line");
     // valid, complex
-    const hat = assertObjSuccess(HAT_OBJ);
+    const hat = assertSingleObjSuccess(HAT_OBJ);
     // exporting
     const hatOut = exportObj(hat);
     // console.log(hatOut);
     // importing our export
-    assertObjSuccess(hatOut);
+    assertSingleObjSuccess(hatOut);
 }
 // Example hat, straight from blender:
 export const HAT_OBJ = `
@@ -466,4 +493,3 @@ f 7/23/10 9/56/10 11/24/10
 f 11/24/10 13/57/10 15/25/10
 f 15/25/10 3/54/10 7/23/10
 `;
-//# sourceMappingURL=import_obj.js.map

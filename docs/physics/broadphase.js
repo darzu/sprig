@@ -434,4 +434,3 @@ export function getAABBFromPositions(positions) {
     }
     return { min, max };
 }
-//# sourceMappingURL=broadphase.js.map

@@ -37,7 +37,7 @@ export var MeshUniformMod;
         for (let i = 0; i < _names.length; i++) {
             const n = _names[i];
             const t = _types[i];
-            res += `${n}: ${t};\n`;
+            res += `${n}: ${t},\n`;
         }
         return res;
     }
@@ -62,9 +62,9 @@ export const obj_vertShader = () => shaderSceneStruct() +
     @group(1) @binding(0) var<uniform> model : Model;
 
     struct VertexOutput {
-        @location(0) @interpolate(flat) normal : vec3<f32>;
-        @location(1) @interpolate(flat) color : vec3<f32>;
-        @builtin(position) position : vec4<f32>;
+        @location(0) @interpolate(flat) normal : vec3<f32>,
+        @location(1) @interpolate(flat) color : vec3<f32>,
+        @builtin(position) position : vec4<f32>,
     };
 
     @stage(vertex)
@@ -84,16 +84,18 @@ export const obj_fragShader = () => shaderSceneStruct() +
     @group(0) @binding(0) var<uniform> scene : Scene;
 
     struct VertexOutput {
-        @location(0) @interpolate(flat) normal : vec3<f32>;
-        @location(1) @interpolate(flat) color : vec3<f32>;
+        @location(0) @interpolate(flat) normal : vec3<f32>,
+        @location(1) @interpolate(flat) color : vec3<f32>,
     };
 
     @stage(fragment)
     fn main(input: VertexOutput) -> @location(0) vec4<f32> {
-        let sunLight : f32 = clamp(dot(-scene.lightDir, input.normal), 0.0, 1.0);
-        let resultColor: vec3<f32> = input.color * (sunLight * 2.0 + 0.2);
+        let light1 : f32 = clamp(dot(-scene.light1Dir, input.normal), 0.0, 1.0);
+        let light2 : f32 = clamp(dot(-scene.light2Dir, input.normal), 0.0, 1.0);
+        let light3 : f32 = clamp(dot(-scene.light3Dir, input.normal), 0.0, 1.0);
+        let resultColor: vec3<f32> = input.color 
+          * (light1 * 1.5 + light2 * 0.5 + light3 * 0.2 + 0.1);
         let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
         return vec4<f32>(gammaCorrected, 1.0);
     }
 `;
-//# sourceMappingURL=shader_obj.js.map

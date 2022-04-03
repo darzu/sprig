@@ -29,4 +29,3 @@ export function test() {
     console.log(`<<< ENDING TESTS (${(end - start).toFixed(1)}ms)`);
     assert(end - start < 1000, `tests took longer than 1 second! shame on you.`);
 }
-//# sourceMappingURL=test.js.map

@@ -102,4 +102,3 @@ export function registerUpdateSmoothedTransform(em) {
         }
     }, "updateSmoothedTransform");
 }
-//# sourceMappingURL=smoothing.js.map

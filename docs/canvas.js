@@ -4,6 +4,7 @@ export const CanvasDef = EM.defineComponent("htmlCanvas", (canvas) => {
         canvas,
         shouldLockMouse: true,
         unlockMouse: () => { },
+        hasInteraction: false,
     };
 });
 export function registerInitCanvasSystem(em) {
@@ -19,6 +20,7 @@ export function registerInitCanvasSystem(em) {
         // TODO(@darzu): this should probably be managed elsewhere
         // TODO(@darzu): re-enable
         function tryMouseLock() {
+            comp.hasInteraction = true;
             if (comp.shouldLockMouse && document.pointerLockElement !== canvas) {
                 canvas.requestPointerLock();
             }
@@ -55,4 +57,3 @@ function init() {
     }, 50);
     return canvas;
 }
-//# sourceMappingURL=canvas.js.map

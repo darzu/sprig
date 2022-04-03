@@ -62,4 +62,3 @@ registerEventHandler("bullet-player", {
         em.ensureComponent(entities[1], DeletedDef);
     },
 });
-//# sourceMappingURL=bullet-collision.js.map

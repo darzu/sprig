@@ -180,4 +180,3 @@ export function computeReboundData(a, aLastPos, aCurrPos, b, bLastPos, bCurrPos,
 //       Math.sign(b.lastPos[bDim] - b.currPos[bDim]) * bOverlapNum;
 //   return { aId: a.id, bId: b.id, aRebound, bRebound, aOverlap, bOverlap };
 // }
-//# sourceMappingURL=phys.js.map

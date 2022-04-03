@@ -48,4 +48,3 @@ async function init(em, canvas) {
     // TODO(@darzu): this is a little wierd to do this in an async callback
     em.addSingletonComponent(RendererDef, rendererInit, usingWebGPU);
 }
-//# sourceMappingURL=render_init.js.map

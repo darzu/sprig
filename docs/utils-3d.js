@@ -69,4 +69,3 @@ export function vec3Mid(out, a, b) {
     out[2] = (a[2] + b[2]) * 0.5;
     return out;
 }
-//# sourceMappingURL=utils-3d.js.map

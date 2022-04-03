@@ -119,7 +119,8 @@ export var SceneUniform;
 (function (SceneUniform) {
     const _counts = [
         4 * 4,
-        4 * 4,
+        3,
+        3,
         3,
         1,
         2,
@@ -131,21 +132,16 @@ export var SceneUniform;
     SceneUniform.ByteSizeExact = sum(_counts) * Float32Array.BYTES_PER_ELEMENT;
     SceneUniform.ByteSizeAligned = align(SceneUniform.ByteSizeExact, 256); // uniform objects must be 256 byte aligned
     function generateWGSLUniformStruct() {
-        // Example
-        //     cameraViewProjMatrix : mat4x4<f32>;
-        //     lightViewProjMatrix : mat4x4<f32>;
-        //     lightDir : vec3<f32>;
-        //     time : f32;
-        //     playerPos: vec2<f32>;
-        //     cameraPos : vec3<f32>;
         // TODO(@darzu): enforce agreement w/ Scene interface
         return `
-            cameraViewProjMatrix : mat4x4<f32>;
-            lightViewProjMatrix : mat4x4<f32>;
-            lightDir : vec3<f32>;
-            time : f32;
-            playerPos: vec2<f32>;
-            cameraPos : vec3<f32>;
+            cameraViewProjMatrix : mat4x4<f32>,
+            // lightViewProjMatrix : mat4x4<f32>,
+            light1Dir : vec3<f32>,
+            light2Dir : vec3<f32>,
+            light3Dir : vec3<f32>,
+            time : f32,
+            playerPos: vec2<f32>,
+            cameraPos : vec3<f32>,
         `;
     }
     SceneUniform.generateWGSLUniformStruct = generateWGSLUniformStruct;
@@ -153,11 +149,13 @@ export var SceneUniform;
     const scratch_f32_as_u8 = new Uint8Array(scratch_f32.buffer);
     function serialize(buffer, byteOffset, data) {
         scratch_f32.set(data.cameraViewProjMatrix, _offsets[0]);
-        scratch_f32.set(data.lightViewProjMatrix, _offsets[1]);
-        scratch_f32.set(data.lightDir, _offsets[2]);
-        scratch_f32[_offsets[3]] = data.time;
-        scratch_f32.set(data.playerPos, _offsets[4]);
-        scratch_f32.set(data.cameraPos, _offsets[5]);
+        // scratch_f32.set(data.lightViewProjMatrix, _offsets[1]);
+        scratch_f32.set(data.light1Dir, _offsets[1]);
+        scratch_f32.set(data.light2Dir, _offsets[2]);
+        scratch_f32.set(data.light3Dir, _offsets[3]);
+        scratch_f32[_offsets[4]] = data.time;
+        scratch_f32.set(data.playerPos, _offsets[5]);
+        scratch_f32.set(data.cameraPos, _offsets[6]);
         buffer.set(scratch_f32_as_u8, byteOffset);
     }
     SceneUniform.serialize = serialize;
@@ -440,6 +438,7 @@ function createMeshPool(opts, queues) {
         const uniOffset = allMeshes.length * MeshUniformMod.byteSizeAligned;
         const newHandle = {
             ...m,
+            mId: nextMeshId++,
             shaderData: d,
             modelUniByteOffset: uniOffset,
         };
@@ -596,4 +595,43 @@ export function cloneMesh(m) {
         lines: m.lines ? m.lines.map((p) => vec2.clone(p)) : undefined,
     };
 }
-//# sourceMappingURL=mesh-pool.js.map
+// split mesh by connectivity
+// TODO(@darzu): actually, we probably don't need this function
+export function splitMesh(m) {
+    // each vertex is a seperate island
+    let vertIslands = [];
+    for (let i = 0; i < m.pos.length; i++)
+        vertIslands[i] = new Set([i]);
+    // tris and lines define connectivity, so
+    //    merge together islands
+    for (let tri of m.tri) {
+        mergeIslands(tri[0], tri[1]);
+        mergeIslands(tri[0], tri[2]);
+    }
+    if (m.lines)
+        for (let line of m.lines) {
+            mergeIslands(line[0], line[1]);
+        }
+    const uniqueIslands = uniqueRefs(vertIslands);
+    console.dir(uniqueIslands);
+    // TODO(@darzu): FINISH IMPL
+    return [m];
+    function mergeIslands(idx0, idx1) {
+        const s0 = vertIslands[idx0];
+        const s1 = vertIslands[idx1];
+        if (s0 !== s1) {
+            // merge s0 and s1
+            for (let i of s1)
+                s0.add(i);
+            vertIslands[idx1] = s0;
+        }
+    }
+}
+function uniqueRefs(ts) {
+    const res = [];
+    for (let t1 of ts) {
+        if (res.every(t2 => t2 !== t1))
+            res.push(t1);
+    }
+    return res;
+}
