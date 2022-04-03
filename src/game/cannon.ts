@@ -28,6 +28,7 @@ import {
 import { MusicDef, randChordId } from "../music.js";
 import { InputsDef } from "../inputs.js";
 import { pitch } from "../utils-3d.js";
+import { clamp } from "../math.js";
 
 const CANNON_FRAMES = 180;
 
@@ -37,6 +38,10 @@ export const CannonDef = EM.defineComponent("cannon", () => {
     mannedId: 0,
     pitch: 0,
     yaw: 0,
+    minYaw: -Math.PI * 0.5,
+    maxYaw: +Math.PI * 0.5,
+    minPitch: -Math.PI * 0.3,
+    maxPitch: Math.PI * 0.1,
   };
 });
 export type Cannon = Component<typeof CannonDef>;
@@ -144,7 +149,13 @@ export function registerPlayerCannonSystem(em: EntityManager) {
 
         if (c.cannon.mannedId) {
           c.cannon.yaw += -res.inputs.mouseMovX * 0.005;
+          c.cannon.yaw = clamp(c.cannon.yaw, c.cannon.minYaw, c.cannon.maxYaw);
           c.cannon.pitch += res.inputs.mouseMovY * 0.002;
+          c.cannon.pitch = clamp(
+            c.cannon.pitch,
+            c.cannon.minPitch,
+            c.cannon.maxPitch
+          );
 
           res.camera.targetId = c.id;
           quat.rotateY(res.camera.rotation, quat.IDENTITY, +Math.PI / 2);
@@ -273,6 +284,8 @@ export function createPlayerCannon(
   em.ensureComponentOn(e, CannonDef);
   e.cannon.yaw = props.yaw;
   e.cannon.pitch = props.pitch;
+  e.cannon.minYaw += props.yaw;
+  e.cannon.maxYaw += props.yaw;
   em.ensureComponent(e.id, ColliderDef, {
     shape: "AABB",
     solid: true,
