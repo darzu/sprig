@@ -29,6 +29,7 @@ import { MusicDef, randChordId } from "../music.js";
 import { InputsDef } from "../inputs.js";
 import { pitch } from "../utils-3d.js";
 import { clamp } from "../math.js";
+import { DeletedDef } from "../delete.js";
 
 const CANNON_FRAMES = 180;
 
@@ -116,6 +117,8 @@ export function registerPlayerCannonSystem(em: EntityManager) {
     ],
     (cannons, res) => {
       for (let c of cannons) {
+        if (DeletedDef.isOn(c)) continue;
+
         const { cannon, world, id, interaction } = c;
         const players = res.physicsResults.collidesWith
           .get(interaction.colliderId)

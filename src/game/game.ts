@@ -1,4 +1,4 @@
-import { Component, EM, EntityManager } from "../entity-manager.js";
+import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { jitter } from "../math.js";
@@ -46,7 +46,7 @@ import {
   registerGroundSystems,
 } from "./ground.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
-import { registerShipSystems, ShipConstructDef } from "./ship.js";
+import { registerShipSystems, ShipConstructDef, ShipDef } from "./ship.js";
 import {
   HatConstructDef,
   registerBuildHatSystem,
@@ -113,7 +113,7 @@ EM.registerSerializerPair(
 
 function createPlayer(em: EntityManager) {
   const e = em.newEntity();
-  em.addComponent(e.id, PlayerConstructDef, vec3.fromValues(0, 5, 0));
+  em.addComponent(e.id, PlayerConstructDef, vec3.fromValues(0, 100, 0));
 }
 
 function createGround(em: EntityManager) {
@@ -189,11 +189,40 @@ function registerBuildWorldPlanes(em: EntityManager) {
   );
 }
 
+export const ScoreDef = EM.defineComponent("score", () => {
+  return {
+    maxScore: 0,
+    currentScore: 0,
+  };
+});
+
+function registerScoreSystems(em: EntityManager) {
+  em.addSingletonComponent(ScoreDef);
+
+  em.registerSystem(
+    [ShipDef, PositionDef],
+    [ScoreDef],
+    (ships, res) => {
+      if (ships.length) {
+        const ship = ships.reduce(
+          (p, n) => (n.position[2] > p.position[2] ? n : p),
+          ships[0]
+        );
+        const currentScore = Math.round(ship.position[2] / 10);
+        res.score.maxScore = Math.max(currentScore, res.score.maxScore);
+        res.score.currentScore = currentScore;
+      }
+    },
+    "updateScore"
+  );
+}
+
 export function registerAllSystems(em: EntityManager) {
   registerTimeSystem(em);
   registerNetSystems(em);
   registerInitCanvasSystem(em);
   registerUISystems(em);
+  registerScoreSystems(em);
   registerRenderInitSystem(em);
   registerMusicSystems(em);
   registerHandleNetworkEvents(em);
@@ -331,7 +360,7 @@ export function createServerObjects(em: EntityManager) {
   createPlayer(em);
   // createGround(em);
   registerBoatSpawnerSystem(em);
-  createShips(em);
+  createNewShip(em);
   // createHats(em);
   // createWorldPlanes(em);
 }
@@ -342,7 +371,7 @@ export function createLocalObjects(em: EntityManager) {
 function createCamera(_em: EntityManager) {
   EM.addSingletonComponent(CameraDef);
 }
-function createShips(em: EntityManager) {
+export function createNewShip(em: EntityManager) {
   const rot = quat.create();
   // quat.rotateY(rot, rot, Math.PI * -0.4);
   // const pos: vec3 = [-40, -10, -60];

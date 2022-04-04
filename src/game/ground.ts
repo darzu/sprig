@@ -3,7 +3,7 @@ import { Component, EM, EntityManager } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { RenderableConstructDef } from "../render/renderer.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
-import { ColorDef } from "./game.js";
+import { ColorDef, ScoreDef } from "./game.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import { FinishedDef } from "../build.js";
@@ -49,8 +49,11 @@ EM.registerSerializerPair(
 export const GroundSystemDef = EM.defineComponent("groundSystem", () => {
   return {
     groundPool: [] as number[],
-    nextScore: THIRDSIZE * 2,
+    initialScore: (THIRDSIZE * 2) / 10,
+    nextScore: (THIRDSIZE * 2) / 10,
     nextGroundIdx: 0,
+    totalPlaced: 0,
+    initialPlace: true,
   };
 });
 
@@ -59,44 +62,57 @@ export function registerGroundSystems(em: EntityManager) {
 
   const NUM_X = 3;
   const NUM_Z = 4;
-  let totalPlaced = 0;
   em.registerSystem(
-    [ShipDef, PositionDef],
-    [GroundSystemDef],
-    (ships, { groundSystem: sys }) => {
+    null,
+    [GroundSystemDef, ScoreDef],
+    (_, res) => {
+      const sys = res.groundSystem;
       // init ground system
       if (sys.groundPool.length === 0) {
-        let idx = 0;
         for (let x = 0; x < NUM_X; x++) {
           for (let z = 0; z < NUM_Z; z++) {
-            const loc = calcLoc(totalPlaced);
             const color = (x + z) % 2 === 0 ? LIGHT_BLUE : DARK_BLUE;
             const g = em.newEntity();
-            em.ensureComponentOn(g, GroundConstructDef, loc, color);
+            em.ensureComponentOn(g, GroundConstructDef, [0, 0, 0], color);
             sys.groundPool.push(g.id);
-            totalPlaced += 1;
           }
         }
       }
 
-      // ship progress
-      if (ships.length) {
-        const ship = ships.reduce(
-          (p, n) => (n.position[2] > p.position[2] ? n : p),
-          ships[0]
-        );
-        const score = ship.position[2];
-        if (score > sys.nextScore) {
-          // move ground
-          const gId = sys.groundPool[sys.nextGroundIdx];
-          const g = em.findEntity(gId, [GroundDef, PositionDef]);
-          if (g) {
-            vec3.copy(g.position, calcLoc(totalPlaced));
+      if (sys.groundPool.some((id) => !em.findEntity(id, [GroundDef])))
+        // not inited
+        return;
 
-            sys.nextGroundIdx = (sys.nextGroundIdx + 1) % sys.groundPool.length;
-            totalPlaced += 1;
-            sys.nextScore += THIRDSIZE;
+      // initial placement
+      if (sys.initialPlace) {
+        sys.initialPlace = false;
+        sys.nextScore = sys.initialScore;
+        sys.totalPlaced = 0;
+        sys.nextGroundIdx = 0;
+
+        for (let x = 0; x < NUM_X; x++) {
+          for (let z = 0; z < NUM_Z; z++) {
+            placeNextGround();
           }
+        }
+      } else {
+        // ship progress
+        const score = res.score.currentScore;
+        while (score > sys.nextScore) {
+          placeNextGround();
+          sys.nextScore += THIRDSIZE / 10;
+        }
+      }
+
+      function placeNextGround() {
+        // move ground
+        const gId = sys.groundPool[sys.nextGroundIdx];
+        const g = em.findEntity(gId, [GroundDef, PositionDef]);
+        if (g) {
+          vec3.copy(g.position, calcLoc(sys.totalPlaced));
+
+          sys.nextGroundIdx = (sys.nextGroundIdx + 1) % sys.groundPool.length;
+          sys.totalPlaced += 1;
         }
       }
     },

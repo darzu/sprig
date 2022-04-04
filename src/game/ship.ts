@@ -17,7 +17,7 @@ import {
   MultiCollider,
 } from "../physics/collider.js";
 import { AABB, copyAABB, createAABB } from "../physics/broadphase.js";
-import { ColorDef, TextDef } from "./game.js";
+import { ColorDef, createNewShip, ScoreDef, TextDef } from "./game.js";
 import { setCubePosScaleToAABB } from "../physics/phys-debug.js";
 import { BOAT_COLOR } from "./boat.js";
 import {
@@ -32,6 +32,9 @@ import { LinearVelocityDef } from "../physics/motion.js";
 import { LifetimeDef } from "./lifetime.js";
 import { CannonConstructDef } from "./cannon.js";
 import { MusicDef } from "../music.js";
+import { CameraDef, PlayerEntDef } from "./player.js";
+import { InputsDef } from "../inputs.js";
+import { GroundSystemDef } from "./ground.js";
 
 export const ShipConstructDef = EM.defineComponent(
   "shipConstruct",
@@ -49,6 +52,8 @@ export const ShipDef = EM.defineComponent("ship", () => {
     partIds: [] as number[],
     gemId: 0,
     speed: 0,
+    cannonLId: 0,
+    cannonRId: 0,
   };
 });
 
@@ -98,7 +103,7 @@ export function registerShipSystems(em: EntityManager) {
         // if (!RenderableConstructDef.isOn(e))
         //   em.addComponent(e.id, RenderableConstructDef, res.assets.ship.mesh);
         em.ensureComponentOn(e, ShipDef);
-        e.ship.speed = 0.005;
+        e.ship.speed = 0.05;
 
         // TODO(@darzu): multi collider
         const mc: MultiCollider = {
@@ -169,6 +174,7 @@ export function registerShipSystems(em: EntityManager) {
           0,
           cannonPitch
         );
+        e.ship.cannonRId = cannonR.id;
         const cannonL = em.newEntity();
         em.ensureComponentOn(cannonL, PhysicsParentDef, e.id);
         em.addComponent(
@@ -178,6 +184,7 @@ export function registerShipSystems(em: EntityManager) {
           Math.PI,
           cannonPitch
         );
+        e.ship.cannonLId = cannonL.id;
 
         // em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
         // em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2]);
@@ -190,7 +197,7 @@ export function registerShipSystems(em: EntityManager) {
 
   em.registerSystem(
     [ShipDef, PositionDef],
-    [MusicDef],
+    [MusicDef, InputsDef, CameraDef, GroundSystemDef],
     (ships, res) => {
       const numCritical = criticalPartIdxes.length;
       for (let ship of ships) {
@@ -201,7 +208,10 @@ export function registerShipSystems(em: EntityManager) {
             numCriticalDamaged += 1;
           }
         }
-        if (numCriticalDamaged === numCritical) {
+        if (
+          numCriticalDamaged === numCritical ||
+          res.inputs.keyClicks["backspace"]
+        ) {
           const gem = em.findEntity(ship.ship.gemId, [
             WorldFrameDef,
             PositionDef,
@@ -210,18 +220,49 @@ export function registerShipSystems(em: EntityManager) {
           if (gem) {
             // ship broken!
             // TODO(@darzu): RUN OVER
-            const score = Math.round(ship.position[2] / 10);
-            setTimeout(() => {
-              // TODO(@darzu): game over music
-              res.music.playChords([1, 2, 3, 4, 4], "minor");
-              alert(`Game over (distance: ${score})`);
-            }, 2000);
+            res.music.playChords([1, 2, 3, 4, 4], "minor");
+            // setTimeout(() => {
+            //   // TODO(@darzu): game over music
+            //   // alert(`Game over (distance: ${score})`);
+            //   createNewShip();
+            //   em.
+            // }, 2000);
+            for (let partId of ship.ship.partIds) {
+              const part = em.findEntity(partId, [ShipPartDef]);
+              if (part) em.ensureComponentOn(part, DeletedDef);
+            }
+            em.ensureComponentOn(ship, DeletedDef);
+            if (ship.ship.cannonLId)
+              em.ensureComponent(ship.ship.cannonLId, DeletedDef);
+            if (ship.ship.cannonRId)
+              em.ensureComponent(ship.ship.cannonRId, DeletedDef);
+
+            const players = em.filterEntities([
+              PlayerEntDef,
+              PositionDef,
+              RotationDef,
+            ]);
+            for (let p of players) {
+              if (PhysicsParentDef.isOn(p)) p.physicsParent.id = 0;
+              console.log("foo");
+              vec3.copy(p.position, [0, 100, 0]);
+              quat.rotateY(p.rotation, quat.IDENTITY, Math.PI);
+              p.player.manning = false;
+            }
+
+            quat.identity(res.camera.rotation);
+            res.camera.targetId = 0;
+
             vec3.copy(gem.position, gem.world.position);
             em.ensureComponentOn(gem, RotationDef);
             quat.copy(gem.rotation, gem.world.rotation);
             em.ensureComponentOn(gem, LinearVelocityDef, [0, -0.01, 0]);
             em.removeComponent(gem.id, PhysicsParentDef);
             em.ensureComponentOn(gem, LifetimeDef, 4000);
+
+            res.groundSystem.initialPlace = true;
+
+            createNewShip(em);
           }
         }
       }
@@ -242,14 +283,13 @@ export function registerShipSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [ShipDef, PositionDef],
-    [TextDef],
-    (ships, res) => {
-      const score = max(ships.map((s) => s.position[2]));
-
+    null,
+    [TextDef, ScoreDef],
+    (_, res) => {
       // update score
-      const roundScore = Math.round(score / 10);
-      res.text.setText(`${roundScore}`);
+      res.text.setText(
+        `current: ${res.score.currentScore}, max: ${res.score.maxScore}`
+      );
     },
     "shipUI"
   );

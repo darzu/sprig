@@ -57,7 +57,7 @@ import { min } from "../math.js";
 import { ShipDef } from "./ship.js";
 import { GroundDef } from "./ground.js";
 
-export const CHEAT = false;
+export const CHEAT = true;
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {
@@ -205,6 +205,8 @@ export function registerStepPlayers(em: EntityManager) {
               vec3.add(vel, vel, vec3.fromValues(0, -trans, 0));
             }
           }
+
+          // console.log(vel);
 
           vec3.transformQuat(vel, vel, p.rotation);
 
