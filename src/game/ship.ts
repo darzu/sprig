@@ -103,7 +103,8 @@ export function registerShipSystems(em: EntityManager) {
         // if (!RenderableConstructDef.isOn(e))
         //   em.addComponent(e.id, RenderableConstructDef, res.assets.ship.mesh);
         em.ensureComponentOn(e, ShipDef);
-        e.ship.speed = 0.05;
+        e.ship.speed = 0.005;
+        // e.ship.speed = 0.05;
 
         // TODO(@darzu): multi collider
         const mc: MultiCollider = {

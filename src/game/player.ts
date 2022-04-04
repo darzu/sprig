@@ -57,7 +57,7 @@ import { min } from "../math.js";
 import { ShipDef } from "./ship.js";
 import { GroundDef } from "./ground.js";
 
-export const CHEAT = true;
+export const CHEAT = false;
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {
