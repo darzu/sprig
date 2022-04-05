@@ -1,4 +1,4 @@
-import { Component, EM, EntityManager } from "../entity-manager.js";
+import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { jitter } from "../math.js";
@@ -8,7 +8,11 @@ import {
   registerUpdateCameraView,
   RenderableConstructDef,
 } from "../render/renderer.js";
-import { registerInitTransforms, TransformDef } from "../physics/transform.js";
+import {
+  PositionDef,
+  registerInitTransforms,
+  TransformDef,
+} from "../physics/transform.js";
 import {
   BoatConstructDef,
   registerBuildBoatsSystem,
@@ -34,17 +38,22 @@ import {
 import { registerPredictSystem } from "../net/predict.js";
 import { registerEventSystems } from "../net/events.js";
 import { registerBuildCubesSystem, registerMoveCubesSystem } from "./cube.js";
-import { registerTimeSystem } from "../time.js";
-import { PlaneConstructDef, registerBuildPlanesSystem } from "./plane.js";
+import { PhysicsTimerDef, registerTimeSystem } from "../time.js";
+import {
+  GroundConstructDef,
+  GROUNDSIZE,
+  GroundSystemDef,
+  registerGroundSystems,
+} from "./ground.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
-import { registerBuildShipSystem, ShipConstructDef } from "./ship.js";
+import { registerShipSystems, ShipConstructDef, ShipDef } from "./ship.js";
 import {
   HatConstructDef,
   registerBuildHatSystem,
   registerHatPickupSystem,
   registerHatDropSystem,
 } from "./hat.js";
-import { registerBuildBulletsSystem } from "./bullet.js";
+import { registerBuildBulletsSystem, registerBulletUpdate } from "./bullet.js";
 import {
   AssetsDef,
   DARK_BLUE,
@@ -65,7 +74,6 @@ import {
   registerBuildCannonsSystem,
   registerBuildLinstockSystem,
   registerPlayerCannonSystem,
-  registerStepCannonsSystem,
 } from "./cannon.js";
 import { registerInteractionSystem } from "./interact.js";
 import { registerModeler } from "./modeler.js";
@@ -81,7 +89,13 @@ import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { FinishedDef } from "../build.js";
 import { registerPhysicsSystems } from "../physics/phys.js";
-import { debugCreateNoodles } from "./noodles.js";
+import { debugCreateNoodles, registerNoodleSystem } from "./noodles.js";
+import { splitMesh } from "../render/mesh-pool.js";
+import { registerUpdateLifetimes } from "./lifetime.js";
+import { registerCreateEnemies } from "./enemy.js";
+import { registerMusicSystems } from "../music.js";
+import { GameState, GameStateDef } from "./gamestate.js";
+import { registerRestartSystem } from "./restart.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -101,28 +115,14 @@ EM.registerSerializerPair(
 
 function createPlayer(em: EntityManager) {
   const e = em.newEntity();
-  em.addComponent(e.id, PlayerConstructDef, vec3.fromValues(5, 0, 0));
+  em.addComponent(e.id, PlayerConstructDef, vec3.fromValues(0, 100, 0));
 }
 
 function createGround(em: EntityManager) {
-  // create checkered grid
-  const NUM_PLANES_X = 10;
-  const NUM_PLANES_Z = 10;
-  for (let x = 0; x < NUM_PLANES_X; x++) {
-    for (let z = 0; z < NUM_PLANES_Z; z++) {
-      const xPos = (x - NUM_PLANES_X / 2) * 20 + 10;
-      const zPos = (z - NUM_PLANES_Z / 2) * 20;
-      const parity = !!((x + z) % 2);
-      const loc = vec3.fromValues(
-        xPos,
-        x + z - (NUM_PLANES_X + NUM_PLANES_Z),
-        zPos
-      );
-      const color = parity ? LIGHT_BLUE : DARK_BLUE;
-      let { id } = em.newEntity();
-      em.addComponent(id, PlaneConstructDef, loc, color);
-    }
-  }
+  const loc = vec3.fromValues(0, -7, 0);
+  const color = LIGHT_BLUE;
+  let { id } = em.newEntity();
+  em.addComponent(id, GroundConstructDef, loc, color);
 }
 
 const WorldPlaneConstDef = EM.defineComponent("worldPlane", (t?: mat4) => {
@@ -191,11 +191,42 @@ function registerBuildWorldPlanes(em: EntityManager) {
   );
 }
 
+export const ScoreDef = EM.defineComponent("score", () => {
+  return {
+    maxScore: 0,
+    currentScore: 0,
+  };
+});
+
+function registerScoreSystems(em: EntityManager) {
+  em.addSingletonComponent(ScoreDef);
+
+  em.registerSystem(
+    [ShipDef, PositionDef],
+    [ScoreDef],
+    (ships, res) => {
+      if (ships.length) {
+        const ship = ships.reduce(
+          (p, n) => (n.position[2] > p.position[2] ? n : p),
+          ships[0]
+        );
+        const currentScore = Math.round(ship.position[2] / 10);
+        res.score.maxScore = Math.max(currentScore, res.score.maxScore);
+        res.score.currentScore = currentScore;
+      }
+    },
+    "updateScore"
+  );
+}
+
 export function registerAllSystems(em: EntityManager) {
   registerTimeSystem(em);
   registerNetSystems(em);
   registerInitCanvasSystem(em);
+  registerUISystems(em);
+  registerScoreSystems(em);
   registerRenderInitSystem(em);
+  registerMusicSystems(em);
   registerHandleNetworkEvents(em);
   registerUpdateSmoothingTargetSnapChange(em);
   registerUpdateSystem(em);
@@ -204,36 +235,38 @@ export function registerAllSystems(em: EntityManager) {
   registerJoinSystems(em);
   registerAssetLoader(em);
   registerBuildPlayersSystem(em);
-  registerBuildPlanesSystem(em);
+  registerGroundSystems(em);
   registerBuildWorldPlanes(em);
   registerBuildCubesSystem(em);
   registerBuildBoatsSystem(em);
-  registerBuildShipSystem(em);
-  registerBuildHatSystem(em);
+  registerShipSystems(em);
   registerBuildBulletsSystem(em);
   registerBuildCannonsSystem(em);
   registerBuildAmmunitionSystem(em);
   registerBuildLinstockSystem(em);
   registerBuildCursor(em);
+  registerCreateEnemies(em);
   registerInitTransforms(em);
   registerMoveCubesSystem(em);
   registerStepBoats(em);
   registerStepPlayers(em);
+  registerBulletUpdate(em);
+  registerNoodleSystem(em);
+  registerUpdateLifetimes(em);
   registerInteractionSystem(em);
-  registerStepCannonsSystem(em);
+  // registerStepCannonsSystem(em);
   registerPlayerCannonSystem(em);
   registerUpdateSmoothingLerp(em);
   registerPhysicsSystems(em);
   registerBulletCollisionSystem(em);
   registerModeler(em);
-  registerHatPickupSystem(em);
-  registerHatDropSystem(em);
   registerToolPickupSystem(em);
   registerToolDropSystem(em);
   registerAckUpdateSystem(em);
   registerSyncSystem(em);
   registerSendOutboxes(em);
   registerEventSystems(em);
+  registerRestartSystem(em);
   registerDeleteEntitiesSystem(em);
   // TODO(@darzu): confirm this all works
   registerUpdateSmoothedTransform(em);
@@ -241,6 +274,22 @@ export function registerAllSystems(em: EntityManager) {
   registerUpdateCameraView(em);
   registerConstructRenderablesSystem(em);
   registerRenderer(em);
+}
+
+export const TextDef = EM.defineComponent("text", () => {
+  return {
+    setText: (s: string) => {},
+  };
+});
+
+export function registerUISystems(em: EntityManager) {
+  const txt = em.addSingletonComponent(TextDef);
+
+  const titleDiv = document.getElementById("title-div") as HTMLDivElement;
+
+  txt.setText = (s: string) => {
+    titleDiv.firstChild!.nodeValue = s;
+  };
 }
 
 function registerRenderViewController(em: EntityManager) {
@@ -282,20 +331,42 @@ export function initGame(em: EntityManager) {
   createCamera(em);
 
   // TODO(@darzu): DEBUGGING
-  debugCreateNoodles(em);
+  // debugCreateNoodles(em);
+  debugBoatParts(em);
+}
+
+function debugBoatParts(em: EntityManager) {
+  let once = false;
+  em.registerSystem(
+    [],
+    [AssetsDef],
+    (_, res) => {
+      if (once) return;
+      once = true;
+
+      // TODO(@darzu): this works!
+      // const bigM = res.assets.boat_broken;
+      // for (let i = 0; i < bigM.length; i++) {
+      //   const e = em.newEntity();
+      //   em.ensureComponentOn(e, RenderableConstructDef, bigM[i].mesh);
+      //   em.ensureComponentOn(e, PositionDef, [0, 0, 0]);
+      // }
+    },
+    "debugBoatParts"
+  );
 }
 
 export function createServerObjects(em: EntityManager) {
   // let { id: cubeId } = em.newEntity();
   // em.addComponent(cubeId, CubeConstructDef, 3, LIGHT_BLUE);
 
+  em.addSingletonComponent(GameStateDef);
   createPlayer(em);
-  createGround(em);
-  createBoats(em);
-  createShips(em);
-  createHats(em);
-  createCannons(em);
-  createWorldPlanes(em);
+  // createGround(em);
+  registerBoatSpawnerSystem(em);
+  createNewShip(em);
+  // createHats(em);
+  // createWorldPlanes(em);
 }
 export function createLocalObjects(em: EntityManager) {
   createPlayer(em);
@@ -304,25 +375,64 @@ export function createLocalObjects(em: EntityManager) {
 function createCamera(_em: EntityManager) {
   EM.addSingletonComponent(CameraDef);
 }
-function createShips(em: EntityManager) {
+export function createNewShip(em: EntityManager) {
   const rot = quat.create();
   // quat.rotateY(rot, rot, Math.PI * -0.4);
   // const pos: vec3 = [-40, -10, -60];
-  const pos: vec3 = [0, -10, 130];
+  const pos: vec3 = vec3.fromValues(0, -2, 0);
+  // const pos: vec3 = [0, -10, 130];
   em.addComponent(em.newEntity().id, ShipConstructDef, pos, rot);
 }
-function createBoats(em: EntityManager) {
-  // create boat(s)
-  const BOAT_COUNT = 10;
-  for (let i = 0; i < BOAT_COUNT; i++) {
-    const boatCon = em.addComponent(em.newEntity().id, BoatConstructDef);
-    boatCon.location[1] = -9;
-    boatCon.location[0] = (Math.random() - 0.5) * 40 - 20;
-    boatCon.location[2] = (Math.random() - 0.5) * 40 - 20;
-    boatCon.speed = 0.005 + jitter(0.005);
-    boatCon.wheelSpeed = jitter(0.001);
-    boatCon.wheelDir = 0;
-  }
+
+export const BoatSpawnerDef = EM.defineComponent("boatSpawner", () => ({
+  timerMs: 3000,
+  timerIntervalMs: 5000,
+}));
+
+function registerBoatSpawnerSystem(em: EntityManager) {
+  em.addSingletonComponent(BoatSpawnerDef);
+
+  em.registerSystem(
+    null,
+    [BoatSpawnerDef, PhysicsTimerDef, GroundSystemDef, GameStateDef],
+    (_, res) => {
+      if (res.gameState.state !== GameState.PLAYING) return;
+      const ms = res.physicsTimer.period * res.physicsTimer.steps;
+      res.boatSpawner.timerMs -= ms;
+      // console.log("res.boatSpawner.timerMs:" + res.boatSpawner.timerMs);
+      if (res.boatSpawner.timerMs < 0) {
+        res.boatSpawner.timerMs = res.boatSpawner.timerIntervalMs;
+        // ramp up difficulty
+        res.boatSpawner.timerIntervalMs *= 0.97;
+        // ~1 second minimum
+        res.boatSpawner.timerIntervalMs = Math.max(
+          1500,
+          res.boatSpawner.timerIntervalMs
+        );
+
+        // console.log("boat ");
+        // create boat(s)
+        const boatCon = em.addComponent(em.newEntity().id, BoatConstructDef);
+        const left = Math.random() < 0.5;
+        const z = res.groundSystem.nextScore * 10 + 100;
+        boatCon.location = vec3.fromValues(
+          -(Math.random() * 0.5 + 0.5) * GROUNDSIZE,
+          10,
+          z
+        );
+        boatCon.speed = 0.005 + jitter(0.002);
+        boatCon.wheelDir = (Math.PI / 2) * (1 + jitter(0.1));
+        boatCon.wheelSpeed = jitter(0.0001);
+        if (left) {
+          boatCon.location[0] *= -1;
+          boatCon.speed *= -1;
+          boatCon.wheelDir *= -1;
+        }
+        // boatCon.wheelSpeed = 0;
+      }
+    },
+    "spawnBoats"
+  );
 }
 
 function createHats(em: EntityManager) {
@@ -335,10 +445,4 @@ function createHats(em: EntityManager) {
     );
     em.addComponent(em.newEntity().id, HatConstructDef, loc);
   }
-}
-
-function createCannons(em: EntityManager) {
-  em.addComponent(em.newEntity().id, CannonConstructDef, [-50, -10, 0]);
-  em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
-  em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2]);
 }

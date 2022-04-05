@@ -132,6 +132,7 @@ export const DetectedEventsDef = EM.defineComponent(
   "detectedEvents",
   () => [] as DetectedEvent[]
 );
+export type DetectedEvents = Component<typeof DetectedEventsDef>;
 
 // Outgoing event requests queue. Should be attached to the host
 // peer, shouldn't exist at the host itself

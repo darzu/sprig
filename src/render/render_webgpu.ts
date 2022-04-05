@@ -9,7 +9,6 @@ import {
   Vertex,
 } from "./mesh-pool.js";
 import { RenderableConstruct, Renderer } from "./renderer.js";
-import { pitch } from "../utils-3d.js";
 import {
   MeshUniformMod,
   obj_fragShader,
@@ -93,6 +92,8 @@ export class Renderer_WebGPU implements Renderer {
       device: this.device,
       format: this.presentationFormat, // this.presentationFormat
       size: newSize,
+      // TODO(@darzu): support transparency?
+      compositingAlphaMode: "opaque",
     });
 
     this.depthTexture = this.device.createTexture({
@@ -341,6 +342,8 @@ export class Renderer_WebGPU implements Renderer {
     this.renderBundle = this.createRenderBundle([]);
   }
 
+  private scratchMIDs = new Set<number>();
+
   private scratchSceneUni = new Uint8Array(SceneUniform.ByteSizeAligned);
   public renderFrame(viewProj: mat4, handles: MeshHandle[]): void {
     this.checkCanvasResize();
@@ -359,21 +362,41 @@ export class Renderer_WebGPU implements Renderer {
 
     // TODO(@darzu): more fine grain
     this.needsRebundle =
-      this.needsRebundle || handles.length !== this.bundledMIds.size;
+      this.needsRebundle ||
+      this.bundledMIds.size !== handles.length ||
+      this.drawLines !== this.lastWireMode[0] ||
+      this.drawTris !== this.lastWireMode[1];
     if (!this.needsRebundle) {
-      for (let id of handles.map((o) => o.mId)) {
-        if (!this.bundledMIds.has(id)) {
+      for (let mId of handles.map((o) => o.mId)) {
+        if (!this.bundledMIds.has(mId)) {
           this.needsRebundle = true;
           break;
         }
       }
+      // this.scratchMIDs.clear();
+      // // console.log(`r mId 24: ${!!m24.length}`);
+      // // console.log(`webgpu rendering boat mId: ${this.bundledMIds.has(24)}`);
+      // for (let mId of handles.map((o) => o.mId)) {
+      //   this.scratchMIDs.add(mId);
+      // }
+
+      // for (let mId of this.scratchMIDs.values()) {
+      //   if (!this.bundledMIds.has(mId)) {
+      //     this.needsRebundle = true;
+      //     break;
+      //   }
+      // }
+      // for (let mId of this.bundledMIds.values()) {
+      //   if (!this.scratchMIDs.has(mId)) {
+      //     this.needsRebundle = true;
+      //     break;
+      //   }
+      // }
     }
-    if (
-      this.needsRebundle ||
-      this.drawLines !== this.lastWireMode[0] ||
-      this.drawTris !== this.lastWireMode[1]
-    )
+    if (this.needsRebundle) {
+      // console.log("rebundeling");
       this.createRenderBundle(handles);
+    }
 
     // start collecting our render commands for this frame
     const commandEncoder = this.device.createCommandEncoder();
@@ -411,35 +434,44 @@ export class Renderer_WebGPU implements Renderer {
 export function setupScene(): SceneUniform.Data {
   // create a directional light and compute it's projection (for shadows) and direction
   const worldOrigin = vec3.fromValues(0, 0, 0);
-  const lightPosition = vec3.fromValues(50, 50, 0);
+  const D = 50;
+  const light1Pos = vec3.fromValues(D, D * 2, D);
+  const light2Pos = vec3.fromValues(-D, D * 1, D);
+  const light3Pos = vec3.fromValues(0, D * 0.5, -D);
   const upVector = vec3.fromValues(0, 1, 0);
-  const lightViewMatrix = mat4.lookAt(
-    mat4.create(),
-    lightPosition,
-    worldOrigin,
-    upVector
-  );
-  const lightProjectionMatrix = mat4.ortho(
-    mat4.create(),
-    -80,
-    80,
-    -80,
-    80,
-    -200,
-    300
-  );
-  const lightViewProjMatrix = mat4.multiply(
-    mat4.create(),
-    lightProjectionMatrix,
-    lightViewMatrix
-  );
-  const lightDir = vec3.subtract(vec3.create(), worldOrigin, lightPosition);
-  vec3.normalize(lightDir, lightDir);
+  // const lightViewMatrix = mat4.lookAt(
+  //   mat4.create(),
+  //   light1Pos,
+  //   worldOrigin,
+  //   upVector
+  // );
+  // const lightProjectionMatrix = mat4.ortho(
+  //   mat4.create(),
+  //   -80,
+  //   80,
+  //   -80,
+  //   80,
+  //   -200,
+  //   300
+  // );
+  // const lightViewProjMatrix = mat4.multiply(
+  //   mat4.create(),
+  //   lightProjectionMatrix,
+  //   lightViewMatrix
+  // );
+  const light1Dir = vec3.subtract(vec3.create(), worldOrigin, light1Pos);
+  vec3.normalize(light1Dir, light1Dir);
+  const light2Dir = vec3.subtract(vec3.create(), worldOrigin, light2Pos);
+  vec3.normalize(light2Dir, light2Dir);
+  const light3Dir = vec3.subtract(vec3.create(), worldOrigin, light3Pos);
+  vec3.normalize(light3Dir, light3Dir);
 
   return {
     cameraViewProjMatrix: mat4.create(), // updated later
-    lightViewProjMatrix,
-    lightDir,
+    // lightViewProjMatrix,
+    light1Dir,
+    light2Dir,
+    light3Dir,
     time: 0, // updated later
     playerPos: [0, 0], // updated later
     cameraPos: vec3.create(), // updated later

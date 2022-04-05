@@ -50,7 +50,7 @@ function getHatMesh(): Mesh {
   if (!_hatMesh) {
     const hatRaw = importObj(HAT_OBJ);
     if (isParseError(hatRaw)) throw hatRaw;
-    const hat = unshareProvokingVertices(hatRaw);
+    const hat = unshareProvokingVertices(hatRaw[0]);
     _hatMesh = hat;
   }
   return _hatMesh;
@@ -90,7 +90,8 @@ function createHat(
   if (!HatDef.isOn(e)) {
     em.addComponent(e.id, HatDef);
   }
-  em.ensureComponent(e.id, InteractableDef);
+  // TODO(@darzu): add interact box
+  // em.ensureComponent(e.id, InteractableDef);
   em.addComponent(e.id, FinishedDef);
 }
 
@@ -161,7 +162,8 @@ registerEventHandler("hat-pickup", {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
     let hat = em.findEntity(entities[1], [PositionDef, PhysicsParentDef])!;
     hat.physicsParent.id = player.id;
-    em.removeComponent(hat.id, InteractableDef);
+    // TODO(@darzu): add interact box
+    // em.removeComponent(hat.id, InteractableDef);
     vec3.set(hat.position, 0, 1, 0);
     player.player.hat = hat.id;
   },
@@ -177,7 +179,8 @@ registerEventHandler("hat-drop", {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
     let hat = em.findEntity(entities[1], [PositionDef, PhysicsParentDef])!;
     hat.physicsParent.id = 0;
-    em.addComponent(hat.id, InteractableDef);
+    // TODO(@darzu): add interact box
+    // em.addComponent(hat.id, InteractableDef);
     vec3.copy(hat.position, location!);
     player.player.hat = 0;
   },

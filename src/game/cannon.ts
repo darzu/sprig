@@ -1,10 +1,11 @@
 import { EM, EntityManager, Component, Entity } from "../entity-manager.js";
 import { PhysicsTimerDef } from "../time.js";
-import { quat, vec3 } from "../gl-matrix.js";
+import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
 import { RenderableConstructDef } from "../render/renderer.js";
 import {
+  Frame,
   PhysicsParentDef,
   PositionDef,
   RotationDef,
@@ -12,108 +13,225 @@ import {
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { Deserializer, Serializer } from "../serialize.js";
-import { DetectedEventsDef } from "../net/events.js";
+import { DetectedEvents, DetectedEventsDef } from "../net/events.js";
 import { fireBullet } from "./bullet.js";
 import { registerEventHandler } from "../net/events.js";
 import { ToolDef } from "./tool.js";
 import { InteractableDef, InteractingDef } from "./interact.js";
-import { PlayerEntDef } from "./player.js";
+import { CameraDef, PlayerEntDef } from "./player.js";
 import { Assets, AssetsDef } from "./assets.js";
+import { copyAABB, createAABB } from "../physics/broadphase.js";
+import {
+  PhysicsResultsDef,
+  WorldFrameDef,
+} from "../physics/nonintersection.js";
+import { MusicDef, randChordId } from "../music.js";
+import { InputsDef } from "../inputs.js";
+import { pitch } from "../utils-3d.js";
+import { clamp } from "../math.js";
+import { DeletedDef } from "../delete.js";
 
 const CANNON_FRAMES = 180;
 
 export const CannonDef = EM.defineComponent("cannon", () => {
   return {
-    loaded: false,
-    firing: false,
-    countdown: 0,
+    loaded: true,
+    mannedId: 0,
+    pitch: 0,
+    yaw: 0,
+    minYaw: -Math.PI * 0.5,
+    maxYaw: +Math.PI * 0.5,
+    minPitch: -Math.PI * 0.3,
+    maxPitch: Math.PI * 0.1,
+    fireMs: 0,
+    fireDelayMs: 1000,
+    loadedId: 0,
   };
 });
 export type Cannon = Component<typeof CannonDef>;
 
 export const CannonConstructDef = EM.defineComponent(
   "cannonConstruct",
-  (loc?: vec3) => {
+  (loc?: vec3, yaw?: number, pitch?: number) => {
     return {
       location: loc ?? vec3.fromValues(0, 0, 0),
+      yaw: yaw ?? 0,
+      pitch: pitch ?? 0,
     };
   }
 );
 
-export function registerStepCannonsSystem(em: EntityManager) {
+export function registerPlayerCannonSystem(em: EntityManager) {
+  // em.registerSystem(
+  //   [CannonDef, InteractableDef],
+  //   [PhysicsResultsDef],
+  //   (cannons, res) => {
+  //     for (let c of cannons) {
+  //       const otherHits =
+  //         res.physicsResults.collidesWith.get(c.cannon.interactBox) ?? [];
+  //       for (let o of otherHits) {
+  //         let player = EM.findEntity(o, [PlayerEntDef])!;
+  //         if (player) console.log(player);
+  //       }
+  //     }
+  //   },
+  //   "playerCannon2"
+  // );
+
   em.registerSystem(
-    [CannonDef, PositionDef, RotationDef, AuthorityDef],
-    [DetectedEventsDef, PhysicsTimerDef, MeDef],
-    (cannons, { detectedEvents, physicsTimer, me }) => {
-      for (let { cannon, authority, position, rotation, id } of cannons) {
-        if (cannon.firing) {
-          cannon.countdown -= physicsTimer.steps;
-          if (cannon.countdown <= 0) {
-            // TODO: cannon firing animation
-            if (authority.pid === me.pid) {
-              cannon.firing = false;
-              fireBullet(em, position, rotation);
-              detectedEvents.push({
-                type: "fired-cannon",
-                entities: [id],
-                location: null,
-              });
-            }
-          }
+    [CannonDef, RotationDef],
+    [CameraDef],
+    (cannons, res) => {
+      for (let c of cannons) {
+        quat.copy(c.rotation, quat.IDENTITY);
+        quat.rotateY(c.rotation, c.rotation, c.cannon.yaw);
+        quat.rotateZ(c.rotation, c.rotation, c.cannon.pitch);
+        // quat.fromEuler(c.rotation, 0, c.cannon.yaw, c.cannon.pitch);
+      }
+    },
+    "rotateCannons"
+  );
+
+  em.registerSystem(
+    [CannonDef],
+    [PhysicsTimerDef],
+    (cannons, res) => {
+      for (let c of cannons) {
+        if (c.cannon.fireMs > 0) {
+          c.cannon.fireMs -= res.physicsTimer.period * res.physicsTimer.steps;
         }
       }
     },
-    "stepCannons"
+    "reloadCannon"
   );
-}
 
-export function registerPlayerCannonSystem(em: EntityManager) {
   em.registerSystem(
-    [CannonDef, InteractingDef],
-    [DetectedEventsDef],
-    (cannons, { detectedEvents }) => {
-      for (let { cannon, interacting, id } of cannons) {
-        console.log("someone is interacting with the cannon");
-        let player = EM.findEntity(interacting.id, [PlayerEntDef])!;
-        if (player.player.tool) {
-          let tool = EM.findEntity(player.player.tool, [ToolDef])!;
-          if (AmmunitionDef.isOn(tool) && !cannon.loaded) {
-            let ammunition = tool.ammunition;
-            if (ammunition.amount > 0) {
-              detectedEvents.push({
-                type: "load-cannon",
-                entities: [interacting.id, id, tool.id],
-                location: null,
-              });
-            }
-          } else if (LinstockDef.isOn(tool) && cannon.loaded) {
-            detectedEvents.push({
-              type: "fire-cannon",
-              entities: [interacting.id, id],
-              location: null,
-            });
+    [CannonDef, WorldFrameDef, InteractableDef, RotationDef],
+    [
+      DetectedEventsDef,
+      MusicDef,
+      InputsDef,
+      PhysicsResultsDef,
+      MeDef,
+      CameraDef,
+    ],
+    (cannons, res) => {
+      for (let c of cannons) {
+        if (DeletedDef.isOn(c)) continue;
+
+        const { cannon, world, id, interaction } = c;
+        const players = res.physicsResults.collidesWith
+          .get(interaction.colliderId)
+          ?.map((h) => em.findEntity(h, [PlayerEntDef, AuthorityDef]))
+          .filter((p) => p && p.authority.pid === res.me.pid);
+
+        if (!players?.length) {
+          if (c.cannon.mannedId) unman();
+          continue;
+        }
+
+        const player = players[0]!;
+
+        function unman() {
+          const oldManner = em.findEntity(c.cannon.mannedId, [PlayerEntDef]);
+          if (oldManner && oldManner.player.manning) {
+            oldManner.player.manning = false;
+            quat.identity(res.camera.rotation);
+          }
+          res.camera.targetId = 0;
+          c.cannon.mannedId = 0;
+        }
+        function doman() {
+          player.player.manning = true;
+          c.cannon.mannedId = player.id;
+        }
+
+        if (res.inputs.keyClicks["e"]) {
+          if (c.cannon.mannedId) {
+            unman();
+          } else {
+            doman();
           }
         }
-        EM.removeComponent(id, InteractingDef);
+
+        if (res.inputs.lclick && cannon.fireMs <= 0) {
+          cannon.fireMs = cannon.fireDelayMs;
+          // console.log("someone is interacting with the cannon");
+          // let player = EM.findEntity(interacting.id, [PlayerEntDef])!;
+
+          // TODO(@darzu): cannon fire sound
+
+          fireFromCannon(em, world);
+
+          const chord = randChordId();
+          res.music.playChords([chord], "major", 2.0, 3.0, -2);
+        }
+
+        if (c.cannon.mannedId) {
+          c.cannon.yaw += -res.inputs.mouseMovX * 0.005;
+          c.cannon.yaw = clamp(c.cannon.yaw, c.cannon.minYaw, c.cannon.maxYaw);
+          c.cannon.pitch += res.inputs.mouseMovY * 0.002;
+          c.cannon.pitch = clamp(
+            c.cannon.pitch,
+            c.cannon.minPitch,
+            c.cannon.maxPitch
+          );
+
+          res.camera.targetId = c.id;
+          quat.rotateY(res.camera.rotation, quat.IDENTITY, +Math.PI / 2);
+          quat.rotateX(
+            res.camera.rotation,
+            res.camera.rotation,
+            -Math.PI * 0.15
+          );
+        }
+        // quat.rotateZ(c.rotation, c.rotation, -res.inputs.mouseMovY * 0.005);
+        // quat.rotateY(c.rotation, c.rotation, -res.inputs.mouseMovX * 0.005);
+        // quat.rotateX(
+        //   camera.rotation,
+        //   camera.rotation,
+        //   -inputs.mouseMovY * 0.001
+        // );
+
+        // em.removeComponent(id, InteractingDef);
       }
     },
     "playerCannon"
   );
 }
 
+export function fireFromCannon(em: EntityManager, cannon: Frame) {
+  // TODO(@darzu): capture this elsewhere
+  const fireDir = quat.create();
+  quat.rotateY(fireDir, cannon.rotation, Math.PI * 0.5);
+  const firePos = vec3.create();
+  vec3.transformQuat(firePos, firePos, fireDir);
+  vec3.add(firePos, firePos, cannon.position);
+
+  fireBullet(em, 1, firePos, fireDir, 0.1);
+
+  // TODO(@darzu): do we need events?
+  // detectedEvents: DetectedEvents,
+  // detectedEvents.push({
+  //   type: "fire-cannon",
+  //   entities: [interacting.id, id],
+  //   location: null,
+  // });
+}
+
 export function registerCannonEventHandlers() {
-  registerEventHandler("load-cannon", {
-    eventAuthorityEntity: (entities) => entities[0],
-    legalEvent: (em, entities) =>
-      !em.findEntity(entities[1], [CannonDef])!.cannon!.loaded &&
-      em.findEntity(entities[2], [AmmunitionDef])!.ammunition.amount > 0,
-    runEvent: (em, entities) => {
-      let cannon = em.findEntity(entities[1], [CannonDef])!.cannon;
-      let ammunition = em.findEntity(entities[2], [AmmunitionDef])!.ammunition;
-      cannon.loaded = true;
-      ammunition.amount -= 1;
-    },
-  });
+  // registerEventHandler("load-cannon", {
+  //   eventAuthorityEntity: (entities) => entities[0],
+  //   legalEvent: (em, entities) =>
+  //     !em.findEntity(entities[1], [CannonDef])!.cannon!.loaded &&
+  //     em.findEntity(entities[2], [AmmunitionDef])!.ammunition.amount > 0,
+  //   runEvent: (em, entities) => {
+  //     let cannon = em.findEntity(entities[1], [CannonDef])!.cannon;
+  //     let ammunition = em.findEntity(entities[2], [AmmunitionDef])!.ammunition;
+  //     cannon.loaded = true;
+  //     ammunition.amount -= 1;
+  //   },
+  // });
 
   registerEventHandler("fire-cannon", {
     eventAuthorityEntity: (entities) => entities[0],
@@ -124,9 +242,9 @@ export function registerCannonEventHandlers() {
         CannonDef,
         AuthorityDef,
       ])!;
-      cannon.loaded = false;
-      cannon.firing = true;
-      cannon.countdown = CANNON_FRAMES;
+      // cannon.loaded = false;
+      // cannon.firing = true;
+      // cannon.countdown = CANNON_FRAMES;
       // TODO: this is maybe weird?
       authority.pid = em.findEntity(entities[0], [AuthorityDef])!.authority.pid;
       authority.seq++;
@@ -135,14 +253,14 @@ export function registerCannonEventHandlers() {
   });
 
   // TODO: figure out authority etc. for this event
-  registerEventHandler("fired-cannon", {
-    eventAuthorityEntity: (entities) => entities[0],
-    legalEvent: (_em, _entities) => true,
-    runEvent: (em, entities) => {
-      let cannon = em.findEntity(entities[0], [CannonDef])!.cannon;
-      cannon.firing = false;
-    },
-  });
+  // registerEventHandler("fired-cannon", {
+  //   eventAuthorityEntity: (entities) => entities[0],
+  //   legalEvent: (_em, _entities) => true,
+  //   runEvent: (em, entities) => {
+  //     let cannon = em.findEntity(entities[0], [CannonDef])!.cannon;
+  //     // cannon.firing = false;
+  //   },
+  // });
 }
 
 // TODO: call this from game somewhere?
@@ -152,11 +270,16 @@ export type CannonConstruct = Component<typeof CannonConstructDef>;
 
 function serializeCannonConstruct(c: CannonConstruct, buf: Serializer) {
   buf.writeVec3(c.location);
+  buf.writeFloat32(c.yaw);
+  buf.writeFloat32(c.pitch);
 }
 
 function deserializeCannonConstruct(c: CannonConstruct, buf: Deserializer) {
   buf.readVec3(c.location);
+  c.yaw = buf.readFloat32();
+  c.pitch = buf.readFloat32();
 }
+
 
 EM.registerSerializerPair(
   CannonConstructDef,
@@ -164,7 +287,7 @@ EM.registerSerializerPair(
   deserializeCannonConstruct
 );
 
-function createCannon(
+export function createPlayerCannon(
   em: EntityManager,
   e: Entity & { cannonConstruct: CannonConstruct },
   pid: number,
@@ -179,15 +302,34 @@ function createCannon(
   //if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
   em.ensureComponent(e.id, RenderableConstructDef, assets.cannon.mesh);
   em.ensureComponent(e.id, AuthorityDef, pid);
-  em.ensureComponent(e.id, CannonDef);
+  em.ensureComponentOn(e, CannonDef);
+  e.cannon.yaw = props.yaw;
+  e.cannon.pitch = props.pitch;
+  e.cannon.minYaw += props.yaw;
+  e.cannon.maxYaw += props.yaw;
   em.ensureComponent(e.id, ColliderDef, {
     shape: "AABB",
     solid: true,
     aabb: assets.cannon.aabb,
   });
-  em.ensureComponent(e.id, InteractableDef);
-  em.ensureComponent(e.id, SyncDef, [CannonConstructDef.id]);
+  em.ensureComponent(e.id, SyncDef, [CannonConstructDef.id, RotationDef.id]);
   em.addComponent(e.id, FinishedDef);
+
+  // create seperate hitbox for interacting with the cannon
+  const interactBox = em.newEntity();
+  const interactAABB = copyAABB(createAABB(), assets.cannon.aabb);
+  // interactAABB.max[0] += 1;
+  vec3.scale(interactAABB.min, interactAABB.min, 2);
+  vec3.scale(interactAABB.max, interactAABB.max, 2);
+  em.ensureComponentOn(interactBox, PhysicsParentDef, e.id);
+  em.ensureComponentOn(interactBox, PositionDef, [0, 0, 0]);
+  em.ensureComponentOn(interactBox, ColliderDef, {
+    shape: "AABB",
+    solid: false,
+    aabb: interactAABB,
+  });
+
+  em.ensureComponent(e.id, InteractableDef, interactBox.id);
 }
 
 export function registerBuildCannonsSystem(em: EntityManager) {
@@ -195,7 +337,7 @@ export function registerBuildCannonsSystem(em: EntityManager) {
     [CannonConstructDef],
     [MeDef, AssetsDef],
     (cannons, res) => {
-      for (let b of cannons) createCannon(em, b, res.me.pid, res.assets);
+      for (let b of cannons) createPlayerCannon(em, b, res.me.pid, res.assets);
     },
     "buildCannons"
   );
@@ -283,7 +425,7 @@ export function registerBuildAmmunitionSystem(em: EntityManager) {
           const tool = em.addComponent(e.id, ToolDef);
           tool.type = "ammunition";
         }
-        if (!InteractableDef.isOn(e)) em.addComponent(e.id, InteractableDef);
+        // if (!InteractableDef.isOn(e)) em.addComponent(e.id, InteractableDef);
         if (!SyncDef.isOn(e)) {
           const sync = em.addComponent(e.id, SyncDef);
           sync.fullComponents.push(AmmunitionConstructDef.id);
@@ -355,7 +497,7 @@ export function registerBuildLinstockSystem(em: EntityManager) {
           const tool = em.addComponent(e.id, ToolDef);
           tool.type = "linstock";
         }
-        if (!InteractableDef.isOn(e)) em.addComponent(e.id, InteractableDef);
+        // if (!InteractableDef.isOn(e)) em.addComponent(e.id, InteractableDef);
         if (!SyncDef.isOn(e)) {
           const sync = em.addComponent(e.id, SyncDef);
           sync.fullComponents.push(LinstockConstructDef.id);
