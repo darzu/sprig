@@ -95,6 +95,7 @@ import { registerUpdateLifetimes } from "./lifetime.js";
 import { registerCreateEnemies } from "./enemy.js";
 import { registerMusicSystems } from "../music.js";
 import { GameState, GameStateDef } from "./gamestate.js";
+import { registerRestartSystem } from "./restart.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -265,6 +266,7 @@ export function registerAllSystems(em: EntityManager) {
   registerSyncSystem(em);
   registerSendOutboxes(em);
   registerEventSystems(em);
+  registerRestartSystem(em);
   registerDeleteEntitiesSystem(em);
   // TODO(@darzu): confirm this all works
   registerUpdateSmoothedTransform(em);
