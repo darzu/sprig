@@ -1,0 +1,399 @@
+Ammo:
+    https://github.com/kripken/ammo.js/
+    https://medium.com/@bluemagnificent/intro-to-javascript-3d-physics-using-ammo-js-and-three-js-dd48df81f591
+    https://medium.com/@bluemagnificent/moving-objects-in-javascript-3d-physics-using-ammo-js-and-three-js-6e39eff6d9e5
+    https://medium.com/@bluemagnificent/collision-detection-in-javascript-3d-physics-using-ammo-js-and-three-js-31a5569291ef
+
+Rapier:
+    https://rapier.rs
+    https://github.com/dimforge/rapier.js/issues/19
+    https://www.npmjs.com/package/@dimforge/rapier3d
+    https://www.rapier.rs/docs/user_guides/javascript/getting_started/
+
+Cannon:
+    https://schteppe.github.io/cannon.js/
+    https://github.com/schteppe/cannon.js/blob/master/examples/worker.html
+
+PhysxJs:
+    https://github.com/ashconnell/physx-js
+
+Oimo:
+    http://lo-th.github.io/Oimo.js/#basic
+    https://github.com/lo-th/Oimo.js/
+
+2D:
+    https://brm.io/matter-js/
+
+Babylon: uses plugins for Cannon.js, Oimo.js, or Ammo.js
+
+Rapier.js
+    Want to use Rapier.js, but it's a difficult dependency to vender since it's split into many files.
+    I tried building it myself following the github workflow for macos, but get these errors:
+        npm ERR! command sh -c node bin/index.js
+        npm ERR! Error: Error: This platform not supported
+        ...
+        error: failed to download `nalgebra-macros v0.1.0`
+        ...
+        feature `resolver` is required
+        this Cargo does not support nightly features, but if you
+        switch to nightly channel you can add
+        `cargo-features = ["resolver"]` to enable this feature
+        ...
+        ./build_typescript.sh: line 2: pkg/raw.ts: No such file or directory
+        ...
+        Error: Tried to set an option (inputFiles) that was not declared.
+    Options:
+        1. Write my own physics and/or collision detection
+            Do I need advanced physics for Sprigheim?
+                Yes. Falling trees
+                No. Character and enemy movement
+                Yes? Carts and hills
+                Yes? harpoon
+        2. Bite the bullet, take on NPM and a bundler
+        3. Create a dummy project w/ NPM to bundle dependencies
+    https://github.com/dimforge/rapier.js/issues/30
+
+Can physics be doen on GPU via compute shaders?
+    https://www.reddit.com/r/gamedev/comments/7ppvyg/physics_simulation_on_gpu/
+    https://i.imgur.com/kjVYcvX.gifv
+    https://www.reddit.com/r/Unity3D/comments/7ppldz/physics_simulation_on_gpu_with_compute_shader_in/
+    https://forum.unity.com/threads/asynchronously-getting-data-from-the-gpu-directx-11-with-rendertexture-or-computebuffer.281346/
+    https://www.seas.upenn.edu/~cis565/LECTURE2010/Physics.pdf
+    broad phase on GPU https://developer.nvidia.com/gpugems/gpugems3/part-v-physics-simulation/chapter-32-broad-phase-collision-detection-cuda
+    GPU gems rigid body https://developer.nvidia.com/gpugems/gpugems3/part-v-physics-simulation/chapter-29-real-time-rigid-body-simulation-gpus
+    Why isn't it more common?
+        https://www.quora.com/Is-it-possible-to-make-the-GPU-process-all-the-physics-of-the-game-instead-of-the-low-end-CPU
+        https://gamedev.stackexchange.com/questions/51309/regarding-physics-engines-and-the-gpu
+            basically, CPU->GPU->CPU round trip for gameplay affecting phsysics is too much
+            GPU is still good choice for visual-only stuff (particles)
+
+Physics engine tutorials
+    https://www.toptal.com/game/video-game-physics-part-iii-constrained-rigid-body-simulation
+    A Unified Framework for Rigid Body Dynamics.pdf
+    https://www.gafferongames.com/tags/physics/
+        https://www.gafferongames.com/post/physics_in_3d/
+        https://www.gafferongames.com/post/spring_physics/
+    http://web.archive.org/web/20200323032109/http://www.wildbunny.co.uk/blog/2011/04/06/physics-engines-for-dummies/
+    Broad vs narrow:
+        https://research.ncl.ac.uk/game/mastersdegree/gametechnologies/physicstutorials/6accelerationstructures/Physics%20-%20Spatial%20Acceleration%20Structures.pdf
+
+Rapier on it's broad phase:
+https://github.com/dimforge/rapier/blob/master/src/geometry/broad_phase_multi_sap/broad_phase.rs
+    /// A broad-phase combining a Hierarchical Grid and Sweep-and-Prune.
+    ///
+    /// The basic Sweep-and-Prune (SAP) algorithm has one significant flaws:
+    /// the interactions between far-away objects. This means that objects
+    /// that are very far away will still have some of their endpoints swapped
+    /// within the SAP data-structure. This results in poor scaling because this
+    /// results in lots of swapping between endpoints of AABBs that won't ever
+    /// actually interact.
+    ///
+    /// The first optimization to address this problem is to use the Multi-SAP
+    /// method. This basically combines an SAP with a grid. The grid subdivides
+    /// the spaces into equally-sized subspaces (grid cells). Each subspace, which we call
+    /// a "region" contains an SAP instance (i.e. there SAP axes responsible for
+    /// collecting endpoints and swapping them when they move to detect interaction pairs).
+    /// Each AABB is inserted in all the regions it intersects.
+    /// This prevents the far-away problem because two objects that are far away will
+    /// be located on different regions. So their endpoints will never meed.
+    ///
+    /// However, the Multi-SAP approach has one notable problem: the region size must
+    /// be chosen wisely. It could be user-defined, but that's makes it more difficult
+    /// to use (for the end-user). Or it can be given a fixed value. Using a fixed
+    /// value may result in large objects intersecting lots of regions, resulting in
+    /// poor performances and very high memory usage.
+    ///
+    /// So a solution to that large-objects problem is the Multi-SAP approach is to
+    /// replace the grid by a hierarchical grid. A hierarchical grid is composed of
+    /// several layers. And each layer have different region sizes. For example all
+    /// the regions on layer 0 will have the size 1x1x1. All the regions on the layer
+    /// 1 will have the size 10x10x10, etc. That way, a given AABB will be inserted
+    /// on the layer that has regions big enough to avoid the large-object problem.
+    /// For example a 20x20x20 object will be inserted in the layer with region
+    /// of size 10x10x10, resulting in only 8 regions being intersect by the AABB.
+    /// (If it was inserted in the layer with regions of size 1x1x1, it would have intersected
+    /// 8000 regions, which is a problem performancewise.)
+    ///
+    /// We call this new method the Hierarchical-SAP.
+    ///
+    /// Now with the Hierarchical-SAP, we can update each layer independently from one another.
+    /// However, objects belonging to different layers will never be detected as intersecting that
+    /// way. So we need a way to do inter-layer interference detection. There is a lot ways of doing
+    /// this: performing inter-layer Multi-Box-Pruning passes is one example (but this is not what we do).
+    /// In our implementation, we do the following:
+    /// - The AABB bounds of each region of the layer `n` are inserted into the corresponding larger region
+    ///   of the layer `n + 1`.
+    /// - When an AABB in the region of the layer `n + 1` intersects the AABB corresponding to one of the
+    ///   regions at the smaller layer `n`, we add that AABB to that smaller region.
+    /// So in the end it means that a given AABB will be inserted into all the region it intersects at
+    /// the layer `n`. And it will also be inserted into all the regions it intersects at the smaller layers
+    /// (the layers `< n`), but only for the regions that already exist (so we don't have to discretize
+    /// our AABB into the layers `< n`). This involves a fair amount of bookkeeping unfortunately, but
+    /// this has the benefit of keep the overall complexity of the algorithm O(1) in the typical specially
+    /// coherent scenario.
+    ///
+    /// From an implementation point-of-view, our hierarchical SAP is implemented with the following structures:
+    /// - There is one `SAPLayer` per layer of the hierarchical grid.
+    /// - Each `SAPLayer` contains multiple `SAPRegion` (each being a region of the grid represented by that layer).
+    /// - Each `SAPRegion` contains three `SAPAxis`, representing the "classical" SAP algorithm running on this region.
+    /// - Each `SAPAxis` maintains a sorted list of `SAPEndpoints` representing the endpoints of the AABBs intersecting
+    ///   the bounds on the `SAPRegion` containing this `SAPAxis`.
+    /// - A set of `SAPProxy` are maintained separately. It contains the AABBs of all the colliders managed by this
+    ///   broad-phase, as well as the AABBs of all the regions part of this broad-phase.
+
+
+Some of my own (horribly naive) ideas about collision detection:
+    Idea 0: brute force, n^2. Works okayish for ~1,000 objects.
+    Idea 1: octtree, recomputed every frame
+        impl 1: 
+            basic tree; ea level contains what is in it (id ptrs), but nothing smaller
+            ea node can only collide with itself or those lower
+
+    Idea 2:
+        octree
+        each object has a bitfield indicating region memberships
+        for "expected steady" objects (e.g. bullets, constant moving objects)
+            when velocity or acceleration change, compute expected membership changes and a counter of when to expect them
+            decrement and apply these membership changes, otherwise never check for new memberships
+        occassionally recenter the origin around the player
+
+        we could reduce the amount of collision detection work needed by making each player responsible only for checking collisions
+            of their objects against authority >= their player number
+    Idea 3:
+        octtree
+
+Other collision detection ideas:
+    https://www.reddit.com/r/gamedev/comments/1cssyn/sweep_and_prune_vs_quadtree_or_similar/
+    https://www.reddit.com/r/gamedev/comments/1xbnmq/question_regarding_extremely_fast_spatial/
+    http://www.codercorner.com/SAP.pdf
+    https://gamedev.stackexchange.com/questions/87625/sweep-and-prune-vs-quad-tree-when-all-objects-are-dynamic-moving
+    https://gamedev.stackexchange.com/questions/57470/are-collision-detection-always-on2
+    
+    techniques:
+        simple grid / buckets, 
+            pros: great for well-bound object sizes
+        "dynamic icoseptree", 
+        AABB tree,
+            pros: great for ray casting
+            "The key is that the objects, when put the tree, have their AABB inflated in the direction of their velocity by some platform and use-case amount. When the object moves, if it doesn't travel outside of the AABB, the tree is not modified. This effectively amortizes the cost of tree updates over multiple frames."
+            "This structure is normally paired with a OverlappingPairCache - a cache that stores A/B pairs of objects. 
+            Every frame that cache is walked and collisions performed between them."
+            http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?f=4&t=9800
+            http://www.randygaul.net/2013/08/06/dynamic-aabb-tree/
+        multi-axis sweep and prune, 
+
+Dynamics, Collision Detection, Collision Response:
+    https://www.youtube.com/watch?v=-_IspRG548E
+    dynamics:
+        Position, Velocity, Force, Mass
+    collision detection:
+        ea object has a collider
+        find the collision points between each pair
+            the nearest points to ea other,
+            can find depth of collision
+    solvers: 
+        impulse from a collision
+        position correction
+        after finding collision pairs, call solvers
+
+    https://blog.winter.dev/2020/designing-a-physics-engine/
+    https://www.youtube.com/c/TheChernoProject/videos
+    https://www.toptal.com/game/video-game-physics-part-i-an-introduction-to-rigid-body-dynamics
+
+https://pybullet.org/wordpress/
+
+Gilbert–Johnson–Keerthi algorithm (GJK)
+    https://www.youtube.com/watch?v=MDusDn8oTSE
+    detecting collision between convex polygons
+    https://blog.winter.dev/2020/gjk-algorithm/
+
+Expanding Polytope algorithm:
+    respond to collisions
+    https://blog.winter.dev/2020/epa-algorithm/
+
+Continuous collision detection:
+    https://www.youtube.com/watch?v=7_nKOET6zwI
+    standard contact constraint:
+        v_rel * norm >= 0
+    "in-elastic", "restitution"
+    goal: a method for computing time of impact between two convex polygons
+        ray-casting works fine if shapes aren't too oblong, and static vs dynamic only
+        "shape cast": assume no rotation, just translate shape and find first collision point
+        brute force: try each edge against each other edge
+
+    conservative advancement:
+        t = 0
+        d = compute_distance(t) // GJK
+
+        while abs(d) > tolerance && t < 1
+            delta = abs(d)/velocity_bound
+            t = t + delta
+            d = compute_distance(t)
+        end
+
+        if t < 1
+            time_of_impact = t
+        else
+            no_collision
+        end
+
+    Bilateral Advancement:
+        Deepest point solder:
+            Root finder w/ seperation function
+        GJK to find closest features
+        in 3D: consider edge vs edge too
+
+    This guy made Box2D
+
+https://box2d.org/about/
+
+"My order of studying physics engine is like this : 
+    David Baraff paper
+    Chris Hecker column
+    Box2D Articles
+"
+
+https://www.youtube.com/watch?v=SHinxAhv1ZE
+    "As a Physics Programmer, it is our job to understand constraints"
+    Game Graphics: shaders
+    Game Physics: constraints
+    Standard constraints:
+        "revolute", "prysmatic"
+    We create beautiful, accurate constraints but we're saddled with crappy solvers
+    To solve precisely: we need cubic time and quadratic memory
+    For games: we need linear time and linear memory
+
+    Everything starts with the position constraint
+    Position constraint example:
+        Need position constraint,
+        Need velocity constraint,
+        Need to know about impulses,
+            "Apply impulses to steer the box so the velocity constraint is satisfied"
+    
+    When we have many bodies, we need to do global constraint solving to be accurate
+    But in games, we can't afford that, so we often iteratively solve the local problems
+        over and over and hope they converge.
+    Understanding convergance of iterative solutions:
+        You have some fraction (0,1), and you multiply your error by this every iteration
+            if it's small, you converge quickly
+            if it's large, you converge slowly
+    
+    Mass ratios are often a difficult problem
+        for two circles stacked, itr needed = 3 * mass_ratio + 2
+
+    One trick: warm start the converge using the solution from the last frame
+        or iterate a few times per time step and pass results to next frame
+
+    Block solver:
+        instead of being totally local or fully global, try ~4 constraints at a time
+    
+    We don't use acceleration constraints, because for rigid bodies, 
+        collisions are instantanious and so you need an infinite force 
+        to fix the acceleration.
+
+    Velocity constraints work well with friction
+
+    Common method for solving position errors:
+        velocity steering: tweak velocity to undo unwanted overlap
+            problem: you're adding kenetic energy
+            problem: constraints look less solid
+        pseudo-velocity: like velocity steering but it's a seperate 
+            value that only exists for that time step, so there is no 
+            momentum
+            simpler in some ways, no time involved (?)
+    
+    Are position constraints better than velocity constraints?
+        With cloth solvers, we work directly with position
+        With character solvers: 
+            you likely don't want rigid body rules
+            example, character moving into a plane:
+                move character to target point, then project onto the plane
+
+    The biggest difference with 3D is rotations become a lot more complex
+
+    acceleration constraints: almost never (never?)
+    velocity constraints: force field, ...
+    position constraints: character controller
+
+Bend Physic Engine to Your Will:
+    https://www.youtube.com/watch?v=NwPIoVW65pE
+
+GJK explained:
+    https://www.youtube.com/watch?v=ajv46BSqcK4
+    support point: point farthest from origin along a direction
+    to check collision between two convex objects, you just need a support function for each
+
+Rocket League Physics:
+    https://www.youtube.com/watch?v=ueEmiDM94IE
+    uses Bullet, open source, can modify
+    fast, single-threaded physics
+        handles many frames at once (not that many objects)
+    120hz physics
+        more consistent
+    Vehical system:
+        use force/accel curve instead of gears/transmission
+        mass: keep consistent, ignore when applying forces
+        no longitudinal friction, simplify lateral friction
+            slide_ friction = curve(side_speed / (side_speed + forward_speed))
+        apply friction force at center of mass
+            suspension done in animation system
+        don't put physical wheel locations at visual wheel locations
+        stability: apply a rolling torque whenever a vehical isn't all the way on the ground
+            tried and gave up on yaw and pitch
+            once a wheel is on the ground, also give downward linear force
+
+Interacting with 3D Geometry:
+    https://www.youtube.com/watch?v=GpsKrAipXm8
+
+Highly optimized collision detection in Titan Fall:
+    https://www.youtube.com/watch?v=6BIfqfC1i7U
+
+"Anatomy of a Physics Engine"
+    https://www.gamedevs.org/uploads/anatomy-of-physics-engine.pdf
+        Counter acting goals:
+            Fast Computations / Interactivity
+            Robustness / Works no matter what
+            Accuracy / Physical correct or plausible
+            Problem size / The whole world
+        Common optimizations:
+            Collision Broadphase / Avoid costly narrowphase using
+                1. Approximate bounding shape
+                2. Spatial data structure and/or spatial sorting to avoid n^2 tests
+                Sweep and prune, uniform grid, dynamic BVH tree
+            Constraint Setup
+                Precompute info that is constant during all the iterations 
+                    Friction, jacobian data, cross products
+                Split the constraints for parallel processing (batching)
+            Simulation islands can “go to sleep” when they become stable
+                i.e. when forces and motion remain unchanged
+                When an object enters the island’s bounds...
+                ...the island wakes up
+    https://ubm-twvideo01.s3.amazonaws.com/o1/vault/GDC2014/Presentations/Coumans_Erwin_Physics_for_Game.pdf
+
+TO WATCH:
+    https://www.youtube.com/watch?v=7S-_vuoKgR4
+    https://www.youtube.com/watch?v=P-WP1yMOkc4
+    https://www.youtube.com/watch?v=1RphLzpQiJY
+    "See Gino van den Bergen's talk"
+        https://archive.org/details/GDC2013VanDenBergen_201511 ?
+    "GDC 2013 Physics Tutorial"
+    "Stop my Constraints from Blowing Up!"
+
+Colliders & rigidbody architecture:
+    colliders have:
+    - shape, size info, position info, physics on/off
+    - if an object has multiple physics colliders, it is essentially the same as having a union collider of all of those
+        - maybe objects only have one physics collider and one of the types of physics colliders it can have is a composite (union) collider
+    - in Unity, objects can have children that are automatically position relative
+        - when a collider has an event, we could traverse to the parent
+    
+In unity:
+    ea obj has a transform
+    ea obj can have children objs
+    ea obj can have N components
+
+    box collider: center xyz, size xyz
+    sphere collider: center xyz, radius
+    mesh collider: convex yes/no,
+    capsule: center xyz, radius, height, direction x-axis, y-axis, z-axis
+

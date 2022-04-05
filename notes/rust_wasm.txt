@@ -1,0 +1,56 @@
+References:
+https://developer.mozilla.org/en-US/docs/WebAssembly/Rust_to_wasm
+https://rustwasm.github.io/docs/book/
+https://www.rust-lang.org/what/wasm
+
+Rust community stuff:
+    https://youtu.be/XH4sXBa06ig
+
+"WASI"
+    https://wasi.dev
+    https://hacks.mozilla.org/2019/03/standardizing-wasi-a-webassembly-system-interface/
+
+https://wasmtime.dev
+    https://docs.wasmtime.dev/lang-rust.html
+    https://github.com/bytecodealliance/wasmtime/tree/main/cranelift
+
+https://wasmer.io
+    https://wasmer.io/wasmer-vs-wasmtime (wasmer is faster?)
+
+singlepass
+    https://medium.com/wasmer/a-webassembly-compiler-tale-9ef37aa3b537
+
+wasm<->js
+    https://rustwasm.github.io/docs/book/game-of-life/implementing.html
+    Minimizing copying into and out of the WebAssembly linear memory
+    Minimizing serializing and deserializing
+
+Trunk
+    Max Approved(TM)
+    https://github.com/thedodd/trunk
+    https://trunkrs.dev
+
+"Interface Types"
+    https://github.com/WebAssembly/interface-types/blob/master/proposals/interface-types/Explainer.md
+
+wasm-pack
+    https://github.com/rustwasm/wasm-pack
+    used by rapier
+
+With bundler
+    https://github.com/evanw/esbuild/issues/408#issuecomment-699688651
+    https://esbuild.github.io/plugins/#webassembly-plugin
+
+Loading without tool?
+    // https://www.snowpack.dev/guides/wasm
+    // Example: Load WASM in your project
+    const wasm = await WebAssembly.instantiateStreaming(
+    fetch('/example.wasm'),
+    /* { ... } */
+    );
+
+Rustcraft uses wgpu:
+    https://github.com/dskart/rustcraft
+
+Mandelbrot perf with wasm:
+    https://blog.feather.systems/jekyll/update/2021/06/21/WasmPerformance.html

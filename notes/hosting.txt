@@ -1,0 +1,27 @@
+Free:
+    GitHub + GLFS ?
+        https://docs.github.com/en/github/managing-large-files/about-storage-and-bandwidth-usage
+        per account:
+             1 GB of free storage
+             1 GB a month of free bandwidth
+    Assets are images hosted elsewhere?
+    All assets are local and must be hosted by the person
+        github pages
+            Published GitHub Pages sites may be no larger than 1 GB
+            GitHub Pages sites have a soft bandwidth limit of 100GB per month
+
+Cheap:
+    blob storage
+    CDN
+        https://www.fastly.com/pricing/
+        https://www.cloudflare.com/plans/
+        https://azure.microsoft.com/en-us/services/cdn/
+            "$0.081 per GB"
+        https://cloud.google.com/cdn
+            Cache egress - North America: 10 GiB
+            Inter-Region Cache Fill: 2 GiB
+            USD 0.88
+            Total Estimated Cost: USD 0.88 per 1 month
+        Or maybe just:
+          raw.githubusercontent.com ?
+          or ghcr.io / https://github.com/features/packages?

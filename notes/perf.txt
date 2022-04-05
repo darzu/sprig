@@ -1,0 +1,113 @@
+Critique of TSC:
+    "Their code makes pretty heavy use of megamorphic object shapes and unnecessary 
+    dynamic property accesses (both well-known JavaScript speed bumps)"
+        https://esbuild.github.io/faq/#why-is-esbuild-fast
+        https://mrale.ph/blog/2015/01/11/whats-up-with-monomorphism.html
+        https://github.com/microsoft/TypeScript/issues/39247
+
+Rant about JS:
+    https://hackernoon.com/how-it-feels-to-learn-javascript-in-2016-d3a717dd577f
+    
+GPU memory access costs:
+  https://computergraphics.stackexchange.com/questions/37/what-is-the-cost-of-changing-state
+    TODO: read for good GPU perf tips
+  most to least expensive state changes:
+    render target (~60K/s)
+    program (~300K/s)
+    ROP
+    texture bindings (~1.5M/s)
+    vertex format
+    UBO bindings
+    vertex bindings
+    uniform updates (~10M/s)
+
+On latency (via Redblob):
+    https://pavelfatin.com/typing-with-pleasure/
+    https://www.youtube.com/watch?v=vOvQCPLkPt4
+    https://www.inkandswitch.com/slow-software.html
+
+Efficient code is harder to change, from redblob lementing mapgen4:
+    https://twitter.com/redblobgames/status/1362852520096198656
+
+Visualizing perf:
+    https://dubroy.com/blog/visualizing-packrat-parsing/
+
+Animometer Test
+    On Mac M1, WebGPU, soft limit of ~85,000 triangle to stay at 60fps
+    http://austin-eng.com/webgpu-samples/samples/animometer
+    "renderBundles" is essential
+    "dynamicOffsets" has no impact (so far)
+
+For automatic lod'ing:
+    Maybe convert to volumetric first, then use marching cubes (or square voxels) to create lower detail versions?
+
+GPU architectures:
+    https://rastergrid.com/blog/gpu-tech/2021/07/gpu-architecture-types-explained/
+
+Debugging html5 games:
+    https://www.html5rocks.com/en/tutorials/games/abouttracing/
+    chrome://tracing/
+    console.time("update"),
+    console.timeEnd("update");
+
+JS obj polymorphism is bad:
+    https://mrale.ph/blog/2015/01/11/whats-up-with-monomorphism.html
+
+Elements kinds in V8: https://v8.dev/blog/elements-kinds
+    - SMI is fastest:
+        The range for Smis on 64-bit platforms is -2^31 to 2^31-1 (2³¹≈ 2*10⁹)
+        -2147483648 to 2147483647
+    - Avoid reading beyond the length of the array
+    - for-of, .forEach, and iterative for loop -- all on par
+    - Avoid elements kind transitions
+    - Prefer arrays over array-like objects
+    - Avoid polymorphism
+        https://v8.dev/blog/elements-kinds#avoid-polymorphism
+        if a function only ever takes one element kind, it's faster
+        built-ins like Array.prototype.forEach are much more efficient at this
+    - Avoid creating holes
+
+    Kinds:
+         // The "fast" kind for elements that only contain SMI values. Must be first
+        // to make it possible to efficiently check maps for this kind.
+        PACKED_SMI_ELEMENTS,
+        HOLEY_SMI_ELEMENTS,
+
+        // The "fast" kind for tagged values. Must be second to make it possible to
+        // efficiently check maps for this and the PACKED_SMI_ELEMENTS kind
+        // together at once.
+        PACKED_ELEMENTS,
+        HOLEY_ELEMENTS,
+
+        // The "fast" kind for unwrapped, non-tagged double values.
+        PACKED_DOUBLE_ELEMENTS,
+        HOLEY_DOUBLE_ELEMENTS,
+
+        // The "slow" kind.
+        DICTIONARY_ELEMENTS,
+
+        // Elements kind of the "arguments" object (only in sloppy mode).
+        FAST_SLOPPY_ARGUMENTS_ELEMENTS,
+        SLOW_SLOPPY_ARGUMENTS_ELEMENTS,
+
+        // For string wrapper objects ("new String('...')"), the string's characters
+        // are overlaid onto a regular elements backing store.
+        FAST_STRING_WRAPPER_ELEMENTS,
+        SLOW_STRING_WRAPPER_ELEMENTS,
+
+        // Fixed typed arrays.
+        UINT8_ELEMENTS,
+        INT8_ELEMENTS,
+        UINT16_ELEMENTS,
+        INT16_ELEMENTS,
+        UINT32_ELEMENTS,
+        INT32_ELEMENTS,
+        FLOAT32_ELEMENTS,
+        FLOAT64_ELEMENTS,
+        UINT8_CLAMPED_ELEMENTS,
+
+Check for more perf tips:
+    https://v8.dev/blog
+
+In a big world with float problems: subtact before multiply
+    https://youtu.be/Ur53sJdS8rQ?t=812

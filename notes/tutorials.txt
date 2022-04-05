@@ -1,0 +1,29 @@
+From the Portal guys:
+    You really want the player to figure it out instead of you telling them
+    they remember it better, and have the epiphony moment
+    get rid of false negatives: 
+        make sure they know when they didn't get it
+        make sure they get it when they should have
+    new mechanic:
+        introduction -> saturation -> graduation -> combination
+
+Vids from CS50:
+    https://www.youtube.com/channel/UCcabW7890RKJzL968QWEykA
+
+Each feature we add:
+    step 1. exploration: from the simple-cube example (or other minimal dependencies), build the feature
+    step 2. implementation: take what we've learned, apply it to our existing system
+    step 3. edge cases, debugging, clean up
+
+Starting out at Sprigland:
+  """
+  Welcome to Sprigland!
+  Some people come here to make games.
+  Some people come here to draw, sculpt, or program art.
+  Here's your backpack!
+  What would you like to do first?
+    Play some games
+    Draw art
+    Make a game
+  In your backpack are leafs of art, pages of code, and acordion folders to organize it all.
+  """

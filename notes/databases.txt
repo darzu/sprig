@@ -1,0 +1,15 @@
+From first principles:
+    https://ccorcos.github.io/filing-cabinets/
+ 
+
+Databases:
+  Perfect domain for PL
+  best problem domain and solution domain
+  you don't have to commit to the representation of ur data
+    specify treversals first, optimize data structures later
+  ECS r just weak databases
+  egg is best as a database
+  datalog is a better syntax for a subset of a SQL + recursion
+  intro:
+    teaches relational algebra and ways of thinking
+  

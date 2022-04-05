@@ -1,0 +1,41 @@
+'cus cool kids spell math with an "s".
+
+General exponentials?
+    https://www.youtube.com/watch?v=O85OWBJ2ayo
+
+Lerp, unlerp, remap:
+    https://twitter.com/LimnuApp/status/733743111109640192
+    https://limnu.com/sketch-lerp-unlerp-remap/
+
+Complex numbers and conformal mapping
+    https://wordsandbuttons.online/complex_numbers_and_conformal_mapping.html
+
+Bilinear up/down sampling:
+    https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/
+
+Discrete Differential Geometry:
+    Exterior Algebra:
+        https://www.youtube.com/watch?v=paEKgbiCyPk&list=PL9_jI1bdZmz0hIrNCMQW1YmZysAiIYSSS&index=6
+
+Lots of great old math papers:
+    https://twitter.com/gabrielpeyre
+
+Annotated equations:
+    https://agilescientific.com/blog/2021/1/14/illuminated-equations
+
+"Lyapunov function":
+    https://twitter.com/ahmedallibhoy/status/1347600886986469381
+
+Elliptic Curve Cryptography :
+    https://www.allaboutcircuits.com/technical-articles/elliptic-curve-cryptography-in-embedded-systems/
+
+Graph experiment / viz:
+    https://www.desmos.com/calculator
+
+Interval algebra:
+    https://www.ics.uci.edu/~alspaugh/cls/shr/allen.html
+
+Dot product: a nice way to measure similarity of vectors
+
+Homogeneous coordinates:
+    https://www.youtube.com/watch?v=o1n02xKP138

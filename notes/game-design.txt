@@ -1,0 +1,134 @@
+from: https://www.youtube.com/watch?v=4LTtr45y7P0
+    The Red Flag List:
+    1. I don't give a crap about your back story.
+    2. I don't give a crap about your inventory system either.
+    3. I'm not going to design your game for you.
+    4. Pillars are not hooks!
+    5. You never explained what the player does.
+    6. Don't use realism to excuse bad design.
+    7. You don't need a framing device if it's not necessary.
+    8. Is it really a game, or just a knockoff?
+    9. You never mentioned your glaringly obvious tech risk.
+    10. Your proof of concept does not prove your concept.
+    11. Having lots of shitty art doesn't make them less shitty.
+    12. I can't tell what's placeholder and what's not.
+    13. You polished too early.
+    14. Your sample dialog sucks.
+    15. You're pandering to the latest tech craze.
+    16. You just pitched a phone game to a console publisher.
+    17. You're making a Gone Home/Minecraft/PUBG ripoff.
+    18. You want us to negotiate a risky IP deal for you.
+    19. I know more about your monetization than your mechanics.
+    20. You have no idea how much money/people/time you need to make this thing.
+    21. You don't have a team.
+    22. Your business plan is based on outliers.
+    23. You seem like you'd be a huge pain in the ass to work with.
+    24. You expect me to know who you are.
+    25. You're annoyed that I'm asking questions.
+    26. We're trying to watch the pitch on your phone.
+    27. You brought a laptop, but no headphones.
+    28. You're hungover/drunk/high.
+    29. Don't trash other games/companies/developers.
+    30. You need to take a shower.  
+
+    The Root Questions:
+    A. Is this game worth making?
+    B. Can this team make the game?
+
+    Dos:
+    Be enthusiastic
+    Be honest
+    Sell your hook
+    Know your scope
+
+local coop, single screen, one joy-con games:
+    dungeon crawler (twin sticks but not)
+    overcooked
+    fighting
+        duck game
+        smash bros
+    unrailed
+    
+We need log on server:
+    with hats,
+        someone has authority over hats
+        event authority is hat owner
+        interacting with field on player that gets synced
+    RPC with server
+    
+Unrailed Post Mortem:
+    https://www.youtube.com/watch?v=eXdNYkB90hk
+    timeline:
+        first did a mock up in blender
+        then created a physical board game prototype
+        then basic game as a student project
+        then funding for bigger game
+    problem: not clear enough goal
+    solution 1: short term goals:
+        make it to the next station
+        secondary objective
+        the bolt (quest)
+    the incentives for those became a currency for upgrades
+    the shop:
+        originally idea was that players could vote on upgrades
+        instead it became obvious what peoples intents where based on position
+        and you could "vote" against them by dashing into them forcing them to drop the wagon
+    biomes:
+        originally random, with monotonic increasing speed
+        now: biomes are progression with speed reset
+        push your luck mechanic of staying in biome to get more bolts
+    mp:
+        communication via emojis
+    map gen:
+        "we are pretty certain they are solvable"
+    felt most demotivated towards release it seemed?
+        having a new partner helped motivation (bilibili)
+    working on game for 9 mon before early access
+    down to 3 people 2 weeks before launch
+    expectations:
+        no financial success, end after release
+    players per day was steadily downward after launch
+    their game was mentioned on some game show
+    saved games:
+        didn't think people would play for long stints
+        introduced one-time saves
+    high scores
+    online replay of high scores (!)
+    single player:
+        tried doing a singleplayer bot
+    the mysterious keys for the final station were a big hit and draw for having a goal
+    for UI:
+        got more and more complex
+        implemented their own style sheet
+    used MonoGame (not Unity)
+    console porting:
+        C#->IL->C++->platform toolchains
+        did switch port themselves
+            the most technically difficult b/c of memory issues and other
+        handed of the other ports to special companies
+    exhibitions: 15 (incl GDC, Pax )
+        7 by publisher alone
+        made merch and cut out paper stuff
+    did some dev log filming for the publisher, but thought they were too cringy
+    favoreable review by Concerned Ape on steam
+    if u could do it over:
+        use unity
+            monogame -> c++ tool chain didn't work well
+        target certain partners earlier
+        start w/ online from day 1
+    cross play:
+        tedious certification agreements w/ console manufacturers
+
+    Daryl big take aways:
+        prototype scene in blender
+
+FTL post mortem:
+    https://www.youtube.com/watch?v=P4Um97AUqp4
+
+    high premium on everything on screen at once
+    over and over kept simplifying
+        e.g. instead of subgrid within room, just have one room
+    their conclusions:
+        one core experience guides the project
+        nothing but main goal is set in stone
+        iterate and follow the fun

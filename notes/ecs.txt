@@ -1,0 +1,48 @@
+ECS:
+  https://ecsy.io/docs/#/
+  https://ecsy.io/docs/#/manual/Architecture?id=queries
+  https://github.com/ecsyjs/ecsy-three
+  https://github.com/kaliber5/ecsy-babylon
+
+Union -> Tuple:
+  https://github.com/microsoft/TypeScript/issues/13298#issuecomment-468114901
+  https://github.com/microsoft/TypeScript/issues/13298#issuecomment-468888651
+
+Fixed length tuple:
+  https://github.com/microsoft/TypeScript/issues/26223#issuecomment-410733998
+
+Recursive conditional types:
+  https://github.com/microsoft/TypeScript/pull/40002
+
+Example from Mozilla ECSY:
+  // MovableSystem
+  class MovableSystem extends System {
+    // This method will get called on every frame by default
+    execute(delta, time) {
+      // Iterate through all the entities on the query
+      this.queries.moving.results.forEach(entity => {
+        var velocity = entity.getComponent(Velocity);
+        var position = entity.getMutableComponent(Position);
+        position.x += velocity.x * delta;
+        position.y += velocity.y * delta;
+
+        if (position.x > canvasWidth + SHAPE_HALF_SIZE) position.x = - SHAPE_HALF_SIZE;
+        if (position.x < - SHAPE_HALF_SIZE) position.x = canvasWidth + SHAPE_HALF_SIZE;
+        if (position.y > canvasHeight + SHAPE_HALF_SIZE) position.y = - SHAPE_HALF_SIZE;
+        if (position.y < - SHAPE_HALF_SIZE) position.y = canvasHeight + SHAPE_HALF_SIZE;
+      });
+    }
+  }
+
+  // Define a query of entities that have "Velocity" and "Position" components
+  MovableSystem.queries = {
+    moving: {
+      components: [Velocity, Position]
+    }
+  }
+
+ECS cadences
+  Cadences can be disjoint (renderer vs simulation) 
+  or multiples of each other (net to simulation)
+
+callSystem

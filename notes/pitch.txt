@@ -1,0 +1,27 @@
+"build your own 3D multiplayer game in the browser with blocks, typescript, or rust"
+
+Games should be easier to make.
+Programming should be easier to learn.
+
+Programs should be easier to understand.
+
+Emphasis on gameplay.
+Ruthelessly simplify your abstractions.
+
+Programming should be easier to learn.
+All considerations are secondary to gameplay.
+All abstractions must be ruthelessly simplified.
+The goals are one and the same.
+
+Games first and foremost must be FUN.
+Programs first and foremost must be UNDERSTANDABLE.
+
+You can't iterate on something you don't understand.
+You shouldn't program something you won't enjoy.
+
+https://twitter.com/andreintg/status/1405771128035954694
+    "the real dream: a Unity/UE competitor based on SDF tech, with standard web deploy. 
+    A game-jam bazooka with strong Flash vibes. The pieces are all out there already."
+    
+    "A game engine like Dreams, but running on PC and exporting to the usual target platforms, 
+    would be very, very, very, very, very, very successful."

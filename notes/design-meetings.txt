@@ -1,0 +1,54 @@
+talk with Doug oct 19th:
+  has time stamp with senders clock
+  can track a skew estimator
+  snap hard all attributes
+  simulate forward best as you can by dt
+    simulating player might not be worth it
+    bullet worth it
+    maybe path projection?
+    objects should have option to simulate themselves forward
+    ballistic by default
+      
+  shooting at point blank range is weird
+
+  problem:
+    seeing bullet go through you
+
+  guest fires bullet at host
+  host is responsible for resolving collision
+  guest is responsible for bullet's motion
+
+  two ways to handle events:
+   temp way: local thing
+   auth way: gameplay impact
+
+   non-rendering of bullet can be:
+     runs every frame, doesn't change state
+     "stateless" and "harmless"
+   event represents a change in state
+
+  ECS
+
+  reference frame:
+    tree of transforms
+    gameplay lets you change the parent
+
+  collider:
+    rotated rectangles
+
+  make it look cool?
+    meshes for boats?
+    object animations?
+      walking animation of some kind
+      animations need to be forward simulated
+    abstract stuff: makes it clear its not the final project
+    renderer: 
+      [ ] shadows
+      [ ] better looking materials
+
+  TO FIX: webgl
+
+EVENTS AGAIN:
+  1. distributed event resolution based on who could possibly be involved in the event (instead of always the host)
+  2. add sequence numbers to entities so that we can sync w/o syncing the whole log
+  3. cannonical / non-reorderable state must be updated by events only

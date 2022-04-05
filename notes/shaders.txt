@@ -1,0 +1,247 @@
+Outdoor lighting in realtime demo scenes:
+    https://www.iquilezles.org/www/articles/outdoorslighting/outdoorslighting.htm
+    "make sure your diffuse colors are around 0.2, and no much brighter except for very special situations."
+    "Don't even bother trying to do tweak lights, materials, diffuse fallof shapes or anything if you don't 
+        have the gamma correction curve in the end of your rendering pipeline. Really..."
+    "please, do not modulate the sun light with ambient occlusion!!"
+    "[...] replace the sky dome with a single directional light falling straight vertically on the set. 
+        You can colorize the light based on the angle of incidence if you need to create sunset sky lighting."
+    " since indirect lighting has to be gathered in the hemisphere, using the same ambient occlusion 
+        signal used for the sky dome works okeish in this case as well."
+
+    // compute materials
+    vec3 material = doFantasticMaterialColor( pos, nor );
+    // lighting terms
+    float occ = doGorgeousOcclusion( pos, nor );
+    float sha = doGreatSoftShadow( pos, sunDir );
+    float sun = clamp( dot( nor, sunDir ), 0.0, 1.0 );
+    float sky = clamp( 0.5 + 0.5*nor.y, 0.0 1.0 );
+    float ind = clamp( dot( nor, normalize(sunDir*vec3(-1.0,0.0,-1.0)) ), 0.0, 1.0 );
+    // compute lighting
+    vec3 lin  = sun*vec3(1.64,1.27,0.99)*pow(vec3(sha),vec3(1.0,1.2,1.5));
+            lin += sky*vec3(0.16,0.20,0.28)*occ;
+            lin += ind*vec3(0.40,0.28,0.20)*occ;
+    // multiply lighting and materials
+    vec3 color = material * lin;
+    // apply fog
+    color = doWonderfullFog( color, pos );
+    // gamma correction
+    color = pow( color, vec3(1.0/2.2) );
+    // display
+    displayColor = color;
+
+Fog:
+    https://www.iquilezles.org/www/articles/fog/fog.htm
+
+Ambient Occlusion:
+    https://www.iquilezles.org/www/articles/multiresaocc/multiresaocc.htm
+        "the most popular technique among the hobbyists has been the SSAO"
+        "[SSAO] is also the most abused and probably wrongly applied effect (closely followed by bloom)"
+        main issues of SSAO: halos, performance, and range of distances at which the technique produces results
+        "One mistake most beginners do is to use the occlusion as a multiplier to the whole lighting equation. 
+            That's is NOT A GOOD IDEA"
+        ""Ambient" [...] probably means all lights but the key lights, meaning the sky dome lighting, 
+            all of the bounce lighting, and the rims"
+        "do not implement the infamous "hemispherical occlusion""
+
+        uniform vec3 unKernel[16];
+        uniform sampler2D unTexZ;
+        uniform sampler2D unTexN;
+        uniform sampler2D unTexR;
+        float ssao( in vec2 pixel ) {
+            vec2  uv  = pixel*0.5 + 0.5;
+            float z   = texture2D( unTexZ, uv ).x;      // read eye linear z
+            vec3  nor = texture2D( unTexN, uv ).xyz;    // read normal
+            vec3  ref = texture2D( unTexD, uv ).xyz;    // read dithering vector
+            // accumulate occlusion
+            float bl = 0.0;
+            for( int i=0; i<16; i++ ) {
+                vec3  of = orientate( reflect( unKernel[i], ref ), nor );
+                float sz = texture2D( unTexZ, uv+0.03*of.xy).x;
+                float zd = (sz-z)*0.2;
+                bl += clamp(zd*10.0,0.1,1.0)*(1.0-clamp((zd-1.0)/5.0,0.0,1.0));
+            }
+            return 1.0 - 1.0*bl/16.0;
+        }
+
+    https://developer.playcanvas.com/en/user-manual/graphics/lighting/ambient-occlusion/
+
+TO LEARN:
+    screen space ambient occlusion (SSAO)
+        "reflection based dithering"
+        dithering: "none, per pixel 2d rotation matrix or random reflection vector"
+        "you can do this at a quarter resolution and then bilaterally upsample"
+    color bleeding (SSCB)
+    physically correct specular BRDFs
+    Box Projected IBL (reflections)
+
+PBR basics:
+    https://developer.playcanvas.com/en/user-manual/graphics/physical-rendering/
+    Diffuse: aka albedo
+    Specular: aka reflected 
+    energy conservation: more reflection means less albedo
+    metalness: metals tend to be more reflective and non-metals reflect white usually
+    Fresnel: "angle at which you are viewing a surface influences how reflective that surface appears"
+    Microsurface: aka roughness/glossiness
+
+"multiresolution ambient occlusion":
+    https://www.iquilezles.org/www/articles/multiresaocc/multiresaocc.htm
+
+Compute shader slime mold webgl:
+  https://greggman.github.io/doodles/slime/slime.html
+
+Redblob on grass:
+  https://www.redblobgames.com/x/2108-grass-shader/
+
+Flat shading in PlayCanvas:
+  https://omar-shehata.medium.com/flat-shading-in-webgl-with-playcanvas-a-quick-tip-97d1bd85258f
+
+Flat shading:
+  "Provoking vertex" https://www.khronos.org/opengl/wiki/Primitive#Provoking_vertex
+  "flat" interpolation qualifier https://www.khronos.org/opengl/wiki/Type_Qualifier_(GLSL)#Interpolation_qualifiers
+  waiting on interplate(flat) support in Chrome's Tint WGSL parser:
+    https://bugs.chromium.org/p/tint/issues/detail?id=746&q=interpolate&can=2
+  https://gamedev.stackexchange.com/questions/154854/how-do-i-implement-flat-shading-in-glsl
+    vec3 xTangent = dFdx( viewPosition );
+    vec3 yTangent = dFdy( viewPosition );
+    vec3 faceNormal = normalize( cross( xTangent, yTangent ) );
+
+"Geometry shaders":
+  " are for creating new geometry on the fly. It's taking geometry of one type as input, and then 
+  emitting a different number of the same, or another type of geoAmetry as output. You could have 
+  points transformed to a series of triangles or quads."
+    https://www.reddit.com/r/vulkan/comments/c9ws13/do_we_need_geometry_shader_anymore/
+  http://www.joshbarczak.com/blog/?p=667 (they are slow)
+  Maybe also a way of doing per-face data?
+  https://docs.microsoft.com/en-us/previous-versions//bb205146(v=vs.85)?redirectedfrom=MSDN
+  Don't use GS: https://twitter.com/pointinpolygon/status/1270695113967181827
+  Don't use GS: https://github.com/gpuweb/gpuweb/issues/1239
+
+"Mesh shaders":
+  https://devblogs.microsoft.com/directx/dev-preview-of-new-directx-12-features/#directx-mesh-shader
+  https://developer.nvidia.com/blog/introduction-turing-mesh-shaders/
+
+Shaders Wow:
+    Slime and ants: https://www.youtube.com/watch?v=X-iSQQgOd1A
+    https://www.shadertoy.com
+
+Game shaders for beginners:
+  https://news.ycombinator.com/item?id=19895218
+  https://www.youtube.com/watch?v=kfM-yu0iQBk
+  https://github.com/lettier/3d-game-shaders-for-beginners
+
+3D Game Shaders for Beginners
+  https://github.com/lettier/3d-game-shaders-for-beginners
+  With multiple lights, accumulate diffuse and specular per light
+  For each shadow casting light, store a shadow map and shadowView matrix
+  four main vectors per fragment: 
+    vector to the light (light dir) [w/ norm: "angle of incidence"]
+    normal
+    reflection (mirrors light dir) [w/ norm: "angle of reflection"]
+    view vector towards the camera
+  types of lights: direction, point, spotlight
+  spotlights use spotDirection and spotCosCutoff
+  attenuation, light's influence based on distance
+  to combine diffuse & specular use addition
+  "There should only ever be one ambient light", uses special ambient color (seperate from diffuse)
+  This is known as "Phong" lighting?
+  Blinn-Phong: produces elliptical specular reflections vs spherical specular reflections
+    sometimes more computationally efficient
+  Fresnel: "alters the reflectiveness of a surface based on the camera or viewing angle"
+    essential for water: looking straight on you can see through water, at shallow view it's like a mirror
+  rim highlighting: brighter light towards edges  
+  Cel shading: 2D obj looks 3D by applying gradiant; 3D obj looks 2D by discretizing
+  Deferred rendering:
+    a screen space lighting technique
+    wait to perform the lighting calc until after the geometry fragments have been culled
+    phase 1: save positions/depths, normals, materials (for each fragment?) to geometry buffer (G buffer)
+      "this is mostly a read-only phase so its performance cost is minimal"
+    phase 2: compute ambient, diffuse, and specular colors plus Shadow and normal mapping
+    forward: scales with lights x fragments
+    deferred: scales with lights x pixels
+    disadvantages: transparency, memory usage, AA
+  blurs: box/mean (simplest), Gaussian (fancier), median (maintains edges, difficult to compute), Kuwahara (maintains edges, faster than median)
+  bloom:
+    parameters: size, seperation, threshold, amount,
+
+
+  float diffuseIntensity = dot(normal, unitLightDirection);
+  if (diffuseIntensity < 0.0) { continue; } // move to next light
+  diffuseTemp = clamp(diffuseTemp, vec4(0), diffuseTex); 
+  float specularIntensity = max(dot(reflectedDirection, eyeDirection), 0);
+  // default: constAtt = 1, linAtt = 0, quadAtt = 1
+  float attenuation = 1 / (constAtt + linAtt * lightDistance + quadAtt * (lightDistance * lightDistance));
+  vec4 outputColor = ambient + diffuse + specular + p3d_Material.emission;
+  // with fresnel:
+  vec4 specular = materialSpecularColor * lightSpecularColor * pow(max(dot(eye, reflection), 0.0), shininess);
+  float rimLightIntensity = max(0.0, 1.0 - dot(eye, normal));
+  // with rim:
+  vec4 outputColor = ambient.rgb + diffuse.rgb + specular.rgb + rimLight.rgb + emission.rgb;
+  // with cell shading: (ditto with specular)
+  diffuseIntensity = step(0.1, diffuseIntensity); // step() returns 0 if input < edge else 1.
+  float fogIntensity = clamp((position.y - near) / (far - near), fogMin, fogMax);
+
+
+Ben Cloward on shaders:
+  Shaders in Anthem:
+    https://www.youtube.com/watch?v=IjQWRjWZGn0
+  https://www.youtube.com/user/bcloward/videos?view=0&sort=p&flow=grid
+
+Computer shader pathfinding:
+  https://www.youtube.com/watch?v=1OSXWhd3hvI
+
+TO LEARN COMPUTE SHADERS:
+    Limitations ?
+    From JS / WASM ?
+    What can it be used for?
+        Physics?
+        Algorithms?
+        Celular atomita?
+        Procedural gen?
+    101:
+      https://news.ycombinator.com/item?id=27396634
+      https://www.youtube.com/watch?v=DZRn_jNZjbw
+
+Book of Shaders (online):
+  https://thebookofshaders.com
+  https://twitter.com/patriciogv
+
+"Shader god" (says Max):
+  https://www.shadertoy.com/user/iq
+  https://www.iquilezles.org/www/articles/voxellines/voxellines.htm
+
+Compute shader tutorial ($400?):
+  https://paprika.studio/workshops/compute/
+
+Shader School:
+  https://github.com/stackgl/shader-school
+
+SDFs (Signed Distance Field)
+    https://joyrok.com/What-Are-SDFs-Anyway
+    live coding greek temple:
+        https://www.youtube.com/watch?v=-pdSjBPH3zM
+    https://www.iquilezles.org/www/articles/raymarchingdf/raymarchingdf.htm
+    https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
+    https://www.iquilezles.org/www/articles/sdfbounding/sdfbounding.htm
+    2D: 
+        https://www.iquilezles.org/www/articles/distfunctions2d/distfunctions2d.htm
+    https://www.cs.cmu.edu/~kmcrane/Projects/QuaternionJulia/paper.pdf
+    for collision:
+        https://gamedev.stackexchange.com/questions/66636/what-are-distance-fields-and-how-are-they-applicable-to-collision-detection
+        https://www.cocos.com/en/building-collision-detection-using-signed-distance-field
+
+Atmosphere:
+    https://www.youtube.com/watch?v=DxfEbulyFcY
+
+Technical challenges #TechnicallyAChallenge:
+  https://twitter.com/hashtag/TechnicallyAChallenge?src=hashtag_click
+
+Technically Art blog, 106 issues:
+  https://halisavakis.com/category/technically-art/
+  https://halisavakis.com/my-portfolio/
+
+Hologram effect:
+  https://twitter.com/jopilatje/status/1391001257997967360
+
+Vaccume game:
+  https://www.youtube.com/watch?v=PGk0rnyTa1U

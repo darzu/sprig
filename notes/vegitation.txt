@@ -1,0 +1,195 @@
+
+Grass shaders:
+  grass (Minion's Art):
+    https://www.patreon.com/posts/40090373
+  grass, flowers, bricks
+    https://www.patreon.com/posts/32245525
+  https://upvoid.com/devblog/2013/02/prototype-grass/
+  https://roystan.net/articles/grass-shader.html
+  grass via point cloud:
+    https://www.youtube.com/watch?v=b2AlyCNbYmY
+  wind sway:
+    https://youtu.be/OxueTbRwXAo?t=1938
+  brackeys unity grass wind sway:
+    https://www.youtube.com/watch?v=L_Bzcw9tqTc
+
+GDC Horizon Zero vegitation:
+  https://www.youtube.com/watch?v=wavnKZNSYqU&t=645s
+  "Global wind force field", centered around player
+  150 micro seconds, compute shader
+    "simulates in influence of force on 4 categories of spring settings updates 3d textures that shaders sample"
+    4 categories: trees, plants, grass, special (banner, traps, canvas)
+  "skinning approximation stored in vertex colors of our mesh"
+    https://developer.nvidia.com/gpugems/gpugems3/part-i-geometry/chapter-6-gpu-generated-procedural-wind-animations-trees
+  trees:
+    3 motions: whole asset, branches, leaves
+    less rigid at top than bottom
+    store per vertex ("vertex skinning"?:
+      height gradiant (distance from ground) [from position?]
+      branch gradiant (distance from trunk) [blue channel]
+      leaf gradiant (distance from branch) [red channel]
+      index / offset (used for time offset) [green channel]
+      baked ambient occlusion) [alpha channel]
+    5 variables (controllable per asset):
+      bend of tree: rigidity
+        (most plants remove this)
+      bend of branches: bend (motion along vector of wind), sway (motion perpendicular to wind), lift (scale up and down motion)
+      leaves: "amount": "the length of the Sampled Force drives a tiny 3D Simplex Noise 
+        Texture (16x16x16) used for motion of leaves"
+      ramp fn: f(x) = (x * (amount +1))/(x + amount)
+        "aspen tree leaves needed to move earlier"
+  grass:
+    "grass needed to be everywhere"
+    "wanted it to be geometry, no alpha planes"
+    "squash it with our feet and move it with hands"
+    three LODs (20-36 tris high shader, 10-18 tris low shader, 10-18 tris low shader)
+      "low shader" means some functionality "LOD-ed out" per-mesh
+      e.g. for grass: no animated vertex program, no sampled normal texture
+    motion: wind (~20%) and "ambient motion" (~80%)
+    global ambient:
+      x = 2 * sin(1 * (objx + objy + objz + time)) + 1
+      y = 1 * sin(2 * (objx + objy + objz + time)) + 0.5
+      z = 0
+    small ambient:
+      Disp = (0.065 * sin(2.65 * (pointWS + pointWY + pointWZ + time))) * normal * (1, 1, 0.35)
+    camera based tilting:
+      "want to avoid geometry disappearing when looking down"
+      Disp = [Vec3 (0,1,0) View to Obj Space] * objZ
+    ground hugging:
+      grass cards where clipping terrain
+      disp = (0, 0, sampleheightmap - objCenterZ)
+    for LOD:
+      scale animation down over distance (so it can be removed completely)
+      squash vertically over distance (easier for lod and perf ?)
+  shading:
+    "transparency, even alpha tested, are expensive"
+    vegitation relies A LOT on alpha testing
+    "pixel program: alpha"
+      depth only pass (very fast)
+      geometry pass:
+        depth compare (depth is equal)
+        0% overdraw
+    profile: 
+      [with depthprime] 11.7% geometry, 10% shadows, 10% depthprime
+      [without depthprime] 45.6% geometry, 11% shadows
+    tried:
+      alpha textures, Signed Distance textures
+      artist controls size in shader, distance quality
+      snow(flakes) in our shader adjusted alpha
+      however: adjusting alpha in shader was too costly
+    instead: (saved 3% GPU budget)
+      "custom mip chain" (... don't understand)
+      seems to have to do with making the alpha testing simpler by reducing geometry at distance?
+      basically, move work done by shader into texture sample
+      "make sure alpha fits in cache" (huge win for grasses)
+      mip-maps essential for anti-aliasing ?
+    need very good anti-aliasing
+      "decima engine: advances in lighting and AA"
+        4 samples total
+        2 samples per rendered pixel per frame
+        ~1ms per frame at 1080 / PS4
+  pixel program: geometry buffers (g-buffers)
+    Decima uses deferred shading
+    vegitation shaders write to these g-buffers
+      normal, albedo, roughness, reflectance ("fixed at 4% dielectric"), transluency amount, transluency diffusion, depth, motion vectors
+    vegitation textures:
+      alpha, tangent space normal, albedo, transparency amount, mask, ambient occlusion (not on grass)
+      packed into:
+        BC7: NMT, MSK, AO
+        BC7: CLR, TRA
+        BC4: Alpha
+  pixel program: normals
+    to avoid card-like appearance head on:
+      adjust vertex normals
+      abs() z component of Viewspace normal
+      grass and most of our Trees Canopies
+      "don't render normals facing away from camera"
+      use polygon mesh to generate normals, not the "correct" normals on the cards
+  pixel program: albedo
+    "all our vegitation is colorized"
+    colorization texture array:
+      based on asset type
+        artist drive
+        U-component
+      based on world data
+        erosion, flow, closeness to water baked into 512x512 worlddata texture
+        V-component
+      based on ecotope
+        place in world
+        W-component
+    colorize: vegitation, rocks, terrain, dust, lichen
+  Asset pipeline:
+    first, created a cinimatic "vision" video showing the vegitation aspiration (10fps), used as "benchmark"
+    lots of time spent on LOD optimization
+      didn't want to rely on software solutions to reduce triangles
+    build lowest LOD first
+      first are happy with look, performance, silhouette, canopy density
+      refine for higher LODs
+    workflow: maya / speedtree / photoshop
+      export LOD-tree w/ bones speedtree -> maya using houdini (setup vertex data branch, trunk, leaves, etc)
+    tree LODs:
+      ~10000 tri (high), ~2600 tri (high), ~1200 tri (low), ~200 tri (low + fade to billboard), ~12 (billboard)
+    plant LODs:
+      ~2000 tri (high), ~800 tri (high), ~140 (low), ~8 (billboard)
+  Shadow casting:
+    for sun shadows, four cascades
+    compartment cascade:
+      1024x1024 (Aloy only)
+    cascade 0:
+      2048x2048 to 8m away from camera
+    cascade 1:
+      2048x2048 to 80m away from camera
+    distant cascade:
+      1536x1536 1.5km x 1.5km around camera
+      "height field based system"
+    cascade 0 & 1:
+      "standard shadow map"
+      crossfade w/ smooth alpha blend
+      every obj in 0 will render with LOD as if 5 meters from camera
+      every obj in 1 will redner with LOD as if 25 meters from camera
+    "seperate shadow casters from visual LOD chain"
+      Shadow LOD 1: lod3 visual mesh, alpha tested, animated, depth only shader
+      Shadow LOD 2: fewer triangles, non-alpha tested, non-animated, depth only shader
+  Summary: what worked well
+    depth prime
+    custom mip chain
+    LOD up not down
+    Shadow caster seperation
+    Placement system
+    All in-house
+
+Grass plan:
+  Heightmap data
+    provides fns for sampling at any point, height and normal
+
+Grass shading:
+  Maybe based on sway height, let through super green light
+
+Grass shading:
+  https://twitter.com/NedMakesGames/status/1416065312538120199
+  https://www.youtube.com/watch?v=tWb2lC0-U-I
+  
+Grass shading:
+  https://www.patreon.com/posts/june-2021-update-52054819
+
+Grass via compute shader:
+  https://twitter.com/KelvinvanHoorn/status/1400403927015858176
+
+  pleasing landscape colors:
+    https://twitter.com/ajugglerstale/status/1411354361427529732
+
+  Fuzzy grass:
+    https://twitter.com/BruteForceGame/status/1375856793088319500
+
+Animal crossing trees / pivot caching:
+  https://www.youtube.com/watch?v=V1nkv8g-oi0
+  one big mesh, store pivot points for each "leaf"
+  
+Snow:
+  https://www.youtube.com/watch?v=BXo97H55EhA
+
+trees compilation:
+  http://wiki.polycount.com/wiki/Foliage
+  
+  fluffy trees study:
+    http://simonschreibt.de/gat/airborn-trees/

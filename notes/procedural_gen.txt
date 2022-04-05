@@ -1,0 +1,179 @@
+https://www.redblobgames.com/maps/mapgen4/
+https://github.com/redblobgames/mapgen4/
+https://github.com/redblobgames/1843-planet-generation
+http://experilous.com/1/project/planet-generator/2014-09-28/planet-generator.js
+http://bit-player.org/2011/a-slight-discrepancy
+http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/
+https://www.complexity-explorables.org/explorables/baristas-secret/
+
+voronoi:
+    https://en.wikipedia.org/wiki/Voronoi_diagram
+    https://www.redblobgames.com/x/1929-voronoi-percolation/
+
+Don't use noise:
+    https://www.youtube.com/watch?v=ztemzsxso0U&t=1s
+
+phasor patterns:
+  https://www.shadertoy.com/view/WtjfzW
+
+Dungeon gen:
+    https://www.boristhebrave.com/2021/04/10/dungeon-generation-in-unexplored/
+
+Graph rewriting:
+    https://www.boristhebrave.com/2021/04/02/graph-rewriting/
+    https://www.boristhebrave.com/2021/04/02/phantomgrammar-and-ludoscope/
+
+"Wave function collapse":
+    https://github.com/mxgmn/WaveFunctionCollapse
+    https://assetstore.unity.com/packages/tools/level-design/tessera-procedural-tile-based-generator-155425
+    https://www.youtube.com/watch?v=2SuvO4Gi7uY
+        explained like Sodoku
+        References:
+            https://marian42.de/article/wfc/
+            http://oskarstalberg.com/game/wave/wave.html
+            https://robertheaton.com/2018/12/17/wavefunction-collapse-algorithm/
+    https://www.youtube.com/watch?v=0bcZb-SsnrA
+        Bad North
+        
+
+"Delaunay triangulation of 2D points":
+    Used by Redblob
+    https://github.com/mapbox/delaunator (JS)
+
+Tectonic plates:
+    https://nickmcd.me/2020/12/03/clustered-convection-for-simulating-plate-tectonics/
+
+Sculpting noise:
+    https://www.redblobgames.com/articles/noise/2d/#spectrum
+
+Generating mazes:
+    https://bwinton.github.io/mazes/
+
+Procedural gen as sculpting:
+    https://jobtalle.com/random_procedural_generation.html
+
+Procedural color pallets:
+    https://iquilezles.org/www/articles/palettes/palettes.htm
+
+Generative art guy:
+    https://inconvergent.net/#about
+
+Triangulated sphere:
+    https://twitter.com/OskSta/status/1338825080844021760
+    https://www.redblobgames.com/x/1842-delaunay-voronoi-sphere/
+    https://www.newcastle.edu.au/__data/assets/pdf_file/0017/22508/13_A-fast-algorithm-for-constructing-Delaunay-triangulations-in-the-plane.pdf
+
+Big height map stuff:
+    https://casual-effects.com/research/McGuire2005Heightfield/index.html
+
+Triangle grids (different from Redblob):
+    https://www.boristhebrave.com/2021/05/23/triangle-grids/
+    If u look at the connectivity of corners on a triangle grid, it's actually a hex grid!
+    If u look at the connectivity of corners on a hex grid, it's actually a triangle grid!
+    Why use triangles:
+        They’re always planar
+            as a height map, each vertex can be at a different heights
+        They’re simple
+            "triangles [are] the best shape for any algorithm that scales with the number of points or edges"
+            Simplex Noise uses a triangle grid and is prefered over Perlin Noise; because of better interpolation (?)
+        They have nicer geometry
+            straight edges (unlike hex)
+    Marching cubes (2d) on a triangle grid: https://www.shadertoy.com/view/WtfGDX
+    consider making vertices "stepable":
+        https://www.boristhebrave.com/2021/05/27/some-triangle-grid-extensions/
+        all triangles sharing only a vertex are two steps away
+        all triangles sharing an edge are one step away
+
+Trihex grids / kagome lattices:
+    https://www.boristhebrave.com/2021/05/27/some-triangle-grid-extensions/
+
+
+No Man's Sky talk: https://www.youtube.com/watch?v=C9RyEiEzMiU
+    "Engines dictate design decisions"
+    it's bad for progress if everybody uses someone else's engine
+    every new genre was created in a new engine
+    Engine veteran, wanted to write something new:
+        3D terrain (caves and overhangs)
+        procedurally textured
+        populated with buildings, forests, creatures
+        mountains several km tall
+        planets millions of sqr km
+        diverse planet shapes
+        AI flying between planets
+        untestable content
+    Y is no longer up (surprisingly difficult)
+    Always outside the bounds of float point
+    great rant about placing a waypoint mark w/ arbitrary planets:
+        https://youtu.be/C9RyEiEzMiU?t=728
+    2GB download at launch
+        (1.5GB was audio, 200MB UI, 300MB for all planet stuff and textures)
+    "proc gen for web dev is cool area"
+    noise gen (GPU) -> ploygonisation (CPU) -> Render+Physics+Population (CPU+GPU)
+    wanted: surprising, playable, performant
+    attempt 1: trilinear filtered low density layered perlin noise field
+        like minecraft. minecraft worlds are amazing
+        problem: if you don't use blocks, when everything is smooth it looks boring
+    attempt 2: high density perlin noise
+        post processing with feature selection, contrast, etc
+        too repetative, unrealistic
+        gradient is too constant, distribution of shape change isn't realistic
+    attempt 3: alter noise fields using real world DEM data as trainer
+        try to extract shape change data
+        in the real world, feautres are exponentially distributed
+        turns out, the real world is just too boring
+    attempt 4: "uber noise"
+        above experimentation took ~3-4 years
+        common noise methods:
+            perlin,
+                basic noise
+            simplex, 
+            billow, 
+                abs(perlin)
+            ridged, 
+                1-abs(perlin)
+            worley,
+            analytical derivative based alterations,
+                creates realistic erosion
+                have features change in relation to different octaves of noise
+                knowing the slope at a point helps you distribute features much better (e.g. erosion, rivers)
+            domain warping,
+                feeding noise into itself
+                (looks super cool!)
+    "Uber Noise":
+        Domain warping, slope erosion, altitude erosion, ridges, 
+        plateaus, terraces, rolling hills, non-repeating features,
+        analytical derivative,
+        as you go between octaves, have different emphasis on different octaves
+
+
+    when you're generating a single voxel, you cannot query the voxels around you
+        in general you can't get that context
+
+Loading large world, Ghost of Tsushima:
+    https://www.youtube.com/watch?v=Ur53sJdS8rQ
+    initial estimates: ~12mb per tile, 100m tiles, 6,400 tiles
+    break down goals:
+        3->2.5mb terrain
+        24->0mb terrain physics
+        12->1mb vegitation
+        0.5->0.1mb lighting
+        6->3mb pathing
+    new tech:
+        large scale/robust editting?
+        proc-gen tools
+        mission tools
+        optimized instance overhead?
+        more data in shared core
+        needed fine grain streaming??
+    final disc:
+        textures: 18g, mesh: 2.8g, terrain: 5.2g, streamed mesh: 0.9g, movies: 6.8g,
+        cutscenes: 2.5g, music: 2.1g, dialog: 2g
+        total: 56g
+    memory break down: https://youtu.be/Ur53sJdS8rQ?t=450
+    
+Procedural wall:
+  https://www.artstation.com/blogs/marcchevry/YMYR/making-of-minimoys-procedural-wall
+
+Procedural terrain w/ errosion:
+  https://github.com/dandrino/terrain-erosion-3-ways
+  https://news.ycombinator.com/item?id=29724597
