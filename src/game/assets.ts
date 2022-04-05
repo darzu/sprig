@@ -58,6 +58,8 @@ const AssetTransforms: Partial<{
   spacerock: mat4.fromScaling(mat4.create(), [1.5, 1.5, 1.5]),
 };
 
+// TODO(@darzu): these sort of hacky offsets are a pain to deal with. It'd be
+//    nice to have some asset import helper tooling
 const SHIP_OFFSET: vec3 = [3.85 - 2.16, -0.33 - 0.13, -8.79 + 4.63];
 const blackoutColor: (m: Mesh) => Mesh = (m: Mesh) => {
   m.colors.map((c) => vec3.zero(c));

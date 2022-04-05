@@ -1,28 +1,23 @@
-// // goals:
-// // sequencer, play i-vi Chords, play melody notes
-
 import { CanvasDef } from "./canvas.js";
 import { Component, EM, EntityManager } from "./entity-manager.js";
 import { range } from "./util.js";
 
-// let canvasRef = document.getElementById('sample-canvas') as HTMLCanvasElement;
-// let canvasCtx = canvasRef.getContext('2d')!;
-// canvasCtx.fillStyle = "#ddd";
-// canvasCtx.fillRect(0, 0, canvasRef.width, canvasRef.height);
+// NOTE: basically this whole file just tries to implement
+//    what Andrew suggests as a good way to start making good sounding
+//    music:
+//    https://www.youtube.com/watch?v=rgaTLrZGlk0
+
+const MAX_VOLUME = 0.02;
 
 // TODO(@darzu): create this somewhere as a proper resource
 // create web audio api context
 const audioCtx = new AudioContext();
 
-// create Oscillator node
-let oscillator: OscillatorNode | null;
-
-const MAX_VOLUME = 0.02;
-
 function playFreq(freq: number, durSec: number, offset: number) {
   const startTime = offset;
   const stopTime = offset + durSec;
 
+  // TODO(@darzu): are these resources reusable?
   const o = audioCtx.createOscillator();
 
   const g = audioCtx.createGain();

@@ -20,6 +20,8 @@ export function registerDeleteEntitiesSystem(em: EntityManager) {
     (entities) => {
       for (let entity of entities) {
         // TODO: remove from renderer
+        // TODO(@darzu): yuck, we just wrote a destructor. Also not sure
+        //    this is serializable or network-able
         if (OnDeleteDef.isOn(entity)) entity.onDelete(entity.id);
 
         em.keepOnlyComponents(entity.id, [DeletedDef, SyncDef]);
