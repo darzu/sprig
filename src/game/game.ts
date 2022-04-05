@@ -94,6 +94,8 @@ import { splitMesh } from "../render/mesh-pool.js";
 import { registerUpdateLifetimes } from "./lifetime.js";
 import { registerCreateEnemies } from "./enemy.js";
 import { registerMusicSystems } from "../music.js";
+import { GameState, GameStateDef } from "./gamestate.js";
+import { registerRestartSystem } from "./restart.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -264,6 +266,7 @@ export function registerAllSystems(em: EntityManager) {
   registerSyncSystem(em);
   registerSendOutboxes(em);
   registerEventSystems(em);
+  registerRestartSystem(em);
   registerDeleteEntitiesSystem(em);
   // TODO(@darzu): confirm this all works
   registerUpdateSmoothedTransform(em);
@@ -357,6 +360,7 @@ export function createServerObjects(em: EntityManager) {
   // let { id: cubeId } = em.newEntity();
   // em.addComponent(cubeId, CubeConstructDef, 3, LIGHT_BLUE);
 
+  em.addSingletonComponent(GameStateDef);
   createPlayer(em);
   // createGround(em);
   registerBoatSpawnerSystem(em);
@@ -390,8 +394,9 @@ function registerBoatSpawnerSystem(em: EntityManager) {
 
   em.registerSystem(
     null,
-    [BoatSpawnerDef, PhysicsTimerDef, GroundSystemDef],
+    [BoatSpawnerDef, PhysicsTimerDef, GroundSystemDef, GameStateDef],
     (_, res) => {
+      if (res.gameState.state !== GameState.PLAYING) return;
       const ms = res.physicsTimer.period * res.physicsTimer.steps;
       res.boatSpawner.timerMs -= ms;
       // console.log("res.boatSpawner.timerMs:" + res.boatSpawner.timerMs);
@@ -409,7 +414,7 @@ function registerBoatSpawnerSystem(em: EntityManager) {
         // create boat(s)
         const boatCon = em.addComponent(em.newEntity().id, BoatConstructDef);
         const left = Math.random() < 0.5;
-        const z = res.groundSystem.nextScore + 100;
+        const z = res.groundSystem.nextScore * 10 + 100;
         boatCon.location = vec3.fromValues(
           -(Math.random() * 0.5 + 0.5) * GROUNDSIZE,
           10,
