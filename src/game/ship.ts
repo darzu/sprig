@@ -35,6 +35,8 @@ import { MusicDef } from "../music.js";
 import { CameraDef, PlayerEntDef } from "./player.js";
 import { InputsDef } from "../inputs.js";
 import { GroundSystemDef } from "./ground.js";
+import { InteractableDef } from "./interact.js";
+import { GameState, GameStateDef } from "./gamestate.js";
 
 export const ShipConstructDef = EM.defineComponent(
   "shipConstruct",
@@ -83,6 +85,7 @@ EM.registerSerializerPair(
 
 export const GemDef = EM.defineComponent("gem", () => {
   // TODO(@darzu):
+  true;
 });
 
 const criticalPartIdxes = [0, 3, 5, 6];
@@ -160,6 +163,23 @@ export function registerShipSystems(em: EntityManager) {
         em.ensureComponentOn(gem, PositionDef, [0, 0, -1]);
         em.ensureComponentOn(gem, PhysicsParentDef, e.id);
         em.ensureComponentOn(gem, GemDef);
+        em.ensureComponentOn(gem, ColorDef);
+        // create seperate hitbox for interacting with the gem
+        const interactBox = em.newEntity();
+        const interactAABB = copyAABB(createAABB(), res.assets.spacerock.aabb);
+        // interactAABB.max[0] += 1;
+        vec3.scale(interactAABB.min, interactAABB.min, 2);
+        vec3.scale(interactAABB.max, interactAABB.max, 2);
+        em.ensureComponentOn(interactBox, PhysicsParentDef, gem.id);
+        em.ensureComponentOn(interactBox, PositionDef, [0, 0, 0]);
+        em.ensureComponentOn(interactBox, ColliderDef, {
+          shape: "AABB",
+          solid: false,
+          aabb: interactAABB,
+        });
+
+        em.ensureComponentOn(gem, InteractableDef, interactBox.id);
+
         e.ship.gemId = gem.id;
 
         // create cannons
@@ -197,9 +217,32 @@ export function registerShipSystems(em: EntityManager) {
   );
 
   em.registerSystem(
+    [GemDef, InteractableDef],
+    [GameStateDef, PhysicsResultsDef, MeDef, InputsDef],
+    (gems, res) => {
+      for (let gem of gems) {
+        if (DeletedDef.isOn(gem)) continue;
+        if (res.gameState.state !== GameState.LOBBY) continue;
+
+        // TODO: use interaction system to dedup this code
+        const players = res.physicsResults.collidesWith
+          .get(gem.interaction.colliderId)
+          ?.map((h) => em.findEntity(h, [PlayerEntDef, AuthorityDef]))
+          .filter((p) => p && p.authority.pid === res.me.pid);
+        if (!players?.length) continue;
+        if (res.inputs.keyClicks["e"]) {
+          res.gameState.state = GameState.PLAYING;
+        }
+      }
+    },
+    "startGame"
+  );
+
+  em.registerSystem(
     [ShipDef, PositionDef],
-    [MusicDef, InputsDef, CameraDef, GroundSystemDef],
+    [MusicDef, InputsDef, CameraDef, GroundSystemDef, GameStateDef],
     (ships, res) => {
+      if (res.gameState.state !== GameState.PLAYING) return;
       const numCritical = criticalPartIdxes.length;
       for (let ship of ships) {
         let numCriticalDamaged = 0;
@@ -213,58 +256,8 @@ export function registerShipSystems(em: EntityManager) {
           numCriticalDamaged === numCritical ||
           res.inputs.keyClicks["backspace"]
         ) {
-          const gem = em.findEntity(ship.ship.gemId, [
-            WorldFrameDef,
-            PositionDef,
-            PhysicsParentDef,
-          ]);
-          if (gem) {
-            // ship broken!
-            // TODO(@darzu): RUN OVER
-            res.music.playChords([1, 2, 3, 4, 4], "minor");
-            // setTimeout(() => {
-            //   // TODO(@darzu): game over music
-            //   // alert(`Game over (distance: ${score})`);
-            //   createNewShip();
-            //   em.
-            // }, 2000);
-            for (let partId of ship.ship.partIds) {
-              const part = em.findEntity(partId, [ShipPartDef]);
-              if (part) em.ensureComponentOn(part, DeletedDef);
-            }
-            em.ensureComponentOn(ship, DeletedDef);
-            if (ship.ship.cannonLId)
-              em.ensureComponent(ship.ship.cannonLId, DeletedDef);
-            if (ship.ship.cannonRId)
-              em.ensureComponent(ship.ship.cannonRId, DeletedDef);
-
-            const players = em.filterEntities([
-              PlayerEntDef,
-              PositionDef,
-              RotationDef,
-            ]);
-            for (let p of players) {
-              if (PhysicsParentDef.isOn(p)) p.physicsParent.id = 0;
-              console.log("foo");
-              vec3.copy(p.position, [0, 100, 0]);
-              quat.rotateY(p.rotation, quat.IDENTITY, Math.PI);
-              p.player.manning = false;
-            }
-
-            quat.identity(res.camera.rotation);
-            res.camera.targetId = 0;
-
-            vec3.copy(gem.position, gem.world.position);
-            em.ensureComponentOn(gem, RotationDef);
-            quat.copy(gem.rotation, gem.world.rotation);
-            em.ensureComponentOn(gem, LinearVelocityDef, [0, -0.01, 0]);
-            em.removeComponent(gem.id, PhysicsParentDef);
-            em.ensureComponentOn(gem, LifetimeDef, 4000);
-
-            res.groundSystem.initialPlace = true;
-
-            createNewShip(em);
-          }
+          res.music.playChords([1, 2, 3, 4, 4], "minor");
+          res.gameState.state = GameState.GAMEOVER;
         }
       }
     },
@@ -273,8 +266,9 @@ export function registerShipSystems(em: EntityManager) {
 
   em.registerSystem(
     [ShipDef, LinearVelocityDef],
-    [],
+    [GameStateDef],
     (ships, res) => {
+      if (res.gameState.state !== GameState.PLAYING) return;
       for (let s of ships) {
         s.linearVelocity[2] = s.ship.speed;
         s.linearVelocity[1] = -0.01;
