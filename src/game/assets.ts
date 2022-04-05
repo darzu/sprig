@@ -43,6 +43,11 @@ const RemoteMeshes = {
 type RemoteMeshSymbols = keyof typeof RemoteMeshes;
 
 const RemoteMesheSets = {
+  // TODO(@darzu): both of these are doing "cell fracture" in Blender
+  //    than exporting into here. It'd be great if sprigland could
+  //    natively do that. Doing it natively would be great b/c there
+  //    is a lot of translate/scale alignment issues when we have
+  //    a base model and a fractured model. Very hard to make changes.
   boat_broken: "boat_broken.sprig.obj",
   ship_broken: "barge1_broken.sprig.obj",
 } as const;
@@ -223,14 +228,52 @@ function createGridPlane(width: number, height: number): Mesh {
   );
 }
 
-const RAW_SHIP_AABBS: AABB[] = [
+export const SHIP_AABBS: AABB[] = [
+  { min: [-20.3, 1.7, -31.3], max: [13.5, 3.75, 16.9] },
+  { min: [-11.6, -2.7, 17.2], max: [4.8, 13.75, 42.8] },
+  { min: [-11.6, 13.1, 16.4], max: [4.8, 15.4, 18.0] },
+  { min: [-21.7, 13.8, 42.3], max: [13.7, 17.6, 43.3] },
+  { min: [-12.9, 13.6, 16.4], max: [-11.1, 15.4, 25.6] },
+  { min: [3.1, 13.6, 16.4], max: [4.9, 15.4, 25.6] },
+  { min: [13.1, 13.4, 20.9], max: [14.9, 16.4, 42.7] },
+  { min: [-23.1, 13.4, 20.9], max: [-21.3, 16.4, 42.7] },
+  { min: [-21.7, 0.4, 22.5], max: [13.7, 13.75, 42.7] },
+  { min: [-21.7, -5.6, -35.7], max: [13.7, 3.75, 16.9] },
+  { min: [-22.55, -2.8, -12.4], max: [-20.65, 6.75, 16.0] },
+  { min: [12.65, 0.65, -12.4], max: [14.55, 6.75, 16.0] },
+  { min: [12.25, 0.65, -29.9], max: [14.55, 6.75, -18.1] },
+  { min: [-22.55, 0.65, -29.9], max: [-20.25, 6.75, -18.1] },
+  { min: [-21.45, 0.65, -34.7], max: [-16.95, 6.75, -29.7] },
+  { min: [-17.85, 0.65, -39.7], max: [-13.35, 6.75, -34.7] },
+  { min: [-13.45, 0.65, -44.7], max: [-8.95, 6.75, -39.7] },
+  { min: [-8.95, 0.65, -49.5], max: [0.95, 6.75, -44.5] },
+  { min: [0.05, 0.65, -44.7], max: [5.15, 6.75, -39.7] },
+  { min: [4.85, 0.65, -39.7], max: [9.95, 6.75, -34.7] },
+  { min: [9.25, 0.65, -34.7], max: [14.35, 6.75, -29.7] },
+  { min: [-13.35, -2.35, -44.9], max: [4.55, 3.75, -35.5] },
+  { min: [12.35, 0.65, -18.2], max: [15.25, 4.35, -12.2] },
+  { min: [-23.45, 0.65, -18.2], max: [-20.55, 4.35, -12.2] },
+  { min: [-21.15, 2.05, 16.9], max: [-12.85, 5.75, 19.1] },
+  { min: [-21.15, 4.05, 18.3], max: [-12.85, 7.75, 20.5] },
+  { min: [-21.15, 6.05, 19.7], max: [-12.85, 9.75, 21.9] },
+  { min: [-21.15, 8.05, 20.9], max: [-12.85, 11.75, 23.1] },
+  { min: [4.85, 8.05, 20.9], max: [13.15, 11.75, 23.1] },
+  { min: [4.85, 6.05, 19.7], max: [13.15, 9.75, 21.9] },
+  { min: [4.85, 4.05, 18.3], max: [13.15, 7.75, 20.5] },
+  { min: [4.85, 2.05, 16.9], max: [13.15, 5.75, 19.1] },
+  { min: [12.95, 6.45, 15.9], max: [14.65, 13.75, 20.9] },
+  { min: [-22.65, 6.45, 15.9], max: [-20.95, 13.75, 20.9] },
+];
+
+const RAW_BARGE_AABBS: AABB[] = [
   { min: [-5.1, -13.6, 83.35], max: [22.1, -11.6, 135.05] },
   { min: [19.2, -11.5, 83.35], max: [22.0, -9.5, 135.05] },
   { min: [-5.1, -11.5, 83.35], max: [-2.3, -9.5, 135.05] },
   { min: [-2.95, -11.5, 83.35], max: [19.55, -9.5, 86.05] },
   { min: [-2.95, -11.5, 132.25], max: [19.55, -9.5, 134.95] },
 ];
-export const SHIP_AABBS: AABB[] = RAW_SHIP_AABBS.map((aabb) => {
+export const BARGE_AABBS: AABB[] = RAW_BARGE_AABBS.map((aabb) => {
+  // TODO(@darzu): this is especially hacky offset/scale fixing
   const yShift = 10;
   aabb.min[1] += yShift;
   aabb.max[1] += yShift;
@@ -323,22 +366,9 @@ async function loadTxtInternal(relPath: string): Promise<string> {
   return txt;
 }
 async function loadMeshInternal(relPath: string): Promise<Mesh> {
-  // download
-  // TODO(@darzu): perf: check DEFAULT_ASSET_PATH once
-  let txt = await loadTxtInternal(relPath);
-
-  // parse
-  const opt = importObj(txt);
-  assert(
-    !!opt && !isParseError(opt),
-    `unable to parse asset (${relPath}):\n${opt}`
-  );
-  assert(opt.length === 1, "too many meshes; use loadMeshSet for multi meshes");
-
-  // clean up
-  const obj = unshareProvokingVertices(opt[0]);
-
-  return obj;
+  const res = await loadMeshSetInternal(relPath);
+  assert(res.length === 1, "too many meshes; use loadMeshSet for multi meshes");
+  return res[0];
 }
 async function loadMeshSetInternal(relPath: string): Promise<Mesh[]> {
   // download

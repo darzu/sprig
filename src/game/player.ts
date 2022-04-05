@@ -57,6 +57,8 @@ import { min } from "../math.js";
 import { ShipDef } from "./ship.js";
 import { GroundDef } from "./ground.js";
 
+// TODO(@darzu): it'd be great if these could hook into some sort of
+//    dev mode you could toggle at runtime.
 export const CHEAT = false;
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {

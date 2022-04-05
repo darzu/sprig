@@ -10,7 +10,7 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { Deserializer, Serializer } from "../serialize.js";
-import { Assets, AssetsDef, SHIP_AABBS } from "./assets.js";
+import { Assets, AssetsDef, BARGE_AABBS } from "./assets.js";
 import {
   AABBCollider,
   ColliderDef,
@@ -111,7 +111,7 @@ export function registerShipSystems(em: EntityManager) {
           shape: "Multi",
           solid: true,
           // TODO(@darzu): integrate these in the assets pipeline
-          children: SHIP_AABBS.map((aabb) => ({
+          children: BARGE_AABBS.map((aabb) => ({
             shape: "AABB",
             solid: true,
             aabb,
