@@ -187,3 +187,9 @@ Animal crossing trees / pivot caching:
   
 Snow:
   https://www.youtube.com/watch?v=BXo97H55EhA
+
+trees compilation:
+  http://wiki.polycount.com/wiki/Foliage
+  
+  fluffy trees study:
+    http://simonschreibt.de/gat/airborn-trees/

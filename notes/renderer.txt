@@ -170,6 +170,7 @@ RTX / ray tracing:
 
 pbr / physically based rendering:
   https://pbrt.org
+  https://www.pbr-book.org/3ed-2018/contents
 
 GPU API concepts compared:
   https://alain.xyz/blog/comparison-of-modern-graphics-apis
@@ -227,6 +228,8 @@ GPU perf for artists:
     https://news.ycombinator.com/item?id=21978146
 
 Frame analysis:
+  compilation:
+    http://www.adriancourreges.com/blog/
   RenderDoc:
     https://renderdoc.org
     https://spector.babylonjs.com (for WebGL)
@@ -410,3 +413,8 @@ Outlines:
   https://prideout.net/blog/distance_fields/
   https://blog.demofox.org/2016/02/29/fast-voronoi-diagrams-and-distance-dield-textures-on-the-gpu-with-the-jump-flooding-algorithm/
   https://shaderbits.com/blog/various-distance-field-generation-techniques
+  
+  overwatch and control use "sobol" for outlines?
+    https://www.youtube.com/watch?v=hxPQ2F96F9E
+    looks like a sampling technique:
+      https://www.pbr-book.org/3ed-2018/Sampling_and_Reconstruction/Sobol_Sampler

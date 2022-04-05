@@ -169,3 +169,12 @@ Vertex animation textures:
 
 Very cool low-poly insect-y procedural animation:
     https://youtu.be/kRVQYb9wzaU?t=358
+
+Notes w/ Doug:
+  Change in position, rot
+
+  Changing positions of vertices
+  changing colors
+
+Skeletal animation:
+  https://learnopengl.com/Guest-Articles/2020/Skeletal-Animation

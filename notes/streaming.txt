@@ -21,3 +21,9 @@ ffmpeg -i modeling_ship_aabbs.mov -filter:v "setpts=0.02*PTS" -vcodec libx265 -c
 ffmpeg -i modeling_ship_aabbs.mov -filter:v "setpts=0.02*PTS" modeling_ship_aabbs_3.mp4
 ffmpeg -i modeling_ship_aabbs_3.mp4 -vcodec libx265 -crf 28 modeling_ship_aabbs_4.mp4
 ffmpeg -i modeling_ship_aabbs.mov -filter:v "setpts=0.05*PTS" modeling_ship_aabbs_3.mp4
+
+Video editting:
+  auto cut out silences:
+    https://news.ycombinator.com/item?id=30194440
+    https://www.kapwing.com/tools/smart-cut
+    https://getrecut.com

@@ -29,3 +29,10 @@ Color interpolation viz:
 RYB:
     https://en.wikipedia.org/wiki/RYB_color_model
     used here: https://david.li/paint/
+
+LCH:
+  https://lea.verou.me/2020/04/lch-colors-in-css-what-why-and-how/
+
+HSLUV:
+  https://www.hsluv.org
+  https://www.kuon.ch/post/2020-03-08-hsluv/
