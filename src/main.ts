@@ -18,7 +18,7 @@ import { InputsDef, registerInputsSystem } from "./inputs.js";
 import { MeDef, JoinDef, HostDef, PeerNameDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";
 import { dbg } from "./debugger.js";
-import { RendererDef } from "./render_init.js";
+import { RendererDef } from "./render/render_init.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;

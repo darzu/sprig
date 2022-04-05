@@ -1,13 +1,18 @@
 // player controller component and system
 
-import { quat, vec2, vec3 } from "../gl-matrix.js";
+import { mat4, quat, vec2, vec3 } from "../gl-matrix.js";
 import { Inputs, InputsDef } from "../inputs.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { PhysicsTimerDef, Timer } from "../time.js";
 import { ColorDef } from "./game.js";
 import { spawnBullet } from "./bullet.js";
 import { FinishedDef } from "../build.js";
-import { CameraView, CameraViewDef, RenderableDef } from "../renderer.js";
+import {
+  CameraView,
+  CameraViewDef,
+  RenderableConstructDef,
+  RenderableDef,
+} from "../render/renderer.js";
 import {
   Frame,
   PhysicsParent,
@@ -30,16 +35,20 @@ import {
   SyncDef,
 } from "../net/components.js";
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
-import { Ray, RayHit } from "../physics/broadphase.js";
+import { copyAABB, createAABB, Ray, RayHit } from "../physics/broadphase.js";
 import { tempQuat, tempVec } from "../temp-pool.js";
-import { Mesh } from "../mesh-pool.js";
-import { Assets, AssetsDef } from "./assets.js";
+import { Mesh, scaleMesh, scaleMesh3 } from "../render/mesh-pool.js";
+import { Assets, AssetsDef, CUBE_FACES } from "./assets.js";
 import { LinearVelocity, LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../smoothing.js";
 import { getCursor, GlobalCursor3dDef } from "./cursor.js";
 import { ModelerDef, screenPosToRay } from "./modeler.js";
 import { PhysicsDbgDef } from "../physics/phys-debug.js";
 import { DeletedDef } from "../delete.js";
+import { createNoodleMesh, Noodle, NoodleDef, NoodleSeg } from "./noodles.js";
+import { assert } from "../test.js";
+import { vec3Dbg, vec3Mid } from "../utils-3d.js";
+import { min } from "../math.js";
 
 export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   return {
@@ -54,6 +63,11 @@ export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
     dropping: false,
     targetCursor: -1,
     targetEnt: -1,
+    // noodle limbs
+    leftLegId: 0,
+    leftFootWorldPos: [0, 0, 0] as vec3,
+    rightLegId: 0,
+    rightFootWorldPos: [0, 0, 0] as vec3,
   };
 });
 export type PlayerEnt = Component<typeof PlayerEntDef>;
@@ -153,7 +167,7 @@ export function registerStepPlayers(em: EntityManager) {
 
           // move player
           let vel = vec3.fromValues(0, 0, 0);
-          let playerSpeed = 0.001;
+          let playerSpeed = 0.0005;
           if (inputs.keyDowns["shift"]) playerSpeed *= 3;
           let trans = playerSpeed * dt;
           if (inputs.keyDowns["a"]) {
@@ -409,6 +423,222 @@ export function registerStepPlayers(em: EntityManager) {
     },
     "playerCursorUpdate"
   );
+
+  registerUpdateLegs(em);
+}
+
+function registerUpdateLegs(em: EntityManager) {
+  // TODO(@darzu): ideally we could impose an ordering constraint on this system,
+  //    it should run after the world frame has been updated, before render
+  em.registerSystem(
+    [PlayerEntDef, WorldFrameDef, PositionDef, LinearVelocityDef, RotationDef],
+    [PhysicsResultsDef],
+    (players, res) => {
+      for (let p of players) {
+        const leftLeg = em.findEntity(p.player.leftLegId, [
+          NoodleDef,
+          PositionDef,
+        ]);
+        const rightLeg = em.findEntity(p.player.rightLegId, [
+          NoodleDef,
+          PositionDef,
+        ]);
+        if (!leftLeg || !rightLeg) continue;
+
+        const centerOfPlayerWorld = vec3.clone(p.world.position);
+        const centerOfFeet = vec3Mid(
+          vec3.create(),
+          p.player.leftFootWorldPos,
+          p.player.rightFootWorldPos
+        );
+        centerOfFeet[1] = centerOfPlayerWorld[1]; // ignore Y component
+        const massOverhangDist2 = vec3.sqrDist(
+          centerOfPlayerWorld,
+          centerOfFeet
+        );
+
+        const massOverhangDistThreshold = 2;
+        const massOverhangDistThreshold2 = massOverhangDistThreshold ** 2;
+
+        const leftLegDist2 = vec3.sqrDist(
+          centerOfPlayerWorld,
+          p.player.leftFootWorldPos
+        );
+        const rightLegDist2 = vec3.sqrDist(
+          centerOfPlayerWorld,
+          p.player.rightFootWorldPos
+        );
+
+        const legDist2Threshold = 16;
+
+        // do we need to move a leg?
+        if (
+          massOverhangDist2 > massOverhangDistThreshold2 ||
+          leftLegDist2 > legDist2Threshold ||
+          rightLegDist2 > legDist2Threshold
+        ) {
+          // which leg? move the one farther from the center
+          const leg = leftLegDist2 < rightLegDist2 ? rightLeg : leftLeg;
+          const footWorldPos =
+            leg === leftLeg
+              ? p.player.leftFootWorldPos
+              : p.player.rightFootWorldPos;
+          const otherFootWorldPos =
+            leg !== leftLeg
+              ? p.player.leftFootWorldPos
+              : p.player.rightFootWorldPos;
+
+          // TODO(@darzu): it's unclear this is contributing a lot, or at least
+          //    not consistent
+          const velComp = vec3.normalize(tempVec(), p.linearVelocity);
+          vec3.scale(velComp, velComp, massOverhangDistThreshold * 0.8);
+          const targetCenterOfMass = vec3.add(
+            tempVec(),
+            centerOfPlayerWorld,
+            velComp
+          );
+          targetCenterOfMass[1] = centerOfPlayerWorld[1]; // ignore y
+
+          // cast a ray to see where the foot should go
+          // const hipLocal = leg.noodle.segments[0].pos;
+          // const hipWorld = vec3.transformMat4(
+          //   vec3.create(),
+          //   hipLocal,
+          //   p.world.transform
+          // );
+
+          // TODO(@darzu): PERF, inverting quat here
+          // const invRot = quat.invert(quat.create(), p.rotation);
+          // const legDirLocal = vec3.transformQuat(
+          //   vec3.create(),
+          //   p.linearVelocity,
+          //   invRot
+          // );
+          // vec3.normalize(legDirLocal, legDirLocal);
+          // vec3.add(legDirLocal, legDirLocal, [0, -0.8, 0]);
+          // vec3.normalize(legDirLocal, legDirLocal);
+          // // const legDirLocal: vec3 = vec3.normalize(tempVec(), [0, -1, -0.5]);
+
+          // // TODO(@darzu): we really shouldn't use transform quat since this doesn't account for scale or skew
+          // const legDirWorld = vec3.transformQuat(
+          //   vec3.create(),
+          //   legDirLocal,
+          //   p.world.rotation
+          // );
+
+          // reflect the other foot over the center of mass
+          const otherToCenter = vec3.sub(
+            tempVec(),
+            targetCenterOfMass,
+            otherFootWorldPos
+          );
+          const legTargetWorldXZ = vec3.add(
+            tempVec(),
+            targetCenterOfMass,
+            otherToCenter
+          );
+          // TODO(@darzu): ignore the y component
+          legTargetWorldXZ[1] = targetCenterOfMass[1];
+
+          let newDist2 = vec3.sqrDist(legTargetWorldXZ, targetCenterOfMass);
+          if (newDist2 > legDist2Threshold) {
+            // too far, move it in
+            const towardCenter = vec3.sub(
+              tempVec(),
+              targetCenterOfMass,
+              legTargetWorldXZ
+            );
+            const movDist = Math.sqrt(newDist2 - legDist2Threshold);
+            vec3.normalize(towardCenter, towardCenter);
+            vec3.scale(towardCenter, towardCenter, movDist);
+            vec3.add(legTargetWorldXZ, legTargetWorldXZ, towardCenter);
+          }
+
+          // TODO(@darzu):
+          // drawLine(EM, hipWorld, legTargetWorldXZ, [0, 0, 1]);
+
+          // const legDirWorld = vec3.sub(tempVec(), legTargetWorldXZ, hipWorld);
+          // vec3.normalize(legDirWorld, legDirWorld);
+
+          const legRayWorld: Ray = {
+            org: legTargetWorldXZ,
+            dir: [0, -1, 0],
+          };
+
+          // const legRayEndWorld = vec3.add(
+          //   vec3.create(),
+          //   legRayWorld.org,
+          //   vec3.scale(tempVec(), legRayWorld.dir, 2.0)
+          // );
+
+          // TODO(@darzu): DEBUG; ray test (green)
+          // drawLine(EM, legRayWorld.org, legRayEndWorld, [0, 1, 0]);
+
+          const hits = res.physicsResults.checkRay(legRayWorld);
+          const minDistWorld = min(
+            hits.map((h) => (h.id === p.id ? Infinity : h.dist))
+          );
+          const minDistWorld2 = minDistWorld ** 2;
+          // TODO(@darzu): check for length < leg length? else flying?
+          if (minDistWorld2 < Infinity) {
+            // update foot pos
+            vec3.add(
+              footWorldPos,
+              legRayWorld.org,
+              vec3.scale(tempVec(), legRayWorld.dir, minDistWorld)
+            );
+
+            // TODO(@darzu): DEBUG; new location found (blue)
+            drawLine(EM, legRayWorld.org, footWorldPos, [1, 0, 0]);
+          }
+        }
+
+        // update local foot position from world position
+        // TODO(@darzu): this would be easiest if we had world->local
+        //    transforms (e.g. the inverse of our world.transform)
+        // TODO(@darzu): PERF, very slow
+        const worldInv = mat4.invert(mat4.create(), p.world.transform);
+        vec3.transformMat4(
+          leftLeg.noodle.segments[1].pos,
+          p.player.leftFootWorldPos,
+          worldInv
+        );
+        // shift by the relative offset
+        // TODO(@darzu): feels hacky
+        vec3.sub(
+          leftLeg.noodle.segments[1].pos,
+          leftLeg.noodle.segments[1].pos,
+          leftLeg.position
+        );
+        vec3.transformMat4(
+          rightLeg.noodle.segments[1].pos,
+          p.player.rightFootWorldPos,
+          worldInv
+        );
+        vec3.sub(
+          rightLeg.noodle.segments[1].pos,
+          rightLeg.noodle.segments[1].pos,
+          rightLeg.position
+        );
+
+        // const gridSize = 4.0;
+        // const xDelta = p.position[0] % gridSize;
+        // // const xDelta = p.world.position[0] % 1.0;
+        // // const zDelta = p.world.position[2] % 2.0;
+
+        // const leftFoot = leftLeg.noodle.segments[1];
+        // leftFoot.pos[0] = -xDelta;
+        // leftFoot[0] = 0;
+        // leftFoot[2] = -zDelta;
+        // console.log(
+        //   `${p.world.position[0]} -> ${p.world.position[0] % 1.0} = ${
+        //     leftFoot[0]
+        //   }`
+        // );
+      }
+    },
+    "updateLimbs"
+  );
 }
 
 // TODO(@darzu): move this helper elsewhere?
@@ -427,7 +657,7 @@ export function drawLine(
     lines: [[0, 1]],
     usesProvoking: true,
   };
-  em.addComponent(id, RenderableDef, m);
+  em.addComponent(id, RenderableConstructDef, m);
   em.addComponent(id, WorldFrameDef);
 }
 
@@ -450,16 +680,49 @@ export function registerBuildPlayersSystem(em: EntityManager) {
         if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0, 0.2, 0]);
         if (!MotionSmoothingDef.isOn(e))
           em.addComponent(e.id, MotionSmoothingDef);
-        if (!RenderableDef.isOn(e))
-          em.addComponent(e.id, RenderableDef, res.assets.cube.mesh);
+        if (!RenderableConstructDef.isOn(e)) {
+          const m = scaleMesh3(res.assets.cube.mesh, [0.75, 0.75, 0.4]);
+          em.addComponent(e.id, RenderableConstructDef, m);
+        }
         if (!AuthorityDef.isOn(e))
           em.addComponent(e.id, AuthorityDef, res.me.pid);
-        if (!PlayerEntDef.isOn(e)) em.addComponent(e.id, PlayerEntDef);
+        if (!PlayerEntDef.isOn(e)) {
+          em.ensureComponentOn(e, PlayerEntDef);
+
+          // create limbs
+          const noodleM = createNoodleMesh(0.15, [0.01, 0.01, 0.01]);
+
+          const legSegs: () => NoodleSeg[] = () => [
+            {
+              pos: [0, 0, 0],
+              dir: [0, 1, 0],
+            },
+            {
+              pos: [0, -2, 0],
+              dir: [0, -1, 0],
+            },
+          ];
+          const leftLeg = em.newEntity();
+          em.ensureComponentOn(leftLeg, RenderableConstructDef, noodleM);
+          em.ensureComponentOn(leftLeg, PositionDef, [-0.5, -0.8, 0]);
+          em.ensureComponentOn(leftLeg, NoodleDef, legSegs());
+          em.ensureComponentOn(leftLeg, PhysicsParentDef, e.id);
+          e.player.leftLegId = leftLeg.id;
+
+          const rightLeg = em.newEntity();
+          em.ensureComponentOn(rightLeg, RenderableConstructDef, noodleM);
+          em.ensureComponentOn(rightLeg, PositionDef, [0.5, -0.8, 0]);
+          em.ensureComponentOn(rightLeg, NoodleDef, legSegs());
+          em.ensureComponentOn(rightLeg, PhysicsParentDef, e.id);
+          e.player.rightLegId = rightLeg.id;
+        }
         if (!ColliderDef.isOn(e)) {
           const collider = em.addComponent(e.id, ColliderDef);
           collider.shape = "AABB";
           collider.solid = true;
-          (collider as AABBCollider).aabb = res.assets.cube.aabb;
+          const playerAABB = copyAABB(createAABB(), res.assets.cube.aabb);
+          vec3.add(playerAABB.min, playerAABB.min, [0, -1, 0]);
+          (collider as AABBCollider).aabb = playerAABB;
         }
         if (!SyncDef.isOn(e)) {
           em.addComponent(

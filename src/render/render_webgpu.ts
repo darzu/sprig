@@ -1,17 +1,20 @@
-import { mat4, vec3, quat } from "./gl-matrix.js";
+import { mat4, vec3, quat } from "../gl-matrix.js";
 import {
-  createMeshPoolBuilder_WebGPU,
+  createMeshPool_WebGPU,
   Mesh,
   MeshHandle,
-  MeshPoolBuilder_WebGPU,
   MeshPoolOpts,
   MeshPool_WebGPU,
-  MeshUniform,
   SceneUniform,
   Vertex,
 } from "./mesh-pool.js";
-import { Renderable } from "./renderer.js";
-import { pitch } from "./utils-3d.js";
+import { RenderableConstruct, Renderer } from "./renderer.js";
+import { pitch } from "../utils-3d.js";
+import {
+  MeshUniformMod,
+  obj_fragShader,
+  obj_vertShader,
+} from "./shader_obj.js";
 
 const PIXEL_PER_PX: number | null = null; // 0.5;
 
@@ -19,56 +22,10 @@ const PIXEL_PER_PX: number | null = null; // 0.5;
 
 // shaders
 
-const shaderSceneStruct = `
+export const shaderSceneStruct = () => `
     struct Scene {
-        ${SceneUniform.GenerateWGSLUniformStruct()}
+        ${SceneUniform.generateWGSLUniformStruct()}
     };
-`;
-const vertexShader =
-  shaderSceneStruct +
-  `
-    struct Model {
-        ${MeshUniform.GenerateWGSLUniformStruct()}
-    };
-
-    @group(0) @binding(0) var<uniform> scene : Scene;
-    @group(1) @binding(0) var<uniform> model : Model;
-
-    struct VertexOutput {
-        @location(0) @interpolate(flat) normal : vec3<f32>;
-        @location(1) @interpolate(flat) color : vec3<f32>;
-        @builtin(position) position : vec4<f32>;
-    };
-
-    @stage(vertex)
-    fn main(
-        ${Vertex.GenerateWGSLVertexInputStruct(",")}
-        ) -> VertexOutput {
-        var output : VertexOutput;
-        let worldPos: vec4<f32> = model.transform * vec4<f32>(position, 1.0);
-        output.position = scene.cameraViewProjMatrix * worldPos;
-        output.normal = normalize(model.transform * vec4<f32>(normal, 0.0)).xyz;
-        output.color = color + model.tint;
-        return output;
-    }
-`;
-const fragmentShader =
-  shaderSceneStruct +
-  `
-    @group(0) @binding(0) var<uniform> scene : Scene;
-
-    struct VertexOutput {
-        @location(0) @interpolate(flat) normal : vec3<f32>;
-        @location(1) @interpolate(flat) color : vec3<f32>;
-    };
-
-    @stage(fragment)
-    fn main(input: VertexOutput) -> @location(0) vec4<f32> {
-        let sunLight : f32 = clamp(dot(-scene.lightDir, input.normal), 0.0, 1.0);
-        let resultColor: vec3<f32> = input.color * (sunLight * 2.0 + 0.2);
-        let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
-        return vec4<f32>(gammaCorrected, 1.0);
-    }
 `;
 
 // render pipeline parameters
@@ -82,16 +39,6 @@ const backgroundColor = { r: 0.6, g: 0.63, b: 0.6, a: 1.0 };
 //   transform: mat4;
 //   renderable: Renderable;
 // }
-
-export interface Renderer {
-  drawLines: boolean;
-  drawTris: boolean;
-  finishInit(): void;
-  addMesh(m: Mesh): MeshHandle;
-  addMeshInstance(h: MeshHandle): MeshHandle;
-  renderFrame(viewMatrix: mat4, handles: MeshHandle[]): void;
-  removeMesh(h: MeshHandle): void;
-}
 
 export class Renderer_WebGPU implements Renderer {
   public drawLines = true;
@@ -107,8 +54,6 @@ export class Renderer_WebGPU implements Renderer {
 
   // private handles: MeshObj[] = {};
 
-  private initFinished: boolean = false;
-  private builder: MeshPoolBuilder_WebGPU;
   private pool: MeshPool_WebGPU;
   private sceneData: SceneUniform.Data;
 
@@ -121,19 +66,9 @@ export class Renderer_WebGPU implements Renderer {
   private lastWidth = 0;
   private lastHeight = 0;
 
-  public finishInit() {
-    if (this.initFinished) throw "finishInit called twice";
-    this.builder.finish();
-    this.initFinished = true;
-  }
-
   private gpuBufferWriteAllMeshUniforms(handles: MeshHandle[]) {
     // TODO(@darzu): make this update all meshes at once
     for (let m of handles) {
-      // TODO(@darzu): this is definitely weird. Need to think about this interaction better.
-      // TODO(@darzu): ensure color is handled
-      // if ((m.renderable as any).color)
-      //   m.meshHandle.tint = (m.renderable as any).color;
       this.pool.updateUniform(m);
     }
   }
@@ -186,9 +121,7 @@ export class Renderer_WebGPU implements Renderer {
     TODO: support adding objects when buffers aren't memory-mapped using device.queue
   */
   public addMesh(m: Mesh): MeshHandle {
-    const handle: MeshHandle = this.initFinished
-      ? this.pool.addMesh(m)
-      : this.builder.addMesh(m);
+    const handle: MeshHandle = this.pool.addMesh(m);
 
     // TODO(@darzu): determine rebundle
     // this.needsRebundle = true;
@@ -197,16 +130,17 @@ export class Renderer_WebGPU implements Renderer {
   public addMeshInstance(oldHandle: MeshHandle): MeshHandle {
     // console.log(`Adding (instanced) object`);
 
-    const d = MeshUniform.CloneData(oldHandle);
-    const newHandle = this.initFinished
-      ? this.pool.addMeshInstance(oldHandle, d)
-      : this.builder.addMeshInstance(oldHandle, d);
+    const d = MeshUniformMod.CloneData(oldHandle.shaderData);
+    const newHandle = this.pool.addMeshInstance(oldHandle, d);
 
     // handles[o.id] = res;
 
     // TODO(@darzu): determine rebundle
     // this.needsRebundle = true;
     return newHandle;
+  }
+  public updateMesh(handle: MeshHandle, newMeshData: Mesh) {
+    this.pool.updateMeshVertices(handle, newMeshData);
   }
 
   removeMesh(h: MeshHandle) {
@@ -236,7 +170,7 @@ export class Renderer_WebGPU implements Renderer {
           buffer: {
             type: "uniform",
             hasDynamicOffset: true,
-            minBindingSize: MeshUniform.ByteSizeAligned,
+            minBindingSize: MeshUniformMod.byteSizeAligned,
           },
         },
       ],
@@ -248,7 +182,7 @@ export class Renderer_WebGPU implements Renderer {
           binding: 0,
           resource: {
             buffer: this.pool.uniformBuffer,
-            size: MeshUniform.ByteSizeAligned,
+            size: MeshUniformMod.byteSizeAligned,
           },
         },
       ],
@@ -288,7 +222,7 @@ export class Renderer_WebGPU implements Renderer {
         ],
       }),
       vertex: {
-        module: this.device.createShaderModule({ code: vertexShader }),
+        module: this.device.createShaderModule({ code: obj_vertShader() }),
         entryPoint: "main",
         buffers: [
           {
@@ -298,7 +232,7 @@ export class Renderer_WebGPU implements Renderer {
         ],
       },
       fragment: {
-        module: this.device.createShaderModule({ code: fragmentShader }),
+        module: this.device.createShaderModule({ code: obj_fragShader() }),
         entryPoint: "main",
         targets: [{ format: this.presentationFormat }],
       },
@@ -393,13 +327,12 @@ export class Renderer_WebGPU implements Renderer {
       shiftMeshIndices: false,
     };
 
-    this.builder = createMeshPoolBuilder_WebGPU(device, opts);
-
-    this.pool = this.builder.poolHandle;
+    this.pool = createMeshPool_WebGPU(device, opts);
 
     this.sceneUniformBuffer = device.createBuffer({
       size: SceneUniform.ByteSizeAligned,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      mappedAtCreation: false,
     });
 
     // setup scene data:
@@ -414,7 +347,7 @@ export class Renderer_WebGPU implements Renderer {
 
     this.sceneData.cameraViewProjMatrix = viewProj;
 
-    SceneUniform.Serialize(this.scratchSceneUni, 0, this.sceneData);
+    SceneUniform.serialize(this.scratchSceneUni, 0, this.sceneData);
     this.device.queue.writeBuffer(
       this.sceneUniformBuffer,
       0,
@@ -451,20 +384,23 @@ export class Renderer_WebGPU implements Renderer {
         {
           view: this.colorTextureView!,
           resolveTarget: this.context.getCurrentTexture().createView(),
-          loadValue: backgroundColor,
+          loadOp: "clear",
+          clearValue: backgroundColor,
           storeOp: "store",
         },
       ],
       depthStencilAttachment: {
         view: this.depthTextureView!,
-        depthLoadValue: 1.0,
+        depthLoadOp: "clear",
+        depthClearValue: 1.0,
         depthStoreOp: "store",
-        stencilLoadValue: 0,
+        stencilLoadOp: "clear",
+        stencilClearValue: 0,
         stencilStoreOp: "store",
       },
     });
     renderPassEncoder.executeBundles([this.renderBundle]);
-    renderPassEncoder.endPass();
+    renderPassEncoder.end();
 
     // submit render passes to GPU
     this.device.queue.submit([commandEncoder.finish()]);

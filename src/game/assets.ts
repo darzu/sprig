@@ -10,10 +10,10 @@ import {
   scaleMesh3,
   transformMesh,
   unshareProvokingVertices,
-} from "../mesh-pool.js";
+} from "../render/mesh-pool.js";
 import { AABB } from "../physics/broadphase.js";
-import { RendererDef } from "../render_init.js";
-import { Renderer } from "../render_webgpu.js";
+import { RendererDef } from "../render/render_init.js";
+import { Renderer } from "../render/renderer.js";
 import { assert } from "../test.js";
 import { objMap } from "../util.js";
 import { getText } from "../webget.js";
@@ -43,7 +43,17 @@ const AssetTransforms: Partial<{ [P in keyof typeof RemoteMeshes]: mat4 }> = {
   linstock: mat4.fromScaling(mat4.create(), [0.1, 0.1, 0.1]),
 };
 
-const CUBE_MESH = unshareProvokingVertices({
+// which triangles belong to which faces
+// TODO(@darzu): should these be standardized for all meshes?
+export const CUBE_FACES = {
+  front: [0, 1],
+  top: [2, 3],
+  right: [4, 5],
+  left: [6, 7],
+  bottom: [8, 9],
+  back: [10, 11]
+};
+export const CUBE_MESH = unshareProvokingVertices({
   pos: [
     [+1.0, +1.0, +1.0],
     [-1.0, +1.0, +1.0],
@@ -290,6 +300,8 @@ async function loadAssets(renderer: Renderer): Promise<GameAssets> {
 
   const allMeshes = { ...remoteMeshes, ...LocalMeshes };
 
+  // TODO(@darzu): this shouldn't directly add to a mesh pool, we don't know which pool it should
+  //  go to
   const result = objMap(allMeshes, (mesh, n) => {
     const aabb = getAABBFromMesh(mesh);
     const proto = renderer.addMesh(mesh);

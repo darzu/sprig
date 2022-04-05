@@ -1,14 +1,14 @@
 import { ColliderDef } from "../physics/collider.js";
 import { Component, EM, EntityManager } from "../entity-manager.js";
 import { vec3 } from "../gl-matrix.js";
-import { RenderableDef } from "../renderer.js";
+import { RenderableConstructDef } from "../render/renderer.js";
 import {
   PhysicsParentDef,
   Position,
   PositionDef,
 } from "../physics/transform.js";
 import { ColorDef } from "./game.js";
-import { getAABBFromMesh, scaleMesh } from "../mesh-pool.js";
+import { getAABBFromMesh, scaleMesh } from "../render/mesh-pool.js";
 import {
   SyncDef,
   Authority,
@@ -70,8 +70,12 @@ export function registerBuildCubesSystem(em: EntityManager) {
       if (!em.hasComponents(cube, [PhysicsParentDef]))
         em.addComponent(cube.id, PhysicsParentDef);
       const mesh = scaleMesh(assets.cube.mesh, cube.cubeConstruct.size);
-      if (!em.hasComponents(cube, [RenderableDef])) {
-        const renderable = em.addComponent(cube.id, RenderableDef, mesh);
+      if (!em.hasComponents(cube, [RenderableConstructDef])) {
+        const renderable = em.addComponent(
+          cube.id,
+          RenderableConstructDef,
+          mesh
+        );
       }
       if (!em.hasComponents(cube, [ColliderDef])) {
         const collider = em.addComponent(cube.id, ColliderDef);

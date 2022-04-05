@@ -3,7 +3,7 @@ import { PhysicsTimerDef } from "../time.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
-import { RenderableDef } from "../renderer.js";
+import { RenderableConstructDef } from "../render/renderer.js";
 import {
   PhysicsParentDef,
   PositionDef,
@@ -177,7 +177,7 @@ function createCannon(
   em.ensureComponent(e.id, ColorDef, [0, 0, 0]);
   //TODO: do we need motion smoothing?
   //if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
-  em.ensureComponent(e.id, RenderableDef, assets.cannon.mesh);
+  em.ensureComponent(e.id, RenderableConstructDef, assets.cannon.mesh);
   em.ensureComponent(e.id, AuthorityDef, pid);
   em.ensureComponent(e.id, CannonDef);
   em.ensureComponent(e.id, ColliderDef, {
@@ -263,8 +263,12 @@ export function registerBuildAmmunitionSystem(em: EntityManager) {
         if (!ColorDef.isOn(e))
           em.addComponent(e.id, ColorDef, [0.2, 0.1, 0.05]);
         if (!PhysicsParentDef.isOn(e)) em.addComponent(e.id, PhysicsParentDef);
-        if (!RenderableDef.isOn(e))
-          em.addComponent(e.id, RenderableDef, res.assets.ammunitionBox.mesh);
+        if (!RenderableConstructDef.isOn(e))
+          em.addComponent(
+            e.id,
+            RenderableConstructDef,
+            res.assets.ammunitionBox.mesh
+          );
         if (!AuthorityDef.isOn(e))
           em.addComponent(e.id, AuthorityDef, res.me.pid);
         if (!AmmunitionDef.isOn(e))
@@ -332,8 +336,12 @@ export function registerBuildLinstockSystem(em: EntityManager) {
         if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.0, 0.0, 0.0]);
         if (!PhysicsParentDef.isOn(e)) em.addComponent(e.id, PhysicsParentDef);
         // TODO(@darzu): allow scaling to be configured on the asset import
-        if (!RenderableDef.isOn(e))
-          em.addComponent(e.id, RenderableDef, res.assets.linstock.mesh);
+        if (!RenderableConstructDef.isOn(e))
+          em.addComponent(
+            e.id,
+            RenderableConstructDef,
+            res.assets.linstock.mesh
+          );
         if (!AuthorityDef.isOn(e))
           em.addComponent(e.id, AuthorityDef, res.me.pid);
         if (!LinstockDef.isOn(e)) em.addComponent(e.id, LinstockDef);

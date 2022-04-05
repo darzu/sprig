@@ -1,29 +1,11 @@
 import { EM, EntityManager, Component, Entity } from "../entity-manager.js";
-import { mat4, quat, vec3 } from "../gl-matrix.js";
+import { quat, vec3 } from "../gl-matrix.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "./game.js";
-import { RenderableDef } from "../renderer.js";
+import { RenderableConstructDef } from "../render/renderer.js";
 import { Position, PositionDef, RotationDef } from "../physics/transform.js";
-import { AABBCollider, ColliderDef } from "../physics/collider.js";
-import {
-  Authority,
-  AuthorityDef,
-  Me,
-  MeDef,
-  SyncDef,
-  PredictDef,
-} from "../net/components.js";
-import {
-  getAABBFromMesh,
-  Mesh,
-  MeshHandle,
-  MeshHandleDef,
-  scaleMesh,
-  scaleMesh3,
-} from "../mesh-pool.js";
-import { AABB } from "../physics/broadphase.js";
-import { RendererDef } from "../render_init.js";
-import { Renderer } from "../render_webgpu.js";
+import { ColliderDef } from "../physics/collider.js";
+import { AuthorityDef, MeDef, SyncDef, PredictDef } from "../net/components.js";
 import { Assets, AssetsDef } from "./assets.js";
 import {
   AngularVelocity,
@@ -80,7 +62,7 @@ function createBullet(
   em.ensureComponent(e.id, AngularVelocityDef, props.angularVelocity);
   em.ensureComponent(e.id, ColorDef, BULLET_COLOR);
   em.ensureComponent(e.id, MotionSmoothingDef);
-  em.ensureComponent(e.id, RenderableDef, assets.bullet.proto);
+  em.ensureComponent(e.id, RenderableConstructDef, assets.bullet.proto);
   em.ensureComponent(e.id, AuthorityDef, pid);
   em.ensureComponent(e.id, BulletDef);
   em.ensureComponent(e.id, ColliderDef, {

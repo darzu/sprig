@@ -11,7 +11,11 @@ import {
   PhysicsStateDef,
 } from "../physics/nonintersection.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
-import { CameraView, CameraViewDef, RenderableDef } from "../renderer.js";
+import {
+  CameraView,
+  CameraViewDef,
+  RenderableConstructDef,
+} from "../render/renderer.js";
 import { tempVec } from "../temp-pool.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
@@ -159,7 +163,11 @@ function registerAABBBuilder(em: EntityManager) {
             em.ensureComponentOn(b, PositionDef, [0, 0, 0]);
           }
           em.ensureComponentOn(b, ColorDef, [0.1, 0.3, 0.2]);
-          em.ensureComponentOn(b, RenderableDef, res.assets.cube.proto);
+          em.ensureComponentOn(
+            b,
+            RenderableConstructDef,
+            res.assets.cube.proto
+          );
           em.ensureComponentOn(b, ColliderDef, {
             shape: "AABB",
             solid: false,

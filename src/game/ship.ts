@@ -2,7 +2,7 @@ import { FinishedDef } from "../build.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
-import { RenderableDef } from "../renderer.js";
+import { RenderableConstructDef } from "../render/renderer.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { Deserializer, Serializer } from "../serialize.js";
 import { Assets, AssetsDef, SHIP_AABBS } from "./assets.js";
@@ -55,8 +55,8 @@ export function registerBuildShipSystem(em: EntityManager) {
         const props = e.shipConstruct;
         if (!PositionDef.isOn(e)) em.addComponent(e.id, PositionDef, props.loc);
         if (!RotationDef.isOn(e)) em.addComponent(e.id, RotationDef, props.rot);
-        if (!RenderableDef.isOn(e))
-          em.addComponent(e.id, RenderableDef, assets.ship.mesh);
+        if (!RenderableConstructDef.isOn(e))
+          em.addComponent(e.id, RenderableConstructDef, assets.ship.mesh);
         if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid);
         if (!SyncDef.isOn(e)) {
           const sync = em.addComponent(e.id, SyncDef);

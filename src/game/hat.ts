@@ -7,11 +7,11 @@ import {
   getAABBFromMesh,
   Mesh,
   unshareProvokingVertices,
-} from "../mesh-pool.js";
+} from "../render/mesh-pool.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { AABB } from "../physics/broadphase.js";
 import { PhysicsStateDef } from "../physics/nonintersection.js";
-import { RenderableDef } from "../renderer.js";
+import { RenderableConstructDef } from "../render/renderer.js";
 import {
   PhysicsParentDef,
   PositionDef,
@@ -74,8 +74,8 @@ function createHat(
   if (!RotationDef.isOn(e)) em.addComponent(e.id, RotationDef);
   if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.4, 0.1, 0.1]);
   if (!PhysicsParentDef.isOn(e)) em.addComponent(e.id, PhysicsParentDef);
-  if (!RenderableDef.isOn(e))
-    em.addComponent(e.id, RenderableDef, getHatMesh());
+  if (!RenderableConstructDef.isOn(e))
+    em.addComponent(e.id, RenderableConstructDef, getHatMesh());
   if (!ColliderDef.isOn(e)) {
     const collider = em.addComponent(e.id, ColliderDef);
     collider.shape = "AABB";

@@ -7,10 +7,10 @@ import {
   getAABBFromMesh,
   Mesh,
   unshareProvokingVertices,
-} from "../mesh-pool.js";
+} from "../render/mesh-pool.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { AABB } from "../physics/broadphase.js";
-import { RenderableDef } from "../renderer.js";
+import { RenderableConstructDef } from "../render/renderer.js";
 import {
   PhysicsParentDef,
   PositionDef,

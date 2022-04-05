@@ -1,20 +1,19 @@
-import { Canvas, CanvasDef } from "./canvas.js";
-import { EntityManager, EM, Component } from "./entity-manager.js";
-import { ColorDef } from "./game/game.js";
+import { Canvas, CanvasDef } from "../canvas.js";
+import { EntityManager, EM, Component } from "../entity-manager.js";
+import { ColorDef } from "../game/game.js";
 import {
   CameraDef,
   CameraProps,
   PlayerEnt,
   PlayerEntDef,
-} from "./game/player.js";
-import { mat4, quat, vec3 } from "./gl-matrix.js";
-import { isMeshHandle, Mesh, MeshHandle, MeshHandleDef } from "./mesh-pool.js";
-import { Authority, AuthorityDef, Me, MeDef } from "./net/components.js";
-import { WorldFrameDef } from "./physics/nonintersection.js";
+} from "../game/player.js";
+import { mat4, quat, vec3 } from "../gl-matrix.js";
+import { isMeshHandle, Mesh, MeshHandle } from "./mesh-pool.js";
+import { Authority, AuthorityDef, Me, MeDef } from "../net/components.js";
+import { WorldFrameDef } from "../physics/nonintersection.js";
 import { RendererDef } from "./render_init.js";
-import { Renderer } from "./render_webgpu.js";
-import { tempQuat, tempVec } from "./temp-pool.js";
-import { PhysicsTimerDef } from "./time.js";
+import { tempQuat, tempVec } from "../temp-pool.js";
+import { PhysicsTimerDef } from "../time.js";
 import {
   PhysicsParent,
   Position,
@@ -22,25 +21,48 @@ import {
   Rotation,
   RotationDef,
   Frame,
-} from "./physics/transform.js";
+} from "../physics/transform.js";
+
+export interface RenderableConstruct {
+  readonly enabled: boolean;
+  readonly layer: number;
+  meshOrProto: Mesh | MeshHandle;
+}
+
+export const RenderableConstructDef = EM.defineComponent(
+  "renderableConstruct",
+  (
+    meshOrProto: Mesh | MeshHandle,
+    enabled: boolean = true,
+    layer: number = 0
+  ) => {
+    const r: RenderableConstruct = {
+      enabled,
+      layer,
+      meshOrProto,
+    };
+    return r;
+  }
+);
+
+function createEmptyMesh(): Mesh {
+  return {
+    pos: [],
+    tri: [],
+    colors: [],
+  };
+}
+
+export interface Renderable {
+  enabled: boolean;
+  layer: number;
+  meshHandle: MeshHandle;
+}
 
 export const RenderableDef = EM.defineComponent(
   "renderable",
-  (meshOrProto?: Mesh | MeshHandle, enabled: boolean = true, layer = 0) => {
-    return {
-      enabled,
-      layer,
-      meshOrProto:
-        meshOrProto ??
-        ({
-          pos: [],
-          tri: [],
-          colors: [],
-        } as Mesh | MeshHandle),
-    };
-  }
+  (r: Renderable) => r
 );
-export type Renderable = Component<typeof RenderableDef>;
 
 export const CameraViewDef = EM.defineComponent("cameraView", () => {
   return {
@@ -54,7 +76,6 @@ export type CameraView = Component<typeof CameraViewDef>;
 interface RenderableObj {
   id: number;
   renderable: Renderable;
-  meshHandle: MeshHandle;
   world: Frame;
 }
 
@@ -67,10 +88,10 @@ function stepRenderer(
   for (let o of objs) {
     // TODO(@darzu): color:
     if (ColorDef.isOn(o)) {
-      vec3.copy(o.meshHandle.tint, o.color);
+      vec3.copy(o.renderable.meshHandle.shaderData.tint, o.color);
     }
 
-    mat4.copy(o.meshHandle.transform, o.world.transform);
+    mat4.copy(o.renderable.meshHandle.shaderData.transform, o.world.transform);
   }
 
   // filter
@@ -82,7 +103,7 @@ function stepRenderer(
   // render
   renderer.renderFrame(
     cameraView.viewProjMat,
-    objs.map((o) => o.meshHandle)
+    objs.map((o) => o.renderable.meshHandle)
   );
 }
 
@@ -172,7 +193,7 @@ export function registerUpdateCameraView(em: EntityManager) {
 
 export function registerRenderer(em: EntityManager) {
   em.registerSystem(
-    [RenderableDef, WorldFrameDef, MeshHandleDef],
+    [WorldFrameDef, RenderableDef],
     [CameraViewDef, PhysicsTimerDef, RendererDef],
     (objs, res) => {
       // TODO: should we just render on every frame?
@@ -183,29 +204,45 @@ export function registerRenderer(em: EntityManager) {
   );
 }
 
-export function registerAddMeshHandleSystem(em: EntityManager) {
+export function registerConstructRenderablesSystem(em: EntityManager) {
   em.registerSystem(
-    [RenderableDef],
+    [RenderableConstructDef],
     [RendererDef],
     (es, res) => {
       for (let e of es) {
-        if (!MeshHandleDef.isOn(e)) {
+        if (!RenderableDef.isOn(e)) {
           // TODO(@darzu): how should we handle instancing?
           // TODO(@darzu): this seems somewhat inefficient to look for this every frame
           let meshHandle: MeshHandle;
-          if (isMeshHandle(e.renderable.meshOrProto))
+          if (isMeshHandle(e.renderableConstruct.meshOrProto))
             meshHandle = res.renderer.renderer.addMeshInstance(
-              e.renderable.meshOrProto
+              e.renderableConstruct.meshOrProto
             );
           else
             meshHandle = res.renderer.renderer.addMesh(
-              e.renderable.meshOrProto
+              e.renderableConstruct.meshOrProto
             );
 
-          em.addComponent(e.id, MeshHandleDef, meshHandle);
+          em.addComponent(e.id, RenderableDef, {
+            enabled: e.renderableConstruct.enabled,
+            layer: e.renderableConstruct.layer,
+            meshHandle,
+          });
         }
       }
     },
-    "addMeshHandle"
+    "constructRenderables"
   );
+}
+
+export interface Renderer {
+  // opts
+  drawLines: boolean;
+  drawTris: boolean;
+
+  addMesh(m: Mesh): MeshHandle;
+  addMeshInstance(h: MeshHandle): MeshHandle;
+  updateMesh(handle: MeshHandle, newMeshData: Mesh): void;
+  renderFrame(viewMatrix: mat4, handles: MeshHandle[]): void;
+  removeMesh(h: MeshHandle): void;
 }

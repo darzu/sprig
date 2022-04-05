@@ -4,14 +4,14 @@ import { AssetsDef, LocalMeshes } from "../game/assets.js";
 import { ColorDef } from "../game/game.js";
 import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
-import { mapMeshPositions, Mesh } from "../mesh-pool.js";
+import { mapMeshPositions, Mesh } from "../render/mesh-pool.js";
 import { AABB } from "./broadphase.js";
 import {
   PhysicsBroadCollidersDef,
   PhysicsStateDef,
   WorldFrameDef,
 } from "./nonintersection.js";
-import { RenderableDef } from "../renderer.js";
+import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
 import {
   copyFrame,
   Position,
@@ -54,7 +54,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
             // with a wireframe mesh
             em.addComponent(
               dbgE.id,
-              RenderableDef,
+              RenderableConstructDef,
               res.assets.wireCube.proto,
               res._physDbgState.showAABBs,
               1

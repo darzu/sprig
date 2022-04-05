@@ -1,14 +1,13 @@
-import { computeTriangleNormal } from "./utils-3d.js";
-import { mat4, vec2, vec3 } from "./gl-matrix.js";
-import { align, sum } from "./math.js";
-import { AABB, getAABBFromPositions } from "./physics/broadphase.js";
-import { EM } from "./entity-manager.js";
+import { computeTriangleNormal } from "../utils-3d.js";
+import { mat4, vec2, vec3 } from "../gl-matrix.js";
+import { align, sum } from "../math.js";
+import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
+import { EM } from "../entity-manager.js";
+import { MeshUniformMod } from "./shader_obj.js";
 
-// TODO(@darzu): BUGS:
-// - in WebGL, around object 5566, we get some weird index stuff, even single player.
-//       Adding object 5567
-//       mesh-pool.ts:711 QUEUE builder.allMeshes.length: 5567, builder.numTris: 16, builder.numVerts: 16
-//       mesh-pool.ts:712 QUEUE pool.allMeshes.length: 5567, pool.numTris: 66796, pool.numVerts: 66796
+// TODO(@darzu): abstraction refinement:
+//  [ ] how do we handle multiple shaders with different mesh
+//    uniforms? e.g. water, noodles, cloth, regular objects, grass
 
 const vertsPerTri = 3;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * vertsPerTri;
@@ -23,6 +22,17 @@ const bytesPerUint32 = Uint32Array.BYTES_PER_ELEMENT;
 const MAX_INDICES = 65535; // Since we're using u16 index type, this is our max indices count
 
 const DEFAULT_VERT_COLOR: vec3 = [0.0, 0.0, 0.0];
+
+const formatToWgslType: Partial<Record<GPUVertexFormat, string>> = {
+  float16x2: "vec2<f16>",
+  float16x4: "vec2<f16>",
+  float32: "f32",
+  float32x2: "vec2<f32>",
+  float32x3: "vec3<f32>",
+  float32x4: "vec4<f32>",
+  uint32: "u32",
+  sint32: "i32",
+};
 
 // Everything to do with our vertex format must be in this module (minus downstream
 //  places that should get type errors when this module changes.)
@@ -41,17 +51,6 @@ export module Vertex {
   ];
 
   const names = ["position", "color", "normal"];
-
-  const formatToWgslType: Partial<Record<GPUVertexFormat, string>> = {
-    float16x2: "vec2<f16>",
-    float16x4: "vec2<f16>",
-    float32: "f32",
-    float32x2: "vec2<f32>",
-    float32x3: "vec3<f32>",
-    float32x4: "vec4<f32>",
-    uint32: "u32",
-    sint32: "i32",
-  };
 
   export function GenerateWGSLVertexInputStruct(terminator: "," | ";"): string {
     // Example output:
@@ -87,7 +86,7 @@ export module Vertex {
   const scratch_f32_as_u8 = new Uint8Array(scratch_f32.buffer);
   const scratch_u32 = new Uint32Array(1);
   const scratch_u32_as_u8 = new Uint8Array(scratch_u32.buffer);
-  export function Serialize(
+  export function serialize(
     buffer: Uint8Array,
     byteOffset: number,
     pos: vec3,
@@ -142,75 +141,6 @@ export module Vertex {
   }
 }
 
-export module MeshUniform {
-  export interface Data {
-    readonly transform: mat4;
-    readonly aabbMin: vec3;
-    readonly aabbMax: vec3;
-    readonly tint: vec3;
-  }
-
-  const _counts = [
-    align(4 * 4, 4), // transform
-    align(3, 4), // aabb min
-    align(3, 4), // aabb max
-    align(3, 4), // tint
-  ];
-  const _names = ["transform", "aabbMin", "aabbMax", "tint"];
-  const _types = ["mat4x4<f32>", "vec3<f32>", "vec3<f32>", "vec3<f32>"];
-
-  const _offsets = _counts.reduce((p, n) => [...p, p[p.length - 1] + n], [0]);
-
-  export const ByteSizeExact = sum(_counts) * bytesPerFloat;
-
-  export const ByteSizeAligned = align(ByteSizeExact, 256); // uniform objects must be 256 byte aligned
-
-  const scratch_f32 = new Float32Array(sum(_counts));
-  const scratch_f32_as_u8 = new Uint8Array(scratch_f32.buffer);
-  export function Serialize(
-    buffer: Uint8Array,
-    byteOffset: number,
-    transform: mat4,
-    aabbMin: vec3,
-    aabbMax: vec3,
-    tint: vec3
-  ): void {
-    scratch_f32.set(transform, _offsets[0]);
-    scratch_f32.set(aabbMin, _offsets[1]);
-    scratch_f32.set(aabbMax, _offsets[2]);
-    scratch_f32.set(tint, _offsets[3]);
-    buffer.set(scratch_f32_as_u8, byteOffset);
-  }
-
-  export function GenerateWGSLUniformStruct() {
-    // Example:
-    //     transform: mat4x4<f32>;
-    //     aabbMin: vec3<f32>;
-    //     aabbMax: vec3<f32>;
-    //     tint: vec3<f32>;
-    if (_names.length !== _types.length)
-      throw `mismatch between names and sizes for mesh uniform format`;
-    let res = ``;
-
-    for (let i = 0; i < _names.length; i++) {
-      const n = _names[i];
-      const t = _types[i];
-      res += `${n}: ${t};\n`;
-    }
-
-    return res;
-  }
-
-  export function CloneData(d: Data): Data {
-    return {
-      aabbMin: vec3.clone(d.aabbMin),
-      aabbMax: vec3.clone(d.aabbMax),
-      transform: mat4.clone(d.transform),
-      tint: vec3.clone(d.tint),
-    };
-  }
-}
-
 export module SceneUniform {
   export interface Data {
     cameraViewProjMatrix: mat4;
@@ -234,10 +164,10 @@ export module SceneUniform {
 
   // TODO(@darzu): SCENE FORMAT
   // defines the format of our scene's uniform data
-  export const ByteSizeExact = sum(_counts) * bytesPerFloat;
+  export const ByteSizeExact = sum(_counts) * Float32Array.BYTES_PER_ELEMENT;
   export const ByteSizeAligned = align(ByteSizeExact, 256); // uniform objects must be 256 byte aligned
 
-  export function GenerateWGSLUniformStruct() {
+  export function generateWGSLUniformStruct() {
     // Example
     //     cameraViewProjMatrix : mat4x4<f32>;
     //     lightViewProjMatrix : mat4x4<f32>;
@@ -258,7 +188,7 @@ export module SceneUniform {
 
   const scratch_f32 = new Float32Array(sum(_counts));
   const scratch_f32_as_u8 = new Uint8Array(scratch_f32.buffer);
-  export function Serialize(
+  export function serialize(
     buffer: Uint8Array,
     byteOffset: number,
     data: Data
@@ -273,6 +203,28 @@ export module SceneUniform {
   }
 }
 
+// TODO(@darzu): WORK IN PROGRESS. Unclear this is how we want to do different shader uniforms
+// TODO(@darzu): WIP interfaces for shaders
+export interface GPUData<D> {
+  byteSizeExact: number;
+  byteSizeAligned: number;
+  generateWGSLUniformStruct(): string;
+  serialize(buffer: Uint8Array, byteOffset: number, data: D): void;
+}
+export const MeshUniform: GPUData<MeshUniformMod.Data> = MeshUniformMod;
+
+export interface ShaderDescription {
+  // TODO(@darzu):
+  uniformByteSizeAligned: number;
+  uniformByteSizeExact: number;
+}
+
+// export const OBJ_SHADER: ShaderDescription = {
+//   // TODO(@darzu):
+//   uniformByteSizeAligned: MeshUniform.ByteSizeAligned,
+//   uniformByteSizeExact: MeshUniform.ByteSizeExact,
+// };
+
 // to track offsets into those buffers so we can make modifications and form draw calls.
 export interface PoolIndex {
   // handle into the pool
@@ -282,26 +234,22 @@ export interface PoolIndex {
   readonly modelUniByteOffset: number;
   readonly lineIndicesNumOffset: number; // for wireframe
 }
-export interface MeshHandle extends PoolIndex, MeshUniform.Data {
+export interface MeshHandle extends PoolIndex {
   readonly mId: number; // mesh id
   // this mesh
   readonly numTris: number;
   readonly numVerts: number;
   readonly numLines: number; // for wireframe
-  readonly model?: Mesh;
+  readonly readonlyMesh?: Mesh;
+
+  // used as the uniform for this mesh
+  shaderData: MeshUniformMod.Data;
+  // TODO(@darzu): specify which shader to use
 }
 
 export function isMeshHandle(m: any): m is MeshHandle {
   return "mId" in m;
 }
-
-// TODO(@darzu): ECS component; should be moved out of here?
-export const MeshHandleDef = EM.defineComponent(
-  "meshHandle",
-  (h: MeshHandle) => {
-    return h;
-  }
-);
 
 export interface MeshPoolOpts {
   maxMeshes: number;
@@ -319,31 +267,10 @@ export interface MeshPoolMaps {
 }
 export interface MeshPoolQueues {
   // asynchronous updates to buffers
-  queueUpdateVertices: (offset: number, data: Uint8Array) => void;
-  queueUpdateTriIndices: (offset: number, data: Uint8Array) => void;
-  queueUpdateLineIndices: (offset: number, data: Uint8Array) => void;
-  queueUpdateUniform: (offset: number, data: Uint8Array) => void;
-}
-export interface MeshPoolBuilder {
-  // options
-  opts: MeshPoolOpts;
-  // memory mapped buffers
-  verticesMap: Uint8Array;
-  triIndicesMap: Uint16Array;
-  lineIndicesMap: Uint16Array;
-  uniformMap: Uint8Array;
-  numTris: number;
-  numVerts: number;
-  numLines: number;
-  allMeshes: MeshHandle[];
-  // handles
-  poolHandle: MeshPool;
-  // methods
-  addMesh: (m: Mesh) => MeshHandle;
-  addMeshInstance: (m: MeshHandle, d: MeshUniform.Data) => MeshHandle;
-  buildMesh: () => MeshBuilder;
-  updateUniform: (m: MeshHandle) => void;
-  finish: () => MeshPool;
+  updateVertices: (offset: number, data: Uint8Array) => void;
+  updateTriIndices: (offset: number, data: Uint8Array) => void;
+  updateLineIndices: (offset: number, data: Uint8Array) => void;
+  updateUniform: (offset: number, data: Uint8Array) => void;
 }
 export interface MeshPool {
   // options
@@ -354,17 +281,16 @@ export interface MeshPool {
   numVerts: number;
   numLines: number;
   // methods
+  // TODO(@darzu): instead of addMesh, mesh pools need a way to add
+  //    vertices and triangles with custom formats. The addMesh impl
+  //    below has hard-coded assumptions about vertex size.
   addMesh: (m: Mesh) => MeshHandle;
-  addMeshInstance: (m: MeshHandle, d: MeshUniform.Data) => MeshHandle;
+  addMeshInstance: (m: MeshHandle, d: MeshUniformMod.Data) => MeshHandle;
   updateUniform: (m: MeshHandle) => void;
+  updateMeshVertices: (handle: MeshHandle, newMeshData: Mesh) => void;
 }
 
 // WebGPU stuff
-export interface MeshPoolBuilder_WebGPU extends MeshPoolBuilder {
-  device: GPUDevice;
-  poolHandle: MeshPool_WebGPU;
-  finish: () => MeshPool_WebGPU;
-}
 export interface MeshPoolBuffers_WebGPU {
   // buffers
   verticesBuffer: GPUBuffer;
@@ -377,11 +303,6 @@ export interface MeshPoolBuffers_WebGPU {
 export type MeshPool_WebGPU = MeshPool & MeshPoolBuffers_WebGPU;
 
 // WebGL stuff
-export interface MeshPoolBuilder_WebGL extends MeshPoolBuilder {
-  gl: WebGLRenderingContext;
-  poolHandle: MeshPool_WebGL;
-  finish: () => MeshPool_WebGL;
-}
 export interface MeshPoolBuffers_WebGL {
   // vertex buffers
   positionsBuffer: WebGLBuffer;
@@ -471,10 +392,10 @@ export function unshareProvokingVertices(input: Mesh): Mesh {
   return { ...input, pos, tri, usesProvoking: true };
 }
 
-export function createMeshPoolBuilder_WebGPU(
+export function createMeshPool_WebGPU(
   device: GPUDevice,
   opts: MeshPoolOpts
-): MeshPoolBuilder_WebGPU {
+): MeshPool_WebGPU {
   const { maxMeshes, maxTris, maxVerts, maxLines } = opts;
   // console.log(`maxMeshes: ${maxMeshes}, maxTris: ${maxTris}, maxVerts: ${maxVerts}`)
 
@@ -482,54 +403,42 @@ export function createMeshPoolBuilder_WebGPU(
   const verticesBuffer = device.createBuffer({
     size: maxVerts * Vertex.ByteSize,
     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-    mappedAtCreation: true,
+    // NOTE(@darzu): with WebGPU we have the option to modify the full buffers in memory before
+    //  handing them over to the GPU. This could be good for large initial sets of data, instead of
+    //  sending that over later via the queues. See commit 4862a7c and it's successors. Pre those
+    //  commits, we had a way to add mesh data to either via initial memory maps or queues. The
+    //  memory mapped way was removed to simplify the abstractions since we weren't noticing speed
+    //  benefits at the time.
+    mappedAtCreation: false,
   });
   const triIndicesBuffer = device.createBuffer({
     size: maxTris * bytesPerTri,
     usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
-    mappedAtCreation: true,
+    mappedAtCreation: false,
   });
   // TODO(@darzu): make creating this buffer optional on whether we're using line indices or not
   const lineIndicesBuffer = device.createBuffer({
     size: maxLines * bytesPerLine,
     usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
-    mappedAtCreation: true,
+    mappedAtCreation: false,
   });
   const uniformBuffer = device.createBuffer({
-    size: MeshUniform.ByteSizeAligned * maxMeshes,
+    size: MeshUniformMod.byteSizeAligned * maxMeshes,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    mappedAtCreation: true,
+    mappedAtCreation: false,
   });
 
-  // to modify buffers, we need to map them into JS space; we'll need to unmap later
-  let verticesMap = new Uint8Array(verticesBuffer.getMappedRange());
-  let triIndicesMap = new Uint16Array(triIndicesBuffer.getMappedRange());
-  let lineIndicesMap = new Uint16Array(lineIndicesBuffer.getMappedRange());
-  let uniformMap = new Uint8Array(uniformBuffer.getMappedRange());
-
-  function queueUpdateBuffer(
-    buffer: GPUBuffer,
-    offset: number,
-    data: Uint8Array
-  ) {
+  function updateBuf(buffer: GPUBuffer, offset: number, data: Uint8Array) {
     device.queue.writeBuffer(buffer, offset, data);
   }
 
-  const maps: MeshPoolMaps = {
-    verticesMap,
-    triIndicesMap,
-    lineIndicesMap,
-    uniformMap,
-  };
   const queues: MeshPoolQueues = {
-    queueUpdateTriIndices: (offset: number, data: Uint8Array) =>
-      queueUpdateBuffer(triIndicesBuffer, offset, data),
-    queueUpdateLineIndices: (offset: number, data: Uint8Array) =>
-      queueUpdateBuffer(lineIndicesBuffer, offset, data),
-    queueUpdateVertices: (offset: number, data: Uint8Array) =>
-      queueUpdateBuffer(verticesBuffer, offset, data),
-    queueUpdateUniform: (offset: number, data: Uint8Array) =>
-      queueUpdateBuffer(uniformBuffer, offset, data),
+    updateTriIndices: (offset, data) =>
+      updateBuf(triIndicesBuffer, offset, data),
+    updateLineIndices: (offset, data) =>
+      updateBuf(lineIndicesBuffer, offset, data),
+    updateVertices: (offset, data) => updateBuf(verticesBuffer, offset, data),
+    updateUniform: (offset, data) => updateBuf(uniformBuffer, offset, data),
   };
 
   const buffers: MeshPoolBuffers_WebGPU = {
@@ -540,39 +449,17 @@ export function createMeshPoolBuilder_WebGPU(
     uniformBuffer,
   };
 
-  const builder = createMeshPoolBuilder(opts, maps, queues);
+  const pool = createMeshPool(opts, queues);
 
-  const poolHandle: MeshPool_WebGPU = Object.assign(
-    builder.poolHandle,
-    buffers
-  );
+  const pool_webgpu: MeshPool_WebGPU = { ...pool, ...buffers };
 
-  const builder_webgpu: MeshPoolBuilder_WebGPU = {
-    ...builder,
-    poolHandle,
-    device,
-    finish, // TODO(@darzu):
-  };
-
-  function finish(): MeshPool_WebGPU {
-    // unmap the buffers so the GPU can use them
-    verticesBuffer.unmap();
-    triIndicesBuffer.unmap();
-    lineIndicesBuffer.unmap();
-    uniformBuffer.unmap();
-
-    builder.finish();
-
-    return poolHandle;
-  }
-
-  return builder_webgpu;
+  return pool_webgpu;
 }
 
-export function createMeshPoolBuilder_WebGL(
+export function createMeshPool_WebGL(
   gl: WebGLRenderingContext,
   opts: MeshPoolOpts
-): MeshPoolBuilder_WebGL {
+): MeshPool_WebGL {
   const { maxMeshes, maxTris, maxVerts, maxLines } = opts;
 
   // TODO(@darzu): we shouldn't need to preallocate all this
@@ -606,12 +493,12 @@ export function createMeshPoolBuilder_WebGL(
 
   // our in-memory reflections of the buffers used during the initial build phase
   // TODO(@darzu): this is too much duplicate data
-  let verticesMap = new Uint8Array(maxVerts * Vertex.ByteSize);
-  let triIndicesMap = new Uint16Array(maxTris * 3);
-  let lineIndicesMap = new Uint16Array(maxLines * 2);
-  let uniformMap = new Uint8Array(maxMeshes * MeshUniform.ByteSizeAligned);
+  // let verticesMap = new Uint8Array(maxVerts * Vertex.ByteSize);
+  // let triIndicesMap = new Uint16Array(maxTris * 3);
+  // let lineIndicesMap = new Uint16Array(maxLines * 2);
+  let uniformMap = new Uint8Array(maxMeshes * MeshUniformMod.byteSizeAligned);
 
-  function queueUpdateVertices(offset: number, data: Uint8Array) {
+  function updateVertices(offset: number, data: Uint8Array) {
     // TODO(@darzu): this is a strange way to compute this, but seems to work conservatively
     // const numVerts = Math.min(data.length / Vertex.ByteSize, Math.max(builder.numVerts, builder.poolHandle.numVerts))
     const numVerts = data.length / Vertex.ByteSize;
@@ -631,7 +518,7 @@ export function createMeshPoolBuilder_WebGL(
     gl.bindBuffer(gl.ARRAY_BUFFER, colorsBuffer);
     gl.bufferSubData(gl.ARRAY_BUFFER, vNumOffset * bytesPerVec3, colors);
   }
-  function queueUpdateTriIndices(offset: number, data: Uint8Array) {
+  function updateTriIndices(offset: number, data: Uint8Array) {
     // TODO(@darzu): again, strange but a useful optimization
     // const numInd = Math.min(data.length / 2, Math.max(builder.numTris, builder.poolHandle.numTris) * 3)
     // TODO(@darzu): debug logging
@@ -639,26 +526,20 @@ export function createMeshPoolBuilder_WebGL(
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triIndicesBuffer);
     gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, offset, data);
   }
-  function queueUpdateLineIndices(offset: number, data: Uint8Array) {
+  function updateLineIndices(offset: number, data: Uint8Array) {
     // TODO(@darzu): line indices don't work right. they interfere with regular tri indices.
     // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, lineIndicesBuffer);
     // gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, offset, data);
   }
-  function queueUpdateUniform(offset: number, data: Uint8Array) {
+  function updateUniform(offset: number, data: Uint8Array) {
     uniformMap.set(data, offset);
   }
 
-  const maps: MeshPoolMaps = {
-    verticesMap,
-    triIndicesMap,
-    lineIndicesMap,
-    uniformMap,
-  };
   const queues: MeshPoolQueues = {
-    queueUpdateTriIndices,
-    queueUpdateLineIndices,
-    queueUpdateVertices,
-    queueUpdateUniform,
+    updateTriIndices,
+    updateLineIndices,
+    updateVertices,
+    updateUniform,
   };
 
   const buffers: MeshPoolBuffers_WebGL = {
@@ -671,43 +552,20 @@ export function createMeshPoolBuilder_WebGL(
     lineIndicesBuffer,
   };
 
-  const builder = createMeshPoolBuilder(opts, maps, queues);
+  const pool = createMeshPool(opts, queues);
 
-  const poolHandle: MeshPool_WebGL = Object.assign(builder.poolHandle, buffers);
+  const pool_webgl: MeshPool_WebGL = { ...pool, ...buffers };
 
-  const builder_webgl: MeshPoolBuilder_WebGL = {
-    ...builder,
-    poolHandle,
-    gl,
-    finish, // TODO(@darzu):
-  };
-
-  function finish(): MeshPool_WebGL {
-    queueUpdateVertices(0, maps.verticesMap);
-    queueUpdateTriIndices(0, new Uint8Array(maps.triIndicesMap.buffer));
-    queueUpdateLineIndices(0, new Uint8Array(maps.lineIndicesMap.buffer));
-
-    builder.finish();
-
-    return poolHandle;
-  }
-
-  return builder_webgl;
+  return pool_webgl;
 }
 
-const scratch_uniform_u8 = new Uint8Array(MeshUniform.ByteSizeAligned);
+const scratch_uniform_u8 = new Uint8Array(MeshUniformMod.byteSizeAligned);
 
-function createMeshPoolBuilder(
-  opts: MeshPoolOpts,
-  maps: MeshPoolMaps,
-  queues: MeshPoolQueues
-): MeshPoolBuilder {
+function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
   const { maxMeshes, maxTris, maxVerts, maxLines } = opts;
 
   if (MAX_INDICES < maxVerts)
     throw `Too many vertices (${maxVerts})! W/ Uint16, we can only support '${maxVerts}' verts`;
-
-  let isUnmapped = false;
 
   // log our estimated space usage stats
   console.log(
@@ -723,12 +581,12 @@ function createMeshPoolBuilder(
     `   ${((maxLines * bytesPerLine) / 1024).toFixed(1)} KB for line indices`
   );
   console.log(
-    `   ${((maxMeshes * MeshUniform.ByteSizeAligned) / 1024).toFixed(
+    `   ${((maxMeshes * MeshUniformMod.byteSizeAligned) / 1024).toFixed(
       1
     )} KB for object uniform data`
   );
   const unusedBytesPerModel =
-    MeshUniform.ByteSizeAligned - MeshUniform.ByteSizeExact;
+    MeshUniformMod.byteSizeAligned - MeshUniformMod.byteSizeExact;
   console.log(
     `   Unused ${unusedBytesPerModel} bytes in uniform buffer per object (${(
       (unusedBytesPerModel * maxMeshes) /
@@ -739,7 +597,7 @@ function createMeshPoolBuilder(
     maxVerts * Vertex.ByteSize +
     maxTris * bytesPerTri +
     maxLines * bytesPerLine +
-    maxMeshes * MeshUniform.ByteSizeAligned;
+    maxMeshes * MeshUniformMod.byteSizeAligned;
   console.log(
     `Total space reserved for objects: ${(totalReservedBytes / 1024).toFixed(
       1
@@ -754,122 +612,13 @@ function createMeshPoolBuilder(
     numTris: 0,
     numVerts: 0,
     numLines: 0,
-    updateUniform: queueUpdateUniform,
-    addMesh: queueAddMesh,
-    addMeshInstance: queueInstanceMesh,
+    updateUniform,
+    addMesh,
+    addMeshInstance,
+    updateMeshVertices,
   };
 
-  const { verticesMap, triIndicesMap, lineIndicesMap, uniformMap } = maps;
-
-  const builder: MeshPoolBuilder = {
-    opts,
-    verticesMap,
-    triIndicesMap,
-    lineIndicesMap,
-    uniformMap,
-    numTris: 0,
-    numVerts: 0,
-    numLines: 0,
-    allMeshes,
-    poolHandle: pool,
-    addMesh: mappedAddMesh,
-    addMeshInstance: mappedInstanceMesh,
-    buildMesh: mappedMeshBuilder,
-    updateUniform: mappedUpdateUniform,
-    finish,
-  };
-
-  function mappedMeshBuilder(): MeshBuilder {
-    const b = createMeshBuilder(
-      maps,
-      allMeshes.length * MeshUniform.ByteSizeAligned,
-      builder.numVerts * Vertex.ByteSize,
-      builder.numTris * bytesPerTri,
-      builder.numLines * bytesPerLine,
-      opts.shiftMeshIndices ? builder.numVerts : undefined
-    );
-
-    function finish() {
-      const idx: PoolIndex = {
-        pool,
-        vertNumOffset: builder.numVerts,
-        triIndicesNumOffset: builder.numTris * 3,
-        lineIndicesNumOffset: builder.numLines * 2,
-        modelUniByteOffset: allMeshes.length * MeshUniform.ByteSizeAligned,
-      };
-      const m = b.finish(idx);
-      builder.numVerts += m.numVerts;
-      builder.numTris += m.numTris;
-      builder.numLines += m.numLines;
-      builder.allMeshes.push(m);
-      return m;
-    }
-
-    return {
-      ...b,
-      finish,
-    };
-  }
-
-  function mappedAddMesh(m: Mesh): MeshHandle {
-    if (isUnmapped) throw `trying to use finished MeshPoolBuilder`;
-    if (!m.usesProvoking) throw `mesh must use provoking vertices`;
-    if (verticesMap === null)
-      throw "Use preRender() and postRender() functions";
-    if (builder.allMeshes.length + 1 > maxMeshes) throw "Too many meshes!";
-    if (builder.numVerts + m.pos.length > maxVerts) throw "Too many vertices!";
-    if (builder.numTris + m.tri.length > maxTris) throw "Too many triangles!";
-    if (builder.numLines + (m.lines?.length ?? 0) > maxLines)
-      throw "Too many lines!";
-
-    // console.log(`QUEUE builder.allMeshes.length: ${builder.allMeshes.length}, builder.numTris: ${builder.numTris}, builder.numVerts: ${builder.numVerts}`)
-    // console.log(`QUEUE pool.allMeshes.length: ${pool.allMeshes.length}, pool.numTris: ${pool.numTris}, pool.numVerts: ${pool.numVerts}`)
-
-    const b = mappedMeshBuilder();
-
-    const vertNumOffset = builder.numVerts;
-
-    m.pos.forEach((pos, i) => {
-      b.addVertex(pos, DEFAULT_VERT_COLOR, [1.0, 0.0, 0.0]);
-    });
-    m.tri.forEach((triInd, i) => {
-      b.addTri(triInd);
-
-      // set provoking vertex data
-      // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
-      // TODO(@darzu): mesh builder should set provoking vertex data
-      const vOff = (vertNumOffset + triInd[0]) * Vertex.ByteSize;
-      const normal = computeTriangleNormal(
-        m.pos[triInd[0]],
-        m.pos[triInd[1]],
-        m.pos[triInd[2]]
-      );
-      Vertex.Serialize(
-        verticesMap,
-        vOff,
-        m.pos[triInd[0]],
-        m.colors[i],
-        normal
-      );
-    });
-    // Each mesh's triangles need to start 4-byte (i.e., 2-index) aligned. So, we add dummy triangles.
-    // TODO: could save a few bytes by tracking offsets into this buffer separately
-    builder.numTris = align(builder.numTris, 2);
-    if (m.lines) {
-      m.lines.forEach((inds, i) => {
-        b.addLine(inds);
-      });
-    }
-
-    const { min, max } = getAABBFromMesh(m);
-
-    b.setUniform(mat4.create(), min, max, vec3.create());
-
-    return b.finish();
-  }
-  function queueAddMesh(m: Mesh): MeshHandle {
-    if (!isUnmapped) throw `trying to use unfinished MeshPool`;
-    if (!m.usesProvoking) throw `mesh must use provoking vertices`;
+  function addMesh(m: Mesh): MeshHandle {
     if (pool.allMeshes.length + 1 > maxMeshes) throw "Too many meshes!";
     if (pool.numVerts + m.pos.length > maxVerts) throw "Too many vertices!";
     if (pool.numTris + m.tri.length > maxTris) throw "Too many triangles!";
@@ -885,40 +634,20 @@ function createMeshPoolBuilder(
       // pad triangles array to make sure it's a multiple of 4 *bytes*
       triIndicesMap: new Uint16Array(align(m.tri.length * 3, 2)),
       lineIndicesMap: new Uint16Array((m.lines?.length ?? 2) * 2), // TODO(@darzu): make optional?
-      uniformMap: new Uint8Array(MeshUniform.ByteSizeAligned),
+      uniformMap: new Uint8Array(MeshUniformMod.byteSizeAligned),
     };
 
     const b = createMeshBuilder(
       data,
-      0,
-      0,
-      0,
-      0,
-      opts.shiftMeshIndices ? pool.numVerts : undefined
+      opts.shiftMeshIndices ? pool.numVerts : 0,
+      m
     );
-
     m.pos.forEach((pos, i) => {
+      // this is placeholder vert data which will be updated later by serializeMeshVertices
       b.addVertex(pos, DEFAULT_VERT_COLOR, [1.0, 0.0, 0.0]);
     });
     m.tri.forEach((triInd, i) => {
       b.addTri(triInd);
-
-      // set provoking vertex data
-      // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
-      // TODO(@darzu): de-duplicated with mappedAddMesh
-      const vOff = triInd[0] * Vertex.ByteSize;
-      const normal = computeTriangleNormal(
-        m.pos[triInd[0]],
-        m.pos[triInd[1]],
-        m.pos[triInd[2]]
-      );
-      Vertex.Serialize(
-        data.verticesMap,
-        vOff,
-        m.pos[triInd[0]],
-        m.colors[i],
-        normal
-      );
     });
     if (m.lines) {
       m.lines.forEach((inds, i) => {
@@ -926,8 +655,8 @@ function createMeshPoolBuilder(
       });
     }
 
+    // initial uniform data
     const { min, max } = getAABBFromMesh(m);
-
     b.setUniform(mat4.create(), min, max, vec3.create());
 
     const idx: PoolIndex = {
@@ -935,29 +664,32 @@ function createMeshPoolBuilder(
       vertNumOffset: pool.numVerts,
       triIndicesNumOffset: pool.numTris * 3,
       lineIndicesNumOffset: pool.numLines * 2,
-      modelUniByteOffset: allMeshes.length * MeshUniform.ByteSizeAligned,
+      modelUniByteOffset: allMeshes.length * MeshUniformMod.byteSizeAligned,
     };
 
-    queues.queueUpdateTriIndices(
+    const handle = b.finish(idx);
+
+    // update vertex data
+    serializeMeshVertices(m, data.verticesMap);
+
+    queues.updateTriIndices(
       idx.triIndicesNumOffset * 2,
       new Uint8Array(data.triIndicesMap.buffer)
     ); // TODO(@darzu): this view shouldn't be necessary
-    queues.queueUpdateLineIndices(
+    queues.updateLineIndices(
       idx.lineIndicesNumOffset * 2,
       new Uint8Array(data.lineIndicesMap.buffer)
     ); // TODO(@darzu): this view shouldn't be necessary
-    queues.queueUpdateUniform(idx.modelUniByteOffset, data.uniformMap);
-    queues.queueUpdateVertices(
+    queues.updateVertices(
       idx.vertNumOffset * Vertex.ByteSize,
       data.verticesMap
     );
 
-    const handle = b.finish(idx);
+    queues.updateUniform(idx.modelUniByteOffset, data.uniformMap);
 
     pool.numTris += handle.numTris;
     // See the comment over the similar lign in mappedAddMesh--a
     // mesh's triangles need to be 4-byte aligned.
-    // TODO: see similar TODO in mappedAddMesh
     pool.numTris = align(pool.numTris, 2);
     pool.numLines += handle.numLines;
     pool.numVerts += handle.numVerts;
@@ -965,75 +697,59 @@ function createMeshPoolBuilder(
 
     return handle;
   }
-  function mappedInstanceMesh(m: MeshHandle, d: MeshUniform.Data): MeshHandle {
-    // TODO(@darzu): implement
-    if (builder.allMeshes.length + 1 > maxMeshes) throw "Too many meshes!";
-
-    const uniOffset = allMeshes.length * MeshUniform.ByteSizeAligned;
-    const newHandle = {
-      ...m,
-      ...d,
-      modelUniByteOffset: uniOffset,
-    };
-    allMeshes.push(newHandle);
-    mappedUpdateUniform(newHandle);
-    return newHandle;
-  }
-  function queueInstanceMesh(m: MeshHandle, d: MeshUniform.Data): MeshHandle {
-    // TODO(@darzu): implement
+  function addMeshInstance(m: MeshHandle, d: MeshUniformMod.Data): MeshHandle {
     if (pool.allMeshes.length + 1 > maxMeshes) throw "Too many meshes!";
 
-    const uniOffset = allMeshes.length * MeshUniform.ByteSizeAligned;
+    const uniOffset = allMeshes.length * MeshUniformMod.byteSizeAligned;
     const newHandle = {
       ...m,
-      ...d,
+      shaderData: d,
       modelUniByteOffset: uniOffset,
     };
     allMeshes.push(newHandle);
-    queueUpdateUniform(newHandle);
+    updateUniform(newHandle);
     return newHandle;
   }
 
-  function finish(): MeshPool {
-    if (isUnmapped) throw `trying to use finished MeshPoolBuilder`;
-    isUnmapped = true;
-
-    pool.numTris = builder.numTris;
-    pool.numLines = builder.numLines;
-    pool.numVerts = builder.numVerts;
-
-    console.log(
-      `Finishing pool with: ${builder.numTris} triangles, ${builder.numVerts} vertices, ${builder.numLines} lines`
-    );
-
-    return pool;
+  function updateMeshVertices(handle: MeshHandle, newMesh: Mesh) {
+    // TODO(@darzu): use scratch array
+    const verticesMap = new Uint8Array(newMesh.pos.length * Vertex.ByteSize);
+    serializeMeshVertices(newMesh, verticesMap);
+    queues.updateVertices(handle.vertNumOffset * Vertex.ByteSize, verticesMap);
   }
 
-  function queueUpdateUniform(m: MeshHandle): void {
-    MeshUniform.Serialize(
-      scratch_uniform_u8,
-      0,
-      m.transform,
-      m.aabbMin,
-      m.aabbMax,
-      m.tint
-    );
-    queues.queueUpdateUniform(m.modelUniByteOffset, scratch_uniform_u8);
-  }
-  function mappedUpdateUniform(m: MeshHandle): void {
-    if (isUnmapped) throw "trying to use finished MeshBuilder";
-    MeshUniform.Serialize(
-      scratch_uniform_u8,
-      0,
-      m.transform,
-      m.aabbMin,
-      m.aabbMax,
-      m.tint
-    );
-    builder.uniformMap.set(scratch_uniform_u8, m.modelUniByteOffset);
+  function updateUniform(m: MeshHandle): void {
+    MeshUniformMod.serialize(scratch_uniform_u8, 0, m.shaderData);
+    queues.updateUniform(m.modelUniByteOffset, scratch_uniform_u8);
   }
 
-  return builder;
+  return pool;
+}
+
+function serializeMeshVertices(m: Mesh, verticesMap: Uint8Array) {
+  if (!m.usesProvoking) throw `mesh must use provoking vertices`;
+
+  m.pos.forEach((pos, i) => {
+    const vOff = i * Vertex.ByteSize;
+    Vertex.serialize(
+      verticesMap,
+      vOff,
+      pos,
+      DEFAULT_VERT_COLOR,
+      [1.0, 0.0, 0.0]
+    );
+  });
+  m.tri.forEach((triInd, i) => {
+    // set provoking vertex data
+    // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
+    const vOff = triInd[0] * Vertex.ByteSize;
+    const normal = computeTriangleNormal(
+      m.pos[triInd[0]],
+      m.pos[triInd[1]],
+      m.pos[triInd[2]]
+    );
+    Vertex.serialize(verticesMap, vOff, m.pos[triInd[0]], m.colors[i], normal);
+  });
 }
 
 // TODO(@darzu): not totally sure we want this state
@@ -1041,12 +757,16 @@ let nextMeshId = 0;
 
 function createMeshBuilder(
   maps: MeshPoolMaps,
-  uByteOff: number,
-  vByteOff: number,
-  iByteOff: number,
-  lByteOff: number,
-  indicesShift: number | undefined
+  indicesShift: number,
+  mesh: Mesh | undefined
 ): MeshBuilderInternal {
+  // TODO(@darzu): these used to be parameters and can be again if we want to
+  //  work inside some bigger array
+  const uByteOff: number = 0;
+  const vByteOff: number = 0;
+  const iByteOff: number = 0;
+  const lByteOff: number = 0;
+
   let meshFinished = false;
   let numVerts = 0;
   let numTris = 0;
@@ -1056,7 +776,7 @@ function createMeshBuilder(
   function addVertex(pos: vec3, color: vec3, normal: vec3): void {
     if (meshFinished) throw "trying to use finished MeshBuilder";
     const vOff = vByteOff + numVerts * Vertex.ByteSize;
-    Vertex.Serialize(maps.verticesMap, vOff, pos, color, normal);
+    Vertex.serialize(maps.verticesMap, vOff, pos, color, normal);
     numVerts += 1;
   }
   let _scratchTri = vec3.create();
@@ -1100,14 +820,12 @@ function createMeshBuilder(
     _aabbMin = aabbMin;
     _aabbMax = aabbMax;
     _tint = tint;
-    MeshUniform.Serialize(
-      maps.uniformMap,
-      uByteOff,
+    MeshUniformMod.serialize(maps.uniformMap, uByteOff, {
       transform,
       aabbMin,
       aabbMax,
-      tint
-    );
+      tint,
+    });
   }
 
   function finish(idx: PoolIndex): MeshHandle {
@@ -1117,14 +835,16 @@ function createMeshBuilder(
     const res: MeshHandle = {
       ...idx,
       mId: nextMeshId++,
-      transform: _transform!,
-      aabbMin: _aabbMin!,
-      aabbMax: _aabbMax!,
-      tint: _tint!,
+      shaderData: {
+        transform: _transform!,
+        aabbMin: _aabbMin!,
+        aabbMax: _aabbMax!,
+        tint: _tint!,
+      },
       numTris,
       numVerts,
       numLines,
-      model: undefined,
+      readonlyMesh: mesh,
     };
     return res;
   }
@@ -1144,7 +864,7 @@ export function getAABBFromMesh(m: Mesh): AABB {
   return getAABBFromPositions(m.pos);
 }
 
-export function mapMeshPositions(m: Mesh, map: (p: vec3) => vec3): Mesh {
+export function mapMeshPositions(m: Mesh, map: (p: vec3, i: number) => vec3): Mesh {
   let pos = m.pos.map(map);
   return { ...m, pos };
 }
@@ -1156,4 +876,13 @@ export function scaleMesh3(m: Mesh, by: vec3): Mesh {
 }
 export function transformMesh(m: Mesh, t: mat4): Mesh {
   return mapMeshPositions(m, (p) => vec3.transformMat4(vec3.create(), p, t));
+}
+export function cloneMesh(m: Mesh): Mesh {
+  return {
+    ...m,
+    pos: m.pos.map((p) => vec3.clone(p)),
+    tri: m.tri.map((p) => vec3.clone(p)),
+    colors: m.colors.map((p) => vec3.clone(p)),
+    lines: m.lines ? m.lines.map((p) => vec2.clone(p)) : undefined,
+  };
 }
