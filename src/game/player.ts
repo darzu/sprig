@@ -192,17 +192,19 @@ export function registerStepPlayers(em: EntityManager) {
           let playerSpeed = 0.0005;
           if (inputs.keyDowns["shift"]) playerSpeed *= 3;
           let trans = playerSpeed * dt;
-          if (inputs.keyDowns["a"]) {
-            vec3.add(vel, vel, vec3.fromValues(-trans, 0, 0));
-          }
-          if (inputs.keyDowns["d"]) {
-            vec3.add(vel, vel, vec3.fromValues(trans, 0, 0));
-          }
-          if (inputs.keyDowns["w"]) {
-            vec3.add(vel, vel, vec3.fromValues(0, 0, -trans));
-          }
-          if (inputs.keyDowns["s"]) {
-            vec3.add(vel, vel, vec3.fromValues(0, 0, trans));
+          if (!p.player.manning) {
+            if (inputs.keyDowns["a"]) {
+              vec3.add(vel, vel, vec3.fromValues(-trans, 0, 0));
+            }
+            if (inputs.keyDowns["d"]) {
+              vec3.add(vel, vel, vec3.fromValues(trans, 0, 0));
+            }
+            if (inputs.keyDowns["w"]) {
+              vec3.add(vel, vel, vec3.fromValues(0, 0, -trans));
+            }
+            if (inputs.keyDowns["s"]) {
+              vec3.add(vel, vel, vec3.fromValues(0, 0, trans));
+            }
           }
 
           if (p.player.mode === "jumping") {
