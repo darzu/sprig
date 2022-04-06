@@ -378,12 +378,15 @@ function createCamera(_em: EntityManager) {
   EM.addSingletonComponent(CameraDef);
 }
 export function createNewShip(em: EntityManager) {
-  const rot = quat.create();
-  // quat.rotateY(rot, rot, Math.PI * -0.4);
-  // const pos: vec3 = [-40, -10, -60];
-  const pos: vec3 = vec3.fromValues(0, -2, 0);
-  // const pos: vec3 = [0, -10, 130];
-  em.addComponent(em.newEntity().id, ShipConstructDef, pos, rot);
+  em.registerOneShotSystem(null, [AssetsDef], () => {
+    // TODO(@darzu): move sub entity spawning out here
+    const rot = quat.create();
+    // quat.rotateY(rot, rot, Math.PI * -0.4);
+    // const pos: vec3 = [-40, -10, -60];
+    const pos: vec3 = vec3.fromValues(0, -2, 0);
+    // const pos: vec3 = [0, -10, 130];
+    em.addComponent(em.newEntity().id, ShipConstructDef, pos, rot);
+  });
 }
 
 export const BoatSpawnerDef = EM.defineComponent("boatSpawner", () => ({

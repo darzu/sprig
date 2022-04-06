@@ -70,6 +70,7 @@ interface SystemStats {
 export class EntityManager {
   entities: Map<number, Entity> = new Map();
   systems: System<any[] | null, any[]>[] = [];
+  oneShotSystems: System<any[] | null, any[]>[] = [];
   components: Map<number, ComponentDef<any, any>> = new Map();
   serializers: Map<
     number,
@@ -474,6 +475,41 @@ export class EntityManager {
     }
   }
 
+  private nextOneShotSuffix = 0;
+  // NOTE: if you're gonna change the types, change it above first and just copy
+  //  them down to here
+  public registerOneShotSystem<
+    CS extends ComponentDef[],
+    RS extends ComponentDef[]
+  >(cs: [...CS], rs: [...RS], callback: SystemFN<CS, RS>): void;
+  public registerOneShotSystem<CS extends null, RS extends ComponentDef[]>(
+    cs: CS,
+    rs: [...RS],
+    callback: SystemFN<CS, RS>
+  ): void;
+  public registerOneShotSystem<
+    CS extends ComponentDef[],
+    RS extends ComponentDef[]
+  >(cs: [...CS] | null, rs: [...RS], callback: SystemFN<CS, RS>): void {
+    const name = callback.name ?? "oneShot" + this.nextOneShotSuffix++;
+
+    // use one bucket for all one shots. Change this if we want more granularity
+    this.stats["__oneShots"] = this.stats["__oneShots"] ?? {
+      calls: 0,
+      queries: 0,
+      callTime: 0,
+      queryTime: 0,
+    };
+
+    this.oneShotSystems.push({
+      cs,
+      rs,
+      callback,
+      name,
+    });
+    // TODO(@darzu): track stats for one-shot systems?
+  }
+
   callSystems() {
     // dispatch to all the systems
     for (let s of this.systems) {
@@ -509,6 +545,36 @@ export class EntityManager {
         this.stats[s.name].callTime += afterCall - afterQuery;
       }
     }
+
+    // dispatch one-shot systems
+    const beforeOneShots = performance.now();
+    this.oneShotSystems = this.oneShotSystems.reduce((keptSystems, s) => {
+      let haveAllResources = true;
+      for (let r of s.rs) {
+        // note this is just to verify it exists
+        haveAllResources &&= !!this.findSingletonComponent(r);
+      }
+      if (haveAllResources) {
+        const es = this.filterEntities(s.cs);
+
+        const afterOneShotQuery = performance.now();
+        this.stats["__oneShots"].queries += 1;
+        this.stats["__oneShots"].queryTime +=
+          afterOneShotQuery - beforeOneShots;
+
+        s.callback(es, this.entities.get(0)! as any);
+
+        const afterOneShotCall = performance.now();
+        this.stats["__oneShots"].calls += 1;
+        this.stats["__oneShots"].callTime +=
+          afterOneShotCall - afterOneShotQuery;
+
+        return keptSystems;
+      } else {
+        return [...keptSystems, s];
+      }
+    }, [] as typeof this.oneShotSystems);
+
     this.loops++;
   }
 }
