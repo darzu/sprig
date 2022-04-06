@@ -17,8 +17,8 @@ import { DetectedEvents, DetectedEventsDef } from "../net/events.js";
 import { fireBullet } from "./bullet.js";
 import { registerEventHandler } from "../net/events.js";
 import { ToolDef } from "./tool.js";
-import { InteractableDef, InteractingDef } from "./interact.js";
-import { CameraDef, PlayerEntDef } from "./player.js";
+import { InRangeDef, InteractableDef } from "./interact.js";
+import { CameraDef, LocalPlayerDef, PlayerEntDef } from "./player.js";
 import { Assets, AssetsDef } from "./assets.js";
 import { copyAABB, createAABB } from "../physics/broadphase.js";
 import {
@@ -106,7 +106,7 @@ export function registerPlayerCannonSystem(em: EntityManager) {
   );
 
   em.registerSystem(
-    [CannonDef, WorldFrameDef, InteractableDef, RotationDef],
+    [CannonDef, WorldFrameDef, InRangeDef, RotationDef],
     [
       DetectedEventsDef,
       MusicDef,
@@ -114,30 +114,17 @@ export function registerPlayerCannonSystem(em: EntityManager) {
       PhysicsResultsDef,
       MeDef,
       CameraDef,
+      LocalPlayerDef,
     ],
     (cannons, res) => {
+      const player = em.findEntity(res.localPlayer.playerId, [PlayerEntDef])!;
+      if (!player) return;
       for (let c of cannons) {
         if (DeletedDef.isOn(c)) continue;
 
-        const { cannon, world, id, interaction } = c;
-        const players = res.physicsResults.collidesWith
-          .get(interaction.colliderId)
-          ?.map((h) => em.findEntity(h, [PlayerEntDef, AuthorityDef]))
-          .filter((p) => p && p.authority.pid === res.me.pid);
-
-        if (!players?.length) {
-          if (c.cannon.mannedId) unman();
-          continue;
-        }
-
-        const player = players[0]!;
-
         function unman() {
-          const oldManner = em.findEntity(c.cannon.mannedId, [PlayerEntDef]);
-          if (oldManner && oldManner.player.manning) {
-            oldManner.player.manning = false;
-            quat.identity(res.camera.rotation);
-          }
+          player.player.manning = false;
+          quat.identity(res.camera.rotation);
           res.camera.targetId = 0;
           c.cannon.mannedId = 0;
         }
@@ -154,14 +141,14 @@ export function registerPlayerCannonSystem(em: EntityManager) {
           }
         }
 
-        if (res.inputs.lclick && cannon.fireMs <= 0) {
-          cannon.fireMs = cannon.fireDelayMs;
+        if (res.inputs.lclick && c.cannon.fireMs <= 0) {
+          c.cannon.fireMs = c.cannon.fireDelayMs;
           // console.log("someone is interacting with the cannon");
           // let player = EM.findEntity(interacting.id, [PlayerEntDef])!;
 
           // TODO(@darzu): cannon fire sound
 
-          fireFromCannon(em, world);
+          fireFromCannon(em, c.world);
 
           const chord = randChordId();
           res.music.playChords([chord], "major", 2.0, 3.0, -2);
@@ -279,7 +266,6 @@ function deserializeCannonConstruct(c: CannonConstruct, buf: Deserializer) {
   c.yaw = buf.readFloat32();
   c.pitch = buf.readFloat32();
 }
-
 
 EM.registerSerializerPair(
   CannonConstructDef,

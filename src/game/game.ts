@@ -20,6 +20,7 @@ import {
 } from "./boat.js";
 import {
   CameraDef,
+  LocalPlayerDef,
   PlayerConstructDef,
   registerBuildPlayersSystem,
   registerStepPlayers,
@@ -116,6 +117,7 @@ EM.registerSerializerPair(
 function createPlayer(em: EntityManager) {
   const e = em.newEntity();
   em.addComponent(e.id, PlayerConstructDef, vec3.fromValues(0, 100, 0));
+  em.addSingletonComponent(LocalPlayerDef, e.id);
 }
 
 function createGround(em: EntityManager) {

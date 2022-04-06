@@ -17,10 +17,9 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { ColorDef } from "./game.js";
-import { InteractingDef } from "./interact.js";
 import { registerEventHandler, DetectedEventsDef } from "../net/events.js";
-import { PlayerEntDef } from "./player.js";
-import { InteractableDef } from "./interact.js";
+import { LocalPlayerDef, PlayerEntDef } from "./player.js";
+import { InteractableDef, InRangeDef } from "./interact.js";
 
 export const ToolDef = EM.defineComponent("tool", (type?: string) => ({
   type,
@@ -28,19 +27,20 @@ export const ToolDef = EM.defineComponent("tool", (type?: string) => ({
 
 export function registerToolPickupSystem(em: EntityManager) {
   em.registerSystem(
-    [ToolDef, InteractingDef],
-    [DetectedEventsDef],
+    [ToolDef, InRangeDef],
+    [DetectedEventsDef, LocalPlayerDef],
     (hats, resources) => {
-      for (let { interacting, id } of hats) {
-        let player = EM.findEntity(interacting.id, [PlayerEntDef])!;
-        if (player.player.tool === 0) {
+      for (let { id } of hats) {
+        let player = EM.findEntity(resources.localPlayer.playerId, [
+          PlayerEntDef,
+        ])!;
+        if (player.player.tool === 0 && player.player.interacting) {
           resources.detectedEvents.push({
             type: "tool-pickup",
             entities: [player.id, id],
             location: null,
           });
         }
-        em.removeComponent(id, InteractingDef);
       }
     },
     "toolPickup"

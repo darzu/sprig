@@ -18,10 +18,9 @@ import {
   RotationDef,
 } from "../physics/transform.js";
 import { ColorDef } from "./game.js";
-import { InteractingDef } from "./interact.js";
 import { registerEventHandler, DetectedEventsDef } from "../net/events.js";
-import { PlayerEntDef } from "./player.js";
-import { InteractableDef } from "./interact.js";
+import { LocalPlayerDef, PlayerEntDef } from "./player.js";
+import { InteractableDef, InRangeDef } from "./interact.js";
 
 export const HatDef = EM.defineComponent("hat", () => true);
 
@@ -108,12 +107,14 @@ export function registerBuildHatSystem(em: EntityManager) {
 
 export function registerHatPickupSystem(em: EntityManager) {
   em.registerSystem(
-    [HatDef, InteractingDef],
-    [DetectedEventsDef],
+    [HatDef, InRangeDef],
+    [DetectedEventsDef, LocalPlayerDef],
     (hats, resources) => {
-      for (let { interacting, id } of hats) {
-        let player = EM.findEntity(interacting.id, [PlayerEntDef])!;
-        if (player.player.hat === 0) {
+      for (let { id } of hats) {
+        let player = EM.findEntity(resources.localPlayer.playerId, [
+          PlayerEntDef,
+        ])!;
+        if (player.player.hat === 0 && player.player.interacting) {
           console.log("detecting pickup");
           resources.detectedEvents.push({
             type: "hat-pickup",
@@ -121,7 +122,6 @@ export function registerHatPickupSystem(em: EntityManager) {
             location: null,
           });
         }
-        em.removeComponent(id, InteractingDef);
       }
     },
     "hatPickup"

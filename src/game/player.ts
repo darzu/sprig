@@ -71,6 +71,7 @@ export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
     hat: 0,
     tool: 0,
     interacting: false,
+    clicking: false,
     manning: false,
     dropping: false,
     targetCursor: -1,
@@ -83,6 +84,14 @@ export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
   };
 });
 export type PlayerEnt = Component<typeof PlayerEntDef>;
+
+// Resource pointing at the local player
+export const LocalPlayerDef = EM.defineComponent(
+  "localPlayer",
+  (playerId?: number) => ({
+    playerId: playerId || 0,
+  })
+);
 
 export const PlayerConstructDef = EM.defineComponent(
   "playerConstruct",
@@ -225,6 +234,12 @@ export function registerStepPlayers(em: EntityManager) {
           } else {
             p.player.interacting = false;
           }
+          if (inputs.lclick) {
+            p.player.clicking = true;
+          } else {
+            p.player.clicking = false;
+          }
+
           p.player.dropping = (inputs.keyClicks["q"] || 0) > 0;
 
           // TODO(@darzu): we need a better way, maybe some sort of stack,
@@ -248,7 +263,6 @@ export function registerStepPlayers(em: EntityManager) {
             vec3.sub(facingDir, targetCursor.world.position, p.world.position);
             vec3.normalize(facingDir, facingDir);
           }
-
           // add bullet on lclick
           if (CHEAT && inputs.lclick) {
             const linearVelocity = vec3.scale(vec3.create(), facingDir, 0.02);

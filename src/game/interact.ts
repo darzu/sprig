@@ -1,5 +1,5 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { PlayerEntDef } from "./player.js";
+import { LocalPlayerDef, PlayerEntDef } from "./player.js";
 import { vec3 } from "../gl-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { ColorDef } from "./game.js";
@@ -20,62 +20,47 @@ export const InteractableDef = EM.defineComponent(
     // TODO(@darzu): components having pointers to entities should be
     //  handled better
     colliderId,
-    inRange: false,
   })
 );
-export const InteractingDef = EM.defineComponent(
-  "interacting",
-  (id?: number) => ({ id: id || 0 })
-);
+
+export const InRangeDef = EM.defineComponent("inRange", () => true);
 
 const INTERACTION_TINT = vec3.fromValues(0.1, 0.2, 0.1);
 
 export function registerInteractionSystem(em: EntityManager) {
   em.registerSystem(
-    [PlayerEntDef, AuthorityDef, WorldFrameDef],
-    [MeDef, PhysicsResultsDef],
-    (players, resources) => {
-      let interactables = em.filterEntities([InteractableDef, WorldFrameDef]);
+    [InteractableDef, WorldFrameDef],
+    [LocalPlayerDef, MeDef, PhysicsResultsDef],
+    (interactables, resources) => {
+      const player = em.findEntity(resources.localPlayer.playerId, [
+        PlayerEntDef,
+      ]);
+      if (!player) return;
+
+      const interactablesMap = interactables.reduce((map, i) => {
+        map.set(i.interaction.colliderId, i);
+        return map;
+      }, new Map());
       for (let interactable of interactables) {
-        if (interactable.interaction.inRange && ColorDef.isOn(interactable)) {
-          vec3.subtract(
-            interactable.color,
-            interactable.color,
-            INTERACTION_TINT
-          );
-          interactable.interaction.inRange = false;
+        if (InRangeDef.isOn(interactable)) {
+          if (ColorDef.isOn(interactable))
+            vec3.subtract(
+              interactable.color,
+              interactable.color,
+              INTERACTION_TINT
+            );
+          em.removeComponent(interactable.id, InRangeDef);
         }
       }
-      for (let player of players) {
-        if (player.authority.pid !== resources.me.pid) continue;
-        // check if any interactables are overlapping
-        let interactionId = 0;
-        for (let i of interactables) {
-          const hits =
-            resources.physicsResults.collidesWith.get(
-              i.interaction.colliderId
-            ) ?? [];
-          for (let h of hits) {
-            if (h === player.id) interactionId = i.id;
-          }
-        }
-        if (interactionId > 0) {
-          if (player.player.interacting) {
-            em.ensureComponent(interactionId, InteractingDef, player.id);
-          } else {
-            let interactable = em.findEntity(interactionId, [
-              InteractableDef,
-              ColorDef,
-            ]);
-            if (interactable) {
-              vec3.add(
-                interactable.color,
-                interactable.color,
-                INTERACTION_TINT
-              );
-              interactable.interaction.inRange = true;
-            }
-          }
+      // find an interactable within range of the player
+      const interactableColliderId = (
+        resources.physicsResults.collidesWith.get(player.id) ?? []
+      ).find((id) => interactablesMap.has(id));
+      if (interactableColliderId) {
+        const interactable = interactablesMap.get(interactableColliderId)!;
+        em.ensureComponentOn(interactable, InRangeDef);
+        if (ColorDef.isOn(interactable)) {
+          vec3.add(interactable.color, interactable.color, INTERACTION_TINT);
         }
       }
     },
