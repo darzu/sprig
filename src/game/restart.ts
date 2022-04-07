@@ -15,7 +15,7 @@ import { CameraDef, PlayerEntDef } from "./player.js";
 import {
   createNewShip,
   ShipConstructDef,
-  ShipDef,
+  ShipLocalDef,
   ShipPartDef,
 } from "./ship.js";
 
@@ -25,17 +25,21 @@ export function registerRestartSystem(em: EntityManager) {
     [GameStateDef, CameraDef, GroundSystemDef],
     ([], res) => {
       if (res.gameState.state !== GameState.GAMEOVER) return;
-      let ships = EM.filterEntities([ShipDef, ShipConstructDef, PositionDef]);
+      let ships = EM.filterEntities([
+        ShipLocalDef,
+        ShipConstructDef,
+        PositionDef,
+      ]);
       for (let ship of ships) {
-        for (let partId of ship.ship.partIds) {
+        for (let partId of ship.shipLocal.partIds) {
           const part = em.findEntity(partId, [ShipPartDef]);
           if (part) em.ensureComponentOn(part, DeletedDef);
         }
         em.ensureComponentOn(ship, DeletedDef);
-        if (ship.ship.cannonLId)
-          em.ensureComponent(ship.ship.cannonLId, DeletedDef);
-        if (ship.ship.cannonRId)
-          em.ensureComponent(ship.ship.cannonRId, DeletedDef);
+        if (ship.shipLocal.cannonLId)
+          em.ensureComponent(ship.shipLocal.cannonLId, DeletedDef);
+        if (ship.shipLocal.cannonRId)
+          em.ensureComponent(ship.shipLocal.cannonRId, DeletedDef);
 
         const players = em.filterEntities([
           PlayerEntDef,
@@ -52,7 +56,7 @@ export function registerRestartSystem(em: EntityManager) {
 
         quat.identity(res.camera.rotation);
         res.camera.targetId = 0;
-        const gem = em.findEntity(ship.shipConstruct.gemId, [
+        const gem = em.findEntity(ship.shipProps.gemId, [
           WorldFrameDef,
           PositionDef,
           PhysicsParentDef,

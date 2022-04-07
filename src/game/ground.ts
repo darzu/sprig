@@ -14,7 +14,6 @@ import {
   scaleMesh,
   scaleMesh3,
 } from "../render/mesh-pool.js";
-import { ShipDef } from "./ship.js";
 
 export const GROUNDSIZE = 48;
 

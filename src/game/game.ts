@@ -47,7 +47,7 @@ import {
   registerGroundSystems,
 } from "./ground.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
-import { createNewShip, registerShipSystems, ShipDef } from "./ship.js";
+import { createNewShip, registerShipSystems, ShipLocalDef } from "./ship.js";
 import { HatConstructDef } from "./hat.js";
 import { registerBuildBulletsSystem, registerBulletUpdate } from "./bullet.js";
 import { AssetsDef, LIGHT_BLUE, registerAssetLoader } from "./assets.js";
@@ -191,7 +191,7 @@ function registerScoreSystems(em: EntityManager) {
   em.addSingletonComponent(ScoreDef);
 
   em.registerSystem(
-    [ShipDef, PositionDef],
+    [ShipLocalDef, PositionDef],
     [ScoreDef],
     (ships, res) => {
       if (ships.length) {

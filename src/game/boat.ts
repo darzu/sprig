@@ -48,7 +48,7 @@ import { LifetimeDef } from "./lifetime.js";
 import { CannonConstructDef } from "./cannon.js";
 import { EnemyConstructDef, EnemyDef } from "./enemy.js";
 import { PlayerEntDef } from "./player.js";
-import { ShipConstructDef, ShipDef } from "./ship.js";
+import { ShipConstructDef, ShipLocalDef } from "./ship.js";
 import { Music, MusicDef } from "../music.js";
 
 export const BoatDef = EM.defineComponent("boat", () => {
@@ -147,7 +147,7 @@ export function registerStepBoats(em: EntityManager) {
             breakBoat(em, boat, res.assets.boat_broken, res.music);
           }
 
-          const ships = hits.filter((h) => em.findEntity(h, [ShipDef]));
+          const ships = hits.filter((h) => em.findEntity(h, [ShipLocalDef]));
           if (ships.length) {
             console.log("HIT SHIP!");
             breakBoat(em, boat, res.assets.boat_broken, res.music);

@@ -54,8 +54,8 @@ import { createNoodleMesh, Noodle, NoodleDef, NoodleSeg } from "./noodles.js";
 import { assert } from "../test.js";
 import { vec3Dbg, vec3Mid } from "../utils-3d.js";
 import { min } from "../math.js";
-import { ShipDef } from "./ship.js";
 import { GroundDef } from "./ground.js";
+import { ShipLocalDef } from "./ship.js";
 
 // TODO(@darzu): it'd be great if these could hook into some sort of
 //    dev mode you could toggle at runtime.
@@ -488,7 +488,7 @@ export function registerStepPlayers(em: EntityManager) {
 
         const shipHits = res.physicsResults.collidesWith
           .get(p.id)
-          ?.map((h) => em.findEntity(h, [ShipDef, ColliderDef]));
+          ?.map((h) => em.findEntity(h, [ShipLocalDef, ColliderDef]));
 
         if (shipHits && shipHits.length && shipHits[0]) {
           const ship = shipHits[0];

@@ -47,18 +47,9 @@ import { InputsDef } from "../inputs.js";
 import { GroundSystemDef } from "./ground.js";
 import { InRangeDef, InteractableDef } from "./interact.js";
 import { GameState, GameStateDef } from "./gamestate.js";
+import { defineNetEntityHelper } from "../em_helpers.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
-
-export const ShipDef = EM.defineComponent("ship", () => {
-  return {
-    partIds: [] as number[],
-    gemId: 0,
-    speed: 0,
-    cannonLId: 0,
-    cannonRId: 0,
-  };
-});
 
 export const ShipPartDef = EM.defineComponent(
   "shipPart",
@@ -68,70 +59,9 @@ export const ShipPartDef = EM.defineComponent(
   })
 );
 
-// export const ShipConstructDef = EM.defineComponent("shipConstruct", () => {
-//   return {
-//     loc: vec3.create(),
-//     rot: quat.create(),
-//     gemId: 0,
-//   };
-// });
-// export type ShipConstruct = Component<typeof ShipConstructDef>;
-
-// EM.registerSerializerPair(
-//   ShipConstructDef,
-//   (c, buf) => {
-//     buf.writeVec3(c.loc);
-//     buf.writeQuat(c.rot);
-//   },
-//   (c, buf) => {
-//     buf.readVec3(c.loc);
-//     buf.readQuat(c.rot);
-//   }
-// );
-
-function defineSerializableComponent<N extends string, P, Pargs extends any[]>(
-  em: EntityManager,
-  name: N,
-  construct: (...args: Pargs) => P,
-  serialize: (obj: P, buf: Serializer) => void,
-  deserialize: (obj: P, buf: Deserializer) => void
-): ComponentDef<N, P, Pargs> {
-  const def = em.defineComponent(name, construct);
-  em.registerSerializerPair(def, serialize, deserialize);
-  return def;
-}
-
-function registerConstructorSystem<
-  C extends ComponentDef,
-  RS extends ComponentDef[]
->(
-  em: EntityManager,
-  def: C,
-  rs: [...RS],
-  callback: (e: EntityW<[C]>, resources: EntityW<RS>) => void
-) {
-  em.registerSystem(
-    [def],
-    rs,
-    (es, res) => {
-      for (let e of es) {
-        if (FinishedDef.isOn(e)) continue;
-        callback(e as EntityW<[C]>, res);
-        em.ensureComponentOn(e, FinishedDef);
-      }
-    },
-    `build_${def.name}`
-  );
-  return def;
-}
-
-// TODO(@darzu):
-// em.ensureComponentOn(e, SyncDef);
-// e.sync.fullComponents.push(def.id);
-
-export const ShipConstructDef = defineSerializableComponent(
+export const [ShipConstructDef, ShipLocalDef] = defineNetEntityHelper(
   EM,
-  "shipConstruct",
+  "ship",
   () => ({
     loc: vec3.create(),
     rot: quat.create(),
@@ -144,6 +74,80 @@ export const ShipConstructDef = defineSerializableComponent(
   (c, buf) => {
     buf.readVec3(c.loc);
     buf.readQuat(c.rot);
+  },
+  () => ({
+    partIds: [] as number[],
+    gemId: 0,
+    speed: 0,
+    cannonLId: 0,
+    cannonRId: 0,
+  }),
+  [PositionDef, RotationDef],
+  [MeDef, AssetsDef],
+  (s, res) => {
+    const em: EntityManager = EM;
+    // networked state
+    em.ensureComponentOn(s, PositionDef, s.shipProps.loc);
+    em.ensureComponentOn(s, RotationDef, s.shipProps.rot);
+
+    // local only state
+    s.shipLocal.speed = 0.005;
+    em.ensureComponentOn(s, LinearVelocityDef, [0, -0.01, 0]);
+
+    const mc: MultiCollider = {
+      shape: "Multi",
+      solid: true,
+      // TODO(@darzu): integrate these in the assets pipeline
+      children: BARGE_AABBS.map((aabb) => ({
+        shape: "AABB",
+        solid: true,
+        aabb,
+      })),
+    };
+    em.ensureComponentOn(s, ColliderDef, mc);
+
+    // NOTE: since their is no network important state on the parts themselves
+    //    they can be created locally
+    const boatFloor = min(BARGE_AABBS.map((c) => c.max[1]));
+    for (let i = 0; i < res.assets.ship_broken.length; i++) {
+      const m = res.assets.ship_broken[i];
+      const part = em.newEntity();
+      em.ensureComponentOn(part, PhysicsParentDef, s.id);
+      em.ensureComponentOn(part, RenderableConstructDef, m.proto);
+      em.ensureComponentOn(part, ColorDef, vec3.clone(BOAT_COLOR));
+      em.ensureComponentOn(part, PositionDef, [0, 0, 0]);
+      const isCritical = criticalPartIdxes.includes(i);
+      em.ensureComponentOn(part, ShipPartDef, isCritical);
+      em.ensureComponentOn(part, ColliderDef, {
+        shape: "AABB",
+        solid: false,
+        aabb: m.aabb,
+      });
+      (part.collider as AABBCollider).aabb.max[1] = boatFloor;
+      s.shipLocal.partIds.push(part.id);
+    }
+
+    // create cannons
+
+    const cannonPitch = Math.PI * -0.05;
+
+    const cannonR = em.newEntity();
+    em.ensureComponentOn(cannonR, PhysicsParentDef, s.id);
+    em.addComponent(cannonR.id, CannonConstructDef, [-6, 3, 5], 0, cannonPitch);
+    s.shipLocal.cannonRId = cannonR.id;
+    const cannonL = em.newEntity();
+    em.ensureComponentOn(cannonL, PhysicsParentDef, s.id);
+    em.addComponent(
+      cannonL.id,
+      CannonConstructDef,
+      [6, 3, 5],
+      Math.PI,
+      cannonPitch
+    );
+    s.shipLocal.cannonLId = cannonL.id;
+
+    // em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
+    // em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2]);
   }
 );
 
@@ -159,7 +163,7 @@ export function createNewShip(em: EntityManager) {
     // create ship
     const s = em.newEntity();
     em.ensureComponentOn(s, ShipConstructDef);
-    s.shipConstruct.loc = [0, -2, 0];
+    s.shipProps.loc = [0, -2, 0];
 
     // create gem
     const gem = em.newEntity();
@@ -186,7 +190,7 @@ export function createNewShip(em: EntityManager) {
 
     em.ensureComponentOn(gem, InteractableDef, interactBox.id);
 
-    s.shipConstruct.gemId = gem.id;
+    s.shipProps.gemId = gem.id;
 
     // creating a ship:
     //  props (synced once)
@@ -199,86 +203,6 @@ export function createNewShip(em: EntityManager) {
 }
 
 export function registerShipSystems(em: EntityManager) {
-  registerConstructorSystem(
-    em,
-    ShipConstructDef,
-    [MeDef, AssetsDef],
-    (s, res) => {
-      // networked state
-      em.ensureComponentOn(s, PositionDef, s.shipConstruct.loc);
-      em.ensureComponentOn(s, RotationDef, s.shipConstruct.rot);
-      em.ensureComponentOn(s, SyncDef);
-      s.sync.dynamicComponents = [RotationDef.id, PositionDef.id];
-      em.ensureComponentOn(s, AuthorityDef, res.me.pid);
-
-      // local only state
-      em.ensureComponentOn(s, ShipDef);
-      s.ship.speed = 0.005;
-      em.ensureComponentOn(s, LinearVelocityDef, [0, -0.01, 0]);
-
-      const mc: MultiCollider = {
-        shape: "Multi",
-        solid: true,
-        // TODO(@darzu): integrate these in the assets pipeline
-        children: BARGE_AABBS.map((aabb) => ({
-          shape: "AABB",
-          solid: true,
-          aabb,
-        })),
-      };
-      em.ensureComponentOn(s, ColliderDef, mc);
-
-      // NOTE: since their is no network important state on the parts themselves
-      //    they can be created locally
-      const boatFloor = min(BARGE_AABBS.map((c) => c.max[1]));
-      for (let i = 0; i < res.assets.ship_broken.length; i++) {
-        const m = res.assets.ship_broken[i];
-        const part = em.newEntity();
-        em.ensureComponentOn(part, PhysicsParentDef, s.id);
-        em.ensureComponentOn(part, RenderableConstructDef, m.proto);
-        em.ensureComponentOn(part, ColorDef, vec3.clone(BOAT_COLOR));
-        em.ensureComponentOn(part, PositionDef, [0, 0, 0]);
-        const isCritical = criticalPartIdxes.includes(i);
-        em.ensureComponentOn(part, ShipPartDef, isCritical);
-        em.ensureComponentOn(part, ColliderDef, {
-          shape: "AABB",
-          solid: false,
-          aabb: m.aabb,
-        });
-        (part.collider as AABBCollider).aabb.max[1] = boatFloor;
-        s.ship.partIds.push(part.id);
-      }
-
-      // create cannons
-
-      const cannonPitch = Math.PI * -0.05;
-
-      const cannonR = em.newEntity();
-      em.ensureComponentOn(cannonR, PhysicsParentDef, s.id);
-      em.addComponent(
-        cannonR.id,
-        CannonConstructDef,
-        [-6, 3, 5],
-        0,
-        cannonPitch
-      );
-      s.ship.cannonRId = cannonR.id;
-      const cannonL = em.newEntity();
-      em.ensureComponentOn(cannonL, PhysicsParentDef, s.id);
-      em.addComponent(
-        cannonL.id,
-        CannonConstructDef,
-        [6, 3, 5],
-        Math.PI,
-        cannonPitch
-      );
-      s.ship.cannonLId = cannonL.id;
-
-      // em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
-      // em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2]);
-    }
-  );
-
   em.registerSystem(
     [GemDef, InRangeDef],
     [GameStateDef, PhysicsResultsDef, MeDef, InputsDef],
@@ -293,14 +217,14 @@ export function registerShipSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [ShipDef, PositionDef],
+    [ShipLocalDef, PositionDef],
     [MusicDef, InputsDef, CameraDef, GroundSystemDef, GameStateDef],
     (ships, res) => {
       if (res.gameState.state !== GameState.PLAYING) return;
       const numCritical = criticalPartIdxes.length;
       for (let ship of ships) {
         let numCriticalDamaged = 0;
-        for (let partId of ship.ship.partIds) {
+        for (let partId of ship.shipLocal.partIds) {
           const part = em.findEntity(partId, [ShipPartDef]);
           if (part && part.shipPart.critical && part.shipPart.damaged) {
             numCriticalDamaged += 1;
@@ -319,12 +243,12 @@ export function registerShipSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [ShipDef, LinearVelocityDef],
+    [ShipLocalDef, LinearVelocityDef],
     [GameStateDef],
     (ships, res) => {
       if (res.gameState.state !== GameState.PLAYING) return;
       for (let s of ships) {
-        s.linearVelocity[2] = s.ship.speed;
+        s.linearVelocity[2] = s.shipLocal.speed;
         s.linearVelocity[1] = -0.01;
       }
     },
@@ -344,11 +268,11 @@ export function registerShipSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [ShipDef],
+    [ShipLocalDef],
     [PhysicsResultsDef, MusicDef],
     (ships, res) => {
       for (let s of ships) {
-        for (let partId of s.ship.partIds) {
+        for (let partId of s.shipLocal.partIds) {
           const part = em.findEntity(partId, [
             ShipPartDef,
             ColorDef,
