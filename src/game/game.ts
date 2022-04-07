@@ -1,4 +1,4 @@
-import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
+import { Component, EM, EntityManager } from "../entity-manager.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { jitter } from "../math.js";
@@ -46,20 +46,10 @@ import {
   registerGroundSystems,
 } from "./ground.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
-import { registerShipSystems, ShipConstructDef, ShipDef } from "./ship.js";
-import {
-  HatConstructDef,
-  registerBuildHatSystem,
-  registerHatPickupSystem,
-  registerHatDropSystem,
-} from "./hat.js";
+import { createNewShip, registerShipSystems, ShipDef } from "./ship.js";
+import { HatConstructDef } from "./hat.js";
 import { registerBuildBulletsSystem, registerBulletUpdate } from "./bullet.js";
-import {
-  AssetsDef,
-  DARK_BLUE,
-  LIGHT_BLUE,
-  registerAssetLoader,
-} from "./assets.js";
+import { AssetsDef, LIGHT_BLUE, registerAssetLoader } from "./assets.js";
 import { registerInitCanvasSystem } from "../canvas.js";
 import {
   registerRenderInitSystem,
@@ -67,9 +57,6 @@ import {
 } from "../render/render_init.js";
 import { registerDeleteEntitiesSystem } from "../delete.js";
 import {
-  AmmunitionConstructDef,
-  CannonConstructDef,
-  LinstockConstructDef,
   registerBuildAmmunitionSystem,
   registerBuildCannonsSystem,
   registerBuildLinstockSystem,
@@ -89,8 +76,7 @@ import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { FinishedDef } from "../build.js";
 import { registerPhysicsSystems } from "../physics/phys.js";
-import { debugCreateNoodles, registerNoodleSystem } from "./noodles.js";
-import { splitMesh } from "../render/mesh-pool.js";
+import { registerNoodleSystem } from "./noodles.js";
 import { registerUpdateLifetimes } from "./lifetime.js";
 import { registerCreateEnemies } from "./enemy.js";
 import { registerMusicSystems } from "../music.js";
@@ -374,17 +360,6 @@ export function createLocalObjects(em: EntityManager) {
 
 function createCamera(_em: EntityManager) {
   EM.addSingletonComponent(CameraDef);
-}
-export function createNewShip(em: EntityManager) {
-  em.registerOneShotSystem(null, [AssetsDef], () => {
-    // TODO(@darzu): move sub entity spawning out here
-    const rot = quat.create();
-    // quat.rotateY(rot, rot, Math.PI * -0.4);
-    // const pos: vec3 = [-40, -10, -60];
-    const pos: vec3 = vec3.fromValues(0, -2, 0);
-    // const pos: vec3 = [0, -10, 130];
-    em.addComponent(em.newEntity().id, ShipConstructDef, pos, rot);
-  });
 }
 
 export const BoatSpawnerDef = EM.defineComponent("boatSpawner", () => ({

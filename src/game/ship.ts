@@ -17,7 +17,7 @@ import {
   MultiCollider,
 } from "../physics/collider.js";
 import { AABB, copyAABB, createAABB } from "../physics/broadphase.js";
-import { ColorDef, createNewShip, ScoreDef, TextDef } from "./game.js";
+import { ColorDef, ScoreDef, TextDef } from "./game.js";
 import { setCubePosScaleToAABB } from "../physics/phys-debug.js";
 import { BOAT_COLOR } from "./boat.js";
 import {
@@ -38,15 +38,15 @@ import { GroundSystemDef } from "./ground.js";
 import { InteractableDef } from "./interact.js";
 import { GameState, GameStateDef } from "./gamestate.js";
 
-export const ShipConstructDef = EM.defineComponent(
-  "shipConstruct",
-  (loc?: vec3, rot?: quat) => {
-    return {
-      loc: loc ?? vec3.create(),
-      rot: rot ?? quat.create(),
-    };
-  }
-);
+// TODO(@darzu): impl. occassionaly syncable components with auto-versioning
+
+export const ShipConstructDef = EM.defineComponent("shipConstruct", () => {
+  return {
+    loc: vec3.create(),
+    rot: quat.create(),
+    gemId: 0,
+  };
+});
 export type ShipConstruct = Component<typeof ShipConstructDef>;
 
 export const ShipDef = EM.defineComponent("ship", () => {
@@ -90,26 +90,77 @@ export const GemDef = EM.defineComponent("gem", () => {
 
 const criticalPartIdxes = [0, 3, 5, 6];
 
+export function createNewShip(em: EntityManager) {
+  em.registerOneShotSystem(null, [AssetsDef], (_, res) => {
+    // create ship
+    const s = em.newEntity();
+    em.ensureComponentOn(s, ShipConstructDef);
+    s.shipConstruct.loc = [0, -2, 0];
+
+    // create gem
+    const gem = em.newEntity();
+    em.ensureComponentOn(
+      gem,
+      RenderableConstructDef,
+      res.assets.spacerock.proto
+    );
+    em.ensureComponentOn(gem, PositionDef, [0, 0, -1]);
+    em.ensureComponentOn(gem, PhysicsParentDef, s.id);
+    em.ensureComponentOn(gem, GemDef);
+    em.ensureComponentOn(gem, ColorDef);
+
+    // create seperate hitbox for interacting with the gem
+    const interactBox = em.newEntity();
+    const interactAABB = copyAABB(createAABB(), res.assets.spacerock.aabb);
+    // interactAABB.max[0] += 1;
+    vec3.scale(interactAABB.min, interactAABB.min, 2);
+    vec3.scale(interactAABB.max, interactAABB.max, 2);
+    em.ensureComponentOn(interactBox, PhysicsParentDef, gem.id);
+    em.ensureComponentOn(interactBox, PositionDef, [0, 0, 0]);
+    em.ensureComponentOn(interactBox, ColliderDef, {
+      shape: "AABB",
+      solid: false,
+      aabb: interactAABB,
+    });
+
+    em.ensureComponentOn(gem, InteractableDef, interactBox.id);
+
+    s.shipConstruct.gemId = gem.id;
+
+    // creating a ship:
+    //  props (synced once)
+    //  local state (never synced)
+    //  dynamic state (synced many times)
+
+    // if you're gonna have ANY local-only state that EACH player
+    //  needs, you must have a constructor
+  });
+}
+
 export function registerShipSystems(em: EntityManager) {
   em.registerSystem(
     [ShipConstructDef],
     [MeDef, AssetsDef],
     (ships, res) => {
-      for (let e of ships) {
-        // createShip(em, s, res.me.pid, res.assets);
-        const pid = res.me.pid;
-        if (FinishedDef.isOn(e)) return;
-        const props = e.shipConstruct;
-        if (!PositionDef.isOn(e)) em.addComponent(e.id, PositionDef, props.loc);
-        if (!RotationDef.isOn(e)) em.addComponent(e.id, RotationDef, props.rot);
-        // if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0.2, 0.1, 0.1]);
-        // if (!RenderableConstructDef.isOn(e))
-        //   em.addComponent(e.id, RenderableConstructDef, res.assets.ship.mesh);
-        em.ensureComponentOn(e, ShipDef);
-        e.ship.speed = 0.005;
-        // e.ship.speed = 0.05;
+      for (let s of ships) {
+        if (FinishedDef.isOn(s)) return;
 
-        // TODO(@darzu): multi collider
+        // networked state
+        em.ensureComponentOn(s, PositionDef, s.shipConstruct.loc);
+        em.ensureComponentOn(s, RotationDef, s.shipConstruct.rot);
+        em.ensureComponentOn(
+          s,
+          SyncDef,
+          [ShipConstructDef.id],
+          [RotationDef.id, PositionDef.id]
+        );
+        em.ensureComponentOn(s, AuthorityDef, res.me.pid);
+
+        // local only state
+        em.ensureComponentOn(s, ShipDef);
+        s.ship.speed = 0.005;
+        em.ensureComponentOn(s, LinearVelocityDef, [0, -0.01, 0]);
+
         const mc: MultiCollider = {
           shape: "Multi",
           solid: true,
@@ -120,15 +171,15 @@ export function registerShipSystems(em: EntityManager) {
             aabb,
           })),
         };
-        em.ensureComponentOn(e, ColliderDef, mc);
+        em.ensureComponentOn(s, ColliderDef, mc);
 
-        const boatFloor = min(
-          mc.children.map((c) => (c as AABBCollider).aabb.max[1])
-        );
+        // NOTE: since their is no network important state on the parts themselves
+        //    they can be created locally
+        const boatFloor = min(BARGE_AABBS.map((c) => c.max[1]));
         for (let i = 0; i < res.assets.ship_broken.length; i++) {
           const m = res.assets.ship_broken[i];
           const part = em.newEntity();
-          em.ensureComponentOn(part, PhysicsParentDef, e.id);
+          em.ensureComponentOn(part, PhysicsParentDef, s.id);
           em.ensureComponentOn(part, RenderableConstructDef, m.proto);
           em.ensureComponentOn(part, ColorDef, vec3.clone(BOAT_COLOR));
           em.ensureComponentOn(part, PositionDef, [0, 0, 0]);
@@ -140,54 +191,15 @@ export function registerShipSystems(em: EntityManager) {
             aabb: m.aabb,
           });
           (part.collider as AABBCollider).aabb.max[1] = boatFloor;
-          e.ship.partIds.push(part.id);
+          s.ship.partIds.push(part.id);
         }
-        if (!AuthorityDef.isOn(e)) em.addComponent(e.id, AuthorityDef, pid);
-        if (!SyncDef.isOn(e)) {
-          const sync = em.addComponent(e.id, SyncDef);
-          sync.fullComponents.push(ShipConstructDef.id);
-          // sync.dynamicComponents.push(PositionDef.id);
-          sync.dynamicComponents.push(RotationDef.id);
-        }
-
-        // TODO(@darzu): ship movement
-        em.ensureComponentOn(e, LinearVelocityDef, [0, -0.01, 0]);
-
-        // create gem
-        const gem = em.newEntity();
-        em.ensureComponentOn(
-          gem,
-          RenderableConstructDef,
-          res.assets.spacerock.proto
-        );
-        em.ensureComponentOn(gem, PositionDef, [0, 0, -1]);
-        em.ensureComponentOn(gem, PhysicsParentDef, e.id);
-        em.ensureComponentOn(gem, GemDef);
-        em.ensureComponentOn(gem, ColorDef);
-        // create seperate hitbox for interacting with the gem
-        const interactBox = em.newEntity();
-        const interactAABB = copyAABB(createAABB(), res.assets.spacerock.aabb);
-        // interactAABB.max[0] += 1;
-        vec3.scale(interactAABB.min, interactAABB.min, 2);
-        vec3.scale(interactAABB.max, interactAABB.max, 2);
-        em.ensureComponentOn(interactBox, PhysicsParentDef, gem.id);
-        em.ensureComponentOn(interactBox, PositionDef, [0, 0, 0]);
-        em.ensureComponentOn(interactBox, ColliderDef, {
-          shape: "AABB",
-          solid: false,
-          aabb: interactAABB,
-        });
-
-        em.ensureComponentOn(gem, InteractableDef, interactBox.id);
-
-        e.ship.gemId = gem.id;
 
         // create cannons
 
         const cannonPitch = Math.PI * -0.05;
 
         const cannonR = em.newEntity();
-        em.ensureComponentOn(cannonR, PhysicsParentDef, e.id);
+        em.ensureComponentOn(cannonR, PhysicsParentDef, s.id);
         em.addComponent(
           cannonR.id,
           CannonConstructDef,
@@ -195,9 +207,9 @@ export function registerShipSystems(em: EntityManager) {
           0,
           cannonPitch
         );
-        e.ship.cannonRId = cannonR.id;
+        s.ship.cannonRId = cannonR.id;
         const cannonL = em.newEntity();
-        em.ensureComponentOn(cannonL, PhysicsParentDef, e.id);
+        em.ensureComponentOn(cannonL, PhysicsParentDef, s.id);
         em.addComponent(
           cannonL.id,
           CannonConstructDef,
@@ -205,12 +217,12 @@ export function registerShipSystems(em: EntityManager) {
           Math.PI,
           cannonPitch
         );
-        e.ship.cannonLId = cannonL.id;
+        s.ship.cannonLId = cannonL.id;
 
         // em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
         // em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2]);
 
-        em.addComponent(e.id, FinishedDef);
+        em.addComponent(s.id, FinishedDef);
       }
     },
     "buildShips"

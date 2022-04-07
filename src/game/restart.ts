@@ -8,12 +8,16 @@ import {
   PositionDef,
   RotationDef,
 } from "../physics/transform.js";
-import { createNewShip } from "./game.js";
 import { GameState, GameStateDef } from "./gamestate.js";
 import { GroundSystemDef } from "./ground.js";
 import { LifetimeDef } from "./lifetime.js";
 import { CameraDef, PlayerEntDef } from "./player.js";
-import { ShipDef, ShipPartDef } from "./ship.js";
+import {
+  createNewShip,
+  ShipConstructDef,
+  ShipDef,
+  ShipPartDef,
+} from "./ship.js";
 
 export function registerRestartSystem(em: EntityManager) {
   em.registerSystem(
@@ -21,7 +25,7 @@ export function registerRestartSystem(em: EntityManager) {
     [GameStateDef, CameraDef, GroundSystemDef],
     ([], res) => {
       if (res.gameState.state !== GameState.GAMEOVER) return;
-      let ships = EM.filterEntities([ShipDef, PositionDef]);
+      let ships = EM.filterEntities([ShipDef, ShipConstructDef, PositionDef]);
       for (let ship of ships) {
         for (let partId of ship.ship.partIds) {
           const part = em.findEntity(partId, [ShipPartDef]);
@@ -48,7 +52,7 @@ export function registerRestartSystem(em: EntityManager) {
 
         quat.identity(res.camera.rotation);
         res.camera.targetId = 0;
-        const gem = em.findEntity(ship.ship.gemId, [
+        const gem = em.findEntity(ship.shipConstruct.gemId, [
           WorldFrameDef,
           PositionDef,
           PhysicsParentDef,
