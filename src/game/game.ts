@@ -83,6 +83,7 @@ import { registerCreateEnemies } from "./enemy.js";
 import { registerMusicSystems } from "../music.js";
 import { GameState, GameStateDef } from "./gamestate.js";
 import { registerRestartSystem } from "./restart.js";
+import { registerNetDebugSystem } from "../net/net-debug.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -251,6 +252,7 @@ export function registerAllSystems(em: EntityManager) {
   registerModeler(em);
   registerToolPickupSystem(em);
   registerToolDropSystem(em);
+  registerNetDebugSystem(em);
   registerAckUpdateSystem(em);
   registerSyncSystem(em);
   registerSendOutboxes(em);

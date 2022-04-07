@@ -2,7 +2,6 @@ import { Component, EM, EntityManager } from "../entity-manager.js";
 import { LocalPlayerDef, PlayerEntDef } from "./player.js";
 import { vec3 } from "../gl-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
-import { ColorDef } from "./game.js";
 import {
   Position,
   PositionDef,
@@ -13,6 +12,7 @@ import {
   PhysicsResultsDef,
   WorldFrameDef,
 } from "../physics/nonintersection.js";
+import { clearTint, setTint, TintsDef } from "../tint.js";
 
 export const InteractableDef = EM.defineComponent(
   "interaction",
@@ -26,6 +26,7 @@ export const InteractableDef = EM.defineComponent(
 export const InRangeDef = EM.defineComponent("inRange", () => true);
 
 const INTERACTION_TINT = vec3.fromValues(0.1, 0.2, 0.1);
+const INTERACTION_TINT_NAME = "interaction";
 
 export function registerInteractionSystem(em: EntityManager) {
   em.registerSystem(
@@ -43,14 +44,10 @@ export function registerInteractionSystem(em: EntityManager) {
       }, new Map());
       for (let interactable of interactables) {
         if (InRangeDef.isOn(interactable)) {
-          if (ColorDef.isOn(interactable))
-            vec3.subtract(
-              interactable.color,
-              interactable.color,
-              INTERACTION_TINT
-            );
           em.removeComponent(interactable.id, InRangeDef);
         }
+        em.ensureComponentOn(interactable, TintsDef);
+        clearTint(interactable.tints, INTERACTION_TINT_NAME);
       }
       // find an interactable within range of the player
       const interactableColliderId = (
@@ -59,9 +56,8 @@ export function registerInteractionSystem(em: EntityManager) {
       if (interactableColliderId) {
         const interactable = interactablesMap.get(interactableColliderId)!;
         em.ensureComponentOn(interactable, InRangeDef);
-        if (ColorDef.isOn(interactable)) {
-          vec3.add(interactable.color, interactable.color, INTERACTION_TINT);
-        }
+        em.ensureComponentOn(interactable, TintsDef);
+        setTint(interactable.tints, INTERACTION_TINT_NAME, INTERACTION_TINT);
       }
     },
     "interaction"

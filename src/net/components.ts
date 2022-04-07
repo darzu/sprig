@@ -28,7 +28,7 @@ export type Peer = Component<typeof PeerDef>;
 
 export const HostDef = EM.defineComponent("host", () => true);
 
-export const AuthorityDef = EM.defineComponent("authority", (pid?) => ({
+export const AuthorityDef = EM.defineComponent("authority", (pid?: number) => ({
   pid: pid || 0,
   seq: 0,
   updateSeq: 0,
