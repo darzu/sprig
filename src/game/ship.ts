@@ -59,6 +59,50 @@ export const ShipPartDef = EM.defineComponent(
   })
 );
 
+export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper(
+  EM,
+  {
+    name: "gem",
+    defaultProps: (shipId: number = 0) => ({
+      shipId,
+    }),
+    serializeProps: (o, buf) => {
+      buf.writeUint32(o.shipId);
+    },
+    deserializeProps: (o, buf) => {
+      o.shipId = buf.readUint32();
+    },
+    defaultLocal: () => true,
+    dynamicComponents: [],
+    buildResources: [AssetsDef, MeDef],
+    build: (gem, res) => {
+      const em: EntityManager = EM;
+
+      em.ensureComponentOn(gem, PositionDef, [0, 0, -1]);
+
+      em.ensureComponentOn(
+        gem,
+        RenderableConstructDef,
+        res.assets.spacerock.proto
+      );
+      em.ensureComponentOn(gem, PhysicsParentDef, gem.gemProps.shipId);
+      em.ensureComponentOn(gem, ColorDef);
+
+      // create seperate hitbox for interacting with the gem
+      const interactBox = em.newEntity();
+      const interactAABB = copyAABB(createAABB(), res.assets.spacerock.aabb);
+      em.ensureComponentOn(interactBox, PhysicsParentDef, gem.id);
+      em.ensureComponentOn(interactBox, PositionDef, [0, 0, 0]);
+      em.ensureComponentOn(interactBox, ColliderDef, {
+        shape: "AABB",
+        solid: false,
+        aabb: interactAABB,
+      });
+      em.ensureComponentOn(gem, InteractableDef, interactBox.id);
+    },
+  }
+);
+
 export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
   EM,
   {
@@ -71,10 +115,12 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
     serializeProps: (c, buf) => {
       buf.writeVec3(c.loc);
       buf.writeQuat(c.rot);
+      buf.writeUint32(c.gemId);
     },
     deserializeProps: (c, buf) => {
       buf.readVec3(c.loc);
       buf.readQuat(c.rot);
+      c.gemId = buf.readUint32();
     },
     defaultLocal: () => ({
       partIds: [] as number[],
@@ -92,29 +138,7 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
         s.shipProps.loc = [0, -2, 0];
 
         // create gem
-        const gem = em.newEntity();
-        em.ensureComponentOn(
-          gem,
-          RenderableConstructDef,
-          res.assets.spacerock.proto
-        );
-        em.ensureComponentOn(gem, PositionDef, [0, 0, -1]);
-        em.ensureComponentOn(gem, PhysicsParentDef, s.id);
-        em.ensureComponentOn(gem, GemDef);
-        em.ensureComponentOn(gem, ColorDef);
-
-        // create seperate hitbox for interacting with the gem
-        const interactBox = em.newEntity();
-        const interactAABB = copyAABB(createAABB(), res.assets.spacerock.aabb);
-        em.ensureComponentOn(interactBox, PhysicsParentDef, gem.id);
-        em.ensureComponentOn(interactBox, PositionDef, [0, 0, 0]);
-        em.ensureComponentOn(interactBox, ColliderDef, {
-          shape: "AABB",
-          solid: false,
-          aabb: interactAABB,
-        });
-
-        em.ensureComponentOn(gem, InteractableDef, interactBox.id);
+        const gem = createGem(s.id);
 
         s.shipProps.gemId = gem.id;
       }
@@ -190,11 +214,6 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
   }
 );
 
-export const GemDef = EM.defineComponent("gem", () => {
-  // TODO(@darzu):
-  true;
-});
-
 const criticalPartIdxes = [0, 3, 5, 6];
 
 // export function createNewShip(em: EntityManager) {
@@ -207,13 +226,15 @@ const criticalPartIdxes = [0, 3, 5, 6];
 
 export function registerShipSystems(em: EntityManager) {
   em.registerSystem(
-    [GemDef, InRangeDef],
+    [GemPropsDef, InRangeDef],
     [GameStateDef, PhysicsResultsDef, MeDef, InputsDef],
     (gems, res) => {
       for (let gem of gems) {
         if (DeletedDef.isOn(gem)) continue;
         if (res.gameState.state !== GameState.LOBBY) continue;
-        if (res.inputs.keyClicks["e"]) res.gameState.state = GameState.PLAYING;
+        if (res.inputs.keyClicks["e"]) {
+          res.gameState.state = GameState.PLAYING;
+        }
       }
     },
     "startGame"
