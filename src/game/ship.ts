@@ -40,7 +40,7 @@ import { max, min } from "../math.js";
 import { assert } from "../test.js";
 import { LinearVelocityDef } from "../physics/motion.js";
 import { LifetimeDef } from "./lifetime.js";
-import { CannonConstructDef } from "./cannon.js";
+import { CannonPropsDef } from "./cannon.js";
 import { MusicDef } from "../music.js";
 import { CameraDef, PlayerEntDef } from "./player.js";
 import { InputsDef } from "../inputs.js";
@@ -186,22 +186,15 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
       // create cannons
 
       const cannonPitch = Math.PI * -0.05;
-
       const cannonR = em.newEntity();
       em.ensureComponentOn(cannonR, PhysicsParentDef, s.id);
-      em.addComponent(
-        cannonR.id,
-        CannonConstructDef,
-        [-6, 3, 5],
-        0,
-        cannonPitch
-      );
+      em.addComponent(cannonR.id, CannonPropsDef, [-6, 3, 5], 0, cannonPitch);
       s.shipLocal.cannonRId = cannonR.id;
       const cannonL = em.newEntity();
       em.ensureComponentOn(cannonL, PhysicsParentDef, s.id);
       em.addComponent(
         cannonL.id,
-        CannonConstructDef,
+        CannonPropsDef,
         [6, 3, 5],
         Math.PI,
         cannonPitch

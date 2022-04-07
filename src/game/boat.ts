@@ -45,7 +45,7 @@ import { BulletDef, fireBullet } from "./bullet.js";
 import { DeletedDef, OnDeleteDef } from "../delete.js";
 import { tempVec } from "../temp-pool.js";
 import { LifetimeDef } from "./lifetime.js";
-import { CannonConstructDef } from "./cannon.js";
+import { CannonPropsDef } from "./cannon.js";
 import { EnemyConstructDef, EnemyDef } from "./enemy.js";
 import { PlayerEntDef } from "./player.js";
 import { ShipLocalDef } from "./ship.js";
