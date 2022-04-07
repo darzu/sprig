@@ -119,7 +119,7 @@ export function registerHatPickupSystem(em: EntityManager) {
           resources.detectedEvents.push({
             type: "hat-pickup",
             entities: [player.id, id],
-            location: null,
+            extra: null,
           });
         }
       }
@@ -142,7 +142,7 @@ export function registerHatDropSystem(em: EntityManager) {
           detectedEvents.push({
             type: "hat-drop",
             entities: [id, player.hat],
-            location: dropLocation,
+            extra: dropLocation,
           });
         }
       }
@@ -175,7 +175,7 @@ registerEventHandler("hat-drop", {
     let player = em.findEntity(entities[0], [PlayerEntDef]);
     return player !== undefined && player.player.hat === entities[1];
   },
-  runEvent: (em, entities, location) => {
+  runEvent: (em, entities, location: vec3) => {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
     let hat = em.findEntity(entities[1], [PositionDef, PhysicsParentDef])!;
     hat.physicsParent.id = 0;
@@ -183,5 +183,11 @@ registerEventHandler("hat-drop", {
     // em.addComponent(hat.id, InteractableDef);
     vec3.copy(hat.position, location!);
     player.player.hat = 0;
+  },
+  serializeExtra: (buf, location: vec3) => {
+    buf.writeVec3(location);
+  },
+  deserializeExtra: (buf) => {
+    return buf.readVec3();
   },
 });

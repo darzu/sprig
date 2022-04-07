@@ -38,7 +38,7 @@ export function registerToolPickupSystem(em: EntityManager) {
           resources.detectedEvents.push({
             type: "tool-pickup",
             entities: [player.id, id],
-            location: null,
+            extra: null,
           });
         }
       }
@@ -60,7 +60,7 @@ export function registerToolDropSystem(em: EntityManager) {
           detectedEvents.push({
             type: "tool-drop",
             entities: [id, player.tool],
-            location: dropLocation,
+            extra: dropLocation,
           });
         }
       }
@@ -98,7 +98,7 @@ registerEventHandler("tool-drop", {
     let player = em.findEntity(entities[0], [PlayerEntDef]);
     return player !== undefined && player.player.tool === entities[1];
   },
-  runEvent: (em, entities, location) => {
+  runEvent: (em, entities, location: vec3) => {
     let player = em.findEntity(entities[0], [PlayerEntDef])!;
     let tool = em.findEntity(entities[1], [PositionDef, PhysicsParentDef])!;
     tool.physicsParent.id = 0;
@@ -109,5 +109,11 @@ registerEventHandler("tool-drop", {
     if (ScaleDef.isOn(tool)) vec3.copy(tool.scale, [1, 1, 1]);
     player.player.tool = 0;
     if (ColliderDef.isOn(tool)) tool.collider.solid = true;
+  },
+  serializeExtra: (buf, location: vec3) => {
+    buf.writeVec3(location);
+  },
+  deserializeExtra: (buf) => {
+    return buf.readVec3();
   },
 });

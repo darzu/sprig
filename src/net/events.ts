@@ -25,22 +25,41 @@ export interface Event {
   seq: number;
   // ID set at the generating node for dedup-ing
   entities: number[];
-  location: vec3 | null;
+  extra: any;
+}
+
+export interface EventHandler {
+  eventAuthorityEntity: (entities: number[]) => number;
+  legalEvent: (em: EntityManager, entities: number[], extra: any) => boolean;
+  runEvent: (em: EntityManager, entities: number[], extra: any) => void;
+  serializeExtra?: (buf: Serializer, extra: any) => void;
+  deserializeExtra?: (buf: Deserializer) => any;
 }
 
 const EVENT_TYPES: Map<number, string> = new Map();
+const EVENT_HANDLERS: Map<string, EventHandler> = new Map();
+
+export function registerEventHandler(type: string, handler: EventHandler) {
+  if (
+    (handler.serializeExtra && !handler.deserializeExtra) ||
+    (!handler.serializeExtra && handler.deserializeExtra)
+  )
+    throw `Must provide full serialize/deserialize pair for event type ${type}`;
+  EVENT_TYPES.set(hashCode(type), type);
+  EVENT_HANDLERS.set(type, handler);
+}
 
 function serializeEvent(event: Event, buf: Serializer) {
+  const handler = EVENT_HANDLERS.get(event.type);
+  if (!handler)
+    throw `Tried to serialize unrecognized event type ${event.type}`;
   buf.writeUint32(hashCode(event.type));
   buf.writeUint32(event.seq);
   buf.writeUint8(event.entities.length);
   for (const id of event.entities) buf.writeUint32(id);
-  if (event.location) {
-    buf.writeUint8(1);
-    buf.writeVec3(event.location);
-  } else {
-    buf.writeUint8(0);
-  }
+  if (handler.serializeExtra) handler.serializeExtra(buf, event.extra);
+  else if (event.extra)
+    throw `Found extra data but no serializer on event type ${event.type}`;
 }
 
 function deserializeEvent(buf: Deserializer): Event {
@@ -49,27 +68,29 @@ function deserializeEvent(buf: Deserializer): Event {
     throw `Tried to deserialize unrecognized event type ${typeCode}`;
   }
   const type = EVENT_TYPES.get(typeCode)!;
+  const handler = EVENT_HANDLERS.get(type);
+  if (!handler) throw `Tried to deserialize unrecognized event type ${type}`;
   const seq = buf.readUint32();
   const entities = [];
   const numEntities = buf.readUint8();
   for (let i = 0; i < numEntities; i++) entities.push(buf.readUint32());
-  const hasLocation = buf.readUint8();
-  const location = hasLocation ? buf.readVec3() : null;
-  return { type, seq, entities, location };
+  let extra;
+  if (handler.deserializeExtra) extra = handler.deserializeExtra(buf);
+  return { type, seq, entities, extra };
 }
 
-export type DetectedEvent = Pick<Event, "type" | "entities" | "location">;
+export type DetectedEvent = Pick<Event, "type" | "entities" | "extra">;
 
 function serializeDetectedEvent(event: DetectedEvent, buf: Serializer) {
+  const handler = EVENT_HANDLERS.get(event.type);
+  if (!handler)
+    throw `Tried to serialize unrecognized event type ${event.type}`;
   buf.writeUint32(hashCode(event.type));
   buf.writeUint8(event.entities.length);
   for (const id of event.entities) buf.writeUint32(id);
-  if (event.location) {
-    buf.writeUint8(1);
-    buf.writeVec3(event.location);
-  } else {
-    buf.writeUint8(0);
-  }
+  if (handler.serializeExtra) handler.serializeExtra(buf, event.extra);
+  else if (event.extra)
+    throw `Found extra data but no serializer on event type ${event.type}`;
 }
 
 function deserializeDetectedEvent(buf: Deserializer): DetectedEvent {
@@ -78,28 +99,14 @@ function deserializeDetectedEvent(buf: Deserializer): DetectedEvent {
     throw `Tried to deserialize unrecognized event type ${typeCode}`;
   }
   const type = EVENT_TYPES.get(typeCode)!;
+  const handler = EVENT_HANDLERS.get(type);
+  if (!handler) throw `Tried to deserialize unrecognized event type ${type}`;
   const entities = [];
   const numEntities = buf.readUint8();
   for (let i = 0; i < numEntities; i++) entities.push(buf.readUint32());
-  const hasLocation = buf.readUint8();
-  const location = hasLocation ? buf.readVec3() : null;
-  return { type, entities, location };
-}
-
-export interface EventHandler {
-  eventAuthorityEntity: (entities: number[]) => number;
-  legalEvent: (em: EntityManager, entities: number[]) => boolean;
-  runEvent: (
-    em: EntityManager,
-    entities: number[],
-    location: vec3 | null
-  ) => void;
-}
-
-const EVENT_HANDLERS: Map<string, EventHandler> = new Map();
-export function registerEventHandler(type: string, handler: EventHandler) {
-  EVENT_TYPES.set(hashCode(type), type);
-  EVENT_HANDLERS.set(type, handler);
+  let extra;
+  if (handler.deserializeExtra) extra = handler.deserializeExtra(buf);
+  return { type, entities, extra };
 }
 
 registerEventHandler("test", {
@@ -119,13 +126,13 @@ function eventAuthorityEntity(type: string, entities: number[]): number {
 function legalEvent(type: string, em: EntityManager, event: DetectedEvent) {
   if (!EVENT_HANDLERS.has(type))
     throw `No event handler registered for event type ${type}`;
-  return EVENT_HANDLERS.get(type)!.legalEvent(em, event.entities);
+  return EVENT_HANDLERS.get(type)!.legalEvent(em, event.entities, event.extra);
 }
 
 function runEvent(type: string, em: EntityManager, event: Event) {
   if (!EVENT_HANDLERS.has(type))
     throw `No event handler registered for event type ${type}`;
-  return EVENT_HANDLERS.get(type)!.runEvent(em, event.entities, event.location);
+  return EVENT_HANDLERS.get(type)!.runEvent(em, event.entities, event.extra);
 }
 
 export const DetectedEventsDef = EM.defineComponent(
