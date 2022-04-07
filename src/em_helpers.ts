@@ -43,6 +43,8 @@ export function registerConstructorSystem<
   return def;
 }
 
+export type NetEntityDef = {};
+
 export function defineNetEntityHelper<
   N extends string,
   P1,
@@ -52,40 +54,51 @@ export function defineNetEntityHelper<
   RS extends ComponentDef[]
 >(
   em: EntityManager,
-  name: N,
-  constructProps: (...args: Pargs1) => P1,
-  serializeProps: (obj: P1, buf: Serializer) => void,
-  deserializeProps: (obj: P1, buf: Deserializer) => void,
-  constructLocal: () => P2,
-  dynamicComponents: [...DS],
-  rs: [...RS],
-  callback: (
-    e: EntityW<
-      [ComponentDef<`${N}Props`, P1, Pargs1>, ComponentDef<`${N}Local`, P2, []>]
-    >,
-    resources: EntityW<RS>
-  ) => void
+  opts: {
+    name: N;
+    defaultProps: (...args: Pargs1) => P1;
+    serializeProps: (obj: P1, buf: Serializer) => void;
+    deserializeProps: (obj: P1, buf: Deserializer) => void;
+    defaultLocal: () => P2;
+    dynamicComponents?: [...DS];
+    buildResources: [...RS];
+    build: (
+      e: EntityW<
+        [
+          ComponentDef<`${N}Props`, P1, Pargs1>,
+          ComponentDef<`${N}Local`, P2, []>
+        ]
+      >,
+      resources: EntityW<RS>
+    ) => void;
+  }
 ): [ComponentDef<`${N}Props`, P1, Pargs1>, ComponentDef<`${N}Local`, P2, []>] {
   const propsDef = defineSerializableComponent(
     em,
-    `${name}Props`,
-    constructProps,
-    serializeProps,
-    deserializeProps
+    `${opts.name}Props`,
+    opts.defaultProps,
+    opts.serializeProps,
+    opts.deserializeProps
   );
-  const localDef = em.defineComponent(`${name}Local`, constructLocal);
+  const localDef = em.defineComponent(`${opts.name}Local`, opts.defaultLocal);
 
-  registerConstructorSystem(em, propsDef, [...rs, MeDef], (e, res) => {
-    em.ensureComponentOn(e, localDef);
-    // HACK
-    const me = (res as any as EntityW<[typeof MeDef]>).me;
-    em.ensureComponentOn(e, AuthorityDef, me.pid);
-    em.ensureComponentOn(e, SyncDef);
-    e.sync.fullComponents = [propsDef.id];
-    e.sync.dynamicComponents = dynamicComponents.map((d) => d.id);
+  registerConstructorSystem(
+    em,
+    propsDef,
+    [...opts.buildResources, MeDef],
+    (e, res) => {
+      em.ensureComponentOn(e, localDef);
+      // HACK
+      const me = (res as any as EntityW<[typeof MeDef]>).me;
+      em.ensureComponentOn(e, AuthorityDef, me.pid);
+      em.ensureComponentOn(e, SyncDef);
+      e.sync.fullComponents = [propsDef.id];
+      if (opts.dynamicComponents)
+        e.sync.dynamicComponents = opts.dynamicComponents.map((d) => d.id);
 
-    callback(e, res as EntityW<RS>);
-  });
+      opts.build(e, res as EntityW<RS>);
+    }
+  );
 
   return [propsDef, localDef];
 }

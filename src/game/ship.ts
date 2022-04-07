@@ -59,32 +59,31 @@ export const ShipPartDef = EM.defineComponent(
   })
 );
 
-export const [ShipConstructDef, ShipLocalDef] = defineNetEntityHelper(
-  EM,
-  "ship",
-  () => ({
+export const [ShipConstructDef, ShipLocalDef] = defineNetEntityHelper(EM, {
+  name: "ship",
+  defaultProps: () => ({
     loc: vec3.create(),
     rot: quat.create(),
     gemId: 0,
   }),
-  (c, buf) => {
+  serializeProps: (c, buf) => {
     buf.writeVec3(c.loc);
     buf.writeQuat(c.rot);
   },
-  (c, buf) => {
+  deserializeProps: (c, buf) => {
     buf.readVec3(c.loc);
     buf.readQuat(c.rot);
   },
-  () => ({
+  defaultLocal: () => ({
     partIds: [] as number[],
     gemId: 0,
     speed: 0,
     cannonLId: 0,
     cannonRId: 0,
   }),
-  [PositionDef, RotationDef],
-  [MeDef, AssetsDef],
-  (s, res) => {
+  dynamicComponents: [PositionDef, RotationDef],
+  buildResources: [MeDef, AssetsDef],
+  build: (s, res) => {
     const em: EntityManager = EM;
     // networked state
     em.ensureComponentOn(s, PositionDef, s.shipProps.loc);
@@ -148,8 +147,8 @@ export const [ShipConstructDef, ShipLocalDef] = defineNetEntityHelper(
 
     // em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
     // em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2]);
-  }
-);
+  },
+});
 
 export const GemDef = EM.defineComponent("gem", () => {
   // TODO(@darzu):
