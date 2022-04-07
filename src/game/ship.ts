@@ -1,5 +1,15 @@
 import { FinishedDef } from "../build.js";
-import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
+import {
+  Component,
+  ComponentDef,
+  EM,
+  Entities,
+  Entity,
+  EntityManager,
+  EntityW,
+  SystemFN,
+  WithComponent,
+} from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
@@ -40,15 +50,6 @@ import { GameState, GameStateDef } from "./gamestate.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
-export const ShipConstructDef = EM.defineComponent("shipConstruct", () => {
-  return {
-    loc: vec3.create(),
-    rot: quat.create(),
-    gemId: 0,
-  };
-});
-export type ShipConstruct = Component<typeof ShipConstructDef>;
-
 export const ShipDef = EM.defineComponent("ship", () => {
   return {
     partIds: [] as number[],
@@ -67,8 +68,75 @@ export const ShipPartDef = EM.defineComponent(
   })
 );
 
-EM.registerSerializerPair(
-  ShipConstructDef,
+// export const ShipConstructDef = EM.defineComponent("shipConstruct", () => {
+//   return {
+//     loc: vec3.create(),
+//     rot: quat.create(),
+//     gemId: 0,
+//   };
+// });
+// export type ShipConstruct = Component<typeof ShipConstructDef>;
+
+// EM.registerSerializerPair(
+//   ShipConstructDef,
+//   (c, buf) => {
+//     buf.writeVec3(c.loc);
+//     buf.writeQuat(c.rot);
+//   },
+//   (c, buf) => {
+//     buf.readVec3(c.loc);
+//     buf.readQuat(c.rot);
+//   }
+// );
+
+function defineSerializableComponent<N extends string, P, Pargs extends any[]>(
+  em: EntityManager,
+  name: N,
+  construct: (...args: Pargs) => P,
+  serialize: (obj: P, buf: Serializer) => void,
+  deserialize: (obj: P, buf: Deserializer) => void
+): ComponentDef<N, P, Pargs> {
+  const def = em.defineComponent(name, construct);
+  em.registerSerializerPair(def, serialize, deserialize);
+  return def;
+}
+
+function registerConstructorSystem<
+  C extends ComponentDef,
+  RS extends ComponentDef[]
+>(
+  em: EntityManager,
+  def: C,
+  rs: [...RS],
+  callback: (e: EntityW<[C]>, resources: EntityW<RS>) => void
+) {
+  em.registerSystem(
+    [def],
+    rs,
+    (es, res) => {
+      for (let e of es) {
+        if (FinishedDef.isOn(e)) continue;
+        callback(e as EntityW<[C]>, res);
+        em.ensureComponentOn(e, FinishedDef);
+      }
+    },
+    `build_${def.name}`
+  );
+  return def;
+}
+
+// TODO(@darzu):
+// em.ensureComponentOn(e, SyncDef);
+// e.sync.fullComponents.push(def.id);
+
+export const ShipConstructDef = defineSerializableComponent(
+  EM,
+  "shipConstruct",
+  () => ({
+    loc: vec3.create(),
+    rot: quat.create(),
+    gemId: 0,
+  }),
   (c, buf) => {
     buf.writeVec3(c.loc);
     buf.writeQuat(c.rot);
@@ -131,94 +199,84 @@ export function createNewShip(em: EntityManager) {
 }
 
 export function registerShipSystems(em: EntityManager) {
-  em.registerSystem(
-    [ShipConstructDef],
+  registerConstructorSystem(
+    em,
+    ShipConstructDef,
     [MeDef, AssetsDef],
-    (ships, res) => {
-      for (let s of ships) {
-        if (FinishedDef.isOn(s)) return;
+    (s, res) => {
+      // networked state
+      em.ensureComponentOn(s, PositionDef, s.shipConstruct.loc);
+      em.ensureComponentOn(s, RotationDef, s.shipConstruct.rot);
+      em.ensureComponentOn(s, SyncDef);
+      s.sync.dynamicComponents = [RotationDef.id, PositionDef.id];
+      em.ensureComponentOn(s, AuthorityDef, res.me.pid);
 
-        // networked state
-        em.ensureComponentOn(s, PositionDef, s.shipConstruct.loc);
-        em.ensureComponentOn(s, RotationDef, s.shipConstruct.rot);
-        em.ensureComponentOn(
-          s,
-          SyncDef,
-          [ShipConstructDef.id],
-          [RotationDef.id, PositionDef.id]
-        );
-        em.ensureComponentOn(s, AuthorityDef, res.me.pid);
+      // local only state
+      em.ensureComponentOn(s, ShipDef);
+      s.ship.speed = 0.005;
+      em.ensureComponentOn(s, LinearVelocityDef, [0, -0.01, 0]);
 
-        // local only state
-        em.ensureComponentOn(s, ShipDef);
-        s.ship.speed = 0.005;
-        em.ensureComponentOn(s, LinearVelocityDef, [0, -0.01, 0]);
-
-        const mc: MultiCollider = {
-          shape: "Multi",
+      const mc: MultiCollider = {
+        shape: "Multi",
+        solid: true,
+        // TODO(@darzu): integrate these in the assets pipeline
+        children: BARGE_AABBS.map((aabb) => ({
+          shape: "AABB",
           solid: true,
-          // TODO(@darzu): integrate these in the assets pipeline
-          children: BARGE_AABBS.map((aabb) => ({
-            shape: "AABB",
-            solid: true,
-            aabb,
-          })),
-        };
-        em.ensureComponentOn(s, ColliderDef, mc);
+          aabb,
+        })),
+      };
+      em.ensureComponentOn(s, ColliderDef, mc);
 
-        // NOTE: since their is no network important state on the parts themselves
-        //    they can be created locally
-        const boatFloor = min(BARGE_AABBS.map((c) => c.max[1]));
-        for (let i = 0; i < res.assets.ship_broken.length; i++) {
-          const m = res.assets.ship_broken[i];
-          const part = em.newEntity();
-          em.ensureComponentOn(part, PhysicsParentDef, s.id);
-          em.ensureComponentOn(part, RenderableConstructDef, m.proto);
-          em.ensureComponentOn(part, ColorDef, vec3.clone(BOAT_COLOR));
-          em.ensureComponentOn(part, PositionDef, [0, 0, 0]);
-          const isCritical = criticalPartIdxes.includes(i);
-          em.ensureComponentOn(part, ShipPartDef, isCritical);
-          em.ensureComponentOn(part, ColliderDef, {
-            shape: "AABB",
-            solid: false,
-            aabb: m.aabb,
-          });
-          (part.collider as AABBCollider).aabb.max[1] = boatFloor;
-          s.ship.partIds.push(part.id);
-        }
-
-        // create cannons
-
-        const cannonPitch = Math.PI * -0.05;
-
-        const cannonR = em.newEntity();
-        em.ensureComponentOn(cannonR, PhysicsParentDef, s.id);
-        em.addComponent(
-          cannonR.id,
-          CannonConstructDef,
-          [-6, 3, 5],
-          0,
-          cannonPitch
-        );
-        s.ship.cannonRId = cannonR.id;
-        const cannonL = em.newEntity();
-        em.ensureComponentOn(cannonL, PhysicsParentDef, s.id);
-        em.addComponent(
-          cannonL.id,
-          CannonConstructDef,
-          [6, 3, 5],
-          Math.PI,
-          cannonPitch
-        );
-        s.ship.cannonLId = cannonL.id;
-
-        // em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
-        // em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2]);
-
-        em.addComponent(s.id, FinishedDef);
+      // NOTE: since their is no network important state on the parts themselves
+      //    they can be created locally
+      const boatFloor = min(BARGE_AABBS.map((c) => c.max[1]));
+      for (let i = 0; i < res.assets.ship_broken.length; i++) {
+        const m = res.assets.ship_broken[i];
+        const part = em.newEntity();
+        em.ensureComponentOn(part, PhysicsParentDef, s.id);
+        em.ensureComponentOn(part, RenderableConstructDef, m.proto);
+        em.ensureComponentOn(part, ColorDef, vec3.clone(BOAT_COLOR));
+        em.ensureComponentOn(part, PositionDef, [0, 0, 0]);
+        const isCritical = criticalPartIdxes.includes(i);
+        em.ensureComponentOn(part, ShipPartDef, isCritical);
+        em.ensureComponentOn(part, ColliderDef, {
+          shape: "AABB",
+          solid: false,
+          aabb: m.aabb,
+        });
+        (part.collider as AABBCollider).aabb.max[1] = boatFloor;
+        s.ship.partIds.push(part.id);
       }
-    },
-    "buildShips"
+
+      // create cannons
+
+      const cannonPitch = Math.PI * -0.05;
+
+      const cannonR = em.newEntity();
+      em.ensureComponentOn(cannonR, PhysicsParentDef, s.id);
+      em.addComponent(
+        cannonR.id,
+        CannonConstructDef,
+        [-6, 3, 5],
+        0,
+        cannonPitch
+      );
+      s.ship.cannonRId = cannonR.id;
+      const cannonL = em.newEntity();
+      em.ensureComponentOn(cannonL, PhysicsParentDef, s.id);
+      em.addComponent(
+        cannonL.id,
+        CannonConstructDef,
+        [6, 3, 5],
+        Math.PI,
+        cannonPitch
+      );
+      s.ship.cannonLId = cannonL.id;
+
+      // em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
+      // em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2]);
+    }
   );
 
   em.registerSystem(

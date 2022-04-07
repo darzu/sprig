@@ -153,12 +153,8 @@ export function registerGroundSystems(em: EntityManager) {
           aabb,
         });
         em.ensureComponent(g.id, AuthorityDef, res.me.pid);
-        em.ensureComponent(
-          g.id,
-          SyncDef,
-          [GroundConstructDef.id],
-          [PositionDef.id]
-        );
+        em.ensureComponentOn(g, SyncDef, [PositionDef.id]);
+        g.sync.fullComponents = [GroundConstructDef.id];
         em.ensureComponentOn(g, GroundDef);
 
         em.ensureComponent(g.id, FinishedDef);

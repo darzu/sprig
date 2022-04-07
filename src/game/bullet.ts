@@ -76,7 +76,8 @@ function createBullet(
     aabb: assets.ball.aabb,
   });
   em.ensureComponent(e.id, LifetimeDef, 4000);
-  em.ensureComponent(e.id, SyncDef, [BulletConstructDef.id], [PositionDef.id]);
+  em.ensureComponentOn(e, SyncDef, [PositionDef.id]);
+  e.sync.fullComponents = [BulletConstructDef.id];
   em.ensureComponent(e.id, PredictDef);
   em.addComponent(e.id, FinishedDef);
 }

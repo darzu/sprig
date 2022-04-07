@@ -825,18 +825,14 @@ export function registerBuildPlayersSystem(em: EntityManager) {
           (collider as AABBCollider).aabb = playerAABB;
         }
         if (!SyncDef.isOn(e)) {
-          em.addComponent(
-            e.id,
-            SyncDef,
-            [PlayerConstructDef.id],
-            [
-              PositionDef.id,
-              RotationDef.id,
-              LinearVelocityDef.id,
-              // TODO(@darzu): maybe sync this via events instead
-              PhysicsParentDef.id,
-            ]
-          );
+          em.ensureComponentOn(e, SyncDef, [
+            PositionDef.id,
+            RotationDef.id,
+            LinearVelocityDef.id,
+            // TODO(@darzu): maybe sync this via events instead
+            PhysicsParentDef.id,
+          ]);
+          e.sync.fullComponents = [PlayerConstructDef.id];
         }
         em.ensureComponent(e.id, PhysicsParentDef);
         em.addComponent(e.id, FinishedDef);

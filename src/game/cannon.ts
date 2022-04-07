@@ -298,7 +298,8 @@ export function createPlayerCannon(
     solid: true,
     aabb: assets.cannon.aabb,
   });
-  em.ensureComponent(e.id, SyncDef, [CannonConstructDef.id, RotationDef.id]);
+  em.ensureComponentOn(e, SyncDef, [PositionDef.id, RotationDef.id]);
+  e.sync.fullComponents = [CannonConstructDef.id];
   em.addComponent(e.id, FinishedDef);
 
   // create seperate hitbox for interacting with the cannon

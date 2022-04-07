@@ -30,14 +30,17 @@ export interface ComponentDef<
 }
 export type Component<DEF> = DEF extends ComponentDef<any, infer P> ? P : never;
 
-type WithComponent<D> = D extends ComponentDef<infer N, infer P>
+export type WithComponent<D> = D extends ComponentDef<infer N, infer P>
   ? { readonly [k in N]: P }
   : never;
 export type EntityW<CS extends ComponentDef[], ID extends number = number> = {
   id: ID;
 } & Intersect<{ [P in keyof CS]: WithComponent<CS[P]> }>;
-type Entities<CS extends ComponentDef[]> = EntityW<CS>[];
-type SystemFN<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = (
+export type Entities<CS extends ComponentDef[]> = EntityW<CS>[];
+export type SystemFN<
+  CS extends ComponentDef[] | null,
+  RS extends ComponentDef[]
+> = (
   es: CS extends ComponentDef[] ? Entities<CS> : [],
   resources: EntityW<RS>
 ) => void;
@@ -122,8 +125,8 @@ export class EntityManager {
       }, not ${def.name}`;
   }
 
-  public registerSerializerPair<N extends string, P>(
-    def: ComponentDef<N, P>,
+  public registerSerializerPair<N extends string, P, Pargs extends any[]>(
+    def: ComponentDef<N, P, Pargs>,
     serialize: (obj: P, buf: Serializer) => void,
     deserialize: (obj: P, buf: Deserializer) => void
   ) {

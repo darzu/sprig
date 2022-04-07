@@ -170,7 +170,8 @@ function registerBuildWorldPlanes(em: EntityManager) {
           solid: true,
           aabb: res.assets.gridPlane.aabb,
         });
-        em.ensureComponentOn(e, SyncDef, [WorldPlaneConstDef.id], []);
+        em.ensureComponentOn(e, SyncDef);
+        e.sync.fullComponents = [WorldPlaneConstDef.id];
         em.ensureComponentOn(e, AuthorityDef, res.me.pid);
         em.ensureComponentOn(e, FinishedDef);
       }
