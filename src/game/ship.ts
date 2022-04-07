@@ -40,7 +40,7 @@ import { max, min } from "../math.js";
 import { assert } from "../test.js";
 import { LinearVelocityDef } from "../physics/motion.js";
 import { LifetimeDef } from "./lifetime.js";
-import { CannonPropsDef } from "./cannon.js";
+import { CannonPropsDef, createCannon } from "./cannon.js";
 import { MusicDef } from "../music.js";
 import { CameraDef, PlayerEntDef } from "./player.js";
 import { InputsDef } from "../inputs.js";
@@ -139,8 +139,14 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
 
         // create gem
         const gem = createGem(s.id);
-
         s.shipProps.gemId = gem.id;
+
+        // create cannons
+        const cannonPitch = Math.PI * -0.05;
+        const cannonR = createCannon([-6, 3, 5], 0, cannonPitch, s.id);
+        s.shipLocal.cannonRId = cannonR.id;
+        const cannonL = createCannon([6, 3, 5], Math.PI, cannonPitch, s.id);
+        s.shipLocal.cannonLId = cannonL.id;
       }
 
       vec3.copy(s.position, s.shipProps.loc);
@@ -182,24 +188,6 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
         (part.collider as AABBCollider).aabb.max[1] = boatFloor;
         s.shipLocal.partIds.push(part.id);
       }
-
-      // create cannons
-
-      const cannonPitch = Math.PI * -0.05;
-      const cannonR = em.newEntity();
-      em.ensureComponentOn(cannonR, PhysicsParentDef, s.id);
-      em.addComponent(cannonR.id, CannonPropsDef, [-6, 3, 5], 0, cannonPitch);
-      s.shipLocal.cannonRId = cannonR.id;
-      const cannonL = em.newEntity();
-      em.ensureComponentOn(cannonL, PhysicsParentDef, s.id);
-      em.addComponent(
-        cannonL.id,
-        CannonPropsDef,
-        [6, 3, 5],
-        Math.PI,
-        cannonPitch
-      );
-      s.shipLocal.cannonLId = cannonL.id;
 
       // em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
       // em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2]);

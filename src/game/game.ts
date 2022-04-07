@@ -59,7 +59,6 @@ import {
 import { registerDeleteEntitiesSystem } from "../delete.js";
 import {
   registerBuildAmmunitionSystem,
-  registerBuildCannonsSystem,
   registerBuildLinstockSystem,
   registerPlayerCannonSystem,
 } from "./cannon.js";
@@ -230,7 +229,6 @@ export function registerAllSystems(em: EntityManager) {
   registerBuildBoatsSystem(em);
   registerShipSystems(em);
   registerBuildBulletsSystem(em);
-  registerBuildCannonsSystem(em);
   registerBuildAmmunitionSystem(em);
   registerBuildLinstockSystem(em);
   registerBuildCursor(em);
