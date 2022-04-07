@@ -67,20 +67,16 @@ export const ShipPartDef = EM.defineComponent(
   })
 );
 
-function serializeShipConstruct(c: ShipConstruct, buf: Serializer) {
-  buf.writeVec3(c.loc);
-  buf.writeQuat(c.rot);
-}
-
-function deserializeShipConstruct(c: ShipConstruct, buf: Deserializer) {
-  buf.readVec3(c.loc);
-  buf.readQuat(c.rot);
-}
-
 EM.registerSerializerPair(
   ShipConstructDef,
-  serializeShipConstruct,
-  deserializeShipConstruct
+  (c, buf) => {
+    buf.writeVec3(c.loc);
+    buf.writeQuat(c.rot);
+  },
+  (c, buf) => {
+    buf.readVec3(c.loc);
+    buf.readQuat(c.rot);
+  }
 );
 
 export const GemDef = EM.defineComponent("gem", () => {
