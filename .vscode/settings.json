@@ -1,0 +1,12 @@
+{
+  "workbench.colorCustomizations": {
+    "editorInlayHint.background": "#00000000",
+    "editorInlayHint.foreground": "#6b9955b5",
+    "editorInlayHint.parameterBackground": "#00000000",
+    "editorInlayHint.parameterForeground": "#6b9955b5",
+    "editorInlayHint.typeBackground": "#00000000",
+    "editorInlayHint.typeForeground": "#6b9955b5",
+  },
+  // "editor.inlayHints.fontSize": 8
+  // "editor.inlayHints.fontFamily": "Menlo, Monaco, 'Courier New', monospace"
+}
