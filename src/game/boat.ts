@@ -48,7 +48,7 @@ import { LifetimeDef } from "./lifetime.js";
 import { CannonConstructDef } from "./cannon.js";
 import { EnemyConstructDef, EnemyDef } from "./enemy.js";
 import { PlayerEntDef } from "./player.js";
-import { ShipConstructDef, ShipLocalDef } from "./ship.js";
+import { ShipLocalDef } from "./ship.js";
 import { Music, MusicDef } from "../music.js";
 
 export const BoatDef = EM.defineComponent("boat", () => {
@@ -108,7 +108,7 @@ export function registerStepBoats(em: EntityManager) {
         // TODO(@darzu): COUNT DOWN FIREZONE
         const hits = res.physicsResults.collidesWith.get(o.boat.fireZoneId);
         const seesPlayer = hits?.some(
-          (h) => !!em.findEntity(h, [ShipConstructDef])
+          (h) => !!em.findEntity(h, [ShipLocalDef])
         );
         if (seesPlayer) {
           o.boat.fireDelay -= ms;

@@ -47,7 +47,7 @@ import {
   registerGroundSystems,
 } from "./ground.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
-import { createNewShip, registerShipSystems, ShipLocalDef } from "./ship.js";
+import { createShip, registerShipSystems, ShipLocalDef } from "./ship.js";
 import { HatConstructDef } from "./hat.js";
 import { registerBuildBulletsSystem, registerBulletUpdate } from "./bullet.js";
 import { AssetsDef, LIGHT_BLUE, registerAssetLoader } from "./assets.js";
@@ -353,7 +353,7 @@ export function createServerObjects(em: EntityManager) {
   createPlayer(em);
   // createGround(em);
   registerBoatSpawnerSystem(em);
-  createNewShip(em);
+  createShip();
   // createHats(em);
   // createWorldPlanes(em);
 }

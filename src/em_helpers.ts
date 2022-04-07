@@ -1,6 +1,11 @@
 import { FinishedDef } from "./build.js";
-import { EntityManager, ComponentDef, EntityW } from "./entity-manager.js";
-import { AuthorityDef, MeDef, SyncDef } from "./net/components.js";
+import {
+  EntityManager,
+  ComponentDef,
+  EntityW,
+  Entity,
+} from "./entity-manager.js";
+import { Authority, AuthorityDef, MeDef, SyncDef } from "./net/components.js";
 import { Serializer, Deserializer } from "./serialize.js";
 
 export function defineSerializableComponent<
@@ -38,12 +43,10 @@ export function registerConstructorSystem<
         em.ensureComponentOn(e, FinishedDef);
       }
     },
-    `build_${def.name}`
+    `${def.name}Build`
   );
   return def;
 }
-
-export type NetEntityDef = {};
 
 export function defineNetEntityHelper<
   N extends string,
@@ -60,19 +63,30 @@ export function defineNetEntityHelper<
     serializeProps: (obj: P1, buf: Serializer) => void;
     deserializeProps: (obj: P1, buf: Deserializer) => void;
     defaultLocal: () => P2;
-    dynamicComponents?: [...DS];
+    dynamicComponents: [...DS];
     buildResources: [...RS];
     build: (
       e: EntityW<
         [
           ComponentDef<`${N}Props`, P1, Pargs1>,
-          ComponentDef<`${N}Local`, P2, []>
+          ComponentDef<`${N}Local`, P2, []>,
+          typeof AuthorityDef,
+          typeof SyncDef,
+          ...DS
         ]
       >,
       resources: EntityW<RS>
     ) => void;
   }
-): [ComponentDef<`${N}Props`, P1, Pargs1>, ComponentDef<`${N}Local`, P2, []>] {
+): {
+  [_ in `${Capitalize<N>}PropsDef`]: ComponentDef<`${N}Props`, P1, Pargs1>;
+} & {
+  [_ in `${Capitalize<N>}LocalDef`]: ComponentDef<`${N}Local`, P2, []>;
+} & {
+  [_ in `create${Capitalize<N>}`]: (
+    ...args: Pargs1
+  ) => EntityW<[ComponentDef<`${N}Props`, P1, Pargs1>]>;
+} {
   const propsDef = defineSerializableComponent(
     em,
     `${opts.name}Props`,
@@ -87,18 +101,48 @@ export function defineNetEntityHelper<
     propsDef,
     [...opts.buildResources, MeDef],
     (e, res) => {
-      em.ensureComponentOn(e, localDef);
-      // HACK
+      // TYPE HACK
       const me = (res as any as EntityW<[typeof MeDef]>).me;
       em.ensureComponentOn(e, AuthorityDef, me.pid);
+
+      em.ensureComponentOn(e, localDef);
       em.ensureComponentOn(e, SyncDef);
       e.sync.fullComponents = [propsDef.id];
-      if (opts.dynamicComponents)
-        e.sync.dynamicComponents = opts.dynamicComponents.map((d) => d.id);
+      e.sync.dynamicComponents = opts.dynamicComponents.map((d) => d.id);
+      for (let d of opts.dynamicComponents) em.ensureComponentOn(e, d);
 
-      opts.build(e, res as EntityW<RS>);
+      // TYPE HACK
+      const _e = e as any as EntityW<
+        [
+          ComponentDef<`${N}Props`, P1, Pargs1>,
+          ComponentDef<`${N}Local`, P2, []>,
+          typeof AuthorityDef,
+          typeof SyncDef,
+          ...DS
+        ]
+      >;
+
+      opts.build(_e, res as EntityW<RS>);
     }
   );
 
-  return [propsDef, localDef];
+  const createNew = (...args: Pargs1) => {
+    const e = em.newEntity();
+    em.ensureComponentOn(e, propsDef, ...args);
+    return e;
+  };
+
+  const capitalizedN = capitalize(opts.name);
+
+  const result = {
+    [`${capitalizedN}PropsDef`]: propsDef,
+    [`${capitalizedN}LocalDef`]: localDef,
+    [`create${capitalizedN}`]: createNew,
+  } as const;
+
+  return result as any;
+}
+
+export function capitalize<S extends string>(s: S): Capitalize<S> {
+  return `${s[0].toUpperCase()}${s.slice(1)}` as any;
 }

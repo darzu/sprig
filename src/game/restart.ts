@@ -12,12 +12,7 @@ import { GameState, GameStateDef } from "./gamestate.js";
 import { GroundSystemDef } from "./ground.js";
 import { LifetimeDef } from "./lifetime.js";
 import { CameraDef, PlayerEntDef } from "./player.js";
-import {
-  createNewShip,
-  ShipConstructDef,
-  ShipLocalDef,
-  ShipPartDef,
-} from "./ship.js";
+import { createShip, ShipLocalDef, ShipPartDef, ShipPropsDef } from "./ship.js";
 
 export function registerRestartSystem(em: EntityManager) {
   em.registerSystem(
@@ -25,11 +20,7 @@ export function registerRestartSystem(em: EntityManager) {
     [GameStateDef, CameraDef, GroundSystemDef],
     ([], res) => {
       if (res.gameState.state !== GameState.GAMEOVER) return;
-      let ships = EM.filterEntities([
-        ShipLocalDef,
-        ShipConstructDef,
-        PositionDef,
-      ]);
+      let ships = EM.filterEntities([ShipLocalDef, ShipPropsDef, PositionDef]);
       for (let ship of ships) {
         for (let partId of ship.shipLocal.partIds) {
           const part = em.findEntity(partId, [ShipPartDef]);
@@ -70,7 +61,7 @@ export function registerRestartSystem(em: EntityManager) {
 
         res.groundSystem.initialPlace = true;
 
-        createNewShip(em);
+        createShip();
       }
       res.gameState.state = GameState.LOBBY;
       // TODO: delete all enemy boats
