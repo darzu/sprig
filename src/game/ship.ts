@@ -47,7 +47,7 @@ import { InputsDef } from "../inputs.js";
 import { GroundSystemDef } from "./ground.js";
 import { InRangeDef, InteractableDef } from "./interact.js";
 import { GameState, GameStateDef } from "./gamestate.js";
-import { defineNetEntityHelper } from "../em_helpers.js";
+import { createRef, defineNetEntityHelper } from "../em_helpers.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
@@ -63,14 +63,14 @@ export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper(
   EM,
   {
     name: "gem",
-    defaultProps: (shipId: number = 0) => ({
-      shipId,
+    defaultProps: (ship?: Entity) => ({
+      ship: createRef(ship ?? 0),
     }),
     serializeProps: (o, buf) => {
-      buf.writeUint32(o.shipId);
+      buf.writeUint32(o.ship.id);
     },
     deserializeProps: (o, buf) => {
-      o.shipId = buf.readUint32();
+      o.ship = createRef(buf.readUint32());
     },
     defaultLocal: () => true,
     dynamicComponents: [],
@@ -85,7 +85,7 @@ export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper(
         RenderableConstructDef,
         res.assets.spacerock.proto
       );
-      em.ensureComponentOn(gem, PhysicsParentDef, gem.gemProps.shipId);
+      em.ensureComponentOn(gem, PhysicsParentDef, gem.gemProps.ship.id);
       em.ensureComponentOn(gem, ColorDef);
 
       // create seperate hitbox for interacting with the gem
@@ -111,23 +111,26 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
       loc: vec3.create(),
       rot: quat.create(),
       gemId: 0,
+      cannonLId: 0,
+      cannonRId: 0,
     }),
     serializeProps: (c, buf) => {
       buf.writeVec3(c.loc);
       buf.writeQuat(c.rot);
       buf.writeUint32(c.gemId);
+      buf.writeUint32(c.cannonLId);
+      buf.writeUint32(c.cannonRId);
     },
     deserializeProps: (c, buf) => {
       buf.readVec3(c.loc);
       buf.readQuat(c.rot);
       c.gemId = buf.readUint32();
+      c.cannonLId = buf.readUint32();
+      c.cannonRId = buf.readUint32();
     },
     defaultLocal: () => ({
       partIds: [] as number[],
-      gemId: 0,
       speed: 0,
-      cannonLId: 0,
-      cannonRId: 0,
     }),
     dynamicComponents: [PositionDef, RotationDef],
     buildResources: [MeDef, AssetsDef],
@@ -138,21 +141,20 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
         s.shipProps.loc = [0, -2, 0];
 
         // create gem
-        const gem = createGem(s.id);
+        const gem = createGem(s);
         s.shipProps.gemId = gem.id;
 
         // create cannons
         const cannonPitch = Math.PI * -0.05;
         const cannonR = createCannon([-6, 3, 5], 0, cannonPitch, s.id);
-        s.shipLocal.cannonRId = cannonR.id;
+        s.shipProps.cannonRId = cannonR.id;
         const cannonL = createCannon([6, 3, 5], Math.PI, cannonPitch, s.id);
-        s.shipLocal.cannonLId = cannonL.id;
+        s.shipProps.cannonLId = cannonL.id;
       }
 
       vec3.copy(s.position, s.shipProps.loc);
       quat.copy(s.rotation, s.shipProps.rot);
 
-      // local only state
       s.shipLocal.speed = 0.005;
       em.ensureComponentOn(s, LinearVelocityDef, [0, -0.01, 0]);
 

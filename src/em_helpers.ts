@@ -4,6 +4,7 @@ import {
   ComponentDef,
   EntityW,
   Entity,
+  EM,
 } from "./entity-manager.js";
 import { Authority, AuthorityDef, MeDef, SyncDef } from "./net/components.js";
 import { Serializer, Deserializer } from "./serialize.js";
@@ -145,4 +146,35 @@ export function defineNetEntityHelper<
 
 export function capitalize<S extends string>(s: S): Capitalize<S> {
   return `${s[0].toUpperCase()}${s.slice(1)}` as any;
+}
+
+export type Ref<CS extends ComponentDef[] = []> = (() =>
+  | EntityW<CS>
+  | undefined) & {
+  readonly id: number;
+};
+
+export function createRef<CS extends ComponentDef[]>(
+  idOrE: EntityW<CS> | number,
+  cs?: CS
+): Ref<CS> {
+  if (typeof idOrE === "number") {
+    if (idOrE === 0) {
+      const thunk = () => undefined;
+      thunk.id = idOrE;
+      return thunk;
+    } else {
+      let found: EntityW<CS> | undefined;
+      const thunk = () => {
+        if (!found) found = EM.findEntity<CS, number>(idOrE, cs ?? ([] as any));
+        return found;
+      };
+      thunk.id = idOrE;
+      return thunk;
+    }
+  } else {
+    const thunk = () => idOrE;
+    thunk.id = idOrE.id;
+    return thunk;
+  }
 }

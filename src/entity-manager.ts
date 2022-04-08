@@ -25,7 +25,7 @@ export interface ComponentDef<
 > {
   readonly name: N;
   construct: (...args: Pargs) => P;
-  id: number;
+  readonly id: number;
   isOn: <E extends Entity>(e: E) => e is E & { [K in N]: P };
 }
 export type Component<DEF> = DEF extends ComponentDef<any, infer P> ? P : never;
@@ -34,7 +34,7 @@ export type WithComponent<D> = D extends ComponentDef<infer N, infer P>
   ? { readonly [k in N]: P }
   : never;
 export type EntityW<CS extends ComponentDef[], ID extends number = number> = {
-  id: ID;
+  readonly id: ID;
 } & Intersect<{ [P in keyof CS]: WithComponent<CS[P]> }>;
 export type Entities<CS extends ComponentDef[]> = EntityW<CS>[];
 export type SystemFN<

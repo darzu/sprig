@@ -27,10 +27,10 @@ export function registerRestartSystem(em: EntityManager) {
           if (part) em.ensureComponentOn(part, DeletedDef);
         }
         em.ensureComponentOn(ship, DeletedDef);
-        if (ship.shipLocal.cannonLId)
-          em.ensureComponent(ship.shipLocal.cannonLId, DeletedDef);
-        if (ship.shipLocal.cannonRId)
-          em.ensureComponent(ship.shipLocal.cannonRId, DeletedDef);
+        if (ship.shipProps.cannonLId)
+          em.ensureComponent(ship.shipProps.cannonLId, DeletedDef);
+        if (ship.shipProps.cannonRId)
+          em.ensureComponent(ship.shipProps.cannonRId, DeletedDef);
 
         const players = em.filterEntities([
           PlayerEntDef,
