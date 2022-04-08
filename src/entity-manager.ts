@@ -33,7 +33,10 @@ export type Component<DEF> = DEF extends ComponentDef<any, infer P> ? P : never;
 export type WithComponent<D> = D extends ComponentDef<infer N, infer P>
   ? { readonly [k in N]: P }
   : never;
-export type EntityW<CS extends ComponentDef[], ID extends number = number> = {
+export type EntityW<
+  CS extends readonly ComponentDef[],
+  ID extends number = number
+> = {
   readonly id: ID;
 } & Intersect<{ [P in keyof CS]: WithComponent<CS[P]> }>;
 export type Entities<CS extends ComponentDef[]> = EntityW<CS>[];
@@ -52,11 +55,16 @@ type System<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = {
   name: string;
 };
 
-type EDef<ID extends number, CS extends ComponentDef[]> = [ID, ...CS];
-type ESet<DS extends EDef<number, any>[]> = {
-  [K in keyof DS]: DS[K] extends EDef<infer ID, infer CS>
+type EDefId<ID extends number, CS extends ComponentDef[]> = [ID, ...CS];
+type ESetId<DS extends EDefId<number, any>[]> = {
+  [K in keyof DS]: DS[K] extends EDefId<infer ID, infer CS>
     ? EntityW<CS, ID> | undefined
     : never;
+};
+
+export type EDef<CS extends ComponentDef[]> = readonly [...CS];
+export type ESet<DS extends EDef<any>[]> = {
+  [K in keyof DS]: DS[K] extends EDef<infer CS> ? EntityW<CS, number> : never;
 };
 
 function nameToId(name: string): number {
@@ -367,7 +375,7 @@ export class EntityManager {
 
   public findEntity<CS extends ComponentDef[], ID extends number>(
     id: ID,
-    cs: [...CS]
+    cs: readonly [...CS]
   ): EntityW<CS, ID> | undefined {
     const e = this.entities.get(id);
     if (!e || !cs.every((c) => c.name in e)) {
@@ -376,14 +384,14 @@ export class EntityManager {
     return e as EntityW<CS, ID>;
   }
 
-  public findEntitySet<ES extends EDef<number, any>[]>(
-    ...es: [...ES]
-  ): ESet<ES> {
+  public findEntitySet<ES extends EDefId<number, any>[]>(
+    es: [...ES]
+  ): ESetId<ES> {
     const res = [];
     for (let [id, ...cs] of es) {
       res.push(this.findEntity(id, cs));
     }
-    return res as ESet<ES>;
+    return res as ESetId<ES>;
   }
 
   public filterEntities<CS extends ComponentDef[]>(

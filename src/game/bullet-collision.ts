@@ -3,7 +3,14 @@ import {
   DetectedEvent,
   DetectedEventsDef,
 } from "../net/events.js";
-import { EntityManager } from "../entity-manager.js";
+import {
+  ComponentDef,
+  EDef,
+  EM,
+  Entity,
+  EntityManager,
+  ESet,
+} from "../entity-manager.js";
 import { PlayerEntDef } from "./player.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { AuthorityDef } from "../net/components.js";
@@ -84,24 +91,45 @@ registerEventHandler("bullet-player", {
   },
 });
 
-registerEventHandler("bullet-boat", {
-  // the authority is the bullet
-  eventAuthorityEntity: (entities) => entities[1],
+function dzRegisterEventHandler<ES extends EDef<any>[]>(
+  name: string,
+  opts: {
+    entities: readonly [...ES];
+    eventAuthorityEntity: (entityIds: number[]) => number;
+    legalEvent: (em: EntityManager, entities: ESet<ES>) => boolean;
+    runEvent: (em: EntityManager, entities: ESet<ES>) => void;
+  }
+) {
+  registerEventHandler(name, {
+    eventAuthorityEntity: opts.eventAuthorityEntity,
+    legalEvent: (em, ids) => {
+      const entities = ids.map((id, idx) =>
+        em.findEntity(id, opts.entities[idx])
+      );
+      if (entities.some((e) => !e)) return false;
+      return opts.legalEvent(em, entities as ESet<ES>);
+    },
+    runEvent: (em, ids) => {
+      const entities = ids.map((id, idx) =>
+        em.findEntity(id, opts.entities[idx])
+      );
+      opts.runEvent(em, entities as ESet<ES>);
+    },
+  });
+}
+
+dzRegisterEventHandler("bullet-boat", {
+  entities: [[BoatLocalDef, PositionDef, RotationDef], [BulletDef]] as const,
+  eventAuthorityEntity: (entities) => {
+    const [boat, bullet] = entities;
+    return boat;
+  },
   legalEvent: (em, entities) => {
-    return (
-      !!em.findEntity(entities[0], [BoatLocalDef, PositionDef, RotationDef]) &&
-      !!em.findEntity(entities[1], [BulletDef])
-    );
+    return true;
   },
   runEvent: (em: EntityManager, entities) => {
-    const bullet = em.findEntity(entities[1], [BulletDef])!;
+    const [boat, bullet] = entities;
     em.ensureComponentOn(bullet, DeletedDef);
-
-    const boat = em.findEntity(entities[0], [
-      BoatLocalDef,
-      PositionDef,
-      RotationDef,
-    ])!;
     const res = em.getResources([AssetsDef, MusicDef])!;
     breakBoat(em, boat, res.assets.boat_broken, res.music);
   },
