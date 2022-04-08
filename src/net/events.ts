@@ -1,5 +1,5 @@
 import { vec3 } from "../gl-matrix.js";
-import { EntityManager, EM, Component } from "../entity-manager.js";
+import { EntityManager, EM, Component, EDef, ESet } from "../entity-manager.js";
 import { Serializer, Deserializer, OutOfRoomError } from "../serialize.js";
 import { MAX_MESSAGE_SIZE, MessageType } from "./message.js";
 import {
@@ -15,7 +15,7 @@ import {
   InboxDef,
   AuthorityDef,
 } from "./components.js";
-import { hashCode } from "../util.js";
+import { hashCode, NumberTuple } from "../util.js";
 import { TimeDef } from "../time.js";
 
 export interface Event<Extra> {
@@ -26,6 +26,34 @@ export interface Event<Extra> {
   // ID set at the generating node for dedup-ing
   entities: number[];
   extra: Extra;
+}
+
+export function dzRegisterEventHandler<ES extends EDef<any>[]>(
+  name: string,
+  opts: {
+    entities: readonly [...ES];
+    eventAuthorityEntity: (entityIds: NumberTuple<ES>) => number;
+    legalEvent: (em: EntityManager, entities: ESet<ES>) => boolean;
+    runEvent: (em: EntityManager, entities: ESet<ES>) => void;
+  }
+) {
+  registerEventHandler(name, {
+    eventAuthorityEntity: (ids) =>
+      opts.eventAuthorityEntity(ids as NumberTuple<ES>),
+    legalEvent: (em, ids) => {
+      const entities = ids.map((id, idx) =>
+        em.findEntity(id, opts.entities[idx])
+      );
+      if (entities.some((e) => !e)) return false;
+      return opts.legalEvent(em, entities as ESet<ES>);
+    },
+    runEvent: (em, ids) => {
+      const entities = ids.map((id, idx) =>
+        em.findEntity(id, opts.entities[idx])
+      );
+      opts.runEvent(em, entities as ESet<ES>);
+    },
+  });
 }
 
 type BasicEventHandler = {

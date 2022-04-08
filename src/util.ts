@@ -65,3 +65,5 @@ export function toRecord<A, V>(
 //  causes type inference (specifically type narrowing) to not work right in
 //  dead code sometimes (last tested with tsc v4.2.3)
 export const FALSE: boolean = false;
+
+export type NumberTuple<ES> = { [_ in keyof ES]: number };

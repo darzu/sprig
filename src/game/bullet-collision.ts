@@ -2,6 +2,7 @@ import {
   registerEventHandler,
   DetectedEvent,
   DetectedEventsDef,
+  dzRegisterEventHandler,
 } from "../net/events.js";
 import {
   ComponentDef,
@@ -20,6 +21,7 @@ import { BoatLocalDef, BoatPropsDef, breakBoat } from "./boat.js";
 import { AssetsDef } from "./assets.js";
 import { MusicDef } from "../music.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
+import { NumberTuple } from "../util.js";
 
 export function registerBulletCollisionSystem(em: EntityManager) {
   // TODO(@darzu):
@@ -91,42 +93,12 @@ registerEventHandler("bullet-player", {
   },
 });
 
-type NumberTuple<ES> = { [_ in keyof ES]: number };
-
-function dzRegisterEventHandler<ES extends EDef<any>[]>(
-  name: string,
-  opts: {
-    entities: readonly [...ES];
-    eventAuthorityEntity: (entityIds: NumberTuple<ES>) => number;
-    legalEvent: (em: EntityManager, entities: ESet<ES>) => boolean;
-    runEvent: (em: EntityManager, entities: ESet<ES>) => void;
-  }
-) {
-  registerEventHandler(name, {
-    eventAuthorityEntity: (ids) =>
-      opts.eventAuthorityEntity(ids as NumberTuple<ES>),
-    legalEvent: (em, ids) => {
-      const entities = ids.map((id, idx) =>
-        em.findEntity(id, opts.entities[idx])
-      );
-      if (entities.some((e) => !e)) return false;
-      return opts.legalEvent(em, entities as ESet<ES>);
-    },
-    runEvent: (em, ids) => {
-      const entities = ids.map((id, idx) =>
-        em.findEntity(id, opts.entities[idx])
-      );
-      opts.runEvent(em, entities as ESet<ES>);
-    },
-  });
-}
-
 dzRegisterEventHandler("bullet-boat", {
   entities: [[BoatLocalDef, PositionDef, RotationDef], [BulletDef]] as const,
   eventAuthorityEntity: ([boatId, bulletId]) => {
     return bulletId;
   },
-  legalEvent: (em, entities) => {
+  legalEvent: (em, [boat, bullet]) => {
     return true;
   },
   runEvent: (em: EntityManager, [boat, bullet]) => {
