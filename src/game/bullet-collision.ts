@@ -16,7 +16,7 @@ import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { AuthorityDef } from "../net/components.js";
 import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../delete.js";
-import { BoatLocalDef, breakBoat } from "./boat.js";
+import { BoatLocalDef, BoatPropsDef, breakBoat } from "./boat.js";
 import { AssetsDef } from "./assets.js";
 import { MusicDef } from "../music.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
@@ -91,17 +91,20 @@ registerEventHandler("bullet-player", {
   },
 });
 
+type NumberTuple<ES> = { [_ in keyof ES]: number };
+
 function dzRegisterEventHandler<ES extends EDef<any>[]>(
   name: string,
   opts: {
     entities: readonly [...ES];
-    eventAuthorityEntity: (entityIds: number[]) => number;
+    eventAuthorityEntity: (entityIds: NumberTuple<ES>) => number;
     legalEvent: (em: EntityManager, entities: ESet<ES>) => boolean;
     runEvent: (em: EntityManager, entities: ESet<ES>) => void;
   }
 ) {
   registerEventHandler(name, {
-    eventAuthorityEntity: opts.eventAuthorityEntity,
+    eventAuthorityEntity: (ids) =>
+      opts.eventAuthorityEntity(ids as NumberTuple<ES>),
     legalEvent: (em, ids) => {
       const entities = ids.map((id, idx) =>
         em.findEntity(id, opts.entities[idx])
@@ -120,15 +123,13 @@ function dzRegisterEventHandler<ES extends EDef<any>[]>(
 
 dzRegisterEventHandler("bullet-boat", {
   entities: [[BoatLocalDef, PositionDef, RotationDef], [BulletDef]] as const,
-  eventAuthorityEntity: (entities) => {
-    const [boat, bullet] = entities;
-    return boat;
+  eventAuthorityEntity: ([boatId, bulletId]) => {
+    return bulletId;
   },
   legalEvent: (em, entities) => {
     return true;
   },
-  runEvent: (em: EntityManager, entities) => {
-    const [boat, bullet] = entities;
+  runEvent: (em: EntityManager, [boat, bullet]) => {
     em.ensureComponentOn(bullet, DeletedDef);
     const res = em.getResources([AssetsDef, MusicDef])!;
     breakBoat(em, boat, res.assets.boat_broken, res.music);
