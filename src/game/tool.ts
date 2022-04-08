@@ -20,6 +20,7 @@ import { ColorDef } from "./game.js";
 import { registerEventHandler, DetectedEventsDef } from "../net/events.js";
 import { LocalPlayerDef, PlayerEntDef } from "./player.js";
 import { InteractableDef, InRangeDef } from "./interact.js";
+import { Deserializer, Serializer } from "../serialize.js";
 
 export const ToolDef = EM.defineComponent("tool", (type?: string) => ({
   type,
@@ -92,7 +93,7 @@ registerEventHandler("tool-pickup", {
   },
 });
 
-registerEventHandler("tool-drop", {
+registerEventHandler<vec3>("tool-drop", {
   eventAuthorityEntity: (entities) => entities[0],
   legalEvent: (em, entities) => {
     let player = em.findEntity(entities[0], [PlayerEntDef]);
@@ -110,10 +111,10 @@ registerEventHandler("tool-drop", {
     player.player.tool = 0;
     if (ColliderDef.isOn(tool)) tool.collider.solid = true;
   },
-  serializeExtra: (buf, location: vec3) => {
+  serializeExtra: (buf, location) => {
     buf.writeVec3(location);
   },
   deserializeExtra: (buf) => {
-    return buf.readVec3();
+    return buf.readVec3()!;
   },
 });

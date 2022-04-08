@@ -169,7 +169,7 @@ registerEventHandler("hat-pickup", {
   },
 });
 
-registerEventHandler("hat-drop", {
+registerEventHandler<vec3>("hat-drop", {
   eventAuthorityEntity: (entities) => entities[0],
   legalEvent: (em, entities) => {
     let player = em.findEntity(entities[0], [PlayerEntDef]);
@@ -188,6 +188,6 @@ registerEventHandler("hat-drop", {
     buf.writeVec3(location);
   },
   deserializeExtra: (buf) => {
-    return buf.readVec3();
+    return buf.readVec3()!;
   },
 });
