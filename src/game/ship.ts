@@ -48,6 +48,7 @@ import { GroundSystemDef } from "./ground.js";
 import { InRangeDef, InteractableDef } from "./interact.js";
 import { GameState, GameStateDef } from "./gamestate.js";
 import { createRef, defineNetEntityHelper, Ref } from "../em_helpers.js";
+import { DetectedEventsDef, registerEventHandler } from "../net/events.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
@@ -225,6 +226,28 @@ export function registerShipSystems(em: EntityManager) {
     "startGame"
   );
 
+  registerEventHandler<number>("ship-hit", {
+    eventAuthorityEntity: (entities) => entities[0],
+    legalEvent: (em, entities, partIdx) => {
+      const ship = em.findEntity(entities[0], [ShipLocalDef]);
+      return !!ship && !!ship.shipLocal.parts[partIdx]();
+    },
+    serializeExtra: (buf, o) => {
+      buf.writeUint8(o);
+    },
+    deserializeExtra: (buf) => {
+      return buf.readUint8();
+    },
+    runEvent: (em: EntityManager, entities, partIdx) => {
+      const ship = em.findEntity(entities[0], [ShipLocalDef])!;
+      const res = em.getResources([MusicDef])!;
+      const part = ship.shipLocal.parts[partIdx]()!;
+      part.renderable.enabled = false;
+      part.shipPart.damaged = true;
+      res.music.playChords([2, 3], "minor", 0.2, 5.0, -2);
+    },
+  });
+
   em.registerSystem(
     [ShipLocalDef, PositionDef, AuthorityDef],
     [
@@ -235,6 +258,7 @@ export function registerShipSystems(em: EntityManager) {
       GameStateDef,
       MeDef,
       PhysicsResultsDef,
+      DetectedEventsDef,
     ],
     (ships, res) => {
       if (res.gameState.state !== GameState.PLAYING) return;
@@ -244,8 +268,8 @@ export function registerShipSystems(em: EntityManager) {
 
         let numCriticalDamaged = 0;
         // TODO(@darzu): EVENT! Notify players of dmg
-        for (let partOpt of ship.shipLocal.parts) {
-          const part = partOpt();
+        for (let i = 0; i < ship.shipLocal.parts.length; i++) {
+          const part = ship.shipLocal.parts[i]();
           if (part) {
             if (part.shipPart.damaged) {
               if (part.shipPart.critical) numCriticalDamaged += 1;
@@ -258,10 +282,12 @@ export function registerShipSystems(em: EntityManager) {
             if (bullets && bullets.length) {
               for (let b of bullets)
                 if (b) em.ensureComponent(b.id, DeletedDef);
-              part.renderable.enabled = false;
-              part.shipPart.damaged = true;
 
-              res.music.playChords([2, 3], "minor", 0.2, 5.0, -2);
+              res.detectedEvents.push({
+                type: "ship-hit",
+                entities: [ship.id],
+                extra: i,
+              });
             }
           }
         }
