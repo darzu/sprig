@@ -1,6 +1,6 @@
 import { Canvas, CanvasDef } from "../canvas.js";
 import { EntityManager, EM, Component } from "../entity-manager.js";
-import { ColorDef } from "../game/game.js";
+import { applyTints, TintsDef } from "../tint.js";
 import {
   CameraDef,
   CameraProps,
@@ -22,6 +22,7 @@ import {
   RotationDef,
   Frame,
 } from "../physics/transform.js";
+import { ColorDef } from "../game/game.js";
 
 export interface RenderableConstruct {
   readonly enabled: boolean;
@@ -89,6 +90,10 @@ function stepRenderer(
     // TODO(@darzu): color:
     if (ColorDef.isOn(o)) {
       vec3.copy(o.renderable.meshHandle.shaderData.tint, o.color);
+    }
+
+    if (TintsDef.isOn(o)) {
+      applyTints(o.tints, o.renderable.meshHandle.shaderData.tint);
     }
 
     mat4.copy(o.renderable.meshHandle.shaderData.transform, o.world.transform);
