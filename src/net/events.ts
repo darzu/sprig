@@ -18,88 +18,119 @@ import {
 import { hashCode } from "../util.js";
 import { TimeDef } from "../time.js";
 
-export interface Event {
+export interface Event<Extra> {
   // Event type
   type: string;
   // Sequence number in the global log of events
   seq: number;
   // ID set at the generating node for dedup-ing
   entities: number[];
-  location: vec3 | null;
+  extra: Extra;
 }
 
-const EVENT_TYPES: Map<number, string> = new Map();
+type BasicEventHandler = {
+  eventAuthorityEntity: (entities: number[]) => number;
+  legalEvent: (em: EntityManager, entities: number[]) => boolean;
+  runEvent: (em: EntityManager, entities: number[]) => void;
+};
 
-function serializeEvent(event: Event, buf: Serializer) {
+type ExtraEventHandler<Extra> = {
+  eventAuthorityEntity: (entities: number[]) => number;
+  legalEvent: (em: EntityManager, entities: number[], extra: Extra) => boolean;
+  runEvent: (em: EntityManager, entities: number[], extra: Extra) => void;
+  serializeExtra: (buf: Serializer, extra: Extra) => void;
+  deserializeExtra: (buf: Deserializer) => Extra;
+};
+
+export type EventHandler<Extra> = Extra extends null
+  ? BasicEventHandler
+  : ExtraEventHandler<Extra>;
+
+const EVENT_TYPES: Map<number, string> = new Map();
+const EVENT_HANDLERS: Map<string, EventHandler<any>> = new Map();
+
+export function registerEventHandler(
+  type: string,
+  handler: BasicEventHandler
+): void;
+export function registerEventHandler<Extra>(
+  type: string,
+  handler: ExtraEventHandler<Extra>
+): void;
+export function registerEventHandler<Extra>(
+  type: string,
+  handler: EventHandler<Extra>
+) {
+  EVENT_TYPES.set(hashCode(type), type);
+  EVENT_HANDLERS.set(type, handler);
+}
+
+function serializeEvent<Extra>(event: Event<Extra>, buf: Serializer) {
+  const handler = EVENT_HANDLERS.get(event.type);
+  if (!handler)
+    throw `Tried to serialize unrecognized event type ${event.type}`;
   buf.writeUint32(hashCode(event.type));
   buf.writeUint32(event.seq);
   buf.writeUint8(event.entities.length);
   for (const id of event.entities) buf.writeUint32(id);
-  if (event.location) {
-    buf.writeUint8(1);
-    buf.writeVec3(event.location);
-  } else {
-    buf.writeUint8(0);
-  }
+  if ("serializeExtra" in handler) handler.serializeExtra(buf, event.extra);
+  else if (event.extra)
+    throw `Found extra data but no serializer on event type ${event.type}`;
 }
 
-function deserializeEvent(buf: Deserializer): Event {
+function deserializeEvent<Extra>(buf: Deserializer): Event<Extra> {
   let typeCode = buf.readUint32();
   if (!EVENT_TYPES.has(typeCode)) {
     throw `Tried to deserialize unrecognized event type ${typeCode}`;
   }
   const type = EVENT_TYPES.get(typeCode)!;
+  const handler = EVENT_HANDLERS.get(type);
+  if (!handler) throw `Tried to deserialize unrecognized event type ${type}`;
   const seq = buf.readUint32();
   const entities = [];
   const numEntities = buf.readUint8();
   for (let i = 0; i < numEntities; i++) entities.push(buf.readUint32());
-  const hasLocation = buf.readUint8();
-  const location = hasLocation ? buf.readVec3() : null;
-  return { type, seq, entities, location };
+  let extra;
+  if ("serializeExtra" in handler) extra = handler.deserializeExtra(buf);
+  return { type, seq, entities, extra };
 }
 
-export type DetectedEvent = Pick<Event, "type" | "entities" | "location">;
+export type DetectedEvent<Extra> = Pick<
+  Event<Extra>,
+  "type" | "entities" | "extra"
+>;
 
-function serializeDetectedEvent(event: DetectedEvent, buf: Serializer) {
+function serializeDetectedEvent<Extra>(
+  event: DetectedEvent<Extra>,
+  buf: Serializer
+) {
+  const handler = EVENT_HANDLERS.get(event.type);
+  if (!handler)
+    throw `Tried to serialize unrecognized event type ${event.type}`;
   buf.writeUint32(hashCode(event.type));
   buf.writeUint8(event.entities.length);
   for (const id of event.entities) buf.writeUint32(id);
-  if (event.location) {
-    buf.writeUint8(1);
-    buf.writeVec3(event.location);
-  } else {
-    buf.writeUint8(0);
-  }
+  if ("serializeExtra" in handler) handler.serializeExtra(buf, event.extra);
+  else if (event.extra)
+    throw `Found extra data but no serializer on event type ${event.type}`;
 }
 
-function deserializeDetectedEvent(buf: Deserializer): DetectedEvent {
+function deserializeDetectedEvent<Extra>(
+  buf: Deserializer
+): DetectedEvent<Extra> {
   let typeCode = buf.readUint32();
   if (!EVENT_TYPES.has(typeCode)) {
     throw `Tried to deserialize unrecognized event type ${typeCode}`;
   }
   const type = EVENT_TYPES.get(typeCode)!;
+  const handler = EVENT_HANDLERS.get(type);
+  if (!handler) throw `Tried to deserialize unrecognized event type ${type}`;
   const entities = [];
   const numEntities = buf.readUint8();
   for (let i = 0; i < numEntities; i++) entities.push(buf.readUint32());
-  const hasLocation = buf.readUint8();
-  const location = hasLocation ? buf.readVec3() : null;
-  return { type, entities, location };
-}
-
-export interface EventHandler {
-  eventAuthorityEntity: (entities: number[]) => number;
-  legalEvent: (em: EntityManager, entities: number[]) => boolean;
-  runEvent: (
-    em: EntityManager,
-    entities: number[],
-    location: vec3 | null
-  ) => void;
-}
-
-const EVENT_HANDLERS: Map<string, EventHandler> = new Map();
-export function registerEventHandler(type: string, handler: EventHandler) {
-  EVENT_TYPES.set(hashCode(type), type);
-  EVENT_HANDLERS.set(type, handler);
+  let extra;
+  if ("serializeExtra" in handler) extra = handler.deserializeExtra(buf);
+  return { type, entities, extra };
 }
 
 registerEventHandler("test", {
@@ -116,21 +147,25 @@ function eventAuthorityEntity(type: string, entities: number[]): number {
   return EVENT_HANDLERS.get(type)!.eventAuthorityEntity(entities);
 }
 
-function legalEvent(type: string, em: EntityManager, event: DetectedEvent) {
+function legalEvent<Extra>(
+  type: string,
+  em: EntityManager,
+  event: DetectedEvent<Extra>
+) {
   if (!EVENT_HANDLERS.has(type))
     throw `No event handler registered for event type ${type}`;
-  return EVENT_HANDLERS.get(type)!.legalEvent(em, event.entities);
+  return EVENT_HANDLERS.get(type)!.legalEvent(em, event.entities, event.extra);
 }
 
-function runEvent(type: string, em: EntityManager, event: Event) {
+function runEvent<Extra>(type: string, em: EntityManager, event: Event<Extra>) {
   if (!EVENT_HANDLERS.has(type))
     throw `No event handler registered for event type ${type}`;
-  return EVENT_HANDLERS.get(type)!.runEvent(em, event.entities, event.location);
+  return EVENT_HANDLERS.get(type)!.runEvent(em, event.entities, event.extra);
 }
 
 export const DetectedEventsDef = EM.defineComponent(
   "detectedEvents",
-  () => [] as DetectedEvent[]
+  () => [] as DetectedEvent<any>[]
 );
 export type DetectedEvents = Component<typeof DetectedEventsDef>;
 
@@ -141,7 +176,7 @@ export const OutgoingEventRequestsDef = EM.defineComponent(
   (nextId?: number) => ({
     lastSendTime: 0,
     nextId: nextId || 0,
-    events: [] as { id: number; event: DetectedEvent }[],
+    events: [] as { id: number; event: DetectedEvent<any> }[],
   })
 );
 
@@ -149,7 +184,7 @@ export const OutgoingEventRequestsDef = EM.defineComponent(
 // either by us or by another node
 const RequestedEventsDef = EM.defineComponent(
   "requestedEvents",
-  () => [] as DetectedEvent[]
+  () => [] as DetectedEvent<any>[]
 );
 
 // TODO: find a better name for this
@@ -163,13 +198,13 @@ const EventSyncDef = EM.defineComponent("eventSync", () => ({
 }));
 
 const EventsDef = EM.defineComponent("events", () => ({
-  log: [] as Event[],
+  log: [] as Event<any>[],
   last: -1,
   newEvents: false,
 }));
 
 // TODO: this function is bad and we should find a way to do without it
-function takeEventsWithKnownObjects<E extends DetectedEvent>(
+function takeEventsWithKnownObjects<Extra, E extends DetectedEvent<Extra>>(
   em: EntityManager,
   events: E[]
 ): E[] {
@@ -351,7 +386,7 @@ export function registerEventSystems(em: EntityManager) {
         requestedEvents
       )) {
         if (legalEvent(detectedEvent.type, em, detectedEvent)) {
-          let event = detectedEvent as Event;
+          let event = detectedEvent as Event<any>;
           event.seq = events.log.length;
           events.log.push(event);
           // run event immediately. TODO: is there a cleaner way to separate this out?
@@ -467,7 +502,7 @@ export function registerEventSystems(em: EntityManager) {
   // TODO: this probably doesn't need to run at the host (it should always no-op there)
   function runEvents(
     [],
-    { events }: { events: { last: number; log: Event[] } }
+    { events }: { events: { last: number; log: Event<any>[] } }
   ) {
     const newEvents = events.log.slice(events.last + 1);
     if (newEvents.length > 0) {
