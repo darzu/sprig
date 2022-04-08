@@ -73,7 +73,7 @@ export const { CannonPropsDef, CannonLocalDef, createCannon } =
     serializeProps: (c, buf) => {
       buf.writeVec3(c.location);
       buf.writeFloat32(c.yaw);
-      buf.writeUint32(c.yaw);
+      buf.writeUint32(c.parentId);
     },
     deserializeProps: (c, buf) => {
       buf.readVec3(c.location);
