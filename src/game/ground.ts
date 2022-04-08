@@ -78,8 +78,10 @@ export function registerGroundSystems(em: EntityManager) {
   const NUM_Z = 4;
   em.registerSystem(
     null,
-    [GroundSystemDef, ScoreDef],
+    [GroundSystemDef, ScoreDef, MeDef],
     (_, res) => {
+      if (!res.me.host) return;
+
       const sys = res.groundSystem;
       // init ground system
       if (sys.groundPool.length === 0) {

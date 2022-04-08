@@ -390,8 +390,9 @@ function registerBoatSpawnerSystem(em: EntityManager) {
 
   em.registerSystem(
     null,
-    [BoatSpawnerDef, PhysicsTimerDef, GroundSystemDef, GameStateDef],
+    [BoatSpawnerDef, PhysicsTimerDef, GroundSystemDef, GameStateDef, MeDef],
     (_, res) => {
+      if (!res.me.host) return;
       if (res.gameState.state !== GameState.PLAYING) return;
       const ms = res.physicsTimer.period * res.physicsTimer.steps;
       res.boatSpawner.timerMs -= ms;
