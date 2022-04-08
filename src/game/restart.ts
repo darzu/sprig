@@ -38,7 +38,6 @@ export function registerRestartSystem(em: EntityManager) {
         ]);
         for (let p of players) {
           if (PhysicsParentDef.isOn(p)) p.physicsParent.id = 0;
-          console.log("foo");
           vec3.copy(p.position, [0, 100, 0]);
           quat.rotateY(p.rotation, quat.IDENTITY, Math.PI);
           p.player.manning = false;
