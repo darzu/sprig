@@ -18,7 +18,7 @@ export function registerInitCanvasSystem(em: EntityManager) {
     [],
     [],
     () => {
-      if (!!em.findSingletonComponent(CanvasDef)) return;
+      if (!!em.getResource(CanvasDef)) return;
       const canvas = init();
 
       const comp = em.addSingletonComponent(CanvasDef, canvas);

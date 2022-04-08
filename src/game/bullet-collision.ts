@@ -9,6 +9,10 @@ import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { AuthorityDef } from "../net/components.js";
 import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../delete.js";
+import { BoatLocalDef, breakBoat } from "./boat.js";
+import { AssetsDef } from "./assets.js";
+import { MusicDef } from "../music.js";
+import { PositionDef, RotationDef } from "../physics/transform.js";
 
 export function registerBulletCollisionSystem(em: EntityManager) {
   // TODO(@darzu):
@@ -77,5 +81,48 @@ registerEventHandler("bullet-player", {
   },
   runEvent: (em, entities) => {
     em.ensureComponent(entities[1], DeletedDef);
+  },
+});
+
+registerEventHandler("bullet-boat", {
+  // the authority is the bullet
+  eventAuthorityEntity: (entities) => entities[1],
+  legalEvent: (em, entities) => {
+    return (
+      !!em.findEntity(entities[0], [BoatLocalDef, PositionDef, RotationDef]) &&
+      !!em.findEntity(entities[1], [BulletDef])
+    );
+  },
+  runEvent: (em: EntityManager, entities) => {
+    const bullet = em.findEntity(entities[1], [BulletDef])!;
+    em.ensureComponentOn(bullet, DeletedDef);
+
+    const boat = em.findEntity(entities[0], [
+      BoatLocalDef,
+      PositionDef,
+      RotationDef,
+    ])!;
+    const res = em.getResources([AssetsDef, MusicDef])!;
+    breakBoat(em, boat, res.assets.boat_broken, res.music);
+  },
+});
+
+registerEventHandler("break-boat", {
+  eventAuthorityEntity: (entities) => entities[0],
+  legalEvent: (em, entities) => {
+    return !!em.findEntity(entities[0], [
+      BoatLocalDef,
+      PositionDef,
+      RotationDef,
+    ]);
+  },
+  runEvent: (em: EntityManager, entities) => {
+    const boat = em.findEntity(entities[0], [
+      BoatLocalDef,
+      PositionDef,
+      RotationDef,
+    ])!;
+    const res = em.getResources([AssetsDef, MusicDef])!;
+    breakBoat(em, boat, res.assets.boat_broken, res.music);
   },
 });

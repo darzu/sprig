@@ -116,7 +116,7 @@ function registerHandleJoinResponse(em: EntityManager) {
       while ((inbox.get(MessageType.JoinResponse) || []).length > 0) {
         console.log("received join response");
         let message = inbox.get(MessageType.JoinResponse)!.shift()!;
-        let join = em.findSingletonComponent(JoinDef);
+        let join = em.getResource(JoinDef);
         // TODO: add player object
         // TODO: this is a hack, need to actually have some system for reserving
         // object ids at each node

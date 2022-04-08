@@ -303,13 +303,20 @@ export class EntityManager {
 
   // TODO(@darzu): should this be public??
   // TODO(@darzu): rename to findSingletonComponent
-  public findSingletonComponent<C extends ComponentDef>(
+  public getResource<C extends ComponentDef>(
     c: C
   ): EntityW<[C], 0> | undefined {
     const e = this.entities.get(0)!;
     if (c.name in e) {
       return e as any;
     }
+    return undefined;
+  }
+  public getResources<RS extends ComponentDef[]>(
+    rs: [...RS]
+  ): EntityW<RS, 0> | undefined {
+    const e = this.entities.get(0)!;
+    if (rs.every((r) => r.name in e)) return e as any;
     return undefined;
   }
 
@@ -533,16 +540,12 @@ export class EntityManager {
       // TODO(@darzu): uncomment to debug query cache issues
       // es = this.filterEntities(s.cs);
 
-      let haveAllResources = true;
-      for (let r of s.rs) {
-        // note this is just to verify it exists
-        haveAllResources &&= !!this.findSingletonComponent(r);
-      }
+      const rs = this.getResources(s.rs);
       let afterQuery = performance.now();
       this.stats[s.name].queries++;
       this.stats[s.name].queryTime += afterQuery - start;
-      if (haveAllResources) {
-        s.callback(es, this.entities.get(0)! as any);
+      if (rs) {
+        s.callback(es, rs);
         let afterCall = performance.now();
         this.stats[s.name].calls++;
         this.stats[s.name].callTime += afterCall - afterQuery;
@@ -555,7 +558,7 @@ export class EntityManager {
       let haveAllResources = true;
       for (let r of s.rs) {
         // note this is just to verify it exists
-        haveAllResources &&= !!this.findSingletonComponent(r);
+        haveAllResources &&= !!this.getResource(r);
       }
       if (haveAllResources) {
         const es = this.filterEntities(s.cs);

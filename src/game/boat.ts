@@ -51,6 +51,7 @@ import { PlayerEntDef } from "./player.js";
 import { ShipLocalDef } from "./ship.js";
 import { Music, MusicDef } from "../music.js";
 import { defineNetEntityHelper } from "../em_helpers.js";
+import { DetectedEventsDef } from "../net/events.js";
 
 export const { BoatPropsDef, BoatLocalDef, createBoat } = defineNetEntityHelper(
   EM,
@@ -249,24 +250,33 @@ export function registerStepBoats(em: EntityManager) {
 
   em.registerSystem(
     [BoatLocalDef, PositionDef, RotationDef],
-    [PhysicsResultsDef, AssetsDef, MusicDef],
+    [PhysicsResultsDef, AssetsDef, MusicDef, MeDef, DetectedEventsDef],
     (objs, res) => {
       for (let boat of objs) {
         const hits = res.physicsResults.collidesWith.get(boat.id);
         if (hits) {
-          const balls = hits.filter(
-            (h) => em.findEntity(h, [BulletDef])?.bullet.team === 1
-          );
+          const balls = hits.filter((h) => {
+            const b = em.findEntity(h, [BulletDef, AuthorityDef]);
+            return b && b.bullet.team === 1 && b.authority.pid === res.me.pid;
+          });
           if (balls.length) {
-            console.log("HIT!");
+            res.detectedEvents.push({
+              type: "bullet-boat",
+              entities: [boat.id, balls[0]],
+              extra: null,
+            });
+            console.log("HIT BOAT!");
             for (let ball of balls) em.ensureComponent(ball, DeletedDef);
-            breakBoat(em, boat, res.assets.boat_broken, res.music);
           }
 
           const ships = hits.filter((h) => em.findEntity(h, [ShipLocalDef]));
           if (ships.length) {
-            console.log("HIT SHIP!");
-            breakBoat(em, boat, res.assets.boat_broken, res.music);
+            console.log("BOAT HIT SHIP!");
+            res.detectedEvents.push({
+              type: "break-boat",
+              entities: [boat.id],
+              extra: null,
+            });
           }
         }
       }

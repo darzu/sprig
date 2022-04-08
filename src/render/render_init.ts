@@ -25,7 +25,7 @@ export function registerRenderInitSystem(em: EntityManager) {
     [],
     [CanvasDef],
     (_, res) => {
-      if (!!em.findSingletonComponent(RendererDef)) return; // already init
+      if (!!em.getResource(RendererDef)) return; // already init
       if (!!_rendererPromise) return;
       _rendererPromise = init(em, res.htmlCanvas.canvas);
     },
