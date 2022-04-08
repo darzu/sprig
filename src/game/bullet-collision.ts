@@ -30,7 +30,7 @@ export function registerBulletCollisionSystem(em: EntityManager) {
               resources.detectedEvents.push({
                 type: "bullet-bullet",
                 entities: [o.id, otherBullet.id],
-                location: null,
+                extra: null,
               });
             }
           }
@@ -44,7 +44,7 @@ export function registerBulletCollisionSystem(em: EntityManager) {
               resources.detectedEvents.push({
                 type: "bullet-player",
                 entities: [otherPlayer!.id, o.id],
-                location: null,
+                extra: null,
               });
           }
         }
