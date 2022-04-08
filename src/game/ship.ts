@@ -47,7 +47,7 @@ import { InputsDef } from "../inputs.js";
 import { GroundSystemDef } from "./ground.js";
 import { InRangeDef, InteractableDef } from "./interact.js";
 import { GameState, GameStateDef } from "./gamestate.js";
-import { createRef, defineNetEntityHelper } from "../em_helpers.js";
+import { createRef, defineNetEntityHelper, Ref } from "../em_helpers.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
@@ -129,7 +129,7 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
       c.cannonRId = buf.readUint32();
     },
     defaultLocal: () => ({
-      partIds: [] as number[],
+      parts: [] as Ref<[typeof ShipPartDef, typeof RenderableDef]>[],
       speed: 0,
     }),
     dynamicComponents: [PositionDef, RotationDef],
@@ -188,7 +188,9 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
           aabb: m.aabb,
         });
         (part.collider as AABBCollider).aabb.max[1] = boatFloor;
-        s.shipLocal.partIds.push(part.id);
+        s.shipLocal.parts.push(
+          createRef(part.id, [ShipPartDef, RenderableDef])
+        );
       }
 
       // em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
@@ -224,21 +226,48 @@ export function registerShipSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [ShipLocalDef, PositionDef],
-    [MusicDef, InputsDef, CameraDef, GroundSystemDef, GameStateDef],
+    [ShipLocalDef, PositionDef, AuthorityDef],
+    [
+      MusicDef,
+      InputsDef,
+      CameraDef,
+      GroundSystemDef,
+      GameStateDef,
+      MeDef,
+      PhysicsResultsDef,
+    ],
     (ships, res) => {
       if (res.gameState.state !== GameState.PLAYING) return;
-      const numCritical = criticalPartIdxes.length;
+
       for (let ship of ships) {
+        if (ship.authority.pid !== res.me.pid) continue;
+
         let numCriticalDamaged = 0;
-        for (let partId of ship.shipLocal.partIds) {
-          const part = em.findEntity(partId, [ShipPartDef]);
-          if (part && part.shipPart.critical && part.shipPart.damaged) {
-            numCriticalDamaged += 1;
+        // TODO(@darzu): EVENT! Notify players of dmg
+        for (let partOpt of ship.shipLocal.parts) {
+          const part = partOpt();
+          if (part) {
+            if (part.shipPart.damaged) {
+              if (part.shipPart.critical) numCriticalDamaged += 1;
+              continue;
+            }
+            const bullets = res.physicsResults.collidesWith
+              .get(part.id)
+              ?.map((h) => em.findEntity(h, [BulletDef]))
+              .filter((h) => h && h.bullet.team === 2);
+            if (bullets && bullets.length) {
+              for (let b of bullets)
+                if (b) em.ensureComponent(b.id, DeletedDef);
+              part.renderable.enabled = false;
+              part.shipPart.damaged = true;
+
+              res.music.playChords([2, 3], "minor", 0.2, 5.0, -2);
+            }
           }
         }
+
         if (
-          numCriticalDamaged === numCritical ||
+          numCriticalDamaged === criticalPartIdxes.length ||
           res.inputs.keyClicks["backspace"]
         ) {
           res.music.playChords([1, 2, 3, 4, 4], "minor");
@@ -246,7 +275,7 @@ export function registerShipSystems(em: EntityManager) {
         }
       }
     },
-    "shipDead"
+    "shipHealthCheck"
   );
 
   em.registerSystem(
@@ -274,36 +303,36 @@ export function registerShipSystems(em: EntityManager) {
     "shipUI"
   );
 
-  em.registerSystem(
-    [ShipLocalDef],
-    [PhysicsResultsDef, MusicDef],
-    (ships, res) => {
-      for (let s of ships) {
-        for (let partId of s.shipLocal.partIds) {
-          const part = em.findEntity(partId, [
-            ShipPartDef,
-            ColorDef,
-            RenderableDef,
-          ]);
-          if (part) {
-            if (!part.renderable.enabled) continue;
-            const bullets = res.physicsResults.collidesWith
-              .get(partId)
-              ?.map((h) => em.findEntity(h, [BulletDef]))
-              .filter((h) => h && h.bullet.team === 2);
-            if (bullets && bullets.length) {
-              for (let b of bullets)
-                if (b) em.ensureComponent(b.id, DeletedDef);
-              // part.color[0] += 0.1;
-              part.renderable.enabled = false;
-              part.shipPart.damaged = true;
+  // em.registerSystem(
+  //   [ShipLocalDef],
+  //   [PhysicsResultsDef, MusicDef],
+  //   (ships, res) => {
+  //     for (let s of ships) {
+  //       for (let partId of s.shipLocal.partIds) {
+  //         const part = em.findEntity(partId, [
+  //           ShipPartDef,
+  //           ColorDef,
+  //           RenderableDef,
+  //         ]);
+  //         if (part) {
+  //           if (!part.renderable.enabled) continue;
+  //           const bullets = res.physicsResults.collidesWith
+  //             .get(partId)
+  //             ?.map((h) => em.findEntity(h, [BulletDef]))
+  //             .filter((h) => h && h.bullet.team === 2);
+  //           if (bullets && bullets.length) {
+  //             for (let b of bullets)
+  //               if (b) em.ensureComponent(b.id, DeletedDef);
+  //             // part.color[0] += 0.1;
+  //             part.renderable.enabled = false;
+  //             part.shipPart.damaged = true;
 
-              res.music.playChords([2, 3], "minor", 0.2, 5.0, -2);
-            }
-          }
-        }
-      }
-    },
-    "shipBreakParts"
-  );
+  //             res.music.playChords([2, 3], "minor", 0.2, 5.0, -2);
+  //           }
+  //         }
+  //       }
+  //     }
+  //   },
+  //   "shipBreakParts"
+  // );
 }

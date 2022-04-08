@@ -22,8 +22,7 @@ export function registerRestartSystem(em: EntityManager) {
       if (res.gameState.state !== GameState.GAMEOVER) return;
       let ships = EM.filterEntities([ShipLocalDef, ShipPropsDef, PositionDef]);
       for (let ship of ships) {
-        for (let partId of ship.shipLocal.partIds) {
-          const part = em.findEntity(partId, [ShipPartDef]);
+        for (let part of ship.shipLocal.parts) {
           if (part) em.ensureComponentOn(part, DeletedDef);
         }
         em.ensureComponentOn(ship, DeletedDef);
