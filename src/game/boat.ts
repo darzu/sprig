@@ -50,46 +50,159 @@ import { EnemyConstructDef, EnemyDef } from "./enemy.js";
 import { PlayerEntDef } from "./player.js";
 import { ShipLocalDef } from "./ship.js";
 import { Music, MusicDef } from "../music.js";
+import { defineNetEntityHelper } from "../em_helpers.js";
 
-export const BoatDef = EM.defineComponent("boat", () => {
-  return {
-    speed: 0,
-    wheelSpeed: 0,
-    wheelDir: 0,
-    childCannonId: 0,
-    childEnemyId: 0,
-    fireDelay: 2000,
-    fireRate: 3000,
-    // fireDelay: 0,
-    // fireRate: 500,
-    fireZoneId: 0,
-  };
-});
-export type Boat = Component<typeof BoatDef>;
+export const { BoatPropsDef, BoatLocalDef, createBoat } = defineNetEntityHelper(
+  EM,
+  {
+    name: "boat",
+    defaultProps: (
+      loc?: vec3,
+      speed?: number,
+      wheelSpeed?: number,
+      wheelDir?: number
+    ) => {
+      return {
+        location: loc ?? vec3.fromValues(0, 0, 0),
+        speed: speed ?? 0.01,
+        wheelSpeed: wheelSpeed ?? 0.0,
+        wheelDir: wheelDir ?? 0.0,
+      };
+    },
+    serializeProps: (c, buf) => {
+      buf.writeVec3(c.location);
+      buf.writeFloat32(c.speed);
+      buf.writeFloat32(c.wheelSpeed);
+      buf.writeFloat32(c.wheelDir);
+    },
+    deserializeProps: (c, buf) => {
+      buf.readVec3(c.location);
+      c.speed = buf.readFloat32();
+      c.wheelSpeed = buf.readFloat32();
+      c.wheelDir = buf.readFloat32();
+    },
+    defaultLocal: () => {
+      return {
+        speed: 0,
+        wheelSpeed: 0,
+        wheelDir: 0,
+        fireDelay: 2000,
+        fireRate: 3000,
+        // fireDelay: 0,
+        // fireRate: 500,
+        fireZoneId: 0,
+        childCannonId: 0,
+        childEnemyId: 0,
+      };
+    },
+    dynamicComponents: [PositionDef, RotationDef, LinearVelocityDef],
+    buildResources: [AssetsDef, MeDef],
+    build: (e, res) => {
+      const em: EntityManager = EM;
+      em.ensureComponentOn(e, ColorDef, BOAT_COLOR);
+      em.ensureComponentOn(e, MotionSmoothingDef);
+      em.ensureComponentOn(e, RenderableConstructDef, res.assets.boat.mesh);
+      vec3.copy(e.position, e.boatProps.location);
+      e.boatLocal.speed = e.boatProps.speed;
+      e.boatLocal.wheelDir = e.boatProps.wheelDir;
+      e.boatLocal.wheelSpeed = e.boatProps.wheelSpeed;
+
+      // fire zone is local, not synced
+      const fireZone = em.newEntity();
+      const fireZoneSize = 40;
+      em.ensureComponentOn(fireZone, ColliderDef, {
+        solid: false,
+        shape: "AABB",
+        aabb: {
+          min: [-2, -2, -fireZoneSize],
+          max: [2, 2, fireZoneSize],
+        },
+      });
+      em.ensureComponentOn(fireZone, PhysicsParentDef, e.id);
+      em.ensureComponentOn(fireZone, PositionDef, [0, 0, fireZoneSize]);
+      em.ensureComponentOn(fireZone, FireZoneDef);
+      e.boatLocal.fireZoneId = fireZone.id;
+
+      em.ensureComponentOn(e, OnDeleteDef, () => {
+        em.ensureComponent(e.boatLocal.fireZoneId, DeletedDef);
+
+        const cannon = em.findEntity(e.boatLocal.childCannonId, [])!;
+        em.ensureComponentOn(cannon, DeletedDef);
+
+        const enemy = em.findEntity(e.boatLocal.childEnemyId, [
+          WorldFrameDef,
+          PositionDef,
+          RotationDef,
+          EnemyDef,
+        ]);
+        if (enemy) {
+          em.ensureComponent(enemy.id, LifetimeDef, 4000);
+          em.ensureComponent(enemy.enemy.leftLegId, LifetimeDef, 4000);
+          em.ensureComponent(enemy.enemy.rightLegId, LifetimeDef, 4000);
+          em.removeComponent(enemy.id, PhysicsParentDef);
+          vec3.copy(enemy.position, enemy.world.position);
+          quat.copy(enemy.rotation, enemy.world.rotation);
+          em.ensureComponentOn(enemy, LinearVelocityDef, [0, -0.002, 0]);
+        }
+      });
+
+      em.ensureComponentOn(e, ColliderDef, {
+        shape: "AABB",
+        solid: true,
+        aabb: res.assets.boat.aabb,
+      });
+
+      const cannon = em.newEntity();
+      em.ensureComponentOn(
+        cannon,
+        RenderableConstructDef,
+        res.assets.cannon.proto
+      );
+      em.ensureComponentOn(cannon, PhysicsParentDef, e.id);
+      em.ensureComponentOn(cannon, PositionDef, [0, 2, 0]);
+
+      const cannonRot = quat.create();
+      const pitch = Math.PI * -0.08;
+      quat.rotateY(cannonRot, cannonRot, Math.PI * 0.5);
+      quat.rotateZ(cannonRot, cannonRot, pitch);
+      em.ensureComponentOn(cannon, RotationDef, cannonRot);
+      e.boatLocal.childCannonId = cannon.id;
+
+      // child enemy
+      const en = em.newEntity();
+      em.ensureComponentOn(en, EnemyConstructDef, e.id, [2, 3, 0]);
+      e.boatLocal.childEnemyId = en.id;
+      if (e.authority.pid === res.me.pid) {
+        // destroy after 1 minute
+        em.ensureComponentOn(e, LifetimeDef, 1000 * 60);
+      }
+    },
+  }
+);
 
 export const BOAT_COLOR: vec3 = [0.2, 0.1, 0.05];
 
 export function registerStepBoats(em: EntityManager) {
   em.registerSystem(
-    [BoatDef, RotationDef, LinearVelocityDef, AuthorityDef],
+    [BoatLocalDef, RotationDef, LinearVelocityDef, AuthorityDef],
     [PhysicsTimerDef, MeDef],
     (boats, res) => {
       for (let i = 0; i < res.physicsTimer.steps; i++) {
         for (let o of boats) {
           if (o.authority.pid !== res.me.pid) continue;
 
-          const rad = o.boat.wheelSpeed * res.physicsTimer.period;
-          o.boat.wheelDir += rad;
+          const rad = o.boatLocal.wheelSpeed * res.physicsTimer.period;
+          o.boatLocal.wheelDir += rad;
 
           // rotate
-          quat.rotateY(o.rotation, quat.IDENTITY, o.boat.wheelDir);
+          quat.rotateY(o.rotation, quat.IDENTITY, o.boatLocal.wheelDir);
 
           // rotate velocity
           vec3.rotateY(
             o.linearVelocity,
-            [o.boat.speed, -0.01, 0],
+            [o.boatLocal.speed, -0.01, 0],
             [0, 0, 0],
-            o.boat.wheelDir
+            o.boatLocal.wheelDir
           );
         }
       }
@@ -98,7 +211,7 @@ export function registerStepBoats(em: EntityManager) {
   );
 
   em.registerSystem(
-    [BoatDef, AuthorityDef],
+    [BoatLocalDef, AuthorityDef],
     [PhysicsTimerDef, MeDef, PhysicsResultsDef],
     (boats, res) => {
       const ms = res.physicsTimer.period * res.physicsTimer.steps;
@@ -106,19 +219,23 @@ export function registerStepBoats(em: EntityManager) {
         if (o.authority.pid !== res.me.pid) continue;
 
         // TODO(@darzu): COUNT DOWN FIREZONE
-        const hits = res.physicsResults.collidesWith.get(o.boat.fireZoneId);
+        const hits = res.physicsResults.collidesWith.get(
+          o.boatLocal.fireZoneId
+        );
         const seesPlayer = hits?.some(
           (h) => !!em.findEntity(h, [ShipLocalDef])
         );
         if (seesPlayer) {
-          o.boat.fireDelay -= ms;
+          o.boatLocal.fireDelay -= ms;
           // console.log(o.boat.fireDelay);
         }
 
-        if (o.boat.fireDelay < 0) {
-          o.boat.fireDelay += o.boat.fireRate;
+        if (o.boatLocal.fireDelay < 0) {
+          o.boatLocal.fireDelay += o.boatLocal.fireRate;
 
-          const cannon = em.findEntity(o.boat.childCannonId, [WorldFrameDef]);
+          const cannon = em.findEntity(o.boatLocal.childCannonId, [
+            WorldFrameDef,
+          ]);
           if (cannon) {
             const rot = quat.create();
             quat.rotateY(rot, cannon.world.rotation, Math.PI * 0.5);
@@ -132,7 +249,7 @@ export function registerStepBoats(em: EntityManager) {
   );
 
   em.registerSystem(
-    [BoatDef, PositionDef, RotationDef],
+    [BoatLocalDef, PositionDef, RotationDef],
     [PhysicsResultsDef, AssetsDef, MusicDef],
     (objs, res) => {
       for (let boat of objs) {
@@ -204,145 +321,4 @@ export function breakBoat(
   }
 }
 
-export const BoatConstructDef = EM.defineComponent(
-  "boatConstruct",
-  (loc?: vec3, speed?: number, wheelSpeed?: number, wheelDir?: number) => {
-    return {
-      location: loc ?? vec3.fromValues(0, 0, 0),
-      speed: speed ?? 0.01,
-      wheelSpeed: wheelSpeed ?? 0.0,
-      wheelDir: wheelDir ?? 0.0,
-    };
-  }
-);
-export type BoatConstruct = Component<typeof BoatConstructDef>;
-
-EM.registerSerializerPair(
-  BoatConstructDef,
-  (c, buf) => {
-    buf.writeVec3(c.location);
-    buf.writeFloat32(c.speed);
-    buf.writeFloat32(c.wheelSpeed);
-    buf.writeFloat32(c.wheelDir);
-  },
-  (c, buf) => {
-    buf.readVec3(c.location);
-    c.speed = buf.readFloat32();
-    c.wheelSpeed = buf.readFloat32();
-    c.wheelDir = buf.readFloat32();
-  }
-);
-
 export const FireZoneDef = EM.defineComponent("firezone", () => {});
-
-function createBoat(
-  em: EntityManager,
-  e: Entity & { boatConstruct: BoatConstruct },
-  pid: number,
-  assets: Assets
-) {
-  if (FinishedDef.isOn(e)) return;
-  const props = e.boatConstruct;
-  if (!PositionDef.isOn(e)) em.addComponent(e.id, PositionDef, props.location);
-  if (!RotationDef.isOn(e)) em.addComponent(e.id, RotationDef);
-  if (!LinearVelocityDef.isOn(e)) em.addComponent(e.id, LinearVelocityDef);
-  if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, BOAT_COLOR);
-  if (!MotionSmoothingDef.isOn(e)) em.addComponent(e.id, MotionSmoothingDef);
-  if (!RenderableConstructDef.isOn(e))
-    em.addComponent(e.id, RenderableConstructDef, assets.boat.mesh);
-  if (!AuthorityDef.isOn(e)) {
-    // TODO(@darzu): debug why boats have jerky movement
-    console.log(`claiming authority of boat ${e.id}`);
-    em.addComponent(e.id, AuthorityDef, pid);
-  }
-  if (!BoatDef.isOn(e)) {
-    const boat = em.addComponent(e.id, BoatDef);
-    boat.speed = props.speed;
-    boat.wheelDir = props.wheelDir;
-    boat.wheelSpeed = props.wheelSpeed;
-
-    // child cannon
-    const cannon = em.newEntity();
-    em.ensureComponentOn(cannon, RenderableConstructDef, assets.cannon.proto);
-    em.ensureComponentOn(cannon, PhysicsParentDef, e.id);
-    em.ensureComponentOn(cannon, PositionDef, [0, 2, 0]);
-
-    const cannonRot = quat.create();
-    const pitch = Math.PI * -0.08;
-    quat.rotateY(cannonRot, cannonRot, Math.PI * 0.5);
-    quat.rotateZ(cannonRot, cannonRot, pitch);
-    em.ensureComponentOn(cannon, RotationDef, cannonRot);
-    boat.childCannonId = cannon.id;
-
-    // child enemy
-    const en = em.newEntity();
-    em.ensureComponentOn(en, EnemyConstructDef, e.id, [2, 3, 0]);
-    boat.childEnemyId = en.id;
-
-    // fire zone
-    const fireZone = em.newEntity();
-    const fireZoneSize = 40;
-    em.ensureComponentOn(fireZone, ColliderDef, {
-      solid: false,
-      shape: "AABB",
-      aabb: {
-        min: [-2, -2, -fireZoneSize],
-        max: [2, 2, fireZoneSize],
-      },
-    });
-    em.ensureComponentOn(fireZone, PhysicsParentDef, e.id);
-    em.ensureComponentOn(fireZone, PositionDef, [0, 0, fireZoneSize]);
-    em.ensureComponentOn(fireZone, FireZoneDef);
-    boat.fireZoneId = fireZone.id;
-  }
-  em.ensureComponentOn(e, OnDeleteDef, (id) => {
-    if (BoatDef.isOn(e)) {
-      em.ensureComponent(e.boat.childCannonId, DeletedDef);
-      em.ensureComponent(e.boat.fireZoneId, DeletedDef);
-
-      const child = em.findEntity(e.boat.childEnemyId, [
-        WorldFrameDef,
-        PositionDef,
-        RotationDef,
-        EnemyDef,
-      ]);
-      if (child) {
-        em.ensureComponent(child.id, LifetimeDef, 4000);
-        em.ensureComponent(child.enemy.leftLegId, LifetimeDef, 4000);
-        em.ensureComponent(child.enemy.rightLegId, LifetimeDef, 4000);
-        em.removeComponent(child.id, PhysicsParentDef);
-        vec3.copy(child.position, child.world.position);
-        quat.copy(child.rotation, child.world.rotation);
-        em.ensureComponentOn(child, LinearVelocityDef, [0, -0.002, 0]);
-      }
-    }
-  });
-  if (!ColliderDef.isOn(e)) {
-    const collider = em.addComponent(e.id, ColliderDef);
-    collider.shape = "AABB";
-    collider.solid = true;
-    (collider as AABBCollider).aabb = assets.boat.aabb;
-  }
-  if (!SyncDef.isOn(e)) {
-    const sync = em.addComponent(e.id, SyncDef);
-    sync.fullComponents.push(BoatConstructDef.id);
-    sync.dynamicComponents.push(PositionDef.id);
-    sync.dynamicComponents.push(RotationDef.id);
-    sync.dynamicComponents.push(LinearVelocityDef.id);
-  }
-  // destory after 1 minute
-  em.ensureComponentOn(e, LifetimeDef, 1000 * 60);
-
-  em.addComponent(e.id, FinishedDef);
-}
-
-export function registerBuildBoatsSystem(em: EntityManager) {
-  em.registerSystem(
-    [BoatConstructDef],
-    [MeDef, AssetsDef],
-    (boats, res) => {
-      for (let b of boats) createBoat(em, b, res.me.pid, res.assets);
-    },
-    "buildBoats"
-  );
-}

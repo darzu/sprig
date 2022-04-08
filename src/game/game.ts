@@ -13,11 +13,7 @@ import {
   registerInitTransforms,
   TransformDef,
 } from "../physics/transform.js";
-import {
-  BoatConstructDef,
-  registerBuildBoatsSystem,
-  registerStepBoats,
-} from "./boat.js";
+import { BoatPropsDef, registerStepBoats } from "./boat.js";
 import {
   CameraDef,
   LocalPlayerDef,
@@ -226,7 +222,6 @@ export function registerAllSystems(em: EntityManager) {
   registerGroundSystems(em);
   registerBuildWorldPlanes(em);
   registerBuildCubesSystem(em);
-  registerBuildBoatsSystem(em);
   registerShipSystems(em);
   registerBuildBulletsSystem(em);
   registerBuildAmmunitionSystem(em);
@@ -391,7 +386,7 @@ function registerBoatSpawnerSystem(em: EntityManager) {
 
         // console.log("boat ");
         // create boat(s)
-        const boatCon = em.addComponent(em.newEntity().id, BoatConstructDef);
+        const boatCon = em.addComponent(em.newEntity().id, BoatPropsDef);
         const left = Math.random() < 0.5;
         const z = res.groundSystem.nextScore * 10 + 100;
         boatCon.location = vec3.fromValues(
