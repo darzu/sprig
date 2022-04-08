@@ -74,7 +74,6 @@ import { FinishedDef } from "../build.js";
 import { registerPhysicsSystems } from "../physics/phys.js";
 import { registerNoodleSystem } from "./noodles.js";
 import { registerUpdateLifetimes } from "./lifetime.js";
-import { registerCreateEnemies } from "./enemy.js";
 import { registerMusicSystems } from "../music.js";
 import { GameState, GameStateDef } from "./gamestate.js";
 import { registerRestartSystem } from "./restart.js";
@@ -228,7 +227,6 @@ export function registerAllSystems(em: EntityManager) {
   registerBuildAmmunitionSystem(em);
   registerBuildLinstockSystem(em);
   registerBuildCursor(em);
-  registerCreateEnemies(em);
   registerInitTransforms(em);
   registerMoveCubesSystem(em);
   registerStepBoats(em);

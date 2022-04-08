@@ -46,7 +46,7 @@ import { DeletedDef, OnDeleteDef } from "../delete.js";
 import { tempVec } from "../temp-pool.js";
 import { LifetimeDef } from "./lifetime.js";
 import { CannonPropsDef } from "./cannon.js";
-import { EnemyConstructDef, EnemyDef } from "./enemy.js";
+import { createEnemy, EnemyDef } from "./enemy.js";
 import { PlayerEntDef } from "./player.js";
 import { ShipLocalDef } from "./ship.js";
 import { Music, MusicDef } from "../music.js";
@@ -169,8 +169,7 @@ export const { BoatPropsDef, BoatLocalDef, createBoat } = defineNetEntityHelper(
       e.boatLocal.childCannonId = cannon.id;
 
       // child enemy
-      const en = em.newEntity();
-      em.ensureComponentOn(en, EnemyConstructDef, e.id, [2, 3, 0]);
+      const en = createEnemy(em, res.assets, e.id, [2, 3, 0]);
       e.boatLocal.childEnemyId = en.id;
       if (e.authority.pid === res.me.pid) {
         // destroy after 1 minute
