@@ -54,7 +54,7 @@ import { createNoodleMesh, Noodle, NoodleDef, NoodleSeg } from "./noodles.js";
 import { assert } from "../test.js";
 import { vec3Dbg, vec3Mid } from "../utils-3d.js";
 import { min } from "../math.js";
-import { GroundDef } from "./ground.js";
+import { GroundLocalDef } from "./ground.js";
 import { ShipLocalDef } from "./ship.js";
 
 // TODO(@darzu): it'd be great if these could hook into some sort of

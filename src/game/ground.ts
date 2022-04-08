@@ -1,5 +1,5 @@
 import { ColliderDef } from "../physics/collider.js";
-import { Component, EM, EntityManager } from "../entity-manager.js";
+import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { RenderableConstructDef } from "../render/renderer.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
@@ -7,43 +7,58 @@ import { ColorDef, ScoreDef } from "./game.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import { FinishedDef } from "../build.js";
-import { Assets, AssetsDef, DARK_BLUE, LIGHT_BLUE } from "./assets.js";
+import {
+  Assets,
+  AssetsDef,
+  DARK_BLUE,
+  GROUNDSIZE,
+  LIGHT_BLUE,
+} from "./assets.js";
 import {
   cloneMesh,
   getAABBFromMesh,
   scaleMesh,
   scaleMesh3,
 } from "../render/mesh-pool.js";
-
-export const GROUNDSIZE = 48;
+import { defineNetEntityHelper } from "../em_helpers.js";
 
 const HALFSIZE = GROUNDSIZE / 2;
 const SIZE = HALFSIZE * 2;
 const THIRDSIZE = SIZE / 3;
 
-export const GroundConstructDef = EM.defineComponent(
-  "groundConstruct",
-  (location?: vec3, color?: vec3) => ({
-    location: location ?? vec3.fromValues(0, 0, 0),
-    color: color ?? vec3.fromValues(0, 0, 0),
-  })
-);
+export const { GroundPropsDef, GroundLocalDef, createGround } =
+  defineNetEntityHelper(EM, {
+    name: "ground",
+    defaultProps: (location?: vec3, color?: vec3) => ({
+      location: location ?? vec3.fromValues(0, 0, 0),
+      color: color ?? vec3.fromValues(0, 0, 0),
+    }),
+    serializeProps: (o, buf) => {
+      buf.writeVec3(o.location);
+      buf.writeVec3(o.color);
+    },
+    deserializeProps: (o, buf) => {
+      buf.readVec3(o.location);
+      buf.readVec3(o.color);
+    },
+    defaultLocal: () => true,
+    dynamicComponents: [PositionDef],
+    buildResources: [AssetsDef, MeDef],
+    build: (g, res) => {
+      const em: EntityManager = EM;
+      // TODO(@darzu): change position via events?
+      vec3.copy(g.position, g.groundProps.location);
+      em.ensureComponent(g.id, ColorDef, g.groundProps.color);
+      em.ensureComponent(g.id, RenderableConstructDef, res.assets.ground.proto);
+      em.ensureComponent(g.id, ColliderDef, {
+        shape: "AABB",
+        solid: true,
+        aabb: res.assets.ground.aabb,
+      });
+    },
+  });
 
-export type GroundConstruct = Component<typeof GroundConstructDef>;
-
-export const GroundDef = EM.defineComponent("ground", () => {});
-
-EM.registerSerializerPair(
-  GroundConstructDef,
-  (groundConstruct, buf) => {
-    buf.writeVec3(groundConstruct.location);
-    buf.writeVec3(groundConstruct.color);
-  },
-  (groundConstruct, buf) => {
-    buf.readVec3(groundConstruct.location);
-    buf.readVec3(groundConstruct.color);
-  }
-);
+export type GroundProps = Component<typeof GroundPropsDef>;
 
 export const GroundSystemDef = EM.defineComponent("groundSystem", () => {
   return {
@@ -72,13 +87,13 @@ export function registerGroundSystems(em: EntityManager) {
           for (let z = 0; z < NUM_Z; z++) {
             const color = (x + z) % 2 === 0 ? LIGHT_BLUE : DARK_BLUE;
             const g = em.newEntity();
-            em.ensureComponentOn(g, GroundConstructDef, [0, 0, 0], color);
+            em.ensureComponentOn(g, GroundPropsDef, [0, 0, 0], color);
             sys.groundPool.push(g.id);
           }
         }
       }
 
-      if (sys.groundPool.some((id) => !em.findEntity(id, [GroundDef])))
+      if (sys.groundPool.some((id) => !em.findEntity(id, [GroundLocalDef])))
         // not inited
         return;
 
@@ -106,7 +121,7 @@ export function registerGroundSystems(em: EntityManager) {
       function placeNextGround() {
         // move ground
         const gId = sys.groundPool[sys.nextGroundIdx];
-        const g = em.findEntity(gId, [GroundDef, PositionDef]);
+        const g = em.findEntity(gId, [GroundLocalDef, PositionDef]);
         if (g) {
           vec3.copy(g.position, calcLoc(sys.totalPlaced));
 
@@ -123,42 +138,4 @@ export function registerGroundSystems(em: EntityManager) {
     const z = Math.floor(num / NUM_X);
     return [(x - 1) * SIZE, -7, z * SIZE];
   }
-
-  em.registerSystem(
-    [GroundConstructDef],
-    [MeDef, AssetsDef],
-    (ground: { id: number; groundConstruct: GroundConstruct }[], res) => {
-      for (let g of ground) {
-        if (FinishedDef.isOn(g)) continue;
-
-        em.ensureComponent(g.id, PositionDef, g.groundConstruct.location);
-        // TODO(@darzu): rotation for debugging
-        // if (!RotationDef.isOn(plane)) {
-        //   // const r =
-        //   //   Math.random() > 0.5
-        //   //     ? quat.fromEuler(quat.create(), 0, 0, Math.PI * 0.5)
-        //   //     : quat.create();
-        //   const r = quat.fromEuler(quat.create(), 0, 0, Math.PI * Math.random());
-        //   em.ensureComponent(plane.id, RotationDef, r);
-        // }
-        em.ensureComponent(g.id, ColorDef, g.groundConstruct.color);
-        let m = cloneMesh(res.assets.cube.mesh);
-        m = scaleMesh3(m, [HALFSIZE, 1, HALFSIZE]);
-        em.ensureComponent(g.id, RenderableConstructDef, m);
-        const aabb = getAABBFromMesh(m);
-        em.ensureComponent(g.id, ColliderDef, {
-          shape: "AABB",
-          solid: true,
-          aabb,
-        });
-        em.ensureComponent(g.id, AuthorityDef, res.me.pid);
-        em.ensureComponentOn(g, SyncDef, [PositionDef.id]);
-        g.sync.fullComponents = [GroundConstructDef.id];
-        em.ensureComponentOn(g, GroundDef);
-
-        em.ensureComponent(g.id, FinishedDef);
-      }
-    },
-    "buildGround"
-  );
 }

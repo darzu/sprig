@@ -37,8 +37,7 @@ import { registerEventSystems } from "../net/events.js";
 import { registerBuildCubesSystem, registerMoveCubesSystem } from "./cube.js";
 import { PhysicsTimerDef, registerTimeSystem } from "../time.js";
 import {
-  GroundConstructDef,
-  GROUNDSIZE,
+  GroundPropsDef,
   GroundSystemDef,
   registerGroundSystems,
 } from "./ground.js";
@@ -46,7 +45,12 @@ import { registerBulletCollisionSystem } from "./bullet-collision.js";
 import { createShip, registerShipSystems, ShipLocalDef } from "./ship.js";
 import { HatConstructDef } from "./hat.js";
 import { registerBuildBulletsSystem, registerBulletUpdate } from "./bullet.js";
-import { AssetsDef, LIGHT_BLUE, registerAssetLoader } from "./assets.js";
+import {
+  AssetsDef,
+  GROUNDSIZE,
+  LIGHT_BLUE,
+  registerAssetLoader,
+} from "./assets.js";
 import { registerInitCanvasSystem } from "../canvas.js";
 import {
   registerRenderInitSystem,
@@ -78,6 +82,7 @@ import { registerMusicSystems } from "../music.js";
 import { GameState, GameStateDef } from "./gamestate.js";
 import { registerRestartSystem } from "./restart.js";
 import { registerNetDebugSystem } from "../net/net-debug.js";
+import { assert } from "../test.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -105,7 +110,7 @@ function createGround(em: EntityManager) {
   const loc = vec3.fromValues(0, -7, 0);
   const color = LIGHT_BLUE;
   let { id } = em.newEntity();
-  em.addComponent(id, GroundConstructDef, loc, color);
+  em.addComponent(id, GroundPropsDef, loc, color);
 }
 
 const WorldPlaneConstDef = EM.defineComponent("worldPlane", (t?: mat4) => {
@@ -203,6 +208,21 @@ function registerScoreSystems(em: EntityManager) {
   );
 }
 
+let hasInitPassed = false;
+const onInitFns: ((em: EntityManager) => void)[] = [];
+export function onInit(fn: (em: EntityManager) => void) {
+  assert(
+    !hasInitPassed,
+    `trying to add an init fn but init has already happened!`
+  );
+  onInitFns.push(fn);
+}
+function callInitFns(em: EntityManager) {
+  assert(!hasInitPassed, "double init");
+  hasInitPassed = true;
+  onInitFns.forEach((fn) => fn(em));
+}
+
 export function registerAllSystems(em: EntityManager) {
   registerTimeSystem(em);
   registerNetSystems(em);
@@ -256,6 +276,8 @@ export function registerAllSystems(em: EntityManager) {
   registerUpdateCameraView(em);
   registerConstructRenderablesSystem(em);
   registerRenderer(em);
+
+  callInitFns(em);
 }
 
 export const TextDef = EM.defineComponent("text", () => {

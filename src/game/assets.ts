@@ -26,6 +26,8 @@ export const LIGHT_GRAY = vec3.fromValues(0.2, 0.2, 0.2);
 export const DARK_BLUE = vec3.fromValues(0.03, 0.03, 0.2);
 export const LIGHT_BLUE = vec3.fromValues(0.05, 0.05, 0.2);
 
+export const GROUNDSIZE = 48;
+
 const DEFAULT_ASSET_PATH = "/assets/";
 const BACKUP_ASSET_PATH = "http://sprig.land/assets/";
 
@@ -55,12 +57,17 @@ const RemoteMesheSets = {
 type RemoteMeshSetSymbols = keyof typeof RemoteMesheSets;
 
 const AssetTransforms: Partial<{
-  [P in RemoteMeshSymbols | RemoteMeshSetSymbols]: mat4;
+  [P in RemoteMeshSymbols | RemoteMeshSetSymbols | LocalMeshSymbols]: mat4;
 }> = {
   linstock: mat4.fromScaling(mat4.create(), [0.1, 0.1, 0.1]),
   // ship: mat4.fromScaling(mat4.create(), [3, 3, 3]),
   // ship_broken: mat4.fromScaling(mat4.create(), [3, 3, 3]),
   spacerock: mat4.fromScaling(mat4.create(), [1.5, 1.5, 1.5]),
+  ground: mat4.fromScaling(mat4.create(), [
+    GROUNDSIZE * 0.5,
+    1,
+    GROUNDSIZE * 0.5,
+  ]),
 };
 
 // TODO(@darzu): these sort of hacky offsets are a pain to deal with. It'd be
@@ -297,6 +304,7 @@ export const BARGE_AABBS: AABB[] = RAW_BARGE_AABBS.map((aabb) => {
 
 export const LocalMeshes = {
   cube: CUBE_MESH,
+  ground: CUBE_MESH,
   plane: PLANE_MESH,
   boat: scaleMesh3(CUBE_MESH, [10, 0.6, 5]),
   bullet: scaleMesh(CUBE_MESH, 0.3),
@@ -448,4 +456,3 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
 
   return result;
 }
-
