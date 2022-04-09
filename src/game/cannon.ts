@@ -13,7 +13,11 @@ import {
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { Deserializer, Serializer } from "../serialize.js";
-import { DetectedEvents, DetectedEventsDef } from "../net/events.js";
+import {
+  DetectedEvents,
+  DetectedEventsDef,
+  eventWizard,
+} from "../net/events.js";
 import { fireBullet } from "./bullet.js";
 import { registerEventHandler } from "../net/events.js";
 import { ToolDef } from "./tool.js";
@@ -130,6 +134,28 @@ export const { CannonPropsDef, CannonLocalDef, createCannon } =
     },
   });
 
+export const raiseManCannon = eventWizard(
+  "man-cannon",
+  () => [[CannonLocalDef], [PlayerEntDef]] as const,
+  ([cannon, player]) => {
+    player.player.manning = true;
+    cannon.cannonLocal.mannedId = player.id;
+  }
+);
+export const raiseUnmanCannon = eventWizard(
+  "unman-cannon",
+  () => [[CannonLocalDef], [PlayerEntDef]] as const,
+  ([cannon, player]) => {
+    player.player.manning = false;
+    const camera = EM.getResource(CameraDef);
+    if (camera?.targetId === cannon.id) {
+      quat.identity(camera.rotation);
+      camera.targetId = 0;
+    }
+    cannon.cannonLocal.mannedId = 0;
+  }
+);
+
 export function registerPlayerCannonSystem(em: EntityManager) {
   // em.registerSystem(
   //   [CannonDef, InteractableDef],
@@ -200,22 +226,11 @@ export function registerPlayerCannonSystem(em: EntityManager) {
       for (let c of cannons) {
         if (DeletedDef.isOn(c)) continue;
 
-        function unman() {
-          player.player.manning = false;
-          quat.identity(res.camera.rotation);
-          res.camera.targetId = 0;
-          c.cannonLocal.mannedId = 0;
-        }
-        function doman() {
-          player.player.manning = true;
-          c.cannonLocal.mannedId = player.id;
-        }
-
         if (res.inputs.keyClicks["e"]) {
           if (c.cannonLocal.mannedId) {
-            unman();
+            raiseUnmanCannon(c, player);
           } else {
-            doman();
+            raiseManCannon(c, player);
           }
         }
 
