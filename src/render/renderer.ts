@@ -271,7 +271,7 @@ function updateRendererWorldFrame(
       o.rendererWorldFrame.rotation,
       o.motionSmoothing.rotationError
     );
-    updateFrameFromPosRotScale(o);
+    updateFrameFromPosRotScale(o.rendererWorldFrame);
   }
   if (PhysicsParentDef.isOn(o) && o.physicsParent.id) {
     if (!_hasRendererWorldFrame.has(o.physicsParent.id)) {
