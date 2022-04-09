@@ -565,7 +565,6 @@ export function registerBuildPlayersSystem(em: EntityManager) {
           em.ensureComponentOn(e, SyncDef, [
             PositionDef.id,
             RotationDef.id,
-            LinearVelocityDef.id,
             // TODO(@darzu): maybe sync this via events instead
             PhysicsParentDef.id,
           ]);
