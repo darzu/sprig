@@ -1,12 +1,18 @@
 import { Canvas, CanvasDef } from "../canvas.js";
-import { EntityManager, EM, Component } from "../entity-manager.js";
+import {
+  EntityManager,
+  EM,
+  Component,
+  EntityW,
+  Entity,
+} from "../entity-manager.js";
 import { applyTints, TintsDef } from "../tint.js";
 import { PlayerEnt, PlayerEntDef } from "../game/player.js";
 import { CameraDef, CameraProps } from "../camera.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { isMeshHandle, Mesh, MeshHandle } from "./mesh-pool.js";
 import { Authority, AuthorityDef, Me, MeDef } from "../net/components.js";
-import { WorldFrameDef } from "../physics/nonintersection.js";
+import { createFrame, WorldFrameDef } from "../physics/nonintersection.js";
 import { RendererDef } from "./render_init.js";
 import { tempQuat, tempVec } from "../temp-pool.js";
 import { PhysicsTimerDef } from "../time.js";
@@ -17,6 +23,11 @@ import {
   Rotation,
   RotationDef,
   Frame,
+  TransformDef,
+  PhysicsParentDef,
+  ScaleDef,
+  updateFrameFromTransform,
+  updateFrameFromPosRotScale,
 } from "../physics/transform.js";
 import { ColorDef } from "../game/game.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
@@ -74,7 +85,7 @@ export type CameraView = Component<typeof CameraViewDef>;
 interface RenderableObj {
   id: number;
   renderable: Renderable;
-  world: Frame;
+  rendererWorldFrame: Frame;
 }
 
 function stepRenderer(
@@ -92,30 +103,10 @@ function stepRenderer(
     if (TintsDef.isOn(o)) {
       applyTints(o.tints, o.renderable.meshHandle.shaderData.tint);
     }
-
-    if (MotionSmoothingDef.isOn(o)) {
-      const position = vec3.add(
-        tempVec(),
-        o.world.position,
-        o.motionSmoothing.positionError
-      );
-      const rotation = quat.mul(
-        tempQuat(),
-        o.world.rotation,
-        o.motionSmoothing.rotationError
-      );
-      mat4.fromRotationTranslationScale(
-        o.renderable.meshHandle.shaderData.transform,
-        rotation,
-        position,
-        o.world.scale
-      );
-    } else {
-      mat4.copy(
-        o.renderable.meshHandle.shaderData.transform,
-        o.world.transform
-      );
-    }
+    mat4.copy(
+      o.renderable.meshHandle.shaderData.transform,
+      o.rendererWorldFrame.transform
+    );
   }
 
   // filter
@@ -256,9 +247,68 @@ export function registerUpdateCameraView(em: EntityManager) {
   );
 }
 
+const _hasRendererWorldFrame = new Set();
+
+const RendererWorldFrameDef = EM.defineComponent("rendererWorldFrame", () =>
+  createFrame()
+);
+
+function updateRendererWorldFrame(
+  em: EntityManager,
+  o: EntityW<[typeof TransformDef]>
+) {
+  em.ensureComponentOn(o, RendererWorldFrameDef);
+  mat4.copy(o.rendererWorldFrame.transform, o.transform);
+  updateFrameFromTransform(o.rendererWorldFrame);
+  if (MotionSmoothingDef.isOn(o)) {
+    vec3.add(
+      o.rendererWorldFrame.position,
+      o.rendererWorldFrame.position,
+      o.motionSmoothing.positionError
+    );
+    quat.mul(
+      o.rendererWorldFrame.rotation,
+      o.rendererWorldFrame.rotation,
+      o.motionSmoothing.rotationError
+    );
+    updateFrameFromPosRotScale(o);
+  }
+  if (PhysicsParentDef.isOn(o) && o.physicsParent.id) {
+    if (!_hasRendererWorldFrame.has(o.physicsParent.id)) {
+      updateRendererWorldFrame(
+        em,
+        em.findEntity(o.physicsParent.id, [TransformDef])!
+      );
+    }
+    let parent = em.findEntity(o.physicsParent.id, [RendererWorldFrameDef])!;
+    mat4.mul(
+      o.rendererWorldFrame.transform,
+      parent.rendererWorldFrame.transform,
+      o.rendererWorldFrame.transform
+    );
+    updateFrameFromTransform(o.rendererWorldFrame);
+  }
+  _hasRendererWorldFrame.add(o.id);
+}
+
+export function registerUpdateRendererWorldFrames(em: EntityManager) {
+  em.registerSystem(
+    [RenderableDef, TransformDef],
+    [],
+    (objs, res) => {
+      _hasRendererWorldFrame.clear();
+
+      for (const o of objs) {
+        updateRendererWorldFrame(em, o);
+      }
+    },
+    "updateRendererWorldFrames"
+  );
+}
+
 export function registerRenderer(em: EntityManager) {
   em.registerSystem(
-    [WorldFrameDef, RenderableDef],
+    [RendererWorldFrameDef, RenderableDef],
     [CameraViewDef, PhysicsTimerDef, RendererDef],
     (objs, res) => {
       // TODO: should we just render on every frame?

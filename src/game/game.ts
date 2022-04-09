@@ -6,6 +6,7 @@ import {
   registerConstructRenderablesSystem,
   registerRenderer,
   registerUpdateCameraView,
+  registerUpdateRendererWorldFrames,
   RenderableConstructDef,
 } from "../render/renderer.js";
 import {
@@ -253,6 +254,7 @@ export function registerAllSystems(em: EntityManager) {
   registerRenderViewController(em);
   registerUpdateCameraView(em);
   registerConstructRenderablesSystem(em);
+  registerUpdateRendererWorldFrames(em);
   registerRenderer(em);
 
   callInitFns(em);

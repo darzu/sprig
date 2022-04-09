@@ -53,7 +53,7 @@ export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {
 });
 export type PhysicsResults = Component<typeof PhysicsResultsDef>;
 
-function createFrame(): Frame {
+export function createFrame(): Frame {
   return {
     position: vec3.create(),
     rotation: quat.create(),
