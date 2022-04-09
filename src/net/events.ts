@@ -26,6 +26,7 @@ import { hashCode, NumberTuple } from "../util.js";
 import { TimeDef } from "../time.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { assert } from "../test.js";
+import { onInit } from "../init.js";
 
 export interface Event<Extra> {
   // Event type
@@ -563,27 +564,38 @@ export function addEventComponents(em: EntityManager) {
 
 export function eventWizard<ES extends EDef<any>[], Extra>(
   name: string,
-  entities: readonly [...ES],
+  entities: readonly [...ES] | (() => readonly [...ES]),
   runEvent: (entities: ESet<ES>, extra: Extra) => void,
   opts?: {
     legalEvent?: (entities: ESet<ES>, extra: Extra) => boolean;
-  } & ExtraSerializers<Extra>
+    eventAuthorityEntity?: (entityIds: NumberTuple<ES>) => number;
+  } & Partial<ExtraSerializers<Extra>>
 ): (es: ESet<ES>, extra?: Extra) => void {
-  registerEventHandler<ES, Extra>(name, {
-    entities,
-    eventAuthorityEntity: (es) => es[0],
-    legalEvent: (em, es, extra) => {
-      if (opts?.legalEvent) return opts.legalEvent(es, extra);
-      return true;
-    },
-    runEvent: (em, es, extra) => {
-      runEvent(es, extra);
-    },
-    ...(opts?.serializeExtra ? { serializeExtra: opts.serializeExtra } : {}),
-    ...(opts?.deserializeExtra
-      ? { deserializeExtra: opts.deserializeExtra }
-      : {}),
-  });
+  const delayInit = typeof entities === "function";
+  const initThunk = () => {
+    registerEventHandler<ES, Extra>(name, {
+      entities: delayInit ? entities() : entities,
+      eventAuthorityEntity: (es) => {
+        if (opts?.eventAuthorityEntity) return opts.eventAuthorityEntity(es);
+        else return es[0];
+      },
+      legalEvent: (em, es, extra) => {
+        if (opts?.legalEvent) return opts.legalEvent(es, extra);
+        return true;
+      },
+      runEvent: (em, es, extra) => {
+        runEvent(es, extra);
+      },
+      ...(opts?.serializeExtra ? { serializeExtra: opts.serializeExtra } : {}),
+      ...(opts?.deserializeExtra
+        ? { deserializeExtra: opts.deserializeExtra }
+        : {}),
+    });
+  };
+
+  if (delayInit) onInit(initThunk);
+  else initThunk();
+
   const raiseEvent = (es: ESet<ES>, extra?: Extra) => {
     const de = EM.getResource(DetectedEventsDef)!;
     de.raise({

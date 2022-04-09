@@ -40,11 +40,7 @@ export function registerBulletCollisionSystem(em: EntityManager) {
           );
           for (let otherBullet of otherBullets) {
             if (otherBullet) {
-              resources.detectedEvents.raise({
-                type: "bullet-bullet",
-                entities: [o.id, otherBullet.id],
-                extra: null,
-              });
+              raiseBulletBullet([o, otherBullet]);
             }
           }
 
@@ -54,11 +50,7 @@ export function registerBulletCollisionSystem(em: EntityManager) {
             .filter((p) => p !== undefined);
           for (let otherPlayer of otherPlayers) {
             if (otherPlayer!.authority.pid !== o.authority.pid)
-              resources.detectedEvents.raise({
-                type: "bullet-player",
-                entities: [otherPlayer!.id, o.id],
-                extra: null,
-              });
+              raiseBulletPlayer([o, otherPlayer!]);
           }
         }
       }
@@ -67,39 +59,34 @@ export function registerBulletCollisionSystem(em: EntityManager) {
   );
 }
 
-registerEventHandler("bullet-bullet", {
-  entities: [[BulletDef], [BulletDef]] as const,
-  // The authority entity is the one with the lowest id
-  eventAuthorityEntity: (entities) => Math.min(...entities),
-  legalEvent: (em, [b1, b2]) => true,
-  runEvent: (em: EntityManager, [b1, b2]) => {
+export const raiseBulletBullet = eventWizard(
+  "bullet-bullet",
+  [[BulletDef], [BulletDef]] as const,
+  ([b1, b2]) => {
     // This bullet might have already been deleted via the sync system
-    em.ensureComponentOn(b1, DeletedDef);
-    em.ensureComponentOn(b2, DeletedDef);
+    EM.ensureComponentOn(b1, DeletedDef);
+    EM.ensureComponentOn(b2, DeletedDef);
   },
-});
+  {
+    // The authority entity is the one with the lowest id
+    eventAuthorityEntity: (entities) => Math.min(...entities),
+  }
+);
 
-registerEventHandler("bullet-player", {
-  entities: [[PlayerEntDef], [BulletDef]] as const,
-  // The authority entity is the bullet
-  eventAuthorityEntity: (entities) => entities[1],
-  legalEvent: (em, [player, bullet]) => true,
-  runEvent: (em, [player, bullet]) => {
-    em.ensureComponent(bullet.id, DeletedDef);
-  },
-});
+export const raiseBulletPlayer = eventWizard(
+  "bullet-player",
+  () => [[BulletDef], [PlayerEntDef]] as const,
+  ([bullet, player]) => {
+    EM.ensureComponent(bullet.id, DeletedDef);
+  }
+);
 
-registerEventHandler("bullet-boat", {
-  entities: [[BoatLocalDef, PositionDef, RotationDef], [BulletDef]] as const,
-  eventAuthorityEntity: ([boatId, bulletId]) => {
-    return bulletId;
-  },
-  legalEvent: (em, [boat, bullet]) => {
-    return true;
-  },
-  runEvent: (em: EntityManager, [boat, bullet]) => {
-    em.ensureComponentOn(bullet, DeletedDef);
-    const res = em.getResources([AssetsDef, MusicDef])!;
-    breakBoat(em, boat, res.assets.boat_broken, res.music);
-  },
-});
+export const raiseBulletBoat = eventWizard(
+  "bullet-boat",
+  () => [[BulletDef], [BoatLocalDef, PositionDef, RotationDef]] as const,
+  ([bullet, boat]) => {
+    EM.ensureComponentOn(bullet, DeletedDef);
+    const res = EM.getResources([AssetsDef, MusicDef])!;
+    breakBoat(EM, boat, res.assets.boat_broken, res.music);
+  }
+);

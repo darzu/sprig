@@ -594,4 +594,4 @@ export class EntityManager {
 }
 
 // TODO(@darzu): where to put this?
-export const EM = new EntityManager();
+export const EM: EntityManager = new EntityManager();

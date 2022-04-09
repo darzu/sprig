@@ -52,6 +52,7 @@ import { ShipLocalDef } from "./ship.js";
 import { Music, MusicDef } from "../music.js";
 import { defineNetEntityHelper } from "../em_helpers.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
+import { raiseBulletBoat } from "./bullet-collision.js";
 
 export const { BoatPropsDef, BoatLocalDef, createBoat } = defineNetEntityHelper(
   EM,
@@ -264,18 +265,15 @@ export function registerBoatSystems(em: EntityManager) {
       for (let boat of objs) {
         const hits = res.physicsResults.collidesWith.get(boat.id);
         if (hits) {
-          const balls = hits.filter((h) => {
-            const b = em.findEntity(h, [BulletDef, AuthorityDef]);
-            return b && b.bullet.team === 1 && b.authority.pid === res.me.pid;
-          });
-          if (balls.length) {
-            res.detectedEvents.raise({
-              type: "bullet-boat",
-              entities: [boat.id, balls[0]],
-              extra: null,
+          const balls = hits
+            .map((h) => em.findEntity(h, [BulletDef, AuthorityDef]))
+            .filter((b) => {
+              return b && b.bullet.team === 1 && b.authority.pid === res.me.pid;
             });
+          if (balls.length) {
+            raiseBulletBoat([balls[0]!, boat]);
             console.log("HIT BOAT!");
-            for (let ball of balls) em.ensureComponent(ball, DeletedDef);
+            for (let ball of balls) em.ensureComponentOn(ball!, DeletedDef);
           }
 
           const ships = hits.filter((h) => em.findEntity(h, [ShipLocalDef]));
