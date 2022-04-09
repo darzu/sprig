@@ -418,3 +418,7 @@ Outlines:
     https://www.youtube.com/watch?v=hxPQ2F96F9E
     looks like a sampling technique:
       https://www.pbr-book.org/3ed-2018/Sampling_and_Reconstruction/Sobol_Sampler
+
+Mesh simplification:
+  https://www.simplygon.com
+  techniques: billboard cloud, flip book
