@@ -13,7 +13,7 @@ import {
   registerInitTransforms,
   TransformDef,
 } from "../physics/transform.js";
-import { BoatPropsDef, registerStepBoats } from "./boat.js";
+import { BoatPropsDef, registerBoatSystems } from "./boat.js";
 import {
   LocalPlayerDef,
   PlayerConstructDef,
@@ -83,6 +83,7 @@ import { GameState, GameStateDef } from "./gamestate.js";
 import { registerRestartSystem } from "./restart.js";
 import { registerNetDebugSystem } from "../net/net-debug.js";
 import { assert } from "../test.js";
+import { callInitFns } from "../init.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -208,21 +209,6 @@ function registerScoreSystems(em: EntityManager) {
   );
 }
 
-let hasInitPassed = false;
-const onInitFns: ((em: EntityManager) => void)[] = [];
-export function onInit(fn: (em: EntityManager) => void) {
-  assert(
-    !hasInitPassed,
-    `trying to add an init fn but init has already happened!`
-  );
-  onInitFns.push(fn);
-}
-function callInitFns(em: EntityManager) {
-  assert(!hasInitPassed, "double init");
-  hasInitPassed = true;
-  onInitFns.forEach((fn) => fn(em));
-}
-
 export function registerAllSystems(em: EntityManager) {
   registerTimeSystem(em);
   registerNetSystems(em);
@@ -249,7 +235,7 @@ export function registerAllSystems(em: EntityManager) {
   registerBuildCursor(em);
   registerInitTransforms(em);
   registerMoveCubesSystem(em);
-  registerStepBoats(em);
+  registerBoatSystems(em);
   registerStepPlayers(em);
   registerBulletUpdate(em);
   registerNoodleSystem(em);

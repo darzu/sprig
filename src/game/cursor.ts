@@ -19,7 +19,7 @@ export function getCursor<CS extends ComponentDef[]>(
 ): EntityW<[typeof Cursor3dDef, ...CS]> | undefined {
   const gb = em.getResource(GlobalCursor3dDef);
   if (!gb) return undefined;
-  const e = em.findEntity(gb.globalCursor3d.entityId, [Cursor3dDef, ...cs]);
+  const e = em.findEntity(gb.entityId, [Cursor3dDef, ...cs]);
   return e;
 }
 

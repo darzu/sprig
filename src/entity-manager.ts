@@ -313,10 +313,10 @@ export class EntityManager {
   // TODO(@darzu): rename to findSingletonComponent
   public getResource<C extends ComponentDef>(
     c: C
-  ): EntityW<[C], 0> | undefined {
+  ): (C extends ComponentDef<any, infer P> ? P : never) | undefined {
     const e = this.entities.get(0)!;
     if (c.name in e) {
-      return e as any;
+      return (e as any)[c.name];
     }
     return undefined;
   }
@@ -594,4 +594,4 @@ export class EntityManager {
 }
 
 // TODO(@darzu): where to put this?
-export const EM = new EntityManager();
+export const EM: EntityManager = new EntityManager();

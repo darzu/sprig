@@ -292,7 +292,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
       for (let o of objs) _objDict.set(o.id, o);
 
       // get singleton data
-      const { physicsResults } = EM.getResource(PhysicsResultsDef)!;
+      const physicsResults = EM.getResource(PhysicsResultsDef)!;
       const { collidesWith, contactData, reboundData } = physicsResults;
 
       // update in-contact pairs; this is seperate from collision or rebound

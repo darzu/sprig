@@ -2,7 +2,7 @@ import { EM, EntityManager, Component, Entity } from "../entity-manager.js";
 import { PhysicsTimerDef } from "../time.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { FinishedDef } from "../build.js";
-import { ColorDef, onInit } from "./game.js";
+import { ColorDef } from "./game.js";
 import { RenderableConstructDef } from "../render/renderer.js";
 import {
   Frame,
@@ -173,6 +173,15 @@ export function registerPlayerCannonSystem(em: EntityManager) {
     },
     "reloadCannon"
   );
+
+  // registerEventHandler("player-cannon", {
+  //   entities: [[PlayerEntDef], [CannonLocalDef]] as const,
+  //   eventAuthorityEntity: ([playerId, cannonId]) => playerId,
+  //   legalEvent: (em, [player, cannon]) => true,
+  //   runEvent: (em, [player, cannon]) => {
+  //     // TODO(@darzu):
+  //   },
+  // });
 
   em.registerSystem(
     [CannonLocalDef, WorldFrameDef, InRangeDef, RotationDef, YawPitchDef],

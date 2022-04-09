@@ -26,6 +26,7 @@ import { hashCode, NumberTuple } from "../util.js";
 import { TimeDef } from "../time.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { assert } from "../test.js";
+import { onInit } from "../init.js";
 
 export interface Event<Extra> {
   // Event type
@@ -559,4 +560,57 @@ export function registerEventSystems(em: EntityManager) {
 export function addEventComponents(em: EntityManager) {
   em.addSingletonComponent(DetectedEventsDef);
   em.addSingletonComponent(EventsDef);
+}
+
+export function eventWizard<ES extends EDef<any>[], Extra>(
+  name: string,
+  entities: readonly [...ES] | (() => readonly [...ES]),
+  runEvent: (entities: ESet<ES>, extra: Extra) => void,
+  opts?: {
+    legalEvent?: (entities: ESet<ES>, extra: Extra) => boolean;
+    eventAuthorityEntity?: (entityIds: NumberTuple<ES>) => number;
+  } & Partial<ExtraSerializers<Extra>>
+): (...es: [...ESet<ES>, Extra?]) => void {
+  const delayInit = typeof entities === "function";
+  const initThunk = () => {
+    registerEventHandler<ES, Extra>(name, {
+      entities: delayInit ? entities() : entities,
+      eventAuthorityEntity: (es) => {
+        if (opts?.eventAuthorityEntity) return opts.eventAuthorityEntity(es);
+        else return es[0];
+      },
+      legalEvent: (em, es, extra) => {
+        if (opts?.legalEvent) return opts.legalEvent(es, extra);
+        return true;
+      },
+      runEvent: (em, es, extra) => {
+        runEvent(es, extra);
+      },
+      ...(opts?.serializeExtra ? { serializeExtra: opts.serializeExtra } : {}),
+      ...(opts?.deserializeExtra
+        ? { deserializeExtra: opts.deserializeExtra }
+        : {}),
+    });
+  };
+
+  if (delayInit) onInit(initThunk);
+  else initThunk();
+
+  const raiseEvent = (...args: [...ESet<ES>, Extra?]) => {
+    const query = delayInit ? entities() : entities;
+    let es: ESet<ES>;
+    let extra: Extra | undefined = undefined;
+    if (args.length === query.length) es = args as any;
+    else {
+      es = args.slice(0, args.length - 1) as any;
+      extra = args[args.length - 1] as Extra;
+    }
+    const de = EM.getResource(DetectedEventsDef)!;
+    de.raise({
+      type: name,
+      entities: es.map((e) => e.id),
+      extra,
+    });
+  };
+  return raiseEvent;
 }
