@@ -26,7 +26,7 @@ export const ToolDef = EM.defineComponent("tool", (type?: string) => ({
   type,
 }));
 
-export function registerToolPickupSystem(em: EntityManager) {
+export function registerToolSystems(em: EntityManager) {
   em.registerSystem(
     [ToolDef, InRangeDef],
     [DetectedEventsDef, LocalPlayerDef],
@@ -46,9 +46,7 @@ export function registerToolPickupSystem(em: EntityManager) {
     },
     "toolPickup"
   );
-}
 
-export function registerToolDropSystem(em: EntityManager) {
   em.registerSystem(
     [PlayerEntDef, PositionDef, RotationDef],
     [DetectedEventsDef],
@@ -68,53 +66,49 @@ export function registerToolDropSystem(em: EntityManager) {
     },
     "toolDrop"
   );
+
+  registerEventHandler("tool-pickup", {
+    entities: [
+      [PlayerEntDef],
+      [InteractableDef, PositionDef, PhysicsParentDef],
+    ] as const,
+    eventAuthorityEntity: ([playerId, toolId]) => playerId,
+    legalEvent: (em, [player, tool]) => {
+      return player.player.tool === 0;
+    },
+    runEvent: (em: EntityManager, [player, tool]) => {
+      tool.physicsParent.id = player.id;
+      // TODO(@darzu): add interact box
+      // em.removeComponent(tool.id, InteractableDef);
+      vec3.set(tool.position, 0, 0, -1.5);
+      em.ensureComponentOn(tool, ScaleDef);
+      vec3.copy(tool.scale, [0.5, 0.5, 0.5]);
+      player.player.tool = tool.id;
+      if (ColliderDef.isOn(tool)) tool.collider.solid = false;
+    },
+  });
+
+  registerEventHandler("tool-drop", {
+    entities: [[PlayerEntDef], [PositionDef, PhysicsParentDef]] as const,
+    eventAuthorityEntity: ([playerId, toolId]) => playerId,
+    legalEvent: (em, [player, tool]) => {
+      return player.player.tool === tool.id;
+    },
+    runEvent: (em: EntityManager, [player, tool], location: vec3) => {
+      tool.physicsParent.id = 0;
+      // TODO(@darzu): add interact box
+      // em.addComponent(tool.id, InteractableDef);
+      vec3.copy(tool.position, location!);
+      em.ensureComponentOn(tool, ScaleDef);
+      vec3.copy(tool.scale, [1, 1, 1]);
+      player.player.tool = 0;
+      if (ColliderDef.isOn(tool)) tool.collider.solid = true;
+    },
+    serializeExtra: (buf, location) => {
+      buf.writeVec3(location);
+    },
+    deserializeExtra: (buf) => {
+      return buf.readVec3()!;
+    },
+  });
 }
-
-registerEventHandler("tool-pickup", {
-  eventAuthorityEntity: (entities) => entities[0],
-  legalEvent: (em, entities) => {
-    let player = em.findEntity(entities[0], [PlayerEntDef]);
-    let tool = em.findEntity(entities[1], [InteractableDef]);
-    return (
-      player !== undefined && tool !== undefined && player.player.tool === 0
-    );
-  },
-  runEvent: (em, entities) => {
-    let player = em.findEntity(entities[0], [PlayerEntDef])!;
-    let tool = em.findEntity(entities[1], [PositionDef, PhysicsParentDef])!;
-    tool.physicsParent.id = player.id;
-    // TODO(@darzu): add interact box
-    // em.removeComponent(tool.id, InteractableDef);
-    vec3.set(tool.position, 0, 0, -1.5);
-    em.ensureComponent(tool.id, ScaleDef);
-    if (ScaleDef.isOn(tool)) vec3.copy(tool.scale, [0.5, 0.5, 0.5]);
-    player.player.tool = tool.id;
-    if (ColliderDef.isOn(tool)) tool.collider.solid = false;
-  },
-});
-
-registerEventHandler<vec3>("tool-drop", {
-  eventAuthorityEntity: (entities) => entities[0],
-  legalEvent: (em, entities) => {
-    let player = em.findEntity(entities[0], [PlayerEntDef]);
-    return player !== undefined && player.player.tool === entities[1];
-  },
-  runEvent: (em, entities, location: vec3) => {
-    let player = em.findEntity(entities[0], [PlayerEntDef])!;
-    let tool = em.findEntity(entities[1], [PositionDef, PhysicsParentDef])!;
-    tool.physicsParent.id = 0;
-    // TODO(@darzu): add interact box
-    // em.addComponent(tool.id, InteractableDef);
-    vec3.copy(tool.position, location!);
-    em.ensureComponent(tool.id, ScaleDef);
-    if (ScaleDef.isOn(tool)) vec3.copy(tool.scale, [1, 1, 1]);
-    player.player.tool = 0;
-    if (ColliderDef.isOn(tool)) tool.collider.solid = true;
-  },
-  serializeExtra: (buf, location) => {
-    buf.writeVec3(location);
-  },
-  deserializeExtra: (buf) => {
-    return buf.readVec3()!;
-  },
-});

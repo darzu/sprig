@@ -226,20 +226,19 @@ export function registerShipSystems(em: EntityManager) {
     "startGame"
   );
 
-  registerEventHandler<number>("ship-hit", {
-    eventAuthorityEntity: (entities) => entities[0],
-    legalEvent: (em, entities, partIdx) => {
-      const ship = em.findEntity(entities[0], [ShipLocalDef]);
+  registerEventHandler("ship-hit", {
+    entities: [[ShipLocalDef]] as const,
+    eventAuthorityEntity: ([shipId]) => shipId,
+    legalEvent: (em, [ship], partIdx: number) => {
       return !!ship && !!ship.shipLocal.parts[partIdx]();
     },
-    serializeExtra: (buf, o) => {
+    serializeExtra: (buf, o: number) => {
       buf.writeUint8(o);
     },
     deserializeExtra: (buf) => {
       return buf.readUint8();
     },
-    runEvent: (em: EntityManager, entities, partIdx) => {
-      const ship = em.findEntity(entities[0], [ShipLocalDef])!;
+    runEvent: (em: EntityManager, [ship], partIdx: number) => {
       const res = em.getResources([MusicDef])!;
       const part = ship.shipLocal.parts[partIdx]()!;
       part.renderable.enabled = false;

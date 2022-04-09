@@ -17,6 +17,8 @@ import {
 } from "./components.js";
 import { hashCode, NumberTuple } from "../util.js";
 import { TimeDef } from "../time.js";
+import { PositionDef, RotationDef } from "../physics/transform.js";
+import { assert } from "../test.js";
 
 export interface Event<Extra> {
   // Event type
@@ -28,69 +30,36 @@ export interface Event<Extra> {
   extra: Extra;
 }
 
-export function dzRegisterEventHandler<ES extends EDef<any>[]>(
-  name: string,
-  opts: {
-    entities: readonly [...ES];
-    eventAuthorityEntity: (entityIds: NumberTuple<ES>) => number;
-    legalEvent: (em: EntityManager, entities: ESet<ES>) => boolean;
-    runEvent: (em: EntityManager, entities: ESet<ES>) => void;
-  }
-) {
-  registerEventHandler(name, {
-    eventAuthorityEntity: (ids) =>
-      opts.eventAuthorityEntity(ids as NumberTuple<ES>),
-    legalEvent: (em, ids) => {
-      const entities = ids.map((id, idx) =>
-        em.findEntity(id, opts.entities[idx])
-      );
-      if (entities.some((e) => !e)) return false;
-      return opts.legalEvent(em, entities as ESet<ES>);
-    },
-    runEvent: (em, ids) => {
-      const entities = ids.map((id, idx) =>
-        em.findEntity(id, opts.entities[idx])
-      );
-      opts.runEvent(em, entities as ESet<ES>);
-    },
-  });
-}
-
-type BasicEventHandler = {
-  eventAuthorityEntity: (entities: number[]) => number;
-  legalEvent: (em: EntityManager, entities: number[]) => boolean;
-  runEvent: (em: EntityManager, entities: number[]) => void;
-};
-
-type ExtraEventHandler<Extra> = {
-  eventAuthorityEntity: (entities: number[]) => number;
-  legalEvent: (em: EntityManager, entities: number[], extra: Extra) => boolean;
-  runEvent: (em: EntityManager, entities: number[], extra: Extra) => void;
+type ExtraSerializers<Extra> = {
   serializeExtra: (buf: Serializer, extra: Extra) => void;
   deserializeExtra: (buf: Deserializer) => Extra;
 };
 
-export type EventHandler<Extra> = Extra extends null
-  ? BasicEventHandler
-  : ExtraEventHandler<Extra>;
+type EventHandler<ES extends EDef<any>[], Extra> = {
+  entities: readonly [...ES];
+  eventAuthorityEntity: (entities: NumberTuple<ES>) => number;
+  legalEvent: (em: EntityManager, entities: ESet<ES>, extra: Extra) => boolean;
+  runEvent: (em: EntityManager, entities: ESet<ES>, extra: Extra) => void;
+} & ({} | ExtraSerializers<Extra>);
 
 const EVENT_TYPES: Map<number, string> = new Map();
-const EVENT_HANDLERS: Map<string, EventHandler<any>> = new Map();
+const EVENT_HANDLERS: Map<string, EventHandler<any, any>> = new Map();
 
-export function registerEventHandler(
+export function registerEventHandler<ES extends EDef<any>[], Extra>(
   type: string,
-  handler: BasicEventHandler
-): void;
-export function registerEventHandler<Extra>(
-  type: string,
-  handler: ExtraEventHandler<Extra>
-): void;
-export function registerEventHandler<Extra>(
-  type: string,
-  handler: EventHandler<Extra>
-) {
+  handler: EventHandler<ES, Extra>
+): void {
   EVENT_TYPES.set(hashCode(type), type);
-  EVENT_HANDLERS.set(type, handler);
+  EVENT_HANDLERS.set(type, handler as any);
+}
+
+function hasSerializers<ES extends EDef<any>[], Extra>(
+  h: EventHandler<ES, Extra>
+): h is EventHandler<ES, Extra> & ExtraSerializers<Extra> {
+  const hasS = "serializeExtra" in h;
+  const hasD = "deserializeExtra" in h;
+  assert(hasS === hasD, "mismatched event serializer/deserializer");
+  return hasS && hasD;
 }
 
 function serializeEvent<Extra>(event: Event<Extra>, buf: Serializer) {
@@ -101,7 +70,7 @@ function serializeEvent<Extra>(event: Event<Extra>, buf: Serializer) {
   buf.writeUint32(event.seq);
   buf.writeUint8(event.entities.length);
   for (const id of event.entities) buf.writeUint32(id);
-  if ("serializeExtra" in handler) handler.serializeExtra(buf, event.extra);
+  if (hasSerializers(handler)) handler.serializeExtra(buf, event.extra);
   else if (event.extra)
     throw `Found extra data but no serializer on event type ${event.type}`;
 }
@@ -162,7 +131,8 @@ function deserializeDetectedEvent<Extra>(
 }
 
 registerEventHandler("test", {
-  eventAuthorityEntity: (l: number[]) => l[0],
+  entities: [[PositionDef], [RotationDef]],
+  eventAuthorityEntity: ([posId, rotId]) => posId,
   legalEvent: () => true,
   runEvent: () => {
     console.log("event running");
@@ -172,7 +142,7 @@ registerEventHandler("test", {
 function eventAuthorityEntity(type: string, entities: number[]): number {
   if (!EVENT_HANDLERS.has(type))
     throw `No event handler registered for event type ${type}`;
-  return EVENT_HANDLERS.get(type)!.eventAuthorityEntity(entities);
+  return EVENT_HANDLERS.get(type)!.eventAuthorityEntity(entities as any);
 }
 
 function legalEvent<Extra>(
@@ -182,13 +152,22 @@ function legalEvent<Extra>(
 ) {
   if (!EVENT_HANDLERS.has(type))
     throw `No event handler registered for event type ${type}`;
-  return EVENT_HANDLERS.get(type)!.legalEvent(em, event.entities, event.extra);
+  const handler = EVENT_HANDLERS.get(type)!;
+  const entities = event.entities.map((id, idx) =>
+    em.findEntity(id, handler.entities[idx])
+  );
+  if (entities.some((e) => !e)) return false;
+  return handler.legalEvent(em, entities as any, event.extra);
 }
 
 function runEvent<Extra>(type: string, em: EntityManager, event: Event<Extra>) {
   if (!EVENT_HANDLERS.has(type))
     throw `No event handler registered for event type ${type}`;
-  return EVENT_HANDLERS.get(type)!.runEvent(em, event.entities, event.extra);
+  const handler = EVENT_HANDLERS.get(type)!;
+  const entities = event.entities.map((id, idx) =>
+    em.findEntity(id, handler.entities[idx])
+  );
+  return handler.runEvent(em, entities as any, event.extra);
 }
 
 export const DetectedEventsDef = EM.defineComponent(

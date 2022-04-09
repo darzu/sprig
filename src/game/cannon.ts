@@ -293,21 +293,17 @@ export function registerCannonEventHandlers() {
   // });
 
   registerEventHandler("fire-cannon", {
-    eventAuthorityEntity: (entities) => entities[0],
-    legalEvent: (em, entities) =>
-      !!em.findEntity(entities[1], [CannonLocalDef])!.cannonLocal!.loaded,
-    runEvent: (em, entities) => {
-      let { cannonLocal, authority } = em.findEntity(entities[1], [
-        CannonLocalDef,
-        AuthorityDef,
-      ])!;
+    entities: [[AuthorityDef], [CannonLocalDef, AuthorityDef]] as const,
+    eventAuthorityEntity: ([playerId, cannonId]) => playerId,
+    legalEvent: (em, [_, cannon]) => cannon.cannonLocal!.loaded,
+    runEvent: (em, [player, cannon]) => {
       // cannon.loaded = false;
       // cannon.firing = true;
       // cannon.countdown = CANNON_FRAMES;
       // TODO: this is maybe weird?
-      authority.pid = em.findEntity(entities[0], [AuthorityDef])!.authority.pid;
-      authority.seq++;
-      authority.updateSeq = 0;
+      cannon.authority.pid = player.authority.pid;
+      cannon.authority.seq++;
+      cannon.authority.updateSeq = 0;
     },
   });
 

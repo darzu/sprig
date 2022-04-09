@@ -2,7 +2,6 @@ import {
   registerEventHandler,
   DetectedEvent,
   DetectedEventsDef,
-  dzRegisterEventHandler,
 } from "../net/events.js";
 import {
   ComponentDef,
@@ -68,32 +67,28 @@ export function registerBulletCollisionSystem(em: EntityManager) {
 }
 
 registerEventHandler("bullet-bullet", {
+  entities: [[BulletDef], [BulletDef]] as const,
   // The authority entity is the one with the lowest id
   eventAuthorityEntity: (entities) => Math.min(...entities),
-  legalEvent: (em, entities) => {
-    // all entities are valid bullets
-    return entities.every((id) => em.findEntity(id, [BulletDef]));
-  },
-  runEvent: (em, entities) => {
-    for (let id of entities) {
-      // This bullet might have already been deleted via the sync system
-      em.ensureComponent(id, DeletedDef);
-    }
+  legalEvent: (em, [b1, b2]) => true,
+  runEvent: (em: EntityManager, [b1, b2]) => {
+    // This bullet might have already been deleted via the sync system
+    em.ensureComponentOn(b1, DeletedDef);
+    em.ensureComponentOn(b2, DeletedDef);
   },
 });
 
 registerEventHandler("bullet-player", {
+  entities: [[PlayerEntDef], [BulletDef]] as const,
   // The authority entity is the bullet
   eventAuthorityEntity: (entities) => entities[1],
-  legalEvent: (em, entities) => {
-    return em.findEntity(entities[1], [BulletDef]) !== undefined;
-  },
-  runEvent: (em, entities) => {
-    em.ensureComponent(entities[1], DeletedDef);
+  legalEvent: (em, [player, bullet]) => true,
+  runEvent: (em, [player, bullet]) => {
+    em.ensureComponent(bullet.id, DeletedDef);
   },
 });
 
-dzRegisterEventHandler("bullet-boat", {
+registerEventHandler("bullet-boat", {
   entities: [[BoatLocalDef, PositionDef, RotationDef], [BulletDef]] as const,
   eventAuthorityEntity: ([boatId, bulletId]) => {
     return bulletId;
@@ -109,20 +104,10 @@ dzRegisterEventHandler("bullet-boat", {
 });
 
 registerEventHandler("break-boat", {
-  eventAuthorityEntity: (entities) => entities[0],
-  legalEvent: (em, entities) => {
-    return !!em.findEntity(entities[0], [
-      BoatLocalDef,
-      PositionDef,
-      RotationDef,
-    ]);
-  },
-  runEvent: (em: EntityManager, entities) => {
-    const boat = em.findEntity(entities[0], [
-      BoatLocalDef,
-      PositionDef,
-      RotationDef,
-    ])!;
+  entities: [[BoatLocalDef, PositionDef, RotationDef]] as const,
+  eventAuthorityEntity: ([boatId]) => boatId,
+  legalEvent: (em, [boat]) => true,
+  runEvent: (em: EntityManager, [boat]) => {
     const res = em.getResources([AssetsDef, MusicDef])!;
     breakBoat(em, boat, res.assets.boat_broken, res.music);
   },

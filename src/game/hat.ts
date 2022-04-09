@@ -152,15 +152,13 @@ export function registerHatDropSystem(em: EntityManager) {
 }
 
 registerEventHandler("hat-pickup", {
-  eventAuthorityEntity: (entities) => entities[0],
-  legalEvent: (em, entities) => {
-    let player = em.findEntity(entities[0], [PlayerEntDef]);
-    let hat = em.findEntity(entities[1], [InteractableDef]);
-    return player !== undefined && hat !== undefined && player.player.hat === 0;
-  },
-  runEvent: (em, entities) => {
-    let player = em.findEntity(entities[0], [PlayerEntDef])!;
-    let hat = em.findEntity(entities[1], [PositionDef, PhysicsParentDef])!;
+  entities: [
+    [PlayerEntDef],
+    [PositionDef, PhysicsParentDef, InteractableDef],
+  ] as const,
+  eventAuthorityEntity: ([playerId, hatId]) => playerId,
+  legalEvent: (em, [player, hat]) => player.player.hat === 0,
+  runEvent: (em, [player, hat]) => {
     hat.physicsParent.id = player.id;
     // TODO(@darzu): add interact box
     // em.removeComponent(hat.id, InteractableDef);
@@ -169,15 +167,13 @@ registerEventHandler("hat-pickup", {
   },
 });
 
-registerEventHandler<vec3>("hat-drop", {
-  eventAuthorityEntity: (entities) => entities[0],
-  legalEvent: (em, entities) => {
-    let player = em.findEntity(entities[0], [PlayerEntDef]);
-    return player !== undefined && player.player.hat === entities[1];
+registerEventHandler("hat-drop", {
+  entities: [[PlayerEntDef], [PositionDef, PhysicsParentDef]] as const,
+  eventAuthorityEntity: ([playerId, hatId]) => playerId,
+  legalEvent: (em, [player, hat]) => {
+    return player.player.hat === hat.id;
   },
-  runEvent: (em, entities, location: vec3) => {
-    let player = em.findEntity(entities[0], [PlayerEntDef])!;
-    let hat = em.findEntity(entities[1], [PositionDef, PhysicsParentDef])!;
+  runEvent: (em, [player, hat], location: vec3) => {
     hat.physicsParent.id = 0;
     // TODO(@darzu): add interact box
     // em.addComponent(hat.id, InteractableDef);

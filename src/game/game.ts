@@ -64,7 +64,7 @@ import {
 } from "./cannon.js";
 import { registerInteractionSystem } from "./interact.js";
 import { registerModeler } from "./modeler.js";
-import { registerToolDropSystem, registerToolPickupSystem } from "./tool.js";
+import { registerToolSystems } from "./tool.js";
 import {
   registerUpdateSmoothingTargetSnapChange,
   registerUpdateSmoothingTargetSmoothChange,
@@ -261,8 +261,7 @@ export function registerAllSystems(em: EntityManager) {
   registerPhysicsSystems(em);
   registerBulletCollisionSystem(em);
   registerModeler(em);
-  registerToolPickupSystem(em);
-  registerToolDropSystem(em);
+  registerToolSystems(em);
   registerNetDebugSystem(em);
   registerAckUpdateSystem(em);
   registerSyncSystem(em);
