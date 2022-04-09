@@ -40,7 +40,7 @@ export function registerBulletCollisionSystem(em: EntityManager) {
           );
           for (let otherBullet of otherBullets) {
             if (otherBullet) {
-              raiseBulletBullet([o, otherBullet]);
+              raiseBulletBullet(o, otherBullet);
             }
           }
 
@@ -50,7 +50,7 @@ export function registerBulletCollisionSystem(em: EntityManager) {
             .filter((p) => p !== undefined);
           for (let otherPlayer of otherPlayers) {
             if (otherPlayer!.authority.pid !== o.authority.pid)
-              raiseBulletPlayer([o, otherPlayer!]);
+              raiseBulletPlayer(o, otherPlayer!);
           }
         }
       }

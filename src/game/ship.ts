@@ -282,7 +282,7 @@ export function registerShipSystems(em: EntityManager) {
               for (let b of bullets)
                 if (b) em.ensureComponent(b.id, DeletedDef);
 
-              raiseShipHit([ship], i);
+              raiseShipHit(ship, i);
             }
           }
         }

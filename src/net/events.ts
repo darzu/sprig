@@ -570,7 +570,7 @@ export function eventWizard<ES extends EDef<any>[], Extra>(
     legalEvent?: (entities: ESet<ES>, extra: Extra) => boolean;
     eventAuthorityEntity?: (entityIds: NumberTuple<ES>) => number;
   } & Partial<ExtraSerializers<Extra>>
-): (es: ESet<ES>, extra?: Extra) => void {
+): (...es: [...ESet<ES>, Extra?]) => void {
   const delayInit = typeof entities === "function";
   const initThunk = () => {
     registerEventHandler<ES, Extra>(name, {
@@ -596,7 +596,15 @@ export function eventWizard<ES extends EDef<any>[], Extra>(
   if (delayInit) onInit(initThunk);
   else initThunk();
 
-  const raiseEvent = (es: ESet<ES>, extra?: Extra) => {
+  const raiseEvent = (...args: [...ESet<ES>, Extra?]) => {
+    const query = delayInit ? entities() : entities;
+    let es: ESet<ES>;
+    let extra: Extra | undefined = undefined;
+    if (args.length === query.length) es = args as any;
+    else {
+      es = args.slice(0, args.length - 1) as any;
+      extra = args[args.length - 1] as Extra;
+    }
     const de = EM.getResource(DetectedEventsDef)!;
     de.raise({
       type: name,

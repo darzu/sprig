@@ -271,7 +271,7 @@ export function registerBoatSystems(em: EntityManager) {
               return b && b.bullet.team === 1 && b.authority.pid === res.me.pid;
             });
           if (balls.length) {
-            raiseBulletBoat([balls[0]!, boat]);
+            raiseBulletBoat(balls[0]!, boat);
             console.log("HIT BOAT!");
             for (let ball of balls) em.ensureComponentOn(ball!, DeletedDef);
           }
@@ -279,7 +279,7 @@ export function registerBoatSystems(em: EntityManager) {
           const ships = hits.filter((h) => em.findEntity(h, [ShipLocalDef]));
           if (ships.length) {
             console.log("BOAT HIT SHIP!");
-            raiseBreakBoat([boat]);
+            raiseBreakBoat(boat);
           }
         }
       }
