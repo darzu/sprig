@@ -51,7 +51,8 @@ import { PlayerEntDef } from "./player.js";
 import { ShipLocalDef } from "./ship.js";
 import { Music, MusicDef } from "../music.js";
 import { defineNetEntityHelper } from "../em_helpers.js";
-import { DetectedEventsDef } from "../net/events.js";
+import { DetectedEventsDef, eventWizard } from "../net/events.js";
+import { raiseBulletBoat } from "./bullet-collision.js";
 
 export const { BoatPropsDef, BoatLocalDef, createBoat } = defineNetEntityHelper(
   EM,
@@ -182,7 +183,16 @@ export const { BoatPropsDef, BoatLocalDef, createBoat } = defineNetEntityHelper(
 
 export const BOAT_COLOR: vec3 = [0.2, 0.1, 0.05];
 
-export function registerStepBoats(em: EntityManager) {
+export const raiseBreakBoat = eventWizard(
+  "break-boat",
+  [[BoatLocalDef, PositionDef, RotationDef]] as const,
+  ([boat]) => {
+    const res = EM.getResources([AssetsDef, MusicDef])!;
+    breakBoat(EM, boat, res.assets.boat_broken, res.music);
+  }
+);
+
+export function registerBoatSystems(em: EntityManager) {
   em.registerSystem(
     [BoatLocalDef, RotationDef, LinearVelocityDef, AuthorityDef],
     [PhysicsTimerDef, MeDef],
@@ -255,28 +265,21 @@ export function registerStepBoats(em: EntityManager) {
       for (let boat of objs) {
         const hits = res.physicsResults.collidesWith.get(boat.id);
         if (hits) {
-          const balls = hits.filter((h) => {
-            const b = em.findEntity(h, [BulletDef, AuthorityDef]);
-            return b && b.bullet.team === 1 && b.authority.pid === res.me.pid;
-          });
-          if (balls.length) {
-            res.detectedEvents.raise({
-              type: "bullet-boat",
-              entities: [boat.id, balls[0]],
-              extra: null,
+          const balls = hits
+            .map((h) => em.findEntity(h, [BulletDef, AuthorityDef]))
+            .filter((b) => {
+              return b && b.bullet.team === 1 && b.authority.pid === res.me.pid;
             });
+          if (balls.length) {
+            raiseBulletBoat(balls[0]!, boat);
             console.log("HIT BOAT!");
-            for (let ball of balls) em.ensureComponent(ball, DeletedDef);
+            for (let ball of balls) em.ensureComponentOn(ball!, DeletedDef);
           }
 
           const ships = hits.filter((h) => em.findEntity(h, [ShipLocalDef]));
           if (ships.length) {
             console.log("BOAT HIT SHIP!");
-            res.detectedEvents.raise({
-              type: "break-boat",
-              entities: [boat.id],
-              extra: null,
-            });
+            raiseBreakBoat(boat);
           }
         }
       }
