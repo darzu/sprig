@@ -6,6 +6,7 @@ import {
   claimAuthority,
   Sync,
   PredictDef,
+  RemoteUpdatesDef,
 } from "./components.js";
 
 export enum MessageType {
@@ -100,6 +101,7 @@ export function deserializeEntity(
     if (predict) {
       predict.dt += dt;
     }
+    em.ensureComponent(id, RemoteUpdatesDef);
   }
 }
 

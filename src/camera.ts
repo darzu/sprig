@@ -1,16 +1,13 @@
-import { Component, EM, EntityManager, EntityW } from "./entity-manager.js";
+import { Component, EM, EntityManager } from "./entity-manager.js";
 import { LocalPlayerDef } from "./game/player.js";
-import { quat, vec3, ReadonlyQuat } from "./gl-matrix.js";
+import { quat, vec3 } from "./gl-matrix.js";
 import { WorldFrameDef } from "./physics/nonintersection.js";
-import { tempQuat, tempVec } from "./temp-pool.js";
+import { computeNewError, reduceError } from "./smoothing.js";
+import { tempQuat } from "./temp-pool.js";
 import { PhysicsTimerDef } from "./time.js";
 
 export type PerspectiveMode = "perspective" | "ortho";
 export type CameraMode = "thirdPerson" | "thirdPersonOverShoulder";
-
-// TODO: consider importing these from smoothing.ts
-const ERROR_SMOOTHING_FACTOR = 0.9 ** (60 / 1000);
-const EPSILON = 0.0001;
 
 export const CameraDef = EM.defineComponent("camera", () => {
   return {
@@ -33,50 +30,6 @@ export const CameraDef = EM.defineComponent("camera", () => {
   };
 });
 export type CameraProps = Component<typeof CameraDef>;
-
-const identityQuat: ReadonlyQuat = quat.identity(quat.create());
-
-function isVec3(v: quat | vec3): v is vec3 {
-  return v.length === 3;
-}
-
-function reduceError(v: quat | vec3, dt: number) {
-  if (isVec3(v)) {
-    const magnitude = vec3.length(v);
-    if (magnitude > EPSILON) {
-      vec3.scale(v, v, ERROR_SMOOTHING_FACTOR ** dt);
-    } else if (magnitude > 0) {
-      vec3.set(v, 0, 0, 0);
-    }
-  } else {
-    const magnitude = Math.abs(quat.getAngle(v, identityQuat));
-    if (magnitude > EPSILON) {
-      quat.slerp(v, v, identityQuat, 1 - ERROR_SMOOTHING_FACTOR ** dt);
-      quat.normalize(v, v);
-    } else if (magnitude > 0) {
-      quat.copy(v, identityQuat);
-    }
-  }
-}
-
-function computeNewError(old: quat, curr: quat, error: quat): void;
-function computeNewError(old: vec3, curr: vec3, error: vec3): void;
-function computeNewError(
-  old: vec3 | quat,
-  curr: vec3 | quat,
-  error: vec3 | quat
-) {
-  if (isVec3(old)) {
-    vec3.add(error as vec3, error as vec3, old);
-    vec3.sub(error as vec3, error as vec3, curr as vec3);
-  } else {
-    const prevComputed = quat.mul(tempQuat(), old, error as quat);
-    quat.invert(error as quat, curr as quat);
-    quat.mul(prevComputed, error as quat, prevComputed);
-    quat.copy(error as quat, prevComputed);
-    quat.normalize(error as quat, error as quat);
-  }
-}
 
 export function registerRetargetCameraSystems(em: EntityManager) {
   em.registerSystem(

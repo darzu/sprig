@@ -65,12 +65,7 @@ import {
 import { registerInteractionSystem } from "./interact.js";
 import { registerModeler } from "./modeler.js";
 import { registerToolSystems } from "./tool.js";
-import {
-  registerUpdateSmoothingTargetSnapChange,
-  registerUpdateSmoothingTargetSmoothChange,
-  registerUpdateSmoothingLerp,
-  registerUpdateSmoothedTransform,
-} from "../smoothing.js";
+import { registerMotionSmoothingSystems } from "../motion-smoothing.js";
 import { registerBuildCursor } from "./cursor.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
@@ -232,10 +227,8 @@ export function registerAllSystems(em: EntityManager) {
   registerRenderInitSystem(em);
   registerMusicSystems(em);
   registerHandleNetworkEvents(em);
-  registerUpdateSmoothingTargetSnapChange(em);
   registerUpdateSystem(em);
   registerPredictSystem(em);
-  registerUpdateSmoothingTargetSmoothChange(em);
   registerJoinSystems(em);
   registerAssetLoader(em);
   registerBuildPlayersSystem(em);
@@ -257,9 +250,9 @@ export function registerAllSystems(em: EntityManager) {
   registerInteractionSystem(em);
   // registerStepCannonsSystem(em);
   registerPlayerCannonSystem(em);
-  registerUpdateSmoothingLerp(em);
   registerPhysicsSystems(em);
   registerRetargetCameraSystems(em);
+  registerMotionSmoothingSystems(em);
   registerBulletCollisionSystem(em);
   registerModeler(em);
   registerToolSystems(em);
@@ -271,7 +264,6 @@ export function registerAllSystems(em: EntityManager) {
   registerRestartSystem(em);
   registerDeleteEntitiesSystem(em);
   // TODO(@darzu): confirm this all works
-  registerUpdateSmoothedTransform(em);
   registerRenderViewController(em);
   registerUpdateCameraView(em);
   registerConstructRenderablesSystem(em);

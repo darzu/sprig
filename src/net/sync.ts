@@ -15,6 +15,7 @@ import {
   SyncDef,
   NetStatsDef,
   NetStats,
+  RemoteUpdatesDef,
 } from "./components.js";
 import {
   Ack,
@@ -104,6 +105,17 @@ export function registerSyncSystem(em: EntityManager) {
 }
 
 export function registerUpdateSystem(em: EntityManager) {
+  em.registerSystem(
+    [RemoteUpdatesDef],
+    [],
+    (es) => {
+      for (const e of es) {
+        em.removeComponent(e.id, RemoteUpdatesDef);
+      }
+    },
+    "clearRemoteUpdatesMarker"
+  );
+
   function update(
     peers: { peer: { address: string }; inbox: Inbox; outbox: Outbox }[],
     {

@@ -19,6 +19,7 @@ import {
   Frame,
 } from "../physics/transform.js";
 import { ColorDef } from "../game/game.js";
+import { MotionSmoothingDef } from "../motion-smoothing.js";
 
 export interface RenderableConstruct {
   readonly enabled: boolean;
@@ -92,7 +93,29 @@ function stepRenderer(
       applyTints(o.tints, o.renderable.meshHandle.shaderData.tint);
     }
 
-    mat4.copy(o.renderable.meshHandle.shaderData.transform, o.world.transform);
+    if (MotionSmoothingDef.isOn(o)) {
+      const position = vec3.add(
+        tempVec(),
+        o.world.position,
+        o.motionSmoothing.positionError
+      );
+      const rotation = quat.mul(
+        tempQuat(),
+        o.world.rotation,
+        o.motionSmoothing.rotationError
+      );
+      mat4.fromRotationTranslationScale(
+        o.renderable.meshHandle.shaderData.transform,
+        rotation,
+        position,
+        o.world.scale
+      );
+    } else {
+      mat4.copy(
+        o.renderable.meshHandle.shaderData.transform,
+        o.world.transform
+      );
+    }
   }
 
   // filter
