@@ -56,6 +56,7 @@ import { vec3Dbg, vec3Mid } from "../utils-3d.js";
 import { min } from "../math.js";
 import { GroundLocalDef } from "./ground.js";
 import { ShipLocalDef } from "./ship.js";
+import { CameraDef } from "../camera.js";
 
 // TODO(@darzu): it'd be great if these could hook into some sort of
 //    dev mode you could toggle at runtime.
@@ -123,24 +124,6 @@ interface PlayerObj {
   physicsParent: PhysicsParent;
   world: Frame;
 }
-
-export type PerspectiveMode = "perspective" | "ortho";
-export type CameraMode = "thirdPerson" | "thirdPersonOverShoulder";
-
-export const CameraDef = EM.defineComponent("camera", () => {
-  return {
-    rotation: quat.rotateX(
-      quat.create(),
-      quat.identity(tempQuat()),
-      -Math.PI / 8
-    ),
-    offset: vec3.create(),
-    cameraMode: "thirdPersonOverShoulder" as CameraMode,
-    perspectiveMode: "perspective" as PerspectiveMode,
-    targetId: 0,
-  };
-});
-export type CameraProps = Component<typeof CameraDef>;
 
 export function registerStepPlayers(em: EntityManager) {
   em.registerSystem(

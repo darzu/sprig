@@ -18,7 +18,8 @@ import { fireBullet } from "./bullet.js";
 import { registerEventHandler } from "../net/events.js";
 import { ToolDef } from "./tool.js";
 import { InRangeDef, InteractableDef } from "./interact.js";
-import { CameraDef, LocalPlayerDef, PlayerEntDef } from "./player.js";
+import { LocalPlayerDef, PlayerEntDef } from "./player.js";
+import { CameraDef } from "../camera.js";
 import { Assets, AssetsDef } from "./assets.js";
 import { copyAABB, createAABB } from "../physics/broadphase.js";
 import {
