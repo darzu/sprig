@@ -1,5 +1,12 @@
 import { vec3 } from "../gl-matrix.js";
-import { EntityManager, EM, Component, EDef, ESet } from "../entity-manager.js";
+import {
+  EntityManager,
+  EM,
+  Component,
+  EDef,
+  ESet,
+  ComponentDef,
+} from "../entity-manager.js";
 import { Serializer, Deserializer, OutOfRoomError } from "../serialize.js";
 import { MAX_MESSAGE_SIZE, MessageType } from "./message.js";
 import {
@@ -170,10 +177,33 @@ function runEvent<Extra>(type: string, em: EntityManager, event: Event<Extra>) {
   return handler.runEvent(em, entities as any, event.extra);
 }
 
-export const DetectedEventsDef = EM.defineComponent(
-  "detectedEvents",
-  () => [] as DetectedEvent<any>[]
-);
+const CHECK_EVENT_RAISE_ARGS = true;
+
+export const DetectedEventsDef = EM.defineComponent("detectedEvents", () => {
+  const events = [] as DetectedEvent<any>[];
+  return {
+    events,
+    raise: (e: DetectedEvent<any>) => {
+      if (CHECK_EVENT_RAISE_ARGS) {
+        assert(EVENT_HANDLERS.has(e.type), "raising event with no handlers");
+        const handler = EVENT_HANDLERS.get(e.type)!;
+        for (let idx = 0; idx < handler.entities.length; idx++) {
+          const id = e.entities[idx];
+          assert(EM.hasEntity(id), `raising event with non-exist entity ${id}`);
+          const defs = handler.entities[idx] as ComponentDef[];
+          const ent = EM.findEntity(id, defs);
+          assert(
+            !!ent,
+            `raising event with entity ${id} which is missing one of these components: ${defs
+              .map((d) => d.name)
+              .join(",")}`
+          );
+        }
+      }
+      events.push(e);
+    },
+  };
+});
 export type DetectedEvents = Component<typeof DetectedEventsDef>;
 
 // Outgoing event requests queue. Should be attached to the host
@@ -246,8 +276,8 @@ export function registerEventSystems(em: EntityManager) {
         OutgoingEventRequestsDef
       );
       let newEvents = false;
-      while (detectedEvents.length > 0) {
-        const event = detectedEvents.shift()!;
+      while (detectedEvents.events.length > 0) {
+        const event = detectedEvents.events.shift()!;
         const authorityId = eventAuthorityEntity(event.type, event.entities);
         const { authority } = em.findEntity(authorityId, [AuthorityDef])!;
         if (authority.pid == me.pid) {
@@ -368,8 +398,8 @@ export function registerEventSystems(em: EntityManager) {
     [DetectedEventsDef, HostDef, MeDef],
     ([], { detectedEvents, me }) => {
       const requestedEvents = em.ensureSingletonComponent(RequestedEventsDef);
-      while (detectedEvents.length > 0) {
-        const event = detectedEvents.shift()!;
+      while (detectedEvents.events.length > 0) {
+        const event = detectedEvents.events.shift()!;
         const authorityId = eventAuthorityEntity(event.type, event.entities);
         const { authority } = em.findEntity(authorityId, [AuthorityDef])!;
         if (authority.pid == me.pid) {

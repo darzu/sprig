@@ -260,7 +260,7 @@ export function registerStepBoats(em: EntityManager) {
             return b && b.bullet.team === 1 && b.authority.pid === res.me.pid;
           });
           if (balls.length) {
-            res.detectedEvents.push({
+            res.detectedEvents.raise({
               type: "bullet-boat",
               entities: [boat.id, balls[0]],
               extra: null,
@@ -272,7 +272,7 @@ export function registerStepBoats(em: EntityManager) {
           const ships = hits.filter((h) => em.findEntity(h, [ShipLocalDef]));
           if (ships.length) {
             console.log("BOAT HIT SHIP!");
-            res.detectedEvents.push({
+            res.detectedEvents.raise({
               type: "break-boat",
               entities: [boat.id],
               extra: null,

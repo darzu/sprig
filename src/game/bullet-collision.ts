@@ -39,7 +39,7 @@ export function registerBulletCollisionSystem(em: EntityManager) {
           );
           for (let otherBullet of otherBullets) {
             if (otherBullet) {
-              resources.detectedEvents.push({
+              resources.detectedEvents.raise({
                 type: "bullet-bullet",
                 entities: [o.id, otherBullet.id],
                 extra: null,
@@ -53,7 +53,7 @@ export function registerBulletCollisionSystem(em: EntityManager) {
             .filter((p) => p !== undefined);
           for (let otherPlayer of otherPlayers) {
             if (otherPlayer!.authority.pid !== o.authority.pid)
-              resources.detectedEvents.push({
+              resources.detectedEvents.raise({
                 type: "bullet-player",
                 entities: [otherPlayer!.id, o.id],
                 extra: null,

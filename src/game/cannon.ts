@@ -271,7 +271,7 @@ export function fireFromCannon(em: EntityManager, cannon: Frame) {
 
   // TODO(@darzu): do we need events?
   // detectedEvents: DetectedEvents,
-  // detectedEvents.push({
+  // detectedEvents.raise({
   //   type: "fire-cannon",
   //   entities: [interacting.id, id],
   //   location: null,

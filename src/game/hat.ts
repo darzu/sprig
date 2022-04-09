@@ -116,7 +116,7 @@ export function registerHatPickupSystem(em: EntityManager) {
         ])!;
         if (player.player.hat === 0 && player.player.interacting) {
           console.log("detecting pickup");
-          resources.detectedEvents.push({
+          resources.detectedEvents.raise({
             type: "hat-pickup",
             entities: [player.id, id],
             extra: null,
@@ -139,7 +139,7 @@ export function registerHatDropSystem(em: EntityManager) {
           let dropLocation = vec3.fromValues(0, 0, -5);
           vec3.transformQuat(dropLocation, dropLocation, rotation);
           vec3.add(dropLocation, dropLocation, position);
-          detectedEvents.push({
+          detectedEvents.raise({
             type: "hat-drop",
             entities: [id, player.hat],
             extra: dropLocation,

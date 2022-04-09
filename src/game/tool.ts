@@ -36,7 +36,7 @@ export function registerToolSystems(em: EntityManager) {
           PlayerEntDef,
         ])!;
         if (player.player.tool === 0 && player.player.interacting) {
-          resources.detectedEvents.push({
+          resources.detectedEvents.raise({
             type: "tool-pickup",
             entities: [player.id, id],
             extra: null,
@@ -56,7 +56,7 @@ export function registerToolSystems(em: EntityManager) {
           let dropLocation = vec3.fromValues(0, 0, -5);
           vec3.transformQuat(dropLocation, dropLocation, rotation);
           vec3.add(dropLocation, dropLocation, position);
-          detectedEvents.push({
+          detectedEvents.raise({
             type: "tool-drop",
             entities: [id, player.tool],
             extra: dropLocation,
