@@ -15,12 +15,12 @@ import {
 } from "../physics/transform.js";
 import { BoatPropsDef, registerStepBoats } from "./boat.js";
 import {
-  CameraDef,
   LocalPlayerDef,
   PlayerConstructDef,
   registerBuildPlayersSystem,
   registerStepPlayers,
 } from "./player.js";
+import { CameraDef, registerRetargetCameraSystems } from "../camera.js";
 import { registerNetSystems } from "../net/net.js";
 import {
   registerHandleNetworkEvents,
@@ -259,6 +259,7 @@ export function registerAllSystems(em: EntityManager) {
   registerPlayerCannonSystem(em);
   registerUpdateSmoothingLerp(em);
   registerPhysicsSystems(em);
+  registerRetargetCameraSystems(em);
   registerBulletCollisionSystem(em);
   registerModeler(em);
   registerToolSystems(em);

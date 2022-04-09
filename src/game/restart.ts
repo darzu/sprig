@@ -11,7 +11,8 @@ import {
 import { GameState, GameStateDef } from "./gamestate.js";
 import { GroundSystemDef } from "./ground.js";
 import { LifetimeDef } from "./lifetime.js";
-import { CameraDef, PlayerEntDef } from "./player.js";
+import { PlayerEntDef } from "./player.js";
+import { CameraDef } from "../camera.js";
 import { createShip, ShipLocalDef, ShipPartDef, ShipPropsDef } from "./ship.js";
 
 export function registerRestartSystem(em: EntityManager) {

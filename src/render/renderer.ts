@@ -1,12 +1,8 @@
 import { Canvas, CanvasDef } from "../canvas.js";
 import { EntityManager, EM, Component } from "../entity-manager.js";
 import { applyTints, TintsDef } from "../tint.js";
-import {
-  CameraDef,
-  CameraProps,
-  PlayerEnt,
-  PlayerEntDef,
-} from "../game/player.js";
+import { PlayerEnt, PlayerEntDef } from "../game/player.js";
+import { CameraDef, CameraProps } from "../camera.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { isMeshHandle, Mesh, MeshHandle } from "./mesh-pool.js";
 import { Authority, AuthorityDef, Me, MeDef } from "../net/components.js";
@@ -164,14 +160,44 @@ export function registerUpdateCameraView(em: EntityManager) {
 
       let viewMatrix = mat4.create();
       if (targetEnt) {
-        mat4.copy(viewMatrix, targetEnt.world.transform);
+        const computedRotation = quat.mul(
+          tempQuat(),
+          targetEnt.world.rotation,
+          camera.targetRotationError
+        );
+        quat.normalize(computedRotation, computedRotation);
+        const computedTranslation = vec3.add(
+          tempVec(),
+          targetEnt.world.position,
+          camera.targetPositionError
+        );
+        mat4.fromRotationTranslationScale(
+          viewMatrix,
+          computedRotation,
+          computedTranslation,
+          targetEnt.world.scale
+        );
       }
+
+      const computedCameraRotation = quat.mul(
+        tempQuat(),
+        camera.rotation,
+        camera.cameraRotationError
+      );
+
       mat4.multiply(
         viewMatrix,
         viewMatrix,
-        mat4.fromQuat(mat4.create(), camera.rotation)
+        mat4.fromQuat(mat4.create(), computedCameraRotation)
       );
-      mat4.translate(viewMatrix, viewMatrix, camera.offset);
+
+      const computedCameraTranslation = vec3.add(
+        tempVec(),
+        camera.offset,
+        camera.cameraOffsetError
+      );
+
+      mat4.translate(viewMatrix, viewMatrix, computedCameraTranslation);
       mat4.invert(viewMatrix, viewMatrix);
 
       const projectionMatrix = mat4.create();
