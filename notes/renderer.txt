@@ -422,3 +422,7 @@ Outlines:
 Mesh simplification:
   https://www.simplygon.com
   techniques: billboard cloud, flip book
+
+Noise is good in game art?:
+  makes things less flat
+  https://simblob.blogspot.com/2009/06/noise-in-game-art.html
