@@ -14,6 +14,9 @@ import {
 import { computeNewError, reduceError } from "./smoothing.js";
 import { RemoteUpdatesDef } from "./net/components.js";
 
+// Determined via binary search--smaller -> jerky, larger -> floaty
+const ERROR_SMOOTHING_FACTOR = 0.75 ** (60 / 1000);
+
 export const MotionSmoothingDef = EM.defineComponent("motionSmoothing", () => {
   return {
     prevPosition: null as vec3 | null,
@@ -32,8 +35,16 @@ export function registerMotionSmoothingSystems(em: EntityManager) {
       if (!res.physicsTimer.steps) return;
       const dt = res.physicsTimer.steps * res.physicsTimer.period;
       for (let e of es) {
-        reduceError(e.motionSmoothing.positionError, dt);
-        reduceError(e.motionSmoothing.rotationError, dt);
+        reduceError(
+          e.motionSmoothing.positionError,
+          dt,
+          ERROR_SMOOTHING_FACTOR
+        );
+        reduceError(
+          e.motionSmoothing.rotationError,
+          dt,
+          ERROR_SMOOTHING_FACTOR
+        );
       }
     },
     "smoothMotion"
