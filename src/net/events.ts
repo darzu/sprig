@@ -560,3 +560,37 @@ export function addEventComponents(em: EntityManager) {
   em.addSingletonComponent(DetectedEventsDef);
   em.addSingletonComponent(EventsDef);
 }
+
+export function eventWizard<ES extends EDef<any>[], Extra>(
+  name: string,
+  entities: readonly [...ES],
+  runEvent: (entities: ESet<ES>, extra: Extra) => void,
+  opts?: {
+    legalEvent?: (entities: ESet<ES>, extra: Extra) => boolean;
+  } & ExtraSerializers<Extra>
+): (es: ESet<ES>, extra?: Extra) => void {
+  registerEventHandler<ES, Extra>(name, {
+    entities,
+    eventAuthorityEntity: (es) => es[0],
+    legalEvent: (em, es, extra) => {
+      if (opts?.legalEvent) return opts.legalEvent(es, extra);
+      return true;
+    },
+    runEvent: (em, es, extra) => {
+      runEvent(es, extra);
+    },
+    ...(opts?.serializeExtra ? { serializeExtra: opts.serializeExtra } : {}),
+    ...(opts?.deserializeExtra
+      ? { deserializeExtra: opts.deserializeExtra }
+      : {}),
+  });
+  const raiseEvent = (es: ESet<ES>, extra?: Extra) => {
+    const de = EM.getResource(DetectedEventsDef)!;
+    de.raise({
+      type: name,
+      entities: es.map((e) => e.id),
+      extra,
+    });
+  };
+  return raiseEvent;
+}

@@ -51,7 +51,7 @@ import { PlayerEntDef } from "./player.js";
 import { ShipLocalDef } from "./ship.js";
 import { Music, MusicDef } from "../music.js";
 import { defineNetEntityHelper } from "../em_helpers.js";
-import { DetectedEventsDef } from "../net/events.js";
+import { DetectedEventsDef, eventWizard } from "../net/events.js";
 
 export const { BoatPropsDef, BoatLocalDef, createBoat } = defineNetEntityHelper(
   EM,
@@ -182,7 +182,16 @@ export const { BoatPropsDef, BoatLocalDef, createBoat } = defineNetEntityHelper(
 
 export const BOAT_COLOR: vec3 = [0.2, 0.1, 0.05];
 
-export function registerStepBoats(em: EntityManager) {
+export const raiseBreakBoat = eventWizard(
+  "break-boat",
+  [[BoatLocalDef, PositionDef, RotationDef]] as const,
+  ([boat]) => {
+    const res = EM.getResources([AssetsDef, MusicDef])!;
+    breakBoat(EM, boat, res.assets.boat_broken, res.music);
+  }
+);
+
+export function registerBoatSystems(em: EntityManager) {
   em.registerSystem(
     [BoatLocalDef, RotationDef, LinearVelocityDef, AuthorityDef],
     [PhysicsTimerDef, MeDef],
@@ -272,11 +281,7 @@ export function registerStepBoats(em: EntityManager) {
           const ships = hits.filter((h) => em.findEntity(h, [ShipLocalDef]));
           if (ships.length) {
             console.log("BOAT HIT SHIP!");
-            res.detectedEvents.raise({
-              type: "break-boat",
-              entities: [boat.id],
-              extra: null,
-            });
+            raiseBreakBoat([boat]);
           }
         }
       }

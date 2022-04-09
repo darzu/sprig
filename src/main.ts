@@ -139,7 +139,7 @@ async function startGame(localPeerName: string, host: string | null) {
     // PERF NOTE: using ".innerText =" creates a new DOM element each frame, whereas
     //    using ".firstChild.nodeValue =" reuses the DOM element. Unfortunately this
     //    means we'll need to do more work to get line breaks.
-    const usingWebGPU = EM.getResource(RendererDef)?.renderer?.usingWebGPU;
+    const usingWebGPU = EM.getResource(RendererDef)?.usingWebGPU;
     debugTxt.nodeValue = `Belgus, you are the last hope of the Squindles, keep the gemheart alive! Failure is inevitable. move: WASD, mouse; cannon: e, left-click; fps:${avgFPS.toFixed(
       1
     )}`;

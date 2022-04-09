@@ -2,6 +2,7 @@ import {
   registerEventHandler,
   DetectedEvent,
   DetectedEventsDef,
+  eventWizard,
 } from "../net/events.js";
 import {
   ComponentDef,
@@ -98,16 +99,6 @@ registerEventHandler("bullet-boat", {
   },
   runEvent: (em: EntityManager, [boat, bullet]) => {
     em.ensureComponentOn(bullet, DeletedDef);
-    const res = em.getResources([AssetsDef, MusicDef])!;
-    breakBoat(em, boat, res.assets.boat_broken, res.music);
-  },
-});
-
-registerEventHandler("break-boat", {
-  entities: [[BoatLocalDef, PositionDef, RotationDef]] as const,
-  eventAuthorityEntity: ([boatId]) => boatId,
-  legalEvent: (em, [boat]) => true,
-  runEvent: (em: EntityManager, [boat]) => {
     const res = em.getResources([AssetsDef, MusicDef])!;
     breakBoat(em, boat, res.assets.boat_broken, res.music);
   },

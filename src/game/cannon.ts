@@ -173,6 +173,15 @@ export function registerPlayerCannonSystem(em: EntityManager) {
     "reloadCannon"
   );
 
+  // registerEventHandler("player-cannon", {
+  //   entities: [[PlayerEntDef], [CannonLocalDef]] as const,
+  //   eventAuthorityEntity: ([playerId, cannonId]) => playerId,
+  //   legalEvent: (em, [player, cannon]) => true,
+  //   runEvent: (em, [player, cannon]) => {
+  //     // TODO(@darzu):
+  //   },
+  // });
+
   em.registerSystem(
     [CannonLocalDef, WorldFrameDef, InRangeDef, RotationDef, YawPitchDef],
     [

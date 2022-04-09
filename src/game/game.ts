@@ -13,7 +13,7 @@ import {
   registerInitTransforms,
   TransformDef,
 } from "../physics/transform.js";
-import { BoatPropsDef, registerStepBoats } from "./boat.js";
+import { BoatPropsDef, registerBoatSystems } from "./boat.js";
 import {
   CameraDef,
   LocalPlayerDef,
@@ -249,7 +249,7 @@ export function registerAllSystems(em: EntityManager) {
   registerBuildCursor(em);
   registerInitTransforms(em);
   registerMoveCubesSystem(em);
-  registerStepBoats(em);
+  registerBoatSystems(em);
   registerStepPlayers(em);
   registerBulletUpdate(em);
   registerNoodleSystem(em);

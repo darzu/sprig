@@ -48,7 +48,11 @@ import { GroundSystemDef } from "./ground.js";
 import { InRangeDef, InteractableDef } from "./interact.js";
 import { GameState, GameStateDef } from "./gamestate.js";
 import { createRef, defineNetEntityHelper, Ref } from "../em_helpers.js";
-import { DetectedEventsDef, registerEventHandler } from "../net/events.js";
+import {
+  DetectedEventsDef,
+  eventWizard,
+  registerEventHandler,
+} from "../net/events.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
@@ -226,26 +230,22 @@ export function registerShipSystems(em: EntityManager) {
     "startGame"
   );
 
-  registerEventHandler("ship-hit", {
-    entities: [[ShipLocalDef]] as const,
-    eventAuthorityEntity: ([shipId]) => shipId,
-    legalEvent: (em, [ship], partIdx: number) => {
-      return !!ship && !!ship.shipLocal.parts[partIdx]();
-    },
-    serializeExtra: (buf, o: number) => {
-      buf.writeUint8(o);
-    },
-    deserializeExtra: (buf) => {
-      return buf.readUint8();
-    },
-    runEvent: (em: EntityManager, [ship], partIdx: number) => {
-      const res = em.getResources([MusicDef])!;
+  const raiseShipHit = eventWizard(
+    "ship-hit",
+    [[ShipLocalDef]] as const,
+    ([ship], partIdx: number) => {
+      const music = em.getResource(MusicDef)!;
       const part = ship.shipLocal.parts[partIdx]()!;
       part.renderable.enabled = false;
       part.shipPart.damaged = true;
-      res.music.playChords([2, 3], "minor", 0.2, 5.0, -2);
+      music.playChords([2, 3], "minor", 0.2, 5.0, -2);
     },
-  });
+    {
+      legalEvent: ([ship], partIdx) => !!ship.shipLocal.parts[partIdx](),
+      serializeExtra: (buf, o) => buf.writeUint8(o),
+      deserializeExtra: (buf) => buf.readUint8(),
+    }
+  );
 
   em.registerSystem(
     [ShipLocalDef, PositionDef, AuthorityDef],
@@ -282,11 +282,7 @@ export function registerShipSystems(em: EntityManager) {
               for (let b of bullets)
                 if (b) em.ensureComponent(b.id, DeletedDef);
 
-              res.detectedEvents.raise({
-                type: "ship-hit",
-                entities: [ship.id],
-                extra: i,
-              });
+              raiseShipHit([ship], i);
             }
           }
         }
