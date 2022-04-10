@@ -21,6 +21,7 @@ import {
   Inbox,
   InboxDef,
   AuthorityDef,
+  Authority,
 } from "./components.js";
 import { hashCode, NumberTuple } from "../util.js";
 import { TimeDef } from "../time.js";
