@@ -47,6 +47,7 @@ const RemoteMeshes = {
   grappleHook: "grapple-hook.sprig.obj",
   grappleGun: "grapple-gun.sprig.obj",
   grappleGunUnloaded: "grapple-gun-unloaded.sprig.obj",
+  rudder: "rudder.sprig.obj",
 } as const;
 
 type RemoteMeshSymbols = keyof typeof RemoteMeshes;
@@ -117,6 +118,11 @@ const MeshTransforms: Partial<{
     m.lines = [];
     m.pos = m.pos.map((p) => vec3.subtract(vec3.create(), p, SHIP_OFFSET));
     m = scaleMesh(m, 3);
+    return m;
+  },
+  rudder: (m) => {
+    const t = mat4.fromYRotation(mat4.create(), -Math.PI * 0.5);
+    m = transformMesh(m, t);
     return m;
   },
 };

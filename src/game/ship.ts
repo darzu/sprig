@@ -112,6 +112,59 @@ export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper(
   }
 );
 
+export const { RudderPropsDef, RudderLocalDef, createRudder } =
+  defineNetEntityHelper(EM, {
+    name: "rudder",
+    defaultProps: (ship?: Entity) => ({
+      ship: createRef(ship ?? 0),
+    }),
+    serializeProps: (o, buf) => {
+      buf.writeUint32(o.ship.id);
+    },
+    deserializeProps: (o, buf) => {
+      o.ship = createRef(buf.readUint32());
+    },
+    defaultLocal: () => ({ angle: 0 }),
+    dynamicComponents: [RotationDef],
+    buildResources: [AssetsDef, MeDef],
+    build: (rudder, res) => {
+      const em: EntityManager = EM;
+
+      em.ensureComponentOn(rudder, PositionDef, [0, 0.5, -20]);
+
+      em.ensureComponentOn(
+        rudder,
+        RenderableConstructDef,
+        res.assets.rudder.proto
+      );
+      em.ensureComponentOn(
+        rudder,
+        PhysicsParentDef,
+        rudder.rudderProps.ship.id
+      );
+      em.ensureComponentOn(rudder, ColorDef, vec3.clone(BOAT_COLOR));
+      vec3.scale(rudder.color, rudder.color, 0.5);
+
+      // create seperate hitbox for interacting with the rudder
+      const interactBox = em.newEntity();
+      em.ensureComponentOn(
+        interactBox,
+        PhysicsParentDef,
+        rudder.rudderProps.ship.id
+      );
+      em.ensureComponentOn(interactBox, PositionDef, [0, 0, -12]);
+      em.ensureComponentOn(interactBox, ColliderDef, {
+        shape: "AABB",
+        solid: false,
+        aabb: {
+          min: vec3.fromValues(-1, -2, -2),
+          max: vec3.fromValues(1, 2, 2.5),
+        },
+      });
+      em.ensureComponentOn(rudder, InteractableDef, interactBox.id);
+    },
+  });
+
 export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
   EM,
   {
@@ -152,6 +205,9 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
         // create gem
         const gem = createGem(s);
         s.shipProps.gemId = gem.id;
+
+        // create rudder
+        const rudder = createRudder(s);
 
         // create cannons
         const cannonPitch = Math.PI * +0.05;
