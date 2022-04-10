@@ -13,7 +13,11 @@ import {
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { Deserializer, Serializer } from "../serialize.js";
-import { DetectedEvents, DetectedEventsDef } from "../net/events.js";
+import {
+  DetectedEvents,
+  DetectedEventsDef,
+  eventWizard,
+} from "../net/events.js";
 import { fireBullet } from "./bullet.js";
 import { registerEventHandler } from "../net/events.js";
 import { ToolDef } from "./tool.js";
@@ -130,6 +134,52 @@ export const { CannonPropsDef, CannonLocalDef, createCannon } =
     },
   });
 
+export const raiseManCannon = eventWizard(
+  "man-cannon",
+  () =>
+    [
+      [PlayerEntDef, AuthorityDef],
+      [CannonLocalDef, AuthorityDef],
+    ] as const,
+  ([player, cannon]) => {
+    const localPlayer = EM.getResource(LocalPlayerDef);
+    if (localPlayer?.playerId === player.id) {
+      const camera = EM.getResource(CameraDef)!;
+      quat.identity(camera.rotation);
+      camera.targetId = cannon.id;
+
+      cannon.authority.pid = player.authority.pid;
+      cannon.authority.seq++;
+      cannon.authority.updateSeq = 0;
+    }
+    player.player.manning = true;
+    cannon.cannonLocal.mannedId = player.id;
+  },
+  {
+    legalEvent: ([player, cannon]) => {
+      return cannon.cannonLocal.mannedId === 0;
+    },
+  }
+);
+export const raiseUnmanCannon = eventWizard(
+  "unman-cannon",
+  () => [[PlayerEntDef], [CannonLocalDef]] as const,
+  ([player, cannon]) => {
+    const camera = EM.getResource(CameraDef);
+    if (camera?.targetId === cannon.id) {
+      quat.identity(camera.rotation);
+      camera.targetId = 0;
+    }
+    player.player.manning = false;
+    cannon.cannonLocal.mannedId = 0;
+  },
+  {
+    legalEvent: ([player, cannon]) => {
+      return cannon.cannonLocal.mannedId === player.id;
+    },
+  }
+);
+
 export function registerPlayerCannonSystem(em: EntityManager) {
   // em.registerSystem(
   //   [CannonDef, InteractableDef],
@@ -184,41 +234,16 @@ export function registerPlayerCannonSystem(em: EntityManager) {
   // });
 
   em.registerSystem(
-    [CannonLocalDef, WorldFrameDef, InRangeDef, RotationDef, YawPitchDef],
-    [
-      DetectedEventsDef,
-      MusicDef,
-      InputsDef,
-      PhysicsResultsDef,
-      MeDef,
-      CameraDef,
-      LocalPlayerDef,
-    ],
+    [CannonLocalDef, WorldFrameDef, YawPitchDef],
+    [MusicDef, InputsDef, MeDef, CameraDef, LocalPlayerDef],
     (cannons, res) => {
       const player = em.findEntity(res.localPlayer.playerId, [PlayerEntDef])!;
       if (!player) return;
       for (let c of cannons) {
         if (DeletedDef.isOn(c)) continue;
+        if (c.cannonLocal.mannedId !== player.id) continue;
 
-        function unman() {
-          player.player.manning = false;
-          quat.identity(res.camera.rotation);
-          res.camera.targetId = 0;
-          c.cannonLocal.mannedId = 0;
-        }
-        function doman() {
-          player.player.manning = true;
-          c.cannonLocal.mannedId = player.id;
-        }
-
-        if (res.inputs.keyClicks["e"]) {
-          if (c.cannonLocal.mannedId) {
-            unman();
-          } else {
-            doman();
-          }
-        }
-
+        // TODO(@darzu): move cannon fire to event
         if (res.inputs.lclick && c.cannonLocal.fireMs <= 0) {
           c.cannonLocal.fireMs = c.cannonLocal.fireDelayMs;
           // console.log("someone is interacting with the cannon");
@@ -232,40 +257,45 @@ export function registerPlayerCannonSystem(em: EntityManager) {
           res.music.playChords([chord], "major", 2.0, 3.0, -2);
         }
 
-        if (c.cannonLocal.mannedId) {
-          c.yawpitch.yaw += -res.inputs.mouseMovX * 0.005;
-          c.yawpitch.yaw = clamp(
-            c.yawpitch.yaw,
-            c.cannonLocal.minYaw,
-            c.cannonLocal.maxYaw
-          );
-          c.yawpitch.pitch += res.inputs.mouseMovY * 0.002;
-          c.yawpitch.pitch = clamp(
-            c.yawpitch.pitch,
-            c.cannonLocal.minPitch,
-            c.cannonLocal.maxPitch
-          );
+        c.yawpitch.yaw += -res.inputs.mouseMovX * 0.005;
+        c.yawpitch.yaw = clamp(
+          c.yawpitch.yaw,
+          c.cannonLocal.minYaw,
+          c.cannonLocal.maxYaw
+        );
+        c.yawpitch.pitch += res.inputs.mouseMovY * 0.002;
+        c.yawpitch.pitch = clamp(
+          c.yawpitch.pitch,
+          c.cannonLocal.minPitch,
+          c.cannonLocal.maxPitch
+        );
 
-          res.camera.targetId = c.id;
-          quat.rotateY(res.camera.rotation, quat.IDENTITY, +Math.PI / 2);
-          quat.rotateX(
-            res.camera.rotation,
-            res.camera.rotation,
-            -Math.PI * 0.15
-          );
-        }
-        // quat.rotateZ(c.rotation, c.rotation, -res.inputs.mouseMovY * 0.005);
-        // quat.rotateY(c.rotation, c.rotation, -res.inputs.mouseMovX * 0.005);
-        // quat.rotateX(
-        //   camera.rotation,
-        //   camera.rotation,
-        //   -inputs.mouseMovY * 0.001
-        // );
-
-        // em.removeComponent(id, InteractingDef);
+        quat.rotateY(res.camera.rotation, quat.IDENTITY, +Math.PI / 2);
+        quat.rotateX(res.camera.rotation, res.camera.rotation, -Math.PI * 0.15);
       }
     },
-    "playerCannon"
+    "playerControlCannon"
+  );
+
+  em.registerSystem(
+    [CannonLocalDef, InRangeDef, AuthorityDef],
+    [DetectedEventsDef, InputsDef, LocalPlayerDef],
+    (cannons, res) => {
+      const player = em.findEntity(res.localPlayer.playerId, [
+        PlayerEntDef,
+        AuthorityDef,
+      ])!;
+      if (!player) return;
+      for (let c of cannons) {
+        if (DeletedDef.isOn(c)) continue;
+
+        if (res.inputs.keyClicks["e"]) {
+          if (c.cannonLocal.mannedId === player.id) raiseUnmanCannon(player, c);
+          if (c.cannonLocal.mannedId === 0) raiseManCannon(player, c);
+        }
+      }
+    },
+    "playerManCanon"
   );
 }
 
