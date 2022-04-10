@@ -234,23 +234,52 @@ export function registerPlayerCannonSystem(em: EntityManager) {
   // });
 
   em.registerSystem(
-    [
-      CannonLocalDef,
-      WorldFrameDef,
-      InRangeDef,
-      RotationDef,
-      YawPitchDef,
-      AuthorityDef,
-    ],
-    [
-      DetectedEventsDef,
-      MusicDef,
-      InputsDef,
-      PhysicsResultsDef,
-      MeDef,
-      CameraDef,
-      LocalPlayerDef,
-    ],
+    [CannonLocalDef, WorldFrameDef, YawPitchDef],
+    [MusicDef, InputsDef, MeDef, CameraDef, LocalPlayerDef],
+    (cannons, res) => {
+      const player = em.findEntity(res.localPlayer.playerId, [PlayerEntDef])!;
+      if (!player) return;
+      for (let c of cannons) {
+        if (DeletedDef.isOn(c)) continue;
+        if (c.cannonLocal.mannedId !== player.id) continue;
+
+        // TODO(@darzu): move cannon fire to event
+        if (res.inputs.lclick && c.cannonLocal.fireMs <= 0) {
+          c.cannonLocal.fireMs = c.cannonLocal.fireDelayMs;
+          // console.log("someone is interacting with the cannon");
+          // let player = EM.findEntity(interacting.id, [PlayerEntDef])!;
+
+          // TODO(@darzu): cannon fire sound
+
+          fireFromCannon(em, c.world);
+
+          const chord = randChordId();
+          res.music.playChords([chord], "major", 2.0, 3.0, -2);
+        }
+
+        c.yawpitch.yaw += -res.inputs.mouseMovX * 0.005;
+        c.yawpitch.yaw = clamp(
+          c.yawpitch.yaw,
+          c.cannonLocal.minYaw,
+          c.cannonLocal.maxYaw
+        );
+        c.yawpitch.pitch += res.inputs.mouseMovY * 0.002;
+        c.yawpitch.pitch = clamp(
+          c.yawpitch.pitch,
+          c.cannonLocal.minPitch,
+          c.cannonLocal.maxPitch
+        );
+
+        quat.rotateY(res.camera.rotation, quat.IDENTITY, +Math.PI / 2);
+        quat.rotateX(res.camera.rotation, res.camera.rotation, -Math.PI * 0.15);
+      }
+    },
+    "playerControlCannon"
+  );
+
+  em.registerSystem(
+    [CannonLocalDef, InRangeDef, AuthorityDef],
+    [DetectedEventsDef, InputsDef, LocalPlayerDef],
     (cannons, res) => {
       const player = em.findEntity(res.localPlayer.playerId, [
         PlayerEntDef,
@@ -264,53 +293,9 @@ export function registerPlayerCannonSystem(em: EntityManager) {
           if (c.cannonLocal.mannedId === player.id) raiseUnmanCannon(player, c);
           if (c.cannonLocal.mannedId === 0) raiseManCannon(player, c);
         }
-
-        if (c.cannonLocal.mannedId === player.id) {
-          if (res.inputs.lclick && c.cannonLocal.fireMs <= 0) {
-            c.cannonLocal.fireMs = c.cannonLocal.fireDelayMs;
-            // console.log("someone is interacting with the cannon");
-            // let player = EM.findEntity(interacting.id, [PlayerEntDef])!;
-
-            // TODO(@darzu): cannon fire sound
-
-            fireFromCannon(em, c.world);
-
-            const chord = randChordId();
-            res.music.playChords([chord], "major", 2.0, 3.0, -2);
-          }
-
-          c.yawpitch.yaw += -res.inputs.mouseMovX * 0.005;
-          c.yawpitch.yaw = clamp(
-            c.yawpitch.yaw,
-            c.cannonLocal.minYaw,
-            c.cannonLocal.maxYaw
-          );
-          c.yawpitch.pitch += res.inputs.mouseMovY * 0.002;
-          c.yawpitch.pitch = clamp(
-            c.yawpitch.pitch,
-            c.cannonLocal.minPitch,
-            c.cannonLocal.maxPitch
-          );
-
-          quat.rotateY(res.camera.rotation, quat.IDENTITY, +Math.PI / 2);
-          quat.rotateX(
-            res.camera.rotation,
-            res.camera.rotation,
-            -Math.PI * 0.15
-          );
-        }
-        // quat.rotateZ(c.rotation, c.rotation, -res.inputs.mouseMovY * 0.005);
-        // quat.rotateY(c.rotation, c.rotation, -res.inputs.mouseMovX * 0.005);
-        // quat.rotateX(
-        //   camera.rotation,
-        //   camera.rotation,
-        //   -inputs.mouseMovY * 0.001
-        // );
-
-        // em.removeComponent(id, InteractingDef);
       }
     },
-    "playerCannon"
+    "playerManCanon"
   );
 }
 
