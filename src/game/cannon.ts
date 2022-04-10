@@ -287,7 +287,12 @@ export function registerPlayerCannonSystem(em: EntityManager) {
           if (c.cannonLocal.mannedId === 0) raiseManCannon(player, c);
         }
 
-        if (res.inputs.lclick && c.cannonLocal.fireMs <= 0) {
+        // allow firing un-manned cannons
+        if (
+          res.inputs.lclick &&
+          c.cannonLocal.mannedId === 0 &&
+          c.cannonLocal.fireMs <= 0
+        ) {
           raiseFireCannon(player, c);
         }
       }
