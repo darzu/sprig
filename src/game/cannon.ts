@@ -161,6 +161,7 @@ export const raiseManCannon = eventWizard(
     },
   }
 );
+
 export const raiseUnmanCannon = eventWizard(
   "unman-cannon",
   () => [[PlayerEntDef], [CannonLocalDef]] as const,
@@ -181,22 +182,6 @@ export const raiseUnmanCannon = eventWizard(
 );
 
 export function registerPlayerCannonSystem(em: EntityManager) {
-  // em.registerSystem(
-  //   [CannonDef, InteractableDef],
-  //   [PhysicsResultsDef],
-  //   (cannons, res) => {
-  //     for (let c of cannons) {
-  //       const otherHits =
-  //         res.physicsResults.collidesWith.get(c.cannonLocal.interactBox) ?? [];
-  //       for (let o of otherHits) {
-  //         let player = EM.findEntity(o, [PlayerEntDef])!;
-  //         if (player) console.log(player);
-  //       }
-  //     }
-  //   },
-  //   "playerCannon2"
-  // );
-
   em.registerSystem(
     [CannonLocalDef, RotationDef, YawPitchDef],
     [],
@@ -207,7 +192,7 @@ export function registerPlayerCannonSystem(em: EntityManager) {
         quat.rotateZ(c.rotation, c.rotation, c.yawpitch.pitch);
       }
     },
-    "rotateCannons"
+    "applyCannonYawPitch"
   );
 
   em.registerSystem(
@@ -224,14 +209,32 @@ export function registerPlayerCannonSystem(em: EntityManager) {
     "reloadCannon"
   );
 
-  // registerEventHandler("player-cannon", {
-  //   entities: [[PlayerEntDef], [CannonLocalDef]] as const,
-  //   eventAuthorityEntity: ([playerId, cannonId]) => playerId,
-  //   legalEvent: (em, [player, cannon]) => true,
-  //   runEvent: (em, [player, cannon]) => {
-  //     // TODO(@darzu):
-  //   },
-  // });
+  const raiseFireCannon = eventWizard(
+    "fire-cannon",
+    [[PlayerEntDef], [CannonLocalDef, WorldFrameDef]] as const,
+    ([player, cannon]) => {
+      // only the firing player creates a bullet
+      if (player.id === EM.getResource(LocalPlayerDef)?.playerId) {
+        const fireDir = quat.create();
+        quat.rotateY(fireDir, cannon.world.rotation, Math.PI * 0.5);
+        const firePos = vec3.create();
+        vec3.transformQuat(firePos, firePos, fireDir);
+        vec3.add(firePos, firePos, cannon.world.position);
+        fireBullet(EM, 1, firePos, fireDir, 0.1);
+      }
+
+      // but everyone resets the cooldown and plays sound effects
+      cannon.cannonLocal.fireMs = cannon.cannonLocal.fireDelayMs;
+
+      const chord = randChordId();
+      EM.getResource(MusicDef)!.playChords([chord], "major", 2.0, 3.0, -2);
+    },
+    {
+      legalEvent: ([player, cannon]) => {
+        return cannon.cannonLocal.fireMs <= 0;
+      },
+    }
+  );
 
   em.registerSystem(
     [CannonLocalDef, WorldFrameDef, YawPitchDef],
@@ -243,18 +246,8 @@ export function registerPlayerCannonSystem(em: EntityManager) {
         if (DeletedDef.isOn(c)) continue;
         if (c.cannonLocal.mannedId !== player.id) continue;
 
-        // TODO(@darzu): move cannon fire to event
         if (res.inputs.lclick && c.cannonLocal.fireMs <= 0) {
-          c.cannonLocal.fireMs = c.cannonLocal.fireDelayMs;
-          // console.log("someone is interacting with the cannon");
-          // let player = EM.findEntity(interacting.id, [PlayerEntDef])!;
-
-          // TODO(@darzu): cannon fire sound
-
-          fireFromCannon(em, c.world);
-
-          const chord = randChordId();
-          res.music.playChords([chord], "major", 2.0, 3.0, -2);
+          raiseFireCannon(player, c);
         }
 
         c.yawpitch.yaw += -res.inputs.mouseMovX * 0.005;
@@ -278,7 +271,7 @@ export function registerPlayerCannonSystem(em: EntityManager) {
   );
 
   em.registerSystem(
-    [CannonLocalDef, InRangeDef, AuthorityDef],
+    [CannonLocalDef, InRangeDef, AuthorityDef, WorldFrameDef],
     [DetectedEventsDef, InputsDef, LocalPlayerDef],
     (cannons, res) => {
       const player = em.findEntity(res.localPlayer.playerId, [
@@ -293,73 +286,15 @@ export function registerPlayerCannonSystem(em: EntityManager) {
           if (c.cannonLocal.mannedId === player.id) raiseUnmanCannon(player, c);
           if (c.cannonLocal.mannedId === 0) raiseManCannon(player, c);
         }
+
+        if (res.inputs.lclick && c.cannonLocal.fireMs <= 0) {
+          raiseFireCannon(player, c);
+        }
       }
     },
     "playerManCanon"
   );
 }
-
-export function fireFromCannon(em: EntityManager, cannon: Frame) {
-  // TODO(@darzu): capture this elsewhere
-  const fireDir = quat.create();
-  quat.rotateY(fireDir, cannon.rotation, Math.PI * 0.5);
-  const firePos = vec3.create();
-  vec3.transformQuat(firePos, firePos, fireDir);
-  vec3.add(firePos, firePos, cannon.position);
-
-  fireBullet(em, 1, firePos, fireDir, 0.1);
-
-  // TODO(@darzu): do we need events?
-  // detectedEvents: DetectedEvents,
-  // detectedEvents.raise({
-  //   type: "fire-cannon",
-  //   entities: [interacting.id, id],
-  //   location: null,
-  // });
-}
-
-export function registerCannonEventHandlers() {
-  // registerEventHandler("load-cannon", {
-  //   eventAuthorityEntity: (entities) => entities[0],
-  //   legalEvent: (em, entities) =>
-  //     !em.findEntity(entities[1], [CannonDef])!.cannonLocal!.loaded &&
-  //     em.findEntity(entities[2], [AmmunitionDef])!.ammunition.amount > 0,
-  //   runEvent: (em, entities) => {
-  //     let cannon = em.findEntity(entities[1], [CannonDef])!.cannonLocal;
-  //     let ammunition = em.findEntity(entities[2], [AmmunitionDef])!.ammunition;
-  //     cannon.loaded = true;
-  //     ammunition.amount -= 1;
-  //   },
-  // });
-
-  registerEventHandler("fire-cannon", {
-    entities: [[AuthorityDef], [CannonLocalDef, AuthorityDef]] as const,
-    eventAuthorityEntity: ([playerId, cannonId]) => playerId,
-    legalEvent: (em, [_, cannon]) => cannon.cannonLocal!.loaded,
-    runEvent: (em, [player, cannon]) => {
-      // cannon.loaded = false;
-      // cannon.firing = true;
-      // cannon.countdown = CANNON_FRAMES;
-      // TODO: this is maybe weird?
-      cannon.authority.pid = player.authority.pid;
-      cannon.authority.seq++;
-      cannon.authority.updateSeq = 0;
-    },
-  });
-
-  // TODO: figure out authority etc. for this event
-  // registerEventHandler("fired-cannon", {
-  //   eventAuthorityEntity: (entities) => entities[0],
-  //   legalEvent: (_em, _entities) => true,
-  //   runEvent: (em, entities) => {
-  //     let cannon = em.findEntity(entities[0], [CannonDef])!.cannonLocal;
-  //     // cannon.firing = false;
-  //   },
-  // });
-}
-
-// TODO: call this from game somewhere?
-registerCannonEventHandlers();
 
 export type CannonConstruct = Component<typeof CannonPropsDef>;
 
