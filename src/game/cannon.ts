@@ -138,6 +138,12 @@ export const raiseManCannon = eventWizard(
   "man-cannon",
   () => [[CannonLocalDef], [PlayerEntDef]] as const,
   ([cannon, player]) => {
+    const localPlayer = EM.getResource(LocalPlayerDef);
+    if (localPlayer?.playerId === player.id) {
+      const camera = EM.getResource(CameraDef)!;
+      quat.identity(camera.rotation);
+      camera.targetId = cannon.id;
+    }
     player.player.manning = true;
     cannon.cannonLocal.mannedId = player.id;
   }
@@ -146,12 +152,12 @@ export const raiseUnmanCannon = eventWizard(
   "unman-cannon",
   () => [[CannonLocalDef], [PlayerEntDef]] as const,
   ([cannon, player]) => {
-    player.player.manning = false;
     const camera = EM.getResource(CameraDef);
     if (camera?.targetId === cannon.id) {
       quat.identity(camera.rotation);
       camera.targetId = 0;
     }
+    player.player.manning = false;
     cannon.cannonLocal.mannedId = 0;
   }
 );
@@ -261,7 +267,6 @@ export function registerPlayerCannonSystem(em: EntityManager) {
             c.cannonLocal.maxPitch
           );
 
-          res.camera.targetId = c.id;
           quat.rotateY(res.camera.rotation, quat.IDENTITY, +Math.PI / 2);
           quat.rotateX(
             res.camera.rotation,
