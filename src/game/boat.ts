@@ -36,7 +36,7 @@ import {
   LinearVelocity,
   LinearVelocityDef,
 } from "../physics/motion.js";
-import { MotionSmoothingDef } from "../smoothing.js";
+import { MotionSmoothingDef } from "../motion-smoothing.js";
 import {
   PhysicsResultsDef,
   WorldFrameDef,

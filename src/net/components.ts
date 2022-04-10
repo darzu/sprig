@@ -124,3 +124,6 @@ export const PredictDef = EM.defineComponent("predict", () => ({
 }));
 
 export type Predict = Component<typeof PredictDef>;
+
+// Marker component for entities that have just been updated by the sync system
+export const RemoteUpdatesDef = EM.defineComponent("remoteUpdates", () => true);

@@ -20,7 +20,7 @@ import { AABBCollider } from "../physics/collider.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import { FinishedDef } from "../build.js";
 import { Assets, AssetsDef } from "./assets.js";
-import { MotionSmoothingDef } from "../smoothing.js";
+import { MotionSmoothingDef } from "../motion-smoothing.js";
 
 export const CubeConstructDef = EM.defineComponent(
   "cubeConstruct",

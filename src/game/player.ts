@@ -46,7 +46,7 @@ import { tempQuat, tempVec } from "../temp-pool.js";
 import { Mesh, scaleMesh, scaleMesh3 } from "../render/mesh-pool.js";
 import { Assets, AssetsDef, CUBE_FACES } from "./assets.js";
 import { LinearVelocity, LinearVelocityDef } from "../physics/motion.js";
-import { MotionSmoothingDef } from "../smoothing.js";
+import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { getCursor, GlobalCursor3dDef } from "./cursor.js";
 import { ModelerDef, screenPosToRay } from "./modeler.js";
 import { PhysicsDbgDef } from "../physics/phys-debug.js";

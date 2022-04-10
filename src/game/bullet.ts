@@ -13,7 +13,7 @@ import {
   LinearVelocity,
   LinearVelocityDef,
 } from "../physics/motion.js";
-import { MotionSmoothingDef } from "../smoothing.js";
+import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { PhysicsTimerDef } from "../time.js";
 import { LifetimeDef } from "./lifetime.js";
 
