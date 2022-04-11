@@ -173,9 +173,13 @@ function runEvent<Extra>(type: string, em: EntityManager, event: Event<Extra>) {
   if (!EVENT_HANDLERS.has(type))
     throw `No event handler registered for event type ${type}`;
   const handler = EVENT_HANDLERS.get(type)!;
-  const entities = event.entities.map((id, idx) =>
-    em.findEntity(id, handler.entities[idx])
-  );
+  const entities = event.entities.map((id, idx) => {
+    const entity = em.findEntity(id, [])!;
+    for (const cdef of handler.entities[idx] as ComponentDef[]) {
+      em.ensureComponentOn(entity, cdef);
+    }
+    return entity;
+  });
   return handler.runEvent(em, entities as any, event.extra);
 }
 
