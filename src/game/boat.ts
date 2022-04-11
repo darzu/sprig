@@ -273,7 +273,6 @@ export function registerBoatSystems(em: EntityManager) {
           if (balls.length) {
             raiseBulletBoat(balls[0]!, boat);
             console.log("HIT BOAT!");
-            for (let ball of balls) em.ensureComponentOn(ball!, DeletedDef);
           }
 
           const ships = hits.filter((h) => em.findEntity(h, [ShipLocalDef]));
