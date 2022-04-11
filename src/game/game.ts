@@ -58,11 +58,7 @@ import {
   RendererDef,
 } from "../render/render_init.js";
 import { registerDeleteEntitiesSystem } from "../delete.js";
-import {
-  registerBuildAmmunitionSystem,
-  registerBuildLinstockSystem,
-  registerCannonSystems,
-} from "./cannon.js";
+import { registerCannonSystems } from "./cannon.js";
 import { registerInteractionSystem } from "./interact.js";
 import { registerModeler } from "./modeler.js";
 import { registerToolSystems } from "./tool.js";
@@ -82,6 +78,10 @@ import { assert } from "../test.js";
 import { callInitFns } from "../init.js";
 import { registerGrappleSystems } from "./grapple.js";
 import { registerTurretSystems } from "./turret.js";
+import {
+  registerBuildAmmunitionSystem,
+  registerBuildLinstockSystem,
+} from "./ammo.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
