@@ -31,6 +31,7 @@ import {
 } from "../physics/transform.js";
 import { ColorDef } from "../game/game.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
+import { DeletedDef } from "../delete.js";
 
 export interface RenderableConstruct {
   readonly enabled: boolean;
@@ -93,6 +94,9 @@ function stepRenderer(
   objs: RenderableObj[],
   cameraView: CameraView
 ) {
+  // filter
+  objs = objs.filter((o) => o.renderable.enabled && !DeletedDef.isOn(o));
+
   // ensure our mesh handle is up to date
   for (let o of objs) {
     // TODO(@darzu): color:
@@ -108,9 +112,6 @@ function stepRenderer(
       o.rendererWorldFrame.transform
     );
   }
-
-  // filter
-  objs = objs.filter((o) => o.renderable.enabled);
 
   // sort
   objs.sort((a, b) => b.renderable.layer - a.renderable.layer);
@@ -299,6 +300,7 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
       _hasRendererWorldFrame.clear();
 
       for (const o of objs) {
+        if (DeletedDef.isOn(o)) continue;
         updateRendererWorldFrame(em, o);
       }
     },
