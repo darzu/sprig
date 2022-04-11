@@ -61,7 +61,7 @@ import { registerDeleteEntitiesSystem } from "../delete.js";
 import {
   registerBuildAmmunitionSystem,
   registerBuildLinstockSystem,
-  registerPlayerCannonSystem,
+  registerCannonSystems,
 } from "./cannon.js";
 import { registerInteractionSystem } from "./interact.js";
 import { registerModeler } from "./modeler.js";
@@ -81,6 +81,7 @@ import { registerNetDebugSystem } from "../net/net-debug.js";
 import { assert } from "../test.js";
 import { callInitFns } from "../init.js";
 import { registerGrappleSystems } from "./grapple.js";
+import { registerTurretSystems } from "./turret.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -238,7 +239,8 @@ export function registerAllSystems(em: EntityManager) {
   registerUpdateLifetimes(em);
   registerInteractionSystem(em);
   // registerStepCannonsSystem(em);
-  registerPlayerCannonSystem(em);
+  registerTurretSystems(em);
+  registerCannonSystems(em);
   registerPhysicsSystems(em);
   registerRetargetCameraSystems(em);
   registerMotionSmoothingSystems(em);

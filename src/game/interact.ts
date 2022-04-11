@@ -16,10 +16,10 @@ import { clearTint, setTint, TintsDef } from "../tint.js";
 
 export const InteractableDef = EM.defineComponent(
   "interaction",
-  (colliderId: number) => ({
+  (colliderId?: number) => ({
     // TODO(@darzu): components having pointers to entities should be
     //  handled better
-    colliderId,
+    colliderId: colliderId || 0,
   })
 );
 

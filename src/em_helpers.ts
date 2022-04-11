@@ -49,6 +49,16 @@ export function registerConstructorSystem<
   return def;
 }
 
+export type NetEntityDefs<N extends string, P1, Pargs1 extends any[], P2> = {
+  [_ in `${Capitalize<N>}PropsDef`]: ComponentDef<`${N}Props`, P1, Pargs1>;
+} & {
+  [_ in `${Capitalize<N>}LocalDef`]: ComponentDef<`${N}Local`, P2, []>;
+} & {
+  [_ in `create${Capitalize<N>}`]: (
+    ...args: Pargs1
+  ) => EntityW<[ComponentDef<`${N}Props`, P1, Pargs1>]>;
+};
+
 export function defineNetEntityHelper<
   N extends string,
   P1,
@@ -79,15 +89,7 @@ export function defineNetEntityHelper<
       resources: EntityW<RS>
     ) => void;
   }
-): {
-  [_ in `${Capitalize<N>}PropsDef`]: ComponentDef<`${N}Props`, P1, Pargs1>;
-} & {
-  [_ in `${Capitalize<N>}LocalDef`]: ComponentDef<`${N}Local`, P2, []>;
-} & {
-  [_ in `create${Capitalize<N>}`]: (
-    ...args: Pargs1
-  ) => EntityW<[ComponentDef<`${N}Props`, P1, Pargs1>]>;
-} {
+): NetEntityDefs<N, P1, Pargs1, P2> {
   const propsDef = defineSerializableComponent(
     em,
     `${opts.name}Props`,

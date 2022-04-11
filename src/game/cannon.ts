@@ -39,25 +39,7 @@ import {
   defineNetEntityHelper,
   defineSerializableComponent,
 } from "../em_helpers.js";
-
-const CANNON_FRAMES = 180;
-
-export const YawPitchDef = defineSerializableComponent(
-  EM,
-  "yawpitch",
-  () => ({
-    yaw: 0,
-    pitch: 0,
-  }),
-  (o, buf) => {
-    buf.writeFloat32(o.yaw);
-    buf.writeFloat32(o.pitch);
-  },
-  (o, buf) => {
-    o.yaw = buf.readFloat32();
-    o.pitch = buf.readFloat32();
-  }
-);
+import { constructNetTurret, TurretDef, YawPitchDef } from "./turret.js";
 
 export const { CannonPropsDef, CannonLocalDef, createCannon } =
   defineNetEntityHelper(EM, {
@@ -88,113 +70,30 @@ export const { CannonPropsDef, CannonLocalDef, createCannon } =
     defaultLocal: () => {
       return {
         loaded: true,
-        mannedId: 0,
-        minYaw: -Math.PI * 0.5,
-        maxYaw: +Math.PI * 0.5,
-        minPitch: -Math.PI * 0.3,
-        maxPitch: Math.PI * 0.1,
         fireMs: 0,
         fireDelayMs: 1000,
         loadedId: 0,
       };
     },
-    dynamicComponents: [YawPitchDef],
+    dynamicComponents: [],
     buildResources: [AssetsDef, MeDef],
     build: (e, res) => {
       const em: EntityManager = EM;
       const props = e.cannonProps;
       em.ensureComponent(e.id, PositionDef, props.location);
-      em.ensureComponent(e.id, RotationDef);
+      constructNetTurret(e, props.yaw, props.pitch, res.assets.cannon.aabb);
       em.ensureComponent(e.id, ColorDef, [0, 0, 0]);
       em.ensureComponent(e.id, RenderableConstructDef, res.assets.cannon.mesh);
-      e.yawpitch.yaw = props.yaw;
-      e.yawpitch.pitch = props.pitch;
-      e.cannonLocal.minYaw += props.yaw;
-      e.cannonLocal.maxYaw += props.yaw;
       em.ensureComponent(e.id, ColliderDef, {
         shape: "AABB",
         solid: true,
         aabb: res.assets.cannon.aabb,
       });
       em.ensureComponentOn(e, PhysicsParentDef, props.parentId);
-
-      // create seperate hitbox for interacting with the cannon
-      const interactBox = em.newEntity();
-      const interactAABB = copyAABB(createAABB(), res.assets.cannon.aabb);
-      vec3.scale(interactAABB.min, interactAABB.min, 2);
-      vec3.scale(interactAABB.max, interactAABB.max, 2);
-      em.ensureComponentOn(interactBox, PhysicsParentDef, e.id);
-      em.ensureComponentOn(interactBox, PositionDef, [0, 0, 0]);
-      em.ensureComponentOn(interactBox, ColliderDef, {
-        shape: "AABB",
-        solid: false,
-        aabb: interactAABB,
-      });
-      em.ensureComponent(e.id, InteractableDef, interactBox.id);
     },
   });
 
-export const raiseManCannon = eventWizard(
-  "man-cannon",
-  () =>
-    [
-      [PlayerEntDef, AuthorityDef],
-      [CannonLocalDef, AuthorityDef],
-    ] as const,
-  ([player, cannon]) => {
-    const localPlayer = EM.getResource(LocalPlayerDef);
-    if (localPlayer?.playerId === player.id) {
-      const camera = EM.getResource(CameraDef)!;
-      quat.identity(camera.rotation);
-      camera.targetId = cannon.id;
-
-      cannon.authority.pid = player.authority.pid;
-      cannon.authority.seq++;
-      cannon.authority.updateSeq = 0;
-    }
-    player.player.manning = true;
-    cannon.cannonLocal.mannedId = player.id;
-  },
-  {
-    legalEvent: ([player, cannon]) => {
-      return cannon.cannonLocal.mannedId === 0;
-    },
-  }
-);
-
-export const raiseUnmanCannon = eventWizard(
-  "unman-cannon",
-  () => [[PlayerEntDef], [CannonLocalDef]] as const,
-  ([player, cannon]) => {
-    const camera = EM.getResource(CameraDef);
-    if (camera?.targetId === cannon.id) {
-      quat.identity(camera.rotation);
-      camera.targetId = 0;
-    }
-    player.player.manning = false;
-    cannon.cannonLocal.mannedId = 0;
-  },
-  {
-    legalEvent: ([player, cannon]) => {
-      return cannon.cannonLocal.mannedId === player.id;
-    },
-  }
-);
-
-export function registerPlayerCannonSystem(em: EntityManager) {
-  em.registerSystem(
-    [CannonLocalDef, RotationDef, YawPitchDef],
-    [],
-    (cannons, res) => {
-      for (let c of cannons) {
-        quat.copy(c.rotation, quat.IDENTITY);
-        quat.rotateY(c.rotation, c.rotation, c.yawpitch.yaw);
-        quat.rotateZ(c.rotation, c.rotation, c.yawpitch.pitch);
-      }
-    },
-    "applyCannonYawPitch"
-  );
-
+export function registerCannonSystems(em: EntityManager) {
   em.registerSystem(
     [CannonLocalDef],
     [PhysicsTimerDef],
@@ -237,41 +136,24 @@ export function registerPlayerCannonSystem(em: EntityManager) {
   );
 
   em.registerSystem(
-    [CannonLocalDef, WorldFrameDef, YawPitchDef],
-    [MusicDef, InputsDef, MeDef, CameraDef, LocalPlayerDef],
+    [CannonLocalDef, TurretDef, WorldFrameDef],
+    [InputsDef, LocalPlayerDef],
     (cannons, res) => {
       const player = em.findEntity(res.localPlayer.playerId, [PlayerEntDef])!;
       if (!player) return;
       for (let c of cannons) {
         if (DeletedDef.isOn(c)) continue;
-        if (c.cannonLocal.mannedId !== player.id) continue;
-
+        if (c.turret.mannedId !== player.id) continue;
         if (res.inputs.lclick && c.cannonLocal.fireMs <= 0) {
           raiseFireCannon(player, c);
         }
-
-        c.yawpitch.yaw += -res.inputs.mouseMovX * 0.005;
-        c.yawpitch.yaw = clamp(
-          c.yawpitch.yaw,
-          c.cannonLocal.minYaw,
-          c.cannonLocal.maxYaw
-        );
-        c.yawpitch.pitch += res.inputs.mouseMovY * 0.002;
-        c.yawpitch.pitch = clamp(
-          c.yawpitch.pitch,
-          c.cannonLocal.minPitch,
-          c.cannonLocal.maxPitch
-        );
-
-        quat.rotateY(res.camera.rotation, quat.IDENTITY, +Math.PI / 2);
-        quat.rotateX(res.camera.rotation, res.camera.rotation, -Math.PI * 0.15);
       }
     },
     "playerControlCannon"
   );
 
   em.registerSystem(
-    [CannonLocalDef, InRangeDef, AuthorityDef, WorldFrameDef],
+    [CannonLocalDef, TurretDef, InRangeDef, AuthorityDef, WorldFrameDef],
     [DetectedEventsDef, InputsDef, LocalPlayerDef],
     (cannons, res) => {
       const player = em.findEntity(res.localPlayer.playerId, [
@@ -281,16 +163,10 @@ export function registerPlayerCannonSystem(em: EntityManager) {
       if (!player) return;
       for (let c of cannons) {
         if (DeletedDef.isOn(c)) continue;
-
-        if (res.inputs.keyClicks["e"]) {
-          if (c.cannonLocal.mannedId === player.id) raiseUnmanCannon(player, c);
-          if (c.cannonLocal.mannedId === 0) raiseManCannon(player, c);
-        }
-
         // allow firing un-manned cannons
         if (
           res.inputs.lclick &&
-          c.cannonLocal.mannedId === 0 &&
+          c.turret.mannedId === 0 &&
           c.cannonLocal.fireMs <= 0
         ) {
           raiseFireCannon(player, c);
