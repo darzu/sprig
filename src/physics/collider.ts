@@ -27,7 +27,7 @@ export interface AABBCollider extends ColliderBase {
 export interface BoxCollider extends ColliderBase {
   shape: "Box";
   center: vec3;
-  size: vec3;
+  halfsize: vec3;
 }
 
 export interface SphereCollider extends ColliderBase {
