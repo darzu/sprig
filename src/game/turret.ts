@@ -1,51 +1,21 @@
+import { EM, EntityManager, Entity, EntityW } from "../entity-manager.js";
+import { quat, vec3 } from "../gl-matrix.js";
 import {
-  EM,
-  EntityManager,
-  Component,
-  Entity,
-  EntityW,
-} from "../entity-manager.js";
-import { PhysicsTimerDef } from "../time.js";
-import { mat4, quat, vec3 } from "../gl-matrix.js";
-import { FinishedDef } from "../build.js";
-import { ColorDef } from "./game.js";
-import { RenderableConstructDef } from "../render/renderer.js";
-import {
-  Frame,
   PhysicsParentDef,
   PositionDef,
   RotationDef,
 } from "../physics/transform.js";
-import { AABBCollider, ColliderDef } from "../physics/collider.js";
-import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
-import { Deserializer, Serializer } from "../serialize.js";
-import {
-  DetectedEvents,
-  DetectedEventsDef,
-  eventWizard,
-} from "../net/events.js";
-import { fireBullet } from "./bullet.js";
-import { registerEventHandler } from "../net/events.js";
-import { ToolDef } from "./tool.js";
+import { ColliderDef } from "../physics/collider.js";
+import { AuthorityDef, SyncDef } from "../net/components.js";
+import { eventWizard } from "../net/events.js";
 import { InRangeDef, InteractableDef } from "./interact.js";
 import { LocalPlayerDef, PlayerEntDef } from "./player.js";
 import { CameraDef } from "../camera.js";
-import { Assets, AssetsDef, GameMesh } from "./assets.js";
 import { AABB, copyAABB, createAABB } from "../physics/broadphase.js";
-import {
-  PhysicsResultsDef,
-  WorldFrameDef,
-} from "../physics/nonintersection.js";
-import { MusicDef, randChordId } from "../music.js";
 import { InputsDef } from "../inputs.js";
-import { pitch } from "../utils-3d.js";
 import { clamp } from "../math.js";
 import { DeletedDef } from "../delete.js";
-import {
-  defineNetEntityHelper,
-  defineSerializableComponent,
-  registerConstructorSystem,
-} from "../em_helpers.js";
+import { defineSerializableComponent } from "../em_helpers.js";
 
 export const YawPitchDef = defineSerializableComponent(
   EM,
