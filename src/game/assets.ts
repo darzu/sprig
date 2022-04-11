@@ -40,6 +40,9 @@ const RemoteMeshes = {
   ammunitionBox: "ammunition_box.sprig.obj",
   linstock: "linstock.sprig.obj",
   cannon: "cannon_simple.sprig.obj",
+  grappleHook: "grapple-hook.sprig.obj",
+  grappleGun: "grapple-gun.sprig.obj",
+  grappleGunUnloaded: "grapple-gun-unloaded.sprig.obj",
 } as const;
 
 type RemoteMeshSymbols = keyof typeof RemoteMeshes;
@@ -68,6 +71,9 @@ const AssetTransforms: Partial<{
     1,
     GROUNDSIZE * 0.5,
   ]),
+  grappleGun: mat4.fromScaling(mat4.create(), [0.5, 0.5, 0.5]),
+  grappleGunUnloaded: mat4.fromScaling(mat4.create(), [0.5, 0.5, 0.5]),
+  grappleHook: mat4.fromScaling(mat4.create(), [0.5, 0.5, 0.5]),
 };
 
 // TODO(@darzu): these sort of hacky offsets are a pain to deal with. It'd be

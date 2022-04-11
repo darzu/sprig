@@ -80,6 +80,7 @@ import { registerRestartSystem } from "./restart.js";
 import { registerNetDebugSystem } from "../net/net-debug.js";
 import { assert } from "../test.js";
 import { callInitFns } from "../init.js";
+import { registerGrappleSystems } from "./grapple.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -227,6 +228,7 @@ export function registerAllSystems(em: EntityManager) {
   registerBuildAmmunitionSystem(em);
   registerBuildLinstockSystem(em);
   registerBuildCursor(em);
+  registerGrappleSystems(em);
   registerInitTransforms(em);
   registerMoveCubesSystem(em);
   registerBoatSystems(em);
