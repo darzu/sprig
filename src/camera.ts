@@ -55,7 +55,6 @@ export function registerRetargetCameraSystems(em: EntityManager) {
         vec3.copy(res.camera.lastOffset, res.camera.offset);
         return;
       }
-      console.log("updating camera");
       const prevTarget = em.findEntity(
         res.camera.prevTargetId || res.localPlayer.playerId,
         [WorldFrameDef]
