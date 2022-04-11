@@ -76,7 +76,7 @@ import { registerRestartSystem } from "./restart.js";
 import { registerNetDebugSystem } from "../net/net-debug.js";
 import { assert } from "../test.js";
 import { callInitFns } from "../init.js";
-import { registerGrappleSystems } from "./grapple.js";
+import { registerGrappleDbgSystems } from "./grapple.js";
 import { registerTurretSystems } from "./turret.js";
 import {
   registerBuildAmmunitionSystem,
@@ -229,7 +229,7 @@ export function registerAllSystems(em: EntityManager) {
   registerBuildAmmunitionSystem(em);
   registerBuildLinstockSystem(em);
   registerBuildCursor(em);
-  registerGrappleSystems(em);
+  registerGrappleDbgSystems(em);
   registerInitTransforms(em);
   registerMoveCubesSystem(em);
   registerBoatSystems(em);

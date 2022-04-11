@@ -15,7 +15,11 @@ import { AssetsDef } from "./assets.js";
 import { ColorDef } from "./game.js";
 import { InteractableDef } from "./interact.js";
 
-export function registerGrappleSystems(em: EntityManager) {
+const DBG_GRAPPLE = false;
+
+export function registerGrappleDbgSystems(em: EntityManager) {
+  if (!DBG_GRAPPLE) return;
+
   em.registerOneShotSystem(null, [AssetsDef], (_, res) => {
     const h = em.newEntity();
     em.ensureComponentOn(h, PositionDef, [0, 0, 0]);
