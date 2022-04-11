@@ -58,11 +58,7 @@ import {
   RendererDef,
 } from "../render/render_init.js";
 import { registerDeleteEntitiesSystem } from "../delete.js";
-import {
-  registerBuildAmmunitionSystem,
-  registerBuildLinstockSystem,
-  registerPlayerCannonSystem,
-} from "./cannon.js";
+import { registerCannonSystems } from "./cannon.js";
 import { registerInteractionSystem } from "./interact.js";
 import { registerModeler } from "./modeler.js";
 import { registerToolSystems } from "./tool.js";
@@ -80,6 +76,12 @@ import { registerRestartSystem } from "./restart.js";
 import { registerNetDebugSystem } from "../net/net-debug.js";
 import { assert } from "../test.js";
 import { callInitFns } from "../init.js";
+import { registerGrappleDbgSystems } from "./grapple.js";
+import { registerTurretSystems } from "./turret.js";
+import {
+  registerBuildAmmunitionSystem,
+  registerBuildLinstockSystem,
+} from "./ammo.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -227,6 +229,7 @@ export function registerAllSystems(em: EntityManager) {
   registerBuildAmmunitionSystem(em);
   registerBuildLinstockSystem(em);
   registerBuildCursor(em);
+  registerGrappleDbgSystems(em);
   registerInitTransforms(em);
   registerMoveCubesSystem(em);
   registerBoatSystems(em);
@@ -236,7 +239,8 @@ export function registerAllSystems(em: EntityManager) {
   registerUpdateLifetimes(em);
   registerInteractionSystem(em);
   // registerStepCannonsSystem(em);
-  registerPlayerCannonSystem(em);
+  registerTurretSystems(em);
+  registerCannonSystems(em);
   registerPhysicsSystems(em);
   registerRetargetCameraSystems(em);
   registerMotionSmoothingSystems(em);
