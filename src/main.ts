@@ -61,8 +61,8 @@ async function startGame(localPeerName: string, host: string | null) {
   EM.addSingletonComponent(InputsDef);
   registerInputsSystem(EM);
 
-  // initShipGame(EM, hosting);
-  initDbgGame(EM, hosting);
+  initShipGame(EM, hosting);
+  // initDbgGame(EM, hosting);
 
   const controlsStr = `[WASD space 1 2 3 4 5 r t]`;
   let avgJsTime = 0;

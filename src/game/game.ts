@@ -35,7 +35,6 @@ import {
 } from "../net/sync.js";
 import { registerPredictSystem } from "../net/predict.js";
 import { registerEventSystems } from "../net/events.js";
-import { registerBuildCubesSystem, registerMoveCubesSystem } from "./cube.js";
 import { PhysicsTimerDef, registerTimeSystem } from "../time.js";
 import {
   GroundPropsDef,
@@ -106,80 +105,6 @@ function createPlayer(em: EntityManager) {
   em.addSingletonComponent(LocalPlayerDef, e.id);
 }
 
-function createGround(em: EntityManager) {
-  const loc = vec3.fromValues(0, -7, 0);
-  const color = LIGHT_BLUE;
-  let { id } = em.newEntity();
-  em.addComponent(id, GroundPropsDef, loc, color);
-}
-
-const WorldPlaneConstDef = EM.defineComponent("worldPlane", (t?: mat4) => {
-  return {
-    transform: t ?? mat4.create(),
-  };
-});
-EM.registerSerializerPair(
-  WorldPlaneConstDef,
-  (o, buf) => buf.writeMat4(o.transform),
-  (o, buf) => buf.readMat4(o.transform)
-);
-
-function createWorldPlanes(em: EntityManager) {
-  const ts = [
-    mat4.fromRotationTranslationScale(
-      mat4.create(),
-      quat.fromEuler(quat.create(), 0, 0, Math.PI * 0.5),
-      [100, 50, -100],
-      [10, 10, 10]
-    ),
-    mat4.fromRotationTranslationScale(
-      mat4.create(),
-      quat.fromEuler(quat.create(), 0, 0, 0),
-      [0, -1000, -0],
-      [100, 100, 100]
-    ),
-    mat4.fromRotationTranslationScale(
-      mat4.create(),
-      quat.fromEuler(quat.create(), 0, 0, Math.PI * 1),
-      [10, -2, 10],
-      [0.2, 0.2, 0.2]
-    ),
-  ];
-
-  for (let t of ts) {
-    em.ensureComponentOn(em.newEntity(), WorldPlaneConstDef, t);
-  }
-}
-
-function registerBuildWorldPlanes(em: EntityManager) {
-  em.registerSystem(
-    [WorldPlaneConstDef],
-    [AssetsDef, MeDef],
-    (es, res) => {
-      for (let e of es) {
-        if (FinishedDef.isOn(e)) continue;
-        em.ensureComponentOn(e, TransformDef, e.worldPlane.transform);
-        em.ensureComponentOn(e, ColorDef, [1, 0, 1]);
-        em.ensureComponentOn(
-          e,
-          RenderableConstructDef,
-          res.assets.gridPlane.mesh
-        );
-        em.ensureComponentOn(e, ColliderDef, {
-          shape: "AABB",
-          solid: true,
-          aabb: res.assets.gridPlane.aabb,
-        });
-        em.ensureComponentOn(e, SyncDef);
-        e.sync.fullComponents = [WorldPlaneConstDef.id];
-        em.ensureComponentOn(e, AuthorityDef, res.me.pid);
-        em.ensureComponentOn(e, FinishedDef);
-      }
-    },
-    "buildWorldPlanes"
-  );
-}
-
 export const ScoreDef = EM.defineComponent("score", () => {
   return {
     maxScore: 0,
@@ -223,8 +148,6 @@ export function registerAllSystems(em: EntityManager) {
   registerAssetLoader(em);
   registerBuildPlayersSystem(em);
   registerGroundSystems(em);
-  registerBuildWorldPlanes(em);
-  registerBuildCubesSystem(em);
   registerShipSystems(em);
   registerBuildBulletsSystem(em);
   registerBuildAmmunitionSystem(em);
@@ -232,7 +155,6 @@ export function registerAllSystems(em: EntityManager) {
   registerBuildCursor(em);
   registerGrappleDbgSystems(em);
   registerInitTransforms(em);
-  registerMoveCubesSystem(em);
   registerBoatSystems(em);
   registerStepPlayers(em);
   registerBulletUpdate(em);
