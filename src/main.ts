@@ -54,8 +54,8 @@ async function startGame(localPeerName: string, host: string | null) {
   EM.addSingletonComponent(InputsDef);
   registerInputsSystem(EM);
 
-  // initShipGame(EM, hosting);
-  initDbgGame(EM, hosting);
+  initShipGame(EM, hosting);
+  // initDbgGame(EM, hosting);
 
   let previous_frame_time = start_of_time;
   let frame = () => {

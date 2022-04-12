@@ -1,5 +1,5 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { LocalPlayerDef, PlayerLocalDef } from "./player.js";
+import { LocalPlayerDef, PlayerDef } from "./player.js";
 import { vec3 } from "../gl-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import {
@@ -33,9 +33,7 @@ export function registerInteractionSystem(em: EntityManager) {
     [InteractableDef, WorldFrameDef],
     [LocalPlayerDef, MeDef, PhysicsResultsDef],
     (interactables, resources) => {
-      const player = em.findEntity(resources.localPlayer.playerId, [
-        PlayerLocalDef,
-      ]);
+      const player = em.findEntity(resources.localPlayer.playerId, [PlayerDef]);
       if (!player) return;
 
       const interactablesMap = interactables.reduce((map, i) => {

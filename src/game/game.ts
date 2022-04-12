@@ -24,7 +24,7 @@ import {
   LocalPlayerDef,
   PlayerPropsDef,
   registerBuildPlayersSystem,
-  registerStepPlayers,
+  registerPlayerSystems,
 } from "./player.js";
 import { CameraDef, registerRetargetCameraSystems } from "../camera.js";
 import { registerNetSystems } from "../net/net.js";
@@ -135,7 +135,7 @@ export function registerAllSystems(em: EntityManager) {
   registerGrappleDbgSystems(em);
   registerInitTransforms(em);
   registerBoatSystems(em);
-  registerStepPlayers(em);
+  registerPlayerSystems(em);
   registerBulletUpdate(em);
   registerNoodleSystem(em);
   registerUpdateLifetimes(em);

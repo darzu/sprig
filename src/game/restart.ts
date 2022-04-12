@@ -11,7 +11,7 @@ import {
 import { GameState, GameStateDef } from "./gamestate.js";
 import { GroundSystemDef } from "./ground.js";
 import { LifetimeDef } from "./lifetime.js";
-import { PlayerLocalDef } from "./player.js";
+import { PlayerDef } from "./player.js";
 import { CameraDef } from "../camera.js";
 import { createShip, ShipLocalDef, ShipPartDef, ShipPropsDef } from "./ship.js";
 
@@ -33,7 +33,7 @@ export function registerRestartSystem(em: EntityManager) {
           em.ensureComponent(ship.shipProps.cannonRId, DeletedDef);
 
         const players = em.filterEntities([
-          PlayerLocalDef,
+          PlayerDef,
           PositionDef,
           RotationDef,
         ]);

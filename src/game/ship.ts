@@ -43,7 +43,7 @@ import { LinearVelocityDef } from "../physics/motion.js";
 import { LifetimeDef } from "./lifetime.js";
 import { CannonPropsDef, createCannon } from "./cannon.js";
 import { MusicDef } from "../music.js";
-import { PlayerLocalDef } from "./player.js";
+import { PlayerDef } from "./player.js";
 import { CameraDef } from "../camera.js";
 import { InputsDef } from "../inputs.js";
 import { GroundSystemDef } from "./ground.js";

@@ -40,6 +40,7 @@ import { ModelerDef, screenPosToRay } from "./modeler.js";
 import { DeletedDef } from "../delete.js";
 import { ShipLocalDef } from "./ship.js";
 import { CameraDef } from "../camera.js";
+import { defineSerializableComponent } from "../em_helpers.js";
 
 // TODO(@darzu): it'd be great if these could hook into some sort of
 //    dev mode you could toggle at runtime.
@@ -51,31 +52,28 @@ export function createPlayer(em: EntityManager) {
   em.addSingletonComponent(LocalPlayerDef, e.id);
 }
 
-export const PlayerLocalDef = EM.defineComponent(
-  "player",
-  (gravity?: number) => {
-    return {
-      mode: "jumping" as "jumping" | "flying",
-      jumpSpeed: 0.003,
-      gravity: gravity ?? 0.1,
-      // hat stuff
-      // TODO(@darzu): better abstraction
-      hat: 0,
-      tool: 0,
-      interacting: false,
-      clicking: false,
-      manning: false,
-      dropping: false,
-      targetCursor: -1,
-      targetEnt: -1,
-      leftLegId: 0,
-      rightLegId: 0,
-      // disabled noodle limbs
-      // leftFootWorldPos: [0, 0, 0] as vec3,
-      // rightFootWorldPos: [0, 0, 0] as vec3,
-    };
-  }
-);
+export const PlayerDef = EM.defineComponent("player", (gravity?: number) => {
+  return {
+    mode: "jumping" as "jumping" | "flying",
+    jumpSpeed: 0.003,
+    gravity: gravity ?? 0.1,
+    // hat stuff
+    // TODO(@darzu): better abstraction
+    hat: 0,
+    tool: 0,
+    interacting: false,
+    clicking: false,
+    manning: false,
+    dropping: false,
+    targetCursor: -1,
+    targetEnt: -1,
+    leftLegId: 0,
+    rightLegId: 0,
+    // disabled noodle limbs
+    // leftFootWorldPos: [0, 0, 0] as vec3,
+    // rightFootWorldPos: [0, 0, 0] as vec3,
+  };
+});
 
 // Resource pointing at the local player
 export const LocalPlayerDef = EM.defineComponent(
@@ -85,18 +83,14 @@ export const LocalPlayerDef = EM.defineComponent(
   })
 );
 
-export const PlayerPropsDef = EM.defineComponent(
+export const PlayerPropsDef = defineSerializableComponent(
+  EM,
   "playerProps",
   (loc?: vec3) => {
     return {
       location: loc ?? vec3.create(),
     };
-  }
-);
-export type PlayerProps = Component<typeof PlayerPropsDef>;
-
-EM.registerSerializerPair(
-  PlayerPropsDef,
+  },
   (c, writer) => {
     writer.writeVec3(c.location);
   },
@@ -105,10 +99,10 @@ EM.registerSerializerPair(
   }
 );
 
-export function registerStepPlayers(em: EntityManager) {
+export function registerPlayerSystems(em: EntityManager) {
   em.registerSystem(
     [
-      PlayerLocalDef,
+      PlayerDef,
       PositionDef,
       RotationDef,
       LinearVelocityDef,
@@ -359,7 +353,7 @@ export function registerStepPlayers(em: EntityManager) {
   );
 
   em.registerSystem(
-    [PlayerLocalDef, PositionDef, RotationDef, AuthorityDef],
+    [PlayerDef, PositionDef, RotationDef, AuthorityDef],
     [
       CameraViewDef,
       CameraDef,
@@ -423,7 +417,7 @@ export function registerStepPlayers(em: EntityManager) {
   );
 
   em.registerSystem(
-    [PlayerLocalDef, AuthorityDef, PositionDef, LinearVelocityDef],
+    [PlayerDef, AuthorityDef, PositionDef, LinearVelocityDef],
     [PhysicsResultsDef, MeDef],
     (players, res) => {
       for (let p of players) {
@@ -473,26 +467,6 @@ export function registerStepPlayers(em: EntityManager) {
   );
 }
 
-// TODO(@darzu): move this helper elsewhere?
-export function drawLine(
-  em: EntityManager,
-  start: vec3,
-  end: vec3,
-  color: vec3
-) {
-  const { id } = em.newEntity();
-  em.addComponent(id, ColorDef, color);
-  const m: Mesh = {
-    pos: [start, end],
-    tri: [],
-    colors: [],
-    lines: [[0, 1]],
-    usesProvoking: true,
-  };
-  em.addComponent(id, RenderableConstructDef, m);
-  em.addComponent(id, WorldFrameDef);
-}
-
 export let __lastPlayerId = 0;
 
 export function registerBuildPlayersSystem(em: EntityManager) {
@@ -523,8 +497,8 @@ export function registerBuildPlayersSystem(em: EntityManager) {
         }
         if (!AuthorityDef.isOn(e))
           em.addComponent(e.id, AuthorityDef, res.me.pid);
-        if (!PlayerLocalDef.isOn(e)) {
-          em.ensureComponentOn(e, PlayerLocalDef);
+        if (!PlayerDef.isOn(e)) {
+          em.ensureComponentOn(e, PlayerDef);
 
           // create legs
           function makeLeg(x: number): Entity {
