@@ -1,41 +1,21 @@
-import {
-  EM,
-  EntityManager,
-  Component,
-  Entity,
-  EntityW,
-} from "../entity-manager.js";
-import { PhysicsTimerDef, Timer } from "../time.js";
+import { EM, EntityManager, Entity } from "../entity-manager.js";
+import { PhysicsTimerDef } from "../time.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { jitter } from "../math.js";
-import { FinishedDef } from "../build.js";
 import { ColorDef } from "../color.js";
 import { RenderableConstructDef } from "../render/renderer.js";
 import {
-  Frame,
   PhysicsParentDef,
   Position,
   PositionDef,
   Rotation,
   RotationDef,
 } from "../physics/transform.js";
-import { AABBCollider, ColliderDef } from "../physics/collider.js";
-import {
-  Authority,
-  AuthorityDef,
-  Me,
-  MeDef,
-  SyncDef,
-} from "../net/components.js";
-import { getAABBFromMesh, Mesh, scaleMesh3 } from "../render/mesh-pool.js";
-import { AABB, aabbCenter } from "../physics/broadphase.js";
-import { Deserializer, Serializer } from "../serialize.js";
-import { Assets, AssetsDef, GameMesh } from "./assets.js";
-import {
-  AngularVelocityDef,
-  LinearVelocity,
-  LinearVelocityDef,
-} from "../physics/motion.js";
+import { ColliderDef } from "../physics/collider.js";
+import { AuthorityDef, MeDef } from "../net/components.js";
+import { aabbCenter } from "../physics/broadphase.js";
+import { AssetsDef, GameMesh, GROUNDSIZE } from "./assets.js";
+import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import {
   PhysicsResultsDef,
@@ -43,16 +23,15 @@ import {
 } from "../physics/nonintersection.js";
 import { BulletDef, fireBullet } from "./bullet.js";
 import { DeletedDef, OnDeleteDef } from "../delete.js";
-import { tempVec } from "../temp-pool.js";
 import { LifetimeDef } from "./lifetime.js";
-import { CannonPropsDef } from "./cannon.js";
 import { createEnemy, EnemyDef } from "./enemy.js";
-import { PlayerEntDef } from "./player.js";
 import { ShipLocalDef } from "./ship.js";
 import { Music, MusicDef } from "../music.js";
 import { defineNetEntityHelper } from "../em_helpers.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { raiseBulletBoat } from "./bullet-collision.js";
+import { GameStateDef, GameState } from "./gamestate.js";
+import { GroundSystemDef } from "./ground.js";
 
 export const { BoatPropsDef, BoatLocalDef, createBoat } = defineNetEntityHelper(
   EM,
@@ -333,3 +312,55 @@ export function breakBoat(
 }
 
 export const FireZoneDef = EM.defineComponent("firezone", () => {});
+
+export const BoatSpawnerDef = EM.defineComponent("boatSpawner", () => ({
+  timerMs: 3000,
+  timerIntervalMs: 5000,
+}));
+
+export function registerBoatSpawnerSystem(em: EntityManager) {
+  em.addSingletonComponent(BoatSpawnerDef);
+
+  em.registerSystem(
+    null,
+    [BoatSpawnerDef, PhysicsTimerDef, GroundSystemDef, GameStateDef, MeDef],
+    (_, res) => {
+      if (!res.me.host) return;
+      if (res.gameState.state !== GameState.PLAYING) return;
+      const ms = res.physicsTimer.period * res.physicsTimer.steps;
+      res.boatSpawner.timerMs -= ms;
+      // console.log("res.boatSpawner.timerMs:" + res.boatSpawner.timerMs);
+      if (res.boatSpawner.timerMs < 0) {
+        res.boatSpawner.timerMs = res.boatSpawner.timerIntervalMs;
+        // ramp up difficulty
+        res.boatSpawner.timerIntervalMs *= 0.97;
+        // ~1 second minimum
+        res.boatSpawner.timerIntervalMs = Math.max(
+          1500,
+          res.boatSpawner.timerIntervalMs
+        );
+
+        // console.log("boat ");
+        // create boat(s)
+        const boatCon = em.addComponent(em.newEntity().id, BoatPropsDef);
+        const left = Math.random() < 0.5;
+        const z = res.groundSystem.nextScore * 10 + 100;
+        boatCon.location = vec3.fromValues(
+          -(Math.random() * 0.5 + 0.5) * GROUNDSIZE,
+          10,
+          z
+        );
+        boatCon.speed = 0.005 + jitter(0.002);
+        boatCon.wheelDir = (Math.PI / 2) * (1 + jitter(0.1));
+        boatCon.wheelSpeed = jitter(0.0001);
+        if (left) {
+          boatCon.location[0] *= -1;
+          boatCon.speed *= -1;
+          boatCon.wheelDir *= -1;
+        }
+        // boatCon.wheelSpeed = 0;
+      }
+    },
+    "spawnBoats"
+  );
+}

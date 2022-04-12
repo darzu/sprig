@@ -27,7 +27,7 @@ import {
   MultiCollider,
 } from "../physics/collider.js";
 import { AABB, copyAABB, createAABB } from "../physics/broadphase.js";
-import { ScoreDef, TextDef } from "./game.js";
+import { ScoreDef } from "./game.js";
 import { ColorDef } from "../color.js";
 import { setCubePosScaleToAABB } from "../physics/phys-debug.js";
 import { BOAT_COLOR } from "./boat.js";
@@ -55,6 +55,7 @@ import {
   eventWizard,
   registerEventHandler,
 } from "../net/events.js";
+import { TextDef } from "./ui.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 

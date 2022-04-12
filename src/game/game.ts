@@ -14,7 +14,11 @@ import {
   registerInitTransforms,
   TransformDef,
 } from "../physics/transform.js";
-import { BoatPropsDef, registerBoatSystems } from "./boat.js";
+import {
+  BoatPropsDef,
+  registerBoatSpawnerSystem,
+  registerBoatSystems,
+} from "./boat.js";
 import {
   LocalPlayerDef,
   PlayerConstructDef,
@@ -77,6 +81,7 @@ import { assert } from "../test.js";
 import { callInitFns } from "../init.js";
 import { registerGrappleDbgSystems } from "./grapple.js";
 import { registerTurretSystems } from "./turret.js";
+import { registerUISystems } from "./ui.js";
 
 function createPlayer(em: EntityManager) {
   const e = em.newEntity();
@@ -160,22 +165,6 @@ export function registerAllSystems(em: EntityManager) {
   registerRenderer(em);
 
   callInitFns(em);
-}
-
-export const TextDef = EM.defineComponent("text", () => {
-  return {
-    setText: (s: string) => {},
-  };
-});
-
-export function registerUISystems(em: EntityManager) {
-  const txt = em.addSingletonComponent(TextDef);
-
-  const titleDiv = document.getElementById("title-div") as HTMLDivElement;
-
-  txt.setText = (s: string) => {
-    titleDiv.firstChild!.nodeValue = s;
-  };
 }
 
 function registerRenderViewController(em: EntityManager) {
@@ -276,56 +265,4 @@ export function createLocalObjects(em: EntityManager) {
 
 function createCamera(_em: EntityManager) {
   EM.addSingletonComponent(CameraDef);
-}
-
-export const BoatSpawnerDef = EM.defineComponent("boatSpawner", () => ({
-  timerMs: 3000,
-  timerIntervalMs: 5000,
-}));
-
-function registerBoatSpawnerSystem(em: EntityManager) {
-  em.addSingletonComponent(BoatSpawnerDef);
-
-  em.registerSystem(
-    null,
-    [BoatSpawnerDef, PhysicsTimerDef, GroundSystemDef, GameStateDef, MeDef],
-    (_, res) => {
-      if (!res.me.host) return;
-      if (res.gameState.state !== GameState.PLAYING) return;
-      const ms = res.physicsTimer.period * res.physicsTimer.steps;
-      res.boatSpawner.timerMs -= ms;
-      // console.log("res.boatSpawner.timerMs:" + res.boatSpawner.timerMs);
-      if (res.boatSpawner.timerMs < 0) {
-        res.boatSpawner.timerMs = res.boatSpawner.timerIntervalMs;
-        // ramp up difficulty
-        res.boatSpawner.timerIntervalMs *= 0.97;
-        // ~1 second minimum
-        res.boatSpawner.timerIntervalMs = Math.max(
-          1500,
-          res.boatSpawner.timerIntervalMs
-        );
-
-        // console.log("boat ");
-        // create boat(s)
-        const boatCon = em.addComponent(em.newEntity().id, BoatPropsDef);
-        const left = Math.random() < 0.5;
-        const z = res.groundSystem.nextScore * 10 + 100;
-        boatCon.location = vec3.fromValues(
-          -(Math.random() * 0.5 + 0.5) * GROUNDSIZE,
-          10,
-          z
-        );
-        boatCon.speed = 0.005 + jitter(0.002);
-        boatCon.wheelDir = (Math.PI / 2) * (1 + jitter(0.1));
-        boatCon.wheelSpeed = jitter(0.0001);
-        if (left) {
-          boatCon.location[0] *= -1;
-          boatCon.speed *= -1;
-          boatCon.wheelDir *= -1;
-        }
-        // boatCon.wheelSpeed = 0;
-      }
-    },
-    "spawnBoats"
-  );
 }
