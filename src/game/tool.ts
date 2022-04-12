@@ -18,7 +18,7 @@ import {
 } from "../physics/transform.js";
 import { ColorDef } from "../color.js";
 import { registerEventHandler, DetectedEventsDef } from "../net/events.js";
-import { LocalPlayerDef, PlayerEntDef } from "./player.js";
+import { LocalPlayerDef, PlayerLocalDef } from "./player.js";
 import { InteractableDef, InRangeDef } from "./interact.js";
 import { Deserializer, Serializer } from "../serialize.js";
 
@@ -33,7 +33,7 @@ export function registerToolSystems(em: EntityManager) {
     (hats, resources) => {
       for (let { id } of hats) {
         let player = EM.findEntity(resources.localPlayer.playerId, [
-          PlayerEntDef,
+          PlayerLocalDef,
         ])!;
         if (player.player.tool === 0 && player.player.interacting) {
           resources.detectedEvents.raise({
@@ -48,7 +48,7 @@ export function registerToolSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [PlayerEntDef, PositionDef, RotationDef],
+    [PlayerLocalDef, PositionDef, RotationDef],
     [DetectedEventsDef],
     (players, { detectedEvents }) => {
       for (let { player, id, position, rotation } of players) {
@@ -69,7 +69,7 @@ export function registerToolSystems(em: EntityManager) {
 
   registerEventHandler("tool-pickup", {
     entities: [
-      [PlayerEntDef],
+      [PlayerLocalDef],
       [InteractableDef, PositionDef, PhysicsParentDef],
     ] as const,
     eventAuthorityEntity: ([playerId, toolId]) => playerId,
@@ -89,7 +89,7 @@ export function registerToolSystems(em: EntityManager) {
   });
 
   registerEventHandler("tool-drop", {
-    entities: [[PlayerEntDef], [PositionDef, PhysicsParentDef]] as const,
+    entities: [[PlayerLocalDef], [PositionDef, PhysicsParentDef]] as const,
     eventAuthorityEntity: ([playerId, toolId]) => playerId,
     legalEvent: (em, [player, tool]) => {
       return player.player.tool === tool.id;

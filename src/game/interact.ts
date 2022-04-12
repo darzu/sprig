@@ -1,5 +1,5 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { LocalPlayerDef, PlayerEntDef } from "./player.js";
+import { LocalPlayerDef, PlayerLocalDef } from "./player.js";
 import { vec3 } from "../gl-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import {
@@ -34,7 +34,7 @@ export function registerInteractionSystem(em: EntityManager) {
     [LocalPlayerDef, MeDef, PhysicsResultsDef],
     (interactables, resources) => {
       const player = em.findEntity(resources.localPlayer.playerId, [
-        PlayerEntDef,
+        PlayerLocalDef,
       ]);
       if (!player) return;
 

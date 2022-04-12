@@ -1,7 +1,7 @@
 // player controller component and system
 
-import { mat4, quat, vec2, vec3 } from "../gl-matrix.js";
-import { Inputs, InputsDef } from "../inputs.js";
+import { quat, vec2, vec3 } from "../gl-matrix.js";
+import { InputsDef } from "../inputs.js";
 import {
   Component,
   EM,
@@ -9,53 +9,35 @@ import {
   EntityManager,
   EntityW,
 } from "../entity-manager.js";
-import { PhysicsTimerDef, Timer } from "../time.js";
+import { PhysicsTimerDef } from "../time.js";
 import { ColorDef } from "../color.js";
 import { FinishedDef } from "../build.js";
 import {
-  CameraView,
   CameraViewDef,
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer.js";
 import {
-  Frame,
-  PhysicsParent,
   PhysicsParentDef,
-  Position,
   PositionDef,
-  Rotation,
   RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
 import {
-  PhysicsResults,
   PhysicsResultsDef,
   WorldFrameDef,
 } from "../physics/nonintersection.js";
-import {
-  Authority,
-  AuthorityDef,
-  Me,
-  MeDef,
-  SyncDef,
-} from "../net/components.js";
-import { AABBCollider, Collider, ColliderDef } from "../physics/collider.js";
+import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
+import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import { copyAABB, createAABB, Ray, RayHit } from "../physics/broadphase.js";
-import { tempQuat, tempVec } from "../temp-pool.js";
-import { Mesh, scaleMesh, scaleMesh3 } from "../render/mesh-pool.js";
-import { Assets, AssetsDef, CUBE_FACES } from "./assets.js";
-import { LinearVelocity, LinearVelocityDef } from "../physics/motion.js";
+import { tempVec } from "../temp-pool.js";
+import { Mesh, scaleMesh3 } from "../render/mesh-pool.js";
+import { AssetsDef } from "./assets.js";
+import { LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { getCursor, GlobalCursor3dDef } from "./cursor.js";
 import { ModelerDef, screenPosToRay } from "./modeler.js";
-import { PhysicsDbgDef } from "../physics/phys-debug.js";
 import { DeletedDef } from "../delete.js";
-import { createNoodleMesh, Noodle, NoodleDef, NoodleSeg } from "./noodles.js";
-import { assert } from "../test.js";
-import { vec3Dbg, vec3Mid } from "../utils-3d.js";
-import { min } from "../math.js";
-import { GroundLocalDef } from "./ground.js";
 import { ShipLocalDef } from "./ship.js";
 import { CameraDef } from "../camera.js";
 
@@ -63,29 +45,38 @@ import { CameraDef } from "../camera.js";
 //    dev mode you could toggle at runtime.
 export const CHEAT = false;
 
-export const PlayerEntDef = EM.defineComponent("player", (gravity?: number) => {
-  return {
-    mode: "jumping" as "jumping" | "flying",
-    jumpSpeed: 0.003,
-    gravity: gravity ?? 0.1,
-    // hat stuff
-    // TODO(@darzu): better abstraction
-    hat: 0,
-    tool: 0,
-    interacting: false,
-    clicking: false,
-    manning: false,
-    dropping: false,
-    targetCursor: -1,
-    targetEnt: -1,
-    leftLegId: 0,
-    rightLegId: 0,
-    // disabled noodle limbs
-    // leftFootWorldPos: [0, 0, 0] as vec3,
-    // rightFootWorldPos: [0, 0, 0] as vec3,
-  };
-});
-export type PlayerEnt = Component<typeof PlayerEntDef>;
+export function createPlayer(em: EntityManager) {
+  const e = em.newEntity();
+  em.addComponent(e.id, PlayerPropsDef, vec3.fromValues(0, 100, 0));
+  em.addSingletonComponent(LocalPlayerDef, e.id);
+}
+
+export const PlayerLocalDef = EM.defineComponent(
+  "player",
+  (gravity?: number) => {
+    return {
+      mode: "jumping" as "jumping" | "flying",
+      jumpSpeed: 0.003,
+      gravity: gravity ?? 0.1,
+      // hat stuff
+      // TODO(@darzu): better abstraction
+      hat: 0,
+      tool: 0,
+      interacting: false,
+      clicking: false,
+      manning: false,
+      dropping: false,
+      targetCursor: -1,
+      targetEnt: -1,
+      leftLegId: 0,
+      rightLegId: 0,
+      // disabled noodle limbs
+      // leftFootWorldPos: [0, 0, 0] as vec3,
+      // rightFootWorldPos: [0, 0, 0] as vec3,
+    };
+  }
+);
+export type PlayerEnt = Component<typeof PlayerLocalDef>;
 
 // Resource pointing at the local player
 export const LocalPlayerDef = EM.defineComponent(
@@ -95,18 +86,18 @@ export const LocalPlayerDef = EM.defineComponent(
   })
 );
 
-export const PlayerConstructDef = EM.defineComponent(
-  "playerConstruct",
+export const PlayerPropsDef = EM.defineComponent(
+  "playerProps",
   (loc?: vec3) => {
     return {
       location: loc ?? vec3.create(),
     };
   }
 );
-export type PlayerConstruct = Component<typeof PlayerConstructDef>;
+export type PlayerProps = Component<typeof PlayerPropsDef>;
 
 EM.registerSerializerPair(
-  PlayerConstructDef,
+  PlayerPropsDef,
   (c, writer) => {
     writer.writeVec3(c.location);
   },
@@ -118,7 +109,7 @@ EM.registerSerializerPair(
 export function registerStepPlayers(em: EntityManager) {
   em.registerSystem(
     [
-      PlayerEntDef,
+      PlayerLocalDef,
       PositionDef,
       RotationDef,
       LinearVelocityDef,
@@ -369,7 +360,7 @@ export function registerStepPlayers(em: EntityManager) {
   );
 
   em.registerSystem(
-    [PlayerEntDef, PositionDef, RotationDef, AuthorityDef],
+    [PlayerLocalDef, PositionDef, RotationDef, AuthorityDef],
     [
       CameraViewDef,
       CameraDef,
@@ -433,7 +424,7 @@ export function registerStepPlayers(em: EntityManager) {
   );
 
   em.registerSystem(
-    [PlayerEntDef, AuthorityDef, PositionDef, LinearVelocityDef],
+    [PlayerLocalDef, AuthorityDef, PositionDef, LinearVelocityDef],
     [PhysicsResultsDef, MeDef],
     (players, res) => {
       for (let p of players) {
@@ -507,13 +498,13 @@ export let __lastPlayerId = 0;
 
 export function registerBuildPlayersSystem(em: EntityManager) {
   em.registerSystem(
-    [PlayerConstructDef],
+    [PlayerPropsDef],
     [MeDef, AssetsDef],
     (players, res) => {
       for (let e of players) {
         if (FinishedDef.isOn(e)) continue;
         __lastPlayerId = e.id; // TODO(@darzu): debugging
-        const props = e.playerConstruct;
+        const props = e.playerProps;
         if (!PositionDef.isOn(e))
           em.addComponent(e.id, PositionDef, props.location);
         if (!RotationDef.isOn(e))
@@ -533,8 +524,8 @@ export function registerBuildPlayersSystem(em: EntityManager) {
         }
         if (!AuthorityDef.isOn(e))
           em.addComponent(e.id, AuthorityDef, res.me.pid);
-        if (!PlayerEntDef.isOn(e)) {
-          em.ensureComponentOn(e, PlayerEntDef);
+        if (!PlayerLocalDef.isOn(e)) {
+          em.ensureComponentOn(e, PlayerLocalDef);
 
           // create legs
           function makeLeg(x: number): Entity {
@@ -568,7 +559,7 @@ export function registerBuildPlayersSystem(em: EntityManager) {
             // TODO(@darzu): maybe sync this via events instead
             PhysicsParentDef.id,
           ]);
-          e.sync.fullComponents = [PlayerConstructDef.id];
+          e.sync.fullComponents = [PlayerPropsDef.id];
         }
         em.ensureComponent(e.id, PhysicsParentDef);
         em.addComponent(e.id, FinishedDef);

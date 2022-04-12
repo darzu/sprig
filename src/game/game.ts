@@ -20,8 +20,9 @@ import {
   registerBoatSystems,
 } from "./boat.js";
 import {
+  createPlayer,
   LocalPlayerDef,
-  PlayerConstructDef,
+  PlayerPropsDef,
   registerBuildPlayersSystem,
   registerStepPlayers,
 } from "./player.js";
@@ -83,12 +84,6 @@ import { registerGrappleDbgSystems } from "./grapple.js";
 import { registerTurretSystems } from "./turret.js";
 import { registerUISystems, TextDef } from "./ui.js";
 import { DevConsoleDef, registerDevSystems } from "../console.js";
-
-function createPlayer(em: EntityManager) {
-  const e = em.newEntity();
-  em.addComponent(e.id, PlayerConstructDef, vec3.fromValues(0, 100, 0));
-  em.addSingletonComponent(LocalPlayerDef, e.id);
-}
 
 export const ScoreDef = EM.defineComponent("score", () => {
   return {

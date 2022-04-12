@@ -9,7 +9,7 @@ import { AuthorityDef, MeDef } from "../net/components.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { fireBullet } from "./bullet.js";
 import { InRangeDef } from "./interact.js";
-import { LocalPlayerDef, PlayerEntDef } from "./player.js";
+import { LocalPlayerDef, PlayerLocalDef } from "./player.js";
 import { AssetsDef } from "./assets.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { MusicDef, randChordId } from "../music.js";
@@ -87,7 +87,7 @@ export function registerCannonSystems(em: EntityManager) {
 
   const raiseFireCannon = eventWizard(
     "fire-cannon",
-    [[PlayerEntDef], [CannonLocalDef, WorldFrameDef]] as const,
+    [[PlayerLocalDef], [CannonLocalDef, WorldFrameDef]] as const,
     ([player, cannon]) => {
       // only the firing player creates a bullet
       if (player.id === EM.getResource(LocalPlayerDef)?.playerId) {
@@ -116,7 +116,7 @@ export function registerCannonSystems(em: EntityManager) {
     [CannonLocalDef, TurretDef, WorldFrameDef],
     [InputsDef, LocalPlayerDef],
     (cannons, res) => {
-      const player = em.findEntity(res.localPlayer.playerId, [PlayerEntDef])!;
+      const player = em.findEntity(res.localPlayer.playerId, [PlayerLocalDef])!;
       if (!player) return;
       for (let c of cannons) {
         if (DeletedDef.isOn(c)) continue;
@@ -134,7 +134,7 @@ export function registerCannonSystems(em: EntityManager) {
     [DetectedEventsDef, InputsDef, LocalPlayerDef],
     (cannons, res) => {
       const player = em.findEntity(res.localPlayer.playerId, [
-        PlayerEntDef,
+        PlayerLocalDef,
         AuthorityDef,
       ])!;
       if (!player) return;

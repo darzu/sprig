@@ -9,7 +9,7 @@ import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, SyncDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
 import { InRangeDef, InteractableDef } from "./interact.js";
-import { LocalPlayerDef, PlayerEntDef } from "./player.js";
+import { LocalPlayerDef, PlayerLocalDef } from "./player.js";
 import { CameraDef } from "../camera.js";
 import { AABB, copyAABB, createAABB } from "../physics/broadphase.js";
 import { InputsDef } from "../inputs.js";
@@ -91,7 +91,7 @@ export const raiseManTurret = eventWizard(
   "man-turret",
   () =>
     [
-      [PlayerEntDef, AuthorityDef],
+      [PlayerLocalDef, AuthorityDef],
       [TurretDef, AuthorityDef],
     ] as const,
   ([player, turret]) => {
@@ -117,7 +117,7 @@ export const raiseManTurret = eventWizard(
 
 export const raiseUnmanTurret = eventWizard(
   "unman-turret",
-  () => [[PlayerEntDef], [TurretDef]] as const,
+  () => [[PlayerLocalDef], [TurretDef]] as const,
   ([player, turret]) => {
     const camera = EM.getResource(CameraDef);
     if (camera?.targetId === turret.id) {
@@ -152,7 +152,7 @@ export function registerTurretSystems(em: EntityManager) {
     [TurretDef, YawPitchDef],
     [InputsDef, CameraDef, LocalPlayerDef],
     (turrets, res) => {
-      const player = em.findEntity(res.localPlayer.playerId, [PlayerEntDef])!;
+      const player = em.findEntity(res.localPlayer.playerId, [PlayerLocalDef])!;
       if (!player) return;
       for (let c of turrets) {
         if (DeletedDef.isOn(c)) continue;
@@ -183,7 +183,7 @@ export function registerTurretSystems(em: EntityManager) {
     [InputsDef, LocalPlayerDef],
     (turrets, res) => {
       const player = em.findEntity(res.localPlayer.playerId, [
-        PlayerEntDef,
+        PlayerLocalDef,
         AuthorityDef,
       ])!;
       if (!player) return;

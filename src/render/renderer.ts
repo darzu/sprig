@@ -7,7 +7,7 @@ import {
   Entity,
 } from "../entity-manager.js";
 import { applyTints, TintsDef } from "../color.js";
-import { PlayerEnt, PlayerEntDef } from "../game/player.js";
+import { PlayerEnt, PlayerLocalDef } from "../game/player.js";
 import { CameraDef, CameraProps } from "../camera.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { isMeshHandle, Mesh, MeshHandle } from "./mesh-pool.js";
@@ -130,7 +130,7 @@ function stepRenderer(
 export function registerUpdateCameraView(em: EntityManager) {
   em.addSingletonComponent(CameraViewDef);
   em.registerSystem(
-    [PlayerEntDef, PositionDef, RotationDef, AuthorityDef, WorldFrameDef],
+    [PlayerLocalDef, PositionDef, RotationDef, AuthorityDef, WorldFrameDef],
     [CameraViewDef, CameraDef, MeDef, CanvasDef],
     (
       players: {
