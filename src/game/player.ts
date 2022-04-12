@@ -99,6 +99,40 @@ export const PlayerPropsDef = defineSerializableComponent(
   }
 );
 
+/*
+names:
+playable
+
+controllable:
+  WASD / left stick -> xz movement
+  Space / A -> jump
+  Space / A -> fly up
+  c / B -> fly down
+  Shift / left stick press -> speed up
+
+  camera: behind, over-shoulder, first person, rts
+  cursor (when over-shoulder)
+
+  e / X -> interact
+  click / trigger -> shoot
+
+  debug:
+  r -> ray
+  t -> re-parent
+  backspace -> delete obj
+*/
+
+export const ControllableDef = EM.defineComponent("controllable", () => {
+  return {
+    speed: 0.0005,
+    sprintSpeed: 0.0005 * 3,
+  };
+});
+
+export function registerControllableSystems(em: EntityManager) {
+  // TODO(@darzu): registerSystem ...
+}
+
 export function registerPlayerSystems(em: EntityManager) {
   em.registerSystem(
     [PlayerPropsDef],
