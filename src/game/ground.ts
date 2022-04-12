@@ -21,6 +21,7 @@ import {
   scaleMesh3,
 } from "../render/mesh-pool.js";
 import { defineNetEntityHelper } from "../em_helpers.js";
+import { assert } from "../test.js";
 
 const HALFSIZE = GROUNDSIZE / 2;
 const SIZE = HALFSIZE * 2;
@@ -71,11 +72,28 @@ export const GroundSystemDef = EM.defineComponent("groundSystem", () => {
   };
 });
 
-export function registerGroundSystems(em: EntityManager) {
-  em.addSingletonComponent(GroundSystemDef);
+const NUM_X = 3;
+const NUM_Z = 4;
 
-  const NUM_X = 3;
-  const NUM_Z = 4;
+export function initGroundSystem(em: EntityManager) {
+  em.registerOneShotSystem(null, [ScoreDef, MeDef], (_, rs) => {
+    const sys = em.addSingletonComponent(GroundSystemDef);
+
+    // init ground system
+    assert(sys.groundPool.length === 0);
+
+    for (let x = 0; x < NUM_X; x++) {
+      for (let z = 0; z < NUM_Z; z++) {
+        const color = (x + z) % 2 === 0 ? LIGHT_BLUE : DARK_BLUE;
+        const g = em.newEntity();
+        em.ensureComponentOn(g, GroundPropsDef, [0, 0, 0], color);
+        sys.groundPool.push(g.id);
+      }
+    }
+  });
+}
+
+export function registerGroundSystems(em: EntityManager) {
   em.registerSystem(
     null,
     [GroundSystemDef, ScoreDef, MeDef],
@@ -83,19 +101,11 @@ export function registerGroundSystems(em: EntityManager) {
       if (!res.me.host) return;
 
       const sys = res.groundSystem;
-      // init ground system
-      if (sys.groundPool.length === 0) {
-        for (let x = 0; x < NUM_X; x++) {
-          for (let z = 0; z < NUM_Z; z++) {
-            const color = (x + z) % 2 === 0 ? LIGHT_BLUE : DARK_BLUE;
-            const g = em.newEntity();
-            em.ensureComponentOn(g, GroundPropsDef, [0, 0, 0], color);
-            sys.groundPool.push(g.id);
-          }
-        }
-      }
 
-      if (sys.groundPool.some((id) => !em.findEntity(id, [GroundLocalDef])))
+      if (
+        sys.groundPool.length === 0 ||
+        sys.groundPool.some((id) => !em.findEntity(id, [GroundLocalDef]))
+      )
         // not inited
         return;
 

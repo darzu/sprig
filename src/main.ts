@@ -8,8 +8,9 @@ import {
 import { setupObjImportExporter } from "./download.js";
 import {
   createLocalObjects,
-  createServerObjects,
-  initGame,
+  createHostObjects,
+  initDbgGame,
+  initGame as initShipGame,
   registerAllSystems,
 } from "./game/game.js";
 import { EM } from "./entity-manager.js";
@@ -57,16 +58,11 @@ async function startGame(localPeerName: string, host: string | null) {
   addTimeComponents(EM);
   addEventComponents(EM);
 
-  initGame(EM);
-
-  if (hosting) {
-    createServerObjects(EM);
-  } else {
-    createLocalObjects(EM);
-  }
-
   EM.addSingletonComponent(InputsDef);
   registerInputsSystem(EM);
+
+  // initShipGame(EM, hosting);
+  initDbgGame(EM, hosting);
 
   const controlsStr = `[WASD space 1 2 3 4 5 r t]`;
   let avgJsTime = 0;

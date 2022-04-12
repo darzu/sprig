@@ -40,6 +40,7 @@ import { PhysicsTimerDef, registerTimeSystem } from "../time.js";
 import {
   GroundPropsDef,
   GroundSystemDef,
+  initGroundSystem,
   registerGroundSystems,
 } from "./ground.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
@@ -314,13 +315,29 @@ function registerRenderViewController(em: EntityManager) {
   );
 }
 
-export function initGame(em: EntityManager) {
+export function initGame(em: EntityManager, hosting: boolean) {
   // init camera
   createCamera(em);
 
   // TODO(@darzu): DEBUGGING
   // debugCreateNoodles(em);
-  debugBoatParts(em);
+  // debugBoatParts(em);
+
+  if (hosting) {
+    createHostObjects(EM);
+  }
+  createLocalObjects(EM);
+}
+
+export function initDbgGame(em: EntityManager, hosting: boolean) {
+  // init camera
+  createCamera(em);
+
+  // TODO(@darzu): DEBUGGING
+  // debugCreateNoodles(em);
+  // debugBoatParts(em);
+
+  createPlayer(em);
 }
 
 function debugBoatParts(em: EntityManager) {
@@ -344,12 +361,11 @@ function debugBoatParts(em: EntityManager) {
   );
 }
 
-export function createServerObjects(em: EntityManager) {
+export function createHostObjects(em: EntityManager) {
   // let { id: cubeId } = em.newEntity();
   // em.addComponent(cubeId, CubeConstructDef, 3, LIGHT_BLUE);
 
   em.addSingletonComponent(GameStateDef);
-  createPlayer(em);
   // createGround(em);
   registerBoatSpawnerSystem(em);
   createShip();
@@ -358,6 +374,7 @@ export function createServerObjects(em: EntityManager) {
 }
 export function createLocalObjects(em: EntityManager) {
   createPlayer(em);
+  initGroundSystem(em);
 }
 
 function createCamera(_em: EntityManager) {
