@@ -11,9 +11,12 @@ const MAX_VOLUME = 0.02;
 
 // TODO(@darzu): create this somewhere as a proper resource
 // create web audio api context
-const audioCtx = new AudioContext();
+const audioCtx =
+  window.AudioContext != null ? new window.AudioContext() : undefined;
 
 function playFreq(freq: number, durSec: number, offset: number) {
+  if (!audioCtx) return;
+
   const startTime = offset;
   const stopTime = offset + durSec;
 
@@ -44,6 +47,7 @@ function playNote(
   durSec: number = 0.25,
   offset: number | null = null
 ) {
+  if (!audioCtx) return;
   if (!offset) offset = audioCtx.currentTime;
 
   const ROOT = 440;
@@ -208,6 +212,7 @@ function playChords(
   noteLen = 0.7,
   octave = 0
 ) {
+  if (!audioCtx) return;
   // console.log("click!");
   // canvasRef.removeEventListener('click', doLockMouse)
 

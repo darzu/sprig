@@ -99,6 +99,10 @@ export function attachToCanvas(
 ): Renderer {
   let gl = canv.getContext("webgl2")!;
 
+  if (!gl) {
+    throw `Browser doesnt support webgl2`;
+  }
+
   // gl.getExtension("OES_standard_derivatives");
   // gl.getExtension("EXT_shader_texture_lod");
 
