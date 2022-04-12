@@ -559,7 +559,7 @@ export function registerEventSystems(em: EntityManager) {
     }
   }
 
-  em.registerSystem(null, [EventsDef], runEvents);
+  em.registerSystem(null, [EventsDef], runEvents, "runEvents");
 }
 
 export function addEventComponents(em: EntityManager) {

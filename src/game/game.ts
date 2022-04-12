@@ -81,7 +81,8 @@ import { assert } from "../test.js";
 import { callInitFns } from "../init.js";
 import { registerGrappleDbgSystems } from "./grapple.js";
 import { registerTurretSystems } from "./turret.js";
-import { registerUISystems } from "./ui.js";
+import { registerUISystems, TextDef } from "./ui.js";
+import { DevConsoleDef, registerDevSystems } from "../console.js";
 
 function createPlayer(em: EntityManager) {
   const e = em.newEntity();
@@ -122,6 +123,7 @@ export function registerAllSystems(em: EntityManager) {
   registerNetSystems(em);
   registerInitCanvasSystem(em);
   registerUISystems(em);
+  registerDevSystems(em);
   registerScoreSystems(em);
   registerRenderInitSystem(em);
   registerMusicSystems(em);
@@ -167,6 +169,21 @@ export function registerAllSystems(em: EntityManager) {
   callInitFns(em);
 }
 
+function registerShipGameUI(em: EntityManager) {
+  em.registerSystem(
+    null,
+    [TextDef, DevConsoleDef],
+    (_, res) => {
+      const avgFPS = 1000 / res.dev.avgFrameTime;
+      const lowerTxt = `Belgus, you are the last hope of the Squindles, keep the gemheart alive! Failure is inevitable. move: WASD, mouse; cannon: e, left-click; fps:${avgFPS.toFixed(
+        1
+      )}`;
+      res.text.lowerText = lowerTxt;
+    },
+    "shipUI"
+  );
+}
+
 function registerRenderViewController(em: EntityManager) {
   em.registerSystem(
     [],
@@ -201,7 +218,9 @@ function registerRenderViewController(em: EntityManager) {
   );
 }
 
-export function initGame(em: EntityManager, hosting: boolean) {
+export function initShipGame(em: EntityManager, hosting: boolean) {
+  registerShipGameUI(em);
+
   // init camera
   createCamera(em);
 

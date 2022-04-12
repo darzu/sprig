@@ -441,19 +441,19 @@ export class EntityManager {
     cs: [...CS],
     rs: [...RS],
     callback: SystemFN<CS, RS>,
-    name?: string
+    name: string
   ): void;
   public registerSystem<CS extends null, RS extends ComponentDef[]>(
     cs: CS,
     rs: [...RS],
     callback: SystemFN<CS, RS>,
-    name?: string
+    name: string
   ): void;
   public registerSystem<CS extends ComponentDef[], RS extends ComponentDef[]>(
     cs: [...CS] | null,
     rs: [...RS],
     callback: SystemFN<CS, RS>,
-    name?: string
+    name: string
   ): void {
     name = name || callback.name;
     if (name === "") {

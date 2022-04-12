@@ -317,13 +317,11 @@ export function registerShipSystems(em: EntityManager) {
 
   em.registerSystem(
     null,
-    [TextDef, ScoreDef],
+    [TextDef, ScoreDef, GameStateDef],
     (_, res) => {
       // update score
-      res.text.setText(
-        `current: ${res.score.currentScore}, max: ${res.score.maxScore}`
-      );
+      res.text.upperText = `current: ${res.score.currentScore}, max: ${res.score.maxScore}`;
     },
-    "shipUI"
+    "shipScore"
   );
 }

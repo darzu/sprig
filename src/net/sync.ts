@@ -100,7 +100,8 @@ export function registerSyncSystem(em: EntityManager) {
   em.registerSystem(
     [AuthorityDef, SyncDef],
     [TimeDef, NetTimerDef, MeDef],
-    sync
+    sync,
+    "netSync"
   );
 }
 
@@ -154,7 +155,8 @@ export function registerUpdateSystem(em: EntityManager) {
   em.registerSystem(
     [PeerDef, InboxDef, OutboxDef],
     [TimeDef, MeDef, NetStatsDef],
-    update
+    update,
+    "netUpdate"
   );
 }
 
@@ -183,5 +185,5 @@ export function registerAckUpdateSystem(em: EntityManager) {
       }
     }
   }
-  em.registerSystem([PeerDef, InboxDef], [TimeDef, MeDef], ack);
+  em.registerSystem([PeerDef, InboxDef], [TimeDef, MeDef], ack, "netAck");
 }

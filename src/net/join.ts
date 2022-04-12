@@ -104,7 +104,12 @@ function registerHandleJoin(em: EntityManager) {
       }
     }
   };
-  em.registerSystem([PeerDef, InboxDef, OutboxDef], [MeDef], handleJoin);
+  em.registerSystem(
+    [PeerDef, InboxDef, OutboxDef],
+    [MeDef],
+    handleJoin,
+    "handleJoin"
+  );
 }
 
 function registerHandleJoinResponse(em: EntityManager) {
@@ -138,7 +143,8 @@ function registerHandleJoinResponse(em: EntityManager) {
   em.registerSystem(
     [PeerDef, InboxDef, OutboxDef],
     [EventsToNetworkDef],
-    handleJoinResponse
+    handleJoinResponse,
+    "handleJoinResponse"
   );
 }
 

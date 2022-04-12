@@ -70,7 +70,12 @@ export function registerTimeSystem(em: EntityManager) {
     updateTimer(netTimer as TimerInternal, time.dt);
     updateTimer(physicsTimer as TimerInternal, time.dt);
   }
-  em.registerSystem(null, [TimeDef, NetTimerDef, PhysicsTimerDef], time);
+  em.registerSystem(
+    null,
+    [TimeDef, NetTimerDef, PhysicsTimerDef],
+    time,
+    "time"
+  );
 }
 
 export function addTimeComponents(em: EntityManager) {

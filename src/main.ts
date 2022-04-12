@@ -10,7 +10,7 @@ import {
   createLocalObjects,
   createHostObjects,
   initDbgGame,
-  initGame as initShipGame,
+  initShipGame,
   registerAllSystems,
 } from "./game/game.js";
 import { EM } from "./entity-manager.js";
@@ -20,6 +20,7 @@ import { MeDef, JoinDef, HostDef, PeerNameDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";
 import { dbg } from "./debugger.js";
 import { RendererDef } from "./render/render_init.js";
+import { DevConsoleDef } from "./console.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -33,8 +34,6 @@ async function startGame(localPeerName: string, host: string | null) {
   gameStarted = true;
 
   let hosting = host === null;
-
-  const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
 
   let start_of_time = performance.now();
 
@@ -64,13 +63,6 @@ async function startGame(localPeerName: string, host: string | null) {
   initShipGame(EM, hosting);
   // initDbgGame(EM, hosting);
 
-  const controlsStr = `[WASD space 1 2 3 4 5 r t]`;
-  let avgJsTime = 0;
-  let avgNetTime = 0;
-  let avgSimTime = 0;
-  let avgFrameTime = 0;
-  let avgWeight = 0.05;
-  //let net: Net | null = null;
   let previous_frame_time = start_of_time;
   let frame = () => {
     let frame_start_time = performance.now();
@@ -82,84 +74,13 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystems();
     sim_time += performance.now() - before_sim;
 
-    /*
-    if (net) {
-      net.handleEventRequests();
-    }*/
-
-    // send updates out to network (if necessary)
-    let net_time = 0;
-    /*
-    let before_net = performance.now();
-    if (net) {
-      net.sendStateUpdates();
-    }
-    net_time += performance.now() - before_net;
-    */
-
-    // render
-    // TODO(@darzu):
-    // gameState.renderFrame();
     let jsTime = performance.now() - frame_start_time;
     let frameTime = frame_start_time - previous_frame_time;
-    let {
-      reliableBufferSize,
-      unreliableBufferSize,
-      numDroppedUpdates,
-      skew,
-      ping,
-    } = /*net
-      ? net.stats()
-      : */ {
-      reliableBufferSize: 0,
-      unreliableBufferSize: 0,
-      numDroppedUpdates: 0,
-      skew: [],
-      ping: [],
-    };
     previous_frame_time = frame_start_time;
-    avgJsTime = avgJsTime
-      ? (1 - avgWeight) * avgJsTime + avgWeight * jsTime
-      : jsTime;
-    avgFrameTime = avgFrameTime
-      ? (1 - avgWeight) * avgFrameTime + avgWeight * frameTime
-      : frameTime;
-    avgNetTime = avgNetTime
-      ? (1 - avgWeight) * avgNetTime + avgWeight * net_time
-      : net_time;
-    avgSimTime = avgSimTime
-      ? (1 - avgWeight) * avgSimTime + avgWeight * sim_time
-      : sim_time;
-    const avgFPS = 1000 / avgFrameTime;
-    const debugTxt = debugDiv.firstChild!;
-    // PERF NOTE: using ".innerText =" creates a new DOM element each frame, whereas
-    //    using ".firstChild.nodeValue =" reuses the DOM element. Unfortunately this
-    //    means we'll need to do more work to get line breaks.
-    const usingWebGPU = EM.getResource(RendererDef)?.usingWebGPU;
-    debugTxt.nodeValue = `Belgus, you are the last hope of the Squindles, keep the gemheart alive! Failure is inevitable. move: WASD, mouse; cannon: e, left-click; fps:${avgFPS.toFixed(
-      1
-    )}`;
-    // debugTxt.nodeValue =
-    //   controlsStr +
-    //   ` ` +
-    //   `js:${avgJsTime.toFixed(2)}ms ` +
-    //   `net:${avgNetTime.toFixed(2)}ms ` +
-    //   `sim:${avgSimTime.toFixed(2)}ms ` +
-    //   `broad:(${_lastCollisionTestTimeMs.toFixed(1)}ms ` +
-    //   `o:${_doesOverlaps} e:${_enclosedBys} c:${_cellChecks}) ` +
-    //   `fps:${avgFPS.toFixed(1)} ` +
-    //   //`buffers:(r=${reliableBufferSize}/u=${unreliableBufferSize}) ` +
-    //   `dropped:${numDroppedUpdates} ` +
-    //   `entities:${EM.entities.size} ` +
-    //   `skew: ${skew.join(",")} ` +
-    //   `ping: ${ping.join(",")} ` +
-    //   `${usingWebGPU ? "WebGPU" : "WebGL"}`;
-    // // TODO(@darzu): DEBUG
-    // debugTxt.nodeValue =
-    //   `sim:${avgSimTime.toFixed(2)}ms ` +
-    //   `broad:${_lastCollisionTestTimeMs.toFixed(1)}ms ` +
-    //   `pairs:${_motionPairsLen} ` +
-    //   `o:${_doesOverlaps} e:${_enclosedBys} `;
+
+    const devStats = EM.getResource(DevConsoleDef);
+    if (devStats) devStats.updateAvgs(jsTime, frameTime, sim_time);
+
     requestAnimationFrame(frame);
   };
 
