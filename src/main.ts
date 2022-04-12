@@ -6,13 +6,7 @@ import {
   _lastCollisionTestTimeMs,
 } from "./physics/broadphase.js";
 import { setupObjImportExporter } from "./download.js";
-import {
-  createLocalObjects,
-  createHostObjects,
-  initDbgGame,
-  initShipGame,
-  registerAllSystems,
-} from "./game/game.js";
+import { initDbgGame, initShipGame, registerAllSystems } from "./game/game.js";
 import { EM } from "./entity-manager.js";
 import { addTimeComponents } from "./time.js";
 import { InputsDef, registerInputsSystem } from "./inputs.js";

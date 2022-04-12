@@ -220,23 +220,24 @@ function registerRenderViewController(em: EntityManager) {
 
 export function initShipGame(em: EntityManager, hosting: boolean) {
   registerShipGameUI(em);
-
-  // init camera
-  createCamera(em);
+  EM.addSingletonComponent(CameraDef);
 
   // TODO(@darzu): DEBUGGING
   // debugCreateNoodles(em);
   // debugBoatParts(em);
 
   if (hosting) {
-    createHostObjects(EM);
+    em.addSingletonComponent(GameStateDef);
+    registerBoatSpawnerSystem(em);
+    createShip();
   }
-  createLocalObjects(EM);
+
+  createPlayer(em);
+  initGroundSystem(em);
 }
 
 export function initDbgGame(em: EntityManager, hosting: boolean) {
-  // init camera
-  createCamera(em);
+  EM.addSingletonComponent(CameraDef);
 
   // TODO(@darzu): DEBUGGING
   // debugCreateNoodles(em);
@@ -264,24 +265,4 @@ function debugBoatParts(em: EntityManager) {
     },
     "debugBoatParts"
   );
-}
-
-export function createHostObjects(em: EntityManager) {
-  // let { id: cubeId } = em.newEntity();
-  // em.addComponent(cubeId, CubeConstructDef, 3, LIGHT_BLUE);
-
-  em.addSingletonComponent(GameStateDef);
-  // createGround(em);
-  registerBoatSpawnerSystem(em);
-  createShip();
-  // createHats(em);
-  // createWorldPlanes(em);
-}
-export function createLocalObjects(em: EntityManager) {
-  createPlayer(em);
-  initGroundSystem(em);
-}
-
-function createCamera(_em: EntityManager) {
-  EM.addSingletonComponent(CameraDef);
 }
