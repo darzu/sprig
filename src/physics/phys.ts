@@ -23,6 +23,7 @@ import {
 } from "./transform.js";
 import { Collider } from "./collider.js";
 import { AABB } from "./broadphase.js";
+import { registerNarrowPhaseSystems } from "./narrowphase.js";
 
 // TODO(@darzu): PHYSICS TODO:
 // - seperate rotation and motion w/ constraint checking between them
@@ -42,6 +43,8 @@ export function registerPhysicsSystems(em: EntityManager) {
   registerUpdateWorldFromLocalAndParent(em);
   registerUpdateWorldAABBs(em);
   registerPhysicsContactSystems(em);
+  // TODO(@darzu): positioning?
+  registerNarrowPhaseSystems(em);
   // registerUpdateWorldFromPosRotScale(em);
   registerUpdateLocalPhysicsAfterRebound(em);
   // TODO(@darzu): get rid of this duplicate call?
@@ -69,7 +72,6 @@ export interface ContactData extends ContactResult {
   bCId: number;
 }
 
-
 export type IdPair = number;
 export function idPair(aId: number, bId: number): IdPair {
   // TODO(@darzu): need a better hash?
@@ -83,7 +85,12 @@ export function idPair(aId: number, bId: number): IdPair {
 
 export const PAD = 0.001; // TODO(@darzu): not sure if we can get away without this
 
-export function computeContactData(a: {aabb: AABB}, aLastPos: vec3, b: {aabb: AABB}, bLastPos: vec3): ContactResult {
+export function computeContactData(
+  a: { aabb: AABB },
+  aLastPos: vec3,
+  b: { aabb: AABB },
+  bLastPos: vec3
+): ContactResult {
   let dist = -Infinity;
   let dim = -1;
   let dir = 0;
@@ -91,8 +98,8 @@ export function computeContactData(a: {aabb: AABB}, aLastPos: vec3, b: {aabb: AA
   // for each of X,Y,Z dimensions
   for (let i = 0; i < 3; i++) {
     // determine who is to the left in this dimension
-    let left: {aabb: AABB};
-    let right: {aabb: AABB};
+    let left: { aabb: AABB };
+    let right: { aabb: AABB };
     if (aLastPos[i] < bLastPos[i]) {
       left = a;
       right = b;
@@ -120,10 +127,10 @@ export function computeContactData(a: {aabb: AABB}, aLastPos: vec3, b: {aabb: AA
 }
 
 export function computeReboundData(
-  a: {aabb: AABB},
+  a: { aabb: AABB },
   aLastPos: vec3,
   aCurrPos: vec3,
-  b: {aabb: AABB},
+  b: { aabb: AABB },
   bLastPos: vec3,
   bCurrPos: vec3,
   itr: number
@@ -148,15 +155,9 @@ export function computeReboundData(
     if (overlap <= 0) continue; // no overlap to deal with
 
     // determine possible contributions
-    const leftMaxContrib = Math.max(
-      0,
-      leftCurrPos[i] - leftLastPos[i]
-    );
-    const rightMaxContrib = Math.max(
-      0,
-      rightLastPos[i] - rightCurrPos[i]
-    );
-    if (leftMaxContrib + rightMaxContrib < overlap - PAD * itr) 
+    const leftMaxContrib = Math.max(0, leftCurrPos[i] - leftLastPos[i]);
+    const rightMaxContrib = Math.max(0, rightLastPos[i] - rightCurrPos[i]);
+    if (leftMaxContrib + rightMaxContrib < overlap - PAD * itr)
       // rebounding wouldn't fix our collision so don't try
       continue;
     if (leftMaxContrib === 0 && rightMaxContrib === 0)

@@ -34,6 +34,10 @@ Graph rewriting:
             https://robertheaton.com/2018/12/17/wavefunction-collapse-algorithm/
     https://www.youtube.com/watch?v=0bcZb-SsnrA
         Bad North
+    Wave Function Collapse over Voxels
+      https://www.youtube.com/watch?v=20KHNA9jTsE
+    Dungeon generation techniques:
+      https://github.com/AtTheMatinee/dungeon-generation/blob/master/dungeonGenerationAlgorithms.py
         
 
 "Delaunay triangulation of 2D points":

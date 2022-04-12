@@ -1,6 +1,8 @@
 // TODO(@darzu): box vs box collision testing
 // https://www.youtube.com/watch?v=ajv46BSqcK4
+// https://www.youtube.com/watch?v=MDusDn8oTSE
 
+import { EntityManager } from "../entity-manager.js";
 import { vec3 } from "../gl-matrix.js";
 import { BoxCollider, Collider } from "./collider.js";
 import { PhysicsObject } from "./nonintersection.js";
@@ -25,6 +27,21 @@ import { PhysicsObject } from "./nonintersection.js";
 //     b: PhysicsObject,
 //     itr: number
 //   ): ReboundData {
+
+/*
+Box-based non-intersection
+or
+common-parent rotated AABBs non-intersection
+
+leaning towards box-based as it's easier on the game dev.
+needs seperate: rotation and translation non-intersection phases.
+  likely we'll need pill colliders for players so they can rotate in a corner
+*/
+
+export function registerNarrowPhaseSystems(em: EntityManager) {
+  // TODO(@darzu):
+  console.log("narrow phase");
+}
 
 type ObjWith<C extends Collider> = PhysicsObject & { collider: C };
 
@@ -163,14 +180,4 @@ from Godot:
         This describes the layers that the object appears in. By default, all bodies are on layer 1.
     collision_mask
         This describes what layers the body will scan for collisions. If an object isn't in one of the mask layers, the body will ignore it. By default, all bodies scan layer 1.
-
-sprig:
-    objects can have 0 or 1 collider
-    this collider can either participate in physics constraints or not
-    either way, it will generate collision events
-    if you need multiple colliders per object, either:
-    - have one or more child objects (positioned relative to u) w/ a different collider
-    - use a union composite collider type that is just one collider built out of the union of multiple other colliders (e.g. the ship)
-
-
 */
