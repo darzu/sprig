@@ -2,7 +2,7 @@ import { Component, EM, EntityManager } from "../entity-manager.js";
 import { vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { RenderableDef } from "../render/renderer.js";
-import { clearTint, setTint, TintsDef } from "../tint.js";
+import { clearTint, setTint, TintsDef } from "../color.js";
 import { AuthorityDef } from "./components.js";
 
 const NetDebugStateDef = EM.defineComponent("netDebugState", () => ({

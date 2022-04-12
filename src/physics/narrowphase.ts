@@ -4,7 +4,7 @@
 
 import { EntityManager } from "../entity-manager.js";
 import { AssetsDef } from "../game/assets.js";
-import { ColorDef } from "../game/game.js";
+import { ColorDef } from "../color.js";
 import { LocalPlayerDef } from "../game/player.js";
 import { vec3 } from "../gl-matrix.js";
 import { cloneMesh } from "../render/mesh-pool.js";

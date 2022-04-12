@@ -44,7 +44,6 @@ import {
 } from "./ground.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
 import { createShip, registerShipSystems, ShipLocalDef } from "./ship.js";
-import { HatConstructDef } from "./hat.js";
 import { registerBuildBulletsSystem, registerBulletUpdate } from "./bullet.js";
 import {
   AssetsDef,
@@ -78,22 +77,6 @@ import { assert } from "../test.js";
 import { callInitFns } from "../init.js";
 import { registerGrappleDbgSystems } from "./grapple.js";
 import { registerTurretSystems } from "./turret.js";
-
-export const ColorDef = EM.defineComponent(
-  "color",
-  (c?: vec3) => c ?? vec3.create()
-);
-export type Color = Component<typeof ColorDef>;
-
-EM.registerSerializerPair(
-  ColorDef,
-  (o, writer) => {
-    writer.writeVec3(o);
-  },
-  (o, reader) => {
-    reader.readVec3(o);
-  }
-);
 
 function createPlayer(em: EntityManager) {
   const e = em.newEntity();
@@ -345,16 +328,4 @@ function registerBoatSpawnerSystem(em: EntityManager) {
     },
     "spawnBoats"
   );
-}
-
-function createHats(em: EntityManager) {
-  const BOX_STACK_COUNT = 10;
-  for (let i = 0; i < BOX_STACK_COUNT; i++) {
-    const loc = vec3.fromValues(
-      Math.random() * -10 + 10 - 5,
-      0,
-      Math.random() * -10 - 5
-    );
-    em.addComponent(em.newEntity().id, HatConstructDef, loc);
-  }
 }

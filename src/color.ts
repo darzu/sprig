@@ -1,6 +1,22 @@
 import { Component, EM, EntityManager } from "./entity-manager.js";
 import { vec3 } from "./gl-matrix.js";
 
+export const ColorDef = EM.defineComponent(
+  "color",
+  (c?: vec3) => c ?? vec3.create()
+);
+export type Color = Component<typeof ColorDef>;
+
+EM.registerSerializerPair(
+  ColorDef,
+  (o, writer) => {
+    writer.writeVec3(o);
+  },
+  (o, reader) => {
+    reader.readVec3(o);
+  }
+);
+
 export const TintsDef = EM.defineComponent(
   "tints",
   () => new Map() as Map<string, vec3>

@@ -9,7 +9,7 @@ import { PhysicsTimerDef, Timer } from "../time.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { jitter } from "../math.js";
 import { FinishedDef } from "../build.js";
-import { ColorDef } from "./game.js";
+import { ColorDef } from "../color.js";
 import { RenderableConstructDef } from "../render/renderer.js";
 import {
   Frame,

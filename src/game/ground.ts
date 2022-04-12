@@ -3,7 +3,7 @@ import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { RenderableConstructDef } from "../render/renderer.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
-import { ColorDef, ScoreDef } from "./game.js";
+import { ScoreDef } from "./game.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import { FinishedDef } from "../build.js";
@@ -22,6 +22,7 @@ import {
 } from "../render/mesh-pool.js";
 import { defineNetEntityHelper } from "../em_helpers.js";
 import { assert } from "../test.js";
+import { ColorDef } from "../color.js";
 
 const HALFSIZE = GROUNDSIZE / 2;
 const SIZE = HALFSIZE * 2;

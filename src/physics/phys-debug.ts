@@ -1,7 +1,7 @@
 import { ColliderDef } from "./collider.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { AssetsDef, LocalMeshes } from "../game/assets.js";
-import { ColorDef } from "../game/game.js";
+import { ColorDef } from "../color.js";
 import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
 import { mapMeshPositions, Mesh } from "../render/mesh-pool.js";

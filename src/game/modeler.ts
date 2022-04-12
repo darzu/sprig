@@ -19,7 +19,7 @@ import {
 import { tempVec } from "../temp-pool.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
-import { ColorDef } from "./game.js";
+import { ColorDef } from "../color.js";
 import { CHEAT, drawLine } from "./player.js";
 
 export const ModelerDef = EM.defineComponent("modeler", () => {

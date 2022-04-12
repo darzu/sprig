@@ -10,7 +10,7 @@ import {
   EntityW,
 } from "../entity-manager.js";
 import { PhysicsTimerDef, Timer } from "../time.js";
-import { ColorDef } from "./game.js";
+import { ColorDef } from "../color.js";
 import { FinishedDef } from "../build.js";
 import {
   CameraView,

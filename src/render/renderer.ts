@@ -6,7 +6,7 @@ import {
   EntityW,
   Entity,
 } from "../entity-manager.js";
-import { applyTints, TintsDef } from "../tint.js";
+import { applyTints, TintsDef } from "../color.js";
 import { PlayerEnt, PlayerEntDef } from "../game/player.js";
 import { CameraDef, CameraProps } from "../camera.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
@@ -29,7 +29,7 @@ import {
   updateFrameFromTransform,
   updateFrameFromPosRotScale,
 } from "../physics/transform.js";
-import { ColorDef } from "../game/game.js";
+import { ColorDef } from "../color.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DeletedDef } from "../delete.js";
 

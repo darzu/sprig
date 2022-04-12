@@ -3,7 +3,7 @@ import { Mesh } from "../render/mesh-pool.js";
 import { RenderableConstructDef } from "../render/renderer.js";
 import { PositionDef } from "../physics/transform.js";
 import { AssetsDef } from "./assets.js";
-import { ColorDef } from "./game.js";
+import { ColorDef } from "../color.js";
 
 export const GlobalCursor3dDef = EM.defineComponent("globalCursor3d", () => {
   return {

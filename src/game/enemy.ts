@@ -16,7 +16,7 @@ import {
 import { scaleMesh3 } from "../render/mesh-pool.js";
 import { RenderableConstructDef } from "../render/renderer.js";
 import { Assets } from "./assets.js";
-import { ColorDef } from "./game.js";
+import { ColorDef } from "../color.js";
 
 export const EnemyDef = EM.defineComponent("enemy", () => {
   return {
