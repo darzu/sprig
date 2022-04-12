@@ -78,10 +78,6 @@ import { assert } from "../test.js";
 import { callInitFns } from "../init.js";
 import { registerGrappleDbgSystems } from "./grapple.js";
 import { registerTurretSystems } from "./turret.js";
-import {
-  registerBuildAmmunitionSystem,
-  registerBuildLinstockSystem,
-} from "./ammo.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -150,8 +146,6 @@ export function registerAllSystems(em: EntityManager) {
   registerGroundSystems(em);
   registerShipSystems(em);
   registerBuildBulletsSystem(em);
-  registerBuildAmmunitionSystem(em);
-  registerBuildLinstockSystem(em);
   registerBuildCursor(em);
   registerGrappleDbgSystems(em);
   registerInitTransforms(em);
@@ -161,7 +155,6 @@ export function registerAllSystems(em: EntityManager) {
   registerNoodleSystem(em);
   registerUpdateLifetimes(em);
   registerInteractionSystem(em);
-  // registerStepCannonsSystem(em);
   registerTurretSystems(em);
   registerCannonSystems(em);
   registerPhysicsSystems(em);
@@ -177,7 +170,6 @@ export function registerAllSystems(em: EntityManager) {
   registerEventSystems(em);
   registerRestartSystem(em);
   registerDeleteEntitiesSystem(em);
-  // TODO(@darzu): confirm this all works
   registerRenderViewController(em);
   registerUpdateCameraView(em);
   registerConstructRenderablesSystem(em);
