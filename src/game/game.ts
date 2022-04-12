@@ -223,10 +223,10 @@ export function initShipGame(em: EntityManager, hosting: boolean) {
     em.addSingletonComponent(GameStateDef);
     registerBoatSpawnerSystem(em);
     createShip();
+    initGroundSystem(em);
   }
 
   createPlayer(em);
-  initGroundSystem(em);
 }
 
 export function initDbgGame(em: EntityManager, hosting: boolean) {
