@@ -23,7 +23,6 @@ import {
   createPlayer,
   LocalPlayerDef,
   PlayerPropsDef,
-  registerBuildPlayersSystem,
   registerPlayerSystems,
 } from "./player.js";
 import { CameraDef, registerRetargetCameraSystems } from "../camera.js";
@@ -127,7 +126,6 @@ export function registerAllSystems(em: EntityManager) {
   registerPredictSystem(em);
   registerJoinSystems(em);
   registerAssetLoader(em);
-  registerBuildPlayersSystem(em);
   registerGroundSystems(em);
   registerShipSystems(em);
   registerBuildBulletsSystem(em);

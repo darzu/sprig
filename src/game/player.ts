@@ -101,6 +101,76 @@ export const PlayerPropsDef = defineSerializableComponent(
 
 export function registerPlayerSystems(em: EntityManager) {
   em.registerSystem(
+    [PlayerPropsDef],
+    [MeDef, AssetsDef],
+    (players, res) => {
+      for (let e of players) {
+        if (FinishedDef.isOn(e)) continue;
+        const props = e.playerProps;
+        if (!PositionDef.isOn(e))
+          em.addComponent(e.id, PositionDef, props.location);
+        if (!RotationDef.isOn(e))
+          em.addComponent(
+            e.id,
+            RotationDef,
+            quat.rotateY(quat.create(), quat.IDENTITY, Math.PI)
+          );
+        if (!LinearVelocityDef.isOn(e))
+          em.addComponent(e.id, LinearVelocityDef);
+        if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0, 0.2, 0]);
+        if (!MotionSmoothingDef.isOn(e))
+          em.addComponent(e.id, MotionSmoothingDef);
+        if (!RenderableConstructDef.isOn(e)) {
+          const m = scaleMesh3(res.assets.cube.mesh, [0.75, 0.75, 0.4]);
+          em.addComponent(e.id, RenderableConstructDef, m);
+        }
+        if (!AuthorityDef.isOn(e))
+          em.addComponent(e.id, AuthorityDef, res.me.pid);
+        if (!PlayerDef.isOn(e)) {
+          em.ensureComponentOn(e, PlayerDef);
+
+          // create legs
+          function makeLeg(x: number): Entity {
+            const l = em.newEntity();
+            em.ensureComponentOn(l, PositionDef, [x, -1.5, 0]);
+            em.ensureComponentOn(
+              l,
+              RenderableConstructDef,
+              res.assets.cube.proto
+            );
+            em.ensureComponentOn(l, ScaleDef, [0.15, 0.75, 0.15]);
+            em.ensureComponentOn(l, ColorDef, [0.05, 0.05, 0.05]);
+            em.ensureComponentOn(l, PhysicsParentDef, e.id);
+            return l;
+          }
+          e.player.leftLegId = makeLeg(-0.5).id;
+          e.player.rightLegId = makeLeg(0.5).id;
+        }
+        if (!ColliderDef.isOn(e)) {
+          const collider = em.addComponent(e.id, ColliderDef);
+          collider.shape = "AABB";
+          collider.solid = true;
+          const playerAABB = copyAABB(createAABB(), res.assets.cube.aabb);
+          vec3.add(playerAABB.min, playerAABB.min, [0, -1, 0]);
+          (collider as AABBCollider).aabb = playerAABB;
+        }
+        if (!SyncDef.isOn(e)) {
+          em.ensureComponentOn(e, SyncDef, [
+            PositionDef.id,
+            RotationDef.id,
+            // TODO(@darzu): maybe sync this via events instead
+            PhysicsParentDef.id,
+          ]);
+          e.sync.fullComponents = [PlayerPropsDef.id];
+        }
+        em.ensureComponent(e.id, PhysicsParentDef);
+        em.addComponent(e.id, FinishedDef);
+      }
+    },
+    "buildPlayers"
+  );
+
+  em.registerSystem(
     [
       PlayerDef,
       PositionDef,
@@ -464,80 +534,5 @@ export function registerPlayerSystems(em: EntityManager) {
       }
     },
     "playerOnShip"
-  );
-}
-
-export let __lastPlayerId = 0;
-
-export function registerBuildPlayersSystem(em: EntityManager) {
-  em.registerSystem(
-    [PlayerPropsDef],
-    [MeDef, AssetsDef],
-    (players, res) => {
-      for (let e of players) {
-        if (FinishedDef.isOn(e)) continue;
-        __lastPlayerId = e.id; // TODO(@darzu): debugging
-        const props = e.playerProps;
-        if (!PositionDef.isOn(e))
-          em.addComponent(e.id, PositionDef, props.location);
-        if (!RotationDef.isOn(e))
-          em.addComponent(
-            e.id,
-            RotationDef,
-            quat.rotateY(quat.create(), quat.IDENTITY, Math.PI)
-          );
-        if (!LinearVelocityDef.isOn(e))
-          em.addComponent(e.id, LinearVelocityDef);
-        if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0, 0.2, 0]);
-        if (!MotionSmoothingDef.isOn(e))
-          em.addComponent(e.id, MotionSmoothingDef);
-        if (!RenderableConstructDef.isOn(e)) {
-          const m = scaleMesh3(res.assets.cube.mesh, [0.75, 0.75, 0.4]);
-          em.addComponent(e.id, RenderableConstructDef, m);
-        }
-        if (!AuthorityDef.isOn(e))
-          em.addComponent(e.id, AuthorityDef, res.me.pid);
-        if (!PlayerDef.isOn(e)) {
-          em.ensureComponentOn(e, PlayerDef);
-
-          // create legs
-          function makeLeg(x: number): Entity {
-            const l = em.newEntity();
-            em.ensureComponentOn(l, PositionDef, [x, -1.5, 0]);
-            em.ensureComponentOn(
-              l,
-              RenderableConstructDef,
-              res.assets.cube.proto
-            );
-            em.ensureComponentOn(l, ScaleDef, [0.15, 0.75, 0.15]);
-            em.ensureComponentOn(l, ColorDef, [0.05, 0.05, 0.05]);
-            em.ensureComponentOn(l, PhysicsParentDef, e.id);
-            return l;
-          }
-          e.player.leftLegId = makeLeg(-0.5).id;
-          e.player.rightLegId = makeLeg(0.5).id;
-        }
-        if (!ColliderDef.isOn(e)) {
-          const collider = em.addComponent(e.id, ColliderDef);
-          collider.shape = "AABB";
-          collider.solid = true;
-          const playerAABB = copyAABB(createAABB(), res.assets.cube.aabb);
-          vec3.add(playerAABB.min, playerAABB.min, [0, -1, 0]);
-          (collider as AABBCollider).aabb = playerAABB;
-        }
-        if (!SyncDef.isOn(e)) {
-          em.ensureComponentOn(e, SyncDef, [
-            PositionDef.id,
-            RotationDef.id,
-            // TODO(@darzu): maybe sync this via events instead
-            PhysicsParentDef.id,
-          ]);
-          e.sync.fullComponents = [PlayerPropsDef.id];
-        }
-        em.ensureComponent(e.id, PhysicsParentDef);
-        em.addComponent(e.id, FinishedDef);
-      }
-    },
-    "buildPlayers"
   );
 }

@@ -1,6 +1,5 @@
 import { Collider, ColliderDef } from "./collider.js";
 import { EntityManager } from "../entity-manager.js";
-import { __lastPlayerId } from "../game/player.js";
 import { mat3, mat4, quat, vec3 } from "../gl-matrix.js";
 import { clamp } from "../math.js";
 import {
