@@ -240,7 +240,7 @@ const EventSyncDef = EM.defineComponent("eventSync", () => ({
   lastSendTime: 0,
 }));
 
-const EventsDef = EM.defineComponent("events", () => ({
+export const EventsDef = EM.defineComponent("events", () => ({
   log: [] as Event<any>[],
   last: -1,
   newEvents: false,
@@ -534,7 +534,6 @@ export function registerEventSystems(em: EntityManager) {
         while (acks.length > 0) {
           const message = acks.shift()!;
           const nextSeq = message.readUint32();
-          console.log(`Acked @ ${nextSeq}`);
           syncState.nextSeq = Math.max(syncState.nextSeq, nextSeq);
         }
       }
@@ -552,7 +551,9 @@ export function registerEventSystems(em: EntityManager) {
       for (let event of newEvents) {
         // If we don't know about all of these objects, we're not ready to run
         // this event (or subsequent events)
-        if (!event.entities.every((id) => em.hasEntity(id))) break;
+        if (!event.entities.every((id) => em.hasEntity(id))) {
+          break;
+        }
         runEvent(event.type, em, event);
         events.last = event.seq;
       }

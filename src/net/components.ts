@@ -91,6 +91,7 @@ export function send(outbox: Outbox, buffer: DataView) {
 export const NetStatsDef = EM.defineComponent("netStats", () => ({
   skewEstimate: {} as Record<string, number>,
   pingEstimate: {} as Record<string, number>,
+  droppedUpdates: 0,
 }));
 
 export type NetStats = Component<typeof NetStatsDef>;
