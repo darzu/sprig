@@ -76,7 +76,6 @@ export const PlayerLocalDef = EM.defineComponent(
     };
   }
 );
-export type PlayerEnt = Component<typeof PlayerLocalDef>;
 
 // Resource pointing at the local player
 export const LocalPlayerDef = EM.defineComponent(

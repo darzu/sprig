@@ -7,7 +7,7 @@ import {
   Entity,
 } from "../entity-manager.js";
 import { applyTints, TintsDef } from "../color.js";
-import { PlayerEnt, PlayerLocalDef } from "../game/player.js";
+import { PlayerLocalDef } from "../game/player.js";
 import { CameraDef, CameraProps } from "../camera.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { isMeshHandle, Mesh, MeshHandle } from "./mesh-pool.js";
@@ -132,22 +132,7 @@ export function registerUpdateCameraView(em: EntityManager) {
   em.registerSystem(
     [PlayerLocalDef, PositionDef, RotationDef, AuthorityDef, WorldFrameDef],
     [CameraViewDef, CameraDef, MeDef, CanvasDef],
-    (
-      players: {
-        id: number;
-        player: PlayerEnt;
-        position: Position;
-        rotation: Rotation;
-        authority: Authority;
-        world: Frame;
-      }[],
-      resources: {
-        cameraView: CameraView;
-        camera: CameraProps;
-        me: Me;
-        htmlCanvas: Canvas;
-      }
-    ) => {
+    (players, resources) => {
       const { cameraView, camera, me, htmlCanvas } = resources;
 
       // if (camera.targetId) console.log(`target: ${camera.targetId}`);
