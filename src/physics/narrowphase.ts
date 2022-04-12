@@ -3,9 +3,15 @@
 // https://www.youtube.com/watch?v=MDusDn8oTSE
 
 import { EntityManager } from "../entity-manager.js";
+import { AssetsDef } from "../game/assets.js";
+import { ColorDef } from "../game/game.js";
+import { LocalPlayerDef } from "../game/player.js";
 import { vec3 } from "../gl-matrix.js";
+import { cloneMesh } from "../render/mesh-pool.js";
+import { RenderableConstructDef } from "../render/renderer.js";
 import { BoxCollider, Collider } from "./collider.js";
 import { PhysicsObject } from "./nonintersection.js";
+import { PhysicsParentDef, PositionDef } from "./transform.js";
 
 // TODO(@darzu): interfaces worth thinking about:
 // export interface ContactData {
@@ -41,6 +47,21 @@ needs seperate: rotation and translation non-intersection phases.
 export function registerNarrowPhaseSystems(em: EntityManager) {
   // TODO(@darzu):
   console.log("narrow phase");
+
+  em.registerOneShotSystem(null, [AssetsDef, LocalPlayerDef], (_, res) => {
+    const b1 = em.newEntity();
+    const m1 = cloneMesh(res.assets.cube.mesh);
+    em.ensureComponentOn(b1, RenderableConstructDef, m1);
+    em.ensureComponentOn(b1, ColorDef, [0.1, 0.2, 0.1]);
+    em.ensureComponentOn(b1, PositionDef, [0, 0, 0]);
+
+    const b2 = em.newEntity();
+    const m2 = cloneMesh(res.assets.cube.mesh);
+    em.ensureComponentOn(b2, RenderableConstructDef, m2);
+    em.ensureComponentOn(b2, ColorDef, [0.1, 0.1, 0.2]);
+    em.ensureComponentOn(b2, PositionDef, [0, 0, 0]);
+    em.ensureComponentOn(b2, PhysicsParentDef, res.localPlayer.playerId);
+  });
 }
 
 type ObjWith<C extends Collider> = PhysicsObject & { collider: C };
