@@ -46,7 +46,9 @@ needs seperate: rotation and translation non-intersection phases.
 
 export function registerNarrowPhaseSystems(em: EntityManager) {
   // TODO(@darzu):
-  console.log("narrow phase");
+  return;
+
+  console.log("NARROW PHASE DBG");
 
   em.registerOneShotSystem(null, [AssetsDef, LocalPlayerDef], (_, res) => {
     const b1 = em.newEntity();
