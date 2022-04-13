@@ -11,6 +11,7 @@ import { max } from "./math.js";
 import { AuthorityDef, MeDef } from "./net/components.js";
 import { WorldFrameDef } from "./physics/nonintersection.js";
 import { PositionDef, RotationDef } from "./physics/transform.js";
+import { RendererWorldFrameDef } from "./render/renderer.js";
 import { computeNewError, reduceError } from "./smoothing.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
 import { PhysicsTimerDef } from "./time.js";
@@ -159,7 +160,7 @@ export function registerCameraSystems(em: EntityManager) {
     (_, resources) => {
       const { cameraView, camera, me, htmlCanvas } = resources;
 
-      let targetEnt = em.findEntity(camera.targetId, [WorldFrameDef]);
+      let targetEnt = em.findEntity(camera.targetId, [RendererWorldFrameDef]);
 
       if (!targetEnt) return;
 
@@ -174,20 +175,20 @@ export function registerCameraSystems(em: EntityManager) {
       if (targetEnt) {
         const computedRotation = quat.mul(
           tempQuat(),
-          targetEnt.world.rotation,
+          targetEnt.rendererWorldFrame.rotation,
           camera.targetRotationError
         );
         quat.normalize(computedRotation, computedRotation);
         const computedTranslation = vec3.add(
           tempVec(),
-          targetEnt.world.position,
+          targetEnt.rendererWorldFrame.position,
           camera.targetPositionError
         );
         mat4.fromRotationTranslationScale(
           viewMatrix,
           computedRotation,
           computedTranslation,
-          targetEnt.world.scale
+          targetEnt.rendererWorldFrame.scale
         );
       }
 

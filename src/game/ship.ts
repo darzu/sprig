@@ -56,6 +56,7 @@ import {
   registerEventHandler,
 } from "../net/events.js";
 import { TextDef } from "./ui.js";
+import { MotionSmoothingDef } from "../motion-smoothing.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
@@ -162,6 +163,7 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
 
       vec3.copy(s.position, s.shipProps.loc);
       quat.copy(s.rotation, s.shipProps.rot);
+      em.ensureComponentOn(s, MotionSmoothingDef);
 
       s.shipLocal.speed = 0.005;
       em.ensureComponentOn(s, LinearVelocityDef, [0, -0.01, 0]);

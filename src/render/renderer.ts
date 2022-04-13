@@ -125,8 +125,9 @@ function stepRenderer(
 
 const _hasRendererWorldFrame = new Set();
 
-const RendererWorldFrameDef = EM.defineComponent("rendererWorldFrame", () =>
-  createFrame()
+export const RendererWorldFrameDef = EM.defineComponent(
+  "rendererWorldFrame",
+  () => createFrame()
 );
 
 function updateRendererWorldFrame(

@@ -69,7 +69,10 @@ import { registerCannonSystems } from "./cannon.js";
 import { registerInteractionSystem } from "./interact.js";
 import { registerModeler } from "./modeler.js";
 import { registerToolSystems } from "./tool.js";
-import { registerMotionSmoothingSystems } from "../motion-smoothing.js";
+import {
+  registerMotionSmoothingRecordLocationsSystem,
+  registerMotionSmoothingSystems,
+} from "../motion-smoothing.js";
 import { registerBuildCursor } from "./cursor.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
@@ -127,8 +130,10 @@ export function registerAllSystems(em: EntityManager) {
   registerRenderInitSystem(em);
   registerMusicSystems(em);
   registerHandleNetworkEvents(em);
+  registerMotionSmoothingRecordLocationsSystem(em);
   registerUpdateSystem(em);
   registerPredictSystem(em);
+  registerMotionSmoothingSystems(em);
   registerJoinSystems(em);
   registerAssetLoader(em);
   registerGroundSystems(em);
@@ -147,7 +152,6 @@ export function registerAllSystems(em: EntityManager) {
   registerTurretSystems(em);
   registerCannonSystems(em);
   registerPhysicsSystems(em);
-  registerMotionSmoothingSystems(em);
   registerBulletCollisionSystem(em);
   registerModeler(em);
   registerToolSystems(em);
@@ -158,10 +162,10 @@ export function registerAllSystems(em: EntityManager) {
   registerEventSystems(em);
   registerRestartSystem(em);
   registerDeleteEntitiesSystem(em);
+  registerUpdateRendererWorldFrames(em);
   registerCameraSystems(em);
   registerRenderViewController(em);
   registerConstructRenderablesSystem(em);
-  registerUpdateRendererWorldFrames(em);
   registerRenderer(em);
 
   callInitFns(em);
@@ -231,10 +235,10 @@ export function initShipGame(em: EntityManager, hosting: boolean) {
     em.addSingletonComponent(GameStateDef);
     registerBoatSpawnerSystem(em);
     createShip();
+    initGroundSystem(em);
   }
 
   createPlayer(em);
-  initGroundSystem(em);
 }
 
 export function initDbgGame(em: EntityManager, hosting: boolean) {
