@@ -22,7 +22,6 @@ import {
   createPlayer,
   LocalPlayerDef,
   PlayerPropsDef,
-  registerControllableSystems,
   registerPlayerSystems,
 } from "./player.js";
 import {
@@ -88,6 +87,7 @@ import { registerGrappleDbgSystems } from "./grapple.js";
 import { registerTurretSystems } from "./turret.js";
 import { registerUISystems, TextDef } from "./ui.js";
 import { DevConsoleDef, registerDevSystems } from "../console.js";
+import { registerControllableSystems } from "./controllable.js";
 
 export const ScoreDef = EM.defineComponent("score", () => {
   return {
