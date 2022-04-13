@@ -1,15 +1,10 @@
 import { EntityManager, EM, Component } from "./entity-manager.js";
-import { vec3, quat, mat4 } from "./gl-matrix.js";
-import { WorldFrameDef } from "./physics/nonintersection.js";
-import { tempQuat, tempVec } from "./temp-pool.js";
-import { Timer, PhysicsTimerDef } from "./time.js";
+import { vec3, quat } from "./gl-matrix.js";
+import { PhysicsTimerDef } from "./time.js";
 import {
-  Position,
-  Rotation,
   PositionDef,
   PhysicsParentDef,
   RotationDef,
-  ScaleDef,
 } from "./physics/transform.js";
 import { computeNewError, reduceError } from "./smoothing.js";
 import { RemoteUpdatesDef } from "./net/components.js";
