@@ -65,7 +65,10 @@ import { registerCannonSystems } from "./cannon.js";
 import { registerInteractionSystem } from "./interact.js";
 import { registerModeler } from "./modeler.js";
 import { registerToolSystems } from "./tool.js";
-import { registerMotionSmoothingSystems } from "../motion-smoothing.js";
+import {
+  registerMotionSmoothingRecordLocationsSystem,
+  registerMotionSmoothingSystems,
+} from "../motion-smoothing.js";
 import { registerBuildCursor } from "./cursor.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
@@ -122,8 +125,10 @@ export function registerAllSystems(em: EntityManager) {
   registerRenderInitSystem(em);
   registerMusicSystems(em);
   registerHandleNetworkEvents(em);
+  registerMotionSmoothingRecordLocationsSystem(em);
   registerUpdateSystem(em);
   registerPredictSystem(em);
+  registerMotionSmoothingSystems(em);
   registerJoinSystems(em);
   registerAssetLoader(em);
   registerGroundSystems(em);
@@ -142,7 +147,6 @@ export function registerAllSystems(em: EntityManager) {
   registerCannonSystems(em);
   registerPhysicsSystems(em);
   registerRetargetCameraSystems(em);
-  registerMotionSmoothingSystems(em);
   registerBulletCollisionSystem(em);
   registerModeler(em);
   registerToolSystems(em);
@@ -154,9 +158,9 @@ export function registerAllSystems(em: EntityManager) {
   registerRestartSystem(em);
   registerDeleteEntitiesSystem(em);
   registerRenderViewController(em);
+  registerUpdateRendererWorldFrames(em);
   registerUpdateCameraView(em);
   registerConstructRenderablesSystem(em);
-  registerUpdateRendererWorldFrames(em);
   registerRenderer(em);
 
   callInitFns(em);
