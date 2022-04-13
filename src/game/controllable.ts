@@ -36,8 +36,6 @@ export const ControllableDef = EM.defineComponent("controllable", () => {
     gravity: 0.1,
     jumpSpeed: 0.003,
     turnSpeed: 0.001,
-    cursorId: 0,
-    worldFacingDir: vec3.create(),
     modes: {
       canFall: true,
       canFly: true,
@@ -101,30 +99,6 @@ export function registerControllableSystems(em: EntityManager) {
       }
     },
     "controllableInput"
-  );
-
-  em.registerSystem(
-    [ControllableDef, WorldFrameDef],
-    [],
-    (controllables, res) => {
-      for (let c of controllables) {
-        let facingDir = c.controllable.worldFacingDir;
-        vec3.copy(facingDir, [0, 0, -1]);
-        vec3.transformQuat(facingDir, facingDir, c.world.rotation);
-
-        // use cursor for facingDir if possible
-        const targetCursor = EM.findEntity(c.controllable.cursorId, [
-          WorldFrameDef,
-        ]);
-        if (targetCursor) {
-          vec3.sub(facingDir, targetCursor.world.position, c.world.position);
-          vec3.normalize(facingDir, facingDir);
-        }
-
-        c.controllable.worldFacingDir;
-      }
-    },
-    "controllableFacingDir"
   );
 
   em.registerSystem(

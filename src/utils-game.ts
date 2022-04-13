@@ -2,6 +2,7 @@ import { ColorDef } from "./color.js";
 import { EntityManager } from "./entity-manager.js";
 import { vec3 } from "./gl-matrix.js";
 import { WorldFrameDef } from "./physics/nonintersection.js";
+import { PositionDef } from "./physics/transform.js";
 import { Mesh } from "./render/mesh-pool.js";
 import { RenderableConstructDef } from "./render/renderer.js";
 
@@ -22,5 +23,5 @@ export function drawLine(
     usesProvoking: true,
   };
   em.addComponent(id, RenderableConstructDef, m);
-  em.addComponent(id, WorldFrameDef);
+  em.addComponent(id, PositionDef);
 }

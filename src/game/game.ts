@@ -73,7 +73,7 @@ import {
   registerMotionSmoothingRecordLocationsSystem,
   registerMotionSmoothingSystems,
 } from "../motion-smoothing.js";
-import { registerBuildCursor } from "./cursor.js";
+import { registerCursorSystems } from "./cursor.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { FinishedDef } from "../build.js";
@@ -139,7 +139,7 @@ export function registerAllSystems(em: EntityManager) {
   registerGroundSystems(em);
   registerShipSystems(em);
   registerBuildBulletsSystem(em);
-  registerBuildCursor(em);
+  registerCursorSystems(em);
   registerGrappleDbgSystems(em);
   registerInitTransforms(em);
   registerBoatSystems(em);

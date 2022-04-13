@@ -1,6 +1,6 @@
 // player controller component and system
 
-import { quat, vec2, vec3 } from "../gl-matrix.js";
+import { quat, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { EM, Entity, EntityManager, EntityW } from "../entity-manager.js";
 import { PhysicsTimerDef } from "../time.js";
@@ -19,24 +19,24 @@ import {
 } from "../physics/nonintersection.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
-import { copyAABB, createAABB, Ray, RayHit } from "../physics/broadphase.js";
+import { copyAABB, createAABB, Ray } from "../physics/broadphase.js";
 import { tempVec } from "../temp-pool.js";
 import { scaleMesh3 } from "../render/mesh-pool.js";
 import { AssetsDef } from "./assets.js";
 import { LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
-import { getCursor, GlobalCursor3dDef } from "./cursor.js";
-import { ModelerDef, screenPosToRay } from "./modeler.js";
+import { ModelerDef } from "./modeler.js";
 import { DeletedDef } from "../delete.js";
 import { ShipLocalDef } from "./ship.js";
 import {
   CameraDef,
   CameraFollowDef,
-  CameraViewDef,
   setCameraFollowPosition,
 } from "../camera.js";
 import { defineSerializableComponent } from "../em_helpers.js";
 import { ControllableDef } from "./controllable.js";
+import { GlobalCursor3dDef } from "./cursor.js";
+import { drawLine } from "../utils-game.js";
 
 // TODO(@darzu): it'd be great if these could hook into some sort of
 //    dev mode you could toggle at runtime.
@@ -58,10 +58,9 @@ export const PlayerDef = EM.defineComponent("player", () => {
     clicking: false,
     manning: false,
     dropping: false,
-    targetCursor: -1,
-    targetEnt: -1,
     leftLegId: 0,
     rightLegId: 0,
+    facingDir: vec3.create(),
     // disabled noodle limbs
     // leftFootWorldPos: [0, 0, 0] as vec3,
     // rightFootWorldPos: [0, 0, 0] as vec3,
@@ -169,6 +168,26 @@ export function registerPlayerSystems(em: EntityManager) {
   );
 
   em.registerSystem(
+    [PlayerDef, WorldFrameDef],
+    [GlobalCursor3dDef],
+    (players, res) => {
+      for (let p of players) {
+        const facingDir = p.player.facingDir;
+        vec3.copy(facingDir, [0, 0, -1]);
+        vec3.transformQuat(facingDir, facingDir, p.world.rotation);
+
+        // use cursor for facingDir if possible
+        const cursor = res.globalCursor3d.cursor();
+        if (cursor) {
+          vec3.sub(facingDir, cursor.world.position, p.world.position);
+          vec3.normalize(facingDir, facingDir);
+        }
+      }
+    },
+    "playerFacingDir"
+  );
+
+  em.registerSystem(
     [
       PlayerDef,
       PositionDef,
@@ -186,6 +205,7 @@ export function registerPlayerSystems(em: EntityManager) {
       MeDef,
       PhysicsResultsDef,
       ModelerDef,
+      GlobalCursor3dDef,
     ],
     (players, res) => {
       for (let i = 0; i < res.physicsTimer.steps; i++) {
@@ -229,6 +249,11 @@ export function registerPlayerSystems(em: EntityManager) {
             p.controllable.modes.canJump = true;
           }
 
+          const cursor = res.globalCursor3d.cursor();
+          if (cursor) {
+            if (RenderableDef.isOn(cursor)) cursor.renderable.enabled = CHEAT;
+          }
+
           // TODO(@darzu): rework to use phsyiscs colliders
           if (inputs.keyClicks["e"]) {
             p.player.interacting = true;
@@ -243,7 +268,7 @@ export function registerPlayerSystems(em: EntityManager) {
 
           p.player.dropping = (inputs.keyClicks["q"] || 0) > 0;
 
-          let facingDir = p.controllable.worldFacingDir;
+          let facingDir = p.player.facingDir;
 
           // add bullet on lclick
           if (CHEAT && inputs.lclick) {
@@ -318,13 +343,17 @@ export function registerPlayerSystems(em: EntityManager) {
 
           // change physics parent
           if (CHEAT && inputs.keyClicks["t"]) {
-            const targetEnt = EM.findEntity(p.player.targetEnt, [ColliderDef]);
-            if (targetEnt) {
-              p.physicsParent.id = targetEnt.id;
-              vec3.copy(p.position, [0, 0, 0]);
-              if (targetEnt.collider.shape === "AABB") {
-                // move above the obj
-                p.position[1] = targetEnt.collider.aabb.max[1] + 3;
+            const targetId = em.getResource(GlobalCursor3dDef)?.cursor()
+              ?.cursor3d.hitId;
+            if (targetId) {
+              p.physicsParent.id = targetId;
+              const targetEnt = em.findEntity(targetId, [ColliderDef]);
+              if (targetEnt) {
+                vec3.copy(p.position, [0, 0, 0]);
+                if (targetEnt.collider.shape === "AABB") {
+                  // move above the obj
+                  p.position[1] = targetEnt.collider.aabb.max[1] + 3;
+                }
               }
               vec3.copy(p.linearVelocity, vec3.ZEROS);
             } else {
@@ -334,12 +363,10 @@ export function registerPlayerSystems(em: EntityManager) {
           }
 
           // delete object
-          if (
-            CHEAT &&
-            res.inputs.keyClicks["backspace"] &&
-            p.player.targetEnt > 0
-          ) {
-            em.ensureComponent(p.player.targetEnt, DeletedDef);
+          if (CHEAT && res.inputs.keyClicks["backspace"]) {
+            const targetId = em.getResource(GlobalCursor3dDef)?.cursor()
+              ?.cursor3d.hitId;
+            if (targetId) em.ensureComponent(targetId, DeletedDef);
           }
 
           function playerShootRay(r: Ray) {
@@ -367,70 +394,12 @@ export function registerPlayerSystems(em: EntityManager) {
               r.org,
               vec3.scale(tempVec(), r.dir, rayDist)
             );
-            // drawLine(EM, r.org, endPoint, color);
+            drawLine(EM, r.org, endPoint, color);
           }
         }
       }
     },
     "stepPlayers"
-  );
-
-  em.registerSystem(
-    [PlayerDef, PositionDef, RotationDef, AuthorityDef, CameraFollowDef],
-    [CameraViewDef, GlobalCursor3dDef, MeDef, PhysicsResultsDef, InputsDef],
-    (players, res) => {
-      const p = players.filter((p) => p.authority.pid === res.me.pid)[0];
-      const c = getCursor(em, [PositionDef, RenderableDef, ColorDef]);
-      if (p && c) {
-        const overShoulder = p.cameraFollow.positionOffset[0] !== 0;
-        if (!overShoulder) {
-          // hide the cursor
-          c.renderable.enabled = false;
-          // target nothing
-          p.player.targetCursor = -1;
-          p.player.targetEnt = -1;
-        } else {
-          // show the cursor
-          c.renderable.enabled = true;
-
-          // target the cursor
-          p.player.targetCursor = c.id;
-
-          // shoot a ray from screen center to figure out where to put the cursor
-          const screenMid: vec2 = [
-            res.cameraView.width * 0.5,
-            res.cameraView.height * 0.4,
-          ];
-          const r = screenPosToRay(screenMid, res.cameraView);
-          let cursorDistance = 100;
-
-          // if we hit something with that ray, put the cursor there
-          const hits = res.physicsResults.checkRay(r);
-          let nearestHit: RayHit = { dist: Infinity, id: -1 };
-          if (hits.length) {
-            nearestHit = hits.reduce(
-              (p, n) => (n.dist < p.dist ? n : p),
-              nearestHit
-            );
-            cursorDistance = nearestHit.dist;
-            vec3.copy(c.color, [0, 1, 0]);
-
-            // remember what we hit
-            p.player.targetEnt = nearestHit.id;
-          } else {
-            vec3.copy(c.color, [0, 1, 1]);
-          }
-
-          // place the cursor
-          vec3.add(
-            c.position,
-            r.org,
-            vec3.scale(tempVec(), r.dir, cursorDistance)
-          );
-        }
-      }
-    },
-    "playerCursorUpdate"
   );
 
   em.registerSystem(
