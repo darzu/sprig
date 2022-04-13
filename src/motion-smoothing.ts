@@ -76,7 +76,7 @@ export function registerMotionSmoothingSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [MotionSmoothingDef, WorldFrameDef],
+    [MotionSmoothingDef],
     [],
     (es) => {
       for (let e of es) {
