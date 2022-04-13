@@ -130,14 +130,14 @@ function stepRenderer(
 export function registerUpdateCameraView(em: EntityManager) {
   em.addSingletonComponent(CameraViewDef);
   em.registerSystem(
-    [PlayerDef, PositionDef, RotationDef, AuthorityDef, WorldFrameDef],
+    [PlayerDef, PositionDef, RotationDef, AuthorityDef, RendererWorldFrameDef],
     [CameraViewDef, CameraDef, MeDef, CanvasDef],
     (players, resources) => {
       const { cameraView, camera, me, htmlCanvas } = resources;
 
       // if (camera.targetId) console.log(`target: ${camera.targetId}`);
 
-      let targetEnt = em.findEntity(camera.targetId, [WorldFrameDef]);
+      let targetEnt = em.findEntity(camera.targetId, [RendererWorldFrameDef]);
 
       // default to player
       if (!targetEnt)
@@ -162,20 +162,20 @@ export function registerUpdateCameraView(em: EntityManager) {
       if (targetEnt) {
         const computedRotation = quat.mul(
           tempQuat(),
-          targetEnt.world.rotation,
+          targetEnt.rendererWorldFrame.rotation,
           camera.targetRotationError
         );
         quat.normalize(computedRotation, computedRotation);
         const computedTranslation = vec3.add(
           tempVec(),
-          targetEnt.world.position,
+          targetEnt.rendererWorldFrame.position,
           camera.targetPositionError
         );
         mat4.fromRotationTranslationScale(
           viewMatrix,
           computedRotation,
           computedTranslation,
-          targetEnt.world.scale
+          targetEnt.rendererWorldFrame.scale
         );
       }
 

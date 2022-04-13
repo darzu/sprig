@@ -158,9 +158,9 @@ export function registerAllSystems(em: EntityManager) {
   registerRestartSystem(em);
   registerDeleteEntitiesSystem(em);
   registerRenderViewController(em);
+  registerUpdateRendererWorldFrames(em);
   registerUpdateCameraView(em);
   registerConstructRenderablesSystem(em);
-  registerUpdateRendererWorldFrames(em);
   registerRenderer(em);
 
   callInitFns(em);
