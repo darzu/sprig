@@ -12,11 +12,7 @@ import {
 import { PhysicsTimerDef } from "../time.js";
 import { ColorDef } from "../color.js";
 import { FinishedDef } from "../build.js";
-import {
-  CameraViewDef,
-  RenderableConstructDef,
-  RenderableDef,
-} from "../render/renderer.js";
+import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
 import {
   PhysicsParentDef,
   PositionDef,
@@ -39,7 +35,12 @@ import { getCursor, GlobalCursor3dDef } from "./cursor.js";
 import { ModelerDef, screenPosToRay } from "./modeler.js";
 import { DeletedDef } from "../delete.js";
 import { ShipLocalDef } from "./ship.js";
-import { CameraDef } from "../camera.js";
+import {
+  CameraDef,
+  CameraFollowDef,
+  CameraViewDef,
+  setCameraFollowPosition,
+} from "../camera.js";
 import { defineSerializableComponent } from "../em_helpers.js";
 
 // TODO(@darzu): it'd be great if these could hook into some sort of
@@ -52,11 +53,8 @@ export function createPlayer(em: EntityManager) {
   em.addSingletonComponent(LocalPlayerDef, e.id);
 }
 
-export const PlayerDef = EM.defineComponent("player", (gravity?: number) => {
+export const PlayerDef = EM.defineComponent("player", () => {
   return {
-    mode: "jumping" as "jumping" | "flying",
-    jumpSpeed: 0.003,
-    gravity: gravity ?? 0.1,
     // hat stuff
     // TODO(@darzu): better abstraction
     hat: 0,
@@ -125,12 +123,116 @@ controllable:
 export const ControllableDef = EM.defineComponent("controllable", () => {
   return {
     speed: 0.0005,
-    sprintSpeed: 0.0005 * 3,
+    sprintMul: 3,
+    gravity: 0.1,
+    jumpSpeed: 0.003,
+    turnSpeed: 0.001,
+    cursorId: 0,
+    worldFacingDir: vec3.create(),
+    modes: {
+      canFall: true,
+      canFly: true,
+      canSprint: true,
+      canJump: true,
+      canTurn: true,
+      canMove: true,
+    },
   };
 });
 
 export function registerControllableSystems(em: EntityManager) {
-  // TODO(@darzu): registerSystem ...
+  const steerVel = vec3.create();
+
+  em.registerSystem(
+    [ControllableDef, LinearVelocityDef, RotationDef, WorldFrameDef],
+    [InputsDef, PhysicsTimerDef],
+    (controllables, res) => {
+      const dt = res.physicsTimer.period * res.physicsTimer.steps;
+
+      for (let c of controllables) {
+        vec3.zero(steerVel);
+        const modes = c.controllable.modes;
+
+        let speed = c.controllable.speed * dt;
+
+        if (modes.canSprint)
+          if (res.inputs.keyDowns["shift"]) speed *= c.controllable.sprintMul;
+
+        if (modes.canMove) {
+          if (res.inputs.keyDowns["a"]) steerVel[0] -= speed;
+          if (res.inputs.keyDowns["d"]) steerVel[0] += speed;
+          if (res.inputs.keyDowns["w"]) steerVel[2] -= speed;
+          if (res.inputs.keyDowns["s"]) steerVel[2] += speed;
+
+          if (modes.canFly) {
+            if (res.inputs.keyDowns[" "]) steerVel[1] += speed;
+            if (res.inputs.keyDowns["c"]) steerVel[1] -= speed;
+          }
+        }
+
+        if (modes.canFall)
+          c.linearVelocity[1] -= (c.controllable.gravity / 1000) * dt;
+
+        if (modes.canJump)
+          if (res.inputs.keyClicks[" "])
+            c.linearVelocity[1] = c.controllable.jumpSpeed * dt;
+
+        // apply our steering velocity
+        vec3.transformQuat(steerVel, steerVel, c.rotation);
+        c.linearVelocity[0] = steerVel[0];
+        c.linearVelocity[2] = steerVel[2];
+        if (modes.canFly) c.linearVelocity[1] = steerVel[1];
+
+        if (modes.canTurn)
+          quat.rotateY(
+            c.rotation,
+            c.rotation,
+            -res.inputs.mouseMovX * c.controllable.turnSpeed
+          );
+      }
+    },
+    "controllableInput"
+  );
+
+  em.registerSystem(
+    [ControllableDef, WorldFrameDef],
+    [],
+    (controllables, res) => {
+      for (let c of controllables) {
+        let facingDir = c.controllable.worldFacingDir;
+        vec3.copy(facingDir, [0, 0, -1]);
+        vec3.transformQuat(facingDir, facingDir, c.world.rotation);
+
+        // use cursor for facingDir if possible
+        const targetCursor = EM.findEntity(c.controllable.cursorId, [
+          WorldFrameDef,
+        ]);
+        if (targetCursor) {
+          vec3.sub(facingDir, targetCursor.world.position, c.world.position);
+          vec3.normalize(facingDir, facingDir);
+        }
+
+        c.controllable.worldFacingDir;
+      }
+    },
+    "controllableFacingDir"
+  );
+
+  em.registerSystem(
+    [ControllableDef, CameraFollowDef],
+    [InputsDef, PhysicsTimerDef],
+    (controllables, res) => {
+      for (let c of controllables) {
+        if (c.controllable.modes.canTurn)
+          quat.rotateX(
+            c.cameraFollow.rotationOffset,
+            c.cameraFollow.rotationOffset,
+            -res.inputs.mouseMovY * c.controllable.turnSpeed
+          );
+      }
+    },
+    "controllableCameraFollow"
+  );
 }
 
 export function registerPlayerSystems(em: EntityManager) {
@@ -198,6 +300,11 @@ export function registerPlayerSystems(em: EntityManager) {
           e.sync.fullComponents = [PlayerPropsDef.id];
         }
         em.ensureComponent(e.id, PhysicsParentDef);
+
+        em.ensureComponentOn(e, ControllableDef);
+        em.ensureComponentOn(e, CameraFollowDef, 1);
+        setCameraFollowPosition(e, "thirdPersonOverShoulder");
+
         em.addComponent(e.id, FinishedDef);
       }
     },
@@ -213,6 +320,7 @@ export function registerPlayerSystems(em: EntityManager) {
       AuthorityDef,
       PhysicsParentDef,
       WorldFrameDef,
+      ControllableDef,
     ],
     [
       PhysicsTimerDef,
@@ -220,7 +328,6 @@ export function registerPlayerSystems(em: EntityManager) {
       InputsDef,
       MeDef,
       PhysicsResultsDef,
-      CameraViewDef,
       ModelerDef,
     ],
     (players, res) => {
@@ -230,66 +337,40 @@ export function registerPlayerSystems(em: EntityManager) {
           inputs,
           camera,
           physicsResults: { checkRay },
-          cameraView,
         } = res;
         //console.log(`${players.length} players, ${hats.length} hats`);
 
         for (let p of players) {
           if (p.authority.pid !== res.me.pid) continue;
 
-          if (CHEAT && inputs.keyClicks["f"])
-            p.player.mode = p.player.mode === "jumping" ? "flying" : "jumping";
+          // determine modes
+          p.controllable.modes.canSprint = true;
 
-          // fall with gravity
-          if (p.player.mode === "jumping") {
-            // TODO(@darzu): what r the units of gravity here?
-            p.linearVelocity[1] -= (p.player.gravity / 1000) * dt;
+          if (p.player.manning) {
+            p.controllable.modes.canMove = false;
+            p.controllable.modes.canTurn = false;
           } else {
-            p.linearVelocity[1] = 0;
+            p.controllable.modes.canMove = true;
+            p.controllable.modes.canTurn = true;
           }
 
-          // move player
-          let vel = vec3.fromValues(0, 0, 0);
-          let playerSpeed = 0.0005;
-          if (inputs.keyDowns["shift"]) playerSpeed *= 3;
-          let trans = playerSpeed * dt;
-          if (!p.player.manning) {
-            if (inputs.keyDowns["a"]) {
-              vec3.add(vel, vel, vec3.fromValues(-trans, 0, 0));
-            }
-            if (inputs.keyDowns["d"]) {
-              vec3.add(vel, vel, vec3.fromValues(trans, 0, 0));
-            }
-            if (inputs.keyDowns["w"]) {
-              vec3.add(vel, vel, vec3.fromValues(0, 0, -trans));
-            }
-            if (inputs.keyDowns["s"]) {
-              vec3.add(vel, vel, vec3.fromValues(0, 0, trans));
-            }
+          if (!CHEAT) {
+            p.controllable.modes.canFall = true;
+            p.controllable.modes.canFly = false;
+            p.controllable.modes.canJump = false;
           }
 
-          if (p.player.mode === "jumping") {
-            if (CHEAT && inputs.keyClicks[" "]) {
-              p.linearVelocity[1] = p.player.jumpSpeed * dt;
-            }
-          } else {
-            if (inputs.keyDowns[" "]) {
-              vec3.add(vel, vel, vec3.fromValues(0, trans, 0));
-            } else if (inputs.keyDowns["c"]) {
-              vec3.add(vel, vel, vec3.fromValues(0, -trans, 0));
-            }
+          if (CHEAT && inputs.keyClicks["f"]) {
+            p.controllable.modes.canFly = !p.controllable.modes.canFly;
           }
 
-          // console.log(vel);
-
-          vec3.transformQuat(vel, vel, p.rotation);
-
-          // vec3.add(player.linearVelocity, player.linearVelocity, vel);
-
-          // x and z from local movement
-          p.linearVelocity[0] = vel[0];
-          p.linearVelocity[2] = vel[2];
-          if (p.player.mode === "flying") p.linearVelocity[1] = vel[1];
+          if (p.controllable.modes.canFly) {
+            p.controllable.modes.canFall = false;
+            p.controllable.modes.canJump = false;
+          } else if (CHEAT) {
+            p.controllable.modes.canFall = true;
+            p.controllable.modes.canJump = true;
+          }
 
           // TODO(@darzu): rework to use phsyiscs colliders
           if (inputs.keyClicks["e"]) {
@@ -305,27 +386,8 @@ export function registerPlayerSystems(em: EntityManager) {
 
           p.player.dropping = (inputs.keyClicks["q"] || 0) > 0;
 
-          // TODO(@darzu): we need a better way, maybe some sort of stack,
-          //    to hand off mouse etc between systems
-          if (res.modeler.mode === "" && !p.player.manning) {
-            quat.rotateY(p.rotation, p.rotation, -inputs.mouseMovX * 0.001);
-            quat.rotateX(
-              camera.rotation,
-              camera.rotation,
-              -inputs.mouseMovY * 0.001
-            );
-          }
+          let facingDir = p.controllable.worldFacingDir;
 
-          let facingDir = vec3.fromValues(0, 0, -1);
-          vec3.transformQuat(facingDir, facingDir, p.world.rotation);
-
-          const targetCursor = EM.findEntity(p.player.targetCursor, [
-            WorldFrameDef,
-          ]);
-          if (targetCursor) {
-            vec3.sub(facingDir, targetCursor.world.position, p.world.position);
-            vec3.normalize(facingDir, facingDir);
-          }
           // add bullet on lclick
           if (CHEAT && inputs.lclick) {
             const linearVelocity = vec3.scale(vec3.create(), facingDir, 0.02);
@@ -457,20 +519,14 @@ export function registerPlayerSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [PlayerDef, PositionDef, RotationDef, AuthorityDef],
-    [
-      CameraViewDef,
-      CameraDef,
-      GlobalCursor3dDef,
-      MeDef,
-      PhysicsResultsDef,
-      InputsDef,
-    ],
+    [PlayerDef, PositionDef, RotationDef, AuthorityDef, CameraFollowDef],
+    [CameraViewDef, GlobalCursor3dDef, MeDef, PhysicsResultsDef, InputsDef],
     (players, res) => {
       const p = players.filter((p) => p.authority.pid === res.me.pid)[0];
       const c = getCursor(em, [PositionDef, RenderableDef, ColorDef]);
       if (p && c) {
-        if (res.camera.cameraMode !== "thirdPersonOverShoulder") {
+        const overShoulder = p.cameraFollow.positionOffset[0] !== 0;
+        if (!overShoulder) {
           // hide the cursor
           c.renderable.enabled = false;
           // target nothing

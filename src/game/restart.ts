@@ -44,8 +44,7 @@ export function registerRestartSystem(em: EntityManager) {
           p.player.manning = false;
         }
 
-        quat.identity(res.camera.rotation);
-        res.camera.targetId = 0;
+        quat.identity(res.camera.rotationOffset);
         const gem = em.findEntity(ship.shipProps.gemId, [
           WorldFrameDef,
           PositionDef,

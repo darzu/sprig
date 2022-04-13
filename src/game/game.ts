@@ -5,7 +5,6 @@ import { jitter } from "../math.js";
 import {
   registerConstructRenderablesSystem,
   registerRenderer,
-  registerUpdateCameraView,
   registerUpdateRendererWorldFrames,
   RenderableConstructDef,
 } from "../render/renderer.js";
@@ -26,7 +25,12 @@ import {
   registerControllableSystems,
   registerPlayerSystems,
 } from "./player.js";
-import { CameraDef, registerRetargetCameraSystems } from "../camera.js";
+import {
+  CameraDef,
+  CameraFollowDef,
+  registerCameraSystems,
+  setCameraFollowPosition,
+} from "../camera.js";
 import { registerNetSystems } from "../net/net.js";
 import {
   registerHandleNetworkEvents,
@@ -143,7 +147,6 @@ export function registerAllSystems(em: EntityManager) {
   registerTurretSystems(em);
   registerCannonSystems(em);
   registerPhysicsSystems(em);
-  registerRetargetCameraSystems(em);
   registerMotionSmoothingSystems(em);
   registerBulletCollisionSystem(em);
   registerModeler(em);
@@ -155,8 +158,8 @@ export function registerAllSystems(em: EntityManager) {
   registerEventSystems(em);
   registerRestartSystem(em);
   registerDeleteEntitiesSystem(em);
+  registerCameraSystems(em);
   registerRenderViewController(em);
-  registerUpdateCameraView(em);
   registerConstructRenderablesSystem(em);
   registerUpdateRendererWorldFrames(em);
   registerRenderer(em);
@@ -182,8 +185,8 @@ function registerShipGameUI(em: EntityManager) {
 function registerRenderViewController(em: EntityManager) {
   em.registerSystem(
     [],
-    [InputsDef, RendererDef, CameraDef],
-    (_, { inputs, renderer, camera }) => {
+    [InputsDef, RendererDef, CameraDef, LocalPlayerDef],
+    (_, { inputs, renderer, camera, localPlayer }) => {
       // check render mode
       if (inputs.keyClicks["1"]) {
         // both lines and tris
@@ -204,9 +207,12 @@ function registerRenderViewController(em: EntityManager) {
 
       // check camera mode
       if (inputs.keyClicks["4"]) {
-        if (camera.cameraMode === "thirdPerson")
-          camera.cameraMode = "thirdPersonOverShoulder";
-        else camera.cameraMode = "thirdPerson";
+        const p = em.findEntity(localPlayer.playerId, [CameraFollowDef]);
+        if (p) {
+          const overShoulder = p.cameraFollow.positionOffset[0] !== 0;
+          if (overShoulder) setCameraFollowPosition(p, "thirdPerson");
+          else setCameraFollowPosition(p, "thirdPersonOverShoulder");
+        }
       }
     },
     "renderView"

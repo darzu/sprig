@@ -10,7 +10,7 @@ import { AuthorityDef, SyncDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
 import { InRangeDef, InteractableDef } from "./interact.js";
 import { LocalPlayerDef, PlayerDef } from "./player.js";
-import { CameraDef } from "../camera.js";
+import { CameraFollowDef, setCameraFollowPosition } from "../camera.js";
 import { AABB, copyAABB, createAABB } from "../physics/broadphase.js";
 import { InputsDef } from "../inputs.js";
 import { clamp } from "../math.js";
@@ -70,6 +70,20 @@ export function constructNetTurret(
   EM.ensureComponentOn(e, SyncDef);
   e.sync.dynamicComponents.push(YawPitchDef.id);
 
+  // setup camera params
+  EM.ensureComponentOn(e, CameraFollowDef, 0);
+  setCameraFollowPosition(e, "thirdPersonOverShoulder");
+  quat.rotateY(
+    e.cameraFollow.rotationOffset,
+    e.cameraFollow.rotationOffset,
+    Math.PI / 2
+  );
+  quat.rotateX(
+    e.cameraFollow.rotationOffset,
+    e.cameraFollow.rotationOffset,
+    -Math.PI / 8
+  );
+
   // create seperate hitbox for interacting with the turret
   const interactBox = EM.newEntity();
   const interactAABB = copyAABB(createAABB(), meshAABB);
@@ -84,6 +98,7 @@ export function constructNetTurret(
   });
   EM.ensureComponentOn(e, InteractableDef);
   e.interaction.colliderId = interactBox.id;
+
   return true;
 }
 
@@ -92,15 +107,12 @@ export const raiseManTurret = eventWizard(
   () =>
     [
       [PlayerDef, AuthorityDef],
-      [TurretDef, AuthorityDef],
+      [TurretDef, CameraFollowDef, AuthorityDef],
     ] as const,
   ([player, turret]) => {
     const localPlayer = EM.getResource(LocalPlayerDef);
     if (localPlayer?.playerId === player.id) {
-      const camera = EM.getResource(CameraDef)!;
-      quat.identity(camera.rotation);
-      camera.targetId = turret.id;
-
+      turret.cameraFollow.priority = 2;
       turret.authority.pid = player.authority.pid;
       turret.authority.seq++;
       turret.authority.updateSeq = 0;
@@ -117,13 +129,9 @@ export const raiseManTurret = eventWizard(
 
 export const raiseUnmanTurret = eventWizard(
   "unman-turret",
-  () => [[PlayerDef], [TurretDef]] as const,
+  () => [[PlayerDef], [TurretDef, CameraFollowDef]] as const,
   ([player, turret]) => {
-    const camera = EM.getResource(CameraDef);
-    if (camera?.targetId === turret.id) {
-      quat.identity(camera.rotation);
-      camera.targetId = 0;
-    }
+    turret.cameraFollow.priority = 0;
     player.player.manning = false;
     turret.turret.mannedId = 0;
   },
@@ -150,7 +158,7 @@ export function registerTurretSystems(em: EntityManager) {
 
   em.registerSystem(
     [TurretDef, YawPitchDef],
-    [InputsDef, CameraDef, LocalPlayerDef],
+    [InputsDef, LocalPlayerDef],
     (turrets, res) => {
       const player = em.findEntity(res.localPlayer.playerId, [PlayerDef])!;
       if (!player) return;
@@ -170,16 +178,13 @@ export function registerTurretSystems(em: EntityManager) {
           c.turret.minPitch,
           c.turret.maxPitch
         );
-
-        quat.rotateY(res.camera.rotation, quat.IDENTITY, +Math.PI / 2);
-        quat.rotateX(res.camera.rotation, res.camera.rotation, -Math.PI * 0.15);
       }
     },
     "turretAim"
   );
 
   em.registerSystem(
-    [TurretDef, InRangeDef, AuthorityDef],
+    [TurretDef, InRangeDef, AuthorityDef, CameraFollowDef],
     [InputsDef, LocalPlayerDef],
     (turrets, res) => {
       const player = em.findEntity(res.localPlayer.playerId, [

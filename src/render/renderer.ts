@@ -8,7 +8,12 @@ import {
 } from "../entity-manager.js";
 import { applyTints, TintsDef } from "../color.js";
 import { PlayerDef } from "../game/player.js";
-import { CameraDef, CameraProps } from "../camera.js";
+import {
+  CameraDef,
+  CameraProps,
+  CameraView,
+  CameraViewDef,
+} from "../camera.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { isMeshHandle, Mesh, MeshHandle } from "./mesh-pool.js";
 import { Authority, AuthorityDef, Me, MeDef } from "../net/components.js";
@@ -74,15 +79,6 @@ export const RenderableDef = EM.defineComponent(
   (r: Renderable) => r
 );
 
-export const CameraViewDef = EM.defineComponent("cameraView", () => {
-  return {
-    aspectRatio: 1,
-    width: 100,
-    height: 100,
-    viewProjMat: mat4.create(),
-  };
-});
-export type CameraView = Component<typeof CameraViewDef>;
 interface RenderableObj {
   id: number;
   renderable: Renderable;
@@ -124,112 +120,6 @@ function stepRenderer(
   renderer.renderFrame(
     cameraView.viewProjMat,
     objs.map((o) => o.renderable.meshHandle)
-  );
-}
-
-export function registerUpdateCameraView(em: EntityManager) {
-  em.addSingletonComponent(CameraViewDef);
-  em.registerSystem(
-    [PlayerDef, PositionDef, RotationDef, AuthorityDef, WorldFrameDef],
-    [CameraViewDef, CameraDef, MeDef, CanvasDef],
-    (players, resources) => {
-      const { cameraView, camera, me, htmlCanvas } = resources;
-
-      // if (camera.targetId) console.log(`target: ${camera.targetId}`);
-
-      let targetEnt = em.findEntity(camera.targetId, [WorldFrameDef]);
-
-      // default to player
-      if (!targetEnt)
-        targetEnt = players.filter((p) => p.authority.pid === me.pid)[0];
-
-      if (!targetEnt) return;
-
-      // update aspect ratio and size
-      cameraView.aspectRatio = Math.abs(
-        htmlCanvas.canvas.width / htmlCanvas.canvas.height
-      );
-      cameraView.width = htmlCanvas.canvas.width;
-      cameraView.height = htmlCanvas.canvas.height;
-
-      if (camera.cameraMode === "thirdPerson") {
-        vec3.copy(camera.offset, [0, 0, 10]);
-      } else if (camera.cameraMode === "thirdPersonOverShoulder") {
-        vec3.copy(camera.offset, [2, 2, 8]);
-      }
-
-      let viewMatrix = mat4.create();
-      if (targetEnt) {
-        const computedRotation = quat.mul(
-          tempQuat(),
-          targetEnt.world.rotation,
-          camera.targetRotationError
-        );
-        quat.normalize(computedRotation, computedRotation);
-        const computedTranslation = vec3.add(
-          tempVec(),
-          targetEnt.world.position,
-          camera.targetPositionError
-        );
-        mat4.fromRotationTranslationScale(
-          viewMatrix,
-          computedRotation,
-          computedTranslation,
-          targetEnt.world.scale
-        );
-      }
-
-      const computedCameraRotation = quat.mul(
-        tempQuat(),
-        camera.rotation,
-        camera.cameraRotationError
-      );
-
-      mat4.multiply(
-        viewMatrix,
-        viewMatrix,
-        mat4.fromQuat(mat4.create(), computedCameraRotation)
-      );
-
-      const computedCameraTranslation = vec3.add(
-        tempVec(),
-        camera.offset,
-        camera.cameraOffsetError
-      );
-
-      mat4.translate(viewMatrix, viewMatrix, computedCameraTranslation);
-      mat4.invert(viewMatrix, viewMatrix);
-
-      const projectionMatrix = mat4.create();
-      if (camera.perspectiveMode === "ortho") {
-        const ORTHO_SIZE = 40;
-        mat4.ortho(
-          projectionMatrix,
-          -ORTHO_SIZE,
-          ORTHO_SIZE,
-          -ORTHO_SIZE,
-          ORTHO_SIZE,
-          -400,
-          200
-        );
-      } else {
-        mat4.perspective(
-          projectionMatrix,
-          (2 * Math.PI) / 5,
-          cameraView.aspectRatio,
-          1,
-          10000.0 /*view distance*/
-        );
-      }
-      const viewProj = mat4.multiply(
-        mat4.create(),
-        projectionMatrix,
-        viewMatrix
-      ) as Float32Array;
-
-      cameraView.viewProjMat = viewProj;
-    },
-    "updateCameraView"
   );
 }
 
