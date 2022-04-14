@@ -76,8 +76,72 @@ export function farthestPointInDir(points: vec3[], d: vec3): vec3 {
   return maxP!;
 }
 
-type Simplex = [vec3, vec3, vec3, vec3];
+type Shape = {
+  center: vec3;
+  support: SupportFn;
+};
 
-export function gjk(s1: SupportFn, s2: SupportFn): boolean {
+// minkowski difference support
+function mSupport(s1: Shape, s2: Shape, d: vec3): vec3 {
+  // TODO(@darzu):
+  return vec3.sub(vec3.create(), s1.support(d), s2.support(d));
+}
+
+// GJK visualization
+
+let d: vec3 = vec3.create();
+let simplex: vec3[] = [];
+export function gjk(s1: Shape, s2: Shape): boolean {
+  vec3.sub(d, s2.center, s1.center);
+  vec3.normalize(d, d);
+  simplex = [mSupport(s1, s2, d)];
+  vec3.sub(d, [0, 0, 0], simplex[0]);
+  while (true) {
+    const A = mSupport(s1, s2, d);
+    if (vec3.dot(A, d) < 0) return false;
+    simplex.push(A);
+    if (handleSimplex()) return true;
+    break; // TODO(@darzu):
+  }
+  return false;
+}
+function tripleProd(out: vec3, a: vec3, b: vec3, c: vec3): vec3 {
+  vec3.cross(out, a, b);
+  vec3.cross(out, out, c);
+  return out;
+}
+function handleSimplex(): boolean {
+  if (simplex.length === 2) {
+    // line case
+    const [B, A] = simplex;
+    const AB = vec3.sub(vec3.create(), B, A);
+    const AO = vec3.sub(vec3.create(), [0, 0, 0], A);
+    const ABperp = tripleProd(vec3.create(), AB, AO, AB);
+    vec3.copy(d, ABperp);
+    return false;
+  } else if (simplex.length === 3) {
+    // triangle case
+    const [C, B, A] = simplex;
+    const AB = vec3.sub(vec3.create(), B, A);
+    const AC = vec3.sub(vec3.create(), C, A);
+    const AO = vec3.sub(vec3.create(), [0, 0, 0], A);
+    const ABperp = tripleProd(vec3.create(), AC, AB, AB);
+    const ACperp = tripleProd(vec3.create(), AB, AC, AC);
+    if (vec3.dot(ABperp, AO) > 0) {
+      // Region AB
+      simplex = [B, A];
+      vec3.copy(d, ABperp);
+      return false;
+    }
+    if (vec3.dot(ACperp, AO) > 0) {
+      // Region AC
+      simplex = [C, A];
+      vec3.copy(d, ACperp);
+      return false;
+    }
+    return true;
+  } else {
+    // tetrahedron
+  }
   return false;
 }

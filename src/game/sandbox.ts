@@ -116,14 +116,32 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
             vec3.transformMat4(p, p, b1.world.transform)
           );
           const supportA = (d: vec3) => farthestPointInDir(worldA, d);
+          const centerA = vec3.transformMat4(
+            vec3.create(),
+            center,
+            b1.world.transform
+          );
+          const shapeA = {
+            center: centerA,
+            support: supportA,
+          };
 
           const localB = boxLocalPoints(center, halfsize);
           const worldB = localA.map((p) =>
             vec3.transformMat4(p, p, b2.world.transform)
           );
           const supportB = (d: vec3) => farthestPointInDir(worldA, d);
+          const centerB = vec3.transformMat4(
+            vec3.create(),
+            center,
+            b2.world.transform
+          );
+          const shapeB = {
+            center: centerB,
+            support: supportB,
+          };
 
-          const overlaps = gjk(supportA, supportB);
+          const overlaps = gjk(shapeA, shapeB);
 
           if (overlaps) {
             b1.color[0] = 0.3;
