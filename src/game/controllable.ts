@@ -2,6 +2,7 @@ import { CameraFollowDef } from "../camera.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { vec3, quat } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
+import { AuthorityDef, MeDef } from "../net/components.js";
 import { LinearVelocityDef } from "../physics/motion.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { RotationDef } from "../physics/transform.js";
@@ -52,11 +53,12 @@ export function registerControllableSystems(em: EntityManager) {
 
   em.registerSystem(
     [ControllableDef, LinearVelocityDef, RotationDef, WorldFrameDef],
-    [InputsDef, PhysicsTimerDef],
+    [InputsDef, PhysicsTimerDef, MeDef],
     (controllables, res) => {
       const dt = res.physicsTimer.period * res.physicsTimer.steps;
 
       for (let c of controllables) {
+        if (AuthorityDef.isOn(c) && c.authority.pid !== res.me.pid) continue;
         vec3.zero(steerVel);
         const modes = c.controllable.modes;
 
@@ -103,9 +105,10 @@ export function registerControllableSystems(em: EntityManager) {
 
   em.registerSystem(
     [ControllableDef, CameraFollowDef],
-    [InputsDef, PhysicsTimerDef],
+    [InputsDef, PhysicsTimerDef, MeDef],
     (controllables, res) => {
       for (let c of controllables) {
+        if (AuthorityDef.isOn(c) && c.authority.pid !== res.me.pid) continue;
         if (c.controllable.modes.canTurn)
           quat.rotateX(
             c.cameraFollow.rotationOffset,
