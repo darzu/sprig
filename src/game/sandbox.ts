@@ -6,8 +6,13 @@ import {
 import { ColorDef } from "../color.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { vec3, quat } from "../gl-matrix.js";
-import { LinearVelocityDef } from "../physics/motion.js";
-import { PositionDef, RotationDef } from "../physics/transform.js";
+import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
+import {
+  PhysicsParentDef,
+  PositionDef,
+  RotationDef,
+} from "../physics/transform.js";
+import { cloneMesh } from "../render/mesh-pool.js";
 import { RenderableDef, RenderableConstructDef } from "../render/renderer.js";
 import { RendererDef } from "../render/render_init.js";
 import { AssetsDef } from "./assets.js";
@@ -56,6 +61,20 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
       em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
       em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
       em.ensureComponentOn(p, PositionDef, [0, -5, 0]);
+
+      const b1 = em.newEntity();
+      const m1 = cloneMesh(res.assets.cube.mesh);
+      em.ensureComponentOn(b1, RenderableConstructDef, m1);
+      em.ensureComponentOn(b1, ColorDef, [0.1, 0.2, 0.1]);
+      em.ensureComponentOn(b1, PositionDef, [0, 0, 1.2]);
+      em.ensureComponentOn(b1, RotationDef);
+      em.ensureComponentOn(b1, AngularVelocityDef, [0, 0.001, 0.001]);
+
+      const b2 = em.newEntity();
+      const m2 = cloneMesh(res.assets.cube.mesh);
+      em.ensureComponentOn(b2, RenderableConstructDef, m2);
+      em.ensureComponentOn(b2, ColorDef, [0.1, 0.1, 0.2]);
+      em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
     }
   );
 }
