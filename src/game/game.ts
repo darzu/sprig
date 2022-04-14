@@ -81,8 +81,11 @@ import { registerPhysicsSystems } from "../physics/phys.js";
 import { registerNoodleSystem } from "./noodles.js";
 import { registerUpdateLifetimes } from "./lifetime.js";
 import { registerMusicSystems } from "../music.js";
-import { GameState, GameStateDef } from "./gamestate.js";
-import { registerRestartSystem } from "./restart.js";
+import {
+  GameState,
+  GameStateDef,
+  registerGameStateSystems,
+} from "./gamestate.js";
 import { registerNetDebugSystem } from "../net/net-debug.js";
 import { assert } from "../test.js";
 import { callInitFns } from "../init.js";
@@ -104,8 +107,9 @@ function registerScoreSystems(em: EntityManager) {
 
   em.registerSystem(
     [ShipLocalDef, PositionDef],
-    [ScoreDef],
+    [ScoreDef, GameStateDef],
     (ships, res) => {
+      if (res.gameState.state !== GameState.PLAYING) return;
       if (ships.length) {
         const ship = ships.reduce(
           (p, n) => (n.position[2] > p.position[2] ? n : p),
@@ -126,6 +130,7 @@ export function registerAllSystems(em: EntityManager) {
   registerInitCanvasSystem(em);
   registerUISystems(em);
   registerDevSystems(em);
+  registerGameStateSystems(em);
   registerScoreSystems(em);
   registerRenderInitSystem(em);
   registerMusicSystems(em);
@@ -160,7 +165,6 @@ export function registerAllSystems(em: EntityManager) {
   registerSyncSystem(em);
   registerSendOutboxes(em);
   registerEventSystems(em);
-  registerRestartSystem(em);
   registerDeleteEntitiesSystem(em);
   registerUpdateRendererWorldFrames(em);
   registerCameraSystems(em);
@@ -226,13 +230,13 @@ function registerRenderViewController(em: EntityManager) {
 export function initShipGame(em: EntityManager, hosting: boolean) {
   registerShipGameUI(em);
   EM.addSingletonComponent(CameraDef);
+  EM.addSingletonComponent(GameStateDef);
 
   // TODO(@darzu): DEBUGGING
   // debugCreateNoodles(em);
   // debugBoatParts(em);
 
   if (hosting) {
-    em.addSingletonComponent(GameStateDef);
     registerBoatSpawnerSystem(em);
     createShip();
     initGroundSystem(em);
