@@ -30,7 +30,6 @@ export const shaderSceneStruct = () => `
 // render pipeline parameters
 const antiAliasSampleCount = 4;
 const depthStencilFormat = "depth24plus-stencil8";
-const backgroundColor = { r: 0.6, g: 0.63, b: 0.6, a: 1.0 };
 
 // export interface MeshObj {
 //   id: number;
@@ -42,6 +41,8 @@ const backgroundColor = { r: 0.6, g: 0.63, b: 0.6, a: 1.0 };
 export class Renderer_WebGPU implements Renderer {
   public drawLines = true;
   public drawTris = true;
+
+  public backgroundColor: vec3 = [0.6, 0.63, 0.6];
 
   private device: GPUDevice;
   private canvas: HTMLCanvasElement;
@@ -408,7 +409,12 @@ export class Renderer_WebGPU implements Renderer {
           view: this.colorTextureView!,
           resolveTarget: this.context.getCurrentTexture().createView(),
           loadOp: "clear",
-          clearValue: backgroundColor,
+          clearValue: {
+            r: this.backgroundColor[0],
+            g: this.backgroundColor[1],
+            b: this.backgroundColor[2],
+            a: 1,
+          },
           storeOp: "store",
         },
       ],

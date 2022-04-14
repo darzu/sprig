@@ -7,6 +7,7 @@ import {
   registerRenderer,
   registerUpdateRendererWorldFrames,
   RenderableConstructDef,
+  RenderableDef,
 } from "../render/renderer.js";
 import {
   PositionDef,
@@ -73,7 +74,7 @@ import {
   registerMotionSmoothingRecordLocationsSystem,
   registerMotionSmoothingSystems,
 } from "../motion-smoothing.js";
-import { registerCursorSystems } from "./cursor.js";
+import { GlobalCursor3dDef, registerCursorSystems } from "./cursor.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { FinishedDef } from "../build.js";
@@ -91,6 +92,8 @@ import { registerTurretSystems } from "./turret.js";
 import { registerUISystems, TextDef } from "./ui.js";
 import { DevConsoleDef, registerDevSystems } from "../console.js";
 import { registerControllableSystems } from "./controllable.js";
+import { createGhost } from "./ghost.js";
+import { ColorDef } from "../color.js";
 
 export const ScoreDef = EM.defineComponent("score", () => {
   return {
@@ -189,8 +192,8 @@ function registerShipGameUI(em: EntityManager) {
 function registerRenderViewController(em: EntityManager) {
   em.registerSystem(
     [],
-    [InputsDef, RendererDef, CameraDef, LocalPlayerDef],
-    (_, { inputs, renderer, camera, localPlayer }) => {
+    [InputsDef, RendererDef, CameraDef],
+    (_, { inputs, renderer, camera }) => {
       // check render mode
       if (inputs.keyClicks["1"]) {
         // both lines and tris
@@ -211,7 +214,8 @@ function registerRenderViewController(em: EntityManager) {
 
       // check camera mode
       if (inputs.keyClicks["4"]) {
-        const p = em.findEntity(localPlayer.playerId, [CameraFollowDef]);
+        const localPlayer = em.getResource(LocalPlayerDef);
+        const p = em.findEntity(localPlayer?.playerId ?? -1, [CameraFollowDef]);
         if (p) {
           const overShoulder = p.cameraFollow.positionOffset[0] !== 0;
           if (overShoulder) setCameraFollowPosition(p, "thirdPerson");
@@ -225,11 +229,7 @@ function registerRenderViewController(em: EntityManager) {
 
 export function initShipGame(em: EntityManager, hosting: boolean) {
   registerShipGameUI(em);
-  EM.addSingletonComponent(CameraDef);
-
-  // TODO(@darzu): DEBUGGING
-  // debugCreateNoodles(em);
-  // debugBoatParts(em);
+  em.addSingletonComponent(CameraDef);
 
   if (hosting) {
     em.addSingletonComponent(GameStateDef);
@@ -242,13 +242,27 @@ export function initShipGame(em: EntityManager, hosting: boolean) {
 }
 
 export function initDbgGame(em: EntityManager, hosting: boolean) {
-  EM.addSingletonComponent(CameraDef);
+  em.addSingletonComponent(CameraDef);
 
-  // TODO(@darzu): DEBUGGING
-  // debugCreateNoodles(em);
-  // debugBoatParts(em);
+  em.registerOneShotSystem(
+    null,
+    [AssetsDef, GlobalCursor3dDef, RendererDef],
+    (_, res) => {
+      const g = createGhost(em);
+      // em.ensureComponentOn(g, RenderableConstructDef, res.assets.cube.proto);
+      // createPlayer(em);
 
-  createPlayer(em);
+      const c = res.globalCursor3d.cursor()!;
+      if (RenderableDef.isOn(c)) c.renderable.enabled = false;
+
+      vec3.copy(res.renderer.renderer.backgroundColor, [0.7, 0.8, 1.0]);
+
+      const p = em.newEntity();
+      em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
+      em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
+      em.ensureComponentOn(p, PositionDef, [0, -5, 0]);
+    }
+  );
 }
 
 function debugBoatParts(em: EntityManager) {

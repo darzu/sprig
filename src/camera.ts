@@ -56,15 +56,17 @@ export const CameraFollowDef = EM.defineComponent(
   })
 );
 
+const cameraOffsets = {
+  thirdPerson: [0, 0, 10],
+  thirdPersonOverShoulder: [2, 2, 8],
+  firstPerson: [0, 0, 0],
+} as const;
+
 export function setCameraFollowPosition(
   c: EntityW<[typeof CameraFollowDef]>,
-  mode: "thirdPerson" | "thirdPersonOverShoulder"
+  mode: keyof typeof cameraOffsets
 ) {
-  if (mode === "thirdPerson") {
-    vec3.copy(c.cameraFollow.positionOffset, [0, 0, 10]);
-  } else if (mode === "thirdPersonOverShoulder") {
-    vec3.copy(c.cameraFollow.positionOffset, [2, 2, 8]);
-  }
+  vec3.copy(c.cameraFollow.positionOffset, cameraOffsets[mode]);
 }
 
 export function registerCameraSystems(em: EntityManager) {
@@ -160,9 +162,13 @@ export function registerCameraSystems(em: EntityManager) {
     (_, resources) => {
       const { cameraView, camera, me, htmlCanvas } = resources;
 
-      let targetEnt = em.findEntity(camera.targetId, [RendererWorldFrameDef]);
+      let targetEnt = em.findEntity(camera.targetId, [WorldFrameDef]);
 
       if (!targetEnt) return;
+
+      let frame = targetEnt.world;
+      if (RendererWorldFrameDef.isOn(targetEnt))
+        frame = targetEnt.rendererWorldFrame;
 
       // update aspect ratio and size
       cameraView.aspectRatio = Math.abs(
@@ -175,20 +181,20 @@ export function registerCameraSystems(em: EntityManager) {
       if (targetEnt) {
         const computedRotation = quat.mul(
           tempQuat(),
-          targetEnt.rendererWorldFrame.rotation,
+          frame.rotation,
           camera.targetRotationError
         );
         quat.normalize(computedRotation, computedRotation);
         const computedTranslation = vec3.add(
           tempVec(),
-          targetEnt.rendererWorldFrame.position,
+          frame.position,
           camera.targetPositionError
         );
         mat4.fromRotationTranslationScale(
           viewMatrix,
           computedRotation,
           computedTranslation,
-          targetEnt.rendererWorldFrame.scale
+          frame.scale
         );
       }
 

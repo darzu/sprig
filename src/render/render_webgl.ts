@@ -106,7 +106,7 @@ export function attachToCanvas(
   // gl.getExtension("OES_standard_derivatives");
   // gl.getExtension("EXT_shader_texture_lod");
 
-  gl.clearColor(0.55, 0.6, 0.8, 1.0);
+  let backgroundColor: vec3 = [0.55, 0.6, 0.8];
 
   let vertShader = gl.createShader(gl.VERTEX_SHADER)!;
   gl.shaderSource(vertShader, vertCode);
@@ -226,6 +226,13 @@ export function attachToCanvas(
 
     gl.viewport(0, 0, canv.width, canv.height);
 
+    gl.clearColor(
+      backgroundColor[0],
+      backgroundColor[1],
+      backgroundColor[2],
+      1.0
+    );
+
     gl.enable(gl.DEPTH_TEST);
     // gl.frontFace(gl.CW);
     gl.enable(gl.CULL_FACE);
@@ -298,6 +305,7 @@ export function attachToCanvas(
   const renderer: Renderer = {
     drawLines: true, // TODO(@darzu): support wireframe mode in webgl
     drawTris: true,
+    backgroundColor,
     addMesh,
     addMeshInstance,
     updateMesh,
