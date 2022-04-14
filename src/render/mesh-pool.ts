@@ -1,4 +1,4 @@
-import { computeTriangleNormal } from "../utils-3d.js";
+import { centroid, computeTriangleNormal, vec3Mid } from "../utils-3d.js";
 import { mat4, vec2, vec3 } from "../gl-matrix.js";
 import { align, sum } from "../math.js";
 import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
@@ -864,8 +864,23 @@ function createMeshBuilder(
 export function getAABBFromMesh(m: Mesh): AABB {
   return getAABBFromPositions(m.pos);
 }
+export function getCenterFromAABB(aabb: AABB): vec3 {
+  return vec3Mid(vec3.create(), aabb.min, aabb.max);
+}
+export function getHalfsizeFromAABB(aabb: AABB): vec3 {
+  const out = vec3.create();
+  const a = aabb.max;
+  const b = aabb.min;
+  out[0] = (a[0] - b[0]) * 0.5;
+  out[1] = (a[1] - b[1]) * 0.5;
+  out[2] = (a[2] - b[2]) * 0.5;
+  return out;
+}
 
-export function mapMeshPositions(m: Mesh, map: (p: vec3, i: number) => vec3): Mesh {
+export function mapMeshPositions(
+  m: Mesh,
+  map: (p: vec3, i: number) => vec3
+): Mesh {
   let pos = m.pos.map(map);
   return { ...m, pos };
 }
@@ -892,42 +907,39 @@ export function cloneMesh(m: Mesh): Mesh {
 export function splitMesh(m: Mesh): Mesh[] {
   // each vertex is a seperate island
   let vertIslands: Set<number>[] = [];
-  for (let i = 0; i < m.pos.length; i++)
-  vertIslands[i] = new Set<number>([i]);
-  
+  for (let i = 0; i < m.pos.length; i++) vertIslands[i] = new Set<number>([i]);
+
   // tris and lines define connectivity, so
   //    merge together islands
   for (let tri of m.tri) {
-    mergeIslands(tri[0], tri[1])
-    mergeIslands(tri[0], tri[2])
+    mergeIslands(tri[0], tri[1]);
+    mergeIslands(tri[0], tri[2]);
   }
   if (m.lines)
-  for (let line of m.lines) {
-    mergeIslands(line[0], line[1])
-  }
-  
+    for (let line of m.lines) {
+      mergeIslands(line[0], line[1]);
+    }
+
   const uniqueIslands = uniqueRefs(vertIslands);
   console.dir(uniqueIslands);
 
   // TODO(@darzu): FINISH IMPL
-  return [m]
+  return [m];
 
   function mergeIslands(idx0: number, idx1: number) {
-    const s0 = vertIslands[idx0]
-    const s1 = vertIslands[idx1]
+    const s0 = vertIslands[idx0];
+    const s1 = vertIslands[idx1];
     if (s0 !== s1) {
       // merge s0 and s1
-      for (let i of s1)
-        s0.add(i)
-      vertIslands[idx1] = s0
+      for (let i of s1) s0.add(i);
+      vertIslands[idx1] = s0;
     }
   }
 }
 function uniqueRefs<T>(ts: T[]): T[] {
   const res: T[] = [];
   for (let t1 of ts) {
-    if (res.every(t2 => t2 !== t1))
-        res.push(t1)
+    if (res.every((t2) => t2 !== t1)) res.push(t1);
   }
   return res;
 }

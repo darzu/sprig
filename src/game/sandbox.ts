@@ -6,7 +6,14 @@ import {
 import { ColorDef } from "../color.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { vec3, quat } from "../gl-matrix.js";
+import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
+import {
+  boxLocalPoints,
+  farthestPointInDir,
+  gjk,
+} from "../physics/narrowphase.js";
+import { WorldFrameDef } from "../physics/nonintersection.js";
 import {
   PhysicsParentDef,
   PositionDef,
@@ -15,6 +22,7 @@ import {
 import { cloneMesh } from "../render/mesh-pool.js";
 import { RenderableDef, RenderableConstructDef } from "../render/renderer.js";
 import { RendererDef } from "../render/render_init.js";
+import { assert } from "../test.js";
 import { AssetsDef } from "./assets.js";
 import { ControllableDef } from "./controllable.js";
 import { GlobalCursor3dDef } from "./cursor.js";
@@ -74,12 +82,59 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
       em.ensureComponentOn(b1, PositionDef, [0, 0, 1.2]);
       em.ensureComponentOn(b1, RotationDef);
       em.ensureComponentOn(b1, AngularVelocityDef, [0, 0.001, 0.001]);
+      em.ensureComponentOn(b1, WorldFrameDef);
+      // em.ensureComponentOn(b1, ColliderDef, {
+      //   shape: "Box",
+      //   solid: false,
+      //   center: res.assets.cube.center,
+      //   halfsize: res.assets.cube.halfsize,
+      // });
 
       const b2 = em.newEntity();
       const m2 = cloneMesh(res.assets.cube.mesh);
       em.ensureComponentOn(b2, RenderableConstructDef, m2);
       em.ensureComponentOn(b2, ColorDef, [0.1, 0.1, 0.2]);
       em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
+      em.ensureComponentOn(b2, WorldFrameDef);
+      // em.ensureComponentOn(b2, ColliderDef, {
+      //   shape: "Box",
+      //   solid: false,
+      //   center: res.assets.cube.center,
+      //   halfsize: res.assets.cube.halfsize,
+      // });
+
+      const center = res.assets.cube.center;
+      const halfsize = res.assets.cube.halfsize;
+
+      em.registerSystem(
+        null,
+        [],
+        () => {
+          // TODO(@darzu):
+          const localA = boxLocalPoints(center, halfsize);
+          const worldA = localA.map((p) =>
+            vec3.transformMat4(p, p, b1.world.transform)
+          );
+          const supportA = (d: vec3) => farthestPointInDir(worldA, d);
+
+          const localB = boxLocalPoints(center, halfsize);
+          const worldB = localA.map((p) =>
+            vec3.transformMat4(p, p, b2.world.transform)
+          );
+          const supportB = (d: vec3) => farthestPointInDir(worldA, d);
+
+          const overlaps = gjk(supportA, supportB);
+
+          if (overlaps) {
+            b1.color[0] = 0.3;
+            b2.color[0] = 0.3;
+          } else {
+            b1.color[0] = 0.1;
+            b2.color[0] = 0.1;
+          }
+        },
+        "checkGJK"
+      );
     }
   );
 }

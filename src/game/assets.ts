@@ -3,6 +3,8 @@ import { mat4, vec3 } from "../gl-matrix.js";
 import { importObj, isParseError } from "../import_obj.js";
 import {
   getAABBFromMesh,
+  getCenterFromAABB,
+  getHalfsizeFromAABB,
   mapMeshPositions,
   Mesh,
   MeshHandle,
@@ -19,6 +21,7 @@ import { objMap } from "../util.js";
 import { getText } from "../webget.js";
 import { aabbListToStr } from "./modeler.js";
 import { min } from "../math.js";
+import { BoxCollider } from "../physics/collider.js";
 
 export const BLACK = vec3.fromValues(0, 0, 0);
 export const DARK_GRAY = vec3.fromValues(0.02, 0.02, 0.02);
@@ -323,6 +326,8 @@ type LocalMeshSymbols = keyof typeof LocalMeshes;
 export type GameMesh = {
   mesh: Mesh;
   aabb: AABB;
+  center: vec3;
+  halfsize: vec3;
   proto: MeshHandle;
 };
 
@@ -444,10 +449,14 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
   //  go to
   function gameMeshFromMesh(mesh: Mesh): GameMesh {
     const aabb = getAABBFromMesh(mesh);
+    const center = getCenterFromAABB(aabb);
+    const halfsize = getHalfsizeFromAABB(aabb);
     const proto = renderer.addMesh(mesh);
     return {
       mesh,
       aabb,
+      center,
+      halfsize,
       proto,
     };
   }
