@@ -44,13 +44,18 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
     null,
     [AssetsDef, GlobalCursor3dDef, RendererDef],
     (_, res) => {
-      const g = createGhost(em);
+      const e = createGhost(em);
       // em.ensureComponentOn(g, RenderableConstructDef, res.assets.cube.proto);
       // createPlayer(em);
 
-      vec3.copy(g.position, [-16.6, 5, -5.1]);
-      quat.copy(g.rotation, [0, -0.77, 0, 0.636]);
-      quat.copy(g.cameraFollow.rotationOffset, [-0.225, 0, 0, 0.974]);
+      // vec3.copy(e.position, [-16.6, 5, -5.1]);
+      // quat.copy(e.rotation, [0, -0.77, 0, 0.636]);
+      // vec3.copy(e.cameraFollow.positionOffset, [0, 0, 0]);
+      // quat.copy(e.cameraFollow.rotationOffset, [-0.225, 0, 0, 0.974]);
+      vec3.copy(e.position, [-4.28, 0.97, 0.11]);
+      quat.setAxisAngle(e.rotation, [0.0, -1.0, 0.0], 1.62);
+      vec3.copy(e.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+      quat.copy(e.cameraFollow.rotationOffset, [-0.18, 0.0, 0.0, 0.98]);
 
       const c = res.globalCursor3d.cursor()!;
       if (RenderableDef.isOn(c)) c.renderable.enabled = false;

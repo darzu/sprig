@@ -1,5 +1,8 @@
+import { CameraFollowDef } from "./camera.js";
 import { ComponentDef, EM, Entity, EntityW } from "./entity-manager.js";
 import { SyncDef } from "./net/components.js";
+import { PositionDef, RotationDef } from "./physics/transform.js";
+import { quatDbg, vec3Dbg, vec4Dbg } from "./utils-3d.js";
 
 // TODO(@darzu): debugging helpers
 interface DbgCmp extends ComponentDef {
@@ -188,6 +191,31 @@ function cmpByName(name: string): DbgCmp | null {
 }
 
 export const dbg = {
+  saveCamera: () => {
+    const targets = EM.filterEntities([
+      CameraFollowDef,
+      RotationDef,
+      PositionDef,
+    ]);
+    const target = targets.reduce(
+      (p, n) => (n.cameraFollow.priority > p.cameraFollow.priority ? n : p),
+      targets[0]
+    );
+    if (!target) {
+      console.error(`no target!`);
+      return;
+    }
+    console.log(`
+vec3.copy(e.position, ${vec3Dbg(target.position)});
+quat.copy(e.rotation, ${vec4Dbg(target.rotation)});
+vec3.copy(e.cameraFollow.positionOffset, ${vec3Dbg(
+      target.cameraFollow.positionOffset
+    )});
+quat.copy(e.cameraFollow.rotationOffset, ${vec4Dbg(
+      target.cameraFollow.rotationOffset
+    )});
+    `);
+  },
   listCmps: () => {
     updateCmps();
     const cmps = [...dbgCmps.values(), ...dbgCmpsSingleton.values()];
