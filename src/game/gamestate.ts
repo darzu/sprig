@@ -13,6 +13,7 @@ import {
   RotationDef,
 } from "../physics/transform.js";
 import { PhysicsTimerDef } from "../time.js";
+import { ScoreDef } from "./game.js";
 import { GroundSystemDef } from "./ground.js";
 import { LifetimeDef } from "./lifetime.js";
 import { LocalPlayerDef, PlayerDef } from "./player.js";
@@ -96,7 +97,7 @@ export const restartGame = eventWizard(
   () => [[ShipPropsDef]] as const,
   ([ship]) => {
     console.log("restart");
-    const res = EM.getResources([GameStateDef, LocalPlayerDef])!;
+    const res = EM.getResources([GameStateDef, LocalPlayerDef, ScoreDef])!;
     res.gameState.state = GameState.LOBBY;
     const player = EM.findEntity(res.localPlayer.playerId, [
       PhysicsParentDef,
@@ -104,6 +105,7 @@ export const restartGame = eventWizard(
     ])!;
     player.physicsParent.id = ship.id;
     vec3.copy(player.position, [0, 100, 0]);
+    res.score.currentScore = 0;
     // reset ground system
     const ground = EM.getResource(GroundSystemDef);
     if (ground) {
