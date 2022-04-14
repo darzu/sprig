@@ -138,7 +138,6 @@ export function registerAllSystems(em: EntityManager) {
   registerMotionSmoothingRecordLocationsSystem(em);
   registerUpdateSystem(em);
   registerPredictSystem(em);
-  registerMotionSmoothingSystems(em);
   registerJoinSystems(em);
   registerAssetLoader(em);
   registerGroundSystems(em);
@@ -166,6 +165,7 @@ export function registerAllSystems(em: EntityManager) {
   registerSendOutboxes(em);
   registerEventSystems(em);
   registerDeleteEntitiesSystem(em);
+  registerMotionSmoothingSystems(em);
   registerUpdateRendererWorldFrames(em);
   registerCameraSystems(em);
   registerRenderViewController(em);
