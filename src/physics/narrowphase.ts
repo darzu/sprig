@@ -101,9 +101,7 @@ export function gjk(s1: Shape, s2: Shape): boolean {
     if (vec3.dot(A, d) < 0) return false;
     simplex.push(A);
     if (handleSimplex()) return true;
-    break; // TODO(@darzu):
   }
-  return false;
 }
 function tripleProd(out: vec3, a: vec3, b: vec3, c: vec3): vec3 {
   vec3.cross(out, a, b);
@@ -124,24 +122,38 @@ function handleSimplex(): boolean {
     const [C, B, A] = simplex;
     const AB = vec3.sub(vec3.create(), B, A);
     const AC = vec3.sub(vec3.create(), C, A);
+    const ABCperp = vec3.cross(vec3.create(), AB, AC);
     const AO = vec3.sub(vec3.create(), [0, 0, 0], A);
-    const ABperp = tripleProd(vec3.create(), AC, AB, AB);
-    const ACperp = tripleProd(vec3.create(), AB, AC, AC);
-    if (vec3.dot(ABperp, AO) > 0) {
-      // Region AB
-      simplex = [B, A];
-      vec3.copy(d, ABperp);
+    if (vec3.dot(ABCperp, AO) < 0) vec3.negate(ABCperp, ABCperp);
+    vec3.copy(d, ABCperp);
+    return false;
+  } else {
+    // tetrahedron
+    const [D, C, B, A] = simplex;
+    // TODO(@darzu):
+    const AB = vec3.sub(vec3.create(), B, A);
+    const AC = vec3.sub(vec3.create(), C, A);
+    const AD = vec3.sub(vec3.create(), D, A);
+    const AO = vec3.sub(vec3.create(), [0, 0, 0], A);
+
+    const ABCperp = vec3.cross(vec3.create(), AB, AC);
+    const ACDperp = vec3.cross(vec3.create(), AC, AD);
+    const ADBperp = vec3.cross(vec3.create(), AD, AB);
+    if (vec3.dot(ABCperp, AO) > 0) {
+      simplex = [C, B, A];
+      vec3.copy(d, ABCperp);
       return false;
     }
-    if (vec3.dot(ACperp, AO) > 0) {
-      // Region AC
-      simplex = [C, A];
-      vec3.copy(d, ACperp);
+    if (vec3.dot(ACDperp, AO) > 0) {
+      simplex = [D, C, A];
+      vec3.copy(d, ACDperp);
+      return false;
+    }
+    if (vec3.dot(ADBperp, AO) > 0) {
+      simplex = [D, B, A];
+      vec3.copy(d, ADBperp);
       return false;
     }
     return true;
-  } else {
-    // tetrahedron
   }
-  return false;
 }

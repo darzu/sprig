@@ -142,6 +142,7 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
           };
 
           const overlaps = gjk(shapeA, shapeB);
+          // const overlaps = false;
 
           if (overlaps) {
             b1.color[0] = 0.3;
