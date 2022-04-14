@@ -6,7 +6,7 @@ import {
   _lastCollisionTestTimeMs,
 } from "./physics/broadphase.js";
 import { setupObjImportExporter } from "./download.js";
-import { initDbgGame, initShipGame, registerAllSystems } from "./game/game.js";
+import { initShipGame, registerAllSystems } from "./game/game.js";
 import { EM } from "./entity-manager.js";
 import { addTimeComponents } from "./time.js";
 import { InputsDef, registerInputsSystem } from "./inputs.js";
@@ -15,6 +15,7 @@ import { addEventComponents } from "./net/events.js";
 import { dbg } from "./debugger.js";
 import { RendererDef } from "./render/render_init.js";
 import { DevConsoleDef } from "./console.js";
+import { initDbgGame } from "./game/sandbox.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;

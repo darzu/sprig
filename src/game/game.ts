@@ -1,28 +1,15 @@
-import { Component, EM, EntityManager } from "../entity-manager.js";
-import { mat4, quat, vec3 } from "../gl-matrix.js";
+import { EM, EntityManager } from "../entity-manager.js";
 import { InputsDef } from "../inputs.js";
-import { jitter } from "../math.js";
 import {
   registerConstructRenderablesSystem,
   registerRenderer,
   registerUpdateRendererWorldFrames,
-  RenderableConstructDef,
-  RenderableDef,
 } from "../render/renderer.js";
-import {
-  PositionDef,
-  registerInitTransforms,
-  TransformDef,
-} from "../physics/transform.js";
-import {
-  BoatPropsDef,
-  registerBoatSpawnerSystem,
-  registerBoatSystems,
-} from "./boat.js";
+import { PositionDef, registerInitTransforms } from "../physics/transform.js";
+import { registerBoatSpawnerSystem, registerBoatSystems } from "./boat.js";
 import {
   createPlayer,
   LocalPlayerDef,
-  PlayerPropsDef,
   registerPlayerSystems,
 } from "./player.js";
 import {
@@ -44,22 +31,12 @@ import {
 } from "../net/sync.js";
 import { registerPredictSystem } from "../net/predict.js";
 import { registerEventSystems } from "../net/events.js";
-import { PhysicsTimerDef, registerTimeSystem } from "../time.js";
-import {
-  GroundPropsDef,
-  GroundSystemDef,
-  initGroundSystem,
-  registerGroundSystems,
-} from "./ground.js";
+import { registerTimeSystem } from "../time.js";
+import { initGroundSystem, registerGroundSystems } from "./ground.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
 import { createShip, registerShipSystems, ShipLocalDef } from "./ship.js";
 import { registerBuildBulletsSystem, registerBulletUpdate } from "./bullet.js";
-import {
-  AssetsDef,
-  GROUNDSIZE,
-  LIGHT_BLUE,
-  registerAssetLoader,
-} from "./assets.js";
+import { AssetsDef, registerAssetLoader } from "./assets.js";
 import { registerInitCanvasSystem } from "../canvas.js";
 import {
   registerRenderInitSystem,
@@ -74,26 +51,20 @@ import {
   registerMotionSmoothingRecordLocationsSystem,
   registerMotionSmoothingSystems,
 } from "../motion-smoothing.js";
-import { GlobalCursor3dDef, registerCursorSystems } from "./cursor.js";
-import { ColliderDef } from "../physics/collider.js";
-import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
-import { FinishedDef } from "../build.js";
+import { registerCursorSystems } from "./cursor.js";
 import { registerPhysicsSystems } from "../physics/phys.js";
 import { registerNoodleSystem } from "./noodles.js";
 import { registerUpdateLifetimes } from "./lifetime.js";
 import { registerMusicSystems } from "../music.js";
-import { GameState, GameStateDef } from "./gamestate.js";
+import { GameStateDef } from "./gamestate.js";
 import { registerRestartSystem } from "./restart.js";
 import { registerNetDebugSystem } from "../net/net-debug.js";
-import { assert } from "../test.js";
 import { callInitFns } from "../init.js";
 import { registerGrappleDbgSystems } from "./grapple.js";
 import { registerTurretSystems } from "./turret.js";
 import { registerUISystems, TextDef } from "./ui.js";
 import { DevConsoleDef, registerDevSystems } from "../console.js";
 import { registerControllableSystems } from "./controllable.js";
-import { createGhost } from "./ghost.js";
-import { ColorDef } from "../color.js";
 
 export const ScoreDef = EM.defineComponent("score", () => {
   return {
@@ -239,34 +210,6 @@ export function initShipGame(em: EntityManager, hosting: boolean) {
   }
 
   createPlayer(em);
-}
-
-export function initDbgGame(em: EntityManager, hosting: boolean) {
-  em.addSingletonComponent(CameraDef);
-
-  em.registerOneShotSystem(
-    null,
-    [AssetsDef, GlobalCursor3dDef, RendererDef],
-    (_, res) => {
-      const g = createGhost(em);
-      // em.ensureComponentOn(g, RenderableConstructDef, res.assets.cube.proto);
-      // createPlayer(em);
-
-      vec3.copy(g.position, [-16.6, 5, -5.1]);
-      quat.copy(g.rotation, [0, -0.77, 0, 0.636]);
-      quat.copy(g.cameraFollow.rotationOffset, [-0.225, 0, 0, 0.974]);
-
-      const c = res.globalCursor3d.cursor()!;
-      if (RenderableDef.isOn(c)) c.renderable.enabled = false;
-
-      vec3.copy(res.renderer.renderer.backgroundColor, [0.7, 0.8, 1.0]);
-
-      const p = em.newEntity();
-      em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
-      em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
-      em.ensureComponentOn(p, PositionDef, [0, -5, 0]);
-    }
-  );
 }
 
 function debugBoatParts(em: EntityManager) {
