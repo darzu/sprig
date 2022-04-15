@@ -348,6 +348,17 @@ Alpha tested vs transparency:
   alpha tested renders front-to-back (occluded pixels r ignored)
   transparency renders back-to-front
 
+transparency:
+  http://learnwebgl.brown37.net/11_advanced_rendering/alpha_blending.html
+    in the standard technique, u have to order transparent objects back to front and
+      render them in a seperate pass
+    b/c alpha blending is not commutitive in real life; 
+      a 99% opaque object in front will dominate the result color
+    unless: 
+      only one transparent object; 
+      transparent objects never overlap in the camera;
+    use insertion sort b/c less work when nothing changes frame to frame
+
 Texture compression:
   BC7, BC4, BCn
   https://www.reedbeta.com/blog/understanding-bcn-texture-compression-formats/
