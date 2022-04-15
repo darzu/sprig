@@ -65,11 +65,6 @@ async function startGame(localPeerName: string, host: string | null) {
 
     let sim_time = 0;
     let before_sim = performance.now();
-    EM.callSystem("groundPropsBuild");
-    EM.callSystem("boatPropsBuild");
-    EM.callSystem("cannonPropsBuild");
-    EM.callSystem("gemPropsBuild");
-    EM.callSystem("shipPropsBuild");
     EM.callSystem("time");
     EM.callSystem("getStatsFromNet");
     EM.callSystem("getEventsFromNet");
@@ -96,6 +91,11 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("shipHealthCheck");
     EM.callSystem("shipMove");
     EM.callSystem("shipScore");
+    EM.callSystem("groundPropsBuild");
+    EM.callSystem("boatPropsBuild");
+    EM.callSystem("cannonPropsBuild");
+    EM.callSystem("gemPropsBuild");
+    EM.callSystem("shipPropsBuild");
     EM.callSystem("buildBullets");
     EM.callSystem("buildCursor");
     EM.callSystem("placeCursorAtScreenCenter");
