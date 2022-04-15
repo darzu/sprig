@@ -80,7 +80,7 @@ interface SystemStats {
 
 export class EntityManager {
   entities: Map<number, Entity> = new Map();
-  systems: System<any[] | null, any[]>[] = [];
+  systems: Map<string, System<any[] | null, any[]>> = new Map();
   oneShotSystems: System<any[] | null, any[]>[] = [];
   components: Map<number, ComponentDef<any, any>> = new Map();
   serializers: Map<
@@ -461,9 +461,9 @@ export class EntityManager {
         `To define a system with an anonymous function, pass an explicit name`
       );
     }
-    if (this.systems.find((sys) => sys.name === name))
+    if (this.systems.has(name))
       throw `System named ${name} already defined. Try explicitly passing a name`;
-    this.systems.push({
+    this.systems.set(name, {
       cs,
       rs,
       callback,
@@ -528,39 +528,38 @@ export class EntityManager {
     // TODO(@darzu): track stats for one-shot systems?
   }
 
-  callSystems() {
-    // dispatch to all the systems
-    for (let s of this.systems) {
-      let start = performance.now();
-
-      // try looking up in the query cache
-      let es: Entities<any[]> = [];
-      if (s.cs) {
-        if (this._systemsToEntities.has(s.name))
-          es = this._systemsToEntities
-            .get(s.name)!
-            .map((id) => this.entities.get(id)! as EntityW<any[]>);
-        else {
-          throw `System ${s.name} doesn't have a query cache!`;
-          // es = this.filterEntities(s.cs);
-        }
-      }
-      // TODO(@darzu): uncomment to debug query cache issues
-      // es = this.filterEntities(s.cs);
-
-      const rs = this.getResources(s.rs);
-      let afterQuery = performance.now();
-      this.stats[s.name].queries++;
-      this.stats[s.name].queryTime += afterQuery - start;
-      if (rs) {
-        s.callback(es, rs);
-        let afterCall = performance.now();
-        this.stats[s.name].calls++;
-        this.stats[s.name].callTime += afterCall - afterQuery;
+  callSystem(name: string) {
+    const s = this.systems.get(name);
+    if (!s) throw `No system named ${name}`;
+    let start = performance.now();
+    // try looking up in the query cache
+    let es: Entities<any[]> = [];
+    if (s.cs) {
+      if (this._systemsToEntities.has(s.name))
+        es = this._systemsToEntities
+          .get(s.name)!
+          .map((id) => this.entities.get(id)! as EntityW<any[]>);
+      else {
+        throw `System ${s.name} doesn't have a query cache!`;
+        // es = this.filterEntities(s.cs);
       }
     }
+    // TODO(@darzu): uncomment to debug query cache issues
+    // es = this.filterEntities(s.cs);
 
-    // dispatch one-shot systems
+    const rs = this.getResources(s.rs);
+    let afterQuery = performance.now();
+    this.stats[s.name].queries++;
+    this.stats[s.name].queryTime += afterQuery - start;
+    if (rs) {
+      s.callback(es, rs);
+      let afterCall = performance.now();
+      this.stats[s.name].calls++;
+      this.stats[s.name].callTime += afterCall - afterQuery;
+    }
+  }
+
+  callOneShotSystems() {
     const beforeOneShots = performance.now();
     this.oneShotSystems = this.oneShotSystems.reduce((keptSystems, s) => {
       let haveAllResources = true;
@@ -588,6 +587,16 @@ export class EntityManager {
         return [...keptSystems, s];
       }
     }, [] as typeof this.oneShotSystems);
+  }
+
+  callSystems() {
+    // dispatch to all the systems
+    for (let name of this.systems.keys()) {
+      this.callSystem(name);
+    }
+
+    // dispatch one-shot systems
+    this.callOneShotSystems();
 
     this.loops++;
   }
