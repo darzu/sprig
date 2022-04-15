@@ -588,18 +588,6 @@ export class EntityManager {
       }
     }, [] as typeof this.oneShotSystems);
   }
-
-  callSystems() {
-    // dispatch to all the systems
-    for (let name of this.systems.keys()) {
-      this.callSystem(name);
-    }
-
-    // dispatch one-shot systems
-    this.callOneShotSystems();
-
-    this.loops++;
-  }
 }
 
 // TODO(@darzu): where to put this?
