@@ -115,6 +115,6 @@ export const obj_fragShader = () =>
         let resultColor: vec3<f32> = input.color 
           * (light1 * 1.5 + light2 * 0.5 + light3 * 0.2 + 0.1);
         let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
-        return vec4<f32>(gammaCorrected, 1.0);
+        return vec4<f32>(gammaCorrected, 0.5);
     }
 `;

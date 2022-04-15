@@ -68,7 +68,8 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
       const c = res.globalCursor3d.cursor()!;
       if (RenderableDef.isOn(c)) c.renderable.enabled = false;
 
-      vec3.copy(res.renderer.renderer.backgroundColor, [0.7, 0.8, 1.0]);
+      vec3.copy(res.renderer.renderer.backgroundColor, [0.0, 0.0, 0.0]);
+      // vec3.copy(res.renderer.renderer.backgroundColor, [0.7, 0.8, 1.0]);
 
       const p = em.newEntity();
       em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
@@ -141,8 +142,8 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
             support: supportB,
           };
 
-          const overlaps = gjk(shapeA, shapeB);
-          // const overlaps = false;
+          // const overlaps = gjk(shapeA, shapeB);
+          const overlaps = false;
 
           if (overlaps) {
             b1.color[0] = 0.3;

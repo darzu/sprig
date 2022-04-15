@@ -81,7 +81,7 @@ void main() {
   vec3 resultColor = v_color 
     * (light1 * 1.5 + light2 * 0.5 + light3 * 0.2 + 0.1);
   vec3 gammaCorrected = pow(resultColor, vec3(1.0/2.2));
-  fragColor = vec4(gammaCorrected, 1.0);
+  fragColor = vec4(gammaCorrected, 0.5);
 }
 `;
 
@@ -233,8 +233,22 @@ export function attachToCanvas(
       1.0
     );
 
-    gl.enable(gl.DEPTH_TEST);
-    // gl.frontFace(gl.CW);
+    // TODO(@darzu):
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    // gl.blendFunc(gl.SRC_ALPHA, gl.DST_COLOR);
+    // gl.blendFunc(gl.DST_ALPHA, gl.ZERO);
+    // gl.blendFunc(gl.SRC_ALPHA, gl.ZERO);
+    // gl.blendFunc(gl.DST_ALPHA, gl.SRC_COLOR);
+    // dest alpha =
+    // TODO(@darzu): any way to achieve order independence with these blend modes?
+    /*
+      - each object could contribute a fixed amount
+      src .2, .2,
+    */
+
+    // gl.enable(gl.DEPTH_TEST);
+    // gl.frontFace(gl.CCW);
     gl.enable(gl.CULL_FACE);
     // gl.cullFace(gl.FRONT);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);

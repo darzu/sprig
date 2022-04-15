@@ -94,6 +94,7 @@ export class Renderer_WebGPU implements Renderer {
       format: this.presentationFormat, // this.presentationFormat
       size: newSize,
       // TODO(@darzu): support transparency?
+      // compositingAlphaMode: "premultiplied",
       compositingAlphaMode: "opaque",
     });
 
