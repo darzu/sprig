@@ -1,3 +1,11 @@
 - Bar at the bottom like MacOS or Cities Skylines
 - "Edit" or "Play" button w/ small preview in top left ?
 - "Download Backup" with info icon to learn about storage
+
+Collaborative editting:
+  CRDTs, OT, or good ol multiplayer net code?
+  CRDTs:
+    https://josephg.com/blog/crdts-are-the-future/
+    https://news.ycombinator.com/item?id=31049883
+    https://www.youtube.com/watch?v=x7drE24geUw
+  
