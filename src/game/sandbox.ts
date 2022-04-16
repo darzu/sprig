@@ -6,6 +6,7 @@ import {
 import { ColorDef } from "../color.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { vec3, quat } from "../gl-matrix.js";
+import { InputsDef } from "../inputs.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 import {
@@ -108,8 +109,10 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
 
       em.registerSystem(
         null,
-        [],
-        () => {
+        [InputsDef],
+        (_, res) => {
+          if (!res.inputs.keyClicks["g"]) return;
+
           // TODO(@darzu):
           const localA = boxLocalPoints(center, halfsize);
           const worldA = localA.map((p) =>

@@ -85,12 +85,12 @@ type Shape = {
 // minkowski difference support
 function mSupport(s1: Shape, s2: Shape, d: vec3): vec3 {
   // TODO(@darzu):
-  return vec3.sub(vec3.create(), s1.support(d), s2.support(d));
+  return vec3.sub(vec3.create(), s2.support(d), s1.support(d));
 }
 
 // GJK visualization
 
-function doesSimplexOverlapOrigin(s: vec3[]) {
+export function doesSimplexOverlapOrigin(s: vec3[]) {
   if (s.length !== 4) return false;
 
   const tris = [
@@ -126,11 +126,14 @@ export function gjk(s1: Shape, s2: Shape): boolean {
   vec3.normalize(d, d);
   simplex = [mSupport(s1, s2, d)];
   vec3.sub(d, [0, 0, 0], simplex[0]);
+  let step = 0;
   while (true) {
     const A = mSupport(s1, s2, d);
     if (vec3.dot(A, d) < 0) {
+      console.log(`false on step: ${step}`);
       return false;
     }
+    step++;
     // console.log(`adding: ${A}`);
     simplex.push(A);
     const len1 = vec3.len(centroid(simplex));
