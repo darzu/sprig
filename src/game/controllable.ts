@@ -41,7 +41,10 @@ export const ControllableDef = EM.defineComponent("controllable", () => {
       canFly: true,
       canSprint: true,
       canJump: true,
-      canTurn: true,
+      canPitch: true,
+      canYaw: true,
+      // TODO(@darzu): this isn't clean...
+      canCameraYaw: false,
       canMove: true,
     },
   };
@@ -90,7 +93,7 @@ export function registerControllableSystems(em: EntityManager) {
         c.linearVelocity[2] = steerVel[2];
         if (modes.canFly) c.linearVelocity[1] = steerVel[1];
 
-        if (modes.canTurn)
+        if (modes.canYaw)
           quat.rotateY(
             c.rotation,
             c.rotation,
@@ -106,7 +109,14 @@ export function registerControllableSystems(em: EntityManager) {
     [InputsDef, PhysicsTimerDef],
     (controllables, res) => {
       for (let c of controllables) {
-        if (c.controllable.modes.canTurn)
+        // TODO(@darzu): probably need to use yaw-pitch :(
+        if (c.controllable.modes.canCameraYaw)
+          quat.rotateY(
+            c.cameraFollow.rotationOffset,
+            c.cameraFollow.rotationOffset,
+            -res.inputs.mouseMovX * c.controllable.turnSpeed
+          );
+        if (c.controllable.modes.canPitch)
           quat.rotateX(
             c.cameraFollow.rotationOffset,
             c.cameraFollow.rotationOffset,

@@ -12,7 +12,7 @@ import { RenderableConstructDef } from "../render/renderer.js";
 import { BoxCollider, Collider } from "./collider.js";
 import { PhysicsObject, WorldFrameDef } from "./nonintersection.js";
 import { PhysicsParentDef, PositionDef } from "./transform.js";
-import { centroid } from "../utils-3d.js";
+import { centroid, vec3Dbg } from "../utils-3d.js";
 
 // TODO(@darzu): interfaces worth thinking about:
 // export interface ContactData {
@@ -85,7 +85,8 @@ type Shape = {
 // minkowski difference support
 function mSupport(s1: Shape, s2: Shape, d: vec3): vec3 {
   // TODO(@darzu):
-  return vec3.sub(vec3.create(), s2.support(d), s1.support(d));
+  const nD = vec3.negate(vec3.create(), d);
+  return vec3.sub(vec3.create(), s2.support(d), s1.support(nD));
 }
 
 // GJK visualization
@@ -126,14 +127,21 @@ export function gjk(s1: Shape, s2: Shape): boolean {
   vec3.normalize(d, d);
   simplex = [mSupport(s1, s2, d)];
   vec3.sub(d, [0, 0, 0], simplex[0]);
+  vec3.normalize(d, d);
   let step = 0;
   while (true) {
     const A = mSupport(s1, s2, d);
     if (vec3.dot(A, d) < 0) {
       console.log(`false on step: ${step}`);
+      console.log(`A: ${vec3Dbg(A)}, d: ${vec3Dbg(d)}`);
+      console.dir(simplex);
       return false;
     }
     step++;
+    if (step > 100) {
+      console.log(`u oh, running too long`);
+      return false;
+    }
     // console.log(`adding: ${A}`);
     simplex.push(A);
     const len1 = vec3.len(centroid(simplex));

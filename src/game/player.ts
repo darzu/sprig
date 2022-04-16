@@ -225,10 +225,12 @@ export function registerPlayerSystems(em: EntityManager) {
 
           if (p.player.manning) {
             p.controllable.modes.canMove = false;
-            p.controllable.modes.canTurn = false;
+            p.controllable.modes.canPitch = false;
+            p.controllable.modes.canYaw = false;
           } else {
             p.controllable.modes.canMove = true;
-            p.controllable.modes.canTurn = true;
+            p.controllable.modes.canPitch = true;
+            p.controllable.modes.canYaw = true;
           }
 
           if (!CHEAT) {

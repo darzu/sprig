@@ -1,4 +1,10 @@
-import { EM, EntityManager, Entity, EntityW } from "../entity-manager.js";
+import {
+  EM,
+  EntityManager,
+  Entity,
+  EntityW,
+  Component,
+} from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import {
   PhysicsParentDef,
@@ -35,6 +41,7 @@ export const YawPitchDef = defineSerializableComponent(
     o.pitch = buf.readFloat32();
   }
 );
+export type YawPitch = Component<typeof YawPitchDef>;
 
 export const TurretDef = EM.defineComponent("turret", () => {
   return {
@@ -142,15 +149,20 @@ export const raiseUnmanTurret = eventWizard(
   }
 );
 
+function yawpitchToQuat(out: quat, yp: YawPitch): quat {
+  quat.copy(out, quat.IDENTITY);
+  quat.rotateY(out, out, yp.yaw);
+  quat.rotateZ(out, out, yp.pitch);
+  return out;
+}
+
 export function registerTurretSystems(em: EntityManager) {
   em.registerSystem(
     [TurretDef, RotationDef, YawPitchDef],
     [],
     (turrets, res) => {
       for (let c of turrets) {
-        quat.copy(c.rotation, quat.IDENTITY);
-        quat.rotateY(c.rotation, c.rotation, c.yawpitch.yaw);
-        quat.rotateZ(c.rotation, c.rotation, c.yawpitch.pitch);
+        yawpitchToQuat(c.rotation, c.yawpitch);
       }
     },
     "turretYawPitch"

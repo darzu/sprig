@@ -53,7 +53,7 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
     null,
     [AssetsDef, GlobalCursor3dDef, RendererDef],
     (_, res) => {
-      const e = createGhost(em);
+      const g = createGhost(em);
       // em.ensureComponentOn(g, RenderableConstructDef, res.assets.cube.proto);
       // createPlayer(em);
 
@@ -61,10 +61,15 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
       // quat.copy(e.rotation, [0, -0.77, 0, 0.636]);
       // vec3.copy(e.cameraFollow.positionOffset, [0, 0, 0]);
       // quat.copy(e.cameraFollow.rotationOffset, [-0.225, 0, 0, 0.974]);
-      vec3.copy(e.position, [-4.28, 0.97, 0.11]);
-      quat.setAxisAngle(e.rotation, [0.0, -1.0, 0.0], 1.62);
-      vec3.copy(e.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-      quat.copy(e.cameraFollow.rotationOffset, [-0.18, 0.0, 0.0, 0.98]);
+      // vec3.copy(g.position, [-4.28, 0.97, 0.11]);
+      // quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
+      // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+      // quat.copy(g.cameraFollow.rotationOffset, [-0.18, 0.0, 0.0, 0.98]);
+      vec3.copy(g.position, [0, 0, -1.2]);
+      quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
+      setCameraFollowPosition(g, "thirdPersonOverShoulder");
+      g.controllable.modes.canYaw = false;
+      g.controllable.modes.canCameraYaw = false;
 
       const c = res.globalCursor3d.cursor()!;
       if (RenderableDef.isOn(c)) c.renderable.enabled = false;
@@ -95,8 +100,10 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
       const m2 = cloneMesh(res.assets.cube.mesh);
       em.ensureComponentOn(b2, RenderableConstructDef, m2);
       em.ensureComponentOn(b2, ColorDef, [0.1, 0.1, 0.2]);
-      em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
+      em.ensureComponentOn(b2, PositionDef, [0, 0, 0]);
+      // em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
       em.ensureComponentOn(b2, WorldFrameDef);
+      em.ensureComponentOn(b2, PhysicsParentDef, g.id);
       // em.ensureComponentOn(b2, ColliderDef, {
       //   shape: "Box",
       //   solid: false,
