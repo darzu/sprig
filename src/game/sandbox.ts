@@ -127,10 +127,10 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
           };
 
           const localB = boxLocalPoints(center, halfsize);
-          const worldB = localA.map((p) =>
+          const worldB = localB.map((p) =>
             vec3.transformMat4(p, p, b2.world.transform)
           );
-          const supportB = (d: vec3) => farthestPointInDir(worldA, d);
+          const supportB = (d: vec3) => farthestPointInDir(worldB, d);
           const centerB = vec3.transformMat4(
             vec3.create(),
             center,

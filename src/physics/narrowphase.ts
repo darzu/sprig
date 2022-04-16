@@ -12,6 +12,7 @@ import { RenderableConstructDef } from "../render/renderer.js";
 import { BoxCollider, Collider } from "./collider.js";
 import { PhysicsObject, WorldFrameDef } from "./nonintersection.js";
 import { PhysicsParentDef, PositionDef } from "./transform.js";
+import { centroid } from "../utils-3d.js";
 
 // TODO(@darzu): interfaces worth thinking about:
 // export interface ContactData {
@@ -89,6 +90,35 @@ function mSupport(s1: Shape, s2: Shape, d: vec3): vec3 {
 
 // GJK visualization
 
+function doesSimplexOverlapOrigin(s: vec3[]) {
+  if (s.length !== 4) return false;
+
+  const tris = [
+    [s[0], s[1], s[2]],
+    [s[0], s[1], s[3]],
+    [s[0], s[2], s[3]],
+    [s[1], s[2], s[3]],
+  ];
+
+  const center = centroid(s);
+
+  for (let t of tris) {
+    const [C, B, A] = t;
+    const AB = vec3.sub(vec3.create(), B, A);
+    const AC = vec3.sub(vec3.create(), C, A);
+    const ABCperp = vec3.cross(vec3.create(), AB, AC);
+    vec3.normalize(ABCperp, ABCperp);
+    const triCenter = centroid(t);
+    const triCenterToSimplexCenter = vec3.sub(vec3.create(), center, triCenter);
+    vec3.normalize(triCenterToSimplexCenter, triCenterToSimplexCenter);
+    if (vec3.dot(ABCperp, triCenterToSimplexCenter) < 0)
+      vec3.negate(ABCperp, ABCperp);
+    const AO = vec3.sub(vec3.create(), [0, 0, 0], A);
+    if (vec3.dot(ABCperp, AO) < 0) return false;
+  }
+  return true;
+}
+
 let d: vec3 = vec3.create();
 let simplex: vec3[] = [];
 export function gjk(s1: Shape, s2: Shape): boolean {
@@ -98,9 +128,23 @@ export function gjk(s1: Shape, s2: Shape): boolean {
   vec3.sub(d, [0, 0, 0], simplex[0]);
   while (true) {
     const A = mSupport(s1, s2, d);
-    if (vec3.dot(A, d) < 0) return false;
+    if (vec3.dot(A, d) < 0) {
+      return false;
+    }
+    // console.log(`adding: ${A}`);
     simplex.push(A);
-    if (handleSimplex()) return true;
+    const len1 = vec3.len(centroid(simplex));
+    const intersects = handleSimplex();
+    const len2 = vec3.len(centroid(simplex));
+    if (len2 > len1) {
+      console.warn(`moving away from origin!`);
+    }
+    if (intersects) {
+      if (!doesSimplexOverlapOrigin(simplex))
+        console.warn(`we dont think it actually overlaps origin`);
+      else console.log(`probably overlaps :)`);
+      return true;
+    }
   }
 }
 function tripleProd(out: vec3, a: vec3, b: vec3, c: vec3): vec3 {
@@ -139,6 +183,7 @@ function handleSimplex(): boolean {
     const ABCperp = vec3.cross(vec3.create(), AB, AC);
     const ACDperp = vec3.cross(vec3.create(), AC, AD);
     const ADBperp = vec3.cross(vec3.create(), AD, AB);
+
     if (vec3.dot(ABCperp, AO) > 0) {
       simplex = [C, B, A];
       vec3.copy(d, ABCperp);
