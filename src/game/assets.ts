@@ -189,6 +189,36 @@ export const CUBE_MESH = unshareProvokingVertices({
     BLACK,
   ],
 });
+
+const TETRA_MESH = unshareProvokingVertices(
+  scaleMesh(
+    {
+      pos: [
+        [0, 1, 0],
+        [-1, 0, -1],
+        [1, 0, -1],
+        [0, 0, 1],
+      ],
+      tri: [
+        [2, 1, 0],
+        [3, 2, 0],
+        [1, 3, 0],
+        [2, 3, 1],
+      ],
+      lines: [
+        [0, 1],
+        [0, 2],
+        [0, 3],
+        [1, 2],
+        [2, 3],
+        [3, 4],
+      ],
+      colors: [BLACK, BLACK, BLACK, BLACK],
+    },
+    2
+  )
+);
+
 const PLANE_MESH = unshareProvokingVertices(
   scaleMesh(
     {
@@ -317,6 +347,7 @@ export const LocalMeshes = {
   cube: CUBE_MESH,
   ground: CUBE_MESH,
   plane: PLANE_MESH,
+  tetra: TETRA_MESH,
   boat: scaleMesh3(CUBE_MESH, [10, 0.6, 5]),
   bullet: scaleMesh(CUBE_MESH, 0.3),
   gridPlane: GRID_PLANE_MESH,
