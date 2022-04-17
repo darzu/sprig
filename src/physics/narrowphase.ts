@@ -107,6 +107,7 @@ export function doesSimplexOverlapOrigin(s: vec3[]) {
   return true;
 }
 
+// TODO(@darzu): so much perf to improve. #1: don't allocate
 let d: vec3 = vec3.create();
 let simplex: vec3[] = [];
 let distToOrigin = Infinity;
