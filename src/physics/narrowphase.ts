@@ -133,9 +133,9 @@ export function gjk(s1: Shape, s2: Shape): boolean {
   while (true) {
     const A = mSupport(s1, s2, d);
     if (vec3.dot(A, d) < 0) {
-      console.log(`false on step: ${step}`);
-      console.log(`A: ${vec3Dbg(A)}, d: ${vec3Dbg(d)}`);
-      console.dir(simplex);
+      // console.log(`false on step: ${step}`);
+      // console.log(`A: ${vec3Dbg(A)}, d: ${vec3Dbg(d)}`);
+      // console.dir(simplex);
       return false;
     }
     step++;
@@ -150,29 +150,15 @@ export function gjk(s1: Shape, s2: Shape): boolean {
     //   console.warn(`moving away from origin!`);
     // }
     distToOrigin = newDist;
-    const intersects = handleSimplex(s1, s2);
+    const intersects = handleSimplex();
     if (intersects) {
       if (!doesSimplexOverlapOrigin(simplex))
         console.error(`we dont think it actually overlaps origin`);
       // else console.log(`probably overlaps :)`);
-      console.log(`true on step: ${step}`);
+      // console.log(`true on step: ${step}`);
       return true;
     }
   }
-}
-
-function dbgIsDirGood(s1: Shape, s2: Shape, d: vec3) {
-  const A = mSupport(s1, s2, d);
-  if (vec3.dot(A, d) < 0) {
-    return true;
-  }
-  const simp = [...simplex, A];
-  const newDist = vec3.len(centroid(simp));
-  if (newDist > distToOrigin) {
-    console.warn(`moving away from origin!`);
-    return false;
-  }
-  return true;
 }
 
 function tripleProd(out: vec3, a: vec3, b: vec3, c: vec3): vec3 {
@@ -180,7 +166,7 @@ function tripleProd(out: vec3, a: vec3, b: vec3, c: vec3): vec3 {
   vec3.cross(out, out, c);
   return out;
 }
-function handleSimplex(s1: Shape, s2: Shape): boolean {
+function handleSimplex(): boolean {
   if (simplex.length === 2) {
     // line case
     const [B, A] = simplex;
@@ -198,7 +184,6 @@ function handleSimplex(s1: Shape, s2: Shape): boolean {
     const AO = vec3.sub(vec3.create(), [0, 0, 0], A);
     if (vec3.dot(ABCperp, AO) < 0) vec3.negate(ABCperp, ABCperp);
     vec3.copy(d, ABCperp);
-    if (!dbgIsDirGood(s1, s2, d)) console.warn(`bad dir from tri case`);
     return false;
   } else {
     // tetrahedron
@@ -211,34 +196,28 @@ function handleSimplex(s1: Shape, s2: Shape): boolean {
 
     const ABCperp = vec3.cross(vec3.create(), AB, AC);
     if (vec3.dot(ABCperp, AD) > 0) {
-      console.log(`neg ABCperp`);
       vec3.negate(ABCperp, ABCperp);
     }
     const ACDperp = vec3.cross(vec3.create(), AC, AD);
     if (vec3.dot(ACDperp, AB) > 0) {
-      console.log(`neg ACDperp`);
       vec3.negate(ACDperp, ACDperp);
     }
     const ADBperp = vec3.cross(vec3.create(), AD, AB);
     if (vec3.dot(ADBperp, AC) > 0) {
-      console.log(`neg ADBperp`);
       vec3.negate(ADBperp, ADBperp);
     }
 
     if (vec3.dot(ABCperp, AO) > 0) {
-      if (!dbgIsDirGood(s1, s2, d)) console.warn(`bad dir from ABCperp`);
       simplex = [C, B, A];
       vec3.copy(d, ABCperp);
       return false;
     }
     if (vec3.dot(ACDperp, AO) > 0) {
-      if (!dbgIsDirGood(s1, s2, d)) console.warn(`bad dir from ACDperp`);
       simplex = [D, C, A];
       vec3.copy(d, ACDperp);
       return false;
     }
     if (vec3.dot(ADBperp, AO) > 0) {
-      if (!dbgIsDirGood(s1, s2, d)) console.warn(`bad dir from ADBperp`);
       simplex = [D, B, A];
       vec3.copy(d, ADBperp);
       return false;
