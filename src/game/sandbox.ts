@@ -46,7 +46,8 @@ export function createGhost(em: EntityManager) {
   return g;
 }
 export function initDbgGame(em: EntityManager, hosting: boolean) {
-  em.addSingletonComponent(CameraDef);
+  const camera = em.addSingletonComponent(CameraDef);
+  camera.fov = Math.PI * 0.5;
 
   em.registerOneShotSystem(
     null,
@@ -118,8 +119,15 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
       em.ensureComponentOn(b3, ColorDef, [0.1, 0.1, 0.1]);
       em.ensureComponentOn(b3, PositionDef, [0, 0, -3]);
       em.ensureComponentOn(b3, RotationDef);
-      // em.ensureComponentOn(s1, AngularVelocityDef, [0, 0.001, 0.001]);
       em.ensureComponentOn(b3, WorldFrameDef);
+
+      const b4 = em.newEntity();
+      const m4 = cloneMesh(res.assets.tetra.mesh);
+      em.ensureComponentOn(b4, RenderableConstructDef, m4);
+      em.ensureComponentOn(b4, ColorDef, [0.1, 0.1, 0.1]);
+      em.ensureComponentOn(b4, PositionDef, [0, -3, 0]);
+      em.ensureComponentOn(b4, RotationDef);
+      em.ensureComponentOn(b4, WorldFrameDef);
 
       // NOTE: this uses temp vectors, it must not live long
       // TODO(@darzu): for perf, this should be done only once per obj per frame;
@@ -147,6 +155,7 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
           const shapeA = createWorldShape(res.assets.cube, b1.world);
           const shapeB = createWorldShape(res.assets.cube, b2.world);
           const shapeC = createWorldShape(res.assets.ball, b3.world);
+          const shapeD = createWorldShape(res.assets.tetra, b4.world);
 
           if (gjk(shapeA, shapeB)) {
             b1.color[0] = 0.3;
@@ -162,6 +171,14 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
           } else {
             b3.color[1] = 0.1;
             b2.color[1] = 0.1;
+          }
+
+          if (gjk(shapeD, shapeB)) {
+            b4.color[2] = 0.3;
+            b2.color[2] = 0.3;
+          } else {
+            b4.color[2] = 0.1;
+            b2.color[2] = 0.1;
           }
         },
         "checkGJK"

@@ -23,6 +23,7 @@ export type CameraMode = "thirdPerson" | "thirdPersonOverShoulder";
 export const CameraDef = EM.defineComponent("camera", () => {
   return {
     perspectiveMode: "perspective" as PerspectiveMode,
+    fov: (2 * Math.PI) / 5,
     targetId: 0,
     positionOffset: vec3.create(),
     rotationOffset: quat.create(),
@@ -236,7 +237,7 @@ export function registerCameraSystems(em: EntityManager) {
       } else {
         mat4.perspective(
           projectionMatrix,
-          (2 * Math.PI) / 5,
+          camera.fov,
           cameraView.aspectRatio,
           1,
           10000.0 /*view distance*/
