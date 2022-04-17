@@ -130,10 +130,17 @@ export const RendererWorldFrameDef = EM.defineComponent(
   () => createFrame()
 );
 
-function updateRendererWorldFrame(
-  em: EntityManager,
-  o: EntityW<[typeof TransformDef]>
-) {
+function updateRendererWorldFrame(em: EntityManager, o: Entity) {
+  if (DeletedDef.isOn(o)) return;
+  if (!TransformDef.isOn(o)) return;
+  let parent = null;
+  if (PhysicsParentDef.isOn(o) && o.physicsParent.id) {
+    if (!_hasRendererWorldFrame.has(o.physicsParent.id)) {
+      updateRendererWorldFrame(em, em.findEntity(o.physicsParent.id, [])!);
+    }
+    parent = em.findEntity(o.physicsParent.id, [RendererWorldFrameDef]);
+    if (!parent) return;
+  }
   em.ensureComponentOn(o, RendererWorldFrameDef);
   mat4.copy(o.rendererWorldFrame.transform, o.transform);
   updateFrameFromTransform(o.rendererWorldFrame);
@@ -150,14 +157,7 @@ function updateRendererWorldFrame(
     );
     updateFrameFromPosRotScale(o.rendererWorldFrame);
   }
-  if (PhysicsParentDef.isOn(o) && o.physicsParent.id) {
-    if (!_hasRendererWorldFrame.has(o.physicsParent.id)) {
-      updateRendererWorldFrame(
-        em,
-        em.findEntity(o.physicsParent.id, [TransformDef])!
-      );
-    }
-    let parent = em.findEntity(o.physicsParent.id, [RendererWorldFrameDef])!;
+  if (parent) {
     mat4.mul(
       o.rendererWorldFrame.transform,
       parent.rendererWorldFrame.transform,
@@ -176,7 +176,6 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
       _hasRendererWorldFrame.clear();
 
       for (const o of objs) {
-        if (DeletedDef.isOn(o)) continue;
         updateRendererWorldFrame(em, o);
       }
     },

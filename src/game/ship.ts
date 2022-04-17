@@ -43,12 +43,12 @@ import { LinearVelocityDef } from "../physics/motion.js";
 import { LifetimeDef } from "./lifetime.js";
 import { CannonPropsDef, createCannon } from "./cannon.js";
 import { MusicDef } from "../music.js";
-import { PlayerDef } from "./player.js";
+import { LocalPlayerDef, PlayerDef } from "./player.js";
 import { CameraDef } from "../camera.js";
 import { InputsDef } from "../inputs.js";
 import { GroundSystemDef } from "./ground.js";
 import { InRangeDef, InteractableDef } from "./interact.js";
-import { GameState, GameStateDef } from "./gamestate.js";
+import { endGame, GameState, GameStateDef, startGame } from "./gamestate.js";
 import { createRef, defineNetEntityHelper, Ref } from "../em_helpers.js";
 import {
   DetectedEventsDef,
@@ -229,16 +229,19 @@ const criticalPartIdxes = [0, 3, 5, 6];
 //   });
 // }
 
+const START_TEXT = "hit the gem to begin";
+
 export function registerShipSystems(em: EntityManager) {
   em.registerSystem(
     [GemPropsDef, InRangeDef],
-    [GameStateDef, PhysicsResultsDef, MeDef, InputsDef],
+    [GameStateDef, PhysicsResultsDef, MeDef, InputsDef, LocalPlayerDef],
     (gems, res) => {
       for (let gem of gems) {
         if (DeletedDef.isOn(gem)) continue;
         if (res.gameState.state !== GameState.LOBBY) continue;
         if (res.inputs.keyClicks["e"]) {
-          res.gameState.state = GameState.PLAYING;
+          let player = EM.findEntity(res.localPlayer.playerId, [PlayerDef])!;
+          startGame(player);
         }
       }
     },
@@ -263,7 +266,7 @@ export function registerShipSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [ShipLocalDef, PositionDef, AuthorityDef],
+    [ShipPropsDef, ShipLocalDef, PositionDef, AuthorityDef],
     [
       MusicDef,
       InputsDef,
@@ -306,8 +309,7 @@ export function registerShipSystems(em: EntityManager) {
           numCriticalDamaged === criticalPartIdxes.length ||
           res.inputs.keyClicks["backspace"]
         ) {
-          res.music.playChords([1, 2, 3, 4, 4], "minor");
-          res.gameState.state = GameState.GAMEOVER;
+          endGame(ship);
         }
       }
     },
@@ -332,7 +334,21 @@ export function registerShipSystems(em: EntityManager) {
     [TextDef, ScoreDef, GameStateDef],
     (_, res) => {
       // update score
-      res.text.upperText = `current: ${res.score.currentScore}, max: ${res.score.maxScore}`;
+      switch (res.gameState.state) {
+        case GameState.LOBBY:
+          if (res.score.maxScore) {
+            res.text.upperText = `max: ${res.score.maxScore}, ${START_TEXT}`;
+          } else {
+            res.text.upperText = `${START_TEXT}`;
+          }
+          break;
+        case GameState.PLAYING:
+          res.text.upperText = `current: ${res.score.currentScore}, max: ${res.score.maxScore}`;
+          break;
+        case GameState.GAMEOVER:
+          res.text.upperText = `GAME OVER, score: ${res.score.currentScore}, max: ${res.score.maxScore}`;
+          break;
+      }
     },
     "shipScore"
   );

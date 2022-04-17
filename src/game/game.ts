@@ -56,8 +56,6 @@ import { registerPhysicsSystems } from "../physics/phys.js";
 import { registerNoodleSystem } from "./noodles.js";
 import { registerUpdateLifetimes } from "./lifetime.js";
 import { registerMusicSystems } from "../music.js";
-import { GameStateDef } from "./gamestate.js";
-import { registerRestartSystem } from "./restart.js";
 import { registerNetDebugSystem } from "../net/net-debug.js";
 import { callInitFns } from "../init.js";
 import { registerGrappleDbgSystems } from "./grapple.js";
@@ -65,6 +63,11 @@ import { registerTurretSystems } from "./turret.js";
 import { registerUISystems, TextDef } from "./ui.js";
 import { DevConsoleDef, registerDevSystems } from "../console.js";
 import { registerControllableSystems } from "./controllable.js";
+import {
+  GameStateDef,
+  GameState,
+  registerGameStateSystems,
+} from "./gamestate.js";
 
 export const ScoreDef = EM.defineComponent("score", () => {
   return {
@@ -78,8 +81,9 @@ function registerScoreSystems(em: EntityManager) {
 
   em.registerSystem(
     [ShipLocalDef, PositionDef],
-    [ScoreDef],
+    [ScoreDef, GameStateDef],
     (ships, res) => {
+      if (res.gameState.state !== GameState.PLAYING) return;
       if (ships.length) {
         const ship = ships.reduce(
           (p, n) => (n.position[2] > p.position[2] ? n : p),
@@ -100,6 +104,7 @@ export function registerAllSystems(em: EntityManager) {
   registerInitCanvasSystem(em);
   registerUISystems(em);
   registerDevSystems(em);
+  registerGameStateSystems(em);
   registerScoreSystems(em);
   registerRenderInitSystem(em);
   registerMusicSystems(em);
@@ -107,7 +112,6 @@ export function registerAllSystems(em: EntityManager) {
   registerMotionSmoothingRecordLocationsSystem(em);
   registerUpdateSystem(em);
   registerPredictSystem(em);
-  registerMotionSmoothingSystems(em);
   registerJoinSystems(em);
   registerAssetLoader(em);
   registerGroundSystems(em);
@@ -134,8 +138,8 @@ export function registerAllSystems(em: EntityManager) {
   registerSyncSystem(em);
   registerSendOutboxes(em);
   registerEventSystems(em);
-  registerRestartSystem(em);
   registerDeleteEntitiesSystem(em);
+  registerMotionSmoothingSystems(em);
   registerUpdateRendererWorldFrames(em);
   registerCameraSystems(em);
   registerRenderViewController(em);
@@ -200,10 +204,10 @@ function registerRenderViewController(em: EntityManager) {
 
 export function initShipGame(em: EntityManager, hosting: boolean) {
   registerShipGameUI(em);
-  em.addSingletonComponent(CameraDef);
+  EM.addSingletonComponent(CameraDef);
+  EM.addSingletonComponent(GameStateDef);
 
   if (hosting) {
-    em.addSingletonComponent(GameStateDef);
     registerBoatSpawnerSystem(em);
     createShip();
     initGroundSystem(em);

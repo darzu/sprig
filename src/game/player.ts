@@ -37,6 +37,7 @@ import { defineSerializableComponent } from "../em_helpers.js";
 import { ControllableDef } from "./controllable.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { drawLine } from "../utils-game.js";
+import { GameState, GameStateDef } from "./gamestate.js";
 
 // TODO(@darzu): it'd be great if these could hook into some sort of
 //    dev mode you could toggle at runtime.
@@ -206,6 +207,7 @@ export function registerPlayerSystems(em: EntityManager) {
       PhysicsResultsDef,
       ModelerDef,
       GlobalCursor3dDef,
+      GameStateDef,
     ],
     (players, res) => {
       for (let i = 0; i < res.physicsTimer.steps; i++) {
@@ -243,6 +245,9 @@ export function registerPlayerSystems(em: EntityManager) {
             p.controllable.modes.canFly = !p.controllable.modes.canFly;
           }
 
+          if (res.gameState.state === GameState.GAMEOVER) {
+            p.controllable.modes.canFly = true;
+          }
           if (p.controllable.modes.canFly) {
             p.controllable.modes.canFall = false;
             p.controllable.modes.canJump = false;
