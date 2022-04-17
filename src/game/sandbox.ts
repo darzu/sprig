@@ -67,7 +67,8 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
       // quat.copy(g.cameraFollow.rotationOffset, [-0.18, 0.0, 0.0, 0.98]);
       vec3.copy(g.position, [0, 0, -1.2]);
       quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
-      setCameraFollowPosition(g, "thirdPerson");
+      // setCameraFollowPosition(g, "thirdPerson");
+      g.cameraFollow.positionOffset = [0, 0, 5];
       g.controllable.modes.canYaw = false;
       g.controllable.modes.canCameraYaw = true;
 
