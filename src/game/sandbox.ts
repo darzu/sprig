@@ -9,13 +9,10 @@ import { vec3, quat } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
-import {
-  boxLocalPoints,
-  farthestPointInDir,
-  gjk,
-} from "../physics/narrowphase.js";
+import { boxLocalPoints, gjk, Shape } from "../physics/narrowphase.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import {
+  Frame,
   PhysicsParentDef,
   PositionDef,
   RotationDef,
@@ -23,8 +20,10 @@ import {
 import { cloneMesh } from "../render/mesh-pool.js";
 import { RenderableDef, RenderableConstructDef } from "../render/renderer.js";
 import { RendererDef } from "../render/render_init.js";
+import { tempVec } from "../temp-pool.js";
 import { assert } from "../test.js";
-import { AssetsDef } from "./assets.js";
+import { farthestPointInDir } from "../utils-3d.js";
+import { AssetsDef, GameMesh } from "./assets.js";
 import { ControllableDef } from "./controllable.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 
@@ -112,45 +111,40 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
       //   halfsize: res.assets.cube.halfsize,
       // });
 
-      const center = res.assets.cube.center;
-      const halfsize = res.assets.cube.halfsize;
+      const s1 = em.newEntity();
+      const m3 = cloneMesh(res.assets.ball.mesh);
+      em.ensureComponentOn(s1, RenderableConstructDef, m3);
+      em.ensureComponentOn(s1, ColorDef, [0.1, 0.2, 0.1]);
+      em.ensureComponentOn(s1, PositionDef, [0, 0, -1.2]);
+      em.ensureComponentOn(s1, RotationDef);
+      // em.ensureComponentOn(s1, AngularVelocityDef, [0, 0.001, 0.001]);
+      em.ensureComponentOn(s1, WorldFrameDef);
+
+      // NOTE: this uses temp vectors, it must not live long
+      // TODO(@darzu): for perf, this should be done only once per obj per frame;
+      //    maybe we should transform the dir instead
+      function createWorldShape(g: GameMesh, world: Frame): Shape {
+        const worldVerts = g.uniqueVerts.map((p) =>
+          vec3.transformMat4(tempVec(), p, world.transform)
+        );
+        const support = (d: vec3) => farthestPointInDir(worldVerts, d);
+        const center = vec3.transformMat4(tempVec(), g.center, world.transform);
+        return {
+          center,
+          support,
+        };
+      }
 
       em.registerSystem(
         null,
         [InputsDef],
-        (_, res) => {
-          if (!res.inputs.keyClicks["g"]) return;
+        (_, { inputs }) => {
+          if (!inputs.keyClicks["g"]) return;
 
           // TODO(@darzu):
-          const localA = boxLocalPoints(center, halfsize);
-          const worldA = localA.map((p) =>
-            vec3.transformMat4(p, p, b1.world.transform)
-          );
-          const supportA = (d: vec3) => farthestPointInDir(worldA, d);
-          const centerA = vec3.transformMat4(
-            vec3.create(),
-            center,
-            b1.world.transform
-          );
-          const shapeA = {
-            center: centerA,
-            support: supportA,
-          };
 
-          const localB = boxLocalPoints(center, halfsize);
-          const worldB = localB.map((p) =>
-            vec3.transformMat4(p, p, b2.world.transform)
-          );
-          const supportB = (d: vec3) => farthestPointInDir(worldB, d);
-          const centerB = vec3.transformMat4(
-            vec3.create(),
-            center,
-            b2.world.transform
-          );
-          const shapeB = {
-            center: centerB,
-            support: supportB,
-          };
+          const shapeA = createWorldShape(res.assets.cube, b1.world);
+          const shapeB = createWorldShape(res.assets.cube, b2.world);
 
           const overlaps = gjk(shapeA, shapeB);
           // const overlaps = false;

@@ -22,6 +22,7 @@ import { getText } from "../webget.js";
 import { aabbListToStr } from "./modeler.js";
 import { min } from "../math.js";
 import { BoxCollider } from "../physics/collider.js";
+import { farthestPointInDir, SupportFn } from "../utils-3d.js";
 
 export const BLACK = vec3.fromValues(0, 0, 0);
 export const DARK_GRAY = vec3.fromValues(0.02, 0.02, 0.02);
@@ -330,6 +331,8 @@ export type GameMesh = {
   center: vec3;
   halfsize: vec3;
   proto: MeshHandle;
+  uniqueVerts: vec3[];
+  support: SupportFn;
 };
 
 type GameMeshes = { [P in RemoteMeshSymbols | LocalMeshSymbols]: GameMesh } & {
@@ -453,12 +456,16 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
     const center = getCenterFromAABB(aabb);
     const halfsize = getHalfsizeFromAABB(aabb);
     const proto = renderer.addMesh(mesh);
+    const uniqueVerts = getUniqueVerts(mesh);
+    const support = (d: vec3) => farthestPointInDir(uniqueVerts, d);
     return {
       mesh,
       aabb,
       center,
       halfsize,
       proto,
+      uniqueVerts,
+      support,
     };
   }
   const allSingleAssets = objMap(allSingleMeshes, gameMeshFromMesh);
@@ -471,4 +478,14 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
   console.log(`took ${elapsed.toFixed(1)}ms to load assets.`);
 
   return result;
+}
+
+function getUniqueVerts(mesh: Mesh): vec3[] {
+  const res: vec3[] = [];
+  // TODO(@darzu): inefficient but probably doesn't matter
+  // TODO(@darzu): might we want to do approx equals?
+  for (let v1 of mesh.pos) {
+    if (!res.some((v2) => vec3.exactEquals(v1, v2))) res.push(v1);
+  }
+  return res;
 }

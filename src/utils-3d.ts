@@ -83,3 +83,17 @@ export function vec3Mid(out: vec3, a: vec3, b: vec3): vec3 {
   out[2] = (a[2] + b[2]) * 0.5;
   return out;
 }
+
+export type SupportFn = (d: vec3) => vec3;
+export function farthestPointInDir(points: vec3[], d: vec3): vec3 {
+  let max = -Infinity;
+  let maxP: vec3 | null = null;
+  for (let p of points) {
+    const n = vec3.dot(p, d);
+    if (n > max) {
+      max = n;
+      maxP = p;
+    }
+  }
+  return maxP!;
+}

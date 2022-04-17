@@ -12,7 +12,7 @@ import { RenderableConstructDef } from "../render/renderer.js";
 import { BoxCollider, Collider } from "./collider.js";
 import { PhysicsObject, WorldFrameDef } from "./nonintersection.js";
 import { PhysicsParentDef, PositionDef } from "./transform.js";
-import { centroid, vec3Dbg } from "../utils-3d.js";
+import { centroid, SupportFn, vec3Dbg } from "../utils-3d.js";
 
 // TODO(@darzu): interfaces worth thinking about:
 // export interface ContactData {
@@ -49,8 +49,6 @@ export function registerNarrowPhaseSystems(em: EntityManager) {
   // TODO(@darzu):
 }
 
-export type SupportFn = (d: vec3) => vec3;
-
 export function boxLocalPoints(m: vec3, s: vec3): vec3[] {
   return [
     vec3.fromValues(m[0] - s[0], m[1] - s[1], m[2] - s[2]),
@@ -64,20 +62,7 @@ export function boxLocalPoints(m: vec3, s: vec3): vec3[] {
   ];
 }
 
-export function farthestPointInDir(points: vec3[], d: vec3): vec3 {
-  let max = -Infinity;
-  let maxP: vec3 | null = null;
-  for (let p of points) {
-    const n = vec3.dot(p, d);
-    if (n > max) {
-      max = n;
-      maxP = p;
-    }
-  }
-  return maxP!;
-}
-
-type Shape = {
+export type Shape = {
   center: vec3;
   support: SupportFn;
 };
