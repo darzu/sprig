@@ -323,6 +323,10 @@ GJK explained:
     support point: point farthest from origin along a direction
     to check collision between two convex objects, you just need a support function for each
 
+OOB:
+  https://gamedev.stackexchange.com/questions/44500/how-many-and-which-axes-to-use-for-3d-obb-collision-with-sat 
+  https://www.geometrictools.com/Documentation/DynamicCollisionDetection.pdf
+
 Rocket League Physics:
     https://www.youtube.com/watch?v=ueEmiDM94IE
     uses Bullet, open source, can modify

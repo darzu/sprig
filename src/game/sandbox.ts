@@ -70,6 +70,7 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
       g.cameraFollow.positionOffset = [0, 0, 5];
       g.controllable.modes.canYaw = false;
       g.controllable.modes.canCameraYaw = true;
+      g.controllable.speed *= 0.5;
 
       const c = res.globalCursor3d.cursor()!;
       if (RenderableDef.isOn(c)) c.renderable.enabled = false;
@@ -84,8 +85,8 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
       const b1 = em.newEntity();
       const m1 = cloneMesh(res.assets.cube.mesh);
       em.ensureComponentOn(b1, RenderableConstructDef, m1);
-      em.ensureComponentOn(b1, ColorDef, [0.1, 0.2, 0.1]);
-      em.ensureComponentOn(b1, PositionDef, [0, 0, 1.2]);
+      em.ensureComponentOn(b1, ColorDef, [0.1, 0.1, 0.1]);
+      em.ensureComponentOn(b1, PositionDef, [0, 0, 3]);
       em.ensureComponentOn(b1, RotationDef);
       em.ensureComponentOn(b1, AngularVelocityDef, [0, 0.001, 0.001]);
       em.ensureComponentOn(b1, WorldFrameDef);
@@ -99,7 +100,7 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
       const b2 = em.newEntity();
       const m2 = cloneMesh(res.assets.cube.mesh);
       em.ensureComponentOn(b2, RenderableConstructDef, m2);
-      em.ensureComponentOn(b2, ColorDef, [0.1, 0.1, 0.2]);
+      em.ensureComponentOn(b2, ColorDef, [0.1, 0.1, 0.1]);
       em.ensureComponentOn(b2, PositionDef, [0, 0, 0]);
       // em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
       em.ensureComponentOn(b2, WorldFrameDef);
@@ -111,14 +112,14 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
       //   halfsize: res.assets.cube.halfsize,
       // });
 
-      const s1 = em.newEntity();
+      const b3 = em.newEntity();
       const m3 = cloneMesh(res.assets.ball.mesh);
-      em.ensureComponentOn(s1, RenderableConstructDef, m3);
-      em.ensureComponentOn(s1, ColorDef, [0.1, 0.2, 0.1]);
-      em.ensureComponentOn(s1, PositionDef, [0, 0, -1.2]);
-      em.ensureComponentOn(s1, RotationDef);
+      em.ensureComponentOn(b3, RenderableConstructDef, m3);
+      em.ensureComponentOn(b3, ColorDef, [0.1, 0.1, 0.1]);
+      em.ensureComponentOn(b3, PositionDef, [0, 0, -3]);
+      em.ensureComponentOn(b3, RotationDef);
       // em.ensureComponentOn(s1, AngularVelocityDef, [0, 0.001, 0.001]);
-      em.ensureComponentOn(s1, WorldFrameDef);
+      em.ensureComponentOn(b3, WorldFrameDef);
 
       // NOTE: this uses temp vectors, it must not live long
       // TODO(@darzu): for perf, this should be done only once per obj per frame;
@@ -139,22 +140,28 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
         null,
         [InputsDef],
         (_, { inputs }) => {
-          if (!inputs.keyClicks["g"]) return;
+          // if (!inputs.keyClicks["g"]) return;
 
           // TODO(@darzu):
 
           const shapeA = createWorldShape(res.assets.cube, b1.world);
           const shapeB = createWorldShape(res.assets.cube, b2.world);
+          const shapeC = createWorldShape(res.assets.ball, b3.world);
 
-          const overlaps = gjk(shapeA, shapeB);
-          // const overlaps = false;
-
-          if (overlaps) {
+          if (gjk(shapeA, shapeB)) {
             b1.color[0] = 0.3;
             b2.color[0] = 0.3;
           } else {
             b1.color[0] = 0.1;
             b2.color[0] = 0.1;
+          }
+
+          if (gjk(shapeC, shapeB)) {
+            b3.color[1] = 0.3;
+            b2.color[1] = 0.3;
+          } else {
+            b3.color[1] = 0.1;
+            b2.color[1] = 0.1;
           }
         },
         "checkGJK"
