@@ -153,7 +153,7 @@ export function gjk(s1: Shape, s2: Shape): boolean {
     if (intersects) {
       if (!doesSimplexOverlapOrigin(simplex))
         console.warn(`we dont think it actually overlaps origin`);
-      else console.log(`probably overlaps :)`);
+      // else console.log(`probably overlaps :)`);
       return true;
     }
   }
