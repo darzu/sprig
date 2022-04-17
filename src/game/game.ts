@@ -229,6 +229,7 @@ function registerRenderViewController(em: EntityManager) {
 
 export function initShipGame(em: EntityManager, hosting: boolean) {
   registerShipGameUI(em);
+  registerBoatSpawnerSystem(em);
   EM.addSingletonComponent(CameraDef);
   EM.addSingletonComponent(GameStateDef);
 
@@ -237,7 +238,6 @@ export function initShipGame(em: EntityManager, hosting: boolean) {
   // debugBoatParts(em);
 
   if (hosting) {
-    registerBoatSpawnerSystem(em);
     createShip();
     initGroundSystem(em);
   }
