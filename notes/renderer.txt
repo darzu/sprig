@@ -426,3 +426,7 @@ Mesh simplification:
 Noise is good in game art?:
   makes things less flat
   https://simblob.blogspot.com/2009/06/noise-in-game-art.html
+
+Factory Station's rendering:
+  https://twitter.com/GravitonPunch/status/1453072441316675584
+  https://twitter.com/alexanderameye/status/1375463146446585857
