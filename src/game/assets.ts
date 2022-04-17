@@ -65,6 +65,7 @@ type RemoteMeshSetSymbols = keyof typeof RemoteMesheSets;
 const AssetTransforms: Partial<{
   [P in RemoteMeshSymbols | RemoteMeshSetSymbols | LocalMeshSymbols]: mat4;
 }> = {
+  cannon: mat4.fromYRotation(mat4.create(), -Math.PI / 2),
   linstock: mat4.fromScaling(mat4.create(), [0.1, 0.1, 0.1]),
   // ship: mat4.fromScaling(mat4.create(), [3, 3, 3]),
   // ship_broken: mat4.fromScaling(mat4.create(), [3, 3, 3]),

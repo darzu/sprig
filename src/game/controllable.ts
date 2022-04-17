@@ -111,18 +111,12 @@ export function registerControllableSystems(em: EntityManager) {
       for (let c of controllables) {
         // TODO(@darzu): probably need to use yaw-pitch :(
         if (c.controllable.modes.canCameraYaw) {
-          quat.rotateY(
-            c.cameraFollow.rotationOffset,
-            c.cameraFollow.rotationOffset,
-            -res.inputs.mouseMovX * c.controllable.turnSpeed
-          );
+          c.cameraFollow.yawOffset +=
+            -res.inputs.mouseMovX * c.controllable.turnSpeed;
         }
         if (c.controllable.modes.canPitch)
-          quat.rotateX(
-            c.cameraFollow.rotationOffset,
-            c.cameraFollow.rotationOffset,
-            -res.inputs.mouseMovY * c.controllable.turnSpeed
-          );
+          c.cameraFollow.pitchOffset +=
+            -res.inputs.mouseMovY * c.controllable.turnSpeed;
       }
     },
     "controllableCameraFollow"

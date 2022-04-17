@@ -15,6 +15,7 @@ import { RendererWorldFrameDef } from "./render/renderer.js";
 import { computeNewError, reduceError } from "./smoothing.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
 import { PhysicsTimerDef } from "./time.js";
+import { yawpitchToQuat } from "./yawpitch.js";
 
 export type PerspectiveMode = "perspective" | "ortho";
 export type CameraMode = "thirdPerson" | "thirdPersonOverShoulder";
@@ -51,7 +52,8 @@ export const CameraFollowDef = EM.defineComponent(
   "cameraFollow",
   (priority = 0) => ({
     positionOffset: vec3.create(),
-    rotationOffset: quat.create(),
+    yawOffset: 0,
+    pitchOffset: 0,
     priority,
   })
 );
@@ -99,10 +101,10 @@ export function registerCameraSystems(em: EntityManager) {
           res.camera.positionOffset,
           target.cameraFollow.positionOffset
         );
-        quat.copy(
-          res.camera.rotationOffset,
-          target.cameraFollow.rotationOffset
-        );
+        yawpitchToQuat(res.camera.rotationOffset, {
+          yaw: target.cameraFollow.yawOffset,
+          pitch: target.cameraFollow.pitchOffset,
+        });
       } else {
         res.camera.targetId = 0;
         vec3.zero(res.camera.positionOffset);

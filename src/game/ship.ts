@@ -154,10 +154,20 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
         s.shipProps.gemId = gem.id;
 
         // create cannons
-        const cannonPitch = Math.PI * -0.05;
-        const cannonR = createCannon([-6, 3, 5], 0, cannonPitch, s.id);
+        const cannonPitch = Math.PI * +0.05;
+        const cannonR = createCannon(
+          [-6, 3, 5],
+          Math.PI * 0.5,
+          cannonPitch,
+          s.id
+        );
         s.shipProps.cannonRId = cannonR.id;
-        const cannonL = createCannon([6, 3, 5], Math.PI, cannonPitch, s.id);
+        const cannonL = createCannon(
+          [6, 3, 5],
+          Math.PI * 1.5,
+          cannonPitch,
+          s.id
+        );
         s.shipProps.cannonLId = cannonL.id;
       }
 

@@ -91,8 +91,9 @@ export function registerCannonSystems(em: EntityManager) {
     ([player, cannon]) => {
       // only the firing player creates a bullet
       if (player.id === EM.getResource(LocalPlayerDef)?.playerId) {
-        const fireDir = quat.create();
-        quat.rotateY(fireDir, cannon.world.rotation, Math.PI * 0.5);
+        const fireDir = cannon.world.rotation;
+        // const fireDir = quat.create();
+        // quat.rotateY(fireDir, cannon.world.rotation, Math.PI * 0.5);
         const firePos = vec3.create();
         vec3.transformQuat(firePos, firePos, fireDir);
         vec3.add(firePos, firePos, cannon.world.position);

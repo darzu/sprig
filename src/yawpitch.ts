@@ -28,6 +28,6 @@ export function yawpitchToQuat(
 ): quat {
   quat.copy(out, quat.IDENTITY);
   quat.rotateY(out, out, yp.yaw);
-  quat.rotateZ(out, out, yp.pitch);
+  quat.rotateX(out, out, yp.pitch);
   return out;
 }

@@ -29,8 +29,8 @@ export const TurretDef = EM.defineComponent("turret", () => {
     mannedId: 0,
     minYaw: -Math.PI * 0.5,
     maxYaw: +Math.PI * 0.5,
-    minPitch: -Math.PI * 0.3,
-    maxPitch: Math.PI * 0.1,
+    minPitch: -Math.PI * 0.1,
+    maxPitch: Math.PI * 0.3,
   };
 });
 
@@ -61,16 +61,8 @@ export function constructNetTurret(
   // setup camera params
   EM.ensureComponentOn(e, CameraFollowDef, 0);
   setCameraFollowPosition(e, "thirdPersonOverShoulder");
-  quat.rotateY(
-    e.cameraFollow.rotationOffset,
-    e.cameraFollow.rotationOffset,
-    Math.PI / 2
-  );
-  quat.rotateX(
-    e.cameraFollow.rotationOffset,
-    e.cameraFollow.rotationOffset,
-    -Math.PI / 8
-  );
+  // e.cameraFollow.yawOffset = Math.PI / 2;
+  e.cameraFollow.pitchOffset = -Math.PI / 8;
 
   // create seperate hitbox for interacting with the turret
   const interactBox = EM.newEntity();
@@ -158,7 +150,7 @@ export function registerTurretSystems(em: EntityManager) {
           c.turret.minYaw,
           c.turret.maxYaw
         );
-        c.yawpitch.pitch += res.inputs.mouseMovY * 0.002;
+        c.yawpitch.pitch += -res.inputs.mouseMovY * 0.002;
         c.yawpitch.pitch = clamp(
           c.yawpitch.pitch,
           c.turret.minPitch,
