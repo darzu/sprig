@@ -528,6 +528,10 @@ export class EntityManager {
     // TODO(@darzu): track stats for one-shot systems?
   }
 
+  hasSystem(name: string) {
+    return this.systems.has(name);
+  }
+
   callSystem(name: string) {
     const s = this.systems.get(name);
     if (!s) throw `No system named ${name}`;

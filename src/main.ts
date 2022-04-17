@@ -55,8 +55,15 @@ async function startGame(localPeerName: string, host: string | null) {
   EM.addSingletonComponent(InputsDef);
   registerInputsSystem(EM);
 
-  initShipGame(EM, hosting);
-  // initDbgGame(EM, hosting);
+  const SHIP_GAME = true;
+  const PHYS_GAME = false;
+
+  if (SHIP_GAME) {
+    initShipGame(EM, hosting);
+  }
+  if (PHYS_GAME) {
+    initDbgGame(EM, hosting);
+  }
 
   let previous_frame_time = start_of_time;
   let frame = () => {
@@ -166,8 +173,14 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("constructRenderables");
     EM.callSystem("stepRenderer");
     EM.callSystem("inputs");
-    EM.callSystem("shipUI");
-    EM.callSystem("spawnBoats");
+    if (SHIP_GAME) {
+      EM.callSystem("shipUI");
+      EM.callSystem("spawnBoats");
+    }
+    if (PHYS_GAME) {
+      // TODO(@darzu): Doug, we should talk about this..
+      if (EM.hasSystem("checkGJK")) EM.callSystem("checkGJK");
+    }
     EM.callOneShotSystems();
     EM.loops++;
     sim_time += performance.now() - before_sim;
