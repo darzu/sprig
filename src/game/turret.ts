@@ -22,26 +22,7 @@ import { InputsDef } from "../inputs.js";
 import { clamp } from "../math.js";
 import { DeletedDef } from "../delete.js";
 import { defineSerializableComponent } from "../em_helpers.js";
-
-export const YawPitchDef = defineSerializableComponent(
-  EM,
-  "yawpitch",
-  (yaw?: number, pitch?: number) => {
-    return {
-      yaw: yaw ?? 0,
-      pitch: pitch ?? 0,
-    };
-  },
-  (o, buf) => {
-    buf.writeFloat32(o.yaw);
-    buf.writeFloat32(o.pitch);
-  },
-  (o, buf) => {
-    o.yaw = buf.readFloat32();
-    o.pitch = buf.readFloat32();
-  }
-);
-export type YawPitch = Component<typeof YawPitchDef>;
+import { YawPitchDef, yawpitchToQuat } from "../yawpitch.js";
 
 export const TurretDef = EM.defineComponent("turret", () => {
   return {
@@ -148,13 +129,6 @@ export const raiseUnmanTurret = eventWizard(
     },
   }
 );
-
-function yawpitchToQuat(out: quat, yp: YawPitch): quat {
-  quat.copy(out, quat.IDENTITY);
-  quat.rotateY(out, out, yp.yaw);
-  quat.rotateZ(out, out, yp.pitch);
-  return out;
-}
 
 export function registerTurretSystems(em: EntityManager) {
   em.registerSystem(
