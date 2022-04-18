@@ -55,8 +55,8 @@ async function startGame(localPeerName: string, host: string | null) {
   EM.addSingletonComponent(InputsDef);
   registerInputsSystem(EM);
 
-  const SHIP_GAME = true;
-  const PHYS_GAME = false;
+  const SHIP_GAME = false;
+  const PHYS_GAME = !SHIP_GAME;
 
   if (SHIP_GAME) {
     initShipGame(EM, hosting);

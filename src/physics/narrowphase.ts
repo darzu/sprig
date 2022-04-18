@@ -214,7 +214,11 @@ function handleSimplex(): boolean {
   }
 }
 
-function oobCollision() {
+/*
+TODO(@darzu): 
+*/
+
+function obbCollision() {
   // https://gamedev.stackexchange.com/questions/44500/how-many-and-which-axes-to-use-for-3d-obb-collision-with-sat
   // https://www.geometrictools.com/Documentation/DynamicCollisionDetection.pdf
   // 15 axis:
