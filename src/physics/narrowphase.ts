@@ -215,7 +215,22 @@ function handleSimplex(): boolean {
 }
 
 /*
-TODO(@darzu): 
+TODO(@darzu):
+Determine penetration
+use EPA?
+Hmm, I don't need the smallest vector, I need the vector along a particular direction
+What if I just move my simplex towards that direction?
+There is infact one distinct point of collision b/c the origin is a point 
+  and the minkowski difference will travel towards the origin
+Should this just be a ray cast from the origin back along the direction of travel towards
+  the old minkowski difference?
+
+EPA-ish:
+  find the feature of the simplex in the dir we care about
+  move past it
+  check the next support point in that dir
+  if it's not past the (new) origin, add it to the simplex and check that
+
 */
 
 function obbCollision() {
