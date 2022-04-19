@@ -223,6 +223,14 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
             );
 
             const simplex = gjk(shapeOther, shapeB);
+            if (
+              simplex &&
+              (!quat.equals(lastWorldRot[i], ents[i].rotation) ||
+                !quat.equals(lastPlayerRot, g.rotation))
+            ) {
+              // rotation happened, undo it
+            }
+
             if (simplex) {
               const penD = penetrationDepth(shapeOther, shapeB, simplex);
               const travelD = vec3.len(shapeB.travel);
