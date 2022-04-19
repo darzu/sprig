@@ -198,7 +198,7 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
 
           // TODO(@darzu):
 
-          const shapeB = createWorldShape(
+          let playerShape = createWorldShape(
             res.assets.cube,
             b2.position,
             b2.rotation,
@@ -215,25 +215,47 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
           let backTravelD = 0;
 
           for (let i = 0; i < ents.length; i++) {
-            const shapeOther = createWorldShape(
+            b2.color[i] = 0.1;
+            ents[i].color[i] = 0.1;
+
+            let shapeOther = createWorldShape(
               gameMeshes[i],
               ents[i].position,
               ents[i].rotation,
               lastWorldPos[i]
             );
-
-            const simplex = gjk(shapeOther, shapeB);
+            let simplex = gjk(shapeOther, playerShape);
+            if (simplex) {
+              b2.color[i] = 0.3;
+              ents[i].color[i] = 0.3;
+            }
             if (
               simplex &&
               (!quat.equals(lastWorldRot[i], ents[i].rotation) ||
                 !quat.equals(lastPlayerRot, g.rotation))
             ) {
               // rotation happened, undo it
+              quat.copy(ents[i].rotation, lastWorldRot[i]);
+              quat.copy(g.rotation, lastPlayerRot);
+
+              shapeOther = createWorldShape(
+                gameMeshes[i],
+                ents[i].position,
+                ents[i].rotation,
+                lastWorldPos[i]
+              );
+              playerShape = createWorldShape(
+                res.assets.cube,
+                b2.position,
+                b2.rotation,
+                lastPlayerPos
+              );
+              simplex = gjk(shapeOther, playerShape);
             }
 
             if (simplex) {
-              const penD = penetrationDepth(shapeOther, shapeB, simplex);
-              const travelD = vec3.len(shapeB.travel);
+              const penD = penetrationDepth(shapeOther, playerShape, simplex);
+              const travelD = vec3.len(playerShape.travel);
               if (penD < Infinity) {
                 backTravelD += penD;
               }
@@ -241,17 +263,11 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
               console.log(
                 `penD: ${penD.toFixed(3)}, travelD: ${travelD.toFixed(3)}`
               );
-
-              b2.color[i] = 0.3;
-              ents[i].color[i] = 0.3;
-            } else {
-              b2.color[i] = 0.1;
-              ents[i].color[i] = 0.1;
             }
           }
 
-          backTravelD = Math.min(backTravelD, vec3.len(shapeB.travel));
-          const travelN = vec3.normalize(tempVec(), shapeB.travel);
+          backTravelD = Math.min(backTravelD, vec3.len(playerShape.travel));
+          const travelN = vec3.normalize(tempVec(), playerShape.travel);
           const backTravel = vec3.scale(tempVec(), travelN, backTravelD);
 
           // console.log(backTravel);
