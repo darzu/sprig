@@ -74,6 +74,7 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
       g.controllable.modes.canYaw = false;
       g.controllable.modes.canCameraYaw = true;
       g.controllable.speed *= 0.5;
+      g.controllable.sprintMul = 10;
 
       const c = res.globalCursor3d.cursor()!;
       if (RenderableDef.isOn(c)) c.renderable.enabled = false;
@@ -231,37 +232,49 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
           //   b2.color[0] = 0.1;
           // }
 
-          const shapeOther = shapeD;
+          const shapes = [shapeA, shapeC, shapeD];
+          const ents = [b1, b3, b4];
 
-          const simplex = gjk(shapeOther, shapeB);
-          if (simplex) {
-            const penD = penetrationDepth(shapeOther, shapeB, simplex);
-            const travelD = vec3.len(shapeB.travel);
-            if (penD < Infinity) {
-              const travelN = vec3.normalize(tempVec(), shapeB.travel);
-              const backTravel = vec3.scale(tempVec(), travelN, penD);
+          let backTravelD = 0;
 
-              // console.log(backTravel);
-              vec3.sub(b2.position, b2.position, backTravel);
+          for (let i = 0; i < shapes.length; i++) {
+            const shapeOther = shapes[i];
+
+            const simplex = gjk(shapeOther, shapeB);
+            if (simplex) {
+              const penD = penetrationDepth(shapeOther, shapeB, simplex);
+              const travelD = vec3.len(shapeB.travel);
+              if (penD < Infinity) {
+                backTravelD += penD;
+              }
+              if (penD > travelD + PAD) console.error(`penD > travelD`);
+              console.log(
+                `penD: ${penD.toFixed(3)}, travelD: ${travelD.toFixed(3)}`
+              );
+              // vec3.sub(b2.position, b2.position, shapeB.travel);
+
+              b2.color[i] = 0.3;
+              ents[i].color[i] = 0.3;
+            } else {
+              b2.color[i] = 0.1;
+              ents[i].color[i] = 0.1;
             }
-            if (penD > travelD + PAD) console.error(`penD > travelD`);
-            console.log(
-              `penD: ${penD.toFixed(3)}, travelD: ${travelD.toFixed(3)}`
-            );
-            // vec3.sub(b2.position, b2.position, shapeB.travel);
 
-            b2.color[1] = 0.3;
-          } else {
-            b2.color[1] = 0.1;
+            // if (gjk(shapeD, shapeB)) {
+            //   b4.color[2] = 0.3;
+            //   b2.color[2] = 0.3;
+            // } else {
+            //   b4.color[2] = 0.1;
+            //   b2.color[2] = 0.1;
+            // }
           }
 
-          // if (gjk(shapeD, shapeB)) {
-          //   b4.color[2] = 0.3;
-          //   b2.color[2] = 0.3;
-          // } else {
-          //   b4.color[2] = 0.1;
-          //   b2.color[2] = 0.1;
-          // }
+          backTravelD = Math.min(backTravelD, vec3.len(shapeB.travel));
+          const travelN = vec3.normalize(tempVec(), shapeB.travel);
+          const backTravel = vec3.scale(tempVec(), travelN, backTravelD);
+
+          // console.log(backTravel);
+          vec3.sub(b2.position, b2.position, backTravel);
 
           lastWorldPos = [
             vec3.clone(b1.position),
