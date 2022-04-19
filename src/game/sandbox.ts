@@ -11,6 +11,7 @@ import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 import { gjk, penetrationDepth, Shape } from "../physics/narrowphase.js";
 import { PhysicsStateDef, WorldFrameDef } from "../physics/nonintersection.js";
+import { PAD } from "../physics/phys.js";
 import {
   Frame,
   PhysicsParentDef,
@@ -45,6 +46,7 @@ export function createGhost(em: EntityManager) {
 
   return g;
 }
+let __frame = 0;
 export function initDbgGame(em: EntityManager, hosting: boolean) {
   const camera = em.addSingletonComponent(CameraDef);
   camera.fov = Math.PI * 0.5;
@@ -65,7 +67,7 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
       // quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
       // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
       // quat.copy(g.cameraFollow.rotationOffset, [-0.18, 0.0, 0.0, 0.98]);
-      vec3.copy(g.position, [0, 0, -1.2]);
+      vec3.copy(g.position, [0, 1, -1.2]);
       quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
       // setCameraFollowPosition(g, "thirdPerson");
       g.cameraFollow.positionOffset = [0, 0, 5];
@@ -163,11 +165,11 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
         );
         const support = (d: vec3) => farthestPointInDir(worldVerts, d);
         const center = vec3.transformMat4(tempVec(), g.center, world.transform);
-        const travelDir = vec3.sub(tempVec(), pos, lastWorldPos);
+        const travel = vec3.sub(tempVec(), pos, lastWorldPos);
         return {
           center,
           support,
-          travelDir,
+          travel,
         };
       }
 
@@ -182,6 +184,8 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
         null,
         [InputsDef],
         (_, { inputs }) => {
+          // console.log(__frame);
+          // __frame++;
           // if (!inputs.keyClicks["g"]) return;
 
           // TODO(@darzu):
@@ -227,18 +231,27 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
           //   b2.color[0] = 0.1;
           // }
 
-          const simplex = gjk(shapeD, shapeB);
+          const shapeOther = shapeD;
+
+          const simplex = gjk(shapeOther, shapeB);
           if (simplex) {
-            const penD = penetrationDepth(shapeD, shapeB, simplex);
-            const travelD = vec3.len(shapeB.travelDir);
-            console.log(`penD: ${penD}, travelD: ${travelD}`);
+            const penD = penetrationDepth(shapeOther, shapeB, simplex);
+            const travelD = vec3.len(shapeB.travel);
+            if (penD < Infinity) {
+              const travelN = vec3.normalize(tempVec(), shapeB.travel);
+              const backTravel = vec3.scale(tempVec(), travelN, penD);
 
-            vec3.sub(b2.position, b2.position, shapeB.travelDir);
+              // console.log(backTravel);
+              vec3.sub(b2.position, b2.position, backTravel);
+            }
+            if (penD > travelD + PAD) console.error(`penD > travelD`);
+            console.log(
+              `penD: ${penD.toFixed(3)}, travelD: ${travelD.toFixed(3)}`
+            );
+            // vec3.sub(b2.position, b2.position, shapeB.travel);
 
-            b4.color[1] = 0.3;
             b2.color[1] = 0.3;
           } else {
-            b4.color[1] = 0.1;
             b2.color[1] = 0.1;
           }
 

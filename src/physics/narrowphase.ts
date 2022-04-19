@@ -10,6 +10,7 @@ import { PhysicsObject, WorldFrameDef } from "./nonintersection.js";
 import { PhysicsParentDef, PositionDef } from "./transform.js";
 import { centroid, SupportFn, vec3Dbg } from "../utils-3d.js";
 import { tempVec } from "../temp-pool.js";
+import { PAD } from "./phys.js";
 
 // GJK: convex vs convex collision testing
 //  https://www.youtube.com/watch?v=ajv46BSqcK4
@@ -74,7 +75,7 @@ export function registerNarrowPhaseSystems(em: EntityManager) {
 export type Shape = {
   center: vec3;
   support: SupportFn;
-  travelDir: vec3;
+  travel: vec3;
 };
 
 export function doesSimplexOverlapOrigin(s: vec3[]) {
@@ -220,19 +221,169 @@ export function gjk(
   }
 }
 
-export function penetrationDepth(s1: Shape, s2: Shape, simplex: vec3[]) {
-  // TODO(@darzu): there's probably something more sophisticated we can do
-  //    like advancing the simplex a la EPA for more accuracy. But what we
-  //    are doing here is just getting the support point in the the dir of
-  //    travel and it works okay.
-
-  const forwardDir = vec3.sub(tempVec(), s1.travelDir, s2.travelDir);
+export function penetrationDepth(
+  s1: Shape,
+  s2: Shape,
+  simplex: vec3[],
+  offset: vec3 = [0, 0, 0]
+): number {
+  if (vec3.equals(s1.travel, s2.travel)) return Infinity;
+  const forwardDir = vec3.sub(tempVec(), s1.travel, s2.travel);
   vec3.normalize(forwardDir, forwardDir);
   const backwardDir = vec3.negate(tempVec(), forwardDir);
-  const a = mSupport(s1, s2, backwardDir);
-  const dist = vec3.dot(a, backwardDir);
-  // console.log(dist);
-  return dist;
+
+  const [D, C, B, A] = simplex;
+  const AB = vec3.sub(tempVec(), B, A);
+  const BC = vec3.sub(tempVec(), B, C);
+  const BD = vec3.sub(tempVec(), B, D);
+  const AC = vec3.sub(tempVec(), C, A);
+  const AD = vec3.sub(tempVec(), D, A);
+  const AO = vec3.sub(tempVec(), A, offset);
+  const BO = vec3.sub(tempVec(), B, offset);
+
+  const ABCperp = vec3.cross(tempVec(), AB, AC);
+  if (vec3.dot(ABCperp, AD) > 0) {
+    vec3.negate(ABCperp, ABCperp);
+  }
+  const ACDperp = vec3.cross(tempVec(), AC, AD);
+  if (vec3.dot(ACDperp, AB) > 0) {
+    vec3.negate(ACDperp, ACDperp);
+  }
+  const ABDperp = vec3.cross(tempVec(), AD, AB);
+  if (vec3.dot(ABDperp, AC) > 0) {
+    vec3.negate(ABDperp, ABDperp);
+  }
+  const BCDperp = vec3.cross(tempVec(), BC, BD);
+  if (vec3.dot(BCDperp, AB) < 0) {
+    vec3.negate(BCDperp, BCDperp);
+  }
+
+  let minD = Infinity;
+  let minPerp: vec3 = [NaN, NaN, NaN];
+  let minVs: vec3[] = [];
+  let minNotV: vec3 = [NaN, NaN, NaN];
+
+  if (vec3.dot(ABCperp, backwardDir) > 0) {
+    const ABCnorm = vec3.normalize(tempVec(), ABCperp);
+    const n = vec3.dot(AO, ABCnorm);
+    const d = n / vec3.dot(ABCnorm, backwardDir);
+    // console.log(d);
+    if (d < minD) {
+      minD = d;
+      minPerp = ABCperp;
+      minVs = [C, B, A];
+      minNotV = D;
+    }
+  }
+  if (vec3.dot(ACDperp, backwardDir) > 0) {
+    const ACDnorm = vec3.normalize(tempVec(), ACDperp);
+    const n = vec3.dot(AO, ACDnorm);
+    const d = n / vec3.dot(ACDnorm, backwardDir);
+    // console.log(d);
+    if (d < minD) {
+      minD = d;
+      minPerp = ACDperp;
+      minVs = [D, C, A];
+      minNotV = B;
+    }
+  }
+  if (vec3.dot(ABDperp, backwardDir) > 0) {
+    const ABDnorm = vec3.normalize(tempVec(), ABDperp);
+    const n = vec3.dot(AO, ABDnorm);
+    const d = n / vec3.dot(ABDnorm, backwardDir);
+    // console.log(d);
+    if (d < minD) {
+      minD = d;
+      minPerp = ABDperp;
+      minVs = [D, B, A];
+      minNotV = C;
+    }
+  }
+  // TODO(@darzu): can skip if `offset` === [0,0,0]
+  if (vec3.dot(BCDperp, backwardDir) > 0) {
+    const BCDnorm = vec3.normalize(tempVec(), BCDperp);
+    const n = vec3.dot(BO, BCDnorm);
+    const d = n / vec3.dot(BCDnorm, backwardDir);
+    // console.log(d);
+    if (d < minD) {
+      minD = d;
+      minPerp = BCDperp;
+      minVs = [D, C, B];
+      minNotV = A;
+    }
+  }
+
+  if (minD === Infinity) {
+    console.error("uh oh!");
+    console.error(`
+    vec3.dot(ABCperp, backwardDir): ${vec3.dot(ABCperp, backwardDir)}
+    vec3.dot(ACDperp, backwardDir): ${vec3.dot(ACDperp, backwardDir)}
+    vec3.dot(ABDperp, backwardDir): ${vec3.dot(ABDperp, backwardDir)}
+    vec3.dot(BCDperp, backwardDir): ${vec3.dot(BCDperp, backwardDir)}
+      `);
+    console.log(
+      JSON.stringify({
+        A,
+        B,
+        C,
+        D,
+        ABCperp,
+        ACDperp,
+        ABDperp,
+        BCDperp,
+        offset,
+        backwardDir,
+      })
+    );
+    return Infinity;
+  }
+
+  minD += PAD;
+
+  const newTravel = vec3.scale(tempVec(), backwardDir, minD);
+  const newOffset = vec3.add(tempVec(), offset, newTravel);
+
+  const F = mSupport(s1, s2, minPerp);
+  const Fs = vec3.sub(tempVec(), F, newOffset);
+  if (vec3.dot(Fs, minPerp) <= 0) {
+    console.log(
+      `done!` +
+        (vec3.len(offset) > 0
+          ? `${vec3.len(offset).toFixed(3)} + ${minD.toFixed(3)}`
+          : ``)
+    );
+    return vec3.len(newOffset);
+  }
+
+  console.log(`more to do!`);
+
+  return penetrationDepth(s1, s2, [...minVs, F], newOffset);
+
+  // const Ns = [ABCperp, ACDperp, ABDperp, BCDperp]
+  //   .map(n => vec3.normalize(n, n));
+  // const dist = Infinity;
+  // for (let N of Ns) {
+  //   const dn = vec3.dot(N, backwardDir);
+  //   if (dn < 0)
+  //     continue;
+
+  // }
+
+  // if (vec3.dot(ABCperp, AO) > 0) {
+  //   simplex = [C, B, A];
+  //   vec3.copy(d, ABCperp);
+  //   return false;
+  // }
+  // if (vec3.dot(ACDperp, AO) > 0) {
+  //   simplex = [D, C, A];
+  //   vec3.copy(d, ACDperp);
+  //   return false;
+  // }
+  // if (vec3.dot(ADBperp, AO) > 0) {
+  //   simplex = [D, B, A];
+  //   vec3.copy(d, ADBperp);
+  //   return false;
+  // }
 }
 
 function tripleProd(out: vec3, a: vec3, b: vec3, c: vec3): vec3 {
