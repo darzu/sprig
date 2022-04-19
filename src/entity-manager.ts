@@ -5,7 +5,7 @@ type Intersect<A> = A extends [infer X, ...infer Y] ? X & Intersect<Y> : {};
 type Union<A> = A extends [infer X, ...infer Y] ? X | Union<Y> : never;
 
 // TODO(@darzu): consider using a non recursive definition for performance
-type TupleN<T, N extends number> = N extends N
+export type TupleN<T, N extends number> = N extends N
   ? number extends N
     ? T[]
     : _TupleN<T, N, []>

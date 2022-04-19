@@ -118,6 +118,10 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("playerFacingDir");
     EM.callSystem("stepPlayers");
     EM.callSystem("playerOnShip");
+    if (PHYS_GAME) {
+      // TODO(@darzu): Doug, we should talk about this..
+      if (EM.hasSystem("checkGJK")) EM.callSystem("checkGJK");
+    }
     EM.callSystem("updateBullets");
     EM.callSystem("updateNoodles");
     EM.callSystem("updateLifetimes");
@@ -176,10 +180,6 @@ async function startGame(localPeerName: string, host: string | null) {
     if (SHIP_GAME) {
       EM.callSystem("shipUI");
       EM.callSystem("spawnBoats");
-    }
-    if (PHYS_GAME) {
-      // TODO(@darzu): Doug, we should talk about this..
-      if (EM.hasSystem("checkGJK")) EM.callSystem("checkGJK");
     }
     EM.callOneShotSystems();
     EM.loops++;

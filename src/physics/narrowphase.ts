@@ -1,4 +1,4 @@
-import { EntityManager, EntityW } from "../entity-manager.js";
+import { EntityManager, EntityW, TupleN } from "../entity-manager.js";
 import { AssetsDef } from "../game/assets.js";
 import { ColorDef } from "../color.js";
 import { LocalPlayerDef } from "../game/player.js";
@@ -9,6 +9,7 @@ import { BoxCollider, Collider } from "./collider.js";
 import { PhysicsObject, WorldFrameDef } from "./nonintersection.js";
 import { PhysicsParentDef, PositionDef } from "./transform.js";
 import { centroid, SupportFn, vec3Dbg } from "../utils-3d.js";
+import { tempVec } from "../temp-pool.js";
 
 // GJK: convex vs convex collision testing
 //  https://www.youtube.com/watch?v=ajv46BSqcK4
@@ -47,36 +48,34 @@ needs seperate: rotation and translation non-intersection phases.
   likely we'll need pill colliders for players so they can rotate in a corner
 */
 
+/*
+TODO(@darzu):
+Determine penetration
+use EPA?
+Hmm, I don't need the smallest vector, I need the vector along a particular direction
+What if I just move my simplex towards that direction?
+There is infact one distinct point of collision b/c the origin is a point 
+  and the minkowski difference will travel towards the origin
+Should this just be a ray cast from the origin back along the direction of travel towards
+  the old minkowski difference?
+
+EPA-ish:
+  find the feature of the simplex in the dir we care about
+  move past it
+  check the next support point in that dir
+  if it's not past the (new) origin, add it to the simplex and check that
+
+*/
+
 export function registerNarrowPhaseSystems(em: EntityManager) {
   // TODO(@darzu):
-}
-
-export function boxLocalPoints(m: vec3, s: vec3): vec3[] {
-  return [
-    vec3.fromValues(m[0] - s[0], m[1] - s[1], m[2] - s[2]),
-    vec3.fromValues(m[0] - s[0], m[1] - s[1], m[2] + s[2]),
-    vec3.fromValues(m[0] - s[0], m[1] + s[1], m[2] - s[2]),
-    vec3.fromValues(m[0] - s[0], m[1] + s[1], m[2] + s[2]),
-    vec3.fromValues(m[0] + s[0], m[1] - s[1], m[2] - s[2]),
-    vec3.fromValues(m[0] + s[0], m[1] - s[1], m[2] + s[2]),
-    vec3.fromValues(m[0] + s[0], m[1] + s[1], m[2] - s[2]),
-    vec3.fromValues(m[0] + s[0], m[1] + s[1], m[2] + s[2]),
-  ];
 }
 
 export type Shape = {
   center: vec3;
   support: SupportFn;
+  travelDir: vec3;
 };
-
-// minkowski difference support
-function mSupport(s1: Shape, s2: Shape, d: vec3): vec3 {
-  // TODO(@darzu):
-  const nD = vec3.negate(vec3.create(), d);
-  return vec3.sub(vec3.create(), s2.support(d), s1.support(nD));
-}
-
-// GJK visualization
 
 export function doesSimplexOverlapOrigin(s: vec3[]) {
   if (s.length !== 4) return false;
@@ -107,11 +106,21 @@ export function doesSimplexOverlapOrigin(s: vec3[]) {
   return true;
 }
 
+// minkowski difference support
+function mSupport(s1: Shape, s2: Shape, d: vec3): vec3 {
+  // TODO(@darzu):
+  const nD = vec3.negate(tempVec(), d);
+  return vec3.sub(tempVec(), s2.support(d), s1.support(nD));
+}
+
+// GJK visualization
+
 // TODO(@darzu): so much perf to improve. #1: don't allocate
-let d: vec3 = vec3.create();
-let simplex: vec3[] = [];
-let distToOrigin = Infinity;
-export function gjk(s1: Shape, s2: Shape): boolean {
+export function gjk(s1: Shape, s2: Shape): [vec3, vec3, vec3] | undefined {
+  let d: vec3 = tempVec();
+  let simplex: vec3[] = [];
+  let distToOrigin = Infinity;
+
   vec3.sub(d, s2.center, s1.center);
   vec3.normalize(d, d);
   simplex = [mSupport(s1, s2, d)];
@@ -124,12 +133,12 @@ export function gjk(s1: Shape, s2: Shape): boolean {
       // console.log(`false on step: ${step}`);
       // console.log(`A: ${vec3Dbg(A)}, d: ${vec3Dbg(d)}`);
       // console.dir(simplex);
-      return false;
+      return undefined;
     }
     step++;
     if (step > 100) {
       console.warn(`u oh, running too long`);
-      return false;
+      return undefined;
     }
     // console.log(`adding: ${A}`);
     simplex.push(A);
@@ -144,6 +153,65 @@ export function gjk(s1: Shape, s2: Shape): boolean {
         console.error(`we dont think it actually overlaps origin`);
       // else console.log(`probably overlaps :)`);
       // console.log(`true on step: ${step}`);
+      return [...simplex] as TupleN<vec3, 3>;
+    }
+  }
+
+  function handleSimplex(): boolean {
+    if (simplex.length === 2) {
+      // line case
+      const [B, A] = simplex;
+      const AB = vec3.sub(tempVec(), B, A);
+      const AO = vec3.sub(tempVec(), [0, 0, 0], A);
+      const ABperp = tripleProd(tempVec(), AB, AO, AB);
+      vec3.copy(d, ABperp);
+      return false;
+    } else if (simplex.length === 3) {
+      // triangle case
+      const [C, B, A] = simplex;
+      const AB = vec3.sub(tempVec(), B, A);
+      const AC = vec3.sub(tempVec(), C, A);
+      const ABCperp = vec3.cross(tempVec(), AB, AC);
+      const AO = vec3.sub(tempVec(), [0, 0, 0], A);
+      if (vec3.dot(ABCperp, AO) < 0) vec3.negate(ABCperp, ABCperp);
+      vec3.copy(d, ABCperp);
+      return false;
+    } else {
+      // tetrahedron
+      const [D, C, B, A] = simplex;
+      const AB = vec3.sub(tempVec(), B, A);
+      const AC = vec3.sub(tempVec(), C, A);
+      const AD = vec3.sub(tempVec(), D, A);
+      const AO = vec3.sub(tempVec(), [0, 0, 0], A);
+
+      const ABCperp = vec3.cross(tempVec(), AB, AC);
+      if (vec3.dot(ABCperp, AD) > 0) {
+        vec3.negate(ABCperp, ABCperp);
+      }
+      const ACDperp = vec3.cross(tempVec(), AC, AD);
+      if (vec3.dot(ACDperp, AB) > 0) {
+        vec3.negate(ACDperp, ACDperp);
+      }
+      const ADBperp = vec3.cross(tempVec(), AD, AB);
+      if (vec3.dot(ADBperp, AC) > 0) {
+        vec3.negate(ADBperp, ADBperp);
+      }
+
+      if (vec3.dot(ABCperp, AO) > 0) {
+        simplex = [C, B, A];
+        vec3.copy(d, ABCperp);
+        return false;
+      }
+      if (vec3.dot(ACDperp, AO) > 0) {
+        simplex = [D, C, A];
+        vec3.copy(d, ACDperp);
+        return false;
+      }
+      if (vec3.dot(ADBperp, AO) > 0) {
+        simplex = [D, B, A];
+        vec3.copy(d, ADBperp);
+        return false;
+      }
       return true;
     }
   }
@@ -154,84 +222,6 @@ function tripleProd(out: vec3, a: vec3, b: vec3, c: vec3): vec3 {
   vec3.cross(out, out, c);
   return out;
 }
-function handleSimplex(): boolean {
-  if (simplex.length === 2) {
-    // line case
-    const [B, A] = simplex;
-    const AB = vec3.sub(vec3.create(), B, A);
-    const AO = vec3.sub(vec3.create(), [0, 0, 0], A);
-    const ABperp = tripleProd(vec3.create(), AB, AO, AB);
-    vec3.copy(d, ABperp);
-    return false;
-  } else if (simplex.length === 3) {
-    // triangle case
-    const [C, B, A] = simplex;
-    const AB = vec3.sub(vec3.create(), B, A);
-    const AC = vec3.sub(vec3.create(), C, A);
-    const ABCperp = vec3.cross(vec3.create(), AB, AC);
-    const AO = vec3.sub(vec3.create(), [0, 0, 0], A);
-    if (vec3.dot(ABCperp, AO) < 0) vec3.negate(ABCperp, ABCperp);
-    vec3.copy(d, ABCperp);
-    return false;
-  } else {
-    // tetrahedron
-    const [D, C, B, A] = simplex;
-    // TODO(@darzu):
-    const AB = vec3.sub(vec3.create(), B, A);
-    const AC = vec3.sub(vec3.create(), C, A);
-    const AD = vec3.sub(vec3.create(), D, A);
-    const AO = vec3.sub(vec3.create(), [0, 0, 0], A);
-
-    const ABCperp = vec3.cross(vec3.create(), AB, AC);
-    if (vec3.dot(ABCperp, AD) > 0) {
-      vec3.negate(ABCperp, ABCperp);
-    }
-    const ACDperp = vec3.cross(vec3.create(), AC, AD);
-    if (vec3.dot(ACDperp, AB) > 0) {
-      vec3.negate(ACDperp, ACDperp);
-    }
-    const ADBperp = vec3.cross(vec3.create(), AD, AB);
-    if (vec3.dot(ADBperp, AC) > 0) {
-      vec3.negate(ADBperp, ADBperp);
-    }
-
-    if (vec3.dot(ABCperp, AO) > 0) {
-      simplex = [C, B, A];
-      vec3.copy(d, ABCperp);
-      return false;
-    }
-    if (vec3.dot(ACDperp, AO) > 0) {
-      simplex = [D, C, A];
-      vec3.copy(d, ACDperp);
-      return false;
-    }
-    if (vec3.dot(ADBperp, AO) > 0) {
-      simplex = [D, B, A];
-      vec3.copy(d, ADBperp);
-      return false;
-    }
-    return true;
-  }
-}
-
-/*
-TODO(@darzu):
-Determine penetration
-use EPA?
-Hmm, I don't need the smallest vector, I need the vector along a particular direction
-What if I just move my simplex towards that direction?
-There is infact one distinct point of collision b/c the origin is a point 
-  and the minkowski difference will travel towards the origin
-Should this just be a ray cast from the origin back along the direction of travel towards
-  the old minkowski difference?
-
-EPA-ish:
-  find the feature of the simplex in the dir we care about
-  move past it
-  check the next support point in that dir
-  if it's not past the (new) origin, add it to the simplex and check that
-
-*/
 
 function obbCollision() {
   // https://gamedev.stackexchange.com/questions/44500/how-many-and-which-axes-to-use-for-3d-obb-collision-with-sat

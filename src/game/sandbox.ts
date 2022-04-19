@@ -9,8 +9,8 @@ import { vec3, quat } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
-import { boxLocalPoints, gjk, Shape } from "../physics/narrowphase.js";
-import { WorldFrameDef } from "../physics/nonintersection.js";
+import { gjk, Shape } from "../physics/narrowphase.js";
+import { PhysicsStateDef, WorldFrameDef } from "../physics/nonintersection.js";
 import {
   Frame,
   PhysicsParentDef,
@@ -91,6 +91,11 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
       em.ensureComponentOn(b1, RotationDef);
       em.ensureComponentOn(b1, AngularVelocityDef, [0, 0.001, 0.001]);
       em.ensureComponentOn(b1, WorldFrameDef);
+      em.ensureComponentOn(b1, ColliderDef, {
+        shape: "AABB",
+        solid: false,
+        aabb: res.assets.cube.aabb,
+      });
       // em.ensureComponentOn(b1, ColliderDef, {
       //   shape: "Box",
       //   solid: false,
@@ -98,14 +103,19 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
       //   halfsize: res.assets.cube.halfsize,
       // });
 
-      const b2 = em.newEntity();
+      const b2 = g;
       const m2 = cloneMesh(res.assets.cube.mesh);
       em.ensureComponentOn(b2, RenderableConstructDef, m2);
       em.ensureComponentOn(b2, ColorDef, [0.1, 0.1, 0.1]);
       em.ensureComponentOn(b2, PositionDef, [0, 0, 0]);
       // em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
       em.ensureComponentOn(b2, WorldFrameDef);
-      em.ensureComponentOn(b2, PhysicsParentDef, g.id);
+      // em.ensureComponentOn(b2, PhysicsParentDef, g.id);
+      em.ensureComponentOn(b2, ColliderDef, {
+        shape: "AABB",
+        solid: false,
+        aabb: res.assets.cube.aabb,
+      });
       // em.ensureComponentOn(b2, ColliderDef, {
       //   shape: "Box",
       //   solid: false,
@@ -117,9 +127,14 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
       const m3 = cloneMesh(res.assets.ball.mesh);
       em.ensureComponentOn(b3, RenderableConstructDef, m3);
       em.ensureComponentOn(b3, ColorDef, [0.1, 0.1, 0.1]);
-      em.ensureComponentOn(b3, PositionDef, [0, 0, -3]);
+      em.ensureComponentOn(b3, PositionDef, [0, 0, -4]);
       em.ensureComponentOn(b3, RotationDef);
       em.ensureComponentOn(b3, WorldFrameDef);
+      em.ensureComponentOn(b3, ColliderDef, {
+        shape: "AABB",
+        solid: false,
+        aabb: res.assets.ball.aabb,
+      });
 
       const b4 = em.newEntity();
       const m4 = cloneMesh(res.assets.tetra.mesh);
@@ -128,21 +143,40 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
       em.ensureComponentOn(b4, PositionDef, [0, -3, 0]);
       em.ensureComponentOn(b4, RotationDef);
       em.ensureComponentOn(b4, WorldFrameDef);
+      em.ensureComponentOn(b4, ColliderDef, {
+        shape: "AABB",
+        solid: false,
+        aabb: res.assets.tetra.aabb,
+      });
 
       // NOTE: this uses temp vectors, it must not live long
       // TODO(@darzu): for perf, this should be done only once per obj per frame;
       //    maybe we should transform the dir instead
-      function createWorldShape(g: GameMesh, world: Frame): Shape {
+      function createWorldShape(
+        g: GameMesh,
+        world: Frame,
+        pos: vec3,
+        lastWorldPos: vec3
+      ): Shape {
         const worldVerts = g.uniqueVerts.map((p) =>
           vec3.transformMat4(tempVec(), p, world.transform)
         );
         const support = (d: vec3) => farthestPointInDir(worldVerts, d);
         const center = vec3.transformMat4(tempVec(), g.center, world.transform);
+        const travelDir = vec3.sub(tempVec(), pos, lastWorldPos);
         return {
           center,
           support,
+          travelDir,
         };
       }
+
+      let lastWorldPos: vec3[] = [
+        vec3.clone(b1.position),
+        vec3.clone(b2.position),
+        vec3.clone(b3.position),
+        vec3.clone(b4.position),
+      ];
 
       em.registerSystem(
         null,
@@ -152,20 +186,51 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
 
           // TODO(@darzu):
 
-          const shapeA = createWorldShape(res.assets.cube, b1.world);
-          const shapeB = createWorldShape(res.assets.cube, b2.world);
-          const shapeC = createWorldShape(res.assets.ball, b3.world);
-          const shapeD = createWorldShape(res.assets.tetra, b4.world);
+          const shapeA = createWorldShape(
+            res.assets.cube,
+            b1.world,
+            b1.position,
+            lastWorldPos[0]
+          );
+          const shapeB = createWorldShape(
+            res.assets.cube,
+            b2.world,
+            b2.position,
+            lastWorldPos[1]
+          );
+          const shapeC = createWorldShape(
+            res.assets.ball,
+            b3.world,
+            b3.position,
+            lastWorldPos[2]
+          );
+          const shapeD = createWorldShape(
+            res.assets.tetra,
+            b4.world,
+            b4.position,
+            lastWorldPos[3]
+          );
 
-          if (gjk(shapeA, shapeB)) {
-            b1.color[0] = 0.3;
-            b2.color[0] = 0.3;
-          } else {
-            b1.color[0] = 0.1;
-            b2.color[0] = 0.1;
-          }
+          // vec3.copy(b2.position, lastWorldPos[1]);
+
+          // vec3.sub(b2.position, b2.position, shapeB.travelDir);
+
+          // const simplex = gjk(shapeA, shapeB);
+          // if (simplex) {
+          //   vec3.sub(b1.position, b1.position, shapeA.travelDir);
+          //   vec3.sub(b2.position, b2.position, shapeB.travelDir);
+
+          //   b1.color[0] = 0.3;
+          //   b2.color[0] = 0.3;
+          // } else {
+          //   b1.color[0] = 0.1;
+          //   b2.color[0] = 0.1;
+          // }
 
           if (gjk(shapeC, shapeB)) {
+            // vec3.sub(b3.position, b3.position, shapeC.travelDir);
+            vec3.sub(b2.position, b2.position, shapeB.travelDir);
+
             b3.color[1] = 0.3;
             b2.color[1] = 0.3;
           } else {
@@ -173,13 +238,20 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
             b2.color[1] = 0.1;
           }
 
-          if (gjk(shapeD, shapeB)) {
-            b4.color[2] = 0.3;
-            b2.color[2] = 0.3;
-          } else {
-            b4.color[2] = 0.1;
-            b2.color[2] = 0.1;
-          }
+          // if (gjk(shapeD, shapeB)) {
+          //   b4.color[2] = 0.3;
+          //   b2.color[2] = 0.3;
+          // } else {
+          //   b4.color[2] = 0.1;
+          //   b2.color[2] = 0.1;
+          // }
+
+          lastWorldPos = [
+            vec3.clone(b1.position),
+            vec3.clone(b2.position),
+            vec3.clone(b3.position),
+            vec3.clone(b4.position),
+          ];
         },
         "checkGJK"
       );

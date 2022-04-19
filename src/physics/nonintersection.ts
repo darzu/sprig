@@ -76,7 +76,7 @@ export interface IndexedAABB {
 export const PhysicsStateDef = EM.defineComponent("_phys", () => {
   return {
     // track last stats so we can diff
-    lastPos: PositionDef.construct(),
+    lastWorldPos: PositionDef.construct(),
     // Colliders
     // TODO(@darzu): actually just use pointers...
     localAABBs: [] as number[],
@@ -449,7 +449,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
           let movFrac = nextObjMovFracs[o.id];
           if (movFrac) {
             // TODO(@darzu): MUTATING WORLD POS. We probably shouldn't do that here
-            vec3.sub(_collisionRefl, o._phys.lastPos, o.world.position);
+            vec3.sub(_collisionRefl, o._phys.lastWorldPos, o.world.position);
             vec3.scale(_collisionRefl, _collisionRefl, movFrac);
             vec3.add(o.world.position, o.world.position, _collisionRefl);
 
@@ -477,7 +477,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
       // remember current state for next time
       // TODO(@darzu): needed any more since colliders track these now?
       for (let o of objs) {
-        vec3.copy(o._phys.lastPos, o.world.position);
+        vec3.copy(o._phys.lastWorldPos, o.world.position);
       }
 
       // update out checkRay function
