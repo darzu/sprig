@@ -5,7 +5,7 @@ import {
 } from "../camera.js";
 import { ColorDef } from "../color.js";
 import { EM, EntityManager } from "../entity-manager.js";
-import { vec3, quat } from "../gl-matrix.js";
+import { vec3, quat, mat4 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
@@ -157,15 +157,16 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
       //    maybe we should transform the dir instead
       function createWorldShape(
         g: GameMesh,
-        world: Frame,
         pos: vec3,
+        rot: quat,
         lastWorldPos: vec3
       ): Shape {
+        const transform = mat4.fromRotationTranslation(mat4.create(), rot, pos);
         const worldVerts = g.uniqueVerts.map((p) =>
-          vec3.transformMat4(tempVec(), p, world.transform)
+          vec3.transformMat4(tempVec(), p, transform)
         );
         const support = (d: vec3) => farthestPointInDir(worldVerts, d);
-        const center = vec3.transformMat4(tempVec(), g.center, world.transform);
+        const center = vec3.transformMat4(tempVec(), g.center, transform);
         const travel = vec3.sub(tempVec(), pos, lastWorldPos);
         return {
           center,
@@ -174,11 +175,17 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
         };
       }
 
+      let lastPlayerPos = vec3.clone(b2.position);
+      let lastPlayerRot = quat.clone(b2.rotation);
       let lastWorldPos: vec3[] = [
         vec3.clone(b1.position),
-        vec3.clone(b2.position),
         vec3.clone(b3.position),
         vec3.clone(b4.position),
+      ];
+      let lastWorldRot: quat[] = [
+        quat.clone(b1.rotation),
+        quat.clone(b3.rotation),
+        quat.clone(b4.rotation),
       ];
 
       em.registerSystem(
@@ -191,54 +198,29 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
 
           // TODO(@darzu):
 
-          const shapeA = createWorldShape(
-            res.assets.cube,
-            b1.world,
-            b1.position,
-            lastWorldPos[0]
-          );
           const shapeB = createWorldShape(
             res.assets.cube,
-            b2.world,
             b2.position,
-            lastWorldPos[1]
+            b2.rotation,
+            lastPlayerPos
           );
-          const shapeC = createWorldShape(
+
+          const gameMeshes = [
+            res.assets.cube,
             res.assets.ball,
-            b3.world,
-            b3.position,
-            lastWorldPos[2]
-          );
-          const shapeD = createWorldShape(
             res.assets.tetra,
-            b4.world,
-            b4.position,
-            lastWorldPos[3]
-          );
-
-          // vec3.copy(b2.position, lastWorldPos[1]);
-
-          // vec3.sub(b2.position, b2.position, shapeB.travelDir);
-
-          // const simplex = gjk(shapeA, shapeB);
-          // if (simplex) {
-          //   vec3.sub(b1.position, b1.position, shapeA.travelDir);
-          //   vec3.sub(b2.position, b2.position, shapeB.travelDir);
-
-          //   b1.color[0] = 0.3;
-          //   b2.color[0] = 0.3;
-          // } else {
-          //   b1.color[0] = 0.1;
-          //   b2.color[0] = 0.1;
-          // }
-
-          const shapes = [shapeA, shapeC, shapeD];
+          ];
           const ents = [b1, b3, b4];
 
           let backTravelD = 0;
 
-          for (let i = 0; i < shapes.length; i++) {
-            const shapeOther = shapes[i];
+          for (let i = 0; i < ents.length; i++) {
+            const shapeOther = createWorldShape(
+              gameMeshes[i],
+              ents[i].position,
+              ents[i].rotation,
+              lastWorldPos[i]
+            );
 
             const simplex = gjk(shapeOther, shapeB);
             if (simplex) {
@@ -251,7 +233,6 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
               console.log(
                 `penD: ${penD.toFixed(3)}, travelD: ${travelD.toFixed(3)}`
               );
-              // vec3.sub(b2.position, b2.position, shapeB.travel);
 
               b2.color[i] = 0.3;
               ents[i].color[i] = 0.3;
@@ -259,14 +240,6 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
               b2.color[i] = 0.1;
               ents[i].color[i] = 0.1;
             }
-
-            // if (gjk(shapeD, shapeB)) {
-            //   b4.color[2] = 0.3;
-            //   b2.color[2] = 0.3;
-            // } else {
-            //   b4.color[2] = 0.1;
-            //   b2.color[2] = 0.1;
-            // }
           }
 
           backTravelD = Math.min(backTravelD, vec3.len(shapeB.travel));
@@ -278,10 +251,16 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
 
           lastWorldPos = [
             vec3.clone(b1.position),
-            vec3.clone(b2.position),
             vec3.clone(b3.position),
             vec3.clone(b4.position),
           ];
+          lastWorldRot = [
+            quat.clone(b1.rotation),
+            quat.clone(b3.rotation),
+            quat.clone(b4.rotation),
+          ];
+          lastPlayerPos = vec3.clone(b2.position);
+          lastPlayerRot = quat.clone(b2.rotation);
         },
         "checkGJK"
       );
