@@ -9,7 +9,7 @@ import { vec3, quat } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
-import { gjk, Shape } from "../physics/narrowphase.js";
+import { gjk, penetrationDepth, Shape } from "../physics/narrowphase.js";
 import { PhysicsStateDef, WorldFrameDef } from "../physics/nonintersection.js";
 import {
   Frame,
@@ -227,14 +227,18 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
           //   b2.color[0] = 0.1;
           // }
 
-          if (gjk(shapeC, shapeB)) {
-            // vec3.sub(b3.position, b3.position, shapeC.travelDir);
+          const simplex = gjk(shapeD, shapeB);
+          if (simplex) {
+            const penD = penetrationDepth(shapeD, shapeB, simplex);
+            const travelD = vec3.len(shapeB.travelDir);
+            console.log(`penD: ${penD}, travelD: ${travelD}`);
+
             vec3.sub(b2.position, b2.position, shapeB.travelDir);
 
-            b3.color[1] = 0.3;
+            b4.color[1] = 0.3;
             b2.color[1] = 0.3;
           } else {
-            b3.color[1] = 0.1;
+            b4.color[1] = 0.1;
             b2.color[1] = 0.1;
           }
 

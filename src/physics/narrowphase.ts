@@ -116,7 +116,10 @@ function mSupport(s1: Shape, s2: Shape, d: vec3): vec3 {
 // GJK visualization
 
 // TODO(@darzu): so much perf to improve. #1: don't allocate
-export function gjk(s1: Shape, s2: Shape): [vec3, vec3, vec3] | undefined {
+export function gjk(
+  s1: Shape,
+  s2: Shape
+): [vec3, vec3, vec3, vec3] | undefined {
   let d: vec3 = tempVec();
   let simplex: vec3[] = [];
   let distToOrigin = Infinity;
@@ -153,7 +156,7 @@ export function gjk(s1: Shape, s2: Shape): [vec3, vec3, vec3] | undefined {
         console.error(`we dont think it actually overlaps origin`);
       // else console.log(`probably overlaps :)`);
       // console.log(`true on step: ${step}`);
-      return [...simplex] as TupleN<vec3, 3>;
+      return [...simplex] as TupleN<vec3, 4>;
     }
   }
 
@@ -215,6 +218,21 @@ export function gjk(s1: Shape, s2: Shape): [vec3, vec3, vec3] | undefined {
       return true;
     }
   }
+}
+
+export function penetrationDepth(s1: Shape, s2: Shape, simplex: vec3[]) {
+  // TODO(@darzu): there's probably something more sophisticated we can do
+  //    like advancing the simplex a la EPA for more accuracy. But what we
+  //    are doing here is just getting the support point in the the dir of
+  //    travel and it works okay.
+
+  const forwardDir = vec3.sub(tempVec(), s1.travelDir, s2.travelDir);
+  vec3.normalize(forwardDir, forwardDir);
+  const backwardDir = vec3.negate(tempVec(), forwardDir);
+  const a = mSupport(s1, s2, backwardDir);
+  const dist = vec3.dot(a, backwardDir);
+  // console.log(dist);
+  return dist;
 }
 
 function tripleProd(out: vec3, a: vec3, b: vec3, c: vec3): vec3 {
