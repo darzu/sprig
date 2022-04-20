@@ -328,12 +328,13 @@ export function initReboundSandbox(em: EntityManager, hosting: boolean) {
     }
   );
 
-  let nextSpawn = 0;
+  let nextSpawnAccu = 0;
   em.registerSystem(
     null,
     [AssetsDef, TimeDef],
     (_, res) => {
-      if (res.time.time > nextSpawn) nextSpawn += 200;
+      nextSpawnAccu += res.time.dt;
+      if (nextSpawnAccu > 100) nextSpawnAccu = 0;
       else return;
 
       const e = em.newEntity();
