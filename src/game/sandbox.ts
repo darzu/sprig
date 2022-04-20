@@ -4,6 +4,7 @@ import {
   CameraDef,
 } from "../camera.js";
 import { ColorDef } from "../color.js";
+import { DeletedDef } from "../delete.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { vec3, quat, mat4 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
@@ -30,6 +31,7 @@ import { farthestPointInDir } from "../utils-3d.js";
 import { AssetsDef, GameMesh } from "./assets.js";
 import { ControllableDef } from "./controllable.js";
 import { GlobalCursor3dDef } from "./cursor.js";
+import { TextDef } from "./ui.js";
 
 export const GhostDef = EM.defineComponent("ghost", () => ({}));
 
@@ -301,7 +303,7 @@ export function initReboundSandbox(em: EntityManager, hosting: boolean) {
 
   em.registerOneShotSystem(
     null,
-    [AssetsDef, GlobalCursor3dDef, RendererDef],
+    [AssetsDef, GlobalCursor3dDef, RendererDef, TextDef],
     (_, res) => {
       const g = createGhost(em);
       vec3.copy(g.position, [-4.8, 3.06, 16.16]);
@@ -325,43 +327,65 @@ export function initReboundSandbox(em: EntityManager, hosting: boolean) {
         solid: true,
         aabb: res.assets.plane.aabb,
       });
+
+      res.text.lowerText = `spawner (p) stack (l) clear (backspace)`;
     }
   );
 
+  const cubeDef = em.defineComponent("cube", () => true);
+
+  function spawn(m: GameMesh, pos: vec3) {
+    const e = em.newEntity();
+    em.ensureComponentOn(e, RenderableConstructDef, m.proto);
+    const [r, g, b] = [jitter(0.1) + 0.2, jitter(0.1) + 0.2, jitter(0.1) + 0.2];
+    em.ensureComponentOn(e, ColorDef, [r, g, b]);
+    em.ensureComponentOn(e, PositionDef, pos);
+    em.ensureComponentOn(e, ScaleDef, [0.5, 0.5, 0.5]);
+    // em.ensureComponentOn(b, RotationDef);
+    // em.ensureComponentOn(b, AngularVelocityDef, [0, 0.001, 0.001]);
+    em.ensureComponentOn(e, LinearVelocityDef, [0, -0.02, 0]);
+    em.ensureComponentOn(e, WorldFrameDef);
+    em.ensureComponentOn(e, ColliderDef, {
+      shape: "AABB",
+      solid: true,
+      aabb: m.aabb,
+    });
+    em.ensureComponentOn(e, cubeDef);
+  }
+
   let nextSpawnAccu = 0;
-  let paused = false;
+  let paused = true;
   em.registerSystem(
     null,
     [AssetsDef, TimeDef, InputsDef],
     (_, res) => {
+      // pause/unpause
       if (res.inputs.keyClicks["p"]) paused = !paused;
-      if (paused) return;
-      nextSpawnAccu += res.time.dt;
-      if (nextSpawnAccu > 100) nextSpawnAccu = 0;
-      else return;
 
-      const e = em.newEntity();
-      const x = jitter(10);
-      const z = jitter(10);
-      em.ensureComponentOn(e, RenderableConstructDef, res.assets.cube.proto);
-      const [r, g, b] = [
-        jitter(0.1) + 0.2,
-        jitter(0.1) + 0.2,
-        jitter(0.1) + 0.2,
-      ];
-      em.ensureComponentOn(e, ColorDef, [r, g, b]);
-      em.ensureComponentOn(e, PositionDef, [x, 20, z]);
-      em.ensureComponentOn(e, ScaleDef, [0.5, 0.5, 0.5]);
-      // em.ensureComponentOn(b, RotationDef);
-      // em.ensureComponentOn(b, AngularVelocityDef, [0, 0.001, 0.001]);
-      em.ensureComponentOn(e, LinearVelocityDef, [0, -0.02, 0]);
-      em.ensureComponentOn(e, WorldFrameDef);
-      em.ensureComponentOn(e, ColliderDef, {
-        shape: "AABB",
-        solid: true,
-        aabb: res.assets.cube.aabb,
-      });
-      // TODO(@darzu):
+      // spawner
+      if (!paused) {
+        nextSpawnAccu += res.time.dt;
+        if (nextSpawnAccu > 100) {
+          nextSpawnAccu = 0;
+
+          const x = jitter(10);
+          const z = jitter(10);
+          spawn(res.assets.cube, [x, 20, z]);
+        }
+      }
+
+      // stack spawn
+      if (res.inputs.keyClicks["l"]) {
+        spawn(res.assets.cube, [0, 20, 0]);
+        spawn(res.assets.cube, [0, 22, 0]);
+        spawn(res.assets.cube, [0, 24, 0]);
+        spawn(res.assets.cube, [0, 26, 0]);
+      }
+
+      if (res.inputs.keyClicks["backspace"]) {
+        const es = em.filterEntities([cubeDef]);
+        for (let e of es) em.ensureComponentOn(e, DeletedDef);
+      }
     },
     "sandboxSpawnBoxes"
   );
