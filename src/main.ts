@@ -136,6 +136,7 @@ async function startGame(localPeerName: string, host: string | null) {
       // TODO(@darzu): Doug, we should talk about this. It is only registered after a one-shot
       if (EM.hasSystem("checkGJK")) EM.callSystem("checkGJK");
     }
+    EM.callSystem("ensurePositionEntsHaveTransform");
     EM.callSystem("updateLocalFromPosRotScale");
     EM.callSystem("updateWorldFromLocalAndParent");
     EM.callSystem("registerUpdateWorldAABBs");

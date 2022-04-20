@@ -40,6 +40,7 @@ import {
 } from "./transform.js";
 import { assert } from "../test.js";
 import { tempVec } from "../temp-pool.js";
+import { aabbDbg, vec3Dbg } from "../utils-3d.js";
 
 // TODO(@darzu): we use "object", "obj", "o" everywhere in here, we should use "entity", "ent", "e"
 
@@ -75,6 +76,14 @@ export interface PhysCollider {
   pos: vec3;
   lastPos: vec3;
 }
+
+const dummyCollider: PhysCollider = {
+  id: 0,
+  oId: 0,
+  aabb: { min: [0, 0, 0], max: [0, 0, 0] },
+  pos: [0, 0, 0],
+  lastPos: [0, 0, 0],
+};
 
 // TODO(@darzu): break this up into the specific use cases
 export const PhysicsStateDef = EM.defineComponent("_phys", () => {
@@ -224,9 +233,11 @@ export const PhysicsBroadCollidersDef = EM.defineComponent(
   "_physBColliders",
   () => {
     return {
-      nextId: 0,
+      // NOTE: we reserve the first collider as a dummy so that we can check
+      //    cId truthiness
       // TODO(@darzu): support removing colliders
-      colliders: [] as PhysCollider[],
+      nextId: 1,
+      colliders: [dummyCollider],
     };
   }
 );
@@ -268,7 +279,8 @@ export function registerPhysicsStateInit(em: EntityManager) {
       }
 
       function mkCollider(aabb: AABB, oId: number): number {
-        const cId = _physBColliders.nextId++;
+        const cId = _physBColliders.nextId;
+        _physBColliders.nextId += 1;
         if (_physBColliders.nextId > 2 ** 15)
           console.warn(`Halfway through collider IDs!`);
         _physBColliders.colliders.push({

@@ -376,7 +376,10 @@ export function initReboundSandbox(em: EntityManager, hosting: boolean) {
 
       // stack spawn
       if (res.inputs.keyClicks["l"]) {
-        for (let i = 0; i < 1; i++) spawn(res.assets.cube, [0, 20 + i * 2, 0]);
+        const NUM = 1;
+        const SPC = 2;
+        for (let i = 0; i < NUM; i++)
+          spawn(res.assets.cube, [0, 10 + i * SPC, 0]);
       }
 
       if (res.inputs.keyClicks["backspace"]) {

@@ -9,7 +9,7 @@ import {
 } from "../gl-matrix.js";
 import { WorldFrameDef } from "./nonintersection.js";
 import { tempVec, tempQuat } from "../temp-pool.js";
-import { FALSE } from "../util.js";
+import { FALSE, logOnce } from "../util.js";
 
 // TODO(@darzu): implement local transform instead of Motion's position & rotation?
 //  one problem is that the order in which you interleave rotation/translations matters if it
@@ -158,7 +158,8 @@ const _hasTransformed: Set<number> = new Set();
 function updateWorldFromLocalAndParent(o: Transformable) {
   if (_hasTransformed.has(o.id)) return;
 
-  if (TransformDef.isOn(o))
+  if (TransformDef.isOn(o)) {
+    // logOnce(`first updateWorldFromLocalAndParent for ${o.id}`);
     if (PhysicsParentDef.isOn(o) && _transformables.has(o.physicsParent.id)) {
       const parent = _transformables.get(o.physicsParent.id)!;
 
@@ -174,6 +175,7 @@ function updateWorldFromLocalAndParent(o: Transformable) {
       // no parent
       copyFrame(o.world, o);
     }
+  }
 
   _hasTransformed.add(o.id);
 }
@@ -216,6 +218,15 @@ export function registerUpdateLocalFromPosRotScale(
   em: EntityManager,
   suffix: string = ""
 ) {
+  em.registerSystem(
+    [PositionDef],
+    [],
+    (objs) => {
+      for (let o of objs) em.ensureComponentOn(o, TransformDef);
+    },
+    "ensurePositionEntsHaveTransform"
+  );
+
   // calculate the world transform
   em.registerSystem(
     [TransformDef, PositionDef],
@@ -226,6 +237,7 @@ export function registerUpdateLocalFromPosRotScale(
     "updateLocalFromPosRotScale" + suffix
   );
 }
+
 export function registerUpdateWorldFromLocalAndParent(
   em: EntityManager,
   suffix: string = ""

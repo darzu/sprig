@@ -67,3 +67,11 @@ export function toRecord<A, V>(
 export const FALSE: boolean = false;
 
 export type NumberTuple<ES> = { [_ in keyof ES]: number };
+
+let _logOnceKeys: Set<string> = new Set();
+export function logOnce(key: string, msg?: string) {
+  if (!_logOnceKeys.has(key)) {
+    _logOnceKeys.add(key);
+    console.log(msg ?? key);
+  }
+}
