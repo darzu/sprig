@@ -329,10 +329,13 @@ export function initReboundSandbox(em: EntityManager, hosting: boolean) {
   );
 
   let nextSpawnAccu = 0;
+  let paused = false;
   em.registerSystem(
     null,
-    [AssetsDef, TimeDef],
+    [AssetsDef, TimeDef, InputsDef],
     (_, res) => {
+      if (res.inputs.keyClicks["p"]) paused = !paused;
+      if (paused) return;
       nextSpawnAccu += res.time.dt;
       if (nextSpawnAccu > 100) nextSpawnAccu = 0;
       else return;
