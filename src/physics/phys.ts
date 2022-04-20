@@ -5,6 +5,7 @@ import {
   PhysicsState,
   registerPhysicsContactSystems,
   registerPhysicsStateInit,
+  registerUpdateInContactSystems,
   registerUpdateLocalPhysicsAfterRebound,
   registerUpdateWorldAABBs,
 } from "./nonintersection.js";
@@ -26,11 +27,17 @@ import { AABB } from "./broadphase.js";
 import { registerNarrowPhaseSystems } from "./narrowphase.js";
 
 // TODO(@darzu): PHYSICS TODO:
-// - seperate rotation and motion w/ constraint checking between them
-// - impl GJK
-// - keep simplifying the systems
-// - seperate out PhysicsResults and PhysicsState into component parts
-// - re-name and re-org files
+// [ ] seperate rotation and motion w/ constraint checking between them
+// [x] impl GJK
+// [ ] keep simplifying the systems
+// [ ] seperate out PhysicsResults and PhysicsState into component parts
+// [ ] re-name and re-org files
+// [ ] ensure all systems run together per step
+// [ ] PERF: dont alloc new vecs in getAABBCorners
+// [ ] PERF: use sweepAABBs again?
+// [ ] layers and masks
+// [ ] specify which objects may non-intersect; then do non-intersection heirarchachly
+// [ ] PERF: matrix inversion should be done once per parent
 
 export function registerPhysicsSystems(em: EntityManager) {
   registerPhysicsStateInit(em);
@@ -42,6 +49,7 @@ export function registerPhysicsSystems(em: EntityManager) {
   registerUpdateLocalFromPosRotScale(em);
   registerUpdateWorldFromLocalAndParent(em);
   registerUpdateWorldAABBs(em);
+  registerUpdateInContactSystems(em);
   registerPhysicsContactSystems(em);
   // TODO(@darzu): positioning?
   registerNarrowPhaseSystems(em);

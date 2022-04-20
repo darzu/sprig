@@ -39,10 +39,12 @@ import {
   updateFrameFromTransform,
 } from "./transform.js";
 import { assert } from "../test.js";
+import { tempVec } from "../temp-pool.js";
 
 // TODO(@darzu): we use "object", "obj", "o" everywhere in here, we should use "entity", "ent", "e"
 
 // TODO(@darzu): break up PhysicsResults
+// TODO(@darzu): rename "BroadphaseResults" ?
 export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {
   return {
     collidesWith: new Map<number, number[]>() as CollidesWith,
@@ -64,10 +66,11 @@ export function createFrame(): Frame {
 
 export const WorldFrameDef = EM.defineComponent("world", () => createFrame());
 
-export interface IndexedAABB {
+export interface PhysCollider {
   id: number;
   oId: number;
   aabb: AABB;
+  // TODO(@darzu): NARROW PHASE: add optional more specific collider types here
   pos: vec3;
   lastPos: vec3;
 }
@@ -78,9 +81,10 @@ export const PhysicsStateDef = EM.defineComponent("_phys", () => {
     // track last stats so we can diff
     lastWorldPos: PositionDef.construct(),
     // Colliders
-    // TODO(@darzu): actually just use pointers...
+    // NOTE: these can be many-to-one colliders-to-entities, hence the arrays
     localAABBs: [] as number[],
     worldAABBs: [] as number[],
+    // TODO(@darzu): actually just use pointers to PhysColliders...
     // TODO(@darzu): use sweepAABBs again?
   };
 });
@@ -92,8 +96,6 @@ export interface PhysicsObject {
   _phys: PhysicsState;
   world: Frame;
 }
-
-const _collisionRefl = vec3.create();
 
 const _collisionPairs: Set<IdPair> = new Set();
 
@@ -109,7 +111,7 @@ function getParentFrame(
   return IDENTITY_FRAME;
 }
 
-// TODO(@darzu): PRECONDITION: assumes world frames are all up to date
+// PRECONDITION: assumes world frames are all up to date
 export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
   em.registerSystem(
     [PhysicsStateDef, WorldFrameDef],
@@ -120,7 +122,7 @@ export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
         for (let i = 0; i < o._phys.worldAABBs.length; i++) {
           const lc = res._physBColliders.colliders[o._phys.localAABBs[i]];
           const wc = res._physBColliders.colliders[o._phys.worldAABBs[i]];
-          // TODO(@darzu): highly inefficient
+          // TODO(@darzu): highly inefficient. for one, this allocs new vecs
           const wCorners = getAABBCorners(lc.aabb).map((p) =>
             vec3.transformMat4(p, p, o.world.transform)
           );
@@ -154,10 +156,10 @@ export function registerUpdateWorldFromPosRotScale(em: EntityManager) {
   );
 }
 
-export function registerUpdateLocalPhysicsAfterRebound(
-  em: EntityManager,
-  s: string = ""
-) {
+// NOTE: assumes world position/rot/scale has just been changed by
+//  constraint solvers. So we need to propegate these down to the
+//  local frame
+export function registerUpdateLocalPhysicsAfterRebound(em: EntityManager) {
   em.registerSystem(
     [PhysicsStateDef, WorldFrameDef, TransformDef],
     [PhysicsTimerDef, PhysicsResultsDef, PhysicsBroadCollidersDef],
@@ -197,7 +199,7 @@ export function registerUpdateLocalPhysicsAfterRebound(
         updateFrameFromTransform(o);
       }
     },
-    "registerUpdateLocalPhysicsAfterRebound" + s
+    "updateLocalPhysicsAfterRebound"
   );
 }
 
@@ -222,7 +224,7 @@ export const PhysicsBroadCollidersDef = EM.defineComponent(
     return {
       nextId: 0,
       // TODO(@darzu): support removing colliders
-      colliders: [] as IndexedAABB[],
+      colliders: [] as PhysCollider[],
     };
   }
 );
@@ -265,6 +267,8 @@ export function registerPhysicsStateInit(em: EntityManager) {
 
       function mkCollider(aabb: AABB, oId: number): number {
         const cId = _physBColliders.nextId++;
+        if (_physBColliders.nextId > 2 ** 15)
+          console.warn(`Halfway through collider IDs!`);
         _physBColliders.colliders.push({
           id: cId,
           oId,
@@ -279,22 +283,23 @@ export function registerPhysicsStateInit(em: EntityManager) {
   );
 }
 
-export function registerPhysicsContactSystems(em: EntityManager) {
+export function registerUpdateInContactSystems(em: EntityManager) {
   em.registerSystem(
     [ColliderDef, PhysicsStateDef, WorldFrameDef],
-    [PhysicsTimerDef, PhysicsBroadCollidersDef],
+    [PhysicsTimerDef, PhysicsBroadCollidersDef, PhysicsResultsDef],
     (objs, res) => {
       // TODO(@darzu): interestingly, this system doesn't need the step count
       if (!res.physicsTimer.steps) return;
 
       // build a dict
+      // TODO(@darzu): would be nice if the query could provide this
       _objDict.clear();
       for (let o of objs) _objDict.set(o.id, o);
 
       // get singleton data
-      const physicsResults = EM.getResource(PhysicsResultsDef)!;
-      const { collidesWith, contactData, reboundData } = physicsResults;
+      const contactData = res.physicsResults.contactData;
 
+      // TODO(@darzu): NARROW: needs to be updated to consider more precise colliders, GJK etc
       // update in-contact pairs; this is seperate from collision or rebound
       for (let [contactId, lastData] of contactData) {
         const ac = res._physBColliders.colliders[lastData.aCId];
@@ -328,19 +333,39 @@ export function registerPhysicsContactSystems(em: EntityManager) {
         // else, this collision isn't valid any more
         contactData.delete(contactId);
       }
+    },
+    "updatePhysInContact"
+  );
+}
+export function registerPhysicsContactSystems(em: EntityManager) {
+  em.registerSystem(
+    [ColliderDef, PhysicsStateDef, WorldFrameDef],
+    [PhysicsTimerDef, PhysicsBroadCollidersDef, PhysicsResultsDef],
+    (objs, res) => {
+      // TODO(@darzu): interestingly, this system doesn't need the step count
+      if (!res.physicsTimer.steps) return;
+
+      // build a dict
+      // TODO(@darzu): would be nice if the query could provide this
+      _objDict.clear();
+      for (let o of objs) _objDict.set(o.id, o);
+
+      // get singleton data
+      const { collidesWith, contactData, reboundData } = res.physicsResults;
 
       // reset collision data
       resetCollidesWithSet(collidesWith, objs);
       reboundData.clear();
       _collisionPairs.clear();
 
-      // check for possible collisions using the motion swept AABBs
+      // BROADPHASE: check for possible collisions
       // TODO(@darzu): cull out unused/deleted colliders
+      // TODO(@darzu): use motion sweep AABBs again?
       const currColliders = objs
         .map((o) =>
           o._phys.worldAABBs.map((cId) => res._physBColliders.colliders[cId])
         )
-        .reduce((p, n) => [...p, ...n], [] as IndexedAABB[]);
+        .reduce((p, n) => [...p, ...n], [] as PhysCollider[]);
       const { collidesWith: colliderCollisions, checkRay: collidersCheckRay } =
         checkBroadphase(currColliders);
       // TODO(@darzu): perf: big array creation
@@ -380,10 +405,13 @@ export function registerPhysicsContactSystems(em: EntityManager) {
           if (!lastObjMovs[aOId] && !lastObjMovs[bOId]) continue;
 
           // TODO(@darzu): this is one of the places we would replace with narrow-phase checking
+          // TODO(@darzu): NARROW PHASE: check precise collision if applicable
           if (!doesOverlap(ac.aabb, bc.aabb)) {
             // a miss
             continue;
           }
+
+          // NOTE: if we make it to here, we consider this a collision that needs rebound
 
           const a = _objDict.get(aOId)!;
           const b = _objDict.get(bOId)!;
@@ -402,8 +430,10 @@ export function registerPhysicsContactSystems(em: EntityManager) {
           }
 
           // compute contact info
+          // TODO(@darzu): do we need to calculate contact data for non-solids?
           // TODO(@darzu): aggregate contact data as one dir per other obj
           // TODO(@darzu): maybe the winning direction in a multi-direction battle should be the one with the biggest rebound
+          // TODO(@darzu): NARROW PHASE: we need to use GJK-based contact data calc
           const contRes = computeContactData(ac, ac.lastPos, bc, bc.lastPos);
           const contData: ContactData = {
             ...contRes,
@@ -417,6 +447,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
           if (a.collider.solid && b.collider.solid) {
             // compute rebound info
             // TODO(@darzu): rebound calc per collider, move-frac aggregated per object
+            // TODO(@darzu): NARROW PHASE: we need to use GJK-based rebound data calc
             const rebData = computeReboundData(
               ac,
               ac.lastPos,
@@ -448,20 +479,22 @@ export function registerPhysicsContactSystems(em: EntityManager) {
         for (let o of objs) {
           let movFrac = nextObjMovFracs[o.id];
           if (movFrac) {
-            // TODO(@darzu): MUTATING WORLD POS. We probably shouldn't do that here
-            vec3.sub(_collisionRefl, o._phys.lastWorldPos, o.world.position);
-            vec3.scale(_collisionRefl, _collisionRefl, movFrac);
-            vec3.add(o.world.position, o.world.position, _collisionRefl);
+            // TODO(@darzu): MUTATING WORLD POS. In an ideal world we'd find a different
+            //    way to do this. maybe.
+            const refl = tempVec();
+            vec3.sub(refl, o._phys.lastWorldPos, o.world.position);
+            vec3.scale(refl, refl, movFrac);
+            vec3.add(o.world.position, o.world.position, refl);
 
             // translate non-sweep AABBs
             for (let cId of o._phys.worldAABBs) {
               const c = res._physBColliders.colliders[cId];
-              vec3.add(c.aabb.min, c.aabb.min, _collisionRefl);
-              vec3.add(c.aabb.max, c.aabb.max, _collisionRefl);
-              vec3.add(c.pos, c.pos, _collisionRefl);
+              vec3.add(c.aabb.min, c.aabb.min, refl);
+              vec3.add(c.aabb.max, c.aabb.max, refl);
+              vec3.add(c.pos, c.pos, refl);
             }
 
-            // track that movement occured
+            // track that some movement occured
             anyMovement = true;
           }
 
@@ -476,12 +509,13 @@ export function registerPhysicsContactSystems(em: EntityManager) {
 
       // remember current state for next time
       // TODO(@darzu): needed any more since colliders track these now?
+      // TODO(@darzu): it'd be great to expose this to e.g. phys sandboxes
       for (let o of objs) {
         vec3.copy(o._phys.lastWorldPos, o.world.position);
       }
 
       // update out checkRay function
-      physicsResults.checkRay = (r: Ray) => {
+      res.physicsResults.checkRay = (r: Ray) => {
         const motHits = collidersCheckRay(r);
         const hits: RayHit[] = [];
         for (let mh of motHits) {

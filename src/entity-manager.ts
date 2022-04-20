@@ -194,6 +194,10 @@ export class EntityManager {
     if (range.nextId >= range.maxId)
       throw `EntityManager has exceeded its id range!`;
     const e = { id: range.nextId++ };
+    if (e.id > 2 ** 15)
+      console.warn(
+        `We're halfway through our local entity ID space! Physics assumes IDs are < 2^16`
+      );
     this.entities.set(e.id, e);
     return e;
   }

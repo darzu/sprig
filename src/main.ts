@@ -55,7 +55,7 @@ async function startGame(localPeerName: string, host: string | null) {
   EM.addSingletonComponent(InputsDef);
   registerInputsSystem(EM);
 
-  const SHIP_GAME = false;
+  const SHIP_GAME = true;
   const PHYS_GAME = !SHIP_GAME;
 
   if (SHIP_GAME) {
@@ -140,8 +140,9 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("updateLocalFromPosRotScale");
     EM.callSystem("updateWorldFromLocalAndParent");
     EM.callSystem("registerUpdateWorldAABBs");
+    EM.callSystem("updatePhysInContact");
     EM.callSystem("physicsStepContact");
-    EM.callSystem("registerUpdateLocalPhysicsAfterRebound");
+    EM.callSystem("updateLocalPhysicsAfterRebound");
     EM.callSystem("updateWorldFromLocalAndParent2");
     EM.callSystem("colliderMeshes");
     EM.callSystem("debugMeshes");
