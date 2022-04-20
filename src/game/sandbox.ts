@@ -7,6 +7,7 @@ import { ColorDef } from "../color.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { vec3, quat, mat4 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
+import { jitter } from "../math.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 import { gjk, penetrationDepth, Shape } from "../physics/narrowphase.js";
@@ -17,12 +18,14 @@ import {
   PhysicsParentDef,
   PositionDef,
   RotationDef,
+  ScaleDef,
 } from "../physics/transform.js";
-import { cloneMesh } from "../render/mesh-pool.js";
+import { cloneMesh, scaleMesh } from "../render/mesh-pool.js";
 import { RenderableDef, RenderableConstructDef } from "../render/renderer.js";
 import { RendererDef } from "../render/render_init.js";
 import { tempVec } from "../temp-pool.js";
 import { assert } from "../test.js";
+import { TimeDef } from "../time.js";
 import { farthestPointInDir } from "../utils-3d.js";
 import { AssetsDef, GameMesh } from "./assets.js";
 import { ControllableDef } from "./controllable.js";
@@ -317,19 +320,45 @@ export function initReboundSandbox(em: EntityManager, hosting: boolean) {
       em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
       em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
       em.ensureComponentOn(p, PositionDef, [0, -5, 0]);
-
-      const b1 = em.newEntity();
-      em.ensureComponentOn(b1, RenderableConstructDef, res.assets.cube.proto);
-      em.ensureComponentOn(b1, ColorDef, [0.1, 0.1, 0.1]);
-      em.ensureComponentOn(b1, PositionDef, [0, 0, 3]);
-      em.ensureComponentOn(b1, RotationDef);
-      em.ensureComponentOn(b1, AngularVelocityDef, [0, 0.001, 0.001]);
-      em.ensureComponentOn(b1, WorldFrameDef);
-      em.ensureComponentOn(b1, ColliderDef, {
+      em.ensureComponentOn(p, ColliderDef, {
         shape: "AABB",
-        solid: false,
-        aabb: res.assets.cube.aabb,
+        solid: true,
+        aabb: res.assets.plane.aabb,
       });
     }
+  );
+
+  let nextSpawn = 0;
+  em.registerSystem(
+    null,
+    [AssetsDef, TimeDef],
+    (_, res) => {
+      if (res.time.time > nextSpawn) nextSpawn += 200;
+      else return;
+
+      const e = em.newEntity();
+      const x = jitter(10);
+      const z = jitter(10);
+      em.ensureComponentOn(e, RenderableConstructDef, res.assets.cube.proto);
+      const [r, g, b] = [
+        jitter(0.1) + 0.2,
+        jitter(0.1) + 0.2,
+        jitter(0.1) + 0.2,
+      ];
+      em.ensureComponentOn(e, ColorDef, [r, g, b]);
+      em.ensureComponentOn(e, PositionDef, [x, 20, z]);
+      em.ensureComponentOn(e, ScaleDef, [0.5, 0.5, 0.5]);
+      // em.ensureComponentOn(b, RotationDef);
+      // em.ensureComponentOn(b, AngularVelocityDef, [0, 0.001, 0.001]);
+      em.ensureComponentOn(e, LinearVelocityDef, [0, -0.02, 0]);
+      em.ensureComponentOn(e, WorldFrameDef);
+      em.ensureComponentOn(e, ColliderDef, {
+        shape: "AABB",
+        solid: true,
+        aabb: res.assets.cube.aabb,
+      });
+      // TODO(@darzu):
+    },
+    "sandboxSpawnBoxes"
   );
 }

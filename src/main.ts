@@ -114,6 +114,9 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("playerFacingDir");
     EM.callSystem("stepPlayers");
     EM.callSystem("playerOnShip");
+    if (GAME === "rebound") {
+      EM.callSystem("sandboxSpawnBoxes");
+    }
     EM.callSystem("updateBullets");
     EM.callSystem("updateNoodles");
     EM.callSystem("updateLifetimes");
