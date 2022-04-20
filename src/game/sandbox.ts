@@ -306,11 +306,11 @@ export function initReboundSandbox(em: EntityManager, hosting: boolean) {
     [AssetsDef, GlobalCursor3dDef, RendererDef, TextDef],
     (_, res) => {
       const g = createGhost(em);
-      vec3.copy(g.position, [-4.8, 3.06, 16.16]);
-      quat.copy(g.rotation, [0.0, -0.15, 0.0, 0.99]);
+      vec3.copy(g.position, [-6.5, 3.06, 22.51]);
+      quat.copy(g.rotation, [0.0, -0.08, 0.0, 1.0]);
       vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-      g.cameraFollow.yawOffset = 0;
-      g.cameraFollow.pitchOffset = -0.417;
+      g.cameraFollow.yawOffset = 0.0;
+      g.cameraFollow.pitchOffset = 0.145;
 
       const c = res.globalCursor3d.cursor()!;
       assert(RenderableDef.isOn(c));
@@ -376,10 +376,7 @@ export function initReboundSandbox(em: EntityManager, hosting: boolean) {
 
       // stack spawn
       if (res.inputs.keyClicks["l"]) {
-        spawn(res.assets.cube, [0, 20, 0]);
-        spawn(res.assets.cube, [0, 22, 0]);
-        spawn(res.assets.cube, [0, 24, 0]);
-        spawn(res.assets.cube, [0, 26, 0]);
+        for (let i = 0; i < 1; i++) spawn(res.assets.cube, [0, 20 + i * 2, 0]);
       }
 
       if (res.inputs.keyClicks["backspace"]) {
