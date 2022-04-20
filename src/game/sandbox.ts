@@ -47,7 +47,7 @@ export function createGhost(em: EntityManager) {
   return g;
 }
 let __frame = 0;
-export function initDbgGame(em: EntityManager, hosting: boolean) {
+export function initGJKSandbox(em: EntityManager, hosting: boolean) {
   const camera = em.addSingletonComponent(CameraDef);
   camera.fov = Math.PI * 0.5;
 
@@ -288,6 +288,48 @@ export function initDbgGame(em: EntityManager, hosting: boolean) {
         },
         "checkGJK"
       );
+    }
+  );
+}
+
+export function initReboundSandbox(em: EntityManager, hosting: boolean) {
+  const camera = em.addSingletonComponent(CameraDef);
+  camera.fov = Math.PI * 0.5;
+
+  em.registerOneShotSystem(
+    null,
+    [AssetsDef, GlobalCursor3dDef, RendererDef],
+    (_, res) => {
+      const g = createGhost(em);
+      vec3.copy(g.position, [-4.8, 3.06, 16.16]);
+      quat.copy(g.rotation, [0.0, -0.15, 0.0, 0.99]);
+      vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+      g.cameraFollow.yawOffset = 0;
+      g.cameraFollow.pitchOffset = -0.417;
+
+      const c = res.globalCursor3d.cursor()!;
+      assert(RenderableDef.isOn(c));
+      c.renderable.enabled = false;
+
+      vec3.copy(res.renderer.renderer.backgroundColor, [0.7, 0.8, 1.0]);
+
+      const p = em.newEntity();
+      em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
+      em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
+      em.ensureComponentOn(p, PositionDef, [0, -5, 0]);
+
+      const b1 = em.newEntity();
+      em.ensureComponentOn(b1, RenderableConstructDef, res.assets.cube.proto);
+      em.ensureComponentOn(b1, ColorDef, [0.1, 0.1, 0.1]);
+      em.ensureComponentOn(b1, PositionDef, [0, 0, 3]);
+      em.ensureComponentOn(b1, RotationDef);
+      em.ensureComponentOn(b1, AngularVelocityDef, [0, 0.001, 0.001]);
+      em.ensureComponentOn(b1, WorldFrameDef);
+      em.ensureComponentOn(b1, ColliderDef, {
+        shape: "AABB",
+        solid: false,
+        aabb: res.assets.cube.aabb,
+      });
     }
   );
 }

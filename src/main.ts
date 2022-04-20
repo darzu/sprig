@@ -15,7 +15,7 @@ import { addEventComponents } from "./net/events.js";
 import { dbg } from "./debugger.js";
 import { RendererDef } from "./render/render_init.js";
 import { DevConsoleDef } from "./console.js";
-import { initDbgGame } from "./game/sandbox.js";
+import { initGJKSandbox, initReboundSandbox } from "./game/sandbox.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -55,15 +55,11 @@ async function startGame(localPeerName: string, host: string | null) {
   EM.addSingletonComponent(InputsDef);
   registerInputsSystem(EM);
 
-  const SHIP_GAME = true;
-  const PHYS_GAME = !SHIP_GAME;
+  const GAME = "rebound" as "ship" | "gjk" | "rebound";
 
-  if (SHIP_GAME) {
-    initShipGame(EM, hosting);
-  }
-  if (PHYS_GAME) {
-    initDbgGame(EM, hosting);
-  }
+  if (GAME === "ship") initShipGame(EM, hosting);
+  else if (GAME === "gjk") initGJKSandbox(EM, hosting);
+  else if (GAME === "rebound") initReboundSandbox(EM, hosting);
 
   let previous_frame_time = start_of_time;
   let frame = () => {
@@ -133,8 +129,8 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("registerPhysicsClampVelocityBySize");
     EM.callSystem("registerPhysicsApplyLinearVelocity");
     EM.callSystem("physicsApplyAngularVelocity");
-    if (PHYS_GAME) {
-      // TODO(@darzu): Doug, we should talk about this..
+    if (GAME === "gjk") {
+      // TODO(@darzu): Doug, we should talk about this. It is only registered after a one-shot
       if (EM.hasSystem("checkGJK")) EM.callSystem("checkGJK");
     }
     EM.callSystem("updateLocalFromPosRotScale");
@@ -178,7 +174,7 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("constructRenderables");
     EM.callSystem("stepRenderer");
     EM.callSystem("inputs");
-    if (SHIP_GAME) {
+    if (GAME === "ship") {
       EM.callSystem("shipUI");
       EM.callSystem("spawnBoats");
     }

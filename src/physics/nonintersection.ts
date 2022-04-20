@@ -70,6 +70,7 @@ export interface PhysCollider {
   id: number;
   oId: number;
   aabb: AABB;
+  // localAABB: AABB;
   // TODO(@darzu): NARROW PHASE: add optional more specific collider types here
   pos: vec3;
   lastPos: vec3;
@@ -82,6 +83,7 @@ export const PhysicsStateDef = EM.defineComponent("_phys", () => {
     lastWorldPos: PositionDef.construct(),
     // Colliders
     // NOTE: these can be many-to-one colliders-to-entities, hence the arrays
+    // TODO(@darzu): do we need this localAABBs?
     localAABBs: [] as number[],
     worldAABBs: [] as number[],
     // TODO(@darzu): actually just use pointers to PhysColliders...
