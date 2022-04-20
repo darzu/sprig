@@ -39,6 +39,8 @@ Cloudflare Free tier
     https://www.reddit.com/r/Wordpress/comments/g9i0ro/is_cloudflares_free_tier_cdn_worth_using/
     https://www.reddit.com/r/web_design/comments/3rp6oo/any_reason_not_to_use_cloudflares_free_tier_cdn/
   https://pages.cloudflare.com
+  In beta: R2
+    $0.015 per GB of data stored per month, no egress fees
     
 Netlify free
   https://www.netlify.com/pricing
