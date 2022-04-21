@@ -1,10 +1,4 @@
 import { test } from "./test.js";
-import {
-  _cellChecks,
-  _doesOverlaps,
-  _enclosedBys,
-  _lastCollisionTestTimeMs,
-} from "./physics/broadphase.js";
 import { setupObjImportExporter } from "./download.js";
 import { initShipGame, registerAllSystems } from "./game/game.js";
 import { EM } from "./entity-manager.js";
@@ -13,7 +7,6 @@ import { InputsDef, registerInputsSystem } from "./inputs.js";
 import { MeDef, JoinDef, HostDef, PeerNameDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";
 import { dbg } from "./debugger.js";
-import { RendererDef } from "./render/render_init.js";
 import { DevConsoleDef } from "./console.js";
 import { initGJKSandbox, initReboundSandbox } from "./game/sandbox.js";
 

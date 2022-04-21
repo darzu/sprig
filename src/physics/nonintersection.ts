@@ -19,8 +19,8 @@ import {
   collisionPairs,
   copyAABB,
   createAABB,
-  doesOverlap,
-  doesTouch,
+  doesOverlapAABB,
+  doesTouchAABB,
   getAABBFromPositions,
   Ray,
   RayHit,
@@ -69,8 +69,10 @@ export function createFrame(): Frame {
 export const WorldFrameDef = EM.defineComponent("world", () => createFrame());
 
 export interface PhysCollider {
+  // NOTE: we use "id" and "aabb" here b/c broadphase looks for a struct with those
   id: number;
   oId: number;
+  parentOId: number;
   aabb: AABB;
   localAABB: AABB;
   // TODO(@darzu): NARROW PHASE: add optional more specific collider types here
@@ -83,6 +85,7 @@ const dummyCollider: PhysCollider = {
   oId: 0,
   aabb: { min: [0, 0, 0], max: [0, 0, 0] },
   localAABB: { min: [0, 0, 0], max: [0, 0, 0] },
+  parentOId: 0,
   pos: [0, 0, 0],
   lastPos: [0, 0, 0],
 };
@@ -251,20 +254,23 @@ export function registerPhysicsStateInit(em: EntityManager) {
     [ColliderDef],
     [PhysicsBroadCollidersDef],
     (objs, { _physBColliders }) => {
-      // TODO(@darzu): PARENT. update collider parent IDs if necessary
       for (let o of objs) {
-        if (PhysicsStateDef.isOn(o)) continue;
+        if (PhysicsStateDef.isOn(o)) {
+          // TODO(@darzu): PARENT. update collider parent IDs if necessary
+          continue;
+        }
+        const parentId = PhysicsParentDef.isOn(o) ? o.physicsParent.id : 0;
         const _phys = em.addComponent(o.id, PhysicsStateDef);
 
         // AABBs (collider derived)
         // TODO(@darzu): handle scale
         if (o.collider.shape === "AABB") {
-          _phys.worldAABBs.push(mkCollider(o.collider.aabb, o.id));
+          _phys.worldAABBs.push(mkCollider(o.collider.aabb, o.id, parentId));
         } else if (o.collider.shape === "Multi") {
           for (let c of o.collider.children) {
             if (c.shape !== "AABB")
               throw `Unimplemented child collider shape: ${c.shape}`;
-            _phys.worldAABBs.push(mkCollider(c.aabb, o.id));
+            _phys.worldAABBs.push(mkCollider(c.aabb, o.id, parentId));
           }
         } else {
           throw `Unimplemented collider shape: ${o.collider.shape}`;
@@ -275,7 +281,11 @@ export function registerPhysicsStateInit(em: EntityManager) {
         // copyAABB(_phys.sweepAABB, _phys.localAABB);
       }
 
-      function mkCollider(aabb: AABB, oId: number): PhysCollider {
+      function mkCollider(
+        aabb: AABB,
+        oId: number,
+        parentOId: number
+      ): PhysCollider {
         const cId = _physBColliders.nextId;
         _physBColliders.nextId += 1;
         if (_physBColliders.nextId > 2 ** 15)
@@ -283,6 +293,7 @@ export function registerPhysicsStateInit(em: EntityManager) {
         const c: PhysCollider = {
           id: cId,
           oId,
+          parentOId,
           aabb: copyAABB(createAABB(), aabb),
           localAABB: copyAABB(createAABB(), aabb),
           pos: aabbCenter(vec3.create(), aabb),
@@ -327,7 +338,7 @@ export function registerUpdateInContactSystems(em: EntityManager) {
         }
 
         // colliding again so we don't need any adjacency checks
-        if (doesOverlap(ac.aabb, bc.aabb)) {
+        if (doesOverlapAABB(ac.aabb, bc.aabb)) {
           const newData = computeContactData(ac, ac.lastPos, bc, bc.lastPos);
           contactData.set(contactId, { ...lastData, ...newData });
           continue;
@@ -337,7 +348,7 @@ export function registerUpdateInContactSystems(em: EntityManager) {
         // TODO(@darzu): do we need to consider relative motions?
         //    i.e. a check to see if the two objects are pressing into each other?
         //    for now I'm ignoring this b/c it doesn't seem harmful to consider non-pressing as contact
-        if (doesTouch(ac.aabb, bc.aabb, 2 * PAD)) {
+        if (doesTouchAABB(ac.aabb, bc.aabb, 2 * PAD)) {
           const newData = computeContactData(ac, ac.lastPos, bc, bc.lastPos);
           contactData.set(contactId, { ...lastData, ...newData });
           continue;
@@ -350,6 +361,7 @@ export function registerUpdateInContactSystems(em: EntityManager) {
     "updatePhysInContact"
   );
 }
+
 export function registerPhysicsContactSystems(em: EntityManager) {
   // TODO(@darzu): split this system
   em.registerSystem(
@@ -416,7 +428,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
           // did one of these objects move?
           if (!lastObjMovs[aOId] && !lastObjMovs[bOId]) continue;
 
-          if (!doesOverlap(ac.aabb, bc.aabb)) {
+          if (!doesOverlapAABB(ac.aabb, bc.aabb)) {
             // a miss
             continue;
           }

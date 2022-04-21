@@ -441,3 +441,6 @@ Noise is good in game art?:
 Factory Station's rendering:
   https://twitter.com/GravitonPunch/status/1453072441316675584
   https://twitter.com/alexanderameye/status/1375463146446585857
+
+Rendering problem cheat sheet:
+  https://techartaid.com/cheatsheet/

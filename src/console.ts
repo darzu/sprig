@@ -3,7 +3,7 @@ import { TextDef } from "./game/ui.js";
 import { InputsDef } from "./inputs.js";
 import {
   _lastCollisionTestTimeMs,
-  _doesOverlaps,
+  _doesOverlapAABBs,
   _enclosedBys,
   _cellChecks,
 } from "./physics/broadphase.js";
@@ -84,7 +84,7 @@ export function registerDevSystems(em: EntityManager) {
         `js:${avgJsTime.toFixed(2)}ms ` +
         `sim:${avgSimTime.toFixed(2)}ms ` +
         `broad:(${_lastCollisionTestTimeMs.toFixed(1)}ms ` +
-        `o:${_doesOverlaps} e:${_enclosedBys} c:${_cellChecks}) ` +
+        `o:${_doesOverlapAABBs} e:${_enclosedBys} c:${_cellChecks}) ` +
         `fps:${avgFPS.toFixed(1)} ` +
         //`buffers:(r=${reliableBufferSize}/u=${unreliableBufferSize}) ` +
         `dropped:${numDroppedUpdates} ` +
