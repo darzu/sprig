@@ -74,16 +74,19 @@ export interface PhysCollider {
   oId: number;
   parentOId: number;
   aabb: AABB;
+  localAABB: AABB;
   selfAABB: AABB;
   // TODO(@darzu): NARROW PHASE: add optional more specific collider types here
+  // TODO(@darzu): pos, lastPos need to be tracked per parent space
   pos: vec3;
   lastPos: vec3;
 }
 
-const dummyCollider: PhysCollider = {
+const DUMMY_COLLIDER: PhysCollider = {
   id: 0,
   oId: 0,
   aabb: { min: [0, 0, 0], max: [0, 0, 0] },
+  localAABB: { min: [0, 0, 0], max: [0, 0, 0] },
   selfAABB: { min: [0, 0, 0], max: [0, 0, 0] },
   parentOId: 0,
   pos: [0, 0, 0],
@@ -124,35 +127,52 @@ function getParentFrame(
   return IDENTITY_FRAME;
 }
 
-export function doesOverlap(a: PhysCollider, b: PhysCollider) {
-  // TODO(@darzu): PARENT. NARROW PHASE. IMPL
-  if (
-    a.parentOId === b.parentOId ||
-    a.parentOId === b.oId ||
-    b.parentOId === b.oId
-  ) {
-    // TODO(@darzu): use local AABBs
-  } else {
-    // Use world AABBs
-    // TODO(@darzu): use nearest-parent AABBs
-  }
+export function doesOverlap(a: PhysCollider, b: PhysCollider): boolean {
+  // TODO(@darzu): use nearest-parent AABBs
+  if (a.parentOId === b.parentOId)
+    return doesOverlapAABB(a.localAABB, b.localAABB);
+  else if (a.parentOId === b.oId)
+    return doesOverlapAABB(a.localAABB, b.selfAABB);
+  else if (a.oId === b.parentOId)
+    return doesOverlapAABB(a.selfAABB, b.localAABB);
+  else return doesOverlapAABB(a.aabb, b.aabb);
+}
+export function doesTouch(
+  a: PhysCollider,
+  b: PhysCollider,
+  threshold: number
+): boolean {
+  if (a.parentOId === b.parentOId)
+    return doesTouchAABB(a.localAABB, b.localAABB, threshold);
+  else if (a.parentOId === b.oId)
+    return doesTouchAABB(a.localAABB, b.selfAABB, threshold);
+  else if (a.oId === b.parentOId)
+    return doesTouchAABB(a.selfAABB, b.localAABB, threshold);
+  else return doesTouchAABB(a.aabb, b.aabb, threshold);
+}
+
+function transformAABB(out: AABB, t: mat4) {
+  // TODO(@darzu): highly inefficient. for one, this allocs new vecs
+  const wCorners = getAABBCorners(out).map((p) => vec3.transformMat4(p, p, t));
+  // TODO(@darzu): update localAABB too
+  copyAABB(out, getAABBFromPositions(wCorners));
 }
 
 // PRECONDITION: assumes world frames are all up to date
 export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
   em.registerSystem(
-    [PhysicsStateDef, WorldFrameDef],
+    [PhysicsStateDef, WorldFrameDef, TransformDef],
     [],
     (objs, res) => {
       for (let o of objs) {
         // update collider AABBs
         for (let i = 0; i < o._phys.colliders.length; i++) {
           const wc = o._phys.colliders[i];
-          // TODO(@darzu): highly inefficient. for one, this allocs new vecs
-          const wCorners = getAABBCorners(wc.selfAABB).map((p) =>
-            vec3.transformMat4(p, p, o.world.transform)
-          );
-          copyAABB(wc.aabb, getAABBFromPositions(wCorners));
+          copyAABB(wc.localAABB, wc.selfAABB);
+          transformAABB(wc.localAABB, o.transform);
+          copyAABB(wc.aabb, wc.selfAABB);
+          transformAABB(wc.aabb, o.world.transform);
+          // TODO(@darzu): update localAABB too
           // TODO(@darzu): do we want to update lastPos here? different than obj last pos
           vec3.copy(wc.lastPos, wc.pos);
           aabbCenter(wc.pos, wc.aabb);
@@ -252,7 +272,7 @@ export const PhysicsBroadCollidersDef = EM.defineComponent(
       //    cId truthiness
       // TODO(@darzu): support removing colliders
       nextId: 1,
-      colliders: [dummyCollider],
+      colliders: [DUMMY_COLLIDER],
     };
   }
 );
@@ -309,6 +329,7 @@ export function registerPhysicsStateInit(em: EntityManager) {
           oId,
           parentOId,
           aabb: copyAABB(createAABB(), aabb),
+          localAABB: copyAABB(createAABB(), aabb),
           selfAABB: copyAABB(createAABB(), aabb),
           pos: aabbCenter(vec3.create(), aabb),
           lastPos: aabbCenter(vec3.create(), aabb),
@@ -351,8 +372,10 @@ export function registerUpdateInContactSystems(em: EntityManager) {
           continue;
         }
 
+        // TODO(@darzu): PARENT. this needs to be updated to consider parents and changing parents
+
         // colliding again so we don't need any adjacency checks
-        if (doesOverlapAABB(ac.aabb, bc.aabb)) {
+        if (doesOverlap(ac, bc)) {
           const newData = computeContactData(ac, ac.lastPos, bc, bc.lastPos);
           contactData.set(contactId, { ...lastData, ...newData });
           continue;
@@ -362,7 +385,7 @@ export function registerUpdateInContactSystems(em: EntityManager) {
         // TODO(@darzu): do we need to consider relative motions?
         //    i.e. a check to see if the two objects are pressing into each other?
         //    for now I'm ignoring this b/c it doesn't seem harmful to consider non-pressing as contact
-        if (doesTouchAABB(ac.aabb, bc.aabb, 2 * PAD)) {
+        if (doesTouch(ac, bc, 2 * PAD)) {
           const newData = computeContactData(ac, ac.lastPos, bc, bc.lastPos);
           contactData.set(contactId, { ...lastData, ...newData });
           continue;
@@ -442,15 +465,13 @@ export function registerPhysicsContactSystems(em: EntityManager) {
           // did one of these objects move?
           if (!lastObjMovs[aOId] && !lastObjMovs[bOId]) continue;
 
-          if (!doesOverlapAABB(ac.aabb, bc.aabb)) {
+          if (!doesOverlap(ac, bc)) {
             // a miss
             continue;
           }
 
           const a = _objDict.get(aOId)!;
           const b = _objDict.get(bOId)!;
-
-          // TODO(@darzu): NARROW PHASE: check precise collision if applicable
 
           // NOTE: if we make it to here, we consider this a collision that needs rebound
 

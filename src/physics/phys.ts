@@ -93,6 +93,7 @@ export function idPair(aId: number, bId: number): IdPair {
 
 export const PAD = 0.001; // TODO(@darzu): not sure if we can get away without this
 
+// TODO(@darzu): PARENT. consider non-world space AABBs
 export function computeContactData(
   a: { aabb: AABB },
   aLastPos: vec3,
@@ -143,6 +144,8 @@ export function computeReboundData(
   bCurrPos: vec3,
   itr: number
 ): ReboundResult {
+  // TODO(@darzu): PARENT. This needs to be updated to consider parent and changing parents
+
   // determine how to readjust positions
   let aRebound = Infinity;
   let bRebound = Infinity;
