@@ -57,6 +57,8 @@ import {
 } from "../net/events.js";
 import { TextDef } from "./ui.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
+import { constructNetTurret } from "./turret.js";
+import { YawPitchDef } from "../yawpitch.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
@@ -124,18 +126,18 @@ export const { RudderPropsDef, RudderLocalDef, createRudder } =
     deserializeProps: (o, buf) => {
       o.ship = createRef(buf.readUint32());
     },
-    defaultLocal: () => ({ angle: 0 }),
+    defaultLocal: () => true,
     dynamicComponents: [RotationDef],
     buildResources: [AssetsDef, MeDef],
     build: (rudder, res) => {
       const em: EntityManager = EM;
 
-      em.ensureComponentOn(rudder, PositionDef, [0, 0.5, -20]);
+      em.ensureComponentOn(rudder, PositionDef, [0, 0.5, -15]);
 
       em.ensureComponentOn(
         rudder,
         RenderableConstructDef,
-        res.assets.rudder.proto
+        res.assets.rudder.mesh
       );
       em.ensureComponentOn(
         rudder,
@@ -161,7 +163,12 @@ export const { RudderPropsDef, RudderLocalDef, createRudder } =
           max: vec3.fromValues(1, 2, 2.5),
         },
       });
-      em.ensureComponentOn(rudder, InteractableDef, interactBox.id);
+      if (constructNetTurret(rudder, 0, 0, interactBox, Math.PI)) {
+        rudder.turret.maxPitch = 0;
+        rudder.turret.minPitch = 0;
+        rudder.turret.maxYaw = Math.PI / 6;
+        rudder.turret.minYaw = -Math.PI / 6;
+      }
     },
   });
 
@@ -175,6 +182,7 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
       gemId: 0,
       cannonLId: 0,
       cannonRId: 0,
+      rudder: createRef(0) as Ref<[typeof RudderPropsDef]>,
     }),
     serializeProps: (c, buf) => {
       buf.writeVec3(c.loc);
@@ -207,7 +215,7 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
         s.shipProps.gemId = gem.id;
 
         // create rudder
-        const rudder = createRudder(s);
+        s.shipProps.rudder = createRef(createRudder(s));
 
         // create cannons
         const cannonPitch = Math.PI * +0.05;

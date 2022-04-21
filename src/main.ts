@@ -103,6 +103,7 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("boatPropsBuild");
     EM.callSystem("cannonPropsBuild");
     EM.callSystem("gemPropsBuild");
+    EM.callSystem("rudderPropsBuild");
     EM.callSystem("shipPropsBuild");
     EM.callSystem("buildBullets");
     EM.callSystem("buildCursor");

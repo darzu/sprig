@@ -82,6 +82,11 @@ const AssetTransforms: Partial<
   grappleGun: mat4.fromScaling(mat4.create(), [0.5, 0.5, 0.5]),
   grappleGunUnloaded: mat4.fromScaling(mat4.create(), [0.5, 0.5, 0.5]),
   grappleHook: mat4.fromScaling(mat4.create(), [0.5, 0.5, 0.5]),
+  rudder: mat4.translate(
+    mat4.create(),
+    mat4.fromYRotation(mat4.create(), -Math.PI * 0.5),
+    vec3.fromValues(-5, 0, 0)
+  ),
 };
 
 // TODO(@darzu): these sort of hacky offsets are a pain to deal with. It'd be
@@ -122,11 +127,6 @@ const MeshTransforms: Partial<
     m.lines = [];
     m.pos = m.pos.map((p) => vec3.subtract(vec3.create(), p, SHIP_OFFSET));
     m = scaleMesh(m, 3);
-    return m;
-  },
-  rudder: (m) => {
-    const t = mat4.fromYRotation(mat4.create(), -Math.PI * 0.5);
-    m = transformMesh(m, t);
     return m;
   },
 };
