@@ -94,9 +94,7 @@ export const PhysicsStateDef = EM.defineComponent("_phys", () => {
     lastWorldPos: PositionDef.construct(),
     // Colliders
     // NOTE: these can be many-to-one colliders-to-entities, hence the arrays
-    // TODO(@darzu): do we need this localAABBs?
-    worldAABBs: [] as number[],
-    // TODO(@darzu): actually just use pointers to PhysColliders...
+    worldAABBs: [] as PhysCollider[],
     // TODO(@darzu): use sweepAABBs again?
   };
 });
@@ -127,12 +125,12 @@ function getParentFrame(
 export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
   em.registerSystem(
     [PhysicsStateDef, WorldFrameDef],
-    [PhysicsTimerDef, PhysicsBroadCollidersDef],
+    [],
     (objs, res) => {
       for (let o of objs) {
         // update collider AABBs
         for (let i = 0; i < o._phys.worldAABBs.length; i++) {
-          const wc = res._physBColliders.colliders[o._phys.worldAABBs[i]];
+          const wc = o._phys.worldAABBs[i];
           // TODO(@darzu): highly inefficient. for one, this allocs new vecs
           const wCorners = getAABBCorners(wc.localAABB).map((p) =>
             vec3.transformMat4(p, p, o.world.transform)
@@ -253,6 +251,7 @@ export function registerPhysicsStateInit(em: EntityManager) {
     [ColliderDef],
     [PhysicsBroadCollidersDef],
     (objs, { _physBColliders }) => {
+      // TODO(@darzu): PARENT. update collider parent IDs if necessary
       for (let o of objs) {
         if (PhysicsStateDef.isOn(o)) continue;
         const _phys = em.addComponent(o.id, PhysicsStateDef);
@@ -276,20 +275,21 @@ export function registerPhysicsStateInit(em: EntityManager) {
         // copyAABB(_phys.sweepAABB, _phys.localAABB);
       }
 
-      function mkCollider(aabb: AABB, oId: number): number {
+      function mkCollider(aabb: AABB, oId: number): PhysCollider {
         const cId = _physBColliders.nextId;
         _physBColliders.nextId += 1;
         if (_physBColliders.nextId > 2 ** 15)
           console.warn(`Halfway through collider IDs!`);
-        _physBColliders.colliders.push({
+        const c: PhysCollider = {
           id: cId,
           oId,
           aabb: copyAABB(createAABB(), aabb),
           localAABB: copyAABB(createAABB(), aabb),
           pos: aabbCenter(vec3.create(), aabb),
           lastPos: aabbCenter(vec3.create(), aabb),
-        });
-        return cId;
+        };
+        _physBColliders.colliders.push(c);
+        return c;
       }
     },
     "physicsInit"
@@ -376,9 +376,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
       // TODO(@darzu): cull out unused/deleted colliders
       // TODO(@darzu): use motion sweep AABBs again?
       const currColliders = objs
-        .map((o) =>
-          o._phys.worldAABBs.map((cId) => res._physBColliders.colliders[cId])
-        )
+        .map((o) => o._phys.worldAABBs)
         .reduce((p, n) => [...p, ...n], [] as PhysCollider[]);
       const { collidesWith: colliderCollisions, checkRay: collidersCheckRay } =
         checkBroadphase(currColliders);
@@ -501,8 +499,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
             vec3.add(o.world.position, o.world.position, refl);
 
             // translate non-sweep AABBs
-            for (let cId of o._phys.worldAABBs) {
-              const c = res._physBColliders.colliders[cId];
+            for (let c of o._phys.worldAABBs) {
               vec3.add(c.aabb.min, c.aabb.min, refl);
               vec3.add(c.aabb.max, c.aabb.max, refl);
               vec3.add(c.pos, c.pos, refl);
