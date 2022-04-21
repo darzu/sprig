@@ -78,8 +78,8 @@ export interface PhysCollider {
   selfAABB: AABB;
   // TODO(@darzu): NARROW PHASE: add optional more specific collider types here
   // TODO(@darzu): pos, lastPos need to be tracked per parent space
-  pos: vec3;
-  lastPos: vec3;
+  localPos: vec3;
+  lastLocalPos: vec3;
 }
 
 const DUMMY_COLLIDER: PhysCollider = {
@@ -89,15 +89,16 @@ const DUMMY_COLLIDER: PhysCollider = {
   localAABB: { min: [0, 0, 0], max: [0, 0, 0] },
   selfAABB: { min: [0, 0, 0], max: [0, 0, 0] },
   parentOId: 0,
-  pos: [0, 0, 0],
-  lastPos: [0, 0, 0],
+  localPos: [0, 0, 0],
+  lastLocalPos: [0, 0, 0],
 };
 
 // TODO(@darzu): break this up into the specific use cases
 export const PhysicsStateDef = EM.defineComponent("_phys", () => {
   return {
     // track last stats so we can diff
-    lastWorldPos: PositionDef.construct(),
+    // TODO(@darzu): PARENT. this needs to be used correctly consider we do rebound not on the world frame
+    lastPos: PositionDef.construct(),
     // Colliders
     // NOTE: these can be many-to-one colliders-to-entities, hence the arrays
     colliders: [] as PhysCollider[],
@@ -137,6 +138,7 @@ export function doesOverlap(a: PhysCollider, b: PhysCollider): boolean {
     return doesOverlapAABB(a.selfAABB, b.localAABB);
   else return doesOverlapAABB(a.aabb, b.aabb);
 }
+
 export function doesTouch(
   a: PhysCollider,
   b: PhysCollider,
@@ -174,8 +176,8 @@ export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
           transformAABB(wc.aabb, o.world.transform);
           // TODO(@darzu): update localAABB too
           // TODO(@darzu): do we want to update lastPos here? different than obj last pos
-          vec3.copy(wc.lastPos, wc.pos);
-          aabbCenter(wc.pos, wc.aabb);
+          vec3.copy(wc.lastLocalPos, wc.localPos);
+          aabbCenter(wc.localPos, wc.localAABB);
         }
         // const { localAABB, worldAABB, lastWorldAABB, sweepAABB } = o._phys;
 
@@ -205,49 +207,52 @@ export function registerUpdateWorldFromPosRotScale(em: EntityManager) {
 // NOTE: assumes world position/rot/scale has just been changed by
 //  constraint solvers. So we need to propegate these down to the
 //  local frame
-export function registerUpdateLocalPhysicsAfterRebound(em: EntityManager) {
-  em.registerSystem(
-    [PhysicsStateDef, WorldFrameDef, ...LocalFrameDefs],
-    [PhysicsTimerDef, PhysicsResultsDef, PhysicsBroadCollidersDef],
-    (objs, res) => {
-      if (!res.physicsTimer.steps) return;
+// export function registerUpdateLocalPhysicsAfterRebound(em: EntityManager) {
+//   em.registerSystem(
+//     [PhysicsStateDef, WorldFrameDef, ...LocalFrameDefs],
+//     [PhysicsTimerDef, PhysicsResultsDef, PhysicsBroadCollidersDef],
+//     (objs, res) => {
+//       if (!res.physicsTimer.steps) return;
 
-      // TODO(@darzu):  move this into reboundData?
-      const hasRebound: Set<number> = new Set();
-      for (let [_, data] of res.physicsResults.reboundData) {
-        if (data.aRebound < Infinity)
-          hasRebound.add(res._physBColliders.colliders[data.aCId].oId);
-        if (data.bRebound < Infinity)
-          hasRebound.add(res._physBColliders.colliders[data.bCId].oId);
-      }
+//       // TODO(@darzu): PARENT. this needs to be updated to account for how rebound
+//       //    works with parenting now
 
-      for (let o of objs)
-        if (hasRebound.has(o.id)) updateFrameFromPosRotScale(o.world);
+//       // TODO(@darzu):  move this into reboundData?
+//       const hasRebound: Set<number> = new Set();
+//       for (let [_, data] of res.physicsResults.reboundData) {
+//         if (data.aRebound < Infinity)
+//           hasRebound.add(res._physBColliders.colliders[data.aCId].oId);
+//         if (data.bRebound < Infinity)
+//           hasRebound.add(res._physBColliders.colliders[data.bCId].oId);
+//       }
 
-      for (let o of objs) {
-        if (!hasRebound.has(o.id)) continue;
+//       for (let o of objs)
+//         if (hasRebound.has(o.id)) updateFrameFromPosRotScale(o.world);
 
-        // find parent transforms
-        // TODO(@darzu): matrix inversion should be done once per parent
-        let worldToParent = mat4.IDENTITY;
-        let parentToWorld = mat4.IDENTITY;
-        if (PhysicsParentDef.isOn(o)) {
-          const parent = EM.findEntity(o.physicsParent.id, [WorldFrameDef]);
-          if (parent) {
-            parentToWorld = parent.world.transform;
-            worldToParent = mat4.invert(mat4.create(), parent.world.transform);
-          }
-        }
+//       for (let o of objs) {
+//         if (!hasRebound.has(o.id)) continue;
 
-        const localToWorld = o.world.transform;
-        mat4.multiply(o.transform, worldToParent, localToWorld);
+//         // find parent transforms
+//         // TODO(@darzu): matrix inversion should be done once per parent
+//         let worldToParent = mat4.IDENTITY;
+//         let parentToWorld = mat4.IDENTITY;
+//         if (PhysicsParentDef.isOn(o)) {
+//           const parent = EM.findEntity(o.physicsParent.id, [WorldFrameDef]);
+//           if (parent) {
+//             parentToWorld = parent.world.transform;
+//             worldToParent = mat4.invert(mat4.create(), parent.world.transform);
+//           }
+//         }
 
-        updateFrameFromTransform(o);
-      }
-    },
-    "updateLocalPhysicsAfterRebound"
-  );
-}
+//         const localToWorld = o.world.transform;
+//         mat4.multiply(o.transform, worldToParent, localToWorld);
+
+//         updateFrameFromTransform(o);
+//       }
+//     },
+//     "updateLocalPhysicsAfterRebound"
+//   );
+// }
 
 function getAABBCorners(aabb: AABB): vec3[] {
   const points: vec3[] = [
@@ -316,7 +321,7 @@ export function registerPhysicsStateInit(em: EntityManager) {
       }
 
       function mkCollider(
-        aabb: AABB,
+        selfAABB: AABB,
         oId: number,
         parentOId: number
       ): PhysCollider {
@@ -328,11 +333,11 @@ export function registerPhysicsStateInit(em: EntityManager) {
           id: cId,
           oId,
           parentOId,
-          aabb: copyAABB(createAABB(), aabb),
-          localAABB: copyAABB(createAABB(), aabb),
-          selfAABB: copyAABB(createAABB(), aabb),
-          pos: aabbCenter(vec3.create(), aabb),
-          lastPos: aabbCenter(vec3.create(), aabb),
+          aabb: copyAABB(createAABB(), selfAABB),
+          localAABB: copyAABB(createAABB(), selfAABB),
+          selfAABB: copyAABB(createAABB(), selfAABB),
+          localPos: aabbCenter(vec3.create(), selfAABB),
+          lastLocalPos: aabbCenter(vec3.create(), selfAABB),
         };
         _physBColliders.colliders.push(c);
         return c;
@@ -376,8 +381,8 @@ export function registerUpdateInContactSystems(em: EntityManager) {
 
         // colliding again so we don't need any adjacency checks
         if (doesOverlap(ac, bc)) {
-          const newData = computeContactData(ac, ac.lastPos, bc, bc.lastPos);
-          contactData.set(contactId, { ...lastData, ...newData });
+          const newData = computeContactData(ac, bc);
+          contactData.set(contactId, newData);
           continue;
         }
 
@@ -386,8 +391,8 @@ export function registerUpdateInContactSystems(em: EntityManager) {
         //    i.e. a check to see if the two objects are pressing into each other?
         //    for now I'm ignoring this b/c it doesn't seem harmful to consider non-pressing as contact
         if (doesTouch(ac, bc, 2 * PAD)) {
-          const newData = computeContactData(ac, ac.lastPos, bc, bc.lastPos);
-          contactData.set(contactId, { ...lastData, ...newData });
+          const newData = computeContactData(ac, bc);
+          contactData.set(contactId, newData);
           continue;
         }
 
@@ -402,7 +407,7 @@ export function registerUpdateInContactSystems(em: EntityManager) {
 export function registerPhysicsContactSystems(em: EntityManager) {
   // TODO(@darzu): split this system
   em.registerSystem(
-    [ColliderDef, PhysicsStateDef, WorldFrameDef],
+    [ColliderDef, PhysicsStateDef, PositionDef, WorldFrameDef],
     [PhysicsTimerDef, PhysicsBroadCollidersDef, PhysicsResultsDef],
     (objs, res) => {
       // TODO(@darzu): interestingly, this system doesn't need the step count
@@ -488,35 +493,24 @@ export function registerPhysicsContactSystems(em: EntityManager) {
             collidesWith.get(bOId)!.push(aOId);
           }
 
-          // compute contact info
-          // TODO(@darzu): do we need to calculate contact data for non-solids?
-          // TODO(@darzu): aggregate contact data as one dir per other obj
-          // TODO(@darzu): maybe the winning direction in a multi-direction battle should be the one with the biggest rebound
-          // TODO(@darzu): NARROW PHASE: we need to use GJK-based contact data calc
-          const contRes = computeContactData(ac, ac.lastPos, bc, bc.lastPos);
-          const contData: ContactData = {
-            ...contRes,
-            aCId: aCId,
-            bCId: bCId,
-          };
-          // TODO(@darzu): this just keeps the latest contact data, should we keep all?
-          contactData.set(abCId, contData);
-
           // solid objects rebound
           if (a.collider.solid && b.collider.solid) {
+            // compute contact info
+            // TODO(@darzu): do we need to calculate contact data for non-solids?
+            // TODO(@darzu): aggregate contact data as one dir per other obj
+            // TODO(@darzu): maybe the winning direction in a multi-direction battle should be the one with the biggest rebound
+            // TODO(@darzu): NARROW PHASE: we need to use GJK-based contact data calc
+            const contData = computeContactData(ac, bc);
+            // TODO(@darzu): this just keeps the latest contact data, should we keep all?
+            contactData.set(abCId, contData);
+
             // compute rebound info
             // TODO(@darzu): rebound calc per collider, move-frac aggregated per object
             // TODO(@darzu): NARROW PHASE: we need to use GJK-based rebound data calc
-            const rebData = computeReboundData(
-              ac,
-              ac.lastPos,
-              ac.pos,
-              bc,
-              bc.lastPos,
-              bc.pos,
-              itr
-            );
-            reboundData.set(abCId, { ...rebData, aCId, bCId });
+            const rebData = computeReboundData(ac, bc, itr);
+            reboundData.set(abCId, rebData);
+
+            // TODO(@darzu): PARENT. obj movement needs to be done in the right parent frame
 
             // update how much we need to rebound objects by
             const { aRebound, bRebound } = rebData;
@@ -538,18 +532,18 @@ export function registerPhysicsContactSystems(em: EntityManager) {
         for (let o of objs) {
           let movFrac = nextObjMovFracs[o.id];
           if (movFrac) {
-            // TODO(@darzu): MUTATING WORLD POS. In an ideal world we'd find a different
-            //    way to do this. maybe.
+            // TODO(@darzu): PARENT. this needs to rebound in the parent frame, not world frame
             const refl = tempVec();
-            vec3.sub(refl, o._phys.lastWorldPos, o.world.position);
+            vec3.sub(refl, o._phys.lastPos, o.position);
             vec3.scale(refl, refl, movFrac);
-            vec3.add(o.world.position, o.world.position, refl);
+            vec3.add(o.position, o.position, refl);
 
             // translate non-sweep AABBs
             for (let c of o._phys.colliders) {
-              vec3.add(c.aabb.min, c.aabb.min, refl);
-              vec3.add(c.aabb.max, c.aabb.max, refl);
-              vec3.add(c.pos, c.pos, refl);
+              // TODO(@darzu): PARENT. translate world AABBs?
+              vec3.add(c.localAABB.min, c.localAABB.min, refl);
+              vec3.add(c.localAABB.max, c.localAABB.max, refl);
+              vec3.add(c.localPos, c.localPos, refl);
             }
 
             // track that some movement occured
@@ -569,7 +563,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
       // TODO(@darzu): needed any more since colliders track these now?
       // TODO(@darzu): it'd be great to expose this to e.g. phys sandboxes
       for (let o of objs) {
-        vec3.copy(o._phys.lastWorldPos, o.world.position);
+        vec3.copy(o._phys.lastPos, o.position);
       }
 
       // update out checkRay function

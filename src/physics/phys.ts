@@ -1,12 +1,12 @@
 import { vec3 } from "../gl-matrix.js";
 import { __isSMI } from "../util.js";
 import {
+  PhysCollider,
   PhysicsObject,
   PhysicsState,
   registerPhysicsContactSystems,
   registerPhysicsStateInit,
   registerUpdateInContactSystems,
-  registerUpdateLocalPhysicsAfterRebound,
   registerUpdateWorldAABBs,
 } from "./nonintersection.js";
 import { EntityManager } from "../entity-manager.js";
@@ -25,6 +25,7 @@ import {
 import { Collider } from "./collider.js";
 import { AABB } from "./broadphase.js";
 import { registerNarrowPhaseSystems } from "./narrowphase.js";
+import { assert } from "../test.js";
 
 // TODO(@darzu): PHYSICS TODO:
 // [ ] seperate rotation and motion w/ constraint checking between them
@@ -54,7 +55,7 @@ export function registerPhysicsSystems(em: EntityManager) {
   // TODO(@darzu): positioning?
   registerNarrowPhaseSystems(em);
   // registerUpdateWorldFromPosRotScale(em);
-  registerUpdateLocalPhysicsAfterRebound(em);
+  // registerUpdateLocalPhysicsAfterRebound(em);
   // TODO(@darzu): get rid of this duplicate call?
   registerUpdateWorldFromLocalAndParent(em, "2");
 
@@ -62,22 +63,20 @@ export function registerPhysicsSystems(em: EntityManager) {
 }
 
 export type CollidesWith = Map<number, number[]>;
-export interface ReboundResult {
+export interface ReboundData {
   aRebound: number;
   bRebound: number;
-}
-export interface ReboundData extends ReboundResult {
   aCId: number;
   bCId: number;
+  parentOId: number;
 }
 
-export interface ContactResult {
+export interface ContactData {
   bToANorm: vec3;
   dist: number;
-}
-export interface ContactData extends ContactResult {
   aCId: number;
   bCId: number;
+  parentOId: number;
 }
 
 export type IdPair = number;
@@ -93,13 +92,96 @@ export function idPair(aId: number, bId: number): IdPair {
 
 export const PAD = 0.001; // TODO(@darzu): not sure if we can get away without this
 
-// TODO(@darzu): PARENT. consider non-world space AABBs
 export function computeContactData(
-  a: { aabb: AABB },
+  a: PhysCollider,
+  b: PhysCollider
+): ContactData {
+  let aAABB = a.localAABB;
+  let lastAPos = a.lastLocalPos;
+  let bAABB = b.localAABB;
+  let lastBPos = b.lastLocalPos;
+  let parentOId = a.parentOId;
+
+  if (a.parentOId === b.oId) {
+    bAABB = b.selfAABB;
+    lastBPos = [0, 0, 0];
+    parentOId = b.oId;
+  } else if (b.parentOId === a.oId) {
+    aAABB = a.selfAABB;
+    lastAPos = [0, 0, 0];
+    parentOId = a.oId;
+  } else {
+    assert(
+      a.parentOId === b.parentOId,
+      "Cannot compute contact data between objs in different parent frames"
+    );
+  }
+
+  const res = computeContactDataInternal(aAABB, lastAPos, bAABB, lastBPos);
+  return {
+    ...res,
+    aCId: a.id,
+    bCId: b.id,
+    parentOId,
+  };
+}
+
+export function computeReboundData(
+  a: PhysCollider,
+  b: PhysCollider,
+  itr: number
+): ReboundData {
+  let aAABB = a.localAABB;
+  let lastAPos = a.lastLocalPos;
+  let aPos = a.localPos;
+  let bAABB = b.localAABB;
+  let lastBPos = b.lastLocalPos;
+  let bPos = b.localPos;
+  let parentOId = a.parentOId;
+
+  if (a.parentOId === b.oId) {
+    bAABB = b.selfAABB;
+    lastBPos = [0, 0, 0];
+    bPos = [0, 0, 0];
+    parentOId = b.oId;
+  } else if (b.parentOId === a.oId) {
+    aAABB = a.selfAABB;
+    lastAPos = [0, 0, 0];
+    aPos = [0, 0, 0];
+    parentOId = a.oId;
+  } else {
+    assert(
+      a.parentOId === b.parentOId,
+      "Cannot compute rebound data between objs in different parent frames"
+    );
+  }
+
+  const res = computeReboundDataInternal(
+    aAABB,
+    lastAPos,
+    aPos,
+    bAABB,
+    lastBPos,
+    bPos,
+    itr
+  );
+  return {
+    ...res,
+    aCId: a.id,
+    bCId: b.id,
+    parentOId,
+  };
+}
+
+function computeContactDataInternal(
+  a: AABB,
   aLastPos: vec3,
-  b: { aabb: AABB },
+  b: AABB,
   bLastPos: vec3
-): ContactResult {
+): {
+  bToANorm: vec3;
+  dist: number;
+} {
   let dist = -Infinity;
   let dim = -1;
   let dir = 0;
@@ -107,8 +189,8 @@ export function computeContactData(
   // for each of X,Y,Z dimensions
   for (let i = 0; i < 3; i++) {
     // determine who is to the left in this dimension
-    let left: { aabb: AABB };
-    let right: { aabb: AABB };
+    let left: AABB;
+    let right: AABB;
     if (aLastPos[i] < bLastPos[i]) {
       left = a;
       right = b;
@@ -118,7 +200,7 @@ export function computeContactData(
     }
 
     // update min distance and its dimension
-    const newDist = right.aabb.min[i] - left.aabb.max[i];
+    const newDist = right.min[i] - left.max[i];
     if (dist < newDist) {
       dist = newDist;
       dim = i;
@@ -134,18 +216,18 @@ export function computeContactData(
     dist,
   };
 }
-
-export function computeReboundData(
-  a: { aabb: AABB },
+function computeReboundDataInternal(
+  a: AABB,
   aLastPos: vec3,
   aCurrPos: vec3,
-  b: { aabb: AABB },
+  b: AABB,
   bLastPos: vec3,
   bCurrPos: vec3,
   itr: number
-): ReboundResult {
-  // TODO(@darzu): PARENT. This needs to be updated to consider parent and changing parents
-
+): {
+  aRebound: number;
+  bRebound: number;
+} {
   // determine how to readjust positions
   let aRebound = Infinity;
   let bRebound = Infinity;
@@ -162,7 +244,7 @@ export function computeReboundData(
     const rightCurrPos = !aIsLeft ? aCurrPos : bCurrPos;
 
     // check overlap
-    const overlap = left.aabb.max[i] - right.aabb.min[i];
+    const overlap = left.max[i] - right.min[i];
     if (overlap <= 0) continue; // no overlap to deal with
 
     // determine possible contributions
