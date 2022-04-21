@@ -301,6 +301,8 @@ export function initReboundSandbox(em: EntityManager, hosting: boolean) {
   const camera = em.addSingletonComponent(CameraDef);
   camera.fov = Math.PI * 0.5;
 
+  let tableId = -1;
+
   em.registerOneShotSystem(
     null,
     [AssetsDef, GlobalCursor3dDef, RendererDef, TextDef],
@@ -321,12 +323,28 @@ export function initReboundSandbox(em: EntityManager, hosting: boolean) {
       const p = em.newEntity();
       em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
       em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
-      em.ensureComponentOn(p, PositionDef, [0, -5, 0]);
+      em.ensureComponentOn(p, PositionDef, [0, -10, 0]);
       em.ensureComponentOn(p, ColliderDef, {
         shape: "AABB",
-        solid: true,
+        solid: false,
         aabb: res.assets.plane.aabb,
       });
+
+      const t = em.newEntity();
+      em.ensureComponentOn(
+        t,
+        RenderableConstructDef,
+        res.assets.gridPlane.proto
+      );
+      em.ensureComponentOn(t, ColorDef, [0.2, 0.2, 0.9]);
+      em.ensureComponentOn(t, PositionDef, [0, 0, 0]);
+      em.ensureComponentOn(t, AngularVelocityDef, [0, 0.0002, 0.0002]);
+      em.ensureComponentOn(t, ColliderDef, {
+        shape: "AABB",
+        solid: true,
+        aabb: res.assets.gridPlane.aabb,
+      });
+      tableId = t.id;
 
       res.text.lowerText = `spawner (p) stack (l) clear (backspace)`;
     }
@@ -344,7 +362,7 @@ export function initReboundSandbox(em: EntityManager, hosting: boolean) {
     // em.ensureComponentOn(b, RotationDef);
     // em.ensureComponentOn(b, AngularVelocityDef, [0, 0.001, 0.001]);
     em.ensureComponentOn(e, LinearVelocityDef, [0, -0.02, 0]);
-    em.ensureComponentOn(e, WorldFrameDef);
+    em.ensureComponentOn(e, PhysicsParentDef, tableId);
     em.ensureComponentOn(e, ColliderDef, {
       shape: "AABB",
       solid: true,
@@ -368,8 +386,8 @@ export function initReboundSandbox(em: EntityManager, hosting: boolean) {
         if (nextSpawnAccu > 100) {
           nextSpawnAccu = 0;
 
-          const x = jitter(10);
-          const z = jitter(10);
+          const x = jitter(5);
+          const z = jitter(5);
           spawn(res.assets.cube, [x, 20, z]);
         }
       }
