@@ -27,3 +27,16 @@ Complaint about lack of PS1-like content in WebGL:
 Raylib game engine:
   https://www.raylib.com/index.html
   https://github.com/raysan5/raylib
+
+Open source games:
+  https://github.com/Poussinou/FLOSS-Games-on-Steam
+  https://github.com/Soldat/soldat
+    This is MIT but also free
+  https://github.com/oakwarrior/DeathAndTaxes
+    MIT, and sells for $13 on Steam with great reviews!
+    They have a long explanation on their github readme; seem like great peeps
+  https://github.com/a327ex/SNKRX
+    MIT, $3
+  https://github.com/egordorichev/BurningKnight
+    MIT, $15
+  Pretty much every other open source game I found is GPL
