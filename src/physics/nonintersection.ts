@@ -97,8 +97,7 @@ const DUMMY_COLLIDER: PhysCollider = {
 export const PhysicsStateDef = EM.defineComponent("_phys", () => {
   return {
     // track last stats so we can diff
-    // TODO(@darzu): PARENT. this needs to be used correctly consider we do rebound not on the world frame
-    lastPos: PositionDef.construct(),
+    lastLocalPos: PositionDef.construct(),
     // Colliders
     // NOTE: these can be many-to-one colliders-to-entities, hence the arrays
     colliders: [] as PhysCollider[],
@@ -296,6 +295,13 @@ export function registerPhysicsStateInit(em: EntityManager) {
       for (let o of objs) {
         if (PhysicsStateDef.isOn(o)) {
           // TODO(@darzu): PARENT. update collider parent IDs if necessary
+
+          // ensure parents are up to date for existing colliders
+          const parent = PhysicsParentDef.isOn(o) ? o.physicsParent.id : 0;
+          for (let c of o._phys.colliders) {
+            c.parentOId = parent;
+          }
+
           continue;
         }
         const parentId = PhysicsParentDef.isOn(o) ? o.physicsParent.id : 0;
@@ -376,8 +382,17 @@ export function registerUpdateInContactSystems(em: EntityManager) {
           contactData.delete(contactId);
           continue;
         }
-
-        // TODO(@darzu): PARENT. this needs to be updated to consider parents and changing parents
+        const aParent = PhysicsParentDef.isOn(a) ? a.physicsParent.id : 0;
+        const bParent = PhysicsParentDef.isOn(b) ? b.physicsParent.id : 0;
+        if (
+          (aParent !== lastData.parentOId && a.id !== lastData.parentOId) ||
+          (bParent !== lastData.parentOId && b.id !== lastData.parentOId)
+        ) {
+          // TODO(@darzu): warn
+          console.warn(`Deleting old contact`);
+          contactData.delete(contactId);
+          continue;
+        }
 
         // colliding again so we don't need any adjacency checks
         if (doesOverlap(ac, bc)) {
@@ -495,6 +510,14 @@ export function registerPhysicsContactSystems(em: EntityManager) {
 
           // solid objects rebound
           if (a.collider.solid && b.collider.solid) {
+            // we only support rebound for objects within the same parent reference frame
+            if (
+              ac.parentOId !== bc.parentOId &&
+              ac.parentOId !== bc.oId &&
+              bc.parentOId !== ac.oId
+            )
+              continue;
+
             // compute contact info
             // TODO(@darzu): do we need to calculate contact data for non-solids?
             // TODO(@darzu): aggregate contact data as one dir per other obj
@@ -534,7 +557,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
           if (movFrac) {
             // TODO(@darzu): PARENT. this needs to rebound in the parent frame, not world frame
             const refl = tempVec();
-            vec3.sub(refl, o._phys.lastPos, o.position);
+            vec3.sub(refl, o._phys.lastLocalPos, o.position);
             vec3.scale(refl, refl, movFrac);
             vec3.add(o.position, o.position, refl);
 
@@ -563,7 +586,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
       // TODO(@darzu): needed any more since colliders track these now?
       // TODO(@darzu): it'd be great to expose this to e.g. phys sandboxes
       for (let o of objs) {
-        vec3.copy(o._phys.lastPos, o.position);
+        vec3.copy(o._phys.lastLocalPos, o.position);
       }
 
       // update out checkRay function

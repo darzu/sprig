@@ -48,7 +48,7 @@ async function startGame(localPeerName: string, host: string | null) {
   EM.addSingletonComponent(InputsDef);
   registerInputsSystem(EM);
 
-  const GAME = "rebound" as "ship" | "gjk" | "rebound";
+  const GAME = "ship" as "ship" | "gjk" | "rebound";
 
   if (GAME === "ship") initShipGame(EM, hosting);
   else if (GAME === "gjk") initGJKSandbox(EM, hosting);

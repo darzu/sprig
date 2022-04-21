@@ -113,7 +113,7 @@ export function computeContactData(
   } else {
     assert(
       a.parentOId === b.parentOId,
-      "Cannot compute contact data between objs in different parent frames"
+      `Cannot compute contact data between objs in different parent frames; ${a.parentOId} vs ${b.parentOId}`
     );
   }
 
