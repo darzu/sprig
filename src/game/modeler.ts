@@ -128,7 +128,7 @@ function registerAABBBuilder(em: EntityManager) {
             if (!b) throw `Invalid modeler state`;
             return b;
           });
-          const aabbs = bs.map((b) => b._phys.worldAABBs[0].aabb);
+          const aabbs = bs.map((b) => b._phys.colliders[0].aabb);
           console.log(aabbListToStr(aabbs));
           for (let b of bs) {
             vec3.copy(b.color, [0.3, 0.1, 0.2]);

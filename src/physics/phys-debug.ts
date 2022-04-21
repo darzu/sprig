@@ -48,7 +48,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
     (es, res) => {
       for (let e of es) {
         if (!res._physDbgState.colliderMeshes.has(e.id)) {
-          for (let c of e._phys.worldAABBs) {
+          for (let c of e._phys.colliders) {
             // create debug entity
             const dbgE = em.newEntity();
 

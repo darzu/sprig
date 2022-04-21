@@ -74,7 +74,7 @@ export interface PhysCollider {
   oId: number;
   parentOId: number;
   aabb: AABB;
-  localAABB: AABB;
+  selfAABB: AABB;
   // TODO(@darzu): NARROW PHASE: add optional more specific collider types here
   pos: vec3;
   lastPos: vec3;
@@ -84,7 +84,7 @@ const dummyCollider: PhysCollider = {
   id: 0,
   oId: 0,
   aabb: { min: [0, 0, 0], max: [0, 0, 0] },
-  localAABB: { min: [0, 0, 0], max: [0, 0, 0] },
+  selfAABB: { min: [0, 0, 0], max: [0, 0, 0] },
   parentOId: 0,
   pos: [0, 0, 0],
   lastPos: [0, 0, 0],
@@ -97,7 +97,7 @@ export const PhysicsStateDef = EM.defineComponent("_phys", () => {
     lastWorldPos: PositionDef.construct(),
     // Colliders
     // NOTE: these can be many-to-one colliders-to-entities, hence the arrays
-    worldAABBs: [] as PhysCollider[],
+    colliders: [] as PhysCollider[],
     // TODO(@darzu): use sweepAABBs again?
   };
 });
@@ -124,6 +124,20 @@ function getParentFrame(
   return IDENTITY_FRAME;
 }
 
+export function doesOverlap(a: PhysCollider, b: PhysCollider) {
+  // TODO(@darzu): PARENT. NARROW PHASE. IMPL
+  if (
+    a.parentOId === b.parentOId ||
+    a.parentOId === b.oId ||
+    b.parentOId === b.oId
+  ) {
+    // TODO(@darzu): use local AABBs
+  } else {
+    // Use world AABBs
+    // TODO(@darzu): use nearest-parent AABBs
+  }
+}
+
 // PRECONDITION: assumes world frames are all up to date
 export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
   em.registerSystem(
@@ -132,10 +146,10 @@ export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
     (objs, res) => {
       for (let o of objs) {
         // update collider AABBs
-        for (let i = 0; i < o._phys.worldAABBs.length; i++) {
-          const wc = o._phys.worldAABBs[i];
+        for (let i = 0; i < o._phys.colliders.length; i++) {
+          const wc = o._phys.colliders[i];
           // TODO(@darzu): highly inefficient. for one, this allocs new vecs
-          const wCorners = getAABBCorners(wc.localAABB).map((p) =>
+          const wCorners = getAABBCorners(wc.selfAABB).map((p) =>
             vec3.transformMat4(p, p, o.world.transform)
           );
           copyAABB(wc.aabb, getAABBFromPositions(wCorners));
@@ -265,12 +279,12 @@ export function registerPhysicsStateInit(em: EntityManager) {
         // AABBs (collider derived)
         // TODO(@darzu): handle scale
         if (o.collider.shape === "AABB") {
-          _phys.worldAABBs.push(mkCollider(o.collider.aabb, o.id, parentId));
+          _phys.colliders.push(mkCollider(o.collider.aabb, o.id, parentId));
         } else if (o.collider.shape === "Multi") {
           for (let c of o.collider.children) {
             if (c.shape !== "AABB")
               throw `Unimplemented child collider shape: ${c.shape}`;
-            _phys.worldAABBs.push(mkCollider(c.aabb, o.id, parentId));
+            _phys.colliders.push(mkCollider(c.aabb, o.id, parentId));
           }
         } else {
           throw `Unimplemented collider shape: ${o.collider.shape}`;
@@ -295,7 +309,7 @@ export function registerPhysicsStateInit(em: EntityManager) {
           oId,
           parentOId,
           aabb: copyAABB(createAABB(), aabb),
-          localAABB: copyAABB(createAABB(), aabb),
+          selfAABB: copyAABB(createAABB(), aabb),
           pos: aabbCenter(vec3.create(), aabb),
           lastPos: aabbCenter(vec3.create(), aabb),
         };
@@ -388,7 +402,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
       // TODO(@darzu): cull out unused/deleted colliders
       // TODO(@darzu): use motion sweep AABBs again?
       const currColliders = objs
-        .map((o) => o._phys.worldAABBs)
+        .map((o) => o._phys.colliders)
         .reduce((p, n) => [...p, ...n], [] as PhysCollider[]);
       const { collidesWith: colliderCollisions, checkRay: collidersCheckRay } =
         checkBroadphase(currColliders);
@@ -511,7 +525,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
             vec3.add(o.world.position, o.world.position, refl);
 
             // translate non-sweep AABBs
-            for (let c of o._phys.worldAABBs) {
+            for (let c of o._phys.colliders) {
               vec3.add(c.aabb.min, c.aabb.min, refl);
               vec3.add(c.aabb.max, c.aabb.max, refl);
               vec3.add(c.pos, c.pos, refl);
