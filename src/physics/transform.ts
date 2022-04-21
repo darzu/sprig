@@ -7,7 +7,7 @@ import {
   ReadonlyVec3,
   vec3,
 } from "../gl-matrix.js";
-import { WorldFrameDef } from "./nonintersection.js";
+import { createFrame, WorldFrameDef } from "./nonintersection.js";
 import { tempVec, tempQuat } from "../temp-pool.js";
 import { FALSE, logOnce } from "../util.js";
 
@@ -45,45 +45,26 @@ export const IDENTITY_FRAME: ReadonlyFrame = {
   scale: vec3.ONES,
 };
 
-export function updateFrameFromTransform(
-  f: Partial<Frame>
-): asserts f is Frame {
-  // TODO(@darzu): oh shoot, this skips EM's addComponent which is needed for query updates
-  f.transform = f.transform ?? mat4.create();
-  f.position = mat4.getTranslation(f.position ?? vec3.create(), f.transform);
-  f.rotation = mat4.getRotation(f.rotation ?? quat.create(), f.transform);
-  f.scale = mat4.getScaling(f.scale ?? vec3.create(), f.transform);
+export function updateFrameFromTransform(f: Frame): asserts f is Frame {
+  f.position = mat4.getTranslation(f.position, f.transform);
+  f.rotation = mat4.getRotation(f.rotation, f.transform);
+  f.scale = mat4.getScaling(f.scale, f.transform);
 }
 
-export function updateFrameFromPosRotScale(
-  f: Partial<Frame>
-): asserts f is Partial<Frame> & { transform: mat4 } {
+export function updateFrameFromPosRotScale(f: Frame) {
   f.transform = mat4.fromRotationTranslationScale(
-    f.transform ?? mat4.create(),
-    f.rotation ?? quat.IDENTITY,
-    f.position ?? vec3.ZEROS,
-    f.scale ?? vec3.ONES
+    f.transform,
+    f.rotation,
+    f.position,
+    f.scale
   );
 }
 
-export function copyFrame(out: Partial<Frame>, frame: Partial<Frame>) {
-  if (out.position || frame.position)
-    out.position = vec3.copy(
-      out.position || vec3.create(),
-      frame.position || vec3.ZEROS
-    );
-  if (out.scale || frame.scale)
-    out.scale = vec3.copy(out.scale || vec3.create(), frame.scale || vec3.ONES);
-  if (out.rotation || frame.rotation)
-    out.rotation = quat.copy(
-      out.rotation || quat.create(),
-      frame.rotation || quat.IDENTITY
-    );
-  if (out.transform || frame.transform)
-    out.transform = mat4.copy(
-      out.transform || mat4.create(),
-      frame.transform || mat4.IDENTITY
-    );
+export function copyFrame(out: Frame, frame: Frame) {
+  vec3.copy(out.position, frame.position);
+  vec3.copy(out.scale, frame.scale);
+  quat.copy(out.rotation, frame.rotation);
+  mat4.copy(out.transform, frame.transform);
 }
 
 // TRANSFORM
@@ -128,6 +109,14 @@ EM.registerSerializerPair(
   (o, buf) => buf.readVec3(o)
 );
 
+// LOCAL FRAME HELPER
+export const LocalFrameDefs = [
+  PositionDef,
+  RotationDef,
+  ScaleDef,
+  TransformDef,
+] as const;
+
 // PARENT
 export const PhysicsParentDef = EM.defineComponent(
   "physicsParent",
@@ -148,9 +137,8 @@ type Transformable = {
   world: Frame;
   // optional components
   // TODO(@darzu): let the query system specify optional components
-  transform?: mat4;
   physicsParent?: PhysicsParent;
-};
+} & Frame;
 
 const _transformables: Map<number, Transformable> = new Map();
 const _hasTransformed: Set<number> = new Set();
@@ -158,53 +146,34 @@ const _hasTransformed: Set<number> = new Set();
 function updateWorldFromLocalAndParent(o: Transformable) {
   if (_hasTransformed.has(o.id)) return;
 
-  if (TransformDef.isOn(o)) {
-    // logOnce(`first updateWorldFromLocalAndParent for ${o.id}`);
-    if (PhysicsParentDef.isOn(o) && _transformables.has(o.physicsParent.id)) {
-      const parent = _transformables.get(o.physicsParent.id)!;
+  // logOnce(`first updateWorldFromLocalAndParent for ${o.id}`);
+  if (PhysicsParentDef.isOn(o) && _transformables.has(o.physicsParent.id)) {
+    const parent = _transformables.get(o.physicsParent.id)!;
 
-      // update parent first
-      if (!_hasTransformed.has(o.physicsParent.id)) {
-        updateWorldFromLocalAndParent(parent);
-      }
-
-      // update relative to parent
-      mat4.mul(o.world.transform, parent.world.transform, o.transform);
-      updateFrameFromTransform(o.world);
-    } else {
-      // no parent
-      copyFrame(o.world, o);
+    // update parent first
+    if (!_hasTransformed.has(o.physicsParent.id)) {
+      updateWorldFromLocalAndParent(parent);
     }
+
+    // update relative to parent
+    mat4.mul(o.world.transform, parent.world.transform, o.transform);
+    updateFrameFromTransform(o.world);
+  } else {
+    // no parent
+    copyFrame(o.world, o);
   }
 
   _hasTransformed.add(o.id);
 }
 
 export function registerInitTransforms(em: EntityManager) {
-  // ensure we have a world transform if we're using the physics system
-  // TODO(@darzu): have some sort of "usePhysics" marker component instead of pos?
-  em.registerSystem(
-    [PositionDef],
-    [],
-    (objs) => {
-      for (let o of objs)
-        if (!TransformDef.isOn(o)) {
-          em.ensureComponentOn(o, TransformDef);
-          updateFrameFromPosRotScale(o);
-        }
-    },
-    "ensureTransform"
-  );
   // TODO(@darzu): WorldFrame should be optional, only needed
   //  for parented objs (which is maybe the uncommon case).
   em.registerSystem(
-    [TransformDef],
+    [...LocalFrameDefs],
     [],
     (objs) => {
       for (let o of objs) {
-        if (!PositionDef.isOn(o))
-          // TODO(@darzu): it'd be great if we didn't have to force PosRotScale on every entity
-          updateFrameFromTransform(o);
         if (!WorldFrameDef.isOn(o)) {
           em.ensureComponentOn(o, WorldFrameDef);
           copyFrame(o.world, o);
@@ -219,17 +188,31 @@ export function registerUpdateLocalFromPosRotScale(
   suffix: string = ""
 ) {
   em.registerSystem(
-    [PositionDef],
+    null,
     [],
     (objs) => {
-      for (let o of objs) em.ensureComponentOn(o, TransformDef);
+      for (let o of em.entities.values()) {
+        if (!o.id) continue;
+        // TODO(@darzu): do we really want these on every entity?
+        if (
+          PositionDef.isOn(o) ||
+          RotationDef.isOn(o) ||
+          ScaleDef.isOn(o) ||
+          TransformDef.isOn(o)
+        ) {
+          em.ensureComponentOn(o, PositionDef);
+          em.ensureComponentOn(o, RotationDef);
+          em.ensureComponentOn(o, ScaleDef);
+          em.ensureComponentOn(o, TransformDef);
+        }
+      }
     },
-    "ensurePositionEntsHaveTransform"
+    "ensureFillOutLocalFrame"
   );
 
   // calculate the world transform
   em.registerSystem(
-    [TransformDef, PositionDef],
+    [...LocalFrameDefs],
     [],
     (objs) => {
       for (let o of objs) updateFrameFromPosRotScale(o);
@@ -244,7 +227,7 @@ export function registerUpdateWorldFromLocalAndParent(
 ) {
   // calculate the world transform
   em.registerSystem(
-    [WorldFrameDef],
+    [WorldFrameDef, ...LocalFrameDefs],
     [],
     (objs) => {
       _transformables.clear();

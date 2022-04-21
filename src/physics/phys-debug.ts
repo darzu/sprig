@@ -14,6 +14,7 @@ import {
 import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
 import {
   copyFrame,
+  LocalFrameDefs,
   Position,
   PositionDef,
   Scale,
@@ -101,7 +102,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
 
   // update transform based on parent collider
   em.registerSystem(
-    [DbgMeshDef, PositionDef, ScaleDef, WorldFrameDef],
+    [DbgMeshDef, WorldFrameDef, ...LocalFrameDefs],
     [PhysicsBroadCollidersDef],
     (es, res) => {
       for (let e of es) {

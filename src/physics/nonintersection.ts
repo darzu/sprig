@@ -30,6 +30,7 @@ import {
 import {
   Frame,
   IDENTITY_FRAME,
+  LocalFrameDefs,
   PhysicsParent,
   PhysicsParentDef,
   PositionDef,
@@ -172,7 +173,7 @@ export function registerUpdateWorldFromPosRotScale(em: EntityManager) {
 //  local frame
 export function registerUpdateLocalPhysicsAfterRebound(em: EntityManager) {
   em.registerSystem(
-    [PhysicsStateDef, WorldFrameDef, TransformDef],
+    [PhysicsStateDef, WorldFrameDef, ...LocalFrameDefs],
     [PhysicsTimerDef, PhysicsResultsDef, PhysicsBroadCollidersDef],
     (objs, res) => {
       if (!res.physicsTimer.steps) return;
