@@ -72,7 +72,7 @@ export interface PhysCollider {
   id: number;
   oId: number;
   aabb: AABB;
-  // localAABB: AABB;
+  localAABB: AABB;
   // TODO(@darzu): NARROW PHASE: add optional more specific collider types here
   pos: vec3;
   lastPos: vec3;
@@ -82,6 +82,7 @@ const dummyCollider: PhysCollider = {
   id: 0,
   oId: 0,
   aabb: { min: [0, 0, 0], max: [0, 0, 0] },
+  localAABB: { min: [0, 0, 0], max: [0, 0, 0] },
   pos: [0, 0, 0],
   lastPos: [0, 0, 0],
 };
@@ -94,7 +95,6 @@ export const PhysicsStateDef = EM.defineComponent("_phys", () => {
     // Colliders
     // NOTE: these can be many-to-one colliders-to-entities, hence the arrays
     // TODO(@darzu): do we need this localAABBs?
-    localAABBs: [] as number[],
     worldAABBs: [] as number[],
     // TODO(@darzu): actually just use pointers to PhysColliders...
     // TODO(@darzu): use sweepAABBs again?
@@ -132,10 +132,9 @@ export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
       for (let o of objs) {
         // update collider AABBs
         for (let i = 0; i < o._phys.worldAABBs.length; i++) {
-          const lc = res._physBColliders.colliders[o._phys.localAABBs[i]];
           const wc = res._physBColliders.colliders[o._phys.worldAABBs[i]];
           // TODO(@darzu): highly inefficient. for one, this allocs new vecs
-          const wCorners = getAABBCorners(lc.aabb).map((p) =>
+          const wCorners = getAABBCorners(wc.localAABB).map((p) =>
             vec3.transformMat4(p, p, o.world.transform)
           );
           copyAABB(wc.aabb, getAABBFromPositions(wCorners));
@@ -262,13 +261,11 @@ export function registerPhysicsStateInit(em: EntityManager) {
         // TODO(@darzu): handle scale
         if (o.collider.shape === "AABB") {
           _phys.worldAABBs.push(mkCollider(o.collider.aabb, o.id));
-          _phys.localAABBs.push(mkCollider(o.collider.aabb, o.id));
         } else if (o.collider.shape === "Multi") {
           for (let c of o.collider.children) {
             if (c.shape !== "AABB")
               throw `Unimplemented child collider shape: ${c.shape}`;
             _phys.worldAABBs.push(mkCollider(c.aabb, o.id));
-            _phys.localAABBs.push(mkCollider(c.aabb, o.id));
           }
         } else {
           throw `Unimplemented collider shape: ${o.collider.shape}`;
@@ -288,6 +285,7 @@ export function registerPhysicsStateInit(em: EntityManager) {
           id: cId,
           oId,
           aabb: copyAABB(createAABB(), aabb),
+          localAABB: copyAABB(createAABB(), aabb),
           pos: aabbCenter(vec3.create(), aabb),
           lastPos: aabbCenter(vec3.create(), aabb),
         });
@@ -353,6 +351,7 @@ export function registerUpdateInContactSystems(em: EntityManager) {
   );
 }
 export function registerPhysicsContactSystems(em: EntityManager) {
+  // TODO(@darzu): split this system
   em.registerSystem(
     [ColliderDef, PhysicsStateDef, WorldFrameDef],
     [PhysicsTimerDef, PhysicsBroadCollidersDef, PhysicsResultsDef],
@@ -419,17 +418,17 @@ export function registerPhysicsContactSystems(em: EntityManager) {
           // did one of these objects move?
           if (!lastObjMovs[aOId] && !lastObjMovs[bOId]) continue;
 
-          // TODO(@darzu): this is one of the places we would replace with narrow-phase checking
-          // TODO(@darzu): NARROW PHASE: check precise collision if applicable
           if (!doesOverlap(ac.aabb, bc.aabb)) {
             // a miss
             continue;
           }
 
-          // NOTE: if we make it to here, we consider this a collision that needs rebound
-
           const a = _objDict.get(aOId)!;
           const b = _objDict.get(bOId)!;
+
+          // TODO(@darzu): NARROW PHASE: check precise collision if applicable
+
+          // NOTE: if we make it to here, we consider this a collision that needs rebound
 
           // uniquely identify this pair of objects
           const abOId = idPair(aOId, bOId);
