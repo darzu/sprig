@@ -69,9 +69,21 @@ export const FALSE: boolean = false;
 export type NumberTuple<ES> = { [_ in keyof ES]: number };
 
 let _logOnceKeys: Set<string> = new Set();
-export function logOnce(key: string, msg?: string) {
+export function dbgLogOnce(key: string, msg?: string) {
   if (!_logOnceKeys.has(key)) {
     _logOnceKeys.add(key);
     console.log(msg ?? key);
   }
+}
+export function dbgDirOnce(key: string, obj?: any) {
+  if (!_logOnceKeys.has(key)) {
+    _logOnceKeys.add(key);
+    console.dir(obj ?? key);
+  }
+}
+export function dbgOnce(key: string): boolean {
+  if (!_logOnceKeys.has(key)) {
+    _logOnceKeys.add(key);
+    return true;
+  } else return false;
 }

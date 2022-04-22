@@ -39,7 +39,7 @@ import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../delete.js";
 import { max, min } from "../math.js";
 import { assert } from "../test.js";
-import { LinearVelocityDef } from "../physics/motion.js";
+import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 import { LifetimeDef } from "./lifetime.js";
 import { CannonPropsDef, createCannon } from "./cannon.js";
 import { MusicDef } from "../music.js";
@@ -177,6 +177,7 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
 
       s.shipLocal.speed = 0.005;
       em.ensureComponentOn(s, LinearVelocityDef, [0, -0.01, 0]);
+      em.ensureComponentOn(s, AngularVelocityDef);
 
       const mc: MultiCollider = {
         shape: "Multi",
@@ -317,13 +318,15 @@ export function registerShipSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [ShipLocalDef, LinearVelocityDef],
+    [ShipLocalDef, LinearVelocityDef, AngularVelocityDef],
     [GameStateDef],
     (ships, res) => {
       if (res.gameState.state !== GameState.PLAYING) return;
       for (let s of ships) {
         s.linearVelocity[2] = s.shipLocal.speed;
         s.linearVelocity[1] = -0.01;
+        // TODO(@darzu): dbg ship physics when turning
+        // s.angularVelocity[1] = -0.0001;
       }
     },
     "shipMove"

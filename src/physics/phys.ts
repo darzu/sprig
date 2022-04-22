@@ -1,5 +1,5 @@
 import { vec3 } from "../gl-matrix.js";
-import { __isSMI } from "../util.js";
+import { dbgDirOnce, __isSMI } from "../util.js";
 import {
   PhysCollider,
   PhysicsObject,
@@ -23,9 +23,10 @@ import {
   registerUpdateWorldFromLocalAndParent,
 } from "./transform.js";
 import { Collider } from "./collider.js";
-import { AABB } from "./broadphase.js";
+import { AABB, aabbCenter } from "./broadphase.js";
 import { registerNarrowPhaseSystems } from "./narrowphase.js";
 import { assert } from "../test.js";
+import { tempVec } from "../temp-pool.js";
 
 // TODO(@darzu): PHYSICS TODO:
 // [ ] seperate rotation and motion w/ constraint checking between them
@@ -104,11 +105,11 @@ export function computeContactData(
 
   if (a.parentOId === b.oId) {
     bAABB = b.selfAABB;
-    lastBPos = [0, 0, 0];
+    lastBPos = aabbCenter(tempVec(), b.selfAABB);
     parentOId = b.oId;
   } else if (b.parentOId === a.oId) {
     aAABB = a.selfAABB;
-    lastAPos = [0, 0, 0];
+    lastAPos = aabbCenter(tempVec(), a.selfAABB);
     parentOId = a.oId;
   } else {
     assert(
@@ -141,13 +142,13 @@ export function computeReboundData(
 
   if (a.parentOId === b.oId) {
     bAABB = b.selfAABB;
-    lastBPos = [0, 0, 0];
-    bPos = [0, 0, 0];
+    bPos = aabbCenter(tempVec(), b.selfAABB);
+    lastBPos = bPos;
     parentOId = b.oId;
   } else if (b.parentOId === a.oId) {
     aAABB = a.selfAABB;
-    lastAPos = [0, 0, 0];
-    aPos = [0, 0, 0];
+    aPos = aabbCenter(tempVec(), a.selfAABB);
+    lastAPos = aPos;
     parentOId = a.oId;
   } else {
     assert(

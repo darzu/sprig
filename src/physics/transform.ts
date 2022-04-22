@@ -9,7 +9,7 @@ import {
 } from "../gl-matrix.js";
 import { createFrame, WorldFrameDef } from "./nonintersection.js";
 import { tempVec, tempQuat } from "../temp-pool.js";
-import { FALSE, logOnce } from "../util.js";
+import { FALSE, dbgLogOnce } from "../util.js";
 
 // TODO(@darzu): implement local transform instead of Motion's position & rotation?
 //  one problem is that the order in which you interleave rotation/translations matters if it

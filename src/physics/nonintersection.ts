@@ -42,6 +42,7 @@ import {
 import { assert } from "../test.js";
 import { tempVec } from "../temp-pool.js";
 import { aabbDbg, vec3Dbg } from "../utils-3d.js";
+import { dbgLogOnce } from "../util.js";
 
 // TODO(@darzu): we use "object", "obj", "o" everywhere in here, we should use "entity", "ent", "e"
 
@@ -289,7 +290,7 @@ export function registerPhysicsStateInit(em: EntityManager) {
   // init the per-object physics state
   // TODO(@darzu): split this into different concerns
   em.registerSystem(
-    [ColliderDef],
+    [ColliderDef, PositionDef],
     [PhysicsBroadCollidersDef],
     (objs, { _physBColliders }) => {
       for (let o of objs) {
@@ -299,7 +300,12 @@ export function registerPhysicsStateInit(em: EntityManager) {
           // ensure parents are up to date for existing colliders
           const parent = PhysicsParentDef.isOn(o) ? o.physicsParent.id : 0;
           for (let c of o._phys.colliders) {
-            c.parentOId = parent;
+            if (c.parentOId !== parent) {
+              // update parent
+              c.parentOId = parent;
+              vec3.copy(c.localPos, o.position);
+              vec3.copy(c.lastLocalPos, o.position);
+            }
           }
 
           continue;
