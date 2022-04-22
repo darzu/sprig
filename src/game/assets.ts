@@ -219,6 +219,62 @@ const TETRA_MESH = unshareProvokingVertices(
   )
 );
 
+// a = cos PI/3
+// b = sin PI/3
+const HEX_MESH = () => {
+  const A = Math.cos(Math.PI / 3);
+  const B = Math.sin(Math.PI / 3);
+  const topTri = [
+    [4, 2, 1],
+    [1, 5, 4],
+    [0, 5, 1],
+    [4, 3, 2],
+  ];
+  const sideTri = (i: number) => {
+    const i2 = (i + 1) % 6;
+    return [
+      [i + 6, i, i2],
+      [i + 6, i2, i2 + 6],
+    ];
+  };
+  let m = {
+    pos: [
+      [+1, 1, +0],
+      [+A, 1, +B],
+      [-A, 1, +B],
+      [-1, 1, +0],
+      [-A, 1, -B],
+      [+A, 1, -B],
+      [+1, 0, +0],
+      [+A, 0, +B],
+      [-A, 0, +B],
+      [-1, 0, +0],
+      [-A, 0, -B],
+      [+A, 0, -B],
+    ],
+    tri: [
+      // top 4
+      ...topTri,
+      // bottom 4
+      ...topTri.map((t) => t.map((v) => v + 6)),
+      // sides
+      ...sideTri(0),
+      ...sideTri(1),
+      ...sideTri(2),
+      ...sideTri(3),
+      ...sideTri(4),
+      ...sideTri(5),
+    ],
+    // lines: [
+    //   [0, 1],
+    //   [0, 2],
+    //   [1, 3],
+    //   [2, 3],
+    // ],
+  };
+  let m2 = { ...m, colors: m.tri.map((_) => BLACK) };
+  return unshareProvokingVertices(m2 as Mesh);
+};
 const PLANE_MESH = unshareProvokingVertices(
   scaleMesh(
     {
@@ -344,14 +400,15 @@ export const BARGE_AABBS: AABB[] = RAW_BARGE_AABBS.map((aabb) => {
 // console.log(`${(shipMaxX + shipMinX) / 2}`);
 
 export const LocalMeshes = {
-  cube: CUBE_MESH,
-  ground: CUBE_MESH,
-  plane: PLANE_MESH,
-  tetra: TETRA_MESH,
-  boat: scaleMesh3(CUBE_MESH, [10, 0.6, 5]),
-  bullet: scaleMesh(CUBE_MESH, 0.3),
-  gridPlane: GRID_PLANE_MESH,
-  wireCube: { ...CUBE_MESH, tri: [] } as Mesh,
+  cube: () => CUBE_MESH,
+  ground: HEX_MESH,
+  plane: () => PLANE_MESH,
+  tetra: () => TETRA_MESH,
+  hex: HEX_MESH,
+  boat: () => scaleMesh3(CUBE_MESH, [10, 0.6, 5]),
+  bullet: () => scaleMesh(CUBE_MESH, 0.3),
+  gridPlane: () => GRID_PLANE_MESH,
+  wireCube: () => ({ ...CUBE_MESH, tri: [] } as Mesh),
 } as const;
 
 type LocalMeshSymbols = keyof typeof LocalMeshes;
@@ -459,7 +516,7 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
   });
 
   const localMeshes = objMap(LocalMeshes, (m, n) => {
-    return processMesh(n, m);
+    return processMesh(n, m());
   });
 
   const setsList = Object.entries(setPromises);

@@ -134,7 +134,7 @@ export function setCubePosScaleToAABB(
 // TODO(@darzu): use instancing
 function meshFromAABB(aabb: AABB): Mesh {
   // resize
-  let m = mapMeshPositions(LocalMeshes.cube, (p) => [
+  let m = mapMeshPositions(LocalMeshes.cube(), (p) => [
     mathMap(p[0], -1, 1, 0, aabb.max[0] - aabb.min[0]),
     mathMap(p[1], -1, 1, 0, aabb.max[1] - aabb.min[1]),
     mathMap(p[2], -1, 1, 0, aabb.max[2] - aabb.min[2]),
