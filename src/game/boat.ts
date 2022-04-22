@@ -14,7 +14,7 @@ import {
 import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { aabbCenter } from "../physics/broadphase.js";
-import { AssetsDef, GameMesh, GROUNDSIZE } from "./assets.js";
+import { AssetsDef, GameMesh } from "./assets.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import {
@@ -31,7 +31,7 @@ import { defineNetEntityHelper } from "../em_helpers.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { raiseBulletBoat } from "./bullet-collision.js";
 import { GameStateDef, GameState } from "./gamestate.js";
-import { GroundSystemDef } from "./ground.js";
+import { GROUNDSIZE, GroundSystemDef } from "./ground.js";
 
 export const { BoatPropsDef, BoatLocalDef, createBoat } = defineNetEntityHelper(
   EM,

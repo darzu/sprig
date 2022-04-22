@@ -1,6 +1,6 @@
 import { ColliderDef } from "../physics/collider.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
-import { quat, vec3 } from "../gl-matrix.js";
+import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { RenderableConstructDef } from "../render/renderer.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { ScoreDef } from "./game.js";
@@ -11,7 +11,8 @@ import {
   Assets,
   AssetsDef,
   DARK_BLUE,
-  GROUNDSIZE,
+  GameMesh,
+  gameMeshFromMesh,
   LIGHT_BLUE,
 } from "./assets.js";
 import {
@@ -19,14 +20,32 @@ import {
   getAABBFromMesh,
   scaleMesh,
   scaleMesh3,
+  transformMesh,
 } from "../render/mesh-pool.js";
 import { defineNetEntityHelper } from "../em_helpers.js";
 import { assert } from "../test.js";
 import { ColorDef } from "../color.js";
+import { RendererDef } from "../render/render_init.js";
+
+export const GROUNDSIZE = 12;
 
 const HALFSIZE = GROUNDSIZE / 2;
 const SIZE = HALFSIZE * 2;
 const THIRDSIZE = SIZE / 3;
+
+export type GroundProps = Component<typeof GroundPropsDef>;
+
+export const GroundSystemDef = EM.defineComponent("groundSystem", () => {
+  return {
+    groundPool: [] as number[],
+    initialScore: (THIRDSIZE * 2) / 10,
+    nextScore: (THIRDSIZE * 2) / 10,
+    nextGroundIdx: 0,
+    totalPlaced: 0,
+    initialPlace: true,
+    mesh: undefined as any as GameMesh,
+  };
+});
 
 export const { GroundPropsDef, GroundLocalDef, createGround } =
   defineNetEntityHelper(EM, {
@@ -45,53 +64,58 @@ export const { GroundPropsDef, GroundLocalDef, createGround } =
     },
     defaultLocal: () => true,
     dynamicComponents: [PositionDef],
-    buildResources: [AssetsDef, MeDef],
+    buildResources: [MeDef, GroundSystemDef],
     build: (g, res) => {
       const em: EntityManager = EM;
       // TODO(@darzu): change position via events?
       vec3.copy(g.position, g.groundProps.location);
       em.ensureComponent(g.id, ColorDef, g.groundProps.color);
-      em.ensureComponent(g.id, RenderableConstructDef, res.assets.ground.proto);
-      em.ensureComponent(g.id, ColliderDef, {
-        shape: "AABB",
-        solid: true,
-        aabb: res.assets.ground.aabb,
-      });
+      em.ensureComponent(
+        g.id,
+        RenderableConstructDef,
+        res.groundSystem.mesh.proto
+      );
+      em.ensureComponent(
+        g.id,
+        ColliderDef,
+        res.groundSystem.mesh.aabbCollider(true)
+      );
     },
   });
-
-export type GroundProps = Component<typeof GroundPropsDef>;
-
-export const GroundSystemDef = EM.defineComponent("groundSystem", () => {
-  return {
-    groundPool: [] as number[],
-    initialScore: (THIRDSIZE * 2) / 10,
-    nextScore: (THIRDSIZE * 2) / 10,
-    nextGroundIdx: 0,
-    totalPlaced: 0,
-    initialPlace: true,
-  };
-});
 
 const NUM_X = 3;
 const NUM_Z = 4;
 
 export function initGroundSystem(em: EntityManager) {
-  em.registerOneShotSystem(null, [ScoreDef, MeDef], (_, rs) => {
-    const sys = em.addSingletonComponent(GroundSystemDef);
+  em.registerOneShotSystem(
+    null,
+    [ScoreDef, MeDef, AssetsDef, RendererDef],
+    (_, rs) => {
+      const sys = em.addSingletonComponent(GroundSystemDef);
 
-    // init ground system
-    assert(sys.groundPool.length === 0);
+      // create mesh
+      const t = mat4.fromScaling(mat4.create(), [
+        GROUNDSIZE * 0.5,
+        1,
+        GROUNDSIZE * 0.5,
+      ]);
+      const m = transformMesh(rs.assets.hex.mesh, t);
+      const gm = gameMeshFromMesh(m, rs.renderer.renderer);
+      sys.mesh = gm;
 
-    for (let x = 0; x < NUM_X; x++) {
-      for (let z = 0; z < NUM_Z; z++) {
-        const color = (x + z) % 2 === 0 ? LIGHT_BLUE : DARK_BLUE;
-        const g = em.newEntity();
-        em.ensureComponentOn(g, GroundPropsDef, [0, 0, 0], color);
-        sys.groundPool.push(g.id);
+      // init ground system
+      assert(sys.groundPool.length === 0);
+
+      for (let x = 0; x < NUM_X; x++) {
+        for (let z = 0; z < NUM_Z; z++) {
+          const color = (x + z) % 2 === 0 ? LIGHT_BLUE : DARK_BLUE;
+          const g = em.newEntity();
+          em.ensureComponentOn(g, GroundPropsDef, [0, 0, 0], color);
+          sys.groundPool.push(g.id);
+        }
       }
     }
-  });
+  );
 }
 
 export function registerGroundSystems(em: EntityManager) {

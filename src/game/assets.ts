@@ -19,9 +19,7 @@ import { Renderer } from "../render/renderer.js";
 import { assert } from "../test.js";
 import { objMap } from "../util.js";
 import { getText } from "../webget.js";
-import { aabbListToStr } from "./modeler.js";
-import { min } from "../math.js";
-import { BoxCollider } from "../physics/collider.js";
+import { AABBCollider } from "../physics/collider.js";
 import { farthestPointInDir, SupportFn } from "../utils-3d.js";
 
 export const BLACK = vec3.fromValues(0, 0, 0);
@@ -29,8 +27,6 @@ export const DARK_GRAY = vec3.fromValues(0.02, 0.02, 0.02);
 export const LIGHT_GRAY = vec3.fromValues(0.2, 0.2, 0.2);
 export const DARK_BLUE = vec3.fromValues(0.03, 0.03, 0.2);
 export const LIGHT_BLUE = vec3.fromValues(0.05, 0.05, 0.2);
-
-export const GROUNDSIZE = 48;
 
 const DEFAULT_ASSET_PATH = "/assets/";
 const BACKUP_ASSET_PATH = "http://sprig.land/assets/";
@@ -71,11 +67,6 @@ const AssetTransforms: Partial<{
   // ship: mat4.fromScaling(mat4.create(), [3, 3, 3]),
   // ship_broken: mat4.fromScaling(mat4.create(), [3, 3, 3]),
   spacerock: mat4.fromScaling(mat4.create(), [1.5, 1.5, 1.5]),
-  ground: mat4.fromScaling(mat4.create(), [
-    GROUNDSIZE * 0.5,
-    1,
-    GROUNDSIZE * 0.5,
-  ]),
   grappleGun: mat4.fromScaling(mat4.create(), [0.5, 0.5, 0.5]),
   grappleGunUnloaded: mat4.fromScaling(mat4.create(), [0.5, 0.5, 0.5]),
   grappleHook: mat4.fromScaling(mat4.create(), [0.5, 0.5, 0.5]),
@@ -401,7 +392,6 @@ export const BARGE_AABBS: AABB[] = RAW_BARGE_AABBS.map((aabb) => {
 
 export const LocalMeshes = {
   cube: () => CUBE_MESH,
-  ground: HEX_MESH,
   plane: () => PLANE_MESH,
   tetra: () => TETRA_MESH,
   hex: HEX_MESH,
@@ -421,6 +411,7 @@ export type GameMesh = {
   proto: MeshHandle;
   uniqueVerts: vec3[];
   support: SupportFn;
+  aabbCollider: (solid: boolean) => AABBCollider;
 };
 
 type GameMeshes = { [P in RemoteMeshSymbols | LocalMeshSymbols]: GameMesh } & {
@@ -539,25 +530,12 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
 
   // TODO(@darzu): this shouldn't directly add to a mesh pool, we don't know which pool it should
   //  go to
-  function gameMeshFromMesh(mesh: Mesh): GameMesh {
-    const aabb = getAABBFromMesh(mesh);
-    const center = getCenterFromAABB(aabb);
-    const halfsize = getHalfsizeFromAABB(aabb);
-    const proto = renderer.addMesh(mesh);
-    const uniqueVerts = getUniqueVerts(mesh);
-    const support = (d: vec3) => farthestPointInDir(uniqueVerts, d);
-    return {
-      mesh,
-      aabb,
-      center,
-      halfsize,
-      proto,
-      uniqueVerts,
-      support,
-    };
-  }
-  const allSingleAssets = objMap(allSingleMeshes, gameMeshFromMesh);
-  const allSetAssets = objMap(setMeshes, (ms, n) => ms.map(gameMeshFromMesh));
+  const allSingleAssets = objMap(allSingleMeshes, (m) =>
+    gameMeshFromMesh(m, renderer)
+  );
+  const allSetAssets = objMap(setMeshes, (ms, n) =>
+    ms.map((m) => gameMeshFromMesh(m, renderer))
+  );
 
   const result = { ...allSingleAssets, ...allSetAssets };
 
@@ -566,6 +544,31 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
   console.log(`took ${elapsed.toFixed(1)}ms to load assets.`);
 
   return result;
+}
+
+export function gameMeshFromMesh(mesh: Mesh, renderer: Renderer): GameMesh {
+  const aabb = getAABBFromMesh(mesh);
+  const center = getCenterFromAABB(aabb);
+  const halfsize = getHalfsizeFromAABB(aabb);
+  const proto = renderer.addMesh(mesh);
+  const uniqueVerts = getUniqueVerts(mesh);
+  const support = (d: vec3) => farthestPointInDir(uniqueVerts, d);
+  const aabbCollider = (solid: boolean) =>
+    ({
+      shape: "AABB",
+      solid,
+      aabb,
+    } as AABBCollider);
+  return {
+    mesh,
+    aabb,
+    center,
+    halfsize,
+    proto,
+    uniqueVerts,
+    support,
+    aabbCollider,
+  };
 }
 
 function getUniqueVerts(mesh: Mesh): vec3[] {
