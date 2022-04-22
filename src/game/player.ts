@@ -38,6 +38,7 @@ import { ControllableDef } from "./controllable.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { drawLine } from "../utils-game.js";
 import { GameState, GameStateDef } from "./gamestate.js";
+import { max } from "../math.js";
 
 // TODO(@darzu): it'd be great if these could hook into some sort of
 //    dev mode you could toggle at runtime.
@@ -62,6 +63,7 @@ export const PlayerDef = EM.defineComponent("player", () => {
     leftLegId: 0,
     rightLegId: 0,
     facingDir: vec3.create(),
+    lookingForShip: true,
     // disabled noodle limbs
     // leftFootWorldPos: [0, 0, 0] as vec3,
     // rightFootWorldPos: [0, 0, 0] as vec3,
@@ -410,52 +412,24 @@ export function registerPlayerSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [PlayerDef, AuthorityDef, PositionDef, LinearVelocityDef],
+    [PlayerDef, AuthorityDef, PositionDef, LinearVelocityDef, PhysicsParentDef],
     [PhysicsResultsDef, MeDef],
     (players, res) => {
       for (let p of players) {
         if (p.authority.pid !== res.me.pid) continue;
+        if (!p.player.lookingForShip) continue;
 
-        function changeParent(parent: EntityW<[typeof ColliderDef]>) {
-          // already on this ship
-          if (PhysicsParentDef.isOn(p))
-            if (p.physicsParent.id === parent.id) return;
-
-          console.log(`new parent: ${parent.id}`);
-
-          em.ensureComponentOn(p, PhysicsParentDef);
-
-          p.physicsParent.id = parent.id;
-          vec3.copy(p.position, [0, 0, 0]);
-          if (parent.collider.shape === "AABB") {
-            // move above the obj
-            p.position[1] = parent.collider.aabb.max[1] + 3;
+        const parent = em.findEntity(p.physicsParent.id, [ColliderDef]);
+        if (!parent) {
+          const ship = em.filterEntities([ColliderDef, ShipLocalDef])[0];
+          if (ship) {
+            p.physicsParent.id = ship.id;
+            vec3.copy(p.position, [0, 10, 0]);
+            p.player.lookingForShip = false;
           }
-          vec3.copy(p.linearVelocity, vec3.ZEROS);
         }
-
-        const shipHits = res.physicsResults.collidesWith
-          .get(p.id)
-          ?.map((h) => em.findEntity(h, [ShipLocalDef, ColliderDef]));
-
-        if (shipHits && shipHits.length && shipHits[0]) {
-          const ship = shipHits[0];
-          changeParent(ship);
-          continue;
-        }
-
-        // TODO(@darzu): trying to reparent to the ground, doesnt work
-        // const groundHits = res.physicsResults.collidesWith
-        //   .get(p.id)
-        //   ?.map((h) => em.findEntity(h, [GroundDef, ColliderDef]));
-
-        // if (groundHits && groundHits.length && groundHits[0]) {
-        //   const ground = groundHits[0];
-        //   changeParent(ground);
-        //   continue;
-        // }
       }
     },
-    "playerOnShip"
+    "playerLookingForShip"
   );
 }
