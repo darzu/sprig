@@ -23,3 +23,6 @@ starfleet commander:
 
 Complaint about lack of PS1-like content in WebGL:
   https://news.ycombinator.com/item?id=29490393
+
+Exospheres:
+  https://opensea.io/collection/exospheres

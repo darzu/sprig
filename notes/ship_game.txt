@@ -1,0 +1,20 @@
+Start docked and your goal is to reach the next dock along the river.
+Oregon trail style, you can load out your ship at docks.
+You can take a bigger gem which increases your payout but also the difficulty.
+The river sometimes splits, with different challenges and rewards down different paths.
+You can buy maps from docks that tell you splits, lengths, etc.
+Sometimes you enter a large lake and you have to navigate edges to find tributaries.
+River can get wider and narrower.
+Maybe you are on the ocean somtimes and you need to sail w/ wind.
+Maybe your bringing food and supplies to little towns.
+You can hire AI crew.
+Everyone needs to eat and drink?
+You can lose supplies by getting damaged.
+  Like the gem heart, supply boxes straddle multiple ship tiles and 
+    all need to be broken before you loose them.
+You can repair ship tiles.
+Fire cannons and broad sides.
+Steer to line up shots and follow the river.
+Players wear hats depending on their job.
+  Maybe done automatically based on station/turret.
+The game lobby is just the ship at dock.
