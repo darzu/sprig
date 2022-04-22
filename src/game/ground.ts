@@ -27,11 +27,10 @@ import { assert } from "../test.js";
 import { ColorDef } from "../color.js";
 import { RendererDef } from "../render/render_init.js";
 
-export const GROUNDSIZE = 12;
-
-const HALFSIZE = GROUNDSIZE / 2;
-const SIZE = HALFSIZE * 2;
+export const SIZE = 12;
+const HALFSIZE = SIZE * 0.5;
 const THIRDSIZE = SIZE / 3;
+const HEIGHT = 2;
 
 export type GroundProps = Component<typeof GroundPropsDef>;
 
@@ -95,9 +94,9 @@ export function initGroundSystem(em: EntityManager) {
 
       // create mesh
       const t = mat4.fromScaling(mat4.create(), [
-        GROUNDSIZE * 0.5,
-        1,
-        GROUNDSIZE * 0.5,
+        SIZE * 0.5,
+        HEIGHT,
+        SIZE * 0.5,
       ]);
       const m = transformMesh(rs.assets.hex.mesh, t);
       const gm = gameMeshFromMesh(m, rs.renderer.renderer);

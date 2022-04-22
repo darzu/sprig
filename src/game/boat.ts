@@ -31,7 +31,7 @@ import { defineNetEntityHelper } from "../em_helpers.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { raiseBulletBoat } from "./bullet-collision.js";
 import { GameStateDef, GameState } from "./gamestate.js";
-import { GROUNDSIZE, GroundSystemDef } from "./ground.js";
+import { GroundSystemDef, SIZE } from "./ground.js";
 
 export const { BoatPropsDef, BoatLocalDef, createBoat } = defineNetEntityHelper(
   EM,
@@ -346,7 +346,7 @@ export function registerBoatSpawnerSystem(em: EntityManager) {
         const left = Math.random() < 0.5;
         const z = res.groundSystem.nextScore * 10 + 100;
         boatCon.location = vec3.fromValues(
-          -(Math.random() * 0.5 + 0.5) * GROUNDSIZE,
+          -(Math.random() * 0.5 + 0.5) * SIZE,
           10,
           z
         );
