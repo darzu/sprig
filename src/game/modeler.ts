@@ -16,9 +16,10 @@ import { tempVec } from "../temp-pool.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
 import { ColorDef } from "../color.js";
-import { CHEAT } from "./player.js";
 import { drawLine } from "../utils-game.js";
 import { CameraView, CameraViewDef } from "../camera.js";
+
+const ENABLED = false;
 
 export const ModelerDef = EM.defineComponent("modeler", () => {
   return {
@@ -39,7 +40,7 @@ function registerObjClicker(em: EntityManager) {
     null,
     [ModelerDef, InputsDef, CanvasDef],
     (_, res) => {
-      if (CHEAT && res.inputs.keyClicks["m"]) {
+      if (ENABLED && res.inputs.keyClicks["m"]) {
         res.modeler.clickerEnabled = !res.modeler.clickerEnabled;
         if (res.modeler.clickerEnabled) {
           res.htmlCanvas.unlockMouse();

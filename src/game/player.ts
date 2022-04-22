@@ -38,10 +38,10 @@ import { ControllableDef } from "./controllable.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { drawLine } from "../utils-game.js";
 import { GameState, GameStateDef } from "./gamestate.js";
+import { DevConsoleDef } from "../console.js";
 
 // TODO(@darzu): it'd be great if these could hook into some sort of
 //    dev mode you could toggle at runtime.
-export const CHEAT = false;
 
 export function createPlayer(em: EntityManager) {
   const e = em.newEntity();
@@ -210,6 +210,7 @@ export function registerPlayerSystems(em: EntityManager) {
       GameStateDef,
     ],
     (players, res) => {
+      const cheat = !!em.getResource(DevConsoleDef)?.showConsole;
       for (let i = 0; i < res.physicsTimer.steps; i++) {
         const {
           physicsTimer: { period: dt },
@@ -235,13 +236,13 @@ export function registerPlayerSystems(em: EntityManager) {
             p.controllable.modes.canYaw = true;
           }
 
-          if (!CHEAT) {
+          if (!cheat) {
             p.controllable.modes.canFall = true;
             p.controllable.modes.canFly = false;
             p.controllable.modes.canJump = false;
           }
 
-          if (CHEAT && inputs.keyClicks["f"]) {
+          if (cheat && inputs.keyClicks["f"]) {
             p.controllable.modes.canFly = !p.controllable.modes.canFly;
           }
 
@@ -251,14 +252,14 @@ export function registerPlayerSystems(em: EntityManager) {
           if (p.controllable.modes.canFly) {
             p.controllable.modes.canFall = false;
             p.controllable.modes.canJump = false;
-          } else if (CHEAT) {
+          } else if (cheat) {
             p.controllable.modes.canFall = true;
             p.controllable.modes.canJump = true;
           }
 
           const cursor = res.globalCursor3d.cursor();
           if (cursor) {
-            if (RenderableDef.isOn(cursor)) cursor.renderable.enabled = CHEAT;
+            if (RenderableDef.isOn(cursor)) cursor.renderable.enabled = cheat;
           }
 
           // TODO(@darzu): rework to use phsyiscs colliders
@@ -278,7 +279,7 @@ export function registerPlayerSystems(em: EntityManager) {
           let facingDir = p.player.facingDir;
 
           // add bullet on lclick
-          if (CHEAT && inputs.lclick) {
+          if (cheat && inputs.lclick) {
             const linearVelocity = vec3.scale(vec3.create(), facingDir, 0.02);
             // TODO(@darzu): adds player motion
             // bulletMotion.linearVelocity = vec3.add(
@@ -296,7 +297,7 @@ export function registerPlayerSystems(em: EntityManager) {
             // TODO: figure out a better way to do this
             inputs.lclick = false;
           }
-          if (CHEAT && inputs.rclick) {
+          if (cheat && inputs.rclick) {
             const SPREAD = 5;
             const GAP = 1.0;
             for (let xi = 0; xi <= SPREAD; xi++) {
@@ -331,7 +332,7 @@ export function registerPlayerSystems(em: EntityManager) {
           }
 
           // shoot a ray
-          if (CHEAT && inputs.keyClicks["r"]) {
+          if (cheat && inputs.keyClicks["r"]) {
             // create our ray
             const r: Ray = {
               org: vec3.add(
@@ -349,7 +350,7 @@ export function registerPlayerSystems(em: EntityManager) {
           }
 
           // change physics parent
-          if (CHEAT && inputs.keyClicks["t"]) {
+          if (cheat && inputs.keyClicks["t"]) {
             const targetId = em.getResource(GlobalCursor3dDef)?.cursor()
               ?.cursor3d.hitId;
             if (targetId) {
@@ -370,7 +371,7 @@ export function registerPlayerSystems(em: EntityManager) {
           }
 
           // delete object
-          if (CHEAT && res.inputs.keyClicks["backspace"]) {
+          if (cheat && res.inputs.keyClicks["backspace"]) {
             const targetId = em.getResource(GlobalCursor3dDef)?.cursor()
               ?.cursor3d.hitId;
             if (targetId) em.ensureComponent(targetId, DeletedDef);
