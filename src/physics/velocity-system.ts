@@ -7,7 +7,7 @@ import {
   LinearVelocity,
   LinearVelocityDef,
 } from "./motion.js";
-import { IdPair, ContactData } from "./phys.js";
+import { ContactData } from "./phys.js";
 import {
   PhysicsBroadCollidersDef,
   PhysicsResultsDef,

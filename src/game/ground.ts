@@ -27,10 +27,23 @@ import { assert } from "../test.js";
 import { ColorDef } from "../color.js";
 import { RendererDef } from "../render/render_init.js";
 
-export const SIZE = 12;
-const HALFSIZE = SIZE * 0.5;
-const THIRDSIZE = SIZE / 3;
-const HEIGHT = 2;
+/*
+NOTES:
+  https://www.redblobgames.com/grids/hexagons/
+  https://www.redblobgames.com/grids/hexagons/implementation.html
+  http://www-cs-students.stanford.edu/~amitp/gameprog.html#hex
+*/
+
+const SIZE = 6;
+export const WIDTH = SIZE * 2;
+const HEIGHT = Math.sqrt(3) * SIZE;
+const DEPTH = 2;
+
+const X_SPC = (WIDTH * 3) / 4;
+const Z_SPC = HEIGHT;
+
+// TODO(@darzu): rm
+const THIRDSIZE = WIDTH / 3;
 
 export type GroundProps = Component<typeof GroundPropsDef>;
 
@@ -94,9 +107,9 @@ export function initGroundSystem(em: EntityManager) {
 
       // create mesh
       const t = mat4.fromScaling(mat4.create(), [
-        SIZE * 0.5,
-        HEIGHT,
-        SIZE * 0.5,
+        WIDTH * 0.5,
+        DEPTH,
+        WIDTH * 0.5,
       ]);
       const m = transformMesh(rs.assets.hex.mesh, t);
       const gm = gameMeshFromMesh(m, rs.renderer.renderer);
@@ -172,6 +185,6 @@ export function registerGroundSystems(em: EntityManager) {
   function calcLoc(num: number): vec3 {
     const x = num % NUM_X;
     const z = Math.floor(num / NUM_X);
-    return [(x - 1) * SIZE, -7, z * SIZE];
+    return [(x - 1) * WIDTH, -7, z * WIDTH];
   }
 }

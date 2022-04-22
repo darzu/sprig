@@ -123,3 +123,12 @@ Topic article format:
   - then mention it's placement amongst other articles and the dependencies of this article
   - then explain building the thing with intermediate interactables and code links if possible
   - then have a see more section
+
+A possible timeline:
+  Year 1: Build an engine
+  Year 2: Game in early access
+  ---- end of savings. r we funded ?? ----
+  Year 3: Game 1.0
+  Year 4: Blocks for all
+  Year 5: Learning content
+  Year 6-20: Iterate

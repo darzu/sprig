@@ -27,3 +27,8 @@ Starting out at Sprigland:
     Make a game
   In your backpack are leafs of art, pages of code, and acordion folders to organize it all.
   """
+
+Interactive, python notebook style tutorials.
+  Interactive windows that could show game, code, or both
+  We'd smartly share engine code and pause play canvases as needed
+  Have gif and code-blob fallback

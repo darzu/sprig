@@ -441,3 +441,7 @@ Noise is good in game art?:
 Factory Station's rendering:
   https://twitter.com/GravitonPunch/status/1453072441316675584
   https://twitter.com/alexanderameye/status/1375463146446585857
+
+To improve look and feel, I should write a .gltf exporter than load that in Unity 
+  or blender and play with materials, lighting, shaders etc until it looks how I want.
+  Then figure out what the delta is and how to impl it. Probably cut corners.

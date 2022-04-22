@@ -7,8 +7,6 @@ import {
   computeContactData,
   computeReboundData,
   ContactData,
-  idPair,
-  IdPair,
   PAD,
   ReboundData,
 } from "./phys.js";
@@ -39,6 +37,7 @@ import {
   updateFrameFromTransform,
 } from "./transform.js";
 import { assert } from "../test.js";
+import { IdPair, idPair } from "../util.js";
 
 // TODO(@darzu): we use "object", "obj", "o" everywhere in here, we should use "entity", "ent", "e"
 

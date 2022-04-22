@@ -22,6 +22,17 @@ export function __isSMI(n: number): boolean {
   return -(2 ** 31) < n && n < 2 ** 31 - 1;
 }
 
+export type IdPair = number;
+export function idPair(aId: number, bId: number): IdPair {
+  // TODO(@darzu): need a better hash?
+  // TODO(@darzu): for perf, ensure this always produces a V8 SMI when given two <2^16 SMIs.
+  //                Also maybe constrain ids to <2^16
+  const h = aId < bId ? (aId << 16) ^ bId : (bId << 16) ^ aId;
+  // TODO(@darzu): DEBUGGING for perf, see comments in __isSMI
+  if (!__isSMI(h)) console.error(`id pair hash isn't SMI: ${h}`);
+  return h;
+}
+
 export function isString(val: any): val is string {
   return typeof val === "string";
 }
