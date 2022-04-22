@@ -134,7 +134,6 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("registerUpdateWorldAABBs");
     EM.callSystem("updatePhysInContact");
     EM.callSystem("physicsStepContact");
-    // EM.callSystem("updateLocalPhysicsAfterRebound");
     EM.callSystem("updateWorldFromLocalAndParent2");
     EM.callSystem("colliderMeshes");
     EM.callSystem("debugMeshes");

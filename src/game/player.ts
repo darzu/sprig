@@ -424,7 +424,7 @@ export function registerPlayerSystems(em: EntityManager) {
           const ship = em.filterEntities([ColliderDef, ShipLocalDef])[0];
           if (ship) {
             p.physicsParent.id = ship.id;
-            vec3.copy(p.position, [0, 10, 0]);
+            vec3.copy(p.position, [0, 10, res.me.pid * 4 - 16]);
             p.player.lookingForShip = false;
           }
         }
