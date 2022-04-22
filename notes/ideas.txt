@@ -34,5 +34,14 @@ From games:
         The game feels fair: it's your fault u died
         Enemy state machines are complex, sometimes they're easy, sometimes tough
 
-
-    
+Cool features sprigland could have:
+  - Export 3D scene. Pause the game, take a snapshot of the whole game's 
+    current geometry and export that as a .gltf file u can just load into
+    blender.
+  - Export to Unity. Export 3D scene to .gltf but also create a unity project
+    with all the objects represented logically.
+      - If we really wanted to, we could maybe transpile to C#. Yikes.
+        We can do a partial transpile and anything we can't just gets dropped as
+        a comment blob in C#-esq syntax.
+        Could have a snarky comment like:
+          {Look, we tried. It's not exactly right... You try writting a TypeScript->C# transpiler. Eh, maybe it's still useful?}

@@ -25,3 +25,7 @@ Cheap:
         Or maybe just:
           raw.githubusercontent.com ?
           or ghcr.io / https://github.com/features/packages?
+
+Can we use github actions to commit to another repo?
+  Then we could auto build each commit/PR and save it to some sprig_built 
+  repo which would host each version.
