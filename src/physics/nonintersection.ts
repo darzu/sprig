@@ -204,56 +204,6 @@ export function registerUpdateWorldFromPosRotScale(em: EntityManager) {
   );
 }
 
-// NOTE: assumes world position/rot/scale has just been changed by
-//  constraint solvers. So we need to propegate these down to the
-//  local frame
-// export function registerUpdateLocalPhysicsAfterRebound(em: EntityManager) {
-//   em.registerSystem(
-//     [PhysicsStateDef, WorldFrameDef, ...LocalFrameDefs],
-//     [PhysicsTimerDef, PhysicsResultsDef, PhysicsBroadCollidersDef],
-//     (objs, res) => {
-//       if (!res.physicsTimer.steps) return;
-
-//       // TODO(@darzu): PARENT. this needs to be updated to account for how rebound
-//       //    works with parenting now
-
-//       // TODO(@darzu):  move this into reboundData?
-//       const hasRebound: Set<number> = new Set();
-//       for (let [_, data] of res.physicsResults.reboundData) {
-//         if (data.aRebound < Infinity)
-//           hasRebound.add(res._physBColliders.colliders[data.aCId].oId);
-//         if (data.bRebound < Infinity)
-//           hasRebound.add(res._physBColliders.colliders[data.bCId].oId);
-//       }
-
-//       for (let o of objs)
-//         if (hasRebound.has(o.id)) updateFrameFromPosRotScale(o.world);
-
-//       for (let o of objs) {
-//         if (!hasRebound.has(o.id)) continue;
-
-//         // find parent transforms
-//         // TODO(@darzu): matrix inversion should be done once per parent
-//         let worldToParent = mat4.IDENTITY;
-//         let parentToWorld = mat4.IDENTITY;
-//         if (PhysicsParentDef.isOn(o)) {
-//           const parent = EM.findEntity(o.physicsParent.id, [WorldFrameDef]);
-//           if (parent) {
-//             parentToWorld = parent.world.transform;
-//             worldToParent = mat4.invert(mat4.create(), parent.world.transform);
-//           }
-//         }
-
-//         const localToWorld = o.world.transform;
-//         mat4.multiply(o.transform, worldToParent, localToWorld);
-
-//         updateFrameFromTransform(o);
-//       }
-//     },
-//     "updateLocalPhysicsAfterRebound"
-//   );
-// }
-
 function getAABBCorners(aabb: AABB): vec3[] {
   const points: vec3[] = [
     [aabb.max[0], aabb.max[1], aabb.max[2]],

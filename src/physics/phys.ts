@@ -55,8 +55,6 @@ export function registerPhysicsSystems(em: EntityManager) {
   registerPhysicsContactSystems(em);
   // TODO(@darzu): positioning?
   registerNarrowPhaseSystems(em);
-  // registerUpdateWorldFromPosRotScale(em);
-  // registerUpdateLocalPhysicsAfterRebound(em);
   // TODO(@darzu): get rid of this duplicate call?
   registerUpdateWorldFromLocalAndParent(em, "2");
 
