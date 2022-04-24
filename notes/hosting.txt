@@ -12,9 +12,12 @@ Free:
 
 Cheap:
     blob storage
+      S3 vs Azure vs ???
+      https://cloud.google.com/storage
+        starting at $.02 per GB per month
+      TODO: costs
     CDN
         https://www.fastly.com/pricing/
-        https://www.cloudflare.com/plans/
         https://azure.microsoft.com/en-us/services/cdn/
             "$0.081 per GB"
         https://cloud.google.com/cdn
@@ -25,3 +28,41 @@ Cheap:
         Or maybe just:
           raw.githubusercontent.com ?
           or ghcr.io / https://github.com/features/packages?
+
+Cloudflare Free tier
+  unclear what the limits are?
+  minecraft server is a listed use case
+  https://www.cloudflare.com/plans/free/
+  https://developers.cloudflare.com/workers/platform/limits/
+  seems legit?
+    https://www.reddit.com/r/webdev/comments/837oww/free_cloudflare_account_goodbad_whats_your/
+    https://www.reddit.com/r/Wordpress/comments/g9i0ro/is_cloudflares_free_tier_cdn_worth_using/
+    https://www.reddit.com/r/web_design/comments/3rp6oo/any_reason_not_to_use_cloudflares_free_tier_cdn/
+  https://pages.cloudflare.com
+  In beta: R2
+    $0.015 per GB of data stored per month, no egress fees
+    
+Netlify free
+  https://www.netlify.com/pricing
+
+Both CloudFlare and Netlify u can run some backend functions
+  Netlify: 125K requests of serverless functions per site monthly
+  CloudFlare: during open beta, it allows 100K invocation requests daily
+
+S3 is pretty cheap
+  100gb / month is $27 a year
+
+AWS Free:
+  Lambda: 
+    1 Million free requests per month
+    Up to 3.2 million seconds of compute time per month
+  Cloudfront:
+    1 TB of Data Transfer Out per ??
+  S3: 12 mo trial, 5GB
+
+Google App Engine
+
+K lots of free/cheap options, what r our needs?
+  Want infinite version-pinned releases a la MakeCode
+  Want every commit could be a released site, or one CLI push
+  Want assets to be version pinned

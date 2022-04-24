@@ -26,5 +26,7 @@ class _TempPool {
 
 const pool = new _TempPool(1000, 1000);
 
+// TODO(@darzu): for debugging temp vec problems
+// export const tempVec = () => vec3.create();
 export const tempVec = pool.vec.bind(pool);
 export const tempQuat = pool.quat.bind(pool);
