@@ -17,6 +17,40 @@ hmm could we restrict outselves to positive q/r only?
   nah, too restrictive
 */
 
-function addTile(q: number, r: number) {
-  // TODO(@darzu):
+import { vec3 } from "./gl-matrix.js";
+import { idPair, IdPair } from "./util.js";
+
+export interface HexGrid<D> {
+  _grid: Map<IdPair, D>;
+  has: (q: number, r: number) => boolean;
+  set: (q: number, r: number, d: D) => void;
+  get: (q: number, r: number) => D | undefined;
+  delete: (q: number, r: number) => void;
 }
+
+export function createHexGrid<D>(): HexGrid<D> {
+  const _grid: Map<IdPair, D> = new Map();
+
+  return {
+    _grid,
+    has: (q, r) => _grid.has(idPair(q, r)),
+    set: (q, r, d) => _grid.set(idPair(q, r), d),
+    get: (q, r) => _grid.get(idPair(q, r)),
+    delete: (q, r) => _grid.delete(idPair(q, r)),
+  };
+}
+
+const q_z_spc = Math.sqrt(3) / 2;
+const r_z_spc = Math.sqrt(3);
+export function hexZ(q: number, r: number, size: number): number {
+  return size * (q_z_spc * q + r_z_spc * r);
+}
+const q_x_spc = 3 / 2;
+export function hexX(q: number, r: number, size: number): number {
+  return size * q_x_spc * q;
+}
+
+// function flat_hex_to_pixel(hex):
+//     var x = size * (     3./2 * hex.q                    )
+//     var y = size * (sqrt(3)/2 * hex.q  +  sqrt(3) * hex.r)
+//     return Point(x, y)
