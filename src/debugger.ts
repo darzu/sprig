@@ -211,8 +211,8 @@ quat.copy(e.rotation, ${vec4Dbg(target.rotation)});
 vec3.copy(e.cameraFollow.positionOffset, ${vec3Dbg(
       target.cameraFollow.positionOffset
     )});
-e.cameraFollow.yawOffset = ${target.cameraFollow.yawOffset};
-e.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset};
+e.cameraFollow.yawOffset = ${target.cameraFollow.yawOffset.toFixed(3)};
+e.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
     `);
   },
   listCmps: () => {

@@ -17,8 +17,8 @@ import {
   collisionPairs,
   copyAABB,
   createAABB,
-  doesOverlap,
-  doesTouch,
+  doesOverlapAABB,
+  doesTouchAABB,
   getAABBFromPositions,
   Ray,
   RayHit,
@@ -28,6 +28,7 @@ import {
 import {
   Frame,
   IDENTITY_FRAME,
+  LocalFrameDefs,
   PhysicsParent,
   PhysicsParentDef,
   PositionDef,
@@ -38,10 +39,14 @@ import {
 } from "./transform.js";
 import { assert } from "../test.js";
 import { IdPair, idPair } from "../util.js";
+import { tempVec } from "../temp-pool.js";
+import { aabbDbg, vec3Dbg } from "../utils-3d.js";
+import { dbgLogOnce } from "../util.js";
 
 // TODO(@darzu): we use "object", "obj", "o" everywhere in here, we should use "entity", "ent", "e"
 
 // TODO(@darzu): break up PhysicsResults
+// TODO(@darzu): rename "BroadphaseResults" ?
 export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {
   return {
     collidesWith: new Map<number, number[]>() as CollidesWith,
@@ -63,23 +68,39 @@ export function createFrame(): Frame {
 
 export const WorldFrameDef = EM.defineComponent("world", () => createFrame());
 
-export interface IndexedAABB {
+export interface PhysCollider {
+  // NOTE: we use "id" and "aabb" here b/c broadphase looks for a struct with those
   id: number;
   oId: number;
+  parentOId: number;
   aabb: AABB;
-  pos: vec3;
-  lastPos: vec3;
+  localAABB: AABB;
+  selfAABB: AABB;
+  // TODO(@darzu): NARROW PHASE: add optional more specific collider types here
+  // TODO(@darzu): pos, lastPos need to be tracked per parent space
+  localPos: vec3;
+  lastLocalPos: vec3;
 }
+
+const DUMMY_COLLIDER: PhysCollider = {
+  id: 0,
+  oId: 0,
+  aabb: { min: [0, 0, 0], max: [0, 0, 0] },
+  localAABB: { min: [0, 0, 0], max: [0, 0, 0] },
+  selfAABB: { min: [0, 0, 0], max: [0, 0, 0] },
+  parentOId: 0,
+  localPos: [0, 0, 0],
+  lastLocalPos: [0, 0, 0],
+};
 
 // TODO(@darzu): break this up into the specific use cases
 export const PhysicsStateDef = EM.defineComponent("_phys", () => {
   return {
     // track last stats so we can diff
-    lastPos: PositionDef.construct(),
+    lastLocalPos: PositionDef.construct(),
     // Colliders
-    // TODO(@darzu): actually just use pointers...
-    localAABBs: [] as number[],
-    worldAABBs: [] as number[],
+    // NOTE: these can be many-to-one colliders-to-entities, hence the arrays
+    colliders: [] as PhysCollider[],
     // TODO(@darzu): use sweepAABBs again?
   };
 });
@@ -91,8 +112,6 @@ export interface PhysicsObject {
   _phys: PhysicsState;
   world: Frame;
 }
-
-const _collisionRefl = vec3.create();
 
 const _collisionPairs: Set<IdPair> = new Set();
 
@@ -108,25 +127,56 @@ function getParentFrame(
   return IDENTITY_FRAME;
 }
 
-// TODO(@darzu): PRECONDITION: assumes world frames are all up to date
+export function doesOverlap(a: PhysCollider, b: PhysCollider): boolean {
+  // TODO(@darzu): use nearest-parent AABBs
+  if (a.parentOId === b.parentOId)
+    return doesOverlapAABB(a.localAABB, b.localAABB);
+  else if (a.parentOId === b.oId)
+    return doesOverlapAABB(a.localAABB, b.selfAABB);
+  else if (a.oId === b.parentOId)
+    return doesOverlapAABB(a.selfAABB, b.localAABB);
+  else return doesOverlapAABB(a.aabb, b.aabb);
+}
+
+export function doesTouch(
+  a: PhysCollider,
+  b: PhysCollider,
+  threshold: number
+): boolean {
+  if (a.parentOId === b.parentOId)
+    return doesTouchAABB(a.localAABB, b.localAABB, threshold);
+  else if (a.parentOId === b.oId)
+    return doesTouchAABB(a.localAABB, b.selfAABB, threshold);
+  else if (a.oId === b.parentOId)
+    return doesTouchAABB(a.selfAABB, b.localAABB, threshold);
+  else return doesTouchAABB(a.aabb, b.aabb, threshold);
+}
+
+function transformAABB(out: AABB, t: mat4) {
+  // TODO(@darzu): highly inefficient. for one, this allocs new vecs
+  const wCorners = getAABBCorners(out).map((p) => vec3.transformMat4(p, p, t));
+  // TODO(@darzu): update localAABB too
+  copyAABB(out, getAABBFromPositions(wCorners));
+}
+
+// PRECONDITION: assumes world frames are all up to date
 export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
   em.registerSystem(
-    [PhysicsStateDef, WorldFrameDef],
-    [PhysicsTimerDef, PhysicsBroadCollidersDef],
+    [PhysicsStateDef, WorldFrameDef, TransformDef],
+    [],
     (objs, res) => {
       for (let o of objs) {
         // update collider AABBs
-        for (let i = 0; i < o._phys.worldAABBs.length; i++) {
-          const lc = res._physBColliders.colliders[o._phys.localAABBs[i]];
-          const wc = res._physBColliders.colliders[o._phys.worldAABBs[i]];
-          // TODO(@darzu): highly inefficient
-          const wCorners = getAABBCorners(lc.aabb).map((p) =>
-            vec3.transformMat4(p, p, o.world.transform)
-          );
-          copyAABB(wc.aabb, getAABBFromPositions(wCorners));
+        for (let i = 0; i < o._phys.colliders.length; i++) {
+          const wc = o._phys.colliders[i];
+          copyAABB(wc.localAABB, wc.selfAABB);
+          transformAABB(wc.localAABB, o.transform);
+          copyAABB(wc.aabb, wc.selfAABB);
+          transformAABB(wc.aabb, o.world.transform);
+          // TODO(@darzu): update localAABB too
           // TODO(@darzu): do we want to update lastPos here? different than obj last pos
-          vec3.copy(wc.lastPos, wc.pos);
-          aabbCenter(wc.pos, wc.aabb);
+          vec3.copy(wc.lastLocalPos, wc.localPos);
+          aabbCenter(wc.localPos, wc.localAABB);
         }
         // const { localAABB, worldAABB, lastWorldAABB, sweepAABB } = o._phys;
 
@@ -153,53 +203,6 @@ export function registerUpdateWorldFromPosRotScale(em: EntityManager) {
   );
 }
 
-export function registerUpdateLocalPhysicsAfterRebound(
-  em: EntityManager,
-  s: string = ""
-) {
-  em.registerSystem(
-    [PhysicsStateDef, WorldFrameDef, TransformDef],
-    [PhysicsTimerDef, PhysicsResultsDef, PhysicsBroadCollidersDef],
-    (objs, res) => {
-      if (!res.physicsTimer.steps) return;
-
-      // TODO(@darzu):  move this into reboundData?
-      const hasRebound: Set<number> = new Set();
-      for (let [_, data] of res.physicsResults.reboundData) {
-        if (data.aRebound < Infinity)
-          hasRebound.add(res._physBColliders.colliders[data.aCId].oId);
-        if (data.bRebound < Infinity)
-          hasRebound.add(res._physBColliders.colliders[data.bCId].oId);
-      }
-
-      for (let o of objs)
-        if (hasRebound.has(o.id)) updateFrameFromPosRotScale(o.world);
-
-      for (let o of objs) {
-        if (!hasRebound.has(o.id)) continue;
-
-        // find parent transforms
-        // TODO(@darzu): matrix inversion should be done once per parent
-        let worldToParent = mat4.IDENTITY;
-        let parentToWorld = mat4.IDENTITY;
-        if (PhysicsParentDef.isOn(o)) {
-          const parent = EM.findEntity(o.physicsParent.id, [WorldFrameDef]);
-          if (parent) {
-            parentToWorld = parent.world.transform;
-            worldToParent = mat4.invert(mat4.create(), parent.world.transform);
-          }
-        }
-
-        const localToWorld = o.world.transform;
-        mat4.multiply(o.transform, worldToParent, localToWorld);
-
-        updateFrameFromTransform(o);
-      }
-    },
-    "registerUpdateLocalPhysicsAfterRebound" + s
-  );
-}
-
 function getAABBCorners(aabb: AABB): vec3[] {
   const points: vec3[] = [
     [aabb.max[0], aabb.max[1], aabb.max[2]],
@@ -219,9 +222,11 @@ export const PhysicsBroadCollidersDef = EM.defineComponent(
   "_physBColliders",
   () => {
     return {
-      nextId: 0,
+      // NOTE: we reserve the first collider as a dummy so that we can check
+      //    cId truthiness
       // TODO(@darzu): support removing colliders
-      colliders: [] as IndexedAABB[],
+      nextId: 1,
+      colliders: [DUMMY_COLLIDER],
     };
   }
 );
@@ -234,24 +239,38 @@ export function registerPhysicsStateInit(em: EntityManager) {
   // init the per-object physics state
   // TODO(@darzu): split this into different concerns
   em.registerSystem(
-    [ColliderDef],
+    [ColliderDef, PositionDef],
     [PhysicsBroadCollidersDef],
     (objs, { _physBColliders }) => {
       for (let o of objs) {
-        if (PhysicsStateDef.isOn(o)) continue;
+        if (PhysicsStateDef.isOn(o)) {
+          // TODO(@darzu): PARENT. update collider parent IDs if necessary
+
+          // ensure parents are up to date for existing colliders
+          const parent = PhysicsParentDef.isOn(o) ? o.physicsParent.id : 0;
+          for (let c of o._phys.colliders) {
+            if (c.parentOId !== parent) {
+              // update parent
+              c.parentOId = parent;
+              vec3.copy(c.localPos, o.position);
+              vec3.copy(c.lastLocalPos, o.position);
+            }
+          }
+
+          continue;
+        }
+        const parentId = PhysicsParentDef.isOn(o) ? o.physicsParent.id : 0;
         const _phys = em.addComponent(o.id, PhysicsStateDef);
 
         // AABBs (collider derived)
         // TODO(@darzu): handle scale
         if (o.collider.shape === "AABB") {
-          _phys.worldAABBs.push(mkCollider(o.collider.aabb, o.id));
-          _phys.localAABBs.push(mkCollider(o.collider.aabb, o.id));
+          _phys.colliders.push(mkCollider(o.collider.aabb, o.id, parentId));
         } else if (o.collider.shape === "Multi") {
           for (let c of o.collider.children) {
             if (c.shape !== "AABB")
               throw `Unimplemented child collider shape: ${c.shape}`;
-            _phys.worldAABBs.push(mkCollider(c.aabb, o.id));
-            _phys.localAABBs.push(mkCollider(c.aabb, o.id));
+            _phys.colliders.push(mkCollider(c.aabb, o.id, parentId));
           }
         } else {
           throw `Unimplemented collider shape: ${o.collider.shape}`;
@@ -262,38 +281,50 @@ export function registerPhysicsStateInit(em: EntityManager) {
         // copyAABB(_phys.sweepAABB, _phys.localAABB);
       }
 
-      function mkCollider(aabb: AABB, oId: number): number {
-        const cId = _physBColliders.nextId++;
-        _physBColliders.colliders.push({
+      function mkCollider(
+        selfAABB: AABB,
+        oId: number,
+        parentOId: number
+      ): PhysCollider {
+        const cId = _physBColliders.nextId;
+        _physBColliders.nextId += 1;
+        if (_physBColliders.nextId > 2 ** 15)
+          console.warn(`Halfway through collider IDs!`);
+        const c: PhysCollider = {
           id: cId,
           oId,
-          aabb: copyAABB(createAABB(), aabb),
-          pos: aabbCenter(vec3.create(), aabb),
-          lastPos: aabbCenter(vec3.create(), aabb),
-        });
-        return cId;
+          parentOId,
+          aabb: copyAABB(createAABB(), selfAABB),
+          localAABB: copyAABB(createAABB(), selfAABB),
+          selfAABB: copyAABB(createAABB(), selfAABB),
+          localPos: aabbCenter(vec3.create(), selfAABB),
+          lastLocalPos: aabbCenter(vec3.create(), selfAABB),
+        };
+        _physBColliders.colliders.push(c);
+        return c;
       }
     },
     "physicsInit"
   );
 }
 
-export function registerPhysicsContactSystems(em: EntityManager) {
+export function registerUpdateInContactSystems(em: EntityManager) {
   em.registerSystem(
     [ColliderDef, PhysicsStateDef, WorldFrameDef],
-    [PhysicsTimerDef, PhysicsBroadCollidersDef],
+    [PhysicsTimerDef, PhysicsBroadCollidersDef, PhysicsResultsDef],
     (objs, res) => {
       // TODO(@darzu): interestingly, this system doesn't need the step count
       if (!res.physicsTimer.steps) return;
 
       // build a dict
+      // TODO(@darzu): would be nice if the query could provide this
       _objDict.clear();
       for (let o of objs) _objDict.set(o.id, o);
 
       // get singleton data
-      const physicsResults = EM.getResource(PhysicsResultsDef)!;
-      const { collidesWith, contactData, reboundData } = physicsResults;
+      const contactData = res.physicsResults.contactData;
 
+      // TODO(@darzu): NARROW: needs to be updated to consider more precise colliders, GJK etc
       // update in-contact pairs; this is seperate from collision or rebound
       for (let [contactId, lastData] of contactData) {
         const ac = res._physBColliders.colliders[lastData.aCId];
@@ -306,11 +337,22 @@ export function registerPhysicsContactSystems(em: EntityManager) {
           contactData.delete(contactId);
           continue;
         }
+        const aParent = PhysicsParentDef.isOn(a) ? a.physicsParent.id : 0;
+        const bParent = PhysicsParentDef.isOn(b) ? b.physicsParent.id : 0;
+        if (
+          (aParent !== lastData.parentOId && a.id !== lastData.parentOId) ||
+          (bParent !== lastData.parentOId && b.id !== lastData.parentOId)
+        ) {
+          // TODO(@darzu): warn
+          console.warn(`Deleting old contact`);
+          contactData.delete(contactId);
+          continue;
+        }
 
         // colliding again so we don't need any adjacency checks
-        if (doesOverlap(ac.aabb, bc.aabb)) {
-          const newData = computeContactData(ac, ac.lastPos, bc, bc.lastPos);
-          contactData.set(contactId, { ...lastData, ...newData });
+        if (doesOverlap(ac, bc)) {
+          const newData = computeContactData(ac, bc);
+          contactData.set(contactId, newData);
           continue;
         }
 
@@ -318,28 +360,48 @@ export function registerPhysicsContactSystems(em: EntityManager) {
         // TODO(@darzu): do we need to consider relative motions?
         //    i.e. a check to see if the two objects are pressing into each other?
         //    for now I'm ignoring this b/c it doesn't seem harmful to consider non-pressing as contact
-        if (doesTouch(ac.aabb, bc.aabb, 2 * PAD)) {
-          const newData = computeContactData(ac, ac.lastPos, bc, bc.lastPos);
-          contactData.set(contactId, { ...lastData, ...newData });
+        if (doesTouch(ac, bc, 2 * PAD)) {
+          const newData = computeContactData(ac, bc);
+          contactData.set(contactId, newData);
           continue;
         }
 
         // else, this collision isn't valid any more
         contactData.delete(contactId);
       }
+    },
+    "updatePhysInContact"
+  );
+}
+
+export function registerPhysicsContactSystems(em: EntityManager) {
+  // TODO(@darzu): split this system
+  em.registerSystem(
+    [ColliderDef, PhysicsStateDef, PositionDef, WorldFrameDef],
+    [PhysicsTimerDef, PhysicsBroadCollidersDef, PhysicsResultsDef],
+    (objs, res) => {
+      // TODO(@darzu): interestingly, this system doesn't need the step count
+      if (!res.physicsTimer.steps) return;
+
+      // build a dict
+      // TODO(@darzu): would be nice if the query could provide this
+      _objDict.clear();
+      for (let o of objs) _objDict.set(o.id, o);
+
+      // get singleton data
+      const { collidesWith, contactData, reboundData } = res.physicsResults;
 
       // reset collision data
       resetCollidesWithSet(collidesWith, objs);
       reboundData.clear();
       _collisionPairs.clear();
 
-      // check for possible collisions using the motion swept AABBs
+      // BROADPHASE: check for possible collisions
       // TODO(@darzu): cull out unused/deleted colliders
+      // TODO(@darzu): use motion sweep AABBs again?
       const currColliders = objs
-        .map((o) =>
-          o._phys.worldAABBs.map((cId) => res._physBColliders.colliders[cId])
-        )
-        .reduce((p, n) => [...p, ...n], [] as IndexedAABB[]);
+        .map((o) => o._phys.colliders)
+        .reduce((p, n) => [...p, ...n], [] as PhysCollider[]);
       const { collidesWith: colliderCollisions, checkRay: collidersCheckRay } =
         checkBroadphase(currColliders);
       // TODO(@darzu): perf: big array creation
@@ -378,14 +440,15 @@ export function registerPhysicsContactSystems(em: EntityManager) {
           // did one of these objects move?
           if (!lastObjMovs[aOId] && !lastObjMovs[bOId]) continue;
 
-          // TODO(@darzu): this is one of the places we would replace with narrow-phase checking
-          if (!doesOverlap(ac.aabb, bc.aabb)) {
+          if (!doesOverlap(ac, bc)) {
             // a miss
             continue;
           }
 
           const a = _objDict.get(aOId)!;
           const b = _objDict.get(bOId)!;
+
+          // NOTE: if we make it to here, we consider this a collision that needs rebound
 
           // uniquely identify this pair of objects
           const abOId = idPair(aOId, bOId);
@@ -400,32 +463,32 @@ export function registerPhysicsContactSystems(em: EntityManager) {
             collidesWith.get(bOId)!.push(aOId);
           }
 
-          // compute contact info
-          // TODO(@darzu): aggregate contact data as one dir per other obj
-          // TODO(@darzu): maybe the winning direction in a multi-direction battle should be the one with the biggest rebound
-          const contRes = computeContactData(ac, ac.lastPos, bc, bc.lastPos);
-          const contData: ContactData = {
-            ...contRes,
-            aCId: aCId,
-            bCId: bCId,
-          };
-          // TODO(@darzu): this just keeps the latest contact data, should we keep all?
-          contactData.set(abCId, contData);
-
           // solid objects rebound
           if (a.collider.solid && b.collider.solid) {
+            // we only support rebound for objects within the same parent reference frame
+            if (
+              ac.parentOId !== bc.parentOId &&
+              ac.parentOId !== bc.oId &&
+              bc.parentOId !== ac.oId
+            )
+              continue;
+
+            // compute contact info
+            // TODO(@darzu): do we need to calculate contact data for non-solids?
+            // TODO(@darzu): aggregate contact data as one dir per other obj
+            // TODO(@darzu): maybe the winning direction in a multi-direction battle should be the one with the biggest rebound
+            // TODO(@darzu): NARROW PHASE: we need to use GJK-based contact data calc
+            const contData = computeContactData(ac, bc);
+            // TODO(@darzu): this just keeps the latest contact data, should we keep all?
+            contactData.set(abCId, contData);
+
             // compute rebound info
             // TODO(@darzu): rebound calc per collider, move-frac aggregated per object
-            const rebData = computeReboundData(
-              ac,
-              ac.lastPos,
-              ac.pos,
-              bc,
-              bc.lastPos,
-              bc.pos,
-              itr
-            );
-            reboundData.set(abCId, { ...rebData, aCId, bCId });
+            // TODO(@darzu): NARROW PHASE: we need to use GJK-based rebound data calc
+            const rebData = computeReboundData(ac, bc, itr);
+            reboundData.set(abCId, rebData);
+
+            // TODO(@darzu): PARENT. obj movement needs to be done in the right parent frame
 
             // update how much we need to rebound objects by
             const { aRebound, bRebound } = rebData;
@@ -447,20 +510,21 @@ export function registerPhysicsContactSystems(em: EntityManager) {
         for (let o of objs) {
           let movFrac = nextObjMovFracs[o.id];
           if (movFrac) {
-            // TODO(@darzu): MUTATING WORLD POS. We probably shouldn't do that here
-            vec3.sub(_collisionRefl, o._phys.lastPos, o.world.position);
-            vec3.scale(_collisionRefl, _collisionRefl, movFrac);
-            vec3.add(o.world.position, o.world.position, _collisionRefl);
+            // TODO(@darzu): PARENT. this needs to rebound in the parent frame, not world frame
+            const refl = tempVec();
+            vec3.sub(refl, o._phys.lastLocalPos, o.position);
+            vec3.scale(refl, refl, movFrac);
+            vec3.add(o.position, o.position, refl);
 
             // translate non-sweep AABBs
-            for (let cId of o._phys.worldAABBs) {
-              const c = res._physBColliders.colliders[cId];
-              vec3.add(c.aabb.min, c.aabb.min, _collisionRefl);
-              vec3.add(c.aabb.max, c.aabb.max, _collisionRefl);
-              vec3.add(c.pos, c.pos, _collisionRefl);
+            for (let c of o._phys.colliders) {
+              // TODO(@darzu): PARENT. translate world AABBs?
+              vec3.add(c.localAABB.min, c.localAABB.min, refl);
+              vec3.add(c.localAABB.max, c.localAABB.max, refl);
+              vec3.add(c.localPos, c.localPos, refl);
             }
 
-            // track that movement occured
+            // track that some movement occured
             anyMovement = true;
           }
 
@@ -475,12 +539,13 @@ export function registerPhysicsContactSystems(em: EntityManager) {
 
       // remember current state for next time
       // TODO(@darzu): needed any more since colliders track these now?
+      // TODO(@darzu): it'd be great to expose this to e.g. phys sandboxes
       for (let o of objs) {
-        vec3.copy(o._phys.lastPos, o.world.position);
+        vec3.copy(o._phys.lastLocalPos, o.position);
       }
 
       // update out checkRay function
-      physicsResults.checkRay = (r: Ray) => {
+      res.physicsResults.checkRay = (r: Ray) => {
         const motHits = collidersCheckRay(r);
         const hits: RayHit[] = [];
         for (let mh of motHits) {

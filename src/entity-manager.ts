@@ -5,7 +5,7 @@ type Intersect<A> = A extends [infer X, ...infer Y] ? X & Intersect<Y> : {};
 type Union<A> = A extends [infer X, ...infer Y] ? X | Union<Y> : never;
 
 // TODO(@darzu): consider using a non recursive definition for performance
-type TupleN<T, N extends number> = N extends N
+export type TupleN<T, N extends number> = N extends N
   ? number extends N
     ? T[]
     : _TupleN<T, N, []>
@@ -194,6 +194,10 @@ export class EntityManager {
     if (range.nextId >= range.maxId)
       throw `EntityManager has exceeded its id range!`;
     const e = { id: range.nextId++ };
+    if (e.id > 2 ** 15)
+      console.warn(
+        `We're halfway through our local entity ID space! Physics assumes IDs are < 2^16`
+      );
     this.entities.set(e.id, e);
     return e;
   }

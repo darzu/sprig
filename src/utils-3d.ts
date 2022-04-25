@@ -1,5 +1,6 @@
 import { mat4, quat, vec3, vec4 } from "./gl-matrix.js";
 import { avg } from "./math.js";
+import { AABB } from "./physics/broadphase.js";
 import { tempVec } from "./temp-pool.js";
 
 // math utilities
@@ -47,6 +48,9 @@ export function vec3Floor(out: vec3, v: vec3): vec3 {
   return out;
 }
 
+export function aabbDbg(v: AABB): string {
+  return `min:${vec3Dbg(v.min)},max:${vec3Dbg(v.max)}`;
+}
 export function vec3Dbg(v: vec3): string {
   return `[${v[0].toFixed(2)},${v[1].toFixed(2)},${v[2].toFixed(2)}]`;
 }

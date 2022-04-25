@@ -54,25 +54,12 @@ export function registerPhysicsClampVelocityByContact(em: EntityManager) {
         // both objects must be solid
         if (!a.collider.solid || !b.collider.solid) continue;
 
-        // maybe clamp "b"
-        if (LinearVelocityDef.isOn(b)) {
-          let bToAInBParent = data.bToANorm;
-          // if we're parented, transform our normal of collision into our local frame
-          // TODO(@darzu): this is inefficient, at least cache the inverse
-          if (PhysicsParentDef.isOn(b) && b.physicsParent.id) {
-            const bp = em.findEntity(b.physicsParent.id, [WorldFrameDef]);
-            if (!bp)
-              throw `Parent ${b.physicsParent.id} doesnt have WorldFrame`;
-            const p3 = mat3.fromMat4(mat3.create(), bp.world.transform);
-            const worldToParent3 = mat3.invert(mat3.create(), p3);
-            bToAInBParent = vec3.transformMat3(
-              tempVec(),
-              data.bToANorm,
-              worldToParent3
-            );
-            vec3.normalize(bToAInBParent, bToAInBParent);
-          }
+        const aParentId = PhysicsParentDef.isOn(a) ? a.physicsParent.id : 0;
+        const bParentId = PhysicsParentDef.isOn(b) ? b.physicsParent.id : 0;
 
+        // maybe clamp "b"
+        if (LinearVelocityDef.isOn(b) && bParentId === data.parentOId) {
+          let bToAInBParent = data.bToANorm;
           const bInDirOfA = vec3.dot(b.linearVelocity, bToAInBParent);
           if (bInDirOfA > 0) {
             vec3.sub(
@@ -84,22 +71,8 @@ export function registerPhysicsClampVelocityByContact(em: EntityManager) {
         }
 
         // maybe clamp "a"
-        if (LinearVelocityDef.isOn(a)) {
+        if (LinearVelocityDef.isOn(a) && aParentId === data.parentOId) {
           let bToAInAParent = data.bToANorm;
-          if (PhysicsParentDef.isOn(a) && a.physicsParent.id) {
-            const ap = em.findEntity(a.physicsParent.id, [WorldFrameDef]);
-            if (!ap)
-              throw `Parent ${a.physicsParent.id} doesnt have WorldFrame`;
-            const p3 = mat3.fromMat4(mat3.create(), ap.world.transform);
-            const worldToParent3 = mat3.invert(mat3.create(), p3);
-            bToAInAParent = vec3.transformMat3(
-              tempVec(),
-              data.bToANorm,
-              worldToParent3
-            );
-            vec3.normalize(bToAInAParent, bToAInAParent);
-          }
-
           const aInDirOfB = -vec3.dot(a.linearVelocity, bToAInAParent);
           if (aInDirOfB > 0) {
             vec3.sub(

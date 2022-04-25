@@ -1,10 +1,4 @@
 import { test } from "./test.js";
-import {
-  _cellChecks,
-  _doesOverlaps,
-  _enclosedBys,
-  _lastCollisionTestTimeMs,
-} from "./physics/broadphase.js";
 import { setupObjImportExporter } from "./download.js";
 import { initShipGame, registerAllSystems } from "./game/game.js";
 import { EM } from "./entity-manager.js";
@@ -13,9 +7,8 @@ import { InputsDef, registerInputsSystem } from "./inputs.js";
 import { MeDef, JoinDef, HostDef, PeerNameDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";
 import { dbg } from "./debugger.js";
-import { RendererDef } from "./render/render_init.js";
 import { DevConsoleDef } from "./console.js";
-import { initDbgGame } from "./game/sandbox.js";
+import { initGJKSandbox, initReboundSandbox } from "./game/sandbox.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -55,15 +48,11 @@ async function startGame(localPeerName: string, host: string | null) {
   EM.addSingletonComponent(InputsDef);
   registerInputsSystem(EM);
 
-  const SHIP_GAME = true;
-  const PHYS_GAME = false;
+  const GAME = "ship" as "ship" | "gjk" | "rebound";
 
-  if (SHIP_GAME) {
-    initShipGame(EM, hosting);
-  }
-  if (PHYS_GAME) {
-    initDbgGame(EM, hosting);
-  }
+  if (GAME === "ship") initShipGame(EM, hosting);
+  else if (GAME === "gjk") initGJKSandbox(EM, hosting);
+  else if (GAME === "rebound") initReboundSandbox(EM, hosting);
 
   let previous_frame_time = start_of_time;
   let frame = () => {
@@ -107,8 +96,6 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("buildBullets");
     EM.callSystem("buildCursor");
     EM.callSystem("placeCursorAtScreenCenter");
-    EM.callSystem("ensureTransform");
-    EM.callSystem("ensureWorldFrame");
     EM.callSystem("stepBoats");
     EM.callSystem("boatsFire");
     EM.callSystem("breakBoats");
@@ -117,7 +104,10 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("buildPlayers");
     EM.callSystem("playerFacingDir");
     EM.callSystem("stepPlayers");
-    EM.callSystem("playerOnShip");
+    EM.callSystem("playerLookingForShip");
+    if (GAME === "rebound") {
+      EM.callSystem("sandboxSpawnBoxes");
+    }
     EM.callSystem("updateBullets");
     EM.callSystem("updateNoodles");
     EM.callSystem("updateLifetimes");
@@ -128,16 +118,22 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("reloadCannon");
     EM.callSystem("playerControlCannon");
     EM.callSystem("playerManCanon");
+    EM.callSystem("ensureFillOutLocalFrame");
+    EM.callSystem("ensureWorldFrame");
     EM.callSystem("physicsInit");
     EM.callSystem("clampVelocityByContact");
     EM.callSystem("registerPhysicsClampVelocityBySize");
     EM.callSystem("registerPhysicsApplyLinearVelocity");
     EM.callSystem("physicsApplyAngularVelocity");
+    if (GAME === "gjk") {
+      // TODO(@darzu): Doug, we should talk about this. It is only registered after a one-shot
+      if (EM.hasSystem("checkGJK")) EM.callSystem("checkGJK");
+    }
     EM.callSystem("updateLocalFromPosRotScale");
     EM.callSystem("updateWorldFromLocalAndParent");
     EM.callSystem("registerUpdateWorldAABBs");
+    EM.callSystem("updatePhysInContact");
     EM.callSystem("physicsStepContact");
-    EM.callSystem("registerUpdateLocalPhysicsAfterRebound");
     EM.callSystem("updateWorldFromLocalAndParent2");
     EM.callSystem("colliderMeshes");
     EM.callSystem("debugMeshes");
@@ -173,13 +169,9 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("constructRenderables");
     EM.callSystem("stepRenderer");
     EM.callSystem("inputs");
-    if (SHIP_GAME) {
+    if (GAME === "ship") {
       EM.callSystem("shipUI");
       EM.callSystem("spawnBoats");
-    }
-    if (PHYS_GAME) {
-      // TODO(@darzu): Doug, we should talk about this..
-      if (EM.hasSystem("checkGJK")) EM.callSystem("checkGJK");
     }
     EM.callOneShotSystems();
     EM.loops++;
