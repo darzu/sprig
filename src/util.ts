@@ -24,47 +24,44 @@ export function __isSMI(n: number): boolean {
   //  lead to better perf esp. for arrays.
   return -(2 ** 31) < n && n < 2 ** 31 - 1;
 }
-const CHECK_PAIR_RANGE = false;
+const CHECK_PAIR_RANGE = true;
 
 export type IdPair = number;
 export function idPair(aId: number, bId: number): IdPair {
   // TODO(@darzu): need a better hash?
   // TODO(@darzu): for perf, ensure this always produces a V8 SMI when given two <2^16 SMIs.
   //                Also maybe constrain ids to <2^16
-  if (CHECK_PAIR_RANGE) {
-    assert(aId < 2 ** 16 && bId < 2 ** 16, "IDs r too big for idPair!");
-  }
+  // if (CHECK_PAIR_RANGE) {
+  //   assert(aId < 2 ** 16 && bId < 2 ** 16, "IDs r too big for idPair!");
+  // }
   const h = aId < bId ? (aId << 16) ^ bId : (bId << 16) ^ aId;
   // TODO(@darzu): DEBUGGING for perf, see comments in __isSMI
-  if (CHECK_PAIR_RANGE && !__isSMI(h))
-    console.error(`id pair hash isn't SMI: ${h}`);
+  // if (CHECK_PAIR_RANGE && !__isSMI(h))
+  //   console.error(`id pair hash isn't SMI: ${h}`);
   return h;
 }
-export function packI16(a: number, b: number): number {
-  const aNeg = a < 0;
-  const bNeg = b < 0;
-  const aP = aNeg ? -a : a;
-  const bP = bNeg ? -b : b;
-  if (CHECK_PAIR_RANGE && (aP >= 2 ** 15 || bP >= 2 ** 15))
-    console.error(`numbers in num pair r too big!`);
-  const h =
-    (aP << 17) | (bP << 2) | (aNeg ? 0b10 : 0b00) | (bNeg ? 0b01 : 0b00);
-  if (CHECK_PAIR_RANGE && !__isSMI(h))
-    console.error(`num pair hash isn't SMI: ${h}`);
+export function packI16s(a: number, b: number): number {
+  // if (CHECK_PAIR_RANGE && (a >= 2 ** 15 || a <= -(2 ** 15)))
+  //   console.error(`numbers in num pair r too big!`);
+  // if (CHECK_PAIR_RANGE && (b >= 2 ** 15 || b <= -(2 ** 15)))
+  //   console.error(`numbers in num pair r too big!`);
   // console.log(
   //   `${aNeg}${bNeg}\n${toBinary(aP)}\n${toBinary(bP)}\n${toBinary(h)}\n`
   // );
-  return h;
+  // if (CHECK_PAIR_RANGE && !__isSMI(h))
+  //   console.error(`id pair hash isn't SMI: ${h}`);
+  return (a << 16) | (b & 0xffff);
 }
-export function unpackI16(ab: number): [number, number] {
-  const aNeg = (ab & 0b10) !== 0;
-  const bNeg = (ab & 0b01) !== 0;
-  const aP = (ab >>> 17) & 0b111111111111111;
-  const bP = (ab >>> 2) & 0b111111111111111;
-  const a = aNeg ? -aP : aP;
-  const b = bNeg ? -bP : bP;
-  return [a, b];
+// NOTE:
+//  using [number, number] takes ~1500ms for 1,000,000,000 pack/unpacks
+//  using { a: number; b: number } takes ~640ms for 1,000,000,000 pack/unpacks
+// but the [,] notation is more convenient and fast enough for now.
+export function unpackI16s(ab: number): [number, number] {
+  return [ab >> 16, (ab << 16) >> 16];
 }
+// export function unpackI16s(ab: number): { a: number; b: number } {
+//   return { a: ab >> 16, b: (ab << 16) >> 16 };
+// }
 
 export function testPackUnpackI16() {
   _testPackUnpackI16(0, 0);
@@ -72,6 +69,7 @@ export function testPackUnpackI16() {
   _testPackUnpackI16(-1, 1);
   _testPackUnpackI16(-1000, -1000);
   _testPackUnpackI16(2 ** 15 - 1, -(2 ** 15) + 1);
+  _testPackUnpackI16(-(2 ** 15) + 1, 2 ** 15 - 1);
   _testPackUnpackI16(-2747, 1);
 
   for (let i = 0; i < 10; i++) {
@@ -81,19 +79,20 @@ export function testPackUnpackI16() {
   }
 
   // speed test
-  const before = performance.now();
-  let x = -2747;
-  let y = 100;
-  for (let i = 0; i < 10000000; i++) {
-    const ab = packI16(x, y);
-    [x, y] = unpackI16(ab);
-  }
-  const after = performance.now();
-  console.log(`PackUnpack took ${(after - before).toFixed(2)}ms`);
+  // const before = performance.now();
+  // let x = -2747;
+  // let y = 100;
+  // for (let i = 0; i < 1000000000; i++) {
+  //   // let { a, b } = unpackI16s(packI16s(x, y));
+  //   let [x1, y2] = unpackI16s(packI16s(x, y));
+  //   // [x, y] = unpackI16s(packI16s(x, y));
+  // }
+  // const after = performance.now();
+  // console.log(`PackUnpack took ${(after - before).toFixed(2)}ms`);
 
   function _testPackUnpackI16(a: number, b: number) {
-    const ab = packI16(a, b);
-    const [a2, b2] = unpackI16(ab);
+    const ab = packI16s(a, b);
+    const [a2, b2] = unpackI16s(ab);
     assert(
       a === a2 && b === b2,
       `PackUnpackI16 failure\n${a} & ${b}\nbecame ${a2} & ${b2}`
