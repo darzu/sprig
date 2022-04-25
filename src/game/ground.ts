@@ -32,8 +32,8 @@ import { defineNetEntityHelper } from "../em_helpers.js";
 import { assert } from "../test.js";
 import { ColorDef } from "../color.js";
 import { RendererDef } from "../render/render_init.js";
-import { createHexGrid, hexX, hexZ } from "../hex.js";
-import { jitter } from "../math.js";
+import { createHexGrid, hexX, hexZ, HEX_DIRS } from "../hex.js";
+import { chance, jitter } from "../math.js";
 import { LocalPlayerDef } from "./player.js";
 import { CameraFollowDef } from "../camera.js";
 
@@ -54,19 +54,19 @@ const Y = -DEPTH - 7;
 const X_SPC = (WIDTH * 3) / 4;
 const Z_SPC = HEIGHT;
 
-// TODO(@darzu): rm
-const THIRDSIZE = WIDTH / 3;
-
 export type GroundProps = Component<typeof GroundPropsDef>;
+
+interface PathNode {
+  q: number;
+  r: number;
+  width: number;
+  dirIdx: number;
+}
 
 export const GroundSystemDef = EM.defineComponent("groundSystem", () => {
   return {
     grid: createHexGrid<EntityW<[typeof GroundPropsDef]>>(),
-    initialScore: (THIRDSIZE * 2) / 10,
-    nextScore: (THIRDSIZE * 2) / 10,
-    nextGroundIdx: 0,
-    totalPlaced: 0,
-    initialPlace: true,
+    path: [] as PathNode[],
   };
 });
 
@@ -114,7 +114,39 @@ export const { GroundPropsDef, GroundLocalDef, createGround } =
     },
   });
 
-const RIVER_WIDTH = 3;
+const RIVER_WIDTH = 1;
+
+function continuePath(path: PathNode[]): PathNode {
+  assert(path.length >= 1, "assumes non-empty path");
+  const lastNode = path[path.length - 1];
+
+  // change directions?
+  let dirIdx = lastNode.dirIdx;
+  let lastTurn = path.reduce(
+    (p, n, i) => (path[i].dirIdx !== dirIdx ? i : p),
+    0
+  );
+  let lastTurnDist = path.length - lastTurn;
+  let cwOrccw = chance(0.5) ? +1 : -1;
+  if (chance(0.06 * lastTurnDist))
+    dirIdx = (dirIdx + HEX_DIRS.length + cwOrccw) % HEX_DIRS.length;
+  if (dirIdx === 2 || dirIdx === 3 || dirIdx === 4) {
+    // dont allow going south to prevent river crossing itself
+    // TODO(@darzu): is there some other way we can disallow this while still
+    //    having interesting bends in the river? In RL this can't happen b/c of
+    //    elevation.
+    cwOrccw = -cwOrccw;
+    dirIdx = (dirIdx + HEX_DIRS.length + cwOrccw * 2) % HEX_DIRS.length;
+  }
+  let { q: dq, r: dr } = HEX_DIRS[dirIdx];
+
+  // change width?
+  let width = lastNode.width;
+
+  const n = { q: lastNode.q + dq, r: lastNode.r + dr, width, dirIdx };
+  path.push(n);
+  return n;
+}
 
 export function initGroundSystem(em: EntityManager) {
   em.registerOneShotSystem(
@@ -131,11 +163,11 @@ export function initGroundSystem(em: EntityManager) {
           PositionDef,
           RotationDef,
         ])!;
-        vec3.copy(e.position, [34.4, 47.92, -28.68]);
-        quat.copy(e.rotation, [0.0, 0.92, 0.0, 0.38]);
+        vec3.copy(e.position, [54.72, 2100.0, 33.17]);
+        quat.copy(e.rotation, [0.0, 1.0, 0.0, 0.02]);
         vec3.copy(e.cameraFollow.positionOffset, [2.0, 2.0, 8.0]);
-        e.cameraFollow.yawOffset = 0;
-        e.cameraFollow.pitchOffset = -0.8150000000000003;
+        e.cameraFollow.yawOffset = 0.0;
+        e.cameraFollow.pitchOffset = -1.042;
       }
 
       // create mesh
@@ -151,26 +183,36 @@ export function initGroundSystem(em: EntityManager) {
       // init ground system
       assert(sys.grid._grid.size === 0);
 
-      const w = Math.floor(RIVER_WIDTH / 2);
+      // createTile(0, -2, [0.1, 0.2, 0.1]);
+      // createTile(2, -2, [0.2, 0.1, 0.1]);
+      // createTile(-2, 0, [0.1, 0.1, 0.2]);
+      // createTile(0, 0, [0.1, 0.1, 0.1]);
 
-      createTile(0, -2, [0.1, 0.2, 0.1]);
-      createTile(2, -2, [0.2, 0.1, 0.1]);
-      createTile(-2, 0, [0.1, 0.1, 0.2]);
-      createTile(0, 0, [0.1, 0.1, 0.1]);
+      sys.path[0] = {
+        q: 0,
+        r: 0,
+        dirIdx: 0,
+        width: RIVER_WIDTH,
+      };
 
-      // TODO(@darzu):
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 50; i++) {
+        const n = continuePath(sys.path);
+        fillNode(n);
+      }
+
+      function fillNode(n: PathNode) {
+        const w = Math.floor(n.width / 2);
         for (let q = -w; q <= w; q++) {
           for (let r = -w; r <= w; r++) {
             for (let s = -w; s <= w; s++) {
               if (q + r + s === 0) {
-                if (!sys.grid.has(q, r - i)) {
+                if (!sys.grid.has(q + n.q, r + n.r)) {
                   const color: vec3 = [
                     0.03 + jitter(0.01),
                     0.03 + jitter(0.01),
                     0.2 + jitter(0.02),
                   ];
-                  createTile(q, r - i, color);
+                  createTile(q + n.q, r + n.r, color);
                 }
               }
             }

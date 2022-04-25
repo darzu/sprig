@@ -51,6 +51,23 @@ export function hexX(q: number, r: number, size: number): number {
   return -size * q_x_spc * q;
 }
 
+// export type Hex = { q: number; r: number };
+
+export const HEX_DIRS = [
+  { q: +0, r: -1 },
+  { q: +1, r: -1 },
+  { q: +1, r: -0 },
+  { q: -0, r: +1 },
+  { q: -1, r: +1 },
+  { q: -1, r: +0 },
+] as const;
+export const HEX_N = HEX_DIRS[0];
+export const HEX_NE = HEX_DIRS[1];
+export const HEX_SE = HEX_DIRS[2];
+export const HEX_S = HEX_DIRS[3];
+export const HEX_SW = HEX_DIRS[4];
+export const HEX_NW = HEX_DIRS[5];
+
 // function flat_hex_to_pixel(hex):
 //     var x = size * (     3./2 * hex.q                    )
 //     var y = size * (sqrt(3)/2 * hex.q  +  sqrt(3) * hex.r)

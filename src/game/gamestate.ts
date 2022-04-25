@@ -102,11 +102,6 @@ export const restartGame = eventWizard(
     const player = EM.findEntity(res.localPlayer.playerId, [PlayerDef])!;
     player.player.lookingForShip = true;
     res.score.currentScore = 0;
-    // reset ground system
-    const ground = EM.getResource(GroundSystemDef);
-    if (ground) {
-      ground.initialPlace = true;
-    }
   },
   {
     legalEvent: () =>

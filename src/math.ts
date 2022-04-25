@@ -38,6 +38,10 @@ export function align(x: number, size: number): number {
   return Math.ceil(x / size) * size;
 }
 
+export function chance(zeroToOne: number): boolean {
+  return Math.random() < zeroToOne;
+}
+
 // maps a number from [inMin, inMax] to [outMin, outMax]
 export function mathMap(
   n: number,

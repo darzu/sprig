@@ -325,41 +325,40 @@ export function registerBoatSpawnerSystem(em: EntityManager) {
     null,
     [BoatSpawnerDef, PhysicsTimerDef, GroundSystemDef, GameStateDef, MeDef],
     (_, res) => {
-      if (!res.me.host) return;
-      if (res.gameState.state !== GameState.PLAYING) return;
-      const ms = res.physicsTimer.period * res.physicsTimer.steps;
-      res.boatSpawner.timerMs -= ms;
-      // console.log("res.boatSpawner.timerMs:" + res.boatSpawner.timerMs);
-      if (res.boatSpawner.timerMs < 0) {
-        res.boatSpawner.timerMs = res.boatSpawner.timerIntervalMs;
-        // ramp up difficulty
-        res.boatSpawner.timerIntervalMs *= 0.97;
-        // ~1 second minimum
-        res.boatSpawner.timerIntervalMs = Math.max(
-          1500,
-          res.boatSpawner.timerIntervalMs
-        );
-
-        // console.log("boat ");
-        // create boat(s)
-        const boatCon = em.addComponent(em.newEntity().id, BoatPropsDef);
-        const left = Math.random() < 0.5;
-        const z = res.groundSystem.nextScore * 10 + 100;
-        boatCon.location = vec3.fromValues(
-          -(Math.random() * 0.5 + 0.5) * WIDTH,
-          10,
-          z
-        );
-        boatCon.speed = 0.005 + jitter(0.002);
-        boatCon.wheelDir = (Math.PI / 2) * (1 + jitter(0.1));
-        boatCon.wheelSpeed = jitter(0.0001);
-        if (left) {
-          boatCon.location[0] *= -1;
-          boatCon.speed *= -1;
-          boatCon.wheelDir *= -1;
-        }
-        // boatCon.wheelSpeed = 0;
-      }
+      // if (!res.me.host) return;
+      // if (res.gameState.state !== GameState.PLAYING) return;
+      // const ms = res.physicsTimer.period * res.physicsTimer.steps;
+      // res.boatSpawner.timerMs -= ms;
+      // // console.log("res.boatSpawner.timerMs:" + res.boatSpawner.timerMs);
+      // if (res.boatSpawner.timerMs < 0) {
+      //   res.boatSpawner.timerMs = res.boatSpawner.timerIntervalMs;
+      //   // ramp up difficulty
+      //   res.boatSpawner.timerIntervalMs *= 0.97;
+      //   // ~1 second minimum
+      //   res.boatSpawner.timerIntervalMs = Math.max(
+      //     1500,
+      //     res.boatSpawner.timerIntervalMs
+      //   );
+      //   // console.log("boat ");
+      //   // create boat(s)
+      //   const boatCon = em.addComponent(em.newEntity().id, BoatPropsDef);
+      //   const left = Math.random() < 0.5;
+      //   const z = res.groundSystem.nextScore * 10 + 100;
+      //   boatCon.location = vec3.fromValues(
+      //     -(Math.random() * 0.5 + 0.5) * WIDTH,
+      //     10,
+      //     z
+      //   );
+      //   boatCon.speed = 0.005 + jitter(0.002);
+      //   boatCon.wheelDir = (Math.PI / 2) * (1 + jitter(0.1));
+      //   boatCon.wheelSpeed = jitter(0.0001);
+      //   if (left) {
+      //     boatCon.location[0] *= -1;
+      //     boatCon.speed *= -1;
+      //     boatCon.wheelDir *= -1;
+      //   }
+      //   // boatCon.wheelSpeed = 0;
+      // }
     },
     "spawnBoats"
   );
