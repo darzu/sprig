@@ -1,4 +1,4 @@
-import { Collider, ColliderDef } from "./collider.js";
+import { Collider, ColliderDef, DefaultLayer, Layer } from "./collider.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { PhysicsTimerDef } from "../time.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
@@ -38,7 +38,7 @@ import {
   updateFrameFromTransform,
 } from "./transform.js";
 import { assert } from "../test.js";
-import { IdPair, idPair } from "../util.js";
+import { IdPair, idPair, toBinary } from "../util.js";
 import { tempVec } from "../temp-pool.js";
 import { aabbDbg, vec3Dbg } from "../utils-3d.js";
 import { dbgLogOnce } from "../util.js";
@@ -80,6 +80,9 @@ export interface PhysCollider {
   // TODO(@darzu): pos, lastPos need to be tracked per parent space
   localPos: vec3;
   lastLocalPos: vec3;
+  // each of these is a 16 bit mask
+  myLayers: number;
+  targetLayers: number;
 }
 
 const DUMMY_COLLIDER: PhysCollider = {
@@ -91,6 +94,8 @@ const DUMMY_COLLIDER: PhysCollider = {
   parentOId: 0,
   localPos: [0, 0, 0],
   lastLocalPos: [0, 0, 0],
+  myLayers: 0b1,
+  targetLayers: 0xffff,
 };
 
 // TODO(@darzu): break this up into the specific use cases
@@ -265,12 +270,28 @@ export function registerPhysicsStateInit(em: EntityManager) {
         // AABBs (collider derived)
         // TODO(@darzu): handle scale
         if (o.collider.shape === "AABB") {
-          _phys.colliders.push(mkCollider(o.collider.aabb, o.id, parentId));
+          _phys.colliders.push(
+            mkCollider(
+              o.collider.aabb,
+              o.id,
+              parentId,
+              o.collider.myLayers,
+              o.collider.targetLayers
+            )
+          );
         } else if (o.collider.shape === "Multi") {
           for (let c of o.collider.children) {
             if (c.shape !== "AABB")
               throw `Unimplemented child collider shape: ${c.shape}`;
-            _phys.colliders.push(mkCollider(c.aabb, o.id, parentId));
+            _phys.colliders.push(
+              mkCollider(
+                c.aabb,
+                o.id,
+                parentId,
+                o.collider.myLayers,
+                o.collider.targetLayers
+              )
+            );
           }
         } else {
           throw `Unimplemented collider shape: ${o.collider.shape}`;
@@ -284,12 +305,26 @@ export function registerPhysicsStateInit(em: EntityManager) {
       function mkCollider(
         selfAABB: AABB,
         oId: number,
-        parentOId: number
+        parentOId: number,
+        myLayers?: Layer[],
+        targetLayers?: Layer[]
       ): PhysCollider {
         const cId = _physBColliders.nextId;
         _physBColliders.nextId += 1;
         if (_physBColliders.nextId > 2 ** 15)
           console.warn(`Halfway through collider IDs!`);
+
+        // figure out layers
+        let my = myLayers ? 0 : 0b1 << DefaultLayer;
+        if (myLayers) for (let l of myLayers) my |= 0b1 << l;
+        let target = targetLayers ? 0 : 0xffff;
+        if (targetLayers) for (let l of targetLayers) target |= 0b1 << l;
+
+        // TODO(@darzu): debugging layers
+        // console.log(
+        //   `${cId}:\nme${toBinary(my, 16)}\ntr${toBinary(target, 16)}`
+        // );
+
         const c: PhysCollider = {
           id: cId,
           oId,
@@ -299,6 +334,8 @@ export function registerPhysicsStateInit(em: EntityManager) {
           selfAABB: copyAABB(createAABB(), selfAABB),
           localPos: aabbCenter(vec3.create(), selfAABB),
           lastLocalPos: aabbCenter(vec3.create(), selfAABB),
+          myLayers: my,
+          targetLayers: target,
         };
         _physBColliders.colliders.push(c);
         return c;
@@ -439,6 +476,14 @@ export function registerPhysicsContactSystems(em: EntityManager) {
 
           // did one of these objects move?
           if (!lastObjMovs[aOId] && !lastObjMovs[bOId]) continue;
+
+          // are these objects interested in each other?
+          // TODO(@darzu): check this in the broad phase as well
+          if (
+            (ac.myLayers & bc.targetLayers) === 0 &&
+            (bc.myLayers & ac.targetLayers) === 0
+          )
+            continue;
 
           if (!doesOverlap(ac, bc)) {
             // a miss

@@ -102,9 +102,9 @@ export const FALSE: boolean = false;
 
 export type NumberTuple<ES> = { [_ in keyof ES]: number };
 
-export function toBinary(n: number): string {
+export function toBinary(n: number, digits = 32): string {
   let s = (n >>> 0).toString(2);
-  while (s.length < 32) s = "0" + s;
+  while (s.length < digits) s = "0" + s;
   return s;
 }
 

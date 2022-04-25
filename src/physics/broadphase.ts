@@ -97,6 +97,7 @@ export function checkBroadphase(
   //      1000 objs: 2.6ms, 8,500 overlaps + 53,000 enclosed-bys
   //      100 objs: 0.1ms, 1,200 overlaps + 6,000 enclosed-bys
   if (BROAD_PHASE === "OCT") {
+    // TODO(@darzu): check layer masks
     const octObjs = new Map<number, AABB>(objs.map((o) => [o.id, o.aabb])); // TODO(@darzu): necessary?
     const tree = octtree(octObjs, universeAABB);
     function octCheckOverlap(tree: OctTree) {

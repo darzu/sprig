@@ -2,6 +2,15 @@ import { Component, EM } from "../entity-manager.js";
 import { vec3 } from "../gl-matrix.js";
 import { AABB } from "./broadphase.js";
 
+export type Layer = number;
+
+export const DefaultLayer = 0;
+let _nextLayer = 1;
+export function DefineLayer(): Layer {
+  if (_nextLayer >= 16) throw `Can't define another layer; already 16!`;
+  return _nextLayer++;
+}
+
 export type ColliderShape =
   | "Empty"
   | "AABB"
@@ -13,6 +22,8 @@ export type ColliderShape =
 interface ColliderBase {
   shape: ColliderShape;
   solid: boolean;
+  myLayers?: Layer[];
+  targetLayers?: Layer[];
 }
 
 export interface EmptyCollider extends ColliderBase {

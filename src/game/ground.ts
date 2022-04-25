@@ -44,7 +44,7 @@ NOTES:
   http://www-cs-students.stanford.edu/~amitp/gameprog.html#hex
 */
 
-const SIZE = 6;
+const SIZE = 16;
 export const WIDTH = SIZE * 2;
 const HEIGHT = Math.sqrt(3) * SIZE;
 const DEPTH = 2;
@@ -98,21 +98,22 @@ export const { GroundPropsDef, GroundLocalDef, createGround } =
       const em: EntityManager = EM;
       // TODO(@darzu): change position via events?
       vec3.copy(g.position, g.groundProps.location);
-      em.ensureComponent(g.id, ColorDef, g.groundProps.color);
-      em.ensureComponent(
-        g.id,
+      em.ensureComponentOn(g, ColorDef, g.groundProps.color);
+      em.ensureComponentOn(
+        g,
         RenderableConstructDef,
         res.groundMesh.mesh.proto
       );
-      em.ensureComponent(
-        g.id,
+      em.ensureComponentOn(
+        g,
         ColliderDef,
         res.groundMesh.mesh.aabbCollider(true)
       );
+      g.collider.targetLayers = []; // don't seek collision with anything
     },
   });
 
-const RIVER_WIDTH = 5;
+const RIVER_WIDTH = 8;
 
 export function initGroundSystem(em: EntityManager) {
   em.registerOneShotSystem(
@@ -156,6 +157,7 @@ export function initGroundSystem(em: EntityManager) {
       createTile(-2, 0, [0.1, 0.1, 0.2]);
       createTile(0, 0, [0.1, 0.1, 0.1]);
 
+      // TODO(@darzu):
       for (let i = 0; i < 10; i++) {
         for (let q = -w; q <= w; q++) {
           for (let r = -w; r <= w; r++) {
