@@ -32,10 +32,18 @@ import { defineNetEntityHelper } from "../em_helpers.js";
 import { assert } from "../test.js";
 import { ColorDef } from "../color.js";
 import { RendererDef } from "../render/render_init.js";
-import { createHexGrid, hexX, hexZ, HEX_DIRS } from "../hex.js";
+import {
+  createHexGrid,
+  hexDist,
+  hexX,
+  hexZ,
+  HEX_DIRS,
+  xzToHex,
+} from "../hex.js";
 import { chance, jitter } from "../math.js";
 import { LocalPlayerDef } from "./player.js";
 import { CameraFollowDef } from "../camera.js";
+import { ShipLocalDef } from "./ship.js";
 
 /*
 NOTES:
@@ -69,6 +77,7 @@ export const GroundSystemDef = EM.defineComponent("groundSystem", () => {
     path: [] as PathNode[],
   };
 });
+export type GroundSystem = Component<typeof GroundSystemDef>;
 
 export const GroundMeshDef = EM.defineComponent("groundMesh", () => {
   return {
@@ -114,7 +123,7 @@ export const { GroundPropsDef, GroundLocalDef, createGround } =
     },
   });
 
-const RIVER_WIDTH = 1;
+const RIVER_WIDTH = 3;
 
 function continuePath(path: PathNode[]): PathNode {
   assert(path.length >= 1, "assumes non-empty path");
@@ -128,7 +137,7 @@ function continuePath(path: PathNode[]): PathNode {
   );
   let lastTurnDist = path.length - lastTurn;
   let cwOrccw = chance(0.5) ? +1 : -1;
-  if (chance(0.06 * lastTurnDist))
+  if (chance(0.2 * lastTurnDist))
     dirIdx = (dirIdx + HEX_DIRS.length + cwOrccw) % HEX_DIRS.length;
   if (dirIdx === 2 || dirIdx === 3 || dirIdx === 4) {
     // dont allow going south to prevent river crossing itself
@@ -163,11 +172,11 @@ export function initGroundSystem(em: EntityManager) {
           PositionDef,
           RotationDef,
         ])!;
-        vec3.copy(e.position, [54.72, 2100.0, 33.17]);
-        quat.copy(e.rotation, [0.0, 1.0, 0.0, 0.02]);
-        vec3.copy(e.cameraFollow.positionOffset, [2.0, 2.0, 8.0]);
-        e.cameraFollow.yawOffset = 0.0;
-        e.cameraFollow.pitchOffset = -1.042;
+        // vec3.copy(e.position, [54.72, 2100.0, 33.17]);
+        // quat.copy(e.rotation, [0.0, 1.0, 0.0, 0.02]);
+        // vec3.copy(e.cameraFollow.positionOffset, [2.0, 2.0, 8.0]);
+        // e.cameraFollow.yawOffset = 0.0;
+        // e.cameraFollow.pitchOffset = -1.042;
       }
 
       // create mesh
@@ -195,53 +204,95 @@ export function initGroundSystem(em: EntityManager) {
         width: RIVER_WIDTH,
       };
 
+      fillNode(sys, sys.path[0]);
+
       for (let i = 0; i < 50; i++) {
         const n = continuePath(sys.path);
-        fillNode(n);
-      }
-
-      function fillNode(n: PathNode) {
-        const w = Math.floor(n.width / 2);
-        for (let q = -w; q <= w; q++) {
-          for (let r = -w; r <= w; r++) {
-            for (let s = -w; s <= w; s++) {
-              if (q + r + s === 0) {
-                if (!sys.grid.has(q + n.q, r + n.r)) {
-                  const color: vec3 = [
-                    0.03 + jitter(0.01),
-                    0.03 + jitter(0.01),
-                    0.2 + jitter(0.02),
-                  ];
-                  createTile(q + n.q, r + n.r, color);
-                }
-              }
-            }
-          }
-        }
-      }
-
-      function createTile(q: number, r: number, color: vec3) {
-        console.log(`created`);
-        const g = em.newEntity();
-        // TODO(@darzu): waves?
-        // const y = Y + jitter(0.5);
-        const y = Y;
-        const pos: vec3 = [hexX(q, r, SIZE), y, hexZ(q, r, SIZE)];
-        em.ensureComponentOn(g, GroundPropsDef, pos, color);
-        sys.grid.set(q, r, g);
       }
     }
   );
 }
 
+function createTile(sys: GroundSystem, q: number, r: number, color: vec3) {
+  console.log(`created!`);
+  const g = EM.newEntity();
+  // TODO(@darzu): waves?
+  // const y = Y + jitter(0.5);
+  const y = Y;
+  const pos: vec3 = [hexX(q, r, SIZE), y, hexZ(q, r, SIZE)];
+  EM.ensureComponentOn(g, GroundPropsDef, pos, color);
+  sys.grid.set(q, r, g);
+}
+
+function fillNode(sys: GroundSystem, n: PathNode) {
+  const w = Math.floor(n.width / 2);
+  for (let q = -w; q <= w; q++) {
+    for (let r = -w; r <= w; r++) {
+      for (let s = -w; s <= w; s++) {
+        if (q + r + s === 0) {
+          if (!sys.grid.has(q + n.q, r + n.r)) {
+            const color: vec3 = [
+              0.03 + jitter(0.01),
+              0.03 + jitter(0.01),
+              0.2 + jitter(0.02),
+            ];
+            createTile(sys, q + n.q, r + n.r, color);
+          }
+        }
+      }
+    }
+  }
+}
+
+const REVEAL_DIST = 3;
+
 export function registerGroundSystems(em: EntityManager) {
+  let lastShipQ = NaN;
+  let lastShipR = NaN;
   em.registerSystem(
     null,
     [GroundSystemDef, ScoreDef, MeDef],
     (_, res) => {
       if (!res.me.host) return;
 
+      const ship = em.filterEntities([ShipLocalDef, PositionDef])[0];
+      if (!ship) return;
+
       const sys = res.groundSystem;
+
+      const [shipQ, shipR] = xzToHex(ship.position[0], ship.position[2], SIZE);
+
+      // haven't changed tiles
+      if (shipQ === lastShipQ && shipR === lastShipR) return;
+
+      // // highlight current tile
+      // const curr = sys.grid.get(shipQ, shipR);
+      // if (curr) {
+      //   if (!ColorDef.isOn(curr)) return; // not initialized yet
+      //   curr.color[1] = 0.2;
+      // }
+      // // de-highlight last tile
+      // const last = sys.grid.get(lastShipQ, lastShipR);
+      // if (last) {
+      //   assert(ColorDef.isOn(last));
+      //   last.color[0] *= 0.1;
+      //   last.color[1] *= 0.1;
+      //   last.color[2] *= 0.1;
+      // }
+
+      const pathInRange = sys.path.filter(
+        (n) => hexDist(n.q, n.r, shipQ, shipR) < REVEAL_DIST
+      );
+      for (let n of pathInRange) {
+        fillNode(sys, n);
+      }
+
+      lastShipQ = shipQ;
+      lastShipR = shipR;
+
+      // for (let n of sys.path) {
+      //   if (hexDist(n.q, n.r,
+      // }
 
       // if (
       //   sys.groundPool.length === 0 ||

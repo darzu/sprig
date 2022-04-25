@@ -51,6 +51,41 @@ export function hexX(q: number, r: number, size: number): number {
   return -size * q_x_spc * q;
 }
 
+export function xzToHex(z: number, x: number, size: number) {
+  const q = -((2 / 3) * z) / size;
+  const r = -((-1 / 3) * z + (Math.sqrt(3) / 3) * x) / size;
+  return hexRound(q, r);
+}
+
+export function hexRound(qf: number, rf: number): [number, number] {
+  const sf = -qf - rf;
+
+  let q = Math.round(qf);
+  let r = Math.round(rf);
+  let s = Math.round(sf);
+
+  const q_diff = Math.abs(q - qf);
+  const r_diff = Math.abs(r - rf);
+  const s_diff = Math.abs(s - sf);
+
+  if (q_diff > r_diff && q_diff > s_diff) q = -r - s;
+  else if (r_diff > s_diff) r = -q - s;
+  else s = -q - r;
+
+  return [q, r];
+}
+
+export function hexDist(
+  q1: number,
+  r1: number,
+  q2: number,
+  r2: number
+): number {
+  const dq = q2 - q1;
+  const dr = r2 - r1;
+  return (Math.abs(dq) + Math.abs(dq + dr) + Math.abs(dr)) / 2;
+}
+
 // export type Hex = { q: number; r: number };
 
 export const HEX_DIRS = [
