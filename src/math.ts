@@ -28,6 +28,12 @@ export function jitter(radius: number): number {
   return (Math.random() - 0.5) * radius * 2;
 }
 
+export function randInt(min: number, max: number) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 export function align(x: number, size: number): number {
   return Math.ceil(x / size) * size;
 }

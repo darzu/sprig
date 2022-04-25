@@ -44,12 +44,12 @@ NOTES:
   http://www-cs-students.stanford.edu/~amitp/gameprog.html#hex
 */
 
-const SIZE = 16;
+const SIZE = 48;
 export const WIDTH = SIZE * 2;
 const HEIGHT = Math.sqrt(3) * SIZE;
-const DEPTH = 2;
+const DEPTH = SIZE / 4;
 
-const Y = -7;
+const Y = -DEPTH - 7;
 
 const X_SPC = (WIDTH * 3) / 4;
 const Z_SPC = HEIGHT;
@@ -104,6 +104,7 @@ export const { GroundPropsDef, GroundLocalDef, createGround } =
         RenderableConstructDef,
         res.groundMesh.mesh.proto
       );
+      // TODO(@darzu): instead of individual colliders, I should have big, shared AABB colliders
       em.ensureComponentOn(
         g,
         ColliderDef,
@@ -113,7 +114,7 @@ export const { GroundPropsDef, GroundLocalDef, createGround } =
     },
   });
 
-const RIVER_WIDTH = 8;
+const RIVER_WIDTH = 3;
 
 export function initGroundSystem(em: EntityManager) {
   em.registerOneShotSystem(
@@ -158,7 +159,7 @@ export function initGroundSystem(em: EntityManager) {
       createTile(0, 0, [0.1, 0.1, 0.1]);
 
       // TODO(@darzu):
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 3; i++) {
         for (let q = -w; q <= w; q++) {
           for (let r = -w; r <= w; r++) {
             for (let s = -w; s <= w; s++) {
@@ -180,7 +181,10 @@ export function initGroundSystem(em: EntityManager) {
       function createTile(q: number, r: number, color: vec3) {
         console.log(`created`);
         const g = em.newEntity();
-        const pos: vec3 = [hexX(q, r, SIZE), Y, hexZ(q, r, SIZE)];
+        // TODO(@darzu): waves?
+        // const y = Y + jitter(0.5);
+        const y = Y;
+        const pos: vec3 = [hexX(q, r, SIZE), y, hexZ(q, r, SIZE)];
         em.ensureComponentOn(g, GroundPropsDef, pos, color);
         sys.grid.set(q, r, g);
       }

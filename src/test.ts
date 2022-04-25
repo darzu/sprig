@@ -2,6 +2,7 @@
 
 import { testImporters } from "./import_obj.js";
 import { Serializer, Deserializer } from "./serialize.js";
+import { testPackUnpackI16 } from "./util.js";
 
 function testBasics() {
   let s = new Serializer(100);
@@ -31,6 +32,7 @@ export function test() {
 
   testBasics();
   testImporters();
+  testPackUnpackI16();
 
   const end = performance.now();
   console.log(`<<< ENDING TESTS (${(end - start).toFixed(1)}ms)`);

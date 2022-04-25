@@ -18,7 +18,7 @@ hmm could we restrict outselves to positive q/r only?
 */
 
 import { vec3 } from "./gl-matrix.js";
-import { numPair } from "./util.js";
+import { packI16 } from "./util.js";
 
 // TODO(@darzu): is using [number,number] bad for perf?
 export interface HexGrid<D> {
@@ -34,10 +34,10 @@ export function createHexGrid<D>(): HexGrid<D> {
 
   return {
     _grid,
-    has: (q, r) => _grid.has(numPair(q, r)),
-    set: (q, r, d) => _grid.set(numPair(q, r), d),
-    get: (q, r) => _grid.get(numPair(q, r)),
-    delete: (q, r) => _grid.delete(numPair(q, r)),
+    has: (q, r) => _grid.has(packI16(q, r)),
+    set: (q, r, d) => _grid.set(packI16(q, r), d),
+    get: (q, r) => _grid.get(packI16(q, r)),
+    delete: (q, r) => _grid.delete(packI16(q, r)),
   };
 }
 

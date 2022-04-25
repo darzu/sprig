@@ -1,3 +1,4 @@
+import { randInt } from "./math.js";
 import { assert } from "./test.js";
 
 export function range(length: number): number[] {
@@ -23,7 +24,7 @@ export function __isSMI(n: number): boolean {
   //  lead to better perf esp. for arrays.
   return -(2 ** 31) < n && n < 2 ** 31 - 1;
 }
-const CHECK_PAIR_RANGE = true;
+const CHECK_PAIR_RANGE = false;
 
 export type IdPair = number;
 export function idPair(aId: number, bId: number): IdPair {
@@ -39,7 +40,7 @@ export function idPair(aId: number, bId: number): IdPair {
     console.error(`id pair hash isn't SMI: ${h}`);
   return h;
 }
-export function numPair(a: number, b: number): number {
+export function packI16(a: number, b: number): number {
   const aNeg = a < 0;
   const bNeg = b < 0;
   const aP = aNeg ? -a : a;
@@ -54,6 +55,50 @@ export function numPair(a: number, b: number): number {
   //   `${aNeg}${bNeg}\n${toBinary(aP)}\n${toBinary(bP)}\n${toBinary(h)}\n`
   // );
   return h;
+}
+export function unpackI16(ab: number): [number, number] {
+  const aNeg = (ab & 0b10) !== 0;
+  const bNeg = (ab & 0b01) !== 0;
+  const aP = (ab >>> 17) & 0b111111111111111;
+  const bP = (ab >>> 2) & 0b111111111111111;
+  const a = aNeg ? -aP : aP;
+  const b = bNeg ? -bP : bP;
+  return [a, b];
+}
+
+export function testPackUnpackI16() {
+  _testPackUnpackI16(0, 0);
+  _testPackUnpackI16(1, -1);
+  _testPackUnpackI16(-1, 1);
+  _testPackUnpackI16(-1000, -1000);
+  _testPackUnpackI16(2 ** 15 - 1, -(2 ** 15) + 1);
+  _testPackUnpackI16(-2747, 1);
+
+  for (let i = 0; i < 10; i++) {
+    const a = randInt(-(2 ** 15) + 1, 2 ** 15 - 1);
+    const b = randInt(-(2 ** 15) + 1, 2 ** 15 - 1);
+    _testPackUnpackI16(a, b);
+  }
+
+  // speed test
+  const before = performance.now();
+  let x = -2747;
+  let y = 100;
+  for (let i = 0; i < 10000000; i++) {
+    const ab = packI16(x, y);
+    [x, y] = unpackI16(ab);
+  }
+  const after = performance.now();
+  console.log(`PackUnpack took ${(after - before).toFixed(2)}ms`);
+
+  function _testPackUnpackI16(a: number, b: number) {
+    const ab = packI16(a, b);
+    const [a2, b2] = unpackI16(ab);
+    assert(
+      a === a2 && b === b2,
+      `PackUnpackI16 failure\n${a} & ${b}\nbecame ${a2} & ${b2}`
+    );
+  }
 }
 
 export function isString(val: any): val is string {
