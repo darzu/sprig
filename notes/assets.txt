@@ -135,3 +135,6 @@ Speed modeling:
 
 Speed painting:
   Valheim, root armor: https://www.youtube.com/watch?v=t8yrnC5EMYQ
+
+Editable WFC a la Townscaper for asset creation?
+  https://www.boristhebrave.com/2022/04/25/editable-wfc/

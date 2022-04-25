@@ -175,8 +175,8 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
       quat.copy(s.rotation, s.shipProps.rot);
       em.ensureComponentOn(s, MotionSmoothingDef);
 
-      s.shipLocal.speed = 0.005;
-      em.ensureComponentOn(s, LinearVelocityDef, [0, -0.01, 0]);
+      s.shipLocal.speed = 0.005 * 10; // TODO(@darzu): DEBUG SPEED
+      em.ensureComponentOn(s, LinearVelocityDef, [0, 0, 0]);
       em.ensureComponentOn(s, AngularVelocityDef);
 
       const mc: MultiCollider = {

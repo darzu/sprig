@@ -44,6 +44,8 @@ import { chance, jitter } from "../math.js";
 import { LocalPlayerDef } from "./player.js";
 import { CameraFollowDef } from "../camera.js";
 import { ShipLocalDef } from "./ship.js";
+import { onInit } from "../init.js";
+import { PhysicsTimerDef } from "../time.js";
 
 /*
 NOTES:
@@ -137,6 +139,7 @@ function continuePath(path: PathNode[]): PathNode {
   );
   let lastTurnDist = path.length - lastTurn;
   let cwOrccw = chance(0.5) ? +1 : -1;
+  // if (chance(0.0 * lastTurnDist))
   if (chance(0.2 * lastTurnDist))
     dirIdx = (dirIdx + HEX_DIRS.length + cwOrccw) % HEX_DIRS.length;
   if (dirIdx === 2 || dirIdx === 3 || dirIdx === 4) {
@@ -204,7 +207,7 @@ export function initGroundSystem(em: EntityManager) {
         width: RIVER_WIDTH,
       };
 
-      fillNode(sys, sys.path[0]);
+      fillNode(sys, sys.path[0], 0);
 
       for (let i = 0; i < 50; i++) {
         const n = continuePath(sys.path);
@@ -213,18 +216,71 @@ export function initGroundSystem(em: EntityManager) {
   );
 }
 
-function createTile(sys: GroundSystem, q: number, r: number, color: vec3) {
+// TODO(@darzu): Move easing system elsewhere
+// TODO(@darzu): share code with smoothing?
+// TODO(@darzu): support more: https://easings.net/#
+export const EaseToDef = EM.defineComponent("easeTo", (pos?: vec3) => ({
+  position: pos ?? vec3.create(),
+}));
+
+onInit(() => {
+  let delta = vec3.create();
+  const EASE_FACTOR = 0.07 ** (60 / 1000);
+  const EPSILON = 0.01;
+
+  EM.registerSystem(
+    [EaseToDef, PositionDef],
+    [PhysicsTimerDef],
+    (cs, res) => {
+      let toRemove: number[] = [];
+
+      const dt = res.physicsTimer.period;
+      for (let c of cs) {
+        // how far?
+        vec3.sub(delta, c.easeTo.position, c.position);
+
+        // are we there yet?
+        if (vec3.sqrLen(delta) < EPSILON) {
+          toRemove.push(c.id);
+          vec3.copy(c.position, c.easeTo.position);
+          continue;
+        }
+
+        // ease
+        vec3.scale(delta, delta, EASE_FACTOR ** dt);
+        vec3.add(c.position, c.position, delta);
+      }
+
+      // clean up finished
+      for (let id of toRemove) {
+        EM.removeComponent(id, EaseToDef);
+      }
+    },
+    "easeTo"
+  );
+});
+
+function createTile(
+  sys: GroundSystem,
+  q: number,
+  r: number,
+  color: vec3,
+  easeDist: number
+) {
   console.log(`created!`);
   const g = EM.newEntity();
   // TODO(@darzu): waves?
   // const y = Y + jitter(0.5);
   const y = Y;
-  const pos: vec3 = [hexX(q, r, SIZE), y, hexZ(q, r, SIZE)];
-  EM.ensureComponentOn(g, GroundPropsDef, pos, color);
+  const posStart: vec3 = [hexX(q, r, SIZE), y - easeDist, hexZ(q, r, SIZE)];
+  const posEnd: vec3 = [hexX(q, r, SIZE), y, hexZ(q, r, SIZE)];
+  EM.ensureComponentOn(g, GroundPropsDef, posStart, color);
+  EM.ensureComponentOn(g, EaseToDef, posEnd);
   sys.grid.set(q, r, g);
 }
 
-function fillNode(sys: GroundSystem, n: PathNode) {
+function fillNode(sys: GroundSystem, n: PathNode, easeDist: number) {
+  let nextEaseDist = easeDist;
   const w = Math.floor(n.width / 2);
   for (let q = -w; q <= w; q++) {
     for (let r = -w; r <= w; r++) {
@@ -236,7 +292,8 @@ function fillNode(sys: GroundSystem, n: PathNode) {
               0.03 + jitter(0.01),
               0.2 + jitter(0.02),
             ];
-            createTile(sys, q + n.q, r + n.r, color);
+            createTile(sys, q + n.q, r + n.r, color, nextEaseDist);
+            nextEaseDist *= 2;
           }
         }
       }
@@ -284,7 +341,7 @@ export function registerGroundSystems(em: EntityManager) {
         (n) => hexDist(n.q, n.r, shipQ, shipR) < REVEAL_DIST
       );
       for (let n of pathInRange) {
-        fillNode(sys, n);
+        fillNode(sys, n, 100);
       }
 
       lastShipQ = shipQ;
