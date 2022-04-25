@@ -34,6 +34,8 @@ import { ColorDef } from "../color.js";
 import { RendererDef } from "../render/render_init.js";
 import { createHexGrid, hexX, hexZ } from "../hex.js";
 import { jitter } from "../math.js";
+import { LocalPlayerDef } from "./player.js";
+import { CameraFollowDef } from "../camera.js";
 
 /*
 NOTES:
@@ -120,6 +122,20 @@ export function initGroundSystem(em: EntityManager) {
       const sys = em.addSingletonComponent(GroundSystemDef);
       const mesh = em.addSingletonComponent(GroundMeshDef);
 
+      // DEBUG CAMERA
+      {
+        const e = em.findEntity(em.getResource(LocalPlayerDef)!.playerId, [
+          CameraFollowDef,
+          PositionDef,
+          RotationDef,
+        ])!;
+        vec3.copy(e.position, [34.4, 47.92, -28.68]);
+        quat.copy(e.rotation, [0.0, 0.92, 0.0, 0.38]);
+        vec3.copy(e.cameraFollow.positionOffset, [2.0, 2.0, 8.0]);
+        e.cameraFollow.yawOffset = 0;
+        e.cameraFollow.pitchOffset = -0.8150000000000003;
+      }
+
       // create mesh
       const t = mat4.fromScaling(mat4.create(), [
         WIDTH * 0.5,
@@ -135,25 +151,36 @@ export function initGroundSystem(em: EntityManager) {
 
       const w = Math.floor(RIVER_WIDTH / 2);
 
+      createTile(0, -2, [0.1, 0.2, 0.1]);
+      createTile(2, -2, [0.2, 0.1, 0.1]);
+      createTile(-2, 0, [0.1, 0.1, 0.2]);
+      createTile(0, 0, [0.1, 0.1, 0.1]);
+
       for (let i = 0; i < 10; i++) {
-        for (let q = -w + i; q <= w; q++) {
+        for (let q = -w; q <= w; q++) {
           for (let r = -w; r <= w; r++) {
             for (let s = -w; s <= w; s++) {
               if (q + r + s === 0) {
-                const color: vec3 = [
-                  0.03 + jitter(0.01),
-                  0.03 + jitter(0.01),
-                  0.2 + jitter(0.05),
-                ];
-                const g = em.newEntity();
-                const pos: vec3 = [hexX(q, r, SIZE), Y, hexZ(q, r, SIZE)];
-                em.ensureComponentOn(g, GroundPropsDef, pos, color);
-
-                sys.grid.set(q, r, g);
+                if (!sys.grid.has(q, r - i)) {
+                  const color: vec3 = [
+                    0.03 + jitter(0.01),
+                    0.03 + jitter(0.01),
+                    0.2 + jitter(0.02),
+                  ];
+                  createTile(q, r - i, color);
+                }
               }
             }
           }
         }
+      }
+
+      function createTile(q: number, r: number, color: vec3) {
+        console.log(`created`);
+        const g = em.newEntity();
+        const pos: vec3 = [hexX(q, r, SIZE), Y, hexZ(q, r, SIZE)];
+        em.ensureComponentOn(g, GroundPropsDef, pos, color);
+        sys.grid.set(q, r, g);
       }
     }
   );

@@ -18,10 +18,11 @@ hmm could we restrict outselves to positive q/r only?
 */
 
 import { vec3 } from "./gl-matrix.js";
-import { idPair, IdPair } from "./util.js";
+import { numPair } from "./util.js";
 
+// TODO(@darzu): is using [number,number] bad for perf?
 export interface HexGrid<D> {
-  _grid: Map<IdPair, D>;
+  _grid: Map<number, D>;
   has: (q: number, r: number) => boolean;
   set: (q: number, r: number, d: D) => void;
   get: (q: number, r: number) => D | undefined;
@@ -29,25 +30,25 @@ export interface HexGrid<D> {
 }
 
 export function createHexGrid<D>(): HexGrid<D> {
-  const _grid: Map<IdPair, D> = new Map();
+  const _grid: Map<number, D> = new Map();
 
   return {
     _grid,
-    has: (q, r) => _grid.has(idPair(q, r)),
-    set: (q, r, d) => _grid.set(idPair(q, r), d),
-    get: (q, r) => _grid.get(idPair(q, r)),
-    delete: (q, r) => _grid.delete(idPair(q, r)),
+    has: (q, r) => _grid.has(numPair(q, r)),
+    set: (q, r, d) => _grid.set(numPair(q, r), d),
+    get: (q, r) => _grid.get(numPair(q, r)),
+    delete: (q, r) => _grid.delete(numPair(q, r)),
   };
 }
 
 const q_z_spc = Math.sqrt(3) / 2;
 const r_z_spc = Math.sqrt(3);
 export function hexZ(q: number, r: number, size: number): number {
-  return size * (q_z_spc * q + r_z_spc * r);
+  return -size * (q_z_spc * q + r_z_spc * r);
 }
 const q_x_spc = 3 / 2;
 export function hexX(q: number, r: number, size: number): number {
-  return size * q_x_spc * q;
+  return -size * q_x_spc * q;
 }
 
 // function flat_hex_to_pixel(hex):

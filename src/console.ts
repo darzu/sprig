@@ -21,7 +21,8 @@ export const DevConsoleDef = EM.defineComponent("dev", () => {
     stats.avgSimTime = updateAvg(stats.avgSimTime, simTime);
   };
   return Object.assign(stats, {
-    showConsole: false,
+    // TODO(@darzu): debugging
+    showConsole: true,
     updateAvgs,
   });
 });

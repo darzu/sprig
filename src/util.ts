@@ -1,3 +1,5 @@
+import { assert } from "./test.js";
+
 export function range(length: number): number[] {
   return ((new Array(length) as any).fill(null) as number[]).map((_, i) => i);
 }
@@ -21,15 +23,36 @@ export function __isSMI(n: number): boolean {
   //  lead to better perf esp. for arrays.
   return -(2 ** 31) < n && n < 2 ** 31 - 1;
 }
+const CHECK_PAIR_RANGE = true;
 
 export type IdPair = number;
 export function idPair(aId: number, bId: number): IdPair {
   // TODO(@darzu): need a better hash?
   // TODO(@darzu): for perf, ensure this always produces a V8 SMI when given two <2^16 SMIs.
   //                Also maybe constrain ids to <2^16
+  if (CHECK_PAIR_RANGE) {
+    assert(aId < 2 ** 16 && bId < 2 ** 16, "IDs r too big for idPair!");
+  }
   const h = aId < bId ? (aId << 16) ^ bId : (bId << 16) ^ aId;
   // TODO(@darzu): DEBUGGING for perf, see comments in __isSMI
-  if (!__isSMI(h)) console.error(`id pair hash isn't SMI: ${h}`);
+  if (CHECK_PAIR_RANGE && !__isSMI(h))
+    console.error(`id pair hash isn't SMI: ${h}`);
+  return h;
+}
+export function numPair(a: number, b: number): number {
+  const aNeg = a < 0;
+  const bNeg = b < 0;
+  const aP = aNeg ? -a : a;
+  const bP = bNeg ? -b : b;
+  if (CHECK_PAIR_RANGE && (aP >= 2 ** 15 || bP >= 2 ** 15))
+    console.error(`numbers in num pair r too big!`);
+  const h =
+    (aP << 17) | (bP << 2) | (aNeg ? 0b10 : 0b00) | (bNeg ? 0b01 : 0b00);
+  if (CHECK_PAIR_RANGE && !__isSMI(h))
+    console.error(`num pair hash isn't SMI: ${h}`);
+  // console.log(
+  //   `${aNeg}${bNeg}\n${toBinary(aP)}\n${toBinary(bP)}\n${toBinary(h)}\n`
+  // );
   return h;
 }
 
@@ -78,3 +101,9 @@ export function toRecord<A, V>(
 export const FALSE: boolean = false;
 
 export type NumberTuple<ES> = { [_ in keyof ES]: number };
+
+export function toBinary(n: number): string {
+  let s = (n >>> 0).toString(2);
+  while (s.length < 32) s = "0" + s;
+  return s;
+}
