@@ -35,6 +35,7 @@ import { RendererDef } from "../render/render_init.js";
 import {
   createHexGrid,
   hexDist,
+  hexesWithin,
   hexX,
   hexZ,
   HEX_DIRS,
@@ -228,7 +229,7 @@ export function initGroundSystem(em: EntityManager) {
         state: "inplay",
       };
 
-      fillNode(sys, sys.path[0], 0, 0);
+      raiseNodeTiles(sys, sys.path[0], 0, 0);
 
       for (let i = 0; i < 10; i++) {
         const n = continuePath(sys.path);
@@ -264,7 +265,7 @@ function createTile(
   return g;
 }
 
-function fillNode(
+function raiseNodeTiles(
   sys: GroundSystem,
   n: { q: number; r: number; width: number },
   easeDelayMs: number,
@@ -273,35 +274,22 @@ function fillNode(
   let nextEaseDelayMs = easeDelayMs;
   const w = Math.floor(n.width / 2);
   let newTiles: Entity[] = [];
-  for (let q = -w; q <= w; q++) {
-    for (let r = -w; r <= w; r++) {
-      for (let s = -w; s <= w; s++) {
-        if (q + r + s === 0) {
-          if (!sys.grid.has(q + n.q, r + n.r)) {
-            const color: vec3 = [
-              0.03 + jitter(0.01),
-              0.03 + jitter(0.01),
-              0.2 + jitter(0.02),
-            ];
-            const t = createTile(
-              sys,
-              q + n.q,
-              r + n.r,
-              color,
-              nextEaseDelayMs,
-              easeMsPer
-            );
-            nextEaseDelayMs += easeMsPer * 0.5;
-            newTiles.push(t);
-          }
-        }
-      }
+  for (let [q, r] of hexesWithin(n.q, n.r, w)) {
+    if (!sys.grid.has(q, r)) {
+      const color: vec3 = [
+        0.03 + jitter(0.01),
+        0.03 + jitter(0.01),
+        0.2 + jitter(0.02),
+      ];
+      const t = createTile(sys, q, r, color, nextEaseDelayMs, easeMsPer);
+      nextEaseDelayMs += easeMsPer * 0.5;
+      newTiles.push(t);
     }
   }
   return newTiles;
 }
 
-function dropNode(
+function dropNodeTiles(
   sys: GroundSystem,
   n: { q: number; r: number; width: number },
   easeDelayMs: number,
@@ -310,48 +298,40 @@ function dropNode(
   let nextEaseDelayMs = easeDelayMs;
   const w = Math.floor(n.width / 2);
   let droppedTiles: Entity[] = [];
-  for (let q = -w; q <= w; q++) {
-    for (let r = -w; r <= w; r++) {
-      for (let s = -w; s <= w; s++) {
-        if (q + r + s === 0) {
-          const g = sys.grid.get(q + n.q, r + n.r);
-          if (g && PositionDef.isOn(g)) {
-            console.log(
-              `dropping ${q + n.q},${
-                r + n.r
-              } in ${nextEaseDelayMs}ms for ${easeMsPer}`
-            );
-            const startPos = vec3.clone(g.position);
-            const endPos = vec3.add(vec3.create(), startPos, [0, -100, 0]);
-            assert(
-              !AnimateToDef.isOn(g),
-              "Oops, we can't animate the tile out when it's already being animated."
-            );
-            EM.ensureComponentOn(g, AnimateToDef, {
-              startPos,
-              endPos,
-              progressMs: -nextEaseDelayMs,
-              durationMs: easeMsPer,
-              easeFn: EASE_INQUAD,
-            });
-            nextEaseDelayMs += easeMsPer * 0.5;
+  for (let [q, r] of hexesWithin(n.q, n.r, w)) {
+    const g = sys.grid.get(q, r);
+    if (g && PositionDef.isOn(g)) {
+      console.log(
+        `dropping ${q},${r} in ${nextEaseDelayMs}ms for ${easeMsPer}`
+      );
+      const startPos = vec3.clone(g.position);
+      const endPos = vec3.add(vec3.create(), startPos, [0, -100, 0]);
+      assert(
+        !AnimateToDef.isOn(g),
+        "Oops, we can't animate the tile out when it's already being animated."
+      );
+      EM.ensureComponentOn(g, AnimateToDef, {
+        startPos,
+        endPos,
+        progressMs: -nextEaseDelayMs,
+        durationMs: easeMsPer,
+        easeFn: EASE_INQUAD,
+      });
+      nextEaseDelayMs += easeMsPer * 0.5;
 
-            // some random spin
-            const spin = vec3.fromValues(
-              Math.random() - 0.5,
-              Math.random() - 0.5,
-              Math.random() - 0.5
-            );
-            vec3.normalize(spin, spin);
-            vec3.scale(spin, spin, 0.001);
-            EM.ensureComponentOn(g, RotationDef);
-            EM.ensureComponentOn(g, AngularVelocityDef, spin);
+      // some random spin
+      const spin = vec3.fromValues(
+        Math.random() - 0.5,
+        Math.random() - 0.5,
+        Math.random() - 0.5
+      );
+      vec3.normalize(spin, spin);
+      vec3.scale(spin, spin, 0.001);
+      EM.ensureComponentOn(g, RotationDef);
+      EM.ensureComponentOn(g, AngularVelocityDef, spin);
 
-            sys.grid.delete(q + n.q, r + n.r);
-            droppedTiles.push(g);
-          }
-        }
-      }
+      sys.grid.delete(q, r);
+      droppedTiles.push(g);
     }
   }
   return droppedTiles;
@@ -390,7 +370,7 @@ export function registerGroundSystems(em: EntityManager) {
         const easeMs = 500;
         for (let n of pathToReveal) {
           n.state = "inplay";
-          const ts = fillNode(sys, n, easeStart, easeMs);
+          const ts = raiseNodeTiles(sys, n, easeStart, easeMs);
           easeStart += ts.length * easeMs * 0.5;
         }
       }
@@ -407,7 +387,7 @@ export function registerGroundSystems(em: EntityManager) {
         for (let i = 0; i <= pathOutOfRangeIdx; i++) {
           const n = sys.path[i];
           n.state = "behind";
-          const ts = dropNode(sys, n, easeStart, easeMs);
+          const ts = dropNodeTiles(sys, n, easeStart, easeMs);
           easeStart += ts.length * easeMs * 0.5;
         }
       }

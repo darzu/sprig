@@ -86,6 +86,23 @@ export function hexDist(
   return (Math.abs(dq) + Math.abs(dq + dr) + Math.abs(dr)) / 2;
 }
 
+export function* hexesWithin(
+  cq: number,
+  cr: number,
+  radius: number
+): Generator<[number, number]> {
+  const w = Math.floor(radius);
+  for (let q = -w; q <= w; q++) {
+    for (let r = -w; r <= w; r++) {
+      for (let s = -w; s <= w; s++) {
+        if (q + r + s === 0) {
+          yield [q + cq, r + cr];
+        }
+      }
+    }
+  }
+}
+
 // export type Hex = { q: number; r: number };
 
 export const HEX_DIRS = [
