@@ -81,6 +81,7 @@ const RIVER_TURN_FACTOR = 0.0;
 
 const REVEAL_DIST = 2;
 const FALLOUT_DIST = 4;
+const TILE_FALL_DIST = 100;
 
 export type GroundProps = Component<typeof GroundPropsDef>;
 
@@ -264,7 +265,11 @@ function raiseTile(
   easeMs: number
 ) {
   const y = Y;
-  const startPos: vec3 = [hexX(q, r, SIZE), y - 100, hexZ(q, r, SIZE)];
+  const startPos: vec3 = [
+    hexX(q, r, SIZE),
+    y - TILE_FALL_DIST,
+    hexZ(q, r, SIZE),
+  ];
   const endPos: vec3 = [hexX(q, r, SIZE), y, hexZ(q, r, SIZE)];
 
   let g: GroundTile;
@@ -334,7 +339,7 @@ function dropNodeTiles(
         `dropping ${q},${r} in ${nextEaseDelayMs}ms for ${easeMsPer}`
       );
       const startPos = vec3.clone(g.position);
-      const endPos = vec3.add(vec3.create(), startPos, [0, -100, 0]);
+      const endPos = vec3.add(vec3.create(), startPos, [0, -TILE_FALL_DIST, 0]);
       assert(
         !AnimateToDef.isOn(g),
         "Oops, we can't animate the tile out when it's already being animated."
