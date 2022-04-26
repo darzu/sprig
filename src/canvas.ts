@@ -5,9 +5,10 @@ export const CanvasDef = EM.defineComponent(
   (canvas: HTMLCanvasElement) => {
     return {
       canvas,
-      shouldLockMouse: true,
+      shouldLockMouseOnClick: true,
       unlockMouse: () => {},
-      hasInteraction: false,
+      hasFirstInteraction: false,
+      hasMouseLock: () => document.pointerLockElement === canvas,
     };
   }
 );
@@ -24,15 +25,18 @@ export function registerInitCanvasSystem(em: EntityManager) {
       const comp = em.addSingletonComponent(CanvasDef, canvas);
 
       comp.unlockMouse = () => {
-        comp.shouldLockMouse = false;
+        comp.shouldLockMouseOnClick = false;
         document.exitPointerLock();
       };
 
       // TODO(@darzu): this should probably be managed elsewhere
       // TODO(@darzu): re-enable
       function tryMouseLock() {
-        comp.hasInteraction = true;
-        if (comp.shouldLockMouse && document.pointerLockElement !== canvas) {
+        comp.hasFirstInteraction = true;
+        if (
+          comp.shouldLockMouseOnClick &&
+          document.pointerLockElement !== canvas
+        ) {
           canvas.requestPointerLock();
         }
       }

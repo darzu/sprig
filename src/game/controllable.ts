@@ -1,4 +1,5 @@
 import { CameraFollowDef } from "../camera.js";
+import { CanvasDef } from "../canvas.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { vec3, quat } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
@@ -37,6 +38,7 @@ export const ControllableDef = EM.defineComponent("controllable", () => {
     gravity: 0.1,
     jumpSpeed: 0.003,
     turnSpeed: 0.001,
+    requiresPointerLock: true,
     modes: {
       canFall: true,
       canFly: true,
@@ -56,12 +58,17 @@ export function registerControllableSystems(em: EntityManager) {
 
   em.registerSystem(
     [ControllableDef, LinearVelocityDef, RotationDef, WorldFrameDef],
-    [InputsDef, PhysicsTimerDef, MeDef],
+    [InputsDef, PhysicsTimerDef, MeDef, CanvasDef],
     (controllables, res) => {
       const dt = res.physicsTimer.period * res.physicsTimer.steps;
 
       for (let c of controllables) {
         if (AuthorityDef.isOn(c) && c.authority.pid !== res.me.pid) continue;
+        if (
+          c.controllable.requiresPointerLock &&
+          !res.htmlCanvas.hasMouseLock()
+        )
+          continue;
         vec3.zero(steerVel);
         const modes = c.controllable.modes;
 
@@ -108,10 +115,15 @@ export function registerControllableSystems(em: EntityManager) {
 
   em.registerSystem(
     [ControllableDef, CameraFollowDef],
-    [InputsDef, PhysicsTimerDef, MeDef],
+    [InputsDef, PhysicsTimerDef, MeDef, CanvasDef],
     (controllables, res) => {
       for (let c of controllables) {
         if (AuthorityDef.isOn(c) && c.authority.pid !== res.me.pid) continue;
+        if (
+          c.controllable.requiresPointerLock &&
+          !res.htmlCanvas.hasMouseLock()
+        )
+          continue;
         // TODO(@darzu): probably need to use yaw-pitch :(
         if (c.controllable.modes.canCameraYaw) {
           c.cameraFollow.yawOffset +=

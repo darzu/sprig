@@ -256,7 +256,7 @@ export function registerMusicSystems(em: EntityManager) {
     null,
     [MusicDef, CanvasDef],
     (_, res) => {
-      if (once && res.htmlCanvas.hasInteraction) {
+      if (once && res.htmlCanvas.hasFirstInteraction) {
         // play opening music
         // const THEME_LENGTH = 100;
         // const randChordId = () => Math.floor(Math.random() * 6);

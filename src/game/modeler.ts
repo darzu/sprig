@@ -45,7 +45,7 @@ function registerObjClicker(em: EntityManager) {
         if (res.modeler.clickerEnabled) {
           res.htmlCanvas.unlockMouse();
         } else {
-          res.htmlCanvas.shouldLockMouse = true;
+          res.htmlCanvas.shouldLockMouseOnClick = true;
         }
       }
     },
