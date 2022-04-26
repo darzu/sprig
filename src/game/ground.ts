@@ -92,10 +92,16 @@ interface PathNode {
   state: "ahead" | "inplay" | "behind";
 }
 
+type GroundTile = EntityW<[typeof GroundPropsDef]>;
+type GroundTileInited = EntityW<
+  [typeof GroundPropsDef, typeof PositionDef, typeof ColorDef]
+>;
+
 export const GroundSystemDef = EM.defineComponent("groundSystem", () => {
   return {
-    grid: createHexGrid<EntityW<[typeof GroundPropsDef]>>(),
+    grid: createHexGrid<GroundTile>(),
     path: [] as PathNode[],
+    objFreePool: [] as GroundTileInited[],
   };
 });
 export type GroundSystem = Component<typeof GroundSystemDef>;
@@ -199,11 +205,19 @@ export function initGroundSystem(em: EntityManager) {
           PositionDef,
           RotationDef,
         ])!;
+        // high up
         // vec3.copy(e.position, [54.72, 2100.0, 33.17]);
         // quat.copy(e.rotation, [0.0, 1.0, 0.0, 0.02]);
         // vec3.copy(e.cameraFollow.positionOffset, [2.0, 2.0, 8.0]);
         // e.cameraFollow.yawOffset = 0.0;
         // e.cameraFollow.pitchOffset = -1.042;
+
+        // watching from afar side
+        // vec3.copy(e.position, [-495.02,241.17,-35.16]);
+        // quat.copy(e.rotation, [0.00,0.70,0.00,-0.72]);
+        // vec3.copy(e.cameraFollow.positionOffset, [2.00,2.00,8.00]);
+        // e.cameraFollow.yawOffset = 0.000;
+        // e.cameraFollow.pitchOffset = -0.655;
       }
 
       // create mesh
@@ -241,7 +255,7 @@ export function initGroundSystem(em: EntityManager) {
   );
 }
 
-function createTile(
+function raiseTile(
   sys: GroundSystem,
   q: number,
   r: number,
@@ -249,14 +263,23 @@ function createTile(
   easeDelayMs: number,
   easeMs: number
 ) {
-  console.log(`created!`);
-  const g = EM.newEntity();
-  // TODO(@darzu): waves?
-  // const y = Y + jitter(0.5);
   const y = Y;
   const startPos: vec3 = [hexX(q, r, SIZE), y - 100, hexZ(q, r, SIZE)];
   const endPos: vec3 = [hexX(q, r, SIZE), y, hexZ(q, r, SIZE)];
-  EM.ensureComponentOn(g, GroundPropsDef, startPos, color);
+
+  let g: GroundTile;
+  if (sys.objFreePool.length > RIVER_WIDTH * 2) {
+    let oldG = sys.objFreePool.pop()!;
+    vec3.copy(oldG.position, startPos);
+    vec3.copy(oldG.color, color);
+    if (RotationDef.isOn(oldG)) quat.identity(oldG.rotation);
+    if (AngularVelocityDef.isOn(oldG)) vec3.zero(oldG.angularVelocity);
+    g = oldG;
+  } else {
+    let newG = EM.newEntity();
+    EM.ensureComponentOn(newG, GroundPropsDef, startPos, color);
+    g = newG;
+  }
   // NOTE: animateTo will only be on the host but that's fine, the host owns all
   //    these anyway
   // TODO(@darzu): we might want to animate on clients b/c it'd be smoother
@@ -287,7 +310,7 @@ function raiseNodeTiles(
         0.03 + jitter(0.01),
         0.2 + jitter(0.02),
       ];
-      const t = createTile(sys, q, r, color, nextEaseDelayMs, easeMsPer);
+      const t = raiseTile(sys, q, r, color, nextEaseDelayMs, easeMsPer);
       nextEaseDelayMs += easeMsPer * 0.5;
       newTiles.push(t);
     }
@@ -306,7 +329,7 @@ function dropNodeTiles(
   let droppedTiles: Entity[] = [];
   for (let [q, r] of hexesWithin(n.q, n.r, w)) {
     const g = sys.grid.get(q, r);
-    if (g && PositionDef.isOn(g)) {
+    if (g && PositionDef.isOn(g) && ColorDef.isOn(g)) {
       console.log(
         `dropping ${q},${r} in ${nextEaseDelayMs}ms for ${easeMsPer}`
       );
@@ -326,16 +349,18 @@ function dropNodeTiles(
       nextEaseDelayMs += easeMsPer * 0.5;
 
       // some random spin
-      const spin = vec3.fromValues(
+      EM.ensureComponentOn(g, RotationDef);
+      EM.ensureComponentOn(g, AngularVelocityDef);
+      const spin = g.angularVelocity;
+      vec3.copy(spin, [
         Math.random() - 0.5,
         Math.random() - 0.5,
-        Math.random() - 0.5
-      );
+        Math.random() - 0.5,
+      ]);
       vec3.normalize(spin, spin);
       vec3.scale(spin, spin, 0.001);
-      EM.ensureComponentOn(g, RotationDef);
-      EM.ensureComponentOn(g, AngularVelocityDef, spin);
 
+      sys.objFreePool.unshift(g);
       sys.grid.delete(q, r);
       droppedTiles.push(g);
     }
