@@ -82,7 +82,7 @@ export const obj_vertShader = () =>
     struct VertexOutput {
         @location(0) @interpolate(flat) normal : vec3<f32>,
         @location(1) @interpolate(flat) color : vec3<f32>,
-        @location(2) fogVisibility : f32,
+        @location(2) worldPos: vec4<f32>,
         @builtin(position) position : vec4<f32>,
     };
 
@@ -92,12 +92,7 @@ export const obj_vertShader = () =>
         ) -> VertexOutput {
         var output : VertexOutput;
         let worldPos: vec4<f32> = model.transform * vec4<f32>(position, 1.0);
-        let fogDensity: f32 = 0.07;
-        let fogGradient: f32 = 1.5;
-        // let fogDist: f32 = 0.1;
-        let fogDist: f32 = max(-worldPos.y - 10.0, 0.0);
-        // output.fogVisibility = 0.9;
-        output.fogVisibility = clamp(exp(-pow(fogDist*fogDensity, fogGradient)), 0.0, 1.0);
+        output.worldPos = worldPos;
         output.position = scene.cameraViewProjMatrix * worldPos;
         output.normal = normalize(model.transform * vec4<f32>(normal, 0.0)).xyz;
         output.color = color + model.tint;
@@ -116,7 +111,7 @@ export const obj_fragShader = () =>
     struct VertexOutput {
         @location(0) @interpolate(flat) normal : vec3<f32>,
         @location(1) @interpolate(flat) color : vec3<f32>,
-        @location(2) fogVisibility : f32,
+        @location(2) worldPos: vec4<f32>,
     };
 
     @stage(fragment)
@@ -127,8 +122,16 @@ export const obj_fragShader = () =>
         let resultColor: vec3<f32> = input.color 
           * (light1 * 1.5 + light2 * 0.5 + light3 * 0.2 + 0.1);
         let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
+
+        let fogDensity: f32 = 0.02;
+        let fogGradient: f32 = 1.5;
+        // let fogDist: f32 = 0.1;
+        let fogDist: f32 = max(-input.worldPos.y - 10.0, 0.0);
+        // output.fogVisibility = 0.9;
+        let fogVisibility: f32 = clamp(exp(-pow(fogDist*fogDensity, fogGradient)), 0.0, 1.0);
+
         let backgroundColor: vec3<f32> = vec3<f32>(0.6, 0.63, 0.6);
-        let finalColor: vec3<f32> = mix(backgroundColor, gammaCorrected, input.fogVisibility);
+        let finalColor: vec3<f32> = mix(backgroundColor, gammaCorrected, fogVisibility);
         return vec4<f32>(finalColor, 1.0);
     }
 `;
