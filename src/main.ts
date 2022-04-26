@@ -144,7 +144,7 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("aabbBuilder");
     EM.callSystem("toolPickup");
     EM.callSystem("toolDrop");
-    EM.callSystem("easeTo");
+    EM.callSystem("animateTo");
     EM.callSystem("netDebugSystem");
     EM.callSystem("netAck");
     EM.callSystem("netSync");
