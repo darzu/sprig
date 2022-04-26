@@ -48,11 +48,15 @@ import { onInit } from "../init.js";
 import { PhysicsTimerDef } from "../time.js";
 import {
   AnimateToDef,
+  EASE_INBACK,
+  EASE_INQUAD,
+  EASE_INVERSE,
   EASE_LINEAR,
   EASE_OUTBACK,
   EASE_OUTQUAD,
 } from "../animate-to.js";
 import { tempVec } from "../temp-pool.js";
+import { AngularVelocityDef } from "../physics/motion.js";
 
 /*
 NOTES:
@@ -312,16 +316,37 @@ function dropNode(
         if (q + r + s === 0) {
           const g = sys.grid.get(q + n.q, r + n.r);
           if (g && PositionDef.isOn(g)) {
-            const startPos = g.position;
+            console.log(
+              `dropping ${q + n.q},${
+                r + n.r
+              } in ${nextEaseDelayMs}ms for ${easeMsPer}`
+            );
+            const startPos = vec3.clone(g.position);
             const endPos = vec3.add(vec3.create(), startPos, [0, -100, 0]);
+            assert(
+              !AnimateToDef.isOn(g),
+              "Oops, we can't animate the tile out when it's already being animated."
+            );
             EM.ensureComponentOn(g, AnimateToDef, {
               startPos,
               endPos,
               progressMs: -nextEaseDelayMs,
               durationMs: easeMsPer,
-              easeFn: EASE_LINEAR,
+              easeFn: EASE_INQUAD,
             });
             nextEaseDelayMs += easeMsPer * 0.5;
+
+            // some random spin
+            const spin = vec3.fromValues(
+              Math.random() - 0.5,
+              Math.random() - 0.5,
+              Math.random() - 0.5
+            );
+            vec3.normalize(spin, spin);
+            vec3.scale(spin, spin, 0.001);
+            EM.ensureComponentOn(g, RotationDef);
+            EM.ensureComponentOn(g, AngularVelocityDef, spin);
+
             sys.grid.delete(q + n.q, r + n.r);
             droppedTiles.push(g);
           }
