@@ -25,6 +25,7 @@ export interface AnimateTo {
 export const EASE_LINEAR: EaseFn = (p) => p;
 export const EASE_OUTQUAD: EaseFn = (p) => 1 - (1 - p) ** 2;
 export const EASE_INQUAD: EaseFn = (p) => p ** 2;
+export const EASE_INCUBE: EaseFn = (p) => p ** 3;
 export const EASE_OUTBACK: EaseFn = (p) => {
   const m = p - 1;
   const k = 1.70158; // 10% bounce, see Michaelangel007's link for derivation

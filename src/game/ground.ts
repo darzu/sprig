@@ -50,6 +50,7 @@ import { PhysicsTimerDef } from "../time.js";
 import {
   AnimateToDef,
   EASE_INBACK,
+  EASE_INCUBE,
   EASE_INQUAD,
   EASE_INVERSE,
   EASE_LINEAR,
@@ -81,7 +82,8 @@ const RIVER_TURN_FACTOR = 0.0;
 
 const REVEAL_DIST = 2;
 const FALLOUT_DIST = 4;
-const TILE_FALL_DIST = 100;
+const TILE_SPAWN_DIST = 100;
+const TILE_FALL_DIST = 200;
 
 export type GroundProps = Component<typeof GroundPropsDef>;
 
@@ -267,7 +269,7 @@ function raiseTile(
   const y = Y;
   const startPos: vec3 = [
     hexX(q, r, SIZE),
-    y - TILE_FALL_DIST,
+    y - TILE_SPAWN_DIST,
     hexZ(q, r, SIZE),
   ];
   const endPos: vec3 = [hexX(q, r, SIZE), y, hexZ(q, r, SIZE)];
@@ -349,9 +351,9 @@ function dropNodeTiles(
         endPos,
         progressMs: -nextEaseDelayMs,
         durationMs: easeMsPer,
-        easeFn: EASE_INQUAD,
+        easeFn: EASE_INCUBE,
       });
-      nextEaseDelayMs += easeMsPer * 0.5;
+      // nextEaseDelayMs += easeMsPer * 0.5;
 
       // some random spin
       EM.ensureComponentOn(g, RotationDef);
@@ -417,12 +419,12 @@ export function registerGroundSystems(em: EntityManager) {
       );
       if (pathOutOfRangeIdx >= 0) {
         let easeStart = 0;
-        const easeMs = 500;
+        const easeMs = 1000;
         for (let i = 0; i <= pathOutOfRangeIdx; i++) {
           const n = sys.path[i];
           n.state = "behind";
           const ts = dropNodeTiles(sys, n, easeStart, easeMs);
-          easeStart += ts.length * easeMs * 0.5;
+          // easeStart += ts.length * easeMs * 0.25;
         }
       }
 
