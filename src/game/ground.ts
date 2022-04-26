@@ -46,7 +46,13 @@ import { CameraFollowDef } from "../camera.js";
 import { ShipLocalDef } from "./ship.js";
 import { onInit } from "../init.js";
 import { PhysicsTimerDef } from "../time.js";
-import { AnimateToDef, EASE_OUTBACK, EASE_OUTQUAD } from "../animate-to.js";
+import {
+  AnimateToDef,
+  EASE_LINEAR,
+  EASE_OUTBACK,
+  EASE_OUTQUAD,
+} from "../animate-to.js";
+import { tempVec } from "../temp-pool.js";
 
 /*
 NOTES:
@@ -75,6 +81,7 @@ interface PathNode {
   r: number;
   width: number;
   dirIdx: number;
+  state: "ahead" | "inplay" | "behind";
 }
 
 export const GroundSystemDef = EM.defineComponent("groundSystem", () => {
@@ -158,7 +165,13 @@ function continuePath(path: PathNode[]): PathNode {
   // change width?
   let width = lastNode.width;
 
-  const n = { q: lastNode.q + dq, r: lastNode.r + dr, width, dirIdx };
+  const n: PathNode = {
+    q: lastNode.q + dq,
+    r: lastNode.r + dr,
+    width,
+    dirIdx,
+    state: "ahead",
+  };
   path.push(n);
   return n;
 }
@@ -208,6 +221,7 @@ export function initGroundSystem(em: EntityManager) {
         r: 0,
         dirIdx: 0,
         width: RIVER_WIDTH,
+        state: "inplay",
       };
 
       fillNode(sys, sys.path[0], 0, 0);
@@ -248,7 +262,7 @@ function createTile(
 
 function fillNode(
   sys: GroundSystem,
-  n: PathNode,
+  n: { q: number; r: number; width: number },
   easeDelayMs: number,
   easeMsPer: number
 ): Entity[] {
@@ -283,7 +297,43 @@ function fillNode(
   return newTiles;
 }
 
-const REVEAL_DIST = 3;
+function dropNode(
+  sys: GroundSystem,
+  n: { q: number; r: number; width: number },
+  easeDelayMs: number,
+  easeMsPer: number
+): Entity[] {
+  let nextEaseDelayMs = easeDelayMs;
+  const w = Math.floor(n.width / 2);
+  let droppedTiles: Entity[] = [];
+  for (let q = -w; q <= w; q++) {
+    for (let r = -w; r <= w; r++) {
+      for (let s = -w; s <= w; s++) {
+        if (q + r + s === 0) {
+          const g = sys.grid.get(q + n.q, r + n.r);
+          if (g && PositionDef.isOn(g)) {
+            const startPos = g.position;
+            const endPos = vec3.add(vec3.create(), startPos, [0, -100, 0]);
+            EM.ensureComponentOn(g, AnimateToDef, {
+              startPos,
+              endPos,
+              progressMs: -nextEaseDelayMs,
+              durationMs: easeMsPer,
+              easeFn: EASE_LINEAR,
+            });
+            nextEaseDelayMs += easeMsPer * 0.5;
+            sys.grid.delete(q + n.q, r + n.r);
+            droppedTiles.push(g);
+          }
+        }
+      }
+    }
+  }
+  return droppedTiles;
+}
+
+const REVEAL_DIST = 2;
+const FALLOUT_DIST = 4;
 
 export function registerGroundSystems(em: EntityManager) {
   let lastShipQ = NaN;
@@ -304,77 +354,41 @@ export function registerGroundSystems(em: EntityManager) {
       // haven't changed tiles
       if (shipQ === lastShipQ && shipR === lastShipR) return;
 
-      // // highlight current tile
-      // const curr = sys.grid.get(shipQ, shipR);
-      // if (curr) {
-      //   if (!ColorDef.isOn(curr)) return; // not initialized yet
-      //   curr.color[1] = 0.2;
-      // }
-      // // de-highlight last tile
-      // const last = sys.grid.get(lastShipQ, lastShipR);
-      // if (last) {
-      //   assert(ColorDef.isOn(last));
-      //   last.color[0] *= 0.1;
-      //   last.color[1] *= 0.1;
-      //   last.color[2] *= 0.1;
-      // }
+      // check for tiles to reveal
+      {
+        const pathToReveal = sys.path.filter(
+          (n) =>
+            n.state === "ahead" &&
+            hexDist(n.q, n.r, shipQ, shipR) <= REVEAL_DIST
+        );
+        let easeStart = 0;
+        const easeMs = 500;
+        for (let n of pathToReveal) {
+          n.state = "inplay";
+          const ts = fillNode(sys, n, easeStart, easeMs);
+          easeStart += ts.length * easeMs * 0.5;
+        }
+      }
 
-      const pathInRange = sys.path.filter(
-        (n) => hexDist(n.q, n.r, shipQ, shipR) < REVEAL_DIST
+      // check for tiles to drop
+      const pathOutOfRangeIdx = sys.path.findIndex(
+        (n) =>
+          n.state === "inplay" &&
+          hexDist(n.q, n.r, shipQ, shipR) >= FALLOUT_DIST
       );
-      let easeStart = 0;
-      const easeMs = 500;
-      for (let n of pathInRange) {
-        const ts = fillNode(sys, n, easeStart, easeMs);
-        easeStart += ts.length * easeMs * 0.5;
+      if (pathOutOfRangeIdx >= 0) {
+        let easeStart = 0;
+        const easeMs = 500;
+        for (let i = 0; i <= pathOutOfRangeIdx; i++) {
+          const n = sys.path[i];
+          n.state = "behind";
+          const ts = dropNode(sys, n, easeStart, easeMs);
+          easeStart += ts.length * easeMs * 0.5;
+        }
       }
 
       lastShipQ = shipQ;
       lastShipR = shipR;
-
-      // for (let n of sys.path) {
-      //   if (hexDist(n.q, n.r,
-      // }
-
-      // if (
-      //   sys.groundPool.length === 0 ||
-      //   sys.groundPool.some((id) => !em.findEntity(id, [GroundLocalDef]))
-      // )
-      //   // not inited
-      //   return;
-
-      // // initial placement
-      // if (sys.initialPlace) {
-      //   sys.initialPlace = false;
-      //   sys.nextScore = sys.initialScore;
-      //   sys.totalPlaced = 0;
-      //   sys.nextGroundIdx = 0;
-
-      //   for (let x = 0; x < NUM_X; x++) {
-      //     for (let z = 0; z < NUM_Z; z++) {
-      //       placeNextGround();
-      //     }
-      //   }
-      // } else {
-      //   // ship progress
-      //   const score = res.score.currentScore;
-      //   while (score > sys.nextScore) {
-      //     placeNextGround();
-      //     sys.nextScore += THIRDSIZE / 10;
-      //   }
-      // }
-
-      // function placeNextGround() {
-      //   // move ground
-      //   const gId = sys.groundPool[sys.nextGroundIdx];
-      //   const g = em.findEntity(gId, [GroundLocalDef, PositionDef]);
-      //   if (g) {
-      //     vec3.copy(g.position, calcLoc(sys.totalPlaced));
-
-      //     sys.nextGroundIdx = (sys.nextGroundIdx + 1) % sys.groundPool.length;
-      //     sys.totalPlaced += 1;
-      //   }
-      // }
     },
     "groundSystem"
   );
