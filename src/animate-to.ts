@@ -1,6 +1,5 @@
 // TODO(@darzu): Move easing system elsewhere
 // TODO(@darzu): share code with smoothing?
-// TODO(@darzu): support more: https://easings.net/#
 
 import { EM } from "./entity-manager.js";
 import { vec3 } from "./gl-matrix.js";
@@ -20,8 +19,16 @@ export interface AnimateTo {
   // TODO(@darzu): pathFn
 }
 
+// NOTE:
+//  ideas from: https://easings.net/# (GPLv3, don't use code)
+//  code from: https://github.com/Michaelangel007/easing#tldr-shut-up-and-show-me-the-code
 export const EASE_LINEAR: EaseFn = (p) => p;
 export const EASE_OUTQUAD: EaseFn = (p) => 1 - (1 - p) ** 2;
+export const EASE_OUTBACK: EaseFn = (p) => {
+  const m = p - 1;
+  const k = 1.70158; // 10% bounce, see Michaelangel007's link for derivation
+  return 1 + m * m * (m * (k + 1) + k);
+};
 
 export const AnimateToDef = EM.defineComponent(
   "animateTo",
@@ -31,7 +38,7 @@ export const AnimateToDef = EM.defineComponent(
       endPos: a.endPos ?? vec3.create(),
       easeFn: a.easeFn ?? EASE_LINEAR,
       durationMs: a.durationMs ?? 1000,
-      progressMs: 0,
+      progressMs: a.progressMs ?? 0,
     };
   }
 );
@@ -45,11 +52,18 @@ onInit(() => {
     (cs, res) => {
       let toRemove: number[] = [];
 
+      // advance the animation
       const dt = res.physicsTimer.period;
       for (let c of cs) {
         c.animateTo.progressMs += dt;
 
         const percentTime = c.animateTo.progressMs / c.animateTo.durationMs;
+
+        if (percentTime < 0) {
+          // outside the time bounds, we're in a start delay
+          vec3.copy(c.position, c.animateTo.startPos);
+          continue;
+        }
 
         if (percentTime >= 1.0) {
           toRemove.push(c.id);

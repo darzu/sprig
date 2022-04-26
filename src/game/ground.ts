@@ -46,7 +46,7 @@ import { CameraFollowDef } from "../camera.js";
 import { ShipLocalDef } from "./ship.js";
 import { onInit } from "../init.js";
 import { PhysicsTimerDef } from "../time.js";
-import { AnimateToDef, EASE_OUTQUAD } from "../animate-to.js";
+import { AnimateToDef, EASE_OUTBACK, EASE_OUTQUAD } from "../animate-to.js";
 
 /*
 NOTES:
@@ -66,7 +66,7 @@ const X_SPC = (WIDTH * 3) / 4;
 const Z_SPC = HEIGHT;
 
 // const RIVER_TURN_FACTOR = 0.0;
-const RIVER_TURN_FACTOR = 0.2;
+const RIVER_TURN_FACTOR = 0.0;
 
 export type GroundProps = Component<typeof GroundPropsDef>;
 
@@ -224,6 +224,7 @@ function createTile(
   q: number,
   r: number,
   color: vec3,
+  easeDelayMs: number,
   easeMs: number
 ) {
   console.log(`created!`);
@@ -237,8 +238,9 @@ function createTile(
   EM.ensureComponentOn(g, AnimateToDef, {
     startPos,
     endPos,
+    progressMs: -easeDelayMs,
     durationMs: easeMs,
-    easeFn: EASE_OUTQUAD,
+    easeFn: EASE_OUTBACK,
   });
   sys.grid.set(q, r, g);
   return g;
@@ -247,10 +249,10 @@ function createTile(
 function fillNode(
   sys: GroundSystem,
   n: PathNode,
-  easeMsStart: number,
+  easeDelayMs: number,
   easeMsPer: number
 ): Entity[] {
-  let nextEaseMs = easeMsStart + easeMsPer;
+  let nextEaseDelayMs = easeDelayMs;
   const w = Math.floor(n.width / 2);
   let newTiles: Entity[] = [];
   for (let q = -w; q <= w; q++) {
@@ -263,8 +265,15 @@ function fillNode(
               0.03 + jitter(0.01),
               0.2 + jitter(0.02),
             ];
-            const t = createTile(sys, q + n.q, r + n.r, color, nextEaseMs);
-            nextEaseMs += easeMsPer;
+            const t = createTile(
+              sys,
+              q + n.q,
+              r + n.r,
+              color,
+              nextEaseDelayMs,
+              easeMsPer
+            );
+            nextEaseDelayMs += easeMsPer * 0.5;
             newTiles.push(t);
           }
         }
@@ -317,7 +326,7 @@ export function registerGroundSystems(em: EntityManager) {
       const easeMs = 500;
       for (let n of pathInRange) {
         const ts = fillNode(sys, n, easeStart, easeMs);
-        easeStart += ts.length * easeMs;
+        easeStart += ts.length * easeMs * 0.5;
       }
 
       lastShipQ = shipQ;
