@@ -46,7 +46,7 @@ import { CameraFollowDef } from "../camera.js";
 import { ShipLocalDef } from "./ship.js";
 import { onInit } from "../init.js";
 import { PhysicsTimerDef } from "../time.js";
-import { AnimateToDef, EASE_OUTQUAD } from "./animate-to.js";
+import { AnimateToDef, EASE_OUTQUAD } from "../animate-to.js";
 
 /*
 NOTES:

@@ -2,11 +2,11 @@
 // TODO(@darzu): share code with smoothing?
 // TODO(@darzu): support more: https://easings.net/#
 
-import { EM } from "../entity-manager.js";
-import { vec3 } from "../gl-matrix.js";
-import { onInit } from "../init.js";
-import { PositionDef } from "../physics/transform.js";
-import { PhysicsTimerDef } from "../time.js";
+import { EM } from "./entity-manager.js";
+import { vec3 } from "./gl-matrix.js";
+import { onInit } from "./init.js";
+import { PositionDef } from "./physics/transform.js";
+import { PhysicsTimerDef } from "./time.js";
 
 export type EaseFn = (percent: number) => number;
 
