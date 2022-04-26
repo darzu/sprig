@@ -79,6 +79,9 @@ const Z_SPC = HEIGHT;
 // const RIVER_TURN_FACTOR = 0.0;
 const RIVER_TURN_FACTOR = 0.0;
 
+const REVEAL_DIST = 2;
+const FALLOUT_DIST = 4;
+
 export type GroundProps = Component<typeof GroundPropsDef>;
 
 interface PathNode {
@@ -254,6 +257,9 @@ function createTile(
   const startPos: vec3 = [hexX(q, r, SIZE), y - 100, hexZ(q, r, SIZE)];
   const endPos: vec3 = [hexX(q, r, SIZE), y, hexZ(q, r, SIZE)];
   EM.ensureComponentOn(g, GroundPropsDef, startPos, color);
+  // NOTE: animateTo will only be on the host but that's fine, the host owns all
+  //    these anyway
+  // TODO(@darzu): we might want to animate on clients b/c it'd be smoother
   EM.ensureComponentOn(g, AnimateToDef, {
     startPos,
     endPos,
@@ -337,9 +343,6 @@ function dropNodeTiles(
   return droppedTiles;
 }
 
-const REVEAL_DIST = 2;
-const FALLOUT_DIST = 4;
-
 export function registerGroundSystems(em: EntityManager) {
   let lastShipQ = NaN;
   let lastShipR = NaN;
@@ -347,17 +350,18 @@ export function registerGroundSystems(em: EntityManager) {
     null,
     [GroundSystemDef, ScoreDef, MeDef],
     (_, res) => {
+      // host only
       if (!res.me.host) return;
 
+      // where is our ship?
       const ship = em.filterEntities([ShipLocalDef, PositionDef])[0];
       if (!ship) return;
-
-      const sys = res.groundSystem;
-
       const [shipQ, shipR] = xzToHex(ship.position[0], ship.position[2], SIZE);
 
-      // haven't changed tiles
+      // have we changed tiles?
       if (shipQ === lastShipQ && shipR === lastShipR) return;
+
+      const sys = res.groundSystem;
 
       // check for tiles to reveal
       {
