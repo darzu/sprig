@@ -230,7 +230,7 @@ export function initGroundSystem(em: EntityManager) {
 
       fillNode(sys, sys.path[0], 0, 0);
 
-      for (let i = 0; i < 50; i++) {
+      for (let i = 0; i < 10; i++) {
         const n = continuePath(sys.path);
       }
     }
@@ -412,15 +412,15 @@ export function registerGroundSystems(em: EntityManager) {
         }
       }
 
+      // check if we need to extend the path
+      const numAhead = sys.path.filter((n) => n.state === "ahead").length;
+      if (numAhead < 3) for (let i = 0; i < 10; i++) continuePath(sys.path);
+
+      // TODO(@darzu): drop old path nodes?
+
       lastShipQ = shipQ;
       lastShipR = shipR;
     },
     "groundSystem"
   );
-
-  // function calcLoc(num: number): vec3 {
-  //   const x = num % NUM_X;
-  //   const z = Math.floor(num / NUM_X);
-  //   return [(x - 1) * WIDTH, -7, z * WIDTH];
-  // }
 }
