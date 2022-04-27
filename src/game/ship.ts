@@ -57,6 +57,7 @@ import {
 } from "../net/events.js";
 import { TextDef } from "./ui.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
+import { DevConsoleDef } from "../console.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
@@ -318,15 +319,27 @@ export function registerShipSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [ShipLocalDef, LinearVelocityDef, AngularVelocityDef],
-    [GameStateDef],
+    [ShipLocalDef, LinearVelocityDef, AngularVelocityDef, RotationDef],
+    [GameStateDef, InputsDef, DevConsoleDef],
     (ships, res) => {
       if (res.gameState.state !== GameState.PLAYING) return;
       for (let s of ships) {
+        s.linearVelocity[0] = 0.0;
         s.linearVelocity[2] = s.shipLocal.speed;
         s.linearVelocity[1] = -0.01;
         // TODO(@darzu): dbg ship physics when turning
         // s.angularVelocity[1] = -0.0001;
+
+        if (res.dev.showConsole) {
+          // Debugging
+          const turnSpeed = Math.PI * 0.01;
+          if (res.inputs.keyDowns["z"])
+            quat.rotateY(s.rotation, s.rotation, turnSpeed);
+          if (res.inputs.keyDowns["x"])
+            quat.rotateY(s.rotation, s.rotation, -turnSpeed);
+
+          vec3.transformQuat(s.linearVelocity, s.linearVelocity, s.rotation);
+        }
       }
     },
     "shipMove"

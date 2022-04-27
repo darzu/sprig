@@ -106,12 +106,12 @@ export function* hexesWithin(
 // export type Hex = { q: number; r: number };
 
 export const HEX_DIRS = [
-  { q: +0, r: -1 },
-  { q: +1, r: -1 },
-  { q: +1, r: -0 },
-  { q: -0, r: +1 },
-  { q: -1, r: +1 },
-  { q: -1, r: +0 },
+  [+0, -1],
+  [+1, -1],
+  [+1, -0],
+  [-0, +1],
+  [-1, +1],
+  [-1, +0],
 ] as const;
 export const HEX_N = HEX_DIRS[0];
 export const HEX_NE = HEX_DIRS[1];

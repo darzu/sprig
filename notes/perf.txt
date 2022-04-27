@@ -111,3 +111,8 @@ Check for more perf tips:
 
 In a big world with float problems: subtact before multiply
     https://youtu.be/Ur53sJdS8rQ?t=812
+
+vec3 on the pass-by-value?
+  It's a huge PITA to have vec3's be pass-by-reference
+  Can we pack 3 floats into some JS object that's pass by value?
+    Maybe 2 float32s into one of JS's float 64s

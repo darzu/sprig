@@ -6,7 +6,7 @@ import {
   EntityManager,
   EntityW,
 } from "../entity-manager.js";
-import { mat4, quat, vec3 } from "../gl-matrix.js";
+import { mat4, quat, vec2, vec3 } from "../gl-matrix.js";
 import { RenderableConstructDef } from "../render/renderer.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { ScoreDef } from "./game.js";
@@ -49,8 +49,8 @@ const DEPTH = SIZE / 4;
 
 const Y = -DEPTH - 7;
 
+const RIVER_TURN_FACTOR = 0.2;
 // const RIVER_TURN_FACTOR = 0.0;
-const RIVER_TURN_FACTOR = 0.0;
 
 const REVEAL_DIST = 2;
 const FALLOUT_DIST = 4;
@@ -149,7 +149,7 @@ function continuePath(path: PathNode[]): PathNode {
     cwOrccw = -cwOrccw;
     dirIdx = (dirIdx + HEX_DIRS.length + cwOrccw * 2) % HEX_DIRS.length;
   }
-  let { q: dq, r: dr } = HEX_DIRS[dirIdx];
+  let [dq, dr] = HEX_DIRS[dirIdx];
 
   // change width?
   let width = lastNode.width;
@@ -283,17 +283,32 @@ function raiseNodeTiles(
   const w = Math.floor(n.width / 2);
   let newTiles: Entity[] = [];
 
-  const forwardDir = HEX_DIRS[n.dirIdx];
-  const leftDir = HEX_DIRS[HEX_LEFT(n.dirIdx)];
-  const rightDir = HEX_DIRS[HEX_RIGHT(n.dirIdx)];
+  const forward = vec2.add(vec2.create(), [n.q, n.r], HEX_DIRS[n.dirIdx]);
+  const left = vec2.add(
+    vec2.create(),
+    [n.q, n.r],
+    HEX_DIRS[HEX_LEFT(n.dirIdx)]
+  );
+  const right = vec2.add(
+    vec2.create(),
+    [n.q, n.r],
+    HEX_DIRS[HEX_RIGHT(n.dirIdx)]
+  );
 
-  for (let [q, r] of hexesWithin(n.q, n.r, w)) {
+  for (let qr of hexesWithin(n.q, n.r, w)) {
+    const [q, r] = qr;
     if (!sys.grid.has(q, r)) {
+      // TODO(@darzu): DEBUG left/right/forward tiles
       const color: vec3 = [
-        0.03 + jitter(0.01),
-        0.03 + jitter(0.01),
-        0.2 + jitter(0.02),
+        vec2.exactEquals(qr, left) ? 0.2 : 0.1,
+        vec2.exactEquals(qr, right) ? 0.2 : 0.1,
+        vec2.exactEquals(qr, forward) ? 0.2 : 0.1,
       ];
+      // const color: vec3 = [
+      //   0.03 + jitter(0.01),
+      //   0.03 + jitter(0.01),
+      //   0.2 + jitter(0.02),
+      // ];
       const t = raiseTile(sys, q, r, color, nextEaseDelayMs, easeMsPer);
       nextEaseDelayMs += easeMsPer * 0.5;
       newTiles.push(t);
