@@ -31,7 +31,7 @@ import { defineNetEntityHelper } from "../em_helpers.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { raiseBulletBoat } from "./bullet-collision.js";
 import { GameStateDef, GameState } from "./gamestate.js";
-import { GroundSystemDef, WIDTH } from "./ground.js";
+import { GroundSystemDef } from "./ground.js";
 
 export const { BoatPropsDef, BoatLocalDef, createBoat } = defineNetEntityHelper(
   EM,

@@ -10,24 +10,9 @@ import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { RenderableConstructDef } from "../render/renderer.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { ScoreDef } from "./game.js";
-import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
-import { Serializer, Deserializer } from "../serialize.js";
-import { FinishedDef } from "../build.js";
-import {
-  Assets,
-  AssetsDef,
-  DARK_BLUE,
-  GameMesh,
-  gameMeshFromMesh,
-  LIGHT_BLUE,
-} from "./assets.js";
-import {
-  cloneMesh,
-  getAABBFromMesh,
-  scaleMesh,
-  scaleMesh3,
-  transformMesh,
-} from "../render/mesh-pool.js";
+import { MeDef } from "../net/components.js";
+import { AssetsDef, GameMesh, gameMeshFromMesh } from "./assets.js";
+import { transformMesh } from "../render/mesh-pool.js";
 import { defineNetEntityHelper } from "../em_helpers.js";
 import { assert } from "../test.js";
 import { ColorDef } from "../color.js";
@@ -39,25 +24,15 @@ import {
   hexX,
   hexZ,
   HEX_DIRS,
+  HEX_LEFT,
+  HEX_RIGHT,
   xzToHex,
 } from "../hex.js";
 import { chance, jitter } from "../math.js";
 import { LocalPlayerDef } from "./player.js";
 import { CameraFollowDef } from "../camera.js";
 import { ShipLocalDef } from "./ship.js";
-import { onInit } from "../init.js";
-import { PhysicsTimerDef } from "../time.js";
-import {
-  AnimateToDef,
-  EASE_INBACK,
-  EASE_INCUBE,
-  EASE_INQUAD,
-  EASE_INVERSE,
-  EASE_LINEAR,
-  EASE_OUTBACK,
-  EASE_OUTQUAD,
-} from "../animate-to.js";
-import { tempVec } from "../temp-pool.js";
+import { AnimateToDef, EASE_INCUBE, EASE_OUTBACK } from "../animate-to.js";
 import { AngularVelocityDef } from "../physics/motion.js";
 
 /*
@@ -68,14 +43,11 @@ NOTES:
 */
 
 const SIZE = 48;
-export const WIDTH = SIZE * 2;
+const WIDTH = SIZE * 2;
 const HEIGHT = Math.sqrt(3) * SIZE;
 const DEPTH = SIZE / 4;
 
 const Y = -DEPTH - 7;
-
-const X_SPC = (WIDTH * 3) / 4;
-const Z_SPC = HEIGHT;
 
 // const RIVER_TURN_FACTOR = 0.0;
 const RIVER_TURN_FACTOR = 0.0;
@@ -303,13 +275,18 @@ function raiseTile(
 
 function raiseNodeTiles(
   sys: GroundSystem,
-  n: { q: number; r: number; width: number },
+  n: PathNode,
   easeDelayMs: number,
   easeMsPer: number
 ): Entity[] {
   let nextEaseDelayMs = easeDelayMs;
   const w = Math.floor(n.width / 2);
   let newTiles: Entity[] = [];
+
+  const forwardDir = HEX_DIRS[n.dirIdx];
+  const leftDir = HEX_DIRS[HEX_LEFT(n.dirIdx)];
+  const rightDir = HEX_DIRS[HEX_RIGHT(n.dirIdx)];
+
   for (let [q, r] of hexesWithin(n.q, n.r, w)) {
     if (!sys.grid.has(q, r)) {
       const color: vec3 = [
@@ -322,6 +299,11 @@ function raiseNodeTiles(
       newTiles.push(t);
     }
   }
+
+  // TODO(@darzu): spawn enemies on these new tiles. Would like to know:
+  //    left or right of river
+  // paint NeedsSpawn and have a SpawnSystem elsewhere
+
   return newTiles;
 }
 

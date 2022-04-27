@@ -120,6 +120,13 @@ export const HEX_S = HEX_DIRS[3];
 export const HEX_SW = HEX_DIRS[4];
 export const HEX_NW = HEX_DIRS[5];
 
+export function HEX_LEFT(dirIdx: number): number {
+  return (dirIdx + HEX_DIRS.length - 1) % HEX_DIRS.length;
+}
+export function HEX_RIGHT(dirIdx: number): number {
+  return (dirIdx + 1) % HEX_DIRS.length;
+}
+
 // function flat_hex_to_pixel(hex):
 //     var x = size * (     3./2 * hex.q                    )
 //     var y = size * (sqrt(3)/2 * hex.q  +  sqrt(3) * hex.r)
