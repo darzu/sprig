@@ -106,14 +106,14 @@ export function* hexesWithin(
 
 // export type Hex = { q: number; r: number };
 
-export const HEX_DIRS = [
+export const HEX_DIRS: TupleN<vec2, 6> = [
   [+0, -1],
   [+1, -1],
   [+1, -0],
   [-0, +1],
   [-1, +1],
   [-1, +0],
-] as const;
+];
 export const HEX_N_IDX = 0;
 export const HEX_NE_IDX = 1;
 export const HEX_SE_IDX = 2;
@@ -127,6 +127,9 @@ export const HEX_S = HEX_DIRS[3];
 export const HEX_SW = HEX_DIRS[4];
 export const HEX_NW = HEX_DIRS[5];
 
+export const HEX_E_DIR = [+1, -0.5, -0.5];
+export const HEX_W_DIR = [-1, +0.5, +0.5];
+
 export function hexDirAdd(dirIdx: number, n: number): number {
   return (dirIdx + HEX_DIRS.length + n) % HEX_DIRS.length;
 }
@@ -137,19 +140,47 @@ export function hexRight(dirIdx: number): number {
   return (dirIdx + 1) % HEX_DIRS.length;
 }
 
+export function hexNeighborDirs(dirIdx: number = 0): TupleN<vec2, 6> {
+  return [
+    HEX_DIRS[dirIdx],
+    HEX_DIRS[hexDirAdd(dirIdx, 1)],
+    HEX_DIRS[hexDirAdd(dirIdx, 2)],
+    HEX_DIRS[hexDirAdd(dirIdx, 3)],
+    HEX_DIRS[hexDirAdd(dirIdx, 4)],
+    HEX_DIRS[hexDirAdd(dirIdx, 5)],
+  ];
+}
+
+export function hexDirCCW90(dirIdx: number = 0): vec3 {
+  return hexAvg(
+    HEX_DIRS[hexDirAdd(dirIdx, HEX_SW_IDX)],
+    HEX_DIRS[hexDirAdd(dirIdx, HEX_NW_IDX)]
+  );
+}
+export function hexDirCW90(dirIdx: number = 0): vec3 {
+  return hexAvg(
+    HEX_DIRS[hexDirAdd(dirIdx, HEX_SE_IDX)],
+    HEX_DIRS[hexDirAdd(dirIdx, HEX_NE_IDX)]
+  );
+}
+
 export function hexNeighbors(
   q: number,
   r: number,
   dirIdx: number = 0
 ): TupleN<vec2, 6> {
   const qr = [q, r] as const;
+  return hexNeighborDirs(dirIdx).map((d) => vec2.add([0, 0], qr, d)) as TupleN<
+    vec2,
+    6
+  >;
+}
+
+export function hexAvg(qr1: vec2, qr2: vec2): vec3 {
   return [
-    vec2.add([0, 0], qr, HEX_DIRS[dirIdx]),
-    vec2.add([0, 0], qr, HEX_DIRS[hexDirAdd(dirIdx, 1)]),
-    vec2.add([0, 0], qr, HEX_DIRS[hexDirAdd(dirIdx, 2)]),
-    vec2.add([0, 0], qr, HEX_DIRS[hexDirAdd(dirIdx, 3)]),
-    vec2.add([0, 0], qr, HEX_DIRS[hexDirAdd(dirIdx, 4)]),
-    vec2.add([0, 0], qr, HEX_DIRS[hexDirAdd(dirIdx, 5)]),
+    (qr1[0] + qr2[0]) * 0.5,
+    (qr1[1] + qr2[1]) * 0.5,
+    (-qr1[0] - qr1[1] - qr2[0] - qr2[1]) * 0.5,
   ];
 }
 

@@ -24,17 +24,11 @@ import {
   hexX,
   hexZ,
   HEX_DIRS,
-  hexLeft,
-  hexRight,
   xzToHex,
-  hexNeighbors,
-  HEX_NW_IDX,
-  HEX_SW_IDX,
-  HEX_NE_IDX,
-  HEX_SE_IDX,
-  HEX_N_IDX,
+  hexDirCCW90,
+  hexDirCW90,
 } from "../hex.js";
-import { chance, jitter } from "../math.js";
+import { chance } from "../math.js";
 import { LocalPlayerDef } from "./player.js";
 import { CameraFollowDef } from "../camera.js";
 import { ShipLocalDef } from "./ship.js";
@@ -54,6 +48,8 @@ const HEIGHT = Math.sqrt(3) * SIZE;
 const DEPTH = SIZE / 4;
 
 const Y = -DEPTH - 7;
+
+const RIVER_WIDTH = 3;
 
 const RIVER_TURN_FACTOR = 0.2;
 // const RIVER_TURN_FACTOR = 0.0;
@@ -132,8 +128,6 @@ export const { GroundPropsDef, GroundLocalDef, createGround } =
       g.collider.targetLayers = []; // don't seek collision with anything
     },
   });
-
-const RIVER_WIDTH = 3;
 
 function continuePath(path: PathNode): PathNode {
   // walk to the end
@@ -302,19 +296,21 @@ function raiseNodeTiles(
   let newTiles: Entity[] = [];
 
   const nextDirIdx = n.next ? n.next.dirIdx : n.dirIdx;
-  const neighbors = hexNeighbors(n.q, n.r, nextDirIdx);
+  const leftDir = hexDirCCW90(nextDirIdx);
+  const rightDir = hexDirCW90(nextDirIdx);
 
   for (let qr of hexesWithin(n.q, n.r, w)) {
     const [q, r] = qr;
     if (!sys.grid.has(q, r)) {
       // TODO(@darzu): DEBUG left/right/forward tiles
-      const isLeft =
-        vec2.exactEquals(qr, neighbors[HEX_NW_IDX]) ||
-        vec2.exactEquals(qr, neighbors[HEX_SW_IDX]);
-      const isRight =
-        vec2.exactEquals(qr, neighbors[HEX_NE_IDX]) ||
-        vec2.exactEquals(qr, neighbors[HEX_SE_IDX]);
-      const isForward = vec2.exactEquals(qr, neighbors[HEX_N_IDX]);
+      const relQR = vec2.sub([0, 0], qr, [n.q, n.r]);
+      const relQRS: vec3 = [relQR[0], relQR[1], -relQR[0] - relQR[1]];
+      const isForwardFn: (p: PathNode) => boolean = (p) =>
+        vec2.exactEquals(qr, [p.q, p.r]) ||
+        (p.next ? isForwardFn(p.next) : false);
+      const isForward = isForwardFn(n);
+      const isLeft = !isForward && vec3.dot(relQRS, leftDir) > 0;
+      const isRight = !isForward && vec3.dot(relQRS, rightDir) > 0;
       const color: vec3 = [
         isLeft ? 0.2 : 0.1,
         isRight ? 0.2 : 0.1,
