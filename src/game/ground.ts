@@ -65,6 +65,8 @@ interface PathNode {
   width: number;
   dirIdx: number;
   state: "ahead" | "inplay" | "behind";
+  next: PathNode | undefined;
+  prev: PathNode | undefined;
 }
 
 type GroundTile = EntityW<[typeof GroundPropsDef]>;
@@ -75,7 +77,7 @@ type GroundTileInited = EntityW<
 export const GroundSystemDef = EM.defineComponent("groundSystem", () => {
   return {
     grid: createHexGrid<GroundTile>(),
-    path: [] as PathNode[],
+    currentPath: undefined as PathNode | undefined,
     objFreePool: [] as GroundTileInited[],
   };
 });
@@ -127,22 +129,26 @@ export const { GroundPropsDef, GroundLocalDef, createGround } =
 
 const RIVER_WIDTH = 3;
 
-function continuePath(path: PathNode[]): PathNode {
-  assert(path.length >= 1, "assumes non-empty path");
-  const lastNode = path[path.length - 1];
+function continuePath(path: PathNode): PathNode {
+  // walk to the end
+  if (path.next) return continuePath(path.next);
 
-  // change directions?
-  let dirIdx = lastNode.dirIdx;
-  let lastTurn = path.reduce(
-    (p, n, i) => (path[i].dirIdx !== dirIdx ? i : p),
-    0
-  );
-  let lastTurnDist = path.length - lastTurn;
+  // how far back did we last turn?
+  let dirIdx = path.dirIdx;
+  let lastTurnDist = 0;
+  let lastTurn: PathNode | undefined = path;
+  while (lastTurn && lastTurn.dirIdx === path.dirIdx) {
+    lastTurn = lastTurn.prev;
+    lastTurnDist++;
+  }
+
+  // should we turn?
   let cwOrccw = chance(0.5) ? +1 : -1;
   if (chance(RIVER_TURN_FACTOR * lastTurnDist))
     dirIdx = (dirIdx + HEX_DIRS.length + cwOrccw) % HEX_DIRS.length;
+
+  // dont allow going south to prevent river crossing itself
   if (dirIdx === 2 || dirIdx === 3 || dirIdx === 4) {
-    // dont allow going south to prevent river crossing itself
     // TODO(@darzu): is there some other way we can disallow this while still
     //    having interesting bends in the river? In RL this can't happen b/c of
     //    elevation.
@@ -152,16 +158,19 @@ function continuePath(path: PathNode[]): PathNode {
   let [dq, dr] = HEX_DIRS[dirIdx];
 
   // change width?
-  let width = lastNode.width;
+  let width = path.width;
 
   const n: PathNode = {
-    q: lastNode.q + dq,
-    r: lastNode.r + dr,
+    q: path.q + dq,
+    r: path.r + dr,
     width,
     dirIdx,
     state: "ahead",
+    prev: path,
+    next: undefined,
   };
-  path.push(n);
+  path.next = n;
+
   return n;
 }
 
@@ -213,18 +222,21 @@ export function initGroundSystem(em: EntityManager) {
       // createTile(-2, 0, [0.1, 0.1, 0.2]);
       // createTile(0, 0, [0.1, 0.1, 0.1]);
 
-      sys.path[0] = {
+      sys.currentPath = {
         q: 0,
         r: 0,
         dirIdx: 0,
         width: RIVER_WIDTH,
         state: "inplay",
+        prev: undefined,
+        next: undefined,
       };
 
-      raiseNodeTiles(sys, sys.path[0], 0, 0);
+      raiseNodeTiles(sys, sys.currentPath, 0, 0);
 
+      let lastPath = sys.currentPath;
       for (let i = 0; i < 10; i++) {
-        const n = continuePath(sys.path);
+        lastPath = continuePath(lastPath);
       }
     }
   );
@@ -382,6 +394,10 @@ export function registerGroundSystems(em: EntityManager) {
       // host only
       if (!res.me.host) return;
 
+      // is our path inited?
+      const sys = res.groundSystem;
+      if (!sys.currentPath) return;
+
       // where is our ship?
       const ship = em.filterEntities([ShipLocalDef, PositionDef])[0];
       if (!ship) return;
@@ -390,44 +406,61 @@ export function registerGroundSystems(em: EntityManager) {
       // have we changed tiles?
       if (shipQ === lastShipQ && shipR === lastShipR) return;
 
-      const sys = res.groundSystem;
-
       // check for tiles to reveal
       {
-        const pathToReveal = sys.path.filter(
-          (n) =>
-            n.state === "ahead" &&
-            hexDist(n.q, n.r, shipQ, shipR) <= REVEAL_DIST
-        );
+        const firstAheadFn: (p?: PathNode) => PathNode | undefined = (p) =>
+          !p || p.state === "ahead" ? p : firstAheadFn(p?.next);
+        let ahead = firstAheadFn(sys.currentPath);
         let easeStart = 0;
         const easeMs = 500;
-        for (let n of pathToReveal) {
-          n.state = "inplay";
-          const ts = raiseNodeTiles(sys, n, easeStart, easeMs);
+        while (
+          ahead &&
+          hexDist(ahead.q, ahead.r, shipQ, shipR) <= REVEAL_DIST
+        ) {
+          ahead.state = "inplay";
+          const ts = raiseNodeTiles(sys, ahead, easeStart, easeMs);
           easeStart += ts.length * easeMs * 0.5;
+
+          // advance out path pointer
+          sys.currentPath = ahead;
+
+          ahead = firstAheadFn(ahead.next);
         }
       }
 
       // check for tiles to drop
-      const pathOutOfRangeIdx = sys.path.findIndex(
-        (n) =>
-          n.state === "inplay" &&
-          hexDist(n.q, n.r, shipQ, shipR) >= FALLOUT_DIST
-      );
-      if (pathOutOfRangeIdx >= 0) {
+      let numDropped = 0;
+      {
+        assert(
+          sys.currentPath.state === "inplay",
+          "The current path should always be inplay"
+        );
+        const lastInPlayFn: (p: PathNode) => PathNode | undefined = (p) =>
+          p.prev && p.prev.state === "inplay"
+            ? lastInPlayFn(p.prev)
+            : p.state === "inplay"
+            ? p
+            : undefined;
+        let behind = lastInPlayFn(sys.currentPath);
         let easeStart = 0;
         const easeMs = 1000;
-        for (let i = 0; i <= pathOutOfRangeIdx; i++) {
-          const n = sys.path[i];
-          n.state = "behind";
-          const ts = dropNodeTiles(sys, n, easeStart, easeMs);
+        while (
+          behind &&
+          behind !== sys.currentPath &&
+          hexDist(behind.q, behind.r, shipQ, shipR) >= FALLOUT_DIST
+        ) {
+          behind.state = "behind";
+          const ts = dropNodeTiles(sys, behind, easeStart, easeMs);
           // easeStart += ts.length * easeMs * 0.25;
+          behind = lastInPlayFn(behind);
+          numDropped++;
         }
       }
 
       // check if we need to extend the path
-      const numAhead = sys.path.filter((n) => n.state === "ahead").length;
-      if (numAhead < 3) for (let i = 0; i < 10; i++) continuePath(sys.path);
+      for (let i = 0; i < numDropped; i++) {
+        continuePath(sys.currentPath);
+      }
 
       // TODO(@darzu): drop old path nodes?
 
