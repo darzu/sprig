@@ -17,7 +17,8 @@ hmm could we restrict outselves to positive q/r only?
   nah, too restrictive
 */
 
-import { vec3 } from "./gl-matrix.js";
+import { TupleN } from "./entity-manager.js";
+import { vec2, vec3 } from "./gl-matrix.js";
 import { packI16s } from "./util.js";
 
 // TODO(@darzu): is using [number,number] bad for perf?
@@ -113,6 +114,12 @@ export const HEX_DIRS = [
   [-1, +1],
   [-1, +0],
 ] as const;
+export const HEX_N_IDX = 0;
+export const HEX_NE_IDX = 1;
+export const HEX_SE_IDX = 2;
+export const HEX_S_IDX = 3;
+export const HEX_SW_IDX = 4;
+export const HEX_NW_IDX = 5;
 export const HEX_N = HEX_DIRS[0];
 export const HEX_NE = HEX_DIRS[1];
 export const HEX_SE = HEX_DIRS[2];
@@ -120,11 +127,30 @@ export const HEX_S = HEX_DIRS[3];
 export const HEX_SW = HEX_DIRS[4];
 export const HEX_NW = HEX_DIRS[5];
 
-export function HEX_LEFT(dirIdx: number): number {
+export function hexDirAdd(dirIdx: number, n: number): number {
+  return (dirIdx + HEX_DIRS.length + n) % HEX_DIRS.length;
+}
+export function hexLeft(dirIdx: number): number {
   return (dirIdx + HEX_DIRS.length - 1) % HEX_DIRS.length;
 }
-export function HEX_RIGHT(dirIdx: number): number {
+export function hexRight(dirIdx: number): number {
   return (dirIdx + 1) % HEX_DIRS.length;
+}
+
+export function hexNeighbors(
+  q: number,
+  r: number,
+  dirIdx: number = 0
+): TupleN<vec2, 6> {
+  const qr = [q, r] as const;
+  return [
+    vec2.add([0, 0], qr, HEX_DIRS[dirIdx]),
+    vec2.add([0, 0], qr, HEX_DIRS[hexDirAdd(dirIdx, 1)]),
+    vec2.add([0, 0], qr, HEX_DIRS[hexDirAdd(dirIdx, 2)]),
+    vec2.add([0, 0], qr, HEX_DIRS[hexDirAdd(dirIdx, 3)]),
+    vec2.add([0, 0], qr, HEX_DIRS[hexDirAdd(dirIdx, 4)]),
+    vec2.add([0, 0], qr, HEX_DIRS[hexDirAdd(dirIdx, 5)]),
+  ];
 }
 
 // function flat_hex_to_pixel(hex):

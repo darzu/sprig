@@ -24,9 +24,15 @@ import {
   hexX,
   hexZ,
   HEX_DIRS,
-  HEX_LEFT,
-  HEX_RIGHT,
+  hexLeft,
+  hexRight,
   xzToHex,
+  hexNeighbors,
+  HEX_NW_IDX,
+  HEX_SW_IDX,
+  HEX_NE_IDX,
+  HEX_SE_IDX,
+  HEX_N_IDX,
 } from "../hex.js";
 import { chance, jitter } from "../math.js";
 import { LocalPlayerDef } from "./player.js";
@@ -295,26 +301,24 @@ function raiseNodeTiles(
   const w = Math.floor(n.width / 2);
   let newTiles: Entity[] = [];
 
-  const forward = vec2.add(vec2.create(), [n.q, n.r], HEX_DIRS[n.dirIdx]);
-  const left = vec2.add(
-    vec2.create(),
-    [n.q, n.r],
-    HEX_DIRS[HEX_LEFT(n.dirIdx)]
-  );
-  const right = vec2.add(
-    vec2.create(),
-    [n.q, n.r],
-    HEX_DIRS[HEX_RIGHT(n.dirIdx)]
-  );
+  const nextDirIdx = n.next ? n.next.dirIdx : n.dirIdx;
+  const neighbors = hexNeighbors(n.q, n.r, nextDirIdx);
 
   for (let qr of hexesWithin(n.q, n.r, w)) {
     const [q, r] = qr;
     if (!sys.grid.has(q, r)) {
       // TODO(@darzu): DEBUG left/right/forward tiles
+      const isLeft =
+        vec2.exactEquals(qr, neighbors[HEX_NW_IDX]) ||
+        vec2.exactEquals(qr, neighbors[HEX_SW_IDX]);
+      const isRight =
+        vec2.exactEquals(qr, neighbors[HEX_NE_IDX]) ||
+        vec2.exactEquals(qr, neighbors[HEX_SE_IDX]);
+      const isForward = vec2.exactEquals(qr, neighbors[HEX_N_IDX]);
       const color: vec3 = [
-        vec2.exactEquals(qr, left) ? 0.2 : 0.1,
-        vec2.exactEquals(qr, right) ? 0.2 : 0.1,
-        vec2.exactEquals(qr, forward) ? 0.2 : 0.1,
+        isLeft ? 0.2 : 0.1,
+        isRight ? 0.2 : 0.1,
+        isForward ? 0.2 : 0.1,
       ];
       // const color: vec3 = [
       //   0.03 + jitter(0.01),
@@ -346,9 +350,6 @@ function dropNodeTiles(
   for (let [q, r] of hexesWithin(n.q, n.r, w)) {
     const g = sys.grid.get(q, r);
     if (g && PositionDef.isOn(g) && ColorDef.isOn(g)) {
-      console.log(
-        `dropping ${q},${r} in ${nextEaseDelayMs}ms for ${easeMsPer}`
-      );
       const startPos = vec3.clone(g.position);
       const endPos = vec3.add(vec3.create(), startPos, [0, -TILE_FALL_DIST, 0]);
       assert(
