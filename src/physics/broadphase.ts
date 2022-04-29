@@ -46,7 +46,7 @@ export function checkBroadphase(
   objs: { aabb: AABB; id: number }[]
 ): BroadphaseResult {
   const start = performance.now();
-  _doesOverlaps = 0; // TODO(@darzu): debugging
+  _doesOverlapAABBs = 0; // TODO(@darzu): debugging
   _enclosedBys = 0; // TODO(@darzu): debugging
   // TODO(@darzu): impl checkRay for non-oct tree broad phase strategies
   let checkRay = (_: Ray) => [] as RayHit[];
@@ -69,7 +69,7 @@ export function checkBroadphase(
       const box0 = objs[i0].aabb;
       for (let i1 = i0 + 1; i1 < objs.length; i1++) {
         const box1 = objs[i1].aabb;
-        if (doesOverlap(box0, box1)) {
+        if (doesOverlapAABB(box0, box1)) {
           _collidesWith.get(objs[i0].id)!.push(objs[i1].id);
           _collidesWith.get(objs[i1].id)!.push(objs[i0].id);
         }
@@ -117,14 +117,14 @@ export function checkBroadphase(
       const [id0, box0] = obj;
       // check this tree
       for (let [id1, box1] of tree.objs) {
-        if ((!first || id0 < id1) && doesOverlap(box0, box1)) {
+        if ((!first || id0 < id1) && doesOverlapAABB(box0, box1)) {
           _collidesWith.get(id0)!.push(id1);
           _collidesWith.get(id1)!.push(id0);
         }
       }
       // check down the tree
       for (let t of tree.children) {
-        if (t && doesOverlap(box0, t.aabb)) {
+        if (t && doesOverlapAABB(box0, t.aabb)) {
           octObjCheckOverlap(obj, t);
         }
       }
@@ -314,7 +314,7 @@ function checkPair(
   a: { id: number; aabb: AABB },
   b: { id: number; aabb: AABB }
 ) {
-  if (b.id < a.id && doesOverlap(a.aabb, b.aabb)) {
+  if (b.id < a.id && doesOverlapAABB(a.aabb, b.aabb)) {
     _collidesWith.get(a.id)!.push(b.id);
     _collidesWith.get(b.id)!.push(a.id);
   }
@@ -452,9 +452,9 @@ export function rayHitDist(b: AABB, r: Ray): number {
   return NaN;
 }
 
-export let _doesOverlaps = 0;
-export function doesOverlap(a: AABB, b: AABB) {
-  _doesOverlaps++; // TODO(@darzu): debugging
+export let _doesOverlapAABBs = 0;
+export function doesOverlapAABB(a: AABB, b: AABB) {
+  _doesOverlapAABBs++; // TODO(@darzu): debugging
   // TODO(@darzu): less then or less then and equal?
   return (
     true &&
@@ -479,8 +479,8 @@ export function enclosedBy(inner: AABB, outer: AABB) {
     outer.min[2] < inner.min[2]
   );
 }
-export function doesTouch(a: AABB, b: AABB, threshold: number) {
-  _doesOverlaps++; // TODO(@darzu): debugging
+export function doesTouchAABB(a: AABB, b: AABB, threshold: number) {
+  _doesOverlapAABBs++; // TODO(@darzu): debugging
   return (
     true &&
     b.min[0] < a.max[0] + threshold &&

@@ -14,6 +14,7 @@ import {
 import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
 import {
   copyFrame,
+  LocalFrameDefs,
   Position,
   PositionDef,
   Scale,
@@ -47,7 +48,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
     (es, res) => {
       for (let e of es) {
         if (!res._physDbgState.colliderMeshes.has(e.id)) {
-          for (let cId of e._phys.worldAABBs) {
+          for (let c of e._phys.colliders) {
             // create debug entity
             const dbgE = em.newEntity();
 
@@ -70,7 +71,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
             // NOTE: we don't use the normal parent transform mechanism b/c
             //  colliders especially AABBs are only translated, not full matrix
             //  transform'ed
-            em.addComponent(dbgE.id, DbgMeshDef, cId);
+            em.addComponent(dbgE.id, DbgMeshDef, c.id);
 
             // remember
             res._physDbgState.colliderMeshes.set(e.id, dbgE.id);
@@ -101,7 +102,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
 
   // update transform based on parent collider
   em.registerSystem(
-    [DbgMeshDef, PositionDef, ScaleDef, WorldFrameDef],
+    [DbgMeshDef, WorldFrameDef, ...LocalFrameDefs],
     [PhysicsBroadCollidersDef],
     (es, res) => {
       for (let e of es) {

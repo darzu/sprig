@@ -128,3 +128,10 @@ MagicaVoxel:
 Generative art:
     https://variable.io
     https://nodes.io
+
+Speed modeling:
+  Valheim, hare: https://www.youtube.com/watch?v=ddzQ_Bzn89s
+  Valheim, bow: https://www.youtube.com/watch?v=HyW-eKxgnxk
+
+Speed painting:
+  Valheim, root armor: https://www.youtube.com/watch?v=t8yrnC5EMYQ

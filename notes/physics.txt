@@ -254,6 +254,7 @@ https://box2d.org/about/
 "
 
 https://www.youtube.com/watch?v=SHinxAhv1ZE
+    "Physics for Game Programmers: Understanding Constraints" by Erin Catto
     "As a Physics Programmer, it is our job to understand constraints"
     Game Graphics: shaders
     Game Physics: constraints
@@ -322,10 +323,17 @@ GJK explained:
     https://www.youtube.com/watch?v=ajv46BSqcK4
     support point: point farthest from origin along a direction
     to check collision between two convex objects, you just need a support function for each
+    SAT vs GJK: https://www.gamedev.net/forums/topic/298397-sat-vs-gjk/
+    Raycast in GJK?
+      http://dtecta.com/papers/jgt04raycast.pdf
 
-OOB:
+OBB:
   https://gamedev.stackexchange.com/questions/44500/how-many-and-which-axes-to-use-for-3d-obb-collision-with-sat 
   https://www.geometrictools.com/Documentation/DynamicCollisionDetection.pdf
+
+Penetration:
+  https://blog.hamaluik.ca/posts/building-a-collision-engine-part-2-2d-penetration-vectors/
+  "Expanding Polytope Algorithm"
 
 Rocket League Physics:
     https://www.youtube.com/watch?v=ueEmiDM94IE

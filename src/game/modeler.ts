@@ -113,7 +113,7 @@ export function aabbListToStr(aabbs: AABB[]): string {
 function registerAABBBuilder(em: EntityManager) {
   em.registerSystem(
     null,
-    [InputsDef, ModelerDef, AssetsDef, PhysicsBroadCollidersDef],
+    [InputsDef, ModelerDef, AssetsDef],
     (_, res) => {
       // create a new box
       if (res.inputs.keyClicks["b"]) {
@@ -128,9 +128,7 @@ function registerAABBBuilder(em: EntityManager) {
             if (!b) throw `Invalid modeler state`;
             return b;
           });
-          const aabbs = bs.map(
-            (b) => res._physBColliders.colliders[b._phys.worldAABBs[0]].aabb
-          );
+          const aabbs = bs.map((b) => b._phys.colliders[0].aabb);
           console.log(aabbListToStr(aabbs));
           for (let b of bs) {
             vec3.copy(b.color, [0.3, 0.1, 0.2]);

@@ -2,3 +2,6 @@ GPU Gems 3
 
 Computer Graphics from Scratch
     https://twitter.com/gabrielgambetta
+
+Sprigland companion books:
+  All the key algorithms printed out and annotated
