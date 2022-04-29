@@ -4,6 +4,7 @@ import { EM, Entity } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { onInit } from "../init.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
+import { eventWizard } from "../net/events.js";
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import { LinearVelocityDef } from "../physics/motion.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
@@ -79,6 +80,15 @@ onInit((em) => {
     "spawnOnTile"
   );
 
+  // TODO(@darzu): this seems really general
+  const runUnparent = eventWizard(
+    "unparent",
+    [[PhysicsParentDef]] as const,
+    ([child]) => {
+      child.physicsParent.id = 0;
+    }
+  );
+
   em.registerSystem(
     [SpawnerDef, GroundLocalDef, AuthorityDef, RotationDef, PositionDef],
     [MeDef],
@@ -102,7 +112,7 @@ onInit((em) => {
             // );
             vec3.copy(c.position, c.world.position);
             quat.copy(c.rotation, c.world.rotation);
-            c.physicsParent.id = 0;
+            runUnparent(c);
             // TODO(@darzu): this needs to be propegated to clients via event
 
             t.toSpawn.childrenToRelease.splice(i);
