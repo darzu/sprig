@@ -176,7 +176,8 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
       quat.copy(s.rotation, s.shipProps.rot);
       em.ensureComponentOn(s, MotionSmoothingDef);
 
-      s.shipLocal.speed = 0.005 * 3; // TODO(@darzu): DEBUG SPEED
+      s.shipLocal.speed = 0.005;
+      // s.shipLocal.speed = 0.005 * 3; // TODO(@darzu): DEBUG SPEED
       em.ensureComponentOn(s, LinearVelocityDef, [0, 0, 0]);
       em.ensureComponentOn(s, AngularVelocityDef);
 
@@ -330,7 +331,9 @@ export function registerShipSystems(em: EntityManager) {
         // TODO(@darzu): dbg ship physics when turning
         // s.angularVelocity[1] = -0.0001;
 
-        if (res.dev.showConsole) {
+        // TODO(@darzu): enabling this always while waiting for the rudder
+        if (true) {
+          // if (res.dev.showConsole) {
           // Debugging
           const turnSpeed = Math.PI * 0.01;
           if (res.inputs.keyDowns["z"])

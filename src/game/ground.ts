@@ -30,7 +30,7 @@ import {
   hexLeft,
   hexXYZ,
 } from "../hex.js";
-import { chance } from "../math.js";
+import { chance, jitter } from "../math.js";
 import { LocalPlayerDef } from "./player.js";
 import { CameraFollowDef } from "../camera.js";
 import { ShipLocalDef } from "./ship.js";
@@ -320,16 +320,16 @@ function raiseNodeTiles(
       const isForward = isOnPath(n);
       const isLeft = !isForward && vec3.dot(relQRS, leftDir) > 0;
       const isRight = !isForward && vec3.dot(relQRS, rightDir) > 0;
-      const color: vec3 = [
-        isLeft ? 0.2 : 0.1,
-        isRight ? 0.2 : 0.1,
-        isForward ? 0.2 : 0.1,
-      ];
       // const color: vec3 = [
-      //   0.03 + jitter(0.01),
-      //   0.03 + jitter(0.01),
-      //   0.2 + jitter(0.02),
+      //   isLeft ? 0.2 : 0.1,
+      //   isRight ? 0.2 : 0.1,
+      //   isForward ? 0.2 : 0.1,
       // ];
+      const color: vec3 = [
+        0.03 + jitter(0.01),
+        0.03 + jitter(0.01),
+        0.2 + jitter(0.02),
+      ];
       const t = raiseTile(sys, q, r, color, nextEaseDelayMs, easeMsPer);
       nextEaseDelayMs += easeMsPer * 0.5;
 
