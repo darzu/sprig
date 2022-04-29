@@ -52,8 +52,13 @@ onInit((em) => {
         if (t.authority.pid !== res.me.pid) continue;
         if (t.toSpawn.hasSpawned) continue;
 
+        const angle = Math.atan2(
+          t.toSpawn.towardsPlayerDir[2],
+          -t.toSpawn.towardsPlayerDir[0]
+        );
+
         const y = (t.collider as AABBCollider).aabb.max[1] + 1;
-        const b = spawnBoat([0, y, 0], t.id, Math.PI / 2, false);
+        const b = spawnBoat([0, y, 0], t.id, angle, false);
 
         // console.log(`spawning ${b.id} from ${t.id} at ${performance.now()}`);
 

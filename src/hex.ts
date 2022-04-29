@@ -31,6 +31,12 @@ const q_x_spc = 3 / 2;
 export function hexX(q: number, r: number, size: number): number {
   return -size * q_x_spc * q;
 }
+export function hexXYZ(out: vec3, q: number, r: number, size: number): vec3 {
+  out[0] = hexX(q, r, size);
+  out[1] = 0;
+  out[2] = hexZ(q, r, size);
+  return out;
+}
 
 export function xzToHex(z: number, x: number, size: number) {
   const q = -((2 / 3) * z) / size;

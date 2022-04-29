@@ -101,7 +101,7 @@ export const { BoatPropsDef, BoatLocalDef, createBoat } = defineNetEntityHelper(
         },
       });
       em.ensureComponentOn(fireZone, PhysicsParentDef, e.id);
-      em.ensureComponentOn(fireZone, PositionDef, [0, 0, fireZoneSize]);
+      em.ensureComponentOn(fireZone, PositionDef, [0, 0, -fireZoneSize]);
       em.ensureComponentOn(fireZone, FireZoneDef);
       e.boatLocal.fireZoneId = fireZone.id;
 
@@ -146,9 +146,9 @@ export const { BoatPropsDef, BoatLocalDef, createBoat } = defineNetEntityHelper(
       em.ensureComponentOn(cannon, PositionDef, [0, 2, 0]);
 
       const cannonRot = quat.create();
-      const pitch = Math.PI * -0.08;
-      quat.rotateY(cannonRot, cannonRot, Math.PI * 0.5);
-      quat.rotateZ(cannonRot, cannonRot, pitch);
+      const pitch = Math.PI * 0.08;
+      // quat.rotateY(cannonRot, cannonRot, Math.PI * 0.5);
+      quat.rotateX(cannonRot, cannonRot, pitch);
       em.ensureComponentOn(cannon, RotationDef, cannonRot);
       e.boatLocal.childCannonId = cannon.id;
 
@@ -193,7 +193,7 @@ export function registerBoatSystems(em: EntityManager) {
           vec3.rotateY(
             o.linearVelocity,
             // TODO(@darzu): debugging
-            [o.boatProps.speed, 0.0, 0],
+            [-o.boatProps.speed, 0.0, 0],
             // [o.boatProps.speed, -0.01, 0],
             [0, 0, 0],
             o.boatProps.wheelDir
@@ -231,10 +231,16 @@ export function registerBoatSystems(em: EntityManager) {
             WorldFrameDef,
           ]);
           if (cannon) {
-            const rot = quat.create();
-            quat.rotateY(rot, cannon.world.rotation, Math.PI * 0.5);
+            // const rot = quat.create();
+            // quat.rotateY(rot, cannon.world.rotation, Math.PI * 0.5);
             const bulletSpeed = jitter(0.025) + 0.075;
-            fireBullet(em, 2, cannon.world.position, rot, bulletSpeed);
+            fireBullet(
+              em,
+              2,
+              cannon.world.position,
+              cannon.world.rotation,
+              bulletSpeed
+            );
           }
         }
       }

@@ -27,6 +27,8 @@ import {
   xzToHex,
   hexDirCCW90,
   hexDirCW90,
+  hexLeft,
+  hexXYZ,
 } from "../hex.js";
 import { chance } from "../math.js";
 import { LocalPlayerDef } from "./player.js";
@@ -301,6 +303,9 @@ function raiseNodeTiles(
   const nextDirIdx = n.next ? n.next.dirIdx : n.dirIdx;
   const leftDir = hexDirCCW90(nextDirIdx);
   const rightDir = hexDirCW90(nextDirIdx);
+  const backDirQR = vec2.negate(vec2.create(), HEX_DIRS[n.dirIdx]);
+  const backDirXYZ = hexXYZ(vec3.create(), backDirQR[0], backDirQR[1], SIZE);
+  vec3.normalize(backDirXYZ, backDirXYZ);
 
   for (let qr of hexesWithin(n.q, n.r, w)) {
     const [q, r] = qr;
@@ -328,7 +333,7 @@ function raiseNodeTiles(
 
       if (doSpawn)
         addSpawner(t, {
-          towardsPlayerDir: [1, 0, 0],
+          towardsPlayerDir: backDirXYZ,
         });
 
       newTiles.push(t);
