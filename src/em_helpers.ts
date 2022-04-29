@@ -26,7 +26,7 @@ export function defineSerializableComponent<
   return def;
 }
 
-export function registerConstructorSystem<
+function registerConstructorSystem<
   C extends ComponentDef,
   RS extends ComponentDef[]
 >(
@@ -47,11 +47,18 @@ export function registerConstructorSystem<
     },
     `${def.name}Build`
   );
+  return callback;
   // console.log(`reg ${def.name}Build`);
-  return def;
 }
 
-export type NetEntityDefs<N extends string, P1, Pargs1 extends any[], P2> = {
+export type NetEntityDefs<
+  N extends string,
+  P1,
+  Pargs1 extends any[],
+  P2,
+  RS extends ComponentDef[],
+  INITED
+> = {
   [_ in `${Capitalize<N>}PropsDef`]: ComponentDef<`${N}Props`, P1, Pargs1>;
 } & {
   [_ in `${Capitalize<N>}LocalDef`]: ComponentDef<`${N}Local`, P2, []>;
@@ -59,6 +66,11 @@ export type NetEntityDefs<N extends string, P1, Pargs1 extends any[], P2> = {
   [_ in `create${Capitalize<N>}`]: (
     ...args: Pargs1
   ) => EntityW<[ComponentDef<`${N}Props`, P1, Pargs1>]>;
+} & {
+  [_ in `create${Capitalize<N>}Now`]: (
+    res: EntityW<RS>,
+    ...args: Pargs1
+  ) => INITED;
 };
 
 export function defineNetEntityHelper<
@@ -67,7 +79,8 @@ export function defineNetEntityHelper<
   Pargs1 extends any[],
   P2,
   DS extends ComponentDef[],
-  RS extends ComponentDef[]
+  RS extends ComponentDef[],
+  INITED
 >(
   em: EntityManager,
   opts: {
@@ -89,9 +102,9 @@ export function defineNetEntityHelper<
         ]
       >,
       resources: EntityW<RS>
-    ) => void;
+    ) => INITED;
   }
-): NetEntityDefs<N, P1, Pargs1, P2> {
+): NetEntityDefs<N, P1, Pargs1, P2, RS, INITED> {
   const propsDef = defineSerializableComponent(
     em,
     `${opts.name}Props`,
@@ -101,7 +114,7 @@ export function defineNetEntityHelper<
   );
   const localDef = em.defineComponent(`${opts.name}Local`, opts.defaultLocal);
 
-  registerConstructorSystem(
+  const constructFn = registerConstructorSystem(
     em,
     propsDef,
     [...opts.buildResources, MeDef],
@@ -137,14 +150,25 @@ export function defineNetEntityHelper<
     return e;
   };
 
+  const createNewNow = (res: EntityW<RS>, ...args: Pargs1) => {
+    const e = em.newEntity();
+    em.ensureComponentOn(e, propsDef, ...args);
+    // TODO(@darzu): maybe we should force users to give us the MeDef? it's probably always there tho..
+    constructFn(e, res as EntityW<[...RS, typeof MeDef]>);
+    em.ensureComponentOn(e, FinishedDef);
+    return e;
+  };
+
   const capitalizedN = capitalize(opts.name);
 
   const result = {
     [`${capitalizedN}PropsDef`]: propsDef,
     [`${capitalizedN}LocalDef`]: localDef,
     [`create${capitalizedN}`]: createNew,
+    [`create${capitalizedN}Now`]: createNewNow,
   } as const;
 
+  // TYPE HACK: idk how to make Typscript accept this...
   return result as any;
 }
 
