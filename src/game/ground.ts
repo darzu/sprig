@@ -37,6 +37,8 @@ import { ShipLocalDef } from "./ship.js";
 import { AnimateToDef, EASE_INCUBE, EASE_OUTBACK } from "../animate-to.js";
 import { AngularVelocityDef } from "../physics/motion.js";
 import { addSpawner, SpawnerDef } from "./spawn.js";
+import { drawLine } from "../utils-game.js";
+import { tempVec } from "../temp-pool.js";
 
 /*
 NOTES:
@@ -50,7 +52,7 @@ const WIDTH = SIZE * 2;
 const HEIGHT = Math.sqrt(3) * SIZE;
 const DEPTH = SIZE / 4;
 
-const Y = -DEPTH - 7;
+const Y = -7;
 
 const RIVER_WIDTH = 3;
 
@@ -208,11 +210,12 @@ export function initGroundSystem(em: EntityManager) {
       }
 
       // create mesh
-      const t = mat4.fromScaling(mat4.create(), [
-        WIDTH * 0.5,
-        DEPTH,
-        WIDTH * 0.5,
-      ]);
+      const t = mat4.fromRotationTranslationScale(
+        mat4.create(),
+        quat.IDENTITY,
+        [0, -DEPTH, 0],
+        [WIDTH * 0.5, DEPTH, WIDTH * 0.5]
+      );
       const m = transformMesh(rs.assets.hex.mesh, t);
       const gm = gameMeshFromMesh(m, rs.renderer.renderer);
       mesh.mesh = gm;
@@ -253,13 +256,12 @@ function raiseTile(
   easeDelayMs: number,
   easeMs: number
 ) {
-  const y = Y;
   const startPos: vec3 = [
     hexX(q, r, SIZE),
-    y - TILE_SPAWN_DIST,
+    Y - TILE_SPAWN_DIST,
     hexZ(q, r, SIZE),
   ];
-  const endPos: vec3 = [hexX(q, r, SIZE), y, hexZ(q, r, SIZE)];
+  const endPos: vec3 = [hexX(q, r, SIZE), Y, hexZ(q, r, SIZE)];
 
   let g: GroundTile;
   if (sys.objFreePool.length > RIVER_WIDTH * 2) {
@@ -331,11 +333,33 @@ function raiseNodeTiles(
       const t = raiseTile(sys, q, r, color, nextEaseDelayMs, easeMsPer);
       nextEaseDelayMs += easeMsPer * 0.5;
 
-      if (doSpawn)
+      if (doSpawn) {
+        // TODO(@darzu): debugging spawn direction
+        // assert(AnimateToDef.isOn(t));
+        // const start = vec3.add(vec3.create(), t.animateTo.endPos, [0, 5, 0]);
+        // const end = vec3.add(
+        //   vec3.create(),
+        //   start,
+        //   vec3.scale(tempVec(), backDirXYZ, 10)
+        // );
+        // drawLine(start, end, [0, 1, 0]);
+        // // TODO(@darzu): debug atan2
+        // const angle = Math.atan2(backDirXYZ[2], -backDirXYZ[0]);
+        // const rot = quat.rotateY(quat.create(), quat.IDENTITY, angle);
+        // const dir2 = vec3.transformQuat(vec3.create(), [-1, 0, 0], rot);
+        // const start2 = vec3.add(vec3.create(), t.animateTo.endPos, [0, 6, 0]);
+        // const end2 = vec3.add(
+        //   vec3.create(),
+        //   start2,
+        //   vec3.scale(tempVec(), dir2, 10)
+        // );
+        // drawLine(start2, end2, [1, 0, 0]);
+
         addSpawner(t, {
           towardsPlayerDir: backDirXYZ,
           side: isLeft ? "left" : isRight ? "right" : "center",
         });
+      }
 
       newTiles.push(t);
     }

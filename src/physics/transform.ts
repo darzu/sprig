@@ -11,6 +11,11 @@ import { createFrame, WorldFrameDef } from "./nonintersection.js";
 import { tempVec, tempQuat } from "../temp-pool.js";
 import { FALSE, dbgLogOnce } from "../util.js";
 
+// Axis:
+//  z is positive forward
+//  x is positive to the right
+//  y is positive up
+
 // TODO(@darzu): implement local transform instead of Motion's position & rotation?
 //  one problem is that the order in which you interleave rotation/translations matters if it
 //  is all in one matrix

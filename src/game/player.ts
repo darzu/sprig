@@ -404,7 +404,7 @@ export function registerPlayerSystems(em: EntityManager) {
               r.org,
               vec3.scale(tempVec(), r.dir, rayDist)
             );
-            drawLine(EM, r.org, endPoint, color);
+            drawLine(r.org, endPoint, color);
           }
         }
       }

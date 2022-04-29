@@ -340,7 +340,7 @@ export function spawnBoat(
   boatCon.wheelSpeed = jitter(0.00005);
   if (facingRight) {
     boatCon.speed *= -1;
-    boatCon.wheelDir *= -1;
+    boatCon.wheelDir += Math.PI;
   }
   return boat;
 }
