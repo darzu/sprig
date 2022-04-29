@@ -73,6 +73,8 @@ export function deserializeEntity(
   let authority;
   if (!haveEnt) {
     em.registerEntity(id);
+    // TODO(@darzu): dbg
+    // console.log(`registering ${id}`);
     authority = em.addComponent(id, AuthorityDef, authorityPid);
     authority.seq = authoritySeq;
   } else {

@@ -115,7 +115,7 @@ export const { GroundPropsDef, GroundLocalDef, createGround } =
     dynamicComponents: [PositionDef],
     buildResources: [MeDef, GroundMeshDef],
     build: (g, res) => {
-      console.log("constructing ground");
+      // console.log(`constructing ground ${g.id}`);
       const em: EntityManager = EM;
       // TODO(@darzu): change position via events?
       vec3.copy(g.position, g.groundProps.location);

@@ -207,9 +207,10 @@ export function initShipGame(em: EntityManager, hosting: boolean) {
   EM.addSingletonComponent(CameraDef);
   EM.addSingletonComponent(GameStateDef);
 
+  initGroundSystem(em);
+
   if (hosting) {
     createShip();
-    initGroundSystem(em);
   }
 
   createPlayer(em);

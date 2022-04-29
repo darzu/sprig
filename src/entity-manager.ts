@@ -537,6 +537,10 @@ export class EntityManager {
   }
 
   callSystem(name: string) {
+    // TODO(@darzu):
+    // if (name.endsWith("Build")) console.log(`calling ${name}`);
+    // if (name == "groundPropsBuild") console.log("calling groundPropsBuild");
+
     const s = this.systems.get(name);
     if (!s) throw `No system named ${name}`;
     let start = performance.now();

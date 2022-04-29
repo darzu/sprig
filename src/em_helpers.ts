@@ -47,6 +47,7 @@ export function registerConstructorSystem<
     },
     `${def.name}Build`
   );
+  // console.log(`reg ${def.name}Build`);
   return def;
 }
 
