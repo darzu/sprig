@@ -118,6 +118,10 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("reloadCannon");
     EM.callSystem("playerControlCannon");
     EM.callSystem("playerManCanon");
+    if (GAME === "ship") {
+      EM.callSystem("spawnOnTile");
+      EM.callSystem("spawnFinishAnimIn");
+    }
     EM.callSystem("ensureFillOutLocalFrame");
     EM.callSystem("ensureWorldFrame");
     EM.callSystem("physicsInit");
@@ -172,7 +176,6 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("inputs");
     if (GAME === "ship") {
       EM.callSystem("shipUI");
-      EM.callSystem("spawnBoats");
     }
     EM.callOneShotSystems();
     EM.loops++;

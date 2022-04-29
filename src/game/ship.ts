@@ -73,14 +73,14 @@ export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper(
   EM,
   {
     name: "gem",
-    defaultProps: (ship?: Entity) => ({
-      ship: createRef(ship ?? 0),
+    defaultProps: (shipId?: number) => ({
+      shipId: shipId ?? 0,
     }),
     serializeProps: (o, buf) => {
-      buf.writeUint32(o.ship.id);
+      buf.writeUint32(o.shipId);
     },
     deserializeProps: (o, buf) => {
-      o.ship = createRef(buf.readUint32());
+      o.shipId = buf.readUint32();
     },
     defaultLocal: () => true,
     dynamicComponents: [],
@@ -95,7 +95,7 @@ export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper(
         RenderableConstructDef,
         res.assets.spacerock.proto
       );
-      em.ensureComponentOn(gem, PhysicsParentDef, gem.gemProps.ship.id);
+      em.ensureComponentOn(gem, PhysicsParentDef, gem.gemProps.shipId);
       em.ensureComponentOn(gem, ColorDef);
 
       // create seperate hitbox for interacting with the gem
@@ -151,7 +151,7 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
         s.shipProps.loc = [0, -2, 0];
 
         // create gem
-        const gem = createGem(s);
+        const gem = createGem(s.id);
         s.shipProps.gemId = gem.id;
 
         // create cannons

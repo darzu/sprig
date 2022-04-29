@@ -34,6 +34,7 @@ import { CameraFollowDef } from "../camera.js";
 import { ShipLocalDef } from "./ship.js";
 import { AnimateToDef, EASE_INCUBE, EASE_OUTBACK } from "../animate-to.js";
 import { AngularVelocityDef } from "../physics/motion.js";
+import { addSpawner, SpawnerDef } from "./spawn.js";
 
 /*
 NOTES:
@@ -232,7 +233,7 @@ export function initGroundSystem(em: EntityManager) {
         next: undefined,
       };
 
-      raiseNodeTiles(sys, sys.currentPath, 0, 0);
+      raiseNodeTiles(sys, sys.currentPath, 0, 0, false);
 
       let lastPath = sys.currentPath;
       for (let i = 0; i < 10; i++) {
@@ -260,6 +261,7 @@ function raiseTile(
 
   let g: GroundTile;
   if (sys.objFreePool.length > RIVER_WIDTH * 2) {
+    // TODO(@darzu): it'd be nice to have a general way to have object pooling
     let oldG = sys.objFreePool.pop()!;
     vec3.copy(oldG.position, startPos);
     vec3.copy(oldG.color, color);
@@ -289,7 +291,8 @@ function raiseNodeTiles(
   sys: GroundSystem,
   n: PathNode,
   easeDelayMs: number,
-  easeMsPer: number
+  easeMsPer: number,
+  doSpawn: boolean
 ): Entity[] {
   let nextEaseDelayMs = easeDelayMs;
   const w = Math.floor(n.width / 2);
@@ -305,10 +308,9 @@ function raiseNodeTiles(
       // TODO(@darzu): DEBUG left/right/forward tiles
       const relQR = vec2.sub([0, 0], qr, [n.q, n.r]);
       const relQRS: vec3 = [relQR[0], relQR[1], -relQR[0] - relQR[1]];
-      const isForwardFn: (p: PathNode) => boolean = (p) =>
-        vec2.exactEquals(qr, [p.q, p.r]) ||
-        (p.next ? isForwardFn(p.next) : false);
-      const isForward = isForwardFn(n);
+      const isOnPath: (p: PathNode) => boolean = (p) =>
+        vec2.exactEquals(qr, [p.q, p.r]) || (p.next ? isOnPath(p.next) : false);
+      const isForward = isOnPath(n);
       const isLeft = !isForward && vec3.dot(relQRS, leftDir) > 0;
       const isRight = !isForward && vec3.dot(relQRS, rightDir) > 0;
       const color: vec3 = [
@@ -323,6 +325,12 @@ function raiseNodeTiles(
       // ];
       const t = raiseTile(sys, q, r, color, nextEaseDelayMs, easeMsPer);
       nextEaseDelayMs += easeMsPer * 0.5;
+
+      if (doSpawn)
+        addSpawner(t, {
+          towardsPlayerDir: [1, 0, 0],
+        });
+
       newTiles.push(t);
     }
   }
@@ -415,7 +423,7 @@ export function registerGroundSystems(em: EntityManager) {
           hexDist(ahead.q, ahead.r, shipQ, shipR) <= REVEAL_DIST
         ) {
           ahead.state = "inplay";
-          const ts = raiseNodeTiles(sys, ahead, easeStart, easeMs);
+          const ts = raiseNodeTiles(sys, ahead, easeStart, easeMs, true);
           easeStart += ts.length * easeMs * 0.5;
 
           // advance out path pointer

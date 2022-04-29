@@ -1,4 +1,4 @@
-import { EM, EntityManager, Entity } from "../entity-manager.js";
+import { EM, EntityManager, Entity, EntityW } from "../entity-manager.js";
 import { PhysicsTimerDef } from "../time.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { jitter } from "../math.js";
@@ -41,13 +41,15 @@ export const { BoatPropsDef, BoatLocalDef, createBoat } = defineNetEntityHelper(
       loc?: vec3,
       speed?: number,
       wheelSpeed?: number,
-      wheelDir?: number
+      wheelDir?: number,
+      parent?: number
     ) => {
       return {
         location: loc ?? vec3.fromValues(0, 0, 0),
         speed: speed ?? 0.01,
         wheelSpeed: wheelSpeed ?? 0.0,
         wheelDir: wheelDir ?? 0.0,
+        parent: parent ?? 0,
       };
     },
     serializeProps: (c, buf) => {
@@ -55,18 +57,17 @@ export const { BoatPropsDef, BoatLocalDef, createBoat } = defineNetEntityHelper(
       buf.writeFloat32(c.speed);
       buf.writeFloat32(c.wheelSpeed);
       buf.writeFloat32(c.wheelDir);
+      buf.writeUint32(c.parent);
     },
     deserializeProps: (c, buf) => {
       buf.readVec3(c.location);
       c.speed = buf.readFloat32();
       c.wheelSpeed = buf.readFloat32();
       c.wheelDir = buf.readFloat32();
+      c.parent = buf.readUint32();
     },
     defaultLocal: () => {
       return {
-        speed: 0,
-        wheelSpeed: 0,
-        wheelDir: 0,
         fireDelay: 2000,
         fireRate: 3000,
         // fireDelay: 0,
@@ -84,11 +85,11 @@ export const { BoatPropsDef, BoatLocalDef, createBoat } = defineNetEntityHelper(
       em.ensureComponentOn(e, MotionSmoothingDef);
       em.ensureComponentOn(e, RenderableConstructDef, res.assets.boat.mesh);
       vec3.copy(e.position, e.boatProps.location);
-      e.boatLocal.speed = e.boatProps.speed;
-      e.boatLocal.wheelDir = e.boatProps.wheelDir;
-      e.boatLocal.wheelSpeed = e.boatProps.wheelSpeed;
+
+      em.ensureComponentOn(e, PhysicsParentDef, e.boatProps.parent);
 
       // fire zone is local, not synced
+      // TODO(@darzu): fire zone should probably be host-only
       const fireZone = em.newEntity();
       const fireZoneSize = 40;
       em.ensureComponentOn(fireZone, ColliderDef, {
@@ -129,7 +130,9 @@ export const { BoatPropsDef, BoatLocalDef, createBoat } = defineNetEntityHelper(
 
       em.ensureComponentOn(e, ColliderDef, {
         shape: "AABB",
-        solid: true,
+        // TODO(@darzu):
+        solid: false,
+        // solid: true,
         aabb: res.assets.boat.aabb,
       });
 
@@ -173,25 +176,27 @@ export const raiseBreakBoat = eventWizard(
 
 export function registerBoatSystems(em: EntityManager) {
   em.registerSystem(
-    [BoatLocalDef, RotationDef, LinearVelocityDef, AuthorityDef],
+    [BoatLocalDef, BoatPropsDef, RotationDef, LinearVelocityDef, AuthorityDef],
     [PhysicsTimerDef, MeDef],
     (boats, res) => {
       for (let i = 0; i < res.physicsTimer.steps; i++) {
         for (let o of boats) {
           if (o.authority.pid !== res.me.pid) continue;
 
-          const rad = o.boatLocal.wheelSpeed * res.physicsTimer.period;
-          o.boatLocal.wheelDir += rad;
+          const rad = o.boatProps.wheelSpeed * res.physicsTimer.period;
+          o.boatProps.wheelDir += rad;
 
           // rotate
-          quat.rotateY(o.rotation, quat.IDENTITY, o.boatLocal.wheelDir);
+          quat.rotateY(o.rotation, quat.IDENTITY, o.boatProps.wheelDir);
 
           // rotate velocity
           vec3.rotateY(
             o.linearVelocity,
-            [o.boatLocal.speed, -0.01, 0],
+            // TODO(@darzu): debugging
+            [o.boatProps.speed, 0.0, 0],
+            // [o.boatProps.speed, -0.01, 0],
             [0, 0, 0],
-            o.boatLocal.wheelDir
+            o.boatProps.wheelDir
           );
         }
       }
@@ -313,53 +318,23 @@ export function breakBoat(
 
 export const FireZoneDef = EM.defineComponent("firezone", () => {});
 
-export const BoatSpawnerDef = EM.defineComponent("boatSpawner", () => ({
-  timerMs: 3000,
-  timerIntervalMs: 5000,
-}));
-
-export function registerBoatSpawnerSystem(em: EntityManager) {
-  em.addSingletonComponent(BoatSpawnerDef);
-
-  em.registerSystem(
-    null,
-    [BoatSpawnerDef, PhysicsTimerDef, GroundSystemDef, GameStateDef, MeDef],
-    (_, res) => {
-      // if (!res.me.host) return;
-      // if (res.gameState.state !== GameState.PLAYING) return;
-      // const ms = res.physicsTimer.period * res.physicsTimer.steps;
-      // res.boatSpawner.timerMs -= ms;
-      // // console.log("res.boatSpawner.timerMs:" + res.boatSpawner.timerMs);
-      // if (res.boatSpawner.timerMs < 0) {
-      //   res.boatSpawner.timerMs = res.boatSpawner.timerIntervalMs;
-      //   // ramp up difficulty
-      //   res.boatSpawner.timerIntervalMs *= 0.97;
-      //   // ~1 second minimum
-      //   res.boatSpawner.timerIntervalMs = Math.max(
-      //     1500,
-      //     res.boatSpawner.timerIntervalMs
-      //   );
-      //   // console.log("boat ");
-      //   // create boat(s)
-      //   const boatCon = em.addComponent(em.newEntity().id, BoatPropsDef);
-      //   const left = Math.random() < 0.5;
-      //   const z = res.groundSystem.nextScore * 10 + 100;
-      //   boatCon.location = vec3.fromValues(
-      //     -(Math.random() * 0.5 + 0.5) * WIDTH,
-      //     10,
-      //     z
-      //   );
-      //   boatCon.speed = 0.005 + jitter(0.002);
-      //   boatCon.wheelDir = (Math.PI / 2) * (1 + jitter(0.1));
-      //   boatCon.wheelSpeed = jitter(0.0001);
-      //   if (left) {
-      //     boatCon.location[0] *= -1;
-      //     boatCon.speed *= -1;
-      //     boatCon.wheelDir *= -1;
-      //   }
-      //   // boatCon.wheelSpeed = 0;
-      // }
-    },
-    "spawnBoats"
-  );
+export function spawnBoat(
+  loc: vec3,
+  parentId: number,
+  wheelDir: number,
+  facingRight: boolean
+): EntityW<[typeof BoatPropsDef]> {
+  const boat = EM.newEntity();
+  EM.ensureComponentOn(boat, BoatPropsDef);
+  const boatCon = boat.boatProps;
+  boatCon.location = loc;
+  boatCon.parent = parentId;
+  boatCon.speed = 0.005 + jitter(0.002);
+  boatCon.wheelDir = wheelDir * (1 + jitter(0.1));
+  boatCon.wheelSpeed = jitter(0.0001);
+  if (facingRight) {
+    boatCon.speed *= -1;
+    boatCon.wheelDir *= -1;
+  }
+  return boat;
 }

@@ -116,3 +116,11 @@ vec3 on the pass-by-value?
   It's a huge PITA to have vec3's be pass-by-reference
   Can we pack 3 floats into some JS object that's pass by value?
     Maybe 2 float32s into one of JS's float 64s
+
+  https://v8.dev/blog/bigint
+  bigints are "arbitrary precision" and pass by value. 
+    And you can bitwise operate on them.
+    So we should be able to pack 3 float32s into a bigint.
+    Unsure about perf on this, probably horendous
+    bad bitwise perf when negative
+    new Float64Array(BigInt64Array.of(1n).buffer)[0]

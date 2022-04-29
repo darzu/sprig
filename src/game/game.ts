@@ -6,7 +6,7 @@ import {
   registerUpdateRendererWorldFrames,
 } from "../render/renderer.js";
 import { PositionDef, registerInitTransforms } from "../physics/transform.js";
-import { registerBoatSpawnerSystem, registerBoatSystems } from "./boat.js";
+import { registerBoatSystems } from "./boat.js";
 import {
   createPlayer,
   LocalPlayerDef,
@@ -204,7 +204,6 @@ function registerRenderViewController(em: EntityManager) {
 
 export function initShipGame(em: EntityManager, hosting: boolean) {
   registerShipGameUI(em);
-  registerBoatSpawnerSystem(em);
   EM.addSingletonComponent(CameraDef);
   EM.addSingletonComponent(GameStateDef);
 

@@ -46,3 +46,9 @@ ECS cadences
   or multiples of each other (net to simulation)
 
 callSystem
+
+Actor model?
+  https://github.com/dotnet/Orleans
+  https://www.orbit.cloud/orbit/
+  https://news.ycombinator.com/item?id=31192795
+  https://www.microsoft.com/en-us/research/project/orleans-virtual-actors/

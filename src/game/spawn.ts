@@ -1,0 +1,110 @@
+import { AnimateToDef } from "../animate-to.js";
+import { createRef, Ref } from "../em_helpers.js";
+import { EM, Entity } from "../entity-manager.js";
+import { quat, vec3 } from "../gl-matrix.js";
+import { onInit } from "../init.js";
+import { AuthorityDef, MeDef } from "../net/components.js";
+import { AABBCollider, ColliderDef } from "../physics/collider.js";
+import { LinearVelocityDef } from "../physics/motion.js";
+import { WorldFrameDef } from "../physics/nonintersection.js";
+import {
+  PhysicsParentDef,
+  PositionDef,
+  RotationDef,
+} from "../physics/transform.js";
+import { spawnBoat } from "./boat.js";
+import { GroundLocalDef } from "./ground.js";
+
+export interface SpawnerOpts {
+  towardsPlayerDir: vec3;
+}
+const ChildCS = [
+  PositionDef,
+  RotationDef,
+  WorldFrameDef,
+  PhysicsParentDef,
+] as const;
+export interface Spawner extends SpawnerOpts {
+  hasSpawned: boolean;
+  childrenToRelease: Ref<[...typeof ChildCS]>[];
+}
+export const SpawnerDef = EM.defineComponent(
+  "toSpawn",
+  (s?: Partial<Spawner>) => ({
+    towardsPlayerDir: [0, 0, 0],
+    childrenToRelease: [],
+    hasSpawned: false,
+    ...s,
+  })
+);
+
+export function addSpawner(e: Entity, opts: SpawnerOpts) {
+  // TODO(@darzu):
+  EM.ensureComponentOn(e, SpawnerDef, opts);
+}
+
+onInit((em) => {
+  em.registerSystem(
+    [SpawnerDef, GroundLocalDef, AuthorityDef, ColliderDef],
+    [MeDef],
+    (tiles, res) => {
+      for (let t of tiles) {
+        if (t.authority.pid !== res.me.pid) continue;
+        if (t.toSpawn.hasSpawned) continue;
+
+        const y = (t.collider as AABBCollider).aabb.max[1] + 1;
+        const b = spawnBoat([0, y, 0], t.id, Math.PI / 2, false);
+
+        // console.log(`spawning ${b.id} from ${t.id} at ${performance.now()}`);
+
+        t.toSpawn.childrenToRelease.push(createRef(b.id, [...ChildCS]));
+
+        t.toSpawn.hasSpawned = true;
+      }
+    },
+    "spawnOnTile"
+  );
+
+  em.registerSystem(
+    [SpawnerDef, GroundLocalDef, AuthorityDef, RotationDef, PositionDef],
+    [MeDef],
+    (tiles, res) => {
+      const toRemove: number[] = [];
+
+      for (let t of tiles) {
+        if (t.authority.pid !== res.me.pid) continue;
+
+        // are we still animating?
+        if (AnimateToDef.isOn(t)) {
+          continue;
+        }
+
+        // unparent children
+        for (let i = t.toSpawn.childrenToRelease.length - 1; i >= 0; i--) {
+          const c = t.toSpawn.childrenToRelease[i]();
+          if (c) {
+            // console.log(
+            //   `unparenting ${c.id} from ${t.id} at ${performance.now()}`
+            // );
+            vec3.copy(c.position, c.world.position);
+            quat.copy(c.rotation, c.world.rotation);
+            c.physicsParent.id = 0;
+            // TODO(@darzu): this needs to be propegated to clients via event
+
+            t.toSpawn.childrenToRelease.splice(i);
+          }
+        }
+
+        // do we still have children to release?
+        if (!t.toSpawn.childrenToRelease.length) {
+          toRemove.push(t.id); // if not, remove the spawner
+        }
+      }
+
+      for (let id of toRemove) {
+        EM.removeComponent(id, SpawnerDef);
+      }
+    },
+    "spawnFinishAnimIn"
+  );
+});

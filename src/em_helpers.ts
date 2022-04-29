@@ -8,6 +8,7 @@ import {
 } from "./entity-manager.js";
 import { Authority, AuthorityDef, MeDef, SyncDef } from "./net/components.js";
 import { Serializer, Deserializer } from "./serialize.js";
+import { assert } from "./test.js";
 
 export function defineSerializableComponent<
   N extends string,
@@ -156,6 +157,11 @@ export type Ref<CS extends ComponentDef[] = []> = (() =>
   readonly id: number;
 };
 
+export function createRef<CS extends ComponentDef[]>(e: EntityW<CS>): Ref<CS>;
+export function createRef<CS extends ComponentDef[]>(
+  id: number,
+  cs: CS
+): Ref<CS>;
 export function createRef<CS extends ComponentDef[]>(
   idOrE: EntityW<CS> | number,
   cs?: CS
@@ -167,8 +173,9 @@ export function createRef<CS extends ComponentDef[]>(
       return thunk;
     } else {
       let found: EntityW<CS> | undefined;
+      assert(!!cs, "Ref must be given ComponentDef witnesses w/ id");
       const thunk = () => {
-        if (!found) found = EM.findEntity<CS, number>(idOrE, cs ?? ([] as any));
+        if (!found) found = EM.findEntity<CS, number>(idOrE, cs);
         return found;
       };
       thunk.id = idOrE;

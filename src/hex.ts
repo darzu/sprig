@@ -1,27 +1,7 @@
-/*
-plane at q + r + s = 0
-each hex is a cube in 3d
-  cubes are connected by edges
-  you move diagonly, always two coordinates change together
-for axial, s = -q-r
-
-IMPL NOTES:
-  We're gonna use sparse storage since most coordinates will be empty
-
-could do class w/ generic data stored at hex
-or each tile could give an id which we can use elsewhere
-like IdPair w/ negatives should work fine
-or we just increment ids
-
-hmm could we restrict outselves to positive q/r only?
-  nah, too restrictive
-*/
-
 import { TupleN } from "./entity-manager.js";
 import { vec2, vec3 } from "./gl-matrix.js";
 import { packI16s } from "./util.js";
 
-// TODO(@darzu): is using [number,number] bad for perf?
 export interface HexGrid<D> {
   _grid: Map<number, D>;
   has: (q: number, r: number) => boolean;
@@ -183,8 +163,3 @@ export function hexAvg(qr1: vec2, qr2: vec2): vec3 {
     (-qr1[0] - qr1[1] - qr2[0] - qr2[1]) * 0.5,
   ];
 }
-
-// function flat_hex_to_pixel(hex):
-//     var x = size * (     3./2 * hex.q                    )
-//     var y = size * (sqrt(3)/2 * hex.q  +  sqrt(3) * hex.r)
-//     return Point(x, y)
