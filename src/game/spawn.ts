@@ -89,6 +89,7 @@ onInit((em) => {
     }
   );
 
+  // TODO(@darzu): can we make this more ground agnostic?
   em.registerSystem(
     [SpawnerDef, GroundLocalDef, AuthorityDef, RotationDef, PositionDef],
     [MeDef],
@@ -98,10 +99,14 @@ onInit((em) => {
       for (let t of tiles) {
         if (t.authority.pid !== res.me.pid) continue;
 
+        // is the ground ready?
+        if (!t.groundLocal.readyForSpawn) continue;
+
         // are we still animating?
-        if (AnimateToDef.isOn(t)) {
-          continue;
-        }
+        if (AnimateToDef.isOn(t)) continue;
+
+        // TODO(@darzu):
+        console.log("releasing children");
 
         // unparent children
         for (let i = t.toSpawn.childrenToRelease.length - 1; i >= 0; i--) {

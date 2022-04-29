@@ -10,3 +10,11 @@ Collaborative editting:
     https://www.youtube.com/watch?v=x7drE24geUw
     https://josephg.com/blog/crdts-go-brrr/
     https://github.com/josephg/diamond-types/
+
+Multiplayer netcode debugger:
+  Have split screen open,
+  paused,
+  user selects two objects and says "I expected these to be the same"
+  "okay, which properties?"
+  "color, location"
+  "looks like ColorDef is only synced and creation and LocationDef is only modified via this event <>"

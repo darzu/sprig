@@ -39,6 +39,8 @@ import { AngularVelocityDef } from "../physics/motion.js";
 import { addSpawner, SpawnerDef } from "./spawn.js";
 import { drawLine } from "../utils-game.js";
 import { tempVec } from "../temp-pool.js";
+import { eventWizard } from "../net/events.js";
+import { vec3Dbg } from "../utils-3d.js";
 
 /*
 NOTES:
@@ -76,16 +78,22 @@ interface PathNode {
   prev: PathNode | undefined;
 }
 
-type GroundTile = EntityW<[typeof GroundPropsDef]>;
-type GroundTileInited = EntityW<
-  [typeof GroundPropsDef, typeof PositionDef, typeof ColorDef]
+type GroundTile = EntityW<
+  [
+    typeof GroundPropsDef,
+    typeof GroundLocalDef,
+    typeof PositionDef,
+    typeof ColorDef,
+    typeof RotationDef,
+    typeof AngularVelocityDef
+  ]
 >;
 
 export const GroundSystemDef = EM.defineComponent("groundSystem", () => {
   return {
     grid: createHexGrid<GroundTile>(),
     currentPath: undefined as PathNode | undefined,
-    objFreePool: [] as GroundTileInited[],
+    objFreePool: [] as GroundTile[],
   };
 });
 export type GroundSystem = Component<typeof GroundSystemDef>;
@@ -96,7 +104,7 @@ export const GroundMeshDef = EM.defineComponent("groundMesh", () => {
   };
 });
 
-export const { GroundPropsDef, GroundLocalDef, createGround } =
+export const { GroundPropsDef, GroundLocalDef, createGroundNow } =
   defineNetEntityHelper(EM, {
     name: "ground",
     defaultProps: (location?: vec3, color?: vec3) => ({
@@ -111,15 +119,19 @@ export const { GroundPropsDef, GroundLocalDef, createGround } =
       buf.readVec3(o.location);
       buf.readVec3(o.color);
     },
-    defaultLocal: () => true,
-    dynamicComponents: [PositionDef],
-    buildResources: [MeDef, GroundMeshDef],
+    defaultLocal: () => ({
+      readyForSpawn: false,
+    }),
+    dynamicComponents: [],
+    buildResources: [GroundMeshDef],
     build: (g, res) => {
       // console.log(`constructing ground ${g.id}`);
       const em: EntityManager = EM;
       // TODO(@darzu): change position via events?
-      vec3.copy(g.position, g.groundProps.location);
+      em.ensureComponentOn(g, PositionDef, g.groundProps.location);
       em.ensureComponentOn(g, ColorDef, g.groundProps.color);
+      EM.ensureComponentOn(g, RotationDef);
+      EM.ensureComponentOn(g, AngularVelocityDef);
       em.ensureComponentOn(
         g,
         RenderableConstructDef,
@@ -132,6 +144,7 @@ export const { GroundPropsDef, GroundLocalDef, createGround } =
         res.groundMesh.mesh.mkAabbCollider(true)
       );
       g.collider.targetLayers = []; // don't seek collision with anything
+      return g;
     },
   });
 
@@ -197,11 +210,12 @@ export function initGroundSystem(em: EntityManager) {
     mesh.mesh = gm;
   });
 
-  em.registerOneShotSystem(null, [MeDef], (_, rs) => {
+  em.registerOneShotSystem(null, [MeDef, GroundMeshDef], (_, rs) => {
     // Only the host runs the ground system
     if (!rs.me.host) return;
 
     const sys = em.addSingletonComponent(GroundSystemDef);
+    assert(GroundSystemDef.isOn(rs));
 
     // DEBUG CAMERA
     {
@@ -243,7 +257,7 @@ export function initGroundSystem(em: EntityManager) {
       next: undefined,
     };
 
-    raiseNodeTiles(sys, sys.currentPath, 0, 0, false);
+    raiseNodeTiles(rs, sys.currentPath, 0, 0, false);
 
     let lastPath = sys.currentPath;
     for (let i = 0; i < 10; i++) {
@@ -252,54 +266,106 @@ export function initGroundSystem(em: EntityManager) {
   });
 }
 
+const raiseRaiseGroundAnim = eventWizard(
+  "raiseGround",
+  [
+    [
+      GroundPropsDef,
+      GroundLocalDef,
+      PositionDef,
+      RotationDef,
+      AngularVelocityDef,
+      ColorDef,
+    ],
+  ] as const,
+  (
+    [g],
+    args: { endPos: vec3; delayMs: number; durationMs: number; color: vec3 }
+  ) => {
+    console.log(`raiseRaiseGroundAnim ${g.id}`);
+
+    const startPos = vec3.add(vec3.create(), args.endPos, [
+      0,
+      -TILE_SPAWN_DIST,
+      0,
+    ]);
+
+    vec3.copy(g.position, startPos);
+    vec3.copy(g.color, args.color);
+    quat.identity(g.rotation);
+    vec3.zero(g.angularVelocity);
+
+    EM.ensureComponentOn(g, AnimateToDef);
+
+    console.log(
+      `startPos: ${vec3Dbg(startPos)} endPos: ${vec3Dbg(args.endPos)}`
+    );
+    Object.assign(g.animateTo, {
+      startPos,
+      endPos: args.endPos,
+      progressMs: -args.delayMs,
+      durationMs: args.durationMs,
+      easeFn: EASE_OUTBACK,
+    });
+
+    g.groundLocal.readyForSpawn = true;
+  },
+  {
+    serializeExtra: (buf, a) => {
+      buf.writeVec3(a.endPos);
+      buf.writeUint32(a.delayMs);
+      buf.writeUint32(a.durationMs);
+      buf.writeVec3(a.color);
+    },
+    deserializeExtra: (buf) => {
+      return {
+        endPos: buf.readVec3()!,
+        delayMs: buf.readUint32(),
+        durationMs: buf.readUint32(),
+        color: buf.readVec3()!,
+      };
+    },
+  }
+);
+
 function raiseTile(
-  sys: GroundSystem,
+  res: EntityW<[typeof GroundSystemDef, typeof GroundMeshDef]>,
   q: number,
   r: number,
   color: vec3,
-  easeDelayMs: number,
-  easeMs: number
+  delayMs: number,
+  durationMs: number
 ) {
-  const startPos: vec3 = [
-    hexX(q, r, SIZE),
-    Y - TILE_SPAWN_DIST,
-    hexZ(q, r, SIZE),
-  ];
   const endPos: vec3 = [hexX(q, r, SIZE), Y, hexZ(q, r, SIZE)];
 
   let g: GroundTile;
-  if (sys.objFreePool.length > RIVER_WIDTH * 2) {
+  if (res.groundSystem.objFreePool.length > RIVER_WIDTH * 2) {
     // TODO(@darzu): it'd be nice to have a general way to have object pooling
-    let oldG = sys.objFreePool.pop()!;
-    vec3.copy(oldG.position, startPos);
-    vec3.copy(oldG.color, color);
-    if (RotationDef.isOn(oldG)) quat.identity(oldG.rotation);
-    if (AngularVelocityDef.isOn(oldG)) vec3.zero(oldG.angularVelocity);
-    g = oldG;
+    g = res.groundSystem.objFreePool.pop()!;
   } else {
-    g = createGround(startPos, color);
+    g = createGroundNow(res, vec3.clone(endPos), color);
+    console.log(`createGroundNow ${g.id}`);
   }
-  // NOTE: animateTo will only be on the host but that's fine, the host owns all
-  //    these anyway
-  // TODO(@darzu): we might want to animate on clients b/c it'd be smoother
-  EM.ensureComponentOn(g, AnimateToDef, {
-    startPos,
+
+  raiseRaiseGroundAnim(g, {
     endPos,
-    progressMs: -easeDelayMs,
-    durationMs: easeMs,
-    easeFn: EASE_OUTBACK,
+    delayMs,
+    durationMs,
+    color,
   });
-  sys.grid.set(q, r, g);
+
+  res.groundSystem.grid.set(q, r, g);
   return g;
 }
 
 function raiseNodeTiles(
-  sys: GroundSystem,
+  res: EntityW<[typeof GroundSystemDef, typeof GroundMeshDef]>,
   n: PathNode,
   easeDelayMs: number,
   easeMsPer: number,
   doSpawn: boolean
 ): Entity[] {
+  console.log("raiseNodeTiles");
   let nextEaseDelayMs = easeDelayMs;
   const w = Math.floor(n.width / 2);
   let newTiles: Entity[] = [];
@@ -310,6 +376,8 @@ function raiseNodeTiles(
   const backDirQR = vec2.negate(vec2.create(), HEX_DIRS[n.dirIdx]);
   const backDirXYZ = hexXYZ(vec3.create(), backDirQR[0], backDirQR[1], SIZE);
   vec3.normalize(backDirXYZ, backDirXYZ);
+
+  const sys = res.groundSystem;
 
   for (let qr of hexesWithin(n.q, n.r, w)) {
     const [q, r] = qr;
@@ -332,7 +400,7 @@ function raiseNodeTiles(
         0.03 + jitter(0.01),
         0.2 + jitter(0.02),
       ];
-      const t = raiseTile(sys, q, r, color, nextEaseDelayMs, easeMsPer);
+      const t = raiseTile(res, q, r, color, nextEaseDelayMs, easeMsPer);
       nextEaseDelayMs += easeMsPer * 0.5;
 
       if (doSpawn) {
@@ -386,6 +454,7 @@ function dropNodeTiles(
   for (let [q, r] of hexesWithin(n.q, n.r, w)) {
     const g = sys.grid.get(q, r);
     if (g && PositionDef.isOn(g) && ColorDef.isOn(g)) {
+      // TODO(@darzu): USE EVENT TO DROP
       const startPos = vec3.clone(g.position);
       const endPos = vec3.add(vec3.create(), startPos, [0, -TILE_FALL_DIST, 0]);
       assert(
@@ -402,8 +471,6 @@ function dropNodeTiles(
       // nextEaseDelayMs += easeMsPer * 0.5;
 
       // some random spin
-      EM.ensureComponentOn(g, RotationDef);
-      EM.ensureComponentOn(g, AngularVelocityDef);
       const spin = g.angularVelocity;
       vec3.copy(spin, [
         Math.random() - 0.5,
@@ -426,7 +493,7 @@ export function registerGroundSystems(em: EntityManager) {
   let lastShipR = NaN;
   em.registerSystem(
     null,
-    [GroundSystemDef, ScoreDef, MeDef],
+    [GroundSystemDef, GroundMeshDef, ScoreDef, MeDef],
     (_, res) => {
       // host only
       if (!res.me.host) return;
@@ -434,6 +501,8 @@ export function registerGroundSystems(em: EntityManager) {
       // is our path inited?
       const sys = res.groundSystem;
       if (!sys.currentPath) return;
+
+      // console.log("running ground system");
 
       // where is our ship?
       const ship = em.filterEntities([ShipLocalDef, PositionDef])[0];
@@ -455,7 +524,7 @@ export function registerGroundSystems(em: EntityManager) {
           hexDist(ahead.q, ahead.r, shipQ, shipR) <= REVEAL_DIST
         ) {
           ahead.state = "inplay";
-          const ts = raiseNodeTiles(sys, ahead, easeStart, easeMs, true);
+          const ts = raiseNodeTiles(res, ahead, easeStart, easeMs, true);
           easeStart += ts.length * easeMs * 0.5;
 
           // advance out path pointer
