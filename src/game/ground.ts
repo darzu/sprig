@@ -115,6 +115,7 @@ export const { GroundPropsDef, GroundLocalDef, createGround } =
     dynamicComponents: [PositionDef],
     buildResources: [MeDef, GroundMeshDef],
     build: (g, res) => {
+      console.log("constructing ground");
       const em: EntityManager = EM;
       // TODO(@darzu): change position via events?
       vec3.copy(g.position, g.groundProps.location);
@@ -128,7 +129,7 @@ export const { GroundPropsDef, GroundLocalDef, createGround } =
       em.ensureComponentOn(
         g,
         ColliderDef,
-        res.groundMesh.mesh.aabbCollider(true)
+        res.groundMesh.mesh.mkAabbCollider(true)
       );
       g.collider.targetLayers = []; // don't seek collision with anything
     },
@@ -180,72 +181,75 @@ function continuePath(path: PathNode): PathNode {
 }
 
 export function initGroundSystem(em: EntityManager) {
-  em.registerOneShotSystem(
-    null,
-    [ScoreDef, MeDef, AssetsDef, RendererDef],
-    (_, rs) => {
-      const sys = em.addSingletonComponent(GroundSystemDef);
-      const mesh = em.addSingletonComponent(GroundMeshDef);
+  // init ground mesh
+  em.registerOneShotSystem(null, [AssetsDef, RendererDef], (_, rs) => {
+    const mesh = em.addSingletonComponent(GroundMeshDef);
 
-      // DEBUG CAMERA
-      {
-        const e = em.findEntity(em.getResource(LocalPlayerDef)!.playerId, [
-          CameraFollowDef,
-          PositionDef,
-          RotationDef,
-        ])!;
-        // high up
-        // vec3.copy(e.position, [54.72, 2100.0, 33.17]);
-        // quat.copy(e.rotation, [0.0, 1.0, 0.0, 0.02]);
-        // vec3.copy(e.cameraFollow.positionOffset, [2.0, 2.0, 8.0]);
-        // e.cameraFollow.yawOffset = 0.0;
-        // e.cameraFollow.pitchOffset = -1.042;
+    // create mesh
+    const t = mat4.fromRotationTranslationScale(
+      mat4.create(),
+      quat.IDENTITY,
+      [0, -DEPTH, 0],
+      [WIDTH * 0.5, DEPTH, WIDTH * 0.5]
+    );
+    const m = transformMesh(rs.assets.hex.mesh, t);
+    const gm = gameMeshFromMesh(m, rs.renderer.renderer);
+    mesh.mesh = gm;
+  });
 
-        // watching from afar side
-        // vec3.copy(e.position, [-495.02,241.17,-35.16]);
-        // quat.copy(e.rotation, [0.00,0.70,0.00,-0.72]);
-        // vec3.copy(e.cameraFollow.positionOffset, [2.00,2.00,8.00]);
-        // e.cameraFollow.yawOffset = 0.000;
-        // e.cameraFollow.pitchOffset = -0.655;
-      }
+  em.registerOneShotSystem(null, [MeDef], (_, rs) => {
+    // Only the host runs the ground system
+    if (!rs.me.host) return;
 
-      // create mesh
-      const t = mat4.fromRotationTranslationScale(
-        mat4.create(),
-        quat.IDENTITY,
-        [0, -DEPTH, 0],
-        [WIDTH * 0.5, DEPTH, WIDTH * 0.5]
-      );
-      const m = transformMesh(rs.assets.hex.mesh, t);
-      const gm = gameMeshFromMesh(m, rs.renderer.renderer);
-      mesh.mesh = gm;
+    const sys = em.addSingletonComponent(GroundSystemDef);
 
-      // init ground system
-      assert(sys.grid._grid.size === 0);
+    // DEBUG CAMERA
+    {
+      const e = em.findEntity(em.getResource(LocalPlayerDef)!.playerId, [
+        CameraFollowDef,
+        PositionDef,
+        RotationDef,
+      ])!;
+      // high up
+      // vec3.copy(e.position, [54.72, 2100.0, 33.17]);
+      // quat.copy(e.rotation, [0.0, 1.0, 0.0, 0.02]);
+      // vec3.copy(e.cameraFollow.positionOffset, [2.0, 2.0, 8.0]);
+      // e.cameraFollow.yawOffset = 0.0;
+      // e.cameraFollow.pitchOffset = -1.042;
 
-      // createTile(0, -2, [0.1, 0.2, 0.1]);
-      // createTile(2, -2, [0.2, 0.1, 0.1]);
-      // createTile(-2, 0, [0.1, 0.1, 0.2]);
-      // createTile(0, 0, [0.1, 0.1, 0.1]);
-
-      sys.currentPath = {
-        q: 0,
-        r: 0,
-        dirIdx: 0,
-        width: RIVER_WIDTH,
-        state: "inplay",
-        prev: undefined,
-        next: undefined,
-      };
-
-      raiseNodeTiles(sys, sys.currentPath, 0, 0, false);
-
-      let lastPath = sys.currentPath;
-      for (let i = 0; i < 10; i++) {
-        lastPath = continuePath(lastPath);
-      }
+      // watching from afar side
+      // vec3.copy(e.position, [-495.02,241.17,-35.16]);
+      // quat.copy(e.rotation, [0.00,0.70,0.00,-0.72]);
+      // vec3.copy(e.cameraFollow.positionOffset, [2.00,2.00,8.00]);
+      // e.cameraFollow.yawOffset = 0.000;
+      // e.cameraFollow.pitchOffset = -0.655;
     }
-  );
+
+    // init ground system
+    assert(sys.grid._grid.size === 0);
+
+    // createTile(0, -2, [0.1, 0.2, 0.1]);
+    // createTile(2, -2, [0.2, 0.1, 0.1]);
+    // createTile(-2, 0, [0.1, 0.1, 0.2]);
+    // createTile(0, 0, [0.1, 0.1, 0.1]);
+
+    sys.currentPath = {
+      q: 0,
+      r: 0,
+      dirIdx: 0,
+      width: RIVER_WIDTH,
+      state: "inplay",
+      prev: undefined,
+      next: undefined,
+    };
+
+    raiseNodeTiles(sys, sys.currentPath, 0, 0, false);
+
+    let lastPath = sys.currentPath;
+    for (let i = 0; i < 10; i++) {
+      lastPath = continuePath(lastPath);
+    }
+  });
 }
 
 function raiseTile(
@@ -273,9 +277,7 @@ function raiseTile(
     if (AngularVelocityDef.isOn(oldG)) vec3.zero(oldG.angularVelocity);
     g = oldG;
   } else {
-    let newG = EM.newEntity();
-    EM.ensureComponentOn(newG, GroundPropsDef, startPos, color);
-    g = newG;
+    g = createGround(startPos, color);
   }
   // NOTE: animateTo will only be on the host but that's fine, the host owns all
   //    these anyway

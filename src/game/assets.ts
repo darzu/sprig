@@ -417,7 +417,7 @@ export type GameMesh = {
   proto: MeshHandle;
   uniqueVerts: vec3[];
   support: SupportFn;
-  aabbCollider: (solid: boolean) => AABBCollider;
+  mkAabbCollider: (solid: boolean) => AABBCollider;
 };
 
 type GameMeshes = { [P in RemoteMeshSymbols | LocalMeshSymbols]: GameMesh } & {
@@ -573,7 +573,7 @@ export function gameMeshFromMesh(mesh: Mesh, renderer: Renderer): GameMesh {
     proto,
     uniqueVerts,
     support,
-    aabbCollider,
+    mkAabbCollider: aabbCollider,
   };
 }
 
