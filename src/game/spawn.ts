@@ -113,7 +113,6 @@ onInit((em) => {
             vec3.copy(c.position, c.world.position);
             quat.copy(c.rotation, c.world.rotation);
             runUnparent(c);
-            // TODO(@darzu): this needs to be propegated to clients via event
 
             t.toSpawn.childrenToRelease.splice(i);
           }

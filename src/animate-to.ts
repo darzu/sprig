@@ -41,13 +41,13 @@ export function EASE_INVERSE(fn: EaseFn): EaseFn {
 
 export const AnimateToDef = EM.defineComponent(
   "animateTo",
-  function (a: Partial<AnimateTo>): AnimateTo {
+  function (a?: Partial<AnimateTo>): AnimateTo {
     return {
-      startPos: a.startPos ?? vec3.create(),
-      endPos: a.endPos ?? vec3.create(),
-      easeFn: a.easeFn ?? EASE_LINEAR,
-      durationMs: a.durationMs ?? 1000,
-      progressMs: a.progressMs ?? 0,
+      startPos: a?.startPos ?? vec3.create(),
+      endPos: a?.endPos ?? vec3.create(),
+      easeFn: a?.easeFn ?? EASE_LINEAR,
+      durationMs: a?.durationMs ?? 1000,
+      progressMs: a?.progressMs ?? 0,
     };
   }
 );
