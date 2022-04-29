@@ -334,6 +334,7 @@ function raiseNodeTiles(
       if (doSpawn)
         addSpawner(t, {
           towardsPlayerDir: backDirXYZ,
+          side: isLeft ? "left" : isRight ? "right" : "center",
         });
 
       newTiles.push(t);

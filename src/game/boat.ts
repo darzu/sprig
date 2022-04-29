@@ -337,7 +337,7 @@ export function spawnBoat(
   boatCon.parent = parentId;
   boatCon.speed = 0.005 + jitter(0.002);
   boatCon.wheelDir = wheelDir * (1 + jitter(0.1));
-  boatCon.wheelSpeed = jitter(0.0001);
+  boatCon.wheelSpeed = jitter(0.00005);
   if (facingRight) {
     boatCon.speed *= -1;
     boatCon.wheelDir *= -1;
