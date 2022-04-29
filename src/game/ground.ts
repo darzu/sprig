@@ -266,7 +266,7 @@ export function initGroundSystem(em: EntityManager) {
   });
 }
 
-const raiseRaiseGroundAnim = eventWizard(
+const raiseGroundEvent = eventWizard(
   "raiseGround",
   [
     [
@@ -282,7 +282,7 @@ const raiseRaiseGroundAnim = eventWizard(
     [g],
     args: { endPos: vec3; delayMs: number; durationMs: number; color: vec3 }
   ) => {
-    console.log(`raiseRaiseGroundAnim ${g.id}`);
+    // console.log(`raiseRaiseGroundAnim ${g.id}`);
 
     const startPos = vec3.add(vec3.create(), args.endPos, [
       0,
@@ -297,9 +297,9 @@ const raiseRaiseGroundAnim = eventWizard(
 
     EM.ensureComponentOn(g, AnimateToDef);
 
-    console.log(
-      `startPos: ${vec3Dbg(startPos)} endPos: ${vec3Dbg(args.endPos)}`
-    );
+    // console.log(
+    //   `startPos: ${vec3Dbg(startPos)} endPos: ${vec3Dbg(args.endPos)}`
+    // );
     Object.assign(g.animateTo, {
       startPos,
       endPos: args.endPos,
@@ -344,10 +344,10 @@ function raiseTile(
     g = res.groundSystem.objFreePool.pop()!;
   } else {
     g = createGroundNow(res, vec3.clone(endPos), color);
-    console.log(`createGroundNow ${g.id}`);
+    // console.log(`createGroundNow ${g.id}`);
   }
 
-  raiseRaiseGroundAnim(g, {
+  raiseGroundEvent(g, {
     endPos,
     delayMs,
     durationMs,
@@ -442,6 +442,47 @@ function raiseNodeTiles(
   return newTiles;
 }
 
+const dropTileEvent = eventWizard(
+  "dropTile",
+  [[GroundPropsDef, PositionDef, AngularVelocityDef]] as const,
+  ([g], args: { delayMs: number; durationMs: number }) => {
+    const startPos = vec3.clone(g.position);
+    const endPos = vec3.add(vec3.create(), startPos, [0, -TILE_FALL_DIST, 0]);
+    // NOTE: since this is an event, these might be played back-to-back as some
+    //    client catches up
+    EM.ensureComponentOn(g, AnimateToDef);
+    Object.assign(g.animateTo, {
+      startPos,
+      endPos,
+      progressMs: -args.delayMs,
+      durationMs: args.durationMs,
+      easeFn: EASE_INCUBE,
+    });
+
+    // some random spin
+    const spin = g.angularVelocity;
+    vec3.copy(spin, [
+      Math.random() - 0.5,
+      Math.random() - 0.5,
+      Math.random() - 0.5,
+    ]);
+    vec3.normalize(spin, spin);
+    vec3.scale(spin, spin, 0.001);
+  },
+  {
+    serializeExtra: (buf, a) => {
+      buf.writeUint32(a.delayMs);
+      buf.writeUint32(a.durationMs);
+    },
+    deserializeExtra: (buf) => {
+      return {
+        delayMs: buf.readUint32(),
+        durationMs: buf.readUint32(),
+      };
+    },
+  }
+);
+
 function dropNodeTiles(
   sys: GroundSystem,
   n: { q: number; r: number; width: number },
@@ -453,32 +494,8 @@ function dropNodeTiles(
   let droppedTiles: Entity[] = [];
   for (let [q, r] of hexesWithin(n.q, n.r, w)) {
     const g = sys.grid.get(q, r);
-    if (g && PositionDef.isOn(g) && ColorDef.isOn(g)) {
-      // TODO(@darzu): USE EVENT TO DROP
-      const startPos = vec3.clone(g.position);
-      const endPos = vec3.add(vec3.create(), startPos, [0, -TILE_FALL_DIST, 0]);
-      assert(
-        !AnimateToDef.isOn(g),
-        "Oops, we can't animate the tile out when it's already being animated."
-      );
-      EM.ensureComponentOn(g, AnimateToDef, {
-        startPos,
-        endPos,
-        progressMs: -nextEaseDelayMs,
-        durationMs: easeMsPer,
-        easeFn: EASE_INCUBE,
-      });
-      // nextEaseDelayMs += easeMsPer * 0.5;
-
-      // some random spin
-      const spin = g.angularVelocity;
-      vec3.copy(spin, [
-        Math.random() - 0.5,
-        Math.random() - 0.5,
-        Math.random() - 0.5,
-      ]);
-      vec3.normalize(spin, spin);
-      vec3.scale(spin, spin, 0.001);
+    if (g) {
+      dropTileEvent(g, { delayMs: nextEaseDelayMs, durationMs: easeMsPer });
 
       sys.objFreePool.unshift(g);
       sys.grid.delete(q, r);
