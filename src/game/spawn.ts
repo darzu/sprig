@@ -83,9 +83,11 @@ onInit((em) => {
   // TODO(@darzu): this seems really general
   const runUnparent = eventWizard(
     "unparent",
-    [[PhysicsParentDef]] as const,
-    ([child]) => {
-      child.physicsParent.id = 0;
+    [[PhysicsParentDef, PositionDef, RotationDef, WorldFrameDef]] as const,
+    ([c]) => {
+      vec3.copy(c.position, c.world.position);
+      quat.copy(c.rotation, c.world.rotation);
+      c.physicsParent.id = 0;
     }
   );
 
@@ -115,8 +117,6 @@ onInit((em) => {
             // console.log(
             //   `unparenting ${c.id} from ${t.id} at ${performance.now()}`
             // );
-            vec3.copy(c.position, c.world.position);
-            quat.copy(c.rotation, c.world.rotation);
             runUnparent(c);
 
             t.toSpawn.childrenToRelease.splice(i);
