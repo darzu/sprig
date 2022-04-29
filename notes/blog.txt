@@ -132,3 +132,18 @@ A possible timeline:
   Year 4: Blocks for all
   Year 5: Learning content
   Year 6-20: Iterate
+
+The big bets in Sprigland:
+  These aren't obviously true, otherwise they'd be done more.
+  Multiplayer can be made way way easier.
+  Block programming can be just as productive as text.
+  Gameplay is king, u don't need fancy graphics.
+    Related, u don't need a computer newer than ~10 years ago to play the best games.
+  Open source games can sell. 
+    (Sprigland users won't need to be open source, but we're counting on our own games still selling maybe)
+  The best programming education environment is one that lets you make real shit.
+  Kids won't be turned off by "grown up" looking UI/UX.
+  U should have custom dsl/program analysis for any significantly complex library/platform.
+  Program slicing is hugely undervalued for good learning references.
+  Static typing is a must, especially for learning.
+  U don't need fancy physics.
