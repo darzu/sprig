@@ -1,3 +1,5 @@
+APPEND ONLY. Just a stream of conciousness as the inspiration strikes.
+
 Start docked and your goal is to reach the next dock along the river.
 Oregon trail style, you can load out your ship at docks.
 You can take a bigger gem which increases your payout but also the difficulty.
@@ -18,3 +20,17 @@ Steer to line up shots and follow the river.
 Players wear hats depending on their job.
   Maybe done automatically based on station/turret.
 The game lobby is just the ship at dock.
+
+With more players, eventually just add another ship.
+  Widen the river and add enemies to compensate.
+
+Branches in the river are actually water falls.
+  Makes it easier to have something floating above the waterfall to indicate.
+  Makes it clear that it's one-way.
+  Nice chance to reset.
+  Obscures what is ahead.
+
+Game modes: Arcade vs Journey
+  Journey: persistent, traveling dock to dock, rpg progression, maybe story
+  Arcade: one run, maybe rogue-lite, easier to just do w/ friends
+
