@@ -57,6 +57,8 @@ import {
 } from "../net/events.js";
 import { TextDef } from "./ui.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
+import { constructNetTurret, TurretDef } from "./turret.js";
+import { YawPitchDef } from "../yawpitch.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
@@ -112,6 +114,64 @@ export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper(
   }
 );
 
+export const { RudderPropsDef, RudderLocalDef, createRudder } =
+  defineNetEntityHelper(EM, {
+    name: "rudder",
+    defaultProps: (ship?: Entity) => ({
+      ship: createRef(ship ?? 0),
+    }),
+    serializeProps: (o, buf) => {
+      buf.writeUint32(o.ship.id);
+    },
+    deserializeProps: (o, buf) => {
+      o.ship = createRef(buf.readUint32());
+    },
+    defaultLocal: () => true,
+    dynamicComponents: [RotationDef],
+    buildResources: [AssetsDef, MeDef],
+    build: (rudder, res) => {
+      const em: EntityManager = EM;
+
+      em.ensureComponentOn(rudder, PositionDef, [0, 0.5, -15]);
+
+      em.ensureComponentOn(
+        rudder,
+        RenderableConstructDef,
+        res.assets.rudder.mesh
+      );
+      em.ensureComponentOn(
+        rudder,
+        PhysicsParentDef,
+        rudder.rudderProps.ship.id
+      );
+      em.ensureComponentOn(rudder, ColorDef, vec3.clone(BOAT_COLOR));
+      vec3.scale(rudder.color, rudder.color, 0.5);
+
+      // create seperate hitbox for interacting with the rudder
+      const interactBox = em.newEntity();
+      em.ensureComponentOn(
+        interactBox,
+        PhysicsParentDef,
+        rudder.rudderProps.ship.id
+      );
+      em.ensureComponentOn(interactBox, PositionDef, [0, 0, -12]);
+      em.ensureComponentOn(interactBox, ColliderDef, {
+        shape: "AABB",
+        solid: false,
+        aabb: {
+          min: vec3.fromValues(-1, -2, -2),
+          max: vec3.fromValues(1, 2, 2.5),
+        },
+      });
+      if (constructNetTurret(rudder, 0, 0, interactBox, Math.PI)) {
+        rudder.turret.maxPitch = 0;
+        rudder.turret.minPitch = 0;
+        rudder.turret.maxYaw = Math.PI / 6;
+        rudder.turret.minYaw = -Math.PI / 6;
+      }
+    },
+  });
+
 export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
   EM,
   {
@@ -122,6 +182,7 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
       gemId: 0,
       cannonLId: 0,
       cannonRId: 0,
+      rudder: createRef(0) as Ref<[typeof RudderPropsDef, typeof YawPitchDef]>,
     }),
     serializeProps: (c, buf) => {
       buf.writeVec3(c.loc);
@@ -141,7 +202,12 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
       parts: [] as Ref<[typeof ShipPartDef, typeof RenderableDef]>[],
       speed: 0,
     }),
-    dynamicComponents: [PositionDef, RotationDef],
+    dynamicComponents: [
+      PositionDef,
+      RotationDef,
+      LinearVelocityDef,
+      AngularVelocityDef,
+    ],
     buildResources: [MeDef, AssetsDef],
     build: (s, res) => {
       const em: EntityManager = EM;
@@ -152,6 +218,13 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
         // create gem
         const gem = createGem(s);
         s.shipProps.gemId = gem.id;
+
+        // create rudder
+        // TODO: Doug doesn't understand refs
+        s.shipProps.rudder = createRef(createRudder(s).id, [
+          RudderPropsDef,
+          YawPitchDef,
+        ]);
 
         // create cannons
         const cannonPitch = Math.PI * +0.05;
@@ -318,18 +391,44 @@ export function registerShipSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [ShipLocalDef, LinearVelocityDef, AngularVelocityDef],
-    [GameStateDef],
+    [
+      ShipLocalDef,
+      ShipPropsDef,
+      LinearVelocityDef,
+      AngularVelocityDef,
+      AuthorityDef,
+      RotationDef,
+    ],
+    [GameStateDef, MeDef],
     (ships, res) => {
       if (res.gameState.state !== GameState.PLAYING) return;
       for (let s of ships) {
+        if (s.authority.pid !== res.me.pid) return;
+        vec3.set(s.linearVelocity, 0, -0.01, s.shipLocal.speed);
+        vec3.transformQuat(s.linearVelocity, s.linearVelocity, s.rotation);
         s.linearVelocity[2] = s.shipLocal.speed;
         s.linearVelocity[1] = -0.01;
+        s.angularVelocity[1] = s.shipProps.rudder()!.yawpitch.yaw * 0.0005;
         // TODO(@darzu): dbg ship physics when turning
         // s.angularVelocity[1] = -0.0001;
       }
     },
     "shipMove"
+  );
+
+  // If a rudder isn't being manned, smooth it back towards straight
+  em.registerSystem(
+    [RudderPropsDef, TurretDef, YawPitchDef, AuthorityDef],
+    [MeDef],
+    (rudders, res) => {
+      for (let r of rudders) {
+        if (r.authority.pid !== res.me.pid) return;
+        if (r.turret.mannedId !== 0) return;
+        if (Math.abs(r.yawpitch.yaw) < 0.01) r.yawpitch.yaw = 0;
+        r.yawpitch.yaw *= 0.9;
+      }
+    },
+    "easeRudder"
   );
 
   em.registerSystem(
