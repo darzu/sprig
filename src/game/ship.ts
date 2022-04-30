@@ -57,7 +57,7 @@ import {
 } from "../net/events.js";
 import { TextDef } from "./ui.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
-import { constructNetTurret } from "./turret.js";
+import { constructNetTurret, TurretDef } from "./turret.js";
 import { YawPitchDef } from "../yawpitch.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
@@ -182,7 +182,7 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
       gemId: 0,
       cannonLId: 0,
       cannonRId: 0,
-      rudder: createRef(0) as Ref<[typeof RudderPropsDef]>,
+      rudder: createRef(0) as Ref<[typeof RudderPropsDef, typeof YawPitchDef]>,
     }),
     serializeProps: (c, buf) => {
       buf.writeVec3(c.loc);
@@ -202,7 +202,12 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
       parts: [] as Ref<[typeof ShipPartDef, typeof RenderableDef]>[],
       speed: 0,
     }),
-    dynamicComponents: [PositionDef, RotationDef],
+    dynamicComponents: [
+      PositionDef,
+      RotationDef,
+      LinearVelocityDef,
+      AngularVelocityDef,
+    ],
     buildResources: [MeDef, AssetsDef],
     build: (s, res) => {
       const em: EntityManager = EM;
@@ -215,7 +220,11 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
         s.shipProps.gemId = gem.id;
 
         // create rudder
-        s.shipProps.rudder = createRef(createRudder(s));
+        // TODO: Doug doesn't understand refs
+        s.shipProps.rudder = createRef(createRudder(s).id, [
+          RudderPropsDef,
+          YawPitchDef,
+        ]);
 
         // create cannons
         const cannonPitch = Math.PI * +0.05;
@@ -382,18 +391,44 @@ export function registerShipSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [ShipLocalDef, LinearVelocityDef, AngularVelocityDef],
-    [GameStateDef],
+    [
+      ShipLocalDef,
+      ShipPropsDef,
+      LinearVelocityDef,
+      AngularVelocityDef,
+      AuthorityDef,
+      RotationDef,
+    ],
+    [GameStateDef, MeDef],
     (ships, res) => {
       if (res.gameState.state !== GameState.PLAYING) return;
       for (let s of ships) {
+        if (s.authority.pid !== res.me.pid) return;
+        vec3.set(s.linearVelocity, 0, -0.01, s.shipLocal.speed);
+        vec3.transformQuat(s.linearVelocity, s.linearVelocity, s.rotation);
         s.linearVelocity[2] = s.shipLocal.speed;
         s.linearVelocity[1] = -0.01;
+        s.angularVelocity[1] = s.shipProps.rudder()!.yawpitch.yaw * 0.0005;
         // TODO(@darzu): dbg ship physics when turning
         // s.angularVelocity[1] = -0.0001;
       }
     },
     "shipMove"
+  );
+
+  // If a rudder isn't being manned, smooth it back towards straight
+  em.registerSystem(
+    [RudderPropsDef, TurretDef, YawPitchDef, AuthorityDef],
+    [MeDef],
+    (rudders, res) => {
+      for (let r of rudders) {
+        if (r.authority.pid !== res.me.pid) return;
+        if (r.turret.mannedId !== 0) return;
+        if (Math.abs(r.yawpitch.yaw) < 0.01) r.yawpitch.yaw = 0;
+        r.yawpitch.yaw *= 0.9;
+      }
+    },
+    "easeRudder"
   );
 
   em.registerSystem(
