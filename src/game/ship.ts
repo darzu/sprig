@@ -166,6 +166,8 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
       rudder.turret.minPitch = 0;
       rudder.turret.maxYaw = Math.PI / 6;
       rudder.turret.minYaw = -Math.PI / 6;
+      rudder.turret.invertYaw = true;
+      rudder.turret.cameraYawFactor = 1.5;
 
       return rudder;
     },
@@ -403,8 +405,6 @@ export function registerShipSystems(em: EntityManager) {
         if (s.authority.pid !== res.me.pid) return;
         vec3.set(s.linearVelocity, 0, -0.01, s.shipLocal.speed);
         vec3.transformQuat(s.linearVelocity, s.linearVelocity, s.rotation);
-        s.linearVelocity[2] = s.shipLocal.speed;
-        s.linearVelocity[1] = -0.01;
         s.angularVelocity[1] = s.shipProps.rudder()!.yawpitch.yaw * 0.0005;
         // TODO(@darzu): dbg ship physics when turning
         // s.angularVelocity[1] = -0.0001;
@@ -417,7 +417,11 @@ export function registerShipSystems(em: EntityManager) {
           if (res.inputs.keyDowns["x"])
             quat.rotateY(s.rotation, s.rotation, -turnSpeed);
 
-          vec3.transformQuat(s.linearVelocity, s.linearVelocity, s.rotation);
+          vec3.transformQuat(
+            s.linearVelocity,
+            [0, -0.01, s.shipLocal.speed],
+            s.rotation
+          );
         }
       }
     },

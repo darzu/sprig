@@ -31,6 +31,10 @@ export const TurretDef = EM.defineComponent("turret", () => {
     maxYaw: +Math.PI * 0.5,
     minPitch: -Math.PI * 0.1,
     maxPitch: Math.PI * 0.3,
+    cameraYawOffset: 0,
+    cameraPitchOffset: 0,
+    invertYaw: false,
+    cameraYawFactor: 0,
   };
 });
 
@@ -40,7 +44,8 @@ export function constructNetTurret(
   startPitch: number,
   aabbOrInteractionEntity: AABB | Entity,
   cameraYawOffset: number = 0,
-  cameraPitchOffset: number = -Math.PI / 8
+  cameraPitchOffset: number = -Math.PI / 8,
+  cameraYawFactor: number = 0
 ): asserts e is EntityW<
   [
     typeof TurretDef,
@@ -56,6 +61,10 @@ export function constructNetTurret(
   EM.ensureComponentOn(e, TurretDef);
   e.turret.minYaw += startYaw;
   e.turret.maxYaw += startYaw;
+  e.turret.cameraYawOffset = cameraYawOffset;
+  e.turret.cameraPitchOffset = cameraPitchOffset;
+  e.turret.cameraYawFactor = cameraYawFactor;
+
   EM.ensureComponentOn(e, RotationDef);
   EM.ensureComponentOn(e, SyncDef);
   e.sync.dynamicComponents.push(YawPitchDef.id);
@@ -133,14 +142,19 @@ export function registerTurretSystems(em: EntityManager) {
     [],
     (turrets, res) => {
       for (let c of turrets) {
-        yawpitchToQuat(c.rotation, c.yawpitch);
+        if (c.turret.invertYaw)
+          yawpitchToQuat(c.rotation, {
+            yaw: -c.yawpitch.yaw,
+            pitch: c.yawpitch.pitch,
+          });
+        else yawpitchToQuat(c.rotation, c.yawpitch);
       }
     },
     "turretYawPitch"
   );
 
   em.registerSystem(
-    [TurretDef, YawPitchDef],
+    [TurretDef, YawPitchDef, CameraFollowDef],
     [InputsDef, LocalPlayerDef],
     (turrets, res) => {
       const player = em.findEntity(res.localPlayer.playerId, [PlayerDef])!;
@@ -161,6 +175,9 @@ export function registerTurretSystems(em: EntityManager) {
           c.turret.minPitch,
           c.turret.maxPitch
         );
+
+        c.cameraFollow.yawOffset =
+          c.turret.cameraYawOffset + c.yawpitch.yaw * c.turret.cameraYawFactor;
       }
     },
     "turretAim"

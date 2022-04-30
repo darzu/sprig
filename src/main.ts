@@ -115,8 +115,8 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("updateNoodles");
     EM.callSystem("updateLifetimes");
     EM.callSystem("interaction");
-    EM.callSystem("turretYawPitch");
     EM.callSystem("turretAim");
+    EM.callSystem("turretYawPitch");
     EM.callSystem("turretManUnman");
     EM.callSystem("reloadCannon");
     EM.callSystem("playerControlCannon");
