@@ -18,7 +18,7 @@ import {
   WorldFrameDef,
 } from "../physics/nonintersection.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
-import { AABBCollider, ColliderDef } from "../physics/collider.js";
+import { AABBCollider, Collider, ColliderDef } from "../physics/collider.js";
 import { copyAABB, createAABB, Ray } from "../physics/broadphase.js";
 import { tempVec } from "../temp-pool.js";
 import { scaleMesh3 } from "../render/mesh-pool.js";
@@ -40,6 +40,7 @@ import { drawLine } from "../utils-game.js";
 import { GameState, GameStateDef } from "./gamestate.js";
 import { DevConsoleDef } from "../console.js";
 import { max } from "../math.js";
+import { AnimateToDef, EASE_OUTQUAD } from "../animate-to.js";
 
 // TODO(@darzu): it'd be great if these could hook into some sort of
 //    dev mode you could toggle at runtime.
@@ -413,7 +414,16 @@ export function registerPlayerSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [PlayerDef, AuthorityDef, PositionDef, LinearVelocityDef, PhysicsParentDef],
+    [
+      PlayerDef,
+      AuthorityDef,
+      PositionDef,
+      LinearVelocityDef,
+      PhysicsParentDef,
+      ColliderDef,
+      CameraFollowDef,
+      RotationDef,
+    ],
     [PhysicsResultsDef, MeDef],
     (players, res) => {
       for (let p of players) {
@@ -422,11 +432,42 @@ export function registerPlayerSystems(em: EntityManager) {
 
         const parent = em.findEntity(p.physicsParent.id, [ColliderDef]);
         if (!parent) {
-          const ship = em.filterEntities([ColliderDef, ShipLocalDef])[0];
+          const ship = em.filterEntities([
+            ColliderDef,
+            ShipLocalDef,
+            PositionDef,
+          ])[0];
           if (ship) {
             p.physicsParent.id = ship.id;
-            vec3.copy(p.position, [0, 10, res.me.pid * 4 - 16]);
+            // vec3.copy(p.position, [0, 10, res.me.pid * 4 - 16]);
             p.player.lookingForShip = false;
+            const maxYFn: (c: Collider) => number = (c) =>
+              c.shape === "Multi"
+                ? Math.max(...c.children.map((c2) => maxYFn(c2)))
+                : c.shape === "AABB"
+                ? c.aabb.max[1]
+                : -Infinity;
+            const shipY = maxYFn(ship.collider);
+            const pFeetToMid = -(p.collider as AABBCollider).aabb.min[1];
+
+            const evenPlayer = res.me.pid % 2 === 0;
+
+            const endPos: vec3 = [
+              3.5 * (evenPlayer ? 1 : -1),
+              shipY + pFeetToMid + 1,
+              Math.floor((res.me.pid - 1) / 2) * 4 - 10,
+            ];
+            const startPos = vec3.add(tempVec(), endPos, [0, 200, 0]);
+            p.cameraFollow.yawOffset = 0.0;
+            p.cameraFollow.pitchOffset = -0.75;
+            quat.copy(p.rotation, [0.0, 1.0, 0.0, 0.0]);
+            vec3.zero(p.linearVelocity);
+            em.ensureComponentOn(p, AnimateToDef, {
+              startPos,
+              endPos,
+              durationMs: 2000,
+              easeFn: EASE_OUTQUAD,
+            });
           }
         }
       }

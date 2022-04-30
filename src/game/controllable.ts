@@ -1,3 +1,4 @@
+import { AnimateToDef } from "../animate-to.js";
 import { CameraFollowDef } from "../camera.js";
 import { CanvasDef } from "../canvas.js";
 import { EM, EntityManager } from "../entity-manager.js";
@@ -64,11 +65,15 @@ export function registerControllableSystems(em: EntityManager) {
 
       for (let c of controllables) {
         if (AuthorityDef.isOn(c) && c.authority.pid !== res.me.pid) continue;
+        // don't control things when we're not locked onto the canvas
         if (
           c.controllable.requiresPointerLock &&
           !res.htmlCanvas.hasMouseLock()
         )
           continue;
+        // don't control things that are animating
+        if (AnimateToDef.isOn(c)) continue;
+
         vec3.zero(steerVel);
         const modes = c.controllable.modes;
 
