@@ -390,7 +390,6 @@ function raiseNodeTiles(
   easeMsPer: number,
   doSpawn: boolean
 ): Entity[] {
-  console.log("raiseNodeTiles");
   let nextEaseDelayMs = easeDelayMs;
   const w = Math.floor(n.width / 2);
   let newTiles: Entity[] = [];

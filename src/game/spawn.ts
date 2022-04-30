@@ -107,9 +107,6 @@ onInit((em) => {
         // are we still animating?
         if (AnimateToDef.isOn(t)) continue;
 
-        // TODO(@darzu):
-        console.log("releasing children");
-
         // unparent children
         for (let i = t.toSpawn.childrenToRelease.length - 1; i >= 0; i--) {
           const c = t.toSpawn.childrenToRelease[i]();

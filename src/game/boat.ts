@@ -262,12 +262,10 @@ export function registerBoatSystems(em: EntityManager) {
             });
           if (balls.length) {
             raiseBulletBoat(balls[0]!, boat);
-            console.log("HIT BOAT!");
           }
 
           const ships = hits.filter((h) => em.findEntity(h, [ShipLocalDef]));
           if (ships.length) {
-            console.log("BOAT HIT SHIP!");
             raiseBreakBoat(boat);
           }
         }
