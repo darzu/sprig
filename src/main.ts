@@ -83,6 +83,7 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("handleJoin");
     EM.callSystem("handleJoinResponse");
     EM.callSystem("assetLoader");
+    EM.callSystem("initGroundSystem");
     EM.callSystem("groundSystem");
     EM.callSystem("startGame");
     EM.callSystem("shipHealthCheck");

@@ -117,6 +117,11 @@ onInit((em) => {
             // console.log(
             //   `unparenting ${c.id} from ${t.id} at ${performance.now()}`
             // );
+            // TODO(@darzu): we're doing duplicate work here. we do it so that at least
+            //  on the host there is less position flickering
+            vec3.copy(c.position, c.world.position);
+            quat.copy(c.rotation, c.world.rotation);
+            c.physicsParent.id = 0;
             runUnparent(c);
 
             t.toSpawn.childrenToRelease.splice(i);

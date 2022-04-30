@@ -102,6 +102,11 @@ export const restartGame = eventWizard(
     const player = EM.findEntity(res.localPlayer.playerId, [PlayerDef])!;
     player.player.lookingForShip = true;
     res.score.currentScore = 0;
+
+    const groundSys = EM.getResource(GroundSystemDef);
+    if (groundSys) {
+      groundSys.needsInit = true;
+    }
   },
   {
     legalEvent: () =>

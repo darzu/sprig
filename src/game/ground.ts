@@ -94,6 +94,7 @@ export const GroundSystemDef = EM.defineComponent("groundSystem", () => {
     grid: createHexGrid<GroundTile>(),
     currentPath: undefined as PathNode | undefined,
     objFreePool: [] as GroundTile[],
+    needsInit: true,
   };
 });
 export type GroundSystem = Component<typeof GroundSystemDef>;
@@ -238,32 +239,55 @@ export function initGroundSystem(em: EntityManager) {
       // e.cameraFollow.yawOffset = 0.000;
       // e.cameraFollow.pitchOffset = -0.655;
     }
-
-    // init ground system
-    assert(sys.grid._grid.size === 0);
-
-    // createTile(0, -2, [0.1, 0.2, 0.1]);
-    // createTile(2, -2, [0.2, 0.1, 0.1]);
-    // createTile(-2, 0, [0.1, 0.1, 0.2]);
-    // createTile(0, 0, [0.1, 0.1, 0.1]);
-
-    sys.currentPath = {
-      q: 0,
-      r: 0,
-      dirIdx: 0,
-      width: RIVER_WIDTH,
-      state: "inplay",
-      prev: undefined,
-      next: undefined,
-    };
-
-    raiseNodeTiles(rs, sys.currentPath, 0, 0, false);
-
-    let lastPath = sys.currentPath;
-    for (let i = 0; i < 10; i++) {
-      lastPath = continuePath(lastPath);
-    }
   });
+
+  em.registerSystem(
+    null,
+    [MeDef, GroundSystemDef, GroundMeshDef],
+    (_, rs) => {
+      const sys = rs.groundSystem;
+
+      if (!sys.needsInit) return;
+
+      // TODO(@darzu): drop all existing grid tiles
+      if (sys.currentPath) {
+        const firstFn = (n: PathNode) => (n.prev ? n.prev : n);
+        const dropFn = (n: PathNode) => {
+          dropNodeTiles(sys, n, 0, 500);
+          if (n.next) dropFn(n.next);
+        };
+        dropFn(firstFn(sys.currentPath));
+      }
+
+      // reset the grid
+      sys.grid._grid.clear();
+
+      // createTile(0, -2, [0.1, 0.2, 0.1]);
+      // createTile(2, -2, [0.2, 0.1, 0.1]);
+      // createTile(-2, 0, [0.1, 0.1, 0.2]);
+      // createTile(0, 0, [0.1, 0.1, 0.1]);
+
+      sys.currentPath = {
+        q: 0,
+        r: 0,
+        dirIdx: 0,
+        width: RIVER_WIDTH,
+        state: "inplay",
+        prev: undefined,
+        next: undefined,
+      };
+
+      raiseNodeTiles(rs, sys.currentPath, 0, 0, false);
+
+      let lastPath = sys.currentPath;
+      for (let i = 0; i < 10; i++) {
+        lastPath = continuePath(lastPath);
+      }
+
+      sys.needsInit = false;
+    },
+    "initGroundSystem"
+  );
 }
 
 const raiseGroundEvent = eventWizard(
