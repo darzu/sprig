@@ -59,7 +59,7 @@ export const CameraFollowDef = EM.defineComponent(
   })
 );
 
-const cameraOffsets = {
+export const CAMERA_OFFSETS = {
   thirdPerson: [0, 0, 10],
   thirdPersonOverShoulder: [2, 2, 8],
   firstPerson: [0, 0, 0],
@@ -67,9 +67,9 @@ const cameraOffsets = {
 
 export function setCameraFollowPosition(
   c: EntityW<[typeof CameraFollowDef]>,
-  mode: keyof typeof cameraOffsets
+  mode: keyof typeof CAMERA_OFFSETS
 ) {
-  vec3.copy(c.cameraFollow.positionOffset, cameraOffsets[mode]);
+  vec3.copy(c.cameraFollow.positionOffset, CAMERA_OFFSETS[mode]);
 }
 
 export function registerCameraSystems(em: EntityManager) {

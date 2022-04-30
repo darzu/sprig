@@ -160,14 +160,22 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
           max: vec3.fromValues(1, 2, 2.5),
         },
       });
-      constructNetTurret(rudder, 0, 0, interactBox, Math.PI);
+      constructNetTurret(
+        rudder,
+        0,
+        0,
+        interactBox,
+        Math.PI,
+        -Math.PI / 8,
+        1.5,
+        [0, 20, 50]
+      );
 
       rudder.turret.maxPitch = 0;
       rudder.turret.minPitch = 0;
       rudder.turret.maxYaw = Math.PI / 6;
       rudder.turret.minYaw = -Math.PI / 6;
       rudder.turret.invertYaw = true;
-      rudder.turret.cameraYawFactor = 1.5;
 
       return rudder;
     },

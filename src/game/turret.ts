@@ -5,7 +5,7 @@ import {
   EntityW,
   Component,
 } from "../entity-manager.js";
-import { quat, vec3 } from "../gl-matrix.js";
+import { quat, ReadonlyVec3, vec3 } from "../gl-matrix.js";
 import {
   PhysicsParentDef,
   PositionDef,
@@ -16,7 +16,11 @@ import { AuthorityDef, SyncDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
 import { InRangeDef, InteractableDef } from "./interact.js";
 import { LocalPlayerDef, PlayerDef } from "./player.js";
-import { CameraFollowDef, setCameraFollowPosition } from "../camera.js";
+import {
+  CameraFollowDef,
+  CAMERA_OFFSETS,
+  setCameraFollowPosition,
+} from "../camera.js";
 import { AABB, copyAABB, createAABB } from "../physics/broadphase.js";
 import { InputsDef } from "../inputs.js";
 import { clamp } from "../math.js";
@@ -45,7 +49,8 @@ export function constructNetTurret(
   aabbOrInteractionEntity: AABB | Entity,
   cameraYawOffset: number = 0,
   cameraPitchOffset: number = -Math.PI / 8,
-  cameraYawFactor: number = 0
+  cameraYawFactor: number = 0,
+  cameraFollowOffset: ReadonlyVec3 = CAMERA_OFFSETS.thirdPersonOverShoulder
 ): asserts e is EntityW<
   [
     typeof TurretDef,
@@ -71,7 +76,7 @@ export function constructNetTurret(
 
   // setup camera params
   EM.ensureComponentOn(e, CameraFollowDef, 0);
-  setCameraFollowPosition(e, "thirdPersonOverShoulder");
+  vec3.copy(e.cameraFollow.positionOffset, cameraFollowOffset);
   e.cameraFollow.yawOffset = cameraYawOffset;
   e.cameraFollow.pitchOffset = cameraPitchOffset;
 
