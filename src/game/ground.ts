@@ -50,7 +50,7 @@ NOTES:
   http://www-cs-students.stanford.edu/~amitp/gameprog.html#hex
 */
 
-const SIZE = 48;
+const SIZE = 24;
 const WIDTH = SIZE * 2;
 const HEIGHT = Math.sqrt(3) * SIZE;
 const DEPTH = SIZE / 4;
