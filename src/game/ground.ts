@@ -41,6 +41,7 @@ import { drawLine } from "../utils-game.js";
 import { tempVec } from "../temp-pool.js";
 import { eventWizard } from "../net/events.js";
 import { vec3Dbg } from "../utils-3d.js";
+import { GameState, GameStateDef } from "./gamestate.js";
 
 /*
 NOTES:
@@ -94,6 +95,8 @@ export const GroundSystemDef = EM.defineComponent("groundSystem", () => {
     grid: createHexGrid<GroundTile>(),
     currentPath: undefined as PathNode | undefined,
     objFreePool: [] as GroundTile[],
+    lastShipQ: NaN,
+    lastShipR: NaN,
     needsInit: true,
   };
 });
@@ -250,13 +253,8 @@ export function initGroundSystem(em: EntityManager) {
       if (!sys.needsInit) return;
 
       // TODO(@darzu): drop all existing grid tiles
-      if (sys.currentPath) {
-        const firstFn = (n: PathNode) => (n.prev ? n.prev : n);
-        const dropFn = (n: PathNode) => {
-          dropNodeTiles(sys, n, 0, 500);
-          if (n.next) dropFn(n.next);
-        };
-        dropFn(firstFn(sys.currentPath));
+      for (let g of sys.grid._grid.values()) {
+        dropTileEvent(g, { delayMs: 0, durationMs: 500 });
       }
 
       // reset the grid
@@ -276,6 +274,9 @@ export function initGroundSystem(em: EntityManager) {
         prev: undefined,
         next: undefined,
       };
+
+      sys.lastShipQ = NaN;
+      sys.lastShipR = NaN;
 
       raiseNodeTiles(rs, sys.currentPath, 0, 0, false);
 
@@ -530,11 +531,9 @@ function dropNodeTiles(
 }
 
 export function registerGroundSystems(em: EntityManager) {
-  let lastShipQ = NaN;
-  let lastShipR = NaN;
   em.registerSystem(
     null,
-    [GroundSystemDef, GroundMeshDef, ScoreDef, MeDef],
+    [GroundSystemDef, GroundMeshDef, ScoreDef, MeDef, GameStateDef],
     (_, res) => {
       // host only
       if (!res.me.host) return;
@@ -543,7 +542,8 @@ export function registerGroundSystems(em: EntityManager) {
       const sys = res.groundSystem;
       if (!sys.currentPath) return;
 
-      // console.log("running ground system");
+      // are we playing?
+      if (res.gameState.state !== GameState.PLAYING) return;
 
       // where is our ship?
       const ship = em.filterEntities([ShipLocalDef, PositionDef])[0];
@@ -551,7 +551,7 @@ export function registerGroundSystems(em: EntityManager) {
       const [shipQ, shipR] = xzToHex(ship.position[0], ship.position[2], SIZE);
 
       // have we changed tiles?
-      if (shipQ === lastShipQ && shipR === lastShipR) return;
+      if (shipQ === sys.lastShipQ && shipR === sys.lastShipR) return;
 
       // check for tiles to reveal
       {
@@ -611,8 +611,8 @@ export function registerGroundSystems(em: EntityManager) {
 
       // TODO(@darzu): drop old path nodes?
 
-      lastShipQ = shipQ;
-      lastShipR = shipR;
+      sys.lastShipQ = shipQ;
+      sys.lastShipR = shipR;
     },
     "groundSystem"
   );
