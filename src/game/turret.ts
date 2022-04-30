@@ -38,8 +38,10 @@ export function constructNetTurret(
   e: Entity,
   startYaw: number,
   startPitch: number,
-  meshAABB: AABB
-): e is EntityW<
+  aabbOrInteractionEntity: AABB | Entity,
+  cameraYawOffset: number = 0,
+  cameraPitchOffset: number = -Math.PI / 8
+): asserts e is EntityW<
   [
     typeof TurretDef,
     typeof YawPitchDef,
@@ -61,25 +63,28 @@ export function constructNetTurret(
   // setup camera params
   EM.ensureComponentOn(e, CameraFollowDef, 0);
   setCameraFollowPosition(e, "thirdPersonOverShoulder");
-  // e.cameraFollow.yawOffset = Math.PI / 2;
-  e.cameraFollow.pitchOffset = -Math.PI / 8;
+  e.cameraFollow.yawOffset = cameraYawOffset;
+  e.cameraFollow.pitchOffset = cameraPitchOffset;
 
-  // create seperate hitbox for interacting with the turret
-  const interactBox = EM.newEntity();
-  const interactAABB = copyAABB(createAABB(), meshAABB);
-  vec3.scale(interactAABB.min, interactAABB.min, 2);
-  vec3.scale(interactAABB.max, interactAABB.max, 2);
-  EM.ensureComponentOn(interactBox, PhysicsParentDef, e.id);
-  EM.ensureComponentOn(interactBox, PositionDef, [0, 0, 0]);
-  EM.ensureComponentOn(interactBox, ColliderDef, {
-    shape: "AABB",
-    solid: false,
-    aabb: interactAABB,
-  });
+  let interactBox: Entity;
+  // create separate hitbox for interacting with the turret
+  if ("min" in aabbOrInteractionEntity) {
+    interactBox = EM.newEntity();
+    const interactAABB = copyAABB(createAABB(), aabbOrInteractionEntity);
+    vec3.scale(interactAABB.min, interactAABB.min, 2);
+    vec3.scale(interactAABB.max, interactAABB.max, 2);
+    EM.ensureComponentOn(interactBox, PhysicsParentDef, e.id);
+    EM.ensureComponentOn(interactBox, PositionDef, [0, 0, 0]);
+    EM.ensureComponentOn(interactBox, ColliderDef, {
+      shape: "AABB",
+      solid: false,
+      aabb: interactAABB,
+    });
+  } else {
+    interactBox = aabbOrInteractionEntity;
+  }
   EM.ensureComponentOn(e, InteractableDef);
   e.interaction.colliderId = interactBox.id;
-
-  return true;
 }
 
 export const raiseManTurret = eventWizard(

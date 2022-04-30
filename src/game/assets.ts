@@ -43,6 +43,7 @@ const RemoteMeshes = {
   grappleHook: "grapple-hook.sprig.obj",
   grappleGun: "grapple-gun.sprig.obj",
   grappleGunUnloaded: "grapple-gun-unloaded.sprig.obj",
+  rudder: "rudder.sprig.obj",
 } as const;
 
 type RemoteMeshSymbols = keyof typeof RemoteMeshes;
@@ -59,9 +60,11 @@ const RemoteMesheSets = {
 
 type RemoteMeshSetSymbols = keyof typeof RemoteMesheSets;
 
-const AssetTransforms: Partial<{
-  [P in RemoteMeshSymbols | RemoteMeshSetSymbols | LocalMeshSymbols]: mat4;
-}> = {
+const AssetTransforms: Partial<
+  {
+    [P in RemoteMeshSymbols | RemoteMeshSetSymbols | LocalMeshSymbols]: mat4;
+  }
+> = {
   cannon: mat4.fromYRotation(mat4.create(), -Math.PI / 2),
   linstock: mat4.fromScaling(mat4.create(), [0.1, 0.1, 0.1]),
   // ship: mat4.fromScaling(mat4.create(), [3, 3, 3]),
@@ -70,6 +73,11 @@ const AssetTransforms: Partial<{
   grappleGun: mat4.fromScaling(mat4.create(), [0.5, 0.5, 0.5]),
   grappleGunUnloaded: mat4.fromScaling(mat4.create(), [0.5, 0.5, 0.5]),
   grappleHook: mat4.fromScaling(mat4.create(), [0.5, 0.5, 0.5]),
+  rudder: mat4.translate(
+    mat4.create(),
+    mat4.fromYRotation(mat4.create(), -Math.PI * 0.5),
+    vec3.fromValues(-5, 0, 0)
+  ),
 };
 
 // TODO(@darzu): these sort of hacky offsets are a pain to deal with. It'd be
@@ -79,11 +87,13 @@ const blackoutColor: (m: Mesh) => Mesh = (m: Mesh) => {
   m.colors.map((c) => vec3.zero(c));
   return m;
 };
-const MeshTransforms: Partial<{
-  [P in RemoteMeshSymbols | RemoteMeshSetSymbols | LocalMeshSymbols]: (
-    m: Mesh
-  ) => Mesh;
-}> = {
+const MeshTransforms: Partial<
+  {
+    [P in RemoteMeshSymbols | RemoteMeshSetSymbols | LocalMeshSymbols]: (
+      m: Mesh
+    ) => Mesh;
+  }
+> = {
   cannon: (m) => {
     m.colors = m.colors.map((c) => [0.2, 0.2, 0.2]);
     return m;
@@ -420,9 +430,10 @@ export type GameMesh = {
   mkAabbCollider: (solid: boolean) => AABBCollider;
 };
 
-type GameMeshes = { [P in RemoteMeshSymbols | LocalMeshSymbols]: GameMesh } & {
-  [P in RemoteMeshSetSymbols]: GameMesh[];
-};
+type GameMeshes = { [P in RemoteMeshSymbols | LocalMeshSymbols]: GameMesh } &
+  {
+    [P in RemoteMeshSetSymbols]: GameMesh[];
+  };
 
 const AssetLoaderDef = EM.defineComponent("assetLoader", () => {
   return {

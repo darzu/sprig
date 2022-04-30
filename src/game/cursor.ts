@@ -18,9 +18,7 @@ import { createRef, Ref } from "../em_helpers.js";
 
 export const GlobalCursor3dDef = EM.defineComponent("globalCursor3d", () => {
   return {
-    cursor: createRef(0, [Cursor3dDef, WorldFrameDef]) as Ref<
-      [typeof Cursor3dDef, typeof WorldFrameDef]
-    >,
+    cursor: createRef(0, [Cursor3dDef, WorldFrameDef]),
   };
 });
 

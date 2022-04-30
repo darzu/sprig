@@ -185,11 +185,11 @@ export type Ref<CS extends ComponentDef[] = []> = (() =>
 export function createRef<CS extends ComponentDef[]>(e: EntityW<CS>): Ref<CS>;
 export function createRef<CS extends ComponentDef[]>(
   id: number,
-  cs: CS
+  cs: [...CS]
 ): Ref<CS>;
 export function createRef<CS extends ComponentDef[]>(
   idOrE: EntityW<CS> | number,
-  cs?: CS
+  cs?: [...CS]
 ): Ref<CS> {
   if (typeof idOrE === "number") {
     if (idOrE === 0) {

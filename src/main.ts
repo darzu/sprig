@@ -87,12 +87,14 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("groundSystem");
     EM.callSystem("startGame");
     EM.callSystem("shipHealthCheck");
+    EM.callSystem("easeRudder");
     EM.callSystem("shipMove");
     EM.callSystem("shipScore");
     EM.callSystem("groundPropsBuild");
     EM.callSystem("boatPropsBuild");
     EM.callSystem("cannonPropsBuild");
     EM.callSystem("gemPropsBuild");
+    EM.callSystem("rudderPropsBuild");
     EM.callSystem("shipPropsBuild");
     EM.callSystem("buildBullets");
     EM.callSystem("buildCursor");
