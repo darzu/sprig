@@ -63,6 +63,10 @@ async function startGame(localPeerName: string, host: string | null) {
     let sim_time = 0;
     let before_sim = performance.now();
     EM.callSystem("time");
+    EM.callSystem("inputs");
+    if (GAME === "ship") {
+      EM.callSystem("shipUI");
+    }
     EM.callSystem("getStatsFromNet");
     EM.callSystem("getEventsFromNet");
     EM.callSystem("sendEventsToNet");
@@ -176,10 +180,6 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("renderView");
     EM.callSystem("constructRenderables");
     EM.callSystem("stepRenderer");
-    EM.callSystem("inputs");
-    if (GAME === "ship") {
-      EM.callSystem("shipUI");
-    }
     EM.callOneShotSystems();
     EM.loops++;
     sim_time += performance.now() - before_sim;
