@@ -1,0 +1,34 @@
+Vision:
+
+Goals:
+  <1mb games
+  Coop easier than ever
+  Instant games a la Flash era
+  Gameplay-driven development
+  Visual / structured programming
+  Runs on any device
+
+Non-goals:
+  hyper-realistic PBR rendering
+
+Features:
+
+FAQ:
+  Why not {Unity, Unreal, GameMaker, Godot, }
+  Why not {MakeCode, Scratch, }
+  Why not {PlayCanvas, Babylon, threejs, }
+  Why 3D
+  Why multiplayer/coop
+  Why web
+  Why still release on steam
+  Why not {Itch, }
+  Why MIT
+  Why not {Rapier, Bullet, }
+  Why not {Rust, C#, C++, WASM, Haxe, Go, GodotScript, }
+  Why not {Ads, pay-for-sprigland, }
+  Why not {Blockly, }
+  Why not {Peerjs, }
+  Why not more community JS libraries?
+  Why so much of your own stuff?
+  Why not academia?
+

@@ -409,3 +409,18 @@ In unity:
     mesh collider: convex yes/no,
     capsule: center xyz, radius, height, direction x-axis, y-axis, z-axis
 
+Timesteps in unreal and unity:
+  http://www.aclockworkberry.com/unreal-engine-substepping/
+
+"Fix your time step":
+  https://gafferongames.com/post/fix_your_timestep/
+  https://www.gamedeveloper.com/programming/fixing-your-time-step-the-easy-way-with-the-golden-4-8537-ms-
+  https://www.reddit.com/r/gamedev/comments/pi9uyq/is_fixing_your_timestep_still_a_thing/
+    https://www.reddit.com/r/gamedev/comments/pi9uyq/comment/hbo78l1/?utm_source=reddit&utm_medium=web2x&context=3
+
+  Us:
+    Physics is constrained to 
+
+Input latency:
+  https://danluu.com/input-lag/
+  https://humanbenchmark.com
