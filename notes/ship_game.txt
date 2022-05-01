@@ -34,3 +34,40 @@ Game modes: Arcade vs Journey
   Journey: persistent, traveling dock to dock, rpg progression, maybe story
   Arcade: one run, maybe rogue-lite, easier to just do w/ friends
 
+Cannon ball effects (positive and negative):
+  (assumes many enemies take several hits)
+  Cannon balls bounce off boats in a random direction
+  Cannon balls are discus that skips along the water N times
+  Cannon balls home on enemies
+  Cannon balls splinter into shrapnel on strike
+  Cannon balls burst into flak after X time
+  Cannon ball project speed increases, arc flatens
+  Mortar: Cannon ball is has higher min and max pitch but shoots farther
+  Cannon fire reload is shared amongst all cannons
+  Cannon fire pushes the ship
+  Cannon balls push enemy boats
+  Cannon ball creates vortex that alters the current of the river
+  Cannon fires N balls at once (shotgun)
+  Cannon fires 3 balls in a row (burst fire)
+  All cannon balls attach a grappling hook, pulling enemies towards u
+  all powder, no ball: cannons don't fire balls, instead they shoot a short range ball of fire
+  Torpedo: The cannon turret is replaced with a underwater parascope and you shoot torpedoes at the bottom of boats
+  Cannon turret relocates to a random hard point after every attack
+  The cannon turret can be picked up and fired from the hip
+  Cannon balls follow an outward spiral trajectory around the ship
+  Lifesteal: cannon balls ricochet wood splinters back from the enemy boat to heal you
+  Cannon balls stick to enemy boats, weighing them down and sinking them
+  Anchor: Cannon balls are extremely heavy, with almost no range, and are chained to your ship causing your ship to anchor turn; disintigrate after a while
+  Cannons fire shark bait causing sharks to attack the target
+  Cannon balls apply fire that does damage-over-time once enough fire builds up
+  Cannons can fire players
+  Cannons damage the ship when firing
+  Cannons roll backward when firing and need to be pushed back into place
+  Cannons continually spin in a circle and you must time your shot to choose the yaw
+  lightning rod: Cannon balls float and after a few seconds a lighting bolt strikes them in the water
+  Cannon balls attach and inflate as a baloon, lifting enemy boats into the air
+  Glass cannon: each cannon can be fired only once
+  
+  
+
+
