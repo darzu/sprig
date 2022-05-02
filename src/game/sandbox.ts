@@ -377,33 +377,34 @@ export function initClothSandbox(em: EntityManager, hosting: boolean) {
 
       if (!line) line = drawLine(vec3.create(), vec3.create(), [0, 1, 0]);
 
+      const cursorPos = res.globalCursor3d.cursor()!.world.position;
+      const midpoint = vec3.scale(
+        tempVec(),
+        [cloth.clothConstruct.columns / 2, cloth.clothConstruct.rows / 2, 0],
+        cloth.clothConstruct.distance
+      );
+      const clothPos = vec3.add(midpoint, midpoint, cloth.world.position);
+
+      // line from cursor to cloth
+      if (RenderableDef.isOn(line)) {
+        line.renderable.enabled = true;
+        const m = line.renderable.meshHandle.readonlyMesh!;
+        vec3.copy(m.pos[0], cursorPos);
+        vec3.copy(m.pos[1], clothPos);
+        res.renderer.renderer.updateMesh(line.renderable.meshHandle, m);
+      }
+
+      // scale the force
+      const delta = vec3.sub(tempVec(), clothPos, cursorPos);
+      const dist = vec3.len(delta);
+      vec3.normalize(cloth.force, delta);
+      const strength = mathMapNEase(dist, 4, 20, 0, 500, (p) =>
+        EASE_INQUAD(1.0 - p)
+      );
+      res.text.upperText = `${strength.toFixed(2)}`;
+
       if (res.inputs.keyDowns["e"]) {
-        const cursorPos = res.globalCursor3d.cursor()!.world.position;
-        const midpoint = vec3.scale(
-          tempVec(),
-          [cloth.clothConstruct.columns / 2, cloth.clothConstruct.rows / 2, 0],
-          cloth.clothConstruct.distance
-        );
-        const clothPos = vec3.add(midpoint, midpoint, cloth.world.position);
-
-        // line from cursor to cloth
-        if (RenderableDef.isOn(line)) {
-          line.renderable.enabled = true;
-          const m = line.renderable.meshHandle.readonlyMesh!;
-          vec3.copy(m.pos[0], cursorPos);
-          vec3.copy(m.pos[1], clothPos);
-          res.renderer.renderer.updateMesh(line.renderable.meshHandle, m);
-        }
-
-        // scale the force
-        const delta = vec3.sub(tempVec(), clothPos, cursorPos);
-        const dist = vec3.len(delta);
-        vec3.normalize(cloth.force, delta);
-        const strength = mathMapNEase(dist, 4, 20, 0, 500, (p) =>
-          EASE_INQUAD(1.0 - p)
-        );
         vec3.scale(cloth.force, cloth.force, strength);
-        res.text.upperText = `${strength.toFixed(2)}`;
       } else {
         vec3.copy(cloth.force, [0, 0, 0]);
         if (RenderableDef.isOn(line)) {
