@@ -422,6 +422,7 @@ Input latency:
   https://danluu.com/input-lag/
   https://humanbenchmark.com
   https://displaylag.com/display-database/
+  https://danluu.com/keyboard-latency/#appendix-counter-arguments-to-common-arguments-that-latency-doesn-t-matter
 
 Vsync test
   https://www.vsynctester.com/index.html

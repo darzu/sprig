@@ -70,8 +70,9 @@ Cannon ball effects (positive and negative):
   Cannon can no longer fire and are replaced with a big spike that does damage to enemy ships you run into
   Cannons don't fire balls instead they fire a burst of air that deflects incoming cannon balls
   Kick forward: Cannon fire pulls the ship towards the direction of fire
-  Grease fire: cannon balls apply fire to the water, damaging boats that come into it
-
+  Oil fire: cannon balls apply fire to the water, damaging boats that come into it
+  Tracer: cannon balls leave a visible trail in the air, making it easier to aim
+  Broadside: a row of connected cannons all aim and fire together
 
 
 
