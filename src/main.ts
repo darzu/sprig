@@ -1,6 +1,5 @@
 import { test } from "./test.js";
 import { setupObjImportExporter } from "./download.js";
-import { initShipGame, registerAllSystems } from "./game/game.js";
 import { EM } from "./entity-manager.js";
 import { addTimeComponents } from "./time.js";
 import { InputsDef, registerInputsSystem } from "./inputs.js";
@@ -8,7 +7,14 @@ import { MeDef, JoinDef, HostDef, PeerNameDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";
 import { dbg } from "./debugger.js";
 import { DevConsoleDef } from "./console.js";
-import { initGJKSandbox, initReboundSandbox } from "./game/sandbox.js";
+import {
+  initClothSandbox,
+  initGJKSandbox,
+  initReboundSandbox,
+} from "./game/sandbox.js";
+import { callClothSystems } from "./game/cloth.js";
+import { callSpringSystems } from "./game/spring.js";
+import { initShipGame, registerAllSystems } from "./game/game.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -48,11 +54,12 @@ async function startGame(localPeerName: string, host: string | null) {
   EM.addSingletonComponent(InputsDef);
   registerInputsSystem(EM);
 
-  const GAME = "ship" as "ship" | "gjk" | "rebound";
+  const GAME = "cloth" as "ship" | "gjk" | "rebound" | "cloth";
 
   if (GAME === "ship") initShipGame(EM, hosting);
   else if (GAME === "gjk") initGJKSandbox(EM, hosting);
   else if (GAME === "rebound") initReboundSandbox(EM, hosting);
+  else if (GAME === "cloth") initClothSandbox(EM, hosting);
 
   let previous_frame_time = start_of_time;
   let frame = () => {
@@ -83,19 +90,21 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("handleJoin");
     EM.callSystem("handleJoinResponse");
     EM.callSystem("assetLoader");
-    EM.callSystem("initGroundSystem");
-    EM.callSystem("groundSystem");
-    EM.callSystem("startGame");
-    EM.callSystem("shipHealthCheck");
-    EM.callSystem("easeRudder");
-    EM.callSystem("shipMove");
-    EM.callSystem("shipScore");
-    EM.callSystem("groundPropsBuild");
-    EM.callSystem("boatPropsBuild");
-    EM.callSystem("cannonPropsBuild");
-    EM.callSystem("gemPropsBuild");
-    EM.callSystem("rudderPropsBuild");
-    EM.callSystem("shipPropsBuild");
+    if (GAME === "ship") {
+      EM.callSystem("initGroundSystem");
+      EM.callSystem("groundSystem");
+      EM.callSystem("startGame");
+      EM.callSystem("shipHealthCheck");
+      EM.callSystem("easeRudder");
+      EM.callSystem("shipMove");
+      EM.callSystem("shipScore");
+      EM.callSystem("groundPropsBuild");
+      EM.callSystem("boatPropsBuild");
+      EM.callSystem("cannonPropsBuild");
+      EM.callSystem("gemPropsBuild");
+      EM.callSystem("rudderPropsBuild");
+      EM.callSystem("shipPropsBuild");
+    }
     EM.callSystem("buildBullets");
     EM.callSystem("buildCursor");
     EM.callSystem("placeCursorAtScreenCenter");
@@ -146,6 +155,8 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("debugMeshes");
     EM.callSystem("debugMeshTransform");
     EM.callSystem("bulletCollision");
+    callSpringSystems(EM);
+    callClothSystems(EM);
     EM.callSystem("modelerOnOff");
     EM.callSystem("modelerClicks");
     EM.callSystem("aabbBuilder");
