@@ -1,3 +1,4 @@
+import { EASE_INQUAD, EASE_INVERSE, EASE_LINEAR } from "../animate-to.js";
 import {
   CameraFollowDef,
   setCameraFollowPosition,
@@ -7,8 +8,9 @@ import { ColorDef } from "../color.js";
 import { DeletedDef } from "../delete.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { vec3, quat, mat4 } from "../gl-matrix.js";
+import { onInit } from "../init.js";
 import { InputsDef } from "../inputs.js";
-import { jitter } from "../math.js";
+import { jitter, mathMap, mathMapNEase } from "../math.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 import { gjk, penetrationDepth, Shape } from "../physics/narrowphase.js";
@@ -27,9 +29,10 @@ import { RendererDef } from "../render/render_init.js";
 import { tempVec } from "../temp-pool.js";
 import { assert } from "../test.js";
 import { TimeDef } from "../time.js";
-import { farthestPointInDir } from "../utils-3d.js";
+import { farthestPointInDir, vec3Dbg } from "../utils-3d.js";
+import { drawLine } from "../utils-game.js";
 import { AssetsDef, GameMesh } from "./assets.js";
-import { ClothConstructDef } from "./cloth.js";
+import { ClothConstructDef, ClothLocalDef } from "./cloth.js";
 import { ControllableDef } from "./controllable.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { ForceDef, SpringGridDef } from "./spring.js";
@@ -322,7 +325,9 @@ export function initClothSandbox(em: EntityManager, hosting: boolean) {
       }
 
       const c = res.globalCursor3d.cursor()!;
-      if (RenderableDef.isOn(c)) c.renderable.enabled = false;
+      assert(RenderableDef.isOn(c));
+      c.renderable.enabled = true;
+      c.cursor3d.maxDistance = 10;
 
       vec3.copy(res.renderer.renderer.backgroundColor, [0.7, 0.8, 1.0]);
 
@@ -359,6 +364,54 @@ export function initClothSandbox(em: EntityManager, hosting: boolean) {
       const F = 100.0;
       em.ensureComponentOn(cloth, ForceDef, [F, F, F]);
     }
+  );
+
+  let line: ReturnType<typeof drawLine>;
+
+  em.registerSystem(
+    [ClothConstructDef, ClothLocalDef, WorldFrameDef, ForceDef],
+    [GlobalCursor3dDef, RendererDef, InputsDef, TextDef],
+    (cs, res) => {
+      if (!cs.length) return;
+      const cloth = cs[0];
+
+      if (!line) line = drawLine(vec3.create(), vec3.create(), [0, 1, 0]);
+
+      if (res.inputs.keyDowns["e"]) {
+        const cursorPos = res.globalCursor3d.cursor()!.world.position;
+        const midpoint = vec3.scale(
+          tempVec(),
+          [cloth.clothConstruct.columns / 2, cloth.clothConstruct.rows / 2, 0],
+          cloth.clothConstruct.distance
+        );
+        const clothPos = vec3.add(midpoint, midpoint, cloth.world.position);
+
+        // line from cursor to cloth
+        if (RenderableDef.isOn(line)) {
+          line.renderable.enabled = true;
+          const m = line.renderable.meshHandle.readonlyMesh!;
+          vec3.copy(m.pos[0], cursorPos);
+          vec3.copy(m.pos[1], clothPos);
+          res.renderer.renderer.updateMesh(line.renderable.meshHandle, m);
+        }
+
+        // scale the force
+        const delta = vec3.sub(tempVec(), clothPos, cursorPos);
+        const dist = vec3.len(delta);
+        vec3.normalize(cloth.force, delta);
+        const strength = mathMapNEase(dist, 4, 20, 0, 500, (p) =>
+          EASE_INQUAD(1.0 - p)
+        );
+        vec3.scale(cloth.force, cloth.force, strength);
+        res.text.upperText = `${strength.toFixed(2)}`;
+      } else {
+        vec3.copy(cloth.force, [0, 0, 0]);
+        if (RenderableDef.isOn(line)) {
+          line.renderable.enabled = false;
+        }
+      }
+    },
+    "clothSandbox"
   );
 }
 

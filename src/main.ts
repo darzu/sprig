@@ -54,7 +54,7 @@ async function startGame(localPeerName: string, host: string | null) {
   EM.addSingletonComponent(InputsDef);
   registerInputsSystem(EM);
 
-  const GAME = "ship" as "ship" | "gjk" | "rebound" | "cloth";
+  const GAME = "cloth" as "ship" | "gjk" | "rebound" | "cloth";
 
   if (GAME === "ship") initShipGame(EM, hosting);
   else if (GAME === "gjk") initGJKSandbox(EM, hosting);
@@ -107,7 +107,6 @@ async function startGame(localPeerName: string, host: string | null) {
     }
     EM.callSystem("buildBullets");
     EM.callSystem("buildCursor");
-    EM.callSystem("placeCursorAtScreenCenter");
     EM.callSystem("stepBoats");
     EM.callSystem("boatsFire");
     EM.callSystem("breakBoats");
@@ -119,6 +118,9 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("playerLookingForShip");
     if (GAME === "rebound") {
       EM.callSystem("sandboxSpawnBoxes");
+    }
+    if (GAME === "cloth") {
+      EM.callSystem("clothSandbox");
     }
     EM.callSystem("updateBullets");
     EM.callSystem("updateNoodles");
@@ -184,6 +186,7 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("cameraFollowTarget");
     EM.callSystem("retargetCamera");
     EM.callSystem("updateCameraView");
+    EM.callSystem("placeCursorAtScreenCenter");
     EM.callSystem("renderView");
     EM.callSystem("constructRenderables");
     EM.callSystem("stepRenderer");

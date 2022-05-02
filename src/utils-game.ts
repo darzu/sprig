@@ -10,8 +10,8 @@ import { RenderableConstructDef } from "./render/renderer.js";
 // TODO(@darzu): would be dope to support thickness;
 //    probably needs some shader work + a post pass
 export function drawLine(start: vec3, end: vec3, color: vec3) {
-  const { id } = EM.newEntity();
-  EM.addComponent(id, ColorDef, color);
+  const e = EM.newEntity();
+  EM.ensureComponentOn(e, ColorDef, color);
   const m: Mesh = {
     pos: [start, end],
     tri: [],
@@ -19,6 +19,7 @@ export function drawLine(start: vec3, end: vec3, color: vec3) {
     lines: [[0, 1]],
     usesProvoking: true,
   };
-  EM.addComponent(id, RenderableConstructDef, m);
-  EM.addComponent(id, PositionDef);
+  EM.ensureComponentOn(e, RenderableConstructDef, m);
+  EM.ensureComponentOn(e, PositionDef);
+  return e;
 }

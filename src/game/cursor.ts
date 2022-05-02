@@ -1,7 +1,13 @@
 import { ComponentDef, EM, EntityManager, EntityW } from "../entity-manager.js";
 import { Mesh } from "../render/mesh-pool.js";
-import { RenderableConstructDef } from "../render/renderer.js";
-import { PositionDef } from "../physics/transform.js";
+import {
+  RenderableConstructDef,
+  RendererWorldFrameDef,
+} from "../render/renderer.js";
+import {
+  PositionDef,
+  updateFrameFromPosRotScale,
+} from "../physics/transform.js";
 import { AssetsDef } from "./assets.js";
 import { ColorDef } from "../color.js";
 import { assert } from "../test.js";
@@ -24,6 +30,7 @@ export const GlobalCursor3dDef = EM.defineComponent("globalCursor3d", () => {
 
 export const Cursor3dDef = EM.defineComponent("cursor3d", () => ({
   hitId: 0,
+  maxDistance: 100,
 }));
 
 export function registerCursorSystems(em: EntityManager) {
@@ -61,16 +68,18 @@ export function registerCursorSystems(em: EntityManager) {
         res.cameraView.height * 0.4,
       ];
       const r = screenPosToRay(screenMid, res.cameraView);
-      let cursorDistance = 100;
+      let cursorDistance = c.cursor3d.maxDistance;
 
       // if we hit something with that ray, put the cursor there
       const hits = res.physicsResults.checkRay(r);
-      let nearestHit: RayHit = { dist: Infinity, id: -1 };
+      let nearestHit: RayHit = { dist: c.cursor3d.maxDistance, id: -1 };
       if (hits.length) {
         nearestHit = hits.reduce(
           (p, n) => (n.dist < p.dist ? n : p),
           nearestHit
         );
+      }
+      if (nearestHit.dist < c.cursor3d.maxDistance) {
         cursorDistance = nearestHit.dist;
         vec3.copy(c.color, [0, 1, 0]);
 
@@ -83,6 +92,13 @@ export function registerCursorSystems(em: EntityManager) {
 
       // place the cursor
       vec3.add(c.position, r.org, vec3.scale(tempVec(), r.dir, cursorDistance));
+
+      // NOTE/HACK: since the cursor is updated after the render view is updated, we need
+      //    to update it's world frame ourselves
+      if (RendererWorldFrameDef.isOn(c)) {
+        vec3.copy(c.rendererWorldFrame.position, c.position);
+        updateFrameFromPosRotScale(c.rendererWorldFrame);
+      }
     },
     "placeCursorAtScreenCenter"
   );
