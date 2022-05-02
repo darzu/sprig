@@ -11,7 +11,6 @@ import { RenderableConstructDef } from "./render/renderer.js";
 //    probably needs some shader work + a post pass
 export function drawLine(start: vec3, end: vec3, color: vec3) {
   const { id } = EM.newEntity();
-  EM.addComponent(id, ColorDef, color);
   const m: Mesh = {
     pos: [start, end],
     tri: [],
@@ -19,6 +18,6 @@ export function drawLine(start: vec3, end: vec3, color: vec3) {
     lines: [[0, 1]],
     usesProvoking: true,
   };
-  EM.addComponent(id, RenderableConstructDef, m);
+  EM.addComponent(id, RenderableConstructDef, m, true, undefined, color);
   EM.addComponent(id, PositionDef);
 }

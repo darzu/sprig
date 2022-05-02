@@ -58,11 +58,9 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
               RenderableConstructDef,
               res.assets.wireCube.proto,
               res._physDbgState.showAABBs,
-              1
+              1,
+              [0, 1, 0]
             );
-
-            // colored
-            em.addComponent(dbgE.id, ColorDef, [0, 1, 0]);
 
             // positioned and scaled
             em.ensureComponentOn(dbgE, PositionDef);

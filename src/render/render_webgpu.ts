@@ -10,12 +10,17 @@ import {
 } from "./mesh-pool.js";
 import { RenderableConstruct, Renderer } from "./renderer.js";
 import {
+  line_fragShader,
+  line_vertShader,
   MeshUniformMod,
   obj_fragShader,
   obj_vertShader,
 } from "./shader_obj.js";
 
-const PIXEL_PER_PX: number | null = null; // 0.5;
+// const PIXEL_PER_PX: number | null = 0.5;
+// const PIXEL_PER_PX: number | null = 0.2;
+const PIXEL_PER_PX: number | null = 1.0;
+// const PIXEL_PER_PX: number | null = null;
 
 // TODO: some state lives in global variables when it should live on the Renderer object
 
@@ -253,6 +258,21 @@ export class Renderer_WebGPU implements Renderer {
     );
     const renderPipelineDesc_lines: GPURenderPipelineDescriptor = {
       ...renderPipelineDesc_tris,
+      vertex: {
+        module: this.device.createShaderModule({ code: line_vertShader() }),
+        entryPoint: "main",
+        buffers: [
+          {
+            arrayStride: Vertex.ByteSize,
+            attributes: Vertex.WebGPUFormat,
+          },
+        ],
+      },
+      fragment: {
+        module: this.device.createShaderModule({ code: line_fragShader() }),
+        entryPoint: "main",
+        targets: [{ format: this.presentationFormat }],
+      },
       primitive: prim_lines,
     };
     const renderPipeline_lines = this.device.createRenderPipeline(

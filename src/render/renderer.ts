@@ -42,6 +42,7 @@ export interface RenderableConstruct {
   readonly enabled: boolean;
   readonly layer: number;
   meshOrProto: Mesh | MeshHandle;
+  lineColor: vec3;
 }
 
 export const RenderableConstructDef = EM.defineComponent(
@@ -49,12 +50,14 @@ export const RenderableConstructDef = EM.defineComponent(
   (
     meshOrProto: Mesh | MeshHandle,
     enabled: boolean = true,
-    layer: number = 0
+    layer: number = 0,
+    lineColor: vec3 = [0, 0, 0]
   ) => {
     const r: RenderableConstruct = {
       enabled,
       layer,
       meshOrProto,
+      lineColor,
     };
     return r;
   }
@@ -72,6 +75,7 @@ export interface Renderable {
   enabled: boolean;
   layer: number;
   meshHandle: MeshHandle;
+  lineColor: vec3;
 }
 
 export const RenderableDef = EM.defineComponent(
@@ -99,6 +103,11 @@ function stepRenderer(
     if (ColorDef.isOn(o)) {
       vec3.copy(o.renderable.meshHandle.shaderData.tint, o.color);
     }
+
+    vec3.copy(
+      o.renderable.meshHandle.shaderData.lineColor,
+      o.renderable.lineColor
+    );
 
     if (TintsDef.isOn(o)) {
       applyTints(o.tints, o.renderable.meshHandle.shaderData.tint);
@@ -219,6 +228,7 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
             enabled: e.renderableConstruct.enabled,
             layer: e.renderableConstruct.layer,
             meshHandle,
+            lineColor: e.renderableConstruct.lineColor,
           });
         }
       }

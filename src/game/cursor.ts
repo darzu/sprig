@@ -1,6 +1,6 @@
 import { ComponentDef, EM, EntityManager, EntityW } from "../entity-manager.js";
 import { Mesh } from "../render/mesh-pool.js";
-import { RenderableConstructDef } from "../render/renderer.js";
+import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
 import { PositionDef } from "../physics/transform.js";
 import { AssetsDef } from "./assets.js";
 import { ColorDef } from "../color.js";
@@ -39,8 +39,14 @@ export function registerCursorSystems(em: EntityManager) {
         em.addComponent(id, Cursor3dDef);
         em.addComponent(id, PositionDef);
         const wireframe: Mesh = { ...res.assets.ball.mesh, tri: [] };
-        em.addComponent(id, RenderableConstructDef, wireframe, true);
-        em.addComponent(id, ColorDef, [0, 1, 1]);
+        em.addComponent(
+          id,
+          RenderableConstructDef,
+          wireframe,
+          true,
+          undefined,
+          [0, 1, 1]
+        );
         res.globalCursor3d.cursor = createRef(id, [Cursor3dDef, WorldFrameDef]);
       }
     },
@@ -48,7 +54,7 @@ export function registerCursorSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [Cursor3dDef, PositionDef, ColorDef],
+    [Cursor3dDef, PositionDef, RenderableDef],
     [CameraViewDef, PhysicsResultsDef],
     (cs, res) => {
       if (!cs.length) return;
@@ -72,12 +78,12 @@ export function registerCursorSystems(em: EntityManager) {
           nearestHit
         );
         cursorDistance = nearestHit.dist;
-        vec3.copy(c.color, [0, 1, 0]);
+        vec3.copy(c.renderable.lineColor, [0, 1, 0]);
 
         // remember what we hit
         c.cursor3d.hitId = nearestHit.id;
       } else {
-        vec3.copy(c.color, [0, 1, 1]);
+        vec3.copy(c.renderable.lineColor, [0, 1, 1]);
         c.cursor3d.hitId = 0;
       }
 

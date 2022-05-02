@@ -324,7 +324,8 @@ export interface MeshBuilder {
     transform: mat4,
     aabbMin: vec3,
     aabbMax: vec3,
-    tint: vec3
+    tint: vec3,
+    lineColor: vec3
   ) => void;
   finish: () => MeshHandle;
 }
@@ -336,7 +337,8 @@ interface MeshBuilderInternal {
     transform: mat4,
     aabbMin: vec3,
     aabbMax: vec3,
-    tint: vec3
+    tint: vec3,
+    lineColor: vec3
   ) => void;
   finish: (idx: PoolIndex) => MeshHandle;
 }
@@ -657,7 +659,7 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
 
     // initial uniform data
     const { min, max } = getAABBFromMesh(m);
-    b.setUniform(mat4.create(), min, max, vec3.create());
+    b.setUniform(mat4.create(), min, max, vec3.create(), vec3.create());
 
     const idx: PoolIndex = {
       pool,
@@ -810,22 +812,26 @@ function createMeshBuilder(
   let _aabbMin: vec3 | undefined = undefined;
   let _aabbMax: vec3 | undefined = undefined;
   let _tint: vec3 | undefined = undefined;
+  let _lineColor: vec3 | undefined = undefined;
   function setUniform(
     transform: mat4,
     aabbMin: vec3,
     aabbMax: vec3,
-    tint: vec3
+    tint: vec3,
+    lineColor: vec3
   ): void {
     if (meshFinished) throw "trying to use finished MeshBuilder";
     _transform = transform;
     _aabbMin = aabbMin;
     _aabbMax = aabbMax;
     _tint = tint;
+    _lineColor = lineColor;
     MeshUniformMod.serialize(maps.uniformMap, uByteOff, {
       transform,
       aabbMin,
       aabbMax,
       tint,
+      lineColor,
     });
   }
 
@@ -841,6 +847,7 @@ function createMeshBuilder(
         aabbMin: _aabbMin!,
         aabbMax: _aabbMax!,
         tint: _tint!,
+        lineColor: _lineColor!,
       },
       numTris,
       numVerts,

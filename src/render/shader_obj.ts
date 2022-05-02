@@ -9,6 +9,7 @@ export module MeshUniformMod {
     readonly aabbMin: vec3;
     readonly aabbMax: vec3;
     readonly tint: vec3;
+    readonly lineColor: vec3;
   }
 
   const _counts = [
@@ -16,9 +17,16 @@ export module MeshUniformMod {
     align(3, 4), // aabb min
     align(3, 4), // aabb max
     align(3, 4), // tint
+    align(3, 4), // lineColor
   ];
-  const _names = ["transform", "aabbMin", "aabbMax", "tint"];
-  const _types = ["mat4x4<f32>", "vec3<f32>", "vec3<f32>", "vec3<f32>"];
+  const _names = ["transform", "aabbMin", "aabbMax", "tint", "lineColor"];
+  const _types = [
+    "mat4x4<f32>",
+    "vec3<f32>",
+    "vec3<f32>",
+    "vec3<f32>",
+    "vec3<f32>",
+  ];
 
   const _offsets = _counts.reduce((p, n) => [...p, p[p.length - 1] + n], [0]);
 
@@ -37,6 +45,7 @@ export module MeshUniformMod {
     scratch_f32.set(d.aabbMin, _offsets[1]);
     scratch_f32.set(d.aabbMax, _offsets[2]);
     scratch_f32.set(d.tint, _offsets[3]);
+    scratch_f32.set(d.lineColor, _offsets[4]);
     buffer.set(scratch_f32_as_u8, byteOffset);
   }
 
@@ -46,6 +55,7 @@ export module MeshUniformMod {
     //     aabbMin: vec3<f32>;
     //     aabbMax: vec3<f32>;
     //     tint: vec3<f32>;
+    //     lineColor: vec3<f32>;
     if (_names.length !== _types.length)
       throw `mismatch between names and sizes for mesh uniform format`;
     let res = ``;
@@ -65,6 +75,7 @@ export module MeshUniformMod {
       aabbMax: vec3.clone(d.aabbMax),
       transform: mat4.clone(d.transform),
       tint: vec3.clone(d.tint),
+      lineColor: vec3.clone(d.lineColor),
     };
   }
 }
@@ -121,6 +132,63 @@ export const obj_fragShader = () =>
         let light3 : f32 = clamp(dot(-scene.light3Dir, input.normal), 0.0, 1.0);
         let resultColor: vec3<f32> = input.color 
           * (light1 * 1.5 + light2 * 0.5 + light3 * 0.2 + 0.1);
+        let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
+
+        let fogDensity: f32 = 0.02;
+        let fogGradient: f32 = 1.5;
+        // let fogDist: f32 = 0.1;
+        let fogDist: f32 = max(-input.worldPos.y - 10.0, 0.0);
+        // output.fogVisibility = 0.9;
+        let fogVisibility: f32 = clamp(exp(-pow(fogDist*fogDensity, fogGradient)), 0.0, 1.0);
+
+        let backgroundColor: vec3<f32> = vec3<f32>(0.6, 0.63, 0.6);
+        let finalColor: vec3<f32> = mix(backgroundColor, gammaCorrected, fogVisibility);
+        return vec4<f32>(finalColor, 1.0);
+    }
+`;
+
+export const line_vertShader = () =>
+  shaderSceneStruct() +
+  `
+    struct Model {
+        ${MeshUniformMod.generateWGSLUniformStruct()}
+    };
+
+    @group(0) @binding(0) var<uniform> scene : Scene;
+    @group(1) @binding(0) var<uniform> model : Model;
+
+    struct VertexOutput {
+        @location(0) @interpolate(flat) color : vec3<f32>,
+        @location(1) worldPos: vec4<f32>,
+        @builtin(position) position : vec4<f32>,
+    };
+
+    @stage(vertex)
+    fn main(
+        ${Vertex.GenerateWGSLVertexInputStruct(",")}
+        ) -> VertexOutput {
+        var output : VertexOutput;
+        let worldPos: vec4<f32> = model.transform * vec4<f32>(position, 1.0);
+        output.worldPos = worldPos;
+        output.position = scene.cameraViewProjMatrix * worldPos;
+        output.color = model.lineColor;
+        return output;
+    }
+`;
+
+export const line_fragShader = () =>
+  shaderSceneStruct() +
+  `
+    @group(0) @binding(0) var<uniform> scene : Scene;
+
+    struct VertexOutput {
+        @location(0) @interpolate(flat) color : vec3<f32>,
+        @location(1) worldPos: vec4<f32>,
+    };
+
+    @stage(fragment)
+    fn main(input: VertexOutput) -> @location(0) vec4<f32> {
+        let resultColor: vec3<f32> = input.color;
         let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
 
         let fogDensity: f32 = 0.02;
