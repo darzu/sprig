@@ -4,6 +4,7 @@ import {
   registerConstructRenderablesSystem,
   registerRenderer,
   registerUpdateRendererWorldFrames,
+  registerUpdateSmoothedWorldFrames,
 } from "../render/renderer.js";
 import { PositionDef, registerInitTransforms } from "../physics/transform.js";
 import { registerBoatSystems } from "./boat.js";
@@ -138,6 +139,7 @@ export function registerAllSystems(em: EntityManager) {
   registerEventSystems(em);
   registerDeleteEntitiesSystem(em);
   registerMotionSmoothingSystems(em);
+  registerUpdateSmoothedWorldFrames(em);
   registerUpdateRendererWorldFrames(em);
   registerCameraSystems(em);
   registerRenderViewController(em);

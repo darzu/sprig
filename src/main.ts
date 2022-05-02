@@ -9,6 +9,7 @@ import { addEventComponents } from "./net/events.js";
 import { dbg } from "./debugger.js";
 import { DevConsoleDef } from "./console.js";
 import { initGJKSandbox, initReboundSandbox } from "./game/sandbox.js";
+import { setSimulationAlpha } from "./render/renderer.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -20,6 +21,9 @@ const GAME = "ship" as "ship" | "gjk" | "rebound";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
+
+// Don't run more than 5 simulation steps--if we do, reset accumulated time
+const MAX_SIM_LOOPS = 3;
 
 export let gameStarted = false;
 
@@ -133,11 +137,10 @@ function callFixedTimestepSystems() {
   EM.callSystem("delete");
   EM.callSystem("smoothMotion");
   EM.callSystem("updateMotionSmoothing");
-  EM.callSystem("updateRendererWorldFrames");
+  EM.callSystem("updateSmoothedWorldFrames");
   EM.callSystem("smoothCamera");
   EM.callSystem("cameraFollowTarget");
   EM.callSystem("retargetCamera");
-  EM.callSystem("updateCameraView");
   EM.callSystem("renderView");
   EM.callSystem("constructRenderables");
   EM.callOneShotSystems();
@@ -183,12 +186,21 @@ async function startGame(localPeerName: string, host: string | null) {
   let frame = (frame_time: number) => {
     let before_frame = performance.now();
     accumulator += frame_time - previous_frame_time;
+    let loops = 0;
     while (accumulator > TIMESTEP) {
+      if (loops > MAX_SIM_LOOPS) {
+        console.log("too many sim loops, resetting accumulator");
+        accumulator = 0;
+        break;
+      }
       accumulator -= TIMESTEP;
       tick(EM, TIMESTEP);
       callFixedTimestepSystems();
+      loops++;
     }
-
+    setSimulationAlpha(accumulator / TIMESTEP);
+    EM.callSystem("updateRendererWorldFrames");
+    EM.callSystem("updateCameraView");
     EM.callSystem("stepRenderer");
     let jsTime = performance.now() - before_frame;
     let frameTime = frame_time - previous_frame_time;
