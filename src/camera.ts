@@ -11,7 +11,7 @@ import { max } from "./math.js";
 import { AuthorityDef, MeDef } from "./net/components.js";
 import { WorldFrameDef } from "./physics/nonintersection.js";
 import { PositionDef, RotationDef } from "./physics/transform.js";
-import { RendererWorldFrameDef } from "./render/renderer.js";
+import { SmoothedWorldFrameDef } from "./render/renderer.js";
 import { computeNewError, reduceError } from "./smoothing.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
 import { TimeDef } from "./time.js";
@@ -168,8 +168,8 @@ export function registerCameraSystems(em: EntityManager) {
       if (!targetEnt) return;
 
       let frame = targetEnt.world;
-      if (RendererWorldFrameDef.isOn(targetEnt))
-        frame = targetEnt.rendererWorldFrame;
+      if (SmoothedWorldFrameDef.isOn(targetEnt))
+        frame = targetEnt.smoothedWorldFrame;
 
       // update aspect ratio and size
       cameraView.aspectRatio = Math.abs(

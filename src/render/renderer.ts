@@ -81,7 +81,7 @@ export const RenderableDef = EM.defineComponent(
 interface RenderableObj {
   id: number;
   renderable: Renderable;
-  rendererWorldFrame: Frame;
+  smoothedWorldFrame: Frame;
 }
 
 function stepRenderer(
@@ -104,7 +104,7 @@ function stepRenderer(
     }
     mat4.copy(
       o.renderable.meshHandle.shaderData.transform,
-      o.rendererWorldFrame.transform
+      o.smoothedWorldFrame.transform
     );
   }
 
@@ -124,8 +124,8 @@ function stepRenderer(
 
 const _hasRendererWorldFrame = new Set();
 
-export const RendererWorldFrameDef = EM.defineComponent(
-  "rendererWorldFrame",
+export const SmoothedWorldFrameDef = EM.defineComponent(
+  "smoothedWorldFrame",
   () => createFrame()
 );
 
@@ -137,34 +137,40 @@ function updateRendererWorldFrame(em: EntityManager, o: Entity) {
     if (!_hasRendererWorldFrame.has(o.physicsParent.id)) {
       updateRendererWorldFrame(em, em.findEntity(o.physicsParent.id, [])!);
     }
-    parent = em.findEntity(o.physicsParent.id, [RendererWorldFrameDef]);
+    parent = em.findEntity(o.physicsParent.id, [SmoothedWorldFrameDef]);
     if (!parent) return;
   }
-  em.ensureComponentOn(o, RendererWorldFrameDef);
-  mat4.copy(o.rendererWorldFrame.transform, o.transform);
-  updateFrameFromTransform(o.rendererWorldFrame);
+  em.ensureComponentOn(o, SmoothedWorldFrameDef);
+  mat4.copy(o.smoothedWorldFrame.transform, o.transform);
+  updateFrameFromTransform(o.smoothedWorldFrame);
   if (MotionSmoothingDef.isOn(o)) {
     vec3.add(
-      o.rendererWorldFrame.position,
-      o.rendererWorldFrame.position,
+      o.smoothedWorldFrame.position,
+      o.smoothedWorldFrame.position,
       o.motionSmoothing.positionError
     );
     quat.mul(
-      o.rendererWorldFrame.rotation,
-      o.rendererWorldFrame.rotation,
+      o.smoothedWorldFrame.rotation,
+      o.smoothedWorldFrame.rotation,
       o.motionSmoothing.rotationError
     );
-    updateFrameFromPosRotScale(o.rendererWorldFrame);
+    updateFrameFromPosRotScale(o.smoothedWorldFrame);
   }
   if (parent) {
     mat4.mul(
-      o.rendererWorldFrame.transform,
-      parent.rendererWorldFrame.transform,
-      o.rendererWorldFrame.transform
+      o.smoothedWorldFrame.transform,
+      parent.smoothedWorldFrame.transform,
+      o.smoothedWorldFrame.transform
     );
-    updateFrameFromTransform(o.rendererWorldFrame);
+    updateFrameFromTransform(o.smoothedWorldFrame);
   }
   _hasRendererWorldFrame.add(o.id);
+}
+
+let _simulationAccumulator = 0;
+
+export function setSimulationAccumulator(to: number) {
+  _simulationAccumulator;
 }
 
 export function registerUpdateRendererWorldFrames(em: EntityManager) {
@@ -184,7 +190,7 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
 
 export function registerRenderer(em: EntityManager) {
   em.registerSystem(
-    [RendererWorldFrameDef, RenderableDef],
+    [SmoothedWorldFrameDef, RenderableDef],
     [CameraViewDef, RendererDef],
     (objs, res) => {
       stepRenderer(res.renderer.renderer, objs, res.cameraView);
