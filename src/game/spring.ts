@@ -3,6 +3,7 @@ import { tempVec } from "../temp-pool.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { PhysicsTimerDef } from "../time.js";
 import { onInit } from "../init.js";
+import { vec3Dbg } from "../utils-3d.js";
 
 const EPSILON = 0.0000000000000000001;
 const VELOCITY_CAP = 1;
@@ -88,7 +89,10 @@ export const SpringGridDef = EM.defineComponent(
   }
 );
 
-export const ForceDef = EM.defineComponent("force", () => vec3.create());
+export const ForceDef = EM.defineComponent(
+  "force",
+  (v?: vec3) => v ?? vec3.create()
+);
 
 EM.registerSerializerPair(
   ForceDef,
@@ -221,6 +225,7 @@ export function stepSprings(g: SpringGrid, dt: number) {
     vec3.scale(velocityVec, velocityVec, dt);
     //console.log("applying a force");
     vec3.copy(forceVec, g.externalForce);
+    // console.log(`externalForce: ${vec3Dbg(forceVec)}`); // TODO(@darzu):
     addSpringForce(g, point, forceVec);
     vec3.scale(forceVec, forceVec, dt * dt);
     if (vec3.length(velocityVec) > EPSILON) {

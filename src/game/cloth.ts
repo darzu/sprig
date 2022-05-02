@@ -12,10 +12,13 @@ import {
   Mesh,
   unshareProvokingVertices,
   isMeshHandle,
+  unshareProvokingVerticesWithMap,
+  mapMeshPositions,
 } from "../render/mesh-pool.js";
 import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
 import { RendererDef } from "../render/render_init.js";
 import { ColorDef } from "../color.js";
+import { tempVec } from "../temp-pool.js";
 
 export interface ClothConstruct {
   location: vec3;
@@ -32,6 +35,13 @@ export const ClothConstructDef = EM.defineComponent(
     rows: c.rows ?? 2,
     columns: c.columns ?? 2,
     distance: c.distance ?? 1,
+  })
+);
+
+export const ClothLocalDef = EM.defineComponent(
+  "clothLocal",
+  (posMap?: Map<number, number>) => ({
+    posMap: posMap ?? new Map(),
   })
 );
 
@@ -53,7 +63,10 @@ EM.registerSerializerPair(
   }
 );
 
-function clothMesh(cloth: ClothConstruct): Mesh {
+function clothMesh(cloth: ClothConstruct): {
+  mesh: Mesh;
+  posMap: Map<number, number>;
+} {
   let x = 0;
   let y = 0;
   let i = 0;
@@ -97,7 +110,7 @@ function clothMesh(cloth: ClothConstruct): Mesh {
     x = x + 1;
     i = i + 1;
   }
-  return unshareProvokingVertices({ pos, tri, colors, lines });
+  return unshareProvokingVerticesWithMap({ pos, tri, colors, lines });
 }
 
 export function callClothSystems(em: EntityManager) {
@@ -112,19 +125,13 @@ onInit((em: EntityManager) => {
     (cloths, res) => {
       for (let cloth of cloths) {
         if (FinishedDef.isOn(cloth)) continue;
-        em.ensureComponent(
-          cloth.id,
-          PositionDef,
-          cloth.clothConstruct.location
-        );
-        em.ensureComponent(cloth.id, ColorDef, cloth.clothConstruct.color);
-        em.ensureComponent(
-          cloth.id,
-          RenderableConstructDef,
-          clothMesh(cloth.clothConstruct)
-        );
-        em.ensureComponent(
-          cloth.id,
+        em.ensureComponentOn(cloth, PositionDef, cloth.clothConstruct.location);
+        em.ensureComponentOn(cloth, ColorDef, cloth.clothConstruct.color);
+        const { mesh, posMap } = clothMesh(cloth.clothConstruct);
+        em.ensureComponentOn(cloth, ClothLocalDef, posMap);
+        em.ensureComponentOn(cloth, RenderableConstructDef, mesh);
+        em.ensureComponentOn(
+          cloth,
           SpringGridDef,
           SpringType.SimpleDistance,
           cloth.clothConstruct.rows,
@@ -137,37 +144,33 @@ onInit((em: EntityManager) => {
           ],
           cloth.clothConstruct.distance
         );
-        em.ensureComponent(cloth.id, ForceDef);
-        em.ensureComponent(cloth.id, AuthorityDef, res.me.pid);
+        em.ensureComponentOn(cloth, ForceDef);
+        em.ensureComponentOn(cloth, AuthorityDef, res.me.pid);
         em.ensureComponentOn(cloth, SyncDef);
         cloth.sync.dynamicComponents = [ClothConstructDef.id];
         cloth.sync.fullComponents = [PositionDef.id, ForceDef.id];
-        em.ensureComponent(cloth.id, FinishedDef);
+        em.ensureComponentOn(cloth, FinishedDef);
       }
     },
     "buildCloths"
   );
 
   em.registerSystem(
-    [ClothConstructDef, SpringGridDef, RenderableDef],
+    [ClothConstructDef, ClothLocalDef, SpringGridDef, RenderableDef],
     [RendererDef],
     (cloths, { renderer }) => {
       for (let cloth of cloths) {
-        // TODO(@darzu): fix
-        // if (isMeshHandle(cloth.renderable.meshOrProto)) {
-        //   throw "Instancing not supported for cloth";
-        // }
-        // for (let i = 0; i < cloth.renderable.meshOrProto.pos.length; i++) {
-        //   const originalIndex = cloth.renderable.meshOrProto.posMap!.get(i)!;
-        //   vec3.copy(
-        //     cloth.renderable.meshOrProto.pos[i],
-        //     cloth.springGrid.positions[originalIndex]
-        //   );
-        // }
-        // renderer.renderer.updateMesh(
-        //   cloth.meshHandle,
-        //   cloth.renderable.meshOrProto
-        // );
+        const newM = mapMeshPositions(
+          cloth.renderable.meshHandle.readonlyMesh!,
+          (_, i) => {
+            const originalIndex = cloth.clothLocal.posMap.get(i)!;
+            return vec3.copy(
+              tempVec(),
+              cloth.springGrid.positions[originalIndex]
+            );
+          }
+        );
+        renderer.renderer.updateMesh(cloth.renderable.meshHandle, newM);
       }
     },
     "updateClothMesh"

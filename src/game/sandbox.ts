@@ -32,6 +32,7 @@ import { AssetsDef, GameMesh } from "./assets.js";
 import { ClothConstructDef } from "./cloth.js";
 import { ControllableDef } from "./controllable.js";
 import { GlobalCursor3dDef } from "./cursor.js";
+import { ForceDef, SpringGridDef } from "./spring.js";
 import { TextDef } from "./ui.js";
 
 export const GhostDef = EM.defineComponent("ghost", () => ({}));
@@ -52,6 +53,7 @@ export function createGhost(em: EntityManager) {
 
   return g;
 }
+
 let __frame = 0;
 export function initGJKSandbox(em: EntityManager, hosting: boolean) {
   const camera = em.addSingletonComponent(CameraDef);
@@ -354,6 +356,8 @@ export function initClothSandbox(em: EntityManager, hosting: boolean) {
         columns: 5,
         distance: 2,
       });
+      const F = 100.0;
+      em.ensureComponentOn(cloth, ForceDef, [F, F, F]);
     }
   );
 }

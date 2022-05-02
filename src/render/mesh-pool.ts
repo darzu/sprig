@@ -363,10 +363,15 @@ export function unshareVertices(input: Mesh): Mesh {
   });
   return { ...input, pos, tri, verticesUnshared: true };
 }
-export function unshareProvokingVertices(input: Mesh): Mesh {
+export function unshareProvokingVerticesWithMap(input: Mesh): {
+  mesh: Mesh;
+  posMap: Map<number, number>;
+} {
   const pos: vec3[] = [...input.pos];
   const tri: vec3[] = [];
   const provoking: { [key: number]: boolean } = {};
+  const posMap: Map<number, number> = new Map();
+  pos.forEach((_, i) => posMap.set(i, i));
   input.tri.forEach(([i0, i1, i2], triI) => {
     if (!provoking[i0]) {
       // First vertex is unused as a provoking vertex, so we'll use it for this triangle.
@@ -385,11 +390,17 @@ export function unshareProvokingVertices(input: Mesh): Mesh {
       // All vertices are taken, so create a new one
       const i3 = pos.length;
       pos.push(input.pos[i0]);
+      posMap.set(i3, i0);
       provoking[i3] = true;
       tri.push([i3, i1, i2]);
     }
   });
-  return { ...input, pos, tri, usesProvoking: true };
+  const mesh: Mesh = { ...input, pos, tri, usesProvoking: true };
+  return { mesh, posMap };
+}
+export function unshareProvokingVertices(input: Mesh): Mesh {
+  const { mesh, posMap } = unshareProvokingVerticesWithMap(input);
+  return mesh;
 }
 
 export function createMeshPool_WebGPU(
