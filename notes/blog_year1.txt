@@ -1,17 +1,68 @@
-Vision:
-
-Goals:
+Goals / vision:
   <1mb games
-  Coop easier than ever
   Instant games a la Flash era
+  The easiest way to make 3d multiplayer games
   Gameplay-driven development
   Visual / structured programming
+    Better than Blockly
+    Strongly typed
+    So many engine-specific language features, static & dynamic analysis, tools
   Runs on any device
+  Not a walled garden: roblox, dreams, little big planet, MakeCode, Scratch,
+  Lowest possible barriers: all web, any hardware
+  No royalties, all open source MIT
+  No package manager, all ES6 modules
+  The easiest way to learn programming
+  Great at creating no-dependency examples via program slicing
+  Yes glitch.com
+
+  More out there:
+    A better way to think about complexity in software
+    Humans solving complex problems
+
+Pitches / one-liners:
+  Unity but on the web
+  Glitch.com but for games
+  MakeCode but 3D
+  Roblox but open source
+  Dreams but not locked to PS4/5
+  
+Bets:
+  Coop/good-faith only: you don't care about cheating
+  Gameplay is king, good (esp high realism) visuals aren't as important
+    Look at Minecraft, Roblox
+  A lot of these goals synergize with each other
 
 Non-goals:
   hyper-realistic PBR rendering
 
-Features:
+Maybes:
+  VR
+
+Features in 1st year:
+  Multiplayer
+    Peer to peer, webrtc, peerjs-derived
+    Prediction
+    always-sync components
+    once-sync components
+    event log
+  3D mesh render
+  Mesh importing, .obj files
+  Physics
+    Collision detection
+    non-intersection
+  ECS
+    Components
+      Resources
+    Entities
+      ID spaces
+    Systems
+      One-Shot Systems
+    TypeScript + wizards
+
+  Unused:
+    Infinite grass land shader
+    Displacement map ocean water
 
 FAQ:
   Why not {Unity, Unreal, GameMaker, Godot, }
@@ -22,7 +73,7 @@ FAQ:
   Why web
   Why still release on steam
   Why not {Itch, }
-  Why MIT
+  Why MIT, why not {GPL, closed-source, }
   Why not {Rapier, Bullet, }
   Why not {Rust, C#, C++, WASM, Haxe, Go, GodotScript, }
   Why not {Ads, pay-for-sprigland, }
@@ -31,4 +82,13 @@ FAQ:
   Why not more community JS libraries?
   Why so much of your own stuff?
   Why not academia?
+
+---
+Outline 1:
+  What is Sprigland's goal?
+  What is Sprigland today?
+  Where is Sprigland going next?
+  
+Outline 2:
+  blow by blow, what happened this year  
 

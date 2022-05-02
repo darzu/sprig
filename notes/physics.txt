@@ -418,9 +418,10 @@ Timesteps in unreal and unity:
   https://www.reddit.com/r/gamedev/comments/pi9uyq/is_fixing_your_timestep_still_a_thing/
     https://www.reddit.com/r/gamedev/comments/pi9uyq/comment/hbo78l1/?utm_source=reddit&utm_medium=web2x&context=3
 
-  Us:
-    Physics is constrained to 
-
 Input latency:
   https://danluu.com/input-lag/
   https://humanbenchmark.com
+  https://displaylag.com/display-database/
+
+Vsync test
+  https://www.vsynctester.com/index.html

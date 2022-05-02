@@ -67,7 +67,12 @@ Cannon ball effects (positive and negative):
   lightning rod: Cannon balls float and after a few seconds a lighting bolt strikes them in the water
   Cannon balls attach and inflate as a baloon, lifting enemy boats into the air
   Glass cannon: each cannon can be fired only once
-  
-  
+  Cannon can no longer fire and are replaced with a big spike that does damage to enemy ships you run into
+  Cannons don't fire balls instead they fire a burst of air that deflects incoming cannon balls
+  Kick forward: Cannon fire pulls the ship towards the direction of fire
+  Grease fire: cannon balls apply fire to the water, damaging boats that come into it
+
+
+
 
 
