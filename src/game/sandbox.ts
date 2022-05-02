@@ -375,8 +375,7 @@ export function initClothSandbox(em: EntityManager, hosting: boolean) {
       if (!cs.length) return;
       const cloth = cs[0];
 
-      if (!line) line = drawLine(vec3.create(), vec3.create(), [0, 1, 0]);
-
+      // cursor to cloth
       const cursorPos = res.globalCursor3d.cursor()!.world.position;
       const midpoint = vec3.scale(
         tempVec(),
@@ -386,6 +385,7 @@ export function initClothSandbox(em: EntityManager, hosting: boolean) {
       const clothPos = vec3.add(midpoint, midpoint, cloth.world.position);
 
       // line from cursor to cloth
+      if (!line) line = drawLine(vec3.create(), vec3.create(), [0, 1, 0]);
       if (RenderableDef.isOn(line)) {
         line.renderable.enabled = true;
         const m = line.renderable.meshHandle.readonlyMesh!;
@@ -403,6 +403,7 @@ export function initClothSandbox(em: EntityManager, hosting: boolean) {
       );
       res.text.upperText = `${strength.toFixed(2)}`;
 
+      // apply the force?
       if (res.inputs.keyDowns["e"]) {
         vec3.scale(cloth.force, cloth.force, strength);
       } else {
