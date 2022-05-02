@@ -2,7 +2,7 @@ import { test } from "./test.js";
 import { setupObjImportExporter } from "./download.js";
 import { initShipGame, registerAllSystems } from "./game/game.js";
 import { EM } from "./entity-manager.js";
-import { addTimeComponents } from "./time.js";
+import { tick } from "./time.js";
 import { InputsDef, registerInputsSystem } from "./inputs.js";
 import { MeDef, JoinDef, HostDef, PeerNameDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";
@@ -16,7 +16,134 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
+const GAME = "ship" as "ship" | "gjk" | "rebound";
+
+// Run simulation with a fixed timestep @ 60hz
+const TIMESTEP = 1000 / 60;
+
 export let gameStarted = false;
+
+function callFixedTimestepSystems() {
+  EM.callSystem("inputs");
+  if (GAME === "ship") {
+    EM.callSystem("shipUI");
+  }
+  EM.callSystem("getStatsFromNet");
+  EM.callSystem("getEventsFromNet");
+  EM.callSystem("sendEventsToNet");
+  EM.callSystem("canvas");
+  EM.callSystem("uiText");
+  EM.callSystem("devConsoleToggle");
+  EM.callSystem("devConsole");
+  EM.callSystem("restartTimer");
+  EM.callSystem("updateScore");
+  EM.callSystem("renderInit");
+  EM.callSystem("musicStart");
+  EM.callSystem("handleNetworkEvents");
+  EM.callSystem("recordPreviousLocations");
+  EM.callSystem("clearRemoteUpdatesMarker");
+  EM.callSystem("netUpdate");
+  EM.callSystem("predict");
+  EM.callSystem("connectToServer");
+  EM.callSystem("handleJoin");
+  EM.callSystem("handleJoinResponse");
+  EM.callSystem("assetLoader");
+  EM.callSystem("initGroundSystem");
+  EM.callSystem("groundSystem");
+  EM.callSystem("startGame");
+  EM.callSystem("shipHealthCheck");
+  EM.callSystem("easeRudder");
+  EM.callSystem("shipMove");
+  EM.callSystem("shipScore");
+  EM.callSystem("groundPropsBuild");
+  EM.callSystem("boatPropsBuild");
+  EM.callSystem("cannonPropsBuild");
+  EM.callSystem("gemPropsBuild");
+  EM.callSystem("rudderPropsBuild");
+  EM.callSystem("shipPropsBuild");
+  EM.callSystem("buildBullets");
+  EM.callSystem("buildCursor");
+  EM.callSystem("placeCursorAtScreenCenter");
+  EM.callSystem("stepBoats");
+  EM.callSystem("boatsFire");
+  EM.callSystem("breakBoats");
+  EM.callSystem("controllableInput");
+  EM.callSystem("controllableCameraFollow");
+  EM.callSystem("buildPlayers");
+  EM.callSystem("playerFacingDir");
+  EM.callSystem("stepPlayers");
+  EM.callSystem("playerLookingForShip");
+  if (GAME === "rebound") {
+    EM.callSystem("sandboxSpawnBoxes");
+  }
+  EM.callSystem("updateBullets");
+  EM.callSystem("updateNoodles");
+  EM.callSystem("updateLifetimes");
+  EM.callSystem("interaction");
+  EM.callSystem("turretAim");
+  EM.callSystem("turretYawPitch");
+  EM.callSystem("turretManUnman");
+  EM.callSystem("reloadCannon");
+  EM.callSystem("playerControlCannon");
+  EM.callSystem("playerManCanon");
+  if (GAME === "ship") {
+    EM.callSystem("spawnOnTile");
+    EM.callSystem("spawnFinishAnimIn");
+  }
+  EM.callSystem("ensureFillOutLocalFrame");
+  EM.callSystem("ensureWorldFrame");
+  EM.callSystem("physicsInit");
+  EM.callSystem("clampVelocityByContact");
+  EM.callSystem("registerPhysicsClampVelocityBySize");
+  EM.callSystem("registerPhysicsApplyLinearVelocity");
+  EM.callSystem("physicsApplyAngularVelocity");
+  if (GAME === "gjk") {
+    // TODO(@darzu): Doug, we should talk about this. It is only registered after a one-shot
+    if (EM.hasSystem("checkGJK")) EM.callSystem("checkGJK");
+  }
+  EM.callSystem("updateLocalFromPosRotScale");
+  EM.callSystem("updateWorldFromLocalAndParent");
+  EM.callSystem("registerUpdateWorldAABBs");
+  EM.callSystem("updatePhysInContact");
+  EM.callSystem("physicsStepContact");
+  EM.callSystem("updateWorldFromLocalAndParent2");
+  EM.callSystem("colliderMeshes");
+  EM.callSystem("debugMeshes");
+  EM.callSystem("debugMeshTransform");
+  EM.callSystem("bulletCollision");
+  EM.callSystem("modelerOnOff");
+  EM.callSystem("modelerClicks");
+  EM.callSystem("aabbBuilder");
+  EM.callSystem("toolPickup");
+  EM.callSystem("toolDrop");
+  EM.callSystem("animateTo");
+  EM.callSystem("netDebugSystem");
+  EM.callSystem("netAck");
+  EM.callSystem("netSync");
+  EM.callSystem("sendOutboxes");
+  EM.callSystem("detectedEventsToHost");
+  EM.callSystem("handleEventRequests");
+  EM.callSystem("handleEventRequestAcks");
+  EM.callSystem("detectedEventsToRequestedEvents");
+  EM.callSystem("requestedEventsToEvents");
+  EM.callSystem("sendEvents");
+  EM.callSystem("handleEvents");
+  EM.callSystem("handleEventAcks");
+  EM.callSystem("runEvents");
+  EM.callSystem("delete");
+  EM.callSystem("smoothMotion");
+  EM.callSystem("updateMotionSmoothing");
+  EM.callSystem("updateRendererWorldFrames");
+  EM.callSystem("smoothCamera");
+  EM.callSystem("cameraFollowTarget");
+  EM.callSystem("retargetCamera");
+  EM.callSystem("updateCameraView");
+  EM.callSystem("renderView");
+  EM.callSystem("constructRenderables");
+  EM.callOneShotSystems();
+  EM.loops++;
+}
+
 async function startGame(localPeerName: string, host: string | null) {
   if (gameStarted) return;
   gameStarted = true;
@@ -42,183 +169,38 @@ async function startGame(localPeerName: string, host: string | null) {
 
   registerAllSystems(EM);
 
-  addTimeComponents(EM);
   addEventComponents(EM);
 
   EM.addSingletonComponent(InputsDef);
   registerInputsSystem(EM);
-
-  const GAME = "ship" as "ship" | "gjk" | "rebound";
 
   if (GAME === "ship") initShipGame(EM, hosting);
   else if (GAME === "gjk") initGJKSandbox(EM, hosting);
   else if (GAME === "rebound") initReboundSandbox(EM, hosting);
 
   let previous_frame_time = start_of_time;
-  let frame = () => {
-    let frame_start_time = performance.now();
-    // apply any state updates from the network
-    //if (net) net.updateState(previous_frame_time);
+  let accumulator = 0;
+  let frame = (frame_time: number) => {
+    let before_frame = performance.now();
+    accumulator += frame_time - previous_frame_time;
+    while (accumulator > TIMESTEP) {
+      accumulator -= TIMESTEP;
+      tick(EM, TIMESTEP);
+      callFixedTimestepSystems();
+    }
 
-    let sim_time = 0;
-    let before_sim = performance.now();
-    EM.callSystem("time");
-    EM.callSystem("inputs");
-    if (GAME === "ship") {
-      EM.callSystem("shipUI");
-    }
-    EM.callSystem("getStatsFromNet");
-    EM.callSystem("getEventsFromNet");
-    EM.callSystem("sendEventsToNet");
-    EM.callSystem("canvas");
-    EM.callSystem("uiText");
-    EM.callSystem("devConsoleToggle");
-    EM.callSystem("devConsole");
-    EM.callSystem("restartTimer");
-    EM.callSystem("updateScore");
-    EM.callSystem("renderInit");
-    EM.callSystem("musicStart");
-    EM.callSystem("handleNetworkEvents");
-    EM.callSystem("recordPreviousLocations");
-    EM.callSystem("clearRemoteUpdatesMarker");
-    EM.callSystem("netUpdate");
-    EM.callSystem("predict");
-    EM.callSystem("connectToServer");
-    EM.callSystem("handleJoin");
-    EM.callSystem("handleJoinResponse");
-    EM.callSystem("assetLoader");
-    EM.callSystem("initGroundSystem");
-    EM.callSystem("groundSystem");
-    EM.callSystem("startGame");
-    EM.callSystem("shipHealthCheck");
-    EM.callSystem("easeRudder");
-    EM.callSystem("shipMove");
-    EM.callSystem("shipScore");
-    EM.callSystem("groundPropsBuild");
-    EM.callSystem("boatPropsBuild");
-    EM.callSystem("cannonPropsBuild");
-    EM.callSystem("gemPropsBuild");
-    EM.callSystem("rudderPropsBuild");
-    EM.callSystem("shipPropsBuild");
-    EM.callSystem("buildBullets");
-    EM.callSystem("buildCursor");
-    EM.callSystem("placeCursorAtScreenCenter");
-    EM.callSystem("stepBoats");
-    EM.callSystem("boatsFire");
-    EM.callSystem("breakBoats");
-    EM.callSystem("controllableInput");
-    EM.callSystem("controllableCameraFollow");
-    EM.callSystem("buildPlayers");
-    EM.callSystem("playerFacingDir");
-    EM.callSystem("stepPlayers");
-    EM.callSystem("playerLookingForShip");
-    if (GAME === "rebound") {
-      EM.callSystem("sandboxSpawnBoxes");
-    }
-    EM.callSystem("updateBullets");
-    EM.callSystem("updateNoodles");
-    EM.callSystem("updateLifetimes");
-    EM.callSystem("interaction");
-    EM.callSystem("turretAim");
-    EM.callSystem("turretYawPitch");
-    EM.callSystem("turretManUnman");
-    EM.callSystem("reloadCannon");
-    EM.callSystem("playerControlCannon");
-    EM.callSystem("playerManCanon");
-    if (GAME === "ship") {
-      EM.callSystem("spawnOnTile");
-      EM.callSystem("spawnFinishAnimIn");
-    }
-    EM.callSystem("ensureFillOutLocalFrame");
-    EM.callSystem("ensureWorldFrame");
-    EM.callSystem("physicsInit");
-    EM.callSystem("clampVelocityByContact");
-    EM.callSystem("registerPhysicsClampVelocityBySize");
-    EM.callSystem("registerPhysicsApplyLinearVelocity");
-    EM.callSystem("physicsApplyAngularVelocity");
-    if (GAME === "gjk") {
-      // TODO(@darzu): Doug, we should talk about this. It is only registered after a one-shot
-      if (EM.hasSystem("checkGJK")) EM.callSystem("checkGJK");
-    }
-    EM.callSystem("updateLocalFromPosRotScale");
-    EM.callSystem("updateWorldFromLocalAndParent");
-    EM.callSystem("registerUpdateWorldAABBs");
-    EM.callSystem("updatePhysInContact");
-    EM.callSystem("physicsStepContact");
-    EM.callSystem("updateWorldFromLocalAndParent2");
-    EM.callSystem("colliderMeshes");
-    EM.callSystem("debugMeshes");
-    EM.callSystem("debugMeshTransform");
-    EM.callSystem("bulletCollision");
-    EM.callSystem("modelerOnOff");
-    EM.callSystem("modelerClicks");
-    EM.callSystem("aabbBuilder");
-    EM.callSystem("toolPickup");
-    EM.callSystem("toolDrop");
-    EM.callSystem("animateTo");
-    EM.callSystem("netDebugSystem");
-    EM.callSystem("netAck");
-    EM.callSystem("netSync");
-    EM.callSystem("sendOutboxes");
-    EM.callSystem("detectedEventsToHost");
-    EM.callSystem("handleEventRequests");
-    EM.callSystem("handleEventRequestAcks");
-    EM.callSystem("detectedEventsToRequestedEvents");
-    EM.callSystem("requestedEventsToEvents");
-    EM.callSystem("sendEvents");
-    EM.callSystem("handleEvents");
-    EM.callSystem("handleEventAcks");
-    EM.callSystem("runEvents");
-    EM.callSystem("delete");
-    EM.callSystem("smoothMotion");
-    EM.callSystem("updateMotionSmoothing");
-    EM.callSystem("updateRendererWorldFrames");
-    EM.callSystem("smoothCamera");
-    EM.callSystem("cameraFollowTarget");
-    EM.callSystem("retargetCamera");
-    EM.callSystem("updateCameraView");
-    EM.callSystem("renderView");
-    EM.callSystem("constructRenderables");
     EM.callSystem("stepRenderer");
-    EM.callOneShotSystems();
-    EM.loops++;
-    sim_time += performance.now() - before_sim;
-
-    let jsTime = performance.now() - frame_start_time;
-    let frameTime = frame_start_time - previous_frame_time;
-    previous_frame_time = frame_start_time;
+    let jsTime = performance.now() - before_frame;
+    let frameTime = frame_time - previous_frame_time;
+    previous_frame_time = frame_time;
 
     const devStats = EM.getResource(DevConsoleDef);
-    if (devStats) devStats.updateAvgs(jsTime, frameTime, sim_time);
+    if (devStats) devStats.updateAvgs(jsTime, frameTime, jsTime);
 
     requestAnimationFrame(frame);
   };
 
-  if (ENABLE_NET) {
-    try {
-      /*
-      net = new Net(_gameState, host, (id: string) => {
-        _renderer.finishInit(); // TODO(@darzu): debugging
-        if (hosting) {
-          console.log("hello");
-          console.log(`Net up and running with id`);
-          console.log(`${id}`);
-          const url = `${window.location.href}?server=${id}`;
-          console.log(url);
-          if (navigator.clipboard) navigator.clipboard.writeText(url);
-          frame();
-        } else {
-          frame();
-        }
-      });*/
-    } catch (e) {
-      console.error("Failed to initialize net");
-      console.error(e);
-      //net = null;
-    }
-  } else {
-    frame();
-  }
+  requestAnimationFrame(frame);
 }
 
 function getPeerName(queryString: { [k: string]: string }): string {

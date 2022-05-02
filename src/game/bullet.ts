@@ -14,7 +14,6 @@ import {
   LinearVelocityDef,
 } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
-import { PhysicsTimerDef } from "../time.js";
 import { LifetimeDef } from "./lifetime.js";
 
 export const BulletDef = EM.defineComponent("bullet", (team?: number) => {
@@ -96,10 +95,11 @@ export function registerBuildBulletsSystem(em: EntityManager) {
 export function registerBulletUpdate(em: EntityManager) {
   em.registerSystem(
     [BulletDef, PositionDef, LinearVelocityDef],
-    [PhysicsTimerDef],
-    (bullets, res) => {
+    [],
+    (bullets) => {
       for (let b of bullets) {
-        b.linearVelocity[1] -= 0.001 * res.physicsTimer.steps;
+        // TODO: Do we need to use time.dt here?
+        b.linearVelocity[1] -= 0.001;
       }
     },
     "updateBullets"

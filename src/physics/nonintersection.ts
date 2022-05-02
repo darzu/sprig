@@ -1,6 +1,5 @@
 import { Collider, ColliderDef, DefaultLayer, Layer } from "./collider.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
-import { PhysicsTimerDef } from "../time.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import {
   CollidesWith,
@@ -348,11 +347,8 @@ export function registerPhysicsStateInit(em: EntityManager) {
 export function registerUpdateInContactSystems(em: EntityManager) {
   em.registerSystem(
     [ColliderDef, PhysicsStateDef, WorldFrameDef],
-    [PhysicsTimerDef, PhysicsBroadCollidersDef, PhysicsResultsDef],
+    [PhysicsBroadCollidersDef, PhysicsResultsDef],
     (objs, res) => {
-      // TODO(@darzu): interestingly, this system doesn't need the step count
-      if (!res.physicsTimer.steps) return;
-
       // build a dict
       // TODO(@darzu): would be nice if the query could provide this
       _objDict.clear();
@@ -415,11 +411,8 @@ export function registerPhysicsContactSystems(em: EntityManager) {
   // TODO(@darzu): split this system
   em.registerSystem(
     [ColliderDef, PhysicsStateDef, PositionDef, WorldFrameDef],
-    [PhysicsTimerDef, PhysicsBroadCollidersDef, PhysicsResultsDef],
+    [PhysicsBroadCollidersDef, PhysicsResultsDef],
     (objs, res) => {
-      // TODO(@darzu): interestingly, this system doesn't need the step count
-      if (!res.physicsTimer.steps) return;
-
       // build a dict
       // TODO(@darzu): would be nice if the query could provide this
       _objDict.clear();

@@ -31,7 +31,6 @@ import {
 } from "../net/sync.js";
 import { registerPredictSystem } from "../net/predict.js";
 import { registerEventSystems } from "../net/events.js";
-import { registerTimeSystem } from "../time.js";
 import { initGroundSystem, registerGroundSystems } from "./ground.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
 import { createShip, registerShipSystems, ShipLocalDef } from "./ship.js";
@@ -99,7 +98,6 @@ function registerScoreSystems(em: EntityManager) {
 }
 
 export function registerAllSystems(em: EntityManager) {
-  registerTimeSystem(em);
   registerNetSystems(em);
   registerInitCanvasSystem(em);
   registerUISystems(em);

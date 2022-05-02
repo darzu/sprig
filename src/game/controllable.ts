@@ -8,7 +8,7 @@ import { AuthorityDef, MeDef } from "../net/components.js";
 import { LinearVelocityDef } from "../physics/motion.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { RotationDef } from "../physics/transform.js";
-import { PhysicsTimerDef } from "../time.js";
+import { TimeDef } from "../time.js";
 
 /*
 TODO key mapping
@@ -59,10 +59,8 @@ export function registerControllableSystems(em: EntityManager) {
 
   em.registerSystem(
     [ControllableDef, LinearVelocityDef, RotationDef, WorldFrameDef],
-    [InputsDef, PhysicsTimerDef, MeDef, CanvasDef],
+    [InputsDef, MeDef, CanvasDef, TimeDef],
     (controllables, res) => {
-      const dt = res.physicsTimer.period * res.physicsTimer.steps;
-
       for (let c of controllables) {
         if (AuthorityDef.isOn(c) && c.authority.pid !== res.me.pid) continue;
         // don't control things when we're not locked onto the canvas
@@ -77,7 +75,7 @@ export function registerControllableSystems(em: EntityManager) {
         vec3.zero(steerVel);
         const modes = c.controllable.modes;
 
-        let speed = c.controllable.speed * dt;
+        let speed = c.controllable.speed * res.time.dt;
 
         if (modes.canSprint)
           if (res.inputs.keyDowns["shift"]) speed *= c.controllable.sprintMul;
@@ -95,11 +93,11 @@ export function registerControllableSystems(em: EntityManager) {
         }
 
         if (modes.canFall)
-          c.linearVelocity[1] -= (c.controllable.gravity / 1000) * dt;
+          c.linearVelocity[1] -= (c.controllable.gravity / 1000) * res.time.dt;
 
         if (modes.canJump)
           if (res.inputs.keyClicks[" "])
-            c.linearVelocity[1] = c.controllable.jumpSpeed * dt;
+            c.linearVelocity[1] = c.controllable.jumpSpeed * res.time.dt;
 
         // apply our steering velocity
         vec3.transformQuat(steerVel, steerVel, c.rotation);
@@ -120,7 +118,7 @@ export function registerControllableSystems(em: EntityManager) {
 
   em.registerSystem(
     [ControllableDef, CameraFollowDef],
-    [InputsDef, PhysicsTimerDef, MeDef, CanvasDef],
+    [InputsDef, MeDef, CanvasDef],
     (controllables, res) => {
       for (let c of controllables) {
         if (AuthorityDef.isOn(c) && c.authority.pid !== res.me.pid) continue;

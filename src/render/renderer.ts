@@ -20,7 +20,6 @@ import { Authority, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { createFrame, WorldFrameDef } from "../physics/nonintersection.js";
 import { RendererDef } from "./render_init.js";
 import { tempQuat, tempVec } from "../temp-pool.js";
-import { PhysicsTimerDef } from "../time.js";
 import {
   PhysicsParent,
   Position,
@@ -186,11 +185,9 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
 export function registerRenderer(em: EntityManager) {
   em.registerSystem(
     [RendererWorldFrameDef, RenderableDef],
-    [CameraViewDef, PhysicsTimerDef, RendererDef],
+    [CameraViewDef, RendererDef],
     (objs, res) => {
-      // TODO: should we just render on every frame?
-      if (res.physicsTimer.steps > 0)
-        stepRenderer(res.renderer.renderer, objs, res.cameraView);
+      stepRenderer(res.renderer.renderer, objs, res.cameraView);
     },
     "stepRenderer"
   );
