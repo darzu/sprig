@@ -179,7 +179,8 @@ export const cloth_shader = () =>
     let uvInt: vec2<i32> = vec2<i32>(GlobalInvocationID.xy);
     let texDisp = textureLoad(inTex, uvInt, 0);
   
-    textureStore(outTex, uvInt, vec4<f32>(texDisp.xyz + vec3<f32>(0.01), 1.0));
+    // textureStore(outTex, uvInt, vec4<f32>(texDisp.xyz + vec3<f32>(0.01), 1.0));
+    textureStore(outTex, uvInt, vec4<f32>(texDisp.xyz * 1.01, 1.0));
   }
   
   `;

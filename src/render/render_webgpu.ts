@@ -391,6 +391,37 @@ export class Renderer_WebGPU implements Renderer {
       minFilter: "linear",
     });
 
+    // update cloth data
+    // TODO(@darzu): DISP
+    if (this.clothOnce) {
+      this.clothOnce = false;
+      const clothData = new Float32Array(10 * 10 * 4);
+      for (let x = 0; x < 10; x++) {
+        for (let y = 0; y < 10; y++) {
+          const i = (y + x * 10) * 3;
+          clothData[i + 0] = i / clothData.length;
+          clothData[i + 1] = i / clothData.length;
+          clothData[i + 2] = i / clothData.length;
+        }
+      }
+      // for (let i = 0; i < clothData.length; i++)
+      //   clothData[i] = i * (1 / clothData.length);
+      this.device.queue.writeTexture(
+        { texture: this.clothTextures[0] },
+        clothData,
+        {
+          offset: 0,
+          bytesPerRow: 10 * Float32Array.BYTES_PER_ELEMENT * 4,
+          rowsPerImage: 10,
+        },
+        {
+          width: 10,
+          height: 10,
+          depthOrArrayLayers: 1,
+        }
+      );
+    }
+
     this.computePipeline = device.createComputePipeline({
       compute: {
         module: device.createShaderModule({
@@ -409,6 +440,8 @@ export class Renderer_WebGPU implements Renderer {
 
   private scratchMIDs = new Set<number>();
 
+  private clothOnce = true;
+
   private scratchSceneUni = new Uint8Array(SceneUniform.ByteSizeAligned);
   public renderFrame(viewProj: mat4, handles: MeshHandle[]): void {
     this.checkCanvasResize();
@@ -422,34 +455,6 @@ export class Renderer_WebGPU implements Renderer {
       0,
       this.scratchSceneUni.buffer
     );
-
-    // update cloth data
-    // TODO(@darzu): DISP
-    const clothData = new Float32Array(10 * 10 * 4);
-    // for (let x = 0; x < 10; x++) {
-    //   for (let y = 0; y < 10; y++) {
-    //     const i = (y + x * 10) * 3;
-    //     clothData[i + 0] = i * 10;
-    //     clothData[i + 1] = i * 10;
-    //     clothData[i + 2] = i * 10;
-    //   }
-    // }
-    for (let i = 0; i < clothData.length; i++)
-      clothData[i] = i * (1 / clothData.length);
-    // this.device.queue.writeTexture(
-    //   { texture: this.clothTexture },
-    //   clothData,
-    //   {
-    //     offset: 0,
-    //     bytesPerRow: 10 * Float32Array.BYTES_PER_ELEMENT * 4,
-    //     rowsPerImage: 10,
-    //   },
-    //   {
-    //     width: 10,
-    //     height: 10,
-    //     depthOrArrayLayers: 1,
-    //   }
-    // );
 
     // update all mesh transforms
     this.gpuBufferWriteAllMeshUniforms(handles);
