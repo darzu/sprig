@@ -32,3 +32,10 @@ Interactive, python notebook style tutorials.
   Interactive windows that could show game, code, or both
   We'd smartly share engine code and pause play canvases as needed
   Have gif and code-blob fallback
+
+For program slicing:
+  in addition to statically culling and inlining engine stuff to make a 
+  compact example, you can also run the example and track which branches 
+  are taken. If they're not used, cull them. This would remove a lot of 
+  the edge case code and error handling that might muddy the core example 
+  concepts.

@@ -29,8 +29,10 @@ import { assert } from "../test.js";
 import { TimeDef } from "../time.js";
 import { farthestPointInDir } from "../utils-3d.js";
 import { AssetsDef, GameMesh } from "./assets.js";
+import { ClothConstructDef } from "./cloth.js";
 import { ControllableDef } from "./controllable.js";
 import { GlobalCursor3dDef } from "./cursor.js";
+import { ForceDef, SpringGridDef } from "./spring.js";
 import { TextDef } from "./ui.js";
 
 export const GhostDef = EM.defineComponent("ghost", () => ({}));
@@ -51,6 +53,7 @@ export function createGhost(em: EntityManager) {
 
   return g;
 }
+
 let __frame = 0;
 export function initGJKSandbox(em: EntityManager, hosting: boolean) {
   const camera = em.addSingletonComponent(CameraDef);
@@ -293,6 +296,68 @@ export function initGJKSandbox(em: EntityManager, hosting: boolean) {
         },
         "checkGJK"
       );
+    }
+  );
+}
+
+export function initClothSandbox(em: EntityManager, hosting: boolean) {
+  const camera = em.addSingletonComponent(CameraDef);
+  camera.fov = Math.PI * 0.5;
+
+  em.registerOneShotSystem(
+    null,
+    [AssetsDef, GlobalCursor3dDef, RendererDef],
+    (_, res) => {
+      const e = createGhost(em);
+      vec3.copy(e.position, [0, 1, -1.2]);
+      quat.setAxisAngle(e.rotation, [0.0, -1.0, 0.0], 1.62);
+      e.controllable.sprintMul = 3;
+
+      {
+        vec3.copy(e.position, [-16.85, 7.11, -4.33]);
+        quat.copy(e.rotation, [0.0, -0.76, 0.0, 0.65]);
+        vec3.copy(e.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+        e.cameraFollow.yawOffset = 0.0;
+        e.cameraFollow.pitchOffset = -0.368;
+      }
+
+      const c = res.globalCursor3d.cursor()!;
+      if (RenderableDef.isOn(c)) c.renderable.enabled = false;
+
+      vec3.copy(res.renderer.renderer.backgroundColor, [0.7, 0.8, 1.0]);
+
+      const plane = em.newEntity();
+      em.ensureComponentOn(
+        plane,
+        RenderableConstructDef,
+        res.assets.plane.proto
+      );
+      em.ensureComponentOn(plane, ColorDef, [0.2, 0.3, 0.2]);
+      em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
+
+      const box = em.newEntity();
+      em.ensureComponentOn(box, RenderableConstructDef, res.assets.cube.proto);
+      em.ensureComponentOn(box, ColorDef, [0.1, 0.1, 0.1]);
+      em.ensureComponentOn(box, PositionDef, [0, 0, 3]);
+      em.ensureComponentOn(box, RotationDef);
+      em.ensureComponentOn(box, AngularVelocityDef, [0, 0.001, 0.001]);
+      em.ensureComponentOn(box, WorldFrameDef);
+      em.ensureComponentOn(box, ColliderDef, {
+        shape: "AABB",
+        solid: false,
+        aabb: res.assets.cube.aabb,
+      });
+
+      const cloth = em.newEntity();
+      em.ensureComponentOn(cloth, ClothConstructDef, {
+        location: [0, 0, 0],
+        color: [0.9, 0.9, 0.8],
+        rows: 5,
+        columns: 5,
+        distance: 2,
+      });
+      const F = 100.0;
+      em.ensureComponentOn(cloth, ForceDef, [F, F, F]);
     }
   );
 }
