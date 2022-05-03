@@ -57,6 +57,11 @@ export class Renderer_WebGPU implements Renderer {
   private pool: MeshPool_WebGPU;
   private sceneData: SceneUniform.Data;
 
+  // displacement map and sampler
+  // TODO(@darzu): DISP
+  private clothTexture: GPUTexture;
+  private clothSampler: GPUSampler;
+
   private renderBundle: GPURenderBundle;
 
   private depthTexture: GPUTexture | null = null;
@@ -208,11 +213,36 @@ export class Renderer_WebGPU implements Renderer {
           visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
           buffer: { type: "uniform" },
         },
+        // TODO(@darzu): DISP
+        {
+          binding: 1,
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          sampler: { type: "filtering" }, // TODO(@darzu): what kind?
+        },
+        {
+          binding: 2,
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          texture: { sampleType: "float" }, // TODO(@darzu): what type?
+        },
       ],
     });
     const renderSceneUniBindGroup = this.device.createBindGroup({
       layout: renderSceneUniBindGroupLayout,
-      entries: [{ binding: 0, resource: { buffer: this.sceneUniformBuffer } }],
+      entries: [
+        {
+          binding: 0,
+          resource: { buffer: this.sceneUniformBuffer },
+        },
+        // TODO(@darzu): DISP
+        {
+          binding: 1,
+          resource: this.clothSampler,
+        },
+        {
+          binding: 2,
+          resource: this.clothTexture.createView(),
+        },
+      ],
     });
 
     // setup our second phase pipeline which renders meshes to the canvas
@@ -340,6 +370,19 @@ export class Renderer_WebGPU implements Renderer {
     // setup scene data:
     this.sceneData = setupScene();
 
+    // Displacement map
+    // TODO(@darzu): DISP
+    const CLOTH_SIZE = 10; // TODO(@darzu):
+    this.clothTexture = device.createTexture({
+      size: [CLOTH_SIZE, CLOTH_SIZE],
+      format: "r16float", // TODO(@darzu): format?
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+    });
+    this.clothSampler = device.createSampler({
+      magFilter: "linear",
+      minFilter: "linear",
+    });
+
     this.renderBundle = this.createRenderBundle([]);
   }
 
@@ -349,6 +392,7 @@ export class Renderer_WebGPU implements Renderer {
   public renderFrame(viewProj: mat4, handles: MeshHandle[]): void {
     this.checkCanvasResize();
 
+    // update scene data
     this.sceneData.cameraViewProjMatrix = viewProj;
 
     SceneUniform.serialize(this.scratchSceneUni, 0, this.sceneData);
@@ -356,6 +400,26 @@ export class Renderer_WebGPU implements Renderer {
       this.sceneUniformBuffer,
       0,
       this.scratchSceneUni.buffer
+    );
+
+    // update cloth data
+    // TODO(@darzu): DISP
+    const clothData = new Float32Array(10 * 10);
+    for (let x = 0; x < 10; x++) {
+      for (let y = 0; y < 10; y++) {
+        const i = y + x * 10;
+        clothData[i] = i * 0.1;
+      }
+    }
+    this.device.queue.writeTexture(
+      { texture: this.clothTexture },
+      clothData,
+      {
+        offset: 0,
+        bytesPerRow: 10 * Float32Array.BYTES_PER_ELEMENT,
+        rowsPerImage: 10,
+      },
+      [10, 10]
     );
 
     // update all mesh transforms
