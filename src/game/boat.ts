@@ -1,5 +1,5 @@
 import { EM, EntityManager, Entity, EntityW } from "../entity-manager.js";
-import { PhysicsTimerDef } from "../time.js";
+import { TimeDef } from "../time.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { jitter } from "../math.js";
 import { ColorDef } from "../color.js";
@@ -177,28 +177,26 @@ export const raiseBreakBoat = eventWizard(
 export function registerBoatSystems(em: EntityManager) {
   em.registerSystem(
     [BoatLocalDef, BoatPropsDef, RotationDef, LinearVelocityDef, AuthorityDef],
-    [PhysicsTimerDef, MeDef],
+    [TimeDef, MeDef],
     (boats, res) => {
-      for (let i = 0; i < res.physicsTimer.steps; i++) {
-        for (let o of boats) {
-          if (o.authority.pid !== res.me.pid) continue;
+      for (let o of boats) {
+        if (o.authority.pid !== res.me.pid) continue;
 
-          const rad = o.boatProps.wheelSpeed * res.physicsTimer.period;
-          o.boatProps.wheelDir += rad;
+        const rad = o.boatProps.wheelSpeed * res.time.dt;
+        o.boatProps.wheelDir += rad;
 
-          // rotate
-          quat.rotateY(o.rotation, quat.IDENTITY, o.boatProps.wheelDir);
+        // rotate
+        quat.rotateY(o.rotation, quat.IDENTITY, o.boatProps.wheelDir);
 
-          // rotate velocity
-          vec3.rotateY(
-            o.linearVelocity,
-            // TODO(@darzu): debugging
-            [-o.boatProps.speed, 0.0, 0],
-            // [o.boatProps.speed, -0.01, 0],
-            [0, 0, 0],
-            o.boatProps.wheelDir
-          );
-        }
+        // rotate velocity
+        vec3.rotateY(
+          o.linearVelocity,
+          // TODO(@darzu): debugging
+          [-o.boatProps.speed, 0.0, 0],
+          // [o.boatProps.speed, -0.01, 0],
+          [0, 0, 0],
+          o.boatProps.wheelDir
+        );
       }
     },
     "stepBoats"
@@ -206,9 +204,8 @@ export function registerBoatSystems(em: EntityManager) {
 
   em.registerSystem(
     [BoatLocalDef, AuthorityDef],
-    [PhysicsTimerDef, MeDef, PhysicsResultsDef],
+    [TimeDef, MeDef, PhysicsResultsDef],
     (boats, res) => {
-      const ms = res.physicsTimer.period * res.physicsTimer.steps;
       for (let o of boats) {
         if (o.authority.pid !== res.me.pid) continue;
 
@@ -220,7 +217,7 @@ export function registerBoatSystems(em: EntityManager) {
           (h) => !!em.findEntity(h, [ShipLocalDef])
         );
         if (seesPlayer) {
-          o.boatLocal.fireDelay -= ms;
+          o.boatLocal.fireDelay -= res.time.dt;
           // console.log(o.boat.fireDelay);
         }
 

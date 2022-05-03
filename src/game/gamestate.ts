@@ -12,7 +12,7 @@ import {
   PositionDef,
   RotationDef,
 } from "../physics/transform.js";
-import { PhysicsTimerDef } from "../time.js";
+import { TimeDef } from "../time.js";
 import { ScoreDef } from "./game.js";
 import { GroundSystemDef } from "./ground.js";
 import { LifetimeDef } from "./lifetime.js";
@@ -117,10 +117,10 @@ export const restartGame = eventWizard(
 export function registerGameStateSystems(em: EntityManager) {
   em.registerSystem(
     null,
-    [GameStateDef, PhysicsTimerDef, HostDef],
+    [GameStateDef, TimeDef, HostDef],
     ([], res) => {
       if (res.gameState.state === GameState.GAMEOVER) {
-        res.gameState.time += res.physicsTimer.period * res.physicsTimer.steps;
+        res.gameState.time += res.time.dt;
         if (res.gameState.time > RESTART_TIME_MS) {
           // Do we have a ship to restart onto yet?
           const ship = EM.filterEntities([ShipPropsDef, ShipLocalDef])[0];

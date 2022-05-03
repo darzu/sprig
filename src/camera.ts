@@ -11,10 +11,13 @@ import { max } from "./math.js";
 import { AuthorityDef, MeDef } from "./net/components.js";
 import { WorldFrameDef } from "./physics/nonintersection.js";
 import { PositionDef, RotationDef } from "./physics/transform.js";
-import { RendererWorldFrameDef } from "./render/renderer.js";
+import {
+  RendererWorldFrameDef,
+  SmoothedWorldFrameDef,
+} from "./render/renderer.js";
 import { computeNewError, reduceError } from "./smoothing.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
-import { PhysicsTimerDef } from "./time.js";
+import { TimeDef } from "./time.js";
 import { yawpitchToQuat } from "./yawpitch.js";
 
 export type PerspectiveMode = "perspective" | "ortho";
@@ -75,14 +78,12 @@ export function setCameraFollowPosition(
 export function registerCameraSystems(em: EntityManager) {
   em.registerSystem(
     null,
-    [CameraDef, PhysicsTimerDef],
+    [CameraDef, TimeDef],
     function (_, res) {
-      if (!res.physicsTimer.steps) return;
-      const dt = res.physicsTimer.steps * res.physicsTimer.period;
-      reduceError(res.camera.targetPositionError, dt);
-      reduceError(res.camera.targetRotationError, dt);
-      reduceError(res.camera.cameraPositionError, dt);
-      reduceError(res.camera.cameraRotationError, dt);
+      reduceError(res.camera.targetPositionError, res.time.dt);
+      reduceError(res.camera.targetRotationError, res.time.dt);
+      reduceError(res.camera.cameraPositionError, res.time.dt);
+      reduceError(res.camera.cameraRotationError, res.time.dt);
     },
     "smoothCamera"
   );
@@ -165,13 +166,11 @@ export function registerCameraSystems(em: EntityManager) {
     (_, resources) => {
       const { cameraView, camera, me, htmlCanvas } = resources;
 
-      let targetEnt = em.findEntity(camera.targetId, [WorldFrameDef]);
+      let targetEnt = em.findEntity(camera.targetId, [RendererWorldFrameDef]);
 
       if (!targetEnt) return;
 
-      let frame = targetEnt.world;
-      if (RendererWorldFrameDef.isOn(targetEnt))
-        frame = targetEnt.rendererWorldFrame;
+      const frame = targetEnt.rendererWorldFrame;
 
       // update aspect ratio and size
       cameraView.aspectRatio = Math.abs(

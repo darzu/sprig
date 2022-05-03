@@ -5,7 +5,7 @@ import { EM } from "./entity-manager.js";
 import { vec3 } from "./gl-matrix.js";
 import { onInit } from "./init.js";
 import { PositionDef } from "./physics/transform.js";
-import { PhysicsTimerDef } from "./time.js";
+import { TimeDef } from "./time.js";
 
 export type EaseFn = (percent: number) => number;
 
@@ -57,14 +57,13 @@ onInit(() => {
 
   EM.registerSystem(
     [AnimateToDef, PositionDef],
-    [PhysicsTimerDef],
+    [TimeDef],
     (cs, res) => {
       let toRemove: number[] = [];
 
       // advance the animation
-      const dt = res.physicsTimer.period;
       for (let c of cs) {
-        c.animateTo.progressMs += dt;
+        c.animateTo.progressMs += res.time.dt;
 
         const percentTime = c.animateTo.progressMs / c.animateTo.durationMs;
 
