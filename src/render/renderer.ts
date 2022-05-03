@@ -39,7 +39,7 @@ import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DeletedDef } from "../delete.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
-  "interpolate";
+  "extrapolate";
 
 export interface RenderableConstruct {
   readonly enabled: boolean;
@@ -235,8 +235,14 @@ function extrapolateFrames(
   quat.mul(out.rotation, next.rotation, out.rotation);
   const axis = tempVec();
   let angle = quat.getAxisAngle(axis, out.rotation);
-  if (angle > 180) angle -= 360; // assume the shortest path
-  angle = (angle * alpha) % 360;
+  // ensure we take the shortest path
+  if (angle > Math.PI) {
+    angle -= Math.PI * 2;
+  }
+  if (angle < -Math.PI) {
+    angle += Math.PI * 2;
+  }
+  angle = angle * alpha;
   quat.setAxisAngle(out.rotation, axis, angle);
   quat.mul(out.rotation, out.rotation, next.rotation);
 
