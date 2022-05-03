@@ -39,7 +39,7 @@ import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DeletedDef } from "../delete.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
-  "extrapolate";
+  "none";
 
 export interface RenderableConstruct {
   readonly enabled: boolean;
