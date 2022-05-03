@@ -1,4 +1,5 @@
 import { mat4, vec3, quat } from "../gl-matrix.js";
+import { range } from "../util.js";
 import {
   createMeshPool_WebGPU,
   Mesh,
@@ -10,6 +11,7 @@ import {
 } from "./mesh-pool.js";
 import { RenderableConstruct, Renderer } from "./renderer.js";
 import {
+  cloth_shader,
   MeshUniformMod,
   obj_fragShader,
   obj_vertShader,
@@ -59,7 +61,8 @@ export class Renderer_WebGPU implements Renderer {
 
   // displacement map and sampler
   // TODO(@darzu): DISP
-  private clothTexture: GPUTexture;
+  private clothTextures: [GPUTexture, GPUTexture];
+  private clothReadIdx = 1;
   private clothSampler: GPUSampler;
 
   private renderBundle: GPURenderBundle;
@@ -240,7 +243,7 @@ export class Renderer_WebGPU implements Renderer {
         },
         {
           binding: 2,
-          resource: this.clothTexture.createView(),
+          resource: this.clothTextures[this.clothReadIdx].createView(),
         },
       ],
     });
@@ -373,18 +376,36 @@ export class Renderer_WebGPU implements Renderer {
     // Displacement map
     // TODO(@darzu): DISP
     const CLOTH_SIZE = 10; // TODO(@darzu):
-    this.clothTexture = device.createTexture({
-      size: [CLOTH_SIZE, CLOTH_SIZE],
-      format: "rgba32float", // TODO(@darzu): format?
-      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
-    });
+    const createClothTex = () =>
+      device.createTexture({
+        size: [CLOTH_SIZE, CLOTH_SIZE],
+        format: "rgba32float", // TODO(@darzu): format?
+        usage:
+          GPUTextureUsage.COPY_DST |
+          GPUTextureUsage.STORAGE_BINDING |
+          GPUTextureUsage.TEXTURE_BINDING,
+      });
+    this.clothTextures = [createClothTex(), createClothTex()];
     this.clothSampler = device.createSampler({
       magFilter: "linear",
       minFilter: "linear",
     });
 
+    this.computePipeline = device.createComputePipeline({
+      compute: {
+        module: device.createShaderModule({
+          code: cloth_shader(),
+        }),
+        entryPoint: "main",
+      },
+    });
+
     this.renderBundle = this.createRenderBundle([]);
   }
+
+  // TODO(@darzu): DISP
+  private computePipeline: GPUComputePipeline;
+  // private computeBindGroup: GPUBindGroup;
 
   private scratchMIDs = new Set<number>();
 
@@ -415,20 +436,20 @@ export class Renderer_WebGPU implements Renderer {
     // }
     for (let i = 0; i < clothData.length; i++)
       clothData[i] = i * (1 / clothData.length);
-    this.device.queue.writeTexture(
-      { texture: this.clothTexture },
-      clothData,
-      {
-        offset: 0,
-        bytesPerRow: 10 * Float32Array.BYTES_PER_ELEMENT * 4,
-        rowsPerImage: 10,
-      },
-      {
-        width: 10,
-        height: 10,
-        depthOrArrayLayers: 1,
-      }
-    );
+    // this.device.queue.writeTexture(
+    //   { texture: this.clothTexture },
+    //   clothData,
+    //   {
+    //     offset: 0,
+    //     bytesPerRow: 10 * Float32Array.BYTES_PER_ELEMENT * 4,
+    //     rowsPerImage: 10,
+    //   },
+    //   {
+    //     width: 10,
+    //     height: 10,
+    //     depthOrArrayLayers: 1,
+    //   }
+    // );
 
     // update all mesh transforms
     this.gpuBufferWriteAllMeshUniforms(handles);
@@ -473,6 +494,35 @@ export class Renderer_WebGPU implements Renderer {
 
     // start collecting our render commands for this frame
     const commandEncoder = this.device.createCommandEncoder();
+
+    // run compute tasks
+    const clothWriteIdx = this.clothReadIdx;
+    this.clothReadIdx = (this.clothReadIdx + 1) % 2;
+    const cmpBindGroup = this.device.createBindGroup({
+      layout: this.computePipeline.getBindGroupLayout(0),
+      entries: [
+        // {
+        //   binding: 0,
+        //   resource: {
+        //     buffer: simParamBuffer,
+        //   },
+        // },
+        {
+          binding: 1,
+          resource: this.clothTextures[this.clothReadIdx].createView(),
+        },
+        {
+          binding: 2,
+          resource: this.clothTextures[clothWriteIdx].createView(),
+        },
+      ],
+    });
+
+    const cmpPassEncoder = commandEncoder.beginComputePass();
+    cmpPassEncoder.setPipeline(this.computePipeline);
+    cmpPassEncoder.setBindGroup(0, cmpBindGroup);
+    cmpPassEncoder.dispatchWorkgroups(1);
+    cmpPassEncoder.end();
 
     // render to the canvas' via our swap-chain
     const renderPassEncoder = commandEncoder.beginRenderPass({
