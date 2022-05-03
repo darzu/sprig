@@ -77,6 +77,9 @@ export const obj_vertShader = () =>
     };
 
     @group(0) @binding(0) var<uniform> scene : Scene;
+    @group(0) @binding(1) var dispSampler: sampler;
+    @group(0) @binding(2) var dispTexture: texture_2d<f32>;
+
     @group(1) @binding(0) var<uniform> model : Model;
 
     struct VertexOutput {
@@ -92,9 +95,22 @@ export const obj_vertShader = () =>
         ) -> VertexOutput {
         var output : VertexOutput;
         let worldPos: vec4<f32> = model.transform * vec4<f32>(position, 1.0);
-        output.worldPos = worldPos;
-        output.position = scene.cameraViewProjMatrix * worldPos;
+
+        // let uvInt: vec2<i32> = vec2<i32>(5, 5);
+        // let uvInt: vec2<i32> = vec2<i32>(10, i32(uv.x + 5.0));
+        let uvInt: vec2<i32> = vec2<i32>(i32(uv.x * 10.0), i32(uv.y * 10.0));
+        let texDisp = textureLoad(dispTexture, uvInt, 0);
+
+        // let finalPos = worldPos;
+        // let finalPos = vec4<f32>(worldPos.xy, worldPos.z + uv.x * 10.0, worldPos.w);
+        let finalPos = vec4<f32>(worldPos.xyz + texDisp.xyz, 1.0);
+
+        output.worldPos = finalPos;
+        output.position = scene.cameraViewProjMatrix * finalPos;
         output.normal = normalize(model.transform * vec4<f32>(normal, 0.0)).xyz;
+        // output.color = vec3<f32>(f32(uvInt.x), f32(uvInt.y), 1.0);
+        // output.color = texDisp.rgb;
+        // output.color = vec3(uv.xy, 1.0);
         output.color = color + model.tint;
         return output;
     }
@@ -103,10 +119,13 @@ export const obj_vertShader = () =>
 // TODO(@darzu): use dynamic background color
 // [0.6, 0.63, 0.6]
 
+// TODO(@darzu): DISP
 export const obj_fragShader = () =>
   shaderSceneStruct() +
   `
     @group(0) @binding(0) var<uniform> scene : Scene;
+    @group(0) @binding(1) var dispSampler: sampler;
+    @group(0) @binding(2) var dispTexture: texture_2d<f32>;
 
     struct VertexOutput {
         @location(0) @interpolate(flat) normal : vec3<f32>,
@@ -133,5 +152,6 @@ export const obj_fragShader = () =>
         let backgroundColor: vec3<f32> = vec3<f32>(0.6, 0.63, 0.6);
         let finalColor: vec3<f32> = mix(backgroundColor, gammaCorrected, fogVisibility);
         return vec4<f32>(finalColor, 1.0);
+        // return vec4<f32>(input.color, 1.0);
     }
 `;

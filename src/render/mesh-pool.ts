@@ -4,6 +4,7 @@ import { align, sum } from "../math.js";
 import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
 import { EM } from "../entity-manager.js";
 import { MeshUniformMod } from "./shader_obj.js";
+import { assert } from "../test.js";
 
 // TODO(@darzu): abstraction refinement:
 //  [ ] how do we handle multiple shaders with different mesh
@@ -48,9 +49,11 @@ export module Vertex {
     { shaderLocation: 0, offset: bytesPerVec3 * 0, format: "float32x3" }, // position
     { shaderLocation: 1, offset: bytesPerVec3 * 1, format: "float32x3" }, // color
     { shaderLocation: 2, offset: bytesPerVec3 * 2, format: "float32x3" }, // normals
+    // TODO(@darzu): DISP
+    { shaderLocation: 3, offset: bytesPerVec3 * 3, format: "float32x2" }, // uv
   ];
 
-  const names = ["position", "color", "normal"];
+  const names = ["position", "color", "normal", "uv"];
 
   export function GenerateWGSLVertexInputStruct(terminator: "," | ";"): string {
     // Example output:
@@ -58,7 +61,7 @@ export module Vertex {
     // @location(0) position : vec3<f32>,
     // @location(1) color : vec3<f32>,
     // @location(2) normal : vec3<f32>,
-    // @location(3) kind : u32,
+    // @location(3) uv : vec2<f32>,
     // `
 
     let res = ``;
@@ -79,10 +82,15 @@ export module Vertex {
 
   // these help us pack and use vertices in that format
   export const ByteSize =
-    bytesPerVec3 /*pos*/ + bytesPerVec3 /*color*/ + bytesPerVec3; /*normal*/
+    bytesPerVec3 /*pos*/ +
+    bytesPerVec3 /*color*/ +
+    bytesPerVec3 /*normal*/ +
+    bytesPerVec2; /*uv*/
 
   // for performance reasons, we keep scratch buffers around
-  const scratch_f32 = new Float32Array(3 + 3 + 3);
+  const scratch_f32 = new Float32Array(
+    ByteSize / Float32Array.BYTES_PER_ELEMENT
+  );
   const scratch_f32_as_u8 = new Uint8Array(scratch_f32.buffer);
   const scratch_u32 = new Uint32Array(1);
   const scratch_u32_as_u8 = new Uint8Array(scratch_u32.buffer);
@@ -91,7 +99,8 @@ export module Vertex {
     byteOffset: number,
     pos: vec3,
     color: vec3,
-    normal: vec3
+    normal: vec3,
+    uv: vec2
   ) {
     scratch_f32[0] = pos[0];
     scratch_f32[1] = pos[1];
@@ -102,6 +111,10 @@ export module Vertex {
     scratch_f32[6] = normal[0];
     scratch_f32[7] = normal[1];
     scratch_f32[8] = normal[2];
+    scratch_f32[9] = uv[0];
+    scratch_f32[10] = uv[1];
+    // TODO(@darzu):
+    // if (uv[0] > 0 || uv[1] > 0) console.log(uv);
     buffer.set(scratch_f32_as_u8, byteOffset);
   }
 
@@ -111,14 +124,16 @@ export module Vertex {
     vertexCount: number,
     positions: Float32Array,
     colors: Float32Array,
-    normals: Float32Array
+    normals: Float32Array,
+    uv: Float32Array
   ) {
     if (
       false ||
       buffer.length < vertexCount * ByteSize ||
       positions.length < vertexCount * 3 ||
       colors.length < vertexCount * 3 ||
-      normals.length < vertexCount * 3
+      normals.length < vertexCount * 3 ||
+      uv.length < vertexCount * 2
     )
       throw "buffer too short!";
     // TODO(@darzu): This only works because they have the same element size. Not sure what to do if that changes.
@@ -137,6 +152,9 @@ export module Vertex {
       normals[i * 3 + 0] = f32View[f32_i + 6];
       normals[i * 3 + 1] = f32View[f32_i + 7];
       normals[i * 3 + 2] = f32View[f32_i + 8];
+      // TODO(@darzu): DISP
+      normals[i * 2 + 0] = f32View[f32_i + 9];
+      normals[i * 2 + 1] = f32View[f32_i + 10];
     }
   }
 }
@@ -317,7 +335,7 @@ export interface MeshPoolBuffers_WebGL {
 export type MeshPool_WebGL = MeshPool & MeshPoolBuffers_WebGL;
 
 export interface MeshBuilder {
-  addVertex: (pos: vec3, color: vec3, normal: vec3) => void;
+  addVertex: (pos: vec3, color: vec3, normal: vec3, uv: vec2) => void;
   addTri: (ind: vec3) => void;
   addLine: (ind: vec2) => void;
   setUniform: (
@@ -329,7 +347,7 @@ export interface MeshBuilder {
   finish: () => MeshHandle;
 }
 interface MeshBuilderInternal {
-  addVertex: (pos: vec3, color: vec3, normal: vec3) => void;
+  addVertex: (pos: vec3, color: vec3, normal: vec3, uv: vec2) => void;
   addTri: (ind: vec3) => void;
   addLine: (ind: vec2) => void;
   setUniform: (
@@ -347,6 +365,7 @@ export interface Mesh {
   tri: vec3[];
   colors: vec3[]; // colors per triangle in r,g,b float [0-1] format
   lines?: vec2[];
+  uvs?: vec2[];
   // format flags:
   usesProvoking?: boolean;
   verticesUnshared?: boolean; // TODO(@darzu): support
@@ -368,6 +387,7 @@ export function unshareProvokingVerticesWithMap(input: Mesh): {
   posMap: Map<number, number>;
 } {
   const pos: vec3[] = [...input.pos];
+  const uvs: vec2[] | undefined = input.uvs ? [...input.uvs] : undefined;
   const tri: vec3[] = [];
   const provoking: { [key: number]: boolean } = {};
   const posMap: Map<number, number> = new Map();
@@ -391,11 +411,13 @@ export function unshareProvokingVerticesWithMap(input: Mesh): {
       const i3 = pos.length;
       pos.push(input.pos[i0]);
       posMap.set(i3, i0);
+      if (uvs) uvs.push(input.uvs![i0]);
       provoking[i3] = true;
       tri.push([i3, i1, i2]);
     }
   });
-  const mesh: Mesh = { ...input, pos, tri, usesProvoking: true };
+  const mesh: Mesh = { ...input, pos, uvs, tri, usesProvoking: true };
+
   return { mesh, posMap };
 }
 export function unshareProvokingVertices(input: Mesh): Mesh {
@@ -516,7 +538,9 @@ export function createMeshPool_WebGL(
     const positions = new Float32Array(numVerts * 3);
     const colors = new Float32Array(numVerts * 3);
     const normals = new Float32Array(numVerts * 3);
-    Vertex.Deserialize(data, numVerts, positions, colors, normals);
+    // TODO(@darzu): DISP
+    const uvs = new Float32Array(numVerts * 2);
+    Vertex.Deserialize(data, numVerts, positions, colors, normals, uvs);
 
     const vNumOffset = offset / Vertex.ByteSize;
 
@@ -655,7 +679,8 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
     );
     m.pos.forEach((pos, i) => {
       // this is placeholder vert data which will be updated later by serializeMeshVertices
-      b.addVertex(pos, DEFAULT_VERT_COLOR, [1.0, 0.0, 0.0]);
+      // TODO(@darzu): DISP calculation
+      b.addVertex(pos, DEFAULT_VERT_COLOR, [1.0, 0.0, 0.0], [0.0, 0.0]);
     });
     m.tri.forEach((triInd, i) => {
       b.addTri(triInd);
@@ -743,24 +768,37 @@ function serializeMeshVertices(m: Mesh, verticesMap: Uint8Array) {
 
   m.pos.forEach((pos, i) => {
     const vOff = i * Vertex.ByteSize;
+    const uv: vec2 = m.uvs ? m.uvs[i] : [0.0, 0.0];
     Vertex.serialize(
       verticesMap,
       vOff,
       pos,
       DEFAULT_VERT_COLOR,
-      [1.0, 0.0, 0.0]
+      [1.0, 0.0, 0.0],
+      uv
     );
   });
   m.tri.forEach((triInd, i) => {
     // set provoking vertex data
     // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
-    const vOff = triInd[0] * Vertex.ByteSize;
+    const vi = triInd[0];
+    const vOff = vi * Vertex.ByteSize;
     const normal = computeTriangleNormal(
       m.pos[triInd[0]],
       m.pos[triInd[1]],
       m.pos[triInd[2]]
     );
-    Vertex.serialize(verticesMap, vOff, m.pos[triInd[0]], m.colors[i], normal);
+    // TODO(@darzu): DISP
+    // TODO(@darzu): set UVs
+    const uv: vec2 = m.uvs ? m.uvs[vi] : [0.0, 0.0];
+    Vertex.serialize(
+      verticesMap,
+      vOff,
+      m.pos[triInd[0]],
+      m.colors[i],
+      normal,
+      uv
+    );
   });
 }
 
@@ -785,10 +823,10 @@ function createMeshBuilder(
   let numLines = 0;
 
   // TODO(@darzu): VERTEX FORMAT
-  function addVertex(pos: vec3, color: vec3, normal: vec3): void {
+  function addVertex(pos: vec3, color: vec3, normal: vec3, uv: vec2): void {
     if (meshFinished) throw "trying to use finished MeshBuilder";
     const vOff = vByteOff + numVerts * Vertex.ByteSize;
-    Vertex.serialize(maps.verticesMap, vOff, pos, color, normal);
+    Vertex.serialize(maps.verticesMap, vOff, pos, color, normal, uv);
     numVerts += 1;
   }
   let _scratchTri = vec3.create();

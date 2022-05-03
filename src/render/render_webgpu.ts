@@ -222,7 +222,7 @@ export class Renderer_WebGPU implements Renderer {
         {
           binding: 2,
           visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-          texture: { sampleType: "float" }, // TODO(@darzu): what type?
+          texture: { sampleType: "unfilterable-float" }, // TODO(@darzu): what type?
         },
       ],
     });
@@ -375,7 +375,7 @@ export class Renderer_WebGPU implements Renderer {
     const CLOTH_SIZE = 10; // TODO(@darzu):
     this.clothTexture = device.createTexture({
       size: [CLOTH_SIZE, CLOTH_SIZE],
-      format: "r16float", // TODO(@darzu): format?
+      format: "rgba32float", // TODO(@darzu): format?
       usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
     });
     this.clothSampler = device.createSampler({
@@ -404,22 +404,30 @@ export class Renderer_WebGPU implements Renderer {
 
     // update cloth data
     // TODO(@darzu): DISP
-    const clothData = new Float32Array(10 * 10);
-    for (let x = 0; x < 10; x++) {
-      for (let y = 0; y < 10; y++) {
-        const i = y + x * 10;
-        clothData[i] = i * 0.1;
-      }
-    }
+    const clothData = new Float32Array(10 * 10 * 4);
+    // for (let x = 0; x < 10; x++) {
+    //   for (let y = 0; y < 10; y++) {
+    //     const i = (y + x * 10) * 3;
+    //     clothData[i + 0] = i * 10;
+    //     clothData[i + 1] = i * 10;
+    //     clothData[i + 2] = i * 10;
+    //   }
+    // }
+    for (let i = 0; i < clothData.length; i++)
+      clothData[i] = i * (1 / clothData.length);
     this.device.queue.writeTexture(
       { texture: this.clothTexture },
       clothData,
       {
         offset: 0,
-        bytesPerRow: 10 * Float32Array.BYTES_PER_ELEMENT,
+        bytesPerRow: 10 * Float32Array.BYTES_PER_ELEMENT * 4,
         rowsPerImage: 10,
       },
-      [10, 10]
+      {
+        width: 10,
+        height: 10,
+        depthOrArrayLayers: 1,
+      }
     );
 
     // update all mesh transforms
