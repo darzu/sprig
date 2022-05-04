@@ -220,6 +220,48 @@ export module SceneUniform {
     buffer.set(scratch_f32_as_u8, byteOffset);
   }
 }
+export module RopePoint {
+  export interface Data {
+    position: vec3;
+    prevPosition: vec3;
+    locked: number;
+  }
+
+  const _byteCounts = [3 * 4, 3 * 4, 1 * 4];
+
+  const _offsets = _byteCounts.reduce(
+    (p, n) => [...p, p[p.length - 1] + n],
+    [0]
+  );
+
+  // TODO(@darzu): SCENE FORMAT
+  // defines the format of our scene's uniform data
+  export const ByteSizeExact = sum(_byteCounts);
+  export const ByteSizeAligned = align(ByteSizeExact, 256); // uniform objects must be 256 byte aligned
+
+  export function generateWGSLUniformStruct() {
+    // TODO(@darzu): enforce agreement w/ Scene interface
+    return `
+            position : vec3<f32>,
+            prevPosition : vec3<f32>,
+            locked : u32,
+        `;
+  }
+
+  const scratch_f32 = new Float32Array(sum(_byteCounts));
+  const scratch_f32_as_u8 = new Uint8Array(scratch_f32.buffer);
+  export function serialize(
+    buffer: Uint8Array,
+    byteOffset: number,
+    data: Data
+  ) {
+    scratch_f32.set(data.position, _offsets[0] / 4);
+    scratch_f32.set(data.prevPosition, _offsets[1] / 4);
+    scratch_f32_as_u8[_offsets[2]] = data.locked ? 1 : 0;
+    // scratch_f32.set(data.lightViewProjMatrix, _offsets[1]);
+    buffer.set(scratch_f32_as_u8, byteOffset);
+  }
+}
 
 // TODO(@darzu): WORK IN PROGRESS. Unclear this is how we want to do different shader uniforms
 // TODO(@darzu): WIP interfaces for shaders

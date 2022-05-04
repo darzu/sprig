@@ -6,6 +6,7 @@ import {
   MeshHandle,
   MeshPoolOpts,
   MeshPool_WebGPU,
+  RopePoint,
   SceneUniform,
   Vertex,
 } from "./mesh-pool.js";
@@ -15,6 +16,7 @@ import {
   MeshUniformMod,
   obj_fragShader,
   obj_vertShader,
+  rope_shader,
 } from "./shader_obj.js";
 
 const PIXEL_PER_PX: number | null = null; // 0.5;
@@ -58,6 +60,15 @@ export class Renderer_WebGPU implements Renderer {
 
   private pool: MeshPool_WebGPU;
   private sceneData: SceneUniform.Data;
+
+  // TODO(@darzu): ROPE
+  private ropeData: RopePoint.Data[];
+  private ropeBuffer: GPUBuffer;
+  private ropeLen: number = 10;
+  private scratchRopeData = new Uint8Array(
+    RopePoint.ByteSizeAligned * this.ropeLen
+  );
+  private cmpRopePipeline: GPUComputePipeline;
 
   // displacement map and sampler
   // TODO(@darzu): DISP
@@ -373,6 +384,23 @@ export class Renderer_WebGPU implements Renderer {
     // setup scene data:
     this.sceneData = setupScene();
 
+    // setup rope
+    // TODO(@darzu): ROPE
+    const mkRope: (i: number) => RopePoint.Data = (i) => ({
+      position: [0, 10 - i, 0],
+      prevPosition: [0, 10 - i, 0],
+      locked: i === 0 ? 1 : 0,
+    });
+    this.ropeData = range(this.ropeLen).map((_, i) => mkRope(i));
+    this.ropeBuffer = device.createBuffer({
+      size: RopePoint.ByteSizeAligned * this.ropeData.length,
+      usage:
+        GPUBufferUsage.VERTEX |
+        GPUBufferUsage.STORAGE |
+        GPUBufferUsage.COPY_DST,
+      mappedAtCreation: false,
+    });
+
     // Displacement map
     // TODO(@darzu): DISP
     const CLOTH_SIZE = 10; // TODO(@darzu):
@@ -422,10 +450,21 @@ export class Renderer_WebGPU implements Renderer {
       );
     }
 
-    this.computePipeline = device.createComputePipeline({
+    // TODO(@darzu): DISP
+    this.cmpClothPipeline = device.createComputePipeline({
       compute: {
         module: device.createShaderModule({
           code: cloth_shader(),
+        }),
+        entryPoint: "main",
+      },
+    });
+
+    // TODO(@darzu): ROPE
+    this.cmpRopePipeline = device.createComputePipeline({
+      compute: {
+        module: device.createShaderModule({
+          code: rope_shader(),
         }),
         entryPoint: "main",
       },
@@ -435,7 +474,7 @@ export class Renderer_WebGPU implements Renderer {
   }
 
   // TODO(@darzu): DISP
-  private computePipeline: GPUComputePipeline;
+  private cmpClothPipeline: GPUComputePipeline;
   // private computeBindGroup: GPUBindGroup;
 
   private scratchMIDs = new Set<number>();
@@ -455,6 +494,21 @@ export class Renderer_WebGPU implements Renderer {
       0,
       this.scratchSceneUni.buffer
     );
+
+    // update rope data?
+    // TODO(@darzu): ROPE
+    for (let i = 0; i < this.ropeLen; i++)
+      RopePoint.serialize(
+        this.scratchRopeData,
+        i * RopePoint.ByteSizeAligned,
+        this.ropeData[i]
+      );
+    this.device.queue.writeBuffer(
+      this.ropeBuffer,
+      0,
+      this.scratchRopeData.buffer
+    );
+    // TODO(@darzu): how do we read out from a GPU buffer?
 
     // update all mesh transforms
     this.gpuBufferWriteAllMeshUniforms(handles);
@@ -501,10 +555,11 @@ export class Renderer_WebGPU implements Renderer {
     const commandEncoder = this.device.createCommandEncoder();
 
     // run compute tasks
+    // TODO(@darzu): DISP
     const clothWriteIdx = this.clothReadIdx;
     this.clothReadIdx = (this.clothReadIdx + 1) % 2;
-    const cmpBindGroup = this.device.createBindGroup({
-      layout: this.computePipeline.getBindGroupLayout(0),
+    const cmpClothBindGroup = this.device.createBindGroup({
+      layout: this.cmpClothPipeline.getBindGroupLayout(0),
       entries: [
         // {
         //   binding: 0,
@@ -523,11 +578,34 @@ export class Renderer_WebGPU implements Renderer {
       ],
     });
 
-    const cmpPassEncoder = commandEncoder.beginComputePass();
-    cmpPassEncoder.setPipeline(this.computePipeline);
-    cmpPassEncoder.setBindGroup(0, cmpBindGroup);
-    cmpPassEncoder.dispatchWorkgroups(1);
-    cmpPassEncoder.end();
+    const cmpClothPassEncoder = commandEncoder.beginComputePass();
+    cmpClothPassEncoder.setPipeline(this.cmpClothPipeline);
+    cmpClothPassEncoder.setBindGroup(0, cmpClothBindGroup);
+    cmpClothPassEncoder.dispatchWorkgroups(1);
+    cmpClothPassEncoder.end();
+
+    // TODO(@darzu): ROPE
+    const cmpRopeBindGroup = this.device.createBindGroup({
+      layout: this.cmpRopePipeline.getBindGroupLayout(0),
+      entries: [
+        // {
+        //   binding: 0,
+        //   resource: {
+        //     buffer: simParamBuffer,
+        //   },
+        // },
+        {
+          binding: 1,
+          resource: { buffer: this.ropeBuffer },
+        },
+      ],
+    });
+
+    const cmpRopePassEncoder = commandEncoder.beginComputePass();
+    cmpRopePassEncoder.setPipeline(this.cmpRopePipeline);
+    cmpRopePassEncoder.setBindGroup(0, cmpRopeBindGroup);
+    cmpRopePassEncoder.dispatchWorkgroups(1);
+    cmpRopePassEncoder.end();
 
     // render to the canvas' via our swap-chain
     const renderPassEncoder = commandEncoder.beginRenderPass({

@@ -1,6 +1,6 @@
 import { mat4, vec3 } from "../gl-matrix.js";
 import { align, sum } from "../math.js";
-import { Vertex } from "./mesh-pool.js";
+import { RopePoint, Vertex } from "./mesh-pool.js";
 import { shaderSceneStruct } from "./render_webgpu.js";
 
 export module MeshUniformMod {
@@ -181,6 +181,29 @@ export const cloth_shader = () =>
   
     // textureStore(outTex, uvInt, vec4<f32>(texDisp.xyz + vec3<f32>(0.01), 1.0));
     textureStore(outTex, uvInt, vec4<f32>(texDisp.xyz * 1.01, 1.0));
+  }
+  
+  `;
+
+export const rope_shader = () =>
+  `
+  struct RopePoint {
+    ${RopePoint.generateWGSLUniformStruct()}
+  };
+  struct RopePoints {
+    ropePoints : array<RopePoint>,
+  };
+
+  @group(0) @binding(1) var<storage, read_write> ropePoints : RopePoints;
+  
+  @stage(compute) @workgroup_size(64)
+  fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
+    var index : u32 = GlobalInvocationID.x;
+
+    let p = ropePoints.ropePoints[index];
+
+    ropePoints.ropePoints[index].prevPosition = p.position;
+    ropePoints.ropePoints[index].position *= 1.01;
   }
   
   `;
