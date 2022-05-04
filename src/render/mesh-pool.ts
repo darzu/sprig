@@ -229,22 +229,33 @@ export module RopePoint {
 
   const _byteCounts = [3 * 4, 3 * 4, 1 * 4];
 
-  const _offsets = _byteCounts.reduce(
+  const _byteOffsets = _byteCounts.reduce(
     (p, n) => [...p, p[p.length - 1] + n],
     [0]
   );
 
   // define the format of our vertices (this needs to agree with the inputs to the vertex shaders)
+  // const prevOffset = bytesPerVec3 * 1 + 4;
   export const WebGPUFormat: GPUVertexAttribute[] = [
-    { shaderLocation: 1, offset: bytesPerVec3 * 1, format: "float32x3" },
-    { shaderLocation: 2, offset: bytesPerVec3 * 2, format: "float32x3" },
-    { shaderLocation: 3, offset: bytesPerVec3 * 3, format: "uint32" },
+    { shaderLocation: 1, offset: 0, format: "float32x3" },
+    {
+      shaderLocation: 2,
+      offset: bytesPerVec3 * 1,
+      format: "float32x3",
+    },
+    {
+      shaderLocation: 3,
+      offset: bytesPerVec3 * 2,
+      format: "uint32",
+    },
   ];
 
   // TODO(@darzu): SCENE FORMAT
   // defines the format of our scene's uniform data
   export const ByteSizeExact = sum(_byteCounts);
-  export const ByteSizeAligned = align(ByteSizeExact, 256); // uniform objects must be 256 byte aligned
+  // vertex objs should probably be 16 byte aligned
+  // TODO(@darzu): alignment https://www.w3.org/TR/WGSL/#alignment-and-size
+  export const ByteSizeAligned = align(ByteSizeExact, 16);
 
   export function generateWGSLUniformStruct() {
     // TODO(@darzu): enforce agreement w/ Scene interface
@@ -255,18 +266,19 @@ export module RopePoint {
         `;
   }
 
-  const scratch_f32 = new Float32Array(sum(_byteCounts));
-  const scratch_f32_as_u8 = new Uint8Array(scratch_f32.buffer);
+  const scratch_u8 = new Uint8Array(sum(_byteCounts));
+  const scratch_as_f32 = new Float32Array(scratch_u8.buffer);
+  const scratch_as_u32 = new Uint32Array(scratch_u8.buffer);
   export function serialize(
     buffer: Uint8Array,
     byteOffset: number,
     data: Data
   ) {
-    scratch_f32.set(data.position, _offsets[0] / 4);
-    scratch_f32.set(data.prevPosition, _offsets[1] / 4);
-    scratch_f32_as_u8[_offsets[2]] = data.locked ? 1 : 0;
+    scratch_as_f32.set(data.position, _byteOffsets[0] / 4);
+    scratch_as_f32.set(data.prevPosition, _byteOffsets[1] / 4);
+    scratch_as_u32[_byteOffsets[2] / 4] = data.locked ? 1 : 0;
     // scratch_f32.set(data.lightViewProjMatrix, _offsets[1]);
-    buffer.set(scratch_f32_as_u8, byteOffset);
+    buffer.set(scratch_u8, byteOffset);
   }
 }
 

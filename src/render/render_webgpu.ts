@@ -384,11 +384,11 @@ export class Renderer_WebGPU implements Renderer {
               },
             ],
           },
-          // {
-          //   stepMode: "instance",
-          //   arrayStride: RopePoint.ByteSizeAligned,
-          //   attributes: RopePoint.WebGPUFormat,
-          // },
+          {
+            stepMode: "instance",
+            arrayStride: RopePoint.ByteSizeAligned,
+            attributes: RopePoint.WebGPUFormat,
+          },
         ],
       },
       fragment: {
@@ -405,7 +405,7 @@ export class Renderer_WebGPU implements Renderer {
     bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
     bundleEnc.setIndexBuffer(this.particleIndexBuffer, "uint16");
     bundleEnc.setVertexBuffer(0, this.particleVertexBuffer);
-    // bundleEnc.setVertexBuffer(1, this.ropeBuffer);
+    bundleEnc.setVertexBuffer(1, this.ropeBuffer);
     bundleEnc.drawIndexed(12, this.ropeLen, 0, 0);
     // console.dir(rndrRopePipeline);
     // console.dir(this.particleIndexBuffer);

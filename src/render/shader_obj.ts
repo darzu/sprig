@@ -220,13 +220,13 @@ export const particle_shader = () =>
   @stage(vertex)
   fn vert_main(
     @location(0) vertPos : vec3<f32>,
-    // @location(1) position : vec3<f32>,
-    // @location(2) prevPosition : vec3<f32>,
-    // @location(3) locked : u32,
+    @location(1) position : vec3<f32>,
+    @location(2) prevPosition : vec3<f32>,
+    @location(3) locked : u32,
   ) -> @builtin(position) vec4<f32> {
     // return vec4<f32>(vertPos, 1.0);
-    let worldPos = vertPos;
-    // let worldPos = vertPos + position;
+    // let worldPos = vertPos;
+    let worldPos = vertPos + position;
     let screenPos = scene.cameraViewProjMatrix * vec4<f32>(worldPos, 1.0);
 
     // return vec4<f32>(vertPos, 1.0);
