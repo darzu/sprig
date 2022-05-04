@@ -454,19 +454,25 @@ export class Renderer_WebGPU implements Renderer {
     // setup rope
     // TODO(@darzu): ROPE
     const mkRope: (i: number) => RopePoint.Data = (i) => ({
-      position: [0, 10 - i, 0],
+      position: [0, 10 - i, i * 0.5],
       prevPosition: [0, 10 - i, 0],
       locked: i === 0 ? 1 : 0,
     });
     this.ropeData = range(this.ropeLen).map((_, i) => mkRope(i));
     this.ropeBuffer = device.createBuffer({
       size: RopePoint.ByteSizeAligned * this.ropeData.length,
-      usage:
-        GPUBufferUsage.VERTEX |
-        GPUBufferUsage.STORAGE |
-        GPUBufferUsage.COPY_DST,
-      mappedAtCreation: false,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
+      // GPUBufferUsage.COPY_DST,
+      mappedAtCreation: true,
     });
+    for (let i = 0; i < this.ropeLen; i++)
+      RopePoint.serialize(
+        this.scratchRopeData,
+        i * RopePoint.ByteSizeAligned,
+        this.ropeData[i]
+      );
+    new Uint8Array(this.ropeBuffer.getMappedRange()).set(this.scratchRopeData);
+    this.ropeBuffer.unmap();
 
     // Displacement map
     // TODO(@darzu): DISP
@@ -594,17 +600,17 @@ export class Renderer_WebGPU implements Renderer {
 
     // update rope data?
     // TODO(@darzu): ROPE
-    for (let i = 0; i < this.ropeLen; i++)
-      RopePoint.serialize(
-        this.scratchRopeData,
-        i * RopePoint.ByteSizeAligned,
-        this.ropeData[i]
-      );
-    this.device.queue.writeBuffer(
-      this.ropeBuffer,
-      0,
-      this.scratchRopeData.buffer
-    );
+    // for (let i = 0; i < this.ropeLen; i++)
+    //   RopePoint.serialize(
+    //     this.scratchRopeData,
+    //     i * RopePoint.ByteSizeAligned,
+    //     this.ropeData[i]
+    //   );
+    // this.device.queue.writeBuffer(
+    //   this.ropeBuffer,
+    //   0,
+    //   this.scratchRopeData.buffer
+    // );
     // TODO(@darzu): how do we read out from a GPU buffer?
 
     // update all mesh transforms

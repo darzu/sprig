@@ -226,7 +226,7 @@ export const particle_shader = () =>
   ) -> @builtin(position) vec4<f32> {
     // return vec4<f32>(vertPos, 1.0);
     // let worldPos = vertPos;
-    let worldPos = vertPos + position;
+    let worldPos = vertPos * 0.5 + position;
     let screenPos = scene.cameraViewProjMatrix * vec4<f32>(worldPos, 1.0);
 
     // return vec4<f32>(vertPos, 1.0);
