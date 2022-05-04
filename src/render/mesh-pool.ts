@@ -234,6 +234,13 @@ export module RopePoint {
     [0]
   );
 
+  // define the format of our vertices (this needs to agree with the inputs to the vertex shaders)
+  export const WebGPUFormat: GPUVertexAttribute[] = [
+    { shaderLocation: 1, offset: bytesPerVec3 * 1, format: "float32x3" },
+    { shaderLocation: 2, offset: bytesPerVec3 * 2, format: "float32x3" },
+    { shaderLocation: 3, offset: bytesPerVec3 * 3, format: "uint32" },
+  ];
+
   // TODO(@darzu): SCENE FORMAT
   // defines the format of our scene's uniform data
   export const ByteSizeExact = sum(_byteCounts);

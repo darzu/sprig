@@ -207,3 +207,36 @@ export const rope_shader = () =>
   }
   
   `;
+
+// TODO(@darzu): ROPE
+// Particle
+
+export const particle_shader = () =>
+  `
+  ${shaderSceneStruct()}
+
+  @group(0) @binding(0) var<uniform> scene : Scene;
+  
+  @stage(vertex)
+  fn vert_main(
+    @location(0) vertPos : vec3<f32>,
+    // @location(1) position : vec3<f32>,
+    // @location(2) prevPosition : vec3<f32>,
+    // @location(3) locked : u32,
+  ) -> @builtin(position) vec4<f32> {
+    // return vec4<f32>(vertPos, 1.0);
+    let worldPos = vertPos;
+    // let worldPos = vertPos + position;
+    let screenPos = scene.cameraViewProjMatrix * vec4<f32>(worldPos, 1.0);
+
+    // return vec4<f32>(vertPos, 1.0);
+    // return vec4<f32>(vertPos + position, 1.0);
+    return screenPos;
+  }
+
+  @stage(fragment)
+  fn frag_main() -> @location(0) vec4<f32> {
+    return vec4<f32>(1.0, 1.0, 1.0, 1.0);
+  }
+
+`;

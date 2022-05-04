@@ -16,6 +16,7 @@ import {
   MeshUniformMod,
   obj_fragShader,
   obj_vertShader,
+  particle_shader,
   rope_shader,
 } from "./shader_obj.js";
 
@@ -69,6 +70,9 @@ export class Renderer_WebGPU implements Renderer {
     RopePoint.ByteSizeAligned * this.ropeLen
   );
   private cmpRopePipeline: GPUComputePipeline;
+  // private rndrRopePipeline: GPURenderPipeline;
+  private particleVertexBuffer: GPUBuffer;
+  private particleIndexBuffer: GPUBuffer;
 
   // displacement map and sampler
   // TODO(@darzu): DISP
@@ -316,7 +320,7 @@ export class Renderer_WebGPU implements Renderer {
     bundleEnc.setVertexBuffer(0, this.pool.verticesBuffer);
 
     // render triangles first
-    if (this.drawTris) {
+    if (this.drawTris && false) {
       bundleEnc.setPipeline(renderPipeline_tris);
       // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
       bundleEnc.setIndexBuffer(this.pool.triIndicesBuffer, "uint16");
@@ -346,6 +350,69 @@ export class Renderer_WebGPU implements Renderer {
         );
       }
     }
+
+    // draw particles
+    // TODO(@darzu): ROPE ?
+    const particleShader = this.device.createShaderModule({
+      code: particle_shader(),
+    });
+    const rndrRopePipeline = this.device.createRenderPipeline({
+      primitive: renderPipelineDesc_tris.primitive,
+      depthStencil: renderPipelineDesc_tris.depthStencil,
+      multisample: renderPipelineDesc_tris.multisample,
+      layout: this.device.createPipelineLayout({
+        bindGroupLayouts: [renderSceneUniBindGroupLayout],
+      }),
+      vertex: {
+        module: particleShader,
+        entryPoint: "vert_main",
+        buffers: [
+          // {
+          //   arrayStride: Vertex.ByteSize,
+          //   attributes: Vertex.WebGPUFormat,
+          // },
+          {
+            stepMode: "vertex",
+            // arrayStride: Vertex.ByteSize,
+            arrayStride: Float32Array.BYTES_PER_ELEMENT * 4, // TODO(@darzu): alignment requirement?
+            // arrayStride: Float32Array.BYTES_PER_ELEMENT * 3,
+            attributes: [
+              {
+                shaderLocation: 0,
+                offset: 0,
+                format: "float32x3",
+              },
+            ],
+          },
+          // {
+          //   stepMode: "instance",
+          //   arrayStride: RopePoint.ByteSizeAligned,
+          //   attributes: RopePoint.WebGPUFormat,
+          // },
+        ],
+      },
+      fragment: {
+        module: particleShader,
+        entryPoint: "frag_main",
+        targets: [
+          {
+            format: this.presentationFormat,
+          },
+        ],
+      },
+    });
+    bundleEnc.setPipeline(rndrRopePipeline);
+    bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
+    bundleEnc.setIndexBuffer(this.particleIndexBuffer, "uint16");
+    bundleEnc.setVertexBuffer(0, this.particleVertexBuffer);
+    // bundleEnc.setVertexBuffer(1, this.ropeBuffer);
+    bundleEnc.drawIndexed(12, this.ropeLen, 0, 0);
+    // console.dir(rndrRopePipeline);
+    // console.dir(this.particleIndexBuffer);
+    // console.dir(this.particleVertexBuffer);
+    // console.dir(this.ropeBuffer);
+    // console.dir(this.ropeLen);
+    // TODO(@darzu):
 
     this.renderBundle = bundleEnc.finish();
     return this.renderBundle;
@@ -469,7 +536,37 @@ export class Renderer_WebGPU implements Renderer {
         entryPoint: "main",
       },
     });
+    // TODO(@darzu): ROPE
+    // TODO(@darzu): Looks like there are alignment requirements even on
+    //    the vertex buffer! https://www.w3.org/TR/WGSL/#alignment-and-size
+    const particleVertexBufferData = new Float32Array([
+      0, 1, 0, 0 /*alignment*/, -1, 0, -1, 0 /*alignment*/, 1, 0, -1,
+      0 /*alignment*/, 0, 0, 1, 0 /*alignment*/,
+    ]);
+    this.particleVertexBuffer = device.createBuffer({
+      size: particleVertexBufferData.byteLength,
+      usage: GPUBufferUsage.VERTEX,
+      mappedAtCreation: true,
+    });
+    new Float32Array(this.particleVertexBuffer.getMappedRange()).set(
+      particleVertexBufferData
+    );
+    this.particleVertexBuffer.unmap();
 
+    const particleIndexBufferData = new Uint16Array([
+      2, 1, 0, 3, 2, 0, 1, 3, 0, 2, 3, 1,
+    ]);
+    this.particleIndexBuffer = device.createBuffer({
+      size: particleIndexBufferData.byteLength,
+      usage: GPUBufferUsage.INDEX,
+      mappedAtCreation: true,
+    });
+    new Uint16Array(this.particleIndexBuffer.getMappedRange()).set(
+      particleIndexBufferData
+    );
+    this.particleIndexBuffer.unmap();
+
+    // render everything else
     this.renderBundle = this.createRenderBundle([]);
   }
 
@@ -633,6 +730,17 @@ export class Renderer_WebGPU implements Renderer {
         stencilStoreOp: "store",
       },
     });
+
+    // TODO(@darzu): ROPE
+    // render rope
+    // {
+    //   renderPassEncoder.setPipeline(renderPipeline);
+    //   renderPassEncoder.setVertexBuffer(0, particleBuffers[(t + 1) % 2]);
+    //   renderPassEncoder.setVertexBuffer(1, spriteVertexBuffer);
+    //   renderPassEncoder.draw(3, numParticles, 0, 0);
+    //   // renderPassEncoder.end();
+    // }
+
     renderPassEncoder.executeBundles([this.renderBundle]);
     renderPassEncoder.end();
 

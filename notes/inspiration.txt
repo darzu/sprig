@@ -46,3 +46,13 @@ Exospheres:
 
 Very cool "self-assembling wires", ball bearings in electric field:
   https://www.youtube.com/watch?v=PeHWqr9dz3c
+
+Great 3d interactive explanation of mechanical watches:
+  https://ciechanow.ski/mechanical-watch/
+
+Curves:
+  https://ciechanow.ski/curves-and-surfaces/
+  https://ciechanow.ski/drawing-bezier-curves/
+
+Mesh transforms:
+  https://ciechanow.ski/mesh-transforms/
