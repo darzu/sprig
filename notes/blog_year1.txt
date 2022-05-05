@@ -15,6 +15,7 @@ Goals / vision:
   The easiest way to learn programming
   Great at creating no-dependency examples via program slicing
   Yes glitch.com
+  One-handed gaming (seriously!)
 
   More out there:
     A better way to think about complexity in software

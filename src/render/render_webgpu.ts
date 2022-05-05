@@ -460,13 +460,17 @@ export class Renderer_WebGPU implements Renderer {
 
     // setup rope
     // TODO(@darzu): ROPE
-    const mkRopePoint: (i: number) => RopePoint.Data = (i) => ({
-      position: [0, 10 - i, i * 0.5],
-      prevPosition: [0, 10 - i, 0],
-      // TODO(@darzu): locked isn't working?
-      // locked: i / this.ropeLen, // i === 0 ? 1 : 0,
-      locked: 0.8,
-    });
+    const mkRopePoint: (i: number) => RopePoint.Data = (i) => {
+      const p: vec3 = [0, 10 - i, i * 0.5];
+      return {
+        position: p,
+        prevPosition: p,
+        // TODO(@darzu): locked isn't working?
+        // locked: i / this.ropeLen,
+        locked: i === 0 ? 1 : 0,
+        // locked: 0.8,
+      };
+    };
     this.ropePointData = range(this.ropeLen).map((_, i) => mkRopePoint(i));
     this.ropePointBuffer = device.createBuffer({
       size: RopePoint.ByteSizeAligned * this.ropePointData.length,

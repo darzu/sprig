@@ -242,7 +242,8 @@ export module RopePoint {
     locked: number;
   }
 
-  const _byteCounts = [3 * 4, 3 * 4, 3 * 4];
+  // const _byteCounts = [3 * 4, 3 * 4, 3 * 4];
+  const _byteCounts = [3 * 4, 3 * 4, 1 * 4];
 
   const _byteOffsets = _byteCounts.reduce(
     (p, n) => [...p, p[p.length - 1] + n],
@@ -261,8 +262,8 @@ export module RopePoint {
     {
       shaderLocation: 3,
       offset: bytesPerVec3 * 2,
-      // format: "float32",
-      format: "float32x3",
+      format: "float32",
+      // format: "float32x3",
     },
   ];
 
@@ -279,8 +280,8 @@ export module RopePoint {
     return `
             position : vec3<f32>,
             prevPosition : vec3<f32>,
-            locked : vec3<f32>,
-            // locked : f32,
+            // locked : vec3<f32>,
+            locked : f32,
         `;
   }
 

@@ -219,14 +219,14 @@ export const rope_shader = () =>
 
     let gravity = 0.0001;
 
-    // if (p.locked > 0.0) {
-      // let newPrev = p.position;
-      // let delta = p.position - p.prevPosition;
-      // let newPos = p.position + delta * 0.1; // + vec3(0.0, -1.0, 0.0) * gravity * scene.time * scene.time;
+    // if (p.locked < 1.0) {
+    //   let newPrev = p.position;
+    //   let delta = p.position - p.prevPosition;
+    //   let newPos = p.position + delta * 0.1; // + vec3(0.0, -1.0, 0.0) * gravity * scene.time * scene.time;
 
-      // ropePoints.ropePoints[pIdx].position *= 1.01;
-      // ropePoints.ropePoints[pIdx].position = newPos;
-      // ropePoints.ropePoints[pIdx].prevPosition = newPrev;
+    //   // ropePoints.ropePoints[pIdx].position *= 1.01;
+    //   ropePoints.ropePoints[pIdx].position = newPos;
+    //   ropePoints.ropePoints[pIdx].prevPosition = newPrev;
     // }
     
   }
@@ -253,8 +253,8 @@ export const particle_shader = () =>
     @location(0) vertPos : vec3<f32>,
     @location(1) position : vec3<f32>,
     @location(2) prevPosition : vec3<f32>,
-    @location(3) locked : vec3<f32>,
-    // @location(3) locked : f32,
+    // @location(3) locked : vec3<f32>,
+    @location(3) locked : f32,
   ) -> VertexOutput {
     // return vec4<f32>(vertPos, 1.0);
     // let worldPos = vertPos;
@@ -266,7 +266,8 @@ export const particle_shader = () =>
 
     var output : VertexOutput;
     output.position = screenPos;
-    output.color = vec3<f32>(0.5, locked.r, 0.5);
+    output.color = vec3<f32>(0.5, locked, 0.5);
+    // output.color = vec3<f32>(0.5, locked.r, 0.5);
 
     return output;
   }
