@@ -466,8 +466,8 @@ export class Renderer_WebGPU implements Renderer {
         position: p,
         prevPosition: p,
         // TODO(@darzu): locked isn't working?
-        locked: i / this.ropeLen,
-        // locked: i === 0 ? 1 : 0,
+        // locked: i / this.ropeLen,
+        locked: i === 0 ? 1 : 0,
         // locked: 0.8,
       };
     };

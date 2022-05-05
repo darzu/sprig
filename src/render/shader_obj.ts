@@ -218,20 +218,21 @@ export const rope_shader = () =>
     let p = ropePoints.ropePoints[pIdx];
 
     let gravity = 0.0001;
+    // let gravity = 10000.0;
 
     // this is setting color:
-    // ropePoints.ropePoints[pIdx].prevPosition.z += 0.01;
-    ropePoints.ropePoints[pIdx].locked += 0.005;
+    // ropePoints.ropePoints[pIdx].position.z += 0.01;
+    // ropePoints.ropePoints[pIdx].locked -= scene.time;
 
-    // if (p.locked < 0.5) {
-    // //   let newPrev = p.position;
-    // //   let delta = p.position - p.prevPosition;
-    // //   let newPos = p.position + delta * 0.1; // + vec3(0.0, -1.0, 0.0) * gravity * scene.time * scene.time;
+    if (p.locked < 0.5) {
+      let newPrev = p.position;
+      let delta = p.position - p.prevPosition;
+      let newPos = p.position + delta + vec3(0.0, -1.0, 0.0) * gravity * scene.time * scene.time;
 
-    //   ropePoints.ropePoints[pIdx].position *= 1.002;
-    //   // ropePoints.ropePoints[pIdx].position = newPos;
-    // //   ropePoints.ropePoints[pIdx].prevPosition = newPrev;
-    // }
+    // //   ropePoints.ropePoints[pIdx].position *= 1.002;
+      ropePoints.ropePoints[pIdx].position = newPos;
+      ropePoints.ropePoints[pIdx].prevPosition = newPrev;
+    }
     
   }
   
