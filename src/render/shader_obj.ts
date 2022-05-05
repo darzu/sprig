@@ -1,6 +1,6 @@
 import { mat4, vec3 } from "../gl-matrix.js";
 import { align, sum } from "../math.js";
-import { RopePoint, Vertex } from "./mesh-pool.js";
+import { RopePoint, RopeStick, SceneUniform, Vertex } from "./mesh-pool.js";
 import { shaderSceneStruct } from "./render_webgpu.js";
 
 export module MeshUniformMod {
@@ -91,7 +91,7 @@ export const obj_vertShader = () =>
 
     @stage(vertex)
     fn main(
-        ${Vertex.GenerateWGSLVertexInputStruct(",")}
+        ${Vertex.GenerateWGSLVertexInputStruct()}
         ) -> VertexOutput {
         var output : VertexOutput;
         let worldPos: vec4<f32> = model.transform * vec4<f32>(position, 1.0);
@@ -187,6 +187,12 @@ export const cloth_shader = () =>
 
 export const rope_shader = () =>
   `
+  struct Scene {
+  ${SceneUniform.generateWGSLUniformStruct()}
+  };
+
+  @group(0) @binding(0) var<uniform> scene : Scene;
+
   struct RopePoint {
     ${RopePoint.generateWGSLUniformStruct()}
   };
@@ -194,16 +200,35 @@ export const rope_shader = () =>
     ropePoints : array<RopePoint>,
   };
 
+  struct RopeStick {
+    ${RopeStick.generateWGSLUniformStruct()}
+  };
+  struct RopeSticks {
+    ropeSticks : array<RopeStick>,
+  };
+
   @group(0) @binding(1) var<storage, read_write> ropePoints : RopePoints;
+  @group(0) @binding(2) var<storage, read> ropeSticks : RopeSticks;
   
-  @stage(compute) @workgroup_size(64)
+  // todo: pick workgroup size based on max rope system?
+  @stage(compute) @workgroup_size(10)
   fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
-    var index : u32 = GlobalInvocationID.x;
+    var pIdx : u32 = GlobalInvocationID.x;
 
-    let p = ropePoints.ropePoints[index];
+    let p = ropePoints.ropePoints[pIdx];
 
-    ropePoints.ropePoints[index].prevPosition = p.position;
-    ropePoints.ropePoints[index].position *= 1.01;
+    let gravity = 0.0001;
+
+    // if (p.locked > 0.0) {
+      // let newPrev = p.position;
+      // let delta = p.position - p.prevPosition;
+      // let newPos = p.position + delta * 0.1; // + vec3(0.0, -1.0, 0.0) * gravity * scene.time * scene.time;
+
+      // ropePoints.ropePoints[pIdx].position *= 1.01;
+      // ropePoints.ropePoints[pIdx].position = newPos;
+      // ropePoints.ropePoints[pIdx].prevPosition = newPrev;
+    // }
+    
   }
   
   `;
@@ -217,13 +242,20 @@ export const particle_shader = () =>
 
   @group(0) @binding(0) var<uniform> scene : Scene;
   
+
+  struct VertexOutput {
+    @builtin(position) position : vec4<f32>,
+    @location(0) color : vec3<f32>,
+  };
+
   @stage(vertex)
   fn vert_main(
     @location(0) vertPos : vec3<f32>,
     @location(1) position : vec3<f32>,
     @location(2) prevPosition : vec3<f32>,
-    @location(3) locked : u32,
-  ) -> @builtin(position) vec4<f32> {
+    @location(3) locked : vec3<f32>,
+    // @location(3) locked : f32,
+  ) -> VertexOutput {
     // return vec4<f32>(vertPos, 1.0);
     // let worldPos = vertPos;
     let worldPos = vertPos * 0.5 + position;
@@ -231,12 +263,17 @@ export const particle_shader = () =>
 
     // return vec4<f32>(vertPos, 1.0);
     // return vec4<f32>(vertPos + position, 1.0);
-    return screenPos;
+
+    var output : VertexOutput;
+    output.position = screenPos;
+    output.color = vec3<f32>(0.5, locked.r, 0.5);
+
+    return output;
   }
 
   @stage(fragment)
-  fn frag_main() -> @location(0) vec4<f32> {
-    return vec4<f32>(1.0, 1.0, 1.0, 1.0);
+  fn frag_main(input: VertexOutput) -> @location(0) vec4<f32> {
+    return vec4<f32>(input.color, 1.0);
   }
 
 `;

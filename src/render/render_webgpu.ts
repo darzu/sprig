@@ -7,6 +7,7 @@ import {
   MeshPoolOpts,
   MeshPool_WebGPU,
   RopePoint,
+  RopeStick,
   SceneUniform,
   Vertex,
 } from "./mesh-pool.js";
@@ -63,13 +64,19 @@ export class Renderer_WebGPU implements Renderer {
   private sceneData: SceneUniform.Data;
 
   // TODO(@darzu): ROPE
-  private ropeData: RopePoint.Data[];
-  private ropeBuffer: GPUBuffer;
+  private ropePointData: RopePoint.Data[];
+  private ropePointBuffer: GPUBuffer;
   private ropeLen: number = 10;
-  private scratchRopeData = new Uint8Array(
+  private scratchRopePointData = new Uint8Array(
     RopePoint.ByteSizeAligned * this.ropeLen
   );
+  private ropeStickData: RopeStick.Data[];
+  private ropeStickBuffer: GPUBuffer;
+  private scratchRopeStickData = new Uint8Array(
+    RopeStick.ByteSizeAligned * (this.ropeLen - 1)
+  );
   private cmpRopePipeline: GPUComputePipeline;
+  private cmpRopeBindGroupLayout: GPUBindGroupLayout;
   // private rndrRopePipeline: GPURenderPipeline;
   private particleVertexBuffer: GPUBuffer;
   private particleIndexBuffer: GPUBuffer;
@@ -405,7 +412,7 @@ export class Renderer_WebGPU implements Renderer {
     bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
     bundleEnc.setIndexBuffer(this.particleIndexBuffer, "uint16");
     bundleEnc.setVertexBuffer(0, this.particleVertexBuffer);
-    bundleEnc.setVertexBuffer(1, this.ropeBuffer);
+    bundleEnc.setVertexBuffer(1, this.ropePointBuffer);
     bundleEnc.drawIndexed(12, this.ropeLen, 0, 0);
     // console.dir(rndrRopePipeline);
     // console.dir(this.particleIndexBuffer);
@@ -453,26 +460,52 @@ export class Renderer_WebGPU implements Renderer {
 
     // setup rope
     // TODO(@darzu): ROPE
-    const mkRope: (i: number) => RopePoint.Data = (i) => ({
+    const mkRopePoint: (i: number) => RopePoint.Data = (i) => ({
       position: [0, 10 - i, i * 0.5],
       prevPosition: [0, 10 - i, 0],
-      locked: i === 0 ? 1 : 0,
+      // TODO(@darzu): locked isn't working?
+      // locked: i / this.ropeLen, // i === 0 ? 1 : 0,
+      locked: 0.8,
     });
-    this.ropeData = range(this.ropeLen).map((_, i) => mkRope(i));
-    this.ropeBuffer = device.createBuffer({
-      size: RopePoint.ByteSizeAligned * this.ropeData.length,
+    this.ropePointData = range(this.ropeLen).map((_, i) => mkRopePoint(i));
+    this.ropePointBuffer = device.createBuffer({
+      size: RopePoint.ByteSizeAligned * this.ropePointData.length,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
       // GPUBufferUsage.COPY_DST,
       mappedAtCreation: true,
     });
-    for (let i = 0; i < this.ropeLen; i++)
+    for (let i = 0; i < this.ropePointData.length; i++)
       RopePoint.serialize(
-        this.scratchRopeData,
+        this.scratchRopePointData,
         i * RopePoint.ByteSizeAligned,
-        this.ropeData[i]
+        this.ropePointData[i]
       );
-    new Uint8Array(this.ropeBuffer.getMappedRange()).set(this.scratchRopeData);
-    this.ropeBuffer.unmap();
+    new Uint8Array(this.ropePointBuffer.getMappedRange()).set(
+      this.scratchRopePointData
+    );
+    this.ropePointBuffer.unmap();
+    const mkRopeStick: (i: number) => RopeStick.Data = (i) => ({
+      aIdx: i,
+      bIdx: i + 1,
+      length: 1.1,
+    });
+    this.ropeStickData = range(this.ropeLen - 1).map((_, i) => mkRopeStick(i));
+    this.ropeStickBuffer = device.createBuffer({
+      size: RopeStick.ByteSizeAligned * this.ropeStickData.length,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
+      // GPUBufferUsage.COPY_DST,
+      mappedAtCreation: true,
+    });
+    for (let i = 0; i < this.ropeStickData.length; i++)
+      RopeStick.serialize(
+        this.scratchRopeStickData,
+        i * RopeStick.ByteSizeAligned,
+        this.ropeStickData[i]
+      );
+    new Uint8Array(this.ropeStickBuffer.getMappedRange()).set(
+      this.scratchRopeStickData
+    );
+    this.ropeStickBuffer.unmap();
 
     // Displacement map
     // TODO(@darzu): DISP
@@ -534,7 +567,35 @@ export class Renderer_WebGPU implements Renderer {
     });
 
     // TODO(@darzu): ROPE
+    this.cmpRopeBindGroupLayout = this.device.createBindGroupLayout({
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.COMPUTE,
+          buffer: { type: "uniform" },
+        },
+        {
+          binding: 1,
+          visibility: GPUShaderStage.COMPUTE,
+          buffer: {
+            type: "storage",
+            minBindingSize: RopePoint.ByteSizeAligned,
+          },
+        },
+        {
+          binding: 2,
+          visibility: GPUShaderStage.COMPUTE,
+          buffer: {
+            type: "storage",
+            minBindingSize: RopeStick.ByteSizeAligned,
+          },
+        },
+      ],
+    });
     this.cmpRopePipeline = device.createComputePipeline({
+      layout: this.device.createPipelineLayout({
+        bindGroupLayouts: [this.cmpRopeBindGroupLayout],
+      }),
       compute: {
         module: device.createShaderModule({
           code: rope_shader(),
@@ -590,6 +651,7 @@ export class Renderer_WebGPU implements Renderer {
 
     // update scene data
     this.sceneData.cameraViewProjMatrix = viewProj;
+    this.sceneData.time = 1000 / 60; // TODO(@darzu): use real dt
 
     SceneUniform.serialize(this.scratchSceneUni, 0, this.sceneData);
     this.device.queue.writeBuffer(
@@ -689,17 +751,22 @@ export class Renderer_WebGPU implements Renderer {
 
     // TODO(@darzu): ROPE
     const cmpRopeBindGroup = this.device.createBindGroup({
-      layout: this.cmpRopePipeline.getBindGroupLayout(0),
+      // layout: this.cmpRopePipeline.getBindGroupLayout(0),
+      layout: this.cmpRopeBindGroupLayout,
       entries: [
-        // {
-        //   binding: 0,
-        //   resource: {
-        //     buffer: simParamBuffer,
-        //   },
-        // },
+        {
+          binding: 0,
+          resource: {
+            buffer: this.sceneUniformBuffer,
+          },
+        },
         {
           binding: 1,
-          resource: { buffer: this.ropeBuffer },
+          resource: { buffer: this.ropePointBuffer },
+        },
+        {
+          binding: 2,
+          resource: { buffer: this.ropeStickBuffer },
         },
       ],
     });

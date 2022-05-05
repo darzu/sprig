@@ -35,6 +35,34 @@ const formatToWgslType: Partial<Record<GPUVertexFormat, string>> = {
   sint32: "i32",
 };
 
+function generateWGSLStruct(
+  vertAttributes: GPUVertexAttribute[],
+  names: string[]
+): string {
+  // Example output:
+  // `
+  // @location(0) position : vec3<f32>,
+  // @location(1) color : vec3<f32>,
+  // @location(2) normal : vec3<f32>,
+  // @location(3) uv : vec2<f32>,
+  // `
+
+  let res = ``;
+
+  if (vertAttributes.length !== names.length)
+    throw `mismatch between vertex format specifiers and names`;
+
+  for (let i = 0; i < vertAttributes.length; i++) {
+    const f = vertAttributes[i];
+    const t = formatToWgslType[f.format];
+    const n = names[i];
+    if (!t) throw `Unknown vertex type -> wgls type '${f.format}'`;
+    res += `@location(${f.shaderLocation}) ${n} : ${t},\n`;
+  }
+
+  return res;
+}
+
 // Everything to do with our vertex format must be in this module (minus downstream
 //  places that should get type errors when this module changes.)
 // TODO(@darzu): code gen some of this so code changes are less error prone.
@@ -55,7 +83,7 @@ export module Vertex {
 
   const names = ["position", "color", "normal", "uv"];
 
-  export function GenerateWGSLVertexInputStruct(terminator: "," | ";"): string {
+  export function GenerateWGSLVertexInputStruct(): string {
     // Example output:
     // `
     // @location(0) position : vec3<f32>,
@@ -64,20 +92,7 @@ export module Vertex {
     // @location(3) uv : vec2<f32>,
     // `
 
-    let res = ``;
-
-    if (WebGPUFormat.length !== names.length)
-      throw `mismatch between vertex format specifiers and names`;
-
-    for (let i = 0; i < WebGPUFormat.length; i++) {
-      const f = WebGPUFormat[i];
-      const t = formatToWgslType[f.format];
-      const n = names[i];
-      if (!t) throw `Unknown vertex type -> wgls type '${f.format}'`;
-      res += `@location(${f.shaderLocation}) ${n} : ${t}${terminator}\n`;
-    }
-
-    return res;
+    return generateWGSLStruct(WebGPUFormat, names);
   }
 
   // these help us pack and use vertices in that format
@@ -227,7 +242,7 @@ export module RopePoint {
     locked: number;
   }
 
-  const _byteCounts = [3 * 4, 3 * 4, 1 * 4];
+  const _byteCounts = [3 * 4, 3 * 4, 3 * 4];
 
   const _byteOffsets = _byteCounts.reduce(
     (p, n) => [...p, p[p.length - 1] + n],
@@ -246,7 +261,8 @@ export module RopePoint {
     {
       shaderLocation: 3,
       offset: bytesPerVec3 * 2,
-      format: "uint32",
+      // format: "float32",
+      format: "float32x3",
     },
   ];
 
@@ -255,6 +271,7 @@ export module RopePoint {
   export const ByteSizeExact = sum(_byteCounts);
   // vertex objs should probably be 16 byte aligned
   // TODO(@darzu): alignment https://www.w3.org/TR/WGSL/#alignment-and-size
+  // export const ByteSizeAligned = ByteSizeExact; // align(ByteSizeExact, 16);
   export const ByteSizeAligned = align(ByteSizeExact, 16);
 
   export function generateWGSLUniformStruct() {
@@ -262,7 +279,8 @@ export module RopePoint {
     return `
             position : vec3<f32>,
             prevPosition : vec3<f32>,
-            locked : u32,
+            locked : vec3<f32>,
+            // locked : f32,
         `;
   }
 
@@ -276,7 +294,67 @@ export module RopePoint {
   ) {
     scratch_as_f32.set(data.position, _byteOffsets[0] / 4);
     scratch_as_f32.set(data.prevPosition, _byteOffsets[1] / 4);
-    scratch_as_u32[_byteOffsets[2] / 4] = data.locked ? 1 : 0;
+    // scratch_as_f32.set([data.locked, 0, 0], _byteOffsets[2] / 4);
+    // scratch_as_f32[_byteOffsets[2] / 4] = data.locked;
+    scratch_as_f32[(3 * 4 * 2) / 4] = data.locked;
+    // scratch_f32.set(data.lightViewProjMatrix, _offsets[1]);
+    buffer.set(scratch_u8, byteOffset);
+  }
+}
+export module RopeStick {
+  export interface Data {
+    aIdx: number;
+    bIdx: number;
+    length: number;
+  }
+
+  const _byteCounts = [1 * 4, 1 * 4, 1 * 4];
+
+  const _byteOffsets = _byteCounts.reduce(
+    (p, n) => [...p, p[p.length - 1] + n],
+    [0]
+  );
+
+  // define the format of our vertices (this needs to agree with the inputs to the vertex shaders)
+  // const prevOffset = bytesPerVec3 * 1 + 4;
+  export const WebGPUFormat: GPUVertexAttribute[] = [
+    { shaderLocation: 1, offset: 0, format: "uint32" },
+    {
+      shaderLocation: 2,
+      offset: 4,
+      format: "uint32",
+    },
+    {
+      shaderLocation: 3,
+      offset: 8,
+      format: "float32",
+    },
+  ];
+
+  export const names = ["aIdx", "bIdx", "length"];
+
+  // TODO(@darzu): SCENE FORMAT
+  // defines the format of our scene's uniform data
+  export const ByteSizeExact = sum(_byteCounts);
+  // vertex objs should probably be 16 byte aligned
+  // TODO(@darzu): alignment https://www.w3.org/TR/WGSL/#alignment-and-size
+  export const ByteSizeAligned = align(ByteSizeExact, 16);
+
+  export function generateWGSLUniformStruct() {
+    return generateWGSLStruct(WebGPUFormat, names);
+  }
+
+  const scratch_u8 = new Uint8Array(sum(_byteCounts));
+  const scratch_as_f32 = new Float32Array(scratch_u8.buffer);
+  const scratch_as_u32 = new Uint32Array(scratch_u8.buffer);
+  export function serialize(
+    buffer: Uint8Array,
+    byteOffset: number,
+    data: Data
+  ) {
+    scratch_as_u32[_byteOffsets[0] / 4] = data.aIdx;
+    scratch_as_f32[_byteOffsets[1] / 4] = data.bIdx;
+    scratch_as_f32[_byteOffsets[2] / 4] = data.length;
     // scratch_f32.set(data.lightViewProjMatrix, _offsets[1]);
     buffer.set(scratch_u8, byteOffset);
   }

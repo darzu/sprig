@@ -83,6 +83,15 @@ FAQ:
   Why so much of your own stuff?
   Why not academia?
 
+Comparison chart w/
+  PlayCanvas, Babylon, Threejs
+  Unity, Unreal, GameMaker, Godot,
+  MakeCode, Scratch, TouchDevelop, HopScotch
+  HypeHype, Roblox,
+  Little Big Planet, Dreams, Kodu, ProjectSpark
+  Glitch.com
+  
+
 ---
 Outline 1:
   What is Sprigland's goal?

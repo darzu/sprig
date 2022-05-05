@@ -448,3 +448,7 @@ Rendering problem cheat sheet:
 To improve look and feel, I should write a .gltf exporter than load that in Unity 
   or blender and play with materials, lighting, shaders etc until it looks how I want.
   Then figure out what the delta is and how to impl it. Probably cut corners.
+
+Waves:
+  https://playground.babylonjs.com/?webgpu#YX6IB8#55
+  https://github.com/gasgiant/FFT-Ocean
