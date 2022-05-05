@@ -10,6 +10,17 @@ import { assert } from "../test.js";
 //  [ ] how do we handle multiple shaders with different mesh
 //    uniforms? e.g. water, noodles, cloth, regular objects, grass
 
+// TODO(@darzu): alignment is needs to be handled right esp for structs
+//    shared between vertex and uniform/storage
+// https://www.w3.org/TR/WGSL/#structure-member-layout
+// https://www.w3.org/TR/WGSL/#input-output-locations
+// https://gpuweb.github.io/gpuweb/#vertex-formats
+//    "descriptor.arrayStride is a multiple of 4."
+//    "attrib.offset + sizeof(attrib.format) ≤ descriptor.arrayStride."
+//    "attrib.offset is a multiple of the minimum of 4 and sizeof(attrib.format)."
+// UNORM: float between [0,1],
+// SNORM: float between [-1,1],
+
 const vertsPerTri = 3;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * vertsPerTri;
 const linesPerTri = 6;
@@ -242,26 +253,32 @@ export module RopePoint {
     locked: number;
   }
 
-  // const _byteCounts = [3 * 4, 3 * 4, 3 * 4];
-  const _byteCounts = [3 * 4, 3 * 4, 1 * 4];
+  // // const _byteCounts = [3 * 4, 3 * 4, 3 * 4];
+  // const _byteCounts = [3 * 4, 3 * 4, 1 * 4];
 
-  const _byteOffsets = _byteCounts.reduce(
-    (p, n) => [...p, p[p.length - 1] + n],
-    [0]
-  );
+  // const _byteOffsets = _byteCounts.reduce(
+  //   (p, n) => [...p, p[p.length - 1] + n],
+  //   [0]
+  // );
+
+  const _byteOffsets = [
+    0, // TODO(@darzu): auto handle alignment requirements
+    16,
+    28,
+  ];
 
   // define the format of our vertices (this needs to agree with the inputs to the vertex shaders)
   // const prevOffset = bytesPerVec3 * 1 + 4;
   export const WebGPUFormat: GPUVertexAttribute[] = [
-    { shaderLocation: 1, offset: 0, format: "float32x3" },
+    { shaderLocation: 1, offset: _byteOffsets[0], format: "float32x3" },
     {
       shaderLocation: 2,
-      offset: bytesPerVec3 * 1,
+      offset: _byteOffsets[1],
       format: "float32x3",
     },
     {
       shaderLocation: 3,
-      offset: bytesPerVec3 * 2,
+      offset: _byteOffsets[2],
       format: "float32",
       // format: "float32x3",
     },
@@ -269,23 +286,25 @@ export module RopePoint {
 
   // TODO(@darzu): SCENE FORMAT
   // defines the format of our scene's uniform data
-  export const ByteSizeExact = sum(_byteCounts);
+  // export const ByteSizeExact = sum(_byteCounts);
   // vertex objs should probably be 16 byte aligned
   // TODO(@darzu): alignment https://www.w3.org/TR/WGSL/#alignment-and-size
-  // export const ByteSizeAligned = ByteSizeExact; // align(ByteSizeExact, 16);
-  export const ByteSizeAligned = align(ByteSizeExact, 16);
+  // export const ByteSizeAligned = ByteSizeExact;
+  export const ByteSizeAligned = 32; // TODO(@darzu): auto align
+  // export const ByteSizeAligned = align(ByteSizeExact, 16);
 
   export function generateWGSLUniformStruct() {
     // TODO(@darzu): enforce agreement w/ Scene interface
+    // TODO(@darzu): auto gen alignment
     return `
-            position : vec3<f32>,
-            prevPosition : vec3<f32>,
+            @align(16) position : vec3<f32>,
+            @align(16) prevPosition : vec3<f32>,
             // locked : vec3<f32>,
-            locked : f32,
+            @align(4) locked : f32,
         `;
   }
 
-  const scratch_u8 = new Uint8Array(sum(_byteCounts));
+  const scratch_u8 = new Uint8Array(ByteSizeAligned);
   const scratch_as_f32 = new Float32Array(scratch_u8.buffer);
   const scratch_as_u32 = new Uint32Array(scratch_u8.buffer);
   export function serialize(
@@ -297,7 +316,7 @@ export module RopePoint {
     scratch_as_f32.set(data.prevPosition, _byteOffsets[1] / 4);
     // scratch_as_f32.set([data.locked, 0, 0], _byteOffsets[2] / 4);
     // scratch_as_f32[_byteOffsets[2] / 4] = data.locked;
-    scratch_as_f32[(3 * 4 * 2) / 4] = data.locked;
+    scratch_as_f32[_byteOffsets[2] / 4] = data.locked;
     // scratch_f32.set(data.lightViewProjMatrix, _offsets[1]);
     buffer.set(scratch_u8, byteOffset);
   }

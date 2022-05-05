@@ -184,7 +184,8 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.callSystem("updateRendererWorldFrames");
     EM.callSystem("smoothCamera");
     EM.callSystem("cameraFollowTarget");
-    EM.callSystem("retargetCamera");
+    // TODO(@darzu): camera smoothing is a little annoying when doing rapid page refreshes
+    // EM.callSystem("retargetCamera");
     EM.callSystem("updateCameraView");
     EM.callSystem("placeCursorAtScreenCenter");
     EM.callSystem("renderView");

@@ -74,6 +74,10 @@ Cannon ball effects (positive and negative):
   Tracer: cannon balls leave a visible trail in the air, making it easier to aim
   Broadside: a row of connected cannons all aim and fire together
 
-
+Broadsides:
+  Master and Commander:
+    https://youtu.be/f06_CkYvIik?t=125
+  Sea of Thieves:
+    https://youtu.be/H3NF4IDClKQ?t=85
 
 

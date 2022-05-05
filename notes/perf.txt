@@ -124,3 +124,6 @@ vec3 on the pass-by-value?
     Unsure about perf on this, probably horendous
     bad bitwise perf when negative
     new Float64Array(BigInt64Array.of(1n).buffer)[0]
+
+Big speed ups by porting to rust?
+  Maybe not: https://zaplib.com/docs/blog_post_mortem.html

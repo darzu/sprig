@@ -38,6 +38,8 @@ import { ColorDef } from "../color.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DeletedDef } from "../delete.js";
 
+// TODO(@darzu): name it cytochrome
+
 export interface RenderableConstruct {
   readonly enabled: boolean;
   readonly layer: number;
