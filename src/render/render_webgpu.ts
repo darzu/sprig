@@ -1,4 +1,5 @@
 import { mat4, vec3, quat } from "../gl-matrix.js";
+import { tempVec } from "../temp-pool.js";
 import { range } from "../util.js";
 import {
   createMeshPool_WebGPU,
@@ -396,6 +397,11 @@ export class Renderer_WebGPU implements Renderer {
             arrayStride: RopePoint.ByteSizeAligned,
             attributes: RopePoint.WebGPUFormat,
           },
+          {
+            stepMode: "instance",
+            arrayStride: RopeStick.ByteSizeAligned,
+            attributes: RopeStick.WebGPUFormat,
+          },
         ],
       },
       fragment: {
@@ -413,6 +419,7 @@ export class Renderer_WebGPU implements Renderer {
     bundleEnc.setIndexBuffer(this.particleIndexBuffer, "uint16");
     bundleEnc.setVertexBuffer(0, this.particleVertexBuffer);
     bundleEnc.setVertexBuffer(1, this.ropePointBuffer);
+    bundleEnc.setVertexBuffer(2, this.ropeStickBuffer);
     bundleEnc.drawIndexed(12, this.ropeLen, 0, 0);
     // console.dir(rndrRopePipeline);
     // console.dir(this.particleIndexBuffer);
@@ -461,16 +468,20 @@ export class Renderer_WebGPU implements Renderer {
     // setup rope
     // TODO(@darzu): ROPE
     const mkRopePoint: (i: number) => RopePoint.Data = (i) => {
-      const p: vec3 = [0, 10 - i, i * 0.5];
+      const p: vec3 = [0, 10 - i * 0.5, i * 1];
       return {
         position: p,
         prevPosition: p,
         // TODO(@darzu): locked isn't working?
         // locked: i / this.ropeLen,
         locked: i === 0 ? 1 : 0,
+        // locked: i === 0 || i === this.ropeLen - 1 ? 1 : 0,
         // locked: 0.8,
       };
     };
+    const startDist = vec3.len(
+      vec3.sub(tempVec(), mkRopePoint(0).position, mkRopePoint(1).position)
+    );
     this.ropePointData = range(this.ropeLen).map((_, i) => mkRopePoint(i));
     this.ropePointBuffer = device.createBuffer({
       size: RopePoint.ByteSizeAligned * this.ropePointData.length,
@@ -491,12 +502,14 @@ export class Renderer_WebGPU implements Renderer {
     const mkRopeStick: (i: number) => RopeStick.Data = (i) => ({
       aIdx: i,
       bIdx: i + 1,
-      length: 1.1,
+      length: startDist,
     });
     this.ropeStickData = range(this.ropeLen - 1).map((_, i) => mkRopeStick(i));
+    console.dir(this.ropeStickData); // TODO(@darzu):
     this.ropeStickBuffer = device.createBuffer({
-      size: RopeStick.ByteSizeAligned * this.ropeStickData.length,
-      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
+      size: RopeStick.ByteSizeAligned * this.ropeLen,
+      // size: RopeStick.ByteSizeAligned * this.ropeStickData.length,
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.VERTEX,
       // GPUBufferUsage.COPY_DST,
       mappedAtCreation: true,
     });
@@ -590,7 +603,7 @@ export class Renderer_WebGPU implements Renderer {
           binding: 2,
           visibility: GPUShaderStage.COMPUTE,
           buffer: {
-            type: "storage",
+            type: "read-only-storage",
             minBindingSize: RopeStick.ByteSizeAligned,
           },
         },

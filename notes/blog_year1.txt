@@ -33,6 +33,8 @@ Bets:
   Gameplay is king, good (esp high realism) visuals aren't as important
     Look at Minecraft, Roblox
   A lot of these goals synergize with each other
+  A lot of people are saying "no code" or "low code", ]
+    and I'm saying the opposite: "yes code! code first"
 
 Non-goals:
   hyper-realistic PBR rendering
@@ -91,7 +93,7 @@ Comparison chart w/
   HypeHype, Roblox,
   Little Big Planet, Dreams, Kodu, ProjectSpark
   Glitch.com
-  
+  Pico8  
 
 ---
 Outline 1:

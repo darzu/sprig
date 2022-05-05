@@ -217,8 +217,10 @@ export const rope_shader = () =>
 
     let p = ropePoints.ropePoints[pIdx];
 
-    let gravity = 0.0001;
-    // let gravity = 10000.0;
+    // ropePoints.ropePoints[pIdx].locked = f32(pIdx) / 10.0;
+
+    let gravity = 0.0002;
+    // let gravity = 0.00001;
 
     // this is setting color:
     // ropePoints.ropePoints[pIdx].position.z += 0.01;
@@ -227,13 +229,50 @@ export const rope_shader = () =>
     if (p.locked < 0.5) {
       let newPrev = p.position;
       let delta = p.position - p.prevPosition;
-      let newPos = p.position + delta + vec3(0.0, -1.0, 0.0) * gravity * scene.time * scene.time;
+      let newPos = p.position + delta * 0.98 + vec3(0.0, -1.0, 0.0) * gravity * scene.time * scene.time;
 
     // //   ropePoints.ropePoints[pIdx].position *= 1.002;
       ropePoints.ropePoints[pIdx].position = newPos;
       ropePoints.ropePoints[pIdx].prevPosition = newPrev;
     }
     
+    workgroupBarrier();
+
+    var i: i32 = 0;
+    loop {
+      if i >= 4 { break; }
+
+      // if pIdx >= 9u { continue; }
+
+      let stick = ropeSticks.ropeSticks[pIdx];
+      let a = ropePoints.ropePoints[stick.aIdx];
+      let b = ropePoints.ropePoints[stick.bIdx];
+
+      let center = (a.position + b.position) / 2.0;
+      let dir = normalize(a.position - b.position);
+      let offset = dir * stick.length / 2.0;
+
+      // ropePoints.ropePoints[stick.aIdx].locked += 0.01;
+      // ropePoints.ropePoints[stick.bIdx].locked += 0.01;
+
+    // ropePoints.ropePoints[pIdx].locked = f32(stick.aIdx); // / 10.0;
+
+      if (a.locked < 0.5 && i % 2 == 0) {
+      // if (a.locked < 0.5) {
+        ropePoints.ropePoints[stick.aIdx].position = center + offset;
+      }
+      // if (b.locked < 0.5) {
+      if (b.locked < 0.5 && i % 2 == 1) {
+        ropePoints.ropePoints[stick.bIdx].position = center - offset;
+      }
+
+      continuing {
+        // TODO: bad perf ?
+        workgroupBarrier();
+        i++;
+      }
+    }
+
   }
   
   `;
@@ -260,6 +299,9 @@ export const particle_shader = () =>
     @location(2) prevPosition : vec3<f32>,
     // @location(3) locked : vec3<f32>,
     @location(3) locked : f32,
+    @location(4) aIdx: u32,
+    @location(5) bIdx: u32,
+    @location(6) length: f32,
   ) -> VertexOutput {
     // return vec4<f32>(vertPos, 1.0);
     // let worldPos = vertPos;
@@ -271,7 +313,11 @@ export const particle_shader = () =>
 
     var output : VertexOutput;
     output.position = screenPos;
-    output.color = vec3<f32>(0.5, locked, 0.5);
+    output.color = vec3<f32>(locked, 0.0, 0.0);
+    // output.color = vec3<f32>(0.0, f32(bIdx) / 10.0, locked);
+    // output.color = vec3<f32>(f32(aIdx) / 10.0, 0.0, locked);
+    // output.color = vec3<f32>(f32(aIdx) / 10.0, f32(bIdx) / 10.0, locked);
+    // output.color = vec3<f32>(0.5, locked, 0.5);
     // output.color = vec3<f32>(0.5, locked.r, 0.5);
 
     return output;

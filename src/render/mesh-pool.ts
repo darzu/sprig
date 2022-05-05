@@ -352,14 +352,18 @@ export module RopeStick {
   // define the format of our vertices (this needs to agree with the inputs to the vertex shaders)
   // const prevOffset = bytesPerVec3 * 1 + 4;
   export const WebGPUFormat: GPUVertexAttribute[] = [
-    { shaderLocation: 1, offset: 0, format: "uint32" },
     {
-      shaderLocation: 2,
+      shaderLocation: 4,
+      offset: 0,
+      format: "uint32",
+    },
+    {
+      shaderLocation: 5,
       offset: 4,
       format: "uint32",
     },
     {
-      shaderLocation: 3,
+      shaderLocation: 6,
       offset: 8,
       format: "float32",
     },
@@ -369,13 +373,20 @@ export module RopeStick {
 
   // TODO(@darzu): SCENE FORMAT
   // defines the format of our scene's uniform data
-  export const ByteSizeExact = sum(_byteCounts);
+  const ByteSizeExact = sum(_byteCounts);
   // vertex objs should probably be 16 byte aligned
   // TODO(@darzu): alignment https://www.w3.org/TR/WGSL/#alignment-and-size
-  export const ByteSizeAligned = align(ByteSizeExact, 16);
+  // export const ByteSizeAligned = align(ByteSizeExact, 12);
+  export const ByteSizeAligned = ByteSizeExact;
 
   export function generateWGSLUniformStruct() {
-    return generateWGSLStruct(WebGPUFormat, names);
+    // console.log(generateWGSLStruct(WebGPUFormat, names));
+    return `
+    @align(4) aIdx : u32,
+    @align(4) bIdx : u32,
+    @align(4) length : f32,
+    `;
+    // return generateWGSLStruct(WebGPUFormat, names);
   }
 
   const scratch_u8 = new Uint8Array(sum(_byteCounts));
@@ -387,7 +398,7 @@ export module RopeStick {
     data: Data
   ) {
     scratch_as_u32[_byteOffsets[0] / 4] = data.aIdx;
-    scratch_as_f32[_byteOffsets[1] / 4] = data.bIdx;
+    scratch_as_u32[_byteOffsets[1] / 4] = data.bIdx;
     scratch_as_f32[_byteOffsets[2] / 4] = data.length;
     // scratch_f32.set(data.lightViewProjMatrix, _offsets[1]);
     buffer.set(scratch_u8, byteOffset);
