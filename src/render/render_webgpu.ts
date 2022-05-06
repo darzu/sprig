@@ -67,15 +67,10 @@ export class Renderer_WebGPU implements Renderer {
   // TODO(@darzu): ROPE
   private ropePointData: RopePoint.Data[];
   private ropePointBuffer: GPUBuffer;
-  private ropeLen: number = 10;
-  private scratchRopePointData = new Uint8Array(
-    RopePoint.ByteSizeAligned * this.ropeLen
-  );
+  private scratchRopePointData: Uint8Array;
   private ropeStickData: RopeStick.Data[];
   private ropeStickBuffer: GPUBuffer;
-  private scratchRopeStickData = new Uint8Array(
-    RopeStick.ByteSizeAligned * (this.ropeLen - 1)
-  );
+  private scratchRopeStickData: Uint8Array;
   private cmpRopePipeline: GPUComputePipeline;
   private cmpRopeBindGroupLayout: GPUBindGroupLayout;
   // private rndrRopePipeline: GPURenderPipeline;
@@ -397,11 +392,11 @@ export class Renderer_WebGPU implements Renderer {
             arrayStride: RopePoint.ByteSizeAligned,
             attributes: RopePoint.WebGPUFormat,
           },
-          {
-            stepMode: "instance",
-            arrayStride: RopeStick.ByteSizeAligned,
-            attributes: RopeStick.WebGPUFormat,
-          },
+          // {
+          //   stepMode: "instance",
+          //   arrayStride: RopeStick.ByteSizeAligned,
+          //   attributes: RopeStick.WebGPUFormat,
+          // },
         ],
       },
       fragment: {
@@ -419,8 +414,8 @@ export class Renderer_WebGPU implements Renderer {
     bundleEnc.setIndexBuffer(this.particleIndexBuffer, "uint16");
     bundleEnc.setVertexBuffer(0, this.particleVertexBuffer);
     bundleEnc.setVertexBuffer(1, this.ropePointBuffer);
-    bundleEnc.setVertexBuffer(2, this.ropeStickBuffer);
-    bundleEnc.drawIndexed(12, this.ropeLen, 0, 0);
+    // bundleEnc.setVertexBuffer(2, this.ropeStickBuffer);
+    bundleEnc.drawIndexed(12, this.ropePointData.length, 0, 0);
     // console.dir(rndrRopePipeline);
     // console.dir(this.particleIndexBuffer);
     // console.dir(this.particleVertexBuffer);
@@ -467,28 +462,52 @@ export class Renderer_WebGPU implements Renderer {
 
     // setup rope
     // TODO(@darzu): ROPE
-    const mkRopePoint: (i: number) => RopePoint.Data = (i) => {
-      const p: vec3 = [0, 10 - i * 0.5, i * 1];
-      return {
-        position: p,
-        prevPosition: p,
-        // TODO(@darzu): locked isn't working?
-        // locked: i / this.ropeLen,
-        locked: i === 0 ? 1 : 0,
-        // locked: i === 0 || i === this.ropeLen - 1 ? 1 : 0,
-        // locked: 0.8,
-      };
-    };
-    const startDist = vec3.len(
-      vec3.sub(tempVec(), mkRopePoint(0).position, mkRopePoint(1).position)
-    );
-    this.ropePointData = range(this.ropeLen).map((_, i) => mkRopePoint(i));
+    this.ropePointData = [];
+    this.ropeStickData = [];
+    const W = 10;
+    const idx = (x: number, y: number) => x * W + y;
+    for (let x = 0; x < W; x++) {
+      for (let y = 0; y < W; y++) {
+        let i = idx(x, y);
+        const pos: vec3 = [x, y + 4, 0];
+        const p: RopePoint.Data = {
+          position: pos,
+          prevPosition: pos,
+          locked: 0.0,
+        };
+        this.ropePointData[i] = p;
+
+        if (y + 1 < W) {
+          this.ropeStickData.push({
+            aIdx: i,
+            bIdx: idx(x, y + 1),
+            length: 1.0,
+          });
+        }
+
+        if (x + 1 < W) {
+          this.ropeStickData.push({
+            aIdx: i,
+            bIdx: idx(x + 1, y),
+            length: 1.0,
+          });
+        }
+      }
+    }
+    // fix points
+    this.ropePointData[idx(0, W - 1)].locked = 1.0;
+    this.ropePointData[idx(W - 1, W - 1)].locked = 1.0;
+
+    // Serialize rope data
     this.ropePointBuffer = device.createBuffer({
       size: RopePoint.ByteSizeAligned * this.ropePointData.length,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
       // GPUBufferUsage.COPY_DST,
       mappedAtCreation: true,
     });
+    this.scratchRopePointData = new Uint8Array(
+      RopePoint.ByteSizeAligned * this.ropePointData.length
+    );
     for (let i = 0; i < this.ropePointData.length; i++)
       RopePoint.serialize(
         this.scratchRopePointData,
@@ -499,20 +518,16 @@ export class Renderer_WebGPU implements Renderer {
       this.scratchRopePointData
     );
     this.ropePointBuffer.unmap();
-    const mkRopeStick: (i: number) => RopeStick.Data = (i) => ({
-      aIdx: i,
-      bIdx: i + 1,
-      length: startDist,
-    });
-    this.ropeStickData = range(this.ropeLen - 1).map((_, i) => mkRopeStick(i));
-    console.dir(this.ropeStickData); // TODO(@darzu):
     this.ropeStickBuffer = device.createBuffer({
-      size: RopeStick.ByteSizeAligned * this.ropeLen,
+      size: RopeStick.ByteSizeAligned * this.ropeStickData.length,
       // size: RopeStick.ByteSizeAligned * this.ropeStickData.length,
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.VERTEX,
       // GPUBufferUsage.COPY_DST,
       mappedAtCreation: true,
     });
+    this.scratchRopeStickData = new Uint8Array(
+      RopeStick.ByteSizeAligned * this.ropeStickData.length
+    );
     for (let i = 0; i < this.ropeStickData.length; i++)
       RopeStick.serialize(
         this.scratchRopeStickData,

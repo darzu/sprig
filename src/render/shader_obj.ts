@@ -211,7 +211,7 @@ export const rope_shader = () =>
   @group(0) @binding(2) var<storage, read> ropeSticks : RopeSticks;
   
   // todo: pick workgroup size based on max rope system?
-  @stage(compute) @workgroup_size(10)
+  @stage(compute) @workgroup_size(212)
   fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
     var pIdx : u32 = GlobalInvocationID.x;
 
@@ -219,7 +219,7 @@ export const rope_shader = () =>
 
     // ropePoints.ropePoints[pIdx].locked = f32(pIdx) / 10.0;
 
-    let gravity = 0.0002;
+    let gravity = 0.00002;
     // let gravity = 0.00001;
 
     // this is setting color:
@@ -229,7 +229,7 @@ export const rope_shader = () =>
     if (p.locked < 0.5) {
       let newPrev = p.position;
       let delta = p.position - p.prevPosition;
-      let newPos = p.position + delta * 0.98 + vec3(0.0, -1.0, 0.0) * gravity * scene.time * scene.time;
+      let newPos = p.position + delta * 0.97 + vec3(0.0, -1.0, 0.0) * gravity * scene.time * scene.time;
 
     // //   ropePoints.ropePoints[pIdx].position *= 1.002;
       ropePoints.ropePoints[pIdx].position = newPos;
@@ -238,9 +238,9 @@ export const rope_shader = () =>
     
     workgroupBarrier();
 
-    var i: i32 = 0;
+    var i: u32 = 0u;
     loop {
-      if i >= 4 { break; }
+      if i >= 10u { break; }
 
       // if pIdx >= 9u { continue; }
 
@@ -257,12 +257,12 @@ export const rope_shader = () =>
 
     // ropePoints.ropePoints[pIdx].locked = f32(stick.aIdx); // / 10.0;
 
-      if (a.locked < 0.5 && i % 2 == 0) {
+      if (a.locked < 0.5 && i % 2u == 0u) {
       // if (a.locked < 0.5) {
         ropePoints.ropePoints[stick.aIdx].position = center + offset;
       }
       // if (b.locked < 0.5) {
-      if (b.locked < 0.5 && i % 2 == 1) {
+      if (b.locked < 0.5 && i % 2u == 1u) {
         ropePoints.ropePoints[stick.bIdx].position = center - offset;
       }
 
@@ -299,9 +299,9 @@ export const particle_shader = () =>
     @location(2) prevPosition : vec3<f32>,
     // @location(3) locked : vec3<f32>,
     @location(3) locked : f32,
-    @location(4) aIdx: u32,
-    @location(5) bIdx: u32,
-    @location(6) length: f32,
+    // @location(4) aIdx: u32,
+    // @location(5) bIdx: u32,
+    // @location(6) length: f32,
   ) -> VertexOutput {
     // return vec4<f32>(vertPos, 1.0);
     // let worldPos = vertPos;
