@@ -1,7 +1,7 @@
 import { mat4, vec3 } from "../gl-matrix.js";
 import { align, sum } from "../math.js";
 import { RopePoint, RopeStick, SceneUniform, Vertex } from "./mesh-pool.js";
-import { shaderSceneStruct } from "./render_webgpu.js";
+import { CLOTH_W, shaderSceneStruct } from "./render_webgpu.js";
 
 export module MeshUniformMod {
   export interface Data {
@@ -211,7 +211,7 @@ export const rope_shader = () =>
   @group(0) @binding(2) var<storage, read> ropeSticks : RopeSticks;
   
   // todo: pick workgroup size based on max rope system?
-  @stage(compute) @workgroup_size(212)
+  @stage(compute) @workgroup_size(${CLOTH_W ** 2})
   fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
     var pIdx : u32 = GlobalInvocationID.x;
 
@@ -219,6 +219,7 @@ export const rope_shader = () =>
 
     // ropePoints.ropePoints[pIdx].locked = f32(pIdx) / 10.0;
 
+    // let gravity = 0.0;
     let gravity = 0.00002;
     // let gravity = 0.00001;
 
@@ -229,7 +230,7 @@ export const rope_shader = () =>
     if (p.locked < 0.5) {
       let newPrev = p.position;
       let delta = p.position - p.prevPosition;
-      let newPos = p.position + delta * 0.97 + vec3(0.0, -1.0, 0.0) * gravity * scene.time * scene.time;
+      let newPos = p.position + delta * 0.9 + vec3(0.0, -1.0, 0.0) * gravity * scene.time * scene.time;
 
     // //   ropePoints.ropePoints[pIdx].position *= 1.002;
       ropePoints.ropePoints[pIdx].position = newPos;
@@ -240,30 +241,41 @@ export const rope_shader = () =>
 
     var i: u32 = 0u;
     loop {
-      if i >= 10u { break; }
+      if i >= 8u { break; }
 
-      // if pIdx >= 9u { continue; }
-
-      let stick = ropeSticks.ropeSticks[pIdx];
+      let sIdx = GlobalInvocationID.x * 2u + (i % 2u);
+      let stick = ropeSticks.ropeSticks[sIdx];
       let a = ropePoints.ropePoints[stick.aIdx];
       let b = ropePoints.ropePoints[stick.bIdx];
 
+      if stick.bIdx >= ${CLOTH_W ** 2}u { continue; }
+
+      // if sIdx >= 9u { continue; }
+
       let center = (a.position + b.position) / 2.0;
-      let dir = normalize(a.position - b.position);
+      let diff = a.position - b.position;
+      let sep = (length(diff) - stick.length) * 0.5;
+      let dir = normalize(diff);
+      let walk = dir * (sep * 0.95);
       let offset = dir * stick.length / 2.0;
 
-      // ropePoints.ropePoints[stick.aIdx].locked += 0.01;
-      // ropePoints.ropePoints[stick.bIdx].locked += 0.01;
+      // ropePoints.ropePoints[pIdx].locked = length(diff) / 7.0;
+      // ropePoints.ropePoints[pIdx].locked = abs(sep * 0.8);
 
-    // ropePoints.ropePoints[pIdx].locked = f32(stick.aIdx); // / 10.0;
+      // // ropePoints.ropePoints[stick.aIdx].locked += 0.01;
+      // // ropePoints.ropePoints[stick.bIdx].locked += 0.01;
 
-      if (a.locked < 0.5 && i % 2u == 0u) {
+      // // ropePoints.ropePoints[sIdx].locked = f32(stick.aIdx); // / 10.0;
+
       // if (a.locked < 0.5) {
-        ropePoints.ropePoints[stick.aIdx].position = center + offset;
+      if (a.locked < 0.5 && (i / 2u) % 2u == 0u) {
+        ropePoints.ropePoints[stick.aIdx].position -= walk;
+        // ropePoints.ropePoints[stick.aIdx].position = center + offset;
       }
       // if (b.locked < 0.5) {
-      if (b.locked < 0.5 && i % 2u == 1u) {
-        ropePoints.ropePoints[stick.bIdx].position = center - offset;
+      if (b.locked < 0.5 && (i / 2u) % 2u == 1u) {
+        ropePoints.ropePoints[stick.bIdx].position += walk;
+        // ropePoints.ropePoints[stick.bIdx].position = center - offset;
       }
 
       continuing {
@@ -305,7 +317,7 @@ export const particle_shader = () =>
   ) -> VertexOutput {
     // return vec4<f32>(vertPos, 1.0);
     // let worldPos = vertPos;
-    let worldPos = vertPos * 0.5 + position;
+    let worldPos = vertPos * 0.3 + position;
     let screenPos = scene.cameraViewProjMatrix * vec4<f32>(worldPos, 1.0);
 
     // return vec4<f32>(vertPos, 1.0);

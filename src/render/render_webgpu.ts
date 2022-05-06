@@ -1,5 +1,6 @@
 import { mat4, vec3, quat } from "../gl-matrix.js";
 import { tempVec } from "../temp-pool.js";
+import { assert } from "../test.js";
 import { range } from "../util.js";
 import {
   createMeshPool_WebGPU,
@@ -44,6 +45,8 @@ const depthStencilFormat = "depth24plus-stencil8";
 //   transform: mat4;
 //   renderable: Renderable;
 // }
+
+export const CLOTH_W = 12;
 
 export class Renderer_WebGPU implements Renderer {
   public drawLines = true;
@@ -464,11 +467,15 @@ export class Renderer_WebGPU implements Renderer {
     // TODO(@darzu): ROPE
     this.ropePointData = [];
     this.ropeStickData = [];
-    const W = 10;
-    const idx = (x: number, y: number) => x * W + y;
-    for (let x = 0; x < W; x++) {
-      for (let y = 0; y < W; y++) {
+    // let n = 0;
+    const idx = (x: number, y: number) => {
+      if (x >= CLOTH_W || y >= CLOTH_W) return CLOTH_W * CLOTH_W;
+      return x * CLOTH_W + y;
+    };
+    for (let x = 0; x < CLOTH_W; x++) {
+      for (let y = 0; y < CLOTH_W; y++) {
         let i = idx(x, y);
+        // assert(i === n, "i === n");
         const pos: vec3 = [x, y + 4, 0];
         const p: RopePoint.Data = {
           position: pos,
@@ -477,26 +484,34 @@ export class Renderer_WebGPU implements Renderer {
         };
         this.ropePointData[i] = p;
 
-        if (y + 1 < W) {
-          this.ropeStickData.push({
-            aIdx: i,
-            bIdx: idx(x, y + 1),
-            length: 1.0,
-          });
-        }
+        // if (y + 1 < W && x + 1 < W) {
+        // if (y + 1 < W) {
+        this.ropeStickData.push({
+          aIdx: i,
+          bIdx: idx(x, y + 1),
+          length: 1.0,
+        });
+        // }
 
-        if (x + 1 < W) {
-          this.ropeStickData.push({
-            aIdx: i,
-            bIdx: idx(x + 1, y),
-            length: 1.0,
-          });
-        }
+        // if (x + 1 < W) {
+        this.ropeStickData.push({
+          aIdx: i,
+          bIdx: idx(x + 1, y),
+          length: 1.0,
+        });
+        // }
+        // }
+
+        // n++;
       }
     }
     // fix points
-    this.ropePointData[idx(0, W - 1)].locked = 1.0;
-    this.ropePointData[idx(W - 1, W - 1)].locked = 1.0;
+    this.ropePointData[idx(0, CLOTH_W - 1)].locked = 1.0;
+    this.ropePointData[idx(CLOTH_W - 1, CLOTH_W - 1)].locked = 1.0;
+    // for (let i = 0; i < this.ropePointData.length; i++)
+    //   if (this.ropePointData[i].locked > 0) console.log(`locked: ${i}`);
+    // console.dir(this.ropePointData);
+    // console.dir(this.ropeStickData);
 
     // Serialize rope data
     this.ropePointBuffer = device.createBuffer({

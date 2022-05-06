@@ -317,11 +317,16 @@ export function initClothSandbox(em: EntityManager, hosting: boolean) {
       e.controllable.sprintMul = 3;
 
       {
-        vec3.copy(e.position, [-16.85, 7.11, -4.33]);
-        quat.copy(e.rotation, [0.0, -0.76, 0.0, 0.65]);
+        // vec3.copy(e.position, [-16.85, 7.11, -4.33]);
+        // quat.copy(e.rotation, [0.0, -0.76, 0.0, 0.65]);
+        // vec3.copy(e.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+        // e.cameraFollow.yawOffset = 0.0;
+        // e.cameraFollow.pitchOffset = -0.368;
+        vec3.copy(e.position, [4.46, 9.61, -10.52]);
+        quat.copy(e.rotation, [0.0, -1.0, 0.0, 0.04]);
         vec3.copy(e.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
         e.cameraFollow.yawOffset = 0.0;
-        e.cameraFollow.pitchOffset = -0.368;
+        e.cameraFollow.pitchOffset = -0.106;
       }
 
       const c = res.globalCursor3d.cursor()!;
