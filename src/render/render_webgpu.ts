@@ -654,8 +654,10 @@ export class Renderer_WebGPU implements Renderer {
     // TODO(@darzu): Looks like there are alignment requirements even on
     //    the vertex buffer! https://www.w3.org/TR/WGSL/#alignment-and-size
     const particleVertexBufferData = new Float32Array([
-      0, 1, 0, 0 /*alignment*/, -1, 0, -1, 0 /*alignment*/, 1, 0, -1,
-      0 /*alignment*/, 0, 0, 1, 0 /*alignment*/,
+      // 0, 1, 0, 0 /*alignment*/, -1, 0, -1, 0 /*alignment*/, 1, 0, -1,
+      // 0 /*alignment*/, 0, 0, 1, 0 /*alignment*/,
+      1, 1, 1, 0 /*alignment*/, 1, -1, -1, 0 /*alignment*/, -1, 1, -1,
+      0 /*alignment*/, -1, -1, 1, 0 /*alignment*/,
     ]);
     this.particleVertexBuffer = device.createBuffer({
       size: particleVertexBufferData.byteLength,
