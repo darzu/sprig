@@ -1,6 +1,23 @@
 import { randInt } from "./math.js";
 import { assert } from "./test.js";
 
+export type Intersect<A> = A extends [infer X, ...infer Y]
+  ? X & Intersect<Y>
+  : {};
+export type Union<A> = A extends [infer X, ...infer Y] ? X | Union<Y> : never;
+
+// TODO(@darzu): consider using a non recursive definition for performance
+export type TupleN<T, N extends number> = N extends N
+  ? number extends N
+    ? T[]
+    : _TupleN<T, N, []>
+  : never;
+export type _TupleN<
+  T,
+  N extends number,
+  R extends unknown[]
+> = R["length"] extends N ? R : _TupleN<T, N, [T, ...R]>;
+
 export function range(length: number): number[] {
   return ((new Array(length) as any).fill(null) as number[]).map((_, i) => i);
 }

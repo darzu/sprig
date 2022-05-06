@@ -1,18 +1,5 @@
 import { Serializer, Deserializer } from "./serialize.js";
-import { hashCode } from "./util.js";
-
-type Intersect<A> = A extends [infer X, ...infer Y] ? X & Intersect<Y> : {};
-type Union<A> = A extends [infer X, ...infer Y] ? X | Union<Y> : never;
-
-// TODO(@darzu): consider using a non recursive definition for performance
-export type TupleN<T, N extends number> = N extends N
-  ? number extends N
-    ? T[]
-    : _TupleN<T, N, []>
-  : never;
-type _TupleN<T, N extends number, R extends unknown[]> = R["length"] extends N
-  ? R
-  : _TupleN<T, N, [T, ...R]>;
+import { hashCode, Intersect } from "./util.js";
 
 export interface Entity {
   readonly id: number;
