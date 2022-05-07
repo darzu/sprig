@@ -34,9 +34,8 @@ export const CameraDef = EM.defineComponent("camera", () => {
     prevTargetId: 0,
     lastRotation: quat.create(),
     lastPosition: vec3.create(),
-    targetRotationError: quat.identity(quat.create()),
+    rotationError: quat.identity(quat.create()),
     targetPositionError: vec3.create(),
-    cameraRotationError: quat.identity(quat.create()),
     cameraPositionError: vec3.create(),
   };
 });
@@ -80,10 +79,9 @@ export function registerCameraSystems(em: EntityManager) {
     null,
     [CameraDef, TimeDef],
     function (_, res) {
+      reduceError(res.camera.rotationError, res.time.dt);
       reduceError(res.camera.targetPositionError, res.time.dt);
-      reduceError(res.camera.targetRotationError, res.time.dt);
       reduceError(res.camera.cameraPositionError, res.time.dt);
-      reduceError(res.camera.cameraRotationError, res.time.dt);
     },
     "smoothCamera"
   );
@@ -135,24 +133,29 @@ export function registerCameraSystems(em: EntityManager) {
           newTarget.world.position,
           res.camera.targetPositionError
         );
+        computeNewError(
+          res.camera.lastPosition,
+          res.camera.positionOffset,
+          res.camera.cameraPositionError
+        );
+
+        const computedRotation = quat.mul(
+          tempQuat(),
+          prevTarget.world.rotation,
+          res.camera.lastRotation
+        );
+        const newComputedRotation = quat.mul(
+          tempQuat(),
+          newTarget.world.rotation,
+          res.camera.rotationOffset
+        );
 
         computeNewError(
-          prevTarget.world.rotation,
-          newTarget.world.rotation,
-          res.camera.targetRotationError
+          computedRotation,
+          newComputedRotation,
+          res.camera.rotationError
         );
       }
-
-      computeNewError(
-        res.camera.lastPosition,
-        res.camera.positionOffset,
-        res.camera.cameraPositionError
-      );
-      computeNewError(
-        res.camera.lastRotation,
-        res.camera.rotationOffset,
-        res.camera.cameraRotationError
-      );
 
       res.camera.prevTargetId = res.camera.targetId;
     },
@@ -181,12 +184,6 @@ export function registerCameraSystems(em: EntityManager) {
 
       let viewMatrix = mat4.create();
       if (targetEnt) {
-        const computedRotation = quat.mul(
-          tempQuat(),
-          frame.rotation,
-          camera.targetRotationError
-        );
-        quat.normalize(computedRotation, computedRotation);
         const computedTranslation = vec3.add(
           tempVec(),
           frame.position,
@@ -194,7 +191,7 @@ export function registerCameraSystems(em: EntityManager) {
         );
         mat4.fromRotationTranslationScale(
           viewMatrix,
-          computedRotation,
+          frame.rotation,
           computedTranslation,
           frame.scale
         );
@@ -203,7 +200,7 @@ export function registerCameraSystems(em: EntityManager) {
       const computedCameraRotation = quat.mul(
         tempQuat(),
         camera.rotationOffset,
-        camera.cameraRotationError
+        camera.rotationError
       );
 
       mat4.multiply(
