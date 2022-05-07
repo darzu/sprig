@@ -3,6 +3,7 @@ import { tempQuat } from "./temp-pool.js";
 
 const ERROR_SMOOTHING_FACTOR = 0.9 ** (60 / 1000);
 const EPSILON = 0.0001;
+const QUAT_EPSILON = 0.001;
 
 const identityQuat: ReadonlyQuat = quat.identity(quat.create());
 
@@ -24,10 +25,12 @@ export function reduceError(
     }
   } else {
     const magnitude = Math.abs(quat.getAngle(v, identityQuat));
-    if (magnitude > EPSILON) {
+    if (magnitude > QUAT_EPSILON) {
+      console.log("mag > EPSILON");
       quat.slerp(v, v, identityQuat, 1 - smoothing_factor ** dt);
       quat.normalize(v, v);
     } else if (magnitude > 0) {
+      console.log("normalizing");
       quat.copy(v, identityQuat);
     }
   }
