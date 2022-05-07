@@ -2,6 +2,7 @@ import { mat4, vec3, quat } from "../gl-matrix.js";
 import { tempVec } from "../temp-pool.js";
 import { assert } from "../test.js";
 import { range } from "../util.js";
+import { createCyUniform, cyStruct, CyToObj, CyUniform } from "./data.js";
 import {
   createMeshPool_WebGPU,
   Mesh,
@@ -48,6 +49,17 @@ const depthStencilFormat = "depth24plus-stencil8";
 
 export const CLOTH_W = 12;
 
+const SceneStruct = cyStruct({
+  cameraViewProjMatrix: "mat4x4<f32>",
+  light1Dir: "vec3<f32>",
+  light2Dir: "vec3<f32>",
+  light3Dir: "vec3<f32>",
+  cameraPos: "vec3<f32>",
+  playerPos: "vec2<f32>",
+  time: "f32",
+});
+type SceneStructTS = CyToObj<typeof SceneStruct>;
+
 export class Renderer_WebGPU implements Renderer {
   public drawLines = true;
   public drawTris = true;
@@ -60,12 +72,14 @@ export class Renderer_WebGPU implements Renderer {
   private adapter: GPUAdapter;
   private presentationFormat: GPUTextureFormat;
 
-  private sceneUniformBuffer: GPUBuffer;
-
   // private handles: MeshObj[] = {};
 
   private pool: MeshPool_WebGPU;
-  private sceneData: SceneUniform.Data;
+
+  // TODO(@darzu): SCENE UNI
+  private sceneUni: CyUniform<typeof SceneStruct>;
+  // private sceneUniformBuffer: GPUBuffer;
+  // private sceneData: SceneUniform.Data;
 
   // TODO(@darzu): ROPE
   private ropePointData: RopePoint.Data[];
@@ -232,11 +246,7 @@ export class Renderer_WebGPU implements Renderer {
     // define the resource bindings for the mesh rendering pipeline
     const renderSceneUniBindGroupLayout = this.device.createBindGroupLayout({
       entries: [
-        {
-          binding: 0,
-          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-          buffer: { type: "uniform" },
-        },
+        this.sceneUni.layout(0),
         // TODO(@darzu): DISP
         {
           binding: 1,
@@ -253,10 +263,7 @@ export class Renderer_WebGPU implements Renderer {
     const renderSceneUniBindGroup = this.device.createBindGroup({
       layout: renderSceneUniBindGroupLayout,
       entries: [
-        {
-          binding: 0,
-          resource: { buffer: this.sceneUniformBuffer },
-        },
+        this.sceneUni.binding(0),
         // TODO(@darzu): DISP
         {
           binding: 1,
@@ -454,14 +461,16 @@ export class Renderer_WebGPU implements Renderer {
 
     this.pool = createMeshPool_WebGPU(device, opts);
 
-    this.sceneUniformBuffer = device.createBuffer({
-      size: SceneUniform.ByteSizeAligned,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-      mappedAtCreation: false,
-    });
+    // this.sceneUniformBuffer = device.createBuffer({
+    //   size: SceneUniform.ByteSizeAligned,
+    //   usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    //   mappedAtCreation: false,
+    // });
+    this.sceneUni = createCyUniform(device, SceneStruct);
 
     // setup scene data:
-    this.sceneData = setupScene();
+    // TODO(@darzu): allow init to pass in above
+    this.sceneUni.queueUpdate(setupScene());
 
     // setup rope
     // TODO(@darzu): ROPE
@@ -699,16 +708,11 @@ export class Renderer_WebGPU implements Renderer {
     this.checkCanvasResize();
 
     // update scene data
-    this.sceneData.cameraViewProjMatrix = viewProj;
-    this.sceneData.time = 1000 / 60; // TODO(@darzu): use real dt
-
-    SceneUniform.serialize(this.scratchSceneUni, 0, this.sceneData);
-    this.device.queue.writeBuffer(
-      this.sceneUniformBuffer,
-      0,
-      this.scratchSceneUni.buffer
-    );
-
+    this.sceneUni.queueUpdate({
+      ...this.sceneUni.lastData!,
+      time: 1000 / 60,
+      cameraViewProjMatrix: viewProj,
+    });
     // update rope data?
     // TODO(@darzu): ROPE
     // for (let i = 0; i < this.ropeLen; i++)
@@ -803,12 +807,7 @@ export class Renderer_WebGPU implements Renderer {
       // layout: this.cmpRopePipeline.getBindGroupLayout(0),
       layout: this.cmpRopeBindGroupLayout,
       entries: [
-        {
-          binding: 0,
-          resource: {
-            buffer: this.sceneUniformBuffer,
-          },
-        },
+        this.sceneUni.binding(0),
         {
           binding: 1,
           resource: { buffer: this.ropePointBuffer },
@@ -872,7 +871,7 @@ export class Renderer_WebGPU implements Renderer {
 }
 
 // TODO(@darzu): move somewhere else
-export function setupScene(): SceneUniform.Data {
+export function setupScene(): SceneStructTS {
   // create a directional light and compute it's projection (for shadows) and direction
   const worldOrigin = vec3.fromValues(0, 0, 0);
   const D = 50;
@@ -913,8 +912,8 @@ export function setupScene(): SceneUniform.Data {
     light1Dir,
     light2Dir,
     light3Dir,
-    time: 0, // updated later
-    playerPos: [0, 0], // updated later
     cameraPos: vec3.create(), // updated later
+    playerPos: [0, 0], // updated later
+    time: 0, // updated later
   };
 }

@@ -1,6 +1,8 @@
 // cytochrome's data helpers
 
-import { Intersect } from "../util.js";
+import { mat4, vec2, vec3 } from "../gl-matrix.js";
+import { align, sum } from "../math.js";
+import { Intersect, objMap } from "../util.js";
 
 const WGSLScalars = ["bool", "i32", "u32", "f32", "f16"] as const;
 type WGSLScalar = typeof WGSLScalars[number];
@@ -23,7 +25,10 @@ type WGSLType = WGSLScalar | WGSLVec | WGSLMat;
 
 type WGSLTypeToTSType = {
   f32: number;
-  "vec2<f32>": [number, number];
+  "vec2<u32>": vec2;
+  "vec2<f32>": vec2;
+  "vec3<f32>": vec3;
+  "mat4x4<f32>": mat4;
 };
 
 const vertTypeToWgslType: Partial<Record<GPUVertexFormat, WGSLType>> = {
@@ -37,58 +42,176 @@ const vertTypeToWgslType: Partial<Record<GPUVertexFormat, WGSLType>> = {
   sint32: "i32",
 };
 
-type CyNameType<
-  N extends string = string,
-  T extends WGSLType = WGSLType
-> = readonly [N, T];
+// https://www.w3.org/TR/WGSL/#alignment-and-size
+const wgslTypeToSize: Partial<Record<WGSLType, number>> = {
+  i32: 4,
+  u32: 4,
+  f32: 4,
+  "vec2<f32>": 8,
+  "vec3<f32>": 12,
+  "mat4x4<f32>": 64,
+};
+const alignUp = (n: number) => {
+  // TODO(@darzu): i know there is a smarter way to write this...
+  //  ... something something bit shifting
+  if (n <= 4) return 4;
+  if (n <= 8) return 8;
+  if (n <= 16) return 16;
+  if (n <= 32) return 32;
+  if (n <= 64) return 64;
+  if (n <= 128) return 128;
+  if (n <= 256) return 256;
+  throw `${n} too big to align`;
+};
+// TODO(@darzu): this isn't quite right, a mat3x4<f32> is size 48 but aligns to 16
+const wgslTypeToAlign = objMap(wgslTypeToSize, alignUp) as Partial<
+  Record<WGSLType, number>
+>;
+// TODO(@darzu): inspect
+console.dir(wgslTypeToAlign);
 
-type CyToObj<NTs extends readonly CyNameType[]> = Intersect<{
-  [I in keyof NTs]: NTs[I] extends CyNameType<infer N, infer T>
-    ? { [k in N]: T }
+type CyStruct = Record<string, WGSLType>;
+
+export type CyToObj<O extends CyStruct> = {
+  [N in keyof O]: O[N] extends keyof WGSLTypeToTSType
+    ? WGSLTypeToTSType[O[N]]
     : never;
-}>;
+};
 
-// type foo = CyToObj<[["bar", "f32"], ["baz", "vec2<u32>"]]>;
-
-// type CyStruct = CyNameType[];
-
-// type CyFormat = {
-//   struct: [],
-//   modes:
-// }
-
-interface CyUni<NTs extends readonly CyNameType[]> {
-  set: (data: CyToObj<NTs>) => void;
+export interface CyUniform<O extends CyStruct> {
+  lastData: CyToObj<O> | undefined;
+  queueUpdate: (data: CyToObj<O>) => void;
+  binding(idx: number): GPUBindGroupEntry;
+  layout(idx: number): GPUBindGroupLayoutEntry;
 }
 
-function createCyUni<NTs extends readonly CyNameType[]>(
-  struct: readonly [...NTs]
-): CyUni<NTs> {
-  throw "TODO";
+export function cyStruct<O extends CyStruct>(struct: O): O {
+  // TODO(@darzu): impl other checks?
+  return struct;
 }
 
-const myUni = createCyUni([
-  ["bar", "f32"],
-  ["baz", "vec2<u32>"],
-] as const);
-// myUni.set({ bar: 2, baz: [0, 1] });
-
-type CyToObj2<O extends Record<string, WGSLType>> = { [N in keyof O]: O[N] };
-
-interface CyUni2<O extends Record<string, WGSLType>> {
-  set: (data: CyToObj2<O>) => void;
-}
 // <NS extends string, TS extends WGSLType>
-function createCyUni2<O extends Record<string, WGSLType>>(
+export function createCyUniform<O extends CyStruct>(
+  device: GPUDevice,
   struct: O
-): CyUni2<O> {
-  throw "TODO";
+): CyUniform<O> {
+  // TODO(@darzu): handle non-aligned for v-bufs
+
+  const sizes = Object.values(struct).map((v) => {
+    const s = wgslTypeToAlign[v];
+    if (!s) throw `missing size for ${v}`;
+    return s;
+  });
+
+  // check for out of size order elements
+  sizes.reduce((p, n, i) => {
+    if (p < n)
+      throw `CyStruct must have members in descending size order.\n${JSON.stringify(
+        struct
+      )} @ ${i}`;
+    return n;
+  }, Infinity);
+
+  const bufSize = align(sum(sizes), 256);
+
+  const buf = device.createBuffer({
+    size: bufSize,
+    // TODO(@darzu): parameterize these
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    mappedAtCreation: false,
+  });
+
+  const offsets = sizes.reduce((p, n) => [...p, p[p.length - 1] + n], [0]);
+
+  const names = Object.keys(struct);
+  const types = Object.values(struct);
+
+  // TODO(@darzu): support registering a custom serializer for perf reasons
+  // TODO(@darzu): emit serialization code
+  const scratch_u8 = new Uint8Array(bufSize);
+  const scratch_f32 = new Float32Array(scratch_u8.buffer);
+  function serializeAuto(data: CyToObj<O>) {
+    // TODO(@darzu): disable this check for perf
+    Object.keys(data).forEach((n, i) => {
+      if (n !== names[i])
+        throw `data values must be in the same order as the declaring struct.\n${JSON.stringify(
+          struct
+        )}\n"${n}" #${i}`;
+    });
+
+    Object.values(data).forEach((v, i) => {
+      const t = types[i];
+      const o = offsets[i];
+      if (t === "f32") scratch_f32[o / 4] = v;
+      else if (t === "vec2<f32>") scratch_f32.set(v, o / 4);
+      else if (t === "vec3<f32>") scratch_f32.set(v, o / 4);
+      else if (t === "mat4x4<f32>") scratch_f32.set(v, o / 4);
+    });
+  }
+
+  const uni: CyUniform<O> = {
+    lastData: undefined,
+    queueUpdate,
+    binding,
+    layout,
+  };
+
+  function queueUpdate(data: CyToObj<O>): void {
+    // TODO(@darzu): measure perf. we probably want to allow hand written serializers
+    uni.lastData = data;
+    serializeAuto(data);
+    device.queue.writeBuffer(buf, 0, scratch_u8.buffer);
+  }
+
+  function binding(idx: number): GPUBindGroupEntry {
+    return {
+      binding: idx,
+      resource: { buffer: buf },
+    };
+  }
+  function layout(idx: number): GPUBindGroupLayoutEntry {
+    return {
+      binding: idx,
+      // TODO(@darzu): parameterize
+      visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+      // TODO(@darzu): parameterize
+      buffer: { type: "uniform" },
+    };
+  }
+
+  return uni;
 }
-const myUni2 = createCyUni2({
-  bar: "f32",
-  baz: "vec2<u32>",
-});
-// myUni.set({ bar: 2, baz: [0, 1] });
+
+if (false as true) {
+  const bogusDevice: GPUDevice = null as any as GPUDevice;
+  const myUni = cyStruct({
+    bar: "f32",
+    baz: "vec2<u32>",
+  });
+  const myUniBuf = createCyUniform(bogusDevice, myUni);
+  myUniBuf.queueUpdate({ bar: 2, baz: [0, 1] });
+
+  const SceneStruct = cyStruct({
+    cameraViewProjMatrix: "mat4x4<f32>",
+    light1Dir: "vec3<f32>",
+    light2Dir: "vec3<f32>",
+    light3Dir: "vec3<f32>",
+    cameraPos: "vec3<f32>",
+    playerPos: "vec2<f32>",
+    time: "f32",
+  });
+
+  const sceneUni = createCyUniform(bogusDevice, SceneStruct);
+  sceneUni.queueUpdate({
+    cameraViewProjMatrix: mat4.create(),
+    light1Dir: vec3.create(),
+    light2Dir: vec3.create(),
+    light3Dir: vec3.create(),
+    cameraPos: vec3.create(),
+    playerPos: vec2.create(),
+    time: 0,
+  });
+}
 
 // let ropePointData: RopePoint.Data[];
 // let ropePointBuffer: GPUBuffer;
