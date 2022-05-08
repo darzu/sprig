@@ -78,7 +78,7 @@ export type CyToObj<O extends CyStruct> = {
     : never;
 };
 
-export interface CyUniform<O extends CyStruct> {
+export interface CyBuffer<O extends CyStruct> {
   lastData: CyToObj<O> | undefined;
   queueUpdate: (data: CyToObj<O>) => void;
   binding(idx: number): GPUBindGroupEntry;
@@ -116,12 +116,14 @@ export function toWGSLStruct(cyStruct: CyStruct, doAlign: boolean): string {
 }
 
 // <NS extends string, TS extends WGSLType>
-export function createCyUniform<O extends CyStruct>(
+export function createCyBuffer<O extends CyStruct>(
   device: GPUDevice,
   struct: O
-): CyUniform<O> {
+): CyBuffer<O> {
   // TODO(@darzu): handle non-aligned for v-bufs
   // TODO(@darzu): emit @group(0) @binding(0) var<uniform> scene : Scene;
+  // TODO(@darzu): a lot of this doesn't need the device, all that should move
+  //    into cyStruct fn probably
 
   const sizes = Object.values(struct).map((v) => {
     const s = wgslTypeToAlign[v];
@@ -175,7 +177,7 @@ export function createCyUniform<O extends CyStruct>(
     });
   }
 
-  const uni: CyUniform<O> = {
+  const uni: CyBuffer<O> = {
     lastData: undefined,
     queueUpdate,
     binding,
@@ -226,37 +228,6 @@ export function createCyUniform<O extends CyStruct>(
     buffer.set(scratch_f32_as_u8, byteOffset);
   }
 */
-
-if (false as true) {
-  const bogusDevice: GPUDevice = null as any as GPUDevice;
-  const myUni = cyStruct({
-    bar: "f32",
-    baz: "vec2<u32>",
-  });
-  const myUniBuf = createCyUniform(bogusDevice, myUni);
-  myUniBuf.queueUpdate({ bar: 2, baz: [0, 1] });
-
-  const SceneStruct = cyStruct({
-    cameraViewProjMatrix: "mat4x4<f32>",
-    light1Dir: "vec3<f32>",
-    light2Dir: "vec3<f32>",
-    light3Dir: "vec3<f32>",
-    cameraPos: "vec3<f32>",
-    playerPos: "vec2<f32>",
-    time: "f32",
-  });
-
-  const sceneUni = createCyUniform(bogusDevice, SceneStruct);
-  sceneUni.queueUpdate({
-    cameraViewProjMatrix: mat4.create(),
-    light1Dir: vec3.create(),
-    light2Dir: vec3.create(),
-    light3Dir: vec3.create(),
-    cameraPos: vec3.create(),
-    playerPos: vec2.create(),
-    time: 0,
-  });
-}
 
 // let ropePointData: RopePoint.Data[];
 // let ropePointBuffer: GPUBuffer;

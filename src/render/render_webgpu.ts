@@ -2,7 +2,7 @@ import { mat4, vec3, quat } from "../gl-matrix.js";
 import { tempVec } from "../temp-pool.js";
 import { assert } from "../test.js";
 import { range } from "../util.js";
-import { createCyUniform, cyStruct, CyToObj, CyUniform } from "./data.js";
+import { createCyBuffer, CyBuffer, cyStruct, CyToObj } from "./data.js";
 import {
   createMeshPool_WebGPU,
   Mesh,
@@ -53,6 +53,13 @@ export const SceneStruct = cyStruct({
 });
 type SceneStructTS = CyToObj<typeof SceneStruct>;
 
+export const RopePointStruct = cyStruct({
+  position: "vec3<f32>",
+  prevPosition: "vec3<f32>",
+  locked: "vec3<f32>",
+});
+type RopePointStructTS = CyToObj<typeof RopePointStruct>;
+
 export class Renderer_WebGPU implements Renderer {
   public drawLines = true;
   public drawTris = true;
@@ -70,7 +77,7 @@ export class Renderer_WebGPU implements Renderer {
   private pool: MeshPool_WebGPU;
 
   // TODO(@darzu): SCENE UNI
-  private sceneUni: CyUniform<typeof SceneStruct>;
+  private sceneUni: CyBuffer<typeof SceneStruct>;
   // private sceneUniformBuffer: GPUBuffer;
   // private sceneData: SceneUniform.Data;
 
@@ -459,7 +466,7 @@ export class Renderer_WebGPU implements Renderer {
     //   usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     //   mappedAtCreation: false,
     // });
-    this.sceneUni = createCyUniform(device, SceneStruct);
+    this.sceneUni = createCyBuffer(device, SceneStruct);
 
     // setup scene data:
     // TODO(@darzu): allow init to pass in above
