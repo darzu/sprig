@@ -68,6 +68,7 @@ import {
   GameState,
   registerGameStateSystems,
 } from "./gamestate.js";
+import { MeDef } from "../net/components.js";
 
 export const ScoreDef = EM.defineComponent("score", () => {
   return {
@@ -212,8 +213,9 @@ export function initShipGame(em: EntityManager, hosting: boolean) {
   if (hosting) {
     createShip();
   }
-
-  createPlayer(em);
+  // create player once MeDef is present (meaning we've joined, if
+  // we're not the host)
+  em.registerOneShotSystem(null, [MeDef], () => createPlayer(em));
 }
 
 function debugBoatParts(em: EntityManager) {
