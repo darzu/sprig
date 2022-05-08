@@ -156,7 +156,7 @@ export function createCyUniform<O extends CyStruct>(
   // TODO(@darzu): emit serialization code
   const scratch_u8 = new Uint8Array(bufSize);
   const scratch_f32 = new Float32Array(scratch_u8.buffer);
-  function serializeAuto(data: CyToObj<O>) {
+  function serializeSlow(data: CyToObj<O>) {
     // TODO(@darzu): disable this check for perf
     Object.keys(data).forEach((n, i) => {
       if (n !== names[i])
@@ -185,7 +185,7 @@ export function createCyUniform<O extends CyStruct>(
   function queueUpdate(data: CyToObj<O>): void {
     // TODO(@darzu): measure perf. we probably want to allow hand written serializers
     uni.lastData = data;
-    serializeAuto(data);
+    serializeSlow(data);
     device.queue.writeBuffer(buf, 0, scratch_u8.buffer);
   }
 
