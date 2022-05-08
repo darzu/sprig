@@ -2,7 +2,13 @@ import { mat4, vec3, quat } from "../gl-matrix.js";
 import { tempVec } from "../temp-pool.js";
 import { assert } from "../test.js";
 import { range } from "../util.js";
-import { createCyBuffer, createCyStruct, CyBuffer, CyToObj } from "./data.js";
+import {
+  createCyOne,
+  createCyStruct,
+  CyBuffer,
+  CyOne,
+  CyToObj,
+} from "./data.js";
 import {
   createMeshPool_WebGPU,
   Mesh,
@@ -77,7 +83,7 @@ export class Renderer_WebGPU implements Renderer {
   private pool: MeshPool_WebGPU;
 
   // TODO(@darzu): SCENE UNI
-  private sceneUni: CyBuffer<typeof SceneStruct.desc>;
+  private sceneUni: CyOne<typeof SceneStruct.desc>;
   // private sceneUniformBuffer: GPUBuffer;
   // private sceneData: SceneUniform.Data;
 
@@ -466,7 +472,7 @@ export class Renderer_WebGPU implements Renderer {
     //   usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     //   mappedAtCreation: false,
     // });
-    this.sceneUni = createCyBuffer(device, SceneStruct);
+    this.sceneUni = createCyOne(device, SceneStruct);
 
     // setup scene data:
     // TODO(@darzu): allow init to pass in above

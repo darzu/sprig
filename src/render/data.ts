@@ -88,10 +88,16 @@ export interface CyStruct<O extends CyStructDesc> {
 
 export interface CyBuffer<O extends CyStructDesc> {
   struct: CyStruct<O>;
-  lastData: CyToObj<O> | undefined;
   binding(idx: number): GPUBindGroupEntry;
+}
+export interface CyOne<O extends CyStructDesc> extends CyBuffer<O> {
+  lastData: CyToObj<O> | undefined;
   queueUpdate: (data: CyToObj<O>) => void;
 }
+// export interface CyMany<O extends CyStructDesc> extends CyBuffer<O> {
+//   lastData: CyToObj<O> | undefined;
+//   queueUpdate: (data: CyToObj<O>) => void;
+// }
 
 // export function cyStruct<O extends CyStruct>(struct: O): O {
 //   // TODO(@darzu): impl other checks?
@@ -201,10 +207,10 @@ export function createCyStruct<O extends CyStructDesc>(desc: O): CyStruct<O> {
   return struct;
 }
 
-export function createCyBuffer<O extends CyStructDesc>(
+export function createCyOne<O extends CyStructDesc>(
   device: GPUDevice,
   struct: CyStruct<O>
-): CyBuffer<O> {
+): CyOne<O> {
   const _buf = device.createBuffer({
     size: struct.size,
     // TODO(@darzu): parameterize these
@@ -212,7 +218,7 @@ export function createCyBuffer<O extends CyStructDesc>(
     mappedAtCreation: false,
   });
 
-  const buf: CyBuffer<O> = {
+  const buf: CyOne<O> = {
     struct,
     lastData: undefined,
     queueUpdate,
