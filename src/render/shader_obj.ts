@@ -1,7 +1,8 @@
 import { mat4, vec3 } from "../gl-matrix.js";
 import { align, sum } from "../math.js";
-import { RopePoint, RopeStick, SceneUniform, Vertex } from "./mesh-pool.js";
-import { CLOTH_W } from "./render_webgpu.js";
+import { toWGSLStruct } from "./data.js";
+import { RopePoint, RopeStick, Vertex } from "./mesh-pool.js";
+import { CLOTH_W, SceneStruct } from "./render_webgpu.js";
 
 export module MeshUniformMod {
   export interface Data {
@@ -72,7 +73,7 @@ export module MeshUniformMod {
 export const obj_vertShader = () =>
   `
   struct Scene {
-    ${SceneUniform.generateWGSLUniformStruct()}
+    ${toWGSLStruct(SceneStruct, true)}
   };
 
     struct Model {
@@ -126,7 +127,7 @@ export const obj_vertShader = () =>
 export const obj_fragShader = () =>
   `
   struct Scene {
-    ${SceneUniform.generateWGSLUniformStruct()}
+    ${toWGSLStruct(SceneStruct, true)}
   };
 
     @group(0) @binding(0) var<uniform> scene : Scene;
@@ -194,7 +195,7 @@ export const cloth_shader = () =>
 export const rope_shader = () =>
   `
   struct Scene {
-    ${SceneUniform.generateWGSLUniformStruct()}
+    ${toWGSLStruct(SceneStruct, true)}
   };
 
   @group(0) @binding(0) var<uniform> scene : Scene;
@@ -301,7 +302,7 @@ export const rope_shader = () =>
 export const particle_shader = () =>
   `
   struct Scene {
-    ${SceneUniform.generateWGSLUniformStruct()}
+    ${toWGSLStruct(SceneStruct, true)}
   };
 
   @group(0) @binding(0) var<uniform> scene : Scene;

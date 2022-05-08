@@ -42,7 +42,7 @@ const depthStencilFormat = "depth24plus-stencil8";
 
 export const CLOTH_W = 12;
 
-const SceneStruct = cyStruct({
+export const SceneStruct = cyStruct({
   cameraViewProjMatrix: "mat4x4<f32>",
   light1Dir: "vec3<f32>",
   light2Dir: "vec3<f32>",

@@ -90,14 +90,30 @@ export function cyStruct<O extends CyStruct>(struct: O): O {
   return struct;
 }
 
-// @align(16) cameraViewProjMatrix : mat4x4<f32>,
-// // lightViewProjMatrix : mat4x4<f32>,
-// @align(16) light1Dir : vec3<f32>,
-// @align(16) light2Dir : vec3<f32>,
-// @align(16) light3Dir : vec3<f32>,
-// @align(16) cameraPos : vec3<f32>,
-// @align(8) playerPos: vec2<f32>,
-// @align(4) time : f32,
+export function toWGSLStruct(cyStruct: CyStruct, doAlign: boolean): string {
+  // Example output:
+  // `
+  // @location(0) position : vec3<f32>,
+  // @location(1) color : vec3<f32>,
+  // @location(2) normal : vec3<f32>,
+  // @location(3) uv : vec2<f32>,
+  // `
+
+  // TODO(@darzu): support location and alignment
+
+  let res = ``;
+
+  for (let name of Object.keys(cyStruct)) {
+    const type = cyStruct[name];
+    // TODO(@darzu): remove eventually for perf
+    if (doAlign && !wgslTypeToAlign[type])
+      throw `Missing alignment info for ${type}`;
+    const align = doAlign ? `@align(${wgslTypeToAlign[type]})` : ``;
+    res += `${align} ${name} : ${type},`;
+  }
+
+  return res;
+}
 
 // <NS extends string, TS extends WGSLType>
 export function createCyUniform<O extends CyStruct>(
@@ -105,6 +121,7 @@ export function createCyUniform<O extends CyStruct>(
   struct: O
 ): CyUniform<O> {
   // TODO(@darzu): handle non-aligned for v-bufs
+  // TODO(@darzu): emit @group(0) @binding(0) var<uniform> scene : Scene;
 
   const sizes = Object.values(struct).map((v) => {
     const s = wgslTypeToAlign[v];
@@ -190,6 +207,25 @@ export function createCyUniform<O extends CyStruct>(
 
   return uni;
 }
+
+// TODO(@darzu): support custom serializers
+/*
+  export function serialize(
+    buffer: Uint8Array,
+    byteOffset: number,
+    data: Data
+  ) {
+    scratch_f32.set(data.cameraViewProjMatrix, _offsets[0]);
+    // scratch_f32.set(data.lightViewProjMatrix, _offsets[1]);
+    scratch_f32.set(data.light1Dir, _offsets[1]);
+    scratch_f32.set(data.light2Dir, _offsets[2]);
+    scratch_f32.set(data.light3Dir, _offsets[3]);
+    scratch_f32.set(data.cameraPos, _offsets[4]);
+    scratch_f32.set(data.playerPos, _offsets[5]);
+    scratch_f32[_offsets[6]] = data.time;
+    buffer.set(scratch_f32_as_u8, byteOffset);
+  }
+*/
 
 if (false as true) {
   const bogusDevice: GPUDevice = null as any as GPUDevice;
