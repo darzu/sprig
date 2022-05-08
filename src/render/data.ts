@@ -90,6 +90,15 @@ export function cyStruct<O extends CyStruct>(struct: O): O {
   return struct;
 }
 
+// @align(16) cameraViewProjMatrix : mat4x4<f32>,
+// // lightViewProjMatrix : mat4x4<f32>,
+// @align(16) light1Dir : vec3<f32>,
+// @align(16) light2Dir : vec3<f32>,
+// @align(16) light3Dir : vec3<f32>,
+// @align(16) cameraPos : vec3<f32>,
+// @align(8) playerPos: vec2<f32>,
+// @align(4) time : f32,
+
 // <NS extends string, TS extends WGSLType>
 export function createCyUniform<O extends CyStruct>(
   device: GPUDevice,

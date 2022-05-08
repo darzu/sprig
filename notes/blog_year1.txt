@@ -16,6 +16,10 @@ Goals / vision:
   Great at creating no-dependency examples via program slicing
   Yes glitch.com
   One-handed gaming (seriously!)
+  As simple as possible but no simpler! None of this "no code" nonsense
+    Also, yes user will have to care about performance and resource constraints!
+  Can make "real games"
+    Games with hours of content that people want to play and pay money for
 
   More out there:
     A better way to think about complexity in software

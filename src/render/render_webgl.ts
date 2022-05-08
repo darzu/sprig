@@ -4,7 +4,6 @@ import {
   Mesh,
   MeshHandle,
   MeshPoolOpts,
-  SceneUniform,
 } from "./mesh-pool.js";
 // TODO(@darzu): this is a bad dependency:
 import { setupScene } from "./render_webgpu.js";

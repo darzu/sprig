@@ -245,3 +245,54 @@ Hologram effect:
 
 Vaccume game:
   https://www.youtube.com/watch?v=PGk0rnyTa1U
+
+Great in depth compute shader deep dive by googler:
+  https://www.youtube.com/watch?v=DZRn_jNZjbw&t=2761s
+  https://github.com/googlefonts/compute-shader-101
+  thread hierarchy:
+    thread, 
+    subgroup
+      always power of 2
+      8-64 is common
+      fast subgroup operations
+    workgroup, 
+      ~64-1024
+      can synchronize and communicate within, but not without
+      ~32kb shared
+    dispatch
+      1000-10,000s of threads
+  shaders can not (in general):
+    recurse, function ptrs, sync outside workgroup, 
+    ptrs outside descriptors/bindings, dynamic mem alloc,
+    spawn more work,
+
+Shader toy standard inputs:
+  uniform vec3      iResolution;           // viewport resolution (in pixels)
+  uniform float     iTime;                 // shader playback time (in seconds)
+  uniform float     iTimeDelta;            // render time (in seconds)
+  uniform int       iFrame;                // shader playback frame
+  uniform float     iChannelTime[4];       // channel playback time (in seconds)
+  uniform vec3      iChannelResolution[4]; // channel resolution (in pixels)
+  uniform vec4      iMouse;                // mouse pixel coords. xy: current (if MLB down), zw: click
+  uniform samplerXX iChannel0..3;          // input channel. XX = 2D/Cube
+  uniform vec4      iDate;                 // (year, month, day, time in seconds)
+  uniform float     iSampleRate;           // sound sample rate (i.e., 44100)
+
+Minspec sprigland device:
+  $353.39 in 3/2019, $211 in 5/2022
+  Lenovo IdeaPad C330
+  MediaTek MT8173C (1.70 GHz, 4 Cores, 4 Threads)
+  4 GB LPDDR3 1866MHz
+  Integrated PowerVR GX6250 Graphics
+  1366 x 768
+
+  or is it?
+    PowerVR SGX543
+    "iPhone 5's PowerVR SGX543MP3"
+
+Bounding volume hierarchy (BVH)
+  Apparently can be efficiently accessed via compute shaders?
+
+Compute algorithms:
+  Prefix sum
+  prefix scan

@@ -11,7 +11,6 @@ import {
   MeshPool_WebGPU,
   RopePoint,
   RopeStick,
-  SceneUniform,
   Vertex,
 } from "./mesh-pool.js";
 import { RenderableConstruct, Renderer } from "./renderer.js";
@@ -29,12 +28,6 @@ const PIXEL_PER_PX: number | null = null; // 0.5;
 // TODO: some state lives in global variables when it should live on the Renderer object
 
 // shaders
-
-export const shaderSceneStruct = () => `
-    struct Scene {
-        ${SceneUniform.generateWGSLUniformStruct()}
-    };
-`;
 
 // render pipeline parameters
 const antiAliasSampleCount = 4;
@@ -703,7 +696,7 @@ export class Renderer_WebGPU implements Renderer {
 
   private clothOnce = true;
 
-  private scratchSceneUni = new Uint8Array(SceneUniform.ByteSizeAligned);
+  // private scratchSceneUni = new Uint8Array(SceneUniform.ByteSizeAligned);
   public renderFrame(viewProj: mat4, handles: MeshHandle[]): void {
     this.checkCanvasResize();
 
