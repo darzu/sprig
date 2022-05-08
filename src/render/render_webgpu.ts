@@ -2,7 +2,7 @@ import { mat4, vec3, quat } from "../gl-matrix.js";
 import { tempVec } from "../temp-pool.js";
 import { assert } from "../test.js";
 import { range } from "../util.js";
-import { createCyBuffer, CyBuffer, cyStruct, CyToObj } from "./data.js";
+import { createCyBuffer, createCyStruct, CyBuffer, CyToObj } from "./data.js";
 import {
   createMeshPool_WebGPU,
   Mesh,
@@ -42,7 +42,7 @@ const depthStencilFormat = "depth24plus-stencil8";
 
 export const CLOTH_W = 12;
 
-export const SceneStruct = cyStruct({
+export const SceneStruct = createCyStruct({
   cameraViewProjMatrix: "mat4x4<f32>",
   light1Dir: "vec3<f32>",
   light2Dir: "vec3<f32>",
@@ -51,14 +51,14 @@ export const SceneStruct = cyStruct({
   playerPos: "vec2<f32>",
   time: "f32",
 });
-type SceneStructTS = CyToObj<typeof SceneStruct>;
+type SceneStructTS = CyToObj<typeof SceneStruct.desc>;
 
-export const RopePointStruct = cyStruct({
-  position: "vec3<f32>",
-  prevPosition: "vec3<f32>",
-  locked: "vec3<f32>",
-});
-type RopePointStructTS = CyToObj<typeof RopePointStruct>;
+// export const RopePointStruct = cyStruct({
+//   position: "vec3<f32>",
+//   prevPosition: "vec3<f32>",
+//   locked: "vec3<f32>",
+// });
+// type RopePointStructTS = CyToObj<typeof RopePointStruct>;
 
 export class Renderer_WebGPU implements Renderer {
   public drawLines = true;
@@ -77,7 +77,7 @@ export class Renderer_WebGPU implements Renderer {
   private pool: MeshPool_WebGPU;
 
   // TODO(@darzu): SCENE UNI
-  private sceneUni: CyBuffer<typeof SceneStruct>;
+  private sceneUni: CyBuffer<typeof SceneStruct.desc>;
   // private sceneUniformBuffer: GPUBuffer;
   // private sceneData: SceneUniform.Data;
 
@@ -246,7 +246,7 @@ export class Renderer_WebGPU implements Renderer {
     // define the resource bindings for the mesh rendering pipeline
     const renderSceneUniBindGroupLayout = this.device.createBindGroupLayout({
       entries: [
-        this.sceneUni.layout(0),
+        this.sceneUni.struct.layout(0),
         // TODO(@darzu): DISP
         {
           binding: 1,

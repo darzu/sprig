@@ -73,7 +73,7 @@ export module MeshUniformMod {
 export const obj_vertShader = () =>
   `
   struct Scene {
-    ${toWGSLStruct(SceneStruct, true)}
+    ${SceneStruct.wgsl(true)}
   };
 
     struct Model {
@@ -127,7 +127,7 @@ export const obj_vertShader = () =>
 export const obj_fragShader = () =>
   `
   struct Scene {
-    ${toWGSLStruct(SceneStruct, true)}
+    ${SceneStruct.wgsl(true)}
   };
 
     @group(0) @binding(0) var<uniform> scene : Scene;
@@ -195,7 +195,7 @@ export const cloth_shader = () =>
 export const rope_shader = () =>
   `
   struct Scene {
-    ${toWGSLStruct(SceneStruct, true)}
+    ${SceneStruct.wgsl(true)}
   };
 
   @group(0) @binding(0) var<uniform> scene : Scene;
@@ -302,7 +302,7 @@ export const rope_shader = () =>
 export const particle_shader = () =>
   `
   struct Scene {
-    ${toWGSLStruct(SceneStruct, true)}
+    ${SceneStruct.wgsl(true)}
   };
 
   @group(0) @binding(0) var<uniform> scene : Scene;

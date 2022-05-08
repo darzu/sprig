@@ -70,27 +70,35 @@ const wgslTypeToAlign = objMap(wgslTypeToSize, alignUp) as Partial<
 // TODO(@darzu): inspect
 console.dir(wgslTypeToAlign);
 
-type CyStruct = Record<string, WGSLType>;
+type CyStructDesc = Record<string, WGSLType>;
 
-export type CyToObj<O extends CyStruct> = {
+export type CyToObj<O extends CyStructDesc> = {
   [N in keyof O]: O[N] extends keyof WGSLTypeToTSType
     ? WGSLTypeToTSType[O[N]]
     : never;
 };
 
-export interface CyBuffer<O extends CyStruct> {
-  lastData: CyToObj<O> | undefined;
-  queueUpdate: (data: CyToObj<O>) => void;
-  binding(idx: number): GPUBindGroupEntry;
+export interface CyStruct<O extends CyStructDesc> {
+  desc: O;
+  size: number;
+  serializeSlow: (data: CyToObj<O>) => Uint8Array;
   layout(idx: number): GPUBindGroupLayoutEntry;
+  wgsl: (align: boolean) => string;
 }
 
-export function cyStruct<O extends CyStruct>(struct: O): O {
-  // TODO(@darzu): impl other checks?
-  return struct;
+export interface CyBuffer<O extends CyStructDesc> {
+  struct: CyStruct<O>;
+  lastData: CyToObj<O> | undefined;
+  binding(idx: number): GPUBindGroupEntry;
+  queueUpdate: (data: CyToObj<O>) => void;
 }
 
-export function toWGSLStruct(cyStruct: CyStruct, doAlign: boolean): string {
+// export function cyStruct<O extends CyStruct>(struct: O): O {
+//   // TODO(@darzu): impl other checks?
+//   return struct;
+// }
+
+export function toWGSLStruct(cyStruct: CyStructDesc, doAlign: boolean): string {
   // Example output:
   // `
   // @location(0) position : vec3<f32>,
@@ -115,17 +123,13 @@ export function toWGSLStruct(cyStruct: CyStruct, doAlign: boolean): string {
   return res;
 }
 
-// <NS extends string, TS extends WGSLType>
-export function createCyBuffer<O extends CyStruct>(
-  device: GPUDevice,
-  struct: O
-): CyBuffer<O> {
+export function createCyStruct<O extends CyStructDesc>(desc: O): CyStruct<O> {
   // TODO(@darzu): handle non-aligned for v-bufs
   // TODO(@darzu): emit @group(0) @binding(0) var<uniform> scene : Scene;
   // TODO(@darzu): a lot of this doesn't need the device, all that should move
   //    into cyStruct fn probably
 
-  const sizes = Object.values(struct).map((v) => {
+  const sizes = Object.values(desc).map((v) => {
     const s = wgslTypeToAlign[v];
     if (!s) throw `missing size for ${v}`;
     return s;
@@ -135,35 +139,28 @@ export function createCyBuffer<O extends CyStruct>(
   sizes.reduce((p, n, i) => {
     if (p < n)
       throw `CyStruct must have members in descending size order.\n${JSON.stringify(
-        struct
+        desc
       )} @ ${i}`;
     return n;
   }, Infinity);
 
-  const bufSize = align(sum(sizes), 256);
-
-  const buf = device.createBuffer({
-    size: bufSize,
-    // TODO(@darzu): parameterize these
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    mappedAtCreation: false,
-  });
+  const structSize = align(sum(sizes), 256);
 
   const offsets = sizes.reduce((p, n) => [...p, p[p.length - 1] + n], [0]);
 
-  const names = Object.keys(struct);
-  const types = Object.values(struct);
+  const names = Object.keys(desc);
+  const types = Object.values(desc);
 
   // TODO(@darzu): support registering a custom serializer for perf reasons
   // TODO(@darzu): emit serialization code
-  const scratch_u8 = new Uint8Array(bufSize);
+  const scratch_u8 = new Uint8Array(structSize);
   const scratch_f32 = new Float32Array(scratch_u8.buffer);
-  function serializeSlow(data: CyToObj<O>) {
+  function serializeSlow(data: CyToObj<O>): Uint8Array {
     // TODO(@darzu): disable this check for perf
     Object.keys(data).forEach((n, i) => {
       if (n !== names[i])
         throw `data values must be in the same order as the declaring struct.\n${JSON.stringify(
-          struct
+          desc
         )}\n"${n}" #${i}`;
     });
 
@@ -175,28 +172,22 @@ export function createCyBuffer<O extends CyStruct>(
       else if (t === "vec3<f32>") scratch_f32.set(v, o / 4);
       else if (t === "mat4x4<f32>") scratch_f32.set(v, o / 4);
     });
+
+    return scratch_u8;
   }
 
-  const uni: CyBuffer<O> = {
-    lastData: undefined,
-    queueUpdate,
-    binding,
+  const struct: CyStruct<O> = {
+    desc,
+    size: structSize,
+    serializeSlow,
     layout,
+    wgsl,
   };
 
-  function queueUpdate(data: CyToObj<O>): void {
-    // TODO(@darzu): measure perf. we probably want to allow hand written serializers
-    uni.lastData = data;
-    serializeSlow(data);
-    device.queue.writeBuffer(buf, 0, scratch_u8.buffer);
+  function wgsl(align: boolean): string {
+    return toWGSLStruct(desc, align);
   }
 
-  function binding(idx: number): GPUBindGroupEntry {
-    return {
-      binding: idx,
-      resource: { buffer: buf },
-    };
-  }
   function layout(idx: number): GPUBindGroupLayoutEntry {
     return {
       binding: idx,
@@ -207,7 +198,42 @@ export function createCyBuffer<O extends CyStruct>(
     };
   }
 
-  return uni;
+  return struct;
+}
+
+export function createCyBuffer<O extends CyStructDesc>(
+  device: GPUDevice,
+  struct: CyStruct<O>
+): CyBuffer<O> {
+  const _buf = device.createBuffer({
+    size: struct.size,
+    // TODO(@darzu): parameterize these
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    mappedAtCreation: false,
+  });
+
+  const buf: CyBuffer<O> = {
+    struct,
+    lastData: undefined,
+    queueUpdate,
+    binding,
+  };
+
+  function queueUpdate(data: CyToObj<O>): void {
+    // TODO(@darzu): measure perf. we probably want to allow hand written serializers
+    buf.lastData = data;
+    const b = struct.serializeSlow(data);
+    device.queue.writeBuffer(_buf, 0, b);
+  }
+
+  function binding(idx: number): GPUBindGroupEntry {
+    return {
+      binding: idx,
+      resource: { buffer: _buf },
+    };
+  }
+
+  return buf;
 }
 
 // TODO(@darzu): support custom serializers
