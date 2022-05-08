@@ -94,10 +94,10 @@ export interface CyOne<O extends CyStructDesc> extends CyBuffer<O> {
   lastData: CyToObj<O> | undefined;
   queueUpdate: (data: CyToObj<O>) => void;
 }
-// export interface CyMany<O extends CyStructDesc> extends CyBuffer<O> {
-//   lastData: CyToObj<O> | undefined;
-//   queueUpdate: (data: CyToObj<O>) => void;
-// }
+export interface CyMany<O extends CyStructDesc> extends CyBuffer<O> {
+  length: number;
+  queueUpdate: (data: CyToObj<O>, idx: number) => void;
+}
 
 // export function cyStruct<O extends CyStruct>(struct: O): O {
 //   // TODO(@darzu): impl other checks?
@@ -230,6 +230,43 @@ export function createCyOne<O extends CyStructDesc>(
     buf.lastData = data;
     const b = struct.serializeSlow(data);
     device.queue.writeBuffer(_buf, 0, b);
+  }
+
+  function binding(idx: number): GPUBindGroupEntry {
+    return {
+      binding: idx,
+      resource: { buffer: _buf },
+    };
+  }
+
+  return buf;
+}
+
+export function createCyMany<O extends CyStructDesc>(
+  device: GPUDevice,
+  struct: CyStruct<O>,
+  length: number
+): CyMany<O> {
+  const _buf = device.createBuffer({
+    size: struct.size * length,
+    // TODO(@darzu): parameterize these
+    usage:
+      GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+    mappedAtCreation: false,
+  });
+
+  const buf: CyMany<O> = {
+    struct,
+    length,
+    queueUpdate,
+    binding,
+  };
+
+  const stride = struct.size;
+
+  function queueUpdate(data: CyToObj<O>, index: number): void {
+    const b = struct.serializeSlow(data);
+    device.queue.writeBuffer(_buf, index * stride, b);
   }
 
   function binding(idx: number): GPUBindGroupEntry {
