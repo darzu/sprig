@@ -158,6 +158,7 @@ export interface CyStruct<O extends CyStructDesc> {
     startLocation: number
   ): GPUVertexBufferLayout;
   clone: (data: CyToTS<O>) => CyToTS<O>;
+  opts: CyStructOpts<O> | undefined;
 }
 
 export interface CyBuffer<O extends CyStructDesc> {
@@ -214,6 +215,7 @@ export type Serializer<O extends CyStructDesc> = (
 
 export interface CyStructOpts<O extends CyStructDesc> {
   isUniform?: boolean;
+  isCompact?: boolean;
   serializer?: Serializer<O>;
 }
 
@@ -243,16 +245,30 @@ export function createCyStruct<O extends CyStructDesc>(
     return n;
   }, Infinity);
 
-  const offsets = sizes.reduce(
-    (p, n, i) => [...p, align(p[p.length - 1] + n, alignments[i + 1])],
-    [0]
+  let offsets: number[];
+  if (opts?.isCompact) {
+    offsets = sizes.reduce((p, n, i) => [...p, p[p.length - 1] + n], [0]);
+    offsets.pop();
+  } else {
+    offsets = sizes.reduce(
+      (p, n, i) => [...p, align(p[p.length - 1] + n, alignments[i + 1])],
+      [0]
+    );
+    offsets.pop();
+  }
+  assert(
+    offsets && sizes.length === offsets.length,
+    "sizes.length === offsets.length"
   );
-  offsets.pop();
-  assert(sizes.length === offsets.length, "sizes.length === offsets.length");
 
+  const structAlign = opts?.isUniform
+    ? 256
+    : opts?.isCompact
+    ? 4 // https://gpuweb.github.io/gpuweb/#vertex-formats
+    : max(alignments);
   const structSize = align(
     offsets[offsets.length - 1] + sizes[sizes.length - 1],
-    opts?.isUniform ? 256 : max(alignments)
+    structAlign
   );
 
   const names = Object.keys(desc);
@@ -336,6 +352,7 @@ export function createCyStruct<O extends CyStructDesc>(
     wgsl,
     vertexLayout,
     clone,
+    opts,
   };
 
   function clone(orig: CyToTS<O>): CyToTS<O> {
@@ -343,6 +360,10 @@ export function createCyStruct<O extends CyStructDesc>(
   }
 
   function wgsl(align: boolean): string {
+    assert(
+      opts?.isCompact ? !align : true,
+      "Cannot use aligned WGSL struct w/ compact layout"
+    );
     return toWGSLStruct(desc, align);
   }
 
@@ -385,7 +406,7 @@ export function createCyOne<O extends CyStructDesc>(
   device: GPUDevice,
   struct: CyStruct<O>
 ): CyOne<O> {
-  assert(struct.size % 256 === 0, "CyOne struct must be 256 aligned");
+  assert(struct.opts?.isUniform, "CyOne struct must be created with isUniform");
   const _buf = device.createBuffer({
     size: struct.size,
     // TODO(@darzu): parameterize these
