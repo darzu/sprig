@@ -5,7 +5,7 @@ import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
 import { EM } from "../entity-manager.js";
 import { assert } from "../test.js";
 import { MeshUniformStruct, MeshUniformTS } from "./shader_obj.js";
-import { createCyMany } from "./data.js";
+import { createCyMany, createCyStruct } from "./data.js";
 
 // TODO(@darzu): abstraction refinement:
 //  [ ] how do we handle multiple shaders with different mesh
@@ -75,15 +75,35 @@ function generateWGSLStruct(
   return res;
 }
 
+// TODO(@darzu):
+export const VertexStruct = createCyStruct(
+  {
+    position: "vec3<f32>",
+    color: "vec3<f32>",
+    normal: "vec3<f32>",
+    uv: "vec2<f32>",
+  },
+  {
+    // serializer: ({ position, color, normal, uv }, offsets, views) => {
+    //   views.f32[0] = position[0];
+    //   views.f32[1] = position[1];
+    //   views.f32[2] = position[2];
+    //   views.f32[3] = color[0];
+    //   views.f32[4] = color[1];
+    //   views.f32[5] = color[2];
+    //   views.f32[6] = normal[0];
+    //   views.f32[7] = normal[1];
+    //   views.f32[8] = normal[2];
+    //   views.f32[9] = uv[0];
+    //   views.f32[10] = uv[1];
+    // },
+  }
+);
+
 // Everything to do with our vertex format must be in this module (minus downstream
 //  places that should get type errors when this module changes.)
 // TODO(@darzu): code gen some of this so code changes are less error prone.
 export module Vertex {
-  export enum Kind {
-    normal = 0,
-    water = 1,
-  }
-
   // define the format of our vertices (this needs to agree with the inputs to the vertex shaders)
   export const WebGPUFormat: GPUVertexAttribute[] = [
     { shaderLocation: 0, offset: bytesPerVec3 * 0, format: "float32x3" }, // position

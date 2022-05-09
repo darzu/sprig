@@ -11,12 +11,14 @@ export const MeshUniformStruct = createCyStruct(
     aabbMax: "vec3<f32>",
     tint: "vec3<f32>",
   },
-  true,
-  (d, offsets, views) => {
-    views.f32.set(d.transform, offsets[0] / 4);
-    views.f32.set(d.aabbMin, offsets[1] / 4);
-    views.f32.set(d.aabbMax, offsets[2] / 4);
-    views.f32.set(d.tint, offsets[3] / 4);
+  {
+    isUniform: true,
+    serializer: (d, offsets, views) => {
+      views.f32.set(d.transform, offsets[0] / 4);
+      views.f32.set(d.aabbMin, offsets[1] / 4);
+      views.f32.set(d.aabbMax, offsets[2] / 4);
+      views.f32.set(d.tint, offsets[3] / 4);
+    },
   }
 );
 export type MeshUniformTS = CyToTS<typeof MeshUniformStruct.desc>;

@@ -212,10 +212,14 @@ export type Serializer<O extends CyStructDesc> = (
   views: { f32: Float32Array; u32: Uint32Array; u8: Uint8Array }
 ) => void;
 
+interface CyStructOpts<O extends CyStructDesc> {
+  isUniform?: boolean;
+  serializer?: Serializer<O>;
+}
+
 export function createCyStruct<O extends CyStructDesc>(
   desc: O,
-  isUniform?: boolean,
-  serializer?: Serializer<O>
+  opts?: CyStructOpts<O>
 ): CyStruct<O> {
   // TODO(@darzu): handle non-aligned for v-bufs
   // TODO(@darzu): emit @group(0) @binding(0) var<uniform> scene : Scene;
@@ -248,7 +252,7 @@ export function createCyStruct<O extends CyStructDesc>(
 
   const structSize = align(
     offsets[offsets.length - 1] + sizes[sizes.length - 1],
-    isUniform ? 256 : max(alignments)
+    opts?.isUniform ? 256 : max(alignments)
   );
 
   const names = Object.keys(desc);
@@ -292,7 +296,7 @@ export function createCyStruct<O extends CyStructDesc>(
   // check custom serializer correctness
   // TODO(@darzu): option to disable this
   let serialize = serializeSlow;
-  if (serializer) {
+  if (opts?.serializer) {
     const dummy = createDummyStruct(desc);
 
     // run the baseline
@@ -304,7 +308,7 @@ export function createCyStruct<O extends CyStructDesc>(
     // run the passed in one
     const fastRes = new Uint8Array(structSize);
     scratch_u8.fill(0);
-    serializer(dummy, offsets, views);
+    opts.serializer(dummy, offsets, views);
     fastRes.set(scratch_u8, 0);
 
     // compare
@@ -318,7 +322,7 @@ export function createCyStruct<O extends CyStructDesc>(
 
     // use it
     serialize = (d) => {
-      serializer(d, offsets, views);
+      opts!.serializer!(d, offsets, views);
       return scratch_u8;
     };
   }

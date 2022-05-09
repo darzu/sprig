@@ -59,15 +59,17 @@ export const SceneStruct = createCyStruct(
     playerPos: "vec2<f32>",
     time: "f32",
   },
-  true,
-  (data, offsets, views) => {
-    views.f32.set(data.cameraViewProjMatrix, offsets[0] / 4);
-    views.f32.set(data.light1Dir, offsets[1] / 4);
-    views.f32.set(data.light2Dir, offsets[2] / 4);
-    views.f32.set(data.light3Dir, offsets[3] / 4);
-    views.f32.set(data.cameraPos, offsets[4] / 4);
-    views.f32.set(data.playerPos, offsets[5] / 4);
-    views.f32[offsets[6] / 4] = data.time;
+  {
+    isUniform: true,
+    serializer: (data, offsets, views) => {
+      views.f32.set(data.cameraViewProjMatrix, offsets[0] / 4);
+      views.f32.set(data.light1Dir, offsets[1] / 4);
+      views.f32.set(data.light2Dir, offsets[2] / 4);
+      views.f32.set(data.light3Dir, offsets[3] / 4);
+      views.f32.set(data.cameraPos, offsets[4] / 4);
+      views.f32.set(data.playerPos, offsets[5] / 4);
+      views.f32[offsets[6] / 4] = data.time;
+    },
   }
 );
 type SceneTS = CyToTS<typeof SceneStruct.desc>;
@@ -78,11 +80,13 @@ export const RopePointStruct = createCyStruct(
     prevPosition: "vec3<f32>",
     locked: "f32",
   },
-  false,
-  (data, offsets, views) => {
-    views.f32.set(data.position, offsets[0] / 4);
-    views.f32.set(data.prevPosition, offsets[1] / 4);
-    views.f32[offsets[2] / 4] = data.locked;
+  {
+    isUniform: false,
+    serializer: (data, offsets, views) => {
+      views.f32.set(data.position, offsets[0] / 4);
+      views.f32.set(data.prevPosition, offsets[1] / 4);
+      views.f32[offsets[2] / 4] = data.locked;
+    },
   }
 );
 type RopePointTS = CyToTS<typeof RopePointStruct.desc>;
