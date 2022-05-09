@@ -212,7 +212,7 @@ export type Serializer<O extends CyStructDesc> = (
   views: { f32: Float32Array; u32: Uint32Array; u8: Uint8Array }
 ) => void;
 
-interface CyStructOpts<O extends CyStructDesc> {
+export interface CyStructOpts<O extends CyStructDesc> {
   isUniform?: boolean;
   serializer?: Serializer<O>;
 }
