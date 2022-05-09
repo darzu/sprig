@@ -68,9 +68,6 @@ export const RopePointStruct = createCyStruct({
 });
 type RopePointTS = CyToTS<typeof RopePointStruct.desc>;
 
-// TODO(@darzu):
-console.log(`RopePointStruct: ${RopePointStruct.size} vs 32`);
-
 export class Renderer_WebGPU implements Renderer {
   public drawLines = true;
   public drawTris = true;

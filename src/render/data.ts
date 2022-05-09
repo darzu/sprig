@@ -2,6 +2,7 @@
 
 import { mat4, vec2, vec3 } from "../gl-matrix.js";
 import { align, max, sum } from "../math.js";
+import { assert } from "../test.js";
 import { Intersect, objMap } from "../util.js";
 
 const WGSLScalars = ["bool", "i32", "u32", "f32", "f16"] as const;
@@ -144,10 +145,12 @@ export function createCyStruct<O extends CyStructDesc>(desc: O): CyStruct<O> {
   //    into cyStruct fn probably
 
   const sizes = Object.values(desc).map((v) => {
-    const s = wgslTypeToAlign[v];
+    const s = wgslTypeToSize[v];
     if (!s) throw `missing size for ${v}`;
     return s;
   });
+
+  const alignments = sizes.map(alignUp);
 
   // check for out of size order elements
   sizes.reduce((p, n, i) => {
@@ -158,14 +161,17 @@ export function createCyStruct<O extends CyStructDesc>(desc: O): CyStruct<O> {
     return n;
   }, Infinity);
 
-  const offsets = sizes.reduce((p, n) => [...p, p[p.length - 1] + n], [0]);
+  const offsets = sizes.reduce(
+    (p, n, i) => [...p, align(p[p.length - 1] + n, alignments[i + 1])],
+    [0]
+  );
   offsets.pop();
+  assert(sizes.length === offsets.length, "sizes.length === offsets.length");
 
-  console.log(`max(sizes): ${max(sizes)} for ${JSON.stringify(desc)}`);
-  console.dir(sizes);
-
-  // size = align(last offset + last size, max(alignments))
-  const structSize = align(sum(sizes), max(sizes));
+  const structSize = align(
+    offsets[offsets.length - 1] + sizes[sizes.length - 1],
+    max(alignments)
+  );
 
   const names = Object.keys(desc);
   const types = Object.values(desc);

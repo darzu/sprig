@@ -192,9 +192,6 @@ export const cloth_shader = () =>
   
   `;
 
-// TODO(@darzu): remove
-console.log(RopePointStruct.wgsl(true));
-
 export const rope_shader = () =>
   `
   struct Scene {
