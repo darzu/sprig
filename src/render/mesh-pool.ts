@@ -63,21 +63,6 @@ export const RopeStickStruct = createCyStruct({
 });
 export type RopeStickTS = CyToTS<typeof RopeStickStruct.desc>;
 
-// TODO(@darzu): WORK IN PROGRESS. Unclear this is how we want to do different shader uniforms
-// TODO(@darzu): WIP interfaces for shaders
-export interface GPUData<D> {
-  byteSizeExact: number;
-  byteSizeAligned: number;
-  generateWGSLUniformStruct(): string;
-  serialize(buffer: Uint8Array, byteOffset: number, data: D): void;
-}
-
-export interface ShaderDescription {
-  // TODO(@darzu):
-  uniformByteSizeAligned: number;
-  uniformByteSizeExact: number;
-}
-
 // export const OBJ_SHADER: ShaderDescription = {
 //   // TODO(@darzu):
 //   uniformByteSizeAligned: MeshUniform.ByteSizeAligned,
