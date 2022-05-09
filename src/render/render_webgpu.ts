@@ -18,7 +18,7 @@ import {
   MeshPoolOpts,
   MeshPool_WebGPU,
   RopeStick,
-  Vertex,
+  VertexStruct,
 } from "./mesh-pool.js";
 import { RenderableConstruct, Renderer } from "./renderer.js";
 import {
@@ -322,12 +322,7 @@ export class Renderer_WebGPU implements Renderer {
       vertex: {
         module: this.device.createShaderModule({ code: obj_vertShader() }),
         entryPoint: "main",
-        buffers: [
-          {
-            arrayStride: Vertex.ByteSize,
-            attributes: Vertex.WebGPUFormat,
-          },
-        ],
+        buffers: [VertexStruct.vertexLayout("vertex", 0)],
       },
       fragment: {
         module: this.device.createShaderModule({ code: obj_fragShader() }),

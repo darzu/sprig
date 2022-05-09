@@ -101,112 +101,6 @@ export const VertexStruct = createCyStruct(
   }
 );
 
-// Everything to do with our vertex format must be in this module (minus downstream
-//  places that should get type errors when this module changes.)
-// TODO(@darzu): code gen some of this so code changes are less error prone.
-export module Vertex {
-  // define the format of our vertices (this needs to agree with the inputs to the vertex shaders)
-  export const WebGPUFormat: GPUVertexAttribute[] = [
-    { shaderLocation: 0, offset: bytesPerVec3 * 0, format: "float32x3" }, // position
-    { shaderLocation: 1, offset: bytesPerVec3 * 1, format: "float32x3" }, // color
-    { shaderLocation: 2, offset: bytesPerVec3 * 2, format: "float32x3" }, // normals
-    // TODO(@darzu): DISP
-    { shaderLocation: 3, offset: bytesPerVec3 * 3, format: "float32x2" }, // uv
-  ];
-
-  const names = ["position", "color", "normal", "uv"];
-
-  export function GenerateWGSLVertexInputStruct(): string {
-    // Example output:
-    // `
-    // @location(0) position : vec3<f32>,
-    // @location(1) color : vec3<f32>,
-    // @location(2) normal : vec3<f32>,
-    // @location(3) uv : vec2<f32>,
-    // `
-
-    return generateWGSLStruct(WebGPUFormat, names);
-  }
-
-  // these help us pack and use vertices in that format
-  export const ByteSize =
-    bytesPerVec3 /*pos*/ +
-    bytesPerVec3 /*color*/ +
-    bytesPerVec3 /*normal*/ +
-    bytesPerVec2; /*uv*/
-
-  // for performance reasons, we keep scratch buffers around
-  const scratch_f32 = new Float32Array(
-    ByteSize / Float32Array.BYTES_PER_ELEMENT
-  );
-  const scratch_f32_as_u8 = new Uint8Array(scratch_f32.buffer);
-  const scratch_u32 = new Uint32Array(1);
-  const scratch_u32_as_u8 = new Uint8Array(scratch_u32.buffer);
-  export function serialize(
-    buffer: Uint8Array,
-    byteOffset: number,
-    pos: vec3,
-    color: vec3,
-    normal: vec3,
-    uv: vec2
-  ) {
-    scratch_f32[0] = pos[0];
-    scratch_f32[1] = pos[1];
-    scratch_f32[2] = pos[2];
-    scratch_f32[3] = color[0];
-    scratch_f32[4] = color[1];
-    scratch_f32[5] = color[2];
-    scratch_f32[6] = normal[0];
-    scratch_f32[7] = normal[1];
-    scratch_f32[8] = normal[2];
-    scratch_f32[9] = uv[0];
-    scratch_f32[10] = uv[1];
-    // TODO(@darzu):
-    // if (uv[0] > 0 || uv[1] > 0) console.log(uv);
-    buffer.set(scratch_f32_as_u8, byteOffset);
-  }
-
-  // for WebGL: deserialize whole array?
-  export function Deserialize(
-    buffer: Uint8Array,
-    vertexCount: number,
-    positions: Float32Array,
-    colors: Float32Array,
-    normals: Float32Array,
-    uv: Float32Array
-  ) {
-    if (
-      false ||
-      buffer.length < vertexCount * ByteSize ||
-      positions.length < vertexCount * 3 ||
-      colors.length < vertexCount * 3 ||
-      normals.length < vertexCount * 3 ||
-      uv.length < vertexCount * 2
-    )
-      throw "buffer too short!";
-    // TODO(@darzu): This only works because they have the same element size. Not sure what to do if that changes.
-    const f32View = new Float32Array(buffer.buffer);
-    const u32View = new Uint32Array(buffer.buffer);
-    for (let i = 0; i < vertexCount; i++) {
-      const u8_i = i * ByteSize;
-      const f32_i = u8_i / Float32Array.BYTES_PER_ELEMENT;
-      const u32_i = u8_i / Uint32Array.BYTES_PER_ELEMENT;
-      positions[i * 3 + 0] = f32View[f32_i + 0];
-      positions[i * 3 + 1] = f32View[f32_i + 1];
-      positions[i * 3 + 2] = f32View[f32_i + 2];
-      colors[i * 3 + 0] = f32View[f32_i + 3];
-      colors[i * 3 + 1] = f32View[f32_i + 4];
-      colors[i * 3 + 2] = f32View[f32_i + 5];
-      normals[i * 3 + 0] = f32View[f32_i + 6];
-      normals[i * 3 + 1] = f32View[f32_i + 7];
-      normals[i * 3 + 2] = f32View[f32_i + 8];
-      // TODO(@darzu): DISP
-      normals[i * 2 + 0] = f32View[f32_i + 9];
-      normals[i * 2 + 1] = f32View[f32_i + 10];
-    }
-  }
-}
-
 export module RopeStick {
   export interface Data {
     aIdx: number;
@@ -488,7 +382,7 @@ export function createMeshPool_WebGPU(
 
   // create our mesh buffers (vertex, index, uniform)
   const verticesBuffer = device.createBuffer({
-    size: maxVerts * Vertex.ByteSize,
+    size: maxVerts * VertexStruct.size,
     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     // NOTE(@darzu): with WebGPU we have the option to modify the full buffers in memory before
     //  handing them over to the GPU. This could be good for large initial sets of data, instead of
@@ -552,7 +446,7 @@ export function createMeshPool_WebGL(
   const { maxMeshes, maxTris, maxVerts, maxLines } = opts;
 
   // TODO(@darzu): we shouldn't need to preallocate all this
-  const scratchVerts = new Float32Array(maxVerts * (Vertex.ByteSize / 4));
+  const scratchVerts = new Float32Array(maxVerts * (VertexStruct.size / 4));
 
   const scratchTriIndices = new Uint16Array(maxTris * 3);
   const scratchLineIndices = new Uint16Array(maxLines * 2);
@@ -574,15 +468,15 @@ export function createMeshPool_WebGL(
 
   // our in-memory reflections of the buffers used during the initial build phase
   // TODO(@darzu): this is too much duplicate data
-  // let verticesMap = new Uint8Array(maxVerts * Vertex.ByteSize);
+  // let verticesMap = new Uint8Array(maxVerts * VertexStruct.size);
   // let triIndicesMap = new Uint16Array(maxTris * 3);
   // let lineIndicesMap = new Uint16Array(maxLines * 2);
   let uniformMap = new Uint8Array(maxMeshes * MeshUniformStruct.size);
 
   function updateVertices(offset: number, data: Uint8Array) {
     // TODO(@darzu): this is a strange way to compute this, but seems to work conservatively
-    // const numVerts = Math.min(data.length / Vertex.ByteSize, Math.max(builder.numVerts, builder.poolHandle.numVerts))
-    // const numVerts = data.length / Vertex.ByteSize;
+    // const numVerts = Math.min(data.length / VertexStruct.size, Math.max(builder.numVerts, builder.poolHandle.numVerts))
+    // const numVerts = data.length / VertexStruct.size;
     // const positions = new Float32Array(numVerts * 3);
     // const colors = new Float32Array(numVerts * 3);
     // const normals = new Float32Array(numVerts * 3);
@@ -590,7 +484,7 @@ export function createMeshPool_WebGL(
     // const uvs = new Float32Array(numVerts * 2);
     // Vertex.Deserialize(data, numVerts, positions, colors, normals, uvs);
 
-    // const vNumOffset = offset / Vertex.ByteSize;
+    // const vNumOffset = offset / VertexStruct.size;
 
     // TODO(@darzu): debug logging
     // console.log(`positions: #${vNumOffset}: ${positions.slice(0, numVerts * 3).join(',')}`)
@@ -649,7 +543,7 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
     `Mesh space usage for up to ${maxMeshes} meshes, ${maxTris} tris, ${maxVerts} verts:`
   );
   console.log(
-    `   ${((maxVerts * Vertex.ByteSize) / 1024).toFixed(1)} KB for verts`
+    `   ${((maxVerts * VertexStruct.size) / 1024).toFixed(1)} KB for verts`
   );
   console.log(
     `   ${((maxTris * bytesPerTri) / 1024).toFixed(1)} KB for tri indices`
@@ -671,7 +565,7 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
     ).toFixed(1)} KB total waste)`
   );
   const totalReservedBytes =
-    maxVerts * Vertex.ByteSize +
+    maxVerts * VertexStruct.size +
     maxTris * bytesPerTri +
     maxLines * bytesPerLine +
     maxMeshes * MeshUniformStruct.size;
@@ -707,7 +601,7 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
 
     const data: MeshPoolMaps = {
       // TODO(@darzu): use scratch arrays
-      verticesMap: new Uint8Array(m.pos.length * Vertex.ByteSize),
+      verticesMap: new Uint8Array(m.pos.length * VertexStruct.size),
       // pad triangles array to make sure it's a multiple of 4 *bytes*
       triIndicesMap: new Uint16Array(align(m.tri.length * 3, 2)),
       lineIndicesMap: new Uint16Array((m.lines?.length ?? 2) * 2), // TODO(@darzu): make optional?
@@ -759,7 +653,7 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
       new Uint8Array(data.lineIndicesMap.buffer)
     ); // TODO(@darzu): this view shouldn't be necessary
     queues.updateVertices(
-      idx.vertNumOffset * Vertex.ByteSize,
+      idx.vertNumOffset * VertexStruct.size,
       data.verticesMap
     );
 
@@ -792,9 +686,12 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
 
   function updateMeshVertices(handle: MeshHandle, newMesh: Mesh) {
     // TODO(@darzu): use scratch array
-    const verticesMap = new Uint8Array(newMesh.pos.length * Vertex.ByteSize);
+    const verticesMap = new Uint8Array(newMesh.pos.length * VertexStruct.size);
     serializeMeshVertices(newMesh, verticesMap);
-    queues.updateVertices(handle.vertNumOffset * Vertex.ByteSize, verticesMap);
+    queues.updateVertices(
+      handle.vertNumOffset * VertexStruct.size,
+      verticesMap
+    );
   }
 
   function updateUniform(m: MeshHandle): void {
@@ -809,22 +706,23 @@ function serializeMeshVertices(m: Mesh, verticesMap: Uint8Array) {
   if (!m.usesProvoking) throw `mesh must use provoking vertices`;
 
   m.pos.forEach((pos, i) => {
-    const vOff = i * Vertex.ByteSize;
+    const vOff = i * VertexStruct.size;
     const uv: vec2 = m.uvs ? m.uvs[i] : [0.0, 0.0];
-    Vertex.serialize(
-      verticesMap,
-      vOff,
-      pos,
-      DEFAULT_VERT_COLOR,
-      [1.0, 0.0, 0.0],
-      uv
+    verticesMap.set(
+      VertexStruct.serialize({
+        position: pos,
+        color: DEFAULT_VERT_COLOR,
+        normal: [1.0, 0.0, 0.0],
+        uv,
+      }),
+      vOff
     );
   });
   m.tri.forEach((triInd, i) => {
     // set provoking vertex data
     // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
     const vi = triInd[0];
-    const vOff = vi * Vertex.ByteSize;
+    const vOff = vi * VertexStruct.size;
     const normal = computeTriangleNormal(
       m.pos[triInd[0]],
       m.pos[triInd[1]],
@@ -833,13 +731,14 @@ function serializeMeshVertices(m: Mesh, verticesMap: Uint8Array) {
     // TODO(@darzu): DISP
     // TODO(@darzu): set UVs
     const uv: vec2 = m.uvs ? m.uvs[vi] : [0.0, 0.0];
-    Vertex.serialize(
-      verticesMap,
-      vOff,
-      m.pos[triInd[0]],
-      m.colors[i],
-      normal,
-      uv
+    verticesMap.set(
+      VertexStruct.serialize({
+        position: m.pos[triInd[0]],
+        color: m.colors[i],
+        normal,
+        uv,
+      }),
+      vOff
     );
   });
 }
@@ -867,8 +766,16 @@ function createMeshBuilder(
   // TODO(@darzu): VERTEX FORMAT
   function addVertex(pos: vec3, color: vec3, normal: vec3, uv: vec2): void {
     if (meshFinished) throw "trying to use finished MeshBuilder";
-    const vOff = vByteOff + numVerts * Vertex.ByteSize;
-    Vertex.serialize(maps.verticesMap, vOff, pos, color, normal, uv);
+    const vOff = vByteOff + numVerts * VertexStruct.size;
+    maps.verticesMap.set(
+      VertexStruct.serialize({
+        position: pos,
+        color,
+        normal,
+        uv,
+      }),
+      vOff
+    );
     numVerts += 1;
   }
   let _scratchTri = vec3.create();

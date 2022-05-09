@@ -4,7 +4,6 @@ import {
   Mesh,
   MeshHandle,
   MeshPoolOpts,
-  Vertex,
   VertexStruct,
 } from "./mesh-pool.js";
 // TODO(@darzu): this is a bad dependency:
@@ -267,7 +266,7 @@ export function attachToCanvas(
       3,
       gl.FLOAT,
       false,
-      Vertex.ByteSize,
+      VertexStruct.size,
       VertexStruct.offsets[0]
     );
     gl.enableVertexAttribArray(a_loc_position);
@@ -276,7 +275,7 @@ export function attachToCanvas(
       3,
       gl.FLOAT,
       false,
-      Vertex.ByteSize,
+      VertexStruct.size,
       VertexStruct.offsets[1]
     );
     gl.enableVertexAttribArray(a_loc_color);
@@ -285,7 +284,7 @@ export function attachToCanvas(
       3,
       gl.FLOAT,
       false,
-      Vertex.ByteSize,
+      VertexStruct.size,
       VertexStruct.offsets[2]
     );
     gl.enableVertexAttribArray(a_loc_normal);

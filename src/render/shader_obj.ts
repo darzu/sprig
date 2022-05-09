@@ -1,7 +1,7 @@
 import { mat4, vec3 } from "../gl-matrix.js";
 import { align, sum } from "../math.js";
 import { createCyStruct, CyToTS } from "./data.js";
-import { RopeStick, Vertex } from "./mesh-pool.js";
+import { RopeStick, VertexStruct } from "./mesh-pool.js";
 import { CLOTH_W, RopePointStruct, SceneStruct } from "./render_webgpu.js";
 
 export const MeshUniformStruct = createCyStruct(
@@ -48,7 +48,7 @@ export const obj_vertShader = () =>
 
     @stage(vertex)
     fn main(
-        ${Vertex.GenerateWGSLVertexInputStruct()}
+        ${VertexStruct.wgsl(false, 0)}
         ) -> VertexOutput {
         var output : VertexOutput;
         let worldPos: vec4<f32> = model.transform * vec4<f32>(position, 1.0);

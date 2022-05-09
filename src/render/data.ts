@@ -151,7 +151,7 @@ export interface CyStruct<O extends CyStructDesc> {
   compactSize: number;
   offsets: number[];
   serialize: (data: CyToTS<O>) => Uint8Array;
-  wgsl: (align: boolean) => string;
+  wgsl: (align: boolean, locationStart?: number) => string;
   // webgpu
   layout(idx: number): GPUBindGroupLayoutEntry;
   vertexLayout(
@@ -182,31 +182,6 @@ export interface CyMany<O extends CyStructDesc> extends CyBuffer<O> {
 //   // TODO(@darzu): impl other checks?
 //   return struct;
 // }
-
-export function toWGSLStruct(cyStruct: CyStructDesc, doAlign: boolean): string {
-  // Example output:
-  // `
-  // @location(0) position : vec3<f32>,
-  // @location(1) color : vec3<f32>,
-  // @location(2) normal : vec3<f32>,
-  // @location(3) uv : vec2<f32>,
-  // `
-
-  // TODO(@darzu): support location and alignment
-
-  let res = ``;
-
-  for (let name of Object.keys(cyStruct)) {
-    const type = cyStruct[name];
-    // TODO(@darzu): remove eventually for perf
-    if (doAlign && !wgslTypeToAlign[type])
-      throw `Missing alignment info for ${type}`;
-    const align = doAlign ? `@align(${wgslTypeToAlign[type]})` : ``;
-    res += `${align} ${name} : ${type},`;
-  }
-
-  return res;
-}
 
 export type Serializer<O extends CyStructDesc> = (
   data: CyToTS<O>,
@@ -361,12 +336,38 @@ export function createCyStruct<O extends CyStructDesc>(
     return cloneStruct(desc, orig);
   }
 
-  function wgsl(align: boolean): string {
+  function wgsl(doAlign: boolean, locationStart?: number): string {
     assert(
-      opts?.isCompact ? !align : true,
+      opts?.isCompact ? !doAlign : true,
       "Cannot use aligned WGSL struct w/ compact layout"
     );
-    return toWGSLStruct(desc, align);
+
+    // Example output:
+    // `
+    // @location(0) position : vec3<f32>,
+    // @location(1) color : vec3<f32>,
+    // @location(2) normal : vec3<f32>,
+    // @location(3) uv : vec2<f32>,
+    // `
+
+    // TODO(@darzu): support location and alignment
+
+    let res = ``;
+
+    let i = 0;
+    for (let name of Object.keys(desc)) {
+      const type = desc[name];
+      // TODO(@darzu): remove eventually for perf
+      if (doAlign && !wgslTypeToAlign[type])
+        throw `Missing alignment info for ${type}`;
+      if (doAlign) res += `@align(${wgslTypeToAlign[type]}) `;
+      if (locationStart !== undefined)
+        res += `@location(${locationStart + i}) `;
+      res += `${name} : ${type},`;
+      i++;
+    }
+
+    return res;
   }
 
   function layout(idx: number): GPUBindGroupLayoutEntry {
