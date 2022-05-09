@@ -3,8 +3,9 @@ import { mat4, vec2, vec3 } from "../gl-matrix.js";
 import { align, sum } from "../math.js";
 import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
 import { EM } from "../entity-manager.js";
-import { MeshUniformMod } from "./shader_obj.js";
 import { assert } from "../test.js";
+import { MeshUniformStruct, MeshUniformTS } from "./shader_obj.js";
+import { createCyMany } from "./data.js";
 
 // TODO(@darzu): abstraction refinement:
 //  [ ] how do we handle multiple shaders with different mesh
@@ -263,7 +264,6 @@ export interface GPUData<D> {
   generateWGSLUniformStruct(): string;
   serialize(buffer: Uint8Array, byteOffset: number, data: D): void;
 }
-export const MeshUniform: GPUData<MeshUniformMod.Data> = MeshUniformMod;
 
 export interface ShaderDescription {
   // TODO(@darzu):
@@ -295,7 +295,7 @@ export interface MeshHandle extends PoolIndex {
   readonly readonlyMesh?: Mesh;
 
   // used as the uniform for this mesh
-  shaderData: MeshUniformMod.Data;
+  shaderData: MeshUniformTS;
   // TODO(@darzu): specify which shader to use
 }
 
@@ -337,12 +337,13 @@ export interface MeshPool {
   //    vertices and triangles with custom formats. The addMesh impl
   //    below has hard-coded assumptions about vertex size.
   addMesh: (m: Mesh) => MeshHandle;
-  addMeshInstance: (m: MeshHandle, d: MeshUniformMod.Data) => MeshHandle;
+  addMeshInstance: (m: MeshHandle, d: MeshUniformTS) => MeshHandle;
   updateUniform: (m: MeshHandle) => void;
   updateMeshVertices: (handle: MeshHandle, newMeshData: Mesh) => void;
 }
 
 // WebGPU stuff
+// TODO(@darzu): use CyMany here
 export interface MeshPoolBuffers_WebGPU {
   // buffers
   verticesBuffer: GPUBuffer;
@@ -489,11 +490,12 @@ export function createMeshPool_WebGPU(
     usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
     mappedAtCreation: false,
   });
-  const uniformBuffer = device.createBuffer({
-    size: MeshUniformMod.byteSizeAligned * maxMeshes,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    mappedAtCreation: false,
-  });
+  const uniformBuffer = createCyMany(
+    device,
+    MeshUniformStruct,
+    GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    maxMeshes
+  );
 
   function updateBuf(buffer: GPUBuffer, offset: number, data: Uint8Array) {
     device.queue.writeBuffer(buffer, offset, data);
@@ -505,7 +507,8 @@ export function createMeshPool_WebGPU(
     updateLineIndices: (offset, data) =>
       updateBuf(lineIndicesBuffer, offset, data),
     updateVertices: (offset, data) => updateBuf(verticesBuffer, offset, data),
-    updateUniform: (offset, data) => updateBuf(uniformBuffer, offset, data),
+    updateUniform: (offset, data) =>
+      updateBuf(uniformBuffer.buffer, offset, data),
   };
 
   const buffers: MeshPoolBuffers_WebGPU = {
@@ -513,7 +516,7 @@ export function createMeshPool_WebGPU(
     verticesBuffer,
     triIndicesBuffer,
     lineIndicesBuffer,
-    uniformBuffer,
+    uniformBuffer: uniformBuffer.buffer,
   };
 
   const pool = createMeshPool(opts, queues);
@@ -563,7 +566,7 @@ export function createMeshPool_WebGL(
   // let verticesMap = new Uint8Array(maxVerts * Vertex.ByteSize);
   // let triIndicesMap = new Uint16Array(maxTris * 3);
   // let lineIndicesMap = new Uint16Array(maxLines * 2);
-  let uniformMap = new Uint8Array(maxMeshes * MeshUniformMod.byteSizeAligned);
+  let uniformMap = new Uint8Array(maxMeshes * MeshUniformStruct.size);
 
   function updateVertices(offset: number, data: Uint8Array) {
     // TODO(@darzu): this is a strange way to compute this, but seems to work conservatively
@@ -628,7 +631,7 @@ export function createMeshPool_WebGL(
   return pool_webgl;
 }
 
-const scratch_uniform_u8 = new Uint8Array(MeshUniformMod.byteSizeAligned);
+const scratch_uniform_u8 = new Uint8Array(MeshUniformStruct.size);
 
 function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
   const { maxMeshes, maxTris, maxVerts, maxLines } = opts;
@@ -650,12 +653,12 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
     `   ${((maxLines * bytesPerLine) / 1024).toFixed(1)} KB for line indices`
   );
   console.log(
-    `   ${((maxMeshes * MeshUniformMod.byteSizeAligned) / 1024).toFixed(
+    `   ${((maxMeshes * MeshUniformStruct.size) / 1024).toFixed(
       1
     )} KB for object uniform data`
   );
   const unusedBytesPerModel =
-    MeshUniformMod.byteSizeAligned - MeshUniformMod.byteSizeExact;
+    MeshUniformStruct.size - MeshUniformStruct.compactSize;
   console.log(
     `   Unused ${unusedBytesPerModel} bytes in uniform buffer per object (${(
       (unusedBytesPerModel * maxMeshes) /
@@ -666,7 +669,7 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
     maxVerts * Vertex.ByteSize +
     maxTris * bytesPerTri +
     maxLines * bytesPerLine +
-    maxMeshes * MeshUniformMod.byteSizeAligned;
+    maxMeshes * MeshUniformStruct.size;
   console.log(
     `Total space reserved for objects: ${(totalReservedBytes / 1024).toFixed(
       1
@@ -703,7 +706,7 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
       // pad triangles array to make sure it's a multiple of 4 *bytes*
       triIndicesMap: new Uint16Array(align(m.tri.length * 3, 2)),
       lineIndicesMap: new Uint16Array((m.lines?.length ?? 2) * 2), // TODO(@darzu): make optional?
-      uniformMap: new Uint8Array(MeshUniformMod.byteSizeAligned),
+      uniformMap: new Uint8Array(MeshUniformStruct.size),
     };
 
     const b = createMeshBuilder(
@@ -734,7 +737,7 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
       vertNumOffset: pool.numVerts,
       triIndicesNumOffset: pool.numTris * 3,
       lineIndicesNumOffset: pool.numLines * 2,
-      modelUniByteOffset: allMeshes.length * MeshUniformMod.byteSizeAligned,
+      modelUniByteOffset: allMeshes.length * MeshUniformStruct.size,
     };
 
     const handle = b.finish(idx);
@@ -767,10 +770,10 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
 
     return handle;
   }
-  function addMeshInstance(m: MeshHandle, d: MeshUniformMod.Data): MeshHandle {
+  function addMeshInstance(m: MeshHandle, d: MeshUniformTS): MeshHandle {
     if (pool.allMeshes.length + 1 > maxMeshes) throw "Too many meshes!";
 
-    const uniOffset = allMeshes.length * MeshUniformMod.byteSizeAligned;
+    const uniOffset = allMeshes.length * MeshUniformStruct.size;
     const newHandle = {
       ...m,
       mId: nextMeshId++,
@@ -790,7 +793,7 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
   }
 
   function updateUniform(m: MeshHandle): void {
-    MeshUniformMod.serialize(scratch_uniform_u8, 0, m.shaderData);
+    scratch_uniform_u8.set(MeshUniformStruct.serialize(m.shaderData));
     queues.updateUniform(m.modelUniByteOffset, scratch_uniform_u8);
   }
 
@@ -904,12 +907,16 @@ function createMeshBuilder(
     _aabbMin = aabbMin;
     _aabbMax = aabbMax;
     _tint = tint;
-    MeshUniformMod.serialize(maps.uniformMap, uByteOff, {
-      transform,
-      aabbMin,
-      aabbMax,
-      tint,
-    });
+
+    maps.uniformMap.set(
+      MeshUniformStruct.serialize({
+        transform,
+        aabbMin,
+        aabbMax,
+        tint,
+      }),
+      uByteOff
+    );
   }
 
   function finish(idx: PoolIndex): MeshHandle {

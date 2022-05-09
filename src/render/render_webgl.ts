@@ -7,8 +7,8 @@ import {
 } from "./mesh-pool.js";
 // TODO(@darzu): this is a bad dependency:
 import { setupScene } from "./render_webgpu.js";
-import { MeshUniformMod } from "./shader_obj.js";
 import { Renderer } from "./renderer.js";
+import { MeshUniformStruct } from "./shader_obj.js";
 
 const vertCode = `#version 300 es
 precision mediump float;
@@ -201,7 +201,7 @@ export function attachToCanvas(
     return handle;
   }
   function addMeshInstance(oldHandle: MeshHandle): MeshHandle {
-    const d = MeshUniformMod.CloneData(oldHandle.shaderData);
+    const d = MeshUniformStruct.clone(oldHandle.shaderData);
 
     const newHandle = pool.addMeshInstance(oldHandle, d);
 

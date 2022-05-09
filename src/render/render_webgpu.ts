@@ -23,7 +23,7 @@ import {
 import { RenderableConstruct, Renderer } from "./renderer.js";
 import {
   cloth_shader,
-  MeshUniformMod,
+  MeshUniformStruct,
   obj_fragShader,
   obj_vertShader,
   particle_shader,
@@ -202,7 +202,7 @@ export class Renderer_WebGPU implements Renderer {
   public addMeshInstance(oldHandle: MeshHandle): MeshHandle {
     // console.log(`Adding (instanced) object`);
 
-    const d = MeshUniformMod.CloneData(oldHandle.shaderData);
+    const d = MeshUniformStruct.clone(oldHandle.shaderData);
     const newHandle = this.pool.addMeshInstance(oldHandle, d);
 
     // handles[o.id] = res;
@@ -236,13 +236,14 @@ export class Renderer_WebGPU implements Renderer {
     this.lastWireMode = [this.drawLines, this.drawTris];
     const modelUniBindGroupLayout = this.device.createBindGroupLayout({
       entries: [
+        // TODO(@darzu): use CyBuffers .binding and .layout
         {
           binding: 0,
           visibility: GPUShaderStage.VERTEX,
           buffer: {
             type: "uniform",
             hasDynamicOffset: true,
-            minBindingSize: MeshUniformMod.byteSizeAligned,
+            minBindingSize: MeshUniformStruct.size,
           },
         },
       ],
@@ -250,11 +251,12 @@ export class Renderer_WebGPU implements Renderer {
     const modelUniBindGroup = this.device.createBindGroup({
       layout: modelUniBindGroupLayout,
       entries: [
+        // TODO(@darzu): use CyBuffers .binding and .layout
         {
           binding: 0,
           resource: {
             buffer: this.pool.uniformBuffer,
-            size: MeshUniformMod.byteSizeAligned,
+            size: MeshUniformStruct.size,
           },
         },
       ],
@@ -546,7 +548,12 @@ export class Renderer_WebGPU implements Renderer {
     // console.dir(this.ropeStickData);
 
     // Serialize rope data
-    this.ropePointBuf = createCyMany(device, RopePointStruct, ropePointData);
+    this.ropePointBuf = createCyMany(
+      device,
+      RopePointStruct,
+      GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
+      ropePointData
+    );
     // this.ropePointBuffer = device.createBuffer({
     //   size: RopePoint.ByteSizeAligned * ropePointData.length,
     //   usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,

@@ -62,6 +62,34 @@ function wgslTypeToDummyVal<T extends WGSLType>(
   }
 }
 
+function cloneValue<T extends WGSLType>(
+  type: T,
+  val: T extends keyof WGSLTypeToTSType ? WGSLTypeToTSType[T] : never
+): T extends keyof WGSLTypeToTSType ? WGSLTypeToTSType[T] : never {
+  return _cloneValue(type, val);
+
+  function _cloneValue<T extends WGSLType>(wgsl: T, val: any): any {
+    if (wgsl === "f32") return val;
+    if (wgsl === "vec2<f32>") return vec2.clone(val);
+    if (wgsl === "vec3<f32>") return vec3.clone(val);
+    if (wgsl === "u32") return val;
+    if (wgsl === "mat4x4<f32>") return mat4.clone(val);
+
+    throw `cloneValue is missing ${wgsl}`;
+  }
+}
+
+function cloneStruct<O extends CyStructDesc>(
+  desc: O,
+  data: CyToTS<O>
+): CyToTS<O> {
+  let res: any = {};
+  for (let name of Object.keys(desc)) {
+    res[name] = cloneValue(desc[name], data[name]);
+  }
+  return res;
+}
+
 function createDummyStruct<O extends CyStructDesc>(desc: O): CyToTS<O> {
   let res: any = {};
   for (let name of Object.keys(desc)) {
@@ -120,6 +148,7 @@ export type CyToTS<O extends CyStructDesc> = {
 export interface CyStruct<O extends CyStructDesc> {
   desc: O;
   size: number;
+  compactSize: number;
   serialize: (data: CyToTS<O>) => Uint8Array;
   wgsl: (align: boolean) => string;
   // webgpu
@@ -128,6 +157,7 @@ export interface CyStruct<O extends CyStructDesc> {
     stepMode: GPUVertexStepMode,
     startLocation: number
   ): GPUVertexBufferLayout;
+  clone: (data: CyToTS<O>) => CyToTS<O>;
 }
 
 export interface CyBuffer<O extends CyStructDesc> {
@@ -295,11 +325,17 @@ export function createCyStruct<O extends CyStructDesc>(
   const struct: CyStruct<O> = {
     desc,
     size: structSize,
+    compactSize: sum(sizes),
     serialize,
     layout,
     wgsl,
     vertexLayout,
+    clone,
   };
+
+  function clone(orig: CyToTS<O>): CyToTS<O> {
+    return cloneStruct(desc, orig);
+  }
 
   function wgsl(align: boolean): string {
     return toWGSLStruct(desc, align);
@@ -379,26 +415,33 @@ export function createCyOne<O extends CyStructDesc>(
 export function createCyMany<O extends CyStructDesc>(
   device: GPUDevice,
   struct: CyStruct<O>,
+  usage: GPUBufferUsageFlags,
   length: number
 ): CyMany<O>;
 export function createCyMany<O extends CyStructDesc>(
   device: GPUDevice,
   struct: CyStruct<O>,
+  usage: GPUBufferUsageFlags,
   data: CyToTS<O>[]
 ): CyMany<O>;
 export function createCyMany<O extends CyStructDesc>(
   device: GPUDevice,
   struct: CyStruct<O>,
+  usage: GPUBufferUsageFlags,
   lenOrData: number | CyToTS<O>[]
 ): CyMany<O> {
   const hasInitData = typeof lenOrData !== "number";
   const length = hasInitData ? lenOrData.length : lenOrData;
 
+  if ((usage & GPUBufferUsage.UNIFORM) !== 0) {
+    // TODO(@darzu): HACK. I guess we should push this up into CyStruct :(
+    struct.size = align(struct.size, 256);
+  }
+
   const _buf = device.createBuffer({
     size: struct.size * length,
     // TODO(@darzu): parameterize these
-    usage:
-      GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+    usage,
     mappedAtCreation: hasInitData,
   });
 
