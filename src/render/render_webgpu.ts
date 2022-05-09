@@ -60,11 +60,18 @@ export const SceneStruct = createCyStruct({
 });
 type SceneTS = CyToTS<typeof SceneStruct.desc>;
 
-export const RopePointStruct = createCyStruct({
-  position: "vec3<f32>",
-  prevPosition: "vec3<f32>",
-  locked: "f32",
-});
+export const RopePointStruct = createCyStruct(
+  {
+    position: "vec3<f32>",
+    prevPosition: "vec3<f32>",
+    locked: "f32",
+  },
+  (data, offsets, views) => {
+    views.f32.set(data.position, offsets[0] / 4);
+    views.f32.set(data.prevPosition, offsets[1] / 4);
+    views.f32[offsets[2] / 4] = data.locked;
+  }
+);
 type RopePointTS = CyToTS<typeof RopePointStruct.desc>;
 
 export class Renderer_WebGPU implements Renderer {
@@ -342,7 +349,7 @@ export class Renderer_WebGPU implements Renderer {
     bundleEnc.setVertexBuffer(0, this.pool.verticesBuffer);
 
     // render triangles first
-    if (this.drawTris && false) {
+    if (this.drawTris) {
       bundleEnc.setPipeline(renderPipeline_tris);
       // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
       bundleEnc.setIndexBuffer(this.pool.triIndicesBuffer, "uint16");

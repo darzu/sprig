@@ -1,6 +1,6 @@
 // cytochrome's data helpers
 
-import { mat4, vec2, vec3 } from "../gl-matrix.js";
+import { mat4, quat, vec2, vec3 } from "../gl-matrix.js";
 import { align, max, sum } from "../math.js";
 import { assert } from "../test.js";
 import { Intersect, objMap } from "../util.js";
@@ -31,6 +31,46 @@ type WGSLTypeToTSType = {
   "vec3<f32>": vec3;
   "mat4x4<f32>": mat4;
 };
+
+function wgslTypeToDummyVal<T extends WGSLType>(
+  wgsl: T
+): T extends keyof WGSLTypeToTSType ? WGSLTypeToTSType[T] : never {
+  return _wgslTypeToDummyVal(wgsl);
+
+  function _wgslTypeToDummyVal<T extends WGSLType>(wgsl: T): any {
+    if (wgsl === "f32") return Math.random() * 100.0;
+    if (wgsl === "vec2<f32>")
+      return vec2.fromValues(Math.random(), Math.random());
+    const randVec3 = () =>
+      vec3.fromValues(Math.random(), Math.random(), Math.random());
+    if (wgsl === "vec3<f32>") return randVec3();
+    if (wgsl === "u32")
+      return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+    const randAngle = () => Math.random() * 2 * Math.PI;
+    const randQuat = () =>
+      quat.fromEuler(quat.create(), randAngle(), randAngle(), randAngle());
+    if (wgsl === "mat4x4<f32>")
+      return mat4.fromRotationTranslationScaleOrigin(
+        mat4.create(),
+        randQuat(),
+        randVec3(),
+        randVec3(),
+        randVec3()
+      );
+
+    throw `wgslTypeToDummyVal is missing ${wgsl}`;
+  }
+}
+
+function createDummyStruct<O extends CyStructDesc>(desc: O): CyToTS<O> {
+  let res: any = {};
+  for (let name of Object.keys(desc)) {
+    const type = desc[name];
+    const val = wgslTypeToDummyVal(type);
+    res[name] = val;
+  }
+  return res;
+}
 
 const wgslTypeToVertType: Partial<Record<WGSLType, GPUVertexFormat>> = {
   "vec2<f16>": "float16x2",
@@ -68,8 +108,6 @@ const alignUp = (n: number) => {
 const wgslTypeToAlign = objMap(wgslTypeToSize, alignUp) as Partial<
   Record<WGSLType, number>
 >;
-// TODO(@darzu): inspect
-console.dir(wgslTypeToAlign);
 
 type CyStructDesc = Record<string, WGSLType>;
 
@@ -82,7 +120,7 @@ export type CyToTS<O extends CyStructDesc> = {
 export interface CyStruct<O extends CyStructDesc> {
   desc: O;
   size: number;
-  serializeSlow: (data: CyToTS<O>) => Uint8Array;
+  serialize: (data: CyToTS<O>) => Uint8Array;
   wgsl: (align: boolean) => string;
   // webgpu
   layout(idx: number): GPUBindGroupLayoutEntry;
@@ -138,7 +176,16 @@ export function toWGSLStruct(cyStruct: CyStructDesc, doAlign: boolean): string {
   return res;
 }
 
-export function createCyStruct<O extends CyStructDesc>(desc: O): CyStruct<O> {
+export type Serializer<O extends CyStructDesc> = (
+  data: CyToTS<O>,
+  offsets: number[],
+  views: { f32: Float32Array; u32: Uint32Array; u8: Uint8Array }
+) => void;
+
+export function createCyStruct<O extends CyStructDesc>(
+  desc: O,
+  serializer?: Serializer<O>
+): CyStruct<O> {
   // TODO(@darzu): handle non-aligned for v-bufs
   // TODO(@darzu): emit @group(0) @binding(0) var<uniform> scene : Scene;
   // TODO(@darzu): a lot of this doesn't need the device, all that should move
@@ -179,7 +226,11 @@ export function createCyStruct<O extends CyStructDesc>(desc: O): CyStruct<O> {
   // TODO(@darzu): support registering a custom serializer for perf reasons
   // TODO(@darzu): emit serialization code
   const scratch_u8 = new Uint8Array(structSize);
-  const scratch_f32 = new Float32Array(scratch_u8.buffer);
+  const views = {
+    u8: scratch_u8,
+    f32: new Float32Array(scratch_u8.buffer),
+    u32: new Uint32Array(scratch_u8.buffer),
+  };
   function serializeSlow(data: CyToTS<O>): Uint8Array {
     // TODO(@darzu): disable this check for perf
     Object.keys(data).forEach((n, i) => {
@@ -189,22 +240,62 @@ export function createCyStruct<O extends CyStructDesc>(desc: O): CyStruct<O> {
         )}\n"${n}" #${i}`;
     });
 
+    // NOTE >>2 vs /4:
+    // using some really janky dev console tests, it looks like there's no difference
+    //  between X >> 2 and X / 4 (tried -12.5, 64, and Math.random()). Perf was identical.
+    //  b = performance.now(); for (let i = 0; i < 10000000000; i++) -12.5 >> 2; a = performance.now(); a - b
+    //  b = performance.now(); for (let i = 0; i < 10000000000; i++) -12.5 / 4; a = performance.now(); a - b
+
     Object.values(data).forEach((v, i) => {
       const t = types[i];
       const o = offsets[i];
-      if (t === "f32") scratch_f32[o / 4] = v;
-      else if (t === "vec2<f32>") scratch_f32.set(v, o / 4);
-      else if (t === "vec3<f32>") scratch_f32.set(v, o / 4);
-      else if (t === "mat4x4<f32>") scratch_f32.set(v, o / 4);
+      if (t === "f32") views.f32[o / 4] = v;
+      else if (t === "vec2<f32>") views.f32.set(v, o / 4);
+      else if (t === "vec3<f32>") views.f32.set(v, o / 4);
+      else if (t === "mat4x4<f32>") views.f32.set(v, o / 4);
     });
 
     return scratch_u8;
   }
 
+  // check custom serializer correctness
+  // TODO(@darzu): option to disable this
+  let serialize = serializeSlow;
+  if (serializer) {
+    const dummy = createDummyStruct(desc);
+
+    // run the baseline
+    const slowRes = new Uint8Array(structSize);
+    scratch_u8.fill(0);
+    serializeSlow(dummy);
+    slowRes.set(scratch_u8, 0);
+
+    // run the passed in one
+    const fastRes = new Uint8Array(structSize);
+    scratch_u8.fill(0);
+    serializer(dummy, offsets, views);
+    fastRes.set(scratch_u8, 0);
+
+    // compare
+    for (let i = 0; i < slowRes.length; i++)
+      assert(
+        slowRes[i] === fastRes[i],
+        `Custom serializer for ${JSON.stringify(
+          desc
+        )} is probably incorrect at byte ${i}`
+      );
+
+    // use it
+    serialize = (d) => {
+      serializer(d, offsets, views);
+      return scratch_u8;
+    };
+  }
+
   const struct: CyStruct<O> = {
     desc,
     size: structSize,
-    serializeSlow,
+    serialize,
     layout,
     wgsl,
     vertexLayout,
@@ -271,7 +362,7 @@ export function createCyOne<O extends CyStructDesc>(
   function queueUpdate(data: CyToTS<O>): void {
     // TODO(@darzu): measure perf. we probably want to allow hand written serializers
     buf.lastData = data;
-    const b = struct.serializeSlow(data);
+    const b = struct.serialize(data);
     device.queue.writeBuffer(_buf, 0, b);
   }
 
@@ -325,14 +416,14 @@ export function createCyMany<O extends CyStructDesc>(
     const data = lenOrData;
     const mappedBuf = new Uint8Array(_buf.getMappedRange());
     for (let i = 0; i < data.length; i++) {
-      const d = struct.serializeSlow(data[i]);
+      const d = struct.serialize(data[i]);
       mappedBuf.set(d, i * stride);
     }
     _buf.unmap();
   }
 
   function queueUpdate(data: CyToTS<O>, index: number): void {
-    const b = struct.serializeSlow(data);
+    const b = struct.serialize(data);
     device.queue.writeBuffer(_buf, index * stride, b);
   }
 

@@ -204,20 +204,6 @@ export module Vertex {
   }
 */
 
-// export function serialize(
-//   buffer: Uint8Array,
-//   byteOffset: number,
-//   data: Data
-// ) {
-//   scratch_as_f32.set(data.position, _byteOffsets[0] / 4);
-//   scratch_as_f32.set(data.prevPosition, _byteOffsets[1] / 4);
-//   // scratch_as_f32.set([data.locked, 0, 0], _byteOffsets[2] / 4);
-//   // scratch_as_f32[_byteOffsets[2] / 4] = data.locked;
-//   scratch_as_f32[_byteOffsets[2] / 4] = data.locked;
-//   // scratch_f32.set(data.lightViewProjMatrix, _offsets[1]);
-//   buffer.set(scratch_u8, byteOffset);
-// }
-
 export module RopeStick {
   export interface Data {
     aIdx: number;

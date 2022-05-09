@@ -1390,7 +1390,7 @@ export module mat4 {
    */
   export function fromRotationTranslationScaleOrigin(
     out: mat4,
-    q: any,
+    q: ReadonlyQuat,
     v: ReadonlyVec3,
     s: ReadonlyVec3,
     o: ReadonlyVec3
