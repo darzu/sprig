@@ -1,7 +1,6 @@
 import { vec3, mat4 } from "../gl-matrix.js";
 import {
   createMeshPool_WebGL,
-  Mesh,
   MeshHandle,
   MeshPoolOpts,
   VertexStruct,
@@ -10,6 +9,7 @@ import {
 import { setupScene } from "./render_webgpu.js";
 import { Renderer } from "./renderer.js";
 import { MeshUniformStruct } from "./shader_obj.js";
+import { Mesh } from "./mesh.js";
 
 const vertCode = `#version 300 es
 precision mediump float;

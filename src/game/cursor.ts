@@ -1,5 +1,5 @@
 import { ComponentDef, EM, EntityManager, EntityW } from "../entity-manager.js";
-import { Mesh } from "../render/mesh-pool.js";
+import { Mesh } from "../render/mesh.js";
 import {
   RenderableConstructDef,
   RendererWorldFrameDef,

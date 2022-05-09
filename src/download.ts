@@ -1,6 +1,6 @@
 import { exportObj, importObj, isParseError } from "./import_obj.js";
 import { exportSprigMesh } from "./import_sprigmesh.js";
-import { unshareProvokingVertices } from "./render/mesh-pool.js";
+import { unshareProvokingVertices } from "./render/mesh.js";
 
 export function setupObjImportExporter() {
   function ondrag() {

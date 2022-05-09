@@ -2,11 +2,6 @@ import { FinishedDef } from "../build.js";
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
-import {
-  getAABBFromMesh,
-  Mesh,
-  unshareProvokingVertices,
-} from "../render/mesh-pool.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { AABB } from "../physics/broadphase.js";
 import { RenderableConstructDef } from "../render/renderer.js";

@@ -15,7 +15,8 @@ import {
   CameraViewDef,
 } from "../camera.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
-import { isMeshHandle, Mesh, MeshHandle } from "./mesh-pool.js";
+import { isMeshHandle, MeshHandle } from "./mesh-pool.js";
+import { Mesh } from "./mesh.js";
 import { Authority, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { createFrame, WorldFrameDef } from "../physics/nonintersection.js";
 import { RendererDef } from "./render_init.js";

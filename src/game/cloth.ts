@@ -8,13 +8,7 @@ import { FinishedDef } from "../build.js";
 import { Assets, AssetsDef } from "./assets.js";
 import { SpringType, SpringGridDef, ForceDef } from "./spring.js";
 import { onInit } from "../init.js";
-import {
-  Mesh,
-  unshareProvokingVertices,
-  isMeshHandle,
-  unshareProvokingVerticesWithMap,
-  mapMeshPositions,
-} from "../render/mesh-pool.js";
+import { Mesh, unshareProvokingVerticesWithMap } from "../render/mesh.js";
 import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
 import { RendererDef } from "../render/render_init.js";
 import { ColorDef } from "../color.js";

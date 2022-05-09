@@ -21,7 +21,7 @@ import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { AABBCollider, Collider, ColliderDef } from "../physics/collider.js";
 import { copyAABB, createAABB, Ray } from "../physics/broadphase.js";
 import { tempVec } from "../temp-pool.js";
-import { scaleMesh3 } from "../render/mesh-pool.js";
+import { scaleMesh3 } from "../render/mesh.js";
 import { AssetsDef } from "./assets.js";
 import { LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";

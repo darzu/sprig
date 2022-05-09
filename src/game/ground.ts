@@ -12,7 +12,7 @@ import { PositionDef, RotationDef } from "../physics/transform.js";
 import { ScoreDef } from "./game.js";
 import { MeDef } from "../net/components.js";
 import { AssetsDef, GameMesh, gameMeshFromMesh } from "./assets.js";
-import { transformMesh } from "../render/mesh-pool.js";
+import { transformMesh } from "../render/mesh.js";
 import { defineNetEntityHelper } from "../em_helpers.js";
 import { assert } from "../test.js";
 import { ColorDef } from "../color.js";

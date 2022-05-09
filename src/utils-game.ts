@@ -3,7 +3,7 @@ import { EM, EntityManager } from "./entity-manager.js";
 import { vec3 } from "./gl-matrix.js";
 import { WorldFrameDef } from "./physics/nonintersection.js";
 import { PositionDef } from "./physics/transform.js";
-import { Mesh } from "./render/mesh-pool.js";
+import { Mesh } from "./render/mesh.js";
 import { RenderableConstructDef } from "./render/renderer.js";
 
 // TODO(@darzu): move this helper elsewhere?

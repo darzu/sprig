@@ -1,14 +1,12 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
 import {
   cloneMesh,
-  createMeshPool_WebGPU,
-  isMeshHandle,
   mapMeshPositions,
   Mesh,
   scaleMesh,
   scaleMesh3,
   unshareProvokingVertices,
-} from "../render/mesh-pool.js";
+} from "../render/mesh.js";
 import { PositionDef } from "../physics/transform.js";
 import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
 import { assert } from "../test.js";

@@ -23,7 +23,7 @@ import {
   RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
-import { cloneMesh, scaleMesh } from "../render/mesh-pool.js";
+import { cloneMesh, scaleMesh } from "../render/mesh.js";
 import { RenderableDef, RenderableConstructDef } from "../render/renderer.js";
 import { RendererDef } from "../render/render_init.js";
 import { tempVec } from "../temp-pool.js";

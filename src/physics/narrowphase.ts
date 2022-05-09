@@ -3,7 +3,6 @@ import { AssetsDef } from "../game/assets.js";
 import { ColorDef } from "../color.js";
 import { LocalPlayerDef } from "../game/player.js";
 import { vec3 } from "../gl-matrix.js";
-import { cloneMesh } from "../render/mesh-pool.js";
 import { RenderableConstructDef } from "../render/renderer.js";
 import { BoxCollider, Collider } from "./collider.js";
 import { PhysicsObject, WorldFrameDef } from "./nonintersection.js";

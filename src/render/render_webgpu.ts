@@ -13,7 +13,6 @@ import {
 } from "./data.js";
 import {
   createMeshPool_WebGPU,
-  Mesh,
   MeshHandle,
   MeshPoolOpts,
   MeshPool_WebGPU,
@@ -21,6 +20,7 @@ import {
   RopeStickTS,
   VertexStruct,
 } from "./mesh-pool.js";
+import { Mesh } from "./mesh.js";
 import { RenderableConstruct, Renderer } from "./renderer.js";
 import {
   cloth_shader,
