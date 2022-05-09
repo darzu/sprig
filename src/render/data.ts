@@ -214,6 +214,7 @@ export type Serializer<O extends CyStructDesc> = (
 
 export function createCyStruct<O extends CyStructDesc>(
   desc: O,
+  isUniform?: boolean,
   serializer?: Serializer<O>
 ): CyStruct<O> {
   // TODO(@darzu): handle non-aligned for v-bufs
@@ -247,7 +248,7 @@ export function createCyStruct<O extends CyStructDesc>(
 
   const structSize = align(
     offsets[offsets.length - 1] + sizes[sizes.length - 1],
-    max(alignments)
+    isUniform ? 256 : max(alignments)
   );
 
   const names = Object.keys(desc);
@@ -380,8 +381,9 @@ export function createCyOne<O extends CyStructDesc>(
   device: GPUDevice,
   struct: CyStruct<O>
 ): CyOne<O> {
+  assert(struct.size % 256 === 0, "CyOne struct must be 256 aligned");
   const _buf = device.createBuffer({
-    size: align(struct.size, 256),
+    size: struct.size,
     // TODO(@darzu): parameterize these
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     mappedAtCreation: false,
@@ -434,8 +436,10 @@ export function createCyMany<O extends CyStructDesc>(
   const length = hasInitData ? lenOrData.length : lenOrData;
 
   if ((usage & GPUBufferUsage.UNIFORM) !== 0) {
-    // TODO(@darzu): HACK. I guess we should push this up into CyStruct :(
-    struct.size = align(struct.size, 256);
+    assert(
+      struct.size % 256 === 0,
+      "CyMany with UNIFORM usage must be 256 aligned"
+    );
   }
 
   const _buf = device.createBuffer({

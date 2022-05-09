@@ -59,6 +59,7 @@ export const SceneStruct = createCyStruct(
     playerPos: "vec2<f32>",
     time: "f32",
   },
+  true,
   (data, offsets, views) => {
     views.f32.set(data.cameraViewProjMatrix, offsets[0] / 4);
     views.f32.set(data.light1Dir, offsets[1] / 4);
@@ -77,6 +78,7 @@ export const RopePointStruct = createCyStruct(
     prevPosition: "vec3<f32>",
     locked: "f32",
   },
+  false,
   (data, offsets, views) => {
     views.f32.set(data.position, offsets[0] / 4);
     views.f32.set(data.prevPosition, offsets[1] / 4);

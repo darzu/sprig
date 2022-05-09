@@ -11,6 +11,7 @@ export const MeshUniformStruct = createCyStruct(
     aabbMax: "vec3<f32>",
     tint: "vec3<f32>",
   },
+  true,
   (d, offsets, views) => {
     views.f32.set(d.transform, offsets[0] / 4);
     views.f32.set(d.aabbMin, offsets[1] / 4);
