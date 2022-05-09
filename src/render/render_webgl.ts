@@ -4,6 +4,8 @@ import {
   Mesh,
   MeshHandle,
   MeshPoolOpts,
+  Vertex,
+  VertexStruct,
 } from "./mesh-pool.js";
 // TODO(@darzu): this is a bad dependency:
 import { setupScene } from "./render_webgpu.js";
@@ -259,17 +261,34 @@ export function attachToCanvas(
     gl.uniform3fv(u_loc_cameraPos, scene.cameraPos);
 
     // bind vertex buffers
-    gl.bindBuffer(gl.ARRAY_BUFFER, pool.positionsBuffer);
-    gl.vertexAttribPointer(a_loc_position, 3, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, pool.vertexBuffer);
+    gl.vertexAttribPointer(
+      a_loc_position,
+      3,
+      gl.FLOAT,
+      false,
+      Vertex.ByteSize,
+      VertexStruct.offsets[0]
+    );
     gl.enableVertexAttribArray(a_loc_position);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, pool.normalsBuffer);
-    gl.vertexAttribPointer(a_loc_normal, 3, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(a_loc_normal);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, pool.colorsBuffer);
-    gl.vertexAttribPointer(a_loc_color, 3, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(
+      a_loc_color,
+      3,
+      gl.FLOAT,
+      false,
+      Vertex.ByteSize,
+      VertexStruct.offsets[1]
+    );
     gl.enableVertexAttribArray(a_loc_color);
+    gl.vertexAttribPointer(
+      a_loc_normal,
+      3,
+      gl.FLOAT,
+      false,
+      Vertex.ByteSize,
+      VertexStruct.offsets[2]
+    );
+    gl.enableVertexAttribArray(a_loc_normal);
 
     // TODO(@darzu): need to draw update uniform: u_loc_transform
 

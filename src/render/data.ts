@@ -149,6 +149,7 @@ export interface CyStruct<O extends CyStructDesc> {
   desc: O;
   size: number;
   compactSize: number;
+  offsets: number[];
   serialize: (data: CyToTS<O>) => Uint8Array;
   wgsl: (align: boolean) => string;
   // webgpu
@@ -347,6 +348,7 @@ export function createCyStruct<O extends CyStructDesc>(
     desc,
     size: structSize,
     compactSize: sum(sizes),
+    offsets,
     serialize,
     layout,
     wgsl,

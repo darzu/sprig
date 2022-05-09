@@ -379,9 +379,7 @@ export type MeshPool_WebGPU = MeshPool & MeshPoolBuffers_WebGPU;
 // WebGL stuff
 export interface MeshPoolBuffers_WebGL {
   // vertex buffers
-  positionsBuffer: WebGLBuffer;
-  normalsBuffer: WebGLBuffer;
-  colorsBuffer: WebGLBuffer;
+  vertexBuffer: WebGLBuffer;
   // other buffers
   triIndicesBuffer: WebGLBuffer;
   lineIndicesBuffer: WebGLBuffer;
@@ -554,23 +552,15 @@ export function createMeshPool_WebGL(
   const { maxMeshes, maxTris, maxVerts, maxLines } = opts;
 
   // TODO(@darzu): we shouldn't need to preallocate all this
-  const scratchPositions = new Float32Array(maxVerts * 3);
-  const scratchNormals = new Float32Array(maxVerts * 3);
-  const scratchColors = new Float32Array(maxVerts * 3);
+  const scratchVerts = new Float32Array(maxVerts * (Vertex.ByteSize / 4));
 
   const scratchTriIndices = new Uint16Array(maxTris * 3);
   const scratchLineIndices = new Uint16Array(maxLines * 2);
 
   // vertex buffers
-  const positionsBuffer = gl.createBuffer()!;
-  gl.bindBuffer(gl.ARRAY_BUFFER, positionsBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, scratchPositions, gl.DYNAMIC_DRAW); // TODO(@darzu): sometimes we might want STATIC_DRAW
-  const normalsBuffer = gl.createBuffer()!;
-  gl.bindBuffer(gl.ARRAY_BUFFER, normalsBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, scratchNormals, gl.DYNAMIC_DRAW);
-  const colorsBuffer = gl.createBuffer()!;
-  gl.bindBuffer(gl.ARRAY_BUFFER, colorsBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, scratchColors, gl.DYNAMIC_DRAW);
+  const vertexBuffer = gl.createBuffer()!;
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, scratchVerts, gl.DYNAMIC_DRAW); // TODO(@darzu): sometimes we might want STATIC_DRAW
 
   // index buffers
   const triIndicesBuffer = gl.createBuffer()!;
@@ -592,24 +582,20 @@ export function createMeshPool_WebGL(
   function updateVertices(offset: number, data: Uint8Array) {
     // TODO(@darzu): this is a strange way to compute this, but seems to work conservatively
     // const numVerts = Math.min(data.length / Vertex.ByteSize, Math.max(builder.numVerts, builder.poolHandle.numVerts))
-    const numVerts = data.length / Vertex.ByteSize;
-    const positions = new Float32Array(numVerts * 3);
-    const colors = new Float32Array(numVerts * 3);
-    const normals = new Float32Array(numVerts * 3);
-    // TODO(@darzu): DISP
-    const uvs = new Float32Array(numVerts * 2);
-    Vertex.Deserialize(data, numVerts, positions, colors, normals, uvs);
+    // const numVerts = data.length / Vertex.ByteSize;
+    // const positions = new Float32Array(numVerts * 3);
+    // const colors = new Float32Array(numVerts * 3);
+    // const normals = new Float32Array(numVerts * 3);
+    // // TODO(@darzu): DISP
+    // const uvs = new Float32Array(numVerts * 2);
+    // Vertex.Deserialize(data, numVerts, positions, colors, normals, uvs);
 
-    const vNumOffset = offset / Vertex.ByteSize;
+    // const vNumOffset = offset / Vertex.ByteSize;
 
     // TODO(@darzu): debug logging
     // console.log(`positions: #${vNumOffset}: ${positions.slice(0, numVerts * 3).join(',')}`)
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionsBuffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, vNumOffset * bytesPerVec3, positions);
-    gl.bindBuffer(gl.ARRAY_BUFFER, normalsBuffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, vNumOffset * bytesPerVec3, normals);
-    gl.bindBuffer(gl.ARRAY_BUFFER, colorsBuffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, vNumOffset * bytesPerVec3, colors);
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, offset, data);
   }
   function updateTriIndices(offset: number, data: Uint8Array) {
     // TODO(@darzu): again, strange but a useful optimization
@@ -637,9 +623,7 @@ export function createMeshPool_WebGL(
 
   const buffers: MeshPoolBuffers_WebGL = {
     gl,
-    positionsBuffer,
-    normalsBuffer,
-    colorsBuffer,
+    vertexBuffer,
     // other buffers
     triIndicesBuffer,
     lineIndicesBuffer,
