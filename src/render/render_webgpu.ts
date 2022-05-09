@@ -49,15 +49,26 @@ const depthStencilFormat = "depth24plus-stencil8";
 
 export const CLOTH_W = 12;
 
-export const SceneStruct = createCyStruct({
-  cameraViewProjMatrix: "mat4x4<f32>",
-  light1Dir: "vec3<f32>",
-  light2Dir: "vec3<f32>",
-  light3Dir: "vec3<f32>",
-  cameraPos: "vec3<f32>",
-  playerPos: "vec2<f32>",
-  time: "f32",
-});
+export const SceneStruct = createCyStruct(
+  {
+    cameraViewProjMatrix: "mat4x4<f32>",
+    light1Dir: "vec3<f32>",
+    light2Dir: "vec3<f32>",
+    light3Dir: "vec3<f32>",
+    cameraPos: "vec3<f32>",
+    playerPos: "vec2<f32>",
+    time: "f32",
+  },
+  (data, offsets, views) => {
+    views.f32.set(data.cameraViewProjMatrix, offsets[0] / 4);
+    views.f32.set(data.light1Dir, offsets[1] / 4);
+    views.f32.set(data.light2Dir, offsets[2] / 4);
+    views.f32.set(data.light3Dir, offsets[3] / 4);
+    views.f32.set(data.cameraPos, offsets[4] / 4);
+    views.f32.set(data.playerPos, offsets[5] / 4);
+    views.f32[offsets[6] / 4] = data.time;
+  }
+);
 type SceneTS = CyToTS<typeof SceneStruct.desc>;
 
 export const RopePointStruct = createCyStruct(

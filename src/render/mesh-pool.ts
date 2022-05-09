@@ -185,25 +185,6 @@ export module Vertex {
   }
 }
 
-// TODO(@darzu): support custom serializers
-/*
-  export function serialize(
-    buffer: Uint8Array,
-    byteOffset: number,
-    data: Data
-  ) {
-    scratch_f32.set(data.cameraViewProjMatrix, _offsets[0]);
-    // scratch_f32.set(data.lightViewProjMatrix, _offsets[1]);
-    scratch_f32.set(data.light1Dir, _offsets[1]);
-    scratch_f32.set(data.light2Dir, _offsets[2]);
-    scratch_f32.set(data.light3Dir, _offsets[3]);
-    scratch_f32.set(data.cameraPos, _offsets[4]);
-    scratch_f32.set(data.playerPos, _offsets[5]);
-    scratch_f32[_offsets[6]] = data.time;
-    buffer.set(scratch_f32_as_u8, byteOffset);
-  }
-*/
-
 export module RopeStick {
   export interface Data {
     aIdx: number;
