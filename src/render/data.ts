@@ -186,6 +186,7 @@ export interface CyMany<O extends CyStructDesc> extends CyBuffer<O> {
 export type Serializer<O extends CyStructDesc> = (
   data: CyToTS<O>,
   offsets: number[],
+  offsets_32: number[],
   views: { f32: Float32Array; u32: Uint32Array; u8: Uint8Array }
 ) => void;
 
@@ -236,6 +237,8 @@ export function createCyStruct<O extends CyStructDesc>(
     offsets && sizes.length === offsets.length,
     "sizes.length === offsets.length"
   );
+
+  const offsets_32 = offsets.map((o) => o >> 2);
 
   const structAlign = opts?.isUniform
     ? 256
@@ -300,7 +303,7 @@ export function createCyStruct<O extends CyStructDesc>(
     // run the passed in one
     const fastRes = new Uint8Array(structSize);
     scratch_u8.fill(0);
-    opts.serializer(dummy, offsets, views);
+    opts.serializer(dummy, offsets, offsets_32, views);
     fastRes.set(scratch_u8, 0);
 
     // compare
@@ -314,7 +317,7 @@ export function createCyStruct<O extends CyStructDesc>(
 
     // use it
     serialize = (d) => {
-      opts!.serializer!(d, offsets, views);
+      opts!.serializer!(d, offsets, offsets_32, views);
       return scratch_u8;
     };
   }

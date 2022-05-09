@@ -85,18 +85,11 @@ export const VertexStruct = createCyStruct(
   },
   {
     isCompact: true,
-    serializer: ({ position, color, normal, uv }, offsets, views) => {
-      views.f32[0] = position[0];
-      views.f32[1] = position[1];
-      views.f32[2] = position[2];
-      views.f32[3] = color[0];
-      views.f32[4] = color[1];
-      views.f32[5] = color[2];
-      views.f32[6] = normal[0];
-      views.f32[7] = normal[1];
-      views.f32[8] = normal[2];
-      views.f32[9] = uv[0];
-      views.f32[10] = uv[1];
+    serializer: ({ position, color, normal, uv }, _, offsets_32, views) => {
+      views.f32.set(position, offsets_32[0]);
+      views.f32.set(color, offsets_32[1]);
+      views.f32.set(normal, offsets_32[2]);
+      views.f32.set(uv, offsets_32[3]);
     },
   }
 );

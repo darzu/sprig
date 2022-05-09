@@ -13,11 +13,11 @@ export const MeshUniformStruct = createCyStruct(
   },
   {
     isUniform: true,
-    serializer: (d, offsets, views) => {
-      views.f32.set(d.transform, offsets[0] / 4);
-      views.f32.set(d.aabbMin, offsets[1] / 4);
-      views.f32.set(d.aabbMax, offsets[2] / 4);
-      views.f32.set(d.tint, offsets[3] / 4);
+    serializer: (d, _, offsets_32, views) => {
+      views.f32.set(d.transform, offsets_32[0]);
+      views.f32.set(d.aabbMin, offsets_32[1]);
+      views.f32.set(d.aabbMax, offsets_32[2]);
+      views.f32.set(d.tint, offsets_32[3]);
     },
   }
 );

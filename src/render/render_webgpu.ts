@@ -61,14 +61,14 @@ export const SceneStruct = createCyStruct(
   },
   {
     isUniform: true,
-    serializer: (data, offsets, views) => {
-      views.f32.set(data.cameraViewProjMatrix, offsets[0] / 4);
-      views.f32.set(data.light1Dir, offsets[1] / 4);
-      views.f32.set(data.light2Dir, offsets[2] / 4);
-      views.f32.set(data.light3Dir, offsets[3] / 4);
-      views.f32.set(data.cameraPos, offsets[4] / 4);
-      views.f32.set(data.playerPos, offsets[5] / 4);
-      views.f32[offsets[6] / 4] = data.time;
+    serializer: (data, _, offsets_32, views) => {
+      views.f32.set(data.cameraViewProjMatrix, offsets_32[0]);
+      views.f32.set(data.light1Dir, offsets_32[1]);
+      views.f32.set(data.light2Dir, offsets_32[2]);
+      views.f32.set(data.light3Dir, offsets_32[3]);
+      views.f32.set(data.cameraPos, offsets_32[4]);
+      views.f32.set(data.playerPos, offsets_32[5]);
+      views.f32[offsets_32[6]] = data.time;
     },
   }
 );
@@ -82,10 +82,10 @@ export const RopePointStruct = createCyStruct(
   },
   {
     isUniform: false,
-    serializer: (data, offsets, views) => {
-      views.f32.set(data.position, offsets[0] / 4);
-      views.f32.set(data.prevPosition, offsets[1] / 4);
-      views.f32[offsets[2] / 4] = data.locked;
+    serializer: (data, _, offsets_32, views) => {
+      views.f32.set(data.position, offsets_32[0]);
+      views.f32.set(data.prevPosition, offsets_32[1]);
+      views.f32[offsets_32[2]] = data.locked;
     },
   }
 );
