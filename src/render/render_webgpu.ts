@@ -17,7 +17,6 @@ import {
   MeshHandle,
   MeshPoolOpts,
   MeshPool_WebGPU,
-  RopePoint,
   RopeStick,
   Vertex,
 } from "./mesh-pool.js";

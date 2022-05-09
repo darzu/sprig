@@ -185,69 +185,6 @@ export module Vertex {
   }
 }
 
-export module RopePoint {
-  export interface Data {
-    position: vec3;
-    prevPosition: vec3;
-    locked: number;
-  }
-
-  // // const _byteCounts = [3 * 4, 3 * 4, 3 * 4];
-  // const _byteCounts = [3 * 4, 3 * 4, 1 * 4];
-
-  // const _byteOffsets = _byteCounts.reduce(
-  //   (p, n) => [...p, p[p.length - 1] + n],
-  //   [0]
-  // );
-
-  const _byteOffsets = [
-    0, // TODO(@darzu): auto handle alignment requirements
-    16,
-    28,
-  ];
-
-  // define the format of our vertices (this needs to agree with the inputs to the vertex shaders)
-  // const prevOffset = bytesPerVec3 * 1 + 4;
-  export const WebGPUFormat: GPUVertexAttribute[] = [
-    { shaderLocation: 1, offset: _byteOffsets[0], format: "float32x3" },
-    {
-      shaderLocation: 2,
-      offset: _byteOffsets[1],
-      format: "float32x3",
-    },
-    {
-      shaderLocation: 3,
-      offset: _byteOffsets[2],
-      format: "float32",
-      // format: "float32x3",
-    },
-  ];
-
-  // TODO(@darzu): SCENE FORMAT
-  // defines the format of our scene's uniform data
-  // export const ByteSizeExact = sum(_byteCounts);
-  // vertex objs should probably be 16 byte aligned
-  // TODO(@darzu): alignment https://www.w3.org/TR/WGSL/#alignment-and-size
-  // export const ByteSizeAligned = ByteSizeExact;
-  export const ByteSizeAligned = 32; // TODO(@darzu): auto align
-  // export const ByteSizeAligned = align(ByteSizeExact, 16);
-
-  export function generateWGSLUniformStruct() {
-    // TODO(@darzu): enforce agreement w/ Scene interface
-    // TODO(@darzu): auto gen alignment
-    return `
-            @align(16) position : vec3<f32>,
-            @align(16) prevPosition : vec3<f32>,
-            // locked : vec3<f32>,
-            @align(4) locked : f32,
-        `;
-  }
-
-  const scratch_u8 = new Uint8Array(ByteSizeAligned);
-  const scratch_as_f32 = new Float32Array(scratch_u8.buffer);
-  const scratch_as_u32 = new Uint32Array(scratch_u8.buffer);
-}
-
 // TODO(@darzu): support custom serializers
 /*
   export function serialize(

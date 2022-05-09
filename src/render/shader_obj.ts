@@ -1,7 +1,6 @@
 import { mat4, vec3 } from "../gl-matrix.js";
 import { align, sum } from "../math.js";
-import { toWGSLStruct } from "./data.js";
-import { RopePoint, RopeStick, Vertex } from "./mesh-pool.js";
+import { RopeStick, Vertex } from "./mesh-pool.js";
 import { CLOTH_W, RopePointStruct, SceneStruct } from "./render_webgpu.js";
 
 export module MeshUniformMod {
