@@ -5,7 +5,7 @@ import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
 import { EM } from "../entity-manager.js";
 import { assert } from "../test.js";
 import { MeshUniformStruct, MeshUniformTS } from "./shader_obj.js";
-import { createCyMany, createCyStruct, CyToTS } from "./data.js";
+import { createCyMany, createCyStruct, CyMany, CyToTS } from "./data.js";
 import { Mesh, getAABBFromMesh } from "./mesh.js";
 
 // TODO(@darzu): abstraction refinement:
@@ -138,7 +138,7 @@ export interface MeshPool {
 // TODO(@darzu): use CyMany here
 export interface MeshPoolBuffers_WebGPU {
   // buffers
-  verticesBuffer: GPUBuffer;
+  verticesBuffer: CyMany<typeof VertexStruct.desc>;
   triIndicesBuffer: GPUBuffer;
   lineIndicesBuffer: GPUBuffer;
   uniformBuffer: GPUBuffer;
@@ -192,17 +192,23 @@ export function createMeshPool_WebGPU(
   // console.log(`maxMeshes: ${maxMeshes}, maxTris: ${maxTris}, maxVerts: ${maxVerts}`)
 
   // create our mesh buffers (vertex, index, uniform)
-  const verticesBuffer = device.createBuffer({
-    size: maxVerts * VertexStruct.size,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-    // NOTE(@darzu): with WebGPU we have the option to modify the full buffers in memory before
-    //  handing them over to the GPU. This could be good for large initial sets of data, instead of
-    //  sending that over later via the queues. See commit 4862a7c and it's successors. Pre those
-    //  commits, we had a way to add mesh data to either via initial memory maps or queues. The
-    //  memory mapped way was removed to simplify the abstractions since we weren't noticing speed
-    //  benefits at the time.
-    mappedAtCreation: false,
-  });
+  const verticesBuffer = createCyMany(
+    device,
+    VertexStruct,
+    GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    maxVerts
+  );
+  // const verticesBuffer = device.createBuffer({
+  //   size: maxVerts * VertexStruct.size,
+  //   usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+  //   // NOTE(@darzu): with WebGPU we have the option to modify the full buffers in memory before
+  //   //  handing them over to the GPU. This could be good for large initial sets of data, instead of
+  //   //  sending that over later via the queues. See commit 4862a7c and it's successors. Pre those
+  //   //  commits, we had a way to add mesh data to either via initial memory maps or queues. The
+  //   //  memory mapped way was removed to simplify the abstractions since we weren't noticing speed
+  //   //  benefits at the time.
+  //   mappedAtCreation: false,
+  // });
   const triIndicesBuffer = device.createBuffer({
     size: maxTris * bytesPerTri,
     usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
@@ -221,6 +227,7 @@ export function createMeshPool_WebGPU(
     maxMeshes
   );
 
+  // TODO(@darzu): use CyBuffer
   function updateBuf(buffer: GPUBuffer, offset: number, data: Uint8Array) {
     device.queue.writeBuffer(buffer, offset, data);
   }
@@ -230,7 +237,8 @@ export function createMeshPool_WebGPU(
       updateBuf(triIndicesBuffer, offset, data),
     updateLineIndices: (offset, data) =>
       updateBuf(lineIndicesBuffer, offset, data),
-    updateVertices: (offset, data) => updateBuf(verticesBuffer, offset, data),
+    updateVertices: (offset, data) =>
+      updateBuf(verticesBuffer.buffer, offset, data),
     updateUniform: (offset, data) =>
       updateBuf(uniformBuffer.buffer, offset, data),
   };

@@ -363,7 +363,7 @@ export class Renderer_WebGPU implements Renderer {
 
     // render triangles and lines
     bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
-    bundleEnc.setVertexBuffer(0, this.pool.verticesBuffer);
+    bundleEnc.setVertexBuffer(0, this.pool.verticesBuffer.buffer);
 
     // render triangles first
     if (this.drawTris) {

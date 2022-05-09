@@ -261,6 +261,7 @@ export function attachToCanvas(
 
     // bind vertex buffers
     gl.bindBuffer(gl.ARRAY_BUFFER, pool.vertexBuffer);
+    // TODO(@darzu): create these attrib points via CyBuffer
     gl.vertexAttribPointer(
       a_loc_position,
       3,
