@@ -5,7 +5,7 @@ import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
 import { EM } from "../entity-manager.js";
 import { assert } from "../test.js";
 import { MeshUniformStruct, MeshUniformTS } from "./shader_obj.js";
-import { createCyMany, createCyStruct } from "./data.js";
+import { createCyMany, createCyStruct, CyToTS } from "./data.js";
 
 // TODO(@darzu): abstraction refinement:
 //  [ ] how do we handle multiple shaders with different mesh
@@ -94,75 +94,12 @@ export const VertexStruct = createCyStruct(
   }
 );
 
-export module RopeStick {
-  export interface Data {
-    aIdx: number;
-    bIdx: number;
-    length: number;
-  }
-
-  const _byteCounts = [1 * 4, 1 * 4, 1 * 4];
-
-  const _byteOffsets = _byteCounts.reduce(
-    (p, n) => [...p, p[p.length - 1] + n],
-    [0]
-  );
-
-  // define the format of our vertices (this needs to agree with the inputs to the vertex shaders)
-  // const prevOffset = bytesPerVec3 * 1 + 4;
-  export const WebGPUFormat: GPUVertexAttribute[] = [
-    {
-      shaderLocation: 4,
-      offset: 0,
-      format: "uint32",
-    },
-    {
-      shaderLocation: 5,
-      offset: 4,
-      format: "uint32",
-    },
-    {
-      shaderLocation: 6,
-      offset: 8,
-      format: "float32",
-    },
-  ];
-
-  export const names = ["aIdx", "bIdx", "length"];
-
-  // TODO(@darzu): SCENE FORMAT
-  // defines the format of our scene's uniform data
-  const ByteSizeExact = sum(_byteCounts);
-  // vertex objs should probably be 16 byte aligned
-  // TODO(@darzu): alignment https://www.w3.org/TR/WGSL/#alignment-and-size
-  // export const ByteSizeAligned = align(ByteSizeExact, 12);
-  export const ByteSizeAligned = ByteSizeExact;
-
-  export function generateWGSLUniformStruct() {
-    // console.log(generateWGSLStruct(WebGPUFormat, names));
-    return `
-    @align(4) aIdx : u32,
-    @align(4) bIdx : u32,
-    @align(4) length : f32,
-    `;
-    // return generateWGSLStruct(WebGPUFormat, names);
-  }
-
-  const scratch_u8 = new Uint8Array(sum(_byteCounts));
-  const scratch_as_f32 = new Float32Array(scratch_u8.buffer);
-  const scratch_as_u32 = new Uint32Array(scratch_u8.buffer);
-  export function serialize(
-    buffer: Uint8Array,
-    byteOffset: number,
-    data: Data
-  ) {
-    scratch_as_u32[_byteOffsets[0] / 4] = data.aIdx;
-    scratch_as_u32[_byteOffsets[1] / 4] = data.bIdx;
-    scratch_as_f32[_byteOffsets[2] / 4] = data.length;
-    // scratch_f32.set(data.lightViewProjMatrix, _offsets[1]);
-    buffer.set(scratch_u8, byteOffset);
-  }
-}
+export const RopeStickStruct = createCyStruct({
+  aIdx: "u32",
+  bIdx: "u32",
+  length: "f32",
+});
+export type RopeStickTS = CyToTS<typeof RopeStickStruct.desc>;
 
 // TODO(@darzu): WORK IN PROGRESS. Unclear this is how we want to do different shader uniforms
 // TODO(@darzu): WIP interfaces for shaders

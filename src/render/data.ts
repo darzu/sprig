@@ -26,6 +26,7 @@ type WGSLType = WGSLScalar | WGSLVec | WGSLMat;
 
 type WGSLTypeToTSType = {
   f32: number;
+  u32: number;
   "vec2<u32>": vec2;
   "vec2<f32>": vec2;
   "vec3<f32>": vec3;
@@ -279,10 +280,13 @@ export function createCyStruct<O extends CyStructDesc>(
     Object.values(data).forEach((v, i) => {
       const t = types[i];
       const o = offsets[i];
-      if (t === "f32") views.f32[o / 4] = v;
-      else if (t === "vec2<f32>") views.f32.set(v, o / 4);
-      else if (t === "vec3<f32>") views.f32.set(v, o / 4);
-      else if (t === "mat4x4<f32>") views.f32.set(v, o / 4);
+      const o32 = offsets_32[i];
+      if (t === "f32") views.f32[o32] = v;
+      else if (t === "u32") views.u32[o32] = v;
+      else if (t === "vec2<f32>") views.f32.set(v, o32);
+      else if (t === "vec3<f32>") views.f32.set(v, o32);
+      else if (t === "mat4x4<f32>") views.f32.set(v, o32);
+      else throw `Unimplemented type in serializer: ${t}`;
     });
 
     return scratch_u8;
@@ -366,7 +370,7 @@ export function createCyStruct<O extends CyStructDesc>(
       if (doAlign) res += `@align(${wgslTypeToAlign[type]}) `;
       if (locationStart !== undefined)
         res += `@location(${locationStart + i}) `;
-      res += `${name} : ${type},`;
+      res += `${name} : ${type},\n`;
       i++;
     }
 

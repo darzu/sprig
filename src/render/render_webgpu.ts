@@ -17,7 +17,8 @@ import {
   MeshHandle,
   MeshPoolOpts,
   MeshPool_WebGPU,
-  RopeStick,
+  RopeStickStruct,
+  RopeStickTS,
   VertexStruct,
 } from "./mesh-pool.js";
 import { RenderableConstruct, Renderer } from "./renderer.js";
@@ -118,9 +119,11 @@ export class Renderer_WebGPU implements Renderer {
   // private scratchRopePointData: Uint8Array;
   private ropePointBuf: CyMany<typeof RopePointStruct.desc>;
 
-  private ropeStickData: RopeStick.Data[];
-  private ropeStickBuffer: GPUBuffer;
-  private scratchRopeStickData: Uint8Array;
+  // private ropeStickData: RopeStickTS[];
+  // private ropeStickBuffer: GPUBuffer;
+  // private scratchRopeStickData: Uint8Array;
+  private ropeStickBuf: CyMany<typeof RopeStickStruct.desc>;
+
   private cmpRopePipeline: GPUComputePipeline;
   private cmpRopeBindGroupLayout: GPUBindGroupLayout;
   // private rndrRopePipeline: GPURenderPipeline;
@@ -501,7 +504,7 @@ export class Renderer_WebGPU implements Renderer {
     // setup rope
     // TODO(@darzu): ROPE
     const ropePointData: RopePointTS[] = [];
-    this.ropeStickData = [];
+    const ropeStickData: RopeStickTS[] = [];
     // let n = 0;
     const idx = (x: number, y: number) => {
       if (x >= CLOTH_W || y >= CLOTH_W) return CLOTH_W * CLOTH_W;
@@ -521,7 +524,7 @@ export class Renderer_WebGPU implements Renderer {
 
         // if (y + 1 < W && x + 1 < W) {
         // if (y + 1 < W) {
-        this.ropeStickData.push({
+        ropeStickData.push({
           aIdx: i,
           bIdx: idx(x, y + 1),
           length: 1.0,
@@ -529,7 +532,7 @@ export class Renderer_WebGPU implements Renderer {
         // }
 
         // if (x + 1 < W) {
-        this.ropeStickData.push({
+        ropeStickData.push({
           aIdx: i,
           bIdx: idx(x + 1, y),
           length: 1.0,
@@ -540,6 +543,9 @@ export class Renderer_WebGPU implements Renderer {
         // n++;
       }
     }
+
+    console.log(RopeStickStruct.wgsl(true));
+
     // fix points
     ropePointData[idx(0, CLOTH_W - 1)].locked = 1.0;
     ropePointData[idx(CLOTH_W - 1, CLOTH_W - 1)].locked = 1.0;
@@ -555,45 +561,12 @@ export class Renderer_WebGPU implements Renderer {
       GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
       ropePointData
     );
-    // this.ropePointBuffer = device.createBuffer({
-    //   size: RopePoint.ByteSizeAligned * ropePointData.length,
-    //   usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
-    //   // GPUBufferUsage.COPY_DST,
-    //   mappedAtCreation: true,
-    // });
-    // this.scratchRopePointData = new Uint8Array(
-    //   RopePoint.ByteSizeAligned * ropePointData.length
-    // );
-    // for (let i = 0; i < ropePointData.length; i++)
-    //   RopePoint.serialize(
-    //     this.scratchRopePointData,
-    //     i * RopePoint.ByteSizeAligned,
-    //     ropePointData[i]
-    //   );
-    // new Uint8Array(this.ropePointBuffer.getMappedRange()).set(
-    //   this.scratchRopePointData
-    // );
-    // this.ropePointBuffer.unmap();
-    this.ropeStickBuffer = device.createBuffer({
-      size: RopeStick.ByteSizeAligned * this.ropeStickData.length,
-      // size: RopeStick.ByteSizeAligned * this.ropeStickData.length,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.VERTEX,
-      // GPUBufferUsage.COPY_DST,
-      mappedAtCreation: true,
-    });
-    this.scratchRopeStickData = new Uint8Array(
-      RopeStick.ByteSizeAligned * this.ropeStickData.length
+    this.ropeStickBuf = createCyMany(
+      device,
+      RopeStickStruct,
+      GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
+      ropeStickData
     );
-    for (let i = 0; i < this.ropeStickData.length; i++)
-      RopeStick.serialize(
-        this.scratchRopeStickData,
-        i * RopeStick.ByteSizeAligned,
-        this.ropeStickData[i]
-      );
-    new Uint8Array(this.ropeStickBuffer.getMappedRange()).set(
-      this.scratchRopeStickData
-    );
-    this.ropeStickBuffer.unmap();
 
     // Displacement map
     // TODO(@darzu): DISP
@@ -657,6 +630,7 @@ export class Renderer_WebGPU implements Renderer {
     // TODO(@darzu): ROPE
     this.cmpRopeBindGroupLayout = this.device.createBindGroupLayout({
       entries: [
+        // TODO(@darzu): move into CyBuffer system
         {
           binding: 0,
           visibility: GPUShaderStage.COMPUTE,
@@ -675,7 +649,7 @@ export class Renderer_WebGPU implements Renderer {
           visibility: GPUShaderStage.COMPUTE,
           buffer: {
             type: "read-only-storage",
-            minBindingSize: RopeStick.ByteSizeAligned,
+            minBindingSize: this.ropeStickBuf.struct.size,
           },
         },
       ],
@@ -841,10 +815,7 @@ export class Renderer_WebGPU implements Renderer {
       entries: [
         this.sceneUni.binding(0),
         this.ropePointBuf.binding(1),
-        {
-          binding: 2,
-          resource: { buffer: this.ropeStickBuffer },
-        },
+        this.ropeStickBuf.binding(2),
       ],
     });
 

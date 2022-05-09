@@ -1,7 +1,7 @@
 import { mat4, vec3 } from "../gl-matrix.js";
 import { align, sum } from "../math.js";
 import { createCyStruct, CyToTS } from "./data.js";
-import { RopeStick, VertexStruct } from "./mesh-pool.js";
+import { RopeStickStruct, VertexStruct } from "./mesh-pool.js";
 import { CLOTH_W, RopePointStruct, SceneStruct } from "./render_webgpu.js";
 
 export const MeshUniformStruct = createCyStruct(
@@ -161,7 +161,7 @@ export const rope_shader = () =>
   };
 
   struct RopeStick {
-    ${RopeStick.generateWGSLUniformStruct()}
+    ${RopeStickStruct.wgsl(true)}
   };
   struct RopeSticks {
     ropeSticks : array<RopeStick>,
