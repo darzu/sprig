@@ -619,6 +619,7 @@ export class Renderer_WebGPU implements Renderer {
 
     // TODO(@darzu): DISP
     this.cmpClothPipeline = device.createComputePipeline({
+      layout: "auto",
       compute: {
         module: device.createShaderModule({
           code: cloth_shader(),
