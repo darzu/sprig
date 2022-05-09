@@ -246,20 +246,41 @@ export module RopePoint {
   const scratch_u8 = new Uint8Array(ByteSizeAligned);
   const scratch_as_f32 = new Float32Array(scratch_u8.buffer);
   const scratch_as_u32 = new Uint32Array(scratch_u8.buffer);
+}
+
+// TODO(@darzu): support custom serializers
+/*
   export function serialize(
     buffer: Uint8Array,
     byteOffset: number,
     data: Data
   ) {
-    scratch_as_f32.set(data.position, _byteOffsets[0] / 4);
-    scratch_as_f32.set(data.prevPosition, _byteOffsets[1] / 4);
-    // scratch_as_f32.set([data.locked, 0, 0], _byteOffsets[2] / 4);
-    // scratch_as_f32[_byteOffsets[2] / 4] = data.locked;
-    scratch_as_f32[_byteOffsets[2] / 4] = data.locked;
+    scratch_f32.set(data.cameraViewProjMatrix, _offsets[0]);
     // scratch_f32.set(data.lightViewProjMatrix, _offsets[1]);
-    buffer.set(scratch_u8, byteOffset);
+    scratch_f32.set(data.light1Dir, _offsets[1]);
+    scratch_f32.set(data.light2Dir, _offsets[2]);
+    scratch_f32.set(data.light3Dir, _offsets[3]);
+    scratch_f32.set(data.cameraPos, _offsets[4]);
+    scratch_f32.set(data.playerPos, _offsets[5]);
+    scratch_f32[_offsets[6]] = data.time;
+    buffer.set(scratch_f32_as_u8, byteOffset);
   }
-}
+*/
+
+// export function serialize(
+//   buffer: Uint8Array,
+//   byteOffset: number,
+//   data: Data
+// ) {
+//   scratch_as_f32.set(data.position, _byteOffsets[0] / 4);
+//   scratch_as_f32.set(data.prevPosition, _byteOffsets[1] / 4);
+//   // scratch_as_f32.set([data.locked, 0, 0], _byteOffsets[2] / 4);
+//   // scratch_as_f32[_byteOffsets[2] / 4] = data.locked;
+//   scratch_as_f32[_byteOffsets[2] / 4] = data.locked;
+//   // scratch_f32.set(data.lightViewProjMatrix, _offsets[1]);
+//   buffer.set(scratch_u8, byteOffset);
+// }
+
 export module RopeStick {
   export interface Data {
     aIdx: number;

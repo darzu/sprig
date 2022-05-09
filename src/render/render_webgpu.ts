@@ -3,11 +3,13 @@ import { tempVec } from "../temp-pool.js";
 import { assert } from "../test.js";
 import { range } from "../util.js";
 import {
+  createCyMany,
   createCyOne,
   createCyStruct,
   CyBuffer,
+  CyMany,
   CyOne,
-  CyToObj,
+  CyToTS,
 } from "./data.js";
 import {
   createMeshPool_WebGPU,
@@ -57,14 +59,17 @@ export const SceneStruct = createCyStruct({
   playerPos: "vec2<f32>",
   time: "f32",
 });
-type SceneStructTS = CyToObj<typeof SceneStruct.desc>;
+type SceneTS = CyToTS<typeof SceneStruct.desc>;
 
-// export const RopePointStruct = cyStruct({
-//   position: "vec3<f32>",
-//   prevPosition: "vec3<f32>",
-//   locked: "vec3<f32>",
-// });
-// type RopePointStructTS = CyToObj<typeof RopePointStruct>;
+export const RopePointStruct = createCyStruct({
+  position: "vec3<f32>",
+  prevPosition: "vec3<f32>",
+  locked: "f32",
+});
+type RopePointTS = CyToTS<typeof RopePointStruct.desc>;
+
+// TODO(@darzu):
+console.log(`RopePointStruct: ${RopePointStruct.size} vs 32`);
 
 export class Renderer_WebGPU implements Renderer {
   public drawLines = true;
@@ -88,9 +93,11 @@ export class Renderer_WebGPU implements Renderer {
   // private sceneData: SceneUniform.Data;
 
   // TODO(@darzu): ROPE
-  private ropePointData: RopePoint.Data[];
-  private ropePointBuffer: GPUBuffer;
-  private scratchRopePointData: Uint8Array;
+  // private ropePointData: RopePoint.Data[];
+  // private ropePointBuffer: GPUBuffer;
+  // private scratchRopePointData: Uint8Array;
+  private ropePointBuf: CyMany<typeof RopePointStruct.desc>;
+
   private ropeStickData: RopeStick.Data[];
   private ropeStickBuffer: GPUBuffer;
   private scratchRopeStickData: Uint8Array;
@@ -403,11 +410,7 @@ export class Renderer_WebGPU implements Renderer {
               },
             ],
           },
-          {
-            stepMode: "instance",
-            arrayStride: RopePoint.ByteSizeAligned,
-            attributes: RopePoint.WebGPUFormat,
-          },
+          this.ropePointBuf.struct.vertexLayout("instance", 1),
           // {
           //   stepMode: "instance",
           //   arrayStride: RopeStick.ByteSizeAligned,
@@ -429,9 +432,9 @@ export class Renderer_WebGPU implements Renderer {
     bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
     bundleEnc.setIndexBuffer(this.particleIndexBuffer, "uint16");
     bundleEnc.setVertexBuffer(0, this.particleVertexBuffer);
-    bundleEnc.setVertexBuffer(1, this.ropePointBuffer);
+    bundleEnc.setVertexBuffer(1, this.ropePointBuf.buffer);
     // bundleEnc.setVertexBuffer(2, this.ropeStickBuffer);
-    bundleEnc.drawIndexed(12, this.ropePointData.length, 0, 0);
+    bundleEnc.drawIndexed(12, this.ropePointBuf.length, 0, 0);
     // console.dir(rndrRopePipeline);
     // console.dir(this.particleIndexBuffer);
     // console.dir(this.particleVertexBuffer);
@@ -480,7 +483,7 @@ export class Renderer_WebGPU implements Renderer {
 
     // setup rope
     // TODO(@darzu): ROPE
-    this.ropePointData = [];
+    const ropePointData: RopePointTS[] = [];
     this.ropeStickData = [];
     // let n = 0;
     const idx = (x: number, y: number) => {
@@ -492,12 +495,12 @@ export class Renderer_WebGPU implements Renderer {
         let i = idx(x, y);
         // assert(i === n, "i === n");
         const pos: vec3 = [x, y + 4, 0];
-        const p: RopePoint.Data = {
+        const p: RopePointTS = {
           position: pos,
           prevPosition: pos,
           locked: 0.0,
         };
-        this.ropePointData[i] = p;
+        ropePointData[i] = p;
 
         // if (y + 1 < W && x + 1 < W) {
         // if (y + 1 < W) {
@@ -521,33 +524,34 @@ export class Renderer_WebGPU implements Renderer {
       }
     }
     // fix points
-    this.ropePointData[idx(0, CLOTH_W - 1)].locked = 1.0;
-    this.ropePointData[idx(CLOTH_W - 1, CLOTH_W - 1)].locked = 1.0;
-    // for (let i = 0; i < this.ropePointData.length; i++)
-    //   if (this.ropePointData[i].locked > 0) console.log(`locked: ${i}`);
-    // console.dir(this.ropePointData);
+    ropePointData[idx(0, CLOTH_W - 1)].locked = 1.0;
+    ropePointData[idx(CLOTH_W - 1, CLOTH_W - 1)].locked = 1.0;
+    // for (let i = 0; i < ropePointData.length; i++)
+    //   if (ropePointData[i].locked > 0) console.log(`locked: ${i}`);
+    // console.dir(ropePointData);
     // console.dir(this.ropeStickData);
 
     // Serialize rope data
-    this.ropePointBuffer = device.createBuffer({
-      size: RopePoint.ByteSizeAligned * this.ropePointData.length,
-      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
-      // GPUBufferUsage.COPY_DST,
-      mappedAtCreation: true,
-    });
-    this.scratchRopePointData = new Uint8Array(
-      RopePoint.ByteSizeAligned * this.ropePointData.length
-    );
-    for (let i = 0; i < this.ropePointData.length; i++)
-      RopePoint.serialize(
-        this.scratchRopePointData,
-        i * RopePoint.ByteSizeAligned,
-        this.ropePointData[i]
-      );
-    new Uint8Array(this.ropePointBuffer.getMappedRange()).set(
-      this.scratchRopePointData
-    );
-    this.ropePointBuffer.unmap();
+    this.ropePointBuf = createCyMany(device, RopePointStruct, ropePointData);
+    // this.ropePointBuffer = device.createBuffer({
+    //   size: RopePoint.ByteSizeAligned * ropePointData.length,
+    //   usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
+    //   // GPUBufferUsage.COPY_DST,
+    //   mappedAtCreation: true,
+    // });
+    // this.scratchRopePointData = new Uint8Array(
+    //   RopePoint.ByteSizeAligned * ropePointData.length
+    // );
+    // for (let i = 0; i < ropePointData.length; i++)
+    //   RopePoint.serialize(
+    //     this.scratchRopePointData,
+    //     i * RopePoint.ByteSizeAligned,
+    //     ropePointData[i]
+    //   );
+    // new Uint8Array(this.ropePointBuffer.getMappedRange()).set(
+    //   this.scratchRopePointData
+    // );
+    // this.ropePointBuffer.unmap();
     this.ropeStickBuffer = device.createBuffer({
       size: RopeStick.ByteSizeAligned * this.ropeStickData.length,
       // size: RopeStick.ByteSizeAligned * this.ropeStickData.length,
@@ -641,7 +645,7 @@ export class Renderer_WebGPU implements Renderer {
           visibility: GPUShaderStage.COMPUTE,
           buffer: {
             type: "storage",
-            minBindingSize: RopePoint.ByteSizeAligned,
+            minBindingSize: this.ropePointBuf.struct.size,
           },
         },
         {
@@ -814,10 +818,7 @@ export class Renderer_WebGPU implements Renderer {
       layout: this.cmpRopeBindGroupLayout,
       entries: [
         this.sceneUni.binding(0),
-        {
-          binding: 1,
-          resource: { buffer: this.ropePointBuffer },
-        },
+        this.ropePointBuf.binding(1),
         {
           binding: 2,
           resource: { buffer: this.ropeStickBuffer },
@@ -877,7 +878,7 @@ export class Renderer_WebGPU implements Renderer {
 }
 
 // TODO(@darzu): move somewhere else
-export function setupScene(): SceneStructTS {
+export function setupScene(): SceneTS {
   // create a directional light and compute it's projection (for shadows) and direction
   const worldOrigin = vec3.fromValues(0, 0, 0);
   const D = 50;

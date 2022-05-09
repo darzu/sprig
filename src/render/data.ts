@@ -1,7 +1,7 @@
 // cytochrome's data helpers
 
 import { mat4, vec2, vec3 } from "../gl-matrix.js";
-import { align, sum } from "../math.js";
+import { align, max, sum } from "../math.js";
 import { Intersect, objMap } from "../util.js";
 
 const WGSLScalars = ["bool", "i32", "u32", "f32", "f16"] as const;
@@ -31,15 +31,15 @@ type WGSLTypeToTSType = {
   "mat4x4<f32>": mat4;
 };
 
-const vertTypeToWgslType: Partial<Record<GPUVertexFormat, WGSLType>> = {
-  float16x2: "vec2<f16>",
-  float16x4: "vec4<f16>",
-  float32: "f32",
-  float32x2: "vec2<f32>",
-  float32x3: "vec3<f32>",
-  float32x4: "vec4<f32>",
-  uint32: "u32",
-  sint32: "i32",
+const wgslTypeToVertType: Partial<Record<WGSLType, GPUVertexFormat>> = {
+  "vec2<f16>": "float16x2",
+  "vec4<f16>": "float16x4",
+  f32: "float32",
+  "vec2<f32>": "float32x2",
+  "vec3<f32>": "float32x3",
+  "vec4<f32>": "float32x4",
+  u32: "uint32",
+  i32: "sint32",
 };
 
 // https://www.w3.org/TR/WGSL/#alignment-and-size
@@ -72,7 +72,7 @@ console.dir(wgslTypeToAlign);
 
 type CyStructDesc = Record<string, WGSLType>;
 
-export type CyToObj<O extends CyStructDesc> = {
+export type CyToTS<O extends CyStructDesc> = {
   [N in keyof O]: O[N] extends keyof WGSLTypeToTSType
     ? WGSLTypeToTSType[O[N]]
     : never;
@@ -81,22 +81,30 @@ export type CyToObj<O extends CyStructDesc> = {
 export interface CyStruct<O extends CyStructDesc> {
   desc: O;
   size: number;
-  serializeSlow: (data: CyToObj<O>) => Uint8Array;
-  layout(idx: number): GPUBindGroupLayoutEntry;
+  serializeSlow: (data: CyToTS<O>) => Uint8Array;
   wgsl: (align: boolean) => string;
+  // webgpu
+  layout(idx: number): GPUBindGroupLayoutEntry;
+  vertexLayout(
+    stepMode: GPUVertexStepMode,
+    startLocation: number
+  ): GPUVertexBufferLayout;
 }
 
 export interface CyBuffer<O extends CyStructDesc> {
   struct: CyStruct<O>;
+  // webgpu
+  // TODO(@darzu): generalize to non-webgpu?
   binding(idx: number): GPUBindGroupEntry;
+  buffer: GPUBuffer;
 }
 export interface CyOne<O extends CyStructDesc> extends CyBuffer<O> {
-  lastData: CyToObj<O> | undefined;
-  queueUpdate: (data: CyToObj<O>) => void;
+  lastData: CyToTS<O> | undefined;
+  queueUpdate: (data: CyToTS<O>) => void;
 }
 export interface CyMany<O extends CyStructDesc> extends CyBuffer<O> {
   length: number;
-  queueUpdate: (data: CyToObj<O>, idx: number) => void;
+  queueUpdate: (data: CyToTS<O>, idx: number) => void;
 }
 
 // export function cyStruct<O extends CyStruct>(struct: O): O {
@@ -150,9 +158,14 @@ export function createCyStruct<O extends CyStructDesc>(desc: O): CyStruct<O> {
     return n;
   }, Infinity);
 
-  const structSize = align(sum(sizes), 256);
-
   const offsets = sizes.reduce((p, n) => [...p, p[p.length - 1] + n], [0]);
+  offsets.pop();
+
+  console.log(`max(sizes): ${max(sizes)} for ${JSON.stringify(desc)}`);
+  console.dir(sizes);
+
+  // size = align(last offset + last size, max(alignments))
+  const structSize = align(sum(sizes), max(sizes));
 
   const names = Object.keys(desc);
   const types = Object.values(desc);
@@ -161,7 +174,7 @@ export function createCyStruct<O extends CyStructDesc>(desc: O): CyStruct<O> {
   // TODO(@darzu): emit serialization code
   const scratch_u8 = new Uint8Array(structSize);
   const scratch_f32 = new Float32Array(scratch_u8.buffer);
-  function serializeSlow(data: CyToObj<O>): Uint8Array {
+  function serializeSlow(data: CyToTS<O>): Uint8Array {
     // TODO(@darzu): disable this check for perf
     Object.keys(data).forEach((n, i) => {
       if (n !== names[i])
@@ -188,6 +201,7 @@ export function createCyStruct<O extends CyStructDesc>(desc: O): CyStruct<O> {
     serializeSlow,
     layout,
     wgsl,
+    vertexLayout,
   };
 
   function wgsl(align: boolean): string {
@@ -204,6 +218,28 @@ export function createCyStruct<O extends CyStructDesc>(desc: O): CyStruct<O> {
     };
   }
 
+  function vertexLayout(
+    stepMode: GPUVertexStepMode,
+    startLocation: number
+  ): GPUVertexBufferLayout {
+    const attributes: GPUVertexAttribute[] = [];
+    for (let i = 0; i < offsets.length; i++) {
+      const format = wgslTypeToVertType[types[i]];
+      if (!format) throw `Unsupported type in vertex buffer: ${types[i]}`;
+      attributes.push({
+        shaderLocation: startLocation + i,
+        offset: offsets[i],
+        format,
+      });
+    }
+
+    return {
+      stepMode,
+      arrayStride: structSize,
+      attributes,
+    };
+  }
+
   return struct;
 }
 
@@ -212,7 +248,7 @@ export function createCyOne<O extends CyStructDesc>(
   struct: CyStruct<O>
 ): CyOne<O> {
   const _buf = device.createBuffer({
-    size: struct.size,
+    size: align(struct.size, 256),
     // TODO(@darzu): parameterize these
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     mappedAtCreation: false,
@@ -220,12 +256,13 @@ export function createCyOne<O extends CyStructDesc>(
 
   const buf: CyOne<O> = {
     struct,
+    buffer: _buf,
     lastData: undefined,
     queueUpdate,
     binding,
   };
 
-  function queueUpdate(data: CyToObj<O>): void {
+  function queueUpdate(data: CyToTS<O>): void {
     // TODO(@darzu): measure perf. we probably want to allow hand written serializers
     buf.lastData = data;
     const b = struct.serializeSlow(data);
@@ -246,17 +283,31 @@ export function createCyMany<O extends CyStructDesc>(
   device: GPUDevice,
   struct: CyStruct<O>,
   length: number
+): CyMany<O>;
+export function createCyMany<O extends CyStructDesc>(
+  device: GPUDevice,
+  struct: CyStruct<O>,
+  data: CyToTS<O>[]
+): CyMany<O>;
+export function createCyMany<O extends CyStructDesc>(
+  device: GPUDevice,
+  struct: CyStruct<O>,
+  lenOrData: number | CyToTS<O>[]
 ): CyMany<O> {
+  const hasInitData = typeof lenOrData !== "number";
+  const length = hasInitData ? lenOrData.length : lenOrData;
+
   const _buf = device.createBuffer({
     size: struct.size * length,
     // TODO(@darzu): parameterize these
     usage:
       GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-    mappedAtCreation: false,
+    mappedAtCreation: hasInitData,
   });
 
   const buf: CyMany<O> = {
     struct,
+    buffer: _buf,
     length,
     queueUpdate,
     binding,
@@ -264,7 +315,17 @@ export function createCyMany<O extends CyStructDesc>(
 
   const stride = struct.size;
 
-  function queueUpdate(data: CyToObj<O>, index: number): void {
+  if (hasInitData) {
+    const data = lenOrData;
+    const mappedBuf = new Uint8Array(_buf.getMappedRange());
+    for (let i = 0; i < data.length; i++) {
+      const d = struct.serializeSlow(data[i]);
+      mappedBuf.set(d, i * stride);
+    }
+    _buf.unmap();
+  }
+
+  function queueUpdate(data: CyToTS<O>, index: number): void {
     const b = struct.serializeSlow(data);
     device.queue.writeBuffer(_buf, index * stride, b);
   }
@@ -278,25 +339,6 @@ export function createCyMany<O extends CyStructDesc>(
 
   return buf;
 }
-
-// TODO(@darzu): support custom serializers
-/*
-  export function serialize(
-    buffer: Uint8Array,
-    byteOffset: number,
-    data: Data
-  ) {
-    scratch_f32.set(data.cameraViewProjMatrix, _offsets[0]);
-    // scratch_f32.set(data.lightViewProjMatrix, _offsets[1]);
-    scratch_f32.set(data.light1Dir, _offsets[1]);
-    scratch_f32.set(data.light2Dir, _offsets[2]);
-    scratch_f32.set(data.light3Dir, _offsets[3]);
-    scratch_f32.set(data.cameraPos, _offsets[4]);
-    scratch_f32.set(data.playerPos, _offsets[5]);
-    scratch_f32[_offsets[6]] = data.time;
-    buffer.set(scratch_f32_as_u8, byteOffset);
-  }
-*/
 
 // let ropePointData: RopePoint.Data[];
 // let ropePointBuffer: GPUBuffer;

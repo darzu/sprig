@@ -2,7 +2,7 @@ import { mat4, vec3 } from "../gl-matrix.js";
 import { align, sum } from "../math.js";
 import { toWGSLStruct } from "./data.js";
 import { RopePoint, RopeStick, Vertex } from "./mesh-pool.js";
-import { CLOTH_W, SceneStruct } from "./render_webgpu.js";
+import { CLOTH_W, RopePointStruct, SceneStruct } from "./render_webgpu.js";
 
 export module MeshUniformMod {
   export interface Data {
@@ -192,6 +192,9 @@ export const cloth_shader = () =>
   
   `;
 
+// TODO(@darzu): remove
+console.log(RopePointStruct.wgsl(true));
+
 export const rope_shader = () =>
   `
   struct Scene {
@@ -201,7 +204,7 @@ export const rope_shader = () =>
   @group(0) @binding(0) var<uniform> scene : Scene;
 
   struct RopePoint {
-    ${RopePoint.generateWGSLUniformStruct()}
+    ${RopePointStruct.wgsl(true)}
   };
   struct RopePoints {
     ropePoints : array<RopePoint>,
