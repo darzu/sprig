@@ -197,6 +197,26 @@ export interface CyStructOpts<O extends CyStructDesc> {
   serializer?: Serializer<O>;
 }
 
+// TODO(@darzu): generalize to webgl?
+/*
+in vec3 a_position;
+in vec3 a_color;
+in vec3 a_normal;
+
+// bind vertex buffers
+gl.bindBuffer(gl.ARRAY_BUFFER, pool.vertexBuffer);
+// TODO(@darzu): create these attrib points via CyBuffer
+gl.vertexAttribPointer(
+  a_loc_position,
+  3,
+  gl.FLOAT,
+  false,
+  VertexStruct.size,
+  VertexStruct.offsets[0]
+);
+gl.enableVertexAttribArray(a_loc_position);
+*/
+
 export function createCyStruct<O extends CyStructDesc>(
   desc: O,
   opts?: CyStructOpts<O>
@@ -517,4 +537,160 @@ export function createCyMany<O extends CyStructDesc>(
   }
 
   return buf;
+}
+
+export interface CyCompPass {
+  // TODO(@darzu): Pass, Pipeline, Layout, Description
+}
+
+export interface CyCompPipeline {
+  // TODO(@darzu):
+}
+
+// resource:
+// var<storage, read>, read_write,
+// var<uniform>
+// array<RopePoint>
+//
+// we want static descriptions, top level
+//  internally, instancing it will create CyOne and CyMany as needed
+//  layout vs binding
+//
+// open questions:
+//  - are resource just CyTypes or do they wrap them?
+//  - CyBuffer or CyStruct needed?
+export type CyResource = CyBuffer<any>;
+
+if (false as true) {
+  const device: GPUDevice = null as any;
+  // const ropeCmp = createCyCompPipeline(
+  //   device,
+  //   [SceneStruct, RopePointStruct, RopeStickStruct],
+  //   rope_shader()
+  // );
+
+  let SceneStruct: CyStruct<any> = null as any;
+  let RopePointStruct: CyStruct<any> = null as any;
+  let RopeStickStruct: CyStruct<any> = null as any;
+  let rope_shader = () => "my shader";
+
+  // TODO(@darzu): needs "name" in struct
+  let ropePipelineDesc = {
+    resources: [
+      { struct: SceneStruct, memory: "uniform", parity: "one" },
+      {
+        struct: RopePointStruct,
+        memory: "storage, read_write",
+        parity: "many",
+      },
+      { struct: RopeStickStruct, memory: "storage, read", parity: "many" },
+    ],
+    shader: rope_shader,
+  };
+
+  let sceneUni = createCyOne(device, SceneStruct);
+  let ropePointBuf = createCyMany(device, RopePointStruct, 0, 0);
+  let ropeStickBuf = createCyMany(device, RopeStickStruct, 0, 0);
+
+  let ropePipeline = createCyPipeline(device, ropePipelineDesc, [
+    sceneUni,
+    ropePointBuf,
+    ropeStickBuf,
+  ]);
+
+  const commandEncoder = device.createCommandEncoder();
+
+  ropePipeline.dispatch(commandEncoder);
+}
+
+function createCyPipeline(d: any, a: any, ...s: any[]) {
+  return {
+    dispatch: (a: any) => a,
+  };
+}
+
+/*
+
+  const cmpRopePassEncoder = commandEncoder.beginComputePass();
+  cmpRopePassEncoder.setPipeline(this.cmpRopePipeline);
+  cmpRopePassEncoder.setBindGroup(0, cmpRopeBindGroup);
+  cmpRopePassEncoder.dispatchWorkgroups(1);
+  cmpRopePassEncoder.end();
+
+  struct Scene {
+    ${SceneStruct.wgsl(true)}
+  };
+  @group(0) @binding(0) var<uniform> scene : Scene;
+
+  struct RopePoint {
+    ${RopePointStruct.wgsl(true)}
+  };
+  struct RopePoints {
+    ropePoints : array<RopePoint>,
+  };
+
+  struct RopeStick {
+    ${RopeStickStruct.wgsl(true)}
+  };
+  struct RopeSticks {
+    ropeSticks : array<RopeStick>,
+  };
+
+  @group(0) @binding(1) var<storage, read_write> ropePoints : RopePoints;
+  @group(0) @binding(2) var<storage, read> ropeSticks : RopeSticks;
+
+  run pipeline:
+
+    const cmpRopePassEncoder = commandEncoder.beginComputePass();
+    cmpRopePassEncoder.setPipeline(this.cmpRopePipeline);
+    cmpRopePassEncoder.setBindGroup(0, cmpRopeBindGroup);
+    cmpRopePassEncoder.dispatchWorkgroups(1);
+    cmpRopePassEncoder.end();
+*/
+
+export function createCyCompPipeline(device: GPUDevice): CyCompPipeline {
+  // const bindGroupLayout = device.createBindGroupLayout({
+  //   entries: [
+  //     // TODO(@darzu): move into CyBuffer system
+  //     {
+  //       binding: 0,
+  //       visibility: GPUShaderStage.COMPUTE,
+  //       buffer: { type: "uniform" },
+  //     },
+  //     {
+  //       binding: 1,
+  //       visibility: GPUShaderStage.COMPUTE,
+  //       buffer: {
+  //         type: "storage",
+  //         minBindingSize: this.ropePointBuf.struct.size,
+  //       },
+  //     },
+  //     {
+  //       binding: 2,
+  //       visibility: GPUShaderStage.COMPUTE,
+  //       buffer: {
+  //         type: "read-only-storage",
+  //         minBindingSize: this.ropeStickBuf.struct.size,
+  //       },
+  //     },
+  //   ],
+  // });
+
+  // const pipeline = device.createComputePipeline({
+  //   layout: device.createPipelineLayout({
+  //     bindGroupLayouts: [bindGroupLayout],
+  //   }),
+  //   compute: {
+  //     module: device.createShaderModule({
+  //       code: rope_shader(),
+  //     }),
+  //     entryPoint: "main",
+  //   },
+  // });
+
+  const res: CyCompPipeline = {
+    // TODO(@darzu):
+  };
+
+  return res;
 }

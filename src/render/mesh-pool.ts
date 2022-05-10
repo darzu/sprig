@@ -418,6 +418,7 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
     // console.log(`QUEUE builder.allMeshes.length: ${builder.allMeshes.length}, builder.numTris: ${builder.numTris}, builder.numVerts: ${builder.numVerts}`)
     // console.log(`QUEUE pool.allMeshes.length: ${pool.allMeshes.length}, pool.numTris: ${pool.numTris}, pool.numVerts: ${pool.numVerts}`)
 
+    // TODO(@darzu): just use TS object arrays and CyMany's
     const data: MeshPoolMaps = {
       // TODO(@darzu): use scratch arrays
       verticesMap: new Uint8Array(m.pos.length * VertexStruct.size),

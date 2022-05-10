@@ -181,3 +181,6 @@ Procedural wall:
 Procedural terrain w/ errosion:
   https://github.com/dandrino/terrain-erosion-3-ways
   https://news.ycombinator.com/item?id=29724597
+
+"Procedural Generation For Dummies":
+  https://martindevans.me/game-development/2015/12/27/Procedural-Generation-For-Dummies-Lots/
