@@ -240,5 +240,4 @@ export interface Renderer {
   addMeshInstance(h: MeshHandle): MeshHandle;
   updateMesh(handle: MeshHandle, newMeshData: Mesh): void;
   renderFrame(viewMatrix: mat4, handles: MeshHandle[]): void;
-  removeMesh(h: MeshHandle): void;
 }

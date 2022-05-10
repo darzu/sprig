@@ -1,10 +1,9 @@
 import { vec3, mat4 } from "../gl-matrix.js";
 import { createMeshPool_WebGL, MeshHandle, MeshPoolOpts } from "./mesh-pool.js";
 // TODO(@darzu): this is a bad dependency:
-import { setupScene } from "./render_webgpu.js";
 import { Renderer } from "./renderer.js";
 import { Mesh } from "./mesh.js";
-import { MeshUniformStruct, VertexStruct } from "./pipelines.js";
+import { MeshUniformStruct, setupScene, VertexStruct } from "./pipelines.js";
 
 const vertCode = `#version 300 es
 precision mediump float;
@@ -210,12 +209,6 @@ export function attachToCanvas(
     pool.updateMeshVertices(handle, newMeshData);
   }
 
-  function removeMesh(h: MeshHandle) {
-    // TODO(@darzu):
-    // delete meshObjs[o.id];
-    console.warn(`TODO: impl removeMesh`);
-  }
-
   function renderFrame(viewProj: mat4, meshHandles: MeshHandle[]) {
     scene.cameraViewProjMatrix = viewProj;
 
@@ -322,7 +315,6 @@ export function attachToCanvas(
     addMesh,
     addMeshInstance,
     updateMesh,
-    removeMesh,
     renderFrame,
   };
 

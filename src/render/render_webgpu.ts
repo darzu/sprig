@@ -1,5 +1,5 @@
-import { mat4, vec3 } from "../gl-matrix.js";
-import { createCyMany, createCyOne, createCyStruct, CyToTS } from "./data.js";
+import { mat4 } from "../gl-matrix.js";
+import { createCyMany, createCyOne } from "./data.js";
 import {
   createMeshPool_WebGPU,
   MeshHandle,
@@ -8,8 +8,6 @@ import {
 import { Mesh } from "./mesh.js";
 import {
   SceneStruct,
-  RopeStickTS,
-  CLOTH_W,
   RopeStickStruct,
   RopePointStruct,
   cloth_shader,
@@ -19,8 +17,8 @@ import {
   VertexStruct,
   obj_fragShader,
   particle_shader,
-  RopePointTS,
-  SceneTS,
+  generateRopeGrid,
+  setupScene,
 } from "./pipelines.js";
 import { Renderer } from "./renderer.js";
 
@@ -51,19 +49,9 @@ export function createWebGPURenderer(
     addMeshInstance,
     updateMesh,
     renderFrame,
-    removeMesh,
   };
 
   let clothReadIdx = 1;
-
-  let depthTexture: GPUTexture | null = null;
-  let depthTextureView: GPUTextureView | null = null;
-  let colorTexture: GPUTexture | null = null;
-  let colorTextureView: GPUTextureView | null = null;
-  let lastWidth = 0;
-  let lastHeight = 0;
-
-  let presentationFormat = context.getPreferredFormat(adapter);
 
   const opts: MeshPoolOpts = {
     maxMeshes,
@@ -74,66 +62,11 @@ export function createWebGPURenderer(
   };
 
   let pool = createMeshPool_WebGPU(device, opts);
-
   let sceneUni = createCyOne(device, SceneStruct, setupScene());
+  let canvasFormat = context.getPreferredFormat(adapter);
 
-  // setup scene data:
-  // TODO(@darzu): allow init to pass in above
-
-  // setup rope
-  // TODO(@darzu): ROPE
-  const ropePointData: RopePointTS[] = [];
-  const ropeStickData: RopeStickTS[] = [];
-  // let n = 0;
-  const idx = (x: number, y: number) => {
-    if (x >= CLOTH_W || y >= CLOTH_W) return CLOTH_W * CLOTH_W;
-    return x * CLOTH_W + y;
-  };
-  for (let x = 0; x < CLOTH_W; x++) {
-    for (let y = 0; y < CLOTH_W; y++) {
-      let i = idx(x, y);
-      // assert(i === n, "i === n");
-      const pos: vec3 = [x, y + 4, 0];
-      const p: RopePointTS = {
-        position: pos,
-        prevPosition: pos,
-        locked: 0.0,
-      };
-      ropePointData[i] = p;
-
-      // if (y + 1 < W && x + 1 < W) {
-      // if (y + 1 < W) {
-      ropeStickData.push({
-        aIdx: i,
-        bIdx: idx(x, y + 1),
-        length: 1.0,
-      });
-      // }
-
-      // if (x + 1 < W) {
-      ropeStickData.push({
-        aIdx: i,
-        bIdx: idx(x + 1, y),
-        length: 1.0,
-      });
-      // }
-      // }
-
-      // n++;
-    }
-  }
-
-  console.log(RopeStickStruct.wgsl(true));
-
-  // fix points
-  ropePointData[idx(0, CLOTH_W - 1)].locked = 1.0;
-  ropePointData[idx(CLOTH_W - 1, CLOTH_W - 1)].locked = 1.0;
-  // for (let i = 0; i < ropePointData.length; i++)
-  //   if (ropePointData[i].locked > 0) console.log(`locked: ${i}`);
-  // console.dir(ropePointData);
-  // console.dir(ropeStickData);
-
-  // Serialize rope data
+  // Rope data
+  const { ropePointData, ropeStickData } = generateRopeGrid();
   let ropePointBuf = createCyMany(
     device,
     RopePointStruct,
@@ -175,8 +108,6 @@ export function createWebGPURenderer(
       clothData[i + 2] = i / clothData.length;
     }
   }
-  // for (let i = 0; i < clothData.length; i++)
-  //   clothData[i] = i * (1 / clothData.length);
   device.queue.writeTexture(
     { texture: clothTextures[0] },
     clothData,
@@ -192,7 +123,6 @@ export function createWebGPURenderer(
     }
   );
 
-  // TODO(@darzu): DISP
   let cmpClothPipeline = device.createComputePipeline({
     layout: "auto",
     compute: {
@@ -203,31 +133,11 @@ export function createWebGPURenderer(
     },
   });
 
-  // TODO(@darzu): ROPE
   let cmpRopeBindGroupLayout = device.createBindGroupLayout({
     entries: [
-      // TODO(@darzu): move into CyBuffer system
-      {
-        binding: 0,
-        visibility: GPUShaderStage.COMPUTE,
-        buffer: { type: "uniform" },
-      },
-      {
-        binding: 1,
-        visibility: GPUShaderStage.COMPUTE,
-        buffer: {
-          type: "storage",
-          minBindingSize: ropePointBuf.struct.size,
-        },
-      },
-      {
-        binding: 2,
-        visibility: GPUShaderStage.COMPUTE,
-        buffer: {
-          type: "read-only-storage",
-          minBindingSize: ropeStickBuf.struct.size,
-        },
-      },
+      SceneStruct.layout(0, GPUShaderStage.COMPUTE, "uniform"),
+      RopePointStruct.layout(1, GPUShaderStage.COMPUTE, "storage"),
+      RopeStickStruct.layout(2, GPUShaderStage.COMPUTE, "read-only-storage"),
     ],
   });
   let cmpRopePipeline = device.createComputePipeline({
@@ -241,6 +151,7 @@ export function createWebGPURenderer(
       entryPoint: "main",
     },
   });
+
   // TODO(@darzu): ROPE
   // TODO(@darzu): Looks like there are alignment requirements even on
   //    the vertex buffer! https://www.w3.org/TR/WGSL/#alignment-and-size
@@ -273,6 +184,7 @@ export function createWebGPURenderer(
   );
   particleIndexBuffer.unmap();
 
+  // render bundle
   let bundledMIds = new Set<number>();
   let needsRebundle = false;
   let lastWireMode: [boolean, boolean] = [
@@ -280,9 +192,7 @@ export function createWebGPURenderer(
     renderer.drawTris,
   ];
   let renderBundle: GPURenderBundle;
-
-  // render everything else
-  createRenderBundle([]);
+  updateRenderBundle([]);
 
   function gpuBufferWriteAllMeshUniforms(handles: MeshHandle[]) {
     // TODO(@darzu): make this update all meshes at once
@@ -292,6 +202,13 @@ export function createWebGPURenderer(
   }
 
   // recomputes textures, widths, and aspect ratio on canvas resize
+  let depthTexture: GPUTexture | null = null;
+  let depthTextureView: GPUTextureView | null = null;
+  let canvasTexture: GPUTexture | null = null;
+  let canvasTextureView: GPUTextureView | null = null;
+  let lastWidth = 0;
+  let lastHeight = 0;
+
   function checkCanvasResize() {
     const devicePixelRatio = PIXEL_PER_PX
       ? PIXEL_PER_PX
@@ -303,13 +220,13 @@ export function createWebGPURenderer(
     console.log(`devicePixelRatio: ${devicePixelRatio}`);
 
     if (depthTexture) depthTexture.destroy();
-    if (colorTexture) colorTexture.destroy();
+    if (canvasTexture) canvasTexture.destroy();
 
     const newSize = [newWidth, newHeight] as const;
 
     context.configure({
       device: device,
-      format: presentationFormat, // presentationFormat
+      format: canvasFormat, // presentationFormat
       size: newSize,
       // TODO(@darzu): support transparency?
       compositingAlphaMode: "opaque",
@@ -323,55 +240,59 @@ export function createWebGPURenderer(
     });
     depthTextureView = depthTexture.createView();
 
-    colorTexture = device.createTexture({
+    canvasTexture = device.createTexture({
       size: newSize,
       sampleCount: antiAliasSampleCount,
-      format: presentationFormat,
+      format: canvasFormat,
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
-    colorTextureView = colorTexture.createView();
+    canvasTextureView = canvasTexture.createView();
 
     lastWidth = newWidth;
     lastHeight = newHeight;
   }
 
-  /*
-    Adds an object to be rendered. Currently expects the GPU's buffers to be memory-mapped.
-                  
-    TODO: support adding objects when buffers aren't memory-mapped using device.queue
-  */
+  function canvasAttachment(): GPURenderPassColorAttachment {
+    return {
+      view: canvasTextureView!,
+      resolveTarget: context.getCurrentTexture().createView(),
+      loadOp: "clear",
+      clearValue: {
+        r: renderer.backgroundColor[0],
+        g: renderer.backgroundColor[1],
+        b: renderer.backgroundColor[2],
+        a: 1,
+      },
+      storeOp: "store",
+    };
+  }
+
+  function depthAttachment(): GPURenderPassDepthStencilAttachment {
+    return {
+      view: depthTextureView!,
+      depthLoadOp: "clear",
+      depthClearValue: 1.0,
+      depthStoreOp: "store",
+      stencilLoadOp: "clear",
+      stencilClearValue: 0,
+      stencilStoreOp: "store",
+    };
+  }
+
   function addMesh(m: Mesh): MeshHandle {
     const handle: MeshHandle = pool.addMesh(m);
-
-    // TODO(@darzu): determine rebundle
-    // needsRebundle = true;
     return handle;
   }
   function addMeshInstance(oldHandle: MeshHandle): MeshHandle {
-    // console.log(`Adding (instanced) object`);
-
     const d = MeshUniformStruct.clone(oldHandle.shaderData);
     const newHandle = pool.addMeshInstance(oldHandle, d);
-
-    // handles[o.id] = res;
-
-    // TODO(@darzu): determine rebundle
-    // needsRebundle = true;
     return newHandle;
   }
   function updateMesh(handle: MeshHandle, newMeshData: Mesh) {
     pool.updateMeshVertices(handle, newMeshData);
   }
 
-  function removeMesh(h: MeshHandle) {
-    // TODO(@darzu): we need to free up vertices
-    //delete handles[o.id];
-    // TODO(@darzu): determine rebundle a different way
-    needsRebundle = true;
-    console.warn(`TODO: impl removeMesh`);
-  }
-
-  function createRenderBundle(handles: MeshHandle[]) {
+  function updateRenderBundle(handles: MeshHandle[]) {
     needsRebundle = false; // TODO(@darzu): hack?
 
     bundledMIds.clear();
@@ -406,7 +327,6 @@ export function createWebGPURenderer(
       ],
     });
 
-    // we'll use a triangle list with backface culling and counter-clockwise triangle indices for both pipelines
     const prim_tris: GPUPrimitiveState = {
       topology: "triangle-list",
       cullMode: "back",
@@ -416,11 +336,13 @@ export function createWebGPURenderer(
       topology: "line-list",
     };
 
-    // define the resource bindings for the mesh rendering pipeline
     const renderSceneUniBindGroupLayout = device.createBindGroupLayout({
       entries: [
-        sceneUni.struct.layout(0),
-        // TODO(@darzu): DISP
+        SceneStruct.layout(
+          0,
+          GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          "uniform"
+        ),
         {
           binding: 1,
           visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
@@ -433,6 +355,7 @@ export function createWebGPURenderer(
         },
       ],
     });
+
     const renderSceneUniBindGroup = device.createBindGroup({
       layout: renderSceneUniBindGroupLayout,
       entries: [
@@ -465,7 +388,7 @@ export function createWebGPURenderer(
       fragment: {
         module: device.createShaderModule({ code: obj_fragShader() }),
         entryPoint: "main",
-        targets: [{ format: presentationFormat }],
+        targets: [{ format: canvasFormat }],
       },
       primitive: prim_tris,
       depthStencil: {
@@ -491,7 +414,7 @@ export function createWebGPURenderer(
     // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
     // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
     const bundleEnc = device.createRenderBundleEncoder({
-      colorFormats: [presentationFormat],
+      colorFormats: [canvasFormat],
       depthStencilFormat: depthStencilFormat,
       sampleCount: antiAliasSampleCount,
     });
@@ -533,7 +456,6 @@ export function createWebGPURenderer(
     }
 
     // draw particles
-    // TODO(@darzu): ROPE ?
     const particleShader = device.createShaderModule({
       code: particle_shader(),
     });
@@ -548,15 +470,9 @@ export function createWebGPURenderer(
         module: particleShader,
         entryPoint: "vert_main",
         buffers: [
-          // {
-          //   arrayStride: Vertex.ByteSize,
-          //   attributes: Vertex.WebGPUFormat,
-          // },
           {
             stepMode: "vertex",
-            // arrayStride: Vertex.ByteSize,
-            arrayStride: Float32Array.BYTES_PER_ELEMENT * 4, // TODO(@darzu): alignment requirement?
-            // arrayStride: Float32Array.BYTES_PER_ELEMENT * 3,
+            arrayStride: Float32Array.BYTES_PER_ELEMENT * 4,
             attributes: [
               {
                 shaderLocation: 0,
@@ -565,12 +481,7 @@ export function createWebGPURenderer(
               },
             ],
           },
-          ropePointBuf.struct.vertexLayout("instance", 1),
-          // {
-          //   stepMode: "instance",
-          //   arrayStride: RopeStick.ByteSizeAligned,
-          //   attributes: RopeStick.WebGPUFormat,
-          // },
+          RopePointStruct.vertexLayout("instance", 1),
         ],
       },
       fragment: {
@@ -578,32 +489,23 @@ export function createWebGPURenderer(
         entryPoint: "frag_main",
         targets: [
           {
-            format: presentationFormat,
+            format: canvasFormat,
           },
         ],
       },
     });
+
     bundleEnc.setPipeline(rndrRopePipeline);
     bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
     bundleEnc.setIndexBuffer(particleIndexBuffer, "uint16");
     bundleEnc.setVertexBuffer(0, particleVertexBuffer);
     bundleEnc.setVertexBuffer(1, ropePointBuf.buffer);
-    // bundleEnc.setVertexBuffer(2, ropeStickBuffer);
     bundleEnc.drawIndexed(12, ropePointBuf.length, 0, 0);
-    // console.dir(rndrRopePipeline);
-    // console.dir(particleIndexBuffer);
-    // console.dir(particleVertexBuffer);
-    // console.dir(ropeBuffer);
-    // console.dir(ropeLen);
-    // TODO(@darzu):
 
     renderBundle = bundleEnc.finish();
     return renderBundle;
   }
 
-  // TODO(@darzu): DISP
-
-  // let scratchSceneUni = new Uint8Array(SceneUniform.ByteSizeAligned);
   function renderFrame(viewProj: mat4, handles: MeshHandle[]): void {
     checkCanvasResize();
 
@@ -613,20 +515,6 @@ export function createWebGPURenderer(
       time: 1000 / 60,
       cameraViewProjMatrix: viewProj,
     });
-    // update rope data?
-    // TODO(@darzu): ROPE
-    // for (let i = 0; i < ropeLen; i++)
-    //   RopePoint.serialize(
-    //     scratchRopeData,
-    //     i * RopePoint.ByteSizeAligned,
-    //     ropeData[i]
-    //   );
-    // device.queue.writeBuffer(
-    //   ropeBuffer,
-    //   0,
-    //   scratchRopeData.buffer
-    // );
-    // TODO(@darzu): how do we read out from a GPU buffer?
 
     // update all mesh transforms
     gpuBufferWriteAllMeshUniforms(handles);
@@ -647,25 +535,18 @@ export function createWebGPURenderer(
     }
     if (needsRebundle) {
       // console.log("rebundeling");
-      createRenderBundle(handles);
+      updateRenderBundle(handles);
     }
 
     // start collecting our render commands for this frame
     const commandEncoder = device.createCommandEncoder();
 
     // run compute tasks
-    // TODO(@darzu): DISP
     const clothWriteIdx = clothReadIdx;
     clothReadIdx = (clothReadIdx + 1) % 2;
     const cmpClothBindGroup = device.createBindGroup({
       layout: cmpClothPipeline.getBindGroupLayout(0),
       entries: [
-        // {
-        //   binding: 0,
-        //   resource: {
-        //     buffer: simParamBuffer,
-        //   },
-        // },
         {
           binding: 1,
           resource: clothTextures[clothReadIdx].createView(),
@@ -683,9 +564,7 @@ export function createWebGPURenderer(
     cmpClothPassEncoder.dispatchWorkgroups(1);
     cmpClothPassEncoder.end();
 
-    // TODO(@darzu): ROPE
     const cmpRopeBindGroup = device.createBindGroup({
-      // layout: cmpRopePipeline.getBindGroupLayout(0),
       layout: cmpRopeBindGroupLayout,
       entries: [
         sceneUni.binding(0),
@@ -702,40 +581,9 @@ export function createWebGPURenderer(
 
     // render to the canvas' via our swap-chain
     const renderPassEncoder = commandEncoder.beginRenderPass({
-      colorAttachments: [
-        {
-          view: colorTextureView!,
-          resolveTarget: context.getCurrentTexture().createView(),
-          loadOp: "clear",
-          clearValue: {
-            r: renderer.backgroundColor[0],
-            g: renderer.backgroundColor[1],
-            b: renderer.backgroundColor[2],
-            a: 1,
-          },
-          storeOp: "store",
-        },
-      ],
-      depthStencilAttachment: {
-        view: depthTextureView!,
-        depthLoadOp: "clear",
-        depthClearValue: 1.0,
-        depthStoreOp: "store",
-        stencilLoadOp: "clear",
-        stencilClearValue: 0,
-        stencilStoreOp: "store",
-      },
+      colorAttachments: [canvasAttachment()],
+      depthStencilAttachment: depthAttachment(),
     });
-
-    // TODO(@darzu): ROPE
-    // render rope
-    // {
-    //   renderPassEncoder.setPipeline(renderPipeline);
-    //   renderPassEncoder.setVertexBuffer(0, particleBuffers[(t + 1) % 2]);
-    //   renderPassEncoder.setVertexBuffer(1, spriteVertexBuffer);
-    //   renderPassEncoder.draw(3, numParticles, 0, 0);
-    //   // renderPassEncoder.end();
-    // }
 
     renderPassEncoder.executeBundles([renderBundle]);
     renderPassEncoder.end();
@@ -745,52 +593,4 @@ export function createWebGPURenderer(
   }
 
   return renderer;
-}
-
-// TODO(@darzu): move somewhere else
-export function setupScene(): SceneTS {
-  // create a directional light and compute it's projection (for shadows) and direction
-  const worldOrigin = vec3.fromValues(0, 0, 0);
-  const D = 50;
-  const light1Pos = vec3.fromValues(D, D * 2, D);
-  const light2Pos = vec3.fromValues(-D, D * 1, D);
-  const light3Pos = vec3.fromValues(0, D * 0.5, -D);
-  const upVector = vec3.fromValues(0, 1, 0);
-  // const lightViewMatrix = mat4.lookAt(
-  //   mat4.create(),
-  //   light1Pos,
-  //   worldOrigin,
-  //   upVector
-  // );
-  // const lightProjectionMatrix = mat4.ortho(
-  //   mat4.create(),
-  //   -80,
-  //   80,
-  //   -80,
-  //   80,
-  //   -200,
-  //   300
-  // );
-  // const lightViewProjMatrix = mat4.multiply(
-  //   mat4.create(),
-  //   lightProjectionMatrix,
-  //   lightViewMatrix
-  // );
-  const light1Dir = vec3.subtract(vec3.create(), worldOrigin, light1Pos);
-  vec3.normalize(light1Dir, light1Dir);
-  const light2Dir = vec3.subtract(vec3.create(), worldOrigin, light2Pos);
-  vec3.normalize(light2Dir, light2Dir);
-  const light3Dir = vec3.subtract(vec3.create(), worldOrigin, light3Pos);
-  vec3.normalize(light3Dir, light3Dir);
-
-  return {
-    cameraViewProjMatrix: mat4.create(), // updated later
-    // lightViewProjMatrix,
-    light1Dir,
-    light2Dir,
-    light3Dir,
-    cameraPos: vec3.create(), // updated later
-    playerPos: [0, 0], // updated later
-    time: 0, // updated later
-  };
 }

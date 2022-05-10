@@ -154,7 +154,11 @@ export interface CyStruct<O extends CyStructDesc> {
   serialize: (data: CyToTS<O>) => Uint8Array;
   wgsl: (align: boolean, locationStart?: number) => string;
   // webgpu
-  layout(idx: number): GPUBindGroupLayoutEntry;
+  layout(
+    idx: number,
+    stage: GPUShaderStageFlags,
+    type: GPUBufferBindingType
+  ): GPUBindGroupLayoutEntry;
   vertexLayout(
     stepMode: GPUVertexStepMode,
     startLocation: number
@@ -397,13 +401,16 @@ export function createCyStruct<O extends CyStructDesc>(
     return res;
   }
 
-  function layout(idx: number): GPUBindGroupLayoutEntry {
+  // TODO(@darzu): is this really worth while?
+  function layout(
+    idx: number,
+    stage: GPUShaderStageFlags,
+    type: GPUBufferBindingType
+  ): GPUBindGroupLayoutEntry {
     return {
       binding: idx,
-      // TODO(@darzu): parameterize
-      visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-      // TODO(@darzu): parameterize
-      buffer: { type: "uniform" },
+      visibility: stage,
+      buffer: { type },
     };
   }
 

@@ -1,3 +1,4 @@
+import { mat4, vec3 } from "../gl-matrix.js";
 import {
   createCyMany,
   createCyOne,
@@ -58,6 +59,31 @@ export const SceneStruct = createCyStruct(
 );
 export type SceneTS = CyToTS<typeof SceneStruct.desc>;
 
+export function setupScene(): SceneTS {
+  // create a directional light and compute it's projection (for shadows) and direction
+  const worldOrigin = vec3.fromValues(0, 0, 0);
+  const D = 50;
+  const light1Pos = vec3.fromValues(D, D * 2, D);
+  const light2Pos = vec3.fromValues(-D, D * 1, D);
+  const light3Pos = vec3.fromValues(0, D * 0.5, -D);
+  const light1Dir = vec3.subtract(vec3.create(), worldOrigin, light1Pos);
+  vec3.normalize(light1Dir, light1Dir);
+  const light2Dir = vec3.subtract(vec3.create(), worldOrigin, light2Pos);
+  vec3.normalize(light2Dir, light2Dir);
+  const light3Dir = vec3.subtract(vec3.create(), worldOrigin, light3Pos);
+  vec3.normalize(light3Dir, light3Dir);
+
+  return {
+    cameraViewProjMatrix: mat4.create(), // updated later
+    light1Dir,
+    light2Dir,
+    light3Dir,
+    cameraPos: vec3.create(), // updated later
+    playerPos: [0, 0], // updated later
+    time: 0, // updated later
+  };
+}
+
 export const RopePointStruct = createCyStruct(
   {
     position: "vec3<f32>",
@@ -95,6 +121,69 @@ export const MeshUniformStruct = createCyStruct(
 export type MeshUniformTS = CyToTS<typeof MeshUniformStruct.desc>;
 
 export const CLOTH_W = 12;
+
+export function generateRopeGrid(): {
+  ropePointData: RopePointTS[];
+  ropeStickData: RopeStickTS[];
+} {
+  // setup scene data:
+  // TODO(@darzu): allow init to pass in above
+
+  // setup rope
+  // TODO(@darzu): ROPE
+  const ropePointData: RopePointTS[] = [];
+  const ropeStickData: RopeStickTS[] = [];
+  // let n = 0;
+  const idx = (x: number, y: number) => {
+    if (x >= CLOTH_W || y >= CLOTH_W) return CLOTH_W * CLOTH_W;
+    return x * CLOTH_W + y;
+  };
+  for (let x = 0; x < CLOTH_W; x++) {
+    for (let y = 0; y < CLOTH_W; y++) {
+      let i = idx(x, y);
+      // assert(i === n, "i === n");
+      const pos: vec3 = [x, y + 4, 0];
+      const p: RopePointTS = {
+        position: pos,
+        prevPosition: pos,
+        locked: 0.0,
+      };
+      ropePointData[i] = p;
+
+      // if (y + 1 < W && x + 1 < W) {
+      // if (y + 1 < W) {
+      ropeStickData.push({
+        aIdx: i,
+        bIdx: idx(x, y + 1),
+        length: 1.0,
+      });
+      // }
+
+      // if (x + 1 < W) {
+      ropeStickData.push({
+        aIdx: i,
+        bIdx: idx(x + 1, y),
+        length: 1.0,
+      });
+      // }
+      // }
+
+      // n++;
+    }
+  }
+
+  console.log(RopeStickStruct.wgsl(true));
+
+  // fix points
+  ropePointData[idx(0, CLOTH_W - 1)].locked = 1.0;
+  ropePointData[idx(CLOTH_W - 1, CLOTH_W - 1)].locked = 1.0;
+  // for (let i = 0; i < ropePointData.length; i++)
+  //   if (ropePointData[i].locked > 0) console.log(`locked: ${i}`);
+  // console.dir(ropePointData);
+  // console.dir(ropeStickData);
+
+  return { ropePointData, ropeStickData };
+}
 
 export const obj_vertShader = () =>
   `
