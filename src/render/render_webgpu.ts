@@ -4,20 +4,25 @@ import {
   createMeshPool_WebGPU,
   MeshHandle,
   MeshPoolOpts,
-  RopeStickStruct,
-  RopeStickTS,
-  VertexStruct,
 } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
-import { Renderer } from "./renderer.js";
 import {
+  SceneStruct,
+  RopeStickTS,
+  CLOTH_W,
+  RopeStickStruct,
+  RopePointStruct,
   cloth_shader,
-  MeshUniformStruct,
-  obj_fragShader,
-  obj_vertShader,
-  particle_shader,
   rope_shader,
-} from "./shader_obj.js";
+  MeshUniformStruct,
+  obj_vertShader,
+  VertexStruct,
+  obj_fragShader,
+  particle_shader,
+  RopePointTS,
+  SceneTS,
+} from "./pipelines.js";
+import { Renderer } from "./renderer.js";
 
 const PIXEL_PER_PX: number | null = null; // 0.5;
 
@@ -35,50 +40,6 @@ const depthStencilFormat = "depth24plus-stencil8";
 //   transform: mat4;
 //   renderable: Renderable;
 // }
-
-export const CLOTH_W = 12;
-
-export const SceneStruct = createCyStruct(
-  {
-    cameraViewProjMatrix: "mat4x4<f32>",
-    light1Dir: "vec3<f32>",
-    light2Dir: "vec3<f32>",
-    light3Dir: "vec3<f32>",
-    cameraPos: "vec3<f32>",
-    playerPos: "vec2<f32>",
-    time: "f32",
-  },
-  {
-    isUniform: true,
-    serializer: (data, _, offsets_32, views) => {
-      views.f32.set(data.cameraViewProjMatrix, offsets_32[0]);
-      views.f32.set(data.light1Dir, offsets_32[1]);
-      views.f32.set(data.light2Dir, offsets_32[2]);
-      views.f32.set(data.light3Dir, offsets_32[3]);
-      views.f32.set(data.cameraPos, offsets_32[4]);
-      views.f32.set(data.playerPos, offsets_32[5]);
-      views.f32[offsets_32[6]] = data.time;
-    },
-  }
-);
-type SceneTS = CyToTS<typeof SceneStruct.desc>;
-
-export const RopePointStruct = createCyStruct(
-  {
-    position: "vec3<f32>",
-    prevPosition: "vec3<f32>",
-    locked: "f32",
-  },
-  {
-    isUniform: false,
-    serializer: (data, _, offsets_32, views) => {
-      views.f32.set(data.position, offsets_32[0]);
-      views.f32.set(data.prevPosition, offsets_32[1]);
-      views.f32[offsets_32[2]] = data.locked;
-    },
-  }
-);
-type RopePointTS = CyToTS<typeof RopePointStruct.desc>;
 
 const CLOTH_SIZE = 10; // TODO(@darzu):
 

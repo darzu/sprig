@@ -1,15 +1,10 @@
 import { vec3, mat4 } from "../gl-matrix.js";
-import {
-  createMeshPool_WebGL,
-  MeshHandle,
-  MeshPoolOpts,
-  VertexStruct,
-} from "./mesh-pool.js";
+import { createMeshPool_WebGL, MeshHandle, MeshPoolOpts } from "./mesh-pool.js";
 // TODO(@darzu): this is a bad dependency:
 import { setupScene } from "./render_webgpu.js";
 import { Renderer } from "./renderer.js";
-import { MeshUniformStruct } from "./shader_obj.js";
 import { Mesh } from "./mesh.js";
+import { MeshUniformStruct, VertexStruct } from "./pipelines.js";
 
 const vertCode = `#version 300 es
 precision mediump float;

@@ -4,9 +4,10 @@ import { align, sum } from "../math.js";
 import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
 import { EM } from "../entity-manager.js";
 import { assert } from "../test.js";
-import { MeshUniformStruct, MeshUniformTS } from "./shader_obj.js";
 import { createCyMany, createCyStruct, CyMany, CyToTS } from "./data.js";
 import { Mesh, getAABBFromMesh } from "./mesh.js";
+// TODO(@darzu): remove dependency on pipelines.js, they are render pipeline-specific
+import { MeshUniformStruct, MeshUniformTS, VertexStruct } from "./pipelines.js";
 
 // TODO(@darzu): abstraction refinement:
 //  [ ] how do we handle multiple shaders with different mesh
@@ -43,32 +44,6 @@ const bytesPerUint32 = Uint32Array.BYTES_PER_ELEMENT;
 const MAX_INDICES = 65535; // Since we're using u16 index type, this is our max indices count
 
 const DEFAULT_VERT_COLOR: vec3 = [0.0, 0.0, 0.0];
-
-// TODO(@darzu):
-export const VertexStruct = createCyStruct(
-  {
-    position: "vec3<f32>",
-    color: "vec3<f32>",
-    normal: "vec3<f32>",
-    uv: "vec2<f32>",
-  },
-  {
-    isCompact: true,
-    serializer: ({ position, color, normal, uv }, _, offsets_32, views) => {
-      views.f32.set(position, offsets_32[0]);
-      views.f32.set(color, offsets_32[1]);
-      views.f32.set(normal, offsets_32[2]);
-      views.f32.set(uv, offsets_32[3]);
-    },
-  }
-);
-
-export const RopeStickStruct = createCyStruct({
-  aIdx: "u32",
-  bIdx: "u32",
-  length: "f32",
-});
-export type RopeStickTS = CyToTS<typeof RopeStickStruct.desc>;
 
 // export const OBJ_SHADER: ShaderDescription = {
 //   // TODO(@darzu):
