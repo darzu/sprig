@@ -1,27 +1,15 @@
-import { mat4, vec3, quat } from "../gl-matrix.js";
-import { tempVec } from "../temp-pool.js";
-import { assert } from "../test.js";
-import { range } from "../util.js";
-import {
-  createCyMany,
-  createCyOne,
-  createCyStruct,
-  CyBuffer,
-  CyMany,
-  CyOne,
-  CyToTS,
-} from "./data.js";
+import { mat4, vec3 } from "../gl-matrix.js";
+import { createCyMany, createCyOne, createCyStruct, CyToTS } from "./data.js";
 import {
   createMeshPool_WebGPU,
   MeshHandle,
   MeshPoolOpts,
-  MeshPool_WebGPU,
   RopeStickStruct,
   RopeStickTS,
   VertexStruct,
 } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
-import { RenderableConstruct, Renderer } from "./renderer.js";
+import { Renderer } from "./renderer.js";
 import {
   cloth_shader,
   MeshUniformStruct,
@@ -94,108 +82,313 @@ type RopePointTS = CyToTS<typeof RopePointStruct.desc>;
 
 const CLOTH_SIZE = 10; // TODO(@darzu):
 
-export class Renderer_WebGPU implements Renderer {
-  public drawLines = true;
-  public drawTris = true;
+export interface Renderer_WebGPU extends Renderer {}
 
-  public backgroundColor: vec3 = [0.6, 0.63, 0.6];
+export function createWebGPURenderer(
+  canvas: HTMLCanvasElement,
+  device: GPUDevice,
+  context: GPUPresentationContext,
+  adapter: GPUAdapter,
+  maxMeshes: number,
+  maxVertices: number
+): Renderer_WebGPU {
+  let renderer: Renderer_WebGPU = {
+    drawLines: true,
+    drawTris: true,
+    backgroundColor: [0.6, 0.63, 0.6],
 
-  private device: GPUDevice;
-  private canvas: HTMLCanvasElement;
-  private context: GPUPresentationContext;
-  private adapter: GPUAdapter;
-  private presentationFormat: GPUTextureFormat;
+    addMesh,
+    addMeshInstance,
+    updateMesh,
+    renderFrame,
+    removeMesh,
+  };
 
-  // private handles: MeshObj[] = {};
+  let clothReadIdx = 1;
 
-  private pool: MeshPool_WebGPU;
+  let depthTexture: GPUTexture | null = null;
+  let depthTextureView: GPUTextureView | null = null;
+  let colorTexture: GPUTexture | null = null;
+  let colorTextureView: GPUTextureView | null = null;
+  let lastWidth = 0;
+  let lastHeight = 0;
 
-  // TODO(@darzu): SCENE UNI
-  private sceneUni: CyOne<typeof SceneStruct.desc>;
-  // private sceneUniformBuffer: GPUBuffer;
-  // private sceneData: SceneUniform.Data;
+  let presentationFormat = context.getPreferredFormat(adapter);
+
+  const opts: MeshPoolOpts = {
+    maxMeshes,
+    maxTris: maxVertices,
+    maxVerts: maxVertices,
+    maxLines: maxVertices * 2,
+    shiftMeshIndices: false,
+  };
+
+  let pool = createMeshPool_WebGPU(device, opts);
+
+  // sceneUniformBuffer = device.createBuffer({
+  //   size: SceneUniform.ByteSizeAligned,
+  //   usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+  //   mappedAtCreation: false,
+  // });
+  let sceneUni = createCyOne(device, SceneStruct);
+
+  // setup scene data:
+  // TODO(@darzu): allow init to pass in above
+  sceneUni.queueUpdate(setupScene());
+
+  // setup rope
+  // TODO(@darzu): ROPE
+  const ropePointData: RopePointTS[] = [];
+  const ropeStickData: RopeStickTS[] = [];
+  // let n = 0;
+  const idx = (x: number, y: number) => {
+    if (x >= CLOTH_W || y >= CLOTH_W) return CLOTH_W * CLOTH_W;
+    return x * CLOTH_W + y;
+  };
+  for (let x = 0; x < CLOTH_W; x++) {
+    for (let y = 0; y < CLOTH_W; y++) {
+      let i = idx(x, y);
+      // assert(i === n, "i === n");
+      const pos: vec3 = [x, y + 4, 0];
+      const p: RopePointTS = {
+        position: pos,
+        prevPosition: pos,
+        locked: 0.0,
+      };
+      ropePointData[i] = p;
+
+      // if (y + 1 < W && x + 1 < W) {
+      // if (y + 1 < W) {
+      ropeStickData.push({
+        aIdx: i,
+        bIdx: idx(x, y + 1),
+        length: 1.0,
+      });
+      // }
+
+      // if (x + 1 < W) {
+      ropeStickData.push({
+        aIdx: i,
+        bIdx: idx(x + 1, y),
+        length: 1.0,
+      });
+      // }
+      // }
+
+      // n++;
+    }
+  }
+
+  console.log(RopeStickStruct.wgsl(true));
+
+  // fix points
+  ropePointData[idx(0, CLOTH_W - 1)].locked = 1.0;
+  ropePointData[idx(CLOTH_W - 1, CLOTH_W - 1)].locked = 1.0;
+  // for (let i = 0; i < ropePointData.length; i++)
+  //   if (ropePointData[i].locked > 0) console.log(`locked: ${i}`);
+  // console.dir(ropePointData);
+  // console.dir(ropeStickData);
+
+  // Serialize rope data
+  let ropePointBuf = createCyMany(
+    device,
+    RopePointStruct,
+    GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
+    ropePointData
+  );
+  let ropeStickBuf = createCyMany(
+    device,
+    RopeStickStruct,
+    GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
+    ropeStickData
+  );
+
+  // Displacement map
+  // TODO(@darzu): DISP
+  const createClothTex = () =>
+    device.createTexture({
+      size: [CLOTH_SIZE, CLOTH_SIZE],
+      format: "rgba32float", // TODO(@darzu): format?
+      usage:
+        GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.STORAGE_BINDING |
+        GPUTextureUsage.TEXTURE_BINDING,
+    });
+  let clothTextures = [createClothTex(), createClothTex()];
+  let clothSampler = device.createSampler({
+    magFilter: "linear",
+    minFilter: "linear",
+  });
+
+  // update cloth data
+  // TODO(@darzu): DISP
+  const clothData = new Float32Array(10 * 10 * 4);
+  for (let x = 0; x < 10; x++) {
+    for (let y = 0; y < 10; y++) {
+      const i = (y + x * 10) * 3;
+      clothData[i + 0] = i / clothData.length;
+      clothData[i + 1] = i / clothData.length;
+      clothData[i + 2] = i / clothData.length;
+    }
+  }
+  // for (let i = 0; i < clothData.length; i++)
+  //   clothData[i] = i * (1 / clothData.length);
+  device.queue.writeTexture(
+    { texture: clothTextures[0] },
+    clothData,
+    {
+      offset: 0,
+      bytesPerRow: 10 * Float32Array.BYTES_PER_ELEMENT * 4,
+      rowsPerImage: 10,
+    },
+    {
+      width: 10,
+      height: 10,
+      depthOrArrayLayers: 1,
+    }
+  );
+
+  // TODO(@darzu): DISP
+  let cmpClothPipeline = device.createComputePipeline({
+    layout: "auto",
+    compute: {
+      module: device.createShaderModule({
+        code: cloth_shader(),
+      }),
+      entryPoint: "main",
+    },
+  });
 
   // TODO(@darzu): ROPE
-  // private ropePointData: RopePoint.Data[];
-  // private ropePointBuffer: GPUBuffer;
-  // private scratchRopePointData: Uint8Array;
-  private ropePointBuf: CyMany<typeof RopePointStruct.desc>;
+  let cmpRopeBindGroupLayout = device.createBindGroupLayout({
+    entries: [
+      // TODO(@darzu): move into CyBuffer system
+      {
+        binding: 0,
+        visibility: GPUShaderStage.COMPUTE,
+        buffer: { type: "uniform" },
+      },
+      {
+        binding: 1,
+        visibility: GPUShaderStage.COMPUTE,
+        buffer: {
+          type: "storage",
+          minBindingSize: ropePointBuf.struct.size,
+        },
+      },
+      {
+        binding: 2,
+        visibility: GPUShaderStage.COMPUTE,
+        buffer: {
+          type: "read-only-storage",
+          minBindingSize: ropeStickBuf.struct.size,
+        },
+      },
+    ],
+  });
+  let cmpRopePipeline = device.createComputePipeline({
+    layout: device.createPipelineLayout({
+      bindGroupLayouts: [cmpRopeBindGroupLayout],
+    }),
+    compute: {
+      module: device.createShaderModule({
+        code: rope_shader(),
+      }),
+      entryPoint: "main",
+    },
+  });
+  // TODO(@darzu): ROPE
+  // TODO(@darzu): Looks like there are alignment requirements even on
+  //    the vertex buffer! https://www.w3.org/TR/WGSL/#alignment-and-size
+  const particleVertexBufferData = new Float32Array([
+    // 0, 1, 0, 0 /*alignment*/, -1, 0, -1, 0 /*alignment*/, 1, 0, -1,
+    // 0 /*alignment*/, 0, 0, 1, 0 /*alignment*/,
+    1, 1, 1, 0 /*alignment*/, 1, -1, -1, 0 /*alignment*/, -1, 1, -1,
+    0 /*alignment*/, -1, -1, 1, 0 /*alignment*/,
+  ]);
+  let particleVertexBuffer = device.createBuffer({
+    size: particleVertexBufferData.byteLength,
+    usage: GPUBufferUsage.VERTEX,
+    mappedAtCreation: true,
+  });
+  new Float32Array(particleVertexBuffer.getMappedRange()).set(
+    particleVertexBufferData
+  );
+  particleVertexBuffer.unmap();
 
-  // private ropeStickData: RopeStickTS[];
-  // private ropeStickBuffer: GPUBuffer;
-  // private scratchRopeStickData: Uint8Array;
-  private ropeStickBuf: CyMany<typeof RopeStickStruct.desc>;
+  const particleIndexBufferData = new Uint16Array([
+    2, 1, 0, 3, 2, 0, 1, 3, 0, 2, 3, 1,
+  ]);
+  let particleIndexBuffer = device.createBuffer({
+    size: particleIndexBufferData.byteLength,
+    usage: GPUBufferUsage.INDEX,
+    mappedAtCreation: true,
+  });
+  new Uint16Array(particleIndexBuffer.getMappedRange()).set(
+    particleIndexBufferData
+  );
+  particleIndexBuffer.unmap();
 
-  private cmpRopePipeline: GPUComputePipeline;
-  private cmpRopeBindGroupLayout: GPUBindGroupLayout;
-  // private rndrRopePipeline: GPURenderPipeline;
-  private particleVertexBuffer: GPUBuffer;
-  private particleIndexBuffer: GPUBuffer;
+  let bundledMIds = new Set<number>();
+  let needsRebundle = false;
+  let lastWireMode: [boolean, boolean] = [
+    renderer.drawLines,
+    renderer.drawTris,
+  ];
+  let renderBundle: GPURenderBundle;
 
-  // displacement map and sampler
-  // TODO(@darzu): DISP
-  private clothTextures: [GPUTexture, GPUTexture];
-  private clothReadIdx = 1;
-  private clothSampler: GPUSampler;
+  // render everything else
+  createRenderBundle([]);
 
-  private renderBundle: GPURenderBundle;
-
-  private depthTexture: GPUTexture | null = null;
-  private depthTextureView: GPUTextureView | null = null;
-  private colorTexture: GPUTexture | null = null;
-  private colorTextureView: GPUTextureView | null = null;
-  private lastWidth = 0;
-  private lastHeight = 0;
-
-  private gpuBufferWriteAllMeshUniforms(handles: MeshHandle[]) {
+  function gpuBufferWriteAllMeshUniforms(handles: MeshHandle[]) {
     // TODO(@darzu): make this update all meshes at once
     for (let m of handles) {
-      this.pool.updateUniform(m);
+      pool.updateUniform(m);
     }
   }
 
   // recomputes textures, widths, and aspect ratio on canvas resize
-  private checkCanvasResize() {
+  function checkCanvasResize() {
     const devicePixelRatio = PIXEL_PER_PX
       ? PIXEL_PER_PX
       : window.devicePixelRatio || 1;
-    const newWidth = this.canvas.clientWidth * devicePixelRatio;
-    const newHeight = this.canvas.clientHeight * devicePixelRatio;
-    if (this.lastWidth === newWidth && this.lastHeight === newHeight) return;
+    const newWidth = canvas.clientWidth * devicePixelRatio;
+    const newHeight = canvas.clientHeight * devicePixelRatio;
+    if (lastWidth === newWidth && lastHeight === newHeight) return;
 
     console.log(`devicePixelRatio: ${devicePixelRatio}`);
 
-    if (this.depthTexture) this.depthTexture.destroy();
-    if (this.colorTexture) this.colorTexture.destroy();
+    if (depthTexture) depthTexture.destroy();
+    if (colorTexture) colorTexture.destroy();
 
     const newSize = [newWidth, newHeight] as const;
 
-    this.context.configure({
-      device: this.device,
-      format: this.presentationFormat, // this.presentationFormat
+    context.configure({
+      device: device,
+      format: presentationFormat, // presentationFormat
       size: newSize,
       // TODO(@darzu): support transparency?
       compositingAlphaMode: "opaque",
     });
 
-    this.depthTexture = this.device.createTexture({
+    depthTexture = device.createTexture({
       size: newSize,
       format: depthStencilFormat,
       sampleCount: antiAliasSampleCount,
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
-    this.depthTextureView = this.depthTexture.createView();
+    depthTextureView = depthTexture.createView();
 
-    this.colorTexture = this.device.createTexture({
+    colorTexture = device.createTexture({
       size: newSize,
       sampleCount: antiAliasSampleCount,
-      format: this.presentationFormat,
+      format: presentationFormat,
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
-    this.colorTextureView = this.colorTexture.createView();
+    colorTextureView = colorTexture.createView();
 
-    this.lastWidth = newWidth;
-    this.lastHeight = newHeight;
+    lastWidth = newWidth;
+    lastHeight = newHeight;
   }
 
   /*
@@ -203,49 +396,45 @@ export class Renderer_WebGPU implements Renderer {
                   
     TODO: support adding objects when buffers aren't memory-mapped using device.queue
   */
-  public addMesh(m: Mesh): MeshHandle {
-    const handle: MeshHandle = this.pool.addMesh(m);
+  function addMesh(m: Mesh): MeshHandle {
+    const handle: MeshHandle = pool.addMesh(m);
 
     // TODO(@darzu): determine rebundle
-    // this.needsRebundle = true;
+    // needsRebundle = true;
     return handle;
   }
-  public addMeshInstance(oldHandle: MeshHandle): MeshHandle {
+  function addMeshInstance(oldHandle: MeshHandle): MeshHandle {
     // console.log(`Adding (instanced) object`);
 
     const d = MeshUniformStruct.clone(oldHandle.shaderData);
-    const newHandle = this.pool.addMeshInstance(oldHandle, d);
+    const newHandle = pool.addMeshInstance(oldHandle, d);
 
     // handles[o.id] = res;
 
     // TODO(@darzu): determine rebundle
-    // this.needsRebundle = true;
+    // needsRebundle = true;
     return newHandle;
   }
-  public updateMesh(handle: MeshHandle, newMeshData: Mesh) {
-    this.pool.updateMeshVertices(handle, newMeshData);
+  function updateMesh(handle: MeshHandle, newMeshData: Mesh) {
+    pool.updateMeshVertices(handle, newMeshData);
   }
 
-  removeMesh(h: MeshHandle) {
+  function removeMesh(h: MeshHandle) {
     // TODO(@darzu): we need to free up vertices
     //delete handles[o.id];
     // TODO(@darzu): determine rebundle a different way
-    this.needsRebundle = true;
+    needsRebundle = true;
     console.warn(`TODO: impl removeMesh`);
   }
 
-  bundledMIds = new Set<number>();
-  needsRebundle = false;
-  lastWireMode: [boolean, boolean] = [this.drawLines, this.drawTris];
+  function createRenderBundle(handles: MeshHandle[]) {
+    needsRebundle = false; // TODO(@darzu): hack?
 
-  private createRenderBundle(handles: MeshHandle[]) {
-    this.needsRebundle = false; // TODO(@darzu): hack?
+    bundledMIds.clear();
+    handles.forEach((h) => bundledMIds.add(h.mId));
 
-    this.bundledMIds.clear();
-    handles.forEach((h) => this.bundledMIds.add(h.mId));
-
-    this.lastWireMode = [this.drawLines, this.drawTris];
-    const modelUniBindGroupLayout = this.device.createBindGroupLayout({
+    lastWireMode = [renderer.drawLines, renderer.drawTris];
+    const modelUniBindGroupLayout = device.createBindGroupLayout({
       entries: [
         // TODO(@darzu): use CyBuffers .binding and .layout
         {
@@ -259,14 +448,14 @@ export class Renderer_WebGPU implements Renderer {
         },
       ],
     });
-    const modelUniBindGroup = this.device.createBindGroup({
+    const modelUniBindGroup = device.createBindGroup({
       layout: modelUniBindGroupLayout,
       entries: [
         // TODO(@darzu): use CyBuffers .binding and .layout
         {
           binding: 0,
           resource: {
-            buffer: this.pool.uniformBuffer,
+            buffer: pool.uniformBuffer,
             size: MeshUniformStruct.size,
           },
         },
@@ -284,9 +473,9 @@ export class Renderer_WebGPU implements Renderer {
     };
 
     // define the resource bindings for the mesh rendering pipeline
-    const renderSceneUniBindGroupLayout = this.device.createBindGroupLayout({
+    const renderSceneUniBindGroupLayout = device.createBindGroupLayout({
       entries: [
-        this.sceneUni.struct.layout(0),
+        sceneUni.struct.layout(0),
         // TODO(@darzu): DISP
         {
           binding: 1,
@@ -300,39 +489,39 @@ export class Renderer_WebGPU implements Renderer {
         },
       ],
     });
-    const renderSceneUniBindGroup = this.device.createBindGroup({
+    const renderSceneUniBindGroup = device.createBindGroup({
       layout: renderSceneUniBindGroupLayout,
       entries: [
-        this.sceneUni.binding(0),
+        sceneUni.binding(0),
         // TODO(@darzu): DISP
         {
           binding: 1,
-          resource: this.clothSampler,
+          resource: clothSampler,
         },
         {
           binding: 2,
-          resource: this.clothTextures[this.clothReadIdx].createView(),
+          resource: clothTextures[clothReadIdx].createView(),
         },
       ],
     });
 
     // setup our second phase pipeline which renders meshes to the canvas
     const renderPipelineDesc_tris: GPURenderPipelineDescriptor = {
-      layout: this.device.createPipelineLayout({
+      layout: device.createPipelineLayout({
         bindGroupLayouts: [
           renderSceneUniBindGroupLayout,
           modelUniBindGroupLayout,
         ],
       }),
       vertex: {
-        module: this.device.createShaderModule({ code: obj_vertShader() }),
+        module: device.createShaderModule({ code: obj_vertShader() }),
         entryPoint: "main",
         buffers: [VertexStruct.vertexLayout("vertex", 0)],
       },
       fragment: {
-        module: this.device.createShaderModule({ code: obj_fragShader() }),
+        module: device.createShaderModule({ code: obj_fragShader() }),
         entryPoint: "main",
-        targets: [{ format: this.presentationFormat }],
+        targets: [{ format: presentationFormat }],
       },
       primitive: prim_tris,
       depthStencil: {
@@ -344,34 +533,34 @@ export class Renderer_WebGPU implements Renderer {
         count: antiAliasSampleCount,
       },
     };
-    const renderPipeline_tris = this.device.createRenderPipeline(
+    const renderPipeline_tris = device.createRenderPipeline(
       renderPipelineDesc_tris
     );
     const renderPipelineDesc_lines: GPURenderPipelineDescriptor = {
       ...renderPipelineDesc_tris,
       primitive: prim_lines,
     };
-    const renderPipeline_lines = this.device.createRenderPipeline(
+    const renderPipeline_lines = device.createRenderPipeline(
       renderPipelineDesc_lines
     );
 
     // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
     // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
-    const bundleEnc = this.device.createRenderBundleEncoder({
-      colorFormats: [this.presentationFormat],
+    const bundleEnc = device.createRenderBundleEncoder({
+      colorFormats: [presentationFormat],
       depthStencilFormat: depthStencilFormat,
       sampleCount: antiAliasSampleCount,
     });
 
     // render triangles and lines
     bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
-    bundleEnc.setVertexBuffer(0, this.pool.verticesBuffer.buffer);
+    bundleEnc.setVertexBuffer(0, pool.verticesBuffer.buffer);
 
     // render triangles first
-    if (this.drawTris) {
+    if (renderer.drawTris) {
       bundleEnc.setPipeline(renderPipeline_tris);
       // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
-      bundleEnc.setIndexBuffer(this.pool.triIndicesBuffer, "uint16");
+      bundleEnc.setIndexBuffer(pool.triIndicesBuffer, "uint16");
       for (let m of Object.values(handles)) {
         bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
         bundleEnc.drawIndexed(
@@ -384,10 +573,10 @@ export class Renderer_WebGPU implements Renderer {
     }
 
     // then render lines
-    if (this.drawLines) {
+    if (renderer.drawLines) {
       bundleEnc.setPipeline(renderPipeline_lines);
       // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
-      bundleEnc.setIndexBuffer(this.pool.lineIndicesBuffer, "uint16");
+      bundleEnc.setIndexBuffer(pool.lineIndicesBuffer, "uint16");
       for (let m of Object.values(handles)) {
         bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
         bundleEnc.drawIndexed(
@@ -401,14 +590,14 @@ export class Renderer_WebGPU implements Renderer {
 
     // draw particles
     // TODO(@darzu): ROPE ?
-    const particleShader = this.device.createShaderModule({
+    const particleShader = device.createShaderModule({
       code: particle_shader(),
     });
-    const rndrRopePipeline = this.device.createRenderPipeline({
+    const rndrRopePipeline = device.createRenderPipeline({
       primitive: renderPipelineDesc_tris.primitive,
       depthStencil: renderPipelineDesc_tris.depthStencil,
       multisample: renderPipelineDesc_tris.multisample,
-      layout: this.device.createPipelineLayout({
+      layout: device.createPipelineLayout({
         bindGroupLayouts: [renderSceneUniBindGroupLayout],
       }),
       vertex: {
@@ -432,7 +621,7 @@ export class Renderer_WebGPU implements Renderer {
               },
             ],
           },
-          this.ropePointBuf.struct.vertexLayout("instance", 1),
+          ropePointBuf.struct.vertexLayout("instance", 1),
           // {
           //   stepMode: "instance",
           //   arrayStride: RopeStick.ByteSizeAligned,
@@ -445,347 +634,87 @@ export class Renderer_WebGPU implements Renderer {
         entryPoint: "frag_main",
         targets: [
           {
-            format: this.presentationFormat,
+            format: presentationFormat,
           },
         ],
       },
     });
     bundleEnc.setPipeline(rndrRopePipeline);
     bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
-    bundleEnc.setIndexBuffer(this.particleIndexBuffer, "uint16");
-    bundleEnc.setVertexBuffer(0, this.particleVertexBuffer);
-    bundleEnc.setVertexBuffer(1, this.ropePointBuf.buffer);
-    // bundleEnc.setVertexBuffer(2, this.ropeStickBuffer);
-    bundleEnc.drawIndexed(12, this.ropePointBuf.length, 0, 0);
+    bundleEnc.setIndexBuffer(particleIndexBuffer, "uint16");
+    bundleEnc.setVertexBuffer(0, particleVertexBuffer);
+    bundleEnc.setVertexBuffer(1, ropePointBuf.buffer);
+    // bundleEnc.setVertexBuffer(2, ropeStickBuffer);
+    bundleEnc.drawIndexed(12, ropePointBuf.length, 0, 0);
     // console.dir(rndrRopePipeline);
-    // console.dir(this.particleIndexBuffer);
-    // console.dir(this.particleVertexBuffer);
-    // console.dir(this.ropeBuffer);
-    // console.dir(this.ropeLen);
+    // console.dir(particleIndexBuffer);
+    // console.dir(particleVertexBuffer);
+    // console.dir(ropeBuffer);
+    // console.dir(ropeLen);
     // TODO(@darzu):
 
-    this.renderBundle = bundleEnc.finish();
-    return this.renderBundle;
-  }
-
-  constructor(
-    canvas: HTMLCanvasElement,
-    device: GPUDevice,
-    context: GPUPresentationContext,
-    adapter: GPUAdapter,
-    maxMeshes: number,
-    maxVertices: number
-  ) {
-    this.canvas = canvas;
-    this.device = device;
-    this.context = context;
-    this.adapter = adapter;
-    this.presentationFormat = context.getPreferredFormat(this.adapter);
-
-    const opts: MeshPoolOpts = {
-      maxMeshes,
-      maxTris: maxVertices,
-      maxVerts: maxVertices,
-      maxLines: maxVertices * 2,
-      shiftMeshIndices: false,
-    };
-
-    this.pool = createMeshPool_WebGPU(device, opts);
-
-    // this.sceneUniformBuffer = device.createBuffer({
-    //   size: SceneUniform.ByteSizeAligned,
-    //   usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    //   mappedAtCreation: false,
-    // });
-    this.sceneUni = createCyOne(device, SceneStruct);
-
-    // setup scene data:
-    // TODO(@darzu): allow init to pass in above
-    this.sceneUni.queueUpdate(setupScene());
-
-    // setup rope
-    // TODO(@darzu): ROPE
-    const ropePointData: RopePointTS[] = [];
-    const ropeStickData: RopeStickTS[] = [];
-    // let n = 0;
-    const idx = (x: number, y: number) => {
-      if (x >= CLOTH_W || y >= CLOTH_W) return CLOTH_W * CLOTH_W;
-      return x * CLOTH_W + y;
-    };
-    for (let x = 0; x < CLOTH_W; x++) {
-      for (let y = 0; y < CLOTH_W; y++) {
-        let i = idx(x, y);
-        // assert(i === n, "i === n");
-        const pos: vec3 = [x, y + 4, 0];
-        const p: RopePointTS = {
-          position: pos,
-          prevPosition: pos,
-          locked: 0.0,
-        };
-        ropePointData[i] = p;
-
-        // if (y + 1 < W && x + 1 < W) {
-        // if (y + 1 < W) {
-        ropeStickData.push({
-          aIdx: i,
-          bIdx: idx(x, y + 1),
-          length: 1.0,
-        });
-        // }
-
-        // if (x + 1 < W) {
-        ropeStickData.push({
-          aIdx: i,
-          bIdx: idx(x + 1, y),
-          length: 1.0,
-        });
-        // }
-        // }
-
-        // n++;
-      }
-    }
-
-    console.log(RopeStickStruct.wgsl(true));
-
-    // fix points
-    ropePointData[idx(0, CLOTH_W - 1)].locked = 1.0;
-    ropePointData[idx(CLOTH_W - 1, CLOTH_W - 1)].locked = 1.0;
-    // for (let i = 0; i < ropePointData.length; i++)
-    //   if (ropePointData[i].locked > 0) console.log(`locked: ${i}`);
-    // console.dir(ropePointData);
-    // console.dir(this.ropeStickData);
-
-    // Serialize rope data
-    this.ropePointBuf = createCyMany(
-      device,
-      RopePointStruct,
-      GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
-      ropePointData
-    );
-    this.ropeStickBuf = createCyMany(
-      device,
-      RopeStickStruct,
-      GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
-      ropeStickData
-    );
-
-    // Displacement map
-    // TODO(@darzu): DISP
-    const createClothTex = () =>
-      device.createTexture({
-        size: [CLOTH_SIZE, CLOTH_SIZE],
-        format: "rgba32float", // TODO(@darzu): format?
-        usage:
-          GPUTextureUsage.COPY_DST |
-          GPUTextureUsage.STORAGE_BINDING |
-          GPUTextureUsage.TEXTURE_BINDING,
-      });
-    this.clothTextures = [createClothTex(), createClothTex()];
-    this.clothSampler = device.createSampler({
-      magFilter: "linear",
-      minFilter: "linear",
-    });
-
-    // update cloth data
-    // TODO(@darzu): DISP
-    if (this.clothOnce) {
-      this.clothOnce = false;
-      const clothData = new Float32Array(10 * 10 * 4);
-      for (let x = 0; x < 10; x++) {
-        for (let y = 0; y < 10; y++) {
-          const i = (y + x * 10) * 3;
-          clothData[i + 0] = i / clothData.length;
-          clothData[i + 1] = i / clothData.length;
-          clothData[i + 2] = i / clothData.length;
-        }
-      }
-      // for (let i = 0; i < clothData.length; i++)
-      //   clothData[i] = i * (1 / clothData.length);
-      this.device.queue.writeTexture(
-        { texture: this.clothTextures[0] },
-        clothData,
-        {
-          offset: 0,
-          bytesPerRow: 10 * Float32Array.BYTES_PER_ELEMENT * 4,
-          rowsPerImage: 10,
-        },
-        {
-          width: 10,
-          height: 10,
-          depthOrArrayLayers: 1,
-        }
-      );
-    }
-
-    // TODO(@darzu): DISP
-    this.cmpClothPipeline = device.createComputePipeline({
-      layout: "auto",
-      compute: {
-        module: device.createShaderModule({
-          code: cloth_shader(),
-        }),
-        entryPoint: "main",
-      },
-    });
-
-    // TODO(@darzu): ROPE
-    this.cmpRopeBindGroupLayout = this.device.createBindGroupLayout({
-      entries: [
-        // TODO(@darzu): move into CyBuffer system
-        {
-          binding: 0,
-          visibility: GPUShaderStage.COMPUTE,
-          buffer: { type: "uniform" },
-        },
-        {
-          binding: 1,
-          visibility: GPUShaderStage.COMPUTE,
-          buffer: {
-            type: "storage",
-            minBindingSize: this.ropePointBuf.struct.size,
-          },
-        },
-        {
-          binding: 2,
-          visibility: GPUShaderStage.COMPUTE,
-          buffer: {
-            type: "read-only-storage",
-            minBindingSize: this.ropeStickBuf.struct.size,
-          },
-        },
-      ],
-    });
-    this.cmpRopePipeline = device.createComputePipeline({
-      layout: this.device.createPipelineLayout({
-        bindGroupLayouts: [this.cmpRopeBindGroupLayout],
-      }),
-      compute: {
-        module: device.createShaderModule({
-          code: rope_shader(),
-        }),
-        entryPoint: "main",
-      },
-    });
-    // TODO(@darzu): ROPE
-    // TODO(@darzu): Looks like there are alignment requirements even on
-    //    the vertex buffer! https://www.w3.org/TR/WGSL/#alignment-and-size
-    const particleVertexBufferData = new Float32Array([
-      // 0, 1, 0, 0 /*alignment*/, -1, 0, -1, 0 /*alignment*/, 1, 0, -1,
-      // 0 /*alignment*/, 0, 0, 1, 0 /*alignment*/,
-      1, 1, 1, 0 /*alignment*/, 1, -1, -1, 0 /*alignment*/, -1, 1, -1,
-      0 /*alignment*/, -1, -1, 1, 0 /*alignment*/,
-    ]);
-    this.particleVertexBuffer = device.createBuffer({
-      size: particleVertexBufferData.byteLength,
-      usage: GPUBufferUsage.VERTEX,
-      mappedAtCreation: true,
-    });
-    new Float32Array(this.particleVertexBuffer.getMappedRange()).set(
-      particleVertexBufferData
-    );
-    this.particleVertexBuffer.unmap();
-
-    const particleIndexBufferData = new Uint16Array([
-      2, 1, 0, 3, 2, 0, 1, 3, 0, 2, 3, 1,
-    ]);
-    this.particleIndexBuffer = device.createBuffer({
-      size: particleIndexBufferData.byteLength,
-      usage: GPUBufferUsage.INDEX,
-      mappedAtCreation: true,
-    });
-    new Uint16Array(this.particleIndexBuffer.getMappedRange()).set(
-      particleIndexBufferData
-    );
-    this.particleIndexBuffer.unmap();
-
-    // render everything else
-    this.renderBundle = this.createRenderBundle([]);
+    renderBundle = bundleEnc.finish();
+    return renderBundle;
   }
 
   // TODO(@darzu): DISP
-  private cmpClothPipeline: GPUComputePipeline;
-  // private computeBindGroup: GPUBindGroup;
 
-  private scratchMIDs = new Set<number>();
-
-  private clothOnce = true;
-
-  // private scratchSceneUni = new Uint8Array(SceneUniform.ByteSizeAligned);
-  public renderFrame(viewProj: mat4, handles: MeshHandle[]): void {
-    this.checkCanvasResize();
+  // let scratchSceneUni = new Uint8Array(SceneUniform.ByteSizeAligned);
+  function renderFrame(viewProj: mat4, handles: MeshHandle[]): void {
+    checkCanvasResize();
 
     // update scene data
-    this.sceneUni.queueUpdate({
-      ...this.sceneUni.lastData!,
+    sceneUni.queueUpdate({
+      ...sceneUni.lastData!,
       time: 1000 / 60,
       cameraViewProjMatrix: viewProj,
     });
     // update rope data?
     // TODO(@darzu): ROPE
-    // for (let i = 0; i < this.ropeLen; i++)
+    // for (let i = 0; i < ropeLen; i++)
     //   RopePoint.serialize(
-    //     this.scratchRopeData,
+    //     scratchRopeData,
     //     i * RopePoint.ByteSizeAligned,
-    //     this.ropeData[i]
+    //     ropeData[i]
     //   );
-    // this.device.queue.writeBuffer(
-    //   this.ropeBuffer,
+    // device.queue.writeBuffer(
+    //   ropeBuffer,
     //   0,
-    //   this.scratchRopeData.buffer
+    //   scratchRopeData.buffer
     // );
     // TODO(@darzu): how do we read out from a GPU buffer?
 
     // update all mesh transforms
-    this.gpuBufferWriteAllMeshUniforms(handles);
+    gpuBufferWriteAllMeshUniforms(handles);
 
     // TODO(@darzu): more fine grain
-    this.needsRebundle =
-      this.needsRebundle ||
-      this.bundledMIds.size !== handles.length ||
-      this.drawLines !== this.lastWireMode[0] ||
-      this.drawTris !== this.lastWireMode[1];
-    if (!this.needsRebundle) {
+    needsRebundle =
+      needsRebundle ||
+      bundledMIds.size !== handles.length ||
+      renderer.drawLines !== lastWireMode[0] ||
+      renderer.drawTris !== lastWireMode[1];
+    if (!needsRebundle) {
       for (let mId of handles.map((o) => o.mId)) {
-        if (!this.bundledMIds.has(mId)) {
-          this.needsRebundle = true;
+        if (!bundledMIds.has(mId)) {
+          needsRebundle = true;
           break;
         }
       }
-      // this.scratchMIDs.clear();
-      // // console.log(`r mId 24: ${!!m24.length}`);
-      // // console.log(`webgpu rendering boat mId: ${this.bundledMIds.has(24)}`);
-      // for (let mId of handles.map((o) => o.mId)) {
-      //   this.scratchMIDs.add(mId);
-      // }
-
-      // for (let mId of this.scratchMIDs.values()) {
-      //   if (!this.bundledMIds.has(mId)) {
-      //     this.needsRebundle = true;
-      //     break;
-      //   }
-      // }
-      // for (let mId of this.bundledMIds.values()) {
-      //   if (!this.scratchMIDs.has(mId)) {
-      //     this.needsRebundle = true;
-      //     break;
-      //   }
-      // }
     }
-    if (this.needsRebundle) {
+    if (needsRebundle) {
       // console.log("rebundeling");
-      this.createRenderBundle(handles);
+      createRenderBundle(handles);
     }
 
     // start collecting our render commands for this frame
-    const commandEncoder = this.device.createCommandEncoder();
+    const commandEncoder = device.createCommandEncoder();
 
     // run compute tasks
     // TODO(@darzu): DISP
-    const clothWriteIdx = this.clothReadIdx;
-    this.clothReadIdx = (this.clothReadIdx + 1) % 2;
-    const cmpClothBindGroup = this.device.createBindGroup({
-      layout: this.cmpClothPipeline.getBindGroupLayout(0),
+    const clothWriteIdx = clothReadIdx;
+    clothReadIdx = (clothReadIdx + 1) % 2;
+    const cmpClothBindGroup = device.createBindGroup({
+      layout: cmpClothPipeline.getBindGroupLayout(0),
       entries: [
         // {
         //   binding: 0,
@@ -795,34 +724,34 @@ export class Renderer_WebGPU implements Renderer {
         // },
         {
           binding: 1,
-          resource: this.clothTextures[this.clothReadIdx].createView(),
+          resource: clothTextures[clothReadIdx].createView(),
         },
         {
           binding: 2,
-          resource: this.clothTextures[clothWriteIdx].createView(),
+          resource: clothTextures[clothWriteIdx].createView(),
         },
       ],
     });
 
     const cmpClothPassEncoder = commandEncoder.beginComputePass();
-    cmpClothPassEncoder.setPipeline(this.cmpClothPipeline);
+    cmpClothPassEncoder.setPipeline(cmpClothPipeline);
     cmpClothPassEncoder.setBindGroup(0, cmpClothBindGroup);
     cmpClothPassEncoder.dispatchWorkgroups(1);
     cmpClothPassEncoder.end();
 
     // TODO(@darzu): ROPE
-    const cmpRopeBindGroup = this.device.createBindGroup({
-      // layout: this.cmpRopePipeline.getBindGroupLayout(0),
-      layout: this.cmpRopeBindGroupLayout,
+    const cmpRopeBindGroup = device.createBindGroup({
+      // layout: cmpRopePipeline.getBindGroupLayout(0),
+      layout: cmpRopeBindGroupLayout,
       entries: [
-        this.sceneUni.binding(0),
-        this.ropePointBuf.binding(1),
-        this.ropeStickBuf.binding(2),
+        sceneUni.binding(0),
+        ropePointBuf.binding(1),
+        ropeStickBuf.binding(2),
       ],
     });
 
     const cmpRopePassEncoder = commandEncoder.beginComputePass();
-    cmpRopePassEncoder.setPipeline(this.cmpRopePipeline);
+    cmpRopePassEncoder.setPipeline(cmpRopePipeline);
     cmpRopePassEncoder.setBindGroup(0, cmpRopeBindGroup);
     cmpRopePassEncoder.dispatchWorkgroups(1);
     cmpRopePassEncoder.end();
@@ -831,20 +760,20 @@ export class Renderer_WebGPU implements Renderer {
     const renderPassEncoder = commandEncoder.beginRenderPass({
       colorAttachments: [
         {
-          view: this.colorTextureView!,
-          resolveTarget: this.context.getCurrentTexture().createView(),
+          view: colorTextureView!,
+          resolveTarget: context.getCurrentTexture().createView(),
           loadOp: "clear",
           clearValue: {
-            r: this.backgroundColor[0],
-            g: this.backgroundColor[1],
-            b: this.backgroundColor[2],
+            r: renderer.backgroundColor[0],
+            g: renderer.backgroundColor[1],
+            b: renderer.backgroundColor[2],
             a: 1,
           },
           storeOp: "store",
         },
       ],
       depthStencilAttachment: {
-        view: this.depthTextureView!,
+        view: depthTextureView!,
         depthLoadOp: "clear",
         depthClearValue: 1.0,
         depthStoreOp: "store",
@@ -864,12 +793,14 @@ export class Renderer_WebGPU implements Renderer {
     //   // renderPassEncoder.end();
     // }
 
-    renderPassEncoder.executeBundles([this.renderBundle]);
+    renderPassEncoder.executeBundles([renderBundle]);
     renderPassEncoder.end();
 
     // submit render passes to GPU
-    this.device.queue.submit([commandEncoder.finish()]);
+    device.queue.submit([commandEncoder.finish()]);
   }
+
+  return renderer;
 }
 
 // TODO(@darzu): move somewhere else

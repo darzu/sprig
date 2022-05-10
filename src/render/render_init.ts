@@ -3,7 +3,7 @@ import { EM, EntityManager } from "../entity-manager.js";
 import { FORCE_WEBGL, MAX_MESHES, MAX_VERTICES } from "../main.js";
 import { RenderableConstructDef, Renderer } from "./renderer.js";
 import { attachToCanvas } from "./render_webgl.js";
-import { Renderer_WebGPU } from "./render_webgpu.js";
+import { createWebGPURenderer, Renderer_WebGPU } from "./render_webgpu.js";
 
 // TODO(@darzu): ECS this
 // export let _renderer: Renderer;
@@ -49,7 +49,7 @@ async function init(
         "webgpu"
       ) as any as GPUPresentationContext;
       if (context) {
-        rendererInit = new Renderer_WebGPU(
+        rendererInit = createWebGPURenderer(
           canvas,
           device,
           context,
