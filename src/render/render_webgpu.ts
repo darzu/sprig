@@ -26,20 +26,9 @@ import { Renderer } from "./renderer.js";
 
 const PIXEL_PER_PX: number | null = null; // 0.5;
 
-// TODO: some state lives in global variables when it should live on the Renderer object
-
-// shaders
-
 // render pipeline parameters
 const antiAliasSampleCount = 4;
 const depthStencilFormat = "depth24plus-stencil8";
-
-// export interface MeshObj {
-//   id: number;
-//   meshHandle: MeshHandle;
-//   transform: mat4;
-//   renderable: Renderable;
-// }
 
 const CLOTH_SIZE = 10; // TODO(@darzu):
 
@@ -48,7 +37,7 @@ export interface Renderer_WebGPU extends Renderer {}
 export function createWebGPURenderer(
   canvas: HTMLCanvasElement,
   device: GPUDevice,
-  context: GPUPresentationContext,
+  context: GPUCanvasContext,
   adapter: GPUAdapter,
   maxMeshes: number,
   maxVertices: number
@@ -86,16 +75,10 @@ export function createWebGPURenderer(
 
   let pool = createMeshPool_WebGPU(device, opts);
 
-  // sceneUniformBuffer = device.createBuffer({
-  //   size: SceneUniform.ByteSizeAligned,
-  //   usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-  //   mappedAtCreation: false,
-  // });
-  let sceneUni = createCyOne(device, SceneStruct);
+  let sceneUni = createCyOne(device, SceneStruct, setupScene());
 
   // setup scene data:
   // TODO(@darzu): allow init to pass in above
-  sceneUni.queueUpdate(setupScene());
 
   // setup rope
   // TODO(@darzu): ROPE

@@ -45,9 +45,7 @@ async function init(
     if (adapter) {
       const device = await adapter.requestDevice();
       // TODO(@darzu): uses cast while waiting for webgpu-types.d.ts to be updated
-      const context = canvas.getContext(
-        "webgpu"
-      ) as any as GPUPresentationContext;
+      const context = canvas.getContext("webgpu");
       if (context) {
         rendererInit = createWebGPURenderer(
           canvas,
