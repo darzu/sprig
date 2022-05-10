@@ -455,4 +455,5 @@ Waves:
   https://playground.babylonjs.com/?webgpu#YX6IB8#55
   https://github.com/gasgiant/FFT-Ocean
 
-  
+WebGPU breakout sample:
+  https://github.com/toji/spookyball

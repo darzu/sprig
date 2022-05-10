@@ -539,11 +539,30 @@ export function createCyMany<O extends CyStructDesc>(
   return buf;
 }
 
+// EXPERIMENTS:
+// Goal: post process with a blur effect
+//    use compute shader to do a blur
+// Goal: add boids to the sky as birds
+//    use comptue shader to update boids
+//    render via custom instanced tri shader
+// Goal: split screen, multiple cameras
+// Goal: deferred rendering
+//    textures: 2 of rgba32float, albedo as bgra8unorm
+//
+//
+// I should be able to describe my render pipeline
+//    without access to the "device" or "canvas"
+
 export interface CyCompPass {
   // TODO(@darzu): Pass, Pipeline, Layout, Description
 }
 
 export interface CyCompPipeline {
+  // TODO(@darzu):
+}
+
+// a composition of pipelines/passes?
+export interface CyTimeline {
   // TODO(@darzu):
 }
 
@@ -559,6 +578,9 @@ export interface CyCompPipeline {
 // open questions:
 //  - are resource just CyTypes or do they wrap them?
 //  - CyBuffer or CyStruct needed?
+//
+// a render pass has 1-n target outputs
+//    can have multiple pipelines and many draw calls per pass
 export type CyResource = CyBuffer<any>;
 
 if (false as true) {
@@ -609,6 +631,7 @@ if (false as true) {
   let ParticleVertStruct: CyStruct<any> = null as any;
   let tri_shader = () => "foo"; // comp_main
   let presentationFormat = null;
+  let MyCanvas = null;
 
   let triPipelineDesc = {
     resources: [
@@ -621,6 +644,7 @@ if (false as true) {
     // TODO(@darzu): how to handle matching with index buffer?
     vertex: [VertexStruct],
     shader: tri_shader, // vert_main, frag_main
+    output: MyCanvas,
   };
 
   let particlePipelineDesc = {
@@ -646,6 +670,19 @@ if (false as true) {
       count: antiAliasSampleCount,
     },
     targets: [{ format: this.presentationFormat }],
+
+    or deferred:
+    targets: [
+      // position
+      { format: 'rgba32float' },
+      // normal
+      { format: 'rgba32float' },
+      // albedo
+      { format: 'bgra8unorm' },
+    ],
+
+    canvas size as a uniform
+    
   */
 
   // let triPipeline = createCyPipeline(device,
@@ -850,4 +887,71 @@ export function createCyCompPipeline(device: GPUDevice): CyCompPipeline {
   bundleEnc.setVertexBuffer(1, this.ropePointBuf.buffer);
   // bundleEnc.setVertexBuffer(2, this.ropeStickBuffer);
   bundleEnc.drawIndexed(12, this.ropePointBuf.length, 0, 0);
+
+  DEFERRED:
+    this is a fairly succinct multi-pass description:
+
+  const commandEncoder = device.createCommandEncoder();
+  {
+    // Write position, normal, albedo etc. data to gBuffers
+    const gBufferPass = commandEncoder.beginRenderPass(
+      writeGBufferPassDescriptor
+    );
+    gBufferPass.setPipeline(writeGBuffersPipeline);
+    gBufferPass.setBindGroup(0, sceneUniformBindGroup);
+    gBufferPass.setVertexBuffer(0, vertexBuffer);
+    gBufferPass.setIndexBuffer(indexBuffer, 'uint16');
+    gBufferPass.drawIndexed(indexCount);
+    gBufferPass.end();
+  }
+  {
+    // Update lights position
+    const lightPass = commandEncoder.beginComputePass();
+    lightPass.setPipeline(lightUpdateComputePipeline);
+    lightPass.setBindGroup(0, lightsBufferComputeBindGroup);
+    lightPass.dispatch(Math.ceil(kMaxNumLights / 64));
+    lightPass.end();
+  }
+  {
+    if (settings.mode === 'gBuffers view') {
+      // GBuffers debug view
+      // Left: position
+      // Middle: normal
+      // Right: albedo (use uv to mimic a checkerboard texture)
+      textureQuadPassDescriptor.colorAttachments[0].view = context
+        .getCurrentTexture()
+        .createView();
+      const debugViewPass = commandEncoder.beginRenderPass(
+        textureQuadPassDescriptor
+      );
+      debugViewPass.setPipeline(gBuffersDebugViewPipeline);
+      debugViewPass.setBindGroup(0, gBufferTexturesBindGroup);
+      debugViewPass.setBindGroup(1, canvasSizeUniformBindGroup);
+      debugViewPass.draw(6);
+      debugViewPass.end();
+    } else {
+      // Deferred rendering
+      textureQuadPassDescriptor.colorAttachments[0].view = context
+        .getCurrentTexture()
+        .createView();
+      const deferredRenderingPass = commandEncoder.beginRenderPass(
+        textureQuadPassDescriptor
+      );
+      deferredRenderingPass.setPipeline(deferredRenderPipeline);
+      deferredRenderingPass.setBindGroup(0, gBufferTexturesBindGroup);
+      deferredRenderingPass.setBindGroup(1, lightsBufferBindGroup);
+      deferredRenderingPass.setBindGroup(2, canvasSizeUniformBindGroup);
+      deferredRenderingPass.draw(6);
+      deferredRenderingPass.end();
+    }
+  }
+  device.queue.submit([commandEncoder.finish()]);
+
+  // fragment output
+  struct GBufferOutput {
+    @location(0) position : vec4<f32>;
+    @location(1) normal : vec4<f32>;
+    // Textures: diffuse color, specular color, smoothness, emissive etc. could go here
+    @location(2) albedo : vec4<f32>;
+  };
 */

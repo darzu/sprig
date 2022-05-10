@@ -20,6 +20,9 @@ Goals / vision:
     Also, yes user will have to care about performance and resource constraints!
   Can make "real games"
     Games with hours of content that people want to play and pay money for
+  Coding on a controller a la Kodu and Dreams
+  Code on a phone
+  Code with just a mouse
 
   More out there:
     A better way to think about complexity in software
@@ -41,7 +44,7 @@ Bets:
     and I'm saying the opposite: "yes code! code first"
 
 Non-goals:
-  hyper-realistic PBR rendering
+  hyper-realistic PBR-ish rendering
 
 Maybes:
   VR
@@ -76,6 +79,7 @@ FAQ:
   Why not {MakeCode, Scratch, }
   Why not {PlayCanvas, Babylon, threejs, }
   Why 3D
+    less well solved than 2D
   Why multiplayer/coop
   Why web
   Why still release on steam
@@ -91,13 +95,17 @@ FAQ:
   Why not academia?
 
 Comparison chart w/
-  PlayCanvas, Babylon, Threejs
-  Unity, Unreal, GameMaker, Godot,
+  PlayCanvas, Babylon, Threejs, Construct, Phaser
+  Unity, Unreal, GameMaker, Godot, XNA/MonoGame
   MakeCode, Scratch, TouchDevelop, HopScotch
   HypeHype, Roblox,
   Little Big Planet, Dreams, Kodu, ProjectSpark
   Glitch.com
-  Pico8  
+  Pico8
+
+Game engines on steam data:
+  https://www.gamedeveloper.com/business/game-engines-on-steam-the-definitive-breakdown
+  https://gamefromscratch.com/top-game-engines-on-steam/
 
 ---
 Outline 1:
@@ -108,3 +116,8 @@ Outline 1:
 Outline 2:
   blow by blow, what happened this year  
 
+---
+While at MakeCode, I became convinced of two surprising beliefs:
+  - structured / block programming can be just as powerful if 
+      not more so than traditional text
+  - structured editting can be near 1:1 to text
