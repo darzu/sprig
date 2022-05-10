@@ -92,6 +92,8 @@ export const RopePointStruct = createCyStruct(
 );
 type RopePointTS = CyToTS<typeof RopePointStruct.desc>;
 
+const CLOTH_SIZE = 10; // TODO(@darzu):
+
 export class Renderer_WebGPU implements Renderer {
   public drawLines = true;
   public drawTris = true;
@@ -570,7 +572,6 @@ export class Renderer_WebGPU implements Renderer {
 
     // Displacement map
     // TODO(@darzu): DISP
-    const CLOTH_SIZE = 10; // TODO(@darzu):
     const createClothTex = () =>
       device.createTexture({
         size: [CLOTH_SIZE, CLOTH_SIZE],

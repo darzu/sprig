@@ -655,6 +655,78 @@ if (false as true) {
     shader: tri_shader, // vert_main, frag_main
   };
 
+  let GAlbedo = null;
+  let GPosition = null;
+  let GNormal = null;
+  let writeDeffered = () => "writeDeffered";
+
+  let deferredPipelineDesc = {
+    resources: [
+      { struct: SceneStruct, memory: "uniform", parity: "one" },
+      // TODO(@darzu): how to describe this dynamic offset thing?
+      { struct: ModelUniStruct, memory: "uniform", parity: "one" },
+      { texture: MyDispTexDesc },
+      { sampler: MyDispTexDesc },
+    ],
+    // TODO(@darzu): how to handle matching with index buffer?
+    vertex: [VertexStruct],
+    shader: writeDeffered, // vert_main, frag_main
+    output: [GAlbedo, GPosition, GNormal],
+  };
+
+  let timeline = [ropePipelineDesc, triPipelineDesc, particlePipelineDesc];
+
+  let CLOTH_SIZE = 10;
+
+  let clothTexDesc: GPUTextureDescriptor = {
+    size: [CLOTH_SIZE, CLOTH_SIZE],
+    format: "rgba32float", // TODO(@darzu): format?
+    usage:
+      GPUTextureUsage.COPY_DST |
+      GPUTextureUsage.STORAGE_BINDING |
+      GPUTextureUsage.TEXTURE_BINDING,
+  };
+  let clothSamplerDesc = {
+    magFilter: "linear",
+    minFilter: "linear",
+  };
+
+  let U16IdxStruct = null;
+  let MeshUniformStruct = null;
+
+  let SceneBufPtr = { struct: SceneStruct, parity: "one" };
+  let MeshBufPtr = { struct: MeshUniformStruct, parity: "many" };
+  let VertBufPtr = { struct: VertexStruct, parity: "many" };
+  let TriBufPtr = { struct: U16IdxStruct, parity: "many" };
+
+  // what makes mesh pools special?
+  //   they have the vert, tri index, line index, mesh index data
+  //   we need a draw descriptor,
+  //   probably related to rebundle decisions,
+  // why be declarative like this instead of just wrapping and simplifying
+  //    the code APIs?
+
+  let obj_vertShader = () => "obj_vertShader";
+  let obj_fragShader = () => "obj_fragShader";
+
+  const triPipelineDesc2 = {
+    resources: [
+      { buf: SceneBufPtr, memory: "uniform" },
+      // TODO(@darzu): how to describe this dynamic offset thing?
+      { texture: clothTexDesc },
+      { sampler: clothSamplerDesc },
+    ],
+    // TODO(@darzu): how to handle matching with index buffer?
+    meshPool: [
+      { buf: MeshBufPtr, memory: "uniform" },
+      { buf: VertBufPtr, memory: "vertex" },
+      { buf: TriBufPtr, memory: "vertex" },
+    ],
+    vertShader: obj_vertShader(),
+    fragShader: obj_fragShader(),
+    output: "canvas",
+  } as const;
+
   /*
     colorFormats: [this.presentationFormat],
     depthStencilFormat: depthStencilFormat,
