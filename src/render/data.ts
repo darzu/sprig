@@ -434,14 +434,16 @@ export function createCyStruct<O extends CyStructDesc>(
 
 export function createCyOne<O extends CyStructDesc>(
   device: GPUDevice,
-  struct: CyStruct<O>
+  struct: CyStruct<O>,
+  initData?: CyToTS<O>
 ): CyOne<O> {
   assert(struct.opts?.isUniform, "CyOne struct must be created with isUniform");
+
   const _buf = device.createBuffer({
     size: struct.size,
     // TODO(@darzu): parameterize these
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    mappedAtCreation: false,
+    mappedAtCreation: !!initData,
   });
 
   const buf: CyOne<O> = {
@@ -451,6 +453,14 @@ export function createCyOne<O extends CyStructDesc>(
     queueUpdate,
     binding,
   };
+
+  if (initData) {
+    buf.lastData = initData;
+    const mappedBuf = new Uint8Array(_buf.getMappedRange());
+    const d = struct.serialize(initData);
+    mappedBuf.set(d, 0);
+    _buf.unmap();
+  }
 
   function queueUpdate(data: CyToTS<O>): void {
     // TODO(@darzu): measure perf. we probably want to allow hand written serializers
