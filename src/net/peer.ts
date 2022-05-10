@@ -50,14 +50,14 @@ export class Peer {
     null;
 
   constructor(id: string) {
-    this.id = id;
+    this.id = "sprig-" + id;
     this.connectToServer();
   }
 
   private connectToServer() {
     // TODO: if this fails, make it possible to get a different valid id
     let sock = new WebSocket(
-      serverUrl("sprig-" + this.id, Math.random().toString(36).substr(2))
+      serverUrl(this.id, Math.random().toString(36).substr(2))
     );
     sock.onmessage = (event) => {
       //console.log(event.data);
@@ -205,7 +205,8 @@ export class Peer {
 
   async connect(peerId: string, reliable: boolean): Promise<RTCDataChannel> {
     const peerConnection = new RTCPeerConnection(DEFAULT_CONFIG);
-    peerId = "sprig-" + peerId;
+    if (!peerId.startsWith("sprig-"))
+      throw `Connecting to non-sprig peer ${peerId}`;
     let connectionId = `${this.id}-${peerId}-${this.nextId++}`;
     this.setupPeerConnection(peerConnection, peerId, connectionId);
     const config: RTCDataChannelInit = { ordered: false };
