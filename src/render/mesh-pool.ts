@@ -11,6 +11,13 @@ import { Mesh, getAABBFromMesh } from "./mesh.js";
 // TODO(@darzu): abstraction refinement:
 //  [ ] how do we handle multiple shaders with different mesh
 //    uniforms? e.g. water, noodles, cloth, regular objects, grass
+// Mesh, MeshPool, and Cy* types
+// Mesh: all the data of a model/asset from blender; lossless
+// MeshPool: a reduced set of attributes for vertex, line, triangle, and model uniforms
+//    what about instanced data?
+//    Mesh can (probably) be loaded into a MeshPool, but it's lossy
+//    has offset pointers into buffers
+//    should it own the buffers?
 
 // TODO(@darzu): alignment is needs to be handled right esp for structs
 //    shared between vertex and uniform/storage

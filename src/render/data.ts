@@ -601,6 +601,54 @@ if (false as true) {
   const commandEncoder = device.createCommandEncoder();
 
   ropePipeline.dispatch(commandEncoder);
+
+  // TRI
+  let ModelUniStruct: CyStruct<any> = null as any;
+  let MyDispTexDesc = null as any;
+  let VertexStruct: CyStruct<any> = null as any;
+  let ParticleVertStruct: CyStruct<any> = null as any;
+  let tri_shader = () => "foo"; // comp_main
+  let presentationFormat = null;
+
+  let triPipelineDesc = {
+    resources: [
+      { struct: SceneStruct, memory: "uniform", parity: "one" },
+      // TODO(@darzu): how to describe this dynamic offset thing?
+      { struct: ModelUniStruct, memory: "uniform", parity: "one" },
+      { texture: MyDispTexDesc },
+      { sampler: MyDispTexDesc },
+    ],
+    // TODO(@darzu): how to handle matching with index buffer?
+    vertex: [VertexStruct],
+    shader: tri_shader, // vert_main, frag_main
+  };
+
+  let particlePipelineDesc = {
+    resources: [{ struct: SceneStruct, memory: "uniform", parity: "one" }],
+    // TODO(@darzu): how to handle matching with index buffer?
+    vertex: [ParticleVertStruct],
+    instance: [RopePointStruct],
+    shader: tri_shader, // vert_main, frag_main
+  };
+
+  /*
+    colorFormats: [this.presentationFormat],
+    depthStencilFormat: depthStencilFormat,
+    sampleCount: antiAliasSampleCount,
+    ...
+    primitive: prim_tris,
+    depthStencil: {
+      depthWriteEnabled: true,
+      depthCompare: "less",
+      format: depthStencilFormat,
+    },
+    multisample: {
+      count: antiAliasSampleCount,
+    },
+    targets: [{ format: this.presentationFormat }],
+  */
+
+  // let triPipeline = createCyPipeline(device,
 }
 
 function createCyPipeline(d: any, a: any, ...s: any[]) {
@@ -609,7 +657,7 @@ function createCyPipeline(d: any, a: any, ...s: any[]) {
   };
 }
 
-/*
+/* ROPE
 
   const cmpRopePassEncoder = commandEncoder.beginComputePass();
   cmpRopePassEncoder.setPipeline(this.cmpRopePipeline);
@@ -638,14 +686,6 @@ function createCyPipeline(d: any, a: any, ...s: any[]) {
 
   @group(0) @binding(1) var<storage, read_write> ropePoints : RopePoints;
   @group(0) @binding(2) var<storage, read> ropeSticks : RopeSticks;
-
-  run pipeline:
-
-    const cmpRopePassEncoder = commandEncoder.beginComputePass();
-    cmpRopePassEncoder.setPipeline(this.cmpRopePipeline);
-    cmpRopePassEncoder.setBindGroup(0, cmpRopeBindGroup);
-    cmpRopePassEncoder.dispatchWorkgroups(1);
-    cmpRopePassEncoder.end();
 */
 
 export function createCyCompPipeline(device: GPUDevice): CyCompPipeline {
@@ -694,3 +734,120 @@ export function createCyCompPipeline(device: GPUDevice): CyCompPipeline {
 
   return res;
 }
+
+/* TRIANGLES
+
+    @group(0) @binding(0) var<uniform> scene : Scene;
+    @group(0) @binding(1) var dispSampler: sampler;
+    @group(0) @binding(2) var dispTexture: texture_2d<f32>;
+
+    @group(1) @binding(0) var<uniform> model : Model;
+
+  const renderPipelineDesc_tris: GPURenderPipelineDescriptor = {
+    layout: this.device.createPipelineLayout({
+      bindGroupLayouts: [
+        renderSceneUniBindGroupLayout,
+        modelUniBindGroupLayout,
+      ],
+    }),
+    vertex: {
+      module: this.device.createShaderModule({ code: obj_vertShader() }),
+      entryPoint: "main",
+      buffers: [VertexStruct.vertexLayout("vertex", 0)],
+    },
+    fragment: {
+      module: this.device.createShaderModule({ code: obj_fragShader() }),
+      entryPoint: "main",
+      targets: [{ format: this.presentationFormat }],
+    },
+    primitive: prim_tris,
+    depthStencil: {
+      depthWriteEnabled: true,
+      depthCompare: "less",
+      format: depthStencilFormat,
+    },
+    multisample: {
+      count: antiAliasSampleCount,
+    },
+  };
+
+  const bundleEnc = this.device.createRenderBundleEncoder({
+    colorFormats: [this.presentationFormat],
+    depthStencilFormat: depthStencilFormat,
+    sampleCount: antiAliasSampleCount,
+  });
+
+  // render triangles and lines
+  bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
+  bundleEnc.setVertexBuffer(0, this.pool.verticesBuffer.buffer);
+
+  bundleEnc.setPipeline(renderPipeline_tris);
+  // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
+  bundleEnc.setIndexBuffer(this.pool.triIndicesBuffer, "uint16");
+  for (let m of Object.values(handles)) {
+    bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
+    bundleEnc.drawIndexed(
+      m.numTris * 3,
+      undefined,
+      m.triIndicesNumOffset,
+      m.vertNumOffset
+    );
+  }
+
+   const renderSceneUniBindGroupLayout = this.device.createBindGroupLayout({
+      entries: [
+        this.sceneUni.struct.layout(0),
+        // TODO(@darzu): DISP
+        {
+          binding: 1,
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          sampler: { type: "filtering" }, // TODO(@darzu): what kind?
+        },
+        {
+          binding: 2,
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          texture: { sampleType: "unfilterable-float" }, // TODO(@darzu): what type?
+        },
+      ],
+    });
+    const renderSceneUniBindGroup = this.device.createBindGroup({
+      layout: renderSceneUniBindGroupLayout,
+      entries: [
+        this.sceneUni.binding(0),
+        // TODO(@darzu): DISP
+        {
+          binding: 1,
+          resource: this.clothSampler,
+        },
+        {
+          binding: 2,
+          resource: this.clothTextures[this.clothReadIdx].createView(),
+        },
+      ],
+    });
+
+  LINES:
+
+  bundleEnc.setPipeline(renderPipeline_lines);
+  // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
+  bundleEnc.setIndexBuffer(this.pool.lineIndicesBuffer, "uint16");
+  for (let m of Object.values(handles)) {
+    bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
+    bundleEnc.drawIndexed(
+      m.numLines * 2,
+      undefined,
+      m.lineIndicesNumOffset,
+      m.vertNumOffset
+    );
+  }
+
+  PARTICLES:
+    
+  bundleEnc.setPipeline(rndrRopePipeline);
+  bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
+  bundleEnc.setIndexBuffer(this.particleIndexBuffer, "uint16");
+  bundleEnc.setVertexBuffer(0, this.particleVertexBuffer);
+  bundleEnc.setVertexBuffer(1, this.ropePointBuf.buffer);
+  // bundleEnc.setVertexBuffer(2, this.ropeStickBuffer);
+  bundleEnc.drawIndexed(12, this.ropePointBuf.length, 0, 0);
+*/
