@@ -35,6 +35,17 @@ const depthStencilFormat = "depth24plus-stencil8";
 
 export interface Renderer_WebGPU extends Renderer {}
 
+// TODO(@darzu): use ECS?
+interface CyCompPipeline {
+  // TODO(@darzu):
+}
+let compPipelines = [];
+export function registerCompPipeline(pipeline: CyCompPipeline) {
+  // TODO(@darzu):
+  // do we want an entirely descriptive pipeline thing?
+  // or we could register with access to ECS resources
+}
+
 export function createWebGPURenderer(
   canvas: HTMLCanvasElement,
   device: GPUDevice,
@@ -82,6 +93,24 @@ export function createWebGPURenderer(
     GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
     ropeStickData
   );
+  let cmpRopeBindGroupLayout = device.createBindGroupLayout({
+    entries: [
+      SceneStruct.layout(0, GPUShaderStage.COMPUTE, "uniform"),
+      RopePointStruct.layout(1, GPUShaderStage.COMPUTE, "storage"),
+      RopeStickStruct.layout(2, GPUShaderStage.COMPUTE, "read-only-storage"),
+    ],
+  });
+  let cmpRopePipeline = device.createComputePipeline({
+    layout: device.createPipelineLayout({
+      bindGroupLayouts: [cmpRopeBindGroupLayout],
+    }),
+    compute: {
+      module: device.createShaderModule({
+        code: rope_shader(),
+      }),
+      entryPoint: "main",
+    },
+  });
 
   // cloth data
   let clothTextures = [
@@ -112,25 +141,6 @@ export function createWebGPURenderer(
     compute: {
       module: device.createShaderModule({
         code: cloth_shader(),
-      }),
-      entryPoint: "main",
-    },
-  });
-
-  let cmpRopeBindGroupLayout = device.createBindGroupLayout({
-    entries: [
-      SceneStruct.layout(0, GPUShaderStage.COMPUTE, "uniform"),
-      RopePointStruct.layout(1, GPUShaderStage.COMPUTE, "storage"),
-      RopeStickStruct.layout(2, GPUShaderStage.COMPUTE, "read-only-storage"),
-    ],
-  });
-  let cmpRopePipeline = device.createComputePipeline({
-    layout: device.createPipelineLayout({
-      bindGroupLayouts: [cmpRopeBindGroupLayout],
-    }),
-    compute: {
-      module: device.createShaderModule({
-        code: rope_shader(),
       }),
       entryPoint: "main",
     },
@@ -556,7 +566,6 @@ export function createWebGPURenderer(
         ropeStickBuf.binding(2),
       ],
     });
-
     const cmpRopePassEncoder = commandEncoder.beginComputePass();
     cmpRopePassEncoder.setPipeline(cmpRopePipeline);
     cmpRopePassEncoder.setBindGroup(0, cmpRopeBindGroup);

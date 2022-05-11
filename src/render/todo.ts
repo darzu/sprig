@@ -1,16 +1,29 @@
-// EXPERIMENTS:
-// Goal: post process with a blur effect
-//    use compute shader to do a blur
-// Goal: add boids to the sky as birds
-//    use comptue shader to update boids
-//    render via custom instanced tri shader
-// Goal: split screen, multiple cameras
-// Goal: deferred rendering
-//    textures: 2 of rgba32float, albedo as bgra8unorm
-//
-//
-// I should be able to describe my render pipeline
-//    without access to the "device" or "canvas"
+/*
+EXPERIMENTS:
+Goal: post process with a blur effect
+   use compute shader to do a blur
+Goal: add boids to the sky as birds
+   use comptue shader to update boids
+   render via custom instanced tri shader
+Goal: split screen, multiple cameras
+Goal: deferred rendering
+   textures: 2 of rgba32float, albedo as bgra8unorm
+
+I should be able to describe my render pipeline
+   without access to the "device" or "canvas"
+
+What isn't static about my rendering pipelines?
+  Instancing? Mesh handles and uniforms?
+  Canvas resizing?
+  Initial data?
+  Per-frame updates?
+
+If I can't achieve static data, can I achieve webgpu independence?
+
+I want the system to handle the agreement problems 
+  i.e. buffer usage and stage flags, binding and layout indices, 
+    location indices
+*/
 
 import { CyBuffer, CyStruct, createCyOne, createCyMany } from "./data.js";
 
@@ -18,7 +31,7 @@ export interface CyCompPass {
   // TODO(@darzu): Pass, Pipeline, Layout, Description
 }
 
-export interface CyCompPipeline {
+interface CyCompPipeline {
   // TODO(@darzu):
 }
 
