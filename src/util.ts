@@ -188,3 +188,17 @@ export function dbgOnce(key: string): boolean {
     return true;
   } else return false;
 }
+
+export function isArray(t: any): t is any[] {
+  return Array.isArray(t);
+}
+
+export function capitalize<S extends string>(s: S): Capitalize<S> {
+  return `${s[0].toUpperCase()}${s.slice(1)}` as any;
+}
+export function uncapitalize<S extends string>(s: S): Uncapitalize<S> {
+  return `${s[0].toLowerCase()}${s.slice(1)}` as any;
+}
+export function pluralize<S extends string>(s: S): `${S}s` {
+  return `${s}s`; // lol
+}

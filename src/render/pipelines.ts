@@ -5,8 +5,11 @@ import {
   createCyStruct,
   CyBuffer,
   CyStruct,
+  CyStructDesc,
   CyToTS,
 } from "./data.js";
+import { registerBufPtr, registerCompPipeline } from "./render_webgpu.js";
+import { rope_shader } from "./shaders.js";
 
 // TODO(@darzu):
 export const VertexStruct = createCyStruct(
@@ -122,7 +125,7 @@ export type MeshUniformTS = CyToTS<typeof MeshUniformStruct.desc>;
 
 export const CLOTH_W = 12;
 
-export function generateRopeGrid(): {
+function generateRopeGrid(): {
   ropePointData: RopePointTS[];
   ropeStickData: RopeStickTS[];
 } {
@@ -184,6 +187,46 @@ export function generateRopeGrid(): {
 
   return { ropePointData, ropeStickData };
 }
+let _initRopePointData: RopePointTS[];
+let _initRopeStickData: RopeStickTS[];
+
+const genRopePointData = () => {
+  if (!_initRopePointData) {
+    let res = generateRopeGrid();
+    _initRopePointData = res.ropePointData;
+    _initRopeStickData = res.ropeStickData;
+  }
+  return _initRopePointData;
+};
+const genRopeStickData = () => {
+  if (!_initRopeStickData) {
+    let res = generateRopeGrid();
+    _initRopePointData = res.ropePointData;
+    _initRopeStickData = res.ropeStickData;
+  }
+  return _initRopeStickData;
+};
+
+const sceneBufPtr = registerBufPtr({
+  name: "scene",
+  struct: SceneStruct,
+  init: setupScene,
+});
+const ropePointBufPtr = registerBufPtr({
+  name: "ropePoint",
+  struct: RopePointStruct,
+  init: genRopePointData,
+});
+const ropeStickBufPtr = registerBufPtr({
+  name: "ropeStick",
+  struct: RopeStickStruct,
+  init: genRopeStickData,
+});
+const compRopePipelineDesc = registerCompPipeline({
+  resources: [sceneBufPtr, ropePointBufPtr, ropeStickBufPtr],
+  shader: rope_shader,
+  shaderEntry: "main",
+});
 
 const CLOTH_SIZE = 10; // TODO(@darzu):
 

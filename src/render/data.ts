@@ -33,6 +33,14 @@ type WGSLTypeToTSType = {
   "mat4x4<f32>": mat4;
 };
 
+export const GPUBufferBindingTypeToWgslVar: {
+  [K in GPUBufferBindingType]: string;
+} = {
+  uniform: "var<uniform>",
+  "read-only-storage": "var<storage, read>",
+  storage: "var<storage, read_write>",
+};
+
 function wgslTypeToDummyVal<T extends WGSLType>(
   wgsl: T
 ): T extends keyof WGSLTypeToTSType ? WGSLTypeToTSType[T] : never {
@@ -138,7 +146,7 @@ const wgslTypeToAlign = objMap(wgslTypeToSize, alignUp) as Partial<
   Record<WGSLType, number>
 >;
 
-type CyStructDesc = Record<string, WGSLType>;
+export type CyStructDesc = Record<string, WGSLType>;
 
 export type CyToTS<O extends CyStructDesc> = {
   [N in keyof O]: O[N] extends keyof WGSLTypeToTSType

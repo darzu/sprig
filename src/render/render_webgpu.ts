@@ -1,5 +1,15 @@
 import { mat4 } from "../gl-matrix.js";
-import { createCyMany, createCyOne } from "./data.js";
+import { capitalize, isArray, pluralize, uncapitalize } from "../util.js";
+import {
+  createCyMany,
+  createCyOne,
+  CyMany,
+  CyOne,
+  CyStruct,
+  CyStructDesc,
+  CyToTS,
+  GPUBufferBindingTypeToWgslVar,
+} from "./data.js";
 import {
   createMeshPool_WebGPU,
   MeshHandle,
@@ -12,7 +22,6 @@ import {
   RopePointStruct,
   MeshUniformStruct,
   VertexStruct,
-  generateRopeGrid,
   setupScene,
   ClothTexDesc,
   ClothSamplerDesc,
@@ -35,15 +44,54 @@ const depthStencilFormat = "depth24plus-stencil8";
 
 export interface Renderer_WebGPU extends Renderer {}
 
-// TODO(@darzu): use ECS?
-interface CyCompPipeline {
-  // TODO(@darzu):
+export interface CyBufferPtrDesc<O extends CyStructDesc> {
+  name: string;
+  struct: CyStruct<O>;
+  init: () => CyToTS<O> | CyToTS<O>[];
 }
-let compPipelines = [];
-export function registerCompPipeline(pipeline: CyCompPipeline) {
-  // TODO(@darzu):
-  // do we want an entirely descriptive pipeline thing?
-  // or we could register with access to ECS resources
+export interface CyBufferPtr<O extends CyStructDesc>
+  extends CyBufferPtrDesc<O> {
+  id: number;
+}
+
+export interface CyBufferPtrLayout<O extends CyStructDesc>
+  extends CyBufferPtr<O> {
+  usage: GPUBufferBindingType;
+  parity: "one" | "many";
+}
+
+export interface CyPipelinePtrDesc<RS extends CyBufferPtr<any>[]> {
+  resources: [...RS];
+  shader: () => string;
+  shaderEntry: string;
+}
+export interface CyPipelinePtr<RS extends CyBufferPtr<any>[]>
+  extends CyPipelinePtrDesc<RS> {
+  id: number;
+}
+
+let _bufPtrs: CyBufferPtr<any>[] = [];
+export function registerBufPtr<O extends CyStructDesc>(
+  desc: CyBufferPtrDesc<O>
+): CyBufferPtr<O> {
+  const r = {
+    ...desc,
+    id: _bufPtrs.length,
+  };
+  _bufPtrs.push(r);
+  return r;
+}
+
+let _compPipelines: CyPipelinePtr<CyBufferPtr<any>[]>[] = [];
+export function registerCompPipeline<RS extends CyBufferPtr<any>[]>(
+  desc: CyPipelinePtrDesc<RS>
+): CyPipelinePtr<RS> {
+  const r = {
+    ...desc,
+    id: _compPipelines.length,
+  };
+  _compPipelines.push(r);
+  return r;
 }
 
 export function createWebGPURenderer(
@@ -79,38 +127,125 @@ export function createWebGPURenderer(
   let sceneUni = createCyOne(device, SceneStruct, setupScene());
   let canvasFormat = context.getPreferredFormat(adapter);
 
-  // Rope data
-  const { ropePointData, ropeStickData } = generateRopeGrid();
-  let ropePointBuf = createCyMany(
-    device,
-    RopePointStruct,
-    GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
-    ropePointData
-  );
-  let ropeStickBuf = createCyMany(
-    device,
-    RopeStickStruct,
-    GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
-    ropeStickData
-  );
-  let cmpRopeBindGroupLayout = device.createBindGroupLayout({
-    entries: [
-      SceneStruct.layout(0, GPUShaderStage.COMPUTE, "uniform"),
-      RopePointStruct.layout(1, GPUShaderStage.COMPUTE, "storage"),
-      RopeStickStruct.layout(2, GPUShaderStage.COMPUTE, "read-only-storage"),
-    ],
-  });
-  let cmpRopePipeline = device.createComputePipeline({
-    layout: device.createPipelineLayout({
-      bindGroupLayouts: [cmpRopeBindGroupLayout],
-    }),
-    compute: {
-      module: device.createShaderModule({
-        code: rope_shader(),
+  // generic compute pipelines
+  // TODO(@darzu): IMPL
+  const cyOnes: Map<number, CyOne<any>> = new Map();
+  const cyManys: Map<number, CyMany<any>> = new Map();
+  const cyPipelines: GPUComputePipeline[] = [];
+  for (let p of _compPipelines) {
+    // init resources
+    for (let r of p.resources) {
+      if (!cyOnes.has(r.id) && !cyManys.has(r.id)) {
+        let initData = r.init();
+        if (isArray(initData)) {
+          // TODO(@darzu): accurately determine usage by inspecting pipelines
+          let usage = GPUBufferUsage.STORAGE;
+          let cyMany = createCyMany(device, r.struct, usage, initData);
+          cyManys.set(r.id, cyMany);
+        } else {
+          let cyOne = createCyOne(device, r.struct, initData);
+          cyOnes.set(r.id, cyOne);
+        }
+      }
+    }
+
+    // global resource layout
+    const resourceLayouts: CyBufferPtrLayout<any>[] = p.resources.map(
+      (r, i) => {
+        const parity = cyOnes.has(r.id) ? "one" : "many";
+        return {
+          ...r,
+          // TODO(@darzu): determine binding types
+          usage: r.struct.opts?.isUniform ? "uniform" : "storage",
+          parity,
+        };
+      }
+    );
+    const bindGroupLayoutDesc: GPUBindGroupLayoutDescriptor = {
+      entries: resourceLayouts.map((r, i) =>
+        r.struct.layout(i, GPUShaderStage.COMPUTE, r.usage)
+      ),
+    };
+    const bindGroupLayout = device.createBindGroupLayout(bindGroupLayoutDesc);
+
+    // shader setup
+    const shaderStructs = resourceLayouts.map((r) => {
+      const structStr = `struct ${capitalize(r.name)} {
+        ${r.struct.wgsl(true)}
+      };`;
+      if (r.parity === "one") {
+        return structStr;
+      } else {
+        return `${structStr}
+        struct ${pluralize(capitalize(r.name))} {
+          ${pluralize(uncapitalize(r.name))} : array<${capitalize(r.name)}>,
+        };`;
+      }
+    });
+    const shaderVars = resourceLayouts.map((r, i) => {
+      const varPrefix = GPUBufferBindingTypeToWgslVar[r.usage];
+      const varName =
+        r.parity === "one"
+          ? uncapitalize(r.name)
+          : pluralize(uncapitalize(r.name));
+      const varType = capitalize(varName);
+      // TODO(@darzu): support multiple groups?
+      return `@group(0) @binding(${i}) ${varPrefix} ${varName} : ${varType};`;
+    });
+    const shader = `
+    ${shaderStructs.join("\n")}
+    ${shaderVars.join("\n")}
+    ${p.shader()}
+    `;
+
+    // console.log(shader);
+
+    // pipeline
+    let compPipeline = device.createComputePipeline({
+      layout: device.createPipelineLayout({
+        bindGroupLayouts: [bindGroupLayout],
       }),
-      entryPoint: "main",
-    },
-  });
+      compute: {
+        module: device.createShaderModule({
+          code: shader,
+        }),
+        entryPoint: p.shaderEntry ?? "main",
+      },
+    });
+    cyPipelines.push(compPipeline);
+  }
+
+  // const { ropePointData, ropeStickData } = generateRopeGrid();
+  // let ropePointBuf = createCyMany(
+  //   device,
+  //   RopePointStruct,
+  //   GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
+  //   ropePointData
+  // );
+  // let ropeStickBuf = createCyMany(
+  //   device,
+  //   RopeStickStruct,
+  //   GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
+  //   ropeStickData
+  // );
+  // let cmpRopeBindGroupLayout = device.createBindGroupLayout({
+  //   entries: [
+  //     SceneStruct.layout(0, GPUShaderStage.COMPUTE, "uniform"),
+  //     RopePointStruct.layout(1, GPUShaderStage.COMPUTE, "storage"),
+  //     RopeStickStruct.layout(2, GPUShaderStage.COMPUTE, "read-only-storage"),
+  //   ],
+  // });
+  // let cmpRopePipeline = device.createComputePipeline({
+  //   layout: device.createPipelineLayout({
+  //     bindGroupLayouts: [cmpRopeBindGroupLayout],
+  //   }),
+  //   compute: {
+  //     module: device.createShaderModule({
+  //       code: rope_shader(),
+  //     }),
+  //     entryPoint: "main",
+  //   },
+  // });
 
   // cloth data
   let clothTextures = [
@@ -489,12 +624,13 @@ export function createWebGPURenderer(
       },
     });
 
-    bundleEnc.setPipeline(rndrRopePipeline);
-    bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
-    bundleEnc.setIndexBuffer(particleIndexBuffer, "uint16");
-    bundleEnc.setVertexBuffer(0, particleVertexBuffer);
-    bundleEnc.setVertexBuffer(1, ropePointBuf.buffer);
-    bundleEnc.drawIndexed(12, ropePointBuf.length, 0, 0);
+    // TODO(@darzu): IMPL
+    // bundleEnc.setPipeline(rndrRopePipeline);
+    // bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
+    // bundleEnc.setIndexBuffer(particleIndexBuffer, "uint16");
+    // bundleEnc.setVertexBuffer(0, particleVertexBuffer);
+    // bundleEnc.setVertexBuffer(1, ropePointBuf.buffer);
+    // bundleEnc.drawIndexed(12, ropePointBuf.length, 0, 0);
 
     renderBundle = bundleEnc.finish();
     return renderBundle;
@@ -558,19 +694,20 @@ export function createWebGPURenderer(
     cmpClothPassEncoder.dispatchWorkgroups(1);
     cmpClothPassEncoder.end();
 
-    const cmpRopeBindGroup = device.createBindGroup({
-      layout: cmpRopeBindGroupLayout,
-      entries: [
-        sceneUni.binding(0),
-        ropePointBuf.binding(1),
-        ropeStickBuf.binding(2),
-      ],
-    });
-    const cmpRopePassEncoder = commandEncoder.beginComputePass();
-    cmpRopePassEncoder.setPipeline(cmpRopePipeline);
-    cmpRopePassEncoder.setBindGroup(0, cmpRopeBindGroup);
-    cmpRopePassEncoder.dispatchWorkgroups(1);
-    cmpRopePassEncoder.end();
+    // TODO(@darzu): IMPL
+    // const cmpRopeBindGroup = device.createBindGroup({
+    //   layout: cmpRopeBindGroupLayout,
+    //   entries: [
+    //     sceneUni.binding(0),
+    //     ropePointBuf.binding(1),
+    //     ropeStickBuf.binding(2),
+    //   ],
+    // });
+    // const cmpRopePassEncoder = commandEncoder.beginComputePass();
+    // cmpRopePassEncoder.setPipeline(cmpRopePipeline);
+    // cmpRopePassEncoder.setBindGroup(0, cmpRopeBindGroup);
+    // cmpRopePassEncoder.dispatchWorkgroups(1);
+    // cmpRopePassEncoder.end();
 
     // render to the canvas' via our swap-chain
     const renderPassEncoder = commandEncoder.beginRenderPass({

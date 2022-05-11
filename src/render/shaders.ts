@@ -125,29 +125,6 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
 
 export const rope_shader = () =>
   `
-struct Scene {
-  ${SceneStruct.wgsl(true)}
-};
-
-@group(0) @binding(0) var<uniform> scene : Scene;
-
-struct RopePoint {
-  ${RopePointStruct.wgsl(true)}
-};
-struct RopePoints {
-  ropePoints : array<RopePoint>,
-};
-
-struct RopeStick {
-  ${RopeStickStruct.wgsl(true)}
-};
-struct RopeSticks {
-  ropeSticks : array<RopeStick>,
-};
-
-@group(0) @binding(1) var<storage, read_write> ropePoints : RopePoints;
-@group(0) @binding(2) var<storage, read> ropeSticks : RopeSticks;
-
 // todo: pick workgroup size based on max rope system?
 @stage(compute) @workgroup_size(${CLOTH_W ** 2})
 fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
