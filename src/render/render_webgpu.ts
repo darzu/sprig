@@ -10,25 +10,28 @@ import {
   SceneStruct,
   RopeStickStruct,
   RopePointStruct,
-  cloth_shader,
-  rope_shader,
   MeshUniformStruct,
-  obj_vertShader,
   VertexStruct,
-  obj_fragShader,
-  particle_shader,
   generateRopeGrid,
   setupScene,
+  ClothTexDesc,
+  ClothSamplerDesc,
+  initClothTex,
 } from "./pipelines.js";
 import { Renderer } from "./renderer.js";
+import {
+  cloth_shader,
+  rope_shader,
+  obj_vertShader,
+  obj_fragShader,
+  particle_shader,
+} from "./shaders.js";
 
 const PIXEL_PER_PX: number | null = null; // 0.5;
 
 // render pipeline parameters
 const antiAliasSampleCount = 4;
 const depthStencilFormat = "depth24plus-stencil8";
-
-const CLOTH_SIZE = 10; // TODO(@darzu):
 
 export interface Renderer_WebGPU extends Renderer {}
 
@@ -80,51 +83,32 @@ export function createWebGPURenderer(
     ropeStickData
   );
 
-  // Displacement map
-  // TODO(@darzu): DISP
-  const createClothTex = () =>
-    device.createTexture({
-      size: [CLOTH_SIZE, CLOTH_SIZE],
-      format: "rgba32float", // TODO(@darzu): format?
-      usage:
-        GPUTextureUsage.COPY_DST |
-        GPUTextureUsage.STORAGE_BINDING |
-        GPUTextureUsage.TEXTURE_BINDING,
-    });
-  let clothTextures = [createClothTex(), createClothTex()];
-  let clothSampler = device.createSampler({
-    magFilter: "linear",
-    minFilter: "linear",
+  // cloth data
+  let clothTextures = [
+    device.createTexture(ClothTexDesc),
+    device.createTexture(ClothTexDesc),
+  ];
+  let clothSampler = device.createSampler(ClothSamplerDesc);
+  initClothTex(device.queue, clothTextures[0]);
+
+  let cmpClothBindGroupLayout = device.createBindGroupLayout({
+    entries: [
+      {
+        binding: 1,
+        visibility: GPUShaderStage.COMPUTE,
+        texture: { sampleType: "unfilterable-float" },
+      },
+      {
+        binding: 2,
+        visibility: GPUShaderStage.COMPUTE,
+        storageTexture: { format: "rgba32float", access: "write-only" },
+      },
+    ],
   });
-
-  // update cloth data
-  // TODO(@darzu): DISP
-  const clothData = new Float32Array(10 * 10 * 4);
-  for (let x = 0; x < 10; x++) {
-    for (let y = 0; y < 10; y++) {
-      const i = (y + x * 10) * 3;
-      clothData[i + 0] = i / clothData.length;
-      clothData[i + 1] = i / clothData.length;
-      clothData[i + 2] = i / clothData.length;
-    }
-  }
-  device.queue.writeTexture(
-    { texture: clothTextures[0] },
-    clothData,
-    {
-      offset: 0,
-      bytesPerRow: 10 * Float32Array.BYTES_PER_ELEMENT * 4,
-      rowsPerImage: 10,
-    },
-    {
-      width: 10,
-      height: 10,
-      depthOrArrayLayers: 1,
-    }
-  );
-
   let cmpClothPipeline = device.createComputePipeline({
-    layout: "auto",
+    layout: device.createPipelineLayout({
+      bindGroupLayouts: [cmpClothBindGroupLayout],
+    }),
     compute: {
       module: device.createShaderModule({
         code: cloth_shader(),
