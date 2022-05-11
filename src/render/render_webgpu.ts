@@ -1,4 +1,5 @@
 import { mat4 } from "../gl-matrix.js";
+import { assert } from "../test.js";
 import { capitalize, isArray, pluralize, uncapitalize } from "../util.js";
 import {
   createCyMany,
@@ -69,6 +70,11 @@ export interface CyPipelinePtr<RS extends CyBufferPtr<any>[]>
   extends CyPipelinePtrDesc<RS> {
   id: number;
 }
+export interface CyPipeline<RS extends CyBufferPtr<any>[]>
+  extends CyPipelinePtr<RS> {
+  resourceLayouts: CyBufferPtrLayout<any>[];
+  pipeline: GPUComputePipeline;
+}
 
 let _bufPtrs: CyBufferPtr<any>[] = [];
 export function registerBufPtr<O extends CyStructDesc>(
@@ -124,14 +130,14 @@ export function createWebGPURenderer(
   };
 
   let pool = createMeshPool_WebGPU(device, opts);
-  let sceneUni = createCyOne(device, SceneStruct, setupScene());
+  // let sceneUni = createCyOne(device, SceneStruct, setupScene());
   let canvasFormat = context.getPreferredFormat(adapter);
 
   // generic compute pipelines
   // TODO(@darzu): IMPL
   const cyOnes: Map<number, CyOne<any>> = new Map();
   const cyManys: Map<number, CyMany<any>> = new Map();
-  const cyPipelines: GPUComputePipeline[] = [];
+  const cyPipelines: CyPipeline<any>[] = [];
   for (let p of _compPipelines) {
     // init resources
     for (let r of p.resources) {
@@ -139,7 +145,7 @@ export function createWebGPURenderer(
         let initData = r.init();
         if (isArray(initData)) {
           // TODO(@darzu): accurately determine usage by inspecting pipelines
-          let usage = GPUBufferUsage.STORAGE;
+          let usage = GPUBufferUsage.STORAGE | GPUBufferUsage.VERTEX;
           let cyMany = createCyMany(device, r.struct, usage, initData);
           cyManys.set(r.id, cyMany);
         } else {
@@ -212,40 +218,17 @@ export function createWebGPURenderer(
         entryPoint: p.shaderEntry ?? "main",
       },
     });
-    cyPipelines.push(compPipeline);
+    cyPipelines.push({
+      ...p,
+      pipeline: compPipeline,
+      resourceLayouts,
+    });
   }
 
-  // const { ropePointData, ropeStickData } = generateRopeGrid();
-  // let ropePointBuf = createCyMany(
-  //   device,
-  //   RopePointStruct,
-  //   GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
-  //   ropePointData
-  // );
-  // let ropeStickBuf = createCyMany(
-  //   device,
-  //   RopeStickStruct,
-  //   GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
-  //   ropeStickData
-  // );
-  // let cmpRopeBindGroupLayout = device.createBindGroupLayout({
-  //   entries: [
-  //     SceneStruct.layout(0, GPUShaderStage.COMPUTE, "uniform"),
-  //     RopePointStruct.layout(1, GPUShaderStage.COMPUTE, "storage"),
-  //     RopeStickStruct.layout(2, GPUShaderStage.COMPUTE, "read-only-storage"),
-  //   ],
-  // });
-  // let cmpRopePipeline = device.createComputePipeline({
-  //   layout: device.createPipelineLayout({
-  //     bindGroupLayouts: [cmpRopeBindGroupLayout],
-  //   }),
-  //   compute: {
-  //     module: device.createShaderModule({
-  //       code: rope_shader(),
-  //     }),
-  //     entryPoint: "main",
-  //   },
-  // });
+  // TODO(@darzu): hacky grab
+  let sceneUni: CyOne<typeof SceneStruct.desc> = [...cyOnes.values()].filter(
+    (r) => r.struct === SceneStruct
+  )[0];
 
   // cloth data
   let clothTextures = [
@@ -625,12 +608,16 @@ export function createWebGPURenderer(
     });
 
     // TODO(@darzu): IMPL
-    // bundleEnc.setPipeline(rndrRopePipeline);
-    // bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
-    // bundleEnc.setIndexBuffer(particleIndexBuffer, "uint16");
-    // bundleEnc.setVertexBuffer(0, particleVertexBuffer);
-    // bundleEnc.setVertexBuffer(1, ropePointBuf.buffer);
-    // bundleEnc.drawIndexed(12, ropePointBuf.length, 0, 0);
+    // TODO(@darzu): HACK
+    let ropePointBuf = [...cyManys.values()].filter(
+      (r) => r.struct === RopePointStruct
+    )[0];
+    bundleEnc.setPipeline(rndrRopePipeline);
+    bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
+    bundleEnc.setIndexBuffer(particleIndexBuffer, "uint16");
+    bundleEnc.setVertexBuffer(0, particleVertexBuffer);
+    bundleEnc.setVertexBuffer(1, ropePointBuf.buffer);
+    bundleEnc.drawIndexed(12, ropePointBuf.length, 0, 0);
 
     renderBundle = bundleEnc.finish();
     return renderBundle;
@@ -695,19 +682,22 @@ export function createWebGPURenderer(
     cmpClothPassEncoder.end();
 
     // TODO(@darzu): IMPL
-    // const cmpRopeBindGroup = device.createBindGroup({
-    //   layout: cmpRopeBindGroupLayout,
-    //   entries: [
-    //     sceneUni.binding(0),
-    //     ropePointBuf.binding(1),
-    //     ropeStickBuf.binding(2),
-    //   ],
-    // });
-    // const cmpRopePassEncoder = commandEncoder.beginComputePass();
-    // cmpRopePassEncoder.setPipeline(cmpRopePipeline);
-    // cmpRopePassEncoder.setBindGroup(0, cmpRopeBindGroup);
-    // cmpRopePassEncoder.dispatchWorkgroups(1);
-    // cmpRopePassEncoder.end();
+    for (let p of cyPipelines) {
+      const bindGroup = device.createBindGroup({
+        layout: p.pipeline.getBindGroupLayout(0),
+        entries: p.resourceLayouts.map((r, i) => {
+          let buf = cyOnes.get(r.id) ?? cyManys.get(r.id);
+          assert(!!buf, `Missing resource buffer: ${r.name}`);
+          return buf.binding(i);
+        }),
+      });
+      const compPassEncoder = commandEncoder.beginComputePass();
+      compPassEncoder.setPipeline(p.pipeline);
+      compPassEncoder.setBindGroup(0, bindGroup);
+      // TODO(@darzu): parameterize workgroup count
+      compPassEncoder.dispatchWorkgroups(1);
+      compPassEncoder.end();
+    }
 
     // render to the canvas' via our swap-chain
     const renderPassEncoder = commandEncoder.beginRenderPass({
