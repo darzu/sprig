@@ -192,6 +192,9 @@ export function dbgOnce(key: string): boolean {
 export function isArray(t: any): t is any[] {
   return Array.isArray(t);
 }
+export function isNumber(t: any): t is number {
+  return typeof t === "number";
+}
 
 export function capitalize<S extends string>(s: S): Capitalize<S> {
   return `${s[0].toUpperCase()}${s.slice(1)}` as any;

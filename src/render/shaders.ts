@@ -206,12 +206,6 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
 
 export const particle_shader = () =>
   `
-struct Scene {
-  ${SceneStruct.wgsl(true)}
-};
-
-@group(0) @binding(0) var<uniform> scene : Scene;
-
 
 struct VertexOutput {
   @builtin(position) position : vec4<f32>,

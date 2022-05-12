@@ -1,9 +1,17 @@
 import { mat4 } from "../gl-matrix.js";
 import { assert } from "../test.js";
-import { capitalize, isArray, pluralize, uncapitalize } from "../util.js";
 import {
+  capitalize,
+  isArray,
+  isNumber,
+  pluralize,
+  uncapitalize,
+} from "../util.js";
+import {
+  createCyIdxBuf,
   createCyMany,
   createCyOne,
+  CyIdxBuffer,
   CyMany,
   CyOne,
   CyStruct,
@@ -45,6 +53,14 @@ const depthStencilFormat = "depth24plus-stencil8";
 
 export interface Renderer_WebGPU extends Renderer {}
 
+export interface CyIdxBufferPtrDesc {
+  name: string;
+  init: () => Uint16Array | number;
+}
+export interface CyIdxBufferPtr extends CyIdxBufferPtrDesc {
+  id: number;
+}
+
 export interface CyBufferPtrDesc<O extends CyStructDesc> {
   name: string;
   struct: CyStruct<O>;
@@ -61,20 +77,66 @@ export interface CyBufferPtrLayout<O extends CyStructDesc>
   parity: "one" | "many";
 }
 
+// PIPELINE
 export interface CyPipelinePtrDesc<RS extends CyBufferPtr<any>[]> {
   resources: [...RS];
   shader: () => string;
-  shaderEntry: string;
 }
-export interface CyPipelinePtr<RS extends CyBufferPtr<any>[]>
+
+// COMP PIPELINE
+export interface CyCompPipelinePtrDesc<RS extends CyBufferPtr<any>[]>
   extends CyPipelinePtrDesc<RS> {
+  shaderComputeEntry: string;
+}
+export interface CyCompPipelinePtr<RS extends CyBufferPtr<any>[]>
+  extends CyCompPipelinePtrDesc<RS> {
   id: number;
 }
-export interface CyPipeline<RS extends CyBufferPtr<any>[]>
-  extends CyPipelinePtr<RS> {
+
+export interface CyCompPipeline<RS extends CyBufferPtr<any>[]>
+  extends CyCompPipelinePtr<RS> {
   resourceLayouts: CyBufferPtrLayout<any>[];
   pipeline: GPUComputePipeline;
+  bindGroup: GPUBindGroup;
 }
+
+// RENDER PIPELINE
+export interface CyRndrPipelinePtrDesc<RS extends CyBufferPtr<any>[]>
+  extends CyPipelinePtrDesc<RS> {
+  vertex: CyBufferPtr<any>;
+  instance: CyBufferPtr<any>;
+  index: CyIdxBufferPtr;
+  shaderVertexEntry: string;
+  shaderFragmentEntry: string;
+  // TODO(@darzu): support other ways e.g. mesh buffer
+  stepMode: "per-instance";
+}
+export interface CyRndrPipelinePtr<RS extends CyBufferPtr<any>[]>
+  extends CyRndrPipelinePtrDesc<RS> {
+  id: number;
+}
+
+// TODO(@darzu): instead of just mushing together with the desc, have desc compose in
+export interface CyRndrPipeline<RS extends CyBufferPtr<any>[]>
+  extends CyRndrPipelinePtr<RS> {
+  // TODO(@darzu):
+  resourceLayouts: CyBufferPtrLayout<any>[];
+  vertexBuf: CyMany<any>;
+  indexBuf: CyIdxBuffer;
+  instanceBuf: CyMany<any>;
+  pipeline: GPURenderPipeline;
+  bindGroup: GPUBindGroup;
+}
+
+// HELPERS
+
+function isRenderPipeline(
+  p: CyRndrPipelinePtrDesc<any> | CyCompPipelinePtrDesc<any>
+): p is CyRndrPipelinePtrDesc<any> {
+  return "vertex" in p;
+}
+
+// REGISTERS
 
 let _bufPtrs: CyBufferPtr<any>[] = [];
 export function registerBufPtr<O extends CyStructDesc>(
@@ -88,10 +150,20 @@ export function registerBufPtr<O extends CyStructDesc>(
   return r;
 }
 
-let _compPipelines: CyPipelinePtr<CyBufferPtr<any>[]>[] = [];
+let _idxBufPtrs: CyIdxBufferPtrDesc[] = [];
+export function registerIdxBufPtr(desc: CyIdxBufferPtrDesc): CyIdxBufferPtr {
+  const r = {
+    ...desc,
+    id: _idxBufPtrs.length,
+  };
+  _idxBufPtrs.push(r);
+  return r;
+}
+
+let _compPipelines: CyCompPipelinePtr<CyBufferPtr<any>[]>[] = [];
 export function registerCompPipeline<RS extends CyBufferPtr<any>[]>(
-  desc: CyPipelinePtrDesc<RS>
-): CyPipelinePtr<RS> {
+  desc: CyCompPipelinePtrDesc<RS>
+): CyCompPipelinePtr<RS> {
   const r = {
     ...desc,
     id: _compPipelines.length,
@@ -99,6 +171,27 @@ export function registerCompPipeline<RS extends CyBufferPtr<any>[]>(
   _compPipelines.push(r);
   return r;
 }
+
+let _rndrPipelines: CyRndrPipelinePtr<CyBufferPtr<any>[]>[] = [];
+export function registerRenderPipeline<RS extends CyBufferPtr<any>[]>(
+  desc: CyRndrPipelinePtrDesc<RS>
+): CyRndrPipelinePtr<RS> {
+  const r = {
+    ...desc,
+    id: _rndrPipelines.length,
+  };
+  _rndrPipelines.push(r);
+  return r;
+}
+
+const prim_tris: GPUPrimitiveState = {
+  topology: "triangle-list",
+  cullMode: "back",
+  frontFace: "ccw",
+};
+const prim_lines: GPUPrimitiveState = {
+  topology: "line-list",
+};
 
 export function createWebGPURenderer(
   canvas: HTMLCanvasElement,
@@ -137,9 +230,11 @@ export function createWebGPURenderer(
   // TODO(@darzu): IMPL
   const cyOnes: Map<number, CyOne<any>> = new Map();
   const cyManys: Map<number, CyMany<any>> = new Map();
-  const cyPipelines: CyPipeline<any>[] = [];
-  for (let p of _compPipelines) {
-    // init resources
+  const cyIdxs: Map<number, CyIdxBuffer> = new Map();
+  const cyCompPipelines: CyCompPipeline<any>[] = [];
+  const cyRndrPipelines: CyRndrPipeline<any>[] = [];
+  for (let p of [..._compPipelines, ..._rndrPipelines]) {
+    // init global resources
     for (let r of p.resources) {
       if (!cyOnes.has(r.id) && !cyManys.has(r.id)) {
         let initData = r.init();
@@ -148,9 +243,13 @@ export function createWebGPURenderer(
           let usage = GPUBufferUsage.STORAGE | GPUBufferUsage.VERTEX;
           let cyMany = createCyMany(device, r.struct, usage, initData);
           cyManys.set(r.id, cyMany);
+
+          console.log(`creating resource many buf: ${r.name}`);
         } else {
           let cyOne = createCyOne(device, r.struct, initData);
           cyOnes.set(r.id, cyOne);
+
+          console.log(`creating resource one buf: ${r.name}`);
         }
       }
     }
@@ -167,15 +266,33 @@ export function createWebGPURenderer(
         };
       }
     );
+
     const bindGroupLayoutDesc: GPUBindGroupLayoutDescriptor = {
       entries: resourceLayouts.map((r, i) =>
-        r.struct.layout(i, GPUShaderStage.COMPUTE, r.usage)
+        r.struct.layout(
+          i,
+          // TODO(@darzu): more precise
+          isRenderPipeline(p)
+            ? GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT
+            : GPUShaderStage.COMPUTE,
+          r.usage
+        )
       ),
     };
     const bindGroupLayout = device.createBindGroupLayout(bindGroupLayoutDesc);
 
-    // shader setup
-    const shaderStructs = resourceLayouts.map((r) => {
+    // resources bind group
+    const bindGroup = device.createBindGroup({
+      layout: bindGroupLayout,
+      entries: resourceLayouts.map((r, i) => {
+        let buf = cyOnes.get(r.id) ?? cyManys.get(r.id);
+        assert(!!buf, `Missing resource buffer: ${r.name}`);
+        return buf.binding(i);
+      }),
+    });
+
+    // shader resource setup
+    const shaderResStructs = resourceLayouts.map((r) => {
       const structStr = `struct ${capitalize(r.name)} {
         ${r.struct.wgsl(true)}
       };`;
@@ -188,7 +305,7 @@ export function createWebGPURenderer(
         };`;
       }
     });
-    const shaderVars = resourceLayouts.map((r, i) => {
+    const shaderResVars = resourceLayouts.map((r, i) => {
       const varPrefix = GPUBufferBindingTypeToWgslVar[r.usage];
       const varName =
         r.parity === "one"
@@ -198,31 +315,136 @@ export function createWebGPURenderer(
       // TODO(@darzu): support multiple groups?
       return `@group(0) @binding(${i}) ${varPrefix} ${varName} : ${varType};`;
     });
-    const shader = `
-    ${shaderStructs.join("\n")}
-    ${shaderVars.join("\n")}
-    ${p.shader()}
-    `;
 
-    // console.log(shader);
+    if (isRenderPipeline(p)) {
+      // vertex buffer init
+      let vertBuf = cyManys.get(p.vertex.id);
+      if (!vertBuf) {
+        let initData = p.vertex.init();
+        assert(
+          isArray(initData),
+          `Vertex buffer must by inited with array ${p.vertex.name}`
+        );
+        console.log(`creating vert buf: ${p.vertex.name}`);
+        vertBuf = createCyMany(
+          device,
+          p.vertex.struct,
+          GPUBufferUsage.VERTEX,
+          initData
+        );
+        cyManys.set(p.vertex.id, vertBuf);
+      }
 
-    // pipeline
-    let compPipeline = device.createComputePipeline({
-      layout: device.createPipelineLayout({
-        bindGroupLayouts: [bindGroupLayout],
-      }),
-      compute: {
-        module: device.createShaderModule({
-          code: shader,
+      // instance buffer init
+      let instBuf = cyManys.get(p.instance.id);
+      if (!instBuf) {
+        let initData = p.instance.init();
+        assert(
+          isArray(initData),
+          `Instance buffer must by inited with array ${p.instance.name}`
+        );
+        console.log(`creating instance buf: ${p.instance.name}`);
+        instBuf = createCyMany(
+          device,
+          p.instance.struct,
+          // TODO(@darzu): collect all possible usages before creating these buffers
+          GPUBufferUsage.VERTEX,
+          initData
+        );
+        cyManys.set(p.instance.id, instBuf);
+      }
+
+      // index buffer init
+      let idxBuffer = cyIdxs.get(p.index.id);
+      if (!idxBuffer) {
+        let dataOrLen = p.index.init();
+        idxBuffer = createCyIdxBuf(device, dataOrLen);
+        cyIdxs.set(p.index.id, idxBuffer);
+      }
+
+      // TODO(@darzu): instance buffer init
+
+      // render shader
+      // TODO(@darzu): pass vertex buffer and instance buffer into shader
+      const shaderStr = `
+      ${shaderResStructs.join("\n")}
+      ${shaderResVars.join("\n")}
+      ${p.shader()}
+      `;
+
+      // render pipeline
+      const shader = device.createShaderModule({
+        code: shaderStr,
+      });
+      const rndrPipelineDesc: GPURenderPipelineDescriptor = {
+        // TODO(@darzu): allow this to be parameterized
+        primitive: prim_tris,
+        depthStencil: {
+          depthWriteEnabled: true,
+          depthCompare: "less",
+          format: depthStencilFormat,
+        },
+        multisample: {
+          count: antiAliasSampleCount,
+        },
+        layout: device.createPipelineLayout({
+          bindGroupLayouts: [bindGroupLayout],
         }),
-        entryPoint: p.shaderEntry ?? "main",
-      },
-    });
-    cyPipelines.push({
-      ...p,
-      pipeline: compPipeline,
-      resourceLayouts,
-    });
+        vertex: {
+          module: shader,
+          entryPoint: p.shaderVertexEntry,
+          buffers: [
+            vertBuf.struct.vertexLayout("vertex", 0),
+            instBuf.struct.vertexLayout("instance", vertBuf.struct.memberCount),
+          ],
+        },
+        fragment: {
+          module: shader,
+          entryPoint: p.shaderFragmentEntry,
+          targets: [
+            // TODO(@darzu): parameterize output targets
+            {
+              format: canvasFormat,
+            },
+          ],
+        },
+      };
+      // console.dir(rndrPipelineDesc);
+      const rndrPipeline = device.createRenderPipeline(rndrPipelineDesc);
+      cyRndrPipelines.push({
+        ...p,
+        indexBuf: idxBuffer,
+        vertexBuf: vertBuf,
+        instanceBuf: instBuf,
+        pipeline: rndrPipeline,
+        resourceLayouts,
+        bindGroup,
+      });
+    } else {
+      const shaderStr = `
+      ${shaderResStructs.join("\n")}
+      ${shaderResVars.join("\n")}
+      ${p.shader()}
+      `;
+
+      let compPipeline = device.createComputePipeline({
+        layout: device.createPipelineLayout({
+          bindGroupLayouts: [bindGroupLayout],
+        }),
+        compute: {
+          module: device.createShaderModule({
+            code: shaderStr,
+          }),
+          entryPoint: p.shaderComputeEntry ?? "main",
+        },
+      });
+      cyCompPipelines.push({
+        ...p,
+        pipeline: compPipeline,
+        resourceLayouts,
+        bindGroup,
+      });
+    }
   }
 
   // TODO(@darzu): hacky grab
@@ -265,6 +487,7 @@ export function createWebGPURenderer(
   });
 
   // TODO(@darzu): ROPE
+  // TODO(@darzu): IMPL
   // TODO(@darzu): Looks like there are alignment requirements even on
   //    the vertex buffer! https://www.w3.org/TR/WGSL/#alignment-and-size
   const particleVertexBufferData = new Float32Array([
@@ -439,15 +662,6 @@ export function createWebGPURenderer(
       ],
     });
 
-    const prim_tris: GPUPrimitiveState = {
-      topology: "triangle-list",
-      cullMode: "back",
-      frontFace: "ccw",
-    };
-    const prim_lines: GPUPrimitiveState = {
-      topology: "line-list",
-    };
-
     const renderSceneUniBindGroupLayout = device.createBindGroupLayout({
       entries: [
         SceneStruct.layout(
@@ -467,6 +681,15 @@ export function createWebGPURenderer(
         },
       ],
     });
+    const renderSceneUniBindGroupLayout0 = device.createBindGroupLayout({
+      entries: [
+        SceneStruct.layout(
+          0,
+          GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          "uniform"
+        ),
+      ],
+    });
 
     const renderSceneUniBindGroup = device.createBindGroup({
       layout: renderSceneUniBindGroupLayout,
@@ -482,6 +705,10 @@ export function createWebGPURenderer(
           resource: clothTextures[clothReadIdx].createView(),
         },
       ],
+    });
+    const renderSceneUniBindGroup0 = device.createBindGroup({
+      layout: renderSceneUniBindGroupLayout0,
+      entries: [sceneUni.binding(0)],
     });
 
     // setup our second phase pipeline which renders meshes to the canvas
@@ -568,55 +795,77 @@ export function createWebGPURenderer(
     }
 
     // draw particles
-    const particleShader = device.createShaderModule({
-      code: particle_shader(),
-    });
-    const rndrRopePipeline = device.createRenderPipeline({
-      primitive: renderPipelineDesc_tris.primitive,
-      depthStencil: renderPipelineDesc_tris.depthStencil,
-      multisample: renderPipelineDesc_tris.multisample,
-      layout: device.createPipelineLayout({
-        bindGroupLayouts: [renderSceneUniBindGroupLayout],
-      }),
-      vertex: {
-        module: particleShader,
-        entryPoint: "vert_main",
-        buffers: [
-          {
-            stepMode: "vertex",
-            arrayStride: Float32Array.BYTES_PER_ELEMENT * 4,
-            attributes: [
-              {
-                shaderLocation: 0,
-                offset: 0,
-                format: "float32x3",
-              },
-            ],
-          },
-          RopePointStruct.vertexLayout("instance", 1),
-        ],
-      },
-      fragment: {
-        module: particleShader,
-        entryPoint: "frag_main",
-        targets: [
-          {
-            format: canvasFormat,
-          },
-        ],
-      },
-    });
+    // TODO(@darzu): IMPL
+    // const particleShader = device.createShaderModule({
+    //   code:
+    //     `struct Scene {
+    //     ${SceneStruct.wgsl(true)}
+    //   };
+
+    //   @group(0) @binding(0) var<uniform> scene : Scene;
+    //   ` + particle_shader(),
+    // });
+    // const rndrRopePipeline = device.createRenderPipeline({
+    //   primitive: renderPipelineDesc_tris.primitive,
+    //   depthStencil: renderPipelineDesc_tris.depthStencil,
+    //   multisample: renderPipelineDesc_tris.multisample,
+    //   layout: device.createPipelineLayout({
+    //     bindGroupLayouts: [renderSceneUniBindGroupLayout],
+    //   }),
+    //   vertex: {
+    //     module: particleShader,
+    //     entryPoint: "vert_main",
+    //     buffers: [
+    //       {
+    //         stepMode: "vertex",
+    //         arrayStride: Float32Array.BYTES_PER_ELEMENT * 4,
+    //         attributes: [
+    //           {
+    //             shaderLocation: 0,
+    //             offset: 0,
+    //             format: "float32x3",
+    //           },
+    //         ],
+    //       },
+    //       RopePointStruct.vertexLayout("instance", 1),
+    //     ],
+    //   },
+    //   fragment: {
+    //     module: particleShader,
+    //     entryPoint: "frag_main",
+    //     targets: [
+    //       {
+    //         format: canvasFormat,
+    //       },
+    //     ],
+    //   },
+    // });
 
     // TODO(@darzu): IMPL
+    // for (let p of cyRndrPipelines) {
+    //   assert(p.stepMode === "per-instance", "IMPL step mode");
+    //   bundleEnc.setPipeline(p.pipeline);
+    //   bundleEnc.setBindGroup(0, p.bindGroup);
+    //   bundleEnc.setIndexBuffer(p.indexBuf.buffer, "uint16");
+    //   bundleEnc.setVertexBuffer(0, p.vertexBuf.buffer);
+    //   // TODO(@darzu): instance buffer
+    //   bundleEnc.setVertexBuffer(1, p.instanceBuf.buffer);
+    //   // TODO(@darzu): support other step modes
+    //   console.log(`drawing ${p.indexBuf.length} ${p.instanceBuf.length}`);
+    //   bundleEnc.drawIndexed(p.indexBuf.length, p.instanceBuf.length, 0, 0);
+    // }
+
     // TODO(@darzu): HACK
     let ropePointBuf = [...cyManys.values()].filter(
       (r) => r.struct === RopePointStruct
     )[0];
+    const rndrRopePipeline = cyRndrPipelines[0].pipeline;
     bundleEnc.setPipeline(rndrRopePipeline);
-    bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
+    bundleEnc.setBindGroup(0, renderSceneUniBindGroup0);
     bundleEnc.setIndexBuffer(particleIndexBuffer, "uint16");
     bundleEnc.setVertexBuffer(0, particleVertexBuffer);
     bundleEnc.setVertexBuffer(1, ropePointBuf.buffer);
+    console.log(`ropePointBuf.length: ${ropePointBuf.length}`);
     bundleEnc.drawIndexed(12, ropePointBuf.length, 0, 0);
 
     renderBundle = bundleEnc.finish();
@@ -682,18 +931,10 @@ export function createWebGPURenderer(
     cmpClothPassEncoder.end();
 
     // TODO(@darzu): IMPL
-    for (let p of cyPipelines) {
-      const bindGroup = device.createBindGroup({
-        layout: p.pipeline.getBindGroupLayout(0),
-        entries: p.resourceLayouts.map((r, i) => {
-          let buf = cyOnes.get(r.id) ?? cyManys.get(r.id);
-          assert(!!buf, `Missing resource buffer: ${r.name}`);
-          return buf.binding(i);
-        }),
-      });
+    for (let p of cyCompPipelines) {
       const compPassEncoder = commandEncoder.beginComputePass();
       compPassEncoder.setPipeline(p.pipeline);
-      compPassEncoder.setBindGroup(0, bindGroup);
+      compPassEncoder.setBindGroup(0, p.bindGroup);
       // TODO(@darzu): parameterize workgroup count
       compPassEncoder.dispatchWorkgroups(1);
       compPassEncoder.end();

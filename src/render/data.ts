@@ -156,6 +156,7 @@ export type CyToTS<O extends CyStructDesc> = {
 
 export interface CyStruct<O extends CyStructDesc> {
   desc: O;
+  memberCount: number;
   size: number;
   compactSize: number;
   offsets: number[];
@@ -189,6 +190,13 @@ export interface CyOne<O extends CyStructDesc> extends CyBuffer<O> {
 export interface CyMany<O extends CyStructDesc> extends CyBuffer<O> {
   length: number;
   queueUpdate: (data: CyToTS<O>, idx: number) => void;
+}
+
+export interface CyIdxBuffer {
+  length: number;
+  size: number;
+  buffer: GPUBuffer;
+  queueUpdate: (data: Uint16Array, startIdx: number) => void;
 }
 
 // export function cyStruct<O extends CyStruct>(struct: O): O {
@@ -360,6 +368,7 @@ export function createCyStruct<O extends CyStructDesc>(
 
   const struct: CyStruct<O> = {
     desc,
+    memberCount: Object.keys(desc).length,
     size: structSize,
     compactSize: sum(sizes),
     offsets,
@@ -457,6 +466,7 @@ export function createCyOne<O extends CyStructDesc>(
   const _buf = device.createBuffer({
     size: struct.size,
     // TODO(@darzu): parameterize these
+    // TODO(@darzu): be precise
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     mappedAtCreation: !!initData,
   });
@@ -559,6 +569,49 @@ export function createCyMany<O extends CyStructDesc>(
       binding: idx,
       resource: { buffer: _buf },
     };
+  }
+
+  return buf;
+}
+
+export function createCyIdxBuf(
+  device: GPUDevice,
+  lenOrData: number | Uint16Array
+): CyIdxBuffer {
+  const hasInitData = typeof lenOrData !== "number";
+  const length = hasInitData ? lenOrData.length : lenOrData;
+
+  const size = align(length * Uint16Array.BYTES_PER_ELEMENT, 4);
+
+  const _buf = device.createBuffer({
+    size: size,
+    usage: GPUBufferUsage.INDEX,
+    mappedAtCreation: hasInitData,
+  });
+
+  const buf: CyIdxBuffer = {
+    buffer: _buf,
+    length,
+    size,
+    queueUpdate,
+  };
+
+  if (hasInitData) {
+    const data = lenOrData;
+    const mappedBuf = new Uint8Array(_buf.getMappedRange());
+    const initBytes = new Uint8Array(data);
+    assert(
+      mappedBuf.length > initBytes.length,
+      "mappedBuf.length > initBytes.length"
+    );
+    mappedBuf.set(initBytes, 0);
+    _buf.unmap();
+  }
+
+  function queueUpdate(data: Uint16Array, startIdx: number): void {
+    const startByte = startIdx * Uint16Array.BYTES_PER_ELEMENT;
+    const byteView = new Uint8Array(data);
+    device.queue.writeBuffer(_buf, startByte, byteView);
   }
 
   return buf;

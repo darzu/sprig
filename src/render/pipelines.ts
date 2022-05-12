@@ -8,8 +8,13 @@ import {
   CyStructDesc,
   CyToTS,
 } from "./data.js";
-import { registerBufPtr, registerCompPipeline } from "./render_webgpu.js";
-import { rope_shader } from "./shaders.js";
+import {
+  registerBufPtr,
+  registerCompPipeline,
+  registerRenderPipeline,
+  registerIdxBufPtr,
+} from "./render_webgpu.js";
+import { particle_shader, rope_shader } from "./shaders.js";
 
 // TODO(@darzu):
 export const VertexStruct = createCyStruct(
@@ -222,10 +227,52 @@ const ropeStickBufPtr = registerBufPtr({
   struct: RopeStickStruct,
   init: genRopeStickData,
 });
-const compRopePipelineDesc = registerCompPipeline({
+const compRopePipelinePtr = registerCompPipeline({
   resources: [sceneBufPtr, ropePointBufPtr, ropeStickBufPtr],
   shader: rope_shader,
-  shaderEntry: "main",
+  shaderComputeEntry: "main",
+});
+
+// rope particle render
+const ParticleVertStruct = createCyStruct(
+  {
+    position: "vec3<f32>",
+  },
+  {
+    isCompact: true,
+  }
+);
+const initParticleVertData: () => CyToTS<
+  typeof ParticleVertStruct.desc
+>[] = () => [
+  { position: [1, 1, 1] },
+  { position: [1, -1, -1] },
+  { position: [-1, 1, -1] },
+  { position: [-1, -1, 1] },
+];
+const particleVertBufPtr = registerBufPtr({
+  name: "particleVert",
+  struct: ParticleVertStruct,
+  init: initParticleVertData,
+});
+
+const initParticleIdxData = () =>
+  new Uint16Array([2, 1, 0, 3, 2, 0, 1, 3, 0, 2, 3, 1]);
+
+const particleIdxBufPtr = registerIdxBufPtr({
+  name: "particleIdx",
+  init: initParticleIdxData,
+});
+
+const renderRopePipelineDesc = registerRenderPipeline({
+  resources: [sceneBufPtr],
+  vertex: particleVertBufPtr,
+  instance: ropePointBufPtr,
+  index: particleIdxBufPtr,
+  shader: particle_shader,
+  shaderVertexEntry: "vert_main",
+  shaderFragmentEntry: "frag_main",
+  stepMode: "per-instance",
 });
 
 const CLOTH_SIZE = 10; // TODO(@darzu):
