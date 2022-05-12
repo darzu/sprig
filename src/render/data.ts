@@ -1,6 +1,6 @@
 // cytochrome's data helpers
 
-import { mat4, quat, vec2, vec3 } from "../gl-matrix.js";
+import { mat4, quat, vec2, vec3, vec4 } from "../gl-matrix.js";
 import { align, max, sum } from "../math.js";
 import { assert } from "../test.js";
 import { Intersect, isNumber, objMap } from "../util.js";
@@ -31,6 +31,10 @@ type WGSLTypeToTSType = {
   "vec2<f32>": vec2;
   "vec3<f32>": vec3;
   "mat4x4<f32>": mat4;
+};
+
+export type TexTypeToTSType = {
+  rgba32float: vec4;
 };
 
 export const GPUBufferBindingTypeToWgslVar: {

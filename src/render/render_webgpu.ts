@@ -18,6 +18,7 @@ import {
   CyStructDesc,
   CyToTS,
   GPUBufferBindingTypeToWgslVar,
+  TexTypeToTSType,
 } from "./data.js";
 import {
   createMeshPool_WebGPU,
@@ -33,7 +34,6 @@ import {
   VertexStruct,
   setupScene,
   ClothTexDesc,
-  ClothSamplerDesc,
   initClothTex,
 } from "./pipelines.js";
 import { Renderer } from "./renderer.js";
@@ -52,6 +52,8 @@ const antiAliasSampleCount = 4;
 const depthStencilFormat = "depth24plus-stencil8";
 
 export interface Renderer_WebGPU extends Renderer {}
+
+// BUFFERS
 
 export interface CyIdxBufferPtrDesc {
   name: string;
@@ -75,6 +77,17 @@ export interface CyBufferPtrLayout<O extends CyStructDesc>
   extends CyBufferPtr<O> {
   usage: GPUBufferBindingType;
   parity: "one" | "many";
+}
+
+// TEXUTRES
+
+export interface CyTexturePtr<F extends GPUTextureFormat> {
+  name: string;
+  size: [number, number];
+  format: F;
+  init: () =>
+    | Float32Array
+    | (F extends keyof TexTypeToTSType ? TexTypeToTSType[F] : never);
 }
 
 // PIPELINE
@@ -157,6 +170,18 @@ export function registerIdxBufPtr(desc: CyIdxBufferPtrDesc): CyIdxBufferPtr {
     id: _idxBufPtrs.length,
   };
   _idxBufPtrs.push(r);
+  return r;
+}
+
+let _texPtr: CyTexturePtr<any>[] = [];
+export function registerTexPtr<F extends GPUTextureFormat>(
+  desc: Omit<CyTexturePtr<F>, "id">
+): CyTexturePtr<F> {
+  const r = {
+    ...desc,
+    id: _texPtr.length,
+  };
+  _texPtr.push(r);
   return r;
 }
 
@@ -459,7 +484,7 @@ export function createWebGPURenderer(
     device.createTexture(ClothTexDesc),
     device.createTexture(ClothTexDesc),
   ];
-  let clothSampler = device.createSampler(ClothSamplerDesc);
+  // let clothSampler = device.createSampler(ClothSamplerDesc);
   initClothTex(device.queue, clothTextures[0]);
 
   let cmpClothBindGroupLayout = device.createBindGroupLayout({
@@ -671,11 +696,11 @@ export function createWebGPURenderer(
           GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
           "uniform"
         ),
-        {
-          binding: 1,
-          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-          sampler: { type: "filtering" }, // TODO(@darzu): what kind?
-        },
+        // {
+        //   binding: 1,
+        //   visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+        //   sampler: { type: "filtering" }, // TODO(@darzu): what kind?
+        // },
         {
           binding: 2,
           visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
@@ -698,10 +723,10 @@ export function createWebGPURenderer(
       entries: [
         sceneUni.binding(0),
         // TODO(@darzu): DISP
-        {
-          binding: 1,
-          resource: clothSampler,
-        },
+        // {
+        //   binding: 1,
+        //   resource: clothSampler,
+        // },
         {
           binding: 2,
           resource: clothTextures[clothReadIdx].createView(),

@@ -18,7 +18,7 @@ struct Scene {
   };
 
   @group(0) @binding(0) var<uniform> scene : Scene;
-  @group(0) @binding(1) var dispSampler: sampler;
+  // @group(0) @binding(1) var dispSampler: sampler;
   @group(0) @binding(2) var dispTexture: texture_2d<f32>;
 
   @group(1) @binding(0) var<uniform> model : Model;
@@ -68,7 +68,7 @@ struct Scene {
 };
 
   @group(0) @binding(0) var<uniform> scene : Scene;
-  @group(0) @binding(1) var dispSampler: sampler;
+  // @group(0) @binding(1) var dispSampler: sampler;
   @group(0) @binding(2) var dispTexture: texture_2d<f32>;
 
   struct VertexOutput {
