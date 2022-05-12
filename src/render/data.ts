@@ -3,7 +3,7 @@
 import { mat4, quat, vec2, vec3 } from "../gl-matrix.js";
 import { align, max, sum } from "../math.js";
 import { assert } from "../test.js";
-import { Intersect, objMap } from "../util.js";
+import { Intersect, isNumber, objMap } from "../util.js";
 
 const WGSLScalars = ["bool", "i32", "u32", "f32", "f16"] as const;
 type WGSLScalar = typeof WGSLScalars[number];
@@ -578,10 +578,11 @@ export function createCyIdxBuf(
   device: GPUDevice,
   lenOrData: number | Uint16Array
 ): CyIdxBuffer {
-  const hasInitData = typeof lenOrData !== "number";
+  const hasInitData = !isNumber(lenOrData);
   const length = hasInitData ? lenOrData.length : lenOrData;
 
   const size = align(length * Uint16Array.BYTES_PER_ELEMENT, 4);
+  console.log(`idx size: ${size}`);
 
   const _buf = device.createBuffer({
     size: size,
@@ -598,13 +599,9 @@ export function createCyIdxBuf(
 
   if (hasInitData) {
     const data = lenOrData;
-    const mappedBuf = new Uint8Array(_buf.getMappedRange());
-    const initBytes = new Uint8Array(data);
-    assert(
-      mappedBuf.length > initBytes.length,
-      "mappedBuf.length > initBytes.length"
-    );
-    mappedBuf.set(initBytes, 0);
+    const mappedBuf = new Uint16Array(_buf.getMappedRange());
+    assert(mappedBuf.length >= data.length, "mappedBuf.length >= data.length");
+    mappedBuf.set(data);
     _buf.unmap();
   }
 

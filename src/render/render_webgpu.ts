@@ -358,6 +358,8 @@ export function createWebGPURenderer(
       let idxBuffer = cyIdxs.get(p.index.id);
       if (!idxBuffer) {
         let dataOrLen = p.index.init();
+        console.log(`idx buffer init: `);
+        console.dir(dataOrLen);
         idxBuffer = createCyIdxBuf(device, dataOrLen);
         cyIdxs.set(p.index.id, idxBuffer);
       }
@@ -490,34 +492,34 @@ export function createWebGPURenderer(
   // TODO(@darzu): IMPL
   // TODO(@darzu): Looks like there are alignment requirements even on
   //    the vertex buffer! https://www.w3.org/TR/WGSL/#alignment-and-size
-  const particleVertexBufferData = new Float32Array([
-    // 0, 1, 0, 0 /*alignment*/, -1, 0, -1, 0 /*alignment*/, 1, 0, -1,
-    // 0 /*alignment*/, 0, 0, 1, 0 /*alignment*/,
-    1, 1, 1, 0 /*alignment*/, 1, -1, -1, 0 /*alignment*/, -1, 1, -1,
-    0 /*alignment*/, -1, -1, 1, 0 /*alignment*/,
-  ]);
-  let particleVertexBuffer = device.createBuffer({
-    size: particleVertexBufferData.byteLength,
-    usage: GPUBufferUsage.VERTEX,
-    mappedAtCreation: true,
-  });
-  new Float32Array(particleVertexBuffer.getMappedRange()).set(
-    particleVertexBufferData
-  );
-  particleVertexBuffer.unmap();
+  // const particleVertexBufferData = new Float32Array([
+  //   // 0, 1, 0, 0 /*alignment*/, -1, 0, -1, 0 /*alignment*/, 1, 0, -1,
+  //   // 0 /*alignment*/, 0, 0, 1, 0 /*alignment*/,
+  //   1, 1, 1, 0 /*alignment*/, 1, -1, -1, 0 /*alignment*/, -1, 1, -1,
+  //   0 /*alignment*/, -1, -1, 1, 0 /*alignment*/,
+  // ]);
+  // let particleVertexBuffer = device.createBuffer({
+  //   size: particleVertexBufferData.byteLength,
+  //   usage: GPUBufferUsage.VERTEX,
+  //   mappedAtCreation: true,
+  // });
+  // new Float32Array(particleVertexBuffer.getMappedRange()).set(
+  //   particleVertexBufferData
+  // );
+  // particleVertexBuffer.unmap();
 
-  const particleIndexBufferData = new Uint16Array([
-    2, 1, 0, 3, 2, 0, 1, 3, 0, 2, 3, 1,
-  ]);
-  let particleIndexBuffer = device.createBuffer({
-    size: particleIndexBufferData.byteLength,
-    usage: GPUBufferUsage.INDEX,
-    mappedAtCreation: true,
-  });
-  new Uint16Array(particleIndexBuffer.getMappedRange()).set(
-    particleIndexBufferData
-  );
-  particleIndexBuffer.unmap();
+  // const particleIndexBufferData = new Uint16Array([
+  //   2, 1, 0, 3, 2, 0, 1, 3, 0, 2, 3, 1,
+  // ]);
+  // let particleIndexBuffer = device.createBuffer({
+  //   size: particleIndexBufferData.byteLength,
+  //   usage: GPUBufferUsage.INDEX,
+  //   mappedAtCreation: true,
+  // });
+  // new Uint16Array(particleIndexBuffer.getMappedRange()).set(
+  //   particleIndexBufferData
+  // );
+  // particleIndexBuffer.unmap();
 
   // render bundle
   let bundledMIds = new Set<number>();
@@ -842,31 +844,32 @@ export function createWebGPURenderer(
     // });
 
     // TODO(@darzu): IMPL
-    // for (let p of cyRndrPipelines) {
-    //   assert(p.stepMode === "per-instance", "IMPL step mode");
-    //   bundleEnc.setPipeline(p.pipeline);
-    //   bundleEnc.setBindGroup(0, p.bindGroup);
-    //   bundleEnc.setIndexBuffer(p.indexBuf.buffer, "uint16");
-    //   bundleEnc.setVertexBuffer(0, p.vertexBuf.buffer);
-    //   // TODO(@darzu): instance buffer
-    //   bundleEnc.setVertexBuffer(1, p.instanceBuf.buffer);
-    //   // TODO(@darzu): support other step modes
-    //   console.log(`drawing ${p.indexBuf.length} ${p.instanceBuf.length}`);
-    //   bundleEnc.drawIndexed(p.indexBuf.length, p.instanceBuf.length, 0, 0);
-    // }
+    for (let p of cyRndrPipelines) {
+      assert(p.stepMode === "per-instance", "IMPL step mode");
+      bundleEnc.setPipeline(p.pipeline);
+      bundleEnc.setBindGroup(0, p.bindGroup);
+      bundleEnc.setIndexBuffer(p.indexBuf.buffer, "uint16");
+      bundleEnc.setVertexBuffer(0, p.vertexBuf.buffer);
+      // TODO(@darzu): instance buffer
+      bundleEnc.setVertexBuffer(1, p.instanceBuf.buffer);
+      // TODO(@darzu): support other step modes
+      console.log(`drawing ${p.indexBuf.length} ${p.instanceBuf.length}`);
+      bundleEnc.drawIndexed(p.indexBuf.length, p.instanceBuf.length, 0, 0);
+    }
 
     // TODO(@darzu): HACK
-    let ropePointBuf = [...cyManys.values()].filter(
-      (r) => r.struct === RopePointStruct
-    )[0];
-    const rndrRopePipeline = cyRndrPipelines[0].pipeline;
-    bundleEnc.setPipeline(rndrRopePipeline);
-    bundleEnc.setBindGroup(0, renderSceneUniBindGroup0);
-    bundleEnc.setIndexBuffer(particleIndexBuffer, "uint16");
-    bundleEnc.setVertexBuffer(0, particleVertexBuffer);
-    bundleEnc.setVertexBuffer(1, ropePointBuf.buffer);
-    console.log(`ropePointBuf.length: ${ropePointBuf.length}`);
-    bundleEnc.drawIndexed(12, ropePointBuf.length, 0, 0);
+    // let ropePointBuf = [...cyManys.values()].filter(
+    //   (r) => r.struct === RopePointStruct
+    // )[0];
+    // const rndrRopePipeline = cyRndrPipelines[0].pipeline;
+    // bundleEnc.setPipeline(rndrRopePipeline);
+    // bundleEnc.setBindGroup(0, renderSceneUniBindGroup0);
+    // bundleEnc.setIndexBuffer(cyRndrPipelines[0].indexBuf.buffer, "uint16");
+    // // bundleEnc.setIndexBuffer(particleIndexBuffer, "uint16");
+    // bundleEnc.setVertexBuffer(0, particleVertexBuffer);
+    // bundleEnc.setVertexBuffer(1, ropePointBuf.buffer);
+    // console.log(`ropePointBuf.length: ${ropePointBuf.length}`);
+    // bundleEnc.drawIndexed(12, ropePointBuf.length, 0, 0);
 
     renderBundle = bundleEnc.finish();
     return renderBundle;
