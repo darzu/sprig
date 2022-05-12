@@ -64,3 +64,8 @@ Atlas water:
         use distance fields generated from the boat hull, 
         don't render within the distance field
     near land just bring waves down to level
+
+Falconeer uses "gerstner waves", 7 iterations:
+  https://youtu.be/5d8tx6K6hkk?t=5621
+  UE4 shader graph vid:
+    https://www.youtube.com/watch?v=BJSMVvZMQ1w
