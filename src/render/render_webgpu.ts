@@ -557,39 +557,6 @@ export function createWebGPURenderer(
     },
   });
 
-  // TODO(@darzu): ROPE
-  // TODO(@darzu): IMPL
-  // TODO(@darzu): Looks like there are alignment requirements even on
-  //    the vertex buffer! https://www.w3.org/TR/WGSL/#alignment-and-size
-  // const particleVertexBufferData = new Float32Array([
-  //   // 0, 1, 0, 0 /*alignment*/, -1, 0, -1, 0 /*alignment*/, 1, 0, -1,
-  //   // 0 /*alignment*/, 0, 0, 1, 0 /*alignment*/,
-  //   1, 1, 1, 0 /*alignment*/, 1, -1, -1, 0 /*alignment*/, -1, 1, -1,
-  //   0 /*alignment*/, -1, -1, 1, 0 /*alignment*/,
-  // ]);
-  // let particleVertexBuffer = device.createBuffer({
-  //   size: particleVertexBufferData.byteLength,
-  //   usage: GPUBufferUsage.VERTEX,
-  //   mappedAtCreation: true,
-  // });
-  // new Float32Array(particleVertexBuffer.getMappedRange()).set(
-  //   particleVertexBufferData
-  // );
-  // particleVertexBuffer.unmap();
-
-  // const particleIndexBufferData = new Uint16Array([
-  //   2, 1, 0, 3, 2, 0, 1, 3, 0, 2, 3, 1,
-  // ]);
-  // let particleIndexBuffer = device.createBuffer({
-  //   size: particleIndexBufferData.byteLength,
-  //   usage: GPUBufferUsage.INDEX,
-  //   mappedAtCreation: true,
-  // });
-  // new Uint16Array(particleIndexBuffer.getMappedRange()).set(
-  //   particleIndexBufferData
-  // );
-  // particleIndexBuffer.unmap();
-
   // render bundle
   let bundledMIds = new Set<number>();
   let needsRebundle = false;
@@ -865,53 +832,6 @@ export function createWebGPURenderer(
       }
     }
 
-    // draw particles
-    // TODO(@darzu): IMPL
-    // const particleShader = device.createShaderModule({
-    //   code:
-    //     `struct Scene {
-    //     ${SceneStruct.wgsl(true)}
-    //   };
-
-    //   @group(0) @binding(0) var<uniform> scene : Scene;
-    //   ` + particle_shader(),
-    // });
-    // const rndrRopePipeline = device.createRenderPipeline({
-    //   primitive: renderPipelineDesc_tris.primitive,
-    //   depthStencil: renderPipelineDesc_tris.depthStencil,
-    //   multisample: renderPipelineDesc_tris.multisample,
-    //   layout: device.createPipelineLayout({
-    //     bindGroupLayouts: [renderSceneUniBindGroupLayout],
-    //   }),
-    //   vertex: {
-    //     module: particleShader,
-    //     entryPoint: "vert_main",
-    //     buffers: [
-    //       {
-    //         stepMode: "vertex",
-    //         arrayStride: Float32Array.BYTES_PER_ELEMENT * 4,
-    //         attributes: [
-    //           {
-    //             shaderLocation: 0,
-    //             offset: 0,
-    //             format: "float32x3",
-    //           },
-    //         ],
-    //       },
-    //       RopePointStruct.vertexLayout("instance", 1),
-    //     ],
-    //   },
-    //   fragment: {
-    //     module: particleShader,
-    //     entryPoint: "frag_main",
-    //     targets: [
-    //       {
-    //         format: canvasFormat,
-    //       },
-    //     ],
-    //   },
-    // });
-
     // TODO(@darzu): IMPL
     for (let p of cyRndrPipelines) {
       assert(p.stepMode === "per-instance", "IMPL step mode");
@@ -925,20 +845,6 @@ export function createWebGPURenderer(
       console.log(`drawing ${p.indexBuf.length} ${p.instanceBuf.length}`);
       bundleEnc.drawIndexed(p.indexBuf.length, p.instanceBuf.length, 0, 0);
     }
-
-    // TODO(@darzu): HACK
-    // let ropePointBuf = [...cyManys.values()].filter(
-    //   (r) => r.struct === RopePointStruct
-    // )[0];
-    // const rndrRopePipeline = cyRndrPipelines[0].pipeline;
-    // bundleEnc.setPipeline(rndrRopePipeline);
-    // bundleEnc.setBindGroup(0, renderSceneUniBindGroup0);
-    // bundleEnc.setIndexBuffer(cyRndrPipelines[0].indexBuf.buffer, "uint16");
-    // // bundleEnc.setIndexBuffer(particleIndexBuffer, "uint16");
-    // bundleEnc.setVertexBuffer(0, particleVertexBuffer);
-    // bundleEnc.setVertexBuffer(1, ropePointBuf.buffer);
-    // console.log(`ropePointBuf.length: ${ropePointBuf.length}`);
-    // bundleEnc.drawIndexed(12, ropePointBuf.length, 0, 0);
 
     renderBundle = bundleEnc.finish();
     return renderBundle;
