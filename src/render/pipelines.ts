@@ -304,3 +304,66 @@ const clothTexPtr1 = registerTexPtr({
   ...clothTexPtrDesc,
   name: clothTexPtrDesc.name + "1",
 });
+
+// const renderTriPipelineDesc = registerRenderPipeline({
+//   resources: [sceneBufPtr, meshUniPtr],
+//   vertex: meshVertPtr,
+//   instance: undefined,
+//   meshHandles: meshHandles,
+//   index: meshIdxPtr,
+//   shader: mesh_shader,
+//   shaderVertexEntry: "vert_main",
+//   shaderFragmentEntry: "frag_main",
+//   stepMode: "per-mesh-instance",
+// });
+
+/*
+renderPipelineDesc_tris: GPURenderPipelineDescriptor = {
+  layout: device.createPipelineLayout({
+    bindGroupLayouts: [
+      renderSceneUniBindGroupLayout,
+      modelUniBindGroupLayout,
+    ],
+  }),
+  vertex: {
+    module: device.createShaderModule({ code: obj_vertShader() }),
+    entryPoint: "main",
+    buffers: [VertexStruct.vertexLayout("vertex", 0)],
+  },
+  fragment: {
+    module: device.createShaderModule({ code: obj_fragShader() }),
+    entryPoint: "main",
+    targets: [{ format: canvasFormat }],
+  },
+  primitive: prim_tris,
+  depthStencil: {
+    depthWriteEnabled: true,
+    depthCompare: "less",
+    format: depthStencilFormat,
+  },
+  multisample: {
+    count: antiAliasSampleCount,
+  },
+};
+
+
+    // render triangles and lines
+    bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
+    bundleEnc.setVertexBuffer(0, pool.verticesBuffer.buffer);
+
+    // render triangles first
+    if (renderer.drawTris) {
+      bundleEnc.setPipeline(renderPipeline_tris);
+      // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
+      bundleEnc.setIndexBuffer(pool.triIndicesBuffer, "uint16");
+      for (let m of Object.values(handles)) {
+        bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
+        bundleEnc.drawIndexed(
+          m.numTris * 3,
+          undefined,
+          m.triIndicesNumOffset,
+          m.vertNumOffset
+        );
+      }
+    }
+*/

@@ -90,32 +90,26 @@ export interface CyTexturePtr {
   init: () => Float32Array | undefined; // TODO(@darzu): | TexTypeAsTSType<F>[]
 }
 
-// PIPELINE
-export interface CyPipelinePtrDesc<RS extends CyBufferPtr<any>[]> {
+// COMP PIPELINE
+export interface CyCompPipelinePtr<RS extends CyBufferPtr<any>[]> {
+  id: number;
   resources: [...RS];
   shader: () => string;
-}
-
-// COMP PIPELINE
-export interface CyCompPipelinePtrDesc<RS extends CyBufferPtr<any>[]>
-  extends CyPipelinePtrDesc<RS> {
   shaderComputeEntry: string;
 }
-export interface CyCompPipelinePtr<RS extends CyBufferPtr<any>[]>
-  extends CyCompPipelinePtrDesc<RS> {
-  id: number;
-}
 
-export interface CyCompPipeline<RS extends CyBufferPtr<any>[]>
-  extends CyCompPipelinePtr<RS> {
+export interface CyCompPipeline<RS extends CyBufferPtr<any>[]> {
+  ptr: CyCompPipelinePtr<RS>;
   resourceLayouts: CyBufferPtrLayout<any>[];
   pipeline: GPUComputePipeline;
   bindGroup: GPUBindGroup;
 }
 
 // RENDER PIPELINE
-export interface CyRndrPipelinePtrDesc<RS extends CyBufferPtr<any>[]>
-  extends CyPipelinePtrDesc<RS> {
+export interface CyRndrPipelinePtr<RS extends CyBufferPtr<any>[]> {
+  id: number;
+  resources: [...RS];
+  shader: () => string;
   vertex: CyBufferPtr<any>;
   instance: CyBufferPtr<any>;
   index: CyIdxBufferPtr;
@@ -124,15 +118,10 @@ export interface CyRndrPipelinePtrDesc<RS extends CyBufferPtr<any>[]>
   // TODO(@darzu): support other ways e.g. mesh buffer
   stepMode: "per-instance";
 }
-export interface CyRndrPipelinePtr<RS extends CyBufferPtr<any>[]>
-  extends CyRndrPipelinePtrDesc<RS> {
-  id: number;
-}
 
 // TODO(@darzu): instead of just mushing together with the desc, have desc compose in
-export interface CyRndrPipeline<RS extends CyBufferPtr<any>[]>
-  extends CyRndrPipelinePtr<RS> {
-  // TODO(@darzu):
+export interface CyRndrPipeline<RS extends CyBufferPtr<any>[]> {
+  ptr: CyRndrPipelinePtr<RS>;
   resourceLayouts: CyBufferPtrLayout<any>[];
   vertexBuf: CyMany<any>;
   indexBuf: CyIdxBuffer;
@@ -143,9 +132,9 @@ export interface CyRndrPipeline<RS extends CyBufferPtr<any>[]>
 
 // HELPERS
 
-function isRenderPipeline(
-  p: CyRndrPipelinePtrDesc<any> | CyCompPipelinePtrDesc<any>
-): p is CyRndrPipelinePtrDesc<any> {
+function isRenderPipelinePtr(
+  p: CyRndrPipelinePtr<any> | CyCompPipelinePtr<any>
+): p is CyRndrPipelinePtr<any> {
   return "vertex" in p;
 }
 
@@ -185,7 +174,7 @@ export function registerTexPtr(desc: Omit<CyTexturePtr, "id">): CyTexturePtr {
 
 let _compPipelines: CyCompPipelinePtr<CyBufferPtr<any>[]>[] = [];
 export function registerCompPipeline<RS extends CyBufferPtr<any>[]>(
-  desc: CyCompPipelinePtrDesc<RS>
+  desc: Omit<CyCompPipelinePtr<RS>, "id">
 ): CyCompPipelinePtr<RS> {
   const r = {
     ...desc,
@@ -197,7 +186,7 @@ export function registerCompPipeline<RS extends CyBufferPtr<any>[]>(
 
 let _rndrPipelines: CyRndrPipelinePtr<CyBufferPtr<any>[]>[] = [];
 export function registerRenderPipeline<RS extends CyBufferPtr<any>[]>(
-  desc: CyRndrPipelinePtrDesc<RS>
+  desc: Omit<CyRndrPipelinePtr<RS>, "id">
 ): CyRndrPipelinePtr<RS> {
   const r = {
     ...desc,
@@ -342,7 +331,7 @@ export function createWebGPURenderer(
         r.struct.layout(
           i,
           // TODO(@darzu): more precise
-          isRenderPipeline(p)
+          isRenderPipelinePtr(p)
             ? GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT
             : GPUShaderStage.COMPUTE,
           r.usage
@@ -386,7 +375,7 @@ export function createWebGPURenderer(
       return `@group(0) @binding(${i}) ${varPrefix} ${varName} : ${varType};`;
     });
 
-    if (isRenderPipeline(p)) {
+    if (isRenderPipelinePtr(p)) {
       // vertex buffer init
       let vertBuf = cyManys.get(p.vertex.id);
       if (!vertBuf) {
@@ -484,7 +473,7 @@ export function createWebGPURenderer(
       // console.dir(rndrPipelineDesc);
       const rndrPipeline = device.createRenderPipeline(rndrPipelineDesc);
       cyRndrPipelines.push({
-        ...p,
+        ptr: p,
         indexBuf: idxBuffer,
         vertexBuf: vertBuf,
         instanceBuf: instBuf,
@@ -511,7 +500,7 @@ export function createWebGPURenderer(
         },
       });
       cyCompPipelines.push({
-        ...p,
+        ptr: p,
         pipeline: compPipeline,
         resourceLayouts,
         bindGroup,
@@ -744,10 +733,6 @@ export function createWebGPURenderer(
         },
       ],
     });
-    const renderSceneUniBindGroup0 = device.createBindGroup({
-      layout: renderSceneUniBindGroupLayout0,
-      entries: [sceneUni.binding(0)],
-    });
 
     // setup our second phase pipeline which renders meshes to the canvas
     const renderPipelineDesc_tris: GPURenderPipelineDescriptor = {
@@ -834,7 +819,10 @@ export function createWebGPURenderer(
 
     // TODO(@darzu): IMPL
     for (let p of cyRndrPipelines) {
-      assert(p.stepMode === "per-instance", "IMPL step mode");
+      assert(
+        p.ptr.stepMode === "per-instance",
+        "Need to implement step mode: " + p.ptr.stepMode
+      );
       bundleEnc.setPipeline(p.pipeline);
       bundleEnc.setBindGroup(0, p.bindGroup);
       bundleEnc.setIndexBuffer(p.indexBuf.buffer, "uint16");
