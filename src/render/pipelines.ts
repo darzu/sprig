@@ -305,6 +305,42 @@ const clothTexPtr1 = registerTexPtr({
   name: clothTexPtrDesc.name + "1",
 });
 
+const MAX_MESHES = 20000;
+const MAX_VERTICES = 21844;
+
+// const opts: MeshPoolOpts = {
+//   maxMeshes,
+//   maxTris: maxVertices,
+//   maxVerts: maxVertices,
+//   maxLines: maxVertices * 2,
+//   shiftMeshIndices: false,
+// };
+
+const meshVertsPtr = registerBufPtr({
+  name: "meshVertBuf",
+  struct: VertexStruct,
+  init: () => MAX_VERTICES,
+});
+
+const meshIdxsPtr = registerIdxBufPtr({
+  name: "meshIdxBuf",
+  init: () => MAX_VERTICES * 3,
+});
+
+const meshUnisPtr = registerBufPtr({
+  name: "meshUnisBuf",
+  struct: MeshUniformStruct,
+  init: () => MAX_MESHES,
+});
+
+// const meshPoolPtr = registerMeshPoolPtr({
+//   maxMeshes: MAX_MESHES,
+//   maxTris: MAX_VERTICES,
+//   maxVerts: MAX_VERTICES,
+//   maxLines: MAX_VERTICES * 2,
+//   // TODO(@darzu): impl
+// });
+
 // const renderTriPipelineDesc = registerRenderPipeline({
 //   resources: [sceneBufPtr, meshUniPtr],
 //   vertex: meshVertPtr,

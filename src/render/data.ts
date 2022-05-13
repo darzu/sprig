@@ -527,18 +527,6 @@ export function createCyMany<O extends CyStructDesc>(
   device: GPUDevice,
   struct: CyStruct<O>,
   usage: GPUBufferUsageFlags,
-  length: number
-): CyMany<O>;
-export function createCyMany<O extends CyStructDesc>(
-  device: GPUDevice,
-  struct: CyStruct<O>,
-  usage: GPUBufferUsageFlags,
-  data: CyToTS<O>[]
-): CyMany<O>;
-export function createCyMany<O extends CyStructDesc>(
-  device: GPUDevice,
-  struct: CyStruct<O>,
-  usage: GPUBufferUsageFlags,
   lenOrData: number | CyToTS<O>[]
 ): CyMany<O> {
   const hasInitData = typeof lenOrData !== "number";

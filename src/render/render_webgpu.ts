@@ -67,7 +67,7 @@ export interface CyIdxBufferPtr extends CyIdxBufferPtrDesc {
 export interface CyBufferPtrDesc<O extends CyStructDesc> {
   name: string;
   struct: CyStruct<O>;
-  init: () => CyToTS<O> | CyToTS<O>[];
+  init: () => CyToTS<O> | CyToTS<O>[] | number;
 }
 export interface CyBufferPtr<O extends CyStructDesc>
   extends CyBufferPtrDesc<O> {
@@ -296,16 +296,16 @@ export function createWebGPURenderer(
     // init global resources
     for (let r of p.resources) {
       if (!cyOnes.has(r.id) && !cyManys.has(r.id)) {
-        let initData = r.init();
-        if (isArray(initData)) {
+        let initDataOrLen = r.init();
+        if (isArray(initDataOrLen) || isNumber(initDataOrLen)) {
           // TODO(@darzu): accurately determine usage by inspecting pipelines
           let usage = GPUBufferUsage.STORAGE | GPUBufferUsage.VERTEX;
-          let cyMany = createCyMany(device, r.struct, usage, initData);
+          let cyMany = createCyMany(device, r.struct, usage, initDataOrLen);
           cyManys.set(r.id, cyMany);
 
           console.log(`creating resource many buf: ${r.name}`);
         } else {
-          let cyOne = createCyOne(device, r.struct, initData);
+          let cyOne = createCyOne(device, r.struct, initDataOrLen);
           cyOnes.set(r.id, cyOne);
 
           console.log(`creating resource one buf: ${r.name}`);
@@ -734,6 +734,7 @@ export function createWebGPURenderer(
       ],
     });
 
+    // TODO(@darzu): AXE
     // setup our second phase pipeline which renders meshes to the canvas
     const renderPipelineDesc_tris: GPURenderPipelineDescriptor = {
       layout: device.createPipelineLayout({
