@@ -36,6 +36,12 @@ type WGSLTypeToTSType = {
 export type TexTypeToTSType = {
   rgba32float: vec4;
 };
+export const texTypeToBytes: Partial<Record<GPUTextureFormat, number>> = {
+  rgba32float: Float32Array.BYTES_PER_ELEMENT * 4,
+};
+export type TexTypeAsTSType<F> = F extends keyof TexTypeToTSType
+  ? TexTypeToTSType[F]
+  : never;
 
 export const GPUBufferBindingTypeToWgslVar: {
   [K in GPUBufferBindingType]: string;
@@ -201,6 +207,15 @@ export interface CyIdxBuffer {
   size: number;
   buffer: GPUBuffer;
   queueUpdate: (data: Uint16Array, startIdx: number) => void;
+}
+
+// TODO(@darzu): texture
+export interface CyTexture {
+  size: [number, number];
+  texture: GPUTexture;
+  format: GPUTextureFormat;
+  // TODO(@darzu): support partial texture update?
+  queueUpdate: (data: Float32Array) => void;
 }
 
 // export function cyStruct<O extends CyStruct>(struct: O): O {

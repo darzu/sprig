@@ -14,6 +14,7 @@ import {
   registerRenderPipeline,
   registerIdxBufPtr,
   registerTexPtr,
+  CyTexturePtr,
 } from "./render_webgpu.js";
 import { particle_shader, rope_shader } from "./shaders.js";
 
@@ -278,7 +279,7 @@ const renderRopePipelineDesc = registerRenderPipeline({
 
 const CLOTH_SIZE = 10; // TODO(@darzu):
 
-const clothTexPtr = registerTexPtr({
+const clothTexPtrDesc: Omit<CyTexturePtr, "id"> = {
   name: "clothTex",
   size: [CLOTH_SIZE, CLOTH_SIZE],
   format: "rgba32float",
@@ -294,44 +295,12 @@ const clothTexPtr = registerTexPtr({
     }
     return clothData;
   },
-});
-
-export const ClothTexDesc: GPUTextureDescriptor = {
-  size: [CLOTH_SIZE, CLOTH_SIZE],
-  format: "rgba32float", // TODO(@darzu): format?
-  usage:
-    GPUTextureUsage.COPY_DST |
-    GPUTextureUsage.STORAGE_BINDING |
-    GPUTextureUsage.TEXTURE_BINDING,
 };
-
-// export const ClothSamplerDesc: GPUSamplerDescriptor = {
-//   magFilter: "linear",
-//   minFilter: "linear",
-// };
-
-export function initClothTex(queue: GPUQueue, tex: GPUTexture) {
-  const clothData = new Float32Array(10 * 10 * 4);
-  for (let x = 0; x < 10; x++) {
-    for (let y = 0; y < 10; y++) {
-      const i = (y + x * 10) * 3;
-      clothData[i + 0] = i / clothData.length;
-      clothData[i + 1] = i / clothData.length;
-      clothData[i + 2] = i / clothData.length;
-    }
-  }
-  queue.writeTexture(
-    { texture: tex },
-    clothData,
-    {
-      offset: 0,
-      bytesPerRow: 10 * Float32Array.BYTES_PER_ELEMENT * 4,
-      rowsPerImage: 10,
-    },
-    {
-      width: 10,
-      height: 10,
-      depthOrArrayLayers: 1,
-    }
-  );
-}
+const clothTexPtr0 = registerTexPtr({
+  ...clothTexPtrDesc,
+  name: clothTexPtrDesc.name + "0",
+});
+const clothTexPtr1 = registerTexPtr({
+  ...clothTexPtrDesc,
+  name: clothTexPtrDesc.name + "1",
+});

@@ -16,8 +16,11 @@ import {
   CyOne,
   CyStruct,
   CyStructDesc,
+  CyTexture,
   CyToTS,
   GPUBufferBindingTypeToWgslVar,
+  TexTypeAsTSType,
+  texTypeToBytes,
   TexTypeToTSType,
 } from "./data.js";
 import {
@@ -33,8 +36,6 @@ import {
   MeshUniformStruct,
   VertexStruct,
   setupScene,
-  ClothTexDesc,
-  initClothTex,
 } from "./pipelines.js";
 import { Renderer } from "./renderer.js";
 import {
@@ -81,13 +82,12 @@ export interface CyBufferPtrLayout<O extends CyStructDesc>
 
 // TEXUTRES
 
-export interface CyTexturePtr<F extends GPUTextureFormat> {
+export interface CyTexturePtr {
+  id: number;
   name: string;
   size: [number, number];
-  format: F;
-  init: () =>
-    | Float32Array
-    | (F extends keyof TexTypeToTSType ? TexTypeToTSType[F] : never);
+  format: GPUTextureFormat;
+  init: () => Float32Array | undefined; // TODO(@darzu): | TexTypeAsTSType<F>[]
 }
 
 // PIPELINE
@@ -173,15 +173,13 @@ export function registerIdxBufPtr(desc: CyIdxBufferPtrDesc): CyIdxBufferPtr {
   return r;
 }
 
-let _texPtr: CyTexturePtr<any>[] = [];
-export function registerTexPtr<F extends GPUTextureFormat>(
-  desc: Omit<CyTexturePtr<F>, "id">
-): CyTexturePtr<F> {
+let _texPtrs: CyTexturePtr[] = [];
+export function registerTexPtr(desc: Omit<CyTexturePtr, "id">): CyTexturePtr {
   const r = {
     ...desc,
-    id: _texPtr.length,
+    id: _texPtrs.length,
   };
-  _texPtr.push(r);
+  _texPtrs.push(r);
   return r;
 }
 
@@ -256,8 +254,55 @@ export function createWebGPURenderer(
   const cyOnes: Map<number, CyOne<any>> = new Map();
   const cyManys: Map<number, CyMany<any>> = new Map();
   const cyIdxs: Map<number, CyIdxBuffer> = new Map();
+  const cyTexs: Map<number, CyTexture> = new Map();
   const cyCompPipelines: CyCompPipeline<any>[] = [];
   const cyRndrPipelines: CyRndrPipeline<any>[] = [];
+  // init textures
+  // TODO(@darzu): Do this pipeline driven
+  for (let desc of _texPtrs) {
+    // TODO(@darzu): move to createCyTexture
+    const tex = device.createTexture({
+      size: desc.size,
+      format: desc.format,
+      dimension: "2d",
+      // TODO(@darzu): be more precise
+      usage:
+        GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.STORAGE_BINDING |
+        GPUTextureUsage.TEXTURE_BINDING,
+    });
+    const bytesPerVal = texTypeToBytes[desc.format];
+    assert(bytesPerVal, `Unimplemented format: ${desc.format}`);
+    const queueUpdate = (data: Float32Array) => {
+      device.queue.writeTexture(
+        { texture: tex },
+        data,
+        {
+          offset: 0,
+          bytesPerRow: desc.size[0] * bytesPerVal,
+          rowsPerImage: desc.size[1],
+        },
+        {
+          width: desc.size[0],
+          height: desc.size[1],
+          // TODO(@darzu): what does this mean?
+          depthOrArrayLayers: 1,
+        }
+      );
+    };
+    const initVal = desc.init();
+    if (initVal) {
+      queueUpdate(initVal);
+    }
+    const cyTex: CyTexture = {
+      size: desc.size,
+      format: desc.format,
+      texture: tex,
+      queueUpdate,
+    };
+    cyTexs.set(desc.id, cyTex);
+  }
+  // init pipelines
   for (let p of [..._compPipelines, ..._rndrPipelines]) {
     // init global resources
     for (let r of p.resources) {
@@ -481,11 +526,10 @@ export function createWebGPURenderer(
 
   // cloth data
   let clothTextures = [
-    device.createTexture(ClothTexDesc),
-    device.createTexture(ClothTexDesc),
+    // TODO(@darzu): hacky grab
+    cyTexs.get(_texPtrs.filter((t) => t.name === "clothTex0")[0].id)?.texture!,
+    cyTexs.get(_texPtrs.filter((t) => t.name === "clothTex1")[0].id)?.texture!,
   ];
-  // let clothSampler = device.createSampler(ClothSamplerDesc);
-  initClothTex(device.queue, clothTextures[0]);
 
   let cmpClothBindGroupLayout = device.createBindGroupLayout({
     entries: [
