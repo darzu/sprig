@@ -38,19 +38,20 @@ import {
 import { ColorDef } from "../color.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DeletedDef } from "../delete.js";
+import { MeshHandleStd, MeshUniformStruct } from "./pipelines.js";
 
 // TODO(@darzu): name it cytochrome
 
 export interface RenderableConstruct {
   readonly enabled: boolean;
   readonly layer: number;
-  meshOrProto: Mesh | MeshHandle;
+  meshOrProto: Mesh | MeshHandleStd;
 }
 
 export const RenderableConstructDef = EM.defineComponent(
   "renderableConstruct",
   (
-    meshOrProto: Mesh | MeshHandle,
+    meshOrProto: Mesh | MeshHandleStd,
     enabled: boolean = true,
     layer: number = 0
   ) => {
@@ -74,7 +75,7 @@ function createEmptyMesh(): Mesh {
 export interface Renderable {
   enabled: boolean;
   layer: number;
-  meshHandle: MeshHandle;
+  meshHandle: MeshHandleStd;
 }
 
 export const RenderableDef = EM.defineComponent(
@@ -208,7 +209,7 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
         if (!RenderableDef.isOn(e)) {
           // TODO(@darzu): how should we handle instancing?
           // TODO(@darzu): this seems somewhat inefficient to look for this every frame
-          let meshHandle: MeshHandle;
+          let meshHandle: MeshHandleStd;
           if (isMeshHandle(e.renderableConstruct.meshOrProto))
             meshHandle = res.renderer.renderer.addMeshInstance(
               e.renderableConstruct.meshOrProto
@@ -236,8 +237,8 @@ export interface Renderer {
   drawTris: boolean;
   backgroundColor: vec3;
 
-  addMesh(m: Mesh): MeshHandle;
-  addMeshInstance(h: MeshHandle): MeshHandle;
-  updateMesh(handle: MeshHandle, newMeshData: Mesh): void;
-  renderFrame(viewMatrix: mat4, handles: MeshHandle[]): void;
+  addMesh(m: Mesh): MeshHandleStd;
+  addMeshInstance(h: MeshHandleStd): MeshHandleStd;
+  updateMesh(handle: MeshHandleStd, newMeshData: Mesh): void;
+  renderFrame(viewMatrix: mat4, handles: MeshHandleStd[]): void;
 }

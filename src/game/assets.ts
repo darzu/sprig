@@ -21,6 +21,7 @@ import { getText } from "../webget.js";
 import { AABBCollider } from "../physics/collider.js";
 import { farthestPointInDir, SupportFn } from "../utils-3d.js";
 import { MeshHandle } from "../render/mesh-pool.js";
+import { MeshHandleStd } from "../render/pipelines.js";
 
 export const BLACK = vec3.fromValues(0, 0, 0);
 export const DARK_GRAY = vec3.fromValues(0.02, 0.02, 0.02);
@@ -426,7 +427,7 @@ export type GameMesh = {
   aabb: AABB;
   center: vec3;
   halfsize: vec3;
-  proto: MeshHandle;
+  proto: MeshHandleStd;
   uniqueVerts: vec3[];
   support: SupportFn;
   mkAabbCollider: (solid: boolean) => AABBCollider;

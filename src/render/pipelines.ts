@@ -1,4 +1,5 @@
 import { mat4, vec3 } from "../gl-matrix.js";
+import { computeTriangleNormal } from "../utils-3d.js";
 import {
   createCyMany,
   createCyOne,
@@ -8,6 +9,8 @@ import {
   CyStructDesc,
   CyToTS,
 } from "./data.js";
+import { MeshHandle } from "./mesh-pool.js";
+import { getAABBFromMesh, Mesh } from "./mesh.js";
 import {
   registerBufPtr,
   registerCompPipeline,
@@ -130,6 +133,9 @@ export const MeshUniformStruct = createCyStruct(
   }
 );
 export type MeshUniformTS = CyToTS<typeof MeshUniformStruct.desc>;
+
+// TODO(@darzu): IMPL
+export type MeshHandleStd = MeshHandle<typeof MeshUniformStruct.desc>;
 
 export const CLOTH_W = 12;
 
@@ -333,6 +339,38 @@ const meshUnisPtr = registerBufPtr({
   struct: MeshUniformStruct,
   init: () => MAX_MESHES,
 });
+
+export function computeUniData(m: Mesh): MeshUniformTS {
+  const { min, max } = getAABBFromMesh(m);
+  const uni: MeshUniformTS = {
+    transform: mat4.create(),
+    aabbMin: min,
+    aabbMax: max,
+    tint: vec3.create(),
+  };
+  return uni;
+}
+
+export function computeVertsData(m: Mesh): VertexTS[] {
+  const vertsData: VertexTS[] = m.pos.map((pos, i) => ({
+    position: pos,
+    color: [0.0, 0.0, 0.0],
+    normal: [1.0, 0.0, 0.0],
+    uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
+  }));
+  m.tri.forEach((triInd, i) => {
+    // set provoking vertex data
+    // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
+    const normal = computeTriangleNormal(
+      m.pos[triInd[0]],
+      m.pos[triInd[1]],
+      m.pos[triInd[2]]
+    );
+    vertsData[triInd[0]].normal = normal;
+    vertsData[triInd[0]].color = m.colors[i];
+  });
+  return vertsData;
+}
 
 // const meshPoolPtr = registerMeshPoolPtr({
 //   maxMeshes: MAX_MESHES,

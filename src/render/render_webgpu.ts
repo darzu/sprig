@@ -36,6 +36,11 @@ import {
   MeshUniformStruct,
   VertexStruct,
   setupScene,
+  VertexTS,
+  MeshUniformTS,
+  computeUniData,
+  computeVertsData,
+  MeshHandleStd,
 } from "./pipelines.js";
 import { Renderer } from "./renderer.js";
 import {
@@ -226,8 +231,15 @@ export function createWebGPURenderer(
 
   let clothReadIdx = 1;
 
-  const opts: MeshPoolOpts = {
+  const opts: MeshPoolOpts<
+    typeof VertexStruct.desc,
+    typeof MeshUniformStruct.desc
+  > = {
     maxMeshes,
+    computeUniData,
+    computeVertsData,
+    vertStruct: VertexStruct,
+    uniStruct: MeshUniformStruct,
     maxTris: maxVertices,
     maxVerts: maxVertices,
     maxLines: maxVertices * 2,
@@ -556,7 +568,7 @@ export function createWebGPURenderer(
   let renderBundle: GPURenderBundle;
   updateRenderBundle([]);
 
-  function gpuBufferWriteAllMeshUniforms(handles: MeshHandle[]) {
+  function gpuBufferWriteAllMeshUniforms(handles: MeshHandleStd[]) {
     // TODO(@darzu): make this update all meshes at once
     for (let m of handles) {
       pool.updateUniform(m);
@@ -641,20 +653,20 @@ export function createWebGPURenderer(
     };
   }
 
-  function addMesh(m: Mesh): MeshHandle {
-    const handle: MeshHandle = pool.addMesh(m);
+  function addMesh(m: Mesh): MeshHandleStd {
+    const handle: MeshHandleStd = pool.addMesh(m);
     return handle;
   }
-  function addMeshInstance(oldHandle: MeshHandle): MeshHandle {
+  function addMeshInstance(oldHandle: MeshHandleStd): MeshHandleStd {
     const d = MeshUniformStruct.clone(oldHandle.shaderData);
     const newHandle = pool.addMeshInstance(oldHandle, d);
     return newHandle;
   }
-  function updateMesh(handle: MeshHandle, newMeshData: Mesh) {
+  function updateMesh(handle: MeshHandleStd, newMeshData: Mesh) {
     pool.updateMeshVertices(handle, newMeshData);
   }
 
-  function updateRenderBundle(handles: MeshHandle[]) {
+  function updateRenderBundle(handles: MeshHandleStd[]) {
     needsRebundle = false; // TODO(@darzu): hack?
 
     bundledMIds.clear();
@@ -838,7 +850,7 @@ export function createWebGPURenderer(
     return renderBundle;
   }
 
-  function renderFrame(viewProj: mat4, handles: MeshHandle[]): void {
+  function renderFrame(viewProj: mat4, handles: MeshHandleStd[]): void {
     checkCanvasResize();
 
     // update scene data

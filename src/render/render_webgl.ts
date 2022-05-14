@@ -1,9 +1,14 @@
 import { vec3, mat4 } from "../gl-matrix.js";
-import { MeshHandle, MeshPoolOpts, MeshPool_WebGL } from "./mesh-pool.js";
+import { MeshHandle, MeshPool, MeshPoolOpts } from "./mesh-pool.js";
 // TODO(@darzu): this is a bad dependency:
 import { Renderer } from "./renderer.js";
 import { Mesh } from "./mesh.js";
-import { MeshUniformStruct, setupScene, VertexStruct } from "./pipelines.js";
+import {
+  MeshHandleStd,
+  MeshUniformStruct,
+  setupScene,
+  VertexStruct,
+} from "./pipelines.js";
 
 const vertCode = `#version 300 es
 precision mediump float;
@@ -152,15 +157,18 @@ export function attachToCanvas(
   const a_loc_normal = gl.getAttribLocation(program, "a_normal");
   const a_loc_color = gl.getAttribLocation(program, "a_color");
 
-  const opts: MeshPoolOpts = {
-    maxMeshes,
-    maxTris: maxVertices,
-    maxVerts: maxVertices,
-    maxLines: maxVertices * 2,
-    shiftMeshIndices: true,
-  };
+  // const opts: MeshPoolOpts = {
+  //   maxMeshes,
+  //   maxTris: maxVertices,
+  //   maxVerts: maxVertices,
+  //   maxLines: maxVertices * 2,
+  //   shiftMeshIndices: true,
+  // };
 
-  const pool: MeshPool_WebGL = null as any; // createMeshPool_WebGL(gl, opts);
+  const pool: MeshPool<
+    typeof VertexStruct.desc,
+    typeof MeshUniformStruct.desc
+  > = null as any; // createMeshPool_WebGL(gl, opts);
   throw `TODO: re-enable webgl`;
 
   const scene = setupScene();
@@ -188,7 +196,7 @@ export function attachToCanvas(
   // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pool.triIndicesBuffer);
   // gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, new Uint16Array(indices));
 
-  function addMesh(m: Mesh): MeshHandle {
+  function addMesh(m: Mesh): MeshHandleStd {
     // console.log(`Adding object ${o.id}`);
     // need to introduce a new variable to convince Typescript the mapping is non-null
 
@@ -196,7 +204,7 @@ export function attachToCanvas(
 
     return handle;
   }
-  function addMeshInstance(oldHandle: MeshHandle): MeshHandle {
+  function addMeshInstance(oldHandle: MeshHandleStd): MeshHandleStd {
     const d = MeshUniformStruct.clone(oldHandle.shaderData);
 
     const newHandle = pool.addMeshInstance(oldHandle, d);
@@ -206,11 +214,11 @@ export function attachToCanvas(
 
     return newHandle;
   }
-  function updateMesh(handle: MeshHandle, newMeshData: Mesh) {
+  function updateMesh(handle: MeshHandleStd, newMeshData: Mesh) {
     pool.updateMeshVertices(handle, newMeshData);
   }
 
-  function renderFrame(viewProj: mat4, meshHandles: MeshHandle[]) {
+  function renderFrame(viewProj: mat4, meshHandles: MeshHandleStd[]) {
     scene.cameraViewProjMatrix = viewProj;
 
     gl.viewport(0, 0, canv.width, canv.height);
@@ -249,7 +257,8 @@ export function attachToCanvas(
     gl.uniform3fv(u_loc_cameraPos, scene.cameraPos);
 
     // bind vertex buffers
-    gl.bindBuffer(gl.ARRAY_BUFFER, pool.vertexBuffer);
+    // TODO(@darzu): IMPL
+    // gl.bindBuffer(gl.ARRAY_BUFFER, pool.vertexBuffer);
     // TODO(@darzu): create these attrib points via CyBuffer
     gl.vertexAttribPointer(
       a_loc_position,

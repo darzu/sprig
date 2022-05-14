@@ -10,16 +10,12 @@ import {
   createCyStruct,
   CyIdxBuffer,
   CyMany,
+  CyStruct,
+  CyStructDesc,
   CyToTS,
 } from "./data.js";
 import { Mesh, getAABBFromMesh } from "./mesh.js";
 // TODO(@darzu): remove dependency on pipelines.js, they are render pipeline-specific
-import {
-  MeshUniformStruct,
-  MeshUniformTS,
-  VertexStruct,
-  VertexTS,
-} from "./pipelines.js";
 
 // TODO(@darzu): abstraction refinement:
 //  [ ] how do we handle multiple shaders with different mesh
@@ -44,9 +40,7 @@ const bytesPerUint16 = Uint16Array.BYTES_PER_ELEMENT;
 const bytesPerUint32 = Uint32Array.BYTES_PER_ELEMENT;
 const MAX_INDICES = 65535; // Since we're using u16 index type, this is our max indices count
 
-const DEFAULT_VERT_COLOR: vec3 = [0.0, 0.0, 0.0];
-
-export interface MeshHandle {
+export interface MeshHandle<U extends CyStructDesc> {
   // mesh id
   readonly mId: number;
 
@@ -62,79 +56,92 @@ export interface MeshHandle {
   readonly readonlyMesh?: Mesh;
 
   // used as the uniform for this mesh
-  shaderData: MeshUniformTS;
+  shaderData: CyToTS<U>;
 }
 
-export function isMeshHandle(m: any): m is MeshHandle {
+export function isMeshHandle(m: any): m is MeshHandle<any> {
   return "mId" in m;
 }
 
-export interface MeshPoolOpts {
+export interface MeshPoolOpts<V extends CyStructDesc, U extends CyStructDesc> {
+  vertStruct: CyStruct<V>;
+  computeVertsData: (m: Mesh) => CyToTS<V>[];
+  computeUniData: (m: Mesh) => CyToTS<U>;
+  uniStruct: CyStruct<U>;
   maxMeshes: number;
   maxTris: number;
   maxVerts: number;
   maxLines: number;
   shiftMeshIndices: boolean;
 }
-export interface MeshPoolQueues {
+export interface MeshPoolQueues<
+  V extends CyStructDesc,
+  U extends CyStructDesc
+> {
   // asynchronous updates to buffers
-  updateVertices: (data: VertexTS[], idx: number) => void;
+  updateVertices: (data: CyToTS<V>[], idx: number) => void;
   updateTriIndices: (data: Uint16Array, idx: number) => void;
   updateLineIndices: (data: Uint16Array, idx: number) => void;
-  updateUniform: (data: MeshUniformTS, idx: number) => void;
+  updateUniform: (data: CyToTS<U>, idx: number) => void;
 }
 
-export interface MeshPool {
+export interface MeshPool<V extends CyStructDesc, U extends CyStructDesc> {
   // options
-  opts: MeshPoolOpts;
+  opts: MeshPoolOpts<V, U>;
   // data
-  allMeshes: MeshHandle[];
+  allMeshes: MeshHandle<U>[];
   numTris: number;
   numVerts: number;
   numLines: number;
   // methods
-  addMesh: (m: Mesh) => MeshHandle;
-  addMeshInstance: (m: MeshHandle, d: MeshUniformTS) => MeshHandle;
-  updateUniform: (m: MeshHandle) => void;
-  updateMeshVertices: (handle: MeshHandle, newMeshData: Mesh) => void;
+  addMesh: (m: Mesh) => MeshHandle<U>;
+  addMeshInstance: (m: MeshHandle<U>, d: CyToTS<U>) => MeshHandle<U>;
+  updateUniform: (m: MeshHandle<U>) => void;
+  updateMeshVertices: (handle: MeshHandle<U>, newMeshData: Mesh) => void;
 }
 
 // WebGPU stuff
 // TODO(@darzu): use CyMany here
-export interface MeshPoolBuffers_WebGPU {
+export interface MeshPoolBuffers_WebGPU<
+  V extends CyStructDesc,
+  U extends CyStructDesc
+> {
   // buffers
-  verticesBuffer: CyMany<typeof VertexStruct.desc>;
+  verticesBuffer: CyMany<V>;
   triIndicesBuffer: CyIdxBuffer;
   lineIndicesBuffer: CyIdxBuffer;
-  uniformBuffer: CyMany<typeof MeshUniformStruct.desc>;
+  uniformBuffer: CyMany<U>;
   // handles
   device: GPUDevice;
 }
-export type MeshPool_WebGPU = MeshPool & MeshPoolBuffers_WebGPU;
+export type MeshPool_WebGPU<
+  V extends CyStructDesc,
+  U extends CyStructDesc
+> = MeshPool<V, U> & MeshPoolBuffers_WebGPU<V, U>;
 
 // WebGL stuff
-export interface MeshPoolBuffers_WebGL {
-  // vertex buffers
-  vertexBuffer: WebGLBuffer;
-  // other buffers
-  triIndicesBuffer: WebGLBuffer;
-  lineIndicesBuffer: WebGLBuffer;
-  // handles
-  gl: WebGLRenderingContext;
-}
-export type MeshPool_WebGL = MeshPool & MeshPoolBuffers_WebGL;
+// export interface MeshPoolBuffers_WebGL {
+//   // vertex buffers
+//   vertexBuffer: WebGLBuffer;
+//   // other buffers
+//   triIndicesBuffer: WebGLBuffer;
+//   lineIndicesBuffer: WebGLBuffer;
+//   // handles
+//   gl: WebGLRenderingContext;
+// }
+// export type MeshPool_WebGL = MeshPool & MeshPoolBuffers_WebGL;
 
-export function createMeshPool_WebGPU(
-  device: GPUDevice,
-  opts: MeshPoolOpts
-): MeshPool_WebGPU {
+export function createMeshPool_WebGPU<
+  V extends CyStructDesc,
+  U extends CyStructDesc
+>(device: GPUDevice, opts: MeshPoolOpts<V, U>): MeshPool_WebGPU<V, U> {
   const { maxMeshes, maxTris, maxVerts, maxLines } = opts;
   // console.log(`maxMeshes: ${maxMeshes}, maxTris: ${maxTris}, maxVerts: ${maxVerts}`)
 
   // create our mesh buffers (vertex, index, uniform)
   const verticesBuffer = createCyMany(
     device,
-    VertexStruct,
+    opts.vertStruct,
     GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     maxVerts
   );
@@ -143,19 +150,19 @@ export function createMeshPool_WebGPU(
   const lineIndicesBuffer = createCyIdxBuf(device, maxLines * 2);
   const uniformBuffer = createCyMany(
     device,
-    MeshUniformStruct,
+    opts.uniStruct,
     GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     maxMeshes
   );
 
-  const queues: MeshPoolQueues = {
+  const queues: MeshPoolQueues<V, U> = {
     updateVertices: verticesBuffer.queueUpdates,
     updateTriIndices: triIndicesBuffer.queueUpdate,
     updateLineIndices: lineIndicesBuffer.queueUpdate,
     updateUniform: uniformBuffer.queueUpdate,
   };
 
-  const buffers: MeshPoolBuffers_WebGPU = {
+  const buffers: MeshPoolBuffers_WebGPU<V, U> = {
     verticesBuffer,
     triIndicesBuffer,
     lineIndicesBuffer,
@@ -165,7 +172,7 @@ export function createMeshPool_WebGPU(
 
   const pool = createMeshPool(opts, queues);
 
-  const pool_webgpu: MeshPool_WebGPU = { ...pool, ...buffers };
+  const pool_webgpu: MeshPool_WebGPU<V, U> = { ...pool, ...buffers };
 
   return pool_webgpu;
 }
@@ -202,7 +209,7 @@ export function createMeshPool_WebGPU(
 //   // let verticesMap = new Uint8Array(maxVerts * VertexStruct.size);
 //   // let triIndicesMap = new Uint16Array(maxTris * 3);
 //   // let lineIndicesMap = new Uint16Array(maxLines * 2);
-//   let uniformMap = new Uint8Array(maxMeshes * MeshUniformStruct.size);
+//   let uniformMap = new Uint8Array(maxMeshes * opts.uniStruct.size);
 
 //   function updateVertices(offset: number, data: Uint8Array) {
 //     // TODO(@darzu): this is a strange way to compute this, but seems to work conservatively
@@ -264,7 +271,10 @@ export function createMeshPool_WebGPU(
 // TODO(@darzu): scope?
 let nextMeshId = 1;
 
-function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
+function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
+  opts: MeshPoolOpts<V, U>,
+  queues: MeshPoolQueues<V, U>
+): MeshPool<V, U> {
   const { maxMeshes, maxTris, maxVerts, maxLines } = opts;
 
   if (MAX_INDICES < maxVerts)
@@ -275,7 +285,7 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
     `Mesh space usage for up to ${maxMeshes} meshes, ${maxTris} tris, ${maxVerts} verts:`
   );
   console.log(
-    `   ${((maxVerts * VertexStruct.size) / 1024).toFixed(1)} KB for verts`
+    `   ${((maxVerts * opts.vertStruct.size) / 1024).toFixed(1)} KB for verts`
   );
   console.log(
     `   ${((maxTris * bytesPerTri) / 1024).toFixed(1)} KB for tri indices`
@@ -284,12 +294,11 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
     `   ${((maxLines * bytesPerLine) / 1024).toFixed(1)} KB for line indices`
   );
   console.log(
-    `   ${((maxMeshes * MeshUniformStruct.size) / 1024).toFixed(
+    `   ${((maxMeshes * opts.uniStruct.size) / 1024).toFixed(
       1
     )} KB for object uniform data`
   );
-  const unusedBytesPerModel =
-    MeshUniformStruct.size - MeshUniformStruct.compactSize;
+  const unusedBytesPerModel = opts.uniStruct.size - opts.uniStruct.compactSize;
   console.log(
     `   Unused ${unusedBytesPerModel} bytes in uniform buffer per object (${(
       (unusedBytesPerModel * maxMeshes) /
@@ -297,19 +306,19 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
     ).toFixed(1)} KB total waste)`
   );
   const totalReservedBytes =
-    maxVerts * VertexStruct.size +
+    maxVerts * opts.vertStruct.size +
     maxTris * bytesPerTri +
     maxLines * bytesPerLine +
-    maxMeshes * MeshUniformStruct.size;
+    maxMeshes * opts.uniStruct.size;
   console.log(
     `Total space reserved for objects: ${(totalReservedBytes / 1024).toFixed(
       1
     )} KB`
   );
 
-  const allMeshes: MeshHandle[] = [];
+  const allMeshes: MeshHandle<U>[] = [];
 
-  const pool: MeshPool = {
+  const pool: MeshPool<V, U> = {
     opts,
     allMeshes,
     numTris: 0,
@@ -321,28 +330,7 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
     updateMeshVertices,
   };
 
-  function computeVertsData(m: Mesh): VertexTS[] {
-    const vertsData: VertexTS[] = m.pos.map((pos, i) => ({
-      position: pos,
-      color: DEFAULT_VERT_COLOR,
-      normal: [1.0, 0.0, 0.0],
-      uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
-    }));
-    m.tri.forEach((triInd, i) => {
-      // set provoking vertex data
-      // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
-      const normal = computeTriangleNormal(
-        m.pos[triInd[0]],
-        m.pos[triInd[1]],
-        m.pos[triInd[2]]
-      );
-      vertsData[triInd[0]].normal = normal;
-      vertsData[triInd[0]].color = m.colors[i];
-    });
-    return vertsData;
-  }
-
-  function addMesh(m: Mesh): MeshHandle {
+  function addMesh(m: Mesh): MeshHandle<U> {
     assert(pool.allMeshes.length + 1 <= maxMeshes, "Too many meshes!");
     assert(pool.numVerts + m.pos.length <= maxVerts, "Too many vertices!");
     assert(pool.numTris + m.tri.length <= maxTris, "Too many triangles!");
@@ -352,7 +340,7 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
     );
     assert(m.usesProvoking, `mesh must use provoking vertices`);
 
-    const vertsData: VertexTS[] = computeVertsData(m);
+    const vertsData = opts.computeVertsData(m);
     const triData = new Uint16Array(align(m.tri.length * 3, 2));
     m.tri.forEach((triInd, i) => {
       // TODO(@darzu): support index shifting
@@ -367,15 +355,9 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
     }
 
     // initial uniform data
-    const { min, max } = getAABBFromMesh(m);
-    const uni: MeshUniformTS = {
-      transform: mat4.create(),
-      aabbMin: min,
-      aabbMax: max,
-      tint: vec3.create(),
-    };
+    const uni = opts.computeUniData(m);
 
-    const handle: MeshHandle = {
+    const handle: MeshHandle<U> = {
       mId: nextMeshId++,
       triNum: m.tri.length,
       lineNum: m.lines?.length ?? 0,
@@ -404,11 +386,11 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
 
     return handle;
   }
-  function addMeshInstance(m: MeshHandle, d: MeshUniformTS): MeshHandle {
+  function addMeshInstance(m: MeshHandle<U>, d: CyToTS<U>): MeshHandle<U> {
     if (pool.allMeshes.length + 1 > maxMeshes) throw "Too many meshes!";
 
     const uniOffset = allMeshes.length;
-    const newHandle: MeshHandle = {
+    const newHandle: MeshHandle<U> = {
       ...m,
       uniIdx: uniOffset,
       mId: nextMeshId++,
@@ -419,12 +401,12 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
     return newHandle;
   }
 
-  function updateMeshVertices(handle: MeshHandle, newMesh: Mesh) {
-    const data = computeVertsData(newMesh);
+  function updateMeshVertices(handle: MeshHandle<U>, newMesh: Mesh) {
+    const data = opts.computeVertsData(newMesh);
     queues.updateVertices(data, handle.vertIdx);
   }
 
-  function updateUniform(m: MeshHandle): void {
+  function updateUniform(m: MeshHandle<U>): void {
     queues.updateUniform(m.shaderData, m.uniIdx);
   }
 
