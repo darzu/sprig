@@ -46,19 +46,13 @@ const MAX_INDICES = 65535; // Since we're using u16 index type, this is our max 
 
 const DEFAULT_VERT_COLOR: vec3 = [0.0, 0.0, 0.0];
 
-// to track offsets into those buffers so we can make modifications and form draw calls.
-export interface PoolIndex {
-  // handle into the pool
-  readonly pool: MeshPool;
+export interface MeshHandle {
+  readonly mId: number; // mesh id
+  // this mesh
   readonly vertNumOffset: number;
   readonly triIndicesNumOffset: number;
   readonly modelUniNumOffset: number;
   readonly lineIndicesNumOffset: number; // for wireframe
-}
-export interface MeshHandle {
-  readonly poolIdx: PoolIndex;
-  readonly mId: number; // mesh id
-  // this mesh
   readonly numTris: number;
   readonly numVerts: number;
   readonly numLines: number; // for wireframe
@@ -379,29 +373,25 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
       tint: vec3.create(),
     };
 
-    const idx: PoolIndex = {
-      pool,
-      vertNumOffset: pool.numVerts,
-      triIndicesNumOffset: pool.numTris * 3,
-      lineIndicesNumOffset: pool.numLines * 2,
-      modelUniNumOffset: allMeshes.length,
-    };
-
-    assert(triData.length % 2 === 0, "triData");
-    queues.updateTriIndices(triData, idx.triIndicesNumOffset);
-    if (lineData) queues.updateLineIndices(lineData, idx.lineIndicesNumOffset);
-    queues.updateVertices(vertsData, idx.vertNumOffset);
-    queues.updateUniform(uni, idx.modelUniNumOffset);
-
     const handle: MeshHandle = {
-      poolIdx: idx,
       mId: nextMeshId++,
       numTris: m.tri.length,
       numLines: m.lines?.length ?? 0,
       numVerts: m.pos.length,
+      vertNumOffset: pool.numVerts,
+      triIndicesNumOffset: pool.numTris * 3,
+      lineIndicesNumOffset: pool.numLines * 2,
+      modelUniNumOffset: allMeshes.length,
       readonlyMesh: m,
       shaderData: uni,
     };
+
+    assert(triData.length % 2 === 0, "triData");
+    queues.updateTriIndices(triData, handle.triIndicesNumOffset);
+    if (lineData)
+      queues.updateLineIndices(lineData, handle.lineIndicesNumOffset);
+    queues.updateVertices(vertsData, handle.vertNumOffset);
+    queues.updateUniform(uni, handle.modelUniNumOffset);
 
     pool.numTris += m.tri.length;
     // NOTE: mesh's triangles need to be 4-byte aligned.
@@ -419,10 +409,7 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
     const uniOffset = allMeshes.length;
     const newHandle: MeshHandle = {
       ...m,
-      poolIdx: {
-        ...m.poolIdx,
-        modelUniNumOffset: uniOffset,
-      },
+      modelUniNumOffset: uniOffset,
       mId: nextMeshId++,
       shaderData: d,
     };
@@ -433,11 +420,11 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
 
   function updateMeshVertices(handle: MeshHandle, newMesh: Mesh) {
     const data = computeVertsData(newMesh);
-    queues.updateVertices(data, handle.poolIdx.vertNumOffset);
+    queues.updateVertices(data, handle.vertNumOffset);
   }
 
   function updateUniform(m: MeshHandle): void {
-    queues.updateUniform(m.shaderData, m.poolIdx.modelUniNumOffset);
+    queues.updateUniform(m.shaderData, m.modelUniNumOffset);
   }
 
   return pool;

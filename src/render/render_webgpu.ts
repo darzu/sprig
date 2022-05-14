@@ -793,13 +793,13 @@ export function createWebGPURenderer(
       bundleEnc.setIndexBuffer(pool.triIndicesBuffer.buffer, "uint16");
       for (let m of Object.values(handles)) {
         bundleEnc.setBindGroup(1, modelUniBindGroup, [
-          m.poolIdx.modelUniNumOffset * MeshUniformStruct.size,
+          m.modelUniNumOffset * MeshUniformStruct.size,
         ]);
         bundleEnc.drawIndexed(
           m.numTris * 3,
           undefined,
-          m.poolIdx.triIndicesNumOffset,
-          m.poolIdx.vertNumOffset
+          m.triIndicesNumOffset,
+          m.vertNumOffset
         );
       }
     }
@@ -811,13 +811,13 @@ export function createWebGPURenderer(
       bundleEnc.setIndexBuffer(pool.lineIndicesBuffer.buffer, "uint16");
       for (let m of Object.values(handles)) {
         bundleEnc.setBindGroup(1, modelUniBindGroup, [
-          m.poolIdx.modelUniNumOffset * MeshUniformStruct.size,
+          m.modelUniNumOffset * MeshUniformStruct.size,
         ]);
         bundleEnc.drawIndexed(
           m.numLines * 2,
           undefined,
-          m.poolIdx.lineIndicesNumOffset,
-          m.poolIdx.vertNumOffset
+          m.lineIndicesNumOffset,
+          m.vertNumOffset
         );
       }
     }
