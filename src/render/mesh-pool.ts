@@ -49,13 +49,13 @@ const DEFAULT_VERT_COLOR: vec3 = [0.0, 0.0, 0.0];
 export interface MeshHandle {
   readonly mId: number; // mesh id
   // this mesh
-  readonly vertNumOffset: number;
-  readonly triIndicesNumOffset: number;
-  readonly modelUniNumOffset: number;
-  readonly lineIndicesNumOffset: number; // for wireframe
-  readonly numTris: number;
-  readonly numVerts: number;
-  readonly numLines: number; // for wireframe
+  readonly uniIdx: number;
+  readonly vertIdx: number;
+  readonly vertNum: number;
+  readonly triIndIdx: number;
+  readonly triNum: number;
+  readonly lineIndIdx: number; // for wireframe
+  readonly lineNum: number; // for wireframe
   readonly readonlyMesh?: Mesh;
 
   // used as the uniform for this mesh
@@ -375,23 +375,22 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
 
     const handle: MeshHandle = {
       mId: nextMeshId++,
-      numTris: m.tri.length,
-      numLines: m.lines?.length ?? 0,
-      numVerts: m.pos.length,
-      vertNumOffset: pool.numVerts,
-      triIndicesNumOffset: pool.numTris * 3,
-      lineIndicesNumOffset: pool.numLines * 2,
-      modelUniNumOffset: allMeshes.length,
+      triNum: m.tri.length,
+      lineNum: m.lines?.length ?? 0,
+      vertNum: m.pos.length,
+      vertIdx: pool.numVerts,
+      triIndIdx: pool.numTris * 3,
+      lineIndIdx: pool.numLines * 2,
+      uniIdx: allMeshes.length,
       readonlyMesh: m,
       shaderData: uni,
     };
 
     assert(triData.length % 2 === 0, "triData");
-    queues.updateTriIndices(triData, handle.triIndicesNumOffset);
-    if (lineData)
-      queues.updateLineIndices(lineData, handle.lineIndicesNumOffset);
-    queues.updateVertices(vertsData, handle.vertNumOffset);
-    queues.updateUniform(uni, handle.modelUniNumOffset);
+    queues.updateTriIndices(triData, handle.triIndIdx);
+    if (lineData) queues.updateLineIndices(lineData, handle.lineIndIdx);
+    queues.updateVertices(vertsData, handle.vertIdx);
+    queues.updateUniform(uni, handle.uniIdx);
 
     pool.numTris += m.tri.length;
     // NOTE: mesh's triangles need to be 4-byte aligned.
@@ -409,7 +408,7 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
     const uniOffset = allMeshes.length;
     const newHandle: MeshHandle = {
       ...m,
-      modelUniNumOffset: uniOffset,
+      uniIdx: uniOffset,
       mId: nextMeshId++,
       shaderData: d,
     };
@@ -420,11 +419,11 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
 
   function updateMeshVertices(handle: MeshHandle, newMesh: Mesh) {
     const data = computeVertsData(newMesh);
-    queues.updateVertices(data, handle.vertNumOffset);
+    queues.updateVertices(data, handle.vertIdx);
   }
 
   function updateUniform(m: MeshHandle): void {
-    queues.updateUniform(m.shaderData, m.modelUniNumOffset);
+    queues.updateUniform(m.shaderData, m.uniIdx);
   }
 
   return pool;
