@@ -200,6 +200,7 @@ export interface CyOne<O extends CyStructDesc> extends CyBuffer<O> {
 export interface CyMany<O extends CyStructDesc> extends CyBuffer<O> {
   length: number;
   queueUpdate: (data: CyToTS<O>, idx: number) => void;
+  queueUpdates: (data: CyToTS<O>[], idx: number) => void;
 }
 
 export interface CyIdxBuffer {
@@ -510,6 +511,7 @@ export function createCyOne<O extends CyStructDesc>(
     // TODO(@darzu): measure perf. we probably want to allow hand written serializers
     buf.lastData = data;
     const b = struct.serialize(data);
+    // assert(b.length % 4 === 0, `buf write must be 4 byte aligned: ${b.length}`);
     device.queue.writeBuffer(_buf, 0, b);
   }
 
@@ -551,6 +553,7 @@ export function createCyMany<O extends CyStructDesc>(
     buffer: _buf,
     length,
     queueUpdate,
+    queueUpdates,
     binding,
   };
 
@@ -568,7 +571,17 @@ export function createCyMany<O extends CyStructDesc>(
 
   function queueUpdate(data: CyToTS<O>, index: number): void {
     const b = struct.serialize(data);
+    // TODO(@darzu): disable for perf?
+    // assert(b.length % 4 === 0);
     device.queue.writeBuffer(_buf, index * stride, b);
+  }
+  function queueUpdates(data: CyToTS<O>[], index: number): void {
+    const serialized = new Uint8Array(stride * data.length);
+    data.forEach((d, i) => {
+      serialized.set(struct.serialize(d), stride * i);
+    });
+    // assert(serialized.length % 4 === 0);
+    device.queue.writeBuffer(_buf, index * stride, serialized);
   }
 
   function binding(idx: number): GPUBindGroupEntry {
@@ -593,7 +606,7 @@ export function createCyIdxBuf(
 
   const _buf = device.createBuffer({
     size: size,
-    usage: GPUBufferUsage.INDEX,
+    usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
     mappedAtCreation: hasInitData,
   });
 
@@ -614,8 +627,9 @@ export function createCyIdxBuf(
 
   function queueUpdate(data: Uint16Array, startIdx: number): void {
     const startByte = startIdx * Uint16Array.BYTES_PER_ELEMENT;
-    const byteView = new Uint8Array(data);
-    device.queue.writeBuffer(_buf, startByte, byteView);
+    // const byteView = new Uint8Array(data);
+    // assert(data.length % 2 === 0);
+    device.queue.writeBuffer(_buf, startByte, data);
   }
 
   return buf;

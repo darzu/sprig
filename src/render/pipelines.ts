@@ -36,6 +36,7 @@ export const VertexStruct = createCyStruct(
     },
   }
 );
+export type VertexTS = CyToTS<typeof VertexStruct.desc>;
 
 export const RopeStickStruct = createCyStruct({
   aIdx: "u32",

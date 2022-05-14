@@ -1,5 +1,5 @@
 import { vec3, mat4 } from "../gl-matrix.js";
-import { createMeshPool_WebGL, MeshHandle, MeshPoolOpts } from "./mesh-pool.js";
+import { MeshHandle, MeshPoolOpts, MeshPool_WebGL } from "./mesh-pool.js";
 // TODO(@darzu): this is a bad dependency:
 import { Renderer } from "./renderer.js";
 import { Mesh } from "./mesh.js";
@@ -160,7 +160,8 @@ export function attachToCanvas(
     shiftMeshIndices: true,
   };
 
-  const pool = createMeshPool_WebGL(gl, opts);
+  const pool: MeshPool_WebGL = null as any; // createMeshPool_WebGL(gl, opts);
+  throw `TODO: re-enable webgl`;
 
   const scene = setupScene();
 
@@ -292,7 +293,7 @@ export function attachToCanvas(
       // gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset * 2);
       gl.uniformMatrix4fv(u_loc_transform, false, m.shaderData.transform);
       gl.uniform3fv(u_loc_tint, m.shaderData.tint);
-      const indicesBytesOffset = m.triIndicesNumOffset * 2;
+      const indicesBytesOffset = m.poolIdx.triIndicesNumOffset * 2;
       gl.drawElements(
         gl.TRIANGLES,
         m.numTris * 3,

@@ -682,7 +682,7 @@ export function createWebGPURenderer(
         {
           binding: 0,
           resource: {
-            buffer: pool.uniformBuffer,
+            buffer: pool.uniformBuffer.buffer,
             size: MeshUniformStruct.size,
           },
         },
@@ -790,14 +790,16 @@ export function createWebGPURenderer(
     if (renderer.drawTris) {
       bundleEnc.setPipeline(renderPipeline_tris);
       // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
-      bundleEnc.setIndexBuffer(pool.triIndicesBuffer, "uint16");
+      bundleEnc.setIndexBuffer(pool.triIndicesBuffer.buffer, "uint16");
       for (let m of Object.values(handles)) {
-        bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
+        bundleEnc.setBindGroup(1, modelUniBindGroup, [
+          m.poolIdx.modelUniNumOffset * MeshUniformStruct.size,
+        ]);
         bundleEnc.drawIndexed(
           m.numTris * 3,
           undefined,
-          m.triIndicesNumOffset,
-          m.vertNumOffset
+          m.poolIdx.triIndicesNumOffset,
+          m.poolIdx.vertNumOffset
         );
       }
     }
@@ -806,14 +808,16 @@ export function createWebGPURenderer(
     if (renderer.drawLines) {
       bundleEnc.setPipeline(renderPipeline_lines);
       // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
-      bundleEnc.setIndexBuffer(pool.lineIndicesBuffer, "uint16");
+      bundleEnc.setIndexBuffer(pool.lineIndicesBuffer.buffer, "uint16");
       for (let m of Object.values(handles)) {
-        bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
+        bundleEnc.setBindGroup(1, modelUniBindGroup, [
+          m.poolIdx.modelUniNumOffset * MeshUniformStruct.size,
+        ]);
         bundleEnc.drawIndexed(
           m.numLines * 2,
           undefined,
-          m.lineIndicesNumOffset,
-          m.vertNumOffset
+          m.poolIdx.lineIndicesNumOffset,
+          m.poolIdx.vertNumOffset
         );
       }
     }

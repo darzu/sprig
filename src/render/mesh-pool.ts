@@ -4,10 +4,22 @@ import { align, sum } from "../math.js";
 import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
 import { EM } from "../entity-manager.js";
 import { assert } from "../test.js";
-import { createCyMany, createCyStruct, CyMany, CyToTS } from "./data.js";
+import {
+  createCyIdxBuf,
+  createCyMany,
+  createCyStruct,
+  CyIdxBuffer,
+  CyMany,
+  CyToTS,
+} from "./data.js";
 import { Mesh, getAABBFromMesh } from "./mesh.js";
 // TODO(@darzu): remove dependency on pipelines.js, they are render pipeline-specific
-import { MeshUniformStruct, MeshUniformTS, VertexStruct } from "./pipelines.js";
+import {
+  MeshUniformStruct,
+  MeshUniformTS,
+  VertexStruct,
+  VertexTS,
+} from "./pipelines.js";
 
 // TODO(@darzu): abstraction refinement:
 //  [ ] how do we handle multiple shaders with different mesh
@@ -19,17 +31,6 @@ import { MeshUniformStruct, MeshUniformTS, VertexStruct } from "./pipelines.js";
 //    Mesh can (probably) be loaded into a MeshPool, but it's lossy
 //    has offset pointers into buffers
 //    should it own the buffers?
-
-// TODO(@darzu): alignment is needs to be handled right esp for structs
-//    shared between vertex and uniform/storage
-// https://www.w3.org/TR/WGSL/#structure-member-layout
-// https://www.w3.org/TR/WGSL/#input-output-locations
-// https://gpuweb.github.io/gpuweb/#vertex-formats
-//    "descriptor.arrayStride is a multiple of 4."
-//    "attrib.offset + sizeof(attrib.format) ≤ descriptor.arrayStride."
-//    "attrib.offset is a multiple of the minimum of 4 and sizeof(attrib.format)."
-// UNORM: float between [0,1],
-// SNORM: float between [-1,1],
 
 const vertsPerTri = 3;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * vertsPerTri;
@@ -45,22 +46,17 @@ const MAX_INDICES = 65535; // Since we're using u16 index type, this is our max 
 
 const DEFAULT_VERT_COLOR: vec3 = [0.0, 0.0, 0.0];
 
-// export const OBJ_SHADER: ShaderDescription = {
-//   // TODO(@darzu):
-//   uniformByteSizeAligned: MeshUniform.ByteSizeAligned,
-//   uniformByteSizeExact: MeshUniform.ByteSizeExact,
-// };
-
 // to track offsets into those buffers so we can make modifications and form draw calls.
 export interface PoolIndex {
   // handle into the pool
   readonly pool: MeshPool;
   readonly vertNumOffset: number;
   readonly triIndicesNumOffset: number;
-  readonly modelUniByteOffset: number;
+  readonly modelUniNumOffset: number;
   readonly lineIndicesNumOffset: number; // for wireframe
 }
-export interface MeshHandle extends PoolIndex {
+export interface MeshHandle {
+  readonly poolIdx: PoolIndex;
   readonly mId: number; // mesh id
   // this mesh
   readonly numTris: number;
@@ -84,20 +80,14 @@ export interface MeshPoolOpts {
   maxLines: number;
   shiftMeshIndices: boolean;
 }
-export interface MeshPoolMaps {
-  // memory mapped buffers
-  verticesMap: Uint8Array;
-  triIndicesMap: Uint16Array;
-  lineIndicesMap: Uint16Array;
-  uniformMap: Uint8Array;
-}
 export interface MeshPoolQueues {
   // asynchronous updates to buffers
-  updateVertices: (offset: number, data: Uint8Array) => void;
-  updateTriIndices: (offset: number, data: Uint8Array) => void;
-  updateLineIndices: (offset: number, data: Uint8Array) => void;
-  updateUniform: (offset: number, data: Uint8Array) => void;
+  updateVertices: (data: VertexTS[], idx: number) => void;
+  updateTriIndices: (data: Uint16Array, idx: number) => void;
+  updateLineIndices: (data: Uint16Array, idx: number) => void;
+  updateUniform: (data: MeshUniformTS, idx: number) => void;
 }
+
 export interface MeshPool {
   // options
   opts: MeshPoolOpts;
@@ -107,9 +97,6 @@ export interface MeshPool {
   numVerts: number;
   numLines: number;
   // methods
-  // TODO(@darzu): instead of addMesh, mesh pools need a way to add
-  //    vertices and triangles with custom formats. The addMesh impl
-  //    below has hard-coded assumptions about vertex size.
   addMesh: (m: Mesh) => MeshHandle;
   addMeshInstance: (m: MeshHandle, d: MeshUniformTS) => MeshHandle;
   updateUniform: (m: MeshHandle) => void;
@@ -121,9 +108,9 @@ export interface MeshPool {
 export interface MeshPoolBuffers_WebGPU {
   // buffers
   verticesBuffer: CyMany<typeof VertexStruct.desc>;
-  triIndicesBuffer: GPUBuffer;
-  lineIndicesBuffer: GPUBuffer;
-  uniformBuffer: GPUBuffer;
+  triIndicesBuffer: CyIdxBuffer;
+  lineIndicesBuffer: CyIdxBuffer;
+  uniformBuffer: CyMany<typeof MeshUniformStruct.desc>;
   // handles
   device: GPUDevice;
 }
@@ -141,31 +128,6 @@ export interface MeshPoolBuffers_WebGL {
 }
 export type MeshPool_WebGL = MeshPool & MeshPoolBuffers_WebGL;
 
-export interface MeshBuilder {
-  addVertex: (pos: vec3, color: vec3, normal: vec3, uv: vec2) => void;
-  addTri: (ind: vec3) => void;
-  addLine: (ind: vec2) => void;
-  setUniform: (
-    transform: mat4,
-    aabbMin: vec3,
-    aabbMax: vec3,
-    tint: vec3
-  ) => void;
-  finish: () => MeshHandle;
-}
-interface MeshBuilderInternal {
-  addVertex: (pos: vec3, color: vec3, normal: vec3, uv: vec2) => void;
-  addTri: (ind: vec3) => void;
-  addLine: (ind: vec2) => void;
-  setUniform: (
-    transform: mat4,
-    aabbMin: vec3,
-    aabbMax: vec3,
-    tint: vec3
-  ) => void;
-  finish: (idx: PoolIndex) => MeshHandle;
-}
-
 export function createMeshPool_WebGPU(
   device: GPUDevice,
   opts: MeshPoolOpts
@@ -180,28 +142,9 @@ export function createMeshPool_WebGPU(
     GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     maxVerts
   );
-  // const verticesBuffer = device.createBuffer({
-  //   size: maxVerts * VertexStruct.size,
-  //   usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-  //   // NOTE(@darzu): with WebGPU we have the option to modify the full buffers in memory before
-  //   //  handing them over to the GPU. This could be good for large initial sets of data, instead of
-  //   //  sending that over later via the queues. See commit 4862a7c and it's successors. Pre those
-  //   //  commits, we had a way to add mesh data to either via initial memory maps or queues. The
-  //   //  memory mapped way was removed to simplify the abstractions since we weren't noticing speed
-  //   //  benefits at the time.
-  //   mappedAtCreation: false,
-  // });
-  const triIndicesBuffer = device.createBuffer({
-    size: maxTris * bytesPerTri,
-    usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
-    mappedAtCreation: false,
-  });
+  const triIndicesBuffer = createCyIdxBuf(device, maxTris * 3);
   // TODO(@darzu): make creating this buffer optional on whether we're using line indices or not
-  const lineIndicesBuffer = device.createBuffer({
-    size: maxLines * bytesPerLine,
-    usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
-    mappedAtCreation: false,
-  });
+  const lineIndicesBuffer = createCyIdxBuf(device, maxLines * 2);
   const uniformBuffer = createCyMany(
     device,
     MeshUniformStruct,
@@ -209,28 +152,19 @@ export function createMeshPool_WebGPU(
     maxMeshes
   );
 
-  // TODO(@darzu): use CyBuffer
-  function updateBuf(buffer: GPUBuffer, offset: number, data: Uint8Array) {
-    device.queue.writeBuffer(buffer, offset, data);
-  }
-
   const queues: MeshPoolQueues = {
-    updateTriIndices: (offset, data) =>
-      updateBuf(triIndicesBuffer, offset, data),
-    updateLineIndices: (offset, data) =>
-      updateBuf(lineIndicesBuffer, offset, data),
-    updateVertices: (offset, data) =>
-      updateBuf(verticesBuffer.buffer, offset, data),
-    updateUniform: (offset, data) =>
-      updateBuf(uniformBuffer.buffer, offset, data),
+    updateVertices: verticesBuffer.queueUpdates,
+    updateTriIndices: triIndicesBuffer.queueUpdate,
+    updateLineIndices: lineIndicesBuffer.queueUpdate,
+    updateUniform: uniformBuffer.queueUpdate,
   };
 
   const buffers: MeshPoolBuffers_WebGPU = {
-    device,
     verticesBuffer,
     triIndicesBuffer,
     lineIndicesBuffer,
-    uniformBuffer: uniformBuffer.buffer,
+    uniformBuffer,
+    device,
   };
 
   const pool = createMeshPool(opts, queues);
@@ -240,98 +174,99 @@ export function createMeshPool_WebGPU(
   return pool_webgpu;
 }
 
-export function createMeshPool_WebGL(
-  gl: WebGLRenderingContext,
-  opts: MeshPoolOpts
-): MeshPool_WebGL {
-  const { maxMeshes, maxTris, maxVerts, maxLines } = opts;
+// export function createMeshPool_WebGL(
+//   gl: WebGLRenderingContext,
+//   opts: MeshPoolOpts
+// ): MeshPool_WebGL {
+//   const { maxMeshes, maxTris, maxVerts, maxLines } = opts;
 
-  // TODO(@darzu): we shouldn't need to preallocate all this
-  const scratchVerts = new Float32Array(maxVerts * (VertexStruct.size / 4));
+//   // TODO(@darzu): we shouldn't need to preallocate all this
+//   const scratchVerts = new Float32Array(maxVerts * (VertexStruct.size / 4));
 
-  const scratchTriIndices = new Uint16Array(maxTris * 3);
-  const scratchLineIndices = new Uint16Array(maxLines * 2);
+//   const scratchTriIndices = new Uint16Array(maxTris * 3);
+//   const scratchLineIndices = new Uint16Array(maxLines * 2);
 
-  // vertex buffers
-  const vertexBuffer = gl.createBuffer()!;
-  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, scratchVerts, gl.DYNAMIC_DRAW); // TODO(@darzu): sometimes we might want STATIC_DRAW
+//   // vertex buffers
+//   const vertexBuffer = gl.createBuffer()!;
+//   gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+//   gl.bufferData(gl.ARRAY_BUFFER, scratchVerts, gl.DYNAMIC_DRAW); // TODO(@darzu): sometimes we might want STATIC_DRAW
 
-  // index buffers
-  const triIndicesBuffer = gl.createBuffer()!;
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triIndicesBuffer);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, scratchTriIndices, gl.DYNAMIC_DRAW);
+//   // index buffers
+//   const triIndicesBuffer = gl.createBuffer()!;
+//   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triIndicesBuffer);
+//   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, scratchTriIndices, gl.DYNAMIC_DRAW);
 
-  const lineIndicesBuffer = gl.createBuffer()!;
-  // TODO(@darzu): line indices don't work right. they interfere with regular tri indices.
-  // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, lineIndicesBuffer);
-  // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, scratchLineIndices, gl.DYNAMIC_DRAW);
+//   const lineIndicesBuffer = gl.createBuffer()!;
+//   // TODO(@darzu): line indices don't work right. they interfere with regular tri indices.
+//   // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, lineIndicesBuffer);
+//   // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, scratchLineIndices, gl.DYNAMIC_DRAW);
 
-  // our in-memory reflections of the buffers used during the initial build phase
-  // TODO(@darzu): this is too much duplicate data
-  // let verticesMap = new Uint8Array(maxVerts * VertexStruct.size);
-  // let triIndicesMap = new Uint16Array(maxTris * 3);
-  // let lineIndicesMap = new Uint16Array(maxLines * 2);
-  let uniformMap = new Uint8Array(maxMeshes * MeshUniformStruct.size);
+//   // our in-memory reflections of the buffers used during the initial build phase
+//   // TODO(@darzu): this is too much duplicate data
+//   // let verticesMap = new Uint8Array(maxVerts * VertexStruct.size);
+//   // let triIndicesMap = new Uint16Array(maxTris * 3);
+//   // let lineIndicesMap = new Uint16Array(maxLines * 2);
+//   let uniformMap = new Uint8Array(maxMeshes * MeshUniformStruct.size);
 
-  function updateVertices(offset: number, data: Uint8Array) {
-    // TODO(@darzu): this is a strange way to compute this, but seems to work conservatively
-    // const numVerts = Math.min(data.length / VertexStruct.size, Math.max(builder.numVerts, builder.poolHandle.numVerts))
-    // const numVerts = data.length / VertexStruct.size;
-    // const positions = new Float32Array(numVerts * 3);
-    // const colors = new Float32Array(numVerts * 3);
-    // const normals = new Float32Array(numVerts * 3);
-    // // TODO(@darzu): DISP
-    // const uvs = new Float32Array(numVerts * 2);
-    // Vertex.Deserialize(data, numVerts, positions, colors, normals, uvs);
+//   function updateVertices(offset: number, data: Uint8Array) {
+//     // TODO(@darzu): this is a strange way to compute this, but seems to work conservatively
+//     // const numVerts = Math.min(data.length / VertexStruct.size, Math.max(builder.numVerts, builder.poolHandle.numVerts))
+//     // const numVerts = data.length / VertexStruct.size;
+//     // const positions = new Float32Array(numVerts * 3);
+//     // const colors = new Float32Array(numVerts * 3);
+//     // const normals = new Float32Array(numVerts * 3);
+//     // // TODO(@darzu): DISP
+//     // const uvs = new Float32Array(numVerts * 2);
+//     // Vertex.Deserialize(data, numVerts, positions, colors, normals, uvs);
 
-    // const vNumOffset = offset / VertexStruct.size;
+//     // const vNumOffset = offset / VertexStruct.size;
 
-    // TODO(@darzu): debug logging
-    // console.log(`positions: #${vNumOffset}: ${positions.slice(0, numVerts * 3).join(',')}`)
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, offset, data);
-  }
-  function updateTriIndices(offset: number, data: Uint8Array) {
-    // TODO(@darzu): again, strange but a useful optimization
-    // const numInd = Math.min(data.length / 2, Math.max(builder.numTris, builder.poolHandle.numTris) * 3)
-    // TODO(@darzu): debug logging
-    // console.log(`indices: #${offset / 2}: ${new Uint16Array(data.buffer).slice(0, numInd).join(',')}`)
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triIndicesBuffer);
-    gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, offset, data);
-  }
-  function updateLineIndices(offset: number, data: Uint8Array) {
-    // TODO(@darzu): line indices don't work right. they interfere with regular tri indices.
-    // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, lineIndicesBuffer);
-    // gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, offset, data);
-  }
-  function updateUniform(offset: number, data: Uint8Array) {
-    uniformMap.set(data, offset);
-  }
+//     // TODO(@darzu): debug logging
+//     // console.log(`positions: #${vNumOffset}: ${positions.slice(0, numVerts * 3).join(',')}`)
+//     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+//     gl.bufferSubData(gl.ARRAY_BUFFER, offset, data);
+//   }
+//   function updateTriIndices(offset: number, data: Uint8Array) {
+//     // TODO(@darzu): again, strange but a useful optimization
+//     // const numInd = Math.min(data.length / 2, Math.max(builder.numTris, builder.poolHandle.numTris) * 3)
+//     // TODO(@darzu): debug logging
+//     // console.log(`indices: #${offset / 2}: ${new Uint16Array(data.buffer).slice(0, numInd).join(',')}`)
+//     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triIndicesBuffer);
+//     gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, offset, data);
+//   }
+//   function updateLineIndices(offset: number, data: Uint8Array) {
+//     // TODO(@darzu): line indices don't work right. they interfere with regular tri indices.
+//     // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, lineIndicesBuffer);
+//     // gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, offset, data);
+//   }
+//   function updateUniform(offset: number, data: Uint8Array) {
+//     uniformMap.set(data, offset);
+//   }
 
-  const queues: MeshPoolQueues = {
-    updateTriIndices,
-    updateLineIndices,
-    updateVertices,
-    updateUniform,
-  };
+//   const queues: MeshPoolQueues = {
+//     updateTriIndices,
+//     updateLineIndices,
+//     updateVertices,
+//     updateUniform,
+//   };
 
-  const buffers: MeshPoolBuffers_WebGL = {
-    gl,
-    vertexBuffer,
-    // other buffers
-    triIndicesBuffer,
-    lineIndicesBuffer,
-  };
+//   const buffers: MeshPoolBuffers_WebGL = {
+//     gl,
+//     vertexBuffer,
+//     // other buffers
+//     triIndicesBuffer,
+//     lineIndicesBuffer,
+//   };
 
-  const pool = createMeshPool(opts, queues);
+//   const pool = createMeshPool(opts, queues);
 
-  const pool_webgl: MeshPool_WebGL = { ...pool, ...buffers };
+//   const pool_webgl: MeshPool_WebGL = { ...pool, ...buffers };
 
-  return pool_webgl;
-}
+//   return pool_webgl;
+// }
 
-const scratch_uniform_u8 = new Uint8Array(MeshUniformStruct.size);
+// TODO(@darzu): scope?
+let nextMeshId = 1;
 
 function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
   const { maxMeshes, maxTris, maxVerts, maxLines } = opts;
@@ -390,83 +325,90 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
     updateMeshVertices,
   };
 
-  function addMesh(m: Mesh): MeshHandle {
-    if (pool.allMeshes.length + 1 > maxMeshes) throw "Too many meshes!";
-    if (pool.numVerts + m.pos.length > maxVerts) throw "Too many vertices!";
-    if (pool.numTris + m.tri.length > maxTris) throw "Too many triangles!";
-    if (pool.numLines + (m.lines?.length ?? 0) > maxLines)
-      throw "Too many lines!";
-
-    // console.log(`QUEUE builder.allMeshes.length: ${builder.allMeshes.length}, builder.numTris: ${builder.numTris}, builder.numVerts: ${builder.numVerts}`)
-    // console.log(`QUEUE pool.allMeshes.length: ${pool.allMeshes.length}, pool.numTris: ${pool.numTris}, pool.numVerts: ${pool.numVerts}`)
-
-    // TODO(@darzu): just use TS object arrays and CyMany's
-    const data: MeshPoolMaps = {
-      // TODO(@darzu): use scratch arrays
-      verticesMap: new Uint8Array(m.pos.length * VertexStruct.size),
-      // pad triangles array to make sure it's a multiple of 4 *bytes*
-      triIndicesMap: new Uint16Array(align(m.tri.length * 3, 2)),
-      lineIndicesMap: new Uint16Array((m.lines?.length ?? 2) * 2), // TODO(@darzu): make optional?
-      uniformMap: new Uint8Array(MeshUniformStruct.size),
-    };
-
-    const b = createMeshBuilder(
-      data,
-      opts.shiftMeshIndices ? pool.numVerts : 0,
-      m
-    );
-    m.pos.forEach((pos, i) => {
-      // this is placeholder vert data which will be updated later by serializeMeshVertices
-      // TODO(@darzu): DISP calculation
-      b.addVertex(pos, DEFAULT_VERT_COLOR, [1.0, 0.0, 0.0], [0.0, 0.0]);
-    });
+  function computeVertsData(m: Mesh): VertexTS[] {
+    const vertsData: VertexTS[] = m.pos.map((pos, i) => ({
+      position: pos,
+      color: DEFAULT_VERT_COLOR,
+      normal: [1.0, 0.0, 0.0],
+      uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
+    }));
     m.tri.forEach((triInd, i) => {
-      b.addTri(triInd);
+      // set provoking vertex data
+      // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
+      const normal = computeTriangleNormal(
+        m.pos[triInd[0]],
+        m.pos[triInd[1]],
+        m.pos[triInd[2]]
+      );
+      vertsData[triInd[0]].normal = normal;
+      vertsData[triInd[0]].color = m.colors[i];
     });
+    return vertsData;
+  }
+
+  function addMesh(m: Mesh): MeshHandle {
+    assert(pool.allMeshes.length + 1 <= maxMeshes, "Too many meshes!");
+    assert(pool.numVerts + m.pos.length <= maxVerts, "Too many vertices!");
+    assert(pool.numTris + m.tri.length <= maxTris, "Too many triangles!");
+    assert(
+      pool.numLines + (m.lines?.length ?? 0) <= maxLines,
+      "Too many lines!"
+    );
+    assert(m.usesProvoking, `mesh must use provoking vertices`);
+
+    const vertsData: VertexTS[] = computeVertsData(m);
+    const triData = new Uint16Array(align(m.tri.length * 3, 2));
+    m.tri.forEach((triInd, i) => {
+      // TODO(@darzu): support index shifting
+      triData.set(triInd, i * 3);
+    });
+    let lineData: Uint16Array | undefined;
     if (m.lines) {
+      lineData = new Uint16Array(m.lines.length * 2);
       m.lines.forEach((inds, i) => {
-        b.addLine(inds);
+        lineData?.set(inds, i * 2);
       });
     }
 
     // initial uniform data
     const { min, max } = getAABBFromMesh(m);
-    b.setUniform(mat4.create(), min, max, vec3.create());
+    const uni: MeshUniformTS = {
+      transform: mat4.create(),
+      aabbMin: min,
+      aabbMax: max,
+      tint: vec3.create(),
+    };
 
     const idx: PoolIndex = {
       pool,
       vertNumOffset: pool.numVerts,
       triIndicesNumOffset: pool.numTris * 3,
       lineIndicesNumOffset: pool.numLines * 2,
-      modelUniByteOffset: allMeshes.length * MeshUniformStruct.size,
+      modelUniNumOffset: allMeshes.length,
     };
 
-    const handle = b.finish(idx);
+    assert(triData.length % 2 === 0, "triData");
+    queues.updateTriIndices(triData, idx.triIndicesNumOffset);
+    if (lineData) queues.updateLineIndices(lineData, idx.lineIndicesNumOffset);
+    queues.updateVertices(vertsData, idx.vertNumOffset);
+    queues.updateUniform(uni, idx.modelUniNumOffset);
 
-    // update vertex data
-    serializeMeshVertices(m, data.verticesMap);
+    const handle: MeshHandle = {
+      poolIdx: idx,
+      mId: nextMeshId++,
+      numTris: m.tri.length,
+      numLines: m.lines?.length ?? 0,
+      numVerts: m.pos.length,
+      readonlyMesh: m,
+      shaderData: uni,
+    };
 
-    queues.updateTriIndices(
-      idx.triIndicesNumOffset * 2,
-      new Uint8Array(data.triIndicesMap.buffer)
-    ); // TODO(@darzu): this view shouldn't be necessary
-    queues.updateLineIndices(
-      idx.lineIndicesNumOffset * 2,
-      new Uint8Array(data.lineIndicesMap.buffer)
-    ); // TODO(@darzu): this view shouldn't be necessary
-    queues.updateVertices(
-      idx.vertNumOffset * VertexStruct.size,
-      data.verticesMap
-    );
-
-    queues.updateUniform(idx.modelUniByteOffset, data.uniformMap);
-
-    pool.numTris += handle.numTris;
-    // See the comment over the similar lign in mappedAddMesh--a
-    // mesh's triangles need to be 4-byte aligned.
+    pool.numTris += m.tri.length;
+    // NOTE: mesh's triangles need to be 4-byte aligned.
+    // TODO(@darzu): is this still necessary? might be handled by the CyBuffer stuff
     pool.numTris = align(pool.numTris, 2);
-    pool.numLines += handle.numLines;
-    pool.numVerts += handle.numVerts;
+    pool.numLines += m.lines?.length ?? 0;
+    pool.numVerts += m.pos.length;
     pool.allMeshes.push(handle);
 
     return handle;
@@ -474,12 +416,15 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
   function addMeshInstance(m: MeshHandle, d: MeshUniformTS): MeshHandle {
     if (pool.allMeshes.length + 1 > maxMeshes) throw "Too many meshes!";
 
-    const uniOffset = allMeshes.length * MeshUniformStruct.size;
-    const newHandle = {
+    const uniOffset = allMeshes.length;
+    const newHandle: MeshHandle = {
       ...m,
+      poolIdx: {
+        ...m.poolIdx,
+        modelUniNumOffset: uniOffset,
+      },
       mId: nextMeshId++,
       shaderData: d,
-      modelUniByteOffset: uniOffset,
     };
     allMeshes.push(newHandle);
     updateUniform(newHandle);
@@ -487,178 +432,13 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
   }
 
   function updateMeshVertices(handle: MeshHandle, newMesh: Mesh) {
-    // TODO(@darzu): use scratch array
-    const verticesMap = new Uint8Array(newMesh.pos.length * VertexStruct.size);
-    serializeMeshVertices(newMesh, verticesMap);
-    queues.updateVertices(
-      handle.vertNumOffset * VertexStruct.size,
-      verticesMap
-    );
+    const data = computeVertsData(newMesh);
+    queues.updateVertices(data, handle.poolIdx.vertNumOffset);
   }
 
   function updateUniform(m: MeshHandle): void {
-    scratch_uniform_u8.set(MeshUniformStruct.serialize(m.shaderData));
-    queues.updateUniform(m.modelUniByteOffset, scratch_uniform_u8);
+    queues.updateUniform(m.shaderData, m.poolIdx.modelUniNumOffset);
   }
 
   return pool;
-}
-
-function serializeMeshVertices(m: Mesh, verticesMap: Uint8Array) {
-  if (!m.usesProvoking) throw `mesh must use provoking vertices`;
-
-  m.pos.forEach((pos, i) => {
-    const vOff = i * VertexStruct.size;
-    const uv: vec2 = m.uvs ? m.uvs[i] : [0.0, 0.0];
-    verticesMap.set(
-      VertexStruct.serialize({
-        position: pos,
-        color: DEFAULT_VERT_COLOR,
-        normal: [1.0, 0.0, 0.0],
-        uv,
-      }),
-      vOff
-    );
-  });
-  m.tri.forEach((triInd, i) => {
-    // set provoking vertex data
-    // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
-    const vi = triInd[0];
-    const vOff = vi * VertexStruct.size;
-    const normal = computeTriangleNormal(
-      m.pos[triInd[0]],
-      m.pos[triInd[1]],
-      m.pos[triInd[2]]
-    );
-    // TODO(@darzu): DISP
-    // TODO(@darzu): set UVs
-    const uv: vec2 = m.uvs ? m.uvs[vi] : [0.0, 0.0];
-    verticesMap.set(
-      VertexStruct.serialize({
-        position: m.pos[triInd[0]],
-        color: m.colors[i],
-        normal,
-        uv,
-      }),
-      vOff
-    );
-  });
-}
-
-// TODO(@darzu): not totally sure we want this state
-let nextMeshId = 0;
-
-function createMeshBuilder(
-  maps: MeshPoolMaps,
-  indicesShift: number,
-  mesh: Mesh | undefined
-): MeshBuilderInternal {
-  // TODO(@darzu): these used to be parameters and can be again if we want to
-  //  work inside some bigger array
-  const uByteOff: number = 0;
-  const vByteOff: number = 0;
-  const iByteOff: number = 0;
-  const lByteOff: number = 0;
-
-  let meshFinished = false;
-  let numVerts = 0;
-  let numTris = 0;
-  let numLines = 0;
-
-  // TODO(@darzu): VERTEX FORMAT
-  function addVertex(pos: vec3, color: vec3, normal: vec3, uv: vec2): void {
-    if (meshFinished) throw "trying to use finished MeshBuilder";
-    const vOff = vByteOff + numVerts * VertexStruct.size;
-    maps.verticesMap.set(
-      VertexStruct.serialize({
-        position: pos,
-        color,
-        normal,
-        uv,
-      }),
-      vOff
-    );
-    numVerts += 1;
-  }
-  let _scratchTri = vec3.create();
-  function addTri(triInd: vec3): void {
-    if (meshFinished) throw "trying to use finished MeshBuilder";
-    const currIByteOff = iByteOff + numTris * bytesPerTri;
-    const currI = currIByteOff / 2;
-    if (indicesShift) {
-      _scratchTri[0] = triInd[0] + indicesShift;
-      _scratchTri[1] = triInd[1] + indicesShift;
-      _scratchTri[2] = triInd[2] + indicesShift;
-    }
-    maps.triIndicesMap.set(indicesShift ? _scratchTri : triInd, currI); // TODO(@darzu): it's kinda weird indices map uses uint16 vs the rest us u8
-    numTris += 1;
-  }
-  let _scratchLine = vec2.create();
-  function addLine(lineInd: vec2): void {
-    if (meshFinished) throw "trying to use finished MeshBuilder";
-    const currLByteOff = lByteOff + numLines * bytesPerLine;
-    const currL = currLByteOff / 2;
-    if (indicesShift) {
-      _scratchLine[0] = lineInd[0] + indicesShift;
-      _scratchLine[1] = lineInd[1] + indicesShift;
-    }
-    maps.lineIndicesMap.set(indicesShift ? _scratchLine : lineInd, currL); // TODO(@darzu): it's kinda weird indices map uses uint16 vs the rest us u8
-    numLines += 1;
-  }
-
-  let _transform: mat4 | undefined = undefined;
-  let _aabbMin: vec3 | undefined = undefined;
-  let _aabbMax: vec3 | undefined = undefined;
-  let _tint: vec3 | undefined = undefined;
-  function setUniform(
-    transform: mat4,
-    aabbMin: vec3,
-    aabbMax: vec3,
-    tint: vec3
-  ): void {
-    if (meshFinished) throw "trying to use finished MeshBuilder";
-    _transform = transform;
-    _aabbMin = aabbMin;
-    _aabbMax = aabbMax;
-    _tint = tint;
-
-    maps.uniformMap.set(
-      MeshUniformStruct.serialize({
-        transform,
-        aabbMin,
-        aabbMax,
-        tint,
-      }),
-      uByteOff
-    );
-  }
-
-  function finish(idx: PoolIndex): MeshHandle {
-    if (meshFinished) throw "trying to use finished MeshBuilder";
-    if (!_transform) throw "uniform never set for this mesh!";
-    meshFinished = true;
-    const res: MeshHandle = {
-      ...idx,
-      mId: nextMeshId++,
-      shaderData: {
-        transform: _transform!,
-        aabbMin: _aabbMin!,
-        aabbMax: _aabbMax!,
-        tint: _tint!,
-      },
-      numTris,
-      numVerts,
-      numLines,
-      readonlyMesh: mesh,
-    };
-    return res;
-  }
-
-  return {
-    addVertex,
-    addTri,
-    addLine,
-    setUniform,
-    finish,
-  };
 }
