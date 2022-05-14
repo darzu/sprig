@@ -84,6 +84,18 @@ void main() {
 }
 `;
 
+// WebGL stuff
+// export interface MeshPoolBuffers_WebGL {
+//   // vertex buffers
+//   vertexBuffer: WebGLBuffer;
+//   // other buffers
+//   triIndicesBuffer: WebGLBuffer;
+//   lineIndicesBuffer: WebGLBuffer;
+//   // handles
+//   gl: WebGLRenderingContext;
+// }
+// export type MeshPool_WebGL = MeshPool & MeshPoolBuffers_WebGL;
+
 // TODO(@darzu):
 // export interface Renderer {
 //   finishInit(): void;
@@ -91,7 +103,98 @@ void main() {
 //   renderFrame(viewMatrix: mat4): void;
 // }
 
-export function attachToCanvas(
+// export function createMeshPool_WebGL(
+//   gl: WebGLRenderingContext,
+//   opts: MeshPoolOpts
+// ): MeshPool_WebGL {
+//   const { maxMeshes, maxTris, maxVerts, maxLines } = opts;
+
+//   // TODO(@darzu): we shouldn't need to preallocate all this
+//   const scratchVerts = new Float32Array(maxVerts * (VertexStruct.size / 4));
+
+//   const scratchTriIndices = new Uint16Array(maxTris * 3);
+//   const scratchLineIndices = new Uint16Array(maxLines * 2);
+
+//   // vertex buffers
+//   const vertexBuffer = gl.createBuffer()!;
+//   gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+//   gl.bufferData(gl.ARRAY_BUFFER, scratchVerts, gl.DYNAMIC_DRAW); // TODO(@darzu): sometimes we might want STATIC_DRAW
+
+//   // index buffers
+//   const triIndicesBuffer = gl.createBuffer()!;
+//   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triIndicesBuffer);
+//   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, scratchTriIndices, gl.DYNAMIC_DRAW);
+
+//   const lineIndicesBuffer = gl.createBuffer()!;
+//   // TODO(@darzu): line indices don't work right. they interfere with regular tri indices.
+//   // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, lineIndicesBuffer);
+//   // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, scratchLineIndices, gl.DYNAMIC_DRAW);
+
+//   // our in-memory reflections of the buffers used during the initial build phase
+//   // TODO(@darzu): this is too much duplicate data
+//   // let verticesMap = new Uint8Array(maxVerts * VertexStruct.size);
+//   // let triIndicesMap = new Uint16Array(maxTris * 3);
+//   // let lineIndicesMap = new Uint16Array(maxLines * 2);
+//   let uniformMap = new Uint8Array(maxMeshes * opts.uniStruct.size);
+
+//   function updateVertices(offset: number, data: Uint8Array) {
+//     // TODO(@darzu): this is a strange way to compute this, but seems to work conservatively
+//     // const numVerts = Math.min(data.length / VertexStruct.size, Math.max(builder.numVerts, builder.poolHandle.numVerts))
+//     // const numVerts = data.length / VertexStruct.size;
+//     // const positions = new Float32Array(numVerts * 3);
+//     // const colors = new Float32Array(numVerts * 3);
+//     // const normals = new Float32Array(numVerts * 3);
+//     // // TODO(@darzu): DISP
+//     // const uvs = new Float32Array(numVerts * 2);
+//     // Vertex.Deserialize(data, numVerts, positions, colors, normals, uvs);
+
+//     // const vNumOffset = offset / VertexStruct.size;
+
+//     // TODO(@darzu): debug logging
+//     // console.log(`positions: #${vNumOffset}: ${positions.slice(0, numVerts * 3).join(',')}`)
+//     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+//     gl.bufferSubData(gl.ARRAY_BUFFER, offset, data);
+//   }
+//   function updateTriIndices(offset: number, data: Uint8Array) {
+//     // TODO(@darzu): again, strange but a useful optimization
+//     // const numInd = Math.min(data.length / 2, Math.max(builder.numTris, builder.poolHandle.numTris) * 3)
+//     // TODO(@darzu): debug logging
+//     // console.log(`indices: #${offset / 2}: ${new Uint16Array(data.buffer).slice(0, numInd).join(',')}`)
+//     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triIndicesBuffer);
+//     gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, offset, data);
+//   }
+//   function updateLineIndices(offset: number, data: Uint8Array) {
+//     // TODO(@darzu): line indices don't work right. they interfere with regular tri indices.
+//     // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, lineIndicesBuffer);
+//     // gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, offset, data);
+//   }
+//   function updateUniform(offset: number, data: Uint8Array) {
+//     uniformMap.set(data, offset);
+//   }
+
+//   const queues: MeshPoolQueues = {
+//     updateTriIndices,
+//     updateLineIndices,
+//     updateVertices,
+//     updateUniform,
+//   };
+
+//   const buffers: MeshPoolBuffers_WebGL = {
+//     gl,
+//     vertexBuffer,
+//     // other buffers
+//     triIndicesBuffer,
+//     lineIndicesBuffer,
+//   };
+
+//   const pool = createMeshPool(opts, queues);
+
+//   const pool_webgl: MeshPool_WebGL = { ...pool, ...buffers };
+
+//   return pool_webgl;
+// }
+
+export function attachToCanvasWebgl(
   canv: HTMLCanvasElement,
   maxMeshes: number,
   maxVertices: number

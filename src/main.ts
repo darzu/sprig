@@ -17,8 +17,6 @@ import { callSpringSystems } from "./game/spring.js";
 import { initShipGame, registerAllSystems } from "./game/game.js";
 
 export const FORCE_WEBGL = false;
-export const MAX_MESHES = 20000;
-export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 

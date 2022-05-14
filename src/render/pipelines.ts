@@ -9,7 +9,7 @@ import {
   CyStructDesc,
   CyToTS,
 } from "./data.js";
-import { MeshHandle } from "./mesh-pool.js";
+import { MeshHandle, MeshPoolOpts } from "./mesh-pool.js";
 import { getAABBFromMesh, Mesh } from "./mesh.js";
 import {
   registerBufPtr,
@@ -18,6 +18,7 @@ import {
   registerIdxBufPtr,
   registerTexPtr,
   CyTexturePtr,
+  registerMeshPoolPtr,
 } from "./render_webgpu.js";
 import { particle_shader, rope_shader } from "./shaders.js";
 
@@ -312,32 +313,54 @@ const clothTexPtr1 = registerTexPtr({
   name: clothTexPtrDesc.name + "1",
 });
 
-const MAX_MESHES = 20000;
-const MAX_VERTICES = 21844;
+export const MAX_MESHES = 20000;
+export const MAX_VERTICES = 21844;
 
-// const opts: MeshPoolOpts = {
-//   maxMeshes,
-//   maxTris: maxVertices,
-//   maxVerts: maxVertices,
-//   maxLines: maxVertices * 2,
+// const stdMeshPoolOpts: MeshPoolOpts<
+//   typeof VertexStruct.desc,
+//   typeof MeshUniformStruct.desc
+// > = {
+//   maxMeshes: MAX_MESHES,
+//   computeUniData,
+//   computeVertsData,
+//   vertStruct: VertexStruct,
+//   uniStruct: MeshUniformStruct,
+//   maxTris: MAX_VERTICES,
+//   maxVerts: MAX_VERTICES,
+//   maxLines: MAX_VERTICES * 2,
 //   shiftMeshIndices: false,
 // };
 
 const meshVertsPtr = registerBufPtr({
-  name: "meshVertBuf",
+  name: "meshVertsBuf",
   struct: VertexStruct,
   init: () => MAX_VERTICES,
 });
 
-const meshIdxsPtr = registerIdxBufPtr({
-  name: "meshIdxBuf",
-  init: () => MAX_VERTICES * 3,
+const meshTriIndsPtr = registerIdxBufPtr({
+  name: "meshTriIndsBuf",
+  init: () => MAX_VERTICES,
+});
+
+const meshLineIndsPtr = registerIdxBufPtr({
+  name: "meshLineIndsBuf",
+  init: () => MAX_VERTICES * 2,
 });
 
 const meshUnisPtr = registerBufPtr({
   name: "meshUnisBuf",
   struct: MeshUniformStruct,
   init: () => MAX_MESHES,
+});
+
+export const meshPoolPtr = registerMeshPoolPtr({
+  name: "meshPool",
+  computeVertsData,
+  computeUniData,
+  vertsPtr: meshVertsPtr,
+  unisPtr: meshUnisPtr,
+  triIndsPtr: meshTriIndsPtr,
+  lineIndsPtr: meshTriIndsPtr,
 });
 
 export function computeUniData(m: Mesh): MeshUniformTS {

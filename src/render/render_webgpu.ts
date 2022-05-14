@@ -24,8 +24,9 @@ import {
   TexTypeToTSType,
 } from "./data.js";
 import {
-  createMeshPool_WebGPU,
+  createMeshPool,
   MeshHandle,
+  MeshPool,
   MeshPoolOpts,
 } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
@@ -41,6 +42,7 @@ import {
   computeUniData,
   computeVertsData,
   MeshHandleStd,
+  meshPoolPtr,
 } from "./pipelines.js";
 import { Renderer } from "./renderer.js";
 import {
@@ -56,8 +58,6 @@ const PIXEL_PER_PX: number | null = null; // 0.5;
 // render pipeline parameters
 const antiAliasSampleCount = 4;
 const depthStencilFormat = "depth24plus-stencil8";
-
-export interface Renderer_WebGPU extends Renderer {}
 
 // BUFFERS
 
@@ -93,6 +93,18 @@ export interface CyTexturePtr {
   size: [number, number];
   format: GPUTextureFormat;
   init: () => Float32Array | undefined; // TODO(@darzu): | TexTypeAsTSType<F>[]
+}
+
+// MESH POOL
+export interface CyMeshPoolPtr<V extends CyStructDesc, U extends CyStructDesc> {
+  id: number;
+  name: string;
+  computeVertsData: (m: Mesh) => CyToTS<V>[];
+  computeUniData: (m: Mesh) => CyToTS<U>;
+  vertsPtr: CyBufferPtr<V>;
+  unisPtr: CyBufferPtr<U>;
+  triIndsPtr: CyIdxBufferPtr;
+  lineIndsPtr: CyIdxBufferPtr;
 }
 
 // COMP PIPELINE
@@ -201,6 +213,19 @@ export function registerRenderPipeline<RS extends CyBufferPtr<any>[]>(
   return r;
 }
 
+let _meshPools: CyMeshPoolPtr<any, any>[] = [];
+export function registerMeshPoolPtr<
+  V extends CyStructDesc,
+  U extends CyStructDesc
+>(desc: Omit<CyMeshPoolPtr<V, U>, "id">): CyMeshPoolPtr<V, U> {
+  const r = {
+    ...desc,
+    id: _meshPools.length,
+  };
+  _meshPools.push(r);
+  return r;
+}
+
 const prim_tris: GPUPrimitiveState = {
   topology: "triangle-list",
   cullMode: "back",
@@ -214,11 +239,9 @@ export function createWebGPURenderer(
   canvas: HTMLCanvasElement,
   device: GPUDevice,
   context: GPUCanvasContext,
-  adapter: GPUAdapter,
-  maxMeshes: number,
-  maxVertices: number
-): Renderer_WebGPU {
-  let renderer: Renderer_WebGPU = {
+  adapter: GPUAdapter
+): Renderer {
+  let renderer: Renderer = {
     drawLines: true,
     drawTris: true,
     backgroundColor: [0.6, 0.63, 0.6],
@@ -231,22 +254,6 @@ export function createWebGPURenderer(
 
   let clothReadIdx = 1;
 
-  const opts: MeshPoolOpts<
-    typeof VertexStruct.desc,
-    typeof MeshUniformStruct.desc
-  > = {
-    maxMeshes,
-    computeUniData,
-    computeVertsData,
-    vertStruct: VertexStruct,
-    uniStruct: MeshUniformStruct,
-    maxTris: maxVertices,
-    maxVerts: maxVertices,
-    maxLines: maxVertices * 2,
-    shiftMeshIndices: false,
-  };
-
-  let pool = createMeshPool_WebGPU(device, opts);
   // let sceneUni = createCyOne(device, SceneStruct, setupScene());
   let canvasFormat = context.getPreferredFormat(adapter);
 
@@ -256,8 +263,65 @@ export function createWebGPURenderer(
   const cyManys: Map<number, CyMany<any>> = new Map();
   const cyIdxs: Map<number, CyIdxBuffer> = new Map();
   const cyTexs: Map<number, CyTexture> = new Map();
+  const cyPools: Map<number, MeshPool<any, any>> = new Map();
   const cyCompPipelines: CyCompPipeline<any>[] = [];
   const cyRndrPipelines: CyRndrPipeline<any>[] = [];
+
+  // init mesh pools
+  for (let desc of _meshPools) {
+    // TODO(@darzu): all this createCy* stuff should be done jointly
+    if (!cyManys.has(desc.vertsPtr.id)) {
+      const dataOrLen = desc.vertsPtr.init();
+      assert(isNumber(dataOrLen), `mesh pool verts must have len`);
+      const verticesBuffer = createCyMany(
+        device,
+        desc.vertsPtr.struct,
+        GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+        dataOrLen
+      );
+      cyManys.set(desc.vertsPtr.id, verticesBuffer);
+    }
+    if (!cyIdxs.has(desc.triIndsPtr.id)) {
+      const dataOrLen = desc.triIndsPtr.init();
+      assert(isNumber(dataOrLen), `mesh pool tri inds must have len`);
+      const buf = createCyIdxBuf(device, dataOrLen);
+      cyIdxs.set(desc.triIndsPtr.id, buf);
+    }
+    if (!cyIdxs.has(desc.lineIndsPtr.id)) {
+      const dataOrLen = desc.lineIndsPtr.init();
+      assert(isNumber(dataOrLen), `mesh pool line inds must have len`);
+      const buf = createCyIdxBuf(device, dataOrLen);
+      cyIdxs.set(desc.lineIndsPtr.id, buf);
+    }
+    if (!cyManys.has(desc.unisPtr.id)) {
+      const dataOrLen = desc.unisPtr.init();
+      assert(isNumber(dataOrLen), `mesh pool unis must have len`);
+      const buf = createCyMany(
+        device,
+        desc.unisPtr.struct,
+        GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        dataOrLen
+      );
+      cyManys.set(desc.unisPtr.id, buf);
+    }
+
+    const pool = createMeshPool({
+      computeVertsData: desc.computeVertsData,
+      computeUniData: desc.computeUniData,
+      verts: cyManys.get(desc.vertsPtr.id)!,
+      unis: cyManys.get(desc.unisPtr.id)!,
+      triInds: cyIdxs.get(desc.triIndsPtr.id)!,
+      lineInds: cyIdxs.get(desc.lineIndsPtr.id)!,
+      // TODO(@darzu): support more?
+      shiftMeshIndices: false,
+    });
+
+    cyPools.set(desc.id, pool);
+  }
+
+  // TODO(@darzu): pass in elsewhere?
+  const pool = cyPools.get(meshPoolPtr.id)!;
+
   // init textures
   // TODO(@darzu): Do this pipeline driven
   for (let desc of _texPtrs) {
@@ -694,7 +758,7 @@ export function createWebGPURenderer(
         {
           binding: 0,
           resource: {
-            buffer: pool.uniformBuffer.buffer,
+            buffer: pool.opts.unis.buffer,
             size: MeshUniformStruct.size,
           },
         },
@@ -796,13 +860,13 @@ export function createWebGPURenderer(
 
     // render triangles and lines
     bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
-    bundleEnc.setVertexBuffer(0, pool.verticesBuffer.buffer);
+    bundleEnc.setVertexBuffer(0, pool.opts.verts.buffer);
 
     // render triangles first
     if (renderer.drawTris) {
       bundleEnc.setPipeline(renderPipeline_tris);
       // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
-      bundleEnc.setIndexBuffer(pool.triIndicesBuffer.buffer, "uint16");
+      bundleEnc.setIndexBuffer(pool.opts.triInds.buffer, "uint16");
       for (let m of Object.values(handles)) {
         bundleEnc.setBindGroup(1, modelUniBindGroup, [
           m.uniIdx * MeshUniformStruct.size,
@@ -815,7 +879,7 @@ export function createWebGPURenderer(
     if (renderer.drawLines) {
       bundleEnc.setPipeline(renderPipeline_lines);
       // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
-      bundleEnc.setIndexBuffer(pool.lineIndicesBuffer.buffer, "uint16");
+      bundleEnc.setIndexBuffer(pool.opts.lineInds.buffer, "uint16");
       for (let m of Object.values(handles)) {
         bundleEnc.setBindGroup(1, modelUniBindGroup, [
           m.uniIdx * MeshUniformStruct.size,
@@ -842,7 +906,7 @@ export function createWebGPURenderer(
       // TODO(@darzu): instance buffer
       bundleEnc.setVertexBuffer(1, p.instanceBuf.buffer);
       // TODO(@darzu): support other step modes
-      console.log(`drawing ${p.indexBuf.length} ${p.instanceBuf.length}`);
+      // console.log(`drawing ${p.indexBuf.length} ${p.instanceBuf.length}`);
       bundleEnc.drawIndexed(p.indexBuf.length, p.instanceBuf.length, 0, 0);
     }
 

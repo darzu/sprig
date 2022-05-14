@@ -892,3 +892,5 @@ Getting file list from github PR:
 Printer and paper rec:
   P800 & hot press bright
 
+Software is only as good as the abstractions it is made of.
+
