@@ -47,20 +47,22 @@ const MAX_INDICES = 65535; // Since we're using u16 index type, this is our max 
 const DEFAULT_VERT_COLOR: vec3 = [0.0, 0.0, 0.0];
 
 export interface MeshHandle {
-  readonly mId: number; // mesh id
+  // mesh id
+  readonly mId: number;
+
   // this mesh
   readonly uniIdx: number;
   readonly vertIdx: number;
   readonly vertNum: number;
-  readonly triIndIdx: number;
+  readonly triIdx: number;
   readonly triNum: number;
-  readonly lineIndIdx: number; // for wireframe
-  readonly lineNum: number; // for wireframe
+  readonly lineIdx: number;
+  readonly lineNum: number;
+
   readonly readonlyMesh?: Mesh;
 
   // used as the uniform for this mesh
   shaderData: MeshUniformTS;
-  // TODO(@darzu): specify which shader to use
 }
 
 export function isMeshHandle(m: any): m is MeshHandle {
@@ -379,16 +381,16 @@ function createMeshPool(opts: MeshPoolOpts, queues: MeshPoolQueues): MeshPool {
       lineNum: m.lines?.length ?? 0,
       vertNum: m.pos.length,
       vertIdx: pool.numVerts,
-      triIndIdx: pool.numTris * 3,
-      lineIndIdx: pool.numLines * 2,
+      triIdx: pool.numTris,
+      lineIdx: pool.numLines,
       uniIdx: allMeshes.length,
       readonlyMesh: m,
       shaderData: uni,
     };
 
     assert(triData.length % 2 === 0, "triData");
-    queues.updateTriIndices(triData, handle.triIndIdx);
-    if (lineData) queues.updateLineIndices(lineData, handle.lineIndIdx);
+    queues.updateTriIndices(triData, handle.triIdx * 3);
+    if (lineData) queues.updateLineIndices(lineData, handle.lineIdx * 2);
     queues.updateVertices(vertsData, handle.vertIdx);
     queues.updateUniform(uni, handle.uniIdx);
 

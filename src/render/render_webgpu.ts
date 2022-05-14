@@ -795,7 +795,7 @@ export function createWebGPURenderer(
         bundleEnc.setBindGroup(1, modelUniBindGroup, [
           m.uniIdx * MeshUniformStruct.size,
         ]);
-        bundleEnc.drawIndexed(m.triNum * 3, undefined, m.triIndIdx, m.vertIdx);
+        bundleEnc.drawIndexed(m.triNum * 3, undefined, m.triIdx * 3, m.vertIdx);
       }
     }
 
@@ -811,7 +811,7 @@ export function createWebGPURenderer(
         bundleEnc.drawIndexed(
           m.lineNum * 2,
           undefined,
-          m.lineIndIdx,
+          m.lineIdx * 2,
           m.vertIdx
         );
       }

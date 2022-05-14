@@ -293,7 +293,7 @@ export function attachToCanvas(
       // gl.drawElements(gl.TRIANGLES, 3, gl.UNSIGNED_SHORT, m.handle.indicesNumOffset * 2);
       gl.uniformMatrix4fv(u_loc_transform, false, m.shaderData.transform);
       gl.uniform3fv(u_loc_tint, m.shaderData.tint);
-      const indicesBytesOffset = m.triIndIdx * 2;
+      const indicesBytesOffset = m.triIdx * 3 * 2;
       gl.drawElements(
         gl.TRIANGLES,
         m.triNum * 3,
