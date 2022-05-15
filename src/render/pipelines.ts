@@ -276,13 +276,15 @@ const particleIdxBufPtr = registerIdxBufPtr({
 
 const renderRopePipelineDesc = registerRenderPipeline({
   resources: [sceneBufPtr],
-  vertex: particleVertBufPtr,
-  instance: ropePointBufPtr,
-  index: particleIdxBufPtr,
+  meshOpt: {
+    vertex: particleVertBufPtr,
+    instance: ropePointBufPtr,
+    index: particleIdxBufPtr,
+    stepMode: "per-instance",
+  },
   shader: particle_shader,
   shaderVertexEntry: "vert_main",
   shaderFragmentEntry: "frag_main",
-  stepMode: "per-instance",
 });
 
 const CLOTH_SIZE = 10; // TODO(@darzu):
@@ -316,21 +318,6 @@ const clothTexPtr1 = registerTexPtr({
 export const MAX_MESHES = 20000;
 export const MAX_VERTICES = 21844;
 
-// const stdMeshPoolOpts: MeshPoolOpts<
-//   typeof VertexStruct.desc,
-//   typeof MeshUniformStruct.desc
-// > = {
-//   maxMeshes: MAX_MESHES,
-//   computeUniData,
-//   computeVertsData,
-//   vertStruct: VertexStruct,
-//   uniStruct: MeshUniformStruct,
-//   maxTris: MAX_VERTICES,
-//   maxVerts: MAX_VERTICES,
-//   maxLines: MAX_VERTICES * 2,
-//   shiftMeshIndices: false,
-// };
-
 const meshVertsPtr = registerBufPtr({
   name: "meshVertsBuf",
   struct: VertexStruct,
@@ -360,7 +347,7 @@ export const meshPoolPtr = registerMeshPoolPtr({
   vertsPtr: meshVertsPtr,
   unisPtr: meshUnisPtr,
   triIndsPtr: meshTriIndsPtr,
-  lineIndsPtr: meshTriIndsPtr,
+  lineIndsPtr: meshLineIndsPtr,
 });
 
 export function computeUniData(m: Mesh): MeshUniformTS {
@@ -395,24 +382,15 @@ export function computeVertsData(m: Mesh): VertexTS[] {
   return vertsData;
 }
 
-// const meshPoolPtr = registerMeshPoolPtr({
-//   maxMeshes: MAX_MESHES,
-//   maxTris: MAX_VERTICES,
-//   maxVerts: MAX_VERTICES,
-//   maxLines: MAX_VERTICES * 2,
-//   // TODO(@darzu): impl
-// });
-
-// const renderTriPipelineDesc = registerRenderPipeline({
-//   resources: [sceneBufPtr, meshUniPtr],
-//   vertex: meshVertPtr,
-//   instance: undefined,
-//   meshHandles: meshHandles,
-//   index: meshIdxPtr,
+// const renderTriPipelineDesc = registerMeshRenderPipeline({
+//   resources: [sceneBufPtr],
+//   meshOpt: {
+//     pool: meshPoolPtr,
+//     stepMode: "per-mesh-handle",
+//   },
 //   shader: mesh_shader,
 //   shaderVertexEntry: "vert_main",
 //   shaderFragmentEntry: "frag_main",
-//   stepMode: "per-mesh-instance",
 // });
 
 /*

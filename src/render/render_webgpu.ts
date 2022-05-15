@@ -4,6 +4,7 @@ import {
   capitalize,
   isArray,
   isNumber,
+  never,
   pluralize,
   uncapitalize,
 } from "../util.js";
@@ -123,18 +124,37 @@ export interface CyCompPipeline<RS extends CyBufferPtr<any>[]> {
 }
 
 // RENDER PIPELINE
+type CyMeshOpt =
+  | {
+      pool: CyMeshPoolPtr<any, any>;
+      stepMode: "per-mesh-handle";
+    }
+  | {
+      vertex: CyBufferPtr<any>;
+      instance: CyBufferPtr<any>;
+      index: CyIdxBufferPtr;
+      stepMode: "per-instance";
+    };
+
 export interface CyRndrPipelinePtr<RS extends CyBufferPtr<any>[]> {
   id: number;
   resources: [...RS];
   shader: () => string;
-  vertex: CyBufferPtr<any>;
-  instance: CyBufferPtr<any>;
-  index: CyIdxBufferPtr;
   shaderVertexEntry: string;
   shaderFragmentEntry: string;
-  // TODO(@darzu): support other ways e.g. mesh buffer
-  stepMode: "per-instance";
+  meshOpt: CyMeshOpt;
 }
+
+// TODO(@darzu):
+// export interface CyRndrMeshPipelineOpts {
+//   id: number;
+//   resources: [sceneBufPtr];
+//   pool: meshPoolPtr;
+//   shader: mesh_shader;
+//   shaderVertexEntry: "vert_main";
+//   shaderFragmentEntry: "frag_main";
+//   stepMode: "per-mesh-instance";
+// }
 
 // TODO(@darzu): instead of just mushing together with the desc, have desc compose in
 export interface CyRndrPipeline<RS extends CyBufferPtr<any>[]> {
@@ -142,7 +162,8 @@ export interface CyRndrPipeline<RS extends CyBufferPtr<any>[]> {
   resourceLayouts: CyBufferPtrLayout<any>[];
   vertexBuf: CyMany<any>;
   indexBuf: CyIdxBuffer;
-  instanceBuf: CyMany<any>;
+  instanceBuf?: CyMany<any>;
+  pool?: MeshPool<any, any>;
   pipeline: GPURenderPipeline;
   bindGroup: GPUBindGroup;
 }
@@ -152,7 +173,7 @@ export interface CyRndrPipeline<RS extends CyBufferPtr<any>[]> {
 function isRenderPipelinePtr(
   p: CyRndrPipelinePtr<any> | CyCompPipelinePtr<any>
 ): p is CyRndrPipelinePtr<any> {
-  return "vertex" in p;
+  return "meshOpt" in p;
 }
 
 // REGISTERS
@@ -203,6 +224,16 @@ export function registerCompPipeline<RS extends CyBufferPtr<any>[]>(
 
 let _rndrPipelines: CyRndrPipelinePtr<CyBufferPtr<any>[]>[] = [];
 export function registerRenderPipeline<RS extends CyBufferPtr<any>[]>(
+  desc: Omit<CyRndrPipelinePtr<RS>, "id">
+): CyRndrPipelinePtr<RS> {
+  const r = {
+    ...desc,
+    id: _rndrPipelines.length,
+  };
+  _rndrPipelines.push(r);
+  return r;
+}
+export function registerMeshRenderPipeline<RS extends CyBufferPtr<any>[]>(
   desc: Omit<CyRndrPipelinePtr<RS>, "id">
 ): CyRndrPipelinePtr<RS> {
   const r = {
@@ -452,111 +483,120 @@ export function createWebGPURenderer(
     });
 
     if (isRenderPipelinePtr(p)) {
-      // vertex buffer init
-      let vertBuf = cyManys.get(p.vertex.id);
-      if (!vertBuf) {
-        let initData = p.vertex.init();
-        assert(
-          isArray(initData),
-          `Vertex buffer must by inited with array ${p.vertex.name}`
-        );
-        console.log(`creating vert buf: ${p.vertex.name}`);
-        vertBuf = createCyMany(
-          device,
-          p.vertex.struct,
-          GPUBufferUsage.VERTEX,
-          initData
-        );
-        cyManys.set(p.vertex.id, vertBuf);
-      }
+      if (p.meshOpt.stepMode === "per-instance") {
+        // vertex buffer init
+        let vertBuf = cyManys.get(p.meshOpt.vertex.id);
+        if (!vertBuf) {
+          let initData = p.meshOpt.vertex.init();
+          assert(
+            isArray(initData),
+            `Vertex buffer must by inited with array ${p.meshOpt.vertex.name}`
+          );
+          console.log(`creating vert buf: ${p.meshOpt.vertex.name}`);
+          vertBuf = createCyMany(
+            device,
+            p.meshOpt.vertex.struct,
+            GPUBufferUsage.VERTEX,
+            initData
+          );
+          cyManys.set(p.meshOpt.vertex.id, vertBuf);
+        }
 
-      // instance buffer init
-      let instBuf = cyManys.get(p.instance.id);
-      if (!instBuf) {
-        let initData = p.instance.init();
-        assert(
-          isArray(initData),
-          `Instance buffer must by inited with array ${p.instance.name}`
-        );
-        console.log(`creating instance buf: ${p.instance.name}`);
-        instBuf = createCyMany(
-          device,
-          p.instance.struct,
-          // TODO(@darzu): collect all possible usages before creating these buffers
-          GPUBufferUsage.VERTEX,
-          initData
-        );
-        cyManys.set(p.instance.id, instBuf);
-      }
+        // instance buffer init
+        let instBuf = cyManys.get(p.meshOpt.instance.id);
+        if (!instBuf) {
+          let initData = p.meshOpt.instance.init();
+          assert(
+            isArray(initData),
+            `Instance buffer must by inited with array ${p.meshOpt.instance.name}`
+          );
+          console.log(`creating instance buf: ${p.meshOpt.instance.name}`);
+          instBuf = createCyMany(
+            device,
+            p.meshOpt.instance.struct,
+            // TODO(@darzu): collect all possible usages before creating these buffers
+            GPUBufferUsage.VERTEX,
+            initData
+          );
+          cyManys.set(p.meshOpt.instance.id, instBuf);
+        }
 
-      // index buffer init
-      let idxBuffer = cyIdxs.get(p.index.id);
-      if (!idxBuffer) {
-        let dataOrLen = p.index.init();
-        console.log(`idx buffer init: `);
-        console.dir(dataOrLen);
-        idxBuffer = createCyIdxBuf(device, dataOrLen);
-        cyIdxs.set(p.index.id, idxBuffer);
-      }
+        // index buffer init
+        let idxBuffer = cyIdxs.get(p.meshOpt.index.id);
+        if (!idxBuffer) {
+          let dataOrLen = p.meshOpt.index.init();
+          console.log(`idx buffer init: `);
+          console.dir(dataOrLen);
+          idxBuffer = createCyIdxBuf(device, dataOrLen);
+          cyIdxs.set(p.meshOpt.index.id, idxBuffer);
+        }
 
-      // TODO(@darzu): instance buffer init
+        // TODO(@darzu): instance buffer init
 
-      // render shader
-      // TODO(@darzu): pass vertex buffer and instance buffer into shader
-      const shaderStr = `
+        // render shader
+        // TODO(@darzu): pass vertex buffer and instance buffer into shader
+        const shaderStr = `
       ${shaderResStructs.join("\n")}
       ${shaderResVars.join("\n")}
       ${p.shader()}
       `;
 
-      // render pipeline
-      const shader = device.createShaderModule({
-        code: shaderStr,
-      });
-      const rndrPipelineDesc: GPURenderPipelineDescriptor = {
-        // TODO(@darzu): allow this to be parameterized
-        primitive: prim_tris,
-        depthStencil: {
-          depthWriteEnabled: true,
-          depthCompare: "less",
-          format: depthStencilFormat,
-        },
-        multisample: {
-          count: antiAliasSampleCount,
-        },
-        layout: device.createPipelineLayout({
-          bindGroupLayouts: [bindGroupLayout],
-        }),
-        vertex: {
-          module: shader,
-          entryPoint: p.shaderVertexEntry,
-          buffers: [
-            vertBuf.struct.vertexLayout("vertex", 0),
-            instBuf.struct.vertexLayout("instance", vertBuf.struct.memberCount),
-          ],
-        },
-        fragment: {
-          module: shader,
-          entryPoint: p.shaderFragmentEntry,
-          targets: [
-            // TODO(@darzu): parameterize output targets
-            {
-              format: canvasFormat,
-            },
-          ],
-        },
-      };
-      // console.dir(rndrPipelineDesc);
-      const rndrPipeline = device.createRenderPipeline(rndrPipelineDesc);
-      cyRndrPipelines.push({
-        ptr: p,
-        indexBuf: idxBuffer,
-        vertexBuf: vertBuf,
-        instanceBuf: instBuf,
-        pipeline: rndrPipeline,
-        resourceLayouts,
-        bindGroup,
-      });
+        // render pipeline
+        const shader = device.createShaderModule({
+          code: shaderStr,
+        });
+        const rndrPipelineDesc: GPURenderPipelineDescriptor = {
+          // TODO(@darzu): allow this to be parameterized
+          primitive: prim_tris,
+          depthStencil: {
+            depthWriteEnabled: true,
+            depthCompare: "less",
+            format: depthStencilFormat,
+          },
+          multisample: {
+            count: antiAliasSampleCount,
+          },
+          layout: device.createPipelineLayout({
+            bindGroupLayouts: [bindGroupLayout],
+          }),
+          vertex: {
+            module: shader,
+            entryPoint: p.shaderVertexEntry,
+            buffers: [
+              vertBuf.struct.vertexLayout("vertex", 0),
+              instBuf.struct.vertexLayout(
+                "instance",
+                vertBuf.struct.memberCount
+              ),
+            ],
+          },
+          fragment: {
+            module: shader,
+            entryPoint: p.shaderFragmentEntry,
+            targets: [
+              // TODO(@darzu): parameterize output targets
+              {
+                format: canvasFormat,
+              },
+            ],
+          },
+        };
+        // console.dir(rndrPipelineDesc);
+        const rndrPipeline = device.createRenderPipeline(rndrPipelineDesc);
+        cyRndrPipelines.push({
+          ptr: p,
+          indexBuf: idxBuffer,
+          vertexBuf: vertBuf,
+          instanceBuf: instBuf,
+          pipeline: rndrPipeline,
+          resourceLayouts,
+          bindGroup,
+        });
+      } else if (p.meshOpt.stepMode === "per-mesh-handle") {
+        throw `TODO ${p.meshOpt.stepMode}`;
+      } else {
+        never(p.meshOpt, `Unimplemented step kind`);
+      }
     } else {
       const shaderStr = `
       ${shaderResStructs.join("\n")}
@@ -896,18 +936,18 @@ export function createWebGPURenderer(
     // TODO(@darzu): IMPL
     for (let p of cyRndrPipelines) {
       assert(
-        p.ptr.stepMode === "per-instance",
-        "Need to implement step mode: " + p.ptr.stepMode
+        p.ptr.meshOpt.stepMode === "per-instance",
+        "Need to implement step mode: " + p.ptr.meshOpt.stepMode
       );
       bundleEnc.setPipeline(p.pipeline);
       bundleEnc.setBindGroup(0, p.bindGroup);
       bundleEnc.setIndexBuffer(p.indexBuf.buffer, "uint16");
       bundleEnc.setVertexBuffer(0, p.vertexBuf.buffer);
       // TODO(@darzu): instance buffer
-      bundleEnc.setVertexBuffer(1, p.instanceBuf.buffer);
+      bundleEnc.setVertexBuffer(1, p.instanceBuf!.buffer);
       // TODO(@darzu): support other step modes
       // console.log(`drawing ${p.indexBuf.length} ${p.instanceBuf.length}`);
-      bundleEnc.drawIndexed(p.indexBuf.length, p.instanceBuf.length, 0, 0);
+      bundleEnc.drawIndexed(p.indexBuf.length, p.instanceBuf!.length, 0, 0);
     }
 
     renderBundle = bundleEnc.finish();
