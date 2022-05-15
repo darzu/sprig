@@ -71,14 +71,22 @@ export interface CyIdxBufferPtr extends CyResourcePtr {
   init: () => Uint16Array | number;
 }
 
-export interface CyBufferPtr<O extends CyStructDesc> extends CyResourcePtr {
-  kind: "structBuffer";
+export interface CyManyBufferPtr<O extends CyStructDesc> extends CyResourcePtr {
+  kind: "manyBuffer";
   struct: CyStruct<O>;
-  init: () => CyToTS<O> | CyToTS<O>[] | number;
+  init: () => CyToTS<O>[] | number;
 }
+export interface CyOneBufferPtr<O extends CyStructDesc> extends CyResourcePtr {
+  kind: "oneBuffer";
+  struct: CyStruct<O>;
+  init: () => CyToTS<O>;
+}
+export type CyBufferPtr<O extends CyStructDesc> =
+  | CyManyBufferPtr<O>
+  | CyOneBufferPtr<O>;
 
 // TODO(@darzu): this is a wierd one. another way to do this?
-export interface CyBufferPtrLayout<O extends CyStructDesc> {
+interface CyBufferPtrLayout<O extends CyStructDesc> {
   bufPtr: CyBufferPtr<O>;
   usage: GPUBufferBindingType;
   parity: "one" | "many";
@@ -100,8 +108,8 @@ export interface CyMeshPoolPtr<V extends CyStructDesc, U extends CyStructDesc>
   // TODO(@darzu): remove id and name, this doesn't need to be inited directly
   computeVertsData: (m: Mesh) => CyToTS<V>[];
   computeUniData: (m: Mesh) => CyToTS<U>;
-  vertsPtr: CyBufferPtr<V>;
-  unisPtr: CyBufferPtr<U>;
+  vertsPtr: CyManyBufferPtr<V>;
+  unisPtr: CyManyBufferPtr<U>;
   triIndsPtr: CyIdxBufferPtr;
   lineIndsPtr: CyIdxBufferPtr;
 }
@@ -187,13 +195,26 @@ function isRenderPipelinePtr(
 //   | CyRndrPipelinePtr<any>;
 
 type PtrKindToPtrType = {
-  structBuffer: CyBufferPtr<any>;
+  manyBuffer: CyManyBufferPtr<any>;
+  oneBuffer: CyOneBufferPtr<any>;
   idxBuffer: CyIdxBufferPtr;
   texture: CyTexturePtr;
   compPipeline: CyCompPipelinePtr<any>;
   renderPipeline: CyRndrPipelinePtr<any>;
   meshPool: CyMeshPoolPtr<any, any>;
 };
+type PtrKindToResourceType = {
+  manyBuffer: CyMany<any>;
+  oneBuffer: CyOne<any>;
+  idxBuffer: CyIdxBuffer;
+  texture: CyTexture;
+  compPipeline: CyCompPipeline<any>;
+  renderPipeline: CyRndrPipeline<any>;
+  meshPool: MeshPool<any, any>;
+};
+type Assert_ResourceTypePtrTypeMatch =
+  PtrKindToPtrType[keyof PtrKindToResourceType] &
+    PtrKindToResourceType[keyof PtrKindToPtrType];
 type PtrKind = keyof PtrKindToPtrType;
 type PtrType = PtrKindToPtrType[PtrKind];
 // type PtrDesc<K extends PtrKind> = Omit<
@@ -203,7 +224,8 @@ type PtrType = PtrKindToPtrType[PtrKind];
 
 let _cyNameToPtr: { [name: string]: CyResourcePtr } = {};
 let _cyKindToPtrs: { [K in PtrKind]: PtrKindToPtrType[K][] } = {
-  structBuffer: [],
+  manyBuffer: [],
+  oneBuffer: [],
   idxBuffer: [],
   texture: [],
   compPipeline: [],
@@ -222,13 +244,23 @@ function registerCyResource<R extends CyResourcePtr>(ptr: R): R {
 
 type Omit_kind_name<T> = Omit<Omit<T, "kind">, "name">;
 
-export function registerBufPtr<O extends CyStructDesc>(
+export function registerOneBufPtr<O extends CyStructDesc>(
   name: string,
-  desc: Omit_kind_name<CyBufferPtr<O>>
-): CyBufferPtr<O> {
+  desc: Omit_kind_name<CyOneBufferPtr<O>>
+): CyOneBufferPtr<O> {
   return registerCyResource({
     ...desc,
-    kind: "structBuffer",
+    kind: "oneBuffer",
+    name,
+  });
+}
+export function registerManyBufPtr<O extends CyStructDesc>(
+  name: string,
+  desc: Omit_kind_name<CyManyBufferPtr<O>>
+): CyManyBufferPtr<O> {
+  return registerCyResource({
+    ...desc,
+    kind: "manyBuffer",
     name,
   });
 }

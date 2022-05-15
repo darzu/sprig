@@ -12,13 +12,14 @@ import {
 import { MeshHandle, MeshPoolOpts } from "./mesh-pool.js";
 import { getAABBFromMesh, Mesh } from "./mesh.js";
 import {
-  registerBufPtr,
   registerCompPipeline,
   registerRenderPipeline,
   registerIdxBufPtr,
   registerTexPtr,
   CyTexturePtr,
   registerMeshPoolPtr,
+  registerOneBufPtr,
+  registerManyBufPtr,
 } from "./render_webgpu.js";
 import { particle_shader, rope_shader } from "./shaders.js";
 
@@ -222,15 +223,15 @@ const genRopeStickData = () => {
   return _initRopeStickData;
 };
 
-const sceneBufPtr = registerBufPtr("scene", {
+const sceneBufPtr = registerOneBufPtr("scene", {
   struct: SceneStruct,
   init: setupScene,
 });
-const ropePointBufPtr = registerBufPtr("ropePoint", {
+const ropePointBufPtr = registerManyBufPtr("ropePoint", {
   struct: RopePointStruct,
   init: genRopePointData,
 });
-const ropeStickBufPtr = registerBufPtr("ropeStick", {
+const ropeStickBufPtr = registerManyBufPtr("ropeStick", {
   struct: RopeStickStruct,
   init: genRopeStickData,
 });
@@ -257,7 +258,7 @@ const initParticleVertData: () => CyToTS<
   { position: [-1, 1, -1] },
   { position: [-1, -1, 1] },
 ];
-const particleVertBufPtr = registerBufPtr("particleVert", {
+const particleVertBufPtr = registerManyBufPtr("particleVert", {
   struct: ParticleVertStruct,
   init: initParticleVertData,
 });
@@ -310,7 +311,7 @@ const clothTexPtr1 = registerTexPtr("clothTex1", {
 export const MAX_MESHES = 20000;
 export const MAX_VERTICES = 21844;
 
-const meshVertsPtr = registerBufPtr("meshVertsBuf", {
+const meshVertsPtr = registerManyBufPtr("meshVertsBuf", {
   struct: VertexStruct,
   init: () => MAX_VERTICES,
 });
@@ -323,7 +324,7 @@ const meshLineIndsPtr = registerIdxBufPtr("meshLineIndsBuf", {
   init: () => MAX_VERTICES * 2,
 });
 
-const meshUnisPtr = registerBufPtr("meshUnisBuf", {
+const meshUnisPtr = registerManyBufPtr("meshUnisBuf", {
   struct: MeshUniformStruct,
   init: () => MAX_MESHES,
 });

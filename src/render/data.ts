@@ -193,6 +193,8 @@ export interface CyBuffer<O extends CyStructDesc> {
   binding(idx: number): GPUBindGroupEntry;
   buffer: GPUBuffer;
 }
+
+// TODO(@darzu): rename "one" to "singleton", "many" to "array" ?
 export interface CyOne<O extends CyStructDesc> extends CyBuffer<O> {
   lastData: CyToTS<O> | undefined;
   queueUpdate: (data: CyToTS<O>) => void;
