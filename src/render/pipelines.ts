@@ -222,22 +222,19 @@ const genRopeStickData = () => {
   return _initRopeStickData;
 };
 
-const sceneBufPtr = registerBufPtr({
-  name: "scene",
+const sceneBufPtr = registerBufPtr("scene", {
   struct: SceneStruct,
   init: setupScene,
 });
-const ropePointBufPtr = registerBufPtr({
-  name: "ropePoint",
+const ropePointBufPtr = registerBufPtr("ropePoint", {
   struct: RopePointStruct,
   init: genRopePointData,
 });
-const ropeStickBufPtr = registerBufPtr({
-  name: "ropeStick",
+const ropeStickBufPtr = registerBufPtr("ropeStick", {
   struct: RopeStickStruct,
   init: genRopeStickData,
 });
-const compRopePipelinePtr = registerCompPipeline({
+const compRopePipelinePtr = registerCompPipeline("ropeComp", {
   resources: [sceneBufPtr, ropePointBufPtr, ropeStickBufPtr],
   shader: rope_shader,
   shaderComputeEntry: "main",
@@ -260,8 +257,7 @@ const initParticleVertData: () => CyToTS<
   { position: [-1, 1, -1] },
   { position: [-1, -1, 1] },
 ];
-const particleVertBufPtr = registerBufPtr({
-  name: "particleVert",
+const particleVertBufPtr = registerBufPtr("particleVert", {
   struct: ParticleVertStruct,
   init: initParticleVertData,
 });
@@ -269,12 +265,11 @@ const particleVertBufPtr = registerBufPtr({
 const initParticleIdxData = () =>
   new Uint16Array([2, 1, 0, 3, 2, 0, 1, 3, 0, 2, 3, 1]);
 
-const particleIdxBufPtr = registerIdxBufPtr({
-  name: "particleIdx",
+const particleIdxBufPtr = registerIdxBufPtr("particleIdx", {
   init: initParticleIdxData,
 });
 
-const renderRopePipelineDesc = registerRenderPipeline({
+const renderRopePipelineDesc = registerRenderPipeline("renderRope", {
   resources: [sceneBufPtr],
   meshOpt: {
     vertex: particleVertBufPtr,
@@ -289,8 +284,7 @@ const renderRopePipelineDesc = registerRenderPipeline({
 
 const CLOTH_SIZE = 10; // TODO(@darzu):
 
-const clothTexPtrDesc: Omit<CyTexturePtr, "id"> = {
-  name: "clothTex",
+const clothTexPtrDesc: Parameters<typeof registerTexPtr>[1] = {
   size: [CLOTH_SIZE, CLOTH_SIZE],
   format: "rgba32float",
   init: () => {
@@ -306,42 +300,35 @@ const clothTexPtrDesc: Omit<CyTexturePtr, "id"> = {
     return clothData;
   },
 };
-const clothTexPtr0 = registerTexPtr({
+const clothTexPtr0 = registerTexPtr("clothTex0", {
   ...clothTexPtrDesc,
-  name: clothTexPtrDesc.name + "0",
 });
-const clothTexPtr1 = registerTexPtr({
+const clothTexPtr1 = registerTexPtr("clothTex1", {
   ...clothTexPtrDesc,
-  name: clothTexPtrDesc.name + "1",
 });
 
 export const MAX_MESHES = 20000;
 export const MAX_VERTICES = 21844;
 
-const meshVertsPtr = registerBufPtr({
-  name: "meshVertsBuf",
+const meshVertsPtr = registerBufPtr("meshVertsBuf", {
   struct: VertexStruct,
   init: () => MAX_VERTICES,
 });
 
-const meshTriIndsPtr = registerIdxBufPtr({
-  name: "meshTriIndsBuf",
+const meshTriIndsPtr = registerIdxBufPtr("meshTriIndsBuf", {
   init: () => MAX_VERTICES,
 });
 
-const meshLineIndsPtr = registerIdxBufPtr({
-  name: "meshLineIndsBuf",
+const meshLineIndsPtr = registerIdxBufPtr("meshLineIndsBuf", {
   init: () => MAX_VERTICES * 2,
 });
 
-const meshUnisPtr = registerBufPtr({
-  name: "meshUnisBuf",
+const meshUnisPtr = registerBufPtr("meshUnisBuf", {
   struct: MeshUniformStruct,
   init: () => MAX_MESHES,
 });
 
-export const meshPoolPtr = registerMeshPoolPtr({
-  name: "meshPool",
+export const meshPoolPtr = registerMeshPoolPtr("meshPool", {
   computeVertsData,
   computeUniData,
   vertsPtr: meshVertsPtr,
