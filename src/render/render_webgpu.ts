@@ -12,6 +12,7 @@ import {
   createCyIdxBuf,
   createCyMany,
   createCyOne,
+  createCyTexture,
   CyIdxBuffer,
   CyMany,
   CyOne,
@@ -86,11 +87,11 @@ export type CyBufferPtr<O extends CyStructDesc> =
   | CyOneBufferPtr<O>;
 
 // TODO(@darzu): this is a wierd one. another way to do this?
-interface CyBufferPtrLayout<O extends CyStructDesc> {
-  bufPtr: CyBufferPtr<O>;
-  usage: GPUBufferBindingType;
-  parity: "one" | "many";
-}
+// interface CyBufferPtrLayout<O extends CyStructDesc> {
+//   bufPtr: CyBufferPtr<O>;
+//   usage: GPUBufferBindingType;
+//   parity: "one" | "many";
+// }
 
 // TEXUTRES
 
@@ -125,7 +126,7 @@ export interface CyCompPipelinePtr<RS extends CyBufferPtr<CyStructDesc>[]>
 
 export interface CyCompPipeline<RS extends CyBufferPtr<CyStructDesc>[]> {
   ptr: CyCompPipelinePtr<RS>;
-  resourceLayouts: CyBufferPtrLayout<CyStructDesc>[];
+  // resourceLayouts: CyBufferPtrLayout<CyStructDesc>[];
   pipeline: GPUComputePipeline;
   bindGroup: GPUBindGroup;
 }
@@ -143,7 +144,8 @@ type CyMeshOpt =
       stepMode: "per-instance";
     };
 
-export interface CyRndrPipelinePtr<RS extends CyBufferPtr<any>[]> {
+export interface CyRndrPipelinePtr<RS extends CyBufferPtr<any>[]>
+  extends CyResourcePtr {
   kind: "renderPipeline";
   resources: [...RS];
   shader: () => string;
@@ -166,7 +168,7 @@ export interface CyRndrPipelinePtr<RS extends CyBufferPtr<any>[]> {
 // TODO(@darzu): instead of just mushing together with the desc, have desc compose in
 export interface CyRndrPipeline<RS extends CyBufferPtr<any>[]> {
   ptr: CyRndrPipelinePtr<RS>;
-  resourceLayouts: CyBufferPtrLayout<any>[];
+  // resourceLayouts: CyBufferPtrLayout<any>[];
   vertexBuf: CyMany<any>;
   indexBuf: CyIdxBuffer;
   instanceBuf?: CyMany<any>;
@@ -199,8 +201,8 @@ type PtrKindToPtrType = {
   oneBuffer: CyOneBufferPtr<any>;
   idxBuffer: CyIdxBufferPtr;
   texture: CyTexturePtr;
-  compPipeline: CyCompPipelinePtr<any>;
-  renderPipeline: CyRndrPipelinePtr<any>;
+  compPipeline: CyCompPipelinePtr<CyBufferPtr<any>[]>;
+  renderPipeline: CyRndrPipelinePtr<CyBufferPtr<any>[]>;
   meshPool: CyMeshPoolPtr<any, any>;
 };
 type PtrKindToResourceType = {
@@ -208,8 +210,8 @@ type PtrKindToResourceType = {
   oneBuffer: CyOne<any>;
   idxBuffer: CyIdxBuffer;
   texture: CyTexture;
-  compPipeline: CyCompPipeline<any>;
-  renderPipeline: CyRndrPipeline<any>;
+  compPipeline: CyCompPipeline<CyBufferPtr<any>[]>;
+  renderPipeline: CyRndrPipeline<CyBufferPtr<any>[]>;
   meshPool: MeshPool<any, any>;
 };
 type Assert_ResourceTypePtrTypeMatch =
@@ -221,6 +223,7 @@ type PtrType = PtrKindToPtrType[PtrKind];
 //   Omit<PtrKindToPtrType[K], "name">,
 //   "kind"
 // >;
+type ResourceType = PtrKindToResourceType[PtrKind];
 
 let _cyNameToPtr: { [name: string]: CyResourcePtr } = {};
 let _cyKindToPtrs: { [K in PtrKind]: PtrKindToPtrType[K][] } = {
@@ -349,204 +352,173 @@ export function createWebGPURenderer(
   // let sceneUni = createCyOne(device, SceneStruct, setupScene());
   let canvasFormat = context.getPreferredFormat(adapter);
 
-  // generic compute pipelines
+  // determine resource usage modes
+  // TODO(@darzu): determine texture usage modes
+  const cyNameToBufferUsage: { [name: string]: GPUBufferUsageFlags } = {};
+  // all buffers are updatable via queue
+  // TODO(@darzu): option for some to opt out? for perf?
+  [..._cyKindToPtrs.manyBuffer, ..._cyKindToPtrs.oneBuffer].forEach(
+    (r) => (cyNameToBufferUsage[r.name] |= GPUBufferUsage.COPY_DST)
+  );
+  // all singleton buffers are probably used as uniforms
+  _cyKindToPtrs.oneBuffer.forEach(
+    (p) => (cyNameToBufferUsage[p.name] |= GPUBufferUsage.UNIFORM)
+  );
+  // all pipeline global resources are storage or uniform
+  // TODO(@darzu): be more precise?
+  [..._cyKindToPtrs.compPipeline, ..._cyKindToPtrs.renderPipeline].forEach(
+    (p) =>
+      p.resources.forEach(
+        (r) => (cyNameToBufferUsage[r.name] |= GPUBufferUsage.STORAGE)
+      )
+  );
+  // render pipelines have vertex buffers and mesh pools have uniform buffers
+  _cyKindToPtrs.renderPipeline.forEach((p) => {
+    if (p.meshOpt.stepMode === "per-instance") {
+      cyNameToBufferUsage[p.meshOpt.instance.name] |= GPUBufferUsage.VERTEX;
+      cyNameToBufferUsage[p.meshOpt.vertex.name] |= GPUBufferUsage.VERTEX;
+    } else if (p.meshOpt.stepMode === "per-mesh-handle") {
+      cyNameToBufferUsage[p.meshOpt.pool.vertsPtr.name] |=
+        GPUBufferUsage.VERTEX;
+      cyNameToBufferUsage[p.meshOpt.pool.unisPtr.name] |=
+        GPUBufferUsage.UNIFORM;
+    } else {
+      never(p.meshOpt);
+    }
+  });
+  // mesh pools have vert and uniform buffers
+  _cyKindToPtrs.meshPool.forEach((p) => {
+    cyNameToBufferUsage[p.vertsPtr.name] |= GPUBufferUsage.VERTEX;
+    cyNameToBufferUsage[p.unisPtr.name] |= GPUBufferUsage.UNIFORM;
+  });
+
+  // create resources
   // TODO(@darzu): IMPL
-  const cyOnes: Map<string, CyOne<any>> = new Map();
-  const cyManys: Map<string, CyMany<any>> = new Map();
-  const cyIdxs: Map<string, CyIdxBuffer> = new Map();
-  const cyTexs: Map<string, CyTexture> = new Map();
-  const cyPools: Map<string, MeshPool<any, any>> = new Map();
-  const cyCompPipelines: CyCompPipeline<any>[] = [];
-  const cyRndrPipelines: CyRndrPipeline<any>[] = [];
+  const cyKindToNameToRes: {
+    [K in PtrKind]: { [name: string]: PtrKindToResourceType[K] };
+  } = {
+    manyBuffer: {},
+    oneBuffer: {},
+    idxBuffer: {},
+    texture: {},
+    compPipeline: {},
+    renderPipeline: {},
+    meshPool: {},
+  };
 
-  function initCyResources() {
-    // TODO(@darzu):
-  }
-
-  // init mesh pools
-  for (let desc of _cyKindToPtrs["meshPool"]) {
-    // TODO(@darzu): all this createCy* stuff should be done jointly
-    if (!cyManys.has(desc.vertsPtr.name)) {
-      const dataOrLen = desc.vertsPtr.init();
-      assert(isNumber(dataOrLen), `mesh pool verts must have len`);
-      const verticesBuffer = createCyMany(
-        device,
-        desc.vertsPtr.struct,
-        GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-        dataOrLen
-      );
-      cyManys.set(desc.vertsPtr.name, verticesBuffer);
-    }
-    if (!cyIdxs.has(desc.triIndsPtr.name)) {
-      const dataOrLen = desc.triIndsPtr.init();
-      assert(isNumber(dataOrLen), `mesh pool tri inds must have len`);
-      const buf = createCyIdxBuf(device, dataOrLen);
-      cyIdxs.set(desc.triIndsPtr.name, buf);
-    }
-    if (!cyIdxs.has(desc.lineIndsPtr.name)) {
-      const dataOrLen = desc.lineIndsPtr.init();
-      assert(isNumber(dataOrLen), `mesh pool line inds must have len`);
-      const buf = createCyIdxBuf(device, dataOrLen);
-      cyIdxs.set(desc.lineIndsPtr.name, buf);
-    }
-    if (!cyManys.has(desc.unisPtr.name)) {
-      const dataOrLen = desc.unisPtr.init();
-      assert(isNumber(dataOrLen), `mesh pool unis must have len`);
-      const buf = createCyMany(
-        device,
-        desc.unisPtr.struct,
-        GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-        dataOrLen
-      );
-      cyManys.set(desc.unisPtr.name, buf);
-    }
-
+  // create many-buffers
+  _cyKindToPtrs.manyBuffer.forEach((r) => {
+    const usage = cyNameToBufferUsage[r.name]!;
+    const buf = createCyMany(device, r.struct, usage, r.init());
+    cyKindToNameToRes.manyBuffer[r.name] = buf;
+  });
+  // create one-buffers
+  _cyKindToPtrs.oneBuffer.forEach((r) => {
+    const usage = cyNameToBufferUsage[r.name]!;
+    const buf = createCyOne(device, r.struct, usage, r.init());
+    cyKindToNameToRes.oneBuffer[r.name] = buf;
+  });
+  // create idx-buffers
+  _cyKindToPtrs.idxBuffer.forEach((r) => {
+    const buf = createCyIdxBuf(device, r.init());
+    cyKindToNameToRes.idxBuffer[r.name] = buf;
+  });
+  // create mesh pools
+  _cyKindToPtrs.meshPool.forEach((r) => {
+    const verts = cyKindToNameToRes.manyBuffer[r.vertsPtr.name];
+    const unis = cyKindToNameToRes.manyBuffer[r.unisPtr.name];
+    const triInds = cyKindToNameToRes.idxBuffer[r.triIndsPtr.name];
+    const lineInds = cyKindToNameToRes.idxBuffer[r.lineIndsPtr.name];
+    assert(
+      verts && unis && triInds && lineInds,
+      `Missing buffer for mesh pool ${r.name}`
+    );
     const pool = createMeshPool({
-      computeVertsData: desc.computeVertsData,
-      computeUniData: desc.computeUniData,
-      verts: cyManys.get(desc.vertsPtr.name)!,
-      unis: cyManys.get(desc.unisPtr.name)!,
-      triInds: cyIdxs.get(desc.triIndsPtr.name)!,
-      lineInds: cyIdxs.get(desc.lineIndsPtr.name)!,
+      computeVertsData: r.computeVertsData,
+      computeUniData: r.computeUniData,
+      verts,
+      unis,
+      triInds,
+      lineInds,
       // TODO(@darzu): support more?
       shiftMeshIndices: false,
     });
-
-    cyPools.set(desc.name, pool);
-  }
-
-  // TODO(@darzu): pass in elsewhere?
-  const pool = cyPools.get(meshPoolPtr.name)!;
-
-  // init textures
-  // TODO(@darzu): Do this pipeline driven
-  for (let desc of _cyKindToPtrs["texture"]) {
-    // TODO(@darzu): move to createCyTexture
-    const tex = device.createTexture({
-      size: desc.size,
-      format: desc.format,
-      dimension: "2d",
-      // TODO(@darzu): be more precise
-      usage:
-        GPUTextureUsage.COPY_DST |
-        GPUTextureUsage.STORAGE_BINDING |
-        GPUTextureUsage.TEXTURE_BINDING,
-    });
-    const bytesPerVal = texTypeToBytes[desc.format];
-    assert(bytesPerVal, `Unimplemented format: ${desc.format}`);
-    const queueUpdate = (data: Float32Array) => {
-      device.queue.writeTexture(
-        { texture: tex },
-        data,
-        {
-          offset: 0,
-          bytesPerRow: desc.size[0] * bytesPerVal,
-          rowsPerImage: desc.size[1],
-        },
-        {
-          width: desc.size[0],
-          height: desc.size[1],
-          // TODO(@darzu): what does this mean?
-          depthOrArrayLayers: 1,
-        }
-      );
-    };
-    const initVal = desc.init();
-    if (initVal) {
-      queueUpdate(initVal);
-    }
-    const cyTex: CyTexture = {
-      size: desc.size,
-      format: desc.format,
-      texture: tex,
-      queueUpdate,
-    };
-    cyTexs.set(desc.name, cyTex);
-  }
-  // init pipelines
+    cyKindToNameToRes.meshPool[r.name] = pool;
+  });
+  // create texture
+  _cyKindToPtrs.texture.forEach((r) => {
+    const t = createCyTexture(device, r.size, r.format, r.init);
+    cyKindToNameToRes.texture[r.name] = t;
+  });
+  // create pipelines
   for (let p of [
     ..._cyKindToPtrs["compPipeline"],
     ..._cyKindToPtrs["renderPipeline"],
   ]) {
-    // init global resources
-    for (let r of p.resources) {
-      if (!cyOnes.has(r.name) && !cyManys.has(r.name)) {
-        let initDataOrLen = r.init();
-        if (isArray(initDataOrLen) || isNumber(initDataOrLen)) {
-          // TODO(@darzu): accurately determine usage by inspecting pipelines
-          let usage = GPUBufferUsage.STORAGE | GPUBufferUsage.VERTEX;
-          let cyMany = createCyMany(device, r.struct, usage, initDataOrLen);
-          cyManys.set(r.name, cyMany);
+    // // global resource layout
+    // const resourceLayouts: CyBufferPtrLayout<any>[] = p.resources.map(
+    //   (r, i) => {
+    //     const parity = cyOnes.has(r.name) ? "one" : "many";
+    //     return {
+    //       bufPtr: r,
+    //       // TODO(@darzu): determine binding types
+    //       usage: r.struct.opts?.isUniform ? "uniform" : "storage",
+    //       parity,
+    //     };
+    //   }
+    // );
 
-          console.log(`creating resource many buf: ${r.name}`);
-        } else {
-          let cyOne = createCyOne(device, r.struct, initDataOrLen);
-          cyOnes.set(r.name, cyOne);
-
-          console.log(`creating resource one buf: ${r.name}`);
-        }
-      }
-    }
-
-    // global resource layout
-    const resourceLayouts: CyBufferPtrLayout<any>[] = p.resources.map(
-      (r, i) => {
-        const parity = cyOnes.has(r.name) ? "one" : "many";
-        return {
-          bufPtr: r,
-          // TODO(@darzu): determine binding types
-          usage: r.struct.opts?.isUniform ? "uniform" : "storage",
-          parity,
-        };
-      }
-    );
-
+    // bind group layout
     const bindGroupLayoutDesc: GPUBindGroupLayoutDescriptor = {
-      entries: resourceLayouts.map((r, i) =>
-        r.bufPtr.struct.layout(
+      entries: p.resources.map((r, i) =>
+        r.struct.layout(
           i,
           // TODO(@darzu): more precise
           isRenderPipelinePtr(p)
             ? GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT
             : GPUShaderStage.COMPUTE,
-          r.usage
+          // TODO(@darzu): more precise?
+          r.struct.opts?.isUniform ? "uniform" : "storage"
         )
       ),
     };
     const bindGroupLayout = device.createBindGroupLayout(bindGroupLayoutDesc);
 
-    // resources bind group
+    // bind group
     const bindGroup = device.createBindGroup({
       layout: bindGroupLayout,
-      entries: resourceLayouts.map((r, i) => {
-        let buf = cyOnes.get(r.bufPtr.name) ?? cyManys.get(r.bufPtr.name);
-        assert(!!buf, `Missing resource buffer: ${r.bufPtr.name}`);
+      entries: p.resources.map((r, i) => {
+        let buf =
+          r.kind === "oneBuffer"
+            ? cyKindToNameToRes.oneBuffer[r.name]
+            : cyKindToNameToRes.manyBuffer[r.name];
+        assert(!!buf, `Missing resource buffer: ${r.name}`);
         return buf.binding(i);
       }),
     });
 
     // shader resource setup
-    const shaderResStructs = resourceLayouts.map((r) => {
-      const structStr = `struct ${capitalize(r.bufPtr.name)} {
-        ${r.bufPtr.struct.wgsl(true)}
+    const shaderResStructs = p.resources.map((r) => {
+      const structStr = `struct ${capitalize(r.name)} {
+        ${r.struct.wgsl(true)}
       };`;
-      if (r.parity === "one") {
+      if (r.kind === "oneBuffer") {
         return structStr;
       } else {
         return `${structStr}
-        struct ${pluralize(capitalize(r.bufPtr.name))} {
-          ${pluralize(uncapitalize(r.bufPtr.name))} : array<${capitalize(
-          r.bufPtr.name
-        )}>,
+        struct ${pluralize(capitalize(r.name))} {
+          ${pluralize(uncapitalize(r.name))} : array<${capitalize(r.name)}>,
         };`;
       }
     });
-    const shaderResVars = resourceLayouts.map((r, i) => {
-      const varPrefix = GPUBufferBindingTypeToWgslVar[r.usage];
+    const shaderResVars = p.resources.map((r, i) => {
+      // TODO(@darzu): duplite usage determination
+      const usage = r.struct.opts?.isUniform ? "uniform" : "storage";
+      const varPrefix = GPUBufferBindingTypeToWgslVar[usage];
       const varName =
-        r.parity === "one"
-          ? uncapitalize(r.bufPtr.name)
-          : pluralize(uncapitalize(r.bufPtr.name));
+        r.kind === "oneBuffer"
+          ? uncapitalize(r.name)
+          : pluralize(uncapitalize(r.name));
       const varType = capitalize(varName);
       // TODO(@darzu): support multiple groups?
       return `@group(0) @binding(${i}) ${varPrefix} ${varName} : ${varType};`;
@@ -554,62 +526,16 @@ export function createWebGPURenderer(
 
     if (isRenderPipelinePtr(p)) {
       if (p.meshOpt.stepMode === "per-instance") {
-        // vertex buffer init
-        let vertBuf = cyManys.get(p.meshOpt.vertex.name);
-        if (!vertBuf) {
-          let initData = p.meshOpt.vertex.init();
-          assert(
-            isArray(initData),
-            `Vertex buffer must by inited with array ${p.meshOpt.vertex.name}`
-          );
-          console.log(`creating vert buf: ${p.meshOpt.vertex.name}`);
-          vertBuf = createCyMany(
-            device,
-            p.meshOpt.vertex.struct,
-            GPUBufferUsage.VERTEX,
-            initData
-          );
-          cyManys.set(p.meshOpt.vertex.name, vertBuf);
-        }
-
-        // instance buffer init
-        let instBuf = cyManys.get(p.meshOpt.instance.name);
-        if (!instBuf) {
-          let initData = p.meshOpt.instance.init();
-          assert(
-            isArray(initData),
-            `Instance buffer must by inited with array ${p.meshOpt.instance.name}`
-          );
-          console.log(`creating instance buf: ${p.meshOpt.instance.name}`);
-          instBuf = createCyMany(
-            device,
-            p.meshOpt.instance.struct,
-            // TODO(@darzu): collect all possible usages before creating these buffers
-            GPUBufferUsage.VERTEX,
-            initData
-          );
-          cyManys.set(p.meshOpt.instance.name, instBuf);
-        }
-
-        // index buffer init
-        let idxBuffer = cyIdxs.get(p.meshOpt.index.name);
-        if (!idxBuffer) {
-          let dataOrLen = p.meshOpt.index.init();
-          console.log(`idx buffer init: `);
-          console.dir(dataOrLen);
-          idxBuffer = createCyIdxBuf(device, dataOrLen);
-          cyIdxs.set(p.meshOpt.index.name, idxBuffer);
-        }
-
-        // TODO(@darzu): instance buffer init
+        const vertBuf = cyKindToNameToRes.manyBuffer[p.meshOpt.vertex.name];
+        const instBuf = cyKindToNameToRes.manyBuffer[p.meshOpt.instance.name];
+        const idxBuffer = cyKindToNameToRes.idxBuffer[p.meshOpt.index.name];
 
         // render shader
         // TODO(@darzu): pass vertex buffer and instance buffer into shader
-        const shaderStr = `
-      ${shaderResStructs.join("\n")}
-      ${shaderResVars.join("\n")}
-      ${p.shader()}
-      `;
+        const shaderStr =
+          `${shaderResStructs.join("\n")}\n` +
+          `${shaderResVars.join("\n")}\n` +
+          `${p.shader()}\n`;
 
         // render pipeline
         const shader = device.createShaderModule({
@@ -653,15 +579,16 @@ export function createWebGPURenderer(
         };
         // console.dir(rndrPipelineDesc);
         const rndrPipeline = device.createRenderPipeline(rndrPipelineDesc);
-        cyRndrPipelines.push({
+        const cyPipeline: CyRndrPipeline<any> = {
           ptr: p,
           indexBuf: idxBuffer,
           vertexBuf: vertBuf,
           instanceBuf: instBuf,
           pipeline: rndrPipeline,
-          resourceLayouts,
+          // resourceLayouts,
           bindGroup,
-        });
+        };
+        cyKindToNameToRes.renderPipeline[p.name] = cyPipeline;
       } else if (p.meshOpt.stepMode === "per-mesh-handle") {
         throw `TODO ${p.meshOpt.stepMode}`;
       } else {
@@ -685,25 +612,31 @@ export function createWebGPURenderer(
           entryPoint: p.shaderComputeEntry ?? "main",
         },
       });
-      cyCompPipelines.push({
+      const cyPipeline: CyCompPipeline<any> = {
         ptr: p,
         pipeline: compPipeline,
-        resourceLayouts,
+        // resourceLayouts,
         bindGroup,
-      });
+      };
+      cyKindToNameToRes.compPipeline[p.name] = cyPipeline;
     }
   }
 
+  // TODO(@darzu): pass in elsewhere?
+  const pool: MeshPool<
+    typeof VertexStruct.desc,
+    typeof MeshUniformStruct.desc
+  > = cyKindToNameToRes.meshPool["meshPool"]!;
+
   // TODO(@darzu): hacky grab
-  let sceneUni: CyOne<typeof SceneStruct.desc> = [...cyOnes.values()].filter(
-    (r) => r.struct === SceneStruct
-  )[0];
+  let sceneUni: CyOne<typeof SceneStruct.desc> =
+    cyKindToNameToRes.oneBuffer["scene"]!;
 
   // cloth data
   let clothTextures = [
     // TODO(@darzu): hacky grab
-    cyTexs.get("clothTex0")!.texture,
-    cyTexs.get("clothTex1")!.texture,
+    cyKindToNameToRes.texture["clothTex0"]!.texture,
+    cyKindToNameToRes.texture["clothTex1"]!.texture,
   ];
 
   let cmpClothBindGroupLayout = device.createBindGroupLayout({
@@ -1004,7 +937,7 @@ export function createWebGPURenderer(
     }
 
     // TODO(@darzu): IMPL
-    for (let p of cyRndrPipelines) {
+    for (let p of Object.values(cyKindToNameToRes.renderPipeline)) {
       assert(
         p.ptr.meshOpt.stepMode === "per-instance",
         "Need to implement step mode: " + p.ptr.meshOpt.stepMode
@@ -1083,7 +1016,7 @@ export function createWebGPURenderer(
     cmpClothPassEncoder.end();
 
     // TODO(@darzu): IMPL
-    for (let p of cyCompPipelines) {
+    for (let p of Object.values(cyKindToNameToRes.compPipeline)) {
       const compPassEncoder = commandEncoder.beginComputePass();
       compPassEncoder.setPipeline(p.pipeline);
       compPassEncoder.setBindGroup(0, p.bindGroup);

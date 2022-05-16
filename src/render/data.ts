@@ -481,6 +481,7 @@ export function createCyStruct<O extends CyStructDesc>(
 export function createCyOne<O extends CyStructDesc>(
   device: GPUDevice,
   struct: CyStruct<O>,
+  usage: GPUBufferUsageFlags,
   initData?: CyToTS<O>
 ): CyOne<O> {
   assert(struct.opts?.isUniform, "CyOne struct must be created with isUniform");
@@ -489,7 +490,7 @@ export function createCyOne<O extends CyStructDesc>(
     size: struct.size,
     // TODO(@darzu): parameterize these
     // TODO(@darzu): be precise
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    usage,
     mappedAtCreation: !!initData,
   });
 
@@ -635,4 +636,53 @@ export function createCyIdxBuf(
   }
 
   return buf;
+}
+
+// TODO(@darzu): these paramters should just be CyTexturePtr
+export function createCyTexture(
+  device: GPUDevice,
+  size: [number, number],
+  format: GPUTextureFormat,
+  init: () => Float32Array | undefined
+): CyTexture {
+  const tex = device.createTexture({
+    size: size,
+    format: format,
+    dimension: "2d",
+    // TODO(@darzu): be more precise
+    usage:
+      GPUTextureUsage.COPY_DST |
+      GPUTextureUsage.STORAGE_BINDING |
+      GPUTextureUsage.TEXTURE_BINDING,
+  });
+  const bytesPerVal = texTypeToBytes[format];
+  assert(bytesPerVal, `Unimplemented format: ${format}`);
+  const queueUpdate = (data: Float32Array) => {
+    device.queue.writeTexture(
+      { texture: tex },
+      data,
+      {
+        offset: 0,
+        bytesPerRow: size[0] * bytesPerVal,
+        rowsPerImage: size[1],
+      },
+      {
+        width: size[0],
+        height: size[1],
+        // TODO(@darzu): what does this mean?
+        depthOrArrayLayers: 1,
+      }
+    );
+  };
+  const initVal = init();
+  if (initVal) {
+    queueUpdate(initVal);
+  }
+  const cyTex: CyTexture = {
+    size: size,
+    format: format,
+    texture: tex,
+    queueUpdate,
+  };
+  return cyTex;
 }
