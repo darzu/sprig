@@ -24,10 +24,12 @@ import {
 import { mesh_shader, particle_shader, rope_shader } from "./shaders.js";
 
 // TODO:
-//  pipeline attachements / outputs
-//  mesh pool handle enable/disable
-//  textures and samplers as resources
-//  resource ping-ponging for cloth texs and boids
+//  [ ] pipeline attachements / outputs
+//        use case: two cameras
+//  [ ] mesh pool handle enable/disable
+//  [ ] textures and samplers as resources
+//  [ ] resource ping-ponging for cloth texs and boids
+//  [ ] shader VertexInput struct auto gen
 
 // TODO(@darzu):
 export const VertexStruct = createCyStruct(
