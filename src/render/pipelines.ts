@@ -29,7 +29,26 @@ import { mesh_shader, particle_shader, rope_shader } from "./shaders.js";
 //  [ ] mesh pool handle enable/disable
 //  [ ] textures and samplers as resources
 //  [ ] resource ping-ponging for cloth texs and boids
-//  [ ] shader VertexInput struct auto gen
+//  [x] shader VertexInput struct auto gen
+
+/*
+ TODO(@darzu): how to reference clothTexPtr0, and clothTexPtr1?
+    need logic to choose between these
+    bake in flip-flop? circular buffer?
+    always changed after compute?
+      what r the other cases?
+        dynamic render target
+    solution:
+      static resource allocations,
+      dynamic resource combinations
+        the difference between layout vs binding
+      .bind or .swap ?
+      waht is swappable? 
+      all resources, all buffers (vert, instance)
+
+  For now, why don't we just have every permutation of pipeline ptr?
+    so far, there r just 2 per config
+*/
 
 // TODO(@darzu):
 export const VertexStruct = createCyStruct(
@@ -388,54 +407,3 @@ const renderTriPipelineDesc = registerRenderPipeline("triRender", {
   shaderVertexEntry: "vert_main",
   shaderFragmentEntry: "frag_main",
 });
-
-/*
-renderPipelineDesc_tris: GPURenderPipelineDescriptor = {
-  layout: device.createPipelineLayout({
-    bindGroupLayouts: [
-      renderSceneUniBindGroupLayout,
-      modelUniBindGroupLayout,
-    ],
-  }),
-  vertex: {
-    module: device.createShaderModule({ code: obj_vertShader() }),
-    entryPoint: "main",
-    buffers: [VertexStruct.vertexLayout("vertex", 0)],
-  },
-  fragment: {
-    module: device.createShaderModule({ code: obj_fragShader() }),
-    entryPoint: "main",
-    targets: [{ format: canvasFormat }],
-  },
-  primitive: prim_tris,
-  depthStencil: {
-    depthWriteEnabled: true,
-    depthCompare: "less",
-    format: depthStencilFormat,
-  },
-  multisample: {
-    count: antiAliasSampleCount,
-  },
-};
-
-
-    // render triangles and lines
-    bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
-    bundleEnc.setVertexBuffer(0, pool.verticesBuffer.buffer);
-
-    // render triangles first
-    if (renderer.drawTris) {
-      bundleEnc.setPipeline(renderPipeline_tris);
-      // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
-      bundleEnc.setIndexBuffer(pool.triIndicesBuffer, "uint16");
-      for (let m of Object.values(handles)) {
-        bundleEnc.setBindGroup(1, modelUniBindGroup, [m.modelUniByteOffset]);
-        bundleEnc.drawIndexed(
-          m.numTris * 3,
-          undefined,
-          m.triIndicesNumOffset,
-          m.vertNumOffset
-        );
-      }
-    }
-*/
