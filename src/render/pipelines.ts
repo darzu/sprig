@@ -21,7 +21,13 @@ import {
   registerOneBufPtr,
   registerManyBufPtr,
 } from "./render_webgpu.js";
-import { particle_shader, rope_shader } from "./shaders.js";
+import { mesh_shader, particle_shader, rope_shader } from "./shaders.js";
+
+// TODO:
+//  pipeline attachements / outputs
+//  mesh pool handle enable/disable
+//  textures and samplers as resources
+//  resource ping-ponging for cloth texs and boids
 
 // TODO(@darzu):
 export const VertexStruct = createCyStruct(
@@ -324,7 +330,7 @@ const meshLineIndsPtr = registerIdxBufPtr("meshLineIndsBuf", {
   init: () => MAX_VERTICES * 2,
 });
 
-const meshUnisPtr = registerManyBufPtr("meshUnisBuf", {
+const meshUnisPtr = registerManyBufPtr("meshUni", {
   struct: MeshUniformStruct,
   init: () => MAX_MESHES,
 });
@@ -370,16 +376,16 @@ export function computeVertsData(m: Mesh): VertexTS[] {
   return vertsData;
 }
 
-// const renderTriPipelineDesc = registerMeshRenderPipeline({
-//   resources: [sceneBufPtr],
-//   meshOpt: {
-//     pool: meshPoolPtr,
-//     stepMode: "per-mesh-handle",
-//   },
-//   shader: mesh_shader,
-//   shaderVertexEntry: "vert_main",
-//   shaderFragmentEntry: "frag_main",
-// });
+const renderTriPipelineDesc = registerRenderPipeline("triRender", {
+  resources: [sceneBufPtr],
+  meshOpt: {
+    pool: meshPoolPtr,
+    stepMode: "per-mesh-handle",
+  },
+  shader: mesh_shader,
+  shaderVertexEntry: "vert_main",
+  shaderFragmentEntry: "frag_main",
+});
 
 /*
 renderPipelineDesc_tris: GPURenderPipelineDescriptor = {

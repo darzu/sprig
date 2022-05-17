@@ -50,8 +50,8 @@ import { Renderer } from "./renderer.js";
 import {
   cloth_shader,
   rope_shader,
-  obj_vertShader,
-  obj_fragShader,
+  // obj_vertShader,
+  // obj_fragShader,
   particle_shader,
 } from "./shaders.js";
 
@@ -174,7 +174,7 @@ export interface CyRndrPipeline<RS extends CyBufferPtr<any>[]> {
   instanceBuf?: CyMany<any>;
   pool?: MeshPool<any, any>;
   pipeline: GPURenderPipeline;
-  bindGroup: GPUBindGroup;
+  bindGroups: GPUBindGroup[];
 }
 
 // HELPERS
@@ -330,6 +330,12 @@ const prim_lines: GPUPrimitiveState = {
   topology: "line-list",
 };
 
+const depthStencilOpts: GPUDepthStencilState = {
+  depthWriteEnabled: true,
+  depthCompare: "less",
+  format: depthStencilFormat,
+};
+
 export function createWebGPURenderer(
   canvas: HTMLCanvasElement,
   device: GPUDevice,
@@ -455,54 +461,52 @@ export function createWebGPURenderer(
     ..._cyKindToPtrs["compPipeline"],
     ..._cyKindToPtrs["renderPipeline"],
   ]) {
-    // // global resource layout
-    // const resourceLayouts: CyBufferPtrLayout<any>[] = p.resources.map(
-    //   (r, i) => {
-    //     const parity = cyOnes.has(r.name) ? "one" : "many";
-    //     return {
-    //       bufPtr: r,
-    //       // TODO(@darzu): determine binding types
-    //       usage: r.struct.opts?.isUniform ? "uniform" : "storage",
-    //       parity,
-    //     };
-    //   }
-    // );
-
-    // bind group layout
-    const bindGroupLayoutDesc: GPUBindGroupLayoutDescriptor = {
-      entries: p.resources.map((r, i) =>
-        r.struct.layout(
-          i,
-          // TODO(@darzu): more precise
-          isRenderPipelinePtr(p)
-            ? GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT
-            : GPUShaderStage.COMPUTE,
-          // TODO(@darzu): more precise?
-          r.struct.opts?.isUniform ? "uniform" : "storage"
-        )
-      ),
-    };
-    const bindGroupLayout = device.createBindGroupLayout(bindGroupLayoutDesc);
-
-    // bind group
-    const bindGroup = device.createBindGroup({
-      layout: bindGroupLayout,
-      entries: p.resources.map((r, i) => {
-        let buf =
-          r.kind === "oneBuffer"
-            ? cyKindToNameToRes.oneBuffer[r.name]
-            : cyKindToNameToRes.manyBuffer[r.name];
-        assert(!!buf, `Missing resource buffer: ${r.name}`);
-        return buf.binding(i);
-      }),
-    });
-
-    // shader resource setup
-    const shaderResStructs = p.resources.map((r) => {
+    // TODO(@darzu): move helpers elsewhere?
+    // TODO(@darzu): dynamic is wierd to pass here
+    function mkBindGroupLayout(ptrs: CyBufferPtr<any>[], dynamic: boolean) {
+      const bindGroupLayoutDesc: GPUBindGroupLayoutDescriptor = {
+        entries: ptrs.map((r, i) =>
+          r.struct.layout(
+            i,
+            // TODO(@darzu): more precise
+            isRenderPipelinePtr(p)
+              ? GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT
+              : GPUShaderStage.COMPUTE,
+            // TODO(@darzu): more precise?
+            r.struct.opts?.isUniform ? "uniform" : "storage",
+            dynamic
+          )
+        ),
+      };
+      return device.createBindGroupLayout(bindGroupLayoutDesc);
+    }
+    function mkBindGroup(
+      layout: GPUBindGroupLayout,
+      ptrs: CyBufferPtr<any>[],
+      plurality: "one" | "many"
+    ) {
+      const bindGroup = device.createBindGroup({
+        layout: layout,
+        entries: ptrs.map((r, i) => {
+          let buf =
+            r.kind === "oneBuffer"
+              ? cyKindToNameToRes.oneBuffer[r.name]
+              : cyKindToNameToRes.manyBuffer[r.name];
+          assert(!!buf, `Missing resource buffer: ${r.name}`);
+          // TODO(@darzu): not super happy with how plurality is handled
+          return buf.binding(i, plurality);
+        }),
+      });
+      return bindGroup;
+    }
+    function bufPtrToWgslStructs(
+      r: CyBufferPtr<CyStructDesc>,
+      plurality: "one" | "many"
+    ) {
       const structStr = `struct ${capitalize(r.name)} {
         ${r.struct.wgsl(true)}
       };`;
-      if (r.kind === "oneBuffer") {
+      if (plurality === "one") {
         return structStr;
       } else {
         return `${structStr}
@@ -510,18 +514,36 @@ export function createWebGPURenderer(
           ${pluralize(uncapitalize(r.name))} : array<${capitalize(r.name)}>,
         };`;
       }
-    });
-    const shaderResVars = p.resources.map((r, i) => {
-      // TODO(@darzu): duplite usage determination
+    }
+    function bufPtrToWgslVars(
+      r: CyBufferPtr<CyStructDesc>,
+      plurality: "one" | "many",
+      groupIdx: number,
+      bindingIdx: number
+    ) {
       const usage = r.struct.opts?.isUniform ? "uniform" : "storage";
       const varPrefix = GPUBufferBindingTypeToWgslVar[usage];
       const varName =
-        r.kind === "oneBuffer"
+        plurality === "one"
           ? uncapitalize(r.name)
           : pluralize(uncapitalize(r.name));
       const varType = capitalize(varName);
       // TODO(@darzu): support multiple groups?
-      return `@group(0) @binding(${i}) ${varPrefix} ${varName} : ${varType};`;
+      return `@group(${groupIdx}) @binding(${bindingIdx}) ${varPrefix} ${varName} : ${varType};`;
+    }
+
+    // resources bind group
+    // TODO(@darzu): don't like this dynamic layout var
+    const resBindGroupLayout = mkBindGroupLayout(p.resources, false);
+    // TODO(@darzu): wait, plurality many isn't right
+    const resBindGroup = mkBindGroup(resBindGroupLayout, p.resources, "many");
+
+    // shader resource setup
+    const shaderResStructs = p.resources.map((r) => {
+      return bufPtrToWgslStructs(r, r.kind === "oneBuffer" ? "one" : "many");
+    });
+    const shaderResVars = p.resources.map((r, i) => {
+      return bufPtrToWgslVars(r, r.kind === "oneBuffer" ? "one" : "many", 0, i);
     });
 
     if (isRenderPipelinePtr(p)) {
@@ -544,16 +566,13 @@ export function createWebGPURenderer(
         const rndrPipelineDesc: GPURenderPipelineDescriptor = {
           // TODO(@darzu): allow this to be parameterized
           primitive: prim_tris,
-          depthStencil: {
-            depthWriteEnabled: true,
-            depthCompare: "less",
-            format: depthStencilFormat,
-          },
+          depthStencil: depthStencilOpts,
           multisample: {
             count: antiAliasSampleCount,
           },
           layout: device.createPipelineLayout({
-            bindGroupLayouts: [bindGroupLayout],
+            bindGroupLayouts: [resBindGroupLayout],
+            // TODO(@darzu): need bind group layout for mesh pool uniform
           }),
           vertex: {
             module: shader,
@@ -586,11 +605,79 @@ export function createWebGPURenderer(
           instanceBuf: instBuf,
           pipeline: rndrPipeline,
           // resourceLayouts,
-          bindGroup,
+          bindGroups: [resBindGroup],
         };
         cyKindToNameToRes.renderPipeline[p.name] = cyPipeline;
       } else if (p.meshOpt.stepMode === "per-mesh-handle") {
-        throw `TODO ${p.meshOpt.stepMode}`;
+        // TODO(@darzu): de-duplicate with above?
+        const vertBuf =
+          cyKindToNameToRes.manyBuffer[p.meshOpt.pool.vertsPtr.name];
+        const idxBuffer =
+          cyKindToNameToRes.idxBuffer[p.meshOpt.pool.triIndsPtr.name];
+        const uniBuf =
+          cyKindToNameToRes.manyBuffer[p.meshOpt.pool.unisPtr.name];
+        const pool = cyKindToNameToRes.meshPool[p.meshOpt.pool.name];
+
+        const uniBGLayout = mkBindGroupLayout([p.meshOpt.pool.unisPtr], true);
+        const uniBG = mkBindGroup(uniBGLayout, [p.meshOpt.pool.unisPtr], "one");
+
+        const uniStruct = bufPtrToWgslStructs(p.meshOpt.pool.unisPtr, "one");
+        const uniVar = bufPtrToWgslVars(p.meshOpt.pool.unisPtr, "one", 1, 0);
+
+        // render shader
+        // TODO(@darzu): pass vertex buffer and instance buffer into shader
+        const shaderStr =
+          `${shaderResStructs.join("\n")}\n` +
+          `${shaderResVars.join("\n")}\n` +
+          `${uniStruct}\n` +
+          `${uniVar}\n` +
+          `${p.shader()}\n`;
+
+        // TODO(@darzu): need uni bind group layout
+
+        // render pipeline
+        const shader = device.createShaderModule({
+          code: shaderStr,
+        });
+        const rndrPipelineDesc: GPURenderPipelineDescriptor = {
+          // TODO(@darzu): allow this to be parameterized
+          primitive: prim_tris,
+          depthStencil: depthStencilOpts,
+          multisample: {
+            count: antiAliasSampleCount,
+          },
+          layout: device.createPipelineLayout({
+            bindGroupLayouts: [resBindGroupLayout, uniBGLayout],
+            // TODO(@darzu): need bind group layout for mesh pool uniform
+          }),
+          vertex: {
+            module: shader,
+            entryPoint: p.shaderVertexEntry,
+            buffers: [vertBuf.struct.vertexLayout("vertex", 0)],
+          },
+          fragment: {
+            module: shader,
+            entryPoint: p.shaderFragmentEntry,
+            targets: [
+              // TODO(@darzu): parameterize output targets
+              {
+                format: canvasFormat,
+              },
+            ],
+          },
+        };
+        // console.dir(rndrPipelineDesc);
+        const rndrPipeline = device.createRenderPipeline(rndrPipelineDesc);
+        const cyPipeline: CyRndrPipeline<any> = {
+          ptr: p,
+          indexBuf: idxBuffer,
+          vertexBuf: vertBuf,
+          pipeline: rndrPipeline,
+          pool,
+          // resourceLayouts,
+          bindGroups: [resBindGroup, uniBG],
+        };
+        cyKindToNameToRes.renderPipeline[p.name] = cyPipeline;
       } else {
         never(p.meshOpt, `Unimplemented step kind`);
       }
@@ -603,7 +690,7 @@ export function createWebGPURenderer(
 
       let compPipeline = device.createComputePipeline({
         layout: device.createPipelineLayout({
-          bindGroupLayouts: [bindGroupLayout],
+          bindGroupLayouts: [resBindGroupLayout],
         }),
         compute: {
           module: device.createShaderModule({
@@ -616,7 +703,7 @@ export function createWebGPURenderer(
         ptr: p,
         pipeline: compPipeline,
         // resourceLayouts,
-        bindGroup,
+        bindGroup: resBindGroup,
       };
       cyKindToNameToRes.compPipeline[p.name] = cyPipeline;
     }
@@ -780,177 +867,197 @@ export function createWebGPURenderer(
     handles.forEach((h) => bundledMIds.add(h.mId));
 
     lastWireMode = [renderer.drawLines, renderer.drawTris];
-    const modelUniBindGroupLayout = device.createBindGroupLayout({
-      entries: [
-        // TODO(@darzu): use CyBuffers .binding and .layout
-        {
-          binding: 0,
-          visibility: GPUShaderStage.VERTEX,
-          buffer: {
-            type: "uniform",
-            hasDynamicOffset: true,
-            minBindingSize: MeshUniformStruct.size,
-          },
-        },
-      ],
-    });
-    const modelUniBindGroup = device.createBindGroup({
-      layout: modelUniBindGroupLayout,
-      entries: [
-        // TODO(@darzu): use CyBuffers .binding and .layout
-        {
-          binding: 0,
-          resource: {
-            buffer: pool.opts.unis.buffer,
-            size: MeshUniformStruct.size,
-          },
-        },
-      ],
-    });
+    // const modelUniBindGroupLayout = device.createBindGroupLayout({
+    //   entries: [
+    //     // TODO(@darzu): use CyBuffers .binding and .layout
+    //     {
+    //       binding: 0,
+    //       visibility: GPUShaderStage.VERTEX,
+    //       buffer: {
+    //         type: "uniform",
+    //         hasDynamicOffset: true,
+    //         minBindingSize: MeshUniformStruct.size,
+    //       },
+    //     },
+    //   ],
+    // });
+    // const modelUniBindGroup = device.createBindGroup({
+    //   layout: modelUniBindGroupLayout,
+    //   entries: [
+    //     // TODO(@darzu): use CyBuffers .binding and .layout
+    //     {
+    //       binding: 0,
+    //       resource: {
+    //         buffer: pool.opts.unis.buffer,
+    //         size: MeshUniformStruct.size,
+    //       },
+    //     },
+    //   ],
+    // });
 
-    const renderSceneUniBindGroupLayout = device.createBindGroupLayout({
-      entries: [
-        SceneStruct.layout(
-          0,
-          GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-          "uniform"
-        ),
-        // {
-        //   binding: 1,
-        //   visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-        //   sampler: { type: "filtering" }, // TODO(@darzu): what kind?
-        // },
-        {
-          binding: 2,
-          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-          texture: { sampleType: "unfilterable-float" }, // TODO(@darzu): what type?
-        },
-      ],
-    });
-    const renderSceneUniBindGroupLayout0 = device.createBindGroupLayout({
-      entries: [
-        SceneStruct.layout(
-          0,
-          GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-          "uniform"
-        ),
-      ],
-    });
+    // const renderSceneUniBindGroupLayout = device.createBindGroupLayout({
+    //   entries: [
+    //     SceneStruct.layout(
+    //       0,
+    //       GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+    //       "uniform",
+    //       false
+    //     ),
+    //     // {
+    //     //   binding: 1,
+    //     //   visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+    //     //   sampler: { type: "filtering" }, // TODO(@darzu): what kind?
+    //     // },
+    //     {
+    //       binding: 2,
+    //       visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+    //       texture: { sampleType: "unfilterable-float" }, // TODO(@darzu): what type?
+    //     },
+    //   ],
+    // });
+    // const renderSceneUniBindGroupLayout0 = device.createBindGroupLayout({
+    //   entries: [
+    //     SceneStruct.layout(
+    //       0,
+    //       GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+    //       "uniform",
+    //       false
+    //     ),
+    //   ],
+    // });
 
-    const renderSceneUniBindGroup = device.createBindGroup({
-      layout: renderSceneUniBindGroupLayout,
-      entries: [
-        sceneUni.binding(0),
-        // TODO(@darzu): DISP
-        // {
-        //   binding: 1,
-        //   resource: clothSampler,
-        // },
-        {
-          binding: 2,
-          resource: clothTextures[clothReadIdx].createView(),
-        },
-      ],
-    });
+    // const renderSceneUniBindGroup = device.createBindGroup({
+    //   layout: renderSceneUniBindGroupLayout,
+    //   entries: [
+    //     sceneUni.binding(0, "one"),
+    //     // TODO(@darzu): DISP
+    //     // {
+    //     //   binding: 1,
+    //     //   resource: clothSampler,
+    //     // },
+    //     {
+    //       binding: 2,
+    //       resource: clothTextures[clothReadIdx].createView(),
+    //     },
+    //   ],
+    // });
 
     // TODO(@darzu): AXE
     // setup our second phase pipeline which renders meshes to the canvas
-    const renderPipelineDesc_tris: GPURenderPipelineDescriptor = {
-      layout: device.createPipelineLayout({
-        bindGroupLayouts: [
-          renderSceneUniBindGroupLayout,
-          modelUniBindGroupLayout,
-        ],
-      }),
-      vertex: {
-        module: device.createShaderModule({ code: obj_vertShader() }),
-        entryPoint: "main",
-        buffers: [VertexStruct.vertexLayout("vertex", 0)],
-      },
-      fragment: {
-        module: device.createShaderModule({ code: obj_fragShader() }),
-        entryPoint: "main",
-        targets: [{ format: canvasFormat }],
-      },
-      primitive: prim_tris,
-      depthStencil: {
-        depthWriteEnabled: true,
-        depthCompare: "less",
-        format: depthStencilFormat,
-      },
-      multisample: {
-        count: antiAliasSampleCount,
-      },
-    };
-    const renderPipeline_tris = device.createRenderPipeline(
-      renderPipelineDesc_tris
-    );
-    const renderPipelineDesc_lines: GPURenderPipelineDescriptor = {
-      ...renderPipelineDesc_tris,
-      primitive: prim_lines,
-    };
-    const renderPipeline_lines = device.createRenderPipeline(
-      renderPipelineDesc_lines
-    );
+    // const renderPipelineDesc_tris: GPURenderPipelineDescriptor = {
+    //   layout: device.createPipelineLayout({
+    //     bindGroupLayouts: [
+    //       renderSceneUniBindGroupLayout,
+    //       modelUniBindGroupLayout,
+    //     ],
+    //   }),
+    //   vertex: {
+    //     module: device.createShaderModule({ code: obj_vertShader() }),
+    //     entryPoint: "main",
+    //     buffers: [VertexStruct.vertexLayout("vertex", 0)],
+    //   },
+    //   fragment: {
+    //     module: device.createShaderModule({ code: obj_fragShader() }),
+    //     entryPoint: "main",
+    //     targets: [{ format: canvasFormat }],
+    //   },
+    //   primitive: prim_tris,
+    //   depthStencil: {
+    //     depthWriteEnabled: true,
+    //     depthCompare: "less",
+    //     format: depthStencilFormat,
+    //   },
+    //   multisample: {
+    //     count: antiAliasSampleCount,
+    //   },
+    // };
+    // const renderPipeline_tris = device.createRenderPipeline(
+    //   renderPipelineDesc_tris
+    // );
+    // const renderPipelineDesc_lines: GPURenderPipelineDescriptor = {
+    //   ...renderPipelineDesc_tris,
+    //   primitive: prim_lines,
+    // };
+    // const renderPipeline_lines = device.createRenderPipeline(
+    //   renderPipelineDesc_lines
+    // );
 
     // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
     // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
+    // TODO(@darzu): handle attachements via pipelines.ts
     const bundleEnc = device.createRenderBundleEncoder({
       colorFormats: [canvasFormat],
       depthStencilFormat: depthStencilFormat,
       sampleCount: antiAliasSampleCount,
     });
 
-    // render triangles and lines
-    bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
-    bundleEnc.setVertexBuffer(0, pool.opts.verts.buffer);
+    // // render triangles and lines
+    // bundleEnc.setBindGroup(0, renderSceneUniBindGroup);
+    // bundleEnc.setVertexBuffer(0, pool.opts.verts.buffer);
 
-    // render triangles first
-    if (renderer.drawTris) {
-      bundleEnc.setPipeline(renderPipeline_tris);
-      // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
-      bundleEnc.setIndexBuffer(pool.opts.triInds.buffer, "uint16");
-      for (let m of Object.values(handles)) {
-        bundleEnc.setBindGroup(1, modelUniBindGroup, [
-          m.uniIdx * MeshUniformStruct.size,
-        ]);
-        bundleEnc.drawIndexed(m.triNum * 3, undefined, m.triIdx * 3, m.vertIdx);
-      }
-    }
+    // // render triangles first
+    // if (renderer.drawTris) {
+    //   bundleEnc.setPipeline(renderPipeline_tris);
+    //   // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
+    //   bundleEnc.setIndexBuffer(pool.opts.triInds.buffer, "uint16");
+    //   for (let m of Object.values(handles)) {
+    //     bundleEnc.setBindGroup(1, modelUniBindGroup, [
+    //       m.uniIdx * MeshUniformStruct.size,
+    //     ]);
+    //     bundleEnc.drawIndexed(m.triNum * 3, undefined, m.triIdx * 3, m.vertIdx);
+    //   }
+    // }
 
-    // then render lines
-    if (renderer.drawLines) {
-      bundleEnc.setPipeline(renderPipeline_lines);
-      // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
-      bundleEnc.setIndexBuffer(pool.opts.lineInds.buffer, "uint16");
-      for (let m of Object.values(handles)) {
-        bundleEnc.setBindGroup(1, modelUniBindGroup, [
-          m.uniIdx * MeshUniformStruct.size,
-        ]);
-        bundleEnc.drawIndexed(
-          m.lineNum * 2,
-          undefined,
-          m.lineIdx * 2,
-          m.vertIdx
-        );
-      }
-    }
+    // // then render lines
+    // if (renderer.drawLines) {
+    //   bundleEnc.setPipeline(renderPipeline_lines);
+    //   // TODO(@darzu): the uint16 vs uint32 needs to be in the mesh pool
+    //   bundleEnc.setIndexBuffer(pool.opts.lineInds.buffer, "uint16");
+    //   for (let m of Object.values(handles)) {
+    //     bundleEnc.setBindGroup(1, modelUniBindGroup, [
+    //       m.uniIdx * MeshUniformStruct.size,
+    //     ]);
+    //     bundleEnc.drawIndexed(
+    //       m.lineNum * 2,
+    //       undefined,
+    //       m.lineIdx * 2,
+    //       m.vertIdx
+    //     );
+    //   }
+    // }
 
-    // TODO(@darzu): IMPL
     for (let p of Object.values(cyKindToNameToRes.renderPipeline)) {
-      assert(
-        p.ptr.meshOpt.stepMode === "per-instance",
-        "Need to implement step mode: " + p.ptr.meshOpt.stepMode
-      );
       bundleEnc.setPipeline(p.pipeline);
-      bundleEnc.setBindGroup(0, p.bindGroup);
+      if (p.bindGroups.length)
+        // bind group 0 is always the global resources
+        // TODO(@darzu): this seems a bit hacky
+        bundleEnc.setBindGroup(0, p.bindGroups[0]);
       bundleEnc.setIndexBuffer(p.indexBuf.buffer, "uint16");
       bundleEnc.setVertexBuffer(0, p.vertexBuf.buffer);
-      // TODO(@darzu): instance buffer
-      bundleEnc.setVertexBuffer(1, p.instanceBuf!.buffer);
-      // TODO(@darzu): support other step modes
-      // console.log(`drawing ${p.indexBuf.length} ${p.instanceBuf.length}`);
-      bundleEnc.drawIndexed(p.indexBuf.length, p.instanceBuf!.length, 0, 0);
+      if (p.ptr.meshOpt.stepMode === "per-instance") {
+        assert(!!p.instanceBuf);
+        bundleEnc.setVertexBuffer(1, p.instanceBuf.buffer);
+        bundleEnc.drawIndexed(p.indexBuf.length, p.instanceBuf.length, 0, 0);
+      } else if (p.ptr.meshOpt.stepMode === "per-mesh-handle") {
+        assert(!!p.pool && p.bindGroups.length >= 2);
+        const uniBG = p.bindGroups[1]; // TODO(@darzu): hacky convention?
+        // TODO(@darzu): filter meshes?
+        for (let m of p.pool.allMeshes) {
+          // TODO(@darzu): HACK
+          if (handles.indexOf(m) < 0) continue;
+          bundleEnc.setBindGroup(1, uniBG, [
+            m.uniIdx * p.pool.opts.unis.struct.size,
+          ]);
+          bundleEnc.drawIndexed(
+            m.triNum * 3,
+            undefined,
+            m.triIdx * 3,
+            m.vertIdx
+          );
+        }
+      } else {
+        never(p.ptr.meshOpt, `Unimplemented mesh step mode`);
+      }
     }
 
     renderBundle = bundleEnc.finish();

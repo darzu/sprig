@@ -176,7 +176,9 @@ export interface CyStruct<O extends CyStructDesc> {
   layout(
     idx: number,
     stage: GPUShaderStageFlags,
-    type: GPUBufferBindingType
+    type: GPUBufferBindingType,
+    // TODO(@darzu): don't like this param
+    hasDynamicOffset: boolean
   ): GPUBindGroupLayoutEntry;
   vertexLayout(
     stepMode: GPUVertexStepMode,
@@ -190,7 +192,8 @@ export interface CyBuffer<O extends CyStructDesc> {
   struct: CyStruct<O>;
   // webgpu
   // TODO(@darzu): generalize to non-webgpu?
-  binding(idx: number): GPUBindGroupEntry;
+  // TODO(@darzu): don't like this param
+  binding(idx: number, plurality: "one" | "many"): GPUBindGroupEntry;
   buffer: GPUBuffer;
 }
 
@@ -444,12 +447,13 @@ export function createCyStruct<O extends CyStructDesc>(
   function layout(
     idx: number,
     stage: GPUShaderStageFlags,
-    type: GPUBufferBindingType
+    type: GPUBufferBindingType,
+    hasDynamicOffset: boolean
   ): GPUBindGroupLayoutEntry {
     return {
       binding: idx,
       visibility: stage,
-      buffer: { type },
+      buffer: { type, hasDynamicOffset },
     };
   }
 
@@ -518,10 +522,12 @@ export function createCyOne<O extends CyStructDesc>(
     device.queue.writeBuffer(_buf, 0, b);
   }
 
-  function binding(idx: number): GPUBindGroupEntry {
+  function binding(idx: number, plurality: "one" | "many"): GPUBindGroupEntry {
+    // TODO(@darzu): more binding options?
     return {
       binding: idx,
-      resource: { buffer: _buf },
+      // TODO(@darzu): is explicit size good?
+      resource: { buffer: _buf, size: struct.size },
     };
   }
 
@@ -587,10 +593,11 @@ export function createCyMany<O extends CyStructDesc>(
     device.queue.writeBuffer(_buf, index * stride, serialized);
   }
 
-  function binding(idx: number): GPUBindGroupEntry {
+  function binding(idx: number, plurality: "one" | "many"): GPUBindGroupEntry {
+    const size = plurality === "one" ? struct.size : length * struct.size;
     return {
       binding: idx,
-      resource: { buffer: _buf },
+      resource: { buffer: _buf, size },
     };
   }
 
