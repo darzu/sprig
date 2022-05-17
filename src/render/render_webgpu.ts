@@ -552,11 +552,22 @@ export function createWebGPURenderer(
         const instBuf = cyKindToNameToRes.manyBuffer[p.meshOpt.instance.name];
         const idxBuffer = cyKindToNameToRes.idxBuffer[p.meshOpt.index.name];
 
+        const vertexInputStruct =
+          `struct VertexInput {\n` +
+          `${vertBuf.struct.wgsl(false, 0)}\n` +
+          `}\n`;
+        const instanceInputStruct =
+          `struct InstanceInput {\n` +
+          `${instBuf.struct.wgsl(false, vertBuf.struct.memberCount)}\n` +
+          `}\n`;
+
         // render shader
         // TODO(@darzu): pass vertex buffer and instance buffer into shader
         const shaderStr =
           `${shaderResStructs.join("\n")}\n` +
           `${shaderResVars.join("\n")}\n` +
+          `${vertexInputStruct}\n` +
+          `${instanceInputStruct}\n` +
           `${p.shader()}\n`;
 
         // render pipeline
@@ -624,6 +635,11 @@ export function createWebGPURenderer(
         const uniStruct = bufPtrToWgslStructs(p.meshOpt.pool.unisPtr, "one");
         const uniVar = bufPtrToWgslVars(p.meshOpt.pool.unisPtr, "one", 1, 0);
 
+        const vertexInputStruct =
+          `struct VertexInput {\n` +
+          `${vertBuf.struct.wgsl(false, 0)}\n` +
+          `}\n`;
+
         // render shader
         // TODO(@darzu): pass vertex buffer and instance buffer into shader
         const shaderStr =
@@ -631,6 +647,7 @@ export function createWebGPURenderer(
           `${shaderResVars.join("\n")}\n` +
           `${uniStruct}\n` +
           `${uniVar}\n` +
+          `${vertexInputStruct}\n` +
           `${p.shader()}\n`;
 
         // TODO(@darzu): need uni bind group layout

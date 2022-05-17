@@ -1,11 +1,4 @@
-import {
-  SceneStruct,
-  MeshUniformStruct,
-  VertexStruct,
-  RopePointStruct,
-  RopeStickStruct,
-  CLOTH_W,
-} from "./pipelines.js";
+import { CLOTH_W } from "./pipelines.js";
 
 export const mesh_shader = () =>
   `
@@ -17,9 +10,12 @@ export const mesh_shader = () =>
   };
 
   @stage(vertex)
-  fn vert_main(
-      ${VertexStruct.wgsl(false, 0)}
-      ) -> VertexOutput {
+  fn vert_main(input: VertexInput) -> VertexOutput {
+      let position = input.position;
+      let uv = input.uv;
+      let color = input.color;
+      let normal = input.normal;
+
       var output : VertexOutput;
       let worldPos: vec4<f32> = meshUni.transform * vec4<f32>(position, 1.0);
 
@@ -172,23 +168,18 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
 
 export const particle_shader = () =>
   `
-
 struct VertexOutput {
   @builtin(position) position : vec4<f32>,
   @location(0) color : vec3<f32>,
 };
 
 @stage(vertex)
-fn vert_main(
-  @location(0) vertPos : vec3<f32>,
-  @location(1) position : vec3<f32>,
-  @location(2) prevPosition : vec3<f32>,
-  // @location(3) locked : vec3<f32>,
-  @location(3) locked : f32,
-  // @location(4) aIdx: u32,
-  // @location(5) bIdx: u32,
-  // @location(6) length: f32,
-) -> VertexOutput {
+fn vert_main(vIn: VertexInput, iIn: InstanceInput) -> VertexOutput {
+  let vertPos = vIn.position;
+  let position = iIn.position;
+  let prevPosition = iIn.prevPosition;
+  let locked = iIn.locked;
+
   // return vec4<f32>(vertPos, 1.0);
   // let worldPos = vertPos;
   let worldPos = vertPos * 0.3 + position;
@@ -213,5 +204,4 @@ fn vert_main(
 fn frag_main(input: VertexOutput) -> @location(0) vec4<f32> {
   return vec4<f32>(input.color, 1.0);
 }
-
 `;
