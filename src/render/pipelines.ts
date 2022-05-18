@@ -403,7 +403,11 @@ export function computeVertsData(m: Mesh): VertexTS[] {
 }
 
 const renderTriPipelineDesc = registerRenderPipeline("triRender", {
-  resources: [sceneBufPtr],
+  resources: [
+    sceneBufPtr,
+    // TODO(@darzu): support textures
+    //clothTexPtr1
+  ],
   meshOpt: {
     pool: meshPoolPtr,
     stepMode: "per-mesh-handle",
@@ -416,7 +420,7 @@ const renderTriPipelineDesc = registerRenderPipeline("triRender", {
 // TODO(@darzu): CLOTH
 let clothReadIdx = 1;
 
-const cmpClothPipelinePtr = registerCompPipeline("clothComp", {
+const cmpClothPipelinePtr0 = registerCompPipeline("clothComp0", {
   resources: [],
   textures: [
     { ptr: clothTexPtr0, access: "read", alias: "inTex" },
@@ -425,6 +429,15 @@ const cmpClothPipelinePtr = registerCompPipeline("clothComp", {
   shader: cloth_shader,
   shaderComputeEntry: "main",
 });
+// const cmpClothPipelinePtr1 = registerCompPipeline("clothComp1", {
+//   resources: [],
+//   textures: [
+//     { ptr: clothTexPtr1, access: "read", alias: "inTex" },
+//     { ptr: clothTexPtr0, access: "write", alias: "outTex" },
+//   ],
+//   shader: cloth_shader,
+//   shaderComputeEntry: "main",
+// });
 
 // cloth data
 // let clothTextures = [

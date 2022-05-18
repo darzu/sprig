@@ -13,6 +13,7 @@ import {
   createCyMany,
   createCyOne,
   createCyTexture,
+  CyBuffer,
   CyIdxBuffer,
   CyMany,
   CyOne,
@@ -125,17 +126,18 @@ export interface CyTexUsage {
   alias?: string;
 }
 
-export interface CyCompPipelinePtr<RS extends CyBufferPtr<CyStructDesc>[]>
-  extends CyResourcePtr {
+export type CyGlobal = CyTexUsage | CyBufferPtr<CyStructDesc>;
+
+export interface CyCompPipelinePtr extends CyResourcePtr {
   kind: "compPipeline";
-  resources: [...RS]; // TODO(@darzu): rename "resources" to "globals"?
+  resources: CyBufferPtr<any>[]; // TODO(@darzu): rename "resources" to "globals"?
   textures?: CyTexUsage[];
   shader: () => string;
   shaderComputeEntry: string;
 }
 
-export interface CyCompPipeline<RS extends CyBufferPtr<CyStructDesc>[]> {
-  ptr: CyCompPipelinePtr<RS>;
+export interface CyCompPipeline {
+  ptr: CyCompPipelinePtr;
   // resourceLayouts: CyBufferPtrLayout<CyStructDesc>[];
   pipeline: GPUComputePipeline;
   bindGroup: GPUBindGroup;
@@ -154,10 +156,9 @@ type CyMeshOpt =
       stepMode: "per-instance";
     };
 
-export interface CyRndrPipelinePtr<RS extends CyBufferPtr<any>[]>
-  extends CyResourcePtr {
+export interface CyRndrPipelinePtr extends CyResourcePtr {
   kind: "renderPipeline";
-  resources: [...RS];
+  resources: CyBufferPtr<any>[];
   textures?: CyTexUsage[];
   shader: () => string;
   shaderVertexEntry: string;
@@ -177,8 +178,8 @@ export interface CyRndrPipelinePtr<RS extends CyBufferPtr<any>[]>
 // }
 
 // TODO(@darzu): instead of just mushing together with the desc, have desc compose in
-export interface CyRndrPipeline<RS extends CyBufferPtr<any>[]> {
-  ptr: CyRndrPipelinePtr<RS>;
+export interface CyRndrPipeline {
+  ptr: CyRndrPipelinePtr;
   // resourceLayouts: CyBufferPtrLayout<any>[];
   vertexBuf: CyMany<any>;
   indexBuf: CyIdxBuffer;
@@ -191,9 +192,9 @@ export interface CyRndrPipeline<RS extends CyBufferPtr<any>[]> {
 // HELPERS
 
 function isRenderPipelinePtr(
-  p: CyRndrPipelinePtr<any> | CyCompPipelinePtr<any>
-): p is CyRndrPipelinePtr<any> {
-  const k: keyof CyRndrPipelinePtr<any> = "meshOpt";
+  p: CyRndrPipelinePtr | CyCompPipelinePtr
+): p is CyRndrPipelinePtr {
+  const k: keyof CyRndrPipelinePtr = "meshOpt";
   return k in p;
 }
 
@@ -212,8 +213,8 @@ type PtrKindToPtrType = {
   oneBuffer: CyOneBufferPtr<any>;
   idxBuffer: CyIdxBufferPtr;
   texture: CyTexturePtr;
-  compPipeline: CyCompPipelinePtr<CyBufferPtr<any>[]>;
-  renderPipeline: CyRndrPipelinePtr<CyBufferPtr<any>[]>;
+  compPipeline: CyCompPipelinePtr;
+  renderPipeline: CyRndrPipelinePtr;
   meshPool: CyMeshPoolPtr<any, any>;
 };
 type PtrKindToResourceType = {
@@ -221,8 +222,8 @@ type PtrKindToResourceType = {
   oneBuffer: CyOne<any>;
   idxBuffer: CyIdxBuffer;
   texture: CyTexture;
-  compPipeline: CyCompPipeline<CyBufferPtr<any>[]>;
-  renderPipeline: CyRndrPipeline<CyBufferPtr<any>[]>;
+  compPipeline: CyCompPipeline;
+  renderPipeline: CyRndrPipeline;
   meshPool: MeshPool<any, any>;
 };
 type Assert_ResourceTypePtrTypeMatch =
@@ -298,20 +299,20 @@ export function registerTexPtr(
     name,
   });
 }
-export function registerCompPipeline<RS extends CyBufferPtr<any>[]>(
+export function registerCompPipeline(
   name: string,
-  desc: Omit_kind_name<CyCompPipelinePtr<RS>>
-): CyCompPipelinePtr<RS> {
+  desc: Omit_kind_name<CyCompPipelinePtr>
+): CyCompPipelinePtr {
   return registerCyResource({
     ...desc,
     kind: "compPipeline",
     name,
   });
 }
-export function registerRenderPipeline<RS extends CyBufferPtr<any>[]>(
+export function registerRenderPipeline(
   name: string,
-  desc: Omit_kind_name<CyRndrPipelinePtr<RS>>
-): CyRndrPipelinePtr<RS> {
+  desc: Omit_kind_name<CyRndrPipelinePtr>
+): CyRndrPipelinePtr {
   return registerCyResource({
     ...desc,
     kind: "renderPipeline",
@@ -676,7 +677,7 @@ export function createWebGPURenderer(
         };
         // console.dir(rndrPipelineDesc);
         const rndrPipeline = device.createRenderPipeline(rndrPipelineDesc);
-        const cyPipeline: CyRndrPipeline<any> = {
+        const cyPipeline: CyRndrPipeline = {
           ptr: p,
           indexBuf: idxBuffer,
           vertexBuf: vertBuf,
@@ -753,7 +754,7 @@ export function createWebGPURenderer(
         };
         // console.dir(rndrPipelineDesc);
         const rndrPipeline = device.createRenderPipeline(rndrPipelineDesc);
-        const cyPipeline: CyRndrPipeline<any> = {
+        const cyPipeline: CyRndrPipeline = {
           ptr: p,
           indexBuf: idxBuffer,
           vertexBuf: vertBuf,
@@ -793,7 +794,7 @@ export function createWebGPURenderer(
           entryPoint: p.shaderComputeEntry ?? "main",
         },
       });
-      const cyPipeline: CyCompPipeline<any> = {
+      const cyPipeline: CyCompPipeline = {
         ptr: p,
         pipeline: compPipeline,
         bindGroup: resBindGroup,
