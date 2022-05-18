@@ -119,7 +119,11 @@ export interface CyMeshPoolPtr<V extends CyStructDesc, U extends CyStructDesc>
 
 // TODO(@darzu): support more access modes?
 // TODO(@darzu): like buffer access modes, is this possibly inferable?
-export type CyTexUsage = { ptr: CyTexturePtr; access: "read" | "write" };
+export interface CyTexUsage {
+  ptr: CyTexturePtr;
+  access: "read" | "write";
+  alias?: string;
+}
 
 export interface CyCompPipelinePtr<RS extends CyBufferPtr<CyStructDesc>[]>
   extends CyResourcePtr {
@@ -579,7 +583,7 @@ export function createWebGPURenderer(
       groupIdx: number,
       bindingIdx: number
     ) {
-      const varName = uncapitalize(r.ptr.name);
+      const varName = r.alias ?? uncapitalize(r.ptr.name);
       if (r.access === "read")
         // TODO(@darzu): handle other formats?
         return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_2d<f32>;`;
@@ -777,6 +781,7 @@ export function createWebGPURenderer(
         layout: device.createPipelineLayout({
           bindGroupLayouts: [
             resBindGroupLayout,
+            // TODO(@darzu):
             // emptyLayout,
             texBindGroupLayout,
           ],

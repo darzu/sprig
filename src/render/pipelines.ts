@@ -419,8 +419,8 @@ let clothReadIdx = 1;
 const cmpClothPipelinePtr = registerCompPipeline("clothComp", {
   resources: [],
   textures: [
-    { ptr: clothTexPtr0, access: "read" },
-    { ptr: clothTexPtr1, access: "write" },
+    { ptr: clothTexPtr0, access: "read", alias: "inTex" },
+    { ptr: clothTexPtr1, access: "write", alias: "outTex" },
   ],
   shader: cloth_shader,
   shaderComputeEntry: "main",
