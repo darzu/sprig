@@ -1,4 +1,5 @@
 import { mat4, vec3 } from "../gl-matrix.js";
+import { jitter } from "../math.js";
 import { range } from "../util.js";
 import { computeTriangleNormal } from "../utils-3d.js";
 import {
@@ -425,17 +426,18 @@ const BoidData = createCyStruct({
   pos: "vec3<f32>",
   vel: "vec3<f32>",
 });
+const numBoids = 1500;
 const boidData0 = registerManyBufPtr("boidData0", {
   struct: BoidData,
   init: () =>
-    range(100).map((_, i) => ({
-      pos: [i, i, i] as vec3,
-      vel: [0.1, 0.1, 0.1] as vec3,
+    range(numBoids).map((_, i) => ({
+      pos: [jitter(10), jitter(10), jitter(10)] as vec3,
+      vel: [jitter(10), jitter(10), jitter(10)] as vec3,
     })),
 });
 const boidData1 = registerManyBufPtr("boidData1", {
   struct: BoidData,
-  init: () => 100,
+  init: () => numBoids,
 });
 const BoidVert = createCyStruct({
   pos: "vec3<f32>",
@@ -469,7 +471,7 @@ const boidRender = registerRenderPipeline("boidRender", {
       // let pos = vec2<f32>(
       //     (a_pos.x * cos(angle)) - (a_pos.y * sin(angle)),
       //     (a_pos.x * sin(angle)) + (a_pos.y * cos(angle)));
-      let pos = scene.cameraViewProjMatrix * vec4<f32>(vIn.pos + iIn.pos, 1.0);
+      let pos = scene.cameraViewProjMatrix * vec4<f32>(vIn.pos * 0.1 + iIn.pos, 1.0);
       return pos;
     }
     
@@ -486,12 +488,14 @@ const boidRender = registerRenderPipeline("boidRender", {
 const BoidParams = createCyStruct(
   {
     deltaT: "f32",
-    rule1Distance: "f32",
-    rule2Distance: "f32",
-    rule3Distance: "f32",
-    rule1Scale: "f32",
-    rule2Scale: "f32",
-    rule3Scale: "f32",
+    cohesionDistance: "f32",
+    seperationDistance: "f32",
+    alignDistance: "f32",
+    cohesionScale: "f32",
+    seperationScale: "f32",
+    alignScale: "f32",
+    worldSize: "f32",
+    speed: "f32",
   },
   {
     // TODO(@darzu): wish we didn't need to specify this
@@ -503,12 +507,14 @@ const boidParams = registerOneBufPtr("boidParams", {
   init: () => {
     return {
       deltaT: 0.04,
-      rule1Distance: 0.1,
-      rule2Distance: 0.025,
-      rule3Distance: 0.025,
-      rule1Scale: 0.02,
-      rule2Scale: 0.05,
-      rule3Scale: 0.005,
+      cohesionDistance: 1.0,
+      seperationDistance: 0.25,
+      alignDistance: 0.5,
+      cohesionScale: 0.02,
+      seperationScale: 0.2,
+      alignScale: 0.1,
+      worldSize: 10.0,
+      speed: 0.3,
     };
   },
 });
@@ -523,8 +529,8 @@ const boidCompDesc: Omit<
   fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
     var index : u32 = GlobalInvocationID.x;
   
-    var vPos = boidData0s.boidData0s[index].pos;
-    var vVel = boidData0s.boidData0s[index].vel;
+    var vPos = inBoids.ms[index].pos;
+    var vVel = inBoids.ms[index].vel;
     var cMass = vec3<f32>(0.0, 0.0, 0.0);
     var cVel = vec3<f32>(0.0, 0.0, 0.0);
     var colVel = vec3<f32>(0.0, 0.0, 0.0);
@@ -533,21 +539,21 @@ const boidCompDesc: Omit<
     var pos : vec3<f32>;
     var vel : vec3<f32>;
   
-    for (var i : u32 = 0u; i < arrayLength(&boidData0s.boidData0s); i = i + 1u) {
+    for (var i : u32 = 0u; i < arrayLength(&inBoids.ms); i = i + 1u) {
       if (i == index) {
         continue;
       }
   
-      pos = boidData0s.boidData0s[i].pos.xyz;
-      vel = boidData0s.boidData0s[i].vel.xyz;
-      if (distance(pos, vPos) < boidParams.rule1Distance) {
+      pos = inBoids.ms[i].pos.xyz;
+      vel = inBoids.ms[i].vel.xyz;
+      if (distance(pos, vPos) < boidParams.cohesionDistance) {
         cMass = cMass + pos;
         cMassCount = cMassCount + 1u;
       }
-      if (distance(pos, vPos) < boidParams.rule2Distance) {
+      if (distance(pos, vPos) < boidParams.seperationDistance) {
         colVel = colVel - (pos - vPos);
       }
-      if (distance(pos, vPos) < boidParams.rule3Distance) {
+      if (distance(pos, vPos) < boidParams.alignDistance) {
         cVel = cVel + vel;
         cVelCount = cVelCount + 1u;
       }
@@ -560,39 +566,54 @@ const boidCompDesc: Omit<
       var temp = f32(cVelCount);
       cVel = cVel / vec3<f32>(temp, temp, temp);
     }
-    vVel = vVel + (cMass * boidParams.rule1Scale) + (colVel * boidParams.rule2Scale) +
-        (cVel * boidParams.rule3Scale);
+    vVel = vVel + (cMass * boidParams.cohesionScale) + (colVel * boidParams.seperationScale) +
+        (cVel * boidParams.alignScale);
   
     // clamp velocity for a more pleasing simulation
-    vVel = normalize(vVel) * clamp(length(vVel), 0.0, 0.1);
+    vVel = normalize(vVel) * boidParams.speed; // max velocity
+    // vVel = normalize(vVel) * clamp(length(vVel), 0.0, 1.0); // max velocity
     // kinematic update
     vPos = vPos + (vVel * boidParams.deltaT);
     // Wrap around boundary
-    if (vPos.x < -100.0) {
-      vPos.x = 100.0;
+    if (vPos.x < -boidParams.worldSize) {
+      vPos.x = boidParams.worldSize;
     }
-    if (vPos.x > 100.0) {
-      vPos.x = -100.0;
+    if (vPos.x > boidParams.worldSize) {
+      vPos.x = -boidParams.worldSize;
     }
-    if (vPos.y < -100.0) {
-      vPos.y = 100.0;
+    if (vPos.y < -boidParams.worldSize) {
+      vPos.y = boidParams.worldSize;
     }
-    if (vPos.y > 100.0) {
-      vPos.y = -100.0;
+    if (vPos.y > boidParams.worldSize) {
+      vPos.y = -boidParams.worldSize;
+    }
+    if (vPos.z < -boidParams.worldSize) {
+      vPos.z = boidParams.worldSize;
+    }
+    if (vPos.z > boidParams.worldSize) {
+      vPos.z = -boidParams.worldSize;
     }
     // Write back
-    boidData1s.boidData1s[index].pos = vPos;
-    boidData1s.boidData1s[index].vel = vVel;
+    outBoids.ms[index].pos = vPos;
+    outBoids.ms[index].vel = vVel;
   }
   `,
+  workgroupCounts: [Math.ceil(numBoids / 64), 1, 1],
 };
 
 const boidComp0 = registerCompPipeline("boidComp0", {
   ...boidCompDesc,
-  resources: [boidParams, boidData0, boidData1],
+  resources: [
+    boidParams,
+    { ptr: boidData0, access: "read", alias: "inBoids" },
+    { ptr: boidData1, access: "write", alias: "outBoids" },
+  ],
 });
-// // TODO(@darzu): usage
-// const boidComp1 = registerCompPipeline("boidComp1", {
-//   ...boidCompDesc,
-//   resources: [boidParams, boidData1, boidData0],
-// });
+const boidComp1 = registerCompPipeline("boidComp1", {
+  ...boidCompDesc,
+  resources: [
+    boidParams,
+    { ptr: boidData1, access: "read", alias: "inBoids" },
+    { ptr: boidData0, access: "write", alias: "outBoids" },
+  ],
+});

@@ -296,3 +296,6 @@ Bounding volume hierarchy (BVH)
 Compute algorithms:
   Prefix sum
   prefix scan
+
+Bunch of vulkan examples:
+  https://github.com/SaschaWillems/Vulkan

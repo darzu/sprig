@@ -92,26 +92,26 @@ export const rope_shader = () =>
 fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
   var pIdx : u32 = GlobalInvocationID.x;
 
-  let p = ropePoints.ropePoints[pIdx];
+  let p = ropePoints.ms[pIdx];
 
-  // ropePoints.ropePoints[pIdx].locked = f32(pIdx) / 10.0;
+  // ropePoints.ms[pIdx].locked = f32(pIdx) / 10.0;
 
   // let gravity = 0.0;
   let gravity = 0.00002;
   // let gravity = 0.00001;
 
   // this is setting color:
-  // ropePoints.ropePoints[pIdx].position.z += 0.01;
-  // ropePoints.ropePoints[pIdx].locked -= scene.time;
+  // ropePoints.ms[pIdx].position.z += 0.01;
+  // ropePoints.ms[pIdx].locked -= scene.time;
 
   if (p.locked < 0.5) {
     let newPrev = p.position;
     let delta = p.position - p.prevPosition;
     let newPos = p.position + delta * 0.9 + vec3(0.0, -1.0, 0.0) * gravity * scene.time * scene.time;
 
-  // //   ropePoints.ropePoints[pIdx].position *= 1.002;
-    ropePoints.ropePoints[pIdx].position = newPos;
-    ropePoints.ropePoints[pIdx].prevPosition = newPrev;
+  // //   ropePoints.ms[pIdx].position *= 1.002;
+    ropePoints.ms[pIdx].position = newPos;
+    ropePoints.ms[pIdx].prevPosition = newPrev;
   }
   
   workgroupBarrier();
@@ -121,9 +121,9 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
     if i >= 8u { break; }
 
     let sIdx = GlobalInvocationID.x * 2u + (i % 2u);
-    let stick = ropeSticks.ropeSticks[sIdx];
-    let a = ropePoints.ropePoints[stick.aIdx];
-    let b = ropePoints.ropePoints[stick.bIdx];
+    let stick = ropeSticks.ms[sIdx];
+    let a = ropePoints.ms[stick.aIdx];
+    let b = ropePoints.ms[stick.bIdx];
 
     if stick.bIdx >= ${CLOTH_W ** 2}u { continue; }
 
@@ -136,23 +136,23 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
     let walk = dir * (sep * 0.95);
     let offset = dir * stick.length / 2.0;
 
-    // ropePoints.ropePoints[pIdx].locked = length(diff) / 7.0;
-    // ropePoints.ropePoints[pIdx].locked = abs(sep * 0.8);
+    // ropePoints.ms[pIdx].locked = length(diff) / 7.0;
+    // ropePoints.ms[pIdx].locked = abs(sep * 0.8);
 
-    // // ropePoints.ropePoints[stick.aIdx].locked += 0.01;
-    // // ropePoints.ropePoints[stick.bIdx].locked += 0.01;
+    // // ropePoints.ms[stick.aIdx].locked += 0.01;
+    // // ropePoints.ms[stick.bIdx].locked += 0.01;
 
-    // // ropePoints.ropePoints[sIdx].locked = f32(stick.aIdx); // / 10.0;
+    // // ropePoints.ms[sIdx].locked = f32(stick.aIdx); // / 10.0;
 
     // if (a.locked < 0.5) {
     if (a.locked < 0.5 && (i / 2u) % 2u == 0u) {
-      ropePoints.ropePoints[stick.aIdx].position -= walk;
-      // ropePoints.ropePoints[stick.aIdx].position = center + offset;
+      ropePoints.ms[stick.aIdx].position -= walk;
+      // ropePoints.ms[stick.aIdx].position = center + offset;
     }
     // if (b.locked < 0.5) {
     if (b.locked < 0.5 && (i / 2u) % 2u == 1u) {
-      ropePoints.ropePoints[stick.bIdx].position += walk;
-      // ropePoints.ropePoints[stick.bIdx].position = center - offset;
+      ropePoints.ms[stick.bIdx].position += walk;
+      // ropePoints.ms[stick.bIdx].position = center - offset;
     }
 
     continuing {
