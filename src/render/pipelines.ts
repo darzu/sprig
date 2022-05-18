@@ -428,15 +428,14 @@ const cmpClothPipelinePtr0 = registerCompPipeline("clothComp0", {
   shader: cloth_shader,
   shaderComputeEntry: "main",
 });
-// const cmpClothPipelinePtr1 = registerCompPipeline("clothComp1", {
-//   resources: [],
-//   textures: [
-//     { ptr: clothTexPtr1, access: "read", alias: "inTex" },
-//     { ptr: clothTexPtr0, access: "write", alias: "outTex" },
-//   ],
-//   shader: cloth_shader,
-//   shaderComputeEntry: "main",
-// });
+const cmpClothPipelinePtr1 = registerCompPipeline("clothComp1", {
+  resources: [
+    { ptr: clothTexPtr1, access: "read", alias: "inTex" },
+    { ptr: clothTexPtr0, access: "write", alias: "outTex" },
+  ],
+  shader: cloth_shader,
+  shaderComputeEntry: "main",
+});
 
 // cloth data
 // let clothTextures = [
