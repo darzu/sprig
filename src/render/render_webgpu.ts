@@ -126,12 +126,14 @@ export interface CyTexUsage {
   alias?: string;
 }
 
-export type CyGlobal = CyTexUsage | CyBufferPtr<CyStructDesc>;
+export type CyGlobal = CyTexUsage | CyBufferPtr<any>;
+export function isResourcePtr(p: any): p is CyResourcePtr {
+  return !!(p as CyResourcePtr).kind;
+}
 
 export interface CyCompPipelinePtr extends CyResourcePtr {
   kind: "compPipeline";
-  resources: CyBufferPtr<any>[]; // TODO(@darzu): rename "resources" to "globals"?
-  textures?: CyTexUsage[];
+  resources: CyGlobal[]; // TODO(@darzu): rename "resources" to "globals"?
   shader: () => string;
   shaderComputeEntry: string;
 }
@@ -141,7 +143,6 @@ export interface CyCompPipeline {
   // resourceLayouts: CyBufferPtrLayout<CyStructDesc>[];
   pipeline: GPUComputePipeline;
   bindGroup: GPUBindGroup;
-  texBindGroup?: GPUBindGroup;
 }
 
 type CyMeshOpt =
@@ -158,8 +159,7 @@ type CyMeshOpt =
 
 export interface CyRndrPipelinePtr extends CyResourcePtr {
   kind: "renderPipeline";
-  resources: CyBufferPtr<any>[];
-  textures?: CyTexUsage[];
+  resources: CyGlobal[];
   shader: () => string;
   shaderVertexEntry: string;
   shaderFragmentEntry: string;
@@ -386,9 +386,12 @@ export function createWebGPURenderer(
   // TODO(@darzu): be more precise?
   [..._cyKindToPtrs.compPipeline, ..._cyKindToPtrs.renderPipeline].forEach(
     (p) =>
-      p.resources.forEach(
-        (r) => (cyNameToBufferUsage[r.name] |= GPUBufferUsage.STORAGE)
-      )
+      p.resources.forEach((r) => {
+        if (isResourcePtr(r)) {
+          if (r.kind === "oneBuffer" || r.kind === "manyBuffer")
+            cyNameToBufferUsage[r.name] |= GPUBufferUsage.STORAGE;
+        }
+      })
   );
   // render pipelines have vertex buffers and mesh pools have uniform buffers
   _cyKindToPtrs.renderPipeline.forEach((p) => {
@@ -478,118 +481,121 @@ export function createWebGPURenderer(
       : GPUShaderStage.COMPUTE;
     // TODO(@darzu): move helpers elsewhere?
     // TODO(@darzu): dynamic is wierd to pass here
-    function mkBindGroupLayout(ptrs: CyBufferPtr<any>[], dynamic: boolean) {
+    function mkGlobalLayoutEntry(
+      idx: number,
+      r: CyGlobal,
+      dynamic: boolean
+    ): GPUBindGroupLayoutEntry {
+      if (isResourcePtr(r)) {
+        return r.struct.layout(
+          idx,
+          shaderStage,
+          // TODO(@darzu): more precise?
+          r.struct.opts?.isUniform ? "uniform" : "storage",
+          dynamic
+        );
+      } else {
+        if (r.access === "read") {
+          return {
+            binding: idx,
+            visibility: shaderStage,
+            // TODO(@darzu): need a mapping of format -> sample type?
+            texture: { sampleType: "unfilterable-float" },
+          };
+        } else {
+          return {
+            binding: idx,
+            visibility: shaderStage,
+            storageTexture: { format: r.ptr.format, access: "write-only" },
+          };
+        }
+      }
+    }
+    function mkBindGroupLayout(ptrs: CyGlobal[], dynamic: boolean) {
       const bindGroupLayoutDesc: GPUBindGroupLayoutDescriptor = {
-        entries: ptrs.map((r, i) =>
-          r.struct.layout(
-            i,
-            // TODO(@darzu): more precise
-            shaderStage,
-            // TODO(@darzu): more precise?
-            r.struct.opts?.isUniform ? "uniform" : "storage",
-            dynamic
-          )
-        ),
+        entries: ptrs.map((r, i) => mkGlobalLayoutEntry(i, r, dynamic)),
       };
       return device.createBindGroupLayout(bindGroupLayoutDesc);
     }
-    function mkTexBindGroupLayout(ptrs: CyTexUsage[]) {
-      const bindGroupLayoutDesc: GPUBindGroupLayoutDescriptor = {
-        entries: ptrs.map((r, i) => {
-          if (r.access === "read") {
-            return {
-              binding: i,
-              visibility: shaderStage,
-              // TODO(@darzu): need a mapping of format -> sample type?
-              texture: { sampleType: "unfilterable-float" },
-            };
-          } else {
-            return {
-              binding: i,
-              visibility: shaderStage,
-              storageTexture: { format: r.ptr.format, access: "write-only" },
-            };
-          }
-        }),
-      };
-      return device.createBindGroupLayout(bindGroupLayoutDesc);
+    function mkBindGroupEntry(
+      idx: number,
+      r: CyGlobal,
+      bufPlurality: "one" | "many"
+    ): GPUBindGroupEntry {
+      if (isResourcePtr(r)) {
+        let buf =
+          r.kind === "oneBuffer"
+            ? cyKindToNameToRes.oneBuffer[r.name]
+            : cyKindToNameToRes.manyBuffer[r.name];
+        assert(!!buf, `Missing resource buffer: ${r.name}`);
+        // TODO(@darzu): not super happy with how plurality is handled
+        return buf.binding(idx, bufPlurality);
+      } else {
+        const tex = cyKindToNameToRes.texture[r.ptr.name]!;
+        return {
+          binding: idx,
+          // TODO(@darzu): does this view need to be updated on resize?
+          resource: tex.texture.createView(),
+        };
+      }
     }
     function mkBindGroup(
       layout: GPUBindGroupLayout,
-      ptrs: CyBufferPtr<any>[],
-      plurality: "one" | "many"
+      ptrs: CyGlobal[],
+      // TODO(@darzu): this is a hack.....
+      bufPlurality: "one" | "many"
     ) {
       const bindGroup = device.createBindGroup({
         layout: layout,
-        entries: ptrs.map((r, i) => {
-          let buf =
-            r.kind === "oneBuffer"
-              ? cyKindToNameToRes.oneBuffer[r.name]
-              : cyKindToNameToRes.manyBuffer[r.name];
-          assert(!!buf, `Missing resource buffer: ${r.name}`);
-          // TODO(@darzu): not super happy with how plurality is handled
-          return buf.binding(i, plurality);
-        }),
+        entries: ptrs.map((r, i) => mkBindGroupEntry(i, r, bufPlurality)),
       });
       return bindGroup;
     }
-    function mkTexBindGroup(layout: GPUBindGroupLayout, ptrs: CyTexUsage[]) {
-      const bindGroup = device.createBindGroup({
-        layout: layout,
-        entries: ptrs.map((r, i) => {
-          const tex = cyKindToNameToRes.texture[r.ptr.name]!;
-          return {
-            binding: i,
-            // TODO(@darzu): does this view need to be updated on resize?
-            resource: tex.texture.createView(),
-          };
-        }),
-      });
-      return bindGroup;
-    }
-    function bufPtrToWgslStructs(
-      r: CyBufferPtr<CyStructDesc>,
-      plurality: "one" | "many"
-    ) {
-      const structStr = `struct ${capitalize(r.name)} {
-        ${r.struct.wgsl(true)}
-      };`;
-      if (plurality === "one") {
-        return structStr;
+    function globalToWgslDefs(r: CyGlobal, plurality: "one" | "many") {
+      if (isResourcePtr(r)) {
+        const structStr =
+          `struct ${capitalize(r.name)} {\n` + r.struct.wgsl(true) + `\n };\n`;
+        if (plurality === "one") {
+          return structStr;
+        } else {
+          return (
+            structStr +
+            `struct ${pluralize(capitalize(r.name))} {\n` +
+            `${pluralize(uncapitalize(r.name))} : array<${capitalize(
+              r.name
+            )}>,\n` +
+            `};\n`
+          );
+        }
       } else {
-        return `${structStr}
-        struct ${pluralize(capitalize(r.name))} {
-          ${pluralize(uncapitalize(r.name))} : array<${capitalize(r.name)}>,
-        };`;
+        // nothing to do for textures
+        return ``;
       }
     }
-    function bufPtrToWgslVars(
-      r: CyBufferPtr<CyStructDesc>,
+    function globalToWgslVars(
+      r: CyGlobal,
       plurality: "one" | "many",
       groupIdx: number,
       bindingIdx: number
     ) {
-      const usage = r.struct.opts?.isUniform ? "uniform" : "storage";
-      const varPrefix = GPUBufferBindingTypeToWgslVar[usage];
-      const varName =
-        plurality === "one"
-          ? uncapitalize(r.name)
-          : pluralize(uncapitalize(r.name));
-      const varType = capitalize(varName);
-      // TODO(@darzu): support multiple groups?
-      return `@group(${groupIdx}) @binding(${bindingIdx}) ${varPrefix} ${varName} : ${varType};`;
-    }
-    function texPtrToWgslVars(
-      r: CyTexUsage,
-      groupIdx: number,
-      bindingIdx: number
-    ) {
-      const varName = r.alias ?? uncapitalize(r.ptr.name);
-      if (r.access === "read")
-        // TODO(@darzu): handle other formats?
-        return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_2d<f32>;`;
-      else
-        return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_storage_2d<${r.ptr.format}, write>;`;
+      if (isResourcePtr(r)) {
+        const usage = r.struct.opts?.isUniform ? "uniform" : "storage";
+        const varPrefix = GPUBufferBindingTypeToWgslVar[usage];
+        const varName =
+          plurality === "one"
+            ? uncapitalize(r.name)
+            : pluralize(uncapitalize(r.name));
+        const varType = capitalize(varName);
+        // TODO(@darzu): support multiple groups?
+        return `@group(${groupIdx}) @binding(${bindingIdx}) ${varPrefix} ${varName} : ${varType};`;
+      } else {
+        const varName = r.alias ?? uncapitalize(r.ptr.name);
+        if (r.access === "read")
+          // TODO(@darzu): handle other formats?
+          return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_2d<f32>;`;
+        else
+          return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_storage_2d<${r.ptr.format}, write>;`;
+      }
     }
 
     // resources layout and bindings
@@ -598,20 +604,17 @@ export function createWebGPURenderer(
     // TODO(@darzu): wait, plurality many isn't right
     const resBindGroup = mkBindGroup(resBindGroupLayout, p.resources, "many");
 
-    // texture layout and bindings
-    const texBindGroupLayout = mkTexBindGroupLayout(p.textures ?? []);
-    const texBindGroup = mkTexBindGroup(texBindGroupLayout, p.textures ?? []);
-
     // shader resource setup
     const shaderResStructs = p.resources.map((r) => {
-      return bufPtrToWgslStructs(r, r.kind === "oneBuffer" ? "one" : "many");
+      // TODO(@darzu): HACK
+      const plurality =
+        isResourcePtr(r) && r.kind === "oneBuffer" ? "one" : "many";
+      return globalToWgslDefs(r, plurality);
     });
     const shaderResVars = p.resources.map((r, i) => {
-      return bufPtrToWgslVars(r, r.kind === "oneBuffer" ? "one" : "many", 0, i);
-    });
-    const shaderTexVars = (p.textures ?? []).map((r, i) => {
-      // TODO(@darzu): textures always group 1?
-      return texPtrToWgslVars(r, 1, i);
+      const plurality =
+        isResourcePtr(r) && r.kind === "oneBuffer" ? "one" : "many";
+      return globalToWgslVars(r, plurality, 0, i);
     });
 
     if (isRenderPipelinePtr(p)) {
@@ -651,7 +654,6 @@ export function createWebGPURenderer(
           },
           layout: device.createPipelineLayout({
             bindGroupLayouts: [resBindGroupLayout],
-            // TODO(@darzu): need bind group layout for mesh pool uniform
           }),
           vertex: {
             module: shader,
@@ -700,8 +702,8 @@ export function createWebGPURenderer(
         const uniBGLayout = mkBindGroupLayout([p.meshOpt.pool.unisPtr], true);
         const uniBG = mkBindGroup(uniBGLayout, [p.meshOpt.pool.unisPtr], "one");
 
-        const uniStruct = bufPtrToWgslStructs(p.meshOpt.pool.unisPtr, "one");
-        const uniVar = bufPtrToWgslVars(p.meshOpt.pool.unisPtr, "one", 1, 0);
+        const uniStruct = globalToWgslDefs(p.meshOpt.pool.unisPtr, "one");
+        const uniVar = globalToWgslVars(p.meshOpt.pool.unisPtr, "one", 1, 0);
 
         const vertexInputStruct =
           `struct VertexInput {\n` +
@@ -715,7 +717,6 @@ export function createWebGPURenderer(
           `${shaderResVars.join("\n")}\n` +
           `${uniStruct}\n` +
           `${uniVar}\n` +
-          `${shaderTexVars.join("\n")}\n` +
           `${vertexInputStruct}\n` +
           `${p.shader()}\n`;
 
@@ -771,7 +772,6 @@ export function createWebGPURenderer(
       const shaderStr =
         `${shaderResStructs.join("\n")}\n` +
         `${shaderResVars.join("\n")}\n` +
-        `${shaderTexVars.join("\n")}\n` +
         `${p.shader()}\n`;
 
       const emptyLayout = device.createBindGroupLayout({
@@ -780,12 +780,7 @@ export function createWebGPURenderer(
 
       let compPipeline = device.createComputePipeline({
         layout: device.createPipelineLayout({
-          bindGroupLayouts: [
-            resBindGroupLayout,
-            // TODO(@darzu):
-            // emptyLayout,
-            texBindGroupLayout,
-          ],
+          bindGroupLayouts: [resBindGroupLayout],
         }),
         compute: {
           module: device.createShaderModule({
@@ -798,7 +793,6 @@ export function createWebGPURenderer(
         ptr: p,
         pipeline: compPipeline,
         bindGroup: resBindGroup,
-        texBindGroup: texBindGroup,
       };
       cyKindToNameToRes.compPipeline[p.name] = cyPipeline;
     }
@@ -1073,10 +1067,6 @@ export function createWebGPURenderer(
       const compPassEncoder = commandEncoder.beginComputePass();
       compPassEncoder.setPipeline(p.pipeline);
       compPassEncoder.setBindGroup(0, p.bindGroup);
-      if (p.texBindGroup) {
-        // TODO(@darzu): textures hard coded to group 1
-        compPassEncoder.setBindGroup(1, p.texBindGroup);
-      }
       // TODO(@darzu): parameterize workgroup count
       compPassEncoder.dispatchWorkgroups(1);
       compPassEncoder.end();

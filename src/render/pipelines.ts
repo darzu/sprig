@@ -421,8 +421,7 @@ const renderTriPipelineDesc = registerRenderPipeline("triRender", {
 let clothReadIdx = 1;
 
 const cmpClothPipelinePtr0 = registerCompPipeline("clothComp0", {
-  resources: [],
-  textures: [
+  resources: [
     { ptr: clothTexPtr0, access: "read", alias: "inTex" },
     { ptr: clothTexPtr1, access: "write", alias: "outTex" },
   ],
