@@ -87,13 +87,6 @@ export type CyBufferPtr<O extends CyStructDesc> =
   | CyManyBufferPtr<O>
   | CyOneBufferPtr<O>;
 
-// TODO(@darzu): this is a wierd one. another way to do this?
-// interface CyBufferPtrLayout<O extends CyStructDesc> {
-//   bufPtr: CyBufferPtr<O>;
-//   usage: GPUBufferBindingType;
-//   parity: "one" | "many";
-// }
-
 // TEXUTRES
 
 export interface CyTexturePtr extends CyResourcePtr {
@@ -166,17 +159,6 @@ export interface CyRndrPipelinePtr extends CyResourcePtr {
   meshOpt: CyMeshOpt;
 }
 
-// TODO(@darzu):
-// export interface CyRndrMeshPipelineOpts {
-//   id: number;
-//   resources: [sceneBufPtr];
-//   pool: meshPoolPtr;
-//   shader: mesh_shader;
-//   shaderVertexEntry: "vert_main";
-//   shaderFragmentEntry: "frag_main";
-//   stepMode: "per-mesh-instance";
-// }
-
 // TODO(@darzu): instead of just mushing together with the desc, have desc compose in
 export interface CyRndrPipeline {
   ptr: CyRndrPipelinePtr;
@@ -199,14 +181,6 @@ function isRenderPipelinePtr(
 }
 
 // REGISTERS
-
-// export type ResourcePtr =
-//   | CyBufferPtr<any>
-//   | CyIdxBufferPtr
-//   | CyTexturePtr
-//   | CyMeshPoolDesc<any, any>
-//   | CyCompPipelinePtr<any>
-//   | CyRndrPipelinePtr<any>;
 
 type PtrKindToPtrType = {
   manyBuffer: CyManyBufferPtr<any>;
@@ -808,39 +782,6 @@ export function createWebGPURenderer(
   let sceneUni: CyOne<typeof SceneStruct.desc> =
     cyKindToNameToRes.oneBuffer["scene"]!;
 
-  // // cloth data
-  // let clothTextures = [
-  //   // TODO(@darzu): hacky grab
-  //   cyKindToNameToRes.texture["clothTex0"]!.texture,
-  //   cyKindToNameToRes.texture["clothTex1"]!.texture,
-  // ];
-
-  // let cmpClothBindGroupLayout = device.createBindGroupLayout({
-  //   entries: [
-  //     {
-  //       binding: 1,
-  //       visibility: GPUShaderStage.COMPUTE,
-  //       texture: { sampleType: "unfilterable-float" },
-  //     },
-  //     {
-  //       binding: 2,
-  //       visibility: GPUShaderStage.COMPUTE,
-  //       storageTexture: { format: "rgba32float", access: "write-only" },
-  //     },
-  //   ],
-  // });
-  // let cmpClothPipeline = device.createComputePipeline({
-  //   layout: device.createPipelineLayout({
-  //     bindGroupLayouts: [cmpClothBindGroupLayout],
-  //   }),
-  //   compute: {
-  //     module: device.createShaderModule({
-  //       code: cloth_shader(),
-  //     }),
-  //     entryPoint: "main",
-  //   },
-  // });
-
   // render bundle
   let bundledMIds = new Set<number>();
   let needsRebundle = false;
@@ -1039,30 +980,7 @@ export function createWebGPURenderer(
     // start collecting our render commands for this frame
     const commandEncoder = device.createCommandEncoder();
 
-    // // run compute tasks
-    // const clothWriteIdx = clothReadIdx;
-    // clothReadIdx = (clothReadIdx + 1) % 2;
-    // const cmpClothBindGroup = device.createBindGroup({
-    //   layout: cmpClothPipeline.getBindGroupLayout(0),
-    //   entries: [
-    //     {
-    //       binding: 1,
-    //       resource: clothTextures[clothReadIdx].createView(),
-    //     },
-    //     {
-    //       binding: 2,
-    //       resource: clothTextures[clothWriteIdx].createView(),
-    //     },
-    //   ],
-    // });
-
-    // const cmpClothPassEncoder = commandEncoder.beginComputePass();
-    // cmpClothPassEncoder.setPipeline(cmpClothPipeline);
-    // cmpClothPassEncoder.setBindGroup(0, cmpClothBindGroup);
-    // cmpClothPassEncoder.dispatchWorkgroups(1);
-    // cmpClothPassEncoder.end();
-
-    // TODO(@darzu): IMPL
+    // run compute shaders
     for (let p of Object.values(cyKindToNameToRes.compPipeline)) {
       const compPassEncoder = commandEncoder.beginComputePass();
       compPassEncoder.setPipeline(p.pipeline);

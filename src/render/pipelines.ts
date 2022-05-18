@@ -32,28 +32,9 @@ import {
 //  [ ] pipeline attachements / outputs
 //        use case: two cameras
 //  [ ] mesh pool handle enable/disable
-//  [ ] textures and samplers as resources
-//  [ ] resource ping-ponging for cloth texs and boids
+//  [x] textures and samplers as resources
+//  [x] resource ping-ponging for cloth texs and boids
 //  [x] shader VertexInput struct auto gen
-
-/*
- TODO(@darzu): how to reference clothTexPtr0, and clothTexPtr1?
-    need logic to choose between these
-    bake in flip-flop? circular buffer?
-    always changed after compute?
-      what r the other cases?
-        dynamic render target
-    solution:
-      static resource allocations,
-      dynamic resource combinations
-        the difference between layout vs binding
-      .bind or .swap ?
-      waht is swappable? 
-      all resources, all buffers (vert, instance)
-
-  For now, why don't we just have every permutation of pipeline ptr?
-    so far, there r just 2 per config
-*/
 
 // TODO(@darzu):
 export const VertexStruct = createCyStruct(
@@ -436,59 +417,3 @@ const cmpClothPipelinePtr1 = registerCompPipeline("clothComp1", {
   shader: cloth_shader,
   shaderComputeEntry: "main",
 });
-
-// cloth data
-// let clothTextures = [
-//   // TODO(@darzu): hacky grab
-//   cyKindToNameToRes.texture["clothTex0"]!.texture,
-//   cyKindToNameToRes.texture["clothTex1"]!.texture,
-// ];
-
-// let cmpClothBindGroupLayout = device.createBindGroupLayout({
-//   entries: [
-//     {
-//       binding: 1,
-//       visibility: GPUShaderStage.COMPUTE,
-//       texture: { sampleType: "unfilterable-float" },
-//     },
-//     {
-//       binding: 2,
-//       visibility: GPUShaderStage.COMPUTE,
-//       storageTexture: { format: "rgba32float", access: "write-only" },
-//     },
-//   ],
-// });
-// let cmpClothPipeline = device.createComputePipeline({
-//   layout: device.createPipelineLayout({
-//     bindGroupLayouts: [cmpClothBindGroupLayout],
-//   }),
-//   compute: {
-//     module: device.createShaderModule({
-//       code: cloth_shader(),
-//     }),
-//     entryPoint: "main",
-//   },
-// });
-
-// // run compute tasks
-// const clothWriteIdx = clothReadIdx;
-// clothReadIdx = (clothReadIdx + 1) % 2;
-// const cmpClothBindGroup = device.createBindGroup({
-//   layout: cmpClothPipeline.getBindGroupLayout(0),
-//   entries: [
-//     {
-//       binding: 1,
-//       resource: clothTextures[clothReadIdx].createView(),
-//     },
-//     {
-//       binding: 2,
-//       resource: clothTextures[clothWriteIdx].createView(),
-//     },
-//   ],
-// });
-
-// const cmpClothPassEncoder = commandEncoder.beginComputePass();
-// cmpClothPassEncoder.setPipeline(cmpClothPipeline);
-// cmpClothPassEncoder.setBindGroup(0, cmpClothBindGroup);
-// cmpClothPassEncoder.dispatchWorkgroups(1);
-// cmpClothPassEncoder.end();
