@@ -22,12 +22,12 @@ export const mesh_shader = () =>
       // let uvInt: vec2<i32> = vec2<i32>(5, 5);
       // let uvInt: vec2<i32> = vec2<i32>(10, i32(uv.x + 5.0));
       let uvInt: vec2<i32> = vec2<i32>(i32(uv.x * 10.0), i32(uv.y * 10.0));
-      // let texDisp = textureLoad(dispTexture, uvInt, 0);
+      let texDisp = textureLoad(clothTex, uvInt, 0);
 
-      let finalPos = worldPos;
+      // let finalPos = worldPos;
       // TODO: support texture resource
       // let finalPos = vec4<f32>(worldPos.xy, worldPos.z + uv.x * 10.0, worldPos.w);
-      // let finalPos = vec4<f32>(worldPos.xyz + texDisp.xyz, 1.0);
+      let finalPos = vec4<f32>(worldPos.xyz + texDisp.xyz, 1.0);
 
       output.worldPos = finalPos;
       output.position = scene.cameraViewProjMatrix * finalPos;

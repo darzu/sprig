@@ -406,7 +406,7 @@ const renderTriPipelineDesc = registerRenderPipeline("triRender", {
   resources: [
     sceneBufPtr,
     // TODO(@darzu): support textures
-    //clothTexPtr1
+    { ptr: clothTexPtr0, access: "read", alias: "clothTex" },
   ],
   meshOpt: {
     pool: meshPoolPtr,
