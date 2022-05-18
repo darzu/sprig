@@ -21,7 +21,12 @@ import {
   registerOneBufPtr,
   registerManyBufPtr,
 } from "./render_webgpu.js";
-import { mesh_shader, particle_shader, rope_shader } from "./shaders.js";
+import {
+  cloth_shader,
+  mesh_shader,
+  particle_shader,
+  rope_shader,
+} from "./shaders.js";
 
 // TODO:
 //  [ ] pipeline attachements / outputs
@@ -407,3 +412,72 @@ const renderTriPipelineDesc = registerRenderPipeline("triRender", {
   shaderVertexEntry: "vert_main",
   shaderFragmentEntry: "frag_main",
 });
+
+// TODO(@darzu): CLOTH
+let clothReadIdx = 1;
+
+const cmpClothPipelinePtr = registerCompPipeline("clothComp", {
+  resources: [],
+  textures: [
+    { ptr: clothTexPtr0, access: "read" },
+    { ptr: clothTexPtr1, access: "write" },
+  ],
+  shader: cloth_shader,
+  shaderComputeEntry: "main",
+});
+
+// cloth data
+// let clothTextures = [
+//   // TODO(@darzu): hacky grab
+//   cyKindToNameToRes.texture["clothTex0"]!.texture,
+//   cyKindToNameToRes.texture["clothTex1"]!.texture,
+// ];
+
+// let cmpClothBindGroupLayout = device.createBindGroupLayout({
+//   entries: [
+//     {
+//       binding: 1,
+//       visibility: GPUShaderStage.COMPUTE,
+//       texture: { sampleType: "unfilterable-float" },
+//     },
+//     {
+//       binding: 2,
+//       visibility: GPUShaderStage.COMPUTE,
+//       storageTexture: { format: "rgba32float", access: "write-only" },
+//     },
+//   ],
+// });
+// let cmpClothPipeline = device.createComputePipeline({
+//   layout: device.createPipelineLayout({
+//     bindGroupLayouts: [cmpClothBindGroupLayout],
+//   }),
+//   compute: {
+//     module: device.createShaderModule({
+//       code: cloth_shader(),
+//     }),
+//     entryPoint: "main",
+//   },
+// });
+
+// // run compute tasks
+// const clothWriteIdx = clothReadIdx;
+// clothReadIdx = (clothReadIdx + 1) % 2;
+// const cmpClothBindGroup = device.createBindGroup({
+//   layout: cmpClothPipeline.getBindGroupLayout(0),
+//   entries: [
+//     {
+//       binding: 1,
+//       resource: clothTextures[clothReadIdx].createView(),
+//     },
+//     {
+//       binding: 2,
+//       resource: clothTextures[clothWriteIdx].createView(),
+//     },
+//   ],
+// });
+
+// const cmpClothPassEncoder = commandEncoder.beginComputePass();
+// cmpClothPassEncoder.setPipeline(cmpClothPipeline);
+// cmpClothPassEncoder.setBindGroup(0, cmpClothBindGroup);
+// cmpClothPassEncoder.dispatchWorkgroups(1);
+// cmpClothPassEncoder.end();

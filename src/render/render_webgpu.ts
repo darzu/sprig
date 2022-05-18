@@ -115,11 +115,17 @@ export interface CyMeshPoolPtr<V extends CyStructDesc, U extends CyStructDesc>
   lineIndsPtr: CyIdxBufferPtr;
 }
 
-// COMP PIPELINE
+// PIPELINES
+
+// TODO(@darzu): support more access modes?
+// TODO(@darzu): like buffer access modes, is this possibly inferable?
+export type CyTexUsage = { ptr: CyTexturePtr; access: "read" | "write" };
+
 export interface CyCompPipelinePtr<RS extends CyBufferPtr<CyStructDesc>[]>
   extends CyResourcePtr {
   kind: "compPipeline";
-  resources: [...RS];
+  resources: [...RS]; // TODO(@darzu): rename "resources" to "globals"?
+  textures?: CyTexUsage[];
   shader: () => string;
   shaderComputeEntry: string;
 }
@@ -129,9 +135,9 @@ export interface CyCompPipeline<RS extends CyBufferPtr<CyStructDesc>[]> {
   // resourceLayouts: CyBufferPtrLayout<CyStructDesc>[];
   pipeline: GPUComputePipeline;
   bindGroup: GPUBindGroup;
+  texBindGroup?: GPUBindGroup;
 }
 
-// RENDER PIPELINE
 type CyMeshOpt =
   | {
       pool: CyMeshPoolPtr<any, any>;
@@ -148,6 +154,7 @@ export interface CyRndrPipelinePtr<RS extends CyBufferPtr<any>[]>
   extends CyResourcePtr {
   kind: "renderPipeline";
   resources: [...RS];
+  textures?: CyTexUsage[];
   shader: () => string;
   shaderVertexEntry: string;
   shaderFragmentEntry: string;
@@ -353,7 +360,7 @@ export function createWebGPURenderer(
     renderFrame,
   };
 
-  let clothReadIdx = 1;
+  // let clothReadIdx = 1;
 
   // let sceneUni = createCyOne(device, SceneStruct, setupScene());
   let canvasFormat = context.getPreferredFormat(adapter);
@@ -461,6 +468,9 @@ export function createWebGPURenderer(
     ..._cyKindToPtrs["compPipeline"],
     ..._cyKindToPtrs["renderPipeline"],
   ]) {
+    const shaderStage = isRenderPipelinePtr(p)
+      ? GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT
+      : GPUShaderStage.COMPUTE;
     // TODO(@darzu): move helpers elsewhere?
     // TODO(@darzu): dynamic is wierd to pass here
     function mkBindGroupLayout(ptrs: CyBufferPtr<any>[], dynamic: boolean) {
@@ -469,14 +479,33 @@ export function createWebGPURenderer(
           r.struct.layout(
             i,
             // TODO(@darzu): more precise
-            isRenderPipelinePtr(p)
-              ? GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT
-              : GPUShaderStage.COMPUTE,
+            shaderStage,
             // TODO(@darzu): more precise?
             r.struct.opts?.isUniform ? "uniform" : "storage",
             dynamic
           )
         ),
+      };
+      return device.createBindGroupLayout(bindGroupLayoutDesc);
+    }
+    function mkTexBindGroupLayout(ptrs: CyTexUsage[]) {
+      const bindGroupLayoutDesc: GPUBindGroupLayoutDescriptor = {
+        entries: ptrs.map((r, i) => {
+          if (r.access === "read") {
+            return {
+              binding: i,
+              visibility: shaderStage,
+              // TODO(@darzu): need a mapping of format -> sample type?
+              texture: { sampleType: "unfilterable-float" },
+            };
+          } else {
+            return {
+              binding: i,
+              visibility: shaderStage,
+              storageTexture: { format: r.ptr.format, access: "write-only" },
+            };
+          }
+        }),
       };
       return device.createBindGroupLayout(bindGroupLayoutDesc);
     }
@@ -495,6 +524,20 @@ export function createWebGPURenderer(
           assert(!!buf, `Missing resource buffer: ${r.name}`);
           // TODO(@darzu): not super happy with how plurality is handled
           return buf.binding(i, plurality);
+        }),
+      });
+      return bindGroup;
+    }
+    function mkTexBindGroup(layout: GPUBindGroupLayout, ptrs: CyTexUsage[]) {
+      const bindGroup = device.createBindGroup({
+        layout: layout,
+        entries: ptrs.map((r, i) => {
+          const tex = cyKindToNameToRes.texture[r.ptr.name]!;
+          return {
+            binding: i,
+            // TODO(@darzu): does this view need to be updated on resize?
+            resource: tex.texture.createView(),
+          };
         }),
       });
       return bindGroup;
@@ -531,12 +574,28 @@ export function createWebGPURenderer(
       // TODO(@darzu): support multiple groups?
       return `@group(${groupIdx}) @binding(${bindingIdx}) ${varPrefix} ${varName} : ${varType};`;
     }
+    function texPtrToWgslVars(
+      r: CyTexUsage,
+      groupIdx: number,
+      bindingIdx: number
+    ) {
+      const varName = uncapitalize(r.ptr.name);
+      if (r.access === "read")
+        // TODO(@darzu): handle other formats?
+        return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_2d<f32>;`;
+      else
+        return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_storage_2d<${r.ptr.format}, write>;`;
+    }
 
-    // resources bind group
+    // resources layout and bindings
     // TODO(@darzu): don't like this dynamic layout var
     const resBindGroupLayout = mkBindGroupLayout(p.resources, false);
     // TODO(@darzu): wait, plurality many isn't right
     const resBindGroup = mkBindGroup(resBindGroupLayout, p.resources, "many");
+
+    // texture layout and bindings
+    const texBindGroupLayout = mkTexBindGroupLayout(p.textures ?? []);
+    const texBindGroup = mkTexBindGroup(texBindGroupLayout, p.textures ?? []);
 
     // shader resource setup
     const shaderResStructs = p.resources.map((r) => {
@@ -544,6 +603,10 @@ export function createWebGPURenderer(
     });
     const shaderResVars = p.resources.map((r, i) => {
       return bufPtrToWgslVars(r, r.kind === "oneBuffer" ? "one" : "many", 0, i);
+    });
+    const shaderTexVars = (p.textures ?? []).map((r, i) => {
+      // TODO(@darzu): textures always group 1?
+      return texPtrToWgslVars(r, 1, i);
     });
 
     if (isRenderPipelinePtr(p)) {
@@ -647,6 +710,7 @@ export function createWebGPURenderer(
           `${shaderResVars.join("\n")}\n` +
           `${uniStruct}\n` +
           `${uniVar}\n` +
+          `${shaderTexVars.join("\n")}\n` +
           `${vertexInputStruct}\n` +
           `${p.shader()}\n`;
 
@@ -699,15 +763,23 @@ export function createWebGPURenderer(
         never(p.meshOpt, `Unimplemented step kind`);
       }
     } else {
-      const shaderStr = `
-      ${shaderResStructs.join("\n")}
-      ${shaderResVars.join("\n")}
-      ${p.shader()}
-      `;
+      const shaderStr =
+        `${shaderResStructs.join("\n")}\n` +
+        `${shaderResVars.join("\n")}\n` +
+        `${shaderTexVars.join("\n")}\n` +
+        `${p.shader()}\n`;
+
+      const emptyLayout = device.createBindGroupLayout({
+        entries: [],
+      });
 
       let compPipeline = device.createComputePipeline({
         layout: device.createPipelineLayout({
-          bindGroupLayouts: [resBindGroupLayout],
+          bindGroupLayouts: [
+            resBindGroupLayout,
+            // emptyLayout,
+            texBindGroupLayout,
+          ],
         }),
         compute: {
           module: device.createShaderModule({
@@ -719,8 +791,8 @@ export function createWebGPURenderer(
       const cyPipeline: CyCompPipeline<any> = {
         ptr: p,
         pipeline: compPipeline,
-        // resourceLayouts,
         bindGroup: resBindGroup,
+        texBindGroup: texBindGroup,
       };
       cyKindToNameToRes.compPipeline[p.name] = cyPipeline;
     }
@@ -736,38 +808,38 @@ export function createWebGPURenderer(
   let sceneUni: CyOne<typeof SceneStruct.desc> =
     cyKindToNameToRes.oneBuffer["scene"]!;
 
-  // cloth data
-  let clothTextures = [
-    // TODO(@darzu): hacky grab
-    cyKindToNameToRes.texture["clothTex0"]!.texture,
-    cyKindToNameToRes.texture["clothTex1"]!.texture,
-  ];
+  // // cloth data
+  // let clothTextures = [
+  //   // TODO(@darzu): hacky grab
+  //   cyKindToNameToRes.texture["clothTex0"]!.texture,
+  //   cyKindToNameToRes.texture["clothTex1"]!.texture,
+  // ];
 
-  let cmpClothBindGroupLayout = device.createBindGroupLayout({
-    entries: [
-      {
-        binding: 1,
-        visibility: GPUShaderStage.COMPUTE,
-        texture: { sampleType: "unfilterable-float" },
-      },
-      {
-        binding: 2,
-        visibility: GPUShaderStage.COMPUTE,
-        storageTexture: { format: "rgba32float", access: "write-only" },
-      },
-    ],
-  });
-  let cmpClothPipeline = device.createComputePipeline({
-    layout: device.createPipelineLayout({
-      bindGroupLayouts: [cmpClothBindGroupLayout],
-    }),
-    compute: {
-      module: device.createShaderModule({
-        code: cloth_shader(),
-      }),
-      entryPoint: "main",
-    },
-  });
+  // let cmpClothBindGroupLayout = device.createBindGroupLayout({
+  //   entries: [
+  //     {
+  //       binding: 1,
+  //       visibility: GPUShaderStage.COMPUTE,
+  //       texture: { sampleType: "unfilterable-float" },
+  //     },
+  //     {
+  //       binding: 2,
+  //       visibility: GPUShaderStage.COMPUTE,
+  //       storageTexture: { format: "rgba32float", access: "write-only" },
+  //     },
+  //   ],
+  // });
+  // let cmpClothPipeline = device.createComputePipeline({
+  //   layout: device.createPipelineLayout({
+  //     bindGroupLayouts: [cmpClothBindGroupLayout],
+  //   }),
+  //   compute: {
+  //     module: device.createShaderModule({
+  //       code: cloth_shader(),
+  //     }),
+  //     entryPoint: "main",
+  //   },
+  // });
 
   // render bundle
   let bundledMIds = new Set<number>();
@@ -967,34 +1039,38 @@ export function createWebGPURenderer(
     // start collecting our render commands for this frame
     const commandEncoder = device.createCommandEncoder();
 
-    // run compute tasks
-    const clothWriteIdx = clothReadIdx;
-    clothReadIdx = (clothReadIdx + 1) % 2;
-    const cmpClothBindGroup = device.createBindGroup({
-      layout: cmpClothPipeline.getBindGroupLayout(0),
-      entries: [
-        {
-          binding: 1,
-          resource: clothTextures[clothReadIdx].createView(),
-        },
-        {
-          binding: 2,
-          resource: clothTextures[clothWriteIdx].createView(),
-        },
-      ],
-    });
+    // // run compute tasks
+    // const clothWriteIdx = clothReadIdx;
+    // clothReadIdx = (clothReadIdx + 1) % 2;
+    // const cmpClothBindGroup = device.createBindGroup({
+    //   layout: cmpClothPipeline.getBindGroupLayout(0),
+    //   entries: [
+    //     {
+    //       binding: 1,
+    //       resource: clothTextures[clothReadIdx].createView(),
+    //     },
+    //     {
+    //       binding: 2,
+    //       resource: clothTextures[clothWriteIdx].createView(),
+    //     },
+    //   ],
+    // });
 
-    const cmpClothPassEncoder = commandEncoder.beginComputePass();
-    cmpClothPassEncoder.setPipeline(cmpClothPipeline);
-    cmpClothPassEncoder.setBindGroup(0, cmpClothBindGroup);
-    cmpClothPassEncoder.dispatchWorkgroups(1);
-    cmpClothPassEncoder.end();
+    // const cmpClothPassEncoder = commandEncoder.beginComputePass();
+    // cmpClothPassEncoder.setPipeline(cmpClothPipeline);
+    // cmpClothPassEncoder.setBindGroup(0, cmpClothBindGroup);
+    // cmpClothPassEncoder.dispatchWorkgroups(1);
+    // cmpClothPassEncoder.end();
 
     // TODO(@darzu): IMPL
     for (let p of Object.values(cyKindToNameToRes.compPipeline)) {
       const compPassEncoder = commandEncoder.beginComputePass();
       compPassEncoder.setPipeline(p.pipeline);
       compPassEncoder.setBindGroup(0, p.bindGroup);
+      if (p.texBindGroup) {
+        // TODO(@darzu): textures hard coded to group 1
+        compPassEncoder.setBindGroup(1, p.texBindGroup);
+      }
       // TODO(@darzu): parameterize workgroup count
       compPassEncoder.dispatchWorkgroups(1);
       compPassEncoder.end();
