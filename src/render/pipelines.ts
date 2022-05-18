@@ -425,13 +425,17 @@ const BoidData = createCyStruct({
   pos: "vec3<f32>",
   vel: "vec3<f32>",
 });
-const boidData = registerManyBufPtr("boidData", {
+const boidData0 = registerManyBufPtr("boidData0", {
   struct: BoidData,
   init: () =>
     range(100).map((_, i) => ({
       pos: [i, i, i] as vec3,
       vel: [0.1, 0.1, 0.1] as vec3,
     })),
+});
+const boidData1 = registerManyBufPtr("boidData1", {
+  struct: BoidData,
+  init: () => 100,
 });
 const BoidVert = createCyStruct({
   pos: "vec3<f32>",
@@ -453,7 +457,7 @@ const boidRender = registerRenderPipeline("boidRender", {
   resources: [sceneBufPtr],
   meshOpt: {
     index: boidInds,
-    instance: boidData,
+    instance: boidData0,
     vertex: boidVerts,
     stepMode: "per-instance",
   },
@@ -478,3 +482,117 @@ const boidRender = registerRenderPipeline("boidRender", {
   shaderFragmentEntry: "frag_main",
   shaderVertexEntry: "vert_main",
 });
+
+const BoidParams = createCyStruct(
+  {
+    deltaT: "f32",
+    rule1Distance: "f32",
+    rule2Distance: "f32",
+    rule3Distance: "f32",
+    rule1Scale: "f32",
+    rule2Scale: "f32",
+    rule3Scale: "f32",
+  },
+  {
+    // TODO(@darzu): wish we didn't need to specify this
+    isUniform: true,
+  }
+);
+const boidParams = registerOneBufPtr("boidParams", {
+  struct: BoidParams,
+  init: () => {
+    return {
+      deltaT: 0.04,
+      rule1Distance: 0.1,
+      rule2Distance: 0.025,
+      rule3Distance: 0.025,
+      rule1Scale: 0.02,
+      rule2Scale: 0.05,
+      rule3Scale: 0.005,
+    };
+  },
+});
+
+const boidCompDesc: Omit<
+  Parameters<typeof registerCompPipeline>[1],
+  "resources"
+> = {
+  shaderComputeEntry: "main",
+  shader: () => `  
+  @stage(compute) @workgroup_size(64)
+  fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
+    var index : u32 = GlobalInvocationID.x;
+  
+    var vPos = boidData0s.boidData0s[index].pos;
+    var vVel = boidData0s.boidData0s[index].vel;
+    var cMass = vec3<f32>(0.0, 0.0, 0.0);
+    var cVel = vec3<f32>(0.0, 0.0, 0.0);
+    var colVel = vec3<f32>(0.0, 0.0, 0.0);
+    var cMassCount : u32 = 0u;
+    var cVelCount : u32 = 0u;
+    var pos : vec3<f32>;
+    var vel : vec3<f32>;
+  
+    for (var i : u32 = 0u; i < arrayLength(&boidData0s.boidData0s); i = i + 1u) {
+      if (i == index) {
+        continue;
+      }
+  
+      pos = boidData0s.boidData0s[i].pos.xyz;
+      vel = boidData0s.boidData0s[i].vel.xyz;
+      if (distance(pos, vPos) < boidParams.rule1Distance) {
+        cMass = cMass + pos;
+        cMassCount = cMassCount + 1u;
+      }
+      if (distance(pos, vPos) < boidParams.rule2Distance) {
+        colVel = colVel - (pos - vPos);
+      }
+      if (distance(pos, vPos) < boidParams.rule3Distance) {
+        cVel = cVel + vel;
+        cVelCount = cVelCount + 1u;
+      }
+    }
+    if (cMassCount > 0u) {
+      var temp = f32(cMassCount);
+      cMass = (cMass / vec3<f32>(temp, temp, temp)) - vPos;
+    }
+    if (cVelCount > 0u) {
+      var temp = f32(cVelCount);
+      cVel = cVel / vec3<f32>(temp, temp, temp);
+    }
+    vVel = vVel + (cMass * boidParams.rule1Scale) + (colVel * boidParams.rule2Scale) +
+        (cVel * boidParams.rule3Scale);
+  
+    // clamp velocity for a more pleasing simulation
+    vVel = normalize(vVel) * clamp(length(vVel), 0.0, 0.1);
+    // kinematic update
+    vPos = vPos + (vVel * boidParams.deltaT);
+    // Wrap around boundary
+    if (vPos.x < -100.0) {
+      vPos.x = 100.0;
+    }
+    if (vPos.x > 100.0) {
+      vPos.x = -100.0;
+    }
+    if (vPos.y < -100.0) {
+      vPos.y = 100.0;
+    }
+    if (vPos.y > 100.0) {
+      vPos.y = -100.0;
+    }
+    // Write back
+    boidData1s.boidData1s[index].pos = vPos;
+    boidData1s.boidData1s[index].vel = vVel;
+  }
+  `,
+};
+
+const boidComp0 = registerCompPipeline("boidComp0", {
+  ...boidCompDesc,
+  resources: [boidParams, boidData0, boidData1],
+});
+// // TODO(@darzu): usage
+// const boidComp1 = registerCompPipeline("boidComp1", {
+//   ...boidCompDesc,
+//   resources: [boidParams, boidData1, boidData0],
+// });
