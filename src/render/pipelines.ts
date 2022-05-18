@@ -1,4 +1,5 @@
 import { mat4, vec3 } from "../gl-matrix.js";
+import { range } from "../util.js";
 import { computeTriangleNormal } from "../utils-3d.js";
 import {
   createCyMany,
@@ -416,4 +417,64 @@ const cmpClothPipelinePtr1 = registerCompPipeline("clothComp1", {
   ],
   shader: cloth_shader,
   shaderComputeEntry: "main",
+});
+
+// BOIDS
+
+const BoidData = createCyStruct({
+  pos: "vec3<f32>",
+  vel: "vec3<f32>",
+});
+const boidData = registerManyBufPtr("boidData", {
+  struct: BoidData,
+  init: () =>
+    range(100).map((_, i) => ({
+      pos: [i, i, i] as vec3,
+      vel: [0.1, 0.1, 0.1] as vec3,
+    })),
+});
+const BoidVert = createCyStruct({
+  pos: "vec3<f32>",
+});
+
+const boidVerts = registerManyBufPtr("boidVerts", {
+  struct: BoidVert,
+  init: () => [
+    { pos: [1, 1, 1] },
+    { pos: [1, -1, -1] },
+    { pos: [-1, 1, -1] },
+    { pos: [-1, -1, 1] },
+  ],
+});
+const boidInds = registerIdxBufPtr("boidIdx", {
+  init: () => new Uint16Array([2, 1, 0, 3, 2, 0, 1, 3, 0, 2, 3, 1]),
+});
+const boidRender = registerRenderPipeline("boidRender", {
+  resources: [sceneBufPtr],
+  meshOpt: {
+    index: boidInds,
+    instance: boidData,
+    vertex: boidVerts,
+    stepMode: "per-instance",
+  },
+  shader: () => {
+    return `
+    @stage(vertex)
+    fn vert_main(vIn: VertexInput, iIn: InstanceInput) -> @builtin(position) vec4<f32> {
+      // let angle = -atan2(a_particleVel.x, a_particleVel.y);
+      // let pos = vec2<f32>(
+      //     (a_pos.x * cos(angle)) - (a_pos.y * sin(angle)),
+      //     (a_pos.x * sin(angle)) + (a_pos.y * cos(angle)));
+      let pos = scene.cameraViewProjMatrix * vec4<f32>(vIn.pos + iIn.pos, 1.0);
+      return pos;
+    }
+    
+    @stage(fragment)
+    fn frag_main() -> @location(0) vec4<f32> {
+      return vec4<f32>(1.0, 1.0, 1.0, 1.0);
+    }
+  `;
+  },
+  shaderFragmentEntry: "frag_main",
+  shaderVertexEntry: "vert_main",
 });
