@@ -299,3 +299,6 @@ Compute algorithms:
 
 Bunch of vulkan examples:
   https://github.com/SaschaWillems/Vulkan
+
+Interesting discussion of shader derivative fns:
+  https://brianlovin.com/hn/28728138

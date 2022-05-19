@@ -41,9 +41,11 @@ export const mesh_shader = () =>
 
   @stage(fragment)
   fn frag_main(input: VertexOutput) -> @location(0) vec4<f32> {
-      let light1 : f32 = clamp(dot(-scene.light1Dir, input.normal), 0.0, 1.0);
-      let light2 : f32 = clamp(dot(-scene.light2Dir, input.normal), 0.0, 1.0);
-      let light3 : f32 = clamp(dot(-scene.light3Dir, input.normal), 0.0, 1.0);
+      let normal = input.normal;
+      // let normal = -normalize(cross(dpdx(input.worldPos.xyz), dpdy(input.worldPos.xyz)));
+      let light1 : f32 = clamp(dot(-scene.light1Dir, normal), 0.0, 1.0);
+      let light2 : f32 = clamp(dot(-scene.light2Dir, normal), 0.0, 1.0);
+      let light3 : f32 = clamp(dot(-scene.light3Dir, normal), 0.0, 1.0);
       let resultColor: vec3<f32> = input.color 
         * (light1 * 1.5 + light2 * 0.5 + light3 * 0.2 + 0.1);
       let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));

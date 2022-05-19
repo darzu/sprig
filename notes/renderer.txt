@@ -570,3 +570,127 @@ Death's door uses fairly minimal textures:
 
 Font choices:
   Montserrat ? https://twitter.com/patriciogv/status/1526539963743059968
+
+PBR:
+  https://www.youtube.com/watch?v=RRE-F57fbXw
+  common traits:
+    energy conservation
+    microfacet model
+    fresnel effect
+  rendering equation:
+    L0(x,wo,l,t) = Le(x,wo,l,t) + INT_O(fr(x,wi,wo,l,t)Li(x,wi,l,t)(wi*n)dwi)
+      x = frament position
+      wo = outgoing light
+      wi = negative incoming light
+      l = wavelength
+      t = time
+    L0(x,V) = Le(x,V) + INT_O(fr(x,L,V)Li(x,L)(L*N)dL)
+      x = fragment position
+      V = view vector
+      Ln = nth light vector
+      L0(x,V) <- final color
+      Le(x,V) <- light emitted
+      SUM_n(
+        fr(x,Ln,V) <- BRDF(bidirectional reflectance distribution function)
+        Li(x,Ln) <- incoming light
+        (Ln*N) <- dot(light, normal)
+      )
+      BRDF = kd*f_diffuse + ks*f_specular
+        kd + ks = 1
+        ks = fresnel, kd = 1 - ks
+      f_schlick = f0 + (1-f0)(1-(v.h))^5
+        f0 = base reflectivity
+        v = view vector
+        h = half-way vector
+      diffuse: lambertian vs oren-nayar
+        f_lambert = coor/pi * dot(Ln, 
+      cook-torrence
+        dgf/4(V*N)(L*N)
+      D = normal distribution function
+        GGX/TROWBRIDGE-pei, has pi, a = roughness square
+      G = geometry shadowin
+        smith-ggx
+          geometry obstruction, geometry shadowing
+        Gsmith = G1 ...
+        k = a/2 // unreal, etc
+       
+  rule of thumb: no negative dot products, no division by 0
+    max(dot(x,y), 0.0)
+    42/max(v, 0.00001);
+
+    frag shader inputs:
+      vec3 fragPos,
+      vec3 normal,
+      vec3 cameraPos,
+      vec3 lightDir,
+      vec3 lightPos,
+      vec3 lightColor,
+      vec3 albedo,
+      vec3 emissivity,
+      float roughness,
+      vec3 baseReflectance,
+      float metallic, // only reflects specular, not diffuse ?
+
+    N = normalize(normal)
+    V = normalize(cameraPos - fragPos)
+    // for directional lights
+    L = normalize(lightDir)
+    // for point lights
+    L = normalize(lightPos - fragmentPos)
+    H = normalize(V + L)
+
+  fn D(alpha, N, H) {
+    numerator = pow(alpha, 2.0)
+    NdotH = max(dot(N,H), 0.0)
+    denominator = PI * pow(pow(NdotH, 2.0) * (pow(alpha, 2.0) - 1.0) + 1.0, 2.0)
+    denominator = max(denominator, 0.000001)
+
+    return numerator/denominator;
+  }
+  fn G1(alpha, N, X) {
+    numerator = max(dot(N,X), 0.0)
+
+    k = alpha/2.0
+    denominator = max(dot(N,X),0.0) * (1.0 - k) + k
+    denominator = max(denominator, 0.000001)
+
+    return numerator / denominator;
+  }
+  fn G(alpha, N, V, L) {
+    return G1(alpha, N, V) * G1(alpha, N, L)
+  }
+  fn F(F0, V, H) {
+    return F0 + (vec3(1.0) - F0) * pow(1 - max(dot(V, H), 0.0), 5.0)
+  }
+  // for one light source
+  fn PBR() {
+    Ks = F(F0, V, H) // lazy F0 is albedo
+    Kd = (vec3(1.0) - Ks) * (1.0 - metallic) // note: need image based lighting for good looking metals
+
+    lambert = albedo / PI
+
+    cookTorNum = D(alpha, N, H) * G(alpha, N, V, L) * F(F0, V, H)
+    cookTorDen = 4.0 * max(dot(V,N), 0.0) * max(dot(L,N), 0.0)
+    cookTorDen = max(cookTorDen, 0.000001)
+    cookTor = cookTorNum / cookTorDen
+
+    BRDF = Kd * lambert + cookTorrance
+    outgoingLight = emissivity + BRDF * lightColor * max(dot(L, N), 0.0);
+
+    return outgoingLight;
+  }
+  
+  frag shader:
+    import all variables
+
+    define normal distribution function
+    define geometry shadowing function
+    define fresnel effect function
+
+    calculate Ks, Kd
+    calculate diffuse component of the BRDF
+    calculate specular component of the BRDF
+    combine them into the BRDF
+
+    insert the BRDF and other vars into rendering equation
+    output result
