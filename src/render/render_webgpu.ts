@@ -57,8 +57,6 @@ import {
   particle_shader,
 } from "./shaders.js";
 
-const PIXEL_PER_PX: number | null = null; // 0.5;
-
 // render pipeline parameters
 const antiAliasSampleCount = 4;
 const depthStencilFormat = "depth24plus-stencil8";
@@ -352,7 +350,8 @@ export function createWebGPURenderer(
   // let clothReadIdx = 1;
 
   // let sceneUni = createCyOne(device, SceneStruct, setupScene());
-  let canvasFormat = context.getPreferredFormat(adapter);
+  let canvasFormat = navigator.gpu.getPreferredCanvasFormat();
+  // let canvasFormat = context.getPreferredFormat(adapter);
 
   // determine resource usage modes
   // TODO(@darzu): determine texture usage modes
@@ -863,14 +862,9 @@ export function createWebGPURenderer(
   let lastHeight = 0;
 
   function checkCanvasResize() {
-    const devicePixelRatio = PIXEL_PER_PX
-      ? PIXEL_PER_PX
-      : window.devicePixelRatio || 1;
-    const newWidth = canvas.clientWidth * devicePixelRatio;
-    const newHeight = canvas.clientHeight * devicePixelRatio;
+    const newWidth = canvas.width;
+    const newHeight = canvas.height;
     if (lastWidth === newWidth && lastHeight === newHeight) return;
-
-    console.log(`devicePixelRatio: ${devicePixelRatio}`);
 
     if (depthTexture) depthTexture.destroy();
     if (canvasTexture) canvasTexture.destroy();
@@ -880,7 +874,6 @@ export function createWebGPURenderer(
     context.configure({
       device: device,
       format: canvasFormat, // presentationFormat
-      size: newSize,
       // TODO(@darzu): support transparency?
       compositingAlphaMode: "opaque",
     });

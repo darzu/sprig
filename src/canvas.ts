@@ -47,14 +47,16 @@ export function registerInitCanvasSystem(em: EntityManager) {
 }
 
 let _imgPixelatedTimeoutHandle = 0;
+let pixelRatio = window.devicePixelRatio || 1;
+// pixelRatio = 0.5;
 function init(): HTMLCanvasElement {
   const canvasOpt = document.getElementById("sample-canvas");
   if (!canvasOpt) throw `can't find HTML canvas to attach to`;
   const canvas = canvasOpt as HTMLCanvasElement;
   function onWindowResize() {
-    canvas.width = window.innerWidth;
+    canvas.width = window.innerWidth * pixelRatio;
     canvas.style.width = `${window.innerWidth}px`;
-    canvas.height = window.innerHeight;
+    canvas.height = window.innerHeight * pixelRatio;
     canvas.style.height = `${window.innerHeight}px`;
   }
   window.onresize = function () {

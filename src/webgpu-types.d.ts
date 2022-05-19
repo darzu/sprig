@@ -976,6 +976,12 @@ interface GPU {
   requestAdapter(
     options?: GPURequestAdapterOptions
   ): Promise<GPUAdapter | null>;
+
+  /**
+   * Returns an optimal {@link GPUTextureFormat} to use with this context and devices created from
+   * the given adapter.
+   */
+  getPreferredCanvasFormat(): GPUTextureFormat;
 }
 
 declare var GPU: {
@@ -1146,6 +1152,7 @@ interface GPUCanvasContext {
    * Returns an optimal {@link GPUTextureFormat} to use with this context and devices created from
    * the given adapter.
    * @param adapter - Adapter the format should be queried for.
+   * @deprecated
    */
   getPreferredFormat(adapter: GPUAdapter): GPUTextureFormat;
   /**

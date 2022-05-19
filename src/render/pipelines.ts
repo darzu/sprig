@@ -37,6 +37,9 @@ import {
 //  [x] textures and samplers as resources
 //  [x] resource ping-ponging for cloth texs and boids
 //  [x] shader VertexInput struct auto gen
+//  [ ] debug view of the depth buffer
+//  [ ] debug view of any texture
+//  [ ] split screen
 
 // TODO(@darzu):
 export const VertexStruct = createCyStruct(
