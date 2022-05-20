@@ -35,15 +35,24 @@ import {
 } from "./shaders.js";
 
 // TODO:
-//  [ ] pipeline attachements / outputs
+//  [x] pipeline attachements / outputs
 //        use case: two cameras
 //  [ ] mesh pool handle enable/disable
 //  [x] textures and samplers as resources
 //  [x] resource ping-ponging for cloth texs and boids
 //  [x] shader VertexInput struct auto gen
 //  [ ] debug view of the depth buffer
-//  [ ] debug view of any texture
+//  [ ] shadows
+//  [x] debug view of any texture
+//  [ ] dynamic resizing texture based on canvas size
 //  [ ] split screen
+//  [ ] re-enable anti aliasing
+//  [ ] ECS integration w/ custom gpu data
+//  [ ] general usable particle system
+//  [ ] split *ptr register from webgpu impl
+//  [ ] webgl impl
+//  [ ] multiple pipeline outputs
+//  [ ] deferred rendering
 
 // TODO(@darzu):
 export const VertexStruct = createCyStruct(
