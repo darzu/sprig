@@ -22,6 +22,7 @@ import {
   registerMeshPoolPtr,
   registerOneBufPtr,
   registerManyBufPtr,
+  canvasTexture,
 } from "./render_webgpu.js";
 import {
   cloth_shader,
@@ -299,6 +300,7 @@ const renderRopePipelineDesc = registerRenderPipeline("renderRope", {
   shader: particle_shader,
   shaderVertexEntry: "vert_main",
   shaderFragmentEntry: "frag_main",
+  output: canvasTexture,
 });
 
 const CLOTH_SIZE = 10; // TODO(@darzu):
@@ -401,6 +403,7 @@ const renderTriPipelineDesc = registerRenderPipeline("triRender", {
   shader: mesh_shader,
   shaderVertexEntry: "vert_main",
   shaderFragmentEntry: "frag_main",
+  output: canvasTexture,
 });
 
 // TODO(@darzu): CLOTH
@@ -466,6 +469,7 @@ const boidRender = registerRenderPipeline("boidRender", {
     vertex: boidVerts,
     stepMode: "per-instance",
   },
+  output: canvasTexture,
   shader: () => {
     return `
     struct VertexOutput {

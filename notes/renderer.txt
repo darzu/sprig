@@ -694,3 +694,19 @@ PBR:
 
     insert the BRDF and other vars into rendering equation
     output result
+
+Games with non-traditional rendering that look good:
+  (that might not be hard to implement)
+  popsok, snkrx, pistol whip, super hot, sayonara, destropolis
+
+World building inspiration vids:
+  https://www.youtube.com/watch?v=ELiqWceCk0Q tiny poly world
+  https://www.youtube.com/watch?v=kQ0x0R_yHrs fantasy scape, walking
+  https://www.youtube.com/watch?v=iNYUG1-A7t8 bob ross 5min, 50min, 5days
+
+  space/nebula:
+    https://www.youtube.com/watch?v=gSxxnR3aLjc cggeek space
+    https://www.youtube.com/watch?v=c4Wec0HtFLE The Great Attractor - 4k 3D Nebula Made In Blender
+    https://www.youtube.com/watch?v=3g8XxmqSP90
+    noise textures?
+      https://simon-thommes.com/free-stuff

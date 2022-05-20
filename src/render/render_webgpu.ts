@@ -91,9 +91,16 @@ export type CyBufferPtr<O extends CyStructDesc> =
 export interface CyTexturePtr extends CyResourcePtr {
   kind: "texture";
   size: [number, number];
+  resize?: (canvasWidth: number, canvasHeight: number) => [number, number];
   format: GPUTextureFormat;
   init: () => Float32Array | undefined; // TODO(@darzu): | TexTypeAsTSType<F>[]
 }
+
+export const canvasTexture = {
+  kind: "canvasTexture",
+  name: "canvas",
+} as const;
+export type CyCanvasTexturePtr = typeof canvasTexture;
 
 // MESH POOL
 export interface CyMeshPoolPtr<V extends CyStructDesc, U extends CyStructDesc>
@@ -165,6 +172,7 @@ export interface CyRndrPipelinePtr extends CyResourcePtr {
   shaderVertexEntry: string;
   shaderFragmentEntry: string;
   meshOpt: CyMeshOpt;
+  output: CyTexturePtr | CyCanvasTexturePtr;
 }
 
 // TODO(@darzu): instead of just mushing together with the desc, have desc compose in
@@ -198,6 +206,7 @@ type PtrKindToPtrType = {
   compPipeline: CyCompPipelinePtr;
   renderPipeline: CyRndrPipelinePtr;
   meshPool: CyMeshPoolPtr<any, any>;
+  canvasTexture: CyCanvasTexturePtr;
 };
 type PtrKindToResourceType = {
   manyBuffer: CyMany<any>;
@@ -207,6 +216,7 @@ type PtrKindToResourceType = {
   compPipeline: CyCompPipeline;
   renderPipeline: CyRndrPipeline;
   meshPool: MeshPool<any, any>;
+  canvasTexture: CyCanvasTexturePtr;
 };
 type Assert_ResourceTypePtrTypeMatch =
   PtrKindToPtrType[keyof PtrKindToResourceType] &
@@ -228,6 +238,7 @@ let _cyKindToPtrs: { [K in PtrKind]: PtrKindToPtrType[K][] } = {
   compPipeline: [],
   renderPipeline: [],
   meshPool: [],
+  canvasTexture: [],
 };
 function registerCyResource<R extends CyResourcePtr>(ptr: R): R {
   assert(
@@ -411,7 +422,10 @@ export function createWebGPURenderer(
     compPipeline: {},
     renderPipeline: {},
     meshPool: {},
+    canvasTexture: {},
   };
+  // TODO(@darzu): IMPL
+  const cyRenderToBundle: { [pipelineName: string]: GPURenderBundle } = {};
 
   // create many-buffers
   _cyKindToPtrs.manyBuffer.forEach((r) => {
@@ -642,6 +656,13 @@ export function createWebGPURenderer(
     });
 
     if (isRenderPipelinePtr(p)) {
+      // TODO(@darzu): OUTPUT parameterize output targets
+      const targets: GPUColorTargetState[] = [
+        {
+          format: canvasFormat,
+        },
+      ];
+
       if (p.meshOpt.stepMode === "per-instance") {
         const vertBuf = cyKindToNameToRes.manyBuffer[p.meshOpt.vertex.name];
         const instBuf = cyKindToNameToRes.manyBuffer[p.meshOpt.instance.name];
@@ -693,12 +714,7 @@ export function createWebGPURenderer(
           fragment: {
             module: shader,
             entryPoint: p.shaderFragmentEntry,
-            targets: [
-              // TODO(@darzu): parameterize output targets
-              {
-                format: canvasFormat,
-              },
-            ],
+            targets,
           },
         };
         // console.dir(rndrPipelineDesc);
@@ -773,12 +789,7 @@ export function createWebGPURenderer(
           fragment: {
             module: shader,
             entryPoint: p.shaderFragmentEntry,
-            targets: [
-              // TODO(@darzu): parameterize output targets
-              {
-                format: canvasFormat,
-              },
-            ],
+            targets,
           },
         };
         // console.dir(rndrPipelineDesc);
@@ -843,7 +854,7 @@ export function createWebGPURenderer(
     renderer.drawLines,
     renderer.drawTris,
   ];
-  let renderBundle: GPURenderBundle;
+  // let renderBundle: GPURenderBundle;
   updateRenderBundle([]);
 
   function gpuBufferWriteAllMeshUniforms(handles: MeshHandleStd[]) {
@@ -866,9 +877,6 @@ export function createWebGPURenderer(
     const newHeight = canvas.height;
     if (lastWidth === newWidth && lastHeight === newHeight) return;
 
-    if (depthTexture) depthTexture.destroy();
-    if (canvasTexture) canvasTexture.destroy();
-
     const newSize = [newWidth, newHeight] as const;
 
     context.configure({
@@ -878,6 +886,7 @@ export function createWebGPURenderer(
       compositingAlphaMode: "opaque",
     });
 
+    depthTexture?.destroy();
     depthTexture = device.createTexture({
       size: newSize,
       format: depthStencilFormat,
@@ -886,6 +895,7 @@ export function createWebGPURenderer(
     });
     depthTextureView = depthTexture.createView();
 
+    canvasTexture?.destroy();
     canvasTexture = device.createTexture({
       size: newSize,
       sampleCount: antiAliasSampleCount,
@@ -948,14 +958,16 @@ export function createWebGPURenderer(
 
     // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
     // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
-    // TODO(@darzu): handle attachements via pipelines.ts
-    const bundleEnc = device.createRenderBundleEncoder({
-      colorFormats: [canvasFormat],
-      depthStencilFormat: depthStencilFormat,
-      sampleCount: antiAliasSampleCount,
-    });
-
     for (let p of Object.values(cyKindToNameToRes.renderPipeline)) {
+      // TODO(@darzu): OUTPUT, pipeline.output;
+      //    just airty and color here
+      //    need bundle per-pipeline, or per same output
+      const bundleEnc = device.createRenderBundleEncoder({
+        colorFormats: [canvasFormat],
+        depthStencilFormat: depthStencilFormat,
+        sampleCount: antiAliasSampleCount,
+      });
+
       bundleEnc.setPipeline(p.pipeline);
       if (p.bindGroups.length)
         // bind group 0 is always the global resources
@@ -987,10 +999,10 @@ export function createWebGPURenderer(
       } else {
         never(p.ptr.meshOpt, `Unimplemented mesh step mode`);
       }
-    }
 
-    renderBundle = bundleEnc.finish();
-    return renderBundle;
+      let renderBundle = bundleEnc.finish();
+      cyRenderToBundle[p.ptr.name] = renderBundle;
+    }
   }
 
   function renderFrame(viewProj: mat4, handles: MeshHandleStd[]): void {
@@ -1040,14 +1052,41 @@ export function createWebGPURenderer(
       compPassEncoder.end();
     }
 
-    // render to the canvas' via our swap-chain
-    const renderPassEncoder = commandEncoder.beginRenderPass({
-      colorAttachments: [canvasAttachment()],
-      depthStencilAttachment: depthAttachment(),
-    });
+    // TODO(@darzu): support multi-output
+    function isOutputEq(
+      a: CyRndrPipelinePtr["output"],
+      b: CyRndrPipelinePtr["output"]
+    ) {
+      return a.name === b.name;
+    }
 
-    renderPassEncoder.executeBundles([renderBundle]);
-    renderPassEncoder.end();
+    // render bundles
+    // TODO(@darzu): ordering needs to be set by outside config
+    // TODO(@darzu): same attachments need to be shared
+    let canvAtt = canvasAttachment();
+    let depthAtt = depthAttachment();
+    let lastOutput: CyRndrPipelinePtr["output"] | undefined;
+    let renderPassEncoder: GPURenderPassEncoder | undefined;
+    for (let p of Object.values(cyKindToNameToRes.renderPipeline)) {
+      if (!lastOutput) lastOutput = p.ptr.output;
+
+      const bundle = cyRenderToBundle[p.ptr.name];
+
+      if (!renderPassEncoder || !isOutputEq(lastOutput, p.ptr.output)) {
+        renderPassEncoder?.end();
+        renderPassEncoder = commandEncoder.beginRenderPass({
+          // TODO(@darzu): OUTPUT, different render targets
+          //    need different pass per different output; start with one bundle per pipeline
+          colorAttachments: [canvAtt],
+          depthStencilAttachment: depthAtt,
+        });
+      }
+
+      renderPassEncoder.executeBundles([bundle]);
+
+      lastOutput = p.ptr.output;
+    }
+    renderPassEncoder?.end();
 
     // submit render passes to GPU
     device.queue.submit([commandEncoder.finish()]);
