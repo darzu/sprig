@@ -4,6 +4,7 @@ import { mat4, quat, vec2, vec3, vec4 } from "../gl-matrix.js";
 import { align, max, sum } from "../math.js";
 import { assert } from "../test.js";
 import { Intersect, isNumber, objMap } from "../util.js";
+import { CyTexturePtr } from "./render_webgpu.js";
 
 const WGSLScalars = ["bool", "i32", "u32", "f32", "f16"] as const;
 type WGSLScalar = typeof WGSLScalars[number];
@@ -37,7 +38,10 @@ export type TexTypeToTSType = {
   rgba32float: vec4;
 };
 export const texTypeToBytes: Partial<Record<GPUTextureFormat, number>> = {
-  rgba32float: Float32Array.BYTES_PER_ELEMENT * 4,
+  rgba32float: 4 * 4,
+  // TODO(@darzu): is this size right?
+  rgba8unorm: 4,
+  "depth24plus-stencil8": 3 + 1,
 };
 export type TexTypeAsTSType<F> = F extends keyof TexTypeToTSType
   ? TexTypeToTSType[F]
@@ -648,19 +652,21 @@ export function createCyIdxBuf(
 // TODO(@darzu): these paramters should just be CyTexturePtr
 export function createCyTexture(
   device: GPUDevice,
-  size: [number, number],
-  format: GPUTextureFormat,
-  init: () => Float32Array | undefined
+  ptr: CyTexturePtr
 ): CyTexture {
+  const { size, format, init, sampleCount } = ptr;
+  // TODO(@darzu): parameterize
+  // TODO(@darzu): be more precise
+  let usage = GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING;
+  if (sampleCount && sampleCount > 1)
+    usage |= GPUTextureUsage.RENDER_ATTACHMENT;
+  else usage |= GPUTextureUsage.STORAGE_BINDING;
   const tex = device.createTexture({
     size: size,
     format: format,
     dimension: "2d",
-    // TODO(@darzu): be more precise
-    usage:
-      GPUTextureUsage.COPY_DST |
-      GPUTextureUsage.STORAGE_BINDING |
-      GPUTextureUsage.TEXTURE_BINDING,
+    sampleCount,
+    usage,
   });
   const bytesPerVal = texTypeToBytes[format];
   assert(bytesPerVal, `Unimplemented format: ${format}`);

@@ -23,6 +23,8 @@ import {
   registerOneBufPtr,
   registerManyBufPtr,
   canvasTexture,
+  antiAliasSampleCount,
+  depthStencilFormat,
 } from "./render_webgpu.js";
 import {
   cloth_shader,
@@ -461,6 +463,18 @@ const boidVerts = registerManyBufPtr("boidVerts", {
 const boidInds = registerIdxBufPtr("boidIdx", {
   init: () => new Uint16Array([2, 1, 0, 3, 2, 0, 1, 3, 0, 2, 3, 1]),
 });
+const boidOutTex = registerTexPtr("boidTex", {
+  size: [100, 100],
+  format: "rgba8unorm",
+  sampleCount: antiAliasSampleCount,
+  init: () => undefined,
+});
+const boidDepthTex = registerTexPtr("boidDepth", {
+  size: [100, 100],
+  format: depthStencilFormat,
+  sampleCount: antiAliasSampleCount,
+  init: () => undefined,
+});
 const boidRender = registerRenderPipeline("boidRender", {
   resources: [sceneBufPtr],
   meshOpt: {
@@ -469,7 +483,8 @@ const boidRender = registerRenderPipeline("boidRender", {
     vertex: boidVerts,
     stepMode: "per-instance",
   },
-  output: canvasTexture,
+  output: boidOutTex,
+  depthStencil: boidDepthTex,
   shader: () => {
     return `
     struct VertexOutput {
@@ -640,3 +655,72 @@ const boidComp1 = registerCompPipeline("boidComp1", {
     { ptr: boidData0, access: "write", alias: "outBoids" },
   ],
 });
+
+// const fullscreenQuadVerts = registerManyBufPtr("boidVerts", {
+//   struct: BoidVert,
+//   init: () => [
+//     { pos: [1, 1, 1] },
+//     { pos: [1, -1, -1] },
+//     { pos: [-1, 1, -1] },
+//     { pos: [-1, -1, 1] },
+//   ],
+// });
+// const boidInds = registerIdxBufPtr("boidIdx", {
+//   init: () => new Uint16Array([2, 1, 0, 3, 2, 0, 1, 3, 0, 2, 3, 1]),
+// });
+
+// passEncoder.draw(6, 1, 0, 0);
+
+// const boidCanvasMerge = registerRenderPipeline("boidCanvasMerge", {
+//   resources: [boidOutTex],
+//   meshOpt: {
+//     index: boidInds,
+//     instance: boidData0,
+//     vertex: boidVerts,
+//     stepMode: "per-instance",
+//   },
+//   output: boidOutTex,
+//   depthStencil: boidDepthTex,
+//   shader: () => {
+//     return `
+//     @group(0) @binding(0) var mySampler : sampler;
+// @group(0) @binding(1) var myTexture : texture_2d<f32>;
+
+// struct VertexOutput {
+//   @builtin(position) Position : vec4<f32>;
+//   @location(0) fragUV : vec2<f32>;
+// };
+
+// @stage(vertex)
+// fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
+//   var pos = array<vec2<f32>, 6>(
+//       vec2<f32>( 1.0,  1.0),
+//       vec2<f32>( 1.0, -1.0),
+//       vec2<f32>(-1.0, -1.0),
+//       vec2<f32>( 1.0,  1.0),
+//       vec2<f32>(-1.0, -1.0),
+//       vec2<f32>(-1.0,  1.0));
+
+//   var uv = array<vec2<f32>, 6>(
+//       vec2<f32>(1.0, 0.0),
+//       vec2<f32>(1.0, 1.0),
+//       vec2<f32>(0.0, 1.0),
+//       vec2<f32>(1.0, 0.0),
+//       vec2<f32>(0.0, 1.0),
+//       vec2<f32>(0.0, 0.0));
+
+//   var output : VertexOutput;
+//   output.Position = vec4<f32>(pos[VertexIndex], 0.0, 1.0);
+//   output.fragUV = uv[VertexIndex];
+//   return output;
+// }
+
+// @stage(fragment)
+// fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
+//   return textureSample(myTexture, mySampler, fragUV);
+// }
+//   `;
+//   },
+//   shaderFragmentEntry: "frag_main",
+//   shaderVertexEntry: "vert_main",
+// });

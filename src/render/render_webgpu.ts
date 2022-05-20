@@ -58,8 +58,8 @@ import {
 } from "./shaders.js";
 
 // render pipeline parameters
-const antiAliasSampleCount = 4;
-const depthStencilFormat = "depth24plus-stencil8";
+export const antiAliasSampleCount = 4;
+export const depthStencilFormat = "depth24plus-stencil8";
 
 interface CyResourcePtr {
   kind: PtrKind;
@@ -93,6 +93,9 @@ export interface CyTexturePtr extends CyResourcePtr {
   size: [number, number];
   resize?: (canvasWidth: number, canvasHeight: number) => [number, number];
   format: GPUTextureFormat;
+  // TODO(@darzu): is this where we want to expose this?
+  // TODO(@darzu): we need agreement with the pipeline
+  sampleCount?: number;
   init: () => Float32Array | undefined; // TODO(@darzu): | TexTypeAsTSType<F>[]
 }
 
@@ -173,6 +176,7 @@ export interface CyRndrPipelinePtr extends CyResourcePtr {
   shaderFragmentEntry: string;
   meshOpt: CyMeshOpt;
   output: CyTexturePtr | CyCanvasTexturePtr;
+  depthStencil?: CyTexturePtr;
 }
 
 // TODO(@darzu): instead of just mushing together with the desc, have desc compose in
@@ -468,7 +472,7 @@ export function createWebGPURenderer(
   });
   // create texture
   _cyKindToPtrs.texture.forEach((r) => {
-    const t = createCyTexture(device, r.size, r.format, r.init);
+    const t = createCyTexture(device, r);
     cyKindToNameToRes.texture[r.name] = t;
   });
   // create pipelines
@@ -657,11 +661,19 @@ export function createWebGPURenderer(
 
     if (isRenderPipelinePtr(p)) {
       // TODO(@darzu): OUTPUT parameterize output targets
-      const targets: GPUColorTargetState[] = [
-        {
-          format: canvasFormat,
-        },
-      ];
+      const targets: GPUColorTargetState[] = [p.output].map((o) => {
+        if (o.kind === "canvasTexture") {
+          return {
+            format: canvasFormat,
+          };
+        } else if (o.kind === "texture") {
+          return {
+            format: o.format,
+          };
+        } else {
+          never(o, "TODO");
+        }
+      });
 
       if (p.meshOpt.stepMode === "per-instance") {
         const vertBuf = cyKindToNameToRes.manyBuffer[p.meshOpt.vertex.name];
@@ -908,6 +920,21 @@ export function createWebGPURenderer(
     lastHeight = newHeight;
   }
 
+  function textureAttachment(tex: CyTexture): GPURenderPassColorAttachment {
+    // TODO(@darzu): parameterizable?
+    return {
+      view: tex.texture.createView(),
+      loadOp: "clear",
+      clearValue: {
+        r: renderer.backgroundColor[0],
+        g: renderer.backgroundColor[1],
+        b: renderer.backgroundColor[2],
+        a: 1,
+      },
+      storeOp: "store",
+    };
+  }
+
   function canvasAttachment(): GPURenderPassColorAttachment {
     return {
       view: canvasTextureView!,
@@ -923,9 +950,11 @@ export function createWebGPURenderer(
     };
   }
 
-  function depthAttachment(): GPURenderPassDepthStencilAttachment {
+  function depthAttachment(
+    view: GPUTextureView
+  ): GPURenderPassDepthStencilAttachment {
     return {
-      view: depthTextureView!,
+      view,
       depthLoadOp: "clear",
       depthClearValue: 1.0,
       depthStoreOp: "store",
@@ -962,8 +991,17 @@ export function createWebGPURenderer(
       // TODO(@darzu): OUTPUT, pipeline.output;
       //    just airty and color here
       //    need bundle per-pipeline, or per same output
+      const colorFormats: GPUTextureFormat[] = [p.ptr.output].map((o) => {
+        if (o.kind === "canvasTexture") {
+          return canvasFormat;
+        } else if (o.kind === "texture") {
+          return o.format;
+        } else {
+          never(o, "TODO");
+        }
+      });
       const bundleEnc = device.createRenderBundleEncoder({
-        colorFormats: [canvasFormat],
+        colorFormats,
         depthStencilFormat: depthStencilFormat,
         sampleCount: antiAliasSampleCount,
       });
@@ -1063,8 +1101,6 @@ export function createWebGPURenderer(
     // render bundles
     // TODO(@darzu): ordering needs to be set by outside config
     // TODO(@darzu): same attachments need to be shared
-    let canvAtt = canvasAttachment();
-    let depthAtt = depthAttachment();
     let lastOutput: CyRndrPipelinePtr["output"] | undefined;
     let renderPassEncoder: GPURenderPassEncoder | undefined;
     for (let p of Object.values(cyKindToNameToRes.renderPipeline)) {
@@ -1073,11 +1109,32 @@ export function createWebGPURenderer(
       const bundle = cyRenderToBundle[p.ptr.name];
 
       if (!renderPassEncoder || !isOutputEq(lastOutput, p.ptr.output)) {
+        let colorAttachments: GPURenderPassColorAttachment[] = [
+          p.ptr.output,
+        ].map((o) => {
+          if (o.kind === "canvasTexture") return canvasAttachment();
+          else if (o.kind === "texture") {
+            let tex = cyKindToNameToRes.texture[o.name]!;
+            return textureAttachment(tex);
+          } else {
+            never(o, "TO IMPL");
+          }
+        });
+        let depthTex = depthTextureView!;
+        if (p.ptr.depthStencil) {
+          depthTex =
+            cyKindToNameToRes.texture[
+              p.ptr.depthStencil.name
+            ]!.texture.createView();
+        }
+        let depthAtt = depthAttachment(depthTex);
+
         renderPassEncoder?.end();
         renderPassEncoder = commandEncoder.beginRenderPass({
           // TODO(@darzu): OUTPUT, different render targets
           //    need different pass per different output; start with one bundle per pipeline
-          colorAttachments: [canvAtt],
+          colorAttachments,
+          // TODO(@darzu): parameterize depth attachment?
           depthStencilAttachment: depthAtt,
         });
       }

@@ -710,3 +710,10 @@ World building inspiration vids:
     https://www.youtube.com/watch?v=3g8XxmqSP90
     noise textures?
       https://simon-thommes.com/free-stuff
+
+Depth and stencil:
+  https://open.gl/depthstencils
+
+Writing a real time PBR shader:
+  https://learnopengl.com/PBR/Theory
+  Real-Time Rendering book
