@@ -595,21 +595,19 @@ export function createWebGPURenderer(
         );
       } else if (r.ptr.kind === "texture") {
         if (!r.access || r.access === "read") {
-          // TODO(@darzu): HACK?
-          if (r.ptr.name === "boidTex") {
-            return {
-              binding: idx,
-              visibility: shaderStage,
-              texture: { sampleType: "float" },
-              // texture: { sampleType: "unfilterable-float" },
-            };
-          }
+          // TODO(@darzu): is this a reasonable way to determine sample type?
+          //    what does sample type even mean in this context :(
+          const usage = cyNameToTextureUsage[r.ptr.name];
+          const sampleType: GPUTextureSampleType =
+            (usage & GPUTextureUsage.STORAGE_BINDING) !== 0
+              ? "unfilterable-float"
+              : "float";
           return {
             binding: idx,
             visibility: shaderStage,
             // TODO(@darzu): need a mapping of format -> sample type?
             // texture: { sampleType: "float" },
-            texture: { sampleType: "unfilterable-float" },
+            texture: { sampleType: sampleType },
           };
         } else {
           return {
@@ -956,9 +954,9 @@ export function createWebGPURenderer(
           // primitive: {
           //   topology: "triangle-list",
           // },
-          // TODO(@darzu): HACK
           primitive: prim_tris,
-          // depthStencil: depthStencilOpts,
+          // TODO(@darzu): depth stencil should be optional?
+          depthStencil: depthStencilOpts,
           // TODO(@darzu): ANTI-ALIAS
           // multisample: {
           //   count: antiAliasSampleCount,
@@ -1176,9 +1174,9 @@ export function createWebGPURenderer(
       });
       const bundleEnc = device.createRenderBundleEncoder({
         colorFormats,
-        // TODO(@darzu): HACK
-        depthStencilFormat:
-          p.ptr.name === "boidCanvasMerge" ? undefined : depthStencilFormat,
+        depthStencilFormat: depthStencilFormat,
+        // // TODO(@darzu): HACK
+        // p.ptr.name === "boidCanvasMerge" ? undefined : depthStencilFormat,
         // TODO(@darzu): ANTI-ALIAS
         // sampleCount: antiAliasSampleCount,
       });
@@ -1314,11 +1312,11 @@ export function createWebGPURenderer(
         let depthAtt: GPURenderPassDepthStencilAttachment | undefined =
           undefined;
         depthAtt = depthAttachment(depthTex);
-        // TODO(@darzu): HACK
-        if (p.ptr.name === "boidCanvasMerge") {
-          // console.log("hack 1");
-          depthAtt = undefined;
-        }
+        // // TODO(@darzu): HACK
+        // if (p.ptr.name === "boidCanvasMerge") {
+        //   // console.log("hack 1");
+        //   depthAtt = undefined;
+        // }
 
         renderPassEncoder?.end();
         renderPassEncoder = commandEncoder.beginRenderPass({
