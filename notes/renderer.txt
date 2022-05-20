@@ -717,3 +717,6 @@ Depth and stencil:
 Writing a real time PBR shader:
   https://learnopengl.com/PBR/Theory
   Real-Time Rendering book
+
+Gamma correction / "Importance of Being Linear":
+  https://developer.nvidia.com/gpugems/gpugems3/part-iv-image-effects/chapter-24-importance-being-linear

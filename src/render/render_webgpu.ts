@@ -58,7 +58,8 @@ import {
 } from "./shaders.js";
 
 // render pipeline parameters
-export const antiAliasSampleCount = 4;
+// TODO(@darzu): ENABLE AA
+// export const antiAliasSampleCount = 4;
 export const depthStencilFormat = "depth24plus-stencil8";
 
 interface CyResourcePtr {
@@ -99,11 +100,33 @@ export interface CyTexturePtr extends CyResourcePtr {
   init: () => Float32Array | undefined; // TODO(@darzu): | TexTypeAsTSType<F>[]
 }
 
-export const canvasTexture = {
+export const canvasTexturePtr = {
   kind: "canvasTexture",
   name: "canvas",
 } as const;
-export type CyCanvasTexturePtr = typeof canvasTexture;
+export type CyCanvasTexturePtr = typeof canvasTexturePtr;
+
+export const linearSamplerPtr = {
+  kind: "sampler",
+  name: "linearSampler",
+} as const;
+export const nearestSamplerPtr = {
+  kind: "sampler",
+  name: "nearestSampler",
+} as const;
+export type CySamplerPtr = typeof linearSamplerPtr | typeof nearestSamplerPtr;
+export interface CySampler {
+  ptr: CySamplerPtr;
+  sampler: GPUSampler;
+}
+
+// TODO(@darzu):
+/*
+  const sampler = device.createSampler({
+    magFilter: 'linear',
+    minFilter: 'linear',
+  });
+*/
 
 // MESH POOL
 export interface CyMeshPoolPtr<V extends CyStructDesc, U extends CyStructDesc>
@@ -124,18 +147,21 @@ export interface CyMeshPoolPtr<V extends CyStructDesc, U extends CyStructDesc>
 // TODO(@darzu): like buffer access modes, is this possibly inferable?
 export interface CyGlobalUsage<G extends CyResourcePtr> {
   ptr: G;
+  // TODO(@darzu): access doesn't make sense for all globals, like samplers
   access?: "read" | "write";
   alias?: string;
 }
 
 // TODO(@darzu): i know there is some fancy type way to construct this but i
 //    can't figure it out.
-export type CyGlobal = CyTexturePtr | CyBufferPtr<any>;
+export type CyGlobal = CyTexturePtr | CyBufferPtr<any> | CySamplerPtr;
 export type CyGlobalParam =
   | CyTexturePtr
   | CyBufferPtr<any>
+  | CySamplerPtr
   | CyGlobalUsage<CyTexturePtr>
-  | CyGlobalUsage<CyBufferPtr<any>>;
+  | CyGlobalUsage<CyBufferPtr<any>>
+  | CyGlobalUsage<CySamplerPtr>;
 
 export function isResourcePtr(p: any): p is CyResourcePtr {
   return !!(p as CyResourcePtr).kind;
@@ -166,6 +192,11 @@ type CyMeshOpt =
       instance: CyBufferPtr<any>;
       index: CyIdxBufferPtr;
       stepMode: "per-instance";
+    }
+  | {
+      // TODO(@darzu): or just support
+      vertexCount: number;
+      stepMode: "single-draw";
     };
 
 export interface CyRndrPipelinePtr extends CyResourcePtr {
@@ -183,8 +214,8 @@ export interface CyRndrPipelinePtr extends CyResourcePtr {
 export interface CyRndrPipeline {
   ptr: CyRndrPipelinePtr;
   // resourceLayouts: CyBufferPtrLayout<any>[];
-  vertexBuf: CyMany<any>;
-  indexBuf: CyIdxBuffer;
+  vertexBuf?: CyMany<any>;
+  indexBuf?: CyIdxBuffer;
   instanceBuf?: CyMany<any>;
   pool?: MeshPool<any, any>;
   pipeline: GPURenderPipeline;
@@ -211,6 +242,7 @@ type PtrKindToPtrType = {
   renderPipeline: CyRndrPipelinePtr;
   meshPool: CyMeshPoolPtr<any, any>;
   canvasTexture: CyCanvasTexturePtr;
+  sampler: CySamplerPtr;
 };
 type PtrKindToResourceType = {
   manyBuffer: CyMany<any>;
@@ -220,7 +252,8 @@ type PtrKindToResourceType = {
   compPipeline: CyCompPipeline;
   renderPipeline: CyRndrPipeline;
   meshPool: MeshPool<any, any>;
-  canvasTexture: CyCanvasTexturePtr;
+  canvasTexture: CyTexture;
+  sampler: CySampler;
 };
 type Assert_ResourceTypePtrTypeMatch =
   PtrKindToPtrType[keyof PtrKindToResourceType] &
@@ -242,7 +275,8 @@ let _cyKindToPtrs: { [K in PtrKind]: PtrKindToPtrType[K][] } = {
   compPipeline: [],
   renderPipeline: [],
   meshPool: [],
-  canvasTexture: [],
+  canvasTexture: [canvasTexturePtr],
+  sampler: [linearSamplerPtr, nearestSamplerPtr],
 };
 function registerCyResource<R extends CyResourcePtr>(ptr: R): R {
   assert(
@@ -404,6 +438,8 @@ export function createWebGPURenderer(
         GPUBufferUsage.VERTEX;
       cyNameToBufferUsage[p.meshOpt.pool.unisPtr.name] |=
         GPUBufferUsage.UNIFORM;
+    } else if (p.meshOpt.stepMode === "single-draw") {
+      // TODO(@darzu): any buffers?
     } else {
       never(p.meshOpt);
     }
@@ -413,6 +449,43 @@ export function createWebGPURenderer(
     cyNameToBufferUsage[p.vertsPtr.name] |= GPUBufferUsage.VERTEX;
     cyNameToBufferUsage[p.unisPtr.name] |= GPUBufferUsage.UNIFORM;
   });
+
+  // determine texture usages
+  const cyNameToTextureUsage: { [name: string]: GPUTextureUsageFlags } = {};
+  // let usage = GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING;
+  // if (sampleCount && sampleCount > 1)
+  //   usage |= GPUTextureUsage.RENDER_ATTACHMENT;
+  // else usage |= GPUTextureUsage.STORAGE_BINDING;
+  _cyKindToPtrs.texture.forEach((p) => {
+    // default usages
+    cyNameToTextureUsage[p.name] |=
+      GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING;
+  });
+  _cyKindToPtrs.renderPipeline.forEach((p) => {
+    if (p.output.kind === "texture") {
+      cyNameToTextureUsage[p.output.name] |= GPUTextureUsage.RENDER_ATTACHMENT;
+    }
+    if (p.depthStencil) {
+      cyNameToTextureUsage[p.depthStencil.name] |=
+        GPUTextureUsage.RENDER_ATTACHMENT;
+    }
+  });
+  [..._cyKindToPtrs.renderPipeline, ..._cyKindToPtrs.compPipeline].forEach(
+    (p) => {
+      p.resources.forEach((r) => {
+        if (isResourcePtr(r)) {
+          // nothing?
+        } else {
+          if (r.ptr.kind === "texture") {
+            if (r.access === "write") {
+              cyNameToTextureUsage[r.ptr.name] |=
+                GPUTextureUsage.STORAGE_BINDING;
+            }
+          }
+        }
+      });
+    }
+  );
 
   // create resources
   // TODO(@darzu): IMPL
@@ -427,9 +500,28 @@ export function createWebGPURenderer(
     renderPipeline: {},
     meshPool: {},
     canvasTexture: {},
+    sampler: {},
   };
   // TODO(@darzu): IMPL
   const cyRenderToBundle: { [pipelineName: string]: GPURenderBundle } = {};
+
+  // create singleton resources
+  // TODO(@darzu): create CyTexture for canvas
+  // const cyCanvasTex = createCyTexture(device, canvasTexturePtr);
+  for (let s of _cyKindToPtrs.sampler) {
+    // TODO(@darzu): other sampler features?
+    let filterMode: GPUFilterMode;
+    if (s.name === "linearSampler") filterMode = "linear";
+    else if (s.name === "nearestSampler") filterMode = "nearest";
+    else never(s, "todo");
+    cyKindToNameToRes.sampler[s.name] = {
+      ptr: s,
+      sampler: device.createSampler({
+        minFilter: filterMode,
+        magFilter: filterMode,
+      }),
+    };
+  }
 
   // create many-buffers
   _cyKindToPtrs.manyBuffer.forEach((r) => {
@@ -472,7 +564,8 @@ export function createWebGPURenderer(
   });
   // create texture
   _cyKindToPtrs.texture.forEach((r) => {
-    const t = createCyTexture(device, r);
+    const usage = cyNameToTextureUsage[r.name];
+    const t = createCyTexture(device, r, usage);
     cyKindToNameToRes.texture[r.name] = t;
   });
   // create pipelines
@@ -502,10 +595,20 @@ export function createWebGPURenderer(
         );
       } else if (r.ptr.kind === "texture") {
         if (!r.access || r.access === "read") {
+          // TODO(@darzu): HACK?
+          if (r.ptr.name === "boidTex") {
+            return {
+              binding: idx,
+              visibility: shaderStage,
+              texture: { sampleType: "float" },
+              // texture: { sampleType: "unfilterable-float" },
+            };
+          }
           return {
             binding: idx,
             visibility: shaderStage,
             // TODO(@darzu): need a mapping of format -> sample type?
+            // texture: { sampleType: "float" },
             texture: { sampleType: "unfilterable-float" },
           };
         } else {
@@ -515,6 +618,15 @@ export function createWebGPURenderer(
             storageTexture: { format: r.ptr.format, access: "write-only" },
           };
         }
+      } else if (r.ptr.kind === "sampler") {
+        return {
+          binding: idx,
+          visibility: shaderStage,
+          // TODO(@darzu): SAMPLER what type to put here....
+          // sampler: { type: "comparison" },
+          // sampler: { type: "non-filtering" },
+          sampler: { type: "filtering" },
+        };
       } else {
         never(r.ptr, "UNIMPLEMENTED");
       }
@@ -549,6 +661,12 @@ export function createWebGPURenderer(
           binding: idx,
           // TODO(@darzu): does this view need to be updated on resize?
           resource: tex.texture.createView(),
+        };
+      } else if (r.ptr.kind === "sampler") {
+        const sampler = cyKindToNameToRes.sampler[r.ptr.name];
+        return {
+          binding: idx,
+          resource: sampler.sampler,
         };
       } else {
         never(r.ptr, "unimplemented");
@@ -590,6 +708,9 @@ export function createWebGPURenderer(
       } else if (r.ptr.kind === "texture") {
         // nothing to do for textures
         return ``;
+      } else if (r.ptr.kind === "sampler") {
+        // nothing to do for samplers
+        return ``;
       } else {
         never(r.ptr, "unimplemented");
       }
@@ -622,6 +743,9 @@ export function createWebGPURenderer(
           return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_2d<f32>;`;
         else
           return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_storage_2d<${r.ptr.format}, write>;`;
+      } else if (r.ptr.kind === "sampler") {
+        const varName = r.alias ?? uncapitalize(r.ptr.name);
+        return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : sampler;`;
       } else {
         never(r.ptr, "unimpl");
       }
@@ -706,9 +830,10 @@ export function createWebGPURenderer(
           // TODO(@darzu): allow this to be parameterized
           primitive: prim_tris,
           depthStencil: depthStencilOpts,
-          multisample: {
-            count: antiAliasSampleCount,
-          },
+          // TODO(@darzu): ANTI-ALIAS
+          // multisample: {
+          //   count: antiAliasSampleCount,
+          // },
           layout: device.createPipelineLayout({
             bindGroupLayouts: [resBindGroupLayout],
           }),
@@ -776,8 +901,6 @@ export function createWebGPURenderer(
           `${vertexInputStruct}\n` +
           `${p.shader()}\n`;
 
-        // TODO(@darzu): need uni bind group layout
-
         // render pipeline
         const shader = device.createShaderModule({
           code: shaderStr,
@@ -786,12 +909,12 @@ export function createWebGPURenderer(
           // TODO(@darzu): allow this to be parameterized
           primitive: prim_tris,
           depthStencil: depthStencilOpts,
-          multisample: {
-            count: antiAliasSampleCount,
-          },
+          // TODO(@darzu): ANTI-ALIAS
+          // multisample: {
+          //   count: antiAliasSampleCount,
+          // },
           layout: device.createPipelineLayout({
             bindGroupLayouts: [resBindGroupLayout, uniBGLayout],
-            // TODO(@darzu): need bind group layout for mesh pool uniform
           }),
           vertex: {
             module: shader,
@@ -814,6 +937,50 @@ export function createWebGPURenderer(
           pool,
           // resourceLayouts,
           bindGroups: [resBindGroup, uniBG],
+        };
+        cyKindToNameToRes.renderPipeline[p.name] = cyPipeline;
+      } else if (p.meshOpt.stepMode === "single-draw") {
+        // TODO(@darzu): IMPL// render shader
+        // TODO(@darzu): pass vertex buffer and instance buffer into shader
+        const shaderStr =
+          `${shaderResStructs.join("\n")}\n` +
+          `${shaderResVars.join("\n")}\n` +
+          `${p.shader()}\n`;
+
+        // render pipeline
+        const shader = device.createShaderModule({
+          code: shaderStr,
+        });
+        const rndrPipelineDesc: GPURenderPipelineDescriptor = {
+          // TODO(@darzu): do we want depth stencil and multisample for this??
+          // primitive: {
+          //   topology: "triangle-list",
+          // },
+          // TODO(@darzu): HACK
+          primitive: prim_tris,
+          // depthStencil: depthStencilOpts,
+          // TODO(@darzu): ANTI-ALIAS
+          // multisample: {
+          //   count: antiAliasSampleCount,
+          // },
+          layout: device.createPipelineLayout({
+            bindGroupLayouts: [resBindGroupLayout],
+          }),
+          vertex: {
+            module: shader,
+            entryPoint: p.shaderVertexEntry,
+          },
+          fragment: {
+            module: shader,
+            entryPoint: p.shaderFragmentEntry,
+            targets,
+          },
+        };
+        const rndrPipeline = device.createRenderPipeline(rndrPipelineDesc);
+        const cyPipeline: CyRndrPipeline = {
+          ptr: p,
+          pipeline: rndrPipeline,
+          bindGroups: [resBindGroup],
         };
         cyKindToNameToRes.renderPipeline[p.name] = cyPipeline;
       } else {
@@ -902,7 +1069,8 @@ export function createWebGPURenderer(
     depthTexture = device.createTexture({
       size: newSize,
       format: depthStencilFormat,
-      sampleCount: antiAliasSampleCount,
+      // TODO(@darzu): ANTI-ALIAS
+      // sampleCount: antiAliasSampleCount,
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
     depthTextureView = depthTexture.createView();
@@ -910,7 +1078,8 @@ export function createWebGPURenderer(
     canvasTexture?.destroy();
     canvasTexture = device.createTexture({
       size: newSize,
-      sampleCount: antiAliasSampleCount,
+      // TODO(@darzu): ANTI-ALIAS
+      // sampleCount: antiAliasSampleCount,
       format: canvasFormat,
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
@@ -924,6 +1093,8 @@ export function createWebGPURenderer(
     // TODO(@darzu): parameterizable?
     return {
       view: tex.texture.createView(),
+      // loadOp: "load",
+      // TODO(@darzu): handle load vs clear
       loadOp: "clear",
       clearValue: {
         r: renderer.backgroundColor[0],
@@ -935,11 +1106,14 @@ export function createWebGPURenderer(
     };
   }
 
-  function canvasAttachment(): GPURenderPassColorAttachment {
+  function canvasAttachment(clear?: boolean): GPURenderPassColorAttachment {
     return {
-      view: canvasTextureView!,
-      resolveTarget: context.getCurrentTexture().createView(),
-      loadOp: "clear",
+      // TODO(@darzu): ANTI-ALIAS; for some reason this is tangled in AA?
+      // view: canvasTextureView!,
+      // resolveTarget: context.getCurrentTexture().createView(),
+      view: context.getCurrentTexture().createView(),
+      // TODO(@darzu): is this how we want to handle load vs clear?
+      loadOp: clear ? "clear" : "load",
       clearValue: {
         r: renderer.backgroundColor[0],
         g: renderer.backgroundColor[1],
@@ -1002,8 +1176,11 @@ export function createWebGPURenderer(
       });
       const bundleEnc = device.createRenderBundleEncoder({
         colorFormats,
-        depthStencilFormat: depthStencilFormat,
-        sampleCount: antiAliasSampleCount,
+        // TODO(@darzu): HACK
+        depthStencilFormat:
+          p.ptr.name === "boidCanvasMerge" ? undefined : depthStencilFormat,
+        // TODO(@darzu): ANTI-ALIAS
+        // sampleCount: antiAliasSampleCount,
       });
 
       bundleEnc.setPipeline(p.pipeline);
@@ -1011,10 +1188,10 @@ export function createWebGPURenderer(
         // bind group 0 is always the global resources
         // TODO(@darzu): this seems a bit hacky
         bundleEnc.setBindGroup(0, p.bindGroups[0]);
-      bundleEnc.setIndexBuffer(p.indexBuf.buffer, "uint16");
-      bundleEnc.setVertexBuffer(0, p.vertexBuf.buffer);
+      if (p.indexBuf) bundleEnc.setIndexBuffer(p.indexBuf.buffer, "uint16");
+      if (p.vertexBuf) bundleEnc.setVertexBuffer(0, p.vertexBuf.buffer);
       if (p.ptr.meshOpt.stepMode === "per-instance") {
-        assert(!!p.instanceBuf);
+        assert(!!p.instanceBuf && !!p.indexBuf);
         bundleEnc.setVertexBuffer(1, p.instanceBuf.buffer);
         bundleEnc.drawIndexed(p.indexBuf.length, p.instanceBuf.length, 0, 0);
       } else if (p.ptr.meshOpt.stepMode === "per-mesh-handle") {
@@ -1034,6 +1211,8 @@ export function createWebGPURenderer(
             m.vertIdx
           );
         }
+      } else if (p.ptr.meshOpt.stepMode === "single-draw") {
+        bundleEnc.draw(p.ptr.meshOpt.vertexCount, 1, 0, 0);
       } else {
         never(p.ptr.meshOpt, `Unimplemented mesh step mode`);
       }
@@ -1104,15 +1283,20 @@ export function createWebGPURenderer(
     let lastOutput: CyRndrPipelinePtr["output"] | undefined;
     let renderPassEncoder: GPURenderPassEncoder | undefined;
     for (let p of Object.values(cyKindToNameToRes.renderPipeline)) {
-      if (!lastOutput) lastOutput = p.ptr.output;
-
+      // console.log(`rendering ${p.ptr.name}`);
       const bundle = cyRenderToBundle[p.ptr.name];
 
-      if (!renderPassEncoder || !isOutputEq(lastOutput, p.ptr.output)) {
+      if (
+        !renderPassEncoder ||
+        !lastOutput ||
+        !isOutputEq(lastOutput, p.ptr.output)
+      ) {
         let colorAttachments: GPURenderPassColorAttachment[] = [
           p.ptr.output,
         ].map((o) => {
-          if (o.kind === "canvasTexture") return canvasAttachment();
+          const isFirst = !lastOutput;
+          const doClear = isFirst;
+          if (o.kind === "canvasTexture") return canvasAttachment(doClear);
           else if (o.kind === "texture") {
             let tex = cyKindToNameToRes.texture[o.name]!;
             return textureAttachment(tex);
@@ -1127,7 +1311,14 @@ export function createWebGPURenderer(
               p.ptr.depthStencil.name
             ]!.texture.createView();
         }
-        let depthAtt = depthAttachment(depthTex);
+        let depthAtt: GPURenderPassDepthStencilAttachment | undefined =
+          undefined;
+        depthAtt = depthAttachment(depthTex);
+        // TODO(@darzu): HACK
+        if (p.ptr.name === "boidCanvasMerge") {
+          // console.log("hack 1");
+          depthAtt = undefined;
+        }
 
         renderPassEncoder?.end();
         renderPassEncoder = commandEncoder.beginRenderPass({

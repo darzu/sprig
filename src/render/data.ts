@@ -241,6 +241,7 @@ export type Serializer<O extends CyStructDesc> = (
 ) => void;
 
 export interface CyStructOpts<O extends CyStructDesc> {
+  // TODO(@darzu): Can we do away with isUniform and isCompact ?
   isUniform?: boolean;
   isCompact?: boolean;
   serializer?: Serializer<O>;
@@ -652,15 +653,12 @@ export function createCyIdxBuf(
 // TODO(@darzu): these paramters should just be CyTexturePtr
 export function createCyTexture(
   device: GPUDevice,
-  ptr: CyTexturePtr
+  ptr: CyTexturePtr,
+  usage: GPUTextureUsageFlags
 ): CyTexture {
   const { size, format, init, sampleCount } = ptr;
   // TODO(@darzu): parameterize
   // TODO(@darzu): be more precise
-  let usage = GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING;
-  if (sampleCount && sampleCount > 1)
-    usage |= GPUTextureUsage.RENDER_ATTACHMENT;
-  else usage |= GPUTextureUsage.STORAGE_BINDING;
   const tex = device.createTexture({
     size: size,
     format: format,

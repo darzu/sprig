@@ -894,3 +894,5 @@ Printer and paper rec:
 
 Software is only as good as the abstractions it is made of.
 
+Google GameSnacks?
+  https://blog.google/technology/area-120/gamesnacks-html5-games-google-products/
