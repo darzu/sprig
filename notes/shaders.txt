@@ -301,4 +301,7 @@ Bunch of vulkan examples:
   https://github.com/SaschaWillems/Vulkan
 
 Interesting discussion of shader derivative fns:
-  https://brianlovin.com/hn/28728138
+  https://brianlovin.com/hn/2872813
+
+Outline shader from Automation Station:
+  https://gist.github.com/ScottJDaley/6cddf0c8995ed61cac7088e22c983de1

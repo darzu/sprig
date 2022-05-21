@@ -631,13 +631,13 @@ interface GPURenderPassDepthStencilAttachment {
    * {@link GPURenderPassDepthStencilAttachment#view}'s stencil component to prior to
    * executing the render pass.
    */
-  stencilLoadOp: GPULoadOp;
-  stencilClearValue: GPUStencilValue; // TODO(@darzu):
+  stencilLoadOp?: GPULoadOp;
+  stencilClearValue?: GPUStencilValue; // TODO(@darzu):
   /**
    * The store operation to perform on {@link GPURenderPassDepthStencilAttachment#view}'s
    * stencil component after executing the render pass.
    */
-  stencilStoreOp: GPUStoreOp;
+  stencilStoreOp?: GPUStoreOp;
   /**
    * Indicates that the stencil component of {@link GPURenderPassDepthStencilAttachment#view}
    * is read only.
