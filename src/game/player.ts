@@ -3,7 +3,7 @@
 import { quat, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { EM, Entity, EntityManager, EntityW } from "../entity-manager.js";
-import { PhysicsTimerDef } from "../time.js";
+import { TimeDef } from "../time.js";
 import { ColorDef } from "../color.js";
 import { FinishedDef } from "../build.js";
 import {
@@ -206,7 +206,7 @@ export function registerPlayerSystems(em: EntityManager) {
       ControllableDef,
     ],
     [
-      PhysicsTimerDef,
+      TimeDef,
       CameraDef,
       InputsDef,
       MeDef,
@@ -217,199 +217,197 @@ export function registerPlayerSystems(em: EntityManager) {
     ],
     (players, res) => {
       const cheat = !!em.getResource(DevConsoleDef)?.showConsole;
-      for (let i = 0; i < res.physicsTimer.steps; i++) {
-        const {
-          physicsTimer: { period: dt },
-          inputs,
-          camera,
-          physicsResults: { checkRay },
-        } = res;
-        //console.log(`${players.length} players, ${hats.length} hats`);
+      const {
+        time: { dt },
+        inputs,
+        camera,
+        physicsResults: { checkRay },
+      } = res;
+      //console.log(`${players.length} players, ${hats.length} hats`);
 
-        for (let p of players) {
-          if (p.authority.pid !== res.me.pid) continue;
+      for (let p of players) {
+        if (p.authority.pid !== res.me.pid) continue;
 
-          // determine modes
-          p.controllable.modes.canSprint = true;
+        // determine modes
+        p.controllable.modes.canSprint = true;
 
-          if (p.player.manning) {
-            p.controllable.modes.canMove = false;
-            p.controllable.modes.canPitch = false;
-            p.controllable.modes.canYaw = false;
-          } else {
-            p.controllable.modes.canMove = true;
-            p.controllable.modes.canPitch = true;
-            p.controllable.modes.canYaw = true;
-          }
+        if (p.player.manning) {
+          p.controllable.modes.canMove = false;
+          p.controllable.modes.canPitch = false;
+          p.controllable.modes.canYaw = false;
+        } else {
+          p.controllable.modes.canMove = true;
+          p.controllable.modes.canPitch = true;
+          p.controllable.modes.canYaw = true;
+        }
 
-          if (!cheat) {
-            p.controllable.modes.canFall = true;
-            p.controllable.modes.canFly = false;
-            p.controllable.modes.canJump = false;
-          }
+        if (!cheat) {
+          p.controllable.modes.canFall = true;
+          p.controllable.modes.canFly = false;
+          p.controllable.modes.canJump = false;
+        }
 
-          if (cheat && inputs.keyClicks["f"]) {
-            p.controllable.modes.canFly = !p.controllable.modes.canFly;
-          }
+        if (cheat && inputs.keyClicks["f"]) {
+          p.controllable.modes.canFly = !p.controllable.modes.canFly;
+        }
 
-          if (res.gameState.state === GameState.GAMEOVER) {
-            p.controllable.modes.canFly = true;
-          }
-          if (p.controllable.modes.canFly) {
-            p.controllable.modes.canFall = false;
-            p.controllable.modes.canJump = false;
-          } else if (cheat) {
-            p.controllable.modes.canFall = true;
-            p.controllable.modes.canJump = true;
-          }
+        if (res.gameState.state === GameState.GAMEOVER) {
+          p.controllable.modes.canFly = true;
+        }
+        if (p.controllable.modes.canFly) {
+          p.controllable.modes.canFall = false;
+          p.controllable.modes.canJump = false;
+        } else if (cheat) {
+          p.controllable.modes.canFall = true;
+          p.controllable.modes.canJump = true;
+        }
 
-          const cursor = res.globalCursor3d.cursor();
-          if (cursor) {
-            if (RenderableDef.isOn(cursor)) cursor.renderable.enabled = cheat;
-          }
+        const cursor = res.globalCursor3d.cursor();
+        if (cursor) {
+          if (RenderableDef.isOn(cursor)) cursor.renderable.enabled = cheat;
+        }
 
-          // TODO(@darzu): rework to use phsyiscs colliders
-          if (inputs.keyClicks["e"]) {
-            p.player.interacting = true;
-          } else {
-            p.player.interacting = false;
-          }
-          if (inputs.lclick) {
-            p.player.clicking = true;
-          } else {
-            p.player.clicking = false;
-          }
+        // TODO(@darzu): rework to use phsyiscs colliders
+        if (inputs.keyClicks["e"]) {
+          p.player.interacting = true;
+        } else {
+          p.player.interacting = false;
+        }
+        if (inputs.lclick) {
+          p.player.clicking = true;
+        } else {
+          p.player.clicking = false;
+        }
 
-          p.player.dropping = (inputs.keyClicks["q"] || 0) > 0;
+        p.player.dropping = (inputs.keyClicks["q"] || 0) > 0;
 
-          let facingDir = p.player.facingDir;
+        let facingDir = p.player.facingDir;
 
-          // add bullet on lclick
-          if (cheat && inputs.lclick) {
-            const linearVelocity = vec3.scale(vec3.create(), facingDir, 0.02);
-            // TODO(@darzu): adds player motion
-            // bulletMotion.linearVelocity = vec3.add(
-            //   bulletMotion.linearVelocity,
-            //   bulletMotion.linearVelocity,
-            //   player.linearVelocity
-            // );
-            const angularVelocity = vec3.scale(vec3.create(), facingDir, 0.01);
-            // spawnBullet(
-            //   EM,
-            //   vec3.clone(p.world.position),
-            //   linearVelocity,
-            //   angularVelocity
-            // );
-            // TODO: figure out a better way to do this
-            inputs.lclick = false;
-          }
-          if (cheat && inputs.rclick) {
-            const SPREAD = 5;
-            const GAP = 1.0;
-            for (let xi = 0; xi <= SPREAD; xi++) {
-              for (let yi = 0; yi <= SPREAD; yi++) {
-                const x = (xi - SPREAD / 2) * GAP;
-                const y = (yi - SPREAD / 2) * GAP;
-                let bullet_axis = vec3.fromValues(0, 0, -1);
-                bullet_axis = vec3.transformQuat(
-                  bullet_axis,
-                  bullet_axis,
-                  p.rotation
-                );
-                const position = vec3.add(
-                  vec3.create(),
-                  p.world.position,
-                  vec3.fromValues(x, y, 0)
-                );
-                const linearVelocity = vec3.scale(
-                  vec3.create(),
-                  bullet_axis,
-                  0.005
-                );
-                vec3.add(linearVelocity, linearVelocity, p.linearVelocity);
-                const angularVelocity = vec3.scale(
-                  vec3.create(),
-                  bullet_axis,
-                  0.01
-                );
-                // spawnBullet(EM, position, linearVelocity, angularVelocity);
-              }
-            }
-          }
-
-          // shoot a ray
-          if (cheat && inputs.keyClicks["r"]) {
-            // create our ray
-            const r: Ray = {
-              org: vec3.add(
+        // add bullet on lclick
+        if (cheat && inputs.lclick) {
+          const linearVelocity = vec3.scale(vec3.create(), facingDir, 0.02);
+          // TODO(@darzu): adds player motion
+          // bulletMotion.linearVelocity = vec3.add(
+          //   bulletMotion.linearVelocity,
+          //   bulletMotion.linearVelocity,
+          //   player.linearVelocity
+          // );
+          const angularVelocity = vec3.scale(vec3.create(), facingDir, 0.01);
+          // spawnBullet(
+          //   EM,
+          //   vec3.clone(p.world.position),
+          //   linearVelocity,
+          //   angularVelocity
+          // );
+          // TODO: figure out a better way to do this
+          inputs.lclick = false;
+        }
+        if (cheat && inputs.rclick) {
+          const SPREAD = 5;
+          const GAP = 1.0;
+          for (let xi = 0; xi <= SPREAD; xi++) {
+            for (let yi = 0; yi <= SPREAD; yi++) {
+              const x = (xi - SPREAD / 2) * GAP;
+              const y = (yi - SPREAD / 2) * GAP;
+              let bullet_axis = vec3.fromValues(0, 0, -1);
+              bullet_axis = vec3.transformQuat(
+                bullet_axis,
+                bullet_axis,
+                p.rotation
+              );
+              const position = vec3.add(
                 vec3.create(),
                 p.world.position,
-                vec3.scale(
-                  tempVec(),
-                  vec3.multiply(tempVec(), facingDir, p.world.scale),
-                  3.0
-                )
-              ),
-              dir: facingDir,
-            };
-            playerShootRay(r);
-          }
-
-          // change physics parent
-          if (cheat && inputs.keyClicks["t"]) {
-            const targetId = em.getResource(GlobalCursor3dDef)?.cursor()
-              ?.cursor3d.hitId;
-            if (targetId) {
-              p.physicsParent.id = targetId;
-              const targetEnt = em.findEntity(targetId, [ColliderDef]);
-              if (targetEnt) {
-                vec3.copy(p.position, [0, 0, 0]);
-                if (targetEnt.collider.shape === "AABB") {
-                  // move above the obj
-                  p.position[1] = targetEnt.collider.aabb.max[1] + 3;
-                }
-              }
-              vec3.copy(p.linearVelocity, vec3.ZEROS);
-            } else {
-              // unparent
-              p.physicsParent.id = 0;
+                vec3.fromValues(x, y, 0)
+              );
+              const linearVelocity = vec3.scale(
+                vec3.create(),
+                bullet_axis,
+                0.005
+              );
+              vec3.add(linearVelocity, linearVelocity, p.linearVelocity);
+              const angularVelocity = vec3.scale(
+                vec3.create(),
+                bullet_axis,
+                0.01
+              );
+              // spawnBullet(EM, position, linearVelocity, angularVelocity);
             }
           }
+        }
 
-          // delete object
-          if (cheat && res.inputs.keyClicks["backspace"]) {
-            const targetId = em.getResource(GlobalCursor3dDef)?.cursor()
-              ?.cursor3d.hitId;
-            if (targetId) em.ensureComponent(targetId, DeletedDef);
-          }
-
-          function playerShootRay(r: Ray) {
-            // check for hits
-            const hits = checkRay(r);
-            const firstHit = hits.reduce((p, n) => (n.dist < p.dist ? n : p), {
-              dist: Infinity,
-              id: -1,
-            });
-            const doesHit = firstHit.id !== -1;
-
-            if (doesHit) {
-              // increase green
-              const e = EM.findEntity(firstHit.id, [ColorDef]);
-              if (e) {
-                e.color[1] += 0.1;
-              }
-            }
-
-            // draw our ray
-            const rayDist = doesHit ? firstHit.dist : 1000;
-            const color: vec3 = doesHit ? [0, 1, 0] : [1, 0, 0];
-            const endPoint = vec3.add(
+        // shoot a ray
+        if (cheat && inputs.keyClicks["r"]) {
+          // create our ray
+          const r: Ray = {
+            org: vec3.add(
               vec3.create(),
-              r.org,
-              vec3.scale(tempVec(), r.dir, rayDist)
-            );
-            drawLine(r.org, endPoint, color);
+              p.world.position,
+              vec3.scale(
+                tempVec(),
+                vec3.multiply(tempVec(), facingDir, p.world.scale),
+                3.0
+              )
+            ),
+            dir: facingDir,
+          };
+          playerShootRay(r);
+        }
+
+        // change physics parent
+        if (cheat && inputs.keyClicks["t"]) {
+          const targetId = em.getResource(GlobalCursor3dDef)?.cursor()
+            ?.cursor3d.hitId;
+          if (targetId) {
+            p.physicsParent.id = targetId;
+            const targetEnt = em.findEntity(targetId, [ColliderDef]);
+            if (targetEnt) {
+              vec3.copy(p.position, [0, 0, 0]);
+              if (targetEnt.collider.shape === "AABB") {
+                // move above the obj
+                p.position[1] = targetEnt.collider.aabb.max[1] + 3;
+              }
+            }
+            vec3.copy(p.linearVelocity, vec3.ZEROS);
+          } else {
+            // unparent
+            p.physicsParent.id = 0;
           }
+        }
+
+        // delete object
+        if (cheat && res.inputs.keyClicks["backspace"]) {
+          const targetId = em.getResource(GlobalCursor3dDef)?.cursor()
+            ?.cursor3d.hitId;
+          if (targetId) em.ensureComponent(targetId, DeletedDef);
+        }
+
+        function playerShootRay(r: Ray) {
+          // check for hits
+          const hits = checkRay(r);
+          const firstHit = hits.reduce((p, n) => (n.dist < p.dist ? n : p), {
+            dist: Infinity,
+            id: -1,
+          });
+          const doesHit = firstHit.id !== -1;
+
+          if (doesHit) {
+            // increase green
+            const e = EM.findEntity(firstHit.id, [ColorDef]);
+            if (e) {
+              e.color[1] += 0.1;
+            }
+          }
+
+          // draw our ray
+          const rayDist = doesHit ? firstHit.dist : 1000;
+          const color: vec3 = doesHit ? [0, 1, 0] : [1, 0, 0];
+          const endPoint = vec3.add(
+            vec3.create(),
+            r.org,
+            vec3.scale(tempVec(), r.dir, rayDist)
+          );
+          drawLine(r.org, endPoint, color);
         }
       }
     },

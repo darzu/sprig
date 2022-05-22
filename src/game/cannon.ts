@@ -1,5 +1,5 @@
 import { EM, EntityManager } from "../entity-manager.js";
-import { PhysicsTimerDef } from "../time.js";
+import { TimeDef } from "../time.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { ColorDef } from "../color.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
@@ -73,12 +73,11 @@ export const { CannonPropsDef, CannonLocalDef, createCannon } =
 export function registerCannonSystems(em: EntityManager) {
   em.registerSystem(
     [CannonLocalDef],
-    [PhysicsTimerDef],
+    [TimeDef],
     (cannons, res) => {
       for (let c of cannons) {
         if (c.cannonLocal.fireMs > 0) {
-          c.cannonLocal.fireMs -=
-            res.physicsTimer.period * res.physicsTimer.steps;
+          c.cannonLocal.fireMs -= res.time.dt;
         }
       }
     },

@@ -128,7 +128,7 @@ function registerHandleJoinResponse(em: EntityManager) {
         if (join) {
           let pid = message.readUint8();
           em.setDefaultRange("net");
-          em.setIdRange("net", (pid + 1) * 10000, (pid + 1) * 10000 + 10000);
+          em.setIdRange("net", pid * 10000, (pid + 1) * 10000);
           let npeers = message.readUint8();
           for (let i = 0; i < npeers; i++) {
             let address = message.readString();

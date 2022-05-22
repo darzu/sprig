@@ -14,7 +14,7 @@ import { PositionDef, RotationDef } from "./physics/transform.js";
 import { RendererWorldFrameDef } from "./render/renderer-ecs.js";
 import { computeNewError, reduceError } from "./smoothing.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
-import { PhysicsTimerDef } from "./time.js";
+import { TimeDef } from "./time.js";
 import { yawpitchToQuat } from "./yawpitch.js";
 
 export type PerspectiveMode = "perspective" | "ortho";
@@ -31,9 +31,8 @@ export const CameraDef = EM.defineComponent("camera", () => {
     prevTargetId: 0,
     lastRotation: quat.create(),
     lastPosition: vec3.create(),
-    targetRotationError: quat.identity(quat.create()),
+    rotationError: quat.identity(quat.create()),
     targetPositionError: vec3.create(),
-    cameraRotationError: quat.identity(quat.create()),
     cameraPositionError: vec3.create(),
   };
 });
@@ -75,14 +74,11 @@ export function setCameraFollowPosition(
 export function registerCameraSystems(em: EntityManager) {
   em.registerSystem(
     null,
-    [CameraDef, PhysicsTimerDef],
+    [CameraDef, TimeDef],
     function (_, res) {
-      if (!res.physicsTimer.steps) return;
-      const dt = res.physicsTimer.steps * res.physicsTimer.period;
-      reduceError(res.camera.targetPositionError, dt);
-      reduceError(res.camera.targetRotationError, dt);
-      reduceError(res.camera.cameraPositionError, dt);
-      reduceError(res.camera.cameraRotationError, dt);
+      reduceError(res.camera.rotationError, res.time.dt);
+      reduceError(res.camera.targetPositionError, res.time.dt);
+      reduceError(res.camera.cameraPositionError, res.time.dt);
     },
     "smoothCamera"
   );
@@ -134,24 +130,29 @@ export function registerCameraSystems(em: EntityManager) {
           newTarget.world.position,
           res.camera.targetPositionError
         );
+        computeNewError(
+          res.camera.lastPosition,
+          res.camera.positionOffset,
+          res.camera.cameraPositionError
+        );
+
+        const computedRotation = quat.mul(
+          tempQuat(),
+          prevTarget.world.rotation,
+          res.camera.lastRotation
+        );
+        const newComputedRotation = quat.mul(
+          tempQuat(),
+          newTarget.world.rotation,
+          res.camera.rotationOffset
+        );
 
         computeNewError(
-          prevTarget.world.rotation,
-          newTarget.world.rotation,
-          res.camera.targetRotationError
+          computedRotation,
+          newComputedRotation,
+          res.camera.rotationError
         );
       }
-
-      computeNewError(
-        res.camera.lastPosition,
-        res.camera.positionOffset,
-        res.camera.cameraPositionError
-      );
-      computeNewError(
-        res.camera.lastRotation,
-        res.camera.rotationOffset,
-        res.camera.cameraRotationError
-      );
 
       res.camera.prevTargetId = res.camera.targetId;
     },
@@ -165,13 +166,11 @@ export function registerCameraSystems(em: EntityManager) {
     (_, resources) => {
       const { cameraView, camera, me, htmlCanvas } = resources;
 
-      let targetEnt = em.findEntity(camera.targetId, [WorldFrameDef]);
+      let targetEnt = em.findEntity(camera.targetId, [RendererWorldFrameDef]);
 
       if (!targetEnt) return;
 
-      let frame = targetEnt.world;
-      if (RendererWorldFrameDef.isOn(targetEnt))
-        frame = targetEnt.rendererWorldFrame;
+      const frame = targetEnt.rendererWorldFrame;
 
       // update aspect ratio and size
       cameraView.aspectRatio = Math.abs(
@@ -182,12 +181,6 @@ export function registerCameraSystems(em: EntityManager) {
 
       let viewMatrix = mat4.create();
       if (targetEnt) {
-        const computedRotation = quat.mul(
-          tempQuat(),
-          frame.rotation,
-          camera.targetRotationError
-        );
-        quat.normalize(computedRotation, computedRotation);
         const computedTranslation = vec3.add(
           tempVec(),
           frame.position,
@@ -195,7 +188,7 @@ export function registerCameraSystems(em: EntityManager) {
         );
         mat4.fromRotationTranslationScale(
           viewMatrix,
-          computedRotation,
+          frame.rotation,
           computedTranslation,
           frame.scale
         );
@@ -204,7 +197,7 @@ export function registerCameraSystems(em: EntityManager) {
       const computedCameraRotation = quat.mul(
         tempQuat(),
         camera.rotationOffset,
-        camera.cameraRotationError
+        camera.rotationError
       );
 
       mat4.multiply(

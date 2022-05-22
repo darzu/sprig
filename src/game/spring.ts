@@ -1,7 +1,7 @@
 import { vec3 } from "../gl-matrix.js";
 import { tempVec } from "../temp-pool.js";
 import { EM, EntityManager } from "../entity-manager.js";
-import { PhysicsTimerDef } from "../time.js";
+import { TimeDef } from "../time.js";
 import { onInit } from "../init.js";
 import { vec3Dbg } from "../utils-3d.js";
 
@@ -257,14 +257,11 @@ export function callSpringSystems(em: EntityManager) {
 onInit((em) => {
   em.registerSystem(
     [SpringGridDef, ForceDef],
-    [PhysicsTimerDef],
-    (springs, { physicsTimer }) => {
-      const dt = physicsTimer.period;
-      for (let i = 0; i < physicsTimer.steps; i++) {
-        for (let { springGrid, force } of springs) {
-          vec3.copy(springGrid.externalForce, force);
-          stepSprings(springGrid, dt);
-        }
+    [TimeDef],
+    (springs, res) => {
+      for (let { springGrid, force } of springs) {
+        vec3.copy(springGrid.externalForce, force);
+        stepSprings(springGrid, res.time.dt);
       }
     },
     "spring"

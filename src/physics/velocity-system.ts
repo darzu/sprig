@@ -16,7 +16,7 @@ import {
   WorldFrameDef,
 } from "./nonintersection.js";
 import { tempVec } from "../temp-pool.js";
-import { PhysicsTimerDef } from "../time.js";
+import { TimeDef } from "../time.js";
 import {
   Frame,
   PhysicsParent,
@@ -36,10 +36,8 @@ let deltaRotation = quat.create();
 export function registerPhysicsClampVelocityByContact(em: EntityManager) {
   em.registerSystem(
     null,
-    [PhysicsTimerDef, PhysicsResultsDef, PhysicsBroadCollidersDef],
+    [PhysicsResultsDef, PhysicsBroadCollidersDef],
     (objs, res) => {
-      if (!res.physicsTimer.steps) return;
-
       const lastContactData = res.physicsResults.contactData;
 
       // check for collision constraints
@@ -91,17 +89,14 @@ export function registerPhysicsClampVelocityByContact(em: EntityManager) {
 export function registerPhysicsClampVelocityBySize(em: EntityManager) {
   em.registerSystem(
     [LinearVelocityDef, ColliderDef],
-    [PhysicsTimerDef],
+    [TimeDef],
     (objs, res) => {
-      // TODO(@darzu): we really need this physics timer loop to be moved out of individual systems
-      if (!res.physicsTimer.steps) return;
-      const dt = res.physicsTimer.period;
       for (let o of objs) {
         if (o.collider.shape === "AABB") {
           const aabb = o.collider.aabb;
-          const vxMax = (aabb.max[0] - aabb.min[0]) / dt;
-          const vyMax = (aabb.max[1] - aabb.min[1]) / dt;
-          const vzMax = (aabb.max[2] - aabb.min[2]) / dt;
+          const vxMax = (aabb.max[0] - aabb.min[0]) / res.time.dt;
+          const vyMax = (aabb.max[1] - aabb.min[1]) / res.time.dt;
+          const vzMax = (aabb.max[2] - aabb.min[2]) / res.time.dt;
           o.linearVelocity[0] = clamp(o.linearVelocity[0], -vxMax, vxMax);
           o.linearVelocity[1] = clamp(o.linearVelocity[1], -vyMax, vyMax);
           o.linearVelocity[2] = clamp(o.linearVelocity[2], -vzMax, vzMax);
@@ -115,15 +110,11 @@ export function registerPhysicsClampVelocityBySize(em: EntityManager) {
 export function registerPhysicsApplyLinearVelocity(em: EntityManager) {
   em.registerSystem(
     [LinearVelocityDef, PositionDef],
-    [PhysicsTimerDef],
+    [TimeDef],
     (objs, res) => {
-      // TODO(@darzu): we really need this physics timer loop to be moved out of individual systems
-      if (!res.physicsTimer.steps) return;
-      const dt = res.physicsTimer.period * res.physicsTimer.steps;
-
       for (let o of objs) {
         // translate position and AABB according to linear velocity
-        linVelDelta = vec3.scale(linVelDelta, o.linearVelocity, dt);
+        linVelDelta = vec3.scale(linVelDelta, o.linearVelocity, res.time.dt);
         vec3.add(o.position, o.position, linVelDelta);
       }
     },
@@ -134,16 +125,12 @@ export function registerPhysicsApplyLinearVelocity(em: EntityManager) {
 export function registerPhysicsApplyAngularVelocity(em: EntityManager) {
   em.registerSystem(
     [AngularVelocityDef, RotationDef],
-    [PhysicsTimerDef],
+    [TimeDef],
     (objs, res) => {
-      // TODO(@darzu): we really need this physics timer loop to be moved out of individual systems
-      if (!res.physicsTimer.steps) return;
-      const dt = res.physicsTimer.period * res.physicsTimer.steps;
-
       for (let o of objs) {
         // change rotation according to angular velocity
         vec3.normalize(normalizedVelocity, o.angularVelocity);
-        let angle = vec3.length(o.angularVelocity) * dt;
+        let angle = vec3.length(o.angularVelocity) * res.time.dt;
         deltaRotation = quat.setAxisAngle(
           deltaRotation,
           normalizedVelocity,

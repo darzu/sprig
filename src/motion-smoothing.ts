@@ -1,6 +1,6 @@
 import { EntityManager, EM, Component } from "./entity-manager.js";
 import { vec3, quat } from "./gl-matrix.js";
-import { PhysicsTimerDef } from "./time.js";
+import { TimeDef } from "./time.js";
 import {
   PositionDef,
   PhysicsParentDef,
@@ -50,19 +50,17 @@ export function registerMotionSmoothingRecordLocationsSystem(
 export function registerMotionSmoothingSystems(em: EntityManager) {
   em.registerSystem(
     [MotionSmoothingDef],
-    [PhysicsTimerDef],
+    [TimeDef],
     (es, res) => {
-      if (!res.physicsTimer.steps) return;
-      const dt = res.physicsTimer.steps * res.physicsTimer.period;
       for (let e of es) {
         reduceError(
           e.motionSmoothing.positionError,
-          dt,
+          res.time.dt,
           ERROR_SMOOTHING_FACTOR
         );
         reduceError(
           e.motionSmoothing.rotationError,
-          dt,
+          res.time.dt,
           ERROR_SMOOTHING_FACTOR
         );
       }

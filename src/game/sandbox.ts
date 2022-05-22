@@ -351,10 +351,14 @@ export function initClothSandbox(em: EntityManager, hosting: boolean) {
         ...renderPipelinesPtrs,
       ];
 
-      const e = createGhost(em);
-      vec3.copy(e.position, [0, 1, -1.2]);
-      quat.setAxisAngle(e.rotation, [0.0, -1.0, 0.0], 1.62);
-      e.controllable.sprintMul = 3;
+      const g = createGhost(em);
+      vec3.copy(g.position, [0, 1, -1.2]);
+      quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
+      g.controllable.sprintMul = 3;
+
+      // TODO(@darzu): this shouldn't be necessary
+      const m2 = cloneMesh(res.assets.cube.mesh);
+      em.ensureComponentOn(g, RenderableConstructDef, m2);
 
       {
         // vec3.copy(e.position, [-16.85, 7.11, -4.33]);
@@ -362,11 +366,12 @@ export function initClothSandbox(em: EntityManager, hosting: boolean) {
         // vec3.copy(e.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
         // e.cameraFollow.yawOffset = 0.0;
         // e.cameraFollow.pitchOffset = -0.368;
-        vec3.copy(e.position, [4.46, 9.61, -10.52]);
-        quat.copy(e.rotation, [0.0, -1.0, 0.0, 0.04]);
-        vec3.copy(e.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-        e.cameraFollow.yawOffset = 0.0;
-        e.cameraFollow.pitchOffset = -0.106;
+
+        vec3.copy(g.position, [4.46, 9.61, -10.52]);
+        quat.copy(g.rotation, [0.0, -1.0, 0.0, 0.04]);
+        vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+        g.cameraFollow.yawOffset = 0.0;
+        g.cameraFollow.pitchOffset = -0.106;
       }
 
       const c = res.globalCursor3d.cursor()!;

@@ -1,10 +1,5 @@
 import { EM, EntityManager } from "../entity-manager.js";
 import { InputsDef } from "../inputs.js";
-import {
-  registerConstructRenderablesSystem,
-  registerRenderer,
-  registerUpdateRendererWorldFrames,
-} from "../render/renderer-ecs.js";
 import { PositionDef, registerInitTransforms } from "../physics/transform.js";
 import { registerBoatSystems } from "./boat.js";
 import {
@@ -31,7 +26,6 @@ import {
 } from "../net/sync.js";
 import { registerPredictSystem } from "../net/predict.js";
 import { registerEventSystems } from "../net/events.js";
-import { registerTimeSystem } from "../time.js";
 import { initGroundSystem, registerGroundSystems } from "./ground.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
 import { createShip, registerShipSystems, ShipLocalDef } from "./ship.js";
@@ -39,7 +33,11 @@ import { registerBuildBulletsSystem, registerBulletUpdate } from "./bullet.js";
 import { AssetsDef, registerAssetLoader } from "./assets.js";
 import { registerInitCanvasSystem } from "../canvas.js";
 import {
+  registerConstructRenderablesSystem,
+  registerRenderer,
   registerRenderInitSystem,
+  registerUpdateRendererWorldFrames,
+  registerUpdateSmoothedWorldFrames,
   RendererDef,
 } from "../render/renderer-ecs.js";
 import { registerDeleteEntitiesSystem } from "../delete.js";
@@ -68,6 +66,7 @@ import {
   GameState,
   registerGameStateSystems,
 } from "./gamestate.js";
+import { MeDef } from "../net/components.js";
 
 export const ScoreDef = EM.defineComponent("score", () => {
   return {
@@ -99,7 +98,6 @@ function registerScoreSystems(em: EntityManager) {
 }
 
 export function registerAllSystems(em: EntityManager) {
-  registerTimeSystem(em);
   registerNetSystems(em);
   registerInitCanvasSystem(em);
   registerUISystems(em);
@@ -140,6 +138,7 @@ export function registerAllSystems(em: EntityManager) {
   registerEventSystems(em);
   registerDeleteEntitiesSystem(em);
   registerMotionSmoothingSystems(em);
+  registerUpdateSmoothedWorldFrames(em);
   registerUpdateRendererWorldFrames(em);
   registerCameraSystems(em);
   registerRenderViewController(em);
@@ -212,8 +211,9 @@ export function initShipGame(em: EntityManager, hosting: boolean) {
   if (hosting) {
     createShip();
   }
-
-  createPlayer(em);
+  // create player once MeDef is present (meaning we've joined, if
+  // we're not the host)
+  em.registerOneShotSystem(null, [MeDef], () => createPlayer(em));
 }
 
 function debugBoatParts(em: EntityManager) {
