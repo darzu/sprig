@@ -10,7 +10,7 @@ import { SpringType, SpringGridDef, ForceDef } from "./spring.js";
 import { onInit } from "../init.js";
 import { Mesh, unshareProvokingVerticesWithMap } from "../render/mesh.js";
 import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
-import { RendererDef } from "../render/render_init.js";
+import { RendererDef } from "../render/render-init.js";
 import { ColorDef } from "../color.js";
 import { tempVec } from "../temp-pool.js";
 

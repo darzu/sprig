@@ -19,7 +19,7 @@ import { isMeshHandle, MeshHandle } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import { Authority, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { createFrame, WorldFrameDef } from "../physics/nonintersection.js";
-import { RendererDef } from "./render_init.js";
+import { RendererDef } from "./render-init.js";
 import { tempQuat, tempVec } from "../temp-pool.js";
 import { PhysicsTimerDef } from "../time.js";
 import {

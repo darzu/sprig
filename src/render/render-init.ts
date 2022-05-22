@@ -3,7 +3,7 @@ import { EM, EntityManager } from "../entity-manager.js";
 import { FORCE_WEBGL } from "../main.js";
 import { RenderableConstructDef, Renderer } from "./renderer.js";
 // import { attachToCanvasWebgl } from "./render_webgl.js";
-import { createWebGPURenderer } from "./render_webgpu.js";
+import { createWebGPURenderer } from "./render-webgpu.js";
 
 // TODO(@darzu): ECS this
 // export let _renderer: Renderer;

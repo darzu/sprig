@@ -13,7 +13,7 @@ import {
   unshareProvokingVertices,
 } from "../render/mesh.js";
 import { AABB } from "../physics/broadphase.js";
-import { RendererDef } from "../render/render_init.js";
+import { RendererDef } from "../render/render-init.js";
 import { Renderer } from "../render/renderer.js";
 import { assert } from "../test.js";
 import { objMap } from "../util.js";

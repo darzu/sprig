@@ -16,7 +16,7 @@ import { transformMesh } from "../render/mesh.js";
 import { defineNetEntityHelper } from "../em_helpers.js";
 import { assert } from "../test.js";
 import { ColorDef } from "../color.js";
-import { RendererDef } from "../render/render_init.js";
+import { RendererDef } from "../render/render-init.js";
 import {
   createHexGrid,
   hexDist,

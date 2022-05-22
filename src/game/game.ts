@@ -41,7 +41,7 @@ import { registerInitCanvasSystem } from "../canvas.js";
 import {
   registerRenderInitSystem,
   RendererDef,
-} from "../render/render_init.js";
+} from "../render/render-init.js";
 import { registerDeleteEntitiesSystem } from "../delete.js";
 import { registerCannonSystems } from "./cannon.js";
 import { registerInteractionSystem } from "./interact.js";

@@ -10,7 +10,7 @@ import {
 import { PositionDef } from "../physics/transform.js";
 import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
 import { assert } from "../test.js";
-import { RendererDef } from "../render/render_init.js";
+import { RendererDef } from "../render/render-init.js";
 import { vec3 } from "../gl-matrix.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { CUBE_FACES, CUBE_MESH } from "./assets.js";
