@@ -10,8 +10,8 @@ import {
   CyGlobal,
   CyManyBufferPtr,
   CyGlobalParam,
-  _cyKindToPtrs,
   isRenderPipelinePtr,
+  CY,
 } from "./gpu-registry.js";
 import { createMeshPool, MeshPool } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
@@ -72,16 +72,16 @@ export function createWebGPURenderer(
   const cyNameToBufferUsage: { [name: string]: GPUBufferUsageFlags } = {};
   // all buffers are updatable via queue
   // TODO(@darzu): option for some to opt out? for perf?
-  [..._cyKindToPtrs.manyBuffer, ..._cyKindToPtrs.oneBuffer].forEach(
+  [...CY.kindToPtrs.manyBuffer, ...CY.kindToPtrs.oneBuffer].forEach(
     (r) => (cyNameToBufferUsage[r.name] |= GPUBufferUsage.COPY_DST)
   );
   // all singleton buffers are probably used as uniforms
-  _cyKindToPtrs.oneBuffer.forEach(
+  CY.kindToPtrs.oneBuffer.forEach(
     (p) => (cyNameToBufferUsage[p.name] |= GPUBufferUsage.UNIFORM)
   );
   // all pipeline global resources are storage or uniform
   // TODO(@darzu): be more precise?
-  [..._cyKindToPtrs.compPipeline, ..._cyKindToPtrs.renderPipeline].forEach(
+  [...CY.kindToPtrs.compPipeline, ...CY.kindToPtrs.renderPipeline].forEach(
     (p) =>
       p.resources.forEach((r) => {
         if (isResourcePtr(r)) {
@@ -94,7 +94,7 @@ export function createWebGPURenderer(
       })
   );
   // render pipelines have vertex buffers and mesh pools have uniform buffers
-  _cyKindToPtrs.renderPipeline.forEach((p) => {
+  CY.kindToPtrs.renderPipeline.forEach((p) => {
     if (p.meshOpt.stepMode === "per-instance") {
       cyNameToBufferUsage[p.meshOpt.instance.name] |= GPUBufferUsage.VERTEX;
       cyNameToBufferUsage[p.meshOpt.vertex.name] |= GPUBufferUsage.VERTEX;
@@ -110,7 +110,7 @@ export function createWebGPURenderer(
     }
   });
   // mesh pools have vert and uniform buffers
-  _cyKindToPtrs.meshPool.forEach((p) => {
+  CY.kindToPtrs.meshPool.forEach((p) => {
     cyNameToBufferUsage[p.vertsPtr.name] |= GPUBufferUsage.VERTEX;
     cyNameToBufferUsage[p.unisPtr.name] |= GPUBufferUsage.UNIFORM;
   });
@@ -121,19 +121,19 @@ export function createWebGPURenderer(
   // if (sampleCount && sampleCount > 1)
   //   usage |= GPUTextureUsage.RENDER_ATTACHMENT;
   // else usage |= GPUTextureUsage.STORAGE_BINDING;
-  [..._cyKindToPtrs.texture, ..._cyKindToPtrs.depthTexture].forEach((p) => {
+  [...CY.kindToPtrs.texture, ...CY.kindToPtrs.depthTexture].forEach((p) => {
     // default usages
     cyNameToTextureUsage[p.name] |=
       GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING;
   });
-  _cyKindToPtrs.renderPipeline.forEach((p) => {
+  CY.kindToPtrs.renderPipeline.forEach((p) => {
     if (p.output.kind === "texture") {
       cyNameToTextureUsage[p.output.name] |= GPUTextureUsage.RENDER_ATTACHMENT;
     }
     cyNameToTextureUsage[p.depthStencil.name] |=
       GPUTextureUsage.RENDER_ATTACHMENT;
   });
-  [..._cyKindToPtrs.renderPipeline, ..._cyKindToPtrs.compPipeline].forEach(
+  [...CY.kindToPtrs.renderPipeline, ...CY.kindToPtrs.compPipeline].forEach(
     (p) => {
       p.resources.forEach((r) => {
         if (isResourcePtr(r)) {
@@ -172,7 +172,7 @@ export function createWebGPURenderer(
   // create singleton resources
   // TODO(@darzu): create CyTexture for canvas
   // const cyCanvasTex = createCyTexture(device, canvasTexturePtr);
-  for (let s of _cyKindToPtrs.sampler) {
+  for (let s of CY.kindToPtrs.sampler) {
     // TODO(@darzu): other sampler features?
     let filterMode: GPUFilterMode;
     if (s.name === "linearSampler") filterMode = "linear";
@@ -192,24 +192,24 @@ export function createWebGPURenderer(
   }
 
   // create many-buffers
-  _cyKindToPtrs.manyBuffer.forEach((r) => {
+  CY.kindToPtrs.manyBuffer.forEach((r) => {
     const usage = cyNameToBufferUsage[r.name]!;
     const buf = createCyMany(device, r.struct, usage, r.init());
     cyKindToNameToRes.manyBuffer[r.name] = buf;
   });
   // create one-buffers
-  _cyKindToPtrs.oneBuffer.forEach((r) => {
+  CY.kindToPtrs.oneBuffer.forEach((r) => {
     const usage = cyNameToBufferUsage[r.name]!;
     const buf = createCyOne(device, r.struct, usage, r.init());
     cyKindToNameToRes.oneBuffer[r.name] = buf;
   });
   // create idx-buffers
-  _cyKindToPtrs.idxBuffer.forEach((r) => {
+  CY.kindToPtrs.idxBuffer.forEach((r) => {
     const buf = createCyIdxBuf(device, r.init());
     cyKindToNameToRes.idxBuffer[r.name] = buf;
   });
   // create mesh pools
-  _cyKindToPtrs.meshPool.forEach((r) => {
+  CY.kindToPtrs.meshPool.forEach((r) => {
     const verts = cyKindToNameToRes.manyBuffer[r.vertsPtr.name];
     const unis = cyKindToNameToRes.manyBuffer[r.unisPtr.name];
     const triInds = cyKindToNameToRes.idxBuffer[r.triIndsPtr.name];
@@ -231,20 +231,20 @@ export function createWebGPURenderer(
     cyKindToNameToRes.meshPool[r.name] = pool;
   });
   // create texture
-  _cyKindToPtrs.texture.forEach((r) => {
+  CY.kindToPtrs.texture.forEach((r) => {
     const usage = cyNameToTextureUsage[r.name];
     const t = createCyTexture(device, r, usage);
     cyKindToNameToRes.texture[r.name] = t;
   });
-  _cyKindToPtrs.depthTexture.forEach((r) => {
+  CY.kindToPtrs.depthTexture.forEach((r) => {
     const usage = cyNameToTextureUsage[r.name];
     const t = createCyDepthTexture(device, r, usage);
     cyKindToNameToRes.depthTexture[r.name] = t;
   });
   // create pipelines
   for (let p of [
-    ..._cyKindToPtrs["compPipeline"],
-    ..._cyKindToPtrs["renderPipeline"],
+    ...CY.kindToPtrs["compPipeline"],
+    ...CY.kindToPtrs["renderPipeline"],
   ]) {
     const shaderStage = isRenderPipelinePtr(p)
       ? GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT

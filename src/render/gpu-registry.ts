@@ -181,112 +181,119 @@ export type PtrKindToPtrType = {
 export type PtrKind = keyof PtrKindToPtrType;
 export type PtrType = PtrKindToPtrType[PtrKind];
 
-// TODO(@darzu): we should probably contain these in some sort of resources or do something like EM.
-export let _cyNameToPtr: { [name: string]: CyResourcePtr } = {};
-export let _cyKindToPtrs: { [K in PtrKind]: PtrKindToPtrType[K][] } = {
-  manyBuffer: [],
-  oneBuffer: [],
-  idxBuffer: [],
-  texture: [],
-  depthTexture: [],
-  compPipeline: [],
-  renderPipeline: [],
-  meshPool: [],
-  canvasTexture: [canvasTexturePtr],
-  sampler: [linearSamplerPtr, nearestSamplerPtr],
-};
-function registerCyResource<R extends CyResourcePtr>(ptr: R): R {
-  assert(
-    !_cyNameToPtr[ptr.name],
-    `already registered Cy resource with name: ${ptr.name}`
-  );
-  _cyNameToPtr[ptr.name] = ptr;
-  _cyKindToPtrs[ptr.kind].push(ptr as any);
-  return ptr;
-}
-
 type Omit_kind_name<T> = Omit<Omit<T, "kind">, "name">;
 
-export function registerOneBufPtr<O extends CyStructDesc>(
-  name: string,
-  desc: Omit_kind_name<CyOneBufferPtr<O>>
-): CyOneBufferPtr<O> {
-  return registerCyResource({
-    ...desc,
-    kind: "oneBuffer",
-    name,
-  });
-}
-export function registerManyBufPtr<O extends CyStructDesc>(
-  name: string,
-  desc: Omit_kind_name<CyManyBufferPtr<O>>
-): CyManyBufferPtr<O> {
-  return registerCyResource({
-    ...desc,
-    kind: "manyBuffer",
-    name,
-  });
-}
-export function registerIdxBufPtr(
-  name: string,
-  desc: Omit_kind_name<CyIdxBufferPtr>
-): CyIdxBufferPtr {
-  return registerCyResource({
-    ...desc,
-    kind: "idxBuffer",
-    name,
-  });
-}
-export function registerTexPtr(
-  name: string,
-  desc: Omit_kind_name<CyTexturePtr>
-): CyTexturePtr {
-  return registerCyResource({
-    ...desc,
-    kind: "texture",
-    name,
-  });
-}
-export function registerDepthTexPtr(
-  name: string,
-  desc: Omit_kind_name<CyDepthTexturePtr>
-): CyDepthTexturePtr {
-  return registerCyResource({
-    ...desc,
-    kind: "depthTexture",
-    name,
-  });
-}
-export function registerCompPipeline(
-  name: string,
-  desc: Omit_kind_name<CyCompPipelinePtr>
-): CyCompPipelinePtr {
-  return registerCyResource({
-    ...desc,
-    kind: "compPipeline",
-    name,
-  });
-}
-export function registerRenderPipeline(
-  name: string,
-  desc: Omit_kind_name<CyRndrPipelinePtr>
-): CyRndrPipelinePtr {
-  return registerCyResource({
-    ...desc,
-    kind: "renderPipeline",
-    name,
-  });
-}
-export function registerMeshPoolPtr<
-  V extends CyStructDesc,
-  U extends CyStructDesc
->(
-  name: string,
-  desc: Omit_kind_name<CyMeshPoolPtr<V, U>>
-): CyMeshPoolPtr<V, U> {
-  return registerCyResource({
-    ...desc,
-    kind: "meshPool",
-    name,
-  });
+export type CyRegistry = ReturnType<typeof createCyRegistry>;
+
+export const CY: CyRegistry = createCyRegistry();
+
+export function createCyRegistry() {
+  let nameToPtr: { [name: string]: CyResourcePtr } = {};
+  let kindToPtrs: { [K in PtrKind]: PtrKindToPtrType[K][] } = {
+    manyBuffer: [],
+    oneBuffer: [],
+    idxBuffer: [],
+    texture: [],
+    depthTexture: [],
+    compPipeline: [],
+    renderPipeline: [],
+    meshPool: [],
+    canvasTexture: [canvasTexturePtr],
+    sampler: [linearSamplerPtr, nearestSamplerPtr],
+  };
+
+  function registerCyResource<R extends CyResourcePtr>(ptr: R): R {
+    assert(
+      !nameToPtr[ptr.name],
+      `already registered Cy resource with name: ${ptr.name}`
+    );
+    nameToPtr[ptr.name] = ptr;
+    kindToPtrs[ptr.kind].push(ptr as any);
+    return ptr;
+  }
+
+  return {
+    nameToPtr,
+    kindToPtrs,
+    registerOneBufPtr: <O extends CyStructDesc>(
+      name: string,
+      desc: Omit_kind_name<CyOneBufferPtr<O>>
+    ): CyOneBufferPtr<O> => {
+      return registerCyResource({
+        ...desc,
+        kind: "oneBuffer",
+        name,
+      });
+    },
+    registerManyBufPtr: <O extends CyStructDesc>(
+      name: string,
+      desc: Omit_kind_name<CyManyBufferPtr<O>>
+    ): CyManyBufferPtr<O> => {
+      return registerCyResource({
+        ...desc,
+        kind: "manyBuffer",
+        name,
+      });
+    },
+    registerIdxBufPtr: (
+      name: string,
+      desc: Omit_kind_name<CyIdxBufferPtr>
+    ): CyIdxBufferPtr => {
+      return registerCyResource({
+        ...desc,
+        kind: "idxBuffer",
+        name,
+      });
+    },
+    registerTexPtr: (
+      name: string,
+      desc: Omit_kind_name<CyTexturePtr>
+    ): CyTexturePtr => {
+      return registerCyResource({
+        ...desc,
+        kind: "texture",
+        name,
+      });
+    },
+    registerDepthTexPtr: (
+      name: string,
+      desc: Omit_kind_name<CyDepthTexturePtr>
+    ): CyDepthTexturePtr => {
+      return registerCyResource({
+        ...desc,
+        kind: "depthTexture",
+        name,
+      });
+    },
+    registerCompPipeline: (
+      name: string,
+      desc: Omit_kind_name<CyCompPipelinePtr>
+    ): CyCompPipelinePtr => {
+      return registerCyResource({
+        ...desc,
+        kind: "compPipeline",
+        name,
+      });
+    },
+    registerRenderPipeline: (
+      name: string,
+      desc: Omit_kind_name<CyRndrPipelinePtr>
+    ): CyRndrPipelinePtr => {
+      return registerCyResource({
+        ...desc,
+        kind: "renderPipeline",
+        name,
+      });
+    },
+    registerMeshPoolPtr: <V extends CyStructDesc, U extends CyStructDesc>(
+      name: string,
+      desc: Omit_kind_name<CyMeshPoolPtr<V, U>>
+    ): CyMeshPoolPtr<V, U> => {
+      return registerCyResource({
+        ...desc,
+        kind: "meshPool",
+        name,
+      });
+    },
+  };
 }

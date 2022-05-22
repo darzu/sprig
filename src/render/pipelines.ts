@@ -2,20 +2,13 @@ import { mat4, vec3 } from "../gl-matrix.js";
 import { jitter } from "../math.js";
 import { range } from "../util.js";
 import { computeTriangleNormal } from "../utils-3d.js";
-import { createCyStruct, CyToTS } from "./gpu-struct.js";
 import {
-  registerOneBufPtr,
-  registerManyBufPtr,
-  registerCompPipeline,
-  registerIdxBufPtr,
-  registerDepthTexPtr,
-  registerRenderPipeline,
   canvasTexturePtr,
-  registerTexPtr,
-  registerMeshPoolPtr,
+  CY,
   CyTexturePtr,
   linearSamplerPtr,
 } from "./gpu-registry.js";
+import { createCyStruct, CyToTS } from "./gpu-struct.js";
 import { MeshHandle } from "./mesh-pool.js";
 import { getAABBFromMesh, Mesh } from "./mesh.js";
 import {
@@ -40,7 +33,7 @@ import {
 //  [ ] re-enable anti aliasing
 //  [ ] ECS integration w/ custom gpu data
 //  [ ] general usable particle system
-//  [ ] split *ptr register from webgpu impl
+//  [ ] split *ptr CY.register from webgpu impl
 //  [ ] webgl impl
 //  [ ] multiple pipeline outputs
 //  [ ] deferred rendering
@@ -245,19 +238,19 @@ const genRopeStickData = () => {
   return _initRopeStickData;
 };
 
-const sceneBufPtr = registerOneBufPtr("scene", {
+const sceneBufPtr = CY.registerOneBufPtr("scene", {
   struct: SceneStruct,
   init: setupScene,
 });
-const ropePointBufPtr = registerManyBufPtr("ropePoint", {
+const ropePointBufPtr = CY.registerManyBufPtr("ropePoint", {
   struct: RopePointStruct,
   init: genRopePointData,
 });
-const ropeStickBufPtr = registerManyBufPtr("ropeStick", {
+const ropeStickBufPtr = CY.registerManyBufPtr("ropeStick", {
   struct: RopeStickStruct,
   init: genRopeStickData,
 });
-const compRopePipelinePtr = registerCompPipeline("ropeComp", {
+const compRopePipelinePtr = CY.registerCompPipeline("ropeComp", {
   resources: [sceneBufPtr, ropePointBufPtr, ropeStickBufPtr],
   shader: rope_shader,
   shaderComputeEntry: "main",
@@ -280,7 +273,7 @@ const initParticleVertData: () => CyToTS<
   { position: [-1, 1, -1] },
   { position: [-1, -1, 1] },
 ];
-const particleVertBufPtr = registerManyBufPtr("particleVert", {
+const particleVertBufPtr = CY.registerManyBufPtr("particleVert", {
   struct: ParticleVertStruct,
   init: initParticleVertData,
 });
@@ -288,18 +281,18 @@ const particleVertBufPtr = registerManyBufPtr("particleVert", {
 const initParticleIdxData = () =>
   new Uint16Array([2, 1, 0, 3, 2, 0, 1, 3, 0, 2, 3, 1]);
 
-const particleIdxBufPtr = registerIdxBufPtr("particleIdx", {
+const particleIdxBufPtr = CY.registerIdxBufPtr("particleIdx", {
   init: initParticleIdxData,
 });
 
-const canvasDepthTex = registerDepthTexPtr("canvasDepth", {
+const canvasDepthTex = CY.registerDepthTexPtr("canvasDepth", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
   format: "depth24plus-stencil8",
   init: () => undefined,
 });
 
-const renderRopePipelineDesc = registerRenderPipeline("renderRope", {
+const renderRopePipelineDesc = CY.registerRenderPipeline("renderRope", {
   resources: [sceneBufPtr],
   meshOpt: {
     vertex: particleVertBufPtr,
@@ -316,7 +309,7 @@ const renderRopePipelineDesc = registerRenderPipeline("renderRope", {
 
 const CLOTH_SIZE = 10; // TODO(@darzu):
 
-const clothTexPtrDesc: Parameters<typeof registerTexPtr>[1] = {
+const clothTexPtrDesc: Parameters<typeof CY.registerTexPtr>[1] = {
   size: [CLOTH_SIZE, CLOTH_SIZE],
   format: "rgba32float",
   init: () => {
@@ -332,35 +325,35 @@ const clothTexPtrDesc: Parameters<typeof registerTexPtr>[1] = {
     return clothData;
   },
 };
-const clothTexPtr0 = registerTexPtr("clothTex0", {
+const clothTexPtr0 = CY.registerTexPtr("clothTex0", {
   ...clothTexPtrDesc,
 });
-const clothTexPtr1 = registerTexPtr("clothTex1", {
+const clothTexPtr1 = CY.registerTexPtr("clothTex1", {
   ...clothTexPtrDesc,
 });
 
 export const MAX_MESHES = 20000;
 export const MAX_VERTICES = 21844;
 
-const meshVertsPtr = registerManyBufPtr("meshVertsBuf", {
+const meshVertsPtr = CY.registerManyBufPtr("meshVertsBuf", {
   struct: VertexStruct,
   init: () => MAX_VERTICES,
 });
 
-const meshTriIndsPtr = registerIdxBufPtr("meshTriIndsBuf", {
+const meshTriIndsPtr = CY.registerIdxBufPtr("meshTriIndsBuf", {
   init: () => MAX_VERTICES,
 });
 
-const meshLineIndsPtr = registerIdxBufPtr("meshLineIndsBuf", {
+const meshLineIndsPtr = CY.registerIdxBufPtr("meshLineIndsBuf", {
   init: () => MAX_VERTICES * 2,
 });
 
-const meshUnisPtr = registerManyBufPtr("meshUni", {
+const meshUnisPtr = CY.registerManyBufPtr("meshUni", {
   struct: MeshUniformStruct,
   init: () => MAX_MESHES,
 });
 
-export const meshPoolPtr = registerMeshPoolPtr("meshPool", {
+export const meshPoolPtr = CY.registerMeshPoolPtr("meshPool", {
   computeVertsData,
   computeUniData,
   vertsPtr: meshVertsPtr,
@@ -401,7 +394,7 @@ export function computeVertsData(m: Mesh): VertexTS[] {
   return vertsData;
 }
 
-const renderTriPipelineDesc = registerRenderPipeline("triRender", {
+const renderTriPipelineDesc = CY.registerRenderPipeline("triRender", {
   resources: [
     sceneBufPtr,
     // TODO(@darzu): support textures
@@ -421,7 +414,7 @@ const renderTriPipelineDesc = registerRenderPipeline("triRender", {
 // TODO(@darzu): CLOTH
 let clothReadIdx = 1;
 
-const cmpClothPipelinePtr0 = registerCompPipeline("clothComp0", {
+const cmpClothPipelinePtr0 = CY.registerCompPipeline("clothComp0", {
   resources: [
     { ptr: clothTexPtr0, access: "read", alias: "inTex" },
     { ptr: clothTexPtr1, access: "write", alias: "outTex" },
@@ -429,7 +422,7 @@ const cmpClothPipelinePtr0 = registerCompPipeline("clothComp0", {
   shader: cloth_shader,
   shaderComputeEntry: "main",
 });
-const cmpClothPipelinePtr1 = registerCompPipeline("clothComp1", {
+const cmpClothPipelinePtr1 = CY.registerCompPipeline("clothComp1", {
   resources: [
     { ptr: clothTexPtr1, access: "read", alias: "inTex" },
     { ptr: clothTexPtr0, access: "write", alias: "outTex" },
@@ -445,7 +438,7 @@ const BoidData = createCyStruct({
   vel: "vec3<f32>",
 });
 const numBoids = 1500;
-const boidData0 = registerManyBufPtr("boidData0", {
+const boidData0 = CY.registerManyBufPtr("boidData0", {
   struct: BoidData,
   init: () =>
     range(numBoids).map((_, i) => ({
@@ -453,7 +446,7 @@ const boidData0 = registerManyBufPtr("boidData0", {
       vel: [jitter(10), jitter(10), jitter(10)] as vec3,
     })),
 });
-const boidData1 = registerManyBufPtr("boidData1", {
+const boidData1 = CY.registerManyBufPtr("boidData1", {
   struct: BoidData,
   init: () => numBoids,
 });
@@ -461,7 +454,7 @@ const BoidVert = createCyStruct({
   pos: "vec3<f32>",
 });
 
-const boidVerts = registerManyBufPtr("boidVerts", {
+const boidVerts = CY.registerManyBufPtr("boidVerts", {
   struct: BoidVert,
   init: () => [
     { pos: [1, 1, 1] },
@@ -470,11 +463,11 @@ const boidVerts = registerManyBufPtr("boidVerts", {
     { pos: [-1, -1, 1] },
   ],
 });
-const boidInds = registerIdxBufPtr("boidIdx", {
+const boidInds = CY.registerIdxBufPtr("boidIdx", {
   init: () => new Uint16Array([2, 1, 0, 3, 2, 0, 1, 3, 0, 2, 3, 1]),
 });
 const boidResize: CyTexturePtr["onCanvasResize"] = (w, h) => [w / 2, h / 2];
-const boidOutTex = registerTexPtr("boidTex", {
+const boidOutTex = CY.registerTexPtr("boidTex", {
   size: [200, 200],
   onCanvasResize: boidResize,
   format: "rgba8unorm",
@@ -482,7 +475,7 @@ const boidOutTex = registerTexPtr("boidTex", {
   // sampleCount: antiAliasSampleCount,
   init: () => undefined,
 });
-const boidDepthTex = registerDepthTexPtr("boidDepth", {
+const boidDepthTex = CY.registerDepthTexPtr("boidDepth", {
   size: [200, 200],
   format: "depth32float",
   onCanvasResize: boidResize,
@@ -490,7 +483,7 @@ const boidDepthTex = registerDepthTexPtr("boidDepth", {
   // sampleCount: antiAliasSampleCount,
   init: () => undefined,
 });
-const boidRender = registerRenderPipeline("boidRender", {
+const boidRender = CY.registerRenderPipeline("boidRender", {
   resources: [sceneBufPtr],
   meshOpt: {
     index: boidInds,
@@ -556,7 +549,7 @@ const BoidParams = createCyStruct(
     isUniform: true,
   }
 );
-const boidParams = registerOneBufPtr("boidParams", {
+const boidParams = CY.registerOneBufPtr("boidParams", {
   struct: BoidParams,
   init: () => {
     return {
@@ -574,7 +567,7 @@ const boidParams = registerOneBufPtr("boidParams", {
 });
 
 const boidCompDesc: Omit<
-  Parameters<typeof registerCompPipeline>[1],
+  Parameters<typeof CY.registerCompPipeline>[1],
   "resources"
 > = {
   shaderComputeEntry: "main",
@@ -655,7 +648,7 @@ const boidCompDesc: Omit<
   workgroupCounts: [Math.ceil(numBoids / 64), 1, 1],
 };
 
-const boidComp0 = registerCompPipeline("boidComp0", {
+const boidComp0 = CY.registerCompPipeline("boidComp0", {
   ...boidCompDesc,
   resources: [
     boidParams,
@@ -663,7 +656,7 @@ const boidComp0 = registerCompPipeline("boidComp0", {
     { ptr: boidData1, access: "write", alias: "outBoids" },
   ],
 });
-const boidComp1 = registerCompPipeline("boidComp1", {
+const boidComp1 = CY.registerCompPipeline("boidComp1", {
   ...boidCompDesc,
   resources: [
     boidParams,
@@ -681,7 +674,7 @@ const boidWindow = createCyStruct(
     isUniform: true,
   }
 );
-const boidWindowUni = registerOneBufPtr("boidWindow", {
+const boidWindowUni = CY.registerOneBufPtr("boidWindow", {
   struct: boidWindow,
   init: () => ({
     xPos: [0, 1],
@@ -689,7 +682,7 @@ const boidWindowUni = registerOneBufPtr("boidWindow", {
   }),
 });
 
-const boidCanvasMerge = registerRenderPipeline("boidCanvasMerge", {
+const boidCanvasMerge = CY.registerRenderPipeline("boidCanvasMerge", {
   resources: [
     // // { ptr: nearestSamplerPtr, alias: "mySampler" },
     { ptr: linearSamplerPtr, alias: "mySampler" },
