@@ -1311,17 +1311,17 @@ export function createWebGPURenderer(
     }
 
     // TODO(@darzu): support multi-output
-    function isOutputEq(
-      a: CyRndrPipelinePtr["output"],
-      b: CyRndrPipelinePtr["output"]
-    ) {
-      return a.name === b.name;
+    function isOutputEq(a: CyRndrPipelinePtr, b: CyRndrPipelinePtr) {
+      return (
+        a.output.name === b.output.name &&
+        a.depthStencil.name === b.depthStencil.name
+      );
     }
 
     // render bundles
     // TODO(@darzu): ordering needs to be set by outside config
     // TODO(@darzu): same attachments need to be shared
-    let lastOutput: CyRndrPipelinePtr["output"] | undefined;
+    let lastPipeline: CyRndrPipelinePtr | undefined;
     let renderPassEncoder: GPURenderPassEncoder | undefined;
     for (let p of Object.values(cyKindToNameToRes.renderPipeline)) {
       // console.log(`rendering ${p.ptr.name}`);
@@ -1329,13 +1329,13 @@ export function createWebGPURenderer(
 
       if (
         !renderPassEncoder ||
-        !lastOutput ||
-        !isOutputEq(lastOutput, p.ptr.output)
+        !lastPipeline ||
+        !isOutputEq(lastPipeline, p.ptr)
       ) {
         let colorAttachments: GPURenderPassColorAttachment[] = [
           p.ptr.output,
         ].map((o) => {
-          const isFirst = !lastOutput;
+          const isFirst = !lastPipeline;
           const doClear = isFirst;
           if (o.kind === "canvasTexture") return canvasAttachment(doClear);
           else if (o.kind === "texture") {
@@ -1361,7 +1361,7 @@ export function createWebGPURenderer(
 
       renderPassEncoder.executeBundles([bundle]);
 
-      lastOutput = p.ptr.output;
+      lastPipeline = p.ptr;
     }
     renderPassEncoder?.end();
 
