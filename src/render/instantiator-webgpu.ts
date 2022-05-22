@@ -369,21 +369,21 @@ export function createCyResources(
     }
 
     // normalize global format
-    const resUsages = normalizeResources(p.globals);
+    const globalUsages = normalizeGlobals(p.globals);
 
     // resources layout and bindings
     // TODO(@darzu): don't like this dynamic layout var
-    const resBindGroupLayout = mkBindGroupLayout(resUsages, false);
+    const resBindGroupLayout = mkBindGroupLayout(globalUsages, false);
     // TODO(@darzu): wait, plurality many isn't right
     // const resBindGroup = mkBindGroup(resBindGroupLayout, resUsages, "many");
 
     // shader resource setup
-    const shaderResStructs = resUsages.map((r) => {
+    const shaderResStructs = globalUsages.map((r) => {
       // TODO(@darzu): HACK
       const plurality = r.ptr.kind === "oneBuffer" ? "one" : "many";
       return globalToWgslDefs(r, plurality);
     });
-    const shaderResVars = resUsages.map((r, i) => {
+    const shaderResVars = globalUsages.map((r, i) => {
       const plurality = r.ptr.kind === "oneBuffer" ? "one" : "many";
       return globalToWgslVars(r, plurality, 0, i);
     });
@@ -631,7 +631,7 @@ export function createCyResources(
   };
 }
 
-export function normalizeResources(
+export function normalizeGlobals(
   globals: CyGlobalParam[]
 ): CyGlobalUsage<CyGlobal>[] {
   const resUsages = globals.map((r, i) => {
@@ -688,12 +688,12 @@ export function bundleRenderPipelines(
     // TODO(@darzu): this seems a bit hacky
     if (p.bindGroupLayouts.length) {
       const resBindGroupLayout = p.bindGroupLayouts[0];
-      const resUsages = normalizeResources(p.ptr.globals);
+      const globalUsages = normalizeGlobals(p.ptr.globals);
       const resBindGroup = mkBindGroup(
         device,
         cyKindToNameToRes,
         resBindGroupLayout,
-        resUsages,
+        globalUsages,
         "many"
       );
       bundleEnc.setBindGroup(0, resBindGroup);
@@ -899,12 +899,12 @@ export function doCompute(
 
   // TODO(@darzu): de-dupe?
   const resBindGroupLayout = pipeline.bindGroupLayout;
-  const resUsages = normalizeResources(pipeline.ptr.globals);
+  const globalUsages = normalizeGlobals(pipeline.ptr.globals);
   const resBindGroup = mkBindGroup(
     device,
     resources,
     resBindGroupLayout,
-    resUsages,
+    globalUsages,
     "many"
   );
 

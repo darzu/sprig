@@ -11,7 +11,7 @@ export const MAX_VERTICES = 21844;
 // TODO:
 //  [x] pipeline attachements / outputs
 //        use case: two cameras
-//  [ ] mesh pool handle enable/disable
+//  [x] mesh pool handle enable/disable
 //  [x] textures and samplers as resources
 //  [x] resource ping-ponging for cloth texs and boids
 //  [x] shader VertexInput struct auto gen
@@ -21,13 +21,14 @@ export const MAX_VERTICES = 21844;
 //  [x] dynamic resizing texture based on canvas size
 //  [x] split screen
 //  [ ] re-enable anti aliasing
-//  [ ] ECS integration w/ custom gpu data
+//  [x] ECS integration w/ custom gpu data
 //  [ ] general usable particle system
 //  [x] split *ptr CY.register from webgpu impl
 //  [ ] webgl impl
 //  [ ] multiple pipeline outputs
 //  [ ] deferred rendering
 //  [ ] re-enable line renderer
+//  [x] pass in pipelines from game
 
 export const VertexStruct = createCyStruct(
   {
