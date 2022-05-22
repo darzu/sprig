@@ -48,7 +48,7 @@ async function init(
       // TODO(@darzu): uses cast while waiting for webgpu-types.d.ts to be updated
       const context = canvas.getContext("webgpu");
       if (context) {
-        rendererInit = createWebGPURenderer(canvas, device, context, adapter);
+        rendererInit = createWebGPURenderer(canvas, device, context);
         if (rendererInit) usingWebGPU = true;
       }
     }
