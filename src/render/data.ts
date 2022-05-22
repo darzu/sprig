@@ -4,7 +4,7 @@ import { mat4, quat, vec2, vec3, vec4 } from "../gl-matrix.js";
 import { align, max, sum } from "../math.js";
 import { assert } from "../test.js";
 import { Intersect, isNumber, objMap } from "../util.js";
-import { CyTexturePtr } from "./render_webgpu.js";
+import { CyDepthTexturePtr, CyTexturePtr } from "./render_webgpu.js";
 
 const WGSLScalars = ["bool", "i32", "u32", "f32", "f16"] as const;
 type WGSLScalar = typeof WGSLScalars[number];
@@ -44,6 +44,25 @@ export const texTypeToBytes: Partial<Record<GPUTextureFormat, number>> = {
   "depth24plus-stencil8": 3 + 1,
   depth32float: 4,
 };
+export const texTypeIsDepthNoStencil = {
+  depth16unorm: true,
+  depth24plus: true,
+  depth32float: true,
+};
+export const texTypeIsDepthAndStencil = {
+  "depth24plus-stencil8": true,
+  "depth24unorm-stencil8": true,
+  "depth32float-stencil8": true,
+};
+export const texTypeIsStencil = {
+  stencil8: true,
+  ...texTypeIsDepthAndStencil,
+};
+export const texTypeIsDepth = {
+  ...texTypeIsDepthNoStencil,
+  ...texTypeIsDepthAndStencil,
+};
+
 export type TexTypeAsTSType<F> = F extends keyof TexTypeToTSType
   ? TexTypeToTSType[F]
   : never;
@@ -222,11 +241,18 @@ export interface CyIdxBuffer {
 
 // TODO(@darzu): texture
 export interface CyTexture {
+  ptr: CyTexturePtr;
   size: [number, number];
   texture: GPUTexture;
   format: GPUTextureFormat;
+  usage: GPUTextureUsageFlags;
   // TODO(@darzu): support partial texture update?
   queueUpdate: (data: Float32Array) => void;
+  resize: (width: number, height: number) => void;
+}
+export interface CyDepthTexture extends Omit<CyTexture, "ptr"> {
+  ptr: CyDepthTexturePtr;
+  depthAttachment: () => GPURenderPassDepthStencilAttachment;
 }
 
 // export function cyStruct<O extends CyStruct>(struct: O): O {
@@ -660,41 +686,89 @@ export function createCyTexture(
   const { size, format, init, sampleCount } = ptr;
   // TODO(@darzu): parameterize
   // TODO(@darzu): be more precise
-  const tex = device.createTexture({
-    size: size,
-    format: format,
-    dimension: "2d",
-    sampleCount,
-    usage,
-  });
-  const bytesPerVal = texTypeToBytes[format];
+  const bytesPerVal = texTypeToBytes[format]!;
   assert(bytesPerVal, `Unimplemented format: ${format}`);
-  const queueUpdate = (data: Float32Array) => {
-    device.queue.writeTexture(
-      { texture: tex },
-      data,
-      {
-        offset: 0,
-        bytesPerRow: size[0] * bytesPerVal,
-        rowsPerImage: size[1],
-      },
-      {
-        width: size[0],
-        height: size[1],
-        // TODO(@darzu): what does this mean?
-        depthOrArrayLayers: 1,
-      }
-    );
+
+  const cyTex: CyTexture = {
+    ptr,
+    size,
+    usage,
+    format,
+    texture: undefined as any as GPUTexture, // pretty hacky...
+    queueUpdate,
+    resize,
   };
+
+  resize(size[0], size[1]);
+
   const initVal = init();
   if (initVal) {
     queueUpdate(initVal);
   }
-  const cyTex: CyTexture = {
-    size: size,
-    format: format,
-    texture: tex,
-    queueUpdate,
-  };
+
   return cyTex;
+
+  function resize(width: number, height: number) {
+    cyTex.size[0] = width;
+    cyTex.size[1] = height;
+    // TODO(@darzu): feels wierd to mutate the descriptor...
+    ptr.size[0] = width;
+    ptr.size[1] = height;
+    (cyTex.texture as GPUTexture | undefined)?.destroy();
+    cyTex.texture = device.createTexture({
+      size: cyTex.size,
+      format: format,
+      dimension: "2d",
+      sampleCount,
+      usage,
+    });
+  }
+
+  // const queueUpdate = (data: Float32Array) => {
+  function queueUpdate(data: Float32Array) {
+    device.queue.writeTexture(
+      { texture: cyTex.texture },
+      data,
+      {
+        offset: 0,
+        bytesPerRow: cyTex.size[0] * bytesPerVal,
+        rowsPerImage: cyTex.size[1],
+      },
+      {
+        width: cyTex.size[0],
+        height: cyTex.size[1],
+        // TODO(@darzu): what does this mean?
+        depthOrArrayLayers: 1,
+      }
+    );
+  }
+}
+
+export function createCyDepthTexture(
+  device: GPUDevice,
+  ptr: CyDepthTexturePtr,
+  usage: GPUTextureUsageFlags
+): CyDepthTexture {
+  const tex = createCyTexture(device, ptr as unknown as CyTexturePtr, usage);
+
+  const hasStencil = ptr.format in texTypeIsStencil;
+
+  return Object.assign(tex, {
+    kind: "depthTexture",
+    ptr,
+    depthAttachment,
+  });
+
+  function depthAttachment(): GPURenderPassDepthStencilAttachment {
+    return {
+      // TODO(@darzu): create these less often??
+      view: tex.texture.createView(),
+      depthLoadOp: "clear",
+      depthClearValue: 1.0,
+      depthStoreOp: "store",
+      stencilLoadOp: hasStencil ? "clear" : undefined,
+      stencilClearValue: hasStencil ? 0 : undefined,
+      stencilStoreOp: hasStencil ? "store" : undefined,
+    };
+  }
 }

@@ -23,9 +23,9 @@ import {
   registerOneBufPtr,
   registerManyBufPtr,
   canvasTexturePtr,
-  depthStencilFormat,
   linearSamplerPtr,
   nearestSamplerPtr,
+  registerDepthTexPtr,
 } from "./render_webgpu.js";
 import {
   cloth_shader,
@@ -301,6 +301,13 @@ const particleIdxBufPtr = registerIdxBufPtr("particleIdx", {
   init: initParticleIdxData,
 });
 
+const canvasDepthTex = registerDepthTexPtr("canvasDepth", {
+  size: [100, 100],
+  onCanvasResize: (w, h) => [w, h],
+  format: "depth24plus-stencil8",
+  init: () => undefined,
+});
+
 const renderRopePipelineDesc = registerRenderPipeline("renderRope", {
   resources: [sceneBufPtr],
   meshOpt: {
@@ -313,6 +320,7 @@ const renderRopePipelineDesc = registerRenderPipeline("renderRope", {
   shaderVertexEntry: "vert_main",
   shaderFragmentEntry: "frag_main",
   output: canvasTexturePtr,
+  depthStencil: canvasDepthTex,
 });
 
 const CLOTH_SIZE = 10; // TODO(@darzu):
@@ -416,6 +424,7 @@ const renderTriPipelineDesc = registerRenderPipeline("triRender", {
   shaderVertexEntry: "vert_main",
   shaderFragmentEntry: "frag_main",
   output: canvasTexturePtr,
+  depthStencil: canvasDepthTex,
 });
 
 // TODO(@darzu): CLOTH
@@ -480,9 +489,9 @@ const boidOutTex = registerTexPtr("boidTex", {
   // sampleCount: antiAliasSampleCount,
   init: () => undefined,
 });
-const boidDepthTex = registerTexPtr("boidDepth", {
+const boidDepthTex = registerDepthTexPtr("boidDepth", {
   size: [200, 200],
-  format: depthStencilFormat,
+  format: "depth32float",
   // TODO(@darzu): ANTI-ALIAS
   // sampleCount: antiAliasSampleCount,
   init: () => undefined,
@@ -689,7 +698,8 @@ const boidCanvasMerge = registerRenderPipeline("boidCanvasMerge", {
   resources: [
     // // { ptr: nearestSamplerPtr, alias: "mySampler" },
     { ptr: linearSamplerPtr, alias: "mySampler" },
-    { ptr: boidOutTex, alias: "myTexture" },
+    { ptr: boidDepthTex, alias: "myTexture" },
+    // { ptr: boidOutTex, alias: "myTexture" },
     boidWindowUni,
   ],
   meshOpt: {
@@ -697,6 +707,7 @@ const boidCanvasMerge = registerRenderPipeline("boidCanvasMerge", {
     stepMode: "single-draw",
   },
   output: canvasTexturePtr,
+  depthStencil: canvasDepthTex,
   shader: () => {
     return `
 // @group(0) @binding(0) var mySampler : sampler;
@@ -743,7 +754,7 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
 @stage(fragment)
 fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   // return vec4(0.5, 0.2, 0.3, 1.0);
-  return textureSample(myTexture, mySampler, fragUV);
+  return vec4(textureSample(myTexture, mySampler, fragUV));
 }
   `;
   },
