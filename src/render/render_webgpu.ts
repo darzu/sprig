@@ -1,28 +1,9 @@
 import { mat4 } from "../gl-matrix.js";
 import { assert } from "../test.js";
 import { capitalize, never, pluralize, uncapitalize } from "../util.js";
+import { GPUBufferBindingTypeToWgslVar } from "./gpu-struct.js";
 import {
-  createCyDepthTexture,
-  createCyIdxBuf,
-  createCyMany,
-  createCyOne,
-  createCyTexture,
-  CyDepthTexture,
-  CyIdxBuffer,
-  CyMany,
-  CyOne,
-  CyStruct,
-  CyStructDesc,
-  CyTexture,
-  CyToTS,
-  GPUBufferBindingTypeToWgslVar,
-  texTypeIsDepth,
-} from "./data.js";
-import {
-  CySampler,
-  PtrKindToPtrType,
   PtrKind,
-  CyCompPipelinePtr,
   CyRndrPipelinePtr,
   isResourcePtr,
   CyGlobalUsage,
@@ -41,47 +22,18 @@ import {
   MeshHandleStd,
 } from "./pipelines.js";
 import { Renderer } from "./renderer.js";
-
-type PtrKindToResourceType = {
-  manyBuffer: CyMany<any>;
-  oneBuffer: CyOne<any>;
-  idxBuffer: CyIdxBuffer;
-  texture: CyTexture;
-  depthTexture: CyDepthTexture;
-  compPipeline: CyCompPipeline;
-  renderPipeline: CyRndrPipeline;
-  meshPool: MeshPool<any, any>;
-  canvasTexture: CyTexture;
-  sampler: CySampler;
-};
-type Assert_ResourceTypePtrTypeMatch =
-  PtrKindToPtrType[keyof PtrKindToResourceType] &
-    PtrKindToResourceType[keyof PtrKindToPtrType];
-
-// type PtrDesc<K extends PtrKind> = Omit<
-//   Omit<PtrKindToPtrType[K], "name">,
-//   "kind"
-// >;
-type ResourceType = PtrKindToResourceType[PtrKind];
-
-export interface CyCompPipeline {
-  ptr: CyCompPipelinePtr;
-  // resourceLayouts: CyBufferPtrLayout<CyStructDesc>[];
-  pipeline: GPUComputePipeline;
-  bindGroupLayout: GPUBindGroupLayout;
-}
-
-// TODO(@darzu): instead of just mushing together with the desc, have desc compose in
-export interface CyRndrPipeline {
-  ptr: CyRndrPipelinePtr;
-  // resourceLayouts: CyBufferPtrLayout<any>[];
-  vertexBuf?: CyMany<any>;
-  indexBuf?: CyIdxBuffer;
-  instanceBuf?: CyMany<any>;
-  pool?: MeshPool<any, any>;
-  pipeline: GPURenderPipeline;
-  bindGroupLayouts: GPUBindGroupLayout[];
-}
+import {
+  PtrKindToResourceType,
+  createCyMany,
+  createCyOne,
+  createCyIdxBuf,
+  createCyTexture,
+  createCyDepthTexture,
+  CyRndrPipeline,
+  CyCompPipeline,
+  CyOne,
+  CyTexture,
+} from "./gpu-data-webgpu.js";
 
 const prim_tris: GPUPrimitiveState = {
   topology: "triangle-list",

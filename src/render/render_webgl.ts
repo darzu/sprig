@@ -10,6 +10,26 @@
 //   VertexStruct,
 // } from "./pipelines.js";
 
+// TODO(@darzu): generalize to webgl?
+/*
+in vec3 a_position;
+in vec3 a_color;
+in vec3 a_normal;
+
+// bind vertex buffers
+gl.bindBuffer(gl.ARRAY_BUFFER, pool.vertexBuffer);
+// TODO(@darzu): create these attrib points via CyBuffer
+gl.vertexAttribPointer(
+  a_loc_position,
+  3,
+  gl.FLOAT,
+  false,
+  VertexStruct.size,
+  VertexStruct.offsets[0]
+);
+gl.enableVertexAttribArray(a_loc_position);
+*/
+
 // const vertCode = `#version 300 es
 // precision mediump float;
 

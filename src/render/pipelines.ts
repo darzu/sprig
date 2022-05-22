@@ -2,15 +2,7 @@ import { mat4, vec3 } from "../gl-matrix.js";
 import { jitter } from "../math.js";
 import { range } from "../util.js";
 import { computeTriangleNormal } from "../utils-3d.js";
-import {
-  createCyMany,
-  createCyOne,
-  createCyStruct,
-  CyBuffer,
-  CyStruct,
-  CyStructDesc,
-  CyToTS,
-} from "./data.js";
+import { createCyStruct, CyToTS } from "./gpu-struct.js";
 import {
   registerOneBufPtr,
   registerManyBufPtr,
@@ -24,7 +16,7 @@ import {
   CyTexturePtr,
   linearSamplerPtr,
 } from "./gpu-registry.js";
-import { MeshHandle, MeshPoolOpts } from "./mesh-pool.js";
+import { MeshHandle } from "./mesh-pool.js";
 import { getAABBFromMesh, Mesh } from "./mesh.js";
 import {
   cloth_shader,

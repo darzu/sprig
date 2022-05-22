@@ -1,6 +1,13 @@
 import { assert } from "../test.js";
-import { CyStructDesc, CyStruct, CyToTS, texTypeIsDepth } from "./data.js";
+import {
+  CyStructDesc,
+  CyStruct,
+  CyToTS,
+  texTypeIsDepth,
+} from "./gpu-struct.js";
 import { Mesh } from "./mesh.js";
+
+// NOTE: this file is supposed to be WebGPU and WebGL agnostic.
 
 // render pipeline parameters
 // TODO(@darzu): ENABLE AA
@@ -69,10 +76,6 @@ export const nearestSamplerPtr = {
 } as const;
 
 export type CySamplerPtr = typeof linearSamplerPtr | typeof nearestSamplerPtr;
-export interface CySampler {
-  ptr: CySamplerPtr;
-  sampler: GPUSampler;
-}
 
 // MESH POOL
 export interface CyMeshPoolPtr<V extends CyStructDesc, U extends CyStructDesc>

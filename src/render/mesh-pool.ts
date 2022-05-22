@@ -1,20 +1,8 @@
-import { centroid, computeTriangleNormal, vec3Mid } from "../utils-3d.js";
-import { mat4, vec2, vec3 } from "../gl-matrix.js";
-import { align, sum } from "../math.js";
-import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
-import { EM } from "../entity-manager.js";
+import { align } from "../math.js";
 import { assert } from "../test.js";
-import {
-  createCyIdxBuf,
-  createCyMany,
-  createCyStruct,
-  CyIdxBuffer,
-  CyMany,
-  CyStruct,
-  CyStructDesc,
-  CyToTS,
-} from "./data.js";
-import { Mesh, getAABBFromMesh } from "./mesh.js";
+import { CyStructDesc, CyToTS } from "./gpu-struct.js";
+import { Mesh } from "./mesh.js";
+import { CyMany, CyIdxBuffer } from "./gpu-data-webgpu.js";
 
 // Mesh: lossless, all the data of a model/asset from blender
 // MeshPool: lossy, a reduced set of attributes for vertex, line, triangle, and model uniforms
