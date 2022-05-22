@@ -29,7 +29,7 @@ export interface CyBuffer<O extends CyStructDesc> {
 }
 
 // TODO(@darzu): rename "one" to "singleton", "many" to "array" ?
-export interface CyOne<O extends CyStructDesc> extends CyBuffer<O> {
+export interface CySingleton<O extends CyStructDesc> extends CyBuffer<O> {
   lastData: CyToTS<O> | undefined;
   queueUpdate: (data: CyToTS<O>) => void;
 }
@@ -63,8 +63,8 @@ export interface CyDepthTexture extends Omit<CyTexture, "ptr"> {
 }
 
 export type PtrKindToResourceType = {
-  arrayBuffer: CyArray<any>;
-  oneBuffer: CyOne<any>;
+  array: CyArray<any>;
+  singleton: CySingleton<any>;
   idxBuffer: CyIdxBuffer;
   texture: CyTexture;
   depthTexture: CyDepthTexture;
@@ -108,12 +108,12 @@ export interface CySampler {
   sampler: GPUSampler;
 }
 
-export function createCyOne<O extends CyStructDesc>(
+export function createCySingleton<O extends CyStructDesc>(
   device: GPUDevice,
   struct: CyStruct<O>,
   usage: GPUBufferUsageFlags,
   initData?: CyToTS<O>
-): CyOne<O> {
+): CySingleton<O> {
   assert(struct.opts?.isUniform, "CyOne struct must be created with isUniform");
 
   const _buf = device.createBuffer({
@@ -124,7 +124,7 @@ export function createCyOne<O extends CyStructDesc>(
     mappedAtCreation: !!initData,
   });
 
-  const buf: CyOne<O> = {
+  const buf: CySingleton<O> = {
     struct,
     buffer: _buf,
     lastData: undefined,

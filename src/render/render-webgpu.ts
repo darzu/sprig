@@ -4,7 +4,7 @@ import { CY, CyPipelinePtr } from "./gpu-registry.js";
 import { MeshPool } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import { Renderer } from "./renderer-ecs.js";
-import { CyRndrPipeline, CyCompPipeline, CyOne } from "./gpu-data-webgpu.js";
+import { CyRndrPipeline, CyCompPipeline, CySingleton } from "./data-webgpu.js";
 import {
   VertexStruct,
   MeshUniformStruct,
@@ -43,8 +43,8 @@ export function createWebGPURenderer(
     typeof MeshUniformStruct.desc
   > = cyKindToNameToRes.meshPool["meshPool"]!;
 
-  const sceneUni: CyOne<typeof SceneStruct.desc> =
-    cyKindToNameToRes.oneBuffer["scene"]!;
+  const sceneUni: CySingleton<typeof SceneStruct.desc> =
+    cyKindToNameToRes.singleton["scene"]!;
 
   // render bundle
   const bundledMIds = new Set<number>();

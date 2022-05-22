@@ -17,7 +17,7 @@ const BoidData = createCyStruct({
   vel: "vec3<f32>",
 });
 const numBoids = 1500;
-const boidData0 = CY.registerArrayBufferPtr("boidData0", {
+const boidData0 = CY.registerArrayPtr("boidData0", {
   struct: BoidData,
   init: () =>
     range(numBoids).map((_, i) => ({
@@ -25,7 +25,7 @@ const boidData0 = CY.registerArrayBufferPtr("boidData0", {
       vel: [jitter(10), jitter(10), jitter(10)] as vec3,
     })),
 });
-const boidData1 = CY.registerArrayBufferPtr("boidData1", {
+const boidData1 = CY.registerArrayPtr("boidData1", {
   struct: BoidData,
   init: () => numBoids,
 });
@@ -33,7 +33,7 @@ const BoidVert = createCyStruct({
   pos: "vec3<f32>",
 });
 
-const boidVerts = CY.registerArrayBufferPtr("boidVerts", {
+const boidVerts = CY.registerArrayPtr("boidVerts", {
   struct: BoidVert,
   init: () => [
     { pos: [1, 1, 1] },
@@ -128,7 +128,7 @@ const BoidParams = createCyStruct(
     isUniform: true,
   }
 );
-const boidParams = CY.registerOneBufPtr("boidParams", {
+const boidParams = CY.registerSingletonPtr("boidParams", {
   struct: BoidParams,
   init: () => {
     return {
@@ -253,7 +253,7 @@ const boidWindow = createCyStruct(
     isUniform: true,
   }
 );
-const boidWindowUni = CY.registerOneBufPtr("boidWindow", {
+const boidWindowUni = CY.registerSingletonPtr("boidWindow", {
   struct: boidWindow,
   init: () => ({
     xPos: [0, 1],

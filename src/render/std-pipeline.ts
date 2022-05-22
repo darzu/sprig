@@ -121,12 +121,12 @@ export type MeshUniformTS = CyToTS<typeof MeshUniformStruct.desc>;
 // TODO(@darzu): IMPL
 export type MeshHandleStd = MeshHandle<typeof MeshUniformStruct.desc>;
 
-export const sceneBufPtr = CY.registerOneBufPtr("scene", {
+export const sceneBufPtr = CY.registerSingletonPtr("scene", {
   struct: SceneStruct,
   init: setupScene,
 });
 
-const meshVertsPtr = CY.registerArrayBufferPtr("meshVertsBuf", {
+const meshVertsPtr = CY.registerArrayPtr("meshVertsBuf", {
   struct: VertexStruct,
   init: () => MAX_VERTICES,
 });
@@ -139,7 +139,7 @@ const meshLineIndsPtr = CY.registerIdxBufPtr("meshLineIndsBuf", {
   init: () => MAX_VERTICES * 2,
 });
 
-const meshUnisPtr = CY.registerArrayBufferPtr("meshUni", {
+const meshUnisPtr = CY.registerArrayPtr("meshUni", {
   struct: MeshUniformStruct,
   init: () => MAX_MESHES,
 });

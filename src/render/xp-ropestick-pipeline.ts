@@ -111,11 +111,11 @@ const genRopeStickData = () => {
   return _initRopeStickData;
 };
 
-const ropePointBufPtr = CY.registerArrayBufferPtr("ropePoint", {
+const ropePointBufPtr = CY.registerArrayPtr("ropePoint", {
   struct: RopePointStruct,
   init: genRopePointData,
 });
-const ropeStickBufPtr = CY.registerArrayBufferPtr("ropeStick", {
+const ropeStickBufPtr = CY.registerArrayPtr("ropeStick", {
   struct: RopeStickStruct,
   init: genRopeStickData,
 });
@@ -221,7 +221,7 @@ const initParticleVertData: () => CyToTS<
   { position: [-1, 1, -1] },
   { position: [-1, -1, 1] },
 ];
-const particleVertBufPtr = CY.registerArrayBufferPtr("particleVert", {
+const particleVertBufPtr = CY.registerArrayPtr("particleVert", {
   struct: ParticleVertStruct,
   init: initParticleVertData,
 });

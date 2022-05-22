@@ -1,6 +1,6 @@
 import { EntityManager, EM, Entity } from "../entity-manager.js";
 import { applyTints, TintsDef } from "../color.js";
-import { CameraView, CameraViewDef } from "../camera.js";
+import { CameraViewDef } from "../camera.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import { isMeshHandle } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
@@ -20,7 +20,7 @@ import { MeshHandleStd, renderTriPipelineDesc } from "./std-pipeline.js";
 import { CanvasDef } from "../canvas.js";
 import { FORCE_WEBGL } from "../main.js";
 import { createWebGPURenderer } from "./render-webgpu.js";
-import { CyPipelinePtr, CyRenderPipelinePtr } from "./gpu-registry.js";
+import { CyPipelinePtr } from "./gpu-registry.js";
 
 export interface RenderableConstruct {
   readonly enabled: boolean;

@@ -2,21 +2,14 @@ import { align } from "../math.js";
 import { assert } from "../test.js";
 import { CyStructDesc, CyToTS } from "./gpu-struct.js";
 import { Mesh } from "./mesh.js";
-import { CyArray, CyIdxBuffer } from "./gpu-data-webgpu.js";
+import { CyArray, CyIdxBuffer } from "./data-webgpu.js";
 
 // Mesh: lossless, all the data of a model/asset from blender
 // MeshPool: lossy, a reduced set of attributes for vertex, line, triangle, and model uniforms
 
 const vertsPerTri = 3;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * vertsPerTri;
-const linesPerTri = 6;
 const bytesPerLine = Uint16Array.BYTES_PER_ELEMENT * 2;
-const bytesPerMat4 = 4 * 4 /*4x4 mat*/ * 4; /*f32*/
-const bytesPerVec3 = 3 /*vec3*/ * 4; /*f32*/
-const bytesPerVec2 = 2 /*vec3*/ * 4; /*f32*/
-const bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
-const bytesPerUint16 = Uint16Array.BYTES_PER_ELEMENT;
-const bytesPerUint32 = Uint32Array.BYTES_PER_ELEMENT;
 const MAX_INDICES = 65535; // Since we're using u16 index type, this is our max indices count
 
 export interface MeshHandle<U extends CyStructDesc> {

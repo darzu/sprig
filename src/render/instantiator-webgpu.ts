@@ -4,14 +4,14 @@ import { never, capitalize, pluralize, uncapitalize } from "../util.js";
 import {
   PtrKindToResourceType,
   createCyArray,
-  createCyOne,
+  createCySingleton,
   createCyIdxBuf,
   createCyTexture,
   createCyDepthTexture,
   CyRndrPipeline,
   CyCompPipeline,
   CyTexture,
-} from "./gpu-data-webgpu.js";
+} from "./data-webgpu.js";
 import {
   PtrKind,
   CyRegistry,
@@ -19,7 +19,7 @@ import {
   isRenderPipelinePtr,
   CyGlobalUsage,
   CyGlobal,
-  CyArrayBufferPtr,
+  CyArrayPtr,
   CyGlobalParam,
   CyRenderPipelinePtr,
 } from "./gpu-registry.js";
@@ -51,11 +51,11 @@ export function createCyResources(
   const cyNameToBufferUsage: { [name: string]: GPUBufferUsageFlags } = {};
   // all buffers are updatable via queue
   // TODO(@darzu): option for some to opt out? for perf?
-  [...cy.kindToPtrs.arrayBuffer, ...cy.kindToPtrs.oneBuffer].forEach(
+  [...cy.kindToPtrs.array, ...cy.kindToPtrs.singleton].forEach(
     (r) => (cyNameToBufferUsage[r.name] |= GPUBufferUsage.COPY_DST)
   );
   // all singleton buffers are probably used as uniforms
-  cy.kindToPtrs.oneBuffer.forEach(
+  cy.kindToPtrs.singleton.forEach(
     (p) => (cyNameToBufferUsage[p.name] |= GPUBufferUsage.UNIFORM)
   );
   // all pipeline global resources are storage or uniform
@@ -64,10 +64,10 @@ export function createCyResources(
     (p) =>
       p.globals.forEach((r) => {
         if (isResourcePtr(r)) {
-          if (r.kind === "oneBuffer" || r.kind === "arrayBuffer")
+          if (r.kind === "singleton" || r.kind === "array")
             cyNameToBufferUsage[r.name] |= GPUBufferUsage.STORAGE;
         } else {
-          if (r.ptr.kind === "oneBuffer" || r.ptr.kind === "arrayBuffer")
+          if (r.ptr.kind === "singleton" || r.ptr.kind === "array")
             cyNameToBufferUsage[r.ptr.name] |= GPUBufferUsage.STORAGE;
         }
       })
@@ -134,8 +134,8 @@ export function createCyResources(
   const kindToNameToRes: {
     [K in PtrKind]: { [name: string]: PtrKindToResourceType[K] };
   } = {
-    arrayBuffer: {},
-    oneBuffer: {},
+    array: {},
+    singleton: {},
     idxBuffer: {},
     texture: {},
     depthTexture: {},
@@ -169,16 +169,16 @@ export function createCyResources(
   }
 
   // create many-buffers
-  cy.kindToPtrs.arrayBuffer.forEach((r) => {
+  cy.kindToPtrs.array.forEach((r) => {
     const usage = cyNameToBufferUsage[r.name]!;
     const buf = createCyArray(device, r.struct, usage, r.init());
-    kindToNameToRes.arrayBuffer[r.name] = buf;
+    kindToNameToRes.array[r.name] = buf;
   });
   // create one-buffers
-  cy.kindToPtrs.oneBuffer.forEach((r) => {
+  cy.kindToPtrs.singleton.forEach((r) => {
     const usage = cyNameToBufferUsage[r.name]!;
-    const buf = createCyOne(device, r.struct, usage, r.init());
-    kindToNameToRes.oneBuffer[r.name] = buf;
+    const buf = createCySingleton(device, r.struct, usage, r.init());
+    kindToNameToRes.singleton[r.name] = buf;
   });
   // create idx-buffers
   cy.kindToPtrs.idxBuffer.forEach((r) => {
@@ -187,8 +187,8 @@ export function createCyResources(
   });
   // create mesh pools
   cy.kindToPtrs.meshPool.forEach((r) => {
-    const verts = kindToNameToRes.arrayBuffer[r.vertsPtr.name];
-    const unis = kindToNameToRes.arrayBuffer[r.unisPtr.name];
+    const verts = kindToNameToRes.array[r.vertsPtr.name];
+    const unis = kindToNameToRes.array[r.unisPtr.name];
     const triInds = kindToNameToRes.idxBuffer[r.triIndsPtr.name];
     const lineInds = kindToNameToRes.idxBuffer[r.lineIndsPtr.name];
     assert(
@@ -233,7 +233,7 @@ export function createCyResources(
       r: CyGlobalUsage<CyGlobal>,
       dynamic: boolean
     ): GPUBindGroupLayoutEntry {
-      if (r.ptr.kind === "oneBuffer" || r.ptr.kind === "arrayBuffer") {
+      if (r.ptr.kind === "singleton" || r.ptr.kind === "array") {
         // TODO(@darzu):
         // const struct = isResourcePtr(r) ? r.struct : r.ptr.
         return r.ptr.struct.layout(
@@ -301,7 +301,7 @@ export function createCyResources(
       r: CyGlobalUsage<CyGlobal>,
       plurality: "one" | "many"
     ) {
-      if (r.ptr.kind === "oneBuffer" || r.ptr.kind === "arrayBuffer") {
+      if (r.ptr.kind === "singleton" || r.ptr.kind === "array") {
         const structStr =
           `struct ${capitalize(r.ptr.name)} {\n` +
           r.ptr.struct.wgsl(true) +
@@ -332,7 +332,7 @@ export function createCyResources(
       groupIdx: number,
       bindingIdx: number
     ) {
-      if (r.ptr.kind === "oneBuffer" || r.ptr.kind === "arrayBuffer") {
+      if (r.ptr.kind === "singleton" || r.ptr.kind === "array") {
         const usage = r.ptr.struct.opts?.isUniform ? "uniform" : "storage";
         const varPrefix = GPUBufferBindingTypeToWgslVar[usage];
         const varName =
@@ -380,11 +380,11 @@ export function createCyResources(
     // shader resource setup
     const shaderResStructs = globalUsages.map((r) => {
       // TODO(@darzu): HACK
-      const plurality = r.ptr.kind === "oneBuffer" ? "one" : "many";
+      const plurality = r.ptr.kind === "singleton" ? "one" : "many";
       return globalToWgslDefs(r, plurality);
     });
     const shaderResVars = globalUsages.map((r, i) => {
-      const plurality = r.ptr.kind === "oneBuffer" ? "one" : "many";
+      const plurality = r.ptr.kind === "singleton" ? "one" : "many";
       return globalToWgslVars(r, plurality, 0, i);
     });
 
@@ -413,8 +413,8 @@ export function createCyResources(
       };
 
       if (p.meshOpt.stepMode === "per-instance") {
-        const vertBuf = kindToNameToRes.arrayBuffer[p.meshOpt.vertex.name];
-        const instBuf = kindToNameToRes.arrayBuffer[p.meshOpt.instance.name];
+        const vertBuf = kindToNameToRes.array[p.meshOpt.vertex.name];
+        const instBuf = kindToNameToRes.array[p.meshOpt.instance.name];
         const idxBuffer = kindToNameToRes.idxBuffer[p.meshOpt.index.name];
 
         const vertexInputStruct =
@@ -480,14 +480,13 @@ export function createCyResources(
         kindToNameToRes.renderPipeline[p.name] = cyPipeline;
       } else if (p.meshOpt.stepMode === "per-mesh-handle") {
         // TODO(@darzu): de-duplicate with above?
-        const vertBuf =
-          kindToNameToRes.arrayBuffer[p.meshOpt.pool.vertsPtr.name];
+        const vertBuf = kindToNameToRes.array[p.meshOpt.pool.vertsPtr.name];
         const idxBuffer =
           kindToNameToRes.idxBuffer[p.meshOpt.pool.triIndsPtr.name];
-        const uniBuf = kindToNameToRes.arrayBuffer[p.meshOpt.pool.unisPtr.name];
+        const uniBuf = kindToNameToRes.array[p.meshOpt.pool.unisPtr.name];
         const pool = kindToNameToRes.meshPool[p.meshOpt.pool.name];
 
-        const uniUsage: CyGlobalUsage<CyArrayBufferPtr<any>> = {
+        const uniUsage: CyGlobalUsage<CyArrayPtr<any>> = {
           ptr: p.meshOpt.pool.unisPtr,
           access: "read",
         };
@@ -708,7 +707,7 @@ export function bundleRenderPipelines(
     } else if (p.ptr.meshOpt.stepMode === "per-mesh-handle") {
       assert(!!p.pool && p.bindGroupLayouts.length >= 2);
       const uniBGLayout = p.bindGroupLayouts[1]; // TODO(@darzu): hacky convention?
-      const uniUsage: CyGlobalUsage<CyArrayBufferPtr<any>> = {
+      const uniUsage: CyGlobalUsage<CyArrayPtr<any>> = {
         ptr: p.ptr.meshOpt.pool.unisPtr,
         access: "read",
       };
@@ -748,11 +747,11 @@ function mkBindGroupEntry(
   bufPlurality: "one" | "many"
 ): GPUBindGroupEntry {
   const kindToNameToRes = resources.kindToNameToRes;
-  if (r.ptr.kind === "oneBuffer" || r.ptr.kind === "arrayBuffer") {
+  if (r.ptr.kind === "singleton" || r.ptr.kind === "array") {
     const buf =
-      r.ptr.kind === "oneBuffer"
-        ? kindToNameToRes.oneBuffer[r.ptr.name]
-        : kindToNameToRes.arrayBuffer[r.ptr.name];
+      r.ptr.kind === "singleton"
+        ? kindToNameToRes.singleton[r.ptr.name]
+        : kindToNameToRes.array[r.ptr.name];
     assert(!!buf, `Missing resource buffer: ${r.ptr.name}`);
     // TODO(@darzu): not super happy with how plurality is handled
     return buf.binding(idx, bufPlurality);

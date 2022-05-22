@@ -1,17 +1,4 @@
-import { mat4, vec3 } from "../gl-matrix.js";
-import { jitter } from "../math.js";
-import { range } from "../util.js";
-import { computeTriangleNormal } from "../utils-3d.js";
-import {
-  canvasTexturePtr,
-  CY,
-  CyTexturePtr,
-  linearSamplerPtr,
-} from "./gpu-registry.js";
-import { createCyStruct, CyToTS } from "./gpu-struct.js";
-import { MeshHandle } from "./mesh-pool.js";
-import { getAABBFromMesh, Mesh } from "./mesh.js";
-import { sceneBufPtr, canvasDepthTex } from "./std-pipeline.js";
+import { CY } from "./gpu-registry.js";
 
 const CLOTH_SIZE = 10; // TODO(@darzu):
 

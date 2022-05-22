@@ -24,20 +24,19 @@ export interface CyIdxBufferPtr extends CyResourcePtr {
   init: () => Uint16Array | number;
 }
 
-export interface CyArrayBufferPtr<O extends CyStructDesc>
-  extends CyResourcePtr {
-  kind: "arrayBuffer";
+export interface CyArrayPtr<O extends CyStructDesc> extends CyResourcePtr {
+  kind: "array";
   struct: CyStruct<O>;
   init: () => CyToTS<O>[] | number;
 }
-export interface CyOneBufferPtr<O extends CyStructDesc> extends CyResourcePtr {
-  kind: "oneBuffer";
+export interface CySingletonPtr<O extends CyStructDesc> extends CyResourcePtr {
+  kind: "singleton";
   struct: CyStruct<O>;
   init: () => CyToTS<O>;
 }
 export type CyBufferPtr<O extends CyStructDesc> =
-  | CyArrayBufferPtr<O>
-  | CyOneBufferPtr<O>;
+  | CyArrayPtr<O>
+  | CySingletonPtr<O>;
 
 // TEXUTRES
 
@@ -85,8 +84,8 @@ export interface CyMeshPoolPtr<V extends CyStructDesc, U extends CyStructDesc>
   // TODO(@darzu): remove id and name, this doesn't need to be inited directly
   computeVertsData: (m: Mesh) => CyToTS<V>[];
   computeUniData: (m: Mesh) => CyToTS<U>;
-  vertsPtr: CyArrayBufferPtr<V>;
-  unisPtr: CyArrayBufferPtr<U>;
+  vertsPtr: CyArrayPtr<V>;
+  unisPtr: CyArrayPtr<U>;
   triIndsPtr: CyIdxBufferPtr;
   lineIndsPtr: CyIdxBufferPtr;
 }
@@ -170,8 +169,8 @@ export function isRenderPipelinePtr(
 // REGISTERS
 
 export type PtrKindToPtrType = {
-  arrayBuffer: CyArrayBufferPtr<any>;
-  oneBuffer: CyOneBufferPtr<any>;
+  array: CyArrayPtr<any>;
+  singleton: CySingletonPtr<any>;
   idxBuffer: CyIdxBufferPtr;
   texture: CyTexturePtr;
   depthTexture: CyDepthTexturePtr;
@@ -193,8 +192,8 @@ export const CY: CyRegistry = createCyRegistry();
 export function createCyRegistry() {
   let nameToPtr: { [name: string]: CyResourcePtr } = {};
   let kindToPtrs: { [K in PtrKind]: PtrKindToPtrType[K][] } = {
-    arrayBuffer: [],
-    oneBuffer: [],
+    array: [],
+    singleton: [],
     idxBuffer: [],
     texture: [],
     depthTexture: [],
@@ -218,23 +217,23 @@ export function createCyRegistry() {
   return {
     nameToPtr,
     kindToPtrs,
-    registerOneBufPtr: <O extends CyStructDesc>(
+    registerSingletonPtr: <O extends CyStructDesc>(
       name: string,
-      desc: Omit_kind_name<CyOneBufferPtr<O>>
-    ): CyOneBufferPtr<O> => {
+      desc: Omit_kind_name<CySingletonPtr<O>>
+    ): CySingletonPtr<O> => {
       return registerCyResource({
         ...desc,
-        kind: "oneBuffer",
+        kind: "singleton",
         name,
       });
     },
-    registerArrayBufferPtr: <O extends CyStructDesc>(
+    registerArrayPtr: <O extends CyStructDesc>(
       name: string,
-      desc: Omit_kind_name<CyArrayBufferPtr<O>>
-    ): CyArrayBufferPtr<O> => {
+      desc: Omit_kind_name<CyArrayPtr<O>>
+    ): CyArrayPtr<O> => {
       return registerCyResource({
         ...desc,
-        kind: "arrayBuffer",
+        kind: "array",
         name,
       });
     },
