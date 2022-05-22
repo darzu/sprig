@@ -4,7 +4,7 @@ import { mat4, quat, vec2, vec3, vec4 } from "../gl-matrix.js";
 import { align, max, sum } from "../math.js";
 import { assert } from "../test.js";
 import { Intersect, isNumber, objMap } from "../util.js";
-import { CyDepthTexturePtr, CyTexturePtr } from "./render_webgpu.js";
+import { CyTexturePtr, CyDepthTexturePtr } from "./gpu-registry.js";
 
 const WGSLScalars = ["bool", "i32", "u32", "f32", "f16"] as const;
 type WGSLScalar = typeof WGSLScalars[number];

@@ -11,22 +11,21 @@ import {
   CyStructDesc,
   CyToTS,
 } from "./data.js";
-import { MeshHandle, MeshPoolOpts } from "./mesh-pool.js";
-import { getAABBFromMesh, Mesh } from "./mesh.js";
 import {
-  registerCompPipeline,
-  registerRenderPipeline,
-  registerIdxBufPtr,
-  registerTexPtr,
-  CyTexturePtr,
-  registerMeshPoolPtr,
   registerOneBufPtr,
   registerManyBufPtr,
-  canvasTexturePtr,
-  linearSamplerPtr,
-  nearestSamplerPtr,
+  registerCompPipeline,
+  registerIdxBufPtr,
   registerDepthTexPtr,
-} from "./render_webgpu.js";
+  registerRenderPipeline,
+  canvasTexturePtr,
+  registerTexPtr,
+  registerMeshPoolPtr,
+  CyTexturePtr,
+  linearSamplerPtr,
+} from "./gpu-registry.js";
+import { MeshHandle, MeshPoolOpts } from "./mesh-pool.js";
+import { getAABBFromMesh, Mesh } from "./mesh.js";
 import {
   cloth_shader,
   mesh_shader,
@@ -41,11 +40,11 @@ import {
 //  [x] textures and samplers as resources
 //  [x] resource ping-ponging for cloth texs and boids
 //  [x] shader VertexInput struct auto gen
-//  [ ] debug view of the depth buffer
+//  [x] debug view of the depth buffer
 //  [ ] shadows
 //  [x] debug view of any texture
-//  [ ] dynamic resizing texture based on canvas size
-//  [ ] split screen
+//  [x] dynamic resizing texture based on canvas size
+//  [x] split screen
 //  [ ] re-enable anti aliasing
 //  [ ] ECS integration w/ custom gpu data
 //  [ ] general usable particle system

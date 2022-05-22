@@ -1,21 +1,12 @@
 import { mat4 } from "../gl-matrix.js";
 import { assert } from "../test.js";
-import {
-  capitalize,
-  isArray,
-  isNumber,
-  never,
-  pluralize,
-  uncapitalize,
-  Union,
-} from "../util.js";
+import { capitalize, never, pluralize, uncapitalize } from "../util.js";
 import {
   createCyDepthTexture,
   createCyIdxBuf,
   createCyMany,
   createCyOne,
   createCyTexture,
-  CyBuffer,
   CyDepthTexture,
   CyIdxBuffer,
   CyMany,
@@ -25,231 +16,32 @@ import {
   CyTexture,
   CyToTS,
   GPUBufferBindingTypeToWgslVar,
-  TexTypeAsTSType,
   texTypeIsDepth,
-  texTypeToBytes,
-  TexTypeToTSType,
 } from "./data.js";
 import {
-  createMeshPool,
-  MeshHandle,
-  MeshPool,
-  MeshPoolOpts,
-} from "./mesh-pool.js";
+  CySampler,
+  PtrKindToPtrType,
+  PtrKind,
+  CyCompPipelinePtr,
+  CyRndrPipelinePtr,
+  isResourcePtr,
+  CyGlobalUsage,
+  CyGlobal,
+  CyManyBufferPtr,
+  CyGlobalParam,
+  _cyKindToPtrs,
+  isRenderPipelinePtr,
+} from "./gpu-registry.js";
+import { createMeshPool, MeshPool } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import {
   SceneStruct,
-  RopeStickStruct,
-  RopePointStruct,
   MeshUniformStruct,
   VertexStruct,
-  setupScene,
-  VertexTS,
-  MeshUniformTS,
-  computeUniData,
-  computeVertsData,
   MeshHandleStd,
-  meshPoolPtr,
 } from "./pipelines.js";
 import { Renderer } from "./renderer.js";
-import {
-  cloth_shader,
-  rope_shader,
-  // obj_vertShader,
-  // obj_fragShader,
-  particle_shader,
-} from "./shaders.js";
 
-// render pipeline parameters
-// TODO(@darzu): ENABLE AA
-// export const antiAliasSampleCount = 4;
-interface CyResourcePtr {
-  kind: PtrKind;
-  name: string;
-}
-
-// BUFFERS
-export interface CyIdxBufferPtr extends CyResourcePtr {
-  kind: "idxBuffer";
-  init: () => Uint16Array | number;
-}
-
-export interface CyManyBufferPtr<O extends CyStructDesc> extends CyResourcePtr {
-  kind: "manyBuffer";
-  struct: CyStruct<O>;
-  init: () => CyToTS<O>[] | number;
-}
-export interface CyOneBufferPtr<O extends CyStructDesc> extends CyResourcePtr {
-  kind: "oneBuffer";
-  struct: CyStruct<O>;
-  init: () => CyToTS<O>;
-}
-export type CyBufferPtr<O extends CyStructDesc> =
-  | CyManyBufferPtr<O>
-  | CyOneBufferPtr<O>;
-
-// TEXUTRES
-
-export interface CyTexturePtr extends CyResourcePtr {
-  kind: "texture";
-  size: [number, number];
-  onCanvasResize?: (
-    canvasWidth: number,
-    canvasHeight: number
-  ) => [number, number];
-  format: GPUTextureFormat;
-  // TODO(@darzu): is this where we want to expose this?
-  // TODO(@darzu): we need agreement with the pipeline
-  sampleCount?: number;
-  init: () => Float32Array | undefined; // TODO(@darzu): | TexTypeAsTSType<F>[]
-}
-
-export interface CyDepthTexturePtr extends Omit<CyTexturePtr, "kind"> {
-  kind: "depthTexture";
-  format: keyof typeof texTypeIsDepth;
-  // TODO(@darzu): other depth properties?
-}
-
-export const canvasTexturePtr = {
-  kind: "canvasTexture",
-  name: "canvas",
-} as const;
-export type CyCanvasTexturePtr = typeof canvasTexturePtr;
-
-export const linearSamplerPtr = {
-  kind: "sampler",
-  name: "linearSampler",
-} as const;
-export const nearestSamplerPtr = {
-  kind: "sampler",
-  name: "nearestSampler",
-} as const;
-export type CySamplerPtr = typeof linearSamplerPtr | typeof nearestSamplerPtr;
-export interface CySampler {
-  ptr: CySamplerPtr;
-  sampler: GPUSampler;
-}
-
-// MESH POOL
-export interface CyMeshPoolPtr<V extends CyStructDesc, U extends CyStructDesc>
-  extends CyResourcePtr {
-  kind: "meshPool";
-  // TODO(@darzu): remove id and name, this doesn't need to be inited directly
-  computeVertsData: (m: Mesh) => CyToTS<V>[];
-  computeUniData: (m: Mesh) => CyToTS<U>;
-  vertsPtr: CyManyBufferPtr<V>;
-  unisPtr: CyManyBufferPtr<U>;
-  triIndsPtr: CyIdxBufferPtr;
-  lineIndsPtr: CyIdxBufferPtr;
-}
-
-// PIPELINES
-
-// TODO(@darzu): support more access modes?
-// TODO(@darzu): like buffer access modes, is this possibly inferable?
-export interface CyGlobalUsage<G extends CyResourcePtr> {
-  ptr: G;
-  // TODO(@darzu): access doesn't make sense for all globals, like samplers
-  access?: "read" | "write";
-  alias?: string;
-}
-
-// TODO(@darzu): i know there is some fancy type way to construct this but i
-//    can't figure it out.
-export type CyGlobal =
-  | CyTexturePtr
-  | CyDepthTexturePtr
-  | CyBufferPtr<any>
-  | CySamplerPtr;
-export type CyGlobalParam =
-  | CyGlobal
-  | CyGlobalUsage<CyTexturePtr>
-  | CyGlobalUsage<CyDepthTexturePtr>
-  | CyGlobalUsage<CyBufferPtr<any>>
-  | CyGlobalUsage<CySamplerPtr>;
-
-export function isResourcePtr(p: any): p is CyResourcePtr {
-  return !!(p as CyResourcePtr).kind;
-}
-
-export interface CyCompPipelinePtr extends CyResourcePtr {
-  kind: "compPipeline";
-  resources: CyGlobalParam[]; // TODO(@darzu): rename "resources" to "globals"?
-  workgroupCounts?: [number, number, number];
-  shaderComputeEntry: string;
-  shader: () => string;
-}
-
-export interface CyCompPipeline {
-  ptr: CyCompPipelinePtr;
-  // resourceLayouts: CyBufferPtrLayout<CyStructDesc>[];
-  pipeline: GPUComputePipeline;
-  bindGroupLayout: GPUBindGroupLayout;
-}
-
-type CyMeshOpt =
-  | {
-      pool: CyMeshPoolPtr<any, any>;
-      stepMode: "per-mesh-handle";
-    }
-  | {
-      vertex: CyBufferPtr<any>;
-      instance: CyBufferPtr<any>;
-      index: CyIdxBufferPtr;
-      stepMode: "per-instance";
-    }
-  | {
-      // TODO(@darzu): or just support
-      vertexCount: number;
-      stepMode: "single-draw";
-    };
-
-export interface CyRndrPipelinePtr extends CyResourcePtr {
-  kind: "renderPipeline";
-  resources: CyGlobalParam[];
-  shader: () => string;
-  shaderVertexEntry: string;
-  shaderFragmentEntry: string;
-  meshOpt: CyMeshOpt;
-  output: CyTexturePtr | CyCanvasTexturePtr;
-  depthStencil: CyDepthTexturePtr;
-}
-
-// TODO(@darzu): instead of just mushing together with the desc, have desc compose in
-export interface CyRndrPipeline {
-  ptr: CyRndrPipelinePtr;
-  // resourceLayouts: CyBufferPtrLayout<any>[];
-  vertexBuf?: CyMany<any>;
-  indexBuf?: CyIdxBuffer;
-  instanceBuf?: CyMany<any>;
-  pool?: MeshPool<any, any>;
-  pipeline: GPURenderPipeline;
-  bindGroupLayouts: GPUBindGroupLayout[];
-}
-
-// HELPERS
-
-function isRenderPipelinePtr(
-  p: CyRndrPipelinePtr | CyCompPipelinePtr
-): p is CyRndrPipelinePtr {
-  const k: keyof CyRndrPipelinePtr = "meshOpt";
-  return k in p;
-}
-
-// REGISTERS
-
-type PtrKindToPtrType = {
-  manyBuffer: CyManyBufferPtr<any>;
-  oneBuffer: CyOneBufferPtr<any>;
-  idxBuffer: CyIdxBufferPtr;
-  texture: CyTexturePtr;
-  depthTexture: CyDepthTexturePtr;
-  compPipeline: CyCompPipelinePtr;
-  renderPipeline: CyRndrPipelinePtr;
-  meshPool: CyMeshPoolPtr<any, any>;
-  canvasTexture: CyCanvasTexturePtr;
-  sampler: CySamplerPtr;
-};
 type PtrKindToResourceType = {
   manyBuffer: CyMany<any>;
   oneBuffer: CyOne<any>;
@@ -265,121 +57,30 @@ type PtrKindToResourceType = {
 type Assert_ResourceTypePtrTypeMatch =
   PtrKindToPtrType[keyof PtrKindToResourceType] &
     PtrKindToResourceType[keyof PtrKindToPtrType];
-type PtrKind = keyof PtrKindToPtrType;
-type PtrType = PtrKindToPtrType[PtrKind];
+
 // type PtrDesc<K extends PtrKind> = Omit<
 //   Omit<PtrKindToPtrType[K], "name">,
 //   "kind"
 // >;
 type ResourceType = PtrKindToResourceType[PtrKind];
 
-let _cyNameToPtr: { [name: string]: CyResourcePtr } = {};
-let _cyKindToPtrs: { [K in PtrKind]: PtrKindToPtrType[K][] } = {
-  manyBuffer: [],
-  oneBuffer: [],
-  idxBuffer: [],
-  texture: [],
-  depthTexture: [],
-  compPipeline: [],
-  renderPipeline: [],
-  meshPool: [],
-  canvasTexture: [canvasTexturePtr],
-  sampler: [linearSamplerPtr, nearestSamplerPtr],
-};
-function registerCyResource<R extends CyResourcePtr>(ptr: R): R {
-  assert(
-    !_cyNameToPtr[ptr.name],
-    `already registered Cy resource with name: ${ptr.name}`
-  );
-  _cyNameToPtr[ptr.name] = ptr;
-  _cyKindToPtrs[ptr.kind].push(ptr as any);
-  return ptr;
+export interface CyCompPipeline {
+  ptr: CyCompPipelinePtr;
+  // resourceLayouts: CyBufferPtrLayout<CyStructDesc>[];
+  pipeline: GPUComputePipeline;
+  bindGroupLayout: GPUBindGroupLayout;
 }
 
-type Omit_kind_name<T> = Omit<Omit<T, "kind">, "name">;
-
-export function registerOneBufPtr<O extends CyStructDesc>(
-  name: string,
-  desc: Omit_kind_name<CyOneBufferPtr<O>>
-): CyOneBufferPtr<O> {
-  return registerCyResource({
-    ...desc,
-    kind: "oneBuffer",
-    name,
-  });
-}
-export function registerManyBufPtr<O extends CyStructDesc>(
-  name: string,
-  desc: Omit_kind_name<CyManyBufferPtr<O>>
-): CyManyBufferPtr<O> {
-  return registerCyResource({
-    ...desc,
-    kind: "manyBuffer",
-    name,
-  });
-}
-export function registerIdxBufPtr(
-  name: string,
-  desc: Omit_kind_name<CyIdxBufferPtr>
-): CyIdxBufferPtr {
-  return registerCyResource({
-    ...desc,
-    kind: "idxBuffer",
-    name,
-  });
-}
-export function registerTexPtr(
-  name: string,
-  desc: Omit_kind_name<CyTexturePtr>
-): CyTexturePtr {
-  return registerCyResource({
-    ...desc,
-    kind: "texture",
-    name,
-  });
-}
-export function registerDepthTexPtr(
-  name: string,
-  desc: Omit_kind_name<CyDepthTexturePtr>
-): CyDepthTexturePtr {
-  return registerCyResource({
-    ...desc,
-    kind: "depthTexture",
-    name,
-  });
-}
-export function registerCompPipeline(
-  name: string,
-  desc: Omit_kind_name<CyCompPipelinePtr>
-): CyCompPipelinePtr {
-  return registerCyResource({
-    ...desc,
-    kind: "compPipeline",
-    name,
-  });
-}
-export function registerRenderPipeline(
-  name: string,
-  desc: Omit_kind_name<CyRndrPipelinePtr>
-): CyRndrPipelinePtr {
-  return registerCyResource({
-    ...desc,
-    kind: "renderPipeline",
-    name,
-  });
-}
-export function registerMeshPoolPtr<
-  V extends CyStructDesc,
-  U extends CyStructDesc
->(
-  name: string,
-  desc: Omit_kind_name<CyMeshPoolPtr<V, U>>
-): CyMeshPoolPtr<V, U> {
-  return registerCyResource({
-    ...desc,
-    kind: "meshPool",
-    name,
-  });
+// TODO(@darzu): instead of just mushing together with the desc, have desc compose in
+export interface CyRndrPipeline {
+  ptr: CyRndrPipelinePtr;
+  // resourceLayouts: CyBufferPtrLayout<any>[];
+  vertexBuf?: CyMany<any>;
+  indexBuf?: CyIdxBuffer;
+  instanceBuf?: CyMany<any>;
+  pool?: MeshPool<any, any>;
+  pipeline: GPURenderPipeline;
+  bindGroupLayouts: GPUBindGroupLayout[];
 }
 
 const prim_tris: GPUPrimitiveState = {
