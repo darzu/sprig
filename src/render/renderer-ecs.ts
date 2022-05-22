@@ -1,37 +1,15 @@
-import { Canvas, CanvasDef } from "../canvas.js";
-import {
-  EntityManager,
-  EM,
-  Component,
-  EntityW,
-  Entity,
-} from "../entity-manager.js";
+import { EntityManager, EM, Entity } from "../entity-manager.js";
 import { applyTints, TintsDef } from "../color.js";
-import { PlayerDef } from "../game/player.js";
-import {
-  CameraDef,
-  CameraProps,
-  CameraView,
-  CameraViewDef,
-} from "../camera.js";
+import { CameraView, CameraViewDef } from "../camera.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
-import { isMeshHandle, MeshHandle } from "./mesh-pool.js";
+import { isMeshHandle } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
-import { Authority, AuthorityDef, Me, MeDef } from "../net/components.js";
-import { createFrame, WorldFrameDef } from "../physics/nonintersection.js";
-import { RendererDef } from "./render-init.js";
-import { tempQuat, tempVec } from "../temp-pool.js";
+import { createFrame } from "../physics/nonintersection.js";
 import { PhysicsTimerDef } from "../time.js";
 import {
-  PhysicsParent,
-  Position,
-  PositionDef,
-  Rotation,
-  RotationDef,
   Frame,
   TransformDef,
   PhysicsParentDef,
-  ScaleDef,
   updateFrameFromTransform,
   updateFrameFromPosRotScale,
 } from "../physics/transform.js";
@@ -39,8 +17,9 @@ import { ColorDef } from "../color.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DeletedDef } from "../delete.js";
 import { MeshHandleStd } from "./std-pipeline.js";
-
-// TODO(@darzu): name it cytochrome
+import { CanvasDef } from "../canvas.js";
+import { FORCE_WEBGL } from "../main.js";
+import { createWebGPURenderer } from "./render-webgpu.js";
 
 export interface RenderableConstruct {
   readonly enabled: boolean;
@@ -63,14 +42,6 @@ export const RenderableConstructDef = EM.defineComponent(
     return r;
   }
 );
-
-function createEmptyMesh(): Mesh {
-  return {
-    pos: [],
-    tri: [],
-    colors: [],
-  };
-}
 
 export interface Renderable {
   enabled: boolean;
@@ -241,4 +212,59 @@ export interface Renderer {
   addMeshInstance(h: MeshHandleStd): MeshHandleStd;
   updateMesh(handle: MeshHandleStd, newMeshData: Mesh): void;
   renderFrame(viewMatrix: mat4, handles: MeshHandleStd[]): void;
+}
+
+export const RendererDef = EM.defineComponent(
+  "renderer",
+  (renderer: Renderer, usingWebGPU: boolean) => {
+    return {
+      renderer,
+      usingWebGPU,
+    };
+  }
+);
+
+let _rendererPromise: Promise<void> | null = null;
+
+export function registerRenderInitSystem(em: EntityManager) {
+  em.registerSystem(
+    [],
+    [CanvasDef],
+    (_, res) => {
+      if (!!em.getResource(RendererDef)) return; // already init
+      if (!!_rendererPromise) return;
+      _rendererPromise = chooseAndInitRenderer(em, res.htmlCanvas.canvas);
+    },
+    "renderInit"
+  );
+}
+
+async function chooseAndInitRenderer(
+  em: EntityManager,
+  canvas: HTMLCanvasElement
+): Promise<void> {
+  let renderer: Renderer | undefined = undefined;
+  let usingWebGPU = false;
+  if (!FORCE_WEBGL) {
+    // try webgpu first
+    const adapter = await navigator.gpu?.requestAdapter();
+    if (adapter) {
+      const device = await adapter.requestDevice();
+      // TODO(@darzu): uses cast while waiting for webgpu-types.d.ts to be updated
+      const context = canvas.getContext("webgpu");
+      if (context) {
+        renderer = createWebGPURenderer(canvas, device, context);
+        if (renderer) usingWebGPU = true;
+      }
+    }
+  }
+  // TODO(@darzu): re-enable WebGL
+  // if (!rendererInit)
+  //   rendererInit = attachToCanvasWebgl(canvas, MAX_MESHES, MAX_VERTICES);
+  if (!renderer) throw "Unable to create webgl or webgpu renderer";
+  console.log(`Renderer: ${usingWebGPU ? "webGPU" : "webGL"}`);
+
+  // add to ECS
+  // TODO(@darzu): this is a little wierd to do this in an async callback
+  em.addSingletonComponent(RendererDef, renderer, usingWebGPU);
 }

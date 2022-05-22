@@ -11,7 +11,10 @@ import {
   PhysicsStateDef,
   WorldFrameDef,
 } from "./nonintersection.js";
-import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
+import {
+  RenderableConstructDef,
+  RenderableDef,
+} from "../render/renderer-ecs.js";
 import {
   copyFrame,
   LocalFrameDefs,

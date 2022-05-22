@@ -4,7 +4,7 @@ import { vec3 } from "./gl-matrix.js";
 import { WorldFrameDef } from "./physics/nonintersection.js";
 import { PositionDef } from "./physics/transform.js";
 import { Mesh } from "./render/mesh.js";
-import { RenderableConstructDef } from "./render/renderer.js";
+import { RenderableConstructDef } from "./render/renderer-ecs.js";
 
 // TODO(@darzu): move this helper elsewhere?
 // TODO(@darzu): would be dope to support thickness;

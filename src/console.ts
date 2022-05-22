@@ -7,7 +7,7 @@ import {
   _enclosedBys,
   _cellChecks,
 } from "./physics/broadphase.js";
-import { RendererDef } from "./render/render-init.js";
+import { RendererDef } from "./render/renderer-ecs.js";
 
 export const DevConsoleDef = EM.defineComponent("dev", () => {
   const stats = {

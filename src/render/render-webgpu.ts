@@ -3,7 +3,7 @@ import { assert } from "../test.js";
 import { CyRndrPipelinePtr, CY, CyCompPipelinePtr } from "./gpu-registry.js";
 import { MeshPool } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
-import { Renderer } from "./renderer.js";
+import { Renderer } from "./renderer-ecs.js";
 import { CyRndrPipeline, CyCompPipeline, CyOne } from "./gpu-data-webgpu.js";
 import {
   VertexStruct,

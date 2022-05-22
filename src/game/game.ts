@@ -4,7 +4,7 @@ import {
   registerConstructRenderablesSystem,
   registerRenderer,
   registerUpdateRendererWorldFrames,
-} from "../render/renderer.js";
+} from "../render/renderer-ecs.js";
 import { PositionDef, registerInitTransforms } from "../physics/transform.js";
 import { registerBoatSystems } from "./boat.js";
 import {
@@ -41,7 +41,7 @@ import { registerInitCanvasSystem } from "../canvas.js";
 import {
   registerRenderInitSystem,
   RendererDef,
-} from "../render/render-init.js";
+} from "../render/renderer-ecs.js";
 import { registerDeleteEntitiesSystem } from "../delete.js";
 import { registerCannonSystems } from "./cannon.js";
 import { registerInteractionSystem } from "./interact.js";

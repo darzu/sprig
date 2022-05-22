@@ -8,9 +8,12 @@ import {
   unshareProvokingVertices,
 } from "../render/mesh.js";
 import { PositionDef } from "../physics/transform.js";
-import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
+import {
+  RenderableConstructDef,
+  RenderableDef,
+} from "../render/renderer-ecs.js";
 import { assert } from "../test.js";
-import { RendererDef } from "../render/render-init.js";
+import { RendererDef } from "../render/renderer-ecs.js";
 import { vec3 } from "../gl-matrix.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { CUBE_FACES, CUBE_MESH } from "./assets.js";

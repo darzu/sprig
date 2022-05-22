@@ -3,7 +3,7 @@ import { Mesh } from "../render/mesh.js";
 import {
   RenderableConstructDef,
   RendererWorldFrameDef,
-} from "../render/renderer.js";
+} from "../render/renderer-ecs.js";
 import {
   PositionDef,
   updateFrameFromPosRotScale,

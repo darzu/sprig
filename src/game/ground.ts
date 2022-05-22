@@ -7,7 +7,7 @@ import {
   EntityW,
 } from "../entity-manager.js";
 import { mat4, quat, vec2, vec3 } from "../gl-matrix.js";
-import { RenderableConstructDef } from "../render/renderer.js";
+import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { ScoreDef } from "./game.js";
 import { MeDef } from "../net/components.js";
@@ -16,7 +16,7 @@ import { transformMesh } from "../render/mesh.js";
 import { defineNetEntityHelper } from "../em_helpers.js";
 import { assert } from "../test.js";
 import { ColorDef } from "../color.js";
-import { RendererDef } from "../render/render-init.js";
+import { RendererDef } from "../render/renderer-ecs.js";
 import {
   createHexGrid,
   hexDist,

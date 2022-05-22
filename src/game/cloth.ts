@@ -9,8 +9,11 @@ import { Assets, AssetsDef } from "./assets.js";
 import { SpringType, SpringGridDef, ForceDef } from "./spring.js";
 import { onInit } from "../init.js";
 import { Mesh, unshareProvokingVerticesWithMap } from "../render/mesh.js";
-import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
-import { RendererDef } from "../render/render-init.js";
+import {
+  RenderableConstructDef,
+  RenderableDef,
+} from "../render/renderer-ecs.js";
+import { RendererDef } from "../render/renderer-ecs.js";
 import { ColorDef } from "../color.js";
 import { tempVec } from "../temp-pool.js";
 

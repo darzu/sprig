@@ -4,7 +4,7 @@ import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { AABB } from "../physics/broadphase.js";
-import { RenderableConstructDef } from "../render/renderer.js";
+import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import {
   PhysicsParentDef,
   PositionDef,

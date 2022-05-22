@@ -11,7 +11,7 @@ import {
   PhysicsStateDef,
 } from "../physics/nonintersection.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
-import { RenderableConstructDef } from "../render/renderer.js";
+import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { tempVec } from "../temp-pool.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
