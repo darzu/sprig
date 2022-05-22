@@ -1,23 +1,10 @@
 import { mat4 } from "../gl-matrix.js";
 import { assert } from "../test.js";
-import { never } from "../util.js";
-import {
-  CyRndrPipelinePtr,
-  CyGlobalUsage,
-  CyGlobal,
-  CyManyBufferPtr,
-  CY,
-  CyCompPipelinePtr,
-} from "./gpu-registry.js";
+import { CyRndrPipelinePtr, CY, CyCompPipelinePtr } from "./gpu-registry.js";
 import { MeshPool } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import { Renderer } from "./renderer.js";
-import {
-  CyRndrPipeline,
-  CyCompPipeline,
-  CyOne,
-  CyTexture,
-} from "./gpu-data-webgpu.js";
+import { CyRndrPipeline, CyCompPipeline, CyOne } from "./gpu-data-webgpu.js";
 import {
   VertexStruct,
   MeshUniformStruct,
@@ -42,8 +29,8 @@ import {
 import {
   bundleRenderPipelines,
   createCyResources,
-  mkBindGroup,
-  normalizeResources,
+  doCompute,
+  renderBundles,
 } from "./instantiator-webgpu.js";
 
 export function createWebGPURenderer(
@@ -164,41 +151,6 @@ export function createWebGPURenderer(
     return true;
   }
 
-  function textureAttachment(tex: CyTexture): GPURenderPassColorAttachment {
-    // TODO(@darzu): parameterizable?
-    return {
-      view: tex.texture.createView(),
-      // loadOp: "load",
-      // TODO(@darzu): handle load vs clear
-      loadOp: "clear",
-      clearValue: {
-        r: renderer.backgroundColor[0],
-        g: renderer.backgroundColor[1],
-        b: renderer.backgroundColor[2],
-        a: 1,
-      },
-      storeOp: "store",
-    };
-  }
-
-  function canvasAttachment(clear?: boolean): GPURenderPassColorAttachment {
-    return {
-      // TODO(@darzu): ANTI-ALIAS; for some reason this is tangled in AA?
-      // view: canvasTextureView!,
-      // resolveTarget: context.getCurrentTexture().createView(),
-      view: context.getCurrentTexture().createView(),
-      // TODO(@darzu): is this how we want to handle load vs clear?
-      loadOp: clear ? "clear" : "load",
-      clearValue: {
-        r: renderer.backgroundColor[0],
-        g: renderer.backgroundColor[1],
-        b: renderer.backgroundColor[2],
-        a: 1,
-      },
-      storeOp: "store",
-    };
-  }
-
   function addMesh(m: Mesh): MeshHandleStd {
     const handle: MeshHandleStd = pool.addMesh(m);
     return handle;
@@ -272,82 +224,17 @@ export function createWebGPURenderer(
 
     // run compute shaders
     for (let p of computePipelines()) {
-      const compPassEncoder = commandEncoder.beginComputePass();
-      compPassEncoder.setPipeline(p.pipeline);
-
-      // TODO(@darzu): de-dupe?
-      const resBindGroupLayout = p.bindGroupLayout;
-      const resUsages = normalizeResources(p.ptr.resources);
-      const resBindGroup = mkBindGroup(
-        device,
-        resources,
-        resBindGroupLayout,
-        resUsages,
-        "many"
-      );
-
-      compPassEncoder.setBindGroup(0, resBindGroup);
-      // TODO(@darzu): parameterize workgroup count
-      compPassEncoder.dispatchWorkgroups(
-        ...(p.ptr.workgroupCounts ?? [1, 1, 1])
-      );
-      compPassEncoder.end();
+      doCompute(device, resources, commandEncoder, p);
     }
 
-    // TODO(@darzu): support multi-output
-    function isOutputEq(a: CyRndrPipelinePtr, b: CyRndrPipelinePtr) {
-      return (
-        a.output.name === b.output.name &&
-        a.depthStencil.name === b.depthStencil.name
-      );
-    }
-
-    // render bundles
-    // TODO(@darzu): ordering needs to be set by outside config
-    // TODO(@darzu): same attachments need to be shared
-    let lastPipeline: CyRndrPipelinePtr | undefined;
-    let renderPassEncoder: GPURenderPassEncoder | undefined;
-    for (let p of renderPipelines()) {
-      // console.log(`rendering ${p.ptr.name}`);
-      const bundle = cyRenderToBundle[p.ptr.name];
-
-      if (
-        !renderPassEncoder ||
-        !lastPipeline ||
-        !isOutputEq(lastPipeline, p.ptr)
-      ) {
-        let colorAttachments: GPURenderPassColorAttachment[] = [
-          p.ptr.output,
-        ].map((o) => {
-          const isFirst = !lastPipeline;
-          const doClear = isFirst;
-          if (o.kind === "canvasTexture") return canvasAttachment(doClear);
-          else if (o.kind === "texture") {
-            let tex = cyKindToNameToRes.texture[o.name]!;
-            return textureAttachment(tex);
-          } else {
-            never(o, "TO IMPL");
-          }
-        });
-        const depthTex =
-          cyKindToNameToRes.depthTexture[p.ptr.depthStencil.name];
-        const depthAtt = depthTex.depthAttachment();
-
-        renderPassEncoder?.end();
-        renderPassEncoder = commandEncoder.beginRenderPass({
-          // TODO(@darzu): OUTPUT, different render targets
-          //    need different pass per different output; start with one bundle per pipeline
-          colorAttachments,
-          // TODO(@darzu): parameterize depth attachment?
-          depthStencilAttachment: depthAtt,
-        });
-      }
-
-      renderPassEncoder.executeBundles([bundle]);
-
-      lastPipeline = p.ptr;
-    }
-    renderPassEncoder?.end();
+    // render
+    renderBundles(
+      context,
+      commandEncoder,
+      resources,
+      renderPipelines().map((p) => [p, cyRenderToBundle[p.ptr.name]]),
+      renderer.backgroundColor
+    );
 
     // submit render passes to GPU
     device.queue.submit([commandEncoder.finish()]);
