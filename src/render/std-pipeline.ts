@@ -8,6 +8,26 @@ import { Mesh, getAABBFromMesh } from "./mesh.js";
 export const MAX_MESHES = 20000;
 export const MAX_VERTICES = 21844;
 
+// TODO:
+//  [x] pipeline attachements / outputs
+//        use case: two cameras
+//  [ ] mesh pool handle enable/disable
+//  [x] textures and samplers as resources
+//  [x] resource ping-ponging for cloth texs and boids
+//  [x] shader VertexInput struct auto gen
+//  [x] debug view of the depth buffer
+//  [ ] shadows
+//  [x] debug view of any texture
+//  [x] dynamic resizing texture based on canvas size
+//  [x] split screen
+//  [ ] re-enable anti aliasing
+//  [ ] ECS integration w/ custom gpu data
+//  [ ] general usable particle system
+//  [ ] split *ptr CY.register from webgpu impl
+//  [ ] webgl impl
+//  [ ] multiple pipeline outputs
+//  [ ] deferred rendering
+
 export const VertexStruct = createCyStruct(
   {
     position: "vec3<f32>",

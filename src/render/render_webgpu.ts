@@ -13,6 +13,7 @@ import {
   isRenderPipelinePtr,
   CY,
   CyRegistry,
+  CyCompPipelinePtr,
 } from "./gpu-registry.js";
 import { createMeshPool, MeshPool } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
@@ -34,7 +35,22 @@ import {
   MeshUniformStruct,
   SceneStruct,
   MeshHandleStd,
+  renderTriPipelineDesc,
 } from "./std-pipeline.js";
+import {
+  cmpClothPipelinePtr0,
+  cmpClothPipelinePtr1,
+} from "./xp-cloth-pipeline.js";
+import {
+  compRopePipelinePtr,
+  renderRopePipelineDesc,
+} from "./xp-ropestick-pipeline.js";
+import {
+  boidCanvasMerge,
+  boidComp0,
+  boidComp1,
+  boidRender,
+} from "./xp-boids-pipeline.js";
 
 const prim_tris: GPUPrimitiveState = {
   topology: "triangle-list",
@@ -687,6 +703,35 @@ export function createWebGPURenderer(
     renderer.drawTris,
   ];
 
+  let renderPipelinesPtrs: CyRndrPipelinePtr[] = [
+    renderTriPipelineDesc,
+    renderRopePipelineDesc,
+    boidRender,
+    boidCanvasMerge,
+  ];
+  let computePipelinesPtrs: CyCompPipelinePtr[] = [
+    cmpClothPipelinePtr0,
+    cmpClothPipelinePtr1,
+    compRopePipelinePtr,
+    boidComp0,
+    boidComp1,
+  ];
+
+  function renderPipelines(): CyRndrPipeline[] {
+    return renderPipelinesPtrs.map((p) => {
+      const res = cyKindToNameToRes.renderPipeline[p.name];
+      assert(res, `Resource not initialized: ${p.name}`);
+      return res;
+    });
+  }
+  function computePipelines(): CyCompPipeline[] {
+    return computePipelinesPtrs.map((p) => {
+      const res = cyKindToNameToRes.compPipeline[p.name];
+      assert(res, `Resource not initialized: ${p.name}`);
+      return res;
+    });
+  }
+
   // TODO(@darzu): IMPL
   const cyRenderToBundle: { [pipelineName: string]: GPURenderBundle } = {};
 
@@ -840,7 +885,7 @@ export function createWebGPURenderer(
 
     // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
     // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
-    for (let p of Object.values(cyKindToNameToRes.renderPipeline)) {
+    for (let p of renderPipelines()) {
       // TODO(@darzu): OUTPUT, pipeline.output;
       //    just airty and color here
       //    need bundle per-pipeline, or per same output
@@ -950,7 +995,7 @@ export function createWebGPURenderer(
     const commandEncoder = device.createCommandEncoder();
 
     // run compute shaders
-    for (let p of Object.values(cyKindToNameToRes.compPipeline)) {
+    for (let p of computePipelines()) {
       const compPassEncoder = commandEncoder.beginComputePass();
       compPassEncoder.setPipeline(p.pipeline);
 
@@ -980,7 +1025,7 @@ export function createWebGPURenderer(
     // TODO(@darzu): same attachments need to be shared
     let lastPipeline: CyRndrPipelinePtr | undefined;
     let renderPassEncoder: GPURenderPassEncoder | undefined;
-    for (let p of Object.values(cyKindToNameToRes.renderPipeline)) {
+    for (let p of renderPipelines()) {
       // console.log(`rendering ${p.ptr.name}`);
       const bundle = cyRenderToBundle[p.ptr.name];
 
