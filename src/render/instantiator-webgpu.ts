@@ -36,6 +36,7 @@ const prim_lines: GPUPrimitiveState = {
 };
 
 export type CyResources = {
+  canvasTexture: GPUTexture | undefined;
   kindToNameToRes: {
     [K in PtrKind]: { [name: string]: PtrKindToResourceType[K] };
   };
@@ -625,6 +626,7 @@ export function createCyResources(
   }
 
   return {
+    canvasTexture: undefined,
     kindToNameToRes,
   };
 }
@@ -912,4 +914,37 @@ export function doCompute(
     ...(pipeline.ptr.workgroupCounts ?? [1, 1, 1])
   );
   compPassEncoder.end();
+}
+
+export function onCanvasResizeAll(
+  device: GPUDevice,
+  context: GPUCanvasContext,
+  resources: CyResources,
+  canvasSize: [number, number]
+) {
+  context.configure({
+    device: device,
+    format: canvasFormat, // presentationFormat
+    // TODO(@darzu): support transparency?
+    compositingAlphaMode: "opaque",
+  });
+
+  resources.canvasTexture?.destroy();
+  resources.canvasTexture = device.createTexture({
+    size: canvasSize,
+    // TODO(@darzu): ANTI-ALIAS
+    // sampleCount: antiAliasSampleCount,
+    format: canvasFormat,
+    usage: GPUTextureUsage.RENDER_ATTACHMENT,
+  });
+
+  for (let tex of [
+    ...Object.values(resources.kindToNameToRes.texture),
+    ...Object.values(resources.kindToNameToRes.depthTexture),
+  ]) {
+    if (tex.ptr.onCanvasResize) {
+      const newSize = tex.ptr.onCanvasResize(canvasSize[0], canvasSize[1]);
+      tex.resize(newSize[0], newSize[1]);
+    }
+  }
 }

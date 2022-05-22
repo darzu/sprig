@@ -30,6 +30,7 @@ import {
   bundleRenderPipelines,
   createCyResources,
   doCompute,
+  onCanvasResizeAll,
   renderBundles,
 } from "./instantiator-webgpu.js";
 
@@ -49,29 +50,26 @@ export function createWebGPURenderer(
     renderFrame,
   };
 
-  let canvasFormat = navigator.gpu.getPreferredCanvasFormat();
-
   const resources = createCyResources(CY, device);
   const cyKindToNameToRes = resources.kindToNameToRes;
 
-  // TODO(@darzu): pass in elsewhere?
   const pool: MeshPool<
     typeof VertexStruct.desc,
     typeof MeshUniformStruct.desc
   > = cyKindToNameToRes.meshPool["meshPool"]!;
 
-  // TODO(@darzu): hacky grab
-  let sceneUni: CyOne<typeof SceneStruct.desc> =
+  const sceneUni: CyOne<typeof SceneStruct.desc> =
     cyKindToNameToRes.oneBuffer["scene"]!;
 
   // render bundle
-  let bundledMIds = new Set<number>();
+  const bundledMIds = new Set<number>();
   let needsRebundle = false;
   let lastWireMode: [boolean, boolean] = [
     renderer.drawLines,
     renderer.drawTris,
   ];
 
+  // TODO(@darzu): pass these in from somewhere, probably the ECS
   let renderPipelinesPtrs: CyRndrPipelinePtr[] = [
     renderTriPipelineDesc,
     renderRopePipelineDesc,
@@ -101,14 +99,11 @@ export function createWebGPURenderer(
     });
   }
 
-  // TODO(@darzu): IMPL
   const cyRenderToBundle: { [pipelineName: string]: GPURenderBundle } = {};
 
-  // let renderBundle: GPURenderBundle;
   updateRenderBundle([]);
 
   // recomputes textures, widths, and aspect ratio on canvas resize
-  let canvasTexture: GPUTexture | null = null;
   let lastWidth = 0;
   let lastHeight = 0;
 
@@ -117,33 +112,7 @@ export function createWebGPURenderer(
     const newHeight = canvas.height;
     if (lastWidth === newWidth && lastHeight === newHeight) return false;
 
-    const newSize = [newWidth, newHeight] as const;
-
-    context.configure({
-      device: device,
-      format: canvasFormat, // presentationFormat
-      // TODO(@darzu): support transparency?
-      compositingAlphaMode: "opaque",
-    });
-
-    canvasTexture?.destroy();
-    canvasTexture = device.createTexture({
-      size: newSize,
-      // TODO(@darzu): ANTI-ALIAS
-      // sampleCount: antiAliasSampleCount,
-      format: canvasFormat,
-      usage: GPUTextureUsage.RENDER_ATTACHMENT,
-    });
-
-    for (let tex of [
-      ...Object.values(cyKindToNameToRes.texture),
-      ...Object.values(cyKindToNameToRes.depthTexture),
-    ]) {
-      if (tex.ptr.onCanvasResize) {
-        const newSize = tex.ptr.onCanvasResize(newWidth, newHeight);
-        tex.resize(newSize[0], newSize[1]);
-      }
-    }
+    onCanvasResizeAll(device, context, resources, [newWidth, newHeight]);
 
     lastWidth = newWidth;
     lastHeight = newHeight;
