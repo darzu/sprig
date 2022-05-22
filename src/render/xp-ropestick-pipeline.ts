@@ -120,7 +120,7 @@ const ropeStickBufPtr = CY.registerManyBufPtr("ropeStick", {
   init: genRopeStickData,
 });
 export const compRopePipelinePtr = CY.registerCompPipeline("ropeComp", {
-  resources: [sceneBufPtr, ropePointBufPtr, ropeStickBufPtr],
+  globals: [sceneBufPtr, ropePointBufPtr, ropeStickBufPtr],
   shaderComputeEntry: "main",
   shader: () =>
     `
@@ -234,7 +234,7 @@ const particleIdxBufPtr = CY.registerIdxBufPtr("particleIdx", {
 });
 
 export const renderRopePipelineDesc = CY.registerRenderPipeline("renderRope", {
-  resources: [sceneBufPtr],
+  globals: [sceneBufPtr],
   meshOpt: {
     vertex: particleVertBufPtr,
     instance: ropePointBufPtr,

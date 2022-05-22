@@ -62,7 +62,7 @@ export function createCyResources(
   // TODO(@darzu): be more precise?
   [...cy.kindToPtrs.compPipeline, ...cy.kindToPtrs.renderPipeline].forEach(
     (p) =>
-      p.resources.forEach((r) => {
+      p.globals.forEach((r) => {
         if (isResourcePtr(r)) {
           if (r.kind === "oneBuffer" || r.kind === "manyBuffer")
             cyNameToBufferUsage[r.name] |= GPUBufferUsage.STORAGE;
@@ -114,7 +114,7 @@ export function createCyResources(
   });
   [...cy.kindToPtrs.renderPipeline, ...cy.kindToPtrs.compPipeline].forEach(
     (p) => {
-      p.resources.forEach((r) => {
+      p.globals.forEach((r) => {
         if (isResourcePtr(r)) {
           // nothing?
         } else {
@@ -369,7 +369,7 @@ export function createCyResources(
     }
 
     // normalize global format
-    const resUsages = normalizeResources(p.resources);
+    const resUsages = normalizeResources(p.globals);
 
     // resources layout and bindings
     // TODO(@darzu): don't like this dynamic layout var
@@ -632,9 +632,9 @@ export function createCyResources(
 }
 
 export function normalizeResources(
-  res: CyGlobalParam[]
+  globals: CyGlobalParam[]
 ): CyGlobalUsage<CyGlobal>[] {
-  const resUsages = res.map((r, i) => {
+  const resUsages = globals.map((r, i) => {
     let usage: CyGlobalUsage<CyGlobal>;
     if (isResourcePtr(r)) {
       usage = {
@@ -688,7 +688,7 @@ export function bundleRenderPipelines(
     // TODO(@darzu): this seems a bit hacky
     if (p.bindGroupLayouts.length) {
       const resBindGroupLayout = p.bindGroupLayouts[0];
-      const resUsages = normalizeResources(p.ptr.resources);
+      const resUsages = normalizeResources(p.ptr.globals);
       const resBindGroup = mkBindGroup(
         device,
         cyKindToNameToRes,
@@ -899,7 +899,7 @@ export function doCompute(
 
   // TODO(@darzu): de-dupe?
   const resBindGroupLayout = pipeline.bindGroupLayout;
-  const resUsages = normalizeResources(pipeline.ptr.resources);
+  const resUsages = normalizeResources(pipeline.ptr.globals);
   const resBindGroup = mkBindGroup(
     device,
     resources,

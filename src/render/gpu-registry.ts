@@ -121,7 +121,7 @@ export function isResourcePtr(p: any): p is CyResourcePtr {
 
 export interface CyCompPipelinePtr extends CyResourcePtr {
   kind: "compPipeline";
-  resources: CyGlobalParam[]; // TODO(@darzu): rename "resources" to "globals"?
+  globals: CyGlobalParam[]; // TODO(@darzu): rename "resources" to "globals"?
   workgroupCounts?: [number, number, number];
   shaderComputeEntry: string;
   shader: () => string;
@@ -146,7 +146,7 @@ type CyMeshOpt =
 
 export interface CyRenderPipelinePtr extends CyResourcePtr {
   kind: "renderPipeline";
-  resources: CyGlobalParam[];
+  globals: CyGlobalParam[];
   shader: () => string;
   shaderVertexEntry: string;
   shaderFragmentEntry: string;

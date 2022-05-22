@@ -63,7 +63,7 @@ const boidDepthTex = CY.registerDepthTexPtr("boidDepth", {
   init: () => undefined,
 });
 export const boidRender = CY.registerRenderPipeline("boidRender", {
-  resources: [sceneBufPtr],
+  globals: [sceneBufPtr],
   meshOpt: {
     index: boidInds,
     instance: boidData0,
@@ -147,7 +147,7 @@ const boidParams = CY.registerOneBufPtr("boidParams", {
 
 const boidCompDesc: Omit<
   Parameters<typeof CY.registerCompPipeline>[1],
-  "resources"
+  "globals"
 > = {
   shaderComputeEntry: "main",
   shader: () => `  
@@ -229,7 +229,7 @@ const boidCompDesc: Omit<
 
 export const boidComp0 = CY.registerCompPipeline("boidComp0", {
   ...boidCompDesc,
-  resources: [
+  globals: [
     boidParams,
     { ptr: boidData0, access: "read", alias: "inBoids" },
     { ptr: boidData1, access: "write", alias: "outBoids" },
@@ -237,7 +237,7 @@ export const boidComp0 = CY.registerCompPipeline("boidComp0", {
 });
 export const boidComp1 = CY.registerCompPipeline("boidComp1", {
   ...boidCompDesc,
-  resources: [
+  globals: [
     boidParams,
     { ptr: boidData1, access: "read", alias: "inBoids" },
     { ptr: boidData0, access: "write", alias: "outBoids" },
@@ -262,7 +262,7 @@ const boidWindowUni = CY.registerOneBufPtr("boidWindow", {
 });
 
 export const boidCanvasMerge = CY.registerRenderPipeline("boidCanvasMerge", {
-  resources: [
+  globals: [
     // // { ptr: nearestSamplerPtr, alias: "mySampler" },
     { ptr: linearSamplerPtr, alias: "mySampler" },
     { ptr: boidDepthTex, alias: "myTexture" },

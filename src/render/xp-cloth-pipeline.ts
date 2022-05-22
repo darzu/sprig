@@ -65,7 +65,7 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
 `;
 
 export const cmpClothPipelinePtr0 = CY.registerCompPipeline("clothComp0", {
-  resources: [
+  globals: [
     { ptr: clothTexPtr0, access: "read", alias: "inTex" },
     { ptr: clothTexPtr1, access: "write", alias: "outTex" },
   ],
@@ -73,7 +73,7 @@ export const cmpClothPipelinePtr0 = CY.registerCompPipeline("clothComp0", {
   shaderComputeEntry: "main",
 });
 export const cmpClothPipelinePtr1 = CY.registerCompPipeline("clothComp1", {
-  resources: [
+  globals: [
     { ptr: clothTexPtr1, access: "read", alias: "inTex" },
     { ptr: clothTexPtr0, access: "write", alias: "outTex" },
   ],

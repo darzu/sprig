@@ -192,7 +192,7 @@ export const canvasDepthTex = CY.registerDepthTexPtr("canvasDepth", {
 });
 
 export const renderTriPipelineDesc = CY.registerRenderPipeline("triRender", {
-  resources: [
+  globals: [
     sceneBufPtr,
     // TODO(@darzu): support textures
     // { ptr: clothTexPtr0, access: "read", alias: "clothTex" },
