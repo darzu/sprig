@@ -17,7 +17,7 @@ const BoidData = createCyStruct({
   vel: "vec3<f32>",
 });
 const numBoids = 1500;
-const boidData0 = CY.registerManyBufPtr("boidData0", {
+const boidData0 = CY.registerArrayBufferPtr("boidData0", {
   struct: BoidData,
   init: () =>
     range(numBoids).map((_, i) => ({
@@ -25,7 +25,7 @@ const boidData0 = CY.registerManyBufPtr("boidData0", {
       vel: [jitter(10), jitter(10), jitter(10)] as vec3,
     })),
 });
-const boidData1 = CY.registerManyBufPtr("boidData1", {
+const boidData1 = CY.registerArrayBufferPtr("boidData1", {
   struct: BoidData,
   init: () => numBoids,
 });
@@ -33,7 +33,7 @@ const BoidVert = createCyStruct({
   pos: "vec3<f32>",
 });
 
-const boidVerts = CY.registerManyBufPtr("boidVerts", {
+const boidVerts = CY.registerArrayBufferPtr("boidVerts", {
   struct: BoidVert,
   init: () => [
     { pos: [1, 1, 1] },

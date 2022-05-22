@@ -2,7 +2,7 @@ import { align } from "../math.js";
 import { assert } from "../test.js";
 import { CyStructDesc, CyToTS } from "./gpu-struct.js";
 import { Mesh } from "./mesh.js";
-import { CyMany, CyIdxBuffer } from "./gpu-data-webgpu.js";
+import { CyArray, CyIdxBuffer } from "./gpu-data-webgpu.js";
 
 // Mesh: lossless, all the data of a model/asset from blender
 // MeshPool: lossy, a reduced set of attributes for vertex, line, triangle, and model uniforms
@@ -48,8 +48,8 @@ export function isMeshHandle(m: any): m is MeshHandle<any> {
 export interface MeshPoolOpts<V extends CyStructDesc, U extends CyStructDesc> {
   computeVertsData: (m: Mesh) => CyToTS<V>[];
   computeUniData: (m: Mesh) => CyToTS<U>;
-  verts: CyMany<V>;
-  unis: CyMany<U>;
+  verts: CyArray<V>;
+  unis: CyArray<U>;
   triInds: CyIdxBuffer;
   lineInds: CyIdxBuffer;
   // TODO(@darzu): needed?

@@ -24,8 +24,9 @@ export interface CyIdxBufferPtr extends CyResourcePtr {
   init: () => Uint16Array | number;
 }
 
-export interface CyManyBufferPtr<O extends CyStructDesc> extends CyResourcePtr {
-  kind: "manyBuffer";
+export interface CyArrayBufferPtr<O extends CyStructDesc>
+  extends CyResourcePtr {
+  kind: "arrayBuffer";
   struct: CyStruct<O>;
   init: () => CyToTS<O>[] | number;
 }
@@ -35,7 +36,7 @@ export interface CyOneBufferPtr<O extends CyStructDesc> extends CyResourcePtr {
   init: () => CyToTS<O>;
 }
 export type CyBufferPtr<O extends CyStructDesc> =
-  | CyManyBufferPtr<O>
+  | CyArrayBufferPtr<O>
   | CyOneBufferPtr<O>;
 
 // TEXUTRES
@@ -84,8 +85,8 @@ export interface CyMeshPoolPtr<V extends CyStructDesc, U extends CyStructDesc>
   // TODO(@darzu): remove id and name, this doesn't need to be inited directly
   computeVertsData: (m: Mesh) => CyToTS<V>[];
   computeUniData: (m: Mesh) => CyToTS<U>;
-  vertsPtr: CyManyBufferPtr<V>;
-  unisPtr: CyManyBufferPtr<U>;
+  vertsPtr: CyArrayBufferPtr<V>;
+  unisPtr: CyArrayBufferPtr<U>;
   triIndsPtr: CyIdxBufferPtr;
   lineIndsPtr: CyIdxBufferPtr;
 }
@@ -169,7 +170,7 @@ export function isRenderPipelinePtr(
 // REGISTERS
 
 export type PtrKindToPtrType = {
-  manyBuffer: CyManyBufferPtr<any>;
+  arrayBuffer: CyArrayBufferPtr<any>;
   oneBuffer: CyOneBufferPtr<any>;
   idxBuffer: CyIdxBufferPtr;
   texture: CyTexturePtr;
@@ -192,7 +193,7 @@ export const CY: CyRegistry = createCyRegistry();
 export function createCyRegistry() {
   let nameToPtr: { [name: string]: CyResourcePtr } = {};
   let kindToPtrs: { [K in PtrKind]: PtrKindToPtrType[K][] } = {
-    manyBuffer: [],
+    arrayBuffer: [],
     oneBuffer: [],
     idxBuffer: [],
     texture: [],
@@ -227,13 +228,13 @@ export function createCyRegistry() {
         name,
       });
     },
-    registerManyBufPtr: <O extends CyStructDesc>(
+    registerArrayBufferPtr: <O extends CyStructDesc>(
       name: string,
-      desc: Omit_kind_name<CyManyBufferPtr<O>>
-    ): CyManyBufferPtr<O> => {
+      desc: Omit_kind_name<CyArrayBufferPtr<O>>
+    ): CyArrayBufferPtr<O> => {
       return registerCyResource({
         ...desc,
-        kind: "manyBuffer",
+        kind: "arrayBuffer",
         name,
       });
     },

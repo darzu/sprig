@@ -126,7 +126,7 @@ export const sceneBufPtr = CY.registerOneBufPtr("scene", {
   init: setupScene,
 });
 
-const meshVertsPtr = CY.registerManyBufPtr("meshVertsBuf", {
+const meshVertsPtr = CY.registerArrayBufferPtr("meshVertsBuf", {
   struct: VertexStruct,
   init: () => MAX_VERTICES,
 });
@@ -139,7 +139,7 @@ const meshLineIndsPtr = CY.registerIdxBufPtr("meshLineIndsBuf", {
   init: () => MAX_VERTICES * 2,
 });
 
-const meshUnisPtr = CY.registerManyBufPtr("meshUni", {
+const meshUnisPtr = CY.registerArrayBufferPtr("meshUni", {
   struct: MeshUniformStruct,
   init: () => MAX_MESHES,
 });

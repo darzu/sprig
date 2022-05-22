@@ -33,7 +33,7 @@ export interface CyOne<O extends CyStructDesc> extends CyBuffer<O> {
   lastData: CyToTS<O> | undefined;
   queueUpdate: (data: CyToTS<O>) => void;
 }
-export interface CyMany<O extends CyStructDesc> extends CyBuffer<O> {
+export interface CyArray<O extends CyStructDesc> extends CyBuffer<O> {
   length: number;
   queueUpdate: (data: CyToTS<O>, idx: number) => void;
   queueUpdates: (data: CyToTS<O>[], idx: number) => void;
@@ -63,7 +63,7 @@ export interface CyDepthTexture extends Omit<CyTexture, "ptr"> {
 }
 
 export type PtrKindToResourceType = {
-  manyBuffer: CyMany<any>;
+  arrayBuffer: CyArray<any>;
   oneBuffer: CyOne<any>;
   idxBuffer: CyIdxBuffer;
   texture: CyTexture;
@@ -95,9 +95,9 @@ export interface CyCompPipeline {
 export interface CyRndrPipeline {
   ptr: CyRenderPipelinePtr;
   // resourceLayouts: CyBufferPtrLayout<any>[];
-  vertexBuf?: CyMany<any>;
+  vertexBuf?: CyArray<any>;
   indexBuf?: CyIdxBuffer;
-  instanceBuf?: CyMany<any>;
+  instanceBuf?: CyArray<any>;
   pool?: MeshPool<any, any>;
   pipeline: GPURenderPipeline;
   bindGroupLayouts: GPUBindGroupLayout[];
@@ -160,19 +160,19 @@ export function createCyOne<O extends CyStructDesc>(
   return buf;
 }
 
-export function createCyMany<O extends CyStructDesc>(
+export function createCyArray<O extends CyStructDesc>(
   device: GPUDevice,
   struct: CyStruct<O>,
   usage: GPUBufferUsageFlags,
   lenOrData: number | CyToTS<O>[]
-): CyMany<O> {
+): CyArray<O> {
   const hasInitData = typeof lenOrData !== "number";
   const length = hasInitData ? lenOrData.length : lenOrData;
 
   if ((usage & GPUBufferUsage.UNIFORM) !== 0) {
     assert(
       struct.size % 256 === 0,
-      "CyMany with UNIFORM usage must be 256 aligned"
+      "CyArray with UNIFORM usage must be 256 aligned"
     );
   }
 
@@ -183,7 +183,7 @@ export function createCyMany<O extends CyStructDesc>(
     mappedAtCreation: hasInitData,
   });
 
-  const buf: CyMany<O> = {
+  const buf: CyArray<O> = {
     struct,
     buffer: _buf,
     length,
