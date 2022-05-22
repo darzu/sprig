@@ -184,7 +184,7 @@ export interface CyCompPipeline {
   ptr: CyCompPipelinePtr;
   // resourceLayouts: CyBufferPtrLayout<CyStructDesc>[];
   pipeline: GPUComputePipeline;
-  bindGroup: GPUBindGroup;
+  bindGroupLayout: GPUBindGroupLayout;
 }
 
 type CyMeshOpt =
@@ -224,7 +224,7 @@ export interface CyRndrPipeline {
   instanceBuf?: CyMany<any>;
   pool?: MeshPool<any, any>;
   pipeline: GPURenderPipeline;
-  bindGroups: GPUBindGroup[];
+  bindGroupLayouts: GPUBindGroupLayout[];
 }
 
 // HELPERS
@@ -667,50 +667,6 @@ export function createWebGPURenderer(
       };
       return device.createBindGroupLayout(bindGroupLayoutDesc);
     }
-    function mkBindGroupEntry(
-      idx: number,
-      r: CyGlobalUsage<CyGlobal>,
-      bufPlurality: "one" | "many"
-    ): GPUBindGroupEntry {
-      if (r.ptr.kind === "oneBuffer" || r.ptr.kind === "manyBuffer") {
-        const buf =
-          r.ptr.kind === "oneBuffer"
-            ? cyKindToNameToRes.oneBuffer[r.ptr.name]
-            : cyKindToNameToRes.manyBuffer[r.ptr.name];
-        assert(!!buf, `Missing resource buffer: ${r.ptr.name}`);
-        // TODO(@darzu): not super happy with how plurality is handled
-        return buf.binding(idx, bufPlurality);
-      } else if (r.ptr.kind === "texture" || r.ptr.kind === "depthTexture") {
-        const tex = cyKindToNameToRes[r.ptr.kind][r.ptr.name]!;
-        return {
-          binding: idx,
-          // TODO(@darzu): does this view need to be updated on resize?
-          resource: tex.texture.createView(),
-        };
-      } else if (r.ptr.kind === "sampler") {
-        const sampler = cyKindToNameToRes.sampler[r.ptr.name];
-        return {
-          binding: idx,
-          resource: sampler.sampler,
-        };
-      } else {
-        never(r.ptr, "unimplemented");
-      }
-    }
-    function mkBindGroup(
-      layout: GPUBindGroupLayout,
-      ptrs: CyGlobalUsage<CyGlobal>[],
-      // TODO(@darzu): this is a hack.....
-      bufPlurality: "one" | "many"
-    ) {
-      const bindGroup = device.createBindGroup({
-        layout: layout,
-        entries: ptrs.map((r, i) => {
-          return mkBindGroupEntry(i, r, bufPlurality);
-        }),
-      });
-      return bindGroup;
-    }
     function globalToWgslDefs(
       r: CyGlobalUsage<CyGlobal>,
       plurality: "one" | "many"
@@ -783,25 +739,13 @@ export function createWebGPURenderer(
     }
 
     // normalize global format
-    const resUsages = p.resources.map((r, i) => {
-      let usage: CyGlobalUsage<CyGlobal>;
-      if (isResourcePtr(r)) {
-        usage = {
-          ptr: r,
-          // TODO(@darzu): what is the right default access? per resource type?
-          access: "read",
-        };
-      } else {
-        usage = r;
-      }
-      return usage;
-    });
+    const resUsages = normalizeResources(p.resources);
 
     // resources layout and bindings
     // TODO(@darzu): don't like this dynamic layout var
     const resBindGroupLayout = mkBindGroupLayout(resUsages, false);
     // TODO(@darzu): wait, plurality many isn't right
-    const resBindGroup = mkBindGroup(resBindGroupLayout, resUsages, "many");
+    // const resBindGroup = mkBindGroup(resBindGroupLayout, resUsages, "many");
 
     // shader resource setup
     const shaderResStructs = resUsages.map((r) => {
@@ -899,8 +843,7 @@ export function createWebGPURenderer(
           vertexBuf: vertBuf,
           instanceBuf: instBuf,
           pipeline: rndrPipeline,
-          // resourceLayouts,
-          bindGroups: [resBindGroup],
+          bindGroupLayouts: [resBindGroupLayout],
         };
         cyKindToNameToRes.renderPipeline[p.name] = cyPipeline;
       } else if (p.meshOpt.stepMode === "per-mesh-handle") {
@@ -918,7 +861,6 @@ export function createWebGPURenderer(
           access: "read",
         };
         const uniBGLayout = mkBindGroupLayout([uniUsage], true);
-        const uniBG = mkBindGroup(uniBGLayout, [uniUsage], "one");
 
         const uniStruct = globalToWgslDefs(uniUsage, "one");
         const uniVar = globalToWgslVars(uniUsage, "one", 1, 0);
@@ -972,8 +914,7 @@ export function createWebGPURenderer(
           vertexBuf: vertBuf,
           pipeline: rndrPipeline,
           pool,
-          // resourceLayouts,
-          bindGroups: [resBindGroup, uniBG],
+          bindGroupLayouts: [resBindGroupLayout, uniBGLayout],
         };
         cyKindToNameToRes.renderPipeline[p.name] = cyPipeline;
       } else if (p.meshOpt.stepMode === "single-draw") {
@@ -1017,7 +958,7 @@ export function createWebGPURenderer(
         const cyPipeline: CyRndrPipeline = {
           ptr: p,
           pipeline: rndrPipeline,
-          bindGroups: [resBindGroup],
+          bindGroupLayouts: [resBindGroupLayout],
         };
         cyKindToNameToRes.renderPipeline[p.name] = cyPipeline;
       } else {
@@ -1047,7 +988,7 @@ export function createWebGPURenderer(
       const cyPipeline: CyCompPipeline = {
         ptr: p,
         pipeline: compPipeline,
-        bindGroup: resBindGroup,
+        bindGroupLayout: resBindGroupLayout,
       };
       cyKindToNameToRes.compPipeline[p.name] = cyPipeline;
     }
@@ -1073,6 +1014,68 @@ export function createWebGPURenderer(
   // let renderBundle: GPURenderBundle;
   updateRenderBundle([]);
 
+  function normalizeResources(res: CyGlobalParam[]): CyGlobalUsage<CyGlobal>[] {
+    const resUsages = res.map((r, i) => {
+      let usage: CyGlobalUsage<CyGlobal>;
+      if (isResourcePtr(r)) {
+        usage = {
+          ptr: r,
+          // TODO(@darzu): what is the right default access? per resource type?
+          access: "read",
+        };
+      } else {
+        usage = r;
+      }
+      return usage;
+    });
+    return resUsages;
+  }
+
+  function mkBindGroupEntry(
+    idx: number,
+    r: CyGlobalUsage<CyGlobal>,
+    bufPlurality: "one" | "many"
+  ): GPUBindGroupEntry {
+    if (r.ptr.kind === "oneBuffer" || r.ptr.kind === "manyBuffer") {
+      const buf =
+        r.ptr.kind === "oneBuffer"
+          ? cyKindToNameToRes.oneBuffer[r.ptr.name]
+          : cyKindToNameToRes.manyBuffer[r.ptr.name];
+      assert(!!buf, `Missing resource buffer: ${r.ptr.name}`);
+      // TODO(@darzu): not super happy with how plurality is handled
+      return buf.binding(idx, bufPlurality);
+    } else if (r.ptr.kind === "texture" || r.ptr.kind === "depthTexture") {
+      const tex = cyKindToNameToRes[r.ptr.kind][r.ptr.name]!;
+      return {
+        binding: idx,
+        // TODO(@darzu): does this view need to be updated on resize?
+        resource: tex.texture.createView(),
+      };
+    } else if (r.ptr.kind === "sampler") {
+      const sampler = cyKindToNameToRes.sampler[r.ptr.name];
+      return {
+        binding: idx,
+        resource: sampler.sampler,
+      };
+    } else {
+      never(r.ptr, "unimplemented");
+    }
+  }
+  function mkBindGroup(
+    layout: GPUBindGroupLayout,
+    ptrs: CyGlobalUsage<CyGlobal>[],
+    // TODO(@darzu): this is a hack.....
+    bufPlurality: "one" | "many"
+  ) {
+    const bindGroup = device.createBindGroup({
+      layout: layout,
+      entries: ptrs.map((r, i) => {
+        return mkBindGroupEntry(i, r, bufPlurality);
+      }),
+    });
+    return bindGroup;
+  }
+
   function gpuBufferWriteAllMeshUniforms(handles: MeshHandleStd[]) {
     // TODO(@darzu): make this update all meshes at once
     for (let m of handles) {
@@ -1085,10 +1088,10 @@ export function createWebGPURenderer(
   let lastWidth = 0;
   let lastHeight = 0;
 
-  function checkCanvasResize() {
+  function checkCanvasResize(): boolean {
     const newWidth = canvas.width;
     const newHeight = canvas.height;
-    if (lastWidth === newWidth && lastHeight === newHeight) return;
+    if (lastWidth === newWidth && lastHeight === newHeight) return false;
 
     const newSize = [newWidth, newHeight] as const;
 
@@ -1120,6 +1123,8 @@ export function createWebGPURenderer(
 
     lastWidth = newWidth;
     lastHeight = newHeight;
+
+    return true;
   }
 
   function textureAttachment(tex: CyTexture): GPURenderPassColorAttachment {
@@ -1202,10 +1207,16 @@ export function createWebGPURenderer(
       });
 
       bundleEnc.setPipeline(p.pipeline);
-      if (p.bindGroups.length)
-        // bind group 0 is always the global resources
-        // TODO(@darzu): this seems a bit hacky
-        bundleEnc.setBindGroup(0, p.bindGroups[0]);
+
+      // bind group 0 is always the global resources
+      // TODO(@darzu): this seems a bit hacky
+      if (p.bindGroupLayouts.length) {
+        const resBindGroupLayout = p.bindGroupLayouts[0];
+        const resUsages = normalizeResources(p.ptr.resources);
+        const resBindGroup = mkBindGroup(resBindGroupLayout, resUsages, "many");
+        bundleEnc.setBindGroup(0, resBindGroup);
+      }
+
       if (p.indexBuf) bundleEnc.setIndexBuffer(p.indexBuf.buffer, "uint16");
       if (p.vertexBuf) bundleEnc.setVertexBuffer(0, p.vertexBuf.buffer);
       if (p.ptr.meshOpt.stepMode === "per-instance") {
@@ -1213,8 +1224,13 @@ export function createWebGPURenderer(
         bundleEnc.setVertexBuffer(1, p.instanceBuf.buffer);
         bundleEnc.drawIndexed(p.indexBuf.length, p.instanceBuf.length, 0, 0);
       } else if (p.ptr.meshOpt.stepMode === "per-mesh-handle") {
-        assert(!!p.pool && p.bindGroups.length >= 2);
-        const uniBG = p.bindGroups[1]; // TODO(@darzu): hacky convention?
+        assert(!!p.pool && p.bindGroupLayouts.length >= 2);
+        const uniBGLayout = p.bindGroupLayouts[1]; // TODO(@darzu): hacky convention?
+        const uniUsage: CyGlobalUsage<CyManyBufferPtr<any>> = {
+          ptr: p.ptr.meshOpt.pool.unisPtr,
+          access: "read",
+        };
+        const uniBG = mkBindGroup(uniBGLayout, [uniUsage], "one");
         // TODO(@darzu): filter meshes?
         for (let m of p.pool.allMeshes) {
           // TODO(@darzu): HACK
@@ -1241,7 +1257,7 @@ export function createWebGPURenderer(
   }
 
   function renderFrame(viewProj: mat4, handles: MeshHandleStd[]): void {
-    checkCanvasResize();
+    const didResize = checkCanvasResize();
 
     // update scene data
     sceneUni.queueUpdate({
@@ -1256,6 +1272,7 @@ export function createWebGPURenderer(
     // TODO(@darzu): more fine grain
     needsRebundle =
       needsRebundle ||
+      didResize ||
       bundledMIds.size !== handles.length ||
       renderer.drawLines !== lastWireMode[0] ||
       renderer.drawTris !== lastWireMode[1];
@@ -1279,7 +1296,13 @@ export function createWebGPURenderer(
     for (let p of Object.values(cyKindToNameToRes.compPipeline)) {
       const compPassEncoder = commandEncoder.beginComputePass();
       compPassEncoder.setPipeline(p.pipeline);
-      compPassEncoder.setBindGroup(0, p.bindGroup);
+
+      // TODO(@darzu): de-dupe?
+      const resBindGroupLayout = p.bindGroupLayout;
+      const resUsages = normalizeResources(p.ptr.resources);
+      const resBindGroup = mkBindGroup(resBindGroupLayout, resUsages, "many");
+
+      compPassEncoder.setBindGroup(0, resBindGroup);
       // TODO(@darzu): parameterize workgroup count
       compPassEncoder.dispatchWorkgroups(
         ...(p.ptr.workgroupCounts ?? [1, 1, 1])

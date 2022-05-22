@@ -482,8 +482,10 @@ const boidVerts = registerManyBufPtr("boidVerts", {
 const boidInds = registerIdxBufPtr("boidIdx", {
   init: () => new Uint16Array([2, 1, 0, 3, 2, 0, 1, 3, 0, 2, 3, 1]),
 });
+const boidResize: CyTexturePtr["onCanvasResize"] = (w, h) => [w / 2, h / 2];
 const boidOutTex = registerTexPtr("boidTex", {
   size: [200, 200],
+  onCanvasResize: boidResize,
   format: "rgba8unorm",
   // TODO(@darzu): ANTI-ALIAS
   // sampleCount: antiAliasSampleCount,
@@ -492,6 +494,7 @@ const boidOutTex = registerTexPtr("boidTex", {
 const boidDepthTex = registerDepthTexPtr("boidDepth", {
   size: [200, 200],
   format: "depth32float",
+  onCanvasResize: boidResize,
   // TODO(@darzu): ANTI-ALIAS
   // sampleCount: antiAliasSampleCount,
   init: () => undefined,
