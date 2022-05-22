@@ -16,10 +16,11 @@ import {
 import { ColorDef } from "../color.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DeletedDef } from "../delete.js";
-import { MeshHandleStd } from "./std-pipeline.js";
+import { MeshHandleStd, renderTriPipelineDesc } from "./std-pipeline.js";
 import { CanvasDef } from "../canvas.js";
 import { FORCE_WEBGL } from "../main.js";
 import { createWebGPURenderer } from "./render-webgpu.js";
+import { CyPipelinePtr, CyRndrPipelinePtr } from "./gpu-registry.js";
 
 export interface RenderableConstruct {
   readonly enabled: boolean;
@@ -58,44 +59,6 @@ interface RenderableObj {
   id: number;
   renderable: Renderable;
   rendererWorldFrame: Frame;
-}
-
-function stepRenderer(
-  renderer: Renderer,
-  objs: RenderableObj[],
-  cameraView: CameraView
-) {
-  // filter
-  objs = objs.filter((o) => o.renderable.enabled && !DeletedDef.isOn(o));
-
-  // ensure our mesh handle is up to date
-  for (let o of objs) {
-    // TODO(@darzu): color:
-    if (ColorDef.isOn(o)) {
-      vec3.copy(o.renderable.meshHandle.shaderData.tint, o.color);
-    }
-
-    if (TintsDef.isOn(o)) {
-      applyTints(o.tints, o.renderable.meshHandle.shaderData.tint);
-    }
-    mat4.copy(
-      o.renderable.meshHandle.shaderData.transform,
-      o.rendererWorldFrame.transform
-    );
-  }
-
-  // sort
-  objs.sort((a, b) => b.renderable.layer - a.renderable.layer);
-
-  // render
-  // TODO(@darzu):
-  // const m24 = objs.filter((o) => o.renderable.meshHandle.mId === 24);
-  // const e10003 = objs.filter((o) => o.id === 10003);
-  // console.log(`mId 24: ${!!m24.length}, e10003: ${!!e10003.length}`);
-  renderer.renderFrame(
-    cameraView.viewProjMat,
-    objs.map((o) => o.renderable.meshHandle)
-  );
 }
 
 const _hasRendererWorldFrame = new Set();
@@ -164,8 +127,42 @@ export function registerRenderer(em: EntityManager) {
     [CameraViewDef, PhysicsTimerDef, RendererDef],
     (objs, res) => {
       // TODO: should we just render on every frame?
-      if (res.physicsTimer.steps > 0)
-        stepRenderer(res.renderer.renderer, objs, res.cameraView);
+      if (res.physicsTimer.steps <= 0) return;
+
+      const renderer = res.renderer.renderer;
+      const cameraView = res.cameraView;
+
+      objs = objs.filter((o) => o.renderable.enabled && !DeletedDef.isOn(o));
+
+      // ensure our mesh handle is up to date
+      for (let o of objs) {
+        // TODO(@darzu): color:
+        if (ColorDef.isOn(o)) {
+          vec3.copy(o.renderable.meshHandle.shaderData.tint, o.color);
+        }
+
+        if (TintsDef.isOn(o)) {
+          applyTints(o.tints, o.renderable.meshHandle.shaderData.tint);
+        }
+        mat4.copy(
+          o.renderable.meshHandle.shaderData.transform,
+          o.rendererWorldFrame.transform
+        );
+      }
+
+      // sort
+      objs.sort((a, b) => b.renderable.layer - a.renderable.layer);
+
+      // render
+      // TODO(@darzu):
+      // const m24 = objs.filter((o) => o.renderable.meshHandle.mId === 24);
+      // const e10003 = objs.filter((o) => o.id === 10003);
+      // console.log(`mId 24: ${!!m24.length}, e10003: ${!!e10003.length}`);
+      renderer.renderFrame(
+        cameraView.viewProjMat,
+        objs.map((o) => o.renderable.meshHandle),
+        res.renderer.pipelines
+      );
     },
     "stepRenderer"
   );
@@ -211,15 +208,20 @@ export interface Renderer {
   addMesh(m: Mesh): MeshHandleStd;
   addMeshInstance(h: MeshHandleStd): MeshHandleStd;
   updateMesh(handle: MeshHandleStd, newMeshData: Mesh): void;
-  renderFrame(viewMatrix: mat4, handles: MeshHandleStd[]): void;
+  renderFrame(
+    viewMatrix: mat4,
+    handles: MeshHandleStd[],
+    pipelines: CyPipelinePtr[]
+  ): void;
 }
 
 export const RendererDef = EM.defineComponent(
   "renderer",
-  (renderer: Renderer, usingWebGPU: boolean) => {
+  (renderer: Renderer, usingWebGPU: boolean, pipelines: CyPipelinePtr[]) => {
     return {
       renderer,
       usingWebGPU,
+      pipelines,
     };
   }
 );
@@ -266,5 +268,7 @@ async function chooseAndInitRenderer(
 
   // add to ECS
   // TODO(@darzu): this is a little wierd to do this in an async callback
-  em.addSingletonComponent(RendererDef, renderer, usingWebGPU);
+  em.addSingletonComponent(RendererDef, renderer, usingWebGPU, [
+    renderTriPipelineDesc,
+  ]);
 }

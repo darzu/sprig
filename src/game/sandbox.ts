@@ -23,12 +23,31 @@ import {
   RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
+import {
+  CyRndrPipelinePtr,
+  CyCompPipelinePtr,
+} from "../render/gpu-registry.js";
 import { cloneMesh, scaleMesh } from "../render/mesh.js";
 import {
   RenderableDef,
   RenderableConstructDef,
 } from "../render/renderer-ecs.js";
 import { RendererDef } from "../render/renderer-ecs.js";
+import { renderTriPipelineDesc } from "../render/std-pipeline.js";
+import {
+  boidRender,
+  boidCanvasMerge,
+  boidComp0,
+  boidComp1,
+} from "../render/xp-boids-pipeline.js";
+import {
+  cmpClothPipelinePtr0,
+  cmpClothPipelinePtr1,
+} from "../render/xp-cloth-pipeline.js";
+import {
+  renderRopePipelineDesc,
+  compRopePipelinePtr,
+} from "../render/xp-ropestick-pipeline.js";
 import { tempVec } from "../temp-pool.js";
 import { assert } from "../test.js";
 import { TimeDef } from "../time.js";
@@ -314,6 +333,24 @@ export function initClothSandbox(em: EntityManager, hosting: boolean) {
     null,
     [AssetsDef, GlobalCursor3dDef, RendererDef],
     (_, res) => {
+      let renderPipelinesPtrs: CyRndrPipelinePtr[] = [
+        renderTriPipelineDesc,
+        renderRopePipelineDesc,
+        boidRender,
+        boidCanvasMerge,
+      ];
+      let computePipelinesPtrs: CyCompPipelinePtr[] = [
+        cmpClothPipelinePtr0,
+        cmpClothPipelinePtr1,
+        compRopePipelinePtr,
+        boidComp0,
+        boidComp1,
+      ];
+      res.renderer.pipelines = [
+        ...computePipelinesPtrs,
+        ...renderPipelinesPtrs,
+      ];
+
       const e = createGhost(em);
       vec3.copy(e.position, [0, 1, -1.2]);
       quat.setAxisAngle(e.rotation, [0.0, -1.0, 0.0], 1.62);

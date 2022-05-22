@@ -1,6 +1,6 @@
 import { mat4 } from "../gl-matrix.js";
 import { assert } from "../test.js";
-import { CyRndrPipelinePtr, CY, CyCompPipelinePtr } from "./gpu-registry.js";
+import { CY, CyPipelinePtr } from "./gpu-registry.js";
 import { MeshPool } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import { Renderer } from "./renderer-ecs.js";
@@ -10,22 +10,7 @@ import {
   MeshUniformStruct,
   SceneStruct,
   MeshHandleStd,
-  renderTriPipelineDesc,
 } from "./std-pipeline.js";
-import {
-  cmpClothPipelinePtr0,
-  cmpClothPipelinePtr1,
-} from "./xp-cloth-pipeline.js";
-import {
-  compRopePipelinePtr,
-  renderRopePipelineDesc,
-} from "./xp-ropestick-pipeline.js";
-import {
-  boidCanvasMerge,
-  boidComp0,
-  boidComp1,
-  boidRender,
-} from "./xp-boids-pipeline.js";
 import {
   bundleRenderPipelines,
   createCyResources,
@@ -68,40 +53,11 @@ export function createWebGPURenderer(
     renderer.drawLines,
     renderer.drawTris,
   ];
-
-  // TODO(@darzu): pass these in from somewhere, probably the ECS
-  let renderPipelinesPtrs: CyRndrPipelinePtr[] = [
-    renderTriPipelineDesc,
-    renderRopePipelineDesc,
-    boidRender,
-    boidCanvasMerge,
-  ];
-  let computePipelinesPtrs: CyCompPipelinePtr[] = [
-    cmpClothPipelinePtr0,
-    cmpClothPipelinePtr1,
-    compRopePipelinePtr,
-    boidComp0,
-    boidComp1,
-  ];
-
-  function renderPipelines(): CyRndrPipeline[] {
-    return renderPipelinesPtrs.map((p) => {
-      const res = cyKindToNameToRes.renderPipeline[p.name];
-      assert(res, `Resource not initialized: ${p.name}`);
-      return res;
-    });
-  }
-  function computePipelines(): CyCompPipeline[] {
-    return computePipelinesPtrs.map((p) => {
-      const res = cyKindToNameToRes.compPipeline[p.name];
-      assert(res, `Resource not initialized: ${p.name}`);
-      return res;
-    });
-  }
+  let lastPipelines: CyPipelinePtr[] = [];
 
   const cyRenderToBundle: { [pipelineName: string]: GPURenderBundle } = {};
 
-  updateRenderBundle([]);
+  updateRenderBundle([], []);
 
   // recomputes textures, widths, and aspect ratio on canvas resize
   let lastWidth = 0;
@@ -133,7 +89,10 @@ export function createWebGPURenderer(
     pool.updateMeshVertices(handle, newMeshData);
   }
 
-  function updateRenderBundle(handles: MeshHandleStd[]) {
+  function updateRenderBundle(
+    handles: MeshHandleStd[],
+    pipelines: CyRndrPipeline[]
+  ) {
     needsRebundle = false; // TODO(@darzu): hack?
 
     bundledMIds.clear();
@@ -141,7 +100,6 @@ export function createWebGPURenderer(
 
     lastWireMode = [renderer.drawLines, renderer.drawTris];
 
-    const pipelines = renderPipelines();
     const renderBundles = bundleRenderPipelines(
       device,
       resources,
@@ -153,7 +111,33 @@ export function createWebGPURenderer(
     }
   }
 
-  function renderFrame(viewProj: mat4, handles: MeshHandleStd[]): void {
+  function renderFrame(
+    viewProj: mat4,
+    handles: MeshHandleStd[],
+    pipelines: CyPipelinePtr[]
+  ): void {
+    let renderPipelines: CyRndrPipeline[] = [];
+    let computePipelines: CyCompPipeline[] = [];
+
+    pipelines.forEach((p) => {
+      if (p.kind === "renderPipeline") {
+        const res = cyKindToNameToRes.renderPipeline[p.name];
+        assert(res, `Resource not initialized: ${p.name}`);
+        renderPipelines.push(res);
+      } else {
+        const res = cyKindToNameToRes.compPipeline[p.name];
+        assert(res, `Resource not initialized: ${p.name}`);
+        computePipelines.push(res);
+      }
+    });
+
+    const didPipelinesChange =
+      lastPipelines.length !== pipelines.length ||
+      lastPipelines.reduce(
+        (p, n, i) => p || lastPipelines[i].name !== pipelines[i].name,
+        false as boolean
+      );
+
     const didResize = checkCanvasResize();
 
     // update scene data
@@ -171,6 +155,7 @@ export function createWebGPURenderer(
     // TODO(@darzu): more fine grain
     needsRebundle =
       needsRebundle ||
+      didPipelinesChange ||
       didResize ||
       bundledMIds.size !== handles.length ||
       renderer.drawLines !== lastWireMode[0] ||
@@ -183,16 +168,17 @@ export function createWebGPURenderer(
         }
       }
     }
+
     if (needsRebundle) {
       // console.log("rebundeling");
-      updateRenderBundle(handles);
+      updateRenderBundle(handles, renderPipelines);
     }
 
     // start collecting our render commands for this frame
     const commandEncoder = device.createCommandEncoder();
 
     // run compute shaders
-    for (let p of computePipelines()) {
+    for (let p of computePipelines) {
       doCompute(device, resources, commandEncoder, p);
     }
 
@@ -201,7 +187,7 @@ export function createWebGPURenderer(
       context,
       commandEncoder,
       resources,
-      renderPipelines().map((p) => [p, cyRenderToBundle[p.ptr.name]]),
+      renderPipelines.map((p) => [p, cyRenderToBundle[p.ptr.name]]),
       renderer.backgroundColor
     );
 

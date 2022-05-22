@@ -155,6 +155,8 @@ export interface CyRndrPipelinePtr extends CyResourcePtr {
   depthStencil: CyDepthTexturePtr;
 }
 
+export type CyPipelinePtr = CyCompPipelinePtr | CyRndrPipelinePtr;
+
 // HELPERS
 
 export function isRenderPipelinePtr(
