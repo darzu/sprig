@@ -21,7 +21,7 @@ import {
   CyGlobal,
   CyManyBufferPtr,
   CyGlobalParam,
-  CyRndrPipelinePtr,
+  CyRenderPipelinePtr,
 } from "./gpu-registry.js";
 import { GPUBufferBindingTypeToWgslVar } from "./gpu-struct.js";
 import { createMeshPool, MeshHandle } from "./mesh-pool.js";
@@ -800,7 +800,7 @@ export function renderBundles(
   // render bundles
   // TODO(@darzu): ordering needs to be set by outside config
   // TODO(@darzu): same attachments need to be shared
-  let lastPipeline: CyRndrPipelinePtr | undefined;
+  let lastPipeline: CyRenderPipelinePtr | undefined;
   let renderPassEncoder: GPURenderPassEncoder | undefined;
   for (let [p, bundle] of pipelineAndBundle) {
     // console.log(`rendering ${p.ptr.name}`);
@@ -844,7 +844,7 @@ export function renderBundles(
   renderPassEncoder?.end();
 
   // TODO(@darzu): support multi-output
-  function isOutputEq(a: CyRndrPipelinePtr, b: CyRndrPipelinePtr) {
+  function isOutputEq(a: CyRenderPipelinePtr, b: CyRenderPipelinePtr) {
     return (
       a.output.name === b.output.name &&
       a.depthStencil.name === b.depthStencil.name

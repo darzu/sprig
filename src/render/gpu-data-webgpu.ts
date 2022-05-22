@@ -12,7 +12,7 @@ import {
   CyTexturePtr,
   CyDepthTexturePtr,
   CyCompPipelinePtr,
-  CyRndrPipelinePtr,
+  CyRenderPipelinePtr,
   CySamplerPtr,
   PtrKind,
   PtrKindToPtrType,
@@ -93,7 +93,7 @@ export interface CyCompPipeline {
 
 // TODO(@darzu): instead of just mushing together with the desc, have desc compose in
 export interface CyRndrPipeline {
-  ptr: CyRndrPipelinePtr;
+  ptr: CyRenderPipelinePtr;
   // resourceLayouts: CyBufferPtrLayout<any>[];
   vertexBuf?: CyMany<any>;
   indexBuf?: CyIdxBuffer;

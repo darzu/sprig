@@ -24,7 +24,7 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import {
-  CyRndrPipelinePtr,
+  CyRenderPipelinePtr,
   CyCompPipelinePtr,
 } from "../render/gpu-registry.js";
 import { cloneMesh, scaleMesh } from "../render/mesh.js";
@@ -333,7 +333,7 @@ export function initClothSandbox(em: EntityManager, hosting: boolean) {
     null,
     [AssetsDef, GlobalCursor3dDef, RendererDef],
     (_, res) => {
-      let renderPipelinesPtrs: CyRndrPipelinePtr[] = [
+      let renderPipelinesPtrs: CyRenderPipelinePtr[] = [
         renderTriPipelineDesc,
         renderRopePipelineDesc,
         boidRender,

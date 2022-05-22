@@ -144,7 +144,7 @@ type CyMeshOpt =
       stepMode: "single-draw";
     };
 
-export interface CyRndrPipelinePtr extends CyResourcePtr {
+export interface CyRenderPipelinePtr extends CyResourcePtr {
   kind: "renderPipeline";
   resources: CyGlobalParam[];
   shader: () => string;
@@ -155,14 +155,14 @@ export interface CyRndrPipelinePtr extends CyResourcePtr {
   depthStencil: CyDepthTexturePtr;
 }
 
-export type CyPipelinePtr = CyCompPipelinePtr | CyRndrPipelinePtr;
+export type CyPipelinePtr = CyCompPipelinePtr | CyRenderPipelinePtr;
 
 // HELPERS
 
 export function isRenderPipelinePtr(
-  p: CyRndrPipelinePtr | CyCompPipelinePtr
-): p is CyRndrPipelinePtr {
-  const k: keyof CyRndrPipelinePtr = "meshOpt";
+  p: CyRenderPipelinePtr | CyCompPipelinePtr
+): p is CyRenderPipelinePtr {
+  const k: keyof CyRenderPipelinePtr = "meshOpt";
   return k in p;
 }
 
@@ -175,7 +175,7 @@ export type PtrKindToPtrType = {
   texture: CyTexturePtr;
   depthTexture: CyDepthTexturePtr;
   compPipeline: CyCompPipelinePtr;
-  renderPipeline: CyRndrPipelinePtr;
+  renderPipeline: CyRenderPipelinePtr;
   meshPool: CyMeshPoolPtr<any, any>;
   canvasTexture: CyCanvasTexturePtr;
   sampler: CySamplerPtr;
@@ -279,8 +279,8 @@ export function createCyRegistry() {
     },
     registerRenderPipeline: (
       name: string,
-      desc: Omit_kind_name<CyRndrPipelinePtr>
-    ): CyRndrPipelinePtr => {
+      desc: Omit_kind_name<CyRenderPipelinePtr>
+    ): CyRenderPipelinePtr => {
       return registerCyResource({
         ...desc,
         kind: "renderPipeline",

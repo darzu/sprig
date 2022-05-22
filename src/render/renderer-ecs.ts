@@ -20,7 +20,7 @@ import { MeshHandleStd, renderTriPipelineDesc } from "./std-pipeline.js";
 import { CanvasDef } from "../canvas.js";
 import { FORCE_WEBGL } from "../main.js";
 import { createWebGPURenderer } from "./render-webgpu.js";
-import { CyPipelinePtr, CyRndrPipelinePtr } from "./gpu-registry.js";
+import { CyPipelinePtr, CyRenderPipelinePtr } from "./gpu-registry.js";
 
 export interface RenderableConstruct {
   readonly enabled: boolean;
