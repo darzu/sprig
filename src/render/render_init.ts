@@ -1,7 +1,6 @@
 import { CanvasDef } from "../canvas.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { FORCE_WEBGL } from "../main.js";
-import { MAX_MESHES, MAX_VERTICES } from "./pipelines.js";
 import { RenderableConstructDef, Renderer } from "./renderer.js";
 // import { attachToCanvasWebgl } from "./render_webgl.js";
 import { createWebGPURenderer } from "./render_webgpu.js";

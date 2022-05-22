@@ -16,12 +16,6 @@ import {
 } from "./gpu-registry.js";
 import { createMeshPool, MeshPool } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
-import {
-  SceneStruct,
-  MeshUniformStruct,
-  VertexStruct,
-  MeshHandleStd,
-} from "./pipelines.js";
 import { Renderer } from "./renderer.js";
 import {
   PtrKindToResourceType,
@@ -35,6 +29,12 @@ import {
   CyOne,
   CyTexture,
 } from "./gpu-data-webgpu.js";
+import {
+  VertexStruct,
+  MeshUniformStruct,
+  SceneStruct,
+  MeshHandleStd,
+} from "./std-pipeline.js";
 
 const prim_tris: GPUPrimitiveState = {
   topology: "triangle-list",
@@ -686,6 +686,10 @@ export function createWebGPURenderer(
     renderer.drawLines,
     renderer.drawTris,
   ];
+
+  // TODO(@darzu): IMPL
+  const cyRenderToBundle: { [pipelineName: string]: GPURenderBundle } = {};
+
   // let renderBundle: GPURenderBundle;
   updateRenderBundle([]);
 
@@ -732,13 +736,6 @@ export function createWebGPURenderer(
       }),
     });
     return bindGroup;
-  }
-
-  function gpuBufferWriteAllMeshUniforms(handles: MeshHandleStd[]) {
-    // TODO(@darzu): make this update all meshes at once
-    for (let m of handles) {
-      pool.updateUniform(m);
-    }
   }
 
   // recomputes textures, widths, and aspect ratio on canvas resize
@@ -833,9 +830,6 @@ export function createWebGPURenderer(
     pool.updateMeshVertices(handle, newMeshData);
   }
 
-  // TODO(@darzu): IMPL
-  const cyRenderToBundle: { [pipelineName: string]: GPURenderBundle } = {};
-
   function updateRenderBundle(handles: MeshHandleStd[]) {
     needsRebundle = false; // TODO(@darzu): hack?
 
@@ -928,7 +922,9 @@ export function createWebGPURenderer(
     });
 
     // update all mesh transforms
-    gpuBufferWriteAllMeshUniforms(handles);
+    for (let m of handles) {
+      pool.updateUniform(m);
+    }
 
     // TODO(@darzu): more fine grain
     needsRebundle =

@@ -38,7 +38,7 @@ import {
 import { ColorDef } from "../color.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DeletedDef } from "../delete.js";
-import { MeshHandleStd, MeshUniformStruct } from "./pipelines.js";
+import { MeshHandleStd } from "./std-pipeline.js";
 
 // TODO(@darzu): name it cytochrome
 
