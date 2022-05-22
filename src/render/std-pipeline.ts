@@ -23,10 +23,11 @@ export const MAX_VERTICES = 21844;
 //  [ ] re-enable anti aliasing
 //  [ ] ECS integration w/ custom gpu data
 //  [ ] general usable particle system
-//  [ ] split *ptr CY.register from webgpu impl
+//  [x] split *ptr CY.register from webgpu impl
 //  [ ] webgl impl
 //  [ ] multiple pipeline outputs
 //  [ ] deferred rendering
+//  [ ] re-enable line renderer
 
 export const VertexStruct = createCyStruct(
   {

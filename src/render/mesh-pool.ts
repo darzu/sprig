@@ -34,8 +34,8 @@ export interface MeshHandle<U extends CyStructDesc> {
 
   readonly readonlyMesh?: Mesh;
 
-  // state
-  enabled: boolean;
+  // // state
+  // enabled: boolean;
 
   // used as the uniform for this mesh
   shaderData: CyToTS<U>;
@@ -175,7 +175,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
 
     const handle: MeshHandle<U> = {
       mId: nextMeshId++,
-      enabled: true,
+      // enabled: true,
       triNum: m.tri.length,
       lineNum: m.lines?.length ?? 0,
       vertNum: m.pos.length,
