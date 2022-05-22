@@ -16,7 +16,7 @@ import {
 import { ColorDef } from "../color.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DeletedDef } from "../delete.js";
-import { MeshHandleStd, renderTriPipelineDesc } from "./std-pipeline.js";
+import { MeshHandleStd, stdRenderPipeline } from "./std-pipeline.js";
 import { CanvasDef } from "../canvas.js";
 import { FORCE_WEBGL } from "../main.js";
 import { createWebGPURenderer } from "./render-webgpu.js";
@@ -269,6 +269,6 @@ async function chooseAndInitRenderer(
   // add to ECS
   // TODO(@darzu): this is a little wierd to do this in an async callback
   em.addSingletonComponent(RendererDef, renderer, usingWebGPU, [
-    renderTriPipelineDesc,
+    stdRenderPipeline,
   ]);
 }

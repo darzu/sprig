@@ -2,7 +2,7 @@ import { CY } from "./gpu-registry.js";
 
 const CLOTH_SIZE = 10; // TODO(@darzu):
 
-const clothTexPtrDesc: Parameters<typeof CY.registerTexPtr>[1] = {
+const clothTexPtrDesc: Parameters<typeof CY.createTexture>[1] = {
   size: [CLOTH_SIZE, CLOTH_SIZE],
   format: "rgba32float",
   init: () => {
@@ -18,10 +18,10 @@ const clothTexPtrDesc: Parameters<typeof CY.registerTexPtr>[1] = {
     return clothData;
   },
 };
-const clothTexPtr0 = CY.registerTexPtr("clothTex0", {
+const clothTexPtr0 = CY.createTexture("clothTex0", {
   ...clothTexPtrDesc,
 });
-const clothTexPtr1 = CY.registerTexPtr("clothTex1", {
+const clothTexPtr1 = CY.createTexture("clothTex1", {
   ...clothTexPtrDesc,
 });
 
@@ -51,7 +51,7 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
 
 `;
 
-export const cmpClothPipelinePtr0 = CY.registerCompPipeline("clothComp0", {
+export const cmpClothPipelinePtr0 = CY.createComputePipeline("clothComp0", {
   globals: [
     { ptr: clothTexPtr0, access: "read", alias: "inTex" },
     { ptr: clothTexPtr1, access: "write", alias: "outTex" },
@@ -59,7 +59,7 @@ export const cmpClothPipelinePtr0 = CY.registerCompPipeline("clothComp0", {
   shader: cloth_shader,
   shaderComputeEntry: "main",
 });
-export const cmpClothPipelinePtr1 = CY.registerCompPipeline("clothComp1", {
+export const cmpClothPipelinePtr1 = CY.createComputePipeline("clothComp1", {
   globals: [
     { ptr: clothTexPtr1, access: "read", alias: "inTex" },
     { ptr: clothTexPtr0, access: "write", alias: "outTex" },

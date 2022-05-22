@@ -653,7 +653,7 @@ const canvasFormat = navigator.gpu?.getPreferredCanvasFormat();
 
 export function bundleRenderPipelines(
   device: GPUDevice,
-  cyKindToNameToRes: CyResources,
+  resources: CyResources,
   renderPipelines: CyRndrPipeline[],
   meshHandleIds: Set<MeshHandle<any>["mId"]>
 ): GPURenderBundle[] {
@@ -690,7 +690,7 @@ export function bundleRenderPipelines(
       const globalUsages = normalizeGlobals(p.ptr.globals);
       const resBindGroup = mkBindGroup(
         device,
-        cyKindToNameToRes,
+        resources,
         resBindGroupLayout,
         globalUsages,
         "many"
@@ -713,7 +713,7 @@ export function bundleRenderPipelines(
       };
       const uniBG = mkBindGroup(
         device,
-        cyKindToNameToRes,
+        resources,
         uniBGLayout,
         [uniUsage],
         "one"

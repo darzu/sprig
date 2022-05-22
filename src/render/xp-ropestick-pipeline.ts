@@ -111,15 +111,15 @@ const genRopeStickData = () => {
   return _initRopeStickData;
 };
 
-const ropePointBufPtr = CY.registerArrayPtr("ropePoint", {
+const ropePointBufPtr = CY.createArray("ropePoint", {
   struct: RopePointStruct,
   init: genRopePointData,
 });
-const ropeStickBufPtr = CY.registerArrayPtr("ropeStick", {
+const ropeStickBufPtr = CY.createArray("ropeStick", {
   struct: RopeStickStruct,
   init: genRopeStickData,
 });
-export const compRopePipelinePtr = CY.registerCompPipeline("ropeComp", {
+export const compRopePipelinePtr = CY.createComputePipeline("ropeComp", {
   globals: [sceneBufPtr, ropePointBufPtr, ropeStickBufPtr],
   shaderComputeEntry: "main",
   shader: () =>
@@ -221,7 +221,7 @@ const initParticleVertData: () => CyToTS<
   { position: [-1, 1, -1] },
   { position: [-1, -1, 1] },
 ];
-const particleVertBufPtr = CY.registerArrayPtr("particleVert", {
+const particleVertBufPtr = CY.createArray("particleVert", {
   struct: ParticleVertStruct,
   init: initParticleVertData,
 });
@@ -229,11 +229,11 @@ const particleVertBufPtr = CY.registerArrayPtr("particleVert", {
 const initParticleIdxData = () =>
   new Uint16Array([2, 1, 0, 3, 2, 0, 1, 3, 0, 2, 3, 1]);
 
-const particleIdxBufPtr = CY.registerIdxBufPtr("particleIdx", {
+const particleIdxBufPtr = CY.createIdxBuf("particleIdx", {
   init: initParticleIdxData,
 });
 
-export const renderRopePipelineDesc = CY.registerRenderPipeline("renderRope", {
+export const renderRopePipelineDesc = CY.createRenderPipeline("renderRope", {
   globals: [sceneBufPtr],
   meshOpt: {
     vertex: particleVertBufPtr,

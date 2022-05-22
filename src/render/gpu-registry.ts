@@ -214,10 +214,14 @@ export function createCyRegistry() {
     return ptr;
   }
 
+  // Note: we define individual register functions instead of a generic like
+  //   register.kind() because some descriptions have custom type parameters
+  //   we want to provide good typing for.
+
   return {
     nameToPtr,
     kindToPtrs,
-    registerSingletonPtr: <O extends CyStructDesc>(
+    createSingleton: <O extends CyStructDesc>(
       name: string,
       desc: Omit_kind_name<CySingletonPtr<O>>
     ): CySingletonPtr<O> => {
@@ -227,7 +231,7 @@ export function createCyRegistry() {
         name,
       });
     },
-    registerArrayPtr: <O extends CyStructDesc>(
+    createArray: <O extends CyStructDesc>(
       name: string,
       desc: Omit_kind_name<CyArrayPtr<O>>
     ): CyArrayPtr<O> => {
@@ -237,7 +241,7 @@ export function createCyRegistry() {
         name,
       });
     },
-    registerIdxBufPtr: (
+    createIdxBuf: (
       name: string,
       desc: Omit_kind_name<CyIdxBufferPtr>
     ): CyIdxBufferPtr => {
@@ -247,7 +251,7 @@ export function createCyRegistry() {
         name,
       });
     },
-    registerTexPtr: (
+    createTexture: (
       name: string,
       desc: Omit_kind_name<CyTexturePtr>
     ): CyTexturePtr => {
@@ -257,7 +261,7 @@ export function createCyRegistry() {
         name,
       });
     },
-    registerDepthTexPtr: (
+    createDepthTexture: (
       name: string,
       desc: Omit_kind_name<CyDepthTexturePtr>
     ): CyDepthTexturePtr => {
@@ -267,7 +271,7 @@ export function createCyRegistry() {
         name,
       });
     },
-    registerCompPipeline: (
+    createComputePipeline: (
       name: string,
       desc: Omit_kind_name<CyCompPipelinePtr>
     ): CyCompPipelinePtr => {
@@ -277,7 +281,7 @@ export function createCyRegistry() {
         name,
       });
     },
-    registerRenderPipeline: (
+    createRenderPipeline: (
       name: string,
       desc: Omit_kind_name<CyRenderPipelinePtr>
     ): CyRenderPipelinePtr => {
@@ -287,7 +291,7 @@ export function createCyRegistry() {
         name,
       });
     },
-    registerMeshPoolPtr: <V extends CyStructDesc, U extends CyStructDesc>(
+    createMeshPool: <V extends CyStructDesc, U extends CyStructDesc>(
       name: string,
       desc: Omit_kind_name<CyMeshPoolPtr<V, U>>
     ): CyMeshPoolPtr<V, U> => {

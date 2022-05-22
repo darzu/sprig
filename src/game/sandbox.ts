@@ -33,7 +33,7 @@ import {
   RenderableConstructDef,
 } from "../render/renderer-ecs.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { renderTriPipelineDesc } from "../render/std-pipeline.js";
+import { stdRenderPipeline } from "../render/std-pipeline.js";
 import {
   boidRender,
   boidCanvasMerge,
@@ -334,7 +334,7 @@ export function initClothSandbox(em: EntityManager, hosting: boolean) {
     [AssetsDef, GlobalCursor3dDef, RendererDef],
     (_, res) => {
       let renderPipelinesPtrs: CyRenderPipelinePtr[] = [
-        renderTriPipelineDesc,
+        stdRenderPipeline,
         renderRopePipelineDesc,
         boidRender,
         boidCanvasMerge,

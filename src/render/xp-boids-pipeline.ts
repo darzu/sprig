@@ -17,7 +17,7 @@ const BoidData = createCyStruct({
   vel: "vec3<f32>",
 });
 const numBoids = 1500;
-const boidData0 = CY.registerArrayPtr("boidData0", {
+const boidData0 = CY.createArray("boidData0", {
   struct: BoidData,
   init: () =>
     range(numBoids).map((_, i) => ({
@@ -25,7 +25,7 @@ const boidData0 = CY.registerArrayPtr("boidData0", {
       vel: [jitter(10), jitter(10), jitter(10)] as vec3,
     })),
 });
-const boidData1 = CY.registerArrayPtr("boidData1", {
+const boidData1 = CY.createArray("boidData1", {
   struct: BoidData,
   init: () => numBoids,
 });
@@ -33,7 +33,7 @@ const BoidVert = createCyStruct({
   pos: "vec3<f32>",
 });
 
-const boidVerts = CY.registerArrayPtr("boidVerts", {
+const boidVerts = CY.createArray("boidVerts", {
   struct: BoidVert,
   init: () => [
     { pos: [1, 1, 1] },
@@ -42,11 +42,11 @@ const boidVerts = CY.registerArrayPtr("boidVerts", {
     { pos: [-1, -1, 1] },
   ],
 });
-const boidInds = CY.registerIdxBufPtr("boidIdx", {
+const boidInds = CY.createIdxBuf("boidIdx", {
   init: () => new Uint16Array([2, 1, 0, 3, 2, 0, 1, 3, 0, 2, 3, 1]),
 });
 const boidResize: CyTexturePtr["onCanvasResize"] = (w, h) => [w / 2, h / 2];
-const boidOutTex = CY.registerTexPtr("boidTex", {
+const boidOutTex = CY.createTexture("boidTex", {
   size: [200, 200],
   onCanvasResize: boidResize,
   format: "rgba8unorm",
@@ -54,7 +54,7 @@ const boidOutTex = CY.registerTexPtr("boidTex", {
   // sampleCount: antiAliasSampleCount,
   init: () => undefined,
 });
-const boidDepthTex = CY.registerDepthTexPtr("boidDepth", {
+const boidDepthTex = CY.createDepthTexture("boidDepth", {
   size: [200, 200],
   format: "depth32float",
   onCanvasResize: boidResize,
@@ -62,7 +62,7 @@ const boidDepthTex = CY.registerDepthTexPtr("boidDepth", {
   // sampleCount: antiAliasSampleCount,
   init: () => undefined,
 });
-export const boidRender = CY.registerRenderPipeline("boidRender", {
+export const boidRender = CY.createRenderPipeline("boidRender", {
   globals: [sceneBufPtr],
   meshOpt: {
     index: boidInds,
@@ -128,7 +128,7 @@ const BoidParams = createCyStruct(
     isUniform: true,
   }
 );
-const boidParams = CY.registerSingletonPtr("boidParams", {
+const boidParams = CY.createSingleton("boidParams", {
   struct: BoidParams,
   init: () => {
     return {
@@ -146,7 +146,7 @@ const boidParams = CY.registerSingletonPtr("boidParams", {
 });
 
 const boidCompDesc: Omit<
-  Parameters<typeof CY.registerCompPipeline>[1],
+  Parameters<typeof CY.createComputePipeline>[1],
   "globals"
 > = {
   shaderComputeEntry: "main",
@@ -227,7 +227,7 @@ const boidCompDesc: Omit<
   workgroupCounts: [Math.ceil(numBoids / 64), 1, 1],
 };
 
-export const boidComp0 = CY.registerCompPipeline("boidComp0", {
+export const boidComp0 = CY.createComputePipeline("boidComp0", {
   ...boidCompDesc,
   globals: [
     boidParams,
@@ -235,7 +235,7 @@ export const boidComp0 = CY.registerCompPipeline("boidComp0", {
     { ptr: boidData1, access: "write", alias: "outBoids" },
   ],
 });
-export const boidComp1 = CY.registerCompPipeline("boidComp1", {
+export const boidComp1 = CY.createComputePipeline("boidComp1", {
   ...boidCompDesc,
   globals: [
     boidParams,
@@ -253,7 +253,7 @@ const boidWindow = createCyStruct(
     isUniform: true,
   }
 );
-const boidWindowUni = CY.registerSingletonPtr("boidWindow", {
+const boidWindowUni = CY.createSingleton("boidWindow", {
   struct: boidWindow,
   init: () => ({
     xPos: [0, 1],
@@ -261,7 +261,7 @@ const boidWindowUni = CY.registerSingletonPtr("boidWindow", {
   }),
 });
 
-export const boidCanvasMerge = CY.registerRenderPipeline("boidCanvasMerge", {
+export const boidCanvasMerge = CY.createRenderPipeline("boidCanvasMerge", {
   globals: [
     // // { ptr: nearestSamplerPtr, alias: "mySampler" },
     { ptr: linearSamplerPtr, alias: "mySampler" },

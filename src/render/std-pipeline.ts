@@ -121,30 +121,30 @@ export type MeshUniformTS = CyToTS<typeof MeshUniformStruct.desc>;
 // TODO(@darzu): IMPL
 export type MeshHandleStd = MeshHandle<typeof MeshUniformStruct.desc>;
 
-export const sceneBufPtr = CY.registerSingletonPtr("scene", {
+export const sceneBufPtr = CY.createSingleton("scene", {
   struct: SceneStruct,
   init: setupScene,
 });
 
-const meshVertsPtr = CY.registerArrayPtr("meshVertsBuf", {
+const meshVertsPtr = CY.createArray("meshVertsBuf", {
   struct: VertexStruct,
   init: () => MAX_VERTICES,
 });
 
-const meshTriIndsPtr = CY.registerIdxBufPtr("meshTriIndsBuf", {
+const meshTriIndsPtr = CY.createIdxBuf("meshTriIndsBuf", {
   init: () => MAX_VERTICES,
 });
 
-const meshLineIndsPtr = CY.registerIdxBufPtr("meshLineIndsBuf", {
+const meshLineIndsPtr = CY.createIdxBuf("meshLineIndsBuf", {
   init: () => MAX_VERTICES * 2,
 });
 
-const meshUnisPtr = CY.registerArrayPtr("meshUni", {
+const meshUnisPtr = CY.createArray("meshUni", {
   struct: MeshUniformStruct,
   init: () => MAX_MESHES,
 });
 
-export const meshPoolPtr = CY.registerMeshPoolPtr("meshPool", {
+export const meshPoolPtr = CY.createMeshPool("meshPool", {
   computeVertsData,
   computeUniData,
   vertsPtr: meshVertsPtr,
@@ -185,14 +185,14 @@ export function computeVertsData(m: Mesh): VertexTS[] {
   return vertsData;
 }
 
-export const canvasDepthTex = CY.registerDepthTexPtr("canvasDepth", {
+export const canvasDepthTex = CY.createDepthTexture("canvasDepth", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
   format: "depth24plus-stencil8",
   init: () => undefined,
 });
 
-export const renderTriPipelineDesc = CY.registerRenderPipeline("triRender", {
+export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
   globals: [
     sceneBufPtr,
     // TODO(@darzu): support textures
