@@ -33,7 +33,9 @@ const prim_lines: GPUPrimitiveState = {
 };
 
 export type CyResources = {
-  [K in PtrKind]: { [name: string]: PtrKindToResourceType[K] };
+  kindToNameToRes: {
+    [K in PtrKind]: { [name: string]: PtrKindToResourceType[K] };
+  };
 };
 
 export function createCyResources(
@@ -619,7 +621,9 @@ export function createCyResources(
     }
   }
 
-  return kindToNameToRes;
+  return {
+    kindToNameToRes,
+  };
 }
 
 export function normalizeResources(
@@ -733,28 +737,29 @@ export function bundleRenderPipelines(
 
 function mkBindGroupEntry(
   device: GPUDevice,
-  cyKindToNameToRes: CyResources,
+  resources: CyResources,
   idx: number,
   r: CyGlobalUsage<CyGlobal>,
   bufPlurality: "one" | "many"
 ): GPUBindGroupEntry {
+  const kindToNameToRes = resources.kindToNameToRes;
   if (r.ptr.kind === "oneBuffer" || r.ptr.kind === "manyBuffer") {
     const buf =
       r.ptr.kind === "oneBuffer"
-        ? cyKindToNameToRes.oneBuffer[r.ptr.name]
-        : cyKindToNameToRes.manyBuffer[r.ptr.name];
+        ? kindToNameToRes.oneBuffer[r.ptr.name]
+        : kindToNameToRes.manyBuffer[r.ptr.name];
     assert(!!buf, `Missing resource buffer: ${r.ptr.name}`);
     // TODO(@darzu): not super happy with how plurality is handled
     return buf.binding(idx, bufPlurality);
   } else if (r.ptr.kind === "texture" || r.ptr.kind === "depthTexture") {
-    const tex = cyKindToNameToRes[r.ptr.kind][r.ptr.name]!;
+    const tex = kindToNameToRes[r.ptr.kind][r.ptr.name]!;
     return {
       binding: idx,
       // TODO(@darzu): does this view need to be updated on resize?
       resource: tex.texture.createView(),
     };
   } else if (r.ptr.kind === "sampler") {
-    const sampler = cyKindToNameToRes.sampler[r.ptr.name];
+    const sampler = kindToNameToRes.sampler[r.ptr.name];
     return {
       binding: idx,
       resource: sampler.sampler,
@@ -765,7 +770,7 @@ function mkBindGroupEntry(
 }
 export function mkBindGroup(
   device: GPUDevice,
-  cyKindToNameToRes: CyResources,
+  resources: CyResources,
   layout: GPUBindGroupLayout,
   ptrs: CyGlobalUsage<CyGlobal>[],
   // TODO(@darzu): this is a hack.....
@@ -774,7 +779,7 @@ export function mkBindGroup(
   const bindGroup = device.createBindGroup({
     layout: layout,
     entries: ptrs.map((r, i) => {
-      return mkBindGroupEntry(device, cyKindToNameToRes, i, r, bufPlurality);
+      return mkBindGroupEntry(device, resources, i, r, bufPlurality);
     }),
   });
   return bindGroup;

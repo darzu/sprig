@@ -64,7 +64,8 @@ export function createWebGPURenderer(
 
   let canvasFormat = navigator.gpu.getPreferredCanvasFormat();
 
-  const cyKindToNameToRes = createCyResources(CY, device);
+  const resources = createCyResources(CY, device);
+  const cyKindToNameToRes = resources.kindToNameToRes;
 
   // TODO(@darzu): pass in elsewhere?
   const pool: MeshPool<
@@ -222,7 +223,7 @@ export function createWebGPURenderer(
     const pipelines = renderPipelines();
     const renderBundles = bundleRenderPipelines(
       device,
-      cyKindToNameToRes,
+      resources,
       pipelines,
       bundledMIds
     );
@@ -279,7 +280,7 @@ export function createWebGPURenderer(
       const resUsages = normalizeResources(p.ptr.resources);
       const resBindGroup = mkBindGroup(
         device,
-        cyKindToNameToRes,
+        resources,
         resBindGroupLayout,
         resUsages,
         "many"
