@@ -11,10 +11,7 @@ import { max } from "./math.js";
 import { AuthorityDef, MeDef } from "./net/components.js";
 import { WorldFrameDef } from "./physics/nonintersection.js";
 import { PositionDef, RotationDef } from "./physics/transform.js";
-import {
-  RendererWorldFrameDef,
-  SmoothedWorldFrameDef,
-} from "./render/renderer.js";
+import { RendererWorldFrameDef } from "./render/renderer-ecs.js";
 import { computeNewError, reduceError } from "./smoothing.js";
 import { tempQuat, tempVec } from "./temp-pool.js";
 import { TimeDef } from "./time.js";

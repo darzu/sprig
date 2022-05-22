@@ -1,0 +1,19 @@
+"Build Your Own Fan Club: How to Use Your Email List"
+  https://www.youtube.com/watch?v=jZ5H6DeaKKs&t=6s
+  give-give-give-ask
+  email every 3 weeks ?
+
+https://howtomarketagame.com/2022/05/04/how-peglin-made-1049413-in-1-week/
+https://howtomarketagame.com/2022/04/18/what-genres-are-popular-on-steam-in-2022/
+https://howtomarketagame.com/2022/03/21/if-you-build-it-they-wont-come-marketing-fallacies-and-missed-opportunities/
+
+Audience participation:
+  one of the things we can do for marketing/building a following is 
+  public AB/micro testing
+  since everything is web and loads lightning fast, we could upload two 
+  builds and be like "hey twitter poll, do u prefer A or B?" for testing 
+  like cannon projectile speed or something
+  better if the two builds were split screen on one page where it auto-paused 
+  each one when u were focused on the other
+  u could easily test out and tweak pretty much any little gameplay 
+  feature that u can make a nice sandbox for

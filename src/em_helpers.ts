@@ -9,6 +9,7 @@ import {
 import { Authority, AuthorityDef, MeDef, SyncDef } from "./net/components.js";
 import { Serializer, Deserializer } from "./serialize.js";
 import { assert } from "./test.js";
+import { capitalize } from "./util.js";
 
 export function defineSerializableComponent<
   N extends string,
@@ -170,10 +171,6 @@ export function defineNetEntityHelper<
 
   // TYPE HACK: idk how to make Typscript accept this...
   return result as any;
-}
-
-export function capitalize<S extends string>(s: S): Capitalize<S> {
-  return `${s[0].toUpperCase()}${s.slice(1)}` as any;
 }
 
 export type Ref<CS extends ComponentDef[] = []> = (() =>

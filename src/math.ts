@@ -1,3 +1,4 @@
+import { EaseFn } from "./animate-to.js";
 import { assert } from "./test.js";
 
 // functions
@@ -53,6 +54,22 @@ export function mathMap(
   assert(inMin < inMax, "must be: inMin < inMax");
   assert(outMin <= outMax, "must be: outMin <= outMax");
   assert(inMin <= n && n <= inMax, "must be: inMin <= n && n <= inMax");
-  const s = (n - inMin) / (inMax - inMin);
-  return s * (outMax - outMin) + outMin;
+  const progress = (n - inMin) / (inMax - inMin);
+  return progress * (outMax - outMin) + outMin;
+}
+export function mathMapNEase(
+  n: number,
+  inMin: number,
+  inMax: number,
+  outMin: number,
+  outMax: number,
+  easeFn?: EaseFn
+): number {
+  assert(inMin < inMax, "must be: inMin < inMax");
+  assert(outMin <= outMax, "must be: outMin <= outMax");
+  n = Math.max(n, inMin);
+  n = Math.min(n, inMax);
+  let progress = (n - inMin) / (inMax - inMin);
+  if (easeFn) progress = easeFn(progress);
+  return progress * (outMax - outMin) + outMin;
 }

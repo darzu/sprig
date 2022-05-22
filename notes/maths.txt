@@ -39,3 +39,10 @@ Dot product: a nice way to measure similarity of vectors
 
 Homogeneous coordinates:
     https://www.youtube.com/watch?v=o1n02xKP138
+
+Bezier curves:
+  https://www.youtube.com/watch?v=aVwxzDHniEw
+    can use nested lerps to calculate (De Casteljau's)
+    also: Bernstein Polynomial Form
+    need approx solutions for even distance along curve
+  https://www.redblobgames.com/articles/curved-paths/

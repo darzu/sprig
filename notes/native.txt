@@ -20,3 +20,11 @@ flutter:
 babylon:
     https://www.babylonjs.com/native/
     https://www.babylonjs.com/reactnative/
+
+wgpu:
+  mozilla, open source, rust webgpu impl
+  more accessible
+  non-chrome googlers use it
+
+dawn:
+  C++, google webgpu impl

@@ -1,16 +1,16 @@
-import { EntityManager, EntityW, TupleN } from "../entity-manager.js";
+import { EntityManager, EntityW } from "../entity-manager.js";
 import { AssetsDef } from "../game/assets.js";
 import { ColorDef } from "../color.js";
 import { LocalPlayerDef } from "../game/player.js";
 import { vec3 } from "../gl-matrix.js";
-import { cloneMesh } from "../render/mesh-pool.js";
-import { RenderableConstructDef } from "../render/renderer.js";
+import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { BoxCollider, Collider } from "./collider.js";
 import { PhysicsObject, WorldFrameDef } from "./nonintersection.js";
 import { PhysicsParentDef, PositionDef } from "./transform.js";
 import { centroid, SupportFn, vec3Dbg } from "../utils-3d.js";
 import { tempVec } from "../temp-pool.js";
 import { PAD } from "./phys.js";
+import { TupleN } from "../util.js";
 
 // GJK: convex vs convex collision testing
 //  https://www.youtube.com/watch?v=ajv46BSqcK4

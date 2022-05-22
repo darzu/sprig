@@ -7,20 +7,21 @@ import {
   getHalfsizeFromAABB,
   mapMeshPositions,
   Mesh,
-  MeshHandle,
   scaleMesh,
   scaleMesh3,
   transformMesh,
   unshareProvokingVertices,
-} from "../render/mesh-pool.js";
+} from "../render/mesh.js";
 import { AABB } from "../physics/broadphase.js";
-import { RendererDef } from "../render/render_init.js";
-import { Renderer } from "../render/renderer.js";
+import { RendererDef } from "../render/renderer-ecs.js";
+import { Renderer } from "../render/renderer-ecs.js";
 import { assert } from "../test.js";
 import { objMap } from "../util.js";
 import { getText } from "../webget.js";
 import { AABBCollider } from "../physics/collider.js";
 import { farthestPointInDir, SupportFn } from "../utils-3d.js";
+import { MeshHandle } from "../render/mesh-pool.js";
+import { MeshHandleStd } from "../render/std-pipeline.js";
 
 export const BLACK = vec3.fromValues(0, 0, 0);
 export const DARK_GRAY = vec3.fromValues(0.02, 0.02, 0.02);
@@ -60,11 +61,9 @@ const RemoteMesheSets = {
 
 type RemoteMeshSetSymbols = keyof typeof RemoteMesheSets;
 
-const AssetTransforms: Partial<
-  {
-    [P in RemoteMeshSymbols | RemoteMeshSetSymbols | LocalMeshSymbols]: mat4;
-  }
-> = {
+const AssetTransforms: Partial<{
+  [P in RemoteMeshSymbols | RemoteMeshSetSymbols | LocalMeshSymbols]: mat4;
+}> = {
   cannon: mat4.fromYRotation(mat4.create(), -Math.PI / 2),
   linstock: mat4.fromScaling(mat4.create(), [0.1, 0.1, 0.1]),
   // ship: mat4.fromScaling(mat4.create(), [3, 3, 3]),
@@ -87,13 +86,11 @@ const blackoutColor: (m: Mesh) => Mesh = (m: Mesh) => {
   m.colors.map((c) => vec3.zero(c));
   return m;
 };
-const MeshTransforms: Partial<
-  {
-    [P in RemoteMeshSymbols | RemoteMeshSetSymbols | LocalMeshSymbols]: (
-      m: Mesh
-    ) => Mesh;
-  }
-> = {
+const MeshTransforms: Partial<{
+  [P in RemoteMeshSymbols | RemoteMeshSetSymbols | LocalMeshSymbols]: (
+    m: Mesh
+  ) => Mesh;
+}> = {
   cannon: (m) => {
     m.colors = m.colors.map((c) => [0.2, 0.2, 0.2]);
     return m;
@@ -304,6 +301,12 @@ const PLANE_MESH = unshareProvokingVertices(
         [2, 3],
       ],
       colors: [BLACK, BLACK, BLACK, BLACK],
+      // uvs: [
+      //   [1, 1],
+      //   [0, 1],
+      //   [1, 0],
+      //   [0, 0],
+      // ],
     },
     10
   )
@@ -424,16 +427,16 @@ export type GameMesh = {
   aabb: AABB;
   center: vec3;
   halfsize: vec3;
-  proto: MeshHandle;
+  // TODO(@darzu): remove dependency on MeshHandleStd
+  proto: MeshHandleStd;
   uniqueVerts: vec3[];
   support: SupportFn;
   mkAabbCollider: (solid: boolean) => AABBCollider;
 };
 
-type GameMeshes = { [P in RemoteMeshSymbols | LocalMeshSymbols]: GameMesh } &
-  {
-    [P in RemoteMeshSetSymbols]: GameMesh[];
-  };
+type GameMeshes = { [P in RemoteMeshSymbols | LocalMeshSymbols]: GameMesh } & {
+  [P in RemoteMeshSetSymbols]: GameMesh[];
+};
 
 const AssetLoaderDef = EM.defineComponent("assetLoader", () => {
   return {

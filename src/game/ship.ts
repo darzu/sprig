@@ -12,7 +12,10 @@ import {
 } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
-import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
+import {
+  RenderableConstructDef,
+  RenderableDef,
+} from "../render/renderer-ecs.js";
 import {
   PhysicsParentDef,
   PositionDef,

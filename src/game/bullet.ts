@@ -2,7 +2,7 @@ import { EM, EntityManager, Component, Entity } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "../color.js";
-import { RenderableConstructDef } from "../render/renderer.js";
+import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { Position, PositionDef, RotationDef } from "../physics/transform.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef, SyncDef, PredictDef } from "../net/components.js";

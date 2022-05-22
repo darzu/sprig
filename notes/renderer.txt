@@ -411,6 +411,8 @@ ALTERNATE APPROACH:
 SDF for text:
   https://www.youtube.com/watch?v=1b5hIMqz_wM
     Material Maker
+  text is hard?
+    https://gankra.github.io/blah/text-hates-you/
 
 VFX explosions:
   https://www.youtube.com/watch?v=dDsb_9n-Gik
@@ -448,3 +450,292 @@ Rendering problem cheat sheet:
 To improve look and feel, I should write a .gltf exporter than load that in Unity 
   or blender and play with materials, lighting, shaders etc until it looks how I want.
   Then figure out what the delta is and how to impl it. Probably cut corners.
+
+Waves:
+  https://playground.babylonjs.com/?webgpu#YX6IB8#55
+  https://github.com/gasgiant/FFT-Ocean
+
+WebGPU breakout sample:
+  https://github.com/toji/spookyball
+
+Tomas Sala doesn't believe in textures either:
+  https://youtu.be/5d8tx6K6hkk?t=3050
+  no baking lights
+  no diffuse maps, no normal maps,
+  world-space fog gradients use extensively
+  world-space aware shaders in general
+  day-night cycle:
+    one slider, indexes ~8 gradients
+  having no textures means he has tons of memory:
+    his audio is uncompressed
+    his whole world is loaded in at once
+    consistent 60fps without much effort
+  doesn't do any special culling, just frustum culling built into Unity
+  regarding low-poly:
+    he doesn't like showing all the facetted edges,
+    "smoothing groups" ?
+    some vertices smooth together, some stay sharp with each other
+  b/c models are "kitbashed", destruction just means flinging individual parts
+  hmm seems he does bake some lights into vertex colors
+  uses forward rendering for perf reasons
+  for flood light: just use a box w/ additive color
+  clouds: transparent spheres, z sorted ?
+    ray marched, volumetric stuff is too expensive
+  "i'm not smart enough to use that so I won't"
+  "find the pillars you need and focus on those"
+    In finding nemo, they had a small list of things that make ocean water work
+    in the outdoor setting of falconeer, 
+  "the smaller the prison the more exciting the break out"
+    limitations breed creative solutions
+  color correction: "that is so important"
+  things need to feel consistent
+    water color reflected in sky
+    things need to feel solid, like they r one piece
+  in unity the perf metrics: batches and tris
+    <200 batches, <200,000 triangles for mobile
+    <400 batches, <400,000 triangles for switch
+      up to 600 batches, 600,000 triangles
+    on PC, 1,000 batches, 1,000,000 triangles is safe
+  ocean 
+    is "occlusion shape" ? only rendered for camera
+    ~50k triangles
+    ocean shader done in Shader Forge
+      omg, it's huge
+    waves itself: vertex displacement, "gerstner wave" ?
+      sine wave, absolute value, but soft tops?
+      7 iterations, bigger and smaller, merged
+      has mirror code in C# and shader for displacement
+    has shadows on the water
+    never got ambient occlusion to work on the water
+    occasionally generate wave splaces
+  for reflections:
+    box blur is too expensive
+    uses lots of jagged sine waves?
+    planar reflection
+  lip sync by just have emotional blabber blended to 
+    mouth closed based on audio
+  clouds:
+    inspiration from dutch moody sky ship paintings
+    "I'm not smart enough to understand how ray marched volumetric clouds really work"
+    Ace Combat has blog on their clouds (too fancy?)
+      https://www.skywardfm.com/post/the-form-and-function-of-clouds-and-weather-in-ace-combat-7
+    Tomas vid on clouds: https://www.youtube.com/watch?v=4i3w9XmxYSo
+      spheres
+      fresnel + noise for soft outer transparency
+      lighting underneath (eventually removed?)
+        prevented b/c of "tri planar mapping"
+        noise is world-space dependent
+        light based on direction and sky gradient
+      not particles, needed custom sorting
+      sorting issues are less of problem b/c of tri planar mapping ?
+        b/c clouds are so similar to their neighbors, u don't notice clipping/sorting
+      only heavy b/c of alpha sorting
+      sorting orthographicly on switch, "down axis"
+    some high up clouds 
+    global "light color" is shared between many many shaders
+  skybox is a sphere
+  combination of tricks makes it work:
+    sphere clouds, sphere skybox, day/night lighting, water shader, 
+    water reflections, water shadows, ground fog, 
+    short render distance makes it feel more atmospheric
+  ocean big displacements:
+    giant ocean trench:
+      displace waves based on worldspace z coordinate sine wave
+      acquaduct bridge crossing the canyon
+    sphere displacement, can even animate
+    caves that are just clipping the ocean
+    b/c displacement is world space, it's trivial to create another 
+      plane using the same displacements and just compose them
+      https://youtu.be/5d8tx6K6hkk?t=8103
+  birds flap forward?
+  for 120hz, only the bird and camera are frame rate independent
+  uses scriptable objects to create missions
+    would have loved to know unity editor scripting better
+  made the game front to back: don't do that, b/c ur best work will be
+    at the end. u want ur peak work and tools for the first bit
+    people r not patient
+  more re textureless: https://www.youtube.com/watch?v=Bu5mxNyR8uA
+    the less u do with textures, the more u do with colors, interesting things start to happen
+    about achieving an emotional effect with the least amount of detail
+    spent a bunch of time on the pipeline (shaders etc) so that simple shapes go in and come out looking good
+    for geometry, only two shaders: one glowy, one not
+  another vid: https://www.youtube.com/watch?v=UhtkcRyGG6o
+    just avoids adding things that he knows are hard and will take him out of the flow
+    chasing certain bugs will just give writers block for a week
+    uses "smoothing groups"
+    UV coords, just make a gradient
+
+Death's door uses fairly minimal textures:
+  https://youtu.be/pcSmBGkbd-g?list=PLX2vGYjWbI0S44qONl7OmB5tpq1YaFN8F&t=3197
+
+Font choices:
+  Montserrat ? https://twitter.com/patriciogv/status/1526539963743059968
+
+PBR:
+  https://www.youtube.com/watch?v=RRE-F57fbXw
+  common traits:
+    energy conservation
+    microfacet model
+    fresnel effect
+  rendering equation:
+    L0(x,wo,l,t) = Le(x,wo,l,t) + INT_O(fr(x,wi,wo,l,t)Li(x,wi,l,t)(wi*n)dwi)
+      x = frament position
+      wo = outgoing light
+      wi = negative incoming light
+      l = wavelength
+      t = time
+    L0(x,V) = Le(x,V) + INT_O(fr(x,L,V)Li(x,L)(L*N)dL)
+      x = fragment position
+      V = view vector
+      Ln = nth light vector
+      L0(x,V) <- final color
+      Le(x,V) <- light emitted
+      SUM_n(
+        fr(x,Ln,V) <- BRDF(bidirectional reflectance distribution function)
+        Li(x,Ln) <- incoming light
+        (Ln*N) <- dot(light, normal)
+      )
+      BRDF = kd*f_diffuse + ks*f_specular
+        kd + ks = 1
+        ks = fresnel, kd = 1 - ks
+      f_schlick = f0 + (1-f0)(1-(v.h))^5
+        f0 = base reflectivity
+        v = view vector
+        h = half-way vector
+      diffuse: lambertian vs oren-nayar
+        f_lambert = coor/pi * dot(Ln, 
+      cook-torrence
+        dgf/4(V*N)(L*N)
+      D = normal distribution function
+        GGX/TROWBRIDGE-pei, has pi, a = roughness square
+      G = geometry shadowin
+        smith-ggx
+          geometry obstruction, geometry shadowing
+        Gsmith = G1 ...
+        k = a/2 // unreal, etc
+       
+  rule of thumb: no negative dot products, no division by 0
+    max(dot(x,y), 0.0)
+    42/max(v, 0.00001);
+
+    frag shader inputs:
+      vec3 fragPos,
+      vec3 normal,
+      vec3 cameraPos,
+      vec3 lightDir,
+      vec3 lightPos,
+      vec3 lightColor,
+      vec3 albedo,
+      vec3 emissivity,
+      float roughness,
+      vec3 baseReflectance,
+      float metallic, // only reflects specular, not diffuse ?
+
+    N = normalize(normal)
+    V = normalize(cameraPos - fragPos)
+    // for directional lights
+    L = normalize(lightDir)
+    // for point lights
+    L = normalize(lightPos - fragmentPos)
+    H = normalize(V + L)
+
+  fn D(alpha, N, H) {
+    numerator = pow(alpha, 2.0)
+    NdotH = max(dot(N,H), 0.0)
+    denominator = PI * pow(pow(NdotH, 2.0) * (pow(alpha, 2.0) - 1.0) + 1.0, 2.0)
+    denominator = max(denominator, 0.000001)
+
+    return numerator/denominator;
+  }
+  fn G1(alpha, N, X) {
+    numerator = max(dot(N,X), 0.0)
+
+    k = alpha/2.0
+    denominator = max(dot(N,X),0.0) * (1.0 - k) + k
+    denominator = max(denominator, 0.000001)
+
+    return numerator / denominator;
+  }
+  fn G(alpha, N, V, L) {
+    return G1(alpha, N, V) * G1(alpha, N, L)
+  }
+  fn F(F0, V, H) {
+    return F0 + (vec3(1.0) - F0) * pow(1 - max(dot(V, H), 0.0), 5.0)
+  }
+  // for one light source
+  fn PBR() {
+    Ks = F(F0, V, H) // lazy F0 is albedo
+    Kd = (vec3(1.0) - Ks) * (1.0 - metallic) // note: need image based lighting for good looking metals
+
+    lambert = albedo / PI
+
+    cookTorNum = D(alpha, N, H) * G(alpha, N, V, L) * F(F0, V, H)
+    cookTorDen = 4.0 * max(dot(V,N), 0.0) * max(dot(L,N), 0.0)
+    cookTorDen = max(cookTorDen, 0.000001)
+    cookTor = cookTorNum / cookTorDen
+
+    BRDF = Kd * lambert + cookTorrance
+    outgoingLight = emissivity + BRDF * lightColor * max(dot(L, N), 0.0);
+
+    return outgoingLight;
+  }
+  
+  frag shader:
+    import all variables
+
+    define normal distribution function
+    define geometry shadowing function
+    define fresnel effect function
+
+    calculate Ks, Kd
+    calculate diffuse component of the BRDF
+    calculate specular component of the BRDF
+    combine them into the BRDF
+
+    insert the BRDF and other vars into rendering equation
+    output result
+
+Games with non-traditional rendering that look good:
+  (that might not be hard to implement)
+  popsok, snkrx, pistol whip, super hot, sayonara, destropolis
+
+World building inspiration vids:
+  https://www.youtube.com/watch?v=ELiqWceCk0Q tiny poly world
+  https://www.youtube.com/watch?v=kQ0x0R_yHrs fantasy scape, walking
+  https://www.youtube.com/watch?v=iNYUG1-A7t8 bob ross 5min, 50min, 5days
+
+  space/nebula:
+    https://www.youtube.com/watch?v=gSxxnR3aLjc cggeek space
+    https://www.youtube.com/watch?v=c4Wec0HtFLE The Great Attractor - 4k 3D Nebula Made In Blender
+    https://www.youtube.com/watch?v=3g8XxmqSP90
+    noise textures?
+      https://simon-thommes.com/free-stuff
+
+Depth and stencil:
+  https://open.gl/depthstencils
+
+Writing a real time PBR shader:
+  https://learnopengl.com/PBR/Theory
+  Real-Time Rendering book
+
+Gamma correction / "Importance of Being Linear":
+  https://developer.nvidia.com/gpugems/gpugems3/part-iv-image-effects/chapter-24-importance-being-linear
+
+ACES tonemapping:
+  ?
+  https://github.com/ampas/aces-dev
+  https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/
+    float3 ACESFilm(float3 x)
+    {
+        float a = 2.51f;
+        float b = 0.03f;
+        float c = 2.43f;
+        float d = 0.59f;
+        float e = 0.14f;
+        return saturate((x*(a*x+b))/(x*(c*x+d)+e));
+    }
+  https://www.youtube.com/watch?v=DX5tQix9NbY <- useless acadamy vid
+  https://chrisbrejon.com/cg-cinematography/chapter-1-5-academy-color-encoding-system-aces/
+
+Rendering a sphere on a quad (and fitting it into a raster scene):
+  https://bgolus.medium.com/rendering-a-sphere-on-a-quad-13c92025570c

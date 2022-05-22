@@ -1,35 +1,11 @@
-import { Canvas, CanvasDef } from "../canvas.js";
-import {
-  EntityManager,
-  EM,
-  Component,
-  EntityW,
-  Entity,
-} from "../entity-manager.js";
+import { EntityManager, EM, Entity } from "../entity-manager.js";
 import { applyTints, TintsDef } from "../color.js";
-import { PlayerDef } from "../game/player.js";
-import {
-  CameraDef,
-  CameraProps,
-  CameraView,
-  CameraViewDef,
-} from "../camera.js";
+import { CameraViewDef } from "../camera.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
-import { isMeshHandle, Mesh, MeshHandle } from "./mesh-pool.js";
-import { Authority, AuthorityDef, Me, MeDef } from "../net/components.js";
-import { createFrame, WorldFrameDef } from "../physics/nonintersection.js";
-import { RendererDef } from "./render_init.js";
-import { tempQuat, tempVec } from "../temp-pool.js";
 import {
-  PhysicsParent,
-  Position,
-  PositionDef,
-  Rotation,
-  RotationDef,
   Frame,
   TransformDef,
   PhysicsParentDef,
-  ScaleDef,
   updateFrameFromTransform,
   updateFrameFromPosRotScale,
   copyFrame,
@@ -37,6 +13,15 @@ import {
 import { ColorDef } from "../color.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DeletedDef } from "../delete.js";
+import { MeshHandleStd, stdRenderPipeline } from "./std-pipeline.js";
+import { CanvasDef } from "../canvas.js";
+import { FORCE_WEBGL } from "../main.js";
+import { createWebGPURenderer } from "./render-webgpu.js";
+import { CyPipelinePtr } from "./gpu-registry.js";
+import { createFrame } from "../physics/nonintersection.js";
+import { tempVec } from "../temp-pool.js";
+import { isMeshHandle } from "./mesh-pool.js";
+import { Mesh } from "./mesh.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -44,13 +29,13 @@ const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
 export interface RenderableConstruct {
   readonly enabled: boolean;
   readonly layer: number;
-  meshOrProto: Mesh | MeshHandle;
+  meshOrProto: Mesh | MeshHandleStd;
 }
 
 export const RenderableConstructDef = EM.defineComponent(
   "renderableConstruct",
   (
-    meshOrProto: Mesh | MeshHandle,
+    meshOrProto: Mesh | MeshHandleStd,
     enabled: boolean = true,
     layer: number = 0
   ) => {
@@ -63,18 +48,10 @@ export const RenderableConstructDef = EM.defineComponent(
   }
 );
 
-function createEmptyMesh(): Mesh {
-  return {
-    pos: [],
-    tri: [],
-    colors: [],
-  };
-}
-
 export interface Renderable {
   enabled: boolean;
   layer: number;
-  meshHandle: MeshHandle;
+  meshHandle: MeshHandleStd;
 }
 
 export const RenderableDef = EM.defineComponent(
@@ -86,44 +63,6 @@ interface RenderableObj {
   id: number;
   renderable: Renderable;
   rendererWorldFrame: Frame;
-}
-
-function stepRenderer(
-  renderer: Renderer,
-  objs: RenderableObj[],
-  cameraView: CameraView
-) {
-  // filter
-  objs = objs.filter((o) => o.renderable.enabled && !DeletedDef.isOn(o));
-
-  // ensure our mesh handle is up to date
-  for (let o of objs) {
-    // TODO(@darzu): color:
-    if (ColorDef.isOn(o)) {
-      vec3.copy(o.renderable.meshHandle.shaderData.tint, o.color);
-    }
-
-    if (TintsDef.isOn(o)) {
-      applyTints(o.tints, o.renderable.meshHandle.shaderData.tint);
-    }
-    mat4.copy(
-      o.renderable.meshHandle.shaderData.transform,
-      o.rendererWorldFrame.transform
-    );
-  }
-
-  // sort
-  objs.sort((a, b) => b.renderable.layer - a.renderable.layer);
-
-  // render
-  // TODO(@darzu):
-  // const m24 = objs.filter((o) => o.renderable.meshHandle.mId === 24);
-  // const e10003 = objs.filter((o) => o.id === 10003);
-  // console.log(`mId 24: ${!!m24.length}, e10003: ${!!e10003.length}`);
-  renderer.renderFrame(
-    cameraView.viewProjMat,
-    objs.map((o) => o.renderable.meshHandle)
-  );
 }
 
 const _hasRendererWorldFrame = new Set();
@@ -292,7 +231,40 @@ export function registerRenderer(em: EntityManager) {
     [RendererWorldFrameDef, RenderableDef],
     [CameraViewDef, RendererDef],
     (objs, res) => {
-      stepRenderer(res.renderer.renderer, objs, res.cameraView);
+      const renderer = res.renderer.renderer;
+      const cameraView = res.cameraView;
+
+      objs = objs.filter((o) => o.renderable.enabled && !DeletedDef.isOn(o));
+
+      // ensure our mesh handle is up to date
+      for (let o of objs) {
+        // TODO(@darzu): color:
+        if (ColorDef.isOn(o)) {
+          vec3.copy(o.renderable.meshHandle.shaderData.tint, o.color);
+        }
+
+        if (TintsDef.isOn(o)) {
+          applyTints(o.tints, o.renderable.meshHandle.shaderData.tint);
+        }
+        mat4.copy(
+          o.renderable.meshHandle.shaderData.transform,
+          o.rendererWorldFrame.transform
+        );
+      }
+
+      // sort
+      objs.sort((a, b) => b.renderable.layer - a.renderable.layer);
+
+      // render
+      // TODO(@darzu):
+      // const m24 = objs.filter((o) => o.renderable.meshHandle.mId === 24);
+      // const e10003 = objs.filter((o) => o.id === 10003);
+      // console.log(`mId 24: ${!!m24.length}, e10003: ${!!e10003.length}`);
+      renderer.renderFrame(
+        cameraView.viewProjMat,
+        objs.map((o) => o.renderable.meshHandle),
+        res.renderer.pipelines
+      );
     },
     "stepRenderer"
   );
@@ -307,7 +279,7 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
         if (!RenderableDef.isOn(e)) {
           // TODO(@darzu): how should we handle instancing?
           // TODO(@darzu): this seems somewhat inefficient to look for this every frame
-          let meshHandle: MeshHandle;
+          let meshHandle: MeshHandleStd;
           if (isMeshHandle(e.renderableConstruct.meshOrProto))
             meshHandle = res.renderer.renderer.addMeshInstance(
               e.renderableConstruct.meshOrProto
@@ -335,9 +307,70 @@ export interface Renderer {
   drawTris: boolean;
   backgroundColor: vec3;
 
-  addMesh(m: Mesh): MeshHandle;
-  addMeshInstance(h: MeshHandle): MeshHandle;
-  updateMesh(handle: MeshHandle, newMeshData: Mesh): void;
-  renderFrame(viewMatrix: mat4, handles: MeshHandle[]): void;
-  removeMesh(h: MeshHandle): void;
+  addMesh(m: Mesh): MeshHandleStd;
+  addMeshInstance(h: MeshHandleStd): MeshHandleStd;
+  updateMesh(handle: MeshHandleStd, newMeshData: Mesh): void;
+  renderFrame(
+    viewMatrix: mat4,
+    handles: MeshHandleStd[],
+    pipelines: CyPipelinePtr[]
+  ): void;
+}
+
+export const RendererDef = EM.defineComponent(
+  "renderer",
+  (renderer: Renderer, usingWebGPU: boolean, pipelines: CyPipelinePtr[]) => {
+    return {
+      renderer,
+      usingWebGPU,
+      pipelines,
+    };
+  }
+);
+
+let _rendererPromise: Promise<void> | null = null;
+
+export function registerRenderInitSystem(em: EntityManager) {
+  em.registerSystem(
+    [],
+    [CanvasDef],
+    (_, res) => {
+      if (!!em.getResource(RendererDef)) return; // already init
+      if (!!_rendererPromise) return;
+      _rendererPromise = chooseAndInitRenderer(em, res.htmlCanvas.canvas);
+    },
+    "renderInit"
+  );
+}
+
+async function chooseAndInitRenderer(
+  em: EntityManager,
+  canvas: HTMLCanvasElement
+): Promise<void> {
+  let renderer: Renderer | undefined = undefined;
+  let usingWebGPU = false;
+  if (!FORCE_WEBGL) {
+    // try webgpu first
+    const adapter = await navigator.gpu?.requestAdapter();
+    if (adapter) {
+      const device = await adapter.requestDevice();
+      // TODO(@darzu): uses cast while waiting for webgpu-types.d.ts to be updated
+      const context = canvas.getContext("webgpu");
+      if (context) {
+        renderer = createWebGPURenderer(canvas, device, context);
+        if (renderer) usingWebGPU = true;
+      }
+    }
+  }
+  // TODO(@darzu): re-enable WebGL
+  // if (!rendererInit)
+  //   rendererInit = attachToCanvasWebgl(canvas, MAX_MESHES, MAX_VERTICES);
+  if (!renderer) throw "Unable to create webgl or webgpu renderer";
+  console.log(`Renderer: ${usingWebGPU ? "webGPU" : "webGL"}`);
+
+  // add to ECS
+  // TODO(@darzu): this is a little wierd to do this in an async callback
+  em.addSingletonComponent(RendererDef, renderer, usingWebGPU, [
+    stdRenderPipeline,
+  ]);
 }

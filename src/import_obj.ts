@@ -3,7 +3,7 @@
 // http://paulbourke.net/dataformats/obj/
 
 import { vec2, vec3 } from "./gl-matrix.js";
-import { Mesh } from "./render/mesh-pool.js";
+import { Mesh } from "./render/mesh.js";
 import { assert } from "./test.js";
 import { idPair, IdPair, isString } from "./util.js";
 

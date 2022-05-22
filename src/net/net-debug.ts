@@ -1,7 +1,7 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
 import { vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
-import { RenderableDef } from "../render/renderer.js";
+import { RenderableDef } from "../render/renderer-ecs.js";
 import { clearTint, setTint, TintsDef } from "../color.js";
 import { AuthorityDef } from "./components.js";
 

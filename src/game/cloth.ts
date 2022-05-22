@@ -8,15 +8,12 @@ import { FinishedDef } from "../build.js";
 import { Assets, AssetsDef } from "./assets.js";
 import { SpringType, SpringGridDef, ForceDef } from "./spring.js";
 import { onInit } from "../init.js";
+import { Mesh, unshareProvokingVerticesWithMap } from "../render/mesh.js";
 import {
-  Mesh,
-  unshareProvokingVertices,
-  isMeshHandle,
-  unshareProvokingVerticesWithMap,
-  mapMeshPositions,
-} from "../render/mesh-pool.js";
-import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
-import { RendererDef } from "../render/render_init.js";
+  RenderableConstructDef,
+  RenderableDef,
+} from "../render/renderer-ecs.js";
+import { RendererDef } from "../render/renderer-ecs.js";
 import { ColorDef } from "../color.js";
 import { tempVec } from "../temp-pool.js";
 
@@ -74,6 +71,7 @@ function clothMesh(cloth: ClothConstruct): {
   const tri: vec3[] = [];
   const colors: vec3[] = [];
   const lines: vec2[] = [];
+  const uvs: vec2[] = [];
   while (y < cloth.rows) {
     if (x == cloth.columns) {
       x = 0;
@@ -81,6 +79,7 @@ function clothMesh(cloth: ClothConstruct): {
       continue;
     }
     pos.push(vec3.fromValues(x * cloth.distance, y * cloth.distance, 0));
+    uvs.push([x / (cloth.columns - 1), y / (cloth.rows - 1)]);
     // add triangles
     if (y > 0) {
       if (x > 0) {
@@ -110,7 +109,7 @@ function clothMesh(cloth: ClothConstruct): {
     x = x + 1;
     i = i + 1;
   }
-  return unshareProvokingVerticesWithMap({ pos, tri, colors, lines });
+  return unshareProvokingVerticesWithMap({ pos, tri, colors, lines, uvs });
 }
 
 export function callClothSystems(em: EntityManager) {
@@ -160,17 +159,13 @@ onInit((em: EntityManager) => {
     [RendererDef],
     (cloths, { renderer }) => {
       for (let cloth of cloths) {
-        const newM = mapMeshPositions(
-          cloth.renderable.meshHandle.readonlyMesh!,
-          (_, i) => {
-            const originalIndex = cloth.clothLocal.posMap.get(i)!;
-            return vec3.copy(
-              tempVec(),
-              cloth.springGrid.positions[originalIndex]
-            );
-          }
-        );
-        renderer.renderer.updateMesh(cloth.renderable.meshHandle, newM);
+        // NOTE: this cast is only safe so long as we're sure this mesh isn't being shared
+        const m = cloth.renderable.meshHandle.readonlyMesh! as Mesh;
+        m.pos.forEach((p, i) => {
+          const originalIndex = cloth.clothLocal.posMap.get(i)!;
+          return vec3.copy(p, cloth.springGrid.positions[originalIndex]);
+        });
+        renderer.renderer.updateMesh(cloth.renderable.meshHandle, m);
       }
     },
     "updateClothMesh"

@@ -1,11 +1,5 @@
 import { EM, EntityManager } from "../entity-manager.js";
 import { InputsDef } from "../inputs.js";
-import {
-  registerConstructRenderablesSystem,
-  registerRenderer,
-  registerUpdateRendererWorldFrames,
-  registerUpdateSmoothedWorldFrames,
-} from "../render/renderer.js";
 import { PositionDef, registerInitTransforms } from "../physics/transform.js";
 import { registerBoatSystems } from "./boat.js";
 import {
@@ -39,9 +33,13 @@ import { registerBuildBulletsSystem, registerBulletUpdate } from "./bullet.js";
 import { AssetsDef, registerAssetLoader } from "./assets.js";
 import { registerInitCanvasSystem } from "../canvas.js";
 import {
+  registerConstructRenderablesSystem,
+  registerRenderer,
   registerRenderInitSystem,
+  registerUpdateRendererWorldFrames,
+  registerUpdateSmoothedWorldFrames,
   RendererDef,
-} from "../render/render_init.js";
+} from "../render/renderer-ecs.js";
 import { registerDeleteEntitiesSystem } from "../delete.js";
 import { registerCannonSystems } from "./cannon.js";
 import { registerInteractionSystem } from "./interact.js";

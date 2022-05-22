@@ -1,6 +1,5 @@
-import { TupleN } from "./entity-manager.js";
 import { vec2, vec3 } from "./gl-matrix.js";
-import { packI16s } from "./util.js";
+import { packI16s, TupleN } from "./util.js";
 
 export interface HexGrid<D> {
   _grid: Map<number, D>;

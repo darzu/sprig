@@ -178,3 +178,17 @@ Notes w/ Doug:
 
 Skeletal animation:
   https://learnopengl.com/Guest-Articles/2020/Skeletal-Animation
+  https://www.youtube.com/watch?v=ZzMnu3v_MOw
+  TODO: skeletal animation:
+    tree heirarchy of bones
+      ea bone has a "model matrix", transformation of bone relative to model origin
+        + need inverse model matrix
+      ea bone has a local matrix, transformation of bone relative to parent
+    each vertex painted with bone influence
+      4 bone indices
+      4 bone weights (all weights must sum to 1)
+    for animation,
+      need model animation after
+  Memory layout:
+    https://youtu.be/ZzMnu3v_MOw?t=680
+  TODO: mesh morphing

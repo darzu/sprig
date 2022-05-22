@@ -13,8 +13,8 @@ import {
   RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
-import { scaleMesh3 } from "../render/mesh-pool.js";
-import { RenderableConstructDef } from "../render/renderer.js";
+import { scaleMesh3 } from "../render/mesh.js";
+import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { Assets } from "./assets.js";
 import { ColorDef } from "../color.js";
 

@@ -15,7 +15,7 @@ import {
 import { callClothSystems } from "./game/cloth.js";
 import { callSpringSystems } from "./game/spring.js";
 import { initShipGame, registerAllSystems } from "./game/game.js";
-import { setSimulationAlpha } from "./render/renderer.js";
+import { setSimulationAlpha } from "./render/renderer-ecs.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -23,7 +23,7 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-const GAME = "ship" as "ship" | "gjk" | "rebound";
+const GAME = "ship" as "ship" | "gjk" | "rebound" | "cloth";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -84,6 +84,9 @@ function callFixedTimestepSystems() {
   EM.callSystem("playerLookingForShip");
   if (GAME === "rebound") {
     EM.callSystem("sandboxSpawnBoxes");
+  }
+  if (GAME === "cloth") {
+    EM.callSystem("clothSandbox");
   }
   EM.callSystem("updateBullets");
   EM.callSystem("updateNoodles");
@@ -183,8 +186,6 @@ async function startGame(localPeerName: string, host: string | null) {
 
   EM.addSingletonComponent(InputsDef);
   registerInputsSystem(EM);
-
-  const GAME = "ship" as "ship" | "gjk" | "rebound" | "cloth";
 
   if (GAME === "ship") initShipGame(EM, hosting);
   else if (GAME === "gjk") initGJKSandbox(EM, hosting);

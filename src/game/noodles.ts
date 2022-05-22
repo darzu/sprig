@@ -1,18 +1,19 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
 import {
   cloneMesh,
-  createMeshPool_WebGPU,
-  isMeshHandle,
   mapMeshPositions,
   Mesh,
   scaleMesh,
   scaleMesh3,
   unshareProvokingVertices,
-} from "../render/mesh-pool.js";
+} from "../render/mesh.js";
 import { PositionDef } from "../physics/transform.js";
-import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
+import {
+  RenderableConstructDef,
+  RenderableDef,
+} from "../render/renderer-ecs.js";
 import { assert } from "../test.js";
-import { RendererDef } from "../render/render_init.js";
+import { RendererDef } from "../render/renderer-ecs.js";
 import { vec3 } from "../gl-matrix.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { CUBE_FACES, CUBE_MESH } from "./assets.js";

@@ -4,14 +4,17 @@ import { AssetsDef, LocalMeshes } from "../game/assets.js";
 import { ColorDef } from "../color.js";
 import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
-import { mapMeshPositions, Mesh } from "../render/mesh-pool.js";
+import { mapMeshPositions, Mesh } from "../render/mesh.js";
 import { AABB } from "./broadphase.js";
 import {
   PhysicsBroadCollidersDef,
   PhysicsStateDef,
   WorldFrameDef,
 } from "./nonintersection.js";
-import { RenderableConstructDef, RenderableDef } from "../render/renderer.js";
+import {
+  RenderableConstructDef,
+  RenderableDef,
+} from "../render/renderer-ecs.js";
 import {
   copyFrame,
   LocalFrameDefs,

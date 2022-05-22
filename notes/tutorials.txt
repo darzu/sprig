@@ -39,3 +39,5 @@ For program slicing:
   are taken. If they're not used, cull them. This would remove a lot of 
   the edge case code and error handling that might muddy the core example 
   concepts.
+
+  terms: tree shaking, program slicing,

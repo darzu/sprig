@@ -181,3 +181,10 @@ Procedural wall:
 Procedural terrain w/ errosion:
   https://github.com/dandrino/terrain-erosion-3-ways
   https://news.ycombinator.com/item?id=29724597
+
+"Procedural Generation For Dummies":
+  https://martindevans.me/game-development/2015/12/27/Procedural-Generation-For-Dummies-Lots/
+
+Procedural walking:
+  https://old.reddit.com/r/gamedev/comments/fqhp9q/procedural_animation_in_10_steps/
+  inverse kinimatics in unity: https://www.youtube.com/watch?v=qqOAzn05fvk
