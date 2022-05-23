@@ -84,3 +84,22 @@ Woah, so u know how i have this idea to have a slingshot on the boat that flings
 What if, at the end of a biome, there is a giant boat-flinging flingshot that launches the whole boat!
 And get this, it flings it toward a new planet!
 Like there were planets in the sky the whole time but u thought they were just part of the skybox, but actually they r the next biome!!
+
+Ship mega upgrades:
+  - the front of the ship is a hinge and both sides swing forward to present one fat broadside
+  - the ship submarines or flips over in water to sneak up between two ships to give a double broadside
+  - fly down through a planet core Starwars ep1 style
+  - fly through the mouth of a giant monster
+  - cannons become attached to big gyroscope style swivels for all directions combat
+      - lesser: rings (ring normal along ship dir)
+  - cannon ball spawns portal on enemy ship
+  - enemy ships scale up into M x N matrix of cannons facing you
+    - u shoot individual cannon spots, maybe u can collapse an entire row
+    - peglin cannon balls bounce between enemy cannons
+    - bullet hell dodging
+
+Ship travels through hyperspace:
+  - Explict gates
+  - license to make it spook and have some abstract concepts and madness
+  - anything goes
+  - can zoom through nebulas!!!

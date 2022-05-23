@@ -1,4 +1,3 @@
-import { vec3 } from "../gl-matrix.js";
 import { assert } from "../test.js";
 import { never, capitalize, pluralize, uncapitalize } from "../util.js";
 import {
@@ -8,9 +7,8 @@ import {
   createCyIdxBuf,
   createCyTexture,
   createCyDepthTexture,
-  CyRndrPipeline,
+  CyRenderPipeline,
   CyCompPipeline,
-  CyTexture,
 } from "./data-webgpu.js";
 import {
   PtrKind,
@@ -21,7 +19,8 @@ import {
   CyGlobal,
   CyArrayPtr,
   CyGlobalParam,
-  CyRenderPipelinePtr,
+  CyColorAttachment,
+  CyAttachment,
 } from "./gpu-registry.js";
 import { GPUBufferBindingTypeToWgslVar } from "./gpu-struct.js";
 import { createMeshPool, MeshHandle } from "./mesh-pool.js";
@@ -36,7 +35,7 @@ const prim_lines: GPUPrimitiveState = {
 };
 
 export type CyResources = {
-  canvasTexture: GPUTexture | undefined;
+  // canvasTexture: GPUTexture | undefined;
   kindToNameToRes: {
     [K in PtrKind]: { [name: string]: PtrKindToResourceType[K] };
   };
@@ -106,9 +105,10 @@ export function createCyResources(
       GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING;
   });
   cy.kindToPtrs.renderPipeline.forEach((p) => {
-    if (p.output.kind === "texture") {
-      cyNameToTextureUsage[p.output.name] |= GPUTextureUsage.RENDER_ATTACHMENT;
-    }
+    p.output.forEach((o) => {
+      const name = isResourcePtr(o) ? o.name : o.ptr.name;
+      cyNameToTextureUsage[name] |= GPUTextureUsage.RENDER_ATTACHMENT;
+    });
     cyNameToTextureUsage[p.depthStencil.name] |=
       GPUTextureUsage.RENDER_ATTACHMENT;
   });
@@ -142,7 +142,6 @@ export function createCyResources(
     compPipeline: {},
     renderPipeline: {},
     meshPool: {},
-    canvasTexture: {},
     sampler: {},
   };
 
@@ -151,20 +150,25 @@ export function createCyResources(
   // const cyCanvasTex = createCyTexture(device, canvasTexturePtr);
   for (let s of cy.kindToPtrs.sampler) {
     // TODO(@darzu): other sampler features?
-    let filterMode: GPUFilterMode;
-    if (s.name === "linearSampler") filterMode = "linear";
-    else if (s.name === "nearestSampler") filterMode = "nearest";
-    else never(s, "todo");
+    let desc: GPUSamplerDescriptor;
+    if (s.name === "linearSampler") {
+      desc = {
+        minFilter: "linear",
+        magFilter: "linear",
+      };
+    } else if (s.name === "nearestSampler") {
+      desc = {
+        minFilter: "nearest",
+        magFilter: "nearest",
+      };
+    } else if (s.name === "comparison") {
+      desc = {
+        compare: "less",
+      };
+    } else never(s, "todo");
     kindToNameToRes.sampler[s.name] = {
       ptr: s,
-      // TODO(@darzu): support comparison sampler
-      // sampler: device.createSampler({
-      //   compare: "less",
-      // }),
-      sampler: device.createSampler({
-        minFilter: filterMode,
-        magFilter: filterMode,
-      }),
+      sampler: device.createSampler(desc),
     };
   }
 
@@ -388,22 +392,13 @@ export function createCyResources(
       return globalToWgslVars(r, plurality, 0, i);
     });
 
-    let canvasFormat = navigator.gpu.getPreferredCanvasFormat();
-
     if (isRenderPipelinePtr(p)) {
-      // TODO(@darzu): OUTPUT parameterize output targets
-      const targets: GPUColorTargetState[] = [p.output].map((o) => {
-        if (o.kind === "canvasTexture") {
-          return {
-            format: canvasFormat,
-          };
-        } else if (o.kind === "texture") {
-          return {
-            format: o.format,
-          };
-        } else {
-          never(o, "TODO");
-        }
+      const output = normalizeColorAttachments(p.output);
+
+      const targets: GPUColorTargetState[] = output.map((o) => {
+        return {
+          format: o.ptr.format,
+        };
       });
 
       const depthStencilOpts: GPUDepthStencilState = {
@@ -469,13 +464,14 @@ export function createCyResources(
         };
         // console.dir(rndrPipelineDesc);
         const rndrPipeline = device.createRenderPipeline(rndrPipelineDesc);
-        const cyPipeline: CyRndrPipeline = {
+        const cyPipeline: CyRenderPipeline = {
           ptr: p,
           indexBuf: idxBuffer,
           vertexBuf: vertBuf,
           instanceBuf: instBuf,
           pipeline: rndrPipeline,
           bindGroupLayouts: [resBindGroupLayout],
+          output,
         };
         kindToNameToRes.renderPipeline[p.name] = cyPipeline;
       } else if (p.meshOpt.stepMode === "per-mesh-handle") {
@@ -538,13 +534,14 @@ export function createCyResources(
         };
         // console.dir(rndrPipelineDesc);
         const rndrPipeline = device.createRenderPipeline(rndrPipelineDesc);
-        const cyPipeline: CyRndrPipeline = {
+        const cyPipeline: CyRenderPipeline = {
           ptr: p,
           indexBuf: idxBuffer,
           vertexBuf: vertBuf,
           pipeline: rndrPipeline,
           pool,
           bindGroupLayouts: [resBindGroupLayout, uniBGLayout],
+          output,
         };
         kindToNameToRes.renderPipeline[p.name] = cyPipeline;
       } else if (p.meshOpt.stepMode === "single-draw") {
@@ -585,10 +582,11 @@ export function createCyResources(
           },
         };
         const rndrPipeline = device.createRenderPipeline(rndrPipelineDesc);
-        const cyPipeline: CyRndrPipeline = {
+        const cyPipeline: CyRenderPipeline = {
           ptr: p,
           pipeline: rndrPipeline,
           bindGroupLayouts: [resBindGroupLayout],
+          output,
         };
         kindToNameToRes.renderPipeline[p.name] = cyPipeline;
       } else {
@@ -625,14 +623,24 @@ export function createCyResources(
   }
 
   return {
-    canvasTexture: undefined,
     kindToNameToRes,
   };
 }
 
-export function normalizeGlobals(
-  globals: CyGlobalParam[]
-): CyGlobalUsage<CyGlobal>[] {
+function normalizeColorAttachments(atts: CyColorAttachment[]): CyAttachment[] {
+  return atts.map((a) => {
+    if (isResourcePtr(a)) {
+      return {
+        ptr: a,
+        clear: "once",
+      };
+    } else {
+      return a;
+    }
+  });
+}
+
+function normalizeGlobals(globals: CyGlobalParam[]): CyGlobalUsage<CyGlobal>[] {
   const resUsages = globals.map((r, i) => {
     let usage: CyGlobalUsage<CyGlobal>;
     if (isResourcePtr(r)) {
@@ -654,7 +662,7 @@ const canvasFormat = navigator.gpu?.getPreferredCanvasFormat();
 export function bundleRenderPipelines(
   device: GPUDevice,
   resources: CyResources,
-  renderPipelines: CyRndrPipeline[],
+  renderPipelines: CyRenderPipeline[],
   meshHandleIds: Set<MeshHandle<any>["mId"]>
 ): GPURenderBundle[] {
   const bundles: GPURenderBundle[] = [];
@@ -664,14 +672,8 @@ export function bundleRenderPipelines(
     // TODO(@darzu): OUTPUT, pipeline.output;
     //    just airty and color here
     //    need bundle per-pipeline, or per same output
-    const colorFormats: GPUTextureFormat[] = [p.ptr.output].map((o) => {
-      if (o.kind === "canvasTexture") {
-        return canvasFormat;
-      } else if (o.kind === "texture") {
-        return o.format;
-      } else {
-        never(o, "TODO");
-      }
+    const colorFormats: GPUTextureFormat[] = p.output.map((o) => {
+      return o.ptr.format;
     });
     // TODO(@darzu): create once?
     const bundleEnc = device.createRenderBundleEncoder({
@@ -793,33 +795,29 @@ export function renderBundles(
   context: GPUCanvasContext,
   commandEncoder: GPUCommandEncoder,
   resources: CyResources,
-  pipelineAndBundle: [CyRndrPipeline, GPURenderBundle][],
-  backgroundColor: vec3
+  pipelineAndBundle: [CyRenderPipeline, GPURenderBundle][]
 ) {
   // render bundles
   // TODO(@darzu): ordering needs to be set by outside config
   // TODO(@darzu): same attachments need to be shared
-  let lastPipeline: CyRenderPipelinePtr | undefined;
+  let lastPipeline: CyRenderPipeline | undefined;
   let renderPassEncoder: GPURenderPassEncoder | undefined;
+  let seenTextures: Set<string> = new Set();
   for (let [p, bundle] of pipelineAndBundle) {
     // console.log(`rendering ${p.ptr.name}`);
 
-    if (
-      !renderPassEncoder ||
-      !lastPipeline ||
-      !isOutputEq(lastPipeline, p.ptr)
-    ) {
-      let colorAttachments: GPURenderPassColorAttachment[] = [p.ptr.output].map(
+    if (!renderPassEncoder || !lastPipeline || !isOutputEq(lastPipeline, p)) {
+      let colorAttachments: GPURenderPassColorAttachment[] = p.output.map(
         (o) => {
-          const isFirst = !lastPipeline;
-          const doClear = isFirst;
-          if (o.kind === "canvasTexture") return canvasAttachment(doClear);
-          else if (o.kind === "texture") {
-            let tex = resources.kindToNameToRes.texture[o.name]!;
-            return textureAttachment(tex);
-          } else {
-            never(o, "TO IMPL");
-          }
+          const isFirst = !seenTextures.has(o.ptr.name);
+          seenTextures.add(o.ptr.name);
+          let tex = resources.kindToNameToRes.texture[o.ptr.name]!;
+          const doClear = isFirst ? o.clear === "once" : o.clear === "always";
+          const defaultColor = o.defaultColor ?? [0, 0, 0, 1];
+          const viewOverride = o.ptr.attachToCanvas
+            ? context.getCurrentTexture().createView()
+            : undefined;
+          return tex.attachment({ doClear, defaultColor, viewOverride });
         }
       );
       const depthTex =
@@ -838,52 +836,17 @@ export function renderBundles(
 
     renderPassEncoder.executeBundles([bundle]);
 
-    lastPipeline = p.ptr;
+    lastPipeline = p;
   }
   renderPassEncoder?.end();
 
   // TODO(@darzu): support multi-output
-  function isOutputEq(a: CyRenderPipelinePtr, b: CyRenderPipelinePtr) {
+  function isOutputEq(a: CyRenderPipeline, b: CyRenderPipeline) {
     return (
-      a.output.name === b.output.name &&
-      a.depthStencil.name === b.depthStencil.name
+      a.output.length === b.output.length &&
+      a.output.every((a, i) => a.ptr.name === b.output[i].ptr.name) &&
+      a.ptr.depthStencil.name === b.ptr.depthStencil.name
     );
-  }
-
-  function canvasAttachment(clear?: boolean): GPURenderPassColorAttachment {
-    return {
-      // TODO(@darzu): ANTI-ALIAS; for some reason this is tangled in AA?
-      // view: canvasTextureView!,
-      // resolveTarget: context.getCurrentTexture().createView(),
-      view: context.getCurrentTexture().createView(),
-      // TODO(@darzu): is this how we want to handle load vs clear?
-      loadOp: clear ? "clear" : "load",
-      clearValue: {
-        r: backgroundColor[0],
-        g: backgroundColor[1],
-        b: backgroundColor[2],
-        a: 1,
-      },
-      storeOp: "store",
-    };
-  }
-
-  // TODO(@darzu): move into CyTexture
-  function textureAttachment(tex: CyTexture): GPURenderPassColorAttachment {
-    // TODO(@darzu): parameterizable?
-    return {
-      view: tex.texture.createView(),
-      // loadOp: "load",
-      // TODO(@darzu): handle load vs clear
-      loadOp: "clear",
-      clearValue: {
-        r: backgroundColor[0],
-        g: backgroundColor[1],
-        b: backgroundColor[2],
-        a: 1,
-      },
-      storeOp: "store",
-    };
   }
 }
 
@@ -921,20 +884,12 @@ export function onCanvasResizeAll(
   resources: CyResources,
   canvasSize: [number, number]
 ) {
+  // TODO(@darzu): this call shouldn't be necessary anymore
   context.configure({
     device: device,
     format: canvasFormat, // presentationFormat
     // TODO(@darzu): support transparency?
     compositingAlphaMode: "opaque",
-  });
-
-  resources.canvasTexture?.destroy();
-  resources.canvasTexture = device.createTexture({
-    size: canvasSize,
-    // TODO(@darzu): ANTI-ALIAS
-    // sampleCount: antiAliasSampleCount,
-    format: canvasFormat,
-    usage: GPUTextureUsage.RENDER_ATTACHMENT,
   });
 
   for (let tex of [

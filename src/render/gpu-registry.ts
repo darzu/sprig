@@ -1,3 +1,4 @@
+import { vec4 } from "../gl-matrix.js";
 import { assert } from "../test.js";
 import {
   CyStructDesc,
@@ -51,6 +52,8 @@ export interface CyTexturePtr extends CyResourcePtr {
   // TODO(@darzu): is this where we want to expose this?
   // TODO(@darzu): we need agreement with the pipeline
   sampleCount?: number;
+  attachToCanvas?: boolean;
+  // TODO(@darzu): make optional:
   init: () => Float32Array | undefined; // TODO(@darzu): | TexTypeAsTSType<F>[]
 }
 
@@ -60,12 +63,6 @@ export interface CyDepthTexturePtr extends Omit<CyTexturePtr, "kind"> {
   // TODO(@darzu): other depth properties?
 }
 
-export const canvasTexturePtr = {
-  kind: "canvasTexture",
-  name: "canvas",
-} as const;
-export type CyCanvasTexturePtr = typeof canvasTexturePtr;
-
 export const linearSamplerPtr = {
   kind: "sampler",
   name: "linearSampler",
@@ -74,8 +71,15 @@ export const nearestSamplerPtr = {
   kind: "sampler",
   name: "nearestSampler",
 } as const;
+export const comparisonSamplerPtr = {
+  kind: "sampler",
+  name: "comparison",
+} as const;
 
-export type CySamplerPtr = typeof linearSamplerPtr | typeof nearestSamplerPtr;
+export type CySamplerPtr =
+  | typeof linearSamplerPtr
+  | typeof nearestSamplerPtr
+  | typeof comparisonSamplerPtr;
 
 // MESH POOL
 export interface CyMeshPoolPtr<V extends CyStructDesc, U extends CyStructDesc>
@@ -115,6 +119,16 @@ export type CyGlobalParam =
   | CyGlobalUsage<CyBufferPtr<any>>
   | CyGlobalUsage<CySamplerPtr>;
 
+export interface CyAttachment {
+  ptr: CyTexturePtr;
+  defaultColor?: vec4;
+  clear: "always" | "never" | "once";
+  // TODO(@darzu): potential properties:
+  // depthWriteEnabled: true,
+  // depthCompare: "less",
+  // TODO(@darzu): actually, depth and stencil need different clear and op values
+}
+
 export function isResourcePtr(p: any): p is CyResourcePtr {
   return !!(p as CyResourcePtr).kind;
 }
@@ -144,6 +158,8 @@ type CyMeshOpt =
       stepMode: "single-draw";
     };
 
+export type CyColorAttachment = CyTexturePtr | CyAttachment;
+
 export interface CyRenderPipelinePtr extends CyResourcePtr {
   kind: "renderPipeline";
   globals: CyGlobalParam[];
@@ -151,7 +167,7 @@ export interface CyRenderPipelinePtr extends CyResourcePtr {
   shaderVertexEntry: string;
   shaderFragmentEntry: string;
   meshOpt: CyMeshOpt;
-  output: CyTexturePtr | CyCanvasTexturePtr;
+  output: CyColorAttachment[];
   depthStencil: CyDepthTexturePtr;
 }
 
@@ -177,7 +193,6 @@ export type PtrKindToPtrType = {
   compPipeline: CyCompPipelinePtr;
   renderPipeline: CyRenderPipelinePtr;
   meshPool: CyMeshPoolPtr<any, any>;
-  canvasTexture: CyCanvasTexturePtr;
   sampler: CySamplerPtr;
 };
 export type PtrKind = keyof PtrKindToPtrType;
@@ -200,8 +215,7 @@ export function createCyRegistry() {
     compPipeline: [],
     renderPipeline: [],
     meshPool: [],
-    canvasTexture: [canvasTexturePtr],
-    sampler: [linearSamplerPtr, nearestSamplerPtr],
+    sampler: [linearSamplerPtr, nearestSamplerPtr, comparisonSamplerPtr],
   };
 
   function registerCyResource<R extends CyResourcePtr>(ptr: R): R {

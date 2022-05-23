@@ -1,6 +1,6 @@
 import { vec3, mat4 } from "../gl-matrix.js";
 import { computeTriangleNormal } from "../utils-3d.js";
-import { CY, canvasTexturePtr } from "./gpu-registry.js";
+import { CY } from "./gpu-registry.js";
 import { createCyStruct, CyToTS } from "./gpu-struct.js";
 import { MeshHandle } from "./mesh-pool.js";
 import { Mesh, getAABBFromMesh } from "./mesh.js";
@@ -192,6 +192,16 @@ export const canvasDepthTex = CY.createDepthTexture("canvasDepth", {
   init: () => undefined,
 });
 
+export const canvasTexturePtr = CY.createTexture("canvasTexture", {
+  size: [100, 100],
+  onCanvasResize: (w, h) => [w, h],
+  // TODO(@darzu): safer way to grab this format?
+  format: navigator.gpu?.getPreferredCanvasFormat() ?? "bgra8unorm",
+  attachToCanvas: true,
+  init: () => undefined,
+  // TODO(@darzu): support anti-aliasing again
+});
+
 export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
   globals: [
     sceneBufPtr,
@@ -204,7 +214,13 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
   },
   shaderVertexEntry: "vert_main",
   shaderFragmentEntry: "frag_main",
-  output: canvasTexturePtr,
+  output: [
+    {
+      ptr: canvasTexturePtr,
+      clear: "once",
+      defaultColor: [0.7, 0.8, 1.0, 1.0],
+    },
+  ],
   depthStencil: canvasDepthTex,
   shader: () =>
     `

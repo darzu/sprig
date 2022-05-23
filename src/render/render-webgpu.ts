@@ -4,7 +4,11 @@ import { CY, CyPipelinePtr } from "./gpu-registry.js";
 import { MeshPool } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import { Renderer } from "./renderer-ecs.js";
-import { CyRndrPipeline, CyCompPipeline, CySingleton } from "./data-webgpu.js";
+import {
+  CyRenderPipeline,
+  CyCompPipeline,
+  CySingleton,
+} from "./data-webgpu.js";
 import {
   VertexStruct,
   MeshUniformStruct,
@@ -27,7 +31,6 @@ export function createWebGPURenderer(
   let renderer: Renderer = {
     drawLines: true,
     drawTris: true,
-    backgroundColor: [0.6, 0.63, 0.6],
 
     addMesh,
     addMeshInstance,
@@ -91,7 +94,7 @@ export function createWebGPURenderer(
 
   function updateRenderBundle(
     handles: MeshHandleStd[],
-    pipelines: CyRndrPipeline[]
+    pipelines: CyRenderPipeline[]
   ) {
     needsRebundle = false; // TODO(@darzu): hack?
 
@@ -116,7 +119,7 @@ export function createWebGPURenderer(
     handles: MeshHandleStd[],
     pipelines: CyPipelinePtr[]
   ): void {
-    let renderPipelines: CyRndrPipeline[] = [];
+    let renderPipelines: CyRenderPipeline[] = [];
     let computePipelines: CyCompPipeline[] = [];
 
     pipelines.forEach((p) => {
@@ -187,8 +190,7 @@ export function createWebGPURenderer(
       context,
       commandEncoder,
       resources,
-      renderPipelines.map((p) => [p, cyRenderToBundle[p.ptr.name]]),
-      renderer.backgroundColor
+      renderPipelines.map((p) => [p, cyRenderToBundle[p.ptr.name]])
     );
 
     // submit render passes to GPU

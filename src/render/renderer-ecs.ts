@@ -305,7 +305,6 @@ export interface Renderer {
   // opts
   drawLines: boolean;
   drawTris: boolean;
-  backgroundColor: vec3;
 
   addMesh(m: Mesh): MeshHandleStd;
   addMeshInstance(h: MeshHandleStd): MeshHandleStd;
