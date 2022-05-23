@@ -14,6 +14,7 @@ import {
   MeshUniformStruct,
   SceneStruct,
   MeshHandleStd,
+  SceneTS,
 } from "./std-pipeline.js";
 import {
   bundleRenderPipelines,
@@ -35,6 +36,7 @@ export function createWebGPURenderer(
     addMesh,
     addMeshInstance,
     updateMesh,
+    updateScene,
     renderFrame,
   };
 
@@ -114,8 +116,14 @@ export function createWebGPURenderer(
     }
   }
 
+  function updateScene(scene: Partial<SceneTS>) {
+    sceneUni.queueUpdate({
+      ...sceneUni.lastData!,
+      ...scene,
+    });
+  }
+
   function renderFrame(
-    viewProj: mat4,
     handles: MeshHandleStd[],
     pipelines: CyPipelinePtr[]
   ): void {
@@ -142,13 +150,6 @@ export function createWebGPURenderer(
       );
 
     const didResize = checkCanvasResize();
-
-    // update scene data
-    sceneUni.queueUpdate({
-      ...sceneUni.lastData!,
-      time: 1000 / 60,
-      cameraViewProjMatrix: viewProj,
-    });
 
     // update all mesh transforms
     for (let m of handles) {

@@ -13,7 +13,7 @@ import {
 import { ColorDef } from "../color.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DeletedDef } from "../delete.js";
-import { MeshHandleStd, stdRenderPipeline } from "./std-pipeline.js";
+import { MeshHandleStd, SceneTS, stdRenderPipeline } from "./std-pipeline.js";
 import { CanvasDef } from "../canvas.js";
 import { FORCE_WEBGL } from "../main.js";
 import { createWebGPURenderer } from "./render-webgpu.js";
@@ -260,8 +260,40 @@ export function registerRenderer(em: EntityManager) {
       // const m24 = objs.filter((o) => o.renderable.meshHandle.mId === 24);
       // const e10003 = objs.filter((o) => o.id === 10003);
       // console.log(`mId 24: ${!!m24.length}, e10003: ${!!e10003.length}`);
+
+      // const light1Dir = vec3.fromValues(-1, -2, -1);
+      // vec3.normalize(light1Dir, light1Dir);
+
+      // TODO(@darzu): go elsewhere
+      // const lightPosition = vec3.fromValues(50, 100, -100);
+      const lightPosition = vec3.fromValues(50, 100, 50);
+      const lightViewMatrix = mat4.create();
+      mat4.lookAt(lightViewMatrix, lightPosition, [0, 0, 0], [0, 1, 0]);
+      const lightProjectionMatrix = mat4.create();
+      {
+        const left = -80;
+        const right = 80;
+        const bottom = -80;
+        const top = 80;
+        const near = -200;
+        const far = 300;
+        mat4.ortho(lightProjectionMatrix, left, right, bottom, top, near, far);
+      }
+      const lightViewProjMatrix = mat4.create();
+      mat4.multiply(
+        lightViewProjMatrix,
+        lightProjectionMatrix,
+        lightViewMatrix
+      );
+
+      renderer.updateScene({
+        cameraViewProjMatrix: cameraView.viewProjMat,
+        lightViewProjMatrix,
+        // TODO(@darzu): use?
+        time: 60 / 1000,
+      });
+
       renderer.renderFrame(
-        cameraView.viewProjMat,
         objs.map((o) => o.renderable.meshHandle),
         res.renderer.pipelines
       );
@@ -309,11 +341,8 @@ export interface Renderer {
   addMesh(m: Mesh): MeshHandleStd;
   addMeshInstance(h: MeshHandleStd): MeshHandleStd;
   updateMesh(handle: MeshHandleStd, newMeshData: Mesh): void;
-  renderFrame(
-    viewMatrix: mat4,
-    handles: MeshHandleStd[],
-    pipelines: CyPipelinePtr[]
-  ): void;
+  updateScene(scene: Partial<SceneTS>): void;
+  renderFrame(handles: MeshHandleStd[], pipelines: CyPipelinePtr[]): void;
 }
 
 export const RendererDef = EM.defineComponent(

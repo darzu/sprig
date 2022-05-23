@@ -1,7 +1,13 @@
 // TODO(@darzu): based on https://github.com/darzu/sprig/pull/3
 
-import { CY } from "./gpu-registry.js";
-import { meshPoolPtr, sceneBufPtr } from "./std-pipeline.js";
+import { CY, linearSamplerPtr } from "./gpu-registry.js";
+import { createCyStruct } from "./gpu-struct.js";
+import {
+  canvasDepthTex,
+  canvasTexturePtr,
+  meshPoolPtr,
+  sceneBufPtr,
+} from "./std-pipeline.js";
 
 // // TODO(@darzu): TODO
 // const shadowDepthTextureSize = 1024;
@@ -37,11 +43,83 @@ export const shadowPipeline = CY.createRenderPipeline("shadowPipeline", {
   shader: () => `
   @stage(vertex)
   fn vert_main(input: VertexInput) -> @builtin(position) vec4<f32> {
-      return scene.cameraViewProjMatrix * meshUni.transform * vec4<f32>(input.position, 1.0);
+      return scene.lightViewProjMatrix * meshUni.transform * vec4<f32>(input.position, 1.0);
   }
 
   @stage(fragment) fn frag_main() { }
   `,
+});
+
+const windowUni = CY.createSingleton("sWinUni", {
+  struct: createCyStruct(
+    {
+      xPos: "vec2<f32>",
+      yPos: "vec2<f32>",
+    },
+    {
+      isUniform: true,
+    }
+  ),
+  init: () => ({
+    xPos: [-0.9, -0.1],
+    yPos: [0.1, 0.9],
+  }),
+});
+export const shadowDbgDisplay = CY.createRenderPipeline("shadowDbg", {
+  globals: [
+    // // { ptr: nearestSamplerPtr, alias: "mySampler" },
+    { ptr: linearSamplerPtr, alias: "mySampler" },
+    { ptr: shadowDepthTexture, alias: "myTexture" },
+    // { ptr: boidOutTex, alias: "myTexture" },
+    windowUni,
+  ],
+  meshOpt: {
+    vertexCount: 6,
+    stepMode: "single-draw",
+  },
+  output: [canvasTexturePtr],
+  // depthStencil: shadowDepthTexture,
+  shader: () => {
+    return `
+struct VertexOutput {
+  @builtin(position) Position : vec4<f32>,
+  @location(0) fragUV : vec2<f32>,
+};
+
+@stage(vertex)
+fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
+  var pos = array<vec2<f32>, 6>(
+    vec2<f32>(sWinUni.xPos.x, sWinUni.yPos.x),
+    vec2<f32>(sWinUni.xPos.y, sWinUni.yPos.x),
+    vec2<f32>(sWinUni.xPos.y, sWinUni.yPos.y),
+    vec2<f32>(sWinUni.xPos.x, sWinUni.yPos.y),
+    vec2<f32>(sWinUni.xPos.x, sWinUni.yPos.x),
+    vec2<f32>(sWinUni.xPos.y, sWinUni.yPos.y),
+  );
+
+  var uv = array<vec2<f32>, 6>(
+    vec2<f32>(0.0, 1.0),
+    vec2<f32>(1.0, 1.0),
+    vec2<f32>(1.0, 0.0),
+    vec2<f32>(0.0, 0.0),
+    vec2<f32>(0.0, 1.0),
+    vec2<f32>(1.0, 0.0),
+  );
+
+  var output : VertexOutput;
+  output.Position = vec4<f32>(pos[VertexIndex], 0.0, 1.0);
+  output.fragUV = uv[VertexIndex];
+  return output;
+}
+
+@stage(fragment)
+fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
+  return vec4(textureSample(myTexture, mySampler, fragUV));
+}
+  `;
+  },
+  shaderFragmentEntry: "frag_main",
+  shaderVertexEntry: "vert_main",
 });
 
 // let shadowVis : f32 = textureSampleCompare(

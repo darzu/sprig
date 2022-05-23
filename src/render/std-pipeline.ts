@@ -52,6 +52,7 @@ export type VertexTS = CyToTS<typeof VertexStruct.desc>;
 export const SceneStruct = createCyStruct(
   {
     cameraViewProjMatrix: "mat4x4<f32>",
+    lightViewProjMatrix: "mat4x4<f32>",
     light1Dir: "vec3<f32>",
     light2Dir: "vec3<f32>",
     light3Dir: "vec3<f32>",
@@ -63,12 +64,13 @@ export const SceneStruct = createCyStruct(
     isUniform: true,
     serializer: (data, _, offsets_32, views) => {
       views.f32.set(data.cameraViewProjMatrix, offsets_32[0]);
-      views.f32.set(data.light1Dir, offsets_32[1]);
-      views.f32.set(data.light2Dir, offsets_32[2]);
-      views.f32.set(data.light3Dir, offsets_32[3]);
-      views.f32.set(data.cameraPos, offsets_32[4]);
-      views.f32.set(data.playerPos, offsets_32[5]);
-      views.f32[offsets_32[6]] = data.time;
+      views.f32.set(data.lightViewProjMatrix, offsets_32[1]);
+      views.f32.set(data.light1Dir, offsets_32[2]);
+      views.f32.set(data.light2Dir, offsets_32[3]);
+      views.f32.set(data.light3Dir, offsets_32[4]);
+      views.f32.set(data.cameraPos, offsets_32[5]);
+      views.f32.set(data.playerPos, offsets_32[6]);
+      views.f32[offsets_32[7]] = data.time;
     },
   }
 );
@@ -76,6 +78,7 @@ export type SceneTS = CyToTS<typeof SceneStruct.desc>;
 
 export function setupScene(): SceneTS {
   // create a directional light and compute it's projection (for shadows) and direction
+  // TODO(@darzu): directional lights should be unit vectors then scaled by strength; remove strength from shader
   const worldOrigin = vec3.fromValues(0, 0, 0);
   const D = 50;
   const light1Pos = vec3.fromValues(D, D * 2, D);
@@ -90,6 +93,7 @@ export function setupScene(): SceneTS {
 
   return {
     cameraViewProjMatrix: mat4.create(), // updated later
+    lightViewProjMatrix: mat4.create(), // updated later
     light1Dir,
     light2Dir,
     light3Dir,

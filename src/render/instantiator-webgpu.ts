@@ -109,8 +109,9 @@ export function createCyResources(
       const name = isResourcePtr(o) ? o.name : o.ptr.name;
       cyNameToTextureUsage[name] |= GPUTextureUsage.RENDER_ATTACHMENT;
     });
-    cyNameToTextureUsage[p.depthStencil.name] |=
-      GPUTextureUsage.RENDER_ATTACHMENT;
+    if (p.depthStencil)
+      cyNameToTextureUsage[p.depthStencil.name] |=
+        GPUTextureUsage.RENDER_ATTACHMENT;
   });
   [...cy.kindToPtrs.renderPipeline, ...cy.kindToPtrs.compPipeline].forEach(
     (p) => {
@@ -401,11 +402,13 @@ export function createCyResources(
         };
       });
 
-      const depthStencilOpts: GPUDepthStencilState = {
-        depthWriteEnabled: true,
-        depthCompare: "less",
-        format: p.depthStencil.format,
-      };
+      let depthStencilOpts: GPUDepthStencilState | undefined = undefined;
+      if (p.depthStencil)
+        depthStencilOpts = {
+          depthWriteEnabled: true,
+          depthCompare: "less",
+          format: p.depthStencil.format,
+        };
 
       if (p.meshOpt.stepMode === "per-instance") {
         const vertBuf = kindToNameToRes.array[p.meshOpt.vertex.name];
@@ -678,7 +681,7 @@ export function bundleRenderPipelines(
     // TODO(@darzu): create once?
     const bundleEnc = device.createRenderBundleEncoder({
       colorFormats,
-      depthStencilFormat: p.ptr.depthStencil.format,
+      depthStencilFormat: p.ptr.depthStencil?.format,
       // TODO(@darzu): ANTI-ALIAS
       // sampleCount: antiAliasSampleCount,
     });
@@ -820,9 +823,12 @@ export function renderBundles(
           return tex.attachment({ doClear, defaultColor, viewOverride });
         }
       );
-      const depthTex =
-        resources.kindToNameToRes.depthTexture[p.ptr.depthStencil.name];
-      const depthAtt = depthTex.depthAttachment();
+      let depthAtt: GPURenderPassDepthStencilAttachment | undefined = undefined;
+      if (p.ptr.depthStencil) {
+        const depthTex =
+          resources.kindToNameToRes.depthTexture[p.ptr.depthStencil.name];
+        depthAtt = depthTex.depthAttachment();
+      }
 
       renderPassEncoder?.end();
       renderPassEncoder = commandEncoder.beginRenderPass({
@@ -845,7 +851,7 @@ export function renderBundles(
     return (
       a.output.length === b.output.length &&
       a.output.every((a, i) => a.ptr.name === b.output[i].ptr.name) &&
-      a.ptr.depthStencil.name === b.ptr.depthStencil.name
+      a.ptr.depthStencil?.name === b.ptr.depthStencil?.name
     );
   }
 }

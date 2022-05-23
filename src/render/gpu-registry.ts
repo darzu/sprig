@@ -168,7 +168,7 @@ export interface CyRenderPipelinePtr extends CyResourcePtr {
   shaderFragmentEntry: string;
   meshOpt: CyMeshOpt;
   output: CyColorAttachment[];
-  depthStencil: CyDepthTexturePtr;
+  depthStencil?: CyDepthTexturePtr;
 }
 
 export type CyPipelinePtr = CyCompPipelinePtr | CyRenderPipelinePtr;
