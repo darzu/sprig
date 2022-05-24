@@ -91,6 +91,12 @@ export function createCyResources(
     cyNameToBufferUsage[p.vertsPtr.name] |= GPUBufferUsage.VERTEX;
     cyNameToBufferUsage[p.unisPtr.name] |= GPUBufferUsage.UNIFORM;
   });
+  // apply forced usages
+  // TODO(@darzu): ideally, we would understand the scenarios where we need this
+  //    and infer it properly
+  cy.kindToPtrs.array.forEach((b) => {
+    if (b.forceUsage) cyNameToBufferUsage[b.name] = b.forceUsage;
+  });
 
   // determine texture usages
   const cyNameToTextureUsage: { [name: string]: GPUTextureUsageFlags } = {};
