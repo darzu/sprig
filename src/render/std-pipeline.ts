@@ -10,6 +10,7 @@ import {
   mainTexturePtr,
   meshPoolPtr,
   normalsTexturePtr,
+  pointLightsPtr,
   sceneBufPtr,
 } from "./std-scene.js";
 import { shadowDepthTexture } from "./std-shadow.js";
@@ -44,6 +45,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
     sceneBufPtr,
     { ptr: shadowDepthTexture, alias: "shadowMap" },
     { ptr: comparisonSamplerPtr, alias: "shadowSampler" },
+    pointLightsPtr,
     // TODO(@darzu): support textures
     // { ptr: clothTexPtr0, access: "read", alias: "clothTex" },
   ],
@@ -126,10 +128,21 @@ fn frag_main(input: VertexOutput) -> FragOut {
     let shadowVis : f32 = textureSampleCompare(
       shadowMap, shadowSampler, input.shadowPos.xy, input.shadowPos.z - 0.007);
 
+    var lightingColor: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
+    for (var i: u32 = 0u; i < scene.lights; i++) {
+        let light = pointLightsBufs.ms[i];
+        let toLight = light.position - input.worldPos.xyz;
+        let distance = length(toLight);
+        let attenuation = 1.0 / (light.constant + light.linear * distance +
+                                 light.quadratic * distance * distance);
+        let angle = clamp(dot(toLight, input.normal), 0.0, 1.0);
+        lightingColor = lightingColor + (light.ambient * attenuation) + (light.diffuse * angle * attenuation);
+    }
+
     let light1 : f32 = clamp(dot(-scene.light1Dir, normal), 0.0, 1.0);
     let light2 : f32 = clamp(dot(-scene.light2Dir, normal), 0.0, 1.0);
     let light3 : f32 = clamp(dot(-scene.light3Dir, normal), 0.0, 1.0);
-    let resultColor: vec3<f32> = input.color 
+    let resultColor: vec3<f32> = input.color
       * (shadowVis * light1 * 1.5 + light2 * 0.5 + light3 * 0.2 + 0.1);
     let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
 

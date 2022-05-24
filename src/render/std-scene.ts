@@ -7,6 +7,7 @@ import { Mesh, getAABBFromMesh } from "./mesh.js";
 
 export const MAX_MESHES = 20000;
 export const MAX_VERTICES = 21844;
+export const MAX_LIGHTS = 8;
 
 export const VertexStruct = createCyStruct(
   {
@@ -118,6 +119,7 @@ export const SceneStruct = createCyStruct(
     cameraPos: "vec3<f32>",
     playerPos: "vec2<f32>",
     time: "f32",
+    lights: "u32",
   },
   {
     isUniform: true,
@@ -130,6 +132,7 @@ export const SceneStruct = createCyStruct(
       views.f32.set(data.cameraPos, offsets_32[5]);
       views.f32.set(data.playerPos, offsets_32[6]);
       views.f32[offsets_32[7]] = data.time;
+      views.u32[offsets_32[8]] = data.lights;
     },
   }
 );
@@ -164,8 +167,32 @@ export function setupScene(): SceneTS {
     cameraPos: vec3.create(), // updated later
     playerPos: [0, 0], // updated later
     time: 0, // updated later
+    lights: 0, // updated later
   };
 }
+
+export const PointLightStruct = createCyStruct(
+  {
+    position: "vec3<f32>",
+    color: "vec3<f32>",
+    ambient: "vec3<f32>",
+    diffuse: "vec3<f32>",
+    specular: "vec3<f32>",
+
+    constant: "f32",
+    linear: "f32",
+    quadratic: "f32",
+  },
+  { isUniform: true }
+);
+
+export type PointLightTS = CyToTS<typeof PointLightStruct.desc>;
+
+export const pointLightsPtr = CY.createArray("pointLightsBuf", {
+  struct: PointLightStruct,
+  init: () => MAX_LIGHTS,
+  forceUsage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
+});
 
 // TODO(@darzu): safer way to grab this format?
 const mainFormat: GPUTextureFormat =
