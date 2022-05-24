@@ -40,6 +40,8 @@ export const texTypeToBytes: Partial<Record<GPUTextureFormat, number>> = {
   rgba32float: 4 * 4,
   // TODO(@darzu): is this size right?
   rgba8unorm: 4,
+  rgba8snorm: 4,
+  rgba16float: 2 * 4,
   "depth24plus-stencil8": 3 + 1,
   depth32float: 4,
   bgra8unorm: 4,

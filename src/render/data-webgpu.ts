@@ -289,7 +289,7 @@ export function createCyTexture(
   // TODO(@darzu): parameterize
   // TODO(@darzu): be more precise
   const bytesPerVal = texTypeToBytes[format]!;
-  assert(bytesPerVal, `Unimplemented format: ${format}`);
+  assert(bytesPerVal, `TODO format: ${format}`);
 
   const cyTex: CyTexture = {
     ptr,

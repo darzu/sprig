@@ -179,6 +179,14 @@ export const mainTexturePtr = CY.createTexture("mainTexture", {
   // TODO(@darzu): support anti-aliasing again
 });
 
+export const normalsTexturePtr = CY.createTexture("normalsTexture", {
+  size: [100, 100],
+  onCanvasResize: (w, h) => [w, h],
+  format: "rgba16float",
+  init: () => undefined,
+  // TODO(@darzu): support anti-aliasing again
+});
+
 export const canvasTexturePtr = CY.createTexture("canvasTexture", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],

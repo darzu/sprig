@@ -1,5 +1,6 @@
 import { vec3, mat4 } from "../gl-matrix.js";
 import { computeTriangleNormal } from "../utils-3d.js";
+import { createRenderTextureToQuad } from "./gpu-helper.js";
 import { comparisonSamplerPtr, CY } from "./gpu-registry.js";
 import { createCyStruct, CyToTS } from "./gpu-struct.js";
 import { MeshHandle } from "./mesh-pool.js";
@@ -8,6 +9,7 @@ import {
   canvasDepthTex,
   mainTexturePtr,
   meshPoolPtr,
+  normalsTexturePtr,
   sceneBufPtr,
 } from "./std-scene.js";
 import { shadowDepthTexture } from "./std-shadow.js";
@@ -53,6 +55,11 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
       ptr: mainTexturePtr,
       clear: "once",
       defaultColor: [0.7, 0.8, 1.0, 1.0],
+    },
+    {
+      ptr: normalsTexturePtr,
+      clear: "once",
+      defaultColor: [0, 0, 0, 0],
     },
   ],
   depthStencil: canvasDepthTex,
@@ -103,8 +110,13 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     return output;
 }
 
+struct FragOut {
+  @location(0) color: vec4<f32>,
+  @location(1) normal: vec4<f32>,
+}
+
 @stage(fragment)
-fn frag_main(input: VertexOutput) -> @location(0) vec4<f32> {
+fn frag_main(input: VertexOutput) -> FragOut {
     let normal = input.normal;
     // let normal = -normalize(cross(dpdx(input.worldPos.xyz), dpdy(input.worldPos.xyz)));
 
@@ -128,8 +140,23 @@ fn frag_main(input: VertexOutput) -> @location(0) vec4<f32> {
 
     let backgroundColor: vec3<f32> = vec3<f32>(0.6, 0.63, 0.6);
     let finalColor: vec3<f32> = mix(backgroundColor, gammaCorrected, fogVisibility);
-    return vec4<f32>(finalColor, 1.0);
+
+    var out: FragOut;
+    out.color = vec4<f32>(finalColor, 1.0);
+    out.normal = vec4<f32>(input.normal, 1.0);
+
+    return out;
+    // return vec4<f32>(finalColor, 1.0);
     // return vec4<f32>(input.color, 1.0);
 }
 `,
 });
+
+export const { pipeline: normalDbg } = createRenderTextureToQuad(
+  "normalDbg",
+  normalsTexturePtr,
+  0.1,
+  0.9,
+  0.1,
+  0.9
+);
