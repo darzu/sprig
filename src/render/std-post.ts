@@ -55,17 +55,24 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   let mL = vec4(textureSample(myTexture, mySampler, fragUV + vec2(-e, 0.0)));
   let mR = vec4(textureSample(myTexture, mySampler, fragUV + vec2(e, 0.0)));
   let mB = vec4(textureSample(myTexture, mySampler, fragUV + vec2(0.0, -e)));
+  var color = m;
   if (
-    length(m - mT) > 0.1 ||
-    length(m - mL) > 0.1 ||
-    length(m - mR) > 0.1 ||
-    length(m - mB) > 0.1
+    length(m - mT) > 0.05 ||
+    length(m - mL) > 0.05 ||
+    length(m - mR) > 0.05 ||
+    length(m - mB) > 0.05
   ) {
-    return vec4(0.0, 0.0, 0.0, 1.0);
-  } else {
-    let res = vec4(m.r, m.g, m.b, m.a);
-    return res;
+    color = vec4(0.0, 0.0, 0.0, 1.0);
+    // return vec4(m.r * 0.5, m.g * 0.5, m.b * 0.5, m.a);
   }
+
+  let edgeDistV = fragUV - 0.5;
+  let edgeDist = 1.0 - dot(edgeDistV, edgeDistV) * 0.5;
+  // let edgeDist = 1.0 - length(fragUV - 0.5) * 0.5;
+  color *= edgeDist;
+
+  
+  return color;
 }
   `;
   },
