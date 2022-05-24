@@ -1,11 +1,17 @@
 import { CY, linearSamplerPtr } from "./gpu-registry.js";
-import { createCyStruct } from "./gpu-struct.js";
-import { canvasTexturePtr, mainTexturePtr } from "./std-scene.js";
+import {
+  canvasDepthTex,
+  canvasTexturePtr,
+  mainTexturePtr,
+  normalsTexturePtr,
+} from "./std-scene.js";
 
 export const postProcess = CY.createRenderPipeline("postProcess", {
   globals: [
-    { ptr: linearSamplerPtr, alias: "mySampler" },
-    { ptr: mainTexturePtr, alias: "myTexture" },
+    { ptr: linearSamplerPtr, alias: "samp" },
+    { ptr: mainTexturePtr, alias: "colorTex" },
+    { ptr: normalsTexturePtr, alias: "normTex" },
+    { ptr: canvasDepthTex, alias: "depthTex" },
   ],
   meshOpt: {
     vertexCount: 6,
@@ -49,23 +55,44 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
 
 @stage(fragment)
 fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
-  let m = vec4(textureSample(myTexture, mySampler, fragUV));
+  var color = textureSample(colorTex, samp, fragUV);
   let e = 0.002;
-  let mT = vec4(textureSample(myTexture, mySampler, fragUV + vec2(0.0, e)));
-  let mL = vec4(textureSample(myTexture, mySampler, fragUV + vec2(-e, 0.0)));
-  let mR = vec4(textureSample(myTexture, mySampler, fragUV + vec2(e, 0.0)));
-  let mB = vec4(textureSample(myTexture, mySampler, fragUV + vec2(0.0, -e)));
-  var color = m;
-  if (
-    length(m - mT) > 0.05 ||
-    length(m - mL) > 0.05 ||
-    length(m - mR) > 0.05 ||
-    length(m - mB) > 0.05
-  ) {
-    color = vec4(0.0, 0.0, 0.0, 1.0);
-    // return vec4(m.r * 0.5, m.g * 0.5, m.b * 0.5, m.a);
-  }
+  let t = fragUV + vec2(0.0, e);
+  let l = fragUV + vec2(-e, 0.0);
+  let r = fragUV + vec2(e, 0.0);
+  let b = fragUV + vec2(0.0, -e);
 
+  let n = normalize(textureSample(normTex, samp, fragUV)).xyz;
+
+  // let dx = dpdx(n);
+  // let dy = dpdy(n);
+  // let xneg = n - dx;
+  // let xpos = n + dx;
+  // let yneg = n - dy;
+  // let ypos = n + dy;
+  // // let depth = length(vertex);
+  // let depth = textureSample(depthTex, samp, fragUV);
+  // let curvature = (cross(xneg, xpos).y - cross(yneg, ypos).x) * 4.0 / depth;
+
+  // color += vec4(curvature, curvature, curvature, 1.0);
+
+  let mT = textureSample(normTex, samp, t).xyz;
+  let mL = textureSample(normTex, samp, l).xyz;
+  let mR = textureSample(normTex, samp, r).xyz;
+  let mB = textureSample(normTex, samp, b).xyz;
+
+  // if (
+  //   // length(mB - mT) > 0.05 ||
+  //   length(mR - mL) > 0.05
+  // ) {
+  //   if (length(cross(mR,mL)) < 0.0) {
+  //     color = vec4(0.0, 0.0, 0.0, 1.0);
+  //   } else {
+  //     color = vec4(1.0, 1.0, 1.0, 1.0);
+  //   }
+  // }
+
+  // vignette
   let edgeDistV = fragUV - 0.5;
   let edgeDist = 1.0 - dot(edgeDistV, edgeDistV) * 0.5;
   // let edgeDist = 1.0 - length(fragUV - 0.5) * 0.5;

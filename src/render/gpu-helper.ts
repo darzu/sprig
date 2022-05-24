@@ -24,10 +24,11 @@ export const QuadStruct = createCyStruct(
 export function createRenderTextureToQuad(
   name: string,
   texPtr: CyTexturePtr | CyDepthTexturePtr,
-  minX: number,
-  maxX: number,
-  minY: number,
-  maxY: number
+  minX = -1,
+  maxX = 1,
+  minY = -1,
+  maxY = 1,
+  fragShader?: string
 ): {
   pipeline: CyRenderPipelinePtr;
   quad: CySingletonPtr<typeof QuadStruct.desc>;
@@ -88,9 +89,12 @@ export function createRenderTextureToQuad(
     return output;
   }
 
-  @stage(fragment)
+  ${
+    fragShader ??
+    `@stage(fragment)
   fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
     return vec4(textureSample(myTexture, mySampler, fragUV));
+  }`
   }
     `;
     },

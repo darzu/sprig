@@ -56,6 +56,7 @@ import { TimeDef } from "../time.js";
 import { farthestPointInDir, vec3Dbg } from "../utils-3d.js";
 import { drawLine } from "../utils-game.js";
 import { AssetsDef, GameMesh } from "./assets.js";
+import { BOAT_COLOR } from "./boat.js";
 import { ClothConstructDef, ClothLocalDef } from "./cloth.js";
 import { ControllableDef } from "./controllable.js";
 import { GlobalCursor3dDef } from "./cursor.js";
@@ -392,6 +393,16 @@ export function initClothSandbox(em: EntityManager, hosting: boolean) {
       );
       em.ensureComponentOn(plane, ColorDef, [0.2, 0.3, 0.2]);
       em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
+
+      const ship = em.newEntity();
+      em.ensureComponentOn(ship, RenderableConstructDef, res.assets.ship.proto);
+      em.ensureComponentOn(ship, ColorDef, BOAT_COLOR);
+      em.ensureComponentOn(ship, PositionDef, [20, -2, 0]);
+      em.ensureComponentOn(
+        ship,
+        RotationDef,
+        quat.fromEuler(quat.create(), 0, Math.PI * 0.1, 0)
+      );
 
       const box = em.newEntity();
       em.ensureComponentOn(box, RenderableConstructDef, res.assets.cube.proto);

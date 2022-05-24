@@ -1,9 +1,9 @@
-// cytochrome's data helpers
-
 import { mat4, quat, vec2, vec3, vec4 } from "../gl-matrix.js";
 import { align, max, sum } from "../math.js";
 import { assert } from "../test.js";
 import { objMap } from "../util.js";
+
+// cytochrome's data helpers
 
 const WGSLScalars = ["bool", "i32", "u32", "f32", "f16"] as const;
 type WGSLScalar = typeof WGSLScalars[number];
