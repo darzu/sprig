@@ -35,7 +35,6 @@ const prim_lines: GPUPrimitiveState = {
 };
 
 export type CyResources = {
-  // canvasTexture: GPUTexture | undefined;
   kindToNameToRes: {
     [K in PtrKind]: { [name: string]: PtrKindToResourceType[K] };
   };
@@ -147,8 +146,6 @@ export function createCyResources(
   };
 
   // create singleton resources
-  // TODO(@darzu): create CyTexture for canvas
-  // const cyCanvasTex = createCyTexture(device, canvasTexturePtr);
   for (let s of cy.kindToPtrs.sampler) {
     // TODO(@darzu): other sampler features?
     let desc: GPUSamplerDescriptor;

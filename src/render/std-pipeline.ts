@@ -6,7 +6,7 @@ import { MeshHandle } from "./mesh-pool.js";
 import { Mesh, getAABBFromMesh } from "./mesh.js";
 import {
   canvasDepthTex,
-  canvasTexturePtr,
+  mainTexturePtr,
   meshPoolPtr,
   sceneBufPtr,
 } from "./std-scene.js";
@@ -50,7 +50,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
   shaderFragmentEntry: "frag_main",
   output: [
     {
-      ptr: canvasTexturePtr,
+      ptr: mainTexturePtr,
       clear: "once",
       defaultColor: [0.7, 0.8, 1.0, 1.0],
     },

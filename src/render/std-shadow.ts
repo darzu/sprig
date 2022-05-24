@@ -2,7 +2,7 @@
 
 import { CY, linearSamplerPtr } from "./gpu-registry.js";
 import { createCyStruct } from "./gpu-struct.js";
-import { canvasTexturePtr, meshPoolPtr, sceneBufPtr } from "./std-scene.js";
+import { mainTexturePtr, meshPoolPtr, sceneBufPtr } from "./std-scene.js";
 
 // // TODO(@darzu): TODO
 // const shadowDepthTextureSize = 1024;
@@ -72,7 +72,7 @@ export const shadowDbgDisplay = CY.createRenderPipeline("shadowDbg", {
     vertexCount: 6,
     stepMode: "single-draw",
   },
-  output: [canvasTexturePtr],
+  output: [mainTexturePtr],
   // depthStencil: shadowDepthTexture,
   shader: () => {
     return `

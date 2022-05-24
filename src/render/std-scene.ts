@@ -167,14 +167,24 @@ export function setupScene(): SceneTS {
   };
 }
 
+// TODO(@darzu): safer way to grab this format?
+const mainFormat: GPUTextureFormat =
+  navigator.gpu?.getPreferredCanvasFormat() ?? "bgra8unorm";
+
+export const mainTexturePtr = CY.createTexture("mainTexture", {
+  size: [100, 100],
+  onCanvasResize: (w, h) => [w, h],
+  format: mainFormat,
+  init: () => undefined,
+  // TODO(@darzu): support anti-aliasing again
+});
+
 export const canvasTexturePtr = CY.createTexture("canvasTexture", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
-  // TODO(@darzu): safer way to grab this format?
-  format: navigator.gpu?.getPreferredCanvasFormat() ?? "bgra8unorm",
+  format: mainFormat,
   attachToCanvas: true,
   init: () => undefined,
-  // TODO(@darzu): support anti-aliasing again
 });
 
 export const canvasDepthTex = CY.createDepthTexture("canvasDepth", {

@@ -1,7 +1,7 @@
 import { vec3 } from "../gl-matrix.js";
 import { CY } from "./gpu-registry.js";
 import { createCyStruct, CyToTS } from "./gpu-struct.js";
-import { sceneBufPtr, canvasTexturePtr, canvasDepthTex } from "./std-scene.js";
+import { sceneBufPtr, mainTexturePtr, canvasDepthTex } from "./std-scene.js";
 
 export const RopeStickStruct = createCyStruct({
   aIdx: "u32",
@@ -243,7 +243,7 @@ export const renderRopePipelineDesc = CY.createRenderPipeline("renderRope", {
   },
   shaderVertexEntry: "vert_main",
   shaderFragmentEntry: "frag_main",
-  output: [canvasTexturePtr],
+  output: [mainTexturePtr],
   depthStencil: canvasDepthTex,
   shader: () =>
     `

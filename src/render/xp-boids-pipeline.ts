@@ -5,7 +5,7 @@ import { jitter } from "../math.js";
 import { range } from "../util.js";
 import { CY, CyTexturePtr, linearSamplerPtr } from "./gpu-registry.js";
 import { createCyStruct } from "./gpu-struct.js";
-import { sceneBufPtr, canvasTexturePtr, canvasDepthTex } from "./std-scene.js";
+import { sceneBufPtr, mainTexturePtr, canvasDepthTex } from "./std-scene.js";
 
 const BoidData = createCyStruct({
   pos: "vec3<f32>",
@@ -267,7 +267,7 @@ export const boidCanvasMerge = CY.createRenderPipeline("boidCanvasMerge", {
     vertexCount: 6,
     stepMode: "single-draw",
   },
-  output: [canvasTexturePtr],
+  output: [mainTexturePtr],
   depthStencil: canvasDepthTex,
   shader: () => {
     return `

@@ -34,6 +34,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { stdRenderPipeline } from "../render/std-pipeline.js";
+import { postProcess } from "../render/std-post.js";
 import { shadowDbgDisplay, shadowPipeline } from "../render/std-shadow.js";
 import {
   boidRender,
@@ -338,8 +339,9 @@ export function initClothSandbox(em: EntityManager, hosting: boolean) {
         stdRenderPipeline,
         renderRopePipelineDesc,
         boidRender,
-        boidCanvasMerge,
-        shadowDbgDisplay,
+        // boidCanvasMerge,
+        // shadowDbgDisplay,
+        postProcess,
       ];
       let computePipelinesPtrs: CyCompPipelinePtr[] = [
         cmpClothPipelinePtr0,
