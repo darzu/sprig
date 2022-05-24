@@ -292,7 +292,7 @@ export function registerRenderer(em: EntityManager) {
         cameraViewProjMatrix: cameraView.viewProjMat,
         lightViewProjMatrix,
         // TODO(@darzu): use?
-        time: 60 / 1000,
+        time: 1000 / 60,
       });
 
       renderer.renderFrame(
