@@ -33,7 +33,9 @@ import {
   RenderableConstructDef,
 } from "../render/renderer-ecs.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { stdRenderPipeline } from "../render/std-pipeline.js";
+import { normalDbg, stdRenderPipeline } from "../render/std-pipeline.js";
+import { postProcess } from "../render/std-post.js";
+import { shadowDbgDisplay, shadowPipeline } from "../render/std-shadow.js";
 import {
   boidRender,
   boidCanvasMerge,
@@ -111,8 +113,6 @@ export function initGJKSandbox(em: EntityManager, hosting: boolean) {
 
       const c = res.globalCursor3d.cursor()!;
       if (RenderableDef.isOn(c)) c.renderable.enabled = false;
-
-      vec3.copy(res.renderer.renderer.backgroundColor, [0.7, 0.8, 1.0]);
 
       const p = em.newEntity();
       em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
@@ -334,10 +334,15 @@ export function initClothSandbox(em: EntityManager, hosting: boolean) {
     [AssetsDef, GlobalCursor3dDef, RendererDef],
     (_, res) => {
       let renderPipelinesPtrs: CyRenderPipelinePtr[] = [
+        // TODO(@darzu):
+        shadowPipeline,
         stdRenderPipeline,
         renderRopePipelineDesc,
         boidRender,
-        boidCanvasMerge,
+        // boidCanvasMerge,
+        // shadowDbgDisplay,
+        normalDbg,
+        postProcess,
       ];
       let computePipelinesPtrs: CyCompPipelinePtr[] = [
         cmpClothPipelinePtr0,
@@ -378,8 +383,6 @@ export function initClothSandbox(em: EntityManager, hosting: boolean) {
       assert(RenderableDef.isOn(c));
       c.renderable.enabled = true;
       c.cursor3d.maxDistance = 10;
-
-      vec3.copy(res.renderer.renderer.backgroundColor, [0.7, 0.8, 1.0]);
 
       const plane = em.newEntity();
       em.ensureComponentOn(
@@ -487,8 +490,6 @@ export function initReboundSandbox(em: EntityManager, hosting: boolean) {
       const c = res.globalCursor3d.cursor()!;
       assert(RenderableDef.isOn(c));
       c.renderable.enabled = false;
-
-      vec3.copy(res.renderer.renderer.backgroundColor, [0.7, 0.8, 1.0]);
 
       const p = em.newEntity();
       em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);

@@ -4,13 +4,12 @@ import { CY, CyPipelinePtr } from "./gpu-registry.js";
 import { MeshPool } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import { Renderer } from "./renderer-ecs.js";
-import { CyRndrPipeline, CyCompPipeline, CySingleton } from "./data-webgpu.js";
 import {
-  VertexStruct,
-  MeshUniformStruct,
-  SceneStruct,
-  MeshHandleStd,
-} from "./std-pipeline.js";
+  CyRenderPipeline,
+  CyCompPipeline,
+  CySingleton,
+} from "./data-webgpu.js";
+import { VertexStruct, MeshUniformStruct, MeshHandleStd } from "./std-scene.js";
 import {
   bundleRenderPipelines,
   createCyResources,
@@ -18,6 +17,7 @@ import {
   onCanvasResizeAll,
   renderBundles,
 } from "./instantiator-webgpu.js";
+import { SceneStruct, SceneTS } from "./std-scene.js";
 
 export function createWebGPURenderer(
   canvas: HTMLCanvasElement,
@@ -27,11 +27,11 @@ export function createWebGPURenderer(
   let renderer: Renderer = {
     drawLines: true,
     drawTris: true,
-    backgroundColor: [0.6, 0.63, 0.6],
 
     addMesh,
     addMeshInstance,
     updateMesh,
+    updateScene,
     renderFrame,
   };
 
@@ -91,7 +91,7 @@ export function createWebGPURenderer(
 
   function updateRenderBundle(
     handles: MeshHandleStd[],
-    pipelines: CyRndrPipeline[]
+    pipelines: CyRenderPipeline[]
   ) {
     needsRebundle = false; // TODO(@darzu): hack?
 
@@ -111,12 +111,23 @@ export function createWebGPURenderer(
     }
   }
 
+  function updateScene(scene: Partial<SceneTS>) {
+    sceneUni.queueUpdate({
+      ...sceneUni.lastData!,
+      ...scene,
+    });
+  }
+
   function renderFrame(
-    viewProj: mat4,
     handles: MeshHandleStd[],
     pipelines: CyPipelinePtr[]
   ): void {
-    let renderPipelines: CyRndrPipeline[] = [];
+    if (!pipelines.length) {
+      console.warn("rendering without any pipelines specified");
+      return;
+    }
+
+    let renderPipelines: CyRenderPipeline[] = [];
     let computePipelines: CyCompPipeline[] = [];
 
     pipelines.forEach((p) => {
@@ -139,13 +150,6 @@ export function createWebGPURenderer(
       );
 
     const didResize = checkCanvasResize();
-
-    // update scene data
-    sceneUni.queueUpdate({
-      ...sceneUni.lastData!,
-      time: 1000 / 60,
-      cameraViewProjMatrix: viewProj,
-    });
 
     // update all mesh transforms
     for (let m of handles) {
@@ -187,8 +191,7 @@ export function createWebGPURenderer(
       context,
       commandEncoder,
       resources,
-      renderPipelines.map((p) => [p, cyRenderToBundle[p.ptr.name]]),
-      renderer.backgroundColor
+      renderPipelines.map((p) => [p, cyRenderToBundle[p.ptr.name]])
     );
 
     // submit render passes to GPU

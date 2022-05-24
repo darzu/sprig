@@ -58,4 +58,22 @@ Mesh transforms:
   https://ciechanow.ski/mesh-transforms/
 
 Very cool particly prog art:
-  https://twitter.com/beesandbombs
+  https://twitter.com/beesandbom
+  
+Outer Wilds documentry:
+  https://www.youtube.com/watch?v=LbY0mBXKKT0&t=207s
+  naomi writing is just meeting notes back and forth
+  character-driven writting
+    people don't connect with a civilazation as a hole,
+    so had to be character driven
+  each writting:
+    what's happening
+    ptr to next clue
+    back ptr to indicate how u could have gotten here,
+      so u can follow the story the other direction
+  characters r attached to certain plot lines
+  players expected text to be lore, not game play
+    had to make it clear: never lore, only text
+  knew they needed shiplog b/c didn't want player using paper notes
+    rumor board was a late addition
+  

@@ -16,8 +16,11 @@ import {
   CySamplerPtr,
   PtrKind,
   PtrKindToPtrType,
+  CyAttachment,
 } from "./gpu-registry.js";
 import { MeshPool } from "./mesh-pool.js";
+import { BLACK } from "../game/assets.js";
+import { vec4 } from "../gl-matrix.js";
 
 export interface CyBuffer<O extends CyStructDesc> {
   struct: CyStruct<O>;
@@ -56,6 +59,11 @@ export interface CyTexture {
   // TODO(@darzu): support partial texture update?
   queueUpdate: (data: Float32Array) => void;
   resize: (width: number, height: number) => void;
+  attachment: (opts?: {
+    doClear?: boolean;
+    defaultColor?: vec4;
+    viewOverride?: GPUTextureView;
+  }) => GPURenderPassColorAttachment;
 }
 export interface CyDepthTexture extends Omit<CyTexture, "ptr"> {
   ptr: CyDepthTexturePtr;
@@ -69,9 +77,8 @@ export type PtrKindToResourceType = {
   texture: CyTexture;
   depthTexture: CyDepthTexture;
   compPipeline: CyCompPipeline;
-  renderPipeline: CyRndrPipeline;
+  renderPipeline: CyRenderPipeline;
   meshPool: MeshPool<any, any>;
-  canvasTexture: CyTexture;
   sampler: CySampler;
 };
 type Assert_ResourceTypePtrTypeMatch =
@@ -92,7 +99,7 @@ export interface CyCompPipeline {
 }
 
 // TODO(@darzu): instead of just mushing together with the desc, have desc compose in
-export interface CyRndrPipeline {
+export interface CyRenderPipeline {
   ptr: CyRenderPipelinePtr;
   // resourceLayouts: CyBufferPtrLayout<any>[];
   vertexBuf?: CyArray<any>;
@@ -101,6 +108,7 @@ export interface CyRndrPipeline {
   pool?: MeshPool<any, any>;
   pipeline: GPURenderPipeline;
   bindGroupLayouts: GPUBindGroupLayout[];
+  output: CyAttachment[];
 }
 
 export interface CySampler {
@@ -281,7 +289,7 @@ export function createCyTexture(
   // TODO(@darzu): parameterize
   // TODO(@darzu): be more precise
   const bytesPerVal = texTypeToBytes[format]!;
-  assert(bytesPerVal, `Unimplemented format: ${format}`);
+  assert(bytesPerVal, `TODO format: ${format}`);
 
   const cyTex: CyTexture = {
     ptr,
@@ -291,6 +299,7 @@ export function createCyTexture(
     texture: undefined as any as GPUTexture, // pretty hacky...
     queueUpdate,
     resize,
+    attachment,
   };
 
   resize(size[0], size[1]);
@@ -299,6 +308,8 @@ export function createCyTexture(
   if (initVal) {
     queueUpdate(initVal);
   }
+
+  const black: vec4 = [0, 0, 0, 1];
 
   return cyTex;
 
@@ -335,6 +346,27 @@ export function createCyTexture(
         depthOrArrayLayers: 1,
       }
     );
+  }
+
+  function attachment(opts?: {
+    doClear?: boolean;
+    defaultColor?: vec4;
+    viewOverride?: GPUTextureView;
+  }): GPURenderPassColorAttachment {
+    const loadOp: GPULoadOp = opts?.doClear ? "clear" : "load";
+
+    const backgroundColor = opts?.defaultColor ?? black;
+    return {
+      view: opts?.viewOverride ?? cyTex.texture.createView(),
+      loadOp,
+      clearValue: {
+        r: backgroundColor[0],
+        g: backgroundColor[1],
+        b: backgroundColor[2],
+        a: backgroundColor[3],
+      },
+      storeOp: "store",
+    };
   }
 }
 
