@@ -13,7 +13,8 @@ import {
 import { ColorDef } from "../color.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DeletedDef } from "../delete.js";
-import { MeshHandleStd, SceneTS, stdRenderPipeline } from "./std-pipeline.js";
+import { stdRenderPipeline } from "./std-pipeline.js";
+import { MeshHandleStd } from "./std-scene.js";
 import { CanvasDef } from "../canvas.js";
 import { FORCE_WEBGL } from "../main.js";
 import { createWebGPURenderer } from "./render-webgpu.js";
@@ -22,6 +23,7 @@ import { createFrame } from "../physics/nonintersection.js";
 import { tempVec } from "../temp-pool.js";
 import { isMeshHandle } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
+import { SceneTS } from "./std-scene.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -398,7 +400,5 @@ async function chooseAndInitRenderer(
 
   // add to ECS
   // TODO(@darzu): this is a little wierd to do this in an async callback
-  em.addSingletonComponent(RendererDef, renderer, usingWebGPU, [
-    stdRenderPipeline,
-  ]);
+  em.addSingletonComponent(RendererDef, renderer, usingWebGPU, []);
 }

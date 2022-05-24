@@ -1,11 +1,7 @@
 import { vec3 } from "../gl-matrix.js";
 import { CY } from "./gpu-registry.js";
 import { createCyStruct, CyToTS } from "./gpu-struct.js";
-import {
-  sceneBufPtr,
-  canvasDepthTex,
-  canvasTexturePtr,
-} from "./std-pipeline.js";
+import { sceneBufPtr, canvasTexturePtr, canvasDepthTex } from "./std-scene.js";
 
 export const RopeStickStruct = createCyStruct({
   aIdx: "u32",

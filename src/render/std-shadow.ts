@@ -2,12 +2,7 @@
 
 import { CY, linearSamplerPtr } from "./gpu-registry.js";
 import { createCyStruct } from "./gpu-struct.js";
-import {
-  canvasDepthTex,
-  canvasTexturePtr,
-  meshPoolPtr,
-  sceneBufPtr,
-} from "./std-pipeline.js";
+import { canvasTexturePtr, meshPoolPtr, sceneBufPtr } from "./std-scene.js";
 
 // // TODO(@darzu): TODO
 // const shadowDepthTextureSize = 1024;
@@ -19,7 +14,7 @@ import {
 // const shadowDepthTextureView = shadowDepthTexture.createView();
 // // TODO(@darzu): TODO
 
-const shadowDepthTexture = CY.createDepthTexture("shadowTex", {
+export const shadowDepthTexture = CY.createDepthTexture("shadowTex", {
   init: () => undefined,
   size: [1024, 1024],
   format: "depth32float",

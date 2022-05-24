@@ -5,11 +5,7 @@ import { jitter } from "../math.js";
 import { range } from "../util.js";
 import { CY, CyTexturePtr, linearSamplerPtr } from "./gpu-registry.js";
 import { createCyStruct } from "./gpu-struct.js";
-import {
-  sceneBufPtr,
-  canvasDepthTex,
-  canvasTexturePtr,
-} from "./std-pipeline.js";
+import { sceneBufPtr, canvasTexturePtr, canvasDepthTex } from "./std-scene.js";
 
 const BoidData = createCyStruct({
   pos: "vec3<f32>",

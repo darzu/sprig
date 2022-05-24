@@ -279,14 +279,20 @@ export function createCyResources(
           };
         }
       } else if (r.ptr.kind === "sampler") {
-        return {
-          binding: idx,
-          visibility: shaderStage,
-          // TODO(@darzu): SAMPLER what type to put here....
-          // sampler: { type: "comparison" },
-          // sampler: { type: "non-filtering" },
-          sampler: { type: "filtering" },
-        };
+        if (r.ptr.name === "comparison") {
+          return {
+            binding: idx,
+            visibility: shaderStage,
+            sampler: { type: "comparison" },
+          };
+        } else {
+          return {
+            binding: idx,
+            visibility: shaderStage,
+            // TODO(@darzu): support non-filtering?
+            sampler: { type: "filtering" },
+          };
+        }
       } else {
         never(r.ptr, "UNIMPLEMENTED");
       }
@@ -365,9 +371,10 @@ export function createCyResources(
           return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_storage_2d<${r.ptr.format}, write>;`;
       } else if (r.ptr.kind === "sampler") {
         const varName = r.alias ?? uncapitalize(r.ptr.name);
-        // TODO(@darzu): support comparison sampler
-        // return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : sampler_comparison;`;
-        return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : sampler;`;
+        if (r.ptr.name === "comparison")
+          return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : sampler_comparison;`;
+        else
+          return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : sampler;`;
       } else {
         never(r.ptr, "unimpl");
       }

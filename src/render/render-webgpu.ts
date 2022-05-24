@@ -9,13 +9,7 @@ import {
   CyCompPipeline,
   CySingleton,
 } from "./data-webgpu.js";
-import {
-  VertexStruct,
-  MeshUniformStruct,
-  SceneStruct,
-  MeshHandleStd,
-  SceneTS,
-} from "./std-pipeline.js";
+import { VertexStruct, MeshUniformStruct, MeshHandleStd } from "./std-scene.js";
 import {
   bundleRenderPipelines,
   createCyResources,
@@ -23,6 +17,7 @@ import {
   onCanvasResizeAll,
   renderBundles,
 } from "./instantiator-webgpu.js";
+import { SceneStruct, SceneTS } from "./std-scene.js";
 
 export function createWebGPURenderer(
   canvas: HTMLCanvasElement,
@@ -127,6 +122,11 @@ export function createWebGPURenderer(
     handles: MeshHandleStd[],
     pipelines: CyPipelinePtr[]
   ): void {
+    if (!pipelines.length) {
+      console.warn("rendering without any pipelines specified");
+      return;
+    }
+
     let renderPipelines: CyRenderPipeline[] = [];
     let computePipelines: CyCompPipeline[] = [];
 

@@ -67,6 +67,8 @@ import {
   registerGameStateSystems,
 } from "./gamestate.js";
 import { MeDef } from "../net/components.js";
+import { stdRenderPipeline } from "../render/std-pipeline.js";
+import { shadowPipeline } from "../render/std-shadow.js";
 
 export const ScoreDef = EM.defineComponent("score", () => {
   return {
@@ -214,6 +216,10 @@ export function initShipGame(em: EntityManager, hosting: boolean) {
   // create player once MeDef is present (meaning we've joined, if
   // we're not the host)
   em.registerOneShotSystem(null, [MeDef], () => createPlayer(em));
+
+  em.registerOneShotSystem(null, [RendererDef], (_, res) => {
+    res.renderer.pipelines = [shadowPipeline, stdRenderPipeline];
+  });
 }
 
 function debugBoatParts(em: EntityManager) {

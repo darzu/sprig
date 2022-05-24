@@ -21,7 +21,7 @@ import { getText } from "../webget.js";
 import { AABBCollider } from "../physics/collider.js";
 import { farthestPointInDir, SupportFn } from "../utils-3d.js";
 import { MeshHandle } from "../render/mesh-pool.js";
-import { MeshHandleStd } from "../render/std-pipeline.js";
+import { MeshHandleStd } from "../render/std-scene.js";
 
 export const BLACK = vec3.fromValues(0, 0, 0);
 export const DARK_GRAY = vec3.fromValues(0.02, 0.02, 0.02);
