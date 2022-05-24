@@ -35,6 +35,9 @@ import { shadowDepthTexture } from "./std-shadow.js";
 //  [ ] deferred rendering
 //  [ ] re-enable line renderer
 //  [x] pass in pipelines from game
+//  [ ] light source: scene rendered with multiple point sources
+//      - light sailing
+//
 
 export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
   globals: [
