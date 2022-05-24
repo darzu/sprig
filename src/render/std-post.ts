@@ -50,8 +50,17 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
 @stage(fragment)
 fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   let m = vec4(textureSample(myTexture, mySampler, fragUV));
-  let m2 = vec4(textureSample(myTexture, mySampler, fragUV - 0.002));
-  if (length(m - m2) > 0.1) {
+  let e = 0.002;
+  let mT = vec4(textureSample(myTexture, mySampler, fragUV + vec2(0.0, e)));
+  let mL = vec4(textureSample(myTexture, mySampler, fragUV + vec2(-e, 0.0)));
+  let mR = vec4(textureSample(myTexture, mySampler, fragUV + vec2(e, 0.0)));
+  let mB = vec4(textureSample(myTexture, mySampler, fragUV + vec2(0.0, -e)));
+  if (
+    length(m - mT) > 0.1 ||
+    length(m - mL) > 0.1 ||
+    length(m - mR) > 0.1 ||
+    length(m - mB) > 0.1
+  ) {
     return vec4(0.0, 0.0, 0.0, 1.0);
   } else {
     let res = vec4(m.r, m.g, m.b, m.a);
