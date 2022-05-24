@@ -113,10 +113,12 @@ const genRopeStickData = () => {
 
 const ropePointBufPtr = CY.createArray("ropePoint", {
   struct: RopePointStruct,
+  length: CLOTH_W * CLOTH_W,
   init: genRopePointData,
 });
 const ropeStickBufPtr = CY.createArray("ropeStick", {
   struct: RopeStickStruct,
+  length: CLOTH_W * CLOTH_W * 2,
   init: genRopeStickData,
 });
 export const compRopePipelinePtr = CY.createComputePipeline("ropeComp", {
@@ -223,6 +225,7 @@ const initParticleVertData: () => CyToTS<
 ];
 const particleVertBufPtr = CY.createArray("particleVert", {
   struct: ParticleVertStruct,
+  length: 4,
   init: initParticleVertData,
 });
 

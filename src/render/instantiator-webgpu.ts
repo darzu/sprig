@@ -179,7 +179,13 @@ export function createCyResources(
   // create many-buffers
   cy.kindToPtrs.array.forEach((r) => {
     const usage = cyNameToBufferUsage[r.name]!;
-    const buf = createCyArray(device, r.struct, usage, r.init());
+    const buf = createCyArray(
+      device,
+      r.struct,
+      usage,
+      r.length,
+      r.init ? r.init() : undefined
+    );
     kindToNameToRes.array[r.name] = buf;
   });
   // create one-buffers
@@ -323,10 +329,12 @@ export function createCyResources(
         if (plurality === "one") {
           return structStr;
         } else {
+          // TODO(@darzu): HACK. Plurality needs a rethink
+          assert(r.ptr.kind === "array", "TODO");
           return (
             structStr +
             `struct ${pluralize(capitalize(r.ptr.name))} {\n` +
-            `ms : array<${capitalize(r.ptr.name)}>,\n` +
+            `ms : array<${capitalize(r.ptr.name)}, ${r.ptr.length}>,\n` +
             `};\n`
           );
         }

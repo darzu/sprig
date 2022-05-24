@@ -52,7 +52,7 @@ export type MeshHandleStd = MeshHandle<typeof MeshUniformStruct.desc>;
 
 const meshVertsPtr = CY.createArray("meshVertsBuf", {
   struct: VertexStruct,
-  init: () => MAX_VERTICES,
+  length: MAX_VERTICES,
 });
 
 const meshTriIndsPtr = CY.createIdxBuf("meshTriIndsBuf", {
@@ -65,7 +65,7 @@ const meshLineIndsPtr = CY.createIdxBuf("meshLineIndsBuf", {
 
 const meshUnisPtr = CY.createArray("meshUni", {
   struct: MeshUniformStruct,
-  init: () => MAX_MESHES,
+  length: MAX_MESHES,
 });
 
 export const meshPoolPtr = CY.createMeshPool("meshPool", {
@@ -190,7 +190,7 @@ export type PointLightTS = CyToTS<typeof PointLightStruct.desc>;
 
 export const pointLightsPtr = CY.createArray("pointLightsBuf", {
   struct: PointLightStruct,
-  init: () => MAX_LIGHTS,
+  length: MAX_LIGHTS,
   forceUsage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
 });
 

@@ -172,10 +172,10 @@ export function createCyArray<O extends CyStructDesc>(
   device: GPUDevice,
   struct: CyStruct<O>,
   usage: GPUBufferUsageFlags,
-  lenOrData: number | CyToTS<O>[]
+  length: number,
+  data?: CyToTS<O>[]
 ): CyArray<O> {
-  const hasInitData = typeof lenOrData !== "number";
-  const length = hasInitData ? lenOrData.length : lenOrData;
+  const hasInitData = !!data;
 
   if ((usage & GPUBufferUsage.UNIFORM) !== 0) {
     assert(
@@ -203,7 +203,10 @@ export function createCyArray<O extends CyStructDesc>(
   const stride = struct.size;
 
   if (hasInitData) {
-    const data = lenOrData;
+    assert(
+      data.length === length,
+      `Mismatch init data vs length ${data.length} vs ${length}`
+    );
     const mappedBuf = new Uint8Array(_buf.getMappedRange());
     for (let i = 0; i < data.length; i++) {
       const d = struct.serialize(data[i]);

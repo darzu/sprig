@@ -15,6 +15,7 @@ const BoidData = createCyStruct({
 const numBoids = 1500;
 const boidData0 = CY.createArray("boidData0", {
   struct: BoidData,
+  length: numBoids,
   init: () =>
     range(numBoids).map((_, i) => ({
       pos: [jitter(10), jitter(10), jitter(10)] as vec3,
@@ -23,7 +24,7 @@ const boidData0 = CY.createArray("boidData0", {
 });
 const boidData1 = CY.createArray("boidData1", {
   struct: BoidData,
-  init: () => numBoids,
+  length: numBoids,
 });
 const BoidVert = createCyStruct({
   pos: "vec3<f32>",
@@ -31,6 +32,7 @@ const BoidVert = createCyStruct({
 
 const boidVerts = CY.createArray("boidVerts", {
   struct: BoidVert,
+  length: 4,
   init: () => [
     { pos: [1, 1, 1] },
     { pos: [1, -1, -1] },
@@ -160,7 +162,7 @@ const boidCompDesc: Omit<
     var pos : vec3<f32>;
     var vel : vec3<f32>;
   
-    for (var i : u32 = 0u; i < arrayLength(&inBoids.ms); i = i + 1u) {
+    for (var i : u32 = 0u; i < ${numBoids}u; i = i + 1u) {
       if (i == index) {
         continue;
       }
