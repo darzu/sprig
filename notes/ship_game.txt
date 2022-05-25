@@ -104,6 +104,8 @@ gates on planets,
 
 Hyperspace traders
 Spatial delivery
+Going Hyperpostal?
+  https://en.wikipedia.org/wiki/Going_postal
 
 
 Ship mega upgrades:
@@ -134,3 +136,30 @@ Surface generation:
   sphere inside out:
     https://www.youtube.com/watch?v=OI-To1eUtuU
   https://store.steampowered.com/app/1297210/Tandis/
+
+World building:
+  
+Tasks:
+  Resource gathering
+    Meta progression
+      unrailed had the key
+    Deep rock as main mission
+    necessary to unlock the gate
+  Hell divers, go herer do that defend
+  goal: make the pathing more interesting than A to B
+  Don't want to do binary must-clear-level like Hades
+    hyperspace has to feel dangerous; you can't go toe to toe with everything
+  Unrailed let you stockpile resources to aid ur next run
+
+how do we avoid yelling at team mates like LoL?
+  maybe slower pace of game?
+  reduce the amount of info you have about each other's tasks
+  reduce the skill ceiling
+
+Roasting vs yelling
+  worst: LoL players yelling at each other
+  less good: overcooked
+  okay: Valheim trench, secret castle, tree chopping, chest management?
+  ???: unrailed bumping into each other?
+
+  

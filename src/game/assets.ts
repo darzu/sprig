@@ -566,6 +566,18 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
   return result;
 }
 
+export function addSurfaceIdsToMesh(mesh: Mesh): void {
+  // TODO(@darzu): implement correctly
+  if (mesh.surfaceIds) return;
+
+  let triIdToSurfaceId: Map<number, number> = new Map();
+  mesh.tri.forEach((t, i) => {
+    triIdToSurfaceId.set(i, i);
+  });
+
+  mesh.surfaceIds = mesh.tri.map((_, i) => triIdToSurfaceId.get(i)!);
+}
+
 export function gameMeshFromMesh(mesh: Mesh, renderer: Renderer): GameMesh {
   const aabb = getAABBFromMesh(mesh);
   const center = getCenterFromAABB(aabb);

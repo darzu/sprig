@@ -5,7 +5,6 @@ import {
   Mesh,
   scaleMesh,
   scaleMesh3,
-  unshareProvokingVertices,
 } from "../render/mesh.js";
 import { PositionDef } from "../physics/transform.js";
 import {

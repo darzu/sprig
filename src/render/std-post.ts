@@ -59,7 +59,7 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
 fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   var color = textureSample(colorTex, samp, fragUV);
   // let e = 0.01;
-  let e = 0.003;
+  let e = 0.0015;
   let t = fragUV + vec2(0.0, e);
   let l = fragUV + vec2(-e, 0.0);
   let r = fragUV + vec2(e, 0.0);
@@ -128,7 +128,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
 
   if (
     length( nR - nL) > 0.05
-    || posChangeX
+    // || posChangeX
     // || depthChangeX
   ) {
     if (dX0 < dX1) {
@@ -136,13 +136,13 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
       // colorChange = 0.2; // * -depthChangeX;
       // color = vec4(1.0, 0.0, 0.0, 1.0);
     } else {
-      colorChange = -0.2;
+      colorChange = -0.3;
       // color = vec4(0.0, 1.0, 0.0, 1.0);
     }
   } 
   else if (
     length( nB - nT) > 0.05
-    || posChangeY
+    // || posChangeY
     // || depthChangeY
   ) {
     if (dY0 < dY1) {
@@ -150,12 +150,12 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
       // colorChange = 0.2; // * -depthChangeY; 
       // color = vec4(0.0, 0.0, 1.0, 1.0);
     } else {
-      colorChange = -0.2;
+      colorChange = -0.3;
       // color = vec4(1.0, 1.0, 0.0, 1.0);
     }
   }
 
-  colorChange *= 20.0;
+  // colorChange *= 20.0;
 
   color += colorChange;
 

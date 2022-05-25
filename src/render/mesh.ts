@@ -7,11 +7,21 @@ export interface Mesh {
   pos: vec3[];
   tri: vec3[];
   colors: vec3[]; // colors per triangle in r,g,b float [0-1] format
-  lines?: vec2[];
+  lines: vec2[];
   uvs?: vec2[];
+  surfaceIds?: number[];
   // format flags:
   usesProvoking?: boolean;
   verticesUnshared?: boolean; // TODO(@darzu): support
+}
+
+// TODO(@darzu): Seperate RawMesh from Mesh, so that we can do standard
+//    processing all at once (usesProvoking, surfaceIds)
+export interface RawMesh {
+  pos: vec3[];
+  tri: vec3[];
+  colors: vec3[]; // colors per triangle in r,g,b float [0-1] format
+  lines: vec2[];
 }
 
 export function unshareVertices(input: Mesh): Mesh {
@@ -108,7 +118,7 @@ export function cloneMesh(m: Mesh): Mesh {
     pos: m.pos.map((p) => vec3.clone(p)),
     tri: m.tri.map((p) => vec3.clone(p)),
     colors: m.colors.map((p) => vec3.clone(p)),
-    lines: m.lines ? m.lines.map((p) => vec2.clone(p)) : undefined,
+    lines: m.lines.map((p) => vec2.clone(p)),
   };
 }
 // split mesh by connectivity
