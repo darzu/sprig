@@ -15,11 +15,11 @@ import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { tempVec } from "../temp-pool.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
-import { ColorDef } from "../color.js";
+import { ColorDef, TintsDef } from "../color.js";
 import { drawLine } from "../utils-game.js";
 import { CameraView, CameraViewDef } from "../camera.js";
 
-const ENABLED = false;
+const ENABLED = true;
 
 export const ModelerDef = EM.defineComponent("modeler", () => {
   return {
@@ -67,6 +67,9 @@ function registerObjClicker(em: EntityManager) {
         // check for hits
         const hits = res.physicsResults.checkRay(r);
 
+        // TODO(@darzu): this doesn't work
+        // console.dir({ screenPos, hits });
+
         hits.sort((a, b) => a.dist - b.dist);
         const firstHit: RayHit | undefined = hits[0];
         if (firstHit) {
@@ -74,7 +77,9 @@ function registerObjClicker(em: EntityManager) {
           // increase green
           const e = EM.findEntity(firstHit.id, [ColorDef]);
           if (e) {
-            e.color[1] += 0.1;
+            EM.ensureComponentOn(e, TintsDef);
+            e.tints.set("select", [0, 0.2, 0]);
+            // e.color[1] += 0.1;
           }
         }
 
