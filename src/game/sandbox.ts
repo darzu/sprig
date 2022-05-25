@@ -409,21 +409,21 @@ export function initClothSandbox(em: EntityManager, hosting: boolean) {
         quat.fromEuler(quat.create(), 0, Math.PI * 0.1, 0)
       );
 
-      const ocean = em.newEntity();
-      em.ensureComponentOn(
-        ocean,
-        EM.defineComponent("ocean", () => true)
-      );
-      em.ensureComponentOn(
-        ocean,
-        RenderableConstructDef,
-        res.assets.ocean.proto
-      );
-      em.ensureComponentOn(ocean, ColorDef, [0.0, 0.0, 0.4]);
-      em.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
-      // vec3.scale(ocean.position, ocean.position, scale);
-      const scale = 100.0;
-      em.ensureComponentOn(ocean, ScaleDef, [scale, scale, scale]);
+      // const ocean = em.newEntity();
+      // em.ensureComponentOn(
+      //   ocean,
+      //   EM.defineComponent("ocean", () => true)
+      // );
+      // em.ensureComponentOn(
+      //   ocean,
+      //   RenderableConstructDef,
+      //   res.assets.ocean.proto
+      // );
+      // em.ensureComponentOn(ocean, ColorDef, [0.0, 0.0, 0.4]);
+      // em.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
+      // // vec3.scale(ocean.position, ocean.position, scale);
+      // const scale = 100.0;
+      // em.ensureComponentOn(ocean, ScaleDef, [scale, scale, scale]);
       // em.ensureComponentOn(
       //   ocean,
       //   RotationDef,

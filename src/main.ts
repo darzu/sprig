@@ -16,6 +16,8 @@ import { callClothSystems } from "./game/cloth.js";
 import { callSpringSystems } from "./game/spring.js";
 import { initShipGame, registerAllSystems } from "./game/game.js";
 import { setSimulationAlpha } from "./render/renderer-ecs.js";
+import { never } from "./util.js";
+import { initHyperspaceGame } from "./game/xp-hyperspace.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -23,7 +25,12 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-const GAME = "cloth" as "ship" | "gjk" | "rebound" | "cloth";
+const GAME = "hyperspace" as
+  | "ship"
+  | "gjk"
+  | "rebound"
+  | "cloth"
+  | "hyperspace";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -87,6 +94,9 @@ function callFixedTimestepSystems() {
   }
   if (GAME === "cloth") {
     EM.callSystem("clothSandbox");
+  }
+  if (GAME === "hyperspace") {
+    EM.callSystem("hyperspaceGame");
   }
   EM.callSystem("updateBullets");
   EM.callSystem("updateNoodles");
@@ -191,6 +201,8 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "gjk") initGJKSandbox(EM, hosting);
   else if (GAME === "rebound") initReboundSandbox(EM, hosting);
   else if (GAME === "cloth") initClothSandbox(EM, hosting);
+  else if (GAME === "hyperspace") initHyperspaceGame(EM);
+  else never(GAME, "TODO game");
 
   let previous_frame_time = start_of_time;
   let accumulator = 0;
