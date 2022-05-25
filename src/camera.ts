@@ -233,7 +233,7 @@ export function registerCameraSystems(em: EntityManager) {
           camera.fov,
           cameraView.aspectRatio,
           1,
-          10000.0 /*view distance*/
+          100000.0 /*view distance*/
         );
       }
       const viewProj = mat4.multiply(

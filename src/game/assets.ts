@@ -45,6 +45,7 @@ const RemoteMeshes = {
   grappleGun: "grapple-gun.sprig.obj",
   grappleGunUnloaded: "grapple-gun-unloaded.sprig.obj",
   rudder: "rudder.sprig.obj",
+  ocean: "hyperspace-ocean.sprig.obj",
 } as const;
 
 type RemoteMeshSymbols = keyof typeof RemoteMeshes;
@@ -556,6 +557,8 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
   const allSetAssets = objMap(setMeshes, (ms, n) =>
     ms.map((m) => gameMeshFromMesh(m, renderer))
   );
+
+  console.dir(allSingleAssets.ocean);
 
   const result = { ...allSingleAssets, ...allSetAssets };
 

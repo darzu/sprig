@@ -755,3 +755,10 @@ Outlines / edge detection:
 
   https://alexanderameye.github.io/notes/rendering-outlines/
   https://roystan.net/articles/outline-shader.html
+    "Instead, we will modulate depthThreshold by the surface's normal. 
+    Surfaces that are at a greater angle from the camera with have a larger 
+    threshold, while surface that are flatter, or more planar to the camera 
+    will have a lower threshold.
+    To implement this we will need the normal of each surface, and the direction 
+    from the camera to the surface (the view direction). We already have the 
+    normal, but we don't have access to the view direction."

@@ -121,7 +121,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   logMeshPoolStats(opts);
 
   const maxMeshes = opts.unis.length;
-  const maxTris = opts.triInds.length / 3;
+  const maxTris = Math.ceil(opts.triInds.length / 3);
   const maxVerts = opts.verts.length;
   const maxLines = opts.lineInds.length / 2;
 

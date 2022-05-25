@@ -55,7 +55,7 @@ const meshVertsPtr = CY.createArray("meshVertsBuf", {
 });
 
 const meshTriIndsPtr = CY.createIdxBuf("meshTriIndsBuf", {
-  init: () => MAX_VERTICES,
+  init: () => MAX_VERTICES * 3,
 });
 
 const meshLineIndsPtr = CY.createIdxBuf("meshLineIndsBuf", {

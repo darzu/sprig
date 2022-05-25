@@ -149,7 +149,9 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
 
     let backgroundColor: vec3<f32> = vec3<f32>(0.6, 0.63, 0.6);
-    let finalColor: vec3<f32> = mix(backgroundColor, gammaCorrected, fogVisibility);
+    // let backgroundColor: vec3<f32> = vec3<f32>(0.6, 0.63, 0.6);
+    // let finalColor: vec3<f32> = mix(backgroundColor, gammaCorrected, fogVisibility);
+    let finalColor: vec3<f32> = gammaCorrected;
 
     var out: FragOut;
     out.color = vec4<f32>(finalColor, 1.0);
