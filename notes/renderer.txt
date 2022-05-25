@@ -752,3 +752,6 @@ Outlines / edge detection:
 
   https://blender.community/c/rightclickselect/J9bbbc/?sorting=hot
     https://en.wikipedia.org/wiki/Prewitt_operator
+
+  https://alexanderameye.github.io/notes/rendering-outlines/
+  https://roystan.net/articles/outline-shader.html

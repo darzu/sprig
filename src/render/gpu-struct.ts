@@ -228,6 +228,7 @@ export interface CyStructOpts<O extends CyStructDesc> {
   serializer?: Serializer<O>;
 }
 
+// TODO(@darzu): handle nested fixed size arrays
 export function createCyStruct<O extends CyStructDesc>(
   desc: O,
   opts?: CyStructOpts<O>

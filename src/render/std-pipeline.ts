@@ -10,6 +10,7 @@ import {
   mainTexturePtr,
   meshPoolPtr,
   normalsTexturePtr,
+  positionsTexturePtr,
   sceneBufPtr,
 } from "./std-scene.js";
 import { shadowDepthTexture } from "./std-shadow.js";
@@ -61,6 +62,11 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
     },
     {
       ptr: normalsTexturePtr,
+      clear: "once",
+      defaultColor: [0, 0, 0, 0],
+    },
+    {
+      ptr: positionsTexturePtr,
       clear: "once",
       defaultColor: [0, 0, 0, 0],
     },
@@ -116,6 +122,7 @@ fn vert_main(input: VertexInput) -> VertexOutput {
 struct FragOut {
   @location(0) color: vec4<f32>,
   @location(1) normal: vec4<f32>,
+  @location(2) position: vec4<f32>,
 }
 
 @stage(fragment)
@@ -147,6 +154,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
     var out: FragOut;
     out.color = vec4<f32>(finalColor, 1.0);
     out.normal = vec4<f32>(input.normal, 1.0);
+    out.position = input.worldPos;
 
     return out;
     // return vec4<f32>(finalColor, 1.0);
@@ -158,8 +166,17 @@ fn frag_main(input: VertexOutput) -> FragOut {
 export const { pipeline: normalDbg } = createRenderTextureToQuad(
   "normalDbg",
   normalsTexturePtr,
-  0.1,
-  0.9,
-  0.1,
-  0.9
+  0.2,
+  0.8,
+  0.2,
+  0.8
+);
+
+export const { pipeline: positionDbg } = createRenderTextureToQuad(
+  "positionDbg",
+  positionsTexturePtr,
+  0.2,
+  0.8,
+  -0.8,
+  -0.2
 );
