@@ -25,7 +25,12 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-const GAME = "ship" as "ship" | "gjk" | "rebound" | "cloth" | "hyperspace";
+const GAME = "hyperspace" as
+  | "ship"
+  | "gjk"
+  | "rebound"
+  | "cloth"
+  | "hyperspace";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;

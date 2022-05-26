@@ -106,10 +106,13 @@ function unshareProvokingVertices(
   return mesh;
 }
 
+let nextSId = 1;
+
 function generateSurfaceIds(mesh: RawMesh): number[] {
+  // TODO(@darzu): better compute surface IDs
   let triIdToSurfaceId: Map<number, number> = new Map();
   mesh.tri.forEach((t, i) => {
-    triIdToSurfaceId.set(i, i);
+    triIdToSurfaceId.set(i, nextSId++);
   });
 
   return mesh.tri.map((_, i) => triIdToSurfaceId.get(i)!);

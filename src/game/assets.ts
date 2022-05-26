@@ -556,7 +556,8 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
     ms.map((m) => gameMeshFromMesh(m, renderer))
   );
 
-  // console.dir(allSingleAssets.ocean);
+  // console.log("allSingleAssets.ocean.mesh");
+  // console.dir(allSingleAssets.ocean.mesh);
 
   const result = { ...allSingleAssets, ...allSetAssets };
 

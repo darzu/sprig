@@ -24,6 +24,7 @@ import { tempVec } from "../temp-pool.js";
 import { isMeshHandle } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import { SceneTS } from "./std-scene.js";
+import { max } from "../math.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -288,11 +289,20 @@ export function registerRenderer(em: EntityManager) {
         lightViewMatrix
       );
 
+      const maxSurfaceId = max(
+        objs
+          .map((o) => o.renderable.meshHandle.readonlyMesh?.surfaceIds ?? [0])
+          .reduce((p, n) => [...p, ...n], [])
+      );
+      // TODO(@darzu): DBG
+      // console.log(`maxSurfaceId: ${maxSurfaceId}`);
+
       renderer.updateScene({
         cameraViewProjMatrix: cameraView.viewProjMat,
         lightViewProjMatrix,
         // TODO(@darzu): use?
         time: 1000 / 60,
+        maxSurfaceId,
       });
 
       renderer.renderFrame(

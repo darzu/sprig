@@ -14,14 +14,21 @@ export const VertexStruct = createCyStruct(
     color: "vec3<f32>",
     normal: "vec3<f32>",
     uv: "vec2<f32>",
+    surfaceId: "u32",
   },
   {
     isCompact: true,
-    serializer: ({ position, color, normal, uv }, _, offsets_32, views) => {
+    serializer: (
+      { position, color, normal, uv, surfaceId },
+      _,
+      offsets_32,
+      views
+    ) => {
       views.f32.set(position, offsets_32[0]);
       views.f32.set(color, offsets_32[1]);
       views.f32.set(normal, offsets_32[2]);
       views.f32.set(uv, offsets_32[3]);
+      views.u32[offsets_32[4]] = surfaceId;
     },
   }
 );
@@ -93,6 +100,7 @@ export function computeVertsData(m: Mesh): VertexTS[] {
     color: [0.0, 0.0, 0.0],
     normal: [1.0, 0.0, 0.0],
     uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
+    surfaceId: 0,
   }));
   m.tri.forEach((triInd, i) => {
     // set provoking vertex data
@@ -104,6 +112,7 @@ export function computeVertsData(m: Mesh): VertexTS[] {
     );
     vertsData[triInd[0]].normal = normal;
     vertsData[triInd[0]].color = m.colors[i];
+    vertsData[triInd[0]].surfaceId = m.surfaceIds[i];
   });
   return vertsData;
 }
@@ -118,6 +127,7 @@ export const SceneStruct = createCyStruct(
     cameraPos: "vec3<f32>",
     playerPos: "vec2<f32>",
     time: "f32",
+    maxSurfaceId: "u32",
   },
   {
     isUniform: true,
@@ -130,6 +140,7 @@ export const SceneStruct = createCyStruct(
       views.f32.set(data.cameraPos, offsets_32[5]);
       views.f32.set(data.playerPos, offsets_32[6]);
       views.f32[offsets_32[7]] = data.time;
+      views.u32[offsets_32[8]] = data.maxSurfaceId;
     },
   }
 );
@@ -164,6 +175,7 @@ export function setupScene(): SceneTS {
     cameraPos: vec3.create(), // updated later
     playerPos: [0, 0], // updated later
     time: 0, // updated later
+    maxSurfaceId: 1, // updated later
   };
 }
 

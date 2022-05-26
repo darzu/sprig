@@ -112,6 +112,9 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     // output.color = texDisp.rgb;
     // output.color = vec3(uv.xy, 1.0);
     output.color = color + meshUni.tint;
+
+    output.color = vec3(f32(input.surfaceId) / f32(scene.maxSurfaceId));
+    // output.color = color + meshUni.tint;
     return output;
 }
 
