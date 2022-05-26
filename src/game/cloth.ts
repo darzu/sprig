@@ -8,7 +8,11 @@ import { FinishedDef } from "../build.js";
 import { Assets, AssetsDef } from "./assets.js";
 import { SpringType, SpringGridDef, ForceDef } from "./spring.js";
 import { onInit } from "../init.js";
-import { Mesh, unshareProvokingVerticesWithMap } from "../render/mesh.js";
+import {
+  Mesh,
+  normalizeMesh,
+  unshareProvokingVerticesWithMap,
+} from "../render/mesh.js";
 import {
   RenderableConstructDef,
   RenderableDef,
@@ -109,7 +113,14 @@ function clothMesh(cloth: ClothConstruct): {
     x = x + 1;
     i = i + 1;
   }
-  return unshareProvokingVerticesWithMap({ pos, tri, colors, lines, uvs });
+  const { mesh, posMap } = unshareProvokingVerticesWithMap({
+    pos,
+    tri,
+    colors,
+    lines,
+    uvs,
+  });
+  return { mesh: normalizeMesh(mesh), posMap };
 }
 
 export function callClothSystems(em: EntityManager) {

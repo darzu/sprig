@@ -4,7 +4,7 @@ import { AssetsDef, LocalMeshes } from "../game/assets.js";
 import { ColorDef } from "../color.js";
 import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
-import { mapMeshPositions, Mesh } from "../render/mesh.js";
+import { cloneMesh, mapMeshPositions, RawMesh } from "../render/mesh.js";
 import { AABB } from "./broadphase.js";
 import {
   PhysicsBroadCollidersDef,
@@ -136,15 +136,17 @@ export function setCubePosScaleToAABB(
 }
 
 // TODO(@darzu): use instancing
-function meshFromAABB(aabb: AABB): Mesh {
+function meshFromAABB(aabb: AABB): RawMesh {
   // resize
-  let m = mapMeshPositions(LocalMeshes.cube(), (p) => [
+  const m = cloneMesh(LocalMeshes.cube());
+  mapMeshPositions(m, (p) => [
     mathMap(p[0], -1, 1, 0, aabb.max[0] - aabb.min[0]),
     mathMap(p[1], -1, 1, 0, aabb.max[1] - aabb.min[1]),
     mathMap(p[2], -1, 1, 0, aabb.max[2] - aabb.min[2]),
   ]);
   // drop the triangles (wireframe lines only)
-  m = { ...m, tri: [], colors: [] };
+  m.tri = [];
+  m.colors = [];
 
   return m;
 }

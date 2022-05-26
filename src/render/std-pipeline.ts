@@ -1,10 +1,5 @@
-import { vec3, mat4 } from "../gl-matrix.js";
-import { computeTriangleNormal } from "../utils-3d.js";
 import { createRenderTextureToQuad } from "./gpu-helper.js";
 import { comparisonSamplerPtr, CY } from "./gpu-registry.js";
-import { createCyStruct, CyToTS } from "./gpu-struct.js";
-import { MeshHandle } from "./mesh-pool.js";
-import { Mesh, getAABBFromMesh } from "./mesh.js";
 import {
   canvasDepthTex,
   mainTexturePtr,

@@ -1,16 +1,18 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { mat4, vec3 } from "../gl-matrix.js";
+import { mat4, vec2, vec3 } from "../gl-matrix.js";
 import { importObj, isParseError } from "../import_obj.js";
 import {
+  cloneMesh,
   getAABBFromMesh,
   getCenterFromAABB,
   getHalfsizeFromAABB,
   mapMeshPositions,
   Mesh,
+  normalizeMesh,
+  RawMesh,
   scaleMesh,
   scaleMesh3,
   transformMesh,
-  unshareProvokingVertices,
 } from "../render/mesh.js";
 import { AABB } from "../physics/broadphase.js";
 import { RendererDef } from "../render/renderer-ecs.js";
@@ -83,14 +85,14 @@ const AssetTransforms: Partial<{
 // TODO(@darzu): these sort of hacky offsets are a pain to deal with. It'd be
 //    nice to have some asset import helper tooling
 const SHIP_OFFSET: vec3 = [3.85 - 2.16, -0.33 - 0.13, -8.79 + 4.63];
-const blackoutColor: (m: Mesh) => Mesh = (m: Mesh) => {
+const blackoutColor: (m: RawMesh) => RawMesh = (m: RawMesh) => {
   m.colors.map((c) => vec3.zero(c));
   return m;
 };
 const MeshTransforms: Partial<{
   [P in RemoteMeshSymbols | RemoteMeshSetSymbols | LocalMeshSymbols]: (
-    m: Mesh
-  ) => Mesh;
+    m: RawMesh
+  ) => RawMesh;
 }> = {
   cannon: (m) => {
     m.colors = m.colors.map((c) => [0.2, 0.2, 0.2]);
@@ -99,7 +101,7 @@ const MeshTransforms: Partial<{
   spacerock: (m) => {
     m.colors = m.colors.map((c) => [0.05, 0.15, 0.2]);
     const t = mat4.fromYRotation(mat4.create(), Math.PI * 0.2);
-    m = transformMesh(m, t);
+    transformMesh(m, t);
     m.lines = [];
     return m;
   },
@@ -109,13 +111,13 @@ const MeshTransforms: Partial<{
   // boat_broken: blackoutColor,
   ship: (m) => {
     m.lines = [];
-    m = scaleMesh(m, 3);
+    scaleMesh(m, 3);
     return m;
   },
   ship_broken: (m) => {
     m.lines = [];
     m.pos = m.pos.map((p) => vec3.subtract(vec3.create(), p, SHIP_OFFSET));
-    m = scaleMesh(m, 3);
+    scaleMesh(m, 3);
     return m;
   },
 };
@@ -130,7 +132,7 @@ export const CUBE_FACES = {
   bottom: [8, 9],
   back: [10, 11],
 };
-export const CUBE_MESH = unshareProvokingVertices({
+export const CUBE_MESH: RawMesh = {
   pos: [
     [+1.0, +1.0, +1.0],
     [-1.0, +1.0, +1.0],
@@ -187,40 +189,36 @@ export const CUBE_MESH = unshareProvokingVertices({
     BLACK,
     BLACK,
   ],
-});
+};
 
-const TETRA_MESH = unshareProvokingVertices(
-  scaleMesh(
-    {
-      pos: [
-        [0, 1, 0],
-        [-1, 0, -1],
-        [1, 0, -1],
-        [0, 0, 1],
-      ],
-      tri: [
-        [2, 1, 0],
-        [3, 2, 0],
-        [1, 3, 0],
-        [2, 3, 1],
-      ],
-      lines: [
-        [0, 1],
-        [0, 2],
-        [0, 3],
-        [1, 2],
-        [2, 3],
-        [3, 4],
-      ],
-      colors: [BLACK, BLACK, BLACK, BLACK],
-    },
-    2
-  )
-);
+const TETRA_MESH: RawMesh = {
+  pos: [
+    [0, 1, 0],
+    [-1, 0, -1],
+    [1, 0, -1],
+    [0, 0, 1],
+  ],
+  tri: [
+    [2, 1, 0],
+    [3, 2, 0],
+    [1, 3, 0],
+    [2, 3, 1],
+  ],
+  lines: [
+    [0, 1],
+    [0, 2],
+    [0, 3],
+    [1, 2],
+    [2, 3],
+    [3, 4],
+  ],
+  colors: [BLACK, BLACK, BLACK, BLACK],
+};
+scaleMesh(TETRA_MESH, 2);
 
 // a = cos PI/3
 // b = sin PI/3
-const HEX_MESH = () => {
+const HEX_MESH: () => RawMesh = () => {
   const A = Math.cos(Math.PI / 3);
   const B = Math.sin(Math.PI / 3);
   const topTri = [
@@ -229,94 +227,89 @@ const HEX_MESH = () => {
     [0, 5, 1],
     [4, 3, 2],
   ];
-  const sideTri = (i: number) => {
+  const sideTri: (i: number) => vec3[] = (i) => {
     const i2 = (i + 1) % 6;
     return [
       [i + 6, i, i2],
       [i + 6, i2, i2 + 6],
     ];
   };
-  let m = {
-    pos: [
-      [+1, 1, +0],
-      [+A, 1, +B],
-      [-A, 1, +B],
-      [-1, 1, +0],
-      [-A, 1, -B],
-      [+A, 1, -B],
-      [+1, 0, +0],
-      [+A, 0, +B],
-      [-A, 0, +B],
-      [-1, 0, +0],
-      [-A, 0, -B],
-      [+A, 0, -B],
-    ],
-    tri: [
-      // top 4
-      [4, 2, 1],
-      [1, 5, 4],
-      [0, 5, 1],
-      [4, 3, 2],
-      // bottom 4
-      [8, 10, 7],
-      [11, 7, 10],
-      [11, 6, 7],
-      [9, 10, 8],
-      // sides
-      ...sideTri(0),
-      ...sideTri(1),
-      ...sideTri(2),
-      ...sideTri(3),
-      ...sideTri(4),
-      ...sideTri(5),
-    ],
-    // lines: [
-    //   [0, 1],
-    //   [0, 2],
-    //   [1, 3],
-    //   [2, 3],
-    // ],
-  };
-  let m2 = { ...m, colors: m.tri.map((_) => BLACK) };
-  return unshareProvokingVertices(m2 as Mesh);
+  const pos: vec3[] = [
+    [+1, 1, +0],
+    [+A, 1, +B],
+    [-A, 1, +B],
+    [-1, 1, +0],
+    [-A, 1, -B],
+    [+A, 1, -B],
+    [+1, 0, +0],
+    [+A, 0, +B],
+    [-A, 0, +B],
+    [-1, 0, +0],
+    [-A, 0, -B],
+    [+A, 0, -B],
+  ];
+  const tri: vec3[] = [
+    // top 4
+    [4, 2, 1],
+    [1, 5, 4],
+    [0, 5, 1],
+    [4, 3, 2],
+    // bottom 4
+    [8, 10, 7],
+    [11, 7, 10],
+    [11, 6, 7],
+    [9, 10, 8],
+    // sides
+    ...sideTri(0),
+    ...sideTri(1),
+    ...sideTri(2),
+    ...sideTri(3),
+    ...sideTri(4),
+    ...sideTri(5),
+  ];
+  // TODO(@darzu): lines for hex
+  const lines: vec2[] = [];
+  // lines: [
+  //   [0, 1],
+  //   [0, 2],
+  //   [1, 3],
+  //   [2, 3],
+  // ],
+  return { pos, tri, lines, colors: tri.map((_) => BLACK) };
 };
-const PLANE_MESH = unshareProvokingVertices(
-  scaleMesh(
-    {
-      pos: [
-        [+1, 0, +1],
-        [-1, 0, +1],
-        [+1, 0, -1],
-        [-1, 0, -1],
-      ],
-      tri: [
-        [0, 2, 3],
-        [0, 3, 1], // top
-        [3, 2, 0],
-        [1, 3, 0], // bottom
-      ],
-      lines: [
-        [0, 1],
-        [0, 2],
-        [1, 3],
-        [2, 3],
-      ],
-      colors: [BLACK, BLACK, BLACK, BLACK],
-      // uvs: [
-      //   [1, 1],
-      //   [0, 1],
-      //   [1, 0],
-      //   [0, 0],
-      // ],
-    },
-    10
-  )
-);
+const PLANE_MESH: RawMesh = {
+  pos: [
+    [+1, 0, +1],
+    [-1, 0, +1],
+    [+1, 0, -1],
+    [-1, 0, -1],
+  ],
+  tri: [
+    [0, 2, 3],
+    [0, 3, 1], // top
+    [3, 2, 0],
+    [1, 3, 0], // bottom
+  ],
+  lines: [
+    [0, 1],
+    [0, 2],
+    [1, 3],
+    [2, 3],
+  ],
+  colors: [BLACK, BLACK, BLACK, BLACK],
+  // uvs: [
+  //   [1, 1],
+  //   [0, 1],
+  //   [1, 0],
+  //   [0, 0],
+  // ],
+};
+scaleMesh(PLANE_MESH, 10);
 
-const GRID_PLANE_MESH = unshareProvokingVertices(createGridPlane(30, 30));
+const GRID_PLANE_MESH = createGridPlane(30, 30);
 
-function createGridPlane(width: number, height: number): Mesh {
-  const m: Mesh = {
+function createGridPlane(width: number, height: number): RawMesh {
+  const m: RawMesh = {
     pos: [],
     tri: [],
     colors: [],
@@ -337,10 +330,10 @@ function createGridPlane(width: number, height: number): Mesh {
     m.lines!.push([i, i + 1]);
   }
 
-  return scaleMesh(
-    mapMeshPositions(m, (p) => [p[0] - width / 2, p[1], p[2] - height / 2]),
-    10 / Math.min(width, height)
-  );
+  mapMeshPositions(m, (p) => [p[0] - width / 2, p[1], p[2] - height / 2]);
+  scaleMesh(m, 10 / Math.min(width, height));
+
+  return m;
 }
 
 export const SHIP_AABBS: AABB[] = [
@@ -410,15 +403,21 @@ export const BARGE_AABBS: AABB[] = RAW_BARGE_AABBS.map((aabb) => {
 // const shipMaxX = min(SHIP_AABBS.map((a) => a.max[0]));
 // console.log(`${(shipMaxX + shipMinX) / 2}`);
 
+const BOAT_MESH = cloneMesh(CUBE_MESH);
+scaleMesh3(BOAT_MESH, [10, 0.6, 5]);
+
+const BULLET_MESH = cloneMesh(CUBE_MESH);
+scaleMesh(BULLET_MESH, 0.3);
+
 export const LocalMeshes = {
   cube: () => CUBE_MESH,
   plane: () => PLANE_MESH,
   tetra: () => TETRA_MESH,
   hex: HEX_MESH,
-  boat: () => scaleMesh3(CUBE_MESH, [10, 0.6, 5]),
-  bullet: () => scaleMesh(CUBE_MESH, 0.3),
+  boat: () => BOAT_MESH,
+  bullet: () => BULLET_MESH,
   gridPlane: () => GRID_PLANE_MESH,
-  wireCube: () => ({ ...CUBE_MESH, tri: [] } as Mesh),
+  wireCube: () => ({ ...CUBE_MESH, tri: [] } as RawMesh),
 } as const;
 
 type LocalMeshSymbols = keyof typeof LocalMeshes;
@@ -488,12 +487,12 @@ async function loadTxtInternal(relPath: string): Promise<string> {
 
   return txt;
 }
-async function loadMeshInternal(relPath: string): Promise<Mesh> {
+async function loadMeshInternal(relPath: string): Promise<RawMesh> {
   const res = await loadMeshSetInternal(relPath);
   assert(res.length === 1, "too many meshes; use loadMeshSet for multi meshes");
   return res[0];
 }
-async function loadMeshSetInternal(relPath: string): Promise<Mesh[]> {
+async function loadMeshSetInternal(relPath: string): Promise<RawMesh[]> {
   // download
   let txt = await loadTxtInternal(relPath);
 
@@ -507,10 +506,7 @@ async function loadMeshSetInternal(relPath: string): Promise<Mesh[]> {
     `unable to parse asset set (${relPath}):\n${opt}`
   );
 
-  // clean up
-  const objs = opt.map((o) => unshareProvokingVertices(o));
-
-  return objs;
+  return opt;
 }
 
 async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
@@ -539,10 +535,12 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
     return ms.map((m) => processMesh(n, m));
   });
 
-  function processMesh(n: string, m: Mesh): Mesh {
+  function processMesh(n: string, m: RawMesh): RawMesh {
     const t1 = (AssetTransforms as { [key: string]: mat4 })[n];
-    if (t1) m = transformMesh(m, t1);
-    const t2 = (MeshTransforms as { [key: string]: (m: Mesh) => Mesh })[n];
+    if (t1) transformMesh(m, t1);
+    const t2 = (MeshTransforms as { [key: string]: (m: RawMesh) => RawMesh })[
+      n
+    ];
     if (t2) m = t2(m);
     return m;
   }
@@ -569,19 +567,11 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
   return result;
 }
 
-export function addSurfaceIdsToMesh(mesh: Mesh): void {
-  // TODO(@darzu): implement correctly
-  if (mesh.surfaceIds) return;
-
-  let triIdToSurfaceId: Map<number, number> = new Map();
-  mesh.tri.forEach((t, i) => {
-    triIdToSurfaceId.set(i, i);
-  });
-
-  mesh.surfaceIds = mesh.tri.map((_, i) => triIdToSurfaceId.get(i)!);
-}
-
-export function gameMeshFromMesh(mesh: Mesh, renderer: Renderer): GameMesh {
+export function gameMeshFromMesh(
+  rawMesh: RawMesh,
+  renderer: Renderer
+): GameMesh {
+  const mesh = normalizeMesh(rawMesh);
   const aabb = getAABBFromMesh(mesh);
   const center = getCenterFromAABB(aabb);
   const halfsize = getHalfsizeFromAABB(aabb);
@@ -606,7 +596,7 @@ export function gameMeshFromMesh(mesh: Mesh, renderer: Renderer): GameMesh {
   };
 }
 
-function getUniqueVerts(mesh: Mesh): vec3[] {
+function getUniqueVerts(mesh: RawMesh): vec3[] {
   const res: vec3[] = [];
   // TODO(@darzu): inefficient but probably doesn't matter
   // TODO(@darzu): might we want to do approx equals?

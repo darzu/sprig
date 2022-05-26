@@ -156,7 +156,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
       triData.set(triInd, i * 3);
     });
     let lineData: Uint16Array | undefined;
-    if (m.lines) {
+    if (m.lines?.length) {
       lineData = new Uint16Array(m.lines.length * 2);
       m.lines.forEach((inds, i) => {
         lineData?.set(inds, i * 2);
