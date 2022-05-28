@@ -9,6 +9,9 @@ export interface RawMesh {
   colors: vec3[]; // colors per triangle in r,g,b float [0-1] format
   lines?: vec2[];
   uvs?: vec2[];
+  surfaceIds?: number[];
+  // TODO(@darzu):
+  dbgName?: string;
 }
 
 // TODO(@darzu): Seperate RawMesh from Mesh, so that we can do standard
@@ -99,7 +102,7 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
     posMap,
   };
 }
-function unshareProvokingVertices(
+export function unshareProvokingVertices(
   input: RawMesh
 ): RawMesh & { usesProvoking: true } {
   const { mesh, posMap } = unshareProvokingVerticesWithMap(input);
@@ -112,19 +115,21 @@ function generateSurfaceIds(mesh: RawMesh): number[] {
   // TODO(@darzu): better compute surface IDs
   let triIdToSurfaceId: Map<number, number> = new Map();
   mesh.tri.forEach((t, i) => {
-    triIdToSurfaceId.set(i, nextSId++);
+    triIdToSurfaceId.set(i, i);
+    // triIdToSurfaceId.set(i, nextSId++);
   });
 
   return mesh.tri.map((_, i) => triIdToSurfaceId.get(i)!);
 }
 
 export function normalizeMesh(input: RawMesh): Mesh {
+  // TODO(@darzu): generate lines from surface IDs?
   const m1 = unshareProvokingVertices(input);
   return {
     ...m1,
     // TODO(@darzu): always generate UVs?
     uvs: m1.uvs,
-    surfaceIds: generateSurfaceIds(m1),
+    surfaceIds: m1.surfaceIds ?? generateSurfaceIds(m1),
   };
 }
 

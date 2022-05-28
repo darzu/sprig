@@ -97,8 +97,8 @@ export function computeUniData(m: Mesh): MeshUniformTS {
 export function computeVertsData(m: Mesh): VertexTS[] {
   const vertsData: VertexTS[] = m.pos.map((pos, i) => ({
     position: pos,
-    color: [0.0, 0.0, 0.0],
-    normal: [1.0, 0.0, 0.0],
+    color: [1.0, 0.0, 1.0], // changed below
+    normal: [1.0, 0.0, 0.0], // changed below
     uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
     surfaceId: 0,
   }));
@@ -205,6 +205,13 @@ export const positionsTexturePtr = CY.createTexture("positionsTexture", {
   format: "rgba16float",
   init: () => undefined,
   // TODO(@darzu): support anti-aliasing again
+});
+
+export const surfacesTexturePtr = CY.createTexture("surfacesTexture", {
+  size: [100, 100],
+  onCanvasResize: (w, h) => [w, h],
+  format: "rgba16float",
+  init: () => undefined,
 });
 
 export const canvasTexturePtr = CY.createTexture("canvasTexture", {

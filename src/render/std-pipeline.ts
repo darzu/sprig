@@ -7,6 +7,7 @@ import {
   normalsTexturePtr,
   positionsTexturePtr,
   sceneBufPtr,
+  surfacesTexturePtr,
 } from "./std-scene.js";
 import { shadowDepthTexture } from "./std-shadow.js";
 
@@ -53,7 +54,8 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
     {
       ptr: mainTexturePtr,
       clear: "once",
-      defaultColor: [0.0, 0.0, 0.0, 1.0],
+      // defaultColor: [0.0, 0.0, 0.0, 1.0],
+      defaultColor: [0.1, 0.1, 0.1, 1.0],
       // defaultColor: [0.7, 0.8, 1.0, 1.0],
     },
     {
@@ -66,6 +68,11 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
       clear: "once",
       defaultColor: [0, 0, 0, 0],
     },
+    {
+      ptr: surfacesTexturePtr,
+      clear: "once",
+      defaultColor: [0, 0, 0, 0],
+    },
   ],
   depthStencil: canvasDepthTex,
   shader: () =>
@@ -75,6 +82,7 @@ struct VertexOutput {
     @location(1) @interpolate(flat) color : vec3<f32>,
     @location(2) worldPos: vec4<f32>,
     @location(3) shadowPos: vec3<f32>,
+    @location(4) @interpolate(flat) surface: vec4<f32>,
     @builtin(position) position : vec4<f32>,
 };
 
@@ -113,8 +121,40 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     // output.color = vec3(uv.xy, 1.0);
     output.color = color + meshUni.tint;
 
-    output.color = vec3(f32(input.surfaceId) / f32(scene.maxSurfaceId));
-    // output.color = color + meshUni.tint;
+    // TODO: better surface info
+    // 2 4 8 16 32 64 128 256 512 1024 2048 4096
+    // output.surface.r = f32(((input.surfaceId << 16u) >> 16u)) / f32((1u << 16u));
+    // output.surface.g = f32(((input.surfaceId << 0u) >> 16u)) / f32((1u << 16u));
+    // output.surface.r = f32(((input.surfaceId << 24u) >> 24u)) / f32((1u << 12u));
+    // output.surface.g = f32(((input.surfaceId << 12u) >> 24u)) / f32((1u << 12u));
+    // output.surface.b = f32(((input.surfaceId << 0u) >> 24u)) / f32((1u << 12u));
+    // output.surface.b = 1.0;
+    // obj id on alpha
+    let maxS3 = f32(scene.maxSurfaceId / 3u);
+    // output.surface.r = f32((input.surfaceId + 0u) % (scene.maxSurfaceId / 3u)) / maxS3;
+    // output.surface.g = f32((input.surfaceId + 1u) % (scene.maxSurfaceId / 3u)) / maxS3;
+    // output.surface.b = f32((input.surfaceId + 2u) % (scene.maxSurfaceId / 3u)) / maxS3;
+    output.surface.r = f32(((input.surfaceId & 1u) >> 0u) * (input.surfaceId / 8u)) / f32(scene.maxSurfaceId / 8u);
+    output.surface.g = f32(((input.surfaceId & 2u) >> 1u) * (input.surfaceId / 8u)) / f32(scene.maxSurfaceId / 8u);
+    output.surface.b = f32(((input.surfaceId & 4u) >> 2u) * (input.surfaceId / 8u)) / f32(scene.maxSurfaceId / 8u);
+    // output.surface.g = 0.4;
+    // output.surface.b = 0.4;
+    // output.surface = vec4(f32(input.surfaceId) / f32(scene.maxSurfaceId));
+    output.surface.a = 1.0;
+    /*
+    000
+    001
+    010
+    011
+    100
+    101
+    110
+    111
+    002
+    */
+
+    // output.color = input.color; // DBG
+
     return output;
 }
 
@@ -122,6 +162,7 @@ struct FragOut {
   @location(0) color: vec4<f32>,
   @location(1) normal: vec4<f32>,
   @location(2) position: vec4<f32>,
+  @location(3) surface: vec4<f32>,
 }
 
 @stage(fragment)
@@ -156,6 +197,9 @@ fn frag_main(input: VertexOutput) -> FragOut {
     out.color = vec4<f32>(finalColor, 1.0);
     out.normal = vec4<f32>(input.normal, 1.0);
     out.position = input.worldPos;
+    out.surface = input.surface;
+    // out.color = vec4(input.color, 1.0);
+    // out.color = input.surface;
 
     return out;
     // return vec4<f32>(finalColor, 1.0);
@@ -181,3 +225,6 @@ export const { pipeline: positionDbg } = createRenderTextureToQuad(
   -0.8,
   -0.2
 );
+
+// TODO(@darzu): rg32uint "uint"
+// rg16uint "uint"

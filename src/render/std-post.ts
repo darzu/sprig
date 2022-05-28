@@ -5,6 +5,7 @@ import {
   mainTexturePtr,
   normalsTexturePtr,
   positionsTexturePtr,
+  surfacesTexturePtr,
 } from "./std-scene.js";
 
 export const postProcess = CY.createRenderPipeline("postProcess", {
@@ -13,6 +14,7 @@ export const postProcess = CY.createRenderPipeline("postProcess", {
     { ptr: mainTexturePtr, alias: "colorTex" },
     { ptr: normalsTexturePtr, alias: "normTex" },
     { ptr: positionsTexturePtr, alias: "posTex" },
+    { ptr: surfacesTexturePtr, alias: "surfTex" },
     { ptr: canvasDepthTex, alias: "depthTex" },
   ],
   meshOpt: {
@@ -153,6 +155,23 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
       colorChange = -0.3;
       // color = vec4(1.0, 1.0, 0.0, 1.0);
     }
+  }
+
+  // SURFACE ID BASED
+  // let sL = surfTex
+  let sT = textureSample(surfTex, samp, t);
+  let sL = textureSample(surfTex, samp, l);
+  let sR = textureSample(surfTex, samp, r);
+  let sB = textureSample(surfTex, samp, b);  
+
+  colorChange = 0.0;
+
+  if (
+    length( sR - sL) > 0.01
+    ||
+    length( sB - sT) > 0.01
+  ) {
+    colorChange = -0.3;
   }
 
   // colorChange *= 20.0;

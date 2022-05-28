@@ -757,7 +757,7 @@ export function bundleRenderPipelines(
 
   // TODO(@darzu): DBG ing
   // TODO(@darzu): we're bundling too often
-  console.log(`bundled ${dbgNumTris} triangles`);
+  // console.log(`bundled ${dbgNumTris} triangles`);
 
   return bundles;
 }

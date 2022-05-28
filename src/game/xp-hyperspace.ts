@@ -3,6 +3,7 @@ import { ColorDef } from "../color.js";
 import { EntityManager, EM } from "../entity-manager.js";
 import { vec3, quat } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
+import { max } from "../math.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef } from "../physics/motion.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
@@ -11,7 +12,7 @@ import {
   CyRenderPipelinePtr,
   CyCompPipelinePtr,
 } from "../render/gpu-registry.js";
-import { cloneMesh } from "../render/mesh.js";
+import { cloneMesh, unshareProvokingVerticesWithMap } from "../render/mesh.js";
 import {
   RendererDef,
   RenderableConstructDef,
@@ -21,7 +22,7 @@ import { stdRenderPipeline } from "../render/std-pipeline.js";
 import { postProcess } from "../render/std-post.js";
 import { shadowPipeline } from "../render/std-shadow.js";
 import { assert } from "../test.js";
-import { AssetsDef } from "./assets.js";
+import { AssetsDef, surfaceIdToColor } from "./assets.js";
 import { BOAT_COLOR } from "./boat.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { createGhost } from "./sandbox.js";
@@ -92,6 +93,16 @@ export function initHyperspaceGame(em: EntityManager) {
       em.ensureComponentOn(plane, ColorDef, [0.2, 0.3, 0.2]);
       em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
 
+      const fence = em.newEntity();
+      em.ensureComponentOn(
+        fence,
+        RenderableConstructDef,
+        res.assets.triFence.proto
+      );
+      // em.ensureComponentOn(fence, ColorDef, [0.2, 0.3, 0.2]);
+      em.ensureComponentOn(fence, ScaleDef, [2, 2, 2]);
+      em.ensureComponentOn(fence, PositionDef, [0, 0, 10]);
+
       const ship = em.newEntity();
       em.ensureComponentOn(ship, RenderableConstructDef, res.assets.ship.proto);
       em.ensureComponentOn(ship, ColorDef, BOAT_COLOR);
@@ -121,8 +132,11 @@ export function initHyperspaceGame(em: EntityManager) {
       // );
 
       const box = em.newEntity();
-      em.ensureComponentOn(box, RenderableConstructDef, res.assets.cube.proto);
-      em.ensureComponentOn(box, ColorDef, [0.1, 0.1, 0.1]);
+      const boxM = cloneMesh(res.assets.cube.mesh);
+      const sIdMax = max(boxM.surfaceIds);
+      boxM.colors = boxM.surfaceIds.map((i) => surfaceIdToColor(i, sIdMax));
+      em.ensureComponentOn(box, RenderableConstructDef, boxM);
+      // em.ensureComponentOn(box, ColorDef, [0.1, 0.1, 0.1]);
       em.ensureComponentOn(box, PositionDef, [0, 0, 3]);
       em.ensureComponentOn(box, RotationDef);
       em.ensureComponentOn(box, AngularVelocityDef, [0, 0.001, 0.001]);

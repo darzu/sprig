@@ -18,7 +18,7 @@ import { AABB } from "../physics/broadphase.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { Renderer } from "../render/renderer-ecs.js";
 import { assert } from "../test.js";
-import { objMap } from "../util.js";
+import { objMap, range } from "../util.js";
 import { getText } from "../webget.js";
 import { AABBCollider } from "../physics/collider.js";
 import { farthestPointInDir, SupportFn } from "../utils-3d.js";
@@ -64,7 +64,7 @@ const RemoteMesheSets = {
 
 type RemoteMeshSetSymbols = keyof typeof RemoteMesheSets;
 
-const AssetTransforms: Partial<{
+const MeshTransforms: Partial<{
   [P in RemoteMeshSymbols | RemoteMeshSetSymbols | LocalMeshSymbols]: mat4;
 }> = {
   cannon: mat4.fromYRotation(mat4.create(), -Math.PI / 2),
@@ -89,7 +89,7 @@ const blackoutColor: (m: RawMesh) => RawMesh = (m: RawMesh) => {
   m.colors.map((c) => vec3.zero(c));
   return m;
 };
-const MeshTransforms: Partial<{
+const MeshModify: Partial<{
   [P in RemoteMeshSymbols | RemoteMeshSetSymbols | LocalMeshSymbols]: (
     m: RawMesh
   ) => RawMesh;
@@ -120,6 +120,10 @@ const MeshTransforms: Partial<{
     scaleMesh(m, 3);
     return m;
   },
+  ocean: (m) => {
+    m.surfaceIds = m.tri.map(() => 1);
+    return m;
+  },
 };
 
 // which triangles belong to which faces
@@ -133,6 +137,7 @@ export const CUBE_FACES = {
   back: [10, 11],
 };
 export const CUBE_MESH: RawMesh = {
+  dbgName: "cube",
   pos: [
     [+1.0, +1.0, +1.0],
     [-1.0, +1.0, +1.0],
@@ -306,6 +311,41 @@ const PLANE_MESH: RawMesh = {
 };
 scaleMesh(PLANE_MESH, 10);
 
+const TRI_FENCE_LN = 100;
+const TRI_FENCE: () => RawMesh = () => {
+  const pos: vec3[] = [];
+  const tri: vec3[] = [];
+  for (let i = 0; i < TRI_FENCE_LN; i++) {
+    tri.push([
+      pos.push([-0.5 + i, 0, 0]) - 1,
+      pos.push([0 + i, 2, 0]) - 1,
+      pos.push([0.5 + i, 0, 0]) - 1,
+    ]);
+  }
+  const surfaceIds = tri.map((_, i) => i);
+
+  // output.surface.r = f32(((input.surfaceId & 1u) >> 0u) * (input.surfaceId / 8u)) / f32(scene.maxSurfaceId / 8u);
+  //   output.surface.g = f32(((input.surfaceId & 2u) >> 1u) * (input.surfaceId / 8u)) / f32(scene.maxSurfaceId / 8u);
+  //   output.surface.b = f32(((input.surfaceId & 4u) >> 2u) * (input.surfaceId / 8u)) / f32(scene.maxSurfaceId / 8u);
+
+  const colors = tri.map((_, i) => surfaceIdToColor(i, TRI_FENCE_LN));
+
+  return {
+    pos,
+    tri,
+    colors,
+    surfaceIds,
+  };
+};
+
+export function surfaceIdToColor(i: number, max: number): vec3 {
+  return [
+    (((i & 1) >> 0) * Math.floor(i / 8)) / (max / 8),
+    (((i & 2) >> 1) * Math.floor(i / 8)) / (max / 8),
+    (((i & 4) >> 2) * Math.floor(i / 8)) / (max / 8),
+  ];
+}
+
 const GRID_PLANE_MESH = createGridPlane(30, 30);
 
 function createGridPlane(width: number, height: number): RawMesh {
@@ -417,6 +457,7 @@ export const LocalMeshes = {
   boat: () => BOAT_MESH,
   bullet: () => BULLET_MESH,
   gridPlane: () => GRID_PLANE_MESH,
+  triFence: TRI_FENCE,
   wireCube: () => ({ ...CUBE_MESH, tri: [] } as RawMesh),
 } as const;
 
@@ -536,11 +577,9 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
   });
 
   function processMesh(n: string, m: RawMesh): RawMesh {
-    const t1 = (AssetTransforms as { [key: string]: mat4 })[n];
+    const t1 = (MeshTransforms as { [key: string]: mat4 })[n];
     if (t1) transformMesh(m, t1);
-    const t2 = (MeshTransforms as { [key: string]: (m: RawMesh) => RawMesh })[
-      n
-    ];
+    const t2 = (MeshModify as { [key: string]: (m: RawMesh) => RawMesh })[n];
     if (t2) m = t2(m);
     return m;
   }

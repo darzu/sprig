@@ -289,12 +289,13 @@ export function registerRenderer(em: EntityManager) {
         lightViewMatrix
       );
 
-      const maxSurfaceId = max(
+      let maxSurfaceId = max(
         objs
           .map((o) => o.renderable.meshHandle.readonlyMesh?.surfaceIds ?? [0])
           .reduce((p, n) => [...p, ...n], [])
       );
       // TODO(@darzu): DBG
+      // maxSurfaceId = 12;
       // console.log(`maxSurfaceId: ${maxSurfaceId}`);
 
       renderer.updateScene({
