@@ -164,9 +164,11 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   // SURFACE ID BASED
   // let sL = surfTex
 
-  let lineWidth = 4.0;
 
   let surf_dims : vec2<i32> = textureDimensions(surfTex);
+  // NOTE: we make the line width depend on resolution b/c that gives a more consistent
+  //    look across resolutions.
+  let lineWidth = max((f32(surf_dims.r) / 800.0), 1.0);
   let coord = fragUV * vec2<f32>(surf_dims);
   let sT = textureLoad(surfTex, vec2<i32>(coord + vec2(0.0, lineWidth)), 0);
   let sL = textureLoad(surfTex, vec2<i32>(coord - vec2(lineWidth, 0.0)), 0);
@@ -176,15 +178,17 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   colorChange = 0.0;
 
 
-  if (
-    sT.r != sB.r ||
-    sT.g != sB.g ||
-    sL.r != sR.r ||
-    sL.g != sR.g ||
-    false
-  ) {
-    colorChange = -0.3;
-  }
+  // if (h < 0.98) {
+    if (
+      sT.r != sB.r ||
+      sT.g != sB.g ||
+      sL.r != sR.r ||
+      sL.g != sR.g ||
+      false
+    ) {
+      colorChange = -0.3;
+    }
+  // }
 
   // colorChange *= 20.0;
 

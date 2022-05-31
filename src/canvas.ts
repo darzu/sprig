@@ -47,6 +47,7 @@ export function registerInitCanvasSystem(em: EntityManager) {
 }
 
 let _imgPixelatedTimeoutHandle = 0;
+// let pixelRatio = 2.0;
 let pixelRatio = window.devicePixelRatio || 1;
 // pixelRatio = 0.5;
 function init(): HTMLCanvasElement {
