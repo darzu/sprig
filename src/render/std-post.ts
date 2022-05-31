@@ -103,16 +103,16 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   // let concave = f32(concaveX || concaveY) * 2.0 - 1.0;
 
   let n = normalize(textureSample(normTex, samp, fragUV).xyz);
-  let nT = textureSample(normTex, samp, (coord - vec2(0.0, concaveE)) / dimsF);
-  let nL = textureSample(normTex, samp, (coord - vec2(concaveE, 0.0)) / dimsF);
-  let nR = textureSample(normTex, samp, (coord + vec2(concaveE, 0.0)) / dimsF);
-  let nB = textureSample(normTex, samp, (coord + vec2(0.0, concaveE)) / dimsF);
+  let nT = normalize(textureSample(normTex, samp, (coord - vec2(0.0, concaveE)) / dimsF).xyz);
+  let nL = normalize(textureSample(normTex, samp, (coord - vec2(concaveE, 0.0)) / dimsF).xyz);
+  let nR = normalize(textureSample(normTex, samp, (coord + vec2(concaveE, 0.0)) / dimsF).xyz);
+  let nB = normalize(textureSample(normTex, samp, (coord + vec2(0.0, concaveE)) / dimsF).xyz);
   
   let surfaceDidChange = sT.r != sB.r || sL.r != sR.r;
   let objectDidChange = sT.g != sB.g || sL.g != sR.g;
 
-  let convexX = nL.x < nR.x && abs(hL - hR) < 0.001;
-  let convexY = nT.y > nB.y && abs(hT - hB) < 0.001;
+  let convexX = nL.x < nR.x; // && abs(hL - hR) < 0.001;
+  let convexY = nT.y > nB.y; // && abs(hT - hB) < 0.001;
   let convex = convexX || convexY;
   let convexFactor = f32(!objectDidChange && convex) * 2.0 - 1.0;
 
@@ -147,15 +147,15 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   // // color.g = 0.0;
   // color.b = 0.0;
 
-  // color *= 0.0;
-  // color.a = 1.0;
-  // color.b = h;
-  // if (convexX) {
-  //   color.r = 1.0;
-  // }
-  // if (convexY) {
-  //   color.g = 1.0;
-  // }
+  color *= 0.0;
+  color.a = 1.0;
+  color.b = h;
+  if (!objectDidChange && convexX) {
+    color.r = 1.0;
+  }
+  if (!objectDidChange && convexY) {
+    color.g = 1.0;
+  }
 
   // color.r = h;
   // // color.r = curvature;
