@@ -64,14 +64,53 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
 @stage(fragment)
 fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   var color = textureSample(colorTex, samp, fragUV);
-  // let e = 0.01;
-  let e = 0.0015;
-  let t = fragUV + vec2(0.0, e);
-  let l = fragUV + vec2(-e, 0.0);
-  let r = fragUV + vec2(e, 0.0);
-  let b = fragUV + vec2(0.0, -e);
 
-  let n = normalize(textureSample(normTex, samp, fragUV)).xyz;
+  var lineColor = 0.0;
+
+  // SURFACE ID BASED
+  let dims : vec2<i32> = textureDimensions(surfTex);
+  let dimsF = vec2<f32>(dims);
+  // NOTE: we make the line width depend on resolution b/c that gives a more consistent
+  //    look across resolutions.
+  // let lineWidth = 1.0;
+  let lineWidth = 2.0;
+  // let lineWidth = max((f32(dims.r) / 800.0), 1.0);
+  let coord = fragUV * vec2<f32>(dims);
+  let t = coord - vec2(0.0, lineWidth);
+  let l = coord - vec2(lineWidth, 0.0);
+  let r = coord + vec2(lineWidth, 0.0);
+  let b = coord + vec2(0.0, lineWidth);
+  let sT = textureLoad(surfTex, vec2<i32>(t), 0);
+  let sL = textureLoad(surfTex, vec2<i32>(l), 0);
+  let sR = textureLoad(surfTex, vec2<i32>(r), 0);
+  let sB = textureLoad(surfTex, vec2<i32>(b), 0);  
+
+  let concaveE = lineWidth * 1.0 ;
+  let h = textureSample(depthTex, samp, fragUV);
+  // let hT = textureSample(depthTex, samp, fragUV + vec2(0.0, 0.01));
+  // let hL = textureSample(depthTex, samp, fragUV + vec2(-0.01, 0.0));
+  // let hR = textureSample(depthTex, samp, fragUV + vec2(0.01, 0.0));
+  // let hB = textureSample(depthTex, samp, fragUV + vec2(0.0, -0.01));  
+  let hT = textureSample(depthTex, samp, (coord - vec2(0.0, concaveE)) / dimsF);
+  let hL = textureSample(depthTex, samp, (coord - vec2(concaveE, 0.0)) / dimsF);
+  let hR = textureSample(depthTex, samp, (coord + vec2(concaveE, 0.0)) / dimsF);
+  let hB = textureSample(depthTex, samp, (coord + vec2(0.0, concaveE)) / dimsF);  
+  // let hDX = abs((h - hL) - (h - hR)) > 0.1;
+  // let hDY = abs((h - hT) - (h - hB)) > 0.1;
+
+  // let concaveX = h > hL && h > hR;
+  // let concaveY = h > hT && h > hB;
+  // let concave = f32(concaveX || concaveY) * 2.0 - 1.0;
+
+  let n = normalize(textureSample(normTex, samp, fragUV).xyz);
+  let nT = textureSample(normTex, samp, (coord - vec2(0.0, concaveE)) / dimsF);
+  let nL = textureSample(normTex, samp, (coord - vec2(concaveE, 0.0)) / dimsF);
+  let nR = textureSample(normTex, samp, (coord + vec2(concaveE, 0.0)) / dimsF);
+  let nB = textureSample(normTex, samp, (coord + vec2(0.0, concaveE)) / dimsF);
+
+  let concaveX = nL.x > nR.x && abs(hL - hR) < 0.001;
+  let concaveY = nT.y < nB.y && abs(hT - hB) < 0.001;
+  let concave = f32(concaveX || concaveY) * 2.0 - 1.0;
 
   // let dx = dpdx(n);
   // let dy = dpdy(n);
@@ -82,102 +121,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   // // let depth = length(vertex);
   // let depth = textureSample(depthTex, samp, fragUV);
   // let curvature = (cross(xneg, xpos).y - cross(yneg, ypos).x) * 4.0 / depth;
-
-  // color += vec4(curvature, curvature, curvature, 1.0);
-
-  let nT = textureSample(normTex, samp, t).xyz;
-  let nL = textureSample(normTex, samp, l).xyz;
-  let nR = textureSample(normTex, samp, r).xyz;
-  let nB = textureSample(normTex, samp, b).xyz;
-
-  let p = textureSample(posTex, samp, fragUV).xyz;
-  let pT = textureSample(posTex, samp, t).xyz;
-  let pL = textureSample(posTex, samp, l).xyz;
-  let pR = textureSample(posTex, samp, r).xyz;
-  let pB = textureSample(posTex, samp, b).xyz;
-
-  let dX0 = length(pL - pR);
-  let dX1 = length((pL + nL * 0.001) - (pR + nR * 0.001));
-  let dY0 = length(pT - pB);
-  let dY1 = length((pT + nT * 0.001) - (pB + nB * 0.001));
-
-  let h = textureSample(depthTex, samp, fragUV);
-  let hT = textureSample(depthTex, samp, t);
-  let hL = textureSample(depthTex, samp, l);
-  let hR = textureSample(depthTex, samp, r);
-  let hB = textureSample(depthTex, samp, b);  
-  let hDX = abs((h - hL) - (h - hR)) > 0.1;
-  let hDY = abs((h - hT) - (h - hB)) > 0.1;
-
-
-  var colorChange = 0.0;
-
-  // if (h + 0.000001 < hL && h + 0.000001 < hR) {
-  // // if (h < hL || h < hR) {
-  //   colorChange = 0.2;
-  // }
-
-  // let depthChangeX = abs(hL - hR) > 0.02;
-  // let depthChangeY = abs(hT - hB) > 0.02;
-  // let depthChangeXf = f32(abs(hL - hR) > 0.1) * 2.0 - 1.0;
-  // let depthChangeYf = f32(abs(hT - hB) > 0.1) * 2.0 - 1.0;
-  // // let depthChangeX = f32(abs(hL - hR) > 0.01 && hDX) * 2.0 - 1.0;
-  // // let depthChangeY = f32(abs(hT - hB) > 0.01 && hDY) * 2.0 - 1.0;
-
-  // // color.r = depthChangeX;
-  // // color.g = depthChangeY;
-
-  let posChangeX = dX0 > 1.5;
-  let posChangeY = dY0 > 1.5;
-  let posChangeXf = f32(posChangeX) * 2.0 - 1.0;
-  let posChangeYf = f32(posChangeY) * 2.0 - 1.0;
-
-  if (
-    length( nR - nL) > 0.05
-    // || posChangeX
-    // || depthChangeX
-  ) {
-    if (dX0 < dX1) {
-      colorChange = 0.2 * -posChangeXf;
-      // colorChange = 0.2; // * -depthChangeX;
-      // color = vec4(1.0, 0.0, 0.0, 1.0);
-    } else {
-      colorChange = -0.3;
-      // color = vec4(0.0, 1.0, 0.0, 1.0);
-    }
-  } 
-  else if (
-    length( nB - nT) > 0.05
-    // || posChangeY
-    // || depthChangeY
-  ) {
-    if (dY0 < dY1) {
-      colorChange = 0.2 * -posChangeYf;
-      // colorChange = 0.2; // * -depthChangeY; 
-      // color = vec4(0.0, 0.0, 1.0, 1.0);
-    } else {
-      colorChange = -0.3;
-      // color = vec4(1.0, 1.0, 0.0, 1.0);
-    }
-  }
-
-  // SURFACE ID BASED
-  // let sL = surfTex
-
-
-  let surf_dims : vec2<i32> = textureDimensions(surfTex);
-  // NOTE: we make the line width depend on resolution b/c that gives a more consistent
-  //    look across resolutions.
-  // let lineWidth = 1.0;
-  let lineWidth = max((f32(surf_dims.r) / 800.0), 1.0);
-  let coord = fragUV * vec2<f32>(surf_dims);
-  let sT = textureLoad(surfTex, vec2<i32>(coord + vec2(0.0, lineWidth)), 0);
-  let sL = textureLoad(surfTex, vec2<i32>(coord - vec2(lineWidth, 0.0)), 0);
-  let sR = textureLoad(surfTex, vec2<i32>(coord + vec2(lineWidth, 0.0)), 0);
-  let sB = textureLoad(surfTex, vec2<i32>(coord - vec2(0.0, lineWidth)), 0);  
-
-  colorChange = 0.0;
-
+  // // let curvature = cross(xneg, xpos).y - cross(yneg, ypos).x > 0.0;
 
   // if (h < 0.98) {
     if (
@@ -187,23 +131,51 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
       sL.g != sR.g ||
       false
     ) {
-      colorChange = -0.3;
+      // lineColor = -0.3 * (f32(curvature) * 2.0 - 1.0);
+      lineColor = -0.3 * -concave;
     }
   // }
 
-  // colorChange *= 20.0;
 
-  color += colorChange;
+  lineColor *= 20.0;
+
+  color += lineColor;
+
+  // let ni = (n + 1.0) / 2.0;
+  // color = vec4(ni, 1.0);
+  // color.r = 0.0;
+  // // color.g = 0.0;
+  // color.b = 0.0;
+
+  // color *= 0.0;
+  // color.a = 1.0;
+  // color.b = h;
+  // if (concaveX) {
+  //   color.r = 1.0;
+  // }
+  // if (concaveY) {
+  //   color.g = 1.0;
+  // }
+
+  // color.r = h;
+  // // color.r = curvature;
+  // color.g = 0.2;
+  // color.b = 0.0;
+  // color.r = (l / dimsF.x).r;
+  // color.g = (l / dimsF.x).g;
+
+  // color.r = fragUV.x;
+  // color.g = fragUV.y;
 
   // DEBUG: visualizes surface IDs
   // let s = textureLoad(surfTex, vec2<i32>(coord), 0);
   // color = vec4(u32toVec3f32(u32(s.r), 24u), 1.0);
 
   // vignette
-  let edgeDistV = fragUV - 0.5;
-  let edgeDist = 1.0 - dot(edgeDistV, edgeDistV) * 0.5;
-  // let edgeDist = 1.0 - length(fragUV - 0.5) * 0.5;
-  color *= edgeDist;
+  // let edgeDistV = fragUV - 0.5;
+  // let edgeDist = 1.0 - dot(edgeDistV, edgeDistV) * 0.5;
+  // // let edgeDist = 1.0 - length(fragUV - 0.5) * 0.5;
+  // color *= edgeDist;
   
   return color;
 }
