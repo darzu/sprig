@@ -168,6 +168,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   let surf_dims : vec2<i32> = textureDimensions(surfTex);
   // NOTE: we make the line width depend on resolution b/c that gives a more consistent
   //    look across resolutions.
+  // let lineWidth = 1.0;
   let lineWidth = max((f32(surf_dims.r) / 800.0), 1.0);
   let coord = fragUV * vec2<f32>(surf_dims);
   let sT = textureLoad(surfTex, vec2<i32>(coord + vec2(0.0, lineWidth)), 0);
@@ -194,6 +195,10 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
 
   color += colorChange;
 
+  // DEBUG: visualizes surface IDs
+  // let s = textureLoad(surfTex, vec2<i32>(coord), 0);
+  // color = vec4(u32toVec3f32(u32(s.r), 100u), 1.0);
+
   // vignette
   let edgeDistV = fragUV - 0.5;
   let edgeDist = 1.0 - dot(edgeDistV, edgeDistV) * 0.5;
@@ -201,6 +206,15 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   color *= edgeDist;
   
   return color;
+}
+
+fn u32toVec3f32(i: u32, max: u32) -> vec3<f32> {
+  let maxF = f32(max);
+  return vec3(
+    f32(((((i % 7u) + 1u) & 1u) >> 0u) * ((i / 7u) + 1u)) / ceil(maxF / 7.0),
+    f32(((((i % 7u) + 1u) & 2u) >> 1u) * ((i / 7u) + 1u)) / ceil(maxF / 7.0),
+    f32(((((i % 7u) + 1u) & 4u) >> 2u) * ((i / 7u) + 1u)) / ceil(maxF / 7.0),
+  );
 }
   `;
   },
