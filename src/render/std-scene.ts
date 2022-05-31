@@ -40,6 +40,7 @@ export const MeshUniformStruct = createCyStruct(
     aabbMin: "vec3<f32>",
     aabbMax: "vec3<f32>",
     tint: "vec3<f32>",
+    id: "u32",
   },
   {
     isUniform: true,
@@ -48,6 +49,7 @@ export const MeshUniformStruct = createCyStruct(
       views.f32.set(d.aabbMin, offsets_32[1]);
       views.f32.set(d.aabbMax, offsets_32[2]);
       views.f32.set(d.tint, offsets_32[3]);
+      views.u32[offsets_32[4]] = d.id;
     },
   }
 );
@@ -90,6 +92,7 @@ export function computeUniData(m: Mesh): MeshUniformTS {
     aabbMin: min,
     aabbMax: max,
     tint: vec3.create(),
+    id: 0,
   };
   return uni;
 }

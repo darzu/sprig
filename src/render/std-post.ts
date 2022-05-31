@@ -197,7 +197,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
 
   // DEBUG: visualizes surface IDs
   // let s = textureLoad(surfTex, vec2<i32>(coord), 0);
-  // color = vec4(u32toVec3f32(u32(s.r), 100u), 1.0);
+  // color = vec4(u32toVec3f32(u32(s.r), 24u), 1.0);
 
   // vignette
   let edgeDistV = fragUV - 0.5;

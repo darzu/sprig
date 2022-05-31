@@ -83,6 +83,7 @@ struct VertexOutput {
     @location(2) worldPos: vec4<f32>,
     @location(3) shadowPos: vec3<f32>,
     @location(4) @interpolate(flat) surface: u32,
+    @location(5) @interpolate(flat) id: u32,
     @builtin(position) position : vec4<f32>,
 };
 
@@ -142,6 +143,7 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     // // output.surface = vec4(f32(input.surfaceId) / f32(scene.maxSurfaceId));
     // output.surface.a = 1.0;
     output.surface = input.surfaceId;
+    output.id = meshUni.id;
 
     // output.color = input.color; // DBG
 
@@ -188,6 +190,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
     out.normal = vec4<f32>(input.normal, 1.0);
     out.position = input.worldPos;
     out.surface.r = input.surface;
+    out.surface.g = input.id;
     // out.color = vec4(input.color, 1.0);
     // out.color = input.surface;
 

@@ -241,14 +241,18 @@ export function registerRenderer(em: EntityManager) {
 
       // ensure our mesh handle is up to date
       for (let o of objs) {
-        // TODO(@darzu): color:
+        // color / tint
         if (ColorDef.isOn(o)) {
           vec3.copy(o.renderable.meshHandle.shaderData.tint, o.color);
         }
-
         if (TintsDef.isOn(o)) {
           applyTints(o.tints, o.renderable.meshHandle.shaderData.tint);
         }
+
+        // id
+        o.renderable.meshHandle.shaderData.id = o.renderable.meshHandle.mId;
+
+        // transform
         mat4.copy(
           o.renderable.meshHandle.shaderData.transform,
           o.rendererWorldFrame.transform

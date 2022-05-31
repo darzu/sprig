@@ -25,6 +25,8 @@ import { farthestPointInDir, SupportFn, uintToVec3unorm } from "../utils-3d.js";
 import { MeshHandle } from "../render/mesh-pool.js";
 import { MeshHandleStd } from "../render/std-scene.js";
 
+// TODO: load these via streaming
+
 export const BLACK = vec3.fromValues(0, 0, 0);
 export const DARK_GRAY = vec3.fromValues(0.02, 0.02, 0.02);
 export const LIGHT_GRAY = vec3.fromValues(0.2, 0.2, 0.2);
