@@ -210,7 +210,7 @@ export const positionsTexturePtr = CY.createTexture("positionsTexture", {
 export const surfacesTexturePtr = CY.createTexture("surfacesTexture", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
-  format: "rgba16float",
+  format: "rg16uint",
   init: () => undefined,
 });
 

@@ -22,7 +22,8 @@ import { stdRenderPipeline } from "../render/std-pipeline.js";
 import { postProcess } from "../render/std-post.js";
 import { shadowPipeline } from "../render/std-shadow.js";
 import { assert } from "../test.js";
-import { AssetsDef, surfaceIdToColor } from "./assets.js";
+import { uintToVec3unorm } from "../utils-3d.js";
+import { AssetsDef } from "./assets.js";
 import { BOAT_COLOR } from "./boat.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { createGhost } from "./sandbox.js";
@@ -134,7 +135,7 @@ export function initHyperspaceGame(em: EntityManager) {
       const box = em.newEntity();
       const boxM = cloneMesh(res.assets.cube.mesh);
       const sIdMax = max(boxM.surfaceIds);
-      boxM.colors = boxM.surfaceIds.map((i) => surfaceIdToColor(i, sIdMax));
+      boxM.colors = boxM.surfaceIds.map((i) => uintToVec3unorm(i, sIdMax));
       em.ensureComponentOn(box, RenderableConstructDef, boxM);
       // em.ensureComponentOn(box, ColorDef, [0.1, 0.1, 0.1]);
       em.ensureComponentOn(box, PositionDef, [0, 0, 3]);

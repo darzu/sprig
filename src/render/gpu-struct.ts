@@ -45,6 +45,7 @@ export const texTypeToBytes: Partial<Record<GPUTextureFormat, number>> = {
   "depth24plus-stencil8": 3 + 1,
   depth32float: 4,
   bgra8unorm: 4,
+  rg16uint: 2 + 2,
 };
 export const texTypeIsDepthNoStencil = {
   depth16unorm: true,

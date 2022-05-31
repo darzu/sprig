@@ -82,7 +82,7 @@ struct VertexOutput {
     @location(1) @interpolate(flat) color : vec3<f32>,
     @location(2) worldPos: vec4<f32>,
     @location(3) shadowPos: vec3<f32>,
-    @location(4) @interpolate(flat) surface: vec4<f32>,
+    @location(4) @interpolate(flat) surface: u32,
     @builtin(position) position : vec4<f32>,
 };
 
@@ -130,28 +130,18 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     // output.surface.b = f32(((input.surfaceId << 0u) >> 24u)) / f32((1u << 12u));
     // output.surface.b = 1.0;
     // obj id on alpha
-    let maxS3 = f32(scene.maxSurfaceId / 3u);
-    // output.surface.r = f32((input.surfaceId + 0u) % (scene.maxSurfaceId / 3u)) / maxS3;
-    // output.surface.g = f32((input.surfaceId + 1u) % (scene.maxSurfaceId / 3u)) / maxS3;
-    // output.surface.b = f32((input.surfaceId + 2u) % (scene.maxSurfaceId / 3u)) / maxS3;
-    output.surface.r = f32(((input.surfaceId & 1u) >> 0u) * (input.surfaceId / 8u)) / f32(scene.maxSurfaceId / 8u);
-    output.surface.g = f32(((input.surfaceId & 2u) >> 1u) * (input.surfaceId / 8u)) / f32(scene.maxSurfaceId / 8u);
-    output.surface.b = f32(((input.surfaceId & 4u) >> 2u) * (input.surfaceId / 8u)) / f32(scene.maxSurfaceId / 8u);
-    // output.surface.g = 0.4;
-    // output.surface.b = 0.4;
-    // output.surface = vec4(f32(input.surfaceId) / f32(scene.maxSurfaceId));
-    output.surface.a = 1.0;
-    /*
-    000
-    001
-    010
-    011
-    100
-    101
-    110
-    111
-    002
-    */
+    // let maxS3 = f32(scene.maxSurfaceId / 3u);
+    // // output.surface.r = f32((input.surfaceId + 0u) % (scene.maxSurfaceId / 3u)) / maxS3;
+    // // output.surface.g = f32((input.surfaceId + 1u) % (scene.maxSurfaceId / 3u)) / maxS3;
+    // // output.surface.b = f32((input.surfaceId + 2u) % (scene.maxSurfaceId / 3u)) / maxS3;
+    // output.surface.r = f32(((input.surfaceId & 1u) >> 0u) * (input.surfaceId / 8u)) / f32(scene.maxSurfaceId / 8u);
+    // output.surface.g = f32(((input.surfaceId & 2u) >> 1u) * (input.surfaceId / 8u)) / f32(scene.maxSurfaceId / 8u);
+    // output.surface.b = f32(((input.surfaceId & 4u) >> 2u) * (input.surfaceId / 8u)) / f32(scene.maxSurfaceId / 8u);
+    // // output.surface.g = 0.4;
+    // // output.surface.b = 0.4;
+    // // output.surface = vec4(f32(input.surfaceId) / f32(scene.maxSurfaceId));
+    // output.surface.a = 1.0;
+    output.surface = input.surfaceId;
 
     // output.color = input.color; // DBG
 
@@ -162,7 +152,7 @@ struct FragOut {
   @location(0) color: vec4<f32>,
   @location(1) normal: vec4<f32>,
   @location(2) position: vec4<f32>,
-  @location(3) surface: vec4<f32>,
+  @location(3) surface: vec2<u32>,
 }
 
 @stage(fragment)
@@ -197,7 +187,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
     out.color = vec4<f32>(finalColor, 1.0);
     out.normal = vec4<f32>(input.normal, 1.0);
     out.position = input.worldPos;
-    out.surface = input.surface;
+    out.surface.r = input.surface;
     // out.color = vec4(input.color, 1.0);
     // out.color = input.surface;
 

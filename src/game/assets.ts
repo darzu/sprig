@@ -21,7 +21,7 @@ import { assert } from "../test.js";
 import { objMap, range } from "../util.js";
 import { getText } from "../webget.js";
 import { AABBCollider } from "../physics/collider.js";
-import { farthestPointInDir, SupportFn } from "../utils-3d.js";
+import { farthestPointInDir, SupportFn, uintToVec3unorm } from "../utils-3d.js";
 import { MeshHandle } from "../render/mesh-pool.js";
 import { MeshHandleStd } from "../render/std-scene.js";
 
@@ -328,7 +328,7 @@ const TRI_FENCE: () => RawMesh = () => {
   //   output.surface.g = f32(((input.surfaceId & 2u) >> 1u) * (input.surfaceId / 8u)) / f32(scene.maxSurfaceId / 8u);
   //   output.surface.b = f32(((input.surfaceId & 4u) >> 2u) * (input.surfaceId / 8u)) / f32(scene.maxSurfaceId / 8u);
 
-  const colors = tri.map((_, i) => surfaceIdToColor(i, TRI_FENCE_LN));
+  const colors = tri.map((_, i) => uintToVec3unorm(i, TRI_FENCE_LN));
 
   return {
     pos,
@@ -337,14 +337,6 @@ const TRI_FENCE: () => RawMesh = () => {
     surfaceIds,
   };
 };
-
-export function surfaceIdToColor(i: number, max: number): vec3 {
-  return [
-    (((i & 1) >> 0) * (Math.floor(i / 8) + 1)) / Math.ceil(max / 8),
-    (((i & 2) >> 1) * (Math.floor(i / 8) + 1)) / Math.ceil(max / 8),
-    (((i & 4) >> 2) * (Math.floor(i / 8) + 1)) / Math.ceil(max / 8),
-  ];
-}
 
 const GRID_PLANE_MESH = createGridPlane(30, 30);
 

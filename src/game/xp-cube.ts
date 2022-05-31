@@ -22,7 +22,8 @@ import {
   canvasDepthTex,
   canvasTexturePtr,
 } from "../render/std-scene.js";
-import { AssetsDef, surfaceIdToColor } from "./assets.js";
+import { uintToVec3unorm } from "../utils-3d.js";
+import { AssetsDef } from "./assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { createGhost } from "./sandbox.js";
 
@@ -67,9 +68,9 @@ export function initCubeGame(em: EntityManager) {
       const box = em.newEntity();
       const boxM = cloneMesh(res.assets.cube.mesh);
       const sIdMax = max(boxM.surfaceIds);
-      boxM.colors = boxM.surfaceIds.map((_, i) => surfaceIdToColor(i, sIdMax));
+      boxM.colors = boxM.surfaceIds.map((_, i) => uintToVec3unorm(i, sIdMax));
       // boxM.colors = boxM.surfaceIds.map((_, i) => [0.1, i / 12, 0.1]);
-      console.dir(boxM);
+      // console.dir(boxM.colors);
       em.ensureComponentOn(box, RenderableConstructDef, boxM);
       // em.ensureComponentOn(box, ColorDef, [0.1, 0.4, 0.1]);
       em.ensureComponentOn(box, PositionDef, [0, 0, 3]);

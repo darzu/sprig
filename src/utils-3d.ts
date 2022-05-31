@@ -101,3 +101,11 @@ export function farthestPointInDir(points: vec3[], d: vec3): vec3 {
   }
   return maxP!;
 }
+
+export function uintToVec3unorm(i: number, max: number): vec3 {
+  return [
+    (((((i % 7) + 1) & 1) >> 0) * (Math.floor(i / 7) + 1)) / Math.ceil(max / 7),
+    (((((i % 7) + 1) & 2) >> 1) * (Math.floor(i / 7) + 1)) / Math.ceil(max / 7),
+    (((((i % 7) + 1) & 4) >> 2) * (Math.floor(i / 7) + 1)) / Math.ceil(max / 7),
+  ];
+}

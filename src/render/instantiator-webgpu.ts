@@ -259,6 +259,10 @@ export function createCyResources(
           let sampleType: GPUTextureSampleType;
           if (r.ptr.kind === "depthTexture") {
             sampleType = "depth";
+          } else if (r.ptr.format.endsWith("uint")) {
+            sampleType = "uint";
+          } else if (r.ptr.format.endsWith("sint")) {
+            sampleType = "sint";
           } else if ((usage & GPUTextureUsage.STORAGE_BINDING) !== 0) {
             // TODO(@darzu): this seems hacky. is there a better way to determine this?
             //    the deferred rendering example uses unfilterable-float for reading gbuffers
@@ -367,6 +371,8 @@ export function createCyResources(
           // TODO(@darzu): handle other formats?
           if (r.ptr.kind === "depthTexture") {
             return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_depth_2d;`;
+          } else if (r.ptr.format.endsWith("uint")) {
+            return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_2d<u32>;`;
           } else {
             return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_2d<f32>;`;
           }

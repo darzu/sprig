@@ -8,6 +8,10 @@ import {
   surfacesTexturePtr,
 } from "./std-scene.js";
 
+// TODO(@darzu): rewrite post processing with compute shader?
+//  https://computergraphics.stackexchange.com/questions/54/when-is-a-compute-shader-more-efficient-than-a-pixel-shader-for-image-filtering
+//  result: yes, probably it is a good idea.
+
 export const postProcess = CY.createRenderPipeline("postProcess", {
   globals: [
     { ptr: linearSamplerPtr, alias: "samp" },
@@ -159,17 +163,25 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
 
   // SURFACE ID BASED
   // let sL = surfTex
-  let sT = textureSample(surfTex, samp, t);
-  let sL = textureSample(surfTex, samp, l);
-  let sR = textureSample(surfTex, samp, r);
-  let sB = textureSample(surfTex, samp, b);  
+
+  let lineWidth = 4;
+
+  let surf_dims : vec2<i32> = textureDimensions(surfTex);
+  let uv_i32 = vec2<i32>(fragUV * vec2<f32>(surf_dims));
+  let sT = textureLoad(surfTex, uv_i32 + vec2(0, lineWidth), 0);
+  let sL = textureLoad(surfTex, uv_i32 - vec2(lineWidth, 0), 0);
+  let sR = textureLoad(surfTex, uv_i32 + vec2(lineWidth, 0), 0);
+  let sB = textureLoad(surfTex, uv_i32 - vec2(0, lineWidth), 0);  
 
   colorChange = 0.0;
 
+
   if (
-    length( sR - sL) > 0.01
-    ||
-    length( sB - sT) > 0.01
+    sT.r != sB.r ||
+    sT.g != sB.g ||
+    sL.r != sR.r ||
+    sL.g != sR.g ||
+    false
   ) {
     colorChange = -0.3;
   }

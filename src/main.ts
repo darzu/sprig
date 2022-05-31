@@ -26,7 +26,7 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-const GAME = "cube" as
+const GAME = "hyperspace" as
   | "ship"
   | "gjk"
   | "rebound"
