@@ -164,14 +164,14 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   // SURFACE ID BASED
   // let sL = surfTex
 
-  let lineWidth = 4;
+  let lineWidth = 4.0;
 
   let surf_dims : vec2<i32> = textureDimensions(surfTex);
-  let uv_i32 = vec2<i32>(fragUV * vec2<f32>(surf_dims));
-  let sT = textureLoad(surfTex, uv_i32 + vec2(0, lineWidth), 0);
-  let sL = textureLoad(surfTex, uv_i32 - vec2(lineWidth, 0), 0);
-  let sR = textureLoad(surfTex, uv_i32 + vec2(lineWidth, 0), 0);
-  let sB = textureLoad(surfTex, uv_i32 - vec2(0, lineWidth), 0);  
+  let coord = fragUV * vec2<f32>(surf_dims);
+  let sT = textureLoad(surfTex, vec2<i32>(coord + vec2(0.0, lineWidth)), 0);
+  let sL = textureLoad(surfTex, vec2<i32>(coord - vec2(lineWidth, 0.0)), 0);
+  let sR = textureLoad(surfTex, vec2<i32>(coord + vec2(lineWidth, 0.0)), 0);
+  let sB = textureLoad(surfTex, vec2<i32>(coord - vec2(0.0, lineWidth)), 0);  
 
   colorChange = 0.0;
 
