@@ -340,9 +340,9 @@ const TRI_FENCE: () => RawMesh = () => {
 
 export function surfaceIdToColor(i: number, max: number): vec3 {
   return [
-    (((i & 1) >> 0) * Math.floor(i / 8)) / (max / 8),
-    (((i & 2) >> 1) * Math.floor(i / 8)) / (max / 8),
-    (((i & 4) >> 2) * Math.floor(i / 8)) / (max / 8),
+    (((i & 1) >> 0) * (Math.floor(i / 8) + 1)) / Math.ceil(max / 8),
+    (((i & 2) >> 1) * (Math.floor(i / 8) + 1)) / Math.ceil(max / 8),
+    (((i & 4) >> 2) * (Math.floor(i / 8) + 1)) / Math.ceil(max / 8),
   ];
 }
 

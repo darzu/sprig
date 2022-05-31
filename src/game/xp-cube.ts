@@ -1,4 +1,5 @@
 import { CameraDef } from "../camera.js";
+import { ColorDef } from "../color.js";
 import { EntityManager } from "../entity-manager.js";
 import { vec3, quat } from "../gl-matrix.js";
 import { max } from "../math.js";
@@ -66,9 +67,11 @@ export function initCubeGame(em: EntityManager) {
       const box = em.newEntity();
       const boxM = cloneMesh(res.assets.cube.mesh);
       const sIdMax = max(boxM.surfaceIds);
-      boxM.colors = boxM.surfaceIds.map((i) => surfaceIdToColor(i, sIdMax));
+      boxM.colors = boxM.surfaceIds.map((_, i) => surfaceIdToColor(i, sIdMax));
+      // boxM.colors = boxM.surfaceIds.map((_, i) => [0.1, i / 12, 0.1]);
+      console.dir(boxM);
       em.ensureComponentOn(box, RenderableConstructDef, boxM);
-      // em.ensureComponentOn(box, ColorDef, [0.1, 0.1, 0.1]);
+      // em.ensureComponentOn(box, ColorDef, [0.1, 0.4, 0.1]);
       em.ensureComponentOn(box, PositionDef, [0, 0, 3]);
       em.ensureComponentOn(box, RotationDef);
       em.ensureComponentOn(box, AngularVelocityDef, [0, 0.001, 0.001]);
