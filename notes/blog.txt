@@ -147,3 +147,34 @@ The big bets in Sprigland:
   Program slicing is hugely undervalued for good learning references.
   Static typing is a must, especially for learning.
   U don't need fancy physics.
+
+Programming is all about abstraction engineering
+  Deciding when is the right time to draw an abstraction
+  Abstractions change how you fundamentally think about the problem and solution space
+  Abstractions leak to varrying degrees
+  The best engineers know when to strategically peal back abstractions
+  We all have a finitely sized scratch space / short term memory within which we can hold the disconnected pieces of unabstracted objects
+    We need to assemble these into abstractions in order to make progress
+    Good abstractions speed you along immensely
+  Building a good abstraction requires experience with both sides of the boundry
+    The more diverse the experience the better
+    It's good to wait as long as possible to abstract
+  Three types of program creation (seperate from fixing):
+    Creating abstractions
+    Assembling solutions from abstractions (turning the crank)
+    Solving a puzzle (think leet code)
+  It's all about trade offs:
+    Strengthing and weaking pre and post conditions have opposite trade 
+      offs for the caller and the callee
+    Creating abstractions early might let you move faster
+    Creating abstractions late will likely result in better abstractions
+    changing abstractions can result in migration work for your existing solutions
+  Good type systems help you change abstractions safely
+  Abstractions shouldn't be sacred:
+    bad abstractions are worse than no abstraction
+  Ultimately the goal of software is to produce solutions to problems (usually 
+    many of each).
+    Solution-production efficiency (and therefore speed) is primarily a function
+      how good your abstractions are
+  You're often creating abstractions even when you don't think you are
+    each function is a micro-abstraction
