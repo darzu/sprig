@@ -5,6 +5,7 @@ import {
   mainTexturePtr,
   normalsTexturePtr,
   positionsTexturePtr,
+  sceneBufPtr,
   surfacesTexturePtr,
 } from "./std-scene.js";
 
@@ -20,6 +21,7 @@ export const postProcess = CY.createRenderPipeline("postProcess", {
     { ptr: positionsTexturePtr, alias: "posTex" },
     { ptr: surfacesTexturePtr, alias: "surfTex" },
     { ptr: canvasDepthTex, alias: "depthTex" },
+    sceneBufPtr,
   ],
   meshOpt: {
     vertexCount: 6,
@@ -73,7 +75,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   // NOTE: we make the line width depend on resolution b/c that gives a more consistent
   //    look across resolutions.
   // let lineWidth = 1.0;
-  let lineWidth = 2.0;
+  let lineWidth = 4.0;
   // let lineWidth = max((f32(dims.r) / 800.0), 1.0);
   let coord = fragUV * vec2<f32>(dims);
   let t = coord - vec2(0.0, lineWidth);
@@ -112,8 +114,13 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   let objectDidChange = sT.g != sB.g || sL.g != sR.g;
 
   let convexX = nL.x < nR.x; // && abs(hL - hR) < 0.001;
+  let convexXf = nR.x - nL.x; // && abs(hL - hR) < 0.001;
   let convexY = nT.y > nB.y; // && abs(hT - hB) < 0.001;
-  let convex = convexX || convexY;
+  let convexYf = nT.y - nB.y; // && abs(hT - hB) < 0.001;
+  // let convexity = sqrt(pow(convexYf, 2.0) + pow(convexXf, 2.0));
+  let convexity = convexYf + convexXf;
+  let convex = convexity > 0.1;
+  // let convex = convexX || convexY;
   let convexFactor = f32(!objectDidChange && convex) * 2.0 - 1.0;
 
   // let dx = dpdx(n);
@@ -131,31 +138,31 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
     if (
       surfaceDidChange || objectDidChange
     ) {
-      // lineColor = -0.3 * (f32(curvature) * 2.0 - 1.0);
+      // lineColor = -0.1 + -0.3 * (f32(curvature) * 2.0 - 1.0);
       lineColor = 0.3 * convexFactor;
     }
   // }
 
-
-  lineColor *= 20.0;
+  // lineColor *= 20.0;
 
   color += lineColor;
 
   // let ni = (n + 1.0) / 2.0;
-  // color = vec4(ni, 1.0);
+  // color = vec4(ni, 1.0) * 0.5;
   // color.r = 0.0;
   // // color.g = 0.0;
   // color.b = 0.0;
 
-  color *= 0.0;
-  color.a = 1.0;
-  color.b = h;
-  if (!objectDidChange && convexX) {
-    color.r = 1.0;
-  }
-  if (!objectDidChange && convexY) {
-    color.g = 1.0;
-  }
+  // color *= 0.0;
+  // color.a = 1.0;
+  // // color.b = h;
+  // // if (!objectDidChange && convexX) {
+  // //   color.r = 1.0;
+  // // }
+  // // if (!objectDidChange && convexY) {
+  // //   color.g = 1.0;
+  // // }
+  // color.b = 0.5 + convexYf + convexXf;
 
   // color.r = h;
   // // color.r = curvature;

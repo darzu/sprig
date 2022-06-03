@@ -73,11 +73,16 @@ export function initHyperspaceGame(em: EntityManager) {
       em.ensureComponentOn(g, RenderableConstructDef, m2);
 
       {
-        vec3.copy(g.position, [4.46, 9.61, -10.52]);
-        quat.copy(g.rotation, [0.0, -1.0, 0.0, 0.04]);
+        // vec3.copy(g.position, [4.46, 9.61, -10.52]);
+        // quat.copy(g.rotation, [0.0, -1.0, 0.0, 0.04]);
+        // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+        // g.cameraFollow.yawOffset = 0.0;
+        // g.cameraFollow.pitchOffset = -0.106;
+        vec3.copy(g.position, [97.81, 0.58, -3.91]);
+        quat.copy(g.rotation, [0.0, -0.96, 0.0, 0.29]);
         vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
         g.cameraFollow.yawOffset = 0.0;
-        g.cameraFollow.pitchOffset = -0.106;
+        g.cameraFollow.pitchOffset = -0.522;
       }
 
       const c = res.globalCursor3d.cursor()!;
@@ -113,6 +118,36 @@ export function initHyperspaceGame(em: EntityManager) {
         RotationDef,
         quat.fromEuler(quat.create(), 0, Math.PI * 0.1, 0)
       );
+
+      const ship2 = em.newEntity();
+      em.ensureComponentOn(
+        ship2,
+        RenderableConstructDef,
+        res.assets.ship.proto
+      );
+      em.ensureComponentOn(ship2, ColorDef, BOAT_COLOR);
+      em.ensureComponentOn(ship2, PositionDef, [60, -2, 0]);
+      em.ensureComponentOn(
+        ship2,
+        RotationDef,
+        quat.fromEuler(quat.create(), 0, Math.PI * 0.1, 0)
+      );
+      em.ensureComponentOn(ship2, AngularVelocityDef, [0, 0.001, 0.001]);
+
+      const ship3 = em.newEntity();
+      em.ensureComponentOn(
+        ship3,
+        RenderableConstructDef,
+        res.assets.grappleGun.proto
+      );
+      em.ensureComponentOn(ship3, ColorDef, BOAT_COLOR);
+      em.ensureComponentOn(ship3, PositionDef, [100, -2, 0]);
+      em.ensureComponentOn(
+        ship3,
+        RotationDef,
+        quat.fromEuler(quat.create(), 0, Math.PI * 0.1, 0)
+      );
+      em.ensureComponentOn(ship3, AngularVelocityDef, [0, 0.001, 0.001]);
 
       const ocean = em.newEntity();
       em.ensureComponentOn(ocean, OceanDef);
