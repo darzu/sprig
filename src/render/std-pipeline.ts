@@ -158,21 +158,25 @@ struct FragOut {
   @location(2) surface: vec2<u32>,
 }
 
+fn getShadowVis(shadowPos: vec3<f32>) -> f32 {
+  // See: https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
+  // Note: a better bias would look something like "max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);"
+  let shadowBias = 0.007;
+  let shadowDepth = shadowPos.z; // * f32(shadowPos.z <= 1.0);
+  let outsideShadow = 1.0 - f32(0.0 < shadowPos.x && shadowPos.x < 1.0 
+                && 0.0 < shadowPos.y && shadowPos.y < 1.0);
+  let shadowSamp = textureSampleCompare(
+    shadowMap, shadowSampler, shadowPos.xy, shadowDepth - shadowBias);
+  let shadowVis : f32 = min(outsideShadow + shadowSamp, 1.0);
+  return shadowVis;
+}
+
 @stage(fragment)
 fn frag_main(input: VertexOutput) -> FragOut {
     let normal = input.normal;
     // let normal = -normalize(cross(dpdx(input.worldPos.xyz), dpdy(input.worldPos.xyz)));
 
-    // See: https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
-    // Note: a better bias would look something like "max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);"
-    let shadowBias = 0.007;
-    let shadowDepth = input.shadowPos.z; // * f32(input.shadowPos.z <= 1.0);
-    let outsideShadow = 1.0 - f32(0.0 < input.shadowPos.x && input.shadowPos.x < 1.0 
-                  && 0.0 < input.shadowPos.y && input.shadowPos.y < 1.0);
-    let shadowSamp = textureSampleCompare(
-      shadowMap, shadowSampler, input.shadowPos.xy, shadowDepth - shadowBias);
-    let shadowVis : f32 = min(outsideShadow + shadowSamp, 1.0);
-      
+    let shadowVis = getShadowVis(input.shadowPos);
 
     let light1 : f32 = clamp(dot(-scene.light1Dir, normal), 0.0, 1.0);
     let light2 : f32 = clamp(dot(-scene.light2Dir, normal), 0.0, 1.0);
