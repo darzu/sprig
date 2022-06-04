@@ -63,11 +63,11 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
       clear: "once",
       defaultColor: [0, 0, 0, 0],
     },
-    {
-      ptr: positionsTexturePtr,
-      clear: "once",
-      defaultColor: [0, 0, 0, 0],
-    },
+    // {
+    //   ptr: positionsTexturePtr,
+    //   clear: "once",
+    //   defaultColor: [0, 0, 0, 0],
+    // },
     {
       ptr: surfacesTexturePtr,
       clear: "once",
@@ -153,8 +153,8 @@ fn vert_main(input: VertexInput) -> VertexOutput {
 struct FragOut {
   @location(0) color: vec4<f32>,
   @location(1) normal: vec4<f32>,
-  @location(2) position: vec4<f32>,
-  @location(3) surface: vec2<u32>,
+  // @location(2) position: vec4<f32>,
+  @location(2) surface: vec2<u32>,
 }
 
 @stage(fragment)
@@ -189,7 +189,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
     out.color = vec4<f32>(finalColor, 1.0);
     // out.normal = vec4(input.normal, 1.0);
     out.normal = vec4(normalize((scene.cameraViewProjMatrix * vec4<f32>(input.normal, 0.0)).xyz), 1.0);
-    out.position = input.worldPos;
+    // out.position = input.worldPos;
     out.surface.r = input.surface;
     out.surface.g = input.id;
     // out.color = vec4(input.color, 1.0);
