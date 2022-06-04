@@ -170,9 +170,9 @@ export function initHyperspaceGame(em: EntityManager) {
       const box = em.newEntity();
       const boxM = cloneMesh(res.assets.cube.mesh);
       const sIdMax = max(boxM.surfaceIds);
-      boxM.colors = boxM.surfaceIds.map((i) => uintToVec3unorm(i, sIdMax));
+      // boxM.colors = boxM.surfaceIds.map((i) => uintToVec3unorm(i, sIdMax));
       em.ensureComponentOn(box, RenderableConstructDef, boxM);
-      // em.ensureComponentOn(box, ColorDef, [0.1, 0.1, 0.1]);
+      em.ensureComponentOn(box, ColorDef, [0.1, 0.1, 0.1]);
       em.ensureComponentOn(box, PositionDef, [0, 0, 3]);
       em.ensureComponentOn(box, RotationDef);
       em.ensureComponentOn(box, AngularVelocityDef, [0, 0.001, 0.001]);

@@ -123,7 +123,8 @@ const MeshModify: Partial<{
     return m;
   },
   ocean: (m) => {
-    m.surfaceIds = m.tri.map(() => 1);
+    // TODO(@darzu): do we want convexity highlighting on the ocean?
+    // m.surfaceIds = m.tri.map(() => 1);
     return m;
   },
 };
