@@ -20,7 +20,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { stdRenderPipeline } from "../render/std-pipeline.js";
 import { postProcess } from "../render/std-post.js";
-import { shadowPipeline } from "../render/std-shadow.js";
+import { shadowDbgDisplay, shadowPipeline } from "../render/std-shadow.js";
 import { assert } from "../test.js";
 import { uintToVec3unorm } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
@@ -67,6 +67,7 @@ export function initHyperspaceGame(em: EntityManager) {
       vec3.copy(g.position, [0, 1, -1.2]);
       quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
       g.controllable.sprintMul = 3;
+      em.ensureComponentOn(g, ColorDef, [0.2, 0.6, 0.2]);
       vec3.copy(g.cameraFollow.positionOffset, [0, 2, 8]);
 
       // TODO(@darzu): this shouldn't be necessary

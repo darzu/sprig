@@ -44,6 +44,7 @@ export const CameraViewDef = EM.defineComponent("cameraView", () => {
     width: 100,
     height: 100,
     viewProjMat: mat4.create(),
+    location: vec3.create(),
   };
 });
 export type CameraView = Component<typeof CameraViewDef>;
@@ -192,6 +193,7 @@ export function registerCameraSystems(em: EntityManager) {
           computedTranslation,
           frame.scale
         );
+        vec3.copy(cameraView.location, computedTranslation);
       }
 
       const computedCameraRotation = quat.mul(

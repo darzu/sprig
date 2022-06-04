@@ -25,6 +25,7 @@ import { isMeshHandle } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import { SceneTS } from "./std-scene.js";
 import { max } from "../math.js";
+import { vec3Dbg } from "../utils-3d.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -273,9 +274,18 @@ export function registerRenderer(em: EntityManager) {
 
       // TODO(@darzu): go elsewhere
       // const lightPosition = vec3.fromValues(50, 100, -100);
-      const lightPosition = vec3.fromValues(50, 100, 50);
+      const lightPosition = vec3.add(
+        tempVec(),
+        cameraView.location,
+        [50, 100, 50]
+      );
       const lightViewMatrix = mat4.create();
-      mat4.lookAt(lightViewMatrix, lightPosition, [0, 0, 0], [0, 1, 0]);
+      mat4.lookAt(
+        lightViewMatrix,
+        lightPosition,
+        cameraView.location,
+        [0, 1, 0]
+      );
       const lightProjectionMatrix = mat4.create();
       {
         const left = -80;
@@ -308,6 +318,7 @@ export function registerRenderer(em: EntityManager) {
         // TODO(@darzu): use?
         time: 1000 / 60,
         maxSurfaceId,
+        cameraPos: cameraView.location,
       });
 
       renderer.renderFrame(

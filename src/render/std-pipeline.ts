@@ -107,7 +107,8 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     // let finalPos = vec4<f32>(worldPos.xyz + texDisp.xyz, 1.0);
 
      // XY is in (-1, 1) space, Z is in (0, 1) space
-    let posFromLight : vec4<f32> = scene.lightViewProjMatrix * worldPos;
+    let posFromLight = (scene.lightViewProjMatrix * worldPos).xyz;
+    // let posFromLight = (scene.lightViewProjMatrix * vec4(worldPos.xyz - scene.cameraPos, 1.0)).xyz;
     // Convert XY to (0, 1), Y is flipped because texture coords are Y-down.
     output.shadowPos = vec3<f32>(
         posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5),
@@ -202,6 +203,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
     out.surface.g = input.id;
     // out.color = vec4(input.color, 1.0);
     // out.color = input.surface;
+    // out.color = vec4(input.shadowPos.xy, 0.0, 1.0);
 
     return out;
     // return vec4<f32>(finalColor, 1.0);
