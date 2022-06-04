@@ -75,7 +75,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   // NOTE: we make the line width depend on resolution b/c that gives a more consistent
   //    look across resolutions.
   // let lineWidth = 1.0;
-  let lineWidth = 2.0;
+  let lineWidth = 3.0;
   // let lineWidth = max((f32(dims.r) / 800.0), 1.0);
   let coord = fragUV * vec2<f32>(dims);
   let t = coord - vec2(0.0, lineWidth);
@@ -99,6 +99,15 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   let hB = textureSample(depthTex, samp, (coord + vec2(0.0, concaveE)) / dimsF);  
   // let hDX = abs((h - hL) - (h - hR)) > 0.1;
   // let hDY = abs((h - hT) - (h - hB)) > 0.1;
+
+  // let depthXf = hR - hL;
+  // let depthYf = hT - hB;
+  // let depthD = depthXf + depthYf;
+  let depthDX1 = hR - h;
+  let depthDX2 = h - hL;
+  let depthDY1 = hT - h;
+  let depthDY2 = h - hB;
+  let depthD = (depthDX1 - depthDX2) + (depthDY1 - depthDY2);
 
   // let concaveX = h > hL && h > hR;
   // let concaveY = h > hT && h > hB;
@@ -139,7 +148,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
       surfaceDidChange || objectDidChange
     ) {
       // lineColor = -0.1 + -0.3 * (f32(curvature) * 2.0 - 1.0);
-      lineColor = 0.3 * convexity;
+      lineColor = convexity * 0.3;
       if (lineColor > 0.0) {
         lineColor *= 0.5;
       }
@@ -151,26 +160,37 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
 
   color += lineColor;
 
-  // let ni = (n + 1.0) / 2.0;
-  // color = vec4(ni, 1.0) * 0.5;
-  // color.r = 0.0;
-  // // color.g = 0.0;
-  // color.b = 0.0;
+  let ni = (n + 1.0) / 2.0;
+  color = vec4(ni, 1.0) * 0.5;
+  color.r = 0.0;
+  // color.g = 0.0;
+  color.b = 0.0;
 
-  // // color *= 0.0;
-  // color.a = 1.0;
-  // // color.b = h;
-  // // if (!objectDidChange && convexX) {
-  // //   color.r = 1.0;
-  // // }
-  // // if (!objectDidChange && convexY) {
-  // //   color.g = 1.0;
-  // // }
-  // if (!objectDidChange && convexYf > 0.0) {
-  //   color.g += convexYf * 0.5;
-  //   // color.g = 1.0;
+  color *= 0.0;
+  color.a = 1.0;
+  // color.b = h;
+  // if (!objectDidChange && convexX) {
+  //   color.r = 1.0;
   // }
-  // // color.b = 0.5 + convexYf; // + convexXf;
+  // if (!objectDidChange && convexY) {
+  //   color.g = 1.0;
+  // }
+  if (surfaceDidChange && !objectDidChange) {
+    color.r = (convexYf + convexXf);// * 20.0;
+    color.b = -(convexYf + convexXf);// * 20.0;
+    // color.g = 0.5 - abs(convexYf + convexXf);
+    // color.r = convexYf * 20.0; // + 0.5;
+    // color.r = convexXf + 0.5;
+  }
+  if (surfaceDidChange) {
+    color.g = depthD * 100.0;
+  }
+  if (objectDidChange) {
+    color.r = 0.0;
+    color.b = 0.0;
+    color.g = 0.5;
+  }
+  // color.b = 0.5 + convexYf; // + convexXf;
 
   // color.r = h;
   // // color.r = curvature;
