@@ -762,3 +762,21 @@ Outlines / edge detection:
     To implement this we will need the normal of each surface, and the direction 
     from the camera to the surface (the view direction). We already have the 
     normal, but we don't have access to the view direction."
+
+  Edge highlighting a la Supreme Commander:
+    https://forum.unity.com/threads/can-i-achieve-this-edge-highlight-effect.831148/#post-6209342
+
+  Related to SSAO?
+    Eevee can do it by rendering the objects into a full screen depth texture 
+    and or full screen normals texture, and then doing an inverse SSAO pass 
+    with that. SSAO which usually requires 3+ more passes (initial gather 
+    pass, blurring passes, maybe temporal reprojection) depending on how its 
+    done to get something that's not needlessly expensive or noisy.
+
+  https://docs.unity3d.com/550/Documentation/Manual/script-EdgeDetectEffectNormals.html
+  https://forum.unity.com/threads/voxel-edge-smooth-effect.858589/#post-7014547
+    > This is a screen space effect using normal texture and depth. If you 
+    look at the Blender code, then they have two concepts "curvature" 
+    (darkens the far edges and brightens the near edges) and "cavity" 
+    (this is an AO effect that makes the edges smoother).
+    https://github.com/malyawka/URP-ScreenSpaceCavity

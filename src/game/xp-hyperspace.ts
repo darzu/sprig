@@ -70,19 +70,19 @@ export function initHyperspaceGame(em: EntityManager) {
 
       // TODO(@darzu): this shouldn't be necessary
       const m2 = cloneMesh(res.assets.cube.mesh);
-      em.ensureComponentOn(g, RenderableConstructDef, m2);
+      em.ensureComponentOn(g, RenderableConstructDef, m2, false);
 
       {
-        // vec3.copy(g.position, [4.46, 9.61, -10.52]);
-        // quat.copy(g.rotation, [0.0, -1.0, 0.0, 0.04]);
-        // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-        // g.cameraFollow.yawOffset = 0.0;
-        // g.cameraFollow.pitchOffset = -0.106;
-        vec3.copy(g.position, [97.81, 0.58, -3.91]);
-        quat.copy(g.rotation, [0.0, -0.96, 0.0, 0.29]);
+        vec3.copy(g.position, [4.46, 9.61, -10.52]);
+        quat.copy(g.rotation, [0.0, -1.0, 0.0, 0.04]);
         vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
         g.cameraFollow.yawOffset = 0.0;
-        g.cameraFollow.pitchOffset = -0.522;
+        g.cameraFollow.pitchOffset = -0.106;
+        // vec3.copy(g.position, [97.81, 0.58, -3.91]);
+        // quat.copy(g.rotation, [0.0, -0.96, 0.0, 0.29]);
+        // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+        // g.cameraFollow.yawOffset = 0.0;
+        // g.cameraFollow.pitchOffset = -0.522;
       }
 
       const c = res.globalCursor3d.cursor()!;

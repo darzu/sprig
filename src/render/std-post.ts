@@ -75,7 +75,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   // NOTE: we make the line width depend on resolution b/c that gives a more consistent
   //    look across resolutions.
   // let lineWidth = 1.0;
-  let lineWidth = 4.0;
+  let lineWidth = 2.0;
   // let lineWidth = max((f32(dims.r) / 800.0), 1.0);
   let coord = fragUV * vec2<f32>(dims);
   let t = coord - vec2(0.0, lineWidth);
@@ -119,7 +119,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   let convexYf = nT.y - nB.y; // && abs(hT - hB) < 0.001;
   // let convexity = sqrt(pow(convexYf, 2.0) + pow(convexXf, 2.0));
   let convexity = convexYf + convexXf;
-  let convex = convexity > 0.1;
+  let convex = convexity > 0.05;
   // let convex = convexX || convexY;
   let convexFactor = f32(!objectDidChange && convex) * 2.0 - 1.0;
 
@@ -139,7 +139,11 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
       surfaceDidChange || objectDidChange
     ) {
       // lineColor = -0.1 + -0.3 * (f32(curvature) * 2.0 - 1.0);
-      lineColor = 0.3 * convexFactor;
+      lineColor = 0.3 * convexity;
+      if (lineColor > 0.0) {
+        lineColor *= 0.5;
+      }
+      // lineColor = 0.3 * convexFactor;
     }
   // }
 
@@ -153,7 +157,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   // // color.g = 0.0;
   // color.b = 0.0;
 
-  // color *= 0.0;
+  // // color *= 0.0;
   // color.a = 1.0;
   // // color.b = h;
   // // if (!objectDidChange && convexX) {
@@ -162,7 +166,11 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   // // if (!objectDidChange && convexY) {
   // //   color.g = 1.0;
   // // }
-  // color.b = 0.5 + convexYf + convexXf;
+  // if (!objectDidChange && convexYf > 0.0) {
+  //   color.g += convexYf * 0.5;
+  //   // color.g = 1.0;
+  // }
+  // // color.b = 0.5 + convexYf; // + convexXf;
 
   // color.r = h;
   // // color.r = curvature;
