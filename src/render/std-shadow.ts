@@ -1,9 +1,14 @@
-// TODO(@darzu): based on https://github.com/darzu/sprig/pull/3
-
 import { createRenderTextureToQuad } from "./gpu-helper.js";
 import { CY, linearSamplerPtr } from "./gpu-registry.js";
 import { createCyStruct } from "./gpu-struct.js";
 import { mainTexturePtr, meshPoolPtr, sceneBufPtr } from "./std-scene.js";
+
+// NOTES:
+//  https://github.com/darzu/sprig/pull/3
+//  https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
+// TODO:
+//  seperate shadow maps for near and far, fitting them to the view frustum:
+//    https://learnopengl.com/Guest-Articles/2021/CSM
 
 // // TODO(@darzu): TODO
 // const shadowDepthTextureSize = 1024;
@@ -26,6 +31,7 @@ export const shadowDepthTexture = CY.createDepthTexture("shadowTex", {
 //   format: "rgba8unorm",
 // });
 
+// TODO(@darzu): for better shadows, we should actually use front-face culling, not back-face
 export const shadowPipeline = CY.createRenderPipeline("shadowPipeline", {
   globals: [sceneBufPtr],
   meshOpt: {

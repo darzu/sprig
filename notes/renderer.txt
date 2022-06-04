@@ -780,3 +780,12 @@ Outlines / edge detection:
     (darkens the far edges and brightens the near edges) and "cavity" 
     (this is an AO effect that makes the edges smoother).
     https://github.com/malyawka/URP-ScreenSpaceCavity
+
+Linearize depth:
+  https://learnopengl.com/Advanced-OpenGL/Depth-testing
+  https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
+  float LinearizeDepth(float depth)
+  {
+      float z = depth * 2.0 - 1.0; // Back to NDC 
+      return (2.0 * near_plane * far_plane) / (far_plane + near_plane - z * (far_plane - near_plane));
+  }

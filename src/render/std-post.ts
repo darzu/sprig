@@ -117,7 +117,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
 
   let edgeLight = convexity * 0.1 * f32(!objectDidChange);
   let edgeDark = concavity * 0.2 + outlineFactor + depthFactor;
-  let edgeColor = (edgeLight - edgeDark);
+  let edgeColor = (edgeLight - min(edgeDark, 0.2));
   color += edgeColor * f32(surfaceDidChange || objectDidChange);
 
   // DEBUG: visualizes surface IDs
