@@ -3,6 +3,7 @@ import { ColorDef } from "../color.js";
 import { EntityManager, EM } from "../entity-manager.js";
 import { vec3, quat } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
+import { max } from "../math.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef } from "../physics/motion.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
@@ -11,7 +12,7 @@ import {
   CyRenderPipelinePtr,
   CyCompPipelinePtr,
 } from "../render/gpu-registry.js";
-import { cloneMesh } from "../render/mesh.js";
+import { cloneMesh, unshareProvokingVerticesWithMap } from "../render/mesh.js";
 import {
   RendererDef,
   RenderableConstructDef,
@@ -21,6 +22,7 @@ import { stdRenderPipeline } from "../render/std-pipeline.js";
 import { postProcess } from "../render/std-post.js";
 import { shadowPipeline } from "../render/std-shadow.js";
 import { assert } from "../test.js";
+import { uintToVec3unorm } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
 import { BOAT_COLOR } from "./boat.js";
 import { GlobalCursor3dDef } from "./cursor.js";
@@ -68,7 +70,7 @@ export function initHyperspaceGame(em: EntityManager) {
 
       // TODO(@darzu): this shouldn't be necessary
       const m2 = cloneMesh(res.assets.cube.mesh);
-      em.ensureComponentOn(g, RenderableConstructDef, m2);
+      em.ensureComponentOn(g, RenderableConstructDef, m2, false);
 
       {
         vec3.copy(g.position, [4.46, 9.61, -10.52]);
@@ -76,6 +78,11 @@ export function initHyperspaceGame(em: EntityManager) {
         vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
         g.cameraFollow.yawOffset = 0.0;
         g.cameraFollow.pitchOffset = -0.106;
+        // vec3.copy(g.position, [97.81, 0.58, -3.91]);
+        // quat.copy(g.rotation, [0.0, -0.96, 0.0, 0.29]);
+        // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+        // g.cameraFollow.yawOffset = 0.0;
+        // g.cameraFollow.pitchOffset = -0.522;
       }
 
       const c = res.globalCursor3d.cursor()!;
@@ -92,6 +99,16 @@ export function initHyperspaceGame(em: EntityManager) {
       em.ensureComponentOn(plane, ColorDef, [0.2, 0.3, 0.2]);
       em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
 
+      const fence = em.newEntity();
+      em.ensureComponentOn(
+        fence,
+        RenderableConstructDef,
+        res.assets.triFence.proto
+      );
+      // em.ensureComponentOn(fence, ColorDef, [0.2, 0.3, 0.2]);
+      em.ensureComponentOn(fence, ScaleDef, [2, 2, 2]);
+      em.ensureComponentOn(fence, PositionDef, [0, 0, 10]);
+
       const ship = em.newEntity();
       em.ensureComponentOn(ship, RenderableConstructDef, res.assets.ship.proto);
       em.ensureComponentOn(ship, ColorDef, BOAT_COLOR);
@@ -102,6 +119,36 @@ export function initHyperspaceGame(em: EntityManager) {
         quat.fromEuler(quat.create(), 0, Math.PI * 0.1, 0)
       );
 
+      const ship2 = em.newEntity();
+      em.ensureComponentOn(
+        ship2,
+        RenderableConstructDef,
+        res.assets.ship.proto
+      );
+      em.ensureComponentOn(ship2, ColorDef, BOAT_COLOR);
+      em.ensureComponentOn(ship2, PositionDef, [60, -2, 0]);
+      em.ensureComponentOn(
+        ship2,
+        RotationDef,
+        quat.fromEuler(quat.create(), 0, Math.PI * 0.1, 0)
+      );
+      em.ensureComponentOn(ship2, AngularVelocityDef, [0, 0.001, 0.001]);
+
+      const ship3 = em.newEntity();
+      em.ensureComponentOn(
+        ship3,
+        RenderableConstructDef,
+        res.assets.grappleGun.proto
+      );
+      em.ensureComponentOn(ship3, ColorDef, BOAT_COLOR);
+      em.ensureComponentOn(ship3, PositionDef, [100, -2, 0]);
+      em.ensureComponentOn(
+        ship3,
+        RotationDef,
+        quat.fromEuler(quat.create(), 0, Math.PI * 0.1, 0)
+      );
+      em.ensureComponentOn(ship3, AngularVelocityDef, [0, 0.001, 0.001]);
+
       const ocean = em.newEntity();
       em.ensureComponentOn(ocean, OceanDef);
       em.ensureComponentOn(
@@ -109,7 +156,7 @@ export function initHyperspaceGame(em: EntityManager) {
         RenderableConstructDef,
         res.assets.ocean.proto
       );
-      em.ensureComponentOn(ocean, ColorDef, [0.0, 0.0, 0.4]);
+      em.ensureComponentOn(ocean, ColorDef, [0.2, 0.4, 0.9]);
       em.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
       // vec3.scale(ocean.position, ocean.position, scale);
       const scale = 100.0;
@@ -121,7 +168,10 @@ export function initHyperspaceGame(em: EntityManager) {
       // );
 
       const box = em.newEntity();
-      em.ensureComponentOn(box, RenderableConstructDef, res.assets.cube.proto);
+      const boxM = cloneMesh(res.assets.cube.mesh);
+      const sIdMax = max(boxM.surfaceIds);
+      // boxM.colors = boxM.surfaceIds.map((i) => uintToVec3unorm(i, sIdMax));
+      em.ensureComponentOn(box, RenderableConstructDef, boxM);
       em.ensureComponentOn(box, ColorDef, [0.1, 0.1, 0.1]);
       em.ensureComponentOn(box, PositionDef, [0, 0, 3]);
       em.ensureComponentOn(box, RotationDef);

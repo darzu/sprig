@@ -18,6 +18,7 @@ import { initShipGame, registerAllSystems } from "./game/game.js";
 import { setSimulationAlpha } from "./render/renderer-ecs.js";
 import { never } from "./util.js";
 import { initHyperspaceGame } from "./game/xp-hyperspace.js";
+import { initCubeGame } from "./game/xp-cube.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -25,12 +26,13 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-const GAME = "hyperspace" as
+const GAME = "ship" as
   | "ship"
   | "gjk"
   | "rebound"
   | "cloth"
-  | "hyperspace";
+  | "hyperspace"
+  | "cube";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -202,6 +204,7 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "rebound") initReboundSandbox(EM, hosting);
   else if (GAME === "cloth") initClothSandbox(EM, hosting);
   else if (GAME === "hyperspace") initHyperspaceGame(EM);
+  else if (GAME === "cube") initCubeGame(EM);
   else never(GAME, "TODO game");
 
   let previous_frame_time = start_of_time;

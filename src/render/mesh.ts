@@ -3,40 +3,61 @@ import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
 import { vec3Mid } from "../utils-3d.js";
 
 // defines the geometry and coloring of a mesh
-export interface Mesh {
-  pos: vec3[];
-  tri: vec3[];
-  colors: vec3[]; // colors per triangle in r,g,b float [0-1] format
-  lines: vec2[];
-  uvs?: vec2[];
-  surfaceIds?: number[];
-  // format flags:
-  usesProvoking?: boolean;
-  verticesUnshared?: boolean; // TODO(@darzu): support
-}
-
-// TODO(@darzu): Seperate RawMesh from Mesh, so that we can do standard
-//    processing all at once (usesProvoking, surfaceIds)
 export interface RawMesh {
   pos: vec3[];
   tri: vec3[];
   colors: vec3[]; // colors per triangle in r,g,b float [0-1] format
-  lines: vec2[];
+  lines?: vec2[];
+  uvs?: vec2[];
+  surfaceIds?: number[];
+  // TODO(@darzu):
+  dbgName?: string;
 }
 
-export function unshareVertices(input: Mesh): Mesh {
-  const pos: vec3[] = [];
-  const tri: vec3[] = [];
-  input.tri.forEach(([i0, i1, i2], i) => {
-    pos.push(input.pos[i0]);
-    pos.push(input.pos[i1]);
-    pos.push(input.pos[i2]);
-    tri.push([i * 3 + 0, i * 3 + 1, i * 3 + 2]);
-  });
-  return { ...input, pos, tri, verticesUnshared: true };
+// TODO(@darzu): Seperate RawMesh from Mesh, so that we can do standard
+//    processing all at once (usesProvoking, surfaceIds)
+export interface Mesh extends RawMesh {
+  pos: vec3[];
+  tri: vec3[];
+  colors: vec3[]; // colors per triangle in r,g,b float [0-1] format
+  lines?: vec2[];
+  uvs?: vec2[];
+  surfaceIds: number[];
+  // format flags:
+  usesProvoking: true;
+  // verticesUnshared?: boolean;
 }
-export function unshareProvokingVerticesWithMap(input: Mesh): {
-  mesh: Mesh;
+
+export function cloneMesh(m: Mesh): Mesh;
+export function cloneMesh(m: RawMesh): RawMesh;
+export function cloneMesh(m: Mesh | RawMesh): Mesh | RawMesh {
+  return {
+    ...m,
+    pos: m.pos.map((p) => vec3.clone(p)),
+    tri: m.tri.map((p) => vec3.clone(p)),
+    colors: m.colors.map((p) => vec3.clone(p)),
+    lines: m.lines?.map((p) => vec2.clone(p)),
+    uvs: m.uvs?.map((p) => vec2.clone(p)),
+    surfaceIds: (m as Mesh).surfaceIds
+      ? [...(m as Mesh).surfaceIds]
+      : undefined,
+  };
+}
+
+// TODO(@darzu): support ?
+// function unshareVertices(input: RawMesh): RawMesh {
+//   const pos: vec3[] = [];
+//   const tri: vec3[] = [];
+//   input.tri.forEach(([i0, i1, i2], i) => {
+//     pos.push(input.pos[i0]);
+//     pos.push(input.pos[i1]);
+//     pos.push(input.pos[i2]);
+//     tri.push([i * 3 + 0, i * 3 + 1, i * 3 + 2]);
+//   });
+//   return { ...input, pos, tri, verticesUnshared: true };
+// }
+export function unshareProvokingVerticesWithMap(input: RawMesh): {
+  mesh: RawMesh & { usesProvoking: true };
   posMap: Map<number, number>;
 } {
   const pos: vec3[] = [...input.pos];
@@ -69,18 +90,52 @@ export function unshareProvokingVerticesWithMap(input: Mesh): {
       tri.push([i3, i1, i2]);
     }
   });
-  const mesh: Mesh = { ...input, pos, uvs, tri, usesProvoking: true };
 
-  return { mesh, posMap };
+  return {
+    mesh: {
+      ...input,
+      pos,
+      uvs,
+      tri,
+      usesProvoking: true,
+    },
+    posMap,
+  };
 }
-export function unshareProvokingVertices(input: Mesh): Mesh {
+export function unshareProvokingVertices(
+  input: RawMesh
+): RawMesh & { usesProvoking: true } {
   const { mesh, posMap } = unshareProvokingVerticesWithMap(input);
   return mesh;
 }
 
+let nextSId = 1;
+
+function generateSurfaceIds(mesh: RawMesh): number[] {
+  // TODO(@darzu): better compute surface IDs
+  let triIdToSurfaceId: Map<number, number> = new Map();
+  mesh.tri.forEach((t, i) => {
+    triIdToSurfaceId.set(i, i);
+    // triIdToSurfaceId.set(i, nextSId++);
+  });
+
+  return mesh.tri.map((_, i) => triIdToSurfaceId.get(i)!);
+}
+
+export function normalizeMesh(input: RawMesh): Mesh {
+  // TODO(@darzu): generate lines from surface IDs?
+  const m1 = unshareProvokingVertices(input);
+  return {
+    ...m1,
+    // TODO(@darzu): always generate UVs?
+    uvs: m1.uvs,
+    surfaceIds: m1.surfaceIds ?? generateSurfaceIds(m1),
+  };
+}
+
 // utils
 
-export function getAABBFromMesh(m: Mesh): AABB {
+export function getAABBFromMesh(m: RawMesh): AABB {
   return getAABBFromPositions(m.pos);
 }
 export function getCenterFromAABB(aabb: AABB): vec3 {
@@ -97,33 +152,23 @@ export function getHalfsizeFromAABB(aabb: AABB): vec3 {
 }
 
 export function mapMeshPositions(
-  m: Mesh,
+  m: RawMesh,
   map: (p: vec3, i: number) => vec3
-): Mesh {
-  let pos = m.pos.map(map);
-  return { ...m, pos };
+) {
+  m.pos = m.pos.map(map);
 }
-export function scaleMesh(m: Mesh, by: number): Mesh {
-  return mapMeshPositions(m, (p) => vec3.scale(vec3.create(), p, by));
+export function scaleMesh(m: RawMesh, by: number) {
+  mapMeshPositions(m, (p) => vec3.scale(vec3.create(), p, by));
 }
-export function scaleMesh3(m: Mesh, by: vec3): Mesh {
-  return mapMeshPositions(m, (p) => vec3.multiply(vec3.create(), p, by));
+export function scaleMesh3(m: RawMesh, by: vec3) {
+  mapMeshPositions(m, (p) => vec3.multiply(vec3.create(), p, by));
 }
-export function transformMesh(m: Mesh, t: mat4): Mesh {
-  return mapMeshPositions(m, (p) => vec3.transformMat4(vec3.create(), p, t));
-}
-export function cloneMesh(m: Mesh): Mesh {
-  return {
-    ...m,
-    pos: m.pos.map((p) => vec3.clone(p)),
-    tri: m.tri.map((p) => vec3.clone(p)),
-    colors: m.colors.map((p) => vec3.clone(p)),
-    lines: m.lines.map((p) => vec2.clone(p)),
-  };
+export function transformMesh(m: RawMesh, t: mat4) {
+  mapMeshPositions(m, (p) => vec3.transformMat4(vec3.create(), p, t));
 }
 // split mesh by connectivity
 // TODO(@darzu): actually, we probably don't need this function
-export function splitMesh(m: Mesh): Mesh[] {
+export function splitMesh(m: RawMesh): RawMesh[] {
   // each vertex is a seperate island
   let vertIslands: Set<number>[] = [];
   for (let i = 0; i < m.pos.length; i++) vertIslands[i] = new Set<number>([i]);

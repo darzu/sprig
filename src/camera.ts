@@ -217,7 +217,7 @@ export function registerCameraSystems(em: EntityManager) {
 
       const projectionMatrix = mat4.create();
       if (camera.perspectiveMode === "ortho") {
-        const ORTHO_SIZE = 40;
+        const ORTHO_SIZE = 10;
         mat4.ortho(
           projectionMatrix,
           -ORTHO_SIZE,
@@ -225,7 +225,7 @@ export function registerCameraSystems(em: EntityManager) {
           -ORTHO_SIZE,
           ORTHO_SIZE,
           -400,
-          200
+          100
         );
       } else {
         mat4.perspective(

@@ -12,7 +12,7 @@ import { PositionDef, RotationDef } from "../physics/transform.js";
 import { ScoreDef } from "./game.js";
 import { MeDef } from "../net/components.js";
 import { AssetsDef, GameMesh, gameMeshFromMesh } from "./assets.js";
-import { transformMesh } from "../render/mesh.js";
+import { cloneMesh, transformMesh } from "../render/mesh.js";
 import { defineNetEntityHelper } from "../em_helpers.js";
 import { assert } from "../test.js";
 import { ColorDef } from "../color.js";
@@ -209,9 +209,9 @@ export function initGroundSystem(em: EntityManager) {
       [0, -DEPTH, 0],
       [WIDTH * 0.5, DEPTH, WIDTH * 0.5]
     );
-    const m = transformMesh(rs.assets.hex.mesh, t);
-    const gm = gameMeshFromMesh(m, rs.renderer.renderer);
-    mesh.mesh = gm;
+    const m = cloneMesh(rs.assets.hex.mesh);
+    transformMesh(m, t);
+    mesh.mesh = gameMeshFromMesh(m, rs.renderer.renderer);
   });
 
   em.registerOneShotSystem(null, [MeDef, GroundMeshDef], (_, rs) => {

@@ -3,6 +3,7 @@ import {
   cloneMesh,
   mapMeshPositions,
   Mesh,
+  normalizeMesh,
   scaleMesh,
   scaleMesh3,
 } from "../render/mesh.js";
@@ -69,12 +70,12 @@ export function registerNoodleSystem(em: EntityManager) {
     [RendererDef],
     (es, rs) => {
       for (let e of es) {
-        const originalM = e.renderable.meshHandle.readonlyMesh;
-        assert(!!originalM, "Cannot find mesh for noodle");
+        const mesh = e.renderable.meshHandle.readonlyMesh;
+        assert(!!mesh, "Cannot find mesh for noodle");
         // mapMeshPositions(m, (p, i) => p);
         // e.noodle.size *= 1.01;
         // vec3.add(e.noodle.segments[0], e.noodle.segments[0], [0.01, 0, 0.01]);
-        const newM = mapMeshPositions(originalM, (p, i) => {
+        mapMeshPositions(mesh, (p, i) => {
           const segIdx = posIdxToSegIdx.get(i);
           assert(segIdx !== undefined, `missing posIdxToSegIdx for ${i}`);
           const seg = e.noodle.segments[segIdx];
@@ -82,7 +83,7 @@ export function registerNoodleSystem(em: EntityManager) {
           // TODO(@darzu): rotate around .dir
           return vec3.add(vec3.create(), p, seg.pos);
         });
-        rs.renderer.renderer.updateMesh(e.renderable.meshHandle, newM);
+        rs.renderer.renderer.updateMesh(e.renderable.meshHandle, mesh);
       }
     },
     "updateNoodles"
@@ -92,5 +93,6 @@ export function registerNoodleSystem(em: EntityManager) {
 export function createNoodleMesh(thickness: number, color: vec3): Mesh {
   const m = cloneMesh(CUBE_MESH);
   m.colors.forEach((c) => vec3.copy(c, color));
-  return scaleMesh3(m, [thickness, 0.0, thickness]);
+  scaleMesh3(m, [thickness, 0.0, thickness]);
+  return normalizeMesh(m);
 }

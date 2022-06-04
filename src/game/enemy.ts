@@ -13,7 +13,7 @@ import {
   RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
-import { scaleMesh3 } from "../render/mesh.js";
+import { cloneMesh, scaleMesh3 } from "../render/mesh.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { Assets } from "./assets.js";
 import { ColorDef } from "../color.js";
@@ -37,7 +37,8 @@ export function createEnemy(
   em.ensureComponentOn(e, EnemyDef);
   em.ensureComponentOn(e, PositionDef, pos);
   em.ensureComponentOn(e, RotationDef, quat.create());
-  const torso = scaleMesh3(assets.cube.mesh, [0.75, 0.75, 0.4]);
+  const torso = cloneMesh(assets.cube.mesh);
+  scaleMesh3(torso, [0.75, 0.75, 0.4]);
   em.ensureComponentOn(e, RenderableConstructDef, torso);
   em.ensureComponentOn(e, ColorDef, [0.2, 0.0, 0]);
   em.ensureComponentOn(e, PhysicsParentDef, parent);

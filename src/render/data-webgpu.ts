@@ -20,7 +20,7 @@ import {
 } from "./gpu-registry.js";
 import { MeshPool } from "./mesh-pool.js";
 import { BLACK } from "../game/assets.js";
-import { vec4 } from "../gl-matrix.js";
+import { vec2, vec3, vec4 } from "../gl-matrix.js";
 
 export interface CyBuffer<O extends CyStructDesc> {
   struct: CyStruct<O>;
@@ -61,7 +61,7 @@ export interface CyTexture {
   resize: (width: number, height: number) => void;
   attachment: (opts?: {
     doClear?: boolean;
-    defaultColor?: vec4;
+    defaultColor?: vec2 | vec3 | vec4;
     viewOverride?: GPUTextureView;
   }) => GPURenderPassColorAttachment;
 }
@@ -351,7 +351,7 @@ export function createCyTexture(
 
   function attachment(opts?: {
     doClear?: boolean;
-    defaultColor?: vec4;
+    defaultColor?: vec2 | vec3 | vec4;
     viewOverride?: GPUTextureView;
   }): GPURenderPassColorAttachment {
     const loadOp: GPULoadOp = opts?.doClear ? "clear" : "load";
@@ -360,12 +360,7 @@ export function createCyTexture(
     return {
       view: opts?.viewOverride ?? cyTex.texture.createView(),
       loadOp,
-      clearValue: {
-        r: backgroundColor[0],
-        g: backgroundColor[1],
-        b: backgroundColor[2],
-        a: backgroundColor[3],
-      },
+      clearValue: backgroundColor,
       storeOp: "store",
     };
   }

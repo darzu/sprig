@@ -1,4 +1,4 @@
-import { vec4 } from "../gl-matrix.js";
+import { vec2, vec3, vec4 } from "../gl-matrix.js";
 import { assert } from "../test.js";
 import {
   CyStructDesc,
@@ -122,7 +122,7 @@ export type CyGlobalParam =
 
 export interface CyAttachment {
   ptr: CyTexturePtr;
-  defaultColor?: vec4;
+  defaultColor?: vec2 | vec3 | vec4;
   clear: "always" | "never" | "once";
   // TODO(@darzu): potential properties:
   // depthWriteEnabled: true,

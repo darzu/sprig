@@ -24,6 +24,7 @@ import { tempVec } from "../temp-pool.js";
 import { isMeshHandle } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import { SceneTS } from "./std-scene.js";
+import { max } from "../math.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -240,14 +241,18 @@ export function registerRenderer(em: EntityManager) {
 
       // ensure our mesh handle is up to date
       for (let o of objs) {
-        // TODO(@darzu): color:
+        // color / tint
         if (ColorDef.isOn(o)) {
           vec3.copy(o.renderable.meshHandle.shaderData.tint, o.color);
         }
-
         if (TintsDef.isOn(o)) {
           applyTints(o.tints, o.renderable.meshHandle.shaderData.tint);
         }
+
+        // id
+        o.renderable.meshHandle.shaderData.id = o.renderable.meshHandle.mId;
+
+        // transform
         mat4.copy(
           o.renderable.meshHandle.shaderData.transform,
           o.rendererWorldFrame.transform
@@ -288,11 +293,21 @@ export function registerRenderer(em: EntityManager) {
         lightViewMatrix
       );
 
+      let maxSurfaceId = max(
+        objs
+          .map((o) => o.renderable.meshHandle.readonlyMesh?.surfaceIds ?? [0])
+          .reduce((p, n) => [...p, ...n], [])
+      );
+      // TODO(@darzu): DBG
+      // maxSurfaceId = 12;
+      // console.log(`maxSurfaceId: ${maxSurfaceId}`);
+
       renderer.updateScene({
         cameraViewProjMatrix: cameraView.viewProjMat,
         lightViewProjMatrix,
         // TODO(@darzu): use?
         time: 1000 / 60,
+        maxSurfaceId,
       });
 
       renderer.renderFrame(

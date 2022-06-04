@@ -259,6 +259,10 @@ export function createCyResources(
           let sampleType: GPUTextureSampleType;
           if (r.ptr.kind === "depthTexture") {
             sampleType = "depth";
+          } else if (r.ptr.format.endsWith("uint")) {
+            sampleType = "uint";
+          } else if (r.ptr.format.endsWith("sint")) {
+            sampleType = "sint";
           } else if ((usage & GPUTextureUsage.STORAGE_BINDING) !== 0) {
             // TODO(@darzu): this seems hacky. is there a better way to determine this?
             //    the deferred rendering example uses unfilterable-float for reading gbuffers
@@ -367,6 +371,8 @@ export function createCyResources(
           // TODO(@darzu): handle other formats?
           if (r.ptr.kind === "depthTexture") {
             return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_depth_2d;`;
+          } else if (r.ptr.format.endsWith("uint")) {
+            return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_2d<u32>;`;
           } else {
             return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_2d<f32>;`;
           }
@@ -679,6 +685,7 @@ export function bundleRenderPipelines(
   meshHandleIds: Set<MeshHandle<any>["mId"]>
 ): GPURenderBundle[] {
   const bundles: GPURenderBundle[] = [];
+  let dbgNumTris = 0;
   // record all the draw calls we'll need in a bundle which we'll replay during the render loop each frame.
   // This saves us an enormous amount of JS compute. We need to rebundle if we add/remove meshes.
   for (let p of renderPipelines) {
@@ -719,6 +726,7 @@ export function bundleRenderPipelines(
       assert(!!p.instanceBuf && !!p.indexBuf);
       bundleEnc.setVertexBuffer(1, p.instanceBuf.buffer);
       bundleEnc.drawIndexed(p.indexBuf.length, p.instanceBuf.length, 0, 0);
+      dbgNumTris += p.instanceBuf.length * (p.indexBuf.length / 3);
     } else if (p.ptr.meshOpt.stepMode === "per-mesh-handle") {
       assert(!!p.pool && p.bindGroupLayouts.length >= 2);
       const uniBGLayout = p.bindGroupLayouts[1]; // TODO(@darzu): hacky convention?
@@ -740,9 +748,11 @@ export function bundleRenderPipelines(
           m.uniIdx * p.pool.opts.unis.struct.size,
         ]);
         bundleEnc.drawIndexed(m.triNum * 3, undefined, m.triIdx * 3, m.vertIdx);
+        dbgNumTris += m.triNum * 3;
       }
     } else if (p.ptr.meshOpt.stepMode === "single-draw") {
       bundleEnc.draw(p.ptr.meshOpt.vertexCount, 1, 0, 0);
+      dbgNumTris += p.ptr.meshOpt.vertexCount;
     } else {
       never(p.ptr.meshOpt, `Unimplemented mesh step mode`);
     }
@@ -750,6 +760,10 @@ export function bundleRenderPipelines(
     let renderBundle = bundleEnc.finish();
     bundles.push(renderBundle);
   }
+
+  // TODO(@darzu): DBG ing
+  // TODO(@darzu): we're bundling too often
+  // console.log(`bundled ${dbgNumTris} triangles`);
 
   return bundles;
 }

@@ -3,7 +3,7 @@
 // http://paulbourke.net/dataformats/obj/
 
 import { vec2, vec3 } from "./gl-matrix.js";
-import { Mesh } from "./render/mesh.js";
+import { RawMesh } from "./render/mesh.js";
 import { assert } from "./test.js";
 import { idPair, IdPair, isString } from "./util.js";
 
@@ -63,7 +63,7 @@ function parseLine(p: string[]): vec2[] | ParseError {
   return verts as vec2[];
 }
 
-export function exportObj(m: Mesh, iOff: number = 0): string {
+export function exportObj(m: RawMesh, iOff: number = 0): string {
   let resLns = [
     `# sprigland exported mesh (${m.pos.length} verts, ${m.tri.length} faces)`,
   ];
@@ -87,7 +87,7 @@ export function exportObj(m: Mesh, iOff: number = 0): string {
 }
 
 const FLIP_FACES = false;
-export function importObj(obj: string): Mesh[] | ParseError {
+export function importObj(obj: string): RawMesh[] | ParseError {
   // TODO(@darzu): implement a streaming parser for better perf
   let pos: vec3[] = [];
   let tri: vec3[] = [];
@@ -98,7 +98,7 @@ export function importObj(obj: string): Mesh[] | ParseError {
 
   let idxOffset = 0;
 
-  const meshes: Mesh[] = [];
+  const meshes: RawMesh[] = [];
 
   function nextMesh() {
     // no mesh data, skip
@@ -110,7 +110,7 @@ export function importObj(obj: string): Mesh[] | ParseError {
       colors.push([0.0, 0.0, 0.0]);
       // colors.push([0.2, 0.2, 0.2]);
     }
-    const m: Mesh = { pos, tri, colors, lines };
+    const m: RawMesh = { pos, tri, colors, lines };
     meshes.push(m);
 
     // start a new mesh
@@ -299,7 +299,7 @@ function assertObjError(obj: string, e: ParseError): void {
     `error mismatch for: ${obj}\n  actual:\t${m}\nexpected:\t${e}`
   );
 }
-function assertSingleObjSuccess(obj: string): Mesh {
+function assertSingleObjSuccess(obj: string): RawMesh {
   const m = importObj(obj);
   assert(!isParseError(m), `failed to import obj: ${m}`);
   assert(m.length === 1, `Too many obj: ${m.length}`);

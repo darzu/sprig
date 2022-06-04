@@ -3,7 +3,7 @@ import { computeTriangleNormal } from "../utils-3d.js";
 import { CY } from "./gpu-registry.js";
 import { createCyStruct, CyToTS } from "./gpu-struct.js";
 import { MeshHandle } from "./mesh-pool.js";
-import { Mesh, getAABBFromMesh } from "./mesh.js";
+import { getAABBFromMesh, Mesh } from "./mesh.js";
 
 export const MAX_MESHES = 20000;
 export const MAX_VERTICES = 21844;
@@ -14,14 +14,21 @@ export const VertexStruct = createCyStruct(
     color: "vec3<f32>",
     normal: "vec3<f32>",
     uv: "vec2<f32>",
+    surfaceId: "u32",
   },
   {
     isCompact: true,
-    serializer: ({ position, color, normal, uv }, _, offsets_32, views) => {
+    serializer: (
+      { position, color, normal, uv, surfaceId },
+      _,
+      offsets_32,
+      views
+    ) => {
       views.f32.set(position, offsets_32[0]);
       views.f32.set(color, offsets_32[1]);
       views.f32.set(normal, offsets_32[2]);
       views.f32.set(uv, offsets_32[3]);
+      views.u32[offsets_32[4]] = surfaceId;
     },
   }
 );
@@ -33,6 +40,7 @@ export const MeshUniformStruct = createCyStruct(
     aabbMin: "vec3<f32>",
     aabbMax: "vec3<f32>",
     tint: "vec3<f32>",
+    id: "u32",
   },
   {
     isUniform: true,
@@ -41,6 +49,7 @@ export const MeshUniformStruct = createCyStruct(
       views.f32.set(d.aabbMin, offsets_32[1]);
       views.f32.set(d.aabbMax, offsets_32[2]);
       views.f32.set(d.tint, offsets_32[3]);
+      views.u32[offsets_32[4]] = d.id;
     },
   }
 );
@@ -83,6 +92,7 @@ export function computeUniData(m: Mesh): MeshUniformTS {
     aabbMin: min,
     aabbMax: max,
     tint: vec3.create(),
+    id: 0,
   };
   return uni;
 }
@@ -90,9 +100,10 @@ export function computeUniData(m: Mesh): MeshUniformTS {
 export function computeVertsData(m: Mesh): VertexTS[] {
   const vertsData: VertexTS[] = m.pos.map((pos, i) => ({
     position: pos,
-    color: [0.0, 0.0, 0.0],
-    normal: [1.0, 0.0, 0.0],
+    color: [1.0, 0.0, 1.0], // changed below
+    normal: [1.0, 0.0, 0.0], // changed below
     uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
+    surfaceId: 0,
   }));
   m.tri.forEach((triInd, i) => {
     // set provoking vertex data
@@ -104,6 +115,7 @@ export function computeVertsData(m: Mesh): VertexTS[] {
     );
     vertsData[triInd[0]].normal = normal;
     vertsData[triInd[0]].color = m.colors[i];
+    vertsData[triInd[0]].surfaceId = m.surfaceIds[i];
   });
   return vertsData;
 }
@@ -118,6 +130,7 @@ export const SceneStruct = createCyStruct(
     cameraPos: "vec3<f32>",
     playerPos: "vec2<f32>",
     time: "f32",
+    maxSurfaceId: "u32",
   },
   {
     isUniform: true,
@@ -130,6 +143,7 @@ export const SceneStruct = createCyStruct(
       views.f32.set(data.cameraPos, offsets_32[5]);
       views.f32.set(data.playerPos, offsets_32[6]);
       views.f32[offsets_32[7]] = data.time;
+      views.u32[offsets_32[8]] = data.maxSurfaceId;
     },
   }
 );
@@ -164,6 +178,7 @@ export function setupScene(): SceneTS {
     cameraPos: vec3.create(), // updated later
     playerPos: [0, 0], // updated later
     time: 0, // updated later
+    maxSurfaceId: 1, // updated later
   };
 }
 
@@ -193,6 +208,13 @@ export const positionsTexturePtr = CY.createTexture("positionsTexture", {
   format: "rgba16float",
   init: () => undefined,
   // TODO(@darzu): support anti-aliasing again
+});
+
+export const surfacesTexturePtr = CY.createTexture("surfacesTexture", {
+  size: [100, 100],
+  onCanvasResize: (w, h) => [w, h],
+  format: "rg16uint",
+  init: () => undefined,
 });
 
 export const canvasTexturePtr = CY.createTexture("canvasTexture", {

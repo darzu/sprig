@@ -164,6 +164,30 @@ Roasting vs yelling
 
 World building:
   three stars, in a triangle, hopefully equalateral ish
-  
 
-  
+Every game has at its heart (at least) one minigame.
+In every FPS, it's clicking on targets + 3d positioning
+In every racing game, it's steering along a curvy path
+In every platforming game, it's the jumping arcs + timing button presses
+In Pegglin, it's the prediction of the ball's path
+
+Most games have 1-3ish of these plus layers of choices and variables to add depth.
+
+Spacial Delivery could have way more of these! Aiming, steering, tetris-puzzler, overcooked, platformer, map pathfinding, flappy bird, and more. Each station or meta-station task could involve one or more of these.
+
+Here's an idea for a taxonomy: 
+"things that need to get done for the function of the ship" are "jobs",
+and "self contained gameplay loops that further a job" are "mini games",
+and "spots on the boat that do a thing" are stations.
+
+Each station probably only works towards one job.
+But perhaps there are many variations of station that can all fullfill the same job!
+E.g. maybe repairing the ship can be done with a station where you play a tetris-like "minigame" to repair the ship,
+or there is another station where you orbit the boat with a turret that shoots planks into places that need it,
+or you hop out of the boat and platform around to do repairs.
+
+This is one of the best ways Spacial Delivery could be very inclusive to different gaming styles! Cam might love playing an overcooked-ish minigame between a couple stations to fullfil repair or loading or resource gathering, while someone else might choose to use a turret-ish minigame to do similar tasks.
+
+Further, this might be a good way to think about single player / fewer players. Maybe when there are less players, you have more stations that can do multiple jobs. Maybe access to some stations are gated on having greater than or less than a certain number of players.
+
+maybe some minigames/stations are playable on mobile. A player could join on mobile primarily located at one station the whole time with maybe some simple auto pathing to get between stations.

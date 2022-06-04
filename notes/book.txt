@@ -1,0 +1,17 @@
+Creating a Game from Scratch:
+  0) Why make a game
+  0.5) Which game should you make
+  1) What is programming
+  2) How to program
+  3) How to think about programming
+    It's all about abstractions (see blog.txt)
+  4) Rendering 3d objects
+  5) Controlling 3d objects (input and behavior)
+  6) Interacting 3d objects (physics)
+  7) Multiplayer
+  8) Make your game fun
+  ???
+  14) Making money
+  15) Publishing your game
+  ???
+  99) You've finished a fun 3D multiplayer game

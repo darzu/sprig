@@ -1,5 +1,5 @@
 import { vec3 } from "./gl-matrix.js";
-import { Mesh } from "./render/mesh.js";
+import { RawMesh } from "./render/mesh.js";
 
 // TODO(@darzu): maybe never mind any of this? doesn't get much more compressed that .toFixed(2)'ing everything
 // TODO(@darzu): this is all somewhat inefficient and will probalby crumble for large files
@@ -13,15 +13,15 @@ export interface SprigMesh {
   triangles: Base64String;
 }
 
-export function exportSprigMesh(mesh: Mesh): SprigMesh {
+export function exportSprigMesh(mesh: RawMesh): SprigMesh {
   return {
     vertices: serializeVecArray(mesh.pos),
     triangles: serializeVecArray(mesh.tri),
   };
 }
 
-export function importSprigMesh(smesh: SprigMesh): Mesh {
-  const res: Partial<Mesh> = {
+export function importSprigMesh(smesh: SprigMesh): RawMesh {
+  const res: Partial<RawMesh> = {
     pos: deserializeVecArray(smesh.vertices),
     tri: deserializeVecArray(smesh.triangles),
   };
@@ -29,7 +29,7 @@ export function importSprigMesh(smesh: SprigMesh): Mesh {
   // TODO(@darzu): colors
   res.colors = res.tri!.map((_) => [0.1, 0.1, 0.1]);
 
-  return res as Mesh;
+  return res as RawMesh;
 }
 
 function serializeVecArray(f32s: vec3[]): string {
