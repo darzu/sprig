@@ -1,4 +1,4 @@
-import { CameraDef } from "../camera.js";
+import { CameraDef, CAMERA_OFFSETS } from "../camera.js";
 import { ColorDef } from "../color.js";
 import { EntityManager, EM } from "../entity-manager.js";
 import { vec3, quat } from "../gl-matrix.js";
@@ -67,15 +67,16 @@ export function initHyperspaceGame(em: EntityManager) {
       vec3.copy(g.position, [0, 1, -1.2]);
       quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
       g.controllable.sprintMul = 3;
+      vec3.copy(g.cameraFollow.positionOffset, [0, 2, 8]);
 
       // TODO(@darzu): this shouldn't be necessary
       const m2 = cloneMesh(res.assets.cube.mesh);
-      em.ensureComponentOn(g, RenderableConstructDef, m2, false);
+      em.ensureComponentOn(g, RenderableConstructDef, m2, true);
 
       {
         vec3.copy(g.position, [4.46, 9.61, -10.52]);
         quat.copy(g.rotation, [0.0, -1.0, 0.0, 0.04]);
-        vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+        // vec3.copy(g.cameraFollow.positionOffset, [0, 0, 0]);
         g.cameraFollow.yawOffset = 0.0;
         g.cameraFollow.pitchOffset = -0.106;
         // vec3.copy(g.position, [97.81, 0.58, -3.91]);

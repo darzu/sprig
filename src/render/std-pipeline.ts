@@ -166,8 +166,12 @@ fn frag_main(input: VertexOutput) -> FragOut {
     // Note: a better bias would look something like "max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);"
     let shadowBias = 0.007;
     let shadowDepth = input.shadowPos.z; // * f32(input.shadowPos.z <= 1.0);
-    let shadowVis : f32 = textureSampleCompare(
+    let outsideShadow = 1.0 - f32(0.0 < input.shadowPos.x && input.shadowPos.x < 1.0 
+                  && 0.0 < input.shadowPos.y && input.shadowPos.y < 1.0);
+    let shadowSamp = textureSampleCompare(
       shadowMap, shadowSampler, input.shadowPos.xy, shadowDepth - shadowBias);
+    let shadowVis : f32 = min(outsideShadow + shadowSamp, 1.0);
+      
 
     let light1 : f32 = clamp(dot(-scene.light1Dir, normal), 0.0, 1.0);
     let light2 : f32 = clamp(dot(-scene.light2Dir, normal), 0.0, 1.0);
