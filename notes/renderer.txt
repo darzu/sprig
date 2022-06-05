@@ -781,6 +781,14 @@ Outlines / edge detection:
     (this is an AO effect that makes the edges smoother).
     https://github.com/malyawka/URP-ScreenSpaceCavity
 
+  @bgolus on proper outline depth usage:
+    https://twitter.com/bgolus/status/1532830971573129216
+    "The fix is this don't compare the depth in view space, use the 
+    depth along the normal. To do this you need to calculate the world 
+    position of each sampled depth position, and then you get the "depth" 
+    by subtracting the center depth from the offset depths, and dot with 
+    the normal."
+
 Linearize depth:
   https://learnopengl.com/Advanced-OpenGL/Depth-testing
   https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
