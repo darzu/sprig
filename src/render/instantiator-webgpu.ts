@@ -1,5 +1,11 @@
 import { assert } from "../test.js";
-import { never, capitalize, pluralize, uncapitalize } from "../util.js";
+import {
+  never,
+  capitalize,
+  pluralize,
+  uncapitalize,
+  isString,
+} from "../util.js";
 import {
   PtrKindToResourceType,
   createCyArray,
@@ -24,6 +30,7 @@ import {
 } from "./gpu-registry.js";
 import { GPUBufferBindingTypeToWgslVar } from "./gpu-struct.js";
 import { createMeshPool, MeshHandle } from "./mesh-pool.js";
+import { ShaderSet } from "./shader-loader.js";
 
 const prim_tris: GPUPrimitiveState = {
   topology: "triangle-list",
@@ -42,6 +49,7 @@ export type CyResources = {
 
 export function createCyResources(
   cy: CyRegistry,
+  shaders: ShaderSet,
   device: GPUDevice
 ): CyResources {
   // determine resource usage modes
@@ -409,6 +417,8 @@ export function createCyResources(
       return globalToWgslVars(r, plurality, 0, i);
     });
 
+    const shaderCore = isString(p.shader) ? shaders[p.shader].code : p.shader();
+
     if (isRenderPipelinePtr(p)) {
       const output = normalizeColorAttachments(p.output);
 
@@ -447,7 +457,7 @@ export function createCyResources(
           `${shaderResVars.join("\n")}\n` +
           `${vertexInputStruct}\n` +
           `${instanceInputStruct}\n` +
-          `${p.shader()}\n`;
+          `${shaderCore}\n`;
 
         // render pipeline
         const shader = device.createShaderModule({
@@ -523,7 +533,7 @@ export function createCyResources(
           `${uniStruct}\n` +
           `${uniVar}\n` +
           `${vertexInputStruct}\n` +
-          `${p.shader()}\n`;
+          `${shaderCore}\n`;
 
         // render pipeline
         const shader = device.createShaderModule({
@@ -569,7 +579,7 @@ export function createCyResources(
         const shaderStr =
           `${shaderResStructs.join("\n")}\n` +
           `${shaderResVars.join("\n")}\n` +
-          `${p.shader()}\n`;
+          `${shaderCore}\n`;
 
         // render pipeline
         const shader = device.createShaderModule({
@@ -615,7 +625,7 @@ export function createCyResources(
       const shaderStr =
         `${shaderResStructs.join("\n")}\n` +
         `${shaderResVars.join("\n")}\n` +
-        `${p.shader()}\n`;
+        `${shaderCore}\n`;
 
       const emptyLayout = device.createBindGroupLayout({
         entries: [],

@@ -7,6 +7,7 @@ import {
   texTypeIsDepth,
 } from "./gpu-struct.js";
 import { Mesh } from "./mesh.js";
+import { ShaderName } from "./shader-loader.js";
 
 // NOTE: this file is supposed to be WebGPU and WebGL agnostic.
 
@@ -139,7 +140,7 @@ export interface CyCompPipelinePtr extends CyResourcePtr {
   globals: CyGlobalParam[]; // TODO(@darzu): rename "resources" to "globals"?
   workgroupCounts?: [number, number, number];
   shaderComputeEntry: string;
-  shader: () => string;
+  shader: (() => string) | ShaderName;
 }
 
 type CyMeshOpt =
@@ -164,7 +165,7 @@ export type CyColorAttachment = CyTexturePtr | CyAttachment;
 export interface CyRenderPipelinePtr extends CyResourcePtr {
   kind: "renderPipeline";
   globals: CyGlobalParam[];
-  shader: () => string;
+  shader: (() => string) | ShaderName;
   shaderVertexEntry: string;
   shaderFragmentEntry: string;
   meshOpt: CyMeshOpt;

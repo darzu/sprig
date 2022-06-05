@@ -26,6 +26,8 @@ import { Mesh } from "./mesh.js";
 import { SceneTS } from "./std-scene.js";
 import { max } from "../math.js";
 import { vec3Dbg } from "../utils-3d.js";
+import { ShadersDef, ShaderSet } from "./shader-loader.js";
+import { dbgLogOnce } from "../util.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -321,6 +323,12 @@ export function registerRenderer(em: EntityManager) {
         cameraPos: cameraView.location,
       });
 
+      if (objs.length && res.renderer.pipelines.length)
+        dbgLogOnce(
+          "first-frame",
+          `Rendering first frame at: ${performance.now().toFixed(2)}ms`
+        );
+
       renderer.renderFrame(
         objs.map((o) => o.renderable.meshHandle),
         res.renderer.pipelines
@@ -389,11 +397,15 @@ let _rendererPromise: Promise<void> | null = null;
 export function registerRenderInitSystem(em: EntityManager) {
   em.registerSystem(
     [],
-    [CanvasDef],
+    [CanvasDef, ShadersDef],
     (_, res) => {
       if (!!em.getResource(RendererDef)) return; // already init
       if (!!_rendererPromise) return;
-      _rendererPromise = chooseAndInitRenderer(em, res.htmlCanvas.canvas);
+      _rendererPromise = chooseAndInitRenderer(
+        em,
+        res.shaders,
+        res.htmlCanvas.canvas
+      );
     },
     "renderInit"
   );
@@ -401,6 +413,7 @@ export function registerRenderInitSystem(em: EntityManager) {
 
 async function chooseAndInitRenderer(
   em: EntityManager,
+  shaders: ShaderSet,
   canvas: HTMLCanvasElement
 ): Promise<void> {
   let renderer: Renderer | undefined = undefined;
@@ -413,7 +426,7 @@ async function chooseAndInitRenderer(
       // TODO(@darzu): uses cast while waiting for webgpu-types.d.ts to be updated
       const context = canvas.getContext("webgpu");
       if (context) {
-        renderer = createWebGPURenderer(canvas, device, context);
+        renderer = createWebGPURenderer(canvas, device, context, shaders);
         if (renderer) usingWebGPU = true;
       }
     }

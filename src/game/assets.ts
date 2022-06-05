@@ -489,25 +489,24 @@ export function registerAssetLoader(em: EntityManager) {
   em.addSingletonComponent(AssetLoaderDef);
 
   // start loading of assets
-  em.registerSystem(
+  em.registerOneShotSystem(
     [],
     [AssetLoaderDef, RendererDef],
     (_, { assetLoader, renderer }) => {
-      if (!assetLoader.promise) {
-        const assetsPromise = loadAssets(renderer.renderer);
-        assetLoader.promise = assetsPromise;
-        assetsPromise.then(
-          (result) => {
-            em.addSingletonComponent(AssetsDef, result);
-          },
-          (failureReason) => {
-            // TODO(@darzu): fail more gracefully
-            throw `Failed to load assets: ${failureReason}`;
-          }
-        );
-      }
-    },
-    "assetLoader"
+      assert(!assetLoader.promise, "somehow we're double loading assets");
+
+      const assetsPromise = loadAssets(renderer.renderer);
+      assetLoader.promise = assetsPromise;
+      assetsPromise.then(
+        (result) => {
+          em.addSingletonComponent(AssetsDef, result);
+        },
+        (failureReason) => {
+          // TODO(@darzu): fail more gracefully
+          throw `Failed to load assets: ${failureReason}`;
+        }
+      );
+    }
   );
 }
 

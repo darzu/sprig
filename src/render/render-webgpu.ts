@@ -18,11 +18,13 @@ import {
   renderBundles,
 } from "./instantiator-webgpu.js";
 import { SceneStruct, SceneTS } from "./std-scene.js";
+import { ShaderSet } from "./shader-loader.js";
 
 export function createWebGPURenderer(
   canvas: HTMLCanvasElement,
   device: GPUDevice,
-  context: GPUCanvasContext
+  context: GPUCanvasContext,
+  shaders: ShaderSet
 ): Renderer {
   let renderer: Renderer = {
     drawLines: true,
@@ -35,7 +37,7 @@ export function createWebGPURenderer(
     renderFrame,
   };
 
-  const resources = createCyResources(CY, device);
+  const resources = createCyResources(CY, shaders, device);
   const cyKindToNameToRes = resources.kindToNameToRes;
 
   const pool: MeshPool<

@@ -63,7 +63,6 @@ function callFixedTimestepSystems() {
   EM.callSystem("connectToServer");
   EM.callSystem("handleJoin");
   EM.callSystem("handleJoinResponse");
-  EM.callSystem("assetLoader");
   if (GAME === "ship") {
     EM.callSystem("initGroundSystem");
     EM.callSystem("groundSystem");

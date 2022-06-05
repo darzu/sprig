@@ -2,5 +2,6 @@
 *.js.map
 /public/assets
 !/public/gl-matrix.js
+!/public/shaders/
 .DS_Store
 !docs/**/*
