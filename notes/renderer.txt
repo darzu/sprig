@@ -788,6 +788,8 @@ Outlines / edge detection:
     position of each sampled depth position, and then you get the "depth" 
     by subtracting the center depth from the offset depths, and dot with 
     the normal."
+    
+  https://atyuwen.github.io/posts/normal-reconstruction/
 
 Linearize depth:
   https://learnopengl.com/Advanced-OpenGL/Depth-testing

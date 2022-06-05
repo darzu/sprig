@@ -53,6 +53,9 @@ struct FragOut {
   @location(2) surface: vec2<u32>,
 }
 
+let shadowDepthTextureSize = 1024.0;
+// let shadowDepthTextureSize = vec2<f32>(textureDimensions(shadowMap, 0.0));
+
 fn getShadowVis(shadowPos: vec3<f32>) -> f32 {
   // See: https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
   // Note: a better bias would look something like "max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);"
@@ -62,8 +65,27 @@ fn getShadowVis(shadowPos: vec3<f32>) -> f32 {
                 && 0.0 < shadowPos.y && shadowPos.y < 1.0);
   let shadowSamp = textureSampleCompare(
     shadowMap, shadowSampler, shadowPos.xy, shadowDepth - shadowBias);
-  let shadowVis : f32 = min(outsideShadow + shadowSamp, 1.0);
-  return shadowVis;
+
+  // Percentage-closer filtering. Sample texels in the region
+  // to smooth the result.
+  var visibility : f32 = 0.0;
+  let oneOverShadowDepthTextureSize = 1.0 / shadowDepthTextureSize;
+  for (var y : i32 = -1 ; y <= 1 ; y = y + 1) {
+      for (var x : i32 = -1 ; x <= 1 ; x = x + 1) {
+        let offset : vec2<f32> = vec2<f32>(
+          f32(x) * oneOverShadowDepthTextureSize,
+          f32(y) * oneOverShadowDepthTextureSize);
+
+          visibility = visibility + textureSampleCompare(
+            shadowMap, shadowSampler, 
+            shadowPos.xy + offset, shadowDepth - shadowBias);
+      }
+  }
+  visibility = visibility / 9.0;
+
+  visibility = min(outsideShadow + visibility, 1.0);
+
+  return visibility;
 }
 
 @stage(fragment)
