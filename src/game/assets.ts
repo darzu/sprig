@@ -24,6 +24,7 @@ import { AABBCollider } from "../physics/collider.js";
 import { farthestPointInDir, SupportFn, uintToVec3unorm } from "../utils-3d.js";
 import { MeshHandle } from "../render/mesh-pool.js";
 import { MeshHandleStd } from "../render/std-scene.js";
+import { onInit } from "../init.js";
 
 // TODO: load these via streaming
 
@@ -485,7 +486,7 @@ export const AssetsDef = EM.defineComponent("assets", (meshes: GameMeshes) => {
 });
 export type Assets = Component<typeof AssetsDef>;
 
-export function registerAssetLoader(em: EntityManager) {
+onInit((em) => {
   em.addSingletonComponent(AssetLoaderDef);
 
   // start loading of assets
@@ -508,7 +509,7 @@ export function registerAssetLoader(em: EntityManager) {
       );
     }
   );
-}
+});
 
 async function loadTxtInternal(relPath: string): Promise<string> {
   // download

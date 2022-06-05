@@ -30,7 +30,7 @@ import { initGroundSystem, registerGroundSystems } from "./ground.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
 import { createShip, registerShipSystems, ShipLocalDef } from "./ship.js";
 import { registerBuildBulletsSystem, registerBulletUpdate } from "./bullet.js";
-import { AssetsDef, registerAssetLoader } from "./assets.js";
+import { AssetsDef } from "./assets.js";
 import { registerInitCanvasSystem } from "../canvas.js";
 import {
   registerConstructRenderablesSystem,
@@ -114,7 +114,6 @@ export function registerAllSystems(em: EntityManager) {
   registerUpdateSystem(em);
   registerPredictSystem(em);
   registerJoinSystems(em);
-  registerAssetLoader(em);
   registerGroundSystems(em);
   registerShipSystems(em);
   registerBuildBulletsSystem(em);
