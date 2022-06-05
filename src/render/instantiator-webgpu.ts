@@ -52,6 +52,8 @@ export function createCyResources(
   shaders: ShaderSet,
   device: GPUDevice
 ): CyResources {
+  const start = performance.now();
+
   // determine resource usage modes
   // TODO(@darzu): determine texture usage modes
   const cyNameToBufferUsage: { [name: string]: GPUBufferUsageFlags } = {};
@@ -650,6 +652,10 @@ export function createCyResources(
       kindToNameToRes.compPipeline[p.name] = cyPipeline;
     }
   }
+
+  console.log(
+    `createCyResources took: ${(performance.now() - start).toFixed(1)}ms`
+  );
 
   return {
     kindToNameToRes,

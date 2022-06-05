@@ -127,3 +127,7 @@ vec3 on the pass-by-value?
 
 Big speed ups by porting to rust?
   Maybe not: https://zaplib.com/docs/blog_post_mortem.html
+
+Proposal for JS tuples & records:
+  https://github.com/tc39/proposal-record-tuple
+  https://bugzilla.mozilla.org/show_bug.cgi?id=1658309

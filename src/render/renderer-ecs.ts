@@ -323,16 +323,16 @@ export function registerRenderer(em: EntityManager) {
         cameraPos: cameraView.location,
       });
 
+      renderer.renderFrame(
+        objs.map((o) => o.renderable.meshHandle),
+        res.renderer.pipelines
+      );
+
       if (objs.length && res.renderer.pipelines.length)
         dbgLogOnce(
           "first-frame",
           `Rendering first frame at: ${performance.now().toFixed(2)}ms`
         );
-
-      renderer.renderFrame(
-        objs.map((o) => o.renderable.meshHandle),
-        res.renderer.pipelines
-      );
     },
     "stepRenderer"
   );

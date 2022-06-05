@@ -50,7 +50,9 @@ const RemoteMeshes = {
   grappleGun: "grapple-gun.sprig.obj",
   grappleGunUnloaded: "grapple-gun-unloaded.sprig.obj",
   rudder: "rudder.sprig.obj",
+  // TODO(@darzu): including hyperspace-ocean makes load time ~100ms slower :/
   ocean: "hyperspace-ocean.sprig.obj",
+  // ocean: "rudder.sprig.obj",
 } as const;
 
 type RemoteMeshSymbols = keyof typeof RemoteMeshes;
@@ -633,10 +635,14 @@ export function gameMeshFromMesh(
 
 function getUniqueVerts(mesh: RawMesh): vec3[] {
   const res: vec3[] = [];
-  // TODO(@darzu): inefficient but probably doesn't matter
+  const seen: Set<string> = new Set();
   // TODO(@darzu): might we want to do approx equals?
   for (let v1 of mesh.pos) {
-    if (!res.some((v2) => vec3.exactEquals(v1, v2))) res.push(v1);
+    const key = `${v1[0]}${v1[1]}${v1[2]}`;
+    if (!seen.has(key)) {
+      res.push(v1);
+      seen.add(key);
+    }
   }
   return res;
 }
