@@ -183,13 +183,13 @@ export function setupScene(): SceneTS {
 }
 
 // TODO(@darzu): safer way to grab this format?
-const mainFormat: GPUTextureFormat =
+const canvasFormat: GPUTextureFormat = //"bgra8unorm-srgb";
   navigator.gpu?.getPreferredCanvasFormat() ?? "bgra8unorm";
 
 export const mainTexturePtr = CY.createTexture("mainTexture", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
-  format: mainFormat,
+  format: "rgba16float",
   init: () => undefined,
   // TODO(@darzu): support anti-aliasing again
 });
@@ -220,7 +220,7 @@ export const surfacesTexturePtr = CY.createTexture("surfacesTexture", {
 export const canvasTexturePtr = CY.createTexture("canvasTexture", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
-  format: mainFormat,
+  format: canvasFormat,
   attachToCanvas: true,
   init: () => undefined,
 });

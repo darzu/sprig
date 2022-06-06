@@ -721,6 +721,17 @@ Writing a real time PBR shader:
 Gamma correction / "Importance of Being Linear":
   https://developer.nvidia.com/gpugems/gpugems3/part-iv-image-effects/chapter-24-importance-being-linear
 
+More on gamma:
+  Unity on linear color space:
+    https://docs.unity3d.com/Manual/LinearLighting.html
+  https://learnopengl.com/Advanced-Lighting/Gamma-Correction
+  monitors darken colors, so if u don't gamma correct u tend 
+    to over brighten (for physical correctness)
+  For sRGB: #000->#888->#fff is perceptually uniform-ish
+    so doubling brightness is 
+  In CSS, u want perceptual uniformity. *1.1 should brighten preceptually by 10%
+  In Games, u want physical uniformity. *1.1 should behave like putting 10% more photons out
+
 ACES tonemapping:
   ?
   https://github.com/ampas/aces-dev
@@ -799,3 +810,4 @@ Linearize depth:
       float z = depth * 2.0 - 1.0; // Back to NDC 
       return (2.0 * near_plane * far_plane) / (far_plane + near_plane - z * (far_plane - near_plane));
   }
+

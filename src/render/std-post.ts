@@ -32,7 +32,7 @@ export const postProcess = CY.createRenderPipeline("postProcess", {
     return `
 struct VertexOutput {
   @builtin(position) Position : vec4<f32>,
-  @location(0) fragUV : vec2<f32>,
+  @location(0) uv : vec2<f32>,
 };
 
 @stage(vertex)
@@ -59,13 +59,13 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
 
   var output : VertexOutput;
   output.Position = vec4<f32>(pos[VertexIndex], 0.0, 1.0);
-  output.fragUV = uv[VertexIndex];
+  output.uv = uv[VertexIndex];
   return output;
 }
 
 @stage(fragment)
-fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
-  var color = textureSample(colorTex, samp, fragUV);
+fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
+  var color = textureSample(colorTex, samp, uv).rgb;
 
   let dims : vec2<i32> = textureDimensions(surfTex);
   let dimsF = vec2<f32>(dims);
@@ -75,7 +75,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   //    look across resolutions.
   // let lineWidth = max((f32(dims.r) / 800.0), 1.0);
 
-  let coord = fragUV * vec2<f32>(dims);
+  let coord = uv * vec2<f32>(dims);
   let t = coord - vec2(0.0, lineWidth);
   let l = coord - vec2(lineWidth, 0.0);
   let r = coord + vec2(lineWidth, 0.0);
@@ -85,7 +85,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   let sR = textureLoad(surfTex, vec2<i32>(r), 0);
   let sB = textureLoad(surfTex, vec2<i32>(b), 0);  
 
-  let h = textureSample(depthTex, samp, fragUV);
+  let h = textureSample(depthTex, samp, uv);
   let hT = textureSample(depthTex, samp, t / dimsF);
   let hL = textureSample(depthTex, samp, l / dimsF);
   let hR = textureSample(depthTex, samp, r / dimsF);
@@ -96,9 +96,9 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   //  accross our point of interest changes.
   let depthDx = ((hR - h) - (h - hL));
   let depthDy = ((hT - h) - (h - hB));
-  let depthFactor = abs(depthDx) + abs(depthDy) * 100.0;
+  let depthFactor = (abs(depthDx) + abs(depthDy)) * 100.0;
 
-  let n = normalize(textureSample(normTex, samp, fragUV).xyz);
+  let n = normalize(textureSample(normTex, samp, uv).xyz);
   let nT = normalize(textureSample(normTex, samp, t / dimsF).xyz);
   let nL = normalize(textureSample(normTex, samp, l / dimsF).xyz);
   let nR = normalize(textureSample(normTex, samp, r / dimsF).xyz);
@@ -115,22 +115,26 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
 
   let outlineFactor = f32(objectDidChange);
 
-  let edgeLight = convexity * 0.1 * f32(!objectDidChange);
+  let edgeLight = convexity * 0.6 * f32(!objectDidChange);
   let edgeDark = concavity * 0.2 + outlineFactor + depthFactor;
-  let edgeColor = (edgeLight - min(edgeDark, 0.2));
-  color += edgeColor * f32(surfaceDidChange || objectDidChange);
+  let edgeLum = clamp(edgeLight - edgeDark, -0.7, 1.0);
+  if (surfaceDidChange || objectDidChange) {
+    color *= 1.0 + edgeLum;
+  }
 
   // DEBUG: visualizes surface IDs
   // let s = textureLoad(surfTex, vec2<i32>(coord), 0);
-  // color = vec4(u32toVec3f32(u32(s.r), 24u), 1.0);
+  // color = u32toVec3f32(u32(s.r), 24u);
 
   // vignette
-  let edgeDistV = fragUV - 0.5;
-  let edgeDist = 1.0 - dot(edgeDistV, edgeDistV) * 0.5;
-  // let edgeDist = 1.0 - length(fragUV - 0.5) * 0.5;
-  color *= edgeDist;
-  
-  return color;
+  let vigUV = uv * (1.0 - uv.yx);
+  var vig = vigUV.x*vigUV.y * 15.0; // multiply with sth for intensity
+  vig = pow(vig, 0.25); // change pow for modifying the extend of the  vignette
+  color *= vig;
+
+  // gamma correction
+  let gammaCorrected: vec3<f32> = pow(color, vec3<f32>(1.0/2.2));
+  return vec4(gammaCorrected, 1.0);
 }
 
 fn u32toVec3f32(i: u32, max: u32) -> vec3<f32> {

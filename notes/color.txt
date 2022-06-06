@@ -42,3 +42,7 @@ Oklab and oklch coming to CSS4?
   https://www.w3.org/TR/css-color-4/#resolving-oklab-oklch-values
   https://webkit.org/blog/12288/working-together-on-interop-2022/
   https://wpt.fyi/interop-2022?feature=interop-2022-color
+
+OKlab on shadertoy:
+  https://www.shadertoy.com/view/WtccD7
+  https://www.shadertoy.com/view/ttcyRS

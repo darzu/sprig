@@ -936,6 +936,7 @@ export function onCanvasResizeAll(
     format: canvasFormat, // presentationFormat
     // TODO(@darzu): support transparency?
     compositingAlphaMode: "opaque",
+    colorSpace: "srgb",
   });
 
   for (let tex of [

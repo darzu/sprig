@@ -98,9 +98,9 @@ fn frag_main(input: VertexOutput) -> FragOut {
     let light1 : f32 = clamp(dot(-scene.light1Dir, normal), 0.0, 1.0);
     let light2 : f32 = clamp(dot(-scene.light2Dir, normal), 0.0, 1.0);
     let light3 : f32 = clamp(dot(-scene.light3Dir, normal), 0.0, 1.0);
-    let resultColor: vec3<f32> = input.color 
+    let litColor: vec3<f32> = input.color 
       * (shadowVis * light1 * 1.5 + light2 * 0.5 + light3 * 0.2 + 0.1);
-    let gammaCorrected: vec3<f32> = pow(resultColor, vec3<f32>(1.0/2.2));
+      // * ((1.0 - shadowVis) * light1 * 1.5 + light2 * 0.5 + light3 * 0.2 + 0.1);
 
     let fogDensity: f32 = 0.02;
     let fogGradient: f32 = 1.5;
@@ -112,10 +112,10 @@ fn frag_main(input: VertexOutput) -> FragOut {
     let backgroundColor: vec3<f32> = vec3<f32>(0.6, 0.63, 0.6);
     // let backgroundColor: vec3<f32> = vec3<f32>(0.6, 0.63, 0.6);
     // let finalColor: vec3<f32> = mix(backgroundColor, gammaCorrected, fogVisibility);
-    let finalColor: vec3<f32> = gammaCorrected;
+    // let finalColor: vec3<f32> = gammaCorrected;
 
     var out: FragOut;
-    out.color = vec4<f32>(finalColor, 1.0);
+    out.color = vec4<f32>(litColor, 1.0);
     // out.normal = vec4(input.normal, 1.0);
     out.normal = vec4(normalize((scene.cameraViewProjMatrix * vec4<f32>(input.normal, 0.0)).xyz), 1.0);
     // out.position = input.worldPos;

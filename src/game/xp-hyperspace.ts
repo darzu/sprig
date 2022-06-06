@@ -158,7 +158,7 @@ export function initHyperspaceGame(em: EntityManager) {
         RenderableConstructDef,
         res.assets.ocean.proto
       );
-      em.ensureComponentOn(ocean, ColorDef, [0.2, 0.4, 0.9]);
+      em.ensureComponentOn(ocean, ColorDef, [0.1, 0.3, 0.8]);
       em.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
       // vec3.scale(ocean.position, ocean.position, scale);
       const scale = 100.0;

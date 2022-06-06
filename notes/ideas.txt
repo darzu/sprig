@@ -45,3 +45,6 @@ Cool features sprigland could have:
         a comment blob in C#-esq syntax.
         Could have a snarky comment like:
           {Look, we tried. It's not exactly right... You try writting a TypeScript->C# transpiler. Eh, maybe it's still useful?}
+
+GPU toy tool:
+  has view that shows approx memory layout / usage on GPU

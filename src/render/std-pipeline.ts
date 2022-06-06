@@ -55,7 +55,9 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
       ptr: mainTexturePtr,
       clear: "once",
       // defaultColor: [0.0, 0.0, 0.0, 1.0],
-      defaultColor: [0.1, 0.1, 0.1, 1.0],
+      // defaultColor: [0.1, 0.1, 0.1, 1.0],
+      // defaultColor: [0.15, 0.15, 0.6, 1.0],
+      defaultColor: [0.015, 0.015, 0.015, 1.0],
       // defaultColor: [0.7, 0.8, 1.0, 1.0],
     },
     {
