@@ -31,6 +31,7 @@ fn vert_main(input: VertexInput) -> VertexOutput {
 
     output.worldPos = finalPos;
     output.position = scene.cameraViewProjMatrix * finalPos;
+    // TODO: use inverse-transpose matrix for normals as per: https://learnopengl.com/Lighting/Basic-Lighting
     output.normal = normalize(meshUni.transform * vec4<f32>(normal, 0.0)).xyz;
     output.color = color + meshUni.tint;
 
@@ -90,16 +91,26 @@ fn getShadowVis(shadowPos: vec3<f32>) -> f32 {
 
 @stage(fragment)
 fn frag_main(input: VertexOutput) -> FragOut {
-    let normal = input.normal;
+    let normal = normalize(input.normal);
     // let normal = -normalize(cross(dpdx(input.worldPos.xyz), dpdy(input.worldPos.xyz)));
 
     let shadowVis = getShadowVis(input.shadowPos);
 
-    let light1 : f32 = clamp(dot(-scene.light1Dir, normal), 0.0, 1.0);
-    let light2 : f32 = clamp(dot(-scene.light2Dir, normal), 0.0, 1.0);
-    let light3 : f32 = clamp(dot(-scene.light3Dir, normal), 0.0, 1.0);
-    let litColor: vec3<f32> = input.color 
-      * (shadowVis * light1 * 1.5 + light2 * 0.5 + light3 * 0.2 + 0.1);
+    let ambientStrength = 0.1;
+    let ambient = vec3(1.0) * ambientStrength;
+    let lightColor1 = vec3(1.0, 1.0, 1.0);
+    let lightColor2 = vec3(1.0, 1.0, 1.0);
+    let lightColor3 = vec3(1.0, 1.0, 1.0);
+    let diffuse1 = max(dot(-scene.light1Dir, normal), 0.0);
+    let diffuse2 = max(dot(-scene.light2Dir, normal), 0.0);
+    let diffuse3 = max(dot(-scene.light3Dir, normal), 0.0);
+    let allLights = (
+      ambient
+      + diffuse1 * lightColor1 * shadowVis
+      + diffuse2 * lightColor2 
+      + diffuse3 * lightColor3 
+    );
+    let litColor: vec3<f32> = input.color * allLights;
       // * ((1.0 - shadowVis) * light1 * 1.5 + light2 * 0.5 + light3 * 0.2 + 0.1);
 
     let fogDensity: f32 = 0.02;

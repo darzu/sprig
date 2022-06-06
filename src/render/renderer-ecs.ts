@@ -271,9 +271,6 @@ export function registerRenderer(em: EntityManager) {
       // const e10003 = objs.filter((o) => o.id === 10003);
       // console.log(`mId 24: ${!!m24.length}, e10003: ${!!e10003.length}`);
 
-      // const light1Dir = vec3.fromValues(-1, -2, -1);
-      // vec3.normalize(light1Dir, light1Dir);
-
       // TODO(@darzu): go elsewhere
       // const lightPosition = vec3.fromValues(50, 100, -100);
       const lightPosition = vec3.add(

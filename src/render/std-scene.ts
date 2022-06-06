@@ -156,18 +156,24 @@ export const sceneBufPtr = CY.createSingleton("scene", {
 
 export function setupScene(): SceneTS {
   // create a directional light and compute it's projection (for shadows) and direction
-  // TODO(@darzu): directional lights should be unit vectors then scaled by strength; remove strength from shader
+  // TODO(@darzu): should be named "directionalLight1" etc. These are direction + strength, not unit.
   const worldOrigin = vec3.fromValues(0, 0, 0);
   const D = 50;
+
   const light1Pos = vec3.fromValues(D, D * 2, D);
-  const light2Pos = vec3.fromValues(-D, D * 1, D);
-  const light3Pos = vec3.fromValues(0, D * 0.5, -D);
   const light1Dir = vec3.subtract(vec3.create(), worldOrigin, light1Pos);
   vec3.normalize(light1Dir, light1Dir);
+  vec3.scale(light1Dir, light1Dir, 2.0);
+
+  const light2Pos = vec3.fromValues(-D, D * 1, D);
   const light2Dir = vec3.subtract(vec3.create(), worldOrigin, light2Pos);
   vec3.normalize(light2Dir, light2Dir);
+  vec3.scale(light2Dir, light2Dir, 0.5);
+
+  const light3Pos = vec3.fromValues(0, D * 0.5, -D);
   const light3Dir = vec3.subtract(vec3.create(), worldOrigin, light3Pos);
   vec3.normalize(light3Dir, light3Dir);
+  vec3.scale(light3Dir, light3Dir, 0.2);
 
   return {
     cameraViewProjMatrix: mat4.create(), // updated later
