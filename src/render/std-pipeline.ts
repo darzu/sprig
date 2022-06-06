@@ -1,7 +1,8 @@
 import { createRenderTextureToQuad } from "./gpu-helper.js";
-import { comparisonSamplerPtr, CY } from "./gpu-registry.js";
+import { comparisonSamplerPtr, CY, linearSamplerPtr } from "./gpu-registry.js";
 import {
   canvasDepthTex,
+  canvasTexturePtr,
   mainTexturePtr,
   meshPoolPtr,
   normalsTexturePtr,
@@ -100,3 +101,27 @@ export const { pipeline: positionDbg } = createRenderTextureToQuad(
 
 // TODO(@darzu): rg32uint "uint"
 // rg16uint "uint"
+
+// TODO(@darzu): rewrite post processing with compute shader?
+//  https://computergraphics.stackexchange.com/questions/54/when-is-a-compute-shader-more-efficient-than-a-pixel-shader-for-image-filtering
+//  result: yes, probably it is a good idea.
+
+export const postProcess = CY.createRenderPipeline("postProcess", {
+  globals: [
+    { ptr: linearSamplerPtr, alias: "samp" },
+    { ptr: mainTexturePtr, alias: "colorTex" },
+    { ptr: normalsTexturePtr, alias: "normTex" },
+    { ptr: positionsTexturePtr, alias: "posTex" },
+    { ptr: surfacesTexturePtr, alias: "surfTex" },
+    { ptr: canvasDepthTex, alias: "depthTex" },
+    sceneBufPtr,
+  ],
+  meshOpt: {
+    vertexCount: 6,
+    stepMode: "single-draw",
+  },
+  output: [canvasTexturePtr],
+  shader: "std-post",
+  shaderFragmentEntry: "frag_main",
+  shaderVertexEntry: "vert_main",
+});

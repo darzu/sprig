@@ -5,7 +5,11 @@ import { getText } from "../webget.js";
 
 const DEFAULT_SHADER_PATH = "/shaders/";
 
-export const ShaderPaths = ["std-shader", "xp-boid-render"] as const;
+export const ShaderPaths = [
+  "std-shader",
+  "std-post",
+  "xp-boid-render",
+] as const;
 
 export type ShaderName = typeof ShaderPaths[number];
 

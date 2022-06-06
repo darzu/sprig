@@ -1,35 +1,3 @@
-import { CY, linearSamplerPtr } from "./gpu-registry.js";
-import {
-  canvasDepthTex,
-  canvasTexturePtr,
-  mainTexturePtr,
-  normalsTexturePtr,
-  positionsTexturePtr,
-  sceneBufPtr,
-  surfacesTexturePtr,
-} from "./std-scene.js";
-
-// TODO(@darzu): rewrite post processing with compute shader?
-//  https://computergraphics.stackexchange.com/questions/54/when-is-a-compute-shader-more-efficient-than-a-pixel-shader-for-image-filtering
-//  result: yes, probably it is a good idea.
-
-export const postProcess = CY.createRenderPipeline("postProcess", {
-  globals: [
-    { ptr: linearSamplerPtr, alias: "samp" },
-    { ptr: mainTexturePtr, alias: "colorTex" },
-    { ptr: normalsTexturePtr, alias: "normTex" },
-    { ptr: positionsTexturePtr, alias: "posTex" },
-    { ptr: surfacesTexturePtr, alias: "surfTex" },
-    { ptr: canvasDepthTex, alias: "depthTex" },
-    sceneBufPtr,
-  ],
-  meshOpt: {
-    vertexCount: 6,
-    stepMode: "single-draw",
-  },
-  output: [canvasTexturePtr],
-  shader: () => {
-    return `
 struct VertexOutput {
   @builtin(position) Position : vec4<f32>,
   @location(0) uv : vec2<f32>,
@@ -145,8 +113,3 @@ fn u32toVec3f32(i: u32, max: u32) -> vec3<f32> {
     f32(((((i % 7u) + 1u) & 4u) >> 2u) * ((i / 7u) + 1u)) / ceil(maxF / 7.0),
   );
 }
-  `;
-  },
-  shaderFragmentEntry: "frag_main",
-  shaderVertexEntry: "vert_main",
-});

@@ -18,8 +18,7 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { stdRenderPipeline } from "../render/std-pipeline.js";
-import { postProcess } from "../render/std-post.js";
+import { stdRenderPipeline, postProcess } from "../render/std-pipeline.js";
 import { shadowDbgDisplay, shadowPipeline } from "../render/std-shadow.js";
 import { assert } from "../test.js";
 import { uintToVec3unorm } from "../utils-3d.js";
