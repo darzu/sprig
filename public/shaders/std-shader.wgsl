@@ -101,9 +101,9 @@ fn frag_main(input: VertexOutput) -> FragOut {
     let lightColor1 = vec3(1.0, 1.0, 1.0);
     let lightColor2 = vec3(1.0, 1.0, 1.0);
     let lightColor3 = vec3(1.0, 1.0, 1.0);
-    let diffuse1 = max(dot(-scene.light1Dir, normal), 0.0);
-    let diffuse2 = max(dot(-scene.light2Dir, normal), 0.0);
-    let diffuse3 = max(dot(-scene.light3Dir, normal), 0.0);
+    let diffuse1 = max(dot(-scene.dirLight1, normal), 0.0);
+    let diffuse2 = max(dot(-scene.dirLight2, normal), 0.0);
+    let diffuse3 = max(dot(-scene.dirLight3, normal), 0.0);
     let allLights = (
       ambient
       + diffuse1 * lightColor1 * shadowVis

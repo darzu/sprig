@@ -372,9 +372,9 @@ gl.enableVertexAttribArray(a_loc_position);
 //     //   false,
 //     //   scene.lightViewProjMatrix
 //     // );
-//     gl.uniform3fv(u_loc_light1Dir, scene.light1Dir);
-//     gl.uniform3fv(u_loc_light2Dir, scene.light2Dir);
-//     gl.uniform3fv(u_loc_light3Dir, scene.light3Dir);
+//     gl.uniform3fv(u_loc_light1Dir, scene.dirLight1);
+//     gl.uniform3fv(u_loc_light2Dir, scene.dirLight2);
+//     gl.uniform3fv(u_loc_light3Dir, scene.dirLight3);
 //     gl.uniform1f(u_loc_time, scene.time);
 //     gl.uniform2fv(u_loc_playerPos, scene.playerPos);
 //     gl.uniform3fv(u_loc_cameraPos, scene.cameraPos);

@@ -124,9 +124,9 @@ export const SceneStruct = createCyStruct(
   {
     cameraViewProjMatrix: "mat4x4<f32>",
     lightViewProjMatrix: "mat4x4<f32>",
-    light1Dir: "vec3<f32>",
-    light2Dir: "vec3<f32>",
-    light3Dir: "vec3<f32>",
+    dirLight1: "vec3<f32>",
+    dirLight2: "vec3<f32>",
+    dirLight3: "vec3<f32>",
     cameraPos: "vec3<f32>",
     playerPos: "vec2<f32>",
     time: "f32",
@@ -137,9 +137,9 @@ export const SceneStruct = createCyStruct(
     serializer: (data, _, offsets_32, views) => {
       views.f32.set(data.cameraViewProjMatrix, offsets_32[0]);
       views.f32.set(data.lightViewProjMatrix, offsets_32[1]);
-      views.f32.set(data.light1Dir, offsets_32[2]);
-      views.f32.set(data.light2Dir, offsets_32[3]);
-      views.f32.set(data.light3Dir, offsets_32[4]);
+      views.f32.set(data.dirLight1, offsets_32[2]);
+      views.f32.set(data.dirLight2, offsets_32[3]);
+      views.f32.set(data.dirLight3, offsets_32[4]);
       views.f32.set(data.cameraPos, offsets_32[5]);
       views.f32.set(data.playerPos, offsets_32[6]);
       views.f32[offsets_32[7]] = data.time;
@@ -156,31 +156,25 @@ export const sceneBufPtr = CY.createSingleton("scene", {
 
 export function setupScene(): SceneTS {
   // create a directional light and compute it's projection (for shadows) and direction
-  // TODO(@darzu): should be named "directionalLight1" etc. These are direction + strength, not unit.
-  const worldOrigin = vec3.fromValues(0, 0, 0);
-  const D = 50;
+  // TODO(@darzu): should be named "dirLight1" etc. These are direction + strength, not unit.
+  const dirLight1 = vec3.fromValues(-1, -1 * 2, -1);
+  vec3.normalize(dirLight1, dirLight1);
+  vec3.scale(dirLight1, dirLight1, 2.0);
 
-  const light1Pos = vec3.fromValues(D, D * 2, D);
-  const light1Dir = vec3.subtract(vec3.create(), worldOrigin, light1Pos);
-  vec3.normalize(light1Dir, light1Dir);
-  vec3.scale(light1Dir, light1Dir, 2.0);
+  const dirLight2 = vec3.fromValues(1, -1 * 1, -1);
+  vec3.normalize(dirLight2, dirLight2);
+  vec3.scale(dirLight2, dirLight2, 0.5);
 
-  const light2Pos = vec3.fromValues(-D, D * 1, D);
-  const light2Dir = vec3.subtract(vec3.create(), worldOrigin, light2Pos);
-  vec3.normalize(light2Dir, light2Dir);
-  vec3.scale(light2Dir, light2Dir, 0.5);
-
-  const light3Pos = vec3.fromValues(0, D * 0.5, -D);
-  const light3Dir = vec3.subtract(vec3.create(), worldOrigin, light3Pos);
-  vec3.normalize(light3Dir, light3Dir);
-  vec3.scale(light3Dir, light3Dir, 0.2);
+  const dirLight3 = vec3.fromValues(0, -1 * 0.5, 1);
+  vec3.normalize(dirLight3, dirLight3);
+  vec3.scale(dirLight3, dirLight3, 0.2);
 
   return {
     cameraViewProjMatrix: mat4.create(), // updated later
     lightViewProjMatrix: mat4.create(), // updated later
-    light1Dir,
-    light2Dir,
-    light3Dir,
+    dirLight1,
+    dirLight2,
+    dirLight3,
     cameraPos: vec3.create(), // updated later
     playerPos: [0, 0], // updated later
     time: 0, // updated later
