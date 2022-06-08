@@ -138,7 +138,7 @@ export function isResourcePtr(p: any): p is CyResourcePtr {
 export interface CyCompPipelinePtr extends CyResourcePtr {
   kind: "compPipeline";
   globals: CyGlobalParam[]; // TODO(@darzu): rename "resources" to "globals"?
-  workgroupCounts?: [number, number, number];
+  workgroupCounts: [number, number, number];
   shaderComputeEntry: string;
   shader: (() => string) | ShaderName;
 }

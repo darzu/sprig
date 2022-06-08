@@ -811,3 +811,8 @@ Linearize depth:
       return (2.0 * near_plane * far_plane) / (far_plane + near_plane - z * (far_plane - near_plane));
   }
 
+
+Particles and techniques:
+  http://www.opengl-tutorial.org/intermediate-tutorials/billboards-particles/particles-instancing/
+  smooth particles: "test if the currently-drawn fragment is near the Z-Buffer. 
+    If so, the fragment is faded out."

@@ -129,6 +129,7 @@ export const SceneStruct = createCyStruct(
     dirLight3: "vec3<f32>",
     cameraPos: "vec3<f32>",
     playerPos: "vec2<f32>",
+    // TODO(@darzu): timeDelta vs totalTime
     time: "f32",
     maxSurfaceId: "u32",
   },

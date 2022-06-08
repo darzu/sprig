@@ -56,6 +56,7 @@ export const cmpClothPipelinePtr0 = CY.createComputePipeline("clothComp0", {
     { ptr: clothTexPtr0, access: "read", alias: "inTex" },
     { ptr: clothTexPtr1, access: "write", alias: "outTex" },
   ],
+  workgroupCounts: [1, 1, 1],
   shader: cloth_shader,
   shaderComputeEntry: "main",
 });
@@ -64,6 +65,7 @@ export const cmpClothPipelinePtr1 = CY.createComputePipeline("clothComp1", {
     { ptr: clothTexPtr1, access: "read", alias: "inTex" },
     { ptr: clothTexPtr0, access: "write", alias: "outTex" },
   ],
+  workgroupCounts: [1, 1, 1],
   shader: cloth_shader,
   shaderComputeEntry: "main",
 });

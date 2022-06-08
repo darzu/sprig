@@ -67,7 +67,7 @@ export interface CyTexture {
 }
 export interface CyDepthTexture extends Omit<CyTexture, "ptr"> {
   ptr: CyDepthTexturePtr;
-  depthAttachment: () => GPURenderPassDepthStencilAttachment;
+  depthAttachment: (clear: boolean) => GPURenderPassDepthStencilAttachment;
 }
 
 export type PtrKindToResourceType = {
@@ -381,11 +381,13 @@ export function createCyDepthTexture(
     depthAttachment,
   });
 
-  function depthAttachment(): GPURenderPassDepthStencilAttachment {
+  function depthAttachment(
+    clear: boolean
+  ): GPURenderPassDepthStencilAttachment {
     return {
       // TODO(@darzu): create these less often??
       view: tex.texture.createView(),
-      depthLoadOp: "clear",
+      depthLoadOp: clear ? "clear" : "load",
       depthClearValue: 1.0,
       depthStoreOp: "store",
       stencilLoadOp: hasStencil ? "clear" : undefined,

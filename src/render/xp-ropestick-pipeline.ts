@@ -122,6 +122,7 @@ const ropeStickBufPtr = CY.createArray("ropeStick", {
 export const compRopePipelinePtr = CY.createComputePipeline("ropeComp", {
   globals: [sceneBufPtr, ropePointBufPtr, ropeStickBufPtr],
   shaderComputeEntry: "main",
+  workgroupCounts: [1, 1, 1],
   shader: () =>
     `
 // todo: pick workgroup size based on max rope system?

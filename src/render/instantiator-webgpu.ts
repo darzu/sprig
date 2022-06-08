@@ -457,12 +457,15 @@ export function createCyResources(
       });
 
       let depthStencilOpts: GPUDepthStencilState | undefined = undefined;
-      if (p.depthStencil)
+      if (p.depthStencil) {
+        // TODO(@darzu): parameterize
+        const depthWriteEnabled = p.name === "renderStars" ? false : true;
         depthStencilOpts = {
-          depthWriteEnabled: true,
+          depthWriteEnabled,
           depthCompare: "less",
           format: p.depthStencil.format,
         };
+      }
 
       if (p.meshOpt.stepMode === "per-instance") {
         const vertBuf = kindToNameToRes.array[p.meshOpt.vertex.name];
@@ -868,6 +871,7 @@ export function renderBundles(
   let lastPipeline: CyRenderPipeline | undefined;
   let renderPassEncoder: GPURenderPassEncoder | undefined;
   let seenTextures: Set<string> = new Set();
+  let seenDepthTextures: Set<string> = new Set();
   for (let [p, bundle] of pipelineAndBundle) {
     // console.log(`rendering ${p.ptr.name}`);
 
@@ -887,9 +891,13 @@ export function renderBundles(
       );
       let depthAtt: GPURenderPassDepthStencilAttachment | undefined = undefined;
       if (p.ptr.depthStencil) {
+        const isFirst = !seenDepthTextures.has(p.ptr.depthStencil.name);
+        seenDepthTextures.add(p.ptr.depthStencil.name);
         const depthTex =
           resources.kindToNameToRes.depthTexture[p.ptr.depthStencil.name];
-        depthAtt = depthTex.depthAttachment();
+        // TODO(@darzu): parameterize doClear like we do textures above
+        const doClear = isFirst ? true : false;
+        depthAtt = depthTex.depthAttachment(doClear);
       }
 
       renderPassEncoder?.end();
@@ -940,9 +948,7 @@ export function doCompute(
 
   compPassEncoder.setBindGroup(0, resBindGroup);
   // TODO(@darzu): parameterize workgroup count
-  compPassEncoder.dispatchWorkgroups(
-    ...(pipeline.ptr.workgroupCounts ?? [1, 1, 1])
-  );
+  compPassEncoder.dispatchWorkgroups(...pipeline.ptr.workgroupCounts);
   compPassEncoder.end();
 }
 
@@ -957,7 +963,8 @@ export function onCanvasResizeAll(
     device: device,
     format: canvasFormat, // presentationFormat
     // TODO(@darzu): support transparency?
-    compositingAlphaMode: "opaque",
+    // alphaMode: "premultiplied",
+    alphaMode: "opaque",
     colorSpace: "srgb",
   });
 
