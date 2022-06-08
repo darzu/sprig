@@ -20,6 +20,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { stdRenderPipeline, postProcess } from "../render/std-pipeline.js";
 import { shadowDbgDisplay, shadowPipeline } from "../render/std-shadow.js";
+import { initStars, renderStars } from "../render/xp-stars.js";
 import { assert } from "../test.js";
 import { uintToVec3unorm } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
@@ -42,6 +43,7 @@ export function initHyperspaceGame(em: EntityManager) {
         // TODO(@darzu):
         shadowPipeline,
         stdRenderPipeline,
+        renderStars,
         // renderRopePipelineDesc,
         // boidRender,
         // boidCanvasMerge,
@@ -56,11 +58,14 @@ export function initHyperspaceGame(em: EntityManager) {
         // compRopePipelinePtr,
         // boidComp0,
         // boidComp1,
+        initStars,
       ];
       res.renderer.pipelines = [
         ...computePipelinesPtrs,
         ...renderPipelinesPtrs,
       ];
+
+      // TODO(@darzu): call one-shot initStars
 
       const g = createGhost(em);
       vec3.copy(g.position, [0, 1, -1.2]);

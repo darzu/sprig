@@ -19,7 +19,7 @@ import {
   sceneBufPtr,
   meshPoolPtr,
   mainTexturePtr,
-  canvasDepthTex,
+  mainDepthTex,
   canvasTexturePtr,
 } from "../render/std-scene.js";
 import { uintToVec3unorm } from "../utils-3d.js";
@@ -103,7 +103,7 @@ const cubeRenderPipeline = CY.createRenderPipeline("cubeRender", {
       // defaultColor: [0.7, 0.8, 1.0, 1.0],
     },
   ],
-  depthStencil: canvasDepthTex,
+  depthStencil: mainDepthTex,
   shader: () =>
     `
 struct VertexOutput {

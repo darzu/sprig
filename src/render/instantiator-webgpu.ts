@@ -1,3 +1,4 @@
+import { ControllableDef } from "../game/controllable.js";
 import { assert } from "../test.js";
 import {
   never,
@@ -27,10 +28,18 @@ import {
   CyGlobalParam,
   CyColorAttachment,
   CyAttachment,
+  CyBufferPtr,
 } from "./gpu-registry.js";
 import { GPUBufferBindingTypeToWgslVar } from "./gpu-struct.js";
 import { createMeshPool, MeshHandle } from "./mesh-pool.js";
 import { ShaderSet } from "./shader-loader.js";
+
+// TODO(@darzu): visibility restrictions:
+/*
+If entry.visibility includes VERTEX:
+  entry.buffer?.type must not be "storage".
+  entry.storageTexture?.access must not be "write-only".
+*/
 
 const prim_tris: GPUPrimitiveState = {
   topology: "triangle-list",
@@ -236,6 +245,23 @@ export function createCyResources(
     const t = createCyDepthTexture(device, r, usage);
     kindToNameToRes.depthTexture[r.name] = t;
   });
+
+  // TODO(@darzu): not very elegant
+  function getBufferBindingType(
+    ptr: CyBufferPtr<any>,
+    shaderStage: GPUShaderStageFlags
+  ): GPUBufferBindingType {
+    // TODO(@darzu): more precise?
+    let bindingType: GPUBufferBindingType = "storage";
+    if (ptr.struct.opts?.isUniform) bindingType = "uniform";
+    else if ((shaderStage & GPUShaderStage.VERTEX) !== 0)
+      // NOTE: writable storage is not allowed in the vertex stage
+      // https://gpuweb.github.io/gpuweb/#dom-gpudevice-createbindgrouplayout
+      // TODO(@darzu): clean up this logic?
+      bindingType = "read-only-storage";
+    return bindingType;
+  }
+
   // create pipelines
   for (let p of [
     ...cy.kindToPtrs["compPipeline"],
@@ -252,15 +278,8 @@ export function createCyResources(
       dynamic: boolean
     ): GPUBindGroupLayoutEntry {
       if (r.ptr.kind === "singleton" || r.ptr.kind === "array") {
-        // TODO(@darzu):
-        // const struct = isResourcePtr(r) ? r.struct : r.ptr.
-        return r.ptr.struct.layout(
-          idx,
-          shaderStage,
-          // TODO(@darzu): more precise?
-          r.ptr.struct.opts?.isUniform ? "uniform" : "storage",
-          dynamic
-        );
+        let bindingType = getBufferBindingType(r.ptr, shaderStage);
+        return r.ptr.struct.layout(idx, shaderStage, bindingType, dynamic);
       } else if (r.ptr.kind === "texture" || r.ptr.kind === "depthTexture") {
         if (!r.access || r.access === "read") {
           // TODO(@darzu): is this a reasonable way to determine sample type?
@@ -320,7 +339,13 @@ export function createCyResources(
     ) {
       const bindGroupLayoutDesc: GPUBindGroupLayoutDescriptor = {
         entries: ptrs.map((r, i) => {
-          return mkGlobalLayoutEntry(i, r, dynamic);
+          const res = mkGlobalLayoutEntry(i, r, dynamic);
+          // TODO(@darzu): dbg
+          if (r.ptr.name === "starData") {
+            console.log("STAR DATA");
+            console.dir(res);
+          }
+          return res;
         }),
       };
       return device.createBindGroupLayout(bindGroupLayoutDesc);
@@ -358,10 +383,11 @@ export function createCyResources(
       r: CyGlobalUsage<CyGlobal>,
       plurality: "one" | "many",
       groupIdx: number,
-      bindingIdx: number
+      bindingIdx: number,
+      stage: GPUShaderStageFlags
     ) {
       if (r.ptr.kind === "singleton" || r.ptr.kind === "array") {
-        const usage = r.ptr.struct.opts?.isUniform ? "uniform" : "storage";
+        const usage = getBufferBindingType(r.ptr, stage);
         const varPrefix = GPUBufferBindingTypeToWgslVar[usage];
         const varName =
           r.alias ??
@@ -416,7 +442,7 @@ export function createCyResources(
     });
     const shaderResVars = globalUsages.map((r, i) => {
       const plurality = r.ptr.kind === "singleton" ? "one" : "many";
-      return globalToWgslVars(r, plurality, 0, i);
+      return globalToWgslVars(r, plurality, 0, i, shaderStage);
     });
 
     const shaderCore = isString(p.shader) ? shaders[p.shader].code : p.shader();
@@ -520,7 +546,7 @@ export function createCyResources(
         const uniBGLayout = mkBindGroupLayout([uniUsage], true);
 
         const uniStruct = globalToWgslDefs(uniUsage, "one");
-        const uniVar = globalToWgslVars(uniUsage, "one", 1, 0);
+        const uniVar = globalToWgslVars(uniUsage, "one", 1, 0, shaderStage);
 
         const vertexInputStruct =
           `struct VertexInput {\n` +
@@ -628,10 +654,6 @@ export function createCyResources(
         `${shaderResStructs.join("\n")}\n` +
         `${shaderResVars.join("\n")}\n` +
         `${shaderCore}\n`;
-
-      const emptyLayout = device.createBindGroupLayout({
-        entries: [],
-      });
 
       let compPipeline = device.createComputePipeline({
         layout: device.createPipelineLayout({

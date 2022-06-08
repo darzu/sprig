@@ -96,13 +96,25 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
 
   // vignette
   let vigUV = uv * (1.0 - uv.yx);
-  var vig = vigUV.x*vigUV.y * 15.0; // multiply with sth for intensity
-  vig = pow(vig, 0.25); // change pow for modifying the extend of the  vignette
+  var vig = vigUV.x*vigUV.y * 3.0; // multiply with sth for intensity
+  vig = pow(vig, 0.15); // change pow for modifying the extend of the  vignette
   color *= vig;
+
+  // TESTING RAND
+  // rand_seed = uv;
+  // return vec4(rand(), rand(), rand(), 1.0);
 
   // gamma correction
   let gammaCorrected: vec3<f32> = pow(color, vec3<f32>(1.0/2.2));
   return vec4(gammaCorrected, 1.0);
+}
+
+// Move to common file?
+var<private> rand_seed : vec2<f32>;
+fn rand() -> f32 {
+    rand_seed.x = fract(cos(dot(rand_seed, vec2<f32>(26.88662389, 200.54042905))) * 240.61722267);
+    rand_seed.y = fract(cos(dot(rand_seed, vec2<f32>(58.302370833, 341.7795489))) * 523.34916812);
+    return rand_seed.y;
 }
 
 fn u32toVec3f32(i: u32, max: u32) -> vec3<f32> {

@@ -77,3 +77,17 @@ Outer Wilds documentry:
   knew they needed shiplog b/c didn't want player using paper notes
     rumor board was a late addition
   
+Domain warping:
+  https://www.shadertoy.com/view/lsl3RH
+
+Space:
+  Black hole:
+    https://www.reddit.com/r/spaceporn/comments/d9i86n/new_nasa_visualization_of_black_hole/
+    https://www.shadertoy.com/view/XdjXDy
+    https://www.shadertoy.com/view/sdjcWm
+  Galactic bulge: https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Artist%27s_impression_of_the_central_bulge_of_the_Milky_Way.jpg/2560px-Artist%27s_impression_of_the_central_bulge_of_the_Milky_Way.jpg
+  Exploding star: https://www.reddit.com/r/spaceporn/comments/rtpgiw/an_exploding_star_captured_by_hubble/
+  Pillars: https://www.nasa.gov/image-feature/the-pillars-of-creation
+  Cool sky: https://i.redd.it/yti0jh2obsg61.jpg
+  Wall of galaxies: https://i.redd.it/7ikk5cnsm1o31.jpg
+  Jupiter: https://i.redd.it/miemqssxtwl31.jpg

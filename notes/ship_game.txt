@@ -191,3 +191,8 @@ This is one of the best ways Spacial Delivery could be very inclusive to differe
 Further, this might be a good way to think about single player / fewer players. Maybe when there are less players, you have more stations that can do multiple jobs. Maybe access to some stations are gated on having greater than or less than a certain number of players.
 
 maybe some minigames/stations are playable on mobile. A player could join on mobile primarily located at one station the whole time with maybe some simple auto pathing to get between stations.
+
+Just like Outer Worlds made a solar system feel tangible, traversable, and "small",
+Perhaps our game can make a galaxy feel tangible, traversable, and "small"
+In hyperspace, star clusters, nebula, black holes, can all feel like reachable, interactive elements
+

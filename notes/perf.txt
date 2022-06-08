@@ -131,3 +131,6 @@ Big speed ups by porting to rust?
 Proposal for JS tuples & records:
   https://github.com/tc39/proposal-record-tuple
   https://bugzilla.mozilla.org/show_bug.cgi?id=1658309
+
+Measure WebGPU perf?
+  https://gpuweb.github.io/gpuweb/#timestamp

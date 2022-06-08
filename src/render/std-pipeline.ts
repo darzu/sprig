@@ -1,7 +1,7 @@
 import { createRenderTextureToQuad } from "./gpu-helper.js";
 import { comparisonSamplerPtr, CY, linearSamplerPtr } from "./gpu-registry.js";
 import {
-  canvasDepthTex,
+  mainDepthTex,
   canvasTexturePtr,
   mainTexturePtr,
   meshPoolPtr,
@@ -77,7 +77,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
       defaultColor: [0, 0, 0, 0],
     },
   ],
-  depthStencil: canvasDepthTex,
+  depthStencil: mainDepthTex,
   shader: "std-shader",
 });
 
@@ -113,7 +113,7 @@ export const postProcess = CY.createRenderPipeline("postProcess", {
     { ptr: normalsTexturePtr, alias: "normTex" },
     { ptr: positionsTexturePtr, alias: "posTex" },
     { ptr: surfacesTexturePtr, alias: "surfTex" },
-    { ptr: canvasDepthTex, alias: "depthTex" },
+    { ptr: mainDepthTex, alias: "depthTex" },
     sceneBufPtr,
   ],
   meshOpt: {
