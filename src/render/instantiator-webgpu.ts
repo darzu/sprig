@@ -340,11 +340,6 @@ export function createCyResources(
       const bindGroupLayoutDesc: GPUBindGroupLayoutDescriptor = {
         entries: ptrs.map((r, i) => {
           const res = mkGlobalLayoutEntry(i, r, dynamic);
-          // TODO(@darzu): dbg
-          if (r.ptr.name === "starData") {
-            console.log("STAR DATA");
-            console.dir(res);
-          }
           return res;
         }),
       };
