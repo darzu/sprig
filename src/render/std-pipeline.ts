@@ -3,7 +3,7 @@ import { comparisonSamplerPtr, CY, linearSamplerPtr } from "./gpu-registry.js";
 import {
   mainDepthTex,
   canvasTexturePtr,
-  mainTexturePtr,
+  litTexturePtr,
   meshPoolPtr,
   normalsTexturePtr,
   positionsTexturePtr,
@@ -53,7 +53,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
   shaderFragmentEntry: "frag_main",
   output: [
     {
-      ptr: mainTexturePtr,
+      ptr: litTexturePtr,
       clear: "once",
       // defaultColor: [0.0, 0.0, 0.0, 1.0],
       // defaultColor: [0.1, 0.1, 0.1, 1.0],
@@ -106,14 +106,39 @@ export const { pipeline: positionDbg } = createRenderTextureToQuad(
 //  https://computergraphics.stackexchange.com/questions/54/when-is-a-compute-shader-more-efficient-than-a-pixel-shader-for-image-filtering
 //  result: yes, probably it is a good idea.
 
+export const outlinedTexturePtr = CY.createTexture("outlinesTexture", {
+  size: [100, 100],
+  onCanvasResize: (w, h) => [w, h],
+  // TODO(@darzu): probably only need 1 float 16 per pixel
+  format: "rgba16float",
+  init: () => undefined,
+  // TODO(@darzu): support anti-aliasing again
+});
+
+export const outlineRender = CY.createRenderPipeline("outlineRender", {
+  globals: [
+    { ptr: linearSamplerPtr, alias: "samp" },
+    { ptr: litTexturePtr, alias: "colorTex" },
+    { ptr: normalsTexturePtr, alias: "normTex" },
+    // { ptr: positionsTexturePtr, alias: "posTex" },
+    { ptr: surfacesTexturePtr, alias: "surfTex" },
+    { ptr: mainDepthTex, alias: "depthTex" },
+    sceneBufPtr,
+  ],
+  meshOpt: {
+    vertexCount: 6,
+    stepMode: "single-draw",
+  },
+  output: [outlinedTexturePtr],
+  shader: "std-outline",
+  shaderFragmentEntry: "frag_main",
+  shaderVertexEntry: "vert_main",
+});
+
 export const postProcess = CY.createRenderPipeline("postProcess", {
   globals: [
     { ptr: linearSamplerPtr, alias: "samp" },
-    { ptr: mainTexturePtr, alias: "colorTex" },
-    { ptr: normalsTexturePtr, alias: "normTex" },
-    { ptr: positionsTexturePtr, alias: "posTex" },
-    { ptr: surfacesTexturePtr, alias: "surfTex" },
-    { ptr: mainDepthTex, alias: "depthTex" },
+    { ptr: outlinedTexturePtr, alias: "colorTex" },
     sceneBufPtr,
   ],
   meshOpt: {

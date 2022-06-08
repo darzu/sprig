@@ -18,7 +18,7 @@ import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import {
   sceneBufPtr,
   meshPoolPtr,
-  mainTexturePtr,
+  litTexturePtr,
   mainDepthTex,
   canvasTexturePtr,
 } from "../render/std-scene.js";
@@ -96,7 +96,7 @@ const cubeRenderPipeline = CY.createRenderPipeline("cubeRender", {
   shaderFragmentEntry: "frag_main",
   output: [
     {
-      ptr: mainTexturePtr,
+      ptr: litTexturePtr,
       clear: "once",
       // defaultColor: [0.0, 0.0, 0.0, 1.0],
       defaultColor: [0.1, 0.1, 0.1, 1.0],
@@ -145,7 +145,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
 const cubePost = CY.createRenderPipeline("cubePost", {
   globals: [
-    { ptr: mainTexturePtr, alias: "colorTex" },
+    { ptr: litTexturePtr, alias: "colorTex" },
     { ptr: linearSamplerPtr, alias: "samp" },
   ],
   meshOpt: {

@@ -1,6 +1,7 @@
 import { CY } from "./gpu-registry.js";
 import { createCyStruct, CyToTS } from "./gpu-struct.js";
-import { mainDepthTex, mainTexturePtr, sceneBufPtr } from "./std-scene.js";
+import { outlinedTexturePtr } from "./std-pipeline.js";
+import { mainDepthTex, litTexturePtr, sceneBufPtr } from "./std-scene.js";
 
 const StarStruct = createCyStruct({
   pos: "vec3<f32>",
@@ -129,5 +130,5 @@ export const renderStars = CY.createRenderPipeline("renderStars", {
     stepMode: "single-draw",
   },
   depthStencil: mainDepthTex,
-  output: [mainTexturePtr],
+  output: [outlinedTexturePtr],
 });

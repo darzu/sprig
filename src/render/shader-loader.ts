@@ -7,6 +7,7 @@ const DEFAULT_SHADER_PATH = "/shaders/";
 
 export const ShaderPaths = [
   "std-shader",
+  "std-outline",
   "std-post",
   "xp-boid-render",
 ] as const;

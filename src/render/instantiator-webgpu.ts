@@ -445,6 +445,7 @@ export function createCyResources(
     if (isRenderPipelinePtr(p)) {
       const output = normalizeColorAttachments(p.output);
 
+      // TODO(@darzu): support blend modes
       const targets: GPUColorTargetState[] = output.map((o) => {
         return {
           format: o.ptr.format,

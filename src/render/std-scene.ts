@@ -187,7 +187,7 @@ export function setupScene(): SceneTS {
 const canvasFormat: GPUTextureFormat = //"bgra8unorm-srgb";
   navigator.gpu?.getPreferredCanvasFormat() ?? "bgra8unorm";
 
-export const mainTexturePtr = CY.createTexture("mainTexture", {
+export const litTexturePtr = CY.createTexture("mainTexture", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
   format: "rgba16float",

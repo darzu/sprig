@@ -18,7 +18,11 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { stdRenderPipeline, postProcess } from "../render/std-pipeline.js";
+import {
+  stdRenderPipeline,
+  postProcess,
+  outlineRender,
+} from "../render/std-pipeline.js";
 import { shadowDbgDisplay, shadowPipeline } from "../render/std-shadow.js";
 import { initStars, renderStars } from "../render/xp-stars.js";
 import { assert } from "../test.js";
@@ -43,6 +47,7 @@ export function initHyperspaceGame(em: EntityManager) {
         // TODO(@darzu):
         shadowPipeline,
         stdRenderPipeline,
+        outlineRender,
         renderStars,
         // renderRopePipelineDesc,
         // boidRender,
