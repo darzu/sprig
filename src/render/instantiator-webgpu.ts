@@ -454,7 +454,9 @@ export function createCyResources(
       let depthStencilOpts: GPUDepthStencilState | undefined = undefined;
       if (p.depthStencil) {
         // TODO(@darzu): parameterize
-        const depthWriteEnabled = p.name === "renderStars" ? false : true;
+        // TODO(@darzu): hack
+        // const depthWriteEnabled = p.name === "renderStars" ? false : true;
+        let depthWriteEnabled = true;
         depthStencilOpts = {
           depthWriteEnabled,
           depthCompare: "less",

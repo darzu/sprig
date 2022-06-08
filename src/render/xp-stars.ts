@@ -33,7 +33,8 @@ export const initStars = CY.createComputePipeline("initStars", {
   fn main(@builtin(global_invocation_id) gId : vec3<u32>) {
     rand_seed = vec2<f32>(f32(gId.x));
     // starDatas.ms[gId.x].pos = vec3(0.0);
-    starDatas.ms[gId.x].pos = vec3(rand() - 0.5, rand() - 0.5, rand() - 0.5) * 1000.0;
+    starDatas.ms[gId.x].pos = vec3(rand() - 0.5, rand() - 0.5, rand() - 0.5) 
+      * 1000.0;
     starDatas.ms[gId.x].color = vec3(rand(), rand(), rand());
     starDatas.ms[gId.x].size = rand() * 3.0;
   }
