@@ -862,7 +862,7 @@ export function mkBindGroup(
 //  be dependant on prev-next pipelines. Do we need a "pass" abstraction?
 export interface BundleRenderer {
   render: (pipeline: CyRenderPipeline, bundle: GPURenderBundle) => void;
-  finish: () => void;
+  endPass: () => void;
 }
 export function startBundleRenderer(
   context: GPUCanvasContext,
@@ -918,8 +918,9 @@ export function startBundleRenderer(
     lastPipeline = p;
   }
 
-  function finish() {
+  function endPass() {
     renderPassEncoder?.end();
+    renderPassEncoder = undefined;
   }
 
   // TODO(@darzu): support multi-output
@@ -931,7 +932,7 @@ export function startBundleRenderer(
     );
   }
 
-  return { render, finish };
+  return { render, endPass };
 }
 
 export function doCompute(

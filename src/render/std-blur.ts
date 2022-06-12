@@ -21,9 +21,15 @@ const blurTextures = [0, 1].map((i) =>
 const blurInputTex = outlinedTexturePtr;
 export const blurOutputTex = blurTextures[1];
 
-const blurParamsStruct = createCyStruct({
-  isVertical: "u32",
-});
+const blurParamsStruct = createCyStruct(
+  {
+    isVertical: "u32",
+  },
+  {
+    // TODO(@darzu): pretty annoying we have to specify this here
+    isUniform: true,
+  }
+);
 const blurHorizParams = CY.createSingleton("blurHorizParams", {
   struct: blurParamsStruct,
   init: () => ({

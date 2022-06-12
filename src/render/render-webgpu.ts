@@ -202,11 +202,12 @@ export function createWebGPURenderer(
         bundleRenderer.render(p, cyRenderToBundle[p.ptr.name]);
       } else {
         // compute
+        bundleRenderer.endPass();
         doCompute(device, resources, commandEncoder, p);
       }
     }
 
-    bundleRenderer.finish();
+    bundleRenderer.endPass();
 
     // submit render passes to GPU
     device.queue.submit([commandEncoder.finish()]);

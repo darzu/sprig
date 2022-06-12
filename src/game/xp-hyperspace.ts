@@ -51,7 +51,7 @@ export function initHyperspaceGame(em: EntityManager) {
         outlineRender,
         renderStars,
         // TODO(@darzu): doesn't quite work yet
-        // ...blurPipelines,
+        ...blurPipelines,
         // renderRopePipelineDesc,
         // boidRender,
         // boidCanvasMerge,
