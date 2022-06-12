@@ -11,6 +11,7 @@ import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import {
   CyRenderPipelinePtr,
   CyCompPipelinePtr,
+  CyPipelinePtr,
 } from "../render/gpu-registry.js";
 import { cloneMesh, unshareProvokingVerticesWithMap } from "../render/mesh.js";
 import {
@@ -18,11 +19,10 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import {
-  stdRenderPipeline,
-  postProcess,
-  outlineRender,
-} from "../render/std-pipeline.js";
+import { blurPipelines } from "../render/std-blur.js";
+import { stdRenderPipeline } from "../render/std-pipeline.js";
+import { postProcess } from "../render/std-post.js";
+import { outlineRender } from "../render/std-outline.js";
 import { shadowDbgDisplay, shadowPipeline } from "../render/std-shadow.js";
 import { initStars, renderStars } from "../render/xp-stars.js";
 import { assert } from "../test.js";
@@ -43,12 +43,15 @@ export function initHyperspaceGame(em: EntityManager) {
     null,
     [AssetsDef, GlobalCursor3dDef, RendererDef],
     (_, res) => {
-      let renderPipelinesPtrs: CyRenderPipelinePtr[] = [
+      let pipelines: CyPipelinePtr[] = [
         // TODO(@darzu):
+        initStars,
         shadowPipeline,
         stdRenderPipeline,
         outlineRender,
         renderStars,
+        // TODO(@darzu): doesn't quite work yet
+        // ...blurPipelines,
         // renderRopePipelineDesc,
         // boidRender,
         // boidCanvasMerge,
@@ -57,18 +60,7 @@ export function initHyperspaceGame(em: EntityManager) {
         // positionDbg,
         postProcess,
       ];
-      let computePipelinesPtrs: CyCompPipelinePtr[] = [
-        // cmpClothPipelinePtr0,
-        // cmpClothPipelinePtr1,
-        // compRopePipelinePtr,
-        // boidComp0,
-        // boidComp1,
-        initStars,
-      ];
-      res.renderer.pipelines = [
-        ...computePipelinesPtrs,
-        ...renderPipelinesPtrs,
-      ];
+      res.renderer.pipelines = pipelines;
 
       // TODO(@darzu): call one-shot initStars
 

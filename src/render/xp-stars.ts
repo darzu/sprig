@@ -1,6 +1,6 @@
 import { CY } from "./gpu-registry.js";
 import { createCyStruct, CyToTS } from "./gpu-struct.js";
-import { outlinedTexturePtr } from "./std-pipeline.js";
+import { outlinedTexturePtr } from "./std-outline.js";
 import { mainDepthTex, litTexturePtr, sceneBufPtr } from "./std-scene.js";
 
 const StarStruct = createCyStruct({

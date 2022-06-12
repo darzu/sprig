@@ -17,6 +17,7 @@ import {
   PtrKind,
   PtrKindToPtrType,
   CyAttachment,
+  isRenderPipelinePtr,
 } from "./gpu-registry.js";
 import { MeshPool } from "./mesh-pool.js";
 import { BLACK } from "../game/assets.js";
@@ -96,6 +97,12 @@ export interface CyCompPipeline {
   // resourceLayouts: CyBufferPtrLayout<CyStructDesc>[];
   pipeline: GPUComputePipeline;
   bindGroupLayout: GPUBindGroupLayout;
+}
+
+export type CyPipeline = CyCompPipeline | CyRenderPipeline;
+
+export function isRenderPipeline(p: CyPipeline): p is CyRenderPipeline {
+  return isRenderPipelinePtr(p.ptr);
 }
 
 // TODO(@darzu): instead of just mushing together with the desc, have desc compose in

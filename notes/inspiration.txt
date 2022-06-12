@@ -91,3 +91,24 @@ Space:
   Cool sky: https://i.redd.it/yti0jh2obsg61.jpg
   Wall of galaxies: https://i.redd.it/7ikk5cnsm1o31.jpg
   Jupiter: https://i.redd.it/miemqssxtwl31.jpg
+  Aurora shader: https://www.shadertoy.com/view/XtGGRt
+
+Fear of:
+  space: https://www.reddit.com/r/Astrophobia/
+  deep water: https://www.reddit.com/r/thalassophobia/
+
+Astroneer crafting:
+  https://www.youtube.com/watch?v=oCwQtZcLrVs
+  Seemed both too complicated and too simple?
+  Congnative load:
+    too little -> boring
+    too much -> overwhelming
+  it's good to dive into apparent contradictions
+    first, make examples concrete
+  in a resource gathering game, you need "sinks" that take resources
+  "What do you want the player to do?"
+    systems/mechanics/features u want players to engage with
+    how do they compose to create gameplay possibilities
+  "Why is the player willing to do it?"
+    rewards, mastery, joy, fantasy fulfillment
+  regularly ask: "what is this for?"

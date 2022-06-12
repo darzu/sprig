@@ -180,8 +180,7 @@ export type CyPipelinePtr = CyCompPipelinePtr | CyRenderPipelinePtr;
 export function isRenderPipelinePtr(
   p: CyRenderPipelinePtr | CyCompPipelinePtr
 ): p is CyRenderPipelinePtr {
-  const k: keyof CyRenderPipelinePtr = "meshOpt";
-  return k in p;
+  return p.kind === "renderPipeline";
 }
 
 // REGISTERS

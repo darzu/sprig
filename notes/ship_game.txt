@@ -196,3 +196,8 @@ Just like Outer Worlds made a solar system feel tangible, traversable, and "smal
 Perhaps our game can make a galaxy feel tangible, traversable, and "small"
 In hyperspace, star clusters, nebula, black holes, can all feel like reachable, interactive elements
 
+How to get to hyperspace:
+trebuchet from planet surface launches you in orbit, you go ~half orbit, 
+then star lines stretch starwars style, you land with a splash onto the hyper
+ plane, planet is behind you in small
+

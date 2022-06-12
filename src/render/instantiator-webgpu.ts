@@ -857,12 +857,18 @@ export function mkBindGroup(
   return bindGroup;
 }
 
-export function renderBundles(
+// TODO(@darzu): the abstraction here feels off. We probably want a way to
+//  capture pipeline+bundle, and also the various attachment states shouldn't
+//  be dependant on prev-next pipelines. Do we need a "pass" abstraction?
+export interface BundleRenderer {
+  render: (pipeline: CyRenderPipeline, bundle: GPURenderBundle) => void;
+  finish: () => void;
+}
+export function startBundleRenderer(
   context: GPUCanvasContext,
   commandEncoder: GPUCommandEncoder,
-  resources: CyResources,
-  pipelineAndBundle: [CyRenderPipeline, GPURenderBundle][]
-) {
+  resources: CyResources
+): BundleRenderer {
   // render bundles
   // TODO(@darzu): ordering needs to be set by outside config
   // TODO(@darzu): same attachments need to be shared
@@ -870,9 +876,8 @@ export function renderBundles(
   let renderPassEncoder: GPURenderPassEncoder | undefined;
   let seenTextures: Set<string> = new Set();
   let seenDepthTextures: Set<string> = new Set();
-  for (let [p, bundle] of pipelineAndBundle) {
-    // console.log(`rendering ${p.ptr.name}`);
 
+  function render(p: CyRenderPipeline, bundle: GPURenderBundle) {
     if (!renderPassEncoder || !lastPipeline || !isOutputEq(lastPipeline, p)) {
       let colorAttachments: GPURenderPassColorAttachment[] = p.output.map(
         (o) => {
@@ -912,7 +917,10 @@ export function renderBundles(
 
     lastPipeline = p;
   }
-  renderPassEncoder?.end();
+
+  function finish() {
+    renderPassEncoder?.end();
+  }
 
   // TODO(@darzu): support multi-output
   function isOutputEq(a: CyRenderPipeline, b: CyRenderPipeline) {
@@ -922,6 +930,8 @@ export function renderBundles(
       a.ptr.depthStencil?.name === b.ptr.depthStencil?.name
     );
   }
+
+  return { render, finish };
 }
 
 export function doCompute(

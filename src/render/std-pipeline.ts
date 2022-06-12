@@ -1,8 +1,7 @@
 import { createRenderTextureToQuad } from "./gpu-helper.js";
-import { comparisonSamplerPtr, CY, linearSamplerPtr } from "./gpu-registry.js";
+import { comparisonSamplerPtr, CY } from "./gpu-registry.js";
 import {
   mainDepthTex,
-  canvasTexturePtr,
   litTexturePtr,
   meshPoolPtr,
   normalsTexturePtr,
@@ -98,55 +97,3 @@ export const { pipeline: positionDbg } = createRenderTextureToQuad(
   -0.8,
   -0.2
 );
-
-// TODO(@darzu): rg32uint "uint"
-// rg16uint "uint"
-
-// TODO(@darzu): rewrite post processing with compute shader?
-//  https://computergraphics.stackexchange.com/questions/54/when-is-a-compute-shader-more-efficient-than-a-pixel-shader-for-image-filtering
-//  result: yes, probably it is a good idea.
-
-export const outlinedTexturePtr = CY.createTexture("outlinesTexture", {
-  size: [100, 100],
-  onCanvasResize: (w, h) => [w, h],
-  // TODO(@darzu): probably only need 1 float 16 per pixel
-  format: "rgba16float",
-  init: () => undefined,
-  // TODO(@darzu): support anti-aliasing again
-});
-
-export const outlineRender = CY.createRenderPipeline("outlineRender", {
-  globals: [
-    { ptr: linearSamplerPtr, alias: "samp" },
-    { ptr: litTexturePtr, alias: "colorTex" },
-    { ptr: normalsTexturePtr, alias: "normTex" },
-    // { ptr: positionsTexturePtr, alias: "posTex" },
-    { ptr: surfacesTexturePtr, alias: "surfTex" },
-    { ptr: mainDepthTex, alias: "depthTex" },
-    sceneBufPtr,
-  ],
-  meshOpt: {
-    vertexCount: 6,
-    stepMode: "single-draw",
-  },
-  output: [outlinedTexturePtr],
-  shader: "std-outline",
-  shaderFragmentEntry: "frag_main",
-  shaderVertexEntry: "vert_main",
-});
-
-export const postProcess = CY.createRenderPipeline("postProcess", {
-  globals: [
-    { ptr: linearSamplerPtr, alias: "samp" },
-    { ptr: outlinedTexturePtr, alias: "colorTex" },
-    sceneBufPtr,
-  ],
-  meshOpt: {
-    vertexCount: 6,
-    stepMode: "single-draw",
-  },
-  output: [canvasTexturePtr],
-  shader: "std-post",
-  shaderFragmentEntry: "frag_main",
-  shaderVertexEntry: "vert_main",
-});
