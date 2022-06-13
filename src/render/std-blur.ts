@@ -47,6 +47,12 @@ export const blurPipelines = range(BLUR_ITERATIONS * 2).map((i) => {
   const inTex = i === 0 ? blurInputTex : blurTextures[(i + 1) % 2];
   const outTex = blurTextures[i % 2];
   const params = i % 2 === 0 ? blurHorizParams : blurVertiParams;
+
+  // TODO(@darzu):
+  let tileDim = 128;
+  let filterDim = 15;
+  let blockDim = tileDim - (filterDim - 1);
+
   // TODO(@darzu): we shouldn't need to create new pipelines since the
   //  shape isn't changing, just the parameters. We need some sort of
   //  parameterized pipeline thing.
@@ -54,11 +60,17 @@ export const blurPipelines = range(BLUR_ITERATIONS * 2).map((i) => {
     globals: [
       { ptr: linearSamplerPtr, alias: "samp" },
       { ptr: inTex, alias: "inTex" },
-      { ptr: outTex, alias: "outTex" },
+      { ptr: outTex, access: "write", alias: "outTex" },
       { ptr: params, alias: "params" },
     ],
     shader: "std-blur",
     shaderComputeEntry: "main",
-    workgroupCounts: [1, 1, 1],
+    // workgroupCounts: [1, 1, 1],
+    workgroupCounts: [
+      // TODO(@darzu): dynamic sizes?
+      Math.ceil(800 / blockDim),
+      Math.ceil(800 / 4),
+      1,
+    ],
   });
 });

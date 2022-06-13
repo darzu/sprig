@@ -927,3 +927,5 @@ HTML5 Game engine / maker:
 
 Diffusion-reaction ?:
   https://www.youtube.com/watch?v=BV9ny785UNc
+
+Maybe my career goals are to make software simpler

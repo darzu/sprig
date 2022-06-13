@@ -69,6 +69,12 @@ export const linearSamplerPtr = {
   kind: "sampler",
   name: "linearSampler",
 } as const;
+// // TODO(@darzu): not the right way to specify samplers!
+// // TODO(@darzu): wait, unfiltering sampler might make zero sense....
+// export const linearUnfilterSamplerPtr = {
+//   kind: "sampler",
+//   name: "linearUnfilterSampler",
+// } as const;
 export const nearestSamplerPtr = {
   kind: "sampler",
   name: "nearestSampler",
@@ -82,6 +88,7 @@ export type CySamplerPtr =
   | typeof linearSamplerPtr
   | typeof nearestSamplerPtr
   | typeof comparisonSamplerPtr;
+// | typeof linearUnfilterSamplerPtr;
 
 // MESH POOL
 export interface CyMeshPoolPtr<V extends CyStructDesc, U extends CyStructDesc>
@@ -216,7 +223,12 @@ export function createCyRegistry() {
     compPipeline: [],
     renderPipeline: [],
     meshPool: [],
-    sampler: [linearSamplerPtr, nearestSamplerPtr, comparisonSamplerPtr],
+    sampler: [
+      linearSamplerPtr,
+      // linearUnfilterSamplerPtr,
+      nearestSamplerPtr,
+      comparisonSamplerPtr,
+    ],
   };
 
   function registerCyResource<R extends CyResourcePtr>(ptr: R): R {

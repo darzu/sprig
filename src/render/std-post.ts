@@ -14,8 +14,8 @@ export const postProcess = CY.createRenderPipeline("postProcess", {
   globals: [
     { ptr: linearSamplerPtr, alias: "samp" },
     // TODO(@darzu): merge blur texture and color tex
-    // { ptr: blurOutputTex, alias: "colorTex" },
-    { ptr: outlinedTexturePtr, alias: "colorTex" },
+    { ptr: blurOutputTex, alias: "colorTex" },
+    // { ptr: outlinedTexturePtr, alias: "colorTex" },
     sceneBufPtr,
   ],
   meshOpt: {

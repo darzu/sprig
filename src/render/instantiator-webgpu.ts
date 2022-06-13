@@ -174,7 +174,10 @@ export function createCyResources(
   for (let s of cy.kindToPtrs.sampler) {
     // TODO(@darzu): other sampler features?
     let desc: GPUSamplerDescriptor;
-    if (s.name === "linearSampler") {
+    if (
+      s.name === "linearSampler"
+      // || s.name === "linearUnfilterSampler"
+    ) {
       desc = {
         minFilter: "linear",
         magFilter: "linear",
@@ -296,6 +299,10 @@ export function createCyResources(
             // TODO(@darzu): this seems hacky. is there a better way to determine this?
             //    the deferred rendering example uses unfilterable-float for reading gbuffers
             sampleType = "unfilterable-float";
+            // TODO(@darzu): HACK!! MUST GENERALIZEG
+            if (r.ptr.name.startsWith("blurTex")) {
+              sampleType = "float";
+            }
           } else {
             sampleType = "float";
           }
@@ -321,6 +328,13 @@ export function createCyResources(
             visibility: shaderStage,
             sampler: { type: "comparison" },
           };
+          // } else if (r.ptr.name === "linearUnfilterSampler") {
+          //   // TODO(@darzu): this definitely feels awkward
+          //   return {
+          //     binding: idx,
+          //     visibility: shaderStage,
+          //     sampler: { type: "non-filtering" },
+          //   };
         } else {
           return {
             binding: idx,
