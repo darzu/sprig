@@ -11,6 +11,7 @@ import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import {
   CyRenderPipelinePtr,
   CyCompPipelinePtr,
+  CyPipelinePtr,
 } from "../render/gpu-registry.js";
 import { cloneMesh, unshareProvokingVerticesWithMap } from "../render/mesh.js";
 import {
@@ -18,8 +19,12 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { stdRenderPipeline, postProcess } from "../render/std-pipeline.js";
+import { blurPipelines } from "../render/std-blur.js";
+import { stdRenderPipeline } from "../render/std-pipeline.js";
+import { postProcess } from "../render/std-post.js";
+import { outlineRender } from "../render/std-outline.js";
 import { shadowDbgDisplay, shadowPipeline } from "../render/std-shadow.js";
+import { initStars, renderStars } from "../render/xp-stars.js";
 import { assert } from "../test.js";
 import { uintToVec3unorm } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
@@ -38,10 +43,15 @@ export function initHyperspaceGame(em: EntityManager) {
     null,
     [AssetsDef, GlobalCursor3dDef, RendererDef],
     (_, res) => {
-      let renderPipelinesPtrs: CyRenderPipelinePtr[] = [
+      let pipelines: CyPipelinePtr[] = [
         // TODO(@darzu):
+        initStars,
         shadowPipeline,
         stdRenderPipeline,
+        outlineRender,
+        renderStars,
+        // TODO(@darzu): doesn't quite work yet
+        ...blurPipelines,
         // renderRopePipelineDesc,
         // boidRender,
         // boidCanvasMerge,
@@ -50,40 +60,46 @@ export function initHyperspaceGame(em: EntityManager) {
         // positionDbg,
         postProcess,
       ];
-      let computePipelinesPtrs: CyCompPipelinePtr[] = [
-        // cmpClothPipelinePtr0,
-        // cmpClothPipelinePtr1,
-        // compRopePipelinePtr,
-        // boidComp0,
-        // boidComp1,
-      ];
-      res.renderer.pipelines = [
-        ...computePipelinesPtrs,
-        ...renderPipelinesPtrs,
-      ];
+      res.renderer.pipelines = pipelines;
+
+      // TODO(@darzu): call one-shot initStars
 
       const g = createGhost(em);
       vec3.copy(g.position, [0, 1, -1.2]);
       quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
       g.controllable.sprintMul = 3;
       em.ensureComponentOn(g, ColorDef, [0.2, 0.6, 0.2]);
-      vec3.copy(g.cameraFollow.positionOffset, [0, 2, 8]);
+      vec3.copy(g.cameraFollow.positionOffset, [0, 0, 0]);
+      // vec3.copy(g.cameraFollow.positionOffset, [0, 2, 8]);
 
       // TODO(@darzu): this shouldn't be necessary
       const m2 = cloneMesh(res.assets.cube.mesh);
       em.ensureComponentOn(g, RenderableConstructDef, m2, true);
 
       {
-        vec3.copy(g.position, [4.46, 9.61, -10.52]);
-        quat.copy(g.rotation, [0.0, -1.0, 0.0, 0.04]);
-        // vec3.copy(g.cameraFollow.positionOffset, [0, 0, 0]);
-        g.cameraFollow.yawOffset = 0.0;
-        g.cameraFollow.pitchOffset = -0.106;
+        // vec3.copy(g.position, [4.46, 9.61, -10.52]);
+        // quat.copy(g.rotation, [0.0, -1.0, 0.0, 0.04]);
+        // // vec3.copy(g.cameraFollow.positionOffset, [0, 0, 0]);
+        // g.cameraFollow.yawOffset = 0.0;
+        // g.cameraFollow.pitchOffset = -0.106;
         // vec3.copy(g.position, [97.81, 0.58, -3.91]);
         // quat.copy(g.rotation, [0.0, -0.96, 0.0, 0.29]);
         // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
         // g.cameraFollow.yawOffset = 0.0;
         // g.cameraFollow.pitchOffset = -0.522;
+        // vec3.copy(g.position, [-6.6, 0.86, 17.55]);
+        // quat.copy(g.rotation, [0.0, -0.27, 0.0, 0.96]);
+        // vec3.copy(g.cameraFollow.positionOffset, [0.0, 2.0, 8.0]);
+        // g.cameraFollow.yawOffset = 0.0;
+        // g.cameraFollow.pitchOffset = -0.536;
+        // vec3.copy(g.position, [-7.56, 0.86, 18.55]);
+        // quat.copy(g.rotation, [0.0, 0.34, 0.0, 0.93]);
+        // g.cameraFollow.yawOffset = 0.0;
+        // g.cameraFollow.pitchOffset = 0.345;
+        vec3.copy(g.position, [-3.32, 6.69, 15.4]);
+        quat.copy(g.rotation, [0.0, -0.27, 0.0, 0.95]);
+        g.cameraFollow.yawOffset = 0.0;
+        g.cameraFollow.pitchOffset = 0.142;
       }
 
       const c = res.globalCursor3d.cursor()!;

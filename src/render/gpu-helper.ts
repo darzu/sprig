@@ -7,7 +7,7 @@ import {
   linearSamplerPtr,
 } from "./gpu-registry.js";
 import { createCyStruct } from "./gpu-struct.js";
-import { mainTexturePtr } from "./std-scene.js";
+import { litTexturePtr } from "./std-scene.js";
 
 export const QuadStruct = createCyStruct(
   {
@@ -55,7 +55,7 @@ export function createRenderTextureToQuad(
       vertexCount: 6,
       stepMode: "single-draw",
     },
-    output: [mainTexturePtr],
+    output: [litTexturePtr],
     shader: () => {
       return `
   struct VertexOutput {

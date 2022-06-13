@@ -17,6 +17,7 @@ import {
   PtrKind,
   PtrKindToPtrType,
   CyAttachment,
+  isRenderPipelinePtr,
 } from "./gpu-registry.js";
 import { MeshPool } from "./mesh-pool.js";
 import { BLACK } from "../game/assets.js";
@@ -67,7 +68,7 @@ export interface CyTexture {
 }
 export interface CyDepthTexture extends Omit<CyTexture, "ptr"> {
   ptr: CyDepthTexturePtr;
-  depthAttachment: () => GPURenderPassDepthStencilAttachment;
+  depthAttachment: (clear: boolean) => GPURenderPassDepthStencilAttachment;
 }
 
 export type PtrKindToResourceType = {
@@ -96,6 +97,13 @@ export interface CyCompPipeline {
   // resourceLayouts: CyBufferPtrLayout<CyStructDesc>[];
   pipeline: GPUComputePipeline;
   bindGroupLayout: GPUBindGroupLayout;
+  workgroupCounts: [number, number, number];
+}
+
+export type CyPipeline = CyCompPipeline | CyRenderPipeline;
+
+export function isRenderPipeline(p: CyPipeline): p is CyRenderPipeline {
+  return isRenderPipelinePtr(p.ptr);
 }
 
 // TODO(@darzu): instead of just mushing together with the desc, have desc compose in
@@ -381,11 +389,13 @@ export function createCyDepthTexture(
     depthAttachment,
   });
 
-  function depthAttachment(): GPURenderPassDepthStencilAttachment {
+  function depthAttachment(
+    clear: boolean
+  ): GPURenderPassDepthStencilAttachment {
     return {
       // TODO(@darzu): create these less often??
       view: tex.texture.createView(),
-      depthLoadOp: "clear",
+      depthLoadOp: clear ? "clear" : "load",
       depthClearValue: 1.0,
       depthStoreOp: "store",
       stencilLoadOp: hasStencil ? "clear" : undefined,

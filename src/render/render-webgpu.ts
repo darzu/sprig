@@ -1,6 +1,6 @@
 import { mat4 } from "../gl-matrix.js";
 import { assert } from "../test.js";
-import { CY, CyPipelinePtr } from "./gpu-registry.js";
+import { CY, CyPipelinePtr, isRenderPipelinePtr } from "./gpu-registry.js";
 import { MeshPool } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import { Renderer } from "./renderer-ecs.js";
@@ -8,6 +8,8 @@ import {
   CyRenderPipeline,
   CyCompPipeline,
   CySingleton,
+  CyPipeline,
+  isRenderPipeline,
 } from "./data-webgpu.js";
 import { VertexStruct, MeshUniformStruct, MeshHandleStd } from "./std-scene.js";
 import {
@@ -15,7 +17,7 @@ import {
   createCyResources,
   doCompute,
   onCanvasResizeAll,
-  renderBundles,
+  startBundleRenderer,
 } from "./instantiator-webgpu.js";
 import { SceneStruct, SceneTS } from "./std-scene.js";
 import { ShaderSet } from "./shader-loader.js";
@@ -122,32 +124,35 @@ export function createWebGPURenderer(
 
   function renderFrame(
     handles: MeshHandleStd[],
-    pipelines: CyPipelinePtr[]
+    pipelinePtrs: CyPipelinePtr[]
   ): void {
-    if (!pipelines.length) {
+    if (!pipelinePtrs.length) {
       console.warn("rendering without any pipelines specified");
       return;
     }
 
     let renderPipelines: CyRenderPipeline[] = [];
     let computePipelines: CyCompPipeline[] = [];
+    let pipelines: CyPipeline[] = [];
 
-    pipelines.forEach((p) => {
+    pipelinePtrs.forEach((p) => {
       if (p.kind === "renderPipeline") {
         const res = cyKindToNameToRes.renderPipeline[p.name];
         assert(res, `Resource not initialized: ${p.name}`);
         renderPipelines.push(res);
+        pipelines.push(res);
       } else {
         const res = cyKindToNameToRes.compPipeline[p.name];
         assert(res, `Resource not initialized: ${p.name}`);
         computePipelines.push(res);
+        pipelines.push(res);
       }
     });
 
     const didPipelinesChange =
-      lastPipelines.length !== pipelines.length ||
+      lastPipelines.length !== pipelinePtrs.length ||
       lastPipelines.reduce(
-        (p, n, i) => p || lastPipelines[i].name !== pipelines[i].name,
+        (p, n, i) => p || lastPipelines[i].name !== pipelinePtrs[i].name,
         false as boolean
       );
 
@@ -158,7 +163,8 @@ export function createWebGPURenderer(
       pool.updateUniform(m);
     }
 
-    // TODO(@darzu): more fine grain
+    // TODO(@darzu): not great detection, needs to be more precise and less
+    //    false positives
     needsRebundle =
       needsRebundle ||
       didPipelinesChange ||
@@ -180,21 +186,28 @@ export function createWebGPURenderer(
       updateRenderBundle(handles, renderPipelines);
     }
 
-    // start collecting our render commands for this frame
+    // start collecting our commands for this frame
     const commandEncoder = device.createCommandEncoder();
 
-    // run compute shaders
-    for (let p of computePipelines) {
-      doCompute(device, resources, commandEncoder, p);
-    }
-
-    // render
-    renderBundles(
+    const bundleRenderer = startBundleRenderer(
       context,
       commandEncoder,
-      resources,
-      renderPipelines.map((p) => [p, cyRenderToBundle[p.ptr.name]])
+      resources
     );
+
+    // run pipelines
+    for (let p of pipelines) {
+      if (isRenderPipeline(p)) {
+        // render
+        bundleRenderer.render(p, cyRenderToBundle[p.ptr.name]);
+      } else {
+        // compute
+        bundleRenderer.endPass();
+        doCompute(device, resources, commandEncoder, p);
+      }
+    }
+
+    bundleRenderer.endPass();
 
     // submit render passes to GPU
     device.queue.submit([commandEncoder.finish()]);

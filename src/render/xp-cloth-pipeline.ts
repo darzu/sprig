@@ -4,7 +4,7 @@ const CLOTH_SIZE = 10; // TODO(@darzu):
 
 const clothTexPtrDesc: Parameters<typeof CY.createTexture>[1] = {
   size: [CLOTH_SIZE, CLOTH_SIZE],
-  format: "rgba32float",
+  format: "rgba16float",
   init: () => {
     const clothData = new Float32Array(10 * 10 * 4);
     for (let x = 0; x < 10; x++) {
@@ -31,7 +31,7 @@ let clothReadIdx = 1;
 export const cloth_shader = () =>
   `
 // @group(0) @binding(1) var inTex : texture_2d<f32>;
-// @group(0) @binding(2) var outTex : texture_storage_2d<rgba32float, write>;
+// @group(0) @binding(2) var outTex : texture_storage_2d<rgba16float, write>;
 
 @stage(compute) @workgroup_size(10, 10)
 fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
@@ -56,6 +56,7 @@ export const cmpClothPipelinePtr0 = CY.createComputePipeline("clothComp0", {
     { ptr: clothTexPtr0, access: "read", alias: "inTex" },
     { ptr: clothTexPtr1, access: "write", alias: "outTex" },
   ],
+  workgroupCounts: [1, 1, 1],
   shader: cloth_shader,
   shaderComputeEntry: "main",
 });
@@ -64,6 +65,7 @@ export const cmpClothPipelinePtr1 = CY.createComputePipeline("clothComp1", {
     { ptr: clothTexPtr1, access: "read", alias: "inTex" },
     { ptr: clothTexPtr0, access: "write", alias: "outTex" },
   ],
+  workgroupCounts: [1, 1, 1],
   shader: cloth_shader,
   shaderComputeEntry: "main",
 });

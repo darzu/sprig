@@ -911,3 +911,21 @@ Name ideas:
   
 All the tools used by Satisfactory:
   https://www.youtube.com/watch?v=o6ao9-UIZIQ
+
+Daryl's pet theory about puzzlers: it's the default answer to game design when
+    you can't come up with compelling gameplay.
+    E.g. infinifactory and other zachtronic games, the factories don't contribute
+      to anything so just make some self contained challenge they need to solve.
+      Compare to something like factorio or space engineers where engineering solves
+        interesting gameplay goals
+    The Witness dev talks about puzzles being the default answer to drawing lines:
+      https://youtu.be/YdSdvIRkkDY?t=1315
+
+HTML5 Game engine / maker:
+  https://superpowers-html5.com/index.en.html
+  https://sparklinlabs.itch.io/craftstudio
+
+Diffusion-reaction ?:
+  https://www.youtube.com/watch?v=BV9ny785UNc
+
+Maybe my career goals are to make software simpler

@@ -129,6 +129,7 @@ export const SceneStruct = createCyStruct(
     dirLight3: "vec3<f32>",
     cameraPos: "vec3<f32>",
     playerPos: "vec2<f32>",
+    // TODO(@darzu): timeDelta vs totalTime
     time: "f32",
     maxSurfaceId: "u32",
   },
@@ -186,7 +187,7 @@ export function setupScene(): SceneTS {
 const canvasFormat: GPUTextureFormat = //"bgra8unorm-srgb";
   navigator.gpu?.getPreferredCanvasFormat() ?? "bgra8unorm";
 
-export const mainTexturePtr = CY.createTexture("mainTexture", {
+export const litTexturePtr = CY.createTexture("mainTexture", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
   format: "rgba16float",
@@ -225,7 +226,7 @@ export const canvasTexturePtr = CY.createTexture("canvasTexture", {
   init: () => undefined,
 });
 
-export const canvasDepthTex = CY.createDepthTexture("canvasDepth", {
+export const mainDepthTex = CY.createDepthTexture("canvasDepth", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
   format: "depth32float",

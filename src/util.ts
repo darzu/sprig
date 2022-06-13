@@ -192,6 +192,9 @@ export function dbgOnce(key: string): boolean {
 export function isArray(t: any): t is any[] {
   return Array.isArray(t);
 }
+export function isFunction(t: any): t is (...args: any[]) => any {
+  return typeof t === "function";
+}
 export function isNumber(t: any): t is number {
   return typeof t === "number";
 }

@@ -192,6 +192,11 @@ export type CyToTS<O extends CyStructDesc> = {
     : never;
 };
 
+// TODO(@darzu): we need seperate sizes, offsets / alignment for different
+//  usages, probably these 3:
+//      uniform (256byte align),
+///     storage array (standard align),
+//      vertex buffer (compact)
 export interface CyStruct<O extends CyStructDesc> {
   desc: O;
   memberCount: number;

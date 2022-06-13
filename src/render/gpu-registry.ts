@@ -45,6 +45,7 @@ export type CyBufferPtr<O extends CyStructDesc> =
 
 export interface CyTexturePtr extends CyResourcePtr {
   kind: "texture";
+  // TODO(@darzu): collapse size and onCanvasResize as XOR
   size: [number, number];
   onCanvasResize?: (
     canvasWidth: number,
@@ -69,6 +70,12 @@ export const linearSamplerPtr = {
   kind: "sampler",
   name: "linearSampler",
 } as const;
+// // TODO(@darzu): not the right way to specify samplers!
+// // TODO(@darzu): wait, unfiltering sampler might make zero sense....
+// export const linearUnfilterSamplerPtr = {
+//   kind: "sampler",
+//   name: "linearUnfilterSampler",
+// } as const;
 export const nearestSamplerPtr = {
   kind: "sampler",
   name: "nearestSampler",
@@ -82,6 +89,7 @@ export type CySamplerPtr =
   | typeof linearSamplerPtr
   | typeof nearestSamplerPtr
   | typeof comparisonSamplerPtr;
+// | typeof linearUnfilterSamplerPtr;
 
 // MESH POOL
 export interface CyMeshPoolPtr<V extends CyStructDesc, U extends CyStructDesc>
@@ -137,8 +145,11 @@ export function isResourcePtr(p: any): p is CyResourcePtr {
 
 export interface CyCompPipelinePtr extends CyResourcePtr {
   kind: "compPipeline";
-  globals: CyGlobalParam[]; // TODO(@darzu): rename "resources" to "globals"?
-  workgroupCounts?: [number, number, number];
+  globals: CyGlobalParam[];
+  // TODO(@darzu): dynamic workgroup counts feels hacky?
+  workgroupCounts:
+    | [number, number, number]
+    | ((canvasSize: [number, number]) => [number, number, number]);
   shaderComputeEntry: string;
   shader: (() => string) | ShaderName;
 }
@@ -180,8 +191,7 @@ export type CyPipelinePtr = CyCompPipelinePtr | CyRenderPipelinePtr;
 export function isRenderPipelinePtr(
   p: CyRenderPipelinePtr | CyCompPipelinePtr
 ): p is CyRenderPipelinePtr {
-  const k: keyof CyRenderPipelinePtr = "meshOpt";
-  return k in p;
+  return p.kind === "renderPipeline";
 }
 
 // REGISTERS
@@ -217,7 +227,12 @@ export function createCyRegistry() {
     compPipeline: [],
     renderPipeline: [],
     meshPool: [],
-    sampler: [linearSamplerPtr, nearestSamplerPtr, comparisonSamplerPtr],
+    sampler: [
+      linearSamplerPtr,
+      // linearUnfilterSamplerPtr,
+      nearestSamplerPtr,
+      comparisonSamplerPtr,
+    ],
   };
 
   function registerCyResource<R extends CyResourcePtr>(ptr: R): R {

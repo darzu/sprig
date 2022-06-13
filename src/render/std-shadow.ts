@@ -1,7 +1,7 @@
 import { createRenderTextureToQuad } from "./gpu-helper.js";
 import { CY, linearSamplerPtr } from "./gpu-registry.js";
 import { createCyStruct } from "./gpu-struct.js";
-import { mainTexturePtr, meshPoolPtr, sceneBufPtr } from "./std-scene.js";
+import { meshPoolPtr, sceneBufPtr } from "./std-scene.js";
 
 // NOTES:
 //  https://github.com/darzu/sprig/pull/3

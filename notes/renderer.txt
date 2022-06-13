@@ -811,3 +811,20 @@ Linearize depth:
       return (2.0 * near_plane * far_plane) / (far_plane + near_plane - z * (far_plane - near_plane));
   }
 
+
+Particles and techniques:
+  http://www.opengl-tutorial.org/intermediate-tutorials/billboards-particles/particles-instancing/
+  smooth particles: "test if the currently-drawn fragment is near the Z-Buffer. 
+    If so, the fragment is faded out."
+
+Bevy used destiny for inspiration on pipeline architecture:
+  https://advances.realtimerendering.com/destiny/gdc_2015/Tatarchuk_GDC_2015__Destiny_Renderer_web.pdf
+  https://www.youtube.com/watch?v=0nTDFLMLX9k
+
+Presentation on WebGPU by Austin Eng:
+  https://docs.google.com/presentation/d/1URnqb1Vuf2jPieHnt_eqXsPV_Es9Oog00_8LKZUdo6g/edit#slide=id.g482a63b4f5_0_494
+  https://docs.google.com/presentation/d/1Z_3-3V6FRsF8OJNeH7yc6UKtgXy90Ggff07V9Z6uo6U/edit#slide=id.g644e7765b4b81e56_540
+  
+UPenn class on GPU programming:
+  https://cis565-fall-2021.github.io
+    https://github.com/chetan-parthiban/Project5-WebGL-Forward-Plus-and-Clustered-Deferred

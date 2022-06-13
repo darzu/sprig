@@ -1,7 +1,7 @@
 import { vec3 } from "../gl-matrix.js";
 import { CY } from "./gpu-registry.js";
 import { createCyStruct, CyToTS } from "./gpu-struct.js";
-import { sceneBufPtr, mainTexturePtr, canvasDepthTex } from "./std-scene.js";
+import { sceneBufPtr, litTexturePtr, mainDepthTex } from "./std-scene.js";
 
 export const RopeStickStruct = createCyStruct({
   aIdx: "u32",
@@ -122,6 +122,7 @@ const ropeStickBufPtr = CY.createArray("ropeStick", {
 export const compRopePipelinePtr = CY.createComputePipeline("ropeComp", {
   globals: [sceneBufPtr, ropePointBufPtr, ropeStickBufPtr],
   shaderComputeEntry: "main",
+  workgroupCounts: [1, 1, 1],
   shader: () =>
     `
 // todo: pick workgroup size based on max rope system?
@@ -243,8 +244,8 @@ export const renderRopePipelineDesc = CY.createRenderPipeline("renderRope", {
   },
   shaderVertexEntry: "vert_main",
   shaderFragmentEntry: "frag_main",
-  output: [mainTexturePtr],
-  depthStencil: canvasDepthTex,
+  output: [litTexturePtr],
+  depthStencil: mainDepthTex,
   shader: () =>
     `
 struct VertexOutput {

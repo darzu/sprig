@@ -340,7 +340,7 @@ interface GPUCanvasConfiguration {
   format: GPUTextureFormat;
   usage?: GPUTextureUsageFlags;
   colorSpace?: GPUPredefinedColorSpace;
-  compositingAlphaMode?: GPUCanvasCompositingAlphaMode;
+  alphaMode?: GPUCanvasCompositingAlphaMode;
   size?: GPUExtent3D;
 }
 

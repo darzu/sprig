@@ -178,3 +178,39 @@ Programming is all about abstraction engineering
       how good your abstractions are
   You're often creating abstractions even when you don't think you are
     each function is a micro-abstraction
+  
+  Start unabstracted for as long as you can,
+    then create the simplest abstractions that might possibly work
+      encapsulation first
+    then frankenstein glob onto your abstractions to support scenarios u need
+      track everywhere the abstractions are failing you, 
+      and ideas about better abstraction as they come to you
+      don't try to re-abstract too often! You'll spin your wheels for little gain
+        experience is the turbo fuel of abstraction, u can abstract so much faster and better with it
+        our brains can try to guess the future, but it's better to just know the past
+          is abstraction primarily to serve the past or the future of software?
+            it's to serve tasks u did in the past that you know you'll need to do in the future
+            don't try to increase the scope of what's possible with abstractions, 
+              do this with core functionality instead
+    once you've accumulated enough cruft and experience, try for a V2 abstraction,
+      again try for the simplest thing that might possibly work
+      experience will inform u of options that won't work
+    don't let the abstraction take on too much life of it's own
+      look at the balance of code: is it supporting core functionality (pure-ish functions),
+        or is it in support of an abstraction?
+      the best abstractions wrap core functionality as thinly as possible
+      ideally you identify new core functionality that accumulates code lines, not the abstraction
+  Core functionality / un-abstracted machinery is what code is all about
+    abstractions help you orchestrate, reason about, and compose core functionality
+  Inheritence should be pretty low down on your toolbelt,
+    it's not in the same ballpark as composition
+
+Abstractions and dependencies:
+  The set of abstractions some dependency uses might not fit ur usecase
+  Better maybe to unroll their abstractions, tree shake, and take only the code
+    that is relevant to solving your problem
+  Then re-abstract as needed to fit ur project's needs
+  Problem with dependencies: 
+    you're not only taking on all their code (transitively!), 
+    you're also taking on their abstractions
+  Abstractions are different from functionality
