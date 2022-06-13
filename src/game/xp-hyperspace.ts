@@ -69,7 +69,8 @@ export function initHyperspaceGame(em: EntityManager) {
       quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
       g.controllable.sprintMul = 3;
       em.ensureComponentOn(g, ColorDef, [0.2, 0.6, 0.2]);
-      vec3.copy(g.cameraFollow.positionOffset, [0, 2, 8]);
+      vec3.copy(g.cameraFollow.positionOffset, [0, 0, 0]);
+      // vec3.copy(g.cameraFollow.positionOffset, [0, 2, 8]);
 
       // TODO(@darzu): this shouldn't be necessary
       const m2 = cloneMesh(res.assets.cube.mesh);
@@ -91,11 +92,14 @@ export function initHyperspaceGame(em: EntityManager) {
         // vec3.copy(g.cameraFollow.positionOffset, [0.0, 2.0, 8.0]);
         // g.cameraFollow.yawOffset = 0.0;
         // g.cameraFollow.pitchOffset = -0.536;
-        vec3.copy(g.position, [-7.56, 0.86, 18.55]);
-        quat.copy(g.rotation, [0.0, 0.34, 0.0, 0.93]);
-        vec3.copy(g.cameraFollow.positionOffset, [0.0, 2.0, 8.0]);
+        // vec3.copy(g.position, [-7.56, 0.86, 18.55]);
+        // quat.copy(g.rotation, [0.0, 0.34, 0.0, 0.93]);
+        // g.cameraFollow.yawOffset = 0.0;
+        // g.cameraFollow.pitchOffset = 0.345;
+        vec3.copy(g.position, [-3.32, 6.69, 15.4]);
+        quat.copy(g.rotation, [0.0, -0.27, 0.0, 0.95]);
         g.cameraFollow.yawOffset = 0.0;
-        g.cameraFollow.pitchOffset = 0.345;
+        g.cameraFollow.pitchOffset = 0.142;
       }
 
       const c = res.globalCursor3d.cursor()!;

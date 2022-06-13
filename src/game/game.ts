@@ -70,6 +70,7 @@ import { MeDef } from "../net/components.js";
 import { stdRenderPipeline } from "../render/std-pipeline.js";
 import { postProcess } from "../render/std-post.js";
 import { shadowPipeline } from "../render/std-shadow.js";
+import { outlineRender } from "../render/std-outline.js";
 
 export const ScoreDef = EM.defineComponent("score", () => {
   return {
@@ -218,7 +219,12 @@ export function initShipGame(em: EntityManager, hosting: boolean) {
   em.registerOneShotSystem(null, [MeDef], () => createPlayer(em));
 
   em.registerOneShotSystem(null, [RendererDef], (_, res) => {
-    res.renderer.pipelines = [shadowPipeline, stdRenderPipeline, postProcess];
+    res.renderer.pipelines = [
+      shadowPipeline,
+      stdRenderPipeline,
+      outlineRender,
+      postProcess,
+    ];
   });
 }
 
