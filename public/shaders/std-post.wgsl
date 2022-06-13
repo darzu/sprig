@@ -34,6 +34,11 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
 @stage(fragment)
 fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   var color = textureSample(colorTex, samp, uv).rgb;
+  let bloom = textureSample(bloomTex, samp, uv).rgb;
+
+  // color += pow(bloom, vec3(2.0));
+  color += bloom; // * 10.0;
+  // color = max(color, bloom);
 
   // vignette
   let vigUV = uv * (1.0 - uv.yx);

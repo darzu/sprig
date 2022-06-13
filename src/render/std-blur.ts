@@ -2,6 +2,7 @@ import { range } from "../util.js";
 import { CY, linearSamplerPtr } from "./gpu-registry.js";
 import { createCyStruct } from "./gpu-struct.js";
 import { outlinedTexturePtr } from "./std-outline.js";
+import { emissionTexturePtr } from "./xp-stars.js";
 
 // TODO(@darzu): we shouldn't use rgba16float everywhere, probably way too much
 //  memory usage
@@ -24,7 +25,8 @@ const blurTextures = [0, 1].map((i) =>
 );
 
 // TODO(@darzu): this should be parameterized
-const blurInputTex = outlinedTexturePtr;
+const blurInputTex = emissionTexturePtr;
+// const blurInputTex = outlinedTexturePtr;
 export const blurOutputTex = blurTextures[1];
 
 const blurParamsStruct = createCyStruct(

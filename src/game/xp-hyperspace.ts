@@ -86,11 +86,16 @@ export function initHyperspaceGame(em: EntityManager) {
         // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
         // g.cameraFollow.yawOffset = 0.0;
         // g.cameraFollow.pitchOffset = -0.522;
-        vec3.copy(g.position, [-6.6, 0.86, 17.55]);
-        quat.copy(g.rotation, [0.0, -0.27, 0.0, 0.96]);
+        // vec3.copy(g.position, [-6.6, 0.86, 17.55]);
+        // quat.copy(g.rotation, [0.0, -0.27, 0.0, 0.96]);
+        // vec3.copy(g.cameraFollow.positionOffset, [0.0, 2.0, 8.0]);
+        // g.cameraFollow.yawOffset = 0.0;
+        // g.cameraFollow.pitchOffset = -0.536;
+        vec3.copy(g.position, [-7.56, 0.86, 18.55]);
+        quat.copy(g.rotation, [0.0, 0.34, 0.0, 0.93]);
         vec3.copy(g.cameraFollow.positionOffset, [0.0, 2.0, 8.0]);
         g.cameraFollow.yawOffset = 0.0;
-        g.cameraFollow.pitchOffset = -0.536;
+        g.cameraFollow.pitchOffset = 0.345;
       }
 
       const c = res.globalCursor3d.cursor()!;

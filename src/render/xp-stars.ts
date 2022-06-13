@@ -18,6 +18,13 @@ const starData = CY.createArray("starData", {
   // forceUsage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
 });
 
+export const emissionTexturePtr = CY.createTexture("emissionTexture", {
+  size: [100, 100],
+  onCanvasResize: (w, h) => [w, h],
+  format: "rgba16float",
+  init: () => undefined,
+});
+
 export const initStars = CY.createComputePipeline("initStars", {
   globals: [starData],
   shaderComputeEntry: "main",
@@ -111,16 +118,29 @@ export const renderStars = CY.createRenderPipeline("renderStars", {
     return output;
   }
   
+  struct FragOut {
+    @location(0) emission: vec4<f32>,
+    @location(1) color: vec4<f32>,
+  }
+
   @stage(fragment)
-  fn frag_main(input: VertexOutput) -> @location(0) vec4<f32> {
+  fn frag_main(input: VertexOutput) -> FragOut {
     let dist = length(input.uv - vec2(0.5));
     // TODO: what's the perf difference of alpha vs discard?
     if (dist > 0.5) {
       discard;
     }
-    // let alpha = f32(dist < 0.5);
-    // return vec4<f32>(0.0, 1.0, 0.0, 1.0);
-    return vec4<f32>(input.color, 1.0);
+
+    // let invDist = 0.5 / dist;
+    // // let invDist = 1.0 / max(dist - 0.1, 0.001);
+    // let color = input.color * invDist;
+
+    var out: FragOut;
+
+    out.emission = vec4<f32>(input.color * 0.5, 1.0);
+    out.color = vec4<f32>(input.color * 2.0, 1.0);
+
+    return out;
   }
   `,
   shaderVertexEntry: "vert_main",
@@ -130,5 +150,5 @@ export const renderStars = CY.createRenderPipeline("renderStars", {
     stepMode: "single-draw",
   },
   depthStencil: mainDepthTex,
-  output: [outlinedTexturePtr],
+  output: [emissionTexturePtr, outlinedTexturePtr],
 });
