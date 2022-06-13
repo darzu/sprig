@@ -43,25 +43,6 @@ export function initHyperspaceGame(em: EntityManager) {
     null,
     [AssetsDef, GlobalCursor3dDef, RendererDef],
     (_, res) => {
-      let pipelines: CyPipelinePtr[] = [
-        // TODO(@darzu):
-        initStars,
-        shadowPipeline,
-        stdRenderPipeline,
-        outlineRender,
-        renderStars,
-        // TODO(@darzu): doesn't quite work yet
-        ...blurPipelines,
-        // renderRopePipelineDesc,
-        // boidRender,
-        // boidCanvasMerge,
-        // shadowDbgDisplay,
-        // normalDbg,
-        // positionDbg,
-        postProcess,
-      ];
-      res.renderer.pipelines = pipelines;
-
       // TODO(@darzu): call one-shot initStars
 
       const g = createGhost(em);
@@ -204,11 +185,33 @@ export function initHyperspaceGame(em: EntityManager) {
 
   // let line: ReturnType<typeof drawLine>;
 
+  let once = true;
+
   em.registerSystem(
     [OceanDef],
     [GlobalCursor3dDef, RendererDef, InputsDef, TextDef],
     (cs, res) => {
-      if (!cs.length) return;
+      if (once) {
+        res.renderer.pipelines = [initStars];
+        once = false;
+      } else {
+        res.renderer.pipelines = [
+          // TODO(@darzu):
+          shadowPipeline,
+          stdRenderPipeline,
+          outlineRender,
+          renderStars,
+          // TODO(@darzu): doesn't quite work yet
+          ...blurPipelines,
+          // renderRopePipelineDesc,
+          // boidRender,
+          // boidCanvasMerge,
+          // shadowDbgDisplay,
+          // normalDbg,
+          // positionDbg,
+          postProcess,
+        ];
+      }
     },
     "hyperspaceGame"
   );
