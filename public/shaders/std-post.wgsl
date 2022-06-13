@@ -35,11 +35,17 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
 fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   var color = textureSample(colorTex, samp, uv).rgb;
   let bloom = textureSample(bloomTex, samp, uv).rgb;
+  let depth = textureSample(depthTex, samp, uv);
+
+  // fog
+  // TODO: hard to evaluate fog w/o objects to fade in and out
+  // color = mix(color, vec3(0.014), pow(depth, 500.0));
 
   // color += pow(bloom, vec3(2.0));
   // color = max(color, bloom);
   color += bloom; // * 10.0;
   // color = bloom;
+
 
   // vignette
   let vigUV = uv * (1.0 - uv.yx);

@@ -11,6 +11,7 @@ const StarStruct = createCyStruct({
 export type StarTS = CyToTS<typeof StarStruct.desc>;
 
 let NUM_STARS = 1000;
+// let NUM_STARS = 1000000;
 
 const starData = CY.createArray("starData", {
   struct: StarStruct,
@@ -43,6 +44,7 @@ export const initStars = CY.createComputePipeline("initStars", {
     // starDatas.ms[gId.x].pos = vec3(0.0);
     starDatas.ms[gId.x].pos = vec3(rand() - 0.5, rand() - 0.5, rand() - 0.5) 
       * 1000.0;
+      // * 3000.0;
     starDatas.ms[gId.x].color = vec3(rand(), rand(), rand());
     starDatas.ms[gId.x].size = rand() * 3.0;
   }
