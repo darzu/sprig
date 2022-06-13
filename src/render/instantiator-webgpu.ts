@@ -296,16 +296,11 @@ export function createCyResources(
             sampleType = "uint";
           } else if (r.ptr.format.endsWith("sint")) {
             sampleType = "sint";
-          } else if ((usage & GPUTextureUsage.STORAGE_BINDING) !== 0) {
-            // TODO(@darzu): this seems hacky. is there a better way to determine this?
-            //    the deferred rendering example uses unfilterable-float for reading gbuffers
-            sampleType = "unfilterable-float";
-            // TODO(@darzu): HACK!! MUST GENERALIZEG
-            if (r.ptr.name.startsWith("blurTex")) {
-              sampleType = "float";
-            }
           } else {
-            sampleType = "float";
+            // TODO(@darzu): use this to table decide filterable?
+            //  https://gpuweb.github.io/gpuweb/#plain-color-formats
+            const isFilterable = true;
+            sampleType = isFilterable ? "float" : "unfilterable-float";
           }
           return {
             binding: idx,

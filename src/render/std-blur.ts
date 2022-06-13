@@ -6,6 +6,12 @@ import { outlinedTexturePtr } from "./std-outline.js";
 // TODO(@darzu): we shouldn't use rgba16float everywhere, probably way too much
 //  memory usage
 
+// TODO(@darzu): PERF: this blur technique is actually quite expensive. At this
+//  point in the code, iteractions > 5 start causing FPS to drop below 60 on my M1
+//  And we have a lot more we want to do with our GPU time budgets.
+//  A better way might be mip-mapping or just downscaling then upsampling:
+//    https://www.gamasutra.com/view/feature/3102/four_tricks_for_fast_blurring_in_.php?print=1
+
 const BLUR_ITERATIONS = 2;
 
 const blurTextures = [0, 1].map((i) =>
