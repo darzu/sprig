@@ -66,11 +66,14 @@ export const blurPipelines = range(BLUR_ITERATIONS * 2).map((i) => {
     shader: "std-blur",
     shaderComputeEntry: "main",
     // workgroupCounts: [1, 1, 1],
-    workgroupCounts: [
-      // TODO(@darzu): dynamic sizes?
-      Math.ceil(800 / blockDim),
-      Math.ceil(800 / 4),
-      1,
-    ],
+    // TODO(@darzu): this isn't true to original yet, got to flip/flop w/h
+    workgroupCounts: ([w, h]) => [Math.ceil(w / blockDim), Math.ceil(h / 4), 1],
+    // workgroupCounts: [
+    //   // TODO(@darzu): HACK. need sizes based on
+    //   // TODO(@darzu): dynamic sizes?
+    //   Math.ceil(800 / blockDim),
+    //   Math.ceil(800 / 4),
+    //   1,
+    // ],
   });
 });

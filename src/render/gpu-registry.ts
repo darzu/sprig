@@ -45,6 +45,7 @@ export type CyBufferPtr<O extends CyStructDesc> =
 
 export interface CyTexturePtr extends CyResourcePtr {
   kind: "texture";
+  // TODO(@darzu): collapse size and onCanvasResize as XOR
   size: [number, number];
   onCanvasResize?: (
     canvasWidth: number,
@@ -144,8 +145,11 @@ export function isResourcePtr(p: any): p is CyResourcePtr {
 
 export interface CyCompPipelinePtr extends CyResourcePtr {
   kind: "compPipeline";
-  globals: CyGlobalParam[]; // TODO(@darzu): rename "resources" to "globals"?
-  workgroupCounts: [number, number, number];
+  globals: CyGlobalParam[];
+  // TODO(@darzu): dynamic workgroup counts feels hacky?
+  workgroupCounts:
+    | [number, number, number]
+    | ((canvasSize: [number, number]) => [number, number, number]);
   shaderComputeEntry: string;
   shader: (() => string) | ShaderName;
 }

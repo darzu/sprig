@@ -6,6 +6,7 @@ import {
   pluralize,
   uncapitalize,
   isString,
+  isFunction,
 } from "../util.js";
 import {
   PtrKindToResourceType,
@@ -685,6 +686,9 @@ export function createCyResources(
         ptr: p,
         pipeline: compPipeline,
         bindGroupLayout: resBindGroupLayout,
+        workgroupCounts: isFunction(p.workgroupCounts)
+          ? p.workgroupCounts([100, 100])
+          : p.workgroupCounts,
       };
       kindToNameToRes.compPipeline[p.name] = cyPipeline;
     }
@@ -970,8 +974,7 @@ export function doCompute(
   );
 
   compPassEncoder.setBindGroup(0, resBindGroup);
-  // TODO(@darzu): parameterize workgroup count
-  compPassEncoder.dispatchWorkgroups(...pipeline.ptr.workgroupCounts);
+  compPassEncoder.dispatchWorkgroups(...pipeline.workgroupCounts);
   compPassEncoder.end();
 }
 
@@ -998,6 +1001,12 @@ export function onCanvasResizeAll(
     if (tex.ptr.onCanvasResize) {
       const newSize = tex.ptr.onCanvasResize(canvasSize[0], canvasSize[1]);
       tex.resize(newSize[0], newSize[1]);
+    }
+  }
+
+  for (let comp of Object.values(resources.kindToNameToRes.compPipeline)) {
+    if (isFunction(comp.ptr.workgroupCounts)) {
+      comp.workgroupCounts = comp.ptr.workgroupCounts(canvasSize);
     }
   }
 }

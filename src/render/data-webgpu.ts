@@ -97,6 +97,7 @@ export interface CyCompPipeline {
   // resourceLayouts: CyBufferPtrLayout<CyStructDesc>[];
   pipeline: GPUComputePipeline;
   bindGroupLayout: GPUBindGroupLayout;
+  workgroupCounts: [number, number, number];
 }
 
 export type CyPipeline = CyCompPipeline | CyRenderPipeline;
