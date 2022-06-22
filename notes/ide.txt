@@ -18,3 +18,9 @@ Multiplayer netcode debugger:
   "okay, which properties?"
   "color, location"
   "looks like ColorDef is only synced and creation and LocationDef is only modified via this event <>"
+
+entity debugger:
+  pause game, enter debugger
+  on hover, show which components a given entity has 
+    and which systems that qualifies them for
+  

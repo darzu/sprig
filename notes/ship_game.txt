@@ -201,3 +201,19 @@ trebuchet from planet surface launches you in orbit, you go ~half orbit,
 then star lines stretch starwars style, you land with a splash onto the hyper
  plane, planet is behind you in small
 
+At one point while playing Dyson Sphere I told Sami that the cubes 
+  were carrying "science". And she was like "woah that's so cool! are 
+  there any other abstract concepts as resources?" And I had to be like
+  "no", and she was a lot less interested.
+  There's definitely something catchy and fun about having concepts-as-things
+  like "hours" and just the whole flavor of Sunless Skies.
+
+narration flavor:
+"
+This is the realm of the gods and we do not belong.
+It is not that they punish us for trespassing, it is that we don't even understand the rules of the board that is playing out.
+We've stumbled into this land without comprehending what it is we do and you would be wise to get in, get your Continuum and get out.
+And you have to hope that when you get out your loved ones aren't thousands
+of years dead, or that you aren't stuck adrift in the infinite void between
+flecks of matter.
+"

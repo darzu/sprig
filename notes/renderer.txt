@@ -828,3 +828,28 @@ Presentation on WebGPU by Austin Eng:
 UPenn class on GPU programming:
   https://cis565-fall-2021.github.io
     https://github.com/chetan-parthiban/Project5-WebGL-Forward-Plus-and-Clustered-Deferred
+
+What are mesh shaders?
+  https://www.reddit.com/r/gamedev/comments/fn1byx/whats_is_mesh_shading/
+  Mesh shaders are basically compute shaders that can output triangles (<256) by themselves.
+  https://www.youtube.com/watch?v=CFXKTXtil34
+  https://blog.siggraph.org/2021/04/mesh-shaders-release-the-intrinsic-power-of-a-gpu.html/
+  WebGPU support (post v1):
+    https://github.com/gpuweb/gpuweb/issues/3015
+  Likely emulatable with compute shaders
+
+Some tips on improving Unity's default look:
+  https://www.youtube.com/watch?v=f6zUot73-gg
+
+Destiny's render engine:
+  https://www.youtube.com/watch?v=0nTDFLMLX9k
+  Per object, they seperate:
+    game object state (simulation stuff)
+    visibility state
+    render state
+  once per frame they run visibility then extract render state based
+    only on what is visible
+  views: player, shadow, overhead, etc
+    == render job chain unit
+    visibility, extract, prepare, submit
+  we should really have GPU counters for perf measurement

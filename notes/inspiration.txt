@@ -112,3 +112,7 @@ Astroneer crafting:
   "Why is the player willing to do it?"
     rewards, mastery, joy, fantasy fulfillment
   regularly ask: "what is this for?"
+
+"Platformer Toolkit Video Essay":
+  https://gmtk.itch.io/platformer-toolkit
+  
