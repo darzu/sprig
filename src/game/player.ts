@@ -224,6 +224,7 @@ export function registerPlayerSystems(em: EntityManager) {
         camera,
         physicsResults: { checkRay },
       } = res;
+      // console.log("stepPlayers");
       //console.log(`${players.length} players, ${hats.length} hats`);
 
       for (let p of players) {

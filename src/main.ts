@@ -97,6 +97,17 @@ function callFixedTimestepSystems() {
     EM.callSystem("clothSandbox");
   }
   if (GAME === "hyperspace") {
+    EM.callSystem("startGame");
+    EM.callSystem("shipHealthCheck");
+    EM.callSystem("easeRudder");
+    EM.callSystem("shipMove");
+    EM.callSystem("shipScore");
+    EM.callSystem("boatPropsBuild");
+    EM.callSystem("cannonPropsBuild");
+    EM.callSystem("gemPropsBuild");
+    EM.callSystem("rudderPropsBuild");
+    EM.callSystem("shipPropsBuild");
+
     EM.callSystem("hyperspaceGame");
   }
   EM.callSystem("updateBullets");
