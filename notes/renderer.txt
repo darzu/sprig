@@ -853,3 +853,32 @@ Destiny's render engine:
     == render job chain unit
     visibility, extract, prepare, submit
   we should really have GPU counters for perf measurement
+
+VFX:
+  How (not) to create textures for VFX: https://www.youtube.com/watch?v=KaNDezgsg4M
+  mentions: Jason keyser, alex redfish, 1mafx, ducvu fx
+  texture types: 
+    sprite, 
+    sprite sheet, 
+    flip book, 
+    volumetric 
+  texture uses: 
+    color, 
+    masks (incl erosion, disolve), 
+    LUT (colorize grayscale), 
+    vector maps (distort UVs)
+  texture creation:
+    handmade (paint: 🏃‍♀️, photo bash: ⚡️)
+    procedural (substance designer: 🏃‍♀️, simple tools: ⚡️),
+    simulate (blender: 🐌, houdini: 🐌, embergen: 🏃‍♀️)
+    use existing: ⚡️⚡️ (texture packs, brushes)
+  https://mebiusbox.github.io/contents/EffectTextureMaker/ (very cool!)
+  https://www.escapemotions.com/products/flamepainter/try/
+  talk resources:
+    https://simonschreibt.de
+
+Doom 3 glow:
+  https://simonschreibt.de/gat/doom-3-volumetric-glow
+  http://yzergame.com/doomGlare.html
+    https://www.reddit.com/r/gamedev/comments/1wukvd/doom_3_glare_effect_in_c/
+    https://gist.github.com/TiliSleepStealer/e6773e7f9b4a873cf1bffe4f9e11478f
