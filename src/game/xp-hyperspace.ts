@@ -17,6 +17,7 @@ import { MeDef } from "../net/components.js";
 import { createPlayer } from "./player.js";
 import { createShip } from "./ship.js";
 import { GameStateDef } from "./gamestate.js";
+import { unwrapPipeline } from "../render/pipelines/xp-uv-unwrap.js";
 
 const OceanDef = EM.defineComponent("ocean", () => true);
 
@@ -61,8 +62,8 @@ export function initHyperspaceGame(em: EntityManager) {
     [GlobalCursor3dDef, RendererDef, InputsDef, TextDef],
     (cs, res) => {
       if (once) {
-        // one-time compute jobs
-        res.renderer.pipelines = [initStars];
+        // one-time compute and render jobs
+        res.renderer.pipelines = [initStars, unwrapPipeline];
         once = false;
       } else {
         // steady state rendering

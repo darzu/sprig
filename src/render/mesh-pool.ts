@@ -112,7 +112,7 @@ function logMeshPoolStats(opts: MeshPoolOpts<any, any>) {
   );
 }
 
-// TODO(@darzu): scope?
+// TODO(@darzu): HACK. should be scoped; removed as global
 let nextMeshId = 1;
 
 export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
