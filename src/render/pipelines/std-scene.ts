@@ -1,9 +1,9 @@
-import { vec3, mat4 } from "../gl-matrix.js";
-import { computeTriangleNormal } from "../utils-3d.js";
-import { CY } from "./gpu-registry.js";
-import { createCyStruct, CyToTS } from "./gpu-struct.js";
-import { MeshHandle } from "./mesh-pool.js";
-import { getAABBFromMesh, Mesh } from "./mesh.js";
+import { vec3, mat4 } from "../../gl-matrix.js";
+import { computeTriangleNormal } from "../../utils-3d.js";
+import { CY } from "../gpu-registry.js";
+import { createCyStruct, CyToTS } from "../gpu-struct.js";
+import { MeshHandle } from "../mesh-pool.js";
+import { getAABBFromMesh, Mesh } from "../mesh.js";
 
 export const MAX_MESHES = 20000;
 export const MAX_VERTICES = 21844;

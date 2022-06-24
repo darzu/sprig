@@ -7,7 +7,7 @@ import {
   linearSamplerPtr,
 } from "./gpu-registry.js";
 import { createCyStruct } from "./gpu-struct.js";
-import { litTexturePtr } from "./std-scene.js";
+import { litTexturePtr } from "./pipelines/std-scene.js";
 
 export const QuadStruct = createCyStruct(
   {

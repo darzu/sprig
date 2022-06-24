@@ -1,4 +1,4 @@
-import { CY, linearSamplerPtr } from "./gpu-registry.js";
+import { CY, linearSamplerPtr } from "../gpu-registry.js";
 import { blurOutputTex } from "./std-blur.js";
 import { outlinedTexturePtr } from "./std-outline.js";
 import { sceneBufPtr, canvasTexturePtr, mainDepthTex } from "./std-scene.js";

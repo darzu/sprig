@@ -11,7 +11,11 @@ import {
   CyPipeline,
   isRenderPipeline,
 } from "./data-webgpu.js";
-import { VertexStruct, MeshUniformStruct, MeshHandleStd } from "./std-scene.js";
+import {
+  VertexStruct,
+  MeshUniformStruct,
+  MeshHandleStd,
+} from "./pipelines/std-scene.js";
 import {
   bundleRenderPipelines,
   createCyResources,
@@ -19,7 +23,7 @@ import {
   onCanvasResizeAll,
   startBundleRenderer,
 } from "./instantiator-webgpu.js";
-import { SceneStruct, SceneTS } from "./std-scene.js";
+import { SceneStruct, SceneTS } from "./pipelines/std-scene.js";
 import { ShaderSet } from "./shader-loader.js";
 
 export function createWebGPURenderer(

@@ -1,6 +1,6 @@
-import { range } from "../util.js";
-import { CY, linearSamplerPtr } from "./gpu-registry.js";
-import { createCyStruct } from "./gpu-struct.js";
+import { range } from "../../util.js";
+import { CY, linearSamplerPtr } from "../gpu-registry.js";
+import { createCyStruct } from "../gpu-struct.js";
 import { outlinedTexturePtr } from "./std-outline.js";
 import { emissionTexturePtr } from "./xp-stars.js";
 

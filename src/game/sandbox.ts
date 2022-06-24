@@ -37,23 +37,26 @@ import {
   normalDbg,
   positionDbg,
   stdRenderPipeline,
-} from "../render/std-pipeline.js";
-import { postProcess } from "../render/std-post.js";
-import { shadowDbgDisplay, shadowPipeline } from "../render/std-shadow.js";
+} from "../render/pipelines/std-pipeline.js";
+import { postProcess } from "../render/pipelines/std-post.js";
+import {
+  shadowDbgDisplay,
+  shadowPipeline,
+} from "../render/pipelines/std-shadow.js";
 import {
   boidRender,
   boidCanvasMerge,
   boidComp0,
   boidComp1,
-} from "../render/xp-boids-pipeline.js";
+} from "../render/pipelines/xp-boids-pipeline.js";
 import {
   cmpClothPipelinePtr0,
   cmpClothPipelinePtr1,
-} from "../render/xp-cloth-pipeline.js";
+} from "../render/pipelines/xp-cloth-pipeline.js";
 import {
   renderRopePipelineDesc,
   compRopePipelinePtr,
-} from "../render/xp-ropestick-pipeline.js";
+} from "../render/pipelines/xp-ropestick-pipeline.js";
 import { tempVec } from "../temp-pool.js";
 import { assert } from "../test.js";
 import { TimeDef } from "../time.js";

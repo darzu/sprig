@@ -21,7 +21,7 @@ import {
   litTexturePtr,
   mainDepthTex,
   canvasTexturePtr,
-} from "../render/std-scene.js";
+} from "../render/pipelines/std-scene.js";
 import { uintToVec3unorm } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";

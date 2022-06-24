@@ -1,6 +1,6 @@
-import { createRenderTextureToQuad } from "./gpu-helper.js";
-import { CY, linearSamplerPtr } from "./gpu-registry.js";
-import { createCyStruct } from "./gpu-struct.js";
+import { createRenderTextureToQuad } from "../gpu-helper.js";
+import { CY, linearSamplerPtr } from "../gpu-registry.js";
+import { createCyStruct } from "../gpu-struct.js";
 import { meshPoolPtr, sceneBufPtr } from "./std-scene.js";
 
 // NOTES:

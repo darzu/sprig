@@ -1,4 +1,4 @@
-import { CY } from "./gpu-registry.js";
+import { CY } from "../gpu-registry.js";
 
 const CLOTH_SIZE = 10; // TODO(@darzu):
 

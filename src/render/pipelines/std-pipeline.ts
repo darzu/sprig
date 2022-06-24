@@ -1,5 +1,5 @@
-import { createRenderTextureToQuad } from "./gpu-helper.js";
-import { comparisonSamplerPtr, CY } from "./gpu-registry.js";
+import { createRenderTextureToQuad } from "../gpu-helper.js";
+import { comparisonSamplerPtr, CY } from "../gpu-registry.js";
 import {
   mainDepthTex,
   litTexturePtr,

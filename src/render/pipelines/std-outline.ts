@@ -1,4 +1,4 @@
-import { CY, linearSamplerPtr } from "./gpu-registry.js";
+import { CY, linearSamplerPtr } from "../gpu-registry.js";
 import {
   litTexturePtr,
   normalsTexturePtr,

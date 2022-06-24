@@ -23,7 +23,7 @@ import { getText } from "../webget.js";
 import { AABBCollider } from "../physics/collider.js";
 import { farthestPointInDir, SupportFn, uintToVec3unorm } from "../utils-3d.js";
 import { MeshHandle } from "../render/mesh-pool.js";
-import { MeshHandleStd } from "../render/std-scene.js";
+import { MeshHandleStd } from "../render/pipelines/std-scene.js";
 import { onInit } from "../init.js";
 
 // TODO: load these via streaming

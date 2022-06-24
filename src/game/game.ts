@@ -67,10 +67,10 @@ import {
   registerGameStateSystems,
 } from "./gamestate.js";
 import { MeDef } from "../net/components.js";
-import { stdRenderPipeline } from "../render/std-pipeline.js";
-import { postProcess } from "../render/std-post.js";
-import { shadowPipeline } from "../render/std-shadow.js";
-import { outlineRender } from "../render/std-outline.js";
+import { stdRenderPipeline } from "../render/pipelines/std-pipeline.js";
+import { postProcess } from "../render/pipelines/std-post.js";
+import { shadowPipeline } from "../render/pipelines/std-shadow.js";
+import { outlineRender } from "../render/pipelines/std-outline.js";
 
 export const ScoreDef = EM.defineComponent("score", () => {
   return {
