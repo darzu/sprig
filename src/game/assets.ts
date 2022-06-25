@@ -25,6 +25,7 @@ import { farthestPointInDir, SupportFn, uintToVec3unorm } from "../utils-3d.js";
 import { MeshHandle } from "../render/mesh-pool.js";
 import { MeshHandleStd } from "../render/pipelines/std-scene.js";
 import { onInit } from "../init.js";
+import { mathMap, min } from "../math.js";
 
 // TODO: load these via streaming
 
@@ -128,6 +129,22 @@ const MeshModify: Partial<{
   ocean: (m) => {
     // TODO(@darzu): do we want convexity highlighting on the ocean?
     // m.surfaceIds = m.tri.map(() => 1);
+    // TODO(@darzu): generate UVs for the ocean
+    const minX = m.pos.reduce((p, n) => (n[0] < p ? n[0] : p), Infinity);
+    const maxX = m.pos.reduce((p, n) => (n[0] > p ? n[0] : p), -Infinity);
+    const minZ = m.pos.reduce((p, n) => (n[2] < p ? n[2] : p), Infinity);
+    const maxZ = m.pos.reduce((p, n) => (n[2] > p ? n[2] : p), -Infinity);
+    m.uvs = m.pos.map(
+      (p, i) =>
+        vec2.fromValues(
+          mathMap(p[0], minX, maxX, 0, 1),
+          mathMap(p[2], minZ, maxZ, 0, 1)
+        )
+      // vec2.fromValues(i / m.pos.length, 0)
+      // vec2.fromValues(0.5, 0.5)
+    );
+    // console.dir(m.uvs);
+    // console.dir({ minX, maxX, minZ, maxZ });
     return m;
   },
 };

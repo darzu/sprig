@@ -18,6 +18,7 @@ import { createPlayer } from "./player.js";
 import { createShip } from "./ship.js";
 import { GameStateDef } from "./gamestate.js";
 import { unwrapPipeline } from "../render/pipelines/xp-uv-unwrap.js";
+import { createComposePipeline } from "../render/pipelines/std-compose.js";
 
 const OceanDef = EM.defineComponent("ocean", () => true);
 
@@ -57,6 +58,8 @@ export function initHyperspaceGame(em: EntityManager) {
 
   let once = true;
 
+  let finalCompose = createComposePipeline();
+
   em.registerSystem(
     [OceanDef],
     [GlobalCursor3dDef, RendererDef, InputsDef, TextDef],
@@ -68,12 +71,12 @@ export function initHyperspaceGame(em: EntityManager) {
       } else {
         // steady state rendering
         res.renderer.pipelines = [
-          // TODO(@darzu):
+          unwrapPipeline, // TODO(@darzu): don't run many times
           shadowPipeline,
           stdRenderPipeline,
+          finalCompose, // TODO(@darzu): should be last step
           outlineRender,
           renderStars,
-          // TODO(@darzu): doesn't quite work yet
           ...blurPipelines,
           // renderRopePipelineDesc,
           // boidRender,

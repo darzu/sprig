@@ -8,7 +8,7 @@ export interface RawMesh {
   tri: vec3[];
   colors: vec3[]; // colors per triangle in r,g,b float [0-1] format
   lines?: vec2[];
-  uvs?: vec2[];
+  uvs?: vec2[]; // optional; one uv per vertex
   surfaceIds?: number[];
   // TODO(@darzu):
   dbgName?: string;

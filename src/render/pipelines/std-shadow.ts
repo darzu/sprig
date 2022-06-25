@@ -1,7 +1,7 @@
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { CY, linearSamplerPtr } from "../gpu-registry.js";
 import { createCyStruct } from "../gpu-struct.js";
-import { meshPoolPtr, sceneBufPtr } from "./std-scene.js";
+import { litTexturePtr, meshPoolPtr, sceneBufPtr } from "./std-scene.js";
 
 // NOTES:
 //  https://github.com/darzu/sprig/pull/3
@@ -71,6 +71,7 @@ const windowUni = CY.createSingleton("sWinUni", {
 export const { pipeline: shadowDbgDisplay } = createRenderTextureToQuad(
   "shadowDbg",
   shadowDepthTexture,
+  litTexturePtr,
   -0.9,
   -0.1,
   0.1,

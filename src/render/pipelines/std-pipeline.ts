@@ -83,6 +83,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
 export const { pipeline: normalDbg } = createRenderTextureToQuad(
   "normalDbg",
   normalsTexturePtr,
+  litTexturePtr,
   0.2,
   0.8,
   0.2,
@@ -92,6 +93,7 @@ export const { pipeline: normalDbg } = createRenderTextureToQuad(
 export const { pipeline: positionDbg } = createRenderTextureToQuad(
   "positionDbg",
   positionsTexturePtr,
+  litTexturePtr,
   0.2,
   0.8,
   -0.8,

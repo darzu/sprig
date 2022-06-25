@@ -23,7 +23,8 @@ export const QuadStruct = createCyStruct(
 
 export function createRenderTextureToQuad(
   name: string,
-  texPtr: CyTexturePtr | CyDepthTexturePtr,
+  inTex: CyTexturePtr | CyDepthTexturePtr,
+  outTex: CyTexturePtr,
   minX = -1,
   maxX = 1,
   minY = -1,
@@ -46,16 +47,16 @@ export function createRenderTextureToQuad(
     globals: [
       { ptr: linearSamplerPtr, alias: "mySampler" },
       // TODO(@darzu): WTF typescript?!
-      texPtr.kind === "texture"
-        ? { ptr: texPtr, alias: "myTexture" }
-        : { ptr: texPtr, alias: "myTexture" },
+      inTex.kind === "texture"
+        ? { ptr: inTex, alias: "myTexture" }
+        : { ptr: inTex, alias: "myTexture" },
       { ptr: quad, alias: "quad" },
     ],
     meshOpt: {
       vertexCount: 6,
       stepMode: "single-draw",
     },
-    output: [litTexturePtr],
+    output: [outTex],
     shader: () => {
       return `
   struct VertexOutput {
