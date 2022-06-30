@@ -1,5 +1,6 @@
 import { vec3, vec2, mat4 } from "../gl-matrix.js";
 import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
+import { assert } from "../test.js";
 import { vec3Mid } from "../utils-3d.js";
 
 // defines the geometry and coloring of a mesh
@@ -206,4 +207,71 @@ function uniqueRefs<T>(ts: T[]): T[] {
     if (res.every((t2) => t2 !== t1)) res.push(t1);
   }
   return res;
+}
+
+type VertPosToGridCoord = vec2[];
+
+function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
+  // TODO(@darzu): PERF. can big arrays of vecs be more efficiently allocated
+  //  as slices into one big type array or something? Each of these is doing
+  //  a "new Float32Array(2)" which seems inefficient. Instead of:
+  //    const coords = new Array(m.pos.length).fill(vec2.create());
+  // TODO(@darzu): PERF. could be made more efficient by using one big typed array
+  //  of vert indices w/ 4 slots for edges.
+
+  const coords: VertPosToGridCoord = [];
+
+  const xLen = 100;
+  const yLen = 100;
+  const grid: number[][] = new Array(xLen).map(() => new Array(yLen).fill(-1));
+
+  // Collect all edges
+  const numVerts = m.pos.length;
+  const edges = new Array(numVerts).map(() => [] as number[]);
+  for (let [t0, t1, t2] of m.tri) {
+    addEdge(t0, t1);
+    addEdge(t0, t2);
+    addEdge(t1, t0);
+    addEdge(t1, t2);
+    addEdge(t2, t1);
+    addEdge(t2, t0);
+  }
+
+  // Find a corner, use that as the origin
+  const origin = m.pos.findIndex((_, i) => edges[i].length === 2);
+  assert(origin >= 0, "Invalid grid mesh; no corner");
+
+  // The two connections will be used as the X and Y axis
+  grid[0][0] = origin;
+  grid[1][0] = edges[origin][0];
+  grid[0][1] = edges[origin][1];
+
+  // Breath-first, add each vertex onto the grid
+  addChildrenToGrid(edges[origin][0], 1, 0);
+  addChildrenToGrid(edges[origin][1], 0, 1);
+
+  return coords;
+
+  function addChildrenToGrid(vi: number, x: number, y: number) {
+    // child x,y must be >= x,y
+    const children = edges[vi];
+    const d1s = dist1Neighbors(x, y);
+
+    // TODO(@darzu): IMPLEMENT
+  }
+
+  function dist1Neighbors(x: number, y: number): number[] {
+    const res: number[] = [];
+    if (x - 1 >= 0) res.push(grid[x - 1][y]);
+    if (x + 1 <= xLen - 1) res.push(grid[x + 1][y]);
+    if (y - 1 >= 0) res.push(grid[x][y - 1]);
+    if (y + 1 <= yLen - 1) res.push(grid[x][y + 1]);
+    return res;
+  }
+
+  function addEdge(va: number, vb: number) {
+    const es = edges[va];
+    if (es.length < 4 && es[0] !== vb && es[1] !== vb && es[2] !== vb)
+      edges[va].push(vb);
+  }
 }

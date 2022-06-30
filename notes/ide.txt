@@ -24,3 +24,18 @@ entity debugger:
   on hover, show which components a given entity has 
     and which systems that qualifies them for
   
+Interactive min-example generating:
+  start by staticly analyzing, tree shaking / program slicing everything
+  run dynamic analysis on the sample scene, cut everything that isn't used
+  then run in immediate compile & prune mode,
+    user deletes some code, tree shaking happens again, 
+    sample is run, if it's good, dynamic prune runs again
+  interactive commands:
+    see number of call sites for each fn
+    inline a fn, then do static and dynamic prunes
+  special ECS aware unroller
+  maybe:
+    once the sample is small enough, u can just highlight lines in VSCode and it'll
+      tell you weather it'll compile and how many lines could be cut
+    
+
