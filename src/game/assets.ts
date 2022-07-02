@@ -3,9 +3,11 @@ import { mat4, vec2, vec3 } from "../gl-matrix.js";
 import { importObj, isParseError } from "../import_obj.js";
 import {
   cloneMesh,
+  deduplicateVertices,
   getAABBFromMesh,
   getCenterFromAABB,
   getHalfsizeFromAABB,
+  getMeshAsGrid,
   mapMeshPositions,
   Mesh,
   normalizeMesh,
@@ -127,6 +129,12 @@ const MeshModify: Partial<{
     return m;
   },
   ocean: (m) => {
+    // reduce duplicate positions
+    // console.log("OCEAN");
+    // console.dir(m);
+    // m = deduplicateVertices(m);
+    // console.dir(m);
+
     // TODO(@darzu): do we want convexity highlighting on the ocean?
     // m.surfaceIds = m.tri.map(() => 1);
     // TODO(@darzu): generate UVs for the ocean
@@ -143,6 +151,11 @@ const MeshModify: Partial<{
       // vec2.fromValues(i / m.pos.length, 0)
       // vec2.fromValues(0.5, 0.5)
     );
+
+    // TODO(@darzu): DBG
+    // console.log("getMeshAsGrid(ocean)");
+    // getMeshAsGrid(m);
+
     // console.dir(m.uvs);
     // console.dir({ minX, maxX, minZ, maxZ });
     return m;
@@ -363,6 +376,10 @@ const TRI_FENCE: () => RawMesh = () => {
 
 const GRID_PLANE_MESH = createGridPlane(30, 30);
 
+// TODO(@darzu): DBG
+// console.log("getMeshAsGrid(GRID_PLANE_MESH)");
+// getMeshAsGrid(GRID_PLANE_MESH);
+
 function createGridPlane(width: number, height: number): RawMesh {
   const m: RawMesh = {
     pos: [],
@@ -389,6 +406,49 @@ function createGridPlane(width: number, height: number): RawMesh {
   scaleMesh(m, 10 / Math.min(width, height));
 
   return m;
+}
+
+const DBG_FABRIC = createFabric(5);
+
+export function createFabric(size: number): RawMesh {
+  const pos: vec3[] = [];
+  const tri: vec3[] = [];
+
+  // create each vert
+  for (let x = 0; x < size; x++) {
+    for (let y = 0; y < size; y++) {
+      pos.push([x, y, 0]);
+    }
+  }
+
+  // create each quad
+  for (let x = 0; x < size - 1; x++) {
+    for (let y = 0; y < size - 1; y++) {
+      const quad = [
+        idx(x, y),
+        idx(x + 1, y),
+        idx(x + 1, y + 1),
+        idx(x, y + 1),
+      ] as const;
+      // clockwise
+      tri.push([quad[0], quad[1], quad[2]]);
+      tri.push([quad[0], quad[2], quad[3]]);
+      // counter-clockwise
+      tri.push([quad[2], quad[1], quad[0]]);
+      tri.push([quad[3], quad[2], quad[0]]);
+    }
+  }
+
+  return {
+    pos,
+    tri,
+    colors: tri.map((_, i) => [i / tri.length, 0.2, 0.2]),
+  };
+
+  function idx(x: number, y: number): number {
+    return x * size + y;
+  }
+  // TODO(@darzu): return
 }
 
 export const SHIP_AABBS: AABB[] = [
@@ -472,6 +532,7 @@ export const LocalMeshes = {
   boat: () => BOAT_MESH,
   bullet: () => BULLET_MESH,
   gridPlane: () => GRID_PLANE_MESH,
+  fabric: () => DBG_FABRIC,
   triFence: TRI_FENCE,
   wireCube: () => ({ ...CUBE_MESH, tri: [] } as RawMesh),
 } as const;

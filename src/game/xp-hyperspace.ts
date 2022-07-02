@@ -51,6 +51,15 @@ export function initHyperspaceGame(em: EntityManager) {
       // vec3.scale(ocean.position, ocean.position, scale);
       const scale = 100.0;
       em.ensureComponentOn(ocean, ScaleDef, [scale, scale, scale]);
+
+      // TODO(@darzu): DEBUG fabric stuff
+      const fabric = em.newEntity();
+      em.ensureComponentOn(
+        fabric,
+        RenderableConstructDef,
+        res.assets.fabric.proto
+      );
+      em.ensureComponentOn(fabric, PositionDef, [10, 10, 10]);
     }
   );
 

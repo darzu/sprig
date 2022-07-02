@@ -1,7 +1,8 @@
+import { createFabric } from "../game/assets.js";
 import { vec3, vec2, mat4 } from "../gl-matrix.js";
 import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
 import { assert } from "../test.js";
-import { vec3Mid } from "../utils-3d.js";
+import { vec3Dbg, vec3Mid } from "../utils-3d.js";
 
 // defines the geometry and coloring of a mesh
 export interface RawMesh {
@@ -57,6 +58,46 @@ export function cloneMesh(m: Mesh | RawMesh): Mesh | RawMesh {
 //   });
 //   return { ...input, pos, tri, verticesUnshared: true };
 // }
+// NOTE: we didn't actually use this or test this fn...
+export function deduplicateVertices(input: RawMesh): RawMesh {
+  // TODO(@darzu): preserve UV data?
+  assert(!input.uvs, "deduplicateVertices doesn't support UVs");
+  // TODO(@darzu): using strings to encode vec3s is horrible
+  const newPosMap: Map<string, number> = new Map();
+  const newPos: vec3[] = [];
+  const oldToNewPosIdx: number[] = [];
+  for (let oldIdx = 0; oldIdx < input.pos.length; oldIdx++) {
+    const p = input.pos[oldIdx];
+    const hash = `${p[0].toFixed(2)},${p[1].toFixed(2)},${p[2].toFixed(2)}`;
+    let newIdx = newPosMap.get(hash);
+    if (!newIdx) {
+      newIdx = newPos.length;
+      newPosMap.set(hash, newIdx);
+      newPos.push(p);
+      oldToNewPosIdx[oldIdx] = newIdx;
+    } else {
+      oldToNewPosIdx[oldIdx] = newIdx;
+    }
+  }
+
+  // map indices
+  const newTri = input.tri.map((t) =>
+    t.map((i) => oldToNewPosIdx[i])
+  ) as vec3[];
+  let newLines: vec2[] | undefined = undefined;
+  if (input.lines)
+    newLines = input.lines.map((t) =>
+      t.map((i) => oldToNewPosIdx[i])
+    ) as vec2[];
+
+  return {
+    ...input,
+    pos: newPos,
+    tri: newTri,
+    lines: newLines,
+  };
+}
+
 export function unshareProvokingVerticesWithMap(input: RawMesh): {
   mesh: RawMesh & { usesProvoking: true };
   posMap: Map<number, number>;
@@ -134,8 +175,6 @@ export function normalizeMesh(input: RawMesh): Mesh {
   };
 }
 
-// utils
-
 export function getAABBFromMesh(m: RawMesh): AABB {
   return getAABBFromPositions(m.pos);
 }
@@ -209,9 +248,15 @@ function uniqueRefs<T>(ts: T[]): T[] {
   return res;
 }
 
+{
+  // TODO(@darzu): DEBUG
+  // const f = createFabric(3);
+  // getMeshAsGrid(f);
+}
+
 type VertPosToGridCoord = vec2[];
 
-function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
+export function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
   // TODO(@darzu): PERF. can big arrays of vecs be more efficiently allocated
   //  as slices into one big type array or something? Each of these is doing
   //  a "new Float32Array(2)" which seems inefficient. Instead of:
@@ -221,13 +266,22 @@ function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
 
   const coords: VertPosToGridCoord = [];
 
-  const xLen = 100;
-  const yLen = 100;
-  const grid: number[][] = new Array(xLen).map(() => new Array(yLen).fill(-1));
+  console.log("mesh");
+  console.dir(m);
+
+  // TODO: figure out grid length
+  const xLen = 5;
+  const yLen = 5;
+  const grid: number[][] = new Array(xLen)
+    .fill([])
+    .map(() => new Array(yLen).fill(-1));
+
+  console.log("start grid:");
+  console.log(grid);
 
   // Collect all edges
   const numVerts = m.pos.length;
-  const edges = new Array(numVerts).map(() => [] as number[]);
+  const edges = new Array(numVerts).fill([]).map(() => [] as number[]);
   for (let [t0, t1, t2] of m.tri) {
     addEdge(t0, t1);
     addEdge(t0, t2);
@@ -236,9 +290,20 @@ function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
     addEdge(t2, t1);
     addEdge(t2, t0);
   }
+  console.log("edges:");
+  console.dir(edges);
 
   // Find a corner, use that as the origin
+  console.log("corners:");
+  console.dir(
+    m.pos.reduce(
+      (p, n, ni) => (edges[ni].length === 2 ? [...p, ni] : p),
+      [] as number[]
+    )
+  );
   const origin = m.pos.findIndex((_, i) => edges[i].length === 2);
+  console.log("0 edges:");
+  console.dir(edges[0]);
   assert(origin >= 0, "Invalid grid mesh; no corner");
 
   // The two connections will be used as the X and Y axis
@@ -246,18 +311,78 @@ function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
   grid[1][0] = edges[origin][0];
   grid[0][1] = edges[origin][1];
 
+  console.dir(grid);
+
   // Breath-first, add each vertex onto the grid
-  addChildrenToGrid(edges[origin][0], 1, 0);
-  addChildrenToGrid(edges[origin][1], 0, 1);
+  const worklist: { vi: number; x: number; y: number }[] = [
+    { vi: edges[origin][0], x: 1, y: 0 },
+    { vi: edges[origin][1], x: 0, y: 1 },
+  ];
+  while (worklist.length) {
+    const { vi, x, y } = worklist.shift()!;
+    console.log(`${vi}(${x},${y})`);
+    addChildrenToGrid(vi, x, y);
+  }
+
+  console.dir(grid);
+
+  // TODO(@darzu): IMPLEMENT
 
   return coords;
 
   function addChildrenToGrid(vi: number, x: number, y: number) {
-    // child x,y must be >= x,y
-    const children = edges[vi];
-    const d1s = dist1Neighbors(x, y);
+    // invarient: child x,y must be >= x,y
 
-    // TODO(@darzu): IMPLEMENT
+    // get unplaced children
+    const d1s = dist1Neighbors(x, y);
+    const unplaced: number[] = [];
+    for (let c of edges[vi]) if (!d1s.some((d1) => d1 === c)) unplaced.push(c);
+    if (unplaced.length > 2) {
+      console.log(`parent: ${vi}->${vec3Dbg(m.pos[vi])} at ${x},${y}`);
+      for (let c of edges[vi]) {
+        console.log(`child: ${c}->${vec3Dbg(m.pos[c])}`);
+      }
+      for (let c of d1s) {
+        console.log(`d1: ${c}->${vec3Dbg(m.pos[c])}`);
+      }
+    }
+    assert(unplaced.length <= 2, "inconsitency: too many unplaced children");
+    if (!unplaced.length) return;
+    const c1: number = unplaced[0];
+    const c2: number | undefined = unplaced[1];
+
+    // place in slot 1
+    if (x + 1 <= xLen - 1) {
+      const slot1d1s = dist1Neighbors(x + 1, y);
+      if (anyOverlap(slot1d1s, edges[c1])) {
+        grid[x + 1][y] = c1;
+        worklist.push({ vi: c1, x: x + 1, y: y });
+      } else if (c2 && anyOverlap(slot1d1s, edges[c2])) {
+        grid[x + 1][y] = c2;
+        worklist.push({ vi: c2, x: x + 1, y: y });
+      }
+    }
+
+    // place in slot 2
+    if (y + 1 <= yLen - 1) {
+      const slot2d1s = dist1Neighbors(x, y + 1);
+      if (anyOverlap(slot2d1s, edges[c1])) {
+        grid[x][y + 1] = c1;
+        worklist.push({ vi: c1, x: x, y: y + 1 });
+      } else if (c2 && anyOverlap(slot2d1s, edges[c2])) {
+        grid[x][y + 1] = c2;
+        worklist.push({ vi: c2, x: x, y: y + 1 });
+      }
+    }
+  }
+
+  function anyOverlap(xs: number[], ys: number[]): boolean {
+    for (let x of xs) {
+      for (let y of ys) {
+        if (x === y) return true;
+      }
+    }
+    return false;
   }
 
   function dist1Neighbors(x: number, y: number): number[] {
@@ -272,6 +397,23 @@ function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
   function addEdge(va: number, vb: number) {
     const es = edges[va];
     if (es.length < 4 && es[0] !== vb && es[1] !== vb && es[2] !== vb)
-      edges[va].push(vb);
+      es.push(vb);
   }
 }
+
+/*
+log based, steps, groups, hide/show
+
+Debug viz:
+dots, lines,
+dbg.setWorldSize(100,100)
+dbg.setStepMs(100ms)
+let d1 = dbg.drawDot(x,y)
+dbg.disableTransitionTime()
+dbg.label("next step")
+let l1 = dbg.drawLine(x1,y1,x2,y2)
+d1.hide()
+dbg.enableTransitionTime()
+
+register2DDebugViz("meshGrid");
+*/

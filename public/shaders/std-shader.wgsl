@@ -129,8 +129,8 @@ fn frag_main(input: VertexOutput) -> FragOut {
     // let finalColor: vec3<f32> = gammaCorrected;
 
     var out: FragOut;
-    // out.color = vec4<f32>(litColor, 1.0);
-    out.color = vec4<f32>(input.uv, 0.0, 1.0);
+    out.color = vec4<f32>(litColor, 1.0);
+    // out.color = vec4<f32>(input.uv, 0.0, 1.0);
     // out.normal = vec4(input.normal, 1.0);
     out.normal = vec4(normalize((scene.cameraViewProjMatrix * vec4<f32>(input.normal, 0.0)).xyz), 1.0);
     // out.position = input.worldPos;
