@@ -14,6 +14,7 @@ export function drawLine(start: vec3, end: vec3, color: vec3) {
   const m: Mesh = {
     pos: [start, end],
     tri: [],
+    quad: [],
     colors: [],
     lines: [[0, 1]],
     surfaceIds: [],

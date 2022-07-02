@@ -3,7 +3,6 @@ import { mat4, vec2, vec3 } from "../gl-matrix.js";
 import { importObj, isParseError } from "../import_obj.js";
 import {
   cloneMesh,
-  deduplicateVertices,
   getAABBFromMesh,
   getCenterFromAABB,
   getHalfsizeFromAABB,
@@ -199,6 +198,7 @@ export const CUBE_MESH: RawMesh = {
     [5, 4, 7],
     [5, 7, 6], // back
   ],
+  quad: [],
   lines: [
     // top
     [0, 1],
@@ -245,6 +245,7 @@ const TETRA_MESH: RawMesh = {
     [1, 3, 0],
     [2, 3, 1],
   ],
+  quad: [],
   lines: [
     [0, 1],
     [0, 2],
@@ -316,7 +317,7 @@ const HEX_MESH: () => RawMesh = () => {
   //   [1, 3],
   //   [2, 3],
   // ],
-  return { pos, tri, lines, colors: tri.map((_) => BLACK) };
+  return { pos, tri, quad: [], lines, colors: tri.map((_) => BLACK) };
 };
 const PLANE_MESH: RawMesh = {
   pos: [
@@ -331,6 +332,7 @@ const PLANE_MESH: RawMesh = {
     [3, 2, 0],
     [1, 3, 0], // bottom
   ],
+  quad: [],
   lines: [
     [0, 1],
     [0, 2],
@@ -369,6 +371,7 @@ const TRI_FENCE: () => RawMesh = () => {
   return {
     pos,
     tri,
+    quad: [],
     colors,
     surfaceIds,
   };
@@ -386,6 +389,7 @@ function createGridPlane(width: number, height: number): RawMesh {
     tri: [],
     colors: [],
     lines: [],
+    quad: [],
   };
 
   for (let x = 0; x <= width; x++) {
@@ -442,6 +446,7 @@ export function createFabric(size: number): RawMesh {
   return {
     pos,
     tri,
+    quad: [],
     colors: tri.map((_, i) => [i / tri.length, 0.2, 0.2]),
   };
 

@@ -2,7 +2,7 @@
 // https://people.cs.clemson.edu/~dhouse/courses/405/docs/brief-obj-file-format.html
 // http://paulbourke.net/dataformats/obj/
 
-import { vec2, vec3 } from "./gl-matrix.js";
+import { vec2, vec3, vec4 } from "./gl-matrix.js";
 import { RawMesh } from "./render/mesh.js";
 import { assert } from "./test.js";
 import { idPair, IdPair, isString } from "./util.js";
@@ -72,10 +72,18 @@ export function exportObj(m: RawMesh, iOff: number = 0): string {
   for (let v of m.pos) {
     resLns.push(`v ${v[0].toFixed(2)} ${v[1].toFixed(2)} ${v[2].toFixed(2)}`);
   }
-  // output faces
+  // output tris
   for (let f of m.tri) {
     resLns.push(
       `f ${f[0] + 1 + iOff}// ${f[1] + 1 + iOff}// ${f[2] + 1 + iOff}//`
+    );
+  }
+  // output quads
+  for (let f of m.quad) {
+    resLns.push(
+      `f ${f[0] + 1 + iOff}// ${f[1] + 1 + iOff}// ${f[2] + 1 + iOff}// ${
+        f[3] + 1 + iOff
+      }//`
     );
   }
   // output lines
@@ -91,6 +99,7 @@ export function importObj(obj: string): RawMesh[] | ParseError {
   // TODO(@darzu): implement a streaming parser for better perf
   let pos: vec3[] = [];
   let tri: vec3[] = [];
+  let quad: vec4[] = [];
   let colors: vec3[] = [];
   // TODO(@darzu): compute lines
   let lines: vec2[] = [];
@@ -110,13 +119,14 @@ export function importObj(obj: string): RawMesh[] | ParseError {
       colors.push([0.0, 0.0, 0.0]);
       // colors.push([0.2, 0.2, 0.2]);
     }
-    const m: RawMesh = { pos, tri, colors, lines };
+    const m: RawMesh = { pos, tri, quad, colors, lines };
     meshes.push(m);
 
     // start a new mesh
     idxOffset += pos.length;
     pos = [];
     tri = [];
+    quad = [];
     colors = [];
     lines = [];
     seenLines = new Set();
@@ -175,15 +185,17 @@ export function importObj(obj: string): RawMesh[] | ParseError {
         }
       } else if (inds.length === 4) {
         // quad
-        // assuming clockwise, then we want 0,1,3 and 1,2,3
-        const tri1: vec3 = [inds[0], inds[1], inds[3]];
-        const tri2: vec3 = [inds[1], inds[2], inds[3]];
+        // // assuming clockwise, then we want 0,1,3 and 1,2,3
+        // const tri1: vec3 = [inds[0], inds[1], inds[3]];
+        // const tri2: vec3 = [inds[1], inds[2], inds[3]];
         if (FLIP_FACES) {
-          tri.push(reverse(tri1));
-          tri.push(reverse(tri2));
+          // tri.push(reverse(tri1));
+          // tri.push(reverse(tri2));
+          quad.push([inds[3], inds[2], inds[1], inds[0]]);
         } else {
-          tri.push(tri1);
-          tri.push(tri2);
+          // tri.push(tri1);
+          // tri.push(tri2);
+          quad.push([inds[0], inds[1], inds[2], inds[3]]);
         }
       } else {
         return `unsupported: ${faceOpt.length}-sided face`;
@@ -348,7 +360,10 @@ export function testImporters() {
   v 0 1 2
   f 1/0/0 2/0/0 3/0/0 4/0/0
   `);
-  assert(good2.tri.length === 2, "test expects 2 tris");
+  assert(
+    good2.tri.length === 0 && good2.quad.length === 1,
+    "test expects 2 tris"
+  );
   const good3 = assertSingleObjSuccess(`
     v 0 1 2
     v 0 1 2

@@ -1,13 +1,15 @@
 import { createFabric } from "../game/assets.js";
-import { vec3, vec2, mat4 } from "../gl-matrix.js";
+import { vec3, vec2, mat4, vec4 } from "../gl-matrix.js";
 import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
 import { assert } from "../test.js";
 import { vec3Dbg, vec3Mid } from "../utils-3d.js";
 
 // defines the geometry and coloring of a mesh
+// TODO(@darzu): we need to rethink theis whole mesh family of objects
 export interface RawMesh {
   pos: vec3[];
   tri: vec3[];
+  quad: vec4[]; // MUST NOT be redundant w/ `tri`
   colors: vec3[]; // colors per triangle in r,g,b float [0-1] format
   lines?: vec2[];
   uvs?: vec2[]; // optional; one uv per vertex
@@ -21,6 +23,7 @@ export interface RawMesh {
 export interface Mesh extends RawMesh {
   pos: vec3[];
   tri: vec3[];
+  quad: vec4[];
   colors: vec3[]; // colors per triangle in r,g,b float [0-1] format
   lines?: vec2[];
   uvs?: vec2[];
@@ -37,6 +40,7 @@ export function cloneMesh(m: Mesh | RawMesh): Mesh | RawMesh {
     ...m,
     pos: m.pos.map((p) => vec3.clone(p)),
     tri: m.tri.map((p) => vec3.clone(p)),
+    quad: m.quad.map((p) => vec4.clone(p)),
     colors: m.colors.map((p) => vec3.clone(p)),
     lines: m.lines?.map((p) => vec2.clone(p)),
     uvs: m.uvs?.map((p) => vec2.clone(p)),
@@ -59,44 +63,44 @@ export function cloneMesh(m: Mesh | RawMesh): Mesh | RawMesh {
 //   return { ...input, pos, tri, verticesUnshared: true };
 // }
 // NOTE: we didn't actually use this or test this fn...
-export function deduplicateVertices(input: RawMesh): RawMesh {
-  // TODO(@darzu): preserve UV data?
-  assert(!input.uvs, "deduplicateVertices doesn't support UVs");
-  // TODO(@darzu): using strings to encode vec3s is horrible
-  const newPosMap: Map<string, number> = new Map();
-  const newPos: vec3[] = [];
-  const oldToNewPosIdx: number[] = [];
-  for (let oldIdx = 0; oldIdx < input.pos.length; oldIdx++) {
-    const p = input.pos[oldIdx];
-    const hash = `${p[0].toFixed(2)},${p[1].toFixed(2)},${p[2].toFixed(2)}`;
-    let newIdx = newPosMap.get(hash);
-    if (!newIdx) {
-      newIdx = newPos.length;
-      newPosMap.set(hash, newIdx);
-      newPos.push(p);
-      oldToNewPosIdx[oldIdx] = newIdx;
-    } else {
-      oldToNewPosIdx[oldIdx] = newIdx;
-    }
-  }
+// export function deduplicateVertices(input: RawMesh): RawMesh {
+//   // TODO(@darzu): preserve UV data?
+//   assert(!input.uvs, "deduplicateVertices doesn't support UVs");
+//   // TODO(@darzu): using strings to encode vec3s is horrible
+//   const newPosMap: Map<string, number> = new Map();
+//   const newPos: vec3[] = [];
+//   const oldToNewPosIdx: number[] = [];
+//   for (let oldIdx = 0; oldIdx < input.pos.length; oldIdx++) {
+//     const p = input.pos[oldIdx];
+//     const hash = `${p[0].toFixed(2)},${p[1].toFixed(2)},${p[2].toFixed(2)}`;
+//     let newIdx = newPosMap.get(hash);
+//     if (!newIdx) {
+//       newIdx = newPos.length;
+//       newPosMap.set(hash, newIdx);
+//       newPos.push(p);
+//       oldToNewPosIdx[oldIdx] = newIdx;
+//     } else {
+//       oldToNewPosIdx[oldIdx] = newIdx;
+//     }
+//   }
 
-  // map indices
-  const newTri = input.tri.map((t) =>
-    t.map((i) => oldToNewPosIdx[i])
-  ) as vec3[];
-  let newLines: vec2[] | undefined = undefined;
-  if (input.lines)
-    newLines = input.lines.map((t) =>
-      t.map((i) => oldToNewPosIdx[i])
-    ) as vec2[];
+//   // map indices
+//   const newTri = input.tri.map((t) =>
+//     t.map((i) => oldToNewPosIdx[i])
+//   ) as vec3[];
+//   let newLines: vec2[] | undefined = undefined;
+//   if (input.lines)
+//     newLines = input.lines.map((t) =>
+//       t.map((i) => oldToNewPosIdx[i])
+//     ) as vec2[];
 
-  return {
-    ...input,
-    pos: newPos,
-    tri: newTri,
-    lines: newLines,
-  };
-}
+//   return {
+//     ...input,
+//     pos: newPos,
+//     tri: newTri,
+//     lines: newLines,
+//   };
+// }
 
 export function unshareProvokingVerticesWithMap(input: RawMesh): {
   mesh: RawMesh & { usesProvoking: true };
@@ -108,6 +112,7 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
   const provoking: { [key: number]: boolean } = {};
   const posMap: Map<number, number> = new Map();
   pos.forEach((_, i) => posMap.set(i, i));
+  // TODO(@darzu): HANDLE QUADS
   input.tri.forEach(([i0, i1, i2], triI) => {
     if (!provoking[i0]) {
       // First vertex is unused as a provoking vertex, so we'll use it for this triangle.
@@ -154,11 +159,12 @@ export function unshareProvokingVertices(
 let nextSId = 1;
 
 function generateSurfaceIds(mesh: RawMesh): number[] {
+  // TODO(@darzu): HANDLE QUADS
   // TODO(@darzu): better compute surface IDs
   let triIdToSurfaceId: Map<number, number> = new Map();
+  let nextSId = 0;
   mesh.tri.forEach((t, i) => {
-    triIdToSurfaceId.set(i, i);
-    // triIdToSurfaceId.set(i, nextSId++);
+    triIdToSurfaceId.set(i, nextSId++);
   });
 
   return mesh.tri.map((_, i) => triIdToSurfaceId.get(i)!);
@@ -209,6 +215,7 @@ export function transformMesh(m: RawMesh, t: mat4) {
 // split mesh by connectivity
 // TODO(@darzu): actually, we probably don't need this function
 export function splitMesh(m: RawMesh): RawMesh[] {
+  // TODO(@darzu): HANDLE QUADS
   // each vertex is a seperate island
   let vertIslands: Set<number>[] = [];
   for (let i = 0; i < m.pos.length; i++) vertIslands[i] = new Set<number>([i]);
@@ -246,6 +253,13 @@ function uniqueRefs<T>(ts: T[]): T[] {
     if (res.every((t2) => t2 !== t1)) res.push(t1);
   }
   return res;
+}
+
+export function quadToTris(q: vec4): [vec3, vec3] {
+  return [
+    [q[0], q[1], q[3]],
+    [q[1], q[2], q[3]],
+  ];
 }
 
 {

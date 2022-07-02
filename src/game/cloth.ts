@@ -116,6 +116,7 @@ function clothMesh(cloth: ClothConstruct): {
   const { mesh, posMap } = unshareProvokingVerticesWithMap({
     pos,
     tri,
+    quad: [],
     colors,
     lines,
     uvs,
