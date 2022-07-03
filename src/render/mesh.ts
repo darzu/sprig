@@ -2,6 +2,7 @@ import { createFabric } from "../game/assets.js";
 import { vec3, vec2, mat4, vec4 } from "../gl-matrix.js";
 import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
 import { assert } from "../test.js";
+import { arraySortedEqual, arrayUnsortedEqual } from "../util.js";
 import { vec3Dbg, vec3Mid } from "../utils-3d.js";
 
 // defines the geometry and coloring of a mesh
@@ -314,20 +315,29 @@ export function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
     "getMeshAsGrid only works for fully quad meshes"
   );
 
+  const refGrid = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+  ];
+
+  console.log("refGrid");
+  console.dir(refGrid);
+
   const coords: VertPosToGridCoord = [];
 
-  console.log("mesh");
-  console.dir(m);
+  // console.log("mesh");
+  // console.dir(m);
 
   // TODO: figure out grid length
-  const xLen = 5;
-  const yLen = 5;
+  const xLen = 3;
+  const yLen = 3;
   const grid: number[][] = new Array(xLen)
     .fill([])
     .map(() => new Array(yLen).fill(-1));
 
-  console.log("start grid:");
-  console.log(grid);
+  // console.log("start grid:");
+  // console.log(grid);
 
   // Collect all edges
   const numVerts = m.pos.length;
@@ -346,36 +356,35 @@ export function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
     addEdge(t0, t3);
     addEdge(t3, t0);
   }
-  console.log("edges:");
-  console.dir(edges);
+  // console.log("edges:");
+  // console.dir(edges);
 
   // Find a corner, use that as the origin
-  console.log("corners:");
-  console.dir(
-    m.pos.reduce(
-      (p, n, ni) => (edges[ni].length === 2 ? [...p, ni] : p),
-      [] as number[]
-    )
-  );
+  // console.log("corners:");
+  // console.dir(
+  //   m.pos.reduce(
+  //     (p, n, ni) => (edges[ni].length === 2 ? [...p, ni] : p),
+  //     [] as number[]
+  //   )
+  // );
   const origin = m.pos.findIndex((_, i) => edges[i].length === 2);
   assert(origin >= 0, "Invalid grid mesh; no corner");
 
-  // The two connections will be used as the X and Y axis
-  grid[0][0] = origin;
-  grid[1][0] = edges[origin][0];
-  grid[0][1] = edges[origin][1];
-
-  console.log("grid");
-  console.dir(grid);
-
   // Breath-first, add each vertex onto the grid
-  const worklist: { vi: number; x: number; y: number }[] = [
-    { vi: edges[origin][0], x: 1, y: 0 },
-    { vi: edges[origin][1], x: 0, y: 1 },
-  ];
+  const worklist: { vi: number; x: number; y: number }[] = [];
+
+  // The two connections will be used as the X and Y axis
+  place(origin, 0, 0);
+  place(edges[origin][0], 1, 0);
+  place(edges[origin][1], 0, 1);
+
+  // console.log("grid");
+  // console.dir(grid);
+
+  // Do the breath-first traversal work
   while (worklist.length) {
     const { vi, x, y } = worklist.shift()!;
-    console.log(`${vi}(${x},${y})`);
+    // console.log(`doing ${vi}(${x},${y})`);
     addChildrenToGrid(vi, x, y);
   }
 
@@ -384,56 +393,112 @@ export function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
 
   // TODO(@darzu): IMPLEMENT
 
+  dbgCheckState();
+
   return coords;
+
+  function place(vi: number, x: number, y: number) {
+    grid[x][y] = vi;
+    coords[vi] = [x, y];
+    worklist.push({ vi, x, y });
+
+    if (!dbgCheckState()) {
+      console.dir(dist1Neighbors(x, y));
+      console.dir(edges[vi].filter((e) => !!coords[e]));
+      throw "inconsistent";
+    }
+  }
 
   function addChildrenToGrid(vi: number, x: number, y: number) {
     // invarient: child x,y must be >= x,y
 
     // get unplaced children
-    const d1s = dist1Neighbors(x, y);
+    const children = dist1Neighbors(x, y);
     // console.log(`d1s at ${x},${y}`);
     // console.dir(d1s);
     const unplaced: number[] = [];
-    for (let c of edges[vi]) if (!d1s.some((d1) => d1 === c)) unplaced.push(c);
-    if (unplaced.length > 2) {
-      console.log(`parent: ${vi}->${vec3Dbg(m.pos[vi])} at ${x},${y}`);
-      for (let c of edges[vi]) {
-        console.log(`child: ${c}->${vec3Dbg(m.pos[c])}`);
-      }
-      for (let c of d1s) {
-        console.log(`d1: ${c}->${vec3Dbg(m.pos[c])}`);
-      }
-    }
+    for (let c of edges[vi])
+      if (!children.some((d1) => d1 === c)) unplaced.push(c);
+    // if (unplaced.length > 2) {
+    //   const d1s = dist1Neighbors(x, y);
+    //   console.log(`parent: ${vi}->pos${vec3Dbg(m.pos[vi])} at ${x},${y}`);
+    //   for (let c of edges[vi]) {
+    //     console.log(`child: ${c}->pos${vec3Dbg(m.pos[c])}`);
+    //   }
+    //   for (let c of d1s) {
+    //     console.log(`d1: ${c}->pos${vec3Dbg(m.pos[c])}`);
+    //   }
+    // }
     assert(unplaced.length <= 2, "inconsitency: too many unplaced children");
     if (!unplaced.length) return;
     const c1: number = unplaced[0];
     const c2: number | undefined = unplaced[1];
 
+    const c1PlacedEdges = edges[c1].filter((e) => !!coords[e]);
+    const c2PlacedEdges = c2 ? edges[c2].filter((e) => !!coords[e]) : undefined;
+
+    // console.log("unplaced:");
+    // console.dir(unplaced);
+    // console.dir({ c1, c1PlacedEdges });
+    // console.dir({ c2, c2PlacedEdges });
+
+    const beforeLen = worklist.length;
+
+    // TODO(@darzu): CONSIDER IF IT IS AN EDGE PIECE!!!
+
     // place in slot 1
     if (x + 1 <= xLen - 1) {
       const slot1d1s = dist1Neighbors(x + 1, y);
-      if (anyOverlap(slot1d1s, edges[c1])) {
-        grid[x + 1][y] = c1;
-        worklist.push({ vi: c1, x: x + 1, y: y });
-      } else if (c2 && anyOverlap(slot1d1s, edges[c2])) {
-        grid[x + 1][y] = c2;
-        worklist.push({ vi: c2, x: x + 1, y: y });
+      // console.dir({ slot1d1s });
+      if (slotCompatible(slot1d1s, c1PlacedEdges)) {
+        place(c1, x + 1, y);
+      } else if (c2 && slotCompatible(slot1d1s, c2PlacedEdges!)) {
+        place(c2, x + 1, y);
       }
     }
 
     // place in slot 2
     if (y + 1 <= yLen - 1) {
       const slot2d1s = dist1Neighbors(x, y + 1);
-      if (anyOverlap(slot2d1s, edges[c1])) {
-        grid[x][y + 1] = c1;
-        worklist.push({ vi: c1, x: x, y: y + 1 });
-      } else if (c2 && anyOverlap(slot2d1s, edges[c2])) {
-        grid[x][y + 1] = c2;
-        worklist.push({ vi: c2, x: x, y: y + 1 });
+      // console.dir({ slot2d1s });
+      if (slotCompatible(slot2d1s, c1PlacedEdges)) {
+        place(c1, x, y + 1);
+      } else if (c2 && slotCompatible(slot2d1s, c2PlacedEdges!)) {
+        place(c2, x, y + 1);
       }
     }
+
+    assert(
+      worklist.length === beforeLen + unplaced.length,
+      "Didn't place all children!"
+    );
   }
 
+  function dbgCheckState() {
+    for (let x = 0; x < xLen; x++) {
+      for (let y = 0; y < yLen; y++) {
+        if (grid[x][y] >= 0 && grid[x][y] !== refGrid[x][y]) {
+          console.log("INCONSITENT!");
+
+          console.log("expected:");
+          console.dir(refGrid);
+          console.log("actual:");
+          console.dir(grid);
+
+          console.trace();
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  function slotCompatible(slotd1s: number[], placedEdges: number[]): boolean {
+    if (slotd1s.length !== placedEdges.length) return false;
+
+    return arrayUnsortedEqual(slotd1s, placedEdges);
+    // return slotd1s.every((a) => edges.some((b) => a === b));
+  }
   function anyOverlap(xs: number[], ys: number[]): boolean {
     for (let x of xs) {
       for (let y of ys) {
@@ -445,21 +510,30 @@ export function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
 
   function dist1Neighbors(x: number, y: number): number[] {
     const res: number[] = [];
-    // prettier-ignore
-    if (x - 1 >= 0        && grid[x - 1][y] >= 0) res.push(grid[x - 1][y]);
-    // prettier-ignore
-    if (x + 1 <= xLen - 1 && grid[x + 1][y] >= 0) res.push(grid[x + 1][y]);
-    // prettier-ignore
-    if (y - 1 >= 0        && grid[x][y - 1] >= 0) res.push(grid[x][y - 1]);
-    // prettier-ignore
-    if (y + 1 <= yLen - 1 && grid[x][y + 1] >= 0) res.push(grid[x][y + 1]);
+    if (x - 1 >= 0) {
+      const o = grid[x - 1][y];
+      if (o >= 0) res.push(o);
+    }
+    if (x + 1 <= xLen - 1) {
+      const o = grid[x + 1][y];
+      if (o >= 0) res.push(o);
+    }
+    if (y - 1 >= 0) {
+      const o = grid[x][y - 1];
+      if (o >= 0) res.push(o);
+    }
+    if (y + 1 <= yLen - 1) {
+      const o = grid[x][y + 1];
+      if (o >= 0) res.push(o);
+    }
     return res;
   }
 
   function addEdge(va: number, vb: number) {
     const es = edges[va];
-    if (es.length < 4 && es[0] !== vb && es[1] !== vb && es[2] !== vb)
+    if (es.length < 4 && es[0] !== vb && es[1] !== vb && es[2] !== vb) {
       es.push(vb);
+    }
   }
 }
 

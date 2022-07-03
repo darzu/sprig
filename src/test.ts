@@ -20,9 +20,9 @@ function testBasics() {
 export function assert(cond: any, msg?: string): asserts cond {
   // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#assertion-functions
   if (!cond)
-    throw (
+    throw new Error(
       msg ??
-      "Assertion failed; please add a helpful msg and yell at the lazy dev who didn't."
+        "Assertion failed; please add a helpful msg and yell at the lazy dev who didn't."
     );
 }
 
