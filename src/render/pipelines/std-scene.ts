@@ -117,6 +117,17 @@ export function computeVertsData(m: Mesh): VertexTS[] {
     vertsData[triInd[0]].color = m.colors[i];
     vertsData[triInd[0]].surfaceId = m.surfaceIds[i];
   });
+  m.quad.forEach((quadInd, i) => {
+    // set provoking vertex data
+    const normal = computeTriangleNormal(
+      m.pos[quadInd[0]],
+      m.pos[quadInd[1]],
+      m.pos[quadInd[2]]
+    );
+    vertsData[quadInd[0]].normal = normal;
+    vertsData[quadInd[0]].color = m.colors[i];
+    vertsData[quadInd[0]].surfaceId = m.surfaceIds[i];
+  });
   return vertsData;
 }
 

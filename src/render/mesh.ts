@@ -6,29 +6,28 @@ import { vec3Dbg, vec3Mid } from "../utils-3d.js";
 
 // defines the geometry and coloring of a mesh
 // TODO(@darzu): we need to rethink theis whole mesh family of objects
+// geometry: pos, tri, quad, lines,
+// geo-data: colors, uvs, surfaceIds,
+// metadata: dbgName,
+// flags: usesProvoking
 export interface RawMesh {
+  // geometry
   pos: vec3[];
   tri: vec3[];
   quad: vec4[]; // MUST NOT be redundant w/ `tri`
-  colors: vec3[]; // colors per triangle in r,g,b float [0-1] format
   lines?: vec2[];
-  uvs?: vec2[]; // optional; one uv per vertex
+  // per-face data
+  colors: vec3[]; // in r,g,b float [0-1] format
   surfaceIds?: number[];
+  // per-vertex data
+  uvs?: vec2[]; // optional; one uv per vertex
   // TODO(@darzu):
   dbgName?: string;
 }
-
-// TODO(@darzu): Seperate RawMesh from Mesh, so that we can do standard
-//    processing all at once (usesProvoking, surfaceIds)
 export interface Mesh extends RawMesh {
-  pos: vec3[];
-  tri: vec3[];
-  quad: vec4[];
-  colors: vec3[]; // colors per triangle in r,g,b float [0-1] format
-  lines?: vec2[];
-  uvs?: vec2[];
-  surfaceIds: number[];
-  // format flags:
+  // made non-optional
+  surfaceIds: NonNullable<RawMesh["surfaceIds"]>;
+  // flags
   usesProvoking: true;
   // verticesUnshared?: boolean;
 }
@@ -109,11 +108,11 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
   const pos: vec3[] = [...input.pos];
   const uvs: vec2[] | undefined = input.uvs ? [...input.uvs] : undefined;
   const tri: vec3[] = [];
+  const quad: vec4[] = [];
   const provoking: { [key: number]: boolean } = {};
   const posMap: Map<number, number> = new Map();
   pos.forEach((_, i) => posMap.set(i, i));
-  // TODO(@darzu): HANDLE QUADS
-  input.tri.forEach(([i0, i1, i2], triI) => {
+  input.tri.forEach(([i0, i1, i2]) => {
     if (!provoking[i0]) {
       // First vertex is unused as a provoking vertex, so we'll use it for this triangle.
       provoking[i0] = true;
@@ -137,6 +136,37 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       tri.push([i3, i1, i2]);
     }
   });
+  // TODO(@darzu): IMPL
+  // input.quad.forEach((q) => quad.push(q));
+  input.quad.forEach(([i0, i1, i2, i3]) => {
+    if (!provoking[i0]) {
+      // First vertex is unused as a provoking vertex, so we'll use it for this triangle.
+      provoking[i0] = true;
+      quad.push([i0, i1, i2, i3]);
+    } else if (!provoking[i1]) {
+      // First vertex was taken, so let's see if we can rotate the indices to get an unused
+      // provoking vertex.
+      provoking[i1] = true;
+      quad.push([i1, i2, i3, i0]);
+    } else if (!provoking[i2]) {
+      // ditto
+      provoking[i2] = true;
+      quad.push([i2, i3, i0, i1]);
+    } else if (!provoking[i3]) {
+      // ditto
+      provoking[i3] = true;
+      quad.push([i3, i0, i1, i2]);
+    } else {
+      // All vertices are taken, so create a new one
+      const i4 = pos.length;
+      pos.push(input.pos[i0]);
+      posMap.set(i4, i0);
+      // TODO(@darzu): safer way to duplicate all per-vertex data
+      if (uvs) uvs.push(input.uvs![i0]);
+      provoking[i4] = true;
+      quad.push([i4, i1, i2, i3]);
+    }
+  });
 
   return {
     mesh: {
@@ -144,6 +174,7 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       pos,
       uvs,
       tri,
+      quad,
       usesProvoking: true,
     },
     posMap,
@@ -257,8 +288,8 @@ function uniqueRefs<T>(ts: T[]): T[] {
 
 export function quadToTris(q: vec4): [vec3, vec3] {
   return [
-    [q[0], q[1], q[3]],
-    [q[1], q[2], q[3]],
+    [q[0], q[1], q[2]],
+    [q[0], q[2], q[3]],
   ];
 }
 

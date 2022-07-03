@@ -114,7 +114,7 @@ export function importObj(obj: string): RawMesh[] | ParseError {
     if (pos.length === 0) return;
 
     // finish mesh
-    for (let i = 0; i < tri.length; i++) {
+    for (let i = 0; i < tri.length + quad.length; i++) {
       // TODO(@darzu): import color
       colors.push([0.0, 0.0, 0.0]);
       // colors.push([0.2, 0.2, 0.2]);
