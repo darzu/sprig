@@ -1,5 +1,5 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { mat4, vec2, vec3 } from "../gl-matrix.js";
+import { mat4, vec2, vec3, vec4 } from "../gl-matrix.js";
 import { importObj, isParseError } from "../import_obj.js";
 import {
   cloneMesh,
@@ -416,7 +416,7 @@ const DBG_FABRIC = createFabric(5);
 
 export function createFabric(size: number): RawMesh {
   const pos: vec3[] = [];
-  const tri: vec3[] = [];
+  const quad: vec4[] = [];
 
   // create each vert
   for (let x = 0; x < size; x++) {
@@ -428,26 +428,22 @@ export function createFabric(size: number): RawMesh {
   // create each quad
   for (let x = 0; x < size - 1; x++) {
     for (let y = 0; y < size - 1; y++) {
-      const quad = [
+      const q: vec4 = [
         idx(x, y),
         idx(x + 1, y),
         idx(x + 1, y + 1),
         idx(x, y + 1),
-      ] as const;
-      // clockwise
-      tri.push([quad[0], quad[1], quad[2]]);
-      tri.push([quad[0], quad[2], quad[3]]);
-      // counter-clockwise
-      tri.push([quad[2], quad[1], quad[0]]);
-      tri.push([quad[3], quad[2], quad[0]]);
+      ];
+      quad.push(q);
+      quad.push([q[3], q[2], q[1], q[0]]);
     }
   }
 
   return {
     pos,
-    tri,
-    quad: [],
-    colors: tri.map((_, i) => [i / tri.length, 0.2, 0.2]),
+    tri: [],
+    quad,
+    colors: quad.map((_, i) => [i / quad.length, 0.2, 0.2]),
   };
 
   function idx(x: number, y: number): number {

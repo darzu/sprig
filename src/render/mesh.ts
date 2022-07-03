@@ -295,8 +295,8 @@ export function quadToTris(q: vec4): [vec3, vec3] {
 
 {
   // TODO(@darzu): DEBUG
-  // const f = createFabric(3);
-  // getMeshAsGrid(f);
+  const f = createFabric(3);
+  getMeshAsGrid(f);
 }
 
 type VertPosToGridCoord = vec2[];
@@ -308,6 +308,11 @@ export function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
   //    const coords = new Array(m.pos.length).fill(vec2.create());
   // TODO(@darzu): PERF. could be made more efficient by using one big typed array
   //  of vert indices w/ 4 slots for edges.
+
+  assert(
+    m.quad.length > 0 && m.tri.length === 0,
+    "getMeshAsGrid only works for fully quad meshes"
+  );
 
   const coords: VertPosToGridCoord = [];
 
@@ -327,13 +332,19 @@ export function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
   // Collect all edges
   const numVerts = m.pos.length;
   const edges = new Array(numVerts).fill([]).map(() => [] as number[]);
-  for (let [t0, t1, t2] of m.tri) {
+  for (let [t0, t1, t2, t3] of m.quad) {
+    // top
     addEdge(t0, t1);
-    addEdge(t0, t2);
     addEdge(t1, t0);
+    // right
     addEdge(t1, t2);
     addEdge(t2, t1);
-    addEdge(t2, t0);
+    // bottom
+    addEdge(t2, t3);
+    addEdge(t3, t2);
+    // left
+    addEdge(t0, t3);
+    addEdge(t3, t0);
   }
   console.log("edges:");
   console.dir(edges);
