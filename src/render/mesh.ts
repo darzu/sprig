@@ -358,8 +358,6 @@ export function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
     )
   );
   const origin = m.pos.findIndex((_, i) => edges[i].length === 2);
-  console.log("0 edges:");
-  console.dir(edges[0]);
   assert(origin >= 0, "Invalid grid mesh; no corner");
 
   // The two connections will be used as the X and Y axis
@@ -367,6 +365,7 @@ export function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
   grid[1][0] = edges[origin][0];
   grid[0][1] = edges[origin][1];
 
+  console.log("grid");
   console.dir(grid);
 
   // Breath-first, add each vertex onto the grid
@@ -380,6 +379,7 @@ export function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
     addChildrenToGrid(vi, x, y);
   }
 
+  console.log("grid");
   console.dir(grid);
 
   // TODO(@darzu): IMPLEMENT
@@ -391,6 +391,8 @@ export function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
 
     // get unplaced children
     const d1s = dist1Neighbors(x, y);
+    // console.log(`d1s at ${x},${y}`);
+    // console.dir(d1s);
     const unplaced: number[] = [];
     for (let c of edges[vi]) if (!d1s.some((d1) => d1 === c)) unplaced.push(c);
     if (unplaced.length > 2) {
@@ -443,10 +445,14 @@ export function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
 
   function dist1Neighbors(x: number, y: number): number[] {
     const res: number[] = [];
-    if (x - 1 >= 0) res.push(grid[x - 1][y]);
-    if (x + 1 <= xLen - 1) res.push(grid[x + 1][y]);
-    if (y - 1 >= 0) res.push(grid[x][y - 1]);
-    if (y + 1 <= yLen - 1) res.push(grid[x][y + 1]);
+    // prettier-ignore
+    if (x - 1 >= 0        && grid[x - 1][y] >= 0) res.push(grid[x - 1][y]);
+    // prettier-ignore
+    if (x + 1 <= xLen - 1 && grid[x + 1][y] >= 0) res.push(grid[x + 1][y]);
+    // prettier-ignore
+    if (y - 1 >= 0        && grid[x][y - 1] >= 0) res.push(grid[x][y - 1]);
+    // prettier-ignore
+    if (y + 1 <= yLen - 1 && grid[x][y + 1] >= 0) res.push(grid[x][y + 1]);
     return res;
   }
 

@@ -138,3 +138,9 @@ Speed painting:
 
 Editable WFC a la Townscaper for asset creation?
   https://www.boristhebrave.com/2022/04/25/editable-wfc/
+
+Why quad meshes?
+  https://projet.liris.cnrs.fr/imagine/pub/proceedings/EUROGRAPHICS2012/stars/pdf/159-182.pdf
+  https://en.wikipedia.org/wiki/Catmull–Clark_subdivision_surface
+  https://prideout.net/quad-meshes
+  https://geometryfactory.com/products/igm-quad-meshing/
