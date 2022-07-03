@@ -4,6 +4,7 @@ import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
 import { assert } from "../test.js";
 import { arraySortedEqual, arrayUnsortedEqual } from "../util.js";
 import { vec3Dbg, vec3Mid } from "../utils-3d.js";
+import { drawBall, drawLine } from "../utils-game.js";
 
 // defines the geometry and coloring of a mesh
 // TODO(@darzu): we need to rethink theis whole mesh family of objects
@@ -105,6 +106,7 @@ export function cloneMesh(m: Mesh | RawMesh): Mesh | RawMesh {
 export function unshareProvokingVerticesWithMap(input: RawMesh): {
   mesh: RawMesh & { usesProvoking: true };
   posMap: Map<number, number>;
+  provoking: { [key: number]: boolean };
 } {
   const pos: vec3[] = [...input.pos];
   const uvs: vec2[] | undefined = input.uvs ? [...input.uvs] : undefined;
@@ -166,6 +168,7 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       if (uvs) uvs.push(input.uvs![i0]);
       provoking[i4] = true;
       quad.push([i4, i1, i2, i3]);
+      // console.log(`duplicating: ${i0}!`);
     }
   });
 
@@ -179,12 +182,13 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       usesProvoking: true,
     },
     posMap,
+    provoking,
   };
 }
 export function unshareProvokingVertices(
   input: RawMesh
 ): RawMesh & { usesProvoking: true } {
-  const { mesh, posMap } = unshareProvokingVerticesWithMap(input);
+  const { mesh, posMap, provoking } = unshareProvokingVerticesWithMap(input);
   return mesh;
 }
 
@@ -202,14 +206,32 @@ function generateSurfaceIds(mesh: RawMesh): number[] {
   return mesh.tri.map((_, i) => triIdToSurfaceId.get(i)!);
 }
 
-export function normalizeMesh(input: RawMesh): Mesh {
+export function normalizeMesh(inM: RawMesh): Mesh {
   // TODO(@darzu): generate lines from surface IDs?
-  const m1 = unshareProvokingVertices(input);
+  const oldVertNum = inM.pos.length;
+  const {
+    mesh: outM,
+    posMap,
+    provoking,
+  } = unshareProvokingVerticesWithMap(inM);
+  const newVertNum = outM.pos.length;
+  if (inM.tri.length === 0 && inM.quad.length > 0) {
+    // single-sided quad meshes shouldn't need to create new verts
+    // if (oldVertNum !== newVertNum) {
+    //   console.warn(
+    //     `quad mesh w/ ${oldVertNum} verts had ${
+    //       newVertNum - oldVertNum
+    //     } extra verts added by unshareProvokingVerticesWithMap`
+    //   );
+    //   console.log(`quad count: ${inM.quad.length}`);
+    //   console.dir(Object.keys(provoking).map((n) => Number(n)));
+    // }
+  }
   return {
-    ...m1,
+    ...outM,
     // TODO(@darzu): always generate UVs?
-    uvs: m1.uvs,
-    surfaceIds: m1.surfaceIds ?? generateSurfaceIds(m1),
+    uvs: outM.uvs,
+    surfaceIds: outM.surfaceIds ?? generateSurfaceIds(outM),
   };
 }
 
@@ -296,13 +318,17 @@ export function quadToTris(q: vec4): [vec3, vec3] {
 
 {
   // TODO(@darzu): DEBUG
-  const f = createFabric(3);
-  getMeshAsGrid(f);
+  const f = createFabric(5);
+  console.log("getMeshAsGrid on fabric");
+  const res = getMeshAsGrid(f);
+  console.dir(res);
+  console.log("getMeshAsGrid on fabric done.");
 }
 
-type VertPosToGridCoord = vec2[];
-
-export function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
+export function getMeshAsGrid(m: RawMesh): {
+  coords: vec2[];
+  grid: number[][];
+} {
   // TODO(@darzu): PERF. can big arrays of vecs be more efficiently allocated
   //  as slices into one big type array or something? Each of these is doing
   //  a "new Float32Array(2)" which seems inefficient. Instead of:
@@ -311,33 +337,18 @@ export function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
   //  of vert indices w/ 4 slots for edges.
 
   assert(
-    m.quad.length > 0 && m.tri.length === 0,
-    "getMeshAsGrid only works for fully quad meshes"
+    (m.quad.length > 0 || (m.lines?.length ?? 0) > 0) && m.tri.length === 0,
+    "getMeshAsGrid only works for fully quad or line meshes"
   );
 
-  const refGrid = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-  ];
+  // const refGrid = [
+  //   [0, 1, 2],
+  //   [3, 4, 5],
+  //   [6, 7, 8],
+  // ];
 
-  console.log("refGrid");
-  console.dir(refGrid);
-
-  const coords: VertPosToGridCoord = [];
-
-  // console.log("mesh");
-  // console.dir(m);
-
-  // TODO: figure out grid length
-  const xLen = 3;
-  const yLen = 3;
-  const grid: number[][] = new Array(xLen)
-    .fill([])
-    .map(() => new Array(yLen).fill(-1));
-
-  // console.log("start grid:");
-  // console.log(grid);
+  // console.log("refGrid");
+  // console.dir(refGrid);
 
   // Collect all edges
   const numVerts = m.pos.length;
@@ -356,27 +367,46 @@ export function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
     addEdge(t0, t3);
     addEdge(t3, t0);
   }
+  // TODO(@darzu): There are issues with line generation from our quad mesh
+  // if (m.lines)
+  //   for (let [t0, t1] of m.lines) {
+  //     addEdge(t0, t1);
+  //     addEdge(t1, t0);
+  //   }
   // console.log("edges:");
   // console.dir(edges);
 
   // Find a corner, use that as the origin
-  // console.log("corners:");
-  // console.dir(
-  //   m.pos.reduce(
-  //     (p, n, ni) => (edges[ni].length === 2 ? [...p, ni] : p),
-  //     [] as number[]
-  //   )
-  // );
-  const origin = m.pos.findIndex((_, i) => edges[i].length === 2);
+  const corners = m.pos.reduce(
+    (p, n, ni) => (edges[ni].length === 2 ? [...p, ni] : p),
+    [] as number[]
+  );
+  const origin = corners[0];
   assert(origin >= 0, "Invalid grid mesh; no corner");
+
+  // Measure the distance to the other corners
+  const xDirVert = edges[origin][0];
+  const xLen = distToCorner(origin, xDirVert) + 1;
+  const yDirVert = edges[origin][1];
+  const yLen = distToCorner(origin, yDirVert) + 1;
+
+  // setup out grid structures
+  const coords: vec2[] = [];
+  // TODO: figure out grid length
+  const grid: number[][] = new Array(xLen)
+    .fill([])
+    .map(() => new Array(yLen).fill(-1));
+
+  // console.log("start grid:");
+  // console.log(grid);
 
   // Breath-first, add each vertex onto the grid
   const worklist: { vi: number; x: number; y: number }[] = [];
 
   // The two connections will be used as the X and Y axis
   place(origin, 0, 0);
-  place(edges[origin][0], 1, 0);
-  place(edges[origin][1], 0, 1);
+  place(xDirVert, 1, 0);
+  place(yDirVert, 0, 1);
 
   // console.log("grid");
   // console.dir(grid);
@@ -388,14 +418,17 @@ export function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
     addChildrenToGrid(vi, x, y);
   }
 
-  console.log("grid");
-  console.dir(grid);
+  // console.log("grid");
+  // console.dir(grid);
 
-  // TODO(@darzu): IMPLEMENT
+  // TODO(@darzu): IMPLEMENT RETURN
 
   dbgCheckState();
 
-  return coords;
+  return {
+    coords,
+    grid,
+  };
 
   function place(vi: number, x: number, y: number) {
     grid[x][y] = vi;
@@ -475,22 +508,64 @@ export function getMeshAsGrid(m: RawMesh): VertPosToGridCoord {
   }
 
   function dbgCheckState() {
-    for (let x = 0; x < xLen; x++) {
-      for (let y = 0; y < yLen; y++) {
-        if (grid[x][y] >= 0 && grid[x][y] !== refGrid[x][y]) {
-          console.log("INCONSITENT!");
+    // for (let x = 0; x < xLen; x++) {
+    //   for (let y = 0; y < yLen; y++) {
+    //     if (grid[x][y] >= 0 && grid[x][y] !== refGrid[x][y]) {
+    //       console.log("INCONSITENT!");
 
-          console.log("expected:");
-          console.dir(refGrid);
-          console.log("actual:");
-          console.dir(grid);
+    //       console.log("expected:");
+    //       console.dir(refGrid);
+    //       console.log("actual:");
+    //       console.dir(grid);
 
-          console.trace();
-          return false;
-        }
-      }
-    }
+    //       console.trace();
+    //       return false;
+    //     }
+    //   }
+    // }
     return true;
+  }
+  function distToCorner(last: number, current: number): number {
+    // console.log(
+    //   `distToCorner: ${last}, ${current}(${edges[current].length}->${edges[
+    //     current
+    //   ]
+    //     .map((n) => edges[n].length)
+    //     .join(",")})`
+    // );
+    // drawBall(m.pos[last], 1.0, [0.2, 0.2, 0.9]);
+
+    const cEdges = edges[current];
+    assert(cEdges.length <= 3, "not walking along an edge!");
+    for (let next of cEdges) {
+      if (next === last) continue;
+      const nEdges = edges[next];
+      // console.log(`n: ${next}`);
+      // console.dir(nEdges);
+      if (nEdges.length === 3) return 1 + distToCorner(current, next);
+      if (nEdges.length === 2) return 2;
+    }
+    // console.dir(edges[current]);
+    // console.dir(
+    //   m.quad.filter((q) => q.some((vi) => vi === current || vi === last))
+    // );
+
+    // Debugging
+    drawBall(m.pos[last], 1.0, [0.2, 0.2, 0.9]);
+    drawBall(m.pos[current], 1.0, [0.2, 0.9, 0.2]);
+    cEdges.forEach((n, i) => {
+      const red = 0.7 + i * 0.1;
+      drawBall(m.pos[n], 0.8, [red, 0.2, 0.2]);
+      edges[n].forEach((n2, i2) => {
+        // drawLine(m.pos[n], m.pos[n2], [red, 0.2, 0.2]);
+        drawBall(m.pos[n2], 0.5, [red, 0.2, 0.2]);
+      });
+    });
+
+    assert(
+      false,
+      `couldn't find an edge to walk along! ${last}->${current}->?!`
+    );
   }
 
   function slotCompatible(slotd1s: number[], placedEdges: number[]): boolean {

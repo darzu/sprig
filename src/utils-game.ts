@@ -1,7 +1,8 @@
 import { ColorDef } from "./color.js";
-import { EM } from "./entity-manager.js";
+import { EM, Entity, EntityW } from "./entity-manager.js";
+import { AssetsDef } from "./game/assets.js";
 import { vec3 } from "./gl-matrix.js";
-import { PositionDef } from "./physics/transform.js";
+import { PositionDef, ScaleDef } from "./physics/transform.js";
 import { Mesh } from "./render/mesh.js";
 import { RenderableConstructDef } from "./render/renderer-ecs.js";
 
@@ -23,4 +24,21 @@ export function drawLine(start: vec3, end: vec3, color: vec3) {
   EM.ensureComponentOn(e, RenderableConstructDef, m);
   EM.ensureComponentOn(e, PositionDef);
   return e;
+}
+
+export function drawBall(
+  pos: vec3,
+  size: number,
+  color: vec3
+): Promise<EntityW<[typeof PositionDef]>> {
+  return new Promise((resolve) => {
+    EM.registerOneShotSystem([], [AssetsDef], (_, res) => {
+      const e = EM.newEntity();
+      EM.ensureComponentOn(e, ColorDef, color);
+      EM.ensureComponentOn(e, RenderableConstructDef, res.assets.ball.proto);
+      EM.ensureComponentOn(e, PositionDef, pos);
+      EM.ensureComponentOn(e, ScaleDef, [size, size, size]);
+      resolve(e);
+    });
+  });
 }

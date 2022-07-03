@@ -29,7 +29,7 @@ export function initHyperspaceGame(em: EntityManager) {
   em.addSingletonComponent(GameStateDef);
 
   // if (hosting) {
-  createShip();
+  createShip([-120, 0, 0]);
   // }
 
   em.registerOneShotSystem(null, [MeDef], () => createPlayer(em));
@@ -47,10 +47,13 @@ export function initHyperspaceGame(em: EntityManager) {
         res.assets.ocean.proto
       );
       em.ensureComponentOn(ocean, ColorDef, [0.1, 0.3, 0.8]);
-      em.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
+      // em.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
+      em.ensureComponentOn(ocean, PositionDef);
+      // em.ensureComponentOn(ocean, PositionDef, [120, 0, 0]);
       // vec3.scale(ocean.position, ocean.position, scale);
-      const scale = 100.0;
-      em.ensureComponentOn(ocean, ScaleDef, [scale, scale, scale]);
+      // const scale = 100.0;
+      // const scale = 1.0;
+      // em.ensureComponentOn(ocean, ScaleDef, [scale, scale, scale]);
 
       // TODO(@darzu): DEBUG fabric stuff
       const fabric = em.newEntity();
@@ -83,7 +86,7 @@ export function initHyperspaceGame(em: EntityManager) {
           unwrapPipeline, // TODO(@darzu): don't run many times
           shadowPipeline,
           stdRenderPipeline,
-          finalCompose, // TODO(@darzu): should be last step
+          // finalCompose, // TODO(@darzu): should be last step
           outlineRender,
           renderStars,
           ...blurPipelines,

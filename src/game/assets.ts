@@ -152,8 +152,14 @@ const MeshModify: Partial<{
     );
 
     // TODO(@darzu): DBG
-    // console.log("getMeshAsGrid(ocean)");
-    // getMeshAsGrid(m);
+    try {
+      console.log("getMeshAsGrid(ocean)");
+      getMeshAsGrid(m);
+      console.log("getMeshAsGrid success!");
+    } catch (e) {
+      console.log("getMeshAsGrid failed!");
+      console.error(e);
+    }
 
     // console.dir(m.uvs);
     // console.dir({ minX, maxX, minZ, maxZ });
@@ -444,6 +450,7 @@ export function createFabric(size: number): RawMesh {
     tri: [],
     quad,
     colors: quad.map((_, i) => [i / quad.length, 0.2, 0.2]),
+    dbgName: `fabric-${size}`,
   };
 
   function idx(x: number, y: number): number {

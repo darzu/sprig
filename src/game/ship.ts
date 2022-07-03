@@ -188,8 +188,8 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
   EM,
   {
     name: "ship",
-    defaultProps: () => ({
-      loc: vec3.create(),
+    defaultProps: (loc?: vec3) => ({
+      loc: loc ?? vec3.create(),
       rot: quat.create(),
       gemId: 0,
       cannonLId: 0,
@@ -225,7 +225,7 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
       const em: EntityManager = EM;
 
       if (s.authority.pid === res.me.pid) {
-        s.shipProps.loc = [0, -2, 0];
+        // s.shipProps.loc = [0, -2, 0];
 
         // create gem
         const gem = createGem(s.id);
