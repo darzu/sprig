@@ -313,7 +313,8 @@ const criticalPartIdxes = [0, 3, 5, 6];
 //   });
 // }
 
-const START_TEXT = "hit the gem to begin";
+const START_TEXT = "";
+// const START_TEXT = "hit the gem to begin";
 
 export function registerShipSystems(em: EntityManager) {
   em.registerSystem(

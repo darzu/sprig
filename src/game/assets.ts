@@ -22,11 +22,16 @@ import { assert } from "../test.js";
 import { objMap, range } from "../util.js";
 import { getText } from "../webget.js";
 import { AABBCollider } from "../physics/collider.js";
-import { farthestPointInDir, SupportFn, uintToVec3unorm } from "../utils-3d.js";
+import {
+  farthestPointInDir,
+  normalizeVec2s,
+  SupportFn,
+  uintToVec3unorm,
+} from "../utils-3d.js";
 import { MeshHandle } from "../render/mesh-pool.js";
 import { MeshHandleStd } from "../render/pipelines/std-scene.js";
 import { onInit } from "../init.js";
-import { mathMap, min } from "../math.js";
+import { mathMap, max, min } from "../math.js";
 
 // TODO: load these via streaming
 
@@ -141,25 +146,68 @@ const MeshModify: Partial<{
     const maxX = m.pos.reduce((p, n) => (n[0] > p ? n[0] : p), -Infinity);
     const minZ = m.pos.reduce((p, n) => (n[2] < p ? n[2] : p), Infinity);
     const maxZ = m.pos.reduce((p, n) => (n[2] > p ? n[2] : p), -Infinity);
-    m.uvs = m.pos.map(
-      (p, i) =>
-        vec2.fromValues(
-          mathMap(p[0], minX, maxX, 0, 1),
-          mathMap(p[2], minZ, maxZ, 0, 1)
-        )
-      // vec2.fromValues(i / m.pos.length, 0)
-      // vec2.fromValues(0.5, 0.5)
-    );
+    // m.uvs = m.pos.map(
+    //   (p, i) =>
+    //     vec2.fromValues(
+    //       mathMap(p[0], minX, maxX, 0, 1),
+    //       mathMap(p[2], minZ, maxZ, 0, 1)
+    //     )
+    //   // vec2.fromValues(i / m.pos.length, 0)
+    //   // vec2.fromValues(0.5, 0.5)
+    // );
 
     // TODO(@darzu): DBG
-    try {
-      console.log("getMeshAsGrid(ocean)");
-      getMeshAsGrid(m);
-      console.log("getMeshAsGrid success!");
-    } catch (e) {
-      console.log("getMeshAsGrid failed!");
-      console.error(e);
+    // try {
+    //   console.log("getMeshAsGrid(ocean)");
+    const { coords, grid } = getMeshAsGrid(m);
+    //   console.log("getMeshAsGrid success!");
+    // } catch (e) {
+    //   console.log("getMeshAsGrid failed!");
+    //   console.error(e);
+    // }
+    const xLen = grid.length;
+    const yLen = grid[0].length;
+    // console.log(`xLen:${xLen},yLen:${yLen}`);
+    const uvs = m.pos.map((_, vi) => vec2.create());
+    m.uvs = uvs;
+    // setUV(Math.floor(xLen / 2), 0, [0, 1], [0, 0], true);
+    setUV(0, Math.floor(yLen / 2), [1, 0], [0, 0], true);
+    normalizeVec2s(uvs);
+
+    function setUV(
+      x: number,
+      y: number,
+      dir: vec2,
+      currDist: vec2,
+      branch: boolean
+    ) {
+      // console.log(`setUV ${x} ${y} ${dir} ${currDist} ${branch}`);
+      // set this UV
+      const vi = grid[x][y];
+      vec2.copy(uvs[vi], currDist);
+
+      // branch?
+      if (branch) {
+        setUV(x, y, [dir[1], dir[0]], currDist, false);
+        setUV(x, y, [-dir[1], -dir[0]], currDist, false);
+      }
+
+      // continue forward?
+      const nX = x + dir[0];
+      const nY = y + dir[1];
+      if (nX < 0 || xLen <= nX || nY < 0 || yLen <= nY) return;
+      const nVi = grid[nX][nY];
+      const delta = vec3.dist(m.pos[vi], m.pos[nVi]);
+      const newDist: vec2 = [
+        currDist[0] + dir[0] * delta,
+        currDist[1] + dir[1] * delta,
+      ];
+      setUV(nX, nY, dir, newDist, branch);
     }
+    // console.dir({
+    //   uvMin: [min(m.uvs.map((a) => a[0])), min(m.uvs.map((a) => a[1]))],
+    //   uvMax: [max(m.uvs.map((a) => a[0])), max(m.uvs.map((a) => a[1]))],
+    // });
 
     // console.dir(m.uvs);
     // console.dir({ minX, maxX, minZ, maxZ });

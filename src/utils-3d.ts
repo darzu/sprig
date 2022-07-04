@@ -1,5 +1,5 @@
-import { mat4, quat, vec3, vec4 } from "./gl-matrix.js";
-import { avg } from "./math.js";
+import { mat4, quat, vec2, vec3, vec4 } from "./gl-matrix.js";
+import { avg, mathMap } from "./math.js";
 import { AABB } from "./physics/broadphase.js";
 import { tempVec } from "./temp-pool.js";
 
@@ -108,4 +108,17 @@ export function uintToVec3unorm(i: number, max: number): vec3 {
     (((((i % 7) + 1) & 2) >> 1) * (Math.floor(i / 7) + 1)) / Math.ceil(max / 7),
     (((((i % 7) + 1) & 4) >> 2) * (Math.floor(i / 7) + 1)) / Math.ceil(max / 7),
   ];
+}
+
+// Changes all vec2s to be in the range [0,1] based on the max and min values
+//   of the whole array.
+export function normalizeVec2s(vs: vec2[]): void {
+  const minX = vs.reduce((p, n) => (n[0] < p ? n[0] : p), Infinity);
+  const maxX = vs.reduce((p, n) => (n[0] > p ? n[0] : p), -Infinity);
+  const minY = vs.reduce((p, n) => (n[1] < p ? n[1] : p), Infinity);
+  const maxY = vs.reduce((p, n) => (n[1] > p ? n[1] : p), -Infinity);
+  for (let v of vs) {
+    v[0] = mathMap(v[0], minX, maxX, 0, 1);
+    v[1] = mathMap(v[1], minY, maxY, 0, 1);
+  }
 }

@@ -116,3 +116,7 @@ Astroneer crafting:
 "Platformer Toolkit Video Essay":
   https://gmtk.itch.io/platformer-toolkit
   
+Pretty decent glossery of functional programming terms:
+  https://github.com/hemanth/functional-programming-jargon#monad
+  could do something similar for game / rendering stuff
+  

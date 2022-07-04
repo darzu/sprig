@@ -19,6 +19,7 @@ import { createShip } from "./ship.js";
 import { GameStateDef } from "./gamestate.js";
 import { unwrapPipeline } from "../render/pipelines/xp-uv-unwrap.js";
 import { createComposePipeline } from "../render/pipelines/std-compose.js";
+import { createGhost } from "./sandbox.js";
 
 const OceanDef = EM.defineComponent("ocean", () => true);
 
@@ -32,12 +33,20 @@ export function initHyperspaceGame(em: EntityManager) {
   createShip([-120, 0, 0]);
   // }
 
-  em.registerOneShotSystem(null, [MeDef], () => createPlayer(em));
+  // em.registerOneShotSystem(null, [MeDef], () => createPlayer(em));
 
   em.registerOneShotSystem(
     null,
     [AssetsDef, GlobalCursor3dDef, RendererDef],
     (_, res) => {
+      const ghost = createGhost(em);
+      em.ensureComponentOn(
+        ghost,
+        RenderableConstructDef,
+        res.assets.cube.proto
+      );
+      ghost.controllable.sprintMul *= 3;
+
       // TODO(@darzu): call one-shot initStars
       const ocean = em.newEntity();
       em.ensureComponentOn(ocean, OceanDef);
@@ -86,7 +95,7 @@ export function initHyperspaceGame(em: EntityManager) {
           unwrapPipeline, // TODO(@darzu): don't run many times
           shadowPipeline,
           stdRenderPipeline,
-          // finalCompose, // TODO(@darzu): should be last step
+          finalCompose, // TODO(@darzu): should be last step
           outlineRender,
           renderStars,
           ...blurPipelines,
