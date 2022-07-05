@@ -18,7 +18,7 @@ import { MeshHandleStd } from "./pipelines/std-scene.js";
 import { CanvasDef } from "../canvas.js";
 import { FORCE_WEBGL } from "../main.js";
 import { createWebGPURenderer } from "./render-webgpu.js";
-import { CyPipelinePtr } from "./gpu-registry.js";
+import { CyPipelinePtr, CyTexturePtr } from "./gpu-registry.js";
 import { createFrame } from "../physics/nonintersection.js";
 import { tempVec } from "../temp-pool.js";
 import { isMeshHandle } from "./mesh-pool.js";
@@ -376,6 +376,7 @@ export interface Renderer {
   updateMesh(handle: MeshHandleStd, newMeshData: Mesh): void;
   updateScene(scene: Partial<SceneTS>): void;
   renderFrame(handles: MeshHandleStd[], pipelines: CyPipelinePtr[]): void;
+  readTexture(tex: CyTexturePtr): Promise<ArrayBuffer>;
 }
 
 export const RendererDef = EM.defineComponent(

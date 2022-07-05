@@ -17,11 +17,16 @@ import { MeDef } from "../net/components.js";
 import { createPlayer } from "./player.js";
 import { createShip } from "./ship.js";
 import { GameStateDef } from "./gamestate.js";
-import { unwrapPipeline } from "../render/pipelines/xp-uv-unwrap.js";
+import { unwrapPipeline, unwrapTex } from "../render/pipelines/xp-uv-unwrap.js";
 import { createComposePipeline } from "../render/pipelines/std-compose.js";
 import { createGhost } from "./sandbox.js";
+import { quat, vec2, vec3 } from "../gl-matrix.js";
 
 const OceanDef = EM.defineComponent("ocean", () => true);
+
+const UVPos = EM.defineComponent("uv", (pos?: vec2) => ({
+  pos: pos,
+}));
 
 export function initHyperspaceGame(em: EntityManager) {
   const camera = em.addSingletonComponent(CameraDef);
@@ -45,7 +50,17 @@ export function initHyperspaceGame(em: EntityManager) {
         RenderableConstructDef,
         res.assets.cube.proto
       );
+      ghost.controllable.speed *= 3;
       ghost.controllable.sprintMul *= 3;
+
+      {
+        // debug camera
+        vec3.copy(ghost.position, [-185.02, 66.25, -69.04]);
+        quat.copy(ghost.rotation, [0.0, -0.92, 0.0, 0.39]);
+        vec3.copy(ghost.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+        ghost.cameraFollow.yawOffset = 0.0;
+        ghost.cameraFollow.pitchOffset = -0.465;
+      }
 
       // TODO(@darzu): call one-shot initStars
       const ocean = em.newEntity();
@@ -64,7 +79,7 @@ export function initHyperspaceGame(em: EntityManager) {
       // const scale = 1.0;
       // em.ensureComponentOn(ocean, ScaleDef, [scale, scale, scale]);
 
-      // TODO(@darzu): DEBUG fabric stuff
+      // TODO(@darzu): DEBUG quad mesh stuff
       const fabric = em.newEntity();
       em.ensureComponentOn(
         fabric,
@@ -72,12 +87,20 @@ export function initHyperspaceGame(em: EntityManager) {
         res.assets.fabric.proto
       );
       em.ensureComponentOn(fabric, PositionDef, [10, 10, 10]);
+
+      const buoy = em.newEntity();
+      em.ensureComponentOn(buoy, PositionDef);
+      em.ensureComponentOn(buoy, RenderableConstructDef, res.assets.ball.proto);
+      em.ensureComponentOn(buoy, ScaleDef, [5, 5, 5]);
+      em.ensureComponentOn(buoy, ColorDef, [0.2, 0.8, 0.2]);
+      em.ensureComponentOn(buoy, UVPos, [0.5, 0.5]);
     }
   );
 
   // let line: ReturnType<typeof drawLine>;
 
   let once = true;
+  let once2 = true; // TODO(@darzu): lol wat.
 
   let finalCompose = createComposePipeline();
 
@@ -88,7 +111,16 @@ export function initHyperspaceGame(em: EntityManager) {
       if (once) {
         // one-time compute and render jobs
         res.renderer.pipelines = [initStars, unwrapPipeline];
+
         once = false;
+      } else if (once2) {
+        // read from one-time jobs
+        // TODO(@darzu): what's the right way to handle these jobs
+        res.renderer.renderer.readTexture(unwrapTex).then((a) => {
+          console.dir(new Float32Array(a));
+        });
+
+        once2 = false;
       } else {
         // steady state rendering
         res.renderer.pipelines = [
@@ -97,11 +129,8 @@ export function initHyperspaceGame(em: EntityManager) {
           stdRenderPipeline,
           finalCompose, // TODO(@darzu): should be last step
           outlineRender,
-          renderStars,
-          ...blurPipelines,
-          // renderRopePipelineDesc,
-          // boidRender,
-          // boidCanvasMerge,
+          // renderStars,
+          // ...blurPipelines,
           // shadowDbgDisplay,
           // normalDbg,
           // positionDbg,

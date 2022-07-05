@@ -31,7 +31,10 @@ import {
   CyAttachment,
   CyBufferPtr,
 } from "./gpu-registry.js";
-import { GPUBufferBindingTypeToWgslVar } from "./gpu-struct.js";
+import {
+  GPUBufferBindingTypeToWgslVar,
+  texTypeToSampleType,
+} from "./gpu-struct.js";
 import { createMeshPool, MeshHandle } from "./mesh-pool.js";
 import { ShaderSet } from "./shader-loader.js";
 
@@ -126,8 +129,11 @@ export function createCyResources(
   // else usage |= GPUTextureUsage.STORAGE_BINDING;
   [...cy.kindToPtrs.texture, ...cy.kindToPtrs.depthTexture].forEach((p) => {
     // default usages
+    // TODO(@darzu): BE MORE PRECISE! We'll probably get better perf that way
     cyNameToTextureUsage[p.name] |=
-      GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING;
+      GPUTextureUsage.COPY_DST |
+      GPUTextureUsage.TEXTURE_BINDING |
+      GPUTextureUsage.COPY_SRC;
   });
   cy.kindToPtrs.renderPipeline.forEach((p) => {
     p.output.forEach((o) => {
@@ -297,10 +303,8 @@ export function createCyResources(
           } else if (r.ptr.format.endsWith("sint")) {
             sampleType = "sint";
           } else {
-            // TODO(@darzu): use this to table decide filterable?
-            //  https://gpuweb.github.io/gpuweb/#plain-color-formats
-            const isFilterable = true;
-            sampleType = isFilterable ? "float" : "unfilterable-float";
+            // TODO(@darzu): better sample type selection?
+            sampleType = (texTypeToSampleType[r.ptr.format] ?? ["float"])[0];
           }
           return {
             binding: idx,

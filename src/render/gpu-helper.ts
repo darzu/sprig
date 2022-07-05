@@ -6,7 +6,7 @@ import {
   CyTexturePtr,
   linearSamplerPtr,
 } from "./gpu-registry.js";
-import { createCyStruct } from "./gpu-struct.js";
+import { createCyStruct, texTypeToSampleType } from "./gpu-struct.js";
 import { litTexturePtr } from "./pipelines/std-scene.js";
 
 export const QuadStruct = createCyStruct(
@@ -43,10 +43,16 @@ export function createRenderTextureToQuad(
       maxY,
     }),
   });
+  const inTexIsUnfilterable = texTypeToSampleType[inTex.format]?.every((f) =>
+    f.startsWith("unfilterable")
+  );
   const pipeline = CY.createRenderPipeline(name, {
     globals: [
+      // TODO(@darzu): Actually, not all textures (e.g. unfilterable rgba32float)
+      //  support this sampler.
+      //  Hmm. Actually the shader code itself might need to change based on filterable vs not. F.
       { ptr: linearSamplerPtr, alias: "mySampler" },
-      // TODO(@darzu): WTF typescript?!
+      // TODO(@darzu): WTF typescript?! This ternary is necessary for some reason.
       inTex.kind === "texture"
         ? { ptr: inTex, alias: "myTexture" }
         : { ptr: inTex, alias: "myTexture" },
@@ -94,7 +100,17 @@ export function createRenderTextureToQuad(
     fragShader ??
     `@stage(fragment)
   fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
-    return vec4(textureSample(myTexture, mySampler, fragUV));
+    ${
+      // TODO(@darzu): don't like this...
+      inTexIsUnfilterable
+        ? `
+        let dims : vec2<i32> = textureDimensions(myTexture);
+        let intUV = vec2<i32>(fragUV * vec2<f32>(dims));
+        let res = textureLoad(myTexture, intUV, 0);
+        `
+        : `let res = textureSample(myTexture, mySampler, fragUV);`
+    }
+    return vec4(res);
   }`
   }
     `;

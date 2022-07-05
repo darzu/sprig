@@ -48,6 +48,12 @@ export const texTypeToBytes: Partial<Record<GPUTextureFormat, number>> = {
   "bgra8unorm-srgb": 4,
   rg16uint: 2 + 2,
 };
+// Source: https://gpuweb.github.io/gpuweb/#plain-color-formats
+export const texTypeToSampleType: Partial<
+  Record<GPUTextureFormat, GPUTextureSampleType[]>
+> = {
+  rgba32float: ["unfilterable-float"],
+};
 export const texTypeIsDepthNoStencil = {
   depth16unorm: true,
   depth24plus: true,

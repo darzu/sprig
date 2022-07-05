@@ -134,3 +134,6 @@ Proposal for JS tuples & records:
 
 Measure WebGPU perf?
   https://gpuweb.github.io/gpuweb/#timestamp
+
+Regarding window compositors (they r evil?):
+  https://raphlinus.github.io/ui/graphics/2020/09/13/compositor-is-evil.html

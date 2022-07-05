@@ -38,4 +38,15 @@ Interactive min-example generating:
     once the sample is small enough, u can just highlight lines in VSCode and it'll
       tell you weather it'll compile and how many lines could be cut
     
+"Build amazing real‑time collaborative products":
+  https://liveblocks.io
 
+UI proposal by Raph Levien:
+  https://raphlinus.github.io/rust/gui/2022/05/07/ui-architecture.html
+  https://news.ycombinator.com/item?id=31297550
+  inspired by SwiftUI
+  also look at Elm
+    "A central philosophy of Rust is that mutation isn't the problem, 
+    it's shared mutable state. If you believe that philosophy (and I do), 
+    then restricting yourself to pure functions over clonable state 
+    feels like tying one hand behind your back."

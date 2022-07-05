@@ -1,6 +1,11 @@
 import { mat4 } from "../gl-matrix.js";
 import { assert } from "../test.js";
-import { CY, CyPipelinePtr, isRenderPipelinePtr } from "./gpu-registry.js";
+import {
+  CY,
+  CyPipelinePtr,
+  CyTexturePtr,
+  isRenderPipelinePtr,
+} from "./gpu-registry.js";
 import { MeshPool } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import { Renderer } from "./renderer-ecs.js";
@@ -25,6 +30,7 @@ import {
 } from "./instantiator-webgpu.js";
 import { SceneStruct, SceneTS } from "./pipelines/std-scene.js";
 import { ShaderSet } from "./shader-loader.js";
+import { texTypeToBytes } from "./gpu-struct.js";
 
 export function createWebGPURenderer(
   canvas: HTMLCanvasElement,
@@ -41,6 +47,7 @@ export function createWebGPURenderer(
     updateMesh,
     updateScene,
     renderFrame,
+    readTexture,
   };
 
   const resources = createCyResources(CY, shaders, device);
@@ -130,6 +137,8 @@ export function createWebGPURenderer(
     handles: MeshHandleStd[],
     pipelinePtrs: CyPipelinePtr[]
   ): void {
+    // TODO(@darzu): a lot of the smarts of this fn should come out and be an explicit part
+    //  of some pipeline sequencer-timeline-composition-y description thing
     if (!pipelinePtrs.length) {
       console.warn("rendering without any pipelines specified");
       return;
@@ -179,6 +188,7 @@ export function createWebGPURenderer(
     if (!needsRebundle) {
       for (let mId of handles.map((o) => o.mId)) {
         if (!bundledMIds.has(mId)) {
+          // TODO(@darzu): BUG. this is currently true too often, maybe every frame
           needsRebundle = true;
           break;
         }
@@ -215,6 +225,52 @@ export function createWebGPURenderer(
 
     // submit render passes to GPU
     device.queue.submit([commandEncoder.finish()]);
+  }
+
+  async function readTexture(ptr: CyTexturePtr): Promise<ArrayBuffer> {
+    const tex = cyKindToNameToRes.texture[ptr.name];
+    assert(!!tex, "cannot read from uninitialized texture: " + ptr.name);
+
+    const bytesPerVal = texTypeToBytes[tex.format]!;
+
+    const byteSize = tex.size[0] * tex.size[1] * bytesPerVal;
+    console.log(`byteSize: ${byteSize}`);
+
+    // TODO(@darzu): re-use buffers! and/or make it a CyBuffer-thing
+    const gpuBuffer = device.createBuffer({
+      size: byteSize,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+      mappedAtCreation: false, // mapped post texture copy
+    });
+
+    const commandEncoder = device.createCommandEncoder();
+
+    // TODO(@darzu): shares a lot with CyTexture's queueUpdate
+    commandEncoder.copyTextureToBuffer(
+      {
+        texture: tex.texture,
+      },
+      {
+        buffer: gpuBuffer,
+        offset: 0,
+        bytesPerRow: tex.size[0] * bytesPerVal, // TODO: alignment?
+        rowsPerImage: tex.size[1],
+      },
+      {
+        width: tex.size[0],
+        height: tex.size[1],
+        // TODO(@darzu): what does this mean?
+        depthOrArrayLayers: 1,
+      }
+    );
+
+    device.queue.submit([commandEncoder.finish()]);
+
+    await gpuBuffer.mapAsync(GPUMapMode.READ, 0, byteSize);
+
+    // TODO(@darzu): support unmapping the array??
+
+    return gpuBuffer.getMappedRange();
   }
 
   return renderer;

@@ -4,7 +4,7 @@ import { meshPoolPtr } from "./std-scene.js";
 export const unwrapTex = CY.createTexture("unwrapTex", {
   init: () => undefined,
   size: [256, 256],
-  format: "rgba16float",
+  format: "rgba32float",
 });
 
 export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
@@ -19,8 +19,8 @@ export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
   fn vertMain(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
     let worldPos = meshUni.transform * vec4<f32>(input.position, 1.0);
-    output.rgba = vec4(input.uv, 0.0, 1.0);
-    // output.rgba = worldPos;
+    // output.rgba = vec4(input.uv, 0.0, 1.0);
+    output.rgba = worldPos;
     let xy = input.uv * 2.0 - 1.0;
     output.fragPos = vec4(xy, 0.0, 1.0);
     return output;
