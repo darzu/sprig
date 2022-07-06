@@ -54,17 +54,19 @@ export const texTypeToSampleType: Partial<
 > = {
   rgba32float: ["unfilterable-float"],
 };
-export const texTypeIsDepthNoStencil = {
-  depth16unorm: true,
-  depth24plus: true,
-  depth32float: true,
-};
-export const texTypeIsDepthAndStencil = {
-  "depth24plus-stencil8": true,
-  "depth24unorm-stencil8": true,
-  "depth32float-stencil8": true,
-};
-export const texTypeIsStencil = {
+export const texTypeIsDepthNoStencil: Partial<Record<GPUTextureFormat, true>> =
+  {
+    depth16unorm: true,
+    depth24plus: true,
+    depth32float: true,
+  };
+export const texTypeIsDepthAndStencil: Partial<Record<GPUTextureFormat, true>> =
+  {
+    "depth24plus-stencil8": true,
+    "depth24unorm-stencil8": true,
+    "depth32float-stencil8": true,
+  };
+export const texTypeIsStencil: Partial<Record<GPUTextureFormat, true>> = {
   stencil8: true,
   ...texTypeIsDepthAndStencil,
 };

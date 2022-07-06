@@ -120,3 +120,10 @@ Pretty decent glossery of functional programming terms:
   https://github.com/hemanth/functional-programming-jargon#monad
   could do something similar for game / rendering stuff
   
+Portals:
+  Psychonauts 2: https://www.youtube.com/watch?v=w-Z1Fx0LvDc
+    meh, too unreal-specific. I think we can do this easier with stencils and composing
+    constraints to make it easier:
+      no enemy AI
+      no recursion (can't see 1 through another)
+      avoid seeing two portals at once

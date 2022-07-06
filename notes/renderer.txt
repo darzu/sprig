@@ -359,6 +359,10 @@ transparency:
       transparent objects never overlap in the camera;
     use insertion sort b/c less work when nothing changes frame to frame
 
+"order independent transparency":
+  https://interplayoflight.wordpress.com/2022/06/25/order-independent-transparency-part-1/
+  https://interplayoflight.wordpress.com/2022/07/02/order-independent-transparency-part-2/
+
 Texture compression:
   BC7, BC4, BCn
   https://www.reedbeta.com/blog/understanding-bcn-texture-compression-formats/

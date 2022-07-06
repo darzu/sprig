@@ -20,13 +20,92 @@ import { GameStateDef } from "./gamestate.js";
 import { unwrapPipeline, unwrapTex } from "../render/pipelines/xp-uv-unwrap.js";
 import { createComposePipeline } from "../render/pipelines/std-compose.js";
 import { createGhost } from "./sandbox.js";
-import { quat, vec2, vec3 } from "../gl-matrix.js";
+import { quat, vec2, vec3, vec4 } from "../gl-matrix.js";
+import { createRef, Ref } from "../em_helpers.js";
+import { TexTypeAsTSType } from "../render/gpu-struct.js";
+import { CyTexturePtr } from "../render/gpu-registry.js";
+import { never } from "../util.js";
+import { assert } from "../test.js";
+import { clamp } from "../math.js";
 
-const OceanDef = EM.defineComponent("ocean", () => true);
+interface Ocean {
+  ent: Ref<[typeof PositionDef]>;
+  uvToPos: (uv: vec2) => vec3;
+  // uvToNorm: TextureReader<"rgba32float">;
+}
+const OceanDef = EM.defineComponent("ocean", (o: Ocean) => {
+  return o;
+});
 
-const UVPos = EM.defineComponent("uv", (pos?: vec2) => ({
+const UVPosDef = EM.defineComponent("uv", (pos: vec2 = [0, 0]) => ({
   pos: pos,
 }));
+
+type ArityToVec<N extends 1 | 2 | 3 | 4> = N extends 1
+  ? number
+  : N extends 2
+  ? vec2
+  : N extends 3
+  ? vec3
+  : N extends 4
+  ? vec4
+  : never;
+
+interface TextureReader<A extends 1 | 2 | 3 | 4> {
+  size: vec2;
+  data: ArrayBuffer;
+  format: GPUTextureFormat;
+  outArity: A;
+  read: (x: number, y: number) => ArityToVec<A>;
+}
+
+function createTextureReader<A extends 1 | 2 | 3 | 4>(
+  data: ArrayBuffer,
+  size: vec2,
+  outArity: A,
+  format: GPUTextureFormat
+): TextureReader<A> {
+  const f32 = new Float32Array(data);
+
+  let stride: number;
+  if (format === "rgba32float") {
+    stride = 4;
+  } else {
+    throw new Error(`unimplemented texture format: ${format} in TextureReader`);
+  }
+
+  assert(outArity <= stride, "outArity <= stride");
+
+  return {
+    size,
+    data,
+    format,
+    outArity,
+    read: read as any as TextureReader<A>["read"],
+  };
+
+  function read(x: number, y: number): number | vec2 | vec3 | vec4 {
+    const idx = (Math.floor(x) + Math.floor(y) * size[0]) * stride;
+    // console.log(idx);
+    // TODO(@darzu): don't create new floats
+    if (outArity === 1) {
+      return f32[idx];
+    } else if (outArity === 2) {
+      return vec2.fromValues(f32[idx], f32[idx + 1]);
+    } else if (outArity === 3) {
+      return vec3.fromValues(f32[idx], f32[idx + 1], f32[idx + 2]);
+    } else if (outArity === 4) {
+      return vec4.fromValues(
+        f32[idx + 0],
+        f32[idx + 1],
+        f32[idx + 2],
+        f32[idx + 3]
+      );
+    } else {
+      never(outArity);
+    }
+  }
+}
 
 export function initHyperspaceGame(em: EntityManager) {
   const camera = em.addSingletonComponent(CameraDef);
@@ -39,6 +118,8 @@ export function initHyperspaceGame(em: EntityManager) {
   // }
 
   // em.registerOneShotSystem(null, [MeDef], () => createPlayer(em));
+
+  let oceanEntId = -1;
 
   em.registerOneShotSystem(
     null,
@@ -64,7 +145,7 @@ export function initHyperspaceGame(em: EntityManager) {
 
       // TODO(@darzu): call one-shot initStars
       const ocean = em.newEntity();
-      em.ensureComponentOn(ocean, OceanDef);
+      oceanEntId = ocean.id; // hacky?
       em.ensureComponentOn(
         ocean,
         RenderableConstructDef,
@@ -93,8 +174,29 @@ export function initHyperspaceGame(em: EntityManager) {
       em.ensureComponentOn(buoy, RenderableConstructDef, res.assets.ball.proto);
       em.ensureComponentOn(buoy, ScaleDef, [5, 5, 5]);
       em.ensureComponentOn(buoy, ColorDef, [0.2, 0.8, 0.2]);
-      em.ensureComponentOn(buoy, UVPos, [0.5, 0.5]);
+      em.ensureComponentOn(buoy, UVPosDef, [0.5, 0.5]);
     }
+  );
+
+  em.registerSystem(
+    [UVPosDef, PositionDef],
+    [OceanDef, InputsDef],
+    (es, res) => {
+      // console.log("runOcean");
+      for (let e of es) {
+        // TODO(@darzu): debug moving
+        // console.log("moving buoy!");
+        if (res.inputs.keyDowns["arrowright"]) e.uv.pos[0] += 0.001;
+        if (res.inputs.keyDowns["arrowleft"]) e.uv.pos[0] -= 0.001;
+        if (res.inputs.keyDowns["arrowup"]) e.uv.pos[1] += 0.001;
+        if (res.inputs.keyDowns["arrowdown"]) e.uv.pos[1] -= 0.001;
+        e.uv.pos[0] = clamp(e.uv.pos[0], 0, 1);
+        e.uv.pos[1] = clamp(e.uv.pos[1], 0, 1);
+        const newPos = res.ocean.uvToPos(e.uv.pos);
+        if (newPos.every((n) => !isNaN(n))) vec3.copy(e.position, newPos);
+      }
+    },
+    "runOcean"
   );
 
   // let line: ReturnType<typeof drawLine>;
@@ -105,7 +207,7 @@ export function initHyperspaceGame(em: EntityManager) {
   let finalCompose = createComposePipeline();
 
   em.registerSystem(
-    [OceanDef],
+    [],
     [GlobalCursor3dDef, RendererDef, InputsDef, TextDef],
     (cs, res) => {
       if (once) {
@@ -117,12 +219,33 @@ export function initHyperspaceGame(em: EntityManager) {
         if (once2 === 1) {
           // read from one-time jobs
           // TODO(@darzu): what's the right way to handle these jobs
-          res.renderer.renderer.readTexture(unwrapTex).then((a) => {
-            const fs = new Float32Array(a);
-            console.dir(fs);
+          res.renderer.renderer.readTexture(unwrapTex).then((data) => {
+            // const fs = new Float32Array(data);
+            // // TODO(@darzu): really want a vec4 array as a view on Float32Array
+            // console.dir(fs);
             // for (let f of fs) {
             //   // if (f !== 0 && f !== 1) console.log(f);
             // }
+
+            const reader = createTextureReader(
+              data,
+              unwrapTex.size,
+              3,
+              unwrapTex.format
+            );
+
+            console.log("adding OceanDef");
+
+            // TODO(@darzu): hacky hacky way to do this
+            em.addSingletonComponent(OceanDef, {
+              ent: createRef(oceanEntId, [PositionDef]),
+              uvToPos: (uv) => {
+                const x = uv[0] * reader.size[0];
+                const y = uv[1] * reader.size[1];
+                // console.log(`${x},${y}`);
+                return reader.read(x, y);
+              },
+            });
           });
         }
 

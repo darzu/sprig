@@ -109,6 +109,7 @@ function callFixedTimestepSystems() {
     EM.callSystem("shipPropsBuild");
 
     EM.callSystem("hyperspaceGame");
+    EM.callSystem("runOcean");
   }
   EM.callSystem("updateBullets");
   EM.callSystem("updateNoodles");
