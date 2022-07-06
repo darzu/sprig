@@ -100,7 +100,7 @@ export function initHyperspaceGame(em: EntityManager) {
   // let line: ReturnType<typeof drawLine>;
 
   let once = true;
-  let once2 = true; // TODO(@darzu): lol wat.
+  let once2 = 10; // TODO(@darzu): lol wat.
 
   let finalCompose = createComposePipeline();
 
@@ -114,13 +114,19 @@ export function initHyperspaceGame(em: EntityManager) {
 
         once = false;
       } else if (once2) {
-        // read from one-time jobs
-        // TODO(@darzu): what's the right way to handle these jobs
-        res.renderer.renderer.readTexture(unwrapTex).then((a) => {
-          console.dir(new Float32Array(a));
-        });
+        if (once2 === 1) {
+          // read from one-time jobs
+          // TODO(@darzu): what's the right way to handle these jobs
+          res.renderer.renderer.readTexture(unwrapTex).then((a) => {
+            const fs = new Float32Array(a);
+            console.dir(fs);
+            // for (let f of fs) {
+            //   // if (f !== 0 && f !== 1) console.log(f);
+            // }
+          });
+        }
 
-        once2 = false;
+        once2 -= 1;
       } else {
         // steady state rendering
         res.renderer.pipelines = [
