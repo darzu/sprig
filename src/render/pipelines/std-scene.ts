@@ -100,10 +100,10 @@ export function computeUniData(m: Mesh): MeshUniformTS {
 export function computeVertsData(m: Mesh): VertexTS[] {
   const vertsData: VertexTS[] = m.pos.map((pos, i) => ({
     position: pos,
-    color: [1.0, 0.0, 1.0], // changed below
-    normal: [1.0, 0.0, 0.0], // changed below
+    color: [1.0, 0.0, 1.0], // per-face; changed below
+    normal: [1.0, 0.0, 0.0], // per-face; changed below
     uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
-    surfaceId: 0,
+    surfaceId: 0, // per-face; changed below
   }));
   m.tri.forEach((triInd, i) => {
     // set provoking vertex data
@@ -125,6 +125,7 @@ export function computeVertsData(m: Mesh): VertexTS[] {
       m.pos[quadInd[2]]
     );
     vertsData[quadInd[0]].normal = normal;
+    // TODO(@darzu): this isn't right, colors and surfaceIds r being indexed by tris and quads
     vertsData[quadInd[0]].color = m.colors[i];
     vertsData[quadInd[0]].surfaceId = m.surfaceIds[i];
   });

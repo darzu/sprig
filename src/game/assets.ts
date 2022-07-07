@@ -140,7 +140,7 @@ const MeshModify: Partial<{
     // console.dir(m);
 
     // TODO(@darzu): do we want convexity highlighting on the ocean?
-    // m.surfaceIds = m.tri.map(() => 1);
+    m.surfaceIds = m.quad.map((_, i) => i);
     // TODO(@darzu): generate UVs for the ocean
     const minX = m.pos.reduce((p, n) => (n[0] < p ? n[0] : p), Infinity);
     const maxX = m.pos.reduce((p, n) => (n[0] > p ? n[0] : p), -Infinity);

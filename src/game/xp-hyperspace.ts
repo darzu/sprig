@@ -30,7 +30,7 @@ import { clamp } from "../math.js";
 
 interface Ocean {
   ent: Ref<[typeof PositionDef]>;
-  uvToPos: (uv: vec2) => vec3;
+  uvToPos: (out: vec3, uv: vec2) => vec3;
   // uvToNorm: TextureReader<"rgba32float">;
 }
 const OceanDef = EM.defineComponent("ocean", (o: Ocean) => {
@@ -56,7 +56,8 @@ interface TextureReader<A extends 1 | 2 | 3 | 4> {
   data: ArrayBuffer;
   format: GPUTextureFormat;
   outArity: A;
-  read: (x: number, y: number) => ArityToVec<A>;
+  read: (out: ArityToVec<A>, xi: number, yi: number) => ArityToVec<A>;
+  sample: (out: ArityToVec<A>, x: number, y: number) => ArityToVec<A>;
 }
 
 function createTextureReader<A extends 1 | 2 | 3 | 4>(
@@ -82,24 +83,77 @@ function createTextureReader<A extends 1 | 2 | 3 | 4>(
     format,
     outArity,
     read: read as any as TextureReader<A>["read"],
+    sample: sample as any as TextureReader<A>["sample"],
   };
 
-  function read(x: number, y: number): number | vec2 | vec3 | vec4 {
-    const idx = (Math.floor(x) + Math.floor(y) * size[0]) * stride;
-    // console.log(idx);
-    // TODO(@darzu): don't create new floats
+  function getIdx(xi: number, yi: number): number {
+    return (xi + yi * size[0]) * stride;
+  }
+
+  function read(
+    out: number | vec2 | vec3 | vec4,
+    x: number,
+    y: number
+  ): number | vec2 | vec3 | vec4 {
+    const idx = getIdx(Math.round(x), Math.round(y));
+
+    assert(typeof out === "number" || out.length === outArity);
     if (outArity === 1) {
       return f32[idx];
     } else if (outArity === 2) {
-      return vec2.fromValues(f32[idx], f32[idx + 1]);
+      return vec2.set(out as vec2, f32[idx], f32[idx + 1]);
     } else if (outArity === 3) {
-      return vec3.fromValues(f32[idx], f32[idx + 1], f32[idx + 2]);
+      return vec3.set(out as vec3, f32[idx], f32[idx + 1], f32[idx + 2]);
     } else if (outArity === 4) {
-      return vec4.fromValues(
+      return vec4.set(
+        out as vec4,
         f32[idx + 0],
         f32[idx + 1],
         f32[idx + 2],
         f32[idx + 3]
+      );
+    } else {
+      never(outArity);
+    }
+  }
+
+  function sample(
+    out: number | vec2 | vec3 | vec4,
+    x: number,
+    y: number
+  ): number | vec2 | vec3 | vec4 {
+    const xi0 = Math.floor(x);
+    const xi1 = Math.ceil(x);
+    const yi0 = Math.floor(y);
+    const yi1 = Math.ceil(y);
+    const ix0y0 = getIdx(xi0, yi0);
+    const ix1y0 = getIdx(xi1, yi0);
+    const ix0y1 = getIdx(xi0, yi1);
+    const ix1y1 = getIdx(xi1, yi1);
+    const dx = x % 1.0;
+    const dy = y % 1.0;
+
+    function _sample(offset: 0 | 1 | 2 | 3): number {
+      const outAy0 = f32[ix0y0 + offset] * (1 - dx) + f32[ix1y0 + offset] * dx;
+      const outAy1 = f32[ix0y1 + offset] * (1 - dx) + f32[ix1y1 + offset] * dx;
+      const outA = outAy0 * (1 - dy) + outAy1 * dy;
+      return outA;
+    }
+
+    assert(typeof out === "number" || out.length === outArity);
+    if (outArity === 1) {
+      return _sample(0);
+    } else if (outArity === 2) {
+      return vec2.set(out as vec2, _sample(0), _sample(1));
+    } else if (outArity === 3) {
+      return vec3.set(out as vec3, _sample(0), _sample(1), _sample(2));
+    } else if (outArity === 4) {
+      return vec4.set(
+        out as vec4,
+        _sample(0),
+        _sample(1),
+        _sample(2),
+        _sample(3)
       );
     } else {
       never(outArity);
@@ -114,7 +168,7 @@ export function initHyperspaceGame(em: EntityManager) {
   em.addSingletonComponent(GameStateDef);
 
   // if (hosting) {
-  createShip([-120, 0, 0]);
+  // createShip([-120, 0, 0]);
   // }
 
   // em.registerOneShotSystem(null, [MeDef], () => createPlayer(em));
@@ -172,7 +226,7 @@ export function initHyperspaceGame(em: EntityManager) {
       const buoy = em.newEntity();
       em.ensureComponentOn(buoy, PositionDef);
       em.ensureComponentOn(buoy, RenderableConstructDef, res.assets.ball.proto);
-      em.ensureComponentOn(buoy, ScaleDef, [5, 5, 5]);
+      em.ensureComponentOn(buoy, ScaleDef, [8, 8, 8]);
       em.ensureComponentOn(buoy, ColorDef, [0.2, 0.8, 0.2]);
       em.ensureComponentOn(buoy, UVPosDef, [0.5, 0.5]);
     }
@@ -186,14 +240,15 @@ export function initHyperspaceGame(em: EntityManager) {
       for (let e of es) {
         // TODO(@darzu): debug moving
         // console.log("moving buoy!");
-        if (res.inputs.keyDowns["arrowright"]) e.uv.pos[0] += 0.001;
-        if (res.inputs.keyDowns["arrowleft"]) e.uv.pos[0] -= 0.001;
-        if (res.inputs.keyDowns["arrowup"]) e.uv.pos[1] += 0.001;
-        if (res.inputs.keyDowns["arrowdown"]) e.uv.pos[1] -= 0.001;
+        let speed = 0.001;
+        if (res.inputs.keyDowns["shift"]) speed *= 5;
+        if (res.inputs.keyDowns["arrowright"]) e.uv.pos[1] += speed;
+        if (res.inputs.keyDowns["arrowleft"]) e.uv.pos[1] -= speed;
+        if (res.inputs.keyDowns["arrowup"]) e.uv.pos[0] += speed;
+        if (res.inputs.keyDowns["arrowdown"]) e.uv.pos[0] -= speed;
         e.uv.pos[0] = clamp(e.uv.pos[0], 0, 1);
         e.uv.pos[1] = clamp(e.uv.pos[1], 0, 1);
-        const newPos = res.ocean.uvToPos(e.uv.pos);
-        if (newPos.every((n) => !isNaN(n))) vec3.copy(e.position, newPos);
+        res.ocean.uvToPos(e.position, e.uv.pos);
       }
     },
     "runOcean"
@@ -239,11 +294,11 @@ export function initHyperspaceGame(em: EntityManager) {
             // TODO(@darzu): hacky hacky way to do this
             em.addSingletonComponent(OceanDef, {
               ent: createRef(oceanEntId, [PositionDef]),
-              uvToPos: (uv) => {
+              uvToPos: (out, uv) => {
                 const x = uv[0] * reader.size[0];
                 const y = uv[1] * reader.size[1];
                 // console.log(`${x},${y}`);
-                return reader.read(x, y);
+                return reader.sample(out, x, y);
               },
             });
           });
@@ -256,10 +311,10 @@ export function initHyperspaceGame(em: EntityManager) {
           unwrapPipeline, // TODO(@darzu): don't run many times
           shadowPipeline,
           stdRenderPipeline,
-          finalCompose, // TODO(@darzu): should be last step
+          // finalCompose, // TODO(@darzu): should be last step
           outlineRender,
-          // renderStars,
-          // ...blurPipelines,
+          renderStars,
+          ...blurPipelines,
           // shadowDbgDisplay,
           // normalDbg,
           // positionDbg,
