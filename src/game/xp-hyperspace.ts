@@ -168,7 +168,7 @@ export function initHyperspaceGame(em: EntityManager) {
   em.addSingletonComponent(GameStateDef);
 
   // if (hosting) {
-  // createShip([-120, 0, 0]);
+  createShip([-120, 0, 0]);
   // }
 
   // em.registerOneShotSystem(null, [MeDef], () => createPlayer(em));
