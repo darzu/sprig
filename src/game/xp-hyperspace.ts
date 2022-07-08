@@ -336,6 +336,7 @@ export function initHyperspaceGame(em: EntityManager) {
             //   // if (f !== 0 && f !== 1) console.log(f);
             // }
 
+            // TODO(@darzu): Account for the 1px border in the texture!!!
             const reader = createTextureReader(
               data,
               uvToPosTex.size,

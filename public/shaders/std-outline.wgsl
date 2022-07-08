@@ -95,7 +95,11 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
     // TODO(@darzu): DEBUG WIREFRAME
     // color *= 2.0;
     // color = vec3(0.2, 0.2, 0.8);
-  }
+  } 
+  // DEBUG WIREFRAME
+  // else {
+  //   color *= 0.0;
+  // }
 
   return vec4(color, 1.0);
 }
