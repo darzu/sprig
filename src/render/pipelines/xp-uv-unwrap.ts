@@ -1,6 +1,8 @@
 import { CY } from "../gpu-registry.js";
 import { meshPoolPtr } from "./std-scene.js";
 
+// TODO(@darzu): rename to "uvmap" or similar?
+
 export const uvToPosTex = CY.createTexture("uvToPosTex", {
   init: () => undefined,
   size: [128, 128],

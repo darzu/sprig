@@ -424,13 +424,22 @@ VFX explosions:
 Flow maps and gradient maps for moving textures:
   https://www.youtube.com/watch?v=KfphtLRoUB0
 
-Outlines:
-  Jump flooding
-  https://bgolus.medium.com/the-quest-for-very-wide-outlines-ba82ed442cd9
+Jump Flood Algorithm:
+  Ben: https://bgolus.medium.com/the-quest-for-very-wide-outlines-ba82ed442cd9
   https://prideout.net/blog/distance_fields/
   https://blog.demofox.org/2016/02/29/fast-voronoi-diagrams-and-distance-dield-textures-on-the-gpu-with-the-jump-flooding-algorithm/
   https://shaderbits.com/blog/various-distance-field-generation-techniques
+  Freya: https://twitter.com/freyaholmer/status/1292536599230775296?lang=en
+  https://www.youtube.com/watch?v=A0pxY9QsgJE
+
+  Related to voronoi?
+    https://www.redblobgames.com/x/2022-voronoi-maps-tutorial/
+    Delaunator: https://github.com/mapbox/delaunator (good license)
+      guide: https://mapbox.github.io/delaunator/
+    Delaunator seems good for CPU and gives a mesh; unclear about GPU perf.
   
+Outlines
+  https://bgolus.medium.com/the-quest-for-very-wide-outlines-ba82ed442cd9
   overwatch and control use "sobol" for outlines?
     https://www.youtube.com/watch?v=hxPQ2F96F9E
     looks like a sampling technique:

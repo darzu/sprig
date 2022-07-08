@@ -21,7 +21,7 @@ import {
   unwrapPipeline,
   uvToPosTex,
 } from "../render/pipelines/xp-uv-unwrap.js";
-import { createComposePipeline } from "../render/pipelines/std-compose.js";
+import { createComposePipelines } from "../render/pipelines/std-compose.js";
 import { createGhost } from "./sandbox.js";
 import { quat, vec2, vec3, vec4 } from "../gl-matrix.js";
 import { createRef, Ref } from "../em_helpers.js";
@@ -32,6 +32,7 @@ import { assert } from "../test.js";
 import { clamp } from "../math.js";
 import { tempVec2, tempVec3, tempVec4 } from "../temp-pool.js";
 import { vec3Dbg } from "../utils-3d.js";
+import { jfaPipeline } from "../render/pipelines/xp-jump-flood.js";
 
 interface Ocean {
   ent: Ref<[typeof PositionDef]>;
@@ -288,17 +289,20 @@ export function initHyperspaceGame(em: EntityManager) {
         // TODO(@darzu): debug moving
         // console.log("moving buoy!");
         let speed = 0.001;
+        const newUV = vec2.copy(tempVec2(), e.uv.pos);
         if (res.inputs.keyDowns["shift"]) speed *= 5;
-        if (res.inputs.keyDowns["arrowright"]) e.uv.pos[1] += speed;
-        if (res.inputs.keyDowns["arrowleft"]) e.uv.pos[1] -= speed;
-        if (res.inputs.keyDowns["arrowup"]) e.uv.pos[0] += speed;
-        if (res.inputs.keyDowns["arrowdown"]) e.uv.pos[0] -= speed;
-        e.uv.pos[0] = clamp(e.uv.pos[0], 0, 1);
-        e.uv.pos[1] = clamp(e.uv.pos[1], 0, 1);
-        const newPos = res.ocean.uvToPos(tempVec3(), e.uv.pos);
-        console.log(vec3Dbg(newPos));
-        if (!vec3.exactEquals(newPos, vec3.ZEROS))
+        if (res.inputs.keyDowns["arrowright"]) newUV[1] += speed;
+        if (res.inputs.keyDowns["arrowleft"]) newUV[1] -= speed;
+        if (res.inputs.keyDowns["arrowup"]) newUV[0] += speed;
+        if (res.inputs.keyDowns["arrowdown"]) newUV[0] -= speed;
+        newUV[0] = clamp(newUV[0], 0, 1);
+        newUV[1] = clamp(newUV[1], 0, 1);
+        const newPos = res.ocean.uvToPos(tempVec3(), newUV);
+        // console.log(vec3Dbg(newPos));
+        if (!vec3.exactEquals(newPos, vec3.ZEROS)) {
           vec3.copy(e.position, newPos);
+          vec2.copy(e.uv.pos, newUV);
+        }
       }
     },
     "runOcean"
@@ -309,7 +313,7 @@ export function initHyperspaceGame(em: EntityManager) {
   let once = true;
   let once2 = 10; // TODO(@darzu): lol wat.
 
-  let finalCompose = createComposePipeline();
+  let finalCompose = createComposePipelines();
 
   em.registerSystem(
     [],
@@ -317,7 +321,7 @@ export function initHyperspaceGame(em: EntityManager) {
     (cs, res) => {
       if (once) {
         // one-time compute and render jobs
-        res.renderer.pipelines = [initStars, unwrapPipeline];
+        res.renderer.pipelines = [initStars, unwrapPipeline, jfaPipeline];
 
         once = false;
       } else if (once2) {
@@ -361,13 +365,16 @@ export function initHyperspaceGame(em: EntityManager) {
           unwrapPipeline, // TODO(@darzu): don't run many times
           shadowPipeline,
           stdRenderPipeline,
-          // finalCompose, // TODO(@darzu): should be last step
+          ...finalCompose, // TODO(@darzu): should be last step
           outlineRender,
-          renderStars,
-          ...blurPipelines,
+          // renderStars,
+          // ...blurPipelines,
+
+          // DEBUG:
           // shadowDbgDisplay,
           // normalDbg,
           // positionDbg,
+
           postProcess,
         ];
       }
