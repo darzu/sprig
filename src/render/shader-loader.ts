@@ -13,6 +13,7 @@ export const ShaderPaths = [
   "xp-boid-render",
   "xp-boid-update",
   "xp-jump-flood",
+  "xp-cloth-update",
 ] as const;
 
 export type ShaderName = typeof ShaderPaths[number];
