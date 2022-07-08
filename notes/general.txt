@@ -929,3 +929,8 @@ Diffusion-reaction ?:
   https://www.youtube.com/watch?v=BV9ny785UNc
 
 Maybe my career goals are to make software simpler
+
+Consider joining Chrome's "Origin Trials" ?
+  https://developer.chrome.com/docs/web-platform/origin-trials/
+
+TODO: read https://gpuweb.github.io/gpuweb/explainer/

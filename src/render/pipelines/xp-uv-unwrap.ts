@@ -1,8 +1,9 @@
 import { mathMap } from "../../math.js";
+import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { CY } from "../gpu-registry.js";
 import { meshPoolPtr } from "./std-scene.js";
 
-const size = 128;
+const size = 64;
 
 // TODO(@darzu): rename to "uvmap" or similar?
 
@@ -13,11 +14,51 @@ export const uvToPosTex = CY.createTexture("uvToPosTex", {
 });
 
 // TODO(@darzu): rgba32float is too aggressive for this
-export const uvMaskTex = CY.createTexture("uvMaskTex", {
+const uvMaskTex = CY.createTexture("uvMaskTex", {
   init: () => undefined,
   size: [size, size],
   format: "rgba32float",
 });
+
+export const uvBorderMask = CY.createTexture("uvBorderMask", {
+  init: () => undefined,
+  size: [size, size],
+  format: "rgba32float",
+});
+
+export const uvBorderMaskPipeline = createRenderTextureToQuad(
+  "uvBorderMaskPipeline",
+  uvMaskTex,
+  uvBorderMask,
+  -1,
+  1,
+  -1,
+  1,
+  (inPxVar, uvVar) => `return 1.0 - vec4(${inPxVar});`
+).pipeline;
+
+export const uvPosBorderMask = CY.createTexture("uvPosBorderMask", {
+  init: () => undefined,
+  size: [size, size],
+  format: "rgba32float",
+});
+
+export const uvPosBorderMaskPipeline = createRenderTextureToQuad(
+  "uvPosBorderMaskPipeline",
+  uvBorderMask,
+  uvPosBorderMask,
+  -1,
+  1,
+  -1,
+  1,
+  (inPxVar, uvVar) => `
+  if (${inPxVar}.x > 0.0) {
+    return vec4(${uvVar}, 0.0, 1.0);
+  } else {
+    discard;
+  }
+  `
+).pipeline;
 
 const borderWidth = (2.0 / size).toFixed(4);
 
@@ -52,7 +93,7 @@ export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
   @stage(fragment) fn fragMain(input: VertexOutput) -> FragOut {
     var output: FragOut;
     output.worldPos = input.worldPos;
-    output.uv = vec4(input.uv, 0.0, 1.0);
+    output.uv = vec4(1.0);
     return output;
   }
   `,

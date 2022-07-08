@@ -29,7 +29,7 @@ export function createRenderTextureToQuad(
   maxX = 1,
   minY = -1,
   maxY = 1,
-  fragShader?: string
+  fragSnippet?: (inPxVar: string, uvVar: string) => string
 ): {
   pipeline: CyRenderPipelinePtr;
   quad: CySingletonPtr<typeof QuadStruct.desc>;
@@ -67,7 +67,7 @@ export function createRenderTextureToQuad(
       return `
   struct VertexOutput {
     @builtin(position) Position : vec4<f32>,
-    @location(0) fragUV : vec2<f32>,
+    @location(0) uv : vec2<f32>,
   };
 
   @stage(vertex)
@@ -92,27 +92,30 @@ export function createRenderTextureToQuad(
 
     var output : VertexOutput;
     output.Position = vec4<f32>(pos[VertexIndex], 0.0, 1.0);
-    output.fragUV = uv[VertexIndex];
+    output.uv = uv[VertexIndex];
     return output;
   }
 
-  ${
-    fragShader ??
-    `@stage(fragment)
-  fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
+  ${`@stage(fragment)
+  fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
     ${
       // TODO(@darzu): don't like this...
       inTexIsUnfilterable
         ? `
         let dims : vec2<i32> = textureDimensions(myTexture);
-        let intUV = vec2<i32>(fragUV * vec2<f32>(dims));
+        let intUV = vec2<i32>(uv * vec2<f32>(dims));
         let res = textureLoad(myTexture, intUV, 0);
         `
-        : `let res = textureSample(myTexture, mySampler, fragUV);`
+        : `let res = textureSample(myTexture, mySampler, uv);`
     }
+    ${
+      fragSnippet
+        ? fragSnippet("res", "uv")
+        : `
     return vec4(res);
-  }`
-  }
+    `
+    }
+  }`}
     `;
     },
     shaderFragmentEntry: "frag_main",

@@ -3,7 +3,7 @@ import { CY, linearSamplerPtr } from "../gpu-registry.js";
 import { createCyStruct } from "../gpu-struct.js";
 import { outlinedTexturePtr } from "./std-outline.js";
 import { emissionTexturePtr } from "./xp-stars.js";
-import { uvMaskTex, uvToPosTex } from "./xp-uv-unwrap.js";
+import { uvBorderMask, uvToPosTex } from "./xp-uv-unwrap.js";
 
 export const sdfTex = CY.createTexture(`sdfTex`, {
   size: [128, 128],
@@ -11,7 +11,7 @@ export const sdfTex = CY.createTexture(`sdfTex`, {
   init: () => undefined,
 });
 
-const jfaInputTex = uvMaskTex;
+const jfaInputTex = uvBorderMask;
 
 // const blurParamsStruct = createCyStruct(
 //   {

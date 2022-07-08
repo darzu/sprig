@@ -18,8 +18,10 @@ import { createPlayer } from "./player.js";
 import { createShip } from "./ship.js";
 import { GameStateDef } from "./gamestate.js";
 import {
+  uvBorderMaskPipeline,
   unwrapPipeline,
   uvToPosTex,
+  uvPosBorderMaskPipeline,
 } from "../render/pipelines/xp-uv-unwrap.js";
 import { createComposePipelines } from "../render/pipelines/std-compose.js";
 import { createGhost } from "./sandbox.js";
@@ -321,7 +323,13 @@ export function initHyperspaceGame(em: EntityManager) {
     (cs, res) => {
       if (once) {
         // one-time compute and render jobs
-        res.renderer.pipelines = [initStars, unwrapPipeline, jfaPipeline];
+        res.renderer.pipelines = [
+          initStars,
+          unwrapPipeline,
+          uvBorderMaskPipeline,
+          uvPosBorderMaskPipeline,
+          jfaPipeline,
+        ];
 
         once = false;
       } else if (once2) {
