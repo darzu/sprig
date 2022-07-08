@@ -11,7 +11,8 @@ export const ShaderPaths = [
   "std-blur",
   "std-post",
   "xp-boid-render",
-  "xp-jfa",
+  "xp-boid-update",
+  "xp-jump-flood",
 ] as const;
 
 export type ShaderName = typeof ShaderPaths[number];

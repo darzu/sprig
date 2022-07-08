@@ -41,7 +41,7 @@ export const jfaPipeline = CY.createComputePipeline(`jfaPipeline`, {
     { ptr: sdfTex, access: "write", alias: "outTex" },
     // { ptr: params, alias: "params" },
   ],
-  shader: "xp-jfa",
+  shader: "xp-jump-flood",
   shaderComputeEntry: "main",
   workgroupCounts: [128 / 8, 128 / 8, 1],
 });
