@@ -57,7 +57,7 @@ import {
   renderRopePipelineDesc,
   compRopePipelinePtr,
 } from "../render/pipelines/xp-ropestick-pipeline.js";
-import { tempVec } from "../temp-pool.js";
+import { tempVec3 } from "../temp-pool.js";
 import { assert } from "../test.js";
 import { TimeDef } from "../time.js";
 import { farthestPointInDir, vec3Dbg } from "../utils-3d.js";
@@ -204,11 +204,11 @@ export function initGJKSandbox(em: EntityManager, hosting: boolean) {
       ): Shape {
         const transform = mat4.fromRotationTranslation(mat4.create(), rot, pos);
         const worldVerts = g.uniqueVerts.map((p) =>
-          vec3.transformMat4(tempVec(), p, transform)
+          vec3.transformMat4(tempVec3(), p, transform)
         );
         const support = (d: vec3) => farthestPointInDir(worldVerts, d);
-        const center = vec3.transformMat4(tempVec(), g.center, transform);
-        const travel = vec3.sub(tempVec(), pos, lastWorldPos);
+        const center = vec3.transformMat4(tempVec3(), g.center, transform);
+        const travel = vec3.sub(tempVec3(), pos, lastWorldPos);
         return {
           center,
           support,
@@ -308,8 +308,8 @@ export function initGJKSandbox(em: EntityManager, hosting: boolean) {
           }
 
           backTravelD = Math.min(backTravelD, vec3.len(playerShape.travel));
-          const travelN = vec3.normalize(tempVec(), playerShape.travel);
-          const backTravel = vec3.scale(tempVec(), travelN, backTravelD);
+          const travelN = vec3.normalize(tempVec3(), playerShape.travel);
+          const backTravel = vec3.scale(tempVec3(), travelN, backTravelD);
 
           // console.log(backTravel);
           vec3.sub(b2.position, b2.position, backTravel);
@@ -471,7 +471,7 @@ export function initClothSandbox(em: EntityManager, hosting: boolean) {
       // cursor to cloth
       const cursorPos = res.globalCursor3d.cursor()!.world.position;
       const midpoint = vec3.scale(
-        tempVec(),
+        tempVec3(),
         [cloth.clothConstruct.columns / 2, cloth.clothConstruct.rows / 2, 0],
         cloth.clothConstruct.distance
       );
@@ -488,7 +488,7 @@ export function initClothSandbox(em: EntityManager, hosting: boolean) {
       }
 
       // scale the force
-      const delta = vec3.sub(tempVec(), clothPos, cursorPos);
+      const delta = vec3.sub(tempVec3(), clothPos, cursorPos);
       const dist = vec3.len(delta);
       vec3.normalize(cloth.force, delta);
       const strength = mathMapNEase(dist, 4, 20, 0, 500, (p) =>

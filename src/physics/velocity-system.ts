@@ -15,7 +15,7 @@ import {
   PhysicsStateDef,
   WorldFrameDef,
 } from "./nonintersection.js";
-import { tempVec } from "../temp-pool.js";
+import { tempVec3 } from "../temp-pool.js";
 import { TimeDef } from "../time.js";
 import {
   Frame,
@@ -63,7 +63,7 @@ export function registerPhysicsClampVelocityByContact(em: EntityManager) {
             vec3.sub(
               b.linearVelocity,
               b.linearVelocity,
-              vec3.scale(tempVec(), bToAInBParent, bInDirOfA)
+              vec3.scale(tempVec3(), bToAInBParent, bInDirOfA)
             );
           }
         }
@@ -76,7 +76,7 @@ export function registerPhysicsClampVelocityByContact(em: EntityManager) {
             vec3.sub(
               a.linearVelocity,
               a.linearVelocity,
-              vec3.scale(tempVec(), bToAInAParent, -aInDirOfB)
+              vec3.scale(tempVec3(), bToAInAParent, -aInDirOfB)
             );
           }
         }

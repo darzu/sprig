@@ -19,7 +19,7 @@ import {
   WorldFrameDef,
 } from "../physics/nonintersection.js";
 import { RayHit } from "../physics/broadphase.js";
-import { tempVec } from "../temp-pool.js";
+import { tempVec3 } from "../temp-pool.js";
 import { createRef, Ref } from "../em_helpers.js";
 
 export const GlobalCursor3dDef = EM.defineComponent("globalCursor3d", () => {
@@ -91,7 +91,11 @@ export function registerCursorSystems(em: EntityManager) {
       }
 
       // place the cursor
-      vec3.add(c.position, r.org, vec3.scale(tempVec(), r.dir, cursorDistance));
+      vec3.add(
+        c.position,
+        r.org,
+        vec3.scale(tempVec3(), r.dir, cursorDistance)
+      );
 
       // NOTE/HACK: since the cursor is updated after the render view is updated, we need
       //    to update it's world frame ourselves

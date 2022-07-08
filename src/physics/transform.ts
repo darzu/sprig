@@ -8,7 +8,7 @@ import {
   vec3,
 } from "../gl-matrix.js";
 import { createFrame, WorldFrameDef } from "./nonintersection.js";
-import { tempVec, tempQuat } from "../temp-pool.js";
+import { tempVec3, tempQuat } from "../temp-pool.js";
 import { FALSE, dbgLogOnce } from "../util.js";
 
 // Axis:

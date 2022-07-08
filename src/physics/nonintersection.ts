@@ -38,7 +38,7 @@ import {
 } from "./transform.js";
 import { assert } from "../test.js";
 import { IdPair, idPair, toBinary } from "../util.js";
-import { tempVec } from "../temp-pool.js";
+import { tempVec3 } from "../temp-pool.js";
 import { aabbDbg, vec3Dbg } from "../utils-3d.js";
 import { dbgLogOnce } from "../util.js";
 
@@ -549,7 +549,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
           let movFrac = nextObjMovFracs[o.id];
           if (movFrac) {
             // TODO(@darzu): PARENT. this needs to rebound in the parent frame, not world frame
-            const refl = tempVec();
+            const refl = tempVec3();
             vec3.sub(refl, o._phys.lastLocalPos, o.position);
             vec3.scale(refl, refl, movFrac);
             vec3.add(o.position, o.position, refl);

@@ -38,7 +38,7 @@ import { AnimateToDef, EASE_INCUBE, EASE_OUTBACK } from "../animate-to.js";
 import { AngularVelocityDef } from "../physics/motion.js";
 import { addSpawner, SpawnerDef } from "./spawn.js";
 import { drawLine } from "../utils-game.js";
-import { tempVec } from "../temp-pool.js";
+import { tempVec3 } from "../temp-pool.js";
 import { eventWizard } from "../net/events.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { GameState, GameStateDef } from "./gamestate.js";

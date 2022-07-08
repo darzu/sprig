@@ -1,7 +1,7 @@
 import { EntityManager } from "../entity-manager.js";
 import { PredictDef } from "./components.js";
 import { vec3, quat } from "../gl-matrix.js";
-import { tempVec, tempQuat } from "../temp-pool.js";
+import { tempVec3, tempQuat } from "../temp-pool.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 
@@ -14,7 +14,7 @@ export function registerPredictSystem(em: EntityManager) {
         if (entity.predict.dt > 0) {
           // TODO: non-ballistic prediction?
           let deltaV = vec3.scale(
-            tempVec(),
+            tempVec3(),
             entity.linearVelocity,
             entity.predict.dt
           );
@@ -22,7 +22,7 @@ export function registerPredictSystem(em: EntityManager) {
 
           if (AngularVelocityDef.isOn(entity) && RotationDef.isOn(entity)) {
             let normalizedVelocity = vec3.normalize(
-              tempVec(),
+              tempVec3(),
               entity.angularVelocity
             );
             let angle = vec3.length(entity.angularVelocity) * entity.predict.dt;

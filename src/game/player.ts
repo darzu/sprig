@@ -23,7 +23,7 @@ import {
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { AABBCollider, Collider, ColliderDef } from "../physics/collider.js";
 import { copyAABB, createAABB, Ray } from "../physics/broadphase.js";
-import { tempVec } from "../temp-pool.js";
+import { tempVec3 } from "../temp-pool.js";
 import { cloneMesh, scaleMesh3 } from "../render/mesh.js";
 import { AssetsDef } from "./assets.js";
 import { LinearVelocityDef } from "../physics/motion.js";
@@ -346,8 +346,8 @@ export function registerPlayerSystems(em: EntityManager) {
               vec3.create(),
               p.world.position,
               vec3.scale(
-                tempVec(),
-                vec3.multiply(tempVec(), facingDir, p.world.scale),
+                tempVec3(),
+                vec3.multiply(tempVec3(), facingDir, p.world.scale),
                 3.0
               )
             ),
@@ -407,7 +407,7 @@ export function registerPlayerSystems(em: EntityManager) {
           const endPoint = vec3.add(
             vec3.create(),
             r.org,
-            vec3.scale(tempVec(), r.dir, rayDist)
+            vec3.scale(tempVec3(), r.dir, rayDist)
           );
           drawLine(r.org, endPoint, color);
         }
@@ -460,7 +460,7 @@ export function registerPlayerSystems(em: EntityManager) {
               shipY + pFeetToMid + 1,
               Math.floor((res.me.pid - 1) / 2) * 4 - 10,
             ];
-            const startPos = vec3.add(tempVec(), endPos, [0, 200, 0]);
+            const startPos = vec3.add(tempVec3(), endPos, [0, 200, 0]);
             p.cameraFollow.yawOffset = 0.0;
             p.cameraFollow.pitchOffset = -0.75;
             quat.copy(p.rotation, [0.0, 1.0, 0.0, 0.0]);

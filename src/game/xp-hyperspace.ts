@@ -17,7 +17,10 @@ import { MeDef } from "../net/components.js";
 import { createPlayer } from "./player.js";
 import { createShip } from "./ship.js";
 import { GameStateDef } from "./gamestate.js";
-import { unwrapPipeline, unwrapTex } from "../render/pipelines/xp-uv-unwrap.js";
+import {
+  unwrapPipeline,
+  uvToPosTex,
+} from "../render/pipelines/xp-uv-unwrap.js";
 import { createComposePipeline } from "../render/pipelines/std-compose.js";
 import { createGhost } from "./sandbox.js";
 import { quat, vec2, vec3, vec4 } from "../gl-matrix.js";
@@ -27,6 +30,8 @@ import { CyTexturePtr } from "../render/gpu-registry.js";
 import { never } from "../util.js";
 import { assert } from "../test.js";
 import { clamp } from "../math.js";
+import { tempVec2, tempVec3, tempVec4 } from "../temp-pool.js";
+import { vec3Dbg } from "../utils-3d.js";
 
 interface Ocean {
   ent: Ref<[typeof PositionDef]>;
@@ -95,7 +100,9 @@ function createTextureReader<A extends 1 | 2 | 3 | 4>(
     x: number,
     y: number
   ): number | vec2 | vec3 | vec4 {
-    const idx = getIdx(Math.round(x), Math.round(y));
+    const xi = clamp(Math.round(x), 0, size[0] - 1);
+    const yi = clamp(Math.round(y), 0, size[1] - 1);
+    const idx = getIdx(xi, yi);
 
     assert(typeof out === "number" || out.length === outArity);
     if (outArity === 1) {
@@ -117,21 +124,61 @@ function createTextureReader<A extends 1 | 2 | 3 | 4>(
     }
   }
 
+  // TODO(@darzu): probably inefficient way to do bounds checking
+  function isDefault(xi: number, yi: number): boolean {
+    if (outArity === 1) {
+      return read(0, xi, yi) === 0;
+    } else if (outArity === 2) {
+      return vec2.equals(read(tempVec2(), xi, yi) as vec2, vec2.ZEROS);
+    } else if (outArity === 3) {
+      return vec3.equals(read(tempVec3(), xi, yi) as vec3, vec3.ZEROS);
+    } else if (outArity === 4) {
+      return vec4.equals(read(tempVec4(), xi, yi) as vec4, vec4.ZEROS);
+    } else {
+      never(outArity);
+    }
+  }
+
   function sample(
     out: number | vec2 | vec3 | vec4,
     x: number,
     y: number
   ): number | vec2 | vec3 | vec4 {
+    x = clamp(x, 0, size[0] - 1);
+    y = clamp(y, 0, size[1] - 1);
     const xi0 = Math.floor(x);
     const xi1 = Math.ceil(x);
     const yi0 = Math.floor(y);
     const yi1 = Math.ceil(y);
-    const ix0y0 = getIdx(xi0, yi0);
-    const ix1y0 = getIdx(xi1, yi0);
-    const ix0y1 = getIdx(xi0, yi1);
-    const ix1y1 = getIdx(xi1, yi1);
     const dx = x % 1.0;
     const dy = y % 1.0;
+    let ix0y0 = getIdx(xi0, yi0);
+    let ix1y0 = getIdx(xi1, yi0);
+    let ix0y1 = getIdx(xi0, yi1);
+    let ix1y1 = getIdx(xi1, yi1);
+
+    // bounds check
+    // TODO(@darzu): this is hacky and inefficient. At minimum we shouldn't
+    //  need to read texture values twice.
+    // TODO(@darzu): actually this might not be necessary at all. we should
+    //  probably have an SDF texture from the edge anyway for pushing the
+    //  player back.
+    const def00 = isDefault(xi0, yi0);
+    const def10 = isDefault(xi1, yi0);
+    const def01 = isDefault(xi0, yi1);
+    const def11 = isDefault(xi1, yi1);
+    if (def00) ix0y0 = ix1y0;
+    if (def10) ix1y0 = ix0y0;
+    if (def01) ix0y1 = ix1y1;
+    if (def11) ix1y1 = ix0y1;
+    if (def00 && def10) {
+      ix0y0 = ix0y1;
+      ix1y0 = ix1y1;
+    }
+    if (def01 && def11) {
+      ix0y1 = ix0y0;
+      ix1y1 = ix1y0;
+    }
 
     function _sample(offset: 0 | 1 | 2 | 3): number {
       const outAy0 = f32[ix0y0 + offset] * (1 - dx) + f32[ix1y0 + offset] * dx;
@@ -226,7 +273,7 @@ export function initHyperspaceGame(em: EntityManager) {
       const buoy = em.newEntity();
       em.ensureComponentOn(buoy, PositionDef);
       em.ensureComponentOn(buoy, RenderableConstructDef, res.assets.ball.proto);
-      em.ensureComponentOn(buoy, ScaleDef, [8, 8, 8]);
+      em.ensureComponentOn(buoy, ScaleDef, [3, 3, 3]);
       em.ensureComponentOn(buoy, ColorDef, [0.2, 0.8, 0.2]);
       em.ensureComponentOn(buoy, UVPosDef, [0.5, 0.5]);
     }
@@ -248,7 +295,10 @@ export function initHyperspaceGame(em: EntityManager) {
         if (res.inputs.keyDowns["arrowdown"]) e.uv.pos[0] -= speed;
         e.uv.pos[0] = clamp(e.uv.pos[0], 0, 1);
         e.uv.pos[1] = clamp(e.uv.pos[1], 0, 1);
-        res.ocean.uvToPos(e.position, e.uv.pos);
+        const newPos = res.ocean.uvToPos(tempVec3(), e.uv.pos);
+        console.log(vec3Dbg(newPos));
+        if (!vec3.exactEquals(newPos, vec3.ZEROS))
+          vec3.copy(e.position, newPos);
       }
     },
     "runOcean"
@@ -274,7 +324,7 @@ export function initHyperspaceGame(em: EntityManager) {
         if (once2 === 1) {
           // read from one-time jobs
           // TODO(@darzu): what's the right way to handle these jobs
-          res.renderer.renderer.readTexture(unwrapTex).then((data) => {
+          res.renderer.renderer.readTexture(uvToPosTex).then((data) => {
             // const fs = new Float32Array(data);
             // // TODO(@darzu): really want a vec4 array as a view on Float32Array
             // console.dir(fs);
@@ -284,9 +334,9 @@ export function initHyperspaceGame(em: EntityManager) {
 
             const reader = createTextureReader(
               data,
-              unwrapTex.size,
+              uvToPosTex.size,
               3,
-              unwrapTex.format
+              uvToPosTex.format
             );
 
             console.log("adding OceanDef");

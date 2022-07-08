@@ -1,7 +1,7 @@
 import { mat4, quat, vec2, vec3, vec4 } from "./gl-matrix.js";
 import { avg, mathMap } from "./math.js";
 import { AABB } from "./physics/broadphase.js";
-import { tempVec } from "./temp-pool.js";
+import { tempVec3 } from "./temp-pool.js";
 
 // math utilities
 export function computeTriangleNormal(p1: vec3, p2: vec3, p3: vec3): vec3 {
@@ -60,7 +60,7 @@ export function vec4Dbg(v: vec4): string {
   )},${v[3].toFixed(2)}]`;
 }
 export function quatDbg(q: quat): string {
-  const axis = tempVec();
+  const axis = tempVec3();
   const n = quat.getAxisAngle(axis, q);
   return `${vec3Dbg(axis)}*${n.toFixed(2)}`;
 }

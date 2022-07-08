@@ -20,7 +20,7 @@ import { FORCE_WEBGL } from "../main.js";
 import { createWebGPURenderer } from "./render-webgpu.js";
 import { CyPipelinePtr, CyTexturePtr } from "./gpu-registry.js";
 import { createFrame } from "../physics/nonintersection.js";
-import { tempVec } from "../temp-pool.js";
+import { tempVec3 } from "../temp-pool.js";
 import { isMeshHandle } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import { SceneTS } from "./pipelines/std-scene.js";
@@ -178,7 +178,7 @@ function extrapolateFrames(
   // see https://answers.unity.com/questions/168779/extrapolating-quaternion-rotation.html
   quat.invert(out.rotation, prev.rotation);
   quat.mul(out.rotation, next.rotation, out.rotation);
-  const axis = tempVec();
+  const axis = tempVec3();
   let angle = quat.getAxisAngle(axis, out.rotation);
   // ensure we take the shortest path
   if (angle > Math.PI) {
@@ -274,7 +274,7 @@ export function registerRenderer(em: EntityManager) {
       // TODO(@darzu): go elsewhere
       // const lightPosition = vec3.fromValues(50, 100, -100);
       const lightPosition = vec3.add(
-        tempVec(),
+        tempVec3(),
         cameraView.location,
         [50, 100, 50]
       );

@@ -1,9 +1,9 @@
 import { CY } from "../gpu-registry.js";
 import { meshPoolPtr } from "./std-scene.js";
 
-export const unwrapTex = CY.createTexture("unwrapTex", {
+export const uvToPosTex = CY.createTexture("uvToPosTex", {
   init: () => undefined,
-  size: [256, 256],
+  size: [128, 128],
   format: "rgba32float",
 });
 
@@ -40,7 +40,7 @@ export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
   },
   output: [
     {
-      ptr: unwrapTex,
+      ptr: uvToPosTex,
       clear: "once",
       defaultColor: [0.0, 0.0, 0.0, 1.0],
     },

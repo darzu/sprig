@@ -56,6 +56,7 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let sR = textureLoad(surfTex, vec2<i32>(r), 0);
   let sB = textureLoad(surfTex, vec2<i32>(b), 0);  
 
+  // TODO(@darzu): do i need to do expensive sampling for depth and norm? why not just load
   let h = textureSample(depthTex, samp, uv);
   let hT = textureSample(depthTex, samp, t / dimsF);
   let hL = textureSample(depthTex, samp, l / dimsF);
