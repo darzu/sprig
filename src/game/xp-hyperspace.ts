@@ -325,6 +325,8 @@ export function initHyperspaceGame(em: EntityManager) {
         // one-time compute and render jobs
         res.renderer.pipelines = [
           initStars,
+
+          // TODO(@darzu): package / abstract these more nicely?
           unwrapPipeline,
           uvBorderMaskPipeline,
           uvPosBorderMaskPipeline,

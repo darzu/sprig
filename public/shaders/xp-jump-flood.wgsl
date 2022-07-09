@@ -11,5 +11,6 @@ fn main(
     LocalInvocationID.xy
   );
 
-  textureStore(outTex, texXY, vec4<f32>(0.2, 0.8, 0.2, 1.0));
+  let res = textureLoad(inTex, texXY, 0);
+  textureStore(outTex, texXY, res);
 }

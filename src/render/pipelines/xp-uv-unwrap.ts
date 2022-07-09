@@ -13,17 +13,18 @@ export const uvToPosTex = CY.createTexture("uvToPosTex", {
   format: "rgba32float",
 });
 
-// TODO(@darzu): rgba32float is too aggressive for this
+// TODO(@darzu): rgba32float is too aggressive for this; revist all formats used
+//    in sprigland
 const uvMaskTex = CY.createTexture("uvMaskTex", {
   init: () => undefined,
   size: [size, size],
-  format: "rgba32float",
+  format: "rgba16float",
 });
 
 export const uvBorderMask = CY.createTexture("uvBorderMask", {
   init: () => undefined,
   size: [size, size],
-  format: "rgba32float",
+  format: "rgba16float",
 });
 
 export const uvBorderMaskPipeline = createRenderTextureToQuad(
@@ -34,13 +35,14 @@ export const uvBorderMaskPipeline = createRenderTextureToQuad(
   1,
   -1,
   1,
+  false,
   (inPxVar, uvVar) => `return 1.0 - vec4(${inPxVar});`
 ).pipeline;
 
 export const uvPosBorderMask = CY.createTexture("uvPosBorderMask", {
   init: () => undefined,
   size: [size, size],
-  format: "rgba32float",
+  format: "rgba16float",
 });
 
 export const uvPosBorderMaskPipeline = createRenderTextureToQuad(
@@ -51,6 +53,7 @@ export const uvPosBorderMaskPipeline = createRenderTextureToQuad(
   1,
   -1,
   1,
+  false,
   (inPxVar, uvVar) => `
   if (${inPxVar}.x > 0.0) {
     return vec4(${uvVar}, 0.0, 1.0);

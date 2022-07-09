@@ -13,7 +13,8 @@ export function createComposePipelines(): CyRenderPipelinePtr[] {
     0.1,
     0.9,
     0.1,
-    0.9
+    0.9,
+    false
   );
   const p1 = createRenderTextureToQuad(
     "composeViews1",
@@ -22,7 +23,8 @@ export function createComposePipelines(): CyRenderPipelinePtr[] {
     0.1,
     0.9,
     -0.9,
-    -0.1
+    -0.1,
+    false
   );
   return [p0.pipeline, p1.pipeline];
 }

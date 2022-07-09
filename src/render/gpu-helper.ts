@@ -29,6 +29,7 @@ export function createRenderTextureToQuad(
   maxX = 1,
   minY = -1,
   maxY = 1,
+  sample = false,
   fragSnippet?: (inPxVar: string, uvVar: string) => string
 ): {
   pipeline: CyRenderPipelinePtr;
@@ -46,6 +47,8 @@ export function createRenderTextureToQuad(
   const inTexIsUnfilterable = texTypeToSampleType[inTex.format]?.every((f) =>
     f.startsWith("unfilterable")
   );
+  // TODO(@darzu): turn on-off sampling?
+  const doSample = !inTexIsUnfilterable && sample;
   const pipeline = CY.createRenderPipeline(name, {
     globals: [
       // TODO(@darzu): Actually, not all textures (e.g. unfilterable rgba32float)
@@ -100,7 +103,7 @@ export function createRenderTextureToQuad(
   fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
     ${
       // TODO(@darzu): don't like this...
-      inTexIsUnfilterable
+      !doSample
         ? `
         let dims : vec2<i32> = textureDimensions(myTexture);
         let intUV = vec2<i32>(uv * vec2<f32>(dims));

@@ -3,15 +3,15 @@ import { CY, linearSamplerPtr } from "../gpu-registry.js";
 import { createCyStruct } from "../gpu-struct.js";
 import { outlinedTexturePtr } from "./std-outline.js";
 import { emissionTexturePtr } from "./xp-stars.js";
-import { uvBorderMask, uvToPosTex } from "./xp-uv-unwrap.js";
+import { uvBorderMask, uvPosBorderMask, uvToPosTex } from "./xp-uv-unwrap.js";
+
+const size = 64;
 
 export const sdfTex = CY.createTexture(`sdfTex`, {
-  size: [128, 128],
+  size: [size, size],
   format: "rgba16float",
   init: () => undefined,
 });
-
-const jfaInputTex = uvBorderMask;
 
 // const blurParamsStruct = createCyStruct(
 //   {
@@ -37,11 +37,11 @@ const jfaInputTex = uvBorderMask;
 
 export const jfaPipeline = CY.createComputePipeline(`jfaPipeline`, {
   globals: [
-    { ptr: jfaInputTex, alias: "inTex" },
+    { ptr: uvPosBorderMask, alias: "inTex" },
     { ptr: sdfTex, access: "write", alias: "outTex" },
     // { ptr: params, alias: "params" },
   ],
   shader: "xp-jump-flood",
   shaderComputeEntry: "main",
-  workgroupCounts: [128 / 8, 128 / 8, 1],
+  workgroupCounts: [size / 8, size / 8, 1],
 });
