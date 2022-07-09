@@ -47,7 +47,7 @@ If entry.visibility includes VERTEX:
 
 const prim_tris: GPUPrimitiveState = {
   topology: "triangle-list",
-  cullMode: "back",
+  cullMode: "none",
   frontFace: "ccw",
 };
 const prim_lines: GPUPrimitiveState = {
