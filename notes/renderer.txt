@@ -429,6 +429,7 @@ Jump Flood Algorithm:
   https://prideout.net/blog/distance_fields/
   https://blog.demofox.org/2016/02/29/fast-voronoi-diagrams-and-distance-dield-textures-on-the-gpu-with-the-jump-flooding-algorithm/
   https://shaderbits.com/blog/various-distance-field-generation-techniques
+    https://www.shadertoy.com/view/4syGWK
   Freya: https://twitter.com/freyaholmer/status/1292536599230775296?lang=en
   https://www.youtube.com/watch?v=A0pxY9QsgJE
 
