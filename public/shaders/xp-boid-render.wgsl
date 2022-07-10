@@ -3,7 +3,7 @@ struct VertexOutput {
   @location(0) worldPos: vec3<f32>,
 }
 
-@stage(vertex)
+@vertex
 fn vert_main(vIn: VertexInput, iIn: InstanceInput) -> VertexOutput {
   // let angle = -atan2(iIn.vel.x, iIn.vel.y);
   // let posXY = vec2<f32>(
@@ -17,7 +17,7 @@ fn vert_main(vIn: VertexInput, iIn: InstanceInput) -> VertexOutput {
   return output;
 }
 
-@stage(fragment)
+@fragment
 fn frag_main(v: VertexOutput) -> @location(0) vec4<f32> {
   let norm = -normalize(cross(dpdx(v.worldPos.xyz), dpdy(v.worldPos.xyz)));
   // let norm = -normalize(cross(dpdx(v.worldPos.xyz), -dpdy(v.worldPos.xyz)));

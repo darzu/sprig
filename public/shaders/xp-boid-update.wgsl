@@ -1,5 +1,5 @@
 
-@stage(compute) @workgroup_size(64)
+@compute @workgroup_size(64)
 fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
   var index : u32 = GlobalInvocationID.x;
 

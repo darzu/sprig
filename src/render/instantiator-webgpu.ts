@@ -151,7 +151,7 @@ export function createCyResources(
           // nothing?
         } else {
           if (r.ptr.kind === "texture") {
-            if (r.access === "write") {
+            if (r.access === "write" /*|| r.access === "read_write"*/) {
               cyNameToTextureUsage[r.ptr.name] |=
                 GPUTextureUsage.STORAGE_BINDING;
             }
@@ -422,7 +422,7 @@ export function createCyResources(
             return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_2d<f32>;`;
           }
         } else
-          return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_storage_2d<${r.ptr.format}, write>;`;
+          return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_storage_2d<${r.ptr.format}, ${r.access}>;`;
       } else if (r.ptr.kind === "sampler") {
         const varName = r.alias ?? uncapitalize(r.ptr.name);
         if (r.ptr.name === "comparison")

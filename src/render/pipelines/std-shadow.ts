@@ -43,12 +43,12 @@ export const shadowPipeline = CY.createRenderPipeline("shadowPipeline", {
   shaderVertexEntry: "vert_main",
   shaderFragmentEntry: "frag_main",
   shader: () => `
-  @stage(vertex)
+  @vertex
   fn vert_main(input: VertexInput) -> @builtin(position) vec4<f32> {
       return scene.lightViewProjMatrix * meshUni.transform * vec4<f32>(input.position, 1.0);
   }
 
-  @stage(fragment) fn frag_main() { }
+  @fragment fn frag_main() { }
   `,
 });
 

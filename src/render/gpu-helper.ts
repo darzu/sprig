@@ -73,7 +73,7 @@ export function createRenderTextureToQuad(
     @location(0) uv : vec2<f32>,
   };
 
-  @stage(vertex)
+  @vertex
   fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
     var pos = array<vec2<f32>, 6>(
       vec2<f32>(quad.minX, quad.minY),
@@ -99,7 +99,7 @@ export function createRenderTextureToQuad(
     return output;
   }
 
-  ${`@stage(fragment)
+  ${`@fragment
   fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
     ${
       // TODO(@darzu): don't like this...

@@ -2,7 +2,7 @@
 // @group(0) @binding(1) var inTex : texture_2d<f32>;
 // @group(0) @binding(2) var outTex : texture_storage_2d<rgba16float, write>;
 
-@stage(compute) @workgroup_size(10, 10)
+@compute @workgroup_size(10, 10)
 fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
   // var index : u32 = GlobalInvocationID.x;
 

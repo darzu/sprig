@@ -38,7 +38,7 @@ export const initStars = CY.createComputePipeline("initStars", {
       return rand_seed.y;
   }
 
-  @stage(compute) @workgroup_size(64)
+  @compute @workgroup_size(64)
   fn main(@builtin(global_invocation_id) gId : vec3<u32>) {
     rand_seed = vec2<f32>(f32(gId.x));
     // starDatas.ms[gId.x].pos = vec3(0.0);
@@ -61,7 +61,7 @@ export const renderStars = CY.createRenderPipeline("renderStars", {
     @location(1) color: vec3<f32>,
   };
   
-  @stage(vertex)
+  @vertex
   fn vert_main(@builtin(vertex_index) gvIdx : u32) -> VertexOutput {
     let vIdx = gvIdx % 6u;
     let starIdx = gvIdx / 6u;
@@ -125,7 +125,7 @@ export const renderStars = CY.createRenderPipeline("renderStars", {
     @location(1) color: vec4<f32>,
   }
 
-  @stage(fragment)
+  @fragment
   fn frag_main(input: VertexOutput) -> FragOut {
     let dist = length(input.uv - vec2(0.5));
     // TODO: what's the perf difference of alpha vs discard?

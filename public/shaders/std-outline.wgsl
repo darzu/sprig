@@ -3,7 +3,7 @@ struct VertexOutput {
   @location(0) uv : vec2<f32>,
 };
 
-@stage(vertex)
+@vertex
 fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
   let xs = vec2(-1.0, 1.0);
   let ys = vec2(-1.0, 1.0);
@@ -31,7 +31,7 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
   return output;
 }
 
-@stage(fragment)
+@fragment
 fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   // TODO(@darzu): it'd be great if we could just output lines and compose elsewhere
   var color = textureSample(colorTex, samp, uv).rgb;

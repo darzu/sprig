@@ -112,6 +112,9 @@ export interface CyGlobalUsage<G extends CyResourcePtr> {
   ptr: G;
   // TODO(@darzu): access doesn't make sense for all globals, like samplers
   access?: "read" | "write";
+  // TODO(@darzu): Support read_write eventually, currently:
+  // "Tint WGSL reader failure: :5:36 error: storage textures currently only support 'write' access control"
+  // | "read_write";
   alias?: string;
 }
 

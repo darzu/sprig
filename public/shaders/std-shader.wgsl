@@ -9,7 +9,7 @@ struct VertexOutput {
     @builtin(position) position : vec4<f32>,
 };
 
-@stage(vertex)
+@vertex
 fn vert_main(input: VertexInput) -> VertexOutput {
     let position = input.position;
     let uv = input.uv;
@@ -57,8 +57,8 @@ struct FragOut {
   @location(2) surface: vec2<u32>,
 }
 
-let shadowDepthTextureSize = 1024.0;
-// let shadowDepthTextureSize = vec2<f32>(textureDimensions(shadowMap, 0.0));
+const shadowDepthTextureSize = 1024.0;
+// const shadowDepthTextureSize = vec2<f32>(textureDimensions(shadowMap, 0.0));
 
 fn getShadowVis(shadowPos: vec3<f32>) -> f32 {
   // See: https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
@@ -92,7 +92,7 @@ fn getShadowVis(shadowPos: vec3<f32>) -> f32 {
   return visibility;
 }
 
-@stage(fragment)
+@fragment
 fn frag_main(input: VertexOutput) -> FragOut {
     let normal = normalize(input.normal);
     // let normal = -normalize(cross(dpdx(input.worldPos.xyz), dpdy(input.worldPos.xyz)));

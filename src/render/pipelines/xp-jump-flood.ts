@@ -7,6 +7,11 @@ import { uvBorderMask, uvPosBorderMask, uvToPosTex } from "./xp-uv-unwrap.js";
 
 const size = 64;
 
+export const nearestPosTex = CY.createTexture(`nearestPosTex`, {
+  size: [size, size],
+  format: "rgba16float",
+  init: () => undefined,
+});
 export const sdfTex = CY.createTexture(`sdfTex`, {
   size: [size, size],
   format: "rgba16float",
@@ -38,7 +43,8 @@ export const sdfTex = CY.createTexture(`sdfTex`, {
 export const jfaPipeline = CY.createComputePipeline(`jfaPipeline`, {
   globals: [
     { ptr: uvPosBorderMask, alias: "inTex" },
-    { ptr: sdfTex, access: "write", alias: "outTex" },
+    { ptr: nearestPosTex, access: "write", alias: "posTex" },
+    { ptr: sdfTex, access: "write", alias: "sdfTex" },
     // { ptr: params, alias: "params" },
   ],
   shader: "xp-jump-flood",

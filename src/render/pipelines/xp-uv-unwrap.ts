@@ -74,7 +74,7 @@ export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
     @location(1) uv: vec2<f32>,
   }
 
-  @stage(vertex)
+  @vertex
   fn vertMain(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
     let worldPos = meshUni.transform * vec4<f32>(input.position, 1.0);
@@ -93,7 +93,7 @@ export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
     @location(1) uv: vec4<f32>,
   }
 
-  @stage(fragment) fn fragMain(input: VertexOutput) -> FragOut {
+  @fragment fn fragMain(input: VertexOutput) -> FragOut {
     var output: FragOut;
     output.worldPos = input.worldPos;
     output.uv = vec4(1.0);
