@@ -5,18 +5,21 @@ import { outlinedTexturePtr } from "./std-outline.js";
 import { emissionTexturePtr } from "./xp-stars.js";
 import { uvBorderMask, uvPosBorderMask, uvToPosTex } from "./xp-uv-unwrap.js";
 
-const size = 64;
+export const nearestPosTexs = [
+  uvPosBorderMask,
+  // TODO(@darzu): this is a nifty way to clone. Is this always going to work?
+  //    maybe we need a deep clone per resource kind?
+  CY.createTexture(uvPosBorderMask.name + "2", uvPosBorderMask),
+];
 
-export const nearestPosTex = CY.createTexture(`nearestPosTex`, {
-  size: [size, size],
-  format: "rgba16float",
-  init: () => undefined,
-});
-export const sdfTex = CY.createTexture(`sdfTex`, {
-  size: [size, size],
-  format: "rgba16float",
-  init: () => undefined,
-});
+const size = uvPosBorderMask.size[0];
+// export const sdfTexs = [0, 1].map((i) =>
+//   CY.createTexture(`sdfTex${i}`, {
+//     size: [size, size],
+//     format: "rgba16float",
+//     init: () => undefined,
+//   })
+// );
 
 // const blurParamsStruct = createCyStruct(
 //   {
@@ -40,14 +43,20 @@ export const sdfTex = CY.createTexture(`sdfTex`, {
 //   }),
 // });
 
-export const jfaPipeline = CY.createComputePipeline(`jfaPipeline`, {
-  globals: [
-    { ptr: uvPosBorderMask, alias: "inTex" },
-    { ptr: nearestPosTex, access: "write", alias: "posTex" },
-    { ptr: sdfTex, access: "write", alias: "sdfTex" },
-    // { ptr: params, alias: "params" },
-  ],
-  shader: "xp-jump-flood",
-  shaderComputeEntry: "main",
-  workgroupCounts: [size / 8, size / 8, 1],
+export const jfaPipelines = [0, 1].map((i) => {
+  const inIdx = (i + 0) % 2;
+  const outIdx = (i + 1) % 2;
+
+  return CY.createComputePipeline(`jfaPipeline${i}`, {
+    globals: [
+      { ptr: nearestPosTexs[inIdx], access: "read", alias: "inTex" },
+      { ptr: nearestPosTexs[outIdx], access: "write", alias: "outTex" },
+      // { ptr: sdfTexs[inIdx], access: "read", alias: "inSdfTex" },
+      // { ptr: sdfTexs[outIdx], access: "write", alias: "outSdfTex" },
+      // { ptr: params, alias: "params" },
+    ],
+    shader: "xp-jump-flood",
+    shaderComputeEntry: "main",
+    workgroupCounts: [size / 8, size / 8, 1],
+  });
 });

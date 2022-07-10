@@ -433,6 +433,9 @@ Jump Flood Algorithm:
   Freya: https://twitter.com/freyaholmer/status/1292536599230775296?lang=en
   https://www.youtube.com/watch?v=A0pxY9QsgJE
 
+  can u use JFA to blur stars instead of gauss blur? easier to make arbitrarily big,
+    maybe easier to modulate based on distance to camera
+
   Related to voronoi?
     https://www.redblobgames.com/x/2022-voronoi-maps-tutorial/
     Delaunator: https://github.com/mapbox/delaunator (good license)

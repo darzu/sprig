@@ -1,6 +1,8 @@
 // TODO(@darzu): use this elsewhere? how does this work exactly
 // var<workgroup> tile : array<array<vec3<f32>, 128>, 4>;
 
+// var<storage,read_write> posData: array<array<vec2<f32>, 128>, 128>;
+
 @compute @workgroup_size(8, 8, 1)
 fn main(
   @builtin(workgroup_id) WorkGroupID : vec3<u32>,
@@ -14,8 +16,8 @@ fn main(
   let stepSize = 4;
   let center = textureLoad(inTex, texXY, 0);
 
-      // let foo1 = textureLoad(sdfTex, texXY, 0);
-      // let foo2 = textureLoad(posTex, texXY, 0);
+      // let foo1 = textureLoad(inSdfTex, texXY, 0);
+      // let foo2 = textureLoad(inPosTex, texXY, 0);
 
   let minDist = 9999.9;
   for (var x = -1; x <= 1; x++) {
@@ -23,8 +25,8 @@ fn main(
       let coord = texXY + vec2(x,y) * stepSize;
       let pos = textureLoad(inTex, coord, 0);
       let dist = length(pos - center);
-      textureStore(sdfTex, texXY, vec4(dist));
-      textureStore(posTex, texXY, pos);
+      // textureStore(outSdfTex, texXY, vec4(dist));
+      textureStore(outTex, texXY, pos);
     }
   }
 }

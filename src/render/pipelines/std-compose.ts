@@ -1,7 +1,7 @@
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { CyRenderPipelinePtr } from "../gpu-registry.js";
 import { litTexturePtr } from "./std-scene.js";
-import { nearestPosTex, sdfTex } from "./xp-jump-flood.js";
+import { nearestPosTexs } from "./xp-jump-flood.js";
 import { uvBorderMask, uvPosBorderMask, uvToPosTex } from "./xp-uv-unwrap.js";
 
 export function createComposePipelines(): CyRenderPipelinePtr[] {
@@ -18,7 +18,7 @@ export function createComposePipelines(): CyRenderPipelinePtr[] {
   );
   const p1 = createRenderTextureToQuad(
     "composeViews1",
-    sdfTex,
+    nearestPosTexs[1],
     litTexturePtr,
     0.1,
     0.9,
@@ -26,15 +26,19 @@ export function createComposePipelines(): CyRenderPipelinePtr[] {
     -0.1,
     false
   );
-  const p2 = createRenderTextureToQuad(
-    "composeViews2",
-    nearestPosTex,
-    litTexturePtr,
-    -0.9,
-    -0.1,
-    -0.9,
-    -0.1,
-    false
-  );
-  return [p0.pipeline, p1.pipeline, p2.pipeline];
+  // const p2 = createRenderTextureToQuad(
+  //   "composeViews2",
+  //   nearestPosTexs[1],
+  //   litTexturePtr,
+  //   -0.9,
+  //   -0.1,
+  //   -0.9,
+  //   -0.1,
+  //   false
+  // );
+  return [
+    p0.pipeline,
+    p1.pipeline,
+    //p2.pipeline
+  ];
 }
