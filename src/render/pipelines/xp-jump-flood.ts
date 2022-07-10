@@ -43,7 +43,7 @@ const size = uvPosBorderMask.size[0];
 //   }),
 // });
 
-export const jfaPipelines = [0, 1].map((i) => {
+export const jfaPipelines = [0].map((i) => {
   const inIdx = (i + 0) % 2;
   const outIdx = (i + 1) % 2;
 

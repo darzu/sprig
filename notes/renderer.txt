@@ -436,11 +436,15 @@ Jump Flood Algorithm:
   can u use JFA to blur stars instead of gauss blur? easier to make arbitrarily big,
     maybe easier to modulate based on distance to camera
 
+  "Triangle Voronoi Borders":
+    https://www.shadertoy.com/view/ss3fW4
+
   Related to voronoi?
     https://www.redblobgames.com/x/2022-voronoi-maps-tutorial/
     Delaunator: https://github.com/mapbox/delaunator (good license)
       guide: https://mapbox.github.io/delaunator/
     Delaunator seems good for CPU and gives a mesh; unclear about GPU perf.
+
   
 Outlines
   https://bgolus.medium.com/the-quest-for-very-wide-outlines-ba82ed442cd9

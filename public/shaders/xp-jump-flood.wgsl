@@ -7,26 +7,56 @@
 fn main(
   @builtin(workgroup_id) WorkGroupID : vec3<u32>,
   @builtin(local_invocation_id) LocalInvocationID : vec3<u32>,
+  @builtin(global_invocation_id) GlobalInvocationID : vec3<u32>,
 ) {
-  let texXY = vec2<i32>(
-    WorkGroupID.xy * vec2<u32>(8u, 8u) +
-    LocalInvocationID.xy
-  );
+  let centerXY = vec2<i32>(GlobalInvocationID.xy);
+  // let centerXY = vec2<i32>(32, 32);
+  // let centerXY = vec2<i32>(
+  //   WorkGroupID.xy * vec2<u32>(8u, 8u) +
+  //   LocalInvocationID.xy
+  // );
+  let dimsI: vec2<i32> = textureDimensions(inTex, 0);
+  let dimsF = vec2<f32>(dimsI);
+  let centerUV = vec2<f32>(centerXY) / dimsF;
 
   let stepSize = 4;
-  let center = textureLoad(inTex, texXY, 0);
 
-      // let foo1 = textureLoad(inSdfTex, texXY, 0);
-      // let foo2 = textureLoad(inPosTex, texXY, 0);
+  var minDist = 9999.9;
+  var minUV = vec2<f32>(0.0);
 
-  let minDist = 9999.9;
-  for (var x = -1; x <= 1; x++) {
-    for (var y = -1; y <= 1; y++) {
-      let coord = texXY + vec2(x,y) * stepSize;
-      let pos = textureLoad(inTex, coord, 0);
-      let dist = length(pos - center);
-      // textureStore(outSdfTex, texXY, vec4(dist));
-      textureStore(outTex, texXY, pos);
-    }
-  }
+  // for (var x = -1; x <= 1; x++) {
+  //   for (var y = -1; y <= 1; y++) {
+    var x = 0;
+    var y = 0;
+
+      let neighXY = centerXY + vec2(x,y) * stepSize;
+      let neighUV = textureLoad(inTex, neighXY, 0).xy;
+      // textureStore(outTex, centerXY, vec4(neighUV, 0.0, 1.0));
+
+      // let neighUV = textureLoad(inTex, neighXY, 0).xy;
+      let dist = length(neighUV - centerUV);
+      // if (true) 
+      if (
+        true
+        && neighUV.x > 0.0 
+        // && neighUV.y > 0.0 
+        // && dist < minDist
+      ) 
+      {
+        minDist = dist;
+        minUV = neighUV;
+
+        // textureStore(outTex, centerXY, vec4(minUV, 0.0, 1.0));
+        textureStore(outTex, centerXY, vec4(neighUV, 0.0, 1.0));
+        // textureStore(outTex, centerXY, vec4(centerUV, 0.0, 1.0));
+      }
+  //     // let foo2 = textureLoad(inPosTex, centerXY, 0);
+  //     // textureStore(outSdfTex, centerXY, vec4(dist));
+  // //   }
+  // // }
+
+  // // TODO(@darzu): don't use rgba, just rg
+  // if (minDist < 999.9) {
+  //   // textureStore(outTex, centerXY, vec4(minUV, 0.0, 1.0));
+  // }
 }
