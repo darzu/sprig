@@ -1,4 +1,5 @@
 import { range } from "../../util.js";
+import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { CY, linearSamplerPtr } from "../gpu-registry.js";
 import { createCyStruct } from "../gpu-struct.js";
 import { outlinedTexturePtr } from "./std-outline.js";
@@ -6,10 +7,11 @@ import { emissionTexturePtr } from "./xp-stars.js";
 import { uvBorderMask, uvPosBorderMask, uvToPosTex } from "./xp-uv-unwrap.js";
 
 export const nearestPosTexs = [
-  uvPosBorderMask,
+  // uvPosBorderMask,
   // TODO(@darzu): this is a nifty way to clone. Is this always going to work?
   //    maybe we need a deep clone per resource kind?
-  CY.createTexture(uvPosBorderMask.name + "2", uvPosBorderMask),
+  CY.createTexture(uvPosBorderMask.name + "0", uvPosBorderMask),
+  CY.createTexture(uvPosBorderMask.name + "1", uvPosBorderMask),
 ];
 
 const size = uvPosBorderMask.size[0];
@@ -42,6 +44,17 @@ const size = uvPosBorderMask.size[0];
 //     isVertical: 1,
 //   }),
 // });
+
+export const jfaCopyIn = createRenderTextureToQuad(
+  "jfaCopyInPipe",
+  uvPosBorderMask,
+  nearestPosTexs[0]
+  // -1,
+  // 1,
+  // -1,
+  // 1,
+  // false
+).pipeline;
 
 export const jfaPipelines = [0].map((i) => {
   const inIdx = (i + 0) % 2;

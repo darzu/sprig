@@ -320,7 +320,7 @@ export function registerRenderer(em: EntityManager) {
         cameraPos: cameraView.location,
       });
 
-      renderer.renderFrame(
+      renderer.submitPipelines(
         objs.map((o) => o.renderable.meshHandle),
         res.renderer.pipelines
       );
@@ -374,11 +374,14 @@ export interface Renderer {
   addMesh(m: Mesh): MeshHandleStd;
   addMeshInstance(h: MeshHandleStd): MeshHandleStd;
   updateMesh(handle: MeshHandleStd, newMeshData: Mesh): void;
+  // TODO(@darzu): scene struct maybe shouldn't be special cased, all uniforms
+  //  should be neatily updatable.
   updateScene(scene: Partial<SceneTS>): void;
-  renderFrame(handles: MeshHandleStd[], pipelines: CyPipelinePtr[]): void;
+  submitPipelines(handles: MeshHandleStd[], pipelines: CyPipelinePtr[]): void;
   readTexture(tex: CyTexturePtr): Promise<ArrayBuffer>;
 }
 
+// TODO(@darzu): the double "Renderer" naming is confusing. Maybe one should be GPUManager or something?
 export const RendererDef = EM.defineComponent(
   "renderer",
   (renderer: Renderer, usingWebGPU: boolean, pipelines: CyPipelinePtr[]) => {

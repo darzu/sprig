@@ -46,7 +46,7 @@ export function createWebGPURenderer(
     addMeshInstance,
     updateMesh,
     updateScene,
-    renderFrame,
+    submitPipelines,
     readTexture,
   };
 
@@ -133,7 +133,7 @@ export function createWebGPURenderer(
     });
   }
 
-  function renderFrame(
+  function submitPipelines(
     handles: MeshHandleStd[],
     pipelinePtrs: CyPipelinePtr[]
   ): void {

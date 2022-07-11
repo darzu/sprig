@@ -35,10 +35,12 @@ fn main(
 
       // let neighUV = textureLoad(inTex, neighXY, 0).xy;
       let dist = length(neighUV - centerUV);
+      let foo = neighUV.x - 0.5 ;
       // if (true) 
       if (
         true
-        && neighUV.x > 0.0 
+        && foo > 0.0
+        // && neighUV.x > 0.5 
         // && neighUV.y > 0.0 
         // && dist < minDist
       ) 
