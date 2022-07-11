@@ -5,14 +5,19 @@ import { outlinedTexturePtr } from "./std-outline.js";
 import { emissionTexturePtr } from "./xp-stars.js";
 import { uvBorderMask, uvPosBorderMask, uvToPosTex } from "./xp-uv-unwrap.js";
 
+const size = 64;
+
 export const nearestPosTexs = [
   uvPosBorderMask,
   // TODO(@darzu): this is a nifty way to clone. Is this always going to work?
   //    maybe we need a deep clone per resource kind?
-  CY.createTexture(uvPosBorderMask.name + "2", uvPosBorderMask),
+  CY.createTexture(uvPosBorderMask.name + "2", {
+    init: () => undefined,
+    size: [size, size],
+    format: "rgba16float",
+  }),
 ];
 
-const size = uvPosBorderMask.size[0];
 // export const sdfTexs = [0, 1].map((i) =>
 //   CY.createTexture(`sdfTex${i}`, {
 //     size: [size, size],
@@ -43,20 +48,19 @@ const size = uvPosBorderMask.size[0];
 //   }),
 // });
 
-export const jfaPipelines = [0].map((i) => {
-  const inIdx = (i + 0) % 2;
-  const outIdx = (i + 1) % 2;
+// export const jfaPipelines = [0].map((i) => {
+//   const inIdx = (i + 0) % 2;
+//   const outIdx = (i + 1) % 2;
 
-  return CY.createComputePipeline(`jfaPipeline${i}`, {
+export const jfaPipelines = [
+  CY.createComputePipeline(`jfaPipeline0`, {
     globals: [
-      { ptr: nearestPosTexs[inIdx], access: "read", alias: "inTex" },
-      { ptr: nearestPosTexs[outIdx], access: "write", alias: "outTex" },
-      // { ptr: sdfTexs[inIdx], access: "read", alias: "inSdfTex" },
-      // { ptr: sdfTexs[outIdx], access: "write", alias: "outSdfTex" },
-      // { ptr: params, alias: "params" },
+      { ptr: nearestPosTexs[0], access: "read", alias: "inTex" },
+      { ptr: nearestPosTexs[1], access: "write", alias: "outTex" },
     ],
     shader: "xp-jump-flood",
     shaderComputeEntry: "main",
-    workgroupCounts: [size / 8, size / 8, 1],
-  });
-});
+    workgroupCounts: [size, size, 1],
+  }),
+];
+// });

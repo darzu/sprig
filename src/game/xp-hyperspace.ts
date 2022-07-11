@@ -376,6 +376,7 @@ export function initHyperspaceGame(em: EntityManager) {
           unwrapPipeline, // TODO(@darzu): don't run many times
           shadowPipeline,
           stdRenderPipeline,
+          // ...jfaPipelines,
           ...finalCompose, // TODO(@darzu): should be last step
           outlineRender,
           // renderStars,
