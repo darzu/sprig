@@ -34,7 +34,10 @@ import { assert } from "../test.js";
 import { clamp } from "../math.js";
 import { tempVec2, tempVec3, tempVec4 } from "../temp-pool.js";
 import { vec3Dbg } from "../utils-3d.js";
-import { jfaCopyIn, jfaPipelines } from "../render/pipelines/xp-jump-flood.js";
+import {
+  jfaPreOutlinePipe,
+  jfaPipelines,
+} from "../render/pipelines/xp-jump-flood.js";
 
 interface Ocean {
   ent: Ref<[typeof PositionDef]>;
@@ -332,7 +335,7 @@ export function initHyperspaceGame(em: EntityManager) {
           unwrapPipeline,
           uvBorderMaskPipeline,
           uvPosBorderMaskPipeline,
-          jfaCopyIn,
+          jfaPreOutlinePipe,
           ...jfaPipelines,
         ];
 
