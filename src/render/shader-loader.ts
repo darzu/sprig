@@ -6,7 +6,7 @@ import { getText } from "../webget.js";
 const DEFAULT_SHADER_PATH = "/shaders/";
 
 export const ShaderPaths = [
-  "std-shader",
+  "std-mesh",
   "std-outline",
   "std-blur",
   "std-post",

@@ -77,7 +77,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
     },
   ],
   depthStencil: mainDepthTex,
-  shader: "std-shader",
+  shader: "std-mesh",
 });
 
 export const { pipeline: normalDbg } = createRenderTextureToQuad(
