@@ -30,7 +30,15 @@ export function createRenderTextureToQuad(
   minY = -1,
   maxY = 1,
   sample = false,
-  fragSnippet?: (inPxVar: string, uvVar: string) => string
+  // TODO(@darzu): maybe all shaders should work this way?
+  //   with this dictionary being statically typed based on the globals
+  //   defined in the CyPtr. Kind of like the ECS systems.
+  fragSnippet?: (varNames: {
+    inPx: string;
+    inTex: string;
+    xy: string;
+    uv: string;
+  }) => string
 ): {
   pipeline: CyRenderPipelinePtr;
   quad: CySingletonPtr<typeof QuadStruct.desc>;
@@ -57,8 +65,8 @@ export function createRenderTextureToQuad(
       { ptr: linearSamplerPtr, alias: "mySampler" },
       // TODO(@darzu): WTF typescript?! This ternary is necessary for some reason.
       inTex.kind === "texture"
-        ? { ptr: inTex, alias: "myTexture" }
-        : { ptr: inTex, alias: "myTexture" },
+        ? { ptr: inTex, alias: "inTex" }
+        : { ptr: inTex, alias: "inTex" },
       { ptr: quad, alias: "quad" },
     ],
     meshOpt: {
@@ -101,21 +109,24 @@ export function createRenderTextureToQuad(
 
   ${`@fragment
   fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
+    let dims : vec2<i32> = textureDimensions(inTex);
+    let intUV = vec2<i32>(uv * vec2<f32>(dims));
     ${
       // TODO(@darzu): don't like this...
       !doSample
-        ? `
-        let dims : vec2<i32> = textureDimensions(myTexture);
-        let intUV = vec2<i32>(uv * vec2<f32>(dims));
-        let res = textureLoad(myTexture, intUV, 0);
-        `
-        : `let res = textureSample(myTexture, mySampler, uv);`
+        ? `let inPx = textureLoad(inTex, intUV, 0);`
+        : `let inPx = textureSample(inTex, mySampler, uv);`
     }
     ${
       fragSnippet
-        ? fragSnippet("res", "uv")
+        ? fragSnippet({
+            inPx: "inPx",
+            uv: "uv",
+            inTex: "inTex",
+            xy: "intUV",
+          })
         : `
-    return vec4(res);
+    return vec4(inPx);
     `
     }
   }`}

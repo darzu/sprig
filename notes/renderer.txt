@@ -903,3 +903,12 @@ Doom 3 glow:
   http://yzergame.com/doomGlare.html
     https://www.reddit.com/r/gamedev/comments/1wukvd/doom_3_glare_effect_in_c/
     https://gist.github.com/TiliSleepStealer/e6773e7f9b4a873cf1bffe4f9e11478f
+
+"5 types of dithering":
+  https://twitter.com/KilledByAPixel/status/1546532593948057601
+  Diffusion - Floyd-Steinberg
+  Ordered - Bayer Matrix
+  Halftone - Newsprint
+  LCD - RGB Screen Pixels
+  Pixel - Squares
+  These combine with extra effects like chroma shift, glitch, invert, low res, and paper color.

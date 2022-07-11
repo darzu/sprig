@@ -144,3 +144,7 @@ Why quad meshes?
   https://en.wikipedia.org/wiki/Catmull–Clark_subdivision_surface
   https://prideout.net/quad-meshes
   https://geometryfactory.com/products/igm-quad-meshing/
+
+Cool free low-poly assets:
+  https://quaternius.com (CC0 1.0)
+    https://www.patreon.com/quaternius

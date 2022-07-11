@@ -36,7 +36,7 @@ export const uvBorderMaskPipeline = createRenderTextureToQuad(
   -1,
   1,
   false,
-  (inPxVar, uvVar) => `return 1.0 - vec4(${inPxVar});`
+  ({ inPx }) => `return 1.0 - vec4(${inPx});`
 ).pipeline;
 
 export const uvPosBorderMask = CY.createTexture("uvPosBorderMask", {
@@ -54,9 +54,9 @@ export const uvPosBorderMaskPipeline = createRenderTextureToQuad(
   -1,
   1,
   false,
-  (inPxVar, uvVar) => `
-  if (${inPxVar}.x > 0.0) {
-    return vec4(${uvVar}, 0.0, 1.0);
+  ({ inPx, uv }) => `
+  if (${inPx}.x > 0.0) {
+    return vec4(${uv}, 0.0, 1.0);
   } else {
     discard;
   }

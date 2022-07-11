@@ -374,7 +374,7 @@ export function initHyperspaceGame(em: EntityManager) {
       } else {
         // steady state rendering
         res.renderer.pipelines = [
-          unwrapPipeline, // TODO(@darzu): don't run many times
+          // unwrapPipeline, // TODO(@darzu): don't run many times
           shadowPipeline,
           stdRenderPipeline,
           ...finalCompose, // TODO(@darzu): should be last step
