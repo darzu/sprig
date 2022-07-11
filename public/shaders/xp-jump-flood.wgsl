@@ -12,7 +12,7 @@ fn main(
 
   // let neighUV = centerUV;
   // if (neighUV.x < 0.5 && neighUV.y < 0.5) 
-  if (centerXY.x > 32 && neighUV > 0.4) 
+  if (neighUV > 0.5) 
   {
   //   // if (length(neighUV.xy) > 0.2) 
   //   {
