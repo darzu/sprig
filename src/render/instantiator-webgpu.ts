@@ -454,7 +454,9 @@ export function createCyResources(
       return globalToWgslVars(r, plurality, 0, i, shaderStage);
     });
 
-    const shaderCore = isString(p.shader) ? shaders[p.shader].code : p.shader();
+    const shaderCore = isString(p.shader)
+      ? shaders[p.shader].code
+      : p.shader(shaders);
 
     if (isRenderPipelinePtr(p)) {
       const output = normalizeColorAttachments(p.output);

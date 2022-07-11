@@ -321,6 +321,8 @@ export function initHyperspaceGame(em: EntityManager) {
     [],
     [GlobalCursor3dDef, RendererDef, InputsDef, TextDef],
     (cs, res) => {
+      // TODO(@darzu): instead of all this one-time nosense, it'd be great
+      //  to just submit async work to the GPU.
       if (once) {
         // one-time compute and render jobs
         res.renderer.pipelines = [

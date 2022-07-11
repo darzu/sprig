@@ -45,6 +45,7 @@ const size = uvPosBorderMask.size[0];
 //   }),
 // });
 
+// TODO(@darzu): this probably isn't needed any more
 export const jfaCopyIn = createRenderTextureToQuad(
   "jfaCopyInPipe",
   uvPosBorderMask,
@@ -60,16 +61,32 @@ export const jfaPipelines = [0].map((i) => {
   const inIdx = (i + 0) % 2;
   const outIdx = (i + 1) % 2;
 
-  return CY.createComputePipeline(`jfaPipeline${i}`, {
-    globals: [
-      { ptr: nearestPosTexs[inIdx], access: "read", alias: "inTex" },
-      { ptr: nearestPosTexs[outIdx], access: "write", alias: "outTex" },
-      // { ptr: sdfTexs[inIdx], access: "read", alias: "inSdfTex" },
-      // { ptr: sdfTexs[outIdx], access: "write", alias: "outSdfTex" },
-      // { ptr: params, alias: "params" },
-    ],
-    shader: "xp-jump-flood",
-    shaderComputeEntry: "main",
-    workgroupCounts: [size / 8, size / 8, 1],
-  });
+  return createRenderTextureToQuad(
+    `jfaPipeline${i}`,
+    nearestPosTexs[inIdx],
+    nearestPosTexs[outIdx],
+    -1,
+    1,
+    -1,
+    1,
+    false,
+    "xp-jump-flood"
+  ).pipeline;
 });
+// export const jfaPipelines = [0].map((i) => {
+//   const inIdx = (i + 0) % 2;
+//   const outIdx = (i + 1) % 2;
+
+//   return CY.createComputePipeline(`jfaPipeline${i}`, {
+//     globals: [
+//       { ptr: nearestPosTexs[inIdx], access: "read", alias: "inTex" },
+//       { ptr: nearestPosTexs[outIdx], access: "write", alias: "outTex" },
+//       // { ptr: sdfTexs[inIdx], access: "read", alias: "inSdfTex" },
+//       // { ptr: sdfTexs[outIdx], access: "write", alias: "outSdfTex" },
+//       // { ptr: params, alias: "params" },
+//     ],
+//     shader: "xp-jump-flood",
+//     shaderComputeEntry: "main",
+//     workgroupCounts: [size / 8, size / 8, 1],
+//   });
+// });

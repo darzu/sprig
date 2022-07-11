@@ -47,4 +47,7 @@ Cool features sprigland could have:
           {Look, we tried. It's not exactly right... You try writting a TypeScript->C# transpiler. Eh, maybe it's still useful?}
 
 GPU toy tool:
-  has view that shows approx memory layout / usage on GPU
+  - has view that shows approx memory layout / usage on GPU
+  - "shader templates" for e.g. tex->tex pixel shader like post processing, view embedding, jump flood algorithm, etc
+      maybe this is how we do "mesh pool" shader stuff too?
+  - prelude and postlude read-only collapsable text snippets w/ usable vars highlighted

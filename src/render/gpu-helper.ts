@@ -1,3 +1,4 @@
+import { isFunction } from "../util.js";
 import {
   CY,
   CyDepthTexturePtr,
@@ -8,6 +9,7 @@ import {
 } from "./gpu-registry.js";
 import { createCyStruct, texTypeToSampleType } from "./gpu-struct.js";
 import { litTexturePtr } from "./pipelines/std-scene.js";
+import { ShaderName } from "./shader-loader.js";
 
 export const QuadStruct = createCyStruct(
   {
@@ -33,12 +35,18 @@ export function createRenderTextureToQuad(
   // TODO(@darzu): maybe all shaders should work this way?
   //   with this dictionary being statically typed based on the globals
   //   defined in the CyPtr. Kind of like the ECS systems.
-  fragSnippet?: (varNames: {
-    inPx: string;
-    inTex: string;
-    xy: string;
-    uv: string;
-  }) => string
+  fragSnippet?:
+    | ((varNames: {
+        dimsI: string;
+        dimsF: string;
+        inPx: string;
+        inTex: string;
+        xy: string;
+        uv: string;
+      }) => string)
+    // TODO(@darzu): it'd be great if external .wgsl shaders could be
+    // parameterized on these inputs somehow. same w/ standard pipeline globals
+    | ShaderName
 ): {
   pipeline: CyRenderPipelinePtr;
   quad: CySingletonPtr<typeof QuadStruct.desc>;
@@ -74,7 +82,23 @@ export function createRenderTextureToQuad(
       stepMode: "single-draw",
     },
     output: [outTex],
-    shader: () => {
+    shader: (shaders) => {
+      // TODO(@darzu): we're doing all kinds of template-y / macro-y stuff w/ shaders
+      //      needs more thought for good abstration.
+      let fSnip = `return vec4(inPx);`;
+      if (fragSnippet) {
+        if (isFunction(fragSnippet))
+          fSnip = fragSnippet({
+            dimsI: "dimsI",
+            dimsF: "dimsF",
+            inPx: "inPx",
+            uv: "uv",
+            inTex: "inTex",
+            xy: "xy",
+          });
+        else fSnip = shaders[fragSnippet].code;
+      }
+
       return `
   struct VertexOutput {
     @builtin(position) Position : vec4<f32>,
@@ -107,29 +131,19 @@ export function createRenderTextureToQuad(
     return output;
   }
 
-  ${`@fragment
+  @fragment
   fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
-    let dims : vec2<i32> = textureDimensions(inTex);
-    let intUV = vec2<i32>(uv * vec2<f32>(dims));
+    let dimsI : vec2<i32> = textureDimensions(inTex);
+    let dimsF = vec2<f32>(dimsI);
+    let xy = vec2<i32>(uv * dimsF);
     ${
       // TODO(@darzu): don't like this...
       !doSample
-        ? `let inPx = textureLoad(inTex, intUV, 0);`
+        ? `let inPx = textureLoad(inTex, xy, 0);`
         : `let inPx = textureSample(inTex, mySampler, uv);`
     }
-    ${
-      fragSnippet
-        ? fragSnippet({
-            inPx: "inPx",
-            uv: "uv",
-            inTex: "inTex",
-            xy: "intUV",
-          })
-        : `
-    return vec4(inPx);
-    `
-    }
-  }`}
+    ${fSnip}
+  }
     `;
     },
     shaderFragmentEntry: "frag_main",

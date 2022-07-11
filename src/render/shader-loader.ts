@@ -50,6 +50,8 @@ async function loadShaders(): Promise<ShaderSet> {
     };
   }
 
+  // TODO(@darzu): should this submit to webgpu for parsing?
+
   return set as ShaderSet;
 }
 
