@@ -5,7 +5,7 @@ import { InputsDef } from "../inputs.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { blurPipelines } from "../render/pipelines/std-blur.js";
-import { stdRenderPipeline } from "../render/pipelines/std-pipeline.js";
+import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { shadowPipeline } from "../render/pipelines/std-shadow.js";

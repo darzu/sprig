@@ -67,7 +67,7 @@ import {
   registerGameStateSystems,
 } from "./gamestate.js";
 import { MeDef } from "../net/components.js";
-import { stdRenderPipeline } from "../render/pipelines/std-pipeline.js";
+import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipeline } from "../render/pipelines/std-shadow.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";

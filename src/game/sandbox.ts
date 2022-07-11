@@ -37,7 +37,7 @@ import {
   normalDbg,
   positionDbg,
   stdRenderPipeline,
-} from "../render/pipelines/std-pipeline.js";
+} from "../render/pipelines/std-mesh.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import {
   shadowDbgDisplay,
