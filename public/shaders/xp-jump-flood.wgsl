@@ -1,25 +1,25 @@
 @compute @workgroup_size(1, 1, 1)
-fn main(
+fn main_bug(
   @builtin(workgroup_id) WorkGroupID : vec3<u32>,
-  // @builtin(local_invocation_id) LocalInvocationID : vec3<u32>,
-  // @builtin(global_invocation_id) GlobalInvocationID : vec3<u32>,
 ) {
-  let centerXY = vec2<i32>(WorkGroupID.xy);
-  // let dimsI: vec2<i32> = textureDimensions(inTex, 0);
-  // let dimsF = vec2<f32>(dimsI);
-  // let centerUV = vec2<f32>(centerXY) / dimsF;
-  let neighUV = textureLoad(inTex, centerXY, 0).x;
+  let coord = vec2<i32>(WorkGroupID.xy);
+  let inPx = textureLoad(inTex, coord, 0);
 
-  // let neighUV = centerUV;
-  // if (neighUV.x < 0.5 && neighUV.y < 0.5) 
-  if (neighUV > 0.5) 
+  if (inPx.x > 0.0)
   {
-  //   // if (length(neighUV.xy) > 0.2) 
-  //   {
-      textureStore(outTex, centerXY, vec4(1.0 - neighUV));
-  //   }
-  //   // textureStore(outTex, centerXY, textureLoad(inTex, centerXY, 0));
-  // } else {
-  //   // textureStore(outTex, centerXY, 1.0 - neighUV);
+      textureStore(outTex, coord, vec4(inPx.xzyw));
+  }
+}
+
+@compute @workgroup_size(1, 1, 1)
+fn main_nobug(
+  @builtin(workgroup_id) WorkGroupID : vec3<u32>,
+) {
+  let coord = vec2<i32>(WorkGroupID.xy);
+  let inPx = textureLoad(inTex, coord, 0);
+
+  // if (inPx.x > 0.0)
+  {
+      textureStore(outTex, coord, vec4(inPx.xzyw));
   }
 }
