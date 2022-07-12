@@ -23,6 +23,16 @@ export const QuadStruct = createCyStruct(
   }
 );
 
+export const fullQuad = CY.createSingleton(`fullQuadStruct`, {
+  struct: QuadStruct,
+  init: () => ({
+    minX: -1,
+    maxX: 1,
+    minY: -1,
+    maxY: 1,
+  }),
+});
+
 export function createRenderTextureToQuad(
   name: string,
   inTex: CyTexturePtr | CyDepthTexturePtr,

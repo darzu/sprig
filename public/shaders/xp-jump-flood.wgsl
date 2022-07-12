@@ -1,6 +1,11 @@
 // used in a createRenderTextureToQuad fragSnippet
 // TODO(@darzu): better support for this pattern?
-{
+ @fragment
+fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
+  let dimsI : vec2<i32> = textureDimensions(inTex);
+  let dimsF = vec2<f32>(dimsI);
+  let xy = vec2<i32>(uv * dimsF);
+  let inPx = textureLoad(inTex, xy, 0);
   // return vec4(inPx);
 
   // let centerXY = vec2<i32>(GlobalInvocationID.xy);
