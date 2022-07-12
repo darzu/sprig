@@ -18,9 +18,11 @@
   var minDist = 9999.9;
   var minUV = inPx.xy;
 
-  for (var x = -1; x <= 1; x++) {
-    for (var y = -1; y <= 1; y++) {
-    // var x = 0;
+  // for (var x = -1; x <= 1; x++) 
+  {
+    for (var y = -1; y <= 1; y++)
+     {
+    var x = 0;
     // var y = 0;
 
     let neighXY = centerXY + vec2(x,y) * stepSize;
