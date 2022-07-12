@@ -664,11 +664,16 @@ export function createCyResources(
       } else {
         never(p.meshOpt, `Unimplemented step kind`);
       }
-    } else {
-      const shaderStr =
+    } else if (p.kind === "compPipeline") {
+      let shaderStr =
         `${shaderResStructs.join("\n")}\n` +
         `${shaderResVars.join("\n")}\n` +
         `${shaderCore}\n`;
+
+      // TODO(@darzu):  HACK for min-repro
+      if (p.shader === "xp-jump-flood") shaderStr = shaderCore;
+
+      // console.log(shaderStr);
 
       let compPipeline = device.createComputePipeline({
         layout: device.createPipelineLayout({
@@ -690,6 +695,8 @@ export function createCyResources(
           : p.workgroupCounts,
       };
       kindToNameToRes.compPipeline[p.name] = cyPipeline;
+    } else {
+      never(p);
     }
   }
 

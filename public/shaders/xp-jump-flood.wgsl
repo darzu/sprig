@@ -1,3 +1,6 @@
+@group(0) @binding(0) var inTex : texture_2d<f32>;
+@group(0) @binding(1) var outTex : texture_storage_2d<rgba16float, write>;
+
 @compute @workgroup_size(1, 1, 1)
 fn main_bug(
   @builtin(workgroup_id) WorkGroupID : vec3<u32>,

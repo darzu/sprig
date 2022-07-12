@@ -20,8 +20,8 @@ export function createComposePipelines(): CyRenderPipelinePtr[] {
     "composeViews1",
     nearestPosTexs[0],
     litTexturePtr,
-    0.1,
-    0.9,
+    -0.9,
+    -0.1,
     -0.9,
     -0.1,
     false
@@ -30,8 +30,8 @@ export function createComposePipelines(): CyRenderPipelinePtr[] {
     "composeViews2",
     nearestPosTexs[1],
     litTexturePtr,
-    -0.9,
-    -0.1,
+    0.1,
+    0.9,
     -0.9,
     -0.1,
     false
