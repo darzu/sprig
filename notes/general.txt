@@ -945,3 +945,11 @@ TO SLEUTH: https://www.reddit.com/r/gamedev/top/?t=year
   free asset links: https://www.reddit.com/r/gamedev/comments/t9lt22/it_might_be_common_knowledge_butthere_are_tons_of/
   what is hard in games: https://www.ign.com/articles/turns-out-hardest-part-making-game-everything?utm_source=twitter
   holy shit AAA games get cancelled a lot: https://www.reddit.com/r/gamedev/comments/oucehr/my_first_aaa_game_cancelled_how_often_does_this/
+
+WebGPU updates at via khronos group webanar:
+  April 2022:
+    http://khr.io/web202204
+    https://www.youtube.com/watch?v=dpfJRxZgJN8
+    https://shader-playground.timjones.io
+  July 2022:
+    http://khr.io/web202207

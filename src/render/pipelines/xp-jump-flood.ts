@@ -39,9 +39,11 @@ export const jfaPreOutlinePipe = createRenderTextureToQuad(
   `
 ).pipeline;
 
-export const jfaPipelines = [0].map((i) => {
+export const jfaPipelines = [0, 1, 2, 3, 4].map((i) => {
   const inIdx = (i + 0) % 2;
   const outIdx = (i + 1) % 2;
+
+  const stepSize = Math.pow(2, i);
 
   const pipeline = CY.createRenderPipeline(`jfaPipe${i}`, {
     globals: [
@@ -55,6 +57,7 @@ export const jfaPipelines = [0].map((i) => {
     output: [jfaTexs[outIdx]],
     shader: (shaders) => {
       return `
+        const stepSize = ${stepSize};
         ${shaders["std-screen-quad-vert"].code}
         ${shaders["xp-jump-flood"].code}
       `;

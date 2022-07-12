@@ -1,5 +1,9 @@
 // used in a createRenderTextureToQuad fragSnippet
 // TODO(@darzu): better support for this pattern?
+
+// TODO(@darzu): not implemented yet in Dawn
+// override stepSize = 16;
+
  @fragment
 fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let dimsI : vec2<i32> = textureDimensions(inTex);
@@ -7,6 +11,8 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let xy = vec2<i32>(uv * dimsF);
   let inPx = textureLoad(inTex, xy, 0);
   // return vec4(inPx);
+
+  // let stepSize = 16;
 
   // let centerXY = vec2<i32>(GlobalInvocationID.xy);
   // // let centerXY = vec2<i32>(32, 32);
@@ -18,16 +24,14 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let centerUV = uv;
   // let centerUV = vec2<f32>(centerXY) / dimsF;
 
-  let stepSize = 16;
-
   var minDist = 9999.9;
   var minUV = inPx.xy;
 
-  // for (var x = -1; x <= 1; x++) 
+  for (var x = -1; x <= 1; x++) 
   {
     for (var y = -1; y <= 1; y++)
      {
-    var x = 0;
+    // var x = 0;
     // var y = 0;
 
     let neighXY = centerXY + vec2(x,y) * stepSize;
