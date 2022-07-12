@@ -648,11 +648,15 @@ export function createCyResources(
           vertex: {
             module: shader,
             entryPoint: p.shaderVertexEntry,
+            // TODO(@darzu): constants
+            constants: p.overrides,
           },
           fragment: {
             module: shader,
             entryPoint: p.shaderFragmentEntry,
             targets,
+            // TODO(@darzu): constants
+            constants: p.overrides,
           },
         };
         const rndrPipeline = device.createRenderPipeline(rndrPipelineDesc);
@@ -681,6 +685,7 @@ export function createCyResources(
             code: shaderStr,
           }),
           entryPoint: p.shaderComputeEntry ?? "main",
+          constants: p.overrides,
         },
       });
       const cyPipeline: CyCompPipeline = {

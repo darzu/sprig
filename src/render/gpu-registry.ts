@@ -149,6 +149,7 @@ export function isResourcePtr(p: any): p is CyResourcePtr {
 export interface CyCompPipelinePtr extends CyResourcePtr {
   kind: "compPipeline";
   globals: CyGlobalParam[];
+  overrides?: Record<string, GPUPipelineConstantValue>;
   // TODO(@darzu): dynamic workgroup counts feels hacky?
   workgroupCounts:
     | [number, number, number]
@@ -179,6 +180,7 @@ export type CyColorAttachment = CyTexturePtr | CyAttachment;
 export interface CyRenderPipelinePtr extends CyResourcePtr {
   kind: "renderPipeline";
   globals: CyGlobalParam[];
+  overrides?: Record<string, GPUPipelineConstantValue>;
   shader: ((shaders: ShaderSet) => string) | ShaderName;
   shaderVertexEntry: string;
   shaderFragmentEntry: string;
