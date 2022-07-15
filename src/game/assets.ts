@@ -44,23 +44,23 @@ export const LIGHT_BLUE = vec3.fromValues(0.05, 0.05, 0.2);
 const DEFAULT_ASSET_PATH = "/assets/";
 const BACKUP_ASSET_PATH = "http://sprig.land/assets/";
 
-const RemoteMeshes = {
-  ship: "barge.sprig.obj",
-  ball: "ball.sprig.obj",
-  pick: "pick.sprig.obj",
-  spaceore: "spaceore.sprig.obj",
-  spacerock: "spacerock.sprig.obj",
-  ammunitionBox: "ammunition_box.sprig.obj",
-  linstock: "linstock.sprig.obj",
-  cannon: "cannon_simple.sprig.obj",
-  grappleHook: "grapple-hook.sprig.obj",
-  grappleGun: "grapple-gun.sprig.obj",
-  grappleGunUnloaded: "grapple-gun-unloaded.sprig.obj",
-  rudder: "rudder.sprig.obj",
-  // TODO(@darzu): including hyperspace-ocean makes load time ~100ms slower :/
-  ocean: "hyperspace-ocean.sprig.obj",
-  // ocean: "rudder.sprig.obj",
-} as const;
+// const RemoteMeshes = {
+//   ship: "barge.sprig.obj",
+//   ball: "ball.sprig.obj",
+//   pick: "pick.sprig.obj",
+//   spaceore: "spaceore.sprig.obj",
+//   spacerock: "spacerock.sprig.obj",
+//   ammunitionBox: "ammunition_box.sprig.obj",
+//   linstock: "linstock.sprig.obj",
+//   cannon: "cannon_simple.sprig.obj",
+//   grappleHook: "grapple-hook.sprig.obj",
+//   grappleGun: "grapple-gun.sprig.obj",
+//   grappleGunUnloaded: "grapple-gun-unloaded.sprig.obj",
+//   rudder: "rudder.sprig.obj",
+//   // TODO(@darzu): including hyperspace-ocean makes load time ~100ms slower :/
+//   ocean: "hyperspace-ocean.sprig.obj",
+//   // ocean: "rudder.sprig.obj",
+// } as const;
 
 type RemoteMeshSymbols = keyof typeof RemoteMeshes;
 
@@ -70,8 +70,8 @@ const RemoteMesheSets = {
   //    natively do that. Doing it natively would be great b/c there
   //    is a lot of translate/scale alignment issues when we have
   //    a base model and a fractured model. Very hard to make changes.
-  boat_broken: "boat_broken.sprig.obj",
-  ship_broken: "barge1_broken.sprig.obj",
+  // boat_broken: "boat_broken.sprig.obj",
+  // ship_broken: "barge1_broken.sprig.obj",
 } as const;
 
 type RemoteMeshSetSymbols = keyof typeof RemoteMesheSets;
@@ -106,42 +106,33 @@ const MeshModify: Partial<{
     m: RawMesh
   ) => RawMesh;
 }> = {
-  cannon: (m) => {
-    m.colors = m.colors.map((c) => [0.2, 0.2, 0.2]);
-    return m;
-  },
-  spacerock: (m) => {
-    m.colors = m.colors.map((c) => [0.05, 0.15, 0.2]);
-    const t = mat4.fromYRotation(mat4.create(), Math.PI * 0.2);
-    transformMesh(m, t);
-    m.lines = [];
-    return m;
-  },
-  // cube: blackoutColor,
-  // ship: blackoutColor,
-  // ball: blackoutColor,
-  // boat_broken: blackoutColor,
-  ship: (m) => {
-    m.lines = [];
-    scaleMesh(m, 3);
-    return m;
-  },
-  ship_broken: (m) => {
-    m.lines = [];
-    m.pos = m.pos.map((p) => vec3.subtract(vec3.create(), p, SHIP_OFFSET));
-    scaleMesh(m, 3);
-    return m;
-  },
+  // cannon: (m) => {
+  //   m.colors = m.colors.map((c) => [0.2, 0.2, 0.2]);
+  //   return m;
+  // },
+  // spacerock: (m) => {
+  //   m.colors = m.colors.map((c) => [0.05, 0.15, 0.2]);
+  //   const t = mat4.fromYRotation(mat4.create(), Math.PI * 0.2);
+  //   transformMesh(m, t);
+  //   m.lines = [];
+  //   return m;
+  // },
+  // // cube: blackoutColor,
+  // // ship: blackoutColor,
+  // // ball: blackoutColor,
+  // // boat_broken: blackoutColor,
+  // ship: (m) => {
+  //   m.lines = [];
+  //   scaleMesh(m, 3);
+  //   return m;
+  // },
+  // ship_broken: (m) => {
+  //   m.lines = [];
+  //   m.pos = m.pos.map((p) => vec3.subtract(vec3.create(), p, SHIP_OFFSET));
+  //   scaleMesh(m, 3);
+  //   return m;
+  // },
   ocean: (m) => {
-    // reduce duplicate positions
-    // console.log("OCEAN");
-    // console.dir(m);
-    // m = deduplicateVertices(m);
-    // console.dir(m);
-
-    // TODO(@darzu): do we want convexity highlighting on the ocean?
-    m.surfaceIds = m.quad.map((_, i) => i);
-    // TODO(@darzu): generate UVs for the ocean
     const minX = m.pos.reduce((p, n) => (n[0] < p ? n[0] : p), Infinity);
     const maxX = m.pos.reduce((p, n) => (n[0] > p ? n[0] : p), -Infinity);
     const minZ = m.pos.reduce((p, n) => (n[2] < p ? n[2] : p), Infinity);
@@ -155,7 +146,6 @@ const MeshModify: Partial<{
     //   // vec2.fromValues(i / m.pos.length, 0)
     //   // vec2.fromValues(0.5, 0.5)
     // );
-
     // TODO(@darzu): DBG
     // try {
     //   console.log("getMeshAsGrid(ocean)");
@@ -167,13 +157,11 @@ const MeshModify: Partial<{
     // }
     const xLen = grid.length;
     const yLen = grid[0].length;
-    // console.log(`xLen:${xLen},yLen:${yLen}`);
     const uvs = m.pos.map((_, vi) => vec2.create());
     m.uvs = uvs;
     // setUV(Math.floor(xLen / 2), 0, [0, 1], [0, 0], true);
     setUV(0, Math.floor(yLen / 2), [1, 0], [0, 0], true);
     normalizeVec2s(uvs);
-
     function setUV(
       x: number,
       y: number,
@@ -185,13 +173,11 @@ const MeshModify: Partial<{
       // set this UV
       const vi = grid[x][y];
       vec2.copy(uvs[vi], currDist);
-
       // branch?
       if (branch) {
         setUV(x, y, [dir[1], dir[0]], currDist, false);
         setUV(x, y, [-dir[1], -dir[0]], currDist, false);
       }
-
       // continue forward?
       const nX = x + dir[0];
       const nY = y + dir[1];
@@ -204,15 +190,83 @@ const MeshModify: Partial<{
       ];
       setUV(nX, nY, dir, newDist, branch);
     }
-    // console.dir({
-    //   uvMin: [min(m.uvs.map((a) => a[0])), min(m.uvs.map((a) => a[1]))],
-    //   uvMax: [max(m.uvs.map((a) => a[0])), max(m.uvs.map((a) => a[1]))],
-    // });
-
-    // console.dir(m.uvs);
-    // console.dir({ minX, maxX, minZ, maxZ });
     return m;
   },
+  // ocean: (m) => {
+  //   // reduce duplicate positions
+  //   // console.log("OCEAN");
+  //   // console.dir(m);
+  //   // m = deduplicateVertices(m);
+  //   // console.dir(m);
+  //   // TODO(@darzu): do we want convexity highlighting on the ocean?
+  //   m.surfaceIds = m.quad.map((_, i) => i);
+  //   // TODO(@darzu): generate UVs for the ocean
+  //   const minX = m.pos.reduce((p, n) => (n[0] < p ? n[0] : p), Infinity);
+  //   const maxX = m.pos.reduce((p, n) => (n[0] > p ? n[0] : p), -Infinity);
+  //   const minZ = m.pos.reduce((p, n) => (n[2] < p ? n[2] : p), Infinity);
+  //   const maxZ = m.pos.reduce((p, n) => (n[2] > p ? n[2] : p), -Infinity);
+  //   // m.uvs = m.pos.map(
+  //   //   (p, i) =>
+  //   //     vec2.fromValues(
+  //   //       mathMap(p[0], minX, maxX, 0, 1),
+  //   //       mathMap(p[2], minZ, maxZ, 0, 1)
+  //   //     )
+  //   //   // vec2.fromValues(i / m.pos.length, 0)
+  //   //   // vec2.fromValues(0.5, 0.5)
+  //   // );
+  //   // TODO(@darzu): DBG
+  //   // try {
+  //   //   console.log("getMeshAsGrid(ocean)");
+  //   const { coords, grid } = getMeshAsGrid(m);
+  //   //   console.log("getMeshAsGrid success!");
+  //   // } catch (e) {
+  //   //   console.log("getMeshAsGrid failed!");
+  //   //   console.error(e);
+  //   // }
+  //   const xLen = grid.length;
+  //   const yLen = grid[0].length;
+  //   // console.log(`xLen:${xLen},yLen:${yLen}`);
+  //   const uvs = m.pos.map((_, vi) => vec2.create());
+  //   m.uvs = uvs;
+  //   // setUV(Math.floor(xLen / 2), 0, [0, 1], [0, 0], true);
+  //   setUV(0, Math.floor(yLen / 2), [1, 0], [0, 0], true);
+  //   normalizeVec2s(uvs);
+  //   function setUV(
+  //     x: number,
+  //     y: number,
+  //     dir: vec2,
+  //     currDist: vec2,
+  //     branch: boolean
+  //   ) {
+  //     // console.log(`setUV ${x} ${y} ${dir} ${currDist} ${branch}`);
+  //     // set this UV
+  //     const vi = grid[x][y];
+  //     vec2.copy(uvs[vi], currDist);
+  //     // branch?
+  //     if (branch) {
+  //       setUV(x, y, [dir[1], dir[0]], currDist, false);
+  //       setUV(x, y, [-dir[1], -dir[0]], currDist, false);
+  //     }
+  //     // continue forward?
+  //     const nX = x + dir[0];
+  //     const nY = y + dir[1];
+  //     if (nX < 0 || xLen <= nX || nY < 0 || yLen <= nY) return;
+  //     const nVi = grid[nX][nY];
+  //     const delta = vec3.dist(m.pos[vi], m.pos[nVi]);
+  //     const newDist: vec2 = [
+  //       currDist[0] + dir[0] * delta,
+  //       currDist[1] + dir[1] * delta,
+  //     ];
+  //     setUV(nX, nY, dir, newDist, branch);
+  //   }
+  //   // console.dir({
+  //   //   uvMin: [min(m.uvs.map((a) => a[0])), min(m.uvs.map((a) => a[1]))],
+  //   //   uvMax: [max(m.uvs.map((a) => a[0])), max(m.uvs.map((a) => a[1]))],
+  //   // });
+  //   // console.dir(m.uvs);
+  //   // console.dir({ minX, maxX, minZ, maxZ });
+  //   return m;
+  // },
 };
 
 // which triangles belong to which faces
@@ -580,6 +634,8 @@ scaleMesh3(BOAT_MESH, [10, 0.6, 5]);
 const BULLET_MESH = cloneMesh(CUBE_MESH);
 scaleMesh(BULLET_MESH, 0.3);
 
+export const RemoteMeshes = {} as const;
+
 export const LocalMeshes = {
   cube: () => CUBE_MESH,
   plane: () => PLANE_MESH,
@@ -591,6 +647,21 @@ export const LocalMeshes = {
   fabric: () => DBG_FABRIC,
   triFence: TRI_FENCE,
   wireCube: () => ({ ...CUBE_MESH, tri: [] } as RawMesh),
+  ship: () => DBG_FABRIC,
+  ball: () => DBG_FABRIC,
+  pick: () => DBG_FABRIC,
+  spaceore: () => DBG_FABRIC,
+  spacerock: () => DBG_FABRIC,
+  ammunitionBox: () => DBG_FABRIC,
+  linstock: () => DBG_FABRIC,
+  cannon: () => DBG_FABRIC,
+  grappleHook: () => DBG_FABRIC,
+  grappleGun: () => DBG_FABRIC,
+  grappleGunUnloaded: () => DBG_FABRIC,
+  rudder: () => DBG_FABRIC,
+  // TODO(@darzu): including hyperspace-ocean makes load time ~100ms slower :/
+  ocean: () => DBG_FABRIC,
+  // ocean: "rudder.sprig.obj",
 } as const;
 
 type LocalMeshSymbols = keyof typeof LocalMeshes;
@@ -684,28 +755,28 @@ async function loadMeshSetInternal(relPath: string): Promise<RawMesh[]> {
 async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
   const start = performance.now();
 
-  const singlePromises = objMap(RemoteMeshes, (p) => loadMeshInternal(p));
-  const setPromises = objMap(RemoteMesheSets, (p) => loadMeshSetInternal(p));
-  const singlesList = Object.entries(singlePromises);
-  const singlesMeshList = await Promise.all(singlesList.map(([_, p]) => p));
+  // const singlePromises = objMap(RemoteMeshes, (p) => loadMeshInternal(p));
+  // const setPromises = objMap(RemoteMesheSets, (p) => loadMeshSetInternal(p));
+  // const singlesList = Object.entries(singlePromises);
+  // const singlesMeshList = await Promise.all(singlesList.map(([_, p]) => p));
 
-  const singleMeshes = objMap(singlePromises, (_, n) => {
-    const idx = singlesList.findIndex(([n2, _]) => n === n2);
-    let m = singlesMeshList[idx];
-    return processMesh(n, m);
-  });
+  // const singleMeshes = objMap(singlePromises, (_, n) => {
+  //   const idx = singlesList.findIndex(([n2, _]) => n === n2);
+  //   let m = singlesMeshList[idx];
+  //   return processMesh(n, m);
+  // });
 
   const localMeshes = objMap(LocalMeshes, (m, n) => {
     return processMesh(n, m());
   });
 
-  const setsList = Object.entries(setPromises);
-  const setsMeshList = await Promise.all(setsList.map(([_, p]) => p));
-  const setMeshes = objMap(setPromises, (_, n) => {
-    const idx = setsList.findIndex(([n2, _]) => n === n2);
-    let ms = setsMeshList[idx];
-    return ms.map((m) => processMesh(n, m));
-  });
+  // const setsList = Object.entries(setPromises);
+  // const setsMeshList = await Promise.all(setsList.map(([_, p]) => p));
+  // const setMeshes = objMap(setPromises, (_, n) => {
+  //   const idx = setsList.findIndex(([n2, _]) => n === n2);
+  //   let ms = setsMeshList[idx];
+  //   return ms.map((m) => processMesh(n, m));
+  // });
 
   function processMesh(n: string, m: RawMesh): RawMesh {
     const t1 = (MeshTransforms as { [key: string]: mat4 })[n];
@@ -715,21 +786,21 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
     return m;
   }
 
-  const allSingleMeshes = { ...singleMeshes, ...localMeshes };
+  const allSingleMeshes = { /*...singleMeshes,*/ ...localMeshes };
 
   // TODO(@darzu): this shouldn't directly add to a mesh pool, we don't know which pool it should
   //  go to
   const allSingleAssets = objMap(allSingleMeshes, (m) =>
     gameMeshFromMesh(m, renderer)
   );
-  const allSetAssets = objMap(setMeshes, (ms, n) =>
-    ms.map((m) => gameMeshFromMesh(m, renderer))
-  );
+  // const allSetAssets = objMap(setMeshes, (ms, n) =>
+  //   ms.map((m) => gameMeshFromMesh(m, renderer))
+  // );
 
   // console.log("allSingleAssets.ocean.mesh");
   // console.dir(allSingleAssets.ocean.mesh);
 
-  const result = { ...allSingleAssets, ...allSetAssets };
+  const result = { ...allSingleAssets /*...allSetAssets*/ };
 
   // perf tracking
   const elapsed = performance.now() - start;

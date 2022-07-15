@@ -170,7 +170,7 @@ export const raiseBreakBoat = eventWizard(
   [[BoatLocalDef, PositionDef, RotationDef]] as const,
   ([boat]) => {
     const res = EM.getResources([AssetsDef, MusicDef])!;
-    breakBoat(EM, boat, res.assets.boat_broken, res.music);
+    // breakBoat(EM, boat, res.assets.boat_broken, res.music);
   }
 );
 

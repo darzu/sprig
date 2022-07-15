@@ -19,7 +19,7 @@ import { createShip } from "./ship.js";
 import { GameStateDef } from "./gamestate.js";
 import {
   uvBorderMaskPipeline,
-  unwrapPipeline,
+  unwrapPipeline_bug,
   uvToPosTex,
   uvPosBorderMaskPipeline,
 } from "../render/pipelines/xp-uv-unwrap.js";
@@ -229,23 +229,23 @@ export function initHyperspaceGame(em: EntityManager) {
     null,
     [AssetsDef, GlobalCursor3dDef, RendererDef],
     (_, res) => {
-      const ghost = createGhost(em);
-      em.ensureComponentOn(
-        ghost,
-        RenderableConstructDef,
-        res.assets.cube.proto
-      );
-      ghost.controllable.speed *= 3;
-      ghost.controllable.sprintMul *= 3;
+      // const ghost = createGhost(em);
+      // em.ensureComponentOn(
+      //   ghost,
+      //   RenderableConstructDef,
+      //   res.assets.cube.proto
+      // );
+      // ghost.controllable.speed *= 3;
+      // ghost.controllable.sprintMul *= 3;
 
-      {
-        // debug camera
-        vec3.copy(ghost.position, [-185.02, 66.25, -69.04]);
-        quat.copy(ghost.rotation, [0.0, -0.92, 0.0, 0.39]);
-        vec3.copy(ghost.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-        ghost.cameraFollow.yawOffset = 0.0;
-        ghost.cameraFollow.pitchOffset = -0.465;
-      }
+      // {
+      //   // debug camera
+      //   vec3.copy(ghost.position, [-185.02, 66.25, -69.04]);
+      //   quat.copy(ghost.rotation, [0.0, -0.92, 0.0, 0.39]);
+      //   vec3.copy(ghost.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+      //   ghost.cameraFollow.yawOffset = 0.0;
+      //   ghost.cameraFollow.pitchOffset = -0.465;
+      // }
 
       // TODO(@darzu): call one-shot initStars
       const ocean = em.newEntity();
@@ -255,9 +255,9 @@ export function initHyperspaceGame(em: EntityManager) {
         RenderableConstructDef,
         res.assets.ocean.proto
       );
-      em.ensureComponentOn(ocean, ColorDef, [0.1, 0.3, 0.8]);
+      // em.ensureComponentOn(ocean, ColorDef, [0.1, 0.3, 0.8]);
       // em.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
-      em.ensureComponentOn(ocean, PositionDef);
+      // em.ensureComponentOn(ocean, PositionDef);
       // em.ensureComponentOn(ocean, PositionDef, [120, 0, 0]);
       // vec3.scale(ocean.position, ocean.position, scale);
       // const scale = 100.0;
@@ -265,20 +265,20 @@ export function initHyperspaceGame(em: EntityManager) {
       // em.ensureComponentOn(ocean, ScaleDef, [scale, scale, scale]);
 
       // TODO(@darzu): DEBUG quad mesh stuff
-      const fabric = em.newEntity();
-      em.ensureComponentOn(
-        fabric,
-        RenderableConstructDef,
-        res.assets.fabric.proto
-      );
-      em.ensureComponentOn(fabric, PositionDef, [10, 10, 10]);
+      // const fabric = em.newEntity();
+      // em.ensureComponentOn(
+      //   fabric,
+      //   RenderableConstructDef,
+      //   res.assets.fabric.proto
+      // );
+      // em.ensureComponentOn(fabric, PositionDef, [10, 10, 10]);
 
-      const buoy = em.newEntity();
-      em.ensureComponentOn(buoy, PositionDef);
-      em.ensureComponentOn(buoy, RenderableConstructDef, res.assets.ball.proto);
-      em.ensureComponentOn(buoy, ScaleDef, [3, 3, 3]);
-      em.ensureComponentOn(buoy, ColorDef, [0.2, 0.8, 0.2]);
-      em.ensureComponentOn(buoy, UVPosDef, [0.5, 0.5]);
+      // const buoy = em.newEntity();
+      // em.ensureComponentOn(buoy, PositionDef);
+      // em.ensureComponentOn(buoy, RenderableConstructDef, res.assets.ball.proto);
+      // em.ensureComponentOn(buoy, ScaleDef, [3, 3, 3]);
+      // em.ensureComponentOn(buoy, ColorDef, [0.2, 0.8, 0.2]);
+      // em.ensureComponentOn(buoy, UVPosDef, [0.5, 0.5]);
     }
   );
 
@@ -286,26 +286,26 @@ export function initHyperspaceGame(em: EntityManager) {
     [UVPosDef, PositionDef],
     [OceanDef, InputsDef],
     (es, res) => {
-      // console.log("runOcean");
-      for (let e of es) {
-        // TODO(@darzu): debug moving
-        // console.log("moving buoy!");
-        let speed = 0.001;
-        const newUV = vec2.copy(tempVec2(), e.uv.pos);
-        if (res.inputs.keyDowns["shift"]) speed *= 5;
-        if (res.inputs.keyDowns["arrowright"]) newUV[1] += speed;
-        if (res.inputs.keyDowns["arrowleft"]) newUV[1] -= speed;
-        if (res.inputs.keyDowns["arrowup"]) newUV[0] += speed;
-        if (res.inputs.keyDowns["arrowdown"]) newUV[0] -= speed;
-        newUV[0] = clamp(newUV[0], 0, 1);
-        newUV[1] = clamp(newUV[1], 0, 1);
-        const newPos = res.ocean.uvToPos(tempVec3(), newUV);
-        // console.log(vec3Dbg(newPos));
-        if (!vec3.exactEquals(newPos, vec3.ZEROS)) {
-          vec3.copy(e.position, newPos);
-          vec2.copy(e.uv.pos, newUV);
-        }
-      }
+      // // console.log("runOcean");
+      // for (let e of es) {
+      //   // TODO(@darzu): debug moving
+      //   // console.log("moving buoy!");
+      //   let speed = 0.001;
+      //   const newUV = vec2.copy(tempVec2(), e.uv.pos);
+      //   if (res.inputs.keyDowns["shift"]) speed *= 5;
+      //   if (res.inputs.keyDowns["arrowright"]) newUV[1] += speed;
+      //   if (res.inputs.keyDowns["arrowleft"]) newUV[1] -= speed;
+      //   if (res.inputs.keyDowns["arrowup"]) newUV[0] += speed;
+      //   if (res.inputs.keyDowns["arrowdown"]) newUV[0] -= speed;
+      //   newUV[0] = clamp(newUV[0], 0, 1);
+      //   newUV[1] = clamp(newUV[1], 0, 1);
+      //   const newPos = res.ocean.uvToPos(tempVec3(), newUV);
+      //   // console.log(vec3Dbg(newPos));
+      //   if (!vec3.exactEquals(newPos, vec3.ZEROS)) {
+      //     vec3.copy(e.position, newPos);
+      //     vec2.copy(e.uv.pos, newUV);
+      //   }
+      // }
     },
     "runOcean"
   );
@@ -324,10 +324,10 @@ export function initHyperspaceGame(em: EntityManager) {
       if (once) {
         // one-time compute and render jobs
         res.renderer.pipelines = [
-          initStars,
+          // initStars,
 
           // TODO(@darzu): package / abstract these more nicely?
-          unwrapPipeline,
+          unwrapPipeline_bug,
           uvBorderMaskPipeline,
           uvPosBorderMaskPipeline,
           ...jfaPipelines,
@@ -345,27 +345,24 @@ export function initHyperspaceGame(em: EntityManager) {
             // for (let f of fs) {
             //   // if (f !== 0 && f !== 1) console.log(f);
             // }
-
             // TODO(@darzu): Account for the 1px border in the texture!!!
-            const reader = createTextureReader(
-              data,
-              uvToPosTex.size,
-              3,
-              uvToPosTex.format
-            );
-
-            console.log("adding OceanDef");
-
-            // TODO(@darzu): hacky hacky way to do this
-            em.addSingletonComponent(OceanDef, {
-              ent: createRef(oceanEntId, [PositionDef]),
-              uvToPos: (out, uv) => {
-                const x = uv[0] * reader.size[0];
-                const y = uv[1] * reader.size[1];
-                // console.log(`${x},${y}`);
-                return reader.sample(out, x, y);
-              },
-            });
+            // const reader = createTextureReader(
+            //   data,
+            //   uvToPosTex.size,
+            //   3,
+            //   uvToPosTex.format
+            // );
+            // console.log("adding OceanDef");
+            // // TODO(@darzu): hacky hacky way to do this
+            // em.addSingletonComponent(OceanDef, {
+            //   ent: createRef(oceanEntId, [PositionDef]),
+            //   uvToPos: (out, uv) => {
+            //     const x = uv[0] * reader.size[0];
+            //     const y = uv[1] * reader.size[1];
+            //     // console.log(`${x},${y}`);
+            //     return reader.sample(out, x, y);
+            //   },
+            // });
           });
         }
 
@@ -378,16 +375,16 @@ export function initHyperspaceGame(em: EntityManager) {
           // stdRenderPipeline,
           // ...jfaPipelines,
           ...finalCompose, // TODO(@darzu): should be last step
-          outlineRender,
-          // renderStars,
-          // ...blurPipelines,
+          // outlineRender,
+          // // renderStars,
+          // // ...blurPipelines,
 
-          // DEBUG:
-          // shadowDbgDisplay,
-          // normalDbg,
-          // positionDbg,
+          // // DEBUG:
+          // // shadowDbgDisplay,
+          // // normalDbg,
+          // // positionDbg,
 
-          postProcess,
+          // postProcess,
         ];
       }
     },

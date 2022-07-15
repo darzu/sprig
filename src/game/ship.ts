@@ -277,25 +277,25 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
       // NOTE: since their is no network important state on the parts themselves
       //    they can be created locally
       const boatFloor = min(BARGE_AABBS.map((c) => c.max[1]));
-      for (let i = 0; i < res.assets.ship_broken.length; i++) {
-        const m = res.assets.ship_broken[i];
-        const part = em.newEntity();
-        em.ensureComponentOn(part, PhysicsParentDef, s.id);
-        em.ensureComponentOn(part, RenderableConstructDef, m.proto);
-        em.ensureComponentOn(part, ColorDef, vec3.clone(BOAT_COLOR));
-        em.ensureComponentOn(part, PositionDef, [0, 0, 0]);
-        const isCritical = criticalPartIdxes.includes(i);
-        em.ensureComponentOn(part, ShipPartDef, isCritical);
-        em.ensureComponentOn(part, ColliderDef, {
-          shape: "AABB",
-          solid: false,
-          aabb: m.aabb,
-        });
-        (part.collider as AABBCollider).aabb.max[1] = boatFloor;
-        s.shipLocal.parts.push(
-          createRef(part.id, [ShipPartDef, RenderableDef])
-        );
-      }
+      // for (let i = 0; i < res.assets.ship_broken.length; i++) {
+      //   const m = res.assets.ship_broken[i];
+      //   const part = em.newEntity();
+      //   em.ensureComponentOn(part, PhysicsParentDef, s.id);
+      //   em.ensureComponentOn(part, RenderableConstructDef, m.proto);
+      //   em.ensureComponentOn(part, ColorDef, vec3.clone(BOAT_COLOR));
+      //   em.ensureComponentOn(part, PositionDef, [0, 0, 0]);
+      //   const isCritical = criticalPartIdxes.includes(i);
+      //   em.ensureComponentOn(part, ShipPartDef, isCritical);
+      //   em.ensureComponentOn(part, ColliderDef, {
+      //     shape: "AABB",
+      //     solid: false,
+      //     aabb: m.aabb,
+      //   });
+      //   (part.collider as AABBCollider).aabb.max[1] = boatFloor;
+      //   s.shipLocal.parts.push(
+      //     createRef(part.id, [ShipPartDef, RenderableDef])
+      //   );
+      // }
 
       // em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
       // em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2]);

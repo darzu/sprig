@@ -65,7 +65,7 @@ export const uvPosBorderMaskPipeline = createRenderTextureToQuad(
 
 const borderWidth = (2.0 / size).toFixed(4);
 
-export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
+export const unwrapPipeline_bug = CY.createRenderPipeline("unwrapPipe_bug", {
   globals: [],
   shader: () => `
   struct VertexOutput {
@@ -119,3 +119,78 @@ export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
     },
   ],
 });
+
+export const unwrapPipeline_nobug = CY.createRenderPipeline(
+  "unwrapPipe_nobug",
+  {
+    globals: [],
+    shader: () => `
+  struct VertexOutput {
+    @builtin(position) fragPos : vec4<f32>,
+    @location(0) worldPos : vec4<f32>,
+    @location(1) uv: vec2<f32>,
+  }
+
+  @vertex
+  fn vertMain(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
+    var pos = array<vec2<f32>, 6>(
+      vec2<f32>(-0.6, -0.6),
+      vec2<f32>(0.6, -0.6),
+      vec2<f32>(0.6, 0.6),
+      vec2<f32>(-0.6, 0.6),
+      vec2<f32>(-0.6, -0.6),
+      vec2<f32>(0.6, 0.6),
+    );
+
+    var uv = array<vec2<f32>, 6>(
+      vec2<f32>(0.0, 1.0),
+      vec2<f32>(1.0, 1.0),
+      vec2<f32>(1.0, 0.0),
+      vec2<f32>(0.0, 0.0),
+      vec2<f32>(0.0, 1.0),
+      vec2<f32>(1.0, 0.0),
+    );
+
+    var output : VertexOutput;
+    output.fragPos = vec4<f32>(pos[VertexIndex], 0.0, 1.0);
+    output.worldPos = vec4<f32>(pos[VertexIndex], 0.0, 1.0);
+    output.uv = uv[VertexIndex];
+    return output;
+  }
+
+  struct FragOut {
+    @location(0) worldPos: vec4<f32>,
+    @location(1) uv: vec4<f32>,
+  }
+
+  @fragment fn fragMain(input: VertexOutput) -> FragOut {
+    var output: FragOut;
+    output.worldPos = input.worldPos;
+    output.uv = vec4(1.0);
+    return output;
+  }
+  `,
+    shaderVertexEntry: "vertMain",
+    shaderFragmentEntry: "fragMain",
+    meshOpt: {
+      vertexCount: 6,
+      stepMode: "single-draw",
+    },
+    // meshOpt: {
+    //   pool: meshPoolPtr,
+    //   stepMode: "per-mesh-handle",
+    // },
+    output: [
+      {
+        ptr: uvToPosTex,
+        clear: "once",
+        defaultColor: [0.0, 0.0, 0.0, 1.0],
+      },
+      {
+        ptr: uvMaskTex,
+        clear: "once",
+        defaultColor: [0.0, 0.0, 0.0, 1.0],
+      },
+    ],
+  }
+);

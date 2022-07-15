@@ -87,6 +87,6 @@ export const raiseBulletBoat = eventWizard(
   ([bullet, boat]) => {
     EM.ensureComponentOn(bullet, DeletedDef);
     const res = EM.getResources([AssetsDef, MusicDef])!;
-    breakBoat(EM, boat, res.assets.boat_broken, res.music);
+    // breakBoat(EM, boat, res.assets.boat_broken, res.music);
   }
 );
