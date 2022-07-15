@@ -1,5 +1,6 @@
 import {
   CY,
+  CyColorAttachment,
   CyDepthTexturePtr,
   CyRenderPipelinePtr,
   CySingletonPtr,
@@ -24,7 +25,7 @@ export const QuadStruct = createCyStruct(
 export function createRenderTextureToQuad(
   name: string,
   inTex: CyTexturePtr | CyDepthTexturePtr,
-  outTex: CyTexturePtr,
+  outTex: CyColorAttachment,
   minX = -1,
   maxX = 1,
   minY = -1,

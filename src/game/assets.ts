@@ -547,6 +547,14 @@ export function createFabric(size: number): RawMesh {
     }
   }
 
+  // delete some quads to make it more obvious that this is a mesh
+  quad.splice(20, 1);
+  quad.splice(4, 1);
+  quad.splice(5, 1);
+  quad.splice(12, 1);
+  // quad.splice(19, 1);
+  quad.splice(0, 1);
+
   return {
     pos,
     tri: [],

@@ -40,6 +40,11 @@ export function createComposePipelines(): CyRenderPipelinePtr[] {
     "composeViews3",
     litTexturePtr,
     canvasTexturePtr,
+    // {
+    //   ptr: canvasTexturePtr,
+    //   defaultColor: [0.8, 0.1, 0.1, 1.0],
+    //   clear: "always",
+    // },
     -1,
     1,
     -1,

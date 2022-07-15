@@ -7,10 +7,9 @@ fn main_bug(
 ) {
   let coord = vec2<i32>(WorkGroupID.xy);
   let inPx = textureLoad(inTex, coord, 0);
-
   if (inPx.x > 0.0)
   {
-      textureStore(outTex, coord, vec4(inPx.xzyw));
+      textureStore(outTex, coord, inPx);
   }
 }
 
@@ -20,9 +19,24 @@ fn main_nobug(
 ) {
   let coord = vec2<i32>(WorkGroupID.xy);
   let inPx = textureLoad(inTex, coord, 0);
-
   // if (inPx.x > 0.0)
   {
-      textureStore(outTex, coord, vec4(inPx.xzyw));
+      textureStore(outTex, coord, inPx);
   }
 }
+
+// @compute @workgroup_size(1, 1, 1)
+// fn main_nobug2(
+//   @builtin(workgroup_id) WorkGroupID : vec3<u32>,
+// ) {
+//   let coord = vec2<i32>(WorkGroupID.xy);
+//   let inPx = textureLoad(inTex, coord, 0);
+
+//   if (inPx.x > 0.0)
+//   {
+//       textureStore(outTex, coord, inPx);
+//   } 
+//   else {
+//       textureStore(outTex, coord, vec4(0.0));
+//   }
+// }
