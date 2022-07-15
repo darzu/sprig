@@ -137,3 +137,19 @@ Measure WebGPU perf?
 
 Regarding window compositors (they r evil?):
   https://raphlinus.github.io/ui/graphics/2020/09/13/compositor-is-evil.html
+
+rust vs js:
+  https://github.com/dmaynard/chaos-screen-saver/blob/master/README.md
+  tried and failed to make biz of js->rust:
+    https://zaplib.com/docs/blog_post_mortem.html
+  https://news.ycombinator.com/item?id=32098016
+    "It's hard to beat JavaScript because the VMs are amazing. If you know a few tricks, like how to let the VM know you want integer math [1], you can get performance that's not too far off from native C in many cases. If you have a JavaScript application with a few hot functions that are slow, optimizing the JavaScript usually makes more sense than reaching for WASM."
+      "In my experience the place wasm really shines is in implementing custom data structures. A wasm b-tree, skip list, rope, etc seems to outperform the equivalent javascript code by many times."
+  
+asm.js
+  http://asmjs.org/spec/latest/
+    specifies things like "|0"
+
+perf gains by using int math in JS:
+  https://james.darpinian.com/blog/integer-math-in-javascript
+  

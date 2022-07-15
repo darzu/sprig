@@ -912,3 +912,8 @@ Doom 3 glow:
   LCD - RGB Screen Pixels
   Pixel - Squares
   These combine with extra effects like chroma shift, glitch, invert, low res, and paper color.
+
+"Next Generation Geometry" / shader culling:
+  https://timur.hu/blog/2022/what-is-ngg
+  mesh shaders are dope
+  shader culling is a new cool thing we can now do

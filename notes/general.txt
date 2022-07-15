@@ -953,3 +953,7 @@ WebGPU updates at via khronos group webanar:
     https://shader-playground.timjones.io
   July 2022:
     http://khr.io/web202207
+    https://github.com/toji/webgpu-best-practices
+    https://surma.dev/things/webgpu/index.html
+    https://web.dev/gpu-compute/
+    https://github.com/shrekshao/webgpu-deferred-renderer
