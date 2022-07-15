@@ -313,7 +313,7 @@ export function initHyperspaceGame(em: EntityManager) {
   // let line: ReturnType<typeof drawLine>;
 
   let once = true;
-  let once2 = 10; // TODO(@darzu): lol wat.
+  // let once2 = 10; // TODO(@darzu): lol wat.
 
   let finalCompose = createComposePipelines();
 
@@ -331,62 +331,62 @@ export function initHyperspaceGame(em: EntityManager) {
           uvBorderMaskPipeline,
           uvPosBorderMaskPipeline,
           ...jfaPipelines,
+          ...finalCompose, // TODO(@darzu): should be last step
         ];
 
         once = false;
-      } else if (once2) {
-        if (once2 === 1) {
-          // read from one-time jobs
-          // TODO(@darzu): what's the right way to handle these jobs
-          res.renderer.renderer.readTexture(uvToPosTex).then((data) => {
-            // const fs = new Float32Array(data);
-            // // TODO(@darzu): really want a vec4 array as a view on Float32Array
-            // console.dir(fs);
-            // for (let f of fs) {
-            //   // if (f !== 0 && f !== 1) console.log(f);
-            // }
-            // TODO(@darzu): Account for the 1px border in the texture!!!
-            // const reader = createTextureReader(
-            //   data,
-            //   uvToPosTex.size,
-            //   3,
-            //   uvToPosTex.format
-            // );
-            // console.log("adding OceanDef");
-            // // TODO(@darzu): hacky hacky way to do this
-            // em.addSingletonComponent(OceanDef, {
-            //   ent: createRef(oceanEntId, [PositionDef]),
-            //   uvToPos: (out, uv) => {
-            //     const x = uv[0] * reader.size[0];
-            //     const y = uv[1] * reader.size[1];
-            //     // console.log(`${x},${y}`);
-            //     return reader.sample(out, x, y);
-            //   },
-            // });
-          });
-        }
-
-        once2 -= 1;
-      } else {
-        // steady state rendering
-        res.renderer.pipelines = [
-          // unwrapPipeline, // TODO(@darzu): don't run many times
-          // shadowPipeline,
-          // stdRenderPipeline,
-          // ...jfaPipelines,
-          ...finalCompose, // TODO(@darzu): should be last step
-          // outlineRender,
-          // // renderStars,
-          // // ...blurPipelines,
-
-          // // DEBUG:
-          // // shadowDbgDisplay,
-          // // normalDbg,
-          // // positionDbg,
-
-          // postProcess,
-        ];
       }
+      //  else if (once2) {
+      //   if (once2 === 1) {
+      //     // read from one-time jobs
+      //     // TODO(@darzu): what's the right way to handle these jobs
+      //     res.renderer.renderer.readTexture(uvToPosTex).then((data) => {
+      //       // const fs = new Float32Array(data);
+      //       // // TODO(@darzu): really want a vec4 array as a view on Float32Array
+      //       // console.dir(fs);
+      //       // for (let f of fs) {
+      //       //   // if (f !== 0 && f !== 1) console.log(f);
+      //       // }
+      //       // TODO(@darzu): Account for the 1px border in the texture!!!
+      //       // const reader = createTextureReader(
+      //       //   data,
+      //       //   uvToPosTex.size,
+      //       //   3,
+      //       //   uvToPosTex.format
+      //       // );
+      //       // console.log("adding OceanDef");
+      //       // // TODO(@darzu): hacky hacky way to do this
+      //       // em.addSingletonComponent(OceanDef, {
+      //       //   ent: createRef(oceanEntId, [PositionDef]),
+      //       //   uvToPos: (out, uv) => {
+      //       //     const x = uv[0] * reader.size[0];
+      //       //     const y = uv[1] * reader.size[1];
+      //       //     // console.log(`${x},${y}`);
+      //       //     return reader.sample(out, x, y);
+      //       //   },
+      //       // });
+      //     });
+      //   }
+
+      //   once2 -= 1;
+      // } else {
+      //   // steady state rendering
+      //   res.renderer.pipelines = [
+      //     // unwrapPipeline, // TODO(@darzu): don't run many times
+      //     // shadowPipeline,
+      //     // stdRenderPipeline,
+      //     // ...jfaPipelines,
+      //     // ...finalCompose, // TODO(@darzu): should be last step
+      //     // outlineRender,
+      //     // // renderStars,
+      //     // // ...blurPipelines,
+      //     // // DEBUG:
+      //     // // shadowDbgDisplay,
+      //     // // normalDbg,
+      //     // // positionDbg,
+      //     // postProcess,
+      //   ];
+      // }
     },
     "hyperspaceGame"
   );

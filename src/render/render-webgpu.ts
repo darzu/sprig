@@ -140,7 +140,7 @@ export function createWebGPURenderer(
     // TODO(@darzu): a lot of the smarts of this fn should come out and be an explicit part
     //  of some pipeline sequencer-timeline-composition-y description thing
     if (!pipelinePtrs.length) {
-      console.warn("rendering without any pipelines specified");
+      // console.warn("rendering without any pipelines specified");
       return;
     }
 
