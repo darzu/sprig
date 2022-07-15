@@ -739,7 +739,9 @@ function normalizeGlobals(globals: CyGlobalParam[]): CyGlobalUsage<CyGlobal>[] {
   return resUsages;
 }
 
-const canvasFormat = navigator.gpu?.getPreferredCanvasFormat();
+const canvasFormat = "bgra8unorm";
+// const canvasFormat = navigator.gpu?.getPreferredCanvasFormat();
+console.log(`canvasFormat: ${canvasFormat}`);
 
 export function bundleRenderPipelines(
   device: GPUDevice,
@@ -927,7 +929,8 @@ export function startBundleRenderer(
         depthAtt = depthTex.depthAttachment(doClear);
       }
 
-      renderPassEncoder?.end();
+      renderPassEncoder?.endPass();
+      // renderPassEncoder?.end();
       renderPassEncoder = commandEncoder.beginRenderPass({
         // TODO(@darzu): OUTPUT, different render targets
         //    need different pass per different output; start with one bundle per pipeline
@@ -943,7 +946,8 @@ export function startBundleRenderer(
   }
 
   function endPass() {
-    renderPassEncoder?.end();
+    renderPassEncoder?.endPass();
+    // renderPassEncoder?.end();
     renderPassEncoder = undefined;
   }
 
@@ -981,7 +985,8 @@ export function doCompute(
 
   compPassEncoder.setBindGroup(0, resBindGroup);
   compPassEncoder.dispatchWorkgroups(...pipeline.workgroupCounts);
-  compPassEncoder.end();
+  compPassEncoder.endPass();
+  // compPassEncoder.end();
 }
 
 export function onCanvasResizeAll(

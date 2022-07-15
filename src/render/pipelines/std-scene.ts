@@ -197,7 +197,8 @@ export function setupScene(): SceneTS {
 
 // TODO(@darzu): safer way to grab this format?
 const canvasFormat: GPUTextureFormat = //"bgra8unorm-srgb";
-  navigator.gpu?.getPreferredCanvasFormat() ?? "bgra8unorm";
+  // navigator.gpu?.getPreferredCanvasFormat() ?? "bgra8unorm";
+  "bgra8unorm";
 
 export const litTexturePtr = CY.createTexture("mainTexture", {
   size: [100, 100],

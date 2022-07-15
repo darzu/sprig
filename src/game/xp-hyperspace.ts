@@ -321,21 +321,23 @@ export function initHyperspaceGame(em: EntityManager) {
     [],
     [GlobalCursor3dDef, RendererDef, InputsDef, TextDef],
     (cs, res) => {
-      if (once) {
-        // one-time compute and render jobs
-        res.renderer.pipelines = [
-          // initStars,
+      // if (once) {
+      // one-time compute and render jobs
+      res.renderer.pipelines = [
+        // initStars,
 
-          // TODO(@darzu): package / abstract these more nicely?
-          unwrapPipeline_bug,
-          uvBorderMaskPipeline,
-          uvPosBorderMaskPipeline,
-          ...jfaPipelines,
-          ...finalCompose, // TODO(@darzu): should be last step
-        ];
+        // TODO(@darzu): package / abstract these more nicely?
+        unwrapPipeline_bug,
+        uvBorderMaskPipeline,
+        uvPosBorderMaskPipeline,
+        ...jfaPipelines,
+        ...finalCompose, // TODO(@darzu): should be last step
+      ];
 
-        once = false;
-      }
+      //   once = false;
+      // } else {
+      //   res.renderer.pipelines = [...finalCompose];
+      // }
       //  else if (once2) {
       //   if (once2 === 1) {
       //     // read from one-time jobs

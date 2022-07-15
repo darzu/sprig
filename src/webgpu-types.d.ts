@@ -588,6 +588,7 @@ interface GPURenderPassColorAttachment {
    * Note: It is recommended to prefer a clear-value; see {@link GPULoadOp#"load"}.
    */
   loadOp: GPULoadOp;
+  loadValue: GPUColor; // TODO(@darzu): DEPRECATED
   clearValue: GPUColor; // TODO(@darzu):
   /**
    * The store operation to perform on {@link GPURenderPassColorAttachment#view}
@@ -1482,6 +1483,7 @@ interface GPUComputePassEncoder
    * Completes recording of the compute pass commands sequence.
    */
   end(): undefined;
+  endPass(): undefined; // TODO(@darzu): dep
 }
 
 declare var GPUComputePassEncoder: {
@@ -1944,6 +1946,7 @@ interface GPURenderPassEncoder
    * Completes recording of the render pass commands sequence.
    */
   end(): undefined;
+  endPass(): undefined; // TODO(@darzu): dep
 }
 
 declare var GPURenderPassEncoder: {

@@ -368,6 +368,7 @@ export function createCyTexture(
     return {
       view: opts?.viewOverride ?? cyTex.texture.createView(),
       loadOp,
+      loadValue: backgroundColor,
       clearValue: backgroundColor,
       storeOp: "store",
     };
