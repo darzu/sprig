@@ -14,13 +14,15 @@ export const jfaTexs = [
   CY.createTexture("jfaTex1", uvPosBorderMask),
 ];
 
+export const jfaInput = CY.createTexture("jfaTexIn", uvPosBorderMask);
+
 const size = uvPosBorderMask.size[0];
 
 // TODO(@darzu): this probably isn't needed any more
 export const jfaPreOutlinePipe = createRenderTextureToQuad(
   "jfaPreOutlinePipe",
   uvPosBorderMask,
-  jfaTexs[0],
+  jfaInput,
   -1,
   1,
   -1,
@@ -47,7 +49,7 @@ export const jfaPipelines = [0, 1, 2, 3, 4, 5, 6].map((i) => {
 
   const pipeline = CY.createRenderPipeline(`jfaPipe${i}`, {
     globals: [
-      { ptr: jfaTexs[inIdx], alias: "inTex" },
+      { ptr: i === 0 ? jfaInput : jfaTexs[inIdx], alias: "inTex" },
       { ptr: fullQuad, alias: "quad" },
     ],
     meshOpt: {
