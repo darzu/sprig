@@ -5,27 +5,13 @@
 // override stepSize = 16;
 
  @fragment
-fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
+fn frag_main(@location(0) centerUV : vec2<f32>) -> @location(0) vec4<f32> {
   let dimsI : vec2<i32> = textureDimensions(inTex);
   let dimsF = vec2<f32>(dimsI);
-  let xy = vec2<i32>(uv * dimsF);
-  let inPx = textureLoad(inTex, xy, 0);
-  // return vec4(inPx);
-
-  // let stepSize = 16;
-
-  // let centerXY = vec2<i32>(GlobalInvocationID.xy);
-  // // let centerXY = vec2<i32>(32, 32);
-  // // let centerXY = vec2<i32>(
-  // //   WorkGroupID.xy * vec2<u32>(8u, 8u) +
-  // //   LocalInvocationID.xy
-  // // );
-  let centerXY = xy;
-  let centerUV = uv;
-  // let centerUV = vec2<f32>(centerXY) / dimsF;
+  let centerXY = vec2<i32>(centerUV * dimsF);
 
   var minDist = 9999.9;
-  var minUV = inPx.xy;
+  var minUV = vec2(0.0);
 
   for (var x = -1; x <= 1; x++) 
   {

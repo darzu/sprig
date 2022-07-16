@@ -188,3 +188,6 @@ Procedural terrain w/ errosion:
 Procedural walking:
   https://old.reddit.com/r/gamedev/comments/fqhp9q/procedural_animation_in_10_steps/
   inverse kinimatics in unity: https://www.youtube.com/watch?v=qqOAzn05fvk
+
+Terrain using SDFs:
+  https://prideout.net/blog/distance_fields/#procedural-terrain

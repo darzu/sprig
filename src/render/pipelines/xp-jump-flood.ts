@@ -39,7 +39,7 @@ export const jfaPreOutlinePipe = createRenderTextureToQuad(
   `
 ).pipeline;
 
-export const jfaPipelines = [0, 1, 2, 3, 4].map((i) => {
+export const jfaPipelines = [0, 1, 2, 3, 4, 5, 6].map((i) => {
   const inIdx = (i + 0) % 2;
   const outIdx = (i + 1) % 2;
 

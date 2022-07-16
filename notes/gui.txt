@@ -16,3 +16,8 @@ ThinMatrix:
 
 CSS box model:
     https://twitter.com/b0rk/status/1284132999940968454
+  
+"Advice for the next dozen Rust GUIs":
+  https://raphlinus.github.io/rust/gui/2022/07/15/next-dozen-guis.html
+  immediate mode vs retained mode GUI
+    https://docs.microsoft.com/en-us/windows/win32/learnwin32/retained-mode-versus-immediate-mode

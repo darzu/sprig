@@ -3,7 +3,8 @@ import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { CY } from "../gpu-registry.js";
 import { meshPoolPtr } from "./std-scene.js";
 
-const size = 64;
+// TODO(@darzu):
+const size = 256;
 
 // TODO(@darzu): rename to "uvmap" or similar?
 

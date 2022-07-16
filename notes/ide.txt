@@ -56,3 +56,12 @@ Crowdsourced benchmarking:
     you can ask users to submit a benchmark! they'll run the example on their
     hardware some number of iterations or benchmark and report the result
   Easier to see cross-GPU perf of everything
+
+Code overlays:
+  like a map overlay,
+  have options to highlight different regions of code for different purposes like:
+    error handling
+    support functions / boiler plate vs. main content
+    syscalls
+    age
+    mutative vs pure
