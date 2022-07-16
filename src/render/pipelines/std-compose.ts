@@ -1,6 +1,6 @@
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { CyRenderPipelinePtr } from "../gpu-registry.js";
-import { litTexturePtr } from "./std-scene.js";
+import { canvasTexturePtr, litTexturePtr } from "./std-scene.js";
 import { jfaTexs } from "./xp-jump-flood.js";
 import { uvBorderMask, uvPosBorderMask, uvToPosTex } from "./xp-uv-unwrap.js";
 
@@ -9,7 +9,7 @@ export function createComposePipelines(): CyRenderPipelinePtr[] {
   const p0 = createRenderTextureToQuad(
     "composeViews0",
     uvPosBorderMask,
-    litTexturePtr,
+    canvasTexturePtr,
     0.1,
     0.9,
     0.1,
@@ -19,7 +19,7 @@ export function createComposePipelines(): CyRenderPipelinePtr[] {
   const p1 = createRenderTextureToQuad(
     "composeViews1",
     jfaTexs[0],
-    litTexturePtr,
+    canvasTexturePtr,
     0.1,
     0.9,
     -0.9,
@@ -29,7 +29,7 @@ export function createComposePipelines(): CyRenderPipelinePtr[] {
   const p2 = createRenderTextureToQuad(
     "composeViews2",
     jfaTexs[1],
-    litTexturePtr,
+    canvasTexturePtr,
     -0.9,
     -0.1,
     -0.9,

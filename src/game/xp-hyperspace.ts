@@ -382,7 +382,6 @@ export function initHyperspaceGame(em: EntityManager) {
           // unwrapPipeline, // TODO(@darzu): don't run many times
           shadowPipeline,
           stdRenderPipeline,
-          ...finalCompose, // TODO(@darzu): should be last step
           outlineRender,
           // renderStars,
           // ...blurPipelines,
@@ -393,6 +392,7 @@ export function initHyperspaceGame(em: EntityManager) {
           // positionDbg,
 
           postProcess,
+          ...finalCompose, // TODO(@darzu): should be last step
         ];
       }
     },
