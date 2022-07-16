@@ -5,7 +5,7 @@
 // override stepSize = 16;
 
  @fragment
-fn frag_main(@location(0) centerUV : vec2<f32>) -> @location(0) vec4<f32> {
+fn frag_main(@location(0) centerUV : vec2<f32>) -> @location(0) vec2<f32> {
   let dimsI : vec2<i32> = textureDimensions(inTex);
   let dimsF = vec2<f32>(dimsI);
   let centerXY = vec2<i32>(centerUV * dimsF);
@@ -16,38 +16,22 @@ fn frag_main(@location(0) centerUV : vec2<f32>) -> @location(0) vec4<f32> {
   for (var x = -1; x <= 1; x++) 
   {
     for (var y = -1; y <= 1; y++)
-     {
-    // var x = 0;
-    // var y = 0;
-
-    let neighXY = centerXY + vec2(x,y) * stepSize;
-    let neighUV = textureLoad(inTex, neighXY, 0).xy;
-  //     // textureStore(outTex, centerXY, vec4(neighUV, 0.0, 1.0));
-
-  //     // let neighUV = textureLoad(inTex, neighXY, 0).xy;
+    {
+      let neighXY = centerXY + vec2(x,y) * stepSize;
+      let neighUV = textureLoad(inTex, neighXY, 0).xy;
       let dist = length(neighUV - centerUV);
-  //     let foo = neighUV.x - 0.5 ;
-  //     // if (true) 
       if (
         true
-  //       && foo > 0.0
         && neighUV.x > 0.0
-        && neighUV.y > 0.0 
+        && neighUV.y > 0.0
         && dist < minDist
       ) 
       {
         minDist = dist;
         minUV = neighUV;
-
-        // textureStore(outTex, centerXY, vec4(minUV, 0.0, 1.0));
-        // textureStore(outTex, centerXY, vec4(neighUV, 0.0, 1.0));
-        // textureStore(outTex, centerXY, vec4(centerUV, 0.0, 1.0));
       }
-  // //     // let foo2 = textureLoad(inPosTex, centerXY, 0);
-  // //     // textureStore(outSdfTex, centerXY, vec4(dist));
     }
   }
 
-  // // // TODO(@darzu): don't use rgba, just rg
-  return vec4(minUV, 0.0, 1.0);
+  return minUV;
 }

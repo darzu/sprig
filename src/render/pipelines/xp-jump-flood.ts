@@ -46,11 +46,12 @@ export const jfaPreOutlinePipe = createRenderTextureToQuad(
   `
 ).pipeline;
 
-export const jfaPipelines = [0, 1, 2, 3, 4, 5, 6].map((i) => {
+const maxStep = 6;
+export const jfaPipelines = range(maxStep + 1).map((i) => {
   const inIdx = (i + 0) % 2;
   const outIdx = (i + 1) % 2;
 
-  const stepSize = Math.pow(2, i);
+  const stepSize = Math.floor(Math.pow(2, maxStep - i));
 
   const pipeline = CY.createRenderPipeline(`jfaPipe${i}`, {
     globals: [
