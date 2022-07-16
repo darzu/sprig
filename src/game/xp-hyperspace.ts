@@ -37,6 +37,7 @@ import { vec3Dbg } from "../utils-3d.js";
 import {
   jfaPreOutlinePipe,
   jfaPipelines,
+  jfaToSdfPipe,
 } from "../render/pipelines/xp-jump-flood.js";
 
 interface Ocean {
@@ -337,6 +338,7 @@ export function initHyperspaceGame(em: EntityManager) {
           uvPosBorderMaskPipeline,
           jfaPreOutlinePipe,
           ...jfaPipelines,
+          jfaToSdfPipe,
         ];
 
         once = false;

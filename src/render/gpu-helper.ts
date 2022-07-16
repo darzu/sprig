@@ -109,6 +109,9 @@ export function createRenderTextureToQuad(
         else fSnip = shaders[fragSnippet].code;
       }
 
+      // TODO(@darzu): fragment result vec type should be based on out texture format
+      //   e.g. rg32float -> vec2<f32>
+
       return `
   ${shaders["std-screen-quad-vert"].code}
 

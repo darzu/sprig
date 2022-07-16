@@ -21,13 +21,19 @@ export const jfaTexs = [
   CY.createTexture("jfaTex1", format),
 ];
 
-export const jfaInput = CY.createTexture("jfaTexIn", format);
+export const jfaInputTex = CY.createTexture("jfaTexIn", format);
+
+export const sdfTex = CY.createTexture("sdfTex", {
+  size: [size, size],
+  // TODO(@darzu): r32
+  format: "r32float",
+});
 
 // TODO(@darzu): this probably isn't needed any more
 export const jfaPreOutlinePipe = createRenderTextureToQuad(
   "jfaPreOutlinePipe",
   uvPosBorderMask,
-  jfaInput,
+  jfaInputTex,
   -1,
   1,
   -1,
@@ -47,6 +53,9 @@ export const jfaPreOutlinePipe = createRenderTextureToQuad(
 ).pipeline;
 
 const maxStep = 6;
+const resultIdx = (maxStep + 2) % 2;
+export const jfaResultTex = jfaTexs[resultIdx];
+
 export const jfaPipelines = range(maxStep + 1).map((i) => {
   const inIdx = (i + 0) % 2;
   const outIdx = (i + 1) % 2;
@@ -55,7 +64,7 @@ export const jfaPipelines = range(maxStep + 1).map((i) => {
 
   const pipeline = CY.createRenderPipeline(`jfaPipe${i}`, {
     globals: [
-      { ptr: i === 0 ? jfaInput : jfaTexs[inIdx], alias: "inTex" },
+      { ptr: i === 0 ? jfaInputTex : jfaTexs[inIdx], alias: "inTex" },
       { ptr: fullQuad, alias: "quad" },
     ],
     meshOpt: {
@@ -76,3 +85,20 @@ export const jfaPipelines = range(maxStep + 1).map((i) => {
 
   return pipeline;
 });
+
+// TODO(@darzu): this probably isn't needed any more
+export const jfaToSdfPipe = createRenderTextureToQuad(
+  "jfaToSdf",
+  jfaResultTex,
+  sdfTex,
+  -1,
+  1,
+  -1,
+  1,
+  false,
+  () => `
+    let nearestUV = textureLoad(inTex, xy, 0).xy;
+    let dist = length(uv - nearestUV);
+    return vec4(dist);
+  `
+).pipeline;
