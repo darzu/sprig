@@ -20,7 +20,6 @@ const blurTextures = [0, 1].map((i) =>
     size: [100, 100],
     onCanvasResize: (w, h) => [w, h],
     format: "rgba16float",
-    init: () => undefined,
   })
 );
 

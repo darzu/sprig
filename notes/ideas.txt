@@ -51,3 +51,5 @@ GPU toy tool:
   - "shader templates" for e.g. tex->tex pixel shader like post processing, view embedding, jump flood algorithm, etc
       maybe this is how we do "mesh pool" shader stuff too?
   - prelude and postlude read-only collapsable text snippets w/ usable vars highlighted
+  - it'd be nice if it was easy to output intermediate results to some debug texture
+      and display that

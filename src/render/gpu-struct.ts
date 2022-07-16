@@ -37,21 +37,29 @@ export type TexTypeToTSType = {
   rgba32float: vec4;
 };
 export const texTypeToBytes: Partial<Record<GPUTextureFormat, number>> = {
+  r32float: 1 * 4,
+  rg32float: 2 * 4,
   rgba32float: 4 * 4,
   // TODO(@darzu): is this size right?
   rgba8unorm: 4,
   rgba8snorm: 4,
+  r16float: 2 * 1,
+  rg16float: 2 * 2,
   rgba16float: 2 * 4,
   "depth24plus-stencil8": 3 + 1,
   depth32float: 4,
+  rg8unorm: 2,
   bgra8unorm: 4,
   "bgra8unorm-srgb": 4,
   rg16uint: 2 + 2,
 };
 // Source: https://gpuweb.github.io/gpuweb/#plain-color-formats
+// TODO(@darzu): probably just track which ones are unfilterable
 export const texTypeToSampleType: Partial<
   Record<GPUTextureFormat, GPUTextureSampleType[]>
 > = {
+  r32float: ["unfilterable-float"],
+  rg32float: ["unfilterable-float"],
   rgba32float: ["unfilterable-float"],
 };
 export const texTypeIsDepthNoStencil: Partial<Record<GPUTextureFormat, true>> =

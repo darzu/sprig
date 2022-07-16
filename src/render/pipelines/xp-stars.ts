@@ -23,7 +23,6 @@ export const emissionTexturePtr = CY.createTexture("emissionTexture", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
   format: "rgba16float",
-  init: () => undefined,
 });
 
 export const initStars = CY.createComputePipeline("initStars", {

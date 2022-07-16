@@ -57,7 +57,7 @@ export interface CyTexturePtr extends CyResourcePtr {
   sampleCount?: number;
   attachToCanvas?: boolean;
   // TODO(@darzu): make optional:
-  init: () => Float32Array | undefined; // TODO(@darzu): | TexTypeAsTSType<F>[]
+  init?: () => Float32Array; // TODO(@darzu): | TexTypeAsTSType<F>[]
 }
 
 export interface CyDepthTexturePtr extends Omit<CyTexturePtr, "kind"> {

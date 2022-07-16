@@ -203,7 +203,6 @@ export const litTexturePtr = CY.createTexture("mainTexture", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
   format: "rgba16float",
-  init: () => undefined,
   // TODO(@darzu): support anti-aliasing again
 });
 
@@ -211,7 +210,6 @@ export const normalsTexturePtr = CY.createTexture("normalsTexture", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
   format: "rgba16float",
-  init: () => undefined,
   // TODO(@darzu): support anti-aliasing again
 });
 
@@ -219,7 +217,6 @@ export const positionsTexturePtr = CY.createTexture("positionsTexture", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
   format: "rgba16float",
-  init: () => undefined,
   // TODO(@darzu): support anti-aliasing again
 });
 
@@ -227,7 +224,6 @@ export const surfacesTexturePtr = CY.createTexture("surfacesTexture", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
   format: "rg16uint",
-  init: () => undefined,
 });
 
 export const canvasTexturePtr = CY.createTexture("canvasTexture", {
@@ -235,7 +231,6 @@ export const canvasTexturePtr = CY.createTexture("canvasTexture", {
   onCanvasResize: (w, h) => [w, h],
   format: canvasFormat,
   attachToCanvas: true,
-  init: () => undefined,
 });
 
 export const mainDepthTex = CY.createDepthTexture("canvasDepth", {
@@ -243,5 +238,4 @@ export const mainDepthTex = CY.createDepthTexture("canvasDepth", {
   onCanvasResize: (w, h) => [w, h],
   format: "depth32float",
   // format: "depth24plus-stencil8",
-  init: () => undefined,
 });

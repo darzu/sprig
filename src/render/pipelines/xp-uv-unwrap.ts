@@ -9,7 +9,6 @@ const size = 256;
 // TODO(@darzu): rename to "uvmap" or similar?
 
 export const uvToPosTex = CY.createTexture("uvToPosTex", {
-  init: () => undefined,
   size: [size, size],
   format: "rgba32float",
 });
@@ -17,13 +16,11 @@ export const uvToPosTex = CY.createTexture("uvToPosTex", {
 // TODO(@darzu): rgba32float is too aggressive for this; revist all formats used
 //    in sprigland
 const uvMaskTex = CY.createTexture("uvMaskTex", {
-  init: () => undefined,
   size: [size, size],
   format: "rgba16float",
 });
 
 export const uvBorderMask = CY.createTexture("uvBorderMask", {
-  init: () => undefined,
   size: [size, size],
   format: "rgba16float",
 });
@@ -41,7 +38,6 @@ export const uvBorderMaskPipeline = createRenderTextureToQuad(
 ).pipeline;
 
 export const uvPosBorderMask = CY.createTexture("uvPosBorderMask", {
-  init: () => undefined,
   size: [size, size],
   format: "rgba16float",
 });

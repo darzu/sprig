@@ -6,17 +6,22 @@ import { outlinedTexturePtr } from "./std-outline.js";
 import { emissionTexturePtr } from "./xp-stars.js";
 import { uvBorderMask, uvPosBorderMask, uvToPosTex } from "./xp-uv-unwrap.js";
 
+const size = uvPosBorderMask.size[0];
+
+const format: Parameters<typeof CY.createTexture>[1] = {
+  size: [size, size],
+  format: "rg32float",
+};
+
 export const jfaTexs = [
   // uvPosBorderMask,
   // TODO(@darzu): this is a nifty way to clone. Is this always going to work?
   //    maybe we need a deep clone per resource kind?
-  CY.createTexture("jfaTex0", uvPosBorderMask),
-  CY.createTexture("jfaTex1", uvPosBorderMask),
+  CY.createTexture("jfaTex0", format),
+  CY.createTexture("jfaTex1", format),
 ];
 
-export const jfaInput = CY.createTexture("jfaTexIn", uvPosBorderMask);
-
-const size = uvPosBorderMask.size[0];
+export const jfaInput = CY.createTexture("jfaTexIn", format);
 
 // TODO(@darzu): this probably isn't needed any more
 export const jfaPreOutlinePipe = createRenderTextureToQuad(

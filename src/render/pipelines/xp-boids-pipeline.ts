@@ -48,7 +48,6 @@ const boidOutTex = CY.createTexture("boidTex", {
   format: "rgba8unorm",
   // TODO(@darzu): ANTI-ALIAS
   // sampleCount: antiAliasSampleCount,
-  init: () => undefined,
 });
 const boidDepthTex = CY.createDepthTexture("boidDepth", {
   size: [200, 200],
@@ -56,7 +55,6 @@ const boidDepthTex = CY.createDepthTexture("boidDepth", {
   onCanvasResize: boidResize,
   // TODO(@darzu): ANTI-ALIAS
   // sampleCount: antiAliasSampleCount,
-  init: () => undefined,
 });
 export const boidRender = CY.createRenderPipeline("boidRender", {
   globals: [sceneBufPtr],
