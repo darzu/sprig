@@ -1,5 +1,5 @@
 import { createRenderTextureToQuad } from "../gpu-helper.js";
-import { CyRenderPipelinePtr } from "../gpu-registry.js";
+import { CyPipelinePtr, CyRenderPipelinePtr } from "../gpu-registry.js";
 import { canvasTexturePtr, litTexturePtr } from "./std-scene.js";
 import {
   jfaInputTex,
@@ -10,48 +10,46 @@ import {
 } from "./xp-jump-flood.js";
 import { uvBorderMask, uvPosBorderMask, uvToPosTex } from "./xp-uv-unwrap.js";
 
+// TODO(@darzu): rename to grid compose
+
+const padding = 0.05;
+
 export function createComposePipelines(): CyRenderPipelinePtr[] {
-  // TODO(@darzu): ARGS
-  const p0 = createRenderTextureToQuad(
-    "composeViews0",
-    ringsTex,
-    canvasTexturePtr,
-    -0.9,
-    -0.1,
-    0.1,
-    0.9,
-    false
-  );
-  const p3 = createRenderTextureToQuad(
-    "composeViews3",
-    jfaInputTex,
-    canvasTexturePtr,
-    0.1,
-    0.9,
-    0.1,
-    0.9,
-    false
-  );
-  const p1 = createRenderTextureToQuad(
-    "composeViews1",
-    jfaResultTex,
-    canvasTexturePtr,
-    0.1,
-    0.9,
-    -0.9,
-    -0.1,
-    false
-  );
-  const p2 = createRenderTextureToQuad(
-    "composeViews2",
-    sdfTex,
-    canvasTexturePtr,
-    -0.9,
-    -0.1,
-    -0.9,
-    -0.1,
-    false,
-    () => `return vec4(inPx.x);`
-  );
-  return [p0.pipeline, p1.pipeline, p2.pipeline, p3.pipeline];
+  const grid = [
+    [jfaInputTex, jfaResultTex],
+    [sdfTex, ringsTex],
+  ];
+
+  const width = grid[0].length;
+  const height = grid.length;
+  const uvWidth = (2.0 - padding * (width + 1)) / width;
+  const uvHeight = (2.0 - padding * (height + 1)) / height;
+  const uvStartX = -1.0 + padding;
+  const uvStartY = 1.0 - padding;
+
+  let pipes: CyRenderPipelinePtr[] = [];
+
+  for (let ri = 0; ri < grid.length; ri++) {
+    for (let ci = 0; ci < grid[ri].length; ci++) {
+      const tex = grid[ri][ci];
+      const xMin = uvStartX + ci * (uvWidth + padding);
+      const xMax = xMin + uvWidth;
+      const yMax = uvStartY - ri * (uvHeight + padding);
+      const yMin = yMax - uvHeight;
+      pipes.push(
+        createRenderTextureToQuad(
+          `composeViews_${ci}x${ri}`,
+          tex,
+          canvasTexturePtr,
+          xMin,
+          xMax,
+          yMin,
+          yMax,
+          false
+        ).pipeline
+      );
+    }
+  }
+
+  return pipes;
 }

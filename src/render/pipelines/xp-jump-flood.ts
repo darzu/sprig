@@ -40,27 +40,27 @@ export const jfaPreOutlinePipe = createRenderTextureToQuad(
   -1,
   1,
   false,
-  () => `
-    if (uv.x < 0.04) {
-      return vec4(uv.xy, 0.0, 1.0);
-    } else {
-      return vec4(0.0, 0.0, 0.0, 1.0);
-    }
-  `
   // () => `
-  //   let t = textureLoad(inTex, xy + vec2(0,1), 0).x;
-  //   let l = textureLoad(inTex, xy + vec2(-1,0), 0).x;
-  //   let r = textureLoad(inTex, xy + vec2(1,0), 0).x;
-  //   let b = textureLoad(inTex, xy + vec2(0,-1), 0).x;
-  //   if (t == 0.0 || l == 0.0 || r == 0.0 || b == 0.0) {
-  //     return vec4(inPx.xy, 0.0, 1.0);
+  //   if (uv.x < 0.04) {
+  //     return vec4(uv.xy, 0.0, 1.0);
   //   } else {
   //     return vec4(0.0, 0.0, 0.0, 1.0);
   //   }
   // `
+  () => `
+    let t = textureLoad(inTex, xy + vec2(0,1), 0).x;
+    let l = textureLoad(inTex, xy + vec2(-1,0), 0).x;
+    let r = textureLoad(inTex, xy + vec2(1,0), 0).x;
+    let b = textureLoad(inTex, xy + vec2(0,-1), 0).x;
+    if (t == 0.0 || l == 0.0 || r == 0.0 || b == 0.0) {
+      return vec4(inPx.xy, 0.0, 1.0);
+    } else {
+      return vec4(0.0, 0.0, 0.0, 1.0);
+    }
+  `
 ).pipeline;
 
-export const VISUALIZE_JFA = false;
+export const VISUALIZE_JFA = true;
 
 // const maxStep = 4;
 const maxStep = Math.ceil(Math.log2(size / 2)) + 0;

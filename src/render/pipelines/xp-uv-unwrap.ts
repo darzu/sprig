@@ -4,7 +4,7 @@ import { CY } from "../gpu-registry.js";
 import { meshPoolPtr } from "./std-scene.js";
 
 // TODO(@darzu):
-const size = 300;
+const size = 128;
 
 // TODO(@darzu): rename to "uvmap" or similar?
 

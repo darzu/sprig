@@ -334,6 +334,7 @@ export function initHyperspaceGame(em: EntityManager) {
         jfaMaxStep += (res.inputs.keyClicks["j"] ?? 0) * 2;
         jfaMaxStep -= (res.inputs.keyClicks["h"] ?? 0) * 2;
         jfaMaxStep = Math.max(jfaMaxStep, 0);
+        jfaMaxStep = Math.min(jfaMaxStep, jfaPipelines.length);
         if (jfaMaxStep !== prevjfaMaxStep)
           console.log(`jfaMaxStep: ${jfaMaxStep}`);
       }
