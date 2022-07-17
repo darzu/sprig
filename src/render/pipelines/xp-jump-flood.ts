@@ -1,7 +1,7 @@
 import { jfaMaxStep } from "../../game/xp-hyperspace.js";
 import { range } from "../../util.js";
 import { createRenderTextureToQuad, fullQuad } from "../gpu-helper.js";
-import { CY, linearSamplerPtr } from "../gpu-registry.js";
+import { CY, CyPipelinePtr, linearSamplerPtr } from "../gpu-registry.js";
 import { createCyStruct } from "../gpu-struct.js";
 import { outlinedTexturePtr } from "./std-outline.js";
 import { emissionTexturePtr } from "./xp-stars.js";
@@ -41,54 +41,85 @@ export const jfaPreOutlinePipe = createRenderTextureToQuad(
   1,
   false,
   () => `
-    let t = textureLoad(inTex, xy + vec2(0,1), 0).x;
-    let l = textureLoad(inTex, xy + vec2(-1,0), 0).x;
-    let r = textureLoad(inTex, xy + vec2(1,0), 0).x;
-    let b = textureLoad(inTex, xy + vec2(0,-1), 0).x;
-    if (t == 0.0 || l == 0.0 || r == 0.0 || b == 0.0) {
-      return vec4(inPx.xy, 0.0, 1.0);
+    if (uv.x < 0.04) {
+      return vec4(uv.xy, 0.0, 1.0);
     } else {
       return vec4(0.0, 0.0, 0.0, 1.0);
     }
   `
+  // () => `
+  //   let t = textureLoad(inTex, xy + vec2(0,1), 0).x;
+  //   let l = textureLoad(inTex, xy + vec2(-1,0), 0).x;
+  //   let r = textureLoad(inTex, xy + vec2(1,0), 0).x;
+  //   let b = textureLoad(inTex, xy + vec2(0,-1), 0).x;
+  //   if (t == 0.0 || l == 0.0 || r == 0.0 || b == 0.0) {
+  //     return vec4(inPx.xy, 0.0, 1.0);
+  //   } else {
+  //     return vec4(0.0, 0.0, 0.0, 1.0);
+  //   }
+  // `
 ).pipeline;
 
+export const VISUALIZE_JFA = false;
+
 // const maxStep = 4;
-const maxStep = Math.ceil(Math.log2(size / 2));
+const maxStep = Math.ceil(Math.log2(size / 2)) + 0;
 // console.log(`maxStep: ${maxStep}`);
 // const resultIdx = jfaMaxStep % 2;
-const resultIdx = (maxStep + 2) % 2;
+// const resultIdx = 0;
+const resultIdx = VISUALIZE_JFA ? 0 : (maxStep + 1) % 2;
+
+console.log(`resultIdx: ${resultIdx}`);
+console.log(`maxStep: ${maxStep}`);
 export const jfaResultTex = jfaTexs[resultIdx];
 
-export const jfaPipelines = range(maxStep + 1).map((i) => {
-  const inIdx = (i + 0) % 2;
-  const outIdx = (i + 1) % 2;
+const copy1to0 = createRenderTextureToQuad(
+  "jfaCopy",
+  jfaTexs[1],
+  jfaTexs[0],
+  -1,
+  1,
+  -1,
+  1,
+  false,
+  () => `
+return inPx;
+`
+).pipeline;
 
-  const stepSize = Math.floor(Math.pow(2, maxStep - i));
+export const jfaPipelines = range(maxStep + 1)
+  .map((i) => {
+    const inIdx = VISUALIZE_JFA ? 0 : (i + 0) % 2;
+    const outIdx = VISUALIZE_JFA ? 1 : (i + 1) % 2;
+    console.log(`outIdx: ${outIdx}`);
 
-  const pipeline = CY.createRenderPipeline(`jfaPipe${i}`, {
-    globals: [
-      { ptr: i === 0 ? jfaInputTex : jfaTexs[inIdx], alias: "inTex" },
-      { ptr: fullQuad, alias: "quad" },
-    ],
-    meshOpt: {
-      vertexCount: 6,
-      stepMode: "single-draw",
-    },
-    output: [jfaTexs[outIdx]],
-    shader: (shaders) => {
-      return `
+    const stepSize = Math.floor(Math.pow(2, maxStep - i));
+
+    const pipeline = CY.createRenderPipeline(`jfaPipe${i}`, {
+      globals: [
+        { ptr: i === 0 ? jfaInputTex : jfaTexs[inIdx], alias: "inTex" },
+        { ptr: fullQuad, alias: "quad" },
+      ],
+      meshOpt: {
+        vertexCount: 6,
+        stepMode: "single-draw",
+      },
+      output: [jfaTexs[outIdx]],
+      shader: (shaders) => {
+        return `
         const stepSize = ${stepSize};
         ${shaders["std-screen-quad-vert"].code}
         ${shaders["xp-jump-flood"].code}
       `;
-    },
-    shaderFragmentEntry: "frag_main",
-    shaderVertexEntry: "vert_main",
-  });
+      },
+      shaderFragmentEntry: "frag_main",
+      shaderVertexEntry: "vert_main",
+    });
 
-  return pipeline;
-});
+    if (VISUALIZE_JFA) return [pipeline, copy1to0];
+    else return [pipeline];
+  })
+  .reduce((p, n) => [...p, ...n], []);
 
 // TODO(@darzu): this probably isn't needed any more
 export const jfaToSdfPipe = createRenderTextureToQuad(

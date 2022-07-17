@@ -39,6 +39,7 @@ import {
   jfaPipelines,
   jfaToSdfPipe,
   sdfToRingsPipe,
+  VISUALIZE_JFA,
 } from "../render/pipelines/xp-jump-flood.js";
 
 interface Ocean {
@@ -216,7 +217,7 @@ function createTextureReader<A extends 1 | 2 | 3 | 4>(
   }
 }
 
-export let jfaMaxStep = 0;
+export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 
 export function initHyperspaceGame(em: EntityManager) {
   const camera = em.addSingletonComponent(CameraDef);
@@ -328,12 +329,14 @@ export function initHyperspaceGame(em: EntityManager) {
     [],
     [GlobalCursor3dDef, RendererDef, InputsDef, TextDef, InputsDef],
     (cs, res) => {
-      let prevjfaMaxStep = jfaMaxStep;
-      jfaMaxStep += res.inputs.keyClicks["j"] ?? 0;
-      jfaMaxStep -= res.inputs.keyClicks["h"] ?? 0;
-      jfaMaxStep = Math.max(jfaMaxStep, 0);
-      if (jfaMaxStep !== prevjfaMaxStep)
-        console.log(`jfaMaxStep: ${jfaMaxStep}`);
+      if (VISUALIZE_JFA) {
+        let prevjfaMaxStep = jfaMaxStep;
+        jfaMaxStep += (res.inputs.keyClicks["j"] ?? 0) * 2;
+        jfaMaxStep -= (res.inputs.keyClicks["h"] ?? 0) * 2;
+        jfaMaxStep = Math.max(jfaMaxStep, 0);
+        if (jfaMaxStep !== prevjfaMaxStep)
+          console.log(`jfaMaxStep: ${jfaMaxStep}`);
+      }
 
       // TODO(@darzu): instead of all this one-time nosense, it'd be great
       //  to just submit async work to the GPU.
