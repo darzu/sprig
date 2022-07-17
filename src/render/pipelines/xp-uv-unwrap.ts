@@ -60,7 +60,8 @@ export const uvPosBorderMaskPipeline = createRenderTextureToQuad(
   `
 ).pipeline;
 
-const borderPxWidth = 2;
+// TODO(@darzu): account for this border on the CPU sampling side
+const borderPxWidth = 1;
 const borderUVWidth = ((borderPxWidth * 2.0) / size).toFixed(4);
 
 export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
