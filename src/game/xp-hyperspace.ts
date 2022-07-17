@@ -38,6 +38,7 @@ import {
   jfaPreOutlinePipe,
   jfaPipelines,
   jfaToSdfPipe,
+  sdfToRingsPipe,
 } from "../render/pipelines/xp-jump-flood.js";
 
 interface Ocean {
@@ -215,6 +216,8 @@ function createTextureReader<A extends 1 | 2 | 3 | 4>(
   }
 }
 
+export let jfaMaxStep = 0;
+
 export function initHyperspaceGame(em: EntityManager) {
   const camera = em.addSingletonComponent(CameraDef);
   camera.fov = Math.PI * 0.5;
@@ -323,8 +326,15 @@ export function initHyperspaceGame(em: EntityManager) {
 
   em.registerSystem(
     [],
-    [GlobalCursor3dDef, RendererDef, InputsDef, TextDef],
+    [GlobalCursor3dDef, RendererDef, InputsDef, TextDef, InputsDef],
     (cs, res) => {
+      let prevjfaMaxStep = jfaMaxStep;
+      jfaMaxStep += res.inputs.keyClicks["j"] ?? 0;
+      jfaMaxStep -= res.inputs.keyClicks["h"] ?? 0;
+      jfaMaxStep = Math.max(jfaMaxStep, 0);
+      if (jfaMaxStep !== prevjfaMaxStep)
+        console.log(`jfaMaxStep: ${jfaMaxStep}`);
+
       // TODO(@darzu): instead of all this one-time nosense, it'd be great
       //  to just submit async work to the GPU.
       if (once) {
@@ -337,8 +347,6 @@ export function initHyperspaceGame(em: EntityManager) {
           uvBorderMaskPipeline,
           uvPosBorderMaskPipeline,
           jfaPreOutlinePipe,
-          ...jfaPipelines,
-          jfaToSdfPipe,
         ];
 
         once = false;
@@ -381,6 +389,10 @@ export function initHyperspaceGame(em: EntityManager) {
       } else {
         // steady state rendering
         res.renderer.pipelines = [
+          ...jfaPipelines.slice(0, jfaMaxStep),
+          jfaToSdfPipe,
+          sdfToRingsPipe,
+
           // unwrapPipeline, // TODO(@darzu): don't run many times
           shadowPipeline,
           stdRenderPipeline,

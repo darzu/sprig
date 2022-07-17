@@ -1,3 +1,4 @@
+import { jfaMaxStep } from "../../game/xp-hyperspace.js";
 import { range } from "../../util.js";
 import { createRenderTextureToQuad, fullQuad } from "../gpu-helper.js";
 import { CY, linearSamplerPtr } from "../gpu-registry.js";
@@ -52,7 +53,10 @@ export const jfaPreOutlinePipe = createRenderTextureToQuad(
   `
 ).pipeline;
 
-const maxStep = 6;
+// const maxStep = 4;
+const maxStep = Math.ceil(Math.log2(size / 2));
+// console.log(`maxStep: ${maxStep}`);
+// const resultIdx = jfaMaxStep % 2;
 const resultIdx = (maxStep + 2) % 2;
 export const jfaResultTex = jfaTexs[resultIdx];
 
@@ -100,5 +104,32 @@ export const jfaToSdfPipe = createRenderTextureToQuad(
     let nearestUV = textureLoad(inTex, xy, 0).xy;
     let dist = length(uv - nearestUV);
     return vec4(dist);
+  `
+).pipeline;
+
+// TODO(@darzu): IMPLG
+export const ringsTex = CY.createTexture("ringsTex", {
+  size: [size, size],
+  // TODO(@darzu): r32
+  format: "rgba32float",
+});
+
+// TODO(@darzu): this probably isn't needed any more
+export const sdfToRingsPipe = createRenderTextureToQuad(
+  "sdfToRings",
+  sdfTex,
+  ringsTex,
+  -1,
+  1,
+  -1,
+  1,
+  false,
+  () => `
+  // let r = (inPx.x * 5.0) % 1.0;
+  let r = inPx.x;
+  if (0.1 < r && r < 0.2) {
+    return vec4(1.0);
+  }
+  return vec4(0.0);
   `
 ).pipeline;

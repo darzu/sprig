@@ -4,7 +4,7 @@ import { CY } from "../gpu-registry.js";
 import { meshPoolPtr } from "./std-scene.js";
 
 // TODO(@darzu):
-const size = 256;
+const size = 64;
 
 // TODO(@darzu): rename to "uvmap" or similar?
 
@@ -60,7 +60,8 @@ export const uvPosBorderMaskPipeline = createRenderTextureToQuad(
   `
 ).pipeline;
 
-const borderWidth = (2.0 / size).toFixed(4);
+const borderPxWidth = 2;
+const borderUVWidth = ((borderPxWidth * 2.0) / size).toFixed(4);
 
 export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
   globals: [],
@@ -79,7 +80,7 @@ export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
     output.uv = input.uv;
     output.worldPos = worldPos;
 
-    let w = ${borderWidth};
+    let w = ${borderUVWidth};
     let xy = (input.uv * (2.0 - w * 2.0) - (1.0 - w));
     output.fragPos = vec4(xy, 0.0, 1.0);
     return output;
