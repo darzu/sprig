@@ -148,3 +148,6 @@ Why quad meshes?
 Cool free low-poly assets:
   https://quaternius.com (CC0 1.0)
     https://www.patreon.com/quaternius
+
+Public domain art:
+  https://artvee.com/main/?s=switzerland

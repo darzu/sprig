@@ -9,7 +9,7 @@ import {
 } from "./gpu-registry.js";
 import { createCyStruct, texTypeToSampleType } from "./gpu-struct.js";
 import { litTexturePtr } from "./pipelines/std-scene.js";
-import { ShaderName } from "./shader-loader.js";
+import { ShaderName, ShaderSet } from "./shader-loader.js";
 
 export const QuadStruct = createCyStruct(
   {
@@ -75,6 +75,45 @@ export function createRenderTextureToQuad(
   );
   // TODO(@darzu): turn on-off sampling?
   const doSample = !inTexIsUnfilterable && sample;
+  outTex.format;
+  const shader = (shaders: ShaderSet) => {
+    // TODO(@darzu): we're doing all kinds of template-y / macro-y stuff w/ shaders
+    //      needs more thought for good abstration.
+    let fSnip = `return vec4(inPx);`;
+    if (fragSnippet) {
+      if (isFunction(fragSnippet))
+        fSnip = fragSnippet({
+          dimsI: "dimsI",
+          dimsF: "dimsF",
+          inPx: "inPx",
+          uv: "uv",
+          inTex: "inTex",
+          xy: "xy",
+        });
+      else fSnip = shaders[fragSnippet].code;
+    }
+
+    // TODO(@darzu): fragment result vec type should be based on out texture format
+    //   e.g. rg32float -> vec2<f32>
+
+    return `
+    ${shaders["std-screen-quad-vert"].code}
+
+    @fragment
+    fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
+      let dimsI : vec2<i32> = textureDimensions(inTex);
+      let dimsF = vec2<f32>(dimsI);
+      let xy = vec2<i32>(uv * dimsF);
+      ${
+        // TODO(@darzu): don't like this...
+        !doSample
+          ? `let inPx = textureLoad(inTex, xy, 0);`
+          : `let inPx = textureSample(inTex, mySampler, uv);`
+      }
+      ${fSnip}
+    }
+  `;
+  };
   const pipeline = CY.createRenderPipeline(name, {
     globals: [
       // TODO(@darzu): Actually, not all textures (e.g. unfilterable rgba32float)
@@ -92,44 +131,7 @@ export function createRenderTextureToQuad(
       stepMode: "single-draw",
     },
     output: [outTex],
-    shader: (shaders) => {
-      // TODO(@darzu): we're doing all kinds of template-y / macro-y stuff w/ shaders
-      //      needs more thought for good abstration.
-      let fSnip = `return vec4(inPx);`;
-      if (fragSnippet) {
-        if (isFunction(fragSnippet))
-          fSnip = fragSnippet({
-            dimsI: "dimsI",
-            dimsF: "dimsF",
-            inPx: "inPx",
-            uv: "uv",
-            inTex: "inTex",
-            xy: "xy",
-          });
-        else fSnip = shaders[fragSnippet].code;
-      }
-
-      // TODO(@darzu): fragment result vec type should be based on out texture format
-      //   e.g. rg32float -> vec2<f32>
-
-      return `
-  ${shaders["std-screen-quad-vert"].code}
-
-  @fragment
-  fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
-    let dimsI : vec2<i32> = textureDimensions(inTex);
-    let dimsF = vec2<f32>(dimsI);
-    let xy = vec2<i32>(uv * dimsF);
-    ${
-      // TODO(@darzu): don't like this...
-      !doSample
-        ? `let inPx = textureLoad(inTex, xy, 0);`
-        : `let inPx = textureSample(inTex, mySampler, uv);`
-    }
-    ${fSnip}
-  }
-    `;
-    },
+    shader,
     shaderFragmentEntry: "frag_main",
     shaderVertexEntry: "vert_main",
   });

@@ -26,7 +26,6 @@ export const jfaInputTex = CY.createTexture("jfaTexIn", format);
 
 export const sdfTex = CY.createTexture("sdfTex", {
   size: [size, size],
-  // TODO(@darzu): r32
   format: "r32float",
 });
 

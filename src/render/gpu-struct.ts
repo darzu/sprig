@@ -3,7 +3,7 @@ import { align, max, sum } from "../math.js";
 import { assert } from "../test.js";
 import { objMap } from "../util.js";
 
-// cytochrome's data helpers
+// TABLES, CONSTS and TYPE-LEVEL HELPERS
 
 const WGSLScalars = ["bool", "i32", "u32", "f32", "f16"] as const;
 type WGSLScalar = typeof WGSLScalars[number];
@@ -95,6 +95,87 @@ export const GPUBufferBindingTypeToWgslVar: {
   storage: "var<storage, read_write>",
 };
 
+const wgslTypeToVertType: Partial<Record<WGSLType, GPUVertexFormat>> = {
+  "vec2<f16>": "float16x2",
+  "vec4<f16>": "float16x4",
+  f32: "float32",
+  "vec2<f32>": "float32x2",
+  "vec3<f32>": "float32x3",
+  "vec4<f32>": "float32x4",
+  u32: "uint32",
+  i32: "sint32",
+};
+
+// https://www.w3.org/TR/WGSL/#alignment-and-size
+const wgslTypeToSize: Partial<Record<WGSLType, number>> = {
+  i32: 4,
+  u32: 4,
+  f32: 4,
+  "vec2<f32>": 8,
+  "vec3<f32>": 12,
+  "mat4x4<f32>": 64,
+};
+
+// TODO(@darzu): this isn't quite right, a mat3x4<f32> is size 48 but aligns to 16
+const wgslTypeToAlign = objMap(wgslTypeToSize, alignUp) as Partial<
+  Record<WGSLType, number>
+>;
+
+export type CyStructDesc = Record<string, WGSLType>;
+
+export type CyToTS<O extends CyStructDesc> = {
+  [N in keyof O]: O[N] extends keyof WGSLTypeToTSType
+    ? WGSLTypeToTSType[O[N]]
+    : never;
+};
+
+// INTERFACES
+
+// TODO(@darzu): we need seperate sizes, offsets / alignment for different
+//  usages, probably these 3:
+//      uniform (256byte align),
+///     storage array (standard align),
+//      vertex buffer (compact)
+export interface CyStruct<O extends CyStructDesc> {
+  desc: O;
+  memberCount: number;
+  size: number;
+  compactSize: number;
+  offsets: number[];
+  serialize: (data: CyToTS<O>) => Uint8Array;
+  wgsl: (align: boolean, locationStart?: number) => string;
+  // webgpu
+  layout(
+    idx: number,
+    stage: GPUShaderStageFlags,
+    type: GPUBufferBindingType,
+    // TODO(@darzu): don't like this param
+    hasDynamicOffset: boolean
+  ): GPUBindGroupLayoutEntry;
+  vertexLayout(
+    stepMode: GPUVertexStepMode,
+    startLocation: number
+  ): GPUVertexBufferLayout;
+  clone: (data: CyToTS<O>) => CyToTS<O>;
+  opts: CyStructOpts<O> | undefined;
+}
+
+export type Serializer<O extends CyStructDesc> = (
+  data: CyToTS<O>,
+  offsets: number[],
+  offsets_32: number[],
+  views: { f32: Float32Array; u32: Uint32Array; u8: Uint8Array }
+) => void;
+
+export interface CyStructOpts<O extends CyStructDesc> {
+  // TODO(@darzu): Can we do away with isUniform and isCompact? Maybe infer from usage?
+  isUniform?: boolean;
+  isCompact?: boolean;
+  serializer?: Serializer<O>;
+}
+
+// HELPER FNS
+
 function wgslTypeToDummyVal<T extends WGSLType>(
   wgsl: T
 ): T extends keyof WGSLTypeToTSType ? WGSLTypeToTSType[T] : never {
@@ -163,27 +244,7 @@ function createDummyStruct<O extends CyStructDesc>(desc: O): CyToTS<O> {
   return res;
 }
 
-const wgslTypeToVertType: Partial<Record<WGSLType, GPUVertexFormat>> = {
-  "vec2<f16>": "float16x2",
-  "vec4<f16>": "float16x4",
-  f32: "float32",
-  "vec2<f32>": "float32x2",
-  "vec3<f32>": "float32x3",
-  "vec4<f32>": "float32x4",
-  u32: "uint32",
-  i32: "sint32",
-};
-
-// https://www.w3.org/TR/WGSL/#alignment-and-size
-const wgslTypeToSize: Partial<Record<WGSLType, number>> = {
-  i32: 4,
-  u32: 4,
-  f32: 4,
-  "vec2<f32>": 8,
-  "vec3<f32>": 12,
-  "mat4x4<f32>": 64,
-};
-const alignUp = (n: number) => {
+function alignUp(n: number) {
   // TODO(@darzu): i know there is a smarter way to write this...
   //  ... something something bit shifting
   if (n <= 4) return 4;
@@ -194,61 +255,6 @@ const alignUp = (n: number) => {
   if (n <= 128) return 128;
   if (n <= 256) return 256;
   throw `${n} too big to align`;
-};
-// TODO(@darzu): this isn't quite right, a mat3x4<f32> is size 48 but aligns to 16
-const wgslTypeToAlign = objMap(wgslTypeToSize, alignUp) as Partial<
-  Record<WGSLType, number>
->;
-
-export type CyStructDesc = Record<string, WGSLType>;
-
-export type CyToTS<O extends CyStructDesc> = {
-  [N in keyof O]: O[N] extends keyof WGSLTypeToTSType
-    ? WGSLTypeToTSType[O[N]]
-    : never;
-};
-
-// TODO(@darzu): we need seperate sizes, offsets / alignment for different
-//  usages, probably these 3:
-//      uniform (256byte align),
-///     storage array (standard align),
-//      vertex buffer (compact)
-export interface CyStruct<O extends CyStructDesc> {
-  desc: O;
-  memberCount: number;
-  size: number;
-  compactSize: number;
-  offsets: number[];
-  serialize: (data: CyToTS<O>) => Uint8Array;
-  wgsl: (align: boolean, locationStart?: number) => string;
-  // webgpu
-  layout(
-    idx: number,
-    stage: GPUShaderStageFlags,
-    type: GPUBufferBindingType,
-    // TODO(@darzu): don't like this param
-    hasDynamicOffset: boolean
-  ): GPUBindGroupLayoutEntry;
-  vertexLayout(
-    stepMode: GPUVertexStepMode,
-    startLocation: number
-  ): GPUVertexBufferLayout;
-  clone: (data: CyToTS<O>) => CyToTS<O>;
-  opts: CyStructOpts<O> | undefined;
-}
-
-export type Serializer<O extends CyStructDesc> = (
-  data: CyToTS<O>,
-  offsets: number[],
-  offsets_32: number[],
-  views: { f32: Float32Array; u32: Uint32Array; u8: Uint8Array }
-) => void;
-
-export interface CyStructOpts<O extends CyStructDesc> {
-  // TODO(@darzu): Can we do away with isUniform and isCompact? Maybe infer from usage?
-  isUniform?: boolean;
-  isCompact?: boolean;
-  serializer?: Serializer<O>;
 }
 
 // TODO(@darzu): handle nested fixed size arrays
