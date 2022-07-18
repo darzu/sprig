@@ -957,3 +957,11 @@ WebGPU updates at via khronos group webanar:
     https://surma.dev/things/webgpu/index.html
     https://web.dev/gpu-compute/
     https://github.com/shrekshao/webgpu-deferred-renderer
+
+Hardware support:
+  https://github.com/gpuweb/gpuweb/issues/1069
+    https://github.com/kainino0x/gpuinfo-vulkan-query
+  steam:  ~75-95% of steam users, depending how u interpret: https://store.steampowered.com/hwsurvey
+  android: 77% ? https://developer.android.com/about/dashboards
+  15-18 of the most popular 20 laptops on Amazon support WebGPU:
+    notes/amazon-best-seller-laptops-webgpu-suppor.txt

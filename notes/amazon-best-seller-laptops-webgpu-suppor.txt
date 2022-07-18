@@ -1,0 +1,69 @@
+amazon-best-seller-laptops-webgpu-support.txt
+SUMMARY:
+
+NO: 2 ($200, $140)
+YES: 15 ($118, $200, $394, $200, $492, $319, $515, $592, $150, $803, $229, $588, $276, $1097, $751)
+PROBABLY: 3 ($391, $360, $130 RENEWED)
+
+LINKS:
+Checked July 18th
+https://www.amazon.com/Best-Sellers-Laptop-Computers/zgbs/electronics/565108
+Compared against:
+https://github.com/gpuweb/gpuweb/issues/1069#issuecomment-930710309
+Mali w/ Vulkan table: 
+https://en.wikipedia.org/wiki/Mali_(GPU)
+Useful for finding graphics adapter:
+https://www.notebookcheck.net/
+
+TOP 20 DEVICE NOTES:
+Asus C203XA: $200, NO
+  IMG PowerVR GX6250, OpenGL 3.x/4.x, OpenGL ES 3.x and DirectX 10
+Lenovo IdeaPad 3 11: $118, UHD 600, YES
+HP 17 Laptop PC $391: PROBABLY?
+  AMD Athlon™ Gold 3150U, AMD Radeon RX Vega 3
+Acer Chromebook Spin 311: $200, UHD 600, YES
+Acer Aspire 5 A515-46-R3UB: $360, AMD Radeon RX Vega 6, PROBABLY
+  maxImageDimension2D and related limits >= 8192
+Lenovo Ideapad 3 2022: $394, UHD 600, YES
+SAMSUNG Galaxy Chromebook 4: $200, UHD 600, YES
+Acer Aspire 5 A515-45-R74Z: $492, AMD Radeon RX Vega 7, YES
+Acer Aspire 5 A515-56-32DK: $319, UHD Xe G4 48EUs, YES
+HP 15.6-inch Laptop: $515, Intel Iris Xe, YES
+Acer Swift 3: $592, AMD Radeon RX Vega 8, YES
+Acer Chromebook 512 CB512-C1KJ: $150, UHD 600, YES
+HP Pavilion 15: $803, Intel Iris Xe, YES
+HP Chromebook 14: $229, UHD 600, YES
+2022 Acer 15inch HD: $130, RENEWED, Celeron, PROBABLY?
+HP 17-inch 17-cn0025nr: $588, Intel Iris Xe Graphics, YES
+HP Chromebook 11 11a-na0021nr 2020: $140, MT8183, ARM Mali-G72 MP3, NO
+  timestampValidBits != 0
+Lenovo Flex 5i 13: $276, UHD, YES
+Acer Nitro 5 AN517-54-79L1: $1097, NVIDIA GeForce RTX 3050Ti, YES
+Acer Nitro 5 AN515-55-53E5: $751, NVIDIA GeForce RTX 3050, YES
+
+CHEAPEST LAPTOP THAT SUPPORTS WEBGPU:
+Lenovo IdeaPad 3 11 Chromebook, Intel Celeron N4020, UHD 600, $118
+https://www.amazon.com/Lenovo-Chromebook-Processor-Graphics-82BA0003US/dp/B087YW8FQB
+
+OTHER CHROMEBOOKS:
+ASUS Chromebook Flip C101: NO
+  $250, Arm Mali-T860 MP4, Vulkan 1.0,
+  FAILS maxPerStageDescriptorStorageBuffers >= 8
+ASUS Chromebook C300: NO?
+  $250, Intel® HD Graphics 400
+  Don't see anything below a 500 in gpuinfo-vulkan-query
+ASUS Chromebook C423: HD 500, maybe?
+ASUS Chromebook C523: HD 500, maybe?
+ASUS Chromebook CX1101: UHD 600, $270, YES
+Lenovo 3i Chromebook Intel (15”) $320: UHD, YES
+Acer Chromebook 512: $150 UHD, YES
+HP Chromebook 11a-na0021nr: $141, NO
+  mediatek_mt8183, ARM Mali-G72 MP3 (timestampValidBits != 0)
+Acer Chromebook 314: $150, UHD 600, YES
+Lenovo Chromebook C330: $209, NO
+  MT8173C, PowerVR GX6250,
+  maxFragmentCombinedOutputResources >= 8+4+8
+Samsung Chromebook 4: $180, UHD, YES
+Dell Chromebook 3100: $260, YES
+  Intel Celeron N4020, UHD 600,
+Acer Chromebook 315: $200 (wm), UHD 600, YES
