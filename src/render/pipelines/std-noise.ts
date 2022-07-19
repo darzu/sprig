@@ -62,12 +62,13 @@ export const whiteNoisePipes = whiteNoiseSizes.map((s, i) => {
 });
 
 const octavesPipe1 = createOctaveWhiteNoisePipe([3, 5, 7], 2);
-const octavesPipe2 = createOctaveWhiteNoisePipe([1, 3, 5, 7, 9], 4);
+const octavesPipe2 = createOctaveWhiteNoisePipe([1, 3, 5, 7, 9], 2);
 
 function createOctaveWhiteNoisePipe(
   frequencies: number[],
   persistence: number
 ) {
+  // TODO(@darzu): make colorings a parameter?
   assert(
     frequencies.every((f) => Number.isInteger(f)),
     "freqs must be int"
@@ -133,65 +134,6 @@ function createOctaveWhiteNoisePipe(
   });
 }
 
-const colorOctPipes = [
-  ["r", "g", "b"],
-  ["b", "r", "g"],
-  ["g", "b", "r"],
-].map((order, i) =>
-  CY.createRenderPipeline("colorOctPipe" + i, {
-    globals: [
-      {
-        ptr: fullQuad,
-        alias: "quad",
-      },
-      ...whiteNoiseTexs.map((t) => t),
-    ],
-    output: [
-      CY.createTexture("colorOctTex" + i, {
-        size: [128, 128],
-        format: "rgba32float",
-      }),
-    ],
-    meshOpt: {
-      stepMode: "single-draw",
-      vertexCount: 6,
-    },
-    shaderVertexEntry: "vert_main",
-    shaderFragmentEntry: "frag_main",
-    shader: (shaders) => `
-  ${shaders["std-rand"].code}
-  ${shaders["std-screen-quad-vert"].code}
-
-  @fragment
-  fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
-      rand_seed = uv;
-
-      var width = 0.0;
-      var res = vec4(0.0);
-      // try sampling ?
-      ${[3, 5, 7]
-        .map((f, i) => {
-          const persistence = 4;
-          let s = Math.pow(2, f);
-          let p = Math.pow(persistence, f);
-          return `
-          {
-            let s = textureLoad(whiteNoise${s}Tex, 
-              vec2<i32>(uv * vec2<f32>(textureDimensions(whiteNoise${s}Tex))), 0).x;
-            let w = 1.0 / ${p.toFixed(2)};
-            res.${order[i]} += s;
-            width += w;
-          }
-          `;
-        })
-        .join("\n")}
-      
-      return res;
-    }
-  `,
-  })
-);
-
 // TODO(@darzu): IMPL PERLIN
 /* https://thebookofshaders.com/11/
   smoothstep on GPU
@@ -226,20 +168,12 @@ export const perlinNoisePipe = CY.createRenderPipeline("perlinNoisePipe", {
   `,
 });
 
-export const noisePipes = [
-  ...whiteNoisePipes,
-  octavesPipe1,
-  octavesPipe2,
-  ...colorOctPipes,
-];
+export const noisePipes = [...whiteNoisePipes, octavesPipe1, octavesPipe2];
 
 export const noiseGridFrame = [
+  [whiteNoiseTexs[0], whiteNoiseTexs[4]],
   [
-    getTexFromAttachment(colorOctPipes[0].output[0]),
-    getTexFromAttachment(colorOctPipes[1].output[0]),
-  ],
-  [
-    getTexFromAttachment(colorOctPipes[2].output[0]),
+    getTexFromAttachment(octavesPipe2.output[0]),
     getTexFromAttachment(octavesPipe1.output[0]),
   ],
 ] as const;
