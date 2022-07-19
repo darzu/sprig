@@ -1,5 +1,6 @@
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { CyPipelinePtr, CyRenderPipelinePtr } from "../gpu-registry.js";
+import { whiteNoiseTex } from "./std-noise.js";
 import { canvasTexturePtr, litTexturePtr } from "./std-scene.js";
 import {
   jfaInputTex,
@@ -8,7 +9,6 @@ import {
   ringsTex,
   sdfBrightTex,
   sdfTex,
-  whiteNoiseTex,
 } from "./xp-jump-flood.js";
 import { uvBorderMask, uvPosBorderMask, uvToPosTex } from "./xp-uv-unwrap.js";
 

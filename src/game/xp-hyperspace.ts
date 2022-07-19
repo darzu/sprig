@@ -41,8 +41,8 @@ import {
   sdfToRingsPipe,
   VISUALIZE_JFA,
   sdfBrightPipe,
-  whiteNoisePipe,
 } from "../render/pipelines/xp-jump-flood.js";
+import { whiteNoisePipe } from "../render/pipelines/std-noise.js";
 
 interface Ocean {
   ent: Ref<[typeof PositionDef]>;

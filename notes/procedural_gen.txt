@@ -191,3 +191,30 @@ Procedural walking:
 
 Terrain using SDFs:
   https://prideout.net/blog/distance_fields/#procedural-terrain
+
+To Slueth:
+  https://www.reddit.com/r/proceduralgeneration/top/?t=all
+
+Different pseudo-random?
+  https://iquilezles.org/articles/sfrand/
+  float frand( int *seed )
+  {
+      union
+      {
+          float fres;
+          unsigned int ires;
+      };
+
+      seed[0] *= 16807;
+      ires = ((((unsigned int)seed[0])>>9 ) | 0x3f800000);
+      return fres - 1.0f;
+  }
+
+Survey of noise:
+  https://hal.inria.fr/hal-00920177/document
+
+Noise, interactive article:
+  https://varun.ca/noise/
+
+Noise colors:
+  https://blog.demofox.org/2017/10/25/transmuting-white-noise-to-blue-red-green-purple/
