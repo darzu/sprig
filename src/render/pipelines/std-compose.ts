@@ -1,6 +1,6 @@
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { CyPipelinePtr, CyRenderPipelinePtr } from "../gpu-registry.js";
-import { noiseGrid, octaveWhiteNoiseTex } from "./std-noise.js";
+import { noiseGrid } from "./std-noise.js";
 import { canvasTexturePtr, litTexturePtr } from "./std-scene.js";
 import {
   jfaInputTex,

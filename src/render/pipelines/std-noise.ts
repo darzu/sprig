@@ -1,5 +1,6 @@
+import { assert } from "../../test.js";
 import { fullQuad } from "../gpu-helper.js";
-import { CY } from "../gpu-registry.js";
+import { CY, CyTexturePtr, getTexFromAttachment } from "../gpu-registry.js";
 
 // TODO(@darzu): NOISES!
 /*
@@ -29,7 +30,7 @@ noise pack:
   https://simon-thommes.com/procedural-noise-pack
 */
 
-const whiteNoiseSizes = [8, 16, 32, 64, 128, 256, 512] as const;
+const whiteNoiseSizes = [2, 4, 8, 16, 32, 64, 128, 256, 512] as const;
 export const whiteNoiseTexs = whiteNoiseSizes.map((s) =>
   CY.createTexture(`whiteNoise${s}Tex`, {
     size: [s, s],
@@ -60,18 +61,30 @@ export const whiteNoisePipes = whiteNoiseSizes.map((s, i) => {
   });
 });
 
-export const octaveWhiteNoiseTex = CY.createTexture("octaveWhiteNoiseTex", {
-  size: [128, 128],
-  format: "r32float",
-});
+const octaveWhiteNoisePipe = createOctaveWhiteNoisePipe([3, 5, 7], 2);
 
-const frequencies = [3, 5, 7];
-const persistence = 2; // 1 / persistence technically
-// const amplitude = persistencei;
+function createOctaveWhiteNoisePipe(
+  frequencies: number[],
+  persistence: number
+) {
+  assert(
+    frequencies.every((f) => Number.isInteger(f)),
+    "freqs must be int"
+  );
+  assert(
+    frequencies[frequencies.length - 1] <= whiteNoiseSizes.length + 2,
+    "freq range"
+  );
+  assert(Number.isInteger(persistence), "freqs must be int");
 
-export const octaveWhiteNoisePipe = CY.createRenderPipeline(
-  "octaveWhiteNoisePipe",
-  {
+  const name = `octaveWhiteNoise_${frequencies.join("_")}by${persistence}`;
+
+  const octaveWhiteNoiseTex = CY.createTexture(name + "Tex", {
+    size: [128, 128],
+    format: "r32float",
+  });
+
+  return CY.createRenderPipeline(name + "Pipe", {
     globals: [
       {
         ptr: fullQuad,
@@ -87,33 +100,33 @@ export const octaveWhiteNoisePipe = CY.createRenderPipeline(
     shaderVertexEntry: "vert_main",
     shaderFragmentEntry: "frag_main",
     shader: (shaders) => `
-  ${shaders["std-rand"].code}
-  ${shaders["std-screen-quad-vert"].code}
+    ${shaders["std-rand"].code}
+    ${shaders["std-screen-quad-vert"].code}
 
-  @fragment
-  fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) f32 {
-      rand_seed = uv;
+    @fragment
+    fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) f32 {
+        rand_seed = uv;
 
-      var width = 0.0;
-      var res = 0.0;
-      // try sampling ?
-      ${frequencies
-        .map((f) => {
-          let s = Math.pow(2, f);
-          let p = Math.pow(persistence, f);
-          return `
-          let s${s} = textureLoad(whiteNoise${s}Tex, vec2<i32>(uv * vec2<f32>(textureDimensions(whiteNoise${s}Tex))), 0).x;
-          res += s${s} * 1.0 / ${p}.0;
-          width += 1.0 / ${p}.0;
-          `;
-        })
-        .join("\n")}
-      
-      return res / width;
-    }
-  `,
-  }
-);
+        var width = 0.0;
+        var res = 0.0;
+        // try sampling ?
+        ${frequencies
+          .map((f) => {
+            let s = Math.pow(2, f);
+            let p = Math.pow(persistence, f);
+            return `
+            let s${s} = textureLoad(whiteNoise${s}Tex, vec2<i32>(uv * vec2<f32>(textureDimensions(whiteNoise${s}Tex))), 0).x;
+            res += s${s} * 1.0 / ${p}.0;
+            width += 1.0 / ${p}.0;
+            `;
+          })
+          .join("\n")}
+        
+        return res / width;
+      }
+    `,
+  });
+}
 
 // TODO(@darzu): IMPL PERLIN
 /* https://thebookofshaders.com/11/
@@ -152,6 +165,6 @@ export const perlinNoisePipe = CY.createRenderPipeline("perlinNoisePipe", {
 export const noisePipes = [...whiteNoisePipes, octaveWhiteNoisePipe];
 
 export const noiseGrid = [
-  [whiteNoiseTexs[0], octaveWhiteNoiseTex],
-  [whiteNoiseTexs[2], octaveWhiteNoiseTex],
+  [whiteNoiseTexs[0], getTexFromAttachment(octaveWhiteNoisePipe.output[0])],
+  [whiteNoiseTexs[0], getTexFromAttachment(octaveWhiteNoisePipe.output[0])],
 ] as const;

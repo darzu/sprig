@@ -178,6 +178,10 @@ type CyMeshOpt =
 
 export type CyColorAttachment = CyTexturePtr | CyAttachment;
 
+export function getTexFromAttachment(t: CyColorAttachment): CyTexturePtr {
+  return isResourcePtr(t) ? t : t.ptr;
+}
+
 export interface CyRenderPipelinePtr extends CyResourcePtr {
   kind: "renderPipeline";
   globals: CyGlobalParam[];
