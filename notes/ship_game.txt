@@ -217,3 +217,92 @@ And you have to hope that when you get out your loved ones aren't thousands
 of years dead, or that you aren't stuck adrift in the infinite void between
 flecks of matter.
 "
+
+environment flavor inspiration:
+  Occassionally a star-shower happens and everyone hunkers down in their shield:
+    https://necessary-disorder.tumblr.com/post/667668153745195008
+  space time fabric is made up of quantized star clusters laid flat:
+    https://necessary-disorder.tumblr.com/post/665236760740102144
+  black hole:
+    https://necessary-disorder.tumblr.com/image/655712545142980608
+    https://necessary-disorder.tumblr.com/image/190042741078
+    https://necessary-disorder.tumblr.com/image/179866401173
+    https://necessary-disorder.tumblr.com/post/178088935033/gaussain-hole-inspiration-patakk
+    https://necessary-disorder.tumblr.com/image/176987641238
+  Waves made of stars:
+    https://necessary-disorder.tumblr.com/post/651898885464326144
+    https://necessary-disorder.tumblr.com/post/186052008988
+  Waves of lines:
+    https://necessary-disorder.tumblr.com/post/187258514378
+    https://necessary-disorder.tumblr.com/post/179214711713
+  waves of different intensity:
+    https://necessary-disorder.tumblr.com/post/183498773288
+    https://necessary-disorder.tumblr.com/post/176775545003
+  wiggly space monster:
+    https://necessary-disorder.tumblr.com/post/649558795898454016
+  wispy particle trails (implementable):
+    https://necessary-disorder.tumblr.com/post/629085081584205824
+    https://necessary-disorder.tumblr.com/post/182477162288
+    https://necessary-disorder.tumblr.com/post/177200948528
+  wispy particles:
+    https://necessary-disorder.tumblr.com/post/178009109638
+  worm hole:
+    https://necessary-disorder.tumblr.com/post/617660776049754112
+    https://necessary-disorder.tumblr.com/post/616856742372999168
+    https://necessary-disorder.tumblr.com/image/190181957443
+    https://necessary-disorder.tumblr.com/image/189018366968
+    https://necessary-disorder.tumblr.com/post/187242333108
+    https://necessary-disorder.tumblr.com/post/183475744663
+    https://necessary-disorder.tumblr.com/post/182553747418
+    https://necessary-disorder.tumblr.com/post/182499315063
+    https://necessary-disorder.tumblr.com/post/177343465758
+  flocks:
+    https://necessary-disorder.tumblr.com/post/190980806623
+    https://necessary-disorder.tumblr.com/image/190105518318
+    https://necessary-disorder.tumblr.com/post/176884493938
+  edge of the world:
+    https://necessary-disorder.tumblr.com/post/190444648458
+  many flowing particles:
+    https://necessary-disorder.tumblr.com/image/188147042373
+  trippy planet:
+    https://necessary-disorder.tumblr.com/post/188087525158
+    https://necessary-disorder.tumblr.com/post/184877170238
+    https://necessary-disorder.tumblr.com/post/182526196023
+  simple dot planet:
+    https://necessary-disorder.tumblr.com/post/180650364133
+  flock planet:
+    https://necessary-disorder.tumblr.com/post/177273291443
+  gas planet:
+    https://necessary-disorder.tumblr.com/post/187840224453
+  planet formation:
+    https://necessary-disorder.tumblr.com/post/185773015628
+  source and sink:
+    https://necessary-disorder.tumblr.com/post/183452231353
+  wirlpool:
+    https://necessary-disorder.tumblr.com/post/182866507003
+    https://necessary-disorder.tumblr.com/post/180719941453
+  planet airstreams:
+    https://necessary-disorder.tumblr.com/image/182251809898
+  abstract space monster:
+    https://necessary-disorder.tumblr.com/post/180757120663
+  disintigrate:
+    https://necessary-disorder.tumblr.com/post/178254988903
+    https://necessary-disorder.tumblr.com/post/177307376393/2-states
+  shape transform:
+    https://necessary-disorder.tumblr.com/post/177696556423
+    https://necessary-disorder.tumblr.com/post/177595937258
+    https://necessary-disorder.tumblr.com/post/176809278093
+  shape distort:
+    https://necessary-disorder.tumblr.com/post/177343463863
+  sand falling:
+    https://necessary-disorder.tumblr.com/image/177060409088
+  fire, source&sink:
+    https://necessary-disorder.tumblr.com/post/176629303013
+    https://necessary-disorder.tumblr.com/post/176409741638
+  orbits and flocks:
+    https://necessary-disorder.tumblr.com/post/176341750603
+  grid deformation:
+    https://necessary-disorder.tumblr.com/post/173766268448
+  orbits:
+    https://necessary-disorder.tumblr.com/post/173417258533
+  TODO: continue on page 15 https://necessary-disorder.tumblr.com/page/15

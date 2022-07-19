@@ -55,6 +55,47 @@ export const whiteNoisePipe = CY.createRenderPipeline("whiteNoisePipe", {
   `,
 });
 
+export const octaveWhiteNoiseTex = CY.createTexture("octaveWhiteNoiseTex", {
+  size: [128, 128],
+  format: "r32float",
+});
+
+export const octaveWhiteNoisePipe = CY.createRenderPipeline(
+  "octaveWhiteNoisePipe",
+  {
+    globals: [{ ptr: fullQuad, alias: "quad" }],
+    output: [octaveWhiteNoiseTex],
+    meshOpt: {
+      stepMode: "single-draw",
+      vertexCount: 6,
+    },
+    shaderVertexEntry: "vert_main",
+    shaderFragmentEntry: "frag_main",
+    shader: (shaders) => `
+  ${shaders["std-rand"].code}
+  ${shaders["std-screen-quad-vert"].code}
+
+  @fragment
+  fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) f32 {
+      rand_seed = uv;
+      let a = rand() % 1.0;
+      let b = rand() % 0.5;
+      let c = rand() % 0.25;
+      let d = rand() % 0.125;
+      return (a + b * 0.5 + c * 0.25 + d * 0.125) * 0.5;
+    }
+  `,
+  }
+);
+
+// TODO(@darzu): IMPL PERLIN
+/* https://thebookofshaders.com/11/
+  smoothstep on GPU
+  float i = floor(x);  // integer
+  float f = fract(x);  // fraction
+  y = mix(rand(i), rand(i + 1.0), smoothstep(0.,1.,f));
+*/
+
 export const perlinNoiseTex = CY.createTexture("perlinNoiseTex", {
   size: [128, 128],
   format: "r32float",
@@ -80,3 +121,5 @@ export const perlinNoisePipe = CY.createRenderPipeline("perlinNoisePipe", {
     }
   `,
 });
+
+export const noisePipes = [whiteNoisePipe, octaveWhiteNoisePipe];

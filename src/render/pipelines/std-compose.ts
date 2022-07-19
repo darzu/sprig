@@ -1,6 +1,6 @@
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { CyPipelinePtr, CyRenderPipelinePtr } from "../gpu-registry.js";
-import { whiteNoiseTex } from "./std-noise.js";
+import { octaveWhiteNoiseTex, whiteNoiseTex } from "./std-noise.js";
 import { canvasTexturePtr, litTexturePtr } from "./std-scene.js";
 import {
   jfaInputTex,
@@ -18,7 +18,7 @@ const padding = 0.05;
 
 export function createComposePipelines(): CyRenderPipelinePtr[] {
   const grid = [
-    [whiteNoiseTex, jfaResultTex],
+    [whiteNoiseTex, octaveWhiteNoiseTex],
     [sdfBrightTex, ringsTex],
   ];
 

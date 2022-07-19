@@ -290,6 +290,11 @@ Sebastian Lague, Procedural Landmass Generation (E02: Noise Map):
   https://www.youtube.com/watch?v=WP-Bm65Q-1Y
   unity perlin: integer values are always .5, inbetween is different numbers. Wierd!
 
+Perlin noise wiki: https://en.wikipedia.org/wiki/Perlin_noise
+
+Book of shader on noise:
+  https://thebookofshaders.com/11/
+  
 Simplex noise:
   "Some sort of public index for Stefan Gustavson":
     https://weber.itn.liu.se/~stegu/
@@ -304,3 +309,30 @@ Simplex noise:
   Looks like patent only applies to 3D and higher: https://en.wikipedia.org/wiki/Simplex_noise#Legal_status
     but it also expired January 8, 2022 !
     https://patents.google.com/patent/US6867776 "Status Expired - Lifetime"
+
+Worley noise: https://en.wikipedia.org/wiki/Worley_noise
+  https://thebookofshaders.com/12/
+
+https://bleuje.github.io, Etienne Jacob:
+  wealth of amazing animations!
+  easier to scroll: https://necessary-disorder.tumblr.com
+  stunning set of tutorials too
+    might be a bit Processing specific
+  as math art: https://math-art-variations.tumblr.com
+
+Smooth / gradient noise:
+  https://www.cs.utexas.edu/~theshark/courses/cs354/lectures/cs354-21.pdf
+  1. Create grid of random gradient vectors
+  2. Compute points within grid using nearest nodes
+  3. Interpolate between node values to form continuous function
+  4. Combine smooth noise function with other smooth noise functions at different octaves
+
+perlin worms:
+  https://www.youtube.com/watch?v=aQ-bomm3lEc
+
+gradiant vs value noise:
+  https://thebookofshaders.com/11/
+    interpolate between values (points in space) 
+    or gradiants (directions at points in space)
+  value noise: https://www.shadertoy.com/view/lsf3WH
+  gradiant noise: https://www.shadertoy.com/view/XdXGW8
