@@ -1,6 +1,6 @@
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { CyPipelinePtr, CyRenderPipelinePtr } from "../gpu-registry.js";
-import { noiseGrid } from "./std-noise.js";
+import { noiseGridFrame } from "./std-noise.js";
 import { canvasTexturePtr, litTexturePtr } from "./std-scene.js";
 import {
   jfaInputTex,
@@ -22,7 +22,7 @@ export function createComposePipelines(): CyRenderPipelinePtr[] {
   //   [whiteNoiseTex, octaveWhiteNoiseTex],
   //   [sdfBrightTex, ringsTex],
   // ];
-  let grid = noiseGrid;
+  let grid = noiseGridFrame;
 
   const width = grid[0].length;
   const height = grid.length;

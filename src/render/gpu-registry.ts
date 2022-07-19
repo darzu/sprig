@@ -190,6 +190,8 @@ export interface CyRenderPipelinePtr extends CyResourcePtr {
   shaderVertexEntry: string;
   shaderFragmentEntry: string;
   meshOpt: CyMeshOpt;
+  // TODO(@darzu): really need to allow changing attachments at runtime. Useful
+  //   for tutorial animations at a minimum
   output: CyColorAttachment[];
   depthStencil?: CyDepthTexturePtr;
 }
