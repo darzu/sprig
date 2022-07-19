@@ -41,6 +41,7 @@ import {
   sdfToRingsPipe,
   VISUALIZE_JFA,
   sdfBrightPipe,
+  whiteNoisePipe,
 } from "../render/pipelines/xp-jump-flood.js";
 
 interface Ocean {
@@ -352,6 +353,8 @@ export function initHyperspaceGame(em: EntityManager) {
       if (once) {
         // one-time compute and render jobs
         res.renderer.pipelines = [
+          whiteNoisePipe,
+
           initStars,
 
           // TODO(@darzu): package / abstract these more nicely?
