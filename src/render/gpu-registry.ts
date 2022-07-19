@@ -155,7 +155,8 @@ export interface CyCompPipelinePtr extends CyResourcePtr {
     | [number, number, number]
     | ((canvasSize: [number, number]) => [number, number, number]);
   shaderComputeEntry: string;
-  shader: (() => string) | ShaderName;
+  // TODO(@darzu): get access to shader set
+  shader: ((shaderSet: ShaderSet) => string) | ShaderName;
 }
 
 type CyMeshOpt =

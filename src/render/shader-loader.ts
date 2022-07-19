@@ -15,6 +15,7 @@ export const ShaderPaths = [
   "xp-jump-flood",
   "xp-cloth-update",
   "std-screen-quad-vert",
+  "std-rand",
 ] as const;
 
 export type ShaderName = typeof ShaderPaths[number];
