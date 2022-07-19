@@ -325,6 +325,13 @@ export function initHyperspaceGame(em: EntityManager) {
 
   let finalCompose = createComposePipelines();
 
+  // TODO(@darzu): TEXTURES TODO:
+  //  - 2D voronoi texture to CPU
+  //  - 2D normals texture
+  //  - 3D->3D voronoi texture
+  //  - 3D->2D voronoi seeds lookup texture
+  //  - 3D normals texture ?
+
   em.registerSystem(
     [],
     [GlobalCursor3dDef, RendererDef, InputsDef, TextDef, InputsDef],
@@ -393,11 +400,12 @@ export function initHyperspaceGame(em: EntityManager) {
       } else {
         // steady state rendering
         res.renderer.pipelines = [
+          // TODO(@darzu): only run many times when debugging
           ...jfaPipelines.slice(0, jfaMaxStep),
           jfaToSdfPipe,
           sdfToRingsPipe,
 
-          // unwrapPipeline, // TODO(@darzu): don't run many times
+          // unwrapPipeline,
           shadowPipeline,
           stdRenderPipeline,
           outlineRender,
@@ -410,7 +418,7 @@ export function initHyperspaceGame(em: EntityManager) {
           // positionDbg,
 
           postProcess,
-          ...finalCompose, // TODO(@darzu): should be last step
+          ...finalCompose,
         ];
       }
     },

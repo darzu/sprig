@@ -1,4 +1,5 @@
-import { isFunction } from "../util.js";
+import { assert } from "../test.js";
+import { isFunction, never } from "../util.js";
 import {
   CY,
   CyDepthTexturePtr,
@@ -7,7 +8,13 @@ import {
   CyTexturePtr,
   linearSamplerPtr,
 } from "./gpu-registry.js";
-import { createCyStruct, texTypeToSampleType } from "./gpu-struct.js";
+import {
+  createCyStruct,
+  texTypeIsDepth,
+  TexTypeToElementArity,
+  texTypeToSampleType,
+  TexTypeToWGSLElement,
+} from "./gpu-struct.js";
 import { litTexturePtr } from "./pipelines/std-scene.js";
 import { ShaderName, ShaderSet } from "./shader-loader.js";
 
@@ -77,9 +84,22 @@ export function createRenderTextureToQuad(
   const doSample = !inTexIsUnfilterable && sample;
   outTex.format;
   const shader = (shaders: ShaderSet) => {
+    const inputArity = TexTypeToElementArity[inTex.format];
+    assert(inputArity, `Missing texture element arity for: ${inTex.format}`);
+    const outArity = TexTypeToElementArity[outTex.format];
+    assert(outArity, `Missing texture element arity for: ${outTex.format}`);
+
+    const returnWgslType = TexTypeToWGSLElement[outTex.format];
+    assert(returnWgslType, `Missing WGSL return type for: ${outTex.format}`);
+
     // TODO(@darzu): we're doing all kinds of template-y / macro-y stuff w/ shaders
     //      needs more thought for good abstration.
-    let fSnip = `return vec4(inPx);`;
+    // TODO(@darzu): so many macro hacks. what's the principled approach?
+
+    let fSnip = `return ${returnWgslType}(inPx);`;
+    if (inputArity === 2 && outArity === 4)
+      fSnip = `return ${returnWgslType}(inPx.xy, 0.0, 0.0);`;
+
     if (fragSnippet) {
       if (isFunction(fragSnippet))
         fSnip = fragSnippet({
@@ -93,22 +113,30 @@ export function createRenderTextureToQuad(
       else fSnip = shaders[fragSnippet].code;
     }
 
-    // TODO(@darzu): fragment result vec type should be based on out texture format
-    //   e.g. rg32float -> vec2<f32>
+    const loadSuffix =
+      inputArity === 1
+        ? texTypeIsDepth[inTex.format]
+          ? ``
+          : `.x`
+        : inputArity === 2
+        ? `.xy`
+        : inputArity === 4
+        ? `.xyzw`
+        : never(inputArity);
 
     return `
     ${shaders["std-screen-quad-vert"].code}
 
     @fragment
-    fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
+    fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) ${returnWgslType} {
       let dimsI : vec2<i32> = textureDimensions(inTex);
       let dimsF = vec2<f32>(dimsI);
       let xy = vec2<i32>(uv * dimsF);
       ${
         // TODO(@darzu): don't like this...
         !doSample
-          ? `let inPx = textureLoad(inTex, xy, 0);`
-          : `let inPx = textureSample(inTex, mySampler, uv);`
+          ? `let inPx = textureLoad(inTex, xy, 0)${loadSuffix};`
+          : `let inPx = textureSample(inTex, mySampler, uv)${loadSuffix};`
       }
       ${fSnip}
     }

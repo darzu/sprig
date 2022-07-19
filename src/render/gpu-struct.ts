@@ -33,9 +33,43 @@ type WGSLTypeToTSType = {
   "mat4x4<f32>": mat4;
 };
 
+export const TexTypeToWGSLElement: Partial<
+  Record<GPUTextureFormat, WGSLVec | WGSLScalar>
+> = {
+  rgba32float: "vec4<f32>",
+  rg32float: "vec2<f32>",
+  r32float: "f32",
+  // TODO(@darzu): Support f16? Currently we get the error:
+  //  "f16 used without 'f16' extension enabled"
+  rgba16float: "vec4<f32>",
+  rg16float: "vec2<f32>",
+  r16float: "f32",
+  // TODO(@darzu): what should we do with 8-bit types?
+  bgra8unorm: "vec4<f32>",
+};
+// TODO(@darzu): this feels redundant with some of the size info
+export const TexTypeToElementArity: Partial<
+  Record<GPUTextureFormat, 1 | 2 | 4>
+> = {
+  rgba32float: 4,
+  rg32float: 2,
+  r32float: 1,
+  rgba16float: 4,
+  rg16float: 2,
+  r16float: 1,
+  bgra8unorm: 4,
+  depth32float: 1,
+};
 export type TexTypeToTSType = {
   rgba32float: vec4;
+  rg32float: vec2;
+  r32float: number;
 };
+
+export type TexTypeAsTSType<F> = F extends keyof TexTypeToTSType
+  ? TexTypeToTSType[F]
+  : never;
+
 export const texTypeToBytes: Partial<Record<GPUTextureFormat, number>> = {
   r32float: 1 * 4,
   rg32float: 2 * 4,
@@ -82,10 +116,6 @@ export const texTypeIsDepth = {
   ...texTypeIsDepthNoStencil,
   ...texTypeIsDepthAndStencil,
 };
-
-export type TexTypeAsTSType<F> = F extends keyof TexTypeToTSType
-  ? TexTypeToTSType[F]
-  : never;
 
 export const GPUBufferBindingTypeToWgslVar: {
   [K in GPUBufferBindingType]: string;

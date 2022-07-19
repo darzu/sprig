@@ -52,9 +52,9 @@ export const jfaPreOutlinePipe = createRenderTextureToQuad(
     let r = textureLoad(inTex, xy + vec2(1,0), 0).x;
     let b = textureLoad(inTex, xy + vec2(0,-1), 0).x;
     if (t == 0.0 || l == 0.0 || r == 0.0 || b == 0.0) {
-      return vec4(inPx.xy, 0.0, 1.0);
+      return inPx.xy;
     } else {
-      return vec4(0.0, 0.0, 0.0, 1.0);
+      return vec2(0.0, 0.0);
     }
   `
 ).pipeline;
@@ -82,7 +82,7 @@ const copy1to0 = createRenderTextureToQuad(
   1,
   false,
   () => `
-return inPx;
+return inPx.xy;
 `
 ).pipeline;
 
@@ -133,7 +133,7 @@ export const jfaToSdfPipe = createRenderTextureToQuad(
   () => `
     let nearestUV = textureLoad(inTex, xy, 0).xy;
     let dist = length(uv - nearestUV);
-    return vec4(dist);
+    return dist;
   `
 ).pipeline;
 
@@ -156,7 +156,7 @@ export const sdfToRingsPipe = createRenderTextureToQuad(
   false,
   () => `
   // let r = (inPx.x * 5.0) % 1.0;
-  let r = inPx.x;
+  let r = inPx;
   if (0.1 < r && r < 0.2) {
     return vec4(1.0);
   }
