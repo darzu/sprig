@@ -54,3 +54,29 @@ export const whiteNoisePipe = CY.createRenderPipeline("whiteNoisePipe", {
     }
   `,
 });
+
+export const perlinNoiseTex = CY.createTexture("perlinNoiseTex", {
+  size: [128, 128],
+  format: "r32float",
+});
+
+export const perlinNoisePipe = CY.createRenderPipeline("perlinNoisePipe", {
+  globals: [{ ptr: fullQuad, alias: "quad" }],
+  output: [perlinNoiseTex],
+  meshOpt: {
+    stepMode: "single-draw",
+    vertexCount: 6,
+  },
+  shaderVertexEntry: "vert_main",
+  shaderFragmentEntry: "frag_main",
+  shader: (shaders) => `
+  ${shaders["std-rand"].code}
+  ${shaders["std-screen-quad-vert"].code}
+
+  @fragment
+    fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) f32 {
+      rand_seed = uv;
+      return rand();
+    }
+  `,
+});
