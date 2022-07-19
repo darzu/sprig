@@ -61,7 +61,8 @@ export const whiteNoisePipes = whiteNoiseSizes.map((s, i) => {
   });
 });
 
-const octaveWhiteNoisePipe = createOctaveWhiteNoisePipe([3, 5, 7], 2);
+const octavesPipe1 = createOctaveWhiteNoisePipe([3, 5, 7], 2);
+const octavesPipe2 = createOctaveWhiteNoisePipe([1, 3, 5, 7, 9], 1.5);
 
 function createOctaveWhiteNoisePipe(
   frequencies: number[],
@@ -72,10 +73,10 @@ function createOctaveWhiteNoisePipe(
     "freqs must be int"
   );
   assert(
-    frequencies[frequencies.length - 1] <= whiteNoiseSizes.length + 2,
+    frequencies[frequencies.length - 1] < whiteNoiseSizes.length + 1,
     "freq range"
   );
-  assert(Number.isInteger(persistence), "freqs must be int");
+  // assert(Number.isInteger(persistence), "freqs must be int");
 
   const name = `octaveWhiteNoise_${frequencies.join("_")}by${persistence}`;
 
@@ -116,8 +117,8 @@ function createOctaveWhiteNoisePipe(
             let p = Math.pow(persistence, f);
             return `
             let s${s} = textureLoad(whiteNoise${s}Tex, vec2<i32>(uv * vec2<f32>(textureDimensions(whiteNoise${s}Tex))), 0).x;
-            res += s${s} * 1.0 / ${p}.0;
-            width += 1.0 / ${p}.0;
+            res += s${s} * 1.0 / ${p.toFixed(2)};
+            width += 1.0 / ${p.toFixed(2)};
             `;
           })
           .join("\n")}
@@ -162,9 +163,9 @@ export const perlinNoisePipe = CY.createRenderPipeline("perlinNoisePipe", {
   `,
 });
 
-export const noisePipes = [...whiteNoisePipes, octaveWhiteNoisePipe];
+export const noisePipes = [...whiteNoisePipes, octavesPipe1, octavesPipe2];
 
 export const noiseGrid = [
-  [whiteNoiseTexs[0], getTexFromAttachment(octaveWhiteNoisePipe.output[0])],
-  [whiteNoiseTexs[0], getTexFromAttachment(octaveWhiteNoisePipe.output[0])],
+  [whiteNoiseTexs[0], getTexFromAttachment(octavesPipe1.output[0])],
+  [whiteNoiseTexs[0], getTexFromAttachment(octavesPipe2.output[0])],
 ] as const;
