@@ -29,21 +29,25 @@ noise pack:
   https://simon-thommes.com/procedural-noise-pack
 */
 
-export const whiteNoiseTex = CY.createTexture("whiteNoiseTex", {
-  size: [128, 128],
-  format: "r32float",
-});
+const whiteNoiseSizes = [8, 16, 32, 64, 128, 256, 512] as const;
+export const whiteNoiseTexs = whiteNoiseSizes.map((s) =>
+  CY.createTexture(`whiteNoise${s}Tex`, {
+    size: [s, s],
+    format: "r32float",
+  })
+);
 
-export const whiteNoisePipe = CY.createRenderPipeline("whiteNoisePipe", {
-  globals: [{ ptr: fullQuad, alias: "quad" }],
-  output: [whiteNoiseTex],
-  meshOpt: {
-    stepMode: "single-draw",
-    vertexCount: 6,
-  },
-  shaderVertexEntry: "vert_main",
-  shaderFragmentEntry: "frag_main",
-  shader: (shaders) => `
+export const whiteNoisePipes = whiteNoiseSizes.map((s, i) => {
+  return CY.createRenderPipeline(`whiteNoise${s}Pipe`, {
+    globals: [{ ptr: fullQuad, alias: "quad" }],
+    output: [whiteNoiseTexs[i]],
+    meshOpt: {
+      stepMode: "single-draw",
+      vertexCount: 6,
+    },
+    shaderVertexEntry: "vert_main",
+    shaderFragmentEntry: "frag_main",
+    shader: (shaders) => `
   ${shaders["std-rand"].code}
   ${shaders["std-screen-quad-vert"].code}
 
@@ -53,6 +57,7 @@ export const whiteNoisePipe = CY.createRenderPipeline("whiteNoisePipe", {
       return rand();
     }
   `,
+  });
 });
 
 export const octaveWhiteNoiseTex = CY.createTexture("octaveWhiteNoiseTex", {
@@ -60,10 +65,20 @@ export const octaveWhiteNoiseTex = CY.createTexture("octaveWhiteNoiseTex", {
   format: "r32float",
 });
 
+const frequencies = [3, 5, 7];
+const persistence = 2; // 1 / persistence technically
+// const amplitude = persistencei;
+
 export const octaveWhiteNoisePipe = CY.createRenderPipeline(
   "octaveWhiteNoisePipe",
   {
-    globals: [{ ptr: fullQuad, alias: "quad" }],
+    globals: [
+      {
+        ptr: fullQuad,
+        alias: "quad",
+      },
+      ...whiteNoiseTexs.map((t) => t),
+    ],
     output: [octaveWhiteNoiseTex],
     meshOpt: {
       stepMode: "single-draw",
@@ -78,11 +93,23 @@ export const octaveWhiteNoisePipe = CY.createRenderPipeline(
   @fragment
   fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) f32 {
       rand_seed = uv;
-      let a = rand() % 1.0;
-      let b = rand() % 0.5;
-      let c = rand() % 0.25;
-      let d = rand() % 0.125;
-      return (a + b * 0.5 + c * 0.25 + d * 0.125) * 0.5;
+
+      var width = 0.0;
+      var res = 0.0;
+      // try sampling ?
+      ${frequencies
+        .map((f) => {
+          let s = Math.pow(2, f);
+          let p = Math.pow(persistence, f);
+          return `
+          let s${s} = textureLoad(whiteNoise${s}Tex, vec2<i32>(uv * vec2<f32>(textureDimensions(whiteNoise${s}Tex))), 0).x;
+          res += s${s} * 1.0 / ${p}.0;
+          width += 1.0 / ${p}.0;
+          `;
+        })
+        .join("\n")}
+      
+      return res / width;
     }
   `,
   }
@@ -122,4 +149,9 @@ export const perlinNoisePipe = CY.createRenderPipeline("perlinNoisePipe", {
   `,
 });
 
-export const noisePipes = [whiteNoisePipe, octaveWhiteNoisePipe];
+export const noisePipes = [...whiteNoisePipes, octaveWhiteNoisePipe];
+
+export const noiseGrid = [
+  [whiteNoiseTexs[0], octaveWhiteNoiseTex],
+  [whiteNoiseTexs[2], octaveWhiteNoiseTex],
+] as const;

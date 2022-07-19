@@ -1,6 +1,6 @@
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { CyPipelinePtr, CyRenderPipelinePtr } from "../gpu-registry.js";
-import { octaveWhiteNoiseTex, whiteNoiseTex } from "./std-noise.js";
+import { noiseGrid, octaveWhiteNoiseTex } from "./std-noise.js";
 import { canvasTexturePtr, litTexturePtr } from "./std-scene.js";
 import {
   jfaInputTex,
@@ -16,11 +16,13 @@ import { uvBorderMask, uvPosBorderMask, uvToPosTex } from "./xp-uv-unwrap.js";
 
 const padding = 0.05;
 
+// TODO(@darzu): make grid a parameter
 export function createComposePipelines(): CyRenderPipelinePtr[] {
-  const grid = [
-    [whiteNoiseTex, octaveWhiteNoiseTex],
-    [sdfBrightTex, ringsTex],
-  ];
+  // const grid = [
+  //   [whiteNoiseTex, octaveWhiteNoiseTex],
+  //   [sdfBrightTex, ringsTex],
+  // ];
+  let grid = noiseGrid;
 
   const width = grid[0].length;
   const height = grid.length;
