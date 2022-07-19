@@ -63,7 +63,8 @@ export function createRenderTextureToQuad(
       }) => string)
     // TODO(@darzu): it'd be great if external .wgsl shaders could be
     // parameterized on these inputs somehow. same w/ standard pipeline globals
-    | ShaderName
+    | ShaderName,
+  libs?: ShaderName[]
 ): {
   pipeline: CyRenderPipelinePtr;
   quad: CySingletonPtr<typeof QuadStruct.desc>;
@@ -125,6 +126,8 @@ export function createRenderTextureToQuad(
         : never(inputArity);
 
     return `
+    ${libs ? libs.map((l) => shaders[l].code).join("\n") : ""}
+
     ${shaders["std-screen-quad-vert"].code}
 
     @fragment

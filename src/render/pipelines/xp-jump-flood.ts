@@ -28,6 +28,10 @@ export const sdfTex = CY.createTexture("sdfTex", {
   size: [size, size],
   format: "r32float",
 });
+export const sdfBrightTex = CY.createTexture("sdfBrightTex", {
+  size: [size, size],
+  format: "r32float",
+});
 
 // TODO(@darzu): this probably isn't needed any more
 export const jfaPreOutlinePipe = createRenderTextureToQuad(
@@ -39,24 +43,28 @@ export const jfaPreOutlinePipe = createRenderTextureToQuad(
   -1,
   1,
   false,
-  // () => `
-  //   if (uv.x < 0.04) {
-  //     return vec4(uv.xy, 0.0, 1.0);
-  //   } else {
-  //     return vec4(0.0, 0.0, 0.0, 1.0);
-  //   }
-  // `
+  // VORONOI
   () => `
-    let t = textureLoad(inTex, xy + vec2(0,1), 0).x;
-    let l = textureLoad(inTex, xy + vec2(-1,0), 0).x;
-    let r = textureLoad(inTex, xy + vec2(1,0), 0).x;
-    let b = textureLoad(inTex, xy + vec2(0,-1), 0).x;
-    if (t == 0.0 || l == 0.0 || r == 0.0 || b == 0.0) {
-      return inPx.xy;
+    rand_seed = uv;
+    if (rand() < 0.003) {
+      return uv;
     } else {
       return vec2(0.0, 0.0);
     }
-  `
+  `,
+  // BORDER
+  // () => `
+  //   let t = textureLoad(inTex, xy + vec2(0,1), 0).x;
+  //   let l = textureLoad(inTex, xy + vec2(-1,0), 0).x;
+  //   let r = textureLoad(inTex, xy + vec2(1,0), 0).x;
+  //   let b = textureLoad(inTex, xy + vec2(0,-1), 0).x;
+  //   if (t == 0.0 || l == 0.0 || r == 0.0 || b == 0.0) {
+  //     return inPx.xy;
+  //   } else {
+  //     return vec2(0.0, 0.0);
+  //   }
+  // `,
+  ["std-rand"]
 ).pipeline;
 
 export const VISUALIZE_JFA = true;
@@ -134,6 +142,20 @@ export const jfaToSdfPipe = createRenderTextureToQuad(
     let nearestUV = textureLoad(inTex, xy, 0).xy;
     let dist = length(uv - nearestUV);
     return dist;
+  `
+).pipeline;
+
+export const sdfBrightPipe = createRenderTextureToQuad(
+  "sdfBright",
+  sdfTex,
+  sdfBrightTex,
+  -1,
+  1,
+  -1,
+  1,
+  false,
+  () => `
+    return inPx * 4.0;
   `
 ).pipeline;
 

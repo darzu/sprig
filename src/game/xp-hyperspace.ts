@@ -40,6 +40,7 @@ import {
   jfaToSdfPipe,
   sdfToRingsPipe,
   VISUALIZE_JFA,
+  sdfBrightPipe,
 } from "../render/pipelines/xp-jump-flood.js";
 
 interface Ocean {
@@ -403,12 +404,13 @@ export function initHyperspaceGame(em: EntityManager) {
           // TODO(@darzu): only run many times when debugging
           ...jfaPipelines.slice(0, jfaMaxStep),
           jfaToSdfPipe,
+          sdfBrightPipe,
           sdfToRingsPipe,
 
           // unwrapPipeline,
-          shadowPipeline,
-          stdRenderPipeline,
-          outlineRender,
+          // shadowPipeline,
+          // stdRenderPipeline,
+          // outlineRender,
           // renderStars,
           // ...blurPipelines,
 
@@ -417,7 +419,7 @@ export function initHyperspaceGame(em: EntityManager) {
           // normalDbg,
           // positionDbg,
 
-          postProcess,
+          // postProcess,
           ...finalCompose,
         ];
       }

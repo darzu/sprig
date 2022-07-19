@@ -6,6 +6,7 @@ import {
   jfaResultTex,
   jfaTexs,
   ringsTex,
+  sdfBrightTex,
   sdfTex,
 } from "./xp-jump-flood.js";
 import { uvBorderMask, uvPosBorderMask, uvToPosTex } from "./xp-uv-unwrap.js";
@@ -17,7 +18,7 @@ const padding = 0.05;
 export function createComposePipelines(): CyRenderPipelinePtr[] {
   const grid = [
     [jfaInputTex, jfaResultTex],
-    [sdfTex, ringsTex],
+    [sdfBrightTex, ringsTex],
   ];
 
   const width = grid[0].length;
