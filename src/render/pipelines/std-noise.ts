@@ -90,8 +90,9 @@ function createOctaveWhiteNoisePipe(
 
   const smooth = true;
 
-  const interp = `cosInterp`;
+  // const interp = `cosInterp`;
   // const interp = `mix`; // linear
+  const interp = `mixNsmooth`; // suggested in book of shader; seems identical to cos interp?
 
   return CY.createRenderPipeline(name + "Pipe", {
     globals: [
@@ -116,6 +117,10 @@ function createOctaveWhiteNoisePipe(
       let ft = x * 3.1415927;
       let f = (1.0 - cos(ft)) * 0.5;
       return  a*(1.0-f) + b*f;
+    }
+
+    fn mixNsmooth(a: f32, b: f32, x: f32) -> f32 {
+      return mix(a, b, smoothstep(0.,1.,x));
     }
 
     @fragment
