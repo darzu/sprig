@@ -306,3 +306,8 @@ environment flavor inspiration:
   orbits:
     https://necessary-disorder.tumblr.com/post/173417258533
   TODO: continue on page 15 https://necessary-disorder.tumblr.com/page/15
+
+environment ideas:
+  as you move on the 2d surface, stars scroll past disproportionatly fast.
+    the effect is like wind when you're moving quickly,
+    also reminiscent of hyperspace like starwars

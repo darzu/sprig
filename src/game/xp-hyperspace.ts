@@ -23,7 +23,7 @@ import {
   uvToPosTex,
   uvPosBorderMaskPipeline,
 } from "../render/pipelines/xp-uv-unwrap.js";
-import { createComposePipelines } from "../render/pipelines/std-compose.js";
+import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { createGhost } from "./sandbox.js";
 import { quat, vec2, vec3, vec4 } from "../gl-matrix.js";
 import { createRef, Ref } from "../em_helpers.js";
@@ -325,7 +325,7 @@ export function initHyperspaceGame(em: EntityManager) {
   let once = true;
   let once2 = 10; // TODO(@darzu): lol wat.
 
-  let finalCompose = createComposePipelines();
+  let gridCompose = createGridComposePipelines();
 
   // TODO(@darzu): TEXTURES TODO:
   //  - 2D voronoi texture to CPU
@@ -413,19 +413,14 @@ export function initHyperspaceGame(em: EntityManager) {
           sdfToRingsPipe,
 
           // unwrapPipeline,
-          // shadowPipeline,
-          // stdRenderPipeline,
-          // outlineRender,
-          // renderStars,
-          // ...blurPipelines,
+          shadowPipeline,
+          stdRenderPipeline,
+          outlineRender,
+          renderStars,
+          ...blurPipelines,
 
-          // DEBUG:
-          // shadowDbgDisplay,
-          // normalDbg,
-          // positionDbg,
-
-          // postProcess,
-          ...finalCompose,
+          postProcess,
+          // ...gridCompose,
         ];
       }
     },

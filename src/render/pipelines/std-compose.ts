@@ -17,7 +17,7 @@ import { uvBorderMask, uvPosBorderMask, uvToPosTex } from "./xp-uv-unwrap.js";
 const padding = 0.05;
 
 // TODO(@darzu): make grid a parameter
-export function createComposePipelines(): CyRenderPipelinePtr[] {
+export function createGridComposePipelines(): CyRenderPipelinePtr[] {
   // const grid = [
   //   [whiteNoiseTex, octaveWhiteNoiseTex],
   //   [sdfBrightTex, ringsTex],
