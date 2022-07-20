@@ -62,7 +62,9 @@ export const whiteNoisePipes = whiteNoiseSizes.map((s, i) => {
 });
 
 const octavesPipe1 = createOctaveWhiteNoisePipe([3, 5, 7], 2);
-const octavesPipe2 = createOctaveWhiteNoisePipe([1, 3, 5, 7, 9], 2);
+const octavesPipe2 = createOctaveWhiteNoisePipe([3], 2);
+const octavesPipe3 = createOctaveWhiteNoisePipe([1, 2, 3, 4, 5, 6, 7, 8], 2);
+const octavesPipe4 = createOctaveWhiteNoisePipe([1, 2, 3, 4, 5, 6, 7, 8], 1.2);
 
 function createOctaveWhiteNoisePipe(
   frequencies: number[],
@@ -85,6 +87,8 @@ function createOctaveWhiteNoisePipe(
     size: [128, 128],
     format: "r32float",
   });
+
+  const smooth = true;
 
   return CY.createRenderPipeline(name + "Pipe", {
     globals: [
@@ -118,8 +122,26 @@ function createOctaveWhiteNoisePipe(
             let p = Math.pow(persistence, f);
             return `
             {
-              let s = textureLoad(whiteNoise${s}Tex, 
-                vec2<i32>(uv * vec2<f32>(textureDimensions(whiteNoise${s}Tex))), 0).x;
+              let xyf = uv * vec2<f32>(textureDimensions(whiteNoise${s}Tex));
+              let i = vec2<i32>(xyf);
+              let f = fract(xyf);
+              // TODO: just use a sampler?
+              ${
+                smooth
+                  ? `
+              let a = textureLoad(whiteNoise${s}Tex, i + vec2(0,0), 0).x;
+              let b = textureLoad(whiteNoise${s}Tex, i + vec2(1,0), 0).x;
+              let c = textureLoad(whiteNoise${s}Tex, i + vec2(0,1), 0).x;
+              let d = textureLoad(whiteNoise${s}Tex, i + vec2(1,1), 0).x;
+              let s = mix(
+                  mix(a, b, f.x),
+                  mix(c, d, f.x),
+                  f.y);
+              `
+                  : `
+              let s = textureLoad(whiteNoise${s}Tex, i, 0).x;
+              `
+              }
               let w = 1.0 / ${p.toFixed(2)};
               res += s * w;
               width += w;
@@ -168,12 +190,22 @@ export const perlinNoisePipe = CY.createRenderPipeline("perlinNoisePipe", {
   `,
 });
 
-export const noisePipes = [...whiteNoisePipes, octavesPipe1, octavesPipe2];
+export const noisePipes = [
+  ...whiteNoisePipes,
+  octavesPipe1,
+  octavesPipe2,
+  octavesPipe3,
+  octavesPipe4,
+];
 
 export const noiseGridFrame = [
-  [whiteNoiseTexs[0], whiteNoiseTexs[4]],
+  // [whiteNoiseTexs[0], whiteNoiseTexs[4]],
   [
-    getTexFromAttachment(octavesPipe2.output[0]),
     getTexFromAttachment(octavesPipe1.output[0]),
+    getTexFromAttachment(octavesPipe2.output[0]),
+  ],
+  [
+    getTexFromAttachment(octavesPipe3.output[0]),
+    getTexFromAttachment(octavesPipe4.output[0]),
   ],
 ] as const;
