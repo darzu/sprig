@@ -61,15 +61,43 @@ export const whiteNoisePipes = whiteNoiseSizes.map((s, i) => {
   });
 });
 
-const octavesPipe1 = createOctaveWhiteNoisePipe([3, 5, 7], 2);
-const octavesPipe2 = createOctaveWhiteNoisePipe([3], 2);
-const octavesPipe3 = createOctaveWhiteNoisePipe([1, 2, 3, 4, 5, 6, 7, 8], 2);
-const octavesPipe4 = createOctaveWhiteNoisePipe([1, 2, 3, 4, 5, 6, 7, 8], 1.2);
+// random vector fields, used for gradient noises
+export const vecNoiseTexs = whiteNoiseSizes.map((s) =>
+  CY.createTexture(`vecNoise${s}Tex`, {
+    size: [s, s],
+    format: "rg32float",
+  })
+);
+export const vecNoisePipes = whiteNoiseSizes.map((s, i) => {
+  return CY.createRenderPipeline(`vecNoise${s}Pipe`, {
+    globals: [{ ptr: fullQuad, alias: "quad" }],
+    output: [vecNoiseTexs[i]],
+    meshOpt: {
+      stepMode: "single-draw",
+      vertexCount: 6,
+    },
+    shaderVertexEntry: "vert_main",
+    shaderFragmentEntry: "frag_main",
+    shader: (shaders) => `
+  ${shaders["std-rand"].code}
+  ${shaders["std-screen-quad-vert"].code}
 
-function createOctaveWhiteNoisePipe(
-  frequencies: number[],
-  persistence: number
-) {
+  @fragment
+    fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec2<f32> {
+      rand_seed = uv;
+      let n = rand();
+      return vec2(cos(n),sin(n));
+    }
+  `,
+  });
+});
+
+const octavesPipe1 = createOctaveNoisePipe([3, 5, 7], 2);
+const octavesPipe2 = createOctaveNoisePipe([3], 2);
+const octavesPipe3 = createOctaveNoisePipe([1, 2, 3, 4, 5, 6, 7, 8], 2);
+const octavesPipe4 = createOctaveNoisePipe([1, 2, 3, 4, 5, 6, 7, 8], 1.2);
+
+function createOctaveNoisePipe(frequencies: number[], persistence: number) {
   // TODO(@darzu): make colorings a parameter?
   assert(
     frequencies.every((f) => Number.isInteger(f)),
@@ -81,18 +109,14 @@ function createOctaveWhiteNoisePipe(
   );
   // assert(Number.isInteger(persistence), "freqs must be int");
 
-  const name = `octaveWhiteNoise_${frequencies.join("_")}by${persistence}`;
+  const name = `octaveNoise_${frequencies.join("_")}by${persistence}`;
 
-  const octaveWhiteNoiseTex = CY.createTexture(name + "Tex", {
+  const octaveNoiseTex = CY.createTexture(name + "Tex", {
     size: [128, 128],
     format: "r32float",
   });
 
   const smooth = true;
-
-  // const interp = `cosInterp`;
-  // const interp = `mix`; // linear
-  const interp = `mixNsmooth`; // suggested in book of shader; seems identical to cos interp?
 
   return CY.createRenderPipeline(name + "Pipe", {
     globals: [
@@ -102,7 +126,7 @@ function createOctaveWhiteNoisePipe(
       },
       ...whiteNoiseTexs.map((t) => t),
     ],
-    output: [octaveWhiteNoiseTex],
+    output: [octaveNoiseTex],
     meshOpt: {
       stepMode: "single-draw",
       vertexCount: 6,
@@ -112,16 +136,6 @@ function createOctaveWhiteNoisePipe(
     shader: (shaders) => `
     ${shaders["std-rand"].code}
     ${shaders["std-screen-quad-vert"].code}
-
-    fn cosInterp(a: f32, b: f32, x: f32) -> f32 {
-      let ft = x * 3.1415927;
-      let f = (1.0 - cos(ft)) * 0.5;
-      return  a*(1.0-f) + b*f;
-    }
-
-    fn mixNsmooth(a: f32, b: f32, x: f32) -> f32 {
-      return mix(a, b, smoothstep(0.,1.,x));
-    }
 
     @fragment
     fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) f32 {
@@ -138,18 +152,23 @@ function createOctaveWhiteNoisePipe(
             {
               let xyf = uv * vec2<f32>(textureDimensions(whiteNoise${s}Tex));
               let i = vec2<i32>(xyf);
-              let f = fract(xyf);
+              let _f = fract(xyf);
+              let f = smoothstep(vec2(0.),vec2(1.),_f);
               // TODO: just use a sampler?
               ${
                 smooth
                   ? `
-              let a = textureLoad(whiteNoise${s}Tex, i + vec2(0,0), 0).x;
-              let b = textureLoad(whiteNoise${s}Tex, i + vec2(1,0), 0).x;
-              let c = textureLoad(whiteNoise${s}Tex, i + vec2(0,1), 0).x;
-              let d = textureLoad(whiteNoise${s}Tex, i + vec2(1,1), 0).x;
-              let s = ${interp}(
-                  ${interp}(a, b, f.x),
-                  ${interp}(c, d, f.x),
+              let _a = textureLoad(whiteNoise${s}Tex, i + vec2(0,0), 0);
+              let _b = textureLoad(whiteNoise${s}Tex, i + vec2(1,0), 0);
+              let _c = textureLoad(whiteNoise${s}Tex, i + vec2(0,1), 0);
+              let _d = textureLoad(whiteNoise${s}Tex, i + vec2(1,1), 0);
+              let a = _a.x;
+              let b = _b.x;
+              let c = _c.x;
+              let d = _d.x;
+              let s = mix(
+                  mix(a, b, f.x),
+                  mix(c, d, f.x),
                   f.y);
               `
                   : `
@@ -206,6 +225,7 @@ export const perlinNoisePipe = CY.createRenderPipeline("perlinNoisePipe", {
 
 export const noisePipes = [
   ...whiteNoisePipes,
+  ...vecNoisePipes,
   octavesPipe1,
   octavesPipe2,
   octavesPipe3,
@@ -213,13 +233,13 @@ export const noisePipes = [
 ];
 
 export const noiseGridFrame = [
-  // [whiteNoiseTexs[0], whiteNoiseTexs[4]],
+  [vecNoiseTexs[0], vecNoiseTexs[4]],
   [
     getTexFromAttachment(octavesPipe1.output[0]),
     getTexFromAttachment(octavesPipe2.output[0]),
   ],
-  [
-    getTexFromAttachment(octavesPipe3.output[0]),
-    getTexFromAttachment(octavesPipe4.output[0]),
-  ],
+  // [
+  //   getTexFromAttachment(octavesPipe3.output[0]),
+  //   getTexFromAttachment(octavesPipe4.output[0]),
+  // ],
 ] as const;

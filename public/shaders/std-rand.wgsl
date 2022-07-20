@@ -1,4 +1,5 @@
 // TODO(@darzu): provide a way to init the seed?
+// TODO(@darzu): where did this come from again?
 var<private> rand_seed : vec2<f32>;
 
 fn rand() -> f32 {
