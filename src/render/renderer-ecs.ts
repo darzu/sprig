@@ -28,6 +28,7 @@ import { max } from "../math.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { ShadersDef, ShaderSet } from "./shader-loader.js";
 import { dbgLogOnce } from "../util.js";
+import { TimeDef } from "../time.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -235,7 +236,7 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
 export function registerRenderer(em: EntityManager) {
   em.registerSystem(
     [RendererWorldFrameDef, RenderableDef],
-    [CameraViewDef, RendererDef],
+    [CameraViewDef, RendererDef, TimeDef],
     (objs, res) => {
       const renderer = res.renderer.renderer;
       const cameraView = res.cameraView;
@@ -314,8 +315,7 @@ export function registerRenderer(em: EntityManager) {
       renderer.updateScene({
         cameraViewProjMatrix: cameraView.viewProjMat,
         lightViewProjMatrix,
-        // TODO(@darzu): use?
-        time: 1000 / 60,
+        time: res.time.time,
         maxSurfaceId,
         cameraPos: cameraView.location,
       });

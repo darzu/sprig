@@ -1,6 +1,7 @@
 import { assert } from "../../test.js";
 import { fullQuad } from "../gpu-helper.js";
 import { CY, CyTexturePtr, getTexFromAttachment } from "../gpu-registry.js";
+import { sceneBufPtr } from "./std-scene.js";
 
 // TODO(@darzu): NOISES!
 /*
@@ -70,7 +71,8 @@ export const vecNoiseTexs = noiseSizes.map((s) =>
 );
 export const vecNoisePipes = noiseSizes.map((s, i) => {
   return CY.createRenderPipeline(`vecNoise${s}Pipe`, {
-    globals: [{ ptr: fullQuad, alias: "quad" }],
+    // TODO(@darzu): instead of depending on scene, depend on just a time element
+    globals: [{ ptr: fullQuad, alias: "quad" }, sceneBufPtr],
     output: [vecNoiseTexs[i]],
     meshOpt: {
       stepMode: "single-draw",
@@ -84,8 +86,9 @@ export const vecNoisePipes = noiseSizes.map((s, i) => {
 
   @fragment
     fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec2<f32> {
-      rand_seed = uv * ${s.toFixed(1)};
-      let n = rand() * 3.14159 * 2.0;
+      let t = scene.time * 0.001;
+      rand_seed = ${s.toFixed(1)} * uv; // + vec2(t * 0.0001);
+      let n = rand() * 3.14159 * 2.0 + t * 2.0;
       // return vec2(cos(n), 0.0); // * 0.5 + vec2(0.5, 0.5);
       return vec2(cos(n),sin(n)); // * 0.5 + vec2(0.5, 0.5);
       // return vec2(-1.0, -0.0);
@@ -166,6 +169,7 @@ function createOctaveNoisePipe(frequencies: number[], persistence: number) {
               ${
                 smooth
                   ? `
+              // BIG TODO: is it faster to generate new rng here or load from texture?
               let _a = textureLoad(${texType}${s}Tex, i + vec2(0,0), 0);
               let _b = textureLoad(${texType}${s}Tex, i + vec2(1,0), 0);
               let _c = textureLoad(${texType}${s}Tex, i + vec2(0,1), 0);

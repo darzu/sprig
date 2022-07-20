@@ -404,6 +404,8 @@ export function initHyperspaceGame(em: EntityManager) {
       } else {
         // steady state rendering
         res.renderer.pipelines = [
+          // ...noisePipes,
+
           // TODO(@darzu): only run many times when debugging
           ...jfaPipelines.slice(0, jfaMaxStep),
           jfaToSdfPipe,
