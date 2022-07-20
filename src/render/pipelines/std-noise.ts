@@ -30,15 +30,15 @@ noise pack:
   https://simon-thommes.com/procedural-noise-pack
 */
 
-const whiteNoiseSizes = [2, 4, 8, 16, 32, 64, 128, 256, 512] as const;
-export const whiteNoiseTexs = whiteNoiseSizes.map((s) =>
+const noiseSizes = [2, 4, 8, 16, 32, 64, 128, 256, 512] as const;
+export const whiteNoiseTexs = noiseSizes.map((s) =>
   CY.createTexture(`whiteNoise${s}Tex`, {
     size: [s, s],
     format: "r32float",
   })
 );
 
-export const whiteNoisePipes = whiteNoiseSizes.map((s, i) => {
+export const whiteNoisePipes = noiseSizes.map((s, i) => {
   return CY.createRenderPipeline(`whiteNoise${s}Pipe`, {
     globals: [{ ptr: fullQuad, alias: "quad" }],
     output: [whiteNoiseTexs[i]],
@@ -62,13 +62,13 @@ export const whiteNoisePipes = whiteNoiseSizes.map((s, i) => {
 });
 
 // random vector fields, used for gradient noises
-export const vecNoiseTexs = whiteNoiseSizes.map((s) =>
+export const vecNoiseTexs = noiseSizes.map((s) =>
   CY.createTexture(`vecNoise${s}Tex`, {
     size: [s, s],
     format: "rg32float",
   })
 );
-export const vecNoisePipes = whiteNoiseSizes.map((s, i) => {
+export const vecNoisePipes = noiseSizes.map((s, i) => {
   return CY.createRenderPipeline(`vecNoise${s}Pipe`, {
     globals: [{ ptr: fullQuad, alias: "quad" }],
     output: [vecNoiseTexs[i]],
@@ -84,27 +84,33 @@ export const vecNoisePipes = whiteNoiseSizes.map((s, i) => {
 
   @fragment
     fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec2<f32> {
-      rand_seed = uv;
+      rand_seed = uv * ${s.toFixed(1)};
       let n = rand();
-      return vec2(cos(n),sin(n));
+      return vec2(cos(n),sin(n)); // * 0.5 + vec2(0.5, 0.5);
     }
   `,
   });
 });
 
 const octavesPipe1 = createOctaveNoisePipe([3, 5, 7], 2);
-const octavesPipe2 = createOctaveNoisePipe([3], 2);
-const octavesPipe3 = createOctaveNoisePipe([1, 2, 3, 4, 5, 6, 7, 8], 2);
+const octavesPipe2 = createOctaveNoisePipe([3], 1);
+const octavesPipe3 = createOctaveNoisePipe([1, 2, 3, 4, 5, 6, 7, 8], 4);
 const octavesPipe4 = createOctaveNoisePipe([1, 2, 3, 4, 5, 6, 7, 8], 1.2);
 
 function createOctaveNoisePipe(frequencies: number[], persistence: number) {
-  // TODO(@darzu): make colorings a parameter?
+  // TODO(@darzu): make color channel assignments a parameter?
+  const smooth = true; // TODO(@darzu): parameter
+  const gradNoise = true;
+  const texType: `whiteNoise` | `vecNoise` = gradNoise
+    ? `vecNoise`
+    : "whiteNoise";
+
   assert(
     frequencies.every((f) => Number.isInteger(f)),
     "freqs must be int"
   );
   assert(
-    frequencies[frequencies.length - 1] < whiteNoiseSizes.length + 1,
+    frequencies[frequencies.length - 1] < noiseSizes.length + 1,
     "freq range"
   );
   // assert(Number.isInteger(persistence), "freqs must be int");
@@ -116,15 +122,15 @@ function createOctaveNoisePipe(frequencies: number[], persistence: number) {
     format: "r32float",
   });
 
-  const smooth = true;
-
   return CY.createRenderPipeline(name + "Pipe", {
     globals: [
       {
         ptr: fullQuad,
         alias: "quad",
       },
-      ...whiteNoiseTexs.map((t) => t),
+      ...(texType === `whiteNoise` ? whiteNoiseTexs : vecNoiseTexs).map(
+        (t) => t
+      ),
     ],
     output: [octaveNoiseTex],
     meshOpt: {
@@ -134,45 +140,55 @@ function createOctaveNoisePipe(frequencies: number[], persistence: number) {
     shaderVertexEntry: "vert_main",
     shaderFragmentEntry: "frag_main",
     shader: (shaders) => `
-    ${shaders["std-rand"].code}
     ${shaders["std-screen-quad-vert"].code}
 
     @fragment
     fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) f32 {
-        rand_seed = uv;
-
         var width = 0.0;
         var res = 0.0;
-        // try sampling ?
+        // TODO: try sampling ?
         ${frequencies
           .map((f) => {
             let s = Math.pow(2, f);
             let p = Math.pow(persistence, f);
             return `
             {
-              let xyf = uv * vec2<f32>(textureDimensions(whiteNoise${s}Tex));
+              let xyf = uv * vec2<f32>(textureDimensions(${texType}${s}Tex));
               let i = vec2<i32>(xyf);
               let _f = fract(xyf);
-              let f = smoothstep(vec2(0.),vec2(1.),_f);
+              let f = mix(vec2(0.),vec2(1.),_f);
+              // let f = smoothstep(vec2(0.),vec2(1.),_f);
+              // let f = vec2(smoothstep(0.,1.,_f.x),smoothstep(0.,1.,_f.y));
               // TODO: just use a sampler?
               ${
                 smooth
                   ? `
-              let _a = textureLoad(whiteNoise${s}Tex, i + vec2(0,0), 0);
-              let _b = textureLoad(whiteNoise${s}Tex, i + vec2(1,0), 0);
-              let _c = textureLoad(whiteNoise${s}Tex, i + vec2(0,1), 0);
-              let _d = textureLoad(whiteNoise${s}Tex, i + vec2(1,1), 0);
+              let _a = textureLoad(${texType}${s}Tex, i + vec2(0,0), 0);
+              let _b = textureLoad(${texType}${s}Tex, i + vec2(1,0), 0);
+              let _c = textureLoad(${texType}${s}Tex, i + vec2(0,1), 0);
+              let _d = textureLoad(${texType}${s}Tex, i + vec2(1,1), 0);
+              ${
+                texType === "whiteNoise"
+                  ? `
               let a = _a.x;
               let b = _b.x;
               let c = _c.x;
               let d = _d.x;
+              `
+                  : `
+              let a = dot(_a.xy, _f-vec2(0.0,0.0));
+              let b = dot(_b.xy, _f-vec2(1.0,0.0));
+              let c = dot(_c.xy, _f-vec2(0.0,1.0));
+              let d = dot(_d.xy, _f-vec2(1.0,1.0));
+              `
+              }
               let s = mix(
                   mix(a, b, f.x),
                   mix(c, d, f.x),
                   f.y);
               `
                   : `
-              let s = textureLoad(whiteNoise${s}Tex, i, 0).x;
+              let s = textureLoad(${texType}${s}Tex, i, 0).x;
               `
               }
               let w = 1.0 / ${p.toFixed(2)};
@@ -182,8 +198,18 @@ function createOctaveNoisePipe(frequencies: number[], persistence: number) {
             `;
           })
           .join("\n")}
+
+        res = res / width;
+
+        ${
+          texType === "vecNoise"
+            ? `
+          res = 0.5 + 0.5*res;
+        `
+            : ""
+        }
         
-        return res / width;
+        return res;
       }
     `,
   });
@@ -233,13 +259,16 @@ export const noisePipes = [
 ];
 
 export const noiseGridFrame = [
-  [vecNoiseTexs[0], vecNoiseTexs[4]],
+  // [vecNoiseTexs[0], vecNoiseTexs[1]],
+  // [vecNoiseTexs[2], vecNoiseTexs[3]],
+  // [vecNoiseTexs[4], vecNoiseTexs[5]],
+  // [vecNoiseTexs[6], vecNoiseTexs[7]],
   [
     getTexFromAttachment(octavesPipe1.output[0]),
     getTexFromAttachment(octavesPipe2.output[0]),
   ],
-  // [
-  //   getTexFromAttachment(octavesPipe3.output[0]),
-  //   getTexFromAttachment(octavesPipe4.output[0]),
-  // ],
+  [
+    getTexFromAttachment(octavesPipe3.output[0]),
+    getTexFromAttachment(octavesPipe4.output[0]),
+  ],
 ] as const;
