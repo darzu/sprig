@@ -90,6 +90,9 @@ function createOctaveWhiteNoisePipe(
 
   const smooth = true;
 
+  const interp = `cosInterp`;
+  // const interp = `mix`; // linear
+
   return CY.createRenderPipeline(name + "Pipe", {
     globals: [
       {
@@ -108,6 +111,12 @@ function createOctaveWhiteNoisePipe(
     shader: (shaders) => `
     ${shaders["std-rand"].code}
     ${shaders["std-screen-quad-vert"].code}
+
+    fn cosInterp(a: f32, b: f32, x: f32) -> f32 {
+      let ft = x * 3.1415927;
+      let f = (1.0 - cos(ft)) * 0.5;
+      return  a*(1.0-f) + b*f;
+    }
 
     @fragment
     fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) f32 {
@@ -133,9 +142,9 @@ function createOctaveWhiteNoisePipe(
               let b = textureLoad(whiteNoise${s}Tex, i + vec2(1,0), 0).x;
               let c = textureLoad(whiteNoise${s}Tex, i + vec2(0,1), 0).x;
               let d = textureLoad(whiteNoise${s}Tex, i + vec2(1,1), 0).x;
-              let s = mix(
-                  mix(a, b, f.x),
-                  mix(c, d, f.x),
+              let s = ${interp}(
+                  ${interp}(a, b, f.x),
+                  ${interp}(c, d, f.x),
                   f.y);
               `
                   : `
