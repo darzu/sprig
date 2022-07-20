@@ -128,8 +128,19 @@ fn frag_main(input: VertexOutput) -> FragOut {
     // let finalColor: vec3<f32> = mix(backgroundColor, gammaCorrected, fogVisibility);
     // let finalColor: vec3<f32> = gammaCorrected;
 
+
     var out: FragOut;
     out.color = vec4<f32>(litColor, 1.0);
+
+    // TODO(@darzu): experimenting with reading from SDF
+    // TODO(@darzu): use sample instead of load
+    if (input.uv.x != 0 || input.uv.y != 0) {
+      let xy = vec2<i32>(input.uv * vec2<f32>(textureDimensions(sdf)));
+      let d = textureLoad(sdf, xy, 0).x;
+      let df = smoothstep(.0, .1, d);
+      out.color *= df;
+    }
+
     // out.color = vec4<f32>(input.uv, 0.0, 1.0);
     // out.normal = vec4(input.normal, 1.0);
     out.normal = vec4(normalize((scene.cameraViewProjMatrix * vec4<f32>(input.normal, 0.0)).xyz), 1.0);

@@ -414,7 +414,7 @@ export function initHyperspaceGame(em: EntityManager) {
           ...blurPipelines,
 
           postProcess,
-          // ...gridCompose,
+          ...gridCompose,
         ];
       }
     },

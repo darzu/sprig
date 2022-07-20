@@ -1,3 +1,4 @@
+import { oceanJfa } from "../../game/xp-hyperspace.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { comparisonSamplerPtr, CY } from "../gpu-registry.js";
 import {
@@ -41,6 +42,8 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
     sceneBufPtr,
     { ptr: shadowDepthTexture, alias: "shadowMap" },
     { ptr: comparisonSamplerPtr, alias: "shadowSampler" },
+    // TODO(@darzu): object-specific SDFs?
+    { ptr: oceanJfa.sdfTex, alias: "sdf" },
     // TODO(@darzu): support textures
     // { ptr: clothTexPtr0, access: "read", alias: "clothTex" },
   ],
