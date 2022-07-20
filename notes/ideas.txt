@@ -53,3 +53,13 @@ GPU toy tool:
   - prelude and postlude read-only collapsable text snippets w/ usable vars highlighted
   - it'd be nice if it was easy to output intermediate results to some debug texture
       and display that
+
+Unrelated:
+  social media check-in app:
+    browser extension?
+    specify {website, time allowed, interval (daily, weekly, monthly)}
+    notifies you if you have check-ins available
+    shows you your social page one after another with a timer at the top
+    optionally a start button per-site so you know it's fully loaded
+    an exception system, but it gets logged and you can see how much excess time you spent
+    you get to save links to a reading list
