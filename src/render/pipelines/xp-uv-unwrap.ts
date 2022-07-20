@@ -13,52 +13,52 @@ export const uvToPosTex = CY.createTexture("uvToPosTex", {
   format: "rgba32float",
 });
 
-// TODO(@darzu): rgba32float is too aggressive for this; revist all formats used
-//    in sprigland
-const uvMaskTex = CY.createTexture("uvMaskTex", {
-  size: [size, size],
-  format: "rgba16float",
-});
+// // TODO(@darzu): rgba32float is too aggressive for this; revist all formats used
+// //    in sprigland
+// const uvMaskTex = CY.createTexture("uvMaskTex", {
+//   size: [size, size],
+//   format: "rgba16float",
+// });
 
-export const uvBorderMask = CY.createTexture("uvBorderMask", {
-  size: [size, size],
-  format: "rgba16float",
-});
+// export const uvBorderMask = CY.createTexture("uvBorderMask", {
+//   size: [size, size],
+//   format: "rgba16float",
+// });
 
-export const uvBorderMaskPipeline = createRenderTextureToQuad(
-  "uvBorderMaskPipeline",
-  uvMaskTex,
-  uvBorderMask,
-  -1,
-  1,
-  -1,
-  1,
-  false,
-  ({ inPx }) => `return 1.0 - vec4(${inPx});`
-).pipeline;
+// export const uvBorderMaskPipeline = createRenderTextureToQuad(
+//   "uvBorderMaskPipeline",
+//   uvMaskTex,
+//   uvBorderMask,
+//   -1,
+//   1,
+//   -1,
+//   1,
+//   false,
+//   ({ inPx }) => `return 1.0 - vec4(${inPx});`
+// ).pipeline;
 
-export const uvPosBorderMask = CY.createTexture("uvPosBorderMask", {
-  size: [size, size],
-  format: "rgba16float",
-});
+// export const uvPosBorderMask = CY.createTexture("uvPosBorderMask", {
+//   size: [size, size],
+//   format: "rgba16float",
+// });
 
-export const uvPosBorderMaskPipeline = createRenderTextureToQuad(
-  "uvPosBorderMaskPipeline",
-  uvBorderMask,
-  uvPosBorderMask,
-  -1,
-  1,
-  -1,
-  1,
-  false,
-  ({ inPx, uv }) => `
-  if (${inPx}.x > 0.0) {
-    return vec4(${uv}, 0.0, 1.0);
-  } else {
-    discard;
-  }
-  `
-).pipeline;
+// export const uvPosBorderMaskPipeline = createRenderTextureToQuad(
+//   "uvPosBorderMaskPipeline",
+//   uvBorderMask,
+//   uvPosBorderMask,
+//   -1,
+//   1,
+//   -1,
+//   1,
+//   false,
+//   ({ inPx, uv }) => `
+//   if (${inPx}.x > 0.0) {
+//     return vec4(${uv}, 0.0, 1.0);
+//   } else {
+//     discard;
+//   }
+//   `
+// ).pipeline;
 
 // TODO(@darzu): account for this border on the CPU sampling side
 const borderPxWidth = 1;
@@ -89,13 +89,13 @@ export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
 
   struct FragOut {
     @location(0) worldPos: vec4<f32>,
-    @location(1) uv: vec4<f32>,
+    // @location(1) uv: vec4<f32>,
   }
 
   @fragment fn fragMain(input: VertexOutput) -> FragOut {
     var output: FragOut;
-    output.worldPos = input.worldPos;
-    output.uv = vec4(1.0);
+    output.worldPos = vec4(input.worldPos.xyz, 0.0);
+    // output.uv = vec4(1.0);
     return output;
   }
   `,
@@ -109,12 +109,12 @@ export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
     {
       ptr: uvToPosTex,
       clear: "once",
-      defaultColor: [0.0, 0.0, 0.0, 1.0],
+      defaultColor: [0.0, 0.0, 0.0, 0.0],
     },
-    {
-      ptr: uvMaskTex,
-      clear: "once",
-      defaultColor: [0.0, 0.0, 0.0, 1.0],
-    },
+    // {
+    //   ptr: uvMaskTex,
+    //   clear: "once",
+    //   defaultColor: [0.0, 0.0, 0.0, 1.0],
+    // },
   ],
 });

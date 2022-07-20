@@ -1,16 +1,9 @@
+import { oceanJfa } from "../../game/xp-hyperspace.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { CyPipelinePtr, CyRenderPipelinePtr } from "../gpu-registry.js";
 import { noiseGridFrame } from "./std-noise.js";
 import { canvasTexturePtr, litTexturePtr } from "./std-scene.js";
-import {
-  jfaInputTex,
-  jfaResultTex,
-  jfaTexs,
-  ringsTex,
-  sdfBrightTex,
-  sdfTex,
-} from "./xp-jump-flood.js";
-import { uvBorderMask, uvPosBorderMask, uvToPosTex } from "./xp-uv-unwrap.js";
+import { uvToPosTex } from "./xp-uv-unwrap.js";
 
 // TODO(@darzu): rename to grid compose
 
@@ -19,10 +12,13 @@ const padding = 0.05;
 // TODO(@darzu): make grid a parameter
 export function createGridComposePipelines(): CyRenderPipelinePtr[] {
   // const grid = [
-  //   [whiteNoiseTex, octaveWhiteNoiseTex],
-  //   [sdfBrightTex, ringsTex],
+  //   //
+  //   [oceanJfa._inputMaskTex, oceanJfa._uvMaskTex],
+  //   //
+  //   [oceanJfa.voronoiTex, oceanJfa.sdfTex],
   // ];
-  let grid = noiseGridFrame;
+  // let grid = noiseGridFrame;
+  const grid = oceanJfa._debugGrid;
 
   const width = grid[0].length;
   const height = grid.length;

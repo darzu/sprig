@@ -18,10 +18,8 @@ import { createPlayer } from "./player.js";
 import { createShip } from "./ship.js";
 import { GameStateDef } from "./gamestate.js";
 import {
-  uvBorderMaskPipeline,
   unwrapPipeline,
   uvToPosTex,
-  uvPosBorderMaskPipeline,
 } from "../render/pipelines/xp-uv-unwrap.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { createGhost } from "./sandbox.js";
@@ -34,15 +32,8 @@ import { assert } from "../test.js";
 import { clamp } from "../math.js";
 import { tempVec2, tempVec3, tempVec4 } from "../temp-pool.js";
 import { vec3Dbg } from "../utils-3d.js";
-import {
-  jfaPreOutlinePipe,
-  jfaPipelines,
-  jfaToSdfPipe,
-  sdfToRingsPipe,
-  VISUALIZE_JFA,
-  sdfBrightPipe,
-} from "../render/pipelines/xp-jump-flood.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
+import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
 
 interface Ocean {
   ent: Ref<[typeof PositionDef]>;
@@ -219,7 +210,9 @@ function createTextureReader<A extends 1 | 2 | 3 | 4>(
   }
 }
 
-export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
+export const oceanJfa = createJfaPipelines(uvToPosTex, true, 128);
+
+// export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 
 export function initHyperspaceGame(em: EntityManager) {
   const camera = em.addSingletonComponent(CameraDef);
@@ -338,15 +331,15 @@ export function initHyperspaceGame(em: EntityManager) {
     [],
     [GlobalCursor3dDef, RendererDef, InputsDef, TextDef, InputsDef],
     (cs, res) => {
-      if (VISUALIZE_JFA) {
-        let prevjfaMaxStep = jfaMaxStep;
-        jfaMaxStep += (res.inputs.keyClicks["j"] ?? 0) * 2;
-        jfaMaxStep -= (res.inputs.keyClicks["h"] ?? 0) * 2;
-        jfaMaxStep = Math.max(jfaMaxStep, 0);
-        jfaMaxStep = Math.min(jfaMaxStep, jfaPipelines.length);
-        if (jfaMaxStep !== prevjfaMaxStep)
-          console.log(`jfaMaxStep: ${jfaMaxStep}`);
-      }
+      // if (VISUALIZE_JFA) {
+      //   let prevjfaMaxStep = jfaMaxStep;
+      //   jfaMaxStep += (res.inputs.keyClicks["j"] ?? 0) * 2;
+      //   jfaMaxStep -= (res.inputs.keyClicks["h"] ?? 0) * 2;
+      //   jfaMaxStep = Math.max(jfaMaxStep, 0);
+      //   jfaMaxStep = Math.min(jfaMaxStep, jfaPipelines.length);
+      //   if (jfaMaxStep !== prevjfaMaxStep)
+      //     console.log(`jfaMaxStep: ${jfaMaxStep}`);
+      // }
 
       // TODO(@darzu): instead of all this one-time nosense, it'd be great
       //  to just submit async work to the GPU.
@@ -359,9 +352,10 @@ export function initHyperspaceGame(em: EntityManager) {
 
           // TODO(@darzu): package / abstract these more nicely?
           unwrapPipeline,
-          uvBorderMaskPipeline,
-          uvPosBorderMaskPipeline,
-          jfaPreOutlinePipe,
+          // uvBorderMaskPipeline,
+          // uvPosBorderMaskPipeline,
+          // jfaPreOutlinePipe,
+          ...oceanJfa.allPipes(),
         ];
 
         once = false;
@@ -407,10 +401,10 @@ export function initHyperspaceGame(em: EntityManager) {
           // ...noisePipes,
 
           // TODO(@darzu): only run many times when debugging
-          ...jfaPipelines.slice(0, jfaMaxStep),
-          jfaToSdfPipe,
-          sdfBrightPipe,
-          sdfToRingsPipe,
+          // ...jfaPipelines.slice(0, jfaMaxStep),
+          // jfaToSdfPipe,
+          // sdfBrightPipe,
+          // sdfToRingsPipe,
 
           // unwrapPipeline,
           shadowPipeline,
