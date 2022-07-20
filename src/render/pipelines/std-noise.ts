@@ -199,8 +199,14 @@ function createOctaveNoisePipe(frequencies: number[], persistence: number) {
                   mix(c, d, f.x),
                   f.y);
               `
-                  : `
+                  : texType === "whiteNoise"
+                  ? `
               let s = textureLoad(${texType}${s}Tex, i, 0).x;
+              `
+                  : `
+              let _a = textureLoad(${texType}${s}Tex, i, 0).xy;
+              let a = dot(_a.xy, _f) * 0.5 + 0.5;
+              let s = a;
               `
               }
               let w = 1.0 / ${p.toFixed(2)};
