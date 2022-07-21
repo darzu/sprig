@@ -27,7 +27,7 @@ export function createJfaPipelines(
 ): JfaResult {
   const voronoiTexFmt: Parameters<typeof CY.createTexture>[1] = {
     size: [size, size],
-    format: "rg32float",
+    format: "rg8unorm",
   };
 
   const namePrefix = `jfa${nextId++}`;
@@ -77,9 +77,10 @@ export function createJfaPipelines(
     `
   ).pipeline;
 
+  // TODO(@darzu): configurable SDF size?
   const sdfTex = CY.createTexture(namePrefix + "SdfTex", {
     size: [size, size],
-    format: "r32float",
+    format: "r8unorm",
   });
 
   const maxStep = Math.ceil(Math.log2(size / 2)) + 0;

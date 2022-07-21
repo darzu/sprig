@@ -1,6 +1,6 @@
 import { oceanJfa } from "../../game/xp-hyperspace.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
-import { comparisonSamplerPtr, CY } from "../gpu-registry.js";
+import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";
 import {
   mainDepthTex,
   litTexturePtr,
@@ -40,6 +40,7 @@ import { shadowDepthTexture } from "./std-shadow.js";
 export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
   globals: [
     sceneBufPtr,
+    { ptr: linearSamplerPtr, alias: "samp" },
     { ptr: shadowDepthTexture, alias: "shadowMap" },
     { ptr: comparisonSamplerPtr, alias: "shadowSampler" },
     // TODO(@darzu): object-specific SDFs?

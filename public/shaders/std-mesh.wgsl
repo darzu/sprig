@@ -134,9 +134,11 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
     // TODO(@darzu): experimenting with reading from SDF
     // TODO(@darzu): use sample instead of load
-    if (input.uv.x > 0.0 && input.uv.y > 0.0) {
-      let xy = vec2<i32>(input.uv * vec2<f32>(textureDimensions(sdf)));
-      let t = textureLoad(sdf, xy, 0);
+    let t = textureSample(sdf, samp, input.uv);
+    if (input.uv.x > 0.0 && input.uv.y > 0.0)
+    {
+      // let xy = vec2<i32>(input.uv * vec2<f32>(textureDimensions(sdf)));
+      // let t = textureLoad(sdf, xy, 0);
       // let d = length(t);
       let d = t.x;
       // if (t.x > 0.0 || t.y > 0.0) {

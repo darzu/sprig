@@ -46,6 +46,12 @@ export const TexTypeToWGSLElement: Partial<
   r16float: "f32",
   // TODO(@darzu): what should we do with 8-bit types?
   bgra8unorm: "vec4<f32>",
+  r8unorm: "f32",
+  r8snorm: "f32",
+  rg8unorm: "vec2<f32>",
+  rg8snorm: "vec2<f32>",
+  rgba8unorm: "vec4<f32>",
+  rgba8snorm: "vec4<f32>",
 };
 // TODO(@darzu): this feels redundant with some of the size info
 export const TexTypeToElementArity: Partial<
@@ -57,7 +63,13 @@ export const TexTypeToElementArity: Partial<
   rgba16float: 4,
   rg16float: 2,
   r16float: 1,
+  r8unorm: 1,
+  r8snorm: 1,
+  rg8unorm: 2,
+  rg8snorm: 2,
   bgra8unorm: 4,
+  rgba8unorm: 4,
+  rgba8snorm: 4,
   depth32float: 1,
 };
 export type TexTypeToTSType = {
@@ -82,8 +94,11 @@ export const texTypeToBytes: Partial<Record<GPUTextureFormat, number>> = {
   rgba16float: 2 * 4,
   "depth24plus-stencil8": 3 + 1,
   depth32float: 4,
+  r8unorm: 1,
   rg8unorm: 2,
   bgra8unorm: 4,
+  r8snorm: 1,
+  rg8snorm: 2,
   "bgra8unorm-srgb": 4,
   rg16uint: 2 + 2,
 };
