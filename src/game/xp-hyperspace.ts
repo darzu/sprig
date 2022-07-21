@@ -34,6 +34,8 @@ import { tempVec2, tempVec3, tempVec4 } from "../temp-pool.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
 import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
+import { DevConsoleDef } from "../console.js";
+import { AngularVelocityDef } from "../physics/motion.js";
 
 interface Ocean {
   ent: Ref<[typeof PositionDef]>;
@@ -266,6 +268,7 @@ export function initHyperspaceGame(em: EntityManager) {
       // const scale = 100.0;
       // const scale = 1.0;
       // em.ensureComponentOn(ocean, ScaleDef, [scale, scale, scale]);
+      // em.ensureComponentOn(ocean, AngularVelocityDef, [0.0001, 0.0001, 0.0001]);
 
       // TODO(@darzu): DEBUG quad mesh stuff
       const fabric = em.newEntity();
@@ -275,6 +278,7 @@ export function initHyperspaceGame(em: EntityManager) {
         res.assets.fabric.proto
       );
       em.ensureComponentOn(fabric, PositionDef, [10, 10, 10]);
+      // em.ensureComponentOn(fabric, AngularVelocityDef, [1.0, 10.0, 0.1]);
 
       const buoy = em.newEntity();
       em.ensureComponentOn(buoy, PositionDef);
@@ -329,7 +333,14 @@ export function initHyperspaceGame(em: EntityManager) {
 
   em.registerSystem(
     [],
-    [GlobalCursor3dDef, RendererDef, InputsDef, TextDef, InputsDef],
+    [
+      GlobalCursor3dDef,
+      RendererDef,
+      InputsDef,
+      TextDef,
+      InputsDef,
+      DevConsoleDef,
+    ],
     (cs, res) => {
       // if (VISUALIZE_JFA) {
       //   let prevjfaMaxStep = jfaMaxStep;
@@ -414,7 +425,7 @@ export function initHyperspaceGame(em: EntityManager) {
           ...blurPipelines,
 
           postProcess,
-          // ...gridCompose,
+          ...(res.dev.showConsole ? gridCompose : []),
         ];
       }
     },

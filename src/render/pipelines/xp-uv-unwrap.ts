@@ -81,8 +81,10 @@ export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
     output.uv = input.uv;
     output.worldPos = worldPos;
 
-    let w = ${borderUVWidth};
-    let xy = (input.uv * (2.0 - w * 2.0) - (1.0 - w));
+    // let w = ${borderUVWidth};
+    // let xy = (input.uv * (2.0 - w * 2.0) - (1.0 - w));
+    let xy = (input.uv * 2.0 - 1.0) * vec2(1.0, -1.0);
+    // let xy = input.uv;
     output.fragPos = vec4(xy, 0.0, 1.0);
     return output;
   }
@@ -105,6 +107,7 @@ export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
     pool: meshPoolPtr,
     stepMode: "per-mesh-handle",
   },
+  cullMode: "none",
   output: [
     {
       ptr: uvToPosTex,

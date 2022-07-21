@@ -44,6 +44,8 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
     { ptr: comparisonSamplerPtr, alias: "shadowSampler" },
     // TODO(@darzu): object-specific SDFs?
     { ptr: oceanJfa.sdfTex, alias: "sdf" },
+    // { ptr: oceanJfa._inputMaskTex, alias: "sdf" },
+    // { ptr: oceanJfa._uvMaskTex, alias: "sdf" },
     // TODO(@darzu): support textures
     // { ptr: clothTexPtr0, access: "read", alias: "clothTex" },
   ],

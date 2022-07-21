@@ -134,14 +134,32 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
     // TODO(@darzu): experimenting with reading from SDF
     // TODO(@darzu): use sample instead of load
-    if (input.uv.x != 0 || input.uv.y != 0) {
+    if (input.uv.x > 0.0 && input.uv.y > 0.0) {
       let xy = vec2<i32>(input.uv * vec2<f32>(textureDimensions(sdf)));
-      let d = textureLoad(sdf, xy, 0).x;
-      let range = fract(d + scene.time * 0.0001) * 0.2;
-      if (range < d && d < range+0.01) {
-        out.color *= d;
+      let t = textureLoad(sdf, xy, 0);
+      // let d = length(t);
+      let d = t.x;
+      let d2 = fract(d * 10.0);
+      // if (t.x > 0.0 || t.y > 0.0) {
+      //   out.color.r = 1.0;
+      // }
+      let range = fract(scene.time * 0.0002);
+      if (range < d2 && d2 < range+0.1) {
+        out.color.r = 1.0;
       }
+      if (d < 0.01) {
+        out.color.r = 1.0;
+      }
+      // if (d > 0.0) {
+      //   out.color.r = 1.0;
+      // }
     }
+    // out.color.b = 0.0;
+    // out.color.r = input.uv.x;
+    // out.color.g = input.uv.y;
+    // if (input.uv.x < 0.0 || input.uv.y < 0.0 || input.uv.x > 1.0 || input.uv.y > 1.0) {
+    //   out.color.b = 1.0;
+    // }
 
     // out.color = vec4<f32>(input.uv, 0.0, 1.0);
     // out.normal = vec4(input.normal, 1.0);

@@ -133,6 +133,7 @@ const MeshModify: Partial<{
     return m;
   },
   ocean: (m) => {
+    // TODO(@darzu): extract out all this setUV stuff.
     // reduce duplicate positions
     // console.log("OCEAN");
     // console.dir(m);
@@ -172,7 +173,18 @@ const MeshModify: Partial<{
     m.uvs = uvs;
     // setUV(Math.floor(xLen / 2), 0, [0, 1], [0, 0], true);
     setUV(0, Math.floor(yLen / 2), [1, 0], [0, 0], true);
-    normalizeVec2s(uvs);
+    // TODO(@darzu): preserve size ratio!!!
+    normalizeVec2s(uvs, 0.1, 0.9);
+
+    // console.dir(uvs);
+    // console.log(`
+    // X:
+    // ${max(uvs.map((uv) => uv[0]))}
+    // ${min(uvs.map((uv) => uv[0]))}
+    // Y:
+    // ${max(uvs.map((uv) => uv[1]))}
+    // ${min(uvs.map((uv) => uv[1]))}
+    // `);
 
     function setUV(
       x: number,

@@ -112,13 +112,13 @@ export function uintToVec3unorm(i: number, max: number): vec3 {
 
 // Changes all vec2s to be in the range [0,1] based on the max and min values
 //   of the whole array.
-export function normalizeVec2s(vs: vec2[]): void {
+export function normalizeVec2s(vs: vec2[], min: number, max: number): void {
   const minX = vs.reduce((p, n) => (n[0] < p ? n[0] : p), Infinity);
   const maxX = vs.reduce((p, n) => (n[0] > p ? n[0] : p), -Infinity);
   const minY = vs.reduce((p, n) => (n[1] < p ? n[1] : p), Infinity);
   const maxY = vs.reduce((p, n) => (n[1] > p ? n[1] : p), -Infinity);
   for (let v of vs) {
-    v[0] = mathMap(v[0], minX, maxX, 0, 1);
-    v[1] = mathMap(v[1], minY, maxY, 0, 1);
+    v[0] = mathMap(v[0], minX, maxX, min, max);
+    v[1] = mathMap(v[1], minY, maxY, min, max);
   }
 }

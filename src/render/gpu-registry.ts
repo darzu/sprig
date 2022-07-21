@@ -189,6 +189,8 @@ export interface CyRenderPipelinePtr extends CyResourcePtr {
   shader: ((shaders: ShaderSet) => string) | ShaderName;
   shaderVertexEntry: string;
   shaderFragmentEntry: string;
+  cullMode?: GPUCullMode;
+  frontFace?: GPUFrontFace;
   meshOpt: CyMeshOpt;
   // TODO(@darzu): really need to allow changing attachments at runtime. Useful
   //   for tutorial animations at a minimum

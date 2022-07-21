@@ -45,11 +45,6 @@ If entry.visibility includes VERTEX:
   entry.storageTexture?.access must not be "write-only".
 */
 
-const prim_tris: GPUPrimitiveState = {
-  topology: "triangle-list",
-  cullMode: "back",
-  frontFace: "ccw",
-};
 const prim_lines: GPUPrimitiveState = {
   topology: "line-list",
 };
@@ -481,6 +476,12 @@ export function createCyResources(
         };
       }
 
+      const primitive: GPUPrimitiveState = {
+        topology: "triangle-list",
+        cullMode: p.cullMode ?? "back",
+        frontFace: p.frontFace ?? "ccw",
+      };
+
       if (p.meshOpt.stepMode === "per-instance") {
         const vertBuf = kindToNameToRes.array[p.meshOpt.vertex.name];
         const instBuf = kindToNameToRes.array[p.meshOpt.instance.name];
@@ -510,7 +511,7 @@ export function createCyResources(
         });
         const rndrPipelineDesc: GPURenderPipelineDescriptor = {
           // TODO(@darzu): allow this to be parameterized
-          primitive: prim_tris,
+          primitive,
           depthStencil: depthStencilOpts,
           // TODO(@darzu): ANTI-ALIAS
           // multisample: {
@@ -585,8 +586,7 @@ export function createCyResources(
           code: shaderStr,
         });
         const rndrPipelineDesc: GPURenderPipelineDescriptor = {
-          // TODO(@darzu): allow this to be parameterized
-          primitive: prim_tris,
+          primitive,
           depthStencil: depthStencilOpts,
           // TODO(@darzu): ANTI-ALIAS
           // multisample: {
@@ -632,10 +632,7 @@ export function createCyResources(
         });
         const rndrPipelineDesc: GPURenderPipelineDescriptor = {
           // TODO(@darzu): do we want depth stencil and multisample for this??
-          // primitive: {
-          //   topology: "triangle-list",
-          // },
-          primitive: prim_tris,
+          primitive,
           // TODO(@darzu): depth stencil should be optional?
           depthStencil: depthStencilOpts,
           // TODO(@darzu): ANTI-ALIAS
