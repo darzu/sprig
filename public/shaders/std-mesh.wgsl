@@ -139,12 +139,11 @@ fn frag_main(input: VertexOutput) -> FragOut {
       let t = textureLoad(sdf, xy, 0);
       // let d = length(t);
       let d = t.x;
-      let d2 = fract(d * 10.0);
       // if (t.x > 0.0 || t.y > 0.0) {
       //   out.color.r = 1.0;
       // }
-      let range = fract(scene.time * 0.0002);
-      if (range < d2 && d2 < range+0.1) {
+      let d2 = fract(d * 10.0 + scene.time * 0.001);
+      if (0.0 < d2 && d2 < 0.1) {
         out.color.r = 1.0;
       }
       if (d < 0.01) {
