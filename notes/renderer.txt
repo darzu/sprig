@@ -417,6 +417,8 @@ SDF for text:
     Material Maker
   text is hard?
     https://gankra.github.io/blah/text-hates-you/
+  https://www.qt.io/blog/2011/07/15/text-rendering-in-the-qml-scene-graph
+  https://computergraphics.stackexchange.com/questions/306/sharp-corners-with-signed-distance-fields-fonts
 
 VFX explosions:
   https://www.youtube.com/watch?v=dDsb_9n-Gik
@@ -917,3 +919,13 @@ Doom 3 glow:
   https://timur.hu/blog/2022/what-is-ngg
   mesh shaders are dope
   shader culling is a new cool thing we can now do
+
+Puffy stylized clouds:
+  https://nokdef.com/Articles/Stylized-Puffy-Clouds-Shader/
+
+Drawing lines is hard:
+  https://mattdesl.svbtle.com/drawing-lines-is-hard
+
+Anti-aliasing:
+  rendering line primatives on edges:
+    https://people.csail.mit.edu/ericchan/articles/prefilter/

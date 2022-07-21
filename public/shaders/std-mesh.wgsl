@@ -137,8 +137,10 @@ fn frag_main(input: VertexOutput) -> FragOut {
     if (input.uv.x != 0 || input.uv.y != 0) {
       let xy = vec2<i32>(input.uv * vec2<f32>(textureDimensions(sdf)));
       let d = textureLoad(sdf, xy, 0).x;
-      let df = smoothstep(.0, .1, d);
-      out.color *= df;
+      let range = fract(d + scene.time * 0.0001) * 0.2;
+      if (range < d && d < range+0.01) {
+        out.color *= d;
+      }
     }
 
     // out.color = vec4<f32>(input.uv, 0.0, 1.0);

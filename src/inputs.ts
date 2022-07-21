@@ -1,6 +1,8 @@
 import { CanvasDef } from "./canvas.js";
 import { Component, EM, EntityManager } from "./entity-manager.js";
 
+// Consider: https://www.reddit.com/r/gamedev/comments/w1dau6/input_buffering_action_canceling_and_also/
+
 const DEBUG_INPUTS = false as const;
 const _seenKeyCodes: Set<string> = new Set();
 
