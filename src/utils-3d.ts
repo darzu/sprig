@@ -117,8 +117,13 @@ export function normalizeVec2s(vs: vec2[], min: number, max: number): void {
   const maxX = vs.reduce((p, n) => (n[0] > p ? n[0] : p), -Infinity);
   const minY = vs.reduce((p, n) => (n[1] < p ? n[1] : p), Infinity);
   const maxY = vs.reduce((p, n) => (n[1] > p ? n[1] : p), -Infinity);
+  const xRange = maxX - minX;
+  const yRange = maxY - minY;
+  const newRange = max - min;
+  const oldRange = Math.max(xRange, yRange);
+  const scalar = newRange / oldRange;
   for (let v of vs) {
-    v[0] = mathMap(v[0], minX, maxX, min, max);
-    v[1] = mathMap(v[1], minY, maxY, min, max);
+    v[0] = (v[0] - minX) * scalar + min;
+    v[1] = (v[1] - minY) * scalar + min;
   }
 }

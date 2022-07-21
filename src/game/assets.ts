@@ -173,8 +173,7 @@ const MeshModify: Partial<{
     m.uvs = uvs;
     // setUV(Math.floor(xLen / 2), 0, [0, 1], [0, 0], true);
     setUV(0, Math.floor(yLen / 2), [1, 0], [0, 0], true);
-    // TODO(@darzu): preserve size ratio!!!
-    normalizeVec2s(uvs, 0.1, 0.9);
+    normalizeVec2s(uvs, 0, 1);
 
     // console.dir(uvs);
     // console.log(`

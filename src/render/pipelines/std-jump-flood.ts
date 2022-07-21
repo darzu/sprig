@@ -112,7 +112,7 @@ export function createJfaPipelines(
         return `
         const stepSize = ${stepSize};
         ${shaders["std-screen-quad-vert"].code}
-        ${shaders["xp-jump-flood"].code}
+        ${shaders["std-jump-flood"].code}
       `;
       },
       shaderFragmentEntry: "frag_main",
