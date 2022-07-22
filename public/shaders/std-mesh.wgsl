@@ -138,7 +138,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
     // TODO(@darzu): use sample instead of load
     let sdf = textureSample(sdf, samp, input.uv);
 
-    out.color = vec4<f32>(sdf.x * 4.0);
+    out.color = vec4<f32>(sdf.x);
 
     if (fract(input.uv.x * 10.0 + t) < 0.1) {
       out.color.g += 0.5;
@@ -157,10 +157,10 @@ fn frag_main(input: VertexOutput) -> FragOut {
       //   out.color.r = 1.0;
       // }
       let d2 = fract(d * 10.0 + t);
-      if (0.0 < d2 && d2 < 0.1) {
+      if (0.0 < d2 && d2 < 0.1 * 4.0) {
         out.color.b += 0.5;
       }
-      if (d < 0.01) {
+      if (d < 0.01 * 4.0) {
         out.color.b += 0.5;
       }
       // if (d > 0.0) {

@@ -103,10 +103,9 @@ export function createJfaPipelines(
   // TODO(@darzu): configurable SDF size?
   const sdfTex = CY.createTexture(namePrefix + "SdfTex", {
     // size: [size, size],
-    // size: [32, 32],
     size: [64, 64],
-    // format: "r8unorm",
-    format: "r16float",
+    format: "r8unorm",
+    // format: "r16float",
   });
 
   const maxStep = Math.ceil(Math.log2(size / 2));
@@ -161,7 +160,8 @@ export function createJfaPipelines(
     // TODO(@darzu): output max distance?
     () => `
       let nearestUV = textureLoad(inTex, xy, 0).xy;
-      let dist = length(uv - nearestUV);
+      let dist = length(uv - nearestUV)
+         * 4.0; // TODO: make configurable
       return dist;
     `
   ).pipeline;

@@ -19,7 +19,8 @@ fn frag_main(@location(0) centerUV : vec2<f32>) -> @location(0) vec2<f32> {
     {
       let neighXY = centerXY + vec2(x,y) * stepSize;
       let neighUV = textureLoad(inTex, neighXY, 0).xy;
-      let dist = length(neighUV - centerUV);
+      let dist = length(neighUV - centerUV)
+         * 4.0; // TODO(@darzu): make configurable
       if (
         true
         // TODO(@darzu): remove the neighXY if u know content won't touch the edge
