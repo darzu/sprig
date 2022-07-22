@@ -151,3 +151,9 @@ Cool free low-poly assets:
 
 Public domain art:
   https://artvee.com/main/?s=switzerland
+
+Regarding "good" vs "bad" topology:
+  https://twitter.com/FlippedNormals/status/1547159260617998339
+  recommended for beginners:
+    http://pushingpoints.com/v2/the-pushing-points-topology-workbook/
+    http://pushingpoints.com/v2/the-pushing-points-topology-workbook-volume-2/

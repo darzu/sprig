@@ -293,7 +293,7 @@ export function initHyperspaceGame(em: EntityManager) {
       em.ensureComponentOn(buoy, RenderableConstructDef, res.assets.ball.proto);
       em.ensureComponentOn(buoy, ScaleDef, [3, 3, 3]);
       em.ensureComponentOn(buoy, ColorDef, [0.2, 0.8, 0.2]);
-      em.ensureComponentOn(buoy, UVPosDef, [0.5, 0.5]);
+      em.ensureComponentOn(buoy, UVPosDef, [0.1, 0.1]);
     }
   );
 
@@ -308,8 +308,8 @@ export function initHyperspaceGame(em: EntityManager) {
         let speed = 0.001;
         const newUV = vec2.copy(tempVec2(), e.uv.pos);
         if (res.inputs.keyDowns["shift"]) speed *= 5;
-        if (res.inputs.keyDowns["arrowright"]) newUV[1] += speed;
-        if (res.inputs.keyDowns["arrowleft"]) newUV[1] -= speed;
+        if (res.inputs.keyDowns["arrowright"]) newUV[1] -= speed;
+        if (res.inputs.keyDowns["arrowleft"]) newUV[1] += speed;
         if (res.inputs.keyDowns["arrowup"]) newUV[0] += speed;
         if (res.inputs.keyDowns["arrowdown"]) newUV[0] -= speed;
         newUV[0] = clamp(newUV[0], 0, 1);

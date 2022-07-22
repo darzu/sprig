@@ -969,3 +969,19 @@ Hardware support:
 
 Cool learn-to-code website and vids:
   https://thecodingtrain.com
+
+Data structures to kick the tires:
+  https://news.ycombinator.com/item?id=32186203
+  bloom filter,
+  union-find,
+  promise-map,
+  "cache oblivious": https://cs.au.dk/~gerth/MassiveData02/notes/demaine.pdf
+  Hash Array Mapped Trie, good for immutable data structures?
+    https://blog.mattbierner.com/hash-array-mapped-tries-in-javascript/
+  Y-fast trie
+    "If your dataset M is bounded integers (say, the set of all 128 bit numbers), you get membership, 
+    predecessor, or successor queries in log log time, not log, like in a normal tree."
+    https://www.youtube.com/playlist?list=PLUl4u3cNGP61hsJNdULdudlRL493b-XZf
+  HNSW, or Hierarchical Navigable Small World 
+    a graph data structure for approximate nearest neighbor search of vectors
+    http://ann-benchmarks.com
