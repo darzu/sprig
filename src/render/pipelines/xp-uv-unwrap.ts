@@ -10,6 +10,12 @@ export const uvToPosTex = CY.createTexture("uvToPosTex", {
   format: "rgba32float",
 });
 
+// TODO(@darzu): IMPLEMENT
+export const uvToNormTex = CY.createTexture("uvToNormTex", {
+  size: [128, 128],
+  format: "rgba32float",
+});
+
 export const uvMaskTex = CY.createTexture("uvMaskTex", {
   size: [512, 512],
   format: "r8unorm",
