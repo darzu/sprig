@@ -19,6 +19,7 @@ import { createShip } from "./ship.js";
 import { GameStateDef } from "./gamestate.js";
 import {
   unwrapPipeline,
+  uvMaskTex,
   uvToPosTex,
 } from "../render/pipelines/xp-uv-unwrap.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
@@ -212,7 +213,7 @@ function createTextureReader<A extends 1 | 2 | 3 | 4>(
   }
 }
 
-export const oceanJfa = createJfaPipelines(uvToPosTex, true, 128);
+export const oceanJfa = createJfaPipelines(uvMaskTex, true, 512);
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 

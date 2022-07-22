@@ -310,9 +310,11 @@ export function createCyResources(
             texture: { sampleType: sampleType },
           };
         } else {
+          // Note: writable storage textures aren't allowed in the vertex stage
+          let visibility = shaderStage & ~GPUShaderStage.VERTEX;
           return {
             binding: idx,
-            visibility: shaderStage,
+            visibility,
             storageTexture: { format: r.ptr.format, access: "write-only" },
           };
         }

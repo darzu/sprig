@@ -3,14 +3,16 @@ import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { CY } from "../gpu-registry.js";
 import { meshPoolPtr } from "./std-scene.js";
 
-// TODO(@darzu):
-const size = 128;
-
-// TODO(@darzu): rename to "uvmap" or similar?
+// TODO(@darzu): parameterize and generalize this for other meshes
 
 export const uvToPosTex = CY.createTexture("uvToPosTex", {
-  size: [size, size],
+  size: [128, 128],
   format: "rgba32float",
+});
+
+export const uvMaskTex = CY.createTexture("uvMaskTex", {
+  size: [512, 512],
+  format: "r8unorm",
 });
 
 // // TODO(@darzu): rgba32float is too aggressive for this; revist all formats used
@@ -60,12 +62,8 @@ export const uvToPosTex = CY.createTexture("uvToPosTex", {
 //   `
 // ).pipeline;
 
-// TODO(@darzu): account for this border on the CPU sampling side
-const borderPxWidth = 0;
-const borderUVWidth = ((borderPxWidth * 2.0) / size).toFixed(4);
-
 export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
-  globals: [],
+  globals: [{ ptr: uvToPosTex, access: "write" }],
   shader: () => `
   struct VertexOutput {
     @builtin(position) fragPos : vec4<f32>,
@@ -81,23 +79,25 @@ export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
     output.uv = input.uv;
     output.worldPos = worldPos;
 
-    // let w = ${borderUVWidth};
-    // let xy = (input.uv * (2.0 - w * 2.0) - (1.0 - w));
     let xy = (input.uv * 2.0 - 1.0) * vec2(1.0, -1.0);
-    // let xy = input.uv;
     output.fragPos = vec4(xy, 0.0, 1.0);
     return output;
   }
 
   struct FragOut {
-    @location(0) worldPos: vec4<f32>,
-    // @location(1) uv: vec4<f32>,
+    // @location(0) worldPos: vec4<f32>,
+    @location(0) uv: f32,
   }
 
   @fragment fn fragMain(input: VertexOutput) -> FragOut {
     var output: FragOut;
-    output.worldPos = vec4(input.worldPos.xyz, 0.0);
-    // output.uv = vec4(1.0);
+    let worldPos = vec4(input.worldPos.xyz, 0.0);
+    let dimsI = textureDimensions(uvToPosTex);
+    let dimsF = vec2<f32>(dimsI);
+    let xy = vec2<i32>(input.uv * dimsF);
+    textureStore(uvToPosTex, xy, worldPos);
+    // output.worldPos = worldPos;
+    output.uv = 1.0;
     return output;
   }
   `,
@@ -109,15 +109,15 @@ export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
   },
   cullMode: "none",
   output: [
+    // {
+    //   ptr: uvToPosTex,
+    //   clear: "once",
+    //   defaultColor: [0.0, 0.0, 0.0, 0.0],
+    // },
     {
-      ptr: uvToPosTex,
+      ptr: uvMaskTex,
       clear: "once",
       defaultColor: [0.0, 0.0, 0.0, 0.0],
     },
-    // {
-    //   ptr: uvMaskTex,
-    //   clear: "once",
-    //   defaultColor: [0.0, 0.0, 0.0, 1.0],
-    // },
   ],
 });

@@ -15,7 +15,7 @@ export function createGridComposePipelines(): CyRenderPipelinePtr[] {
   //   //
   //   [oceanJfa._inputMaskTex, oceanJfa._uvMaskTex],
   //   //
-  //   [oceanJfa.voronoiTex, oceanJfa.sdfTex],
+  //   [oceanJfa.voronoiTex, uvToPosTex],
   // ];
   // let grid = noiseGridFrame;
   const grid = oceanJfa._debugGrid;

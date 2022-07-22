@@ -173,7 +173,8 @@ const MeshModify: Partial<{
     m.uvs = uvs;
     // setUV(Math.floor(xLen / 2), 0, [0, 1], [0, 0], true);
     setUV(0, Math.floor(yLen / 2), [1, 0], [0, 0], true);
-    normalizeVec2s(uvs, 0, 1);
+    // TODO(@darzu): lots of little annoying issues happen when you go right to the texture edge
+    normalizeVec2s(uvs, 0 + 0.01, 1 - 0.01);
 
     // console.dir(uvs);
     // console.log(`

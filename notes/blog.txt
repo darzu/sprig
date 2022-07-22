@@ -214,3 +214,7 @@ Abstractions and dependencies:
     you're not only taking on all their code (transitively!), 
     you're also taking on their abstractions
   Abstractions are different from functionality
+
+Companies are interested in shipping solutions not well engineered artifacts
+  they'd be happiest constantly gluing together existing platforms into
+    passable solutions and charging a mark up.

@@ -54,18 +54,23 @@ export function createJfaPipelines(
     // TODO(@darzu): output max distance?
     borderOnly
       ? () => `
+      // let s = textureSample(inTex, mySampler, uv).x;
+      // if (s < 1.0) {
+      //   return uv;
+      // }
       let uvDx = 1.0 / dimsF.x;
       let uvDy = 1.0 / dimsF.y;
-      let c = textureLoad(inTex, xy + vec2(0,0), 0);
-      let t = textureLoad(inTex, xy + vec2(0,1), 0);
-      let l = textureLoad(inTex, xy + vec2(-1,0), 0);
-      let r = textureLoad(inTex, xy + vec2(1,0), 0);
-      let b = textureLoad(inTex, xy + vec2(0,-1), 0);
-      if (dot(c, c) != 0.0 && (uv.x - uvDx < 0.0 || uv.x + uvDx > 1.0 || uv.y - uvDy < 0.0 || uv.y + uvDy > 1.0 || dot(t, t) == 0.0 || dot(l, l) == 0.0 || dot(r, r) == 0.0 || dot(b, b) == 0.0)) {
+      let c = textureLoad(inTex, xy + vec2(0,0), 0).xyz;
+      let t = textureLoad(inTex, xy + vec2(0,1), 0).xyz;
+      let l = textureLoad(inTex, xy + vec2(-1,0), 0).xyz;
+      let r = textureLoad(inTex, xy + vec2(1,0), 0).xyz;
+      let b = textureLoad(inTex, xy + vec2(0,-1), 0).xyz;
+      if (dot(c, c) != 0.0
+       && (uv.x - uvDx < 0.0 || uv.x + uvDx > 1.0 || uv.y - uvDy < 0.0 || uv.y + uvDy > 1.0 
+          || dot(t, t) == 0.0 || dot(l, l) == 0.0 || dot(r, r) == 0.0 || dot(b, b) == 0.0)) {
         return uv;
-      } else {
-        return vec2(0.0);
       }
+      return vec2(0.0);
     `
       : () => `
       let c = textureLoad(inTex, xy, 0);
