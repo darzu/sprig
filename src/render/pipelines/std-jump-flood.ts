@@ -3,6 +3,9 @@ import { createRenderTextureToQuad, fullQuad } from "../gpu-helper.js";
 import { CY, CyPipelinePtr, CyTexturePtr } from "../gpu-registry.js";
 import { ShaderSet } from "../shader-loader.js";
 
+// TODO(@darzu): support a sign bit for dist on the mask
+//    I think we'll need this for text -> SDF
+
 export interface JfaResult {
   voronoiTex: CyTexturePtr;
   sdfTex: CyTexturePtr;

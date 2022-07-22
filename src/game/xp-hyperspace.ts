@@ -41,6 +41,7 @@ import { AngularVelocityDef } from "../physics/motion.js";
 interface Ocean {
   ent: Ref<[typeof PositionDef]>;
   uvToPos: (out: vec3, uv: vec2) => vec3;
+  uvToNorm: (out: vec3, uv: vec2) => vec3;
   // uvToNorm: TextureReader<"rgba32float">;
 }
 const OceanDef = EM.defineComponent("ocean", (o: Ocean) => {
@@ -70,6 +71,8 @@ interface TextureReader<A extends 1 | 2 | 3 | 4> {
   sample: (out: ArityToVec<A>, x: number, y: number) => ArityToVec<A>;
 }
 
+// TODO(@darzu): we want a whole CPU-side texture library including
+//  sampling, loading, comparison, derivatives, etc.
 function createTextureReader<A extends 1 | 2 | 3 | 4>(
   data: ArrayBuffer,
   size: vec2,
@@ -105,6 +108,7 @@ function createTextureReader<A extends 1 | 2 | 3 | 4>(
     x: number,
     y: number
   ): number | vec2 | vec3 | vec4 {
+    // TODO(@darzu): share code with sample
     const xi = clamp(Math.round(x), 0, size[0] - 1);
     const yi = clamp(Math.round(y), 0, size[1] - 1);
     const idx = getIdx(xi, yi);
@@ -246,18 +250,18 @@ export function initHyperspaceGame(em: EntityManager) {
 
       {
         // debug camera
-        // vec3.copy(ghost.position, [-185.02, 66.25, -69.04]);
-        // quat.copy(ghost.rotation, [0.0, -0.92, 0.0, 0.39]);
-        // vec3.copy(ghost.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-        // ghost.cameraFollow.yawOffset = 0.0;
-        // ghost.cameraFollow.pitchOffset = -0.465;
+        vec3.copy(ghost.position, [-185.02, 66.25, -69.04]);
+        quat.copy(ghost.rotation, [0.0, -0.92, 0.0, 0.39]);
+        vec3.copy(ghost.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+        ghost.cameraFollow.yawOffset = 0.0;
+        ghost.cameraFollow.pitchOffset = -0.465;
 
-        let g = ghost;
-        vec3.copy(g.position, [-208.43, 29.58, 80.05]);
-        quat.copy(g.rotation, [0.0, -0.61, 0.0, 0.79]);
-        vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-        g.cameraFollow.yawOffset = 0.0;
-        g.cameraFollow.pitchOffset = -0.486;
+        // let g = ghost;
+        // vec3.copy(g.position, [-208.43, 29.58, 80.05]);
+        // quat.copy(g.rotation, [0.0, -0.61, 0.0, 0.79]);
+        // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+        // g.cameraFollow.yawOffset = 0.0;
+        // g.cameraFollow.pitchOffset = -0.486;
       }
 
       // TODO(@darzu): call one-shot initStars
@@ -408,6 +412,9 @@ export function initHyperspaceGame(em: EntityManager) {
                 const y = uv[1] * reader.size[1];
                 // console.log(`${x},${y}`);
                 return reader.sample(out, x, y);
+              },
+              uvToNorm: (out, uv) => {
+                throw `TO IMPL uvToNorm`;
               },
             });
           });
