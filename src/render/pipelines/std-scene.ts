@@ -1,9 +1,9 @@
-import { vec3, mat4 } from "../gl-matrix.js";
-import { computeTriangleNormal } from "../utils-3d.js";
-import { CY } from "./gpu-registry.js";
-import { createCyStruct, CyToTS } from "./gpu-struct.js";
-import { MeshHandle } from "./mesh-pool.js";
-import { getAABBFromMesh, Mesh } from "./mesh.js";
+import { vec3, mat4 } from "../../gl-matrix.js";
+import { computeTriangleNormal } from "../../utils-3d.js";
+import { CY } from "../gpu-registry.js";
+import { createCyStruct, CyToTS } from "../gpu-struct.js";
+import { MeshHandle } from "../mesh-pool.js";
+import { getAABBFromMesh, Mesh } from "../mesh.js";
 
 export const MAX_MESHES = 20000;
 export const MAX_VERTICES = 21844;
@@ -100,10 +100,10 @@ export function computeUniData(m: Mesh): MeshUniformTS {
 export function computeVertsData(m: Mesh): VertexTS[] {
   const vertsData: VertexTS[] = m.pos.map((pos, i) => ({
     position: pos,
-    color: [1.0, 0.0, 1.0], // changed below
-    normal: [1.0, 0.0, 0.0], // changed below
+    color: [1.0, 0.0, 1.0], // per-face; changed below
+    normal: [1.0, 0.0, 0.0], // per-face; changed below
     uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
-    surfaceId: 0,
+    surfaceId: 0, // per-face; changed below
   }));
   m.tri.forEach((triInd, i) => {
     // set provoking vertex data
@@ -116,6 +116,18 @@ export function computeVertsData(m: Mesh): VertexTS[] {
     vertsData[triInd[0]].normal = normal;
     vertsData[triInd[0]].color = m.colors[i];
     vertsData[triInd[0]].surfaceId = m.surfaceIds[i];
+  });
+  m.quad.forEach((quadInd, i) => {
+    // set provoking vertex data
+    const normal = computeTriangleNormal(
+      m.pos[quadInd[0]],
+      m.pos[quadInd[1]],
+      m.pos[quadInd[2]]
+    );
+    vertsData[quadInd[0]].normal = normal;
+    // TODO(@darzu): this isn't right, colors and surfaceIds r being indexed by tris and quads
+    vertsData[quadInd[0]].color = m.colors[i];
+    vertsData[quadInd[0]].surfaceId = m.surfaceIds[i];
   });
   return vertsData;
 }
@@ -191,7 +203,6 @@ export const litTexturePtr = CY.createTexture("mainTexture", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
   format: "rgba16float",
-  init: () => undefined,
   // TODO(@darzu): support anti-aliasing again
 });
 
@@ -199,7 +210,6 @@ export const normalsTexturePtr = CY.createTexture("normalsTexture", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
   format: "rgba16float",
-  init: () => undefined,
   // TODO(@darzu): support anti-aliasing again
 });
 
@@ -207,7 +217,6 @@ export const positionsTexturePtr = CY.createTexture("positionsTexture", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
   format: "rgba16float",
-  init: () => undefined,
   // TODO(@darzu): support anti-aliasing again
 });
 
@@ -215,7 +224,6 @@ export const surfacesTexturePtr = CY.createTexture("surfacesTexture", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
   format: "rg16uint",
-  init: () => undefined,
 });
 
 export const canvasTexturePtr = CY.createTexture("canvasTexture", {
@@ -223,7 +231,6 @@ export const canvasTexturePtr = CY.createTexture("canvasTexture", {
   onCanvasResize: (w, h) => [w, h],
   format: canvasFormat,
   attachToCanvas: true,
-  init: () => undefined,
 });
 
 export const mainDepthTex = CY.createDepthTexture("canvasDepth", {
@@ -231,5 +238,4 @@ export const mainDepthTex = CY.createDepthTexture("canvasDepth", {
   onCanvasResize: (w, h) => [w, h],
   format: "depth32float",
   // format: "depth24plus-stencil8",
-  init: () => undefined,
 });

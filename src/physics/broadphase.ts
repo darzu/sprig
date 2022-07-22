@@ -1,6 +1,6 @@
 import { vec3 } from "../gl-matrix.js";
 import { clamp } from "../math.js";
-import { tempVec } from "../temp-pool.js";
+import { tempVec3 } from "../temp-pool.js";
 import { range } from "../util.js";
 import { vec3Floor } from "../utils-3d.js";
 

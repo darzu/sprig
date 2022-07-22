@@ -6,11 +6,16 @@ import { getText } from "../webget.js";
 const DEFAULT_SHADER_PATH = "/shaders/";
 
 export const ShaderPaths = [
-  "std-shader",
+  "std-mesh",
   "std-outline",
   "std-blur",
   "std-post",
   "xp-boid-render",
+  "xp-boid-update",
+  "std-jump-flood",
+  "xp-cloth-update",
+  "std-screen-quad-vert",
+  "std-rand",
 ] as const;
 
 export type ShaderName = typeof ShaderPaths[number];
@@ -46,6 +51,8 @@ async function loadShaders(): Promise<ShaderSet> {
       code: codes[i],
     };
   }
+
+  // TODO(@darzu): should this submit to webgpu for parsing?
 
   return set as ShaderSet;
 }

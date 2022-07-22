@@ -26,7 +26,7 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-const GAME = "ship" as
+const GAME = "hyperspace" as
   | "ship"
   | "gjk"
   | "rebound"
@@ -97,7 +97,19 @@ function callFixedTimestepSystems() {
     EM.callSystem("clothSandbox");
   }
   if (GAME === "hyperspace") {
+    EM.callSystem("startGame");
+    EM.callSystem("shipHealthCheck");
+    EM.callSystem("easeRudder");
+    EM.callSystem("shipMove");
+    EM.callSystem("shipScore");
+    EM.callSystem("boatPropsBuild");
+    EM.callSystem("cannonPropsBuild");
+    EM.callSystem("gemPropsBuild");
+    EM.callSystem("rudderPropsBuild");
+    EM.callSystem("shipPropsBuild");
+
     EM.callSystem("hyperspaceGame");
+    EM.callSystem("runOcean");
   }
   EM.callSystem("updateBullets");
   EM.callSystem("updateNoodles");

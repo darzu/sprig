@@ -208,3 +208,24 @@ export function uncapitalize<S extends string>(s: S): Uncapitalize<S> {
 export function pluralize<S extends string>(s: S): `${S}s` {
   return `${s}s`; // lol
 }
+
+export function arraySortedEqual<T>(vs: T[], us: T[]): boolean {
+  if (vs.length !== us.length) return false;
+  for (let i = 0; i < vs.length; i++) if (vs[i] !== us[i]) return false;
+  return true;
+}
+export function arrayUnsortedEqual<T>(vs: T[], us: T[]): boolean {
+  // NOTE: inefficient for large lengths
+  if (vs.length !== us.length) return false;
+  for (let i1 = 0; i1 < vs.length; i1++) {
+    let match = false;
+    for (let i2 = 0; i2 < vs.length; i2++) {
+      if (vs[i1] === us[i2]) {
+        match = true;
+        break;
+      }
+    }
+    if (!match) return false;
+  }
+  return true;
+}

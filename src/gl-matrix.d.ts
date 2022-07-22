@@ -2083,6 +2083,10 @@ export module vec4 {
    * @returns {vec4} a new 4D vector
    */
   export function create(): vec4;
+
+  export const ZEROS: ReadonlyVec4;
+  export const ONES: ReadonlyVec4;
+
   /**
    * Creates a new vec4 initialized with values from an existing vector
    *
@@ -3253,6 +3257,10 @@ export module vec2 {
    * @returns {vec2} a new 2D vector
    */
   export function create(): vec2;
+
+  export const ZEROS: ReadonlyVec2;
+  export const ONES: ReadonlyVec2;
+
   /**
    * Creates a new vec2 initialized with values from an existing vector
    *

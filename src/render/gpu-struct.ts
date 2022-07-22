@@ -3,7 +3,7 @@ import { align, max, sum } from "../math.js";
 import { assert } from "../test.js";
 import { objMap } from "../util.js";
 
-// cytochrome's data helpers
+// TABLES, CONSTS and TYPE-LEVEL HELPERS
 
 const WGSLScalars = ["bool", "i32", "u32", "f32", "f16"] as const;
 type WGSLScalar = typeof WGSLScalars[number];
@@ -33,32 +33,97 @@ type WGSLTypeToTSType = {
   "mat4x4<f32>": mat4;
 };
 
+export const TexTypeToWGSLElement: Partial<
+  Record<GPUTextureFormat, WGSLVec | WGSLScalar>
+> = {
+  rgba32float: "vec4<f32>",
+  rg32float: "vec2<f32>",
+  r32float: "f32",
+  // TODO(@darzu): Support f16? Currently we get the error:
+  //  "f16 used without 'f16' extension enabled"
+  rgba16float: "vec4<f32>",
+  rg16float: "vec2<f32>",
+  r16float: "f32",
+  // TODO(@darzu): what should we do with 8-bit types?
+  bgra8unorm: "vec4<f32>",
+  r8unorm: "f32",
+  r8snorm: "f32",
+  rg8unorm: "vec2<f32>",
+  rg8snorm: "vec2<f32>",
+  rgba8unorm: "vec4<f32>",
+  rgba8snorm: "vec4<f32>",
+};
+// TODO(@darzu): this feels redundant with some of the size info
+export const TexTypeToElementArity: Partial<
+  Record<GPUTextureFormat, 1 | 2 | 4>
+> = {
+  rgba32float: 4,
+  rg32float: 2,
+  r32float: 1,
+  rgba16float: 4,
+  rg16float: 2,
+  r16float: 1,
+  r8unorm: 1,
+  r8snorm: 1,
+  rg8unorm: 2,
+  rg8snorm: 2,
+  bgra8unorm: 4,
+  rgba8unorm: 4,
+  rgba8snorm: 4,
+  depth32float: 1,
+};
 export type TexTypeToTSType = {
   rgba32float: vec4;
+  rg32float: vec2;
+  r32float: number;
 };
+
+export type TexTypeAsTSType<F> = F extends keyof TexTypeToTSType
+  ? TexTypeToTSType[F]
+  : never;
+
 export const texTypeToBytes: Partial<Record<GPUTextureFormat, number>> = {
+  r32float: 1 * 4,
+  rg32float: 2 * 4,
   rgba32float: 4 * 4,
   // TODO(@darzu): is this size right?
   rgba8unorm: 4,
   rgba8snorm: 4,
+  r16float: 2 * 1,
+  rg16float: 2 * 2,
   rgba16float: 2 * 4,
   "depth24plus-stencil8": 3 + 1,
   depth32float: 4,
+  r8unorm: 1,
+  rg8unorm: 2,
   bgra8unorm: 4,
+  r8snorm: 1,
+  rg8snorm: 2,
   "bgra8unorm-srgb": 4,
   rg16uint: 2 + 2,
 };
-export const texTypeIsDepthNoStencil = {
-  depth16unorm: true,
-  depth24plus: true,
-  depth32float: true,
+// Source: https://gpuweb.github.io/gpuweb/#plain-color-formats
+// TODO(@darzu): probably just track which ones are unfilterable
+export const texTypeToSampleType: Partial<
+  Record<GPUTextureFormat, GPUTextureSampleType[]>
+> = {
+  r32float: ["unfilterable-float"],
+  rg32float: ["unfilterable-float"],
+  rgba32float: ["unfilterable-float"],
 };
-export const texTypeIsDepthAndStencil = {
-  "depth24plus-stencil8": true,
-  "depth24unorm-stencil8": true,
-  "depth32float-stencil8": true,
-};
-export const texTypeIsStencil = {
+export const texTypeIsDepthNoStencil: Partial<Record<GPUTextureFormat, true>> =
+  {
+    depth16unorm: true,
+    depth24plus: true,
+    depth32float: true,
+  };
+export const texTypeIsDepthAndStencil: Partial<Record<GPUTextureFormat, true>> =
+  {
+    "depth24plus-stencil8": true,
+    "depth24unorm-stencil8": true,
+    "depth32float-stencil8": true,
+  };
+export const texTypeIsStencil: Partial<Record<GPUTextureFormat, true>> = {
   stencil8: true,
   ...texTypeIsDepthAndStencil,
 };
@@ -67,10 +132,6 @@ export const texTypeIsDepth = {
   ...texTypeIsDepthAndStencil,
 };
 
-export type TexTypeAsTSType<F> = F extends keyof TexTypeToTSType
-  ? TexTypeToTSType[F]
-  : never;
-
 export const GPUBufferBindingTypeToWgslVar: {
   [K in GPUBufferBindingType]: string;
 } = {
@@ -78,6 +139,87 @@ export const GPUBufferBindingTypeToWgslVar: {
   "read-only-storage": "var<storage, read>",
   storage: "var<storage, read_write>",
 };
+
+const wgslTypeToVertType: Partial<Record<WGSLType, GPUVertexFormat>> = {
+  "vec2<f16>": "float16x2",
+  "vec4<f16>": "float16x4",
+  f32: "float32",
+  "vec2<f32>": "float32x2",
+  "vec3<f32>": "float32x3",
+  "vec4<f32>": "float32x4",
+  u32: "uint32",
+  i32: "sint32",
+};
+
+// https://www.w3.org/TR/WGSL/#alignment-and-size
+const wgslTypeToSize: Partial<Record<WGSLType, number>> = {
+  i32: 4,
+  u32: 4,
+  f32: 4,
+  "vec2<f32>": 8,
+  "vec3<f32>": 12,
+  "mat4x4<f32>": 64,
+};
+
+// TODO(@darzu): this isn't quite right, a mat3x4<f32> is size 48 but aligns to 16
+const wgslTypeToAlign = objMap(wgslTypeToSize, alignUp) as Partial<
+  Record<WGSLType, number>
+>;
+
+export type CyStructDesc = Record<string, WGSLType>;
+
+export type CyToTS<O extends CyStructDesc> = {
+  [N in keyof O]: O[N] extends keyof WGSLTypeToTSType
+    ? WGSLTypeToTSType[O[N]]
+    : never;
+};
+
+// INTERFACES
+
+// TODO(@darzu): we need seperate sizes, offsets / alignment for different
+//  usages, probably these 3:
+//      uniform (256byte align),
+///     storage array (standard align),
+//      vertex buffer (compact)
+export interface CyStruct<O extends CyStructDesc> {
+  desc: O;
+  memberCount: number;
+  size: number;
+  compactSize: number;
+  offsets: number[];
+  serialize: (data: CyToTS<O>) => Uint8Array;
+  wgsl: (align: boolean, locationStart?: number) => string;
+  // webgpu
+  layout(
+    idx: number,
+    stage: GPUShaderStageFlags,
+    type: GPUBufferBindingType,
+    // TODO(@darzu): don't like this param
+    hasDynamicOffset: boolean
+  ): GPUBindGroupLayoutEntry;
+  vertexLayout(
+    stepMode: GPUVertexStepMode,
+    startLocation: number
+  ): GPUVertexBufferLayout;
+  clone: (data: CyToTS<O>) => CyToTS<O>;
+  opts: CyStructOpts<O> | undefined;
+}
+
+export type Serializer<O extends CyStructDesc> = (
+  data: CyToTS<O>,
+  offsets: number[],
+  offsets_32: number[],
+  views: { f32: Float32Array; u32: Uint32Array; u8: Uint8Array }
+) => void;
+
+export interface CyStructOpts<O extends CyStructDesc> {
+  // TODO(@darzu): Can we do away with isUniform and isCompact? Maybe infer from usage?
+  isUniform?: boolean;
+  isCompact?: boolean;
+  serializer?: Serializer<O>;
+}
+
+// HELPER FNS
 
 function wgslTypeToDummyVal<T extends WGSLType>(
   wgsl: T
@@ -147,27 +289,7 @@ function createDummyStruct<O extends CyStructDesc>(desc: O): CyToTS<O> {
   return res;
 }
 
-const wgslTypeToVertType: Partial<Record<WGSLType, GPUVertexFormat>> = {
-  "vec2<f16>": "float16x2",
-  "vec4<f16>": "float16x4",
-  f32: "float32",
-  "vec2<f32>": "float32x2",
-  "vec3<f32>": "float32x3",
-  "vec4<f32>": "float32x4",
-  u32: "uint32",
-  i32: "sint32",
-};
-
-// https://www.w3.org/TR/WGSL/#alignment-and-size
-const wgslTypeToSize: Partial<Record<WGSLType, number>> = {
-  i32: 4,
-  u32: 4,
-  f32: 4,
-  "vec2<f32>": 8,
-  "vec3<f32>": 12,
-  "mat4x4<f32>": 64,
-};
-const alignUp = (n: number) => {
+function alignUp(n: number) {
   // TODO(@darzu): i know there is a smarter way to write this...
   //  ... something something bit shifting
   if (n <= 4) return 4;
@@ -178,61 +300,6 @@ const alignUp = (n: number) => {
   if (n <= 128) return 128;
   if (n <= 256) return 256;
   throw `${n} too big to align`;
-};
-// TODO(@darzu): this isn't quite right, a mat3x4<f32> is size 48 but aligns to 16
-const wgslTypeToAlign = objMap(wgslTypeToSize, alignUp) as Partial<
-  Record<WGSLType, number>
->;
-
-export type CyStructDesc = Record<string, WGSLType>;
-
-export type CyToTS<O extends CyStructDesc> = {
-  [N in keyof O]: O[N] extends keyof WGSLTypeToTSType
-    ? WGSLTypeToTSType[O[N]]
-    : never;
-};
-
-// TODO(@darzu): we need seperate sizes, offsets / alignment for different
-//  usages, probably these 3:
-//      uniform (256byte align),
-///     storage array (standard align),
-//      vertex buffer (compact)
-export interface CyStruct<O extends CyStructDesc> {
-  desc: O;
-  memberCount: number;
-  size: number;
-  compactSize: number;
-  offsets: number[];
-  serialize: (data: CyToTS<O>) => Uint8Array;
-  wgsl: (align: boolean, locationStart?: number) => string;
-  // webgpu
-  layout(
-    idx: number,
-    stage: GPUShaderStageFlags,
-    type: GPUBufferBindingType,
-    // TODO(@darzu): don't like this param
-    hasDynamicOffset: boolean
-  ): GPUBindGroupLayoutEntry;
-  vertexLayout(
-    stepMode: GPUVertexStepMode,
-    startLocation: number
-  ): GPUVertexBufferLayout;
-  clone: (data: CyToTS<O>) => CyToTS<O>;
-  opts: CyStructOpts<O> | undefined;
-}
-
-export type Serializer<O extends CyStructDesc> = (
-  data: CyToTS<O>,
-  offsets: number[],
-  offsets_32: number[],
-  views: { f32: Float32Array; u32: Uint32Array; u8: Uint8Array }
-) => void;
-
-export interface CyStructOpts<O extends CyStructDesc> {
-  // TODO(@darzu): Can we do away with isUniform and isCompact? Maybe infer from usage?
-  isUniform?: boolean;
-  isCompact?: boolean;
-  serializer?: Serializer<O>;
 }
 
 // TODO(@darzu): handle nested fixed size arrays

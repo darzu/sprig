@@ -193,3 +193,96 @@ trees compilation:
   
   fluffy trees study:
     http://simonschreibt.de/gat/airborn-trees/
+
+Ghost of Tsushima:
+  https://www.youtube.com/watch?v=Ibe1JBF5i5Y
+  Inspired by:
+    https://outerra.blogspot.com/2012/05/procedural-grass-rendering.html
+  2.5ms for grass,
+  considers ~1mil, renders 83k
+  animates w/ wind
+  first step: tile the world
+    terrain height, ...
+    type of grass and height
+  subdivided into smaller rendered tiles
+    512x512, texel 1 every ~39cm
+    512x512 tile -> grass type, 8 bit index into grass params
+      do a gather from nearby pixels and randomly choose type weighed by pos
+    1 compute shader per tile
+      height, distance and frustum culling (in shader)
+      last step: occlusion culling
+      each remaining "lane" (thread?)
+        generate blade:
+          position (3xf32), facing (2xf32)
+          wind strength, per-blade hash,
+          grass type,
+          clump info,
+            gives more varience in a big field
+            clump by voronoi algorithm
+          various:
+            height, width, tilt, bend, side curve
+    4 tiles are computed at once,
+      setups instance buffers and "indirect call args" (?)
+    vertex shading: indexed instanced draw call (no vertex streams)
+      High LOD: 15 verts, Low LOD: 7 verts
+      each tile is one draw call, either low or high lod
+      each vert knows: 0-1 where it is on length of blade, and left or right
+      verts aren't evenly distributed along length b/c of curve
+      high lod blends towards low lod
+      low lod tiles are 2x size of high lod tiles, same number of grass blades
+      high lod tiles transition out 3/4 of blades
+      if grass is short enough, 15/7 vert grass is "folded" to form two blades instead (fucking wild)
+      shape:
+        cubic bezier curve
+          easy to calculate positions
+          derivatives also easy (for normals)
+          control points great for animating and shaping
+      animation:
+        bobs up and down in the wind,
+        sine wave, phase is affected by the per-blade hash
+        (arc length of bezier curve is not easy to calculate)
+          if animation is simple enough, this isn't noticable
+      normals of the grass are tilted outward a bit (not flat)
+      slightly shift blade's verts in view space when blade is orthogonol to camera
+        this really fills in the grass
+      specular highlights were hard, lots of aliasing
+        "grass is very glossy" esp in rain
+        as distance to camera increase, lerp normal to common normal for grass clump
+        also reduce gloss in the pixel shader
+          "makes sense b/c gloss represent sub-pixel normal variance; as variance increases, reduce gloss"
+    pixel shading:
+      deferred rendering
+      gloss is 1D texture across width (less glossy in center and edges)
+      diffuse: 1D texture for vein down center, 2D texture w/ color
+      transluency: constant that varies over length
+      ambient occlusion: single value, high at base, low at tip
+        temporal SSAO doesn't work well (see vid for details)
+    wind system can be sampled on CPU and GPU:
+      2D perlin noise,
+      larger = more push
+      scrolled in direction wind is blowing
+      grass and some particle systems layer more noise
+    Very far lods were a challenge
+      tried view dependent stuff based on clump info 
+      render artist authored texture at that place instead of underlying material
+    CPU interactivity:
+      Compute shader copies summary of data out for CPU
+      generate "fiz meshes" the gameplay can raycast against for hiding
+    Shadows:
+      Doesn't run the compute and vertex pipeline 
+        (wait, why would compute ever be run??)
+        Well it does happen in "some rare case". cinimatics?
+      Uses imposter system.
+        "raise verts of the terrain to heigh of the grass"
+        offset depth written to shadow map w/ a dithered pattern
+        "combines with shadow filter" (TODO: what are shadow filters?)
+        problems: hard edges, difficult to resolve
+        also does screen-space shadows  
+          "screen space shadows can't understand thickness of objects but grass is thin anyway"
+    Improvements for next time:
+      currently, strictly limited to grass on terrain
+      would like to be able to generate grass on assets; full seamless w/ terrain
+      would like more the bezier curves: ferns, leaves, small rocks,
+      want to disassociate lod'ing out size of tile (?)
+
+      

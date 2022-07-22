@@ -1,7 +1,7 @@
-import { mat4, quat, vec3, vec4 } from "./gl-matrix.js";
-import { avg } from "./math.js";
+import { mat4, quat, vec2, vec3, vec4 } from "./gl-matrix.js";
+import { avg, mathMap } from "./math.js";
 import { AABB } from "./physics/broadphase.js";
-import { tempVec } from "./temp-pool.js";
+import { tempVec3 } from "./temp-pool.js";
 
 // math utilities
 export function computeTriangleNormal(p1: vec3, p2: vec3, p3: vec3): vec3 {
@@ -60,7 +60,7 @@ export function vec4Dbg(v: vec4): string {
   )},${v[3].toFixed(2)}]`;
 }
 export function quatDbg(q: quat): string {
-  const axis = tempVec();
+  const axis = tempVec3();
   const n = quat.getAxisAngle(axis, q);
   return `${vec3Dbg(axis)}*${n.toFixed(2)}`;
 }
@@ -108,4 +108,22 @@ export function uintToVec3unorm(i: number, max: number): vec3 {
     (((((i % 7) + 1) & 2) >> 1) * (Math.floor(i / 7) + 1)) / Math.ceil(max / 7),
     (((((i % 7) + 1) & 4) >> 2) * (Math.floor(i / 7) + 1)) / Math.ceil(max / 7),
   ];
+}
+
+// Changes all vec2s to be in the range [0,1] based on the max and min values
+//   of the whole array.
+export function normalizeVec2s(vs: vec2[], min: number, max: number): void {
+  const minX = vs.reduce((p, n) => (n[0] < p ? n[0] : p), Infinity);
+  const maxX = vs.reduce((p, n) => (n[0] > p ? n[0] : p), -Infinity);
+  const minY = vs.reduce((p, n) => (n[1] < p ? n[1] : p), Infinity);
+  const maxY = vs.reduce((p, n) => (n[1] > p ? n[1] : p), -Infinity);
+  const xRange = maxX - minX;
+  const yRange = maxY - minY;
+  const newRange = max - min;
+  const oldRange = Math.max(xRange, yRange);
+  const scalar = newRange / oldRange;
+  for (let v of vs) {
+    v[0] = (v[0] - minX) * scalar + min;
+    v[1] = (v[1] - minY) * scalar + min;
+  }
 }

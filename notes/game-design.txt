@@ -132,3 +132,65 @@ FTL post mortem:
         one core experience guides the project
         nothing but main goal is set in stone
         iterate and follow the fun
+
+Resources:
+  thread: https://twitter.com/haydndalton/status/1541104969478246403
+  MELEE COMBAT
+    Melee expertise is highly desired. Follow & read:
+    http://pushing-buttons.blogspot.com
+    http://jasondeheras.com/blog
+    https://twitter.com/jasondeheras
+    http://derekdaniels.com/game-design
+    https://twitter.com/derek_omni
+    Look up framecounts on your favorite SF characters
+      https://fullmeter.com/fatonline/#/framedata/SFV/Ryu
+    Combat animation:
+      https://art-eater.com/articles/darkstalkers-and-the-twelve-principles-of-animation
+    key posing:
+      https://twitter.com/Richmond_Lee/status/1225886892320641024?s=20&amp;t=_lDXWT5MVT3xeLiQXxrDHg
+    Game art:
+      https://www.fightersgeneration.com/games1.html#s
+    Game sprites are a great way to relay key-poses, quickly:
+      https://www.spriters-resource.com/genre/fighting/
+      https://spritedatabase.net
+      https://www.justnopoint.com/zweifuss/index.htm
+      https://www.infinitymugenteam.com
+  LEVEL DESIGN
+    https://twitter.com/the_Norberg
+    https://www.tommynorberg.com
+    https://timanderssondesign.wixsite.com/portfolio
+    https://twitter.com/MaxPears
+    https://www.maxpears.com
+    https://twitter.com/leveldesign_org
+    easy 3d blocks:
+      https://www.sketchup.com
+    https://probabletrain.itch.io/dungeon-scrawl
+    https://dungeondraft.net
+    https://level-design.org
+    https://www.pinterest.com/search/pins/?q=level%20design&amp;rs=typed&amp;term_meta[]=level%7Ctyped&amp;term_meta[]=design%7Ctyped
+  UI:
+    https://gameuxmasterguide.com
+    https://www.gameuidatabase.com
+    https://www.hudsandguis.com
+    https://www.figma.com
+    https://twitter.com/YugenBlake
+    http://www.yugenblake.com
+    https://twitter.com/ashthorp1
+    https://www.behance.net/gallery/45058123/CALL-OF-DUTY-Infinite-Warfare
+  USEFUL GAME DESIGN RESOURCES
+    https://howlongtobeat.com
+    https://www.dimensions.com
+    https://gamedocs.org/documents/
+    https://www.thesaurus.com
+    jobs:
+      https://gamejobs.co
+      https://jobs.gamasutra.com/index
+      https://www.linkedin.com/jobs/
+    https://www.gamedevmap.com/index.php
+    https://twitter.com/mightybedbug
+    http://mrbossdesign.blogspot.com
+    https://www.amazon.com/Level-Up-Guide-Great-Design/dp/047068867X
+    https://www.creativeuncut.com
+    https://www.artstation.com/?sort_by=trending
+    https://www.pinterest.com
+  https://www.gamedesignworkshop.com

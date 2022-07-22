@@ -1,7 +1,7 @@
-import { CY, linearSamplerPtr } from "./gpu-registry.js";
+import { CY, linearSamplerPtr } from "../gpu-registry.js";
 import { blurOutputTex } from "./std-blur.js";
 import { outlinedTexturePtr } from "./std-outline.js";
-import { sceneBufPtr, canvasTexturePtr } from "./std-scene.js";
+import { sceneBufPtr, canvasTexturePtr, mainDepthTex } from "./std-scene.js";
 
 // TODO(@darzu): rg32uint "uint"
 // rg16uint "uint"
@@ -16,6 +16,7 @@ export const postProcess = CY.createRenderPipeline("postProcess", {
     // TODO(@darzu): merge blur texture and color tex
     { ptr: blurOutputTex, alias: "bloomTex" },
     { ptr: outlinedTexturePtr, alias: "colorTex" },
+    { ptr: mainDepthTex, alias: "depthTex" },
     // { ptr: outlinedTexturePtr, alias: "colorTex" },
     sceneBufPtr,
   ],

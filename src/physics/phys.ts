@@ -26,7 +26,7 @@ import { Collider } from "./collider.js";
 import { AABB, aabbCenter } from "./broadphase.js";
 import { registerNarrowPhaseSystems } from "./narrowphase.js";
 import { assert } from "../test.js";
-import { tempVec } from "../temp-pool.js";
+import { tempVec3 } from "../temp-pool.js";
 
 // TODO(@darzu): PHYSICS TODO:
 // [ ] seperate rotation and motion w/ constraint checking between them
@@ -92,11 +92,11 @@ export function computeContactData(
 
   if (a.parentOId === b.oId) {
     bAABB = b.selfAABB;
-    lastBPos = aabbCenter(tempVec(), b.selfAABB);
+    lastBPos = aabbCenter(tempVec3(), b.selfAABB);
     parentOId = b.oId;
   } else if (b.parentOId === a.oId) {
     aAABB = a.selfAABB;
-    lastAPos = aabbCenter(tempVec(), a.selfAABB);
+    lastAPos = aabbCenter(tempVec3(), a.selfAABB);
     parentOId = a.oId;
   } else {
     assert(
@@ -129,12 +129,12 @@ export function computeReboundData(
 
   if (a.parentOId === b.oId) {
     bAABB = b.selfAABB;
-    bPos = aabbCenter(tempVec(), b.selfAABB);
+    bPos = aabbCenter(tempVec3(), b.selfAABB);
     lastBPos = bPos;
     parentOId = b.oId;
   } else if (b.parentOId === a.oId) {
     aAABB = a.selfAABB;
-    aPos = aabbCenter(tempVec(), a.selfAABB);
+    aPos = aabbCenter(tempVec3(), a.selfAABB);
     lastAPos = aPos;
     parentOId = a.oId;
   } else {

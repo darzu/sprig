@@ -1,5 +1,5 @@
-import { CY } from "./gpu-registry.js";
-import { createCyStruct, CyToTS } from "./gpu-struct.js";
+import { CY } from "../gpu-registry.js";
+import { createCyStruct, CyToTS } from "../gpu-struct.js";
 import { outlinedTexturePtr } from "./std-outline.js";
 import { mainDepthTex, litTexturePtr, sceneBufPtr } from "./std-scene.js";
 
@@ -11,6 +11,7 @@ const StarStruct = createCyStruct({
 export type StarTS = CyToTS<typeof StarStruct.desc>;
 
 let NUM_STARS = 1000;
+// let NUM_STARS = 1000000;
 
 const starData = CY.createArray("starData", {
   struct: StarStruct,
@@ -22,27 +23,21 @@ export const emissionTexturePtr = CY.createTexture("emissionTexture", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
   format: "rgba16float",
-  init: () => undefined,
 });
 
 export const initStars = CY.createComputePipeline("initStars", {
   globals: [starData],
   shaderComputeEntry: "main",
-  shader: () => `
-  var<private> rand_seed : vec2<f32>;
+  shader: (shaders) => `
+  ${shaders["std-rand"].code}
 
-  fn rand() -> f32 {
-      rand_seed.x = fract(cos(dot(rand_seed, vec2<f32>(26.88662389, 200.54042905))) * 240.61722267);
-      rand_seed.y = fract(cos(dot(rand_seed, vec2<f32>(58.302370833, 341.7795489))) * 523.34916812);
-      return rand_seed.y;
-  }
-
-  @stage(compute) @workgroup_size(64)
+  @compute @workgroup_size(64)
   fn main(@builtin(global_invocation_id) gId : vec3<u32>) {
     rand_seed = vec2<f32>(f32(gId.x));
     // starDatas.ms[gId.x].pos = vec3(0.0);
     starDatas.ms[gId.x].pos = vec3(rand() - 0.5, rand() - 0.5, rand() - 0.5) 
       * 1000.0;
+      // * 3000.0;
     starDatas.ms[gId.x].color = vec3(rand(), rand(), rand());
     starDatas.ms[gId.x].size = rand() * 3.0;
   }
@@ -59,7 +54,7 @@ export const renderStars = CY.createRenderPipeline("renderStars", {
     @location(1) color: vec3<f32>,
   };
   
-  @stage(vertex)
+  @vertex
   fn vert_main(@builtin(vertex_index) gvIdx : u32) -> VertexOutput {
     let vIdx = gvIdx % 6u;
     let starIdx = gvIdx / 6u;
@@ -123,7 +118,7 @@ export const renderStars = CY.createRenderPipeline("renderStars", {
     @location(1) color: vec4<f32>,
   }
 
-  @stage(fragment)
+  @fragment
   fn frag_main(input: VertexOutput) -> FragOut {
     let dist = length(input.uv - vec2(0.5));
     // TODO: what's the perf difference of alpha vs discard?

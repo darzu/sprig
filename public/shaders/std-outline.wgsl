@@ -3,7 +3,7 @@ struct VertexOutput {
   @location(0) uv : vec2<f32>,
 };
 
-@stage(vertex)
+@vertex
 fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
   let xs = vec2(-1.0, 1.0);
   let ys = vec2(-1.0, 1.0);
@@ -31,14 +31,17 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
   return output;
 }
 
-@stage(fragment)
+@fragment
 fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
+  // TODO(@darzu): it'd be great if we could just output lines and compose elsewhere
   var color = textureSample(colorTex, samp, uv).rgb;
 
   let dims : vec2<i32> = textureDimensions(surfTex);
   let dimsF = vec2<f32>(dims);
 
   let lineWidth = 3.0;
+  // TODO(@darzu): DBG WIREFRAME
+  // let lineWidth = 1.0;
   // NOTE: we make the line width depend on resolution b/c that gives a more consistent
   //    look across resolutions.
   // let lineWidth = max((f32(dims.r) / 800.0), 1.0);
@@ -53,6 +56,7 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let sR = textureLoad(surfTex, vec2<i32>(r), 0);
   let sB = textureLoad(surfTex, vec2<i32>(b), 0);  
 
+  // TODO(@darzu): do i need to do expensive sampling for depth and norm? why not just load
   let h = textureSample(depthTex, samp, uv);
   let hT = textureSample(depthTex, samp, t / dimsF);
   let hL = textureSample(depthTex, samp, l / dimsF);
@@ -88,7 +92,14 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let edgeLum = clamp(edgeLight - edgeDark, -0.7, 1.0);
   if (surfaceDidChange || objectDidChange) {
     color *= 1.0 + edgeLum;
-  }
+    // TODO(@darzu): DEBUG WIREFRAME
+    // color *= 2.0;
+    // color = vec3(0.2, 0.2, 0.8);
+  } 
+  // DEBUG WIREFRAME
+  // else {
+  //   color *= 0.0;
+  // }
 
   return vec4(color, 1.0);
 }

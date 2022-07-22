@@ -1,6 +1,6 @@
-import { vec3 } from "../gl-matrix.js";
-import { CY } from "./gpu-registry.js";
-import { createCyStruct, CyToTS } from "./gpu-struct.js";
+import { vec3 } from "../../gl-matrix.js";
+import { CY } from "../gpu-registry.js";
+import { createCyStruct, CyToTS } from "../gpu-struct.js";
 import { sceneBufPtr, litTexturePtr, mainDepthTex } from "./std-scene.js";
 
 export const RopeStickStruct = createCyStruct({
@@ -119,14 +119,17 @@ const ropeStickBufPtr = CY.createArray("ropeStick", {
   struct: RopeStickStruct,
   init: genRopeStickData,
 });
-export const compRopePipelinePtr = CY.createComputePipeline("ropeComp", {
-  globals: [sceneBufPtr, ropePointBufPtr, ropeStickBufPtr],
-  shaderComputeEntry: "main",
-  workgroupCounts: [1, 1, 1],
-  shader: () =>
-    `
+
+// TODO(@darzu): disabled this shader b/c of annoying warnings
+const shader = `
+@compute @workgroup_size(${CLOTH_W ** 2}) 
+fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
+  // noop
+}`;
+
+const shader_real = `
 // todo: pick workgroup size based on max rope system?
-@stage(compute) @workgroup_size(${CLOTH_W ** 2})
+@compute @workgroup_size(${CLOTH_W ** 2})
 fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
 var pIdx : u32 = GlobalInvocationID.x;
 
@@ -202,7 +205,12 @@ loop {
 
 }
 
-`,
+`;
+export const compRopePipelinePtr = CY.createComputePipeline("ropeComp", {
+  globals: [sceneBufPtr, ropePointBufPtr, ropeStickBufPtr],
+  shaderComputeEntry: "main",
+  workgroupCounts: [1, 1, 1],
+  shader: () => shader,
 });
 
 // rope particle render
@@ -253,7 +261,7 @@ struct VertexOutput {
   @location(0) color : vec3<f32>,
 };
 
-@stage(vertex)
+@vertex
 fn vert_main(vIn: VertexInput, iIn: InstanceInput) -> VertexOutput {
   let vertPos = vIn.position;
   let position = iIn.position;
@@ -280,7 +288,7 @@ fn vert_main(vIn: VertexInput, iIn: InstanceInput) -> VertexOutput {
   return output;
 }
 
-@stage(fragment)
+@fragment
 fn frag_main(input: VertexOutput) -> @location(0) vec4<f32> {
   return vec4<f32>(input.color, 1.0);
 }

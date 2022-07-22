@@ -13,21 +13,22 @@ import {
 import { ColorDef } from "../color.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DeletedDef } from "../delete.js";
-import { stdRenderPipeline } from "./std-pipeline.js";
-import { MeshHandleStd } from "./std-scene.js";
+import { stdRenderPipeline } from "./pipelines/std-mesh.js";
+import { MeshHandleStd } from "./pipelines/std-scene.js";
 import { CanvasDef } from "../canvas.js";
 import { FORCE_WEBGL } from "../main.js";
 import { createWebGPURenderer } from "./render-webgpu.js";
-import { CyPipelinePtr } from "./gpu-registry.js";
+import { CyPipelinePtr, CyTexturePtr } from "./gpu-registry.js";
 import { createFrame } from "../physics/nonintersection.js";
-import { tempVec } from "../temp-pool.js";
+import { tempVec3 } from "../temp-pool.js";
 import { isMeshHandle } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
-import { SceneTS } from "./std-scene.js";
+import { SceneTS } from "./pipelines/std-scene.js";
 import { max } from "../math.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { ShadersDef, ShaderSet } from "./shader-loader.js";
 import { dbgLogOnce } from "../util.js";
+import { TimeDef } from "../time.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -178,7 +179,7 @@ function extrapolateFrames(
   // see https://answers.unity.com/questions/168779/extrapolating-quaternion-rotation.html
   quat.invert(out.rotation, prev.rotation);
   quat.mul(out.rotation, next.rotation, out.rotation);
-  const axis = tempVec();
+  const axis = tempVec3();
   let angle = quat.getAxisAngle(axis, out.rotation);
   // ensure we take the shortest path
   if (angle > Math.PI) {
@@ -235,7 +236,7 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
 export function registerRenderer(em: EntityManager) {
   em.registerSystem(
     [RendererWorldFrameDef, RenderableDef],
-    [CameraViewDef, RendererDef],
+    [CameraViewDef, RendererDef, TimeDef],
     (objs, res) => {
       const renderer = res.renderer.renderer;
       const cameraView = res.cameraView;
@@ -274,7 +275,7 @@ export function registerRenderer(em: EntityManager) {
       // TODO(@darzu): go elsewhere
       // const lightPosition = vec3.fromValues(50, 100, -100);
       const lightPosition = vec3.add(
-        tempVec(),
+        tempVec3(),
         cameraView.location,
         [50, 100, 50]
       );
@@ -314,13 +315,12 @@ export function registerRenderer(em: EntityManager) {
       renderer.updateScene({
         cameraViewProjMatrix: cameraView.viewProjMat,
         lightViewProjMatrix,
-        // TODO(@darzu): use?
-        time: 1000 / 60,
+        time: res.time.time,
         maxSurfaceId,
         cameraPos: cameraView.location,
       });
 
-      renderer.renderFrame(
+      renderer.submitPipelines(
         objs.map((o) => o.renderable.meshHandle),
         res.renderer.pipelines
       );
@@ -374,10 +374,14 @@ export interface Renderer {
   addMesh(m: Mesh): MeshHandleStd;
   addMeshInstance(h: MeshHandleStd): MeshHandleStd;
   updateMesh(handle: MeshHandleStd, newMeshData: Mesh): void;
+  // TODO(@darzu): scene struct maybe shouldn't be special cased, all uniforms
+  //  should be neatily updatable.
   updateScene(scene: Partial<SceneTS>): void;
-  renderFrame(handles: MeshHandleStd[], pipelines: CyPipelinePtr[]): void;
+  submitPipelines(handles: MeshHandleStd[], pipelines: CyPipelinePtr[]): void;
+  readTexture(tex: CyTexturePtr): Promise<ArrayBuffer>;
 }
 
+// TODO(@darzu): the double "Renderer" naming is confusing. Maybe one should be GPUManager or something?
 export const RendererDef = EM.defineComponent(
   "renderer",
   (renderer: Renderer, usingWebGPU: boolean, pipelines: CyPipelinePtr[]) => {

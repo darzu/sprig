@@ -41,3 +41,6 @@ For program slicing:
   concepts.
 
   terms: tree shaking, program slicing,
+
+For every complex topic that someone is stuck on, there are 1-2 
+  sentences that if they heard would unblock their learning.

@@ -5273,6 +5273,8 @@ export var vec3 = /*#__PURE__*/Object.freeze({
 export var vec4 = /*#__PURE__*/Object.freeze({
         __proto__: null,
         create: create$5,
+        ZEROS: [0,0,0,0],
+        ONES: [1,1,1,1],
         clone: clone$5,
         fromValues: fromValues$5,
         copy: copy$5,
@@ -7546,6 +7548,8 @@ export var quat = /*#__PURE__*/Object.freeze({
 export var vec2 = /*#__PURE__*/Object.freeze({
         __proto__: null,
         create: create$8,
+        ZEROS: [0,0],
+        ONES: [1,1],
         clone: clone$8,
         fromValues: fromValues$8,
         copy: copy$8,
