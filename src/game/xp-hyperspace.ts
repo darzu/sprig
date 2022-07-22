@@ -353,7 +353,7 @@ export function initHyperspaceGame(em: EntityManager) {
       InputsDef,
       DevConsoleDef,
     ],
-    (cs, res) => {
+    async (cs, res) => {
       // if (VISUALIZE_JFA) {
       //   let prevjfaMaxStep = jfaMaxStep;
       //   jfaMaxStep += (res.inputs.keyClicks["j"] ?? 0) * 2;
@@ -386,37 +386,36 @@ export function initHyperspaceGame(em: EntityManager) {
         if (once2 === 1) {
           // read from one-time jobs
           // TODO(@darzu): what's the right way to handle these jobs
-          res.renderer.renderer.readTexture(uvToPosTex).then((data) => {
-            // const fs = new Float32Array(data);
-            // // TODO(@darzu): really want a vec4 array as a view on Float32Array
-            // console.dir(fs);
-            // for (let f of fs) {
-            //   // if (f !== 0 && f !== 1) console.log(f);
-            // }
+          const data = await res.renderer.renderer.readTexture(uvToPosTex);
+          // const fs = new Float32Array(data);
+          // // TODO(@darzu): really want a vec4 array as a view on Float32Array
+          // console.dir(fs);
+          // for (let f of fs) {
+          //   // if (f !== 0 && f !== 1) console.log(f);
+          // }
 
-            // TODO(@darzu): Account for the 1px border in the texture!!!
-            const reader = createTextureReader(
-              data,
-              uvToPosTex.size,
-              3,
-              uvToPosTex.format
-            );
+          // TODO(@darzu): Account for the 1px border in the texture!!!
+          const reader = createTextureReader(
+            data,
+            uvToPosTex.size,
+            3,
+            uvToPosTex.format
+          );
 
-            console.log("adding OceanDef");
+          console.log("adding OceanDef");
 
-            // TODO(@darzu): hacky hacky way to do this
-            em.addSingletonComponent(OceanDef, {
-              ent: createRef(oceanEntId, [PositionDef]),
-              uvToPos: (out, uv) => {
-                const x = uv[0] * reader.size[0];
-                const y = uv[1] * reader.size[1];
-                // console.log(`${x},${y}`);
-                return reader.sample(out, x, y);
-              },
-              uvToNorm: (out, uv) => {
-                throw `TO IMPL uvToNorm`;
-              },
-            });
+          // TODO(@darzu): hacky hacky way to do this
+          em.addSingletonComponent(OceanDef, {
+            ent: createRef(oceanEntId, [PositionDef]),
+            uvToPos: (out, uv) => {
+              const x = uv[0] * reader.size[0];
+              const y = uv[1] * reader.size[1];
+              // console.log(`${x},${y}`);
+              return reader.sample(out, x, y);
+            },
+            uvToNorm: (out, uv) => {
+              throw `TO IMPL uvToNorm`;
+            },
           });
         }
 
