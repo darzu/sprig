@@ -213,7 +213,7 @@ function createTextureReader<A extends 1 | 2 | 3 | 4>(
   }
 }
 
-export const oceanJfa = createJfaPipelines(uvMaskTex, true, 512);
+export const oceanJfa = createJfaPipelines(uvMaskTex, "exterior");
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 
@@ -246,11 +246,18 @@ export function initHyperspaceGame(em: EntityManager) {
 
       {
         // debug camera
-        vec3.copy(ghost.position, [-185.02, 66.25, -69.04]);
-        quat.copy(ghost.rotation, [0.0, -0.92, 0.0, 0.39]);
-        vec3.copy(ghost.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-        ghost.cameraFollow.yawOffset = 0.0;
-        ghost.cameraFollow.pitchOffset = -0.465;
+        // vec3.copy(ghost.position, [-185.02, 66.25, -69.04]);
+        // quat.copy(ghost.rotation, [0.0, -0.92, 0.0, 0.39]);
+        // vec3.copy(ghost.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+        // ghost.cameraFollow.yawOffset = 0.0;
+        // ghost.cameraFollow.pitchOffset = -0.465;
+
+        let g = ghost;
+        vec3.copy(g.position, [-208.43, 29.58, 80.05]);
+        quat.copy(g.rotation, [0.0, -0.61, 0.0, 0.79]);
+        vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+        g.cameraFollow.yawOffset = 0.0;
+        g.cameraFollow.pitchOffset = -0.486;
       }
 
       // TODO(@darzu): call one-shot initStars

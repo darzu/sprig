@@ -1,6 +1,7 @@
-import { range } from "../../util.js";
+import { never, range } from "../../util.js";
 import { createRenderTextureToQuad, fullQuad } from "../gpu-helper.js";
 import { CY, CyPipelinePtr, CyTexturePtr } from "../gpu-registry.js";
+import { ShaderSet } from "../shader-loader.js";
 
 export interface JfaResult {
   voronoiTex: CyTexturePtr;
@@ -22,12 +23,13 @@ let nextId = 1; // TODO(@darzu): hack so we don't need to name everything
 
 export function createJfaPipelines(
   maskTex: CyTexturePtr,
-  borderOnly: boolean,
-  size: number
+  maskMode: "interior" | "border" | "exterior"
 ): JfaResult {
+  let size = 512;
+
   const voronoiTexFmt: Parameters<typeof CY.createTexture>[1] = {
     size: [size, size],
-    format: "rg8unorm",
+    format: "rg16float",
   };
 
   const namePrefix = `jfa${nextId++}`;
@@ -42,18 +44,9 @@ export function createJfaPipelines(
 
   const uvMaskTex = CY.createTexture(namePrefix + "UvTex", voronoiTexFmt);
 
-  const extractUvMaskPipe = createRenderTextureToQuad(
-    namePrefix + "UvMaskPipe",
-    maskTex,
-    uvMaskTex,
-    -1,
-    1,
-    -1,
-    1,
-    false,
-    // TODO(@darzu): output max distance?
-    borderOnly
-      ? () => `
+  let extractUvMaskShader: () => string;
+  if (maskMode === "border") {
+    extractUvMaskShader = () => `
       // let s = textureSample(inTex, mySampler, uv).x;
       // if (s < 1.0) {
       //   return uv;
@@ -71,24 +64,52 @@ export function createJfaPipelines(
         return uv;
       }
       return vec2(0.0);
-    `
-      : () => `
-      let c = textureLoad(inTex, xy, 0);
-      if (dot(c,c) != 0.0) {
-        return uv;
-      } else {
-        return vec2(0.0);
-      }
-    `
+    `;
+  } else if (maskMode === "interior") {
+    extractUvMaskShader = () => `
+    let c = textureLoad(inTex, xy, 0).xyz;
+    if (dot(c,c) != 0.0) {
+      return uv;
+    } else {
+      return vec2(0.0);
+    }
+  `;
+  } else if (maskMode === "exterior") {
+    extractUvMaskShader = () => `
+    let c = textureLoad(inTex, xy, 0).xyz;
+    if (dot(c,c) == 0.0) {
+      return uv;
+    } else {
+      return vec2(0.0);
+    }
+  `;
+  } else {
+    never(maskMode);
+  }
+
+  const extractUvMaskPipe = createRenderTextureToQuad(
+    namePrefix + "UvMaskPipe",
+    maskTex,
+    uvMaskTex,
+    -1,
+    1,
+    -1,
+    1,
+    false,
+    // TODO(@darzu): output max distance?
+    extractUvMaskShader
   ).pipeline;
 
   // TODO(@darzu): configurable SDF size?
   const sdfTex = CY.createTexture(namePrefix + "SdfTex", {
-    size: [size, size],
-    format: "r8unorm",
+    // size: [size, size],
+    // size: [32, 32],
+    size: [64, 64],
+    // format: "r8unorm",
+    format: "r16float",
   });
 
-  const maxStep = Math.ceil(Math.log2(size / 2)) + 0;
+  const maxStep = Math.ceil(Math.log2(size / 2));
   const resultIdx = (maxStep + 1) % 2;
 
   // console.log(`resultIdx: ${resultIdx}`);

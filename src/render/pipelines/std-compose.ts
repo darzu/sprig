@@ -19,6 +19,7 @@ export function createGridComposePipelines(): CyRenderPipelinePtr[] {
   // ];
   // let grid = noiseGridFrame;
   const grid = oceanJfa._debugGrid;
+  // const grid = [[oceanJfa._voronoiTexs[0]], [oceanJfa._voronoiTexs[1]]];
 
   const width = grid[0].length;
   const height = grid.length;

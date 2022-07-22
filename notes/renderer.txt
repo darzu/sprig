@@ -413,6 +413,7 @@ ALTERNATE APPROACH:
   Using SDF tech, we could get some very cool meshes and mesh building
 
 SDF for text:
+  https://steamcdn-a.akamaihd.net/apps/valve/2007/SIGGRAPH2007_AlphaTestedMagnification.pdf
   https://www.youtube.com/watch?v=1b5hIMqz_wM
     Material Maker
   text is hard?
