@@ -985,3 +985,6 @@ Data structures to kick the tires:
   HNSW, or Hierarchical Navigable Small World 
     a graph data structure for approximate nearest neighbor search of vectors
     http://ann-benchmarks.com
+
+Game post mortem (anti-Unity):
+  https://www.reddit.com/r/gamedev/comments/76htb2/successful_steam_launch_postmortem_throne_of_lies/

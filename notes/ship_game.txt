@@ -311,3 +311,12 @@ environment ideas:
   as you move on the 2d surface, stars scroll past disproportionatly fast.
     the effect is like wind when you're moving quickly,
     also reminiscent of hyperspace like starwars
+
+MVP experience:
+  point to point navigation
+  some impassible terrain
+  enemy boats:
+    random patrols
+    enter area, spawn and come at you
+  mining:
+    EV? Not?

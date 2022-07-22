@@ -958,13 +958,25 @@ export function startBundleRenderer(
   return { render, endPass };
 }
 
+// TODO(@darzu): what is beginPipelineStatisticsQuery
+// TODO(@darzu): Doug is probably implementing this
+// let querySet: GPUQuerySet | undefined = undefined;
+
 export function doCompute(
   device: GPUDevice,
   resources: CyResources,
   commandEncoder: GPUCommandEncoder,
   pipeline: CyCompPipeline
 ) {
+  // if (!querySet) {
+  //   querySet = device.createQuerySet({
+  //     type: "timestamp",
+  //     count: 10,
+  //   });
+  // }
+
   const compPassEncoder = commandEncoder.beginComputePass();
+  // compPassEncoder.writeTimestamp(querySet, 0);
   compPassEncoder.setPipeline(pipeline.pipeline);
 
   // TODO(@darzu): de-dupe?
@@ -980,6 +992,8 @@ export function doCompute(
 
   compPassEncoder.setBindGroup(0, resBindGroup);
   compPassEncoder.dispatchWorkgroups(...pipeline.workgroupCounts);
+  // compPassEncoder.writeTimestamp(querySet, 1);
+
   compPassEncoder.end();
 }
 
