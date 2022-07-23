@@ -19,6 +19,7 @@ import { createShip } from "./ship.js";
 import { GameStateDef } from "./gamestate.js";
 import {
   unwrapPipeline,
+  unwrapPipeline2,
   uvMaskTex,
   uvToNormTex,
   uvToPosTex,
@@ -394,6 +395,7 @@ export function initHyperspaceGame(em: EntityManager) {
 
           // TODO(@darzu): package / abstract these more nicely?
           unwrapPipeline,
+          unwrapPipeline2,
           // uvBorderMaskPipeline,
           // uvPosBorderMaskPipeline,
           // jfaPreOutlinePipe,

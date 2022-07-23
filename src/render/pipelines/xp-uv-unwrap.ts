@@ -20,80 +20,76 @@ export const uvMaskTex = CY.createTexture("uvMaskTex", {
   format: "r8unorm",
 });
 
-// // TODO(@darzu): rgba32float is too aggressive for this; revist all formats used
-// //    in sprigland
-// const uvMaskTex = CY.createTexture("uvMaskTex", {
-//   size: [size, size],
-//   format: "rgba16float",
-// });
+const unwrapVert = `
+struct VertexOutput {
+  @builtin(position) fragPos : vec4<f32>,
+  @location(0) worldPos : vec4<f32>,
+  @location(1) normal : vec3<f32>,
+  @location(2) uv: vec2<f32>,
+}
 
-// export const uvBorderMask = CY.createTexture("uvBorderMask", {
-//   size: [size, size],
-//   format: "rgba16float",
-// });
+@vertex
+fn vertMain(input: VertexInput) -> VertexOutput {
+  var output: VertexOutput;
+  let worldPos = meshUni.transform * vec4<f32>(input.position, 1.0);
+  let normal =  meshUni.transform * vec4<f32>(input.normal, 0.0);
 
-// export const uvBorderMaskPipeline = createRenderTextureToQuad(
-//   "uvBorderMaskPipeline",
-//   uvMaskTex,
-//   uvBorderMask,
-//   -1,
-//   1,
-//   -1,
-//   1,
-//   false,
-//   ({ inPx }) => `return 1.0 - vec4(${inPx});`
-// ).pipeline;
+  output.uv = input.uv;
+  output.worldPos = worldPos;
+  output.normal = normal.xyz;
 
-// export const uvPosBorderMask = CY.createTexture("uvPosBorderMask", {
-//   size: [size, size],
-//   format: "rgba16float",
-// });
+  let xy = (input.uv * 2.0 - 1.0) * vec2(1.0, -1.0);
+  output.fragPos = vec4(xy, 0.0, 1.0);
+  return output;
+}
+`;
 
-// export const uvPosBorderMaskPipeline = createRenderTextureToQuad(
-//   "uvPosBorderMaskPipeline",
-//   uvBorderMask,
-//   uvPosBorderMask,
-//   -1,
-//   1,
-//   -1,
-//   1,
-//   false,
-//   ({ inPx, uv }) => `
-//   if (${inPx}.x > 0.0) {
-//     return vec4(${uv}, 0.0, 1.0);
-//   } else {
-//     discard;
-//   }
-//   `
-// ).pipeline;
-
-export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
-  globals: [
-    { ptr: uvToPosTex, access: "write" },
-    { ptr: uvToNormTex, access: "write" },
-  ],
+// TODO(@darzu): it isn't great having two pipelines for this, but I'm not
+//    sure of a better way. render attachments need to be the same size
+export const unwrapPipeline2 = CY.createRenderPipeline("unwrapPipe2", {
+  globals: [],
   shader: () => `
-  struct VertexOutput {
-    @builtin(position) fragPos : vec4<f32>,
-    @location(0) worldPos : vec4<f32>,
-    @location(1) normal : vec3<f32>,
-    @location(2) uv: vec2<f32>,
+  ${unwrapVert}
+
+  struct FragOut {
+    @location(0) worldPos: vec4<f32>,
+    @location(1) worldNorm: vec4<f32>,
   }
 
-  @vertex
-  fn vertMain(input: VertexInput) -> VertexOutput {
-    var output: VertexOutput;
-    let worldPos = meshUni.transform * vec4<f32>(input.position, 1.0);
-    let normal =  meshUni.transform * vec4<f32>(input.normal, 0.0);
-
-    output.uv = input.uv;
-    output.worldPos = worldPos;
-    output.normal = normal.xyz;
-
-    let xy = (input.uv * 2.0 - 1.0) * vec2(1.0, -1.0);
-    output.fragPos = vec4(xy, 0.0, 1.0);
+  @fragment fn fragMain(input: VertexOutput) -> FragOut {
+    var output: FragOut;
+    output.worldPos = vec4(input.worldPos.xyz, 0.0);
+    output.worldNorm = vec4(normalize(input.normal.xyz), 0.0);
     return output;
   }
+  `,
+  shaderVertexEntry: "vertMain",
+  shaderFragmentEntry: "fragMain",
+  meshOpt: {
+    pool: meshPoolPtr,
+    stepMode: "per-mesh-handle",
+  },
+  cullMode: "none",
+  output: [
+    {
+      ptr: uvToPosTex,
+      clear: "once",
+      defaultColor: [0.0, 0.0, 0.0, 0.0],
+    },
+    {
+      ptr: uvToNormTex,
+      clear: "once",
+      defaultColor: [0.0, 0.0, 0.0, 0.0],
+    },
+  ],
+});
+export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
+  globals: [
+    // { ptr: uvToPosTex, access: "write" },
+    // { ptr: uvToNormTex, access: "write" },
+  ],
+  shader: () => `
+  ${unwrapVert}
 
   struct FragOut {
     // @location(0) worldPos: vec4<f32>,
@@ -102,10 +98,10 @@ export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
 
   @fragment fn fragMain(input: VertexOutput) -> FragOut {
     var output: FragOut;
-    textureStore(uvToPosTex, vec2<i32>(input.uv * vec2<f32>(textureDimensions(uvToPosTex))), 
-      vec4(input.worldPos.xyz, 0.0));
-    textureStore(uvToNormTex, vec2<i32>(input.uv * vec2<f32>(textureDimensions(uvToNormTex))), 
-      vec4(normalize(input.normal.xyz), 0.0));
+    // textureStore(uvToPosTex, vec2<i32>(input.uv * vec2<f32>(textureDimensions(uvToPosTex))), 
+    //   vec4(input.worldPos.xyz, 0.0));
+    // textureStore(uvToNormTex, vec2<i32>(input.uv * vec2<f32>(textureDimensions(uvToNormTex))), 
+    //   vec4(normalize(input.normal.xyz), 0.0));
     output.uv = 1.0;
     return output;
   }

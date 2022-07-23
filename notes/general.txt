@@ -988,3 +988,9 @@ Data structures to kick the tires:
 
 Game post mortem (anti-Unity):
   https://www.reddit.com/r/gamedev/comments/76htb2/successful_steam_launch_postmortem_throne_of_lies/
+
+Another game engine:
+  https://ourmachinery.com
+
+Interesting long post on ECS:
+  https://ajmmertens.medium.com/ecs-from-tool-to-paradigm-350587cdf216
