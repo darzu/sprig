@@ -806,6 +806,8 @@ export function bundleRenderPipelines(
       // TODO(@darzu): filter meshes?
       for (let m of p.pool.allMeshes) {
         if (!meshHandleIds.has(m.mId)) continue;
+        if (p.ptr.meshOpt.meshMask && (p.ptr.meshOpt.meshMask & m.mask) === 0)
+          continue;
         bundleEnc.setBindGroup(1, uniBG, [
           m.uniIdx * p.pool.opts.unis.struct.size,
         ]);
@@ -880,7 +882,7 @@ export function mkBindGroup(
   return bindGroup;
 }
 
-// TODO(@darzu): the abstraction here feels off. We probably want a way to
+// TODO(@darzu): The abstraction here feels off. We probably want a way to
 //  capture pipeline+bundle, and also the various attachment states shouldn't
 //  be dependant on prev-next pipelines. Do we need a "pass" abstraction?
 export interface BundleRenderer {

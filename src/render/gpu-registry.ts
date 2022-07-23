@@ -162,6 +162,7 @@ export interface CyCompPipelinePtr extends CyResourcePtr {
 type CyMeshOpt =
   | {
       pool: CyMeshPoolPtr<any, any>;
+      meshMask?: number;
       stepMode: "per-mesh-handle";
     }
   | {

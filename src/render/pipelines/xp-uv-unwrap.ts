@@ -44,6 +44,9 @@ fn vertMain(input: VertexInput) -> VertexOutput {
 }
 `;
 
+// TODO(@darzu): how to ensure there aren't collisions? Probably won't be a problem..
+export const UVUNWRAP_MASK = 0x0001;
+
 // TODO(@darzu): it isn't great having two pipelines for this, but I'm not
 //    sure of a better way. render attachments need to be the same size
 export const unwrapPipeline2 = CY.createRenderPipeline("unwrapPipe2", {
@@ -67,6 +70,7 @@ export const unwrapPipeline2 = CY.createRenderPipeline("unwrapPipe2", {
   shaderFragmentEntry: "fragMain",
   meshOpt: {
     pool: meshPoolPtr,
+    meshMask: UVUNWRAP_MASK,
     stepMode: "per-mesh-handle",
   },
   cullMode: "none",
@@ -110,6 +114,7 @@ export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
   shaderFragmentEntry: "fragMain",
   meshOpt: {
     pool: meshPoolPtr,
+    meshMask: UVUNWRAP_MASK,
     stepMode: "per-mesh-handle",
   },
   cullMode: "none",

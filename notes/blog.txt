@@ -218,3 +218,8 @@ Abstractions and dependencies:
 Companies are interested in shipping solutions not well engineered artifacts
   they'd be happiest constantly gluing together existing platforms into
     passable solutions and charging a mark up.
+  investiment in durable libraries is rare and almost always led from the bottom up
+
+Comments in code:
+  One of the best things about coding for myself is liberal use of TODO comments. All my professional jobs in the last decade have discouraged this practice and I think they are so so wrong.
+  Code is so much more than the machinery. 

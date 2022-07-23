@@ -316,14 +316,14 @@ export function quadToTris(q: vec4): [vec3, vec3] {
   ];
 }
 
-{
-  // TODO(@darzu): DEBUG
-  const f = createFabric(5);
-  console.log("getMeshAsGrid on fabric");
-  const res = getMeshAsGrid(f);
-  console.dir(res);
-  console.log("getMeshAsGrid on fabric done.");
-}
+// {
+//   // TODO(@darzu): DEBUG
+//   const f = createFabric(5);
+//   // console.log("getMeshAsGrid on fabric");
+//   const res = getMeshAsGrid(f);
+//   // console.dir(res);
+//   // console.log("getMeshAsGrid on fabric done.");
+// }
 
 export function getMeshAsGrid(m: RawMesh): {
   coords: vec2[];

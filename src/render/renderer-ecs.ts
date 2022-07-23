@@ -35,7 +35,10 @@ const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
 
 export interface RenderableConstruct {
   readonly enabled: boolean;
-  readonly layer: number;
+  readonly sortLayer: number;
+  // TODO(@darzu): mask is inconsitently placed; here it is in the component,
+  //  later it is in the mesh handle.
+  readonly mask?: number;
   meshOrProto: Mesh | MeshHandleStd;
 }
 
@@ -44,12 +47,14 @@ export const RenderableConstructDef = EM.defineComponent(
   (
     meshOrProto: Mesh | MeshHandleStd,
     enabled: boolean = true,
-    layer: number = 0
+    sortLayer: number = 0,
+    mask?: number
   ) => {
     const r: RenderableConstruct = {
       enabled,
-      layer,
+      sortLayer: sortLayer,
       meshOrProto,
+      mask,
     };
     return r;
   }
@@ -57,7 +62,7 @@ export const RenderableConstructDef = EM.defineComponent(
 
 export interface Renderable {
   enabled: boolean;
-  layer: number;
+  sortLayer: number;
   meshHandle: MeshHandleStd;
 }
 
@@ -263,8 +268,9 @@ export function registerRenderer(em: EntityManager) {
         );
       }
 
+      // TODO(@darzu): this is currently unused, and maybe should be dropped.
       // sort
-      objs.sort((a, b) => b.renderable.layer - a.renderable.layer);
+      objs.sort((a, b) => b.renderable.sortLayer - a.renderable.sortLayer);
 
       // render
       // TODO(@darzu):
@@ -354,9 +360,13 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
               e.renderableConstruct.meshOrProto
             );
 
+          if (e.renderableConstruct.mask) {
+            meshHandle.mask = e.renderableConstruct.mask;
+          }
+
           em.addComponent(e.id, RenderableDef, {
             enabled: e.renderableConstruct.enabled,
-            layer: e.renderableConstruct.layer,
+            sortLayer: e.renderableConstruct.sortLayer,
             meshHandle,
           });
         }

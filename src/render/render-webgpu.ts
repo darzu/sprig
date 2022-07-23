@@ -178,6 +178,7 @@ export function createWebGPURenderer(
 
     // TODO(@darzu): not great detection, needs to be more precise and less
     //    false positives
+    // TODO(@darzu): account for handle masks
     needsRebundle =
       needsRebundle ||
       didPipelinesChange ||

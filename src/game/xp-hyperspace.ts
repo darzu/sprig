@@ -23,6 +23,7 @@ import {
   uvMaskTex,
   uvToNormTex,
   uvToPosTex,
+  UVUNWRAP_MASK,
 } from "../render/pipelines/xp-uv-unwrap.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { createGhost } from "./sandbox.js";
@@ -280,7 +281,10 @@ export function initHyperspaceGame(em: EntityManager) {
       em.ensureComponentOn(
         ocean,
         RenderableConstructDef,
-        res.assets.ocean.proto
+        res.assets.ocean.proto,
+        true,
+        0,
+        UVUNWRAP_MASK
       );
       em.ensureComponentOn(ocean, ColorDef, [0.1, 0.3, 0.8]);
       // em.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
@@ -298,6 +302,9 @@ export function initHyperspaceGame(em: EntityManager) {
         fabric,
         RenderableConstructDef,
         res.assets.fabric.proto
+        // true,
+        // 0
+        // UVUNWRAP_MASK
       );
       em.ensureComponentOn(fabric, PositionDef, [10, 10, 10]);
       // em.ensureComponentOn(fabric, AngularVelocityDef, [1.0, 10.0, 0.1]);

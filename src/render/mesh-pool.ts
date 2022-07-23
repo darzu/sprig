@@ -27,11 +27,9 @@ export interface MeshHandle<U extends CyStructDesc> {
 
   readonly readonlyMesh?: Mesh;
 
-  // // state
-  // enabled: boolean;
-
-  // used as the uniform for this mesh
-  shaderData: CyToTS<U>;
+  // state
+  mask: number; // used for selecting which render pipelines to particpate in
+  shaderData: CyToTS<U>; // used as the uniform for this mesh
 }
 
 export function isMeshHandle(m: any): m is MeshHandle<any> {
@@ -139,6 +137,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     updateMeshVertices,
   };
 
+  // TODO(@darzu): default to all 1s?
   function addMesh(m: Mesh): MeshHandle<U> {
     assert(pool.allMeshes.length + 1 <= maxMeshes, "Too many meshes!");
     assert(pool.numVerts + m.pos.length <= maxVerts, "Too many vertices!");
@@ -186,6 +185,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
       lineIdx: pool.numLines,
       uniIdx: allMeshes.length,
       readonlyMesh: m,
+      mask: 0,
       shaderData: uni,
     };
 
