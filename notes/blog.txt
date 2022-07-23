@@ -223,3 +223,9 @@ Companies are interested in shipping solutions not well engineered artifacts
 Comments in code:
   One of the best things about coding for myself is liberal use of TODO comments. All my professional jobs in the last decade have discouraged this practice and I think they are so so wrong.
   Code is so much more than the machinery. 
+
+Engineers need to stop refactoring before the code works. (premature generalization/abstraction)
+Managers need to stop forbidding refactors once the code works.
+  it's a vicious, downward spiral
+  refactor needs to be about improving conditions for existing code, not planning for future
+  and managers need to stop seeing code as just inputs -> outputs

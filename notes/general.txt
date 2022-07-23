@@ -994,3 +994,8 @@ Another game engine:
 
 Interesting long post on ECS:
   https://ajmmertens.medium.com/ecs-from-tool-to-paradigm-350587cdf216
+
+Current LOC:
+  32307 .ts
+  806   .wgsl
+  6947  .txt
