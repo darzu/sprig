@@ -10,7 +10,6 @@ export const uvToPosTex = CY.createTexture("uvToPosTex", {
   format: "rgba32float",
 });
 
-// TODO(@darzu): IMPLEMENT
 export const uvToNormTex = CY.createTexture("uvToNormTex", {
   size: [128, 128],
   format: "rgba32float",
@@ -69,21 +68,27 @@ export const uvMaskTex = CY.createTexture("uvMaskTex", {
 // ).pipeline;
 
 export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
-  globals: [{ ptr: uvToPosTex, access: "write" }],
+  globals: [
+    { ptr: uvToPosTex, access: "write" },
+    { ptr: uvToNormTex, access: "write" },
+  ],
   shader: () => `
   struct VertexOutput {
     @builtin(position) fragPos : vec4<f32>,
     @location(0) worldPos : vec4<f32>,
-    @location(1) uv: vec2<f32>,
+    @location(1) normal : vec3<f32>,
+    @location(2) uv: vec2<f32>,
   }
 
   @vertex
   fn vertMain(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
     let worldPos = meshUni.transform * vec4<f32>(input.position, 1.0);
+    let normal =  meshUni.transform * vec4<f32>(input.normal, 0.0);
 
     output.uv = input.uv;
     output.worldPos = worldPos;
+    output.normal = normal.xyz;
 
     let xy = (input.uv * 2.0 - 1.0) * vec2(1.0, -1.0);
     output.fragPos = vec4(xy, 0.0, 1.0);
@@ -97,12 +102,10 @@ export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
 
   @fragment fn fragMain(input: VertexOutput) -> FragOut {
     var output: FragOut;
-    let worldPos = vec4(input.worldPos.xyz, 0.0);
-    let dimsI = textureDimensions(uvToPosTex);
-    let dimsF = vec2<f32>(dimsI);
-    let xy = vec2<i32>(input.uv * dimsF);
-    textureStore(uvToPosTex, xy, worldPos);
-    // output.worldPos = worldPos;
+    textureStore(uvToPosTex, vec2<i32>(input.uv * vec2<f32>(textureDimensions(uvToPosTex))), 
+      vec4(input.worldPos.xyz, 0.0));
+    textureStore(uvToNormTex, vec2<i32>(input.uv * vec2<f32>(textureDimensions(uvToNormTex))), 
+      vec4(normalize(input.normal.xyz), 0.0));
     output.uv = 1.0;
     return output;
   }

@@ -1,7 +1,10 @@
-import { mat4, quat, vec2, vec3, vec4 } from "./gl-matrix.js";
+import { mat3, mat4, quat, vec2, vec3, vec4 } from "./gl-matrix.js";
 import { avg, mathMap } from "./math.js";
 import { AABB } from "./physics/broadphase.js";
 import { tempVec3 } from "./temp-pool.js";
+
+// TODO(@darzu): a lot of these need to move into gl-matrix; or rather, we need
+//  to subsume gl-matrix into our own libraries.
 
 // math utilities
 export function computeTriangleNormal(p1: vec3, p2: vec3, p3: vec3): vec3 {
@@ -85,6 +88,45 @@ export function vec3Mid(out: vec3, a: vec3, b: vec3): vec3 {
   out[0] = (a[0] + b[0]) * 0.5;
   out[1] = (a[1] + b[1]) * 0.5;
   out[2] = (a[2] + b[2]) * 0.5;
+  return out;
+}
+
+// quat utilities
+// assumes local up axis is [0,1,0] and forward is [0,0,1]
+export function quatFromUpForward(out: quat, up: vec3, forwardish: vec3): quat {
+  // https://stackoverflow.com/questions/52413464/look-at-quaternion-using-up-vector/52551983#52551983
+  const side = vec3.cross(tempVec3(), forwardish, up);
+  vec3.normalize(side, side);
+  const forward = vec3.cross(tempVec3(), side, up);
+
+  const trace = side[0] + up[1] + forward[2];
+  if (trace > 0.0) {
+    const s = 0.5 / Math.sqrt(trace + 1.0);
+    out[3] = 0.25 / s;
+    out[0] = (up[2] - forward[1]) * s;
+    out[1] = (forward[0] - side[2]) * s;
+    out[2] = (side[1] - up[0]) * s;
+  } else {
+    if (side[0] > up[1] && side[0] > forward[2]) {
+      const s = 2.0 * Math.sqrt(1.0 + side[0] - up[1] - forward[2]);
+      out[3] = (up[2] - forward[1]) / s;
+      out[0] = 0.25 * s;
+      out[1] = (up[0] + side[1]) / s;
+      out[2] = (forward[0] + side[2]) / s;
+    } else if (up[1] > forward[2]) {
+      const s = 2.0 * Math.sqrt(1.0 + up[1] - side[0] - forward[2]);
+      out[3] = (forward[0] - side[2]) / s;
+      out[0] = (up[0] + side[1]) / s;
+      out[1] = 0.25 * s;
+      out[2] = (forward[1] + up[2]) / s;
+    } else {
+      const s = 2.0 * Math.sqrt(1.0 + forward[2] - side[0] - up[1]);
+      out[3] = (side[1] - up[0]) / s;
+      out[0] = (forward[0] + side[2]) / s;
+      out[1] = (forward[1] + up[2]) / s;
+      out[2] = 0.25 * s;
+    }
+  }
   return out;
 }
 
