@@ -999,3 +999,9 @@ Current LOC:
   32307 .ts
   806   .wgsl
   6947  .txt
+
+Core:
+  https://coregames.com
+  roblox-y
+  Some NFT integrations..
+  50% revenue share (roblox is 75%?)
