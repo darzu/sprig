@@ -672,16 +672,16 @@ export class EntityManager {
     e: Entity,
     cs: [...CS],
     rs: [...RS],
-    callback: SingleSystemFN<[/*...eCS, */ ...CS], RS>,
     name?: string
-  ): void {
+  ): Promise<[EntityW<CS>, EntityW<RS>]> {
     // TODO(@darzu): this is too copy-pasted from oneShot which is too copy pasted from system
     // TODO(@darzu): need unified query maybe?
-    name = name || callback.name || "oneShot" + this.nextOneShotSuffix++;
+    let _name = name || "oneShot" + this.nextOneShotSuffix++;
 
-    if (this.oneShotSingleSystems.has(name))
-      throw `One-shot single system named ${name} already defined.`;
+    if (this.oneShotSingleSystems.has(_name))
+      throw `One-shot single system named ${_name} already defined.`;
 
+    // TODO(@darzu): bad duplication
     // use one bucket for all one shots. Change this if we want more granularity
     this.stats["__oneShots"] = this.stats["__oneShots"] ?? {
       calls: 0,
@@ -690,12 +690,18 @@ export class EntityManager {
       queryTime: 0,
     };
 
-    this.oneShotSingleSystems.set(name, {
-      e,
-      cs,
-      rs,
-      callback,
-      name,
+    return new Promise<[EntityW<CS>, EntityW<RS>]>((resolve, reject) => {
+      const callback: SingleSystemFN<CS, RS> = (e, res) => {
+        resolve([e, res]);
+      };
+
+      this.oneShotSingleSystems.set(_name, {
+        e,
+        cs,
+        rs,
+        callback,
+        name: _name,
+      });
     });
   }
 }

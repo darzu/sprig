@@ -65,3 +65,10 @@ Code overlays:
     syscalls
     age
     mutative vs pure
+
+For debugging async or init code:
+  color all code by first execution order!
+    or by per-frame execution order
+  this will clearly show splits across an async boundry
+
+Have a "step frame" notion
