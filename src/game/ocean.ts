@@ -28,15 +28,16 @@ export interface Ocean {
   ent: Ref<[typeof PositionDef]>;
   uvToPos: (out: vec3, uv: vec2) => vec3;
   uvToNorm: (out: vec3, uv: vec2) => vec3;
-  // uvToNorm: TextureReader<"rgba32float">;
 }
+
 export const OceanDef = EM.defineComponent("ocean", (o: Ocean) => {
   return o;
 });
 
-export const UVObjDef = EM.defineComponent("uv", (uv: vec2 = [0, 0]) => ({
-  uv: uv,
-}));
+export const UVDef = EM.defineComponent(
+  "uv",
+  (uv?: vec2) => uv ?? vec2.create()
+);
 
 // const BouyDef = EM.defineComponent(
 //   "bouy",
@@ -118,7 +119,7 @@ export async function initOcean() {
 }
 
 EM.registerSystem(
-  [UVObjDef, PositionDef, RotationDef],
+  [UVDef, PositionDef, RotationDef],
   [OceanDef, InputsDef],
   (es, res) => {
     // console.log("runOcean");
@@ -133,7 +134,7 @@ EM.registerSystem(
       if (res.inputs.keyDowns["arrowup"]) deltaUV[0] += speed;
       if (res.inputs.keyDowns["arrowdown"]) deltaUV[0] -= speed;
       if (deltaUV[0] !== 0.0 || deltaUV[1] !== 0.0) {
-        const newUV = vec2.add(deltaUV, e.uv.uv, deltaUV);
+        const newUV = vec2.add(deltaUV, e.uv, deltaUV);
         newUV[0] = clamp(newUV[0], 0, 1);
         newUV[1] = clamp(newUV[1], 0, 1);
         const newPos = res.ocean.uvToPos(tempVec3(), newUV);
@@ -142,7 +143,7 @@ EM.registerSystem(
         if (!vec3.exactEquals(newPos, vec3.ZEROS)) {
           const forward = vec3.sub(tempVec3(), newPos, e.position);
           vec3.copy(e.position, newPos);
-          vec2.copy(e.uv.uv, newUV);
+          vec2.copy(e.uv, newUV);
 
           const newNorm = res.ocean.uvToNorm(tempVec3(), newUV);
           // TODO(@darzu):
