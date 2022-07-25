@@ -217,9 +217,9 @@ export async function initShipGame(em: EntityManager, hosting: boolean) {
 
   // create player once MeDef is present (meaning we've joined, if
   // we're not the host)
-  em.registerOneShotSystem(null, [MeDef]).then(() => createPlayer(em));
+  em.whenResources([MeDef]).then(() => createPlayer(em));
 
-  const [_, res] = await em.registerOneShotSystem(null, [RendererDef]);
+  const res = await em.whenResources([RendererDef]);
   res.renderer.pipelines = [
     shadowPipeline,
     stdRenderPipeline,

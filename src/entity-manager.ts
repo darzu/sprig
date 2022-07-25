@@ -508,52 +508,11 @@ export class EntityManager {
   }
 
   private nextOneShotSuffix = 0;
-  // NOTE: if you're gonna change the types, change registerSystem first and just copy
-  //  them down to here
-  public registerOneShotSystem<
-    CS extends ComponentDef[],
-    RS extends ComponentDef[]
-  >(
-    cs: [...CS],
+  public whenResources<RS extends ComponentDef[]>(
     rs: [...RS],
     name?: string
-  ): Promise<[Entities<CS>, EntityW<RS>]>;
-  public registerOneShotSystem<CS extends null, RS extends ComponentDef[]>(
-    cs: CS,
-    rs: [...RS],
-    name?: string
-  ): Promise<[[], EntityW<RS>]>;
-  public registerOneShotSystem<
-    CS extends ComponentDef[],
-    RS extends ComponentDef[]
-  >(
-    cs: [...CS] | null,
-    rs: [...RS],
-    name?: string
-  ): Promise<[Entities<CS>, EntityW<RS>]> {
-    let _name = name || "oneShot" + this.nextOneShotSuffix++;
-
-    if (this.oneShotSystems.has(_name))
-      throw `One-shot system named ${name} already defined.`;
-
-    // use one bucket for all one shots. Change this if we want more granularity
-    this.stats["__oneShots"] = this.stats["__oneShots"] ?? {
-      calls: 0,
-      queries: 0,
-      callTime: 0,
-      queryTime: 0,
-    };
-
-    return new Promise<[Entities<CS>, EntityW<RS>]>((resolve, reject) => {
-      const callback: SystemFN<CS, RS> = (es, res) => resolve([es, res]);
-
-      this.oneShotSystems.set(_name, {
-        cs,
-        rs,
-        callback,
-        name: _name,
-      });
-    });
+  ): Promise<EntityW<RS>> {
+    return this.whenEntityHas(this.entities.get(0)!, rs, name);
   }
 
   hasSystem(name: string) {
@@ -605,7 +564,7 @@ export class EntityManager {
       let es: Entities<any[]>;
       if (isSingleSystem(s)) {
         if (s.cs.every((c) => c.name in s.e)) es = [s.e];
-        else es = [];
+        else return;
       } else {
         let haveAllResources = s.rs.every((r) => this.getResource(r));
         if (!haveAllResources) return;

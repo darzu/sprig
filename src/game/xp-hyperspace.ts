@@ -178,11 +178,13 @@ export async function initHyperspaceGame(em: EntityManager) {
     "hyperspaceGame"
   );
 
-  const [_, res] = await em.registerOneShotSystem(null, [
+  const res = await em.whenResources([
     AssetsDef,
     GlobalCursor3dDef,
     RendererDef,
   ]);
+  console.log("INITHYPERSPACEGAME");
+  console.dir(res);
 
   // console.log("HERE!");
   const ghost = createGhost(em);

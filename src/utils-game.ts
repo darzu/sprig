@@ -31,7 +31,7 @@ export async function drawBall(
   size: number,
   color: vec3
 ): Promise<EntityW<[typeof PositionDef]>> {
-  let [_, res] = await EM.registerOneShotSystem([], [AssetsDef]);
+  let res = await EM.whenResources([AssetsDef]);
   const e = EM.newEntity();
   EM.ensureComponentOn(e, ColorDef, color);
   EM.ensureComponentOn(e, RenderableConstructDef, res.assets.ball.proto);

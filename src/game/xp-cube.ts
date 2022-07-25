@@ -31,7 +31,7 @@ export async function initCubeGame(em: EntityManager) {
   const camera = em.addSingletonComponent(CameraDef);
   camera.fov = Math.PI * 0.5;
 
-  const [_, res] = await em.registerOneShotSystem(null, [
+  const res = await em.whenResources([
     AssetsDef,
     GlobalCursor3dDef,
     RendererDef,

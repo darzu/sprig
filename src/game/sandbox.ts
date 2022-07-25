@@ -94,7 +94,7 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   const camera = em.addSingletonComponent(CameraDef);
   camera.fov = Math.PI * 0.5;
 
-  const [_, res] = await em.registerOneShotSystem(null, [
+  const res = await em.whenResources([
     AssetsDef,
     GlobalCursor3dDef,
     RendererDef,
@@ -332,7 +332,7 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
   const camera = em.addSingletonComponent(CameraDef);
   camera.fov = Math.PI * 0.5;
 
-  const [_, res] = await em.registerOneShotSystem(null, [
+  const res = await em.whenResources([
     AssetsDef,
     GlobalCursor3dDef,
     RendererDef,
@@ -503,7 +503,7 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
 
   let tableId = -1;
 
-  const [_, res] = await em.registerOneShotSystem(null, [
+  const res = await em.whenResources([
     AssetsDef,
     GlobalCursor3dDef,
     RendererDef,

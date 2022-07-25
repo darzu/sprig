@@ -641,10 +641,10 @@ onInit(async (em) => {
   em.addSingletonComponent(AssetLoaderDef);
 
   // start loading of assets
-  const [_, { assetLoader, renderer }] = await em.registerOneShotSystem(
-    [],
-    [AssetLoaderDef, RendererDef]
-  );
+  const { assetLoader, renderer } = await em.whenResources([
+    AssetLoaderDef,
+    RendererDef,
+  ]);
   assert(!assetLoader.promise, "somehow we're double loading assets");
 
   const assetsPromise = loadAssets(renderer.renderer);
