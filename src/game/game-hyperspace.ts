@@ -82,7 +82,7 @@ export async function initHyperspaceGame(em: EntityManager) {
   createShip([-120, 0, 0]);
   // }
 
-  // em.registerOneShotSystem(null, [MeDef], () => createPlayer(em));
+  em.whenResources([MeDef]).then(() => createPlayer(em));
 
   let oceanEntId = -1;
 
@@ -184,19 +184,18 @@ export async function initHyperspaceGame(em: EntityManager) {
     RendererDef,
   ]);
 
-  const ghost = createGhost(em);
-  em.ensureComponentOn(ghost, RenderableConstructDef, res.assets.cube.proto);
-  ghost.controllable.speed *= 3;
-  ghost.controllable.sprintMul *= 3;
+  // const ghost = createGhost(em);
+  // em.ensureComponentOn(ghost, RenderableConstructDef, res.assets.cube.proto);
+  // ghost.controllable.speed *= 3;
+  // ghost.controllable.sprintMul *= 3;
 
   {
-    // debug camera
-    vec3.copy(ghost.position, [-185.02, 66.25, -69.04]);
-    quat.copy(ghost.rotation, [0.0, -0.92, 0.0, 0.39]);
-    vec3.copy(ghost.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-    ghost.cameraFollow.yawOffset = 0.0;
-    ghost.cameraFollow.pitchOffset = -0.465;
-
+    // // debug camera
+    // vec3.copy(ghost.position, [-185.02, 66.25, -69.04]);
+    // quat.copy(ghost.rotation, [0.0, -0.92, 0.0, 0.39]);
+    // vec3.copy(ghost.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    // ghost.cameraFollow.yawOffset = 0.0;
+    // ghost.cameraFollow.pitchOffset = -0.465;
     // let g = ghost;
     // vec3.copy(g.position, [-208.43, 29.58, 80.05]);
     // quat.copy(g.rotation, [0.0, -0.61, 0.0, 0.79]);
