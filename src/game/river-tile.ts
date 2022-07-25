@@ -9,7 +9,6 @@ import {
 import { mat4, quat, vec2, vec3 } from "../gl-matrix.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
-import { ScoreDef } from "./game-init.js";
 import { MeDef } from "../net/components.js";
 import { AssetsDef, GameMesh, gameMeshFromMesh } from "./assets.js";
 import { cloneMesh, transformMesh } from "../render/mesh.js";
@@ -42,6 +41,7 @@ import { tempVec3 } from "../temp-pool.js";
 import { eventWizard } from "../net/events.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { GameState, GameStateDef } from "./gamestate.js";
+import { ScoreDef } from "./game-river.js";
 
 /*
 NOTES:
@@ -197,7 +197,7 @@ function continuePath(path: PathNode): PathNode {
   return n;
 }
 
-export function initGroundSystem(em: EntityManager) {
+export function initRiverTileSystem(em: EntityManager) {
   // init ground mesh
   em.whenResources([AssetsDef, RendererDef]).then((rs) => {
     const mesh = em.addSingletonComponent(GroundMeshDef);

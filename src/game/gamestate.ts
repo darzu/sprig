@@ -13,8 +13,7 @@ import {
   RotationDef,
 } from "../physics/transform.js";
 import { TimeDef } from "../time.js";
-import { ScoreDef } from "./game-init.js";
-import { GroundSystemDef } from "./ground.js";
+import { GroundSystemDef } from "./river-tile.js";
 import { LifetimeDef } from "./lifetime.js";
 import { LocalPlayerDef, PlayerDef, PlayerPropsDef } from "./player.js";
 import { createShip, ShipLocalDef, ShipPropsDef } from "./ship.js";
@@ -97,11 +96,11 @@ export const restartGame = eventWizard(
   () => [[ShipPropsDef]] as const,
   ([ship]) => {
     console.log("restart");
-    const res = EM.getResources([GameStateDef, LocalPlayerDef, ScoreDef])!;
+    const res = EM.getResources([GameStateDef, LocalPlayerDef])!;
     res.gameState.state = GameState.LOBBY;
     const player = EM.findEntity(res.localPlayer.playerId, [PlayerDef])!;
     player.player.lookingForShip = true;
-    res.score.currentScore = 0;
+    // res.score.currentScore = 0;
 
     const groundSys = EM.getResource(GroundSystemDef);
     if (groundSys) {

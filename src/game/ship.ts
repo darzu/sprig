@@ -30,7 +30,6 @@ import {
   MultiCollider,
 } from "../physics/collider.js";
 import { AABB, copyAABB, createAABB } from "../physics/broadphase.js";
-import { ScoreDef } from "./game-init.js";
 import { ColorDef } from "../color.js";
 import { setCubePosScaleToAABB } from "../physics/phys-debug.js";
 import { BOAT_COLOR } from "./boat.js";
@@ -49,7 +48,7 @@ import { MusicDef } from "../music.js";
 import { LocalPlayerDef, PlayerDef } from "./player.js";
 import { CameraDef } from "../camera.js";
 import { InputsDef } from "../inputs.js";
-import { GroundSystemDef } from "./ground.js";
+import { GroundSystemDef } from "./river-tile.js";
 import { InRangeDef, InteractableDef } from "./interact.js";
 import { endGame, GameState, GameStateDef, startGame } from "./gamestate.js";
 import { createRef, defineNetEntityHelper, Ref } from "../em_helpers.js";
@@ -453,29 +452,5 @@ export function registerShipSystems(em: EntityManager) {
       }
     },
     "easeRudder"
-  );
-
-  em.registerSystem(
-    null,
-    [TextDef, ScoreDef, GameStateDef],
-    (_, res) => {
-      // update score
-      switch (res.gameState.state) {
-        case GameState.LOBBY:
-          if (res.score.maxScore) {
-            res.text.upperText = `max: ${res.score.maxScore}, ${START_TEXT}`;
-          } else {
-            res.text.upperText = `${START_TEXT}`;
-          }
-          break;
-        case GameState.PLAYING:
-          res.text.upperText = `current: ${res.score.currentScore}, max: ${res.score.maxScore}`;
-          break;
-        case GameState.GAMEOVER:
-          res.text.upperText = `GAME OVER, score: ${res.score.currentScore}, max: ${res.score.maxScore}`;
-          break;
-      }
-    },
-    "shipScore"
   );
 }

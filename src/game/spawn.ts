@@ -14,7 +14,7 @@ import {
   RotationDef,
 } from "../physics/transform.js";
 import { spawnBoat } from "./boat.js";
-import { GroundLocalDef } from "./ground.js";
+import { GroundLocalDef } from "./river-tile.js";
 
 export interface SpawnerOpts {
   towardsPlayerDir: vec3;

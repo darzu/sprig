@@ -14,11 +14,12 @@ import {
 } from "./game/game-sandbox.js";
 import { callClothSystems } from "./game/cloth.js";
 import { callSpringSystems } from "./game/spring.js";
-import { initShipGame, registerAllSystems } from "./game/game-init.js";
+import { registerCommonSystems } from "./game/game-init.js";
 import { setSimulationAlpha } from "./render/renderer-ecs.js";
 import { never } from "./util.js";
 import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { initCubeGame } from "./game/xp-cube.js";
+import { initRiverGame } from "./game/game-river.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -55,7 +56,7 @@ function callFixedTimestepSystems() {
   EM.callSystem("devConsoleToggle");
   EM.callSystem("devConsole");
   EM.callSystem("restartTimer");
-  EM.callSystem("updateScore");
+  // EM.callSystem("updateScore");
   EM.callSystem("renderInit");
   EM.callSystem("musicStart");
   EM.callSystem("handleNetworkEvents");
@@ -73,7 +74,7 @@ function callFixedTimestepSystems() {
     EM.callSystem("shipHealthCheck");
     EM.callSystem("easeRudder");
     EM.callSystem("shipMove");
-    EM.callSystem("shipScore");
+    // EM.callSystem("shipScore");
     EM.callSystem("groundPropsBuild");
     EM.callSystem("boatPropsBuild");
     EM.callSystem("cannonPropsBuild");
@@ -104,7 +105,7 @@ function callFixedTimestepSystems() {
     EM.callSystem("shipHealthCheck");
     EM.callSystem("easeRudder");
     EM.callSystem("shipMove");
-    EM.callSystem("shipScore");
+    // EM.callSystem("shipScore");
     EM.callSystem("boatPropsBuild");
     EM.callSystem("cannonPropsBuild");
     EM.callSystem("gemPropsBuild");
@@ -207,14 +208,14 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.addSingletonComponent(JoinDef, host!);
   }
 
-  registerAllSystems(EM);
+  registerCommonSystems(EM);
 
   addEventComponents(EM);
 
   EM.addSingletonComponent(InputsDef);
   registerInputsSystem(EM);
 
-  if (GAME === "ship") initShipGame(EM, hosting);
+  if (GAME === "ship") initRiverGame(EM, hosting);
   else if (GAME === "gjk") initGJKSandbox(EM, hosting);
   else if (GAME === "rebound") initReboundSandbox(EM, hosting);
   else if (GAME === "cloth") initClothSandbox(EM, hosting);
