@@ -183,10 +183,7 @@ export async function initHyperspaceGame(em: EntityManager) {
     GlobalCursor3dDef,
     RendererDef,
   ]);
-  console.log("INITHYPERSPACEGAME");
-  console.dir(res);
 
-  // console.log("HERE!");
   const ghost = createGhost(em);
   em.ensureComponentOn(ghost, RenderableConstructDef, res.assets.cube.proto);
   ghost.controllable.speed *= 3;
@@ -229,7 +226,6 @@ export async function initHyperspaceGame(em: EntityManager) {
   let ocean2 = await em.whenEntityHas(ocean, [RenderableDef], "oceanGPUWork");
 
   // TODO(@darzu):
-  console.log("FOO!!!");
   res.renderer.renderer.submitPipelines(
     [ocean2.renderable.meshHandle],
     [unwrapPipeline, unwrapPipeline2, ...oceanJfa.allPipes()]
@@ -258,7 +254,7 @@ export async function initHyperspaceGame(em: EntityManager) {
     uvToNormTex.format
   );
 
-  console.log("adding OceanDef");
+  // console.log("adding OceanDef");
 
   // TODO(@darzu): hacky hacky way to do this
   em.addSingletonComponent(OceanDef, {
