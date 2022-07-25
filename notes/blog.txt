@@ -229,3 +229,26 @@ Managers need to stop forbidding refactors once the code works.
   it's a vicious, downward spiral
   refactor needs to be about improving conditions for existing code, not planning for future
   and managers need to stop seeing code as just inputs -> outputs
+
+Estimation vs forecasting
+  Maybe instead of asking for estimates, we try to forecast forward like weather
+  And like weather, we don't asign blame when it's wrong
+  Forecasts are going to feel off
+  IDK. might just be estimation rebranded.
+  https://news.ycombinator.com/item?id=23498257
+    "Instead you can look at the team’s historical data and apply statistical techniques."
+    "Estimates vs plans"
+    "plans are worthless but planning is everything"
+  Software Estimation: Demystifying the Black Art
+  https://news.ycombinator.com/item?id=27687265
+  "I can give you a really really accurate estimate, but in 
+    order to do so we're going to have to spend a lot of time 
+    going through the request, building and verifying actual 
+    requirements, designing the solution and then validating it."
+  "Good and accurate estimation is not just a dev function.
+    It requires buy in and input from the entire business stack."
+  "We can commit to a date and we'll finish whatever we finish by then,
+   or we can commit to a scope and it will take as long as it takes.
+    But we won't commit to a date and a scope unless we spend the up 
+    front time to first figure out every detail of what we need to build."
+  https://www.commitstrip.com/en/2016/08/25/a-very-comprehensive-and-precise-spec/

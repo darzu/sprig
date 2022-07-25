@@ -43,6 +43,9 @@ const MAX_SIM_LOOPS = 3;
 export let gameStarted = false;
 
 function callFixedTimestepSystems() {
+  // TODO(@darzu): calling systems still needs more massaging.
+  //    - uncalled systems maybe should give a warning? Or at least a one-time read out.
+  //    - Lets use types for this. String matching the name is brittle and unnessessary
   EM.callSystem("inputs");
   EM.callSystem("getStatsFromNet");
   EM.callSystem("getEventsFromNet");
@@ -110,6 +113,7 @@ function callFixedTimestepSystems() {
 
     EM.callSystem("hyperspaceGame");
     EM.callSystem("runOcean");
+    EM.callSystem("debugLoop");
   }
   EM.callSystem("updateBullets");
   EM.callSystem("updateNoodles");

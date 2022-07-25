@@ -42,6 +42,30 @@ type System<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = {
   name: string;
 };
 
+// TODO(@darzu): START EXPERIMENTAL
+// TODO(@darzu): think about naming some more...
+export type SingleSystemFN<
+  CS extends ComponentDef[],
+  RS extends ComponentDef[]
+> = (e: EntityW<[...CS]>, resources: EntityW<RS>) => void;
+type SingleSystem<
+  //eCS extends ComponentDef[],
+  CS extends ComponentDef[],
+  RS extends ComponentDef[]
+> = {
+  e: Entity;
+  cs: CS;
+  rs: RS;
+  callback: SingleSystemFN<[/*...eCS,*/ ...CS], RS>;
+  name: string;
+};
+function isSingleSystem(
+  s: SingleSystem<any, any> | System<any, any>
+): s is SingleSystem<any, any> {
+  return "e" in s;
+}
+// TODO(@darzu): END EXPERIMENTAL
+
 type EDefId<ID extends number, CS extends ComponentDef[]> = [ID, ...CS];
 type ESetId<DS extends EDefId<number, any>[]> = {
   [K in keyof DS]: DS[K] extends EDefId<infer ID, infer CS>
@@ -69,6 +93,8 @@ export class EntityManager {
   entities: Map<number, Entity> = new Map();
   systems: Map<string, System<any[] | null, any[]>> = new Map();
   oneShotSystems: Map<string, System<any[] | null, any[]>> = new Map();
+  // TODO(@darzu): EXPERIMENTAL
+  oneShotSingleSystems: Map<string, SingleSystem<any[], any[]>> = new Map();
   components: Map<number, ComponentDef<any, any>> = new Map();
   serializers: Map<
     number,
@@ -485,7 +511,7 @@ export class EntityManager {
   }
 
   private nextOneShotSuffix = 0;
-  // NOTE: if you're gonna change the types, change it above first and just copy
+  // NOTE: if you're gonna change the types, change registerSystem first and just copy
   //  them down to here
   public registerOneShotSystem<
     CS extends ComponentDef[],
@@ -570,19 +596,32 @@ export class EntityManager {
   callOneShotSystems() {
     const beforeOneShots = performance.now();
     let calledSystems: Set<string> = new Set();
-    this.oneShotSystems.forEach((s) => {
+    [
+      ...this.oneShotSystems.values(),
+      ...this.oneShotSingleSystems.values(),
+    ].forEach((s) => {
       let haveAllResources = s.rs.every((r) => this.getResource(r));
       if (!haveAllResources) return;
 
-      const es = this.filterEntities(s.cs);
+      let es: Entities<any[]>;
+      if (isSingleSystem(s)) {
+        if (s.cs.every((c) => c.name in s.e)) es = [s.e];
+        else es = [];
+      } else {
+        es = this.filterEntities(s.cs);
+      }
 
       const afterOneShotQuery = performance.now();
       this.stats["__oneShots"].queries += 1;
       this.stats["__oneShots"].queryTime += afterOneShotQuery - beforeOneShots;
 
-      // TODO(@darzu): how to handle async callbacks and their timing?
       calledSystems.add(s.name);
-      s.callback(es, this.entities.get(0)! as any);
+      // TODO(@darzu): how to handle async callbacks and their timing?
+      if (isSingleSystem(s)) {
+        s.callback(es[0], this.entities.get(0)! as any);
+      } else {
+        s.callback(es, this.entities.get(0)! as any);
+      }
 
       const afterOneShotCall = performance.now();
       this.stats["__oneShots"].calls += 1;
@@ -590,13 +629,17 @@ export class EntityManager {
     });
     for (let name of calledSystems) {
       this.oneShotSystems.delete(name);
+      this.oneShotSingleSystems.delete(name);
     }
   }
 
   // TODO(@darzu): good or terrible name?
   whyIsntSystemBeingCalled(name: string): void {
     // TODO(@darzu): more features like check against a specific set of entities
-    const sys = this.systems.get(name) ?? this.oneShotSystems.get(name);
+    const sys =
+      this.systems.get(name) ??
+      this.oneShotSystems.get(name) ??
+      this.oneShotSingleSystems.get(name);
     if (!sys) {
       console.warn(`No systems found with name: '${name}'`);
       console.dir(this.oneShotSystems);
@@ -616,6 +659,44 @@ export class EntityManager {
     console.warn(
       `System '${name}' matches ${es.length} entities and has all resources: ${haveAllResources}.`
     );
+  }
+
+  // TODO(@darzu): Rethink naming here
+  // NOTE: if you're gonna change the types, change registerSystem first and just copy
+  //  them down to here
+  public whenEntityHas<
+    // eCS extends ComponentDef[],
+    CS extends ComponentDef[],
+    RS extends ComponentDef[]
+  >(
+    e: Entity,
+    cs: [...CS],
+    rs: [...RS],
+    callback: SingleSystemFN<[/*...eCS, */ ...CS], RS>,
+    name?: string
+  ): void {
+    // TODO(@darzu): this is too copy-pasted from oneShot which is too copy pasted from system
+    // TODO(@darzu): need unified query maybe?
+    name = name || callback.name || "oneShot" + this.nextOneShotSuffix++;
+
+    if (this.oneShotSingleSystems.has(name))
+      throw `One-shot single system named ${name} already defined.`;
+
+    // use one bucket for all one shots. Change this if we want more granularity
+    this.stats["__oneShots"] = this.stats["__oneShots"] ?? {
+      calls: 0,
+      queries: 0,
+      callTime: 0,
+      queryTime: 0,
+    };
+
+    this.oneShotSingleSystems.set(name, {
+      e,
+      cs,
+      rs,
+      callback,
+      name,
+    });
   }
 }
 

@@ -1005,3 +1005,10 @@ Core:
   roblox-y
   Some NFT integrations..
   50% revenue share (roblox is 75%?)
+
+Multiplatform games w/ JS + HTML:
+  https://frgmnts.blog/f/multi-platform-games-javascript.html
+  https://github.com/greenheartgames/greenworks
+
+Getting HTML game onto console:
+  https://www.youtube.com/watch?v=KfBzlzvt8RU

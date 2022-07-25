@@ -52,3 +52,13 @@ Actor model?
   https://www.orbit.cloud/orbit/
   https://news.ycombinator.com/item?id=31192795
   https://www.microsoft.com/en-us/research/project/orleans-virtual-actors/
+
+Relationships in an ECS:
+  https://ajmmertens.medium.com/building-games-in-ecs-with-entity-relationships-657275ba2c6c
+
+"The Truth:"
+  https://ourmachinery.com/post/the-story-behind-the-truth-designing-a-data-model/
+
+Our Machinery ECS:
+  https://ourmachinery.com/post/syncing-a-data-oriented-ecs/
+  https://ourmachinery.com/post/ecs-and-rendering/

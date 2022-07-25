@@ -3,7 +3,11 @@ import { ColorDef } from "../color.js";
 import { EntityManager, EM } from "../entity-manager.js";
 import { InputsDef } from "../inputs.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
-import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
+import {
+  RendererDef,
+  RenderableConstructDef,
+  RenderableDef,
+} from "../render/renderer-ecs.js";
 import { blurPipelines } from "../render/pipelines/std-blur.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -86,6 +90,7 @@ export function initHyperspaceGame(em: EntityManager) {
     null,
     [AssetsDef, GlobalCursor3dDef, RendererDef],
     (_, res) => {
+      // console.log("HERE!");
       const ghost = createGhost(em);
       em.ensureComponentOn(
         ghost,
@@ -118,6 +123,7 @@ export function initHyperspaceGame(em: EntityManager) {
         ocean,
         RenderableConstructDef,
         res.assets.ocean.proto,
+        // TODO(@darzu): needed?
         true,
         0,
         UVUNWRAP_MASK
@@ -125,6 +131,66 @@ export function initHyperspaceGame(em: EntityManager) {
       em.ensureComponentOn(ocean, ColorDef, [0.1, 0.3, 0.8]);
       // em.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
       em.ensureComponentOn(ocean, PositionDef);
+      const oceanEntDef = em.defineComponent("OceanEnt", () => true);
+      em.ensureComponentOn(ocean, oceanEntDef);
+
+      // TODO(@darzu): it'd be great if we could get a Promise<> for this instead of using this tag+one-shot thing
+      em.whenEntityHas(
+        ocean,
+        [oceanEntDef, RenderableDef],
+        [RendererDef],
+        async (ocean, res) => {
+          // TODO(@darzu):
+          console.log("FOO!!!");
+          res.renderer.renderer.submitPipelines(
+            [ocean.renderable.meshHandle],
+            [unwrapPipeline, unwrapPipeline2, ...oceanJfa.allPipes()]
+          );
+
+          // read from one-time jobs
+          // TODO(@darzu): what's the right way to handle these jobs
+          const readPromises = [
+            res.renderer.renderer.readTexture(uvToPosTex),
+            res.renderer.renderer.readTexture(uvToNormTex),
+          ];
+          const [uvToPosData, uvToNormData] = await Promise.all(readPromises);
+
+          // TODO(@darzu): Account for the 1px border in the texture!!!
+          const uvToPosReader = createTextureReader(
+            uvToPosData,
+            uvToPosTex.size,
+            3,
+            uvToPosTex.format
+          );
+
+          const uvToNormReader = createTextureReader(
+            uvToNormData,
+            uvToNormTex.size,
+            3,
+            uvToNormTex.format
+          );
+
+          console.log("adding OceanDef");
+
+          // TODO(@darzu): hacky hacky way to do this
+          em.addSingletonComponent(OceanDef, {
+            ent: createRef(oceanEntId, [PositionDef]),
+            uvToPos: (out, uv) => {
+              const x = uv[0] * uvToPosReader.size[0];
+              const y = uv[1] * uvToPosReader.size[1];
+              // console.log(`${x},${y}`);
+              return uvToPosReader.sample(out, x, y);
+            },
+            uvToNorm: (out, uv) => {
+              const x = uv[0] * uvToNormReader.size[0];
+              const y = uv[1] * uvToNormReader.size[1];
+              // console.log(`${x},${y}`);
+              return uvToNormReader.sample(out, x, y);
+            },
+          });
+        },
+        "oceanGPUWork"
+      );
       // em.ensureComponentOn(ocean, PositionDef, [120, 0, 0]);
       // vec3.scale(ocean.position, ocean.position, scale);
       // const scale = 100.0;
@@ -151,7 +217,20 @@ export function initHyperspaceGame(em: EntityManager) {
       em.ensureComponentOn(buoy, ScaleDef, [1.0, 1.0, 1.0]);
       em.ensureComponentOn(buoy, ColorDef, [0.2, 0.8, 0.2]);
       em.ensureComponentOn(buoy, UVObjDef, [0.1, 0.1]);
+
+      // one-time GPU jobs
+      res.renderer.renderer.submitPipelines([], [...noisePipes, initStars]);
     }
+  );
+
+  em.registerSystem(
+    [],
+    [],
+    () => {
+      // console.log("debugLoop");
+      // em.whyIsntSystemBeingCalled("oceanGPUWork");
+    },
+    "debugLoop"
   );
 
   em.registerSystem(
@@ -192,19 +271,14 @@ export function initHyperspaceGame(em: EntityManager) {
     "runOcean"
   );
 
-  // let line: ReturnType<typeof drawLine>;
-
-  let once = true;
-  let once2 = 10; // TODO(@darzu): lol wat.
-
   let gridCompose = createGridComposePipelines();
 
   // TODO(@darzu): TEXTURES TODO:
-  //  - 2D voronoi texture to CPU
-  //  - 2D normals texture
-  //  - 3D->3D voronoi texture
-  //  - 3D->2D voronoi seeds lookup texture
-  //  - 3D normals texture ?
+  // [x] 2D voronoi texture to CPU
+  // [x] 2D normals texture
+  // [ ] 3D->3D voronoi texture
+  // [ ] 3D->2D voronoi seeds lookup texture
+  // [ ] 3D normals texture ?
 
   em.registerSystem(
     [],
@@ -217,109 +291,26 @@ export function initHyperspaceGame(em: EntityManager) {
       DevConsoleDef,
     ],
     async (cs, res) => {
-      // if (VISUALIZE_JFA) {
-      //   let prevjfaMaxStep = jfaMaxStep;
-      //   jfaMaxStep += (res.inputs.keyClicks["j"] ?? 0) * 2;
-      //   jfaMaxStep -= (res.inputs.keyClicks["h"] ?? 0) * 2;
-      //   jfaMaxStep = Math.max(jfaMaxStep, 0);
-      //   jfaMaxStep = Math.min(jfaMaxStep, jfaPipelines.length);
-      //   if (jfaMaxStep !== prevjfaMaxStep)
-      //     console.log(`jfaMaxStep: ${jfaMaxStep}`);
-      // }
+      // steady state rendering
+      res.renderer.pipelines = [
+        // ...noisePipes,
 
-      // TODO(@darzu): instead of all this one-time nosense, it'd be great
-      //  to just submit async work to the GPU.
-      if (once) {
-        // one-time compute and render jobs
-        res.renderer.pipelines = [
-          ...noisePipes,
+        // TODO(@darzu): only run many times when debugging
+        // ...jfaPipelines.slice(0, jfaMaxStep),
+        // jfaToSdfPipe,
+        // sdfBrightPipe,
+        // sdfToRingsPipe,
 
-          initStars,
+        // unwrapPipeline,
+        shadowPipeline,
+        stdRenderPipeline,
+        outlineRender,
+        renderStars,
+        ...blurPipelines,
 
-          // TODO(@darzu): package / abstract these more nicely?
-          unwrapPipeline,
-          unwrapPipeline2,
-          // uvBorderMaskPipeline,
-          // uvPosBorderMaskPipeline,
-          // jfaPreOutlinePipe,
-          ...oceanJfa.allPipes(),
-        ];
-
-        once = false;
-      } else if (once2) {
-        if (once2 === 1) {
-          // read from one-time jobs
-          // TODO(@darzu): what's the right way to handle these jobs
-          const readPromises = [
-            res.renderer.renderer.readTexture(uvToPosTex),
-            res.renderer.renderer.readTexture(uvToNormTex),
-          ];
-          const [uvToPosData, uvToNormData] = await Promise.all(readPromises);
-          // const fs = new Float32Array(data);
-          // // TODO(@darzu): really want a vec4 array as a view on Float32Array
-          // console.dir(fs);
-          // for (let f of fs) {
-          //   // if (f !== 0 && f !== 1) console.log(f);
-          // }
-
-          // TODO(@darzu): Account for the 1px border in the texture!!!
-          const uvToPosReader = createTextureReader(
-            uvToPosData,
-            uvToPosTex.size,
-            3,
-            uvToPosTex.format
-          );
-
-          const uvToNormReader = createTextureReader(
-            uvToNormData,
-            uvToNormTex.size,
-            3,
-            uvToNormTex.format
-          );
-
-          console.log("adding OceanDef");
-
-          // TODO(@darzu): hacky hacky way to do this
-          em.addSingletonComponent(OceanDef, {
-            ent: createRef(oceanEntId, [PositionDef]),
-            uvToPos: (out, uv) => {
-              const x = uv[0] * uvToPosReader.size[0];
-              const y = uv[1] * uvToPosReader.size[1];
-              // console.log(`${x},${y}`);
-              return uvToPosReader.sample(out, x, y);
-            },
-            uvToNorm: (out, uv) => {
-              const x = uv[0] * uvToNormReader.size[0];
-              const y = uv[1] * uvToNormReader.size[1];
-              // console.log(`${x},${y}`);
-              return uvToNormReader.sample(out, x, y);
-            },
-          });
-        }
-
-        once2 -= 1;
-      } else {
-        // steady state rendering
-        res.renderer.pipelines = [
-          // ...noisePipes,
-
-          // TODO(@darzu): only run many times when debugging
-          // ...jfaPipelines.slice(0, jfaMaxStep),
-          // jfaToSdfPipe,
-          // sdfBrightPipe,
-          // sdfToRingsPipe,
-
-          // unwrapPipeline,
-          shadowPipeline,
-          stdRenderPipeline,
-          outlineRender,
-          renderStars,
-          ...blurPipelines,
-
-          postProcess,
-          ...(res.dev.showConsole ? gridCompose : []),
-        ];
-      }
+        postProcess,
+        ...(res.dev.showConsole ? gridCompose : []),
+      ];
     },
     "hyperspaceGame"
   );
