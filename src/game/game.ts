@@ -204,7 +204,7 @@ function registerRenderViewController(em: EntityManager) {
   );
 }
 
-export function initShipGame(em: EntityManager, hosting: boolean) {
+export async function initShipGame(em: EntityManager, hosting: boolean) {
   registerShipGameUI(em);
   EM.addSingletonComponent(CameraDef);
   EM.addSingletonComponent(GameStateDef);
@@ -214,18 +214,18 @@ export function initShipGame(em: EntityManager, hosting: boolean) {
   if (hosting) {
     createShip();
   }
+
   // create player once MeDef is present (meaning we've joined, if
   // we're not the host)
-  em.registerOneShotSystem(null, [MeDef], () => createPlayer(em));
+  em.registerOneShotSystem(null, [MeDef]).then(() => createPlayer(em));
 
-  em.registerOneShotSystem(null, [RendererDef], (_, res) => {
-    res.renderer.pipelines = [
-      shadowPipeline,
-      stdRenderPipeline,
-      outlineRender,
-      postProcess,
-    ];
-  });
+  const [_, res] = await em.registerOneShotSystem(null, [RendererDef]);
+  res.renderer.pipelines = [
+    shadowPipeline,
+    stdRenderPipeline,
+    outlineRender,
+    postProcess,
+  ];
 }
 
 function debugBoatParts(em: EntityManager) {

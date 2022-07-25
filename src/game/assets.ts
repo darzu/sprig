@@ -637,29 +637,25 @@ export const AssetsDef = EM.defineComponent("assets", (meshes: GameMeshes) => {
 });
 export type Assets = Component<typeof AssetsDef>;
 
-onInit((em) => {
+onInit(async (em) => {
   em.addSingletonComponent(AssetLoaderDef);
 
   // start loading of assets
-  em.registerOneShotSystem(
+  const [_, { assetLoader, renderer }] = await em.registerOneShotSystem(
     [],
-    [AssetLoaderDef, RendererDef],
-    (_, { assetLoader, renderer }) => {
-      assert(!assetLoader.promise, "somehow we're double loading assets");
-
-      const assetsPromise = loadAssets(renderer.renderer);
-      assetLoader.promise = assetsPromise;
-      assetsPromise.then(
-        (result) => {
-          em.addSingletonComponent(AssetsDef, result);
-        },
-        (failureReason) => {
-          // TODO(@darzu): fail more gracefully
-          throw `Failed to load assets: ${failureReason}`;
-        }
-      );
-    }
+    [AssetLoaderDef, RendererDef]
   );
+  assert(!assetLoader.promise, "somehow we're double loading assets");
+
+  const assetsPromise = loadAssets(renderer.renderer);
+  assetLoader.promise = assetsPromise;
+  try {
+    const result = await assetsPromise;
+    em.addSingletonComponent(AssetsDef, result);
+  } catch (failureReason) {
+    // TODO(@darzu): fail more gracefully
+    throw `Failed to load assets: ${failureReason}`;
+  }
 });
 
 async function loadTxtInternal(relPath: string): Promise<string> {

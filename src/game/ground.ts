@@ -199,7 +199,7 @@ function continuePath(path: PathNode): PathNode {
 
 export function initGroundSystem(em: EntityManager) {
   // init ground mesh
-  em.registerOneShotSystem(null, [AssetsDef, RendererDef], (_, rs) => {
+  em.registerOneShotSystem(null, [AssetsDef, RendererDef]).then(([_, rs]) => {
     const mesh = em.addSingletonComponent(GroundMeshDef);
 
     // create mesh
@@ -214,7 +214,7 @@ export function initGroundSystem(em: EntityManager) {
     mesh.mesh = gameMeshFromMesh(m, rs.renderer.renderer);
   });
 
-  em.registerOneShotSystem(null, [MeDef, GroundMeshDef], (_, rs) => {
+  em.registerOneShotSystem(null, [MeDef, GroundMeshDef]).then(([_, rs]) => {
     // Only the host runs the ground system
     if (!rs.me.host) return;
 

@@ -72,7 +72,7 @@ export const oceanJfa = createJfaPipelines(uvMaskTex, "exterior");
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 
-export function initHyperspaceGame(em: EntityManager) {
+export async function initHyperspaceGame(em: EntityManager) {
   const camera = em.addSingletonComponent(CameraDef);
   camera.fov = Math.PI * 0.5;
 
@@ -85,138 +85,6 @@ export function initHyperspaceGame(em: EntityManager) {
   // em.registerOneShotSystem(null, [MeDef], () => createPlayer(em));
 
   let oceanEntId = -1;
-
-  em.registerOneShotSystem(
-    null,
-    [AssetsDef, GlobalCursor3dDef, RendererDef],
-    async (_, res) => {
-      // console.log("HERE!");
-      const ghost = createGhost(em);
-      em.ensureComponentOn(
-        ghost,
-        RenderableConstructDef,
-        res.assets.cube.proto
-      );
-      ghost.controllable.speed *= 3;
-      ghost.controllable.sprintMul *= 3;
-
-      {
-        // debug camera
-        vec3.copy(ghost.position, [-185.02, 66.25, -69.04]);
-        quat.copy(ghost.rotation, [0.0, -0.92, 0.0, 0.39]);
-        vec3.copy(ghost.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-        ghost.cameraFollow.yawOffset = 0.0;
-        ghost.cameraFollow.pitchOffset = -0.465;
-
-        // let g = ghost;
-        // vec3.copy(g.position, [-208.43, 29.58, 80.05]);
-        // quat.copy(g.rotation, [0.0, -0.61, 0.0, 0.79]);
-        // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-        // g.cameraFollow.yawOffset = 0.0;
-        // g.cameraFollow.pitchOffset = -0.486;
-      }
-
-      // one-time GPU jobs
-      res.renderer.renderer.submitPipelines([], [...noisePipes, initStars]);
-
-      const ocean = em.newEntity();
-      oceanEntId = ocean.id; // hacky?
-      em.ensureComponentOn(
-        ocean,
-        RenderableConstructDef,
-        res.assets.ocean.proto,
-        // TODO(@darzu): needed?
-        true,
-        0,
-        UVUNWRAP_MASK
-      );
-      em.ensureComponentOn(ocean, ColorDef, [0.1, 0.3, 0.8]);
-      // em.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
-      em.ensureComponentOn(ocean, PositionDef);
-
-      let [ocean2] = await em.whenEntityHas(
-        ocean,
-        [RenderableDef],
-        [],
-        "oceanGPUWork"
-      );
-
-      // TODO(@darzu):
-      console.log("FOO!!!");
-      res.renderer.renderer.submitPipelines(
-        [ocean2.renderable.meshHandle],
-        [unwrapPipeline, unwrapPipeline2, ...oceanJfa.allPipes()]
-      );
-
-      // read from one-time jobs
-      // TODO(@darzu): what's the right way to handle these jobs
-      const readPromises = [
-        res.renderer.renderer.readTexture(uvToPosTex),
-        res.renderer.renderer.readTexture(uvToNormTex),
-      ];
-      const [uvToPosData, uvToNormData] = await Promise.all(readPromises);
-
-      // TODO(@darzu): Account for the 1px border in the texture!!!
-      const uvToPosReader = createTextureReader(
-        uvToPosData,
-        uvToPosTex.size,
-        3,
-        uvToPosTex.format
-      );
-
-      const uvToNormReader = createTextureReader(
-        uvToNormData,
-        uvToNormTex.size,
-        3,
-        uvToNormTex.format
-      );
-
-      console.log("adding OceanDef");
-
-      // TODO(@darzu): hacky hacky way to do this
-      em.addSingletonComponent(OceanDef, {
-        ent: createRef(oceanEntId, [PositionDef]),
-        uvToPos: (out, uv) => {
-          const x = uv[0] * uvToPosReader.size[0];
-          const y = uv[1] * uvToPosReader.size[1];
-          // console.log(`${x},${y}`);
-          return uvToPosReader.sample(out, x, y);
-        },
-        uvToNorm: (out, uv) => {
-          const x = uv[0] * uvToNormReader.size[0];
-          const y = uv[1] * uvToNormReader.size[1];
-          // console.log(`${x},${y}`);
-          return uvToNormReader.sample(out, x, y);
-        },
-      });
-      // em.ensureComponentOn(ocean, PositionDef, [120, 0, 0]);
-      // vec3.scale(ocean.position, ocean.position, scale);
-      // const scale = 100.0;
-      // const scale = 1.0;
-      // em.ensureComponentOn(ocean, ScaleDef, [scale, scale, scale]);
-      // em.ensureComponentOn(ocean, AngularVelocityDef, [0.0001, 0.0001, 0.0001]);
-
-      // TODO(@darzu): DEBUG quad mesh stuff
-      const fabric = em.newEntity();
-      em.ensureComponentOn(
-        fabric,
-        RenderableConstructDef,
-        res.assets.fabric.proto
-        // true,
-        // 0
-        // UVUNWRAP_MASK
-      );
-      em.ensureComponentOn(fabric, PositionDef, [10, 10, 10]);
-      // em.ensureComponentOn(fabric, AngularVelocityDef, [1.0, 10.0, 0.1]);
-
-      const buoy = em.newEntity();
-      em.ensureComponentOn(buoy, PositionDef);
-      em.ensureComponentOn(buoy, RenderableConstructDef, res.assets.ship.proto);
-      em.ensureComponentOn(buoy, ScaleDef, [1.0, 1.0, 1.0]);
-      em.ensureComponentOn(buoy, ColorDef, [0.2, 0.8, 0.2]);
-      em.ensureComponentOn(buoy, UVObjDef, [0.1, 0.1]);
-    }
-  );
 
   em.registerSystem(
     [],
@@ -309,4 +177,132 @@ export function initHyperspaceGame(em: EntityManager) {
     },
     "hyperspaceGame"
   );
+
+  const [_, res] = await em.registerOneShotSystem(null, [
+    AssetsDef,
+    GlobalCursor3dDef,
+    RendererDef,
+  ]);
+
+  // console.log("HERE!");
+  const ghost = createGhost(em);
+  em.ensureComponentOn(ghost, RenderableConstructDef, res.assets.cube.proto);
+  ghost.controllable.speed *= 3;
+  ghost.controllable.sprintMul *= 3;
+
+  {
+    // debug camera
+    vec3.copy(ghost.position, [-185.02, 66.25, -69.04]);
+    quat.copy(ghost.rotation, [0.0, -0.92, 0.0, 0.39]);
+    vec3.copy(ghost.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    ghost.cameraFollow.yawOffset = 0.0;
+    ghost.cameraFollow.pitchOffset = -0.465;
+
+    // let g = ghost;
+    // vec3.copy(g.position, [-208.43, 29.58, 80.05]);
+    // quat.copy(g.rotation, [0.0, -0.61, 0.0, 0.79]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // g.cameraFollow.pitchOffset = -0.486;
+  }
+
+  // one-time GPU jobs
+  res.renderer.renderer.submitPipelines([], [...noisePipes, initStars]);
+
+  const ocean = em.newEntity();
+  oceanEntId = ocean.id; // hacky?
+  em.ensureComponentOn(
+    ocean,
+    RenderableConstructDef,
+    res.assets.ocean.proto,
+    // TODO(@darzu): needed?
+    true,
+    0,
+    UVUNWRAP_MASK
+  );
+  em.ensureComponentOn(ocean, ColorDef, [0.1, 0.3, 0.8]);
+  // em.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
+  em.ensureComponentOn(ocean, PositionDef);
+
+  let [ocean2] = await em.whenEntityHas(
+    ocean,
+    [RenderableDef],
+    [],
+    "oceanGPUWork"
+  );
+
+  // TODO(@darzu):
+  console.log("FOO!!!");
+  res.renderer.renderer.submitPipelines(
+    [ocean2.renderable.meshHandle],
+    [unwrapPipeline, unwrapPipeline2, ...oceanJfa.allPipes()]
+  );
+
+  // read from one-time jobs
+  // TODO(@darzu): what's the right way to handle these jobs
+  const readPromises = [
+    res.renderer.renderer.readTexture(uvToPosTex),
+    res.renderer.renderer.readTexture(uvToNormTex),
+  ];
+  const [uvToPosData, uvToNormData] = await Promise.all(readPromises);
+
+  // TODO(@darzu): Account for the 1px border in the texture!!!
+  const uvToPosReader = createTextureReader(
+    uvToPosData,
+    uvToPosTex.size,
+    3,
+    uvToPosTex.format
+  );
+
+  const uvToNormReader = createTextureReader(
+    uvToNormData,
+    uvToNormTex.size,
+    3,
+    uvToNormTex.format
+  );
+
+  console.log("adding OceanDef");
+
+  // TODO(@darzu): hacky hacky way to do this
+  em.addSingletonComponent(OceanDef, {
+    ent: createRef(oceanEntId, [PositionDef]),
+    uvToPos: (out, uv) => {
+      const x = uv[0] * uvToPosReader.size[0];
+      const y = uv[1] * uvToPosReader.size[1];
+      // console.log(`${x},${y}`);
+      return uvToPosReader.sample(out, x, y);
+    },
+    uvToNorm: (out, uv) => {
+      const x = uv[0] * uvToNormReader.size[0];
+      const y = uv[1] * uvToNormReader.size[1];
+      // console.log(`${x},${y}`);
+      return uvToNormReader.sample(out, x, y);
+    },
+  });
+  // em.ensureComponentOn(ocean, PositionDef, [120, 0, 0]);
+  // vec3.scale(ocean.position, ocean.position, scale);
+  // const scale = 100.0;
+  // const scale = 1.0;
+  // em.ensureComponentOn(ocean, ScaleDef, [scale, scale, scale]);
+  // em.ensureComponentOn(ocean, AngularVelocityDef, [0.0001, 0.0001, 0.0001]);
+
+  // TODO(@darzu): DEBUG quad mesh stuff
+  const fabric = em.newEntity();
+  em.ensureComponentOn(
+    fabric,
+    RenderableConstructDef,
+    res.assets.fabric.proto
+    // true,
+    // 0
+    // UVUNWRAP_MASK
+  );
+  em.ensureComponentOn(fabric, PositionDef, [10, 10, 10]);
+  // em.ensureComponentOn(fabric, AngularVelocityDef, [1.0, 10.0, 0.1]);
+
+  const buoy = em.newEntity();
+  em.ensureComponentOn(buoy, PositionDef);
+  em.ensureComponentOn(buoy, RenderableConstructDef, res.assets.ship.proto);
+  em.ensureComponentOn(buoy, ScaleDef, [1.0, 1.0, 1.0]);
+  em.ensureComponentOn(buoy, ColorDef, [0.2, 0.8, 0.2]);
+  em.ensureComponentOn(buoy, UVObjDef, [0.1, 0.1]);
 }

@@ -90,374 +90,361 @@ export function createGhost(em: EntityManager) {
 }
 
 let __frame = 0;
-export function initGJKSandbox(em: EntityManager, hosting: boolean) {
+export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   const camera = em.addSingletonComponent(CameraDef);
   camera.fov = Math.PI * 0.5;
 
-  em.registerOneShotSystem(
+  const [_, res] = await em.registerOneShotSystem(null, [
+    AssetsDef,
+    GlobalCursor3dDef,
+    RendererDef,
+  ]);
+  const g = createGhost(em);
+  // em.ensureComponentOn(g, RenderableConstructDef, res.assets.cube.proto);
+  // createPlayer(em);
+
+  // vec3.copy(e.position, [-16.6, 5, -5.1]);
+  // quat.copy(e.rotation, [0, -0.77, 0, 0.636]);
+  // vec3.copy(e.cameraFollow.positionOffset, [0, 0, 0]);
+  // quat.copy(e.cameraFollow.rotationOffset, [-0.225, 0, 0, 0.974]);
+  // vec3.copy(g.position, [-4.28, 0.97, 0.11]);
+  // quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
+  // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+  // quat.copy(g.cameraFollow.rotationOffset, [-0.18, 0.0, 0.0, 0.98]);
+  vec3.copy(g.position, [0, 1, -1.2]);
+  quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
+  // setCameraFollowPosition(g, "thirdPerson");
+  g.cameraFollow.positionOffset = [0, 0, 5];
+  g.controllable.modes.canYaw = false;
+  g.controllable.modes.canCameraYaw = true;
+  g.controllable.speed *= 0.5;
+  g.controllable.sprintMul = 10;
+
+  const c = res.globalCursor3d.cursor()!;
+  if (RenderableDef.isOn(c)) c.renderable.enabled = false;
+
+  const p = em.newEntity();
+  em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
+  em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
+  em.ensureComponentOn(p, PositionDef, [0, -5, 0]);
+
+  const b1 = em.newEntity();
+  const m1 = cloneMesh(res.assets.cube.mesh);
+  em.ensureComponentOn(b1, RenderableConstructDef, m1);
+  em.ensureComponentOn(b1, ColorDef, [0.1, 0.1, 0.1]);
+  em.ensureComponentOn(b1, PositionDef, [0, 0, 3]);
+  em.ensureComponentOn(b1, RotationDef);
+  em.ensureComponentOn(b1, AngularVelocityDef, [0, 0.001, 0.001]);
+  em.ensureComponentOn(b1, WorldFrameDef);
+  em.ensureComponentOn(b1, ColliderDef, {
+    shape: "AABB",
+    solid: false,
+    aabb: res.assets.cube.aabb,
+  });
+  // em.ensureComponentOn(b1, ColliderDef, {
+  //   shape: "Box",
+  //   solid: false,
+  //   center: res.assets.cube.center,
+  //   halfsize: res.assets.cube.halfsize,
+  // });
+
+  const b2 = g;
+  const m2 = cloneMesh(res.assets.cube.mesh);
+  em.ensureComponentOn(b2, RenderableConstructDef, m2);
+  em.ensureComponentOn(b2, ColorDef, [0.1, 0.1, 0.1]);
+  em.ensureComponentOn(b2, PositionDef, [0, 0, 0]);
+  // em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
+  em.ensureComponentOn(b2, WorldFrameDef);
+  // em.ensureComponentOn(b2, PhysicsParentDef, g.id);
+  em.ensureComponentOn(b2, ColliderDef, {
+    shape: "AABB",
+    solid: false,
+    aabb: res.assets.cube.aabb,
+  });
+  // em.ensureComponentOn(b2, ColliderDef, {
+  //   shape: "Box",
+  //   solid: false,
+  //   center: res.assets.cube.center,
+  //   halfsize: res.assets.cube.halfsize,
+  // });
+
+  const b3 = em.newEntity();
+  const m3 = cloneMesh(res.assets.ball.mesh);
+  em.ensureComponentOn(b3, RenderableConstructDef, m3);
+  em.ensureComponentOn(b3, ColorDef, [0.1, 0.1, 0.1]);
+  em.ensureComponentOn(b3, PositionDef, [0, 0, -4]);
+  em.ensureComponentOn(b3, RotationDef);
+  em.ensureComponentOn(b3, WorldFrameDef);
+  em.ensureComponentOn(b3, ColliderDef, {
+    shape: "AABB",
+    solid: false,
+    aabb: res.assets.ball.aabb,
+  });
+
+  const b4 = em.newEntity();
+  const m4 = cloneMesh(res.assets.tetra.mesh);
+  em.ensureComponentOn(b4, RenderableConstructDef, m4);
+  em.ensureComponentOn(b4, ColorDef, [0.1, 0.1, 0.1]);
+  em.ensureComponentOn(b4, PositionDef, [0, -3, 0]);
+  em.ensureComponentOn(b4, RotationDef);
+  em.ensureComponentOn(b4, WorldFrameDef);
+  em.ensureComponentOn(b4, ColliderDef, {
+    shape: "AABB",
+    solid: false,
+    aabb: res.assets.tetra.aabb,
+  });
+
+  // NOTE: this uses temp vectors, it must not live long
+  // TODO(@darzu): for perf, this should be done only once per obj per frame;
+  //    maybe we should transform the dir instead
+  function createWorldShape(
+    g: GameMesh,
+    pos: vec3,
+    rot: quat,
+    lastWorldPos: vec3
+  ): Shape {
+    const transform = mat4.fromRotationTranslation(mat4.create(), rot, pos);
+    const worldVerts = g.uniqueVerts.map((p) =>
+      vec3.transformMat4(tempVec3(), p, transform)
+    );
+    const support = (d: vec3) => farthestPointInDir(worldVerts, d);
+    const center = vec3.transformMat4(tempVec3(), g.center, transform);
+    const travel = vec3.sub(tempVec3(), pos, lastWorldPos);
+    return {
+      center,
+      support,
+      travel,
+    };
+  }
+
+  let lastPlayerPos = vec3.clone(b2.position);
+  let lastPlayerRot = quat.clone(b2.rotation);
+  let lastWorldPos: vec3[] = [
+    vec3.clone(b1.position),
+    vec3.clone(b3.position),
+    vec3.clone(b4.position),
+  ];
+  let lastWorldRot: quat[] = [
+    quat.clone(b1.rotation),
+    quat.clone(b3.rotation),
+    quat.clone(b4.rotation),
+  ];
+
+  em.registerSystem(
     null,
-    [AssetsDef, GlobalCursor3dDef, RendererDef],
-    (_, res) => {
-      const g = createGhost(em);
-      // em.ensureComponentOn(g, RenderableConstructDef, res.assets.cube.proto);
-      // createPlayer(em);
+    [InputsDef],
+    (_, { inputs }) => {
+      // console.log(__frame);
+      // __frame++;
+      // if (!inputs.keyClicks["g"]) return;
 
-      // vec3.copy(e.position, [-16.6, 5, -5.1]);
-      // quat.copy(e.rotation, [0, -0.77, 0, 0.636]);
-      // vec3.copy(e.cameraFollow.positionOffset, [0, 0, 0]);
-      // quat.copy(e.cameraFollow.rotationOffset, [-0.225, 0, 0, 0.974]);
-      // vec3.copy(g.position, [-4.28, 0.97, 0.11]);
-      // quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
-      // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-      // quat.copy(g.cameraFollow.rotationOffset, [-0.18, 0.0, 0.0, 0.98]);
-      vec3.copy(g.position, [0, 1, -1.2]);
-      quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
-      // setCameraFollowPosition(g, "thirdPerson");
-      g.cameraFollow.positionOffset = [0, 0, 5];
-      g.controllable.modes.canYaw = false;
-      g.controllable.modes.canCameraYaw = true;
-      g.controllable.speed *= 0.5;
-      g.controllable.sprintMul = 10;
+      // TODO(@darzu):
 
-      const c = res.globalCursor3d.cursor()!;
-      if (RenderableDef.isOn(c)) c.renderable.enabled = false;
+      let playerShape = createWorldShape(
+        res.assets.cube,
+        b2.position,
+        b2.rotation,
+        lastPlayerPos
+      );
 
-      const p = em.newEntity();
-      em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
-      em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
-      em.ensureComponentOn(p, PositionDef, [0, -5, 0]);
+      const gameMeshes = [res.assets.cube, res.assets.ball, res.assets.tetra];
+      const ents = [b1, b3, b4];
 
-      const b1 = em.newEntity();
-      const m1 = cloneMesh(res.assets.cube.mesh);
-      em.ensureComponentOn(b1, RenderableConstructDef, m1);
-      em.ensureComponentOn(b1, ColorDef, [0.1, 0.1, 0.1]);
-      em.ensureComponentOn(b1, PositionDef, [0, 0, 3]);
-      em.ensureComponentOn(b1, RotationDef);
-      em.ensureComponentOn(b1, AngularVelocityDef, [0, 0.001, 0.001]);
-      em.ensureComponentOn(b1, WorldFrameDef);
-      em.ensureComponentOn(b1, ColliderDef, {
-        shape: "AABB",
-        solid: false,
-        aabb: res.assets.cube.aabb,
-      });
-      // em.ensureComponentOn(b1, ColliderDef, {
-      //   shape: "Box",
-      //   solid: false,
-      //   center: res.assets.cube.center,
-      //   halfsize: res.assets.cube.halfsize,
-      // });
+      let backTravelD = 0;
 
-      const b2 = g;
-      const m2 = cloneMesh(res.assets.cube.mesh);
-      em.ensureComponentOn(b2, RenderableConstructDef, m2);
-      em.ensureComponentOn(b2, ColorDef, [0.1, 0.1, 0.1]);
-      em.ensureComponentOn(b2, PositionDef, [0, 0, 0]);
-      // em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
-      em.ensureComponentOn(b2, WorldFrameDef);
-      // em.ensureComponentOn(b2, PhysicsParentDef, g.id);
-      em.ensureComponentOn(b2, ColliderDef, {
-        shape: "AABB",
-        solid: false,
-        aabb: res.assets.cube.aabb,
-      });
-      // em.ensureComponentOn(b2, ColliderDef, {
-      //   shape: "Box",
-      //   solid: false,
-      //   center: res.assets.cube.center,
-      //   halfsize: res.assets.cube.halfsize,
-      // });
+      for (let i = 0; i < ents.length; i++) {
+        b2.color[i] = 0.1;
+        ents[i].color[i] = 0.1;
 
-      const b3 = em.newEntity();
-      const m3 = cloneMesh(res.assets.ball.mesh);
-      em.ensureComponentOn(b3, RenderableConstructDef, m3);
-      em.ensureComponentOn(b3, ColorDef, [0.1, 0.1, 0.1]);
-      em.ensureComponentOn(b3, PositionDef, [0, 0, -4]);
-      em.ensureComponentOn(b3, RotationDef);
-      em.ensureComponentOn(b3, WorldFrameDef);
-      em.ensureComponentOn(b3, ColliderDef, {
-        shape: "AABB",
-        solid: false,
-        aabb: res.assets.ball.aabb,
-      });
-
-      const b4 = em.newEntity();
-      const m4 = cloneMesh(res.assets.tetra.mesh);
-      em.ensureComponentOn(b4, RenderableConstructDef, m4);
-      em.ensureComponentOn(b4, ColorDef, [0.1, 0.1, 0.1]);
-      em.ensureComponentOn(b4, PositionDef, [0, -3, 0]);
-      em.ensureComponentOn(b4, RotationDef);
-      em.ensureComponentOn(b4, WorldFrameDef);
-      em.ensureComponentOn(b4, ColliderDef, {
-        shape: "AABB",
-        solid: false,
-        aabb: res.assets.tetra.aabb,
-      });
-
-      // NOTE: this uses temp vectors, it must not live long
-      // TODO(@darzu): for perf, this should be done only once per obj per frame;
-      //    maybe we should transform the dir instead
-      function createWorldShape(
-        g: GameMesh,
-        pos: vec3,
-        rot: quat,
-        lastWorldPos: vec3
-      ): Shape {
-        const transform = mat4.fromRotationTranslation(mat4.create(), rot, pos);
-        const worldVerts = g.uniqueVerts.map((p) =>
-          vec3.transformMat4(tempVec3(), p, transform)
+        let shapeOther = createWorldShape(
+          gameMeshes[i],
+          ents[i].position,
+          ents[i].rotation,
+          lastWorldPos[i]
         );
-        const support = (d: vec3) => farthestPointInDir(worldVerts, d);
-        const center = vec3.transformMat4(tempVec3(), g.center, transform);
-        const travel = vec3.sub(tempVec3(), pos, lastWorldPos);
-        return {
-          center,
-          support,
-          travel,
-        };
-      }
+        let simplex = gjk(shapeOther, playerShape);
+        if (simplex) {
+          b2.color[i] = 0.3;
+          ents[i].color[i] = 0.3;
+        }
+        if (
+          simplex &&
+          (!quat.equals(lastWorldRot[i], ents[i].rotation) ||
+            !quat.equals(lastPlayerRot, g.rotation))
+        ) {
+          // rotation happened, undo it
+          quat.copy(ents[i].rotation, lastWorldRot[i]);
+          quat.copy(g.rotation, lastPlayerRot);
 
-      let lastPlayerPos = vec3.clone(b2.position);
-      let lastPlayerRot = quat.clone(b2.rotation);
-      let lastWorldPos: vec3[] = [
-        vec3.clone(b1.position),
-        vec3.clone(b3.position),
-        vec3.clone(b4.position),
-      ];
-      let lastWorldRot: quat[] = [
-        quat.clone(b1.rotation),
-        quat.clone(b3.rotation),
-        quat.clone(b4.rotation),
-      ];
-
-      em.registerSystem(
-        null,
-        [InputsDef],
-        (_, { inputs }) => {
-          // console.log(__frame);
-          // __frame++;
-          // if (!inputs.keyClicks["g"]) return;
-
-          // TODO(@darzu):
-
-          let playerShape = createWorldShape(
+          shapeOther = createWorldShape(
+            gameMeshes[i],
+            ents[i].position,
+            ents[i].rotation,
+            lastWorldPos[i]
+          );
+          playerShape = createWorldShape(
             res.assets.cube,
             b2.position,
             b2.rotation,
             lastPlayerPos
           );
+          simplex = gjk(shapeOther, playerShape);
+        }
 
-          const gameMeshes = [
-            res.assets.cube,
-            res.assets.ball,
-            res.assets.tetra,
-          ];
-          const ents = [b1, b3, b4];
-
-          let backTravelD = 0;
-
-          for (let i = 0; i < ents.length; i++) {
-            b2.color[i] = 0.1;
-            ents[i].color[i] = 0.1;
-
-            let shapeOther = createWorldShape(
-              gameMeshes[i],
-              ents[i].position,
-              ents[i].rotation,
-              lastWorldPos[i]
-            );
-            let simplex = gjk(shapeOther, playerShape);
-            if (simplex) {
-              b2.color[i] = 0.3;
-              ents[i].color[i] = 0.3;
-            }
-            if (
-              simplex &&
-              (!quat.equals(lastWorldRot[i], ents[i].rotation) ||
-                !quat.equals(lastPlayerRot, g.rotation))
-            ) {
-              // rotation happened, undo it
-              quat.copy(ents[i].rotation, lastWorldRot[i]);
-              quat.copy(g.rotation, lastPlayerRot);
-
-              shapeOther = createWorldShape(
-                gameMeshes[i],
-                ents[i].position,
-                ents[i].rotation,
-                lastWorldPos[i]
-              );
-              playerShape = createWorldShape(
-                res.assets.cube,
-                b2.position,
-                b2.rotation,
-                lastPlayerPos
-              );
-              simplex = gjk(shapeOther, playerShape);
-            }
-
-            if (simplex) {
-              const penD = penetrationDepth(shapeOther, playerShape, simplex);
-              const travelD = vec3.len(playerShape.travel);
-              if (penD < Infinity) {
-                backTravelD += penD;
-              }
-              if (penD > travelD + PAD) console.error(`penD > travelD`);
-              console.log(
-                `penD: ${penD.toFixed(3)}, travelD: ${travelD.toFixed(3)}`
-              );
-            }
+        if (simplex) {
+          const penD = penetrationDepth(shapeOther, playerShape, simplex);
+          const travelD = vec3.len(playerShape.travel);
+          if (penD < Infinity) {
+            backTravelD += penD;
           }
+          if (penD > travelD + PAD) console.error(`penD > travelD`);
+          console.log(
+            `penD: ${penD.toFixed(3)}, travelD: ${travelD.toFixed(3)}`
+          );
+        }
+      }
 
-          backTravelD = Math.min(backTravelD, vec3.len(playerShape.travel));
-          const travelN = vec3.normalize(tempVec3(), playerShape.travel);
-          const backTravel = vec3.scale(tempVec3(), travelN, backTravelD);
+      backTravelD = Math.min(backTravelD, vec3.len(playerShape.travel));
+      const travelN = vec3.normalize(tempVec3(), playerShape.travel);
+      const backTravel = vec3.scale(tempVec3(), travelN, backTravelD);
 
-          // console.log(backTravel);
-          vec3.sub(b2.position, b2.position, backTravel);
+      // console.log(backTravel);
+      vec3.sub(b2.position, b2.position, backTravel);
 
-          lastWorldPos = [
-            vec3.clone(b1.position),
-            vec3.clone(b3.position),
-            vec3.clone(b4.position),
-          ];
-          lastWorldRot = [
-            quat.clone(b1.rotation),
-            quat.clone(b3.rotation),
-            quat.clone(b4.rotation),
-          ];
-          lastPlayerPos = vec3.clone(b2.position);
-          lastPlayerRot = quat.clone(b2.rotation);
-        },
-        "checkGJK"
-      );
-    }
+      lastWorldPos = [
+        vec3.clone(b1.position),
+        vec3.clone(b3.position),
+        vec3.clone(b4.position),
+      ];
+      lastWorldRot = [
+        quat.clone(b1.rotation),
+        quat.clone(b3.rotation),
+        quat.clone(b4.rotation),
+      ];
+      lastPlayerPos = vec3.clone(b2.position);
+      lastPlayerRot = quat.clone(b2.rotation);
+    },
+    "checkGJK"
   );
 }
 
-export function initClothSandbox(em: EntityManager, hosting: boolean) {
+export async function initClothSandbox(em: EntityManager, hosting: boolean) {
   const camera = em.addSingletonComponent(CameraDef);
   camera.fov = Math.PI * 0.5;
 
-  em.registerOneShotSystem(
-    null,
-    [AssetsDef, GlobalCursor3dDef, RendererDef],
-    (_, res) => {
-      let renderPipelinesPtrs: CyRenderPipelinePtr[] = [
-        // TODO(@darzu):
-        shadowPipeline,
-        stdRenderPipeline,
-        // renderRopePipelineDesc,
-        boidRender,
-        // boidCanvasMerge,
-        // shadowDbgDisplay,
-        // normalDbg,
-        // positionDbg,
-        postProcess,
-      ];
-      let computePipelinesPtrs: CyCompPipelinePtr[] = [
-        cmpClothPipelinePtr0,
-        cmpClothPipelinePtr1,
-        compRopePipelinePtr,
-        boidComp0,
-        boidComp1,
-      ];
-      res.renderer.pipelines = [
-        ...computePipelinesPtrs,
-        ...renderPipelinesPtrs,
-      ];
+  const [_, res] = await em.registerOneShotSystem(null, [
+    AssetsDef,
+    GlobalCursor3dDef,
+    RendererDef,
+  ]);
+  let renderPipelinesPtrs: CyRenderPipelinePtr[] = [
+    // TODO(@darzu):
+    shadowPipeline,
+    stdRenderPipeline,
+    // renderRopePipelineDesc,
+    boidRender,
+    // boidCanvasMerge,
+    // shadowDbgDisplay,
+    // normalDbg,
+    // positionDbg,
+    postProcess,
+  ];
+  let computePipelinesPtrs: CyCompPipelinePtr[] = [
+    cmpClothPipelinePtr0,
+    cmpClothPipelinePtr1,
+    compRopePipelinePtr,
+    boidComp0,
+    boidComp1,
+  ];
+  res.renderer.pipelines = [...computePipelinesPtrs, ...renderPipelinesPtrs];
 
-      const g = createGhost(em);
-      vec3.copy(g.position, [0, 1, -1.2]);
-      quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
-      g.controllable.sprintMul = 3;
+  const g = createGhost(em);
+  vec3.copy(g.position, [0, 1, -1.2]);
+  quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
+  g.controllable.sprintMul = 3;
 
-      // TODO(@darzu): this shouldn't be necessary
-      const m2 = cloneMesh(res.assets.cube.mesh);
-      em.ensureComponentOn(g, RenderableConstructDef, m2);
+  // TODO(@darzu): this shouldn't be necessary
+  const m2 = cloneMesh(res.assets.cube.mesh);
+  em.ensureComponentOn(g, RenderableConstructDef, m2);
 
-      {
-        // vec3.copy(e.position, [-16.85, 7.11, -4.33]);
-        // quat.copy(e.rotation, [0.0, -0.76, 0.0, 0.65]);
-        // vec3.copy(e.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-        // e.cameraFollow.yawOffset = 0.0;
-        // e.cameraFollow.pitchOffset = -0.368;
+  {
+    // vec3.copy(e.position, [-16.85, 7.11, -4.33]);
+    // quat.copy(e.rotation, [0.0, -0.76, 0.0, 0.65]);
+    // vec3.copy(e.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    // e.cameraFollow.yawOffset = 0.0;
+    // e.cameraFollow.pitchOffset = -0.368;
 
-        vec3.copy(g.position, [4.46, 9.61, -10.52]);
-        quat.copy(g.rotation, [0.0, -1.0, 0.0, 0.04]);
-        vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-        g.cameraFollow.yawOffset = 0.0;
-        g.cameraFollow.pitchOffset = -0.106;
-      }
+    vec3.copy(g.position, [4.46, 9.61, -10.52]);
+    quat.copy(g.rotation, [0.0, -1.0, 0.0, 0.04]);
+    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    g.cameraFollow.yawOffset = 0.0;
+    g.cameraFollow.pitchOffset = -0.106;
+  }
 
-      const c = res.globalCursor3d.cursor()!;
-      assert(RenderableDef.isOn(c));
-      c.renderable.enabled = true;
-      c.cursor3d.maxDistance = 10;
+  const c = res.globalCursor3d.cursor()!;
+  assert(RenderableDef.isOn(c));
+  c.renderable.enabled = true;
+  c.cursor3d.maxDistance = 10;
 
-      const plane = em.newEntity();
-      em.ensureComponentOn(
-        plane,
-        RenderableConstructDef,
-        res.assets.plane.proto
-      );
-      em.ensureComponentOn(plane, ColorDef, [0.2, 0.3, 0.2]);
-      em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
+  const plane = em.newEntity();
+  em.ensureComponentOn(plane, RenderableConstructDef, res.assets.plane.proto);
+  em.ensureComponentOn(plane, ColorDef, [0.2, 0.3, 0.2]);
+  em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
 
-      const ship = em.newEntity();
-      em.ensureComponentOn(ship, RenderableConstructDef, res.assets.ship.proto);
-      em.ensureComponentOn(ship, ColorDef, BOAT_COLOR);
-      em.ensureComponentOn(ship, PositionDef, [20, -2, 0]);
-      em.ensureComponentOn(
-        ship,
-        RotationDef,
-        quat.fromEuler(quat.create(), 0, Math.PI * 0.1, 0)
-      );
-
-      // const ocean = em.newEntity();
-      // em.ensureComponentOn(
-      //   ocean,
-      //   EM.defineComponent("ocean", () => true)
-      // );
-      // em.ensureComponentOn(
-      //   ocean,
-      //   RenderableConstructDef,
-      //   res.assets.ocean.proto
-      // );
-      // em.ensureComponentOn(ocean, ColorDef, [0.0, 0.0, 0.4]);
-      // em.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
-      // // vec3.scale(ocean.position, ocean.position, scale);
-      // const scale = 100.0;
-      // em.ensureComponentOn(ocean, ScaleDef, [scale, scale, scale]);
-      // em.ensureComponentOn(
-      //   ocean,
-      //   RotationDef,
-      //   quat.fromEuler(quat.create(), 0, Math.PI * 0.1, 0)
-      // );
-
-      const box = em.newEntity();
-      em.ensureComponentOn(box, RenderableConstructDef, res.assets.cube.proto);
-      em.ensureComponentOn(box, ColorDef, [0.1, 0.1, 0.1]);
-      em.ensureComponentOn(box, PositionDef, [0, 0, 3]);
-      em.ensureComponentOn(box, RotationDef);
-      em.ensureComponentOn(box, AngularVelocityDef, [0, 0.001, 0.001]);
-      em.ensureComponentOn(box, WorldFrameDef);
-      em.ensureComponentOn(box, ColliderDef, {
-        shape: "AABB",
-        solid: false,
-        aabb: res.assets.cube.aabb,
-      });
-
-      const cloth = em.newEntity();
-      em.ensureComponentOn(cloth, ClothConstructDef, {
-        location: [0, 0, 0],
-        color: [0.9, 0.9, 0.8],
-        rows: 5,
-        columns: 5,
-        distance: 2,
-      });
-      const F = 100.0;
-      em.ensureComponentOn(cloth, ForceDef, [F, F, F]);
-    }
+  const ship = em.newEntity();
+  em.ensureComponentOn(ship, RenderableConstructDef, res.assets.ship.proto);
+  em.ensureComponentOn(ship, ColorDef, BOAT_COLOR);
+  em.ensureComponentOn(ship, PositionDef, [20, -2, 0]);
+  em.ensureComponentOn(
+    ship,
+    RotationDef,
+    quat.fromEuler(quat.create(), 0, Math.PI * 0.1, 0)
   );
+
+  // const ocean = em.newEntity();
+  // em.ensureComponentOn(
+  //   ocean,
+  //   EM.defineComponent("ocean", () => true)
+  // );
+  // em.ensureComponentOn(
+  //   ocean,
+  //   RenderableConstructDef,
+  //   res.assets.ocean.proto
+  // );
+  // em.ensureComponentOn(ocean, ColorDef, [0.0, 0.0, 0.4]);
+  // em.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
+  // // vec3.scale(ocean.position, ocean.position, scale);
+  // const scale = 100.0;
+  // em.ensureComponentOn(ocean, ScaleDef, [scale, scale, scale]);
+  // em.ensureComponentOn(
+  //   ocean,
+  //   RotationDef,
+  //   quat.fromEuler(quat.create(), 0, Math.PI * 0.1, 0)
+  // );
+
+  const box = em.newEntity();
+  em.ensureComponentOn(box, RenderableConstructDef, res.assets.cube.proto);
+  em.ensureComponentOn(box, ColorDef, [0.1, 0.1, 0.1]);
+  em.ensureComponentOn(box, PositionDef, [0, 0, 3]);
+  em.ensureComponentOn(box, RotationDef);
+  em.ensureComponentOn(box, AngularVelocityDef, [0, 0.001, 0.001]);
+  em.ensureComponentOn(box, WorldFrameDef);
+  em.ensureComponentOn(box, ColliderDef, {
+    shape: "AABB",
+    solid: false,
+    aabb: res.assets.cube.aabb,
+  });
+
+  const cloth = em.newEntity();
+  em.ensureComponentOn(cloth, ClothConstructDef, {
+    location: [0, 0, 0],
+    color: [0.9, 0.9, 0.8],
+    rows: 5,
+    columns: 5,
+    distance: 2,
+  });
+  const F = 100.0;
+  em.ensureComponentOn(cloth, ForceDef, [F, F, F]);
 
   let line: ReturnType<typeof drawLine>;
 
@@ -510,56 +497,52 @@ export function initClothSandbox(em: EntityManager, hosting: boolean) {
   );
 }
 
-export function initReboundSandbox(em: EntityManager, hosting: boolean) {
+export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
   const camera = em.addSingletonComponent(CameraDef);
   camera.fov = Math.PI * 0.5;
 
   let tableId = -1;
 
-  em.registerOneShotSystem(
-    null,
-    [AssetsDef, GlobalCursor3dDef, RendererDef, TextDef],
-    (_, res) => {
-      const g = createGhost(em);
-      vec3.copy(g.position, [-6.5, 3.06, 22.51]);
-      quat.copy(g.rotation, [0.0, -0.08, 0.0, 1.0]);
-      vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-      g.cameraFollow.yawOffset = 0.0;
-      g.cameraFollow.pitchOffset = 0.145;
+  const [_, res] = await em.registerOneShotSystem(null, [
+    AssetsDef,
+    GlobalCursor3dDef,
+    RendererDef,
+    TextDef,
+  ]);
+  const g = createGhost(em);
+  vec3.copy(g.position, [-6.5, 3.06, 22.51]);
+  quat.copy(g.rotation, [0.0, -0.08, 0.0, 1.0]);
+  vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+  g.cameraFollow.yawOffset = 0.0;
+  g.cameraFollow.pitchOffset = 0.145;
 
-      const c = res.globalCursor3d.cursor()!;
-      assert(RenderableDef.isOn(c));
-      c.renderable.enabled = false;
+  const c = res.globalCursor3d.cursor()!;
+  assert(RenderableDef.isOn(c));
+  c.renderable.enabled = false;
 
-      const p = em.newEntity();
-      em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
-      em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
-      em.ensureComponentOn(p, PositionDef, [0, -10, 0]);
-      em.ensureComponentOn(p, ColliderDef, {
-        shape: "AABB",
-        solid: false,
-        aabb: res.assets.plane.aabb,
-      });
+  const p = em.newEntity();
+  em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
+  em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
+  em.ensureComponentOn(p, PositionDef, [0, -10, 0]);
+  em.ensureComponentOn(p, ColliderDef, {
+    shape: "AABB",
+    solid: false,
+    aabb: res.assets.plane.aabb,
+  });
 
-      const t = em.newEntity();
-      em.ensureComponentOn(
-        t,
-        RenderableConstructDef,
-        res.assets.gridPlane.proto
-      );
-      em.ensureComponentOn(t, ColorDef, [0.2, 0.2, 0.9]);
-      em.ensureComponentOn(t, PositionDef, [0, 0, 0]);
-      em.ensureComponentOn(t, AngularVelocityDef, [0, 0.0002, 0.0002]);
-      em.ensureComponentOn(t, ColliderDef, {
-        shape: "AABB",
-        solid: true,
-        aabb: res.assets.gridPlane.aabb,
-      });
-      tableId = t.id;
+  const t = em.newEntity();
+  em.ensureComponentOn(t, RenderableConstructDef, res.assets.gridPlane.proto);
+  em.ensureComponentOn(t, ColorDef, [0.2, 0.2, 0.9]);
+  em.ensureComponentOn(t, PositionDef, [0, 0, 0]);
+  em.ensureComponentOn(t, AngularVelocityDef, [0, 0.0002, 0.0002]);
+  em.ensureComponentOn(t, ColliderDef, {
+    shape: "AABB",
+    solid: true,
+    aabb: res.assets.gridPlane.aabb,
+  });
+  tableId = t.id;
 
-      res.text.lowerText = `spawner (p) stack (l) clear (backspace)`;
-    }
-  );
+  res.text.lowerText = `spawner (p) stack (l) clear (backspace)`;
 
   const cubeDef = em.defineComponent("cube", () => true);
 

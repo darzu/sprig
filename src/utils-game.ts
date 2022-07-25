@@ -26,19 +26,16 @@ export function drawLine(start: vec3, end: vec3, color: vec3) {
   return e;
 }
 
-export function drawBall(
+export async function drawBall(
   pos: vec3,
   size: number,
   color: vec3
 ): Promise<EntityW<[typeof PositionDef]>> {
-  return new Promise((resolve) => {
-    EM.registerOneShotSystem([], [AssetsDef], (_, res) => {
-      const e = EM.newEntity();
-      EM.ensureComponentOn(e, ColorDef, color);
-      EM.ensureComponentOn(e, RenderableConstructDef, res.assets.ball.proto);
-      EM.ensureComponentOn(e, PositionDef, pos);
-      EM.ensureComponentOn(e, ScaleDef, [size, size, size]);
-      resolve(e);
-    });
-  });
+  let [_, res] = await EM.registerOneShotSystem([], [AssetsDef]);
+  const e = EM.newEntity();
+  EM.ensureComponentOn(e, ColorDef, color);
+  EM.ensureComponentOn(e, RenderableConstructDef, res.assets.ball.proto);
+  EM.ensureComponentOn(e, PositionDef, pos);
+  EM.ensureComponentOn(e, ScaleDef, [size, size, size]);
+  return e;
 }

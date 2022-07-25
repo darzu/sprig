@@ -516,25 +516,27 @@ export class EntityManager {
   public registerOneShotSystem<
     CS extends ComponentDef[],
     RS extends ComponentDef[]
-  >(cs: [...CS], rs: [...RS], callback: SystemFN<CS, RS>, name?: string): void;
+  >(
+    cs: [...CS],
+    rs: [...RS],
+    name?: string
+  ): Promise<[Entities<CS>, EntityW<RS>]>;
   public registerOneShotSystem<CS extends null, RS extends ComponentDef[]>(
     cs: CS,
     rs: [...RS],
-    callback: SystemFN<CS, RS>,
     name?: string
-  ): void;
+  ): Promise<[[], EntityW<RS>]>;
   public registerOneShotSystem<
     CS extends ComponentDef[],
     RS extends ComponentDef[]
   >(
     cs: [...CS] | null,
     rs: [...RS],
-    callback: SystemFN<CS, RS>,
     name?: string
-  ): void {
-    name = name || callback.name || "oneShot" + this.nextOneShotSuffix++;
+  ): Promise<[Entities<CS>, EntityW<RS>]> {
+    let _name = name || "oneShot" + this.nextOneShotSuffix++;
 
-    if (this.oneShotSystems.has(name))
+    if (this.oneShotSystems.has(_name))
       throw `One-shot system named ${name} already defined.`;
 
     // use one bucket for all one shots. Change this if we want more granularity
@@ -545,13 +547,16 @@ export class EntityManager {
       queryTime: 0,
     };
 
-    this.oneShotSystems.set(name, {
-      cs,
-      rs,
-      callback,
-      name,
+    return new Promise<[Entities<CS>, EntityW<RS>]>((resolve, reject) => {
+      const callback: SystemFN<CS, RS> = (es, res) => resolve([es, res]);
+
+      this.oneShotSystems.set(_name, {
+        cs,
+        rs,
+        callback,
+        name: _name,
+      });
     });
-    // TODO(@darzu): track stats for one-shot systems?
   }
 
   hasSystem(name: string) {

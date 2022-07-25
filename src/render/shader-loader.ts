@@ -57,23 +57,26 @@ async function loadShaders(): Promise<ShaderSet> {
   return set as ShaderSet;
 }
 
-onInit((em) => {
+onInit(async (em) => {
   em.addSingletonComponent(ShaderLoaderDef);
 
   // start loading of shaders
-  em.registerOneShotSystem([], [ShaderLoaderDef], (_, { shaderLoader }) => {
-    assert(!shaderLoader.promise, "somehow we're double loading shaders");
+  const [_, { shaderLoader }] = await em.registerOneShotSystem(
+    [],
+    [ShaderLoaderDef]
+  );
 
-    const shadersPromise = loadShaders();
-    shaderLoader.promise = shadersPromise;
-    shadersPromise.then(
-      (result) => {
-        em.addSingletonComponent(ShadersDef, result);
-      },
-      (failureReason) => {
-        // TODO(@darzu): fail more gracefully
-        throw `Failed to load shaders: ${failureReason}`;
-      }
-    );
-  });
+  assert(!shaderLoader.promise, "somehow we're double loading shaders");
+
+  const shadersPromise = loadShaders();
+  shaderLoader.promise = shadersPromise;
+  shadersPromise.then(
+    (result) => {
+      em.addSingletonComponent(ShadersDef, result);
+    },
+    (failureReason) => {
+      // TODO(@darzu): fail more gracefully
+      throw `Failed to load shaders: ${failureReason}`;
+    }
+  );
 });

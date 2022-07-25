@@ -17,26 +17,17 @@ import { InteractableDef } from "./interact.js";
 
 const DBG_GRAPPLE = false;
 
-export function registerGrappleDbgSystems(em: EntityManager) {
+export async function registerGrappleDbgSystems(em: EntityManager) {
   if (!DBG_GRAPPLE) return;
 
-  em.registerOneShotSystem(null, [AssetsDef], (_, res) => {
-    const h = em.newEntity();
-    em.ensureComponentOn(h, PositionDef, [0, 0, 0]);
-    em.ensureComponentOn(h, ColorDef, [0.1, 0.1, 0.1]);
-    em.ensureComponentOn(
-      h,
-      RenderableConstructDef,
-      res.assets.grappleHook.proto
-    );
+  const [_, res] = await em.registerOneShotSystem(null, [AssetsDef]);
+  const h = em.newEntity();
+  em.ensureComponentOn(h, PositionDef, [0, 0, 0]);
+  em.ensureComponentOn(h, ColorDef, [0.1, 0.1, 0.1]);
+  em.ensureComponentOn(h, RenderableConstructDef, res.assets.grappleHook.proto);
 
-    const g = em.newEntity();
-    em.ensureComponentOn(g, PositionDef, [0, 0, 0]);
-    em.ensureComponentOn(g, ColorDef, [0.1, 0.1, 0.1]);
-    em.ensureComponentOn(
-      g,
-      RenderableConstructDef,
-      res.assets.grappleGun.proto
-    );
-  });
+  const g = em.newEntity();
+  em.ensureComponentOn(g, PositionDef, [0, 0, 0]);
+  em.ensureComponentOn(g, ColorDef, [0.1, 0.1, 0.1]);
+  em.ensureComponentOn(g, RenderableConstructDef, res.assets.grappleGun.proto);
 }

@@ -27,63 +27,60 @@ import { AssetsDef } from "./assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { createGhost } from "./sandbox.js";
 
-export function initCubeGame(em: EntityManager) {
+export async function initCubeGame(em: EntityManager) {
   const camera = em.addSingletonComponent(CameraDef);
   camera.fov = Math.PI * 0.5;
 
-  em.registerOneShotSystem(
-    null,
-    [AssetsDef, GlobalCursor3dDef, RendererDef],
-    (_, res) => {
-      let renderPipelinesPtrs: CyRenderPipelinePtr[] = [
-        cubeRenderPipeline,
-        cubePost,
-      ];
-      let computePipelinesPtrs: CyCompPipelinePtr[] = [
-        // ...
-      ];
-      res.renderer.pipelines = [
-        ...computePipelinesPtrs,
-        ...renderPipelinesPtrs,
-      ];
+  const [_, res] = await em.registerOneShotSystem(null, [
+    AssetsDef,
+    GlobalCursor3dDef,
+    RendererDef,
+  ]);
 
-      const e = createGhost(em);
-      vec3.copy(e.position, [0, 1, -1.2]);
-      quat.setAxisAngle(e.rotation, [0.0, -1.0, 0.0], 1.62);
-      e.controllable.sprintMul = 3;
+  let renderPipelinesPtrs: CyRenderPipelinePtr[] = [
+    cubeRenderPipeline,
+    cubePost,
+  ];
+  let computePipelinesPtrs: CyCompPipelinePtr[] = [
+    // ...
+  ];
+  res.renderer.pipelines = [...computePipelinesPtrs, ...renderPipelinesPtrs];
 
-      // TODO(@darzu): this shouldn't be necessary
-      const m2 = cloneMesh(res.assets.cube.mesh);
-      em.ensureComponentOn(e, RenderableConstructDef, m2);
+  const e = createGhost(em);
+  vec3.copy(e.position, [0, 1, -1.2]);
+  quat.setAxisAngle(e.rotation, [0.0, -1.0, 0.0], 1.62);
+  e.controllable.sprintMul = 3;
 
-      {
-        // auto-gen; use dbg.saveCamera() to update
-        vec3.copy(e.position, [3.29, 1.69, -1.37]);
-        quat.copy(e.rotation, [0.0, -0.95, 0.0, -0.31]);
-        vec3.copy(e.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-        e.cameraFollow.yawOffset = 0.0;
-        e.cameraFollow.pitchOffset = -0.267;
-      }
+  // TODO(@darzu): this shouldn't be necessary
+  const m2 = cloneMesh(res.assets.cube.mesh);
+  em.ensureComponentOn(e, RenderableConstructDef, m2);
 
-      const box = em.newEntity();
-      const boxM = cloneMesh(res.assets.cube.mesh);
-      const sIdMax = max(boxM.surfaceIds);
-      boxM.colors = boxM.surfaceIds.map((_, i) => uintToVec3unorm(i, sIdMax));
-      // boxM.colors = boxM.surfaceIds.map((_, i) => [0.1, i / 12, 0.1]);
-      // console.dir(boxM.colors);
-      em.ensureComponentOn(box, RenderableConstructDef, boxM);
-      // em.ensureComponentOn(box, ColorDef, [0.1, 0.4, 0.1]);
-      em.ensureComponentOn(box, PositionDef, [0, 0, 3]);
-      em.ensureComponentOn(box, RotationDef);
-      em.ensureComponentOn(box, AngularVelocityDef, [0, 0.001, 0.001]);
-      em.ensureComponentOn(box, WorldFrameDef);
-      em.ensureComponentOn(box, ColliderDef, {
-        shape: "AABB",
-        solid: false,
-        aabb: res.assets.cube.aabb,
-      });
-    }
-  );
+  {
+    // auto-gen; use dbg.saveCamera() to update
+    vec3.copy(e.position, [3.29, 1.69, -1.37]);
+    quat.copy(e.rotation, [0.0, -0.95, 0.0, -0.31]);
+    vec3.copy(e.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    e.cameraFollow.yawOffset = 0.0;
+    e.cameraFollow.pitchOffset = -0.267;
+  }
+
+  const box = em.newEntity();
+  const boxM = cloneMesh(res.assets.cube.mesh);
+  const sIdMax = max(boxM.surfaceIds);
+  boxM.colors = boxM.surfaceIds.map((_, i) => uintToVec3unorm(i, sIdMax));
+  // boxM.colors = boxM.surfaceIds.map((_, i) => [0.1, i / 12, 0.1]);
+  // console.dir(boxM.colors);
+  em.ensureComponentOn(box, RenderableConstructDef, boxM);
+  // em.ensureComponentOn(box, ColorDef, [0.1, 0.4, 0.1]);
+  em.ensureComponentOn(box, PositionDef, [0, 0, 3]);
+  em.ensureComponentOn(box, RotationDef);
+  em.ensureComponentOn(box, AngularVelocityDef, [0, 0.001, 0.001]);
+  em.ensureComponentOn(box, WorldFrameDef);
+  em.ensureComponentOn(box, ColliderDef, {
+    shape: "AABB",
+    solid: false,
+    aabb: res.assets.cube.aabb,
+  });
 }
 
 const cubeRenderPipeline = CY.createRenderPipeline("cubeRender", {
