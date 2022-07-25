@@ -1,4 +1,4 @@
-import { oceanJfa } from "../../game/xp-hyperspace.js";
+import { oceanJfa } from "../../game/game-hyperspace.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { CyPipelinePtr, CyRenderPipelinePtr } from "../gpu-registry.js";
 import { noiseGridFrame } from "./std-noise.js";

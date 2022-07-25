@@ -30,7 +30,7 @@ import {
   MultiCollider,
 } from "../physics/collider.js";
 import { AABB, copyAABB, createAABB } from "../physics/broadphase.js";
-import { ScoreDef } from "./game.js";
+import { ScoreDef } from "./game-init.js";
 import { ColorDef } from "../color.js";
 import { setCubePosScaleToAABB } from "../physics/phys-debug.js";
 import { BOAT_COLOR } from "./boat.js";

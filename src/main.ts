@@ -11,13 +11,13 @@ import {
   initClothSandbox,
   initGJKSandbox,
   initReboundSandbox,
-} from "./game/sandbox.js";
+} from "./game/game-sandbox.js";
 import { callClothSystems } from "./game/cloth.js";
 import { callSpringSystems } from "./game/spring.js";
-import { initShipGame, registerAllSystems } from "./game/game.js";
+import { initShipGame, registerAllSystems } from "./game/game-init.js";
 import { setSimulationAlpha } from "./render/renderer-ecs.js";
 import { never } from "./util.js";
-import { initHyperspaceGame } from "./game/xp-hyperspace.js";
+import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { initCubeGame } from "./game/xp-cube.js";
 
 export const FORCE_WEBGL = false;

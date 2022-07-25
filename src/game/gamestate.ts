@@ -13,7 +13,7 @@ import {
   RotationDef,
 } from "../physics/transform.js";
 import { TimeDef } from "../time.js";
-import { ScoreDef } from "./game.js";
+import { ScoreDef } from "./game-init.js";
 import { GroundSystemDef } from "./ground.js";
 import { LifetimeDef } from "./lifetime.js";
 import { LocalPlayerDef, PlayerDef, PlayerPropsDef } from "./player.js";

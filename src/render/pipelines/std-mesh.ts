@@ -1,4 +1,4 @@
-import { oceanJfa } from "../../game/xp-hyperspace.js";
+import { oceanJfa } from "../../game/game-hyperspace.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";
 import {

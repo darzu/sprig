@@ -30,7 +30,7 @@ import {
   UVUNWRAP_MASK,
 } from "../render/pipelines/xp-uv-unwrap.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
-import { createGhost } from "./sandbox.js";
+import { createGhost } from "./game-sandbox.js";
 import { quat, vec2, vec3, vec4 } from "../gl-matrix.js";
 import { createRef, Ref } from "../em_helpers.js";
 import { TexTypeAsTSType } from "../render/gpu-struct.js";

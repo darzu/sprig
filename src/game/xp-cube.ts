@@ -25,7 +25,7 @@ import {
 import { uintToVec3unorm } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";
-import { createGhost } from "./sandbox.js";
+import { createGhost } from "./game-sandbox.js";
 
 export async function initCubeGame(em: EntityManager) {
   const camera = em.addSingletonComponent(CameraDef);

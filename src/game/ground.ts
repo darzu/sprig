@@ -9,7 +9,7 @@ import {
 import { mat4, quat, vec2, vec3 } from "../gl-matrix.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
-import { ScoreDef } from "./game.js";
+import { ScoreDef } from "./game-init.js";
 import { MeDef } from "../net/components.js";
 import { AssetsDef, GameMesh, gameMeshFromMesh } from "./assets.js";
 import { cloneMesh, transformMesh } from "../render/mesh.js";
