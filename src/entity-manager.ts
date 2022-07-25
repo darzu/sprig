@@ -68,7 +68,7 @@ interface SystemStats {
 export class EntityManager {
   entities: Map<number, Entity> = new Map();
   systems: Map<string, System<any[] | null, any[]>> = new Map();
-  oneShotSystems: System<any[] | null, any[]>[] = [];
+  oneShotSystems: Map<string, System<any[] | null, any[]>> = new Map();
   components: Map<number, ComponentDef<any, any>> = new Map();
   serializers: Map<
     number,
@@ -490,17 +490,26 @@ export class EntityManager {
   public registerOneShotSystem<
     CS extends ComponentDef[],
     RS extends ComponentDef[]
-  >(cs: [...CS], rs: [...RS], callback: SystemFN<CS, RS>): void;
+  >(cs: [...CS], rs: [...RS], callback: SystemFN<CS, RS>, name?: string): void;
   public registerOneShotSystem<CS extends null, RS extends ComponentDef[]>(
     cs: CS,
     rs: [...RS],
-    callback: SystemFN<CS, RS>
+    callback: SystemFN<CS, RS>,
+    name?: string
   ): void;
   public registerOneShotSystem<
     CS extends ComponentDef[],
     RS extends ComponentDef[]
-  >(cs: [...CS] | null, rs: [...RS], callback: SystemFN<CS, RS>): void {
-    const name = callback.name ?? "oneShot" + this.nextOneShotSuffix++;
+  >(
+    cs: [...CS] | null,
+    rs: [...RS],
+    callback: SystemFN<CS, RS>,
+    name?: string
+  ): void {
+    name = name || callback.name || "oneShot" + this.nextOneShotSuffix++;
+
+    if (this.oneShotSystems.has(name))
+      throw `One-shot system named ${name} already defined.`;
 
     // use one bucket for all one shots. Change this if we want more granularity
     this.stats["__oneShots"] = this.stats["__oneShots"] ?? {
@@ -510,7 +519,7 @@ export class EntityManager {
       queryTime: 0,
     };
 
-    this.oneShotSystems.push({
+    this.oneShotSystems.set(name, {
       cs,
       rs,
       callback,
@@ -560,32 +569,53 @@ export class EntityManager {
 
   callOneShotSystems() {
     const beforeOneShots = performance.now();
-    this.oneShotSystems = this.oneShotSystems.reduce((keptSystems, s) => {
-      let haveAllResources = true;
-      for (let r of s.rs) {
-        // note this is just to verify it exists
-        haveAllResources &&= !!this.getResource(r);
+    let calledSystems: Set<string> = new Set();
+    this.oneShotSystems.forEach((s) => {
+      let haveAllResources = s.rs.every((r) => this.getResource(r));
+      if (!haveAllResources) return;
+
+      const es = this.filterEntities(s.cs);
+
+      const afterOneShotQuery = performance.now();
+      this.stats["__oneShots"].queries += 1;
+      this.stats["__oneShots"].queryTime += afterOneShotQuery - beforeOneShots;
+
+      // TODO(@darzu): how to handle async callbacks and their timing?
+      calledSystems.add(s.name);
+      s.callback(es, this.entities.get(0)! as any);
+
+      const afterOneShotCall = performance.now();
+      this.stats["__oneShots"].calls += 1;
+      this.stats["__oneShots"].callTime += afterOneShotCall - afterOneShotQuery;
+    });
+    for (let name of calledSystems) {
+      this.oneShotSystems.delete(name);
+    }
+  }
+
+  // TODO(@darzu): good or terrible name?
+  whyIsntSystemBeingCalled(name: string): void {
+    // TODO(@darzu): more features like check against a specific set of entities
+    const sys = this.systems.get(name) ?? this.oneShotSystems.get(name);
+    if (!sys) {
+      console.warn(`No systems found with name: '${name}'`);
+      console.dir(this.oneShotSystems);
+      return;
+    }
+
+    let haveAllResources = true;
+    for (let _r of sys.rs) {
+      let r = _r as ComponentDef;
+      if (!this.getResource(r)) {
+        console.warn(`System '${name}' missing resource: ${r.name}`);
+        haveAllResources = false;
       }
-      if (haveAllResources) {
-        const es = this.filterEntities(s.cs);
+    }
 
-        const afterOneShotQuery = performance.now();
-        this.stats["__oneShots"].queries += 1;
-        this.stats["__oneShots"].queryTime +=
-          afterOneShotQuery - beforeOneShots;
-
-        s.callback(es, this.entities.get(0)! as any);
-
-        const afterOneShotCall = performance.now();
-        this.stats["__oneShots"].calls += 1;
-        this.stats["__oneShots"].callTime +=
-          afterOneShotCall - afterOneShotQuery;
-
-        return keptSystems;
-      } else {
-        return [...keptSystems, s];
-      }
-    }, [] as typeof this.oneShotSystems);
+    const es = this.filterEntities(sys.cs);
+    console.warn(
+      `System '${name}' matches ${es.length} entities and has all resources: ${haveAllResources}.`
+    );
   }
 }
 
