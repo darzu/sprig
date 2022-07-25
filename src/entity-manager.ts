@@ -44,24 +44,21 @@ type System<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = {
 
 // TODO(@darzu): START EXPERIMENTAL
 // TODO(@darzu): think about naming some more...
-export type SingleSystemFN<
-  CS extends ComponentDef[],
-  RS extends ComponentDef[]
-> = (e: EntityW<[...CS]>, resources: EntityW<RS>) => void;
+export type SingleSystemFN<CS extends ComponentDef[]> = (
+  e: EntityW<[...CS]>
+) => void;
 type SingleSystem<
   //eCS extends ComponentDef[],
-  CS extends ComponentDef[],
-  RS extends ComponentDef[]
+  CS extends ComponentDef[]
 > = {
   e: Entity;
   cs: CS;
-  rs: RS;
-  callback: SingleSystemFN<[/*...eCS,*/ ...CS], RS>;
+  callback: SingleSystemFN</*...eCS,*/ CS>;
   name: string;
 };
 function isSingleSystem(
-  s: SingleSystem<any, any> | System<any, any>
-): s is SingleSystem<any, any> {
+  s: SingleSystem<any> | System<any, any>
+): s is SingleSystem<any> {
   return "e" in s;
 }
 // TODO(@darzu): END EXPERIMENTAL
@@ -94,7 +91,7 @@ export class EntityManager {
   systems: Map<string, System<any[] | null, any[]>> = new Map();
   oneShotSystems: Map<string, System<any[] | null, any[]>> = new Map();
   // TODO(@darzu): EXPERIMENTAL
-  oneShotSingleSystems: Map<string, SingleSystem<any[], any[]>> = new Map();
+  oneShotSingleSystems: Map<string, SingleSystem<any[]>> = new Map();
   components: Map<number, ComponentDef<any, any>> = new Map();
   serializers: Map<
     number,
@@ -605,14 +602,13 @@ export class EntityManager {
       ...this.oneShotSystems.values(),
       ...this.oneShotSingleSystems.values(),
     ].forEach((s) => {
-      let haveAllResources = s.rs.every((r) => this.getResource(r));
-      if (!haveAllResources) return;
-
       let es: Entities<any[]>;
       if (isSingleSystem(s)) {
         if (s.cs.every((c) => c.name in s.e)) es = [s.e];
         else es = [];
       } else {
+        let haveAllResources = s.rs.every((r) => this.getResource(r));
+        if (!haveAllResources) return;
         es = this.filterEntities(s.cs);
       }
 
@@ -623,7 +619,7 @@ export class EntityManager {
       calledSystems.add(s.name);
       // TODO(@darzu): how to handle async callbacks and their timing?
       if (isSingleSystem(s)) {
-        s.callback(es[0], this.entities.get(0)! as any);
+        s.callback(es[0]);
       } else {
         s.callback(es, this.entities.get(0)! as any);
       }
@@ -652,11 +648,13 @@ export class EntityManager {
     }
 
     let haveAllResources = true;
-    for (let _r of sys.rs) {
-      let r = _r as ComponentDef;
-      if (!this.getResource(r)) {
-        console.warn(`System '${name}' missing resource: ${r.name}`);
-        haveAllResources = false;
+    if (!isSingleSystem(sys)) {
+      for (let _r of sys.rs) {
+        let r = _r as ComponentDef;
+        if (!this.getResource(r)) {
+          console.warn(`System '${name}' missing resource: ${r.name}`);
+          haveAllResources = false;
+        }
       }
     }
 
@@ -671,14 +669,8 @@ export class EntityManager {
   //  them down to here
   public whenEntityHas<
     // eCS extends ComponentDef[],
-    CS extends ComponentDef[],
-    RS extends ComponentDef[]
-  >(
-    e: Entity,
-    cs: [...CS],
-    rs: [...RS],
-    name?: string
-  ): Promise<[EntityW<CS>, EntityW<RS>]> {
+    CS extends ComponentDef[]
+  >(e: Entity, cs: [...CS], name?: string): Promise<EntityW<CS>> {
     // TODO(@darzu): this is too copy-pasted from oneShot which is too copy pasted from system
     // TODO(@darzu): need unified query maybe?
     let _name = name || "oneShot" + this.nextOneShotSuffix++;
@@ -695,15 +687,14 @@ export class EntityManager {
       queryTime: 0,
     };
 
-    return new Promise<[EntityW<CS>, EntityW<RS>]>((resolve, reject) => {
-      const callback: SingleSystemFN<CS, RS> = (e, res) => {
-        resolve([e, res]);
+    return new Promise<EntityW<CS>>((resolve, reject) => {
+      const callback: SingleSystemFN<CS> = (e) => {
+        resolve(e);
       };
 
       this.oneShotSingleSystems.set(_name, {
         e,
         cs,
-        rs,
         callback,
         name: _name,
       });

@@ -224,12 +224,7 @@ export async function initHyperspaceGame(em: EntityManager) {
   // em.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
   em.ensureComponentOn(ocean, PositionDef);
 
-  let [ocean2] = await em.whenEntityHas(
-    ocean,
-    [RenderableDef],
-    [],
-    "oceanGPUWork"
-  );
+  let ocean2 = await em.whenEntityHas(ocean, [RenderableDef], "oceanGPUWork");
 
   // TODO(@darzu):
   console.log("FOO!!!");
