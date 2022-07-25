@@ -1,4 +1,4 @@
-import { oceanJfa } from "../../game/game-hyperspace.js";
+import { oceanJfa } from "../../game/ocean.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";
 import {
@@ -44,6 +44,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
     { ptr: shadowDepthTexture, alias: "shadowMap" },
     { ptr: comparisonSamplerPtr, alias: "shadowSampler" },
     // TODO(@darzu): object-specific SDFs?
+    // TODO(@darzu): REMOVE HARD-CODED DEPENDENCY ON OCEAN SDF!
     { ptr: oceanJfa.sdfTex, alias: "sdf" },
     // { ptr: oceanJfa._inputMaskTex, alias: "sdf" },
     // { ptr: oceanJfa._uvMaskTex, alias: "sdf" },

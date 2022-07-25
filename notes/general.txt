@@ -1012,3 +1012,7 @@ Multiplatform games w/ JS + HTML:
 
 Getting HTML game onto console:
   https://www.youtube.com/watch?v=KfBzlzvt8RU
+
+PickCode "An educational coding environment for students after Scratch":
+  https://www.pickcode.io
+  https://news.ycombinator.com/item?id=32230329

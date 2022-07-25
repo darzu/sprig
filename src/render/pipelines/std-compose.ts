@@ -1,26 +1,13 @@
-import { oceanJfa } from "../../game/game-hyperspace.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
-import { CyPipelinePtr, CyRenderPipelinePtr } from "../gpu-registry.js";
-import { noiseGridFrame } from "./std-noise.js";
-import { canvasTexturePtr, litTexturePtr } from "./std-scene.js";
-import { uvToPosTex } from "./xp-uv-unwrap.js";
-
-// TODO(@darzu): rename to grid compose
+import { CyRenderPipelinePtr, CyTexturePtr } from "../gpu-registry.js";
+import { canvasTexturePtr } from "./std-scene.js";
 
 const padding = 0.05;
 
 // TODO(@darzu): make grid a parameter
-export function createGridComposePipelines(): CyRenderPipelinePtr[] {
-  // const grid = [
-  //   //
-  //   [oceanJfa._inputMaskTex, oceanJfa._uvMaskTex],
-  //   //
-  //   [oceanJfa.voronoiTex, uvToPosTex],
-  // ];
-  // let grid = noiseGridFrame;
-  const grid = oceanJfa._debugGrid;
-  // const grid = [[oceanJfa._voronoiTexs[0]], [oceanJfa._voronoiTexs[1]]];
-
+export function createGridComposePipelines(
+  grid: CyTexturePtr[][]
+): CyRenderPipelinePtr[] {
   const width = grid[0].length;
   const height = grid.length;
   const uvWidth = (2.0 - padding * (width + 1)) / width;
