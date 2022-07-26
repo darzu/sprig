@@ -7,6 +7,7 @@ import { clamp } from "../math.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { createTextureReader } from "../render/cpu-texture.js";
 import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
+import { createBenchmarkTexAndPipe } from "../render/pipelines/std-noise.js";
 import {
   unwrapPipeline,
   unwrapPipeline2,
@@ -21,6 +22,7 @@ import {
   RendererDef,
 } from "../render/renderer-ecs.js";
 import { tempVec2, tempVec3 } from "../temp-pool.js";
+import { awaitTimeout, range } from "../util.js";
 import { quatFromUpForward } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
 
@@ -71,8 +73,10 @@ export async function initOcean() {
   let ocean2 = await EM.whenEntityHas(ocean, [RenderableDef], "oceanGPUWork");
 
   // TODO(@darzu):
+  const preOceanGPU = performance.now();
   res.renderer.renderer.submitPipelines(
     [ocean2.renderable.meshHandle],
+    // [unwrapPipeline, unwrapPipeline2]
     [unwrapPipeline, unwrapPipeline2, ...oceanJfa.allPipes()]
   );
 
@@ -83,6 +87,9 @@ export async function initOcean() {
     res.renderer.renderer.readTexture(uvToNormTex),
   ];
   const [uvToPosData, uvToNormData] = await Promise.all(readPromises);
+
+  const timeOceanGPU = performance.now() - preOceanGPU;
+  console.log(`ocean GPU round-trip: ${timeOceanGPU.toFixed(2)}ms`);
 
   // TODO(@darzu): Account for the 1px border in the texture!!!
   const uvToPosReader = createTextureReader(
@@ -117,7 +124,30 @@ export async function initOcean() {
       return uvToNormReader.sample(out, x, y);
     },
   });
+
+  {
+    // CPU <-> GPU round trip benchmarking!
+    // await awaitTimeout(2000); // TODO(@darzu): dbg
+    // console.log(`GPU <-> CPU TEST`);
+    // for (let [tex, pipe] of benchmarkTexsAndPipes) {
+    //   const perGPUTest = performance.now();
+    //   res.renderer.renderer.submitPipelines([], [pipe]);
+    //   await res.renderer.renderer.readTexture(tex);
+    //   const afterGPUTest = performance.now() - perGPUTest;
+    //   const mb = (tex.size[0] * tex.size[1] * 4) / 1024 / 1024;
+    //   console.log(
+    //     `${tex.size[0]}x${tex.size[1]}, ${mb.toFixed(
+    //       2
+    //     )}mb, ${afterGPUTest.toFixed(2)}ms`
+    //   );
+    //   await awaitTimeout(500); // TODO(@darzu): dbg
+    // }
+  }
 }
+
+const benchmarkTexsAndPipes = range(20).map((s) =>
+  createBenchmarkTexAndPipe((s + 1) * 128, "gpuTest")
+);
 
 EM.registerSystem(
   [UVDef, PositionDef],

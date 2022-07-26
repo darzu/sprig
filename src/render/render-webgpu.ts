@@ -235,7 +235,7 @@ export function createWebGPURenderer(
     const bytesPerVal = texTypeToBytes[tex.format]!;
 
     const byteSize = tex.size[0] * tex.size[1] * bytesPerVal;
-    console.log(`byteSize: ${byteSize}`);
+    // console.log(`byteSize: ${byteSize}`);
 
     // TODO(@darzu): re-use buffers! and/or make it a CyBuffer-thing
     const gpuBuffer = device.createBuffer({

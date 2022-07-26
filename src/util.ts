@@ -229,3 +229,11 @@ export function arrayUnsortedEqual<T>(vs: T[], us: T[]): boolean {
   }
   return true;
 }
+
+export async function awaitTimeout(ms: number) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(null);
+    }, ms);
+  });
+}
