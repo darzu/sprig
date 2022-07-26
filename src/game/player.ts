@@ -44,11 +44,13 @@ import { GameState, GameStateDef } from "./gamestate.js";
 import { DevConsoleDef } from "../console.js";
 import { max } from "../math.js";
 import { AnimateToDef, EASE_OUTQUAD } from "../animate-to.js";
+import { vec3Dbg } from "../utils-3d.js";
 
 // TODO(@darzu): it'd be great if these could hook into some sort of
 //    dev mode you could toggle at runtime.
 
 export function createPlayer(em: EntityManager) {
+  // console.log("create player!");
   const e = em.newEntity();
   em.addComponent(e.id, PlayerPropsDef, vec3.fromValues(0, 100, 0));
   em.addSingletonComponent(LocalPlayerDef, e.id);
@@ -443,6 +445,7 @@ export function registerPlayerSystems(em: EntityManager) {
           if (ship) {
             p.physicsParent.id = ship.id;
             // vec3.copy(p.position, [0, 10, res.me.pid * 4 - 16]);
+            // console.log("found ship!");
             p.player.lookingForShip = false;
             const maxYFn: (c: Collider) => number = (c) =>
               c.shape === "Multi"
@@ -460,7 +463,17 @@ export function registerPlayerSystems(em: EntityManager) {
               shipY + pFeetToMid + 1,
               Math.floor((res.me.pid - 1) / 2) * 4 - 10,
             ];
-            const startPos = vec3.add(tempVec3(), endPos, [0, 200, 0]);
+            const startPos = vec3.add(
+              // tempVec3(),
+              vec3.create(),
+              endPos,
+              [0, 200, 0]
+            );
+            // console.log("player animateTo:");
+            // console.log(vec3Dbg(startPos));
+            // console.log(vec3Dbg(endPos));
+            // console.dir(startPos);
+            // console.dir(endPos);
             p.cameraFollow.yawOffset = 0.0;
             p.cameraFollow.pitchOffset = -0.75;
             quat.copy(p.rotation, [0.0, 1.0, 0.0, 0.0]);

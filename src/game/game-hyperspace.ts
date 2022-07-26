@@ -17,7 +17,8 @@ import { GameStateDef } from "./gamestate.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
 import { DevConsoleDef } from "../console.js";
-import { initOcean, oceanJfa, UVDef } from "./ocean.js";
+import { initOcean, OceanDef, oceanJfa, UVDef } from "./ocean.js";
+import { awaitTimeout } from "../util.js";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 
@@ -31,7 +32,10 @@ export async function initHyperspaceGame(em: EntityManager) {
   createShip([0.1, 0.1]);
   // }
 
-  em.whenResources([MeDef]).then(() => createPlayer(em));
+  em.whenResources([MeDef, OceanDef]).then(async () => {
+    // await awaitTimeout(1000); // TODO(@darzu): what is happening
+    createPlayer(em);
+  });
 
   em.registerSystem(
     [],

@@ -23,7 +23,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { tempVec2, tempVec3 } from "../temp-pool.js";
 import { awaitTimeout, range } from "../util.js";
-import { quatFromUpForward } from "../utils-3d.js";
+import { quatFromUpForward, vec3Dbg } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
 
 export interface Ocean {
@@ -109,7 +109,7 @@ export async function initOcean() {
   // console.log("adding OceanDef");
 
   // TODO(@darzu): hacky hacky way to do this
-  EM.addSingletonComponent(OceanDef, {
+  const globalOcean = EM.addSingletonComponent(OceanDef, {
     ent: createRef(oceanEntId, [PositionDef]),
     uvToPos: (out, uv) => {
       const x = uv[0] * uvToPosReader.size[0];
@@ -160,6 +160,7 @@ EM.registerSystem(
 
       if (!vec3.exactEquals(newPos, vec3.ZEROS)) {
         vec3.copy(e.position, newPos);
+        // console.log(`moving to: ${vec3Dbg(e.position)}`);
       }
     }
   },
