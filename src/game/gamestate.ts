@@ -13,7 +13,6 @@ import {
   RotationDef,
 } from "../physics/transform.js";
 import { TimeDef } from "../time.js";
-import { GroundSystemDef } from "./river-tile.js";
 import { LifetimeDef } from "./lifetime.js";
 import { LocalPlayerDef, PlayerDef, PlayerPropsDef } from "./player.js";
 import { createShip, ShipLocalDef, ShipPropsDef } from "./ship.js";
@@ -102,10 +101,10 @@ export const restartGame = eventWizard(
     player.player.lookingForShip = true;
     // res.score.currentScore = 0;
 
-    const groundSys = EM.getResource(GroundSystemDef);
-    if (groundSys) {
-      groundSys.needsInit = true;
-    }
+    // const groundSys = EM.getResource(GroundSystemDef);
+    // if (groundSys) {
+    //   groundSys.needsInit = true;
+    // }
   },
   {
     legalEvent: () =>

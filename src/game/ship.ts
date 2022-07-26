@@ -48,7 +48,6 @@ import { MusicDef } from "../music.js";
 import { LocalPlayerDef, PlayerDef } from "./player.js";
 import { CameraDef } from "../camera.js";
 import { InputsDef } from "../inputs.js";
-import { GroundSystemDef } from "./river-tile.js";
 import { InRangeDef, InteractableDef } from "./interact.js";
 import { endGame, GameState, GameStateDef, startGame } from "./gamestate.js";
 import { createRef, defineNetEntityHelper, Ref } from "../em_helpers.js";
@@ -355,7 +354,6 @@ export function registerShipSystems(em: EntityManager) {
       MusicDef,
       InputsDef,
       CameraDef,
-      GroundSystemDef,
       GameStateDef,
       MeDef,
       PhysicsResultsDef,

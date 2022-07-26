@@ -26,7 +26,6 @@ import {
 } from "../net/sync.js";
 import { registerPredictSystem } from "../net/predict.js";
 import { registerEventSystems } from "../net/events.js";
-import { initRiverTileSystem, registerGroundSystems } from "./river-tile.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
 import { createShip, registerShipSystems, ShipLocalDef } from "./ship.js";
 import { registerBuildBulletsSystem, registerBulletUpdate } from "./bullet.js";
@@ -85,7 +84,7 @@ export function registerCommonSystems(em: EntityManager) {
   registerUpdateSystem(em);
   registerPredictSystem(em);
   registerJoinSystems(em);
-  registerGroundSystems(em);
+  // registerGroundSystems(em);
   registerShipSystems(em);
   registerBuildBulletsSystem(em);
   registerCursorSystems(em);

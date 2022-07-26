@@ -14,7 +14,6 @@ import {
   RotationDef,
 } from "../physics/transform.js";
 import { spawnBoat } from "./boat.js";
-import { GroundLocalDef } from "./river-tile.js";
 
 export interface SpawnerOpts {
   towardsPlayerDir: vec3;
@@ -48,7 +47,7 @@ export function addSpawner(e: Entity, opts: SpawnerOpts) {
 
 onInit((em) => {
   em.registerSystem(
-    [SpawnerDef, GroundLocalDef, AuthorityDef, ColliderDef],
+    [SpawnerDef, AuthorityDef, ColliderDef],
     [MeDef],
     (tiles, res) => {
       for (let t of tiles) {
@@ -93,7 +92,7 @@ onInit((em) => {
 
   // TODO(@darzu): can we make this more ground agnostic?
   em.registerSystem(
-    [SpawnerDef, GroundLocalDef, AuthorityDef, RotationDef, PositionDef],
+    [SpawnerDef, AuthorityDef, RotationDef, PositionDef],
     [MeDef],
     (tiles, res) => {
       const toRemove: number[] = [];
@@ -101,8 +100,9 @@ onInit((em) => {
       for (let t of tiles) {
         if (t.authority.pid !== res.me.pid) continue;
 
+        // TODO(@darzu): is spawner still relevant?
         // is the ground ready?
-        if (!t.groundLocal.readyForSpawn) continue;
+        // if (!t.groundLocal.readyForSpawn) continue;
 
         // are we still animating?
         if (AnimateToDef.isOn(t)) continue;

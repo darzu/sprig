@@ -19,7 +19,6 @@ import { setSimulationAlpha } from "./render/renderer-ecs.js";
 import { never } from "./util.js";
 import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { initCubeGame } from "./game/xp-cube.js";
-import { initRiverGame } from "./game/game-river.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -28,7 +27,7 @@ const ENABLE_NET = false;
 const AUTOSTART = true;
 
 const GAME = "hyperspace" as
-  | "ship"
+  | "ship" // TODO(@darzu): DELETE
   | "gjk"
   | "rebound"
   | "cloth"
@@ -215,8 +214,9 @@ async function startGame(localPeerName: string, host: string | null) {
   EM.addSingletonComponent(InputsDef);
   registerInputsSystem(EM);
 
-  if (GAME === "ship") initRiverGame(EM, hosting);
-  else if (GAME === "gjk") initGJKSandbox(EM, hosting);
+  if (GAME === "ship") {
+    //initRiverGame(EM, hosting);
+  } else if (GAME === "gjk") initGJKSandbox(EM, hosting);
   else if (GAME === "rebound") initReboundSandbox(EM, hosting);
   else if (GAME === "cloth") initClothSandbox(EM, hosting);
   else if (GAME === "hyperspace") initHyperspaceGame(EM);
