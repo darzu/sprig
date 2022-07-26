@@ -96,34 +96,35 @@ export function vec3Mid(out: vec3, a: vec3, b: vec3): vec3 {
 export function quatFromUpForward(out: quat, up: vec3, forwardish: vec3): quat {
   // https://stackoverflow.com/questions/52413464/look-at-quaternion-using-up-vector/52551983#52551983
   const side = vec3.cross(tempVec3(), forwardish, up);
+  vec3.negate(side, side); // TODO(@darzu): is this negate right?
   vec3.normalize(side, side);
-  const forward = vec3.cross(tempVec3(), side, up);
+  const backward = vec3.cross(tempVec3(), side, up);
 
-  const trace = side[0] + up[1] + forward[2];
+  const trace = side[0] + up[1] + backward[2];
   if (trace > 0.0) {
     const s = 0.5 / Math.sqrt(trace + 1.0);
     out[3] = 0.25 / s;
-    out[0] = (up[2] - forward[1]) * s;
-    out[1] = (forward[0] - side[2]) * s;
+    out[0] = (up[2] - backward[1]) * s;
+    out[1] = (backward[0] - side[2]) * s;
     out[2] = (side[1] - up[0]) * s;
   } else {
-    if (side[0] > up[1] && side[0] > forward[2]) {
-      const s = 2.0 * Math.sqrt(1.0 + side[0] - up[1] - forward[2]);
-      out[3] = (up[2] - forward[1]) / s;
+    if (side[0] > up[1] && side[0] > backward[2]) {
+      const s = 2.0 * Math.sqrt(1.0 + side[0] - up[1] - backward[2]);
+      out[3] = (up[2] - backward[1]) / s;
       out[0] = 0.25 * s;
       out[1] = (up[0] + side[1]) / s;
-      out[2] = (forward[0] + side[2]) / s;
-    } else if (up[1] > forward[2]) {
-      const s = 2.0 * Math.sqrt(1.0 + up[1] - side[0] - forward[2]);
-      out[3] = (forward[0] - side[2]) / s;
+      out[2] = (backward[0] + side[2]) / s;
+    } else if (up[1] > backward[2]) {
+      const s = 2.0 * Math.sqrt(1.0 + up[1] - side[0] - backward[2]);
+      out[3] = (backward[0] - side[2]) / s;
       out[0] = (up[0] + side[1]) / s;
       out[1] = 0.25 * s;
-      out[2] = (forward[1] + up[2]) / s;
+      out[2] = (backward[1] + up[2]) / s;
     } else {
-      const s = 2.0 * Math.sqrt(1.0 + forward[2] - side[0] - up[1]);
+      const s = 2.0 * Math.sqrt(1.0 + backward[2] - side[0] - up[1]);
       out[3] = (side[1] - up[0]) / s;
-      out[0] = (forward[0] + side[2]) / s;
-      out[1] = (forward[1] + up[2]) / s;
+      out[0] = (backward[0] + side[2]) / s;
+      out[1] = (backward[1] + up[2]) / s;
       out[2] = 0.25 * s;
     }
   }

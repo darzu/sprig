@@ -28,7 +28,7 @@ export async function initHyperspaceGame(em: EntityManager) {
   em.addSingletonComponent(GameStateDef);
 
   // if (hosting) {
-  createShip([-120, 0, 0]);
+  createShip([0.1, 0.1]);
   // }
 
   em.whenResources([MeDef]).then(() => createPlayer(em));

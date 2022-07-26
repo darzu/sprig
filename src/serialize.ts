@@ -1,4 +1,4 @@
-import { vec3, quat, mat4 } from "./gl-matrix.js";
+import { vec3, quat, mat4, vec2 } from "./gl-matrix.js";
 
 // use network byte order
 const LITTLE_ENDIAN = false;
@@ -62,6 +62,13 @@ export class Serializer {
   writeFloat32(value: number, at: number | null = null): number {
     at = this.index(at, 4);
     this.dataView.setFloat32(at, value, LITTLE_ENDIAN);
+    return at;
+  }
+
+  writeVec2(value: vec2, at: number | null = null): number {
+    at = this.index(at, 8);
+    this.dataView.setFloat32(at, value[0], LITTLE_ENDIAN);
+    this.dataView.setFloat32(at + 4, value[1], LITTLE_ENDIAN);
     return at;
   }
 
@@ -135,6 +142,19 @@ export class Deserializer {
     let at = this.cursor;
     this.cursor += 4;
     return this.dataView.getFloat32(at, LITTLE_ENDIAN);
+  }
+
+  readVec2(into: vec2 | null = null): vec2 | null {
+    let at = this.cursor;
+    this.cursor += 8;
+    if (!this.dummy) {
+      if (into === null) {
+        into = vec2.create();
+      }
+      into[0] = this.dataView.getFloat32(at, LITTLE_ENDIAN);
+      into[1] = this.dataView.getFloat32(at + 4, LITTLE_ENDIAN);
+    }
+    return into;
   }
 
   readVec3(into: vec3 | null = null): vec3 | null {

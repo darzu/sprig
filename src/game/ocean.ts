@@ -26,6 +26,7 @@ import { AssetsDef } from "./assets.js";
 
 export interface Ocean {
   ent: Ref<[typeof PositionDef]>;
+  // TODO(@darzu): uvDistanceToEdge, read the SDF
   uvToPos: (out: vec3, uv: vec2) => vec3;
   uvToNorm: (out: vec3, uv: vec2) => vec3;
 }
@@ -119,6 +120,23 @@ export async function initOcean() {
 }
 
 EM.registerSystem(
+  [UVDef, PositionDef],
+  [OceanDef],
+  (es, res) => {
+    // console.log("runOcean");
+    for (let e of es) {
+      // console.log(`copying: ${e.id}`);
+      const newPos = res.ocean.uvToPos(tempVec3(), e.uv);
+
+      if (!vec3.exactEquals(newPos, vec3.ZEROS)) {
+        vec3.copy(e.position, newPos);
+      }
+    }
+  },
+  "oceanUVtoPos"
+);
+
+EM.registerSystem(
   [UVDef, PositionDef, RotationDef],
   [OceanDef, InputsDef],
   (es, res) => {
@@ -137,12 +155,14 @@ EM.registerSystem(
         const newUV = vec2.add(deltaUV, e.uv, deltaUV);
         newUV[0] = clamp(newUV[0], 0, 1);
         newUV[1] = clamp(newUV[1], 0, 1);
+        // TODO(@darzu): need a better way to see if UV is out of map bounds
         const newPos = res.ocean.uvToPos(tempVec3(), newUV);
 
         // console.log(vec3Dbg(newPos));
         if (!vec3.exactEquals(newPos, vec3.ZEROS)) {
+          // TODO(@darzu): wait, forward seems backward?
+          // const forward = vec3.sub(tempVec3(), e.position, newPos);
           const forward = vec3.sub(tempVec3(), newPos, e.position);
-          vec3.copy(e.position, newPos);
           vec2.copy(e.uv, newUV);
 
           const newNorm = res.ocean.uvToNorm(tempVec3(), newUV);

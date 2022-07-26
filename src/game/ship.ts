@@ -10,7 +10,7 @@ import {
   SystemFN,
   WithComponent,
 } from "../entity-manager.js";
-import { quat, vec3 } from "../gl-matrix.js";
+import { quat, vec2, vec3 } from "../gl-matrix.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import {
   RenderableConstructDef,
@@ -61,6 +61,7 @@ import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DevConsoleDef } from "../console.js";
 import { constructNetTurret, TurretDef } from "./turret.js";
 import { YawPitchDef } from "../yawpitch.js";
+import { UVDef } from "./ocean.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
@@ -186,24 +187,21 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
   EM,
   {
     name: "ship",
-    defaultProps: (loc?: vec3) => ({
-      loc: loc ?? vec3.create(),
-      rot: quat.create(),
+    defaultProps: (uvLoc?: vec2) => ({
+      uvLoc: uvLoc ?? vec2.fromValues(0.5, 0.5),
       gemId: 0,
       cannonLId: 0,
       cannonRId: 0,
       rudder: createRef(0, [RudderPropsDef, YawPitchDef]),
     }),
     serializeProps: (c, buf) => {
-      buf.writeVec3(c.loc);
-      buf.writeQuat(c.rot);
+      buf.writeVec2(c.uvLoc);
       buf.writeUint32(c.gemId);
       buf.writeUint32(c.cannonLId);
       buf.writeUint32(c.cannonRId);
     },
     deserializeProps: (c, buf) => {
-      buf.readVec3(c.loc);
-      buf.readQuat(c.rot);
+      buf.readVec2(c.uvLoc);
       c.gemId = buf.readUint32();
       c.cannonLId = buf.readUint32();
       c.cannonRId = buf.readUint32();
@@ -213,6 +211,7 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
       speed: 0,
     }),
     dynamicComponents: [
+      // TODO(@darzu): do we want to sync UV based stuff instead?
       PositionDef,
       RotationDef,
       LinearVelocityDef,
@@ -251,8 +250,9 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
         s.shipProps.cannonLId = cannonL.id;
       }
 
-      vec3.copy(s.position, s.shipProps.loc);
-      quat.copy(s.rotation, s.shipProps.rot);
+      em.ensureComponentOn(s, UVDef);
+      vec2.copy(s.uv, s.shipProps.uvLoc);
+
       em.ensureComponentOn(s, MotionSmoothingDef);
 
       s.shipLocal.speed = 0.005;
@@ -412,8 +412,9 @@ export function registerShipSystems(em: EntityManager) {
       if (res.gameState.state !== GameState.PLAYING) return;
       for (let s of ships) {
         if (s.authority.pid !== res.me.pid) return;
-        vec3.set(s.linearVelocity, 0, -0.01, s.shipLocal.speed);
-        vec3.transformQuat(s.linearVelocity, s.linearVelocity, s.rotation);
+        // TODO(@darzu): handle UV heading !!
+        // vec3.set(s.linearVelocity, 0, -0.01, s.shipLocal.speed);
+        // vec3.transformQuat(s.linearVelocity, s.linearVelocity, s.rotation);
         s.angularVelocity[1] = s.shipProps.rudder()!.yawpitch.yaw * 0.0005;
         // TODO(@darzu): dbg ship physics when turning
         // s.angularVelocity[1] = -0.0001;
@@ -426,11 +427,11 @@ export function registerShipSystems(em: EntityManager) {
           if (res.inputs.keyDowns["x"])
             quat.rotateY(s.rotation, s.rotation, -turnSpeed);
 
-          vec3.transformQuat(
-            s.linearVelocity,
-            [0, -0.01, s.shipLocal.speed],
-            s.rotation
-          );
+          // vec3.transformQuat(
+          //   s.linearVelocity,
+          //   [0, -0.01, s.shipLocal.speed],
+          //   s.rotation
+          // );
         }
       }
     },

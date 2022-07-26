@@ -113,6 +113,7 @@ function callFixedTimestepSystems() {
 
     EM.callSystem("hyperspaceGame");
     EM.callSystem("runOcean");
+    EM.callSystem("oceanUVtoPos");
     EM.callSystem("debugLoop");
   }
   EM.callSystem("updateBullets");
