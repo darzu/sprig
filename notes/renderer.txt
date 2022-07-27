@@ -949,3 +949,6 @@ Anti-aliasing:
 
 "GPU-driven rendering":
   https://stackoverflow.com/questions/59686151/what-is-gpu-driven-rendering
+
+"Adventures in Text Rendering: Kerning and Glyph Atlases":
+  https://www.warp.dev/blog/adventures-text-rendering-kerning-glyph-atlases

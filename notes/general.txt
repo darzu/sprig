@@ -1020,3 +1020,99 @@ PickCode "An educational coding environment for students after Scratch":
 Include binary blobs in Node.js projects?
   https://github.com/postmanlabs/postject
   prob already be solved for electron
+
+Revisting Rust vs TS:
+  Sprigland long-term components:
+    Games
+      game logic
+      custom engine components
+    Game engine: 
+      rendering, 
+      physics, 
+      networking, 
+      ECS, 
+      libraries,
+      in-game UI
+    Block based editor
+      outputs game logic
+      maybe outputs custom engine components
+      outputs shaders (?)
+    Asset editors
+      3D assets
+      textures (?)
+      pixel art (?)
+      level design
+    GPU tool (?)
+      outputs shaders
+      outputs descriptors: buffers, textures, pipelines, etc
+    Learning content  
+      Videos
+      Interactive blogs
+      In-editor tutorials
+
+  Types of code:
+    game logic:
+      ECS heavy, reading/writing systems, defining components, 
+      still plenty of vectors, matrices, etc
+      goal: ECS-aware, engine-specific-aware scripting language
+        translatable to-from block language
+    game engine:
+      low-ish level, bit packing, tight loops,
+    UIs/IDEs/Editors:
+      windows, tabs, buttons, controls, text,
+      resize, layout, grid, flex,
+      accessibility (!!)
+    
+  Goals worth revisting:
+    Full TS<->block language
+      I had a fairly certain vision of this 
+      but maybe full parity is too restrictive?
+    Static compiling Typescript
+      makecode did this, fairly confident I could do this
+      but maybe if you're going to write a compiler, just make a different language
+  
+  Problems with typescript:
+    Lack of stack-allocated types for vecs, matrics, small structs
+    No (first-class) explicit number types e.g. u64, f32, etc.
+    Hard to track memory leaks; hard to see allocations
+    Long past the hype days of JS/TS excitement
+    Electron seen in a bad light
+    TS isn't a serious player in games
+    V8/jit bloats the binary
+    performance cliffs, hard to anticipate
+
+  Benefits of typescript:
+    Good DOM/HTML/CSS integration, therefore tons of web tech esp UI for "free"
+      accessibility! Rust UI solutions have major problems here
+    Web HTML/CSS is de-facto for interactive learning content
+    Great typechecker, very "moddable", easy to create custom language services
+    Can probably be both the engine and the scripting language
+    speed of coding: i doubt Rust will ever outpace TS in terms of building a thing
+      (C++ programmers claim this too... but they're wrong)
+
+  Benfits of Rust:
+    The "right" language. It's efficient and high level.
+    High hype levels right now, free marketing
+    No waste/high efficiency; the right language for performance
+    Could revisit Bevvy, Rapier, and other libraries
+    
+  Problems with Rust:
+    UI, esp accessibility, isn't solved
+    Slower typechecker, unfamiliar with "moddability"
+      bevvy people aren't doing custom language services
+
+  GUI:
+    HTML/CSS -> obvious choice, accessible, unlimited options, productive
+      some hard limitions: limited context menu, OS/browser-controlled zoom, accidental text selection, gestures
+    in-engine -> needed for in-game UI; way more fun to make for dz; not accessible!
+
+  Inertia:
+    we've put a year+ effort into the current code base
+    but the value is in the abstractions and learnings made along the way
+    but how many abstractions will translate nicely to Rust? Probably all
+
+  Hypothesis worth revisiting:
+    We only need ~PS2.5 era graphics
+      The thing is, u can always do more with that extra efficiency
+      But Rust vs TS is all about CPU and memory, 
+        maybe that just doesn't matter so much
