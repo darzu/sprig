@@ -21,3 +21,12 @@ CSS box model:
   https://raphlinus.github.io/rust/gui/2022/07/15/next-dozen-guis.html
   immediate mode vs retained mode GUI
     https://docs.microsoft.com/en-us/windows/win32/learnwin32/retained-mode-versus-immediate-mode
+
+Game UI database:
+  https://www.gameuidatabase.com
+
+Game UIs:
+  https://interfaceingame.com
+
+"we can fix it in ui" UI dev community?
+  https://wecanfixitinui.com 

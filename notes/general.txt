@@ -1116,3 +1116,11 @@ Revisting Rust vs TS:
       The thing is, u can always do more with that extra efficiency
       But Rust vs TS is all about CPU and memory, 
         maybe that just doesn't matter so much
+
+Game design links (big spreadsheet):
+  https://docs.google.com/spreadsheets/u/0/d/1QhFyPfYSjHv7PjibGrslF3mNW_CIDXWv9o-iQgLbu1o/htmlview#
+  https://docs.google.com/spreadsheets/u/0/d/11g8MCMFNrBM0CXIWrT8bej5vqR1fCJGMhoFfbS5ph3Q/htmlview#gid=0
+
+Free tiers:
+  https://free-for.dev/#/
+
