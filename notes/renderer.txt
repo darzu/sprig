@@ -930,3 +930,22 @@ Drawing lines is hard:
 Anti-aliasing:
   rendering line primatives on edges:
     https://people.csail.mit.edu/ericchan/articles/prefilter/
+
+"Efficently rendering glTF models, A WebGPU Case Study":
+  https://toji.github.io/webgpu-gltf-case-study/
+  Render pipelines are also fairly expensive to create, and can cause hitches if you create them while rendering.
+  Calls to setPipeline() should be treated as expensive, because they generally are! 
+
+"Deferred texturing"
+  https://therealmjp.github.io/posts/bindless-texturing-for-deferred-rendering-and-decals/
+  instead of writing out a G-Buffer containing all of the material parameters required for shading, you instead write out your interpolated UV’s as well as a material ID. 
+    The main benefit is that you can ensure that your textures are only sampled for visible pixels
+  For normal mapping you need your full tangent frame, which at minimum requires a quaternion
+  For mipmaps and anisotropic filtering we also need the screen-space derivatives of our UV’s
+  https://www.reedbeta.com/blog/deferred-texturing/
+
+"GPU-Driven Rendering Pipelines", Ubisoft:
+  http://advances.realtimerendering.com/s2015/aaltonenhaar_siggraph2015_combined_final_footer_220dpi.pdf
+
+"GPU-driven rendering":
+  https://stackoverflow.com/questions/59686151/what-is-gpu-driven-rendering
