@@ -7,7 +7,6 @@ import { clamp } from "../math.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { createTextureReader } from "../render/cpu-texture.js";
 import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
-import { createBenchmarkTexAndPipe } from "../render/pipelines/std-noise.js";
 import {
   unwrapPipeline,
   unwrapPipeline2,
@@ -40,6 +39,11 @@ export const OceanDef = EM.defineComponent("ocean", (o: Ocean) => {
 export const UVDef = EM.defineComponent(
   "uv",
   (uv?: vec2) => uv ?? vec2.create()
+);
+
+export const UVDirDef = EM.defineComponent(
+  "uvDir",
+  (dir?: vec2) => dir ?? vec2.create()
 );
 
 // const BouyDef = EM.defineComponent(
@@ -109,7 +113,7 @@ export async function initOcean() {
   // console.log("adding OceanDef");
 
   // TODO(@darzu): hacky hacky way to do this
-  const globalOcean = EM.addSingletonComponent(OceanDef, {
+  EM.addSingletonComponent(OceanDef, {
     ent: createRef(oceanEntId, [PositionDef]),
     uvToPos: (out, uv) => {
       const x = uv[0] * uvToPosReader.size[0];
@@ -124,30 +128,7 @@ export async function initOcean() {
       return uvToNormReader.sample(out, x, y);
     },
   });
-
-  {
-    // CPU <-> GPU round trip benchmarking!
-    // await awaitTimeout(2000); // TODO(@darzu): dbg
-    // console.log(`GPU <-> CPU TEST`);
-    // for (let [tex, pipe] of benchmarkTexsAndPipes) {
-    //   const perGPUTest = performance.now();
-    //   res.renderer.renderer.submitPipelines([], [pipe]);
-    //   await res.renderer.renderer.readTexture(tex);
-    //   const afterGPUTest = performance.now() - perGPUTest;
-    //   const mb = (tex.size[0] * tex.size[1] * 4) / 1024 / 1024;
-    //   console.log(
-    //     `${tex.size[0]}x${tex.size[1]}, ${mb.toFixed(
-    //       2
-    //     )}mb, ${afterGPUTest.toFixed(2)}ms`
-    //   );
-    //   await awaitTimeout(500); // TODO(@darzu): dbg
-    // }
-  }
 }
-
-const benchmarkTexsAndPipes = range(20).map((s) =>
-  createBenchmarkTexAndPipe((s + 1) * 128, "gpuTest")
-);
 
 EM.registerSystem(
   [UVDef, PositionDef],

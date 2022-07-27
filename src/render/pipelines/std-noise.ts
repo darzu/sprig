@@ -67,41 +67,6 @@ export const whiteNoisePipes = noiseSizes.map((s, i) => {
   });
 });
 
-// TODO(@darzu): DBG
-export function createBenchmarkTexAndPipe(
-  size: number,
-  name: string
-): [CyTexturePtr, CyRenderPipelinePtr] {
-  const tex = CY.createTexture(`${name}${size}Tex`, {
-    size: [size, size],
-    format: "r32float",
-  });
-
-  const pipe = CY.createRenderPipeline(`${name}${size}Pipe`, {
-    globals: [{ ptr: fullQuad, alias: "quad" }],
-    output: [tex],
-    meshOpt: {
-      stepMode: "single-draw",
-      vertexCount: 6,
-    },
-    shaderVertexEntry: "vert_main",
-    shaderFragmentEntry: "frag_main",
-    shader: (shaders) => `
-    ${shaders["std-rand"].code}
-    ${shaders["std-screen-quad-vert"].code}
-
-  @fragment
-    fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) f32 {
-      rand_seed = uv;
-      return rand();
-      // return 0.4;
-    }
-  `,
-  });
-
-  return [tex, pipe];
-}
-
 // random vector fields, used for gradient noises
 export const vecNoiseTexs = noiseSizes.map((s) =>
   CY.createTexture(`vecNoise${s}Tex`, {
