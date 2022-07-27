@@ -22,7 +22,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { tempVec2, tempVec3 } from "../temp-pool.js";
 import { awaitTimeout, range } from "../util.js";
-import { quatFromUpForward, vec3Dbg } from "../utils-3d.js";
+import { quatDbg, quatFromUpForward, vec3Dbg } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
 
 export interface Ocean {
@@ -149,7 +149,33 @@ EM.registerSystem(
 );
 
 EM.registerSystem(
-  [UVDef, PositionDef, RotationDef],
+  [UVDef, UVDirDef, PositionDef, RotationDef],
+  [OceanDef],
+  (es, res) => {
+    // console.log("runOcean");
+    for (let e of es) {
+      // console.log(`copying: ${e.id}`);
+
+      // vec2.normalize(e.uvDir, e.uvDir);
+      const aheadUV = vec2.add(tempVec2(), e.uv, e.uvDir);
+      const aheadPos = res.ocean.uvToPos(tempVec3(), aheadUV);
+
+      // TODO(@darzu): want SDF-based bounds checking
+      if (!vec3.exactEquals(aheadPos, vec3.ZEROS)) {
+        const forwardish = vec3.sub(tempVec3(), aheadPos, e.position);
+        const newNorm = res.ocean.uvToNorm(tempVec3(), e.uv);
+        quatFromUpForward(e.rotation, newNorm, forwardish);
+        // console.log(
+        //   `UVDir ${[e.uvDir[0], e.uvDir[1]]} -> ${quatDbg(e.rotation)}`
+        // );
+      }
+    }
+  },
+  "oceanUVDirToRot"
+);
+
+EM.registerSystem(
+  [UVDef, UVDirDef, PositionDef, RotationDef],
   [OceanDef, InputsDef],
   (es, res) => {
     // console.log("runOcean");
@@ -164,23 +190,13 @@ EM.registerSystem(
       if (res.inputs.keyDowns["arrowup"]) deltaUV[0] += speed;
       if (res.inputs.keyDowns["arrowdown"]) deltaUV[0] -= speed;
       if (deltaUV[0] !== 0.0 || deltaUV[1] !== 0.0) {
-        const newUV = vec2.add(deltaUV, e.uv, deltaUV);
-        newUV[0] = clamp(newUV[0], 0, 1);
-        newUV[1] = clamp(newUV[1], 0, 1);
+        const newUV = vec2.add(tempVec2(), e.uv, deltaUV);
+
         // TODO(@darzu): need a better way to see if UV is out of map bounds
         const newPos = res.ocean.uvToPos(tempVec3(), newUV);
-
-        // console.log(vec3Dbg(newPos));
         if (!vec3.exactEquals(newPos, vec3.ZEROS)) {
-          // TODO(@darzu): wait, forward seems backward?
-          // const forward = vec3.sub(tempVec3(), e.position, newPos);
-          const forward = vec3.sub(tempVec3(), newPos, e.position);
           vec2.copy(e.uv, newUV);
-
-          const newNorm = res.ocean.uvToNorm(tempVec3(), newUV);
-          // TODO(@darzu):
-          quatFromUpForward(e.rotation, newNorm, forward);
-          // quat.setAxisAngle(e.rotation, newNorm, Math.PI * 0.5);
+          vec2.copy(e.uvDir, deltaUV);
         }
       }
     }

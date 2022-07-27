@@ -17,7 +17,7 @@ import { GameStateDef } from "./gamestate.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
 import { DevConsoleDef } from "../console.js";
-import { initOcean, OceanDef, oceanJfa, UVDef } from "./ocean.js";
+import { initOcean, OceanDef, oceanJfa, UVDef, UVDirDef } from "./ocean.js";
 import { awaitTimeout } from "../util.js";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
@@ -129,4 +129,5 @@ export async function initHyperspaceGame(em: EntityManager) {
   em.ensureComponentOn(buoy, ScaleDef, [1.0, 1.0, 1.0]);
   em.ensureComponentOn(buoy, ColorDef, [0.2, 0.8, 0.2]);
   em.ensureComponentOn(buoy, UVDef, [0.1, 0.1]);
+  em.ensureComponentOn(buoy, UVDirDef, [1.0, 0.0]);
 }

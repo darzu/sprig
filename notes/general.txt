@@ -1117,6 +1117,11 @@ Revisting Rust vs TS:
       But Rust vs TS is all about CPU and memory, 
         maybe that just doesn't matter so much
 
+  Web platform:
+    Running on the web means JS or WASM
+    in theory: Can always start w/ JS and add in WASM modules
+    but if you're not using any of {DOM,HTML,CSS,JS} might as well be fully native->WASM
+
 Game design links (big spreadsheet):
   https://docs.google.com/spreadsheets/u/0/d/1QhFyPfYSjHv7PjibGrslF3mNW_CIDXWv9o-iQgLbu1o/htmlview#
   https://docs.google.com/spreadsheets/u/0/d/11g8MCMFNrBM0CXIWrT8bej5vqR1fCJGMhoFfbS5ph3Q/htmlview#gid=0
