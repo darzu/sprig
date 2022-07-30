@@ -885,7 +885,6 @@ export function mkBindGroup(
 //  be dependant on prev-next pipelines. Do we need a "pass" abstraction?
 export interface BundleRenderer {
   render: (pipeline: CyRenderPipeline, bundle: GPURenderBundle) => void;
-  endPass: () => void;
 }
 export function startBundleRenderer(
   context: GPUCanvasContext,
@@ -901,49 +900,40 @@ export function startBundleRenderer(
   let seenDepthTextures: Set<string> = new Set();
 
   function render(p: CyRenderPipeline, bundle: GPURenderBundle) {
-    if (!renderPassEncoder || !lastPipeline || !isOutputEq(lastPipeline, p)) {
-      let colorAttachments: GPURenderPassColorAttachment[] = p.output.map(
-        (o) => {
-          const isFirst = !seenTextures.has(o.ptr.name);
-          seenTextures.add(o.ptr.name);
-          let tex = resources.kindToNameToRes.texture[o.ptr.name]!;
-          const doClear = isFirst ? o.clear === "once" : o.clear === "always";
-          const defaultColor = o.defaultColor ?? [0, 0, 0, 1];
-          const viewOverride = o.ptr.attachToCanvas
-            ? context.getCurrentTexture().createView()
-            : undefined;
-          return tex.attachment({ doClear, defaultColor, viewOverride });
-        }
-      );
-      let depthAtt: GPURenderPassDepthStencilAttachment | undefined = undefined;
-      if (p.ptr.depthStencil) {
-        const isFirst = !seenDepthTextures.has(p.ptr.depthStencil.name);
-        seenDepthTextures.add(p.ptr.depthStencil.name);
-        const depthTex =
-          resources.kindToNameToRes.depthTexture[p.ptr.depthStencil.name];
-        // TODO(@darzu): parameterize doClear like we do textures above
-        const doClear = isFirst ? true : false;
-        depthAtt = depthTex.depthAttachment(doClear);
-      }
-
-      renderPassEncoder?.end();
-      renderPassEncoder = commandEncoder.beginRenderPass({
-        // TODO(@darzu): OUTPUT, different render targets
-        //    need different pass per different output; start with one bundle per pipeline
-        colorAttachments,
-        // TODO(@darzu): parameterize depth attachment?
-        depthStencilAttachment: depthAtt,
-      });
+    let colorAttachments: GPURenderPassColorAttachment[] = p.output.map((o) => {
+      const isFirst = !seenTextures.has(o.ptr.name);
+      seenTextures.add(o.ptr.name);
+      let tex = resources.kindToNameToRes.texture[o.ptr.name]!;
+      const doClear = isFirst ? o.clear === "once" : o.clear === "always";
+      const defaultColor = o.defaultColor ?? [0, 0, 0, 1];
+      const viewOverride = o.ptr.attachToCanvas
+        ? context.getCurrentTexture().createView()
+        : undefined;
+      return tex.attachment({ doClear, defaultColor, viewOverride });
+    });
+    let depthAtt: GPURenderPassDepthStencilAttachment | undefined = undefined;
+    if (p.ptr.depthStencil) {
+      const isFirst = !seenDepthTextures.has(p.ptr.depthStencil.name);
+      seenDepthTextures.add(p.ptr.depthStencil.name);
+      const depthTex =
+        resources.kindToNameToRes.depthTexture[p.ptr.depthStencil.name];
+      // TODO(@darzu): parameterize doClear like we do textures above
+      const doClear = isFirst ? true : false;
+      depthAtt = depthTex.depthAttachment(doClear);
     }
 
+    renderPassEncoder = commandEncoder.beginRenderPass({
+      // TODO(@darzu): OUTPUT, different render targets
+      //    need different pass per different output; start with one bundle per pipeline
+      colorAttachments,
+      // TODO(@darzu): parameterize depth attachment?
+      depthStencilAttachment: depthAtt,
+    });
+
     renderPassEncoder.executeBundles([bundle]);
+    renderPassEncoder.end();
 
     lastPipeline = p;
-  }
-
-  function endPass() {
-    renderPassEncoder?.end();
-    renderPassEncoder = undefined;
   }
 
   // TODO(@darzu): support multi-output
@@ -955,7 +945,7 @@ export function startBundleRenderer(
     );
   }
 
-  return { render, endPass };
+  return { render };
 }
 
 export function doCompute(
