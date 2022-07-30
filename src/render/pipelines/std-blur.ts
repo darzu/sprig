@@ -2,7 +2,7 @@ import { range } from "../../util.js";
 import { CY, linearSamplerPtr } from "../gpu-registry.js";
 import { createCyStruct } from "../gpu-struct.js";
 import { outlinedTexturePtr } from "./std-outline.js";
-import { emissionTexturePtr } from "./xp-stars.js";
+import { emissionTexturePtr } from "./std-stars.js";
 
 // TODO(@darzu): we shouldn't use rgba16float everywhere, probably way too much
 //  memory usage

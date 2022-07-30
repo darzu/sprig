@@ -8,7 +8,7 @@ import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { shadowPipeline } from "../render/pipelines/std-shadow.js";
-import { initStars, renderStars } from "../render/pipelines/xp-stars.js";
+import { initStars, renderStars } from "../render/pipelines/std-stars.js";
 import { AssetsDef } from "./assets.js";
 import { MeDef } from "../net/components.js";
 import { createPlayer } from "./player.js";

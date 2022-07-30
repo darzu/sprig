@@ -322,6 +322,7 @@ export function registerRenderer(em: EntityManager) {
         cameraViewProjMatrix: cameraView.viewProjMat,
         lightViewProjMatrix,
         time: res.time.time,
+        canvasAspectRatio: res.cameraView.aspectRatio,
         maxSurfaceId,
         cameraPos: cameraView.location,
       });

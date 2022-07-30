@@ -16,6 +16,7 @@ export const ShaderPaths = [
   "xp-cloth-update",
   "std-screen-quad-vert",
   "std-rand",
+  "std-stars",
 ] as const;
 
 export type ShaderName = typeof ShaderPaths[number];
