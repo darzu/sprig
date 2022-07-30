@@ -92,6 +92,7 @@ const MeshTransforms: Partial<{
     mat4.fromYRotation(mat4.create(), -Math.PI * 0.5),
     vec3.fromValues(-5, 0, 0)
   ),
+  ocean: mat4.fromScaling(mat4.create(), [2, 2, 2]),
 };
 
 // TODO(@darzu): these sort of hacky offsets are a pain to deal with. It'd be
