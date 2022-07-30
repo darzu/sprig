@@ -287,7 +287,7 @@ export function createWebGPURenderer(
     return gpuBuffer.getMappedRange();
   }
 
-  async function stats(): Promise<Map<string, number>> {
+  async function stats(): Promise<Map<string, bigint>> {
     const byteSize = (MAX_PIPELINES + 1) * 8;
     // We need to have 2 buffers here because you can't have MAP_READ
     // and QUERY_RESOLVE on the same buffer. We resolve the QuerySet

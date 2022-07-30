@@ -49,7 +49,7 @@ export function registerDevSystems(em: EntityManager) {
   em.registerSystem(
     null,
     [RendererDef, TextDef, DevConsoleDef],
-    (_, res) => {
+    async (_, res) => {
       if (!res.dev.showConsole) {
         res.text.debugText = "";
         return;
@@ -76,6 +76,15 @@ export function registerDevSystems(em: EntityManager) {
         ping: [],
       };
 
+      const pipelineTimes = await res.renderer.renderer.stats();
+
+      let pipelineTimesTxts: string[] = [];
+      pipelineTimes.forEach((time, pipeline) =>
+        pipelineTimesTxts.push(
+          `\n${pipeline} ${(Number(time / BigInt(1000)) / 1000).toFixed(2)}`
+        )
+      );
+
       const { avgFrameTime, avgJsTime, avgSimTime } = res.dev;
 
       const avgFPS = 1000 / avgFrameTime;
@@ -93,7 +102,8 @@ export function registerDevSystems(em: EntityManager) {
         `entities:${EM.entities.size} ` +
         `skew: ${skew.join(",")} ` +
         `ping: ${ping.join(",")} ` +
-        `${usingWebGPU ? "WebGPU" : "WebGL"} `;
+        `${usingWebGPU ? "WebGPU" : "WebGL"} ` +
+        `pipelines: ${pipelineTimesTxts.join(",")}`;
 
       res.text.debugText = dbgTxt;
     },

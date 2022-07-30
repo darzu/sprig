@@ -379,7 +379,7 @@ export interface Renderer {
   updateScene(scene: Partial<SceneTS>): void;
   submitPipelines(handles: MeshHandleStd[], pipelines: CyPipelinePtr[]): void;
   readTexture(tex: CyTexturePtr): Promise<ArrayBuffer>;
-  stats(): Promise<Map<string, number>>;
+  stats(): Promise<Map<string, bigint>>;
 }
 
 // TODO(@darzu): the double "Renderer" naming is confusing. Maybe one should be GPUManager or something?
