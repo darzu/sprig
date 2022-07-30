@@ -68,7 +68,7 @@ export function createWebGPURenderer(
     renderer.drawLines,
     renderer.drawTris,
   ];
-  let lastPipelines: CyPipelinePtr[] = [];
+  let lastPipelines: CyPipeline[] = [];
 
   const cyRenderToBundle: { [pipelineName: string]: GPURenderBundle } = {};
 
@@ -165,7 +165,7 @@ export function createWebGPURenderer(
     const didPipelinesChange =
       lastPipelines.length !== pipelinePtrs.length ||
       lastPipelines.reduce(
-        (p, n, i) => p || lastPipelines[i].name !== pipelinePtrs[i].name,
+        (p, n, i) => p || lastPipelines[i].ptr.name !== pipelinePtrs[i].name,
         false as boolean
       );
 
@@ -199,6 +199,8 @@ export function createWebGPURenderer(
       // console.log("rebundeling");
       updateRenderBundle(handles, renderPipelines);
     }
+
+    lastPipelines = pipelines;
 
     // start collecting our commands for this frame
     const commandEncoder = device.createCommandEncoder();
