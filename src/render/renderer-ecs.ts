@@ -379,6 +379,7 @@ export interface Renderer {
   updateScene(scene: Partial<SceneTS>): void;
   submitPipelines(handles: MeshHandleStd[], pipelines: CyPipelinePtr[]): void;
   readTexture(tex: CyTexturePtr): Promise<ArrayBuffer>;
+  stats(): Promise<Map<string, number>>;
 }
 
 // TODO(@darzu): the double "Renderer" naming is confusing. Maybe one should be GPUManager or something?
@@ -423,7 +424,9 @@ async function chooseAndInitRenderer(
     // try webgpu first
     const adapter = await navigator.gpu?.requestAdapter();
     if (adapter) {
-      const device = await adapter.requestDevice();
+      const device = await adapter.requestDevice({
+        requiredFeatures: ["timestamp-query"],
+      });
       // TODO(@darzu): uses cast while waiting for webgpu-types.d.ts to be updated
       const context = canvas.getContext("webgpu");
       if (context) {
