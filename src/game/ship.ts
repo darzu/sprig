@@ -61,7 +61,8 @@ import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DevConsoleDef } from "../console.js";
 import { constructNetTurret, TurretDef } from "./turret.js";
 import { YawPitchDef } from "../yawpitch.js";
-import { UVDef } from "./ocean.js";
+import { UVDef, UVDirDef } from "./ocean.js";
+import { tempVec2 } from "../temp-pool.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
@@ -212,10 +213,12 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
     }),
     dynamicComponents: [
       // TODO(@darzu): do we want to sync UV based stuff instead?
-      PositionDef,
-      RotationDef,
-      LinearVelocityDef,
-      AngularVelocityDef,
+      UVDef,
+      UVDirDef,
+      // PositionDef,
+      // RotationDef,
+      // LinearVelocityDef,
+      // AngularVelocityDef,
     ],
     buildResources: [MeDef, AssetsDef],
     build: (s, res) => {
@@ -250,15 +253,17 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
         s.shipProps.cannonLId = cannonL.id;
       }
 
-      em.ensureComponentOn(s, UVDef);
       vec2.copy(s.uv, s.shipProps.uvLoc);
+
+      em.ensureComponentOn(s, PositionDef);
+      em.ensureComponentOn(s, RotationDef);
 
       em.ensureComponentOn(s, MotionSmoothingDef);
 
-      s.shipLocal.speed = 0.005;
+      s.shipLocal.speed = 0.0005;
       // s.shipLocal.speed = 0.005 * 3; // TODO(@darzu): DEBUG SPEED
-      em.ensureComponentOn(s, LinearVelocityDef, [0, 0, 0]);
-      em.ensureComponentOn(s, AngularVelocityDef);
+      // em.ensureComponentOn(s, LinearVelocityDef, [0, 0, 0]);
+      // em.ensureComponentOn(s, AngularVelocityDef);
 
       const mc: MultiCollider = {
         shape: "Multi",
@@ -402,10 +407,12 @@ export function registerShipSystems(em: EntityManager) {
     [
       ShipLocalDef,
       ShipPropsDef,
-      LinearVelocityDef,
-      AngularVelocityDef,
+      // LinearVelocityDef,
+      // AngularVelocityDef,
       AuthorityDef,
-      RotationDef,
+      // RotationDef,
+      UVDef,
+      UVDirDef,
     ],
     [GameStateDef, MeDef, InputsDef, DevConsoleDef],
     (ships, res) => {
@@ -415,24 +422,34 @@ export function registerShipSystems(em: EntityManager) {
         // TODO(@darzu): handle UV heading !!
         // vec3.set(s.linearVelocity, 0, -0.01, s.shipLocal.speed);
         // vec3.transformQuat(s.linearVelocity, s.linearVelocity, s.rotation);
-        s.angularVelocity[1] = s.shipProps.rudder()!.yawpitch.yaw * 0.0005;
+        // s.angularVelocity[1] = s.shipProps.rudder()!.yawpitch.yaw * 0.0005;
         // TODO(@darzu): dbg ship physics when turning
         // s.angularVelocity[1] = -0.0001;
+
+        // STEERING
+        let yaw = s.shipProps.rudder()!.yawpitch.yaw;
 
         // cheat steering
         if (res.dev.showConsole) {
           const turnSpeed = Math.PI * 0.01;
-          if (res.inputs.keyDowns["z"])
-            quat.rotateY(s.rotation, s.rotation, turnSpeed);
-          if (res.inputs.keyDowns["x"])
-            quat.rotateY(s.rotation, s.rotation, -turnSpeed);
-
-          // vec3.transformQuat(
-          //   s.linearVelocity,
-          //   [0, -0.01, s.shipLocal.speed],
-          //   s.rotation
-          // );
+          if (res.inputs.keyDowns["z"]) yaw += turnSpeed;
+          if (res.inputs.keyDowns["x"]) yaw -= turnSpeed;
         }
+
+        vec2.rotate(s.uvDir, s.uvDir, vec2.ZEROS, yaw * 0.02);
+
+        // s.uvDir[0] += Math.cos(yaw);
+        // s.uvDir[1] -= Math.sin(yaw);
+        // console.log(`yaw: ${yaw} uvdir: ${s.uvDir[0]},${s.uvDir[1]}`);
+
+        // MOVING
+        // NOTE: we scale uvDir by speed so that the look-ahead used for
+        //    UVDir->Rotation works.
+        // TODO(@darzu): This doesn't seem great. We need a better way to
+        //    do  UVDir->Rotation
+        vec2.normalize(s.uvDir, s.uvDir);
+        vec2.scale(s.uvDir, s.uvDir, s.shipLocal.speed);
+        vec2.add(s.uv, s.uv, s.uvDir);
       }
     },
     "shipMove"

@@ -1129,3 +1129,5 @@ Game design links (big spreadsheet):
 Free tiers:
   https://free-for.dev/#/
 
+SQLlite internals:
+  https://fly.io/blog/sqlite-internals-btree/

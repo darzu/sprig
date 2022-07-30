@@ -40,10 +40,20 @@ export const UVDef = EM.defineComponent(
   "uv",
   (uv?: vec2) => uv ?? vec2.create()
 );
+EM.registerSerializerPair(
+  UVDef,
+  (o, buf) => buf.writeVec2(o),
+  (o, buf) => buf.readVec2(o)
+);
 
 export const UVDirDef = EM.defineComponent(
   "uvDir",
-  (dir?: vec2) => dir ?? vec2.create()
+  (dir?: vec2) => dir ?? vec2.fromValues(0, 1)
+);
+EM.registerSerializerPair(
+  UVDirDef,
+  (o, buf) => buf.writeVec2(o),
+  (o, buf) => buf.readVec2(o)
 );
 
 // const BouyDef = EM.defineComponent(
