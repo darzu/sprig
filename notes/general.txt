@@ -1134,3 +1134,6 @@ Free tiers:
 
 SQLlite internals:
   https://fly.io/blog/sqlite-internals-btree/
+
+For estimating sales of a game:
+  https://games-stats.com/steam/?tag=sailing

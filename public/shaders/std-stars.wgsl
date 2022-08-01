@@ -34,7 +34,14 @@ struct VertexOutput {
       scene.cameraViewProjMatrix[2][1]
     ));
 
-    let worldPos = star.pos
+    // TODO(@darzu): use starBoxSize
+    let wrappedPos = vec3(
+      star.pos.x,
+      star.pos.y,
+      star.pos.z
+    );
+
+    let worldPos = wrappedPos
       + right * corner.x
       + up * corner.y;
 

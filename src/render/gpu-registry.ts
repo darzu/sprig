@@ -35,7 +35,7 @@ export interface CyArrayPtr<O extends CyStructDesc> extends CyResourcePtr {
 export interface CySingletonPtr<O extends CyStructDesc> extends CyResourcePtr {
   kind: "singleton";
   struct: CyStruct<O>;
-  init: () => CyToTS<O>;
+  init?: () => CyToTS<O>;
 }
 export type CyBufferPtr<O extends CyStructDesc> =
   | CyArrayPtr<O>

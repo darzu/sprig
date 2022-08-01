@@ -209,7 +209,12 @@ export function createCyResources(
   // create one-buffers
   cy.kindToPtrs.singleton.forEach((r) => {
     const usage = cyNameToBufferUsage[r.name]!;
-    const buf = createCySingleton(device, r.struct, usage, r.init());
+    const buf = createCySingleton(
+      device,
+      r.struct,
+      usage,
+      r.init ? r.init() : undefined
+    );
     kindToNameToRes.singleton[r.name] = buf;
   });
   // create idx-buffers

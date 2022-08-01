@@ -27,6 +27,8 @@ export const emissionTexturePtr = CY.createTexture("emissionTexture", {
   format: "rgba16float",
 });
 
+const STAR_BOX_SIZE = 1000.0;
+
 export const initStars = CY.createComputePipeline("initStars", {
   globals: [starData],
   shaderComputeEntry: "main",
@@ -38,8 +40,7 @@ export const initStars = CY.createComputePipeline("initStars", {
     rand_seed = vec2<f32>(f32(gId.x));
     // starDatas.ms[gId.x].pos = vec3(0.0);
     starDatas.ms[gId.x].pos = vec3(rand() - 0.5, rand() - 0.5, rand() - 0.5) 
-      * 1000.0;
-      // * 3000.0;
+      * ${STAR_BOX_SIZE.toFixed(1)};
     starDatas.ms[gId.x].color = vec3(rand(), rand(), rand());
     starDatas.ms[gId.x].size = rand() * 3.0;
   }
@@ -49,7 +50,11 @@ export const initStars = CY.createComputePipeline("initStars", {
 
 export const renderStars = CY.createRenderPipeline("renderStars", {
   globals: [starData, sceneBufPtr],
-  shader: (shaders) => shaders["std-stars"].code,
+  // TODO(@darzu): use an "override" var for starBoxSize once supported
+  shader: (shaders) => `
+  var<private> starBoxSize = ${STAR_BOX_SIZE.toFixed(1)};
+  ${shaders["std-stars"].code}
+  `,
   shaderVertexEntry: "vert_main",
   shaderFragmentEntry: "frag_main",
   meshOpt: {
