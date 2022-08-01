@@ -427,15 +427,13 @@ export function registerShipSystems(em: EntityManager) {
         // TODO(@darzu): dbg ship physics when turning
         // s.angularVelocity[1] = -0.0001;
 
+        // SPEED
+        if (res.inputs.keyDowns["z"]) s.shipLocal.speed += 0.00001;
+        if (res.inputs.keyDowns["x"]) s.shipLocal.speed -= 0.00001;
+        s.shipLocal.speed = Math.max(0, s.shipLocal.speed);
+
         // STEERING
         let yaw = s.shipProps.rudder()!.yawpitch.yaw;
-
-        // cheat steering
-        if (res.dev.showConsole) {
-          const turnSpeed = Math.PI * 0.01;
-          if (res.inputs.keyDowns["z"]) yaw += turnSpeed;
-          if (res.inputs.keyDowns["x"]) yaw -= turnSpeed;
-        }
 
         vec2.rotate(s.uvDir, s.uvDir, vec2.ZEROS, yaw * 0.02);
 
@@ -444,13 +442,15 @@ export function registerShipSystems(em: EntityManager) {
         // console.log(`yaw: ${yaw} uvdir: ${s.uvDir[0]},${s.uvDir[1]}`);
 
         // MOVING
-        // NOTE: we scale uvDir by speed so that the look-ahead used for
-        //    UVDir->Rotation works.
-        // TODO(@darzu): This doesn't seem great. We need a better way to
-        //    do  UVDir->Rotation
-        vec2.normalize(s.uvDir, s.uvDir);
-        vec2.scale(s.uvDir, s.uvDir, s.shipLocal.speed);
-        vec2.add(s.uv, s.uv, s.uvDir);
+        if (s.shipLocal.speed > 0.00001) {
+          // NOTE: we scale uvDir by speed so that the look-ahead used for
+          //    UVDir->Rotation works.
+          // TODO(@darzu): This doesn't seem great. We need a better way to
+          //    do  UVDir->Rotation
+          vec2.normalize(s.uvDir, s.uvDir);
+          vec2.scale(s.uvDir, s.uvDir, s.shipLocal.speed);
+          vec2.add(s.uv, s.uv, s.uvDir);
+        }
       }
     },
     "shipMove"

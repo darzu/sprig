@@ -27,6 +27,7 @@ export const emissionTexturePtr = CY.createTexture("emissionTexture", {
   format: "rgba16float",
 });
 
+// const STAR_BOX_SIZE = 100.0;
 const STAR_BOX_SIZE = 1000.0;
 
 export const initStars = CY.createComputePipeline("initStars", {
@@ -39,10 +40,15 @@ export const initStars = CY.createComputePipeline("initStars", {
   fn main(@builtin(global_invocation_id) gId : vec3<u32>) {
     rand_seed = vec2<f32>(f32(gId.x));
     // starDatas.ms[gId.x].pos = vec3(0.0);
-    starDatas.ms[gId.x].pos = vec3(rand() - 0.5, rand() - 0.5, rand() - 0.5) 
-      * ${STAR_BOX_SIZE.toFixed(1)};
+    starDatas.ms[gId.x].pos = vec3(rand(), rand(), rand());
+    // starDatas.ms[gId.x].pos = vec3(rand() - 0.5, rand() - 0.5, rand() - 0.5) 
+    //   * ${STAR_BOX_SIZE.toFixed(1)};
+    // TODO: generate a random hue not color
+    // starDatas.ms[gId.x].color = vec3(f32(gId.x) / 5.0, 0.2, 0.2);
     starDatas.ms[gId.x].color = vec3(rand(), rand(), rand());
-    starDatas.ms[gId.x].size = rand() * 3.0;
+    starDatas.ms[gId.x].size = rand() * 3.0
+      ;
+      // * 0.2;
   }
   `,
   workgroupCounts: [Math.ceil(NUM_STARS / 64), 1, 1],
