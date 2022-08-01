@@ -62,3 +62,7 @@ Relationships in an ECS:
 Our Machinery ECS:
   https://ourmachinery.com/post/syncing-a-data-oriented-ecs/
   https://ourmachinery.com/post/ecs-and-rendering/
+  Annnd it's dead: https://www.reddit.com/r/gamedev/comments/wd4qoh/our_machinery_extensible_engine_made_in_c_just/
+    They're asking people to delete their copies in 14 days :/
+    They may have editted their EULA for this? https://news.ycombinator.com/item?id=32301177
+    Yup, you can't trust closed source: https://twitter.com/AliceICecile/status/1553907629172342787

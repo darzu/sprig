@@ -952,3 +952,6 @@ Anti-aliasing:
 
 "Adventures in Text Rendering: Kerning and Glyph Atlases":
   https://www.warp.dev/blog/adventures-text-rendering-kerning-glyph-atlases
+
+"Stuff I did over the years":
+  https://twitter.com/Mirko_Salm/status/1553724647664926721

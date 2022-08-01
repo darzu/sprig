@@ -1017,6 +1017,9 @@ PickCode "An educational coding environment for students after Scratch":
   https://www.pickcode.io
   https://news.ycombinator.com/item?id=32230329
 
+"Game Builder Garage" on Switch:
+  https://www.nintendo.com/store/products/game-builder-garage-switch/
+
 Include binary blobs in Node.js projects?
   https://github.com/postmanlabs/postject
   prob already be solved for electron

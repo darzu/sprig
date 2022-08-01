@@ -10,32 +10,29 @@ struct VertexOutput {
     let starIdx = gvIdx / 6u;
 
     let star = starDatas.ms[starIdx];
-    // Hmmm
-    // let S = 4.0;
     let S = star.size;
 
-    let xs = vec2(-S, S);
-    let ys = vec2(-S, S);
-    var corners = array<vec3<f32>, 6>(
-      vec3<f32>(xs.x, ys.x, 0.0),
-      vec3<f32>(xs.y, ys.x, 0.0),
-      vec3<f32>(xs.y, ys.y, 0.0),
-      vec3<f32>(xs.x, ys.y, 0.0),
-      vec3<f32>(xs.x, ys.x, 0.0),
-      vec3<f32>(xs.y, ys.y, 0.0),
+    let corners = array<vec3<f32>, 6>(
+      vec3<f32>(-S, -S, 0.0),
+      vec3<f32>(S, -S, 0.0),
+      vec3<f32>(S, S, 0.0),
+      vec3<f32>(-S, S, 0.0),
+      vec3<f32>(-S, -S, 0.0),
+      vec3<f32>(S, S, 0.0),
     );
     let corner = corners[vIdx];
 
-    let right = vec3(
+    // TODO(@darzu): just include this on the scene?
+    let right = normalize(vec3(
       scene.cameraViewProjMatrix[0][0], 
       scene.cameraViewProjMatrix[1][0], 
       scene.cameraViewProjMatrix[2][0]
-    );
-    let up = vec3(
+    ));
+    let up = normalize(vec3(
       scene.cameraViewProjMatrix[0][1], 
       scene.cameraViewProjMatrix[1][1], 
       scene.cameraViewProjMatrix[2][1]
-    );
+    ));
 
     let worldPos = star.pos
       + right * corner.x
@@ -43,11 +40,7 @@ struct VertexOutput {
 
     let screenPos = scene.cameraViewProjMatrix * vec4(worldPos, 1.0);
 
-    // let worldPos = corners[vIdx] + star.pos;
-    // let pos = pos0 + vec4(corners[vIdx], 0.0);
-    // pos.w /= pos.w;
-  
-    var uv = array<vec2<f32>, 6>(
+    let uv = array<vec2<f32>, 6>(
       vec2<f32>(0.0, 1.0),
       vec2<f32>(1.0, 1.0),
       vec2<f32>(1.0, 0.0),
@@ -70,22 +63,11 @@ struct VertexOutput {
 
   @fragment
   fn frag_main(input: VertexOutput) -> FragOut {
-    // TODO(@darzu): is this right?
-    // let w = 1.0;
-    // let h = 1.0;
-    let w = max(1.0 / scene.canvasAspectRatio, 1.0);
-    let h = max(scene.canvasAspectRatio, 1.0);
-
-    // let xDist = input.uv.x 
-    let dist = length(input.uv * vec2(w,h) - vec2(0.5));
+    let dist = length(input.uv - vec2(0.5));
     // TODO: what's the perf difference of alpha vs discard?
     if (dist > 0.5) {
       discard;
     }
-
-    // let invDist = 0.5 / dist;
-    // // let invDist = 1.0 / max(dist - 0.1, 0.001);
-    // let color = input.color * invDist;
 
     var out: FragOut;
 
