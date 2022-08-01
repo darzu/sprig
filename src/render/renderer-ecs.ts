@@ -29,6 +29,7 @@ import { vec3Dbg } from "../utils-3d.js";
 import { ShadersDef, ShaderSet } from "./shader-loader.js";
 import { dbgLogOnce } from "../util.js";
 import { TimeDef } from "../time.js";
+import { PartyDef } from "../game/party.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -241,7 +242,7 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
 export function registerRenderer(em: EntityManager) {
   em.registerSystem(
     [RendererWorldFrameDef, RenderableDef],
-    [CameraViewDef, RendererDef, TimeDef],
+    [CameraViewDef, RendererDef, TimeDef, PartyDef],
     (objs, res) => {
       const renderer = res.renderer.renderer;
       const cameraView = res.cameraView;
@@ -324,6 +325,7 @@ export function registerRenderer(em: EntityManager) {
         time: res.time.time,
         canvasAspectRatio: res.cameraView.aspectRatio,
         maxSurfaceId,
+        partyPos: res.party.pos,
         cameraPos: cameraView.location,
       });
 

@@ -104,6 +104,7 @@ function callFixedTimestepSystems() {
     EM.callSystem("shipHealthCheck");
     EM.callSystem("easeRudder");
     EM.callSystem("shipMove");
+    EM.callSystem("shipUpdateParty");
     // EM.callSystem("shipScore");
     EM.callSystem("boatPropsBuild");
     EM.callSystem("cannonPropsBuild");

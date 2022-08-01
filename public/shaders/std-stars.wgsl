@@ -35,6 +35,7 @@ struct VertexOutput {
     ));
 
     // TODO(@darzu): use starBoxSize
+    // TODO(@darzu): use scene.partyPos
     let wrappedPos = vec3(
       star.pos.x,
       star.pos.y,

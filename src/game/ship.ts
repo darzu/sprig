@@ -63,6 +63,7 @@ import { constructNetTurret, TurretDef } from "./turret.js";
 import { YawPitchDef } from "../yawpitch.js";
 import { UVDef, UVDirDef } from "./ocean.js";
 import { tempVec2 } from "../temp-pool.js";
+import { PartyDef } from "./party.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
@@ -453,6 +454,15 @@ export function registerShipSystems(em: EntityManager) {
       }
     },
     "shipMove"
+  );
+
+  em.registerSystem(
+    [ShipLocalDef, ShipPropsDef, PositionDef],
+    [PartyDef],
+    (ships, res) => {
+      if (ships[0]) vec3.copy(res.party.pos, ships[0].position);
+    },
+    "shipUpdateParty"
   );
 
   // If a rudder isn't being manned, smooth it back towards straight

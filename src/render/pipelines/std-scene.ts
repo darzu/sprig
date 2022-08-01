@@ -140,7 +140,7 @@ export const SceneStruct = createCyStruct(
     dirLight2: "vec3<f32>",
     dirLight3: "vec3<f32>",
     cameraPos: "vec3<f32>",
-    playerPos: "vec2<f32>",
+    partyPos: "vec3<f32>",
     // TODO(@darzu): timeDelta vs totalTime
     time: "f32",
     canvasAspectRatio: "f32",
@@ -155,7 +155,7 @@ export const SceneStruct = createCyStruct(
       views.f32.set(data.dirLight2, offsets_32[3]);
       views.f32.set(data.dirLight3, offsets_32[4]);
       views.f32.set(data.cameraPos, offsets_32[5]);
-      views.f32.set(data.playerPos, offsets_32[6]);
+      views.f32.set(data.partyPos, offsets_32[6]);
       views.f32[offsets_32[7]] = data.time;
       views.f32[offsets_32[8]] = data.canvasAspectRatio;
       views.u32[offsets_32[9]] = data.maxSurfaceId;
@@ -191,7 +191,7 @@ export function setupScene(): SceneTS {
     dirLight2,
     dirLight3,
     cameraPos: vec3.create(), // updated later
-    playerPos: [0, 0], // updated later
+    partyPos: vec3.create(), // updated later
     time: 0, // updated later
     canvasAspectRatio: 1, // updated later
     maxSurfaceId: 1, // updated later
