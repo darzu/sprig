@@ -63,6 +63,13 @@ struct VertexOutput {
 
   @fragment
   fn frag_main(input: VertexOutput) -> FragOut {
+    // TODO(@darzu): Can we do emissive blur by outputing a fading-out color
+    //    straight to the emission texture? Might not need the guassian blur
+    //    at all. One tricky thing is that that the output size for the emission
+    //    texture is much bigger so we need to not write to the color tex in
+    //    all locations. We should be able to handle this easily with alpha blend
+    //    mode stuff or maybe a stencil mask or something.
+
     let dist = length(input.uv - vec2(0.5));
     // TODO: what's the perf difference of alpha vs discard?
     if (dist > 0.5) {
