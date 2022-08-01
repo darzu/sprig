@@ -69,6 +69,8 @@ struct VertexOutput {
     //    texture is much bigger so we need to not write to the color tex in
     //    all locations. We should be able to handle this easily with alpha blend
     //    mode stuff or maybe a stencil mask or something.
+    //    Another benefit of doing this is that we can have the blur be proportional
+    //    to the size of the star.
 
     let dist = length(input.uv - vec2(0.5));
     // TODO: what's the perf difference of alpha vs discard?
