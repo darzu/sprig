@@ -157,3 +157,10 @@ Regarding "good" vs "bad" topology:
   recommended for beginners:
     http://pushingpoints.com/v2/the-pushing-points-topology-workbook/
     http://pushingpoints.com/v2/the-pushing-points-topology-workbook-volume-2/
+
+High quality assets:
+  https://www.reddit.com/r/gamedev/comments/waam0z/what_are_premade_assets_that_are_more_or_less/
+  https://quixel.com/megascans/
+  https://syntystore.com
+  https://quaternius.com
+  https://www.unrealengine.com/marketplace/en-US/assets?tag=85&lang=en-US

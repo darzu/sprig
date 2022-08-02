@@ -1137,3 +1137,45 @@ SQLlite internals:
 
 For estimating sales of a game:
   https://games-stats.com/steam/?tag=sailing
+
+Teaching idea:
+  Instead of tutorial (or in addition to), drop the user
+  in a very limited environment where they have just a few
+  possible knobs they can turn and challenge them to make
+  three different games that seem perhaps impossible at first
+  to make
+  Limits r everything!
+
+More on teaching:
+  At the end of a tutorial / challenge, present the user an
+  option:
+    build a game (practice existing knowledge) 
+    or learn a new thing
+  Put a strong recommendation forward so there's an opinion,
+  but don't be so patronizing that u assume u always know better
+  Try and calibrate the recommendation based on how the creator
+  has been doing
+
+IDE teaching ideas:
+  Have the UI be turn-on-able via check boxes that slowly get
+  ticked on as the user learns things. Like a good city builder.
+  However, the user can also uncheck everything if it's been a while
+  and they want to start fresh.
+  Unity just dumps you this huge IDE way too early.
+
+"How I learned Unity without following tutorials (Developing 1)":
+  https://www.youtube.com/watch?v=vFjXKOXdgGo
+  Three steps:
+    Learn the basics
+    Familiarize urself with the basics (repeat)
+    Slowly add to ur repretoir
+  Basics:
+    What is a game object?
+    How to make one game object interact with another game object?
+    How to spawn in objects? And then delete them?
+    How to make something happen when two objects collide?
+    How to do UI? Sound effects? Animation?
+    How to deal with levels and game over?
+  Repeat:
+    plagerize; copy basic games out there
+    make the steps really simple for yourself
