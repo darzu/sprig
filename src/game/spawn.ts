@@ -13,7 +13,7 @@ import {
   PositionDef,
   RotationDef,
 } from "../physics/transform.js";
-import { spawnBoat } from "./boat.js";
+import { spawnBoat } from "./enemy-boat.js";
 
 export interface SpawnerOpts {
   towardsPlayerDir: vec3;

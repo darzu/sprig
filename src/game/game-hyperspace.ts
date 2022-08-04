@@ -123,11 +123,12 @@ export async function initHyperspaceGame(em: EntityManager) {
   em.ensureComponentOn(fabric, PositionDef, [10, 10, 10]);
   // em.ensureComponentOn(fabric, AngularVelocityDef, [1.0, 10.0, 0.1]);
 
-  const buoy = em.newEntity();
-  em.ensureComponentOn(buoy, PositionDef);
-  em.ensureComponentOn(buoy, RenderableConstructDef, res.assets.ship.proto);
-  em.ensureComponentOn(buoy, ScaleDef, [1.0, 1.0, 1.0]);
-  em.ensureComponentOn(buoy, ColorDef, [0.2, 0.8, 0.2]);
-  em.ensureComponentOn(buoy, UVDef, [0.1, 0.1]);
-  em.ensureComponentOn(buoy, UVDirDef, [1.0, 0.0]);
+  // Useful ocean UV debug entity:
+  // const buoy = em.newEntity();
+  // em.ensureComponentOn(buoy, PositionDef);
+  // em.ensureComponentOn(buoy, RenderableConstructDef, res.assets.ship.proto);
+  // em.ensureComponentOn(buoy, ScaleDef, [1.0, 1.0, 1.0]);
+  // em.ensureComponentOn(buoy, ColorDef, [0.2, 0.8, 0.2]);
+  // em.ensureComponentOn(buoy, UVDef, [0.1, 0.1]);
+  // em.ensureComponentOn(buoy, UVDirDef, [1.0, 0.0]);
 }

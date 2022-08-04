@@ -1,7 +1,7 @@
 import { EM, EntityManager } from "../entity-manager.js";
 import { InputsDef } from "../inputs.js";
 import { PositionDef, registerInitTransforms } from "../physics/transform.js";
-import { registerBoatSystems } from "./boat.js";
+import { registerBoatSystems } from "./enemy-boat.js";
 import {
   createPlayer,
   LocalPlayerDef,

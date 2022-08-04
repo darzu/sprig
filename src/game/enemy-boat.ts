@@ -1,4 +1,10 @@
-import { EM, EntityManager, Entity, EntityW } from "../entity-manager.js";
+import {
+  EM,
+  EntityManager,
+  Entity,
+  EntityW,
+  Component,
+} from "../entity-manager.js";
 import { TimeDef } from "../time.js";
 import { quat, vec3 } from "../gl-matrix.js";
 import { jitter } from "../math.js";
@@ -10,11 +16,12 @@ import {
   PositionDef,
   Rotation,
   RotationDef,
+  ScaleDef,
 } from "../physics/transform.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { aabbCenter } from "../physics/broadphase.js";
-import { AssetsDef, GameMesh } from "./assets.js";
+import { Assets, AssetsDef, GameMesh } from "./assets.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import {
@@ -24,13 +31,52 @@ import {
 import { BulletDef, fireBullet } from "./bullet.js";
 import { DeletedDef, OnDeleteDef } from "../delete.js";
 import { LifetimeDef } from "./lifetime.js";
-import { createEnemy, EnemyDef } from "./enemy.js";
 import { ShipLocalDef } from "./ship.js";
 import { Music, MusicDef } from "../music.js";
 import { defineNetEntityHelper } from "../em_helpers.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { raiseBulletBoat } from "./bullet-collision.js";
 import { GameStateDef, GameState } from "./gamestate.js";
+import { cloneMesh, scaleMesh3 } from "../render/mesh.js";
+
+export const EnemyDef = EM.defineComponent("enemy", () => {
+  return {
+    leftLegId: 0,
+    rightLegId: 0,
+  };
+});
+
+export type Enemy = Component<typeof EnemyDef>;
+
+export function createEnemy(
+  em: EntityManager,
+  assets: Assets,
+  parent: number,
+  pos: vec3
+): EntityW<[typeof EnemyDef]> {
+  const e = em.newEntity();
+  em.ensureComponentOn(e, EnemyDef);
+  em.ensureComponentOn(e, PositionDef, pos);
+  em.ensureComponentOn(e, RotationDef, quat.create());
+  const torso = cloneMesh(assets.cube.mesh);
+  scaleMesh3(torso, [0.75, 0.75, 0.4]);
+  em.ensureComponentOn(e, RenderableConstructDef, torso);
+  em.ensureComponentOn(e, ColorDef, [0.2, 0.0, 0]);
+  em.ensureComponentOn(e, PhysicsParentDef, parent);
+
+  function makeLeg(x: number): Entity {
+    const l = em.newEntity();
+    em.ensureComponentOn(l, PositionDef, [x, -1.75, 0]);
+    em.ensureComponentOn(l, RenderableConstructDef, assets.cube.proto);
+    em.ensureComponentOn(l, ScaleDef, [0.1, 1.0, 0.1]);
+    em.ensureComponentOn(l, ColorDef, [0.05, 0.05, 0.05]);
+    em.ensureComponentOn(l, PhysicsParentDef, e.id);
+    return l;
+  }
+  e.enemy.leftLegId = makeLeg(-0.5).id;
+  e.enemy.rightLegId = makeLeg(0.5).id;
+  return e;
+}
 
 export const { BoatPropsDef, BoatLocalDef, createBoat } = defineNetEntityHelper(
   EM,

@@ -63,7 +63,7 @@ import { TimeDef } from "../time.js";
 import { farthestPointInDir, vec3Dbg } from "../utils-3d.js";
 import { drawLine } from "../utils-game.js";
 import { AssetsDef, GameMesh } from "./assets.js";
-import { BOAT_COLOR } from "./boat.js";
+import { BOAT_COLOR } from "./enemy-boat.js";
 import { ClothConstructDef, ClothLocalDef } from "./cloth.js";
 import { ControllableDef } from "./controllable.js";
 import { GlobalCursor3dDef } from "./cursor.js";

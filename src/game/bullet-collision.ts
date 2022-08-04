@@ -17,7 +17,7 @@ import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { AuthorityDef } from "../net/components.js";
 import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../delete.js";
-import { BoatLocalDef, BoatPropsDef, breakBoat } from "./boat.js";
+import { BoatLocalDef, BoatPropsDef, breakBoat } from "./enemy-boat.js";
 import { AssetsDef } from "./assets.js";
 import { MusicDef } from "../music.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
