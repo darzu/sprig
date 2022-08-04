@@ -1179,3 +1179,7 @@ IDE teaching ideas:
   Repeat:
     plagerize; copy basic games out there
     make the steps really simple for yourself
+
+Barycentric rendering:
+  https://wunkolo.github.io/post/2022/07/gl_ext_fragment_shader_barycentric-wireframe/
+  maybe good for wireframes or possibly edge detection?

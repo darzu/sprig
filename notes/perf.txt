@@ -153,3 +153,5 @@ asm.js
 perf gains by using int math in JS:
   https://james.darpinian.com/blog/integer-math-in-javascript
   
+Details of D3D12 memory pools:
+  https://therealmjp.github.io/posts/gpu-memory-pool/

@@ -305,3 +305,6 @@ Interesting discussion of shader derivative fns:
 
 Outline shader from Automation Station:
   https://gist.github.com/ScottJDaley/6cddf0c8995ed61cac7088e22c983de1
+
+Compute shaders talk by AMD:
+  https://www.youtube.com/watch?v=eDLilzy2mq0
