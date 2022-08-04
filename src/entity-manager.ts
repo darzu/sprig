@@ -42,6 +42,23 @@ type System<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = {
   name: string;
 };
 
+// TODO(@darzu): think about naming some more...
+type OneShotSystem<
+  //eCS extends ComponentDef[],
+  CS extends ComponentDef[],
+  ID extends number
+> = {
+  e: EntityW<any[], ID>;
+  cs: CS;
+  callback: (e: EntityW<[...CS], ID>) => void;
+  name: string;
+};
+function isOneShotSystem(
+  s: OneShotSystem<any, any> | System<any, any>
+): s is OneShotSystem<any, any> {
+  return "e" in s;
+}
+
 type EDefId<ID extends number, CS extends ComponentDef[]> = [ID, ...CS];
 type ESetId<DS extends EDefId<number, any>[]> = {
   [K in keyof DS]: DS[K] extends EDefId<infer ID, infer CS>
@@ -68,7 +85,7 @@ interface SystemStats {
 export class EntityManager {
   entities: Map<number, Entity> = new Map();
   systems: Map<string, System<any[] | null, any[]>> = new Map();
-  oneShotSystems: System<any[] | null, any[]>[] = [];
+  oneShotSystems: Map<string, OneShotSystem<any[], any>> = new Map();
   components: Map<number, ComponentDef<any, any>> = new Map();
   serializers: Map<
     number,
@@ -485,38 +502,11 @@ export class EntityManager {
   }
 
   private nextOneShotSuffix = 0;
-  // NOTE: if you're gonna change the types, change it above first and just copy
-  //  them down to here
-  public registerOneShotSystem<
-    CS extends ComponentDef[],
-    RS extends ComponentDef[]
-  >(cs: [...CS], rs: [...RS], callback: SystemFN<CS, RS>): void;
-  public registerOneShotSystem<CS extends null, RS extends ComponentDef[]>(
-    cs: CS,
+  public whenResources<RS extends ComponentDef[]>(
     rs: [...RS],
-    callback: SystemFN<CS, RS>
-  ): void;
-  public registerOneShotSystem<
-    CS extends ComponentDef[],
-    RS extends ComponentDef[]
-  >(cs: [...CS] | null, rs: [...RS], callback: SystemFN<CS, RS>): void {
-    const name = callback.name ?? "oneShot" + this.nextOneShotSuffix++;
-
-    // use one bucket for all one shots. Change this if we want more granularity
-    this.stats["__oneShots"] = this.stats["__oneShots"] ?? {
-      calls: 0,
-      queries: 0,
-      callTime: 0,
-      queryTime: 0,
-    };
-
-    this.oneShotSystems.push({
-      cs,
-      rs,
-      callback,
-      name,
-    });
-    // TODO(@darzu): track stats for one-shot systems?
+    name?: string
+  ): Promise<EntityW<RS>> {
+    return this.whenEntityHas(this.entities.get(0)!, rs, name);
   }
 
   hasSystem(name: string) {
@@ -560,32 +550,90 @@ export class EntityManager {
 
   callOneShotSystems() {
     const beforeOneShots = performance.now();
-    this.oneShotSystems = this.oneShotSystems.reduce((keptSystems, s) => {
-      let haveAllResources = true;
-      for (let r of s.rs) {
-        // note this is just to verify it exists
-        haveAllResources &&= !!this.getResource(r);
+    let calledSystems: Set<string> = new Set();
+    this.oneShotSystems.forEach((s) => {
+      if (!s.cs.every((c) => c.name in s.e)) return;
+
+      const afterOneShotQuery = performance.now();
+      this.stats["__oneShots"].queries += 1;
+      this.stats["__oneShots"].queryTime += afterOneShotQuery - beforeOneShots;
+
+      calledSystems.add(s.name);
+      // TODO(@darzu): how to handle async callbacks and their timing?
+      s.callback(s.e);
+
+      const afterOneShotCall = performance.now();
+      this.stats["__oneShots"].calls += 1;
+      this.stats["__oneShots"].callTime += afterOneShotCall - afterOneShotQuery;
+    });
+    for (let name of calledSystems) {
+      this.oneShotSystems.delete(name);
+    }
+  }
+
+  // TODO(@darzu): good or terrible name?
+  whyIsntSystemBeingCalled(name: string): void {
+    // TODO(@darzu): more features like check against a specific set of entities
+    const sys = this.systems.get(name) ?? this.oneShotSystems.get(name);
+    if (!sys) {
+      console.warn(`No systems found with name: '${name}'`);
+      return;
+    }
+
+    let haveAllResources = true;
+    if (!isOneShotSystem(sys)) {
+      for (let _r of sys.rs) {
+        let r = _r as ComponentDef;
+        if (!this.getResource(r)) {
+          console.warn(`System '${name}' missing resource: ${r.name}`);
+          haveAllResources = false;
+        }
       }
-      if (haveAllResources) {
-        const es = this.filterEntities(s.cs);
+    }
 
-        const afterOneShotQuery = performance.now();
-        this.stats["__oneShots"].queries += 1;
-        this.stats["__oneShots"].queryTime +=
-          afterOneShotQuery - beforeOneShots;
+    const es = this.filterEntities(sys.cs);
+    console.warn(
+      `System '${name}' matches ${es.length} entities and has all resources: ${haveAllResources}.`
+    );
+  }
 
-        s.callback(es, this.entities.get(0)! as any);
+  // TODO(@darzu): Rethink naming here
+  // NOTE: if you're gonna change the types, change registerSystem first and just copy
+  //  them down to here
+  public whenEntityHas<
+    // eCS extends ComponentDef[],
+    CS extends ComponentDef[],
+    ID extends number
+  >(
+    e: EntityW<any[], ID>,
+    cs: [...CS],
+    name?: string
+  ): Promise<EntityW<CS, ID>> {
+    // TODO(@darzu): this is too copy-pasted from registerSystem
+    // TODO(@darzu): need unified query maybe?
+    let _name = name || "oneShot" + this.nextOneShotSuffix++;
 
-        const afterOneShotCall = performance.now();
-        this.stats["__oneShots"].calls += 1;
-        this.stats["__oneShots"].callTime +=
-          afterOneShotCall - afterOneShotQuery;
+    if (this.oneShotSystems.has(_name))
+      throw `One-shot single system named ${_name} already defined.`;
 
-        return keptSystems;
-      } else {
-        return [...keptSystems, s];
-      }
-    }, [] as typeof this.oneShotSystems);
+    // use one bucket for all one shots. Change this if we want more granularity
+    this.stats["__oneShots"] = this.stats["__oneShots"] ?? {
+      calls: 0,
+      queries: 0,
+      callTime: 0,
+      queryTime: 0,
+    };
+
+    return new Promise<EntityW<CS, ID>>((resolve, reject) => {
+      const sys: OneShotSystem<CS, ID> = {
+        e,
+        cs,
+        callback: resolve,
+        name: _name,
+      };
+
+      this.oneShotSystems.set(_name, sys);
+    });
   }
 }
 

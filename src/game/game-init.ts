@@ -26,7 +26,6 @@ import {
 } from "../net/sync.js";
 import { registerPredictSystem } from "../net/predict.js";
 import { registerEventSystems } from "../net/events.js";
-import { initGroundSystem, registerGroundSystems } from "./ground.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
 import { createShip, registerShipSystems, ShipLocalDef } from "./ship.js";
 import { registerBuildBulletsSystem, registerBulletUpdate } from "./bullet.js";
@@ -67,47 +66,17 @@ import {
   registerGameStateSystems,
 } from "./gamestate.js";
 import { MeDef } from "../net/components.js";
-import { stdRenderPipeline } from "../render/std-pipeline.js";
-import { postProcess } from "../render/std-post.js";
-import { shadowPipeline } from "../render/std-shadow.js";
-import { outlineRender } from "../render/std-outline.js";
+import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
+import { postProcess } from "../render/pipelines/std-post.js";
+import { shadowPipeline } from "../render/pipelines/std-shadow.js";
+import { outlineRender } from "../render/pipelines/std-outline.js";
 
-export const ScoreDef = EM.defineComponent("score", () => {
-  return {
-    maxScore: 0,
-    currentScore: 0,
-  };
-});
-
-function registerScoreSystems(em: EntityManager) {
-  em.addSingletonComponent(ScoreDef);
-
-  em.registerSystem(
-    [ShipLocalDef, PositionDef],
-    [ScoreDef, GameStateDef],
-    (ships, res) => {
-      if (res.gameState.state !== GameState.PLAYING) return;
-      if (ships.length) {
-        const ship = ships.reduce(
-          (p, n) => (n.position[2] > p.position[2] ? n : p),
-          ships[0]
-        );
-        const currentScore = Math.round(ship.position[2] / 10);
-        res.score.maxScore = Math.max(currentScore, res.score.maxScore);
-        res.score.currentScore = currentScore;
-      }
-    },
-    "updateScore"
-  );
-}
-
-export function registerAllSystems(em: EntityManager) {
+export function registerCommonSystems(em: EntityManager) {
   registerNetSystems(em);
   registerInitCanvasSystem(em);
   registerUISystems(em);
   registerDevSystems(em);
   registerGameStateSystems(em);
-  registerScoreSystems(em);
   registerRenderInitSystem(em);
   registerMusicSystems(em);
   registerHandleNetworkEvents(em);
@@ -115,7 +84,7 @@ export function registerAllSystems(em: EntityManager) {
   registerUpdateSystem(em);
   registerPredictSystem(em);
   registerJoinSystems(em);
-  registerGroundSystems(em);
+  // registerGroundSystems(em);
   registerShipSystems(em);
   registerBuildBulletsSystem(em);
   registerCursorSystems(em);
@@ -149,21 +118,6 @@ export function registerAllSystems(em: EntityManager) {
   registerRenderer(em);
 
   callInitFns(em);
-}
-
-function registerShipGameUI(em: EntityManager) {
-  em.registerSystem(
-    null,
-    [TextDef, DevConsoleDef],
-    (_, res) => {
-      const avgFPS = 1000 / res.dev.avgFrameTime;
-      const lowerTxt = `Belgus, you are the last hope of the Squindles, keep the gemheart alive! Failure is inevitable. move: WASD, mouse; cannon: e, left-click; fps:${avgFPS.toFixed(
-        1
-      )}`;
-      res.text.lowerText = lowerTxt;
-    },
-    "shipUI"
-  );
 }
 
 function registerRenderViewController(em: EntityManager) {
@@ -201,50 +155,5 @@ function registerRenderViewController(em: EntityManager) {
       }
     },
     "renderView"
-  );
-}
-
-export function initShipGame(em: EntityManager, hosting: boolean) {
-  registerShipGameUI(em);
-  EM.addSingletonComponent(CameraDef);
-  EM.addSingletonComponent(GameStateDef);
-
-  initGroundSystem(em);
-
-  if (hosting) {
-    createShip();
-  }
-  // create player once MeDef is present (meaning we've joined, if
-  // we're not the host)
-  em.registerOneShotSystem(null, [MeDef], () => createPlayer(em));
-
-  em.registerOneShotSystem(null, [RendererDef], (_, res) => {
-    res.renderer.pipelines = [
-      shadowPipeline,
-      stdRenderPipeline,
-      outlineRender,
-      postProcess,
-    ];
-  });
-}
-
-function debugBoatParts(em: EntityManager) {
-  let once = false;
-  em.registerSystem(
-    [],
-    [AssetsDef],
-    (_, res) => {
-      if (once) return;
-      once = true;
-
-      // TODO(@darzu): this works!
-      // const bigM = res.assets.boat_broken;
-      // for (let i = 0; i < bigM.length; i++) {
-      //   const e = em.newEntity();
-      //   em.ensureComponentOn(e, RenderableConstructDef, bigM[i].mesh);
-      //   em.ensureComponentOn(e, PositionDef, [0, 0, 0]);
-      // }
-    },
-    "debugBoatParts"
   );
 }

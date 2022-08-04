@@ -1,11 +1,12 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { mat4, vec2, vec3 } from "../gl-matrix.js";
+import { mat4, vec2, vec3, vec4 } from "../gl-matrix.js";
 import { importObj, isParseError } from "../import_obj.js";
 import {
   cloneMesh,
   getAABBFromMesh,
   getCenterFromAABB,
   getHalfsizeFromAABB,
+  getMeshAsGrid,
   mapMeshPositions,
   Mesh,
   normalizeMesh,
@@ -21,10 +22,16 @@ import { assert } from "../test.js";
 import { objMap, range } from "../util.js";
 import { getText } from "../webget.js";
 import { AABBCollider } from "../physics/collider.js";
-import { farthestPointInDir, SupportFn, uintToVec3unorm } from "../utils-3d.js";
+import {
+  farthestPointInDir,
+  normalizeVec2s,
+  SupportFn,
+  uintToVec3unorm,
+} from "../utils-3d.js";
 import { MeshHandle } from "../render/mesh-pool.js";
-import { MeshHandleStd } from "../render/std-scene.js";
+import { MeshHandleStd } from "../render/pipelines/std-scene.js";
 import { onInit } from "../init.js";
+import { mathMap, max, min } from "../math.js";
 
 // TODO: load these via streaming
 
@@ -85,6 +92,7 @@ const MeshTransforms: Partial<{
     mat4.fromYRotation(mat4.create(), -Math.PI * 0.5),
     vec3.fromValues(-5, 0, 0)
   ),
+  ocean: mat4.fromScaling(mat4.create(), [2, 2, 2]),
 };
 
 // TODO(@darzu): these sort of hacky offsets are a pain to deal with. It'd be
@@ -126,8 +134,96 @@ const MeshModify: Partial<{
     return m;
   },
   ocean: (m) => {
+    // TODO(@darzu): extract out all this setUV stuff.
+    // reduce duplicate positions
+    // console.log("OCEAN");
+    // console.dir(m);
+    // m = deduplicateVertices(m);
+    // console.dir(m);
+
     // TODO(@darzu): do we want convexity highlighting on the ocean?
-    // m.surfaceIds = m.tri.map(() => 1);
+    m.surfaceIds = m.quad.map((_, i) => i);
+    // TODO(@darzu): generate UVs for the ocean
+    const minX = m.pos.reduce((p, n) => (n[0] < p ? n[0] : p), Infinity);
+    const maxX = m.pos.reduce((p, n) => (n[0] > p ? n[0] : p), -Infinity);
+    const minZ = m.pos.reduce((p, n) => (n[2] < p ? n[2] : p), Infinity);
+    const maxZ = m.pos.reduce((p, n) => (n[2] > p ? n[2] : p), -Infinity);
+    // m.uvs = m.pos.map(
+    //   (p, i) =>
+    //     vec2.fromValues(
+    //       mathMap(p[0], minX, maxX, 0, 1),
+    //       mathMap(p[2], minZ, maxZ, 0, 1)
+    //     )
+    //   // vec2.fromValues(i / m.pos.length, 0)
+    //   // vec2.fromValues(0.5, 0.5)
+    // );
+
+    // TODO(@darzu): DBG
+    // try {
+    //   console.log("getMeshAsGrid(ocean)");
+    const { coords, grid } = getMeshAsGrid(m);
+    //   console.log("getMeshAsGrid success!");
+    // } catch (e) {
+    //   console.log("getMeshAsGrid failed!");
+    //   console.error(e);
+    // }
+    const xLen = grid.length;
+    const yLen = grid[0].length;
+    // console.log(`xLen:${xLen},yLen:${yLen}`);
+    const uvs = m.pos.map((_, vi) => vec2.create());
+    m.uvs = uvs;
+    // setUV(Math.floor(xLen / 2), 0, [0, 1], [0, 0], true);
+    setUV(0, Math.floor(yLen / 2), [1, 0], [0, 0], true);
+    // TODO(@darzu): lots of little annoying issues happen when you go right to the texture edge
+    normalizeVec2s(uvs, 0 + 0.01, 1 - 0.01);
+
+    // console.dir(uvs);
+    // console.log(`
+    // X:
+    // ${max(uvs.map((uv) => uv[0]))}
+    // ${min(uvs.map((uv) => uv[0]))}
+    // Y:
+    // ${max(uvs.map((uv) => uv[1]))}
+    // ${min(uvs.map((uv) => uv[1]))}
+    // `);
+
+    function setUV(
+      x: number,
+      y: number,
+      dir: vec2,
+      currDist: vec2,
+      branch: boolean
+    ) {
+      // console.log(`setUV ${x} ${y} ${dir} ${currDist} ${branch}`);
+      // set this UV
+      const vi = grid[x][y];
+      vec2.copy(uvs[vi], currDist);
+
+      // branch?
+      if (branch) {
+        setUV(x, y, [dir[1], dir[0]], currDist, false);
+        setUV(x, y, [-dir[1], -dir[0]], currDist, false);
+      }
+
+      // continue forward?
+      const nX = x + dir[0];
+      const nY = y + dir[1];
+      if (nX < 0 || xLen <= nX || nY < 0 || yLen <= nY) return;
+      const nVi = grid[nX][nY];
+      const delta = vec3.dist(m.pos[vi], m.pos[nVi]);
+      const newDist: vec2 = [
+        currDist[0] + dir[0] * delta,
+        currDist[1] + dir[1] * delta,
+      ];
+      setUV(nX, nY, dir, newDist, branch);
+    }
+    // console.dir({
+    //   uvMin: [min(m.uvs.map((a) => a[0])), min(m.uvs.map((a) => a[1]))],
+    //   uvMax: [max(m.uvs.map((a) => a[0])), max(m.uvs.map((a) => a[1]))],
+    // });
+
+    // console.dir(m.uvs);
+    // console.dir({ minX, maxX, minZ, maxZ });
     return m;
   },
 };
@@ -169,6 +265,7 @@ export const CUBE_MESH: RawMesh = {
     [5, 4, 7],
     [5, 7, 6], // back
   ],
+  quad: [],
   lines: [
     // top
     [0, 1],
@@ -215,6 +312,7 @@ const TETRA_MESH: RawMesh = {
     [1, 3, 0],
     [2, 3, 1],
   ],
+  quad: [],
   lines: [
     [0, 1],
     [0, 2],
@@ -286,7 +384,7 @@ const HEX_MESH: () => RawMesh = () => {
   //   [1, 3],
   //   [2, 3],
   // ],
-  return { pos, tri, lines, colors: tri.map((_) => BLACK) };
+  return { pos, tri, quad: [], lines, colors: tri.map((_) => BLACK) };
 };
 const PLANE_MESH: RawMesh = {
   pos: [
@@ -301,6 +399,7 @@ const PLANE_MESH: RawMesh = {
     [3, 2, 0],
     [1, 3, 0], // bottom
   ],
+  quad: [],
   lines: [
     [0, 1],
     [0, 2],
@@ -339,6 +438,7 @@ const TRI_FENCE: () => RawMesh = () => {
   return {
     pos,
     tri,
+    quad: [],
     colors,
     surfaceIds,
   };
@@ -346,12 +446,17 @@ const TRI_FENCE: () => RawMesh = () => {
 
 const GRID_PLANE_MESH = createGridPlane(30, 30);
 
+// TODO(@darzu): DBG
+// console.log("getMeshAsGrid(GRID_PLANE_MESH)");
+// getMeshAsGrid(GRID_PLANE_MESH);
+
 function createGridPlane(width: number, height: number): RawMesh {
   const m: RawMesh = {
     pos: [],
     tri: [],
     colors: [],
     lines: [],
+    quad: [],
   };
 
   for (let x = 0; x <= width; x++) {
@@ -372,6 +477,50 @@ function createGridPlane(width: number, height: number): RawMesh {
   scaleMesh(m, 10 / Math.min(width, height));
 
   return m;
+}
+
+const DBG_FABRIC = createFabric(5);
+
+export function createFabric(size: number): RawMesh {
+  const pos: vec3[] = [];
+  const quad: vec4[] = [];
+  const uvs: vec2[] = [];
+
+  // create each vert
+  for (let x = 0; x < size; x++) {
+    for (let y = 0; y < size; y++) {
+      pos.push([x, y, 0]);
+      uvs.push([x / size, y / size]);
+    }
+  }
+
+  // create each quad
+  for (let x = 0; x < size - 1; x++) {
+    for (let y = 0; y < size - 1; y++) {
+      const q: vec4 = [
+        idx(x, y),
+        idx(x + 1, y),
+        idx(x + 1, y + 1),
+        idx(x, y + 1),
+      ];
+      quad.push(q);
+      quad.push([q[3], q[2], q[1], q[0]]);
+    }
+  }
+
+  return {
+    pos,
+    tri: [],
+    uvs,
+    quad,
+    colors: quad.map((_, i) => [i / quad.length, 0.2, 0.2]),
+    dbgName: `fabric-${size}`,
+  };
+
+  function idx(x: number, y: number): number {
+    return x * size + y;
+  }
+  // TODO(@darzu): return
 }
 
 export const SHIP_AABBS: AABB[] = [
@@ -455,6 +604,7 @@ export const LocalMeshes = {
   boat: () => BOAT_MESH,
   bullet: () => BULLET_MESH,
   gridPlane: () => GRID_PLANE_MESH,
+  fabric: () => DBG_FABRIC,
   triFence: TRI_FENCE,
   wireCube: () => ({ ...CUBE_MESH, tri: [] } as RawMesh),
 } as const;
@@ -488,29 +638,25 @@ export const AssetsDef = EM.defineComponent("assets", (meshes: GameMeshes) => {
 });
 export type Assets = Component<typeof AssetsDef>;
 
-onInit((em) => {
+onInit(async (em) => {
   em.addSingletonComponent(AssetLoaderDef);
 
   // start loading of assets
-  em.registerOneShotSystem(
-    [],
-    [AssetLoaderDef, RendererDef],
-    (_, { assetLoader, renderer }) => {
-      assert(!assetLoader.promise, "somehow we're double loading assets");
+  const { assetLoader, renderer } = await em.whenResources([
+    AssetLoaderDef,
+    RendererDef,
+  ]);
+  assert(!assetLoader.promise, "somehow we're double loading assets");
 
-      const assetsPromise = loadAssets(renderer.renderer);
-      assetLoader.promise = assetsPromise;
-      assetsPromise.then(
-        (result) => {
-          em.addSingletonComponent(AssetsDef, result);
-        },
-        (failureReason) => {
-          // TODO(@darzu): fail more gracefully
-          throw `Failed to load assets: ${failureReason}`;
-        }
-      );
-    }
-  );
+  const assetsPromise = loadAssets(renderer.renderer);
+  assetLoader.promise = assetsPromise;
+  try {
+    const result = await assetsPromise;
+    em.addSingletonComponent(AssetsDef, result);
+  } catch (failureReason) {
+    // TODO(@darzu): fail more gracefully
+    throw `Failed to load assets: ${failureReason}`;
+  }
 });
 
 async function loadTxtInternal(relPath: string): Promise<string> {

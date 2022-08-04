@@ -929,3 +929,257 @@ Diffusion-reaction ?:
   https://www.youtube.com/watch?v=BV9ny785UNc
 
 Maybe my career goals are to make software simpler
+
+Consider joining Chrome's "Origin Trials" ?
+  https://developer.chrome.com/docs/web-platform/origin-trials/
+
+TODO: read https://gpuweb.github.io/gpuweb/explainer/
+
+TO SLEUTH: https://www.reddit.com/r/gamedev/top/?t=year
+  2d anim tut: https://www.reddit.com/r/gamedev/comments/rv98tb/animation_process_for_a_noodly_boss/
+  3d mop attack tut: https://www.reddit.com/r/gamedev/comments/uz5lmv/how_we_added_a_mop_using_maya_in_our_shopkeeping/
+  95 video "make a pokemon game": https://www.youtube.com/playlist?list=PLLf84Zj7U26kfPQ00JVI2nIoozuPkykDX
+  hex terrain gen: https://www.reddit.com/r/gamedev/comments/s1k6gm/procedural_hexagon_terrain_threejs_react_code_in/
+  local coop discussion: https://www.reddit.com/r/gamedev/comments/t3kca5/please_dont_stop_making_games_with_local_coop/
+  blender head sculpting: https://www.youtube.com/watch?v=BE301UsthtY
+  free asset links: https://www.reddit.com/r/gamedev/comments/t9lt22/it_might_be_common_knowledge_butthere_are_tons_of/
+  what is hard in games: https://www.ign.com/articles/turns-out-hardest-part-making-game-everything?utm_source=twitter
+  holy shit AAA games get cancelled a lot: https://www.reddit.com/r/gamedev/comments/oucehr/my_first_aaa_game_cancelled_how_often_does_this/
+
+WebGPU updates at via khronos group webanar:
+  April 2022:
+    http://khr.io/web202204
+    https://www.youtube.com/watch?v=dpfJRxZgJN8
+    https://shader-playground.timjones.io
+  July 2022:
+    http://khr.io/web202207
+    https://github.com/toji/webgpu-best-practices
+    https://surma.dev/things/webgpu/index.html
+    https://web.dev/gpu-compute/
+    https://github.com/shrekshao/webgpu-deferred-renderer
+
+Hardware support:
+  https://github.com/gpuweb/gpuweb/issues/1069
+    https://github.com/kainino0x/gpuinfo-vulkan-query
+  steam:  ~75-95% of steam users, depending how u interpret: https://store.steampowered.com/hwsurvey
+  android: 77% ? https://developer.android.com/about/dashboards
+  15-18 of the most popular 20 laptops on Amazon support WebGPU:
+    notes/amazon-best-seller-laptops-webgpu-suppor.txt
+    https://gist.github.com/darzu/d2f426f8990f8c0cf555061d0c65bbaf
+
+Cool learn-to-code website and vids:
+  https://thecodingtrain.com
+
+Data structures to kick the tires:
+  https://news.ycombinator.com/item?id=32186203
+  bloom filter,
+  union-find,
+  promise-map,
+  "cache oblivious": https://cs.au.dk/~gerth/MassiveData02/notes/demaine.pdf
+  Hash Array Mapped Trie, good for immutable data structures?
+    https://blog.mattbierner.com/hash-array-mapped-tries-in-javascript/
+  Y-fast trie
+    "If your dataset M is bounded integers (say, the set of all 128 bit numbers), you get membership, 
+    predecessor, or successor queries in log log time, not log, like in a normal tree."
+    https://www.youtube.com/playlist?list=PLUl4u3cNGP61hsJNdULdudlRL493b-XZf
+  HNSW, or Hierarchical Navigable Small World 
+    a graph data structure for approximate nearest neighbor search of vectors
+    http://ann-benchmarks.com
+
+Game post mortem (anti-Unity):
+  https://www.reddit.com/r/gamedev/comments/76htb2/successful_steam_launch_postmortem_throne_of_lies/
+
+Another game engine:
+  https://ourmachinery.com
+
+Interesting long post on ECS:
+  https://ajmmertens.medium.com/ecs-from-tool-to-paradigm-350587cdf216
+
+Current LOC:
+  32307 .ts
+  806   .wgsl
+  6947  .txt
+
+Core:
+  https://coregames.com
+  roblox-y
+  Some NFT integrations..
+  50% revenue share (roblox is 75%?)
+
+Multiplatform games w/ JS + HTML:
+  https://frgmnts.blog/f/multi-platform-games-javascript.html
+  https://github.com/greenheartgames/greenworks
+
+Getting HTML game onto console:
+  https://www.youtube.com/watch?v=KfBzlzvt8RU
+
+PickCode "An educational coding environment for students after Scratch":
+  https://www.pickcode.io
+  https://news.ycombinator.com/item?id=32230329
+
+"Game Builder Garage" on Switch:
+  https://www.nintendo.com/store/products/game-builder-garage-switch/
+
+Include binary blobs in Node.js projects?
+  https://github.com/postmanlabs/postject
+  prob already be solved for electron
+
+Revisting Rust vs TS:
+  Sprigland long-term components:
+    Games
+      game logic
+      custom engine components
+    Game engine: 
+      rendering, 
+      physics, 
+      networking, 
+      ECS, 
+      libraries,
+      in-game UI
+    Block based editor
+      outputs game logic
+      maybe outputs custom engine components
+      outputs shaders (?)
+    Asset editors
+      3D assets
+      textures (?)
+      pixel art (?)
+      level design
+    GPU tool (?)
+      outputs shaders
+      outputs descriptors: buffers, textures, pipelines, etc
+    Learning content  
+      Videos
+      Interactive blogs
+      In-editor tutorials
+
+  Types of code:
+    game logic:
+      ECS heavy, reading/writing systems, defining components, 
+      still plenty of vectors, matrices, etc
+      goal: ECS-aware, engine-specific-aware scripting language
+        translatable to-from block language
+    game engine:
+      low-ish level, bit packing, tight loops,
+    UIs/IDEs/Editors:
+      windows, tabs, buttons, controls, text,
+      resize, layout, grid, flex,
+      accessibility (!!)
+    
+  Goals worth revisting:
+    Full TS<->block language
+      I had a fairly certain vision of this 
+      but maybe full parity is too restrictive?
+    Static compiling Typescript
+      makecode did this, fairly confident I could do this
+      but maybe if you're going to write a compiler, just make a different language
+  
+  Problems with typescript:
+    Lack of stack-allocated types for vecs, matrics, small structs
+    No (first-class) explicit number types e.g. u64, f32, etc.
+    Hard to track memory leaks; hard to see allocations
+    Long past the hype days of JS/TS excitement
+    Electron seen in a bad light
+    TS isn't a serious player in games
+    V8/jit bloats the binary
+    performance cliffs, hard to anticipate
+
+  Benefits of typescript:
+    Good DOM/HTML/CSS integration, therefore tons of web tech esp UI for "free"
+      accessibility! Rust UI solutions have major problems here
+    Web HTML/CSS is de-facto for interactive learning content
+    Great typechecker, very "moddable", easy to create custom language services
+    Can probably be both the engine and the scripting language
+    speed of coding: i doubt Rust will ever outpace TS in terms of building a thing
+      (C++ programmers claim this too... but they're wrong)
+
+  Benfits of Rust:
+    The "right" language. It's efficient and high level.
+    High hype levels right now, free marketing
+    No waste/high efficiency; the right language for performance
+    Could revisit Bevvy, Rapier, and other libraries
+    
+  Problems with Rust:
+    UI, esp accessibility, isn't solved
+    Slower typechecker, unfamiliar with "moddability"
+      bevvy people aren't doing custom language services
+
+  GUI:
+    HTML/CSS -> obvious choice, accessible, unlimited options, productive
+      some hard limitions: limited context menu, OS/browser-controlled zoom, accidental text selection, gestures
+    in-engine -> needed for in-game UI; way more fun to make for dz; not accessible!
+
+  Inertia:
+    we've put a year+ effort into the current code base
+    but the value is in the abstractions and learnings made along the way
+    but how many abstractions will translate nicely to Rust? Probably all
+
+  Hypothesis worth revisiting:
+    We only need ~PS2.5 era graphics
+      The thing is, u can always do more with that extra efficiency
+      But Rust vs TS is all about CPU and memory, 
+        maybe that just doesn't matter so much
+
+  Web platform:
+    Running on the web means JS or WASM
+    in theory: Can always start w/ JS and add in WASM modules
+    but if you're not using any of {DOM,HTML,CSS,JS} might as well be fully native->WASM
+
+Game design links (big spreadsheet):
+  https://docs.google.com/spreadsheets/u/0/d/1QhFyPfYSjHv7PjibGrslF3mNW_CIDXWv9o-iQgLbu1o/htmlview#
+  https://docs.google.com/spreadsheets/u/0/d/11g8MCMFNrBM0CXIWrT8bej5vqR1fCJGMhoFfbS5ph3Q/htmlview#gid=0
+
+Free tiers:
+  https://free-for.dev/#/
+
+SQLlite internals:
+  https://fly.io/blog/sqlite-internals-btree/
+
+For estimating sales of a game:
+  https://games-stats.com/steam/?tag=sailing
+
+Teaching idea:
+  Instead of tutorial (or in addition to), drop the user
+  in a very limited environment where they have just a few
+  possible knobs they can turn and challenge them to make
+  three different games that seem perhaps impossible at first
+  to make
+  Limits r everything!
+
+More on teaching:
+  At the end of a tutorial / challenge, present the user an
+  option:
+    build a game (practice existing knowledge) 
+    or learn a new thing
+  Put a strong recommendation forward so there's an opinion,
+  but don't be so patronizing that u assume u always know better
+  Try and calibrate the recommendation based on how the creator
+  has been doing
+
+IDE teaching ideas:
+  Have the UI be turn-on-able via check boxes that slowly get
+  ticked on as the user learns things. Like a good city builder.
+  However, the user can also uncheck everything if it's been a while
+  and they want to start fresh.
+  Unity just dumps you this huge IDE way too early.
+
+"How I learned Unity without following tutorials (Developing 1)":
+  https://www.youtube.com/watch?v=vFjXKOXdgGo
+  Three steps:
+    Learn the basics
+    Familiarize urself with the basics (repeat)
+    Slowly add to ur repretoir
+  Basics:
+    What is a game object?
+    How to make one game object interact with another game object?
+    How to spawn in objects? And then delete them?
+    How to make something happen when two objects collide?
+    How to do UI? Sound effects? Animation?
+    How to deal with levels and game over?
+  Repeat:
+    plagerize; copy basic games out there
+    make the steps really simple for yourself
+
+Barycentric rendering:
+  https://wunkolo.github.io/post/2022/07/gl_ext_fragment_shader_barycentric-wireframe/
+  maybe good for wireframes or possibly edge detection?

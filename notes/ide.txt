@@ -18,3 +18,57 @@ Multiplayer netcode debugger:
   "okay, which properties?"
   "color, location"
   "looks like ColorDef is only synced and creation and LocationDef is only modified via this event <>"
+
+entity debugger:
+  pause game, enter debugger
+  on hover, show which components a given entity has 
+    and which systems that qualifies them for
+  
+Interactive min-example generating:
+  start by staticly analyzing, tree shaking / program slicing everything
+  run dynamic analysis on the sample scene, cut everything that isn't used
+  then run in immediate compile & prune mode,
+    user deletes some code, tree shaking happens again, 
+    sample is run, if it's good, dynamic prune runs again
+  interactive commands:
+    see number of call sites for each fn
+    inline a fn, then do static and dynamic prunes
+  special ECS aware unroller
+  maybe:
+    once the sample is small enough, u can just highlight lines in VSCode and it'll
+      tell you weather it'll compile and how many lines could be cut
+    
+"Build amazing real‑time collaborative products":
+  https://liveblocks.io
+
+UI proposal by Raph Levien:
+  https://raphlinus.github.io/rust/gui/2022/05/07/ui-architecture.html
+  https://news.ycombinator.com/item?id=31297550
+  inspired by SwiftUI
+  also look at Elm
+    "A central philosophy of Rust is that mutation isn't the problem, 
+    it's shared mutable state. If you believe that philosophy (and I do), 
+    then restricting yourself to pure functions over clonable state 
+    feels like tying one hand behind your back."
+
+Crowdsourced benchmarking:
+  For shaders or games, in the sprig.land creations browser,
+    you can ask users to submit a benchmark! they'll run the example on their
+    hardware some number of iterations or benchmark and report the result
+  Easier to see cross-GPU perf of everything
+
+Code overlays:
+  like a map overlay,
+  have options to highlight different regions of code for different purposes like:
+    error handling
+    support functions / boiler plate vs. main content
+    syscalls
+    age
+    mutative vs pure
+
+For debugging async or init code:
+  color all code by first execution order!
+    or by per-frame execution order
+  this will clearly show splits across an async boundry
+
+Have a "step frame" notion

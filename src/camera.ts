@@ -13,7 +13,7 @@ import { WorldFrameDef } from "./physics/nonintersection.js";
 import { PositionDef, RotationDef } from "./physics/transform.js";
 import { RendererWorldFrameDef } from "./render/renderer-ecs.js";
 import { computeNewError, reduceError } from "./smoothing.js";
-import { tempQuat, tempVec } from "./temp-pool.js";
+import { tempQuat, tempVec3 } from "./temp-pool.js";
 import { TimeDef } from "./time.js";
 import { yawpitchToQuat } from "./yawpitch.js";
 
@@ -183,7 +183,7 @@ export function registerCameraSystems(em: EntityManager) {
       let viewMatrix = mat4.create();
       if (targetEnt) {
         const computedTranslation = vec3.add(
-          tempVec(),
+          tempVec3(),
           frame.position,
           camera.targetPositionError
         );
@@ -209,7 +209,7 @@ export function registerCameraSystems(em: EntityManager) {
       );
 
       const computedCameraTranslation = vec3.add(
-        tempVec(),
+        tempVec3(),
         camera.positionOffset,
         camera.cameraPositionError
       );

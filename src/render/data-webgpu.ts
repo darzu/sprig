@@ -313,9 +313,8 @@ export function createCyTexture(
 
   resize(size[0], size[1]);
 
-  const initVal = init();
-  if (initVal) {
-    queueUpdate(initVal);
+  if (init) {
+    queueUpdate(init());
   }
 
   const black: vec4 = [0, 0, 0, 1];

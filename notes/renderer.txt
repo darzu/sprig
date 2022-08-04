@@ -359,6 +359,10 @@ transparency:
       transparent objects never overlap in the camera;
     use insertion sort b/c less work when nothing changes frame to frame
 
+"order independent transparency":
+  https://interplayoflight.wordpress.com/2022/06/25/order-independent-transparency-part-1/
+  https://interplayoflight.wordpress.com/2022/07/02/order-independent-transparency-part-2/
+
 Texture compression:
   BC7, BC4, BCn
   https://www.reedbeta.com/blog/understanding-bcn-texture-compression-formats/
@@ -409,10 +413,13 @@ ALTERNATE APPROACH:
   Using SDF tech, we could get some very cool meshes and mesh building
 
 SDF for text:
+  https://steamcdn-a.akamaihd.net/apps/valve/2007/SIGGRAPH2007_AlphaTestedMagnification.pdf
   https://www.youtube.com/watch?v=1b5hIMqz_wM
     Material Maker
   text is hard?
     https://gankra.github.io/blah/text-hates-you/
+  https://www.qt.io/blog/2011/07/15/text-rendering-in-the-qml-scene-graph
+  https://computergraphics.stackexchange.com/questions/306/sharp-corners-with-signed-distance-fields-fonts
 
 VFX explosions:
   https://www.youtube.com/watch?v=dDsb_9n-Gik
@@ -420,13 +427,30 @@ VFX explosions:
 Flow maps and gradient maps for moving textures:
   https://www.youtube.com/watch?v=KfphtLRoUB0
 
-Outlines:
-  Jump flooding
-  https://bgolus.medium.com/the-quest-for-very-wide-outlines-ba82ed442cd9
+Jump Flood Algorithm:
+  Ben: https://bgolus.medium.com/the-quest-for-very-wide-outlines-ba82ed442cd9
   https://prideout.net/blog/distance_fields/
   https://blog.demofox.org/2016/02/29/fast-voronoi-diagrams-and-distance-dield-textures-on-the-gpu-with-the-jump-flooding-algorithm/
   https://shaderbits.com/blog/various-distance-field-generation-techniques
+    https://www.shadertoy.com/view/4syGWK
+  Freya: https://twitter.com/freyaholmer/status/1292536599230775296?lang=en
+  https://www.youtube.com/watch?v=A0pxY9QsgJE
+
+  can u use JFA to blur stars instead of gauss blur? easier to make arbitrarily big,
+    maybe easier to modulate based on distance to camera
+
+  "Triangle Voronoi Borders":
+    https://www.shadertoy.com/view/ss3fW4
+
+  Related to voronoi?
+    https://www.redblobgames.com/x/2022-voronoi-maps-tutorial/
+    Delaunator: https://github.com/mapbox/delaunator (good license)
+      guide: https://mapbox.github.io/delaunator/
+    Delaunator seems good for CPU and gives a mesh; unclear about GPU perf.
+
   
+Outlines
+  https://bgolus.medium.com/the-quest-for-very-wide-outlines-ba82ed442cd9
   overwatch and control use "sobol" for outlines?
     https://www.youtube.com/watch?v=hxPQ2F96F9E
     looks like a sampling technique:
@@ -828,3 +852,106 @@ Presentation on WebGPU by Austin Eng:
 UPenn class on GPU programming:
   https://cis565-fall-2021.github.io
     https://github.com/chetan-parthiban/Project5-WebGL-Forward-Plus-and-Clustered-Deferred
+
+What are mesh shaders?
+  https://www.reddit.com/r/gamedev/comments/fn1byx/whats_is_mesh_shading/
+  Mesh shaders are basically compute shaders that can output triangles (<256) by themselves.
+  https://www.youtube.com/watch?v=CFXKTXtil34
+  https://blog.siggraph.org/2021/04/mesh-shaders-release-the-intrinsic-power-of-a-gpu.html/
+  WebGPU support (post v1):
+    https://github.com/gpuweb/gpuweb/issues/3015
+  Likely emulatable with compute shaders
+
+Some tips on improving Unity's default look:
+  https://www.youtube.com/watch?v=f6zUot73-gg
+
+Destiny's render engine:
+  https://www.youtube.com/watch?v=0nTDFLMLX9k
+  Per object, they seperate:
+    game object state (simulation stuff)
+    visibility state
+    render state
+  once per frame they run visibility then extract render state based
+    only on what is visible
+  views: player, shadow, overhead, etc
+    == render job chain unit
+    visibility, extract, prepare, submit
+  we should really have GPU counters for perf measurement
+
+VFX:
+  How (not) to create textures for VFX: https://www.youtube.com/watch?v=KaNDezgsg4M
+  mentions: Jason keyser, alex redfish, 1mafx, ducvu fx
+  texture types: 
+    sprite, 
+    sprite sheet, 
+    flip book, 
+    volumetric 
+  texture uses: 
+    color, 
+    masks (incl erosion, disolve), 
+    LUT (colorize grayscale), 
+    vector maps (distort UVs)
+  texture creation:
+    handmade (paint: 🏃‍♀️, photo bash: ⚡️)
+    procedural (substance designer: 🏃‍♀️, simple tools: ⚡️),
+    simulate (blender: 🐌, houdini: 🐌, embergen: 🏃‍♀️)
+    use existing: ⚡️⚡️ (texture packs, brushes)
+  https://mebiusbox.github.io/contents/EffectTextureMaker/ (very cool!)
+  https://www.escapemotions.com/products/flamepainter/try/
+  talk resources:
+    https://simonschreibt.de
+
+Doom 3 glow:
+  https://simonschreibt.de/gat/doom-3-volumetric-glow
+  http://yzergame.com/doomGlare.html
+    https://www.reddit.com/r/gamedev/comments/1wukvd/doom_3_glare_effect_in_c/
+    https://gist.github.com/TiliSleepStealer/e6773e7f9b4a873cf1bffe4f9e11478f
+
+"5 types of dithering":
+  https://twitter.com/KilledByAPixel/status/1546532593948057601
+  Diffusion - Floyd-Steinberg
+  Ordered - Bayer Matrix
+  Halftone - Newsprint
+  LCD - RGB Screen Pixels
+  Pixel - Squares
+  These combine with extra effects like chroma shift, glitch, invert, low res, and paper color.
+
+"Next Generation Geometry" / shader culling:
+  https://timur.hu/blog/2022/what-is-ngg
+  mesh shaders are dope
+  shader culling is a new cool thing we can now do
+
+Puffy stylized clouds:
+  https://nokdef.com/Articles/Stylized-Puffy-Clouds-Shader/
+
+Drawing lines is hard:
+  https://mattdesl.svbtle.com/drawing-lines-is-hard
+
+Anti-aliasing:
+  rendering line primatives on edges:
+    https://people.csail.mit.edu/ericchan/articles/prefilter/
+
+"Efficently rendering glTF models, A WebGPU Case Study":
+  https://toji.github.io/webgpu-gltf-case-study/
+  Render pipelines are also fairly expensive to create, and can cause hitches if you create them while rendering.
+  Calls to setPipeline() should be treated as expensive, because they generally are! 
+
+"Deferred texturing"
+  https://therealmjp.github.io/posts/bindless-texturing-for-deferred-rendering-and-decals/
+  instead of writing out a G-Buffer containing all of the material parameters required for shading, you instead write out your interpolated UV’s as well as a material ID. 
+    The main benefit is that you can ensure that your textures are only sampled for visible pixels
+  For normal mapping you need your full tangent frame, which at minimum requires a quaternion
+  For mipmaps and anisotropic filtering we also need the screen-space derivatives of our UV’s
+  https://www.reedbeta.com/blog/deferred-texturing/
+
+"GPU-Driven Rendering Pipelines", Ubisoft:
+  http://advances.realtimerendering.com/s2015/aaltonenhaar_siggraph2015_combined_final_footer_220dpi.pdf
+
+"GPU-driven rendering":
+  https://stackoverflow.com/questions/59686151/what-is-gpu-driven-rendering
+
+"Adventures in Text Rendering: Kerning and Glyph Atlases":
+  https://www.warp.dev/blog/adventures-text-rendering-kerning-glyph-atlases
+
+"Stuff I did over the years":
+  https://twitter.com/Mirko_Salm/status/1553724647664926721

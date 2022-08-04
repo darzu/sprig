@@ -1,5 +1,6 @@
-import { createRenderTextureToQuad } from "./gpu-helper.js";
-import { comparisonSamplerPtr, CY } from "./gpu-registry.js";
+import { oceanJfa } from "../../game/ocean.js";
+import { createRenderTextureToQuad } from "../gpu-helper.js";
+import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";
 import {
   mainDepthTex,
   litTexturePtr,
@@ -39,11 +40,19 @@ import { shadowDepthTexture } from "./std-shadow.js";
 export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
   globals: [
     sceneBufPtr,
+    { ptr: linearSamplerPtr, alias: "samp" },
     { ptr: shadowDepthTexture, alias: "shadowMap" },
     { ptr: comparisonSamplerPtr, alias: "shadowSampler" },
+    // TODO(@darzu): object-specific SDFs?
+    // TODO(@darzu): REMOVE HARD-CODED DEPENDENCY ON OCEAN SDF!
+    { ptr: oceanJfa.sdfTex, alias: "sdf" },
+    // { ptr: oceanJfa._inputMaskTex, alias: "sdf" },
+    // { ptr: oceanJfa._uvMaskTex, alias: "sdf" },
     // TODO(@darzu): support textures
     // { ptr: clothTexPtr0, access: "read", alias: "clothTex" },
   ],
+  // TODO(@darzu): DBG
+  cullMode: "none",
   meshOpt: {
     pool: meshPoolPtr,
     stepMode: "per-mesh-handle",
@@ -77,12 +86,13 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
     },
   ],
   depthStencil: mainDepthTex,
-  shader: "std-shader",
+  shader: "std-mesh",
 });
 
 export const { pipeline: normalDbg } = createRenderTextureToQuad(
   "normalDbg",
   normalsTexturePtr,
+  litTexturePtr,
   0.2,
   0.8,
   0.2,
@@ -92,6 +102,7 @@ export const { pipeline: normalDbg } = createRenderTextureToQuad(
 export const { pipeline: positionDbg } = createRenderTextureToQuad(
   "positionDbg",
   positionsTexturePtr,
+  litTexturePtr,
   0.2,
   0.8,
   -0.8,

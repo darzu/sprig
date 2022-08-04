@@ -7,7 +7,7 @@ import {
   texTypeIsDepth,
 } from "./gpu-struct.js";
 import { Mesh } from "./mesh.js";
-import { ShaderName } from "./shader-loader.js";
+import { ShaderName, ShaderSet } from "./shader-loader.js";
 
 // NOTE: this file is supposed to be WebGPU and WebGL agnostic.
 
@@ -35,7 +35,7 @@ export interface CyArrayPtr<O extends CyStructDesc> extends CyResourcePtr {
 export interface CySingletonPtr<O extends CyStructDesc> extends CyResourcePtr {
   kind: "singleton";
   struct: CyStruct<O>;
-  init: () => CyToTS<O>;
+  init?: () => CyToTS<O>;
 }
 export type CyBufferPtr<O extends CyStructDesc> =
   | CyArrayPtr<O>
@@ -57,7 +57,7 @@ export interface CyTexturePtr extends CyResourcePtr {
   sampleCount?: number;
   attachToCanvas?: boolean;
   // TODO(@darzu): make optional:
-  init: () => Float32Array | undefined; // TODO(@darzu): | TexTypeAsTSType<F>[]
+  init?: () => Float32Array; // TODO(@darzu): | TexTypeAsTSType<F>[]
 }
 
 export interface CyDepthTexturePtr extends Omit<CyTexturePtr, "kind"> {
@@ -112,6 +112,9 @@ export interface CyGlobalUsage<G extends CyResourcePtr> {
   ptr: G;
   // TODO(@darzu): access doesn't make sense for all globals, like samplers
   access?: "read" | "write";
+  // TODO(@darzu): Support read_write eventually, currently:
+  // "Tint WGSL reader failure: :5:36 error: storage textures currently only support 'write' access control"
+  // | "read_write";
   alias?: string;
 }
 
@@ -146,17 +149,20 @@ export function isResourcePtr(p: any): p is CyResourcePtr {
 export interface CyCompPipelinePtr extends CyResourcePtr {
   kind: "compPipeline";
   globals: CyGlobalParam[];
+  overrides?: Record<string, GPUPipelineConstantValue>;
   // TODO(@darzu): dynamic workgroup counts feels hacky?
   workgroupCounts:
     | [number, number, number]
     | ((canvasSize: [number, number]) => [number, number, number]);
   shaderComputeEntry: string;
-  shader: (() => string) | ShaderName;
+  // TODO(@darzu): get access to shader set
+  shader: ((shaderSet: ShaderSet) => string) | ShaderName;
 }
 
 type CyMeshOpt =
   | {
       pool: CyMeshPoolPtr<any, any>;
+      meshMask?: number;
       stepMode: "per-mesh-handle";
     }
   | {
@@ -173,13 +179,22 @@ type CyMeshOpt =
 
 export type CyColorAttachment = CyTexturePtr | CyAttachment;
 
+export function getTexFromAttachment(t: CyColorAttachment): CyTexturePtr {
+  return isResourcePtr(t) ? t : t.ptr;
+}
+
 export interface CyRenderPipelinePtr extends CyResourcePtr {
   kind: "renderPipeline";
   globals: CyGlobalParam[];
-  shader: (() => string) | ShaderName;
+  overrides?: Record<string, GPUPipelineConstantValue>;
+  shader: ((shaders: ShaderSet) => string) | ShaderName;
   shaderVertexEntry: string;
   shaderFragmentEntry: string;
+  cullMode?: GPUCullMode;
+  frontFace?: GPUFrontFace;
   meshOpt: CyMeshOpt;
+  // TODO(@darzu): really need to allow changing attachments at runtime. Useful
+  //   for tutorial animations at a minimum
   output: CyColorAttachment[];
   depthStencil?: CyDepthTexturePtr;
 }

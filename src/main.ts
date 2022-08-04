@@ -11,13 +11,13 @@ import {
   initClothSandbox,
   initGJKSandbox,
   initReboundSandbox,
-} from "./game/sandbox.js";
+} from "./game/game-sandbox.js";
 import { callClothSystems } from "./game/cloth.js";
 import { callSpringSystems } from "./game/spring.js";
-import { initShipGame, registerAllSystems } from "./game/game.js";
+import { registerCommonSystems } from "./game/game-init.js";
 import { setSimulationAlpha } from "./render/renderer-ecs.js";
 import { never } from "./util.js";
-import { initHyperspaceGame } from "./game/xp-hyperspace.js";
+import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { initCubeGame } from "./game/xp-cube.js";
 
 export const FORCE_WEBGL = false;
@@ -26,8 +26,8 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-const GAME = "ship" as
-  | "ship"
+const GAME = "hyperspace" as
+  | "ship" // TODO(@darzu): DELETE
   | "gjk"
   | "rebound"
   | "cloth"
@@ -43,6 +43,9 @@ const MAX_SIM_LOOPS = 3;
 export let gameStarted = false;
 
 function callFixedTimestepSystems() {
+  // TODO(@darzu): calling systems still needs more massaging.
+  //    - uncalled systems maybe should give a warning? Or at least a one-time read out.
+  //    - Lets use types for this. String matching the name is brittle and unnessessary
   EM.callSystem("inputs");
   EM.callSystem("getStatsFromNet");
   EM.callSystem("getEventsFromNet");
@@ -52,7 +55,7 @@ function callFixedTimestepSystems() {
   EM.callSystem("devConsoleToggle");
   EM.callSystem("devConsole");
   EM.callSystem("restartTimer");
-  EM.callSystem("updateScore");
+  // EM.callSystem("updateScore");
   EM.callSystem("renderInit");
   EM.callSystem("musicStart");
   EM.callSystem("handleNetworkEvents");
@@ -70,7 +73,7 @@ function callFixedTimestepSystems() {
     EM.callSystem("shipHealthCheck");
     EM.callSystem("easeRudder");
     EM.callSystem("shipMove");
-    EM.callSystem("shipScore");
+    // EM.callSystem("shipScore");
     EM.callSystem("groundPropsBuild");
     EM.callSystem("boatPropsBuild");
     EM.callSystem("cannonPropsBuild");
@@ -97,7 +100,23 @@ function callFixedTimestepSystems() {
     EM.callSystem("clothSandbox");
   }
   if (GAME === "hyperspace") {
+    EM.callSystem("startGame");
+    EM.callSystem("shipHealthCheck");
+    EM.callSystem("easeRudder");
+    EM.callSystem("shipMove");
+    EM.callSystem("shipUpdateParty");
+    // EM.callSystem("shipScore");
+    EM.callSystem("boatPropsBuild");
+    EM.callSystem("cannonPropsBuild");
+    EM.callSystem("gemPropsBuild");
+    EM.callSystem("rudderPropsBuild");
+    EM.callSystem("shipPropsBuild");
+
     EM.callSystem("hyperspaceGame");
+    EM.callSystem("runOcean");
+    EM.callSystem("oceanUVtoPos");
+    EM.callSystem("oceanUVDirToRot");
+    EM.callSystem("debugLoop");
   }
   EM.callSystem("updateBullets");
   EM.callSystem("updateNoodles");
@@ -191,15 +210,16 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.addSingletonComponent(JoinDef, host!);
   }
 
-  registerAllSystems(EM);
+  registerCommonSystems(EM);
 
   addEventComponents(EM);
 
   EM.addSingletonComponent(InputsDef);
   registerInputsSystem(EM);
 
-  if (GAME === "ship") initShipGame(EM, hosting);
-  else if (GAME === "gjk") initGJKSandbox(EM, hosting);
+  if (GAME === "ship") {
+    //initRiverGame(EM, hosting);
+  } else if (GAME === "gjk") initGJKSandbox(EM, hosting);
   else if (GAME === "rebound") initReboundSandbox(EM, hosting);
   else if (GAME === "cloth") initClothSandbox(EM, hosting);
   else if (GAME === "hyperspace") initHyperspaceGame(EM);

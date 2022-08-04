@@ -188,3 +188,153 @@ Procedural terrain w/ errosion:
 Procedural walking:
   https://old.reddit.com/r/gamedev/comments/fqhp9q/procedural_animation_in_10_steps/
   inverse kinimatics in unity: https://www.youtube.com/watch?v=qqOAzn05fvk
+
+Terrain using SDFs:
+  https://prideout.net/blog/distance_fields/#procedural-terrain
+
+To Slueth:
+  https://www.reddit.com/r/proceduralgeneration/top/?t=all
+
+Different pseudo-random?
+  https://iquilezles.org/articles/sfrand/
+  float frand( int *seed )
+  {
+      union
+      {
+          float fres;
+          unsigned int ires;
+      };
+
+      seed[0] *= 16807;
+      ires = ((((unsigned int)seed[0])>>9 ) | 0x3f800000);
+      return fres - 1.0f;
+  }
+
+Survey of noise:
+  https://hal.inria.fr/hal-00920177/document
+
+Noise, interactive article:
+  https://varun.ca/noise/
+
+Noise colors:
+  https://blog.demofox.org/2017/10/25/transmuting-white-noise-to-blue-red-green-purple/
+
+Original perlin noise:
+  https://web.archive.org/web/20160530124230/http://freespace.virgin.net/hugo.elias/models/m_perlin.htm
+  noise fn: in 1D, just smoothly connect the dots from random points
+  perlin noise: just combine noise fns w/ various amplitudes and wavelengths (spaceing between dots)
+    each layer is known as an octave
+  persistance: the faster your amplitude drops off, the more "persistent" the earlier octaves are
+
+  linear interp:
+    function Linear_Interpolate(a, b, x)
+      return  a*(1-x) + b*x
+    end of function
+
+  cosine interp:
+    function Cosine_Interpolate(a, b, x)
+      ft = x * 3.1415927
+      f = (1 - cos(ft)) * .5
+      return  a*(1-f) + b*f
+    end of function
+
+  cubic interp:
+    function Cubic_Interpolate(v0, v1, v2, v3,x)
+      P = (v3 - v2) - (v0 - v1)
+      Q = (v0 - v1) - P
+      R = v2 - v0
+      S = v1
+      return Px3 + Qx2 + Rx + S
+    end of function
+
+  1D smoothed noise:
+    function SmoothNoise_1D(x)
+      return Noise(x)/2  +  Noise(x-1)/4  +  Noise(x+1)/4
+    end function
+
+  2D smoothed noise:
+    function SmoothNoise_2D(x>, y)
+      corners = ( Noise(x-1, y-1)+Noise(x+1, y-1)+Noise(x-1, y+1)+Noise(x+1, y+1) ) / 16
+      sides   = ( Noise(x-1, y)  +Noise(x+1, y)  +Noise(x, y-1)  +Noise(x, y+1) ) /  8
+      center  =  Noise(x, y) / 4
+      return corners + sides + center
+    end function
+
+  Perlin Noise:
+    function InterpolatedNoise_1(float x, float y)
+      integer_X    = int(x)
+      fractional_X = x - integer_X
+      integer_Y    = int(y)
+      fractional_Y = y - integer_Y
+      v1 = SmoothedNoise1(integer_X,     integer_Y)
+      v2 = SmoothedNoise1(integer_X + 1, integer_Y)
+      v3 = SmoothedNoise1(integer_X,     integer_Y + 1)
+      v4 = SmoothedNoise1(integer_X + 1, integer_Y + 1)
+      i1 = Interpolate(v1 , v2 , fractional_X)
+      i2 = Interpolate(v3 , v4 , fractional_X)
+      return Interpolate(i1 , i2 , fractional_Y)
+    end function
+    function PerlinNoise_2D(float x, float y)
+      total = 0
+      p = persistence
+      n = Number_Of_Octaves - 1
+      loop i from 0 to n
+          frequency = 2i
+          amplitude = pi
+          total = total + InterpolatedNoisei(x * frequency, y * frequency) * amplitude
+      end of i loop
+      return total
+    end function
+
+Sebastian Lague, Procedural Landmass Generation (E02: Noise Map):
+  https://www.youtube.com/watch?v=WP-Bm65Q-1Y
+  unity perlin: integer values are always .5, inbetween is different numbers. Wierd!
+
+Perlin noise wiki: https://en.wikipedia.org/wiki/Perlin_noise
+
+Book of shader on noise:
+  https://thebookofshaders.com/11/
+  
+Simplex noise:
+  "Some sort of public index for Stefan Gustavson":
+    https://weber.itn.liu.se/~stegu/
+    https://weber.itn.liu.se/~stegu/simplexnoise/
+      https://weber.itn.liu.se/~stegu/simplexnoise/simplexnoise.pdf
+
+  Open Simplex:
+    https://github.com/KdotJPG/OpenSimplex2
+
+  Perlin vs Simplex: https://stackoverflow.com/questions/6439350/simplex-noise-vs-perlin-noise
+
+  Looks like patent only applies to 3D and higher: https://en.wikipedia.org/wiki/Simplex_noise#Legal_status
+    but it also expired January 8, 2022 !
+    https://patents.google.com/patent/US6867776 "Status Expired - Lifetime"
+
+Worley noise: https://en.wikipedia.org/wiki/Worley_noise
+  https://thebookofshaders.com/12/
+
+https://bleuje.github.io, Etienne Jacob:
+  wealth of amazing animations!
+  easier to scroll: https://necessary-disorder.tumblr.com
+  stunning set of tutorials too
+    might be a bit Processing specific
+  as math art: https://math-art-variations.tumblr.com
+
+Smooth / gradient noise:
+  https://www.cs.utexas.edu/~theshark/courses/cs354/lectures/cs354-21.pdf
+  1. Create grid of random gradient vectors
+  2. Compute points within grid using nearest nodes
+  3. Interpolate between node values to form continuous function
+  4. Combine smooth noise function with other smooth noise functions at different octaves
+
+perlin worms:
+  https://www.youtube.com/watch?v=aQ-bomm3lEc
+
+gradiant vs value noise:
+  https://thebookofshaders.com/11/
+    interpolate between values (points in space) 
+    or gradiants (directions at points in space)
+  value noise: https://www.shadertoy.com/view/lsf3WH
+  gradiant noise: https://www.shadertoy.com/view/XdXGW8
+
+gen art: https://www.isohedron.io

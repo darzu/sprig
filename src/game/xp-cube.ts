@@ -21,69 +21,66 @@ import {
   litTexturePtr,
   mainDepthTex,
   canvasTexturePtr,
-} from "../render/std-scene.js";
+} from "../render/pipelines/std-scene.js";
 import { uintToVec3unorm } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";
-import { createGhost } from "./sandbox.js";
+import { createGhost } from "./game-sandbox.js";
 
-export function initCubeGame(em: EntityManager) {
+export async function initCubeGame(em: EntityManager) {
   const camera = em.addSingletonComponent(CameraDef);
   camera.fov = Math.PI * 0.5;
 
-  em.registerOneShotSystem(
-    null,
-    [AssetsDef, GlobalCursor3dDef, RendererDef],
-    (_, res) => {
-      let renderPipelinesPtrs: CyRenderPipelinePtr[] = [
-        cubeRenderPipeline,
-        cubePost,
-      ];
-      let computePipelinesPtrs: CyCompPipelinePtr[] = [
-        // ...
-      ];
-      res.renderer.pipelines = [
-        ...computePipelinesPtrs,
-        ...renderPipelinesPtrs,
-      ];
+  const res = await em.whenResources([
+    AssetsDef,
+    GlobalCursor3dDef,
+    RendererDef,
+  ]);
 
-      const e = createGhost(em);
-      vec3.copy(e.position, [0, 1, -1.2]);
-      quat.setAxisAngle(e.rotation, [0.0, -1.0, 0.0], 1.62);
-      e.controllable.sprintMul = 3;
+  let renderPipelinesPtrs: CyRenderPipelinePtr[] = [
+    cubeRenderPipeline,
+    cubePost,
+  ];
+  let computePipelinesPtrs: CyCompPipelinePtr[] = [
+    // ...
+  ];
+  res.renderer.pipelines = [...computePipelinesPtrs, ...renderPipelinesPtrs];
 
-      // TODO(@darzu): this shouldn't be necessary
-      const m2 = cloneMesh(res.assets.cube.mesh);
-      em.ensureComponentOn(e, RenderableConstructDef, m2);
+  const e = createGhost(em);
+  vec3.copy(e.position, [0, 1, -1.2]);
+  quat.setAxisAngle(e.rotation, [0.0, -1.0, 0.0], 1.62);
+  e.controllable.sprintMul = 3;
 
-      {
-        // auto-gen; use dbg.saveCamera() to update
-        vec3.copy(e.position, [3.29, 1.69, -1.37]);
-        quat.copy(e.rotation, [0.0, -0.95, 0.0, -0.31]);
-        vec3.copy(e.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-        e.cameraFollow.yawOffset = 0.0;
-        e.cameraFollow.pitchOffset = -0.267;
-      }
+  // TODO(@darzu): this shouldn't be necessary
+  const m2 = cloneMesh(res.assets.cube.mesh);
+  em.ensureComponentOn(e, RenderableConstructDef, m2);
 
-      const box = em.newEntity();
-      const boxM = cloneMesh(res.assets.cube.mesh);
-      const sIdMax = max(boxM.surfaceIds);
-      boxM.colors = boxM.surfaceIds.map((_, i) => uintToVec3unorm(i, sIdMax));
-      // boxM.colors = boxM.surfaceIds.map((_, i) => [0.1, i / 12, 0.1]);
-      // console.dir(boxM.colors);
-      em.ensureComponentOn(box, RenderableConstructDef, boxM);
-      // em.ensureComponentOn(box, ColorDef, [0.1, 0.4, 0.1]);
-      em.ensureComponentOn(box, PositionDef, [0, 0, 3]);
-      em.ensureComponentOn(box, RotationDef);
-      em.ensureComponentOn(box, AngularVelocityDef, [0, 0.001, 0.001]);
-      em.ensureComponentOn(box, WorldFrameDef);
-      em.ensureComponentOn(box, ColliderDef, {
-        shape: "AABB",
-        solid: false,
-        aabb: res.assets.cube.aabb,
-      });
-    }
-  );
+  {
+    // auto-gen; use dbg.saveCamera() to update
+    vec3.copy(e.position, [3.29, 1.69, -1.37]);
+    quat.copy(e.rotation, [0.0, -0.95, 0.0, -0.31]);
+    vec3.copy(e.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    e.cameraFollow.yawOffset = 0.0;
+    e.cameraFollow.pitchOffset = -0.267;
+  }
+
+  const box = em.newEntity();
+  const boxM = cloneMesh(res.assets.cube.mesh);
+  const sIdMax = max(boxM.surfaceIds);
+  boxM.colors = boxM.surfaceIds.map((_, i) => uintToVec3unorm(i, sIdMax));
+  // boxM.colors = boxM.surfaceIds.map((_, i) => [0.1, i / 12, 0.1]);
+  // console.dir(boxM.colors);
+  em.ensureComponentOn(box, RenderableConstructDef, boxM);
+  // em.ensureComponentOn(box, ColorDef, [0.1, 0.4, 0.1]);
+  em.ensureComponentOn(box, PositionDef, [0, 0, 3]);
+  em.ensureComponentOn(box, RotationDef);
+  em.ensureComponentOn(box, AngularVelocityDef, [0, 0.001, 0.001]);
+  em.ensureComponentOn(box, WorldFrameDef);
+  em.ensureComponentOn(box, ColliderDef, {
+    shape: "AABB",
+    solid: false,
+    aabb: res.assets.cube.aabb,
+  });
 }
 
 const cubeRenderPipeline = CY.createRenderPipeline("cubeRender", {
@@ -111,7 +108,7 @@ struct VertexOutput {
     @builtin(position) position : vec4<f32>,
 };
 
-@stage(vertex)
+@vertex
 fn vert_main(input: VertexInput) -> VertexOutput {
     var output : VertexOutput;
 
@@ -129,7 +126,7 @@ struct FragOut {
   @location(0) color: vec4<f32>,
 }
 
-@stage(fragment)
+@fragment
 fn frag_main(input: VertexOutput) -> FragOut {
 
     var out: FragOut;
@@ -160,7 +157,7 @@ struct VertexOutput {
   @location(0) fragUV : vec2<f32>,
 };
 
-@stage(vertex)
+@vertex
 fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
   let xs = vec2(-1.0, 1.0);
   let ys = vec2(-1.0, 1.0);
@@ -188,7 +185,7 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
   return output;
 }
 
-@stage(fragment)
+@fragment
 fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
   var color = textureSample(colorTex, samp, fragUV);
 

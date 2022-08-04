@@ -189,7 +189,7 @@ export function createRef<CS extends ComponentDef[]>(
   cs?: [...CS]
 ): Ref<CS> {
   if (typeof idOrE === "number") {
-    if (idOrE === 0) {
+    if (idOrE <= 0) {
       const thunk = () => undefined;
       thunk.id = idOrE;
       return thunk;

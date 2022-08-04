@@ -1,7 +1,7 @@
-import { createRenderTextureToQuad } from "./gpu-helper.js";
-import { CY, linearSamplerPtr } from "./gpu-registry.js";
-import { createCyStruct } from "./gpu-struct.js";
-import { meshPoolPtr, sceneBufPtr } from "./std-scene.js";
+import { createRenderTextureToQuad } from "../gpu-helper.js";
+import { CY, linearSamplerPtr } from "../gpu-registry.js";
+import { createCyStruct } from "../gpu-struct.js";
+import { litTexturePtr, meshPoolPtr, sceneBufPtr } from "./std-scene.js";
 
 // NOTES:
 //  https://github.com/darzu/sprig/pull/3
@@ -21,13 +21,11 @@ import { meshPoolPtr, sceneBufPtr } from "./std-scene.js";
 // // TODO(@darzu): TODO
 
 export const shadowDepthTexture = CY.createDepthTexture("shadowTex", {
-  init: () => undefined,
   size: [1024, 1024],
   format: "depth32float",
 });
 // const shadowOutTexture = CY.createTexture("shadowOut", {
-//   init: () => undefined,
-//   size: [1024, 1024],
+//   //   size: [1024, 1024],
 //   format: "rgba8unorm",
 // });
 
@@ -43,12 +41,12 @@ export const shadowPipeline = CY.createRenderPipeline("shadowPipeline", {
   shaderVertexEntry: "vert_main",
   shaderFragmentEntry: "frag_main",
   shader: () => `
-  @stage(vertex)
+  @vertex
   fn vert_main(input: VertexInput) -> @builtin(position) vec4<f32> {
       return scene.lightViewProjMatrix * meshUni.transform * vec4<f32>(input.position, 1.0);
   }
 
-  @stage(fragment) fn frag_main() { }
+  @fragment fn frag_main() { }
   `,
 });
 
@@ -71,6 +69,7 @@ const windowUni = CY.createSingleton("sWinUni", {
 export const { pipeline: shadowDbgDisplay } = createRenderTextureToQuad(
   "shadowDbg",
   shadowDepthTexture,
+  litTexturePtr,
   -0.9,
   -0.1,
   0.1,

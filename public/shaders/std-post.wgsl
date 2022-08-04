@@ -3,7 +3,7 @@ struct VertexOutput {
   @location(0) uv : vec2<f32>,
 };
 
-@stage(vertex)
+@vertex
 fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
   let xs = vec2(-1.0, 1.0);
   let ys = vec2(-1.0, 1.0);
@@ -31,15 +31,21 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
   return output;
 }
 
-@stage(fragment)
+@fragment
 fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   var color = textureSample(colorTex, samp, uv).rgb;
   let bloom = textureSample(bloomTex, samp, uv).rgb;
+  let depth = textureSample(depthTex, samp, uv);
+
+  // fog
+  // TODO: hard to evaluate fog w/o objects to fade in and out
+  // color = mix(color, vec3(0.014), pow(depth, 500.0));
 
   // color += pow(bloom, vec3(2.0));
   // color = max(color, bloom);
   color += bloom; // * 10.0;
   // color = bloom;
+
 
   // vignette
   let vigUV = uv * (1.0 - uv.yx);
@@ -56,10 +62,4 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   return vec4(gammaCorrected, 1.0);
 }
 
-// Move to common file?
-var<private> rand_seed : vec2<f32>;
-fn rand() -> f32 {
-    rand_seed.x = fract(cos(dot(rand_seed, vec2<f32>(26.88662389, 200.54042905))) * 240.61722267);
-    rand_seed.y = fract(cos(dot(rand_seed, vec2<f32>(58.302370833, 341.7795489))) * 523.34916812);
-    return rand_seed.y;
-}
+

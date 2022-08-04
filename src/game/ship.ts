@@ -10,7 +10,7 @@ import {
   SystemFN,
   WithComponent,
 } from "../entity-manager.js";
-import { quat, vec3 } from "../gl-matrix.js";
+import { quat, vec2, vec3 } from "../gl-matrix.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import {
   RenderableConstructDef,
@@ -30,7 +30,6 @@ import {
   MultiCollider,
 } from "../physics/collider.js";
 import { AABB, copyAABB, createAABB } from "../physics/broadphase.js";
-import { ScoreDef } from "./game.js";
 import { ColorDef } from "../color.js";
 import { setCubePosScaleToAABB } from "../physics/phys-debug.js";
 import { BOAT_COLOR } from "./boat.js";
@@ -49,7 +48,6 @@ import { MusicDef } from "../music.js";
 import { LocalPlayerDef, PlayerDef } from "./player.js";
 import { CameraDef } from "../camera.js";
 import { InputsDef } from "../inputs.js";
-import { GroundSystemDef } from "./ground.js";
 import { InRangeDef, InteractableDef } from "./interact.js";
 import { endGame, GameState, GameStateDef, startGame } from "./gamestate.js";
 import { createRef, defineNetEntityHelper, Ref } from "../em_helpers.js";
@@ -63,6 +61,9 @@ import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DevConsoleDef } from "../console.js";
 import { constructNetTurret, TurretDef } from "./turret.js";
 import { YawPitchDef } from "../yawpitch.js";
+import { UVDef, UVDirDef } from "./ocean.js";
+import { tempVec2 } from "../temp-pool.js";
+import { PartyDef } from "./party.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
@@ -188,24 +189,21 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
   EM,
   {
     name: "ship",
-    defaultProps: () => ({
-      loc: vec3.create(),
-      rot: quat.create(),
+    defaultProps: (uvLoc?: vec2) => ({
+      uvLoc: uvLoc ?? vec2.fromValues(0.5, 0.5),
       gemId: 0,
       cannonLId: 0,
       cannonRId: 0,
       rudder: createRef(0, [RudderPropsDef, YawPitchDef]),
     }),
     serializeProps: (c, buf) => {
-      buf.writeVec3(c.loc);
-      buf.writeQuat(c.rot);
+      buf.writeVec2(c.uvLoc);
       buf.writeUint32(c.gemId);
       buf.writeUint32(c.cannonLId);
       buf.writeUint32(c.cannonRId);
     },
     deserializeProps: (c, buf) => {
-      buf.readVec3(c.loc);
-      buf.readQuat(c.rot);
+      buf.readVec2(c.uvLoc);
       c.gemId = buf.readUint32();
       c.cannonLId = buf.readUint32();
       c.cannonRId = buf.readUint32();
@@ -215,17 +213,20 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
       speed: 0,
     }),
     dynamicComponents: [
-      PositionDef,
-      RotationDef,
-      LinearVelocityDef,
-      AngularVelocityDef,
+      // TODO(@darzu): do we want to sync UV based stuff instead?
+      UVDef,
+      UVDirDef,
+      // PositionDef,
+      // RotationDef,
+      // LinearVelocityDef,
+      // AngularVelocityDef,
     ],
     buildResources: [MeDef, AssetsDef],
     build: (s, res) => {
       const em: EntityManager = EM;
 
       if (s.authority.pid === res.me.pid) {
-        s.shipProps.loc = [0, -2, 0];
+        // s.shipProps.loc = [0, -2, 0];
 
         // create gem
         const gem = createGem(s.id);
@@ -253,14 +254,17 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
         s.shipProps.cannonLId = cannonL.id;
       }
 
-      vec3.copy(s.position, s.shipProps.loc);
-      quat.copy(s.rotation, s.shipProps.rot);
+      vec2.copy(s.uv, s.shipProps.uvLoc);
+
+      em.ensureComponentOn(s, PositionDef);
+      em.ensureComponentOn(s, RotationDef);
+
       em.ensureComponentOn(s, MotionSmoothingDef);
 
-      s.shipLocal.speed = 0.005;
+      s.shipLocal.speed = 0.0005;
       // s.shipLocal.speed = 0.005 * 3; // TODO(@darzu): DEBUG SPEED
-      em.ensureComponentOn(s, LinearVelocityDef, [0, 0, 0]);
-      em.ensureComponentOn(s, AngularVelocityDef);
+      // em.ensureComponentOn(s, LinearVelocityDef, [0, 0, 0]);
+      // em.ensureComponentOn(s, AngularVelocityDef);
 
       const mc: MultiCollider = {
         shape: "Multi",
@@ -313,7 +317,8 @@ const criticalPartIdxes = [0, 3, 5, 6];
 //   });
 // }
 
-const START_TEXT = "hit the gem to begin";
+const START_TEXT = "";
+// const START_TEXT = "hit the gem to begin";
 
 export function registerShipSystems(em: EntityManager) {
   em.registerSystem(
@@ -355,7 +360,6 @@ export function registerShipSystems(em: EntityManager) {
       MusicDef,
       InputsDef,
       CameraDef,
-      GroundSystemDef,
       GameStateDef,
       MeDef,
       PhysicsResultsDef,
@@ -404,39 +408,61 @@ export function registerShipSystems(em: EntityManager) {
     [
       ShipLocalDef,
       ShipPropsDef,
-      LinearVelocityDef,
-      AngularVelocityDef,
+      // LinearVelocityDef,
+      // AngularVelocityDef,
       AuthorityDef,
-      RotationDef,
+      // RotationDef,
+      UVDef,
+      UVDirDef,
     ],
     [GameStateDef, MeDef, InputsDef, DevConsoleDef],
     (ships, res) => {
       if (res.gameState.state !== GameState.PLAYING) return;
       for (let s of ships) {
         if (s.authority.pid !== res.me.pid) return;
-        vec3.set(s.linearVelocity, 0, -0.01, s.shipLocal.speed);
-        vec3.transformQuat(s.linearVelocity, s.linearVelocity, s.rotation);
-        s.angularVelocity[1] = s.shipProps.rudder()!.yawpitch.yaw * 0.0005;
+        // TODO(@darzu): handle UV heading !!
+        // vec3.set(s.linearVelocity, 0, -0.01, s.shipLocal.speed);
+        // vec3.transformQuat(s.linearVelocity, s.linearVelocity, s.rotation);
+        // s.angularVelocity[1] = s.shipProps.rudder()!.yawpitch.yaw * 0.0005;
         // TODO(@darzu): dbg ship physics when turning
         // s.angularVelocity[1] = -0.0001;
 
-        // cheat steering
-        if (res.dev.showConsole) {
-          const turnSpeed = Math.PI * 0.01;
-          if (res.inputs.keyDowns["z"])
-            quat.rotateY(s.rotation, s.rotation, turnSpeed);
-          if (res.inputs.keyDowns["x"])
-            quat.rotateY(s.rotation, s.rotation, -turnSpeed);
+        // SPEED
+        if (res.inputs.keyDowns["z"]) s.shipLocal.speed += 0.00001;
+        if (res.inputs.keyDowns["x"]) s.shipLocal.speed -= 0.00001;
+        s.shipLocal.speed = Math.max(0, s.shipLocal.speed);
 
-          vec3.transformQuat(
-            s.linearVelocity,
-            [0, -0.01, s.shipLocal.speed],
-            s.rotation
-          );
+        // STEERING
+        let yaw = s.shipProps.rudder()!.yawpitch.yaw;
+
+        vec2.rotate(s.uvDir, s.uvDir, vec2.ZEROS, yaw * 0.02);
+
+        // s.uvDir[0] += Math.cos(yaw);
+        // s.uvDir[1] -= Math.sin(yaw);
+        // console.log(`yaw: ${yaw} uvdir: ${s.uvDir[0]},${s.uvDir[1]}`);
+
+        // MOVING
+        if (s.shipLocal.speed > 0.00001) {
+          // NOTE: we scale uvDir by speed so that the look-ahead used for
+          //    UVDir->Rotation works.
+          // TODO(@darzu): This doesn't seem great. We need a better way to
+          //    do  UVDir->Rotation
+          vec2.normalize(s.uvDir, s.uvDir);
+          vec2.scale(s.uvDir, s.uvDir, s.shipLocal.speed);
+          vec2.add(s.uv, s.uv, s.uvDir);
         }
       }
     },
     "shipMove"
+  );
+
+  em.registerSystem(
+    [ShipLocalDef, ShipPropsDef, PositionDef],
+    [PartyDef],
+    (ships, res) => {
+      if (ships[0]) vec3.copy(res.party.pos, ships[0].position);
+    },
+    "shipUpdateParty"
   );
 
   // If a rudder isn't being manned, smooth it back towards straight
@@ -452,29 +478,5 @@ export function registerShipSystems(em: EntityManager) {
       }
     },
     "easeRudder"
-  );
-
-  em.registerSystem(
-    null,
-    [TextDef, ScoreDef, GameStateDef],
-    (_, res) => {
-      // update score
-      switch (res.gameState.state) {
-        case GameState.LOBBY:
-          if (res.score.maxScore) {
-            res.text.upperText = `max: ${res.score.maxScore}, ${START_TEXT}`;
-          } else {
-            res.text.upperText = `${START_TEXT}`;
-          }
-          break;
-        case GameState.PLAYING:
-          res.text.upperText = `current: ${res.score.currentScore}, max: ${res.score.maxScore}`;
-          break;
-        case GameState.GAMEOVER:
-          res.text.upperText = `GAME OVER, score: ${res.score.currentScore}, max: ${res.score.maxScore}`;
-          break;
-      }
-    },
-    "shipScore"
   );
 }

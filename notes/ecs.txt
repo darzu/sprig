@@ -52,3 +52,17 @@ Actor model?
   https://www.orbit.cloud/orbit/
   https://news.ycombinator.com/item?id=31192795
   https://www.microsoft.com/en-us/research/project/orleans-virtual-actors/
+
+Relationships in an ECS:
+  https://ajmmertens.medium.com/building-games-in-ecs-with-entity-relationships-657275ba2c6c
+
+"The Truth:"
+  https://ourmachinery.com/post/the-story-behind-the-truth-designing-a-data-model/
+
+Our Machinery ECS:
+  https://ourmachinery.com/post/syncing-a-data-oriented-ecs/
+  https://ourmachinery.com/post/ecs-and-rendering/
+  Annnd it's dead: https://www.reddit.com/r/gamedev/comments/wd4qoh/our_machinery_extensible_engine_made_in_c_just/
+    They're asking people to delete their copies in 14 days :/
+    They may have editted their EULA for this? https://news.ycombinator.com/item?id=32301177
+    Yup, you can't trust closed source: https://twitter.com/AliceICecile/status/1553907629172342787

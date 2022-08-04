@@ -1,0 +1,105 @@
+
+MidJourney prompts:
+  a sailing ship on a stormy hyperspace ocean near a black hole
+  pirate ship cannon broadside sailing through space nebula stars. Realistic render 8k.
+  pirate ship firing all cannons broadside sailing space nebula nebula nebula stars. Unreal engine, high details
+
+  A sprig twig sprite creature in an idyllic lush landscape
+  A small friendly sprig ent sprite creature in an idyllic lush landscape
+  A small walking friendly ent wood-sprite creature in an idyllic lush landscape
+  A small walking friendly ent wood-sprite creature in an idyllic lush landscape
+  A walking friendly sapling sprite creature big eyes in an idyllic lush landscape
+  A small walking friendly sprig sprite in an idyllic lush landscape
+  baby groot in an idyllic lush landscape
+  A friendly creature made of twigs and leaf
+  A disney creature made of twigs and leaf. acrylic painting oil painting.
+  A disney creature made of twigs and leaf in ghibli style
+  ghibli friend made of twigs and leaf --ar 2:1
+  ghibli friend made of sprig and leaf --ar 2:3
+  ghibli friend made of sticks and leaf --ar 2:3
+  sprite made of twigs and leaves, disney style, ghibli style, colorful --ar 3:4
+  a disney creature made of twigs and leaf, colorful
+  creature of twigs and leaf
+  a tall disney creature made of twigs and leaf, colorful
+  japanese creature made of twigs and leaf
+  god made of twigs and leaf
+  nymph made of twigs and leaf
+  creature of twigs and leaf in the style of Kuo-Wei Lin
+  pirate ship in space, Albert Bierstadt
+  a cute cartoon otter made of twigs and leaf
+  a detailed tattoo design with cute leaf creature on a white background
+  bengal cat prismatic album cover
+  malamute trapeze album cover
+  prismatic blacksmith
+  a cute cartoon creature made of twigs and leaf
+  black cat prismatic shards album cover
+  a mischievous disney creature made of twigs and leaf
+  pinata texture creature, symmetrical, 8k, hyper realistic, minimalist background
+  graffiti mischievous twig and leaf creature, heavy black lines
+  mischievous twig and leaf creature, water color
+  a mischievous disney creature made of twig and leaf playing
+  a mischievous cute cartoon creature made of twigs and leaf
+  black metal band logo "dz" symmetrical
+  Comsic, fantasy warships sea battle, space, nebula, high detail
+  hand drawings of labeled fantastical flora in a botanical field guide-book with notes, highly detailed, high definition, well-lit, ray tracing, colourful, hand drawn, photo-realistic, 8K --ar 16:9
+  a sleepy cute cartoon creature made of twigs and leaf
+  a skinny cute cartoon creature made of twigs and leaf
+  logo of cute cartoon creature made of twigs and leaf
+  mischievous, disney, creature made of leaf
+  A disney creature made of twigs and leaf in ghibli style, colorful, pencil on paper, hand drawn, 
+  surrealist pastelpunk ocean waves surrounded by stars, space, galaxy, planets, psychedelic, colorful, cosmic, low-poly, abstract, geometric, strange --wallpaper  --s 20000 --q 2 --v 3
+  ocean waves amongst the stars
+  group of 5 cute leaf twig creatures exploring the woods dramatic sunlight detailed perspective cinematic topview dynamic --ar 2:3
+  low-poly cannon ball
+
+style ideas:
+  Jeff mtg artists:
+    rebecca guay, kev walker, christopher moeller, wayne reynolds, dave palumbo, rk post, Peter Mohrbacher
+  Bierstadt
+  black metal band logo
+  album cover
+  soviet propaganda travel poster
+  pixel art
+  retro
+  80s neon,
+  synthwave, vaporwave
+  book cover
+  pencil on paper
+  2d
+  1952 olympiad poster
+  in the ukiyo-e style
+  intricate details
+  superb YYYYY logo  --s 5000
+  hand drawings, labeled, fantastical, botanical field guide-book with note
+  drawn on stained glass
+  colorful paint splashes version of noahs ark graphic novel
+  black wolf concept art gothic artstation
+  minimalist logo of fox
+  style of Gustave Dore
+  atmospheric
+  a photorealistic macro image
+  in style of national geocraphic
+  detailed hand drawn character art of a YYYYY drawn on a piece of paper, hand drawn, highly-detailed, well-lit, 8K
+  Agnes Martin, matte, artstation
+  in the style of pablo picasso
+  as a Japanese pop idol superstar, Photo realistic, blender, unreal
+  illuminated scroll style, tarot card, serpent border, danger
+  watercolor
+  oil on canvas
+  by Jeffrey Smith, oil on canvas
+  digital art
+  dramatic detailed perspective cinematic dynamic by Boris Vallejo
+  concept art
+  vintage 1977 Polaroid photo of
+  sprite sheet of
+  in a dream world
+  marble statue
+  fantasy style
+  neon
+  uplighting
+  voronoi
+  in the abyss of space
+  clay animation
+  mandala
+  by veira da silva
+  patch, insign, embroidery

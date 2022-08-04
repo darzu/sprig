@@ -1,7 +1,7 @@
 import { align } from "../math.js";
 import { assert } from "../test.js";
 import { CyStructDesc, CyToTS } from "./gpu-struct.js";
-import { Mesh } from "./mesh.js";
+import { Mesh, quadToTris } from "./mesh.js";
 import { CyArray, CyIdxBuffer } from "./data-webgpu.js";
 
 // Mesh: lossless, all the data of a model/asset from blender
@@ -27,11 +27,9 @@ export interface MeshHandle<U extends CyStructDesc> {
 
   readonly readonlyMesh?: Mesh;
 
-  // // state
-  // enabled: boolean;
-
-  // used as the uniform for this mesh
-  shaderData: CyToTS<U>;
+  // state
+  mask: number; // used for selecting which render pipelines to particpate in
+  shaderData: CyToTS<U>; // used as the uniform for this mesh
 }
 
 export function isMeshHandle(m: any): m is MeshHandle<any> {
@@ -112,7 +110,7 @@ function logMeshPoolStats(opts: MeshPoolOpts<any, any>) {
   );
 }
 
-// TODO(@darzu): scope?
+// TODO(@darzu): HACK. should be scoped; removed as global
 let nextMeshId = 1;
 
 export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
@@ -139,10 +137,12 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     updateMeshVertices,
   };
 
+  // TODO(@darzu): default to all 1s?
   function addMesh(m: Mesh): MeshHandle<U> {
     assert(pool.allMeshes.length + 1 <= maxMeshes, "Too many meshes!");
     assert(pool.numVerts + m.pos.length <= maxVerts, "Too many vertices!");
-    assert(pool.numTris + m.tri.length <= maxTris, "Too many triangles!");
+    const numTri = m.tri.length + m.quad.length * 2;
+    assert(pool.numTris + numTri <= maxTris, "Too many triangles!");
     assert(
       pool.numLines + (m.lines?.length ?? 0) <= maxLines,
       "Too many lines!"
@@ -150,11 +150,19 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     assert(m.usesProvoking, `mesh must use provoking vertices`);
 
     const vertsData = opts.computeVertsData(m);
-    const triData = new Uint16Array(align(m.tri.length * 3, 2));
+    const triData = new Uint16Array(align(numTri * 3, 2));
+    // add tris
     m.tri.forEach((triInd, i) => {
       // TODO(@darzu): support index shifting
       triData.set(triInd, i * 3);
     });
+    m.quad.forEach((quadInd, i) => {
+      // TODO(@darzu): support index shifting
+      const [t1, t2] = quadToTris(quadInd);
+      triData.set(t1, m.tri.length * 3 + i * 6);
+      triData.set(t2, m.tri.length * 3 + i * 6 + 3);
+    });
+    // add lines
     let lineData: Uint16Array | undefined;
     if (m.lines?.length) {
       lineData = new Uint16Array(m.lines.length * 2);
@@ -169,7 +177,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     const handle: MeshHandle<U> = {
       mId: nextMeshId++,
       // enabled: true,
-      triNum: m.tri.length,
+      triNum: numTri,
       lineNum: m.lines?.length ?? 0,
       vertNum: m.pos.length,
       vertIdx: pool.numVerts,
@@ -177,6 +185,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
       lineIdx: pool.numLines,
       uniIdx: allMeshes.length,
       readonlyMesh: m,
+      mask: 0,
       shaderData: uni,
     };
 
@@ -186,7 +195,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     opts.verts.queueUpdates(vertsData, handle.vertIdx);
     opts.unis.queueUpdate(uni, handle.uniIdx);
 
-    pool.numTris += m.tri.length;
+    pool.numTris += numTri;
     // NOTE: mesh's triangles need to be 4-byte aligned.
     // TODO(@darzu): is this still necessary? might be handled by the CyBuffer stuff
     pool.numTris = align(pool.numTris, 2);

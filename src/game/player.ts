@@ -23,7 +23,7 @@ import {
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { AABBCollider, Collider, ColliderDef } from "../physics/collider.js";
 import { copyAABB, createAABB, Ray } from "../physics/broadphase.js";
-import { tempVec } from "../temp-pool.js";
+import { tempVec3 } from "../temp-pool.js";
 import { cloneMesh, scaleMesh3 } from "../render/mesh.js";
 import { AssetsDef } from "./assets.js";
 import { LinearVelocityDef } from "../physics/motion.js";
@@ -44,11 +44,13 @@ import { GameState, GameStateDef } from "./gamestate.js";
 import { DevConsoleDef } from "../console.js";
 import { max } from "../math.js";
 import { AnimateToDef, EASE_OUTQUAD } from "../animate-to.js";
+import { vec3Dbg } from "../utils-3d.js";
 
 // TODO(@darzu): it'd be great if these could hook into some sort of
 //    dev mode you could toggle at runtime.
 
 export function createPlayer(em: EntityManager) {
+  // console.log("create player!");
   const e = em.newEntity();
   em.addComponent(e.id, PlayerPropsDef, vec3.fromValues(0, 100, 0));
   em.addSingletonComponent(LocalPlayerDef, e.id);
@@ -224,6 +226,7 @@ export function registerPlayerSystems(em: EntityManager) {
         camera,
         physicsResults: { checkRay },
       } = res;
+      // console.log("stepPlayers");
       //console.log(`${players.length} players, ${hats.length} hats`);
 
       for (let p of players) {
@@ -345,8 +348,8 @@ export function registerPlayerSystems(em: EntityManager) {
               vec3.create(),
               p.world.position,
               vec3.scale(
-                tempVec(),
-                vec3.multiply(tempVec(), facingDir, p.world.scale),
+                tempVec3(),
+                vec3.multiply(tempVec3(), facingDir, p.world.scale),
                 3.0
               )
             ),
@@ -406,7 +409,7 @@ export function registerPlayerSystems(em: EntityManager) {
           const endPoint = vec3.add(
             vec3.create(),
             r.org,
-            vec3.scale(tempVec(), r.dir, rayDist)
+            vec3.scale(tempVec3(), r.dir, rayDist)
           );
           drawLine(r.org, endPoint, color);
         }
@@ -442,6 +445,7 @@ export function registerPlayerSystems(em: EntityManager) {
           if (ship) {
             p.physicsParent.id = ship.id;
             // vec3.copy(p.position, [0, 10, res.me.pid * 4 - 16]);
+            // console.log("found ship!");
             p.player.lookingForShip = false;
             const maxYFn: (c: Collider) => number = (c) =>
               c.shape === "Multi"
@@ -459,7 +463,17 @@ export function registerPlayerSystems(em: EntityManager) {
               shipY + pFeetToMid + 1,
               Math.floor((res.me.pid - 1) / 2) * 4 - 10,
             ];
-            const startPos = vec3.add(tempVec(), endPos, [0, 200, 0]);
+            const startPos = vec3.add(
+              // tempVec3(),
+              vec3.create(),
+              endPos,
+              [0, 200, 0]
+            );
+            // console.log("player animateTo:");
+            // console.log(vec3Dbg(startPos));
+            // console.log(vec3Dbg(endPos));
+            // console.dir(startPos);
+            // console.dir(endPos);
             p.cameraFollow.yawOffset = 0.0;
             p.cameraFollow.pitchOffset = -0.75;
             quat.copy(p.rotation, [0.0, 1.0, 0.0, 0.0]);

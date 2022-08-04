@@ -138,3 +138,29 @@ Speed painting:
 
 Editable WFC a la Townscaper for asset creation?
   https://www.boristhebrave.com/2022/04/25/editable-wfc/
+
+Why quad meshes?
+  https://projet.liris.cnrs.fr/imagine/pub/proceedings/EUROGRAPHICS2012/stars/pdf/159-182.pdf
+  https://en.wikipedia.org/wiki/Catmull–Clark_subdivision_surface
+  https://prideout.net/quad-meshes
+  https://geometryfactory.com/products/igm-quad-meshing/
+
+Cool free low-poly assets:
+  https://quaternius.com (CC0 1.0)
+    https://www.patreon.com/quaternius
+
+Public domain art:
+  https://artvee.com/main/?s=switzerland
+
+Regarding "good" vs "bad" topology:
+  https://twitter.com/FlippedNormals/status/1547159260617998339
+  recommended for beginners:
+    http://pushingpoints.com/v2/the-pushing-points-topology-workbook/
+    http://pushingpoints.com/v2/the-pushing-points-topology-workbook-volume-2/
+
+High quality assets:
+  https://www.reddit.com/r/gamedev/comments/waam0z/what_are_premade_assets_that_are_more_or_less/
+  https://quixel.com/megascans/
+  https://syntystore.com
+  https://quaternius.com
+  https://www.unrealengine.com/marketplace/en-US/assets?tag=85&lang=en-US

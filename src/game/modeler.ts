@@ -12,7 +12,7 @@ import {
 } from "../physics/nonintersection.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import { tempVec } from "../temp-pool.js";
+import { tempVec3 } from "../temp-pool.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
 import { ColorDef, TintsDef } from "../color.js";
@@ -89,7 +89,7 @@ function registerObjClicker(em: EntityManager) {
         const endPoint = vec3.add(
           vec3.create(),
           r.org,
-          vec3.scale(tempVec(), r.dir, rayDist)
+          vec3.scale(tempVec3(), r.dir, rayDist)
         );
         drawLine(r.org, endPoint, color);
       }

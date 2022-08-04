@@ -31,7 +31,10 @@ import {
   CyAttachment,
   CyBufferPtr,
 } from "./gpu-registry.js";
-import { GPUBufferBindingTypeToWgslVar } from "./gpu-struct.js";
+import {
+  GPUBufferBindingTypeToWgslVar,
+  texTypeToSampleType,
+} from "./gpu-struct.js";
 import { createMeshPool, MeshHandle } from "./mesh-pool.js";
 import { ShaderSet } from "./shader-loader.js";
 
@@ -42,11 +45,6 @@ If entry.visibility includes VERTEX:
   entry.storageTexture?.access must not be "write-only".
 */
 
-const prim_tris: GPUPrimitiveState = {
-  topology: "triangle-list",
-  cullMode: "back",
-  frontFace: "ccw",
-};
 const prim_lines: GPUPrimitiveState = {
   topology: "line-list",
 };
@@ -126,8 +124,11 @@ export function createCyResources(
   // else usage |= GPUTextureUsage.STORAGE_BINDING;
   [...cy.kindToPtrs.texture, ...cy.kindToPtrs.depthTexture].forEach((p) => {
     // default usages
+    // TODO(@darzu): BE MORE PRECISE! We'll probably get better perf that way
     cyNameToTextureUsage[p.name] |=
-      GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING;
+      GPUTextureUsage.COPY_DST |
+      GPUTextureUsage.TEXTURE_BINDING |
+      GPUTextureUsage.COPY_SRC;
   });
   cy.kindToPtrs.renderPipeline.forEach((p) => {
     p.output.forEach((o) => {
@@ -145,7 +146,7 @@ export function createCyResources(
           // nothing?
         } else {
           if (r.ptr.kind === "texture") {
-            if (r.access === "write") {
+            if (r.access === "write" /*|| r.access === "read_write"*/) {
               cyNameToTextureUsage[r.ptr.name] |=
                 GPUTextureUsage.STORAGE_BINDING;
             }
@@ -208,7 +209,12 @@ export function createCyResources(
   // create one-buffers
   cy.kindToPtrs.singleton.forEach((r) => {
     const usage = cyNameToBufferUsage[r.name]!;
-    const buf = createCySingleton(device, r.struct, usage, r.init());
+    const buf = createCySingleton(
+      device,
+      r.struct,
+      usage,
+      r.init ? r.init() : undefined
+    );
     kindToNameToRes.singleton[r.name] = buf;
   });
   // create idx-buffers
@@ -297,10 +303,8 @@ export function createCyResources(
           } else if (r.ptr.format.endsWith("sint")) {
             sampleType = "sint";
           } else {
-            // TODO(@darzu): use this to table decide filterable?
-            //  https://gpuweb.github.io/gpuweb/#plain-color-formats
-            const isFilterable = true;
-            sampleType = isFilterable ? "float" : "unfilterable-float";
+            // TODO(@darzu): better sample type selection?
+            sampleType = (texTypeToSampleType[r.ptr.format] ?? ["float"])[0];
           }
           return {
             binding: idx,
@@ -311,9 +315,11 @@ export function createCyResources(
             texture: { sampleType: sampleType },
           };
         } else {
+          // Note: writable storage textures aren't allowed in the vertex stage
+          let visibility = shaderStage & ~GPUShaderStage.VERTEX;
           return {
             binding: idx,
-            visibility: shaderStage,
+            visibility,
             storageTexture: { format: r.ptr.format, access: "write-only" },
           };
         }
@@ -418,7 +424,7 @@ export function createCyResources(
             return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_2d<f32>;`;
           }
         } else
-          return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_storage_2d<${r.ptr.format}, write>;`;
+          return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_storage_2d<${r.ptr.format}, ${r.access}>;`;
       } else if (r.ptr.kind === "sampler") {
         const varName = r.alias ?? uncapitalize(r.ptr.name);
         if (r.ptr.name === "comparison")
@@ -450,7 +456,9 @@ export function createCyResources(
       return globalToWgslVars(r, plurality, 0, i, shaderStage);
     });
 
-    const shaderCore = isString(p.shader) ? shaders[p.shader].code : p.shader();
+    const shaderCore = isString(p.shader)
+      ? shaders[p.shader].code
+      : p.shader(shaders);
 
     if (isRenderPipelinePtr(p)) {
       const output = normalizeColorAttachments(p.output);
@@ -474,6 +482,12 @@ export function createCyResources(
           format: p.depthStencil.format,
         };
       }
+
+      const primitive: GPUPrimitiveState = {
+        topology: "triangle-list",
+        cullMode: p.cullMode ?? "back",
+        frontFace: p.frontFace ?? "ccw",
+      };
 
       if (p.meshOpt.stepMode === "per-instance") {
         const vertBuf = kindToNameToRes.array[p.meshOpt.vertex.name];
@@ -504,7 +518,7 @@ export function createCyResources(
         });
         const rndrPipelineDesc: GPURenderPipelineDescriptor = {
           // TODO(@darzu): allow this to be parameterized
-          primitive: prim_tris,
+          primitive,
           depthStencil: depthStencilOpts,
           // TODO(@darzu): ANTI-ALIAS
           // multisample: {
@@ -579,8 +593,7 @@ export function createCyResources(
           code: shaderStr,
         });
         const rndrPipelineDesc: GPURenderPipelineDescriptor = {
-          // TODO(@darzu): allow this to be parameterized
-          primitive: prim_tris,
+          primitive,
           depthStencil: depthStencilOpts,
           // TODO(@darzu): ANTI-ALIAS
           // multisample: {
@@ -626,10 +639,7 @@ export function createCyResources(
         });
         const rndrPipelineDesc: GPURenderPipelineDescriptor = {
           // TODO(@darzu): do we want depth stencil and multisample for this??
-          // primitive: {
-          //   topology: "triangle-list",
-          // },
-          primitive: prim_tris,
+          primitive,
           // TODO(@darzu): depth stencil should be optional?
           depthStencil: depthStencilOpts,
           // TODO(@darzu): ANTI-ALIAS
@@ -642,11 +652,15 @@ export function createCyResources(
           vertex: {
             module: shader,
             entryPoint: p.shaderVertexEntry,
+            // TODO(@darzu): constants
+            constants: p.overrides,
           },
           fragment: {
             module: shader,
             entryPoint: p.shaderFragmentEntry,
             targets,
+            // TODO(@darzu): constants
+            constants: p.overrides,
           },
         };
         const rndrPipeline = device.createRenderPipeline(rndrPipelineDesc);
@@ -675,6 +689,7 @@ export function createCyResources(
             code: shaderStr,
           }),
           entryPoint: p.shaderComputeEntry ?? "main",
+          constants: p.overrides,
         },
       });
       const cyPipeline: CyCompPipeline = {
@@ -796,6 +811,8 @@ export function bundleRenderPipelines(
       // TODO(@darzu): filter meshes?
       for (let m of p.pool.allMeshes) {
         if (!meshHandleIds.has(m.mId)) continue;
+        if (p.ptr.meshOpt.meshMask && (p.ptr.meshOpt.meshMask & m.mask) === 0)
+          continue;
         bundleEnc.setBindGroup(1, uniBG, [
           m.uniIdx * p.pool.opts.unis.struct.size,
         ]);
@@ -870,7 +887,7 @@ export function mkBindGroup(
   return bindGroup;
 }
 
-// TODO(@darzu): the abstraction here feels off. We probably want a way to
+// TODO(@darzu): The abstraction here feels off. We probably want a way to
 //  capture pipeline+bundle, and also the various attachment states shouldn't
 //  be dependant on prev-next pipelines. Do we need a "pass" abstraction?
 export interface BundleRenderer {
@@ -948,13 +965,25 @@ export function startBundleRenderer(
   return { render, endPass };
 }
 
+// TODO(@darzu): what is beginPipelineStatisticsQuery
+// TODO(@darzu): Doug is probably implementing this
+// let querySet: GPUQuerySet | undefined = undefined;
+
 export function doCompute(
   device: GPUDevice,
   resources: CyResources,
   commandEncoder: GPUCommandEncoder,
   pipeline: CyCompPipeline
 ) {
+  // if (!querySet) {
+  //   querySet = device.createQuerySet({
+  //     type: "timestamp",
+  //     count: 10,
+  //   });
+  // }
+
   const compPassEncoder = commandEncoder.beginComputePass();
+  // compPassEncoder.writeTimestamp(querySet, 0);
   compPassEncoder.setPipeline(pipeline.pipeline);
 
   // TODO(@darzu): de-dupe?
@@ -970,6 +999,8 @@ export function doCompute(
 
   compPassEncoder.setBindGroup(0, resBindGroup);
   compPassEncoder.dispatchWorkgroups(...pipeline.workgroupCounts);
+  // compPassEncoder.writeTimestamp(querySet, 1);
+
   compPassEncoder.end();
 }
 

@@ -3,12 +3,13 @@ struct VertexOutput {
     @location(1) @interpolate(flat) color : vec3<f32>,
     @location(2) worldPos: vec4<f32>,
     @location(3) shadowPos: vec3<f32>,
-    @location(4) @interpolate(flat) surface: u32,
-    @location(5) @interpolate(flat) id: u32,
+    @location(4) uv: vec2<f32>,
+    @location(5) @interpolate(flat) surface: u32,
+    @location(6) @interpolate(flat) id: u32,
     @builtin(position) position : vec4<f32>,
 };
 
-@stage(vertex)
+@vertex
 fn vert_main(input: VertexInput) -> VertexOutput {
     let position = input.position;
     let uv = input.uv;
@@ -44,6 +45,8 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     output.surface = input.surfaceId;
     output.id = meshUni.id;
 
+    output.uv = uv;
+
     return output;
 }
 
@@ -54,8 +57,8 @@ struct FragOut {
   @location(2) surface: vec2<u32>,
 }
 
-let shadowDepthTextureSize = 1024.0;
-// let shadowDepthTextureSize = vec2<f32>(textureDimensions(shadowMap, 0.0));
+const shadowDepthTextureSize = 1024.0;
+// const shadowDepthTextureSize = vec2<f32>(textureDimensions(shadowMap, 0.0));
 
 fn getShadowVis(shadowPos: vec3<f32>) -> f32 {
   // See: https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
@@ -89,7 +92,7 @@ fn getShadowVis(shadowPos: vec3<f32>) -> f32 {
   return visibility;
 }
 
-@stage(fragment)
+@fragment
 fn frag_main(input: VertexOutput) -> FragOut {
     let normal = normalize(input.normal);
     // let normal = -normalize(cross(dpdx(input.worldPos.xyz), dpdy(input.worldPos.xyz)));
@@ -125,8 +128,43 @@ fn frag_main(input: VertexOutput) -> FragOut {
     // let finalColor: vec3<f32> = mix(backgroundColor, gammaCorrected, fogVisibility);
     // let finalColor: vec3<f32> = gammaCorrected;
 
+
     var out: FragOut;
     out.color = vec4<f32>(litColor, 1.0);
+
+    // let t = scene.time * 0.0005;
+    // // TODO(@darzu): experimenting with reading from SDF
+    // // TODO(@darzu): use sample instead of load
+    // let sdf = textureSample(sdf, samp, input.uv);
+    // out.color = vec4<f32>(sdf.x * 0.5 + 0.1);
+    // if (fract(input.uv.x * 10.0 + t) < 0.1) {
+    //   out.color.g += 0.2;
+    // }
+    // if (fract(input.uv.y * 10.0 + t) < 0.1) {
+    //   out.color.r += 0.2;
+    // }
+    // if (input.uv.x > 0.0 && input.uv.y > 0.0)
+    // {
+    //   // let xy = vec2<i32>(input.uv * vec2<f32>(textureDimensions(sdf)));
+    //   // let t = textureLoad(sdf, xy, 0);
+    //   // let d = length(t);
+    //   let d = sdf.x;
+    //   // if (t.x > 0.0 || t.y > 0.0) {
+    //   //   out.color.r = 1.0;
+    //   // }
+    //   let d2 = fract(d * 10.0 + t);
+    //   if (0.0 < d2 && d2 < 0.1 * 4.0) {
+    //     out.color.b += 0.2;
+    //   }
+    //   if (d < 0.01 * 4.0) {
+    //     out.color.b += 0.2;
+    //   }
+    //   // if (d > 0.0) {
+    //   //   out.color.r = 1.0;
+    //   // }
+    // }
+
+    // out.color = vec4<f32>(input.uv, 0.0, 1.0);
     // out.normal = vec4(input.normal, 1.0);
     out.normal = vec4(normalize((scene.cameraViewProjMatrix * vec4<f32>(input.normal, 0.0)).xyz), 1.0);
     // out.position = input.worldPos;

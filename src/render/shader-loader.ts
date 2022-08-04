@@ -6,11 +6,17 @@ import { getText } from "../webget.js";
 const DEFAULT_SHADER_PATH = "/shaders/";
 
 export const ShaderPaths = [
-  "std-shader",
+  "std-mesh",
   "std-outline",
   "std-blur",
   "std-post",
   "xp-boid-render",
+  "xp-boid-update",
+  "std-jump-flood",
+  "xp-cloth-update",
+  "std-screen-quad-vert",
+  "std-rand",
+  "std-stars",
 ] as const;
 
 export type ShaderName = typeof ShaderPaths[number];
@@ -47,26 +53,28 @@ async function loadShaders(): Promise<ShaderSet> {
     };
   }
 
+  // TODO(@darzu): should this submit to webgpu for parsing?
+
   return set as ShaderSet;
 }
 
-onInit((em) => {
+onInit(async (em) => {
   em.addSingletonComponent(ShaderLoaderDef);
 
   // start loading of shaders
-  em.registerOneShotSystem([], [ShaderLoaderDef], (_, { shaderLoader }) => {
-    assert(!shaderLoader.promise, "somehow we're double loading shaders");
+  const { shaderLoader } = await em.whenResources([ShaderLoaderDef]);
 
-    const shadersPromise = loadShaders();
-    shaderLoader.promise = shadersPromise;
-    shadersPromise.then(
-      (result) => {
-        em.addSingletonComponent(ShadersDef, result);
-      },
-      (failureReason) => {
-        // TODO(@darzu): fail more gracefully
-        throw `Failed to load shaders: ${failureReason}`;
-      }
-    );
-  });
+  assert(!shaderLoader.promise, "somehow we're double loading shaders");
+
+  const shadersPromise = loadShaders();
+  shaderLoader.promise = shadersPromise;
+  shadersPromise.then(
+    (result) => {
+      em.addSingletonComponent(ShadersDef, result);
+    },
+    (failureReason) => {
+      // TODO(@darzu): fail more gracefully
+      throw `Failed to load shaders: ${failureReason}`;
+    }
+  );
 });
