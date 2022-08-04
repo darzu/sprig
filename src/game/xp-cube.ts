@@ -31,11 +31,7 @@ export async function initCubeGame(em: EntityManager) {
   const camera = em.addSingletonComponent(CameraDef);
   camera.fov = Math.PI * 0.5;
 
-  const res = await em.whenResources([
-    AssetsDef,
-    GlobalCursor3dDef,
-    RendererDef,
-  ]);
+  const res = await em.whenResources(AssetsDef, GlobalCursor3dDef, RendererDef);
 
   let renderPipelinesPtrs: CyRenderPipelinePtr[] = [
     cubeRenderPipeline,

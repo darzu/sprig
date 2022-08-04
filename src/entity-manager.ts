@@ -503,10 +503,9 @@ export class EntityManager {
 
   private nextOneShotSuffix = 0;
   public whenResources<RS extends ComponentDef[]>(
-    rs: [...RS],
-    name?: string
+    ...rs: RS
   ): Promise<EntityW<RS>> {
-    return this.whenEntityHas(this.entities.get(0)!, rs, name);
+    return this.whenEntityHas(this.entities.get(0)!, ...rs);
   }
 
   hasSystem(name: string) {
@@ -604,14 +603,10 @@ export class EntityManager {
     // eCS extends ComponentDef[],
     CS extends ComponentDef[],
     ID extends number
-  >(
-    e: EntityW<any[], ID>,
-    cs: [...CS],
-    name?: string
-  ): Promise<EntityW<CS, ID>> {
+  >(e: EntityW<any[], ID>, ...cs: CS): Promise<EntityW<CS, ID>> {
     // TODO(@darzu): this is too copy-pasted from registerSystem
     // TODO(@darzu): need unified query maybe?
-    let _name = name || "oneShot" + this.nextOneShotSuffix++;
+    let _name = "oneShot" + this.nextOneShotSuffix++;
 
     if (this.oneShotSystems.has(_name))
       throw `One-shot single system named ${_name} already defined.`;

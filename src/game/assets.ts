@@ -642,10 +642,10 @@ onInit(async (em) => {
   em.addSingletonComponent(AssetLoaderDef);
 
   // start loading of assets
-  const { assetLoader, renderer } = await em.whenResources([
+  const { assetLoader, renderer } = await em.whenResources(
     AssetLoaderDef,
-    RendererDef,
-  ]);
+    RendererDef
+  );
   assert(!assetLoader.promise, "somehow we're double loading assets");
 
   const assetsPromise = loadAssets(renderer.renderer);

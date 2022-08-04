@@ -20,7 +20,7 @@ const DBG_GRAPPLE = false;
 export async function registerGrappleDbgSystems(em: EntityManager) {
   if (!DBG_GRAPPLE) return;
 
-  const res = await em.whenResources([AssetsDef]);
+  const res = await em.whenResources(AssetsDef);
   const h = em.newEntity();
   em.ensureComponentOn(h, PositionDef, [0, 0, 0]);
   em.ensureComponentOn(h, ColorDef, [0.1, 0.1, 0.1]);

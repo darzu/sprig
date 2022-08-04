@@ -17,7 +17,7 @@ import { spawnBoat } from "./enemy-boat.js";
 
 export interface SpawnerOpts {
   towardsPlayerDir: vec3;
-  side: "left" | "right" | "center";
+  side: "left" | "right";
 }
 const ChildCS = [
   PositionDef,
@@ -35,43 +35,37 @@ export const SpawnerDef = EM.defineComponent(
     towardsPlayerDir: [0, 0, 0],
     childrenToRelease: [],
     hasSpawned: false,
-    side: "center",
+    side: "left",
     ...s,
   })
 );
 
 export function addSpawner(e: Entity, opts: SpawnerOpts) {
-  // TODO(@darzu):
   EM.ensureComponentOn(e, SpawnerDef, opts);
 }
 
 onInit((em) => {
   em.registerSystem(
-    [SpawnerDef, AuthorityDef, ColliderDef],
+    [SpawnerDef, AuthorityDef, PositionDef],
     [MeDef],
     (tiles, res) => {
       for (let t of tiles) {
         if (t.authority.pid !== res.me.pid) continue;
         if (t.toSpawn.hasSpawned) continue;
 
-        if (t.toSpawn.side !== "center") {
-          const angle = Math.atan2(
-            t.toSpawn.towardsPlayerDir[2],
-            -t.toSpawn.towardsPlayerDir[0]
-          );
+        const angle = Math.atan2(
+          t.toSpawn.towardsPlayerDir[2],
+          -t.toSpawn.towardsPlayerDir[0]
+        );
 
-          const y = (t.collider as AABBCollider).aabb.max[1] + 1;
-          const b = spawnBoat(
-            [0, y, 0],
-            t.id,
-            angle,
-            t.toSpawn.side === "left"
-          );
+        const y = ColliderDef.isOn(t)
+          ? (t.collider as AABBCollider).aabb.max[1] + 1
+          : t.position[1];
+        const b = spawnBoat([0, y, 0], t.id, angle, t.toSpawn.side === "left");
 
-          // console.log(`spawning ${b.id} from ${t.id} at ${performance.now()}`);
+        // console.log(`spawning ${b.id} from ${t.id} at ${performance.now()}`);
 
-          t.toSpawn.childrenToRelease.push(createRef(b.id, [...ChildCS]));
-        }
+        t.toSpawn.childrenToRelease.push(createRef(b.id, [...ChildCS]));
 
         t.toSpawn.hasSpawned = true;
       }
@@ -104,6 +98,7 @@ onInit((em) => {
         // is the ground ready?
         // if (!t.groundLocal.readyForSpawn) continue;
 
+        // TODO(@darzu): it'd be nice to have a non-network event system
         // are we still animating?
         if (AnimateToDef.isOn(t)) continue;
 

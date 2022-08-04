@@ -62,7 +62,7 @@ onInit(async (em) => {
   em.addSingletonComponent(ShaderLoaderDef);
 
   // start loading of shaders
-  const { shaderLoader } = await em.whenResources([ShaderLoaderDef]);
+  const { shaderLoader } = await em.whenResources(ShaderLoaderDef);
 
   assert(!shaderLoader.promise, "somehow we're double loading shaders");
 

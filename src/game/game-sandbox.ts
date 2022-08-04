@@ -94,11 +94,7 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   const camera = em.addSingletonComponent(CameraDef);
   camera.fov = Math.PI * 0.5;
 
-  const res = await em.whenResources([
-    AssetsDef,
-    GlobalCursor3dDef,
-    RendererDef,
-  ]);
+  const res = await em.whenResources(AssetsDef, GlobalCursor3dDef, RendererDef);
   const g = createGhost(em);
   // em.ensureComponentOn(g, RenderableConstructDef, res.assets.cube.proto);
   // createPlayer(em);
@@ -332,11 +328,7 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
   const camera = em.addSingletonComponent(CameraDef);
   camera.fov = Math.PI * 0.5;
 
-  const res = await em.whenResources([
-    AssetsDef,
-    GlobalCursor3dDef,
-    RendererDef,
-  ]);
+  const res = await em.whenResources(AssetsDef, GlobalCursor3dDef, RendererDef);
   let renderPipelinesPtrs: CyRenderPipelinePtr[] = [
     // TODO(@darzu):
     shadowPipeline,
@@ -503,12 +495,12 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
 
   let tableId = -1;
 
-  const res = await em.whenResources([
+  const res = await em.whenResources(
     AssetsDef,
     GlobalCursor3dDef,
     RendererDef,
-    TextDef,
-  ]);
+    TextDef
+  );
   const g = createGhost(em);
   vec3.copy(g.position, [-6.5, 3.06, 22.51]);
   quat.copy(g.rotation, [0.0, -0.08, 0.0, 1.0]);

@@ -478,12 +478,15 @@ export function registerPlayerSystems(em: EntityManager) {
             p.cameraFollow.pitchOffset = -0.75;
             quat.copy(p.rotation, [0.0, 1.0, 0.0, 0.0]);
             vec3.zero(p.linearVelocity);
-            em.ensureComponentOn(p, AnimateToDef, {
-              startPos,
-              endPos,
-              durationMs: 2000,
-              easeFn: EASE_OUTQUAD,
-            });
+
+            // TODO(@darzu): uncomment to animate player entry
+            // em.ensureComponentOn(p, AnimateToDef, {
+            //   startPos,
+            //   endPos,
+            //   durationMs: 2000,
+            //   easeFn: EASE_OUTQUAD,
+            // });
+            vec3.copy(p.position, endPos);
           }
         }
       }

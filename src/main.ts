@@ -27,7 +27,6 @@ const ENABLE_NET = false;
 const AUTOSTART = true;
 
 const GAME = "hyperspace" as
-  | "ship" // TODO(@darzu): DELETE
   | "gjk"
   | "rebound"
   | "cloth"
@@ -66,21 +65,6 @@ function callFixedTimestepSystems() {
   EM.callSystem("connectToServer");
   EM.callSystem("handleJoin");
   EM.callSystem("handleJoinResponse");
-  if (GAME === "ship") {
-    EM.callSystem("initGroundSystem");
-    EM.callSystem("groundSystem");
-    EM.callSystem("startGame");
-    EM.callSystem("shipHealthCheck");
-    EM.callSystem("easeRudder");
-    EM.callSystem("shipMove");
-    // EM.callSystem("shipScore");
-    EM.callSystem("groundPropsBuild");
-    EM.callSystem("boatPropsBuild");
-    EM.callSystem("cannonPropsBuild");
-    EM.callSystem("gemPropsBuild");
-    EM.callSystem("rudderPropsBuild");
-    EM.callSystem("shipPropsBuild");
-  }
   EM.callSystem("buildBullets");
   EM.callSystem("buildCursor");
   EM.callSystem("placeCursorAtScreenCenter");
@@ -128,7 +112,7 @@ function callFixedTimestepSystems() {
   EM.callSystem("reloadCannon");
   EM.callSystem("playerControlCannon");
   EM.callSystem("playerManCanon");
-  if (GAME === "ship") {
+  if (GAME === "hyperspace") {
     EM.callSystem("spawnOnTile");
     EM.callSystem("spawnFinishAnimIn");
   }
@@ -217,9 +201,7 @@ async function startGame(localPeerName: string, host: string | null) {
   EM.addSingletonComponent(InputsDef);
   registerInputsSystem(EM);
 
-  if (GAME === "ship") {
-    //initRiverGame(EM, hosting);
-  } else if (GAME === "gjk") initGJKSandbox(EM, hosting);
+  if (GAME === "gjk") initGJKSandbox(EM, hosting);
   else if (GAME === "rebound") initReboundSandbox(EM, hosting);
   else if (GAME === "cloth") initClothSandbox(EM, hosting);
   else if (GAME === "hyperspace") initHyperspaceGame(EM);

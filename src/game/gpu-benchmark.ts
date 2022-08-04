@@ -7,7 +7,7 @@ import {
   CyPipelinePtr,
 } from "../render/gpu-registry.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { awaitTimeout, range } from "../util.js";
+import { asyncTimeout, range } from "../util.js";
 
 // TODO(@darzu): waiting on gpu pipeline measurements for better data
 
@@ -20,10 +20,10 @@ export function initBenchmark() {
 }
 
 export async function runBenchmark() {
-  const res = await EM.whenResources([RendererDef]);
+  const res = await EM.whenResources(RendererDef);
 
   // CPU <-> GPU round trip benchmarking!
-  await awaitTimeout(2000); // TODO(@darzu): dbg
+  await asyncTimeout(2000); // TODO(@darzu): dbg
   console.log(`GPU <-> CPU TEST`);
   for (let [tex, pipe] of benchmarkTexsAndPipes) {
     const perGPUTest = performance.now();
@@ -36,7 +36,7 @@ export async function runBenchmark() {
         2
       )}mb, ${afterGPUTest.toFixed(2)}ms`
     );
-    await awaitTimeout(500); // TODO(@darzu): dbg
+    await asyncTimeout(500); // TODO(@darzu): dbg
   }
 }
 

@@ -21,7 +21,7 @@ import {
   RendererDef,
 } from "../render/renderer-ecs.js";
 import { tempVec2, tempVec3 } from "../temp-pool.js";
-import { awaitTimeout, range } from "../util.js";
+import { asyncTimeout, range } from "../util.js";
 import { quatDbg, quatFromUpForward, vec3Dbg } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
 
@@ -67,7 +67,7 @@ EM.registerSerializerPair(
 export const oceanJfa = createJfaPipelines(uvMaskTex, "exterior");
 
 export async function initOcean() {
-  const res = await EM.whenResources([RendererDef, AssetsDef]);
+  const res = await EM.whenResources(RendererDef, AssetsDef);
 
   const ocean = EM.newEntity();
   let oceanEntId = ocean.id; // hacky?
@@ -84,7 +84,7 @@ export async function initOcean() {
   // em.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
   EM.ensureComponentOn(ocean, PositionDef);
 
-  let ocean2 = await EM.whenEntityHas(ocean, [RenderableDef], "oceanGPUWork");
+  let ocean2 = await EM.whenEntityHas(ocean, RenderableDef);
 
   // TODO(@darzu):
   const preOceanGPU = performance.now();
