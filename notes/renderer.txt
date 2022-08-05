@@ -955,3 +955,7 @@ Anti-aliasing:
 
 "Stuff I did over the years":
   https://twitter.com/Mirko_Salm/status/1553724647664926721
+
+"Sokpop: I built a 3D engine in 2D":
+  https://www.youtube.com/watch?v=chtRPC1ISyA
+  example project: https://sokpop.itch.io/sokpop-fake-3d-demo
