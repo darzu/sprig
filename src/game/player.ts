@@ -30,7 +30,7 @@ import { LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { ModelerDef } from "./modeler.js";
 import { DeletedDef } from "../delete.js";
-import { ShipLocalDef } from "./ship.js";
+import { PlayerShipLocalDef } from "./ship.js";
 import {
   CameraDef,
   CameraFollowDef,
@@ -439,7 +439,7 @@ export function registerPlayerSystems(em: EntityManager) {
         if (!parent) {
           const ship = em.filterEntities([
             ColliderDef,
-            ShipLocalDef,
+            PlayerShipLocalDef,
             PositionDef,
           ])[0];
           if (ship) {

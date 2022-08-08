@@ -15,7 +15,11 @@ import {
 import { TimeDef } from "../time.js";
 import { LifetimeDef } from "./lifetime.js";
 import { LocalPlayerDef, PlayerDef, PlayerPropsDef } from "./player.js";
-import { createShip, ShipLocalDef, ShipPropsDef } from "./ship.js";
+import {
+  createPlayerShip,
+  PlayerShipLocalDef,
+  PlayerShipPropsDef,
+} from "./ship.js";
 
 const RESTART_TIME_MS = 5000;
 
@@ -40,22 +44,22 @@ export const startGame = eventWizard(
 
 export const endGame = eventWizard(
   "end-game",
-  () => [[ShipPropsDef, ShipLocalDef, PositionDef]] as const,
+  () => [[PlayerShipPropsDef, PlayerShipLocalDef, PositionDef]] as const,
   ([ship]) => {
     console.log("end");
     const res = EM.getResources([MusicDef, GameStateDef, MeDef])!;
     res.music.playChords([1, 2, 3, 4, 4], "minor");
     res.gameState.state = GameState.GAMEOVER;
     res.gameState.time = 0;
-    for (const partRef of ship.shipLocal.parts) {
+    for (const partRef of ship.playerShipLocal.parts) {
       const part = partRef();
       if (part) EM.ensureComponentOn(part, DeletedDef);
     }
     EM.ensureComponentOn(ship, DeletedDef);
-    if (ship.shipProps.cannonLId)
-      EM.ensureComponent(ship.shipProps.cannonLId, DeletedDef);
-    if (ship.shipProps.cannonRId)
-      EM.ensureComponent(ship.shipProps.cannonRId, DeletedDef);
+    if (ship.playerShipProps.cannonLId)
+      EM.ensureComponent(ship.playerShipProps.cannonLId, DeletedDef);
+    if (ship.playerShipProps.cannonRId)
+      EM.ensureComponent(ship.playerShipProps.cannonRId, DeletedDef);
     const players = EM.filterEntities([
       PlayerDef,
       PositionDef,
@@ -73,7 +77,7 @@ export const endGame = eventWizard(
       }
     }
 
-    const gem = EM.findEntity(ship.shipProps.gemId, [
+    const gem = EM.findEntity(ship.playerShipProps.gemId, [
       WorldFrameDef,
       PositionDef,
       PhysicsParentDef,
@@ -92,7 +96,7 @@ export const endGame = eventWizard(
 
 export const restartGame = eventWizard(
   "restart-game",
-  () => [[ShipPropsDef]] as const,
+  () => [[PlayerShipPropsDef]] as const,
   ([ship]) => {
     console.log("restart");
     const res = EM.getResources([GameStateDef, LocalPlayerDef])!;
@@ -121,11 +125,14 @@ export function registerGameStateSystems(em: EntityManager) {
         res.gameState.time += res.time.dt;
         if (res.gameState.time > RESTART_TIME_MS) {
           // Do we have a ship to restart onto yet?
-          const ship = EM.filterEntities([ShipPropsDef, ShipLocalDef])[0];
+          const ship = EM.filterEntities([
+            PlayerShipPropsDef,
+            PlayerShipLocalDef,
+          ])[0];
           if (ship) {
             restartGame(ship);
           } else {
-            createShip();
+            createPlayerShip();
           }
         }
       }

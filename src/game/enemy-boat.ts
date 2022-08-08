@@ -31,7 +31,7 @@ import {
 import { BulletDef, fireBullet } from "./bullet.js";
 import { DeletedDef, OnDeleteDef } from "../delete.js";
 import { LifetimeDef } from "./lifetime.js";
-import { ShipLocalDef } from "./ship.js";
+import { PlayerShipLocalDef } from "./ship.js";
 import { Music, MusicDef } from "../music.js";
 import { defineNetEntityHelper } from "../em_helpers.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
@@ -259,7 +259,7 @@ export function registerBoatSystems(em: EntityManager) {
           o.boatLocal.fireZoneId
         );
         const seesPlayer = hits?.some(
-          (h) => !!em.findEntity(h, [ShipLocalDef])
+          (h) => !!em.findEntity(h, [PlayerShipLocalDef])
         );
         if (seesPlayer) {
           o.boatLocal.fireDelay -= res.time.dt;
@@ -306,7 +306,9 @@ export function registerBoatSystems(em: EntityManager) {
             raiseBulletBoat(balls[0]!, boat);
           }
 
-          const ships = hits.filter((h) => em.findEntity(h, [ShipLocalDef]));
+          const ships = hits.filter((h) =>
+            em.findEntity(h, [PlayerShipLocalDef])
+          );
           if (ships.length) {
             raiseBreakBoat(boat);
           }

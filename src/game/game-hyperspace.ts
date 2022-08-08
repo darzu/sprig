@@ -12,7 +12,7 @@ import { initStars, renderStars } from "../render/pipelines/std-stars.js";
 import { AssetsDef } from "./assets.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { createPlayer } from "./player.js";
-import { createShip } from "./ship.js";
+import { createPlayerShip } from "./ship.js";
 import { GameStateDef } from "./gamestate.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
@@ -33,7 +33,7 @@ export async function initHyperspaceGame(em: EntityManager) {
   em.addSingletonComponent(GameStateDef);
 
   // if (hosting) {
-  const ship = createShip([0.1, 0.1]);
+  const ship = createPlayerShip([0.1, 0.1]);
   // }
 
   em.whenResources(MeDef, OceanDef).then(async () => {

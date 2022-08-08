@@ -27,7 +27,7 @@ import {
 import { registerPredictSystem } from "../net/predict.js";
 import { registerEventSystems } from "../net/events.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
-import { createShip, registerShipSystems, ShipLocalDef } from "./ship.js";
+import { registerShipSystems } from "./ship.js";
 import { registerBuildBulletsSystem, registerBulletUpdate } from "./bullet.js";
 import { AssetsDef } from "./assets.js";
 import { registerInitCanvasSystem } from "../canvas.js";
