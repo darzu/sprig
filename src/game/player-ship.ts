@@ -38,6 +38,7 @@ import { constructNetTurret, TurretDef } from "./turret.js";
 import { YawPitchDef } from "../yawpitch.js";
 import { UVPosDef, UVDirDef } from "./ocean.js";
 import { PartyDef } from "./party.js";
+import { ShipDef } from "./ship.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
@@ -183,7 +184,6 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
     },
     defaultLocal: () => ({
       parts: [] as Ref<[typeof ShipPartDef, typeof RenderableDef]>[],
-      speed: 0,
     }),
     dynamicComponents: [
       // TODO(@darzu): do we want to sync UV based stuff instead?
@@ -234,7 +234,9 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
 
       em.ensureComponentOn(s, MotionSmoothingDef);
 
-      s.playerShipLocal.speed = 0.0005;
+      em.ensureComponentOn(s, ShipDef);
+
+      s.ship.speed = 0.0005;
       // s.playerShipLocal.speed = 0.005 * 3; // TODO(@darzu): DEBUG SPEED
       // em.ensureComponentOn(s, LinearVelocityDef, [0, 0, 0]);
       // em.ensureComponentOn(s, AngularVelocityDef);
@@ -378,13 +380,13 @@ export function registerShipSystems(em: EntityManager) {
 
   em.registerSystem(
     [
+      ShipDef,
       PlayerShipLocalDef,
       PlayerShipPropsDef,
       // LinearVelocityDef,
       // AngularVelocityDef,
       AuthorityDef,
       // RotationDef,
-      UVPosDef,
       UVDirDef,
     ],
     [GameStateDef, MeDef, InputsDef, DevConsoleDef],
@@ -400,32 +402,17 @@ export function registerShipSystems(em: EntityManager) {
         // s.angularVelocity[1] = -0.0001;
 
         // SPEED
-        if (res.inputs.keyDowns["z"]) s.playerShipLocal.speed += 0.00001;
-        if (res.inputs.keyDowns["x"]) s.playerShipLocal.speed -= 0.00001;
-        s.playerShipLocal.speed = Math.max(0, s.playerShipLocal.speed);
+        if (res.inputs.keyDowns["z"]) s.ship.speed += 0.00001;
+        if (res.inputs.keyDowns["x"]) s.ship.speed -= 0.00001;
+        s.ship.speed = Math.max(0, s.ship.speed);
 
         // STEERING
         let yaw = s.playerShipProps.rudder()!.yawpitch.yaw;
 
         vec2.rotate(s.uvDir, s.uvDir, vec2.ZEROS, yaw * 0.02);
-
-        // s.uvDir[0] += Math.cos(yaw);
-        // s.uvDir[1] -= Math.sin(yaw);
-        // console.log(`yaw: ${yaw} uvdir: ${s.uvDir[0]},${s.uvDir[1]}`);
-
-        // MOVING
-        if (s.playerShipLocal.speed > 0.00001) {
-          // NOTE: we scale uvDir by speed so that the look-ahead used for
-          //    UVDir->Rotation works.
-          // TODO(@darzu): This doesn't seem great. We need a better way to
-          //    do  UVDir->Rotation
-          vec2.normalize(s.uvDir, s.uvDir);
-          vec2.scale(s.uvDir, s.uvDir, s.playerShipLocal.speed);
-          vec2.add(s.uvPos, s.uvPos, s.uvDir);
-        }
       }
     },
-    "shipMove"
+    "playerShipMove"
   );
 
   em.registerSystem(
