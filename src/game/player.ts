@@ -30,7 +30,7 @@ import { LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { ModelerDef } from "./modeler.js";
 import { DeletedDef } from "../delete.js";
-import { PlayerShipLocalDef } from "./ship.js";
+import { PlayerShipLocalDef } from "./player-ship.js";
 import {
   CameraDef,
   CameraFollowDef,

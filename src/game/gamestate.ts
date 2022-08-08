@@ -19,7 +19,7 @@ import {
   createPlayerShip,
   PlayerShipLocalDef,
   PlayerShipPropsDef,
-} from "./ship.js";
+} from "./player-ship.js";
 
 const RESTART_TIME_MS = 5000;
 

@@ -1,17 +1,6 @@
-import { FinishedDef } from "../build.js";
-import {
-  Component,
-  ComponentDef,
-  EM,
-  Entities,
-  Entity,
-  EntityManager,
-  EntityW,
-  SystemFN,
-  WithComponent,
-} from "../entity-manager.js";
-import { quat, vec2, vec3 } from "../gl-matrix.js";
-import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
+import { EM, EntityManager } from "../entity-manager.js";
+import { vec2, vec3 } from "../gl-matrix.js";
+import { AuthorityDef, MeDef } from "../net/components.js";
 import {
   RenderableConstructDef,
   RenderableDef,
@@ -20,30 +9,21 @@ import {
   PhysicsParentDef,
   PositionDef,
   RotationDef,
-  ScaleDef,
 } from "../physics/transform.js";
-import { Deserializer, Serializer } from "../serialize.js";
-import { Assets, AssetsDef, BARGE_AABBS } from "./assets.js";
+import { AssetsDef, BARGE_AABBS } from "./assets.js";
 import {
   AABBCollider,
   ColliderDef,
   MultiCollider,
 } from "../physics/collider.js";
-import { AABB, copyAABB, createAABB } from "../physics/broadphase.js";
+import { copyAABB, createAABB } from "../physics/broadphase.js";
 import { ColorDef } from "../color.js";
-import { setCubePosScaleToAABB } from "../physics/phys-debug.js";
 import { BOAT_COLOR } from "./enemy-boat.js";
-import {
-  PhysicsResultsDef,
-  WorldFrameDef,
-} from "../physics/nonintersection.js";
+import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../delete.js";
-import { max, min } from "../math.js";
-import { assert } from "../test.js";
-import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
-import { LifetimeDef } from "./lifetime.js";
-import { CannonPropsDef, createCannon } from "./cannon.js";
+import { min } from "../math.js";
+import { createCannon } from "./cannon.js";
 import { MusicDef } from "../music.js";
 import { LocalPlayerDef, PlayerDef } from "./player.js";
 import { CameraDef } from "../camera.js";
@@ -51,18 +31,12 @@ import { InputsDef } from "../inputs.js";
 import { InRangeDef, InteractableDef } from "./interact.js";
 import { endGame, GameState, GameStateDef, startGame } from "./gamestate.js";
 import { createRef, defineNetEntityHelper, Ref } from "../em_helpers.js";
-import {
-  DetectedEventsDef,
-  eventWizard,
-  registerEventHandler,
-} from "../net/events.js";
-import { TextDef } from "./ui.js";
+import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DevConsoleDef } from "../console.js";
 import { constructNetTurret, TurretDef } from "./turret.js";
 import { YawPitchDef } from "../yawpitch.js";
 import { UVPosDef, UVDirDef } from "./ocean.js";
-import { tempVec2 } from "../temp-pool.js";
 import { PartyDef } from "./party.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
@@ -188,21 +162,21 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
 export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
   defineNetEntityHelper(EM, {
     name: "playerShip",
-    defaultProps: (uvLoc?: vec2) => ({
-      uvLoc: uvLoc ?? vec2.fromValues(0.5, 0.5),
+    defaultProps: (uvPos?: vec2) => ({
+      uvPos: uvPos ?? vec2.fromValues(0.5, 0.5),
       gemId: 0,
       cannonLId: 0,
       cannonRId: 0,
       rudder: createRef(0, [RudderPropsDef, YawPitchDef]),
     }),
     serializeProps: (c, buf) => {
-      buf.writeVec2(c.uvLoc);
+      buf.writeVec2(c.uvPos);
       buf.writeUint32(c.gemId);
       buf.writeUint32(c.cannonLId);
       buf.writeUint32(c.cannonRId);
     },
     deserializeProps: (c, buf) => {
-      buf.readVec2(c.uvLoc);
+      buf.readVec2(c.uvPos);
       c.gemId = buf.readUint32();
       c.cannonLId = buf.readUint32();
       c.cannonRId = buf.readUint32();
@@ -253,7 +227,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
         s.playerShipProps.cannonLId = cannonL.id;
       }
 
-      vec2.copy(s.uvPos, s.playerShipProps.uvLoc);
+      vec2.copy(s.uvPos, s.playerShipProps.uvPos);
 
       em.ensureComponentOn(s, PositionDef);
       em.ensureComponentOn(s, RotationDef);
