@@ -44,3 +44,18 @@ For program slicing:
 
 For every complex topic that someone is stuck on, there are 1-2 
   sentences that if they heard would unblock their learning.
+
+Free "The Essential Web Developer Course":
+  https://upskillcourses.com/courses/essential-web-developer-course
+
+/r/learnprogramming (3.3m members) recommends "How to Learn to Code":
+  https://www.youtube.com/watch?v=mvK0UzFNw1Q
+
+about teaching CS for non-techies:
+  http://teachtogether.tech/en/index.html
+
+"14 year old wanting to get into game dev. Couple questions.":
+  https://www.reddit.com/r/gamedev/comments/wgo35u/14_year_old_wanting_to_get_into_game_dev_couple/
+  The first point they make is: "I want to use ue5 because I feel the “ceiling” of what you can do is much higher"
+    This is why it's so important for beginner-friendly game engines to have high ceilings! People aren't stupid, they don't want to invest in something that is ultimately not going to let them reach their goals.
+    

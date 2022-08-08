@@ -1213,3 +1213,8 @@ Game of Life the Roguelike idea:
 
 Good blog to read through:
   https://dukope.com/devlogs/papers-please/mobile/
+
+Recoverable vs unrecoverable errors:
+  with regards to panic
+  think instead: error-but-not-a-bug vs bug
+  https://blog.burntsushi.net/unwrap/#what-about-recoverable-vs-unrecoverable-errors

@@ -418,3 +418,56 @@ events:
     everyone can see that it might have happened
     can request that it happens
     
+
+Bunch of links from reply to "When programming online games, do you take extra measures to try to prevent lag?": 
+  https://www.reddit.com/r/gamedev/comments/whcvn7/comment/ij50zsy/?utm_source=reddit&utm_medium=web2x&context=3
+
+  Here's a smorgasbord of links so you can deal with post mortems and similar rather than my half developed hobby musings (tendency towards softer material instead of technical material) :
+  http://cranktrain.com/blog/autopsy-of-an-indie-mmorpg-1/
+  http://cranktrain.com/blog/autopsy-of-an-indie-mmorpg-2/
+  https://www.gamedeveloper.com/blogs/online-multiplayer-the-hard-way (post mortem of a smash like game, with rollback and some other neat tech)
+  https://medium.com/meseta-dev
+  https://web.archive.org/web/20161029212520/http://www.over00.com/index.php/archives/1119
+  https://web.archive.org/web/20160624154213/http://www.over00.com/?p=1610
+  https://web.archive.org/web/20070106063538/http://www.devmaster.net/articles/mmorpg-postmortem/part1.php
+  https://web.archive.org/web/20070106063512/http://www.devmaster.net/articles/mmorpg-postmortem/part2.php
+  https://web.archive.org/web/20070106063700/http://www.devmaster.net/articles/mmorpg-postmortem/part3.php
+  https://web.archive.org/web/20070106063812/http://www.devmaster.net/articles/mmorpg-postmortem/part4.php
+  https://web.archive.org/web/20070106063556/http://www.devmaster.net/articles/mmorpg-postmortem/part5.php
+  https://www.kinematicsoup.com/news/2019/9/8/the-economics-of-web-based-multiplayer-games?s=gd
+  https://www.youtube.com/watch?v=ECb31GwoSsM (eventually goes on to 6 rules of MMOs, and interesting experiences related to their time on MMO games dev side). https://www.youtube.com/watch?v=fuz3Bh8FQJQ (2 hours of MMO dev QA, mostly unity focused for engine specific questions). https://youtu.be/x8C63oZMrTU for unity specific multiplayer frameworks.
+  https://aws.amazon.com/blogs/gametech/the-unique-architecture-behind-amazon-games-seamless-mmo-new-world/ (A technology post mortem and walkthrough of NewWorld. It's a sales pitch, managing AWS services and not being robbed blind for it requires essentially a person/team working full time on intial implementation and upkeep).
+  More Tutorial-ly:
+  https://www.radcade.com/how-to-add-network-multiplayer-to-your-indie-game (a brief overview of a simpler game)
+  https://gafferongames.com/
+  http://ithare.com/ (This one alternates between being blog like, having the beta version of their good book on multiplayer, and having some of the most in-depth tutorials)
+  https://www.gabrielgambetta.com/client-server-game-architecture.html
+  https://www.youtube.com/user/RainingChain/videos?sort=dd&shelf_id=1&view=0
+  https://hookrace.net/blog/ddnet-evolution-architecture-technology/
+  https://www.raphkoster.com/2018/11/13/mailbag-parts-of-an-mmo/
+  https://youtu.be/rQcxI-ACmZg (Some slower college style lectures)
+  https://ruoyusun.com/2019/03/28/game-networking-1.html
+  https://github.com/MFatihMAR/Game-Networking-Resources (This is a list maintained by someone else, and it has some amazing things in it, and far more technical leaning than what I maintain).
+  There are also tons of HTML 5/Node/JavaScript multiplayer tutorials that are under 2 years old (though these focus on the simpler parts in the initial steps, not the complex ones like handing off rooms between servers, having more than one server, or lag compensation) :
+  https://victorzhou.com/blog/build-an-io-game-part-1/ https://victorzhou.com/blog/build-an-io-game-part-2/
+  http://antriel.com/post/online-platformer-1/ http://antriel.com/post/online-platformer-2/ http://antriel.com/post/online-platformer-3/ http://antriel.com/post/online-platformer-4/ http://antriel.com/post/online-platformer-5/
+  http://buildnewgames.com/real-time-multiplayer/
+  https://www.dynetisgames.com/2017/03/06/how-to-make-a-multiplayer-online-game-with-phaser-socket-io-and-node-js/
+  "interesting" tech overviews:
+  https://technology.riotgames.com/news/fixing-internet-real-time-applications-part-i (Riot talking about building out their own backbones, and going over some of the more obnoxious technical limitations of modern internet infrastructure. In three parts)
+  https://amar.io/thesis.pdf (A thesis going over a large number of the problems and solutions of P2P networking)
+  “Engines" though different than what you'd think, since most of these work with multiple client side engines:
+  https://colyseus.io/ (Authoritative server, that works with many engines JavaScript/Phaser/Unity/Haxe/Defold)
+  https://www.modd.io/ (Designer and non-programmer focused)
+  https://mirror-networking.com/ (Unity specific, looks nice but don't use unity myself).
+  https://timetocode.com/nengi (Authoritative server for JavaScript stuff)
+  https://blog.hathora.dev/ (Haven't had time to poke at it yet, but TypeScript. Looks focused at using AWS from the start for higher built in scalability than other options, also some nice looking tutorials. Also have a nice general blog to poke at: https://blog.hathora.dev/ )
+  https://www.photonengine.com/en-us/Photon (Enterprise level for just about any engine)
+  http://www.coffeemud.org/
+  https://www.eclipseorigins.com/ (don’t recommend due to VB6)
+  r/gamedev/comments/k2mvgn/official_baas_backend_as_a_service_discord_for/ (Discord for a bunch of other services, along with an awesome summary spreadsheet for them in that post)
+
+P2P stuff by Yousef Amar:
+  https://amar.io/thesis.pdf
+  https://yousefamar.com/res/papers/PID5999227.pdf
+  https://github.com/yousefamar/p2p-peer/blob/master/src/index.ts

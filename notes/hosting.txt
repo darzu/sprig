@@ -70,3 +70,10 @@ K lots of free/cheap options, what r our needs?
 Can we use github actions to commit to another repo?
   Then we could auto build each commit/PR and save it to some sprig_built 
   repo which would host each version.
+
+Regarding strategies for stopping ur HTML game from being copied:
+  https://www.reddit.com/r/gamedev/comments/wfh1ch/our_team_has_noticed_quite_a_few_websites/
+  (assuming we're not freely licensing)
+  Best: JS domain locking w/ "Continue playing our game here: LINK"
+    essentially make it a demo and funnel
+  DCMA possible but annoying
