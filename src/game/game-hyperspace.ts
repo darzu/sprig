@@ -17,7 +17,7 @@ import { GameStateDef } from "./gamestate.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
 import { DevConsoleDef } from "../console.js";
-import { initOcean, OceanDef, oceanJfa, UVDef, UVDirDef } from "./ocean.js";
+import { initOcean, OceanDef, oceanJfa, UVPosDef, UVDirDef } from "./ocean.js";
 import { asyncTimeout } from "../util.js";
 import { vec3 } from "../gl-matrix.js";
 import { AnimateToDef, EASE_INQUAD } from "../animate-to.js";
@@ -111,7 +111,7 @@ export async function initHyperspaceGame(em: EntityManager) {
   await asyncTimeout(2000);
 
   const { ocean, me } = await em.whenResources(OceanDef, MeDef);
-  const ship2 = await em.whenEntityHas(ship, UVDef);
+  const ship2 = await em.whenEntityHas(ship, UVPosDef);
 
   const enemyEndPos = ocean.uvToPos(vec3.create(), [0.2, 0.1]);
   vec3.add(enemyEndPos, enemyEndPos, [0, 10, 0]);
@@ -130,7 +130,7 @@ export async function initHyperspaceGame(em: EntityManager) {
   });
   const towardsPlayerDir = vec3.sub(
     vec3.create(),
-    ocean.uvToPos(tempVec3(), ship2.uv),
+    ocean.uvToPos(tempVec3(), ship2.uvPos),
     enemyEndPos
   );
   vec3.normalize(towardsPlayerDir, towardsPlayerDir);

@@ -36,12 +36,12 @@ export const OceanDef = EM.defineComponent("ocean", (o: Ocean) => {
   return o;
 });
 
-export const UVDef = EM.defineComponent(
-  "uv",
+export const UVPosDef = EM.defineComponent(
+  "uvPos",
   (uv?: vec2) => uv ?? vec2.create()
 );
 EM.registerSerializerPair(
-  UVDef,
+  UVPosDef,
   (o, buf) => buf.writeVec2(o),
   (o, buf) => buf.readVec2(o)
 );
@@ -141,13 +141,13 @@ export async function initOcean() {
 }
 
 EM.registerSystem(
-  [UVDef, PositionDef],
+  [UVPosDef, PositionDef],
   [OceanDef],
   (es, res) => {
     // console.log("runOcean");
     for (let e of es) {
       // console.log(`copying: ${e.id}`);
-      const newPos = res.ocean.uvToPos(tempVec3(), e.uv);
+      const newPos = res.ocean.uvToPos(tempVec3(), e.uvPos);
 
       if (!vec3.exactEquals(newPos, vec3.ZEROS)) {
         vec3.copy(e.position, newPos);
@@ -159,7 +159,7 @@ EM.registerSystem(
 );
 
 EM.registerSystem(
-  [UVDef, UVDirDef, PositionDef, RotationDef],
+  [UVPosDef, UVDirDef, PositionDef, RotationDef],
   [OceanDef],
   (es, res) => {
     // console.log("runOcean");
@@ -167,13 +167,13 @@ EM.registerSystem(
       // console.log(`copying: ${e.id}`);
 
       // vec2.normalize(e.uvDir, e.uvDir);
-      const aheadUV = vec2.add(tempVec2(), e.uv, e.uvDir);
+      const aheadUV = vec2.add(tempVec2(), e.uvPos, e.uvDir);
       const aheadPos = res.ocean.uvToPos(tempVec3(), aheadUV);
 
       // TODO(@darzu): want SDF-based bounds checking
       if (!vec3.exactEquals(aheadPos, vec3.ZEROS)) {
         const forwardish = vec3.sub(tempVec3(), aheadPos, e.position);
-        const newNorm = res.ocean.uvToNorm(tempVec3(), e.uv);
+        const newNorm = res.ocean.uvToNorm(tempVec3(), e.uvPos);
         quatFromUpForward(e.rotation, newNorm, forwardish);
         // console.log(
         //   `UVDir ${[e.uvDir[0], e.uvDir[1]]} -> ${quatDbg(e.rotation)}`
@@ -185,7 +185,7 @@ EM.registerSystem(
 );
 
 EM.registerSystem(
-  [UVDef, UVDirDef, PositionDef, RotationDef],
+  [UVPosDef, UVDirDef, PositionDef, RotationDef],
   [OceanDef, InputsDef],
   (es, res) => {
     // console.log("runOcean");
@@ -200,12 +200,12 @@ EM.registerSystem(
       if (res.inputs.keyDowns["arrowup"]) deltaUV[0] += speed;
       if (res.inputs.keyDowns["arrowdown"]) deltaUV[0] -= speed;
       if (deltaUV[0] !== 0.0 || deltaUV[1] !== 0.0) {
-        const newUV = vec2.add(tempVec2(), e.uv, deltaUV);
+        const newUV = vec2.add(tempVec2(), e.uvPos, deltaUV);
 
         // TODO(@darzu): need a better way to see if UV is out of map bounds
         const newPos = res.ocean.uvToPos(tempVec3(), newUV);
         if (!vec3.exactEquals(newPos, vec3.ZEROS)) {
-          vec2.copy(e.uv, newUV);
+          vec2.copy(e.uvPos, newUV);
           vec2.copy(e.uvDir, deltaUV);
         }
       }

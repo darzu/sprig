@@ -164,3 +164,6 @@ High quality assets:
   https://syntystore.com
   https://quaternius.com
   https://www.unrealengine.com/marketplace/en-US/assets?tag=85&lang=en-US
+
+3D clay-ish assets (free?):
+  https://kaylousberg.itch.io

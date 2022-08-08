@@ -61,7 +61,7 @@ import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DevConsoleDef } from "../console.js";
 import { constructNetTurret, TurretDef } from "./turret.js";
 import { YawPitchDef } from "../yawpitch.js";
-import { UVDef, UVDirDef } from "./ocean.js";
+import { UVPosDef, UVDirDef } from "./ocean.js";
 import { tempVec2 } from "../temp-pool.js";
 import { PartyDef } from "./party.js";
 
@@ -214,7 +214,7 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
     }),
     dynamicComponents: [
       // TODO(@darzu): do we want to sync UV based stuff instead?
-      UVDef,
+      UVPosDef,
       UVDirDef,
       // PositionDef,
       // RotationDef,
@@ -254,7 +254,7 @@ export const { ShipPropsDef, ShipLocalDef, createShip } = defineNetEntityHelper(
         s.shipProps.cannonLId = cannonL.id;
       }
 
-      vec2.copy(s.uv, s.shipProps.uvLoc);
+      vec2.copy(s.uvPos, s.shipProps.uvLoc);
 
       em.ensureComponentOn(s, PositionDef);
       em.ensureComponentOn(s, RotationDef);
@@ -412,7 +412,7 @@ export function registerShipSystems(em: EntityManager) {
       // AngularVelocityDef,
       AuthorityDef,
       // RotationDef,
-      UVDef,
+      UVPosDef,
       UVDirDef,
     ],
     [GameStateDef, MeDef, InputsDef, DevConsoleDef],
@@ -449,7 +449,7 @@ export function registerShipSystems(em: EntityManager) {
           //    do  UVDir->Rotation
           vec2.normalize(s.uvDir, s.uvDir);
           vec2.scale(s.uvDir, s.uvDir, s.shipLocal.speed);
-          vec2.add(s.uv, s.uv, s.uvDir);
+          vec2.add(s.uvPos, s.uvPos, s.uvDir);
         }
       }
     },

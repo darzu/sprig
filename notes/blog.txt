@@ -252,3 +252,7 @@ Estimation vs forecasting
     But we won't commit to a date and a scope unless we spend the up 
     front time to first figure out every detail of what we need to build."
   https://www.commitstrip.com/en/2016/08/25/a-very-comprehensive-and-precise-spec/
+
+Instead of being "data-driven", we should be "data-informed"
+  Don't turn off your brain, data is just one set of inputs
+

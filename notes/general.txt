@@ -1183,3 +1183,33 @@ IDE teaching ideas:
 Barycentric rendering:
   https://wunkolo.github.io/post/2022/07/gl_ext_fragment_shader_barycentric-wireframe/
   maybe good for wireframes or possibly edge detection?
+
+Environment design:
+  https://www.youtube.com/watch?v=t7VkrExQwSo
+  https://www.youtube.com/watch?v=L27Qb20AYmc
+  Personality in a space:
+    behavioral traces (e.g. a messy desk),
+    identity claims (e.g. photographs on the wall)
+    mood modifiers (e.g. music, candle light)
+  
+Teaching programming idea:
+  first, don't even start with code
+  imagine two blocks, red and blue, and u could snap them together
+    to see a different result on the screen
+  U learn ordering, and playing with physical things with limits and behavior
+  think Baba is You
+  At some point ask: Would you like to build a 3D rendering engine from scratch?
+    Yes, No, Later
+    Later marks it as a TODO
+
+Game of Life the Roguelike idea:
+  U start as a young kid,
+  Limited time before u advance to the next stage: youth, young adult, mid age, older, acient
+  Different perks each time,
+    u get reputation based on what you did before
+    challenges change
+  maybe u can get coffee with a nemisis from an earlier stage
+  then u die and that's 1 run
+
+Good blog to read through:
+  https://dukope.com/devlogs/papers-please/mobile/

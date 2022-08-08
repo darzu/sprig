@@ -1,0 +1,37 @@
+First game
+  Early access
+  DLC?
+  Open source eventually
+
+Second game
+  Showcase genres, so probaly 3D third person adventure
+
+Screen recording:
+  Trailer making / video editting
+  Livestreaming / friend streaming
+  Gameplay sharing
+  Remote play-together
+
+Audio:
+  Music
+    Full DAW
+  Sound effects
+    like MakeCode's
+
+2D asset making
+  Icon maker
+
+3D asset making
+
+Teaching content:
+  Rendering
+    Consider Sokpop-Ruben's 3D via sprites as a better way to 
+      creep up on view projection and vertex shading
+  The single best tutorial for creating a 3D game
+
+IDEs:
+  Shader-super-toy
+  Scene editor
+  Visual editor / super-enhanced language service
+    API toolbox
+
