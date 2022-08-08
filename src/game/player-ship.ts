@@ -18,7 +18,6 @@ import {
 } from "../physics/collider.js";
 import { copyAABB, createAABB } from "../physics/broadphase.js";
 import { ColorDef } from "../color.js";
-import { BOAT_COLOR } from "./enemy-boat.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../delete.js";
@@ -41,6 +40,8 @@ import { PartyDef } from "./party.js";
 import { ShipDef } from "./ship.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
+
+export const BOAT_COLOR: vec3 = [0.2, 0.1, 0.05];
 
 export const ShipPartDef = EM.defineComponent(
   "shipPart",
@@ -255,7 +256,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
 
       // NOTE: since their is no network important state on the parts themselves
       //    they can be created locally
-      const boatFloor = min(BARGE_AABBS.map((c) => c.max[1]));
+      const enemyShipFloor = min(BARGE_AABBS.map((c) => c.max[1]));
       for (let i = 0; i < res.assets.ship_broken.length; i++) {
         const m = res.assets.ship_broken[i];
         const part = em.newEntity();
@@ -270,7 +271,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
           solid: false,
           aabb: m.aabb,
         });
-        (part.collider as AABBCollider).aabb.max[1] = boatFloor;
+        (part.collider as AABBCollider).aabb.max[1] = enemyShipFloor;
         s.playerShipLocal.parts.push(
           createRef(part.id, [ShipPartDef, RenderableDef])
         );

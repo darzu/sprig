@@ -1,7 +1,7 @@
 import { EM, EntityManager } from "../entity-manager.js";
 import { InputsDef } from "../inputs.js";
 import { PositionDef, registerInitTransforms } from "../physics/transform.js";
-import { registerBoatSystems } from "./enemy-boat.js";
+import { registerEnemyShipSystems } from "./enemy-ship.js";
 import {
   createPlayer,
   LocalPlayerDef,
@@ -90,7 +90,7 @@ export function registerCommonSystems(em: EntityManager) {
   registerCursorSystems(em);
   registerGrappleDbgSystems(em);
   registerInitTransforms(em);
-  registerBoatSystems(em);
+  registerEnemyShipSystems(em);
   registerControllableSystems(em);
   registerPlayerSystems(em);
   registerBulletUpdate(em);

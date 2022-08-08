@@ -16,7 +16,7 @@ interface DbgEnt extends Entity {
 // peer,host,authority,deleted,me,inbox,outbox,netStats,eventsFromNetwork,
 // eventsToNetwork,networkReady,join,bullet,bulletConstruct,cubeConstruct,player,
 // playerProps,camera,transform,motionSmoothing,parent,renderable,cameraView,
-// physicsResults,_phys,boat,boatConstruct,detectedEvents,requestedEvents,events,
+// physicsResults,_phys,enemyShip,enemyShipConstruct,detectedEvents,requestedEvents,events,
 // groundConstruct,shipConstruct,hatConstruct,color,hat
 
 const dbgEnts: Map<number, DbgEnt> = new Map();

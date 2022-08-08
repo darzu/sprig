@@ -68,9 +68,9 @@ function callFixedTimestepSystems() {
   EM.callSystem("buildBullets");
   EM.callSystem("buildCursor");
   EM.callSystem("placeCursorAtScreenCenter");
-  EM.callSystem("stepBoats");
-  EM.callSystem("boatsFire");
-  EM.callSystem("breakBoats");
+  EM.callSystem("stepEnemyShips");
+  EM.callSystem("enemyShipsFire");
+  EM.callSystem("breakEnemyShips");
   EM.callSystem("controllableInput");
   EM.callSystem("controllableCameraFollow");
   EM.callSystem("buildPlayers");
@@ -91,7 +91,7 @@ function callFixedTimestepSystems() {
     EM.callSystem("playerShipMove");
     EM.callSystem("shipUpdateParty");
     // EM.callSystem("shipScore");
-    EM.callSystem("boatPropsBuild");
+    EM.callSystem("enemyShipPropsBuild");
     EM.callSystem("cannonPropsBuild");
     EM.callSystem("gemPropsBuild");
     EM.callSystem("rudderPropsBuild");

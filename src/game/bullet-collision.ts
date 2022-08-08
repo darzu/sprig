@@ -17,7 +17,11 @@ import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { AuthorityDef } from "../net/components.js";
 import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../delete.js";
-import { BoatLocalDef, BoatPropsDef, breakBoat } from "./enemy-boat.js";
+import {
+  EnemyShipLocalDef,
+  EnemyShipPropsDef,
+  breakEnemyShip,
+} from "./enemy-ship.js";
 import { AssetsDef } from "./assets.js";
 import { MusicDef } from "../music.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
@@ -81,12 +85,12 @@ export const raiseBulletPlayer = eventWizard(
   }
 );
 
-export const raiseBulletBoat = eventWizard(
-  "bullet-boat",
-  () => [[BulletDef], [BoatLocalDef, PositionDef, RotationDef]] as const,
-  ([bullet, boat]) => {
+export const raiseBulletEnemyShip = eventWizard(
+  "bullet-enemyShip",
+  () => [[BulletDef], [EnemyShipLocalDef, PositionDef, RotationDef]] as const,
+  ([bullet, enemyShip]) => {
     EM.ensureComponentOn(bullet, DeletedDef);
     const res = EM.getResources([AssetsDef, MusicDef])!;
-    breakBoat(EM, boat, res.assets.boat_broken, res.music);
+    breakEnemyShip(EM, enemyShip, res.assets.enemyShip_broken, res.music);
   }
 );

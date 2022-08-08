@@ -70,7 +70,7 @@ const RemoteMesheSets = {
   //    natively do that. Doing it natively would be great b/c there
   //    is a lot of translate/scale alignment issues when we have
   //    a base model and a fractured model. Very hard to make changes.
-  boat_broken: "boat_broken.sprig.obj",
+  enemyShip_broken: "boat_broken.sprig.obj",
   ship_broken: "barge1_broken.sprig.obj",
 } as const;
 
@@ -121,7 +121,7 @@ const MeshModify: Partial<{
   // cube: blackoutColor,
   // ship: blackoutColor,
   // ball: blackoutColor,
-  // boat_broken: blackoutColor,
+  // enemyShip_broken: blackoutColor,
   ship: (m) => {
     m.lines = [];
     scaleMesh(m, 3);
@@ -601,7 +601,7 @@ export const LocalMeshes = {
   plane: () => PLANE_MESH,
   tetra: () => TETRA_MESH,
   hex: HEX_MESH,
-  boat: () => BOAT_MESH,
+  enemyShip: () => BOAT_MESH,
   bullet: () => BULLET_MESH,
   gridPlane: () => GRID_PLANE_MESH,
   fabric: () => DBG_FABRIC,

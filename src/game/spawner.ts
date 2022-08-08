@@ -13,7 +13,7 @@ import {
   PositionDef,
   RotationDef,
 } from "../physics/transform.js";
-import { spawnBoat } from "./enemy-boat.js";
+import { spawnEnemyShip } from "./enemy-ship.js";
 
 export interface SpawnerOpts {
   towardsPlayerDir: vec3;
@@ -61,7 +61,12 @@ onInit((em) => {
         const y = ColliderDef.isOn(t)
           ? (t.collider as AABBCollider).aabb.max[1] + 1
           : t.position[1];
-        const b = spawnBoat([0, y, 0], t.id, angle, t.toSpawn.side === "left");
+        const b = spawnEnemyShip(
+          [0, y, 0],
+          t.id,
+          angle,
+          t.toSpawn.side === "left"
+        );
 
         // console.log(`spawning ${b.id} from ${t.id} at ${performance.now()}`);
 
