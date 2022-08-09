@@ -72,3 +72,5 @@ For debugging async or init code:
   this will clearly show splits across an async boundry
 
 Have a "step frame" notion
+
+MidJourney or similiar integration for references generation?

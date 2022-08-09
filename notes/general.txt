@@ -1191,7 +1191,36 @@ Environment design:
     behavioral traces (e.g. a messy desk),
     identity claims (e.g. photographs on the wall)
     mood modifiers (e.g. music, candle light)
-  
+  Mimesis
+    Roleplaying
+    Personality
+    Affordances
+    Sizes
+    Layout
+  Semiotics:
+    Signifiers 
+      symbols: culturally arbitrary, e.g. language words, stop sign
+      icon: resembles what it is signifying
+      indexes: e.g. smoke is an index signifier for fire
+    Aesthetic Language
+      Shape language
+        to design a silo door, u could:
+          shape language: copy style of existing marine machinery doors
+          roleplaying engineer: work from the principles of physics to design a door
+    Tropes
+      Metonymy: e.g. White House to refer to US Gov
+      Synecdoche: e.g. Eifel Tower to refer to Paris
+  Cognition:
+    Associations
+      color preferences are partially culturally motivated
+    Spatial:
+      brain uses real-world spacial mapping to understand social mapping
+        e.g. John is {close to, distant to, ahead of, above, below} me
+    Peak shift:
+      exaggerate features that are different from normal e.g. a caricature
+        e.g. feature prominently in frame: the hollywood sign, cactus, golf course, mountain lookout
+
+
 Teaching programming idea:
   first, don't even start with code
   imagine two blocks, red and blue, and u could snap them together

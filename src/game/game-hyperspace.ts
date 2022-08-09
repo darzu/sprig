@@ -19,9 +19,9 @@ import { noisePipes } from "../render/pipelines/std-noise.js";
 import { DevConsoleDef } from "../console.js";
 import { initOcean, OceanDef, oceanJfa, UVPosDef, UVDirDef } from "./ocean.js";
 import { asyncTimeout } from "../util.js";
-import { vec3 } from "../gl-matrix.js";
+import { vec2, vec3 } from "../gl-matrix.js";
 import { AnimateToDef, EASE_INQUAD } from "../animate-to.js";
-import { SpawnerDef } from "./spawner.js";
+import { createSpawner, SpawnerDef } from "./spawner.js";
 import { tempVec3 } from "../temp-pool.js";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
@@ -113,29 +113,20 @@ export async function initHyperspaceGame(em: EntityManager) {
   const { ocean, me } = await em.whenResources(OceanDef, MeDef);
   const ship2 = await em.whenEntityHas(ship, UVPosDef);
 
-  const enemyEndPos = ocean.uvToPos(vec3.create(), [0.2, 0.1]);
-  vec3.add(enemyEndPos, enemyEndPos, [0, 10, 0]);
+  const enemyUVPos: vec2 = [0.2, 0.1];
+  const enemyEndPos = ocean.uvToPos(vec3.create(), enemyUVPos);
+  // vec3.add(enemyEndPos, enemyEndPos, [0, 10, 0]);
   const enemyStartPos = vec3.sub(vec3.create(), enemyEndPos, [0, 20, 0]);
 
+  const towardsPlayerDir = vec2.sub(vec2.create(), ship2.uvPos, enemyUVPos);
+  vec2.normalize(towardsPlayerDir, towardsPlayerDir);
+
   // console.log("creating spawner");
-  const enemySpawner = em.newEntity();
-  em.ensureComponentOn(enemySpawner, PositionDef);
-  em.ensureComponentOn(enemySpawner, RotationDef);
-  em.ensureComponentOn(enemySpawner, AuthorityDef, me.pid);
-  em.ensureComponentOn(enemySpawner, AnimateToDef, {
+  const enemySpawner = createSpawner(enemyUVPos, towardsPlayerDir, {
     startPos: enemyStartPos,
     endPos: enemyEndPos,
     durationMs: 1000,
     easeFn: EASE_INQUAD,
-  });
-  const towardsPlayerDir = vec3.sub(
-    vec3.create(),
-    ocean.uvToPos(tempVec3(), ship2.uvPos),
-    enemyEndPos
-  );
-  vec3.normalize(towardsPlayerDir, towardsPlayerDir);
-  em.ensureComponentOn(enemySpawner, SpawnerDef, {
-    towardsPlayerDir,
   });
 
   // em.ensureComponentOn(ocean, PositionDef, [120, 0, 0]);

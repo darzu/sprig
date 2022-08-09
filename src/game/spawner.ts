@@ -1,7 +1,7 @@
-import { AnimateToDef } from "../animate-to.js";
+import { AnimateTo, AnimateToDef } from "../animate-to.js";
 import { createRef, Ref } from "../em_helpers.js";
 import { EM, Entity } from "../entity-manager.js";
-import { quat, vec3 } from "../gl-matrix.js";
+import { quat, vec2, vec3 } from "../gl-matrix.js";
 import { onInit } from "../init.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
@@ -14,65 +14,74 @@ import {
   RotationDef,
 } from "../physics/transform.js";
 import { spawnEnemyShip } from "./enemy-ship.js";
+import { UVDirDef, UVPosDef } from "./ocean.js";
 
-export interface SpawnerOpts {
-  towardsPlayerDir: vec3;
-  side: "left" | "right";
-}
+// TODO(@darzu): generalize for spawning non-enemy entities in the ocean
+
 const ChildCS = [
   PositionDef,
   RotationDef,
   WorldFrameDef,
   PhysicsParentDef,
 ] as const;
-export interface Spawner extends SpawnerOpts {
+
+export interface Spawner {
   hasSpawned: boolean;
   childrenToRelease: Ref<[...typeof ChildCS]>[];
 }
 export const SpawnerDef = EM.defineComponent(
-  "toSpawn",
-  (s?: Partial<Spawner>) => ({
-    towardsPlayerDir: [0, 0, 0],
-    childrenToRelease: [],
-    hasSpawned: false,
-    side: "left",
-    ...s,
-  })
+  "spawner",
+  function (s?: Partial<Spawner>): Spawner {
+    return {
+      childrenToRelease: [],
+      hasSpawned: false,
+      ...s,
+    };
+  }
 );
 
-export function addSpawner(e: Entity, opts: SpawnerOpts) {
-  EM.ensureComponentOn(e, SpawnerDef, opts);
+export function createSpawner(
+  uvPos: vec2,
+  uvDir: vec2,
+  animate?: Partial<AnimateTo>
+) {
+  const e = EM.newEntity();
+  EM.ensureComponentOn(e, SpawnerDef);
+  EM.ensureComponentOn(e, UVPosDef, uvPos);
+  EM.ensureComponentOn(e, UVDirDef, uvDir);
+  EM.ensureComponentOn(e, PositionDef);
+  EM.ensureComponentOn(e, RotationDef);
+  if (animate) EM.ensureComponentOn(e, AnimateToDef, animate);
+  return e;
 }
 
 onInit((em) => {
   em.registerSystem(
-    [SpawnerDef, AuthorityDef, PositionDef],
+    [SpawnerDef, UVPosDef, UVDirDef],
     [MeDef],
     (tiles, res) => {
       for (let t of tiles) {
-        if (t.authority.pid !== res.me.pid) continue;
-        if (t.toSpawn.hasSpawned) continue;
+        if (AuthorityDef.isOn(t) && t.authority.pid !== res.me.pid) continue;
+        if (t.spawner.hasSpawned) continue;
 
-        const angle = Math.atan2(
-          t.toSpawn.towardsPlayerDir[2],
-          -t.toSpawn.towardsPlayerDir[0]
-        );
+        // TODO(@darzu): move to util, very useful
+        // const angle = Math.atan2(
+        //   t.spawner.towardsPlayerDir[2],
+        //   -t.spawner.towardsPlayerDir[0]
+        // );
 
-        const y = ColliderDef.isOn(t)
-          ? (t.collider as AABBCollider).aabb.max[1] + 1
-          : t.position[1];
+        // TODO(@darzu): parameterize what is spawned
         const b = spawnEnemyShip(
-          [0, y, 0],
+          vec2.copy(vec2.create(), t.uvPos),
           t.id,
-          angle,
-          t.toSpawn.side === "left"
+          vec2.copy(vec2.create(), t.uvDir)
         );
 
         // console.log(`spawning ${b.id} from ${t.id} at ${performance.now()}`);
 
-        t.toSpawn.childrenToRelease.push(createRef(b.id, [...ChildCS]));
+        t.spawner.childrenToRelease.push(createRef(b.id, [...ChildCS]));
 
-        t.toSpawn.hasSpawned = true;
+        t.spawner.hasSpawned = true;
       }
     },
     "spawnOnTile"
@@ -108,8 +117,8 @@ onInit((em) => {
         if (AnimateToDef.isOn(t)) continue;
 
         // unparent children
-        for (let i = t.toSpawn.childrenToRelease.length - 1; i >= 0; i--) {
-          const c = t.toSpawn.childrenToRelease[i]();
+        for (let i = t.spawner.childrenToRelease.length - 1; i >= 0; i--) {
+          const c = t.spawner.childrenToRelease[i]();
           if (c) {
             // console.log(
             //   `unparenting ${c.id} from ${t.id} at ${performance.now()}`
@@ -121,12 +130,12 @@ onInit((em) => {
             c.physicsParent.id = 0;
             runUnparent(c);
 
-            t.toSpawn.childrenToRelease.splice(i);
+            t.spawner.childrenToRelease.splice(i);
           }
         }
 
         // do we still have children to release?
-        if (!t.toSpawn.childrenToRelease.length) {
+        if (!t.spawner.childrenToRelease.length) {
           toRemove.push(t.id); // if not, remove the spawner
         }
       }

@@ -256,3 +256,6 @@ Estimation vs forecasting
 Instead of being "data-driven", we should be "data-informed"
   Don't turn off your brain, data is just one set of inputs
 
+There are no game engines that have both:
+  "real 3D" -> can make an actual performant game for Steam
+  "obsessive simplicity" -> can teach beginners like Scratch, Kodu, MakeCode, etc.

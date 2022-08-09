@@ -604,6 +604,10 @@ export class EntityManager {
     CS extends ComponentDef[],
     ID extends number
   >(e: EntityW<any[], ID>, ...cs: CS): Promise<EntityW<CS, ID>> {
+    // short circuit if we already have the components
+    if (cs.every((c) => c.name in e))
+      return Promise.resolve(e as EntityW<CS, ID>);
+
     // TODO(@darzu): this is too copy-pasted from registerSystem
     // TODO(@darzu): need unified query maybe?
     let _name = "oneShot" + this.nextOneShotSuffix++;

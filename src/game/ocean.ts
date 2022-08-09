@@ -1,10 +1,15 @@
+import { AnimateToDef } from "../animate-to.js";
 import { ColorDef } from "../color.js";
 import { createRef, Ref } from "../em_helpers.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { vec3, vec2 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { clamp } from "../math.js";
-import { PositionDef, RotationDef } from "../physics/transform.js";
+import {
+  PhysicsParentDef,
+  PositionDef,
+  RotationDef,
+} from "../physics/transform.js";
 import { createTextureReader } from "../render/cpu-texture.js";
 import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
 import {
@@ -146,6 +151,9 @@ EM.registerSystem(
   (es, res) => {
     // console.log("runOcean");
     for (let e of es) {
+      // TODO(@darzu): need some notion of UV parenting?
+      if (PhysicsParentDef.isOn(e) && e.physicsParent.id !== 0) continue;
+      if (AnimateToDef.isOn(e)) continue;
       // console.log(`copying: ${e.id}`);
       const newPos = res.ocean.uvToPos(tempVec3(), e.uvPos);
 
@@ -164,6 +172,9 @@ EM.registerSystem(
   (es, res) => {
     // console.log("runOcean");
     for (let e of es) {
+      // TODO(@darzu): need some notion of UV parenting?
+      if (PhysicsParentDef.isOn(e) && e.physicsParent.id !== 0) continue;
+      if (AnimateToDef.isOn(e)) continue;
       // console.log(`copying: ${e.id}`);
 
       // vec2.normalize(e.uvDir, e.uvDir);
@@ -184,35 +195,36 @@ EM.registerSystem(
   "oceanUVDirToRot"
 );
 
-EM.registerSystem(
-  [UVPosDef, UVDirDef, PositionDef, RotationDef],
-  [OceanDef, InputsDef],
-  (es, res) => {
-    // console.log("runOcean");
-    for (let e of es) {
-      // TODO(@darzu): debug moving
-      // console.log("moving buoy!");
-      let speed = 0.001;
-      const deltaUV = vec2.zero(tempVec2());
-      if (res.inputs.keyDowns["shift"]) speed *= 5;
-      if (res.inputs.keyDowns["arrowright"]) deltaUV[1] -= speed;
-      if (res.inputs.keyDowns["arrowleft"]) deltaUV[1] += speed;
-      if (res.inputs.keyDowns["arrowup"]) deltaUV[0] += speed;
-      if (res.inputs.keyDowns["arrowdown"]) deltaUV[0] -= speed;
-      if (deltaUV[0] !== 0.0 || deltaUV[1] !== 0.0) {
-        const newUV = vec2.add(tempVec2(), e.uvPos, deltaUV);
+// TODO(@darzu): debug movement on the ocean
+// EM.registerSystem(
+//   [UVPosDef, UVDirDef, PositionDef, RotationDef],
+//   [OceanDef, InputsDef],
+//   (es, res) => {
+//     // console.log("runOcean");
+//     for (let e of es) {
+//       // TODO(@darzu): debug moving
+//       // console.log("moving buoy!");
+//       let speed = 0.001;
+//       const deltaUV = vec2.zero(tempVec2());
+//       if (res.inputs.keyDowns["shift"]) speed *= 5;
+//       if (res.inputs.keyDowns["arrowright"]) deltaUV[1] -= speed;
+//       if (res.inputs.keyDowns["arrowleft"]) deltaUV[1] += speed;
+//       if (res.inputs.keyDowns["arrowup"]) deltaUV[0] += speed;
+//       if (res.inputs.keyDowns["arrowdown"]) deltaUV[0] -= speed;
+//       if (deltaUV[0] !== 0.0 || deltaUV[1] !== 0.0) {
+//         const newUV = vec2.add(tempVec2(), e.uvPos, deltaUV);
 
-        // TODO(@darzu): need a better way to see if UV is out of map bounds
-        const newPos = res.ocean.uvToPos(tempVec3(), newUV);
-        if (!vec3.exactEquals(newPos, vec3.ZEROS)) {
-          vec2.copy(e.uvPos, newUV);
-          vec2.copy(e.uvDir, deltaUV);
-        }
-      }
-    }
-  },
-  "runOcean"
-);
+//         // TODO(@darzu): need a better way to see if UV is out of map bounds
+//         const newPos = res.ocean.uvToPos(tempVec3(), newUV);
+//         if (!vec3.exactEquals(newPos, vec3.ZEROS)) {
+//           vec2.copy(e.uvPos, newUV);
+//           vec2.copy(e.uvDir, deltaUV);
+//         }
+//       }
+//     }
+//   },
+//   "runOcean"
+// );
 
 // TODO(@darzu): ocean texture posibilities:
 // [x] 2D voronoi texture to CPU

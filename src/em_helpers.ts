@@ -91,6 +91,8 @@ export function defineNetEntityHelper<
     deserializeProps: (obj: P1, buf: Deserializer) => void;
     defaultLocal: () => P2;
     dynamicComponents: [...DS];
+    // TODO(@darzu): probably get rid of this in favor of "whenResources", then
+    //    maybe bring it back if we need the perf.
     buildResources: [...RS];
     build: (
       e: EntityW<

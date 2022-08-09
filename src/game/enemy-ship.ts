@@ -6,7 +6,7 @@ import {
   Component,
 } from "../entity-manager.js";
 import { TimeDef } from "../time.js";
-import { quat, vec3 } from "../gl-matrix.js";
+import { quat, vec2, vec3 } from "../gl-matrix.js";
 import { jitter } from "../math.js";
 import { ColorDef } from "../color.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
@@ -38,6 +38,8 @@ import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { raiseBulletEnemyShip } from "./bullet-collision.js";
 import { GameStateDef, GameState } from "./gamestate.js";
 import { cloneMesh, scaleMesh3 } from "../render/mesh.js";
+import { ShipDef } from "./ship.js";
+import { UVDirDef, UVPosDef } from "./ocean.js";
 
 export const EnemyDef = EM.defineComponent("enemy", () => {
   return {
@@ -82,32 +84,32 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
   defineNetEntityHelper(EM, {
     name: "enemyShip",
     defaultProps: (
-      loc?: vec3,
+      uvLoc?: vec2,
       speed?: number,
       wheelSpeed?: number,
-      wheelDir?: number,
+      uvDir?: vec2,
       parent?: number
     ) => {
       return {
-        location: loc ?? vec3.fromValues(0, 0, 0),
-        speed: speed ?? 0.01,
+        uvLoc: uvLoc ?? vec2.fromValues(0, 0),
+        speed: speed ?? 0.0,
         wheelSpeed: wheelSpeed ?? 0.0,
-        wheelDir: wheelDir ?? 0.0,
+        uvDir: uvDir ?? vec2.fromValues(1, 0),
         parent: parent ?? 0,
       };
     },
     serializeProps: (c, buf) => {
-      buf.writeVec3(c.location);
+      buf.writeVec2(c.uvLoc);
+      buf.writeVec2(c.uvDir);
       buf.writeFloat32(c.speed);
       buf.writeFloat32(c.wheelSpeed);
-      buf.writeFloat32(c.wheelDir);
       buf.writeUint32(c.parent);
     },
     deserializeProps: (c, buf) => {
-      buf.readVec3(c.location);
+      buf.readVec2(c.uvLoc);
+      buf.readVec2(c.uvDir);
       c.speed = buf.readFloat32();
       c.wheelSpeed = buf.readFloat32();
-      c.wheelDir = buf.readFloat32();
       c.parent = buf.readUint32();
     },
     defaultLocal: () => {
@@ -121,10 +123,15 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
         childEnemyId: 0,
       };
     },
-    dynamicComponents: [PositionDef, RotationDef, LinearVelocityDef],
+    // TODO(@darzu): probably sync UV pos/dir
+    dynamicComponents: [PositionDef, RotationDef],
     buildResources: [AssetsDef, MeDef],
     build: (e, res) => {
       const em: EntityManager = EM;
+
+      em.ensureComponentOn(e, ShipDef);
+      e.ship.speed = e.enemyShipProps.speed;
+
       em.ensureComponentOn(e, ColorDef, ENEMY_SHIP_COLOR);
       em.ensureComponentOn(e, MotionSmoothingDef);
       em.ensureComponentOn(
@@ -132,7 +139,11 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
         RenderableConstructDef,
         res.assets.enemyShip.mesh
       );
-      vec3.copy(e.position, e.enemyShipProps.location);
+
+      em.ensureComponentOn(e, UVPosDef);
+      vec2.copy(e.uvPos, e.enemyShipProps.uvLoc);
+      em.ensureComponentOn(e, UVDirDef);
+      vec2.copy(e.uvDir, e.enemyShipProps.uvDir);
 
       em.ensureComponentOn(e, PhysicsParentDef, e.enemyShipProps.parent);
 
@@ -223,33 +234,17 @@ export const raiseBreakEnemyShip = eventWizard(
 
 export function registerEnemyShipSystems(em: EntityManager) {
   em.registerSystem(
-    [
-      EnemyShipLocalDef,
-      EnemyShipPropsDef,
-      RotationDef,
-      LinearVelocityDef,
-      AuthorityDef,
-    ],
+    [EnemyShipLocalDef, EnemyShipPropsDef, UVDirDef, ShipDef, AuthorityDef],
     [TimeDef, MeDef],
     (enemyShips, res) => {
       for (let o of enemyShips) {
         if (o.authority.pid !== res.me.pid) continue;
 
-        const rad = o.enemyShipProps.wheelSpeed * res.time.dt;
-        o.enemyShipProps.wheelDir += rad;
+        const radYaw = o.enemyShipProps.wheelSpeed * res.time.dt;
+        // o.enemyShipProps.uvDir += rad;
+        // TODO(@darzu):  * 0.02
 
-        // rotate
-        quat.rotateY(o.rotation, quat.IDENTITY, o.enemyShipProps.wheelDir);
-
-        // rotate velocity
-        vec3.rotateY(
-          o.linearVelocity,
-          // TODO(@darzu): debugging
-          [-o.enemyShipProps.speed, 0.0, 0],
-          // [o.enemyShipProps.speed, -0.01, 0],
-          [0, 0, 0],
-          o.enemyShipProps.wheelDir
-        );
+        vec2.rotate(o.uvDir, o.uvDir, vec2.ZEROS, radYaw);
       }
     },
     "stepEnemyShips"
@@ -375,22 +370,17 @@ export function breakEnemyShip(
 export const FireZoneDef = EM.defineComponent("firezone", () => {});
 
 export function spawnEnemyShip(
-  loc: vec3,
+  loc: vec2,
   parentId: number,
-  wheelDir: number,
-  facingRight: boolean
+  uvDir: vec2
 ): EntityW<[typeof EnemyShipPropsDef]> {
   const enemyShip = EM.newEntity();
   EM.ensureComponentOn(enemyShip, EnemyShipPropsDef);
   const enemyShipCon = enemyShip.enemyShipProps;
-  enemyShipCon.location = loc;
+  enemyShipCon.uvLoc = loc;
   enemyShipCon.parent = parentId;
   enemyShipCon.speed = 0.005 + jitter(0.002);
-  enemyShipCon.wheelDir = wheelDir * (1 + jitter(0.1));
+  enemyShipCon.uvDir = uvDir;
   enemyShipCon.wheelSpeed = jitter(0.00005);
-  if (facingRight) {
-    enemyShipCon.speed *= -1;
-    enemyShipCon.wheelDir += Math.PI;
-  }
   return enemyShip;
 }

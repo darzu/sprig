@@ -11,6 +11,28 @@ Screen recording:
   Livestreaming / friend streaming
   Gameplay sharing
   Remote play-together
+  Linked to a session recording 
+  
+Session recording:
+  records all actions taken in the IDE
+  linked to screen recording
+  linked to project version control and save format
+  linked to game saves
+  can replay, rewind, etc
+  on replay, can show keyboard shortcuts that could have been used,
+    or can simulate a mouse to click instead of keyboard shortcuts
+      use loopy mouse paths (biase to loop toward center) with sharp end points
+  tracks which features and versions were used so it can automatically be upgraded as the IDE updates
+      When compatibility breaks, we can write a custom mapping from all feature clicks to new feature clicks
+  option to follow along with the session as a ghost presence
+    can reduce IDE to just the features used, greying out everything else
+
+IDE multiplayer:
+  a la liveshare, google docs
+  uses same netcode base as the multiplayer game
+  trivial to playtest together via multiplayer
+    can vote on switching into and out of the game
+  can request help from teacher / mentor / friend
 
 Audio:
   Music
@@ -28,6 +50,9 @@ Teaching content:
     Consider Sokpop-Ruben's 3D via sprites as a better way to 
       creep up on view projection and vertex shading
   The single best tutorial for creating a 3D game
+  Make it as easy as possible to create good content via:
+    session recording, screen recording, webcam, video editting, auto gap removal,
+    auto shortcut showing, feature usage and version tracking
 
 IDEs:
   Shader-super-toy
