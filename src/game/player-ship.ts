@@ -38,6 +38,7 @@ import { YawPitchDef } from "../yawpitch.js";
 import { UVPosDef, UVDirDef } from "./ocean.js";
 import { PartyDef } from "./party.js";
 import { ShipDef } from "./ship.js";
+import { createMastNow } from "./sail.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
@@ -209,6 +210,8 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
         // create rudder
         const r = createRudderNow(res, s.id);
         s.playerShipProps.rudder = createRef(r);
+
+        const m = createMastNow(res, s.id);
 
         // create cannons
         const cannonPitch = Math.PI * +0.05;

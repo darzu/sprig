@@ -608,6 +608,12 @@ export const LocalMeshes = {
   fabric: () => DBG_FABRIC,
   triFence: TRI_FENCE,
   wireCube: () => ({ ...CUBE_MESH, tri: [] } as RawMesh),
+  mast: () => {
+    let m = cloneMesh(CUBE_MESH);
+    mapMeshPositions(m, (p) => [p[0], p[1] + 1, p[2]]);
+    scaleMesh3(m, [0.5, 12, 0.5]);
+    return m;
+  },
 } as const;
 
 type LocalMeshSymbols = keyof typeof LocalMeshes;
