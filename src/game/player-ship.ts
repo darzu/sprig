@@ -70,7 +70,7 @@ export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper(
     build: (gem, res) => {
       const em: EntityManager = EM;
 
-      em.ensureComponentOn(gem, PositionDef, [0, 0, -1]);
+      em.ensureComponentOn(gem, PositionDef, [0, 0, 10]);
 
       em.ensureComponentOn(
         gem,
