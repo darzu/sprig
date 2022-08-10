@@ -13,11 +13,30 @@ import {
   RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
-import { RenderableConstructDef } from "../render/renderer-ecs.js";
+import { mapMeshPositions } from "../render/mesh.js";
+import {
+  RenderableConstructDef,
+  RenderableDef,
+  RendererDef,
+} from "../render/renderer-ecs.js";
 import { YawPitchDef, yawpitchToQuat } from "../yawpitch.js";
 import { AssetsDef } from "./assets.js";
 import { BOAT_COLOR } from "./player-ship.js";
 import { constructNetTurret, TurretDef } from "./turret.js";
+
+const BoomPitchesDef = EM.defineComponent(
+  "boomPitches",
+  () => [Math.PI / 4] as [number]
+);
+EM.registerSerializerPair(
+  BoomPitchesDef,
+  (c, writer) => {
+    writer.writeFloat32(c[0]);
+  },
+  (c, reader) => {
+    c[0] = reader.readFloat32();
+  }
+);
 
 export const { MastPropsDef, MastLocalDef, createMastNow } =
   defineNetEntityHelper(EM, {
@@ -32,9 +51,10 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       o.shipId = buf.readUint32();
     },
     defaultLocal: () => ({
-      boom: createRef(0, [YawPitchDef, RotationDef]),
+      boom: createRef(0, [RotationDef]),
+      sail: createRef(0, [RenderableDef]),
     }),
-    dynamicComponents: [RotationDef],
+    dynamicComponents: [RotationDef, BoomPitchesDef],
     buildResources: [AssetsDef, MeDef],
     build: (mast, res) => {
       const em: EntityManager = EM;
@@ -50,15 +70,22 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       em.ensureComponentOn(boom, PositionDef, [0, 12, 0]);
       em.ensureComponentOn(boom, RenderableConstructDef, res.assets.mast.mesh);
       em.ensureComponentOn(boom, ScaleDef, [0.5, 0.5, 0.5]);
-      em.ensureComponentOn(boom, YawPitchDef);
-      boom.yawpitch.pitch = Math.PI / 4;
       em.ensureComponentOn(boom, RotationDef);
-      quat.rotateZ(boom.rotation, boom.rotation, Math.PI / 4);
-      em.ensureComponentOn(boom, ColorDef, [0.05, 0.05, 0.05]);
       em.ensureComponentOn(boom, ColorDef, vec3.clone(BOAT_COLOR));
       vec3.scale(boom.color, boom.color, 0.7);
       em.ensureComponentOn(boom, PhysicsParentDef, mast.id);
       mast.mastLocal.boom = createRef(boom);
+
+      const sail = em.newEntity();
+      em.ensureComponentOn(sail, PositionDef, [0, 12, 0]);
+      em.ensureComponentOn(sail, RenderableConstructDef, res.assets.sail.mesh);
+      //em.ensureComponentOn(sail, ScaleDef, [12, 12, 12]);
+      em.ensureComponentOn(sail, RotationDef);
+      em.ensureComponentOn(sail, ColorDef, [0.99, 0.99, 0.99]);
+      em.ensureComponentOn(sail, PhysicsParentDef, mast.id);
+      em.whenEntityHas(sail, RenderableDef).then((sail) => {
+        mast.mastLocal.sail = createRef(sail);
+      });
 
       // create seperate hitbox for interacting with the mast
       const interactBox = em.newEntity();
@@ -99,21 +126,46 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
 
 onInit((em) => {
   em.registerSystem(
-    [MastPropsDef, MastLocalDef, TurretDef],
-    [InputsDef],
+    [MastPropsDef, MastLocalDef, TurretDef, BoomPitchesDef],
+    [InputsDef, RendererDef],
     (masts, res) => {
       for (let mast of masts) {
         const boom = mast.mastLocal.boom()!;
         if (mast.turret.mannedId) {
           if (res.inputs.keyDowns["a"]) {
-            boom.yawpitch.pitch -= Math.PI * 0.005;
+            mast.boomPitches[0] -= Math.PI * 0.005;
           }
           if (res.inputs.keyDowns["d"]) {
-            boom.yawpitch.pitch += Math.PI * 0.005;
+            mast.boomPitches[0] += Math.PI * 0.005;
           }
-          boom.yawpitch.pitch = clamp(boom.yawpitch.pitch, 0, Math.PI / 2);
+          mast.boomPitches[0] = clamp(
+            mast.boomPitches[0],
+            Math.PI * 0.03,
+            Math.PI / 2
+          );
         }
-        yawpitchToQuat(boom.rotation, boom.yawpitch);
+        quat.rotateX(boom.rotation, quat.IDENTITY, mast.boomPitches[0]);
+
+        // update sail
+        const sail = mast.mastLocal.sail();
+        if (sail) {
+          // TODO: "read only mesh," eh? not so much
+          mapMeshPositions(
+            sail.renderable.meshHandle.readonlyMesh!,
+            (pos, i) => {
+              if (i == 1) {
+                pos[1] = 12;
+              } else if (i == 2) {
+                vec3.transformQuat(pos, [0, 12, 0], boom.rotation);
+              }
+              return pos;
+            }
+          );
+          res.renderer.renderer.updateMesh(
+            sail.renderable.meshHandle,
+            sail.renderable.meshHandle.readonlyMesh!
+          );
+        }
       }
     },
     "updateMastBoom"
