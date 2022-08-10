@@ -320,3 +320,22 @@ MVP experience:
     enter area, spawn and come at you
   mining:
     EV? Not?
+
+Gameplay hackathon ideas:
+  - firing cannon at enemy ship
+  - any resource collection
+  - Grass cutting
+  - sailing: controlling sail unfurl; sail direction
+  - repairing
+  - Hard points / ship customization
+  - Multi-surface gameplay (UV surface traversal works on many shapes)
+  - Portals
+  - "Jumping" from one part of a surface to another, as a shortcut via 3D movement
+  - snake monster
+  - underwater anything
+  - boarding enemy
+  - multi-deck ship
+  - crow's nest
+  - impassible rocks
+  - raising and lowering obstacles like turtle islands in Valheim
+  - grapple hook floating objects

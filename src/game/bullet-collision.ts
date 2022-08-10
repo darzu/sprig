@@ -91,6 +91,6 @@ export const raiseBulletEnemyShip = eventWizard(
   ([bullet, enemyShip]) => {
     EM.ensureComponentOn(bullet, DeletedDef);
     const res = EM.getResources([AssetsDef, MusicDef])!;
-    breakEnemyShip(EM, enemyShip, res.assets.enemyShip_broken, res.music);
+    breakEnemyShip(EM, enemyShip, res.assets.boat_broken, res.music);
   }
 );

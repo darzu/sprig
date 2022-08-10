@@ -92,6 +92,8 @@ onInit((em) => {
     "unparent",
     [[PhysicsParentDef, PositionDef, RotationDef, WorldFrameDef]] as const,
     ([c]) => {
+      // TODO(@darzu): DBG
+      // console.log(`unparent on: ${c.id}`);
       vec3.copy(c.position, c.world.position);
       quat.copy(c.rotation, c.world.rotation);
       c.physicsParent.id = 0;
@@ -100,13 +102,13 @@ onInit((em) => {
 
   // TODO(@darzu): can we make this more ground agnostic?
   em.registerSystem(
-    [SpawnerDef, AuthorityDef, RotationDef, PositionDef],
+    [SpawnerDef, RotationDef, PositionDef],
     [MeDef],
     (tiles, res) => {
       const toRemove: number[] = [];
 
       for (let t of tiles) {
-        if (t.authority.pid !== res.me.pid) continue;
+        if (AuthorityDef.isOn(t) && t.authority.pid !== res.me.pid) continue;
 
         // TODO(@darzu): is spawner still relevant?
         // is the ground ready?
@@ -117,6 +119,7 @@ onInit((em) => {
         if (AnimateToDef.isOn(t)) continue;
 
         // unparent children
+        // console.log(`childrenToRelease: ${t.spawner.childrenToRelease.length}`);
         for (let i = t.spawner.childrenToRelease.length - 1; i >= 0; i--) {
           const c = t.spawner.childrenToRelease[i]();
           if (c) {

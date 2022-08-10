@@ -70,7 +70,8 @@ const RemoteMesheSets = {
   //    natively do that. Doing it natively would be great b/c there
   //    is a lot of translate/scale alignment issues when we have
   //    a base model and a fractured model. Very hard to make changes.
-  enemyShip_broken: "boat_broken.sprig.obj",
+  // TODO(@darzu): enemy broken parts doesn't seem to work rn. probably rename related
+  boat_broken: "boat_broken.sprig.obj",
   ship_broken: "barge1_broken.sprig.obj",
 } as const;
 

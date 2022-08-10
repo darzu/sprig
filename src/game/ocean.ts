@@ -27,7 +27,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { tempVec2, tempVec3 } from "../temp-pool.js";
 import { asyncTimeout, range } from "../util.js";
-import { quatDbg, quatFromUpForward, vec3Dbg } from "../utils-3d.js";
+import { quatDbg, quatFromUpForward, vec2Dbg, vec3Dbg } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
 
 export interface Ocean {
@@ -156,6 +156,16 @@ EM.registerSystem(
       if (AnimateToDef.isOn(e)) continue;
       // console.log(`copying: ${e.id}`);
       const newPos = res.ocean.uvToPos(tempVec3(), e.uvPos);
+
+      // if (e.id > 10001) {
+      //   // [-347.83,25.77,126.72]
+      //   // [-347.83,25.77,126.72]
+      //   console.log(
+      //     `moving: ${e.id} at uv ${vec2Dbg(e.uvPos)} from ${vec3Dbg(
+      //       e.position
+      //     )} to ${vec3Dbg(newPos)}`
+      //   );
+      // }
 
       if (!vec3.exactEquals(newPos, vec3.ZEROS)) {
         vec3.copy(e.position, newPos);

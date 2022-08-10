@@ -228,7 +228,7 @@ export const raiseBreakEnemyShip = eventWizard(
   [[EnemyShipLocalDef, PositionDef, RotationDef]] as const,
   ([enemyShip]) => {
     const res = EM.getResources([AssetsDef, MusicDef])!;
-    breakEnemyShip(EM, enemyShip, res.assets.enemyShip_broken, res.music);
+    breakEnemyShip(EM, enemyShip, res.assets.boat_broken, res.music);
   }
 );
 
@@ -374,13 +374,11 @@ export function spawnEnemyShip(
   parentId: number,
   uvDir: vec2
 ): EntityW<[typeof EnemyShipPropsDef]> {
-  const enemyShip = EM.newEntity();
-  EM.ensureComponentOn(enemyShip, EnemyShipPropsDef);
-  const enemyShipCon = enemyShip.enemyShipProps;
-  enemyShipCon.uvLoc = loc;
-  enemyShipCon.parent = parentId;
-  enemyShipCon.speed = 0.005 + jitter(0.002);
-  enemyShipCon.uvDir = uvDir;
-  enemyShipCon.wheelSpeed = jitter(0.00005);
-  return enemyShip;
+  return createEnemyShip(
+    loc,
+    0.0002 + jitter(0.0001),
+    jitter(0.00005),
+    uvDir,
+    parentId
+  );
 }

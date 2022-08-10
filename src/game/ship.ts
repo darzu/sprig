@@ -4,6 +4,7 @@ import { vec2 } from "../gl-matrix.js";
 import { onInit } from "../init.js";
 import { InputsDef } from "../inputs.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
+import { vec2Dbg, vec3Dbg } from "../utils-3d.js";
 import { GameStateDef, GameState } from "./gamestate.js";
 import { UVPosDef, UVDirDef } from "./ocean.js";
 
@@ -15,12 +16,24 @@ export const ShipDef = EM.defineComponent("ship", () => {
 
 onInit((em) => {
   em.registerSystem(
-    [ShipDef, AuthorityDef, UVPosDef, UVDirDef],
+    [ShipDef, UVPosDef, UVDirDef],
     [GameStateDef, MeDef, InputsDef, DevConsoleDef],
     (ships, res) => {
       if (res.gameState.state !== GameState.PLAYING) return;
       for (let s of ships) {
-        if (s.authority.pid !== res.me.pid) return;
+        if (AuthorityDef.isOn(s) && s.authority.pid !== res.me.pid) continue;
+
+        // console.log(
+        //   `ship speed: ${s.ship.speed}, dir: ${s.uvDir[0]}, ${s.uvDir[1]}`
+        // );
+
+        // if (s.id > 10001) {
+        //   console.log(
+        //     `${s.id}: ship speed: ${s.ship.speed}, old pos: ${vec2Dbg(
+        //       s.uvPos
+        //     )} dir: ${s.uvDir[0]}, ${s.uvDir[1]}`
+        //   );
+        // }
 
         if (s.ship.speed > 0.00001) {
           // NOTE: we scale uvDir by speed so that the look-ahead used for
