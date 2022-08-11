@@ -259,7 +259,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
 
       // NOTE: since their is no network important state on the parts themselves
       //    they can be created locally
-      const enemyShipFloor = min(BARGE_AABBS.map((c) => c.max[1]));
+      const shipFloor = min(BARGE_AABBS.map((c) => c.max[1]));
       for (let i = 0; i < res.assets.ship_broken.length; i++) {
         const m = res.assets.ship_broken[i];
         const part = em.newEntity();
@@ -274,7 +274,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
           solid: false,
           aabb: m.aabb,
         });
-        (part.collider as AABBCollider).aabb.max[1] = enemyShipFloor;
+        (part.collider as AABBCollider).aabb.max[1] = shipFloor;
         s.playerShipLocal.parts.push(
           createRef(part.id, [ShipPartDef, RenderableDef])
         );

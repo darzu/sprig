@@ -35,6 +35,7 @@ export interface Ocean {
   // TODO(@darzu): uvDistanceToEdge, read the SDF
   uvToPos: (out: vec3, uv: vec2) => vec3;
   uvToNorm: (out: vec3, uv: vec2) => vec3;
+  uvToEdgeDist: (uv: vec2) => number;
 }
 
 export const OceanDef = EM.defineComponent("ocean", (o: Ocean) => {
@@ -104,8 +105,10 @@ export async function initOcean() {
   const readPromises = [
     res.renderer.renderer.readTexture(uvToPosTex),
     res.renderer.renderer.readTexture(uvToNormTex),
+    res.renderer.renderer.readTexture(oceanJfa.sdfTex),
   ];
-  const [uvToPosData, uvToNormData] = await Promise.all(readPromises);
+
+  const [uvToPosData, uvToNormData, sdfData] = await Promise.all(readPromises);
 
   const timeOceanGPU = performance.now() - preOceanGPU;
   console.log(`ocean GPU round-trip: ${timeOceanGPU.toFixed(2)}ms`);
@@ -125,6 +128,13 @@ export async function initOcean() {
     uvToNormTex.format
   );
 
+  const sdfReader = createTextureReader(
+    sdfData,
+    oceanJfa.sdfTex.size,
+    1,
+    oceanJfa.sdfTex.format
+  );
+
   // console.log("adding OceanDef");
 
   // TODO(@darzu): hacky hacky way to do this
@@ -141,6 +151,11 @@ export async function initOcean() {
       const y = uv[1] * uvToNormReader.size[1];
       // console.log(`${x},${y}`);
       return uvToNormReader.sample(out, x, y);
+    },
+    uvToEdgeDist: (uv) => {
+      const x = uv[0] * uvToNormReader.size[0];
+      const y = uv[1] * uvToNormReader.size[1];
+      return sdfReader.sample(NaN, x, y);
     },
   });
 }

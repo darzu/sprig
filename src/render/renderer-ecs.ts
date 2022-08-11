@@ -310,11 +310,14 @@ export function registerRenderer(em: EntityManager) {
         lightViewMatrix
       );
 
-      let maxSurfaceId = max(
-        objs
-          .map((o) => o.renderable.meshHandle.readonlyMesh?.surfaceIds ?? [0])
-          .reduce((p, n) => [...p, ...n], [])
-      );
+      // TODO(@darzu): this maxSurfaceId calculation is super inefficient, we need
+      //  to move this out of this loop.
+      let maxSurfaceId = 1000;
+      // let maxSurfaceId = max(
+      //   objs
+      //     .map((o) => o.renderable.meshHandle.readonlyMesh?.surfaceIds ?? [0])
+      //     .reduce((p, n) => [...p, ...n], [])
+      // );
       // TODO(@darzu): DBG
       // maxSurfaceId = 12;
       // console.log(`maxSurfaceId: ${maxSurfaceId}`);

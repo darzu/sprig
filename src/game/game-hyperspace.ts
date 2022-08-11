@@ -113,21 +113,29 @@ export async function initHyperspaceGame(em: EntityManager) {
   const { ocean, me } = await em.whenResources(OceanDef, MeDef);
   const ship2 = await em.whenEntityHas(ship, UVPosDef);
 
-  const enemyUVPos: vec2 = [0.2, 0.1];
-  const enemyEndPos = ocean.uvToPos(vec3.create(), enemyUVPos);
-  // vec3.add(enemyEndPos, enemyEndPos, [0, 10, 0]);
-  const enemyStartPos = vec3.sub(vec3.create(), enemyEndPos, [0, 20, 0]);
+  const NUM_ENEMY = 40;
 
-  const towardsPlayerDir = vec2.sub(vec2.create(), ship2.uvPos, enemyUVPos);
-  vec2.normalize(towardsPlayerDir, towardsPlayerDir);
+  for (let i = 0; i < NUM_ENEMY; i++) {
+    let enemyUVPos: vec2 = [Math.random(), Math.random()];
+    while (ocean.uvToEdgeDist(enemyUVPos) < 0.1) {
+      enemyUVPos = [Math.random(), Math.random()];
+    }
 
-  // console.log("creating spawner");
-  const enemySpawner = createSpawner(enemyUVPos, towardsPlayerDir, {
-    startPos: enemyStartPos,
-    endPos: enemyEndPos,
-    durationMs: 1000,
-    easeFn: EASE_INQUAD,
-  });
+    const enemyEndPos = ocean.uvToPos(vec3.create(), enemyUVPos);
+    // vec3.add(enemyEndPos, enemyEndPos, [0, 10, 0]);
+    const enemyStartPos = vec3.sub(vec3.create(), enemyEndPos, [0, 20, 0]);
+
+    const towardsPlayerDir = vec2.sub(vec2.create(), ship2.uvPos, enemyUVPos);
+    vec2.normalize(towardsPlayerDir, towardsPlayerDir);
+
+    // console.log("creating spawner");
+    const enemySpawner = createSpawner(enemyUVPos, towardsPlayerDir, {
+      startPos: enemyStartPos,
+      endPos: enemyEndPos,
+      durationMs: 1000,
+      easeFn: EASE_INQUAD,
+    });
+  }
 
   // em.ensureComponentOn(ocean, PositionDef, [120, 0, 0]);
   // vec3.scale(ocean.position, ocean.position, scale);
