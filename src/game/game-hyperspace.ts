@@ -131,15 +131,11 @@ export async function initHyperspaceGame(em: EntityManager) {
 
   // Rock.
   const rock = em.newEntity();
-  em.ensureComponentOn(rock, RenderableConstructDef, res.assets.fabric.proto);
-  let shipPos = ocean.uvToPos(tempVec3(), ship2.uvPos);
-  em.ensureComponentOn(
-    rock,
-    PositionDef,
-    vec3.add(vec3.create(), shipPos, [10, 5, 10])
-  );
-  em.ensureComponentOn(rock, ScaleDef, [10, 10, 10]);
+  em.ensureComponentOn(rock, RenderableConstructDef, res.assets.mound.proto);
+  let rockPos = ocean.uvToPos(vec3.create(), [0.05, 0.3]);
+  em.ensureComponentOn(rock, PositionDef, rockPos);
   em.ensureComponentOn(rock, RotationDef);
+  em.ensureComponentOn(rock, ScaleDef, [10, 10, 10]);
 
   // em.ensureComponentOn(ocean, PositionDef, [120, 0, 0]);
   // vec3.scale(ocean.position, ocean.position, scale);

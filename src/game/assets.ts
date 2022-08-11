@@ -31,7 +31,7 @@ import {
 import { MeshHandle } from "../render/mesh-pool.js";
 import { MeshHandleStd } from "../render/pipelines/std-scene.js";
 import { onInit } from "../init.js";
-import { mathMap, max, min } from "../math.js";
+import { jitter, mathMap, max, min } from "../math.js";
 
 // TODO: load these via streaming
 
@@ -501,9 +501,7 @@ function createGridPlane(width: number, height: number): RawMesh {
   return m;
 }
 
-const DBG_FABRIC = createQuadGrid(5);
-
-export function createQuadGrid(size: number): RawMesh {
+export function createQuadMoundGrid(size: number): RawMesh {
   const pos: vec3[] = [];
   const quad: vec4[] = [];
   const uvs: vec2[] = [];
@@ -511,11 +509,11 @@ export function createQuadGrid(size: number): RawMesh {
   // create each vert
   for (let x = 0; x < size; x++) {
     for (let y = 0; y < size; y++) {
-      const d = vec2.dist([x / (size / 2) - 1.0, y / (size / 2) - 1.0], [0, 0]);
+      const d = vec2.dist([x / size, y / size], [0.5, 0.5]) * 4.0;
       // use this to tweak equation: https://www.desmos.com/calculator
       let height = -0.24 * d ** 4 - 0.32 * d ** 2 + 0.5;
-
-      pos.push([x, height, y]);
+      const J = 0.1;
+      pos.push([x + jitter(J), height + jitter(J), y + jitter(J)]);
       uvs.push([x / size, y / size]);
     }
   }
@@ -524,13 +522,13 @@ export function createQuadGrid(size: number): RawMesh {
   for (let x = 0; x < size - 1; x++) {
     for (let y = 0; y < size - 1; y++) {
       const q: vec4 = [
-        idx(x, y),
-        idx(x + 1, y),
-        idx(x + 1, y + 1),
         idx(x, y + 1),
+        idx(x + 1, y + 1),
+        idx(x + 1, y),
+        idx(x, y),
       ];
       quad.push(q);
-      quad.push([q[3], q[2], q[1], q[0]]);
+      // quad.push([q[3], q[2], q[1], q[0]]);
     }
   }
 
@@ -630,7 +628,8 @@ export const LocalMeshes = {
   enemyShip: () => BOAT_MESH,
   bullet: () => BULLET_MESH,
   gridPlane: () => GRID_PLANE_MESH,
-  fabric: () => DBG_FABRIC,
+  // fabric: () => createQuadMoundGrid(5),
+  mound: () => createQuadMoundGrid(20),
   triFence: TRI_FENCE,
   wireCube: () => ({ ...CUBE_MESH, tri: [] } as RawMesh),
   mast: () => {

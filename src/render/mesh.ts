@@ -1,4 +1,4 @@
-import { createQuadGrid } from "../game/assets.js";
+import { createQuadMoundGrid } from "../game/assets.js";
 import { vec3, vec2, mat4, vec4 } from "../gl-matrix.js";
 import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
 import { assert } from "../test.js";
