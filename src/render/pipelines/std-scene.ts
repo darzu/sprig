@@ -172,7 +172,7 @@ export const sceneBufPtr = CY.createSingleton("scene", {
 export function setupScene(): SceneTS {
   // create a directional light and compute it's projection (for shadows) and direction
   // TODO(@darzu): should be named "dirLight1" etc. These are direction + strength, not unit.
-  const dirLight1 = vec3.fromValues(-1, -1 * 2, -1);
+  const dirLight1 = vec3.fromValues(1, -1 * 2, 1);
   vec3.normalize(dirLight1, dirLight1);
   vec3.scale(dirLight1, dirLight1, 2.0);
 
