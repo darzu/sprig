@@ -136,8 +136,9 @@ export async function initHyperspaceGame(em: EntityManager) {
   em.ensureComponentOn(
     rock,
     PositionDef,
-    vec3.add(vec3.create(), shipPos, [0, 5, 0])
+    vec3.add(vec3.create(), shipPos, [10, 5, 10])
   );
+  em.ensureComponentOn(rock, ScaleDef, [10, 10, 10]);
   em.ensureComponentOn(rock, RotationDef);
 
   // em.ensureComponentOn(ocean, PositionDef, [120, 0, 0]);

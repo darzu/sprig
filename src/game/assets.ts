@@ -501,9 +501,9 @@ function createGridPlane(width: number, height: number): RawMesh {
   return m;
 }
 
-const DBG_FABRIC = createFabric(5);
+const DBG_FABRIC = createQuadGrid(5);
 
-export function createFabric(size: number): RawMesh {
+export function createQuadGrid(size: number): RawMesh {
   const pos: vec3[] = [];
   const quad: vec4[] = [];
   const uvs: vec2[] = [];
@@ -511,7 +511,11 @@ export function createFabric(size: number): RawMesh {
   // create each vert
   for (let x = 0; x < size; x++) {
     for (let y = 0; y < size; y++) {
-      pos.push([x, y, 0]);
+      const d = vec2.dist([x / (size / 2) - 1.0, y / (size / 2) - 1.0], [0, 0]);
+      // use this to tweak equation: https://www.desmos.com/calculator
+      let height = -0.24 * d ** 4 - 0.32 * d ** 2 + 0.5;
+
+      pos.push([x, height, y]);
       uvs.push([x / size, y / size]);
     }
   }
