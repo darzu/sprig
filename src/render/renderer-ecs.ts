@@ -424,8 +424,9 @@ async function chooseAndInitRenderer(
     // try webgpu first
     const adapter = await navigator.gpu?.requestAdapter();
     if (adapter) {
+      const supportsTimestamp = adapter.features.has("timestamp-query");
       const device = await adapter.requestDevice({
-        requiredFeatures: ["timestamp-query"],
+        requiredFeatures: supportsTimestamp ? ["timestamp-query"] : [],
       });
       // TODO(@darzu): uses cast while waiting for webgpu-types.d.ts to be updated
       const context = canvas.getContext("webgpu");

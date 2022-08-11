@@ -53,10 +53,12 @@ export function createWebGPURenderer(
     stats,
   };
 
-  const timestampQuerySet = device.createQuerySet({
-    type: "timestamp",
-    count: MAX_PIPELINES + 1, // start of execution + after each pipeline
-  });
+  const timestampQuerySet = device.features.has("timestamp-query")
+    ? device.createQuerySet({
+        type: "timestamp",
+        count: MAX_PIPELINES + 1, // start of execution + after each pipeline
+      })
+    : null;
 
   const resources = createCyResources(CY, shaders, device);
   const cyKindToNameToRes = resources.kindToNameToRes;
@@ -220,7 +222,7 @@ export function createWebGPURenderer(
     );
 
     // run pipelines
-    commandEncoder.writeTimestamp(timestampQuerySet, 0);
+    if (timestampQuerySet) commandEncoder.writeTimestamp(timestampQuerySet, 0);
     let index = 1;
     for (let p of pipelines) {
       if (isRenderPipeline(p)) {
@@ -230,7 +232,8 @@ export function createWebGPURenderer(
         // compute
         doCompute(device, resources, commandEncoder, p);
       }
-      commandEncoder.writeTimestamp(timestampQuerySet, index);
+      if (timestampQuerySet)
+        commandEncoder.writeTimestamp(timestampQuerySet, index);
       index++;
       if (index > MAX_PIPELINES) {
         throw `More than ${MAX_PIPELINES} GPU pipelines. Edit MAX_PIPELINES constant`;
@@ -288,6 +291,7 @@ export function createWebGPURenderer(
   }
 
   async function stats(): Promise<Map<string, bigint>> {
+    if (!timestampQuerySet) return new Map();
     const byteSize = (MAX_PIPELINES + 1) * 8;
     // We need to have 2 buffers here because you can't have MAP_READ
     // and QUERY_RESOLVE on the same buffer. We resolve the QuerySet
