@@ -32,6 +32,8 @@ import { SceneStruct, SceneTS } from "./pipelines/std-scene.js";
 import { ShaderSet } from "./shader-loader.js";
 import { texTypeToBytes } from "./gpu-struct.js";
 
+const MAX_PIPELINES = 64;
+
 export function createWebGPURenderer(
   canvas: HTMLCanvasElement,
   device: GPUDevice,
@@ -48,7 +50,15 @@ export function createWebGPURenderer(
     updateScene,
     submitPipelines,
     readTexture,
+    stats,
   };
+
+  const timestampQuerySet = device.features.has("timestamp-query")
+    ? device.createQuerySet({
+        type: "timestamp",
+        count: MAX_PIPELINES + 1, // start of execution + after each pipeline
+      })
+    : null;
 
   const resources = createCyResources(CY, shaders, device);
   const cyKindToNameToRes = resources.kindToNameToRes;
@@ -68,7 +78,7 @@ export function createWebGPURenderer(
     renderer.drawLines,
     renderer.drawTris,
   ];
-  let lastPipelines: CyPipelinePtr[] = [];
+  let lastPipelines: CyPipeline[] = [];
 
   const cyRenderToBundle: { [pipelineName: string]: GPURenderBundle } = {};
 
@@ -165,7 +175,7 @@ export function createWebGPURenderer(
     const didPipelinesChange =
       lastPipelines.length !== pipelinePtrs.length ||
       lastPipelines.reduce(
-        (p, n, i) => p || lastPipelines[i].name !== pipelinePtrs[i].name,
+        (p, n, i) => p || lastPipelines[i].ptr.name !== pipelinePtrs[i].name,
         false as boolean
       );
 
@@ -201,6 +211,8 @@ export function createWebGPURenderer(
       updateRenderBundle(handles, renderPipelines);
     }
 
+    lastPipelines = pipelines;
+
     // start collecting our commands for this frame
     const commandEncoder = device.createCommandEncoder();
 
@@ -211,18 +223,23 @@ export function createWebGPURenderer(
     );
 
     // run pipelines
+    if (timestampQuerySet) commandEncoder.writeTimestamp(timestampQuerySet, 0);
+    let index = 1;
     for (let p of pipelines) {
       if (isRenderPipeline(p)) {
         // render
         bundleRenderer.render(p, cyRenderToBundle[p.ptr.name]);
       } else {
         // compute
-        bundleRenderer.endPass();
         doCompute(device, resources, commandEncoder, p);
       }
+      if (timestampQuerySet)
+        commandEncoder.writeTimestamp(timestampQuerySet, index);
+      index++;
+      if (index > MAX_PIPELINES) {
+        throw `More than ${MAX_PIPELINES} GPU pipelines. Edit MAX_PIPELINES constant`;
+      }
     }
-
-    bundleRenderer.endPass();
 
     // submit render passes to GPU
     device.queue.submit([commandEncoder.finish()]);
@@ -272,6 +289,53 @@ export function createWebGPURenderer(
     // TODO(@darzu): support unmapping the array??
 
     return gpuBuffer.getMappedRange();
+  }
+
+  async function stats(): Promise<Map<string, bigint>> {
+    if (!timestampQuerySet) return new Map();
+    const byteSize = (MAX_PIPELINES + 1) * 8;
+    // We need to have 2 buffers here because you can't have MAP_READ
+    // and QUERY_RESOLVE on the same buffer. We resolve the QuerySet
+    // to one buffer, then copy it to another for reading.
+    const resolveBuffer = device.createBuffer({
+      // GPUSize64s
+      size: byteSize,
+      usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC,
+      mappedAtCreation: false, // mapped post texture copy
+    });
+    const copyBuffer = device.createBuffer({
+      size: byteSize,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+      mappedAtCreation: false, // mapped post texture copy
+    });
+    const commandEncoder = device.createCommandEncoder();
+    commandEncoder.resolveQuerySet(
+      timestampQuerySet,
+      0,
+      MAX_PIPELINES + 1,
+      resolveBuffer,
+      0
+    );
+    commandEncoder.copyBufferToBuffer(
+      resolveBuffer,
+      0,
+      copyBuffer,
+      0,
+      byteSize
+    );
+    device.queue.submit([commandEncoder.finish()]);
+    await copyBuffer.mapAsync(GPUMapMode.READ, 0, byteSize);
+
+    const times = new BigUint64Array(copyBuffer.getMappedRange());
+
+    const res = new Map();
+    let lastTime = times.at(0)!;
+    for (let i = 0; i < lastPipelines.length; i++) {
+      const t = times.at(i + 1)!;
+      res.set(lastPipelines[i].ptr.name, t - lastTime);
+      lastTime = t;
+    }
+    return res;
   }
 
   return renderer;
