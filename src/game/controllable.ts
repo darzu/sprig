@@ -58,11 +58,17 @@ export function registerControllableSystems(em: EntityManager) {
   const steerVel = vec3.create();
 
   em.registerSystem(
-    [ControllableDef, LinearVelocityDef, RotationDef, WorldFrameDef],
+    [
+      ControllableDef,
+      AuthorityDef,
+      LinearVelocityDef,
+      RotationDef,
+      WorldFrameDef,
+    ],
     [InputsDef, MeDef, CanvasDef, TimeDef],
     (controllables, res) => {
       for (let c of controllables) {
-        if (AuthorityDef.isOn(c) && c.authority.pid !== res.me.pid) continue;
+        if (c.authority.pid !== res.me.pid) continue;
         // don't control things when we're not locked onto the canvas
         if (
           c.controllable.requiresPointerLock &&
@@ -117,11 +123,11 @@ export function registerControllableSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [ControllableDef, CameraFollowDef],
+    [ControllableDef, CameraFollowDef, AuthorityDef],
     [InputsDef, MeDef, CanvasDef],
     (controllables, res) => {
       for (let c of controllables) {
-        if (AuthorityDef.isOn(c) && c.authority.pid !== res.me.pid) continue;
+        if (c.authority.pid !== res.me.pid) continue;
         if (
           c.controllable.requiresPointerLock &&
           !res.htmlCanvas.hasMouseLock()
