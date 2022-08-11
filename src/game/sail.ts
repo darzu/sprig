@@ -5,7 +5,7 @@ import { mat4, quat, vec2, vec3 } from "../gl-matrix.js";
 import { onInit } from "../init.js";
 import { InputsDef } from "../inputs.js";
 import { clamp } from "../math.js";
-import { MeDef } from "../net/components.js";
+import { AuthorityDef, MeDef } from "../net/components.js";
 import { ColliderDef } from "../physics/collider.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import {
@@ -20,10 +20,11 @@ import {
   RenderableDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { tempVec3 } from "../temp-pool.js";
+import { tempVec2, tempVec3 } from "../temp-pool.js";
 import {
-  areaOfTriangle,
+  signedAreaOfTriangle,
   positionAndTargetToOrthoViewProjMatrix,
+  vec3Dbg,
 } from "../utils-3d.js";
 import { YawPitchDef, yawpitchToQuat } from "../yawpitch.js";
 import { AssetsDef } from "./assets.js";
@@ -33,6 +34,7 @@ import {
   PlayerShipLocalDef,
   PlayerShipPropsDef,
 } from "./player-ship.js";
+import { ShipDef } from "./ship.js";
 import { constructNetTurret, TurretDef } from "./turret.js";
 
 const BoomPitchesDef = EM.defineComponent(
@@ -184,10 +186,11 @@ onInit((em) => {
 
   let viewProjMatrix = mat4.create();
   em.registerSystem(
-    [PlayerShipPropsDef, WorldFrameDef],
-    [],
+    [PlayerShipPropsDef, ShipDef, WorldFrameDef, AuthorityDef],
+    [MeDef],
     (es, res) => {
       for (let ship of es) {
+        if (ship.authority.pid !== res.me.pid) continue;
         const stars = em.filterEntities([DarkStarDef, WorldFrameDef]);
         for (let star of stars) {
           viewProjMatrix = positionAndTargetToOrthoViewProjMatrix(
@@ -206,13 +209,29 @@ onInit((em) => {
             return vec3.transformMat4(tempVec3(), pos, viewProjMatrix);
           });
 
-          const area = areaOfTriangle(
+          const area = signedAreaOfTriangle(
             vec2.fromValues(starViewVerts[0][0], starViewVerts[0][1]),
             vec2.fromValues(starViewVerts[1][0], starViewVerts[1][1]),
             vec2.fromValues(starViewVerts[2][0], starViewVerts[2][1])
           );
 
-          console.log(`Area of sail from star is ${area}`);
+          const sailNormal = vec3.cross(
+            tempVec3(),
+            vec3.subtract(tempVec3(), worldVerts[1], worldVerts[0]),
+            vec3.subtract(tempVec3(), worldVerts[2], worldVerts[0])
+          );
+
+          vec3.normalize(sailNormal, sailNormal);
+          const sailForce = vec3.scale(sailNormal, sailNormal, area);
+
+          //console.log(`Sail force is ${vec3Dbg(sailForce)}`);
+          //console.log(`Area of sail from star is ${area}`);
+
+          const shipDirection = vec3.fromValues(0, 0, -1);
+          vec3.transformQuat(shipDirection, shipDirection, ship.world.rotation);
+          const accel = vec3.dot(shipDirection, sailForce);
+          ship.ship.speed += accel;
+          console.log(`Speed is ${ship.ship.speed}`);
         }
       }
     },

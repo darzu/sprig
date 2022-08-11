@@ -242,7 +242,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
 
       em.ensureComponentOn(s, ShipDef);
 
-      s.ship.speed = 0.0005;
+      s.ship.speed = 0;
       // s.playerShipLocal.speed = 0.005 * 3; // TODO(@darzu): DEBUG SPEED
       // em.ensureComponentOn(s, LinearVelocityDef, [0, 0, 0]);
       // em.ensureComponentOn(s, AngularVelocityDef);
@@ -410,7 +410,7 @@ export function registerShipSystems(em: EntityManager) {
         // SPEED
         if (res.inputs.keyDowns["z"]) s.ship.speed += 0.00001;
         if (res.inputs.keyDowns["x"]) s.ship.speed -= 0.00001;
-        s.ship.speed = Math.max(0, s.ship.speed);
+        //s.ship.speed = Math.max(0, s.ship.speed);
 
         // STEERING
         let yaw = s.playerShipProps.rudder()!.yawpitch.yaw;

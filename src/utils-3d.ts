@@ -197,10 +197,11 @@ export function positionAndTargetToOrthoViewProjMatrix(
   return viewMatrix;
 }
 
-export function areaOfTriangle(a: vec2, b: vec2, c: vec2): number {
+export function signedAreaOfTriangle(a: vec2, b: vec2, c: vec2): number {
   const ab = tempVec2();
   const ac = tempVec2();
   vec2.subtract(ab, b, a);
   vec2.subtract(ac, c, a);
-  return 0.5 * vec3.len(vec2.cross(tempVec3(), ab, ac));
+  let cross = vec2.cross(tempVec3(), ab, ac);
+  return 0.5 * cross[2];
 }
