@@ -108,7 +108,7 @@ export async function initHyperspaceGame(em: EntityManager) {
   initOcean();
 
   // TODO(@darzu): dbg
-  await asyncTimeout(2000);
+  // await asyncTimeout(2000);
 
   const { ocean, me } = await em.whenResources(OceanDef, MeDef);
   const ship2 = await em.whenEntityHas(ship, UVPosDef);
@@ -128,6 +128,17 @@ export async function initHyperspaceGame(em: EntityManager) {
     durationMs: 1000,
     easeFn: EASE_INQUAD,
   });
+
+  // Rock.
+  const rock = em.newEntity();
+  em.ensureComponentOn(rock, RenderableConstructDef, res.assets.fabric.proto);
+  let shipPos = ocean.uvToPos(tempVec3(), ship2.uvPos);
+  em.ensureComponentOn(
+    rock,
+    PositionDef,
+    vec3.add(vec3.create(), shipPos, [0, 5, 0])
+  );
+  em.ensureComponentOn(rock, RotationDef);
 
   // em.ensureComponentOn(ocean, PositionDef, [120, 0, 0]);
   // vec3.scale(ocean.position, ocean.position, scale);
