@@ -1,12 +1,13 @@
 import { ColorDef } from "../color.js";
 import { createRef, defineNetEntityHelper } from "../em_helpers.js";
 import { EM, EntityManager } from "../entity-manager.js";
-import { quat, vec3 } from "../gl-matrix.js";
+import { mat4, quat, vec2, vec3 } from "../gl-matrix.js";
 import { onInit } from "../init.js";
 import { InputsDef } from "../inputs.js";
 import { clamp } from "../math.js";
 import { MeDef } from "../net/components.js";
 import { ColliderDef } from "../physics/collider.js";
+import { WorldFrameDef } from "../physics/nonintersection.js";
 import {
   PhysicsParentDef,
   PositionDef,
@@ -19,9 +20,19 @@ import {
   RenderableDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
+import { tempVec3 } from "../temp-pool.js";
+import {
+  areaOfTriangle,
+  positionAndTargetToOrthoViewProjMatrix,
+} from "../utils-3d.js";
 import { YawPitchDef, yawpitchToQuat } from "../yawpitch.js";
 import { AssetsDef } from "./assets.js";
-import { BOAT_COLOR } from "./player-ship.js";
+import { DarkStarDef } from "./darkstar.js";
+import {
+  BOAT_COLOR,
+  PlayerShipLocalDef,
+  PlayerShipPropsDef,
+} from "./player-ship.js";
 import { constructNetTurret, TurretDef } from "./turret.js";
 
 const BoomPitchesDef = EM.defineComponent(
@@ -52,7 +63,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
     },
     defaultLocal: () => ({
       boom: createRef(0, [RotationDef]),
-      sail: createRef(0, [RenderableDef]),
+      sail: createRef(0, [RenderableDef, WorldFrameDef]),
     }),
     dynamicComponents: [RotationDef, BoomPitchesDef],
     buildResources: [AssetsDef, MeDef],
@@ -83,7 +94,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       em.ensureComponentOn(sail, RotationDef);
       em.ensureComponentOn(sail, ColorDef, [0.99, 0.99, 0.99]);
       em.ensureComponentOn(sail, PhysicsParentDef, mast.id);
-      em.whenEntityHas(sail, RenderableDef).then((sail) => {
+      em.whenEntityHas(sail, RenderableDef, WorldFrameDef).then((sail) => {
         mast.mastLocal.sail = createRef(sail);
       });
 
@@ -169,5 +180,42 @@ onInit((em) => {
       }
     },
     "updateMastBoom"
+  );
+
+  let viewProjMatrix = mat4.create();
+  em.registerSystem(
+    [PlayerShipPropsDef, WorldFrameDef],
+    [],
+    (es, res) => {
+      for (let ship of es) {
+        const stars = em.filterEntities([DarkStarDef, WorldFrameDef]);
+        for (let star of stars) {
+          viewProjMatrix = positionAndTargetToOrthoViewProjMatrix(
+            viewProjMatrix,
+            star.world.position,
+            ship.world.position
+          );
+          const sail = ship.playerShipProps.mast()!.mastLocal.sail()!;
+          const localVerts = sail.renderable.meshHandle.readonlyMesh!.pos;
+
+          const worldVerts = localVerts.map((pos) => {
+            return vec3.transformMat4(tempVec3(), pos, sail.world.transform);
+          });
+
+          const starViewVerts = worldVerts.map((pos) => {
+            return vec3.transformMat4(tempVec3(), pos, viewProjMatrix);
+          });
+
+          const area = areaOfTriangle(
+            vec2.fromValues(starViewVerts[0][0], starViewVerts[0][1]),
+            vec2.fromValues(starViewVerts[1][0], starViewVerts[1][1]),
+            vec2.fromValues(starViewVerts[2][0], starViewVerts[2][1])
+          );
+
+          console.log(`Area of sail from star is ${area}`);
+        }
+      }
+    },
+    "sail"
   );
 });

@@ -38,7 +38,7 @@ import { YawPitchDef } from "../yawpitch.js";
 import { UVPosDef, UVDirDef } from "./ocean.js";
 import { PartyDef } from "./party.js";
 import { ShipDef } from "./ship.js";
-import { createMastNow } from "./sail.js";
+import { createMastNow, MastLocalDef, MastPropsDef } from "./sail.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
@@ -171,6 +171,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
       cannonLId: 0,
       cannonRId: 0,
       rudder: createRef(0, [RudderPropsDef, YawPitchDef]),
+      mast: createRef(0, [MastPropsDef, MastLocalDef]),
     }),
     serializeProps: (c, buf) => {
       buf.writeVec2(c.uvPos);
@@ -212,6 +213,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
         s.playerShipProps.rudder = createRef(r);
 
         const m = createMastNow(res, s.id);
+        s.playerShipProps.mast = createRef(m);
 
         // create cannons
         const cannonPitch = Math.PI * +0.05;

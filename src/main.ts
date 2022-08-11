@@ -111,6 +111,7 @@ function callFixedTimestepSystems() {
   EM.callSystem("turretYawPitch");
   EM.callSystem("turretManUnman");
   EM.callSystem("updateMastBoom");
+  EM.callSystem("sail");
   EM.callSystem("reloadCannon");
   EM.callSystem("playerControlCannon");
   EM.callSystem("playerManCanon");
