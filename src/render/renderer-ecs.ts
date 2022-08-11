@@ -425,6 +425,10 @@ async function chooseAndInitRenderer(
     const adapter = await navigator.gpu?.requestAdapter();
     if (adapter) {
       const supportsTimestamp = adapter.features.has("timestamp-query");
+      if (!supportsTimestamp)
+        console.log(
+          "GPU profiling disabled: device does not support timestamp queries"
+        );
       const device = await adapter.requestDevice({
         requiredFeatures: supportsTimestamp ? ["timestamp-query"] : [],
       });
