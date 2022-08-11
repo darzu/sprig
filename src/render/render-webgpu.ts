@@ -31,6 +31,7 @@ import {
 import { SceneStruct, SceneTS } from "./pipelines/std-scene.js";
 import { ShaderSet } from "./shader-loader.js";
 import { texTypeToBytes } from "./gpu-struct.js";
+import { align } from "../math.js";
 
 export function createWebGPURenderer(
   canvas: HTMLCanvasElement,
@@ -254,6 +255,9 @@ export function createWebGPURenderer(
       {
         buffer: gpuBuffer,
         offset: 0,
+        // TODO(@darzu): ERROR: bytesPerRow (64) is not a multiple of 256.
+        // TODO(@darzu): need to align up to 256 but then also account for this in the
+        //                CPU sampler?
         bytesPerRow: tex.size[0] * bytesPerVal, // TODO: alignment?
         rowsPerImage: tex.size[1],
       },
