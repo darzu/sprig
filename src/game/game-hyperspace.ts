@@ -158,12 +158,15 @@ export async function initHyperspaceGame(em: EntityManager) {
       orbitalAxis
     );
 
+    // darkstar at the origin
+    /*
     const darkstar2 = createDarkStarNow(
       res,
       vec3.fromValues(0, 0, 0),
       vec3.fromValues(0.1, 0.1, 0.8),
       vec3.fromValues(0, 0, 0),
       orbitalAxis
-    );
+      );
+      */
   }
 }
