@@ -52,6 +52,7 @@ EM.registerSerializerPair(
   }
 );
 
+// TODO: we need warnings if you forget to call the buildProps system!
 export const { MastPropsDef, MastLocalDef, createMastNow } =
   defineNetEntityHelper(EM, {
     name: "mast",
