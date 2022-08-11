@@ -52,7 +52,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
     // { ptr: clothTexPtr0, access: "read", alias: "clothTex" },
   ],
   // TODO(@darzu): DBG
-  cullMode: "none",
+  cullMode: "back",
   meshOpt: {
     pool: meshPoolPtr,
     stepMode: "per-mesh-handle",
