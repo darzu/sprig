@@ -137,32 +137,4 @@ export async function initHyperspaceGame(em: EntityManager) {
     });
   }
 
-  // em.ensureComponentOn(ocean, PositionDef, [120, 0, 0]);
-  // vec3.scale(ocean.position, ocean.position, scale);
-  // const scale = 100.0;
-  // const scale = 1.0;
-  // em.ensureComponentOn(ocean, ScaleDef, [scale, scale, scale]);
-  // em.ensureComponentOn(ocean, AngularVelocityDef, [0.0001, 0.0001, 0.0001]);
-
-  // TODO(@darzu): DEBUG. quad mesh stuff
-  // const fabric = em.newEntity();
-  // em.ensureComponentOn(
-  //   fabric,
-  //   RenderableConstructDef,
-  //   res.assets.fabric.proto
-  //   // true,
-  //   // 0
-  //   // UVUNWRAP_MASK
-  // );
-  // em.ensureComponentOn(fabric, PositionDef, [10, 10, 10]);
-  // em.ensureComponentOn(fabric, AngularVelocityDef, [1.0, 10.0, 0.1]);
-
-  // TODO(@darzu): DEBUG. Useful ocean UV debug entity:
-  // const buoy = em.newEntity();
-  // em.ensureComponentOn(buoy, PositionDef);
-  // em.ensureComponentOn(buoy, RenderableConstructDef, res.assets.ship.proto);
-  // em.ensureComponentOn(buoy, ScaleDef, [1.0, 1.0, 1.0]);
-  // em.ensureComponentOn(buoy, ColorDef, [0.2, 0.8, 0.2]);
-  // em.ensureComponentOn(buoy, UVDef, [0.1, 0.1]);
-  // em.ensureComponentOn(buoy, UVDirDef, [1.0, 0.0]);
 }
