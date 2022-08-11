@@ -1,7 +1,7 @@
 import { mat3, mat4, quat, vec2, vec3, vec4 } from "./gl-matrix.js";
 import { avg, mathMap } from "./math.js";
 import { AABB } from "./physics/broadphase.js";
-import { tempVec3 } from "./temp-pool.js";
+import { tempVec2, tempVec3 } from "./temp-pool.js";
 
 // TODO(@darzu): a lot of these need to move into gl-matrix; or rather, we need
 //  to subsume gl-matrix into our own libraries.
@@ -172,4 +172,35 @@ export function normalizeVec2s(vs: vec2[], min: number, max: number): void {
     v[0] = (v[0] - minX) * scalar + min;
     v[1] = (v[1] - minY) * scalar + min;
   }
+}
+
+export function positionAndTargetToOrthoViewProjMatrix(
+  out: mat4,
+  position: vec3,
+  target: vec3
+): mat4 {
+  const viewMatrix = out;
+  mat4.lookAt(viewMatrix, position, target, [0, 1, 0]);
+  const projectionMatrix = mat4.create();
+  const dist = vec3.dist(position, target);
+  {
+    const left = -80;
+    const right = 80;
+    const bottom = -80;
+    const top = 80;
+    const near = -200;
+    // TODO: examine this carefully-derived constant
+    const far = dist * 2;
+    mat4.ortho(projectionMatrix, left, right, bottom, top, near, far);
+  }
+  mat4.multiply(viewMatrix, projectionMatrix, viewMatrix);
+  return viewMatrix;
+}
+
+export function areaOfTriangle(a: vec2, b: vec2, c: vec2): number {
+  const ab = tempVec2();
+  const ac = tempVec2();
+  vec2.subtract(ab, b, a);
+  vec2.subtract(ac, c, a);
+  return 0.5 * vec3.len(vec2.cross(tempVec3(), ab, ac));
 }
