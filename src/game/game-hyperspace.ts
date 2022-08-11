@@ -23,7 +23,7 @@ import { vec2, vec3 } from "../gl-matrix.js";
 import { AnimateToDef, EASE_INQUAD } from "../animate-to.js";
 import { createSpawner, SpawnerDef } from "./spawner.js";
 import { tempVec3 } from "../temp-pool.js";
-import { DarkStarDef } from "./darkstar.js";
+import { createDarkStarNow } from "./darkstar.js";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 
@@ -136,14 +136,34 @@ export async function initHyperspaceGame(em: EntityManager) {
         easeFn: EASE_INQUAD,
       });
     }
+    const orbitalAxis = vec3.fromValues(
+      Math.random() - 0.5,
+      Math.random() - 0.5,
+      Math.random() - 0.5
+    );
+    vec3.normalize(orbitalAxis, orbitalAxis);
+
+    // TODO: this only works because the darkstar is orbiting the origin
+    const approxPosition = vec3.fromValues(-1000, 2000, -1000);
+    const perpendicular = vec3.cross(tempVec3(), approxPosition, orbitalAxis);
+    const starPosition = vec3.cross(perpendicular, orbitalAxis, perpendicular);
+    vec3.normalize(starPosition, starPosition);
+    vec3.scale(starPosition, starPosition, vec3.length(approxPosition));
+
+    const darkstar = createDarkStarNow(
+      res,
+      starPosition,
+      vec3.fromValues(0.8, 0.1, 0.1),
+      vec3.fromValues(0, 0, 0),
+      orbitalAxis
+    );
+
+    const darkstar2 = createDarkStarNow(
+      res,
+      vec3.fromValues(0, 0, 0),
+      vec3.fromValues(0.1, 0.1, 0.8),
+      vec3.fromValues(0, 0, 0),
+      orbitalAxis
+    );
   }
-
-  // dark/hyper/cool star
-
-  const star = em.newEntity();
-  em.ensureComponentOn(star, PositionDef, vec3.fromValues(-1000, 2000, -1000));
-  em.ensureComponentOn(star, RenderableConstructDef, res.assets.ball.proto);
-  em.ensureComponentOn(star, ScaleDef, vec3.fromValues(100, 100, 100));
-  em.ensureComponentOn(star, ColorDef, vec3.fromValues(0.8, 0.1, 0.1));
-  em.ensureComponentOn(star, DarkStarDef);
 }

@@ -97,6 +97,8 @@ function callFixedTimestepSystems() {
     EM.callSystem("rudderPropsBuild");
     EM.callSystem("mastPropsBuild");
     EM.callSystem("playerShipPropsBuild");
+    EM.callSystem("darkStarPropsBuild");
+    EM.callSystem("darkStarOrbit");
     EM.callSystem("hyperspaceGame");
     // EM.callSystem("runOcean");
     EM.callSystem("oceanUVtoPos");

@@ -28,7 +28,7 @@ import {
 } from "../utils-3d.js";
 import { YawPitchDef, yawpitchToQuat } from "../yawpitch.js";
 import { AssetsDef } from "./assets.js";
-import { DarkStarDef } from "./darkstar.js";
+import { DarkStarPropsDef } from "./darkstar.js";
 import { GameState, GameStateDef } from "./gamestate.js";
 import {
   BOAT_COLOR,
@@ -196,7 +196,7 @@ onInit((em) => {
       }
       for (let ship of es) {
         if (ship.authority.pid !== res.me.pid) continue;
-        const stars = em.filterEntities([DarkStarDef, WorldFrameDef]);
+        const stars = em.filterEntities([DarkStarPropsDef, WorldFrameDef]);
         for (let star of stars) {
           viewProjMatrix = positionAndTargetToOrthoViewProjMatrix(
             viewProjMatrix,
