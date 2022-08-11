@@ -100,7 +100,7 @@ onInit((em) => {
         const newDistance = vec3.length(toCenter);
         vec3.normalize(toCenter, toCenter);
         vec3.scale(toCenter, toCenter, newDistance - distance);
-        console.log(`distance ${distance}, newDistance ${newDistance}`);
+        //console.log(`distance ${distance}, newDistance ${newDistance}`);
         vec3.add(star.position, star.position, toCenter);
       }
     },
