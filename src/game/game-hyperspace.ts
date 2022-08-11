@@ -33,11 +33,7 @@ export async function initHyperspaceGame(em: EntityManager) {
 
   em.addSingletonComponent(GameStateDef);
 
-  // if (hosting) {
-  const ship = createPlayerShip([0.1, 0.1]);
-  // }
-
-  em.whenResources(MeDef, OceanDef).then(async () => {
+  em.whenResources(OceanDef).then(async () => {
     // await awaitTimeout(1000); // TODO(@darzu): what is happening
     createPlayer(em);
   });
@@ -111,31 +107,35 @@ export async function initHyperspaceGame(em: EntityManager) {
   // TODO(@darzu): dbg
   //await asyncTimeout(2000);
 
-  const { ocean, me } = await em.whenResources(OceanDef, MeDef);
-  const ship2 = await em.whenEntityHas(ship, UVPosDef);
+  const { me, ocean } = await em.whenResources(OceanDef, MeDef);
 
-  const NUM_ENEMY = 40;
+  if (me.host) {
+    const ship = createPlayerShip([0.1, 0.1]);
+    const ship2 = await em.whenEntityHas(ship, UVPosDef);
 
-  for (let i = 0; i < NUM_ENEMY; i++) {
-    let enemyUVPos: vec2 = [Math.random(), Math.random()];
-    while (ocean.uvToEdgeDist(enemyUVPos) < 0.1) {
-      enemyUVPos = [Math.random(), Math.random()];
+    const NUM_ENEMY = 40;
+
+    for (let i = 0; i < NUM_ENEMY; i++) {
+      let enemyUVPos: vec2 = [Math.random(), Math.random()];
+      while (ocean.uvToEdgeDist(enemyUVPos) < 0.1) {
+        enemyUVPos = [Math.random(), Math.random()];
+      }
+
+      const enemyEndPos = ocean.uvToPos(vec3.create(), enemyUVPos);
+      // vec3.add(enemyEndPos, enemyEndPos, [0, 10, 0]);
+      const enemyStartPos = vec3.sub(vec3.create(), enemyEndPos, [0, 20, 0]);
+
+      const towardsPlayerDir = vec2.sub(vec2.create(), ship2.uvPos, enemyUVPos);
+      vec2.normalize(towardsPlayerDir, towardsPlayerDir);
+
+      // console.log("creating spawner");
+      const enemySpawner = createSpawner(enemyUVPos, towardsPlayerDir, {
+        startPos: enemyStartPos,
+        endPos: enemyEndPos,
+        durationMs: 1000,
+        easeFn: EASE_INQUAD,
+      });
     }
-
-    const enemyEndPos = ocean.uvToPos(vec3.create(), enemyUVPos);
-    // vec3.add(enemyEndPos, enemyEndPos, [0, 10, 0]);
-    const enemyStartPos = vec3.sub(vec3.create(), enemyEndPos, [0, 20, 0]);
-
-    const towardsPlayerDir = vec2.sub(vec2.create(), ship2.uvPos, enemyUVPos);
-    vec2.normalize(towardsPlayerDir, towardsPlayerDir);
-
-    // console.log("creating spawner");
-    const enemySpawner = createSpawner(enemyUVPos, towardsPlayerDir, {
-      startPos: enemyStartPos,
-      endPos: enemyEndPos,
-      durationMs: 1000,
-      easeFn: EASE_INQUAD,
-    });
   }
 
   // dark/hyper/cool star
