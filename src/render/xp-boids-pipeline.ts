@@ -95,11 +95,7 @@ export const boidRender = CY.createRenderPipeline("boidRender", {
     fn frag_main(v: VertexOutput) -> @location(0) vec4<f32> {
       let norm = -normalize(cross(dpdx(v.worldPos.xyz), dpdy(v.worldPos.xyz)));
       // let norm = -normalize(cross(dpdx(v.worldPos.xyz), -dpdy(v.worldPos.xyz)));
-      let light1 : f32 = clamp(dot(-scene.light1Dir, norm), 0.0, 1.0);
-      let light2 : f32 = clamp(dot(-scene.light2Dir, norm), 0.0, 1.0);
-      let light3 : f32 = clamp(dot(-scene.light3Dir, norm), 0.0, 1.0);
-      let color = vec3<f32>(1.0, 1.0, 1.0)
-          * (light1 * 1.5 + light2 * 0.5 + light3 * 0.2 + 0.1);
+      let color = vec3<f32>(1.0, 1.0, 1.0);
       return vec4<f32>(color.xyz, 1.0);
     }
   `;

@@ -14,7 +14,7 @@ import { ColorDef } from "../color.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DeletedDef } from "../delete.js";
 import { stdRenderPipeline } from "./std-pipeline.js";
-import { MeshHandleStd } from "./std-scene.js";
+import { MeshHandleStd, PointLightTS } from "./std-scene.js";
 import { CanvasDef } from "../canvas.js";
 import { FORCE_WEBGL } from "../main.js";
 import { createWebGPURenderer } from "./render-webgpu.js";
@@ -24,6 +24,7 @@ import { tempVec } from "../temp-pool.js";
 import { isMeshHandle } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import { SceneTS } from "./std-scene.js";
+import { PointLightDef } from "./lights.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -288,12 +289,22 @@ export function registerRenderer(em: EntityManager) {
         lightViewMatrix
       );
 
-      renderer.updateScene({
-        cameraViewProjMatrix: cameraView.viewProjMat,
-        lightViewProjMatrix,
-        // TODO(@darzu): use?
-        time: 1000 / 60,
-      });
+      const pointLights = em
+        .filterEntities([PointLightDef, RendererWorldFrameDef])
+        .map((e) => ({
+          ...e.pointLight,
+          position: e.rendererWorldFrame.position,
+        }));
+
+      renderer.updateScene(
+        {
+          cameraViewProjMatrix: cameraView.viewProjMat,
+          lightViewProjMatrix,
+          // TODO(@darzu): use?
+          time: 1000 / 60,
+        },
+        pointLights
+      );
 
       renderer.renderFrame(
         objs.map((o) => o.renderable.meshHandle),
@@ -343,7 +354,7 @@ export interface Renderer {
   addMesh(m: Mesh): MeshHandleStd;
   addMeshInstance(h: MeshHandleStd): MeshHandleStd;
   updateMesh(handle: MeshHandleStd, newMeshData: Mesh): void;
-  updateScene(scene: Partial<SceneTS>): void;
+  updateScene(scene: Partial<SceneTS>, lights: PointLightTS[]): void;
   renderFrame(handles: MeshHandleStd[], pipelines: CyPipelinePtr[]): void;
 }
 

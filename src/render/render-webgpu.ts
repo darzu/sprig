@@ -8,8 +8,16 @@ import {
   CyRenderPipeline,
   CyCompPipeline,
   CySingleton,
+  CyArray,
 } from "./data-webgpu.js";
-import { VertexStruct, MeshUniformStruct, MeshHandleStd } from "./std-scene.js";
+import {
+  VertexStruct,
+  MeshUniformStruct,
+  MeshHandleStd,
+  PointLightStruct,
+  PointLightTS,
+  MAX_POINT_LIGHTS,
+} from "./std-scene.js";
 import {
   bundleRenderPipelines,
   createCyResources,
@@ -45,6 +53,9 @@ export function createWebGPURenderer(
 
   const sceneUni: CySingleton<typeof SceneStruct.desc> =
     cyKindToNameToRes.singleton["scene"]!;
+
+  const pointLightsArray: CyArray<typeof PointLightStruct.desc> =
+    cyKindToNameToRes.array["pointLight"]!;
 
   // render bundle
   const bundledMIds = new Set<number>();
@@ -111,11 +122,17 @@ export function createWebGPURenderer(
     }
   }
 
-  function updateScene(scene: Partial<SceneTS>) {
+  function updateScene(scene: Partial<SceneTS>, pointLights: PointLightTS[]) {
+    assert(
+      pointLights.length < MAX_POINT_LIGHTS,
+      `Too many point lights ${pointLights.length}`
+    );
     sceneUni.queueUpdate({
       ...sceneUni.lastData!,
       ...scene,
+      pointLights: pointLights.length,
     });
+    pointLightsArray.queueUpdates(pointLights, 0);
   }
 
   function renderFrame(

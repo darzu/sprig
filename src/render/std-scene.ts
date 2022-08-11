@@ -7,7 +7,8 @@ import { Mesh, getAABBFromMesh } from "./mesh.js";
 
 export const MAX_MESHES = 20000;
 export const MAX_VERTICES = 21844;
-export const MAX_LIGHTS = 8;
+export const MAX_POINT_LIGHTS = 8;
+export const MAX_DIRECTIONAL_LIGHTS = 3;
 
 export const VertexStruct = createCyStruct(
   {
@@ -113,26 +114,22 @@ export const SceneStruct = createCyStruct(
   {
     cameraViewProjMatrix: "mat4x4<f32>",
     lightViewProjMatrix: "mat4x4<f32>",
-    light1Dir: "vec3<f32>",
-    light2Dir: "vec3<f32>",
-    light3Dir: "vec3<f32>",
     cameraPos: "vec3<f32>",
     playerPos: "vec2<f32>",
     time: "f32",
-    lights: "u32",
+    pointLights: "u32",
+    directionalLights: "u32",
   },
   {
     isUniform: true,
     serializer: (data, _, offsets_32, views) => {
       views.f32.set(data.cameraViewProjMatrix, offsets_32[0]);
       views.f32.set(data.lightViewProjMatrix, offsets_32[1]);
-      views.f32.set(data.light1Dir, offsets_32[2]);
-      views.f32.set(data.light2Dir, offsets_32[3]);
-      views.f32.set(data.light3Dir, offsets_32[4]);
-      views.f32.set(data.cameraPos, offsets_32[5]);
-      views.f32.set(data.playerPos, offsets_32[6]);
-      views.f32[offsets_32[7]] = data.time;
-      views.u32[offsets_32[8]] = data.lights;
+      views.f32.set(data.cameraPos, offsets_32[2]);
+      views.f32.set(data.playerPos, offsets_32[3]);
+      views.f32[offsets_32[4]] = data.time;
+      views.u32[offsets_32[5]] = data.pointLights;
+      views.u32[offsets_32[6]] = data.directionalLights;
     },
   }
 );
@@ -144,37 +141,20 @@ export const sceneBufPtr = CY.createSingleton("scene", {
 });
 
 export function setupScene(): SceneTS {
-  // create a directional light and compute it's projection (for shadows) and direction
-  // TODO(@darzu): directional lights should be unit vectors then scaled by strength; remove strength from shader
-  const worldOrigin = vec3.fromValues(0, 0, 0);
-  const D = 50;
-  const light1Pos = vec3.fromValues(D, D * 2, D);
-  const light2Pos = vec3.fromValues(-D, D * 1, D);
-  const light3Pos = vec3.fromValues(0, D * 0.5, -D);
-  const light1Dir = vec3.subtract(vec3.create(), worldOrigin, light1Pos);
-  vec3.normalize(light1Dir, light1Dir);
-  const light2Dir = vec3.subtract(vec3.create(), worldOrigin, light2Pos);
-  vec3.normalize(light2Dir, light2Dir);
-  const light3Dir = vec3.subtract(vec3.create(), worldOrigin, light3Pos);
-  vec3.normalize(light3Dir, light3Dir);
-
   return {
     cameraViewProjMatrix: mat4.create(), // updated later
     lightViewProjMatrix: mat4.create(), // updated later
-    light1Dir,
-    light2Dir,
-    light3Dir,
     cameraPos: vec3.create(), // updated later
     playerPos: [0, 0], // updated later
     time: 0, // updated later
-    lights: 0, // updated later
+    pointLights: 0, // updated later
+    directionalLights: 0, // updated later
   };
 }
 
 export const PointLightStruct = createCyStruct(
   {
     position: "vec3<f32>",
-    color: "vec3<f32>",
     ambient: "vec3<f32>",
     diffuse: "vec3<f32>",
     specular: "vec3<f32>",
@@ -188,9 +168,28 @@ export const PointLightStruct = createCyStruct(
 
 export type PointLightTS = CyToTS<typeof PointLightStruct.desc>;
 
-export const pointLightsPtr = CY.createArray("pointLightsBuf", {
+export const pointLightsPtr = CY.createArray("pointLight", {
   struct: PointLightStruct,
-  length: MAX_LIGHTS,
+  length: MAX_POINT_LIGHTS,
+  forceUsage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
+});
+
+export const DirectionalLightStruct = createCyStruct(
+  {
+    viewProjMatrix: "mat4x4<f32>",
+    direction: "vec3<f32>",
+    ambient: "vec3<f32>",
+    diffuse: "vec3<f32>",
+    specular: "vec3<f32>",
+  },
+  { isUniform: true }
+);
+
+export type DirectionalLightTS = CyToTS<typeof DirectionalLightStruct.desc>;
+
+export const directionalLightsPtr = CY.createArray("directionalLight", {
+  struct: DirectionalLightStruct,
+  length: MAX_DIRECTIONAL_LIGHTS,
   forceUsage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
 });
 
