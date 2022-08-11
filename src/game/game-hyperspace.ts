@@ -108,7 +108,7 @@ export async function initHyperspaceGame(em: EntityManager) {
   initOcean();
 
   // TODO(@darzu): dbg
-  await asyncTimeout(2000);
+  //await asyncTimeout(2000);
 
   const { ocean, me } = await em.whenResources(OceanDef, MeDef);
   const ship2 = await em.whenEntityHas(ship, UVPosDef);
