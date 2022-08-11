@@ -51,6 +51,7 @@ export function createSpawner(
   EM.ensureComponentOn(e, UVDirDef, uvDir);
   EM.ensureComponentOn(e, PositionDef);
   EM.ensureComponentOn(e, RotationDef);
+  // TODO(@darzu): put AuthorityDef and sync stuff on spawner
   if (animate) EM.ensureComponentOn(e, AnimateToDef, animate);
   return e;
 }

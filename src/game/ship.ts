@@ -17,12 +17,12 @@ export const ShipDef = EM.defineComponent("ship", () => {
 
 onInit((em) => {
   em.registerSystem(
-    [ShipDef, UVPosDef, UVDirDef],
+    [ShipDef, UVPosDef, UVDirDef, AuthorityDef],
     [GameStateDef, MeDef, InputsDef, DevConsoleDef],
     (ships, res) => {
       if (res.gameState.state !== GameState.PLAYING) return;
       for (let s of ships) {
-        if (AuthorityDef.isOn(s) && s.authority.pid !== res.me.pid) continue;
+        if (s.authority.pid !== res.me.pid) continue;
 
         // console.log(
         //   `ship speed: ${s.ship.speed}, dir: ${s.uvDir[0]}, ${s.uvDir[1]}`

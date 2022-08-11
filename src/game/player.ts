@@ -126,8 +126,7 @@ export function registerPlayerSystems(em: EntityManager) {
           scaleMesh3(m, [0.75, 0.75, 0.4]);
           em.addComponent(e.id, RenderableConstructDef, m);
         }
-        if (!AuthorityDef.isOn(e))
-          em.addComponent(e.id, AuthorityDef, res.me.pid);
+        em.ensureComponentOn(e, AuthorityDef, res.me.pid);
         if (!PlayerDef.isOn(e)) {
           em.ensureComponentOn(e, PlayerDef);
 
