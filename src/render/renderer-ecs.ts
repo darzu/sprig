@@ -25,7 +25,10 @@ import { isMeshHandle } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import { SceneTS } from "./pipelines/std-scene.js";
 import { max } from "../math.js";
-import { vec3Dbg } from "../utils-3d.js";
+import {
+  positionAndTargetToOrthoViewProjMatrix,
+  vec3Dbg,
+} from "../utils-3d.js";
 import { ShadersDef, ShaderSet } from "./shader-loader.js";
 import { dbgLogOnce } from "../util.js";
 import { TimeDef } from "../time.js";
@@ -284,30 +287,12 @@ export function registerRenderer(em: EntityManager) {
       const lightPosition = vec3.add(
         tempVec3(),
         cameraView.location,
-        [50, 100, 50]
+        [-50, 100, -50]
       );
-      const lightViewMatrix = mat4.create();
-      mat4.lookAt(
-        lightViewMatrix,
+      const lightViewProjMatrix = positionAndTargetToOrthoViewProjMatrix(
+        mat4.create(),
         lightPosition,
-        cameraView.location,
-        [0, 1, 0]
-      );
-      const lightProjectionMatrix = mat4.create();
-      {
-        const left = -80;
-        const right = 80;
-        const bottom = -80;
-        const top = 80;
-        const near = -200;
-        const far = 300;
-        mat4.ortho(lightProjectionMatrix, left, right, bottom, top, near, far);
-      }
-      const lightViewProjMatrix = mat4.create();
-      mat4.multiply(
-        lightViewProjMatrix,
-        lightProjectionMatrix,
-        lightViewMatrix
+        cameraView.location
       );
 
       // TODO(@darzu): this maxSurfaceId calculation is super inefficient, we need
