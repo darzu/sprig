@@ -67,6 +67,7 @@ export function registerSyncSystem(em: EntityManager) {
               let type = peer.entitiesKnown.has(ent.id)
                 ? EntityUpdateType.Dynamic
                 : EntityUpdateType.Full;
+              console.log(`doing type ${type} sync of ${ent.id}`);
               const components =
                 type === EntityUpdateType.Dynamic
                   ? ent.sync.dynamicComponents
