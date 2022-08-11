@@ -1,7 +1,9 @@
 import { EM, EntityManager } from "./entity-manager.js";
 import { SyncDef } from "./net/components.js";
 
-export const DeletedDef = EM.defineComponent("deleted", () => true);
+export const DeletedDef = EM.defineComponent("deleted", () => ({
+  processed: false,
+}));
 
 EM.registerSerializerPair(
   DeletedDef,
@@ -19,15 +21,18 @@ export function registerDeleteEntitiesSystem(em: EntityManager) {
     [],
     (entities) => {
       for (let entity of entities) {
-        // TODO: remove from renderer
-        // TODO(@darzu): yuck, we just wrote a destructor. Also not sure
-        //    this is serializable or network-able
-        if (OnDeleteDef.isOn(entity)) entity.onDelete(entity.id);
+        if (!entity.deleted.processed) {
+          // TODO: remove from renderer
+          // TODO(@darzu): yuck, we just wrote a destructor. Also not sure
+          //    this is serializable or network-able
+          if (OnDeleteDef.isOn(entity)) entity.onDelete(entity.id);
 
-        em.keepOnlyComponents(entity.id, [DeletedDef, SyncDef]);
-        if (SyncDef.isOn(entity)) {
-          entity.sync.dynamicComponents = [];
-          entity.sync.fullComponents = [DeletedDef.id];
+          em.keepOnlyComponents(entity.id, [DeletedDef, SyncDef]);
+          if (SyncDef.isOn(entity)) {
+            entity.sync.dynamicComponents = [];
+            entity.sync.fullComponents = [DeletedDef.id];
+          }
+          entity.deleted.processed = true;
         }
       }
     },
