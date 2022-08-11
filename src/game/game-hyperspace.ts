@@ -23,6 +23,7 @@ import { vec2, vec3 } from "../gl-matrix.js";
 import { AnimateToDef, EASE_INQUAD } from "../animate-to.js";
 import { createSpawner, SpawnerDef } from "./spawner.js";
 import { tempVec3 } from "../temp-pool.js";
+import { DarkStarDef } from "./darkstar.js";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 
@@ -137,4 +138,12 @@ export async function initHyperspaceGame(em: EntityManager) {
     });
   }
 
+  // dark/hyper/cool star
+
+  const star = em.newEntity();
+  em.ensureComponentOn(star, PositionDef, vec3.fromValues(-1000, 2000, -1000));
+  em.ensureComponentOn(star, RenderableConstructDef, res.assets.ball.proto);
+  em.ensureComponentOn(star, ScaleDef, vec3.fromValues(100, 100, 100));
+  em.ensureComponentOn(star, ColorDef, vec3.fromValues(0.8, 0.1, 0.1));
+  em.ensureComponentOn(star, DarkStarDef);
 }
