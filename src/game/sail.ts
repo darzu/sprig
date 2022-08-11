@@ -29,6 +29,7 @@ import {
 import { YawPitchDef, yawpitchToQuat } from "../yawpitch.js";
 import { AssetsDef } from "./assets.js";
 import { DarkStarDef } from "./darkstar.js";
+import { GameState, GameStateDef } from "./gamestate.js";
 import {
   BOAT_COLOR,
   PlayerShipLocalDef,
@@ -187,8 +188,11 @@ onInit((em) => {
   let viewProjMatrix = mat4.create();
   em.registerSystem(
     [PlayerShipPropsDef, ShipDef, WorldFrameDef, AuthorityDef],
-    [MeDef],
+    [MeDef, GameStateDef],
     (es, res) => {
+      if (res.gameState.state !== GameState.PLAYING) {
+        return;
+      }
       for (let ship of es) {
         if (ship.authority.pid !== res.me.pid) continue;
         const stars = em.filterEntities([DarkStarDef, WorldFrameDef]);
@@ -230,8 +234,8 @@ onInit((em) => {
           const shipDirection = vec3.fromValues(0, 0, -1);
           vec3.transformQuat(shipDirection, shipDirection, ship.world.rotation);
           const accel = vec3.dot(shipDirection, sailForce);
-          ship.ship.speed += accel;
-          console.log(`Speed is ${ship.ship.speed}`);
+          ship.ship.speed += accel * 0.0001;
+          //console.log(`Speed is ${ship.ship.speed}`);
         }
       }
     },

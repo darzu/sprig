@@ -203,7 +203,8 @@ EM.registerSystem(
       // console.log(`copying: ${e.id}`);
 
       // vec2.normalize(e.uvDir, e.uvDir);
-      const aheadUV = vec2.add(tempVec2(), e.uvPos, e.uvDir);
+      const scaledUVDir = vec2.scale(tempVec2(), e.uvDir, 0.0001);
+      const aheadUV = vec2.add(tempVec2(), e.uvPos, scaledUVDir);
       const aheadPos = res.ocean.uvToPos(tempVec3(), aheadUV);
 
       // TODO(@darzu): want SDF-based bounds checking

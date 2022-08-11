@@ -21,7 +21,7 @@ import { ColorDef } from "../color.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../delete.js";
-import { min } from "../math.js";
+import { clamp, min } from "../math.js";
 import { createCannon } from "./cannon.js";
 import { MusicDef } from "../music.js";
 import { LocalPlayerDef, PlayerDef } from "./player.js";
@@ -234,6 +234,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
       }
 
       vec2.copy(s.uvPos, s.playerShipProps.uvPos);
+      vec2.set(s.uvDir, 1, 0);
 
       em.ensureComponentOn(s, PositionDef);
       em.ensureComponentOn(s, RotationDef);
@@ -397,7 +398,9 @@ export function registerShipSystems(em: EntityManager) {
     ],
     [GameStateDef, MeDef, InputsDef, DevConsoleDef],
     (ships, res) => {
-      if (res.gameState.state !== GameState.PLAYING) return;
+      if (res.gameState.state !== GameState.PLAYING) {
+        return;
+      }
       for (let s of ships) {
         if (s.authority.pid !== res.me.pid) return;
         // TODO(@darzu): handle UV heading !!
@@ -410,6 +413,7 @@ export function registerShipSystems(em: EntityManager) {
         // SPEED
         if (res.inputs.keyDowns["z"]) s.ship.speed += 0.00001;
         if (res.inputs.keyDowns["x"]) s.ship.speed -= 0.00001;
+        s.ship.speed = clamp(s.ship.speed, -0.001, 0.001);
         //s.ship.speed = Math.max(0, s.ship.speed);
 
         // STEERING
