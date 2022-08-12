@@ -156,7 +156,7 @@ export async function initHyperspaceGame(em: EntityManager) {
     const darkstar = createDarkStarNow(
       res,
       starPosition,
-      vec3.fromValues(0.8, 0.1, 0.1),
+      vec3.fromValues(1.3, 0.6, 0.6),
       vec3.fromValues(0, 0, 0),
       orbitalAxis
     );
