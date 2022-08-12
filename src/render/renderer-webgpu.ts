@@ -37,13 +37,13 @@ import { PointLightStruct, PointLightTS } from "./lights.js";
 
 const MAX_PIPELINES = 64;
 
-export function createWebGPURenderer(
+export function createRenderer(
   canvas: HTMLCanvasElement,
   device: GPUDevice,
   context: GPUCanvasContext,
   shaders: ShaderSet
-): Renderer {
-  let renderer: Renderer = {
+) {
+  const renderer = {
     drawLines: true,
     drawTris: true,
 
@@ -67,6 +67,7 @@ export function createWebGPURenderer(
   const resources = createCyResources(CY, shaders, device);
   const cyKindToNameToRes = resources.kindToNameToRes;
 
+  // TODO(@darzu): multiple mesh pools?
   const pool: MeshPool<
     typeof VertexStruct.desc,
     typeof MeshUniformStruct.desc

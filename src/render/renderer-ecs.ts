@@ -17,7 +17,7 @@ import { stdRenderPipeline } from "./pipelines/std-mesh.js";
 import { MeshHandleStd } from "./pipelines/std-scene.js";
 import { CanvasDef } from "../canvas.js";
 import { FORCE_WEBGL } from "../main.js";
-import { createWebGPURenderer } from "./render-webgpu.js";
+import { createRenderer } from "./renderer-webgpu.js";
 import { CyPipelinePtr, CyTexturePtr } from "./gpu-registry.js";
 import { createFrame } from "../physics/nonintersection.js";
 import { tempVec3 } from "../temp-pool.js";
@@ -380,22 +380,23 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
   );
 }
 
-export interface Renderer {
-  // opts
-  drawLines: boolean;
-  drawTris: boolean;
+export type Renderer = ReturnType<typeof createRenderer>;
+// export interface Renderer {
+//   // opts
+//   drawLines: boolean;
+//   drawTris: boolean;
 
-  addMesh(m: Mesh): MeshHandleStd;
-  addMeshInstance(h: MeshHandleStd): MeshHandleStd;
-  updateMesh(handle: MeshHandleStd, newMeshData: Mesh): void;
-  // TODO(@darzu): scene struct maybe shouldn't be special cased, all uniforms
-  //  should be neatily updatable.
-  updateScene(scene: Partial<SceneTS>): void;
-  updatePointLights(pointLights: PointLightTS[]): void;
-  submitPipelines(handles: MeshHandleStd[], pipelines: CyPipelinePtr[]): void;
-  readTexture(tex: CyTexturePtr): Promise<ArrayBuffer>;
-  stats(): Promise<Map<string, bigint>>;
-}
+//   addMesh(m: Mesh): MeshHandleStd;
+//   addMeshInstance(h: MeshHandleStd): MeshHandleStd;
+//   updateMesh(handle: MeshHandleStd, newMeshData: Mesh): void;
+//   // TODO(@darzu): scene struct maybe shouldn't be special cased, all uniforms
+//   //  should be neatily updatable.
+//   updateScene(scene: Partial<SceneTS>): void;
+//   updatePointLights(pointLights: PointLightTS[]): void;
+//   submitPipelines(handles: MeshHandleStd[], pipelines: CyPipelinePtr[]): void;
+//   readTexture(tex: CyTexturePtr): Promise<ArrayBuffer>;
+//   stats(): Promise<Map<string, bigint>>;
+// }
 
 // TODO(@darzu): the double "Renderer" naming is confusing. Maybe one should be GPUManager or something?
 export const RendererDef = EM.defineComponent(
@@ -450,7 +451,7 @@ async function chooseAndInitRenderer(
       // TODO(@darzu): uses cast while waiting for webgpu-types.d.ts to be updated
       const context = canvas.getContext("webgpu");
       if (context) {
-        renderer = createWebGPURenderer(canvas, device, context, shaders);
+        renderer = createRenderer(canvas, device, context, shaders);
         if (renderer) usingWebGPU = true;
       }
     }
