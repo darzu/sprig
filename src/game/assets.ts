@@ -417,6 +417,27 @@ const PLANE_MESH: RawMesh = {
 };
 scaleMesh(PLANE_MESH, 10);
 
+const SAIL_MESH: RawMesh = {
+  pos: [
+    [0, 0, 0],
+    [0, 1, 0],
+    [0, 1, 1],
+  ],
+  tri: [
+    [0, 1, 2], // front
+    [2, 1, 0], // back
+  ],
+  quad: [],
+  lines: [],
+  colors: [BLACK, BLACK],
+  // uvs: [
+  //   [1, 1],
+  //   [0, 1],
+  //   [1, 0],
+  //   [0, 0],
+  // ],
+};
+
 const TRI_FENCE_LN = 100;
 const TRI_FENCE: () => RawMesh = () => {
   const pos: vec3[] = [];
@@ -608,6 +629,13 @@ export const LocalMeshes = {
   fabric: () => DBG_FABRIC,
   triFence: TRI_FENCE,
   wireCube: () => ({ ...CUBE_MESH, tri: [] } as RawMesh),
+  mast: () => {
+    let m = cloneMesh(CUBE_MESH);
+    mapMeshPositions(m, (p) => [p[0], p[1] + 1, p[2]]);
+    scaleMesh3(m, [0.5, 12, 0.5]);
+    return m;
+  },
+  sail: () => SAIL_MESH,
 } as const;
 
 type LocalMeshSymbols = keyof typeof LocalMeshes;

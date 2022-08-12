@@ -39,10 +39,7 @@ import {
   stdRenderPipeline,
 } from "../render/pipelines/std-mesh.js";
 import { postProcess } from "../render/pipelines/std-post.js";
-import {
-  shadowDbgDisplay,
-  shadowPipeline,
-} from "../render/pipelines/std-shadow.js";
+import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import {
   boidRender,
   boidCanvasMerge,
@@ -331,7 +328,7 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
   const res = await em.whenResources(AssetsDef, GlobalCursor3dDef, RendererDef);
   let renderPipelinesPtrs: CyRenderPipelinePtr[] = [
     // TODO(@darzu):
-    shadowPipeline,
+    ...shadowPipelines,
     stdRenderPipeline,
     // renderRopePipelineDesc,
     boidRender,

@@ -4,6 +4,7 @@ import { vec2 } from "../gl-matrix.js";
 import { onInit } from "../init.js";
 import { InputsDef } from "../inputs.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
+import { tempVec2 } from "../temp-pool.js";
 import { vec2Dbg, vec3Dbg } from "../utils-3d.js";
 import { GameStateDef, GameState } from "./gamestate.js";
 import { UVPosDef, UVDirDef } from "./ocean.js";
@@ -16,12 +17,12 @@ export const ShipDef = EM.defineComponent("ship", () => {
 
 onInit((em) => {
   em.registerSystem(
-    [ShipDef, UVPosDef, UVDirDef],
+    [ShipDef, UVPosDef, UVDirDef, AuthorityDef],
     [GameStateDef, MeDef, InputsDef, DevConsoleDef],
     (ships, res) => {
       if (res.gameState.state !== GameState.PLAYING) return;
       for (let s of ships) {
-        if (AuthorityDef.isOn(s) && s.authority.pid !== res.me.pid) continue;
+        if (s.authority.pid !== res.me.pid) continue;
 
         // console.log(
         //   `ship speed: ${s.ship.speed}, dir: ${s.uvDir[0]}, ${s.uvDir[1]}`
@@ -35,14 +36,14 @@ onInit((em) => {
         //   );
         // }
 
-        if (s.ship.speed > 0.00001) {
+        if (Math.abs(s.ship.speed) > 0.00001) {
           // NOTE: we scale uvDir by speed so that the look-ahead used for
           //    UVDir->Rotation works.
           // TODO(@darzu): This doesn't seem great. We need a better way to
           //    do  UVDir->Rotation
-          vec2.normalize(s.uvDir, s.uvDir);
-          vec2.scale(s.uvDir, s.uvDir, s.ship.speed);
-          vec2.add(s.uvPos, s.uvPos, s.uvDir);
+          //vec2.normalize(s.uvDir, s.uvDir);
+          const scaled = vec2.scale(tempVec2(), s.uvDir, s.ship.speed);
+          vec2.add(s.uvPos, s.uvPos, scaled);
         }
       }
     },

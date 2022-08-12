@@ -71,6 +71,7 @@ export const TexTypeToElementArity: Partial<
   rgba8unorm: 4,
   rgba8snorm: 4,
   depth32float: 1,
+  depth16unorm: 1,
 };
 export type TexTypeToTSType = {
   rgba32float: vec4;
@@ -101,6 +102,7 @@ export const texTypeToBytes: Partial<Record<GPUTextureFormat, number>> = {
   rg8snorm: 2,
   "bgra8unorm-srgb": 4,
   rg16uint: 2 + 2,
+  depth16unorm: 2,
 };
 // Source: https://gpuweb.github.io/gpuweb/#plain-color-formats
 // TODO(@darzu): probably just track which ones are unfilterable
@@ -217,6 +219,7 @@ export interface CyStructOpts<O extends CyStructDesc> {
   isUniform?: boolean;
   isCompact?: boolean;
   serializer?: Serializer<O>;
+  hackArray?: boolean;
 }
 
 // HELPER FNS
@@ -347,7 +350,10 @@ export function createCyStruct<O extends CyStructDesc>(
 
   const offsets_32 = offsets.map((o) => o >> 2);
 
-  const structAlign = opts?.isUniform
+  // TODO: hack
+  const structAlign = opts?.hackArray
+    ? max(alignments)
+    : opts?.isUniform
     ? 256
     : opts?.isCompact
     ? 4 // https://gpuweb.github.io/gpuweb/#vertex-formats

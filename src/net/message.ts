@@ -91,6 +91,7 @@ export function deserializeEntity(
     !authority ||
     !claimAuthority(authority, authorityPid, authoritySeq, updateSeq)
   ) {
+    console.log("failed authority check");
     message.dummy = true;
   }
   let numComponents = message.readUint8();

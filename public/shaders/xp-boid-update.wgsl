@@ -13,7 +13,7 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
   var pos : vec3<f32>;
   var vel : vec3<f32>;
 
-  for (var i : u32 = 0u; i < arrayLength(&inBoids.ms); i = i + 1u) {
+  for (var i : u32 = 0u; i < numBoids; i = i + 1u) {
     if (i == index) {
       continue;
     }

@@ -185,13 +185,13 @@ export function createCyArray<O extends CyStructDesc>(
   const hasInitData = typeof lenOrData !== "number";
   const length = hasInitData ? lenOrData.length : lenOrData;
 
-  if ((usage & GPUBufferUsage.UNIFORM) !== 0) {
-    // TODO(@darzu): is this true for arrays where the whole array might be a uniform?
-    assert(
-      struct.size % 256 === 0,
-      "CyArray with UNIFORM usage must be 256 aligned"
-    );
-  }
+  // if ((usage & GPUBufferUsage.UNIFORM) !== 0) {
+  //   // TODO(@darzu): is this true for arrays where the whole array might be a uniform?
+  //   assert(
+  //     struct.size % 256 === 0,
+  //     "CyArray with UNIFORM usage must be 256 aligned"
+  //   );
+  // }
 
   const _buf = device.createBuffer({
     size: struct.size * length,

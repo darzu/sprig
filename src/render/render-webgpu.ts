@@ -15,6 +15,7 @@ import {
   CySingleton,
   CyPipeline,
   isRenderPipeline,
+  CyArray,
 } from "./data-webgpu.js";
 import {
   VertexStruct,
@@ -31,6 +32,8 @@ import {
 import { SceneStruct, SceneTS } from "./pipelines/std-scene.js";
 import { ShaderSet } from "./shader-loader.js";
 import { texTypeToBytes } from "./gpu-struct.js";
+import { align } from "../math.js";
+import { PointLightStruct, PointLightTS } from "./lights.js";
 
 const MAX_PIPELINES = 64;
 
@@ -48,6 +51,7 @@ export function createWebGPURenderer(
     addMeshInstance,
     updateMesh,
     updateScene,
+    updatePointLights,
     submitPipelines,
     readTexture,
     stats,
@@ -70,6 +74,9 @@ export function createWebGPURenderer(
 
   const sceneUni: CySingleton<typeof SceneStruct.desc> =
     cyKindToNameToRes.singleton["scene"]!;
+
+  const pointLightsArray: CyArray<typeof PointLightStruct.desc> =
+    cyKindToNameToRes.array["pointLight"]!;
 
   // render bundle
   const bundledMIds = new Set<number>();
@@ -141,6 +148,10 @@ export function createWebGPURenderer(
       ...sceneUni.lastData!,
       ...scene,
     });
+  }
+
+  function updatePointLights(pointLights: PointLightTS[]) {
+    pointLightsArray.queueUpdates(pointLights, 0);
   }
 
   function submitPipelines(
@@ -271,6 +282,9 @@ export function createWebGPURenderer(
       {
         buffer: gpuBuffer,
         offset: 0,
+        // TODO(@darzu): ERROR: bytesPerRow (64) is not a multiple of 256.
+        // TODO(@darzu): need to align up to 256 but then also account for this in the
+        //                CPU sampler?
         bytesPerRow: tex.size[0] * bytesPerVal, // TODO: alignment?
         rowsPerImage: tex.size[1],
       },

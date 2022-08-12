@@ -1,12 +1,16 @@
 import { createRenderTextureToQuad } from "../gpu-helper.js";
-import { CyRenderPipelinePtr, CyTexturePtr } from "../gpu-registry.js";
+import {
+  CyDepthTexturePtr,
+  CyRenderPipelinePtr,
+  CyTexturePtr,
+} from "../gpu-registry.js";
 import { canvasTexturePtr } from "./std-scene.js";
 
 const padding = 0.05;
 
 // TODO(@darzu): make grid a parameter
 export function createGridComposePipelines(
-  grid: CyTexturePtr[][]
+  grid: (CyTexturePtr | CyDepthTexturePtr)[][]
 ): CyRenderPipelinePtr[] {
   const width = grid[0].length;
   const height = grid.length;

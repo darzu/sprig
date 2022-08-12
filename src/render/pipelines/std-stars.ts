@@ -17,7 +17,7 @@ let NUM_STARS = 1000;
 
 const starData = CY.createArray("starData", {
   struct: StarStruct,
-  init: () => NUM_STARS,
+  init: NUM_STARS,
   // forceUsage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
 });
 

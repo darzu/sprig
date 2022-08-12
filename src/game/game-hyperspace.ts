@@ -1,13 +1,16 @@
 import { CameraDef } from "../camera.js";
 import { ColorDef } from "../color.js";
-import { EntityManager } from "../entity-manager.js";
+import { EntityManager, EntityW } from "../entity-manager.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { blurPipelines } from "../render/pipelines/std-blur.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
-import { shadowPipeline } from "../render/pipelines/std-shadow.js";
+import {
+  shadowDepthTextures,
+  shadowPipelines,
+} from "../render/pipelines/std-shadow.js";
 import { initStars, renderStars } from "../render/pipelines/std-stars.js";
 import { AssetsDef } from "./assets.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
@@ -23,8 +26,38 @@ import { vec2, vec3 } from "../gl-matrix.js";
 import { AnimateToDef, EASE_INQUAD } from "../animate-to.js";
 import { createSpawner, SpawnerDef } from "./spawner.js";
 import { tempVec3 } from "../temp-pool.js";
+import { createDarkStarNow } from "./darkstar.js";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
+
+function spawnRandomDarkStar(
+  res: EntityW<[typeof AssetsDef]>,
+  approxPosition: vec3,
+  color: vec3
+) {
+  const orbitalAxis = vec3.fromValues(
+    Math.random() - 0.5,
+    Math.random() - 0.5,
+    Math.random() - 0.5
+  );
+  vec3.normalize(orbitalAxis, orbitalAxis);
+
+  vec3.normalize(orbitalAxis, orbitalAxis);
+
+  // TODO: this only works because the darkstar is orbiting the origin
+  const perpendicular = vec3.cross(tempVec3(), approxPosition, orbitalAxis);
+  const starPosition = vec3.cross(perpendicular, orbitalAxis, perpendicular);
+  vec3.normalize(starPosition, starPosition);
+  vec3.scale(starPosition, starPosition, vec3.length(approxPosition));
+
+  const darkstar = createDarkStarNow(
+    res,
+    starPosition,
+    color,
+    vec3.fromValues(0, 0, 0),
+    orbitalAxis
+  );
+}
 
 export async function initHyperspaceGame(em: EntityManager) {
   const camera = em.addSingletonComponent(CameraDef);
@@ -32,11 +65,7 @@ export async function initHyperspaceGame(em: EntityManager) {
 
   em.addSingletonComponent(GameStateDef);
 
-  // if (hosting) {
-  const ship = createPlayerShip([0.1, 0.1]);
-  // }
-
-  em.whenResources(MeDef, OceanDef).then(async () => {
+  em.whenResources(OceanDef).then(async () => {
     // await awaitTimeout(1000); // TODO(@darzu): what is happening
     createPlayer(em);
   });
@@ -51,30 +80,30 @@ export async function initHyperspaceGame(em: EntityManager) {
     "debugLoop"
   );
 
-  // const grid = [
+  const grid = [[...shadowDepthTextures]];
   //   //
   //   [oceanJfa._inputMaskTex, oceanJfa._uvMaskTex],
   //   //
-  //   [oceanJfa.voronoiTex, uvToPosTex],
+  //   [oceanJfa.voronoiTex, shadowDepthTexture],
   // ];
   // let grid = noiseGridFrame;
   // const grid = [[oceanJfa._voronoiTexs[0]], [oceanJfa._voronoiTexs[1]]];
 
-  let gridCompose = createGridComposePipelines(oceanJfa._debugGrid);
+  let gridCompose = createGridComposePipelines(grid);
 
   em.registerSystem(
     null,
     [RendererDef, DevConsoleDef],
     (_, res) => {
       res.renderer.pipelines = [
-        shadowPipeline,
+        ...shadowPipelines,
         stdRenderPipeline,
         outlineRender,
-        renderStars,
-        ...blurPipelines,
+        //renderStars,
+        //...blurPipelines,
 
         postProcess,
-        // ...(res.dev.showConsole ? gridCompose : []),
+        ...(res.dev.showConsole ? gridCompose : []),
       ];
     },
     "hyperspaceGame"
@@ -108,53 +137,68 @@ export async function initHyperspaceGame(em: EntityManager) {
   initOcean();
 
   // TODO(@darzu): dbg
-  await asyncTimeout(2000);
+  //await asyncTimeout(2000);
 
-  const { ocean, me } = await em.whenResources(OceanDef, MeDef);
-  const ship2 = await em.whenEntityHas(ship, UVPosDef);
+  const { me, ocean } = await em.whenResources(OceanDef, MeDef);
 
-  const enemyUVPos: vec2 = [0.2, 0.1];
-  const enemyEndPos = ocean.uvToPos(vec3.create(), enemyUVPos);
-  // vec3.add(enemyEndPos, enemyEndPos, [0, 10, 0]);
-  const enemyStartPos = vec3.sub(vec3.create(), enemyEndPos, [0, 20, 0]);
+  if (me.host) {
+    const ship = createPlayerShip([0.1, 0.1]);
+    const ship2 = await em.whenEntityHas(ship, UVPosDef);
 
-  const towardsPlayerDir = vec2.sub(vec2.create(), ship2.uvPos, enemyUVPos);
-  vec2.normalize(towardsPlayerDir, towardsPlayerDir);
+    const NUM_ENEMY = 40;
 
-  // console.log("creating spawner");
-  const enemySpawner = createSpawner(enemyUVPos, towardsPlayerDir, {
-    startPos: enemyStartPos,
-    endPos: enemyEndPos,
-    durationMs: 1000,
-    easeFn: EASE_INQUAD,
-  });
+    for (let i = 0; i < NUM_ENEMY; i++) {
+      let enemyUVPos: vec2 = [Math.random(), Math.random()];
+      while (ocean.uvToEdgeDist(enemyUVPos) < 0.1) {
+        enemyUVPos = [Math.random(), Math.random()];
+      }
 
-  // em.ensureComponentOn(ocean, PositionDef, [120, 0, 0]);
-  // vec3.scale(ocean.position, ocean.position, scale);
-  // const scale = 100.0;
-  // const scale = 1.0;
-  // em.ensureComponentOn(ocean, ScaleDef, [scale, scale, scale]);
-  // em.ensureComponentOn(ocean, AngularVelocityDef, [0.0001, 0.0001, 0.0001]);
+      const enemyEndPos = ocean.uvToPos(vec3.create(), enemyUVPos);
+      // vec3.add(enemyEndPos, enemyEndPos, [0, 10, 0]);
+      const enemyStartPos = vec3.sub(vec3.create(), enemyEndPos, [0, 20, 0]);
 
-  // TODO(@darzu): DEBUG. quad mesh stuff
-  // const fabric = em.newEntity();
-  // em.ensureComponentOn(
-  //   fabric,
-  //   RenderableConstructDef,
-  //   res.assets.fabric.proto
-  //   // true,
-  //   // 0
-  //   // UVUNWRAP_MASK
-  // );
-  // em.ensureComponentOn(fabric, PositionDef, [10, 10, 10]);
-  // em.ensureComponentOn(fabric, AngularVelocityDef, [1.0, 10.0, 0.1]);
+      const towardsPlayerDir = vec2.sub(vec2.create(), ship2.uvPos, enemyUVPos);
+      vec2.normalize(towardsPlayerDir, towardsPlayerDir);
 
-  // TODO(@darzu): DEBUG. Useful ocean UV debug entity:
-  // const buoy = em.newEntity();
-  // em.ensureComponentOn(buoy, PositionDef);
-  // em.ensureComponentOn(buoy, RenderableConstructDef, res.assets.ship.proto);
-  // em.ensureComponentOn(buoy, ScaleDef, [1.0, 1.0, 1.0]);
-  // em.ensureComponentOn(buoy, ColorDef, [0.2, 0.8, 0.2]);
-  // em.ensureComponentOn(buoy, UVDef, [0.1, 0.1]);
-  // em.ensureComponentOn(buoy, UVDirDef, [1.0, 0.0]);
+      // console.log("creating spawner");
+      const enemySpawner = createSpawner(enemyUVPos, towardsPlayerDir, {
+        startPos: enemyStartPos,
+        endPos: enemyEndPos,
+        durationMs: 1000,
+        easeFn: EASE_INQUAD,
+      });
+    }
+    const orbitalAxis = vec3.fromValues(
+      Math.random() - 0.5,
+      Math.random() - 0.5,
+      Math.random() - 0.5
+    );
+    vec3.normalize(orbitalAxis, orbitalAxis);
+
+    // TODO: this only works because the darkstar is orbiting the origin
+    const approxPosition = vec3.fromValues(-1000, 2000, -1000);
+    const perpendicular = vec3.cross(tempVec3(), approxPosition, orbitalAxis);
+    const starPosition = vec3.cross(perpendicular, orbitalAxis, perpendicular);
+    vec3.normalize(starPosition, starPosition);
+    vec3.scale(starPosition, starPosition, vec3.length(approxPosition));
+
+    spawnRandomDarkStar(
+      res,
+      vec3.fromValues(-1000, 2000, -1000),
+      vec3.fromValues(0.8, 0.3, 0.3)
+      //vec3.fromValues(0, 0, 0)
+    );
+
+    spawnRandomDarkStar(
+      res,
+      vec3.fromValues(0, 0, 2000),
+      vec3.fromValues(0.3, 0.8, 0.6)
+    );
+
+    spawnRandomDarkStar(
+      res,
+      vec3.fromValues(0, 1000, 1000),
+      vec3.fromValues(0.3, 0.3, 0.8)
+    );
+  }
 }

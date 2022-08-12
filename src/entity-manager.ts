@@ -226,6 +226,12 @@ export class EntityManager {
     if (id === 0) throw `hey, use addSingletonComponent!`;
     const c = def.construct(...args);
     const e = this.entities.get(id)!;
+    // TODO: this is hacky--EM shouldn't know about "deleted"
+    if ("deleted" in e) {
+      console.error(
+        `Trying to add component ${def.name} to deleted entity ${id}`
+      );
+    }
     if (def.name in e)
       throw `double defining component ${def.name} on ${e.id}!`;
     (e as any)[def.name] = c;

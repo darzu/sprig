@@ -21,7 +21,7 @@ import { ColorDef } from "../color.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../delete.js";
-import { min } from "../math.js";
+import { clamp, min } from "../math.js";
 import { createCannon } from "./cannon.js";
 import { MusicDef } from "../music.js";
 import { LocalPlayerDef, PlayerDef } from "./player.js";
@@ -38,6 +38,7 @@ import { YawPitchDef } from "../yawpitch.js";
 import { UVPosDef, UVDirDef } from "./ocean.js";
 import { PartyDef } from "./party.js";
 import { ShipDef } from "./ship.js";
+import { createMastNow, MastLocalDef, MastPropsDef } from "./sail.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
@@ -70,7 +71,7 @@ export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper(
     build: (gem, res) => {
       const em: EntityManager = EM;
 
-      em.ensureComponentOn(gem, PositionDef, [0, 0, -1]);
+      em.ensureComponentOn(gem, PositionDef, [0, 0, 10]);
 
       em.ensureComponentOn(
         gem,
@@ -170,6 +171,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
       cannonLId: 0,
       cannonRId: 0,
       rudder: createRef(0, [RudderPropsDef, YawPitchDef]),
+      mast: createRef(0, [MastPropsDef, MastLocalDef]),
     }),
     serializeProps: (c, buf) => {
       buf.writeVec2(c.uvPos);
@@ -210,6 +212,9 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
         const r = createRudderNow(res, s.id);
         s.playerShipProps.rudder = createRef(r);
 
+        const m = createMastNow(res, s.id);
+        s.playerShipProps.mast = createRef(m);
+
         // create cannons
         const cannonPitch = Math.PI * +0.05;
         const cannonR = createCannon(
@@ -229,6 +234,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
       }
 
       vec2.copy(s.uvPos, s.playerShipProps.uvPos);
+      vec2.set(s.uvDir, 1, 0);
 
       em.ensureComponentOn(s, PositionDef);
       em.ensureComponentOn(s, RotationDef);
@@ -237,7 +243,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
 
       em.ensureComponentOn(s, ShipDef);
 
-      s.ship.speed = 0.0005;
+      s.ship.speed = 0;
       // s.playerShipLocal.speed = 0.005 * 3; // TODO(@darzu): DEBUG SPEED
       // em.ensureComponentOn(s, LinearVelocityDef, [0, 0, 0]);
       // em.ensureComponentOn(s, AngularVelocityDef);
@@ -256,7 +262,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
 
       // NOTE: since their is no network important state on the parts themselves
       //    they can be created locally
-      const enemyShipFloor = min(BARGE_AABBS.map((c) => c.max[1]));
+      const shipFloor = min(BARGE_AABBS.map((c) => c.max[1]));
       for (let i = 0; i < res.assets.ship_broken.length; i++) {
         const m = res.assets.ship_broken[i];
         const part = em.newEntity();
@@ -271,7 +277,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
           solid: false,
           aabb: m.aabb,
         });
-        (part.collider as AABBCollider).aabb.max[1] = enemyShipFloor;
+        (part.collider as AABBCollider).aabb.max[1] = shipFloor;
         s.playerShipLocal.parts.push(
           createRef(part.id, [ShipPartDef, RenderableDef])
         );
@@ -392,7 +398,9 @@ export function registerShipSystems(em: EntityManager) {
     ],
     [GameStateDef, MeDef, InputsDef, DevConsoleDef],
     (ships, res) => {
-      if (res.gameState.state !== GameState.PLAYING) return;
+      if (res.gameState.state !== GameState.PLAYING) {
+        return;
+      }
       for (let s of ships) {
         if (s.authority.pid !== res.me.pid) return;
         // TODO(@darzu): handle UV heading !!
@@ -405,7 +413,8 @@ export function registerShipSystems(em: EntityManager) {
         // SPEED
         if (res.inputs.keyDowns["z"]) s.ship.speed += 0.00001;
         if (res.inputs.keyDowns["x"]) s.ship.speed -= 0.00001;
-        s.ship.speed = Math.max(0, s.ship.speed);
+        s.ship.speed = clamp(s.ship.speed, -0.001, 0.001);
+        //s.ship.speed = Math.max(0, s.ship.speed);
 
         // STEERING
         let yaw = s.playerShipProps.rudder()!.yawpitch.yaw;

@@ -95,8 +95,10 @@ function callFixedTimestepSystems() {
     EM.callSystem("cannonPropsBuild");
     EM.callSystem("gemPropsBuild");
     EM.callSystem("rudderPropsBuild");
+    EM.callSystem("mastPropsBuild");
     EM.callSystem("playerShipPropsBuild");
-
+    EM.callSystem("darkStarPropsBuild");
+    EM.callSystem("darkStarOrbit");
     EM.callSystem("hyperspaceGame");
     // EM.callSystem("runOcean");
     EM.callSystem("oceanUVtoPos");
@@ -110,6 +112,8 @@ function callFixedTimestepSystems() {
   EM.callSystem("turretAim");
   EM.callSystem("turretYawPitch");
   EM.callSystem("turretManUnman");
+  EM.callSystem("updateMastBoom");
+  EM.callSystem("sail");
   EM.callSystem("reloadCannon");
   EM.callSystem("playerControlCannon");
   EM.callSystem("playerManCanon");

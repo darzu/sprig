@@ -95,6 +95,7 @@ class Net {
   }
 
   private handleMessage(address: string, buf: ArrayBuffer) {
+    //console.log("A MESSAGE");
     let message = new Deserializer(buf);
     let type = message.readUint8();
     switch (type) {

@@ -60,7 +60,7 @@ export type MeshHandleStd = MeshHandle<typeof MeshUniformStruct.desc>;
 
 const meshVertsPtr = CY.createArray("meshVertsBuf", {
   struct: VertexStruct,
-  init: () => MAX_VERTICES,
+  init: MAX_VERTICES,
 });
 
 const meshTriIndsPtr = CY.createIdxBuf("meshTriIndsBuf", {
@@ -73,7 +73,7 @@ const meshLineIndsPtr = CY.createIdxBuf("meshLineIndsBuf", {
 
 const meshUnisPtr = CY.createArray("meshUni", {
   struct: MeshUniformStruct,
-  init: () => MAX_MESHES,
+  init: MAX_MESHES,
 });
 
 export const meshPoolPtr = CY.createMeshPool("meshPool", {
@@ -135,30 +135,32 @@ export function computeVertsData(m: Mesh): VertexTS[] {
 export const SceneStruct = createCyStruct(
   {
     cameraViewProjMatrix: "mat4x4<f32>",
-    lightViewProjMatrix: "mat4x4<f32>",
-    dirLight1: "vec3<f32>",
-    dirLight2: "vec3<f32>",
-    dirLight3: "vec3<f32>",
+    //lightViewProjMatrix: "mat4x4<f32>",
+    //dirLight1: "vec3<f32>",
+    // dirLight2: "vec3<f32>",
+    // dirLight3: "vec3<f32>",
     cameraPos: "vec3<f32>",
     partyPos: "vec3<f32>",
     // TODO(@darzu): timeDelta vs totalTime
     time: "f32",
     canvasAspectRatio: "f32",
     maxSurfaceId: "u32",
+    numPointLights: "u32",
   },
   {
     isUniform: true,
     serializer: (data, _, offsets_32, views) => {
       views.f32.set(data.cameraViewProjMatrix, offsets_32[0]);
-      views.f32.set(data.lightViewProjMatrix, offsets_32[1]);
-      views.f32.set(data.dirLight1, offsets_32[2]);
-      views.f32.set(data.dirLight2, offsets_32[3]);
-      views.f32.set(data.dirLight3, offsets_32[4]);
-      views.f32.set(data.cameraPos, offsets_32[5]);
-      views.f32.set(data.partyPos, offsets_32[6]);
-      views.f32[offsets_32[7]] = data.time;
-      views.f32[offsets_32[8]] = data.canvasAspectRatio;
-      views.u32[offsets_32[9]] = data.maxSurfaceId;
+      //views.f32.set(data.lightViewProjMatrix, offsets_32[1]);
+      // views.f32.set(data.dirLight1, offsets_32[2]);
+      // views.f32.set(data.dirLight2, offsets_32[3]);
+      // views.f32.set(data.dirLight3, offsets_32[4]);
+      views.f32.set(data.cameraPos, offsets_32[1]);
+      views.f32.set(data.partyPos, offsets_32[2]);
+      views.f32[offsets_32[3]] = data.time;
+      views.f32[offsets_32[4]] = data.canvasAspectRatio;
+      views.u32[offsets_32[5]] = data.maxSurfaceId;
+      views.u32[offsets_32[6]] = data.numPointLights;
     },
   }
 );
@@ -172,29 +174,30 @@ export const sceneBufPtr = CY.createSingleton("scene", {
 export function setupScene(): SceneTS {
   // create a directional light and compute it's projection (for shadows) and direction
   // TODO(@darzu): should be named "dirLight1" etc. These are direction + strength, not unit.
-  const dirLight1 = vec3.fromValues(-1, -1 * 2, -1);
-  vec3.normalize(dirLight1, dirLight1);
-  vec3.scale(dirLight1, dirLight1, 2.0);
+  // const dirLight1 = vec3.fromValues(1, -1 * 2, 1);
+  // vec3.normalize(dirLight1, dirLight1);
+  // vec3.scale(dirLight1, dirLight1, 2.0);
 
-  const dirLight2 = vec3.fromValues(1, -1 * 1, -1);
-  vec3.normalize(dirLight2, dirLight2);
-  vec3.scale(dirLight2, dirLight2, 0.5);
+  // const dirLight2 = vec3.fromValues(1, -1 * 1, -1);
+  // vec3.normalize(dirLight2, dirLight2);
+  // vec3.scale(dirLight2, dirLight2, 0.5);
 
-  const dirLight3 = vec3.fromValues(0, -1 * 0.5, 1);
-  vec3.normalize(dirLight3, dirLight3);
-  vec3.scale(dirLight3, dirLight3, 0.2);
+  // const dirLight3 = vec3.fromValues(0, -1 * 0.5, 1);
+  // vec3.normalize(dirLight3, dirLight3);
+  // vec3.scale(dirLight3, dirLight3, 0.2);
 
   return {
     cameraViewProjMatrix: mat4.create(), // updated later
-    lightViewProjMatrix: mat4.create(), // updated later
-    dirLight1,
-    dirLight2,
-    dirLight3,
+    //lightViewProjMatrix: mat4.create(), // updated later
+    // dirLight1,
+    // dirLight2,
+    // dirLight3,
     cameraPos: vec3.create(), // updated later
     partyPos: vec3.create(), // updated later
     time: 0, // updated later
     canvasAspectRatio: 1, // updated later
     maxSurfaceId: 1, // updated later
+    numPointLights: 0, // updated later
   };
 }
 

@@ -36,6 +36,8 @@ export function createTextureReader<A extends 1 | 2 | 3 | 4>(
   let stride: number;
   if (format === "rgba32float") {
     stride = 4;
+  } else if (format === "r8unorm") {
+    stride = 1;
   } else {
     throw new Error(`unimplemented texture format: ${format} in TextureReader`);
   }

@@ -25,11 +25,15 @@ import { isMeshHandle } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import { SceneTS } from "./pipelines/std-scene.js";
 import { max } from "../math.js";
-import { vec3Dbg } from "../utils-3d.js";
+import {
+  positionAndTargetToOrthoViewProjMatrix,
+  vec3Dbg,
+} from "../utils-3d.js";
 import { ShadersDef, ShaderSet } from "./shader-loader.js";
 import { dbgLogOnce } from "../util.js";
 import { TimeDef } from "../time.js";
 import { PartyDef } from "../game/party.js";
+import { PointLightDef, pointLightsPtr, PointLightTS } from "./lights.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -281,53 +285,50 @@ export function registerRenderer(em: EntityManager) {
 
       // TODO(@darzu): go elsewhere
       // const lightPosition = vec3.fromValues(50, 100, -100);
-      const lightPosition = vec3.add(
-        tempVec3(),
-        cameraView.location,
-        [50, 100, 50]
-      );
-      const lightViewMatrix = mat4.create();
-      mat4.lookAt(
-        lightViewMatrix,
-        lightPosition,
-        cameraView.location,
-        [0, 1, 0]
-      );
-      const lightProjectionMatrix = mat4.create();
-      {
-        const left = -80;
-        const right = 80;
-        const bottom = -80;
-        const top = 80;
-        const near = -200;
-        const far = 300;
-        mat4.ortho(lightProjectionMatrix, left, right, bottom, top, near, far);
-      }
-      const lightViewProjMatrix = mat4.create();
-      mat4.multiply(
-        lightViewProjMatrix,
-        lightProjectionMatrix,
-        lightViewMatrix
-      );
 
-      let maxSurfaceId = max(
-        objs
-          .map((o) => o.renderable.meshHandle.readonlyMesh?.surfaceIds ?? [0])
-          .reduce((p, n) => [...p, ...n], [])
-      );
+      const pointLights = em
+        .filterEntities([PointLightDef, RendererWorldFrameDef])
+        .map((e) => {
+          e.pointLight.viewProj = positionAndTargetToOrthoViewProjMatrix(
+            mat4.create(),
+            e.rendererWorldFrame.position,
+            cameraView.location
+          );
+          let { viewProj, ...rest } = e.pointLight;
+          return {
+            viewProj,
+            position: e.rendererWorldFrame.position,
+            ...rest,
+          };
+        });
+
+      // const lightPosition =
+      //   pointLights[0]?.position ?? vec3.fromValues(0, 0, 0);
+
+      // TODO(@darzu): this maxSurfaceId calculation is super inefficient, we need
+      //  to move this out of this loop.
+      let maxSurfaceId = 1000;
+      // let maxSurfaceId = max(
+      //   objs
+      //     .map((o) => o.renderable.meshHandle.readonlyMesh?.surfaceIds ?? [0])
+      //     .reduce((p, n) => [...p, ...n], [])
+      // );
       // TODO(@darzu): DBG
       // maxSurfaceId = 12;
       // console.log(`maxSurfaceId: ${maxSurfaceId}`);
 
       renderer.updateScene({
         cameraViewProjMatrix: cameraView.viewProjMat,
-        lightViewProjMatrix,
+        //lightViewProjMatrix,
         time: res.time.time,
         canvasAspectRatio: res.cameraView.aspectRatio,
         maxSurfaceId,
         partyPos: res.party.pos,
         cameraPos: cameraView.location,
+        numPointLights: pointLights.length,
       });
+
+      renderer.updatePointLights(pointLights);
 
       renderer.submitPipelines(
         objs.map((o) => o.renderable.meshHandle),
@@ -390,6 +391,7 @@ export interface Renderer {
   // TODO(@darzu): scene struct maybe shouldn't be special cased, all uniforms
   //  should be neatily updatable.
   updateScene(scene: Partial<SceneTS>): void;
+  updatePointLights(pointLights: PointLightTS[]): void;
   submitPipelines(handles: MeshHandleStd[], pipelines: CyPipelinePtr[]): void;
   readTexture(tex: CyTexturePtr): Promise<ArrayBuffer>;
   stats(): Promise<Map<string, bigint>>;
