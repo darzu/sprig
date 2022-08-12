@@ -219,6 +219,7 @@ export interface CyStructOpts<O extends CyStructDesc> {
   isUniform?: boolean;
   isCompact?: boolean;
   serializer?: Serializer<O>;
+  hackArray?: boolean;
 }
 
 // HELPER FNS
@@ -349,7 +350,10 @@ export function createCyStruct<O extends CyStructDesc>(
 
   const offsets_32 = offsets.map((o) => o >> 2);
 
-  const structAlign = opts?.isUniform
+  // TODO: hack
+  const structAlign = opts?.hackArray
+    ? max(alignments)
+    : opts?.isUniform
     ? 256
     : opts?.isCompact
     ? 4 // https://gpuweb.github.io/gpuweb/#vertex-formats

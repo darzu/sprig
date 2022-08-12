@@ -16,7 +16,7 @@ export const PointLightStruct = createCyStruct(
     linear: "f32",
     quadratic: "f32",
   },
-  { isUniform: true }
+  { isUniform: true, hackArray: true }
 );
 
 export type PointLightTS = CyToTS<typeof PointLightStruct.desc>;

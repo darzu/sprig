@@ -112,6 +112,8 @@ fn frag_main(input: VertexOutput) -> FragOut {
                                  light.quadratic * distance * distance);
         let angle = clamp(dot(normalize(toLight), input.normal), 0.0, 1.0);
         let shadowVis = getShadowVis(input.shadowPos, input.normal, normalize(toLight));
+        //lightingColor = lightingColor + clamp(abs((light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis)), vec3(0.0), vec3(1.0));
+        //lightingColor += light.ambient;
         lightingColor = lightingColor + (light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis);
     }
     let litColor = input.color * lightingColor;

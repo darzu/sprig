@@ -1,6 +1,6 @@
 import { CameraDef } from "../camera.js";
 import { ColorDef } from "../color.js";
-import { EntityManager } from "../entity-manager.js";
+import { EntityManager, EntityW } from "../entity-manager.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { blurPipelines } from "../render/pipelines/std-blur.js";
@@ -29,6 +29,35 @@ import { tempVec3 } from "../temp-pool.js";
 import { createDarkStarNow } from "./darkstar.js";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
+
+function spawnRandomDarkStar(
+  res: EntityW<[typeof AssetsDef]>,
+  approxPosition: vec3,
+  color: vec3
+) {
+  const orbitalAxis = vec3.fromValues(
+    Math.random() - 0.5,
+    Math.random() - 0.5,
+    Math.random() - 0.5
+  );
+  vec3.normalize(orbitalAxis, orbitalAxis);
+
+  vec3.normalize(orbitalAxis, orbitalAxis);
+
+  // TODO: this only works because the darkstar is orbiting the origin
+  const perpendicular = vec3.cross(tempVec3(), approxPosition, orbitalAxis);
+  const starPosition = vec3.cross(perpendicular, orbitalAxis, perpendicular);
+  vec3.normalize(starPosition, starPosition);
+  vec3.scale(starPosition, starPosition, vec3.length(approxPosition));
+
+  const darkstar = createDarkStarNow(
+    res,
+    starPosition,
+    color,
+    vec3.fromValues(0, 0, 0),
+    orbitalAxis
+  );
+}
 
 export async function initHyperspaceGame(em: EntityManager) {
   const camera = em.addSingletonComponent(CameraDef);
@@ -153,23 +182,17 @@ export async function initHyperspaceGame(em: EntityManager) {
     vec3.normalize(starPosition, starPosition);
     vec3.scale(starPosition, starPosition, vec3.length(approxPosition));
 
-    const darkstar = createDarkStarNow(
+    spawnRandomDarkStar(
       res,
-      starPosition,
-      vec3.fromValues(1.3, 0.6, 0.6),
-      vec3.fromValues(0, 0, 0),
-      orbitalAxis
+      vec3.fromValues(-1000, 2000, -1000),
+      //vec3.fromValues(1.3, 0.6, 0.6)
+      vec3.fromValues(0, 0, 0)
     );
 
-    // darkstar at the origin
-    /*
-    const darkstar2 = createDarkStarNow(
+    spawnRandomDarkStar(
       res,
-      vec3.fromValues(0, 0, 0),
-      vec3.fromValues(0.1, 0.1, 0.8),
-      vec3.fromValues(0, 0, 0),
-      orbitalAxis
-      );
-      */
+      vec3.fromValues(0, 0, 2000),
+      vec3.fromValues(0.6, 1.3, 1.3)
+    );
   }
 }
