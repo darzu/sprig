@@ -21,6 +21,8 @@ import {
   VertexStruct,
   MeshUniformStruct,
   MeshHandleStd,
+  meshPoolPtr,
+  sceneBufPtr,
 } from "./pipelines/std-scene.js";
 import {
   bundleRenderPipelines,
@@ -33,7 +35,13 @@ import { SceneStruct, SceneTS } from "./pipelines/std-scene.js";
 import { ShaderSet } from "./shader-loader.js";
 import { texTypeToBytes } from "./gpu-struct.js";
 import { align } from "../math.js";
-import { PointLightStruct, PointLightTS } from "./lights.js";
+import { pointLightsPtr, PointLightStruct, PointLightTS } from "./lights.js";
+import {
+  OceanMeshHandle,
+  oceanPoolPtr,
+  OceanUniStruct,
+  OceanVertStruct,
+} from "./pipelines/std-ocean.js";
 
 const MAX_PIPELINES = 64;
 
@@ -47,11 +55,20 @@ export function createRenderer(
     drawLines: true,
     drawTris: true,
 
+    // std mesh
     addMesh,
     addMeshInstance,
     updateMesh,
+
+    // ocean
+    addOcean,
+    updateOcean,
+
+    // std scene
     updateScene,
     updatePointLights,
+
+    // gpu commands
     submitPipelines,
     readTexture,
     stats,
@@ -67,17 +84,21 @@ export function createRenderer(
   const resources = createCyResources(CY, shaders, device);
   const cyKindToNameToRes = resources.kindToNameToRes;
 
-  // TODO(@darzu): multiple mesh pools?
-  const pool: MeshPool<
+  const stdPool: MeshPool<
     typeof VertexStruct.desc,
     typeof MeshUniformStruct.desc
-  > = cyKindToNameToRes.meshPool["meshPool"]!;
+  > = cyKindToNameToRes.meshPool[meshPoolPtr.name]!;
+
+  const oceanPool: MeshPool<
+    typeof OceanVertStruct.desc,
+    typeof OceanUniStruct.desc
+  > = cyKindToNameToRes.meshPool[oceanPoolPtr.name]!;
 
   const sceneUni: CySingleton<typeof SceneStruct.desc> =
-    cyKindToNameToRes.singleton["scene"]!;
+    cyKindToNameToRes.singleton[sceneBufPtr.name]!;
 
   const pointLightsArray: CyArray<typeof PointLightStruct.desc> =
-    cyKindToNameToRes.array["pointLight"]!;
+    cyKindToNameToRes.array[pointLightsPtr.name]!;
 
   // render bundle
   const bundledMIds = new Set<number>();
@@ -110,18 +131,27 @@ export function createRenderer(
   }
 
   function addMesh(m: Mesh): MeshHandleStd {
-    const handle: MeshHandleStd = pool.addMesh(m);
+    const handle: MeshHandleStd = stdPool.addMesh(m);
     return handle;
   }
   function addMeshInstance(oldHandle: MeshHandleStd): MeshHandleStd {
     const d = MeshUniformStruct.clone(oldHandle.shaderData);
-    const newHandle = pool.addMeshInstance(oldHandle, d);
+    const newHandle = stdPool.addMeshInstance(oldHandle, d);
     return newHandle;
   }
   function updateMesh(handle: MeshHandleStd, newMeshData: Mesh) {
-    pool.updateMeshVertices(handle, newMeshData);
+    stdPool.updateMeshVertices(handle, newMeshData);
   }
 
+  function addOcean(m: Mesh): OceanMeshHandle {
+    const handle: OceanMeshHandle = oceanPool.addMesh(m);
+    return handle;
+  }
+  function updateOcean(handle: OceanMeshHandle, newMeshData: Mesh) {
+    oceanPool.updateMeshVertices(handle, newMeshData);
+  }
+
+  // TODO(@darzu): support ocean!
   function updateRenderBundle(
     handles: MeshHandleStd[],
     pipelines: CyRenderPipeline[]
@@ -155,6 +185,7 @@ export function createRenderer(
     pointLightsArray.queueUpdates(pointLights, 0);
   }
 
+  // TODO(@darzu): support ocean!
   function submitPipelines(
     handles: MeshHandleStd[],
     pipelinePtrs: CyPipelinePtr[]
@@ -195,7 +226,7 @@ export function createRenderer(
 
     // update all mesh transforms
     for (let m of handles) {
-      pool.updateUniform(m);
+      stdPool.updateUniform(m);
     }
 
     // TODO(@darzu): not great detection, needs to be more precise and less
