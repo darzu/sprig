@@ -60,23 +60,26 @@ struct FragOut {
 const shadowDepthTextureSize = 1024.0;
 // const shadowDepthTextureSize = vec2<f32>(textureDimensions(shadowMap, 0.0));
 
-fn getShadowVis(shadowPos: vec3<f32>) -> f32 {
+fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>) -> f32 {
   // See: https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
   // Note: a better bias would look something like "max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);"
-  let shadowBias = 0.007;
+    //let shadowBias = 0.007;
+    //let shadowBias = 0.001;
+    //let shadowBias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+  let shadowBias = 0.0001;
   let shadowDepth = shadowPos.z; // * f32(shadowPos.z <= 1.0);
   let outsideShadow = 1.0 - f32(0.0 < shadowPos.x && shadowPos.x < 1.0 
                 && 0.0 < shadowPos.y && shadowPos.y < 1.0);
   let shadowSamp = textureSampleCompare(
     shadowMap, shadowSampler, shadowPos.xy, shadowDepth - shadowBias);
 
-  // Percentage-closer filtering. Sample texels in the region
-  // to smooth the result.
+  //Percentage-closer filtering. Sample texels in the region
+  //to smooth the result.
   var visibility : f32 = 0.0;
   let oneOverShadowDepthTextureSize = 1.0 / shadowDepthTextureSize;
   for (var y : i32 = -1 ; y <= 1 ; y = y + 1) {
       for (var x : i32 = -1 ; x <= 1 ; x = x + 1) {
-        let offset : vec2<f32> = vec2<f32>(
+          let offset : vec2<f32> = vec2<f32>(
           f32(x) * oneOverShadowDepthTextureSize,
           f32(y) * oneOverShadowDepthTextureSize);
 
@@ -86,7 +89,9 @@ fn getShadowVis(shadowPos: vec3<f32>) -> f32 {
       }
   }
   visibility = visibility / 9.0;
-
+  // var visibility = textureSampleCompare(shadowMap, shadowSampler, 
+  //                                       shadowPos.xy, shadowDepth - shadowBias);
+ 
   visibility = min(outsideShadow + visibility, 1.0);
 
   return visibility;
@@ -97,7 +102,6 @@ fn frag_main(input: VertexOutput) -> FragOut {
     let normal = normalize(input.normal);
     // let normal = -normalize(cross(dpdx(input.worldPos.xyz), dpdy(input.worldPos.xyz)));
 
-    let shadowVis = getShadowVis(input.shadowPos);
 
     var lightingColor: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
     for (var i: u32 = 0u; i < scene.numPointLights; i++) {
@@ -107,6 +111,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
         let attenuation = 1.0 / (light.constant + light.linear * distance +
                                  light.quadratic * distance * distance);
         let angle = clamp(dot(normalize(toLight), input.normal), 0.0, 1.0);
+        let shadowVis = getShadowVis(input.shadowPos, input.normal, normalize(toLight));
         lightingColor = lightingColor + (light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis);
     }
     let litColor = input.color * lightingColor;

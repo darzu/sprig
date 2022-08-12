@@ -7,7 +7,10 @@ import { blurPipelines } from "../render/pipelines/std-blur.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
-import { shadowPipeline } from "../render/pipelines/std-shadow.js";
+import {
+  shadowDepthTexture,
+  shadowPipeline,
+} from "../render/pipelines/std-shadow.js";
 import { initStars, renderStars } from "../render/pipelines/std-stars.js";
 import { AssetsDef } from "./assets.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
@@ -48,16 +51,16 @@ export async function initHyperspaceGame(em: EntityManager) {
     "debugLoop"
   );
 
-  // const grid = [
+  const grid = [[shadowDepthTexture]];
   //   //
   //   [oceanJfa._inputMaskTex, oceanJfa._uvMaskTex],
   //   //
-  //   [oceanJfa.voronoiTex, uvToPosTex],
+  //   [oceanJfa.voronoiTex, shadowDepthTexture],
   // ];
   // let grid = noiseGridFrame;
   // const grid = [[oceanJfa._voronoiTexs[0]], [oceanJfa._voronoiTexs[1]]];
 
-  let gridCompose = createGridComposePipelines(oceanJfa._debugGrid);
+  let gridCompose = createGridComposePipelines(grid);
 
   em.registerSystem(
     null,
@@ -71,7 +74,7 @@ export async function initHyperspaceGame(em: EntityManager) {
         //...blurPipelines,
 
         postProcess,
-        // ...(res.dev.showConsole ? gridCompose : []),
+        ...(res.dev.showConsole ? gridCompose : []),
       ];
     },
     "hyperspaceGame"

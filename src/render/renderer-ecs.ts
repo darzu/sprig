@@ -285,11 +285,17 @@ export function registerRenderer(em: EntityManager) {
 
       // TODO(@darzu): go elsewhere
       // const lightPosition = vec3.fromValues(50, 100, -100);
-      const lightPosition = vec3.add(
-        tempVec3(),
-        cameraView.location,
-        [-50, 100, -50]
-      );
+
+      const pointLights = em
+        .filterEntities([PointLightDef, RendererWorldFrameDef])
+        .map((e) => ({
+          position: e.rendererWorldFrame.position,
+          ...e.pointLight,
+        }));
+
+      const lightPosition =
+        pointLights[0]?.position ?? vec3.fromValues(0, 0, 0);
+
       const lightViewProjMatrix = positionAndTargetToOrthoViewProjMatrix(
         mat4.create(),
         lightPosition,
@@ -307,13 +313,6 @@ export function registerRenderer(em: EntityManager) {
       // TODO(@darzu): DBG
       // maxSurfaceId = 12;
       // console.log(`maxSurfaceId: ${maxSurfaceId}`);
-
-      const pointLights = em
-        .filterEntities([PointLightDef, RendererWorldFrameDef])
-        .map((e) => ({
-          position: e.rendererWorldFrame.position,
-          ...e.pointLight,
-        }));
 
       renderer.updateScene({
         cameraViewProjMatrix: cameraView.viewProjMat,

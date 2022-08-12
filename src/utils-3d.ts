@@ -188,9 +188,9 @@ export function positionAndTargetToOrthoViewProjMatrix(
     const right = 80;
     const bottom = -80;
     const top = 80;
-    const near = -200;
+    const near = dist * 0.2;
     // TODO: examine this carefully-derived constant
-    const far = dist * 2;
+    const far = dist * 1.5;
     mat4.ortho(projectionMatrix, left, right, bottom, top, near, far);
   }
   mat4.multiply(viewMatrix, projectionMatrix, viewMatrix);

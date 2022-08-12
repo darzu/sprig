@@ -21,8 +21,8 @@ import { litTexturePtr, meshPoolPtr, sceneBufPtr } from "./std-scene.js";
 // // TODO(@darzu): TODO
 
 export const shadowDepthTexture = CY.createDepthTexture("shadowTex", {
-  size: [1024, 1024],
-  format: "depth32float",
+  size: [2048, 2048],
+  format: "depth16unorm",
 });
 // const shadowOutTexture = CY.createTexture("shadowOut", {
 //   //   size: [1024, 1024],

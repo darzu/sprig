@@ -71,6 +71,7 @@ export const TexTypeToElementArity: Partial<
   rgba8unorm: 4,
   rgba8snorm: 4,
   depth32float: 1,
+  depth16unorm: 1,
 };
 export type TexTypeToTSType = {
   rgba32float: vec4;
@@ -101,6 +102,7 @@ export const texTypeToBytes: Partial<Record<GPUTextureFormat, number>> = {
   rg8snorm: 2,
   "bgra8unorm-srgb": 4,
   rg16uint: 2 + 2,
+  depth16unorm: 2,
 };
 // Source: https://gpuweb.github.io/gpuweb/#plain-color-formats
 // TODO(@darzu): probably just track which ones are unfilterable
