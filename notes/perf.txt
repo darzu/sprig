@@ -155,3 +155,10 @@ perf gains by using int math in JS:
   
 Details of D3D12 memory pools:
   https://therealmjp.github.io/posts/gpu-memory-pool/
+
+Pipeline GPU stats from Doug:
+  shadowPipeline, 0.162398ms,
+  triRender, 1.012784ms,
+  outlineRender, 2.091969ms,
+  renderStars, 0.120638ms,
+  postProcess, 2.823797ms,
