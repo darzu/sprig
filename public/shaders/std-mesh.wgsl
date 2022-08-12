@@ -76,7 +76,7 @@ fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>, in
     //let shadowBias = 0.007;
     //let shadowBias = 0.001;
     //let shadowBias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-  let shadowBias = 0.0001;
+  let shadowBias = 0.0004;
   let shadowDepth = shadowPos.z; // * f32(shadowPos.z <= 1.0);
   let outsideShadow = 1.0 - f32(0.0 < shadowPos.x && shadowPos.x < 1.0 
                 && 0.0 < shadowPos.y && shadowPos.y < 1.0);
@@ -101,7 +101,7 @@ fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>, in
  
   visibility = min(outsideShadow + visibility, 1.0);
 
-  return visibility;
+  return 1.0 - visibility;
 }
 
 @fragment

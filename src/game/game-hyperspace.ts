@@ -185,20 +185,20 @@ export async function initHyperspaceGame(em: EntityManager) {
     spawnRandomDarkStar(
       res,
       vec3.fromValues(-1000, 2000, -1000),
-      vec3.fromValues(0.8, 0.3, 0.3)
+      vec3.fromValues(2.0, 0.3, 0.3)
       //vec3.fromValues(0, 0, 0)
     );
 
     spawnRandomDarkStar(
       res,
       vec3.fromValues(0, 0, 2000),
-      vec3.fromValues(0.3, 0.8, 0.6)
+      vec3.fromValues(0.3, 2.0, 0.3)
     );
 
     spawnRandomDarkStar(
       res,
       vec3.fromValues(0, 1000, 1000),
-      vec3.fromValues(0.3, 0.3, 0.8)
+      vec3.fromValues(0.3, 0.3, 2.0)
     );
   }
 }
