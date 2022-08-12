@@ -10,6 +10,7 @@ import { tempVec3 } from "../temp-pool.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
 import { GameState, GameStateDef } from "./gamestate.js";
+import { PointLightDef } from "../render/lights.js";
 
 export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
   defineNetEntityHelper(EM, {
@@ -42,6 +43,11 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
       em.ensureComponentOn(star, RenderableConstructDef, res.assets.ball.proto);
       em.ensureComponentOn(star, ScaleDef, vec3.fromValues(100, 100, 100));
       em.ensureComponentOn(star, ColorDef, star.darkStarProps.color);
+      em.ensureComponentOn(star, PointLightDef);
+      star.pointLight.constant = 1.0;
+      vec3.copy(star.pointLight.ambient, star.color);
+      vec3.scale(star.pointLight.ambient, star.pointLight.ambient, 0.2);
+      vec3.copy(star.pointLight.diffuse, star.color);
     },
   });
 
@@ -93,7 +99,7 @@ onInit((em) => {
         vec3.add(
           star.position,
           star.position,
-          vec3.scale(movementDirection, movementDirection, 1)
+          vec3.scale(movementDirection, movementDirection, 10)
         );
 
         vec3.sub(toCenter, star.darkStarProps.orbiting, star.position);

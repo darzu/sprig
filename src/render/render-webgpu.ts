@@ -15,6 +15,7 @@ import {
   CySingleton,
   CyPipeline,
   isRenderPipeline,
+  CyArray,
 } from "./data-webgpu.js";
 import {
   VertexStruct,
@@ -32,6 +33,7 @@ import { SceneStruct, SceneTS } from "./pipelines/std-scene.js";
 import { ShaderSet } from "./shader-loader.js";
 import { texTypeToBytes } from "./gpu-struct.js";
 import { align } from "../math.js";
+import { PointLightStruct, PointLightTS } from "./lights.js";
 
 export function createWebGPURenderer(
   canvas: HTMLCanvasElement,
@@ -47,6 +49,7 @@ export function createWebGPURenderer(
     addMeshInstance,
     updateMesh,
     updateScene,
+    updatePointLights,
     submitPipelines,
     readTexture,
   };
@@ -61,6 +64,9 @@ export function createWebGPURenderer(
 
   const sceneUni: CySingleton<typeof SceneStruct.desc> =
     cyKindToNameToRes.singleton["scene"]!;
+
+  const pointLightsArray: CyArray<typeof PointLightStruct.desc> =
+    cyKindToNameToRes.array["pointLight"]!;
 
   // render bundle
   const bundledMIds = new Set<number>();
@@ -132,6 +138,10 @@ export function createWebGPURenderer(
       ...sceneUni.lastData!,
       ...scene,
     });
+  }
+
+  function updatePointLights(pointLights: PointLightTS[]) {
+    pointLightsArray.queueUpdates(pointLights, 0);
   }
 
   function submitPipelines(

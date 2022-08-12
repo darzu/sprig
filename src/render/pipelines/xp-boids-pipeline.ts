@@ -23,7 +23,7 @@ const boidData0 = CY.createArray("boidData0", {
 });
 const boidData1 = CY.createArray("boidData1", {
   struct: BoidData,
-  init: () => numBoids,
+  init: numBoids,
 });
 const BoidVert = createCyStruct({
   pos: "vec3<f32>",
@@ -110,7 +110,9 @@ const boidCompDesc: Omit<
   "globals"
 > = {
   shaderComputeEntry: "main",
-  shader: "xp-boid-update",
+  shader: (shaders) =>
+    `var<private> numBoids: u32 = ${numBoids};
+${shaders["xp-boid-update"].code}`,
   workgroupCounts: [Math.ceil(numBoids / 64), 1, 1],
 };
 

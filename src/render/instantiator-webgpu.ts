@@ -203,7 +203,8 @@ export function createCyResources(
   // create many-buffers
   cy.kindToPtrs.array.forEach((r) => {
     const usage = cyNameToBufferUsage[r.name]!;
-    const buf = createCyArray(device, r.struct, usage, r.init());
+    const lengthOrData = typeof r.init === "number" ? r.init : r.init();
+    const buf = createCyArray(device, r.struct, usage, lengthOrData);
     kindToNameToRes.array[r.name] = buf;
   });
   // create one-buffers
@@ -373,10 +374,13 @@ export function createCyResources(
         if (plurality === "one") {
           return structStr;
         } else {
+          // TODO: can technically support fixed-size arrays even when initial data is passed
+          const fixedSize =
+            typeof r.ptr.init === "number" ? `, ${r.ptr.init}` : "";
           return (
             structStr +
             `struct ${pluralize(capitalize(r.ptr.name))} {\n` +
-            `ms : array<${capitalize(r.ptr.name)}>,\n` +
+            `ms : array<${capitalize(r.ptr.name)}${fixedSize}>,\n` +
             `};\n`
           );
         }

@@ -29,7 +29,7 @@ export interface CyIdxBufferPtr extends CyResourcePtr {
 export interface CyArrayPtr<O extends CyStructDesc> extends CyResourcePtr {
   kind: "array";
   struct: CyStruct<O>;
-  init: () => CyToTS<O>[] | number;
+  init: (() => CyToTS<O>[]) | number;
   forceUsage?: GPUBufferUsageFlags;
 }
 export interface CySingletonPtr<O extends CyStructDesc> extends CyResourcePtr {

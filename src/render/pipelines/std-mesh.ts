@@ -1,6 +1,7 @@
 import { oceanJfa } from "../../game/ocean.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";
+import { pointLightsPtr } from "../lights.js";
 import {
   mainDepthTex,
   litTexturePtr,
@@ -46,6 +47,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
     // TODO(@darzu): object-specific SDFs?
     // TODO(@darzu): REMOVE HARD-CODED DEPENDENCY ON OCEAN SDF!
     { ptr: oceanJfa.sdfTex, alias: "sdf" },
+    pointLightsPtr,
     // { ptr: oceanJfa._inputMaskTex, alias: "sdf" },
     // { ptr: oceanJfa._uvMaskTex, alias: "sdf" },
     // TODO(@darzu): support textures

@@ -33,6 +33,7 @@ import { ShadersDef, ShaderSet } from "./shader-loader.js";
 import { dbgLogOnce } from "../util.js";
 import { TimeDef } from "../time.js";
 import { PartyDef } from "../game/party.js";
+import { PointLightDef, pointLightsPtr, PointLightTS } from "./lights.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -307,6 +308,13 @@ export function registerRenderer(em: EntityManager) {
       // maxSurfaceId = 12;
       // console.log(`maxSurfaceId: ${maxSurfaceId}`);
 
+      const pointLights = em
+        .filterEntities([PointLightDef, RendererWorldFrameDef])
+        .map((e) => ({
+          position: e.rendererWorldFrame.position,
+          ...e.pointLight,
+        }));
+
       renderer.updateScene({
         cameraViewProjMatrix: cameraView.viewProjMat,
         lightViewProjMatrix,
@@ -315,7 +323,10 @@ export function registerRenderer(em: EntityManager) {
         maxSurfaceId,
         partyPos: res.party.pos,
         cameraPos: cameraView.location,
+        numPointLights: pointLights.length,
       });
+
+      renderer.updatePointLights(pointLights);
 
       renderer.submitPipelines(
         objs.map((o) => o.renderable.meshHandle),
@@ -378,6 +389,7 @@ export interface Renderer {
   // TODO(@darzu): scene struct maybe shouldn't be special cased, all uniforms
   //  should be neatily updatable.
   updateScene(scene: Partial<SceneTS>): void;
+  updatePointLights(pointLights: PointLightTS[]): void;
   submitPipelines(handles: MeshHandleStd[], pipelines: CyPipelinePtr[]): void;
   readTexture(tex: CyTexturePtr): Promise<ArrayBuffer>;
 }
