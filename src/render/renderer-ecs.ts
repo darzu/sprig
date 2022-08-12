@@ -288,19 +288,22 @@ export function registerRenderer(em: EntityManager) {
 
       const pointLights = em
         .filterEntities([PointLightDef, RendererWorldFrameDef])
-        .map((e) => ({
-          position: e.rendererWorldFrame.position,
-          ...e.pointLight,
-        }));
+        .map((e) => {
+          e.pointLight.viewProj = positionAndTargetToOrthoViewProjMatrix(
+            mat4.create(),
+            e.rendererWorldFrame.position,
+            cameraView.location
+          );
+          let { viewProj, ...rest } = e.pointLight;
+          return {
+            viewProj,
+            position: e.rendererWorldFrame.position,
+            ...rest,
+          };
+        });
 
-      const lightPosition =
-        pointLights[0]?.position ?? vec3.fromValues(0, 0, 0);
-
-      const lightViewProjMatrix = positionAndTargetToOrthoViewProjMatrix(
-        mat4.create(),
-        lightPosition,
-        cameraView.location
-      );
+      // const lightPosition =
+      //   pointLights[0]?.position ?? vec3.fromValues(0, 0, 0);
 
       // TODO(@darzu): this maxSurfaceId calculation is super inefficient, we need
       //  to move this out of this loop.
@@ -316,7 +319,7 @@ export function registerRenderer(em: EntityManager) {
 
       renderer.updateScene({
         cameraViewProjMatrix: cameraView.viewProjMat,
-        lightViewProjMatrix,
+        //lightViewProjMatrix,
         time: res.time.time,
         canvasAspectRatio: res.cameraView.aspectRatio,
         maxSurfaceId,

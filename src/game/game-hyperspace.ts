@@ -8,8 +8,8 @@ import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import {
-  shadowDepthTexture,
-  shadowPipeline,
+  shadowDepthTextures,
+  shadowPipelines,
 } from "../render/pipelines/std-shadow.js";
 import { initStars, renderStars } from "../render/pipelines/std-stars.js";
 import { AssetsDef } from "./assets.js";
@@ -80,7 +80,7 @@ export async function initHyperspaceGame(em: EntityManager) {
     "debugLoop"
   );
 
-  const grid = [[shadowDepthTexture]];
+  const grid = [[...shadowDepthTextures]];
   //   //
   //   [oceanJfa._inputMaskTex, oceanJfa._uvMaskTex],
   //   //
@@ -96,7 +96,7 @@ export async function initHyperspaceGame(em: EntityManager) {
     [RendererDef, DevConsoleDef],
     (_, res) => {
       res.renderer.pipelines = [
-        shadowPipeline,
+        ...shadowPipelines,
         stdRenderPipeline,
         outlineRender,
         //renderStars,
@@ -185,14 +185,20 @@ export async function initHyperspaceGame(em: EntityManager) {
     spawnRandomDarkStar(
       res,
       vec3.fromValues(-1000, 2000, -1000),
-      //vec3.fromValues(1.3, 0.6, 0.6)
-      vec3.fromValues(0, 0, 0)
+      vec3.fromValues(0.8, 0.3, 0.3)
+      //vec3.fromValues(0, 0, 0)
     );
 
     spawnRandomDarkStar(
       res,
       vec3.fromValues(0, 0, 2000),
-      vec3.fromValues(0.6, 1.3, 1.3)
+      vec3.fromValues(0.3, 0.8, 0.6)
+    );
+
+    spawnRandomDarkStar(
+      res,
+      vec3.fromValues(0, 1000, 1000),
+      vec3.fromValues(0.3, 0.3, 0.8)
     );
   }
 }

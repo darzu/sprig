@@ -1,6 +1,8 @@
+import { range } from "../../util.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { CY, linearSamplerPtr } from "../gpu-registry.js";
 import { createCyStruct } from "../gpu-struct.js";
+import { pointLightsPtr } from "../lights.js";
 import { litTexturePtr, meshPoolPtr, sceneBufPtr } from "./std-scene.js";
 
 // NOTES:
@@ -20,58 +22,36 @@ import { litTexturePtr, meshPoolPtr, sceneBufPtr } from "./std-scene.js";
 // const shadowDepthTextureView = shadowDepthTexture.createView();
 // // TODO(@darzu): TODO
 
-export const shadowDepthTexture = CY.createDepthTexture("shadowTex", {
-  size: [2048, 2048],
-  format: "depth16unorm",
-});
+export const shadowDepthTextures = range(3).map((i) =>
+  CY.createDepthTexture(`shadowTex${i}`, {
+    size: [2048, 2048],
+    format: "depth16unorm",
+  })
+);
 // const shadowOutTexture = CY.createTexture("shadowOut", {
 //   //   size: [1024, 1024],
 //   format: "rgba8unorm",
 // });
 
 // TODO(@darzu): for better shadows, we should actually use front-face culling, not back-face
-export const shadowPipeline = CY.createRenderPipeline("shadowPipeline", {
-  globals: [sceneBufPtr],
-  meshOpt: {
-    pool: meshPoolPtr,
-    stepMode: "per-mesh-handle",
-  },
-  output: [],
-  depthStencil: shadowDepthTexture,
-  shaderVertexEntry: "vert_main",
-  shaderFragmentEntry: "frag_main",
-  shader: () => `
+export const shadowPipelines = range(3).map((i) =>
+  CY.createRenderPipeline(`shadowPipeline${i}`, {
+    globals: [pointLightsPtr],
+    meshOpt: {
+      pool: meshPoolPtr,
+      stepMode: "per-mesh-handle",
+    },
+    output: [],
+    depthStencil: shadowDepthTextures[i],
+    shaderVertexEntry: "vert_main",
+    shaderFragmentEntry: "frag_main",
+    shader: () => `
   @vertex
   fn vert_main(input: VertexInput) -> @builtin(position) vec4<f32> {
-      return scene.lightViewProjMatrix * meshUni.transform * vec4<f32>(input.position, 1.0);
+    return pointLights.ms[${i}].viewProj * meshUni.transform * vec4<f32>(input.position, 1.0);
   }
 
   @fragment fn frag_main() { }
   `,
-});
-
-const windowUni = CY.createSingleton("sWinUni", {
-  struct: createCyStruct(
-    {
-      xPos: "vec2<f32>",
-      yPos: "vec2<f32>",
-    },
-    {
-      isUniform: true,
-    }
-  ),
-  init: () => ({
-    xPos: [-0.9, -0.1],
-    yPos: [0.1, 0.9],
-  }),
-});
-
-export const { pipeline: shadowDbgDisplay } = createRenderTextureToQuad(
-  "shadowDbg",
-  shadowDepthTexture,
-  litTexturePtr,
-  -0.9,
-  -0.1,
-  0.1,
-  0.9
+  })
 );

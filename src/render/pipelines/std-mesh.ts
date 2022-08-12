@@ -11,7 +11,7 @@ import {
   sceneBufPtr,
   surfacesTexturePtr,
 } from "./std-scene.js";
-import { shadowDepthTexture } from "./std-shadow.js";
+import { shadowDepthTextures } from "./std-shadow.js";
 
 // TODO:
 //  [x] pipeline attachements / outputs
@@ -42,7 +42,10 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
   globals: [
     sceneBufPtr,
     { ptr: linearSamplerPtr, alias: "samp" },
-    { ptr: shadowDepthTexture, alias: "shadowMap" },
+    ...shadowDepthTextures.map((tex, i) => ({
+      ptr: tex,
+      alias: `shadowMap${i}`,
+    })),
     { ptr: comparisonSamplerPtr, alias: "shadowSampler" },
     // TODO(@darzu): object-specific SDFs?
     // TODO(@darzu): REMOVE HARD-CODED DEPENDENCY ON OCEAN SDF!

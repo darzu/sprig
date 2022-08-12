@@ -1,5 +1,5 @@
 import { EM } from "../entity-manager.js";
-import { vec3 } from "../gl-matrix.js";
+import { vec3, mat4 } from "../gl-matrix.js";
 import { CY } from "./gpu-registry.js";
 import { createCyStruct, CyToTS } from "./gpu-struct.js";
 
@@ -7,6 +7,7 @@ const MAX_POINT_LIGHTS = 12;
 
 export const PointLightStruct = createCyStruct(
   {
+    viewProj: "mat4x4<f32>",
     position: "vec3<f32>",
     ambient: "vec3<f32>",
     diffuse: "vec3<f32>",
@@ -23,6 +24,7 @@ export type PointLightTS = CyToTS<typeof PointLightStruct.desc>;
 
 function createDefaultPointLight(): Omit<PointLightTS, "position"> {
   return {
+    viewProj: mat4.create(),
     ambient: vec3.create(),
     diffuse: vec3.create(),
     specular: vec3.create(),

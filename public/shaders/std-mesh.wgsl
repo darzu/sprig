@@ -2,10 +2,10 @@ struct VertexOutput {
     @location(0) @interpolate(flat) normal : vec3<f32>,
     @location(1) @interpolate(flat) color : vec3<f32>,
     @location(2) worldPos: vec4<f32>,
-    @location(3) shadowPos: vec3<f32>,
-    @location(4) uv: vec2<f32>,
-    @location(5) @interpolate(flat) surface: u32,
-    @location(6) @interpolate(flat) id: u32,
+    //@location(3) shadowPos: vec3<f32>,
+    @location(3) uv: vec2<f32>,
+    @location(4) @interpolate(flat) surface: u32,
+    @location(5) @interpolate(flat) id: u32,
     @builtin(position) position : vec4<f32>,
 };
 
@@ -22,13 +22,13 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     let finalPos = worldPos;
 
      // XY is in (-1, 1) space, Z is in (0, 1) space
-    let posFromLight = (scene.lightViewProjMatrix * worldPos).xyz;
+    // let posFromLight = (scene.lightViewProjMatrix * worldPos).xyz;
 
-    // Convert XY to (0, 1), Y is flipped because texture coords are Y-down.
-    output.shadowPos = vec3<f32>(
-        posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5),
-        posFromLight.z
-    );
+    // // Convert XY to (0, 1), Y is flipped because texture coords are Y-down.
+    // output.shadowPos = vec3<f32>(
+    //     posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5),
+    //     posFromLight.z
+    // );
 
     output.worldPos = finalPos;
     output.position = scene.cameraViewProjMatrix * finalPos;
@@ -60,7 +60,17 @@ struct FragOut {
 const shadowDepthTextureSize = 1024.0;
 // const shadowDepthTextureSize = vec2<f32>(textureDimensions(shadowMap, 0.0));
 
-fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>) -> f32 {
+fn sampleShadowTexture(pos: vec2<f32>, depth: f32, index: u32) -> f32 {
+    if (index == 0) {
+        return textureSampleCompare(shadowMap0, shadowSampler, pos, depth);
+    } else if (index == 1) {
+        return textureSampleCompare(shadowMap1, shadowSampler, pos, depth);
+    } else {
+        return textureSampleCompare(shadowMap2, shadowSampler, pos, depth);
+    }
+}
+
+fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>, index: u32) -> f32 {
   // See: https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
   // Note: a better bias would look something like "max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);"
     //let shadowBias = 0.007;
@@ -70,8 +80,7 @@ fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>) ->
   let shadowDepth = shadowPos.z; // * f32(shadowPos.z <= 1.0);
   let outsideShadow = 1.0 - f32(0.0 < shadowPos.x && shadowPos.x < 1.0 
                 && 0.0 < shadowPos.y && shadowPos.y < 1.0);
-  let shadowSamp = textureSampleCompare(
-    shadowMap, shadowSampler, shadowPos.xy, shadowDepth - shadowBias);
+  //let shadowSamp = sampleShadowTexture(shadowPos.xy, shadowDepth - shadowBias, index);
 
   //Percentage-closer filtering. Sample texels in the region
   //to smooth the result.
@@ -83,9 +92,7 @@ fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>) ->
           f32(x) * oneOverShadowDepthTextureSize,
           f32(y) * oneOverShadowDepthTextureSize);
 
-          visibility = visibility + textureSampleCompare(
-            shadowMap, shadowSampler, 
-            shadowPos.xy + offset, shadowDepth - shadowBias);
+          visibility = visibility + sampleShadowTexture(shadowPos.xy + offset, shadowDepth - shadowBias, index);
       }
   }
   visibility = visibility / 9.0;
@@ -111,7 +118,14 @@ fn frag_main(input: VertexOutput) -> FragOut {
         let attenuation = 1.0 / (light.constant + light.linear * distance +
                                  light.quadratic * distance * distance);
         let angle = clamp(dot(normalize(toLight), input.normal), 0.0, 1.0);
-        let shadowVis = getShadowVis(input.shadowPos, input.normal, normalize(toLight));
+     // XY is in (-1, 1) space, Z is in (0, 1) space
+        let posFromLight = (pointLights.ms[i].viewProj * input.worldPos).xyz;
+        
+        // Convert XY to (0, 1), Y is flipped because texture coords are Y-down.
+        let shadowPos = vec3<f32>(posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5),
+                                  posFromLight.z
+                                  );
+        let shadowVis = getShadowVis(shadowPos, input.normal, normalize(toLight), i);
         //lightingColor = lightingColor + clamp(abs((light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis)), vec3(0.0), vec3(1.0));
         //lightingColor += light.ambient;
         lightingColor = lightingColor + (light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis);

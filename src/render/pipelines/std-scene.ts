@@ -135,7 +135,7 @@ export function computeVertsData(m: Mesh): VertexTS[] {
 export const SceneStruct = createCyStruct(
   {
     cameraViewProjMatrix: "mat4x4<f32>",
-    lightViewProjMatrix: "mat4x4<f32>",
+    //lightViewProjMatrix: "mat4x4<f32>",
     //dirLight1: "vec3<f32>",
     // dirLight2: "vec3<f32>",
     // dirLight3: "vec3<f32>",
@@ -151,16 +151,16 @@ export const SceneStruct = createCyStruct(
     isUniform: true,
     serializer: (data, _, offsets_32, views) => {
       views.f32.set(data.cameraViewProjMatrix, offsets_32[0]);
-      views.f32.set(data.lightViewProjMatrix, offsets_32[1]);
+      //views.f32.set(data.lightViewProjMatrix, offsets_32[1]);
       // views.f32.set(data.dirLight1, offsets_32[2]);
       // views.f32.set(data.dirLight2, offsets_32[3]);
       // views.f32.set(data.dirLight3, offsets_32[4]);
-      views.f32.set(data.cameraPos, offsets_32[2]);
-      views.f32.set(data.partyPos, offsets_32[3]);
-      views.f32[offsets_32[4]] = data.time;
-      views.f32[offsets_32[5]] = data.canvasAspectRatio;
-      views.u32[offsets_32[6]] = data.maxSurfaceId;
-      views.u32[offsets_32[7]] = data.numPointLights;
+      views.f32.set(data.cameraPos, offsets_32[1]);
+      views.f32.set(data.partyPos, offsets_32[2]);
+      views.f32[offsets_32[3]] = data.time;
+      views.f32[offsets_32[4]] = data.canvasAspectRatio;
+      views.u32[offsets_32[5]] = data.maxSurfaceId;
+      views.u32[offsets_32[6]] = data.numPointLights;
     },
   }
 );
@@ -188,7 +188,7 @@ export function setupScene(): SceneTS {
 
   return {
     cameraViewProjMatrix: mat4.create(), // updated later
-    lightViewProjMatrix: mat4.create(), // updated later
+    //lightViewProjMatrix: mat4.create(), // updated later
     // dirLight1,
     // dirLight2,
     // dirLight3,
