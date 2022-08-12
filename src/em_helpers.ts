@@ -74,6 +74,7 @@ export type NetEntityDefs<
   ) => INITED;
 };
 
+// TODO(@darzu): what happens if build() is async???!
 export function defineNetEntityHelper<
   N extends string,
   P1,
@@ -157,6 +158,7 @@ export function defineNetEntityHelper<
     const e = em.newEntity();
     em.ensureComponentOn(e, propsDef, ...args);
     // TODO(@darzu): maybe we should force users to give us the MeDef? it's probably always there tho..
+    // TODO(@darzu): Think about what if buid() is async...
     constructFn(e, res as EntityW<[...RS, typeof MeDef]>);
     em.ensureComponentOn(e, FinishedDef);
     return e;
