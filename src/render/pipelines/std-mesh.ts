@@ -21,7 +21,7 @@ import { shadowDepthTextures } from "./std-shadow.js";
 //  [x] resource ping-ponging for cloth texs and boids
 //  [x] shader VertexInput struct auto gen
 //  [x] debug view of the depth buffer
-//  [ ] shadows
+//  [x] shadows
 //  [x] debug view of any texture
 //  [x] dynamic resizing texture based on canvas size
 //  [x] split screen
@@ -29,14 +29,13 @@ import { shadowDepthTextures } from "./std-shadow.js";
 //  [x] ECS integration w/ custom gpu data
 //  [ ] general usable particle system
 //  [x] split *ptr CY.register from webgpu impl
-//  [ ] webgl impl
-//  [ ] multiple pipeline outputs
+//  [-] webgl impl
+//  [x] multiple pipeline outputs
 //  [ ] deferred rendering
 //  [ ] re-enable line renderer
 //  [x] pass in pipelines from game
-//  [ ] light source: scene rendered with multiple point sources
-//      - light sailing
-//
+//  [x] light source: scene rendered with multiple point sources
+//      [x] light sailing
 
 export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
   globals: [

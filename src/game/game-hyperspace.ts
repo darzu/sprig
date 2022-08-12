@@ -27,6 +27,7 @@ import { AnimateToDef, EASE_INQUAD } from "../animate-to.js";
 import { createSpawner, SpawnerDef } from "./spawner.js";
 import { tempVec3 } from "../temp-pool.js";
 import { createDarkStarNow } from "./darkstar.js";
+import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 
@@ -98,6 +99,7 @@ export async function initHyperspaceGame(em: EntityManager) {
       res.renderer.pipelines = [
         ...shadowPipelines,
         stdRenderPipeline,
+        renderOceanPipe,
         outlineRender,
         //renderStars,
         //...blurPipelines,
