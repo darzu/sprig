@@ -341,16 +341,31 @@ onInit((em) => {
           const [force, area] = sailForceAndSignedArea(sail, star);
           const accel = vec3.dot(shipDirection, force);
 
+          const localVerts = sail.renderable.meshHandle.readonlyMesh!.pos;
+
+          const realArea = Math.abs(
+            signedAreaOfTriangle(
+              vec2.fromValues(localVerts[0][1], localVerts[0][2]),
+              vec2.fromValues(localVerts[1][1], localVerts[1][2]),
+              vec2.fromValues(localVerts[2][1], localVerts[2][2])
+            ) * RIB_COUNT
+          );
+
+          console.log(
+            `Color lerp is ${
+              accel / realArea
+            }, realArea ${realArea}, accel ${accel}`
+          );
+
           vec3.lerp(
             sail.color,
             DEFAULT_SAIL_COLOR,
-            star.color,
-            clamp(accel * 1000, 0, 1)
+            vec3.normalize(tempVec3(), star.color),
+            clamp((accel / realArea) * 5000, 0, 1)
           );
 
           ship.ship.speed += accel * 0.0001;
           //console.log(`Speed is ${ship.ship.speed}`);
-          console.log(`Accel is ${accel}`);
         }
       }
     },
@@ -380,11 +395,12 @@ function sailForceAndSignedArea(
     return vec3.transformMat4(tempVec3(), pos, viewProjMatrix);
   });
 
-  const area = signedAreaOfTriangle(
-    vec2.fromValues(starViewVerts[0][0], starViewVerts[0][1]),
-    vec2.fromValues(starViewVerts[1][0], starViewVerts[1][1]),
-    vec2.fromValues(starViewVerts[2][0], starViewVerts[2][1])
-  );
+  const area =
+    signedAreaOfTriangle(
+      vec2.fromValues(starViewVerts[0][0], starViewVerts[0][1]),
+      vec2.fromValues(starViewVerts[1][0], starViewVerts[1][1]),
+      vec2.fromValues(starViewVerts[2][0], starViewVerts[2][1])
+    ) * RIB_COUNT;
 
   const sailNormal = vec3.cross(
     tempVec3(),
