@@ -10,7 +10,7 @@ import {
 import { PositionDef } from "../physics/transform.js";
 import {
   RenderableConstructDef,
-  RenderableDef,
+  RenderableStdDef,
 } from "../render/renderer-ecs.js";
 import { assert } from "../test.js";
 import { RendererDef } from "../render/renderer-ecs.js";
@@ -66,7 +66,7 @@ export function registerNoodleSystem(em: EntityManager) {
   });
 
   em.registerSystem(
-    [NoodleDef, RenderableDef],
+    [NoodleDef, RenderableStdDef],
     [RendererDef],
     (es, rs) => {
       for (let e of es) {

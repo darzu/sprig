@@ -18,7 +18,7 @@ import { cloneMesh, mapMeshPositions } from "../render/mesh.js";
 import { FLAG_UNLIT, MeshHandleStd } from "../render/pipelines/std-scene.js";
 import {
   RenderableConstructDef,
-  RenderableDef,
+  RenderableStdDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
 import { tempMat4, tempQuat, tempVec2, tempVec3 } from "../temp-pool.js";
@@ -84,13 +84,13 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       boom1: range(RIB_COUNT).map(() => createRef(0, [RotationDef])),
       boom2: range(RIB_COUNT).map(() => createRef(0, [RotationDef])),
       sail1: createRef(0, [
-        RenderableDef,
+        RenderableStdDef,
         WorldFrameDef,
         SailColorDef,
         ColorDef,
       ]),
       sail2: createRef(0, [
-        RenderableDef,
+        RenderableStdDef,
         WorldFrameDef,
         SailColorDef,
         ColorDef,
@@ -140,7 +140,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       em.ensureComponentOn(sail1, PhysicsParentDef, mast.id);
       em.whenEntityHas(
         sail1,
-        RenderableDef,
+        RenderableStdDef,
         WorldFrameDef,
         SailColorDef,
         ColorDef
@@ -163,7 +163,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       em.ensureComponentOn(sail2, PhysicsParentDef, mast.id);
       em.whenEntityHas(
         sail2,
-        RenderableDef,
+        RenderableStdDef,
         WorldFrameDef,
         SailColorDef,
         ColorDef
@@ -375,7 +375,7 @@ onInit((em) => {
 
 function sailForceAndSignedArea(
   sail: EntityW<
-    [typeof SailColorDef, typeof RenderableDef, typeof WorldFrameDef]
+    [typeof SailColorDef, typeof RenderableStdDef, typeof WorldFrameDef]
   >,
   star: EntityW<[typeof DarkStarPropsDef, typeof WorldFrameDef]>
 ): [vec3, number] {

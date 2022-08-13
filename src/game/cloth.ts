@@ -15,7 +15,7 @@ import {
 } from "../render/mesh.js";
 import {
   RenderableConstructDef,
-  RenderableDef,
+  RenderableStdDef,
 } from "../render/renderer-ecs.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { ColorDef } from "../color.js";
@@ -167,7 +167,7 @@ onInit((em: EntityManager) => {
   );
 
   em.registerSystem(
-    [ClothConstructDef, ClothLocalDef, SpringGridDef, RenderableDef],
+    [ClothConstructDef, ClothLocalDef, SpringGridDef, RenderableStdDef],
     [RendererDef],
     (cloths, { renderer }) => {
       for (let cloth of cloths) {

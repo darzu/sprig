@@ -22,7 +22,7 @@ import {
 } from "../render/pipelines/xp-uv-unwrap.js";
 import {
   RenderableConstructDef,
-  RenderableDef,
+  RenderableStdDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
 import { tempVec2, tempVec3 } from "../temp-pool.js";
@@ -90,7 +90,7 @@ export async function initOcean() {
   // em.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
   EM.ensureComponentOn(ocean, PositionDef);
 
-  let ocean2 = await EM.whenEntityHas(ocean, RenderableDef);
+  let ocean2 = await EM.whenEntityHas(ocean, RenderableStdDef);
 
   // TODO(@darzu):
   const preOceanGPU = performance.now();

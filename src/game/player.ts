@@ -8,7 +8,7 @@ import { ColorDef } from "../color.js";
 import { FinishedDef } from "../build.js";
 import {
   RenderableConstructDef,
-  RenderableDef,
+  RenderableStdDef,
 } from "../render/renderer-ecs.js";
 import {
   PhysicsParentDef,
@@ -267,7 +267,8 @@ export function registerPlayerSystems(em: EntityManager) {
 
         const cursor = res.globalCursor3d.cursor();
         if (cursor) {
-          if (RenderableDef.isOn(cursor)) cursor.renderableStd.enabled = cheat;
+          if (RenderableStdDef.isOn(cursor))
+            cursor.renderableStd.enabled = cheat;
         }
 
         // TODO(@darzu): rework to use phsyiscs colliders

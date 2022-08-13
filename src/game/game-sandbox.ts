@@ -29,7 +29,7 @@ import {
 } from "../render/gpu-registry.js";
 import { cloneMesh, scaleMesh } from "../render/mesh.js";
 import {
-  RenderableDef,
+  RenderableStdDef,
   RenderableConstructDef,
 } from "../render/renderer-ecs.js";
 import { RendererDef } from "../render/renderer-ecs.js";
@@ -114,7 +114,7 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   g.controllable.sprintMul = 10;
 
   const c = res.globalCursor3d.cursor()!;
-  if (RenderableDef.isOn(c)) c.renderableStd.enabled = false;
+  if (RenderableStdDef.isOn(c)) c.renderableStd.enabled = false;
 
   const p = em.newEntity();
   em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
@@ -371,7 +371,7 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
   }
 
   const c = res.globalCursor3d.cursor()!;
-  assert(RenderableDef.isOn(c));
+  assert(RenderableStdDef.isOn(c));
   c.renderableStd.enabled = true;
   c.cursor3d.maxDistance = 10;
 
@@ -455,7 +455,7 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
       // line from cursor to cloth
       if (!line) line = drawLine(vec3.create(), vec3.create(), [0, 1, 0]);
-      if (RenderableDef.isOn(line)) {
+      if (RenderableStdDef.isOn(line)) {
         line.renderableStd.enabled = true;
         const m = line.renderableStd.meshHandle.readonlyMesh!;
         vec3.copy(m.pos[0], cursorPos);
@@ -477,7 +477,7 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
         vec3.scale(cloth.force, cloth.force, strength);
       } else {
         vec3.copy(cloth.force, [0, 0, 0]);
-        if (RenderableDef.isOn(line)) {
+        if (RenderableStdDef.isOn(line)) {
           line.renderableStd.enabled = false;
         }
       }
@@ -506,7 +506,7 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
   g.cameraFollow.pitchOffset = 0.145;
 
   const c = res.globalCursor3d.cursor()!;
-  assert(RenderableDef.isOn(c));
+  assert(RenderableStdDef.isOn(c));
   c.renderableStd.enabled = false;
 
   const p = em.newEntity();

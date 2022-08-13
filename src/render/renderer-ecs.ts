@@ -71,7 +71,7 @@ export interface RenderableStd {
   meshHandle: MeshHandleStd;
 }
 
-export const RenderableDef = EM.defineComponent(
+export const RenderableStdDef = EM.defineComponent(
   "renderableStd",
   (r: RenderableStd) => r
 );
@@ -138,7 +138,7 @@ function updateSmoothedWorldFrame(em: EntityManager, o: Entity) {
 
 export function registerUpdateSmoothedWorldFrames(em: EntityManager) {
   em.registerSystem(
-    [RenderableDef, TransformDef],
+    [RenderableStdDef, TransformDef],
     [],
     (objs, res) => {
       _hasRendererWorldFrame.clear();
@@ -239,7 +239,7 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
 
 export function registerRenderer(em: EntityManager) {
   em.registerSystem(
-    [RendererWorldFrameDef, RenderableDef],
+    [RendererWorldFrameDef, RenderableStdDef],
     [CameraViewDef, RendererDef, TimeDef, PartyDef],
     (objs, res) => {
       const renderer = res.renderer.renderer;
@@ -348,7 +348,7 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
     [RendererDef],
     (es, res) => {
       for (let e of es) {
-        if (!RenderableDef.isOn(e)) {
+        if (!RenderableStdDef.isOn(e)) {
           // TODO(@darzu): how should we handle instancing?
           // TODO(@darzu): this seems somewhat inefficient to look for this every frame
           let meshHandle: MeshHandleStd;
@@ -365,7 +365,7 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
             meshHandle.mask = e.renderableConstruct.mask;
           }
 
-          em.addComponent(e.id, RenderableDef, {
+          em.addComponent(e.id, RenderableStdDef, {
             enabled: e.renderableConstruct.enabled,
             sortLayer: e.renderableConstruct.sortLayer,
             meshHandle,

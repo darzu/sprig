@@ -3,7 +3,7 @@ import { vec2, vec3 } from "../gl-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import {
   RenderableConstructDef,
-  RenderableDef,
+  RenderableStdDef,
 } from "../render/renderer-ecs.js";
 import {
   PhysicsParentDef,
@@ -187,7 +187,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
       c.cannonRId = buf.readUint32();
     },
     defaultLocal: () => ({
-      parts: [] as Ref<[typeof ShipPartDef, typeof RenderableDef]>[],
+      parts: [] as Ref<[typeof ShipPartDef, typeof RenderableStdDef]>[],
     }),
     dynamicComponents: [
       // TODO(@darzu): do we want to sync UV based stuff instead?
@@ -280,7 +280,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
         });
         (part.collider as AABBCollider).aabb.max[1] = shipFloor;
         s.playerShipLocal.parts.push(
-          createRef(part.id, [ShipPartDef, RenderableDef])
+          createRef(part.id, [ShipPartDef, RenderableStdDef])
         );
       }
 
