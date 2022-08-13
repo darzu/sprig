@@ -111,6 +111,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
 
     var lightingColor: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
+    let unlit = meshUni.flags & 1u >> 0u;
     for (var i: u32 = 0u; i < scene.numPointLights; i++) {
         let light = pointLights.ms[i];
         let toLight = light.position - input.worldPos.xyz;
@@ -128,9 +129,9 @@ fn frag_main(input: VertexOutput) -> FragOut {
         let shadowVis = getShadowVis(shadowPos, input.normal, normalize(toLight), i);
         //lightingColor = lightingColor + clamp(abs((light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis)), vec3(0.0), vec3(1.0));
         //lightingColor += light.ambient;
-        lightingColor = lightingColor + (light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis);
+        lightingColor = lightingColor + f32(1u - unlit) * ((light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis));
     }
-    let litColor = input.color * lightingColor;
+    let litColor = input.color * (lightingColor + vec3(f32(unlit)));
 
     let fogDensity: f32 = 0.02;
     let fogGradient: f32 = 1.5;

@@ -15,7 +15,7 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { cloneMesh, mapMeshPositions } from "../render/mesh.js";
-import { MeshHandleStd } from "../render/pipelines/std-scene.js";
+import { FLAG_UNLIT, MeshHandleStd } from "../render/pipelines/std-scene.js";
 import {
   RenderableConstructDef,
   RenderableDef,
@@ -40,7 +40,7 @@ import {
 import { ShipDef } from "./ship.js";
 import { constructNetTurret, TurretDef } from "./turret.js";
 
-const DEFAULT_SAIL_COLOR = vec3.fromValues(0.3, 0.3, 0.3);
+const DEFAULT_SAIL_COLOR = vec3.fromValues(0.05, 0.05, 0.05);
 const BOOM_LENGTH = 20;
 const MAST_LENGTH = 40;
 const BOOM_HEIGHT = MAST_LENGTH - BOOM_LENGTH - 2;
@@ -145,6 +145,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
         SailColorDef,
         ColorDef
       ).then((sail1) => {
+        sail1.renderable.meshHandle.shaderData.flags |= FLAG_UNLIT;
         mast.mastLocal.sail1 = createRef(sail1);
       });
 
@@ -167,6 +168,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
         SailColorDef,
         ColorDef
       ).then((sail2) => {
+        sail2.renderable.meshHandle.shaderData.flags |= FLAG_UNLIT;
         mast.mastLocal.sail2 = createRef(sail2);
       });
 
@@ -273,7 +275,11 @@ onInit((em) => {
                 ribRotationTop
               );
             } else if (i % 3 == 2) {
-              vec3.transformQuat(pos, [0, BOOM_LENGTH, 0], ribRotationBot);
+              vec3.transformQuat(
+                pos,
+                [0, BOOM_LENGTH * 0.99, 0],
+                ribRotationBot
+              );
             }
             return pos;
           });
@@ -339,7 +345,7 @@ onInit((em) => {
             sail.color,
             DEFAULT_SAIL_COLOR,
             star.color,
-            clamp(accel * 100, 0, 1)
+            clamp(accel * 1000, 0, 1)
           );
 
           ship.ship.speed += accel * 0.0001;

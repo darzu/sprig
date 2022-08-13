@@ -5,12 +5,16 @@ import { vec3 } from "../gl-matrix.js";
 import { onInit } from "../init.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
-import { RenderableConstructDef } from "../render/renderer-ecs.js";
+import {
+  RenderableConstructDef,
+  RenderableDef,
+} from "../render/renderer-ecs.js";
 import { tempVec3 } from "../temp-pool.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
 import { GameState, GameStateDef } from "./gamestate.js";
 import { PointLightDef } from "../render/lights.js";
+import { FLAG_UNLIT } from "../render/pipelines/std-scene.js";
 
 export const STAR1_COLOR = vec3.fromValues(0.8, 0.3, 0.3);
 export const STAR2_COLOR = vec3.fromValues(0.3, 0.8, 0.6);
@@ -51,6 +55,9 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
       vec3.copy(star.pointLight.ambient, star.color);
       vec3.scale(star.pointLight.ambient, star.pointLight.ambient, 0.2);
       vec3.copy(star.pointLight.diffuse, star.color);
+      em.whenEntityHas(star, RenderableDef).then((star1) => {
+        star1.renderable.meshHandle.shaderData.flags |= FLAG_UNLIT;
+      });
       return star;
     },
   });

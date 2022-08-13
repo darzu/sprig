@@ -41,6 +41,8 @@ export const MeshUniformStruct = createCyStruct(
     aabbMax: "vec3<f32>",
     tint: "vec3<f32>",
     id: "u32",
+    // TODO: is this a good idea?
+    flags: "u32",
   },
   {
     isUniform: true,
@@ -50,9 +52,13 @@ export const MeshUniformStruct = createCyStruct(
       views.f32.set(d.aabbMax, offsets_32[2]);
       views.f32.set(d.tint, offsets_32[3]);
       views.u32[offsets_32[4]] = d.id;
+      views.u32[offsets_32[5]] = d.flags;
     },
   }
 );
+
+export const FLAG_UNLIT = 1;
+
 export type MeshUniformTS = CyToTS<typeof MeshUniformStruct.desc>;
 
 // TODO(@darzu): IMPL
@@ -93,6 +99,7 @@ export function computeUniData(m: Mesh): MeshUniformTS {
     aabbMax: max,
     tint: vec3.create(),
     id: 0,
+    flags: 0,
   };
   return uni;
 }
