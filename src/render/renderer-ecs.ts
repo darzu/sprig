@@ -65,22 +65,16 @@ export const RenderableConstructDef = EM.defineComponent(
   }
 );
 
-export interface Renderable {
+export interface RenderableStd {
   enabled: boolean;
   sortLayer: number;
   meshHandle: MeshHandleStd;
 }
 
 export const RenderableDef = EM.defineComponent(
-  "renderable",
-  (r: Renderable) => r
+  "renderableStd",
+  (r: RenderableStd) => r
 );
-
-interface RenderableObj {
-  id: number;
-  renderable: Renderable;
-  rendererWorldFrame: Frame;
-}
 
 const _hasRendererWorldFrame = new Set();
 
@@ -251,35 +245,38 @@ export function registerRenderer(em: EntityManager) {
       const renderer = res.renderer.renderer;
       const cameraView = res.cameraView;
 
-      objs = objs.filter((o) => o.renderable.enabled && !DeletedDef.isOn(o));
+      objs = objs.filter((o) => o.renderableStd.enabled && !DeletedDef.isOn(o));
 
       // ensure our mesh handle is up to date
       for (let o of objs) {
         // color / tint
         if (ColorDef.isOn(o)) {
-          vec3.copy(o.renderable.meshHandle.shaderData.tint, o.color);
+          vec3.copy(o.renderableStd.meshHandle.shaderData.tint, o.color);
         }
         if (TintsDef.isOn(o)) {
-          applyTints(o.tints, o.renderable.meshHandle.shaderData.tint);
+          applyTints(o.tints, o.renderableStd.meshHandle.shaderData.tint);
         }
 
         // id
-        o.renderable.meshHandle.shaderData.id = o.renderable.meshHandle.mId;
+        o.renderableStd.meshHandle.shaderData.id =
+          o.renderableStd.meshHandle.mId;
 
         // transform
         mat4.copy(
-          o.renderable.meshHandle.shaderData.transform,
+          o.renderableStd.meshHandle.shaderData.transform,
           o.rendererWorldFrame.transform
         );
       }
 
       // TODO(@darzu): this is currently unused, and maybe should be dropped.
       // sort
-      objs.sort((a, b) => b.renderable.sortLayer - a.renderable.sortLayer);
+      objs.sort(
+        (a, b) => b.renderableStd.sortLayer - a.renderableStd.sortLayer
+      );
 
       // render
       // TODO(@darzu):
-      // const m24 = objs.filter((o) => o.renderable.meshHandle.mId === 24);
+      // const m24 = objs.filter((o) => o.renderableStd.meshHandle.mId === 24);
       // const e10003 = objs.filter((o) => o.id === 10003);
       // console.log(`mId 24: ${!!m24.length}, e10003: ${!!e10003.length}`);
 
@@ -310,7 +307,7 @@ export function registerRenderer(em: EntityManager) {
       let maxSurfaceId = 1000;
       // let maxSurfaceId = max(
       //   objs
-      //     .map((o) => o.renderable.meshHandle.readonlyMesh?.surfaceIds ?? [0])
+      //     .map((o) => o.renderableStd.meshHandle.readonlyMesh?.surfaceIds ?? [0])
       //     .reduce((p, n) => [...p, ...n], [])
       // );
       // TODO(@darzu): DBG
@@ -331,7 +328,7 @@ export function registerRenderer(em: EntityManager) {
       renderer.updatePointLights(pointLights);
 
       renderer.submitPipelines(
-        objs.map((o) => o.renderable.meshHandle),
+        objs.map((o) => o.renderableStd.meshHandle),
         res.renderer.pipelines
       );
 

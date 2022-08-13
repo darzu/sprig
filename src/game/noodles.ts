@@ -70,7 +70,7 @@ export function registerNoodleSystem(em: EntityManager) {
     [RendererDef],
     (es, rs) => {
       for (let e of es) {
-        const mesh = e.renderable.meshHandle.readonlyMesh;
+        const mesh = e.renderableStd.meshHandle.readonlyMesh;
         assert(!!mesh, "Cannot find mesh for noodle");
         // mapMeshPositions(m, (p, i) => p);
         // e.noodle.size *= 1.01;
@@ -83,7 +83,7 @@ export function registerNoodleSystem(em: EntityManager) {
           // TODO(@darzu): rotate around .dir
           return vec3.add(vec3.create(), p, seg.pos);
         });
-        rs.renderer.renderer.updateMesh(e.renderable.meshHandle, mesh);
+        rs.renderer.renderer.updateMesh(e.renderableStd.meshHandle, mesh);
       }
     },
     "updateNoodles"

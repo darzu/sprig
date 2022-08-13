@@ -96,7 +96,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
         res._physDbgState.showAABBs = newState;
 
         for (let e of es) {
-          e.renderable.enabled = newState;
+          e.renderableStd.enabled = newState;
         }
       }
     },

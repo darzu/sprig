@@ -172,12 +172,12 @@ onInit((em: EntityManager) => {
     (cloths, { renderer }) => {
       for (let cloth of cloths) {
         // NOTE: this cast is only safe so long as we're sure this mesh isn't being shared
-        const m = cloth.renderable.meshHandle.readonlyMesh! as Mesh;
+        const m = cloth.renderableStd.meshHandle.readonlyMesh! as Mesh;
         m.pos.forEach((p, i) => {
           const originalIndex = cloth.clothLocal.posMap.get(i)!;
           return vec3.copy(p, cloth.springGrid.positions[originalIndex]);
         });
-        renderer.renderer.updateMesh(cloth.renderable.meshHandle, m);
+        renderer.renderer.updateMesh(cloth.renderableStd.meshHandle, m);
       }
     },
     "updateClothMesh"

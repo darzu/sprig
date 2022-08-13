@@ -326,7 +326,7 @@ export function registerShipSystems(em: EntityManager) {
     ([ship], partIdx: number) => {
       const music = em.getResource(MusicDef)!;
       const part = ship.playerShipLocal.parts[partIdx]()!;
-      part.renderable.enabled = false;
+      part.renderableStd.enabled = false;
       part.shipPart.damaged = true;
       music.playChords([2, 3], "minor", 0.2, 5.0, -2);
     },

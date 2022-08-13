@@ -58,7 +58,7 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
       vec3.scale(star.pointLight.ambient, star.pointLight.ambient, 0.2);
       vec3.copy(star.pointLight.diffuse, star.color);
       em.whenEntityHas(star, RenderableDef).then((star1) => {
-        star1.renderable.meshHandle.shaderData.flags |= FLAG_UNLIT;
+        star1.renderableStd.meshHandle.shaderData.flags |= FLAG_UNLIT;
       });
       return star;
     },

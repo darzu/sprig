@@ -95,7 +95,7 @@ export async function initOcean() {
   // TODO(@darzu):
   const preOceanGPU = performance.now();
   res.renderer.renderer.submitPipelines(
-    [ocean2.renderable.meshHandle],
+    [ocean2.renderableStd.meshHandle],
     // [unwrapPipeline, unwrapPipeline2]
     [unwrapPipeline, unwrapPipeline2, ...oceanJfa.allPipes()]
   );

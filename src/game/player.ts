@@ -267,7 +267,7 @@ export function registerPlayerSystems(em: EntityManager) {
 
         const cursor = res.globalCursor3d.cursor();
         if (cursor) {
-          if (RenderableDef.isOn(cursor)) cursor.renderable.enabled = cheat;
+          if (RenderableDef.isOn(cursor)) cursor.renderableStd.enabled = cheat;
         }
 
         // TODO(@darzu): rework to use phsyiscs colliders
