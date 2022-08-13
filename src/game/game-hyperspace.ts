@@ -26,7 +26,7 @@ import { vec2, vec3 } from "../gl-matrix.js";
 import { AnimateToDef, EASE_INQUAD } from "../animate-to.js";
 import { createSpawner, SpawnerDef } from "./spawner.js";
 import { tempVec3 } from "../temp-pool.js";
-import { createDarkStarNow } from "./darkstar.js";
+import { createDarkStarNow, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
 import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
@@ -51,7 +51,7 @@ function spawnRandomDarkStar(
   vec3.normalize(starPosition, starPosition);
   vec3.scale(starPosition, starPosition, vec3.length(approxPosition));
 
-  const darkstar = createDarkStarNow(
+  return createDarkStarNow(
     res,
     starPosition,
     color,
@@ -184,23 +184,17 @@ export async function initHyperspaceGame(em: EntityManager) {
     vec3.normalize(starPosition, starPosition);
     vec3.scale(starPosition, starPosition, vec3.length(approxPosition));
 
-    spawnRandomDarkStar(
+    const star1 = spawnRandomDarkStar(
       res,
       vec3.fromValues(-1000, 2000, -1000),
-      vec3.fromValues(0.8, 0.3, 0.3)
+      STAR1_COLOR
       //vec3.fromValues(0, 0, 0)
     );
 
-    spawnRandomDarkStar(
+    const star2 = spawnRandomDarkStar(
       res,
       vec3.fromValues(0, 0, 2000),
-      vec3.fromValues(0.3, 0.8, 0.6)
-    );
-
-    spawnRandomDarkStar(
-      res,
-      vec3.fromValues(0, 1000, 1000),
-      vec3.fromValues(0.3, 0.3, 0.8)
+      STAR2_COLOR
     );
   }
 }

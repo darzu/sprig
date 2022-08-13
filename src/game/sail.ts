@@ -1,6 +1,6 @@
 import { ColorDef } from "../color.js";
 import { createRef, defineNetEntityHelper } from "../em_helpers.js";
-import { EM, EntityManager } from "../entity-manager.js";
+import { EM, EntityManager, EntityW } from "../entity-manager.js";
 import { mat4, quat, vec2, vec3 } from "../gl-matrix.js";
 import { onInit } from "../init.js";
 import { InputsDef } from "../inputs.js";
@@ -14,13 +14,13 @@ import {
   RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
-import { mapMeshPositions } from "../render/mesh.js";
+import { cloneMesh, mapMeshPositions } from "../render/mesh.js";
 import {
   RenderableConstructDef,
   RenderableDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { tempVec2, tempVec3 } from "../temp-pool.js";
+import { tempMat4, tempVec2, tempVec3 } from "../temp-pool.js";
 import {
   signedAreaOfTriangle,
   positionAndTargetToOrthoViewProjMatrix,
@@ -28,7 +28,7 @@ import {
 } from "../utils-3d.js";
 import { YawPitchDef, yawpitchToQuat } from "../yawpitch.js";
 import { AssetsDef } from "./assets.js";
-import { DarkStarPropsDef } from "./darkstar.js";
+import { DarkStarPropsDef, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
 import { GameState, GameStateDef } from "./gamestate.js";
 import {
   BOAT_COLOR,
@@ -38,18 +38,30 @@ import {
 import { ShipDef } from "./ship.js";
 import { constructNetTurret, TurretDef } from "./turret.js";
 
-const BoomPitchesDef = EM.defineComponent(
-  "boomPitches",
-  () => [Math.PI / 4] as [number]
-);
+const DEFAULT_SAIL_COLOR = vec3.fromValues(0.3, 0.3, 0.3);
+const BOOM_LENGTH = 20;
+const MAST_LENGTH = 40;
+const BOOM_HEIGHT = MAST_LENGTH - BOOM_LENGTH - 2;
+
+const BoomPitchesDef = EM.defineComponent("boomPitches", () => ({
+  boom1: Math.PI / 4,
+  boom2: Math.PI / 4,
+}));
 EM.registerSerializerPair(
   BoomPitchesDef,
   (c, writer) => {
-    writer.writeFloat32(c[0]);
+    writer.writeFloat32(c.boom1);
+    writer.writeFloat32(c.boom2);
   },
   (c, reader) => {
-    c[0] = reader.readFloat32();
+    c.boom1 = reader.readFloat32();
+    c.boom2 = reader.readFloat32();
   }
+);
+
+const SailColorDef = EM.defineComponent(
+  "sailColor",
+  (color?: vec3) => color ?? vec3.create()
 );
 
 // TODO: we need warnings if you forget to call the buildProps system!
@@ -66,8 +78,20 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       o.shipId = buf.readUint32();
     },
     defaultLocal: () => ({
-      boom: createRef(0, [RotationDef]),
-      sail: createRef(0, [RenderableDef, WorldFrameDef]),
+      boom1: createRef(0, [RotationDef]),
+      boom2: createRef(0, [RotationDef]),
+      sail1: createRef(0, [
+        RenderableDef,
+        WorldFrameDef,
+        SailColorDef,
+        ColorDef,
+      ]),
+      sail2: createRef(0, [
+        RenderableDef,
+        WorldFrameDef,
+        SailColorDef,
+        ColorDef,
+      ]),
     }),
     dynamicComponents: [RotationDef, BoomPitchesDef],
     buildResources: [AssetsDef, MeDef],
@@ -81,25 +105,68 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       em.ensureComponentOn(mast, ColorDef, vec3.clone(BOAT_COLOR));
       vec3.scale(mast.color, mast.color, 0.5);
 
-      const boom = em.newEntity();
-      em.ensureComponentOn(boom, PositionDef, [0, 12, 0]);
-      em.ensureComponentOn(boom, RenderableConstructDef, res.assets.mast.mesh);
-      em.ensureComponentOn(boom, ScaleDef, [0.5, 0.5, 0.5]);
-      em.ensureComponentOn(boom, RotationDef);
-      em.ensureComponentOn(boom, ColorDef, vec3.clone(BOAT_COLOR));
-      vec3.scale(boom.color, boom.color, 0.7);
-      em.ensureComponentOn(boom, PhysicsParentDef, mast.id);
-      mast.mastLocal.boom = createRef(boom);
+      const boom1 = em.newEntity();
+      em.ensureComponentOn(boom1, PositionDef, [0, BOOM_HEIGHT, 0]);
+      em.ensureComponentOn(boom1, RenderableConstructDef, res.assets.mast.mesh);
+      em.ensureComponentOn(boom1, ScaleDef, [0.5, 0.5, 0.5]);
+      em.ensureComponentOn(boom1, RotationDef);
+      em.ensureComponentOn(boom1, ColorDef, vec3.clone(BOAT_COLOR));
+      vec3.scale(boom1.color, boom1.color, 0.7);
+      em.ensureComponentOn(boom1, PhysicsParentDef, mast.id);
+      mast.mastLocal.boom1 = createRef(boom1);
 
-      const sail = em.newEntity();
-      em.ensureComponentOn(sail, PositionDef, [0, 12, 0]);
-      em.ensureComponentOn(sail, RenderableConstructDef, res.assets.sail.mesh);
-      //em.ensureComponentOn(sail, ScaleDef, [12, 12, 12]);
-      em.ensureComponentOn(sail, RotationDef);
-      em.ensureComponentOn(sail, ColorDef, [0.99, 0.99, 0.99]);
-      em.ensureComponentOn(sail, PhysicsParentDef, mast.id);
-      em.whenEntityHas(sail, RenderableDef, WorldFrameDef).then((sail) => {
-        mast.mastLocal.sail = createRef(sail);
+      const boom2 = em.newEntity();
+      em.ensureComponentOn(boom2, PositionDef, [0, BOOM_HEIGHT, 0]);
+      em.ensureComponentOn(boom2, RenderableConstructDef, res.assets.mast.mesh);
+      em.ensureComponentOn(boom2, ScaleDef, [0.5, 0.5, 0.5]);
+      em.ensureComponentOn(boom2, RotationDef);
+      em.ensureComponentOn(boom2, ColorDef, vec3.clone(BOAT_COLOR));
+      vec3.scale(boom2.color, boom2.color, 0.7);
+      em.ensureComponentOn(boom2, PhysicsParentDef, mast.id);
+      mast.mastLocal.boom2 = createRef(boom2);
+
+      const sail1 = em.newEntity();
+      em.ensureComponentOn(sail1, PositionDef, [0, BOOM_HEIGHT, 0]);
+      em.ensureComponentOn(
+        sail1,
+        RenderableConstructDef,
+        cloneMesh(res.assets.sail.mesh)
+      );
+      //em.ensureComponentOn(sail1, ScaleDef, [12, 12, 12]);
+      em.ensureComponentOn(sail1, RotationDef);
+      em.ensureComponentOn(sail1, SailColorDef, STAR1_COLOR);
+      em.ensureComponentOn(sail1, ColorDef, vec3.clone(DEFAULT_SAIL_COLOR));
+      em.ensureComponentOn(sail1, PhysicsParentDef, mast.id);
+      em.whenEntityHas(
+        sail1,
+        RenderableDef,
+        WorldFrameDef,
+        SailColorDef,
+        ColorDef
+      ).then((sail1) => {
+        mast.mastLocal.sail1 = createRef(sail1);
+      });
+
+      const sail2 = em.newEntity();
+      em.ensureComponentOn(sail2, PositionDef, [0, BOOM_HEIGHT, 0]);
+      em.ensureComponentOn(
+        sail2,
+        RenderableConstructDef,
+        cloneMesh(res.assets.sail.mesh)
+      );
+      //em.ensureComponentOn(sail2, ScaleDef, [12, 12, 12]);
+      em.ensureComponentOn(sail2, RotationDef);
+      em.ensureComponentOn(sail2, SailColorDef, STAR2_COLOR);
+      em.ensureComponentOn(sail2, ColorDef, vec3.clone(DEFAULT_SAIL_COLOR));
+      em.ensureComponentOn(sail2, PhysicsParentDef, mast.id);
+      em.whenEntityHas(
+        sail2,
+        RenderableDef,
+        WorldFrameDef,
+        SailColorDef,
+        ColorDef
+      ).then((sail2) => {
+        mast.mastLocal.sail2 = createRef(sail2);
       });
 
       // create seperate hitbox for interacting with the mast
@@ -145,40 +212,75 @@ onInit((em) => {
     [InputsDef, RendererDef],
     (masts, res) => {
       for (let mast of masts) {
-        const boom = mast.mastLocal.boom()!;
         if (mast.turret.mannedId) {
+          if (res.inputs.keyDowns["q"]) {
+            mast.boomPitches.boom1 -= Math.PI * 0.005;
+          }
           if (res.inputs.keyDowns["a"]) {
-            mast.boomPitches[0] -= Math.PI * 0.005;
+            mast.boomPitches.boom1 += Math.PI * 0.005;
           }
-          if (res.inputs.keyDowns["d"]) {
-            mast.boomPitches[0] += Math.PI * 0.005;
+          if (res.inputs.keyDowns["w"]) {
+            mast.boomPitches.boom2 -= Math.PI * 0.005;
           }
-          mast.boomPitches[0] = clamp(
-            mast.boomPitches[0],
+          if (res.inputs.keyDowns["s"]) {
+            mast.boomPitches.boom2 += Math.PI * 0.005;
+          }
+          mast.boomPitches.boom1 = clamp(
+            mast.boomPitches.boom1,
             Math.PI * 0.03,
-            Math.PI / 2
+            Math.PI / 3
+          );
+          mast.boomPitches.boom2 = clamp(
+            mast.boomPitches.boom2,
+            Math.PI * 0.03,
+            Math.PI / 3
           );
         }
-        quat.rotateX(boom.rotation, quat.IDENTITY, mast.boomPitches[0]);
+        const boom1 = mast.mastLocal.boom1()!;
+        const boom2 = mast.mastLocal.boom2()!;
+        quat.rotateX(boom1.rotation, quat.IDENTITY, mast.boomPitches.boom1);
+        quat.rotateY(boom2.rotation, quat.IDENTITY, Math.PI);
+        quat.rotateX(boom2.rotation, boom2.rotation, mast.boomPitches.boom2);
 
-        // update sail
-        const sail = mast.mastLocal.sail();
-        if (sail) {
+        // update sails
+        // TODO: too much copy-paste here
+        const sail1 = mast.mastLocal.sail1();
+        if (sail1) {
           // TODO: "read only mesh," eh? not so much
           mapMeshPositions(
-            sail.renderable.meshHandle.readonlyMesh!,
+            sail1.renderable.meshHandle.readonlyMesh!,
             (pos, i) => {
               if (i == 1) {
-                pos[1] = 12;
+                pos[1] = BOOM_LENGTH;
               } else if (i == 2) {
-                vec3.transformQuat(pos, [0, 12, 0], boom.rotation);
+                vec3.transformQuat(pos, [0, BOOM_LENGTH, 0], boom1.rotation);
               }
               return pos;
             }
           );
           res.renderer.renderer.updateMesh(
-            sail.renderable.meshHandle,
-            sail.renderable.meshHandle.readonlyMesh!
+            sail1.renderable.meshHandle,
+            sail1.renderable.meshHandle.readonlyMesh!
+          );
+        }
+
+        const sail2 = mast.mastLocal.sail2();
+        if (sail2) {
+          // TODO: "read only mesh," eh? not so much
+          mapMeshPositions(
+            sail2.renderable.meshHandle.readonlyMesh!,
+            (pos, i) => {
+              if (i == 1) {
+                pos[1] = BOOM_LENGTH;
+              } else if (i == 2) {
+                vec3.transformQuat(pos, [0, BOOM_LENGTH, 0], boom2.rotation);
+              }
+              return pos;
+            }
+          );
+          res.renderer.renderer.updateMesh(
+            sail2.renderable.meshHandle,
+            sail2.renderable.meshHandle.readonlyMesh!
           );
         }
       }
@@ -186,7 +288,6 @@ onInit((em) => {
     "updateMastBoom"
   );
 
-  let viewProjMatrix = mat4.create();
   em.registerSystem(
     [PlayerShipPropsDef, ShipDef, WorldFrameDef, AuthorityDef],
     [MeDef, GameStateDef],
@@ -196,50 +297,82 @@ onInit((em) => {
       }
       for (let ship of es) {
         if (ship.authority.pid !== res.me.pid) continue;
-        const stars = em.filterEntities([DarkStarPropsDef, WorldFrameDef]);
-        for (let star of stars) {
-          viewProjMatrix = positionAndTargetToOrthoViewProjMatrix(
-            viewProjMatrix,
-            star.world.position,
-            ship.world.position
-          );
-          const sail = ship.playerShipProps.mast()!.mastLocal.sail()!;
-          const localVerts = sail.renderable.meshHandle.readonlyMesh!.pos;
-
-          const worldVerts = localVerts.map((pos) => {
-            return vec3.transformMat4(tempVec3(), pos, sail.world.transform);
-          });
-
-          const starViewVerts = worldVerts.map((pos) => {
-            return vec3.transformMat4(tempVec3(), pos, viewProjMatrix);
-          });
-
-          const area = signedAreaOfTriangle(
-            vec2.fromValues(starViewVerts[0][0], starViewVerts[0][1]),
-            vec2.fromValues(starViewVerts[1][0], starViewVerts[1][1]),
-            vec2.fromValues(starViewVerts[2][0], starViewVerts[2][1])
-          );
-
-          const sailNormal = vec3.cross(
-            tempVec3(),
-            vec3.subtract(tempVec3(), worldVerts[1], worldVerts[0]),
-            vec3.subtract(tempVec3(), worldVerts[2], worldVerts[0])
-          );
-
-          vec3.normalize(sailNormal, sailNormal);
-          const sailForce = vec3.scale(sailNormal, sailNormal, area);
-
+        const stars = em.filterEntities([
+          DarkStarPropsDef,
+          WorldFrameDef,
+          ColorDef,
+        ]);
+        const sails = [
+          ship.playerShipProps.mast()!.mastLocal.sail1()!,
+          ship.playerShipProps.mast()!.mastLocal.sail2()!,
+        ];
+        for (let sail of sails) {
+          const star = stars.find((s) => vec3.equals(s.color, sail.sailColor));
+          if (!star) {
+            console.warn(
+              `No matching star for sail with color ${vec3Dbg(sail.sailColor)}`
+            );
+            continue;
+          }
           //console.log(`Sail force is ${vec3Dbg(sailForce)}`);
           //console.log(`Area of sail from star is ${area}`);
 
           const shipDirection = vec3.fromValues(0, 0, -1);
           vec3.transformQuat(shipDirection, shipDirection, ship.world.rotation);
-          const accel = vec3.dot(shipDirection, sailForce);
-          ship.ship.speed += accel * 0.0001;
+          const [force, area] = sailForceAndSignedArea(sail, star);
+          const accel = vec3.dot(shipDirection, force);
+
+          vec3.lerp(
+            sail.color,
+            DEFAULT_SAIL_COLOR,
+            star.color,
+            clamp(accel * 100, 0, 1)
+          );
+
+          //ship.ship.speed += accel * 0.0001;
           //console.log(`Speed is ${ship.ship.speed}`);
+          console.log(`Accel is ${accel}`);
         }
       }
     },
     "sail"
   );
 });
+
+function sailForceAndSignedArea(
+  sail: EntityW<
+    [typeof SailColorDef, typeof RenderableDef, typeof WorldFrameDef]
+  >,
+  star: EntityW<[typeof DarkStarPropsDef, typeof WorldFrameDef]>
+): [vec3, number] {
+  const viewProjMatrix = positionAndTargetToOrthoViewProjMatrix(
+    tempMat4(),
+    star.world.position,
+    sail.world.position
+  );
+
+  const localVerts = sail.renderable.meshHandle.readonlyMesh!.pos;
+
+  const worldVerts = localVerts.map((pos) => {
+    return vec3.transformMat4(tempVec3(), pos, sail.world.transform);
+  });
+
+  const starViewVerts = worldVerts.map((pos) => {
+    return vec3.transformMat4(tempVec3(), pos, viewProjMatrix);
+  });
+
+  const area = signedAreaOfTriangle(
+    vec2.fromValues(starViewVerts[0][0], starViewVerts[0][1]),
+    vec2.fromValues(starViewVerts[1][0], starViewVerts[1][1]),
+    vec2.fromValues(starViewVerts[2][0], starViewVerts[2][1])
+  );
+
+  const sailNormal = vec3.cross(
+    tempVec3(),
+    vec3.subtract(tempVec3(), worldVerts[1], worldVerts[0]),
+    vec3.subtract(tempVec3(), worldVerts[2], worldVerts[0])
+  );
+
+  vec3.normalize(sailNormal, sailNormal);
+  return [vec3.scale(sailNormal, sailNormal, area), area];
+}

@@ -632,7 +632,7 @@ export const LocalMeshes = {
   mast: () => {
     let m = cloneMesh(CUBE_MESH);
     mapMeshPositions(m, (p) => [p[0], p[1] + 1, p[2]]);
-    scaleMesh3(m, [0.5, 12, 0.5]);
+    scaleMesh3(m, [0.5, 20, 0.5]);
     return m;
   },
   sail: () => SAIL_MESH,

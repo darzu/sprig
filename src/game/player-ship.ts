@@ -198,7 +198,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
       // AngularVelocityDef,
     ],
     buildResources: [MeDef, AssetsDef],
-    build: (s, res) => {
+    build: async (s, res) => {
       const em: EntityManager = EM;
 
       if (s.authority.pid === res.me.pid) {

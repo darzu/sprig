@@ -1,4 +1,4 @@
-import { quat, vec2, vec3, vec4 } from "./gl-matrix.js";
+import { mat4, quat, vec2, vec3, vec4 } from "./gl-matrix.js";
 import { range } from "./util.js";
 
 class _TempPool {
@@ -12,11 +12,15 @@ class _TempPool {
   private quats: quat[];
   private nextQuat = 0;
 
-  constructor(maxVecs: number, maxQuats: number) {
+  private mat4s: mat4[];
+  private nextMat4 = 0;
+
+  constructor(maxVecs: number, maxQuats: number, maxMat4s: number) {
     this.vec2s = range(maxVecs).map(() => vec2.create());
     this.vec3s = range(maxVecs).map(() => vec3.create());
     this.vec4s = range(maxVecs).map(() => vec4.create());
     this.quats = range(maxQuats).map(() => quat.create());
+    this.mat4s = range(maxMat4s).map(() => mat4.create());
   }
 
   public vec2(): vec2 {
@@ -36,9 +40,14 @@ class _TempPool {
     if (this.nextQuat >= this.quats.length) this.nextQuat = 0;
     return this.quats[this.nextQuat++];
   }
+
+  public mat4(): mat4 {
+    if (this.nextMat4 >= this.mat4s.length) this.nextMat4 = 0;
+    return this.mat4s[this.nextMat4++];
+  }
 }
 
-const pool = new _TempPool(1000, 1000);
+const pool = new _TempPool(1000, 1000, 1000);
 
 // TODO(@darzu): for debugging temp vec problems
 // export const tempVec = () => vec3.create();
@@ -46,3 +55,4 @@ export const tempVec2 = pool.vec2.bind(pool);
 export const tempVec3 = pool.vec3.bind(pool);
 export const tempVec4 = pool.vec4.bind(pool);
 export const tempQuat = pool.quat.bind(pool);
+export const tempMat4 = pool.mat4.bind(pool);

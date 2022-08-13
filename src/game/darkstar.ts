@@ -1,6 +1,6 @@
 import { ColorDef } from "../color.js";
-import { defineNetEntityHelper } from "../em_helpers.js";
-import { EM, EntityManager } from "../entity-manager.js";
+import { createRef, defineNetEntityHelper } from "../em_helpers.js";
+import { EM, EntityManager, EntityW } from "../entity-manager.js";
 import { vec3 } from "../gl-matrix.js";
 import { onInit } from "../init.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
@@ -11,6 +11,9 @@ import { vec3Dbg } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
 import { GameState, GameStateDef } from "./gamestate.js";
 import { PointLightDef } from "../render/lights.js";
+
+export const STAR1_COLOR = vec3.fromValues(0.8, 0.3, 0.3);
+export const STAR2_COLOR = vec3.fromValues(0.3, 0.8, 0.6);
 
 export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
   defineNetEntityHelper(EM, {
@@ -48,6 +51,7 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
       vec3.copy(star.pointLight.ambient, star.color);
       vec3.scale(star.pointLight.ambient, star.pointLight.ambient, 0.2);
       vec3.copy(star.pointLight.diffuse, star.color);
+      return star;
     },
   });
 
@@ -99,7 +103,7 @@ onInit((em) => {
         vec3.add(
           star.position,
           star.position,
-          vec3.scale(movementDirection, movementDirection, 10)
+          vec3.scale(movementDirection, movementDirection, 1)
         );
 
         vec3.sub(toCenter, star.darkStarProps.orbiting, star.position);
