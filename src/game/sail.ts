@@ -351,11 +351,11 @@ onInit((em) => {
             ) * RIB_COUNT
           );
 
-          console.log(
-            `Color lerp is ${
-              accel / realArea
-            }, realArea ${realArea}, accel ${accel}`
-          );
+          // console.log(
+          //   `Color lerp is ${
+          //     accel / realArea
+          //   }, realArea ${realArea}, accel ${accel}`
+          // );
 
           vec3.lerp(
             sail.color,
