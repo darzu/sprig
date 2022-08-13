@@ -2,6 +2,7 @@ import { mat4, vec3 } from "../../gl-matrix.js";
 import { computeTriangleNormal } from "../../utils-3d.js";
 import { CY } from "../gpu-registry.js";
 import { createCyStruct, CyToTS } from "../gpu-struct.js";
+import { MeshHandle } from "../mesh-pool.js";
 import { getAABBFromMesh, Mesh } from "../mesh.js";
 import { sceneBufPtr, litTexturePtr, mainDepthTex } from "./std-scene.js";
 
@@ -55,6 +56,7 @@ export const OceanUniStruct = createCyStruct(
   }
 );
 export type OceanUniTS = CyToTS<typeof OceanUniStruct.desc>;
+export type OceanMeshHandle = MeshHandle<typeof OceanUniStruct.desc>;
 
 const oceanVertsPtr = CY.createArray("oceanVertsBuf", {
   struct: OceanVertStruct,
