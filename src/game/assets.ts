@@ -417,26 +417,27 @@ const PLANE_MESH: RawMesh = {
 };
 scaleMesh(PLANE_MESH, 10);
 
-const SAIL_MESH: RawMesh = {
-  pos: [
-    [0, 0, 0],
-    [0, 1, 0],
-    [0, 1, 1],
-  ],
-  tri: [
-    [0, 1, 2], // front
-    [2, 1, 0], // back
-  ],
-  quad: [],
-  lines: [],
-  colors: [BLACK, BLACK],
-  // uvs: [
-  //   [1, 1],
-  //   [0, 1],
-  //   [1, 0],
-  //   [0, 0],
-  // ],
-};
+function makeSailMesh(): RawMesh {
+  const mesh: RawMesh = {
+    pos: [],
+    tri: [],
+    quad: [],
+    lines: [],
+    colors: [],
+  };
+  for (let i = 0; i < 6; i++) {
+    mesh.pos.push([0, 0, 0]);
+    mesh.pos.push([0, 1, 0]);
+    mesh.pos.push([0, 1, 1]);
+    mesh.tri.push([i * 3, i * 3 + 1, i * 3 + 2]);
+    mesh.tri.push([i * 3 + 2, i * 3 + 1, i * 3]);
+    mesh.colors.push(BLACK);
+    mesh.colors.push(BLACK);
+  }
+  return mesh;
+}
+
+const SAIL_MESH: RawMesh = makeSailMesh();
 
 const TRI_FENCE_LN = 100;
 const TRI_FENCE: () => RawMesh = () => {

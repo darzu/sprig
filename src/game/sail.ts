@@ -15,12 +15,13 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { cloneMesh, mapMeshPositions } from "../render/mesh.js";
+import { MeshHandleStd } from "../render/pipelines/std-scene.js";
 import {
   RenderableConstructDef,
   RenderableDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { tempMat4, tempVec2, tempVec3 } from "../temp-pool.js";
+import { tempMat4, tempQuat, tempVec2, tempVec3 } from "../temp-pool.js";
 import { range } from "../util.js";
 import {
   signedAreaOfTriangle,
@@ -43,7 +44,7 @@ const DEFAULT_SAIL_COLOR = vec3.fromValues(0.3, 0.3, 0.3);
 const BOOM_LENGTH = 20;
 const MAST_LENGTH = 40;
 const BOOM_HEIGHT = MAST_LENGTH - BOOM_LENGTH - 2;
-const RIB_COUNT = 3;
+const RIB_COUNT = 6;
 
 const BoomPitchesDef = EM.defineComponent("boomPitches", () => ({
   boom1: Math.PI / 4,
@@ -227,13 +228,13 @@ onInit((em) => {
           }
           mast.boomPitches.boom1 = clamp(
             mast.boomPitches.boom1,
-            Math.PI * 0.03,
-            Math.PI / 3
+            0,
+            (2 * Math.PI) / 3
           );
           mast.boomPitches.boom2 = clamp(
             mast.boomPitches.boom2,
-            Math.PI * 0.03,
-            Math.PI / 3
+            0,
+            (2 * Math.PI) / 3
           );
         }
 
@@ -255,55 +256,46 @@ onInit((em) => {
           );
         });
 
-        // update sails
-        // TODO: too much copy-paste here
-        const sail1 = mast.mastLocal.sail1();
-        if (sail1) {
+        const adjustSailVertices = (
+          sailMeshHandle: MeshHandleStd,
+          rotations: quat[]
+        ) => {
           // TODO: "read only mesh," eh? not so much
-          mapMeshPositions(
-            sail1.renderable.meshHandle.readonlyMesh!,
-            (pos, i) => {
-              if (i == 1) {
-                pos[1] = BOOM_LENGTH;
-              } else if (i == 2) {
-                vec3.transformQuat(
-                  pos,
-                  [0, BOOM_LENGTH, 0],
-                  mast.mastLocal.boom1[0]()!.rotation
-                );
-              }
-              return pos;
+          rotations.push(quat.identity(tempQuat()));
+          mapMeshPositions(sailMeshHandle.readonlyMesh!, (pos, i) => {
+            const ribIndex = Math.floor(i / 3);
+            const ribRotationBot = rotations[ribIndex];
+            const ribRotationTop = rotations[ribIndex + 1];
+            if (i % 3 == 1) {
+              vec3.transformQuat(
+                pos,
+                [0, BOOM_LENGTH * 0.9, 0],
+                ribRotationTop
+              );
+            } else if (i % 3 == 2) {
+              vec3.transformQuat(pos, [0, BOOM_LENGTH, 0], ribRotationBot);
             }
-          );
+            return pos;
+          });
           res.renderer.renderer.updateMesh(
-            sail1.renderable.meshHandle,
-            sail1.renderable.meshHandle.readonlyMesh!
+            sailMeshHandle,
+            sailMeshHandle.readonlyMesh!
           );
-        }
+        };
 
+        // update sails
+        const sail1 = mast.mastLocal.sail1();
+        if (sail1)
+          adjustSailVertices(
+            sail1.renderable.meshHandle,
+            mast.mastLocal.boom1.map((b) => b()!.rotation)
+          );
         const sail2 = mast.mastLocal.sail2();
-        if (sail2) {
-          // TODO: "read only mesh," eh? not so much
-          mapMeshPositions(
-            sail2.renderable.meshHandle.readonlyMesh!,
-            (pos, i) => {
-              if (i == 1) {
-                pos[1] = BOOM_LENGTH;
-              } else if (i == 2) {
-                vec3.transformQuat(
-                  pos,
-                  [0, BOOM_LENGTH, 0],
-                  mast.mastLocal.boom2[0]()!.rotation
-                );
-              }
-              return pos;
-            }
-          );
-          res.renderer.renderer.updateMesh(
+        if (sail2)
+          adjustSailVertices(
             sail2.renderable.meshHandle,
-            sail2.renderable.meshHandle.readonlyMesh!
+            mast.mastLocal.boom2.map((b) => b()!.rotation)
           );
-        }
       }
     },
     "updateMastBoom"
@@ -350,7 +342,7 @@ onInit((em) => {
             clamp(accel * 100, 0, 1)
           );
 
-          //ship.ship.speed += accel * 0.0001;
+          ship.ship.speed += accel * 0.0001;
           //console.log(`Speed is ${ship.ship.speed}`);
           console.log(`Accel is ${accel}`);
         }
