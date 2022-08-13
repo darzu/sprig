@@ -16,6 +16,8 @@ import { GameState, GameStateDef } from "./gamestate.js";
 import { PointLightDef } from "../render/lights.js";
 import { FLAG_UNLIT } from "../render/pipelines/std-scene.js";
 
+const DARKSTAR_SPEED = 10;
+
 export const STAR1_COLOR = vec3.fromValues(0.8, 0.3, 0.3);
 export const STAR2_COLOR = vec3.fromValues(0.3, 0.8, 0.6);
 
@@ -110,7 +112,7 @@ onInit((em) => {
         vec3.add(
           star.position,
           star.position,
-          vec3.scale(movementDirection, movementDirection, 1)
+          vec3.scale(movementDirection, movementDirection, DARKSTAR_SPEED)
         );
 
         vec3.sub(toCenter, star.darkStarProps.orbiting, star.position);

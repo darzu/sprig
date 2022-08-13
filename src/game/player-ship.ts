@@ -39,6 +39,7 @@ import { UVPosDef, UVDirDef } from "./ocean.js";
 import { PartyDef } from "./party.js";
 import { ShipDef } from "./ship.js";
 import { createMastNow, MastLocalDef, MastPropsDef } from "./sail.js";
+import { makeOrrery, OrreryDef } from "./orrery.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
@@ -283,6 +284,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
         );
       }
 
+      makeOrrery(em, s.id);
       // em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
       // em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2]);
     },
