@@ -21,6 +21,7 @@ import {
   RendererDef,
 } from "../render/renderer-ecs.js";
 import { tempMat4, tempVec2, tempVec3 } from "../temp-pool.js";
+import { range } from "../util.js";
 import {
   signedAreaOfTriangle,
   positionAndTargetToOrthoViewProjMatrix,
@@ -42,6 +43,7 @@ const DEFAULT_SAIL_COLOR = vec3.fromValues(0.3, 0.3, 0.3);
 const BOOM_LENGTH = 20;
 const MAST_LENGTH = 40;
 const BOOM_HEIGHT = MAST_LENGTH - BOOM_LENGTH - 2;
+const RIB_COUNT = 3;
 
 const BoomPitchesDef = EM.defineComponent("boomPitches", () => ({
   boom1: Math.PI / 4,
@@ -78,8 +80,8 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       o.shipId = buf.readUint32();
     },
     defaultLocal: () => ({
-      boom1: createRef(0, [RotationDef]),
-      boom2: createRef(0, [RotationDef]),
+      boom1: range(RIB_COUNT).map(() => createRef(0, [RotationDef])),
+      boom2: range(RIB_COUNT).map(() => createRef(0, [RotationDef])),
       sail1: createRef(0, [
         RenderableDef,
         WorldFrameDef,
@@ -105,25 +107,23 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       em.ensureComponentOn(mast, ColorDef, vec3.clone(BOAT_COLOR));
       vec3.scale(mast.color, mast.color, 0.5);
 
-      const boom1 = em.newEntity();
-      em.ensureComponentOn(boom1, PositionDef, [0, BOOM_HEIGHT, 0]);
-      em.ensureComponentOn(boom1, RenderableConstructDef, res.assets.mast.mesh);
-      em.ensureComponentOn(boom1, ScaleDef, [0.5, 0.5, 0.5]);
-      em.ensureComponentOn(boom1, RotationDef);
-      em.ensureComponentOn(boom1, ColorDef, vec3.clone(BOAT_COLOR));
-      vec3.scale(boom1.color, boom1.color, 0.7);
-      em.ensureComponentOn(boom1, PhysicsParentDef, mast.id);
-      mast.mastLocal.boom1 = createRef(boom1);
-
-      const boom2 = em.newEntity();
-      em.ensureComponentOn(boom2, PositionDef, [0, BOOM_HEIGHT, 0]);
-      em.ensureComponentOn(boom2, RenderableConstructDef, res.assets.mast.mesh);
-      em.ensureComponentOn(boom2, ScaleDef, [0.5, 0.5, 0.5]);
-      em.ensureComponentOn(boom2, RotationDef);
-      em.ensureComponentOn(boom2, ColorDef, vec3.clone(BOAT_COLOR));
-      vec3.scale(boom2.color, boom2.color, 0.7);
-      em.ensureComponentOn(boom2, PhysicsParentDef, mast.id);
-      mast.mastLocal.boom2 = createRef(boom2);
+      const createRib = (width: number) => {
+        const rib = em.newEntity();
+        em.ensureComponentOn(rib, PositionDef, [0, BOOM_HEIGHT, 0]);
+        em.ensureComponentOn(rib, RenderableConstructDef, res.assets.mast.mesh);
+        em.ensureComponentOn(rib, ScaleDef, [0.5 * width, 0.5, 0.5 * width]);
+        em.ensureComponentOn(rib, RotationDef);
+        em.ensureComponentOn(rib, ColorDef, vec3.clone(BOAT_COLOR));
+        vec3.scale(rib.color, rib.color, 0.7);
+        em.ensureComponentOn(rib, PhysicsParentDef, mast.id);
+        return rib;
+      };
+      mast.mastLocal.boom1 = range(RIB_COUNT).map((i) =>
+        createRef(createRib(i === 0 ? 1 : 0.7))
+      );
+      mast.mastLocal.boom2 = range(RIB_COUNT).map((i) =>
+        createRef(createRib(i === 0 ? 1 : 0.7))
+      );
 
       const sail1 = em.newEntity();
       em.ensureComponentOn(sail1, PositionDef, [0, BOOM_HEIGHT, 0]);
@@ -236,11 +236,24 @@ onInit((em) => {
             Math.PI / 3
           );
         }
-        const boom1 = mast.mastLocal.boom1()!;
-        const boom2 = mast.mastLocal.boom2()!;
-        quat.rotateX(boom1.rotation, quat.IDENTITY, mast.boomPitches.boom1);
-        quat.rotateY(boom2.rotation, quat.IDENTITY, Math.PI);
-        quat.rotateX(boom2.rotation, boom2.rotation, mast.boomPitches.boom2);
+
+        mast.mastLocal.boom1.forEach((ribRef, i) => {
+          const rib = ribRef()!;
+          quat.rotateX(
+            rib.rotation,
+            quat.IDENTITY,
+            mast.boomPitches.boom1 * (1 - i / RIB_COUNT)
+          );
+        });
+        mast.mastLocal.boom2.forEach((ribRef, i) => {
+          const rib = ribRef()!;
+          quat.rotateY(rib.rotation, quat.IDENTITY, Math.PI);
+          quat.rotateX(
+            rib.rotation,
+            rib.rotation,
+            mast.boomPitches.boom2 * (1 - i / RIB_COUNT)
+          );
+        });
 
         // update sails
         // TODO: too much copy-paste here
@@ -253,7 +266,11 @@ onInit((em) => {
               if (i == 1) {
                 pos[1] = BOOM_LENGTH;
               } else if (i == 2) {
-                vec3.transformQuat(pos, [0, BOOM_LENGTH, 0], boom1.rotation);
+                vec3.transformQuat(
+                  pos,
+                  [0, BOOM_LENGTH, 0],
+                  mast.mastLocal.boom1[0]()!.rotation
+                );
               }
               return pos;
             }
@@ -273,7 +290,11 @@ onInit((em) => {
               if (i == 1) {
                 pos[1] = BOOM_LENGTH;
               } else if (i == 2) {
-                vec3.transformQuat(pos, [0, BOOM_LENGTH, 0], boom2.rotation);
+                vec3.transformQuat(
+                  pos,
+                  [0, BOOM_LENGTH, 0],
+                  mast.mastLocal.boom2[0]()!.rotation
+                );
               }
               return pos;
             }
