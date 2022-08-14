@@ -14,8 +14,9 @@ import {
   RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
+import { MeshHandle } from "../render/mesh-pool.js";
 import { cloneMesh, mapMeshPositions } from "../render/mesh.js";
-import { FLAG_UNLIT, MeshHandleStd } from "../render/pipelines/std-scene.js";
+import { FLAG_UNLIT } from "../render/pipelines/std-scene.js";
 import {
   RenderableConstructDef,
   RenderableDef,
@@ -262,7 +263,7 @@ onInit((em) => {
         });
 
         const adjustSailVertices = (
-          sailMeshHandle: MeshHandleStd,
+          sailMeshHandle: MeshHandle,
           rotations: quat[]
         ) => {
           // TODO: "read only mesh," eh? not so much

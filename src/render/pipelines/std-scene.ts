@@ -61,10 +61,6 @@ export const FLAG_UNLIT = 1;
 
 export type MeshUniformTS = CyToTS<typeof MeshUniformStruct.desc>;
 
-// TODO(@darzu): IMPL
-// TODO: rename instead of aliasing
-export type MeshHandleStd = MeshHandle;
-
 const meshVertsPtr = CY.createArray("meshVertsBuf", {
   struct: VertexStruct,
   init: MAX_VERTICES,

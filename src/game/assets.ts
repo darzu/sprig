@@ -29,7 +29,6 @@ import {
   uintToVec3unorm,
 } from "../utils-3d.js";
 import { MeshHandle } from "../render/mesh-pool.js";
-import { MeshHandleStd } from "../render/pipelines/std-scene.js";
 import { onInit } from "../init.js";
 import { mathMap, max, min } from "../math.js";
 
@@ -647,7 +646,7 @@ export type GameMesh = {
   center: vec3;
   halfsize: vec3;
   // TODO(@darzu): remove dependency on MeshHandleStd
-  proto: MeshHandleStd;
+  proto: MeshHandle;
   uniqueVerts: vec3[];
   support: SupportFn;
   mkAabbCollider: (solid: boolean) => AABBCollider;

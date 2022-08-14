@@ -20,7 +20,6 @@ import {
 import {
   VertexStruct,
   MeshUniformStruct,
-  MeshHandleStd,
   meshPoolPtr,
   sceneBufPtr,
   MeshUniformTS,
@@ -136,15 +135,15 @@ export function createRenderer(
     return true;
   }
 
-  function addMesh(m: Mesh): MeshHandleStd {
-    const handle: MeshHandleStd = stdPool.addMesh(m);
+  function addMesh(m: Mesh): MeshHandle {
+    const handle: MeshHandle = stdPool.addMesh(m);
     return handle;
   }
-  function addMeshInstance(oldHandle: MeshHandleStd): MeshHandleStd {
+  function addMeshInstance(oldHandle: MeshHandle): MeshHandle {
     const newHandle = stdPool.addMeshInstance(oldHandle);
     return newHandle;
   }
-  function updateMesh(handle: MeshHandleStd, newMeshData: Mesh) {
+  function updateMesh(handle: MeshHandle, newMeshData: Mesh) {
     stdPool.updateMeshVertices(handle, newMeshData);
   }
 
@@ -157,7 +156,7 @@ export function createRenderer(
   }
 
   function updateRenderBundle(
-    handles: MeshHandleStd[],
+    handles: MeshHandle[],
     pipelines: CyRenderPipeline[]
   ) {
     // TODO(@darzu): handle ocean
@@ -200,7 +199,7 @@ export function createRenderer(
 
   // TODO(@darzu): support ocean!
   function submitPipelines(
-    handles: MeshHandleStd[],
+    handles: MeshHandle[],
     pipelinePtrs: CyPipelinePtr[]
   ): void {
     // TODO(@darzu): a lot of the smarts of this fn should come out and be an explicit part

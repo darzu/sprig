@@ -15,7 +15,7 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { cloneMesh, mapMeshPositions } from "../render/mesh.js";
-import { FLAG_UNLIT, MeshHandleStd } from "../render/pipelines/std-scene.js";
+import { FLAG_UNLIT } from "../render/pipelines/std-scene.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
 import { tempMat4, tempQuat, tempVec2, tempVec3 } from "../temp-pool.js";
 import { range } from "../util.js";

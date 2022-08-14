@@ -14,18 +14,14 @@ import { ColorDef } from "../color.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DeletedDef } from "../delete.js";
 import { stdRenderPipeline } from "./pipelines/std-mesh.js";
-import {
-  computeUniData,
-  MeshHandleStd,
-  MeshUniformTS,
-} from "./pipelines/std-scene.js";
+import { computeUniData, MeshUniformTS } from "./pipelines/std-scene.js";
 import { CanvasDef } from "../canvas.js";
 import { FORCE_WEBGL } from "../main.js";
 import { createRenderer } from "./renderer-webgpu.js";
 import { CyPipelinePtr, CyTexturePtr } from "./gpu-registry.js";
 import { createFrame } from "../physics/nonintersection.js";
 import { tempVec3 } from "../temp-pool.js";
-import { isMeshHandle } from "./mesh-pool.js";
+import { isMeshHandle, MeshHandle } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import { SceneTS } from "./pipelines/std-scene.js";
 import { max } from "../math.js";
@@ -56,13 +52,13 @@ export interface RenderableConstruct {
   //  later it is in the mesh handle.
   readonly mask?: number;
   readonly poolKind: PoolKind;
-  meshOrProto: Mesh | MeshHandleStd;
+  meshOrProto: Mesh | MeshHandle;
 }
 
 export const RenderableConstructDef = EM.defineComponent(
   "renderableConstruct",
   (
-    meshOrProto: Mesh | MeshHandleStd,
+    meshOrProto: Mesh | MeshHandle,
     enabled: boolean = true,
     sortLayer: number = 0,
     mask?: number,
@@ -82,7 +78,7 @@ export const RenderableConstructDef = EM.defineComponent(
 export interface Renderable {
   enabled: boolean;
   sortLayer: number;
-  meshHandle: MeshHandleStd;
+  meshHandle: MeshHandle;
 }
 
 export const RenderableDef = EM.defineComponent(
@@ -412,7 +408,7 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
       for (let e of es) {
         // TODO(@darzu): this seems somewhat inefficient to look for this every frame
         if (!RenderableDef.isOn(e)) {
-          let meshHandle: MeshHandleStd;
+          let meshHandle: MeshHandle;
           let mesh: Mesh;
           if (isMeshHandle(e.renderableConstruct.meshOrProto)) {
             assert(
