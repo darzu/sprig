@@ -88,18 +88,14 @@ export const RenderableDef = EM.defineComponent(
 
 // TODO: standardize names more
 
-export type RenderDataStd = MeshUniformTS;
-
 export const RenderDataStdDef = EM.defineComponent(
   "renderDataStd",
-  (r: RenderDataStd) => r
+  (r: MeshUniformTS) => r
 );
-
-export type RenderDataOcean = OceanUniTS;
 
 export const RenderDataOceanDef = EM.defineComponent(
   "renderDataOcean",
-  (r: RenderDataOcean) => r
+  (r: OceanUniTS) => r
 );
 
 // export interface RenderableOcean {
