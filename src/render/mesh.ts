@@ -23,6 +23,7 @@ export interface RawMesh {
   surfaceIds?: number[];
   // per-vertex data
   uvs?: vec2[]; // optional; one uv per vertex
+  tangents?: vec3[]; // optional; one tangent per vertex
   // TODO(@darzu):
   dbgName?: string;
 }
@@ -45,6 +46,7 @@ export function cloneMesh(m: Mesh | RawMesh): Mesh | RawMesh {
     colors: m.colors.map((p) => vec3.clone(p)),
     lines: m.lines?.map((p) => vec2.clone(p)),
     uvs: m.uvs?.map((p) => vec2.clone(p)),
+    tangents: m.tangents?.map((p) => vec3.clone(p)),
     surfaceIds: (m as Mesh).surfaceIds
       ? [...(m as Mesh).surfaceIds]
       : undefined,
@@ -110,6 +112,9 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
 } {
   const pos: vec3[] = [...input.pos];
   const uvs: vec2[] | undefined = input.uvs ? [...input.uvs] : undefined;
+  const tangents: vec3[] | undefined = input.tangents
+    ? [...input.tangents]
+    : undefined;
   const tri: vec3[] = [];
   const quad: vec4[] = [];
   const provoking: { [key: number]: boolean } = {};
@@ -135,6 +140,7 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       pos.push(input.pos[i0]);
       posMap.set(i3, i0);
       if (uvs) uvs.push(input.uvs![i0]);
+      if (tangents) tangents.push(input.tangents![i0]);
       provoking[i3] = true;
       tri.push([i3, i1, i2]);
     }
@@ -166,6 +172,7 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       posMap.set(i4, i0);
       // TODO(@darzu): safer way to duplicate all per-vertex data
       if (uvs) uvs.push(input.uvs![i0]);
+      if (tangents) tangents.push(input.tangents![i0]);
       provoking[i4] = true;
       quad.push([i4, i1, i2, i3]);
       // console.log(`duplicating: ${i0}!`);
@@ -177,6 +184,7 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       ...input,
       pos,
       uvs,
+      tangents,
       tri,
       quad,
       usesProvoking: true,
@@ -228,9 +236,8 @@ export function normalizeMesh(inM: RawMesh): Mesh {
     // }
   }
   return {
-    ...outM,
     // TODO(@darzu): always generate UVs?
-    uvs: outM.uvs,
+    ...outM,
     surfaceIds: outM.surfaceIds ?? generateSurfaceIds(outM),
   };
 }

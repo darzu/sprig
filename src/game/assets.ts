@@ -178,6 +178,34 @@ const MeshModify: Partial<{
     // TODO(@darzu): lots of little annoying issues happen when you go right to the texture edge
     normalizeVec2s(uvs, 0 + 0.01, 1 - 0.01);
 
+    // TODO: should we compute tangents (and normals!) per vertex
+    // instead of per quad, for vertex displacement (e.g. waves)
+    // purposes?
+
+    //set tangents
+    m.tangents = m.pos.map(() => vec3.create());
+    for (let xIndex = 0; xIndex < grid.length; xIndex++) {
+      for (let yIndex = 0; yIndex < grid[0].length; yIndex++) {
+        if (xIndex + 1 < grid.length) {
+          const nextXIndex = xIndex + 1;
+          const nextYIndex = yIndex;
+
+          const pos = m.pos[grid[xIndex][yIndex]];
+          const nextPos = m.pos[grid[nextXIndex][nextYIndex]];
+          const dir = vec3.sub(m.tangents[grid[xIndex][yIndex]], nextPos, pos);
+          vec3.normalize(dir, dir);
+        } else {
+          const prevXIndex = xIndex - 1;
+          const prevYIndex = yIndex;
+
+          vec3.negate(
+            m.tangents[grid[xIndex][yIndex]],
+            m.tangents[grid[prevXIndex][prevYIndex]]
+          );
+        }
+      }
+    }
+
     // console.dir(uvs);
     // console.log(`
     // X:
