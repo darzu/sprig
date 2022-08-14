@@ -22,6 +22,7 @@ import {
 } from "../render/pipelines/xp-uv-unwrap.js";
 import {
   RenderableConstructDef,
+  RenderableOceanDef,
   RenderableStdDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
@@ -80,22 +81,24 @@ export async function initOcean() {
   EM.ensureComponentOn(
     ocean,
     RenderableConstructDef,
-    res.assets.ocean.proto,
+    res.assets.ocean.mesh,
     // TODO(@darzu): needed?
     true,
     0,
-    UVUNWRAP_MASK
+    UVUNWRAP_MASK,
+    "ocean"
   );
   EM.ensureComponentOn(ocean, ColorDef, [0.1, 0.3, 0.8]);
   // em.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
   EM.ensureComponentOn(ocean, PositionDef);
 
-  let ocean2 = await EM.whenEntityHas(ocean, RenderableStdDef);
+  let ocean2 = await EM.whenEntityHas(ocean, RenderableOceanDef);
 
   // TODO(@darzu):
   const preOceanGPU = performance.now();
   res.renderer.renderer.submitPipelines(
-    [ocean2.renderableStd.meshHandle],
+    [],
+    [ocean2.renderableOcean.meshHandle],
     // [unwrapPipeline, unwrapPipeline2]
     [unwrapPipeline, unwrapPipeline2, ...oceanJfa.allPipes()]
   );

@@ -134,7 +134,7 @@ export async function initHyperspaceGame(em: EntityManager) {
   }
 
   // one-time GPU jobs
-  res.renderer.renderer.submitPipelines([], [...noisePipes, initStars]);
+  res.renderer.renderer.submitPipelines([], [], [...noisePipes, initStars]);
 
   initOcean();
 

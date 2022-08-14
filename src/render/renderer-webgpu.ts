@@ -111,7 +111,7 @@ export function createRenderer(
 
   const cyRenderToBundle: { [pipelineName: string]: GPURenderBundle } = {};
 
-  updateRenderBundle([], []);
+  updateRenderBundle([], [], []);
 
   // recomputes textures, widths, and aspect ratio on canvas resize
   let lastWidth = 0;
@@ -151,15 +151,18 @@ export function createRenderer(
     oceanPool.updateMeshVertices(handle, newMeshData);
   }
 
-  // TODO(@darzu): support ocean!
   function updateRenderBundle(
     handles: MeshHandleStd[],
+    oceanHandles: OceanMeshHandle[],
     pipelines: CyRenderPipeline[]
   ) {
+    // TODO(@darzu): handle ocean
     needsRebundle = false; // TODO(@darzu): hack?
 
     bundledMIds.clear();
     handles.forEach((h) => bundledMIds.add(h.mId));
+    console.log(`bundling w/ ${oceanHandles.length} meshes`);
+    oceanHandles.forEach((h) => bundledMIds.add(h.mId));
 
     lastWireMode = [renderer.drawLines, renderer.drawTris];
 
@@ -188,6 +191,8 @@ export function createRenderer(
   // TODO(@darzu): support ocean!
   function submitPipelines(
     handles: MeshHandleStd[],
+    // TODO(@darzu): this feels pretty akward; need a better way to handle multiple mesh pools
+    oceanHandles: OceanMeshHandle[],
     pipelinePtrs: CyPipelinePtr[]
   ): void {
     // TODO(@darzu): a lot of the smarts of this fn should come out and be an explicit part
@@ -229,6 +234,11 @@ export function createRenderer(
       stdPool.updateUniform(m);
     }
 
+    // update all ocean mesh transforms
+    for (let m of oceanHandles) {
+      oceanPool.updateUniform(m);
+    }
+
     // TODO(@darzu): not great detection, needs to be more precise and less
     //    false positives
     // TODO(@darzu): account for handle masks
@@ -236,7 +246,7 @@ export function createRenderer(
       needsRebundle ||
       didPipelinesChange ||
       didResize ||
-      bundledMIds.size !== handles.length ||
+      bundledMIds.size !== handles.length + oceanHandles.length ||
       renderer.drawLines !== lastWireMode[0] ||
       renderer.drawTris !== lastWireMode[1];
     if (!needsRebundle) {
@@ -247,11 +257,17 @@ export function createRenderer(
           break;
         }
       }
+      for (let mId of oceanHandles.map((o) => o.mId)) {
+        if (!bundledMIds.has(mId)) {
+          needsRebundle = true;
+          break;
+        }
+      }
     }
 
     if (needsRebundle) {
       // console.log("rebundeling");
-      updateRenderBundle(handles, renderPipelines);
+      updateRenderBundle(handles, oceanHandles, renderPipelines);
     }
 
     lastPipelines = pipelines;

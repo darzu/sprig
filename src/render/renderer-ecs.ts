@@ -30,20 +30,24 @@ import {
   vec3Dbg,
 } from "../utils-3d.js";
 import { ShadersDef, ShaderSet } from "./shader-loader.js";
-import { dbgLogOnce } from "../util.js";
+import { dbgLogOnce, never } from "../util.js";
 import { TimeDef } from "../time.js";
 import { PartyDef } from "../game/party.js";
 import { PointLightDef, pointLightsPtr, PointLightTS } from "./lights.js";
+import { OceanMeshHandle } from "./pipelines/std-ocean.js";
+import { assert } from "../test.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
 
+export type PoolKind = "std" | "ocean";
 export interface RenderableConstruct {
   readonly enabled: boolean;
   readonly sortLayer: number;
   // TODO(@darzu): mask is inconsitently placed; here it is in the component,
   //  later it is in the mesh handle.
   readonly mask?: number;
+  readonly poolKind: PoolKind;
   meshOrProto: Mesh | MeshHandleStd;
 }
 
@@ -53,13 +57,15 @@ export const RenderableConstructDef = EM.defineComponent(
     meshOrProto: Mesh | MeshHandleStd,
     enabled: boolean = true,
     sortLayer: number = 0,
-    mask?: number
+    mask?: number,
+    poolKind: PoolKind = "std"
   ) => {
     const r: RenderableConstruct = {
       enabled,
       sortLayer: sortLayer,
       meshOrProto,
       mask,
+      poolKind,
     };
     return r;
   }
@@ -74,6 +80,17 @@ export interface RenderableStd {
 export const RenderableStdDef = EM.defineComponent(
   "renderableStd",
   (r: RenderableStd) => r
+);
+
+export interface RenderableOcean {
+  enabled: boolean;
+  sortLayer: number;
+  meshHandle: OceanMeshHandle;
+}
+
+export const RenderableOceanDef = EM.defineComponent(
+  "renderableOcean",
+  (r: RenderableOcean) => r
 );
 
 const _hasRendererWorldFrame = new Set();
@@ -138,7 +155,7 @@ function updateSmoothedWorldFrame(em: EntityManager, o: Entity) {
 
 export function registerUpdateSmoothedWorldFrames(em: EntityManager) {
   em.registerSystem(
-    [RenderableStdDef, TransformDef],
+    [RenderableConstructDef, TransformDef],
     [],
     (objs, res) => {
       _hasRendererWorldFrame.clear();
@@ -329,6 +346,7 @@ export function registerRenderer(em: EntityManager) {
 
       renderer.submitPipelines(
         objs.map((o) => o.renderableStd.meshHandle),
+        [],
         res.renderer.pipelines
       );
 
@@ -348,28 +366,51 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
     [RendererDef],
     (es, res) => {
       for (let e of es) {
-        if (!RenderableStdDef.isOn(e)) {
-          // TODO(@darzu): how should we handle instancing?
-          // TODO(@darzu): this seems somewhat inefficient to look for this every frame
-          let meshHandle: MeshHandleStd;
-          if (isMeshHandle(e.renderableConstruct.meshOrProto))
-            meshHandle = res.renderer.renderer.addMeshInstance(
-              e.renderableConstruct.meshOrProto
+        // TODO(@darzu): this seems somewhat inefficient to look for this every frame
+        if (!RenderableStdDef.isOn(e) && !RenderableOceanDef.isOn(e)) {
+          if (e.renderableConstruct.poolKind === "std") {
+            let meshHandle: MeshHandleStd;
+            if (isMeshHandle(e.renderableConstruct.meshOrProto))
+              meshHandle = res.renderer.renderer.addMeshInstance(
+                e.renderableConstruct.meshOrProto
+              );
+            else
+              meshHandle = res.renderer.renderer.addMesh(
+                e.renderableConstruct.meshOrProto
+              );
+
+            if (e.renderableConstruct.mask) {
+              meshHandle.mask = e.renderableConstruct.mask;
+            }
+
+            em.addComponent(e.id, RenderableStdDef, {
+              enabled: e.renderableConstruct.enabled,
+              sortLayer: e.renderableConstruct.sortLayer,
+              meshHandle,
+            });
+          } else if (e.renderableConstruct.poolKind === "ocean") {
+            // TODO(@darzu): HANDLE OCEAN
+            let meshHandle: OceanMeshHandle;
+            assert(
+              !isMeshHandle(e.renderableConstruct.meshOrProto),
+              "ocean doesn't support instancing b/c y wud u do that"
             );
-          else
-            meshHandle = res.renderer.renderer.addMesh(
+            meshHandle = res.renderer.renderer.addOcean(
               e.renderableConstruct.meshOrProto
             );
 
-          if (e.renderableConstruct.mask) {
-            meshHandle.mask = e.renderableConstruct.mask;
+            if (e.renderableConstruct.mask) {
+              meshHandle.mask = e.renderableConstruct.mask;
+            }
+
+            em.addComponent(e.id, RenderableOceanDef, {
+              enabled: e.renderableConstruct.enabled,
+              sortLayer: e.renderableConstruct.sortLayer,
+              meshHandle,
+            });
+          } else {
+            never(e.renderableConstruct.poolKind);
           }
-
-          em.addComponent(e.id, RenderableStdDef, {
-            enabled: e.renderableConstruct.enabled,
-            sortLayer: e.renderableConstruct.sortLayer,
-            meshHandle,
-          });
         }
       }
     },
