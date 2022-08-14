@@ -17,13 +17,15 @@ export const OceanVertStruct = createCyStruct(
     position: "vec3<f32>",
     color: "vec3<f32>",
     normal: "vec3<f32>",
+    // tangent towards +u
+    tangent: "vec3<f32>",
     uv: "vec2<f32>",
     surfaceId: "u32",
   },
   {
     isCompact: true,
     serializer: (
-      { position, color, normal, uv, surfaceId },
+      { position, color, normal, tangent, uv, surfaceId },
       _,
       offsets_32,
       views
@@ -31,8 +33,9 @@ export const OceanVertStruct = createCyStruct(
       views.f32.set(position, offsets_32[0]);
       views.f32.set(color, offsets_32[1]);
       views.f32.set(normal, offsets_32[2]);
-      views.f32.set(uv, offsets_32[3]);
-      views.u32[offsets_32[4]] = surfaceId;
+      views.f32.set(tangent, offsets_32[3]);
+      views.f32.set(uv, offsets_32[4]);
+      views.u32[offsets_32[5]] = surfaceId;
     },
   }
 );
@@ -78,12 +81,14 @@ const oceanUnisPtr = CY.createArray("oceanUni", {
   init: MAX_OCEAN_MESHES,
 });
 
+// TODO(@darzu): de-duplicate with std-scene's computeVertsData
 function computeOceanVertsData(m: Mesh): OceanVertTS[] {
   // TODO(@darzu): change
   const vertsData: OceanVertTS[] = m.pos.map((pos, i) => ({
     position: pos,
     color: [1.0, 0.0, 1.0], // per-face; changed below
     normal: [1.0, 0.0, 0.0], // per-face; changed below
+    tangent: m.tangents ? m.tangents[i] : [0.0, 0.0, 0.0],
     uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
     surfaceId: 0, // per-face; changed below
   }));
@@ -101,6 +106,9 @@ function computeOceanVertsData(m: Mesh): OceanVertTS[] {
   });
   m.quad.forEach((quadInd, i) => {
     // set provoking vertex data
+
+    // TODO: compute tangents here? right now tangents are wrong if we
+    // update vertex positions on the CPU
     const normal = computeTriangleNormal(
       m.pos[quadInd[0]],
       m.pos[quadInd[1]],
@@ -165,5 +173,8 @@ export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
     },
   ],
   depthStencil: mainDepthTex,
-  shader: "std-ocean",
+  shader: (shaderSet) => `
+  ${shaderSet["std-rand"].code}
+  ${shaderSet["std-ocean"].code}
+  `,
 });

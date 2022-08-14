@@ -56,6 +56,11 @@ fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>, in
   return visibility;
 }
 
+fn gerstner(Q: f32, A: f32, D: vec2<f32>, w: f32, phi: f32, uv: vec2<f32>, t: f32) -> vec3<f32> {
+    return vec3<f32>(Q * A + D.x * cos(dot(w * D, uv) + phi * t),
+                     A * sin(dot(w * D, uv) + phi * t),
+                     Q * A + D.y * cos(dot(w * D, uv) + phi * t));
+}
 
 @vertex
 fn vert_main(input: VertexInput) -> VertexOutput {
@@ -63,9 +68,25 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     let uv = input.uv;
     let color = input.color;
     let normal = input.normal;
+    let tangent = input.tangent;
+    let perp = cross(tangent, normal);
+
+    let flattenedPos = vec3<f32>(uv.x - 1.0, 0, uv.y) * 1000;
+    rand_seed = vec2<f32>(-45, 13);
+    rand();
+    let D0 = normalize(vec2<f32>(rand() - 0.5, rand() - 0.5));
+    let D0a = normalize(vec2<f32>(rand() - 0.5, rand() - 0.5));
+    let D1 = normalize(vec2<f32>(rand() - 0.5, rand() - 0.5));
+    let D2 = normalize(vec2<f32>(rand() - 0.5, rand() - 0.5));
+    let wave0 = gerstner(1., 5. * 2., D0, .5 / 10.0, 0.5, uv * 1000., scene.time * .001);
+    let wave0a = gerstner(1., 5. * 2., D0a, .5 / 10.0, 0.5, uv * 1000., scene.time * .001);
+    let wave1 = gerstner(1., 2. * 2., D1, .5 / 4.0, 1., uv * 1000., scene.time * .001);
+    let wave2 = gerstner(1., 0.5 * 2., D2, .5 / 1.0, 3., uv * 1000., scene.time * .001);    
+    //let displacedPos = position + normal * wave.y + tangent * wave.x + perp * wave.z;
+    let displacedPos = flattenedPos + wave0 + wave0a;// wave0 + wave0a + wave1; //+ wave2;
 
     var output : VertexOutput;
-    let worldPos: vec4<f32> = oceanUni.transform * vec4<f32>(position, 1.0);
+    let worldPos: vec4<f32> = oceanUni.transform * vec4<f32>(displacedPos, 1.0);
 
     let finalPos = worldPos;
 
@@ -74,6 +95,7 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     // TODO: use inverse-transpose matrix for normals as per: https://learnopengl.com/Lighting/Basic-Lighting
     output.normal = normalize(oceanUni.transform * vec4<f32>(normal, 0.0)).xyz;
     output.color = color + oceanUni.tint;
+    output.color = tangent; // DBG TANGENT
 
     output.surface = input.surfaceId;
     output.id = oceanUni.id;

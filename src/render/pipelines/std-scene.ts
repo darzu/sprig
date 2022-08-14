@@ -13,15 +13,13 @@ export const VertexStruct = createCyStruct(
     position: "vec3<f32>",
     color: "vec3<f32>",
     normal: "vec3<f32>",
-    // tangent towards +u
-    tangent: "vec3<f32>",
     uv: "vec2<f32>",
     surfaceId: "u32",
   },
   {
     isCompact: true,
     serializer: (
-      { position, color, normal, tangent, uv, surfaceId },
+      { position, color, normal, uv, surfaceId },
       _,
       offsets_32,
       views
@@ -29,9 +27,8 @@ export const VertexStruct = createCyStruct(
       views.f32.set(position, offsets_32[0]);
       views.f32.set(color, offsets_32[1]);
       views.f32.set(normal, offsets_32[2]);
-      views.f32.set(tangent, offsets_32[3]);
-      views.f32.set(uv, offsets_32[4]);
-      views.u32[offsets_32[5]] = surfaceId;
+      views.f32.set(uv, offsets_32[3]);
+      views.u32[offsets_32[4]] = surfaceId;
     },
   }
 );
@@ -128,9 +125,6 @@ export function computeVertsData(m: Mesh): VertexTS[] {
   });
   m.quad.forEach((quadInd, i) => {
     // set provoking vertex data
-
-    // TODO: compute tangents here? right now tangents are wrong if we
-    // update vertex positions on the CPU
     const normal = computeTriangleNormal(
       m.pos[quadInd[0]],
       m.pos[quadInd[1]],

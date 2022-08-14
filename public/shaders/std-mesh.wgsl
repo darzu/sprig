@@ -9,41 +9,16 @@ struct VertexOutput {
     @builtin(position) position : vec4<f32>,
 };
 
-fn gerstner(Q: f32, A: f32, D: vec2<f32>, w: f32, phi: f32, uv: vec2<f32>, t: f32) -> vec3<f32> {
-    return vec3<f32>(Q * A + D.x * cos(dot(w * D, uv) + phi * t),
-                     A * sin(dot(w * D, uv) + phi * t),
-                     Q * A + D.y * cos(dot(w * D, uv) + phi * t));
-}
-
 @vertex
 fn vert_main(input: VertexInput) -> VertexOutput {
     let position = input.position;
     let uv = input.uv;
     let color = input.color;
     let normal = input.normal;
-    let tangent = input.tangent;
-    let perp = cross(tangent, normal);
-    
-    
-    //let height = sin(uv.x * 100 + scene.time * .001) * ceil(max(uv.x, uv.y)) * 4;
-    let isuv = ceil(max(uv.x, uv.y));
-    //let displacedPos = position + gerstner(1, 40, vec2<f32>(0, 1), .5, 2, uv * 1000, scene.time * .001) * isuv;
-    let flattenedPos = vec3<f32>(uv.x - 1.0, 0, uv.y) * 1000;
-    rand_seed = vec2<f32>(-45, 13);
-    rand();
-    let D0 = normalize(vec2<f32>(rand() - 0.5, rand() - 0.5));
-    let D0a = normalize(vec2<f32>(rand() - 0.5, rand() - 0.5));
-    let D1 = normalize(vec2<f32>(rand() - 0.5, rand() - 0.5));
-    let D2 = normalize(vec2<f32>(rand() - 0.5, rand() - 0.5));
-    let gerstnerDisplacement0 = gerstner(1., 5. * 2., D0, .5 / 10.0, 0.5, uv * 1000., scene.time * .001) * isuv;
-    let gerstnerDisplacement0a = gerstner(1., 5. * 2., D0a, .5 / 10.0, 0.5, uv * 1000., scene.time * .001) * isuv;
-    let gerstnerDisplacement1 = gerstner(1., 2. * 2., D1, .5 / 4.0, 1., uv * 1000., scene.time * .001) * isuv;
-    let gerstnerDisplacement2 = gerstner(1., 0.5 * 2., D2, .5 / 1.0, 3., uv * 1000., scene.time * .001) * isuv;    
-    //let displacedPos = position + normal * gerstnerDisplacement.y + tangent * gerstnerDisplacement.x + perp * gerstnerDisplacement.z;
-    let displacedPos = flattenedPos + gerstnerDisplacement0 + gerstnerDisplacement0a;// gerstnerDisplacement0 + gerstnerDisplacement0a + gerstnerDisplacement1; //+ gerstnerDisplacement2;
+
     var output : VertexOutput;
     
-    let worldPos: vec4<f32> = meshUni.transform * vec4<f32>(displacedPos, 1.0);
+    let worldPos: vec4<f32> = meshUni.transform * vec4<f32>(position, 1.0);
 
     let finalPos = worldPos;
 
@@ -56,15 +31,11 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     //     posFromLight.z
     // );
 
-    
     output.worldPos = finalPos;
     output.position = scene.cameraViewProjMatrix * finalPos;
     // TODO: use inverse-transpose matrix for normals as per: https://learnopengl.com/Lighting/Basic-Lighting
     output.normal = normalize(meshUni.transform * vec4<f32>(normal, 0.0)).xyz;
     output.color = color + meshUni.tint;
-
-    // DEBUG TANGENTS
-    output.color = input.tangent;
     
     // DEBUG:
     // output.color = vec3<f32>(f32(uvInt.x), f32(uvInt.y), 1.0);
