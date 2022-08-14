@@ -105,7 +105,7 @@ export async function initHyperspaceGame(em: EntityManager) {
         //...blurPipelines,
 
         postProcess,
-        ...(res.dev.showConsole ? gridCompose : []),
+        //...(res.dev.showConsole ? gridCompose : []),
       ];
     },
     "hyperspaceGame"
@@ -134,7 +134,7 @@ export async function initHyperspaceGame(em: EntityManager) {
   }
 
   // one-time GPU jobs
-  res.renderer.renderer.submitPipelines([], [], [...noisePipes, initStars]);
+  res.renderer.renderer.submitPipelines([], [...noisePipes, initStars]);
 
   initOcean();
 

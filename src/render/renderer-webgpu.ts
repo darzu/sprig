@@ -6,7 +6,7 @@ import {
   CyTexturePtr,
   isRenderPipelinePtr,
 } from "./gpu-registry.js";
-import { MeshPool } from "./mesh-pool.js";
+import { MeshHandle, MeshPool } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import { Renderer } from "./renderer-ecs.js";
 import {
@@ -23,6 +23,7 @@ import {
   MeshHandleStd,
   meshPoolPtr,
   sceneBufPtr,
+  MeshUniformTS,
 } from "./pipelines/std-scene.js";
 import {
   bundleRenderPipelines,
@@ -40,6 +41,7 @@ import {
   OceanMeshHandle,
   oceanPoolPtr,
   OceanUniStruct,
+  OceanUniTS,
   OceanVertStruct,
 } from "./pipelines/std-ocean.js";
 
@@ -67,6 +69,10 @@ export function createRenderer(
     // std scene
     updateScene,
     updatePointLights,
+
+    // uniforms
+    updateStdUniform,
+    updateOceanUniform,
 
     // gpu commands
     submitPipelines,
@@ -111,7 +117,7 @@ export function createRenderer(
 
   const cyRenderToBundle: { [pipelineName: string]: GPURenderBundle } = {};
 
-  updateRenderBundle([], [], []);
+  updateRenderBundle([], []);
 
   // recomputes textures, widths, and aspect ratio on canvas resize
   let lastWidth = 0;
@@ -135,8 +141,7 @@ export function createRenderer(
     return handle;
   }
   function addMeshInstance(oldHandle: MeshHandleStd): MeshHandleStd {
-    const d = MeshUniformStruct.clone(oldHandle.shaderData);
-    const newHandle = stdPool.addMeshInstance(oldHandle, d);
+    const newHandle = stdPool.addMeshInstance(oldHandle);
     return newHandle;
   }
   function updateMesh(handle: MeshHandleStd, newMeshData: Mesh) {
@@ -153,7 +158,6 @@ export function createRenderer(
 
   function updateRenderBundle(
     handles: MeshHandleStd[],
-    oceanHandles: OceanMeshHandle[],
     pipelines: CyRenderPipeline[]
   ) {
     // TODO(@darzu): handle ocean
@@ -161,8 +165,6 @@ export function createRenderer(
 
     bundledMIds.clear();
     handles.forEach((h) => bundledMIds.add(h.mId));
-    console.log(`bundling w/ ${oceanHandles.length} meshes`);
-    oceanHandles.forEach((h) => bundledMIds.add(h.mId));
 
     lastWireMode = [renderer.drawLines, renderer.drawTris];
 
@@ -188,11 +190,17 @@ export function createRenderer(
     pointLightsArray.queueUpdates(pointLights, 0);
   }
 
+  function updateStdUniform(handle: MeshHandle, data: MeshUniformTS) {
+    stdPool.updateUniform(handle, data);
+  }
+
+  function updateOceanUniform(handle: MeshHandle, data: OceanUniTS) {
+    oceanPool.updateUniform(handle, data);
+  }
+
   // TODO(@darzu): support ocean!
   function submitPipelines(
     handles: MeshHandleStd[],
-    // TODO(@darzu): this feels pretty akward; need a better way to handle multiple mesh pools
-    oceanHandles: OceanMeshHandle[],
     pipelinePtrs: CyPipelinePtr[]
   ): void {
     // TODO(@darzu): a lot of the smarts of this fn should come out and be an explicit part
@@ -229,15 +237,15 @@ export function createRenderer(
 
     const didResize = checkCanvasResize();
 
-    // update all mesh transforms
-    for (let m of handles) {
-      stdPool.updateUniform(m);
-    }
+    // // update all mesh transforms
+    // for (let m of handles) {
+    //   stdPool.updateUniform(m);
+    // }
 
-    // update all ocean mesh transforms
-    for (let m of oceanHandles) {
-      oceanPool.updateUniform(m);
-    }
+    // // update all ocean mesh transforms
+    // for (let m of oceanHandles) {
+    //   oceanPool.updateUniform(m);
+    // }
 
     // TODO(@darzu): not great detection, needs to be more precise and less
     //    false positives
@@ -246,7 +254,7 @@ export function createRenderer(
       needsRebundle ||
       didPipelinesChange ||
       didResize ||
-      bundledMIds.size !== handles.length + oceanHandles.length ||
+      bundledMIds.size !== handles.length ||
       renderer.drawLines !== lastWireMode[0] ||
       renderer.drawTris !== lastWireMode[1];
     if (!needsRebundle) {
@@ -257,17 +265,11 @@ export function createRenderer(
           break;
         }
       }
-      for (let mId of oceanHandles.map((o) => o.mId)) {
-        if (!bundledMIds.has(mId)) {
-          needsRebundle = true;
-          break;
-        }
-      }
     }
 
     if (needsRebundle) {
       // console.log("rebundeling");
-      updateRenderBundle(handles, oceanHandles, renderPipelines);
+      updateRenderBundle(handles, renderPipelines);
     }
 
     lastPipelines = pipelines;

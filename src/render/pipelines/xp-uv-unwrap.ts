@@ -1,7 +1,7 @@
 import { mathMap } from "../../math.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { CY } from "../gpu-registry.js";
-import { meshPoolPtr } from "./std-scene.js";
+import { oceanPoolPtr } from "./std-ocean.js";
 
 // TODO(@darzu): parameterize and generalize this for other meshes
 
@@ -31,8 +31,8 @@ struct VertexOutput {
 @vertex
 fn vertMain(input: VertexInput) -> VertexOutput {
   var output: VertexOutput;
-  let worldPos = meshUni.transform * vec4<f32>(input.position, 1.0);
-  let normal =  meshUni.transform * vec4<f32>(input.normal, 0.0);
+  let worldPos = oceanUni.transform * vec4<f32>(input.position, 1.0);
+  let normal =  oceanUni.transform * vec4<f32>(input.normal, 0.0);
 
   output.uv = input.uv;
   output.worldPos = worldPos;
@@ -69,7 +69,7 @@ export const unwrapPipeline2 = CY.createRenderPipeline("unwrapPipe2", {
   shaderVertexEntry: "vertMain",
   shaderFragmentEntry: "fragMain",
   meshOpt: {
-    pool: meshPoolPtr,
+    pool: oceanPoolPtr,
     meshMask: UVUNWRAP_MASK,
     stepMode: "per-mesh-handle",
   },
@@ -113,7 +113,7 @@ export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
   shaderVertexEntry: "vertMain",
   shaderFragmentEntry: "fragMain",
   meshOpt: {
-    pool: meshPoolPtr,
+    pool: oceanPoolPtr,
     meshMask: UVUNWRAP_MASK,
     stepMode: "per-mesh-handle",
   },

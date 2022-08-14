@@ -754,7 +754,7 @@ export function bundleRenderPipelines(
   device: GPUDevice,
   resources: CyResources,
   renderPipelines: CyRenderPipeline[],
-  meshHandleIds: Set<MeshHandle<any>["mId"]>
+  meshHandleIds: Set<MeshHandle["mId"]>
 ): GPURenderBundle[] {
   const bundles: GPURenderBundle[] = [];
   let dbgNumTris = 0;

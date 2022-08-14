@@ -18,7 +18,8 @@ import { cloneMesh, mapMeshPositions } from "../render/mesh.js";
 import { FLAG_UNLIT, MeshHandleStd } from "../render/pipelines/std-scene.js";
 import {
   RenderableConstructDef,
-  RenderableStdDef,
+  RenderableDef,
+  RenderDataStdDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
 import { tempMat4, tempQuat, tempVec2, tempVec3 } from "../temp-pool.js";
@@ -84,13 +85,13 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       boom1: range(RIB_COUNT).map(() => createRef(0, [RotationDef])),
       boom2: range(RIB_COUNT).map(() => createRef(0, [RotationDef])),
       sail1: createRef(0, [
-        RenderableStdDef,
+        RenderableDef,
         WorldFrameDef,
         SailColorDef,
         ColorDef,
       ]),
       sail2: createRef(0, [
-        RenderableStdDef,
+        RenderableDef,
         WorldFrameDef,
         SailColorDef,
         ColorDef,
@@ -140,12 +141,13 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       em.ensureComponentOn(sail1, PhysicsParentDef, mast.id);
       em.whenEntityHas(
         sail1,
-        RenderableStdDef,
+        RenderDataStdDef,
+        RenderableDef,
         WorldFrameDef,
         SailColorDef,
         ColorDef
       ).then((sail1) => {
-        sail1.renderableStd.meshHandle.shaderData.flags |= FLAG_UNLIT;
+        sail1.renderDataStd.flags |= FLAG_UNLIT;
         mast.mastLocal.sail1 = createRef(sail1);
       });
 
@@ -163,12 +165,13 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       em.ensureComponentOn(sail2, PhysicsParentDef, mast.id);
       em.whenEntityHas(
         sail2,
-        RenderableStdDef,
+        RenderDataStdDef,
+        RenderableDef,
         WorldFrameDef,
         SailColorDef,
         ColorDef
       ).then((sail2) => {
-        sail2.renderableStd.meshHandle.shaderData.flags |= FLAG_UNLIT;
+        sail2.renderDataStd.flags |= FLAG_UNLIT;
         mast.mastLocal.sail2 = createRef(sail2);
       });
 
@@ -293,13 +296,13 @@ onInit((em) => {
         const sail1 = mast.mastLocal.sail1();
         if (sail1)
           adjustSailVertices(
-            sail1.renderableStd.meshHandle,
+            sail1.renderable.meshHandle,
             mast.mastLocal.boom1.map((b) => b()!.rotation)
           );
         const sail2 = mast.mastLocal.sail2();
         if (sail2)
           adjustSailVertices(
-            sail2.renderableStd.meshHandle,
+            sail2.renderable.meshHandle,
             mast.mastLocal.boom2.map((b) => b()!.rotation)
           );
       }
@@ -341,7 +344,7 @@ onInit((em) => {
           const [force, area] = sailForceAndSignedArea(sail, star);
           const accel = vec3.dot(shipDirection, force);
 
-          const localVerts = sail.renderableStd.meshHandle.readonlyMesh!.pos;
+          const localVerts = sail.renderable.meshHandle.readonlyMesh!.pos;
 
           const realArea = Math.abs(
             signedAreaOfTriangle(
@@ -375,7 +378,7 @@ onInit((em) => {
 
 function sailForceAndSignedArea(
   sail: EntityW<
-    [typeof SailColorDef, typeof RenderableStdDef, typeof WorldFrameDef]
+    [typeof SailColorDef, typeof RenderableDef, typeof WorldFrameDef]
   >,
   star: EntityW<[typeof DarkStarPropsDef, typeof WorldFrameDef]>
 ): [vec3, number] {
@@ -385,7 +388,7 @@ function sailForceAndSignedArea(
     sail.world.position
   );
 
-  const localVerts = sail.renderableStd.meshHandle.readonlyMesh!.pos;
+  const localVerts = sail.renderable.meshHandle.readonlyMesh!.pos;
 
   const worldVerts = localVerts.map((pos) => {
     return vec3.transformMat4(tempVec3(), pos, sail.world.transform);

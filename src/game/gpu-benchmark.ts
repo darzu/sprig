@@ -27,7 +27,7 @@ export async function runBenchmark() {
   console.log(`GPU <-> CPU TEST`);
   for (let [tex, pipe] of benchmarkTexsAndPipes) {
     const perGPUTest = performance.now();
-    res.renderer.renderer.submitPipelines([], [], [pipe]);
+    res.renderer.renderer.submitPipelines([], [pipe]);
     await res.renderer.renderer.readTexture(tex);
     const afterGPUTest = performance.now() - perGPUTest;
     const mb = (tex.size[0] * tex.size[1] * 4) / 1024 / 1024;

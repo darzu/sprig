@@ -29,7 +29,7 @@ import {
 } from "../render/gpu-registry.js";
 import { cloneMesh, scaleMesh } from "../render/mesh.js";
 import {
-  RenderableStdDef,
+  RenderableDef,
   RenderableConstructDef,
 } from "../render/renderer-ecs.js";
 import { RendererDef } from "../render/renderer-ecs.js";
@@ -114,7 +114,7 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   g.controllable.sprintMul = 10;
 
   const c = res.globalCursor3d.cursor()!;
-  if (RenderableStdDef.isOn(c)) c.renderableStd.enabled = false;
+  if (RenderableDef.isOn(c)) c.renderable.enabled = false;
 
   const p = em.newEntity();
   em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
@@ -371,8 +371,8 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
   }
 
   const c = res.globalCursor3d.cursor()!;
-  assert(RenderableStdDef.isOn(c));
-  c.renderableStd.enabled = true;
+  assert(RenderableDef.isOn(c));
+  c.renderable.enabled = true;
   c.cursor3d.maxDistance = 10;
 
   const plane = em.newEntity();
@@ -455,12 +455,12 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
       // line from cursor to cloth
       if (!line) line = drawLine(vec3.create(), vec3.create(), [0, 1, 0]);
-      if (RenderableStdDef.isOn(line)) {
-        line.renderableStd.enabled = true;
-        const m = line.renderableStd.meshHandle.readonlyMesh!;
+      if (RenderableDef.isOn(line)) {
+        line.renderable.enabled = true;
+        const m = line.renderable.meshHandle.readonlyMesh!;
         vec3.copy(m.pos[0], cursorPos);
         vec3.copy(m.pos[1], clothPos);
-        res.renderer.renderer.updateMesh(line.renderableStd.meshHandle, m);
+        res.renderer.renderer.updateMesh(line.renderable.meshHandle, m);
       }
 
       // scale the force
@@ -477,8 +477,8 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
         vec3.scale(cloth.force, cloth.force, strength);
       } else {
         vec3.copy(cloth.force, [0, 0, 0]);
-        if (RenderableStdDef.isOn(line)) {
-          line.renderableStd.enabled = false;
+        if (RenderableDef.isOn(line)) {
+          line.renderable.enabled = false;
         }
       }
     },
@@ -506,8 +506,8 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
   g.cameraFollow.pitchOffset = 0.145;
 
   const c = res.globalCursor3d.cursor()!;
-  assert(RenderableStdDef.isOn(c));
-  c.renderableStd.enabled = false;
+  assert(RenderableDef.isOn(c));
+  c.renderable.enabled = false;
 
   const p = em.newEntity();
   em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);

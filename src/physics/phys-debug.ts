@@ -13,7 +13,7 @@ import {
 } from "./nonintersection.js";
 import {
   RenderableConstructDef,
-  RenderableStdDef,
+  RenderableDef,
 } from "../render/renderer-ecs.js";
 import {
   copyFrame,
@@ -88,7 +88,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
 
   // toggle debug meshes on and off
   em.registerSystem(
-    [DbgMeshDef, RenderableStdDef],
+    [DbgMeshDef, RenderableDef],
     [InputsDef, PhysicsDbgDef],
     (es, res) => {
       if (res.inputs.keyClicks["5"]) {
@@ -96,7 +96,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
         res._physDbgState.showAABBs = newState;
 
         for (let e of es) {
-          e.renderableStd.enabled = newState;
+          e.renderable.enabled = newState;
         }
       }
     },
