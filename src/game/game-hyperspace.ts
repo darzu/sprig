@@ -105,7 +105,7 @@ export async function initHyperspaceGame(em: EntityManager) {
         //...blurPipelines,
 
         postProcess,
-        ...(res.dev.showConsole ? gridCompose : []),
+        //...(res.dev.showConsole ? gridCompose : []),
       ];
     },
     "hyperspaceGame"

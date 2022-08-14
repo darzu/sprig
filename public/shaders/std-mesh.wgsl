@@ -9,6 +9,12 @@ struct VertexOutput {
     @builtin(position) position : vec4<f32>,
 };
 
+fn gerstner(Q: f32, A: f32, D: vec2<f32>, w: f32, phi: f32, uv: vec2<f32>, t: f32) -> vec3<f32> {
+    return vec3<f32>(Q * A + D.x * cos(dot(w * D, uv) + phi * t),
+                     A * sin(dot(w * D, uv) + phi * t),
+                     Q * A + D.y * cos(dot(w * D, uv) + phi * t));
+}
+
 @vertex
 fn vert_main(input: VertexInput) -> VertexOutput {
     let position = input.position;
@@ -16,8 +22,13 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     let color = input.color;
     let normal = input.normal;
 
+    //let height = sin(uv.x * 100 + scene.time * .001) * ceil(max(uv.x, uv.y)) * 4;
+    let isuv = ceil(max(uv.x, uv.y));
+    //let displacedPos = position + gerstner(1, 40, vec2<f32>(0, 1), .5, 2, uv * 1000, scene.time * .001) * isuv;
+    let displacedPos = vec3<f32>(uv.x - 1.0, 0, uv.y) * 1000 + gerstner(1, 2, vec2<f32>(0, 1), .5, 2, uv * 1000, scene.time * .001) * isuv;
     var output : VertexOutput;
-    let worldPos: vec4<f32> = meshUni.transform * vec4<f32>(position, 1.0);
+    
+    let worldPos: vec4<f32> = meshUni.transform * vec4<f32>(displacedPos, 1.0);
 
     let finalPos = worldPos;
 
@@ -30,6 +41,7 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     //     posFromLight.z
     // );
 
+    
     output.worldPos = finalPos;
     output.position = scene.cameraViewProjMatrix * finalPos;
     // TODO: use inverse-transpose matrix for normals as per: https://learnopengl.com/Lighting/Basic-Lighting
