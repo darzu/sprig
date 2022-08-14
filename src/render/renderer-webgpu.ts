@@ -6,7 +6,7 @@ import {
   CyTexturePtr,
   isRenderPipelinePtr,
 } from "./gpu-registry.js";
-import { MeshPool } from "./mesh-pool.js";
+import { MeshHandle, MeshPool } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import { Renderer } from "./renderer-ecs.js";
 import {
@@ -20,9 +20,9 @@ import {
 import {
   VertexStruct,
   MeshUniformStruct,
-  MeshHandleStd,
   meshPoolPtr,
   sceneBufPtr,
+  MeshUniformTS,
 } from "./pipelines/std-scene.js";
 import {
   bundleRenderPipelines,
@@ -40,6 +40,7 @@ import {
   OceanMeshHandle,
   oceanPoolPtr,
   OceanUniStruct,
+  OceanUniTS,
   OceanVertStruct,
 } from "./pipelines/std-ocean.js";
 
@@ -67,6 +68,10 @@ export function createRenderer(
     // std scene
     updateScene,
     updatePointLights,
+
+    // uniforms
+    updateStdUniform,
+    updateOceanUniform,
 
     // gpu commands
     submitPipelines,
@@ -130,16 +135,15 @@ export function createRenderer(
     return true;
   }
 
-  function addMesh(m: Mesh): MeshHandleStd {
-    const handle: MeshHandleStd = stdPool.addMesh(m);
+  function addMesh(m: Mesh): MeshHandle {
+    const handle: MeshHandle = stdPool.addMesh(m);
     return handle;
   }
-  function addMeshInstance(oldHandle: MeshHandleStd): MeshHandleStd {
-    const d = MeshUniformStruct.clone(oldHandle.shaderData);
-    const newHandle = stdPool.addMeshInstance(oldHandle, d);
+  function addMeshInstance(oldHandle: MeshHandle): MeshHandle {
+    const newHandle = stdPool.addMeshInstance(oldHandle);
     return newHandle;
   }
-  function updateMesh(handle: MeshHandleStd, newMeshData: Mesh) {
+  function updateMesh(handle: MeshHandle, newMeshData: Mesh) {
     stdPool.updateMeshVertices(handle, newMeshData);
   }
 
@@ -151,11 +155,11 @@ export function createRenderer(
     oceanPool.updateMeshVertices(handle, newMeshData);
   }
 
-  // TODO(@darzu): support ocean!
   function updateRenderBundle(
-    handles: MeshHandleStd[],
+    handles: MeshHandle[],
     pipelines: CyRenderPipeline[]
   ) {
+    // TODO(@darzu): handle ocean
     needsRebundle = false; // TODO(@darzu): hack?
 
     bundledMIds.clear();
@@ -185,9 +189,17 @@ export function createRenderer(
     pointLightsArray.queueUpdates(pointLights, 0);
   }
 
+  function updateStdUniform(handle: MeshHandle, data: MeshUniformTS) {
+    stdPool.updateUniform(handle, data);
+  }
+
+  function updateOceanUniform(handle: MeshHandle, data: OceanUniTS) {
+    oceanPool.updateUniform(handle, data);
+  }
+
   // TODO(@darzu): support ocean!
   function submitPipelines(
-    handles: MeshHandleStd[],
+    handles: MeshHandle[],
     pipelinePtrs: CyPipelinePtr[]
   ): void {
     // TODO(@darzu): a lot of the smarts of this fn should come out and be an explicit part
@@ -224,10 +236,15 @@ export function createRenderer(
 
     const didResize = checkCanvasResize();
 
-    // update all mesh transforms
-    for (let m of handles) {
-      stdPool.updateUniform(m);
-    }
+    // // update all mesh transforms
+    // for (let m of handles) {
+    //   stdPool.updateUniform(m);
+    // }
+
+    // // update all ocean mesh transforms
+    // for (let m of oceanHandles) {
+    //   oceanPool.updateUniform(m);
+    // }
 
     // TODO(@darzu): not great detection, needs to be more precise and less
     //    false positives

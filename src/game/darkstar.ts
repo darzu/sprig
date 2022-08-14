@@ -7,7 +7,7 @@ import { AuthorityDef, MeDef } from "../net/components.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import {
   RenderableConstructDef,
-  RenderableDef,
+  RenderDataStdDef,
 } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../temp-pool.js";
 import { vec3Dbg } from "../utils-3d.js";
@@ -57,8 +57,8 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
       vec3.copy(star.pointLight.ambient, star.color);
       vec3.scale(star.pointLight.ambient, star.pointLight.ambient, 0.2);
       vec3.copy(star.pointLight.diffuse, star.color);
-      em.whenEntityHas(star, RenderableDef).then((star1) => {
-        star1.renderable.meshHandle.shaderData.flags |= FLAG_UNLIT;
+      em.whenEntityHas(star, RenderDataStdDef).then((star1) => {
+        star1.renderDataStd.flags |= FLAG_UNLIT;
       });
       return star;
     },

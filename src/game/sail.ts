@@ -14,11 +14,13 @@ import {
   RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
+import { MeshHandle } from "../render/mesh-pool.js";
 import { cloneMesh, mapMeshPositions } from "../render/mesh.js";
-import { FLAG_UNLIT, MeshHandleStd } from "../render/pipelines/std-scene.js";
+import { FLAG_UNLIT } from "../render/pipelines/std-scene.js";
 import {
   RenderableConstructDef,
   RenderableDef,
+  RenderDataStdDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
 import { tempMat4, tempQuat, tempVec2, tempVec3 } from "../temp-pool.js";
@@ -140,12 +142,13 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       em.ensureComponentOn(sail1, PhysicsParentDef, mast.id);
       em.whenEntityHas(
         sail1,
+        RenderDataStdDef,
         RenderableDef,
         WorldFrameDef,
         SailColorDef,
         ColorDef
       ).then((sail1) => {
-        sail1.renderable.meshHandle.shaderData.flags |= FLAG_UNLIT;
+        sail1.renderDataStd.flags |= FLAG_UNLIT;
         mast.mastLocal.sail1 = createRef(sail1);
       });
 
@@ -163,12 +166,13 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       em.ensureComponentOn(sail2, PhysicsParentDef, mast.id);
       em.whenEntityHas(
         sail2,
+        RenderDataStdDef,
         RenderableDef,
         WorldFrameDef,
         SailColorDef,
         ColorDef
       ).then((sail2) => {
-        sail2.renderable.meshHandle.shaderData.flags |= FLAG_UNLIT;
+        sail2.renderDataStd.flags |= FLAG_UNLIT;
         mast.mastLocal.sail2 = createRef(sail2);
       });
 
@@ -259,7 +263,7 @@ onInit((em) => {
         });
 
         const adjustSailVertices = (
-          sailMeshHandle: MeshHandleStd,
+          sailMeshHandle: MeshHandle,
           rotations: quat[]
         ) => {
           // TODO: "read only mesh," eh? not so much
