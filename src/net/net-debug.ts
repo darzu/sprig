@@ -1,7 +1,7 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
 import { vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
-import { RenderableStdDef } from "../render/renderer-ecs.js";
+import { RenderableDef } from "../render/renderer-ecs.js";
 import { clearTint, setTint, TintsDef } from "../color.js";
 import { AuthorityDef } from "./components.js";
 
@@ -20,7 +20,7 @@ const AUTHORITY_TINTS: Record<number, vec3> = {
 
 export function registerNetDebugSystem(em: EntityManager) {
   em.registerSystem(
-    [AuthorityDef, RenderableStdDef],
+    [AuthorityDef, RenderableDef],
     [InputsDef],
     (objs, res) => {
       const netDebugState = em.ensureSingletonComponent(NetDebugStateDef);

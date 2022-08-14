@@ -1,10 +1,12 @@
 import { mat4, vec3 } from "../../gl-matrix.js";
 import { computeTriangleNormal } from "../../utils-3d.js";
-import { CY } from "../gpu-registry.js";
+import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";
 import { createCyStruct, CyToTS } from "../gpu-struct.js";
+import { pointLightsPtr } from "../lights.js";
 import { MeshHandle } from "../mesh-pool.js";
 import { getAABBFromMesh, Mesh } from "../mesh.js";
 import { sceneBufPtr, litTexturePtr, mainDepthTex } from "./std-scene.js";
+import { shadowDepthTextures } from "./std-shadow.js";
 
 const MAX_OCEAN_VERTS = 10000;
 const MAX_OCEAN_MESHES = 1;
@@ -56,7 +58,7 @@ export const OceanUniStruct = createCyStruct(
   }
 );
 export type OceanUniTS = CyToTS<typeof OceanUniStruct.desc>;
-export type OceanMeshHandle = MeshHandle<typeof OceanUniStruct.desc>;
+export type OceanMeshHandle = MeshHandle;
 
 const oceanVertsPtr = CY.createArray("oceanVertsBuf", {
   struct: OceanVertStruct,
@@ -112,7 +114,7 @@ function computeOceanVertsData(m: Mesh): OceanVertTS[] {
   return vertsData;
 }
 
-function computeOceanUniData(m: Mesh): OceanUniTS {
+export function computeOceanUniData(m: Mesh): OceanUniTS {
   // TODO(@darzu): change
   const { min, max } = getAABBFromMesh(m);
   const uni: OceanUniTS = {
@@ -139,6 +141,14 @@ export const oceanPoolPtr = CY.createMeshPool("oceanPool", {
 export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
   globals: [
     sceneBufPtr,
+    { ptr: linearSamplerPtr, alias: "samp" },
+    ...shadowDepthTextures.map((tex, i) => ({
+      ptr: tex,
+      alias: `shadowMap${i}`,
+    })),
+    { ptr: comparisonSamplerPtr, alias: "shadowSampler" },
+    pointLightsPtr,
+
     // { ptr: oceanJfa.sdfTex, alias: "sdf" },
   ],
   cullMode: "none",

@@ -12,7 +12,7 @@ const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * vertsPerTri;
 const bytesPerLine = Uint16Array.BYTES_PER_ELEMENT * 2;
 const MAX_INDICES = 65535; // Since we're using u16 index type, this is our max indices count
 
-export interface MeshHandle<U extends CyStructDesc> {
+export interface MeshHandle {
   // mesh id
   readonly mId: number;
 
@@ -29,10 +29,10 @@ export interface MeshHandle<U extends CyStructDesc> {
 
   // state
   mask: number; // used for selecting which render pipelines to particpate in
-  shaderData: CyToTS<U>; // used as the uniform for this mesh
+  //shaderData: CyToTS<U>; // used as the uniform for this mesh
 }
 
-export function isMeshHandle(m: any): m is MeshHandle<any> {
+export function isMeshHandle(m: any): m is MeshHandle {
   return "mId" in m;
 }
 
@@ -51,15 +51,15 @@ export interface MeshPool<V extends CyStructDesc, U extends CyStructDesc> {
   // options
   opts: MeshPoolOpts<V, U>;
   // data
-  allMeshes: MeshHandle<U>[];
+  allMeshes: MeshHandle[];
   numTris: number;
   numVerts: number;
   numLines: number;
   // methods
-  addMesh: (m: Mesh) => MeshHandle<U>;
-  addMeshInstance: (m: MeshHandle<U>, d: CyToTS<U>) => MeshHandle<U>;
-  updateUniform: (m: MeshHandle<U>) => void;
-  updateMeshVertices: (handle: MeshHandle<U>, newMeshData: Mesh) => void;
+  addMesh: (m: Mesh) => MeshHandle;
+  addMeshInstance: (m: MeshHandle) => MeshHandle;
+  updateUniform: (m: MeshHandle, d: CyToTS<U>) => void;
+  updateMeshVertices: (handle: MeshHandle, newMeshData: Mesh) => void;
 }
 
 function logMeshPoolStats(opts: MeshPoolOpts<any, any>) {
@@ -123,7 +123,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   const maxVerts = opts.verts.length;
   const maxLines = opts.lineInds.length / 2;
 
-  const allMeshes: MeshHandle<U>[] = [];
+  const allMeshes: MeshHandle[] = [];
 
   const pool: MeshPool<V, U> = {
     opts,
@@ -138,7 +138,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   };
 
   // TODO(@darzu): default to all 1s?
-  function addMesh(m: Mesh): MeshHandle<U> {
+  function addMesh(m: Mesh): MeshHandle {
     assert(pool.allMeshes.length + 1 <= maxMeshes, "Too many meshes!");
     assert(pool.numVerts + m.pos.length <= maxVerts, "Too many vertices!");
     const numTri = m.tri.length + m.quad.length * 2;
@@ -174,7 +174,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     // initial uniform data
     const uni = opts.computeUniData(m);
 
-    const handle: MeshHandle<U> = {
+    const handle: MeshHandle = {
       mId: nextMeshId++,
       // enabled: true,
       triNum: numTri,
@@ -186,7 +186,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
       uniIdx: allMeshes.length,
       readonlyMesh: m,
       mask: 0,
-      shaderData: uni,
+      //shaderData: uni,
     };
 
     assert(triData.length % 2 === 0, "triData");
@@ -205,28 +205,28 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
 
     return handle;
   }
-  function addMeshInstance(m: MeshHandle<U>, d: CyToTS<U>): MeshHandle<U> {
+  function addMeshInstance(m: MeshHandle): MeshHandle {
     if (pool.allMeshes.length + 1 > maxMeshes) throw "Too many meshes!";
 
     const uniOffset = allMeshes.length;
-    const newHandle: MeshHandle<U> = {
+    const newHandle: MeshHandle = {
       ...m,
       uniIdx: uniOffset,
       mId: nextMeshId++,
-      shaderData: d,
+      //shaderData: d,
     };
     allMeshes.push(newHandle);
-    updateUniform(newHandle);
+    //updateUniform(newHandle);
     return newHandle;
   }
 
-  function updateMeshVertices(handle: MeshHandle<U>, newMesh: Mesh) {
+  function updateMeshVertices(handle: MeshHandle, newMesh: Mesh) {
     const data = opts.computeVertsData(newMesh);
     opts.verts.queueUpdates(data, handle.vertIdx);
   }
 
-  function updateUniform(m: MeshHandle<U>): void {
-    opts.unis.queueUpdate(m.shaderData, m.uniIdx);
+  function updateUniform(m: MeshHandle, d: CyToTS<U>): void {
+    opts.unis.queueUpdate(d, m.uniIdx);
   }
 
   return pool;

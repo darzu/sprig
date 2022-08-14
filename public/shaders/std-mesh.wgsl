@@ -57,7 +57,7 @@ struct FragOut {
   @location(2) surface: vec2<u32>,
 }
 
-const shadowDepthTextureSize = 1024.0;
+const shadowDepthTextureSize = 2048.0;
 // const shadowDepthTextureSize = vec2<f32>(textureDimensions(shadowMap, 0.0));
 
 fn sampleShadowTexture(pos: vec2<f32>, depth: f32, index: u32) -> f32 {

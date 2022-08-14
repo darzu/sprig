@@ -3,7 +3,7 @@ import { vec2, vec3 } from "../gl-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import {
   RenderableConstructDef,
-  RenderableStdDef,
+  RenderableDef,
 } from "../render/renderer-ecs.js";
 import {
   PhysicsParentDef,
@@ -187,7 +187,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
       c.cannonRId = buf.readUint32();
     },
     defaultLocal: () => ({
-      parts: [] as Ref<[typeof ShipPartDef, typeof RenderableStdDef]>[],
+      parts: [] as Ref<[typeof ShipPartDef, typeof RenderableDef]>[],
     }),
     dynamicComponents: [
       // TODO(@darzu): do we want to sync UV based stuff instead?
@@ -280,7 +280,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
         });
         (part.collider as AABBCollider).aabb.max[1] = shipFloor;
         s.playerShipLocal.parts.push(
-          createRef(part.id, [ShipPartDef, RenderableStdDef])
+          createRef(part.id, [ShipPartDef, RenderableDef])
         );
       }
 
@@ -326,7 +326,7 @@ export function registerShipSystems(em: EntityManager) {
     ([ship], partIdx: number) => {
       const music = em.getResource(MusicDef)!;
       const part = ship.playerShipLocal.parts[partIdx]()!;
-      part.renderableStd.enabled = false;
+      part.renderable.enabled = false;
       part.shipPart.damaged = true;
       music.playChords([2, 3], "minor", 0.2, 5.0, -2);
     },

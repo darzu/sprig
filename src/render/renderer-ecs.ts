@@ -14,7 +14,11 @@ import { ColorDef } from "../color.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DeletedDef } from "../delete.js";
 import { stdRenderPipeline } from "./pipelines/std-mesh.js";
-import { MeshHandleStd } from "./pipelines/std-scene.js";
+import {
+  computeUniData,
+  MeshHandleStd,
+  MeshUniformTS,
+} from "./pipelines/std-scene.js";
 import { CanvasDef } from "../canvas.js";
 import { FORCE_WEBGL } from "../main.js";
 import { createRenderer } from "./renderer-webgpu.js";
@@ -30,20 +34,28 @@ import {
   vec3Dbg,
 } from "../utils-3d.js";
 import { ShadersDef, ShaderSet } from "./shader-loader.js";
-import { dbgLogOnce } from "../util.js";
+import { dbgLogOnce, never } from "../util.js";
 import { TimeDef } from "../time.js";
 import { PartyDef } from "../game/party.js";
 import { PointLightDef, pointLightsPtr, PointLightTS } from "./lights.js";
+import {
+  computeOceanUniData,
+  OceanMeshHandle,
+  OceanUniTS,
+} from "./pipelines/std-ocean.js";
+import { assert } from "../test.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
 
+export type PoolKind = "std" | "ocean";
 export interface RenderableConstruct {
   readonly enabled: boolean;
   readonly sortLayer: number;
   // TODO(@darzu): mask is inconsitently placed; here it is in the component,
   //  later it is in the mesh handle.
   readonly mask?: number;
+  readonly poolKind: PoolKind;
   meshOrProto: Mesh | MeshHandleStd;
 }
 
@@ -53,28 +65,57 @@ export const RenderableConstructDef = EM.defineComponent(
     meshOrProto: Mesh | MeshHandleStd,
     enabled: boolean = true,
     sortLayer: number = 0,
-    mask?: number
+    mask?: number,
+    poolKind: PoolKind = "std"
   ) => {
     const r: RenderableConstruct = {
       enabled,
       sortLayer: sortLayer,
       meshOrProto,
       mask,
+      poolKind,
     };
     return r;
   }
 );
 
-export interface RenderableStd {
+export interface Renderable {
   enabled: boolean;
   sortLayer: number;
   meshHandle: MeshHandleStd;
 }
 
-export const RenderableStdDef = EM.defineComponent(
-  "renderableStd",
-  (r: RenderableStd) => r
+export const RenderableDef = EM.defineComponent(
+  "renderable",
+  (r: Renderable) => r
 );
+
+// TODO: standardize names more
+
+export type RenderDataStd = MeshUniformTS;
+
+export const RenderDataStdDef = EM.defineComponent(
+  "renderDataStd",
+  (r: RenderDataStd) => r
+);
+
+export type RenderDataOcean = OceanUniTS;
+
+export const RenderDataOceanDef = EM.defineComponent(
+  "renderDataOcean",
+  (r: RenderDataOcean) => r
+);
+
+// export interface RenderableOcean {
+//   enabled: boolean;
+//   sortLayer: number;
+//   meshHandle: OceanMeshHandle;
+// }
+
+// export const RenderableOceanDef = EM.defineComponent(
+//   "renderableOcean",
+//   (r: RenderableOcean) => r
+// );
 
 const _hasRendererWorldFrame = new Set();
 
@@ -138,7 +179,7 @@ function updateSmoothedWorldFrame(em: EntityManager, o: Entity) {
 
 export function registerUpdateSmoothedWorldFrames(em: EntityManager) {
   em.registerSystem(
-    [RenderableStdDef, TransformDef],
+    [RenderableConstructDef, TransformDef],
     [],
     (objs, res) => {
       _hasRendererWorldFrame.clear();
@@ -239,44 +280,65 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
 
 export function registerRenderer(em: EntityManager) {
   em.registerSystem(
-    [RendererWorldFrameDef, RenderableStdDef],
+    [RendererWorldFrameDef, RenderableDef],
     [CameraViewDef, RendererDef, TimeDef, PartyDef],
     (objs, res) => {
       const renderer = res.renderer.renderer;
       const cameraView = res.cameraView;
 
-      objs = objs.filter((o) => o.renderableStd.enabled && !DeletedDef.isOn(o));
+      objs = objs.filter((o) => o.renderable.enabled && !DeletedDef.isOn(o));
 
       // ensure our mesh handle is up to date
       for (let o of objs) {
-        // color / tint
-        if (ColorDef.isOn(o)) {
-          vec3.copy(o.renderableStd.meshHandle.shaderData.tint, o.color);
-        }
-        if (TintsDef.isOn(o)) {
-          applyTints(o.tints, o.renderableStd.meshHandle.shaderData.tint);
-        }
+        if (RenderDataStdDef.isOn(o)) {
+          // color / tint
+          if (ColorDef.isOn(o)) {
+            vec3.copy(o.renderDataStd.tint, o.color);
+          }
+          if (TintsDef.isOn(o)) {
+            applyTints(o.tints, o.renderDataStd.tint);
+          }
 
-        // id
-        o.renderableStd.meshHandle.shaderData.id =
-          o.renderableStd.meshHandle.mId;
+          // id
+          o.renderDataStd.id = o.renderable.meshHandle.mId;
 
-        // transform
-        mat4.copy(
-          o.renderableStd.meshHandle.shaderData.transform,
-          o.rendererWorldFrame.transform
-        );
+          // transform
+          mat4.copy(o.renderDataStd.transform, o.rendererWorldFrame.transform);
+          res.renderer.renderer.updateStdUniform(
+            o.renderable.meshHandle,
+            o.renderDataStd
+          );
+        } else if (RenderDataOceanDef.isOn(o)) {
+          // color / tint
+          if (ColorDef.isOn(o)) {
+            vec3.copy(o.renderDataOcean.tint, o.color);
+          }
+          if (TintsDef.isOn(o)) {
+            applyTints(o.tints, o.renderDataOcean.tint);
+          }
+
+          // id
+          o.renderDataOcean.id = o.renderable.meshHandle.mId;
+
+          // transform
+          mat4.copy(
+            o.renderDataOcean.transform,
+            o.rendererWorldFrame.transform
+          );
+          res.renderer.renderer.updateOceanUniform(
+            o.renderable.meshHandle,
+            o.renderDataOcean
+          );
+        }
       }
 
       // TODO(@darzu): this is currently unused, and maybe should be dropped.
       // sort
-      objs.sort(
-        (a, b) => b.renderableStd.sortLayer - a.renderableStd.sortLayer
-      );
+      objs.sort((a, b) => b.renderable.sortLayer - a.renderable.sortLayer);
 
       // render
       // TODO(@darzu):
-      // const m24 = objs.filter((o) => o.renderableStd.meshHandle.mId === 24);
+      // const m24 = objs.filter((o) => o.renderable.meshHandle.mId === 24);
       // const e10003 = objs.filter((o) => o.id === 10003);
       // console.log(`mId 24: ${!!m24.length}, e10003: ${!!e10003.length}`);
 
@@ -307,7 +369,7 @@ export function registerRenderer(em: EntityManager) {
       let maxSurfaceId = 1000;
       // let maxSurfaceId = max(
       //   objs
-      //     .map((o) => o.renderableStd.meshHandle.readonlyMesh?.surfaceIds ?? [0])
+      //     .map((o) => o.renderable.meshHandle.readonlyMesh?.surfaceIds ?? [0])
       //     .reduce((p, n) => [...p, ...n], [])
       // );
       // TODO(@darzu): DBG
@@ -328,7 +390,7 @@ export function registerRenderer(em: EntityManager) {
       renderer.updatePointLights(pointLights);
 
       renderer.submitPipelines(
-        objs.map((o) => o.renderableStd.meshHandle),
+        objs.map((o) => o.renderable.meshHandle),
         res.renderer.pipelines
       );
 
@@ -348,28 +410,53 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
     [RendererDef],
     (es, res) => {
       for (let e of es) {
-        if (!RenderableStdDef.isOn(e)) {
-          // TODO(@darzu): how should we handle instancing?
-          // TODO(@darzu): this seems somewhat inefficient to look for this every frame
+        // TODO(@darzu): this seems somewhat inefficient to look for this every frame
+        if (!RenderableDef.isOn(e)) {
           let meshHandle: MeshHandleStd;
-          if (isMeshHandle(e.renderableConstruct.meshOrProto))
+          let mesh: Mesh;
+          if (isMeshHandle(e.renderableConstruct.meshOrProto)) {
+            assert(
+              e.renderableConstruct.poolKind === "std",
+              `Instanced meshes only supported for std pool`
+            );
             meshHandle = res.renderer.renderer.addMeshInstance(
               e.renderableConstruct.meshOrProto
             );
-          else
-            meshHandle = res.renderer.renderer.addMesh(
-              e.renderableConstruct.meshOrProto
-            );
-
+            mesh = meshHandle.readonlyMesh!;
+          } else {
+            if (e.renderableConstruct.poolKind === "std") {
+              meshHandle = res.renderer.renderer.addMesh(
+                e.renderableConstruct.meshOrProto
+              );
+            } else if (e.renderableConstruct.poolKind === "ocean") {
+              meshHandle = res.renderer.renderer.addOcean(
+                e.renderableConstruct.meshOrProto
+              );
+            } else {
+              never(e.renderableConstruct.poolKind);
+            }
+            mesh = e.renderableConstruct.meshOrProto;
+          }
           if (e.renderableConstruct.mask) {
             meshHandle.mask = e.renderableConstruct.mask;
           }
 
-          em.addComponent(e.id, RenderableStdDef, {
+          em.addComponent(e.id, RenderableDef, {
             enabled: e.renderableConstruct.enabled,
             sortLayer: e.renderableConstruct.sortLayer,
             meshHandle,
           });
+          if (e.renderableConstruct.poolKind === "std") {
+            em.addComponent(e.id, RenderDataStdDef, computeUniData(mesh));
+          } else if (e.renderableConstruct.poolKind === "ocean") {
+            em.addComponent(
+              e.id,
+              RenderDataOceanDef,
+              computeOceanUniData(mesh)
+            );
+          } else {
+            never(e.renderableConstruct.poolKind);
+          }
         }
       }
     },

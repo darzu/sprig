@@ -62,7 +62,8 @@ export const FLAG_UNLIT = 1;
 export type MeshUniformTS = CyToTS<typeof MeshUniformStruct.desc>;
 
 // TODO(@darzu): IMPL
-export type MeshHandleStd = MeshHandle<typeof MeshUniformStruct.desc>;
+// TODO: rename instead of aliasing
+export type MeshHandleStd = MeshHandle;
 
 const meshVertsPtr = CY.createArray("meshVertsBuf", {
   struct: VertexStruct,
@@ -91,6 +92,7 @@ export const meshPoolPtr = CY.createMeshPool("meshPool", {
   lineIndsPtr: meshLineIndsPtr,
 });
 
+// TODO: does this need to be passed into the mesh pool anymore?
 export function computeUniData(m: Mesh): MeshUniformTS {
   const { min, max } = getAABBFromMesh(m);
   const uni: MeshUniformTS = {
