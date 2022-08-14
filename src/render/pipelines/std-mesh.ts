@@ -55,9 +55,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
     // TODO(@darzu): support textures
     // { ptr: clothTexPtr0, access: "read", alias: "clothTex" },
   ],
-  // TODO(@darzu): DBG
-  // TODO: UV-mapping stuff depends on cull mode
-  cullMode: "none",
+  cullMode: "back",
   meshOpt: {
     pool: meshPoolPtr,
     stepMode: "per-mesh-handle",

@@ -23,6 +23,7 @@ import { objMap, range } from "../util.js";
 import { getText } from "../webget.js";
 import { AABBCollider } from "../physics/collider.js";
 import {
+  computeTriangleNormal,
   farthestPointInDir,
   normalizeVec2s,
   SupportFn,
@@ -183,25 +184,31 @@ const MeshModify: Partial<{
 
     //set tangents
     m.tangents = m.pos.map(() => vec3.create());
+    m.normals = m.pos.map(() => vec3.create());
     for (let xIndex = 0; xIndex < grid.length; xIndex++) {
       for (let yIndex = 0; yIndex < grid[0].length; yIndex++) {
-        if (xIndex + 1 < grid.length) {
-          const nextXIndex = xIndex + 1;
-          const nextYIndex = yIndex;
-
+        let normal: vec3;
+        let tangent: vec3;
+        if (xIndex + 1 < grid.length && yIndex + 1 < grid[0].length) {
           const pos = m.pos[grid[xIndex][yIndex]];
-          const nextPos = m.pos[grid[nextXIndex][nextYIndex]];
-          const dir = vec3.sub(m.tangents[grid[xIndex][yIndex]], nextPos, pos);
-          vec3.normalize(dir, dir);
-        } else {
-          const prevXIndex = xIndex - 1;
-          const prevYIndex = yIndex;
+          const posNX = m.pos[grid[xIndex + 1][yIndex]];
+          const posNY = m.pos[grid[xIndex][yIndex + 1]];
 
-          vec3.negate(
-            m.tangents[grid[xIndex][yIndex]],
-            m.tangents[grid[prevXIndex][prevYIndex]]
-          );
+          normal = computeTriangleNormal(pos, posNX, posNY);
+
+          tangent = vec3.sub(m.tangents[grid[xIndex][yIndex]], posNX, pos);
+          vec3.normalize(tangent, tangent);
+        } else if (xIndex + 1 >= grid.length) {
+          normal = m.normals[grid[xIndex - 1][yIndex]];
+          tangent = m.tangents[grid[xIndex - 1][yIndex]];
+        } else if (yIndex + 1 >= grid[0].length) {
+          normal = m.normals[grid[xIndex][yIndex - 1]];
+          tangent = m.tangents[grid[xIndex][yIndex - 1]];
+        } else {
+          assert(false);
         }
+        vec3.copy(m.normals[grid[xIndex][yIndex]], normal);
+        vec3.copy(m.tangents[grid[xIndex][yIndex]], tangent);
       }
     }
 

@@ -1,11 +1,17 @@
 import { mat4, vec3 } from "../../gl-matrix.js";
+import { assert } from "../../test.js";
 import { computeTriangleNormal } from "../../utils-3d.js";
 import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";
 import { createCyStruct, CyToTS } from "../gpu-struct.js";
 import { pointLightsPtr } from "../lights.js";
 import { MeshHandle } from "../mesh-pool.js";
 import { getAABBFromMesh, Mesh } from "../mesh.js";
-import { sceneBufPtr, litTexturePtr, mainDepthTex } from "./std-scene.js";
+import {
+  sceneBufPtr,
+  litTexturePtr,
+  mainDepthTex,
+  surfacesTexturePtr,
+} from "./std-scene.js";
 import { shadowDepthTextures } from "./std-shadow.js";
 
 const MAX_OCEAN_VERTS = 10000;
@@ -83,38 +89,21 @@ const oceanUnisPtr = CY.createArray("oceanUni", {
 
 // TODO(@darzu): de-duplicate with std-scene's computeVertsData
 function computeOceanVertsData(m: Mesh): OceanVertTS[] {
+  assert(!!m.normals, "ocean meshes assumed to have normals");
+  assert(!!m.tangents, "ocean meshes assumed to have tangents");
   // TODO(@darzu): change
   const vertsData: OceanVertTS[] = m.pos.map((pos, i) => ({
     position: pos,
     color: [1.0, 0.0, 1.0], // per-face; changed below
-    normal: [1.0, 0.0, 0.0], // per-face; changed below
-    tangent: m.tangents ? m.tangents[i] : [0.0, 0.0, 0.0],
+    tangent: m.tangents![i],
+    normal: m.normals![i],
     uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
     surfaceId: 0, // per-face; changed below
   }));
-  m.tri.forEach((triInd, i) => {
-    // set provoking vertex data
-    // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
-    const normal = computeTriangleNormal(
-      m.pos[triInd[0]],
-      m.pos[triInd[1]],
-      m.pos[triInd[2]]
-    );
-    vertsData[triInd[0]].normal = normal;
-    vertsData[triInd[0]].color = m.colors[i];
-    vertsData[triInd[0]].surfaceId = m.surfaceIds[i];
-  });
+  // TODO: compute tangents here? right now tangents are wrong if we
+  // update vertex positions on the CPU
+  // TODO(@darzu): think about htis
   m.quad.forEach((quadInd, i) => {
-    // set provoking vertex data
-
-    // TODO: compute tangents here? right now tangents are wrong if we
-    // update vertex positions on the CPU
-    const normal = computeTriangleNormal(
-      m.pos[quadInd[0]],
-      m.pos[quadInd[1]],
-      m.pos[quadInd[2]]
-    );
-    vertsData[quadInd[0]].normal = normal;
     // TODO(@darzu): this isn't right, colors and surfaceIds r being indexed by tris and quads
     vertsData[quadInd[0]].color = m.colors[i];
     vertsData[quadInd[0]].surfaceId = m.surfaceIds[i];
@@ -159,6 +148,7 @@ export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
 
     // { ptr: oceanJfa.sdfTex, alias: "sdf" },
   ],
+  // TODO(@darzu): for perf, maybe do backface culling
   cullMode: "none",
   meshOpt: {
     pool: oceanPoolPtr,
@@ -169,6 +159,10 @@ export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
   output: [
     {
       ptr: litTexturePtr,
+      clear: "never",
+    },
+    {
+      ptr: surfacesTexturePtr,
       clear: "never",
     },
   ],

@@ -81,9 +81,19 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     let wave0 = gerstner(1., 5. * 2., D0, .5 / 10.0, 0.5, uv * 1000., scene.time * .001);
     let wave0a = gerstner(1., 5. * 2., D0a, .5 / 10.0, 0.5, uv * 1000., scene.time * .001);
     let wave1 = gerstner(1., 2. * 2., D1, .5 / 4.0, 1., uv * 1000., scene.time * .001);
-    let wave2 = gerstner(1., 0.5 * 2., D2, .5 / 1.0, 3., uv * 1000., scene.time * .001);    
-    //let displacedPos = position + normal * wave.y + tangent * wave.x + perp * wave.z;
-    let displacedPos = flattenedPos + wave0 + wave0a;// wave0 + wave0a + wave1; //+ wave2;
+    let wave2 = gerstner(1., 0.5 * 2., D2, .5 / 1.0, 3., uv * 1000., scene.time * .001);
+    // TODO(@darzu): we're not totally sure about x,y,z vs normal,tangent,perp
+    let surfBasis = mat3x3<f32>(perp, normal, tangent);
+    let displacedPos = position 
+      + surfBasis * wave0
+      + surfBasis * wave0a
+      + surfBasis * wave1
+      + surfBasis * wave2
+    ;
+    // let displacedPos = flattenedPos + wave1;
+    // let displacedPos = position + wave0;
+    // let displacedPos = position + wave1;
+    // let displacedPos = flattenedPos + wave0 + wave0a;// wave0 + wave0a + wave1; //+ wave2;
 
     var output : VertexOutput;
     let worldPos: vec4<f32> = oceanUni.transform * vec4<f32>(displacedPos, 1.0);
@@ -95,7 +105,7 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     // TODO: use inverse-transpose matrix for normals as per: https://learnopengl.com/Lighting/Basic-Lighting
     output.normal = normalize(oceanUni.transform * vec4<f32>(normal, 0.0)).xyz;
     output.color = color + oceanUni.tint;
-    output.color = tangent; // DBG TANGENT
+    // output.color = tangent; // DBG TANGENT
 
     output.surface = input.surfaceId;
     output.id = oceanUni.id;
@@ -107,6 +117,7 @@ fn vert_main(input: VertexInput) -> VertexOutput {
 
 struct FragOut {
   @location(0) color: vec4<f32>,
+  @location(1) surface: vec2<u32>,
 }
 
 @fragment
@@ -139,6 +150,9 @@ fn frag_main(input: VertexOutput) -> FragOut {
     
     var out: FragOut;
     out.color = vec4<f32>(litColor, 1.0);
+
+    out.surface.r = input.surface;
+    out.surface.g = input.id;
 
     return out;
 }

@@ -24,6 +24,7 @@ export interface RawMesh {
   // per-vertex data
   uvs?: vec2[]; // optional; one uv per vertex
   tangents?: vec3[]; // optional; one tangent per vertex
+  normals?: vec3[]; // optional; one tangent per vertex
   // TODO(@darzu):
   dbgName?: string;
 }
@@ -47,6 +48,7 @@ export function cloneMesh(m: Mesh | RawMesh): Mesh | RawMesh {
     lines: m.lines?.map((p) => vec2.clone(p)),
     uvs: m.uvs?.map((p) => vec2.clone(p)),
     tangents: m.tangents?.map((p) => vec3.clone(p)),
+    normals: m.normals?.map((p) => vec3.clone(p)),
     surfaceIds: (m as Mesh).surfaceIds
       ? [...(m as Mesh).surfaceIds]
       : undefined,
@@ -115,6 +117,9 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
   const tangents: vec3[] | undefined = input.tangents
     ? [...input.tangents]
     : undefined;
+  const normals: vec3[] | undefined = input.normals
+    ? [...input.normals]
+    : undefined;
   const tri: vec3[] = [];
   const quad: vec4[] = [];
   const provoking: { [key: number]: boolean } = {};
@@ -141,6 +146,7 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       posMap.set(i3, i0);
       if (uvs) uvs.push(input.uvs![i0]);
       if (tangents) tangents.push(input.tangents![i0]);
+      if (normals) normals.push(input.normals![i0]);
       provoking[i3] = true;
       tri.push([i3, i1, i2]);
     }
@@ -173,6 +179,7 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       // TODO(@darzu): safer way to duplicate all per-vertex data
       if (uvs) uvs.push(input.uvs![i0]);
       if (tangents) tangents.push(input.tangents![i0]);
+      if (normals) normals.push(input.normals![i0]);
       provoking[i4] = true;
       quad.push([i4, i1, i2, i3]);
       // console.log(`duplicating: ${i0}!`);

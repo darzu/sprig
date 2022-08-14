@@ -39,9 +39,10 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let dims : vec2<i32> = textureDimensions(surfTex);
   let dimsF = vec2<f32>(dims);
 
-  //let lineWidth = 3.0;
+  let lineWidth = 2.0;
+  // let lineWidth = 3.0; // OLD
   // TODO(@darzu): DBG WIREFRAME
-  let lineWidth = 1.0;
+  //let lineWidth = 1.0;
   // NOTE: we make the line width depend on resolution b/c that gives a more consistent
   //    look across resolutions.
   // let lineWidth = max((f32(dims.r) / 800.0), 1.0);
@@ -91,10 +92,10 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let edgeDark = concavity * 0.2 + outlineFactor + depthFactor;
   let edgeLum = clamp(edgeLight - edgeDark, -0.7, 1.0);
   if (surfaceDidChange || objectDidChange) {
-    //color *= 1.0 + edgeLum;
+    color *= 1.0 + edgeLum;
     // TODO(@darzu): DEBUG WIREFRAME
     // color *= 2.0;
-    color = vec3(0.2, 0.2, 0.8);
+    // color = vec3(0.8);
   }
   // DEBUG WIREFRAME
   // else {

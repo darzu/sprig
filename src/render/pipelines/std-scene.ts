@@ -106,14 +106,15 @@ export function computeVertsData(m: Mesh): VertexTS[] {
   const vertsData: VertexTS[] = m.pos.map((pos, i) => ({
     position: pos,
     color: [1.0, 0.0, 1.0], // per-face; changed below
-    normal: [1.0, 0.0, 0.0], // per-face; changed below
-    tangent: m.tangents ? m.tangents[i] : [0.0, 0.0, 0.0],
+    tangent: m.tangents ? m.tangents[i] : [1.0, 0.0, 0.0], // per-face; changed below (maybe)
+    normal: m.normals ? m.normals[i] : [0.0, 1.0, 0.0], // per-face; changed below (maybe)
     uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
     surfaceId: 0, // per-face; changed below
   }));
   m.tri.forEach((triInd, i) => {
     // set provoking vertex data
     // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
+    // TODO(@darzu): what to do about normals. If we're modifying verts, they need to recompute. But it might be in the mesh.
     const normal = computeTriangleNormal(
       m.pos[triInd[0]],
       m.pos[triInd[1]],
