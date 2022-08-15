@@ -30,7 +30,7 @@ export const emissionTexturePtr = CY.createTexture("emissionTexture", {
 
 // const STAR_BOX_SIZE = 100.0;
 // TODO(@darzu): tweak to make Doug happy
-const STAR_BOX_SIZE = 100.0;
+const STAR_BOX_SIZE = 1000.0;
 
 export const initStars = CY.createComputePipeline("initStars", {
   globals: [starData],
