@@ -16,7 +16,11 @@ import {
 } from "../physics/transform.js";
 import { cloneMesh, mapMeshPositions } from "../render/mesh.js";
 import { FLAG_UNLIT } from "../render/pipelines/std-scene.js";
-import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
+import {
+  RenderableConstructDef,
+  RenderDataStdDef,
+  RendererDef,
+} from "../render/renderer-ecs.js";
 import { tempMat4, tempQuat, tempVec2, tempVec3 } from "../temp-pool.js";
 import { range } from "../util.js";
 import {
@@ -90,6 +94,9 @@ onInit((em: EntityManager) => {
           );
           em.ensureComponentOn(orreryStar, ScaleDef, [0.25, 0.25, 0.25]);
           orrery.orrery.orreryStars.push(createRef(orreryStar));
+          em.whenEntityHas(orreryStar, RenderDataStdDef).then((orreryStar2) => {
+            orreryStar2.renderDataStd.flags |= FLAG_UNLIT;
+          });
         }
         const intoOrrerySpace = mat4.invert(tempMat4(), orrery.world.transform);
         stars.forEach((star, i) => {
