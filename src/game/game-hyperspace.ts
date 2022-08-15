@@ -155,7 +155,9 @@ export async function initHyperspaceGame(em: EntityManager) {
         enemyUVPos = [Math.random(), Math.random()];
       }
 
-      const enemyEndPos = ocean.uvToPos(vec3.create(), enemyUVPos);
+      // const enemyEndPos = ocean.uvToPos(vec3.create(), enemyUVPos);
+      const enemyEndPos = vec3.create();
+      ocean.uvToGerstnerDispAndNorm(enemyEndPos, tempVec3(), enemyUVPos);
       // vec3.add(enemyEndPos, enemyEndPos, [0, 10, 0]);
       const enemyStartPos = vec3.sub(vec3.create(), enemyEndPos, [0, 20, 0]);
 

@@ -2,7 +2,7 @@ import { AnimateToDef } from "../animate-to.js";
 import { ColorDef } from "../color.js";
 import { createRef, Ref } from "../em_helpers.js";
 import { EM, EntityManager } from "../entity-manager.js";
-import { vec3, vec2 } from "../gl-matrix.js";
+import { vec3, vec2, mat3, mat4 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { clamp } from "../math.js";
 import {
@@ -19,6 +19,7 @@ import {
   uvMaskTex,
   uvToNormTex,
   uvToPosTex,
+  uvToTangTex,
   UVUNWRAP_MASK,
 } from "../render/pipelines/xp-uv-unwrap.js";
 import {
@@ -28,6 +29,7 @@ import {
   RendererDef,
 } from "../render/renderer-ecs.js";
 import { tempVec2, tempVec3 } from "../temp-pool.js";
+import { TimeDef } from "../time.js";
 import { asyncTimeout, range } from "../util.js";
 import {
   quatDbg,
@@ -42,8 +44,11 @@ export interface Ocean {
   ent: Ref<[typeof PositionDef]>;
   // TODO(@darzu): uvDistanceToEdge, read the SDF
   uvToPos: (out: vec3, uv: vec2) => vec3;
+  // TODO(@darzu): normal and tangent could probably come straight from CPU mesh
   uvToNorm: (out: vec3, uv: vec2) => vec3;
+  uvToTang: (out: vec3, uv: vec2) => vec3;
   uvToEdgeDist: (uv: vec2) => number;
+  uvToGerstnerDispAndNorm: (outDisp: vec3, outNorm: vec3, uv: vec2) => void;
   gerstnerWaves: GerstnerWaveTS[];
 }
 
@@ -82,7 +87,7 @@ EM.registerSerializerPair(
 export const oceanJfa = createJfaPipelines(uvMaskTex, "exterior");
 
 export async function initOcean() {
-  const res = await EM.whenResources(RendererDef, AssetsDef);
+  const res = await EM.whenResources(RendererDef, AssetsDef, TimeDef);
 
   const ocean = EM.newEntity();
   let oceanEntId = ocean.id; // hacky?
@@ -121,10 +126,13 @@ export async function initOcean() {
   const readPromises = [
     res.renderer.renderer.readTexture(uvToPosTex),
     res.renderer.renderer.readTexture(uvToNormTex),
+    res.renderer.renderer.readTexture(uvToTangTex),
     res.renderer.renderer.readTexture(oceanJfa.sdfTex),
   ];
 
-  const [uvToPosData, uvToNormData, sdfData] = await Promise.all(readPromises);
+  const [uvToPosData, uvToNormData, uvToTangData, sdfData] = await Promise.all(
+    readPromises
+  );
 
   const timeOceanGPU = performance.now() - preOceanGPU;
   console.log(`ocean GPU round-trip: ${timeOceanGPU.toFixed(2)}ms`);
@@ -144,6 +152,13 @@ export async function initOcean() {
     uvToNormTex.format
   );
 
+  const uvToTangReader = createTextureReader(
+    uvToTangData,
+    uvToTangTex.size,
+    3,
+    uvToTangTex.format
+  );
+
   const sdfReader = createTextureReader(
     sdfData,
     oceanJfa.sdfTex.size,
@@ -153,46 +168,111 @@ export async function initOcean() {
 
   // console.log("adding OceanDef");
 
+  const gerstnerWaves = [
+    createGerstnerWave(
+      1.08 * 2.0,
+      10 * 0.5,
+      randNormalVec2(vec2.create()),
+      0.5 / 20.0,
+      0.5
+    ),
+    createGerstnerWave(
+      1.08 * 2.0,
+      10 * 0.5,
+      randNormalVec2(vec2.create()),
+      0.5 / 20.0,
+      0.5
+    ),
+    createGerstnerWave(
+      1.08 * 2.0,
+      2 * 0.5,
+      randNormalVec2(vec2.create()),
+      0.5 / 4.0,
+      1
+    ),
+    //createGerstnerWave(1, 0.5, randNormalVec2(vec2.create()), 0.5 / 1.0, 3),
+  ];
+
+  const uvToPos = (out: vec3, uv: vec2) => {
+    const x = uv[0] * uvToPosReader.size[0];
+    const y = uv[1] * uvToPosReader.size[1];
+    // console.log(`${x},${y}`);
+    return uvToPosReader.sample(out, x, y);
+  };
+  const uvToNorm = (out: vec3, uv: vec2) => {
+    const x = uv[0] * uvToNormReader.size[0];
+    const y = uv[1] * uvToNormReader.size[1];
+    // console.log(`${x},${y}`);
+    return uvToNormReader.sample(out, x, y);
+  };
+  const uvToTang = (out: vec3, uv: vec2) => {
+    const x = uv[0] * uvToTangReader.size[0];
+    const y = uv[1] * uvToTangReader.size[1];
+    // console.log(`${x},${y}`);
+    return uvToTangReader.sample(out, x, y);
+  };
+  const uvToEdgeDist = (uv: vec2) => {
+    const x = uv[0] * uvToNormReader.size[0];
+    const y = uv[1] * uvToNormReader.size[1];
+    return sdfReader.sample(NaN, x, y);
+  };
+
+  const uvToGerstnerDispAndNorm = (outDisp: vec3, outNorm: vec3, uv: vec2) => {
+    // TODO(@darzu): impl
+    gerstner(
+      outDisp,
+      outNorm,
+      gerstnerWaves,
+      vec2.scale(tempVec2(), uv, 1000),
+      res.time.time * 0.001
+    );
+
+    const pos = uvToPos(tempVec3(), uv);
+    const norm = uvToNorm(tempVec3(), uv);
+    const tang = uvToTang(tempVec3(), uv);
+    const perp = vec3.cross(tempVec3(), tang, norm);
+    const disp = vec3.add(
+      tempVec3(),
+      vec3.scale(tempVec3(), perp, outDisp[0]),
+      vec3.add(
+        tempVec3(),
+        vec3.scale(tempVec3(), norm, outDisp[1]),
+        vec3.scale(tempVec3(), tang, outDisp[2])
+      )
+    );
+    // outDisp[0] = pos[0] + disp[0] * 0.5;
+    // outDisp[1] = pos[1] + disp[1];
+    // outDisp[2] = pos[2] + disp[2] * 0.5;
+    vec3.add(outDisp, pos, disp);
+
+    const gNorm = vec3.add(
+      tempVec3(),
+      vec3.scale(tempVec3(), perp, outNorm[0]),
+      vec3.add(
+        tempVec3(),
+        vec3.scale(tempVec3(), norm, outNorm[1]),
+        vec3.scale(tempVec3(), tang, outNorm[2])
+      )
+    );
+    vec3.copy(outNorm, gNorm);
+
+    // HACK: smooth out norm?
+    vec3.add(outNorm, outNorm, vec3.scale(tempVec3(), norm, 2.0));
+    vec3.normalize(outNorm, outNorm);
+  };
+
   // TODO(@darzu): hacky hacky way to do this
   const oceanRes = EM.addSingletonComponent(OceanDef, {
     ent: createRef(oceanEntId, [PositionDef]),
-    uvToPos: (out, uv) => {
-      const x = uv[0] * uvToPosReader.size[0];
-      const y = uv[1] * uvToPosReader.size[1];
-      // console.log(`${x},${y}`);
-      return uvToPosReader.sample(out, x, y);
-    },
-    uvToNorm: (out, uv) => {
-      const x = uv[0] * uvToNormReader.size[0];
-      const y = uv[1] * uvToNormReader.size[1];
-      // console.log(`${x},${y}`);
-      return uvToNormReader.sample(out, x, y);
-    },
-    uvToEdgeDist: (uv) => {
-      const x = uv[0] * uvToNormReader.size[0];
-      const y = uv[1] * uvToNormReader.size[1];
-      return sdfReader.sample(NaN, x, y);
-    },
+    uvToPos,
+    uvToNorm,
+    uvToTang,
+    uvToEdgeDist,
+    uvToGerstnerDispAndNorm,
     // TODO: enforce programmatically that sum(Q_i * A_i * w_i) <= 1.0
-    gerstnerWaves: [
-      createGerstnerWave(
-        1.08,
-        10,
-        randNormalVec2(vec2.create()),
-        0.5 / 20.0,
-        0.5
-      ),
-      createGerstnerWave(
-        1.08,
-        10,
-        randNormalVec2(vec2.create()),
-        0.5 / 20.0,
-        0.5
-      ),
-      createGerstnerWave(1.08, 2, randNormalVec2(vec2.create()), 0.5 / 4.0, 1),
-      //createGerstnerWave(1, 0.5, randNormalVec2(vec2.create()), 0.5 / 1.0, 3),
-    ],
+    gerstnerWaves,
   });
+
   res.renderer.renderer.updateGerstnerWaves(oceanRes.gerstnerWaves);
   res.renderer.renderer.updateScene({
     numGerstnerWaves: oceanRes.gerstnerWaves.length,
@@ -203,24 +283,29 @@ export async function initOcean() {
 }
 
 // TODO(@darzu): maintain compatibility with std-ocean.wgsl
-function gerstner(waves: GerstnerWaveTS[], uv: vec2, t: number): [vec3, vec3] {
-  let displacement = vec3.fromValues(0.0, 0.0, 0.0);
-  let normal = vec3.fromValues(0.0, 0.0, 0.0);
+function gerstner(
+  outDisp: vec3,
+  outNorm: vec3,
+  waves: GerstnerWaveTS[],
+  uv: vec2,
+  t: number
+): void {
+  vec3.zero(outDisp);
+  vec3.zero(outNorm);
   for (let i = 0; i < waves.length; i++) {
     let w = waves[i];
     const WDuv_phi_t = w.w * vec2.dot(w.D, uv) + w.phi * t;
     const cos_WDuv_phi_t = Math.cos(WDuv_phi_t);
     const sin_WDuv_phi_t = Math.sin(WDuv_phi_t);
-    displacement[0] += w.Q * w.A + w.D[0] * cos_WDuv_phi_t;
-    displacement[1] += w.A * sin_WDuv_phi_t;
-    displacement[2] += w.Q * w.A + w.D[1] * cos_WDuv_phi_t;
-    normal[0] += -1.0 * w.D[0] * w.w * w.A * cos_WDuv_phi_t;
-    normal[1] += w.Q * w.w * w.A * sin_WDuv_phi_t;
-    normal[2] += -1.0 * w.D[1] * w.w * w.A * cos_WDuv_phi_t;
+    outDisp[0] += w.Q * w.A + w.D[0] * cos_WDuv_phi_t;
+    outDisp[1] += w.A * sin_WDuv_phi_t;
+    outDisp[2] += w.Q * w.A + w.D[1] * cos_WDuv_phi_t;
+    outNorm[0] += -1.0 * w.D[0] * w.w * w.A * cos_WDuv_phi_t;
+    outNorm[1] += w.Q * w.w * w.A * sin_WDuv_phi_t;
+    outNorm[2] += -1.0 * w.D[1] * w.w * w.A * cos_WDuv_phi_t;
   }
-  normal[1] = 1.0 - normal[1];
-  vec3.normalize(normal, normal);
-  return [displacement, normal];
+  outNorm[1] = 1.0 - outNorm[1];
+  vec3.normalize(outNorm, outNorm);
 }
 
 EM.registerSystem(
@@ -233,7 +318,9 @@ EM.registerSystem(
       if (PhysicsParentDef.isOn(e) && e.physicsParent.id !== 0) continue;
       if (AnimateToDef.isOn(e)) continue;
       // console.log(`copying: ${e.id}`);
-      const newPos = res.ocean.uvToPos(tempVec3(), e.uvPos);
+      const newPos = tempVec3();
+      res.ocean.uvToGerstnerDispAndNorm(newPos, tempVec3(), e.uvPos);
+      // const newPos = res.ocean.uvToPos(tempVec3(), e.uvPos);
 
       // if (e.id > 10001) {
       //   // [-347.83,25.77,126.72]
@@ -265,15 +352,23 @@ EM.registerSystem(
       if (AnimateToDef.isOn(e)) continue;
       // console.log(`copying: ${e.id}`);
 
-      // vec2.normalize(e.uvDir, e.uvDir);
+      // const newNorm = tempVec3();
+      // res.ocean.uvToGerstnerDispAndNorm(tempVec3(), newNorm, e.uvPos);
+      // vec3.copy(e.rotation, newNorm);
+
+      // TODO(@darzu): this is horrible.
+      vec2.normalize(e.uvDir, e.uvDir);
       const scaledUVDir = vec2.scale(tempVec2(), e.uvDir, 0.0001);
       const aheadUV = vec2.add(tempVec2(), e.uvPos, scaledUVDir);
-      const aheadPos = res.ocean.uvToPos(tempVec3(), aheadUV);
+      const aheadPos = tempVec3();
+      res.ocean.uvToGerstnerDispAndNorm(aheadPos, tempVec3(), aheadUV);
+      // const aheadPos = res.ocean.uvToPos(tempVec3(), aheadUV);
 
       // TODO(@darzu): want SDF-based bounds checking
       if (!vec3.exactEquals(aheadPos, vec3.ZEROS)) {
         const forwardish = vec3.sub(tempVec3(), aheadPos, e.position);
-        const newNorm = res.ocean.uvToNorm(tempVec3(), e.uvPos);
+        const newNorm = tempVec3();
+        res.ocean.uvToGerstnerDispAndNorm(tempVec3(), newNorm, e.uvPos);
         quatFromUpForward(e.rotation, newNorm, forwardish);
         // console.log(
         //   `UVDir ${[e.uvDir[0], e.uvDir[1]]} -> ${quatDbg(e.rotation)}`

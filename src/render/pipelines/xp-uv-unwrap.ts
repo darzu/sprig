@@ -15,6 +15,11 @@ export const uvToNormTex = CY.createTexture("uvToNormTex", {
   format: "rgba32float",
 });
 
+export const uvToTangTex = CY.createTexture("uvToTangTex", {
+  size: [128, 128],
+  format: "rgba32float",
+});
+
 export const uvMaskTex = CY.createTexture("uvMaskTex", {
   size: [512, 512],
   format: "r8unorm",
@@ -25,7 +30,8 @@ struct VertexOutput {
   @builtin(position) fragPos : vec4<f32>,
   @location(0) worldPos : vec4<f32>,
   @location(1) normal : vec3<f32>,
-  @location(2) uv: vec2<f32>,
+  @location(2) tangent : vec3<f32>,
+  @location(3) uv: vec2<f32>,
 }
 
 @vertex
@@ -33,10 +39,12 @@ fn vertMain(input: VertexInput) -> VertexOutput {
   var output: VertexOutput;
   let worldPos = oceanUni.transform * vec4<f32>(input.position, 1.0);
   let normal =  oceanUni.transform * vec4<f32>(input.normal, 0.0);
+  let tangent =  oceanUni.transform * vec4<f32>(input.tangent, 0.0);
 
   output.uv = input.uv;
   output.worldPos = worldPos;
   output.normal = normal.xyz;
+  output.tangent = tangent.xyz;
 
   let xy = (input.uv * 2.0 - 1.0) * vec2(1.0, -1.0);
   output.fragPos = vec4(xy, 0.0, 1.0);
@@ -57,12 +65,14 @@ export const unwrapPipeline2 = CY.createRenderPipeline("unwrapPipe2", {
   struct FragOut {
     @location(0) worldPos: vec4<f32>,
     @location(1) worldNorm: vec4<f32>,
+    @location(2) worldTang: vec4<f32>,
   }
 
   @fragment fn fragMain(input: VertexOutput) -> FragOut {
     var output: FragOut;
     output.worldPos = vec4(input.worldPos.xyz, 0.0);
     output.worldNorm = vec4(normalize(input.normal.xyz), 0.0);
+    output.worldTang = vec4(normalize(input.tangent.xyz), 0.0);
     return output;
   }
   `,
@@ -82,6 +92,11 @@ export const unwrapPipeline2 = CY.createRenderPipeline("unwrapPipe2", {
     },
     {
       ptr: uvToNormTex,
+      clear: "once",
+      defaultColor: [0.0, 0.0, 0.0, 0.0],
+    },
+    {
+      ptr: uvToTangTex,
       clear: "once",
       defaultColor: [0.0, 0.0, 0.0, 0.0],
     },
