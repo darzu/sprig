@@ -21,13 +21,22 @@ export function createGridComposePipelines(
 
   let pipes: CyRenderPipelinePtr[] = [];
 
-  for (let ri = 0; ri < grid.length; ri++) {
-    for (let ci = 0; ci < grid[ri].length; ci++) {
+  const rCount = grid.length;
+  for (let ri = 0; ri < rCount; ri++) {
+    const cCount = grid[ri].length;
+    for (let ci = 0; ci < cCount; ci++) {
       const tex = grid[ri][ci];
-      const xMin = uvStartX + ci * (uvWidth + padding);
-      const xMax = xMin + uvWidth;
-      const yMax = uvStartY - ri * (uvHeight + padding);
-      const yMin = yMax - uvHeight;
+      let xMin = uvStartX + ci * (uvWidth + padding);
+      let xMax = xMin + uvWidth;
+      let yMax = uvStartY - ri * (uvHeight + padding);
+      let yMin = yMax - uvHeight;
+      // HACK: when we're working with 2x2, we shrink the images for easier nav
+      // TODO(@darzu): this is the common case; we should support this in a more
+      //    principled way
+      if (ci === 0 && cCount === 2) xMax -= 0.25;
+      if (ci === 1 && cCount === 2) xMin += 0.25;
+      if (ri === 0 && rCount === 2) yMin += 0.25;
+      if (ri === 1 && rCount === 2) yMax -= 0.25;
       pipes.push(
         createRenderTextureToQuad(
           `composeViews_${ci}x${ri}`,

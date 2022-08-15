@@ -99,7 +99,7 @@ export function createRenderTextureToQuad(
 
     let fSnip = `return ${returnWgslType}(inPx);`;
     if (inputArity === 2 && outArity === 4)
-      fSnip = `return ${returnWgslType}(inPx.xy, 0.0, 0.0);`;
+      fSnip = `return ${returnWgslType}(vec2<f32>(inPx.xy), 0.0, 0.0);`;
 
     if (fragSnippet) {
       if (isFunction(fragSnippet))
@@ -125,7 +125,7 @@ export function createRenderTextureToQuad(
         ? `.xyzw`
         : never(inputArity);
 
-    return `
+    const shader = `
     ${libs ? libs.map((l) => shaders[l].code).join("\n") : ""}
 
     ${shaders["std-screen-quad-vert"].code}
@@ -144,6 +144,8 @@ export function createRenderTextureToQuad(
       ${fSnip}
     }
   `;
+    // console.log(shader);
+    return shader;
   };
   const pipeline = CY.createRenderPipeline(name, {
     globals: [

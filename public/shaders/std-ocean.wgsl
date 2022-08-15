@@ -1,6 +1,7 @@
 struct VertexOutput {
   // TODO(@darzu): change
     @location(0) normal : vec3<f32>,
+    // @location(0) @interpolate(flat) normal : vec3<f32>,
     @location(1) color : vec3<f32>,
     @location(2) worldPos: vec4<f32>,
     @location(3) uv: vec2<f32>,
@@ -120,35 +121,39 @@ fn vert_main(input: VertexInput) -> VertexOutput {
 
 struct FragOut {
   @location(0) color: vec4<f32>,
-  @location(1) surface: vec2<u32>,
+  @location(1) normal: vec4<f32>,
+  @location(2) surface: vec2<u32>,
 }
 
 @fragment
 fn frag_main(input: VertexOutput) -> FragOut {
     let normal = normalize(input.normal);
 
-    var lightingColor: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
-    let unlit = 0u;
-    for (var i: u32 = 0u; i < scene.numPointLights; i++) {
-        let light = pointLights.ms[i];
-        let toLight = light.position - input.worldPos.xyz;
-        let distance = length(toLight);
-        let attenuation = 1.0 / (light.constant + light.linear * distance +
-                                 light.quadratic * distance * distance);
-        let angle = clamp(dot(normalize(toLight), input.normal), 0.0, 1.0);
-     // XY is in (-1, 1) space, Z is in (0, 1) space
-        let posFromLight = (pointLights.ms[i].viewProj * input.worldPos).xyz;
+    // var lightingColor: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
+    // let unlit = 1u;
+    // for (var i: u32 = 0u; i < scene.numPointLights; i++) {
+    //     let light = pointLights.ms[i];
+    //     let toLight = light.position - input.worldPos.xyz;
+    //     let distance = length(toLight);
+    //     let attenuation = 1.0 / (light.constant + light.linear * distance +
+    //                              light.quadratic * distance * distance);
+    //     let angle = clamp(dot(normalize(toLight), input.normal), 0.0, 1.0);
+    //  // XY is in (-1, 1) space, Z is in (0, 1) space
+    //     let posFromLight = (pointLights.ms[i].viewProj * input.worldPos).xyz;
         
-        // Convert XY to (0, 1), Y is flipped because texture coords are Y-down.
-        let shadowPos = vec3<f32>(posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5),
-                                  posFromLight.z
-                                  );
-        let shadowVis = getShadowVis(shadowPos, input.normal, normalize(toLight), i);
-        //lightingColor = lightingColor + clamp(abs((light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis)), vec3(0.0), vec3(1.0));
-        //lightingColor += light.ambient;
-        lightingColor = lightingColor + f32(1u - unlit) * ((light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis));
-    }
-    let litColor = input.color * (lightingColor + vec3(f32(unlit)));
+    //     // Convert XY to (0, 1), Y is flipped because texture coords are Y-down.
+    //     let shadowPos = vec3<f32>(posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5),
+    //                               posFromLight.z
+    //                               );
+    //     let shadowVis = getShadowVis(shadowPos, input.normal, normalize(toLight), i);
+    //     //lightingColor = lightingColor + clamp(abs((light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis)), vec3(0.0), vec3(1.0));
+    //     //lightingColor += light.ambient;
+    //     lightingColor = lightingColor + f32(1u - unlit) * ((light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis));
+    // }
+    // let litColor = input.color * (lightingColor + vec3(f32(unlit)));
+
+    // let litColor = mix(vec3(0.1, 0.3, 0.8), vec3(0.015), input.uv.x);
+    let litColor = mix(vec3(0.1, 0.3, 0.8), vec3(0.1, 0.05, 0.1), input.uv.x);
 
     
     var out: FragOut;
@@ -156,6 +161,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
     out.surface.r = input.surface;
     out.surface.g = input.id;
+    out.normal = vec4(normal, 0.0);
 
     return out;
 }

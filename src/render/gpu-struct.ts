@@ -62,6 +62,7 @@ export const TexTypeToElementArity: Partial<
   r32float: 1,
   rgba16float: 4,
   rg16float: 2,
+  rg16uint: 2,
   r16float: 1,
   r8unorm: 1,
   r8snorm: 1,

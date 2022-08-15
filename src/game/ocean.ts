@@ -190,7 +190,7 @@ export async function initOcean() {
       0.5 / 4.0,
       1
     ),
-    //createGerstnerWave(1, 0.5, randNormalVec2(vec2.create()), 0.5 / 1.0, 3),
+    // createGerstnerWave(0.7, 0.5, randNormalVec2(vec2.create()), 0.5 / 1.0, 1),
   ];
 
   const uvToPos = (out: vec3, uv: vec2) => {
@@ -257,8 +257,9 @@ export async function initOcean() {
     vec3.copy(outNorm, gNorm);
 
     // HACK: smooth out norm?
-    vec3.add(outNorm, outNorm, vec3.scale(tempVec3(), norm, 2.0));
-    vec3.normalize(outNorm, outNorm);
+    vec3.copy(outNorm, norm);
+    // vec3.add(outNorm, outNorm, vec3.scale(tempVec3(), norm, 2.0));
+    // vec3.normalize(outNorm, outNorm);
   };
 
   // TODO(@darzu): hacky hacky way to do this
@@ -369,6 +370,7 @@ EM.registerSystem(
         const forwardish = vec3.sub(tempVec3(), aheadPos, e.position);
         const newNorm = tempVec3();
         res.ocean.uvToGerstnerDispAndNorm(tempVec3(), newNorm, e.uvPos);
+        // const newNorm = res.ocean.uvToNorm(tempVec3(), e.uvPos);
         quatFromUpForward(e.rotation, newNorm, forwardish);
         // console.log(
         //   `UVDir ${[e.uvDir[0], e.uvDir[1]]} -> ${quatDbg(e.rotation)}`

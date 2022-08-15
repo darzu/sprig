@@ -11,7 +11,11 @@ import {
   shadowDepthTextures,
   shadowPipelines,
 } from "../render/pipelines/std-shadow.js";
-import { initStars, renderStars } from "../render/pipelines/std-stars.js";
+import {
+  emissionTexturePtr,
+  initStars,
+  renderStars,
+} from "../render/pipelines/std-stars.js";
 import { AssetsDef } from "./assets.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { createPlayer } from "./player.js";
@@ -28,6 +32,11 @@ import { createSpawner, SpawnerDef } from "./spawner.js";
 import { tempVec3 } from "../temp-pool.js";
 import { createDarkStarNow, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
 import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
+import {
+  normalsTexturePtr,
+  positionsTexturePtr,
+  surfacesTexturePtr,
+} from "../render/pipelines/std-scene.js";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 
@@ -81,12 +90,16 @@ export async function initHyperspaceGame(em: EntityManager) {
     "debugLoop"
   );
 
-  const grid = [[...shadowDepthTextures]];
+  // const grid = [[...shadowDepthTextures]];
   //   //
   //   [oceanJfa._inputMaskTex, oceanJfa._uvMaskTex],
   //   //
   //   [oceanJfa.voronoiTex, shadowDepthTexture],
   // ];
+  const grid = [
+    [normalsTexturePtr, surfacesTexturePtr],
+    [positionsTexturePtr, emissionTexturePtr],
+  ];
   // let grid = noiseGridFrame;
   // const grid = [[oceanJfa._voronoiTexs[0]], [oceanJfa._voronoiTexs[1]]];
 
@@ -101,11 +114,11 @@ export async function initHyperspaceGame(em: EntityManager) {
         stdRenderPipeline,
         renderOceanPipe,
         outlineRender,
-        //renderStars,
-        //...blurPipelines,
+        // renderStars,
+        // ...blurPipelines,
 
         postProcess,
-        //...(res.dev.showConsole ? gridCompose : []),
+        // ...(res.dev.showConsole ? gridCompose : []),
       ];
     },
     "hyperspaceGame"
