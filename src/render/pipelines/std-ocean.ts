@@ -69,7 +69,34 @@ export const OceanUniStruct = createCyStruct(
 export type OceanUniTS = CyToTS<typeof OceanUniStruct.desc>;
 export type OceanMeshHandle = MeshHandle;
 
-const oceanVertsPtr = CY.createArray("oceanVertsBuf", {
+const MAX_GERSTNER_WAVES = 8;
+
+export const GerstnerWaveStruct = createCyStruct(
+  {
+    D: "vec2<f32>",
+    Q: "f32",
+    A: "f32",
+    w: "f32",
+    phi: "f32",
+    // TODO: solve alignment issues--shouldn't need manual padding
+    padding1: "f32",
+    padding2: "f32",
+  },
+  {
+    isUniform: true,
+    hackArray: true,
+  }
+);
+
+export type GerstnerWaveTS = CyToTS<typeof GerstnerWaveStruct.desc>;
+
+export const gerstnerWavesPtr = CY.createArray("gerstnerWave", {
+  struct: GerstnerWaveStruct,
+  init: MAX_GERSTNER_WAVES,
+  forceUsage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
+});
+
+export const oceanVertsPtr = CY.createArray("oceanVertsBuf", {
   struct: OceanVertStruct,
   init: MAX_OCEAN_VERTS,
 });
@@ -144,6 +171,7 @@ export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
       alias: `shadowMap${i}`,
     })),
     { ptr: comparisonSamplerPtr, alias: "shadowSampler" },
+    gerstnerWavesPtr,
     pointLightsPtr,
 
     // { ptr: oceanJfa.sdfTex, alias: "sdf" },

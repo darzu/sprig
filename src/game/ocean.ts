@@ -12,6 +12,7 @@ import {
 } from "../physics/transform.js";
 import { createTextureReader } from "../render/cpu-texture.js";
 import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
+import { GerstnerWaveTS } from "../render/pipelines/std-ocean.js";
 import {
   unwrapPipeline,
   unwrapPipeline2,
@@ -28,7 +29,13 @@ import {
 } from "../render/renderer-ecs.js";
 import { tempVec2, tempVec3 } from "../temp-pool.js";
 import { asyncTimeout, range } from "../util.js";
-import { quatDbg, quatFromUpForward, vec2Dbg, vec3Dbg } from "../utils-3d.js";
+import {
+  quatDbg,
+  quatFromUpForward,
+  randNormalVec2,
+  vec2Dbg,
+  vec3Dbg,
+} from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
 
 export interface Ocean {
@@ -37,6 +44,7 @@ export interface Ocean {
   uvToPos: (out: vec3, uv: vec2) => vec3;
   uvToNorm: (out: vec3, uv: vec2) => vec3;
   uvToEdgeDist: (uv: vec2) => number;
+  gerstnerWaves: GerstnerWaveTS[];
 }
 
 export const OceanDef = EM.defineComponent("ocean", (o: Ocean) => {
@@ -146,7 +154,7 @@ export async function initOcean() {
   // console.log("adding OceanDef");
 
   // TODO(@darzu): hacky hacky way to do this
-  EM.addSingletonComponent(OceanDef, {
+  const oceanRes = EM.addSingletonComponent(OceanDef, {
     ent: createRef(oceanEntId, [PositionDef]),
     uvToPos: (out, uv) => {
       const x = uv[0] * uvToPosReader.size[0];
@@ -165,6 +173,29 @@ export async function initOcean() {
       const y = uv[1] * uvToNormReader.size[1];
       return sdfReader.sample(NaN, x, y);
     },
+    // TODO: enforce programmatically that sum(Q_i * A_i * w_i) <= 1.0
+    gerstnerWaves: [
+      createGerstnerWave(
+        1.08,
+        10,
+        randNormalVec2(vec2.create()),
+        0.5 / 20.0,
+        0.5
+      ),
+      createGerstnerWave(
+        1.08,
+        10,
+        randNormalVec2(vec2.create()),
+        0.5 / 20.0,
+        0.5
+      ),
+      createGerstnerWave(1.08, 2, randNormalVec2(vec2.create()), 0.5 / 4.0, 1),
+      //createGerstnerWave(1, 0.5, randNormalVec2(vec2.create()), 0.5 / 1.0, 3),
+    ],
+  });
+  res.renderer.renderer.updateGerstnerWaves(oceanRes.gerstnerWaves);
+  res.renderer.renderer.updateScene({
+    numGerstnerWaves: oceanRes.gerstnerWaves.length,
   });
 }
 
@@ -228,6 +259,16 @@ EM.registerSystem(
   },
   "oceanUVDirToRot"
 );
+
+function createGerstnerWave(
+  Q: number,
+  A: number,
+  D: vec2,
+  w: number,
+  phi: number
+): GerstnerWaveTS {
+  return { D, Q, A, w, phi, padding1: 0, padding2: 0 };
+}
 
 // TODO(@darzu): debug movement on the ocean
 // EM.registerSystem(

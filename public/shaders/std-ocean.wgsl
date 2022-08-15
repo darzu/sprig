@@ -1,7 +1,7 @@
 struct VertexOutput {
   // TODO(@darzu): change
-    @location(0) @interpolate(flat) normal : vec3<f32>,
-    @location(1) @interpolate(flat) color : vec3<f32>,
+    @location(0) normal : vec3<f32>,
+    @location(1) color : vec3<f32>,
     @location(2) worldPos: vec4<f32>,
     @location(3) uv: vec2<f32>,
     @location(4) @interpolate(flat) surface: u32,
@@ -56,10 +56,23 @@ fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>, in
   return visibility;
 }
 
-fn gerstner(Q: f32, A: f32, D: vec2<f32>, w: f32, phi: f32, uv: vec2<f32>, t: f32) -> vec3<f32> {
-    return vec3<f32>(Q * A + D.x * cos(dot(w * D, uv) + phi * t),
-                     A * sin(dot(w * D, uv) + phi * t),
-                     Q * A + D.y * cos(dot(w * D, uv) + phi * t));
+fn gerstner(uv: vec2<f32>, t: f32) -> mat2x3<f32> {
+    var displacement = vec3<f32>(0.0, 0.0, 0.0);
+    var normal = vec3<f32>(0.0, 0.0, 0.0);
+    for (var i = 0u; i < scene.numGerstnerWaves; i++) {
+        let wave = gerstnerWaves.ms[i];
+        displacement = displacement +
+            vec3<f32>(wave.Q * wave.A + wave.D.x * cos(dot(wave.w * wave.D, uv) + wave.phi * t),
+                      wave.A * sin(dot(wave.w * wave.D, uv) + wave.phi * t),
+                      wave.Q * wave.A + wave.D.y * cos(dot(wave.w * wave.D, uv) + wave.phi * t));
+        normal = normal +
+            vec3<f32>(-1.0 * wave.D.x * wave.w * wave.A * cos(wave.w * dot(wave.D, uv) + wave.phi * t),
+                      wave.Q * wave.w * wave.A * sin(wave.w * dot(wave.D, uv) + wave.phi * t),
+                      -1.0 * wave.D.y * wave.w * wave.A * cos(wave.w * dot(wave.D, uv) + wave.phi * t));
+    }
+    normal.y = 1.0 - normal.y;
+    normalize(normal);
+    return mat2x3(displacement, normal);
 }
 
 @vertex
@@ -72,24 +85,13 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     let perp = cross(tangent, normal);
 
     let flattenedPos = vec3<f32>(uv.x - 1.0, 0, uv.y) * 1000;
-    rand_seed = vec2<f32>(-45, 13);
-    rand();
-    let D0 = normalize(vec2<f32>(rand() - 0.5, rand() - 0.5));
-    let D0a = normalize(vec2<f32>(rand() - 0.5, rand() - 0.5));
-    let D1 = normalize(vec2<f32>(rand() - 0.5, rand() - 0.5));
-    let D2 = normalize(vec2<f32>(rand() - 0.5, rand() - 0.5));
-    let wave0 = gerstner(1., 5. * 2., D0, .5 / 10.0, 0.5, uv * 1000., scene.time * .001);
-    let wave0a = gerstner(1., 5. * 2., D0a, .5 / 10.0, 0.5, uv * 1000., scene.time * .001);
-    let wave1 = gerstner(1., 2. * 2., D1, .5 / 4.0, 1., uv * 1000., scene.time * .001);
-    let wave2 = gerstner(1., 0.5 * 2., D2, .5 / 1.0, 3., uv * 1000., scene.time * .001);
     // TODO(@darzu): we're not totally sure about x,y,z vs normal,tangent,perp
     let surfBasis = mat3x3<f32>(perp, normal, tangent);
-    let displacedPos = position 
-      + surfBasis * wave0
-      + surfBasis * wave0a
-      + surfBasis * wave1
-      + surfBasis * wave2
-    ;
+    let gerst = gerstner(input.uv * 1000, scene.time * .001);
+    let displacedPos = position + surfBasis * gerst[0];
+    //let displacedPos = flattenedPos + gerst[0];
+    let gerstNormal = surfBasis * gerst[1];
+    //let gerstNormal = gerst[1];
     // let displacedPos = flattenedPos + wave1;
     // let displacedPos = position + wave0;
     // let displacedPos = position + wave1;
@@ -103,10 +105,11 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     output.worldPos = finalPos;
     output.position = scene.cameraViewProjMatrix * finalPos;
     // TODO: use inverse-transpose matrix for normals as per: https://learnopengl.com/Lighting/Basic-Lighting
-    output.normal = normalize(oceanUni.transform * vec4<f32>(normal, 0.0)).xyz;
+    //output.normal = normalize(oceanUni.transform * vec4<f32>(normal, 0.0)).xyz;
+    output.normal = normalize(oceanUni.transform * vec4<f32>(gerstNormal, 0.0)).xyz;
     output.color = color + oceanUni.tint;
     // output.color = tangent; // DBG TANGENT
-
+    //output.color = output.normal;
     output.surface = input.surfaceId;
     output.id = oceanUni.id;
 

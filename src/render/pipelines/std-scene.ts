@@ -153,6 +153,7 @@ export const SceneStruct = createCyStruct(
     canvasAspectRatio: "f32",
     maxSurfaceId: "u32",
     numPointLights: "u32",
+    numGerstnerWaves: "u32",
   },
   {
     isUniform: true,
@@ -168,6 +169,7 @@ export const SceneStruct = createCyStruct(
       views.f32[offsets_32[4]] = data.canvasAspectRatio;
       views.u32[offsets_32[5]] = data.maxSurfaceId;
       views.u32[offsets_32[6]] = data.numPointLights;
+      views.u32[offsets_32[7]] = data.numGerstnerWaves;
     },
   }
 );
@@ -205,6 +207,7 @@ export function setupScene(): SceneTS {
     canvasAspectRatio: 1, // updated later
     maxSurfaceId: 1, // updated later
     numPointLights: 0, // updated later
+    numGerstnerWaves: 0, // updated later
   };
 }
 

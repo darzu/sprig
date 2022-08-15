@@ -37,6 +37,9 @@ import { texTypeToBytes } from "./gpu-struct.js";
 import { align } from "../math.js";
 import { pointLightsPtr, PointLightStruct, PointLightTS } from "./lights.js";
 import {
+  gerstnerWavesPtr,
+  GerstnerWaveStruct,
+  GerstnerWaveTS,
   OceanMeshHandle,
   oceanPoolPtr,
   OceanUniStruct,
@@ -64,6 +67,7 @@ export function createRenderer(
     // ocean
     addOcean,
     updateOcean,
+    updateGerstnerWaves,
 
     // std scene
     updateScene,
@@ -104,6 +108,9 @@ export function createRenderer(
 
   const pointLightsArray: CyArray<typeof PointLightStruct.desc> =
     cyKindToNameToRes.array[pointLightsPtr.name]!;
+
+  const gerstnerWavesArray: CyArray<typeof GerstnerWaveStruct.desc> =
+    cyKindToNameToRes.array[gerstnerWavesPtr.name]!;
 
   // render bundle
   const bundledMIds = new Set<number>();
@@ -187,6 +194,10 @@ export function createRenderer(
 
   function updatePointLights(pointLights: PointLightTS[]) {
     pointLightsArray.queueUpdates(pointLights, 0);
+  }
+
+  function updateGerstnerWaves(gerstnerWaves: GerstnerWaveTS[]) {
+    gerstnerWavesArray.queueUpdates(gerstnerWaves, 0);
   }
 
   function updateStdUniform(handle: MeshHandle, data: MeshUniformTS) {
