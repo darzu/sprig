@@ -41,6 +41,8 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   // TODO: hard to evaluate fog w/o objects to fade in and out
   // color = mix(color, vec3(0.014), pow(depth, 500.0));
 
+  // TODO(@darzu): consider this shader for dark stars: https://www.shadertoy.com/view/MlyGzW
+
   // color += pow(bloom, vec3(2.0));
   // color = max(color, bloom);
   color += bloom; // * 10.0;

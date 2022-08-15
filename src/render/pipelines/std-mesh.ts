@@ -12,6 +12,7 @@ import {
   surfacesTexturePtr,
 } from "./std-scene.js";
 import { shadowDepthTextures } from "./std-shadow.js";
+import { emissionTexturePtr } from "./std-stars.js";
 
 // TODO:
 //  [x] pipeline attachements / outputs
@@ -84,6 +85,11 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
     },
     {
       ptr: surfacesTexturePtr,
+      clear: "once",
+      defaultColor: [0, 0, 0, 0],
+    },
+    {
+      ptr: emissionTexturePtr,
       clear: "once",
       defaultColor: [0, 0, 0, 0],
     },

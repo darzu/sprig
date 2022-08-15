@@ -188,15 +188,16 @@ export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
   output: [
     {
       ptr: litTexturePtr,
-      clear: "never",
+      clear: "once",
+      defaultColor: [0.015, 0.015, 0.015, 1.0],
     },
     {
       ptr: surfacesTexturePtr,
-      clear: "never",
+      clear: "once",
     },
     {
       ptr: positionsTexturePtr,
-      clear: "never",
+      clear: "once",
     },
   ],
   depthStencil: mainDepthTex,

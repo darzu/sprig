@@ -98,8 +98,8 @@ export async function initHyperspaceGame(em: EntityManager) {
     (_, res) => {
       res.renderer.pipelines = [
         ...shadowPipelines,
-        stdRenderPipeline,
         renderOceanPipe,
+        stdRenderPipeline,
         outlineRender,
         renderStars,
         ...blurPipelines,

@@ -56,6 +56,7 @@ struct FragOut {
   @location(1) normal: vec4<f32>,
   @location(2) position: vec4<f32>,
   @location(3) surface: vec2<u32>,
+  @location(4) emission: vec4<f32>,
 }
 
 const shadowDepthTextureSize = 2048.0;
@@ -143,6 +144,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
     var out: FragOut;
     out.color = vec4<f32>(foggedColor, 1.0);
+    out.emission = vec4<f32>(litColor * f32(unlit), 1.0);
 
     // let t = scene.time * 0.0005;
     // // TODO(@darzu): experimenting with reading from SDF
