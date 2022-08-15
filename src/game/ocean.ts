@@ -197,6 +197,30 @@ export async function initOcean() {
   res.renderer.renderer.updateScene({
     numGerstnerWaves: oceanRes.gerstnerWaves.length,
   });
+
+  // TODO(@darzu): Gerstner on CPU
+  // res.time.time
+}
+
+// TODO(@darzu): maintain compatibility with std-ocean.wgsl
+function gerstner(waves: GerstnerWaveTS[], uv: vec2, t: number): [vec3, vec3] {
+  let displacement = vec3.fromValues(0.0, 0.0, 0.0);
+  let normal = vec3.fromValues(0.0, 0.0, 0.0);
+  for (let i = 0; i < waves.length; i++) {
+    let w = waves[i];
+    const WDuv_phi_t = w.w * vec2.dot(w.D, uv) + w.phi * t;
+    const cos_WDuv_phi_t = Math.cos(WDuv_phi_t);
+    const sin_WDuv_phi_t = Math.sin(WDuv_phi_t);
+    displacement[0] += w.Q * w.A + w.D[0] * cos_WDuv_phi_t;
+    displacement[1] += w.A * sin_WDuv_phi_t;
+    displacement[2] += w.Q * w.A + w.D[1] * cos_WDuv_phi_t;
+    normal[0] += -1.0 * w.D[0] * w.w * w.A * cos_WDuv_phi_t;
+    normal[1] += w.Q * w.w * w.A * sin_WDuv_phi_t;
+    normal[2] += -1.0 * w.D[1] * w.w * w.A * cos_WDuv_phi_t;
+  }
+  normal[1] = 1.0 - normal[1];
+  vec3.normalize(normal, normal);
+  return [displacement, normal];
 }
 
 EM.registerSystem(
