@@ -88,15 +88,27 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
 
   let outlineFactor = f32(objectDidChange);
 
+
+  let pos = textureLoad(posTex, vec2<i32>(t), 0);
+  let distToParty = distance(pos.xyz, scene.partyPos);
+  let fogDensity: f32 = 0.01;
+  let fogGradient: f32 = 1.2;
+  let fogVisibility: f32 = clamp(exp(-pow(distToParty*fogDensity, fogGradient)), 0.0, 1.0);
+  
   let edgeLight = convexity * 0.6 * f32(!objectDidChange);
   let edgeDark = concavity * 0.2 + outlineFactor + depthFactor;
-  let edgeLum = clamp(edgeLight - edgeDark, -0.7, 1.0);
+  let edgeLum = clamp((edgeLight - edgeDark), -0.7, 1.0);
   if (surfaceDidChange || objectDidChange) {
-    color *= 1.0 + edgeLum;
+    color *= 1.0 + edgeLum * (fogVisibility);
     // TODO(@darzu): DEBUG WIREFRAME
     // color *= 2.0;
     // color = vec3(0.8);
+
+    // let backgroundColor: vec3<f32> = vec3<f32>(0.015);
+    // let foggedColor: vec3<f32> = mix(backgroundColor, color, fogVisibility);
+    // color = foggedColor;
   }
+
   // DEBUG WIREFRAME
   // else {
   //   color *= 0.0;

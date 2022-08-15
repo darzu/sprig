@@ -121,6 +121,7 @@ fn vert_main(input: VertexInput) -> VertexOutput {
 struct FragOut {
   @location(0) color: vec4<f32>,
   @location(1) surface: vec2<u32>,
+  @location(2) pos: vec4<f32>,
 }
 
 @fragment
@@ -150,9 +151,17 @@ fn frag_main(input: VertexOutput) -> FragOut {
     }
     let litColor = input.color * (lightingColor + vec3(f32(unlit)));
 
-    
+    let distToParty = distance(input.worldPos.xyz, scene.partyPos);
+    let fogDensity: f32 = 0.01;
+    let fogGradient: f32 = 1.2;
+    let fogVisibility: f32 = clamp(exp(-pow(distToParty*fogDensity, fogGradient)), 0.0, 1.0);
+    let backgroundColor: vec3<f32> = vec3<f32>(0.015);
+    let foggedColor: vec3<f32> = mix(backgroundColor, litColor, fogVisibility);
+
     var out: FragOut;
-    out.color = vec4<f32>(litColor, 1.0);
+    out.color = vec4<f32>(foggedColor, 1.0);
+
+    out.pos = input.worldPos;
 
     out.surface.r = input.surface;
     out.surface.g = input.id;

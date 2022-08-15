@@ -77,11 +77,11 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
       clear: "once",
       defaultColor: [0, 0, 0, 0],
     },
-    // {
-    //   ptr: positionsTexturePtr,
-    //   clear: "once",
-    //   defaultColor: [0, 0, 0, 0],
-    // },
+    {
+      ptr: positionsTexturePtr,
+      clear: "once",
+      defaultColor: [0, 0, 0, 0],
+    },
     {
       ptr: surfacesTexturePtr,
       clear: "once",
