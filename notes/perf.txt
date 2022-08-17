@@ -162,3 +162,11 @@ Pipeline GPU stats from Doug:
   outlineRender, 2.091969ms,
   renderStars, 0.120638ms,
   postProcess, 2.823797ms,
+
+Animometer:
+  WebGL: 
+    https://github.com/kenrussell/webgl-animometer
+    http://kenrussell.github.io/webgl-animometer/Animometer/tests/3d/webgl.html
+    http://sprig.land/webgl-animometer/Animometer/tests/3d/webgl.html
+    https://sprig.land/webgl-animometer/Animometer/tests/3d/webgl.html?webgl_version=2&use_ubos=1&use_multi_draw=1
+    ?webgl_version=2&use_ubos=1&use_multi_draw=1

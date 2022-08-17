@@ -959,3 +959,6 @@ Anti-aliasing:
 "Sokpop: I built a 3D engine in 2D":
   https://www.youtube.com/watch?v=chtRPC1ISyA
   example project: https://sokpop.itch.io/sokpop-fake-3d-demo
+
+Decals:
+  https://tuket.github.io/posts/2022-08-05-explosion-decals/
