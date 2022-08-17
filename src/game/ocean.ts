@@ -167,30 +167,25 @@ export async function initOcean() {
   );
 
   // console.log("adding OceanDef");
+  const dirs = [
+    // randNormalVec2(vec2.create()),
+    // randNormalVec2(vec2.create()),
+    // randNormalVec2(vec2.create()),
+    // randNormalVec2(vec2.create()),
+    vec2.normalize(vec2.create(), [0.5, 0.5]),
+    vec2.normalize(vec2.create(), [0.5, 0.5]),
+    vec2.normalize(vec2.create(), [0.5, 0.5]),
+    vec2.normalize(vec2.create(), [0.5, 0.5]),
+  ];
 
   const gerstnerWaves = [
-    createGerstnerWave(
-      1.08 * 2.0,
-      10 * 0.5,
-      randNormalVec2(vec2.create()),
-      0.5 / 20.0,
-      0.5
-    ),
-    createGerstnerWave(
-      1.08 * 2.0,
-      10 * 0.5,
-      randNormalVec2(vec2.create()),
-      0.5 / 20.0,
-      0.5
-    ),
-    createGerstnerWave(
-      1.08 * 2.0,
-      2 * 0.5,
-      randNormalVec2(vec2.create()),
-      0.5 / 4.0,
-      1
-    ),
-    // createGerstnerWave(0.7, 0.5, randNormalVec2(vec2.create()), 0.5 / 1.0, 1),
+    // BAD:
+    // createGerstnerWave(2, 5, dirs[0], 0.01, 0.5),
+    // createGerstnerWave(1.08 * 2.0, 10 * 0.5, dirs[1], 0.5 / 20.0, 0.5),
+    // createGerstnerWave(0.7, 0.5, dirs[3], 0.5 / 1.0, 1),
+    //
+    // GOOD:
+    createGerstnerWave(2, 1, dirs[2], 0.5, 1),
   ];
 
   const uvToPos = (out: vec3, uv: vec2) => {
@@ -244,6 +239,8 @@ export async function initOcean() {
     // outDisp[1] = pos[1] + disp[1];
     // outDisp[2] = pos[2] + disp[2] * 0.5;
     vec3.add(outDisp, pos, disp);
+    // TODO(@darzu): HACK
+    vec3.copy(outDisp, pos);
 
     const gNorm = vec3.add(
       tempVec3(),

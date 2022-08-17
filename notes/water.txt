@@ -72,3 +72,9 @@ Falconeer uses "gerstner waves", 7 iterations:
 
 Cool interactive waterfall:
   https://twitter.com/Cyanilux/status/1190253359703482369
+
+Tons of water links:
+  http://vterrain.org/Water/index.html
+
+GPU gems water, gerstner waves:
+  https://developer.nvidia.com/gpugems/gpugems/part-i-natural-effects/chapter-1-effective-water-simulation-physical-models

@@ -2,7 +2,7 @@ struct VertexOutput {
   // TODO(@darzu): change
     @location(0) normal : vec3<f32>,
     // @location(0) @interpolate(flat) normal : vec3<f32>,
-    @location(1) color : vec3<f32>,
+    @location(1) @interpolate(flat) color : vec3<f32>,
     @location(2) worldPos: vec4<f32>,
     @location(3) uv: vec2<f32>,
     @location(4) @interpolate(flat) surface: u32,
@@ -71,11 +71,11 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     let surfBasis = mat3x3<f32>(perp, normal, tangent);
     let gerst = gerstner(input.uv * 1000, scene.time * .001);
     
-    let displacedPos = position + surfBasis * gerst[0];
-    let gerstNormal = surfBasis * gerst[1];
+    // let displacedPos = position + surfBasis * gerst[0];
+    // let gerstNormal = surfBasis * gerst[1];
     // FLATTENED:
-    // let displacedPos = flattenedPos + gerst[0];
-    // let gerstNormal = gerst[1];
+    let displacedPos = flattenedPos + gerst[0];
+    let gerstNormal = gerst[1];
 
     // let displacedPos = flattenedPos + wave1;
     // let displacedPos = position + wave0;

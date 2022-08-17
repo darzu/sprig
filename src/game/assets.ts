@@ -168,8 +168,28 @@ const MeshModify: Partial<{
     //   console.log("getMeshAsGrid failed!");
     //   console.error(e);
     // }
+
     const xLen = grid.length;
     const yLen = grid[0].length;
+
+    // redo quad indices based on the grid (optional?)
+    for (let xi = 0; xi < xLen - 1; xi++) {
+      for (let yi = 0; yi < yLen - 1; yi++) {
+        const qi = gridXYtoQuad(xi, yi);
+        vec4.copy(m.quad[qi], [
+          grid[xi][yi],
+          grid[xi + 1][yi],
+          grid[xi + 1][yi + 1],
+          grid[xi][yi + 1],
+        ]);
+      }
+    }
+    function gridXYtoQuad(xi: number, yi: number): number {
+      const qi = yi + xi * (yLen - 1);
+      assert(qi < m.quad.length, "quads and grid mismatch!");
+      return qi;
+    }
+
     // console.log(`xLen:${xLen},yLen:${yLen}`);
     const uvs = m.pos.map((_, vi) => vec2.create());
     m.uvs = uvs;
@@ -182,45 +202,135 @@ const MeshModify: Partial<{
     // instead of per quad, for vertex displacement (e.g. waves)
     // purposes?
 
-    //set tangents
+    // set tangents and normals
     m.tangents = m.pos.map(() => vec3.create());
     m.normals = m.pos.map(() => vec3.create());
-    for (let xIndex = 0; xIndex < grid.length; xIndex++) {
-      for (let yIndex = 0; yIndex < grid[0].length; yIndex++) {
+    for (let xi = 0; xi < grid.length; xi++) {
+      for (let yi = 0; yi < grid[0].length; yi++) {
         let normal: vec3;
         let tangent: vec3;
-        if (xIndex + 1 < grid.length && yIndex + 1 < grid[0].length) {
-          const pos = m.pos[grid[xIndex][yIndex]];
-          const posNX = m.pos[grid[xIndex + 1][yIndex]];
-          const posNY = m.pos[grid[xIndex][yIndex + 1]];
+        if (xi + 1 < grid.length && yi + 1 < grid[0].length) {
+          const pos = m.pos[grid[xi][yi]];
+          const posNX = m.pos[grid[xi + 1][yi]];
+          const posNY = m.pos[grid[xi][yi + 1]];
 
           normal = computeTriangleNormal(pos, posNX, posNY);
 
-          tangent = vec3.sub(m.tangents[grid[xIndex][yIndex]], posNX, pos);
+          tangent = vec3.sub(m.tangents[grid[xi][yi]], posNX, pos);
           vec3.normalize(tangent, tangent);
-        } else if (xIndex + 1 >= grid.length) {
-          normal = m.normals[grid[xIndex - 1][yIndex]];
-          tangent = m.tangents[grid[xIndex - 1][yIndex]];
-        } else if (yIndex + 1 >= grid[0].length) {
-          normal = m.normals[grid[xIndex][yIndex - 1]];
-          tangent = m.tangents[grid[xIndex][yIndex - 1]];
+        } else if (xi + 1 >= grid.length) {
+          normal = m.normals[grid[xi - 1][yi]];
+          tangent = m.tangents[grid[xi - 1][yi]];
+        } else if (yi + 1 >= grid[0].length) {
+          normal = m.normals[grid[xi][yi - 1]];
+          tangent = m.tangents[grid[xi][yi - 1]];
         } else {
           assert(false);
         }
-        vec3.copy(m.normals[grid[xIndex][yIndex]], normal);
-        vec3.copy(m.tangents[grid[xIndex][yIndex]], tangent);
+        vec3.copy(m.normals[grid[xi][yi]], normal);
+        vec3.copy(m.tangents[grid[xi][yi]], tangent);
       }
     }
 
-    // console.dir(uvs);
-    // console.log(`
-    // X:
-    // ${max(uvs.map((uv) => uv[0]))}
-    // ${min(uvs.map((uv) => uv[0]))}
-    // Y:
-    // ${max(uvs.map((uv) => uv[1]))}
-    // ${min(uvs.map((uv) => uv[1]))}
-    // `);
+    // TODO(@darzu): testing subdivide
+    // for (let i = 0; i < 100; i++) {
+    //   subdivideQuad(i);
+    // }
+    let startXi = Math.floor(grid.length * 0.3);
+    let endXi = Math.floor(grid.length * 0.6);
+    let startYi = Math.floor(grid[0].length * 0.2);
+    let endYi = Math.floor(grid[0].length * 0.8);
+    for (let xi = startXi; xi < endXi; xi++) {
+      for (let yi = startYi; yi < endYi; yi++) {
+        let recurse = 0;
+        if (grid.length * 0.35 < xi && xi < grid.length * 0.5) recurse = 1;
+        // else if (grid.length * 0.4 < xi && xi < grid.length * 0.45) recurse = 2;
+        subdivideQuad(gridXYtoQuad(xi, yi), recurse);
+      }
+    }
+
+    // console.dir(m);
+
+    // console.dir({
+    //   uvMin: [min(m.uvs.map((a) => a[0])), min(m.uvs.map((a) => a[1]))],
+    //   uvMax: [max(m.uvs.map((a) => a[0])), max(m.uvs.map((a) => a[1]))],
+    // });
+
+    // console.dir(m.uvs);
+    // console.dir({ minX, maxX, minZ, maxZ });
+    return m;
+
+    function subdivideQuad(quadIdx: number, recurse = 0) {
+      // maintain: colors, normals, pos, quad, surfaceIds, tangents, uvs
+      let [tl, tr, br, bl] = m.quad[quadIdx];
+      let tm = m.pos.push(midPos(tl, tr)) - 1;
+      let rm = m.pos.push(midPos(tr, br)) - 1;
+      let bm = m.pos.push(midPos(br, bl)) - 1;
+      let lm = m.pos.push(midPos(bl, tl)) - 1;
+      let mm = m.pos.push(midPos(tm, bm)) - 1;
+
+      // all quads are: top-left, top-right, bottom-right, bottom-left
+      let q_tl = quadIdx; // re-use
+      m.quad[q_tl] = [tl, tm, mm, lm];
+      let q_tr = m.quad.push([tm, tr, rm, mm]) - 1;
+      let q_br = m.quad.push([mm, rm, br, bm]) - 1;
+      let q_bl = m.quad.push([lm, mm, bm, bl]) - 1;
+
+      // init per-vertex (set later)
+      for (let p of [tm, rm, bm, lm, mm]) {
+        m.uvs![p] = vec2.create();
+        m.tangents![p] = vec3.create();
+        m.normals![p] = vec3.create();
+      }
+
+      // update quad properties
+      for (let q of [q_tl, q_tr, q_br, q_bl]) {
+        // per quad:
+        m.colors[q] = vec3.clone(m.colors[quadIdx]);
+        m.surfaceIds![q] = q;
+        // per provoking vert:
+        let vs = m.quad[q];
+        m.normals![vs[0]] = computeTriangleNormal(
+          m.pos[vs[0]],
+          m.pos[vs[1]],
+          m.pos[vs[2]]
+        );
+        m.tangents![vs[0]] = vec3.sub(
+          vec3.create(),
+          m.pos[vs[1]],
+          m.pos[vs[0]]
+        );
+        vec3.normalize(m.tangents![vs[0]], m.tangents![vs[0]]);
+      }
+      // per vertex:
+      m.uvs![tm] = midUV(tl, tr);
+      m.uvs![rm] = midUV(tr, br);
+      m.uvs![bm] = midUV(br, bl);
+      m.uvs![lm] = midUV(bl, tl);
+      m.uvs![mm] = midUV(tm, bm);
+
+      // recurse?
+      if (recurse > 0) {
+        subdivideQuad(q_tl, recurse - 1);
+        subdivideQuad(q_tr, recurse - 1);
+        subdivideQuad(q_br, recurse - 1);
+        subdivideQuad(q_bl, recurse - 1);
+      }
+
+      function midPos(p0: number, p1: number): vec3 {
+        return vec3.fromValues(
+          (m.pos[p0][0] + m.pos[p1][0]) * 0.5,
+          (m.pos[p0][1] + m.pos[p1][1]) * 0.5,
+          (m.pos[p0][2] + m.pos[p1][2]) * 0.5
+        );
+      }
+      function midUV(p0: number, p1: number): vec2 {
+        return vec2.fromValues(
+          (m.uvs![p0][0] + m.uvs![p1][0]) * 0.5,
+          (m.uvs![p0][1] + m.uvs![p1][1]) * 0.5
+        );
+      }
+    }
 
     function setUV(
       x: number,
@@ -252,14 +362,6 @@ const MeshModify: Partial<{
       ];
       setUV(nX, nY, dir, newDist, branch);
     }
-    // console.dir({
-    //   uvMin: [min(m.uvs.map((a) => a[0])), min(m.uvs.map((a) => a[1]))],
-    //   uvMax: [max(m.uvs.map((a) => a[0])), max(m.uvs.map((a) => a[1]))],
-    // });
-
-    // console.dir(m.uvs);
-    // console.dir({ minX, maxX, minZ, maxZ });
-    return m;
   },
 };
 
@@ -714,13 +816,13 @@ onInit(async (em) => {
 
   const assetsPromise = loadAssets(renderer.renderer);
   assetLoader.promise = assetsPromise;
-  try {
-    const result = await assetsPromise;
-    em.addSingletonComponent(AssetsDef, result);
-  } catch (failureReason) {
-    // TODO(@darzu): fail more gracefully
-    throw `Failed to load assets: ${failureReason}`;
-  }
+  // try {
+  const result = await assetsPromise;
+  em.addSingletonComponent(AssetsDef, result);
+  // } catch (failureReason) {
+  //   // TODO(@darzu): fail more gracefully
+  //   throw `Failed to load assets: ${failureReason}`;
+  // }
 });
 
 async function loadTxtInternal(relPath: string): Promise<string> {

@@ -15,7 +15,7 @@ import {
 } from "./std-scene.js";
 import { shadowDepthTextures } from "./std-shadow.js";
 
-const MAX_OCEAN_VERTS = 10000;
+const MAX_OCEAN_VERTS = 65000; // capped by uint16 max
 const MAX_OCEAN_MESHES = 1;
 
 // TODO(@darzu): change
