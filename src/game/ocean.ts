@@ -2,7 +2,7 @@ import { AnimateToDef } from "../animate-to.js";
 import { ColorDef } from "../color.js";
 import { createRef, Ref } from "../em_helpers.js";
 import { EM, EntityManager } from "../entity-manager.js";
-import { vec3, vec2, mat3, mat4 } from "../gl-matrix.js";
+import { vec3, vec2, mat3, mat4, quat } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { clamp } from "../math.js";
 import {
@@ -28,7 +28,7 @@ import {
   RenderDataOceanDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { tempVec2, tempVec3 } from "../temp-pool.js";
+import { tempQuat, tempVec2, tempVec3 } from "../temp-pool.js";
 import { TimeDef } from "../time.js";
 import { asyncTimeout, range } from "../util.js";
 import {
@@ -65,6 +65,9 @@ EM.registerSerializerPair(
   (o, buf) => buf.writeVec2(o),
   (o, buf) => buf.readVec2(o)
 );
+
+export const SmoothUVPosDef = EM.defineComponent("smoothUVPos", () => true);
+const SMOOTH_UV_FACTOR = 0.9;
 
 export const UVDirDef = EM.defineComponent(
   "uvDir",
@@ -333,7 +336,14 @@ EM.registerSystem(
       // }
 
       if (!vec3.exactEquals(newPos, vec3.ZEROS)) {
-        vec3.copy(e.position, newPos);
+        if (SmoothUVPosDef.isOn(e)) {
+          // blend UV and current positions
+          vec3.scale(e.position, e.position, SMOOTH_UV_FACTOR);
+          vec3.scale(newPos, newPos, 1.0 - SMOOTH_UV_FACTOR);
+          vec3.add(e.position, e.position, newPos);
+        } else {
+          vec3.copy(e.position, newPos);
+        }
         // console.log(`moving to: ${vec3Dbg(e.position)}`);
       }
     }
@@ -366,10 +376,27 @@ EM.registerSystem(
 
       // TODO(@darzu): want SDF-based bounds checking
       if (!vec3.exactEquals(aheadPos, vec3.ZEROS)) {
-        const forwardish = vec3.sub(tempVec3(), aheadPos, e.position);
+        //let forwardish = res.ocean.uvToPos(tempVec3(), e.uvPos);
+        let forwardish = tempVec3();
+        res.ocean.uvToGerstnerDispAndNorm(forwardish, tempVec3(), e.uvPos);
+        forwardish = vec3.sub(forwardish, aheadPos, forwardish);
         const newNorm = tempVec3();
         res.ocean.uvToGerstnerDispAndNorm(tempVec3(), newNorm, e.uvPos);
-        quatFromUpForward(e.rotation, newNorm, forwardish);
+        if (SmoothUVPosDef.isOn(e)) {
+          const targetRotation = quatFromUpForward(
+            tempQuat(),
+            newNorm,
+            forwardish
+          );
+          quat.slerp(
+            e.rotation,
+            e.rotation,
+            targetRotation,
+            1 - SMOOTH_UV_FACTOR
+          );
+        } else {
+          quatFromUpForward(e.rotation, newNorm, forwardish);
+        }
         // console.log(
         //   `UVDir ${[e.uvDir[0], e.uvDir[1]]} -> ${quatDbg(e.rotation)}`
         // );

@@ -35,7 +35,7 @@ import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DevConsoleDef } from "../console.js";
 import { constructNetTurret, TurretDef } from "./turret.js";
 import { YawPitchDef } from "../yawpitch.js";
-import { UVPosDef, UVDirDef } from "./ocean.js";
+import { UVPosDef, UVDirDef, SmoothUVPosDef } from "./ocean.js";
 import { PartyDef } from "./party.js";
 import { ShipDef } from "./ship.js";
 import { createMastNow, MastLocalDef, MastPropsDef } from "./sail.js";
@@ -241,6 +241,8 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
       em.ensureComponentOn(s, RotationDef);
 
       em.ensureComponentOn(s, MotionSmoothingDef);
+
+      em.ensureComponentOn(s, SmoothUVPosDef);
 
       em.ensureComponentOn(s, ShipDef);
 
