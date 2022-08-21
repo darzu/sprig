@@ -26,7 +26,7 @@ import { noisePipes } from "../render/pipelines/std-noise.js";
 import { DevConsoleDef } from "../console.js";
 import { initOcean, OceanDef, oceanJfa, UVPosDef, UVDirDef } from "./ocean.js";
 import { asyncTimeout } from "../util.js";
-import { vec2, vec3 } from "../gl-matrix.js";
+import { quat, vec2, vec3 } from "../gl-matrix.js";
 import { AnimateToDef, EASE_INQUAD } from "../animate-to.js";
 import { createSpawner, SpawnerDef } from "./spawner.js";
 import { tempVec3 } from "../temp-pool.js";
@@ -37,6 +37,7 @@ import {
   positionsTexturePtr,
   surfacesTexturePtr,
 } from "../render/pipelines/std-scene.js";
+import { createGhost } from "./game-sandbox.js";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 
@@ -126,10 +127,10 @@ export async function initHyperspaceGame(em: EntityManager) {
 
   const res = await em.whenResources(AssetsDef, RendererDef);
 
-  // const ghost = createGhost(em);
-  // em.ensureComponentOn(ghost, RenderableConstructDef, res.assets.cube.proto);
-  // ghost.controllable.speed *= 3;
-  // ghost.controllable.sprintMul *= 3;
+  const ghost = createGhost(em);
+  em.ensureComponentOn(ghost, RenderableConstructDef, res.assets.cube.proto);
+  ghost.controllable.speed *= 3;
+  ghost.controllable.sprintMul *= 3;
 
   {
     // // debug camera
@@ -144,6 +145,13 @@ export async function initHyperspaceGame(em: EntityManager) {
     // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
     // g.cameraFollow.yawOffset = 0.0;
     // g.cameraFollow.pitchOffset = -0.486;
+
+    let g = ghost;
+    vec3.copy(g.position, [-6.25, -45.38, -20.86]);
+    quat.copy(g.rotation, [0.0, 0.76, 0.0, 0.65]);
+    vec3.copy(g.cameraFollow.positionOffset, [2.0, 2.0, 8.0]);
+    g.cameraFollow.yawOffset = 0.0;
+    g.cameraFollow.pitchOffset = -0.621;
   }
 
   // one-time GPU jobs

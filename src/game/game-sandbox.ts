@@ -66,6 +66,7 @@ import { ControllableDef } from "./controllable.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { ForceDef, SpringGridDef } from "./spring.js";
 import { TextDef } from "./ui.js";
+import { AuthorityDef, MeDef } from "../net/components.js";
 
 export const GhostDef = EM.defineComponent("ghost", () => ({}));
 
@@ -82,6 +83,12 @@ export function createGhost(em: EntityManager) {
   // quat.rotateY(g.rotation, quat.IDENTITY, (-5 * Math.PI) / 8);
   // quat.rotateX(g.cameraFollow.rotationOffset, quat.IDENTITY, -Math.PI / 8);
   em.ensureComponentOn(g, LinearVelocityDef);
+  const res = em.entities.get(0)!;
+  if (MeDef.isOn(res)) {
+    em.ensureComponentOn(g, AuthorityDef, res.me.pid);
+  } else {
+    console.warn(`No MeDef when creating ghost!`);
+  }
 
   return g;
 }
