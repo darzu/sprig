@@ -4,7 +4,7 @@ import { createRef, Ref } from "../em_helpers.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { vec3, vec2, mat3, mat4 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
-import { clamp } from "../math.js";
+import { clamp, mathMix } from "../math.js";
 import {
   PhysicsParentDef,
   PositionDef,
@@ -167,16 +167,31 @@ export async function initOcean() {
   );
 
   // console.log("adding OceanDef");
-  const dirs = [
+  let dirs: vec2[] = [
     // randNormalVec2(vec2.create()),
     // randNormalVec2(vec2.create()),
     // randNormalVec2(vec2.create()),
     // randNormalVec2(vec2.create()),
-    vec2.normalize(vec2.create(), [0.5, 0.5]),
-    vec2.normalize(vec2.create(), [0.5, 0.5]),
-    vec2.normalize(vec2.create(), [0.5, 0.5]),
-    vec2.normalize(vec2.create(), [0.5, 0.5]),
+    // vec2.normalize(vec2.create(), [0.5, 0.5]),
+    // vec2.normalize(vec2.create(), [0.5, 0.5]),
+    // vec2.normalize(vec2.create(), [0.5, 0.5]),
+    // vec2.normalize(vec2.create(), [0.5, 0.5]),
   ];
+  dirs[0] = randNormalVec2(vec2.create());
+  let lastDir = dirs[0];
+  while (dirs.length < 10) {
+    const nextDir = vec2.rotate(
+      vec2.create(),
+      lastDir,
+      vec2.ZEROS,
+      (Math.PI + 1.0) * 0.5
+    );
+    dirs.push(nextDir);
+    lastDir = nextDir;
+  }
+
+  const steepness = 0.1;
+  const numWaves = 3;
 
   const gerstnerWaves = [
     // BAD:
@@ -185,7 +200,16 @@ export async function initOcean() {
     // createGerstnerWave(0.7, 0.5, dirs[3], 0.5 / 1.0, 1),
     //
     // GOOD:
-    createGerstnerWave(2, 1, dirs[2], 0.5, 1),
+    createGerstnerWave(steepness, 2, dirs[1], 0.3, 0.8, numWaves),
+    createGerstnerWave(steepness, 1, dirs[2], 0.5, 1, numWaves),
+    createGerstnerWave(steepness, 0.5, dirs[3], 0.8, 1.3, numWaves),
+
+    // Maybe:
+    // createGerstnerWave(steepness, 1.5, dirs[1], 0.3, 0.5, 5),
+    // createGerstnerWave(steepness, 0.75, dirs[2], 2.0, 0.7, 5),
+    // createGerstnerWave(steepness, 0.65, dirs[3], 0.59, 0.9, 5),
+    // createGerstnerWave(steepness, 0.55, dirs[4], 0.1, 1.2, 5),
+    // createGerstnerWave(steepness, 0.33, dirs[5], 0.8, 2.0, 5),
   ];
 
   const uvToPos = (out: vec3, uv: vec2) => {
@@ -254,7 +278,8 @@ export async function initOcean() {
     vec3.copy(outNorm, gNorm);
 
     // HACK: smooth out norm?
-    vec3.copy(outNorm, norm);
+    // vec3.copy(outNorm, norm);
+    vec3.set(outNorm, 0, 1, 0);
     // vec3.add(outNorm, outNorm, vec3.scale(tempVec3(), norm, 2.0));
     // vec3.normalize(outNorm, outNorm);
   };
@@ -379,6 +404,18 @@ EM.registerSystem(
 );
 
 function createGerstnerWave(
+  steepness: number,
+  amplitude: number,
+  direction: vec2,
+  wavelength: number,
+  speed: number,
+  numWaves: number
+) {
+  const Q = mathMix(0, 1 / (wavelength * amplitude * numWaves), steepness);
+  console.log(`Q: ${Q}`);
+  return _createGerstnerWave(Q, amplitude, direction, wavelength, speed);
+}
+function _createGerstnerWave(
   Q: number,
   A: number,
   D: vec2,

@@ -78,3 +78,6 @@ Tons of water links:
 
 GPU gems water, gerstner waves:
   https://developer.nvidia.com/gpugems/gpugems/part-i-natural-effects/chapter-1-effective-water-simulation-physical-models
+
+Sea of Thieves (not very useful):
+  https://www.youtube.com/watch?v=9nxlmCq4220

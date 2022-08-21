@@ -57,6 +57,9 @@ export function mathMap(
   const progress = (n - inMin) / (inMax - inMin);
   return progress * (outMax - outMin) + outMin;
 }
+export function mathMix(a: number, b: number, p: number) {
+  return a * (1 - p) + b * p;
+}
 export function mathMapNEase(
   n: number,
   inMin: number,
