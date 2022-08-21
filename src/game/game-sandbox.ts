@@ -83,12 +83,19 @@ export function createGhost(em: EntityManager) {
   // quat.rotateY(g.rotation, quat.IDENTITY, (-5 * Math.PI) / 8);
   // quat.rotateX(g.cameraFollow.rotationOffset, quat.IDENTITY, -Math.PI / 8);
   em.ensureComponentOn(g, LinearVelocityDef);
-  const res = em.entities.get(0)!;
-  if (MeDef.isOn(res)) {
+
+  em.whenResources(RendererDef, AssetsDef).then((res) => {
+    em.ensureComponentOn(
+      g,
+      RenderableConstructDef,
+      res.assets.cube.proto,
+      true
+      // false
+    );
+  });
+  em.whenResources(MeDef).then((res) => {
     em.ensureComponentOn(g, AuthorityDef, res.me.pid);
-  } else {
-    console.warn(`No MeDef when creating ghost!`);
-  }
+  });
 
   return g;
 }

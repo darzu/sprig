@@ -203,8 +203,8 @@ export async function initOcean() {
     //
     // GOOD:
     createGerstnerWave(steepness, 2, dirs[1], 0.3, 0.8, numWaves),
-    // createGerstnerWave(steepness, 1, dirs[2], 0.5, 1, numWaves),
-    // createGerstnerWave(steepness, 0.5, dirs[3], 0.8, 1.3, numWaves),
+    createGerstnerWave(steepness, 1, dirs[2], 0.5, 1, numWaves),
+    createGerstnerWave(steepness, 0.5, dirs[3], 0.8, 1.3, numWaves),
 
     // Maybe:
     // createGerstnerWave(steepness, 1.5, dirs[1], 0.3, 0.5, 5),

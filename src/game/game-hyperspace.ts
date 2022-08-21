@@ -128,10 +128,9 @@ export async function initHyperspaceGame(em: EntityManager) {
   const res = await em.whenResources(AssetsDef, RendererDef);
 
   const ghost = createGhost(em);
-  em.ensureComponentOn(ghost, RenderableConstructDef, res.assets.cube.proto);
+  // em.ensureComponentOn(ghost, RenderableConstructDef, res.assets.cube.proto);
   ghost.controllable.speed *= 3;
   ghost.controllable.sprintMul *= 3;
-
   {
     // // debug camera
     // vec3.copy(ghost.position, [-185.02, 66.25, -69.04]);
@@ -147,11 +146,11 @@ export async function initHyperspaceGame(em: EntityManager) {
     // g.cameraFollow.pitchOffset = -0.486;
 
     let g = ghost;
-    vec3.copy(g.position, [-6.25, -45.38, -20.86]);
-    quat.copy(g.rotation, [0.0, 0.76, 0.0, 0.65]);
+    vec3.copy(g.position, [-463.91, 8.79, 123.46]);
+    quat.copy(g.rotation, [0.0, 1.0, 0.0, 0.04]);
     vec3.copy(g.cameraFollow.positionOffset, [2.0, 2.0, 8.0]);
     g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -0.621;
+    g.cameraFollow.pitchOffset = -0.659;
   }
 
   // one-time GPU jobs
