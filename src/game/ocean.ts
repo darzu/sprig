@@ -4,7 +4,7 @@ import { createRef, Ref } from "../em_helpers.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { vec3, vec2, mat3, mat4 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
-import { clamp, mathMix } from "../math.js";
+import { clamp, mathMap, mathMix } from "../math.js";
 import {
   PhysicsParentDef,
   PositionDef,
@@ -186,14 +186,23 @@ export async function initOcean() {
       vec2.create(),
       lastDir,
       vec2.ZEROS,
-      (Math.PI + 1.0) * 0.5
+      (Math.PI + 1.4) * 0.5
     );
     dirs.push(nextDir);
     lastDir = nextDir;
   }
 
   const steepness = 0.1;
-  const numWaves = 3;
+  const numWaves = 6;
+
+  function mkDir(hour: number): vec2 {
+    return vec2.rotate(
+      vec2.create(),
+      [1, 0],
+      vec2.ZEROS,
+      mathMap(hour, 0, 12, Math.PI * 1.5, 3.5 * Math.PI)
+    );
+  }
 
   const gerstnerWaves = [
     // BAD:
@@ -202,9 +211,20 @@ export async function initOcean() {
     // createGerstnerWave(0.7, 0.5, dirs[3], 0.5 / 1.0, 1),
     //
     // GOOD:
-    createGerstnerWave(steepness, 2, dirs[1], 0.1, 0.3, numWaves),
-    createGerstnerWave(steepness, 1, dirs[2], 0.2, 0.5, numWaves),
-    createGerstnerWave(steepness, 0.5, dirs[3], 0.4, 1.3, numWaves),
+    createGerstnerWave(steepness, 4, mkDir(10), 0.1, 0.3, numWaves),
+    createGerstnerWave(steepness, 4, mkDir(4.3), 0.14, 0.32, numWaves),
+    createGerstnerWave(steepness, 2, mkDir(5), 0.2, 0.5, numWaves),
+    createGerstnerWave(steepness, 1, mkDir(11.4), 0.1, 1.3, numWaves),
+    createGerstnerWave(steepness, 3, mkDir(1), 0.3, 1.2, numWaves),
+    createGerstnerWave(steepness, 2, mkDir(7.5), 0.5, 0.55, numWaves),
+    // createGerstnerWave(steepness, 0.5, mkDir(3), 0.4, 0.4, numWaves),
+    // createGerstnerWave(steepness, 0.2, mkDir(9.4), 0.6, 0.2, numWaves),
+
+    // createGerstnerWave(steepness, 0.2, dirs[6], 0.2, 0.7, numWaves),
+    // createGerstnerWave(steepness, 0.2, dirs[7], 0.2, 0.8, numWaves),
+    // createGerstnerWave(steepness, 0.2, dirs[8], 0.2, 0.9, numWaves),
+
+    // createGerstnerWave(steepness, 0.5, dirs[4], 0.4, 1.6, numWaves),
 
     // Maybe:
     // createGerstnerWave(steepness, 1.5, dirs[1], 0.3, 0.5, 5),
@@ -413,9 +433,10 @@ function createGerstnerWave(
   speed: number,
   numWaves: number
 ) {
-  const Q = mathMix(0, 1 / (wavelength * amplitude * numWaves), steepness);
+  const A = amplitude / numWaves;
+  const Q = mathMix(0, 1 / (wavelength * A * numWaves), steepness);
   console.log(`Q: ${Q}`);
-  return _createGerstnerWave(Q, amplitude, direction, wavelength, speed);
+  return _createGerstnerWave(Q, A, direction, wavelength, speed);
 }
 function _createGerstnerWave(
   Q: number,
