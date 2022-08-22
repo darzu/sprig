@@ -57,7 +57,13 @@ export function mathMap(
   const progress = (n - inMin) / (inMax - inMin);
   return progress * (outMax - outMin) + outMin;
 }
-export function mathMix(a: number, b: number, p: number) {
+export function mathWrap(n: number, max: number): number {
+  // TODO(@darzu): support min?
+  const r = max;
+  const p = ((n % r) + r) % r; // TODO(@darzu): probably a more compact way to do this
+  return p;
+}
+export function mathMix(a: number, b: number, p: number): number {
   return a * (1 - p) + b * p;
 }
 export function mathMapNEase(

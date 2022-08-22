@@ -4,7 +4,7 @@ import { createRef, Ref } from "../em_helpers.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { vec3, vec2, mat3, mat4 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
-import { clamp, mathMap, mathMix } from "../math.js";
+import { clamp, mathMap, mathMix, mathWrap } from "../math.js";
 import {
   PhysicsParentDef,
   PositionDef,
@@ -192,68 +192,42 @@ export async function initOcean() {
     lastDir = nextDir;
   }
 
-  const steepness = 1.0;
-  const numWaves = 3;
-
-  const S = 1 / (0.1 * 5);
-
-  // const gerstnerWaves = [
-  //   // BAD:
-  //   // createGerstnerWave(2, 5, dirs[0], 0.01, 0.5),
-  //   // createGerstnerWave(1.08 * 2.0, 10 * 0.5, dirs[1], 0.5 / 20.0, 0.5),
-  //   // createGerstnerWave(0.7, 0.5, dirs[3], 0.5 / 1.0, 1),
-  //   //
-  //   // _createGerstnerWave(S, 5.0, mkDir(3), 0.1, 0.5),
-  //   // _createGerstnerWave(0.5, 2, mkDir(10), 0.1, 0.3),
-  //   // _createGerstnerWave(0.5, 2, mkDir(11), 0.2, 1.0),
-  //   createGerstnerWave(steepness, 6, hrToDir(10), 0.1, 0.3, numWaves),
-  //   // createGerstnerWave(steepness, 2, mkDir(4.3), 0.2, 0.5, numWaves),
-  //   // createGerstnerWave(steepness, 1.5, mkDir(1.2), 0.4, 1.3, numWaves),
-  //   // GOOD:
-  //   // createGerstnerWave(steepness, 4, mkDir(10), 0.1, 0.3, numWaves),
-  //   // createGerstnerWave(steepness, 4, mkDir(4.3), 0.14, 0.32, numWaves),
-  //   // createGerstnerWave(steepness, 2, mkDir(5), 0.2, 0.5, numWaves),
-  //   // createGerstnerWave(steepness, 1, mkDir(11.4), 0.1, 1.3, numWaves),
-  //   // createGerstnerWave(steepness, 3, mkDir(1), 0.3, 1.2, numWaves),
-  //   // createGerstnerWave(steepness, 2, mkDir(7.5), 0.5, 0.55, numWaves),
-  //   // createGerstnerWave(steepness, 0.5, mkDir(3), 0.4, 0.4, numWaves),
-  //   // createGerstnerWave(steepness, 0.2, mkDir(9.4), 0.6, 0.2, numWaves),
-  //   // createGerstnerWave(steepness, 0.2, dirs[6], 0.2, 0.7, numWaves),
-  //   // createGerstnerWave(steepness, 0.2, dirs[7], 0.2, 0.8, numWaves),
-  //   // createGerstnerWave(steepness, 0.2, dirs[8], 0.2, 0.9, numWaves),
-  //   // createGerstnerWave(steepness, 0.5, dirs[4], 0.4, 1.6, numWaves),
-  //   // Maybe:
-  //   // createGerstnerWave(steepness, 1.5 * 5.0, dirs[1], 0.3, 0.5, 5),
-  //   // createGerstnerWave(steepness, 0.75 * 5.0, dirs[2], 2.0, 0.7, 5),
-  //   // createGerstnerWave(steepness, 0.65 * 5.0, dirs[3], 0.59, 0.9, 5),
-  //   // createGerstnerWave(steepness, 0.55 * 5.0, dirs[4], 0.1, 1.2, 5),
-  //   // createGerstnerWave(steepness, 0.33 * 5.0, dirs[5], 0.8, 2.0, 5),
-  // ];
-  const gerstnerWaves = createGerstnerWaves({
+  // prettier-ignore
+  const gerstnerWaves = createGerstnerWaves(
+  {
     ampScale: 1,
     speedScale: 0.5,
     steepness: 1.0,
-    // prettier-ignore
+    sizeScale: 1.0,
+    rotateHr: 0,
     waves: [
-      // big
-      // { amp: 0.3, wavelen: 0.50 * 0.1, dirHr: 12-1.4, speed: 1.1 * 0.5 },
-      // { amp: 0.3, wavelen: 0.60 * 0.1, dirHr: 1.1, speed: 2.8 * 0.5 },
-      // { amp: 0.3, wavelen: 0.75 * 0.1, dirHr: 6.3, speed: 0.5 * 0.5 },
-      // { amp: 0.3, wavelen: 0.70 * 0.1, dirHr: 7.2, speed: 4.2 * 0.5 },
-
-      // med
       { amp: 0.5, wavelen: 0.5, dirHr: 0.4, speed: 1.1 },
       { amp: 0.5, wavelen: 0.9, dirHr: 2.1, speed: 2.8 },
-      // { amp: 0.5, wavelen: 0.75, dirHr: 7.3, speed: 0.5 },
-      // { amp: 0.5, wavelen: 0.7, dirHr: 8.2, speed: 4.2 },
-
-      // small
-      // { amp: 0.2, wavelen: 0.50 * 2.0, dirHr: 1.4, speed: 1.1 * 1.2 },
-      // { amp: 0.2, wavelen: 0.60 * 2.0, dirHr: 3.1, speed: 2.8 * 1.2 },
-      // { amp: 0.2, wavelen: 0.75 * 2.0, dirHr: 8.3, speed: 5.5 * 1.2 },
-      // { amp: 0.2, wavelen: 0.70 * 2.0, dirHr: 9.2, speed: 4.2 * 1.2 },
     ],
-  });
+  }, 
+  {
+    ampScale: 0.2,
+    speedScale: 0.2,
+    steepness: 1.0,
+    sizeScale: 4.0,
+    rotateHr: 8,
+    waves: [
+      { amp: 0.5, wavelen: 0.5, dirHr: 0.4, speed: 1.1 },
+      { amp: 0.5, wavelen: 0.9, dirHr: 2.1, speed: 2.8 },
+    ],
+  },
+  {
+    ampScale: 0.5,
+    speedScale: 2.0,
+    steepness: 1.0,
+    sizeScale: 0.5,
+    rotateHr: 4,
+    waves: [
+      { amp: 0.5, wavelen: 0.5, dirHr: 0.4, speed: 1.1 },
+      { amp: 0.5, wavelen: 0.9, dirHr: 2.1, speed: 2.8 },
+    ],
+  },
+  );
 
   const uvToPos = (out: vec3, uv: vec2) => {
     const x = uv[0] * uvToPosReader.size[0];
@@ -450,6 +424,8 @@ type GerstnerSet = {
   steepness: number;
   ampScale: number;
   speedScale: number;
+  sizeScale: number;
+  rotateHr: number;
   waves: {
     amp: number;
     dirHr: number;
@@ -459,6 +435,7 @@ type GerstnerSet = {
 };
 
 function hrToDir(hour: number): vec2 {
+  hour = mathWrap(hour, 12);
   return vec2.rotate(
     vec2.create(),
     [1, 0],
@@ -467,14 +444,18 @@ function hrToDir(hour: number): vec2 {
   );
 }
 
-function createGerstnerWaves(set: GerstnerSet): GerstnerWaveTS[] {
+function createGerstnerWaves(...sets: GerstnerSet[]): GerstnerWaveTS[] {
   const res: GerstnerWaveTS[] = [];
-  for (let w of set.waves) {
-    const A = w.amp * set.ampScale;
-    const D = hrToDir(w.dirHr);
-    const Q = mathMix(0, 1 / (w.wavelen * A * set.waves.length), set.steepness);
-    const phi = w.speed * set.speedScale;
-    res.push(_createGerstnerWave(Q, A, D, w.wavelen, phi));
+  const numWaves = sets.reduce((p, n) => p + n.waves.length, 0);
+  for (let set of sets) {
+    for (let w of set.waves) {
+      const A = w.amp * set.ampScale * set.sizeScale;
+      const D = hrToDir(w.dirHr + set.rotateHr);
+      const W = w.wavelen / set.sizeScale;
+      const Q = mathMix(0, 1 / (W * A * numWaves), set.steepness);
+      const phi = w.speed * set.speedScale; // / set.sizeScale;
+      res.push(_createGerstnerWave(Q, A, D, W, phi));
+    }
   }
   return res;
 }
