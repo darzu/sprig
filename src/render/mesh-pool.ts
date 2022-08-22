@@ -71,7 +71,7 @@ function logMeshPoolStats(opts: MeshPoolOpts<any, any>) {
   const uniStruct = opts.unis.struct;
 
   if (MAX_INDICES < maxVerts)
-    throw `Too many vertices (${maxVerts})! W/ Uint16, we can only support '${maxVerts}' verts`;
+    throw `Too many vertices (${maxVerts})! W/ Uint16, we can only support '${MAX_INDICES}' verts`;
 
   // log our estimated space usage stats
   console.log(

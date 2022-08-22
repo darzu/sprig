@@ -70,7 +70,7 @@ export const OceanUniStruct = createCyStruct(
 export type OceanUniTS = CyToTS<typeof OceanUniStruct.desc>;
 export type OceanMeshHandle = MeshHandle;
 
-const MAX_GERSTNER_WAVES = 8;
+const MAX_GERSTNER_WAVES = 12;
 
 export const GerstnerWaveStruct = createCyStruct(
   {

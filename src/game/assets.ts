@@ -93,6 +93,7 @@ const MeshTransforms: Partial<{
     mat4.fromYRotation(mat4.create(), -Math.PI * 0.5),
     vec3.fromValues(-5, 0, 0)
   ),
+  // ocean: mat4.fromScaling(mat4.create(), [0.1, 0.1, 0.1]),
   ocean: mat4.fromScaling(mat4.create(), [2, 2, 2]),
 };
 
@@ -236,16 +237,13 @@ const MeshModify: Partial<{
     // for (let i = 0; i < 100; i++) {
     //   subdivideQuad(i);
     // }
-    let startXi = Math.floor(grid.length * 0.3);
-    let endXi = Math.floor(grid.length * 0.6);
-    let startYi = Math.floor(grid[0].length * 0.2);
-    let endYi = Math.floor(grid[0].length * 0.8);
+    let startXi = Math.floor(grid.length * 0.85);
+    let endXi = Math.floor(grid.length * 1.0);
+    let startYi = Math.floor(grid[0].length * 0.0);
+    let endYi = Math.floor(grid[0].length * 0.2);
     for (let xi = startXi; xi < endXi; xi++) {
       for (let yi = startYi; yi < endYi; yi++) {
-        let recurse = 0;
-        if (grid.length * 0.35 < xi && xi < grid.length * 0.5) recurse = 1;
-        // else if (grid.length * 0.4 < xi && xi < grid.length * 0.45) recurse = 2;
-        subdivideQuad(gridXYtoQuad(xi, yi), recurse);
+        subdivideQuad(gridXYtoQuad(xi, yi), 2);
       }
     }
 
