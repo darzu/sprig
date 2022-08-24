@@ -192,59 +192,14 @@ export async function initOcean() {
     lastDir = nextDir;
   }
 
-  // prettier-ignore
   const S = 1.0;
   const T = 1.0;
-  const gerstnerWaves = createGerstnerWaves(
-    {
-      steepness: 2.0,
-      rotateHr: 0,
-      ampScale: 0.8,
-      speedScale: 1.0 * T,
-      sizeScale: 1.0 * S,
-      freqScale: 1.0,
-      waves: [
-        { amp: 0.5, freq: 0.5, dirHr: 0.4, speed: 1.1 },
-        { amp: 0.5, freq: 0.9, dirHr: 2.1, speed: 2.8 },
-      ],
-    },
-    {
-      steepness: 0.2,
-      rotateHr: 6.4,
-      ampScale: 1.0,
-      speedScale: 0.21 * T,
-      sizeScale: 1.0 * S,
-      freqScale: 0.7,
-      waves: [
-        { amp: 0.5, freq: 0.5, dirHr: 0.4, speed: 1.1 },
-        { amp: 0.5, freq: 0.9, dirHr: 2.1, speed: 2.8 },
-      ],
-    },
-    {
-      steepness: 0.2,
-      rotateHr: 2.7,
-      ampScale: 0.2,
-      speedScale: 0.25 * T,
-      sizeScale: 1.0 * S,
-      freqScale: 0.7,
-      waves: [
-        { amp: 0.5, freq: 0.5, dirHr: 0.4, speed: 1.1 },
-        { amp: 0.5, freq: 0.9, dirHr: 2.1, speed: 2.8 },
-      ],
-    },
-    {
-      steepness: 0.2,
-      rotateHr: 9.2,
-      ampScale: 0.2,
-      speedScale: 0.17 * T,
-      sizeScale: 1.0 * S,
-      freqScale: 0.7,
-      waves: [
-        { amp: 0.5, freq: 0.5, dirHr: 0.4, speed: 1.1 },
-        { amp: 0.5, freq: 0.9, dirHr: 2.1, speed: 2.8 },
-      ],
-    }
-  );
+  // prettier-ignore
+  const gerstnerWaves = createGerstnerWaves([
+    { steep: 10.0, amp: 1, freq: 0.5, dirHr: 2.0, speed: 0.5 },
+    { steep: 10.0, amp: 1, freq: 0.5, dirHr: 6.0, speed: 0.5 },
+    // { steep: 0.4, amp: 1.0, freq: 0.1, dirHr: 4.0, speed: 0.2 },
+  ]);
 
   const uvToPos = (out: vec3, uv: vec2) => {
     const x = uv[0] * uvToPosReader.size[0];
@@ -438,19 +393,12 @@ EM.registerSystem(
 );
 
 type GerstnerSet = {
-  steepness: number;
-  ampScale: number;
-  speedScale: number;
-  sizeScale: number;
-  freqScale: number;
-  rotateHr: number;
-  waves: {
-    amp: number;
-    dirHr: number;
-    freq: number;
-    speed: number;
-  }[];
-};
+  steep: number;
+  amp: number;
+  dirHr: number;
+  freq: number;
+  speed: number;
+}[];
 
 function hrToDir(hour: number): vec2 {
   hour = mathWrap(hour, 12);
@@ -462,18 +410,31 @@ function hrToDir(hour: number): vec2 {
   );
 }
 
-function createGerstnerWaves(...sets: GerstnerSet[]): GerstnerWaveTS[] {
+function createGerstnerWaves(waves: GerstnerSet): GerstnerWaveTS[] {
   const res: GerstnerWaveTS[] = [];
-  const numWaves = sets.reduce((p, n) => p + n.waves.length, 0);
-  for (let set of sets) {
-    for (let w of set.waves) {
-      const A = w.amp * set.ampScale * set.sizeScale;
-      const D = hrToDir(w.dirHr + set.rotateHr);
-      const W = (w.freq * set.freqScale) / set.sizeScale;
-      const Q = mathMix(0, 1 / (W * A * numWaves), set.steepness);
-      const phi = w.speed * set.speedScale; // / set.sizeScale;
-      res.push(_createGerstnerWave(Q, A, D, W, phi));
-    }
+  const numWaves = waves.length;
+  const steepDenom = waves.reduce((p, n) => p + n.amp * n.freq, 0);
+  const steepBudget = 1 / steepDenom;
+  const steepTotal = waves.reduce((p, n) => p + n.steep, 0);
+  const steepScale = steepBudget / steepTotal;
+  // TODO(@darzu): confirm/fix this math!
+  console.log(
+    `
+    steepDenom: ${steepDenom}, 
+    steepBudget: ${steepBudget}, 
+    steepTotal: ${steepTotal},
+    steepScale: ${steepScale},
+    `
+  );
+  for (let w of waves) {
+    const A = w.amp;
+    const D = hrToDir(w.dirHr);
+    const W = w.freq;
+    const Q = w.steep * steepScale;
+    console.log(`Q: ${Q}`);
+    const phi = w.speed;
+    res.push(_createGerstnerWave(Q, A, D, W, phi));
+    console.dir(res[res.length - 1]);
   }
   return res;
 }

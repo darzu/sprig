@@ -962,3 +962,18 @@ Anti-aliasing:
 
 Decals:
   https://tuket.github.io/posts/2022-08-05-explosion-decals/
+
+Falconeer clouds:
+  https://youtu.be/5d8tx6K6hkk?t=6896
+  spheres, noise texture, fresnel effect to hide outside edges
+  tri-planar mapping to ea sphere
+    e.g. tri-planar: https://gamedevelopment.tutsplus.com/articles/use-tri-planar-texture-mapping-for-better-terrain--gamedev-13821
+  clouds are lit by using the skybox gradient (not lit on sphere)
+    "if i were to turn off the distortion, they would disappear into the sky"
+  sorting and clipping isn't an issue since clouds are so similar w/ tri-planar mapping
+  still does alpha sorting?
+
+Falconeer floodlights:
+  triangular prism,
+  addative,
+  fade out w/ depth blend so u don't get ugly intersections

@@ -81,3 +81,19 @@ GPU gems water, gerstner waves:
 
 Sea of Thieves (not very useful):
   https://www.youtube.com/watch?v=9nxlmCq4220
+
+Waves in Sprigland, 8/24/22:
+  What have we learned:
+    It's not easy to get the right parameters for gerstner waves
+  What are the open questions:
+    Do we need more resolution to our mesh before the waves look good?
+      So far, it hasn't been easier with a tighter mesh
+  What's the immediate, plausible path:
+    Go back to the big mesh, unsubdivided, 
+      get 2-3 waves that look passable but probably not great
+    continue with other gameplay content
+  eventually:
+    [ ] higher LOD triangle meshes, tiled, follows camera
+      - Falconeer uses ~60k tris
+    [ ] sliders for real-time adjustment
+    [ ] 
