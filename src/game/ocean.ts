@@ -194,12 +194,14 @@ export async function initOcean() {
 
   const S = 1.0;
   const T = 1.0;
-  // prettier-ignore
-  const gerstnerWaves = createGerstnerWaves([
-    { steep: 10.0, amp: 1, freq: 0.5, dirHr: 2.0, speed: 0.5 },
-    { steep: 10.0, amp: 1, freq: 0.5, dirHr: 6.0, speed: 0.5 },
-    // { steep: 0.4, amp: 1.0, freq: 0.1, dirHr: 4.0, speed: 0.2 },
-  ]);
+  const gerstnerWaves = createGerstnerWaves({
+    steepTotal: 2.0,
+    waves: [
+      { steep: 10.0, amp: 1, freq: 0.5, dirHr: 2.0, speed: 0.5 },
+      { steep: 10.0, amp: 1, freq: 0.5, dirHr: 6.0, speed: 0.5 },
+      // { steep: 0.4, amp: 1.0, freq: 0.1, dirHr: 4.0, speed: 0.2 },
+    ],
+  });
 
   const uvToPos = (out: vec3, uv: vec2) => {
     const x = uv[0] * uvToPosReader.size[0];
@@ -393,12 +395,15 @@ EM.registerSystem(
 );
 
 type GerstnerSet = {
-  steep: number;
-  amp: number;
-  dirHr: number;
-  freq: number;
-  speed: number;
-}[];
+  steepTotal: number;
+  waves: {
+    steep: number;
+    amp: number;
+    dirHr: number;
+    freq: number;
+    speed: number;
+  }[];
+};
 
 function hrToDir(hour: number): vec2 {
   hour = mathWrap(hour, 12);
@@ -410,23 +415,22 @@ function hrToDir(hour: number): vec2 {
   );
 }
 
-function createGerstnerWaves(waves: GerstnerSet): GerstnerWaveTS[] {
+function createGerstnerWaves(set: GerstnerSet): GerstnerWaveTS[] {
   const res: GerstnerWaveTS[] = [];
-  const numWaves = waves.length;
-  const steepDenom = waves.reduce((p, n) => p + n.amp * n.freq, 0);
-  const steepBudget = 1 / steepDenom;
-  const steepTotal = waves.reduce((p, n) => p + n.steep, 0);
-  const steepScale = steepBudget / steepTotal;
+  const steepDenom = set.waves.reduce((p, n) => p + n.amp * n.freq, 0);
+  const steepBudget = set.steepTotal / steepDenom;
+  const steepSum = set.waves.reduce((p, n) => p + n.steep, 0);
+  const steepScale = steepBudget / steepSum;
   // TODO(@darzu): confirm/fix this math!
   console.log(
     `
     steepDenom: ${steepDenom}, 
     steepBudget: ${steepBudget}, 
-    steepTotal: ${steepTotal},
+    steepSum: ${steepSum},
     steepScale: ${steepScale},
     `
   );
-  for (let w of waves) {
+  for (let w of set.waves) {
     const A = w.amp;
     const D = hrToDir(w.dirHr);
     const W = w.freq;
