@@ -68,6 +68,12 @@ export module vec2 {
   export function sub(v1: InputT, v2: InputT, out?: T): T {
     return GL.sub(out ?? tmp(), v1, v2) as T;
   }
+  export function mul(v1: InputT, v2: InputT, out?: T): T {
+    return GL.mul(out ?? tmp(), v1, v2) as T;
+  }
+  export function div(v1: InputT, v2: InputT, out?: T): T {
+    return GL.div(out ?? tmp(), v1, v2) as T;
+  }
   export function normalize(v1: InputT, out?: T): T {
     return GL.normalize(out ?? tmp(), v1) as T;
   }
@@ -128,6 +134,12 @@ export module vec3 {
   }
   export function sub(v1: InputT, v2: InputT, out?: T): T {
     return GL.sub(out ?? tmp(), v1, v2) as T;
+  }
+  export function mul(v1: InputT, v2: InputT, out?: T): T {
+    return GL.mul(out ?? tmp(), v1, v2) as T;
+  }
+  export function div(v1: InputT, v2: InputT, out?: T): T {
+    return GL.div(out ?? tmp(), v1, v2) as T;
   }
   export function normalize(v1: InputT, out?: T): T {
     return GL.normalize(out ?? tmp(), v1) as T;
