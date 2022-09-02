@@ -19,6 +19,7 @@ import { setSimulationAlpha } from "./render/renderer-ecs.js";
 import { never } from "./util.js";
 import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { initCubeGame } from "./game/xp-cube.js";
+import { resetTempMatrixBuffer } from "./sprig-matrix.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -228,6 +229,7 @@ async function startGame(localPeerName: string, host: string | null) {
       }
       accumulator -= TIMESTEP;
       tick(EM, TIMESTEP);
+      resetTempMatrixBuffer();
       callFixedTimestepSystems();
       loops++;
     }

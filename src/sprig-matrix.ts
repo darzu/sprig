@@ -30,7 +30,7 @@ function tmpArray<N extends number>(n: N): Float32ArrayOfLength<N> {
   return arr as Float32ArrayOfLength<N>;
 }
 
-export function resetBuffer() {
+export function resetTempMatrixBuffer() {
   bufferIndex = 0;
 }
 
@@ -106,6 +106,9 @@ export module vec3 {
     return out;
   }
 
+  export const ZEROS = fromValues(0, 0, 0, create());
+  export const ONES = fromValues(1, 1, 1, create());
+
   export function add(v1: InputT, v2: InputT, out?: T): T {
     return GL.add(out ?? tmp(), v1, v2) as T;
   }
@@ -126,6 +129,13 @@ export module vec3 {
   }
   export function scale(v1: InputT, n: number, out?: T) {
     return GL.scale(out ?? vec3.tmp(), v1, n);
+  }
+  export function transformQuat(v1: InputT, v2: quat.InputT, out?: T): T {
+    return GL.transformQuat(out ?? tmp(), v1, v2) as T;
+  }
+
+  export function transformMat4(v1: InputT, v2: mat4.InputT, out?: T): T {
+    return GL.transformMat4(out ?? tmp(), v1, v2) as T;
   }
 
   export function zero(out?: T): T {
@@ -158,6 +168,8 @@ export module quat {
     return out;
   }
 
+  export const IDENTITY = identity(create());
+
   export function add(v1: InputT, v2: InputT, out?: T): T {
     return GL.add(out ?? tmp(), v1, v2) as T;
   }
@@ -177,6 +189,16 @@ export module quat {
 
   export function conjugate(v1: InputT, out?: T): T {
     return GL.conjugate(out ?? tmp(), v1) as T;
+  }
+
+  export function rotateX(v1: InputT, n: number, out?: T) {
+    return GL.rotateX(out ?? tmp(), v1, n) as T;
+  }
+  export function rotateY(v1: InputT, n: number, out?: T) {
+    return GL.rotateY(out ?? tmp(), v1, n) as T;
+  }
+  export function rotateZ(v1: InputT, n: number, out?: T) {
+    return GL.rotateZ(out ?? tmp(), v1, n) as T;
   }
 }
 
@@ -209,6 +231,8 @@ export module mat4 {
     return out;
   }
 
+  export const IDENTITY = identity(create());
+
   export function add(v1: InputT, v2: InputT, out?: T): T {
     return GL.add(out ?? tmp(), v1, v2) as T;
   }
@@ -218,5 +242,34 @@ export module mat4 {
 
   export function identity(out?: T): T {
     return GL.identity(out ?? tmp()) as T;
+  }
+
+  export function fromRotationTranslation(
+    q: quat.InputT,
+    v: vec3.InputT,
+    out?: T
+  ): T {
+    return GL.fromRotationTranslation(out ?? tmp(), q, v) as T;
+  }
+
+  export function fromRotationTranslationScale(
+    q: quat.InputT,
+    v: vec3.InputT,
+    s: vec3.InputT,
+    out?: T
+  ): T {
+    return GL.fromRotationTranslationScale(out ?? tmp(), q, v, s) as T;
+  }
+
+  export function getRotation(m: InputT, out?: quat.T): quat {
+    return GL.getRotation(out ?? quat.tmp(), m) as quat;
+  }
+
+  export function getTranslation(m: InputT, out?: vec3.T): vec3 {
+    return GL.getTranslation(out ?? vec3.tmp(), m) as vec3;
+  }
+
+  export function getScaling(m: InputT, out?: vec3.T): vec3 {
+    return GL.getScaling(out ?? vec3.tmp(), m) as vec3;
   }
 }
