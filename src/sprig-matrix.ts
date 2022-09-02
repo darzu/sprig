@@ -272,4 +272,35 @@ export module mat4 {
   export function getScaling(m: InputT, out?: vec3.T): vec3 {
     return GL.getScaling(out ?? vec3.tmp(), m) as vec3;
   }
+
+  export function rotateX(v1: InputT, n: number, out?: T) {
+    return GL.rotateX(out ?? tmp(), v1, n) as T;
+  }
+  export function rotateY(v1: InputT, n: number, out?: T) {
+    return GL.rotateY(out ?? tmp(), v1, n) as T;
+  }
+  export function rotateZ(v1: InputT, n: number, out?: T) {
+    return GL.rotateZ(out ?? tmp(), v1, n) as T;
+  }
+
+  export function ortho(
+    left: number,
+    right: number,
+    bottom: number,
+    top: number,
+    near: number,
+    far: number,
+    out?: T
+  ): T {
+    return GL.ortho(out ?? tmp(), left, right, bottom, top, near, far) as T;
+  }
+
+  export function lookAt(
+    v1: vec3.InputT,
+    v2: vec3.InputT,
+    v3: vec3.InputT,
+    out?: T
+  ): T {
+    return GL.lookAt(out ?? tmp(), v1, v2, v3) as T;
+  }
 }
