@@ -83,7 +83,9 @@ export module vec2 {
   export function scale(v1: InputT, n: number, out?: T): T {
     return GL.scale(out ?? vec3.tmp(), v1, n) as T;
   }
-
+  export function negate(v1: InputT, out?: T): T {
+    return GL.negate(out ?? vec3.tmp(), v1) as T;
+  }
   export function dist(v1: InputT, v2: InputT): number {
     return length(sub(v1, v2));
   }
@@ -142,9 +144,17 @@ export module vec3 {
   export function scale(v1: InputT, n: number, out?: T): T {
     return GL.scale(out ?? vec3.tmp(), v1, n) as T;
   }
+  export function negate(v1: InputT, out?: T): T {
+    return GL.negate(out ?? vec3.tmp(), v1) as T;
+  }
   export function dist(v1: InputT, v2: InputT): number {
     return length(sub(v1, v2));
   }
+
+  export function lerp(v1: InputT, v2: InputT, n: number, out?: T): T {
+    return GL.lerp(out ?? tmp(), v1, v2, n) as T;
+  }
+
   export function transformQuat(v1: InputT, v2: quat.InputT, out?: T): T {
     return GL.transformQuat(out ?? tmp(), v1, v2) as T;
   }
