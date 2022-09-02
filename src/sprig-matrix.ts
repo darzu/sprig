@@ -197,6 +197,16 @@ export module quat {
   export function conjugate(v1: InputT, out?: T): T {
     return GL.conjugate(out ?? tmp(), v1) as T;
   }
+  export function invert(v1: InputT, out?: T): T {
+    return GL.invert(out ?? tmp(), v1) as T;
+  }
+
+  export function setAxisAngle(axis: vec3.InputT, rad: number, out?: T): T {
+    return GL.setAxisAngle(out ?? tmp(), axis, rad) as T;
+  }
+  export function getAxisAngle(q: InputT, out?: vec3.T): number {
+    return GL.getAxisAngle(out ?? tmp(), q);
+  }
 
   export function rotateX(v1: InputT, n: number, out?: T) {
     return GL.rotateX(out ?? tmp(), v1, n) as T;
@@ -309,5 +319,9 @@ export module mat4 {
     out?: T
   ): T {
     return GL.lookAt(out ?? tmp(), v1, v2, v3) as T;
+  }
+
+  export function translate(m: InputT, v: vec3.InputT, out?: T): T {
+    return GL.translate(out ?? tmp(), m, v) as T;
   }
 }
