@@ -51,11 +51,15 @@ export module vec2 {
     GL.copy(out, v1) as T;
   }
 
-  export function fromValues(n0: number, n1: number, out?: T): T {
+  export function set(n0: number, n1: number, out?: T): T {
     out = out ?? tmp();
     out[0] = n0;
     out[1] = n1;
     return out;
+  }
+
+  export function fromValues(n0: number, n1: number): T {
+    return set(n0, n1, create());
   }
 
   export function add(v1: InputT, v2: InputT, out?: T): T {
@@ -102,7 +106,7 @@ export module vec3 {
     GL.copy(out, v1) as T;
   }
 
-  export function fromValues(n0: number, n1: number, n2: number, out?: T): T {
+  export function set(n0: number, n1: number, n2: number, out?: T): T {
     out = out ?? tmp();
     out[0] = n0;
     out[1] = n1;
@@ -110,8 +114,12 @@ export module vec3 {
     return out;
   }
 
-  export const ZEROS = fromValues(0, 0, 0, create());
-  export const ONES = fromValues(1, 1, 1, create());
+  export function fromValues(n0: number, n1: number, n2: number): T {
+    return set(n0, n1, n2, create());
+  }
+
+  export const ZEROS = fromValues(0, 0, 0);
+  export const ONES = fromValues(1, 1, 1);
 
   export function add(v1: InputT, v2: InputT, out?: T): T {
     return GL.add(out ?? tmp(), v1, v2) as T;
@@ -165,14 +173,6 @@ export module quat {
 
   export function copy(out: T, v1: InputT): void {
     GL.copy(out, v1) as T;
-  }
-
-  export function fromValues(n0: number, n1: number, n2: number, out?: T): T {
-    out = out ?? tmp();
-    out[0] = n0;
-    out[1] = n1;
-    out[2] = n2;
-    return out;
   }
 
   export const IDENTITY = identity(create());
@@ -238,14 +238,6 @@ export module mat4 {
 
   export function copy(out: T, v1: InputT): void {
     GL.copy(out, v1) as T;
-  }
-
-  export function fromValues(n0: number, n1: number, n2: number, out?: T): T {
-    out = out ?? tmp();
-    out[0] = n0;
-    out[1] = n1;
-    out[2] = n2;
-    return out;
   }
 
   export const IDENTITY = identity(create());
