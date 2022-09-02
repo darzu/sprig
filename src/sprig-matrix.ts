@@ -66,6 +66,10 @@ export module vec2 {
     return set(n0, n1, create());
   }
 
+  export function equals(v1: InputT, v2: InputT): boolean {
+    return GL.equals(v1, v2);
+  }
+
   export function add(v1: InputT, v2: InputT, out?: T): T {
     return GL.add(out ?? tmp(), v1, v2) as T;
   }
@@ -97,7 +101,10 @@ export module vec2 {
     return GL.negate(out ?? vec3.tmp(), v1) as T;
   }
   export function dist(v1: InputT, v2: InputT): number {
-    return length(sub(v1, v2));
+    return GL.dist(v1, v2);
+  }
+  export function sqrDist(v1: InputT, v2: InputT): number {
+    return GL.dist(v1, v2);
   }
 }
 
@@ -137,6 +144,10 @@ export module vec3 {
   export const ZEROS = fromValues(0, 0, 0);
   export const ONES = fromValues(1, 1, 1);
 
+  export function equals(v1: InputT, v2: InputT): boolean {
+    return GL.equals(v1, v2);
+  }
+
   export function add(v1: InputT, v2: InputT, out?: T): T {
     return GL.add(out ?? tmp(), v1, v2) as T;
   }
@@ -168,7 +179,10 @@ export module vec3 {
     return GL.negate(out ?? vec3.tmp(), v1) as T;
   }
   export function dist(v1: InputT, v2: InputT): number {
-    return length(sub(v1, v2));
+    return GL.dist(v1, v2);
+  }
+  export function sqrDist(v1: InputT, v2: InputT): number {
+    return GL.dist(v1, v2);
   }
 
   export function lerp(v1: InputT, v2: InputT, n: number, out?: T): T {
@@ -210,6 +224,10 @@ export module quat {
   }
 
   export const IDENTITY = identity(create());
+
+  export function equals(v1: InputT, v2: InputT): boolean {
+    return GL.equals(v1, v2);
+  }
 
   export function add(v1: InputT, v2: InputT, out?: T): T {
     return GL.add(out ?? tmp(), v1, v2) as T;
@@ -282,6 +300,10 @@ export module mat4 {
   }
 
   export const IDENTITY = identity(create());
+
+  export function equals(v1: InputT, v2: InputT): boolean {
+    return GL.equals(v1, v2);
+  }
 
   export function add(v1: InputT, v2: InputT, out?: T): T {
     return GL.add(out ?? tmp(), v1, v2) as T;
