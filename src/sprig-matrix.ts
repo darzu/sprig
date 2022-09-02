@@ -79,6 +79,10 @@ export module vec2 {
   export function scale(v1: InputT, n: number, out?: T) {
     return GL.scale(out ?? vec3.tmp(), v1, n);
   }
+
+  export function dist(v1: InputT, v2: InputT): number {
+    return length(sub(v1, v2));
+  }
 }
 
 export module vec3 {
@@ -129,6 +133,9 @@ export module vec3 {
   }
   export function scale(v1: InputT, n: number, out?: T) {
     return GL.scale(out ?? vec3.tmp(), v1, n);
+  }
+  export function dist(v1: InputT, v2: InputT): number {
+    return length(sub(v1, v2));
   }
   export function transformQuat(v1: InputT, v2: quat.InputT, out?: T): T {
     return GL.transformQuat(out ?? tmp(), v1, v2) as T;
