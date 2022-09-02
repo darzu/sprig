@@ -47,6 +47,10 @@ export module vec2 {
     return float32ArrayOfLength(2);
   }
 
+  export function clone(v: InputT): T {
+    return GL.clone(v) as T;
+  }
+
   export function copy(out: T, v1: InputT): void {
     GL.copy(out, v1) as T;
   }
@@ -108,6 +112,10 @@ export module vec3 {
 
   export function create(): T {
     return float32ArrayOfLength(3);
+  }
+
+  export function clone(v: InputT): T {
+    return GL.clone(v) as T;
   }
 
   export function copy(out: T, v1: InputT): void {
@@ -193,6 +201,10 @@ export module quat {
     return float32ArrayOfLength(4);
   }
 
+  export function clone(v: InputT): T {
+    return GL.clone(v) as T;
+  }
+
   export function copy(out: T, v1: InputT): void {
     GL.copy(out, v1) as T;
   }
@@ -239,6 +251,9 @@ export module quat {
   export function rotateZ(v1: InputT, n: number, out?: T) {
     return GL.rotateZ(out ?? tmp(), v1, n) as T;
   }
+  export function fromEuler(x: number, y: number, z: number, out?: T): T {
+    return GL.fromEuler(out ?? tmp(), x, y, z) as T;
+  }
 }
 
 export module mat4 {
@@ -256,6 +271,10 @@ export module mat4 {
 
   export function create(): T {
     return float32ArrayOfLength(16);
+  }
+
+  export function clone(v: InputT): T {
+    return GL.clone(v) as T;
   }
 
   export function copy(out: T, v1: InputT): void {
@@ -290,6 +309,16 @@ export module mat4 {
     out?: T
   ): T {
     return GL.fromRotationTranslationScale(out ?? tmp(), q, v, s) as T;
+  }
+
+  export function fromRotationTranslationScaleOrigin(
+    q: quat.InputT,
+    v: vec3.InputT,
+    s: vec3.InputT,
+    o: vec3.InputT,
+    out?: T
+  ): T {
+    return GL.fromRotationTranslationScaleOrigin(out ?? tmp(), q, v, s, o) as T;
   }
 
   export function getRotation(m: InputT, out?: quat.T): quat {
