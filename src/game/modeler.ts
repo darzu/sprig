@@ -1,6 +1,6 @@
 import { CanvasDef } from "../canvas.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { mat4, vec2, vec3 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
 import { AABB, Ray, RayHit } from "../physics/broadphase.js";
@@ -60,7 +60,7 @@ function registerObjClicker(em: EntityManager) {
       if (!res.modeler.clickerEnabled) return;
 
       if (res.inputs.lclick) {
-        const screenPos: vec2 = [res.inputs.mousePosX, res.inputs.mousePosY];
+        const screenPos: vec2 = vec2.clone([res.inputs.mousePosX, res.inputs.mousePosY]);
 
         const r = screenPosToRay(screenPos, res.cameraView);
 
@@ -78,19 +78,15 @@ function registerObjClicker(em: EntityManager) {
           const e = EM.findEntity(firstHit.id, [ColorDef]);
           if (e) {
             EM.ensureComponentOn(e, TintsDef);
-            e.tints.set("select", [0, 0.2, 0]);
+            e.tints.set("select", vec3.clone([0, 0.2, 0]));
             // e.color[1] += 0.1;
           }
         }
 
         // draw our ray
         const rayDist = firstHit?.dist || 1000;
-        const color: vec3 = firstHit ? [0, 1, 0] : [1, 0, 0];
-        const endPoint = vec3.add(
-          vec3.create(),
-          r.org,
-          vec3.scale(tempVec3(), r.dir, rayDist)
-        );
+        const color: vec3 = firstHit ? vec3.clone([0, 1, 0]) : vec3.clone([1, 0, 0]);
+        const endPoint = vec3.add(r.org, vec3.scale(r.dir, rayDist), vec3.create());
         drawLine(r.org, endPoint, color);
       }
     },
@@ -161,10 +157,10 @@ function registerAABBBuilder(em: EntityManager) {
               vec3.copy(vec3.create(), lastB.position)
             );
           } else {
-            em.ensureComponentOn(b, ScaleDef, [2, 1, 1]);
-            em.ensureComponentOn(b, PositionDef, [0, 0, 0]);
+            em.ensureComponentOn(b, ScaleDef, vec3.clone([2, 1, 1]));
+            em.ensureComponentOn(b, PositionDef, vec3.clone([0, 0, 0]));
           }
-          em.ensureComponentOn(b, ColorDef, [0.1, 0.3, 0.2]);
+          em.ensureComponentOn(b, ColorDef, vec3.clone([0.1, 0.3, 0.2]));
           em.ensureComponentOn(
             b,
             RenderableConstructDef,
@@ -225,7 +221,7 @@ function registerAABBBuilder(em: EntityManager) {
 
 export function screenPosToRay(screenPos: vec2, cameraView: CameraView): Ray {
   const invViewProj = mat4.create();
-  mat4.invert(invViewProj, cameraView.viewProjMat);
+  mat4.invert(cameraView.viewProjMat, invViewProj);
   if (invViewProj === null) {
     // TODO(@darzu): debugging
     throw `invViewProj is null`;
@@ -233,13 +229,13 @@ export function screenPosToRay(screenPos: vec2, cameraView: CameraView): Ray {
 
   const viewX = mathMap(screenPos[0], 0, cameraView.width, -1, 1);
   const viewY = mathMap(screenPos[1], 0, cameraView.height, -1, 1) * -1;
-  const pos0: vec3 = [viewX, viewY, -1];
-  const pos1: vec3 = [viewX, viewY, 0];
+  const pos0: vec3 = vec3.clone([viewX, viewY, -1]);
+  const pos1: vec3 = vec3.clone([viewX, viewY, 0]);
 
-  const ray0 = vec3.transformMat4(vec3.create(), pos0, invViewProj);
-  const ray1 = vec3.transformMat4(vec3.create(), pos1, invViewProj);
+  const ray0 = vec3.transformMat4(pos0, invViewProj, vec3.create());
+  const ray1 = vec3.transformMat4(pos1, invViewProj, vec3.create());
 
-  const dir: vec3 = vec3.sub(vec3.create(), ray1, ray0);
+  const dir: vec3 = vec3.sub(ray1, ray0, vec3.create());
   vec3.normalize(dir, dir);
 
   const r: Ray = {

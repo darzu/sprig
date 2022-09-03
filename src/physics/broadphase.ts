@@ -1,4 +1,4 @@
-import { vec3 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { clamp } from "../math.js";
 import { tempVec3 } from "../temp-pool.js";
 import { range } from "../util.js";
@@ -140,7 +140,7 @@ export function checkBroadphase(
   //      3000 objs @[2000, 200, 2000]: 1.2-7.6ms, 180,000-400,000 overlaps, 4,400 cell checks
   if (BROAD_PHASE === "GRID") {
     // initialize world
-    if (!_worldGrid) _worldGrid = createWorldGrid(universeAABB, [10, 10, 10]);
+    if (!_worldGrid) _worldGrid = createWorldGrid(universeAABB, vec3.clone([10, 10, 10]));
     // place objects in grid
     for (let o of objs) {
       let ll = _objToObjLL[o.id];
@@ -169,7 +169,7 @@ export function checkBroadphase(
         for (let x = o.minCoord[0]; x <= o.maxCoord[0]; x++) {
           for (let y = o.minCoord[1]; y <= o.maxCoord[1]; y++) {
             for (let z = o.minCoord[2]; z <= o.maxCoord[2]; z++) {
-              const c = _worldGrid.grid[gridIdx(_worldGrid, [x, y, z])];
+              const c = _worldGrid.grid[gridIdx(_worldGrid, vec3.clone([x, y, z]))];
               checkCell(o, c);
             }
           }
@@ -217,8 +217,8 @@ interface ObjLL {
   prev: WorldCell | ObjLL | null;
 }
 function createWorldGrid(aabb: AABB, cellSize: vec3): WorldGrid {
-  const chunkSize = vec3.sub(vec3.create(), aabb.max, aabb.min);
-  const dims = vec3.div(vec3.create(), chunkSize, cellSize);
+  const chunkSize = vec3.sub(aabb.max, aabb.min, vec3.create());
+  const dims = vec3.div(chunkSize, cellSize, vec3.create());
   vec3Floor(dims, dims);
   const gridLength = dims[0] * dims[1] * dims[2];
   console.log(gridLength);
@@ -249,7 +249,7 @@ function gridIdx(g: WorldGrid, coord: vec3): number {
   return idx;
 }
 function gridCoord(out: vec3, g: WorldGrid, pos: vec3): vec3 {
-  vec3.div(out, vec3.sub(out, pos, g.aabb.min), g.cellSize);
+  vec3.div(vec3.sub(pos, g.aabb.min, out), g.cellSize, out);
   // clamp coordinates onto world grid
   // TODO(@darzu): should we use multiple grids?
   out[0] = clamp(Math.floor(out[0]), 0, g.dimensions[0] - 1);
@@ -392,11 +392,7 @@ function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
     _nextMap--;
     return null;
   }
-  const nextLen = vec3.scale(
-    _scratchVec3,
-    vec3.sub(_scratchVec3, aabb.max, aabb.min),
-    0.5
-  );
+  const nextLen = vec3.scale(vec3.sub(aabb.max, aabb.min, _scratchVec3), 0.5, _scratchVec3);
   if (thisObjs.size <= 2 || nextLen[0] <= _octtreeMinLen)
     return {
       aabb,
@@ -408,8 +404,8 @@ function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
     for (let yMin of [aabb.min[1], aabb.min[1] + nextLen[1]]) {
       for (let zMin of [aabb.min[2], aabb.min[2] + nextLen[2]]) {
         childAABBs.push({
-          min: [xMin, yMin, zMin],
-          max: [xMin + nextLen[0], yMin + nextLen[1], zMin + nextLen[2]],
+          min: vec3.clone([xMin, yMin, zMin]),
+          max: vec3.clone([xMin + nextLen[0], yMin + nextLen[1], zMin + nextLen[2]]),
         });
       }
     }

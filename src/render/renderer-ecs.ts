@@ -1,7 +1,7 @@
 import { EntityManager, EM, Entity } from "../entity-manager.js";
 import { applyTints, TintsDef } from "../color.js";
 import { CameraViewDef } from "../camera.js";
-import { mat4, quat, vec3 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import {
   Frame,
   TransformDef,
@@ -145,24 +145,12 @@ function updateSmoothedWorldFrame(em: EntityManager, o: Entity) {
   mat4.copy(o.smoothedWorldFrame.transform, o.transform);
   updateFrameFromTransform(o.smoothedWorldFrame);
   if (MotionSmoothingDef.isOn(o)) {
-    vec3.add(
-      o.smoothedWorldFrame.position,
-      o.smoothedWorldFrame.position,
-      o.motionSmoothing.positionError
-    );
-    quat.mul(
-      o.smoothedWorldFrame.rotation,
-      o.smoothedWorldFrame.rotation,
-      o.motionSmoothing.rotationError
-    );
+    vec3.add(o.smoothedWorldFrame.position, o.motionSmoothing.positionError, o.smoothedWorldFrame.position);
+    quat.mul(o.smoothedWorldFrame.rotation, o.motionSmoothing.rotationError, o.smoothedWorldFrame.rotation);
     updateFrameFromPosRotScale(o.smoothedWorldFrame);
   }
   if (parent) {
-    mat4.mul(
-      o.smoothedWorldFrame.transform,
-      parent.smoothedWorldFrame.transform,
-      o.smoothedWorldFrame.transform
-    );
+    mat4.mul(parent.smoothedWorldFrame.transform, o.smoothedWorldFrame.transform, o.smoothedWorldFrame.transform);
     updateFrameFromTransform(o.smoothedWorldFrame);
   }
   if (firstFrame) copyFrame(o.prevSmoothedWorldFrame, o.smoothedWorldFrame);
@@ -196,9 +184,9 @@ function interpolateFrames(
   prev: Frame,
   next: Frame
 ) {
-  vec3.lerp(out.position, prev.position, next.position, alpha);
-  quat.slerp(out.rotation, prev.rotation, next.rotation, alpha);
-  vec3.lerp(out.scale, prev.scale, next.scale, alpha);
+  vec3.lerp(prev.position, next.position, alpha, out.position);
+  quat.slerp(prev.rotation, next.rotation, alpha, out.rotation);
+  vec3.lerp(prev.scale, next.scale, alpha, out.scale);
   updateFrameFromPosRotScale(out);
 }
 
@@ -209,15 +197,17 @@ function extrapolateFrames(
   next: Frame
 ) {
   // out.position = next.position + alpha * (next.position - prev.position)
-  vec3.sub(out.position, next.position, prev.position);
-  vec3.scale(out.position, out.position, alpha);
-  vec3.add(out.position, out.position, next.position);
+  // out.position = next.position + alpha * (next.position - prev.position)
+vec3.sub(next.position, prev.position, out.position);
+  vec3.scale(out.position, alpha, out.position);
+  vec3.add(out.position, next.position, out.position);
 
   // see https://answers.unity.com/questions/168779/extrapolating-quaternion-rotation.html
-  quat.invert(out.rotation, prev.rotation);
-  quat.mul(out.rotation, next.rotation, out.rotation);
+  // see https://answers.unity.com/questions/168779/extrapolating-quaternion-rotation.html
+quat.invert(prev.rotation, out.rotation);
+  quat.mul(next.rotation, out.rotation, out.rotation);
   const axis = tempVec3();
-  let angle = quat.getAxisAngle(axis, out.rotation);
+  let angle = quat.getAxisAngle(out.rotation, axis);
   // ensure we take the shortest path
   if (angle > Math.PI) {
     angle -= Math.PI * 2;
@@ -226,13 +216,14 @@ function extrapolateFrames(
     angle += Math.PI * 2;
   }
   angle = angle * alpha;
-  quat.setAxisAngle(out.rotation, axis, angle);
-  quat.mul(out.rotation, out.rotation, next.rotation);
+  quat.setAxisAngle(axis, angle, out.rotation);
+  quat.mul(out.rotation, next.rotation, out.rotation);
 
   // out.scale = next.scale + alpha * (next.scale - prev.scale)
-  vec3.sub(out.scale, next.scale, prev.scale);
-  vec3.scale(out.scale, out.scale, alpha);
-  vec3.add(out.scale, out.scale, next.scale);
+  // out.scale = next.scale + alpha * (next.scale - prev.scale)
+vec3.sub(next.scale, prev.scale, out.scale);
+  vec3.scale(out.scale, alpha, out.scale);
+  vec3.add(out.scale, next.scale, out.scale);
 
   updateFrameFromPosRotScale(out);
 }

@@ -69,13 +69,13 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
       // defaultColor: [0.0, 0.0, 0.0, 1.0],
       // defaultColor: [0.1, 0.1, 0.1, 1.0],
       // defaultColor: [0.15, 0.15, 0.6, 1.0],
-      defaultColor: [0.015, 0.015, 0.015, 1.0],
+      defaultColor: vec4.clone([0.015, 0.015, 0.015, 1.0]),
       // defaultColor: [0.7, 0.8, 1.0, 1.0],
     },
     {
       ptr: normalsTexturePtr,
       clear: "once",
-      defaultColor: [0, 0, 0, 0],
+      defaultColor: vec4.clone([0, 0, 0, 0]),
     },
     // {
     //   ptr: positionsTexturePtr,
@@ -85,7 +85,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
     {
       ptr: surfacesTexturePtr,
       clear: "once",
-      defaultColor: [0, 0, 0, 0],
+      defaultColor: vec4.clone([0, 0, 0, 0]),
     },
   ],
   depthStencil: mainDepthTex,

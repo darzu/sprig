@@ -1,4 +1,4 @@
-import { mat4, vec3 } from "../../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../../sprig-matrix.js";
 import { assert } from "../../test.js";
 import { computeTriangleNormal } from "../../utils-3d.js";
 import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";

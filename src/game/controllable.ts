@@ -2,7 +2,7 @@ import { AnimateToDef } from "../animate-to.js";
 import { CameraFollowDef } from "../camera.js";
 import { CanvasDef } from "../canvas.js";
 import { EM, EntityManager } from "../entity-manager.js";
-import { vec3, quat } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { LinearVelocityDef } from "../physics/motion.js";
@@ -106,17 +106,14 @@ export function registerControllableSystems(em: EntityManager) {
             c.linearVelocity[1] = c.controllable.jumpSpeed * res.time.dt;
 
         // apply our steering velocity
-        vec3.transformQuat(steerVel, steerVel, c.rotation);
+        // apply our steering velocity
+vec3.transformQuat(steerVel, c.rotation, steerVel);
         c.linearVelocity[0] = steerVel[0];
         c.linearVelocity[2] = steerVel[2];
         if (modes.canFly) c.linearVelocity[1] = steerVel[1];
 
         if (modes.canYaw)
-          quat.rotateY(
-            c.rotation,
-            c.rotation,
-            -res.inputs.mouseMovX * c.controllable.turnSpeed
-          );
+          quat.rotateY(c.rotation, -res.inputs.mouseMovX * c.controllable.turnSpeed, c.rotation);
       }
     },
     "controllableInput"

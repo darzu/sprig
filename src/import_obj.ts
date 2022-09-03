@@ -2,7 +2,10 @@
 // https://people.cs.clemson.edu/~dhouse/courses/405/docs/brief-obj-file-format.html
 // http://paulbourke.net/dataformats/obj/
 
-import { vec2, vec3, vec4 } from "./gl-matrix.js";
+// Import .obj files into sprig format
+// https://people.cs.clemson.edu/~dhouse/courses/405/docs/brief-obj-file-format.html
+// http://paulbourke.net/dataformats/obj/
+import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
 import { RawMesh } from "./render/mesh.js";
 import { assert } from "./test.js";
 import { idPair, IdPair, isString } from "./util.js";
@@ -116,7 +119,7 @@ export function importObj(obj: string): RawMesh[] | ParseError {
     // finish mesh
     for (let i = 0; i < tri.length + quad.length; i++) {
       // TODO(@darzu): import color
-      colors.push([0.0, 0.0, 0.0]);
+      colors.push(vec3.clone([0.0, 0.0, 0.0]));
       // colors.push([0.2, 0.2, 0.2]);
     }
     const m: RawMesh = { pos, tri, quad, colors, lines };
@@ -191,11 +194,11 @@ export function importObj(obj: string): RawMesh[] | ParseError {
         if (FLIP_FACES) {
           // tri.push(reverse(tri1));
           // tri.push(reverse(tri2));
-          quad.push([inds[3], inds[2], inds[1], inds[0]]);
+          quad.push(vec4.clone([inds[3], inds[2], inds[1], inds[0]]));
         } else {
           // tri.push(tri1);
           // tri.push(tri2);
-          quad.push([inds[0], inds[1], inds[2], inds[3]]);
+          quad.push(vec4.clone([inds[0], inds[1], inds[2], inds[3]]));
         }
       } else {
         return `unsupported: ${faceOpt.length}-sided face`;
@@ -247,7 +250,7 @@ export function importObj(obj: string): RawMesh[] | ParseError {
     return null;
   }
   function reverse(v: vec3): vec3 {
-    return [v[2], v[1], v[0]];
+    return vec3.clone([v[2], v[1], v[0]]);
   }
   function sortByGreedyDistance(inds: number[]) {
     // TODO(@darzu): improve perf?
@@ -290,12 +293,12 @@ export function importObj(obj: string): RawMesh[] | ParseError {
 
     const indPairs: vec2[] = [];
     for (let i = 0; i < inds.length; i++) {
-      indPairs.push([inds[i], inds[i + 1 === inds.length ? 0 : i + 1]]);
+      indPairs.push(vec2.clone([inds[i], inds[i + 1 === inds.length ? 0 : i + 1]]));
     }
     for (let [i0, i1] of indPairs) {
       const hash = idPair(i0, i1);
       if (!seenLines.has(hash)) {
-        lines.push([i0, i1]);
+        lines.push(vec2.clone([i0, i1]));
         seenLines.add(hash);
       }
     }

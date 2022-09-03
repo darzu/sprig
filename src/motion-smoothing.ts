@@ -1,5 +1,5 @@
 import { EntityManager, EM, Component } from "./entity-manager.js";
-import { vec3, quat } from "./gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
 import { TimeDef } from "./time.js";
 import {
   PositionDef,
@@ -88,7 +88,8 @@ export function registerMotionSmoothingSystems(em: EntityManager) {
             );
           } else {
             // if we change parents just snap to the new location
-            vec3.set(e.motionSmoothing.positionError, 0, 0, 0);
+            // if we change parents just snap to the new location
+vec3.set(0, 0, 0, e.motionSmoothing.positionError);
             quat.identity(e.motionSmoothing.rotationError);
           }
         }

@@ -5,7 +5,7 @@ import {
   EntityW,
   Component,
 } from "../entity-manager.js";
-import { quat, ReadonlyVec3, vec3 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import {
   PhysicsParentDef,
   PositionDef,
@@ -50,7 +50,7 @@ export function constructNetTurret(
   cameraYawOffset: number = 0,
   cameraPitchOffset: number = -Math.PI / 8,
   cameraYawFactor: number = 0,
-  cameraFollowOffset: ReadonlyVec3 = CAMERA_OFFSETS.thirdPersonOverShoulder
+  cameraFollowOffset: vec3 = CAMERA_OFFSETS.thirdPersonOverShoulder
 ): asserts e is EntityW<
   [
     typeof TurretDef,
@@ -85,10 +85,10 @@ export function constructNetTurret(
   if ("min" in aabbOrInteractionEntity) {
     interactBox = EM.newEntity();
     const interactAABB = copyAABB(createAABB(), aabbOrInteractionEntity);
-    vec3.scale(interactAABB.min, interactAABB.min, 2);
-    vec3.scale(interactAABB.max, interactAABB.max, 2);
+    vec3.scale(interactAABB.min, 2, interactAABB.min);
+    vec3.scale(interactAABB.max, 2, interactAABB.max);
     EM.ensureComponentOn(interactBox, PhysicsParentDef, e.id);
-    EM.ensureComponentOn(interactBox, PositionDef, [0, 0, 0]);
+    EM.ensureComponentOn(interactBox, PositionDef, vec3.clone([0, 0, 0]));
     EM.ensureComponentOn(interactBox, ColliderDef, {
       shape: "AABB",
       solid: false,

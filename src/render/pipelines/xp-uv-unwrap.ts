@@ -93,12 +93,12 @@ export const unwrapPipeline2 = CY.createRenderPipeline("unwrapPipe2", {
     {
       ptr: uvToNormTex,
       clear: "once",
-      defaultColor: [0.0, 0.0, 0.0, 0.0],
+      defaultColor: vec4.clone([0.0, 0.0, 0.0, 0.0]),
     },
     {
       ptr: uvToTangTex,
       clear: "once",
-      defaultColor: [0.0, 0.0, 0.0, 0.0],
+      defaultColor: vec4.clone([0.0, 0.0, 0.0, 0.0]),
     },
   ],
 });
@@ -142,7 +142,7 @@ export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
     {
       ptr: uvMaskTex,
       clear: "once",
-      defaultColor: [0.0, 0.0, 0.0, 0.0],
+      defaultColor: vec4.clone([0.0, 0.0, 0.0, 0.0]),
     },
   ],
 });

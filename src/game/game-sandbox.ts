@@ -7,7 +7,7 @@ import {
 import { ColorDef } from "../color.js";
 import { DeletedDef } from "../delete.js";
 import { EM, EntityManager } from "../entity-manager.js";
-import { vec3, quat, mat4 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { onInit } from "../init.js";
 import { InputsDef } from "../inputs.js";
 import { jitter, mathMap, mathMapNEase } from "../math.js";
@@ -105,9 +105,9 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
   // quat.copy(g.cameraFollow.rotationOffset, [-0.18, 0.0, 0.0, 0.98]);
   vec3.copy(g.position, [0, 1, -1.2]);
-  quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
+  quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, g.rotation);
   // setCameraFollowPosition(g, "thirdPerson");
-  g.cameraFollow.positionOffset = [0, 0, 5];
+  g.cameraFollow.positionOffset = vec3.clone([0, 0, 5]);
   g.controllable.modes.canYaw = false;
   g.controllable.modes.canCameraYaw = true;
   g.controllable.speed *= 0.5;
@@ -118,16 +118,16 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
 
   const p = em.newEntity();
   em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
-  em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
-  em.ensureComponentOn(p, PositionDef, [0, -5, 0]);
+  em.ensureComponentOn(p, ColorDef, vec3.clone([0.2, 0.3, 0.2]));
+  em.ensureComponentOn(p, PositionDef, vec3.clone([0, -5, 0]));
 
   const b1 = em.newEntity();
   const m1 = cloneMesh(res.assets.cube.mesh);
   em.ensureComponentOn(b1, RenderableConstructDef, m1);
-  em.ensureComponentOn(b1, ColorDef, [0.1, 0.1, 0.1]);
-  em.ensureComponentOn(b1, PositionDef, [0, 0, 3]);
+  em.ensureComponentOn(b1, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
+  em.ensureComponentOn(b1, PositionDef, vec3.clone([0, 0, 3]));
   em.ensureComponentOn(b1, RotationDef);
-  em.ensureComponentOn(b1, AngularVelocityDef, [0, 0.001, 0.001]);
+  em.ensureComponentOn(b1, AngularVelocityDef, vec3.clone([0, 0.001, 0.001]));
   em.ensureComponentOn(b1, WorldFrameDef);
   em.ensureComponentOn(b1, ColliderDef, {
     shape: "AABB",
@@ -144,8 +144,8 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   const b2 = g;
   const m2 = cloneMesh(res.assets.cube.mesh);
   em.ensureComponentOn(b2, RenderableConstructDef, m2);
-  em.ensureComponentOn(b2, ColorDef, [0.1, 0.1, 0.1]);
-  em.ensureComponentOn(b2, PositionDef, [0, 0, 0]);
+  em.ensureComponentOn(b2, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
+  em.ensureComponentOn(b2, PositionDef, vec3.clone([0, 0, 0]));
   // em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
   em.ensureComponentOn(b2, WorldFrameDef);
   // em.ensureComponentOn(b2, PhysicsParentDef, g.id);
@@ -164,8 +164,8 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   const b3 = em.newEntity();
   const m3 = cloneMesh(res.assets.ball.mesh);
   em.ensureComponentOn(b3, RenderableConstructDef, m3);
-  em.ensureComponentOn(b3, ColorDef, [0.1, 0.1, 0.1]);
-  em.ensureComponentOn(b3, PositionDef, [0, 0, -4]);
+  em.ensureComponentOn(b3, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
+  em.ensureComponentOn(b3, PositionDef, vec3.clone([0, 0, -4]));
   em.ensureComponentOn(b3, RotationDef);
   em.ensureComponentOn(b3, WorldFrameDef);
   em.ensureComponentOn(b3, ColliderDef, {
@@ -177,8 +177,8 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   const b4 = em.newEntity();
   const m4 = cloneMesh(res.assets.tetra.mesh);
   em.ensureComponentOn(b4, RenderableConstructDef, m4);
-  em.ensureComponentOn(b4, ColorDef, [0.1, 0.1, 0.1]);
-  em.ensureComponentOn(b4, PositionDef, [0, -3, 0]);
+  em.ensureComponentOn(b4, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
+  em.ensureComponentOn(b4, PositionDef, vec3.clone([0, -3, 0]));
   em.ensureComponentOn(b4, RotationDef);
   em.ensureComponentOn(b4, WorldFrameDef);
   em.ensureComponentOn(b4, ColliderDef, {
@@ -196,13 +196,13 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
     rot: quat,
     lastWorldPos: vec3
   ): Shape {
-    const transform = mat4.fromRotationTranslation(mat4.create(), rot, pos);
+    const transform = mat4.fromRotationTranslation(rot, pos, mat4.create());
     const worldVerts = g.uniqueVerts.map((p) =>
-      vec3.transformMat4(tempVec3(), p, transform)
+      vec3.transformMat4(p, transform)
     );
     const support = (d: vec3) => farthestPointInDir(worldVerts, d);
-    const center = vec3.transformMat4(tempVec3(), g.center, transform);
-    const travel = vec3.sub(tempVec3(), pos, lastWorldPos);
+    const center = vec3.transformMat4(g.center, transform);
+    const travel = vec3.sub(pos, lastWorldPos);
     return {
       center,
       support,
@@ -286,7 +286,7 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
 
         if (simplex) {
           const penD = penetrationDepth(shapeOther, playerShape, simplex);
-          const travelD = vec3.len(playerShape.travel);
+          const travelD = vec3.length(playerShape.travel);
           if (penD < Infinity) {
             backTravelD += penD;
           }
@@ -297,12 +297,13 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
         }
       }
 
-      backTravelD = Math.min(backTravelD, vec3.len(playerShape.travel));
-      const travelN = vec3.normalize(tempVec3(), playerShape.travel);
-      const backTravel = vec3.scale(tempVec3(), travelN, backTravelD);
+      backTravelD = Math.min(backTravelD, vec3.length(playerShape.travel));
+      const travelN = vec3.normalize(playerShape.travel);
+      const backTravel = vec3.scale(travelN, backTravelD);
 
       // console.log(backTravel);
-      vec3.sub(b2.position, b2.position, backTravel);
+      // console.log(backTravel);
+vec3.sub(b2.position, backTravel, b2.position);
 
       lastWorldPos = [
         vec3.clone(b1.position),
@@ -349,7 +350,7 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
   const g = createGhost(em);
   vec3.copy(g.position, [0, 1, -1.2]);
-  quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
+  quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, g.rotation);
   g.controllable.sprintMul = 3;
 
   // TODO(@darzu): this shouldn't be necessary
@@ -377,17 +378,17 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
   const plane = em.newEntity();
   em.ensureComponentOn(plane, RenderableConstructDef, res.assets.plane.proto);
-  em.ensureComponentOn(plane, ColorDef, [0.2, 0.3, 0.2]);
-  em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
+  em.ensureComponentOn(plane, ColorDef, vec3.clone([0.2, 0.3, 0.2]));
+  em.ensureComponentOn(plane, PositionDef, vec3.clone([0, -5, 0]));
 
   const ship = em.newEntity();
   em.ensureComponentOn(ship, RenderableConstructDef, res.assets.ship.proto);
   em.ensureComponentOn(ship, ColorDef, ENEMY_SHIP_COLOR);
-  em.ensureComponentOn(ship, PositionDef, [20, -2, 0]);
+  em.ensureComponentOn(ship, PositionDef, vec3.clone([20, -2, 0]));
   em.ensureComponentOn(
     ship,
     RotationDef,
-    quat.fromEuler(quat.create(), 0, Math.PI * 0.1, 0)
+    quat.fromEuler(0, Math.PI * 0.1, 0, quat.create())
   );
 
   // const ocean = em.newEntity();
@@ -413,10 +414,10 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
   const box = em.newEntity();
   em.ensureComponentOn(box, RenderableConstructDef, res.assets.cube.proto);
-  em.ensureComponentOn(box, ColorDef, [0.1, 0.1, 0.1]);
-  em.ensureComponentOn(box, PositionDef, [0, 0, 3]);
+  em.ensureComponentOn(box, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
+  em.ensureComponentOn(box, PositionDef, vec3.clone([0, 0, 3]));
   em.ensureComponentOn(box, RotationDef);
-  em.ensureComponentOn(box, AngularVelocityDef, [0, 0.001, 0.001]);
+  em.ensureComponentOn(box, AngularVelocityDef, vec3.clone([0, 0.001, 0.001]));
   em.ensureComponentOn(box, WorldFrameDef);
   em.ensureComponentOn(box, ColliderDef, {
     shape: "AABB",
@@ -426,14 +427,14 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
   const cloth = em.newEntity();
   em.ensureComponentOn(cloth, ClothConstructDef, {
-    location: [0, 0, 0],
-    color: [0.9, 0.9, 0.8],
+    location: vec3.clone([0, 0, 0]),
+    color: vec3.clone([0.9, 0.9, 0.8]),
     rows: 5,
     columns: 5,
     distance: 2,
   });
   const F = 100.0;
-  em.ensureComponentOn(cloth, ForceDef, [F, F, F]);
+  em.ensureComponentOn(cloth, ForceDef, vec3.clone([F, F, F]));
 
   let line: ReturnType<typeof drawLine>;
 
@@ -446,15 +447,11 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
       // cursor to cloth
       const cursorPos = res.globalCursor3d.cursor()!.world.position;
-      const midpoint = vec3.scale(
-        tempVec3(),
-        [cloth.clothConstruct.columns / 2, cloth.clothConstruct.rows / 2, 0],
-        cloth.clothConstruct.distance
-      );
-      const clothPos = vec3.add(midpoint, midpoint, cloth.world.position);
+      const midpoint = vec3.scale([cloth.clothConstruct.columns / 2, cloth.clothConstruct.rows / 2, 0], cloth.clothConstruct.distance);
+      const clothPos = vec3.add(midpoint, cloth.world.position, midpoint);
 
       // line from cursor to cloth
-      if (!line) line = drawLine(vec3.create(), vec3.create(), [0, 1, 0]);
+      if (!line) line = drawLine(vec3.create(), vec3.create(), vec3.clone([0, 1, 0]));
       if (RenderableDef.isOn(line)) {
         line.renderable.enabled = true;
         const m = line.renderable.meshHandle.readonlyMesh!;
@@ -464,9 +461,9 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
       }
 
       // scale the force
-      const delta = vec3.sub(tempVec3(), clothPos, cursorPos);
-      const dist = vec3.len(delta);
-      vec3.normalize(cloth.force, delta);
+      const delta = vec3.sub(clothPos, cursorPos);
+      const dist = vec3.length(delta);
+      vec3.normalize(delta, cloth.force);
       const strength = mathMapNEase(dist, 4, 20, 0, 500, (p) =>
         EASE_INQUAD(1.0 - p)
       );
@@ -474,7 +471,7 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
       // apply the force?
       if (res.inputs.keyDowns["e"]) {
-        vec3.scale(cloth.force, cloth.force, strength);
+        vec3.scale(cloth.force, strength, cloth.force);
       } else {
         vec3.copy(cloth.force, [0, 0, 0]);
         if (RenderableDef.isOn(line)) {
@@ -511,8 +508,8 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
 
   const p = em.newEntity();
   em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
-  em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
-  em.ensureComponentOn(p, PositionDef, [0, -10, 0]);
+  em.ensureComponentOn(p, ColorDef, vec3.clone([0.2, 0.3, 0.2]));
+  em.ensureComponentOn(p, PositionDef, vec3.clone([0, -10, 0]));
   em.ensureComponentOn(p, ColliderDef, {
     shape: "AABB",
     solid: false,
@@ -521,9 +518,9 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
 
   const t = em.newEntity();
   em.ensureComponentOn(t, RenderableConstructDef, res.assets.gridPlane.proto);
-  em.ensureComponentOn(t, ColorDef, [0.2, 0.2, 0.9]);
-  em.ensureComponentOn(t, PositionDef, [0, 0, 0]);
-  em.ensureComponentOn(t, AngularVelocityDef, [0, 0.0002, 0.0002]);
+  em.ensureComponentOn(t, ColorDef, vec3.clone([0.2, 0.2, 0.9]));
+  em.ensureComponentOn(t, PositionDef, vec3.clone([0, 0, 0]));
+  em.ensureComponentOn(t, AngularVelocityDef, vec3.clone([0, 0.0002, 0.0002]));
   em.ensureComponentOn(t, ColliderDef, {
     shape: "AABB",
     solid: true,
@@ -539,12 +536,12 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
     const e = em.newEntity();
     em.ensureComponentOn(e, RenderableConstructDef, m.proto);
     const [r, g, b] = [jitter(0.1) + 0.2, jitter(0.1) + 0.2, jitter(0.1) + 0.2];
-    em.ensureComponentOn(e, ColorDef, [r, g, b]);
+    em.ensureComponentOn(e, ColorDef, vec3.clone([r, g, b]));
     em.ensureComponentOn(e, PositionDef, pos);
-    em.ensureComponentOn(e, ScaleDef, [0.5, 0.5, 0.5]);
+    em.ensureComponentOn(e, ScaleDef, vec3.clone([0.5, 0.5, 0.5]));
     // em.ensureComponentOn(b, RotationDef);
     // em.ensureComponentOn(b, AngularVelocityDef, [0, 0.001, 0.001]);
-    em.ensureComponentOn(e, LinearVelocityDef, [0, -0.02, 0]);
+    em.ensureComponentOn(e, LinearVelocityDef, vec3.clone([0, -0.02, 0]));
     em.ensureComponentOn(e, PhysicsParentDef, tableId);
     em.ensureComponentOn(e, ColliderDef, {
       shape: "AABB",
@@ -571,7 +568,7 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
 
           const x = jitter(5);
           const z = jitter(5);
-          spawn(res.assets.cube, [x, 20, z]);
+          spawn(res.assets.cube, vec3.clone([x, 20, z]));
         }
       }
 
@@ -580,7 +577,7 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
         const NUM = 1;
         const SPC = 2;
         for (let i = 0; i < NUM; i++)
-          spawn(res.assets.cube, [0, 10 + i * SPC, 0]);
+          spawn(res.assets.cube, vec3.clone([0, 10 + i * SPC, 0]));
       }
 
       if (res.inputs.keyClicks["backspace"]) {

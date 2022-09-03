@@ -1,7 +1,7 @@
 import { CameraDef } from "../camera.js";
 import { DeletedDef } from "../delete.js";
 import { EM, EntityManager } from "../entity-manager.js";
-import { quat, vec3 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { MusicDef } from "../music.js";
 import { AuthorityDef, HostDef, MeDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
@@ -85,7 +85,7 @@ export const endGame = eventWizard(
     vec3.copy(gem.position, gem.world.position);
     EM.ensureComponentOn(gem, RotationDef);
     quat.copy(gem.rotation, gem.world.rotation);
-    EM.ensureComponentOn(gem, LinearVelocityDef, [0, 0.01, 0]);
+    EM.ensureComponentOn(gem, LinearVelocityDef, vec3.clone([0, 0.01, 0]));
     EM.removeComponent(gem.id, PhysicsParentDef);
     EM.ensureComponentOn(gem, LifetimeDef, 4000);
   },

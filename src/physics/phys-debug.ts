@@ -65,7 +65,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
             );
 
             // colored
-            em.addComponent(dbgE.id, ColorDef, [0, 1, 0]);
+            em.addComponent(dbgE.id, ColorDef, vec3.clone([0, 1, 0]));
 
             // positioned and scaled
             em.ensureComponentOn(dbgE, PositionDef);
@@ -139,11 +139,11 @@ export function setCubePosScaleToAABB(
 function meshFromAABB(aabb: AABB): RawMesh {
   // resize
   const m = cloneMesh(LocalMeshes.cube());
-  mapMeshPositions(m, (p) => [
+  mapMeshPositions(m, (p) => vec3.clone([
     mathMap(p[0], -1, 1, 0, aabb.max[0] - aabb.min[0]),
     mathMap(p[1], -1, 1, 0, aabb.max[1] - aabb.min[1]),
     mathMap(p[2], -1, 1, 0, aabb.max[2] - aabb.min[2]),
-  ]);
+]));
   // drop the triangles (wireframe lines only)
   m.tri = [];
   m.colors = [];

@@ -1,4 +1,4 @@
-import { vec3, mat4 } from "../../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../../sprig-matrix.js";
 import { computeTriangleNormal } from "../../utils-3d.js";
 import { CY } from "../gpu-registry.js";
 import { createCyStruct, CyToTS } from "../gpu-struct.js";

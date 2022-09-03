@@ -1,5 +1,5 @@
 import { EM, EntityManager, Component, Entity } from "../entity-manager.js";
-import { quat, vec3 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "../color.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
@@ -51,7 +51,7 @@ EM.registerSerializerPair(
   }
 );
 
-const BULLET_COLOR: vec3 = [0.02, 0.02, 0.02];
+const BULLET_COLOR: vec3 = vec3.clone([0.02, 0.02, 0.02]);
 
 function createBullet(
   em: EntityManager,
@@ -115,10 +115,10 @@ export function fireBullet(
   rotationSpeed: number = 0.02
 ) {
   let bulletAxis = vec3.fromValues(0, 0, -1);
-  vec3.transformQuat(bulletAxis, bulletAxis, rotation);
+  vec3.transformQuat(bulletAxis, rotation, bulletAxis);
   vec3.normalize(bulletAxis, bulletAxis);
-  const linearVelocity = vec3.scale(vec3.create(), bulletAxis, speed);
-  const angularVelocity = vec3.scale(vec3.create(), bulletAxis, rotationSpeed);
+  const linearVelocity = vec3.scale(bulletAxis, speed, vec3.create());
+  const angularVelocity = vec3.scale(bulletAxis, rotationSpeed, vec3.create());
   const e = em.newEntity();
   em.addComponent(
     e.id,

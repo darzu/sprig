@@ -1,7 +1,7 @@
 import { ColorDef } from "../color.js";
 import { createRef, defineNetEntityHelper } from "../em_helpers.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { mat4, quat, vec2, vec3 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { onInit } from "../init.js";
 import { InputsDef } from "../inputs.js";
 import { clamp } from "../math.js";
@@ -103,21 +103,21 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
     build: (mast, res) => {
       const em: EntityManager = EM;
 
-      em.ensureComponentOn(mast, PositionDef, [0, 0, 0]);
+      em.ensureComponentOn(mast, PositionDef, vec3.clone([0, 0, 0]));
 
       em.ensureComponentOn(mast, RenderableConstructDef, res.assets.mast.mesh);
       em.ensureComponentOn(mast, PhysicsParentDef, mast.mastProps.shipId);
       em.ensureComponentOn(mast, ColorDef, vec3.clone(BOAT_COLOR));
-      vec3.scale(mast.color, mast.color, 0.5);
+      vec3.scale(mast.color, 0.5, mast.color);
 
       const createRib = (width: number) => {
         const rib = em.newEntity();
-        em.ensureComponentOn(rib, PositionDef, [0, BOOM_HEIGHT, 0]);
+        em.ensureComponentOn(rib, PositionDef, vec3.clone([0, BOOM_HEIGHT, 0]));
         em.ensureComponentOn(rib, RenderableConstructDef, res.assets.mast.mesh);
-        em.ensureComponentOn(rib, ScaleDef, [0.5 * width, 0.5, 0.5 * width]);
+        em.ensureComponentOn(rib, ScaleDef, vec3.clone([0.5 * width, 0.5, 0.5 * width]));
         em.ensureComponentOn(rib, RotationDef);
         em.ensureComponentOn(rib, ColorDef, vec3.clone(BOAT_COLOR));
-        vec3.scale(rib.color, rib.color, 0.7);
+        vec3.scale(rib.color, 0.7, rib.color);
         em.ensureComponentOn(rib, PhysicsParentDef, mast.id);
         return rib;
       };
@@ -129,7 +129,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       );
 
       const sail1 = em.newEntity();
-      em.ensureComponentOn(sail1, PositionDef, [0, BOOM_HEIGHT, 0]);
+      em.ensureComponentOn(sail1, PositionDef, vec3.clone([0, BOOM_HEIGHT, 0]));
       em.ensureComponentOn(
         sail1,
         RenderableConstructDef,
@@ -153,7 +153,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       });
 
       const sail2 = em.newEntity();
-      em.ensureComponentOn(sail2, PositionDef, [0, BOOM_HEIGHT, 0]);
+      em.ensureComponentOn(sail2, PositionDef, vec3.clone([0, BOOM_HEIGHT, 0]));
       em.ensureComponentOn(
         sail2,
         RenderableConstructDef,
@@ -183,7 +183,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
         PhysicsParentDef,
         mast.mastProps.shipId
       );
-      em.ensureComponentOn(interactBox, PositionDef, [0, 0, 0]);
+      em.ensureComponentOn(interactBox, PositionDef, vec3.clone([0, 0, 0]));
       em.ensureComponentOn(interactBox, ColliderDef, {
         shape: "AABB",
         solid: false,
@@ -201,7 +201,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
         Math.PI,
         -Math.PI / 8,
         -1,
-        [0, 20, 50]
+        vec3.clone([0, 20, 50])
       );
 
       mast.turret.maxPitch = 0;
@@ -246,20 +246,12 @@ onInit((em) => {
 
         mast.mastLocal.boom1.forEach((ribRef, i) => {
           const rib = ribRef()!;
-          quat.rotateX(
-            rib.rotation,
-            quat.IDENTITY,
-            mast.boomPitches.boom1 * (1 - i / RIB_COUNT)
-          );
+          quat.rotateX(quat.IDENTITY, mast.boomPitches.boom1 * (1 - i / RIB_COUNT), rib.rotation);
         });
         mast.mastLocal.boom2.forEach((ribRef, i) => {
           const rib = ribRef()!;
-          quat.rotateY(rib.rotation, quat.IDENTITY, Math.PI);
-          quat.rotateX(
-            rib.rotation,
-            rib.rotation,
-            mast.boomPitches.boom2 * (1 - i / RIB_COUNT)
-          );
+          quat.rotateY(quat.IDENTITY, Math.PI, rib.rotation);
+          quat.rotateX(rib.rotation, mast.boomPitches.boom2 * (1 - i / RIB_COUNT), rib.rotation);
         });
 
         const adjustSailVertices = (
@@ -273,17 +265,9 @@ onInit((em) => {
             const ribRotationBot = rotations[ribIndex];
             const ribRotationTop = rotations[ribIndex + 1];
             if (i % 3 == 1) {
-              vec3.transformQuat(
-                pos,
-                [0, BOOM_LENGTH * 0.9, 0],
-                ribRotationTop
-              );
+              vec3.transformQuat([0, BOOM_LENGTH * 0.9, 0], ribRotationTop, pos);
             } else if (i % 3 == 2) {
-              vec3.transformQuat(
-                pos,
-                [0, BOOM_LENGTH * 0.99, 0],
-                ribRotationBot
-              );
+              vec3.transformQuat([0, BOOM_LENGTH * 0.99, 0], ribRotationBot, pos);
             }
             return pos;
           });
@@ -341,7 +325,7 @@ onInit((em) => {
           //console.log(`Area of sail from star is ${area}`);
 
           const shipDirection = vec3.fromValues(0, 0, -1);
-          vec3.transformQuat(shipDirection, shipDirection, ship.world.rotation);
+          vec3.transformQuat(shipDirection, ship.world.rotation, shipDirection);
           const [force, area] = sailForceAndSignedArea(sail, star);
           const accel = vec3.dot(shipDirection, force);
 
@@ -361,12 +345,12 @@ onInit((em) => {
           //   }, realArea ${realArea}, accel ${accel}`
           // );
 
-          vec3.lerp(
-            sail.color,
-            DEFAULT_SAIL_COLOR,
-            vec3.normalize(tempVec3(), star.color),
-            clamp((accel / realArea) * 5000, 0, 1)
-          );
+          // console.log(
+//   `Color lerp is ${
+//     accel / realArea
+//   }, realArea ${realArea}, accel ${accel}`
+// );
+vec3.lerp(DEFAULT_SAIL_COLOR, vec3.normalize(star.color), clamp((accel / realArea) * 5000, 0, 1), sail.color);
 
           ship.ship.speed += accel * 0.0001;
           //console.log(`Speed is ${ship.ship.speed}`);
@@ -392,11 +376,11 @@ function sailForceAndSignedArea(
   const localVerts = sail.renderable.meshHandle.readonlyMesh!.pos;
 
   const worldVerts = localVerts.map((pos) => {
-    return vec3.transformMat4(tempVec3(), pos, sail.world.transform);
+    return vec3.transformMat4(pos, sail.world.transform);
   });
 
   const starViewVerts = worldVerts.map((pos) => {
-    return vec3.transformMat4(tempVec3(), pos, viewProjMatrix);
+    return vec3.transformMat4(pos, viewProjMatrix);
   });
 
   const area =
@@ -406,12 +390,8 @@ function sailForceAndSignedArea(
       vec2.fromValues(starViewVerts[2][0], starViewVerts[2][1])
     ) * RIB_COUNT;
 
-  const sailNormal = vec3.cross(
-    tempVec3(),
-    vec3.subtract(tempVec3(), worldVerts[1], worldVerts[0]),
-    vec3.subtract(tempVec3(), worldVerts[2], worldVerts[0])
-  );
+  const sailNormal = vec3.cross(vec3.sub(worldVerts[1], worldVerts[0]), vec3.sub(worldVerts[2], worldVerts[0]));
 
   vec3.normalize(sailNormal, sailNormal);
-  return [vec3.scale(sailNormal, sailNormal, area), area];
+  return [vec3.scale(sailNormal, area, sailNormal), area];
 }

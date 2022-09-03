@@ -1,6 +1,6 @@
 import { ColliderDef } from "../physics/collider.js";
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { quat, vec2, vec3 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../serialize.js";
@@ -83,7 +83,7 @@ function clothMesh(cloth: ClothConstruct): {
       continue;
     }
     pos.push(vec3.fromValues(x * cloth.distance, y * cloth.distance, 0));
-    uvs.push([x / (cloth.columns - 1), y / (cloth.rows - 1)]);
+    uvs.push(vec2.clone([x / (cloth.columns - 1), y / (cloth.rows - 1)]));
     // add triangles
     if (y > 0) {
       if (x > 0) {
@@ -105,10 +105,10 @@ function clothMesh(cloth: ClothConstruct): {
     }
     // add lines
     if (x > 0) {
-      lines.push([i - 1, i]);
+      lines.push(vec2.clone([i - 1, i]));
     }
     if (y > 0) {
-      lines.push([i - cloth.columns, i]);
+      lines.push(vec2.clone([i - cloth.columns, i]));
     }
     x = x + 1;
     i = i + 1;

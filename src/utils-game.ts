@@ -1,7 +1,7 @@
 import { ColorDef } from "./color.js";
 import { EM, Entity, EntityW } from "./entity-manager.js";
 import { AssetsDef } from "./game/assets.js";
-import { vec3 } from "./gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
 import { PositionDef, ScaleDef } from "./physics/transform.js";
 import { Mesh } from "./render/mesh.js";
 import { RenderableConstructDef } from "./render/renderer-ecs.js";
@@ -17,7 +17,7 @@ export function drawLine(start: vec3, end: vec3, color: vec3) {
     tri: [],
     quad: [],
     colors: [],
-    lines: [[0, 1]],
+    lines: [vec2.clone([0, 1])],
     surfaceIds: [],
     usesProvoking: true,
   };
@@ -36,6 +36,6 @@ export async function drawBall(
   EM.ensureComponentOn(e, ColorDef, color);
   EM.ensureComponentOn(e, RenderableConstructDef, res.assets.ball.proto);
   EM.ensureComponentOn(e, PositionDef, pos);
-  EM.ensureComponentOn(e, ScaleDef, [size, size, size]);
+  EM.ensureComponentOn(e, ScaleDef, vec3.clone([size, size, size]));
   return e;
 }
