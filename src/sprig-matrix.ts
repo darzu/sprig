@@ -343,6 +343,10 @@ export module mat4 {
     return GL.fromRotationTranslationScaleOrigin(out ?? tmp(), q, v, s, o) as T;
   }
 
+  export function fromQuat(q: quat, out?: T): T {
+    return GL.fromQuat(out ?? tmp(), q) as T;
+  }
+
   export function getRotation(m: InputT, out?: quat.T): quat {
     return GL.getRotation(out ?? quat.tmp(), m) as quat;
   }
