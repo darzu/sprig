@@ -20,15 +20,15 @@ function float32ArrayOfLength<N extends number>(n: N): Float32ArrayOfLength<N> {
   return new Float32Array(n) as Float32ArrayOfLength<N>;
 }
 
-const BUFFER_SIZE = 1024;
+const BUFFER_SIZE = 40000;
 const buffer = new ArrayBuffer(BUFFER_SIZE);
 let bufferIndex = 0;
 function tmpArray<N extends number>(n: N): Float32ArrayOfLength<N> {
-  if (bufferIndex + n > BUFFER_SIZE) {
+  if (bufferIndex + n * Float32Array.BYTES_PER_ELEMENT > BUFFER_SIZE) {
     throw `Too many temp Float32Arrays allocated--try increasing BUFFER_SIZE`;
   }
   const arr = new Float32Array(buffer, bufferIndex, n);
-  bufferIndex += n;
+  bufferIndex += arr.byteLength;
   return arr as Float32ArrayOfLength<N>;
 }
 
