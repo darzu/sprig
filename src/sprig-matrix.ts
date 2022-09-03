@@ -1,4 +1,4 @@
-import * as GLM from "gl-matrix.js";
+import * as GLM from "./gl-matrix.js";
 
 interface Float32ArrayOfLength<N extends number> extends Float32Array {
   length: N;
