@@ -68,6 +68,8 @@ export module vec2 {
     return set(n0, n1, create());
   }
 
+  export const ZEROS = fromValues(0, 0);
+
   export function equals(v1: InputT, v2: InputT): boolean {
     return GL.equals(v1, v2);
   }
@@ -228,20 +230,32 @@ export module vec4 {
     GL.copy(out, v1) as T;
   }
 
-  export function set(n0: number, n1: number, n2: number, out?: T): T {
+  export function set(
+    n0: number,
+    n1: number,
+    n2: number,
+    n3: number,
+    out?: T
+  ): T {
     out = out ?? tmp();
     out[0] = n0;
     out[1] = n1;
     out[2] = n2;
+    out[3] = n3;
     return out;
   }
 
-  export function fromValues(n0: number, n1: number, n2: number): T {
-    return set(n0, n1, n2, create());
+  export function fromValues(
+    n0: number,
+    n1: number,
+    n2: number,
+    n3: number
+  ): T {
+    return set(n0, n1, n2, n3, create());
   }
 
-  export const ZEROS = fromValues(0, 0, 0);
-  export const ONES = fromValues(1, 1, 1);
+  export const ZEROS = fromValues(0, 0, 0, 0);
+  export const ONES = fromValues(1, 1, 1, 0);
 
   export function equals(v1: InputT, v2: InputT): boolean {
     return GL.equals(v1, v2);
