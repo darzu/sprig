@@ -108,6 +108,9 @@ export module vec2 {
   export function sqrDist(v1: InputT, v2: InputT): number {
     return GL.dist(v1, v2);
   }
+  export function rotate(v1: InputT, v2: InputT, rad: number, out?: T): T {
+    return GL.rotate(out ?? tmp(), v1, v2, rad) as T;
+  }
 }
 
 export module vec3 {
