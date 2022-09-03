@@ -73,6 +73,9 @@ export module vec2 {
   export function equals(v1: InputT, v2: InputT): boolean {
     return GL.equals(v1, v2);
   }
+  export function exactEquals(v1: InputT, v2: InputT): boolean {
+    return GL.exactEquals(v1, v2);
+  }
 
   export function add(v1: InputT, v2: InputT, out?: T): T {
     return GL.add(out ?? tmp(), v1, v2) as T;
@@ -153,6 +156,9 @@ export module vec3 {
 
   export function equals(v1: InputT, v2: InputT): boolean {
     return GL.equals(v1, v2);
+  }
+  export function exactEquals(v1: InputT, v2: InputT): boolean {
+    return GL.exactEquals(v1, v2);
   }
 
   export function add(v1: InputT, v2: InputT, out?: T): T {
@@ -260,6 +266,9 @@ export module vec4 {
   export function equals(v1: InputT, v2: InputT): boolean {
     return GL.equals(v1, v2);
   }
+  export function exactEquals(v1: InputT, v2: InputT): boolean {
+    return GL.exactEquals(v1, v2);
+  }
 
   export function add(v1: InputT, v2: InputT, out?: T): T {
     return GL.add(out ?? tmp(), v1, v2) as T;
@@ -339,6 +348,9 @@ export module quat {
   export function equals(v1: InputT, v2: InputT): boolean {
     return GL.equals(v1, v2);
   }
+  export function exactEquals(v1: InputT, v2: InputT): boolean {
+    return GL.exactEquals(v1, v2);
+  }
 
   export function add(v1: InputT, v2: InputT, out?: T): T {
     return GL.add(out ?? tmp(), v1, v2) as T;
@@ -414,6 +426,9 @@ export module mat4 {
 
   export function equals(v1: InputT, v2: InputT): boolean {
     return GL.equals(v1, v2);
+  }
+  export function exactEquals(v1: InputT, v2: InputT): boolean {
+    return GL.exactEquals(v1, v2);
   }
 
   export function add(v1: InputT, v2: InputT, out?: T): T {
