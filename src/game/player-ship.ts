@@ -1,5 +1,5 @@
 import { EM, EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, vec3r } from "../sprig-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import {
   RenderableConstructDef,
@@ -43,7 +43,8 @@ import { makeOrrery, OrreryDef } from "./orrery.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
-export const BOAT_COLOR: vec3 = vec3.clone([0.2, 0.1, 0.05]);
+export const BOAT_COLOR: vec3r = [0.2, 0.1, 0.05];
+// const foo_color: vec3 = BOAT_COLOR;
 
 export const ShipPartDef = EM.defineComponent(
   "shipPart",

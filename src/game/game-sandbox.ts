@@ -303,7 +303,7 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
 
       // console.log(backTravel);
       // console.log(backTravel);
-vec3.sub(b2.position, backTravel, b2.position);
+      vec3.sub(b2.position, backTravel, b2.position);
 
       lastWorldPos = [
         vec3.clone(b1.position),
@@ -383,7 +383,7 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
   const ship = em.newEntity();
   em.ensureComponentOn(ship, RenderableConstructDef, res.assets.ship.proto);
-  em.ensureComponentOn(ship, ColorDef, ENEMY_SHIP_COLOR);
+  em.ensureComponentOn(ship, ColorDef, vec3.clone(ENEMY_SHIP_COLOR));
   em.ensureComponentOn(ship, PositionDef, vec3.clone([20, -2, 0]));
   em.ensureComponentOn(
     ship,
@@ -447,11 +447,15 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
       // cursor to cloth
       const cursorPos = res.globalCursor3d.cursor()!.world.position;
-      const midpoint = vec3.scale([cloth.clothConstruct.columns / 2, cloth.clothConstruct.rows / 2, 0], cloth.clothConstruct.distance);
+      const midpoint = vec3.scale(
+        [cloth.clothConstruct.columns / 2, cloth.clothConstruct.rows / 2, 0],
+        cloth.clothConstruct.distance
+      );
       const clothPos = vec3.add(midpoint, cloth.world.position, midpoint);
 
       // line from cursor to cloth
-      if (!line) line = drawLine(vec3.create(), vec3.create(), vec3.clone([0, 1, 0]));
+      if (!line)
+        line = drawLine(vec3.create(), vec3.create(), vec3.clone([0, 1, 0]));
       if (RenderableDef.isOn(line)) {
         line.renderable.enabled = true;
         const m = line.renderable.meshHandle.readonlyMesh!;

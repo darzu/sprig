@@ -4,9 +4,36 @@ interface Float32ArrayOfLength<N extends number> extends Float32Array {
   length: N;
 }
 
-export type vec2 = Float32ArrayOfLength<2>;
+interface ReadonlyFloat32ArrayOfLength<N extends number>
+  extends Omit<
+    Float32ArrayOfLength<N>,
+    "copyWithin" | "fill" | "reverse" | "set" | "sort"
+  > {
+  readonly [n: number]: number;
+}
 
-export type vec3 = Float32ArrayOfLength<3>;
+declare const _forever: unique symbol;
+
+export type vec3f =
+  | [number, number, number]
+  | (Float32ArrayOfLength<3> & { [_forever]: true });
+export type vec3r =
+  | readonly [number, number, number]
+  | ReadonlyFloat32ArrayOfLength<3>;
+export type vec3 = vec3f | Float32ArrayOfLength<3>;
+
+let eg_vec3f: vec3f = [0, 0, 0] as vec3f;
+let eg_vec3r: vec3r = [0, 0, 0] as vec3r;
+let eg_vec3: vec3 = vec3.create() as vec3;
+
+// eg_vec3 = eg_vec3r; // illegal
+// eg_vec3 = eg_vec3f; // legal
+// eg_vec3r = eg_vec3; // legal
+// eg_vec3r = eg_vec3f; // legal
+// eg_vec3f = eg_vec3; // illegal
+// eg_vec3f = eg_vec3r; // illegal
+
+export type vec2 = Float32ArrayOfLength<2>;
 
 export type vec4 = Float32ArrayOfLength<4>;
 
@@ -99,13 +126,13 @@ export module vec2 {
     return GL.dot(v1, v2);
   }
   export function cross(v1: InputT, v2: InputT, out?: vec3.T): vec3.T {
-    return GL.cross(out ?? vec3.tmp(), v1, v2) as vec3.T;
+    return GL.cross(out ?? tmp(), v1, v2) as vec3.T;
   }
   export function scale(v1: InputT, n: number, out?: T): T {
-    return GL.scale(out ?? vec3.tmp(), v1, n) as T;
+    return GL.scale(out ?? tmp(), v1, n) as T;
   }
   export function negate(v1: InputT, out?: T): T {
-    return GL.negate(out ?? vec3.tmp(), v1) as T;
+    return GL.negate(out ?? tmp(), v1) as T;
   }
   export function dist(v1: InputT, v2: InputT): number {
     return GL.dist(v1, v2);
@@ -120,25 +147,30 @@ export module vec2 {
 
 export module vec3 {
   export type T = vec3;
-  export type InputT = T | readonly [number, number, number];
+  export type Tf = vec3f;
+  export type InputT = vec3r;
   const GL = GLM.vec3;
 
   export function tmp(): T {
     return tmpArray(3);
   }
 
-  export function create(): T {
-    return float32ArrayOfLength(3);
+  export function create(): Tf {
+    return float32ArrayOfLength(3) as Tf;
   }
 
-  export function clone(v: InputT): T {
-    return GL.clone(v) as T;
+  export function clone(v: InputT): Tf {
+    return GL.clone(v) as Tf;
   }
 
+  export function copy(out: Tf, v1: InputT): Tf;
+  export function copy(out: T, v1: InputT): T;
   export function copy(out: T, v1: InputT): T {
     return GL.copy(out, v1) as T;
   }
 
+  export function set(n0: number, n1: number, n2: number, out: Tf): Tf;
+  export function set(n0: number, n1: number, n2: number, out?: T): T;
   export function set(n0: number, n1: number, n2: number, out?: T): T {
     out = out ?? tmp();
     out[0] = n0;
@@ -147,8 +179,8 @@ export module vec3 {
     return out;
   }
 
-  export function fromValues(n0: number, n1: number, n2: number): T {
-    return set(n0, n1, n2, create());
+  export function fromValues(n0: number, n1: number, n2: number): Tf {
+    return set(n0, n1, n2, create()) as Tf;
   }
 
   export const ZEROS = fromValues(0, 0, 0);
@@ -161,18 +193,29 @@ export module vec3 {
     return GL.exactEquals(v1, v2);
   }
 
+  export function add(v1: InputT, v2: InputT, out: Tf): Tf;
+  export function add(v1: InputT, v2: InputT, out?: T): T;
   export function add(v1: InputT, v2: InputT, out?: T): T {
     return GL.add(out ?? tmp(), v1, v2) as T;
   }
+
+  export function sub(v1: InputT, v2: InputT, out: Tf): Tf;
+  export function sub(v1: InputT, v2: InputT, out?: T): T;
   export function sub(v1: InputT, v2: InputT, out?: T): T {
     return GL.sub(out ?? tmp(), v1, v2) as T;
   }
+  export function mul(v1: InputT, v2: InputT, out: Tf): Tf;
+  export function mul(v1: InputT, v2: InputT, out?: T): T;
   export function mul(v1: InputT, v2: InputT, out?: T): T {
     return GL.mul(out ?? tmp(), v1, v2) as T;
   }
+  export function div(v1: InputT, v2: InputT, out: Tf): Tf;
+  export function div(v1: InputT, v2: InputT, out?: T): T;
   export function div(v1: InputT, v2: InputT, out?: T): T {
     return GL.div(out ?? tmp(), v1, v2) as T;
   }
+  export function normalize(v1: InputT, out: Tf): Tf;
+  export function normalize(v1: InputT, out?: T): T;
   export function normalize(v1: InputT, out?: T): T {
     return GL.normalize(out ?? tmp(), v1) as T;
   }
@@ -182,14 +225,20 @@ export module vec3 {
   export function dot(v1: InputT, v2: InputT): number {
     return GL.dot(v1, v2);
   }
+  export function cross(v1: InputT, v2: InputT, out: Tf): Tf;
+  export function cross(v1: InputT, v2: InputT, out?: T): T;
   export function cross(v1: InputT, v2: InputT, out?: T): T {
     return GL.cross(out ?? tmp(), v1, v2) as T;
   }
+  export function scale(v1: InputT, n: number, out: Tf): Tf;
+  export function scale(v1: InputT, n: number, out?: T): T;
   export function scale(v1: InputT, n: number, out?: T): T {
-    return GL.scale(out ?? vec3.tmp(), v1, n) as T;
+    return GL.scale(out ?? tmp(), v1, n) as T;
   }
+  export function negate(v1: InputT, out: Tf): Tf;
+  export function negate(v1: InputT, out?: T): T;
   export function negate(v1: InputT, out?: T): T {
-    return GL.negate(out ?? vec3.tmp(), v1) as T;
+    return GL.negate(out ?? tmp(), v1) as T;
   }
   export function dist(v1: InputT, v2: InputT): number {
     return GL.dist(v1, v2);
@@ -198,18 +247,26 @@ export module vec3 {
     return GL.dist(v1, v2);
   }
 
+  export function lerp(v1: InputT, v2: InputT, n: number, out: Tf): Tf;
+  export function lerp(v1: InputT, v2: InputT, n: number, out?: T): T;
   export function lerp(v1: InputT, v2: InputT, n: number, out?: T): T {
     return GL.lerp(out ?? tmp(), v1, v2, n) as T;
   }
 
+  export function transformQuat(v1: InputT, v2: quat.InputT, out: Tf): Tf;
+  export function transformQuat(v1: InputT, v2: quat.InputT, out?: T): T;
   export function transformQuat(v1: InputT, v2: quat.InputT, out?: T): T {
     return GL.transformQuat(out ?? tmp(), v1, v2) as T;
   }
 
+  export function transformMat4(v1: InputT, v2: mat4.InputT, out: Tf): Tf;
+  export function transformMat4(v1: InputT, v2: mat4.InputT, out?: T): T;
   export function transformMat4(v1: InputT, v2: mat4.InputT, out?: T): T {
     return GL.transformMat4(out ?? tmp(), v1, v2) as T;
   }
 
+  export function zero(out: Tf): Tf;
+  export function zero(out?: T): T;
   export function zero(out?: T): T {
     return GL.zero(out ?? tmp()) as T;
   }
@@ -293,10 +350,10 @@ export module vec4 {
   }
 
   export function scale(v1: InputT, n: number, out?: T): T {
-    return GL.scale(out ?? vec3.tmp(), v1, n) as T;
+    return GL.scale(out ?? tmp(), v1, n) as T;
   }
   export function negate(v1: InputT, out?: T): T {
-    return GL.negate(out ?? vec3.tmp(), v1) as T;
+    return GL.negate(out ?? tmp(), v1) as T;
   }
   export function dist(v1: InputT, v2: InputT): number {
     return GL.dist(v1, v2);

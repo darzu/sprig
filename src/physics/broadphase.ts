@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, vec3f } from "../sprig-matrix.js";
 import { clamp } from "../math.js";
 import { tempVec3 } from "../temp-pool.js";
 import { range } from "../util.js";
@@ -140,7 +140,8 @@ export function checkBroadphase(
   //      3000 objs @[2000, 200, 2000]: 1.2-7.6ms, 180,000-400,000 overlaps, 4,400 cell checks
   if (BROAD_PHASE === "GRID") {
     // initialize world
-    if (!_worldGrid) _worldGrid = createWorldGrid(universeAABB, vec3.clone([10, 10, 10]));
+    if (!_worldGrid)
+      _worldGrid = createWorldGrid(universeAABB, vec3.clone([10, 10, 10]));
     // place objects in grid
     for (let o of objs) {
       let ll = _objToObjLL[o.id];
@@ -169,7 +170,8 @@ export function checkBroadphase(
         for (let x = o.minCoord[0]; x <= o.maxCoord[0]; x++) {
           for (let y = o.minCoord[1]; y <= o.maxCoord[1]; y++) {
             for (let z = o.minCoord[2]; z <= o.maxCoord[2]; z++) {
-              const c = _worldGrid.grid[gridIdx(_worldGrid, vec3.clone([x, y, z]))];
+              const c =
+                _worldGrid.grid[gridIdx(_worldGrid, vec3.clone([x, y, z]))];
               checkCell(o, c);
             }
           }
@@ -392,7 +394,11 @@ function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
     _nextMap--;
     return null;
   }
-  const nextLen = vec3.scale(vec3.sub(aabb.max, aabb.min, _scratchVec3), 0.5, _scratchVec3);
+  const nextLen = vec3.scale(
+    vec3.sub(aabb.max, aabb.min, _scratchVec3),
+    0.5,
+    _scratchVec3
+  );
   if (thisObjs.size <= 2 || nextLen[0] <= _octtreeMinLen)
     return {
       aabb,
@@ -405,7 +411,11 @@ function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
       for (let zMin of [aabb.min[2], aabb.min[2] + nextLen[2]]) {
         childAABBs.push({
           min: vec3.clone([xMin, yMin, zMin]),
-          max: vec3.clone([xMin + nextLen[0], yMin + nextLen[1], zMin + nextLen[2]]),
+          max: vec3.clone([
+            xMin + nextLen[0],
+            yMin + nextLen[1],
+            zMin + nextLen[2],
+          ]),
         });
       }
     }
@@ -489,8 +499,8 @@ export function doesTouchAABB(a: AABB, b: AABB, threshold: number) {
   );
 }
 export interface AABB {
-  min: vec3;
-  max: vec3;
+  min: vec3f;
+  max: vec3f;
 }
 export function createAABB(): AABB {
   return {

@@ -1,5 +1,5 @@
 import { EM, EntityManager, Component, Entity } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, vec3r } from "../sprig-matrix.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "../color.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
@@ -51,7 +51,7 @@ EM.registerSerializerPair(
   }
 );
 
-const BULLET_COLOR: vec3 = vec3.clone([0.02, 0.02, 0.02]);
+const BULLET_COLOR: vec3r = [0.02, 0.02, 0.02];
 
 function createBullet(
   em: EntityManager,
@@ -65,7 +65,7 @@ function createBullet(
   em.ensureComponent(e.id, RotationDef);
   em.ensureComponent(e.id, LinearVelocityDef, props.linearVelocity);
   em.ensureComponent(e.id, AngularVelocityDef, props.angularVelocity);
-  em.ensureComponent(e.id, ColorDef, BULLET_COLOR);
+  em.ensureComponent(e.id, ColorDef, vec3.clone(BULLET_COLOR));
   em.ensureComponent(e.id, MotionSmoothingDef);
   em.ensureComponent(e.id, RenderableConstructDef, assets.ball.proto);
   em.ensureComponent(e.id, AuthorityDef, pid);

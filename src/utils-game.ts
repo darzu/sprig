@@ -1,7 +1,7 @@
 import { ColorDef } from "./color.js";
 import { EM, Entity, EntityW } from "./entity-manager.js";
 import { AssetsDef } from "./game/assets.js";
-import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, vec3f } from "./sprig-matrix.js";
 import { PositionDef, ScaleDef } from "./physics/transform.js";
 import { Mesh } from "./render/mesh.js";
 import { RenderableConstructDef } from "./render/renderer-ecs.js";
@@ -9,7 +9,7 @@ import { RenderableConstructDef } from "./render/renderer-ecs.js";
 // TODO(@darzu): move this helper elsewhere?
 // TODO(@darzu): would be dope to support thickness;
 //    probably needs some shader work + a post pass
-export function drawLine(start: vec3, end: vec3, color: vec3) {
+export function drawLine(start: vec3, end: vec3, color: vec3f) {
   const e = EM.newEntity();
   EM.ensureComponentOn(e, ColorDef, color);
   const m: Mesh = {
@@ -29,7 +29,7 @@ export function drawLine(start: vec3, end: vec3, color: vec3) {
 export async function drawBall(
   pos: vec3,
   size: number,
-  color: vec3
+  color: vec3f
 ): Promise<EntityW<[typeof PositionDef]>> {
   let res = await EM.whenResources(AssetsDef);
   const e = EM.newEntity();

@@ -55,6 +55,18 @@ export type vec2 = [number, number] | Float32Array;
 export type vec3 = [number, number, number] | Float32Array;
 export type vec4 = [number, number, number, number] | Float32Array;
 
+export interface Float32ArrayOfLength<N extends number> extends Float32Array {
+  length: N;
+}
+
+export interface ReadonlyFloat32ArrayOfLength<N extends number>
+  extends Omit<
+    Float32ArrayOfLength<N>,
+    "copyWithin" | "fill" | "reverse" | "set" | "sort"
+  > {
+  readonly [n: number]: number;
+}
+
 // prettier-ignore
 export type ReadonlyMat2 =
         | readonly [
@@ -100,7 +112,9 @@ export type ReadonlyQuat2 =
   | Float32Array;
 
 export type ReadonlyVec2 = readonly [number, number] | Float32Array;
-export type ReadonlyVec3 = readonly [number, number, number] | Float32Array;
+export type ReadonlyVec3 =
+  | readonly [number, number, number]
+  | ReadonlyFloat32ArrayOfLength<3>;
 export type ReadonlyVec4 =
   | readonly [number, number, number, number]
   | Float32Array;

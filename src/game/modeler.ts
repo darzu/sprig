@@ -60,7 +60,10 @@ function registerObjClicker(em: EntityManager) {
       if (!res.modeler.clickerEnabled) return;
 
       if (res.inputs.lclick) {
-        const screenPos: vec2 = vec2.clone([res.inputs.mousePosX, res.inputs.mousePosY]);
+        const screenPos: vec2 = vec2.clone([
+          res.inputs.mousePosX,
+          res.inputs.mousePosY,
+        ]);
 
         const r = screenPosToRay(screenPos, res.cameraView);
 
@@ -85,8 +88,12 @@ function registerObjClicker(em: EntityManager) {
 
         // draw our ray
         const rayDist = firstHit?.dist || 1000;
-        const color: vec3 = firstHit ? vec3.clone([0, 1, 0]) : vec3.clone([1, 0, 0]);
-        const endPoint = vec3.add(r.org, vec3.scale(r.dir, rayDist), vec3.create());
+        const color = firstHit ? vec3.clone([0, 1, 0]) : vec3.clone([1, 0, 0]);
+        const endPoint = vec3.add(
+          r.org,
+          vec3.scale(r.dir, rayDist),
+          vec3.create()
+        );
         drawLine(r.org, endPoint, color);
       }
     },

@@ -137,7 +137,11 @@ onInit((em: EntityManager) => {
       for (let cloth of cloths) {
         if (FinishedDef.isOn(cloth)) continue;
         em.ensureComponentOn(cloth, PositionDef, cloth.clothConstruct.location);
-        em.ensureComponentOn(cloth, ColorDef, cloth.clothConstruct.color);
+        em.ensureComponentOn(
+          cloth,
+          ColorDef,
+          vec3.clone(cloth.clothConstruct.color)
+        );
         const { mesh, posMap } = clothMesh(cloth.clothConstruct);
         em.ensureComponentOn(cloth, ClothLocalDef, posMap);
         em.ensureComponentOn(cloth, RenderableConstructDef, mesh);
