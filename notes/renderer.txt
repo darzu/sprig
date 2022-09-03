@@ -977,3 +977,14 @@ Falconeer floodlights:
   triangular prism,
   addative,
   fade out w/ depth blend so u don't get ugly intersections
+
+Reternal particle system:
+  This is a great talk about the custom particle system used in Reternal for everything incl tentacles
+  https://www.youtube.com/watch?v=qbkb8ap7vts
+  This could be a great starting point for our own particle system, and I think it fits nicely with the Cy workflow
+
+  "Semi-Lagrangian grid-based fluid sim"
+    centered around the player, running at all time
+      simulates air flow
+    particles can simple from it
+      and affect it?
