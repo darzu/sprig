@@ -27,7 +27,7 @@ export function importSprigMesh(smesh: SprigMesh): RawMesh {
   };
 
   // TODO(@darzu): colors
-  res.colors = res.tri!.map((_) => [0.1, 0.1, 0.1]);
+  res.colors = res.tri!.map((_) => vec3.clone([0.1, 0.1, 0.1]));
 
   return res as RawMesh;
 }

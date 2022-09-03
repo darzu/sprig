@@ -60,9 +60,9 @@ export const CameraFollowDef = EM.defineComponent(
 );
 
 export const CAMERA_OFFSETS = {
-  thirdPerson: [0, 0, 10],
-  thirdPersonOverShoulder: [2, 2, 8],
-  firstPerson: [0, 0, 0],
+  thirdPerson: vec3.clone([0, 0, 10]),
+  thirdPersonOverShoulder: vec3.clone([2, 2, 8]),
+  firstPerson: vec3.clone([0, 0, 0]),
 } as const;
 
 export function setCameraFollowPosition(
@@ -137,8 +137,14 @@ export function registerCameraSystems(em: EntityManager) {
           res.camera.cameraPositionError
         );
 
-        const computedRotation = quat.mul(prevTarget.world.rotation, res.camera.lastRotation);
-        const newComputedRotation = quat.mul(newTarget.world.rotation, res.camera.rotationOffset);
+        const computedRotation = quat.mul(
+          prevTarget.world.rotation,
+          res.camera.lastRotation
+        );
+        const newComputedRotation = quat.mul(
+          newTarget.world.rotation,
+          res.camera.rotationOffset
+        );
 
         computeNewError(
           computedRotation,
@@ -174,16 +180,34 @@ export function registerCameraSystems(em: EntityManager) {
 
       let viewMatrix = mat4.create();
       if (targetEnt) {
-        const computedTranslation = vec3.add(frame.position, camera.targetPositionError);
-        mat4.fromRotationTranslationScale(frame.rotation, computedTranslation, frame.scale, viewMatrix);
+        const computedTranslation = vec3.add(
+          frame.position,
+          camera.targetPositionError
+        );
+        mat4.fromRotationTranslationScale(
+          frame.rotation,
+          computedTranslation,
+          frame.scale,
+          viewMatrix
+        );
         vec3.copy(cameraView.location, computedTranslation);
       }
 
-      const computedCameraRotation = quat.mul(camera.rotationOffset, camera.rotationError);
+      const computedCameraRotation = quat.mul(
+        camera.rotationOffset,
+        camera.rotationError
+      );
 
-      mat4.mul(viewMatrix, mat4.fromQuat(computedCameraRotation, mat4.create()), viewMatrix);
+      mat4.mul(
+        viewMatrix,
+        mat4.fromQuat(computedCameraRotation, mat4.create()),
+        viewMatrix
+      );
 
-      const computedCameraTranslation = vec3.add(camera.positionOffset, camera.cameraPositionError);
+      const computedCameraTranslation = vec3.add(
+        camera.positionOffset,
+        camera.cameraPositionError
+      );
 
       mat4.translate(viewMatrix, computedCameraTranslation, viewMatrix);
       mat4.invert(viewMatrix, viewMatrix);
@@ -191,11 +215,25 @@ export function registerCameraSystems(em: EntityManager) {
       const projectionMatrix = mat4.create();
       if (camera.perspectiveMode === "ortho") {
         const ORTHO_SIZE = 10;
-        mat4.ortho(-ORTHO_SIZE, ORTHO_SIZE, -ORTHO_SIZE, ORTHO_SIZE, -400, 100, projectionMatrix);
+        mat4.ortho(
+          -ORTHO_SIZE,
+          ORTHO_SIZE,
+          -ORTHO_SIZE,
+          ORTHO_SIZE,
+          -400,
+          100,
+          projectionMatrix
+        );
       } else {
-        mat4.perspective(camera.fov, cameraView.aspectRatio, 1, 100000.0 /*view distance*/, projectionMatrix);
+        mat4.perspective(
+          camera.fov,
+          cameraView.aspectRatio,
+          1,
+          100000.0 /*view distance*/,
+          projectionMatrix
+        );
       }
-      const viewProj = mat4.mul(projectionMatrix, viewMatrix, mat4.create()) as Float32Array;
+      const viewProj = mat4.mul(projectionMatrix, viewMatrix, mat4.create());
 
       cameraView.viewProjMat = viewProj;
     },

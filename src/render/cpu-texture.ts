@@ -15,7 +15,7 @@ type ArityToVec<N extends 1 | 2 | 3 | 4> = N extends 1
   : never;
 
 export interface TextureReader<A extends 1 | 2 | 3 | 4> {
-  size: vec2;
+  size: [number, number];
   data: ArrayBuffer;
   format: GPUTextureFormat;
   outArity: A;
@@ -27,7 +27,7 @@ export interface TextureReader<A extends 1 | 2 | 3 | 4> {
 //  sampling, loading, comparison, derivatives, etc.
 export function createTextureReader<A extends 1 | 2 | 3 | 4>(
   data: ArrayBuffer,
-  size: vec2,
+  size: [number, number],
   outArity: A,
   format: GPUTextureFormat
 ): TextureReader<A> {
@@ -75,7 +75,13 @@ export function createTextureReader<A extends 1 | 2 | 3 | 4>(
     } else if (outArity === 3) {
       return vec3.set(f32[idx], f32[idx + 1], f32[idx + 2], out as vec3);
     } else if (outArity === 4) {
-      return vec4.set(f32[idx + 0], f32[idx + 1], f32[idx + 2], f32[idx + 3], out as vec4);
+      return vec4.set(
+        f32[idx + 0],
+        f32[idx + 1],
+        f32[idx + 2],
+        f32[idx + 3],
+        out as vec4
+      );
     } else {
       never(outArity);
     }
@@ -152,7 +158,13 @@ export function createTextureReader<A extends 1 | 2 | 3 | 4>(
     } else if (outArity === 3) {
       return vec3.set(_sample(0), _sample(1), _sample(2), out as vec3);
     } else if (outArity === 4) {
-      return vec4.set(_sample(0), _sample(1), _sample(2), _sample(3), out as vec4);
+      return vec4.set(
+        _sample(0),
+        _sample(1),
+        _sample(2),
+        _sample(3),
+        out as vec4
+      );
     } else {
       never(outArity);
     }

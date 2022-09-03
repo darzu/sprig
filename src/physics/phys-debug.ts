@@ -24,6 +24,7 @@ import {
   ScaleDef,
   updateFrameFromPosRotScale,
 } from "./transform.js";
+import { vec3 } from "../sprig-matrix.js";
 
 export const PhysicsDbgDef = EM.defineComponent("_physDbgState", () => {
   return {
@@ -139,11 +140,13 @@ export function setCubePosScaleToAABB(
 function meshFromAABB(aabb: AABB): RawMesh {
   // resize
   const m = cloneMesh(LocalMeshes.cube());
-  mapMeshPositions(m, (p) => vec3.clone([
-    mathMap(p[0], -1, 1, 0, aabb.max[0] - aabb.min[0]),
-    mathMap(p[1], -1, 1, 0, aabb.max[1] - aabb.min[1]),
-    mathMap(p[2], -1, 1, 0, aabb.max[2] - aabb.min[2]),
-]));
+  mapMeshPositions(m, (p) =>
+    vec3.clone([
+      mathMap(p[0], -1, 1, 0, aabb.max[0] - aabb.min[0]),
+      mathMap(p[1], -1, 1, 0, aabb.max[1] - aabb.min[1]),
+      mathMap(p[2], -1, 1, 0, aabb.max[2] - aabb.min[2]),
+    ])
+  );
   // drop the triangles (wireframe lines only)
   m.tri = [];
   m.colors = [];

@@ -105,10 +105,10 @@ export function computeUniData(m: Mesh): MeshUniformTS {
 export function computeVertsData(m: Mesh): VertexTS[] {
   const vertsData: VertexTS[] = m.pos.map((pos, i) => ({
     position: pos,
-    color: [1.0, 0.0, 1.0], // per-face; changed below
-    tangent: m.tangents ? m.tangents[i] : [1.0, 0.0, 0.0], // per-face; changed below (maybe)
-    normal: m.normals ? m.normals[i] : [0.0, 1.0, 0.0], // per-face; changed below (maybe)
-    uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
+    color: vec3.clone([1.0, 0.0, 1.0]), // per-face; changed below
+    tangent: m.tangents ? m.tangents[i] : vec3.clone([1.0, 0.0, 0.0]), // per-face; changed below (maybe)
+    normal: m.normals ? m.normals[i] : vec3.clone([0.0, 1.0, 0.0]), // per-face; changed below (maybe)
+    uv: m.uvs ? m.uvs[i] : vec2.clone([0.0, 0.0]),
     surfaceId: 0, // per-face; changed below
   }));
   m.tri.forEach((triInd, i) => {

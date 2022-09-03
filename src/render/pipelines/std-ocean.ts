@@ -121,10 +121,10 @@ function computeOceanVertsData(m: Mesh): OceanVertTS[] {
   // TODO(@darzu): change
   const vertsData: OceanVertTS[] = m.pos.map((pos, i) => ({
     position: pos,
-    color: [1.0, 0.0, 1.0], // per-face; changed below
+    color: vec3.clone([1.0, 0.0, 1.0]), // per-face; changed below
     tangent: m.tangents![i],
     normal: m.normals![i],
-    uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
+    uv: m.uvs ? m.uvs[i] : vec2.clone([0.0, 0.0]),
     surfaceId: 0, // per-face; changed below
   }));
   // TODO: compute tangents here? right now tangents are wrong if we

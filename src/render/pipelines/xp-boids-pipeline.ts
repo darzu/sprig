@@ -33,10 +33,10 @@ const BoidVert = createCyStruct({
 const boidVerts = CY.createArray("boidVerts", {
   struct: BoidVert,
   init: () => [
-    { pos: [1, 1, 1] },
-    { pos: [1, -1, -1] },
-    { pos: [-1, 1, -1] },
-    { pos: [-1, -1, 1] },
+    { pos: vec3.clone([1, 1, 1]) },
+    { pos: vec3.clone([1, -1, -1]) },
+    { pos: vec3.clone([-1, 1, -1]) },
+    { pos: vec3.clone([-1, -1, 1]) },
   ],
 });
 const boidInds = CY.createIdxBuf("boidIdx", {
@@ -146,8 +146,8 @@ const boidWindow = createCyStruct(
 const boidWindowUni = CY.createSingleton("boidWindow", {
   struct: boidWindow,
   init: () => ({
-    xPos: [0, 1],
-    yPos: [0, 1],
+    xPos: vec2.clone([0, 1]),
+    yPos: vec2.clone([0, 1]),
   }),
 });
 

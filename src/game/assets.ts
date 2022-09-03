@@ -88,7 +88,11 @@ const MeshTransforms: Partial<{
   grappleGun: mat4.fromScaling([0.5, 0.5, 0.5], mat4.create()),
   grappleGunUnloaded: mat4.fromScaling([0.5, 0.5, 0.5], mat4.create()),
   grappleHook: mat4.fromScaling([0.5, 0.5, 0.5], mat4.create()),
-  rudder: mat4.translate(mat4.fromYRotation(-Math.PI * 0.5, mat4.create()), vec3.fromValues(-5, 0, 0), mat4.create()),
+  rudder: mat4.translate(
+    mat4.fromYRotation(-Math.PI * 0.5, mat4.create()),
+    vec3.fromValues(-5, 0, 0),
+    mat4.create()
+  ),
   ocean: mat4.fromScaling([2, 2, 2], mat4.create()),
 };
 
@@ -170,7 +174,13 @@ const MeshModify: Partial<{
     const uvs = m.pos.map((_, vi) => vec2.create());
     m.uvs = uvs;
     // setUV(Math.floor(xLen / 2), 0, [0, 1], [0, 0], true);
-    setUV(0, Math.floor(yLen / 2), vec2.clone([1, 0]), vec2.clone([0, 0]), true);
+    setUV(
+      0,
+      Math.floor(yLen / 2),
+      vec2.clone([1, 0]),
+      vec2.clone([0, 0]),
+      true
+    );
     // TODO(@darzu): lots of little annoying issues happen when you go right to the texture edge
     normalizeVec2s(uvs, 0 + 0.01, 1 - 0.01);
 
@@ -243,9 +253,9 @@ const MeshModify: Partial<{
       const nVi = grid[nX][nY];
       const delta = vec3.dist(m.pos[vi], m.pos[nVi]);
       const newDist: vec2 = vec2.clone([
-    currDist[0] + dir[0] * delta,
-    currDist[1] + dir[1] * delta,
-]);
+        currDist[0] + dir[0] * delta,
+        currDist[1] + dir[1] * delta,
+      ]);
       setUV(nX, nY, dir, newDist, branch);
     }
     // console.dir({
@@ -285,42 +295,55 @@ export const CUBE_MESH: RawMesh = {
   tri: [
     vec3.clone([0, 1, 2]),
     vec3.clone([0, 2, 3]), // front
-    vec3.clone(// front
-[4, 5, 1]),
+    vec3.clone(
+      // front
+      [4, 5, 1]
+    ),
     vec3.clone([4, 1, 0]), // top
-    vec3.clone(// top
-[3, 4, 0]),
+    vec3.clone(
+      // top
+      [3, 4, 0]
+    ),
     vec3.clone([3, 7, 4]), // right
-    vec3.clone(// right
-[2, 1, 5]),
+    vec3.clone(
+      // right
+      [2, 1, 5]
+    ),
     vec3.clone([2, 5, 6]), // left
-    vec3.clone(// left
-[6, 3, 2]),
+    vec3.clone(
+      // left
+      [6, 3, 2]
+    ),
     vec3.clone([6, 7, 3]), // bottom
-    vec3.clone(// bottom
-[5, 4, 7]),
+    vec3.clone(
+      // bottom
+      [5, 4, 7]
+    ),
     vec3.clone([5, 7, 6]), // back
   ],
   quad: [],
   lines: [
     // top
     vec2.clone(
-// top
-[0, 1]),
+      // top
+      [0, 1]
+    ),
     vec2.clone([1, 2]),
     vec2.clone([2, 3]),
     vec2.clone([3, 0]),
     // bottom
     vec2.clone(
-// bottom
-[4, 5]),
+      // bottom
+      [4, 5]
+    ),
     vec2.clone([5, 6]),
     vec2.clone([6, 7]),
     vec2.clone([7, 4]),
     // connectors
     vec2.clone(
-// connectors
-[0, 4]),
+      // connectors
+      [0, 4]
+    ),
     vec2.clone([1, 5]),
     vec2.clone([2, 6]),
     vec2.clone([3, 7]),
@@ -380,10 +403,7 @@ const HEX_MESH: () => RawMesh = () => {
   ];
   const sideTri: (i: number) => vec3[] = (i) => {
     const i2 = (i + 1) % 6;
-    return [
-      [i + 6, i, i2],
-      [i + 6, i2, i2 + 6],
-    ];
+    return [vec3.clone([i + 6, i, i2]), vec3.clone([i + 6, i2, i2 + 6])];
   };
   const pos: vec3[] = [
     vec3.clone([+1, 1, +0]),
@@ -402,15 +422,17 @@ const HEX_MESH: () => RawMesh = () => {
   const tri: vec3[] = [
     // top 4
     vec3.clone(
-// top 4
-[4, 2, 1]),
+      // top 4
+      [4, 2, 1]
+    ),
     vec3.clone([1, 5, 4]),
     vec3.clone([0, 5, 1]),
     vec3.clone([4, 3, 2]),
     // bottom 4
     vec3.clone(
-// bottom 4
-[8, 10, 7]),
+      // bottom 4
+      [8, 10, 7]
+    ),
     vec3.clone([11, 7, 10]),
     vec3.clone([11, 6, 7]),
     vec3.clone([9, 10, 8]),
@@ -442,8 +464,10 @@ const PLANE_MESH: RawMesh = {
   tri: [
     vec3.clone([0, 2, 3]),
     vec3.clone([0, 3, 1]), // top
-    vec3.clone(// top
-[3, 2, 0]),
+    vec3.clone(
+      // top
+      [3, 2, 0]
+    ),
     vec3.clone([1, 3, 0]), // bottom
   ],
   quad: [],
@@ -490,11 +514,13 @@ const TRI_FENCE: () => RawMesh = () => {
   const pos: vec3[] = [];
   const tri: vec3[] = [];
   for (let i = 0; i < TRI_FENCE_LN; i++) {
-    tri.push(vec3.clone([
-    pos.push(vec3.clone([-0.5 + i, 0, 0])) - 1,
-    pos.push(vec3.clone([0 + i, 2, 0])) - 1,
-    pos.push(vec3.clone([0.5 + i, 0, 0])) - 1,
-]));
+    tri.push(
+      vec3.clone([
+        pos.push(vec3.clone([-0.5 + i, 0, 0])) - 1,
+        pos.push(vec3.clone([0 + i, 2, 0])) - 1,
+        pos.push(vec3.clone([0.5 + i, 0, 0])) - 1,
+      ])
+    );
   }
   const surfaceIds = tri.map((_, i) => i);
 
@@ -542,7 +568,9 @@ function createGridPlane(width: number, height: number): RawMesh {
     m.lines!.push(vec2.clone([i, i + 1]));
   }
 
-  mapMeshPositions(m, (p) => vec3.clone([p[0] - width / 2, p[1], p[2] - height / 2]));
+  mapMeshPositions(m, (p) =>
+    vec3.clone([p[0] - width / 2, p[1], p[2] - height / 2])
+  );
   scaleMesh(m, 10 / Math.min(width, height));
 
   return m;
@@ -567,11 +595,11 @@ export function createFabric(size: number): RawMesh {
   for (let x = 0; x < size - 1; x++) {
     for (let y = 0; y < size - 1; y++) {
       const q: vec4 = vec4.clone([
-    idx(x, y),
-    idx(x + 1, y),
-    idx(x + 1, y + 1),
-    idx(x, y + 1),
-]);
+        idx(x, y),
+        idx(x + 1, y),
+        idx(x + 1, y + 1),
+        idx(x, y + 1),
+      ]);
       quad.push(q);
       quad.push(vec4.clone([q[3], q[2], q[1], q[0]]));
     }
@@ -597,44 +625,131 @@ export const SHIP_AABBS: AABB[] = [
   { min: vec3.clone([-11.6, -2.7, 17.2]), max: vec3.clone([4.8, 13.75, 42.8]) },
   { min: vec3.clone([-11.6, 13.1, 16.4]), max: vec3.clone([4.8, 15.4, 18.0]) },
   { min: vec3.clone([-21.7, 13.8, 42.3]), max: vec3.clone([13.7, 17.6, 43.3]) },
-  { min: vec3.clone([-12.9, 13.6, 16.4]), max: vec3.clone([-11.1, 15.4, 25.6]) },
+  {
+    min: vec3.clone([-12.9, 13.6, 16.4]),
+    max: vec3.clone([-11.1, 15.4, 25.6]),
+  },
   { min: vec3.clone([3.1, 13.6, 16.4]), max: vec3.clone([4.9, 15.4, 25.6]) },
   { min: vec3.clone([13.1, 13.4, 20.9]), max: vec3.clone([14.9, 16.4, 42.7]) },
-  { min: vec3.clone([-23.1, 13.4, 20.9]), max: vec3.clone([-21.3, 16.4, 42.7]) },
+  {
+    min: vec3.clone([-23.1, 13.4, 20.9]),
+    max: vec3.clone([-21.3, 16.4, 42.7]),
+  },
   { min: vec3.clone([-21.7, 0.4, 22.5]), max: vec3.clone([13.7, 13.75, 42.7]) },
-  { min: vec3.clone([-21.7, -5.6, -35.7]), max: vec3.clone([13.7, 3.75, 16.9]) },
-  { min: vec3.clone([-22.55, -2.8, -12.4]), max: vec3.clone([-20.65, 6.75, 16.0]) },
-  { min: vec3.clone([12.65, 0.65, -12.4]), max: vec3.clone([14.55, 6.75, 16.0]) },
-  { min: vec3.clone([12.25, 0.65, -29.9]), max: vec3.clone([14.55, 6.75, -18.1]) },
-  { min: vec3.clone([-22.55, 0.65, -29.9]), max: vec3.clone([-20.25, 6.75, -18.1]) },
-  { min: vec3.clone([-21.45, 0.65, -34.7]), max: vec3.clone([-16.95, 6.75, -29.7]) },
-  { min: vec3.clone([-17.85, 0.65, -39.7]), max: vec3.clone([-13.35, 6.75, -34.7]) },
-  { min: vec3.clone([-13.45, 0.65, -44.7]), max: vec3.clone([-8.95, 6.75, -39.7]) },
-  { min: vec3.clone([-8.95, 0.65, -49.5]), max: vec3.clone([0.95, 6.75, -44.5]) },
-  { min: vec3.clone([0.05, 0.65, -44.7]), max: vec3.clone([5.15, 6.75, -39.7]) },
-  { min: vec3.clone([4.85, 0.65, -39.7]), max: vec3.clone([9.95, 6.75, -34.7]) },
-  { min: vec3.clone([9.25, 0.65, -34.7]), max: vec3.clone([14.35, 6.75, -29.7]) },
-  { min: vec3.clone([-13.35, -2.35, -44.9]), max: vec3.clone([4.55, 3.75, -35.5]) },
-  { min: vec3.clone([12.35, 0.65, -18.2]), max: vec3.clone([15.25, 4.35, -12.2]) },
-  { min: vec3.clone([-23.45, 0.65, -18.2]), max: vec3.clone([-20.55, 4.35, -12.2]) },
-  { min: vec3.clone([-21.15, 2.05, 16.9]), max: vec3.clone([-12.85, 5.75, 19.1]) },
-  { min: vec3.clone([-21.15, 4.05, 18.3]), max: vec3.clone([-12.85, 7.75, 20.5]) },
-  { min: vec3.clone([-21.15, 6.05, 19.7]), max: vec3.clone([-12.85, 9.75, 21.9]) },
-  { min: vec3.clone([-21.15, 8.05, 20.9]), max: vec3.clone([-12.85, 11.75, 23.1]) },
-  { min: vec3.clone([4.85, 8.05, 20.9]), max: vec3.clone([13.15, 11.75, 23.1]) },
+  {
+    min: vec3.clone([-21.7, -5.6, -35.7]),
+    max: vec3.clone([13.7, 3.75, 16.9]),
+  },
+  {
+    min: vec3.clone([-22.55, -2.8, -12.4]),
+    max: vec3.clone([-20.65, 6.75, 16.0]),
+  },
+  {
+    min: vec3.clone([12.65, 0.65, -12.4]),
+    max: vec3.clone([14.55, 6.75, 16.0]),
+  },
+  {
+    min: vec3.clone([12.25, 0.65, -29.9]),
+    max: vec3.clone([14.55, 6.75, -18.1]),
+  },
+  {
+    min: vec3.clone([-22.55, 0.65, -29.9]),
+    max: vec3.clone([-20.25, 6.75, -18.1]),
+  },
+  {
+    min: vec3.clone([-21.45, 0.65, -34.7]),
+    max: vec3.clone([-16.95, 6.75, -29.7]),
+  },
+  {
+    min: vec3.clone([-17.85, 0.65, -39.7]),
+    max: vec3.clone([-13.35, 6.75, -34.7]),
+  },
+  {
+    min: vec3.clone([-13.45, 0.65, -44.7]),
+    max: vec3.clone([-8.95, 6.75, -39.7]),
+  },
+  {
+    min: vec3.clone([-8.95, 0.65, -49.5]),
+    max: vec3.clone([0.95, 6.75, -44.5]),
+  },
+  {
+    min: vec3.clone([0.05, 0.65, -44.7]),
+    max: vec3.clone([5.15, 6.75, -39.7]),
+  },
+  {
+    min: vec3.clone([4.85, 0.65, -39.7]),
+    max: vec3.clone([9.95, 6.75, -34.7]),
+  },
+  {
+    min: vec3.clone([9.25, 0.65, -34.7]),
+    max: vec3.clone([14.35, 6.75, -29.7]),
+  },
+  {
+    min: vec3.clone([-13.35, -2.35, -44.9]),
+    max: vec3.clone([4.55, 3.75, -35.5]),
+  },
+  {
+    min: vec3.clone([12.35, 0.65, -18.2]),
+    max: vec3.clone([15.25, 4.35, -12.2]),
+  },
+  {
+    min: vec3.clone([-23.45, 0.65, -18.2]),
+    max: vec3.clone([-20.55, 4.35, -12.2]),
+  },
+  {
+    min: vec3.clone([-21.15, 2.05, 16.9]),
+    max: vec3.clone([-12.85, 5.75, 19.1]),
+  },
+  {
+    min: vec3.clone([-21.15, 4.05, 18.3]),
+    max: vec3.clone([-12.85, 7.75, 20.5]),
+  },
+  {
+    min: vec3.clone([-21.15, 6.05, 19.7]),
+    max: vec3.clone([-12.85, 9.75, 21.9]),
+  },
+  {
+    min: vec3.clone([-21.15, 8.05, 20.9]),
+    max: vec3.clone([-12.85, 11.75, 23.1]),
+  },
+  {
+    min: vec3.clone([4.85, 8.05, 20.9]),
+    max: vec3.clone([13.15, 11.75, 23.1]),
+  },
   { min: vec3.clone([4.85, 6.05, 19.7]), max: vec3.clone([13.15, 9.75, 21.9]) },
   { min: vec3.clone([4.85, 4.05, 18.3]), max: vec3.clone([13.15, 7.75, 20.5]) },
   { min: vec3.clone([4.85, 2.05, 16.9]), max: vec3.clone([13.15, 5.75, 19.1]) },
-  { min: vec3.clone([12.95, 6.45, 15.9]), max: vec3.clone([14.65, 13.75, 20.9]) },
-  { min: vec3.clone([-22.65, 6.45, 15.9]), max: vec3.clone([-20.95, 13.75, 20.9]) },
+  {
+    min: vec3.clone([12.95, 6.45, 15.9]),
+    max: vec3.clone([14.65, 13.75, 20.9]),
+  },
+  {
+    min: vec3.clone([-22.65, 6.45, 15.9]),
+    max: vec3.clone([-20.95, 13.75, 20.9]),
+  },
 ];
 
 const RAW_BARGE_AABBS: AABB[] = [
-  { min: vec3.clone([-5.1, -13.6, 83.35]), max: vec3.clone([22.1, -11.6, 135.05]) },
-  { min: vec3.clone([19.2, -11.5, 83.35]), max: vec3.clone([22.0, -9.5, 135.05]) },
-  { min: vec3.clone([-5.1, -11.5, 83.35]), max: vec3.clone([-2.3, -9.5, 135.05]) },
-  { min: vec3.clone([-2.95, -11.5, 83.35]), max: vec3.clone([19.55, -9.5, 86.05]) },
-  { min: vec3.clone([-2.95, -11.5, 132.25]), max: vec3.clone([19.55, -9.5, 134.95]) },
+  {
+    min: vec3.clone([-5.1, -13.6, 83.35]),
+    max: vec3.clone([22.1, -11.6, 135.05]),
+  },
+  {
+    min: vec3.clone([19.2, -11.5, 83.35]),
+    max: vec3.clone([22.0, -9.5, 135.05]),
+  },
+  {
+    min: vec3.clone([-5.1, -11.5, 83.35]),
+    max: vec3.clone([-2.3, -9.5, 135.05]),
+  },
+  {
+    min: vec3.clone([-2.95, -11.5, 83.35]),
+    max: vec3.clone([19.55, -9.5, 86.05]),
+  },
+  {
+    min: vec3.clone([-2.95, -11.5, 132.25]),
+    max: vec3.clone([19.55, -9.5, 134.95]),
+  },
 ];
 export const BARGE_AABBS: AABB[] = RAW_BARGE_AABBS.map((aabb) => {
   // TODO(@darzu): this is especially hacky offset/scale fixing

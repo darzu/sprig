@@ -2,6 +2,7 @@ import { mathMap } from "../../math.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { CY } from "../gpu-registry.js";
 import { oceanPoolPtr } from "./std-ocean.js";
+import { vec4 } from "../../sprig-matrix.js";
 
 // TODO(@darzu): parameterize and generalize this for other meshes
 
@@ -88,7 +89,7 @@ export const unwrapPipeline2 = CY.createRenderPipeline("unwrapPipe2", {
     {
       ptr: uvToPosTex,
       clear: "once",
-      defaultColor: [0.0, 0.0, 0.0, 0.0],
+      defaultColor: vec4.clone([0.0, 0.0, 0.0, 0.0]),
     },
     {
       ptr: uvToNormTex,

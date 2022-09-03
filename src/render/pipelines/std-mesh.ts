@@ -12,6 +12,7 @@ import {
   surfacesTexturePtr,
 } from "./std-scene.js";
 import { shadowDepthTextures } from "./std-shadow.js";
+import { vec4 } from "../../sprig-matrix.js";
 
 // TODO:
 //  [x] pipeline attachements / outputs
