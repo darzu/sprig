@@ -427,6 +427,10 @@ export module mat4 {
     return GL.identity(out ?? tmp()) as T;
   }
 
+  export function invert(v1: InputT, out?: T): T {
+    return GL.invert(out ?? tmp(), v1) as T;
+  }
+
   export function fromRotationTranslation(
     q: quat.InputT,
     v: vec3.InputT,
@@ -452,6 +456,20 @@ export module mat4 {
     out?: T
   ): T {
     return GL.fromRotationTranslationScaleOrigin(out ?? tmp(), q, v, s, o) as T;
+  }
+
+  export function fromScaling(v: vec3.InputT, out?: T): T {
+    return GL.fromScaling(out ?? tmp(), v) as T;
+  }
+
+  export function fromXRotation(rad: number, out?: T): T {
+    return GL.fromXRotation(out ?? tmp(), rad) as T;
+  }
+  export function fromYRotation(rad: number, out?: T): T {
+    return GL.fromYRotation(out ?? tmp(), rad) as T;
+  }
+  export function fromZRotation(rad: number, out?: T): T {
+    return GL.fromZRotation(out ?? tmp(), rad) as T;
   }
 
   export function fromQuat(q: quat, out?: T): T {
@@ -490,6 +508,16 @@ export module mat4 {
     out?: T
   ): T {
     return GL.ortho(out ?? tmp(), left, right, bottom, top, near, far) as T;
+  }
+
+  export function perspective(
+    fovy: number,
+    aspect: number,
+    near: number,
+    far: number,
+    out?: T
+  ): T {
+    return GL.perspective(out ?? tmp(), fovy, aspect, near, far) as T;
   }
 
   export function lookAt(
