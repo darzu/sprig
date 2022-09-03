@@ -53,8 +53,8 @@ export module vec2 {
     return GL.clone(v) as T;
   }
 
-  export function copy(out: T, v1: InputT): void {
-    GL.copy(out, v1) as T;
+  export function copy(out: T, v1: InputT): T {
+    return GL.copy(out, v1) as T;
   }
 
   export function set(n0: number, n1: number, out?: T): T {
@@ -135,8 +135,8 @@ export module vec3 {
     return GL.clone(v) as T;
   }
 
-  export function copy(out: T, v1: InputT): void {
-    GL.copy(out, v1) as T;
+  export function copy(out: T, v1: InputT): T {
+    return GL.copy(out, v1) as T;
   }
 
   export function set(n0: number, n1: number, n2: number, out?: T): T {
@@ -232,8 +232,8 @@ export module vec4 {
     return GL.clone(v) as T;
   }
 
-  export function copy(out: T, v1: InputT): void {
-    GL.copy(out, v1) as T;
+  export function copy(out: T, v1: InputT): T {
+    return GL.copy(out, v1) as T;
   }
 
   export function set(
@@ -339,8 +339,8 @@ export module quat {
     return GL.clone(v) as T;
   }
 
-  export function copy(out: T, v1: InputT): void {
-    GL.copy(out, v1) as T;
+  export function copy(out: T, v1: InputT): T {
+    return GL.copy(out, v1) as T;
   }
 
   export const IDENTITY = identity(create());
@@ -421,8 +421,8 @@ export module mat4 {
     return GL.clone(v) as T;
   }
 
-  export function copy(out: T, v1: InputT): void {
-    GL.copy(out, v1) as T;
+  export function copy(out: T, v1: InputT): T {
+    return GL.copy(out, v1) as T;
   }
 
   export const IDENTITY = identity(create());
