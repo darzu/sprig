@@ -35,8 +35,8 @@ export function resetTempMatrixBuffer() {
 }
 
 export module vec2 {
-  type T = vec2;
-  type InputT = T | readonly [number, number];
+  export type T = vec2;
+  export type InputT = T | readonly [number, number];
   const GL = GLM.vec2;
 
   function tmp(): T {
