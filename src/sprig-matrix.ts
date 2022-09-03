@@ -382,6 +382,9 @@ export module quat {
   export function getAxisAngle(q: InputT, out?: vec3.T): number {
     return GL.getAxisAngle(out ?? tmp(), q);
   }
+  export function getAngle(q1: InputT, q2: InputT): number {
+    return GL.getAngle(q1, q2);
+  }
 
   export function rotateX(v1: InputT, n: number, out?: T) {
     return GL.rotateX(out ?? tmp(), v1, n) as T;
