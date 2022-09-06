@@ -339,3 +339,22 @@ Gameplay hackathon ideas:
   - impassible rocks
   - raising and lowering obstacles like turtle islands in Valheim
   - grapple hook floating objects
+
+Okay okay I know this is probably bad idea, and yes I've been playing to much Factorio, but hear me out:
+
+Say at the start of your journey, you get to choose to either:
+- bring planks and nails
+or
+- bring logs, ingots, a mill, forge and anvil
+the idea is that you can either bring specialized goods or base materials and crafting stations to use those goods.
+With specialized goods it's obviously less work to use them in repair or other tasks but the risk is that you will run out of the right materials.
+Whereas with generalized goods you have a lot more flexibility but it's a trade off in craft station space, complexity, and time.
+
+This is actually how ship journeys used to work to a degree! They would stock extra sail cloth, huge lengths of rope, planks, and nails and then sew and work them to the sizes needed at sea.
+
+Maybe after every combat, you have to go asses the damage to your ship and come up with a parts list. Then you need to source all those parts in order to do a repair. While your ship isn't repaired, you have a magic shield that is protected you but the bigger the breach the faster it drains your energy reserves. You need to get those wizard-wood planks in place to stabalize the energy leaks into the hyperspace ocean.
+
+It’s also another mechanism to make combat dangerous: u might need a huge, costly repair afterwards
+Also there’s a hand tools vs powertools tradeoff: power tools are faster, more expensive, take more space, take power to operate
+
+If we’re low-poly enough, u could render the exact output on the ship. The process wouldn’t be perfect and u would see individual marks from the process. The ship would really feel like ur personal creation

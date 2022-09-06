@@ -112,7 +112,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
 
     var lightingColor: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
-    let unlit = meshUni.flags & 1u >> 0u;
+    let unlit = meshUni.flags & (1u >> 0u);
     for (var i: u32 = 0u; i < scene.numPointLights; i++) {
         let light = pointLights.ms[i];
         let toLight = light.position - input.worldPos.xyz;
