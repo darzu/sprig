@@ -144,6 +144,16 @@ export async function initHyperspaceGame(em: EntityManager) {
   const { me, ocean } = await em.whenResources(OceanDef, MeDef);
 
   if (me.host) {
+    // experimental ship:
+    const eShip = em.newEntity();
+    em.ensureComponentOn(
+      eShip,
+      RenderableConstructDef,
+      res.assets.enemyShip_Fangs.proto
+    );
+    em.ensureComponentOn(eShip, PositionDef);
+    em.ensureComponentOn(eShip, UVPosDef, [0.2, 0.1]);
+
     const ship = createPlayerShip([0.1, 0.1]);
     const ship2 = await em.whenEntityHas(ship, UVPosDef);
 

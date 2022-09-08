@@ -626,6 +626,57 @@ export function getMeshAsGrid(m: RawMesh): {
   }
 }
 
+export function mergeMeshes(rs: RawMesh[]): RawMesh {
+  if (rs.length === 1) return rs[0];
+
+  let posIdx = 0;
+
+  const m: RawMesh = {
+    pos: [],
+    tri: [],
+    quad: [],
+    lines: rs.every((r) => r.lines) ? [] : undefined,
+    colors: [],
+    surfaceIds: rs.every((r) => r.surfaceIds) ? [] : undefined,
+    uvs: rs.every((r) => r.uvs) ? [] : undefined,
+    tangents: rs.every((r) => r.tangents) ? [] : undefined,
+    normals: rs.every((r) => r.normals) ? [] : undefined,
+    dbgName: rs.some((r) => r.dbgName)
+      ? rs.reduce((p, n, i) => p + "_" + n?.dbgName ?? "mesh", "")
+      : undefined,
+  };
+
+  for (let r of rs) {
+    m.pos = [...m.pos, ...r.pos];
+    m.tri = [
+      ...m.tri,
+      ...r.tri.map(
+        (t) => [t[0] + posIdx, t[1] + posIdx, t[2] + posIdx] as vec3
+      ),
+    ];
+    m.quad = [
+      ...m.quad,
+      ...r.quad.map(
+        (t) =>
+          [t[0] + posIdx, t[1] + posIdx, t[2] + posIdx, t[3] + posIdx] as vec4
+      ),
+    ];
+    if (m.lines)
+      m.lines = [
+        ...m.lines,
+        ...r.lines!.map((t) => [t[0] + posIdx, t[1] + posIdx] as vec2),
+      ];
+    m.colors = [...m.colors, ...r.colors];
+    if (m.surfaceIds) m.surfaceIds = [...m.surfaceIds, ...r.surfaceIds!];
+    if (m.uvs) m.uvs = [...m.uvs, ...r.uvs!];
+    if (m.tangents) m.tangents = [...m.tangents, ...r.tangents!];
+    if (m.normals) m.normals = [...m.normals, ...r.normals!];
+    posIdx += r.pos.length;
+  }
+
+  return m;
+}
+
 /*
 log based, steps, groups, hide/show
 

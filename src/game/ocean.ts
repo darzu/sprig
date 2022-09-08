@@ -40,6 +40,8 @@ import {
 } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
 
+const DISABLE_GERSTNER_MOVE = true;
+
 export interface Ocean {
   ent: Ref<[typeof PositionDef]>;
   // TODO(@darzu): uvDistanceToEdge, read the SDF
@@ -224,7 +226,7 @@ export async function initOcean() {
       outNorm,
       gerstnerWaves,
       vec2.scale(tempVec2(), uv, 1000),
-      res.time.time * 0.001
+      res.time.time * 0.001 * (DISABLE_GERSTNER_MOVE ? 0 : 1)
     );
 
     const pos = uvToPos(tempVec3(), uv);
