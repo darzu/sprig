@@ -959,3 +959,32 @@ Anti-aliasing:
 "Sokpop: I built a 3D engine in 2D":
   https://www.youtube.com/watch?v=chtRPC1ISyA
   example project: https://sokpop.itch.io/sokpop-fake-3d-demo
+
+Decals:
+  https://tuket.github.io/posts/2022-08-05-explosion-decals/
+
+Falconeer clouds:
+  https://youtu.be/5d8tx6K6hkk?t=6896
+  spheres, noise texture, fresnel effect to hide outside edges
+  tri-planar mapping to ea sphere
+    e.g. tri-planar: https://gamedevelopment.tutsplus.com/articles/use-tri-planar-texture-mapping-for-better-terrain--gamedev-13821
+  clouds are lit by using the skybox gradient (not lit on sphere)
+    "if i were to turn off the distortion, they would disappear into the sky"
+  sorting and clipping isn't an issue since clouds are so similar w/ tri-planar mapping
+  still does alpha sorting?
+
+Falconeer floodlights:
+  triangular prism,
+  addative,
+  fade out w/ depth blend so u don't get ugly intersections
+
+Reternal particle system:
+  This is a great talk about the custom particle system used in Reternal for everything incl tentacles
+  https://www.youtube.com/watch?v=qbkb8ap7vts
+  This could be a great starting point for our own particle system, and I think it fits nicely with the Cy workflow
+
+  "Semi-Lagrangian grid-based fluid sim"
+    centered around the player, running at all time
+      simulates air flow
+    particles can simple from it
+      and affect it?

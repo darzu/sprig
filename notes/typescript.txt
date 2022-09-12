@@ -9,3 +9,15 @@ Refactors I want to be able to do:
   Inline funcition: splat the body of a function into it's call site
   program slice: chop away everything that isn't needed to make this one thing work
   
+Doug's transform script:
+  https://github.com/dwoos/sprig-transforms/blob/main/src/matrixMigrate.ts
+
+Fake nominal typing:
+  https://stackoverflow.com/a/61296495
+  https://evertpot.com/opaque-ts-types/
+
+  // stripped out when emitted to JS
+  declare const validProductId: unique symbol;
+  type ProductId = number & {
+    [validProductId]: true
+  }
