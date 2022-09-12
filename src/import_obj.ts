@@ -197,6 +197,8 @@ export function importObj(obj: string): RawMesh[] | ParseError {
           // tri.push(tri2);
           quad.push([inds[0], inds[1], inds[2], inds[3]]);
         }
+      } else if (inds.length === 8) {
+        // TODO(@darzu): HACK. ignore 8 sided faces?
       } else {
         return `unsupported: ${faceOpt.length}-sided face`;
       }
