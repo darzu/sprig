@@ -19,6 +19,7 @@ import { setSimulationAlpha } from "./render/renderer-ecs.js";
 import { never } from "./util.js";
 import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { initCubeGame } from "./game/xp-cube.js";
+import { VERBOSE_LOG } from "./flags.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -222,7 +223,8 @@ async function startGame(localPeerName: string, host: string | null) {
     let loops = 0;
     while (accumulator > TIMESTEP) {
       if (loops > MAX_SIM_LOOPS) {
-        console.log("too many sim loops, resetting accumulator");
+        if (VERBOSE_LOG)
+          console.log("too many sim loops, resetting accumulator");
         accumulator = 0;
         break;
       }

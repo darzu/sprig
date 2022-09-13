@@ -1,3 +1,4 @@
+import { VERBOSE_LOG } from "../flags.js";
 import { ControllableDef } from "../game/controllable.js";
 import { assert } from "../test.js";
 import {
@@ -709,9 +710,10 @@ export function createCyResources(
     }
   }
 
-  console.log(
-    `createCyResources took: ${(performance.now() - start).toFixed(1)}ms`
-  );
+  if (VERBOSE_LOG)
+    console.log(
+      `createCyResources took: ${(performance.now() - start).toFixed(1)}ms`
+    );
 
   return {
     kindToNameToRes,
@@ -817,7 +819,7 @@ export function bundleRenderPipelines(
       for (let m of p.pool.allMeshes) {
         // TODO(@darzu): DBG
         if (p.pool.opts.computeVertsData === oceanPoolPtr.computeVertsData) {
-          console.log(`OCEAN MESH: ${m.mId} has: ${meshHandleIds.has(m.mId)}`);
+          // console.log(`OCEAN MESH: ${m.mId} has: ${meshHandleIds.has(m.mId)}`);
         }
         if (!meshHandleIds.has(m.mId)) continue;
         if (p.ptr.meshOpt.meshMask && (p.ptr.meshOpt.meshMask & m.mask) === 0)

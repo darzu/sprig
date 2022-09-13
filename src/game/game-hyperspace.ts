@@ -28,6 +28,7 @@ import { createSpawner, SpawnerDef } from "./spawner.js";
 import { tempVec3 } from "../temp-pool.js";
 import { createDarkStarNow, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
 import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
+import { debugBoardSystem } from "../wood.js";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 
@@ -145,14 +146,17 @@ export async function initHyperspaceGame(em: EntityManager) {
 
   if (me.host) {
     // experimental ship:
-    const eShip = em.newEntity();
+    const fangShip = em.newEntity();
+    const fangMesh = res.assets.ship_fangs.mesh;
+    debugBoardSystem(fangMesh);
+    // TODO(@darzu): seperate mesh pool?
     em.ensureComponentOn(
-      eShip,
+      fangShip,
       RenderableConstructDef,
       res.assets.ship_fangs.proto
     );
-    em.ensureComponentOn(eShip, PositionDef);
-    em.ensureComponentOn(eShip, UVPosDef, [0.2, 0.1]);
+    em.ensureComponentOn(fangShip, PositionDef);
+    em.ensureComponentOn(fangShip, UVPosDef, [0.2, 0.1]);
 
     const ship = createPlayerShip([0.1, 0.1]);
     const ship2 = await em.whenEntityHas(ship, UVPosDef);

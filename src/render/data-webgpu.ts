@@ -255,7 +255,7 @@ export function createCyIdxBuf(
   const length = hasInitData ? lenOrData.length : lenOrData;
 
   const size = align(length * Uint16Array.BYTES_PER_ELEMENT, 4);
-  console.log(`idx size: ${size}`);
+  // console.log(`idx size: ${size}`);
 
   const _buf = device.createBuffer({
     size: size,

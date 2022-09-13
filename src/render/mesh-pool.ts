@@ -3,6 +3,7 @@ import { assert } from "../test.js";
 import { CyStructDesc, CyToTS } from "./gpu-struct.js";
 import { Mesh, quadToTris } from "./mesh.js";
 import { CyArray, CyIdxBuffer } from "./data-webgpu.js";
+import { VERBOSE_MESH_POOL_STATS } from "../flags.js";
 
 // Mesh: lossless, all the data of a model/asset from blender
 // MeshPool: lossy, a reduced set of attributes for vertex, line, triangle, and model uniforms
@@ -73,41 +74,43 @@ function logMeshPoolStats(opts: MeshPoolOpts<any, any>) {
   if (MAX_INDICES < maxVerts)
     throw `Too many vertices (${maxVerts})! W/ Uint16, we can only support '${maxVerts}' verts`;
 
-  // log our estimated space usage stats
-  console.log(
-    `Mesh space usage for up to ${maxMeshes} meshes, ${maxTris} tris, ${maxVerts} verts:`
-  );
-  console.log(
-    `   ${((maxVerts * vertStruct.size) / 1024).toFixed(1)} KB for verts`
-  );
-  console.log(
-    `   ${((maxTris * bytesPerTri) / 1024).toFixed(1)} KB for tri indices`
-  );
-  console.log(
-    `   ${((maxLines * bytesPerLine) / 1024).toFixed(1)} KB for line indices`
-  );
-  console.log(
-    `   ${((maxMeshes * uniStruct.size) / 1024).toFixed(
-      1
-    )} KB for object uniform data`
-  );
-  const unusedBytesPerModel = uniStruct.size - uniStruct.compactSize;
-  console.log(
-    `   Unused ${unusedBytesPerModel} bytes in uniform buffer per object (${(
-      (unusedBytesPerModel * maxMeshes) /
-      1024
-    ).toFixed(1)} KB total waste)`
-  );
-  const totalReservedBytes =
-    maxVerts * vertStruct.size +
-    maxTris * bytesPerTri +
-    maxLines * bytesPerLine +
-    maxMeshes * uniStruct.size;
-  console.log(
-    `Total space reserved for objects: ${(totalReservedBytes / 1024).toFixed(
-      1
-    )} KB`
-  );
+  if (VERBOSE_MESH_POOL_STATS) {
+    // log our estimated space usage stats
+    console.log(
+      `Mesh space usage for up to ${maxMeshes} meshes, ${maxTris} tris, ${maxVerts} verts:`
+    );
+    console.log(
+      `   ${((maxVerts * vertStruct.size) / 1024).toFixed(1)} KB for verts`
+    );
+    console.log(
+      `   ${((maxTris * bytesPerTri) / 1024).toFixed(1)} KB for tri indices`
+    );
+    console.log(
+      `   ${((maxLines * bytesPerLine) / 1024).toFixed(1)} KB for line indices`
+    );
+    console.log(
+      `   ${((maxMeshes * uniStruct.size) / 1024).toFixed(
+        1
+      )} KB for object uniform data`
+    );
+    const unusedBytesPerModel = uniStruct.size - uniStruct.compactSize;
+    console.log(
+      `   Unused ${unusedBytesPerModel} bytes in uniform buffer per object (${(
+        (unusedBytesPerModel * maxMeshes) /
+        1024
+      ).toFixed(1)} KB total waste)`
+    );
+    const totalReservedBytes =
+      maxVerts * vertStruct.size +
+      maxTris * bytesPerTri +
+      maxLines * bytesPerLine +
+      maxMeshes * uniStruct.size;
+    console.log(
+      `Total space reserved for objects: ${(totalReservedBytes / 1024).toFixed(
+        1
+      )} KB`
+    );
+  }
 }
 
 // TODO(@darzu): HACK. should be scoped; removed as global

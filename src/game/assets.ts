@@ -33,6 +33,7 @@ import {
 import { MeshHandle } from "../render/mesh-pool.js";
 import { onInit } from "../init.js";
 import { mathMap, max, min } from "../math.js";
+import { VERBOSE_LOG } from "../flags.js";
 
 // TODO: load these via streaming
 
@@ -821,7 +822,7 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
 
   // perf tracking
   const elapsed = performance.now() - start;
-  console.log(`took ${elapsed.toFixed(1)}ms to load assets.`);
+  if (VERBOSE_LOG) console.log(`took ${elapsed.toFixed(1)}ms to load assets.`);
 
   return result;
 }

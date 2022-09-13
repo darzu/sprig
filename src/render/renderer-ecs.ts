@@ -40,6 +40,7 @@ import {
   OceanUniTS,
 } from "./pipelines/std-ocean.js";
 import { assert } from "../test.js";
+import { VERBOSE_LOG } from "../flags.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -517,7 +518,7 @@ async function chooseAndInitRenderer(
     const adapter = await navigator.gpu?.requestAdapter();
     if (adapter) {
       const supportsTimestamp = adapter.features.has("timestamp-query");
-      if (!supportsTimestamp)
+      if (!supportsTimestamp && VERBOSE_LOG)
         console.log(
           "GPU profiling disabled: device does not support timestamp queries"
         );
@@ -536,7 +537,7 @@ async function chooseAndInitRenderer(
   // if (!rendererInit)
   //   rendererInit = attachToCanvasWebgl(canvas, MAX_MESHES, MAX_VERTICES);
   if (!renderer) throw "Unable to create webgl or webgpu renderer";
-  console.log(`Renderer: ${usingWebGPU ? "webGPU" : "webGL"}`);
+  if (VERBOSE_LOG) console.log(`Renderer: ${usingWebGPU ? "webGPU" : "webGL"}`);
 
   // add to ECS
   // TODO(@darzu): this is a little wierd to do this in an async callback

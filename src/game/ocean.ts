@@ -2,6 +2,7 @@ import { AnimateToDef } from "../animate-to.js";
 import { ColorDef } from "../color.js";
 import { createRef, Ref } from "../em_helpers.js";
 import { EM, EntityManager } from "../entity-manager.js";
+import { DISABLE_GERSTNER, VERBOSE_LOG } from "../flags.js";
 import { vec3, vec2, mat3, mat4 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { clamp } from "../math.js";
@@ -39,8 +40,6 @@ import {
   vec3Dbg,
 } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
-
-const DISABLE_GERSTNER = false;
 
 export interface Ocean {
   ent: Ref<[typeof PositionDef]>;
@@ -137,7 +136,8 @@ export async function initOcean() {
   );
 
   const timeOceanGPU = performance.now() - preOceanGPU;
-  console.log(`ocean GPU round-trip: ${timeOceanGPU.toFixed(2)}ms`);
+  if (VERBOSE_LOG)
+    console.log(`ocean GPU round-trip: ${timeOceanGPU.toFixed(2)}ms`);
 
   // TODO(@darzu): Account for the 1px border in the texture!!!
   const uvToPosReader = createTextureReader(

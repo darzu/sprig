@@ -1,5 +1,6 @@
 // Some serialization and deserialization tests
 
+import { RUN_UNIT_TESTS, VERBOSE_LOG } from "./flags.js";
 import { testImporters } from "./import_obj.js";
 import { Serializer, Deserializer } from "./serialize.js";
 import { testPackUnpackI16 } from "./util.js";
@@ -27,6 +28,10 @@ export function assert(cond: any, msg?: string): asserts cond {
 }
 
 export function test() {
+  if (!RUN_UNIT_TESTS) {
+    if (VERBOSE_LOG) console.log(`Skipping unit tests (!RUN_UNIT_TESTS)`);
+    return;
+  }
   const start = performance.now();
   console.log(`>>> STARTING TESTS`);
 
