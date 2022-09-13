@@ -40,7 +40,7 @@ import {
 } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
 
-const DISABLE_GERSTNER_MOVE = true;
+const DISABLE_GERSTNER = false;
 
 export interface Ocean {
   ent: Ref<[typeof PositionDef]>;
@@ -226,7 +226,7 @@ export async function initOcean() {
       outNorm,
       gerstnerWaves,
       vec2.scale(tempVec2(), uv, 1000),
-      res.time.time * 0.001 * (DISABLE_GERSTNER_MOVE ? 0 : 1)
+      res.time.time * 0.001
     );
 
     const pos = uvToPos(tempVec3(), uv);
@@ -388,6 +388,13 @@ function createGerstnerWave(
   w: number,
   phi: number
 ): GerstnerWaveTS {
+  if (DISABLE_GERSTNER) {
+    A = 0.0;
+    phi = 0.0;
+    Q = 0.0;
+    D = [1, 0];
+    w = 0.0;
+  }
   return { D, Q, A, w, phi, padding1: 0, padding2: 0 };
 }
 
