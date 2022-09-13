@@ -149,7 +149,7 @@ export async function initHyperspaceGame(em: EntityManager) {
     em.ensureComponentOn(
       eShip,
       RenderableConstructDef,
-      res.assets.enemyShip_Fangs.proto
+      res.assets.ship_fangs.proto
     );
     em.ensureComponentOn(eShip, PositionDef);
     em.ensureComponentOn(eShip, UVPosDef, [0.2, 0.1]);
