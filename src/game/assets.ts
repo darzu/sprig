@@ -8,6 +8,7 @@ import {
   getHalfsizeFromAABB,
   getMeshAsGrid,
   mapMeshPositions,
+  mergeMeshes,
   Mesh,
   normalizeMesh,
   RawMesh,
@@ -46,6 +47,7 @@ const BACKUP_ASSET_PATH = "http://sprig.land/assets/";
 
 const RemoteMeshes = {
   ship: "barge.sprig.obj",
+  ship_fangs: "enemy_ship_fangs.sprig.obj",
   ball: "ball.sprig.obj",
   pick: "pick.sprig.obj",
   spaceore: "spaceore.sprig.obj",
@@ -94,6 +96,7 @@ const MeshTransforms: Partial<{
     vec3.fromValues(-5, 0, 0)
   ),
   ocean: mat4.fromScaling(mat4.create(), [2, 2, 2]),
+  ship_fangs: mat4.fromScaling(mat4.create(), [3, 3, 3]),
 };
 
 // TODO(@darzu): these sort of hacky offsets are a pain to deal with. It'd be
@@ -108,6 +111,16 @@ const MeshModify: Partial<{
     m: RawMesh
   ) => RawMesh;
 }> = {
+  ship_fangs: (m) => {
+    m.colors = m.colors.map((c) => [0.2, 0.2, 0.2]);
+    m.surfaceIds = m.colors.map((_, i) => i);
+    // console.log(`
+    // Fang ship has:
+    // ${m.tri.length} tris
+    // ${m.quad.length} quads
+    // `);
+    return m;
+  },
   cannon: (m) => {
     m.colors = m.colors.map((c) => [0.2, 0.2, 0.2]);
     return m;
@@ -737,8 +750,7 @@ async function loadTxtInternal(relPath: string): Promise<string> {
 }
 async function loadMeshInternal(relPath: string): Promise<RawMesh> {
   const res = await loadMeshSetInternal(relPath);
-  assert(res.length === 1, "too many meshes; use loadMeshSet for multi meshes");
-  return res[0];
+  return mergeMeshes(res);
 }
 async function loadMeshSetInternal(relPath: string): Promise<RawMesh[]> {
   // download

@@ -40,6 +40,8 @@ import {
 } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
 
+const DISABLE_GERSTNER = false;
+
 export interface Ocean {
   ent: Ref<[typeof PositionDef]>;
   // TODO(@darzu): uvDistanceToEdge, read the SDF
@@ -386,6 +388,13 @@ function createGerstnerWave(
   w: number,
   phi: number
 ): GerstnerWaveTS {
+  if (DISABLE_GERSTNER) {
+    A = 0.0;
+    phi = 0.0;
+    Q = 0.0;
+    D = [1, 0];
+    w = 0.0;
+  }
   return { D, Q, A, w, phi, padding1: 0, padding2: 0 };
 }
 
