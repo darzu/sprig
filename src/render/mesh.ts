@@ -290,6 +290,7 @@ export function splitMesh(m: RawMesh): RawMesh[] {
 
   // tris and lines define connectivity, so
   //    merge together islands
+  // TODO(@darzu): quad connectivity
   for (let tri of m.tri) {
     mergeIslands(tri[0], tri[1]);
     mergeIslands(tri[0], tri[2]);
