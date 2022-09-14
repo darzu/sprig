@@ -34,6 +34,7 @@ import { MeshHandle } from "../render/mesh-pool.js";
 import { onInit } from "../init.js";
 import { mathMap, max, min } from "../math.js";
 import { VERBOSE_LOG } from "../flags.js";
+import { debugBoardSystem } from "../wood.js";
 
 // TODO: load these via streaming
 
@@ -120,6 +121,9 @@ const MeshModify: Partial<{
     // ${m.tri.length} tris
     // ${m.quad.length} quads
     // `);
+
+    m = debugBoardSystem(m);
+
     return m;
   },
   cannon: (m) => {

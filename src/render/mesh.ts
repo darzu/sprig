@@ -339,6 +339,34 @@ export function quadToTris(q: vec4): [vec3, vec3] {
 //   // console.log("getMeshAsGrid on fabric done.");
 // }
 
+export function getQuadMeshEdges(m: RawMesh): number[][] {
+  // Collect all edges
+  const numVerts = m.pos.length;
+  const edges = new Array(numVerts).fill([]).map(() => [] as number[]);
+  for (let [t0, t1, t2, t3] of m.quad) {
+    // top
+    addEdge(t0, t1);
+    addEdge(t1, t0);
+    // right
+    addEdge(t1, t2);
+    addEdge(t2, t1);
+    // bottom
+    addEdge(t2, t3);
+    addEdge(t3, t2);
+    // left
+    addEdge(t0, t3);
+    addEdge(t3, t0);
+  }
+  return edges;
+
+  function addEdge(va: number, vb: number) {
+    const es = edges[va];
+    if (es.length < 4 && es[0] !== vb && es[1] !== vb && es[2] !== vb) {
+      es.push(vb);
+    }
+  }
+}
+
 export function getMeshAsGrid(m: RawMesh): {
   coords: vec2[];
   grid: number[][];
@@ -364,23 +392,7 @@ export function getMeshAsGrid(m: RawMesh): {
   // console.log("refGrid");
   // console.dir(refGrid);
 
-  // Collect all edges
-  const numVerts = m.pos.length;
-  const edges = new Array(numVerts).fill([]).map(() => [] as number[]);
-  for (let [t0, t1, t2, t3] of m.quad) {
-    // top
-    addEdge(t0, t1);
-    addEdge(t1, t0);
-    // right
-    addEdge(t1, t2);
-    addEdge(t2, t1);
-    // bottom
-    addEdge(t2, t3);
-    addEdge(t3, t2);
-    // left
-    addEdge(t0, t3);
-    addEdge(t3, t0);
-  }
+  const edges = getQuadMeshEdges(m);
   // TODO(@darzu): There are issues with line generation from our quad mesh
   // if (m.lines)
   //   for (let [t0, t1] of m.lines) {
@@ -616,13 +628,6 @@ export function getMeshAsGrid(m: RawMesh): {
       if (o >= 0) res.push(o);
     }
     return res;
-  }
-
-  function addEdge(va: number, vb: number) {
-    const es = edges[va];
-    if (es.length < 4 && es[0] !== vb && es[1] !== vb && es[2] !== vb) {
-      es.push(vb);
-    }
   }
 }
 

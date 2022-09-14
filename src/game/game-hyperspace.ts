@@ -147,8 +147,6 @@ export async function initHyperspaceGame(em: EntityManager) {
   if (me.host) {
     // experimental ship:
     const fangShip = em.newEntity();
-    const fangMesh = res.assets.ship_fangs.mesh;
-    debugBoardSystem(fangMesh);
     // TODO(@darzu): seperate mesh pool?
     em.ensureComponentOn(
       fangShip,
