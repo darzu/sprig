@@ -32,6 +32,8 @@ export function getBoardsFromMesh(m: RawMesh): RawMesh {
   m.quad = [];
   m.tri = [];
 
+  // TODO(@darzu): use m.quad as end canidates! b/c we need their cw/ccw order
+
   let ends: vec4[] = [];
   for (let eIdx of mightBeEnd) {
     if (isEnd.has(eIdx)) continue;
@@ -63,6 +65,7 @@ export function getBoardsFromMesh(m: RawMesh): RawMesh {
 
   const isTaken = new Set();
   function createBoard(end: vec4) {
+    // TODO(@darzu): oh duh, use the existing quads to know which quads to add
     const next: number[] = [];
     for (let ei of end) {
       for (let ni of edges[ei]) {
@@ -73,6 +76,7 @@ export function getBoardsFromMesh(m: RawMesh): RawMesh {
     }
     if (next.length === 4) {
       m.quad.push(next as vec4);
+      for (let i of m.quad) isTaken.add(i);
     }
   }
 
