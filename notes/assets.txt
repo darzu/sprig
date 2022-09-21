@@ -189,4 +189,8 @@ Mesh data structures:
   What about a quad-based representation?
   https://graphics.stanford.edu/courses/cs468-10-fall/LectureSlides/02_Mesh_Data_Structures.pdf
   "Shared Vertex" is just the start vert buffer + index buffer approach
-  
+
+I think game dev art assets often use Perforce:
+  https://www.perforce.com/blog/vcs/version-control-for-binary-files
+  https://www.perforce.com/indie-studio-pack
+  mentioned by: https://www.youtube.com/watch?v=3DXAVeJh_-0

@@ -22,7 +22,7 @@ import { noisePipes } from "../render/pipelines/std-noise.js";
 import { DevConsoleDef } from "../console.js";
 import { initOcean, OceanDef, oceanJfa, UVPosDef, UVDirDef } from "./ocean.js";
 import { asyncTimeout } from "../util.js";
-import { vec2, vec3 } from "../gl-matrix.js";
+import { quat, vec2, vec3 } from "../gl-matrix.js";
 import { AnimateToDef, EASE_INQUAD } from "../animate-to.js";
 import { createSpawner, SpawnerDef } from "./spawner.js";
 import { tempVec3 } from "../temp-pool.js";
@@ -154,7 +154,9 @@ export async function initHyperspaceGame(em: EntityManager) {
       res.assets.ship_fangs.proto
     );
     em.ensureComponentOn(fangShip, PositionDef);
-    em.ensureComponentOn(fangShip, UVPosDef, [0.2, 0.1]);
+    em.ensureComponentOn(fangShip, RotationDef);
+    quat.fromEuler(fangShip.rotation, 0, Math.PI * 0.5, 0);
+    em.ensureComponentOn(fangShip, UVPosDef, [0.1, 0.15]);
 
     const ship = createPlayerShip([0.1, 0.1]);
     const ship2 = await em.whenEntityHas(ship, UVPosDef);
