@@ -170,3 +170,23 @@ High quality assets:
 
 Mesh Retopology on ipad:
   https://apps.apple.com/us/app/cozyblanket/id1608079174
+
+Mesh data structures:
+  https://observablehq.com/@2talltim/mesh-data-structures-traversal
+  DCEL or half-edge data structure
+  https://www.enseignement.polytechnique.fr/informatique/INF562/Slides/MeshDataStructures.pdf
+    class Halfedge{
+      Halfedge  prev, next, opposite;
+      Vertex v;
+      Face f;
+    }class Vertex{
+      Halfedge  e;
+      Point p;
+    }
+    class Face{
+    Halfedge e; }
+  Triangle based DS: many operations can be done in O(n)
+  What about a quad-based representation?
+  https://graphics.stanford.edu/courses/cs468-10-fall/LectureSlides/02_Mesh_Data_Structures.pdf
+  "Shared Vertex" is just the start vert buffer + index buffer approach
+  

@@ -988,3 +988,12 @@ Reternal particle system:
       simulates air flow
     particles can simple from it
       and affect it?
+
+Twitter thread on downsampling, blur, and bloom:
+  https://twitter.com/BartWronsk/status/1570399970406305800
+  "
+  Downsample = lowpass filter + decimate (take one pixel in N).
+  Blur = lowpass filter.
+  "
+  what is Nyquist?
+  https://bartwronski.com/2022/03/07/fast-gpu-friendly-antialiasing-downsampling-filter/

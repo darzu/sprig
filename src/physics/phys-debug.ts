@@ -56,6 +56,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
             const dbgE = em.newEntity();
 
             // with a wireframe mesh
+            // TODO(@darzu): doesn't work w/o our line renderer
             em.addComponent(
               dbgE.id,
               RenderableConstructDef,

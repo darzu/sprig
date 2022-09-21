@@ -1256,3 +1256,6 @@ Twitter contacts for gamedevs?
 
 Game AI:
   http://www.gameaipro.com
+
+What's the deal with https://observablehq.com?
+  seems like interactive, source controlled, collaborative?, source-inspectable content?

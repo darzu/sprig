@@ -15,6 +15,7 @@ import {
   scaleMesh,
   scaleMesh3,
   transformMesh,
+  validateMesh,
 } from "../render/mesh.js";
 import { AABB } from "../physics/broadphase.js";
 import { RendererDef } from "../render/renderer-ecs.js";
@@ -681,9 +682,11 @@ export const LocalMeshes = {
   gridPlane: () => GRID_PLANE_MESH,
   fabric: () => DBG_FABRIC,
   triFence: TRI_FENCE,
-  wireCube: () => ({ ...CUBE_MESH, tri: [] } as RawMesh),
+  wireCube: () =>
+    ({ ...CUBE_MESH, tri: [], colors: [], dbgName: "wireCube" } as RawMesh),
   mast: () => {
     let m = cloneMesh(CUBE_MESH);
+    m.dbgName = "mast";
     mapMeshPositions(m, (p) => [p[0], p[1] + 1, p[2]]);
     scaleMesh3(m, [0.5, 20, 0.5]);
     return m;
@@ -732,13 +735,14 @@ onInit(async (em) => {
 
   const assetsPromise = loadAssets(renderer.renderer);
   assetLoader.promise = assetsPromise;
-  try {
-    const result = await assetsPromise;
-    em.addSingletonComponent(AssetsDef, result);
-  } catch (failureReason) {
-    // TODO(@darzu): fail more gracefully
-    throw `Failed to load assets: ${failureReason}`;
-  }
+  // TODO(@darzu): do we want this try-catch here? It just obscures errors.
+  // try {
+  const result = await assetsPromise;
+  em.addSingletonComponent(AssetsDef, result);
+  // } catch (failureReason) {
+  //   // TODO(@darzu): fail more gracefully
+  //   throw `Failed to load assets: ${failureReason}`;
+  // }
 });
 
 async function loadTxtInternal(relPath: string): Promise<string> {
@@ -835,6 +839,7 @@ export function gameMeshFromMesh(
   rawMesh: RawMesh,
   renderer: Renderer
 ): GameMesh {
+  validateMesh(rawMesh);
   const mesh = normalizeMesh(rawMesh);
   const aabb = getAABBFromMesh(mesh);
   const center = getCenterFromAABB(aabb);

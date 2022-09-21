@@ -107,6 +107,49 @@ export function cloneMesh(m: Mesh | RawMesh): Mesh | RawMesh {
 //   };
 // }
 
+export function validateMesh(m: RawMesh) {
+  //  // geometry
+  //  pos: vec3[];
+  //  tri: vec3[];
+  //  quad: vec4[]; // MUST NOT be redundant w/ `tri`
+  //  lines?: vec2[];
+  //  // per-face data, so one per tri and quad
+  //  colors: vec3[]; // in r,g,b float [0-1] format
+  //  surfaceIds?: number[];
+  //  // per-vertex data
+  //  uvs?: vec2[]; // optional; one uv per vertex
+  //  tangents?: vec3[]; // optional; one tangent per vertex
+  //  normals?: vec3[]; // optional; one tangent per vertex
+  //  // TODO(@darzu):
+  //  dbgName?: string;
+
+  const dbgName = `"${m.dbgName ?? "???"}"`;
+
+  // TODO(@darzu): Don't assert, return a boolean + reason!
+  const faceCount = m.tri.length + m.quad.length;
+  assert(
+    m.colors.length === faceCount,
+    `mesh ${dbgName} color count (${m.colors.length}) doesn't match face count (${faceCount})`
+  );
+  assert(
+    !m.surfaceIds || m.surfaceIds.length === faceCount,
+    `mesh ${dbgName} surface id count (${m.surfaceIds?.length}) doesn't match face count (${faceCount})`
+  );
+  const vertCount = m.pos.length;
+  assert(
+    !m.uvs || m.uvs.length === vertCount,
+    `mesh ${dbgName} uvs count (${m.uvs?.length}) doesn't match vert count (${vertCount})`
+  );
+  assert(
+    !m.normals || m.normals.length === vertCount,
+    `mesh ${dbgName} normals count (${m.normals?.length}) doesn't match vert count (${vertCount})`
+  );
+  assert(
+    !m.tangents || m.tangents.length === vertCount,
+    `mesh ${dbgName} tangents count (${m.tangents?.length}) doesn't match vert count (${vertCount})`
+  );
+}
+
 export function unshareProvokingVerticesWithMap(input: RawMesh): {
   mesh: RawMesh & { usesProvoking: true };
   posMap: Map<number, number>;
