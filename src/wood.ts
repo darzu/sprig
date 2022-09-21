@@ -1,10 +1,30 @@
+import { EM } from "./entity-manager.js";
 import { vec3, vec4 } from "./gl-matrix.js";
+import { onInit } from "./init.js";
 import { getQuadMeshEdges, RawMesh } from "./render/mesh.js";
 import { assert } from "./test.js";
 import { edges } from "./util.js";
 
 // TODO(@darzu): consider other mesh representations like:
 //    DCEL or half-edge data structure
+
+export const WoodenDef = EM.defineComponent("wooden", () => {
+  return {
+    // TODO(@darzu): boards, tight colliders etc
+  };
+});
+
+onInit((em) => {
+  em.registerSystem(
+    [WoodenDef],
+    [],
+    (es, res) => {
+      // TODO(@darzu):
+      // console.log("wooden!: " + es.length);
+    },
+    "runWooden"
+  );
+});
 
 interface Board {}
 
