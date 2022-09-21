@@ -22,3 +22,32 @@ Less ideal:
 
 never:
     ads
+
+Freelance consulting?:
+  https://www.youtube.com/watch?v=3DXAVeJh_-0&t=637s
+  LCC, accountant, invoice, logo, ECH/wire, seperate bank
+  List of DO and DON'T for work u do
+  Social media (many contracts from Twitter)
+  Portfolio/reel
+  Charge for "art tests" (flat fee)
+  Be really discerning
+    check glassdoor, 
+    bad clients r worse than no clients
+  Don't have a static rate
+    enjoyment, time frame, client resources
+  Prioritize enjoyment
+    Better a good client, bad money; than bad client, good money
+  Get to know ur client
+  Do research before accepting concept
+  Seperate environment for every contract
+  Get Perforce
+    version control
+  Document hours per deliverable
+    Add 15% (Maya crash padding)
+  Mix up work
+  Time estimates:
+    most important way to avoid burnout
+    track aggressively, annotate as much as possible
+    stick to that data
+  "If you're not growing, you are shrinking"
+    That's just not true

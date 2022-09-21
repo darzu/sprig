@@ -9,7 +9,10 @@ import { edges } from "./util.js";
 interface Board {}
 
 export function debugBoardSystem(m: RawMesh): RawMesh {
+  const before = performance.now();
   const r = getBoardsFromMesh(m);
+  const after = performance.now();
+  console.log(`debugBoardSystem: ${(after - before).toFixed(2)}ms`);
   return r;
 }
 

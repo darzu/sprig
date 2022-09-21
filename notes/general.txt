@@ -1259,3 +1259,8 @@ Game AI:
 
 What's the deal with https://observablehq.com?
   seems like interactive, source controlled, collaborative?, source-inspectable content?
+
+Game dev offices:
+  https://www.youtube.com/watch?v=hBcVpRFRIqQ
+  https://journals.sagepub.com/doi/10.1177/0018726710375481
+  people need/want to "nest"; personalize their space
