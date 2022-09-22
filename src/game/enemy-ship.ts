@@ -8,7 +8,7 @@ import {
 import { TimeDef } from "../time.js";
 import { quat, vec2, vec3 } from "../gl-matrix.js";
 import { jitter } from "../math.js";
-import { ColorDef } from "../color.js";
+import { ColorDef } from "../color-ecs.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import {
   PhysicsParentDef,

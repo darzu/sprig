@@ -1,4 +1,4 @@
-import { ColorDef } from "./color.js";
+import { ColorDef } from "./color-ecs.js";
 import { EM, Entity, EntityW } from "./entity-manager.js";
 import { AssetsDef } from "./game/assets.js";
 import { vec3 } from "./gl-matrix.js";

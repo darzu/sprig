@@ -4,7 +4,7 @@ import { quat, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { EM, Entity, EntityManager, EntityW } from "../entity-manager.js";
 import { TimeDef } from "../time.js";
-import { ColorDef } from "../color.js";
+import { ColorDef } from "../color-ecs.js";
 import { FinishedDef } from "../build.js";
 import {
   RenderableConstructDef,

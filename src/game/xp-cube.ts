@@ -1,5 +1,5 @@
 import { CameraDef } from "../camera.js";
-import { ColorDef } from "../color.js";
+import { ColorDef } from "../color-ecs.js";
 import { EntityManager } from "../entity-manager.js";
 import { vec3, quat } from "../gl-matrix.js";
 import { max } from "../math.js";

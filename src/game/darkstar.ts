@@ -1,4 +1,4 @@
-import { ColorDef } from "../color.js";
+import { ColorDef } from "../color-ecs.js";
 import { createRef, defineNetEntityHelper } from "../em_helpers.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
 import { vec3 } from "../gl-matrix.js";

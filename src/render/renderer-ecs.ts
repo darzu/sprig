@@ -1,5 +1,5 @@
 import { EntityManager, EM, Entity } from "../entity-manager.js";
-import { applyTints, TintsDef } from "../color.js";
+import { applyTints, TintsDef } from "../color-ecs.js";
 import { CameraViewDef } from "../camera.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import {
@@ -10,7 +10,7 @@ import {
   updateFrameFromPosRotScale,
   copyFrame,
 } from "../physics/transform.js";
-import { ColorDef } from "../color.js";
+import { ColorDef } from "../color-ecs.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DeletedDef } from "../delete.js";
 import { stdRenderPipeline } from "./pipelines/std-mesh.js";

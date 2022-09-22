@@ -17,7 +17,7 @@ import {
   MultiCollider,
 } from "../physics/collider.js";
 import { copyAABB, createAABB } from "../physics/broadphase.js";
-import { ColorDef } from "../color.js";
+import { ColorDef } from "../color-ecs.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../delete.js";

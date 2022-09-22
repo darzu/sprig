@@ -1,7 +1,7 @@
 import { EM, EntityManager } from "../entity-manager.js";
 import { TimeDef } from "../time.js";
 import { quat, vec3 } from "../gl-matrix.js";
-import { ColorDef } from "../color.js";
+import { ColorDef } from "../color-ecs.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { PhysicsParentDef, PositionDef } from "../physics/transform.js";
 import { ColliderDef } from "../physics/collider.js";

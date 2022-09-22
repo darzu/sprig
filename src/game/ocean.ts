@@ -1,5 +1,5 @@
 import { AnimateToDef } from "../animate-to.js";
-import { ColorDef } from "../color.js";
+import { ColorDef } from "../color-ecs.js";
 import { createRef, Ref } from "../em_helpers.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { DISABLE_GERSTNER, VERBOSE_LOG } from "../flags.js";
