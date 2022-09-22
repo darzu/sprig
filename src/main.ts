@@ -105,6 +105,7 @@ function callFixedTimestepSystems() {
     EM.callSystem("oceanUVtoPos");
     EM.callSystem("oceanUVDirToRot");
     EM.callSystem("debugLoop");
+    EM.callSystem("initWooden");
     EM.callSystem("runWooden");
   }
   EM.callSystem("updateBullets");

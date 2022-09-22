@@ -123,7 +123,7 @@ const MeshModify: Partial<{
     // ${m.quad.length} quads
     // `);
 
-    m = debugBoardSystem(m);
+    // m = debugBoardSystem(m);
 
     return m;
   },

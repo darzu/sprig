@@ -1,7 +1,13 @@
-import { EM } from "./entity-manager.js";
+import { EM, EntityManager } from "./entity-manager.js";
+import { BulletDef } from "./game/bullet.js";
 import { vec3, vec4 } from "./gl-matrix.js";
 import { onInit } from "./init.js";
+import { AABB, getAABBFromPositions } from "./physics/broadphase.js";
+import { ColliderDef } from "./physics/collider.js";
+import { PhysicsResultsDef } from "./physics/nonintersection.js";
 import { getQuadMeshEdges, RawMesh } from "./render/mesh.js";
+import { emissionTexturePtr } from "./render/pipelines/std-stars.js";
+import { RenderableDef } from "./render/renderer-ecs.js";
 import { assert } from "./test.js";
 import { edges } from "./util.js";
 
@@ -10,33 +16,98 @@ import { edges } from "./util.js";
 
 export const WoodenDef = EM.defineComponent("wooden", () => {
   return {
-    // TODO(@darzu): boards, tight colliders etc
+    // TODO(@darzu): options?
   };
 });
+
+export const WoodenStateDef = EM.defineComponent(
+  "woodenState",
+  (s: WoodenState) => {
+    return s;
+  }
+);
 
 onInit((em) => {
   em.registerSystem(
     [WoodenDef],
-    [],
+    [PhysicsResultsDef],
     (es, res) => {
+      const { collidesWith } = res.physicsResults;
+
+      for (let e of es) {
+        const hits = collidesWith.get(e.id);
+        if (hits) {
+          const balls = hits
+            .map((h) => em.findEntity(h, [BulletDef, ColliderDef]))
+            .filter((b) => {
+              // TODO(@darzu): check authority and team
+              return b;
+            });
+          for (let b of balls) {
+            console.log(`hit!`);
+          }
+        }
+      }
+
       // TODO(@darzu):
       // console.log("wooden!: " + es.length);
+      //
+      // TODO(@darzu): auto AABB system?
+      /*
+      Broadphase Collision / non-intersection:
+        each level of floor planks, etc
+      */
     },
     "runWooden"
   );
 });
 
-interface Board {}
+onInit((em: EntityManager) => {
+  em.registerSystem(
+    [WoodenDef, RenderableDef],
+    [],
+    (es, res) => {
+      // TODO(@darzu):
+      for (let e of es) {
+        if (WoodenStateDef.isOn(e)) continue;
+
+        const before = performance.now();
+        const state = getBoardsFromMesh(e.renderable.meshHandle.readonlyMesh!);
+        const after = performance.now();
+        console.log(`getBoardsFromMesh: ${(after - before).toFixed(2)}ms`);
+
+        em.ensureComponentOn(e, WoodenStateDef, state);
+      }
+    },
+    "initWooden"
+  );
+});
+
+interface OBB {
+  // TODO(@darzu): 3 axis + lengths
+}
+
+// each board has an AABB, OBB,
+interface BoardSeg {
+  localAABB: AABB;
+  vertIdxs: number[];
+  quadIdxs: number[];
+}
+type Board = BoardSeg[];
+interface WoodenState {
+  boards: Board[];
+}
 
 export function debugBoardSystem(m: RawMesh): RawMesh {
   const before = performance.now();
-  const r = getBoardsFromMesh(m);
+  const boards = getBoardsFromMesh(m);
+  console.dir(boards);
   const after = performance.now();
   console.log(`debugBoardSystem: ${(after - before).toFixed(2)}ms`);
-  return r;
+  return m;
 }
 
-export function getBoardsFromMesh(m: RawMesh): RawMesh {
+export function getBoardsFromMesh(m: RawMesh): WoodenState {
   // What's in a board?
   // end verts connect to 3 others
   // mid verts connect to 4 others
@@ -78,7 +149,7 @@ export function getBoardsFromMesh(m: RawMesh): RawMesh {
   const takenQis = new Set<number>();
 
   // TODO: vi to board idx ?
-  function createBoard(startQi: number) {
+  function createBoard(startQi: number): Board | undefined {
     const boardVis = new Set<number>();
     const boardQis = new Set<number>();
 
@@ -88,9 +159,9 @@ export function getBoardsFromMesh(m: RawMesh): RawMesh {
     startQ.forEach((vi) => boardVis.add(vi));
 
     // build the board
-    const validBoard = buildBoard(startQ);
+    const segments = addBoardSegment(startQ);
 
-    if (validBoard) {
+    if (segments) {
       boardVis.forEach((vi) => takenVis.add(vi));
       boardQis.forEach((qi) => takenQis.add(qi));
 
@@ -103,7 +174,9 @@ export function getBoardsFromMesh(m: RawMesh): RawMesh {
       // boardQis.forEach((qi) => newQuads.push(m.quad[qi]));
     }
 
-    function buildBoard(lastLoop: vec4): boolean {
+    return segments;
+
+    function addBoardSegment(lastLoop: vec4): BoardSeg[] | undefined {
       // find the next loop
       const nextLoop: number[] = [];
       lastLoop.forEach((vi) => {
@@ -116,7 +189,7 @@ export function getBoardsFromMesh(m: RawMesh): RawMesh {
       });
       if (nextLoop.length !== 4) {
         // invalid board
-        return false;
+        return undefined;
       }
 
       // track the segment vertices and quads between the last loop and this loop
@@ -137,48 +210,70 @@ export function getBoardsFromMesh(m: RawMesh): RawMesh {
       // track segment quads as board quads
       segQis.forEach((qi) => boardQis.add(qi));
 
-      // do we still have a valid board, or are we at the end?
+      // do we still have a valid board?
+      if (segQis.length !== 4 && segQis.length !== 5) {
+        // invalid board; missing quads
+        return undefined;
+      }
+
+      // create the segment
+      const vertIdxs = [...segVis.values()];
+      const aabb = getAABBFromPositions(vertIdxs.map((vi) => m.pos[vi]));
+      const seg: BoardSeg = {
+        localAABB: aabb,
+        vertIdxs,
+        quadIdxs: segQis,
+      };
+
+      // are we at the end?
       if (segQis.length === 5) {
         // we might be at the other end
         const hasEndQuad =
           segQis.filter((qi) => m.quad[qi].every((vi) => loop.includes(vi)))
             .length === 1;
-        return hasEndQuad;
-      } else if (segQis.length !== 4) {
-        // invalid board; missing quads
-        return false;
+
+        return [seg];
       }
 
       // continue
-      return buildBoard(loop);
+      // TODO(@darzu): perf. tail call optimization?
+      const nextSegs = addBoardSegment(loop);
+      if (!nextSegs) return undefined;
+      else return [seg, ...nextSegs];
     }
   }
 
+  const boards: Board[] = [];
   for (let qi of qIsMaybeEnd) {
     if (!takenQis.has(qi)) {
-      createBoard(qi);
+      const b = createBoard(qi);
+      if (b) boards.push(b);
     }
   }
 
-  const newQuads: vec4[] = [];
-  const newTri: vec3[] = [];
-  const newColors: vec3[] = [];
-  const newSurfaceIds: number[] = [];
+  // const newQuads: vec4[] = [];
+  // const newTri: vec3[] = [];
+  // const newColors: vec3[] = [];
+  // const newSurfaceIds: number[] = [];
 
-  // TODO(@darzu): transfer quad data
-  takenQis.forEach((qi) => {
-    const newQi = newQuads.length;
-    newQuads.push(m.quad[qi]);
-    newColors[newQi] = m.colors[qi]; // TODO(@darzu): face indexing isn't quite right here b/c of triangles
-    newSurfaceIds[newQi] = newQi;
-  });
+  // // TODO(@darzu): transfer quad data
+  // takenQis.forEach((qi) => {
+  //   const newQi = newQuads.length;
+  //   newQuads.push(m.quad[qi]);
+  //   newColors[newQi] = m.colors[qi]; // TODO(@darzu): face indexing isn't quite right here b/c of triangles
+  //   newSurfaceIds[newQi] = newQi;
+  // });
 
-  console.log(`quad count: ${m.quad.length} -> ${m.quad.length}`);
+  // console.log(`quad count: ${m.quad.length} -> ${m.quad.length}`);
 
-  m.quad = newQuads;
-  m.tri = newTri;
-  m.colors = newColors;
-  m.surfaceIds = newSurfaceIds;
+  // m.quad = newQuads;
+  // m.tri = newTri;
+  // m.colors = newColors;
+  // m.surfaceIds = newSurfaceIds;
 
-  return m;
+  const woodenState: WoodenState = {
+    boards,
+  };
+
+  return woodenState;
 }

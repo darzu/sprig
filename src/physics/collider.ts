@@ -21,6 +21,7 @@ export type ColliderShape =
 
 interface ColliderBase {
   shape: ColliderShape;
+  // TODO(@darzu): rename "solid" to "non-intersection?" or move this to physics systems options somewhere
   solid: boolean;
   myLayers?: Layer[];
   targetLayers?: Layer[];
