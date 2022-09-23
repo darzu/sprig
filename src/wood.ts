@@ -81,6 +81,11 @@ onInit((em: EntityManager) => {
 
         em.ensureComponentOn(e, WoodenStateDef, state);
 
+        // first, color all "board"-used
+        for (let qi of state.usedQuadIdxs) {
+          vec3.copy(m.colors[qi], [1, 0, 0]);
+        }
+
         // TODO(@darzu): dbg colors:
         for (let b of state.boards) {
           // TODO(@darzu): use hue variations
@@ -110,6 +115,8 @@ interface BoardSeg {
 }
 type Board = BoardSeg[];
 interface WoodenState {
+  usedVertIdxs: Set<number>;
+  usedQuadIdxs: Set<number>;
   boards: Board[];
 }
 
@@ -121,6 +128,8 @@ export function debugBoardSystem(m: RawMesh): RawMesh {
   console.log(`debugBoardSystem: ${(after - before).toFixed(2)}ms`);
   return m;
 }
+
+const TRACK_INVALID_BOARDS = false;
 
 export function getBoardsFromMesh(m: RawMesh): WoodenState {
   // What's in a board?
@@ -160,25 +169,23 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
   // console.dir(qIsMaybeEnd);
 
   // tracks verts and quads used in all boards
-  const takenVis = new Set<number>();
-  const takenQis = new Set<number>();
+  const structureVis = new Set<number>();
+  const structureQis = new Set<number>();
 
   // TODO: vi to board idx ?
   function createBoard(startQi: number): Board | undefined {
     const boardVis = new Set<number>();
     const boardQis = new Set<number>();
 
-    // track starting quad and vert indices as part of this board
-    boardQis.add(startQi);
-    const startQ = m.quad[startQi];
-    startQ.forEach((vi) => boardVis.add(vi));
+    const startLoop = m.quad[startQi];
 
     // build the board
-    const segments = addBoardSegment(startQ);
+    const allSegments = addBoardSegment(startLoop, true);
 
-    if (segments) {
-      boardVis.forEach((vi) => takenVis.add(vi));
-      boardQis.forEach((qi) => takenQis.add(qi));
+    if (allSegments) {
+      // the board is valid; track it, return it
+      boardVis.forEach((vi) => structureVis.add(vi));
+      boardQis.forEach((qi) => structureQis.add(qi));
 
       // TODO(@darzu): DEBUG: render the board
       // console.log("boardQis:");
@@ -187,51 +194,71 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
       //   assert(0 <= qi && qi < m.quad.length, "invalid qi")
       // );
       // boardQis.forEach((qi) => newQuads.push(m.quad[qi]));
+      return allSegments;
     }
 
-    return segments;
+    return undefined;
 
-    function addBoardSegment(lastLoop: vec4): BoardSeg[] | undefined {
+    function addBoardSegment(
+      lastLoop: vec4,
+      isFirstLoop: boolean = false
+    ): BoardSeg[] | undefined {
+      // start tracking this segment
+      const segVis = new Set([...lastLoop]);
+
       // find the next loop
-      const nextLoop: number[] = [];
+      const nextLoop_: number[] = [];
       lastLoop.forEach((vi) => {
         edges[vi].forEach((vi2) => {
-          if (!boardVis.has(vi2) && !takenVis.has(vi2)) {
-            nextLoop.push(vi2);
-            boardVis.add(vi2); // eagerly track verts as board verts
+          if (
+            !segVis.has(vi2) &&
+            !boardVis.has(vi2) &&
+            !structureVis.has(vi2)
+          ) {
+            nextLoop_.push(vi2);
           }
         });
       });
-      if (nextLoop.length !== 4) {
+
+      // is our loop valid?
+      if (nextLoop_.length !== 4) {
         // invalid board
+        if (TRACK_INVALID_BOARDS)
+          console.log(`invalid board: next loop has ${nextLoop_.length} verts`);
         return undefined;
       }
+      const nextLoop = nextLoop_ as vec4;
 
-      // track the segment vertices and quads between the last loop and this loop
-      const loop = nextLoop as vec4;
-      const segVis = new Set([...lastLoop, ...loop]);
+      // add next loop verts to segment
+      nextLoop.forEach((vi) => segVis.add(vi));
+
+      // find all quads for segment
       // TODO(@darzu): PERF. inefficient to repeat this linear scan for each loop..
       //    probably partition the mesh into islands first
       const segQis = m.quad.reduce(
         (p, n, ni) =>
           !boardQis.has(ni) &&
-          !takenQis.has(ni) &&
+          !structureQis.has(ni) &&
           n.every((vi) => segVis.has(vi))
             ? [...p, ni]
             : p,
         [] as number[]
       );
 
-      // track segment quads as board quads
-      segQis.forEach((qi) => boardQis.add(qi));
-
       // do we still have a valid board?
       if (segQis.length !== 4 && segQis.length !== 5) {
         // invalid board; missing quads
+        if (TRACK_INVALID_BOARDS)
+          console.log(`invalid board: seg has ${segQis.length} quads`);
         return undefined;
       }
 
-      // create the segment
+      // track segment quads as board quads, from here the segment has either
+      // the right verts and quads or the whole board is invalid.
+      segQis.forEach((qi) => boardQis.add(qi));
+      segVis.forEach((vi) => boardVis.add(vi));
+
+      // create the final segment data struct
       const vertIdxs = [...segVis.values()];
       const aabb = getAABBFromPositions(vertIdxs.map((vi) => m.pos[vi]));
       const seg: BoardSeg = {
@@ -240,19 +267,34 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
         quadIdxs: segQis,
       };
 
-      // are we at the end?
+      // are we at an end of the board?
       if (segQis.length === 5) {
-        // we might be at the other end
-        const hasEndQuad =
-          segQis.filter((qi) => m.quad[qi].every((vi) => loop.includes(vi)))
-            .length === 1;
-
-        return [seg];
+        // get the end-cap
+        const endQuad = segQis.filter((qi) =>
+          m.quad[qi].every((vi) =>
+            (isFirstLoop ? lastLoop : nextLoop).includes(vi)
+          )
+        );
+        if (endQuad.length === 1) {
+          if (isFirstLoop) {
+            // no-op; we keep building the board
+          } else {
+            // we're done with the board
+            return [seg];
+          }
+        } else {
+          // invalid board
+          if (TRACK_INVALID_BOARDS)
+            console.log(
+              `invalid board: 5-quad but ${endQuad.length} end quads and is first: ${isFirstLoop}`
+            );
+          return undefined;
+        }
       }
 
       // continue
       // TODO(@darzu): perf. tail call optimization?
-      const nextSegs = addBoardSegment(loop);
+      const nextSegs = addBoardSegment(nextLoop);
       if (!nextSegs) return undefined;
       else return [seg, ...nextSegs];
     }
@@ -260,7 +302,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
 
   const boards: Board[] = [];
   for (let qi of qIsMaybeEnd) {
-    if (!takenQis.has(qi)) {
+    if (!structureQis.has(qi)) {
       const b = createBoard(qi);
       if (b) boards.push(b);
     }
@@ -288,6 +330,8 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
 
   const woodenState: WoodenState = {
     boards,
+    usedVertIdxs: structureVis,
+    usedQuadIdxs: structureQis,
   };
 
   return woodenState;

@@ -77,3 +77,10 @@ Regarding strategies for stopping ur HTML game from being copied:
   Best: JS domain locking w/ "Continue playing our game here: LINK"
     essentially make it a demo and funnel
   DCMA possible but annoying
+
+Thought about project state syncing between computers:
+  For cloud-synced project (a la Steam save state syncing or MakeCode syncing)
+  Don't let an edit session start until the cloud has acknowledged that ur starting a session
+  Then, warn on starting an edit session for that project elsewhere until the previous session has synced
+  A little tricky for after the session is synced
+  Or maybe use something more multiplayer-like
