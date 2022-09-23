@@ -7,7 +7,7 @@ import { ColliderDef } from "./physics/collider.js";
 import { PhysicsResultsDef } from "./physics/nonintersection.js";
 import { getQuadMeshEdges, RawMesh } from "./render/mesh.js";
 import { emissionTexturePtr } from "./render/pipelines/std-stars.js";
-import { RenderableDef } from "./render/renderer-ecs.js";
+import { RenderableDef, RendererDef } from "./render/renderer-ecs.js";
 import { assert } from "./test.js";
 import { edges } from "./util.js";
 
@@ -65,18 +65,33 @@ onInit((em) => {
 onInit((em: EntityManager) => {
   em.registerSystem(
     [WoodenDef, RenderableDef],
-    [],
+    [RendererDef],
     (es, res) => {
       // TODO(@darzu):
       for (let e of es) {
         if (WoodenStateDef.isOn(e)) continue;
 
+        // TODO(@darzu): need a first-class way to do this sort of pattern
+        const m = e.renderable.meshHandle.readonlyMesh!;
+
         const before = performance.now();
-        const state = getBoardsFromMesh(e.renderable.meshHandle.readonlyMesh!);
+        const state = getBoardsFromMesh(m);
         const after = performance.now();
         console.log(`getBoardsFromMesh: ${(after - before).toFixed(2)}ms`);
 
         em.ensureComponentOn(e, WoodenStateDef, state);
+
+        // TODO(@darzu): dbg colors:
+        for (let b of state.boards) {
+          // TODO(@darzu): use hue variations
+          const color: vec3 = [Math.random(), Math.random(), Math.random()];
+          for (let seg of b) {
+            for (let qi of seg.quadIdxs) {
+              vec3.copy(m.colors[qi], color);
+            }
+          }
+        }
+        res.renderer.renderer.updateMesh(e.renderable.meshHandle, m);
       }
     },
     "initWooden"
@@ -113,7 +128,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
   // mid verts connect to 4 others
   // ASSUME: quad mesh for the boards. Might as well
   // TODO(@darzu):
-  console.log("getBoardsFromMesh");
+  // console.log("getBoardsFromMesh");
 
   const edges = getQuadMeshEdges(m);
   // possible ends
@@ -141,8 +156,8 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
     }
   }
 
-  console.log("qIsMaybeEnd");
-  console.dir(qIsMaybeEnd);
+  // console.log("qIsMaybeEnd");
+  // console.dir(qIsMaybeEnd);
 
   // tracks verts and quads used in all boards
   const takenVis = new Set<number>();

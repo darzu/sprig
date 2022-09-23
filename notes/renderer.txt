@@ -997,3 +997,7 @@ Twitter thread on downsampling, blur, and bloom:
   "
   what is Nyquist?
   https://bartwronski.com/2022/03/07/fast-gpu-friendly-antialiasing-downsampling-filter/
+
+Ratchet and Clank team on lighting:
+  https://www.youtube.com/watch?v=geErfczxwjc
+  exposure is super important to get right
