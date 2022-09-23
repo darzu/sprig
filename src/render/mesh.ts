@@ -1,3 +1,4 @@
+import { ASSET_LOG_VERT_CHANGES } from "../flags.js";
 import { createFabric } from "../game/assets.js";
 import { vec3, vec2, mat4, vec4 } from "../gl-matrix.js";
 import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
@@ -273,17 +274,24 @@ export function normalizeMesh(inM: RawMesh): Mesh {
     provoking,
   } = unshareProvokingVerticesWithMap(inM);
   const newVertNum = outM.pos.length;
-  if (inM.tri.length === 0 && inM.quad.length > 0) {
-    // single-sided quad meshes shouldn't need to create new verts
-    // if (oldVertNum !== newVertNum) {
-    //   console.warn(
-    //     `quad mesh w/ ${oldVertNum} verts had ${
-    //       newVertNum - oldVertNum
-    //     } extra verts added by unshareProvokingVerticesWithMap`
-    //   );
-    //   console.log(`quad count: ${inM.quad.length}`);
-    //   console.dir(Object.keys(provoking).map((n) => Number(n)));
-    // }
+  // if (inM.tri.length === 0 && inM.quad.length > 0) {
+  //   single-sided quad meshes shouldn't need to create new verts
+  //   if (oldVertNum !== newVertNum) {
+  //     console.warn(
+  //       `quad mesh w/ ${oldVertNum} verts had ${
+  //         newVertNum - oldVertNum
+  //       } extra verts added by unshareProvokingVerticesWithMap`
+  //     );
+  //     console.log(`quad count: ${inM.quad.length}`);
+  //     console.dir(Object.keys(provoking).map((n) => Number(n)));
+  //   }
+  // }
+  if (ASSET_LOG_VERT_CHANGES && oldVertNum !== newVertNum) {
+    console.log(
+      `mesh "${
+        inM.dbgName ?? "??"
+      }" had vert change: ${oldVertNum} -> ${newVertNum}`
+    );
   }
   return {
     // TODO(@darzu): always generate UVs?

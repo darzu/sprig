@@ -809,6 +809,7 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
     if (t1) transformMesh(m, t1);
     const t2 = (MeshModify as { [key: string]: (m: RawMesh) => RawMesh })[n];
     if (t2) m = t2(m);
+    if (!m.dbgName) m.dbgName = n;
     return m;
   }
 
