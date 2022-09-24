@@ -1,3 +1,4 @@
+import { toFRGB, toOKLAB, toV3 } from "./color/color.js";
 import { EM, EntityManager } from "./entity-manager.js";
 import { BulletDef } from "./game/bullet.js";
 import { vec3, vec4 } from "./gl-matrix.js";
@@ -6,10 +7,8 @@ import { AABB, getAABBFromPositions } from "./physics/broadphase.js";
 import { ColliderDef } from "./physics/collider.js";
 import { PhysicsResultsDef } from "./physics/nonintersection.js";
 import { getQuadMeshEdges, RawMesh } from "./render/mesh.js";
-import { emissionTexturePtr } from "./render/pipelines/std-stars.js";
 import { RenderableDef, RendererDef } from "./render/renderer-ecs.js";
-import { assert } from "./test.js";
-import { edges } from "./util.js";
+import { range } from "./util.js";
 
 // TODO(@darzu): consider other mesh representations like:
 //    DCEL or half-edge data structure
@@ -81,21 +80,34 @@ onInit((em: EntityManager) => {
 
         em.ensureComponentOn(e, WoodenStateDef, state);
 
-        // first, color all "board"-used
-        for (let qi of state.usedQuadIdxs) {
-          vec3.copy(m.colors[qi], [1, 0, 0]);
-        }
+        // // first, color all "board"-used
+        // for (let qi of state.usedQuadIdxs) {
+        //   vec3.copy(m.colors[qi], [1, 0, 0]);
+        // }
+
+        const numColors = state.boards.length;
+        const gray = toOKLAB({ h: 123 /*doesn't matter*/, s: 0, l: 50 });
+        const saturation = 1.0; // defined as euclidean distance from gray in OKLab space
+        const mkColor = (rad: number) => {
+          const a = Math.cos(rad) * saturation + gray.a;
+          const b = Math.sin(rad) * saturation + gray.b;
+          return { ...gray, a, b };
+        };
+        // TODO(@darzu): this rainbow isn't right yet, fix!!!
+        const rainbow = range(numColors).map((i) =>
+          toV3(toFRGB(mkColor((2 * Math.PI) / i)))
+        );
 
         // TODO(@darzu): dbg colors:
-        for (let b of state.boards) {
+        state.boards.forEach((b, i) => {
           // TODO(@darzu): use hue variations
-          const color: vec3 = [Math.random(), Math.random(), Math.random()];
+          const color: vec3 = rainbow[i];
           for (let seg of b) {
             for (let qi of seg.quadIdxs) {
               vec3.copy(m.colors[qi], color);
             }
           }
-        }
+        });
         res.renderer.renderer.updateMesh(e.renderable.meshHandle, m);
       }
     },
