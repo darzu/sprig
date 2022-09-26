@@ -1,6 +1,7 @@
 import { ASSET_LOG_VERT_CHANGES } from "../flags.js";
 import { createFabric } from "../game/assets.js";
 import { vec3, vec2, mat4, vec4 } from "../gl-matrix.js";
+import { max, sum } from "../math.js";
 import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
 import { assert } from "../test.js";
 import { arraySortedEqual, arrayUnsortedEqual } from "../util.js";
@@ -151,6 +152,8 @@ export function validateMesh(m: RawMesh) {
   );
 }
 
+let _timeSpentOnNeighborIsh = 0;
+
 export function unshareProvokingVerticesWithMap(input: RawMesh): {
   mesh: RawMesh & { usesProvoking: true };
   posMap: Map<number, number>;
@@ -169,6 +172,48 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
   const provoking: { [key: number]: boolean } = {};
   const posMap: Map<number, number> = new Map();
   pos.forEach((_, i) => posMap.set(i, i));
+
+  // TODO(@darzu): probably remove this once we have unshareProvoking working for board-specific assets w/ board knowledge
+  // TODO(@darzu): HACK. We're getting this "neighbor-ish" count to use as a heuristic
+  //    during unshare provoking quads below. We probably need some better pre-processing
+  //    that many stages could use like a half-edge data structure or something.
+  const quadIdxToNeighborIshCount: number[] = [];
+  {
+    const before = performance.now();
+    // TODO(@darzu): count quad neighbors, do provoking changes for quads w/ fewest neighbors first
+    const vertIdxToFaceCount: number[] = [];
+    [...input.tri, ...input.quad].forEach((vs) =>
+      vs.forEach(
+        (vi) => (vertIdxToFaceCount[vi] = (vertIdxToFaceCount[vi] ?? 0) + 1)
+      )
+    );
+    input.quad.forEach((v, qi) => {
+      quadIdxToNeighborIshCount[qi] = (v as number[]) // TSC can't handle the Float32Array/number[] ambiguity :(
+        .map((vi) => vertIdxToFaceCount[vi])
+        .reduce((p, n) => p + n, 0);
+    });
+    const uniqueNeighborIshCounts = (() => {
+      const countsSet = new Set<number>();
+      quadIdxToNeighborIshCount.forEach((c) => countsSet.add(c));
+      const countsList = [...countsSet.values()];
+      countsList.sort();
+      return countsList;
+    })();
+    if (input.dbgName?.includes("fang")) {
+      console.dir(vertIdxToFaceCount);
+      console.dir(quadIdxToNeighborIshCount);
+      console.dir(uniqueNeighborIshCounts);
+      console.log(
+        `uniqueNeighborIshCounts.length: ${uniqueNeighborIshCounts.length}`
+      );
+    }
+    const after = performance.now();
+    _timeSpentOnNeighborIsh += after - before;
+    console.log(
+      `_timeSpentOnNeighborIsh: ${_timeSpentOnNeighborIsh.toFixed(2)}ms`
+    );
+  }
+
   input.tri.forEach(([i0, i1, i2]) => {
     if (!provoking[i0]) {
       // First vertex is unused as a provoking vertex, so we'll use it for this triangle.
@@ -195,26 +240,28 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       tri.push([i3, i1, i2]);
     }
   });
-  // TODO(@darzu): IMPL
-  // input.quad.forEach((q) => quad.push(q));
-  input.quad.forEach(([i0, i1, i2, i3]) => {
+
+  const unshareProvokingForQuad: (q: vec4, qi: number) => void = (
+    [i0, i1, i2, i3],
+    qi
+  ) => {
     if (!provoking[i0]) {
       // First vertex is unused as a provoking vertex, so we'll use it for this triangle.
       provoking[i0] = true;
-      quad.push([i0, i1, i2, i3]);
+      quad[qi] = [i0, i1, i2, i3];
     } else if (!provoking[i1]) {
       // First vertex was taken, so let's see if we can rotate the indices to get an unused
       // provoking vertex.
       provoking[i1] = true;
-      quad.push([i1, i2, i3, i0]);
+      quad[qi] = [i1, i2, i3, i0];
     } else if (!provoking[i2]) {
       // ditto
       provoking[i2] = true;
-      quad.push([i2, i3, i0, i1]);
+      quad[qi] = [i2, i3, i0, i1];
     } else if (!provoking[i3]) {
       // ditto
       provoking[i3] = true;
-      quad.push([i3, i0, i1, i2]);
+      quad[qi] = [i3, i0, i1, i2];
     } else {
       // All vertices are taken, so create a new one
       const i4 = pos.length;
@@ -225,9 +272,38 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       if (tangents) tangents.push(input.tangents![i0]);
       if (normals) normals.push(input.normals![i0]);
       provoking[i4] = true;
-      quad.push([i4, i1, i2, i3]);
+      quad[qi] = [i4, i1, i2, i3];
       // console.log(`duplicating: ${i0}!`);
+
+      // TODO(@darzu): DBG
+      if (input.dbgName?.includes("fang")) {
+        console.log("new vert for fang ship");
+      }
     }
+  };
+  // input.quad.forEach((q, qi) => {
+  //   unshareProvokingForQuad(q, qi);
+  // });
+  // HACK!
+  // first pass for quads w/ a "small" number of neighbors
+  // if (input.dbgName?.includes("fang")) {
+  //   input.quad.forEach((q, qi) => {
+  //     const colorIdx = qi;
+  //     // TODO(@darzu): IMPORTANT! Color indexing seems v broken
+  //     // const colorIdx = input.tri.length + qi;
+  //     if (quadIdxToNeighborIshCount[qi] <= 12) {
+  //       input.colors[colorIdx] = [1, 0, 0];
+  //     } else {
+  //       input.colors[colorIdx] = [0.2, 0.2, 0.2];
+  //     }
+  //   });
+  // }
+  input.quad.forEach((q, qi) => {
+    if (quadIdxToNeighborIshCount[qi] <= 12) unshareProvokingForQuad(q, qi);
+  });
+  // second pass for the rest
+  input.quad.forEach((q, qi) => {
+    if (quadIdxToNeighborIshCount[qi] > 12) unshareProvokingForQuad(q, qi);
   });
 
   return {

@@ -5,7 +5,7 @@
 //  https://en.wikipedia.org/wiki/Color_difference
 
 import { clamp } from "../math.js";
-import { never } from "../util.js";
+import { never, range } from "../util.js";
 import {
   FLRGBToFRGB,
   XYZD65ToFLRGB,
@@ -441,4 +441,24 @@ export function colorDistDeltaE2000(lab1: Color, lab2: Color): number {
 
 export function colorDistOKLAB(c1: Color, c2: Color) {
   return colorDistEuclid(toOKLAB(c1), toOKLAB(c2));
+}
+
+// helpers
+export function makeRainbow(numColors: number) {
+  // TODO(@darzu): needs some testing
+  const gray = toOKLAB({ h: 123 /*doesn't matter*/, s: 100, l: 50 });
+  const saturation = 0.2; // defined as euclidean distance from gray in OKLab space
+  const mkColor = (rad: number) => {
+    const a = Math.cos(rad) * saturation + gray.a;
+    const b = Math.sin(rad) * saturation + gray.b;
+    return { ...gray, a, b };
+  };
+  // TODO(@darzu): this rainbow isn't right yet, fix!!!
+  const rainbow = range(numColors).map((i) =>
+    toV3(toFRGB(mkColor(2 * Math.PI * (i / numColors))))
+  );
+  // const rainbow = range(numColors).map((i) =>
+  //   toV3(toFRGB({ h: 360 * (i / numColors), s: 50, l: 50 }))
+  // );
+  return rainbow;
 }

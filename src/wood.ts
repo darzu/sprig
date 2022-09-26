@@ -1,5 +1,6 @@
 import { toFRGB, toOKLAB, toV3 } from "./color/color.js";
 import { EM, EntityManager } from "./entity-manager.js";
+import { AllMeshSymbols } from "./game/assets.js";
 import { BulletDef } from "./game/bullet.js";
 import { vec3, vec4 } from "./gl-matrix.js";
 import { onInit } from "./init.js";
@@ -24,6 +25,15 @@ export const WoodenStateDef = EM.defineComponent(
   (s: WoodenState) => {
     return s;
   }
+);
+
+export type WoodAssets = Partial<{
+  [P in AllMeshSymbols]: WoodenState;
+}>;
+
+export const WoodAssetsDef = EM.defineComponent(
+  "woodAssets",
+  (registry: WoodAssets = {}) => registry
 );
 
 onInit((em) => {
@@ -64,7 +74,7 @@ onInit((em) => {
 onInit((em: EntityManager) => {
   em.registerSystem(
     [WoodenDef, RenderableDef],
-    [RendererDef],
+    [RendererDef, WoodAssetsDef],
     (es, res) => {
       // TODO(@darzu):
       for (let e of es) {
@@ -73,10 +83,12 @@ onInit((em: EntityManager) => {
         // TODO(@darzu): need a first-class way to do this sort of pattern
         const m = e.renderable.meshHandle.readonlyMesh!;
 
-        const before = performance.now();
-        const state = getBoardsFromMesh(m);
-        const after = performance.now();
-        console.log(`getBoardsFromMesh: ${(after - before).toFixed(2)}ms`);
+        // const before = performance.now();
+        // const state = getBoardsFromMesh(m);
+        // const after = performance.now();
+        // console.log(`getBoardsFromMesh: ${(after - before).toFixed(2)}ms`);
+
+        const state = res.woodAssets.ship_fangs!;
 
         em.ensureComponentOn(e, WoodenStateDef, state);
 
@@ -84,24 +96,17 @@ onInit((em: EntityManager) => {
         // for (let qi of state.usedQuadIdxs) {
         //   vec3.copy(m.colors[qi], [1, 0, 0]);
         // }
+        // console.log(`fangship has ${m.tri.length} triangles!`);
+        // m.tri.forEach((t, ti) => {
+        //   vec3.copy(m.colors[ti], [1, 0, 0]);
+        // });
 
-        const numColors = state.boards.length;
-        const gray = toOKLAB({ h: 123 /*doesn't matter*/, s: 0, l: 50 });
-        const saturation = 1.0; // defined as euclidean distance from gray in OKLab space
-        const mkColor = (rad: number) => {
-          const a = Math.cos(rad) * saturation + gray.a;
-          const b = Math.sin(rad) * saturation + gray.b;
-          return { ...gray, a, b };
-        };
-        // TODO(@darzu): this rainbow isn't right yet, fix!!!
-        const rainbow = range(numColors).map((i) =>
-          toV3(toFRGB(mkColor((2 * Math.PI) / i)))
-        );
-
+        // TODO(@darzu): wait, these color indices might be off by 4 since we have 4 triangles
         // TODO(@darzu): dbg colors:
+        console.log(`num boards: ${state.boards.length}`);
         state.boards.forEach((b, i) => {
           // TODO(@darzu): use hue variations
-          const color: vec3 = rainbow[i];
+          const color: vec3 = [Math.random(), Math.random(), Math.random()];
           for (let seg of b) {
             for (let qi of seg.quadIdxs) {
               vec3.copy(m.colors[qi], color);
@@ -257,6 +262,8 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
         [] as number[]
       );
 
+      // TODO(@darzu): in the case of 6, we might have a single-segment
+      //    board and we need to allow for that
       // do we still have a valid board?
       if (segQis.length !== 4 && segQis.length !== 5) {
         // invalid board; missing quads

@@ -35,7 +35,12 @@ import { MeshHandle } from "../render/mesh-pool.js";
 import { onInit } from "../init.js";
 import { mathMap, max, min } from "../math.js";
 import { VERBOSE_LOG } from "../flags.js";
-import { debugBoardSystem } from "../wood.js";
+import {
+  debugBoardSystem,
+  getBoardsFromMesh,
+  WoodAssets,
+  WoodAssetsDef,
+} from "../wood.js";
 
 // TODO: load these via streaming
 
@@ -72,7 +77,7 @@ type RemoteMeshSymbols = keyof typeof RemoteMeshes;
 const RemoteMesheSets = {
   // TODO(@darzu): both of these are doing "cell fracture" in Blender
   //    than exporting into here. It'd be great if sprigland could
-  //    natively do that. Doing it natively would be great b/c there
+  //    natively do cell fracture b/c there
   //    is a lot of translate/scale alignment issues when we have
   //    a base model and a fractured model. Very hard to make changes.
   // TODO(@darzu): enemy broken parts doesn't seem to work rn. probably rename related
@@ -82,8 +87,13 @@ const RemoteMesheSets = {
 
 type RemoteMeshSetSymbols = keyof typeof RemoteMesheSets;
 
+export type AllMeshSymbols =
+  | RemoteMeshSymbols
+  | RemoteMeshSetSymbols
+  | LocalMeshSymbols;
+
 const MeshTransforms: Partial<{
-  [P in RemoteMeshSymbols | RemoteMeshSetSymbols | LocalMeshSymbols]: mat4;
+  [P in AllMeshSymbols]: mat4;
 }> = {
   cannon: mat4.fromYRotation(mat4.create(), -Math.PI / 2),
   linstock: mat4.fromScaling(mat4.create(), [0.1, 0.1, 0.1]),
@@ -110,12 +120,10 @@ const blackoutColor: (m: RawMesh) => RawMesh = (m: RawMesh) => {
   return m;
 };
 const MeshModify: Partial<{
-  [P in RemoteMeshSymbols | RemoteMeshSetSymbols | LocalMeshSymbols]: (
-    m: RawMesh
-  ) => RawMesh;
+  [P in AllMeshSymbols]: (m: RawMesh) => RawMesh;
 }> = {
   ship_fangs: (m) => {
-    m.colors = m.colors.map((c) => [0.2, 0.2, 0.2]);
+    // m.colors = m.colors.map((c) => [0.2, 0.2, 0.2]);
     m.surfaceIds = m.colors.map((_, i) => i);
     // console.log(`
     // Fang ship has:
@@ -124,6 +132,17 @@ const MeshModify: Partial<{
     // `);
 
     // m = debugBoardSystem(m);
+
+    // TODO(@darzu): call getBoardsFromMesh,
+    //    then move this data into some resource to be accessed later in an entities lifecycle
+    const woodState = getBoardsFromMesh(m);
+
+    const woodAssets: WoodAssets =
+      EM.getResource(WoodAssetsDef) ?? EM.addSingletonComponent(WoodAssetsDef);
+
+    // TODO(@darzu): UNSHARE PROVOKING FOR BOARDS
+
+    woodAssets["ship_fangs"] = woodState;
 
     return m;
   },
@@ -786,6 +805,7 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
   const singlesList = Object.entries(singlePromises);
   const singlesMeshList = await Promise.all(singlesList.map(([_, p]) => p));
 
+  // TODO(@darzu): We need clearer asset processing stages. "processMesh", "meshModify", "gameMeshFromMesh", "normalizeMesh"
   const singleMeshes = objMap(singlePromises, (_, n) => {
     const idx = singlesList.findIndex(([n2, _]) => n === n2);
     let m = singlesMeshList[idx];
@@ -804,10 +824,10 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
     return ms.map((m) => processMesh(n, m));
   });
 
-  function processMesh(n: string, m: RawMesh): RawMesh {
-    const t1 = (MeshTransforms as { [key: string]: mat4 })[n];
+  function processMesh(n: AllMeshSymbols, m: RawMesh): RawMesh {
+    const t1 = MeshTransforms[n];
     if (t1) transformMesh(m, t1);
-    const t2 = (MeshModify as { [key: string]: (m: RawMesh) => RawMesh })[n];
+    const t2 = MeshModify[n];
     if (t2) m = t2(m);
     if (!m.dbgName) m.dbgName = n;
     return m;
