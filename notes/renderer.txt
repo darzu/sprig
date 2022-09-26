@@ -1001,3 +1001,16 @@ Twitter thread on downsampling, blur, and bloom:
 Ratchet and Clank team on lighting:
   https://www.youtube.com/watch?v=geErfczxwjc
   exposure is super important to get right
+
+"Let's talk about different ways of providing per draw data. What are their CPU and GPU performance implications?
+
+UBOs, instance rate VB, push constants...":
+  https://twitter.com/SebAaltonen/status/1573927036015546369
+
+Shadow maps take 2 by ThinMatrix:
+  https://www.youtube.com/watch?v=uueB2kVvbHo
+  Only render backfaces in shadow pass
+    challange: little light gaps at the seems
+  use percent-closer filtering + random-ish offsets
+    ideally circular; ideally comparison-filter (?)
+  update shadow map region based on camera

@@ -137,3 +137,21 @@ Regarding creative work:
   And if you are just starting out or if you are still in this phase, you gotta know its normal and the most important thing you can do is do a lot of work. Do a huge volume of work. Put yourself on a deadline so that every week or every month you know you're going to finish one story. It is only by going through a volume of work that you're going to catch up and close that gap. And the work you're making will be as good as your ambitions.
   I took longer to figure out how to do this than anyone I’ve ever met. It takes awhile. It’s gonna take you a while. It’s normal to take a while. You just have to fight your way through that.
   —Ira Glass
+
+Maps of Science, interactive wall idea:
+  Get every poster from this channel, Domain of Science
+  https://www.youtube.com/watch?v=ohyai6GIRZg
+  Put them all on a grid on a big piece (or several connectable pieces) of plywood
+  In the center of all of them will be a monitor, speaker, and raspberry pi (or similar)
+  Each one will have a button; when pressed it'll play the relevant video for that poster
+  Optionally, each also has a slider
+     which dictates where in the video it should play when u press the button
+     this lets u seek, ff, rewind, etc
+  Optionally, the monitor has buttons for different language subtitles
+  Optionally, the posters are tagged with little timestamps (or slider indicators) so u know where to seek to hear about that section
+    perhaps this is printed on a transparent overlay per poster (maybe talk to Dom about this)
+    or more extreme: little buttons for each section
+  Maybe projector instead of monitor
+  Maybe not one giant wall, but arranged like a mounted book with big sheafs u can browse
+
+  Sprigland could absolutely do something like this for the realms of video game engines and computer science

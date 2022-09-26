@@ -418,3 +418,27 @@ Wood plank system:
     modifyMeshTriIndicesToRemoveSegment/splitBoard
     createThreeBoardParticlesForSegment
     sphereHitToPathIntervals
+
+
+Name ideas:
+  Spatial Delivery
+  Hyperspace traders
+  Hypersail
+  Darkstar Sailors
+  Hypersail: Rise of the Darkstar
+  Hypersail: Darkstar Mariners
+
+Excellent summary of "space stuff":
+  https://www.youtube.com/watch?v=uniGQrGLEoI
+  (plus errata in pinned comment)
+
+L says:
+  Hypersail 
+    fast modern ship, sleek, fancy sailboat zooming accross the ocean
+    fancy, glitzy, positive, bright
+  Darkstar Sailors
+    fantasy, spooky, adventerous,
+    interesting,
+    A dark boat, going into the unknown, a quest
+  
+

@@ -194,3 +194,47 @@ Resources:
     https://www.artstation.com/?sort_by=trending
     https://www.pinterest.com
   https://www.gamedesignworkshop.com
+
+"Stop Getting Lost: Make Cognitive Maps, Not Levels":
+  https://www.youtube.com/watch?v=Q1Tczf8vxCM
+  :)
+    Is a tool
+    Is made
+    Represents spaces or concepts
+    Is relational
+    Has edges/limits
+  :(
+    Is not the "truth
+    Not always orthographie
+    Not always "flat'
+    Not always physical
+    Prescriptive
+  Things people use to build cognative maps:
+    Paths
+      linear space that directs movement and travel
+      very dominant
+      most temporal
+      "dead reckoning", "path integration"
+      relies on continuity, proprioception (body sensing itself)
+      good at catching lost players
+    Landmarks
+      single, localized, memorable, point-reference
+      best if they aren't radially symetric / are directional
+    Districts
+      zonal reference
+      contains like-things
+    Edges
+      linear reference, but not a path
+      control continuity
+    Nodes
+      point reference
+      convergence of paths; hub
+  Getting lost:
+    misalignment between cognative map and surroundings
+  section is emotion, plan is structure
+  radar/gps/minimap/hud can lead to egocentric view
+    decrease in route memory
+    disengage from the environment
+    exploring the map instead of the terrain
+  egocentric vs allocentric
+    "piecemeal" vs "big picture"
