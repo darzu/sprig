@@ -1,4 +1,4 @@
-import { vec3 } from "../gl-matrix.js";
+import { mat4, vec3 } from "../gl-matrix.js";
 import { clamp } from "../math.js";
 import { tempVec3 } from "../temp-pool.js";
 import { range } from "../util.js";
@@ -507,6 +507,29 @@ export function copyAABB(out: AABB, a: AABB) {
   vec3.copy(out.max, a.max);
   return out;
 }
+
+export function getAABBCorners(aabb: AABB): vec3[] {
+  const points: vec3[] = [
+    [aabb.max[0], aabb.max[1], aabb.max[2]],
+    [aabb.max[0], aabb.max[1], aabb.min[2]],
+    [aabb.max[0], aabb.min[1], aabb.max[2]],
+    [aabb.max[0], aabb.min[1], aabb.min[2]],
+
+    [aabb.min[0], aabb.max[1], aabb.max[2]],
+    [aabb.min[0], aabb.max[1], aabb.min[2]],
+    [aabb.min[0], aabb.min[1], aabb.max[2]],
+    [aabb.min[0], aabb.min[1], aabb.min[2]],
+  ];
+  return points;
+}
+
+export function transformAABB(out: AABB, t: mat4) {
+  // TODO(@darzu): highly inefficient. for one, this allocs new vecs
+  const wCorners = getAABBCorners(out).map((p) => vec3.transformMat4(p, p, t));
+  // TODO(@darzu): update localAABB too
+  copyAABB(out, getAABBFromPositions(wCorners));
+}
+
 export function aabbCenter(out: vec3, a: AABB): vec3 {
   out[0] = (a.min[0] + a.max[0]) * 0.5;
   out[1] = (a.min[1] + a.max[1]) * 0.5;

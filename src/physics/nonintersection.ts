@@ -23,6 +23,7 @@ import {
   RayHit,
   rayHitDist,
   resetCollidesWithSet,
+  transformAABB,
 } from "./broadphase.js";
 import {
   Frame,
@@ -156,13 +157,6 @@ export function doesTouch(
   else return doesTouchAABB(a.aabb, b.aabb, threshold);
 }
 
-function transformAABB(out: AABB, t: mat4) {
-  // TODO(@darzu): highly inefficient. for one, this allocs new vecs
-  const wCorners = getAABBCorners(out).map((p) => vec3.transformMat4(p, p, t));
-  // TODO(@darzu): update localAABB too
-  copyAABB(out, getAABBFromPositions(wCorners));
-}
-
 // PRECONDITION: assumes world frames are all up to date
 export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
   em.registerSystem(
@@ -177,7 +171,6 @@ export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
           transformAABB(wc.localAABB, o.transform);
           copyAABB(wc.aabb, wc.selfAABB);
           transformAABB(wc.aabb, o.world.transform);
-          // TODO(@darzu): update localAABB too
           // TODO(@darzu): do we want to update lastPos here? different than obj last pos
           vec3.copy(wc.lastLocalPos, wc.localPos);
           aabbCenter(wc.localPos, wc.localAABB);
@@ -205,21 +198,6 @@ export function registerUpdateWorldFromPosRotScale(em: EntityManager) {
     },
     "updateWorldFromPosRotScale"
   );
-}
-
-function getAABBCorners(aabb: AABB): vec3[] {
-  const points: vec3[] = [
-    [aabb.max[0], aabb.max[1], aabb.max[2]],
-    [aabb.max[0], aabb.max[1], aabb.min[2]],
-    [aabb.max[0], aabb.min[1], aabb.max[2]],
-    [aabb.max[0], aabb.min[1], aabb.min[2]],
-
-    [aabb.min[0], aabb.max[1], aabb.max[2]],
-    [aabb.min[0], aabb.max[1], aabb.min[2]],
-    [aabb.min[0], aabb.min[1], aabb.max[2]],
-    [aabb.min[0], aabb.min[1], aabb.min[2]],
-  ];
-  return points;
 }
 
 export const PhysicsBroadCollidersDef = EM.defineComponent(

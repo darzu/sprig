@@ -4,9 +4,16 @@ import { AllMeshSymbols } from "./game/assets.js";
 import { BulletDef } from "./game/bullet.js";
 import { vec3, vec4 } from "./gl-matrix.js";
 import { onInit } from "./init.js";
-import { AABB, getAABBFromPositions } from "./physics/broadphase.js";
+import {
+  AABB,
+  copyAABB,
+  createAABB,
+  doesOverlapAABB,
+  getAABBFromPositions,
+  transformAABB,
+} from "./physics/broadphase.js";
 import { ColliderDef } from "./physics/collider.js";
-import { PhysicsResultsDef } from "./physics/nonintersection.js";
+import { PhysicsResultsDef, WorldFrameDef } from "./physics/nonintersection.js";
 import { getQuadMeshEdges, RawMesh } from "./render/mesh.js";
 import { RenderableDef, RendererDef } from "./render/renderer-ecs.js";
 import { assert } from "./test.js";
@@ -39,23 +46,57 @@ export const WoodAssetsDef = EM.defineComponent(
 
 onInit((em) => {
   em.registerSystem(
-    [WoodenDef],
-    [PhysicsResultsDef],
+    [WoodenStateDef, WorldFrameDef, RenderableDef],
+    [PhysicsResultsDef, RendererDef],
     (es, res) => {
       const { collidesWith } = res.physicsResults;
 
-      for (let e of es) {
-        const hits = collidesWith.get(e.id);
+      const ballAABBWorld = createAABB();
+      const segAABBWorld = createAABB();
+
+      const before = performance.now();
+
+      let segHits = 0;
+      let overlapChecks = 0;
+
+      for (let wooden of es) {
+        const meshHandle = wooden.renderable.meshHandle;
+        const mesh = meshHandle.readonlyMesh!; // TODO(@darzu): again, shouldn't be modifying "readonlyXXXX"
+        const hits = collidesWith.get(wooden.id);
         if (hits) {
           const balls = hits
-            .map((h) => em.findEntity(h, [BulletDef, ColliderDef]))
+            .map((h) =>
+              em.findEntity(h, [BulletDef, WorldFrameDef, ColliderDef])
+            )
             .filter((b) => {
               // TODO(@darzu): check authority and team
               return b;
             });
-          for (let b of balls) {
-            console.log(`hit!`);
+          for (let ball of balls) {
+            // TODO(@darzu): move a bunch of the below into physic system features!
+            assert(ball?.collider.shape === "AABB");
+            copyAABB(ballAABBWorld, ball.collider.aabb);
+            transformAABB(ballAABBWorld, ball.world.transform);
+            for (let board of wooden.woodenState.boards) {
+              for (let seg of board) {
+                // TODO(@darzu):
+                copyAABB(segAABBWorld, seg.localAABB);
+                transformAABB(segAABBWorld, wooden.world.transform);
+                overlapChecks++;
+                if (doesOverlapAABB(ballAABBWorld, segAABBWorld)) {
+                  // TODO(@darzu): hack, turn boards red on AABB hit
+                  for (let qi of seg.quadSideIdxs) {
+                    mesh.colors[qi] = [1, 0, 0];
+                    segHits += 1;
+                  }
+                }
+              }
+            }
           }
+        }
+        if (segHits > 0) {
+          // TODO(@darzu): really need sub-mesh updateMesh
+          res.renderer.renderer.updateMesh(meshHandle, mesh);
         }
       }
 
@@ -67,6 +108,16 @@ onInit((em) => {
       Broadphase Collision / non-intersection:
         each level of floor planks, etc
       */
+
+      const after = performance.now();
+
+      if (segHits > 1) {
+        console.log(
+          `runWooden: ${(after - before).toFixed(
+            2
+          )}ms, hits: ${segHits}, overlaps: ${overlapChecks}`
+        );
+      }
     },
     "runWooden"
   );

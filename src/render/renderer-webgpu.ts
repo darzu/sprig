@@ -62,6 +62,7 @@ export function createRenderer(
     // std mesh
     addMesh,
     addMeshInstance,
+    // TODO(@darzu): need sub-mesh updateMesh variant (e.g. coloring a few quads)
     updateMesh,
 
     // ocean
