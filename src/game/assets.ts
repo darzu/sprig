@@ -137,10 +137,19 @@ const MeshModify: Partial<{
     //    then move this data into some resource to be accessed later in an entities lifecycle
     const woodState = getBoardsFromMesh(m);
 
+    // TODO(@darzu): UNSHARE PROVOKING FOR BOARDS
+    {
+      const provokingVis = new Set<number>();
+      for (let b of woodState.boards) {
+        for (let seg of b) {
+          // TODO(@darzu): need end-cap info
+          // seg.
+        }
+      }
+    }
+
     const woodAssets: WoodAssets =
       EM.getResource(WoodAssetsDef) ?? EM.addSingletonComponent(WoodAssetsDef);
-
-    // TODO(@darzu): UNSHARE PROVOKING FOR BOARDS
 
     woodAssets["ship_fangs"] = woodState;
 

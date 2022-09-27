@@ -9,7 +9,8 @@ import { ColliderDef } from "./physics/collider.js";
 import { PhysicsResultsDef } from "./physics/nonintersection.js";
 import { getQuadMeshEdges, RawMesh } from "./render/mesh.js";
 import { RenderableDef, RendererDef } from "./render/renderer-ecs.js";
-import { range } from "./util.js";
+import { assert } from "./test.js";
+import { never, range } from "./util.js";
 
 // TODO(@darzu): consider other mesh representations like:
 //    DCEL or half-edge data structure
@@ -107,10 +108,17 @@ onInit((em: EntityManager) => {
         state.boards.forEach((b, i) => {
           // TODO(@darzu): use hue variations
           const color: vec3 = [Math.random(), Math.random(), Math.random()];
+          vec3.normalize(color, color);
+          vec3.scale(color, color, 0.05);
+          // 0.05 * (x^n) = 1.0
+          // x = 20^(1/n)
+          const incr = Math.pow(20, 1 / b.length);
+          console.log(`incr: ${incr}`);
           for (let seg of b) {
-            for (let qi of seg.quadIdxs) {
+            for (let qi of [...seg.quadSideIdxs, ...seg.quadEndIdxs]) {
               vec3.copy(m.colors[qi], color);
             }
+            vec3.scale(color, color, incr);
           }
         });
         res.renderer.renderer.updateMesh(e.renderable.meshHandle, m);
@@ -127,8 +135,9 @@ interface OBB {
 // each board has an AABB, OBB,
 interface BoardSeg {
   localAABB: AABB;
-  vertIdxs: number[];
-  quadIdxs: number[];
+  vertIdxs: number[]; // TODO(@darzu): always 4?
+  quadSideIdxs: number[]; // TODO(@darzu): alway 4?
+  quadEndIdxs: number[]; // TODO(@darzu): always 0,1,2?
 }
 type Board = BoardSeg[];
 interface WoodenState {
@@ -277,26 +286,30 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
       segQis.forEach((qi) => boardQis.add(qi));
       segVis.forEach((vi) => boardVis.add(vi));
 
-      // create the final segment data struct
+      // create common segment data
       const vertIdxs = [...segVis.values()];
       const aabb = getAABBFromPositions(vertIdxs.map((vi) => m.pos[vi]));
-      const seg: BoardSeg = {
-        localAABB: aabb,
-        vertIdxs,
-        quadIdxs: segQis,
-      };
+      let seg: BoardSeg;
 
       // are we at an end of the board?
       if (segQis.length === 5) {
         // get the end-cap
-        const endQuad = segQis.filter((qi) =>
+        const endQuads = segQis.filter((qi) =>
           m.quad[qi].every((vi) =>
             (isFirstLoop ? lastLoop : nextLoop).includes(vi)
           )
         );
-        if (endQuad.length === 1) {
+        if (endQuads.length === 1) {
+          const endQuad = endQuads[0];
+          const sideQuads = segQis.filter((qi) => qi !== endQuad);
+          seg = {
+            localAABB: aabb,
+            vertIdxs,
+            quadSideIdxs: sideQuads,
+            quadEndIdxs: [endQuad],
+          };
           if (isFirstLoop) {
-            // no-op; we keep building the board
+            // no-op, we'll continue below
           } else {
             // we're done with the board
             return [seg];
@@ -305,10 +318,18 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
           // invalid board
           if (TRACK_INVALID_BOARDS)
             console.log(
-              `invalid board: 5-quad but ${endQuad.length} end quads and is first: ${isFirstLoop}`
+              `invalid board: 5-quad but ${endQuads.length} end quads and is first: ${isFirstLoop}`
             );
           return undefined;
         }
+      } else {
+        // no end quads, just side
+        seg = {
+          localAABB: aabb,
+          vertIdxs,
+          quadSideIdxs: segQis,
+          quadEndIdxs: [],
+        };
       }
 
       // continue
