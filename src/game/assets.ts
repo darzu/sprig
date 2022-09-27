@@ -137,8 +137,10 @@ const MeshModify: Partial<{
     //    then move this data into some resource to be accessed later in an entities lifecycle
     const woodState = getBoardsFromMesh(m);
 
-    // TODO(@darzu): UNSHARE PROVOKING FOR BOARDS
     {
+      // TODO(@darzu): verify this actually works. We should pre-split the mesh
+      //  into islands (which will speed up getBoardsFromMesh by a lot), and then
+      //  verify each island is unshared.
       const provokingVis = new Set<number>();
       let bIdx = 0;
       for (let b of woodState.boards) {
@@ -167,16 +169,6 @@ const MeshModify: Partial<{
                 console.error(
                   `invalid board ${bIdx}; unable to unshare provoking`
                 );
-                // console.log(`board:`);
-                // console.dir(b);
-                // for (let seg of b) {
-                //   if (seg.quadEndIdxs.length) {
-                //     console.log(`end: ${m.quad[seg.quadEndIdxs[0]]}`);
-                //   }
-                //   for (let qi of seg.quadSideIdxs) {
-                //     console.log(`side: ${m.quad[qi]}`);
-                //   }
-                // }
               }
             }
           }
@@ -215,8 +207,6 @@ const MeshModify: Partial<{
           return true;
         } else {
           return false;
-          // console.error(`invalid board; unable to unshare provoking`);
-          // throw new Error(`invalid board; unable to unshare provoking`);
         }
       }
     }
