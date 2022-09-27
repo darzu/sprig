@@ -113,7 +113,7 @@ onInit((em: EntityManager) => {
           // 0.05 * (x^n) = 1.0
           // x = 20^(1/n)
           const incr = Math.pow(20, 1 / b.length);
-          console.log(`incr: ${incr}`);
+          // console.log(`incr: ${incr}`);
           for (let seg of b) {
             for (let qi of [...seg.quadSideIdxs, ...seg.quadEndIdxs]) {
               vec3.copy(m.colors[qi], color);
@@ -135,7 +135,8 @@ interface OBB {
 // each board has an AABB, OBB,
 interface BoardSeg {
   localAABB: AABB;
-  vertIdxs: number[]; // TODO(@darzu): always 4?
+  vertLastLoopIdxs: number[]; // TODO(@darzu): always 4?
+  vertNextLoopIdxs: number[]; // TODO(@darzu): always 4?
   quadSideIdxs: number[]; // TODO(@darzu): alway 4?
   quadEndIdxs: number[]; // TODO(@darzu): always 0,1,2?
 }
@@ -304,7 +305,8 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
           const sideQuads = segQis.filter((qi) => qi !== endQuad);
           seg = {
             localAABB: aabb,
-            vertIdxs,
+            vertLastLoopIdxs: [...lastLoop],
+            vertNextLoopIdxs: [...nextLoop],
             quadSideIdxs: sideQuads,
             quadEndIdxs: [endQuad],
           };
@@ -326,7 +328,8 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
         // no end quads, just side
         seg = {
           localAABB: aabb,
-          vertIdxs,
+          vertLastLoopIdxs: [...lastLoop],
+          vertNextLoopIdxs: [...nextLoop],
           quadSideIdxs: segQis,
           quadEndIdxs: [],
         };
