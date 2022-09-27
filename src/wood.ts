@@ -7,10 +7,17 @@ import { onInit } from "./init.js";
 import {
   AABB,
   copyAABB,
+  copyLine,
   createAABB,
+  createLine,
   doesOverlapAABB,
+  emptyLine,
   getAABBFromPositions,
+  Line,
+  lineSphereIntersections,
+  Sphere,
   transformAABB,
+  transformLine,
 } from "./physics/broadphase.js";
 import { ColliderDef } from "./physics/collider.js";
 import { PhysicsResultsDef, WorldFrameDef } from "./physics/nonintersection.js";
@@ -18,6 +25,7 @@ import { getQuadMeshEdges, RawMesh } from "./render/mesh.js";
 import { RenderableDef, RendererDef } from "./render/renderer-ecs.js";
 import { assert } from "./test.js";
 import { never, range } from "./util.js";
+import { centroid } from "./utils-3d.js";
 
 // TODO(@darzu): consider other mesh representations like:
 //    DCEL or half-edge data structure
@@ -53,10 +61,12 @@ onInit((em) => {
 
       const ballAABBWorld = createAABB();
       const segAABBWorld = createAABB();
+      const worldLine = emptyLine();
 
       const before = performance.now();
 
-      let segHits = 0;
+      let segAABBHits = 0;
+      let segMidHits = 0;
       let overlapChecks = 0;
 
       for (let wooden of es) {
@@ -77,6 +87,11 @@ onInit((em) => {
             assert(ball?.collider.shape === "AABB");
             copyAABB(ballAABBWorld, ball.collider.aabb);
             transformAABB(ballAABBWorld, ball.world.transform);
+            // TODO(@darzu): this sphere should live elsewhere..
+            const worldSphere: Sphere = {
+              org: ball.world.position,
+              rad: (ballAABBWorld.max[0] - ballAABBWorld.min[0]) * 0.5,
+            };
             for (let board of wooden.woodenState.boards) {
               for (let seg of board) {
                 // TODO(@darzu):
@@ -85,16 +100,32 @@ onInit((em) => {
                 overlapChecks++;
                 if (doesOverlapAABB(ballAABBWorld, segAABBWorld)) {
                   // TODO(@darzu): hack, turn boards red on AABB hit
+                  segAABBHits += 1;
                   for (let qi of seg.quadSideIdxs) {
-                    mesh.colors[qi] = [1, 0, 0];
-                    segHits += 1;
+                    if (mesh.colors[qi][1] < 1) {
+                      // dont change green to red
+                      mesh.colors[qi] = [1, 0, 0];
+                    }
+                  }
+
+                  copyLine(worldLine, seg.midLine);
+                  transformLine(worldLine, wooden.world.transform);
+                  const midHits = lineSphereIntersections(
+                    worldLine,
+                    worldSphere
+                  );
+                  if (midHits) {
+                    segMidHits += 1;
+                    for (let qi of seg.quadSideIdxs) {
+                      mesh.colors[qi] = [0, 1, 0];
+                    }
                   }
                 }
               }
             }
           }
         }
-        if (segHits > 0) {
+        if (segAABBHits > 0) {
           // TODO(@darzu): really need sub-mesh updateMesh
           res.renderer.renderer.updateMesh(meshHandle, mesh);
         }
@@ -111,11 +142,11 @@ onInit((em) => {
 
       const after = performance.now();
 
-      if (segHits > 1) {
+      if (segAABBHits > 1) {
         console.log(
           `runWooden: ${(after - before).toFixed(
             2
-          )}ms, hits: ${segHits}, overlaps: ${overlapChecks}`
+          )}ms, aabb hits: ${segAABBHits}, line hits: ${segMidHits}, aabbChecks: ${overlapChecks}`
         );
       }
     },
@@ -186,6 +217,7 @@ interface OBB {
 // each board has an AABB, OBB,
 interface BoardSeg {
   localAABB: AABB;
+  midLine: Line;
   vertLastLoopIdxs: number[]; // TODO(@darzu): always 4?
   vertNextLoopIdxs: number[]; // TODO(@darzu): always 4?
   quadSideIdxs: number[]; // TODO(@darzu): alway 4?
@@ -341,6 +373,9 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
       // create common segment data
       const vertIdxs = [...segVis.values()];
       const aabb = getAABBFromPositions(vertIdxs.map((vi) => m.pos[vi]));
+      const lastMid = centroid([...lastLoop].map((vi) => m.pos[vi]));
+      const nextMid = centroid([...nextLoop].map((vi) => m.pos[vi]));
+      const mid = createLine(lastMid, nextMid);
       let seg: BoardSeg;
 
       // are we at an end of the board?
@@ -356,6 +391,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
           const sideQuads = segQis.filter((qi) => qi !== endQuad);
           seg = {
             localAABB: aabb,
+            midLine: mid,
             vertLastLoopIdxs: [...lastLoop],
             vertNextLoopIdxs: [...nextLoop],
             quadSideIdxs: sideQuads,
@@ -379,6 +415,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
         // no end quads, just side
         seg = {
           localAABB: aabb,
+          midLine: mid,
           vertLastLoopIdxs: [...lastLoop],
           vertNextLoopIdxs: [...nextLoop],
           quadSideIdxs: segQis,

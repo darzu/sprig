@@ -1,4 +1,4 @@
-import { mat4, vec3 } from "../gl-matrix.js";
+import { mat4, vec2, vec3 } from "../gl-matrix.js";
 import { clamp } from "../math.js";
 import { tempVec3 } from "../temp-pool.js";
 import { range } from "../util.js";
@@ -550,4 +550,85 @@ export function getAABBFromPositions(positions: vec3[]): AABB {
   }
 
   return { min, max };
+}
+
+export interface Sphere {
+  org: vec3;
+  rad: number;
+}
+
+export interface Line {
+  ray: Ray;
+  len: number;
+}
+
+// TODO(@darzu): do we need this pattern?
+export function emptyRay(): Ray {
+  return {
+    org: vec3.create(),
+    dir: vec3.create(),
+  };
+}
+export function copyRay(out: Ray, a: Ray): Ray {
+  vec3.copy(out.org, a.org);
+  vec3.copy(out.dir, a.dir);
+  return out;
+}
+export function emptyLine(): Line {
+  return {
+    ray: emptyRay(),
+    len: 0,
+  };
+}
+export function copyLine(out: Line, a: Line): Line {
+  copyRay(out.ray, a.ray);
+  out.len = a.len;
+  return out;
+}
+
+export function createLine(a: vec3, b: vec3): Line {
+  const len = vec3.dist(a, b);
+  const dir = vec3.sub(vec3.create(), b, a);
+  vec3.normalize(dir, dir);
+  return {
+    ray: {
+      org: vec3.clone(a),
+      dir,
+    },
+    len,
+  };
+}
+
+export function transformLine(out: Line, t: mat4) {
+  vec3.transformMat4(out.ray.org, out.ray.org, t);
+  vec3.transformMat4(out.ray.dir, out.ray.dir, t);
+  const lenScale = vec3.len(out.ray.dir);
+  out.len = out.len * lenScale;
+  vec3.normalize(out.ray.dir, out.ray.dir);
+  return out;
+}
+
+export function raySphereIntersections(
+  ray: Ray,
+  sphere: Sphere
+): vec2 | undefined {
+  // https://iquilezles.org/articles/intersectors/
+  const a = vec3.sub(tempVec3(), ray.org, sphere.org);
+  const b = vec3.dot(a, ray.dir);
+  const c = vec3.dot(a, a) - sphere.rad * sphere.rad;
+  const h = b * b - c;
+  if (h < 0.0) return undefined; // no intersection
+  const h2 = Math.sqrt(h);
+  return vec2.fromValues(-b - h2, -b + h2);
+}
+
+export function lineSphereIntersections(
+  line: Line,
+  sphere: Sphere
+): vec2 | undefined {
+  const hits = raySphereIntersections(line.ray, sphere);
+  if (!hits) return undefined;
+  // TODO(@darzu): what about negative numbers?
+  if (hits[0] > line.len && hits[1] > line.len) return undefined;
+  return hits;
 }
