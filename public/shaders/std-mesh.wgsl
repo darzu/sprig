@@ -54,8 +54,9 @@ fn vert_main(input: VertexInput) -> VertexOutput {
 struct FragOut {
   @location(0) color: vec4<f32>,
   @location(1) normal: vec4<f32>,
-  // @location(2) position: vec4<f32>,
-  @location(2) surface: vec2<u32>,
+  @location(2) position: vec4<f32>,
+  @location(3) surface: vec2<u32>,
+  @location(4) emission: vec4<f32>,
 }
 
 const shadowDepthTextureSize = 2048.0;
@@ -134,21 +135,16 @@ fn frag_main(input: VertexOutput) -> FragOut {
     }
     let litColor = input.color * (lightingColor + vec3(f32(unlit)));
 
+    let distToParty = distance(input.worldPos.xyz, scene.partyPos);
     let fogDensity: f32 = 0.02;
     let fogGradient: f32 = 1.5;
-    // let fogDist: f32 = 0.1;
-    let fogDist: f32 = max(-input.worldPos.y - 10.0, 0.0);
-    // output.fogVisibility = 0.9;
-    let fogVisibility: f32 = clamp(exp(-pow(fogDist*fogDensity, fogGradient)), 0.0, 1.0);
-
-    let backgroundColor: vec3<f32> = vec3<f32>(0.6, 0.63, 0.6);
-    // let backgroundColor: vec3<f32> = vec3<f32>(0.6, 0.63, 0.6);
-    // let finalColor: vec3<f32> = mix(backgroundColor, gammaCorrected, fogVisibility);
-    // let finalColor: vec3<f32> = gammaCorrected;
-
+    let fogVisibility: f32 = clamp(exp(-pow(distToParty*fogDensity, fogGradient)) + f32(unlit), 0.0, 1.0);
+    let backgroundColor: vec3<f32> = vec3<f32>(0.015);
+    let foggedColor: vec3<f32> = mix(backgroundColor, litColor, fogVisibility);
 
     var out: FragOut;
-    out.color = vec4<f32>(litColor, 1.0);
+    out.color = vec4<f32>(foggedColor, 1.0);
+    out.emission = vec4<f32>(litColor * f32(unlit), 1.0);
 
     // let t = scene.time * 0.0005;
     // // TODO(@darzu): experimenting with reading from SDF
@@ -185,7 +181,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
     // out.color = vec4<f32>(input.uv, 0.0, 1.0);
     // out.normal = vec4(input.normal, 1.0);
     out.normal = vec4(normalize((scene.cameraViewProjMatrix * vec4<f32>(input.normal, 0.0)).xyz), 1.0);
-    // out.position = input.worldPos;
+    out.position = input.worldPos;
     out.surface.r = input.surface;
     out.surface.g = input.id;
     // out.color = vec4(input.color, 1.0);

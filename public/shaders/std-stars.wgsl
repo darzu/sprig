@@ -2,6 +2,7 @@ struct VertexOutput {
     @builtin(position) Position : vec4<f32>,
     @location(0) uv : vec2<f32>,
     @location(1) color: vec3<f32>,
+    @location(2) worldPos: vec3<f32>,
   };
   
   @vertex
@@ -10,7 +11,7 @@ struct VertexOutput {
     let starIdx = gvIdx / 6u;
 
     let star = starDatas.ms[starIdx];
-    let S = star.size;
+    let S = star.size * 0.5;
 
     let corners = array<vec3<f32>, 6>(
       vec3<f32>(-S, -S, 0.0),
@@ -36,7 +37,8 @@ struct VertexOutput {
 
     // TODO(@darzu): use starBoxSize
     // TODO(@darzu): use scene.partyPos
-    let hyperspeedFactor = 10.0; // 1.0 = none, 2.0 = ea 1.0 ship forward stars go backward 1.0
+    // let hyperspeedFactor = 10.0; 
+    let hyperspeedFactor = 30.0; // 1.0 = none, 2.0 = ea 1.0 ship forward stars go backward 1.0
     var wrappedPos = (
       fract(star.pos - scene.partyPos * hyperspeedFactor / starBoxSize)
       - 0.5 
@@ -61,6 +63,7 @@ struct VertexOutput {
     output.Position = screenPos;
     output.uv = uv[vIdx];
     output.color = star.color;
+    output.worldPos = worldPos;
     return output;
   }
   
@@ -80,13 +83,21 @@ struct VertexOutput {
     //    Another benefit of doing this is that we can have the blur be proportional
     //    to the size of the star.
 
+    let distToParty = 1.0 / distance(input.worldPos.xyz, scene.partyPos);
+
     let dist = length(input.uv - vec2(0.5));
     // TODO: what's the perf difference of alpha vs discard?
-    if (dist > 0.5) {
+    if (dist + distToParty * 100.0 > 0.5) {
       discard;
     }
 
     var out: FragOut;
+
+    // let fogDensity: f32 = 0.01;
+    // let fogGradient: f32 = 1.2;
+    // let fogVisibility: f32 = 1.0 - clamp(exp(-pow(distToParty*fogDensity, fogGradient)), 0.0, 1.0);
+    // let backgroundColor: vec3<f32> = vec3<f32>(0.015);
+    // let foggedColor: vec3<f32> = mix(backgroundColor, input.color, fogVisibility);
 
     out.emission = vec4<f32>(input.color * 0.5, 1.0);
     out.color = vec4<f32>(input.color * 2.0, 1.0);
