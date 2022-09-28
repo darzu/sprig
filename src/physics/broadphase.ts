@@ -629,6 +629,10 @@ export function lineSphereIntersections(
   const hits = raySphereIntersections(line.ray, sphere);
   if (!hits) return undefined;
   // TODO(@darzu): what about negative numbers?
-  if (hits[0] > line.len && hits[1] > line.len) return undefined;
+  if (
+    (hits[0] < 0 || line.len < hits[0]) &&
+    (hits[1] < 0 || line.len < hits[1])
+  )
+    return undefined;
   return hits;
 }

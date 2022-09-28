@@ -23,6 +23,7 @@ import { ColliderDef } from "./physics/collider.js";
 import { PhysicsResultsDef, WorldFrameDef } from "./physics/nonintersection.js";
 import { getQuadMeshEdges, RawMesh } from "./render/mesh.js";
 import { RenderableDef, RendererDef } from "./render/renderer-ecs.js";
+import { tempVec3 } from "./temp-pool.js";
 import { assert } from "./test.js";
 import { never, range } from "./util.js";
 import { centroid } from "./utils-3d.js";
@@ -107,6 +108,22 @@ onInit((em) => {
                       mesh.colors[qi] = [1, 0, 0];
                     }
                   }
+                  // // DBG: collapse to line
+                  // for (let vi of seg.vertLastLoopIdxs) {
+                  //   vec3.copy(mesh.pos[vi], seg.midLine.ray.org);
+                  // }
+                  // for (let vi of seg.vertNextLoopIdxs) {
+                  //   vec3.copy(mesh.pos[vi], seg.midLine.ray.org);
+                  //   vec3.add(
+                  //     mesh.pos[vi],
+                  //     mesh.pos[vi],
+                  //     vec3.scale(
+                  //       tempVec3(),
+                  //       seg.midLine.ray.dir,
+                  //       seg.midLine.len
+                  //     )
+                  //   );
+                  // }
 
                   copyLine(worldLine, seg.midLine);
                   transformLine(worldLine, wooden.world.transform);
@@ -115,6 +132,7 @@ onInit((em) => {
                     worldSphere
                   );
                   if (midHits) {
+                    console.log(`mid hit: ${midHits}`);
                     segMidHits += 1;
                     for (let qi of seg.quadSideIdxs) {
                       mesh.colors[qi] = [0, 1, 0];
