@@ -66,6 +66,8 @@ import { ControllableDef } from "./controllable.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { ForceDef, SpringGridDef } from "./spring.js";
 import { TextDef } from "./ui.js";
+import { outlineRender } from "../render/pipelines/std-outline.js";
+import { PointLightDef } from "../render/lights.js";
 
 export const GhostDef = EM.defineComponent("ghost", () => ({}));
 
@@ -92,6 +94,23 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   camera.fov = Math.PI * 0.5;
 
   const res = await em.whenResources(AssetsDef, GlobalCursor3dDef, RendererDef);
+
+  res.renderer.pipelines = [
+    // ...shadowPipelines,
+    stdRenderPipeline,
+    outlineRender,
+    postProcess,
+  ];
+
+  const sunlight = em.newEntity();
+  em.ensureComponentOn(sunlight, PointLightDef);
+  sunlight.pointLight.constant = 1.0;
+  vec3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
+  // vec3.scale(sunlight.pointLight.ambient, sunlight.pointLight.ambient, 0.2);
+  // vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
+  em.ensureComponentOn(sunlight, PositionDef, [10, 100, 10]);
+  em.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
+
   const g = createGhost(em);
   // em.ensureComponentOn(g, RenderableConstructDef, res.assets.cube.proto);
   // createPlayer(em);
