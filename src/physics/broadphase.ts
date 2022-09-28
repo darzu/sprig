@@ -600,6 +600,7 @@ export function createLine(a: vec3, b: vec3): Line {
 }
 
 export function transformLine(out: Line, t: mat4) {
+  vec3.normalize(out.ray.dir, out.ray.dir); // might not be needed if inputs r always normalized
   vec3.transformMat4(out.ray.org, out.ray.org, t);
   vec3.transformMat4(out.ray.dir, out.ray.dir, t);
   const lenScale = vec3.len(out.ray.dir);
