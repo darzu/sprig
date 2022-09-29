@@ -4,7 +4,11 @@ import { AssetsDef } from "./game/assets.js";
 import { vec3 } from "./gl-matrix.js";
 import { PositionDef, ScaleDef } from "./physics/transform.js";
 import { Mesh } from "./render/mesh.js";
-import { RenderableConstructDef } from "./render/renderer-ecs.js";
+import {
+  RenderableConstructDef,
+  RenderableDef,
+  RendererDef,
+} from "./render/renderer-ecs.js";
 
 // TODO(@darzu): move this helper elsewhere?
 // TODO(@darzu): would be dope to support thickness;
@@ -38,4 +42,14 @@ export async function drawBall(
   EM.ensureComponentOn(e, PositionDef, pos);
   EM.ensureComponentOn(e, ScaleDef, [size, size, size]);
   return e;
+}
+
+export async function randomizeMeshColors(e: Entity) {
+  const res = await EM.whenResources(RendererDef);
+  const e2 = await EM.whenEntityHas(e, RenderableDef);
+  const meshH = e2.renderable.meshHandle;
+  const mesh = meshH.readonlyMesh!;
+  for (let c of mesh.colors)
+    vec3.set(c, Math.random(), Math.random(), Math.random());
+  res.renderer.renderer.updateMesh(meshH, mesh);
 }

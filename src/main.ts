@@ -11,6 +11,8 @@ import {
   initClothSandbox,
   initGJKSandbox,
   initReboundSandbox,
+  initTimberSandbox,
+  sandboxSystems,
 } from "./game/game-sandbox.js";
 import { callClothSystems } from "./game/cloth.js";
 import { callSpringSystems } from "./game/spring.js";
@@ -27,7 +29,13 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-const GAME = "gjk" as "gjk" | "rebound" | "cloth" | "hyperspace" | "cube";
+const GAME = "timber" as
+  | "gjk"
+  | "rebound"
+  | "cloth"
+  | "hyperspace"
+  | "cube"
+  | "timber";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -131,6 +139,11 @@ function callFixedTimestepSystems() {
     // TODO(@darzu): Doug, we should talk about this. It is only registered after a one-shot
     if (EM.hasSystem("checkGJK")) EM.callSystem("checkGJK");
   }
+
+  // TODO(@darzu): HACK. we need to think better how to let different areas, like a sandbox game, register systems
+  //    to be called in a less cumbersome way than adding text and guards in here.
+  for (let sys of sandboxSystems) EM.callSystem(sys);
+
   EM.callSystem("updateLocalFromPosRotScale");
   EM.callSystem("updateWorldFromLocalAndParent");
   EM.callSystem("registerUpdateWorldAABBs");
@@ -210,6 +223,7 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "cloth") initClothSandbox(EM, hosting);
   else if (GAME === "hyperspace") initHyperspaceGame(EM);
   else if (GAME === "cube") initCubeGame(EM);
+  else if (GAME === "timber") initTimberSandbox(EM, hosting);
   else never(GAME, "TODO game");
 
   let previous_frame_time = start_of_time;
