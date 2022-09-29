@@ -77,6 +77,8 @@ export function createGhost(em: EntityManager) {
   em.ensureComponentOn(g, ControllableDef);
   g.controllable.modes.canFall = false;
   g.controllable.modes.canJump = false;
+  // g.controllable.modes.canYaw = true;
+  // g.controllable.modes.canPitch = true;
   em.ensureComponentOn(g, CameraFollowDef, 1);
   setCameraFollowPosition(g, "firstPerson");
   em.ensureComponentOn(g, PositionDef);
@@ -129,6 +131,7 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   g.cameraFollow.positionOffset = [0, 0, 5];
   g.controllable.modes.canYaw = false;
   g.controllable.modes.canCameraYaw = true;
+  // g.controllable.modes.canPitch = true;
   g.controllable.speed *= 0.5;
   g.controllable.sprintMul = 10;
 
