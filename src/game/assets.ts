@@ -457,18 +457,18 @@ const mkTimberRib: () => RawMesh = () => {
   const cursor: mat4 = mat4.create();
 
   addLoopVerts();
-  addEndQuad();
+  addEndQuad(true);
   mat4.translate(cursor, cursor, [0, 2, 0]);
   addLoopVerts();
   addSideQuads();
   mat4.translate(cursor, cursor, [0, 2, 0]);
   addLoopVerts();
   addSideQuads();
-  addEndQuad();
+  addEndQuad(false);
 
   mesh.colors = mesh.quad.map((_) => vec3.clone(BLACK));
 
-  console.dir(mesh);
+  // console.dir(mesh);
 
   return mesh;
 
@@ -479,7 +479,7 @@ const mkTimberRib: () => RawMesh = () => {
     // TODO(@darzu): handle rotation and provoking
     for (let i = 0; i > -4; i--) {
       const i2 = (i - 1) % 4;
-      console.log(`i: ${i}, i2: ${i2}`);
+      // console.log(`i: ${i}, i2: ${i2}`);
       mesh.quad.push([
         loop2Idx + i,
         loop1Idx + i,
@@ -489,19 +489,21 @@ const mkTimberRib: () => RawMesh = () => {
     }
   }
 
-  function addEndQuad() {
+  function addEndQuad(facingDown: boolean) {
     // TODO(@darzu): take a "flipped" param
     // TODO(@darzu): handle provoking verts
     const lastIdx = mesh.pos.length - 1;
-    const q: vec4 = [lastIdx, lastIdx - 1, lastIdx - 2, lastIdx - 3];
+    const q: vec4 = facingDown
+      ? [lastIdx, lastIdx - 1, lastIdx - 2, lastIdx - 3]
+      : [lastIdx - 3, lastIdx - 2, lastIdx - 1, lastIdx];
     mesh.quad.push(q);
   }
 
   function addLoopVerts() {
     const v0 = vec3.fromValues(1, 0, 1);
-    const v1 = vec3.fromValues(-1, 0, 1);
+    const v1 = vec3.fromValues(1, 0, -1);
     const v2 = vec3.fromValues(-1, 0, -1);
-    const v3 = vec3.fromValues(1, 0, -1);
+    const v3 = vec3.fromValues(-1, 0, 1);
     vec3.transformMat4(v0, v0, cursor);
     vec3.transformMat4(v1, v1, cursor);
     vec3.transformMat4(v2, v2, cursor);
