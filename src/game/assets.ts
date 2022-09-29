@@ -443,6 +443,72 @@ export const CUBE_MESH: RawMesh = {
     BLACK,
   ],
 };
+const mkTimberRib: () => RawMesh = () => {
+  // TODO(@darzu): have a system for building wood?
+
+  let mesh: RawMesh = {
+    dbgName: "timber_rib",
+    pos: [],
+    tri: [],
+    quad: [],
+    colors: [],
+  };
+
+  const cursor: mat4 = mat4.create();
+
+  addLoopVerts();
+  addEndQuad();
+  mat4.translate(cursor, cursor, [0, 2, 0]);
+  addLoopVerts();
+  addSideQuads();
+  mat4.translate(cursor, cursor, [0, 2, 0]);
+  addLoopVerts();
+  addSideQuads();
+  addEndQuad();
+
+  mesh.colors = mesh.quad.map((_) => vec3.clone(BLACK));
+
+  console.dir(mesh);
+
+  return mesh;
+
+  function addSideQuads() {
+    const loop1Idx = mesh.pos.length - 1;
+    const loop2Idx = mesh.pos.length - 1 - 4;
+
+    // TODO(@darzu): handle rotation and provoking
+    for (let i = 0; i > -4; i--) {
+      const i2 = (i - 1) % 4;
+      console.log(`i: ${i}, i2: ${i2}`);
+      mesh.quad.push([
+        loop2Idx + i,
+        loop1Idx + i,
+        loop1Idx + i2,
+        loop2Idx + i2,
+      ]);
+    }
+  }
+
+  function addEndQuad() {
+    // TODO(@darzu): take a "flipped" param
+    // TODO(@darzu): handle provoking verts
+    const lastIdx = mesh.pos.length - 1;
+    const q: vec4 = [lastIdx, lastIdx - 1, lastIdx - 2, lastIdx - 3];
+    mesh.quad.push(q);
+  }
+
+  function addLoopVerts() {
+    const v0 = vec3.fromValues(1, 0, 1);
+    const v1 = vec3.fromValues(-1, 0, 1);
+    const v2 = vec3.fromValues(-1, 0, -1);
+    const v3 = vec3.fromValues(1, 0, -1);
+    vec3.transformMat4(v0, v0, cursor);
+    vec3.transformMat4(v1, v1, cursor);
+    vec3.transformMat4(v2, v2, cursor);
+    vec3.transformMat4(v3, v3, cursor);
+    mesh.pos.push(v0, v1, v2, v3);
+  }
+};
 
 const TETRA_MESH: RawMesh = {
   pos: [
@@ -783,6 +849,7 @@ export const LocalMeshes = {
     return m;
   },
   sail: () => SAIL_MESH,
+  timber_rib: mkTimberRib,
 } as const;
 
 type LocalMeshSymbols = keyof typeof LocalMeshes;

@@ -150,6 +150,20 @@ export function validateMesh(m: RawMesh) {
     !m.tangents || m.tangents.length === vertCount,
     `mesh ${dbgName} tangents count (${m.tangents?.length}) doesn't match vert count (${vertCount})`
   );
+
+  for (let q of m.quad)
+    for (let qi of q)
+      assert(
+        qi <= m.pos.length - 1,
+        `invalid vert idx in quad: ${q} (vert count: ${m.pos.length})}`
+      );
+
+  for (let q of m.tri)
+    for (let qi of q)
+      assert(
+        qi <= m.pos.length - 1,
+        `invalid vert idx in tri: ${q} (vert count: ${m.pos.length})`
+      );
 }
 
 let _timeSpentOnNeighborIsh = 0;
