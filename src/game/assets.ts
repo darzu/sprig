@@ -36,6 +36,7 @@ import { onInit } from "../init.js";
 import { mathMap, max, min } from "../math.js";
 import { VERBOSE_LOG } from "../flags.js";
 import {
+  createTimberBuilder,
   debugBoardSystem,
   getBoardsFromMesh,
   unshareProvokingForWood,
@@ -387,83 +388,55 @@ export const CUBE_MESH: RawMesh = {
     BLACK,
   ],
 };
+
 const mkTimberRib: () => RawMesh = () => {
-  // TODO(@darzu): have a system for building wood?
+  const b = createTimberBuilder();
 
-  const W = 0.5; // width
-  const D = 0.2; // depth
-
-  let mesh: RawMesh = {
-    dbgName: "timber_rib",
-    pos: [],
-    tri: [],
-    quad: [],
-    colors: [],
-  };
-
-  const cursor: mat4 = mat4.create();
-
-  // mat4.scale(cursor, cursor, [W, 1, D]);
-
-  addLoopVerts();
-  addEndQuad(true);
-  for (let i = 0; i < 120; i++) {
-    mat4.translate(cursor, cursor, [0, 2, 0]);
-    mat4.rotateX(cursor, cursor, Math.PI * -0.05);
-    addLoopVerts();
-    addSideQuads();
-    mat4.rotateX(cursor, cursor, Math.PI * -0.05);
-    mat4.rotateY(cursor, cursor, Math.PI * -0.005);
+  b.addLoopVerts();
+  b.addEndQuad(true);
+  for (let i = 0; i < 20; i++) {
+    mat4.translate(b.cursor, b.cursor, [0, 2, 0]);
+    mat4.rotateX(b.cursor, b.cursor, Math.PI * -0.05);
+    b.addLoopVerts();
+    b.addSideQuads();
+    mat4.rotateX(b.cursor, b.cursor, Math.PI * -0.05);
+    mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.005);
   }
-  mat4.translate(cursor, cursor, [0, 2, 0]);
-  addLoopVerts();
-  addSideQuads();
-  addEndQuad(false);
+  mat4.translate(b.cursor, b.cursor, [0, 2, 0]);
+  b.addLoopVerts();
+  b.addSideQuads();
+  b.addEndQuad(false);
 
-  mesh.colors = mesh.quad.map((_) => vec3.clone(BLACK));
+  b.mesh.colors = b.mesh.quad.map((_) => vec3.clone(BLACK));
 
-  console.dir(mesh);
+  console.dir(b.mesh);
 
-  return mesh;
+  return b.mesh;
+};
 
-  function addSideQuads() {
-    const loop1Idx = mesh.pos.length - 1;
-    const loop2Idx = mesh.pos.length - 1 - 4;
+const mkTimberSplinter: () => RawMesh = () => {
+  const b = createTimberBuilder();
 
-    // TODO(@darzu): handle rotation and provoking
-    for (let i = 0; i > -4; i--) {
-      const i2 = (i - 1) % 4;
-      // console.log(`i: ${i}, i2: ${i2}`);
-      mesh.quad.push([
-        loop2Idx + i,
-        loop1Idx + i,
-        loop1Idx + i2,
-        loop2Idx + i2,
-      ]);
-    }
+  b.addLoopVerts();
+  b.addEndQuad(true);
+  for (let i = 0; i < 3; i++) {
+    mat4.translate(b.cursor, b.cursor, [0, 2, 0]);
+    mat4.rotateX(b.cursor, b.cursor, Math.PI * -0.05);
+    b.addLoopVerts();
+    b.addSideQuads();
+    mat4.rotateX(b.cursor, b.cursor, Math.PI * -0.05);
+    mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.005);
   }
+  mat4.translate(b.cursor, b.cursor, [0, 2, 0]);
+  b.addLoopVerts();
+  b.addSideQuads();
+  b.addEndQuad(false);
 
-  function addEndQuad(facingDown: boolean) {
-    // TODO(@darzu): take a "flipped" param
-    // TODO(@darzu): handle provoking verts
-    const lastIdx = mesh.pos.length - 1;
-    const q: vec4 = facingDown
-      ? [lastIdx, lastIdx - 1, lastIdx - 2, lastIdx - 3]
-      : [lastIdx - 3, lastIdx - 2, lastIdx - 1, lastIdx];
-    mesh.quad.push(q);
-  }
+  b.mesh.colors = b.mesh.quad.map((_) => vec3.clone(BLACK));
 
-  function addLoopVerts() {
-    const v0 = vec3.fromValues(W, 0, D);
-    const v1 = vec3.fromValues(W, 0, -D);
-    const v2 = vec3.fromValues(-W, 0, -D);
-    const v3 = vec3.fromValues(-W, 0, D);
-    vec3.transformMat4(v0, v0, cursor);
-    vec3.transformMat4(v1, v1, cursor);
-    vec3.transformMat4(v2, v2, cursor);
-    vec3.transformMat4(v3, v3, cursor);
-    mesh.pos.push(v0, v1, v2, v3);
-  }
+  console.dir(b.mesh);
+
+  return b.mesh;
 };
 
 const TETRA_MESH: RawMesh = {
@@ -806,6 +779,7 @@ export const LocalMeshes = {
   },
   sail: () => SAIL_MESH,
   timber_rib: mkTimberRib,
+  timber_splinter: mkTimberSplinter,
 } as const;
 
 type LocalMeshSymbols = keyof typeof LocalMeshes;

@@ -492,6 +492,20 @@ export async function initTimberSandbox(em: EntityManager, hosting: boolean) {
     aabb: res.assets.tetra.aabb,
   });
 
+  // TODO(@darzu): dbging splinters
+  const splinter = em.newEntity();
+  const splinterMesh = cloneMesh(res.assets.timber_splinter.mesh);
+  em.ensureComponentOn(splinter, RenderableConstructDef, splinterMesh);
+  em.ensureComponentOn(splinter, ColorDef, [0.1, 0.1, 0.1]);
+  em.ensureComponentOn(splinter, PositionDef, [4, 0, 0]);
+  em.ensureComponentOn(splinter, RotationDef);
+  em.ensureComponentOn(splinter, WorldFrameDef);
+  em.ensureComponentOn(splinter, ColliderDef, {
+    shape: "AABB",
+    solid: false,
+    aabb: res.assets.timber_splinter.aabb,
+  });
+
   const quadIdsNeedReset = new Set<number>();
 
   assert(ghost?.collider.shape === "AABB");

@@ -2,7 +2,7 @@ import { toFRGB, toOKLAB, toV3 } from "./color/color.js";
 import { EM, EntityManager } from "./entity-manager.js";
 import { AllMeshSymbols } from "./game/assets.js";
 import { BulletDef } from "./game/bullet.js";
-import { vec3, vec4 } from "./gl-matrix.js";
+import { mat4, vec3, vec4 } from "./gl-matrix.js";
 import { onInit } from "./init.js";
 import {
   AABB,
@@ -158,6 +158,90 @@ onInit((em) => {
     "runWooden"
   );
 });
+
+export function createTimberBuilder() {
+  // TODO(@darzu): have a system for building wood?
+
+  const W = 0.5; // width
+  const D = 0.2; // depth
+
+  let mesh: RawMesh = {
+    dbgName: "timber_rib",
+    pos: [],
+    tri: [],
+    quad: [],
+    colors: [],
+  };
+
+  const cursor: mat4 = mat4.create();
+
+  return {
+    width: W,
+    depth: D,
+    mesh,
+    cursor,
+    addSplinteredEnd,
+    addLoopVerts,
+    addSideQuads,
+    addEndQuad,
+  };
+
+  function addSplinteredEnd() {
+    const v0 = vec3.fromValues(W, 1, D);
+    const v1 = vec3.fromValues(W, 1, -D);
+    const v2 = vec3.fromValues(-W, 1, -D);
+    const v3 = vec3.fromValues(-W, 1, D);
+    const v4 = vec3.fromValues(0, 0, -D);
+    const v5 = vec3.fromValues(0, 0, D);
+    vec3.transformMat4(v0, v0, cursor);
+    vec3.transformMat4(v1, v1, cursor);
+    vec3.transformMat4(v2, v2, cursor);
+    vec3.transformMat4(v3, v3, cursor);
+    vec3.transformMat4(v4, v4, cursor);
+    vec3.transformMat4(v5, v5, cursor);
+    mesh.pos.push(v0, v1, v2, v3, v4, v5);
+    // TODO(@darzu): IMPL!
+  }
+
+  function addSideQuads() {
+    const loop1Idx = mesh.pos.length - 1;
+    const loop2Idx = mesh.pos.length - 1 - 4;
+
+    // TODO(@darzu): handle rotation and provoking
+    for (let i = 0; i > -4; i--) {
+      const i2 = (i - 1) % 4;
+      // console.log(`i: ${i}, i2: ${i2}`);
+      mesh.quad.push([
+        loop2Idx + i,
+        loop1Idx + i,
+        loop1Idx + i2,
+        loop2Idx + i2,
+      ]);
+    }
+  }
+
+  function addEndQuad(facingDown: boolean) {
+    // TODO(@darzu): take a "flipped" param
+    // TODO(@darzu): handle provoking verts
+    const lastIdx = mesh.pos.length - 1;
+    const q: vec4 = facingDown
+      ? [lastIdx, lastIdx - 1, lastIdx - 2, lastIdx - 3]
+      : [lastIdx - 3, lastIdx - 2, lastIdx - 1, lastIdx];
+    mesh.quad.push(q);
+  }
+
+  function addLoopVerts() {
+    const v0 = vec3.fromValues(W, 0, D);
+    const v1 = vec3.fromValues(W, 0, -D);
+    const v2 = vec3.fromValues(-W, 0, -D);
+    const v3 = vec3.fromValues(-W, 0, D);
+    vec3.transformMat4(v0, v0, cursor);
+    vec3.transformMat4(v1, v1, cursor);
+    vec3.transformMat4(v2, v2, cursor);
+    vec3.transformMat4(v3, v3, cursor);
+    mesh.pos.push(v0, v1, v2, v3);
+  }
+}
 
 function hideSegment(seg: BoardSeg, m: RawMesh) {
   // TODO(@darzu): how to unhide?
