@@ -93,6 +93,7 @@ onInit((em) => {
               org: ball.world.position,
               rad: (ballAABBWorld.max[0] - ballAABBWorld.min[0]) * 0.5,
             };
+
             for (let board of wooden.woodenState.boards) {
               for (let seg of board) {
                 // TODO(@darzu):
@@ -108,22 +109,6 @@ onInit((em) => {
                       mesh.colors[qi] = [1, 0, 0];
                     }
                   }
-                  // // DBG: collapse to line
-                  // for (let vi of seg.vertLastLoopIdxs) {
-                  //   vec3.copy(mesh.pos[vi], seg.midLine.ray.org);
-                  // }
-                  // for (let vi of seg.vertNextLoopIdxs) {
-                  //   vec3.copy(mesh.pos[vi], seg.midLine.ray.org);
-                  //   vec3.add(
-                  //     mesh.pos[vi],
-                  //     mesh.pos[vi],
-                  //     vec3.scale(
-                  //       tempVec3(),
-                  //       seg.midLine.ray.dir,
-                  //       seg.midLine.len
-                  //     )
-                  //   );
-                  // }
 
                   copyLine(worldLine, seg.midLine);
                   transformLine(worldLine, wooden.world.transform);
@@ -132,7 +117,7 @@ onInit((em) => {
                     worldSphere
                   );
                   if (midHits) {
-                    console.log(`mid hit: ${midHits}`);
+                    // console.log(`mid hit: ${midHits}`);
                     segMidHits += 1;
                     for (let qi of seg.quadSideIdxs) {
                       mesh.colors[qi] = [0, 1, 0];

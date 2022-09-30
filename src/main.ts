@@ -29,7 +29,7 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-const GAME = "timber" as
+const GAME = "hyperspace" as
   | "gjk"
   | "rebound"
   | "cloth"
