@@ -14,7 +14,11 @@ import { jitter, mathMap, mathMapNEase } from "../math.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 import { gjk, penetrationDepth, Shape } from "../physics/narrowphase.js";
-import { PhysicsStateDef, WorldFrameDef } from "../physics/nonintersection.js";
+import {
+  doesOverlap,
+  PhysicsStateDef,
+  WorldFrameDef,
+} from "../physics/nonintersection.js";
 import { PAD } from "../physics/phys.js";
 import {
   Frame,
@@ -58,7 +62,7 @@ import { tempVec3 } from "../temp-pool.js";
 import { assert } from "../test.js";
 import { TimeDef } from "../time.js";
 import { farthestPointInDir, vec3Dbg } from "../utils-3d.js";
-import { drawLine } from "../utils-game.js";
+import { drawLine, drawLine2, createLine } from "../utils-game.js";
 import { AssetsDef, GameMesh } from "./assets.js";
 import { ENEMY_SHIP_COLOR } from "./enemy-ship.js";
 import { ClothConstructDef, ClothLocalDef } from "./cloth.js";
@@ -69,6 +73,18 @@ import { TextDef } from "./ui.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { PointLightDef } from "../render/lights.js";
 import { randomizeMeshColors } from "../utils-game.js";
+import { WoodAssetsDef } from "../wood.js";
+import {
+  copyAABB,
+  copyLine,
+  createAABB,
+  doesOverlapAABB,
+  emptyLine,
+  lineSphereIntersections,
+  Sphere,
+  transformAABB,
+  transformLine,
+} from "../physics/broadphase.js";
 
 export const GhostDef = EM.defineComponent("ghost", () => ({}));
 
@@ -351,7 +367,12 @@ export async function initTimberSandbox(em: EntityManager, hosting: boolean) {
   const camera = em.addSingletonComponent(CameraDef);
   camera.fov = Math.PI * 0.5;
 
-  const res = await em.whenResources(AssetsDef, GlobalCursor3dDef, RendererDef);
+  const res = await em.whenResources(
+    AssetsDef,
+    WoodAssetsDef,
+    GlobalCursor3dDef,
+    RendererDef
+  );
 
   res.renderer.pipelines = [
     // ...shadowPipelines,
@@ -369,7 +390,7 @@ export async function initTimberSandbox(em: EntityManager, hosting: boolean) {
   em.ensureComponentOn(sunlight, PositionDef, [10, 100, 10]);
   em.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
 
-  const g = createGhost(em);
+  const ghost = createGhost(em);
   // em.ensureComponentOn(g, RenderableConstructDef, res.assets.cube.proto);
   // createPlayer(em);
 
@@ -381,15 +402,15 @@ export async function initTimberSandbox(em: EntityManager, hosting: boolean) {
   // quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
   // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
   // quat.copy(g.cameraFollow.rotationOffset, [-0.18, 0.0, 0.0, 0.98]);
-  vec3.copy(g.position, [0, 1, -1.2]);
-  quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
+  vec3.copy(ghost.position, [0, 1, -1.2]);
+  quat.setAxisAngle(ghost.rotation, [0.0, -1.0, 0.0], 1.62);
   // setCameraFollowPosition(g, "thirdPerson");
-  g.cameraFollow.positionOffset = [0, 0, 5];
-  g.controllable.modes.canYaw = false;
-  g.controllable.modes.canCameraYaw = true;
+  ghost.cameraFollow.positionOffset = [0, 0, 5];
+  // g.controllable.modes.canYaw = false;
+  // g.controllable.modes.canCameraYaw = true;
   // g.controllable.modes.canPitch = true;
-  g.controllable.speed *= 0.5;
-  g.controllable.sprintMul = 10;
+  ghost.controllable.speed *= 0.5;
+  ghost.controllable.sprintMul = 10;
 
   const c = res.globalCursor3d.cursor()!;
   if (RenderableDef.isOn(c)) c.renderable.enabled = false;
@@ -399,15 +420,15 @@ export async function initTimberSandbox(em: EntityManager, hosting: boolean) {
   em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
   em.ensureComponentOn(p, PositionDef, [0, -5, 0]);
 
-  const b1 = em.newEntity();
-  const m1 = cloneMesh(res.assets.cube.mesh);
-  em.ensureComponentOn(b1, RenderableConstructDef, m1);
-  em.ensureComponentOn(b1, ColorDef, [0.1, 0.1, 0.1]);
-  em.ensureComponentOn(b1, PositionDef, [0, 0, 3]);
-  em.ensureComponentOn(b1, RotationDef);
-  em.ensureComponentOn(b1, AngularVelocityDef, [0, 0.001, 0.001]);
-  em.ensureComponentOn(b1, WorldFrameDef);
-  em.ensureComponentOn(b1, ColliderDef, {
+  const cube = em.newEntity();
+  const cubeMesh = cloneMesh(res.assets.cube.mesh);
+  em.ensureComponentOn(cube, RenderableConstructDef, cubeMesh);
+  em.ensureComponentOn(cube, ColorDef, [0.1, 0.1, 0.1]);
+  em.ensureComponentOn(cube, PositionDef, [0, 0, 3]);
+  em.ensureComponentOn(cube, RotationDef);
+  em.ensureComponentOn(cube, AngularVelocityDef, [0, 0.001, 0.001]);
+  em.ensureComponentOn(cube, WorldFrameDef);
+  em.ensureComponentOn(cube, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.assets.cube.aabb,
@@ -420,15 +441,14 @@ export async function initTimberSandbox(em: EntityManager, hosting: boolean) {
   // });
 
   // TODO(@darzu): timber system here!
-  const b2 = g;
-  const m2 = cloneMesh(res.assets.ball.mesh);
-  em.ensureComponentOn(b2, RenderableConstructDef, m2);
-  em.ensureComponentOn(b2, ColorDef, [0.1, 0.1, 0.1]);
-  em.ensureComponentOn(b2, PositionDef, [0, 0, 0]);
+  const sphereMesh = cloneMesh(res.assets.ball.mesh);
+  em.ensureComponentOn(ghost, RenderableConstructDef, sphereMesh);
+  em.ensureComponentOn(ghost, ColorDef, [0.1, 0.1, 0.1]);
+  em.ensureComponentOn(ghost, PositionDef, [0, 0, 0]);
   // em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
-  em.ensureComponentOn(b2, WorldFrameDef);
+  em.ensureComponentOn(ghost, WorldFrameDef);
   // em.ensureComponentOn(b2, PhysicsParentDef, g.id);
-  em.ensureComponentOn(b2, ColliderDef, {
+  em.ensureComponentOn(ghost, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.assets.ball.aabb,
@@ -442,162 +462,110 @@ export async function initTimberSandbox(em: EntityManager, hosting: boolean) {
   //   halfsize: res.assets.cube.halfsize,
   // });
 
-  const b3 = em.newEntity();
-  const m3 = cloneMesh(res.assets.timber_rib.mesh);
-  em.ensureComponentOn(b3, RenderableConstructDef, m3);
-  em.ensureComponentOn(b3, ColorDef, [0.1, 0.1, 0.1]);
-  em.ensureComponentOn(b3, PositionDef, [0, 0, -4]);
-  em.ensureComponentOn(b3, RotationDef);
-  em.ensureComponentOn(b3, WorldFrameDef);
-  em.ensureComponentOn(b3, ColliderDef, {
+  const timber = em.newEntity();
+  const timberMesh = cloneMesh(res.assets.timber_rib.mesh);
+  em.ensureComponentOn(timber, RenderableConstructDef, timberMesh);
+  em.ensureComponentOn(timber, ColorDef, [0.1, 0.1, 0.1]);
+  em.ensureComponentOn(timber, PositionDef, [0, 0, -4]);
+  em.ensureComponentOn(timber, RotationDef);
+  em.ensureComponentOn(timber, WorldFrameDef);
+  em.ensureComponentOn(timber, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.assets.timber_rib.aabb,
   });
-  randomizeMeshColors(b3);
+  // randomizeMeshColors(timber);
+  const timberState = res.woodAssets.timber_rib!;
+  const board = timberState.boards[0];
+  const timber2 = await em.whenEntityHas(timber, RenderableDef);
 
-  const b4 = em.newEntity();
-  const m4 = cloneMesh(res.assets.tetra.mesh);
-  em.ensureComponentOn(b4, RenderableConstructDef, m4);
-  em.ensureComponentOn(b4, ColorDef, [0.1, 0.1, 0.1]);
-  em.ensureComponentOn(b4, PositionDef, [0, -3, 0]);
-  em.ensureComponentOn(b4, RotationDef);
-  em.ensureComponentOn(b4, WorldFrameDef);
-  em.ensureComponentOn(b4, ColliderDef, {
+  const tetra = em.newEntity();
+  const tetraMesh = cloneMesh(res.assets.tetra.mesh);
+  em.ensureComponentOn(tetra, RenderableConstructDef, tetraMesh);
+  em.ensureComponentOn(tetra, ColorDef, [0.1, 0.1, 0.1]);
+  em.ensureComponentOn(tetra, PositionDef, [0, -3, 0]);
+  em.ensureComponentOn(tetra, RotationDef);
+  em.ensureComponentOn(tetra, WorldFrameDef);
+  em.ensureComponentOn(tetra, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.assets.tetra.aabb,
   });
 
-  // NOTE: this uses temp vectors, it must not live long
-  // TODO(@darzu): for perf, this should be done only once per obj per frame;
-  //    maybe we should transform the dir instead
-  function createWorldShape(
-    g: GameMesh,
-    pos: vec3,
-    rot: quat,
-    lastWorldPos: vec3
-  ): Shape {
-    const transform = mat4.fromRotationTranslation(mat4.create(), rot, pos);
-    const worldVerts = g.uniqueVerts.map((p) =>
-      vec3.transformMat4(tempVec3(), p, transform)
-    );
-    const support = (d: vec3) => farthestPointInDir(worldVerts, d);
-    const center = vec3.transformMat4(tempVec3(), g.center, transform);
-    const travel = vec3.sub(tempVec3(), pos, lastWorldPos);
-    return {
-      center,
-      support,
-      travel,
-    };
-  }
+  const quadIdsNeedReset = new Set<number>();
 
-  let lastPlayerPos = vec3.clone(b2.position);
-  let lastPlayerRot = quat.clone(b2.rotation);
-  let lastWorldPos: vec3[] = [
-    vec3.clone(b1.position),
-    vec3.clone(b3.position),
-    vec3.clone(b4.position),
-  ];
-  let lastWorldRot: quat[] = [
-    quat.clone(b1.rotation),
-    quat.clone(b3.rotation),
-    quat.clone(b4.rotation),
-  ];
+  assert(ghost?.collider.shape === "AABB");
+  console.dir(ghost.collider.aabb);
 
   em.registerSystem(
     null,
     [InputsDef],
     (_, { inputs }) => {
-      // console.log(__frame);
-      // __frame++;
-      // if (!inputs.keyClicks["g"]) return;
+      const ballAABBWorld = createAABB();
+      const segAABBWorld = createAABB();
+      const worldLine = emptyLine();
 
-      // TODO(@darzu):
+      assert(ghost?.collider.shape === "AABB");
+      copyAABB(ballAABBWorld, ghost.collider.aabb);
+      transformAABB(ballAABBWorld, ghost.world.transform);
+      // TODO(@darzu): this sphere should live elsewhere..
+      const worldSphere: Sphere = {
+        org: ghost.world.position,
+        rad: 1,
+        // rad: (ballAABBWorld.max[0] - ballAABBWorld.min[0]) * 0.5,
+      };
 
-      let playerShape = createWorldShape(
-        res.assets.cube,
-        b2.position,
-        b2.rotation,
-        lastPlayerPos
-      );
+      let segAABBHits = 0;
+      let segMidHits = 0;
+      let overlapChecks = 0;
 
-      const gameMeshes = [res.assets.cube, res.assets.ball, res.assets.tetra];
-      const ents = [b1, b3, b4];
-
-      let backTravelD = 0;
-
-      for (let i = 0; i < ents.length; i++) {
-        b2.color[i] = 0.1;
-        ents[i].color[i] = 0.1;
-
-        let shapeOther = createWorldShape(
-          gameMeshes[i],
-          ents[i].position,
-          ents[i].rotation,
-          lastWorldPos[i]
+      for (let qi of quadIdsNeedReset) {
+        timberMesh.colors[qi] = [0.1, 0.1, 0.1];
+      }
+      if (quadIdsNeedReset.size) {
+        res.renderer.renderer.updateMesh(
+          timber2.renderable.meshHandle,
+          timberMesh
         );
-        let simplex = gjk(shapeOther, playerShape);
-        if (simplex) {
-          b2.color[i] = 0.3;
-          ents[i].color[i] = 0.3;
-        }
-        if (
-          simplex &&
-          (!quat.equals(lastWorldRot[i], ents[i].rotation) ||
-            !quat.equals(lastPlayerRot, g.rotation))
-        ) {
-          // rotation happened, undo it
-          quat.copy(ents[i].rotation, lastWorldRot[i]);
-          quat.copy(g.rotation, lastPlayerRot);
-
-          shapeOther = createWorldShape(
-            gameMeshes[i],
-            ents[i].position,
-            ents[i].rotation,
-            lastWorldPos[i]
-          );
-          playerShape = createWorldShape(
-            res.assets.cube,
-            b2.position,
-            b2.rotation,
-            lastPlayerPos
-          );
-          simplex = gjk(shapeOther, playerShape);
-        }
-
-        if (simplex) {
-          const penD = penetrationDepth(shapeOther, playerShape, simplex);
-          const travelD = vec3.len(playerShape.travel);
-          if (penD < Infinity) {
-            backTravelD += penD;
-          }
-          if (penD > travelD + PAD) console.error(`penD > travelD`);
-          console.log(
-            `penD: ${penD.toFixed(3)}, travelD: ${travelD.toFixed(3)}`
-          );
-        }
+        quadIdsNeedReset.clear();
       }
 
-      backTravelD = Math.min(backTravelD, vec3.len(playerShape.travel));
-      const travelN = vec3.normalize(tempVec3(), playerShape.travel);
-      const backTravel = vec3.scale(tempVec3(), travelN, backTravelD);
+      for (let seg of board) {
+        // TODO(@darzu):
+        copyAABB(segAABBWorld, seg.localAABB);
+        transformAABB(segAABBWorld, timber.world.transform);
+        overlapChecks++;
+        // if (doesOverlapAABB(ballAABBWorld, segAABBWorld)) {
+        // segAABBHits += 1;
+        // for (let qi of seg.quadSideIdxs) {
+        //   if (timberMesh.colors[qi][1] < 1) {
+        //     timberMesh.colors[qi] = [0.1, 0.3, 0.1];
+        //     quadIdsNeedReset.add(qi);
+        //   }
+        // }
 
-      // console.log(backTravel);
-      vec3.sub(b2.position, b2.position, backTravel);
+        copyLine(worldLine, seg.midLine);
+        transformLine(worldLine, timber.world.transform);
+        const midHits = lineSphereIntersections(worldLine, worldSphere);
+        if (midHits) {
+          drawLine2(worldLine, [0, 1, 0]);
+          console.log(`mid hit: ${midHits}`);
+          segMidHits += 1;
+          for (let qi of seg.quadSideIdxs) {
+            timberMesh.colors[qi] = [0, 1, 0];
+            quadIdsNeedReset.add(qi);
+          }
+        }
+        // }
+      }
 
-      lastWorldPos = [
-        vec3.clone(b1.position),
-        vec3.clone(b3.position),
-        vec3.clone(b4.position),
-      ];
-      lastWorldRot = [
-        quat.clone(b1.rotation),
-        quat.clone(b3.rotation),
-        quat.clone(b4.rotation),
-      ];
-      lastPlayerPos = vec3.clone(b2.position);
-      lastPlayerRot = quat.clone(b2.rotation);
+      if (segAABBHits > 0 || segMidHits > 0) {
+        // TODO(@darzu): really need sub-mesh updateMesh
+        res.renderer.renderer.updateMesh(
+          timber2.renderable.meshHandle,
+          timberMesh
+        );
+      }
     },
     "runTimberSandbox"
   );
@@ -718,7 +686,7 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
   const F = 100.0;
   em.ensureComponentOn(cloth, ForceDef, [F, F, F]);
 
-  let line: ReturnType<typeof drawLine>;
+  let line: ReturnType<typeof createLine>;
 
   em.registerSystem(
     [ClothConstructDef, ClothLocalDef, WorldFrameDef, ForceDef],
@@ -737,7 +705,7 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
       const clothPos = vec3.add(midpoint, midpoint, cloth.world.position);
 
       // line from cursor to cloth
-      if (!line) line = drawLine(vec3.create(), vec3.create(), [0, 1, 0]);
+      if (!line) line = createLine(vec3.create(), vec3.create(), [0, 1, 0]);
       if (RenderableDef.isOn(line)) {
         line.renderable.enabled = true;
         const m = line.renderable.meshHandle.readonlyMesh!;

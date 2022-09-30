@@ -628,6 +628,7 @@ export function lineSphereIntersections(
   sphere: Sphere
 ): vec2 | undefined {
   const hits = raySphereIntersections(line.ray, sphere);
+  // return hits; // TODO(@darzu): HACK
   if (!hits) return undefined;
   // TODO(@darzu): what about negative numbers?
   if (

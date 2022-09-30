@@ -485,3 +485,75 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
 
   return woodenState;
 }
+
+export function unshareProvokingForWood(m: RawMesh, woodState: WoodenState) {
+  // TODO(@darzu): verify this actually works. We should pre-split the mesh
+  //  into islands (which will speed up getBoardsFromMesh by a lot), and then
+  //  verify each island is unshared.
+  const provokingVis = new Set<number>();
+  let bIdx = 0;
+  for (let b of woodState.boards) {
+    // for (let b of [woodState.boards[60]]) {
+    // first, do ends
+    for (let seg of b) {
+      for (let qi of seg.quadEndIdxs) {
+        const done = unshareProvokingForBoardQuad(m.quad[qi], qi);
+        if (!done)
+          console.error(`invalid board ${bIdx}! End cap can't unshare`);
+        // console.log(`end: ${m.quad[qi]}`);
+      }
+    }
+    for (let seg of b) {
+      for (let qi of seg.quadSideIdxs) {
+        const done = unshareProvokingForBoardQuad(
+          m.quad[qi],
+          qi,
+          seg.vertLastLoopIdxs
+        );
+        // if (done) console.log(`side: ${m.quad[qi]}`);
+        if (!done) {
+          const done2 = unshareProvokingForBoardQuad(m.quad[qi], qi);
+          // if (done2) console.log(`side(2): ${m.quad[qi]}`);
+          if (!done2) {
+            console.error(`invalid board ${bIdx}; unable to unshare provoking`);
+          }
+        }
+      }
+    }
+    bIdx++;
+  }
+  function unshareProvokingForBoardQuad(
+    [i0, i1, i2, i3]: vec4,
+    qi: number,
+    preferVis?: number[]
+  ) {
+    if ((!preferVis || preferVis.includes(i0)) && !provokingVis.has(i0)) {
+      provokingVis.add(i0);
+      m.quad[qi] = [i0, i1, i2, i3];
+      return true;
+    } else if (
+      (!preferVis || preferVis.includes(i1)) &&
+      !provokingVis.has(i1)
+    ) {
+      provokingVis.add(i1);
+      m.quad[qi] = [i1, i2, i3, i0];
+      return true;
+    } else if (
+      (!preferVis || preferVis.includes(i2)) &&
+      !provokingVis.has(i2)
+    ) {
+      provokingVis.add(i2);
+      m.quad[qi] = [i2, i3, i0, i1];
+      return true;
+    } else if (
+      (!preferVis || preferVis.includes(i3)) &&
+      !provokingVis.has(i3)
+    ) {
+      provokingVis.add(i3);
+      m.quad[qi] = [i3, i0, i1, i2];
+      return true;
+    } else {
+      return false;
+    }
+  }
+}

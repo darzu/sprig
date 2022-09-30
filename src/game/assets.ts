@@ -1,5 +1,5 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { mat4, vec2, vec3, vec4 } from "../gl-matrix.js";
+import { mat3, mat4, vec2, vec3, vec4 } from "../gl-matrix.js";
 import { importObj, isParseError } from "../import_obj.js";
 import {
   cloneMesh,
@@ -38,6 +38,7 @@ import { VERBOSE_LOG } from "../flags.js";
 import {
   debugBoardSystem,
   getBoardsFromMesh,
+  unshareProvokingForWood,
   WoodAssets,
   WoodAssetsDef,
 } from "../wood.js";
@@ -137,84 +138,27 @@ const MeshModify: Partial<{
     //    then move this data into some resource to be accessed later in an entities lifecycle
     const woodState = getBoardsFromMesh(m);
 
-    {
-      // TODO(@darzu): verify this actually works. We should pre-split the mesh
-      //  into islands (which will speed up getBoardsFromMesh by a lot), and then
-      //  verify each island is unshared.
-      const provokingVis = new Set<number>();
-      let bIdx = 0;
-      for (let b of woodState.boards) {
-        // for (let b of [woodState.boards[60]]) {
-        // first, do ends
-        for (let seg of b) {
-          for (let qi of seg.quadEndIdxs) {
-            const done = unshareProvokingForBoardQuad(m.quad[qi], qi);
-            if (!done)
-              console.error(`invalid board ${bIdx}! End cap can't unshare`);
-            // console.log(`end: ${m.quad[qi]}`);
-          }
-        }
-        for (let seg of b) {
-          for (let qi of seg.quadSideIdxs) {
-            const done = unshareProvokingForBoardQuad(
-              m.quad[qi],
-              qi,
-              seg.vertLastLoopIdxs
-            );
-            // if (done) console.log(`side: ${m.quad[qi]}`);
-            if (!done) {
-              const done2 = unshareProvokingForBoardQuad(m.quad[qi], qi);
-              // if (done2) console.log(`side(2): ${m.quad[qi]}`);
-              if (!done2) {
-                console.error(
-                  `invalid board ${bIdx}; unable to unshare provoking`
-                );
-              }
-            }
-          }
-        }
-        bIdx++;
-      }
-      function unshareProvokingForBoardQuad(
-        [i0, i1, i2, i3]: vec4,
-        qi: number,
-        preferVis?: number[]
-      ) {
-        if ((!preferVis || preferVis.includes(i0)) && !provokingVis.has(i0)) {
-          provokingVis.add(i0);
-          m.quad[qi] = [i0, i1, i2, i3];
-          return true;
-        } else if (
-          (!preferVis || preferVis.includes(i1)) &&
-          !provokingVis.has(i1)
-        ) {
-          provokingVis.add(i1);
-          m.quad[qi] = [i1, i2, i3, i0];
-          return true;
-        } else if (
-          (!preferVis || preferVis.includes(i2)) &&
-          !provokingVis.has(i2)
-        ) {
-          provokingVis.add(i2);
-          m.quad[qi] = [i2, i3, i0, i1];
-          return true;
-        } else if (
-          (!preferVis || preferVis.includes(i3)) &&
-          !provokingVis.has(i3)
-        ) {
-          provokingVis.add(i3);
-          m.quad[qi] = [i3, i0, i1, i2];
-          return true;
-        } else {
-          return false;
-        }
-      }
-    }
+    unshareProvokingForWood(m, woodState);
 
     const woodAssets: WoodAssets =
       EM.getResource(WoodAssetsDef) ?? EM.addSingletonComponent(WoodAssetsDef);
 
     woodAssets["ship_fangs"] = woodState;
+
+    return m;
+  },
+  timber_rib: (m) => {
+    // TODO(@darzu): de-duplicate w/ fang ship above
+    m.surfaceIds = m.colors.map((_, i) => i);
+
+    const woodState = getBoardsFromMesh(m);
+
+    unshareProvokingForWood(m, woodState);
+
+    const woodAssets: WoodAssets =
+      EM.getResource(WoodAssetsDef) ?? EM.addSingletonComponent(WoodAssetsDef);
+
+    woodAssets["timber_rib"] = woodState;
 
     return m;
   },
@@ -446,6 +390,9 @@ export const CUBE_MESH: RawMesh = {
 const mkTimberRib: () => RawMesh = () => {
   // TODO(@darzu): have a system for building wood?
 
+  const W = 0.5; // width
+  const D = 0.2; // depth
+
   let mesh: RawMesh = {
     dbgName: "timber_rib",
     pos: [],
@@ -456,11 +403,18 @@ const mkTimberRib: () => RawMesh = () => {
 
   const cursor: mat4 = mat4.create();
 
+  // mat4.scale(cursor, cursor, [W, 1, D]);
+
   addLoopVerts();
   addEndQuad(true);
-  mat4.translate(cursor, cursor, [0, 2, 0]);
-  addLoopVerts();
-  addSideQuads();
+  for (let i = 0; i < 120; i++) {
+    mat4.translate(cursor, cursor, [0, 2, 0]);
+    mat4.rotateX(cursor, cursor, Math.PI * -0.05);
+    addLoopVerts();
+    addSideQuads();
+    mat4.rotateX(cursor, cursor, Math.PI * -0.05);
+    mat4.rotateY(cursor, cursor, Math.PI * -0.005);
+  }
   mat4.translate(cursor, cursor, [0, 2, 0]);
   addLoopVerts();
   addSideQuads();
@@ -468,7 +422,7 @@ const mkTimberRib: () => RawMesh = () => {
 
   mesh.colors = mesh.quad.map((_) => vec3.clone(BLACK));
 
-  // console.dir(mesh);
+  console.dir(mesh);
 
   return mesh;
 
@@ -500,10 +454,10 @@ const mkTimberRib: () => RawMesh = () => {
   }
 
   function addLoopVerts() {
-    const v0 = vec3.fromValues(1, 0, 1);
-    const v1 = vec3.fromValues(1, 0, -1);
-    const v2 = vec3.fromValues(-1, 0, -1);
-    const v3 = vec3.fromValues(-1, 0, 1);
+    const v0 = vec3.fromValues(W, 0, D);
+    const v1 = vec3.fromValues(W, 0, -D);
+    const v2 = vec3.fromValues(-W, 0, -D);
+    const v3 = vec3.fromValues(-W, 0, D);
     vec3.transformMat4(v0, v0, cursor);
     vec3.transformMat4(v1, v1, cursor);
     vec3.transformMat4(v2, v2, cursor);
