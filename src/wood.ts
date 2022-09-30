@@ -196,10 +196,12 @@ export function createTimberBuilder() {
     };
 
     const vi = mesh.pos.length;
-    const v0 = vec3.fromValues(W, yJitter(), D);
-    const v1 = vec3.fromValues(W, yJitter(), -D);
-    const v2 = vec3.fromValues(-W, yJitter(), D);
-    const v3 = vec3.fromValues(-W, yJitter(), -D);
+    let y = yJitter();
+    const v0 = vec3.fromValues(W, y, D);
+    const v1 = vec3.fromValues(W, y, -D);
+    y = yJitter();
+    const v2 = vec3.fromValues(-W, y, D);
+    const v3 = vec3.fromValues(-W, y, -D);
     const v4 = vec3.fromValues(0, 0, D);
     const v5 = vec3.fromValues(0, 0, -D);
     vec3.transformMat4(v0, v0, cursor);
@@ -212,30 +214,57 @@ export function createTimberBuilder() {
 
     // TODO(@darzu): DBG
 
-    // +D side
     const v_tm = vi + 4;
     const v_tr = vi + 0;
     const v_tl = vi + 2;
     const v_tbr = vi + -4;
     const v_tbl = vi + -1;
+    const v_bbr = vi + -3;
+    const v_bbl = vi + -2;
+    // +D side
     mesh.tri.push([v_tm, v_tbl, v_tbr]);
     mesh.tri.push([v_tm, v_tbr, v_tr]);
     mesh.tri.push([v_tm, v_tl, v_tbl]);
+    // -D side
+    mesh.tri.push([v_tm + 1, v_bbr, v_bbl]);
+    mesh.tri.push([v_tm + 1, v_tr + 1, v_bbr]);
+    mesh.tri.push([v_tm + 1, v_bbl, v_tl + 1]);
+
+    // D to -D quads
+    mesh.quad.push([v_bbl, v_tbl, v_tl, v_tl + 1]);
+    mesh.quad.push([v_tbr, v_bbr, v_tr + 1, v_tr]);
 
     const numJags = 5;
-    let v_last = v_tl;
+    let v_tlast = v_tl;
     for (let i = 1; i < numJags; i++) {
       const x = i * ((W * 2) / numJags) - W;
       const y = yJitter(); // TODO(@darzu): jitter
 
-      const vj = vec3.fromValues(x, y, D);
-      vec3.transformMat4(vj, vj, cursor);
-      const vji = mesh.pos.length;
-      mesh.pos.push(vj);
-      mesh.tri.push([v_tm, vji, v_last]);
-      v_last = vji;
+      // +D side
+      const vtj = vec3.fromValues(x, y, D);
+      vec3.transformMat4(vtj, vtj, cursor);
+      const vtji = mesh.pos.length;
+      mesh.pos.push(vtj);
+      mesh.tri.push([v_tm, vtji, v_tlast]);
+
+      // -D side
+      const vbj = vec3.fromValues(x, y, -D);
+      vec3.transformMat4(vbj, vbj, cursor);
+      mesh.pos.push(vbj);
+      mesh.tri.push([v_tm + 1, v_tlast + 1, vtji + 1]);
+
+      // D to -D quad
+      mesh.quad.push([v_tlast + 1, v_tlast, vtji, vtji + 1]);
+
+      v_tlast = vtji;
     }
-    mesh.tri.push([v_tm, v_tr, v_last]);
+    // +D side
+    mesh.tri.push([v_tm, v_tr, v_tlast]);
+    // -D side
+    mesh.tri.push([v_tm + 1, v_tlast + 1, v_tr + 1]);
+
+    // D to -D quad
+    mesh.quad.push([v_tlast + 1, v_tlast, v_tr, v_tr + 1]);
   }
 
   function addSideQuads() {
