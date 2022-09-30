@@ -83,7 +83,7 @@ export function registerNoodleSystem(em: EntityManager) {
           // TODO(@darzu): rotate around .dir
           return vec3.add(vec3.create(), p, seg.pos);
         });
-        rs.renderer.renderer.updateMesh(e.renderable.meshHandle, mesh);
+        rs.renderer.renderer.updateMeshVertices(e.renderable.meshHandle, mesh);
       }
     },
     "updateNoodles"

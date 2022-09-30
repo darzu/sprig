@@ -177,7 +177,7 @@ onInit((em: EntityManager) => {
           const originalIndex = cloth.clothLocal.posMap.get(i)!;
           return vec3.copy(p, cloth.springGrid.positions[originalIndex]);
         });
-        renderer.renderer.updateMesh(cloth.renderable.meshHandle, m);
+        renderer.renderer.updateMeshVertices(cloth.renderable.meshHandle, m);
       }
     },
     "updateClothMesh"

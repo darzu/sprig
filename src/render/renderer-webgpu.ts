@@ -63,7 +63,8 @@ export function createRenderer(
     addMesh,
     addMeshInstance,
     // TODO(@darzu): need sub-mesh updateMesh variant (e.g. coloring a few quads)
-    updateMesh,
+    updateMeshVertices,
+    updateMeshIndices,
 
     // ocean
     addOcean,
@@ -151,8 +152,11 @@ export function createRenderer(
     const newHandle = stdPool.addMeshInstance(oldHandle);
     return newHandle;
   }
-  function updateMesh(handle: MeshHandle, newMeshData: Mesh) {
+  function updateMeshVertices(handle: MeshHandle, newMeshData: Mesh) {
     stdPool.updateMeshVertices(handle, newMeshData);
+  }
+  function updateMeshIndices(handle: MeshHandle, newMeshData: Mesh) {
+    stdPool.updateMeshIndices(handle, newMeshData);
   }
 
   function addOcean(m: Mesh): OceanMeshHandle {

@@ -523,7 +523,7 @@ export async function initTimberSandbox(em: EntityManager, hosting: boolean) {
         timberMesh.colors[qi] = [0.1, 0.1, 0.1];
       }
       if (quadIdsNeedReset.size) {
-        res.renderer.renderer.updateMesh(
+        res.renderer.renderer.updateMeshVertices(
           timber2.renderable.meshHandle,
           timberMesh
         );
@@ -561,7 +561,7 @@ export async function initTimberSandbox(em: EntityManager, hosting: boolean) {
 
       if (segAABBHits > 0 || segMidHits > 0) {
         // TODO(@darzu): really need sub-mesh updateMesh
-        res.renderer.renderer.updateMesh(
+        res.renderer.renderer.updateMeshVertices(
           timber2.renderable.meshHandle,
           timberMesh
         );
@@ -711,7 +711,7 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
         const m = line.renderable.meshHandle.readonlyMesh!;
         vec3.copy(m.pos[0], cursorPos);
         vec3.copy(m.pos[1], clothPos);
-        res.renderer.renderer.updateMesh(line.renderable.meshHandle, m);
+        res.renderer.renderer.updateMeshVertices(line.renderable.meshHandle, m);
       }
 
       // scale the force

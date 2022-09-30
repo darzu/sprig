@@ -61,6 +61,7 @@ export interface MeshPool<V extends CyStructDesc, U extends CyStructDesc> {
   addMeshInstance: (m: MeshHandle) => MeshHandle;
   updateUniform: (m: MeshHandle, d: CyToTS<U>) => void;
   updateMeshVertices: (handle: MeshHandle, newMeshData: Mesh) => void;
+  updateMeshIndices: (handle: MeshHandle, newMeshData: Mesh) => void;
 }
 
 function logMeshPoolStats(opts: MeshPoolOpts<any, any>) {
@@ -138,7 +139,25 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     addMesh,
     addMeshInstance,
     updateMeshVertices,
+    updateMeshIndices,
   };
+
+  function computeTriData(m: Mesh): Uint16Array {
+    const numTri = m.tri.length + m.quad.length * 2;
+    const triData = new Uint16Array(align(numTri * 3, 2));
+    // add tris
+    m.tri.forEach((triInd, i) => {
+      // TODO(@darzu): support index shifting
+      triData.set(triInd, i * 3);
+    });
+    m.quad.forEach((quadInd, i) => {
+      // TODO(@darzu): support index shifting
+      const [t1, t2] = quadToTris(quadInd);
+      triData.set(t1, m.tri.length * 3 + i * 6);
+      triData.set(t2, m.tri.length * 3 + i * 6 + 3);
+    });
+    return triData;
+  }
 
   // TODO(@darzu): default to all 1s?
   function addMesh(m: Mesh): MeshHandle {
@@ -153,18 +172,8 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     assert(m.usesProvoking, `mesh must use provoking vertices`);
 
     const vertsData = opts.computeVertsData(m);
-    const triData = new Uint16Array(align(numTri * 3, 2));
     // add tris
-    m.tri.forEach((triInd, i) => {
-      // TODO(@darzu): support index shifting
-      triData.set(triInd, i * 3);
-    });
-    m.quad.forEach((quadInd, i) => {
-      // TODO(@darzu): support index shifting
-      const [t1, t2] = quadToTris(quadInd);
-      triData.set(t1, m.tri.length * 3 + i * 6);
-      triData.set(t2, m.tri.length * 3 + i * 6 + 3);
-    });
+    const triData = computeTriData(m);
     // add lines
     let lineData: Uint16Array | undefined;
     if (m.lines?.length) {
@@ -226,6 +235,10 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   function updateMeshVertices(handle: MeshHandle, newMesh: Mesh) {
     const data = opts.computeVertsData(newMesh);
     opts.verts.queueUpdates(data, handle.vertIdx);
+  }
+  function updateMeshIndices(handle: MeshHandle, newMesh: Mesh) {
+    const data = computeTriData(newMesh);
+    opts.triInds.queueUpdate(data, handle.triIdx * 3);
   }
 
   function updateUniform(m: MeshHandle, d: CyToTS<U>): void {

@@ -21,7 +21,7 @@ import {
 } from "./physics/broadphase.js";
 import { ColliderDef } from "./physics/collider.js";
 import { PhysicsResultsDef, WorldFrameDef } from "./physics/nonintersection.js";
-import { getQuadMeshEdges, RawMesh } from "./render/mesh.js";
+import { getQuadMeshEdges, Mesh, RawMesh } from "./render/mesh.js";
 import { RenderableDef, RendererDef } from "./render/renderer-ecs.js";
 import { tempVec3 } from "./temp-pool.js";
 import { assert } from "./test.js";
@@ -122,15 +122,17 @@ onInit((em) => {
                     for (let qi of seg.quadSideIdxs) {
                       mesh.colors[qi] = [0, 1, 0];
                     }
+                    hideSegment(seg, mesh);
                   }
                 }
               }
             }
           }
         }
-        if (segAABBHits > 0) {
+        if (segAABBHits > 0 || segMidHits > 0) {
           // TODO(@darzu): really need sub-mesh updateMesh
-          res.renderer.renderer.updateMesh(meshHandle, mesh);
+          res.renderer.renderer.updateMeshVertices(meshHandle, mesh);
+          res.renderer.renderer.updateMeshIndices(meshHandle, mesh);
         }
       }
 
@@ -156,6 +158,15 @@ onInit((em) => {
     "runWooden"
   );
 });
+
+function hideSegment(seg: BoardSeg, m: RawMesh) {
+  // TODO(@darzu): how to unhide?
+  // TODO(@darzu): probably a more efficient way to do this..
+  for (let qi of [...seg.quadSideIdxs, ...seg.quadEndIdxs]) {
+    const q = m.quad[qi];
+    vec4.set(q, 0, 0, 0, 0);
+  }
+}
 
 onInit((em: EntityManager) => {
   em.registerSystem(
@@ -206,7 +217,7 @@ onInit((em: EntityManager) => {
             vec3.scale(color, color, incr);
           }
         });
-        res.renderer.renderer.updateMesh(e.renderable.meshHandle, m);
+        res.renderer.renderer.updateMeshVertices(e.renderable.meshHandle, m);
       }
     },
     "initWooden"
@@ -225,6 +236,10 @@ interface BoardSeg {
   vertNextLoopIdxs: number[]; // TODO(@darzu): always 4?
   quadSideIdxs: number[]; // TODO(@darzu): alway 4?
   quadEndIdxs: number[]; // TODO(@darzu): always 0,1,2?
+
+  // TODO(@darzu): move gameplay elsewhere!
+  // gameplay:
+  alive: boolean;
 }
 type Board = BoardSeg[];
 interface WoodenState {
@@ -399,6 +414,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
             vertNextLoopIdxs: [...nextLoop],
             quadSideIdxs: sideQuads,
             quadEndIdxs: [endQuad],
+            alive: true,
           };
           if (isFirstLoop) {
             // no-op, we'll continue below
@@ -423,6 +439,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
           vertNextLoopIdxs: [...nextLoop],
           quadSideIdxs: segQis,
           quadEndIdxs: [],
+          alive: true,
         };
       }
 

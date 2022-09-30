@@ -48,7 +48,7 @@ export async function drawLine(start: vec3, end: vec3, color: vec3) {
     m.colors = [color, color];
 
     const res = await EM.whenResources(RendererDef);
-    res.renderer.renderer.updateMesh(e.renderable.meshHandle, m);
+    res.renderer.renderer.updateMeshVertices(e.renderable.meshHandle, m);
     return e;
   } else {
     const e = createLine(start, end, color);
@@ -109,5 +109,5 @@ export async function randomizeMeshColors(e: Entity) {
   const mesh = meshH.readonlyMesh!;
   for (let c of mesh.colors)
     vec3.set(c, Math.random(), Math.random(), Math.random());
-  res.renderer.renderer.updateMesh(meshH, mesh);
+  res.renderer.renderer.updateMeshVertices(meshH, mesh);
 }
