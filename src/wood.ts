@@ -26,7 +26,7 @@ import { RenderableDef, RendererDef } from "./render/renderer-ecs.js";
 import { tempVec3 } from "./temp-pool.js";
 import { assert } from "./test.js";
 import { never, range } from "./util.js";
-import { centroid } from "./utils-3d.js";
+import { centroid, vec3Dbg } from "./utils-3d.js";
 
 // TODO(@darzu): consider other mesh representations like:
 //    DCEL or half-edge data structure

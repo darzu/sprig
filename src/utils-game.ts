@@ -17,6 +17,7 @@ import { tempVec3 } from "./temp-pool.js";
 // TODO(@darzu): move this helper elsewhere?
 // TODO(@darzu): would be dope to support thickness;
 //    probably needs some shader work + a post pass
+// TODO(@darzu): this whole line pool thing needs a hard rethink; it might be okay but it's pretty hacky rn
 const _linePool: EntityW<[typeof RenderableDef]>[] = [];
 const _linePoolLimit = 100;
 let _linePoolNext = 0;
@@ -30,7 +31,7 @@ export async function drawLine2(line: Line, color: vec3) {
 }
 export async function drawLine(start: vec3, end: vec3, color: vec3) {
   start = vec3.clone(start);
-  const start2 = vec3.add(vec3.create(), start, [0.1, 0.1, 0.1]);
+  const start2 = vec3.add(vec3.create(), start, [0.2, 0.2, 0.2]);
   end = vec3.clone(end);
   const end2 = vec3.add(vec3.create(), end, [0.1, 0.1, 0.1]);
 
@@ -59,7 +60,7 @@ export async function drawLine(start: vec3, end: vec3, color: vec3) {
 }
 export function createLine(start: vec3, end: vec3, color: vec3) {
   start = vec3.clone(start);
-  const start2 = vec3.add(vec3.create(), start, [0.1, 0.1, 0.1]);
+  const start2 = vec3.add(vec3.create(), start, [0.2, 0.2, 0.2]);
   end = vec3.clone(end);
   const end2 = vec3.add(vec3.create(), end, [0.1, 0.1, 0.1]);
 

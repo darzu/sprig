@@ -1,6 +1,6 @@
-import { mat4, vec2, vec3 } from "../gl-matrix.js";
+import { mat3, mat4, vec2, vec3 } from "../gl-matrix.js";
 import { clamp } from "../math.js";
-import { tempVec3 } from "../temp-pool.js";
+import { tempMat3, tempVec3 } from "../temp-pool.js";
 import { range } from "../util.js";
 import { vec3Floor } from "../utils-3d.js";
 
@@ -600,9 +600,11 @@ export function createLine(a: vec3, b: vec3): Line {
 }
 
 export function transformLine(out: Line, t: mat4) {
+  // TODO(@darzu): this code needs review. It might not work right with scaling
   vec3.normalize(out.ray.dir, out.ray.dir); // might not be needed if inputs r always normalized
   vec3.transformMat4(out.ray.org, out.ray.org, t);
-  vec3.transformMat4(out.ray.dir, out.ray.dir, t);
+  const t3 = mat3.fromMat4(tempMat3(), t);
+  vec3.transformMat3(out.ray.dir, out.ray.dir, t3);
   const lenScale = vec3.len(out.ray.dir);
   out.len = out.len * lenScale;
   vec3.normalize(out.ray.dir, out.ray.dir);

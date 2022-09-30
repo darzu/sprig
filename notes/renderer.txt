@@ -1014,3 +1014,14 @@ Shadow maps take 2 by ThinMatrix:
   use percent-closer filtering + random-ish offsets
     ideally circular; ideally comparison-filter (?)
   update shadow map region based on camera
+
+HypeHype and Blender guys talking about line rendering:
+  https://twitter.com/hypersomniac_/status/1575776294096490496
+  https://twitter.com/SebAaltonen/status/1575778699378675712
+
+Recommendations for learning graphics programming:
+  https://medium.com/vrtigo/resources-for-beginning-graphics-programming-c0da724381bc
+  https://interplayoflight.wordpress.com/2018/07/08/how-to-start-learn-graphics-programming/
+  https://erkaman.github.io/posts/beginner_computer_graphics.html
+  https://www.realtimerendering.com
+  https://foundationsofgameenginedev.com

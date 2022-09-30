@@ -170,3 +170,6 @@ Animometer:
     http://sprig.land/webgl-animometer/Animometer/tests/3d/webgl.html
     https://sprig.land/webgl-animometer/Animometer/tests/3d/webgl.html?webgl_version=2&use_ubos=1&use_multi_draw=1
     ?webgl_version=2&use_ubos=1&use_multi_draw=1
+
+Webgpu timestamp querries:
+  https://github.com/OmarShehata/webgpu-compute-rasterizer/blob/main/how-to-use-timestamp-queries.md
