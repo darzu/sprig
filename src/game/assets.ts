@@ -417,22 +417,21 @@ const mkTimberRib: () => RawMesh = () => {
 const mkTimberSplinter: () => RawMesh = () => {
   const b = createTimberBuilder();
 
+  mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.5);
   b.addLoopVerts();
   b.addEndQuad(true);
-  for (let i = 0; i < 3; i++) {
-    mat4.translate(b.cursor, b.cursor, [0, 2, 0]);
-    mat4.rotateX(b.cursor, b.cursor, Math.PI * -0.05);
-    b.addLoopVerts();
-    b.addSideQuads();
-    mat4.rotateX(b.cursor, b.cursor, Math.PI * -0.05);
-    mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.005);
-  }
   mat4.translate(b.cursor, b.cursor, [0, 2, 0]);
   b.addLoopVerts();
   b.addSideQuads();
-  b.addEndQuad(false);
 
-  b.mesh.colors = b.mesh.quad.map((_) => vec3.clone(BLACK));
+  mat4.translate(b.cursor, b.cursor, [0, 0.1, 0]);
+  b.addSplinteredEnd();
+
+  // b.addEndQuad(false);
+
+  // TODO(@darzu): triangle vs quad coloring doesn't work
+  b.mesh.quad.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
+  b.mesh.tri.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
 
   console.dir(b.mesh);
 

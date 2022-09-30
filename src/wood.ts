@@ -4,6 +4,7 @@ import { AllMeshSymbols } from "./game/assets.js";
 import { BulletDef } from "./game/bullet.js";
 import { mat4, vec3, vec4 } from "./gl-matrix.js";
 import { onInit } from "./init.js";
+import { jitter } from "./math.js";
 import {
   AABB,
   copyAABB,
@@ -187,10 +188,18 @@ export function createTimberBuilder() {
   };
 
   function addSplinteredEnd() {
-    const v0 = vec3.fromValues(W, 1, D);
-    const v1 = vec3.fromValues(W, 1, -D);
-    const v2 = vec3.fromValues(-W, 1, -D);
-    const v3 = vec3.fromValues(-W, 1, D);
+    // const yJitter = () => 0.4;
+    let yJitterFar = false;
+    const yJitter = () => {
+      yJitterFar = !yJitterFar;
+      return yJitterFar ? 0.4 + jitter(0.3) : 0.2 + jitter(0.1);
+    };
+
+    const vi = mesh.pos.length;
+    const v0 = vec3.fromValues(W, yJitter(), D);
+    const v1 = vec3.fromValues(W, yJitter(), -D);
+    const v2 = vec3.fromValues(-W, yJitter(), -D);
+    const v3 = vec3.fromValues(-W, yJitter(), D);
     const v4 = vec3.fromValues(0, 0, -D);
     const v5 = vec3.fromValues(0, 0, D);
     vec3.transformMat4(v0, v0, cursor);
@@ -200,7 +209,33 @@ export function createTimberBuilder() {
     vec3.transformMat4(v4, v4, cursor);
     vec3.transformMat4(v5, v5, cursor);
     mesh.pos.push(v0, v1, v2, v3, v4, v5);
-    // TODO(@darzu): IMPL!
+
+    // TODO(@darzu): DBG
+
+    // +D side
+    const v_tm = vi + 5;
+    const v_tr = vi + 0;
+    const v_tl = vi + 3;
+    const v_tbr = vi + -4;
+    const v_tbl = vi + -1;
+    mesh.tri.push([v_tbl, v_tbr, v_tm]);
+    mesh.tri.push([v_tbr, v_tr, v_tm]);
+    mesh.tri.push([v_tbl, v_tm, v_tl]);
+
+    const numJags = 5;
+    let v_last = v_tl;
+    for (let i = 1; i < numJags; i++) {
+      const x = i * ((W * 2) / numJags) - W;
+      const y = yJitter(); // TODO(@darzu): jitter
+
+      const vj = vec3.fromValues(x, y, D);
+      vec3.transformMat4(vj, vj, cursor);
+      const vji = mesh.pos.length;
+      mesh.pos.push(vj);
+      mesh.tri.push([v_tm, vji, v_last]);
+      v_last = vji;
+    }
+    mesh.tri.push([v_tm, v_tr, v_last]);
   }
 
   function addSideQuads() {

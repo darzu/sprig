@@ -505,6 +505,7 @@ export async function initTimberSandbox(em: EntityManager, hosting: boolean) {
     solid: false,
     aabb: res.assets.timber_splinter.aabb,
   });
+  randomizeMeshColors(splinter);
 
   const quadIdsNeedReset = new Set<number>();
 
