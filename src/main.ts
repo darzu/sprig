@@ -11,8 +11,6 @@ import {
   initClothSandbox,
   initGJKSandbox,
   initReboundSandbox,
-  initTimberSandbox,
-  sandboxSystems,
 } from "./game/game-sandbox.js";
 import { callClothSystems } from "./game/cloth.js";
 import { callSpringSystems } from "./game/spring.js";
@@ -22,6 +20,7 @@ import { never } from "./util.js";
 import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { initCubeGame } from "./game/xp-cube.js";
 import { VERBOSE_LOG } from "./flags.js";
+import { initLD51Game, sandboxSystems } from "./game/game-ld51.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -29,13 +28,13 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-const GAME = "timber" as
+const GAME = "ld51" as
   | "gjk"
   | "rebound"
   | "cloth"
   | "hyperspace"
   | "cube"
-  | "timber";
+  | "ld51";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -223,7 +222,7 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "cloth") initClothSandbox(EM, hosting);
   else if (GAME === "hyperspace") initHyperspaceGame(EM);
   else if (GAME === "cube") initCubeGame(EM);
-  else if (GAME === "timber") initTimberSandbox(EM, hosting);
+  else if (GAME === "ld51") initLD51Game(EM, hosting);
   else never(GAME, "TODO game");
 
   let previous_frame_time = start_of_time;
