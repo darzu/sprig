@@ -414,7 +414,7 @@ const mkTimberRib: () => RawMesh = () => {
   return b.mesh;
 };
 
-const mkTimberSplinter: () => RawMesh = () => {
+export const mkTimberSplinter: () => RawMesh = () => {
   const b = createTimberBuilder();
 
   mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.5);
@@ -433,7 +433,7 @@ const mkTimberSplinter: () => RawMesh = () => {
   b.mesh.quad.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
   b.mesh.tri.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
 
-  console.dir(b.mesh);
+  // console.dir(b.mesh);
 
   return b.mesh;
 };

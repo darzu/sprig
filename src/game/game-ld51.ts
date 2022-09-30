@@ -18,7 +18,7 @@ import { AngularVelocityDef } from "../physics/motion.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
-import { cloneMesh } from "../render/mesh.js";
+import { cloneMesh, normalizeMesh } from "../render/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -30,7 +30,7 @@ import {
 import { assert } from "../test.js";
 import { randomizeMeshColors, drawLine2 } from "../utils-game.js";
 import { WoodAssetsDef } from "../wood.js";
-import { AssetsDef } from "./assets.js";
+import { AssetsDef, mkTimberSplinter } from "./assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { createGhost } from "./game-sandbox.js";
 
@@ -166,20 +166,25 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
     aabb: res.assets.tetra.aabb,
   });
 
-  // TODO(@darzu): dbging splinters
-  const splinter = em.newEntity();
-  const splinterMesh = cloneMesh(res.assets.timber_splinter.mesh);
-  em.ensureComponentOn(splinter, RenderableConstructDef, splinterMesh);
-  em.ensureComponentOn(splinter, ColorDef, [0.1, 0.1, 0.1]);
-  em.ensureComponentOn(splinter, PositionDef, [4, 0, 0]);
-  em.ensureComponentOn(splinter, RotationDef);
-  em.ensureComponentOn(splinter, WorldFrameDef);
-  em.ensureComponentOn(splinter, ColliderDef, {
-    shape: "AABB",
-    solid: false,
-    aabb: res.assets.timber_splinter.aabb,
-  });
-  randomizeMeshColors(splinter);
+  for (let xi = 0; xi < 10; xi++) {
+    for (let yi = 0; yi < 10; yi++) {
+      // TODO(@darzu): dbging splinters
+      const splinter = em.newEntity();
+      // TODO(@darzu): perf? probably don't need to normalize, just use same surface ID and provoking vert for all
+      const splinterMesh = normalizeMesh(mkTimberSplinter());
+      em.ensureComponentOn(splinter, RenderableConstructDef, splinterMesh);
+      em.ensureComponentOn(splinter, ColorDef, [0.1, 0.1, 0.1]);
+      em.ensureComponentOn(splinter, PositionDef, [xi * 2 + 4, 0, yi * 2]);
+      em.ensureComponentOn(splinter, RotationDef);
+      em.ensureComponentOn(splinter, WorldFrameDef);
+      em.ensureComponentOn(splinter, ColliderDef, {
+        shape: "AABB",
+        solid: false,
+        aabb: res.assets.timber_splinter.aabb,
+      });
+      randomizeMeshColors(splinter);
+    }
+  }
 
   const quadIdsNeedReset = new Set<number>();
 

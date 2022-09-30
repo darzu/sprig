@@ -223,9 +223,9 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
     }
     const after = performance.now();
     _timeSpentOnNeighborIsh += after - before;
-    console.log(
-      `_timeSpentOnNeighborIsh: ${_timeSpentOnNeighborIsh.toFixed(2)}ms`
-    );
+    // console.log(
+    //   `_timeSpentOnNeighborIsh: ${_timeSpentOnNeighborIsh.toFixed(2)}ms`
+    // );
   }
 
   input.tri.forEach(([i0, i1, i2]) => {

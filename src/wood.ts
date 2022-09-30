@@ -198,10 +198,10 @@ export function createTimberBuilder() {
     const vi = mesh.pos.length;
     const v0 = vec3.fromValues(W, yJitter(), D);
     const v1 = vec3.fromValues(W, yJitter(), -D);
-    const v2 = vec3.fromValues(-W, yJitter(), -D);
-    const v3 = vec3.fromValues(-W, yJitter(), D);
-    const v4 = vec3.fromValues(0, 0, -D);
-    const v5 = vec3.fromValues(0, 0, D);
+    const v2 = vec3.fromValues(-W, yJitter(), D);
+    const v3 = vec3.fromValues(-W, yJitter(), -D);
+    const v4 = vec3.fromValues(0, 0, D);
+    const v5 = vec3.fromValues(0, 0, -D);
     vec3.transformMat4(v0, v0, cursor);
     vec3.transformMat4(v1, v1, cursor);
     vec3.transformMat4(v2, v2, cursor);
@@ -213,14 +213,14 @@ export function createTimberBuilder() {
     // TODO(@darzu): DBG
 
     // +D side
-    const v_tm = vi + 5;
+    const v_tm = vi + 4;
     const v_tr = vi + 0;
-    const v_tl = vi + 3;
+    const v_tl = vi + 2;
     const v_tbr = vi + -4;
     const v_tbl = vi + -1;
-    mesh.tri.push([v_tbl, v_tbr, v_tm]);
-    mesh.tri.push([v_tbr, v_tr, v_tm]);
-    mesh.tri.push([v_tbl, v_tm, v_tl]);
+    mesh.tri.push([v_tm, v_tbl, v_tbr]);
+    mesh.tri.push([v_tm, v_tbr, v_tr]);
+    mesh.tri.push([v_tm, v_tl, v_tbl]);
 
     const numJags = 5;
     let v_last = v_tl;
