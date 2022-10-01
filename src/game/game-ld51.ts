@@ -95,13 +95,21 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   const c = res.globalCursor3d.cursor()!;
   if (RenderableDef.isOn(c)) c.renderable.enabled = false;
 
-  const plane = em.newEntity();
-  const planeMesh = cloneMesh(res.assets.plane.mesh);
-  transformMesh(planeMesh, mat4.fromScaling(tempMat4(), [2, 2, 2]));
-  em.ensureComponentOn(plane, RenderableConstructDef, planeMesh);
-  em.ensureComponentOn(plane, ColorDef, [0.1, 0.1, 0.4]);
+  const ground = em.newEntity();
+  const groundMesh = cloneMesh(res.assets.hex.mesh);
+  transformMesh(
+    groundMesh,
+    mat4.fromRotationTranslationScale(
+      tempMat4(),
+      quat.IDENTITY,
+      [0, -2, 0],
+      [20, 2, 20]
+    )
+  );
+  em.ensureComponentOn(ground, RenderableConstructDef, groundMesh);
+  em.ensureComponentOn(ground, ColorDef, [0.1, 0.1, 0.4]);
   // em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
-  em.ensureComponentOn(plane, PositionDef, [0, 0, 0]);
+  em.ensureComponentOn(ground, PositionDef, [0, 0, 0]);
   // em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
 
   // const cube = em.newEntity();
