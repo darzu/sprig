@@ -215,7 +215,7 @@ export function createTimberBuilder() {
     let lastX = -W;
     for (let i = 0; i <= numJags; i++) {
       const x = i * xStep - W + jitter(0.05);
-      let y = i % 2 === 0 ? 0.4 + jitter(0.3) : 0.2 + jitter(0.1);
+      let y = i % 2 === 0 ? 0.7 + jitter(0.6) : 0.2 + jitter(0.1);
       let d = D; // + jitter(0.1);
 
       // TODO(@darzu): HACK! This ensures that adjacent "teeth" in the splinter
