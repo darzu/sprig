@@ -42,6 +42,7 @@ import {
 import {
   RenderableConstructDef,
   RenderableDef,
+  RenderDataStdDef,
   RendererDef,
 } from "./render/renderer-ecs.js";
 import { tempVec2, tempVec3 } from "./temp-pool.js";
@@ -185,7 +186,7 @@ onInit((em) => {
 
 onInit((em: EntityManager) => {
   em.registerSystem(
-    [WoodStateDef, WoodHealthDef, RenderableDef],
+    [WoodStateDef, WoodHealthDef, RenderableDef, ColorDef],
     [RendererDef],
     async (es, res) => {
       // TODO(@darzu):
@@ -207,6 +208,12 @@ onInit((em: EntityManager) => {
               // TODO(@darzu): use a pool of end caps n stuff
               const end = await createSplinterEnd(seg, mesh);
               em.ensureComponentOn(end, PhysicsParentDef, w.id);
+              vec3.copy(end.color, w.color);
+              em.whenEntityHas(end, RenderDataStdDef).then((end2) => {
+                // NOTE: we match the object IDs so that there's no hard outline
+                // between the splintered end and main board.
+                end2.renderDataStd.id = meshHandle.mId;
+              });
             }
           });
         });
