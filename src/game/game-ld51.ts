@@ -2,7 +2,8 @@ import { CameraDef } from "../camera.js";
 import { ColorDef } from "../color-ecs.js";
 import { toV3, toFRGB, parseHex } from "../color/color.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM, EntityManager } from "../entity-manager.js";
+import { createRef } from "../em_helpers.js";
+import { EM, Entity, EntityManager } from "../entity-manager.js";
 import { vec3, quat, mat4 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import {
@@ -37,6 +38,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { tempMat4 } from "../temp-pool.js";
 import { assert } from "../test.js";
+import { TimeDef } from "../time.js";
 import { objMap } from "../util.js";
 import { randomizeMeshColors, drawLine2 } from "../utils-game.js";
 import {
@@ -299,36 +301,65 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   );
   sandboxSystems.push("runLD51Timber");
 
-  startEnemies();
+  startPirates();
 }
 
-export const EnemyPlatformDef = EM.defineComponent("enemyPlatform", () => {
-  return {};
-});
+export const PiratePlatformDef = EM.defineComponent(
+  "piratePlatform",
+  (cannon: Entity) => {
+    return {
+      cannon: createRef(cannon),
+    };
+  }
+);
 
-async function startEnemies() {
+async function startPirates() {
   const em: EntityManager = EM;
 
-  spawnEnemy();
+  spawnPirate();
 
+  let lastFire = 2000; // start time
+  let tenSeconds = 1000 * 1; // TODO(@darzu): make 10 seconds
   em.registerSystem(
-    [EnemyPlatformDef, PositionDef, RotationDef],
-    [],
+    [PiratePlatformDef, PositionDef, RotationDef],
+    [TimeDef],
     (ps, res) => {
+      let doFire = res.time.time - lastFire > tenSeconds;
+      if (doFire) {
+        console.log("broadside!");
+        lastFire = res.time.time;
+      }
+
       for (let p of ps) {
-        // TODO(@darzu):
+        // rotate platform
         const R = Math.PI * 0.001;
         vec3.rotateY(p.position, p.position, vec3.ZEROS, R);
         quat.rotateY(p.rotation, p.rotation, R);
+
+        // fire cannons
+        if (doFire) {
+          const c = p.piratePlatform.cannon();
+          if (c && WorldFrameDef.isOn(c)) {
+            console.log(`pirate fire`);
+            fireBullet(
+              em,
+              2,
+              c.world.position,
+              c.world.rotation,
+              0.05,
+              0.02,
+              3
+            );
+          }
+        }
       }
     },
-    "updateEnemyPlatforms"
+    "updatePiratePlatforms"
   );
-
-  sandboxSystems.push("updateEnemyPlatforms");
+  sandboxSystems.push("updatePiratePlatforms");
 }
 
-async function spawnEnemy() {
+async function spawnPirate() {
   const em: EntityManager = EM;
 
   const res = await em.whenResources(
@@ -339,6 +370,8 @@ async function spawnEnemy() {
   );
 
   const platform = em.newEntity();
+  const cannon = em.newEntity();
+
   const groundMesh = cloneMesh(res.assets.hex.mesh);
   transformMesh(
     groundMesh,
@@ -354,15 +387,19 @@ async function spawnEnemy() {
   // em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
   em.ensureComponentOn(platform, PositionDef, [0, 0, 30]);
   // em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
-  em.ensureComponentOn(platform, EnemyPlatformDef);
+  em.ensureComponentOn(platform, PiratePlatformDef, cannon);
 
-  const cannon = em.newEntity();
   em.ensureComponentOn(
     cannon,
     RenderableConstructDef,
     res.assets.ld51_cannon.proto
   );
-  em.ensureComponentOn(cannon, PositionDef);
+  em.ensureComponentOn(cannon, PositionDef, [0, 2, 0]);
+  em.ensureComponentOn(
+    cannon,
+    RotationDef,
+    quat.rotateX(quat.create(), quat.IDENTITY, Math.PI * 0.1)
+  );
   em.ensureComponentOn(cannon, PhysicsParentDef, platform.id);
   em.ensureComponentOn(cannon, ColorDef, vec3.clone(ENDESGA16.darkGray));
 }

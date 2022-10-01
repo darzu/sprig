@@ -1,5 +1,5 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { mat3, mat4, vec2, vec3, vec4 } from "../gl-matrix.js";
+import { mat3, mat4, quat, vec2, vec3, vec4 } from "../gl-matrix.js";
 import { importObj, isParseError } from "../import_obj.js";
 import {
   cloneMesh,
@@ -115,6 +115,12 @@ const MeshTransforms: Partial<{
   ),
   ocean: mat4.fromScaling(mat4.create(), [2, 2, 2]),
   ship_fangs: mat4.fromScaling(mat4.create(), [3, 3, 3]),
+  ld51_cannon: mat4.fromRotationTranslationScale(
+    mat4.create(),
+    quat.rotateX(quat.create(), quat.IDENTITY, Math.PI * -0.5),
+    [0, 0, 0],
+    [0.8, 0.8, 0.8]
+  ),
 };
 
 // TODO(@darzu): these sort of hacky offsets are a pain to deal with. It'd be
