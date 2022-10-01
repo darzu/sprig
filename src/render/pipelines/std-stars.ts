@@ -13,7 +13,7 @@ const StarStruct = createCyStruct({
 export type StarTS = CyToTS<typeof StarStruct.desc>;
 
 let NUM_STARS = 1000;
-// let NUM_STARS = 1000000;
+// let NUM_STARS = 100000Unable to create webgl;
 
 const starData = CY.createArray("starData", {
   struct: StarStruct,

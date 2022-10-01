@@ -39,6 +39,7 @@ import {
 import { createMeshPool, MeshHandle } from "./mesh-pool.js";
 import { oceanPoolPtr } from "./pipelines/std-ocean.js";
 import { ShaderSet } from "./shader-loader.js";
+import { GPUBufferUsage } from "./webgpu-hacks.js";
 
 // TODO(@darzu): visibility restrictions:
 /*

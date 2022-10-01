@@ -46,6 +46,7 @@ import {
   OceanUniTS,
   OceanVertStruct,
 } from "./pipelines/std-ocean.js";
+import { GPUBufferUsage } from "./webgpu-hacks.js";
 
 const MAX_PIPELINES = 64;
 

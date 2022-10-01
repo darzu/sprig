@@ -530,6 +530,8 @@ async function chooseAndInitRenderer(
       });
       // TODO(@darzu): uses cast while waiting for webgpu-types.d.ts to be updated
       const context = canvas.getContext("webgpu");
+      console.log("webgpu context:");
+      console.dir(context);
       if (context) {
         renderer = createRenderer(canvas, device, context, shaders);
         if (renderer) usingWebGPU = true;

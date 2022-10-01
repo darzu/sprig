@@ -6,6 +6,7 @@ import { createCyStruct, CyToTS } from "../gpu-struct.js";
 import { pointLightsPtr } from "../lights.js";
 import { MeshHandle } from "../mesh-pool.js";
 import { getAABBFromMesh, Mesh } from "../mesh.js";
+import { GPUBufferUsage } from "../webgpu-hacks.js";
 import {
   sceneBufPtr,
   litTexturePtr,

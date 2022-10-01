@@ -22,6 +22,7 @@ import {
 import { MeshPool } from "./mesh-pool.js";
 import { BLACK } from "../game/assets.js";
 import { vec2, vec3, vec4 } from "../gl-matrix.js";
+import { GPUBufferUsage } from "./webgpu-hacks.js";
 
 export interface CyBuffer<O extends CyStructDesc> {
   struct: CyStruct<O>;
