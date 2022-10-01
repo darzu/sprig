@@ -29,7 +29,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { assert } from "../test.js";
 import { randomizeMeshColors, drawLine2 } from "../utils-game.js";
-import { WoodAssetsDef, WoodenStateDef } from "../wood.js";
+import { WoodAssetsDef, WoodStateDef } from "../wood.js";
 import { yawpitchToQuat } from "../yawpitch.js";
 import {
   AssetsDef,
@@ -146,7 +146,7 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   const timberMesh = cloneMesh(res.assets.timber_rib.mesh);
   const timberState = res.woodAssets.timber_rib!;
   em.ensureComponentOn(timber, RenderableConstructDef, timberMesh);
-  em.ensureComponentOn(timber, WoodenStateDef, timberState);
+  em.ensureComponentOn(timber, WoodStateDef, timberState);
   em.ensureComponentOn(timber, ColorDef, [0.1, 0.1, 0.1]);
   em.ensureComponentOn(timber, PositionDef, [0, 0, -4]);
   em.ensureComponentOn(timber, RotationDef);

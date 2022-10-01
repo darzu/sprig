@@ -32,21 +32,18 @@ import { centroid, vec3Dbg } from "./utils-3d.js";
 // TODO(@darzu): consider other mesh representations like:
 //    DCEL or half-edge data structure
 
-export const WoodenDef = EM.defineComponent("wooden", () => {
-  return {
-    // TODO(@darzu): options?
-  };
+// export const WoodenDef = EM.defineComponent("wooden", () => {
+//   return {
+//     // TODO(@darzu): options?
+//   };
+// });
+
+export const WoodStateDef = EM.defineComponent("woodState", (s: WoodState) => {
+  return s;
 });
 
-export const WoodenStateDef = EM.defineComponent(
-  "woodenState",
-  (s: WoodenState) => {
-    return s;
-  }
-);
-
 export type WoodAssets = Partial<{
-  [P in AllMeshSymbols]: WoodenState;
+  [P in AllMeshSymbols]: WoodState;
 }>;
 
 export const WoodAssetsDef = EM.defineComponent(
@@ -56,7 +53,7 @@ export const WoodAssetsDef = EM.defineComponent(
 
 onInit((em) => {
   em.registerSystem(
-    [WoodenStateDef, WorldFrameDef, RenderableDef],
+    [WoodStateDef, WorldFrameDef, RenderableDef],
     [PhysicsResultsDef, RendererDef],
     (es, res) => {
       const { collidesWith } = res.physicsResults;
@@ -96,7 +93,7 @@ onInit((em) => {
               rad: (ballAABBWorld.max[0] - ballAABBWorld.min[0]) * 0.5,
             };
 
-            for (let board of wooden.woodenState.boards) {
+            for (let board of wooden.woodState.boards) {
               for (let seg of board) {
                 // TODO(@darzu):
                 copyAABB(segAABBWorld, seg.localAABB);
@@ -314,62 +311,6 @@ function hideSegment(seg: BoardSeg, m: RawMesh) {
   }
 }
 
-onInit((em: EntityManager) => {
-  em.registerSystem(
-    [WoodenDef, RenderableDef],
-    [RendererDef, WoodAssetsDef],
-    (es, res) => {
-      // TODO(@darzu):
-      for (let e of es) {
-        if (WoodenStateDef.isOn(e)) continue;
-
-        // TODO(@darzu): need a first-class way to do this sort of pattern
-        const m = e.renderable.meshHandle.readonlyMesh!;
-
-        // const before = performance.now();
-        // const state = getBoardsFromMesh(m);
-        // const after = performance.now();
-        // console.log(`getBoardsFromMesh: ${(after - before).toFixed(2)}ms`);
-
-        const state = res.woodAssets.ship_fangs!;
-
-        em.ensureComponentOn(e, WoodenStateDef, state);
-
-        // // first, color all "board"-used
-        // for (let qi of state.usedQuadIdxs) {
-        //   vec3.copy(m.colors[qi], [1, 0, 0]);
-        // }
-        // console.log(`fangship has ${m.tri.length} triangles!`);
-        // m.tri.forEach((t, ti) => {
-        //   vec3.copy(m.colors[ti], [1, 0, 0]);
-        // });
-
-        // TODO(@darzu): wait, these color indices might be off by 4 since we have 4 triangles
-        // TODO(@darzu): dbg colors:
-        console.log(`num boards: ${state.boards.length}`);
-        state.boards.forEach((b, i) => {
-          // TODO(@darzu): use hue variations
-          const color: vec3 = [Math.random(), Math.random(), Math.random()];
-          vec3.normalize(color, color);
-          vec3.scale(color, color, 0.05);
-          // 0.05 * (x^n) = 1.0
-          // x = 20^(1/n)
-          const incr = Math.pow(20, 1 / b.length);
-          // console.log(`incr: ${incr}`);
-          for (let seg of b) {
-            for (let qi of [...seg.quadSideIdxs, ...seg.quadEndIdxs]) {
-              vec3.copy(m.colors[qi], color);
-            }
-            vec3.scale(color, color, incr);
-          }
-        });
-        res.renderer.renderer.updateMeshVertices(e.renderable.meshHandle, m);
-      }
-    },
-    "initWooden"
-  );
-});
-
 interface OBB {
   // TODO(@darzu): 3 axis + lengths
 }
@@ -382,13 +323,9 @@ interface BoardSeg {
   vertNextLoopIdxs: number[]; // TODO(@darzu): always 4?
   quadSideIdxs: number[]; // TODO(@darzu): alway 4?
   quadEndIdxs: number[]; // TODO(@darzu): always 0,1,2?
-
-  // TODO(@darzu): move gameplay elsewhere!
-  // gameplay:
-  alive: boolean;
 }
 type Board = BoardSeg[];
-interface WoodenState {
+interface WoodState {
   usedVertIdxs: Set<number>;
   usedQuadIdxs: Set<number>;
   boards: Board[];
@@ -405,7 +342,7 @@ export function debugBoardSystem(m: RawMesh): RawMesh {
 
 const TRACK_INVALID_BOARDS = false;
 
-export function getBoardsFromMesh(m: RawMesh): WoodenState {
+export function getBoardsFromMesh(m: RawMesh): WoodState {
   // What's in a board?
   // end verts connect to 3 others
   // mid verts connect to 4 others
@@ -560,7 +497,6 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
             vertNextLoopIdxs: [...nextLoop],
             quadSideIdxs: sideQuads,
             quadEndIdxs: [endQuad],
-            alive: true,
           };
           if (isFirstLoop) {
             // no-op, we'll continue below
@@ -585,7 +521,6 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
           vertNextLoopIdxs: [...nextLoop],
           quadSideIdxs: segQis,
           quadEndIdxs: [],
-          alive: true,
         };
       }
 
@@ -625,7 +560,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
   // m.colors = newColors;
   // m.surfaceIds = newSurfaceIds;
 
-  const woodenState: WoodenState = {
+  const woodenState: WoodState = {
     boards,
     usedVertIdxs: structureVis,
     usedQuadIdxs: structureQis,
@@ -634,7 +569,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodenState {
   return woodenState;
 }
 
-export function unshareProvokingForWood(m: RawMesh, woodState: WoodenState) {
+export function unshareProvokingForWood(m: RawMesh, woodState: WoodState) {
   // TODO(@darzu): verify this actually works. We should pre-split the mesh
   //  into islands (which will speed up getBoardsFromMesh by a lot), and then
   //  verify each island is unshared.
@@ -704,4 +639,23 @@ export function unshareProvokingForWood(m: RawMesh, woodState: WoodenState) {
       return false;
     }
   }
+}
+
+interface SegHealth {
+  health: number;
+}
+type BoardHealth = SegHealth[];
+interface WoodHealth {
+  boards: BoardHealth[];
+}
+
+function createWoodHealth(w: WoodState) {
+  // TODO(@darzu):
+  return {
+    boards: w.boards.map((b) =>
+      b.map((s) => ({
+        health: 1.0,
+      }))
+    ),
+  };
 }

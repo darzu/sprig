@@ -28,7 +28,7 @@ import { createSpawner, SpawnerDef } from "./spawner.js";
 import { tempVec3 } from "../temp-pool.js";
 import { createDarkStarNow, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
 import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
-import { debugBoardSystem, WoodenDef } from "../wood.js";
+import { debugBoardSystem, WoodAssetsDef, WoodStateDef } from "../wood.js";
 import { ColliderDef } from "../physics/collider.js";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
@@ -143,7 +143,11 @@ export async function initHyperspaceGame(em: EntityManager) {
   // TODO(@darzu): dbg
   //await asyncTimeout(2000);
 
-  const { me, ocean } = await em.whenResources(OceanDef, MeDef);
+  const { me, ocean, woodAssets } = await em.whenResources(
+    OceanDef,
+    MeDef,
+    WoodAssetsDef
+  );
 
   if (me.host) {
     // experimental ship:
@@ -158,7 +162,7 @@ export async function initHyperspaceGame(em: EntityManager) {
     em.ensureComponentOn(fangShip, RotationDef);
     quat.fromEuler(fangShip.rotation, 0, Math.PI * 0.5, 0);
     em.ensureComponentOn(fangShip, UVPosDef, [0.1, 0.15]);
-    em.ensureComponentOn(fangShip, WoodenDef);
+    em.ensureComponentOn(fangShip, WoodStateDef, woodAssets.ship_fangs!);
     // TODO(@darzu): need a much finer grain collider
     em.ensureComponentOn(fangShip, ColliderDef, {
       shape: "AABB",
