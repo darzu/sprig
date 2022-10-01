@@ -1,4 +1,5 @@
 import { CameraDef } from "../camera.js";
+import { CanvasDef } from "../canvas.js";
 import { ColorDef } from "../color-ecs.js";
 import { toV3, toFRGB, parseHex } from "../color/color.js";
 import { ENDESGA16 } from "../color/palettes.js";
@@ -24,9 +25,16 @@ import {
   PhysicsParentDef,
   PositionDef,
   RotationDef,
+  ScaleDef,
 } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
-import { cloneMesh, normalizeMesh, transformMesh } from "../render/mesh.js";
+import {
+  cloneMesh,
+  normalizeMesh,
+  scaleMesh,
+  scaleMesh3,
+  transformMesh,
+} from "../render/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -167,27 +175,32 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   //   halfsize: res.assets.cube.halfsize,
   // });
 
-  const timber = em.newEntity();
-  const timberMesh = cloneMesh(res.assets.timber_rib.mesh);
-  const timberState = res.woodAssets.timber_rib!;
-  em.ensureComponentOn(timber, RenderableConstructDef, timberMesh);
-  em.ensureComponentOn(timber, WoodStateDef, timberState);
-  em.ensureComponentOn(timber, ColorDef, vec3.clone(ENDESGA16.darkBrown));
-  // em.ensureComponentOn(timber, ColorDef, [0.1, 0.1, 0.1]);
-  const timberPos = vec3.clone(res.assets.timber_rib.center);
-  vec3.negate(timberPos, timberPos);
-  timberPos[1] += 5;
-  em.ensureComponentOn(timber, PositionDef, timberPos);
-  // em.ensureComponentOn(timber, PositionDef, [0, 0, -4]);
-  em.ensureComponentOn(timber, RotationDef);
-  em.ensureComponentOn(timber, WorldFrameDef);
-  em.ensureComponentOn(timber, ColliderDef, {
-    shape: "AABB",
-    solid: false,
-    aabb: res.assets.timber_rib.aabb,
-  });
-  const timberHealth = createWoodHealth(timberState);
-  em.ensureComponentOn(timber, WoodHealthDef, timberHealth);
+  for (let ti = 0; ti < 2; ti++) {
+    const timber = em.newEntity();
+    const timberMesh = cloneMesh(res.assets.timber_rib.mesh);
+    const timberState = res.woodAssets.timber_rib!;
+    em.ensureComponentOn(timber, RenderableConstructDef, timberMesh);
+    em.ensureComponentOn(timber, WoodStateDef, timberState);
+    em.ensureComponentOn(timber, ColorDef, vec3.clone(ENDESGA16.darkBrown));
+    // em.ensureComponentOn(timber, ColorDef, [0.1, 0.1, 0.1]);
+    const scale = 1 * Math.pow(0.8, ti);
+    const timberPos = vec3.clone(res.assets.timber_rib.center);
+    vec3.negate(timberPos, timberPos);
+    vec3.scale(timberPos, timberPos, scale);
+    timberPos[1] += 5;
+    em.ensureComponentOn(timber, PositionDef, timberPos);
+    // em.ensureComponentOn(timber, PositionDef, [0, 0, -4]);
+    em.ensureComponentOn(timber, RotationDef);
+    em.ensureComponentOn(timber, ScaleDef, [scale, scale, scale]);
+    em.ensureComponentOn(timber, WorldFrameDef);
+    em.ensureComponentOn(timber, ColliderDef, {
+      shape: "AABB",
+      solid: false,
+      aabb: res.assets.timber_rib.aabb,
+    });
+    const timberHealth = createWoodHealth(timberState);
+    em.ensureComponentOn(timber, WoodHealthDef, timberHealth);
+  }
   // randomizeMeshColors(timber);
   // const board = timberState.boards[0];
   // const timber2 = await em.whenEntityHas(timber, RenderableDef);
@@ -273,8 +286,8 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
 
   em.registerSystem(
     null,
-    [InputsDef],
-    (_, { inputs }) => {
+    [InputsDef, CanvasDef],
+    (_, { inputs, htmlCanvas }) => {
       const ballAABBWorld = createAABB();
       const segAABBWorld = createAABB();
       const worldLine = emptyLine();
@@ -289,7 +302,7 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
         // rad: (ballAABBWorld.max[0] - ballAABBWorld.min[0]) * 0.5,
       };
 
-      if (inputs.lclick) {
+      if (inputs.lclick && htmlCanvas.hasFirstInteraction) {
         // TODO(@darzu): fire?
         console.log(`fire!`);
         const firePos = worldSphere.org;
@@ -305,7 +318,7 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   startPirates();
 }
 
-const startDelay = 2000;
+const startDelay = 5000;
 
 export const PiratePlatformDef = EM.defineComponent(
   "piratePlatform",
@@ -338,7 +351,7 @@ async function startPirates() {
     rotatePiratePlatform(p, i * ((2 * Math.PI) / numPirates));
   }
 
-  const tenSeconds = 1000 * 3; // TODO(@darzu): make 10 seconds
+  const tenSeconds = 1000 * 10; // TODO(@darzu): make 10 seconds
   const fireStagger = 150;
   // const tiltPeriod = 5700;
   em.registerSystem(
