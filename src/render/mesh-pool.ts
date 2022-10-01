@@ -11,7 +11,7 @@ import { VERBOSE_MESH_POOL_STATS } from "../flags.js";
 const vertsPerTri = 3;
 const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * vertsPerTri;
 const bytesPerLine = Uint16Array.BYTES_PER_ELEMENT * 2;
-const MAX_INDICES = 65535; // Since we're using u16 index type, this is our max indices count
+export const MAX_INDICES = 65535; // Since we're using u16 index type, this is our max indices count
 
 export interface MeshHandle {
   // mesh id

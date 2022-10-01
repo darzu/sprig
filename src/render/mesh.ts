@@ -215,12 +215,12 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       return countsList;
     })();
     if (input.dbgName?.includes("fang")) {
-      console.dir(vertIdxToFaceCount);
-      console.dir(quadIdxToNeighborIshCount);
-      console.dir(uniqueNeighborIshCounts);
-      console.log(
-        `uniqueNeighborIshCounts.length: ${uniqueNeighborIshCounts.length}`
-      );
+      // console.dir(vertIdxToFaceCount);
+      // console.dir(quadIdxToNeighborIshCount);
+      // console.dir(uniqueNeighborIshCounts);
+      // console.log(
+      //   `uniqueNeighborIshCounts.length: ${uniqueNeighborIshCounts.length}`
+      // );
     }
     const after = performance.now();
     _timeSpentOnNeighborIsh += after - before;

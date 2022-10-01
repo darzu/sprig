@@ -30,11 +30,13 @@ import {
 import { assert } from "../test.js";
 import { randomizeMeshColors, drawLine2 } from "../utils-game.js";
 import { WoodAssetsDef } from "../wood.js";
+import { yawpitchToQuat } from "../yawpitch.js";
 import {
   AssetsDef,
   mkTimberSplinterEnd,
   mkTimberSplinterFree,
 } from "./assets.js";
+import { fireBullet } from "./bullet.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { createGhost } from "./game-sandbox.js";
 
@@ -202,7 +204,7 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   const quadIdsNeedReset = new Set<number>();
 
   assert(ghost?.collider.shape === "AABB");
-  console.dir(ghost.collider.aabb);
+  // console.dir(ghost.collider.aabb);
 
   em.registerSystem(
     null,
@@ -221,6 +223,20 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
         rad: 1,
         // rad: (ballAABBWorld.max[0] - ballAABBWorld.min[0]) * 0.5,
       };
+
+      if (inputs.lclick) {
+        // TODO(@darzu): fire?
+        console.log(`fire!`);
+        const firePos = worldSphere.org;
+        const fireDir = quat.create();
+        quat.copy(fireDir, ghost.world.rotation);
+        // const fireDir = yawpitchToQuat(quat.create(), {
+        //   yaw: 0,
+        //   pitch: Math.PI * 0.2,
+        // });
+        // quat.rotateX(fireDir, fireDir, Math.PI * 0.2);
+        fireBullet(em, 1, firePos, fireDir, 0.1);
+      }
 
       let segAABBHits = 0;
       let segMidHits = 0;
