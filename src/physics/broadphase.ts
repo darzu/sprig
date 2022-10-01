@@ -566,6 +566,11 @@ export function getLineEnd(out: vec3, line: Line) {
   vec3.add(out, line.ray.org, out);
   return out;
 }
+export function getLineMid(out: vec3, line: Line) {
+  vec3.scale(out, line.ray.dir, line.len * 0.5);
+  vec3.add(out, line.ray.org, out);
+  return out;
+}
 
 // TODO(@darzu): do we need this pattern?
 export function emptyRay(): Ray {

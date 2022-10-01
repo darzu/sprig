@@ -6,6 +6,7 @@ import {
   AssetsDef,
   BLACK,
   mkTimberSplinterEnd,
+  mkTimberSplinterFree,
 } from "./game/assets.js";
 import { BulletDef } from "./game/bullet.js";
 import { mat4, quat, vec2, vec3, vec4 } from "./gl-matrix.js";
@@ -21,6 +22,7 @@ import {
   emptyLine,
   getAABBFromPositions,
   getLineEnd,
+  getLineMid,
   Line,
   lineSphereIntersections,
   Sphere,
@@ -28,6 +30,7 @@ import {
   transformLine,
 } from "./physics/broadphase.js";
 import { ColliderDef } from "./physics/collider.js";
+import { AngularVelocityDef, LinearVelocityDef } from "./physics/motion.js";
 import { PhysicsResultsDef, WorldFrameDef } from "./physics/nonintersection.js";
 import {
   PhysicsParentDef,
@@ -52,6 +55,7 @@ import { never, range } from "./util.js";
 import {
   centroid,
   quatFromUpForward,
+  randNormalVec3,
   vec3Dbg,
   vec4RotateLeft,
 } from "./utils-3d.js";
@@ -196,7 +200,7 @@ onInit((em) => {
 
 onInit((em: EntityManager) => {
   em.registerSystem(
-    [WoodStateDef, WoodHealthDef, RenderableDef, ColorDef],
+    [WoodStateDef, WorldFrameDef, WoodHealthDef, RenderableDef, ColorDef],
     [RendererDef],
     async (es, res) => {
       // TODO(@darzu):
@@ -213,6 +217,39 @@ onInit((em: EntityManager) => {
               h.broken = true;
               hideSegment(seg, mesh);
               needsUpdate = true;
+
+              // create flying splinter
+              {
+                const topW = 0.6 + jitter(0.4);
+                const botW = 0.6 + jitter(0.4);
+                const _splinterMesh = mkTimberSplinterFree(topW, botW, 1);
+                const splinterMesh = normalizeMesh(_splinterMesh);
+                const splinter = EM.newEntity();
+                EM.ensureComponentOn(
+                  splinter,
+                  RenderableConstructDef,
+                  splinterMesh
+                );
+                // EM.ensureComponentOn(splinter, ColorDef, [
+                //   Math.random(),
+                //   Math.random(),
+                //   Math.random(),
+                // ]);
+                em.ensureComponentOn(splinter, ColorDef, vec3.clone(w.color));
+                const pos = getLineMid(vec3.create(), seg.midLine);
+                vec3.transformMat4(pos, pos, w.world.transform);
+                EM.ensureComponentOn(splinter, PositionDef, pos);
+                const rot = getSegmentRotation(seg, false);
+                quat.mul(rot, rot, w.world.rotation); // TODO(@darzu): !VERIFY! this works
+                EM.ensureComponentOn(splinter, RotationDef, rot);
+                const spin = randNormalVec3(vec3.create());
+                const vel = vec3.clone(spin);
+                vec3.scale(spin, spin, 0.01);
+                em.ensureComponentOn(splinter, AngularVelocityDef, spin);
+                vec3.scale(vel, vel, 0.01);
+                em.ensureComponentOn(splinter, LinearVelocityDef, vel);
+                // EM.ensureComponentOn(splinter, WorldFrameDef);
+              }
 
               if (h.prev && !h.prev.broken) {
                 // create end caps
@@ -273,7 +310,7 @@ onInit((em: EntityManager) => {
   );
 });
 
-function createSplinterEnd(seg: BoardSeg, boardMesh: Mesh, top = false) {
+function getSegmentRotation(seg: BoardSeg, top: boolean) {
   let segNorm = vec3.create();
   let biggestArea2 = 0;
   for (let v of seg.areaNorms) {
@@ -284,10 +321,6 @@ function createSplinterEnd(seg: BoardSeg, boardMesh: Mesh, top = false) {
     }
   }
 
-  const pos = vec3.copy(tempVec3(), seg.midLine.ray.org);
-  if (top) {
-    getLineEnd(pos, seg.midLine);
-  }
   const endNorm = vec3.copy(tempVec3(), seg.midLine.ray.dir);
   if (top) {
     vec3.negate(endNorm, endNorm);
@@ -295,7 +328,16 @@ function createSplinterEnd(seg: BoardSeg, boardMesh: Mesh, top = false) {
 
   const rot = quat.create();
   quatFromUpForward(rot, endNorm, segNorm);
+  return rot;
+}
 
+function createSplinterEnd(seg: BoardSeg, boardMesh: Mesh, top: boolean) {
+  const pos = vec3.copy(tempVec3(), seg.midLine.ray.org);
+  if (top) {
+    getLineEnd(pos, seg.midLine);
+  }
+
+  const rot = getSegmentRotation(seg, top);
   // TODO(@darzu): put these into a pool
   // const res = await EM.whenResources(AssetsDef);
   const splinter = EM.newEntity();
