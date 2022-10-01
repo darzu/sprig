@@ -440,38 +440,48 @@ export const mkTimberSplinterEnd: () => RawMesh = () => {
   return b.mesh;
 };
 
-export const mkTimberSplinterFree: () => RawMesh = () => {
+export const mkTimberSplinterFree = (
+  topWidth = 1,
+  botWidth = 1,
+  height = 2
+) => {
   // TODO(@darzu): IMPL!
   const b = createTimberBuilder();
 
   mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.5); // TODO(@darzu): DBG
 
-  const W = 1 + jitter(0.9);
+  // const Wtop = 1 + jitter(0.9);
+  // const Wbot = 1 + jitter(0.9);
+  const Wtop = topWidth;
+  const Wbot = botWidth;
   // const W = 0.75 + jitter(0.25);
+  const H = height;
 
-  const numJags = Math.round(5 * W);
+  const topJags = Math.round(5 * Wtop);
+  const botJags = Math.round(5 * Wbot);
 
-  mat4.scale(b.cursor, b.cursor, [W, 1, 1]);
-
-  mat4.translate(b.cursor, b.cursor, [0, -1, 0]);
+  mat4.translate(b.cursor, b.cursor, [0, -H * 0.5, 0]);
+  mat4.scale(b.cursor, b.cursor, [Wbot, 1, 1]);
   b.addLoopVerts();
   const loopBotEndIdx = b.mesh.pos.length;
-  mat4.translate(b.cursor, b.cursor, [0, +2, 0]);
+  mat4.translate(b.cursor, b.cursor, [0, +H, 0]);
+  mat4.scale(b.cursor, b.cursor, [(1 / Wbot) * Wtop, 1, 1]);
   b.addLoopVerts();
   const loopTopEndIdx = b.mesh.pos.length;
   b.addSideQuads();
 
   // top splinters
-  b.addSplinteredEnd(loopTopEndIdx, numJags);
+  b.addSplinteredEnd(loopTopEndIdx, topJags);
 
   // mat4.translate(b.cursor, b.cursor, [0, -0.2, 0]);
   {
-    mat4.translate(b.cursor, b.cursor, [0, -2, 0]);
+    mat4.scale(b.cursor, b.cursor, [(1 / Wtop) * Wbot, 1, 1]);
+    mat4.translate(b.cursor, b.cursor, [0, -H, 0]);
     mat4.scale(b.cursor, b.cursor, [1, -1, 1]);
 
     const tIdx = b.mesh.tri.length;
     const qIdx = b.mesh.quad.length;
-    b.addSplinteredEnd(loopBotEndIdx, numJags);
+    b.addSplinteredEnd(loopBotEndIdx, botJags);
     for (let ti = tIdx; ti < b.mesh.tri.length; ti++)
       vec3Reverse(b.mesh.tri[ti]);
     for (let ti = qIdx; ti < b.mesh.quad.length; ti++)

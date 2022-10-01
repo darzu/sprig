@@ -177,7 +177,8 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
       // TODO(@darzu): perf? probably don't need to normalize, just use same surface ID and provoking vert for all
       const _splinterMesh =
         // yi < 5 ? mkTimberSplinterEnd() : mkTimberSplinterFree();
-        mkTimberSplinterFree();
+        // mkTimberSplinterFree(0.2 + xi * 0.2, 0.2 + yi * 0.2);
+        mkTimberSplinterFree(1, 1, 1);
       const splinterMesh = normalizeMesh(_splinterMesh);
       em.ensureComponentOn(splinter, RenderableConstructDef, splinterMesh);
       em.ensureComponentOn(splinter, ColorDef, [
