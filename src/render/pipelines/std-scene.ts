@@ -111,6 +111,7 @@ export function computeVertsData(m: Mesh): VertexTS[] {
     uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
     surfaceId: 0, // per-face; changed below
   }));
+  // NOTE: for per-face data (e.g. color and surface IDs), first all the quads then tris
   m.tri.forEach((triInd, i) => {
     // set provoking vertex data
     // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
@@ -121,8 +122,9 @@ export function computeVertsData(m: Mesh): VertexTS[] {
       m.pos[triInd[2]]
     );
     vertsData[triInd[0]].normal = normal;
-    vertsData[triInd[0]].color = m.colors[i];
-    vertsData[triInd[0]].surfaceId = m.surfaceIds[i];
+    const faceIdx = i + m.quad.length; // quads first
+    vertsData[triInd[0]].color = m.colors[faceIdx];
+    vertsData[triInd[0]].surfaceId = m.surfaceIds[faceIdx];
   });
   m.quad.forEach((quadInd, i) => {
     // set provoking vertex data

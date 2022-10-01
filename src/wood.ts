@@ -217,6 +217,8 @@ export function createTimberBuilder() {
       const x = i * xStep - W;
       let y = i % 2 === 0 ? 0.4 + jitter(0.3) : 0.2 + jitter(0.1);
 
+      // TODO(@darzu): HACK! This ensures that adjacent "teeth" in the splinter
+      //    are properly manifold/convex/something-something
       let cross_last_this = vec2.cross(tempVec3(), [lastX, lastY], [x, y]);
       let maxLoop = 10;
       while (cross_last_this[2] > 0 && maxLoop > 0) {
@@ -225,7 +227,7 @@ export function createTimberBuilder() {
         vec2.cross(cross_last_this, [lastX, lastY], [x, y]);
         maxLoop--;
       }
-      if (cross_last_this[2] > 0) console.log(`cross_last_this[2] > 0`);
+      // if (cross_last_this[2] > 0) console.log(`cross_last_this[2] > 0`);
 
       // +D side
       const vtj = vec3.fromValues(x, y, D);
