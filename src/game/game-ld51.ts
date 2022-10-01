@@ -3,9 +3,10 @@ import { ColorDef } from "../color-ecs.js";
 import { toV3, toFRGB, parseHex } from "../color/color.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { createRef } from "../em_helpers.js";
-import { EM, Entity, EntityManager } from "../entity-manager.js";
+import { EM, Entity, EntityManager, EntityW } from "../entity-manager.js";
 import { vec3, quat, mat4 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
+import { jitter } from "../math.js";
 import {
   createAABB,
   emptyLine,
@@ -304,42 +305,79 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   startPirates();
 }
 
+const startDelay = 2000;
+
 export const PiratePlatformDef = EM.defineComponent(
   "piratePlatform",
-  (cannon: Entity) => {
+  (cannon: Entity, tiltPeriod: number, tiltTimer: number) => {
     return {
       cannon: createRef(cannon),
+      tiltPeriod,
+      tiltTimer,
+      lastFire: startDelay,
     };
   }
 );
 
+function rotatePiratePlatform(
+  p: EntityW<[typeof PositionDef, typeof RotationDef]>,
+  rad: number
+) {
+  vec3.rotateY(p.position, p.position, vec3.ZEROS, rad);
+  quat.rotateY(p.rotation, p.rotation, rad);
+}
+
+const pitchSpeed = 0.000042;
+
 async function startPirates() {
   const em: EntityManager = EM;
 
-  spawnPirate();
+  const numPirates = 7;
+  for (let i = 0; i < numPirates; i++) {
+    const p = await spawnPirate();
+    rotatePiratePlatform(p, i * ((2 * Math.PI) / numPirates));
+  }
 
-  let lastFire = 2000; // start time
-  let tenSeconds = 1000 * 1; // TODO(@darzu): make 10 seconds
+  const tenSeconds = 1000 * 3; // TODO(@darzu): make 10 seconds
+  const fireStagger = 150;
+  // const tiltPeriod = 5700;
   em.registerSystem(
     [PiratePlatformDef, PositionDef, RotationDef],
     [TimeDef],
     (ps, res) => {
-      let doFire = res.time.time - lastFire > tenSeconds;
-      if (doFire) {
-        console.log("broadside!");
-        lastFire = res.time.time;
-      }
+      // const sinceLastFire = res.time.time - lastFire;
+      // let beginFire = sinceLastFire > tenSeconds;
+      // if (beginFire) {
+      //   console.log("broadside!");
+      //   lastFire = res.time.time;
+      // }
 
+      let pIdx = 0;
       for (let p of ps) {
+        pIdx++;
+
         // rotate platform
-        const R = Math.PI * 0.001;
-        vec3.rotateY(p.position, p.position, vec3.ZEROS, R);
-        quat.rotateY(p.rotation, p.rotation, R);
+        const R = Math.PI * -0.001;
+        rotatePiratePlatform(p, R);
+
+        const c = p.piratePlatform.cannon()!;
+
+        // pitch cannons
+        p.piratePlatform.tiltTimer += res.time.dt;
+        const upMode =
+          p.piratePlatform.tiltTimer % p.piratePlatform.tiltPeriod >
+          p.piratePlatform.tiltPeriod * 0.5;
+        if (RotationDef.isOn(c)) {
+          let r = Math.PI * pitchSpeed * res.time.dt * (upMode ? -1 : 1);
+          quat.rotateX(c.rotation, c.rotation, r);
+        }
 
         // fire cannons
+        const myTime = res.time.time + pIdx * fireStagger;
+        let doFire = myTime - p.piratePlatform.lastFire > tenSeconds;
         if (doFire) {
-          const c = p.piratePlatform.cannon();
-          if (c && WorldFrameDef.isOn(c)) {
+          p.piratePlatform.lastFire = myTime;
+          if (WorldFrameDef.isOn(c)) {
             console.log(`pirate fire`);
             fireBullet(
               em,
@@ -362,12 +400,7 @@ async function startPirates() {
 async function spawnPirate() {
   const em: EntityManager = EM;
 
-  const res = await em.whenResources(
-    AssetsDef,
-    WoodAssetsDef,
-    GlobalCursor3dDef,
-    RendererDef
-  );
+  const res = await em.whenResources(AssetsDef, RendererDef);
 
   const platform = em.newEntity();
   const cannon = em.newEntity();
@@ -386,8 +419,18 @@ async function spawnPirate() {
   em.ensureComponentOn(platform, ColorDef, vec3.clone(ENDESGA16.darkRed));
   // em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
   em.ensureComponentOn(platform, PositionDef, [0, 0, 30]);
+  em.ensureComponentOn(platform, RotationDef);
   // em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
-  em.ensureComponentOn(platform, PiratePlatformDef, cannon);
+  const tiltPeriod = 5700 + jitter(3000);
+  const tiltTimer = Math.random() * tiltPeriod;
+
+  em.ensureComponentOn(
+    platform,
+    PiratePlatformDef,
+    cannon,
+    tiltPeriod,
+    tiltTimer
+  );
 
   em.ensureComponentOn(
     cannon,
@@ -398,8 +441,19 @@ async function spawnPirate() {
   em.ensureComponentOn(
     cannon,
     RotationDef,
-    quat.rotateX(quat.create(), quat.IDENTITY, Math.PI * 0.1)
+    quat.rotateX(quat.create(), quat.IDENTITY, Math.PI * 0.03)
   );
   em.ensureComponentOn(cannon, PhysicsParentDef, platform.id);
   em.ensureComponentOn(cannon, ColorDef, vec3.clone(ENDESGA16.darkGray));
+
+  let initTimer = 0;
+  // TODO(@darzu):
+  while (initTimer < tiltTimer) {
+    initTimer += 16.6666;
+    const upMode = initTimer % tiltPeriod > tiltPeriod * 0.5;
+    let r = Math.PI * pitchSpeed * 16.6666 * (upMode ? -1 : 1);
+    quat.rotateX(cannon.rotation, cannon.rotation, r);
+  }
+
+  return platform;
 }
