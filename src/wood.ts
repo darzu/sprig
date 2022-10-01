@@ -187,7 +187,7 @@ export function createTimberBuilder() {
     addEndQuad,
   };
 
-  function addSplinteredEnd(lastLoopEndVi: number) {
+  function addSplinteredEnd(lastLoopEndVi: number, numJags: number) {
     const vi = mesh.pos.length;
 
     const v0 = vec3.fromValues(0, 0, D);
@@ -209,13 +209,16 @@ export function createTimberBuilder() {
     let v_tlast = v_tbl;
     let v_blast = v_bbl;
 
-    const numJags = 5;
+    // const numJags = 5;
     const xStep = (W * 2) / numJags;
     let lastY = 0;
     let lastX = -W;
     for (let i = 0; i <= numJags; i++) {
       const x = i * xStep - W + jitter(0.05);
-      let y = i % 2 === 0 ? 0.7 + jitter(0.6) : 0.2 + jitter(0.1);
+      let y = lastY;
+      while (Math.abs(y - lastY) < 0.1)
+        // TODO(@darzu): HACK to make sure it's not too even
+        y = i % 2 === 0 ? 0.7 + jitter(0.6) : 0.2 + jitter(0.1);
       let d = D; // + jitter(0.1);
 
       // TODO(@darzu): HACK! This ensures that adjacent "teeth" in the splinter

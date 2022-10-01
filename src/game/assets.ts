@@ -35,7 +35,7 @@ import {
 } from "../utils-3d.js";
 import { MeshHandle } from "../render/mesh-pool.js";
 import { onInit } from "../init.js";
-import { mathMap, max, min } from "../math.js";
+import { jitter, mathMap, max, min } from "../math.js";
 import { VERBOSE_LOG } from "../flags.js";
 import {
   createTimberBuilder,
@@ -427,7 +427,7 @@ export const mkTimberSplinterEnd: () => RawMesh = () => {
   // b.addSideQuads();
 
   mat4.translate(b.cursor, b.cursor, [0, 0.1, 0]);
-  b.addSplinteredEnd(b.mesh.pos.length);
+  b.addSplinteredEnd(b.mesh.pos.length, 5);
 
   // b.addEndQuad(false);
 
@@ -446,6 +446,13 @@ export const mkTimberSplinterFree: () => RawMesh = () => {
 
   mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.5); // TODO(@darzu): DBG
 
+  const W = 1 + jitter(0.9);
+  // const W = 0.75 + jitter(0.25);
+
+  const numJags = Math.round(5 * W);
+
+  mat4.scale(b.cursor, b.cursor, [W, 1, 1]);
+
   mat4.translate(b.cursor, b.cursor, [0, -1, 0]);
   b.addLoopVerts();
   const loopBotEndIdx = b.mesh.pos.length;
@@ -455,7 +462,7 @@ export const mkTimberSplinterFree: () => RawMesh = () => {
   b.addSideQuads();
 
   // top splinters
-  b.addSplinteredEnd(loopTopEndIdx);
+  b.addSplinteredEnd(loopTopEndIdx, numJags);
 
   // mat4.translate(b.cursor, b.cursor, [0, -0.2, 0]);
   {
@@ -464,7 +471,7 @@ export const mkTimberSplinterFree: () => RawMesh = () => {
 
     const tIdx = b.mesh.tri.length;
     const qIdx = b.mesh.quad.length;
-    b.addSplinteredEnd(loopBotEndIdx);
+    b.addSplinteredEnd(loopBotEndIdx, numJags);
     for (let ti = tIdx; ti < b.mesh.tri.length; ti++)
       vec3Reverse(b.mesh.tri[ti]);
     for (let ti = qIdx; ti < b.mesh.quad.length; ti++)
