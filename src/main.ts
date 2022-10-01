@@ -116,6 +116,7 @@ function callFixedTimestepSystems() {
     EM.callSystem("woodHealth");
   }
   EM.callSystem("updateBullets");
+  EM.callSystem("applyGravity");
   EM.callSystem("updateNoodles");
   EM.callSystem("updateLifetimes");
   EM.callSystem("interaction");

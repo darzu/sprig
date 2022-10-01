@@ -9,6 +9,7 @@ import {
   mkTimberSplinterFree,
 } from "./game/assets.js";
 import { BulletDef } from "./game/bullet.js";
+import { GravityDef } from "./game/gravity.js";
 import { mat4, quat, vec2, vec3, vec4 } from "./gl-matrix.js";
 import { onInit } from "./init.js";
 import { jitter } from "./math.js";
@@ -220,6 +221,7 @@ onInit((em: EntityManager) => {
 
               // create flying splinter
               {
+                // TODO(@darzu): use pool!!
                 const topW = 0.6 + jitter(0.4);
                 const botW = 0.6 + jitter(0.4);
                 const _splinterMesh = mkTimberSplinterFree(topW, botW, 1);
@@ -248,6 +250,7 @@ onInit((em: EntityManager) => {
                 em.ensureComponentOn(splinter, AngularVelocityDef, spin);
                 vec3.scale(vel, vel, 0.01);
                 em.ensureComponentOn(splinter, LinearVelocityDef, vel);
+                em.ensureComponentOn(splinter, GravityDef, [0, -3, 0]);
                 // EM.ensureComponentOn(splinter, WorldFrameDef);
               }
 

@@ -1,7 +1,7 @@
 import { CameraDef } from "../camera.js";
 import { ColorDef } from "../color-ecs.js";
 import { EntityManager } from "../entity-manager.js";
-import { vec3, quat } from "../gl-matrix.js";
+import { vec3, quat, mat4 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import {
   createAABB,
@@ -18,7 +18,7 @@ import { AngularVelocityDef } from "../physics/motion.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
-import { cloneMesh, normalizeMesh } from "../render/mesh.js";
+import { cloneMesh, normalizeMesh, transformMesh } from "../render/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -27,6 +27,7 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
+import { tempMat4 } from "../temp-pool.js";
 import { assert } from "../test.js";
 import { randomizeMeshColors, drawLine2 } from "../utils-game.js";
 import {
@@ -92,7 +93,9 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   if (RenderableDef.isOn(c)) c.renderable.enabled = false;
 
   const plane = em.newEntity();
-  em.ensureComponentOn(plane, RenderableConstructDef, res.assets.plane.proto);
+  const planeMesh = cloneMesh(res.assets.plane.mesh);
+  transformMesh(planeMesh, mat4.fromScaling(tempMat4(), [2, 2, 2]));
+  em.ensureComponentOn(plane, RenderableConstructDef, planeMesh);
   em.ensureComponentOn(plane, ColorDef, [0.1, 0.1, 0.4]);
   // em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
   em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);

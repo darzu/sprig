@@ -16,6 +16,7 @@ import {
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { LifetimeDef } from "./lifetime.js";
 import { TimeDef } from "../time.js";
+import { GravityDef } from "./gravity.js";
 
 export const BulletDef = EM.defineComponent("bullet", (team?: number) => {
   return {
@@ -82,6 +83,7 @@ function createBullet(
   em.ensureComponentOn(e, SyncDef, [PositionDef.id]);
   e.sync.fullComponents = [BulletConstructDef.id];
   em.ensureComponent(e.id, PredictDef);
+  em.ensureComponentOn(e, GravityDef, [0, -props.gravity, 0]);
   em.addComponent(e.id, FinishedDef);
 }
 
@@ -97,14 +99,15 @@ export function registerBuildBulletsSystem(em: EntityManager) {
 }
 
 export function registerBulletUpdate(em: EntityManager) {
+  // TODO(@darzu): remove?
   em.registerSystem(
     [BulletConstructDef, BulletDef, PositionDef, LinearVelocityDef],
     [TimeDef],
     (bullets, res) => {
-      for (let b of bullets) {
-        b.linearVelocity[1] -=
-          0.00001 * b.bulletConstruct.gravity * res.time.dt;
-      }
+      // for (let b of bullets) {
+      //   b.linearVelocity[1] -=
+      //     0.00001 * b.bulletConstruct.gravity * res.time.dt;
+      // }
     },
     "updateBullets"
   );
