@@ -396,14 +396,14 @@ const mkTimberRib: () => RawMesh = () => {
 
   b.addLoopVerts();
   b.addEndQuad(true);
-  const numSegs = 120;
+  const numSegs = 12 * 20;
   for (let i = 0; i < numSegs; i++) {
     mat4.translate(b.cursor, b.cursor, [0, 2, 0]);
     mat4.rotateX(b.cursor, b.cursor, Math.PI * -0.05);
     b.addLoopVerts();
     b.addSideQuads();
     mat4.rotateX(b.cursor, b.cursor, Math.PI * -0.05);
-    mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.005);
+    mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.003);
   }
   mat4.translate(b.cursor, b.cursor, [0, 2, 0]);
   b.addLoopVerts();

@@ -91,24 +91,26 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   const c = res.globalCursor3d.cursor()!;
   if (RenderableDef.isOn(c)) c.renderable.enabled = false;
 
-  const p = em.newEntity();
-  em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
-  em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
-  em.ensureComponentOn(p, PositionDef, [0, -5, 0]);
+  const plane = em.newEntity();
+  em.ensureComponentOn(plane, RenderableConstructDef, res.assets.plane.proto);
+  em.ensureComponentOn(plane, ColorDef, [0.1, 0.1, 0.4]);
+  // em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
+  em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
 
-  const cube = em.newEntity();
-  const cubeMesh = cloneMesh(res.assets.cube.mesh);
-  em.ensureComponentOn(cube, RenderableConstructDef, cubeMesh);
-  em.ensureComponentOn(cube, ColorDef, [0.1, 0.1, 0.1]);
-  em.ensureComponentOn(cube, PositionDef, [0, 0, 3]);
-  em.ensureComponentOn(cube, RotationDef);
-  em.ensureComponentOn(cube, AngularVelocityDef, [0, 0.001, 0.001]);
-  em.ensureComponentOn(cube, WorldFrameDef);
-  em.ensureComponentOn(cube, ColliderDef, {
-    shape: "AABB",
-    solid: false,
-    aabb: res.assets.cube.aabb,
-  });
+  // const cube = em.newEntity();
+  // const cubeMesh = cloneMesh(res.assets.cube.mesh);
+  // em.ensureComponentOn(cube, RenderableConstructDef, cubeMesh);
+  // em.ensureComponentOn(cube, ColorDef, [0.1, 0.1, 0.1]);
+  // em.ensureComponentOn(cube, PositionDef, [0, 0, 3]);
+  // em.ensureComponentOn(cube, RotationDef);
+  // em.ensureComponentOn(cube, AngularVelocityDef, [0, 0.001, 0.001]);
+  // em.ensureComponentOn(cube, WorldFrameDef);
+  // em.ensureComponentOn(cube, ColliderDef, {
+  //   shape: "AABB",
+  //   solid: false,
+  //   aabb: res.assets.cube.aabb,
+  // });
+
   // em.ensureComponentOn(b1, ColliderDef, {
   //   shape: "Box",
   //   solid: false,
@@ -118,7 +120,8 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
 
   // TODO(@darzu): timber system here!
   const sphereMesh = cloneMesh(res.assets.ball.mesh);
-  em.ensureComponentOn(ghost, RenderableConstructDef, sphereMesh);
+  const visible = false;
+  em.ensureComponentOn(ghost, RenderableConstructDef, sphereMesh, visible);
   em.ensureComponentOn(ghost, ColorDef, [0.1, 0.1, 0.1]);
   em.ensureComponentOn(ghost, PositionDef, [0, 0, 0]);
   // em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
@@ -145,7 +148,10 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   em.ensureComponentOn(timber, WoodStateDef, timberState);
   em.ensureComponentOn(timber, ColorDef, vec3.clone(woodColor));
   // em.ensureComponentOn(timber, ColorDef, [0.1, 0.1, 0.1]);
-  em.ensureComponentOn(timber, PositionDef, [0, 0, -4]);
+  const timberPos = vec3.clone(res.assets.timber_rib.center);
+  vec3.negate(timberPos, timberPos);
+  em.ensureComponentOn(timber, PositionDef, timberPos);
+  // em.ensureComponentOn(timber, PositionDef, [0, 0, -4]);
   em.ensureComponentOn(timber, RotationDef);
   em.ensureComponentOn(timber, WorldFrameDef);
   em.ensureComponentOn(timber, ColliderDef, {
@@ -159,21 +165,21 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   // const board = timberState.boards[0];
   // const timber2 = await em.whenEntityHas(timber, RenderableDef);
 
-  const tetra = em.newEntity();
-  const tetraMesh = cloneMesh(res.assets.tetra.mesh);
-  em.ensureComponentOn(tetra, RenderableConstructDef, tetraMesh);
-  em.ensureComponentOn(tetra, ColorDef, [0.1, 0.1, 0.1]);
-  em.ensureComponentOn(tetra, PositionDef, [0, -3, 0]);
-  em.ensureComponentOn(tetra, RotationDef);
-  em.ensureComponentOn(tetra, WorldFrameDef);
-  em.ensureComponentOn(tetra, ColliderDef, {
-    shape: "AABB",
-    solid: false,
-    aabb: res.assets.tetra.aabb,
-  });
+  // const tetra = em.newEntity();
+  // const tetraMesh = cloneMesh(res.assets.tetra.mesh);
+  // em.ensureComponentOn(tetra, RenderableConstructDef, tetraMesh);
+  // em.ensureComponentOn(tetra, ColorDef, [0.1, 0.1, 0.1]);
+  // em.ensureComponentOn(tetra, PositionDef, [0, -3, 0]);
+  // em.ensureComponentOn(tetra, RotationDef);
+  // em.ensureComponentOn(tetra, WorldFrameDef);
+  // em.ensureComponentOn(tetra, ColliderDef, {
+  //   shape: "AABB",
+  //   solid: false,
+  //   aabb: res.assets.tetra.aabb,
+  // });
 
-  for (let xi = 0; xi < 10; xi += 2) {
-    for (let yi = 0; yi < 10; yi += 2) {
+  for (let xi = 0; xi < 0; xi += 2) {
+    for (let yi = 0; yi < 0; yi += 2) {
       // TODO(@darzu): dbging splinters
       const splinter = em.newEntity();
       // TODO(@darzu): perf? probably don't need to normalize, just use same surface ID and provoking vert for all

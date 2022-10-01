@@ -100,6 +100,8 @@ onInit((em) => {
       let segMidHits = 0;
       let overlapChecks = 0;
 
+      const DBG_COLOR = false;
+
       for (let w of es) {
         // console.log(`checking wood!`);
         const meshHandle = w.renderable.meshHandle;
@@ -135,7 +137,7 @@ onInit((em) => {
                   // TODO(@darzu): hack, turn boards red on AABB hit
                   segAABBHits += 1;
                   for (let qi of seg.quadSideIdxs) {
-                    if (mesh.colors[qi][1] < 1) {
+                    if (DBG_COLOR && mesh.colors[qi][1] < 1) {
                       // dont change green to red
                       mesh.colors[qi] = [1, 0, 0];
                     }
@@ -150,17 +152,19 @@ onInit((em) => {
                   if (midHits) {
                     // console.log(`mid hit: ${midHits}`);
                     segMidHits += 1;
-                    for (let qi of seg.quadSideIdxs) {
-                      mesh.colors[qi] = [0, 1, 0];
-                    }
-                    w.woodHealth.boards[boardIdx][segIdx].health -= 0.2;
+                    if (DBG_COLOR)
+                      for (let qi of seg.quadSideIdxs) {
+                        mesh.colors[qi] = [0, 1, 0];
+                      }
+                    w.woodHealth.boards[boardIdx][segIdx].health -= 1.0;
+                    // w.woodHealth.boards[boardIdx][segIdx].health -= 0.2;
                   }
                 }
               });
             });
           }
         }
-        if (segAABBHits > 0 || segMidHits > 0) {
+        if (DBG_COLOR && (segAABBHits > 0 || segMidHits > 0)) {
           // TODO(@darzu): really need sub-mesh updateMesh
           res.renderer.renderer.updateMeshVertices(meshHandle, mesh);
           // res.renderer.renderer.updateMeshIndices(meshHandle, mesh);
@@ -179,11 +183,11 @@ onInit((em) => {
       const after = performance.now();
 
       if (segAABBHits > 1) {
-        console.log(
-          `runWooden: ${(after - before).toFixed(
-            2
-          )}ms, aabb hits: ${segAABBHits}, line hits: ${segMidHits}, aabbChecks: ${overlapChecks}`
-        );
+        // console.log(
+        //   `runWooden: ${(after - before).toFixed(
+        //     2
+        //   )}ms, aabb hits: ${segAABBHits}, line hits: ${segMidHits}, aabbChecks: ${overlapChecks}`
+        // );
       }
     },
     "runWooden"
@@ -202,33 +206,59 @@ onInit((em: EntityManager) => {
         const meshHandle = w.renderable.meshHandle;
         const mesh = meshHandle.readonlyMesh!;
 
-        await w.woodState.boards.forEach(async (board, bIdx) => {
-          await board.forEach(async (seg, sIdx) => {
+        w.woodState.boards.forEach((board, bIdx) => {
+          board.forEach((seg, sIdx) => {
             const h = w.woodHealth.boards[bIdx][sIdx];
             if (!h.broken && h.health <= 0) {
               h.broken = true;
               hideSegment(seg, mesh);
               needsUpdate = true;
 
-              // create end caps
-              // TODO(@darzu): use a pool of end caps n stuff
-              const endBot = await createSplinterEnd(seg, mesh, false);
-              em.ensureComponentOn(endBot, PhysicsParentDef, w.id);
-              vec3.copy(endBot.color, w.color);
-              em.whenEntityHas(endBot, RenderDataStdDef).then((end2) => {
-                // NOTE: we match the object IDs so that there's no hard outline
-                // between the splintered end and main board.
-                end2.renderDataStd.id = meshHandle.mId;
-              });
+              if (h.prev && !h.prev.broken) {
+                // create end caps
+                // TODO(@darzu): use a pool of end caps n stuff
+                const endBot = createSplinterEnd(seg, mesh, false);
+                em.ensureComponentOn(endBot, PhysicsParentDef, w.id);
+                vec3.copy(endBot.color, w.color);
+                em.whenEntityHas(endBot, RenderDataStdDef).then((end2) => {
+                  // NOTE: we match the object IDs so that there's no hard outline
+                  // between the splintered end and main board.
+                  end2.renderDataStd.id = meshHandle.mId;
+                });
+                h.splinterBot = endBot;
+              }
 
-              const endTop = await createSplinterEnd(seg, mesh, true);
-              em.ensureComponentOn(endTop, PhysicsParentDef, w.id);
-              vec3.copy(endTop.color, w.color);
-              em.whenEntityHas(endTop, RenderDataStdDef).then((end2) => {
-                // NOTE: we match the object IDs so that there's no hard outline
-                // between the splintered end and main board.
-                end2.renderDataStd.id = meshHandle.mId;
-              });
+              if (h.next && !h.next.broken) {
+                const endTop = createSplinterEnd(seg, mesh, true);
+                em.ensureComponentOn(endTop, PhysicsParentDef, w.id);
+                vec3.copy(endTop.color, w.color);
+                em.whenEntityHas(endTop, RenderDataStdDef).then((end2) => {
+                  // NOTE: we match the object IDs so that there's no hard outline
+                  // between the splintered end and main board.
+                  end2.renderDataStd.id = meshHandle.mId;
+                });
+                h.splinterTop = endTop;
+              }
+
+              if (h.next?.splinterBot) {
+                em.whenEntityHas(h.next?.splinterBot, RenderableDef).then(
+                  (nextEnd) => {
+                    // TODO(@darzu): Put back into pool!
+                    nextEnd.renderable.enabled = false;
+                  }
+                );
+                h.next.splinterBot = undefined;
+              }
+
+              if (h.prev?.splinterTop) {
+                em.whenEntityHas(h.prev?.splinterTop, RenderableDef).then(
+                  (prevEnd) => {
+                    // TODO(@darzu): Put back into pool!
+                    prevEnd.renderable.enabled = false;
+                  }
+                );
+                h.prev.splinterTop = undefined;
+              }
             }
           });
         });
@@ -243,7 +273,7 @@ onInit((em: EntityManager) => {
   );
 });
 
-async function createSplinterEnd(seg: BoardSeg, boardMesh: Mesh, top = false) {
+function createSplinterEnd(seg: BoardSeg, boardMesh: Mesh, top = false) {
   let segNorm = vec3.create();
   let biggestArea2 = 0;
   for (let v of seg.areaNorms) {
@@ -841,8 +871,12 @@ export const WoodHealthDef = EM.defineComponent(
 );
 
 interface SegHealth {
+  prev?: SegHealth;
+  next?: SegHealth;
   health: number;
   broken: boolean;
+  splinterTop?: Entity;
+  splinterBot?: Entity;
 }
 type BoardHealth = SegHealth[];
 interface WoodHealth {
@@ -852,11 +886,29 @@ interface WoodHealth {
 export function createWoodHealth(w: WoodState) {
   // TODO(@darzu):
   return {
-    boards: w.boards.map((b) =>
-      b.map((s) => ({
-        health: 1.0,
-        broken: false,
-      }))
-    ),
+    boards: w.boards.map((b) => {
+      let lastSeg = b.reduce((p, n) => {
+        const h: SegHealth = {
+          prev: p,
+          health: 1.0,
+          broken: false,
+        };
+        return h;
+      }, undefined as SegHealth | undefined);
+      if (!lastSeg) return [] as SegHealth[];
+      // patch up "next" ptrs
+      while (lastSeg.prev) {
+        lastSeg.prev.next = lastSeg;
+        lastSeg = lastSeg.prev;
+      }
+      let nextSeg: SegHealth | undefined = lastSeg;
+      const segHealths: SegHealth[] = [];
+      while (nextSeg) {
+        segHealths.push(nextSeg);
+        nextSeg = nextSeg.next;
+      }
+      // console.dir(segHealths);
+      return segHealths;
+    }),
   };
 }
