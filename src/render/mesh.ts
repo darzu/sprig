@@ -20,7 +20,8 @@ export interface RawMesh {
   tri: vec3[];
   quad: vec4[]; // MUST NOT be redundant w/ `tri`
   lines?: vec2[];
-  // per-face data, so one per tri and quad
+  // per-face data, so one per quad and tri
+  //  NOTE: first all the quad data is stored, then all the tri data
   colors: vec3[]; // in r,g,b float [0-1] format
   surfaceIds?: number[];
   // per-vertex data
