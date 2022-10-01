@@ -1,5 +1,7 @@
 import { CameraDef } from "../camera.js";
 import { ColorDef } from "../color-ecs.js";
+import { toV3, toFRGB, parseHex } from "../color/color.js";
+import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { vec3, quat, mat4 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
@@ -16,7 +18,11 @@ import {
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
-import { PositionDef, RotationDef } from "../physics/transform.js";
+import {
+  PhysicsParentDef,
+  PositionDef,
+  RotationDef,
+} from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
 import { cloneMesh, normalizeMesh, transformMesh } from "../render/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
@@ -30,12 +36,12 @@ import {
 } from "../render/renderer-ecs.js";
 import { tempMat4 } from "../temp-pool.js";
 import { assert } from "../test.js";
+import { objMap } from "../util.js";
 import { randomizeMeshColors, drawLine2 } from "../utils-game.js";
 import {
   createWoodHealth,
   SplinterParticleDef,
   WoodAssetsDef,
-  woodColor,
   WoodHealthDef,
   WoodStateDef,
 } from "../wood.js";
@@ -74,6 +80,7 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   const sunlight = em.newEntity();
   em.ensureComponentOn(sunlight, PointLightDef);
   sunlight.pointLight.constant = 1.0;
+  // sunlight.pointLight.constant = 0.6;
   vec3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
   // vec3.scale(sunlight.pointLight.ambient, sunlight.pointLight.ambient, 0.2);
   // vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
@@ -107,7 +114,7 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
     )
   );
   em.ensureComponentOn(ground, RenderableConstructDef, groundMesh);
-  em.ensureComponentOn(ground, ColorDef, [0.1, 0.1, 0.4]);
+  em.ensureComponentOn(ground, ColorDef, vec3.clone(ENDESGA16.blue));
   // em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
   em.ensureComponentOn(ground, PositionDef, [0, 0, 0]);
   // em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
@@ -161,7 +168,7 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   const timberState = res.woodAssets.timber_rib!;
   em.ensureComponentOn(timber, RenderableConstructDef, timberMesh);
   em.ensureComponentOn(timber, WoodStateDef, timberState);
-  em.ensureComponentOn(timber, ColorDef, vec3.clone(woodColor));
+  em.ensureComponentOn(timber, ColorDef, vec3.clone(ENDESGA16.darkBrown));
   // em.ensureComponentOn(timber, ColorDef, [0.1, 0.1, 0.1]);
   const timberPos = vec3.clone(res.assets.timber_rib.center);
   vec3.negate(timberPos, timberPos);
@@ -342,9 +349,18 @@ async function spawnEnemy() {
     )
   );
   em.ensureComponentOn(platform, RenderableConstructDef, groundMesh);
-  em.ensureComponentOn(platform, ColorDef, [0.4, 0.1, 0.1]);
+  em.ensureComponentOn(platform, ColorDef, vec3.clone(ENDESGA16.darkRed));
   // em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
   em.ensureComponentOn(platform, PositionDef, [0, 0, 30]);
   // em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
   em.ensureComponentOn(platform, EnemyPlatformDef);
+
+  const cannon = em.newEntity();
+  em.ensureComponentOn(
+    cannon,
+    RenderableConstructDef,
+    res.assets.ld51_cannon.proto
+  );
+  em.ensureComponentOn(cannon, PositionDef);
+  em.ensureComponentOn(cannon, PhysicsParentDef, platform.id);
 }

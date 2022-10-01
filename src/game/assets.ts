@@ -67,6 +67,7 @@ const RemoteMeshes = {
   ammunitionBox: "ammunition_box.sprig.obj",
   linstock: "linstock.sprig.obj",
   cannon: "cannon_simple.sprig.obj",
+  ld51_cannon: "ld51_cannon.sprig.obj",
   grappleHook: "grapple-hook.sprig.obj",
   grappleGun: "grapple-gun.sprig.obj",
   grappleGunUnloaded: "grapple-gun-unloaded.sprig.obj",

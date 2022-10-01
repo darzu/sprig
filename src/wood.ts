@@ -70,11 +70,6 @@ import {
 //   };
 // });
 
-// TODO(@darzu): color on screen doesn't look anything like in the pallette
-export const woodColor: vec3 = toV3(toFRGB(parseHex("#743f39")));
-// vec3.scale(woodColor, woodColor, 2);
-console.log(`woodColor: ${woodColor}`);
-
 export const WoodStateDef = EM.defineComponent("woodState", (s: WoodState) => {
   return s;
 });

@@ -1,4 +1,6 @@
+import { ENDESGA16 } from "../../color/palettes.js";
 import { oceanJfa } from "../../game/ocean.js";
+import { vec3, vec4 } from "../../gl-matrix.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";
 import { pointLightsPtr } from "../lights.js";
@@ -71,6 +73,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
       // defaultColor: [0.1, 0.1, 0.1, 1.0],
       // defaultColor: [0.15, 0.15, 0.6, 1.0],
       defaultColor: [0.015, 0.015, 0.015, 1.0],
+      // defaultColor: [...vec3.clone(ENDESGA16.white), 1.0] as vec4,
       // defaultColor: [0.7, 0.8, 1.0, 1.0],
     },
     {
