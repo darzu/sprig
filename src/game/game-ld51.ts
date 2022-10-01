@@ -1,6 +1,6 @@
 import { CameraDef } from "../camera.js";
 import { ColorDef } from "../color-ecs.js";
-import { EntityManager } from "../entity-manager.js";
+import { EM, EntityManager } from "../entity-manager.js";
 import { vec3, quat, mat4 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import {
@@ -14,7 +14,7 @@ import {
   lineSphereIntersections,
 } from "../physics/broadphase.js";
 import { ColliderDef } from "../physics/collider.js";
-import { AngularVelocityDef } from "../physics/motion.js";
+import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
@@ -26,12 +26,14 @@ import {
   RendererDef,
   RenderableConstructDef,
   RenderableDef,
+  RenderDataStdDef,
 } from "../render/renderer-ecs.js";
 import { tempMat4 } from "../temp-pool.js";
 import { assert } from "../test.js";
 import { randomizeMeshColors, drawLine2 } from "../utils-game.js";
 import {
   createWoodHealth,
+  SplinterParticleDef,
   WoodAssetsDef,
   woodColor,
   WoodHealthDef,
@@ -46,6 +48,7 @@ import {
 import { fireBullet } from "./bullet.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { createGhost } from "./game-sandbox.js";
+import { GravityDef } from "./gravity.js";
 
 // TODO(@darzu): HACK. we need a better way to programmatically create sandbox games
 export const sandboxSystems: string[] = [];
@@ -98,7 +101,8 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   em.ensureComponentOn(plane, RenderableConstructDef, planeMesh);
   em.ensureComponentOn(plane, ColorDef, [0.1, 0.1, 0.4]);
   // em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
-  em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
+  em.ensureComponentOn(plane, PositionDef, [0, 0, 0]);
+  // em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
 
   // const cube = em.newEntity();
   // const cubeMesh = cloneMesh(res.assets.cube.mesh);
@@ -153,6 +157,7 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   // em.ensureComponentOn(timber, ColorDef, [0.1, 0.1, 0.1]);
   const timberPos = vec3.clone(res.assets.timber_rib.center);
   vec3.negate(timberPos, timberPos);
+  timberPos[1] += 5;
   em.ensureComponentOn(timber, PositionDef, timberPos);
   // em.ensureComponentOn(timber, PositionDef, [0, 0, -4]);
   em.ensureComponentOn(timber, RotationDef);
@@ -181,34 +186,66 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   //   aabb: res.assets.tetra.aabb,
   // });
 
-  for (let xi = 0; xi < 0; xi += 2) {
-    for (let yi = 0; yi < 0; yi += 2) {
-      // TODO(@darzu): dbging splinters
-      const splinter = em.newEntity();
-      // TODO(@darzu): perf? probably don't need to normalize, just use same surface ID and provoking vert for all
-      const _splinterMesh =
-        // yi < 5 ? mkTimberSplinterEnd() : mkTimberSplinterFree();
-        // mkTimberSplinterFree(0.2 + xi * 0.2, 0.2 + yi * 0.2);
-        mkTimberSplinterFree(1, 1, 1);
-      const splinterMesh = normalizeMesh(_splinterMesh);
-      em.ensureComponentOn(splinter, RenderableConstructDef, splinterMesh);
-      em.ensureComponentOn(splinter, ColorDef, [
-        Math.random(),
-        Math.random(),
-        Math.random(),
-      ]);
-      // em.ensureComponentOn(splinter, ColorDef, [0.1, 0.1, 0.1]);
-      em.ensureComponentOn(splinter, PositionDef, [xi * 2 + 4, 0, yi * 2]);
-      em.ensureComponentOn(splinter, RotationDef);
-      em.ensureComponentOn(splinter, WorldFrameDef);
-      em.ensureComponentOn(splinter, ColliderDef, {
-        shape: "AABB",
-        solid: false,
-        aabb: res.assets.timber_splinter.aabb,
-      });
-      // randomizeMeshColors(splinter);
-    }
-  }
+  // for (let xi = 0; xi < 0; xi += 2) {
+  //   for (let yi = 0; yi < 0; yi += 2) {
+  //     // TODO(@darzu): dbging splinters
+  //     const splinter = em.newEntity();
+  //     // TODO(@darzu): perf? probably don't need to normalize, just use same surface ID and provoking vert for all
+  //     const _splinterMesh =
+  //       // yi < 5 ? mkTimberSplinterEnd() : mkTimberSplinterFree();
+  //       // mkTimberSplinterFree(0.2 + xi * 0.2, 0.2 + yi * 0.2);
+  //       mkTimberSplinterFree(1, 1, 1);
+  //     const splinterMesh = normalizeMesh(_splinterMesh);
+  //     em.ensureComponentOn(splinter, RenderableConstructDef, splinterMesh);
+  //     em.ensureComponentOn(splinter, ColorDef, [
+  //       Math.random(),
+  //       Math.random(),
+  //       Math.random(),
+  //     ]);
+  //     // em.ensureComponentOn(splinter, ColorDef, [0.1, 0.1, 0.1]);
+  //     em.ensureComponentOn(splinter, PositionDef, [xi * 2 + 4, 0, yi * 2]);
+  //     em.ensureComponentOn(splinter, RotationDef);
+  //     em.ensureComponentOn(splinter, WorldFrameDef);
+  //     em.ensureComponentOn(splinter, ColliderDef, {
+  //       shape: "AABB",
+  //       solid: false,
+  //       aabb: res.assets.timber_splinter.aabb,
+  //     });
+  //     // randomizeMeshColors(splinter);
+  //   }
+  // }
+
+  const splinterObjId = 7654;
+  em.registerSystem(
+    [
+      SplinterParticleDef,
+      LinearVelocityDef,
+      AngularVelocityDef,
+      GravityDef,
+      PositionDef,
+      RotationDef,
+      RenderDataStdDef,
+    ],
+    [],
+    (splinters, res) => {
+      for (let s of splinters) {
+        if (s.position[1] <= 0) {
+          em.removeComponent(s.id, LinearVelocityDef);
+          em.removeComponent(s.id, GravityDef);
+          em.removeComponent(s.id, AngularVelocityDef);
+
+          s.position[1] = 0;
+          quat.identity(s.rotation);
+          quat.rotateX(s.rotation, s.rotation, Math.PI * 0.5);
+          quat.rotateZ(s.rotation, s.rotation, Math.PI * Math.random());
+          s.renderDataStd.id = splinterObjId; // stops z-fighting
+          // console.log("freeze!");
+        }
+      }
+    },
+    "splintersOnFloor"
+  );
+  sandboxSystems.push("splintersOnFloor");
 
   const quadIdsNeedReset = new Set<number>();
 

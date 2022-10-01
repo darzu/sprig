@@ -199,6 +199,10 @@ onInit((em) => {
   );
 });
 
+export const SplinterParticleDef = EM.defineComponent("splinter", () => {
+  return {};
+});
+
 onInit((em: EntityManager) => {
   em.registerSystem(
     [WoodStateDef, WorldFrameDef, WoodHealthDef, RenderableDef, ColorDef],
@@ -252,6 +256,7 @@ onInit((em: EntityManager) => {
                 em.ensureComponentOn(splinter, LinearVelocityDef, vel);
                 em.ensureComponentOn(splinter, GravityDef, [0, -3, 0]);
                 // EM.ensureComponentOn(splinter, WorldFrameDef);
+                em.ensureComponentOn(splinter, SplinterParticleDef);
               }
 
               if (h.prev && !h.prev.broken) {
