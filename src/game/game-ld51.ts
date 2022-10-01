@@ -28,6 +28,7 @@ import { cloneMesh, normalizeMesh, transformMesh } from "../render/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
+import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import {
   RendererDef,
   RenderableConstructDef,
@@ -71,7 +72,7 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   );
 
   res.renderer.pipelines = [
-    // ...shadowPipelines,
+    ...shadowPipelines,
     stdRenderPipeline,
     outlineRender,
     postProcess,
@@ -79,12 +80,12 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
 
   const sunlight = em.newEntity();
   em.ensureComponentOn(sunlight, PointLightDef);
+  // sunlight.pointLight.constant = 1.0;
   sunlight.pointLight.constant = 1.0;
-  // sunlight.pointLight.constant = 0.6;
-  vec3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
+  vec3.copy(sunlight.pointLight.ambient, [0.4, 0.4, 0.4]);
   // vec3.scale(sunlight.pointLight.ambient, sunlight.pointLight.ambient, 0.2);
-  // vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  em.ensureComponentOn(sunlight, PositionDef, [10, 100, 10]);
+  vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
+  em.ensureComponentOn(sunlight, PositionDef, [50, 100, 10]);
   em.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
 
   const ghost = createGhost(em);
@@ -363,4 +364,5 @@ async function spawnEnemy() {
   );
   em.ensureComponentOn(cannon, PositionDef);
   em.ensureComponentOn(cannon, PhysicsParentDef, platform.id);
+  em.ensureComponentOn(cannon, ColorDef, vec3.clone(ENDESGA16.darkGray));
 }

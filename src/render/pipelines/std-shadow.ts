@@ -45,6 +45,7 @@ export const shadowPipelines = range(3).map((i) =>
     depthStencil: shadowDepthTextures[i],
     shaderVertexEntry: "vert_main",
     shaderFragmentEntry: "frag_main",
+    cullMode: "front", // TODO(@darzu): alternative to depth bias?
     shader: () => `
   @vertex
   fn vert_main(input: VertexInput) -> @builtin(position) vec4<f32> {
