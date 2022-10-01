@@ -72,6 +72,7 @@ onInit((em) => {
       let overlapChecks = 0;
 
       for (let wooden of es) {
+        console.log(`checking wood!`);
         const meshHandle = wooden.renderable.meshHandle;
         const mesh = meshHandle.readonlyMesh!; // TODO(@darzu): again, shouldn't be modifying "readonlyXXXX"
         const hits = collidesWith.get(wooden.id);

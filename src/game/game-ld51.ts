@@ -29,7 +29,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { assert } from "../test.js";
 import { randomizeMeshColors, drawLine2 } from "../utils-game.js";
-import { WoodAssetsDef } from "../wood.js";
+import { WoodAssetsDef, WoodenStateDef } from "../wood.js";
 import { yawpitchToQuat } from "../yawpitch.js";
 import {
   AssetsDef,
@@ -144,7 +144,9 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
 
   const timber = em.newEntity();
   const timberMesh = cloneMesh(res.assets.timber_rib.mesh);
+  const timberState = res.woodAssets.timber_rib!;
   em.ensureComponentOn(timber, RenderableConstructDef, timberMesh);
+  em.ensureComponentOn(timber, WoodenStateDef, timberState);
   em.ensureComponentOn(timber, ColorDef, [0.1, 0.1, 0.1]);
   em.ensureComponentOn(timber, PositionDef, [0, 0, -4]);
   em.ensureComponentOn(timber, RotationDef);
@@ -155,7 +157,6 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
     aabb: res.assets.timber_rib.aabb,
   });
   // randomizeMeshColors(timber);
-  const timberState = res.woodAssets.timber_rib!;
   const board = timberState.boards[0];
   const timber2 = await em.whenEntityHas(timber, RenderableDef);
 
@@ -238,57 +239,57 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
         fireBullet(em, 1, firePos, fireDir, 0.1);
       }
 
-      let segAABBHits = 0;
-      let segMidHits = 0;
-      let overlapChecks = 0;
+      // let segAABBHits = 0;
+      // let segMidHits = 0;
+      // let overlapChecks = 0;
 
-      for (let qi of quadIdsNeedReset) {
-        timberMesh.colors[qi] = [0.1, 0.1, 0.1];
-      }
-      if (quadIdsNeedReset.size) {
-        res.renderer.renderer.updateMeshVertices(
-          timber2.renderable.meshHandle,
-          timberMesh
-        );
-        quadIdsNeedReset.clear();
-      }
+      // for (let qi of quadIdsNeedReset) {
+      //   timberMesh.colors[qi] = [0.1, 0.1, 0.1];
+      // }
+      // if (quadIdsNeedReset.size) {
+      //   res.renderer.renderer.updateMeshVertices(
+      //     timber2.renderable.meshHandle,
+      //     timberMesh
+      //   );
+      //   quadIdsNeedReset.clear();
+      // }
 
-      for (let seg of board) {
-        // TODO(@darzu):
-        copyAABB(segAABBWorld, seg.localAABB);
-        transformAABB(segAABBWorld, timber.world.transform);
-        overlapChecks++;
-        // if (doesOverlapAABB(ballAABBWorld, segAABBWorld)) {
-        // segAABBHits += 1;
-        // for (let qi of seg.quadSideIdxs) {
-        //   if (timberMesh.colors[qi][1] < 1) {
-        //     timberMesh.colors[qi] = [0.1, 0.3, 0.1];
-        //     quadIdsNeedReset.add(qi);
-        //   }
-        // }
+      // for (let seg of board) {
+      //   // TODO(@darzu):
+      //   copyAABB(segAABBWorld, seg.localAABB);
+      //   transformAABB(segAABBWorld, timber.world.transform);
+      //   overlapChecks++;
+      //   // if (doesOverlapAABB(ballAABBWorld, segAABBWorld)) {
+      //   // segAABBHits += 1;
+      //   // for (let qi of seg.quadSideIdxs) {
+      //   //   if (timberMesh.colors[qi][1] < 1) {
+      //   //     timberMesh.colors[qi] = [0.1, 0.3, 0.1];
+      //   //     quadIdsNeedReset.add(qi);
+      //   //   }
+      //   // }
 
-        copyLine(worldLine, seg.midLine);
-        transformLine(worldLine, timber.world.transform);
-        const midHits = lineSphereIntersections(worldLine, worldSphere);
-        if (midHits) {
-          drawLine2(worldLine, [0, 1, 0]);
-          console.log(`mid hit: ${midHits}`);
-          segMidHits += 1;
-          for (let qi of seg.quadSideIdxs) {
-            timberMesh.colors[qi] = [0, 1, 0];
-            quadIdsNeedReset.add(qi);
-          }
-        }
-        // }
-      }
+      //   copyLine(worldLine, seg.midLine);
+      //   transformLine(worldLine, timber.world.transform);
+      //   const midHits = lineSphereIntersections(worldLine, worldSphere);
+      //   if (midHits) {
+      //     drawLine2(worldLine, [0, 1, 0]);
+      //     console.log(`mid hit: ${midHits}`);
+      //     segMidHits += 1;
+      //     for (let qi of seg.quadSideIdxs) {
+      //       timberMesh.colors[qi] = [0, 1, 0];
+      //       quadIdsNeedReset.add(qi);
+      //     }
+      //   }
+      //   // }
+      // }
 
-      if (segAABBHits > 0 || segMidHits > 0) {
-        // TODO(@darzu): really need sub-mesh updateMesh
-        res.renderer.renderer.updateMeshVertices(
-          timber2.renderable.meshHandle,
-          timberMesh
-        );
-      }
+      // if (segAABBHits > 0 || segMidHits > 0) {
+      //   // TODO(@darzu): really need sub-mesh updateMesh
+      //   res.renderer.renderer.updateMeshVertices(
+      //     timber2.renderable.meshHandle,
+      //     timberMesh
+      //   );
+      // }
     },
     "runLD51Timber"
   );
