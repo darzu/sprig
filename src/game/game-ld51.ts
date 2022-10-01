@@ -290,4 +290,61 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
     "runLD51Timber"
   );
   sandboxSystems.push("runLD51Timber");
+
+  startEnemies();
+}
+
+export const EnemyPlatformDef = EM.defineComponent("enemyPlatform", () => {
+  return {};
+});
+
+async function startEnemies() {
+  const em: EntityManager = EM;
+
+  spawnEnemy();
+
+  em.registerSystem(
+    [EnemyPlatformDef, PositionDef, RotationDef],
+    [],
+    (ps, res) => {
+      for (let p of ps) {
+        // TODO(@darzu):
+        const R = Math.PI * 0.001;
+        vec3.rotateY(p.position, p.position, vec3.ZEROS, R);
+        quat.rotateY(p.rotation, p.rotation, R);
+      }
+    },
+    "updateEnemyPlatforms"
+  );
+
+  sandboxSystems.push("updateEnemyPlatforms");
+}
+
+async function spawnEnemy() {
+  const em: EntityManager = EM;
+
+  const res = await em.whenResources(
+    AssetsDef,
+    WoodAssetsDef,
+    GlobalCursor3dDef,
+    RendererDef
+  );
+
+  const platform = em.newEntity();
+  const groundMesh = cloneMesh(res.assets.hex.mesh);
+  transformMesh(
+    groundMesh,
+    mat4.fromRotationTranslationScale(
+      tempMat4(),
+      quat.IDENTITY,
+      [0, -1, 0],
+      [4, 1, 4]
+    )
+  );
+  em.ensureComponentOn(platform, RenderableConstructDef, groundMesh);
+  em.ensureComponentOn(platform, ColorDef, [0.4, 0.1, 0.1]);
+  // em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
+  em.ensureComponentOn(platform, PositionDef, [0, 0, 30]);
+  // em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
+  em.ensureComponentOn(platform, EnemyPlatformDef);
 }
