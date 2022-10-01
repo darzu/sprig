@@ -217,3 +217,20 @@ export function signedAreaOfTriangle(a: vec2, b: vec2, c: vec2): number {
   let cross = vec2.cross(tempVec3(), ab, ac);
   return 0.5 * cross[2];
 }
+
+export function vec3Reverse(out: vec3) {
+  const t = out[0];
+  out[0] = out[2];
+  out[2] = t;
+  return out;
+}
+
+export function vec4Reverse(out: vec4) {
+  let t = out[0];
+  out[0] = out[3];
+  out[3] = t;
+  t = out[1];
+  out[1] = out[2];
+  out[2] = t;
+  return out;
+}

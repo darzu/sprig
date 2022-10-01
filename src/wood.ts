@@ -187,7 +187,7 @@ export function createTimberBuilder() {
     addEndQuad,
   };
 
-  function addSplinteredEnd() {
+  function addSplinteredEnd(lastLoopEndVi: number) {
     const vi = mesh.pos.length;
 
     const v0 = vec3.fromValues(0, 0, D);
@@ -197,10 +197,10 @@ export function createTimberBuilder() {
     mesh.pos.push(v0, v1);
 
     const v_tm = vi + 0;
-    const v_tbr = vi + -4;
-    const v_tbl = vi + -1;
-    const v_bbr = vi + -3;
-    const v_bbl = vi + -2;
+    const v_tbr = lastLoopEndVi + -4;
+    const v_tbl = lastLoopEndVi + -1;
+    const v_bbr = lastLoopEndVi + -3;
+    const v_bbl = lastLoopEndVi + -2;
     // +D side
     mesh.tri.push([v_tm, v_tbl, v_tbr]);
     // -D side
@@ -214,8 +214,9 @@ export function createTimberBuilder() {
     let lastY = 0;
     let lastX = -W;
     for (let i = 0; i <= numJags; i++) {
-      const x = i * xStep - W;
+      const x = i * xStep - W + jitter(0.05);
       let y = i % 2 === 0 ? 0.4 + jitter(0.3) : 0.2 + jitter(0.1);
+      let d = D; // + jitter(0.1);
 
       // TODO(@darzu): HACK! This ensures that adjacent "teeth" in the splinter
       //    are properly manifold/convex/something-something
@@ -227,17 +228,17 @@ export function createTimberBuilder() {
         vec2.cross(cross_last_this, [lastX, lastY], [x, y]);
         maxLoop--;
       }
-      // if (cross_last_this[2] > 0) console.log(`cross_last_this[2] > 0`);
+      if (cross_last_this[2] > 0) console.warn(`non-manifold!`);
 
       // +D side
-      const vtj = vec3.fromValues(x, y, D);
+      const vtj = vec3.fromValues(x, y, d);
       vec3.transformMat4(vtj, vtj, cursor);
       const vtji = mesh.pos.length;
       mesh.pos.push(vtj);
       mesh.tri.push([v_tm, vtji, v_tlast]);
 
       // -D side
-      const vbj = vec3.fromValues(x, y, -D);
+      const vbj = vec3.fromValues(x, y, -d);
       vec3.transformMat4(vbj, vbj, cursor);
       mesh.pos.push(vbj);
       mesh.tri.push([v_tm + 1, v_blast, vtji + 1]);

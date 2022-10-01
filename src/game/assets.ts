@@ -30,6 +30,8 @@ import {
   normalizeVec2s,
   SupportFn,
   uintToVec3unorm,
+  vec3Reverse,
+  vec4Reverse,
 } from "../utils-3d.js";
 import { MeshHandle } from "../render/mesh-pool.js";
 import { onInit } from "../init.js";
@@ -414,18 +416,60 @@ const mkTimberRib: () => RawMesh = () => {
   return b.mesh;
 };
 
-export const mkTimberSplinter: () => RawMesh = () => {
+export const mkTimberSplinterEnd: () => RawMesh = () => {
   const b = createTimberBuilder();
 
-  mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.5);
+  mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.5); // TODO(@darzu): DBG
+  // b.addLoopVerts();
+  // mat4.translate(b.cursor, b.cursor, [0, 2, 0]);
   b.addLoopVerts();
   b.addEndQuad(true);
-  mat4.translate(b.cursor, b.cursor, [0, 2, 0]);
-  b.addLoopVerts();
-  b.addSideQuads();
+  // b.addSideQuads();
 
   mat4.translate(b.cursor, b.cursor, [0, 0.1, 0]);
-  b.addSplinteredEnd();
+  b.addSplinteredEnd(b.mesh.pos.length);
+
+  // b.addEndQuad(false);
+
+  // TODO(@darzu): triangle vs quad coloring doesn't work
+  b.mesh.quad.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
+  b.mesh.tri.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
+
+  // console.dir(b.mesh);
+
+  return b.mesh;
+};
+
+export const mkTimberSplinterFree: () => RawMesh = () => {
+  // TODO(@darzu): IMPL!
+  const b = createTimberBuilder();
+
+  mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.5); // TODO(@darzu): DBG
+
+  mat4.translate(b.cursor, b.cursor, [0, -1, 0]);
+  b.addLoopVerts();
+  const loopBotEndIdx = b.mesh.pos.length;
+  mat4.translate(b.cursor, b.cursor, [0, +2, 0]);
+  b.addLoopVerts();
+  const loopTopEndIdx = b.mesh.pos.length;
+  b.addSideQuads();
+
+  // top splinters
+  b.addSplinteredEnd(loopTopEndIdx);
+
+  // mat4.translate(b.cursor, b.cursor, [0, -0.2, 0]);
+  {
+    mat4.translate(b.cursor, b.cursor, [0, -2, 0]);
+    mat4.scale(b.cursor, b.cursor, [1, -1, 1]);
+
+    const tIdx = b.mesh.tri.length;
+    const qIdx = b.mesh.quad.length;
+    b.addSplinteredEnd(loopBotEndIdx);
+    for (let ti = tIdx; ti < b.mesh.tri.length; ti++)
+      vec3Reverse(b.mesh.tri[ti]);
+    for (let ti = qIdx; ti < b.mesh.quad.length; ti++)
+      vec4Reverse(b.mesh.quad[ti]);
+  }
 
   // b.addEndQuad(false);
 
@@ -778,7 +822,7 @@ export const LocalMeshes = {
   },
   sail: () => SAIL_MESH,
   timber_rib: mkTimberRib,
-  timber_splinter: mkTimberSplinter,
+  timber_splinter: mkTimberSplinterEnd,
 } as const;
 
 type LocalMeshSymbols = keyof typeof LocalMeshes;
