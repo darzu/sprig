@@ -29,7 +29,12 @@ import {
 } from "../render/renderer-ecs.js";
 import { assert } from "../test.js";
 import { randomizeMeshColors, drawLine2 } from "../utils-game.js";
-import { WoodAssetsDef, WoodStateDef } from "../wood.js";
+import {
+  createWoodHealth,
+  WoodAssetsDef,
+  WoodHealthDef,
+  WoodStateDef,
+} from "../wood.js";
 import { yawpitchToQuat } from "../yawpitch.js";
 import {
   AssetsDef,
@@ -156,9 +161,11 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
     solid: false,
     aabb: res.assets.timber_rib.aabb,
   });
+  const timberHealth = createWoodHealth(timberState);
+  em.ensureComponentOn(timber, WoodHealthDef, timberHealth);
   // randomizeMeshColors(timber);
-  const board = timberState.boards[0];
-  const timber2 = await em.whenEntityHas(timber, RenderableDef);
+  // const board = timberState.boards[0];
+  // const timber2 = await em.whenEntityHas(timber, RenderableDef);
 
   const tetra = em.newEntity();
   const tetraMesh = cloneMesh(res.assets.tetra.mesh);

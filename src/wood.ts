@@ -53,7 +53,7 @@ export const WoodAssetsDef = EM.defineComponent(
 
 onInit((em) => {
   em.registerSystem(
-    [WoodStateDef, WorldFrameDef, RenderableDef],
+    [WoodStateDef, WoodHealthDef, WorldFrameDef, RenderableDef],
     [PhysicsResultsDef, RendererDef],
     (es, res) => {
       const { collidesWith } = res.physicsResults;
@@ -68,11 +68,11 @@ onInit((em) => {
       let segMidHits = 0;
       let overlapChecks = 0;
 
-      for (let wooden of es) {
-        console.log(`checking wood!`);
-        const meshHandle = wooden.renderable.meshHandle;
+      for (let w of es) {
+        // console.log(`checking wood!`);
+        const meshHandle = w.renderable.meshHandle;
         const mesh = meshHandle.readonlyMesh!; // TODO(@darzu): again, shouldn't be modifying "readonlyXXXX"
-        const hits = collidesWith.get(wooden.id);
+        const hits = collidesWith.get(w.id);
         if (hits) {
           const balls = hits
             .map((h) =>
@@ -93,11 +93,11 @@ onInit((em) => {
               rad: (ballAABBWorld.max[0] - ballAABBWorld.min[0]) * 0.5,
             };
 
-            for (let board of wooden.woodState.boards) {
-              for (let seg of board) {
+            w.woodState.boards.forEach((board, boardIdx) => {
+              board.forEach((seg, segIdx) => {
                 // TODO(@darzu):
                 copyAABB(segAABBWorld, seg.localAABB);
-                transformAABB(segAABBWorld, wooden.world.transform);
+                transformAABB(segAABBWorld, w.world.transform);
                 overlapChecks++;
                 if (doesOverlapAABB(ballAABBWorld, segAABBWorld)) {
                   // TODO(@darzu): hack, turn boards red on AABB hit
@@ -110,7 +110,7 @@ onInit((em) => {
                   }
 
                   copyLine(worldLine, seg.midLine);
-                  transformLine(worldLine, wooden.world.transform);
+                  transformLine(worldLine, w.world.transform);
                   const midHits = lineSphereIntersections(
                     worldLine,
                     worldSphere
@@ -121,17 +121,17 @@ onInit((em) => {
                     for (let qi of seg.quadSideIdxs) {
                       mesh.colors[qi] = [0, 1, 0];
                     }
-                    hideSegment(seg, mesh);
+                    w.woodHealth.boards[boardIdx][segIdx].health -= 0.2;
                   }
                 }
-              }
-            }
+              });
+            });
           }
         }
         if (segAABBHits > 0 || segMidHits > 0) {
           // TODO(@darzu): really need sub-mesh updateMesh
           res.renderer.renderer.updateMeshVertices(meshHandle, mesh);
-          res.renderer.renderer.updateMeshIndices(meshHandle, mesh);
+          // res.renderer.renderer.updateMeshIndices(meshHandle, mesh);
         }
       }
 
@@ -155,6 +155,37 @@ onInit((em) => {
       }
     },
     "runWooden"
+  );
+});
+
+onInit((em) => {
+  em.registerSystem(
+    [WoodStateDef, WoodHealthDef, RenderableDef],
+    [RendererDef],
+    (es, res) => {
+      // TODO(@darzu):
+      for (let w of es) {
+        let needsUpdate = false;
+
+        const meshHandle = w.renderable.meshHandle;
+        const mesh = meshHandle.readonlyMesh!;
+
+        w.woodState.boards.forEach((board, bIdx) => {
+          board.forEach((seg, sIdx) => {
+            if (w.woodHealth.boards[bIdx][sIdx].health <= 0) {
+              hideSegment(seg, mesh);
+              needsUpdate = true;
+            }
+          });
+        });
+
+        if (needsUpdate) {
+          // TODO(@darzu): really need sub-mesh updateMesh
+          res.renderer.renderer.updateMeshIndices(meshHandle, mesh);
+        }
+      }
+    },
+    "woodHealth"
   );
 });
 
@@ -641,6 +672,13 @@ export function unshareProvokingForWood(m: RawMesh, woodState: WoodState) {
   }
 }
 
+export const WoodHealthDef = EM.defineComponent(
+  "woodHealth",
+  (s: WoodHealth) => {
+    return s;
+  }
+);
+
 interface SegHealth {
   health: number;
 }
@@ -649,7 +687,7 @@ interface WoodHealth {
   boards: BoardHealth[];
 }
 
-function createWoodHealth(w: WoodState) {
+export function createWoodHealth(w: WoodState) {
   // TODO(@darzu):
   return {
     boards: w.boards.map((b) =>

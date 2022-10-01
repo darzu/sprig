@@ -113,6 +113,7 @@ function callFixedTimestepSystems() {
   if (GAME === "ld51") {
     // EM.callSystem("initWooden");
     EM.callSystem("runWooden");
+    EM.callSystem("woodHealth");
   }
   EM.callSystem("updateBullets");
   EM.callSystem("updateNoodles");
