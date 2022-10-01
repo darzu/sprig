@@ -5,6 +5,7 @@
 //  https://en.wikipedia.org/wiki/Color_difference
 
 import { clamp } from "../math.js";
+import { assert } from "../test.js";
 import { never, range } from "../util.js";
 import {
   FLRGBToFRGB,
@@ -188,6 +189,7 @@ export function parseHex(hex: string): RGB {
   let r = 0,
     g = 0,
     b = 0;
+  assert(hex[0] === "#", `hex color must start with #`);
   if (hex.length == 4) {
     r = parseInt("0x" + hex[1] + hex[1]);
     g = parseInt("0x" + hex[2] + hex[2]);

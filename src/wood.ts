@@ -1,5 +1,5 @@
 import { ColorDef } from "./color-ecs.js";
-import { toFRGB, toOKLAB, toV3 } from "./color/color.js";
+import { parseHex, parseRGB, toFRGB, toOKLAB, toV3 } from "./color/color.js";
 import { EM, Entity, EntityManager } from "./entity-manager.js";
 import {
   AllMeshSymbols,
@@ -20,6 +20,7 @@ import {
   doesOverlapAABB,
   emptyLine,
   getAABBFromPositions,
+  getLineEnd,
   Line,
   lineSphereIntersections,
   Sphere,
@@ -63,6 +64,11 @@ import {
 //     // TODO(@darzu): options?
 //   };
 // });
+
+// TODO(@darzu): color on screen doesn't look anything like in the pallette
+export const woodColor: vec3 = toV3(toFRGB(parseHex("#743f39")));
+// vec3.scale(woodColor, woodColor, 2);
+console.log(`woodColor: ${woodColor}`);
 
 export const WoodStateDef = EM.defineComponent("woodState", (s: WoodState) => {
   return s;
@@ -206,10 +212,19 @@ onInit((em: EntityManager) => {
 
               // create end caps
               // TODO(@darzu): use a pool of end caps n stuff
-              const end = await createSplinterEnd(seg, mesh);
-              em.ensureComponentOn(end, PhysicsParentDef, w.id);
-              vec3.copy(end.color, w.color);
-              em.whenEntityHas(end, RenderDataStdDef).then((end2) => {
+              const endBot = await createSplinterEnd(seg, mesh, false);
+              em.ensureComponentOn(endBot, PhysicsParentDef, w.id);
+              vec3.copy(endBot.color, w.color);
+              em.whenEntityHas(endBot, RenderDataStdDef).then((end2) => {
+                // NOTE: we match the object IDs so that there's no hard outline
+                // between the splintered end and main board.
+                end2.renderDataStd.id = meshHandle.mId;
+              });
+
+              const endTop = await createSplinterEnd(seg, mesh, true);
+              em.ensureComponentOn(endTop, PhysicsParentDef, w.id);
+              vec3.copy(endTop.color, w.color);
+              em.whenEntityHas(endTop, RenderDataStdDef).then((end2) => {
                 // NOTE: we match the object IDs so that there's no hard outline
                 // between the splintered end and main board.
                 end2.renderDataStd.id = meshHandle.mId;
@@ -228,7 +243,7 @@ onInit((em: EntityManager) => {
   );
 });
 
-async function createSplinterEnd(seg: BoardSeg, boardMesh: Mesh) {
+async function createSplinterEnd(seg: BoardSeg, boardMesh: Mesh, top = false) {
   let segNorm = vec3.create();
   let biggestArea2 = 0;
   for (let v of seg.areaNorms) {
@@ -239,8 +254,14 @@ async function createSplinterEnd(seg: BoardSeg, boardMesh: Mesh) {
     }
   }
 
-  const pos = seg.midLine.ray.org;
-  const endNorm = seg.midLine.ray.dir;
+  const pos = vec3.copy(tempVec3(), seg.midLine.ray.org);
+  if (top) {
+    getLineEnd(pos, seg.midLine);
+  }
+  const endNorm = vec3.copy(tempVec3(), seg.midLine.ray.dir);
+  if (top) {
+    vec3.negate(endNorm, endNorm);
+  }
 
   const rot = quat.create();
   quatFromUpForward(rot, endNorm, segNorm);
@@ -259,11 +280,12 @@ async function createSplinterEnd(seg: BoardSeg, boardMesh: Mesh) {
     // TODO(@darzu): HACK. We're "snapping" the splinter loop and segment loops
     //    together via distance; we should be able to do this in a more analytic way
     const snapDistSqr = Math.pow(0.2 * 0.5, 2);
+    const loop = (
+      top ? seg.vertNextLoopIdxs : seg.vertLastLoopIdxs
+    ) as number[];
     for (let vi = b.mesh.pos.length - 4; vi < b.mesh.pos.length; vi++) {
       const p = b.mesh.pos[vi];
-      for (let lp of (seg.vertLastLoopIdxs as number[]).map(
-        (vi2) => boardMesh.pos[vi2]
-      )) {
+      for (let lp of loop.map((vi2) => boardMesh.pos[vi2])) {
         if (vec3.sqrDist(p, lp) < snapDistSqr) {
           vec3.copy(p, lp);
           break;

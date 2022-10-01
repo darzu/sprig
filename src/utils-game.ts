@@ -2,7 +2,7 @@ import { ColorDef } from "./color-ecs.js";
 import { EM, Entity, EntityW } from "./entity-manager.js";
 import { AssetsDef } from "./game/assets.js";
 import { vec3 } from "./gl-matrix.js";
-import { Line } from "./physics/broadphase.js";
+import { getLineEnd, Line } from "./physics/broadphase.js";
 import { PositionDef, ScaleDef } from "./physics/transform.js";
 import { MeshHandle } from "./render/mesh-pool.js";
 import { Mesh } from "./render/mesh.js";
@@ -22,11 +22,7 @@ const _linePool: EntityW<[typeof RenderableDef]>[] = [];
 const _linePoolLimit = 100;
 let _linePoolNext = 0;
 export async function drawLine2(line: Line, color: vec3) {
-  const end = vec3.add(
-    tempVec3(),
-    line.ray.org,
-    vec3.scale(tempVec3(), line.ray.dir, line.len)
-  );
+  const end = getLineEnd(tempVec3(), line);
   return drawLine(line.ray.org, end, color);
 }
 export async function drawLine(start: vec3, end: vec3, color: vec3) {

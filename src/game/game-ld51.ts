@@ -32,6 +32,7 @@ import { randomizeMeshColors, drawLine2 } from "../utils-game.js";
 import {
   createWoodHealth,
   WoodAssetsDef,
+  woodColor,
   WoodHealthDef,
   WoodStateDef,
 } from "../wood.js";
@@ -142,7 +143,8 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   const timberState = res.woodAssets.timber_rib!;
   em.ensureComponentOn(timber, RenderableConstructDef, timberMesh);
   em.ensureComponentOn(timber, WoodStateDef, timberState);
-  em.ensureComponentOn(timber, ColorDef, [0.1, 0.1, 0.1]);
+  em.ensureComponentOn(timber, ColorDef, vec3.clone(woodColor));
+  // em.ensureComponentOn(timber, ColorDef, [0.1, 0.1, 0.1]);
   em.ensureComponentOn(timber, PositionDef, [0, 0, -4]);
   em.ensureComponentOn(timber, RotationDef);
   em.ensureComponentOn(timber, WorldFrameDef);
