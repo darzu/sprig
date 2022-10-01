@@ -2,7 +2,7 @@ import { toFRGB, toOKLAB, toV3 } from "./color/color.js";
 import { EM, EntityManager } from "./entity-manager.js";
 import { AllMeshSymbols } from "./game/assets.js";
 import { BulletDef } from "./game/bullet.js";
-import { mat4, vec3, vec4 } from "./gl-matrix.js";
+import { mat4, vec2, vec3, vec4 } from "./gl-matrix.js";
 import { onInit } from "./init.js";
 import { jitter } from "./math.js";
 import {
@@ -24,7 +24,7 @@ import { ColliderDef } from "./physics/collider.js";
 import { PhysicsResultsDef, WorldFrameDef } from "./physics/nonintersection.js";
 import { getQuadMeshEdges, Mesh, RawMesh } from "./render/mesh.js";
 import { RenderableDef, RendererDef } from "./render/renderer-ecs.js";
-import { tempVec3 } from "./temp-pool.js";
+import { tempVec2, tempVec3 } from "./temp-pool.js";
 import { assert } from "./test.js";
 import { never, range } from "./util.js";
 import { centroid, vec3Dbg } from "./utils-3d.js";
@@ -211,9 +211,21 @@ export function createTimberBuilder() {
 
     const numJags = 5;
     const xStep = (W * 2) / numJags;
+    let lastY = 0;
+    let lastX = -W;
     for (let i = 0; i <= numJags; i++) {
       const x = i * xStep - W;
-      const y = i % 2 === 0 ? 0.4 + jitter(0.3) : 0.2 + jitter(0.1);
+      let y = i % 2 === 0 ? 0.4 + jitter(0.3) : 0.2 + jitter(0.1);
+
+      let cross_last_this = vec2.cross(tempVec3(), [lastX, lastY], [x, y]);
+      let maxLoop = 10;
+      while (cross_last_this[2] > 0 && maxLoop > 0) {
+        if (x < 0) y += 0.1;
+        else y -= 0.1;
+        vec2.cross(cross_last_this, [lastX, lastY], [x, y]);
+        maxLoop--;
+      }
+      if (cross_last_this[2] > 0) console.log(`cross_last_this[2] > 0`);
 
       // +D side
       const vtj = vec3.fromValues(x, y, D);
@@ -233,6 +245,9 @@ export function createTimberBuilder() {
 
       v_tlast = vtji;
       v_blast = vtji + 1;
+
+      lastX = x;
+      lastY = y;
     }
     // +D side
     mesh.tri.push([v_tm, v_tbr, v_tlast]);
