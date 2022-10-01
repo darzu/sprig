@@ -292,8 +292,10 @@ export function registerRenderer(em: EntityManager) {
             applyTints(o.tints, o.renderDataStd.tint);
           }
 
+          // TODO(@darzu): actually we only set this at creation now so that
+          //  it's overridable for gameplay
           // id
-          o.renderDataStd.id = o.renderable.meshHandle.mId;
+          // o.renderDataStd.id = o.renderable.meshHandle.mId;
 
           // transform
           mat4.copy(o.renderDataStd.transform, o.rendererWorldFrame.transform);
@@ -440,7 +442,8 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
             meshHandle,
           });
           if (e.renderableConstruct.poolKind === "std") {
-            em.addComponent(e.id, RenderDataStdDef, computeUniData(mesh));
+            em.ensureComponentOn(e, RenderDataStdDef, computeUniData(mesh));
+            e.renderDataStd.id = meshHandle.mId;
           } else if (e.renderableConstruct.poolKind === "ocean") {
             em.addComponent(
               e.id,

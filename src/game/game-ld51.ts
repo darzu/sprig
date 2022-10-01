@@ -76,17 +76,7 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   em.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
 
   const ghost = createGhost(em);
-  // em.ensureComponentOn(g, RenderableConstructDef, res.assets.cube.proto);
-  // createPlayer(em);
 
-  // vec3.copy(e.position, [-16.6, 5, -5.1]);
-  // quat.copy(e.rotation, [0, -0.77, 0, 0.636]);
-  // vec3.copy(e.cameraFollow.positionOffset, [0, 0, 0]);
-  // quat.copy(e.cameraFollow.rotationOffset, [-0.225, 0, 0, 0.974]);
-  // vec3.copy(g.position, [-4.28, 0.97, 0.11]);
-  // quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
-  // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-  // quat.copy(g.cameraFollow.rotationOffset, [-0.18, 0.0, 0.0, 0.98]);
   vec3.copy(ghost.position, [0, 1, -1.2]);
   quat.setAxisAngle(ghost.rotation, [0.0, -1.0, 0.0], 1.62);
   // setCameraFollowPosition(g, "thirdPerson");
@@ -180,8 +170,8 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
     aabb: res.assets.tetra.aabb,
   });
 
-  for (let xi = 0; xi < 10; xi++) {
-    for (let yi = 0; yi < 10; yi++) {
+  for (let xi = 0; xi < 10; xi += 2) {
+    for (let yi = 0; yi < 10; yi += 2) {
       // TODO(@darzu): dbging splinters
       const splinter = em.newEntity();
       // TODO(@darzu): perf? probably don't need to normalize, just use same surface ID and provoking vert for all
@@ -238,65 +228,8 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
         const firePos = worldSphere.org;
         const fireDir = quat.create();
         quat.copy(fireDir, ghost.world.rotation);
-        // const fireDir = yawpitchToQuat(quat.create(), {
-        //   yaw: 0,
-        //   pitch: Math.PI * 0.2,
-        // });
-        // quat.rotateX(fireDir, fireDir, Math.PI * 0.2);
-        fireBullet(em, 1, firePos, fireDir, 0.1);
+        fireBullet(em, 1, firePos, fireDir, 0.05, 0.02, 3);
       }
-
-      // let segAABBHits = 0;
-      // let segMidHits = 0;
-      // let overlapChecks = 0;
-
-      // for (let qi of quadIdsNeedReset) {
-      //   timberMesh.colors[qi] = [0.1, 0.1, 0.1];
-      // }
-      // if (quadIdsNeedReset.size) {
-      //   res.renderer.renderer.updateMeshVertices(
-      //     timber2.renderable.meshHandle,
-      //     timberMesh
-      //   );
-      //   quadIdsNeedReset.clear();
-      // }
-
-      // for (let seg of board) {
-      //   // TODO(@darzu):
-      //   copyAABB(segAABBWorld, seg.localAABB);
-      //   transformAABB(segAABBWorld, timber.world.transform);
-      //   overlapChecks++;
-      //   // if (doesOverlapAABB(ballAABBWorld, segAABBWorld)) {
-      //   // segAABBHits += 1;
-      //   // for (let qi of seg.quadSideIdxs) {
-      //   //   if (timberMesh.colors[qi][1] < 1) {
-      //   //     timberMesh.colors[qi] = [0.1, 0.3, 0.1];
-      //   //     quadIdsNeedReset.add(qi);
-      //   //   }
-      //   // }
-
-      //   copyLine(worldLine, seg.midLine);
-      //   transformLine(worldLine, timber.world.transform);
-      //   const midHits = lineSphereIntersections(worldLine, worldSphere);
-      //   if (midHits) {
-      //     drawLine2(worldLine, [0, 1, 0]);
-      //     console.log(`mid hit: ${midHits}`);
-      //     segMidHits += 1;
-      //     for (let qi of seg.quadSideIdxs) {
-      //       timberMesh.colors[qi] = [0, 1, 0];
-      //       quadIdsNeedReset.add(qi);
-      //     }
-      //   }
-      //   // }
-      // }
-
-      // if (segAABBHits > 0 || segMidHits > 0) {
-      //   // TODO(@darzu): really need sub-mesh updateMesh
-      //   res.renderer.renderer.updateMeshVertices(
-      //     timber2.renderable.meshHandle,
-      //     timberMesh
-      //   );
-      // }
     },
     "runLD51Timber"
   );

@@ -417,16 +417,20 @@ const mkTimberRib: () => RawMesh = () => {
   return b.mesh;
 };
 
-export const mkTimberSplinterEnd: () => RawMesh = () => {
+export function mkTimberSplinterEnd(loopCursor?: mat4, splintersCursor?: mat4) {
+  loopCursor = loopCursor ?? mat4.create();
+  splintersCursor = splintersCursor ?? mat4.create();
   const b = createTimberBuilder();
 
-  mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.5); // TODO(@darzu): DBG
+  // mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.5); // TODO(@darzu): DBG
   // b.addLoopVerts();
   // mat4.translate(b.cursor, b.cursor, [0, 2, 0]);
+  b.setCursor(loopCursor);
   b.addLoopVerts();
   b.addEndQuad(true);
   // b.addSideQuads();
 
+  b.setCursor(splintersCursor);
   mat4.translate(b.cursor, b.cursor, [0, 0.1, 0]);
   b.addSplinteredEnd(b.mesh.pos.length, 5);
 
@@ -439,7 +443,7 @@ export const mkTimberSplinterEnd: () => RawMesh = () => {
   // console.dir(b.mesh);
 
   return b.mesh;
-};
+}
 
 export const mkTimberSplinterFree = (
   topWidth = 1,
@@ -449,7 +453,7 @@ export const mkTimberSplinterFree = (
   // TODO(@darzu): IMPL!
   const b = createTimberBuilder();
 
-  mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.5); // TODO(@darzu): DBG
+  // mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.5); // TODO(@darzu): DBG
 
   // const Wtop = 1 + jitter(0.9);
   // const Wbot = 1 + jitter(0.9);

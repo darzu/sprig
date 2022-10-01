@@ -1,8 +1,14 @@
+import { ColorDef } from "./color-ecs.js";
 import { toFRGB, toOKLAB, toV3 } from "./color/color.js";
-import { EM, EntityManager } from "./entity-manager.js";
-import { AllMeshSymbols } from "./game/assets.js";
+import { EM, Entity, EntityManager } from "./entity-manager.js";
+import {
+  AllMeshSymbols,
+  AssetsDef,
+  BLACK,
+  mkTimberSplinterEnd,
+} from "./game/assets.js";
 import { BulletDef } from "./game/bullet.js";
-import { mat4, vec2, vec3, vec4 } from "./gl-matrix.js";
+import { mat4, quat, vec2, vec3, vec4 } from "./gl-matrix.js";
 import { onInit } from "./init.js";
 import { jitter } from "./math.js";
 import {
@@ -22,12 +28,31 @@ import {
 } from "./physics/broadphase.js";
 import { ColliderDef } from "./physics/collider.js";
 import { PhysicsResultsDef, WorldFrameDef } from "./physics/nonintersection.js";
-import { getQuadMeshEdges, Mesh, RawMesh } from "./render/mesh.js";
-import { RenderableDef, RendererDef } from "./render/renderer-ecs.js";
+import {
+  PhysicsParentDef,
+  PositionDef,
+  RotationDef,
+} from "./physics/transform.js";
+import {
+  getQuadMeshEdges,
+  Mesh,
+  normalizeMesh,
+  RawMesh,
+} from "./render/mesh.js";
+import {
+  RenderableConstructDef,
+  RenderableDef,
+  RendererDef,
+} from "./render/renderer-ecs.js";
 import { tempVec2, tempVec3 } from "./temp-pool.js";
 import { assert } from "./test.js";
 import { never, range } from "./util.js";
-import { centroid, vec3Dbg } from "./utils-3d.js";
+import {
+  centroid,
+  quatFromUpForward,
+  vec3Dbg,
+  vec4RotateLeft,
+} from "./utils-3d.js";
 
 // TODO(@darzu): consider other mesh representations like:
 //    DCEL or half-edge data structure
@@ -158,11 +183,11 @@ onInit((em) => {
   );
 });
 
-onInit((em) => {
+onInit((em: EntityManager) => {
   em.registerSystem(
     [WoodStateDef, WoodHealthDef, RenderableDef],
     [RendererDef],
-    (es, res) => {
+    async (es, res) => {
       // TODO(@darzu):
       for (let w of es) {
         let needsUpdate = false;
@@ -170,11 +195,18 @@ onInit((em) => {
         const meshHandle = w.renderable.meshHandle;
         const mesh = meshHandle.readonlyMesh!;
 
-        w.woodState.boards.forEach((board, bIdx) => {
-          board.forEach((seg, sIdx) => {
-            if (w.woodHealth.boards[bIdx][sIdx].health <= 0) {
+        await w.woodState.boards.forEach(async (board, bIdx) => {
+          await board.forEach(async (seg, sIdx) => {
+            const h = w.woodHealth.boards[bIdx][sIdx];
+            if (!h.broken && h.health <= 0) {
+              h.broken = true;
               hideSegment(seg, mesh);
               needsUpdate = true;
+
+              // create end caps
+              // TODO(@darzu): use a pool of end caps n stuff
+              const end = await createSplinterEnd(seg, mesh);
+              em.ensureComponentOn(end, PhysicsParentDef, w.id);
             }
           });
         });
@@ -188,6 +220,91 @@ onInit((em) => {
     "woodHealth"
   );
 });
+
+async function createSplinterEnd(seg: BoardSeg, boardMesh: Mesh) {
+  let segNorm = vec3.create();
+  let biggestArea2 = 0;
+  for (let v of seg.areaNorms) {
+    const a = vec3.sqrLen(v);
+    if (a > biggestArea2) {
+      biggestArea2 = a;
+      vec3.copy(segNorm, v);
+    }
+  }
+
+  const pos = seg.midLine.ray.org;
+  const endNorm = seg.midLine.ray.dir;
+
+  const rot = quat.create();
+  quatFromUpForward(rot, endNorm, segNorm);
+
+  // TODO(@darzu): put these into a pool
+  // const res = await EM.whenResources(AssetsDef);
+  const splinter = EM.newEntity();
+  // TODO(@darzu): perf? probably don't need to normalize, just use same surface ID and provoking vert for all
+  const cursor = mat4.fromRotationTranslation(mat4.create(), rot, pos);
+  let _splinterMesh: RawMesh;
+  {
+    const b = createTimberBuilder();
+
+    b.setCursor(cursor);
+    b.addLoopVerts();
+    // TODO(@darzu): HACK. We're "snapping" the splinter loop and segment loops
+    //    together via distance; we should be able to do this in a more analytic way
+    const snapDistSqr = Math.pow(0.2 * 0.5, 2);
+    for (let vi = b.mesh.pos.length - 4; vi < b.mesh.pos.length; vi++) {
+      const p = b.mesh.pos[vi];
+      for (let lp of (seg.vertLastLoopIdxs as number[]).map(
+        (vi2) => boardMesh.pos[vi2]
+      )) {
+        if (vec3.sqrDist(p, lp) < snapDistSqr) {
+          vec3.copy(p, lp);
+          break;
+        }
+      }
+    }
+    // const lastLoop = vec4.clone(seg.vertLastLoopIdxs);
+    // vec4RotateLeft(lastLoop);
+    // vec4RotateLeft(lastLoop);
+    // // vec4RotateLeft(lastLoop);
+    // for (let vi of lastLoop) {
+    //   b.mesh.pos.push(vec3.clone(boardMesh.pos[vi]));
+    // }
+    b.addEndQuad(true);
+
+    b.setCursor(cursor);
+    mat4.translate(b.cursor, b.cursor, [0, 0.1, 0]);
+    b.addSplinteredEnd(b.mesh.pos.length, 5);
+
+    // TODO(@darzu): triangle vs quad coloring doesn't work
+    b.mesh.quad.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
+    b.mesh.tri.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
+
+    // TODO(@darzu): set objectIDs
+
+    _splinterMesh = b.mesh;
+  }
+  // yi < 5 ? mkTimberSplinterEnd() : mkTimberSplinterFree();
+  // mkTimberSplinterFree(0.2 + xi * 0.2, 0.2 + yi * 0.2);
+  // mkTimberSplinterFree(1, 1, 1);
+  const splinterMesh = normalizeMesh(_splinterMesh);
+  EM.ensureComponentOn(splinter, RenderableConstructDef, splinterMesh);
+  EM.ensureComponentOn(splinter, ColorDef, [
+    Math.random(),
+    Math.random(),
+    Math.random(),
+  ]);
+  // em.ensureComponentOn(splinter, ColorDef, [0.1, 0.1, 0.1]);
+  EM.ensureComponentOn(splinter, PositionDef);
+  EM.ensureComponentOn(splinter, RotationDef);
+  EM.ensureComponentOn(splinter, WorldFrameDef);
+  // EM.ensureComponentOn(splinter, ColliderDef, {
+  //   shape: "AABB",
+  //   solid: false,
+  //   aabb: res.assets.timber_splinter.aabb,
+  // });
+  return splinter;
+}
 
 export function createTimberBuilder() {
   // TODO(@darzu): have a system for building wood?
@@ -214,7 +331,12 @@ export function createTimberBuilder() {
     addLoopVerts,
     addSideQuads,
     addEndQuad,
+    setCursor,
   };
+
+  function setCursor(newCursor: mat4) {
+    mat4.copy(cursor, newCursor);
+  }
 
   function addSplinteredEnd(lastLoopEndVi: number, numJags: number) {
     const vi = mesh.pos.length;
@@ -350,8 +472,9 @@ interface OBB {
 interface BoardSeg {
   localAABB: AABB;
   midLine: Line;
-  vertLastLoopIdxs: number[]; // TODO(@darzu): always 4?
-  vertNextLoopIdxs: number[]; // TODO(@darzu): always 4?
+  areaNorms: vec3[];
+  vertLastLoopIdxs: vec4; // TODO(@darzu): always 4?
+  vertNextLoopIdxs: vec4; // TODO(@darzu): always 4?
   quadSideIdxs: number[]; // TODO(@darzu): alway 4?
   quadEndIdxs: number[]; // TODO(@darzu): always 0,1,2?
 }
@@ -508,6 +631,15 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
       const lastMid = centroid([...lastLoop].map((vi) => m.pos[vi]));
       const nextMid = centroid([...nextLoop].map((vi) => m.pos[vi]));
       const mid = createLine(lastMid, nextMid);
+      const areaNorms = segQis.map((qi) => {
+        const ps = (m.quad[qi] as number[]).map((vi) => m.pos[vi]);
+        // NOTE: assumes segments are parallelograms
+        const ab = vec3.subtract(tempVec3(), ps[1], ps[0]);
+        const ac = vec3.subtract(tempVec3(), ps[3], ps[0]);
+        const areaNorm = vec3.cross(vec3.create(), ab, ac);
+        // console.log(`vec3.len(areaNorm): ${vec3.len(areaNorm)}`);
+        return areaNorm;
+      });
       let seg: BoardSeg;
 
       // are we at an end of the board?
@@ -524,8 +656,9 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
           seg = {
             localAABB: aabb,
             midLine: mid,
-            vertLastLoopIdxs: [...lastLoop],
-            vertNextLoopIdxs: [...nextLoop],
+            areaNorms,
+            vertLastLoopIdxs: lastLoop,
+            vertNextLoopIdxs: nextLoop,
             quadSideIdxs: sideQuads,
             quadEndIdxs: [endQuad],
           };
@@ -548,8 +681,9 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
         seg = {
           localAABB: aabb,
           midLine: mid,
-          vertLastLoopIdxs: [...lastLoop],
-          vertNextLoopIdxs: [...nextLoop],
+          areaNorms,
+          vertLastLoopIdxs: lastLoop,
+          vertNextLoopIdxs: nextLoop,
           quadSideIdxs: segQis,
           quadEndIdxs: [],
         };
@@ -619,11 +753,9 @@ export function unshareProvokingForWood(m: RawMesh, woodState: WoodState) {
     }
     for (let seg of b) {
       for (let qi of seg.quadSideIdxs) {
-        const done = unshareProvokingForBoardQuad(
-          m.quad[qi],
-          qi,
-          seg.vertLastLoopIdxs
-        );
+        const done = unshareProvokingForBoardQuad(m.quad[qi], qi, [
+          ...seg.vertLastLoopIdxs,
+        ]);
         // if (done) console.log(`side: ${m.quad[qi]}`);
         if (!done) {
           const done2 = unshareProvokingForBoardQuad(m.quad[qi], qi);
@@ -681,6 +813,7 @@ export const WoodHealthDef = EM.defineComponent(
 
 interface SegHealth {
   health: number;
+  broken: boolean;
 }
 type BoardHealth = SegHealth[];
 interface WoodHealth {
@@ -693,6 +826,7 @@ export function createWoodHealth(w: WoodState) {
     boards: w.boards.map((b) =>
       b.map((s) => ({
         health: 1.0,
+        broken: false,
       }))
     ),
   };

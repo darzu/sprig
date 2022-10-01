@@ -234,3 +234,12 @@ export function vec4Reverse(out: vec4) {
   out[2] = t;
   return out;
 }
+
+export function vec4RotateLeft(out: vec4) {
+  let t = out[0];
+  out[0] = out[1];
+  out[1] = out[2];
+  out[2] = out[3];
+  out[3] = t;
+  return out;
+}

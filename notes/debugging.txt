@@ -6,3 +6,10 @@ Typescript analyzer:
     Determine changes in the DAG between components over time (commits)
     Show boundries and names around Sprig modules
     Show interfaces
+
+Guide:
+  Is there code that should be running that isn't?
+  Which code? <select lines>
+  <analyze callers, and dependencies on resources and systems; analyze if those
+    dependencies are met and if those systems are being run>
+  <analyze conditional statements>

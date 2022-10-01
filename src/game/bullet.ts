@@ -26,12 +26,13 @@ export type Bullet = Component<typeof BulletDef>;
 
 export const BulletConstructDef = EM.defineComponent(
   "bulletConstruct",
-  (loc?: vec3, vel?: vec3, angVel?: vec3, team?: number) => {
+  (loc?: vec3, vel?: vec3, angVel?: vec3, team?: number, gravity?: number) => {
     return {
       location: loc ?? vec3.fromValues(0, 0, 0),
       linearVelocity: vel ?? vec3.fromValues(0, 1, 0),
       angularVelocity: angVel ?? vec3.fromValues(0, 0, 0),
       team,
+      gravity: gravity ?? 0,
     };
   }
 );
@@ -43,11 +44,13 @@ EM.registerSerializerPair(
     writer.writeVec3(c.location);
     writer.writeVec3(c.linearVelocity);
     writer.writeVec3(c.angularVelocity);
+    writer.writeFloat32(c.gravity);
   },
   (c, reader) => {
     reader.readVec3(c.location);
     reader.readVec3(c.linearVelocity);
     reader.readVec3(c.angularVelocity);
+    c.gravity = reader.readFloat32();
   }
 );
 
@@ -95,11 +98,12 @@ export function registerBuildBulletsSystem(em: EntityManager) {
 
 export function registerBulletUpdate(em: EntityManager) {
   em.registerSystem(
-    [BulletDef, PositionDef, LinearVelocityDef],
+    [BulletConstructDef, BulletDef, PositionDef, LinearVelocityDef],
     [TimeDef],
     (bullets, res) => {
       for (let b of bullets) {
-        b.linearVelocity[1] -= 0.00006 * res.time.dt;
+        b.linearVelocity[1] -=
+          0.00001 * b.bulletConstruct.gravity * res.time.dt;
       }
     },
     "updateBullets"
@@ -112,7 +116,8 @@ export function fireBullet(
   location: vec3,
   rotation: quat,
   speed: number = 0.02,
-  rotationSpeed: number = 0.02
+  rotationSpeed: number = 0.02,
+  gravity: number = 6
 ) {
   let bulletAxis = vec3.fromValues(0, 0, -1);
   vec3.transformQuat(bulletAxis, bulletAxis, rotation);
@@ -126,6 +131,7 @@ export function fireBullet(
     vec3.clone(location),
     linearVelocity,
     angularVelocity,
-    team
+    team,
+    gravity
   );
 }
