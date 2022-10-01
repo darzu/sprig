@@ -188,57 +188,32 @@ export function createTimberBuilder() {
   };
 
   function addSplinteredEnd() {
-    // const yJitter = () => 0.4;
-    let yJitterFar = false;
-    const yJitter = () => {
-      yJitterFar = !yJitterFar;
-      return yJitterFar ? 0.4 + jitter(0.3) : 0.2 + jitter(0.1);
-    };
-
     const vi = mesh.pos.length;
-    let y = yJitter();
-    const v0 = vec3.fromValues(W, y, D);
-    const v1 = vec3.fromValues(W, y, -D);
-    y = yJitter();
-    const v2 = vec3.fromValues(-W, y, D);
-    const v3 = vec3.fromValues(-W, y, -D);
-    const v4 = vec3.fromValues(0, 0, D);
-    const v5 = vec3.fromValues(0, 0, -D);
+
+    const v0 = vec3.fromValues(0, 0, D);
+    const v1 = vec3.fromValues(0, 0, -D);
     vec3.transformMat4(v0, v0, cursor);
     vec3.transformMat4(v1, v1, cursor);
-    vec3.transformMat4(v2, v2, cursor);
-    vec3.transformMat4(v3, v3, cursor);
-    vec3.transformMat4(v4, v4, cursor);
-    vec3.transformMat4(v5, v5, cursor);
-    mesh.pos.push(v0, v1, v2, v3, v4, v5);
+    mesh.pos.push(v0, v1);
 
-    // TODO(@darzu): DBG
-
-    const v_tm = vi + 4;
-    const v_tr = vi + 0;
-    const v_tl = vi + 2;
+    const v_tm = vi + 0;
     const v_tbr = vi + -4;
     const v_tbl = vi + -1;
     const v_bbr = vi + -3;
     const v_bbl = vi + -2;
     // +D side
     mesh.tri.push([v_tm, v_tbl, v_tbr]);
-    mesh.tri.push([v_tm, v_tbr, v_tr]);
-    mesh.tri.push([v_tm, v_tl, v_tbl]);
     // -D side
     mesh.tri.push([v_tm + 1, v_bbr, v_bbl]);
-    mesh.tri.push([v_tm + 1, v_tr + 1, v_bbr]);
-    mesh.tri.push([v_tm + 1, v_bbl, v_tl + 1]);
 
-    // D to -D quads
-    mesh.quad.push([v_bbl, v_tbl, v_tl, v_tl + 1]);
-    mesh.quad.push([v_tbr, v_bbr, v_tr + 1, v_tr]);
+    let v_tlast = v_tbl;
+    let v_blast = v_bbl;
 
     const numJags = 5;
-    let v_tlast = v_tl;
-    for (let i = 1; i < numJags; i++) {
-      const x = i * ((W * 2) / numJags) - W;
-      const y = yJitter(); // TODO(@darzu): jitter
+    const xStep = (W * 2) / numJags;
+    for (let i = 0; i <= numJags; i++) {
+      const x = i * xStep - W;
+      const y = i % 2 === 0 ? 0.4 + jitter(0.3) : 0.2 + jitter(0.1);
 
       // +D side
       const vtj = vec3.fromValues(x, y, D);
@@ -251,20 +226,21 @@ export function createTimberBuilder() {
       const vbj = vec3.fromValues(x, y, -D);
       vec3.transformMat4(vbj, vbj, cursor);
       mesh.pos.push(vbj);
-      mesh.tri.push([v_tm + 1, v_tlast + 1, vtji + 1]);
+      mesh.tri.push([v_tm + 1, v_blast, vtji + 1]);
 
       // D to -D quad
-      mesh.quad.push([v_tlast + 1, v_tlast, vtji, vtji + 1]);
+      mesh.quad.push([v_blast, v_tlast, vtji, vtji + 1]);
 
       v_tlast = vtji;
+      v_blast = vtji + 1;
     }
     // +D side
-    mesh.tri.push([v_tm, v_tr, v_tlast]);
+    mesh.tri.push([v_tm, v_tbr, v_tlast]);
     // -D side
-    mesh.tri.push([v_tm + 1, v_tlast + 1, v_tr + 1]);
+    mesh.tri.push([v_tm + 1, v_blast, v_bbr]);
 
     // D to -D quad
-    mesh.quad.push([v_tlast + 1, v_tlast, v_tr, v_tr + 1]);
+    mesh.quad.push([v_blast, v_tlast, v_tbr, v_bbr]);
   }
 
   function addSideQuads() {

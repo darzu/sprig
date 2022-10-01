@@ -173,12 +173,12 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
       // TODO(@darzu): perf? probably don't need to normalize, just use same surface ID and provoking vert for all
       const splinterMesh = normalizeMesh(mkTimberSplinter());
       em.ensureComponentOn(splinter, RenderableConstructDef, splinterMesh);
-      em.ensureComponentOn(splinter, ColorDef, [
-        Math.random(),
-        Math.random(),
-        Math.random(),
-      ]);
-      // em.ensureComponentOn(splinter, ColorDef, [0.1, 0.1, 0.1]);
+      // em.ensureComponentOn(splinter, ColorDef, [
+      //   Math.random(),
+      //   Math.random(),
+      //   Math.random(),
+      // ]);
+      em.ensureComponentOn(splinter, ColorDef, [0.1, 0.1, 0.1]);
       em.ensureComponentOn(splinter, PositionDef, [xi * 2 + 4, 0, yi * 2]);
       em.ensureComponentOn(splinter, RotationDef);
       em.ensureComponentOn(splinter, WorldFrameDef);
@@ -187,7 +187,7 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
         solid: false,
         aabb: res.assets.timber_splinter.aabb,
       });
-      // randomizeMeshColors(splinter);
+      randomizeMeshColors(splinter);
     }
   }
 
