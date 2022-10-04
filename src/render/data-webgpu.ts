@@ -23,6 +23,7 @@ import { MeshPool } from "./mesh-pool.js";
 import { BLACK } from "../game/assets.js";
 import { vec2, vec3, vec4 } from "../gl-matrix.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
+import { GPU_DBG_PERF } from "../flags.js";
 
 export interface CyBuffer<O extends CyStructDesc> {
   struct: CyStruct<O>;
@@ -125,6 +126,8 @@ export interface CySampler {
   sampler: GPUSampler;
 }
 
+export let _gpuQueueBufferWriteBytes = 0;
+
 export function createCySingleton<O extends CyStructDesc>(
   device: GPUDevice,
   struct: CyStruct<O>,
@@ -162,6 +165,9 @@ export function createCySingleton<O extends CyStructDesc>(
     buf.lastData = data;
     const b = struct.serialize(data);
     // assert(b.length % 4 === 0, `buf write must be 4 byte aligned: ${b.length}`);
+    if (GPU_DBG_PERF) {
+      _gpuQueueBufferWriteBytes += b.length;
+    }
     device.queue.writeBuffer(_buf, 0, b);
   }
 
@@ -226,6 +232,9 @@ export function createCyArray<O extends CyStructDesc>(
     const b = struct.serialize(data);
     // TODO(@darzu): disable for perf?
     // assert(b.length % 4 === 0);
+    if (GPU_DBG_PERF) {
+      _gpuQueueBufferWriteBytes += b.length;
+    }
     device.queue.writeBuffer(_buf, index * stride, b);
   }
   function queueUpdates(data: CyToTS<O>[], index: number): void {
@@ -234,6 +243,9 @@ export function createCyArray<O extends CyStructDesc>(
       serialized.set(struct.serialize(d), stride * i);
     });
     // assert(serialized.length % 4 === 0);
+    if (GPU_DBG_PERF) {
+      _gpuQueueBufferWriteBytes += serialized.length;
+    }
     device.queue.writeBuffer(_buf, index * stride, serialized);
   }
 
@@ -283,6 +295,9 @@ export function createCyIdxBuf(
     const startByte = startIdx * Uint16Array.BYTES_PER_ELEMENT;
     // const byteView = new Uint8Array(data);
     // assert(data.length % 2 === 0);
+    if (GPU_DBG_PERF) {
+      _gpuQueueBufferWriteBytes += data.length;
+    }
     device.queue.writeBuffer(_buf, startByte, data);
   }
 

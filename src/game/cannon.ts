@@ -96,7 +96,7 @@ export function registerCannonSystems(em: EntityManager) {
         const firePos = vec3.create();
         vec3.transformQuat(firePos, firePos, fireDir);
         vec3.add(firePos, firePos, cannon.world.position);
-        fireBullet(EM, 1, firePos, fireDir, 0.1);
+        // fireBullet(EM, 1, firePos, fireDir, 0.1);
       }
 
       // but everyone resets the cooldown and plays sound effects

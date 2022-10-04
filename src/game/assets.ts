@@ -38,6 +38,7 @@ import { onInit } from "../init.js";
 import { jitter, mathMap, max, min } from "../math.js";
 import { VERBOSE_LOG } from "../flags.js";
 import {
+  createEmptyMesh,
   createTimberBuilder,
   debugBoardSystem,
   getBoardsFromMesh,
@@ -55,11 +56,11 @@ export const DARK_BLUE = vec3.fromValues(0.03, 0.03, 0.2);
 export const LIGHT_BLUE = vec3.fromValues(0.05, 0.05, 0.2);
 
 const DEFAULT_ASSET_PATH = "/assets/";
-const BACKUP_ASSET_PATH = "http://sprig.land/assets/";
+const BACKUP_ASSET_PATH = "https://sprig.land/ld51/assets/";
 
 const RemoteMeshes = {
   ship: "barge.sprig.obj",
-  ship_fangs: "enemy_ship_fangs.sprig.obj",
+  // ship_fangs: "enemy_ship_fangs.sprig.obj",
   ball: "ball.sprig.obj",
   pick: "pick.sprig.obj",
   spaceore: "spaceore.sprig.obj",
@@ -73,7 +74,7 @@ const RemoteMeshes = {
   grappleGunUnloaded: "grapple-gun-unloaded.sprig.obj",
   rudder: "rudder.sprig.obj",
   // TODO(@darzu): including hyperspace-ocean makes load time ~100ms slower :/
-  ocean: "hyperspace-ocean.sprig.obj",
+  // ocean: "hyperspace-ocean.sprig.obj",
   // ocean: "rudder.sprig.obj",
 } as const;
 
@@ -88,6 +89,7 @@ const RemoteMesheSets = {
   // TODO(@darzu): enemy broken parts doesn't seem to work rn. probably rename related
   boat_broken: "boat_broken.sprig.obj",
   ship_broken: "barge1_broken.sprig.obj",
+  ball_broken: "ball_broken6.sprig.obj",
 } as const;
 
 type RemoteMeshSetSymbols = keyof typeof RemoteMesheSets;
@@ -113,8 +115,8 @@ const MeshTransforms: Partial<{
     mat4.fromYRotation(mat4.create(), -Math.PI * 0.5),
     vec3.fromValues(-5, 0, 0)
   ),
-  ocean: mat4.fromScaling(mat4.create(), [2, 2, 2]),
-  ship_fangs: mat4.fromScaling(mat4.create(), [3, 3, 3]),
+  // ocean: mat4.fromScaling(mat4.create(), [2, 2, 2]),
+  // ship_fangs: mat4.fromScaling(mat4.create(), [3, 3, 3]),
   ld51_cannon: mat4.fromRotationTranslationScale(
     mat4.create(),
     quat.rotateX(quat.create(), quat.IDENTITY, Math.PI * -0.5),
@@ -133,45 +135,45 @@ const blackoutColor: (m: RawMesh) => RawMesh = (m: RawMesh) => {
 const MeshModify: Partial<{
   [P in AllMeshSymbols]: (m: RawMesh) => RawMesh;
 }> = {
-  ship_fangs: (m) => {
-    // m.colors = m.colors.map((c) => [0.2, 0.2, 0.2]);
-    m.surfaceIds = m.colors.map((_, i) => i);
-    // console.log(`
-    // Fang ship has:
-    // ${m.tri.length} tris
-    // ${m.quad.length} quads
-    // `);
+  // ship_fangs: (m) => {
+  //   // m.colors = m.colors.map((c) => [0.2, 0.2, 0.2]);
+  //   m.surfaceIds = m.colors.map((_, i) => i);
+  //   // console.log(`
+  //   // Fang ship has:
+  //   // ${m.tri.length} tris
+  //   // ${m.quad.length} quads
+  //   // `);
 
-    // m = debugBoardSystem(m);
+  //   // m = debugBoardSystem(m);
 
-    // TODO(@darzu): call getBoardsFromMesh,
-    //    then move this data into some resource to be accessed later in an entities lifecycle
-    const woodState = getBoardsFromMesh(m);
+  //   // TODO(@darzu): call getBoardsFromMesh,
+  //   //    then move this data into some resource to be accessed later in an entities lifecycle
+  //   const woodState = getBoardsFromMesh(m);
 
-    unshareProvokingForWood(m, woodState);
+  //   unshareProvokingForWood(m, woodState);
 
-    const woodAssets: WoodAssets =
-      EM.getResource(WoodAssetsDef) ?? EM.addSingletonComponent(WoodAssetsDef);
+  //   const woodAssets: WoodAssets =
+  //     EM.getResource(WoodAssetsDef) ?? EM.addSingletonComponent(WoodAssetsDef);
 
-    woodAssets["ship_fangs"] = woodState;
+  //   woodAssets["ship_fangs"] = woodState;
 
-    return m;
-  },
-  timber_rib: (m) => {
-    // TODO(@darzu): de-duplicate w/ fang ship above
-    m.surfaceIds = m.colors.map((_, i) => i);
+  //   return m;
+  // },
+  // timber_rib: (m) => {
+  //   // TODO(@darzu): de-duplicate w/ fang ship above
+  //   m.surfaceIds = m.colors.map((_, i) => i);
 
-    const woodState = getBoardsFromMesh(m);
+  //   const woodState = getBoardsFromMesh(m);
 
-    unshareProvokingForWood(m, woodState);
+  //   unshareProvokingForWood(m, woodState);
 
-    const woodAssets: WoodAssets =
-      EM.getResource(WoodAssetsDef) ?? EM.addSingletonComponent(WoodAssetsDef);
+  //   const woodAssets: WoodAssets =
+  //     EM.getResource(WoodAssetsDef) ?? EM.addSingletonComponent(WoodAssetsDef);
 
-    woodAssets["timber_rib"] = woodState;
+  //   woodAssets["timber_rib"] = woodState;
 
-    return m;
-  },
+  //   return m;
+  // },
   cannon: (m) => {
     m.colors = m.colors.map((c) => [0.2, 0.2, 0.2]);
     return m;
@@ -198,133 +200,133 @@ const MeshModify: Partial<{
     scaleMesh(m, 3);
     return m;
   },
-  ocean: (m) => {
-    // TODO(@darzu): extract out all this setUV stuff.
-    // reduce duplicate positions
-    // console.log("OCEAN");
-    // console.dir(m);
-    // m = deduplicateVertices(m);
-    // console.dir(m);
+  // ocean: (m) => {
+  //   // TODO(@darzu): extract out all this setUV stuff.
+  //   // reduce duplicate positions
+  //   // console.log("OCEAN");
+  //   // console.dir(m);
+  //   // m = deduplicateVertices(m);
+  //   // console.dir(m);
 
-    // TODO(@darzu): do we want convexity highlighting on the ocean?
-    m.surfaceIds = m.quad.map((_, i) => i);
-    // TODO(@darzu): generate UVs for the ocean
-    const minX = m.pos.reduce((p, n) => (n[0] < p ? n[0] : p), Infinity);
-    const maxX = m.pos.reduce((p, n) => (n[0] > p ? n[0] : p), -Infinity);
-    const minZ = m.pos.reduce((p, n) => (n[2] < p ? n[2] : p), Infinity);
-    const maxZ = m.pos.reduce((p, n) => (n[2] > p ? n[2] : p), -Infinity);
-    // m.uvs = m.pos.map(
-    //   (p, i) =>
-    //     vec2.fromValues(
-    //       mathMap(p[0], minX, maxX, 0, 1),
-    //       mathMap(p[2], minZ, maxZ, 0, 1)
-    //     )
-    //   // vec2.fromValues(i / m.pos.length, 0)
-    //   // vec2.fromValues(0.5, 0.5)
-    // );
+  //   // TODO(@darzu): do we want convexity highlighting on the ocean?
+  //   m.surfaceIds = m.quad.map((_, i) => i);
+  //   // TODO(@darzu): generate UVs for the ocean
+  //   const minX = m.pos.reduce((p, n) => (n[0] < p ? n[0] : p), Infinity);
+  //   const maxX = m.pos.reduce((p, n) => (n[0] > p ? n[0] : p), -Infinity);
+  //   const minZ = m.pos.reduce((p, n) => (n[2] < p ? n[2] : p), Infinity);
+  //   const maxZ = m.pos.reduce((p, n) => (n[2] > p ? n[2] : p), -Infinity);
+  //   // m.uvs = m.pos.map(
+  //   //   (p, i) =>
+  //   //     vec2.fromValues(
+  //   //       mathMap(p[0], minX, maxX, 0, 1),
+  //   //       mathMap(p[2], minZ, maxZ, 0, 1)
+  //   //     )
+  //   //   // vec2.fromValues(i / m.pos.length, 0)
+  //   //   // vec2.fromValues(0.5, 0.5)
+  //   // );
 
-    // TODO(@darzu): DBG
-    // try {
-    //   console.log("getMeshAsGrid(ocean)");
-    const { coords, grid } = getMeshAsGrid(m);
-    //   console.log("getMeshAsGrid success!");
-    // } catch (e) {
-    //   console.log("getMeshAsGrid failed!");
-    //   console.error(e);
-    // }
-    const xLen = grid.length;
-    const yLen = grid[0].length;
-    // console.log(`xLen:${xLen},yLen:${yLen}`);
-    const uvs = m.pos.map((_, vi) => vec2.create());
-    m.uvs = uvs;
-    // setUV(Math.floor(xLen / 2), 0, [0, 1], [0, 0], true);
-    setUV(0, Math.floor(yLen / 2), [1, 0], [0, 0], true);
-    // TODO(@darzu): lots of little annoying issues happen when you go right to the texture edge
-    normalizeVec2s(uvs, 0 + 0.01, 1 - 0.01);
+  //   // TODO(@darzu): DBG
+  //   // try {
+  //   //   console.log("getMeshAsGrid(ocean)");
+  //   const { coords, grid } = getMeshAsGrid(m);
+  //   //   console.log("getMeshAsGrid success!");
+  //   // } catch (e) {
+  //   //   console.log("getMeshAsGrid failed!");
+  //   //   console.error(e);
+  //   // }
+  //   const xLen = grid.length;
+  //   const yLen = grid[0].length;
+  //   // console.log(`xLen:${xLen},yLen:${yLen}`);
+  //   const uvs = m.pos.map((_, vi) => vec2.create());
+  //   m.uvs = uvs;
+  //   // setUV(Math.floor(xLen / 2), 0, [0, 1], [0, 0], true);
+  //   setUV(0, Math.floor(yLen / 2), [1, 0], [0, 0], true);
+  //   // TODO(@darzu): lots of little annoying issues happen when you go right to the texture edge
+  //   normalizeVec2s(uvs, 0 + 0.01, 1 - 0.01);
 
-    // TODO: should we compute tangents (and normals!) per vertex
-    // instead of per quad, for vertex displacement (e.g. waves)
-    // purposes?
+  //   // TODO: should we compute tangents (and normals!) per vertex
+  //   // instead of per quad, for vertex displacement (e.g. waves)
+  //   // purposes?
 
-    //set tangents
-    m.tangents = m.pos.map(() => vec3.create());
-    m.normals = m.pos.map(() => vec3.create());
-    for (let xIndex = 0; xIndex < grid.length; xIndex++) {
-      for (let yIndex = 0; yIndex < grid[0].length; yIndex++) {
-        let normal: vec3;
-        let tangent: vec3;
-        if (xIndex + 1 < grid.length && yIndex + 1 < grid[0].length) {
-          const pos = m.pos[grid[xIndex][yIndex]];
-          const posNX = m.pos[grid[xIndex + 1][yIndex]];
-          const posNY = m.pos[grid[xIndex][yIndex + 1]];
+  //   //set tangents
+  //   m.tangents = m.pos.map(() => vec3.create());
+  //   m.normals = m.pos.map(() => vec3.create());
+  //   for (let xIndex = 0; xIndex < grid.length; xIndex++) {
+  //     for (let yIndex = 0; yIndex < grid[0].length; yIndex++) {
+  //       let normal: vec3;
+  //       let tangent: vec3;
+  //       if (xIndex + 1 < grid.length && yIndex + 1 < grid[0].length) {
+  //         const pos = m.pos[grid[xIndex][yIndex]];
+  //         const posNX = m.pos[grid[xIndex + 1][yIndex]];
+  //         const posNY = m.pos[grid[xIndex][yIndex + 1]];
 
-          normal = computeTriangleNormal(pos, posNX, posNY);
+  //         normal = computeTriangleNormal(pos, posNX, posNY);
 
-          tangent = vec3.sub(m.tangents[grid[xIndex][yIndex]], posNX, pos);
-          vec3.normalize(tangent, tangent);
-        } else if (xIndex + 1 >= grid.length) {
-          normal = m.normals[grid[xIndex - 1][yIndex]];
-          tangent = m.tangents[grid[xIndex - 1][yIndex]];
-        } else if (yIndex + 1 >= grid[0].length) {
-          normal = m.normals[grid[xIndex][yIndex - 1]];
-          tangent = m.tangents[grid[xIndex][yIndex - 1]];
-        } else {
-          assert(false);
-        }
-        vec3.copy(m.normals[grid[xIndex][yIndex]], normal);
-        vec3.copy(m.tangents[grid[xIndex][yIndex]], tangent);
-      }
-    }
+  //         tangent = vec3.sub(m.tangents[grid[xIndex][yIndex]], posNX, pos);
+  //         vec3.normalize(tangent, tangent);
+  //       } else if (xIndex + 1 >= grid.length) {
+  //         normal = m.normals[grid[xIndex - 1][yIndex]];
+  //         tangent = m.tangents[grid[xIndex - 1][yIndex]];
+  //       } else if (yIndex + 1 >= grid[0].length) {
+  //         normal = m.normals[grid[xIndex][yIndex - 1]];
+  //         tangent = m.tangents[grid[xIndex][yIndex - 1]];
+  //       } else {
+  //         assert(false);
+  //       }
+  //       vec3.copy(m.normals[grid[xIndex][yIndex]], normal);
+  //       vec3.copy(m.tangents[grid[xIndex][yIndex]], tangent);
+  //     }
+  //   }
 
-    // console.dir(uvs);
-    // console.log(`
-    // X:
-    // ${max(uvs.map((uv) => uv[0]))}
-    // ${min(uvs.map((uv) => uv[0]))}
-    // Y:
-    // ${max(uvs.map((uv) => uv[1]))}
-    // ${min(uvs.map((uv) => uv[1]))}
-    // `);
+  //   // console.dir(uvs);
+  //   // console.log(`
+  //   // X:
+  //   // ${max(uvs.map((uv) => uv[0]))}
+  //   // ${min(uvs.map((uv) => uv[0]))}
+  //   // Y:
+  //   // ${max(uvs.map((uv) => uv[1]))}
+  //   // ${min(uvs.map((uv) => uv[1]))}
+  //   // `);
 
-    function setUV(
-      x: number,
-      y: number,
-      dir: vec2,
-      currDist: vec2,
-      branch: boolean
-    ) {
-      // console.log(`setUV ${x} ${y} ${dir} ${currDist} ${branch}`);
-      // set this UV
-      const vi = grid[x][y];
-      vec2.copy(uvs[vi], currDist);
+  //   function setUV(
+  //     x: number,
+  //     y: number,
+  //     dir: vec2,
+  //     currDist: vec2,
+  //     branch: boolean
+  //   ) {
+  //     // console.log(`setUV ${x} ${y} ${dir} ${currDist} ${branch}`);
+  //     // set this UV
+  //     const vi = grid[x][y];
+  //     vec2.copy(uvs[vi], currDist);
 
-      // branch?
-      if (branch) {
-        setUV(x, y, [dir[1], dir[0]], currDist, false);
-        setUV(x, y, [-dir[1], -dir[0]], currDist, false);
-      }
+  //     // branch?
+  //     if (branch) {
+  //       setUV(x, y, [dir[1], dir[0]], currDist, false);
+  //       setUV(x, y, [-dir[1], -dir[0]], currDist, false);
+  //     }
 
-      // continue forward?
-      const nX = x + dir[0];
-      const nY = y + dir[1];
-      if (nX < 0 || xLen <= nX || nY < 0 || yLen <= nY) return;
-      const nVi = grid[nX][nY];
-      const delta = vec3.dist(m.pos[vi], m.pos[nVi]);
-      const newDist: vec2 = [
-        currDist[0] + dir[0] * delta,
-        currDist[1] + dir[1] * delta,
-      ];
-      setUV(nX, nY, dir, newDist, branch);
-    }
-    // console.dir({
-    //   uvMin: [min(m.uvs.map((a) => a[0])), min(m.uvs.map((a) => a[1]))],
-    //   uvMax: [max(m.uvs.map((a) => a[0])), max(m.uvs.map((a) => a[1]))],
-    // });
+  //     // continue forward?
+  //     const nX = x + dir[0];
+  //     const nY = y + dir[1];
+  //     if (nX < 0 || xLen <= nX || nY < 0 || yLen <= nY) return;
+  //     const nVi = grid[nX][nY];
+  //     const delta = vec3.dist(m.pos[vi], m.pos[nVi]);
+  //     const newDist: vec2 = [
+  //       currDist[0] + dir[0] * delta,
+  //       currDist[1] + dir[1] * delta,
+  //     ];
+  //     setUV(nX, nY, dir, newDist, branch);
+  //   }
+  //   // console.dir({
+  //   //   uvMin: [min(m.uvs.map((a) => a[0])), min(m.uvs.map((a) => a[1]))],
+  //   //   uvMax: [max(m.uvs.map((a) => a[0])), max(m.uvs.map((a) => a[1]))],
+  //   // });
 
-    // console.dir(m.uvs);
-    // console.dir({ minX, maxX, minZ, maxZ });
-    return m;
-  },
+  //   // console.dir(m.uvs);
+  //   // console.dir({ minX, maxX, minZ, maxZ });
+  //   return m;
+  // },
 };
 
 // which triangles belong to which faces
@@ -398,36 +400,12 @@ export const CUBE_MESH: RawMesh = {
   ],
 };
 
-const mkTimberRib: () => RawMesh = () => {
-  const b = createTimberBuilder();
-
-  b.addLoopVerts();
-  b.addEndQuad(true);
-  const numSegs = 12 * 20;
-  for (let i = 0; i < numSegs; i++) {
-    mat4.translate(b.cursor, b.cursor, [0, 2, 0]);
-    mat4.rotateX(b.cursor, b.cursor, Math.PI * -0.05);
-    b.addLoopVerts();
-    b.addSideQuads();
-    mat4.rotateX(b.cursor, b.cursor, Math.PI * -0.05);
-    mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.003);
-  }
-  mat4.translate(b.cursor, b.cursor, [0, 2, 0]);
-  b.addLoopVerts();
-  b.addSideQuads();
-  b.addEndQuad(false);
-
-  b.mesh.colors = b.mesh.quad.map((_) => vec3.clone(BLACK));
-
-  console.dir(b.mesh);
-
-  return b.mesh;
-};
-
 export function mkTimberSplinterEnd(loopCursor?: mat4, splintersCursor?: mat4) {
   loopCursor = loopCursor ?? mat4.create();
   splintersCursor = splintersCursor ?? mat4.create();
-  const b = createTimberBuilder();
+  const b = createTimberBuilder(createEmptyMesh("splinterEnd"));
+  b.width = 0.5;
+  b.depth = 0.2;
 
   // mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.5); // TODO(@darzu): DBG
   // b.addLoopVerts();
@@ -453,12 +431,17 @@ export function mkTimberSplinterEnd(loopCursor?: mat4, splintersCursor?: mat4) {
 }
 
 export const mkTimberSplinterFree = (
-  topWidth = 1,
-  botWidth = 1,
-  height = 2
+  topWidth: number,
+  botWidth: number,
+  height: number,
+  width: number,
+  depth: number
 ) => {
   // TODO(@darzu): IMPL!
-  const b = createTimberBuilder();
+  // const b = createTimberBuilder(.5, .2);
+  const b = createTimberBuilder(createEmptyMesh("splinter"));
+  b.width = width;
+  b.depth = depth;
 
   // mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.5); // TODO(@darzu): DBG
 
@@ -469,8 +452,8 @@ export const mkTimberSplinterFree = (
   // const W = 0.75 + jitter(0.25);
   const H = height;
 
-  const topJags = Math.round(5 * Wtop);
-  const botJags = Math.round(5 * Wbot);
+  const topJags = Math.round(10 * width * Wtop);
+  const botJags = Math.round(10 * width * Wbot);
 
   mat4.translate(b.cursor, b.cursor, [0, -H * 0.5, 0]);
   mat4.scale(b.cursor, b.cursor, [Wbot, 1, 1]);
@@ -831,6 +814,10 @@ const BULLET_MESH = cloneMesh(CUBE_MESH);
 scaleMesh(BULLET_MESH, 0.3);
 
 export const LocalMeshes = {
+  // TODO(@darzu): LD51 PERF HACKS:
+  ship_fangs: () => CUBE_MESH,
+  ocean: () => CUBE_MESH,
+
   cube: () => CUBE_MESH,
   plane: () => PLANE_MESH,
   tetra: () => TETRA_MESH,
@@ -850,7 +837,7 @@ export const LocalMeshes = {
     return m;
   },
   sail: () => SAIL_MESH,
-  timber_rib: mkTimberRib,
+  // timber_rib: mkTimberRib,
   timber_splinter: mkTimberSplinterEnd,
 } as const;
 

@@ -1,4 +1,4 @@
-import { EntityManager, EM, Entity } from "../entity-manager.js";
+import { EntityManager, EM, Entity, EntityW } from "../entity-manager.js";
 import { applyTints, TintsDef } from "../color-ecs.js";
 import { CameraViewDef } from "../camera.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
@@ -19,7 +19,7 @@ import { CanvasDef } from "../canvas.js";
 import { FORCE_WEBGL } from "../main.js";
 import { createRenderer } from "./renderer-webgpu.js";
 import { CyPipelinePtr, CyTexturePtr } from "./gpu-registry.js";
-import { createFrame } from "../physics/nonintersection.js";
+import { createFrame, WorldFrameDef } from "../physics/nonintersection.js";
 import { tempVec3 } from "../temp-pool.js";
 import { isMeshHandle, MeshHandle } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
@@ -40,7 +40,7 @@ import {
   OceanUniTS,
 } from "./pipelines/std-ocean.js";
 import { assert } from "../test.js";
-import { VERBOSE_LOG } from "../flags.js";
+import { DONT_SMOOTH_WORLD_FRAME, VERBOSE_LOG } from "../flags.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -178,6 +178,13 @@ export function registerUpdateSmoothedWorldFrames(em: EntityManager) {
       _hasRendererWorldFrame.clear();
 
       for (const o of objs) {
+        // TODO(@darzu): PERF HACK!
+        if (DONT_SMOOTH_WORLD_FRAME) {
+          em.ensureComponentOn(o, SmoothedWorldFrameDef);
+          em.ensureComponentOn(o, PrevSmoothedWorldFrameDef);
+          continue;
+        }
+
         updateSmoothedWorldFrame(em, o);
       }
     },
@@ -245,6 +252,13 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
     (objs) => {
       for (let o of objs) {
         em.ensureComponentOn(o, RendererWorldFrameDef);
+
+        // TODO(@darzu): HACK!
+        if (DONT_SMOOTH_WORLD_FRAME) {
+          (o as any).rendererWorldFrame = (o as any).world;
+          continue;
+        }
+
         switch (BLEND_SIMULATION_FRAMES_STRATEGY) {
           case "interpolate":
             interpolateFrames(
@@ -271,6 +285,8 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
   );
 }
 
+const _lastMeshHandlePos = new Map<number, vec3>();
+
 export function registerRenderer(em: EntityManager) {
   em.registerSystem(
     [RendererWorldFrameDef, RenderableDef],
@@ -285,11 +301,16 @@ export function registerRenderer(em: EntityManager) {
       for (let o of objs) {
         if (RenderDataStdDef.isOn(o)) {
           // color / tint
+          let tintChange = false;
+          let prevTint = vec3.copy(tempVec3(), o.renderDataStd.tint);
           if (ColorDef.isOn(o)) {
             vec3.copy(o.renderDataStd.tint, o.color);
           }
           if (TintsDef.isOn(o)) {
             applyTints(o.tints, o.renderDataStd.tint);
+          }
+          if (vec3.sqrDist(prevTint, o.renderDataStd.tint) > 0.01) {
+            tintChange = true;
           }
 
           // TODO(@darzu): actually we only set this at creation now so that
@@ -298,11 +319,24 @@ export function registerRenderer(em: EntityManager) {
           // o.renderDataStd.id = o.renderable.meshHandle.mId;
 
           // transform
-          mat4.copy(o.renderDataStd.transform, o.rendererWorldFrame.transform);
-          res.renderer.renderer.updateStdUniform(
-            o.renderable.meshHandle,
-            o.renderDataStd
-          );
+          // TODO(@darzu): hACK! ONLY UPDATE UNIFORM IF WE"VE MOVED
+          let lastPos = _lastMeshHandlePos.get(o.renderable.meshHandle.mId);
+          const thisPos = o.rendererWorldFrame.position;
+          if (tintChange || !lastPos || vec3.sqrDist(lastPos, thisPos) > 0.01) {
+            mat4.copy(
+              o.renderDataStd.transform,
+              o.rendererWorldFrame.transform
+            );
+            res.renderer.renderer.updateStdUniform(
+              o.renderable.meshHandle,
+              o.renderDataStd
+            );
+            if (!lastPos) {
+              lastPos = vec3.create();
+              _lastMeshHandlePos.set(o.renderable.meshHandle.mId, lastPos);
+            }
+            vec3.copy(lastPos, thisPos);
+          }
         } else if (RenderDataOceanDef.isOn(o)) {
           // color / tint
           if (ColorDef.isOn(o)) {
@@ -329,7 +363,7 @@ export function registerRenderer(em: EntityManager) {
 
       // TODO(@darzu): this is currently unused, and maybe should be dropped.
       // sort
-      objs.sort((a, b) => b.renderable.sortLayer - a.renderable.sortLayer);
+      // objs.sort((a, b) => b.renderable.sortLayer - a.renderable.sortLayer);
 
       // render
       // TODO(@darzu):
@@ -381,6 +415,7 @@ export function registerRenderer(em: EntityManager) {
         cameraPos: cameraView.location,
         numPointLights: pointLights.length,
       });
+      // console.log(`pointLights.length: ${pointLights.length}`);
 
       renderer.updatePointLights(pointLights);
 
@@ -541,10 +576,23 @@ async function chooseAndInitRenderer(
   // TODO(@darzu): re-enable WebGL
   // if (!rendererInit)
   //   rendererInit = attachToCanvasWebgl(canvas, MAX_MESHES, MAX_VERTICES);
-  if (!renderer) throw new Error("Unable to create webgl or webgpu renderer");
+  if (!renderer) {
+    displayWebGPUError();
+    throw new Error("Unable to create webgl or webgpu renderer");
+  }
   if (VERBOSE_LOG) console.log(`Renderer: ${usingWebGPU ? "webGPU" : "webGL"}`);
 
   // add to ECS
   // TODO(@darzu): this is a little wierd to do this in an async callback
   em.addSingletonComponent(RendererDef, renderer, usingWebGPU, []);
+}
+
+export function displayWebGPUError() {
+  const style = `font-size: 48px;
+      color: green;
+      margin: 24px;
+      max-width: 600px;`;
+  document.getElementsByTagName(
+    "body"
+  )[0].innerHTML = `<div style="${style}">This page requires WebGPU which isn't yet supported in your browser!<br>Or something else went wrong that was my fault.<br><br>U can try Chrome >106.<br><br>🙂</div>`;
 }

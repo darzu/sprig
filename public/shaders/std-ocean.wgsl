@@ -13,13 +13,13 @@ const shadowDepthTextureSize = 2048.0;
 // const shadowDepthTextureSize = vec2<f32>(textureDimensions(shadowMap, 0.0));
 
 fn sampleShadowTexture(pos: vec2<f32>, depth: f32, index: u32) -> f32 {
-    if (index == 0) {
+    // if (index == 0) {
         return textureSampleCompare(shadowMap0, shadowSampler, pos, depth);
-    } else if (index == 1) {
-        return textureSampleCompare(shadowMap1, shadowSampler, pos, depth);
-    } else {
-        return textureSampleCompare(shadowMap2, shadowSampler, pos, depth);
-    }
+    // } else if (index == 1) {
+    //     return textureSampleCompare(shadowMap1, shadowSampler, pos, depth);
+    // } else {
+    //     return textureSampleCompare(shadowMap2, shadowSampler, pos, depth);
+    // }
 }
 
 fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>, index: u32) -> f32 {

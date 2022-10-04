@@ -44,7 +44,8 @@ export function registerBulletCollisionSystem(em: EntityManager) {
           );
           for (let otherBullet of otherBullets) {
             if (otherBullet) {
-              raiseBulletBullet(o, otherBullet);
+              // TODO(@darzu): HACK
+              // raiseBulletBullet(o, otherBullet);
             }
           }
 

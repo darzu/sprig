@@ -13,6 +13,7 @@ import { GravityDef } from "./game/gravity.js";
 import { mat4, quat, vec2, vec3, vec4 } from "./gl-matrix.js";
 import { onInit } from "./init.js";
 import { jitter } from "./math.js";
+import { MusicDef } from "./music.js";
 import {
   AABB,
   copyAABB,
@@ -26,6 +27,7 @@ import {
   getLineMid,
   Line,
   lineSphereIntersections,
+  mergeAABBs,
   Sphere,
   transformAABB,
   transformLine,
@@ -40,7 +42,9 @@ import {
 } from "./physics/transform.js";
 import {
   getQuadMeshEdges,
+  mergeMeshes,
   Mesh,
+  meshStats,
   normalizeMesh,
   RawMesh,
 } from "./render/mesh.js";
@@ -60,6 +64,7 @@ import {
   vec3Dbg,
   vec4RotateLeft,
 } from "./utils-3d.js";
+import { createSplinterPool, SplinterPool } from "./wood-splinters.js";
 
 // TODO(@darzu): consider other mesh representations like:
 //    DCEL or half-edge data structure
@@ -92,6 +97,7 @@ onInit((em) => {
 
       const ballAABBWorld = createAABB();
       const segAABBWorld = createAABB();
+      const boardAABBWorld = createAABB();
       const worldLine = emptyLine();
 
       const before = performance.now();
@@ -114,11 +120,12 @@ onInit((em) => {
             )
             .filter((b) => {
               // TODO(@darzu): check authority and team
-              return b;
+              return b && b.bullet.health > 0;
             });
-          for (let ball of balls) {
+          for (let _ball of balls) {
+            const ball = _ball!;
             // TODO(@darzu): move a bunch of the below into physic system features!
-            assert(ball?.collider.shape === "AABB");
+            assert(ball.collider.shape === "AABB");
             copyAABB(ballAABBWorld, ball.collider.aabb);
             transformAABB(ballAABBWorld, ball.world.transform);
             // TODO(@darzu): this sphere should live elsewhere..
@@ -128,13 +135,22 @@ onInit((em) => {
             };
 
             w.woodState.boards.forEach((board, boardIdx) => {
-              board.forEach((seg, segIdx) => {
-                // TODO(@darzu):
+              if (ball.bullet.health <= 0) return;
+
+              // does the ball hit the board?
+              copyAABB(boardAABBWorld, board.localAABB);
+              transformAABB(boardAABBWorld, w.world.transform);
+              overlapChecks++;
+              if (!doesOverlapAABB(ballAABBWorld, boardAABBWorld)) return;
+
+              board.segments.forEach((seg, segIdx) => {
+                if (ball.bullet.health <= 0) return;
+
+                // does the ball hit the segment?
                 copyAABB(segAABBWorld, seg.localAABB);
                 transformAABB(segAABBWorld, w.world.transform);
                 overlapChecks++;
                 if (doesOverlapAABB(ballAABBWorld, segAABBWorld)) {
-                  // TODO(@darzu): hack, turn boards red on AABB hit
                   segAABBHits += 1;
                   for (let qi of seg.quadSideIdxs) {
                     if (DBG_COLOR && mesh.colors[qi][1] < 1) {
@@ -143,6 +159,7 @@ onInit((em) => {
                     }
                   }
 
+                  // does the ball hit the middle of the segment?
                   copyLine(worldLine, seg.midLine);
                   transformLine(worldLine, w.world.transform);
                   const midHits = lineSphereIntersections(
@@ -156,8 +173,27 @@ onInit((em) => {
                       for (let qi of seg.quadSideIdxs) {
                         mesh.colors[qi] = [0, 1, 0];
                       }
-                    w.woodHealth.boards[boardIdx][segIdx].health -= 1.0;
-                    // w.woodHealth.boards[boardIdx][segIdx].health -= 0.2;
+                    // TODO(@darzu): cannon ball health stuff!
+                    const woodHealth = w.woodHealth.boards[boardIdx][segIdx];
+                    const dmg =
+                      Math.min(woodHealth.health, ball.bullet.health) + 0.001;
+                    woodHealth.health -= dmg;
+                    ball.bullet.health -= dmg;
+
+                    // TODO(@darzu): HUGE HACK to detect hitting a pirate ship
+                    if (
+                      dmg > 0 &&
+                      mesh.dbgName === "pirateShip" &&
+                      ball.bullet.team === 1
+                    ) {
+                      assert(PhysicsParentDef.isOn(w));
+                      for (let fn of _destroyPirateShipFns)
+                        fn(w.physicsParent.id, w);
+                    } else if (ball.bullet.team === 2) {
+                      const music = EM.getResource(MusicDef);
+                      if (music)
+                        music.playChords([2, 3], "minor", 0.2, 5.0, -2);
+                    }
                   }
                 }
               });
@@ -194,9 +230,21 @@ onInit((em) => {
   );
 });
 
+type DestroyPirateShipFn = (id: number, timber: Entity) => void;
+const _destroyPirateShipFns: DestroyPirateShipFn[] = [];
+export function registerDestroyPirateHandler(fn: DestroyPirateShipFn) {
+  _destroyPirateShipFns.push(fn);
+}
+
 export const SplinterParticleDef = EM.defineComponent("splinter", () => {
   return {};
 });
+
+const splinterPools = new Map<string, SplinterPool>();
+
+export let _numSplinterEnds = 0;
+
+let _ONCE = true;
 
 onInit((em: EntityManager) => {
   em.registerSystem(
@@ -205,107 +253,164 @@ onInit((em: EntityManager) => {
     async (es, res) => {
       // TODO(@darzu):
       for (let w of es) {
-        let needsUpdate = false;
+        // TODO(@darzu): track start and end offsets for each
+        let needsIndicesUpdate = false;
+        let needsVertsUpdate = false;
 
         const meshHandle = w.renderable.meshHandle;
         const mesh = meshHandle.readonlyMesh!;
 
+        if (_ONCE && mesh.dbgName?.includes("home")) {
+          // console.log(`mesh: ${meshStats(mesh)}`);
+          // console.log(`woodMesh: ${meshStats(w.woodState.mesh)}`);
+          // if (meshHandle.triNum !== mesh.tri.length) {
+          //   console.log("mesh.pos.length");
+          //   console.log(meshHandle.triNum);
+          //   console.log(mesh.tri.length);
+          // }
+          console.dir(meshHandle);
+          console.dir(mesh);
+          console.log(meshStats(mesh));
+          _ONCE = false;
+        }
+
         w.woodState.boards.forEach((board, bIdx) => {
-          board.forEach((seg, sIdx) => {
+          let pool: SplinterPool | undefined = undefined;
+          board.segments.forEach((seg, sIdx) => {
             const h = w.woodHealth.boards[bIdx][sIdx];
             if (!h.broken && h.health <= 0) {
               h.broken = true;
               hideSegment(seg, mesh);
-              needsUpdate = true;
+              needsIndicesUpdate = true;
 
-              // create flying splinter
+              // get the board's pool
+              if (!pool) {
+                const poolKey: string = `w${seg.width.toFixed(
+                  1
+                )}_d${seg.depth.toFixed(1)}_c${vec3Dbg(w.color)}`;
+                if (!splinterPools.has(poolKey)) {
+                  console.log(`new splinter pool!: ${poolKey}`);
+                  pool = createSplinterPool(
+                    seg.width,
+                    seg.depth,
+                    1,
+                    vec3.clone(w.color),
+                    40
+                  );
+                  splinterPools.set(poolKey, pool);
+                } else {
+                  pool = splinterPools.get(poolKey)!;
+                }
+              }
+
+              // create flying splinter (from pool)
               {
-                // TODO(@darzu): use pool!!
-                const topW = 0.6 + jitter(0.4);
-                const botW = 0.6 + jitter(0.4);
-                const _splinterMesh = mkTimberSplinterFree(topW, botW, 1);
-                const splinterMesh = normalizeMesh(_splinterMesh);
-                const splinter = EM.newEntity();
-                EM.ensureComponentOn(
-                  splinter,
-                  RenderableConstructDef,
-                  splinterMesh
-                );
-                // EM.ensureComponentOn(splinter, ColorDef, [
-                //   Math.random(),
-                //   Math.random(),
-                //   Math.random(),
-                // ]);
-                em.ensureComponentOn(splinter, ColorDef, vec3.clone(w.color));
+                const splinter = pool.getNext();
+                vec3.copy(splinter.color, w.color);
                 const pos = getLineMid(vec3.create(), seg.midLine);
                 vec3.transformMat4(pos, pos, w.world.transform);
-                EM.ensureComponentOn(splinter, PositionDef, pos);
+                EM.ensureComponentOn(splinter, PositionDef);
+                vec3.copy(splinter.position, pos);
                 const rot = getSegmentRotation(seg, false);
                 quat.mul(rot, rot, w.world.rotation); // TODO(@darzu): !VERIFY! this works
-                EM.ensureComponentOn(splinter, RotationDef, rot);
+                EM.ensureComponentOn(splinter, RotationDef);
+                quat.copy(splinter.rotation, rot);
                 const spin = randNormalVec3(vec3.create());
                 const vel = vec3.clone(spin);
                 vec3.scale(spin, spin, 0.01);
-                em.ensureComponentOn(splinter, AngularVelocityDef, spin);
+                em.ensureComponentOn(splinter, AngularVelocityDef);
+                vec3.copy(splinter.angularVelocity, spin);
                 vec3.scale(vel, vel, 0.01);
-                em.ensureComponentOn(splinter, LinearVelocityDef, vel);
-                em.ensureComponentOn(splinter, GravityDef, [0, -3, 0]);
-                // EM.ensureComponentOn(splinter, WorldFrameDef);
-                em.ensureComponentOn(splinter, SplinterParticleDef);
+                em.ensureComponentOn(splinter, LinearVelocityDef);
+                vec3.copy(splinter.linearVelocity, spin);
+                em.ensureComponentOn(splinter, GravityDef);
+                vec3.copy(splinter.gravity, [0, -3, 0]);
               }
 
               if (h.prev && !h.prev.broken) {
                 // create end caps
-                // TODO(@darzu): use a pool of end caps n stuff
-                const endBot = createSplinterEnd(seg, mesh, false);
-                em.ensureComponentOn(endBot, PhysicsParentDef, w.id);
-                vec3.copy(endBot.color, w.color);
-                em.whenEntityHas(endBot, RenderDataStdDef).then((end2) => {
-                  // NOTE: we match the object IDs so that there's no hard outline
-                  // between the splintered end and main board.
-                  end2.renderDataStd.id = meshHandle.mId;
-                });
-                h.splinterBot = endBot;
+
+                if (w.woodState.splinterState) {
+                  const splinterGen = w.woodState.splinterState.generation;
+                  const splinterIdx = addSplinterEnd(seg, w.woodState, false);
+                  h.splinterBotIdx = splinterIdx;
+                  h.splinterBotGeneration = splinterGen;
+                  needsIndicesUpdate = true;
+                  needsVertsUpdate = true;
+
+                  _numSplinterEnds++;
+                }
               }
 
               if (h.next && !h.next.broken) {
-                const endTop = createSplinterEnd(seg, mesh, true);
-                em.ensureComponentOn(endTop, PhysicsParentDef, w.id);
-                vec3.copy(endTop.color, w.color);
-                em.whenEntityHas(endTop, RenderDataStdDef).then((end2) => {
-                  // NOTE: we match the object IDs so that there's no hard outline
-                  // between the splintered end and main board.
-                  end2.renderDataStd.id = meshHandle.mId;
-                });
-                h.splinterTop = endTop;
+                if (w.woodState.splinterState) {
+                  const splinterGen = w.woodState.splinterState.generation;
+                  const splinterIdx = addSplinterEnd(seg, w.woodState, true);
+                  h.splinterTopIdx = splinterIdx;
+                  h.splinterTopGeneration = splinterGen;
+                  needsIndicesUpdate = true;
+                  needsVertsUpdate = true;
+
+                  _numSplinterEnds++;
+                }
               }
 
-              if (h.next?.splinterBot) {
-                em.whenEntityHas(h.next?.splinterBot, RenderableDef).then(
-                  (nextEnd) => {
-                    // TODO(@darzu): Put back into pool!
-                    nextEnd.renderable.enabled = false;
-                  }
-                );
-                h.next.splinterBot = undefined;
+              if (
+                h.next?.splinterBotIdx !== undefined &&
+                w.woodState.splinterState
+              ) {
+                // TODO(@darzu): ugly
+                // TODO(@darzu): this generation stuff seems somewhat broken
+                // if (
+                //   h.splinterBotGeneration ===
+                //     w.woodState.splinterState.generation ||
+                //   (h.splinterBotGeneration ===
+                //     w.woodState.splinterState.generation - 1 &&
+                //     w.woodState.splinterState.nextSplinterIdx <=
+                //       h.next.splinterBotIdx)
+                // ) {
+                removeSplinterEnd(h.next.splinterBotIdx, w.woodState);
+                // } else {
+                //   // console.log(`skipping removal b/c generation mismatch!`);
+                // }
+                h.next.splinterBotIdx = undefined;
+                h.next.splinterBotGeneration = undefined;
+                _numSplinterEnds--;
               }
 
-              if (h.prev?.splinterTop) {
-                em.whenEntityHas(h.prev?.splinterTop, RenderableDef).then(
-                  (prevEnd) => {
-                    // TODO(@darzu): Put back into pool!
-                    prevEnd.renderable.enabled = false;
-                  }
-                );
-                h.prev.splinterTop = undefined;
+              if (
+                h.prev?.splinterTopIdx !== undefined &&
+                w.woodState.splinterState
+              ) {
+                // if (
+                //   h.splinterTopGeneration ===
+                //     w.woodState.splinterState.generation ||
+                //   (h.splinterTopGeneration ===
+                //     w.woodState.splinterState.generation - 1 &&
+                //     w.woodState.splinterState.nextSplinterIdx <=
+                //       h.prev.splinterTopIdx)
+                // ) {
+                removeSplinterEnd(h.prev.splinterTopIdx, w.woodState);
+                // } else {
+                //   // console.log(`skipping removal b/c generation mismatch!`);
+                // }
+                h.prev.splinterTopIdx = undefined;
+                h.prev.splinterTopGeneration = undefined;
+                _numSplinterEnds--;
               }
             }
           });
         });
 
-        if (needsUpdate) {
+        if (needsIndicesUpdate) {
+          // console.log(`needsIndicesUpdate`);
           // TODO(@darzu): really need sub-mesh updateMesh
           res.renderer.renderer.updateMeshIndices(meshHandle, mesh);
+        }
+        if (needsVertsUpdate) {
+          // console.log(`needsVertsUpdate`);
+          // TODO(@darzu): really need sub-mesh updateMesh
+          res.renderer.renderer.updateMeshVertices(meshHandle, mesh);
         }
       }
     },
@@ -334,7 +439,123 @@ function getSegmentRotation(seg: BoardSeg, top: boolean) {
   return rot;
 }
 
-function createSplinterEnd(seg: BoardSeg, boardMesh: Mesh, top: boolean) {
+// TODO(@darzu): POOL THESE SPLINTER ENDS!
+
+let _tempSplinterMesh: RawMesh = createEmptyMesh("splinterEnd");
+
+function removeSplinterEnd(splinterIdx: number, wood: WoodState) {
+  // TODO(@darzu): only do this if the splinter is free!!!!
+  assert(wood.splinterState);
+  const sIdx = splinterIdx;
+  const vertIdx = wood.splinterState.vertOffset + sIdx * _vertsPerSplinter;
+  const triIdx = wood.splinterState.triOffset + sIdx * _trisPerSplinter;
+  const quadIdx = wood.splinterState.quadOffset + sIdx * _quadsPerSplinter;
+
+  for (let i = 0; i < _trisPerSplinter; i++) {
+    vec3.zero(wood.mesh.tri[triIdx + i]);
+  }
+  for (let i = 0; i < _quadsPerSplinter; i++) {
+    vec4.zero(wood.mesh.quad[quadIdx + i]);
+  }
+}
+
+function addSplinterEnd(seg: BoardSeg, wood: WoodState, top: boolean): number {
+  assert(wood.splinterState, "!wood.splinterState");
+  const W = seg.width;
+  const D = seg.depth;
+  const pos = vec3.copy(tempVec3(), seg.midLine.ray.org);
+  if (top) {
+    getLineEnd(pos, seg.midLine);
+  }
+
+  _tempSplinterMesh.pos.length = 0;
+  _tempSplinterMesh.quad.length = 0;
+  _tempSplinterMesh.tri.length = 0;
+
+  const rot = getSegmentRotation(seg, top);
+  // TODO(@darzu): put these into a pool
+  // TODO(@darzu): perf? probably don't need to normalize, just use same surface ID and provoking vert for all
+  const cursor = mat4.fromRotationTranslation(mat4.create(), rot, pos);
+  {
+    const b = createTimberBuilder(_tempSplinterMesh);
+    b.width = W;
+    b.depth = D;
+
+    b.setCursor(cursor);
+    b.addLoopVerts();
+    // TODO(@darzu): HACK. We're "snapping" the splinter loop and segment loops
+    //    together via distance; we should be able to do this in a more analytic way
+    const snapDistSqr = Math.pow(0.2 * 0.5, 2);
+    const loop = (
+      top ? seg.vertNextLoopIdxs : seg.vertLastLoopIdxs
+    ) as number[];
+    for (let vi = b.mesh.pos.length - 4; vi < b.mesh.pos.length; vi++) {
+      const p = b.mesh.pos[vi];
+      for (let lp of loop.map((vi2) => wood.mesh.pos[vi2])) {
+        if (vec3.sqrDist(p, lp) < snapDistSqr) {
+          vec3.copy(p, lp);
+          break;
+        }
+      }
+    }
+    b.addEndQuad(true);
+
+    b.setCursor(cursor);
+    mat4.translate(b.cursor, b.cursor, [0, 0.1, 0]);
+    b.addSplinteredEnd(b.mesh.pos.length, 5);
+
+    // TODO(@darzu): triangle vs quad coloring doesn't work
+    // b.mesh.quad.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
+    // b.mesh.tri.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
+  }
+  // TODO(@darzu): don't alloc all this mesh stuff!!
+  const splinterMesh = normalizeMesh(_tempSplinterMesh);
+
+  // copy mesh into main mesh
+  const sIdx = wood.splinterState.nextSplinterIdx;
+  const vertIdx = wood.splinterState.vertOffset + sIdx * _vertsPerSplinter;
+  const triIdx = wood.splinterState.triOffset + sIdx * _trisPerSplinter;
+  const quadIdx = wood.splinterState.quadOffset + sIdx * _quadsPerSplinter;
+  // console.log(`copying to: ${vertIdx} ${triIdx} ${quadIdx}`);
+
+  for (let i = 0; i < _vertsPerSplinter; i++) {
+    vec3.copy(wood.mesh.pos[vertIdx + i], splinterMesh.pos[i]);
+  }
+  for (let i = 0; i < _trisPerSplinter; i++) {
+    splinterMesh.tri[i][0] += vertIdx;
+    splinterMesh.tri[i][1] += vertIdx;
+    splinterMesh.tri[i][2] += vertIdx;
+    vec3.copy(wood.mesh.tri[triIdx + i], splinterMesh.tri[i]);
+  }
+  for (let i = 0; i < _quadsPerSplinter; i++) {
+    splinterMesh.quad[i][0] += vertIdx;
+    splinterMesh.quad[i][1] += vertIdx;
+    splinterMesh.quad[i][2] += vertIdx;
+    splinterMesh.quad[i][3] += vertIdx;
+    vec4.copy(wood.mesh.quad[quadIdx + i], splinterMesh.quad[i]);
+  }
+
+  // advance the pool prt
+  wood.splinterState.nextSplinterIdx += 1;
+  if (
+    wood.splinterState.nextSplinterIdx >= wood.splinterState.maxNumSplinters
+  ) {
+    wood.splinterState.nextSplinterIdx = 0;
+    wood.splinterState.generation++;
+    // console.log(`splinter gen: ${wood.splinterState.generation}`);
+  }
+
+  return sIdx;
+  // return splinter;
+}
+
+function createSplinterEnd(
+  seg: BoardSeg,
+  boardMesh: Mesh,
+  top: boolean,
+  W: number,
+  D: number
+) {
   const pos = vec3.copy(tempVec3(), seg.midLine.ray.org);
   if (top) {
     getLineEnd(pos, seg.midLine);
@@ -342,13 +563,14 @@ function createSplinterEnd(seg: BoardSeg, boardMesh: Mesh, top: boolean) {
 
   const rot = getSegmentRotation(seg, top);
   // TODO(@darzu): put these into a pool
-  // const res = await EM.whenResources(AssetsDef);
   const splinter = EM.newEntity();
   // TODO(@darzu): perf? probably don't need to normalize, just use same surface ID and provoking vert for all
   const cursor = mat4.fromRotationTranslation(mat4.create(), rot, pos);
-  let _splinterMesh: RawMesh;
+  let _splinterMesh: RawMesh = createEmptyMesh("splinterEnd");
   {
-    const b = createTimberBuilder();
+    const b = createTimberBuilder(_splinterMesh);
+    b.width = W;
+    b.depth = D;
 
     b.setCursor(cursor);
     b.addLoopVerts();
@@ -367,13 +589,6 @@ function createSplinterEnd(seg: BoardSeg, boardMesh: Mesh, top: boolean) {
         }
       }
     }
-    // const lastLoop = vec4.clone(seg.vertLastLoopIdxs);
-    // vec4RotateLeft(lastLoop);
-    // vec4RotateLeft(lastLoop);
-    // // vec4RotateLeft(lastLoop);
-    // for (let vi of lastLoop) {
-    //   b.mesh.pos.push(vec3.clone(boardMesh.pos[vi]));
-    // }
     b.addEndQuad(true);
 
     b.setCursor(cursor);
@@ -383,14 +598,7 @@ function createSplinterEnd(seg: BoardSeg, boardMesh: Mesh, top: boolean) {
     // TODO(@darzu): triangle vs quad coloring doesn't work
     b.mesh.quad.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
     b.mesh.tri.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
-
-    // TODO(@darzu): set objectIDs
-
-    _splinterMesh = b.mesh;
   }
-  // yi < 5 ? mkTimberSplinterEnd() : mkTimberSplinterFree();
-  // mkTimberSplinterFree(0.2 + xi * 0.2, 0.2 + yi * 0.2);
-  // mkTimberSplinterFree(1, 1, 1);
   const splinterMesh = normalizeMesh(_splinterMesh);
   EM.ensureComponentOn(splinter, RenderableConstructDef, splinterMesh);
   EM.ensureComponentOn(splinter, ColorDef, [
@@ -398,37 +606,35 @@ function createSplinterEnd(seg: BoardSeg, boardMesh: Mesh, top: boolean) {
     Math.random(),
     Math.random(),
   ]);
-  // em.ensureComponentOn(splinter, ColorDef, [0.1, 0.1, 0.1]);
   EM.ensureComponentOn(splinter, PositionDef);
   EM.ensureComponentOn(splinter, RotationDef);
   EM.ensureComponentOn(splinter, WorldFrameDef);
-  // EM.ensureComponentOn(splinter, ColliderDef, {
-  //   shape: "AABB",
-  //   solid: false,
-  //   aabb: res.assets.timber_splinter.aabb,
-  // });
   return splinter;
 }
 
-export function createTimberBuilder() {
-  // TODO(@darzu): have a system for building wood?
-
-  const W = 0.5; // width
-  const D = 0.2; // depth
-
+export function createEmptyMesh(dbgName: string) {
   let mesh: RawMesh = {
-    dbgName: "timber_rib",
+    dbgName,
     pos: [],
     tri: [],
     quad: [],
     colors: [],
   };
+  return mesh;
+}
+
+export type TimberBuilder = ReturnType<typeof createTimberBuilder>;
+export function createTimberBuilder(mesh: RawMesh) {
+  // TODO(@darzu): have a system for building wood?
+
+  // const W = 0.5; // width
+  // const D = 0.2; // depth
 
   const cursor: mat4 = mat4.create();
 
-  return {
-    width: W,
-    depth: D,
+  const b = {
+    width: 0.2,
+    depth: 0.2,
     mesh,
     cursor,
     addSplinteredEnd,
@@ -438,6 +644,8 @@ export function createTimberBuilder() {
     setCursor,
   };
 
+  return b;
+
   function setCursor(newCursor: mat4) {
     mat4.copy(cursor, newCursor);
   }
@@ -445,8 +653,8 @@ export function createTimberBuilder() {
   function addSplinteredEnd(lastLoopEndVi: number, numJags: number) {
     const vi = mesh.pos.length;
 
-    const v0 = vec3.fromValues(0, 0, D);
-    const v1 = vec3.fromValues(0, 0, -D);
+    const v0 = vec3.fromValues(0, 0, b.depth);
+    const v1 = vec3.fromValues(0, 0, -b.depth);
     vec3.transformMat4(v0, v0, cursor);
     vec3.transformMat4(v1, v1, cursor);
     mesh.pos.push(v0, v1);
@@ -465,16 +673,16 @@ export function createTimberBuilder() {
     let v_blast = v_bbl;
 
     // const numJags = 5;
-    const xStep = (W * 2) / numJags;
+    const xStep = (b.width * 2) / numJags;
     let lastY = 0;
-    let lastX = -W;
+    let lastX = -b.width;
     for (let i = 0; i <= numJags; i++) {
-      const x = i * xStep - W + jitter(0.05);
+      const x = i * xStep - b.width + jitter(0.05);
       let y = lastY;
       while (Math.abs(y - lastY) < 0.1)
         // TODO(@darzu): HACK to make sure it's not too even
         y = i % 2 === 0 ? 0.7 + jitter(0.6) : 0.2 + jitter(0.1);
-      let d = D; // + jitter(0.1);
+      let d = b.depth; // + jitter(0.1);
 
       // TODO(@darzu): HACK! This ensures that adjacent "teeth" in the splinter
       //    are properly manifold/convex/something-something
@@ -547,10 +755,10 @@ export function createTimberBuilder() {
   }
 
   function addLoopVerts() {
-    const v0 = vec3.fromValues(W, 0, D);
-    const v1 = vec3.fromValues(W, 0, -D);
-    const v2 = vec3.fromValues(-W, 0, -D);
-    const v3 = vec3.fromValues(-W, 0, D);
+    const v0 = vec3.fromValues(b.width, 0, b.depth);
+    const v1 = vec3.fromValues(b.width, 0, -b.depth);
+    const v2 = vec3.fromValues(-b.width, 0, -b.depth);
+    const v3 = vec3.fromValues(-b.width, 0, b.depth);
     vec3.transformMat4(v0, v0, cursor);
     vec3.transformMat4(v1, v1, cursor);
     vec3.transformMat4(v2, v2, cursor);
@@ -577,16 +785,71 @@ interface BoardSeg {
   localAABB: AABB;
   midLine: Line;
   areaNorms: vec3[];
+  width: number;
+  depth: number;
   vertLastLoopIdxs: vec4; // TODO(@darzu): always 4?
   vertNextLoopIdxs: vec4; // TODO(@darzu): always 4?
   quadSideIdxs: number[]; // TODO(@darzu): alway 4?
   quadEndIdxs: number[]; // TODO(@darzu): always 0,1,2?
 }
-type Board = BoardSeg[];
+interface Board {
+  segments: BoardSeg[];
+  localAABB: AABB;
+}
+
+// v24, t16, q8
+// TODO(@darzu): reduce to v18, t16, q8
+const _vertsPerSplinter = 24;
+const _trisPerSplinter = 16;
+const _quadsPerSplinter = 8;
+interface WoodSplinterState {
+  maxNumSplinters: number;
+  nextSplinterIdx: number;
+  vertOffset: number;
+  quadOffset: number;
+  triOffset: number;
+  generation: number;
+}
+
 interface WoodState {
+  mesh: RawMesh;
   usedVertIdxs: Set<number>;
   usedQuadIdxs: Set<number>;
   boards: Board[];
+
+  splinterState?: WoodSplinterState;
+}
+
+export function reserveSplinterSpace(wood: WoodState, maxSplinters: number) {
+  // console.log("reserveSplinterSpace");
+  // console.log(meshStats(wood.mesh));
+  const vertOffset = wood.mesh.pos.length;
+  const quadOffset = wood.mesh.quad.length;
+  const triOffset = wood.mesh.tri.length;
+  range(maxSplinters * _vertsPerSplinter).forEach((_) =>
+    wood.mesh.pos.push(vec3.create())
+  );
+  range(maxSplinters * _trisPerSplinter).forEach((_) =>
+    wood.mesh.tri.push(vec3.create())
+  );
+  range(maxSplinters * _quadsPerSplinter).forEach((_) =>
+    wood.mesh.quad.push(vec4.create())
+  );
+  const newFaces = maxSplinters * (_quadsPerSplinter + _trisPerSplinter);
+  range(newFaces).forEach((_) => {
+    wood.mesh.surfaceIds!.push(wood.mesh.surfaceIds!.length);
+    wood.mesh.colors.push(vec3.clone(BLACK));
+  });
+
+  wood.splinterState = {
+    maxNumSplinters: maxSplinters,
+    nextSplinterIdx: 0,
+    vertOffset,
+    quadOffset,
+    triOffset,
+    generation: 1,
+  };
+  // console.log(meshStats(wood.mesh));
 }
 
 export function debugBoardSystem(m: RawMesh): RawMesh {
@@ -663,7 +926,14 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
       //   assert(0 <= qi && qi < m.quad.length, "invalid qi")
       // );
       // boardQis.forEach((qi) => newQuads.push(m.quad[qi]));
-      return allSegments;
+
+      // TODO(@darzu): IML
+      const localAABB = createAABB();
+      for (let s of allSegments) mergeAABBs(localAABB, localAABB, s.localAABB);
+      return {
+        segments: allSegments,
+        localAABB,
+      };
     }
 
     return undefined;
@@ -744,6 +1014,10 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
         // console.log(`vec3.len(areaNorm): ${vec3.len(areaNorm)}`);
         return areaNorm;
       });
+      const len1 = vec3.dist(m.pos[lastLoop[1]], m.pos[lastLoop[0]]);
+      const len2 = vec3.dist(m.pos[lastLoop[3]], m.pos[lastLoop[0]]);
+      const width = Math.max(len1, len2) * 0.5;
+      const depth = Math.min(len1, len2) * 0.5;
       let seg: BoardSeg;
 
       // are we at an end of the board?
@@ -761,6 +1035,8 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
             localAABB: aabb,
             midLine: mid,
             areaNorms,
+            width,
+            depth,
             vertLastLoopIdxs: lastLoop,
             vertNextLoopIdxs: nextLoop,
             quadSideIdxs: sideQuads,
@@ -786,6 +1062,8 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
           localAABB: aabb,
           midLine: mid,
           areaNorms,
+          width,
+          depth,
           vertLastLoopIdxs: lastLoop,
           vertNextLoopIdxs: nextLoop,
           quadSideIdxs: segQis,
@@ -830,6 +1108,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
   // m.surfaceIds = newSurfaceIds;
 
   const woodenState: WoodState = {
+    mesh: m,
     boards,
     usedVertIdxs: structureVis,
     usedQuadIdxs: structureQis,
@@ -847,7 +1126,7 @@ export function unshareProvokingForWood(m: RawMesh, woodState: WoodState) {
   for (let b of woodState.boards) {
     // for (let b of [woodState.boards[60]]) {
     // first, do ends
-    for (let seg of b) {
+    for (let seg of b.segments) {
       for (let qi of seg.quadEndIdxs) {
         const done = unshareProvokingForBoardQuad(m.quad[qi], qi);
         if (!done)
@@ -855,7 +1134,7 @@ export function unshareProvokingForWood(m: RawMesh, woodState: WoodState) {
         // console.log(`end: ${m.quad[qi]}`);
       }
     }
-    for (let seg of b) {
+    for (let seg of b.segments) {
       for (let qi of seg.quadSideIdxs) {
         const done = unshareProvokingForBoardQuad(m.quad[qi], qi, [
           ...seg.vertLastLoopIdxs,
@@ -920,8 +1199,10 @@ interface SegHealth {
   next?: SegHealth;
   health: number;
   broken: boolean;
-  splinterTop?: Entity;
-  splinterBot?: Entity;
+  splinterTopIdx?: number;
+  splinterBotIdx?: number;
+  splinterTopGeneration?: number;
+  splinterBotGeneration?: number;
 }
 type BoardHealth = SegHealth[];
 interface WoodHealth {
@@ -932,7 +1213,7 @@ export function createWoodHealth(w: WoodState) {
   // TODO(@darzu):
   return {
     boards: w.boards.map((b) => {
-      let lastSeg = b.reduce((p, n) => {
+      let lastSeg = b.segments.reduce((p, n) => {
         const h: SegHealth = {
           prev: p,
           health: 1.0,

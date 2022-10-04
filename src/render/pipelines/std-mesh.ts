@@ -50,7 +50,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
     { ptr: comparisonSamplerPtr, alias: "shadowSampler" },
     // TODO(@darzu): object-specific SDFs?
     // TODO(@darzu): REMOVE HARD-CODED DEPENDENCY ON OCEAN SDF!
-    { ptr: oceanJfa.sdfTex, alias: "sdf" },
+    // { ptr: oceanJfa.sdfTex, alias: "sdf" },
     pointLightsPtr,
     // { ptr: oceanJfa._inputMaskTex, alias: "sdf" },
     // { ptr: oceanJfa._uvMaskTex, alias: "sdf" },

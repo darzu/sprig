@@ -263,12 +263,12 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
     let totalTime = totalQueryTime + totalCallTime;
     let callTimes = [];
     for (let s of Object.keys(stats)) {
-      callTimes.push({ s, t: stats[s].callTime });
+      callTimes.push({ s, t: stats[s].callTime, m: stats[s].maxCallTime });
     }
-    callTimes.push({ s: "ALL QUERIES", t: totalQueryTime });
+    callTimes.push({ s: "ALL QUERIES", t: totalQueryTime, m: -1 });
     callTimes.sort((x, y) => y.t - x.t);
     let out = "";
-    for (let { s, t } of callTimes) {
+    for (let { s, t, m } of callTimes) {
       out +=
         s +
         ": " +
@@ -276,6 +276,8 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
         "%" +
         " (" +
         (t / EM.loops).toPrecision(2) +
+        "ms, max:" +
+        m.toPrecision(2) +
         "ms)" +
         "\n";
     }

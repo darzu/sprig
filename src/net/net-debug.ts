@@ -27,15 +27,15 @@ export function registerNetDebugSystem(em: EntityManager) {
       if (res.inputs.keyClicks["6"])
         netDebugState.dbgAuthority = !netDebugState.dbgAuthority;
       for (const o of objs) {
-        em.ensureComponentOn(o, TintsDef);
         if (netDebugState.dbgAuthority) {
+          em.ensureComponentOn(o, TintsDef);
           setTint(
             o.tints,
             AUTHORITY_TINT_NAME,
             AUTHORITY_TINTS[o.authority.pid] || AUTHORITY_TINTS[0]
           );
         } else {
-          clearTint(o.tints, AUTHORITY_TINT_NAME);
+          if (TintsDef.isOn(o)) clearTint(o.tints, AUTHORITY_TINT_NAME);
         }
       }
     },

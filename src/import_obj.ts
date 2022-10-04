@@ -199,6 +199,14 @@ export function importObj(obj: string): RawMesh[] | ParseError {
         }
       } else if (inds.length === 8) {
         // TODO(@darzu): HACK. ignore 8 sided faces?
+        // triangle fan
+        for (let i = 1; i < 7; i++) {
+          if (FLIP_FACES) {
+            tri.push([inds[0], inds[i + 1], inds[i]]);
+          } else {
+            tri.push([inds[0], inds[i], inds[i + 1]]);
+          }
+        }
       } else {
         return `unsupported: ${faceOpt.length}-sided face`;
       }

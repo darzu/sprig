@@ -819,9 +819,9 @@ export function bundleRenderPipelines(
       // TODO(@darzu): filter meshes?
       for (let m of p.pool.allMeshes) {
         // TODO(@darzu): DBG
-        if (p.pool.opts.computeVertsData === oceanPoolPtr.computeVertsData) {
-          // console.log(`OCEAN MESH: ${m.mId} has: ${meshHandleIds.has(m.mId)}`);
-        }
+        // if (p.pool.opts.computeVertsData === oceanPoolPtr.computeVertsData) {
+        // console.log(`OCEAN MESH: ${m.mId} has: ${meshHandleIds.has(m.mId)}`);
+        // }
         if (!meshHandleIds.has(m.mId)) continue;
         if (p.ptr.meshOpt.meshMask && (p.ptr.meshOpt.meshMask & m.mask) === 0)
           continue;

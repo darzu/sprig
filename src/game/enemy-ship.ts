@@ -279,13 +279,13 @@ export function registerEnemyShipSystems(em: EntityManager) {
             // const rot = quat.create();
             // quat.rotateY(rot, cannon.world.rotation, Math.PI * 0.5);
             const bulletSpeed = jitter(0.025) + 0.075;
-            fireBullet(
-              em,
-              2,
-              cannon.world.position,
-              cannon.world.rotation,
-              bulletSpeed
-            );
+            // fireBullet(
+            //   em,
+            //   2,
+            //   cannon.world.position,
+            //   cannon.world.rotation,
+            //   bulletSpeed
+            // );
           }
         }
       }

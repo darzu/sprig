@@ -1,4 +1,5 @@
 import { EM, EntityManager } from "./entity-manager.js";
+import { GPU_DBG_PERF } from "./flags.js";
 import { TextDef } from "./game/ui.js";
 import { InputsDef } from "./inputs.js";
 import {
@@ -7,6 +8,7 @@ import {
   _enclosedBys,
   _cellChecks,
 } from "./physics/broadphase.js";
+import { _gpuQueueBufferWriteBytes } from "./render/data-webgpu.js";
 import { RendererDef } from "./render/renderer-ecs.js";
 
 export const DevConsoleDef = EM.defineComponent("dev", () => {
@@ -30,7 +32,7 @@ export const DevConsoleDef = EM.defineComponent("dev", () => {
 
 let avgWeight = 0.05;
 
-function updateAvg(avg: number, curr: number): number {
+export function updateAvg(avg: number, curr: number): number {
   return avg ? (1 - avgWeight) * avg + avgWeight * curr : curr;
 }
 
@@ -45,6 +47,12 @@ export function registerDevSystems(em: EntityManager) {
     },
     "devConsoleToggle"
   );
+
+  let lastGPUBytes = 0;
+  let avgGPUBytes = 0;
+  let maxFrameGPUBytes = 0;
+
+  let warmUpFrame = 500;
 
   em.registerSystem(
     null,
@@ -87,6 +95,19 @@ export function registerDevSystems(em: EntityManager) {
 
       const { avgFrameTime, avgJsTime, avgSimTime } = res.dev;
 
+      const poolStats = res.renderer.renderer.getMeshPoolStats();
+
+      if (GPU_DBG_PERF) {
+        const frameBytes = _gpuQueueBufferWriteBytes - lastGPUBytes;
+
+        if (warmUpFrame <= 0)
+          maxFrameGPUBytes = Math.max(maxFrameGPUBytes, frameBytes);
+        else warmUpFrame--;
+
+        avgGPUBytes = updateAvg(avgGPUBytes, frameBytes);
+        lastGPUBytes = _gpuQueueBufferWriteBytes;
+      }
+
       const avgFPS = 1000 / avgFrameTime;
 
       const dbgTxt =
@@ -97,6 +118,17 @@ export function registerDevSystems(em: EntityManager) {
         `broad:(${_lastCollisionTestTimeMs.toFixed(1)}ms ` +
         `o:${_doesOverlapAABBs} e:${_enclosedBys} c:${_cellChecks}) ` +
         `fps:${avgFPS.toFixed(1)} ` +
+        `tris:${poolStats.numTris} ` +
+        `verts:${poolStats.numVerts} ` +
+        (GPU_DBG_PERF ? `avgGpuBytes: ${avgGPUBytes.toFixed(0)}b ` : ``) +
+        (GPU_DBG_PERF
+          ? `allGpuBytes: ${(_gpuQueueBufferWriteBytes / (1024 * 1024)).toFixed(
+              0
+            )}mb `
+          : ``) +
+        (GPU_DBG_PERF
+          ? `maxFrameGPUBytes: ${(maxFrameGPUBytes / 1024).toFixed(0)}kb `
+          : ``) +
         //`buffers:(r=${reliableBufferSize}/u=${unreliableBufferSize}) ` +
         `dropped:${numDroppedUpdates} ` +
         `entities:${EM.entities.size} ` +

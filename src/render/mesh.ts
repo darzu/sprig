@@ -39,6 +39,12 @@ export interface Mesh extends RawMesh {
   // verticesUnshared?: boolean;
 }
 
+export function meshStats(m: RawMesh): string {
+  return `${m.dbgName ?? "??"}: v${m.pos.length}, t${m.tri.length}, q${
+    m.quad.length
+  }`;
+}
+
 export function cloneMesh(m: Mesh): Mesh;
 export function cloneMesh(m: RawMesh): RawMesh;
 export function cloneMesh(m: Mesh | RawMesh): Mesh | RawMesh {

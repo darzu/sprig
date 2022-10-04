@@ -49,9 +49,9 @@ function callFixedTimestepSystems() {
   //    - uncalled systems maybe should give a warning? Or at least a one-time read out.
   //    - Lets use types for this. String matching the name is brittle and unnessessary
   EM.callSystem("inputs");
-  EM.callSystem("getStatsFromNet");
-  EM.callSystem("getEventsFromNet");
-  EM.callSystem("sendEventsToNet");
+  // EM.callSystem("getStatsFromNet");
+  // EM.callSystem("getEventsFromNet");
+  // EM.callSystem("sendEventsToNet");
   EM.callSystem("canvas");
   EM.callSystem("uiText");
   EM.callSystem("devConsoleToggle");
@@ -60,14 +60,14 @@ function callFixedTimestepSystems() {
   // EM.callSystem("updateScore");
   EM.callSystem("renderInit");
   EM.callSystem("musicStart");
-  EM.callSystem("handleNetworkEvents");
+  // EM.callSystem("handleNetworkEvents");
   EM.callSystem("recordPreviousLocations");
   EM.callSystem("clearRemoteUpdatesMarker");
-  EM.callSystem("netUpdate");
+  // EM.callSystem("netUpdate");
   EM.callSystem("predict");
-  EM.callSystem("connectToServer");
-  EM.callSystem("handleJoin");
-  EM.callSystem("handleJoinResponse");
+  // EM.callSystem("connectToServer");
+  // EM.callSystem("handleJoin");
+  // EM.callSystem("handleJoinResponse");
   EM.callSystem("buildBullets");
   EM.callSystem("buildCursor");
   EM.callSystem("placeCursorAtScreenCenter");
@@ -79,7 +79,9 @@ function callFixedTimestepSystems() {
   EM.callSystem("buildPlayers");
   EM.callSystem("playerFacingDir");
   EM.callSystem("stepPlayers");
-  EM.callSystem("playerLookingForShip");
+  if (GAME === "hyperspace") {
+    EM.callSystem("playerLookingForShip");
+  }
   if (GAME === "rebound") {
     EM.callSystem("sandboxSpawnBoxes");
   }
@@ -167,18 +169,18 @@ function callFixedTimestepSystems() {
   EM.callSystem("toolPickup");
   EM.callSystem("toolDrop");
   EM.callSystem("animateTo");
-  EM.callSystem("netDebugSystem");
-  EM.callSystem("netAck");
-  EM.callSystem("netSync");
-  EM.callSystem("sendOutboxes");
-  EM.callSystem("detectedEventsToHost");
-  EM.callSystem("handleEventRequests");
-  EM.callSystem("handleEventRequestAcks");
-  EM.callSystem("detectedEventsToRequestedEvents");
-  EM.callSystem("requestedEventsToEvents");
-  EM.callSystem("sendEvents");
-  EM.callSystem("handleEvents");
-  EM.callSystem("handleEventAcks");
+  // EM.callSystem("netDebugSystem");
+  // EM.callSystem("netAck");
+  // EM.callSystem("netSync");
+  // EM.callSystem("sendOutboxes");
+  // EM.callSystem("detectedEventsToHost");
+  // EM.callSystem("handleEventRequests");
+  // EM.callSystem("handleEventRequestAcks");
+  // EM.callSystem("detectedEventsToRequestedEvents");
+  // EM.callSystem("requestedEventsToEvents");
+  // EM.callSystem("sendEvents");
+  // EM.callSystem("handleEvents");
+  // EM.callSystem("handleEventAcks");
   EM.callSystem("runEvents");
   EM.callSystem("delete");
   EM.callSystem("smoothMotion");
@@ -205,7 +207,7 @@ async function startGame(localPeerName: string, host: string | null) {
   EM.setIdRange("local", 1, 10000);
   // TODO(@darzu): ECS stuff
   // init ECS
-  EM.addSingletonComponent(PeerNameDef, localPeerName);
+  // EM.addSingletonComponent(PeerNameDef, localPeerName);
   if (hosting) {
     // TODO(@darzu): ECS
     EM.setDefaultRange("net");
@@ -258,7 +260,9 @@ async function startGame(localPeerName: string, host: string | null) {
     previous_frame_time = frame_time;
 
     const devStats = EM.getResource(DevConsoleDef);
-    if (devStats) devStats.updateAvgs(jsTime, frameTime, jsTime);
+    if (devStats) {
+      devStats.updateAvgs(jsTime, frameTime, jsTime);
+    }
 
     requestAnimationFrame(frame);
   };
@@ -284,7 +288,8 @@ async function main() {
   );
   const urlServerId = queryString["server"] ?? null;
 
-  const peerName = getPeerName(queryString);
+  // const peerName = getPeerName(queryString);
+  const peerName = "myPeerName";
 
   let controls = document.getElementById("server-controls") as HTMLDivElement;
   let serverStartButton = document.getElementById(

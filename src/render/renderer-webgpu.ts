@@ -84,6 +84,9 @@ export function createRenderer(
     submitPipelines,
     readTexture,
     stats,
+
+    // debug
+    getMeshPoolStats,
   };
 
   const timestampQuerySet = device.features.has("timestamp-query")
@@ -92,6 +95,7 @@ export function createRenderer(
         count: MAX_PIPELINES + 1, // start of execution + after each pipeline
       })
     : null;
+  console.log(`timestamp-query: ${!!timestampQuerySet}`);
 
   const resources = createCyResources(CY, shaders, device);
   const cyKindToNameToRes = resources.kindToNameToRes;
@@ -105,6 +109,18 @@ export function createRenderer(
     typeof OceanVertStruct.desc,
     typeof OceanUniStruct.desc
   > = cyKindToNameToRes.meshPool[oceanPoolPtr.name]!;
+
+  function getMeshPoolStats() {
+    const stats = {
+      numTris: 0,
+      numVerts: 0,
+    };
+    for (let p of Object.values(cyKindToNameToRes.meshPool)) {
+      stats.numTris += p.numTris;
+      stats.numVerts += p.numVerts;
+    }
+    return stats;
+  }
 
   const sceneUni: CySingleton<typeof SceneStruct.desc> =
     cyKindToNameToRes.singleton[sceneBufPtr.name]!;

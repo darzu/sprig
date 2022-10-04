@@ -13,13 +13,19 @@ export const VertexStruct = createCyStruct(
     position: "vec3<f32>",
     color: "vec3<f32>",
     normal: "vec3<f32>",
-    uv: "vec2<f32>",
+    // uv: "vec2<f32>",
     surfaceId: "u32",
   },
   {
     isCompact: true,
     serializer: (
-      { position, color, normal, uv, surfaceId },
+      {
+        position,
+        color,
+        normal,
+        // uv,
+        surfaceId,
+      },
       _,
       offsets_32,
       views
@@ -27,8 +33,9 @@ export const VertexStruct = createCyStruct(
       views.f32.set(position, offsets_32[0]);
       views.f32.set(color, offsets_32[1]);
       views.f32.set(normal, offsets_32[2]);
-      views.f32.set(uv, offsets_32[3]);
-      views.u32[offsets_32[4]] = surfaceId;
+      // views.f32.set(uv, offsets_32[3]);
+      // views.u32[offsets_32[4]] = surfaceId;
+      views.u32[offsets_32[3]] = surfaceId;
     },
   }
 );
@@ -37,8 +44,8 @@ export type VertexTS = CyToTS<typeof VertexStruct.desc>;
 export const MeshUniformStruct = createCyStruct(
   {
     transform: "mat4x4<f32>",
-    aabbMin: "vec3<f32>",
-    aabbMax: "vec3<f32>",
+    // aabbMin: "vec3<f32>",
+    // aabbMax: "vec3<f32>",
     tint: "vec3<f32>",
     id: "u32",
     // TODO: is this a good idea?
@@ -48,11 +55,11 @@ export const MeshUniformStruct = createCyStruct(
     isUniform: true,
     serializer: (d, _, offsets_32, views) => {
       views.f32.set(d.transform, offsets_32[0]);
-      views.f32.set(d.aabbMin, offsets_32[1]);
-      views.f32.set(d.aabbMax, offsets_32[2]);
-      views.f32.set(d.tint, offsets_32[3]);
-      views.u32[offsets_32[4]] = d.id;
-      views.u32[offsets_32[5]] = d.flags;
+      // views.f32.set(d.aabbMin, offsets_32[1]);
+      // views.f32.set(d.aabbMax, offsets_32[2]);
+      views.f32.set(d.tint, offsets_32[1]);
+      views.u32[offsets_32[2]] = d.id;
+      views.u32[offsets_32[3]] = d.flags;
     },
   }
 );
@@ -93,8 +100,8 @@ export function computeUniData(m: Mesh): MeshUniformTS {
   const { min, max } = getAABBFromMesh(m);
   const uni: MeshUniformTS = {
     transform: mat4.create(),
-    aabbMin: min,
-    aabbMax: max,
+    // aabbMin: min,
+    // aabbMax: max,
     tint: vec3.create(),
     id: 0,
     flags: 0,
