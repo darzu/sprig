@@ -84,15 +84,14 @@ export function createRenderer(
     drawTris: true,
 
     // std mesh
-    addMesh,
-    addMeshInstance,
+    // addMeshInstance,
     // TODO(@darzu): need sub-mesh updateMesh variant (e.g. coloring a few quads)
-    updateMeshVertices,
-    updateMeshIndices,
+    // updateMeshVertices,
+    // updateMeshIndices,
 
     // ocean
-    addOcean,
-    updateOcean,
+    // addOcean,
+    // updateOcean,
     updateGerstnerWaves,
 
     // std scene
@@ -100,8 +99,8 @@ export function createRenderer(
     updatePointLights,
 
     // uniforms
-    updateStdUniform,
-    updateOceanUniform,
+    // updateStdUniform,
+    // updateOceanUniform,
 
     // gpu commands
     submitPipelines,
@@ -168,29 +167,6 @@ export function createRenderer(
     return true;
   }
 
-  function addMesh(m: Mesh): MeshHandle {
-    const handle: MeshHandle = stdPool.addMesh(m);
-    return handle;
-  }
-  function addMeshInstance(oldHandle: MeshHandle): MeshHandle {
-    const newHandle = stdPool.addMeshInstance(oldHandle);
-    return newHandle;
-  }
-  function updateMeshVertices(handle: MeshHandle, newMeshData: Mesh) {
-    stdPool.updateMeshVertices(handle, newMeshData);
-  }
-  function updateMeshIndices(handle: MeshHandle, newMeshData: Mesh) {
-    stdPool.updateMeshIndices(handle, newMeshData);
-  }
-
-  function addOcean(m: Mesh): OceanMeshHandle {
-    const handle: OceanMeshHandle = oceanPool.addMesh(m);
-    return handle;
-  }
-  function updateOcean(handle: OceanMeshHandle, newMeshData: Mesh) {
-    oceanPool.updateMeshVertices(handle, newMeshData);
-  }
-
   function updateRenderBundle(
     handles: MeshHandle[],
     pipelines: CyRenderPipeline[]
@@ -230,14 +206,6 @@ export function createRenderer(
 
   function updateGerstnerWaves(gerstnerWaves: GerstnerWaveTS[]) {
     gerstnerWavesArray.queueUpdates(gerstnerWaves, 0);
-  }
-
-  function updateStdUniform(handle: MeshHandle, data: MeshUniformTS) {
-    stdPool.updateUniform(handle, data);
-  }
-
-  function updateOceanUniform(handle: MeshHandle, data: OceanUniTS) {
-    oceanPool.updateUniform(handle, data);
   }
 
   // TODO(@darzu): support ocean!

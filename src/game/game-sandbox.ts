@@ -499,7 +499,10 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
         const m = line.renderable.meshHandle.readonlyMesh!;
         vec3.copy(m.pos[0], cursorPos);
         vec3.copy(m.pos[1], clothPos);
-        res.renderer.renderer.updateMeshVertices(line.renderable.meshHandle, m);
+        res.renderer.renderer.stdPool.updateMeshVertices(
+          line.renderable.meshHandle,
+          m
+        );
       }
 
       // scale the force

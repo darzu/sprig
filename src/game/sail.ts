@@ -287,7 +287,7 @@ onInit((em) => {
             }
             return pos;
           });
-          res.renderer.renderer.updateMeshVertices(
+          res.renderer.renderer.stdPool.updateMeshVertices(
             sailMeshHandle,
             sailMeshHandle.readonlyMesh!
           );

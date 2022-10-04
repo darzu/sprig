@@ -331,7 +331,7 @@ export function registerRenderer(em: EntityManager) {
               o.renderDataStd.transform,
               o.rendererWorldFrame.transform
             );
-            res.renderer.renderer.updateStdUniform(
+            res.renderer.renderer.stdPool.updateUniform(
               o.renderable.meshHandle,
               o.renderDataStd
             );
@@ -358,7 +358,7 @@ export function registerRenderer(em: EntityManager) {
             o.renderDataOcean.transform,
             o.rendererWorldFrame.transform
           );
-          res.renderer.renderer.updateOceanUniform(
+          res.renderer.renderer.oceanPool.updateUniform(
             o.renderable.meshHandle,
             o.renderDataOcean
           );
@@ -473,17 +473,17 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
               e.renderableConstruct.poolKind === "std",
               `Instanced meshes only supported for std pool`
             );
-            meshHandle = res.renderer.renderer.addMeshInstance(
+            meshHandle = res.renderer.renderer.stdPool.addMeshInstance(
               e.renderableConstruct.meshOrProto
             );
             mesh = meshHandle.readonlyMesh!;
           } else {
             if (e.renderableConstruct.poolKind === "std") {
-              meshHandle = res.renderer.renderer.addMesh(
+              meshHandle = res.renderer.renderer.stdPool.addMesh(
                 e.renderableConstruct.meshOrProto
               );
             } else if (e.renderableConstruct.poolKind === "ocean") {
-              meshHandle = res.renderer.renderer.addOcean(
+              meshHandle = res.renderer.renderer.oceanPool.addMesh(
                 e.renderableConstruct.meshOrProto
               );
             } else {

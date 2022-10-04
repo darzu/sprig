@@ -202,7 +202,7 @@ onInit((em) => {
         }
         if (DBG_COLOR && (segAABBHits > 0 || segMidHits > 0)) {
           // TODO(@darzu): really need sub-mesh updateMesh
-          res.renderer.renderer.updateMeshVertices(meshHandle, mesh);
+          res.renderer.renderer.stdPool.updateMeshVertices(meshHandle, mesh);
           // res.renderer.renderer.updateMeshIndices(meshHandle, mesh);
         }
       }
@@ -405,12 +405,12 @@ onInit((em: EntityManager) => {
         if (needsIndicesUpdate) {
           // console.log(`needsIndicesUpdate`);
           // TODO(@darzu): really need sub-mesh updateMesh
-          res.renderer.renderer.updateMeshIndices(meshHandle, mesh);
+          res.renderer.renderer.stdPool.updateMeshIndices(meshHandle, mesh);
         }
         if (needsVertsUpdate) {
           // console.log(`needsVertsUpdate`);
           // TODO(@darzu): really need sub-mesh updateMesh
-          res.renderer.renderer.updateMeshVertices(meshHandle, mesh);
+          res.renderer.renderer.stdPool.updateMeshVertices(meshHandle, mesh);
         }
       }
     },

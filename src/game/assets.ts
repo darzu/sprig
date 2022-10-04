@@ -993,7 +993,7 @@ export function gameMeshFromMesh(
   const aabb = getAABBFromMesh(mesh);
   const center = getCenterFromAABB(aabb);
   const halfsize = getHalfsizeFromAABB(aabb);
-  const proto = renderer.addMesh(mesh);
+  const proto = renderer.stdPool.addMesh(mesh);
   const uniqueVerts = getUniqueVerts(mesh);
   const support = (d: vec3) => farthestPointInDir(uniqueVerts, d);
   const aabbCollider = (solid: boolean) =>

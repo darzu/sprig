@@ -112,7 +112,7 @@ export async function initOcean() {
   // TODO(@darzu):
   const preOceanGPU = performance.now();
 
-  res.renderer.renderer.updateOceanUniform(
+  res.renderer.renderer.oceanPool.updateUniform(
     ocean2.renderable.meshHandle,
     ocean2.renderDataOcean
   );
