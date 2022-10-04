@@ -1,6 +1,6 @@
 import { align } from "../math.js";
-import { assert } from "../test.js";
-import { isNumber } from "../util.js";
+import { assert } from "../util.js";
+import { dbgLogOnce, isNumber } from "../util.js";
 import {
   CyStructDesc,
   CyStruct,
@@ -216,14 +216,12 @@ export function createCyArray<O extends CyStructDesc>(
     binding,
   };
 
-  const stride = struct.size;
-
   if (hasInitData) {
     const data = lenOrData;
     const mappedBuf = new Uint8Array(_buf.getMappedRange());
     for (let i = 0; i < data.length; i++) {
       const d = struct.serialize(data[i]);
-      mappedBuf.set(d, i * stride);
+      mappedBuf.set(d, i * struct.size);
     }
     _buf.unmap();
   }
@@ -235,18 +233,18 @@ export function createCyArray<O extends CyStructDesc>(
     if (GPU_DBG_PERF) {
       _gpuQueueBufferWriteBytes += b.length;
     }
-    device.queue.writeBuffer(_buf, index * stride, b);
+    device.queue.writeBuffer(_buf, index * struct.size, b);
   }
   function queueUpdates(data: CyToTS<O>[], index: number): void {
-    const serialized = new Uint8Array(stride * data.length);
+    const serialized = new Uint8Array(struct.size * data.length);
     data.forEach((d, i) => {
-      serialized.set(struct.serialize(d), stride * i);
+      serialized.set(struct.serialize(d), struct.size * i);
     });
     // assert(serialized.length % 4 === 0);
     if (GPU_DBG_PERF) {
       _gpuQueueBufferWriteBytes += serialized.length;
     }
-    device.queue.writeBuffer(_buf, index * stride, serialized);
+    device.queue.writeBuffer(_buf, index * struct.size, serialized);
   }
 
   function binding(idx: number, plurality: "one" | "many"): GPUBindGroupEntry {
@@ -296,7 +294,7 @@ export function createCyIdxBuf(
     // const byteView = new Uint8Array(data);
     // assert(data.length % 2 === 0);
     if (GPU_DBG_PERF) {
-      _gpuQueueBufferWriteBytes += data.length;
+      _gpuQueueBufferWriteBytes += data.length * 2.0;
     }
     device.queue.writeBuffer(_buf, startByte, data);
   }
@@ -330,7 +328,10 @@ export function createCyTexture(
   resize(size[0], size[1]);
 
   if (init) {
-    queueUpdate(init());
+    const data = init();
+    if (GPU_DBG_PERF)
+      console.log(`creating texture of size: ${(data.length * 4) / 1024}kb`);
+    queueUpdate(data);
   }
 
   const black: vec4 = [0, 0, 0, 1];

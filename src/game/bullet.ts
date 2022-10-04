@@ -30,7 +30,7 @@ import { MusicDef } from "../music.js";
 import { randNormalVec3 } from "../utils-3d.js";
 import { SplinterParticleDef } from "../wood.js";
 import { tempVec3 } from "../temp-pool.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 
 export const BulletDef = EM.defineComponent(
   "bullet",

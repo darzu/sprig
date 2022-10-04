@@ -3,7 +3,7 @@ import { createFabric } from "../game/assets.js";
 import { vec3, vec2, mat4, vec4 } from "../gl-matrix.js";
 import { max, sum } from "../math.js";
 import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import { arraySortedEqual, arrayUnsortedEqual } from "../util.js";
 import { vec3Dbg, vec3Mid } from "../utils-3d.js";
 import { drawBall, drawLine } from "../utils-game.js";

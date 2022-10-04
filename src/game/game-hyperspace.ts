@@ -23,13 +23,14 @@ import { DevConsoleDef } from "../console.js";
 import { initOcean, OceanDef, oceanJfa, UVPosDef, UVDirDef } from "./ocean.js";
 import { asyncTimeout } from "../util.js";
 import { quat, vec2, vec3 } from "../gl-matrix.js";
-import { AnimateToDef, EASE_INQUAD } from "../animate-to.js";
+import { AnimateToDef } from "../animate-to.js";
 import { createSpawner, SpawnerDef } from "./spawner.js";
 import { tempVec3 } from "../temp-pool.js";
 import { createDarkStarNow, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
 import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
 import { debugBoardSystem, WoodAssetsDef, WoodStateDef } from "../wood.js";
 import { ColliderDef } from "../physics/collider.js";
+import { EASE_INQUAD } from "../util-ease.js";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 

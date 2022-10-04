@@ -1,5 +1,5 @@
-import { EaseFn } from "./animate-to.js";
-import { assert } from "./test.js";
+import { EaseFn } from "./util-ease.js";
+import { assert } from "./util.js";
 
 // functions
 export function sum(ns: number[]): number {

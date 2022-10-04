@@ -1,5 +1,5 @@
 import { mat4 } from "../gl-matrix.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import {
   CY,
   CyPipelinePtr,
@@ -47,6 +47,8 @@ import {
   OceanVertStruct,
 } from "./pipelines/std-ocean.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
+import { GPU_DBG_PERF } from "../flags.js";
+import { dbgLogOnce } from "../util.js";
 
 const MAX_PIPELINES = 64;
 
@@ -56,6 +58,27 @@ export function createRenderer(
   context: GPUCanvasContext,
   shaders: ShaderSet
 ) {
+  const timestampQuerySet = device.features.has("timestamp-query")
+    ? device.createQuerySet({
+        type: "timestamp",
+        count: MAX_PIPELINES + 1, // start of execution + after each pipeline
+      })
+    : null;
+  console.log(`timestamp-query: ${!!timestampQuerySet}`);
+
+  const resources = createCyResources(CY, shaders, device);
+  const cyKindToNameToRes = resources.kindToNameToRes;
+
+  const stdPool: MeshPool<
+    typeof VertexStruct.desc,
+    typeof MeshUniformStruct.desc
+  > = cyKindToNameToRes.meshPool[meshPoolPtr.name]!;
+
+  const oceanPool: MeshPool<
+    typeof OceanVertStruct.desc,
+    typeof OceanUniStruct.desc
+  > = cyKindToNameToRes.meshPool[oceanPoolPtr.name]!;
+
   const renderer = {
     drawLines: true,
     drawTris: true,
@@ -87,29 +110,13 @@ export function createRenderer(
 
     // debug
     getMeshPoolStats,
+
+    // TODO(@darzu): collapose the renderer-webgpu layer, it shouldn't exist
+    stdPool,
+    oceanPool,
   };
 
-  const timestampQuerySet = device.features.has("timestamp-query")
-    ? device.createQuerySet({
-        type: "timestamp",
-        count: MAX_PIPELINES + 1, // start of execution + after each pipeline
-      })
-    : null;
-  console.log(`timestamp-query: ${!!timestampQuerySet}`);
-
-  const resources = createCyResources(CY, shaders, device);
-  const cyKindToNameToRes = resources.kindToNameToRes;
-
-  const stdPool: MeshPool<
-    typeof VertexStruct.desc,
-    typeof MeshUniformStruct.desc
-  > = cyKindToNameToRes.meshPool[meshPoolPtr.name]!;
-
-  const oceanPool: MeshPool<
-    typeof OceanVertStruct.desc,
-    typeof OceanUniStruct.desc
-  > = cyKindToNameToRes.meshPool[oceanPoolPtr.name]!;
-
+  // TODO(@darzu): collapse this with MeshPool._stats
   function getMeshPoolStats() {
     const stats = {
       numTris: 0,
@@ -208,6 +215,9 @@ export function createRenderer(
   }
 
   function updateScene(scene: Partial<SceneTS>) {
+    if (GPU_DBG_PERF) {
+      dbgLogOnce("sceneUniSize", `SceneUni size: ${sceneUni.struct.size}`);
+    }
     sceneUni.queueUpdate({
       ...sceneUni.lastData!,
       ...scene,

@@ -20,7 +20,7 @@ import {
 import { AABB } from "../physics/broadphase.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { Renderer } from "../render/renderer-ecs.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import { objMap, range } from "../util.js";
 import { getText } from "../webget.js";
 import { AABBCollider } from "../physics/collider.js";

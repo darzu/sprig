@@ -37,7 +37,7 @@ import {
   updateFrameFromPosRotScale,
   updateFrameFromTransform,
 } from "./transform.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import { IdPair, idPair, toBinary } from "../util.js";
 import { tempVec3 } from "../temp-pool.js";
 import { aabbDbg, vec3Dbg } from "../utils-3d.js";

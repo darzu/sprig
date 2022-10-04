@@ -1,4 +1,4 @@
-import { assert } from "../../test.js";
+import { assert } from "../../util.js";
 import { fullQuad } from "../gpu-helper.js";
 import {
   CY,

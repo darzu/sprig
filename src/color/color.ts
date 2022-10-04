@@ -5,7 +5,7 @@
 //  https://en.wikipedia.org/wiki/Color_difference
 
 import { clamp } from "../math.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import { never, range } from "../util.js";
 import {
   FLRGBToFRGB,

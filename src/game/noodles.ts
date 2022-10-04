@@ -12,7 +12,7 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { vec3 } from "../gl-matrix.js";
 import { vec3Dbg } from "../utils-3d.js";

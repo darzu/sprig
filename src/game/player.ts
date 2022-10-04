@@ -43,7 +43,7 @@ import { drawLine } from "../utils-game.js";
 import { GameState, GameStateDef } from "./gamestate.js";
 import { DevConsoleDef } from "../console.js";
 import { max } from "../math.js";
-import { AnimateToDef, EASE_OUTQUAD } from "../animate-to.js";
+import { AnimateToDef } from "../animate-to.js";
 import { vec3Dbg } from "../utils-3d.js";
 
 // TODO(@darzu): it'd be great if these could hook into some sort of

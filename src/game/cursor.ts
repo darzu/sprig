@@ -10,7 +10,7 @@ import {
 } from "../physics/transform.js";
 import { AssetsDef } from "./assets.js";
 import { ColorDef } from "../color-ecs.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import { CameraViewDef } from "../camera.js";
 import { vec2, vec3 } from "../gl-matrix.js";
 import { screenPosToRay } from "./modeler.js";

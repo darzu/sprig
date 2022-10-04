@@ -1,4 +1,4 @@
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import { isFunction, never } from "../util.js";
 import {
   CY,

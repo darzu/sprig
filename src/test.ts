@@ -3,7 +3,7 @@
 import { RUN_UNIT_TESTS, VERBOSE_LOG } from "./flags.js";
 import { testImporters } from "./import_obj.js";
 import { Serializer, Deserializer } from "./serialize.js";
-import { testPackUnpackI16 } from "./util.js";
+import { assert, testPackUnpackI16 } from "./util.js";
 
 function testBasics() {
   let s = new Serializer(100);
@@ -16,15 +16,6 @@ function testBasics() {
   if (d.readUint32() !== 42) throw "test failure";
   if (d.readUint32() !== 57) throw "test failure";
   if (d.readUint16() !== 45) throw "test failure";
-}
-
-export function assert(cond: any, msg?: string): asserts cond {
-  // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#assertion-functions
-  if (!cond)
-    throw new Error(
-      msg ??
-        "Assertion failed; please add a helpful msg and yell at the lazy dev who didn't."
-    );
 }
 
 export function test() {

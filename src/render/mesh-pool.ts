@@ -1,9 +1,9 @@
 import { align } from "../math.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import { CyStructDesc, CyToTS } from "./gpu-struct.js";
 import { Mesh, quadToTris } from "./mesh.js";
 import { CyArray, CyIdxBuffer } from "./data-webgpu.js";
-import { VERBOSE_MESH_POOL_STATS } from "../flags.js";
+import { GPU_DBG_PERF, VERBOSE_MESH_POOL_STATS } from "../flags.js";
 
 // Mesh: lossless, all the data of a model/asset from blender
 // MeshPool: lossy, a reduced set of attributes for vertex, line, triangle, and model uniforms
@@ -48,6 +48,15 @@ export interface MeshPoolOpts<V extends CyStructDesc, U extends CyStructDesc> {
   shiftMeshIndices: boolean;
 }
 
+function createMeshPoolDbgStats() {
+  return {
+    _accumTriDataQueued: 0,
+    _accumVertDataQueued: 0,
+    _accumUniDataQueued: 0,
+  };
+}
+export type MeshPoolDbgStats = ReturnType<typeof createMeshPoolDbgStats>;
+
 export interface MeshPool<V extends CyStructDesc, U extends CyStructDesc> {
   // options
   opts: MeshPoolOpts<V, U>;
@@ -56,6 +65,8 @@ export interface MeshPool<V extends CyStructDesc, U extends CyStructDesc> {
   numTris: number;
   numVerts: number;
   numLines: number;
+  // dbg data (requires GPU_DBG_PERF)
+  _stats: MeshPoolDbgStats;
   // methods
   addMesh: (m: Mesh) => MeshHandle;
   addMeshInstance: (m: MeshHandle) => MeshHandle;
@@ -129,12 +140,15 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
 
   const allMeshes: MeshHandle[] = [];
 
+  const _stats = createMeshPoolDbgStats();
+
   const pool: MeshPool<V, U> = {
     opts,
     allMeshes,
     numTris: 0,
     numVerts: 0,
     numLines: 0,
+    _stats,
     updateUniform,
     addMesh,
     addMeshInstance,
@@ -207,6 +221,12 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     opts.verts.queueUpdates(vertsData, handle.vertIdx);
     opts.unis.queueUpdate(uni, handle.uniIdx);
 
+    if (GPU_DBG_PERF) {
+      _stats._accumTriDataQueued += triData.length * 2.0;
+      _stats._accumVertDataQueued += vertsData.length * opts.verts.struct.size;
+      _stats._accumUniDataQueued += opts.unis.struct.size;
+    }
+
     pool.numTris += numTri;
     // NOTE: mesh's triangles need to be 4-byte aligned.
     // TODO(@darzu): is this still necessary? might be handled by the CyBuffer stuff
@@ -235,14 +255,26 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   function updateMeshVertices(handle: MeshHandle, newMesh: Mesh) {
     const data = opts.computeVertsData(newMesh);
     opts.verts.queueUpdates(data, handle.vertIdx);
+
+    if (GPU_DBG_PERF) {
+      _stats._accumVertDataQueued += data.length * opts.verts.struct.size;
+    }
   }
   function updateMeshIndices(handle: MeshHandle, newMesh: Mesh) {
     const data = computeTriData(newMesh);
     opts.triInds.queueUpdate(data, handle.triIdx * 3);
+
+    if (GPU_DBG_PERF) {
+      _stats._accumTriDataQueued += data.length * 2.0;
+    }
   }
 
   function updateUniform(m: MeshHandle, d: CyToTS<U>): void {
     opts.unis.queueUpdate(d, m.uniIdx);
+
+    if (GPU_DBG_PERF) {
+      _stats._accumUniDataQueued += opts.unis.struct.size;
+    }
   }
 
   return pool;

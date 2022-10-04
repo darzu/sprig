@@ -55,7 +55,7 @@ import {
   RendererDef,
 } from "./render/renderer-ecs.js";
 import { tempVec2, tempVec3 } from "./temp-pool.js";
-import { assert } from "./test.js";
+import { assert } from "./util.js";
 import { never, range } from "./util.js";
 import {
   centroid,

@@ -1,5 +1,5 @@
 import { vec2, vec3, vec4 } from "../gl-matrix.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import {
   CyStructDesc,
   CyStruct,

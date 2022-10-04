@@ -50,7 +50,7 @@ import {
   RenderDataStdDef,
 } from "../render/renderer-ecs.js";
 import { tempMat4, tempVec3 } from "../temp-pool.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import { TimeDef } from "../time.js";
 import {
   createEmptyMesh,
@@ -1138,13 +1138,16 @@ function rotatePiratePlatform(
 
 const pitchSpeed = 0.000042;
 
-const numStartPirates = DBG_PLAYER ? 9 : 2;
+const numStartPirates = DBG_PLAYER ? 0 : 2;
 let nextSpawn = 0;
 
 const tenSeconds = 1000 * (DBG_PLAYER ? 3 : 10); // TODO(@darzu): make 10 seconds
 
 let spawnTimer = tenSeconds;
 const minSpawnTimer = 3000;
+
+const maxPirates = 0;
+// const maxPirates = 10;
 
 async function startPirates() {
   const em: EntityManager = EM;
@@ -1168,11 +1171,12 @@ async function startPirates() {
         // console.log("SPAWN");
 
         const rad = Math.random() * 2 * Math.PI;
-        if (pirateCount < 10) {
+        if (pirateCount < maxPirates) {
           spawnPirate(rad);
-        }
-        if (pirateCount < 2) {
-          spawnPirate(rad + Math.PI);
+
+          if (pirateCount < 2) {
+            spawnPirate(rad + Math.PI);
+          }
         }
         spawnTimer *= 0.95;
         spawnTimer = Math.max(spawnTimer, minSpawnTimer);

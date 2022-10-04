@@ -1,6 +1,6 @@
 import { mat4, quat, vec2, vec3, vec4 } from "../gl-matrix.js";
 import { align, max, sum } from "../math.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import { objMap } from "../util.js";
 
 // TABLES, CONSTS and TYPE-LEVEL HELPERS

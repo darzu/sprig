@@ -1,5 +1,5 @@
 import { mat4, vec3 } from "../../gl-matrix.js";
-import { assert } from "../../test.js";
+import { assert } from "../../util.js";
 import { computeTriangleNormal } from "../../utils-3d.js";
 import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";
 import { createCyStruct, CyToTS } from "../gpu-struct.js";

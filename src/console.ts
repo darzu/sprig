@@ -52,12 +52,14 @@ export function registerDevSystems(em: EntityManager) {
   let avgGPUBytes = 0;
   let maxFrameGPUBytes = 0;
 
-  let warmUpFrame = 500;
+  let warmUpFrame = 60 * 3;
 
   em.registerSystem(
     null,
     [RendererDef, TextDef, DevConsoleDef],
     async (_, res) => {
+      warmUpFrame--;
+
       if (!res.dev.showConsole) {
         res.text.debugText = "";
         return;
@@ -100,9 +102,12 @@ export function registerDevSystems(em: EntityManager) {
       if (GPU_DBG_PERF) {
         const frameBytes = _gpuQueueBufferWriteBytes - lastGPUBytes;
 
-        if (warmUpFrame <= 0)
+        if (warmUpFrame <= 0) {
           maxFrameGPUBytes = Math.max(maxFrameGPUBytes, frameBytes);
-        else warmUpFrame--;
+          if (frameBytes >= 1024 * 100) {
+            console.log(`Big frame!: ${(frameBytes / 1024).toFixed(0)}kb`);
+          }
+        }
 
         avgGPUBytes = updateAvg(avgGPUBytes, frameBytes);
         lastGPUBytes = _gpuQueueBufferWriteBytes;

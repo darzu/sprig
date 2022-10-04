@@ -1,6 +1,6 @@
-import { VERBOSE_LOG } from "../flags.js";
+import { GPU_DBG_PERF, VERBOSE_LOG } from "../flags.js";
 import { ControllableDef } from "../game/controllable.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import {
   never,
   capitalize,
@@ -8,6 +8,7 @@ import {
   uncapitalize,
   isString,
   isFunction,
+  dbgLogOnce,
 } from "../util.js";
 import {
   PtrKindToResourceType,
@@ -209,6 +210,9 @@ export function createCyResources(
     const lengthOrData = typeof r.init === "number" ? r.init : r.init();
     const buf = createCyArray(device, r.struct, usage, lengthOrData);
     kindToNameToRes.array[r.name] = buf;
+    if (GPU_DBG_PERF) {
+      console.log(`CyArray ${r.name}: ${r.struct.size * buf.length}b`);
+    }
   });
   // create one-buffers
   cy.kindToPtrs.singleton.forEach((r) => {
@@ -220,11 +224,17 @@ export function createCyResources(
       r.init ? r.init() : undefined
     );
     kindToNameToRes.singleton[r.name] = buf;
+    if (GPU_DBG_PERF) {
+      console.log(`CySingleton ${r.name}: ${r.struct.size}b`);
+    }
   });
   // create idx-buffers
   cy.kindToPtrs.idxBuffer.forEach((r) => {
     const buf = createCyIdxBuf(device, r.init());
     kindToNameToRes.idxBuffer[r.name] = buf;
+    if (GPU_DBG_PERF) {
+      console.log(`CyIdx ${r.name}: ${buf.size}b`);
+    }
   });
   // create mesh pools
   cy.kindToPtrs.meshPool.forEach((r) => {
