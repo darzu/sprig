@@ -201,11 +201,11 @@ export function createRenderer(
   }
 
   function updatePointLights(pointLights: PointLightTS[]) {
-    pointLightsArray.queueUpdates(pointLights, 0);
+    pointLightsArray.queueUpdates(pointLights, 0, 0, pointLights.length);
   }
 
   function updateGerstnerWaves(gerstnerWaves: GerstnerWaveTS[]) {
-    gerstnerWavesArray.queueUpdates(gerstnerWaves, 0);
+    gerstnerWavesArray.queueUpdates(gerstnerWaves, 0, 0, gerstnerWaves.length);
   }
 
   // TODO(@darzu): support ocean!

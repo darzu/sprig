@@ -1,9 +1,11 @@
 import { align } from "../math.js";
 import { assert } from "../util.js";
 import { CyStructDesc, CyToTS } from "./gpu-struct.js";
-import { Mesh, quadToTris } from "./mesh.js";
+import { Mesh } from "./mesh.js";
 import { CyArray, CyIdxBuffer } from "./data-webgpu.js";
 import { GPU_DBG_PERF, VERBOSE_MESH_POOL_STATS } from "../flags.js";
+import { ComputeVertsDataFn } from "./gpu-registry.js";
+import { vec3, vec4 } from "../gl-matrix.js";
 
 // Mesh: lossless, all the data of a model/asset from blender
 // MeshPool: lossy, a reduced set of attributes for vertex, line, triangle, and model uniforms
@@ -37,8 +39,9 @@ export function isMeshHandle(m: any): m is MeshHandle {
   return "mId" in m;
 }
 
+// TODO(@darzu): de-duplicate between here and CyMeshPoolPtr
 export interface MeshPoolOpts<V extends CyStructDesc, U extends CyStructDesc> {
-  computeVertsData: (m: Mesh) => CyToTS<V>[];
+  computeVertsData: ComputeVertsDataFn<V>;
   computeUniData: (m: Mesh) => CyToTS<U>;
   verts: CyArray<V>;
   unis: CyArray<U>;
@@ -71,8 +74,21 @@ export interface MeshPool<V extends CyStructDesc, U extends CyStructDesc> {
   addMesh: (m: Mesh) => MeshHandle;
   addMeshInstance: (m: MeshHandle) => MeshHandle;
   updateUniform: (m: MeshHandle, d: CyToTS<U>) => void;
-  updateMeshVertices: (handle: MeshHandle, newMeshData: Mesh) => void;
-  updateMeshIndices: (handle: MeshHandle, newMeshData: Mesh) => void;
+  updateMeshVertices: (
+    handle: MeshHandle,
+    newMeshData: Mesh,
+    startIdx?: number,
+    count?: number
+  ) => void;
+  updateMeshIndices: (
+    handle: MeshHandle,
+    newMeshData: Mesh,
+    // TODO(@darzu): make optional again?
+    triIdx: number,
+    triCount: number,
+    quadIdx: number,
+    quadCount: number
+  ) => void;
 }
 
 function logMeshPoolStats(opts: MeshPoolOpts<any, any>) {
@@ -128,6 +144,68 @@ function logMeshPoolStats(opts: MeshPoolOpts<any, any>) {
 // TODO(@darzu): HACK. should be scoped; removed as global
 let nextMeshId = 1;
 
+// function OLD_computeTriData(m: Mesh): Uint16Array {
+//   const numTri = m.tri.length + m.quad.length * 2;
+//   const triData = new Uint16Array(align(numTri * 3, 2));
+//   // add tris
+//   m.tri.forEach((triInd, i) => {
+//     // TODO(@darzu): support index shifting
+//     triData.set(triInd, i * 3);
+//   });
+//   m.quad.forEach((quadInd, i) => {
+//     // TODO(@darzu): support index shifting
+//     const [t1, t2] = quadToTris(quadInd);
+//     triData.set(t1, m.tri.length * 3 + i * 6);
+//     triData.set(t2, m.tri.length * 3 + i * 6 + 3);
+//   });
+//   return triData;
+
+//   function quadToTris(q: vec4): [vec3, vec3] {
+//     return [
+//       [q[0], q[1], q[2]],
+//       [q[0], q[2], q[3]],
+//     ];
+//   }
+// }
+
+let tempTriData = new Uint16Array(256);
+function computeTriData(m: Mesh, startIdx: number, count: number): Uint16Array {
+  if (startIdx + count < m.tri.length && count % 2 === 1) count += 1;
+  const dataLen = align(count * 3, 2);
+  if (tempTriData.length < dataLen) tempTriData = new Uint16Array(dataLen);
+  // add tris
+  for (let ti = startIdx; ti < startIdx + count; ti++) {
+    const dIdx = (ti - startIdx) * 3;
+    const triInd = m.tri[ti];
+    tempTriData[dIdx + 0] = triInd[0];
+    tempTriData[dIdx + 1] = triInd[1];
+    tempTriData[dIdx + 2] = triInd[2];
+  }
+  return new Uint16Array(tempTriData.buffer, 0, dataLen);
+}
+
+let tempQuadData = new Uint16Array(256);
+function computeQuadData(
+  m: Mesh,
+  startIdx: number,
+  count: number
+): Uint16Array {
+  const dataLen = count * 2 * 3;
+  if (tempQuadData.length < dataLen) tempQuadData = new Uint16Array(dataLen);
+  for (let qi = startIdx; qi < startIdx + count; qi++) {
+    // TODO(@darzu): support index shifting
+    const idx = (qi - startIdx) * 6;
+    const quadInd = m.quad[qi];
+    tempQuadData[idx + 0] = quadInd[0];
+    tempQuadData[idx + 1] = quadInd[1];
+    tempQuadData[idx + 2] = quadInd[2];
+    tempQuadData[idx + 3] = quadInd[0];
+    tempQuadData[idx + 4] = quadInd[2];
+    tempQuadData[idx + 5] = quadInd[3];
+  }
+  return new Uint16Array(tempQuadData.buffer, 0, dataLen);
+}
+
 export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   opts: MeshPoolOpts<V, U>
 ): MeshPool<V, U> {
@@ -156,23 +234,6 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     updateMeshIndices,
   };
 
-  function computeTriData(m: Mesh): Uint16Array {
-    const numTri = m.tri.length + m.quad.length * 2;
-    const triData = new Uint16Array(align(numTri * 3, 2));
-    // add tris
-    m.tri.forEach((triInd, i) => {
-      // TODO(@darzu): support index shifting
-      triData.set(triInd, i * 3);
-    });
-    m.quad.forEach((quadInd, i) => {
-      // TODO(@darzu): support index shifting
-      const [t1, t2] = quadToTris(quadInd);
-      triData.set(t1, m.tri.length * 3 + i * 6);
-      triData.set(t2, m.tri.length * 3 + i * 6 + 3);
-    });
-    return triData;
-  }
-
   // TODO(@darzu): default to all 1s?
   function addMesh(m: Mesh): MeshHandle {
     assert(pool.allMeshes.length + 1 <= maxMeshes, "Too many meshes!");
@@ -184,21 +245,6 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
       "Too many lines!"
     );
     assert(m.usesProvoking, `mesh must use provoking vertices`);
-
-    const vertsData = opts.computeVertsData(m);
-    // add tris
-    const triData = computeTriData(m);
-    // add lines
-    let lineData: Uint16Array | undefined;
-    if (m.lines?.length) {
-      lineData = new Uint16Array(m.lines.length * 2);
-      m.lines.forEach((inds, i) => {
-        lineData?.set(inds, i * 2);
-      });
-    }
-
-    // initial uniform data
-    const uni = opts.computeUniData(m);
 
     const handle: MeshHandle = {
       mId: nextMeshId++,
@@ -215,15 +261,40 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
       //shaderData: uni,
     };
 
-    assert(triData.length % 2 === 0, "triData");
-    opts.triInds.queueUpdate(triData, handle.triIdx * 3);
+    // add tris (and quads)
+    if (m.tri.length) {
+      const triData = computeTriData(m, 0, m.tri.length);
+      assert(triData.length % 2 === 0, "triData");
+      opts.triInds.queueUpdate(triData, handle.triIdx * 3);
+      if (GPU_DBG_PERF) _stats._accumTriDataQueued += triData.length * 2.0;
+    }
+    if (m.quad.length) {
+      const quadData = computeQuadData(m, 0, m.quad.length);
+      opts.triInds.queueUpdate(quadData, (handle.triIdx + m.tri.length) * 3);
+      if (GPU_DBG_PERF) _stats._accumTriDataQueued += quadData.length * 2.0;
+    }
+
+    // add lines
+    // TODO(@darzu): untested for a while
+    let lineData: Uint16Array | undefined;
+    if (m.lines?.length) {
+      lineData = new Uint16Array(m.lines.length * 2);
+      m.lines.forEach((inds, i) => {
+        lineData?.set(inds, i * 2);
+      });
+    }
     if (lineData) opts.lineInds.queueUpdate(lineData, handle.lineIdx * 2);
-    opts.verts.queueUpdates(vertsData, handle.vertIdx);
+
+    // add verts data
+    const vertsData = opts.computeVertsData(m, 0, m.pos.length);
+    opts.verts.queueUpdates(vertsData, handle.vertIdx, 0, m.pos.length);
+
+    // initial uniform data
+    const uni = opts.computeUniData(m);
     opts.unis.queueUpdate(uni, handle.uniIdx);
 
     if (GPU_DBG_PERF) {
-      _stats._accumTriDataQueued += triData.length * 2.0;
-      _stats._accumVertDataQueued += vertsData.length * opts.verts.struct.size;
+      _stats._accumVertDataQueued += m.pos.length * opts.verts.struct.size;
       _stats._accumUniDataQueued += opts.unis.struct.size;
     }
 
@@ -252,21 +323,58 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     return newHandle;
   }
 
-  function updateMeshVertices(handle: MeshHandle, newMesh: Mesh) {
-    const data = opts.computeVertsData(newMesh);
-    opts.verts.queueUpdates(data, handle.vertIdx);
+  function updateMeshVertices(
+    handle: MeshHandle,
+    newMesh: Mesh,
+    startIdx?: number,
+    count?: number
+  ) {
+    startIdx = startIdx ?? 0;
+    count = count ?? newMesh.pos.length;
+    const data = opts.computeVertsData(newMesh, startIdx, count);
+    opts.verts.queueUpdates(data, handle.vertIdx, 0, count);
 
     if (GPU_DBG_PERF) {
       _stats._accumVertDataQueued += data.length * opts.verts.struct.size;
     }
   }
-  function updateMeshIndices(handle: MeshHandle, newMesh: Mesh) {
-    const data = computeTriData(newMesh);
-    opts.triInds.queueUpdate(data, handle.triIdx * 3);
+  function updateMeshIndices(
+    handle: MeshHandle,
+    newMesh: Mesh,
+    triIdx: number,
+    triCount: number,
+    quadIdx: number,
+    quadCount: number
+  ) {
+    triIdx = triIdx ?? 0;
+    triCount = triCount ?? newMesh.tri.length - triIdx;
+    quadIdx = quadIdx ?? 0;
+    quadCount = quadCount ?? newMesh.quad.length - quadIdx;
+    // TODO(@darzu): IMPL! Use startIdx?: number, count?: number
+    // TODO(@darzu): IMPL w/ quad data too
+    // console.log(`updateMeshIndices: ${[triIdx, triCount, quadIdx, quadCount]}`);
 
-    if (GPU_DBG_PERF) {
-      _stats._accumTriDataQueued += data.length * 2.0;
+    // const oldData = OLD_computeTriData(newMesh);
+    // opts.triInds.queueUpdate(oldData, handle.triIdx * 3);
+    // return;
+
+    if (triCount > 0) {
+      const triData = computeTriData(newMesh, triIdx, triCount);
+      // console.dir(triData);
+      opts.triInds.queueUpdate(triData, handle.triIdx * 3);
+      if (GPU_DBG_PERF) _stats._accumTriDataQueued += triData.length * 2.0;
     }
+    if (quadCount > 0) {
+      const quadData = computeQuadData(newMesh, quadIdx, quadCount);
+      // console.dir(quadData);
+      const bufQuadIdx = (handle.triIdx + newMesh.tri.length) * 3; // NOTE: tris come first
+      opts.triInds.queueUpdate(quadData, bufQuadIdx);
+      if (GPU_DBG_PERF) _stats._accumTriDataQueued += quadData.length * 2.0;
+    }
+
+    // console.log(
+    //   `oldData: ${oldData.length}, triData: ${triData.length}, quadData: ${quadData.length}`
+    // );
   }
 
   function updateUniform(m: MeshHandle, d: CyToTS<U>): void {

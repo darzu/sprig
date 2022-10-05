@@ -40,6 +40,16 @@ export const VertexStruct = createCyStruct(
   }
 );
 export type VertexTS = CyToTS<typeof VertexStruct.desc>;
+export function createEmptyVertexTS(): VertexTS {
+  return {
+    position: vec3.create(),
+    color: vec3.create(),
+    // tangent: m.tangents ? m.tangents[i] : [1.0, 0.0, 0.0],
+    normal: vec3.create(),
+    // uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
+    surfaceId: 0,
+  };
+}
 
 export const MeshUniformStruct = createCyStruct(
   {
@@ -109,15 +119,30 @@ export function computeUniData(m: Mesh): MeshUniformTS {
   return uni;
 }
 
-export function computeVertsData(m: Mesh): VertexTS[] {
-  const vertsData: VertexTS[] = m.pos.map((pos, i) => ({
-    position: pos,
-    color: [1.0, 0.0, 1.0], // per-face; changed below
-    tangent: m.tangents ? m.tangents[i] : [1.0, 0.0, 0.0], // per-face; changed below (maybe)
-    normal: m.normals ? m.normals[i] : [0.0, 1.0, 0.0], // per-face; changed below (maybe)
-    uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
-    surfaceId: 0, // per-face; changed below
-  }));
+// TODO(@darzu): Allow partial updates (start + len?)
+// TODO(@darzu): Allow updates directly to serialized data
+// TODO(@darzu): Related, allow updates that don't change e.g. the normals
+const tempVertsData: VertexTS[] = [];
+export function computeVertsData(
+  m: Mesh,
+  startIdx?: number,
+  count?: number
+): VertexTS[] {
+  count = count ?? m.pos.length;
+  startIdx = startIdx ?? 0;
+
+  const missingLen = m.pos.length - tempVertsData.length;
+  if (missingLen > 0) {
+    for (let i = 0; i < missingLen; i++)
+      tempVertsData.push(createEmptyVertexTS());
+  }
+  m.pos.forEach((pos, i) => {
+    // NOTE: assignment is fine since this better not be used without being re-assigned
+    tempVertsData[i].position = pos;
+    // TODO(@darzu): UVs again?
+    // if (m.uvs)
+    //   tempVertsData[i].uv = m.uvs[i];
+  });
   // NOTE: for per-face data (e.g. color and surface IDs), first all the quads then tris
   m.tri.forEach((triInd, i) => {
     // set provoking vertex data
@@ -128,10 +153,10 @@ export function computeVertsData(m: Mesh): VertexTS[] {
       m.pos[triInd[1]],
       m.pos[triInd[2]]
     );
-    vertsData[triInd[0]].normal = normal;
+    tempVertsData[triInd[0]].normal = normal;
     const faceIdx = i + m.quad.length; // quads first
-    vertsData[triInd[0]].color = m.colors[faceIdx];
-    vertsData[triInd[0]].surfaceId = m.surfaceIds[faceIdx];
+    tempVertsData[triInd[0]].color = m.colors[faceIdx];
+    tempVertsData[triInd[0]].surfaceId = m.surfaceIds[faceIdx];
   });
   m.quad.forEach((quadInd, i) => {
     // set provoking vertex data
@@ -140,12 +165,13 @@ export function computeVertsData(m: Mesh): VertexTS[] {
       m.pos[quadInd[1]],
       m.pos[quadInd[2]]
     );
-    vertsData[quadInd[0]].normal = normal;
+    tempVertsData[quadInd[0]].normal = normal;
     // TODO(@darzu): this isn't right, colors and surfaceIds r being indexed by tris and quads
-    vertsData[quadInd[0]].color = m.colors[i];
-    vertsData[quadInd[0]].surfaceId = m.surfaceIds[i];
+    tempVertsData[quadInd[0]].color = m.colors[i];
+    tempVertsData[quadInd[0]].surfaceId = m.surfaceIds[i];
   });
-  return vertsData;
+
+  return tempVertsData;
 }
 
 export const SceneStruct = createCyStruct(

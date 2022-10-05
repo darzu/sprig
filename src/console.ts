@@ -60,6 +60,20 @@ export function registerDevSystems(em: EntityManager) {
     async (_, res) => {
       warmUpFrame--;
 
+      if (GPU_DBG_PERF) {
+        const frameBytes = _gpuQueueBufferWriteBytes - lastGPUBytes;
+
+        if (warmUpFrame <= 0) {
+          maxFrameGPUBytes = Math.max(maxFrameGPUBytes, frameBytes);
+          if (frameBytes >= 1024 * 100) {
+            console.log(`Big frame!: ${(frameBytes / 1024).toFixed(0)}kb`);
+          }
+        }
+
+        avgGPUBytes = updateAvg(avgGPUBytes, frameBytes);
+        lastGPUBytes = _gpuQueueBufferWriteBytes;
+      }
+
       if (!res.dev.showConsole) {
         res.text.debugText = "";
         return;
@@ -98,20 +112,6 @@ export function registerDevSystems(em: EntityManager) {
       const { avgFrameTime, avgJsTime, avgSimTime } = res.dev;
 
       const poolStats = res.renderer.renderer.getMeshPoolStats();
-
-      if (GPU_DBG_PERF) {
-        const frameBytes = _gpuQueueBufferWriteBytes - lastGPUBytes;
-
-        if (warmUpFrame <= 0) {
-          maxFrameGPUBytes = Math.max(maxFrameGPUBytes, frameBytes);
-          if (frameBytes >= 1024 * 100) {
-            console.log(`Big frame!: ${(frameBytes / 1024).toFixed(0)}kb`);
-          }
-        }
-
-        avgGPUBytes = updateAvg(avgGPUBytes, frameBytes);
-        lastGPUBytes = _gpuQueueBufferWriteBytes;
-      }
 
       const avgFPS = 1000 / avgFrameTime;
 

@@ -91,12 +91,21 @@ export type CySamplerPtr =
   | typeof comparisonSamplerPtr;
 // | typeof linearUnfilterSamplerPtr;
 
+// NOTE: the return value's length can extend beyond "count"! That's b/c ur being handed a shared, temp array. Only
+//    read up until count and don't hold onto the result.
+// TODO(@darzu): Is there a cleaner way to handle this and be performant?
+export type ComputeVertsDataFn<V extends CyStructDesc> = (
+  m: Mesh,
+  startIdx: number,
+  count: number
+) => CyToTS<V>[];
+
 // MESH POOL
 export interface CyMeshPoolPtr<V extends CyStructDesc, U extends CyStructDesc>
   extends CyResourcePtr {
   kind: "meshPool";
   // TODO(@darzu): remove id and name, this doesn't need to be inited directly
-  computeVertsData: (m: Mesh) => CyToTS<V>[];
+  computeVertsData: ComputeVertsDataFn<V>;
   computeUniData: (m: Mesh) => CyToTS<U>;
   vertsPtr: CyArrayPtr<V>;
   unisPtr: CyArrayPtr<U>;

@@ -472,13 +472,6 @@ function uniqueRefs<T>(ts: T[]): T[] {
   return res;
 }
 
-export function quadToTris(q: vec4): [vec3, vec3] {
-  return [
-    [q[0], q[1], q[2]],
-    [q[0], q[2], q[3]],
-  ];
-}
-
 // {
 //   // TODO(@darzu): DEBUG
 //   const f = createFabric(5);

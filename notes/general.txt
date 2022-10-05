@@ -1264,3 +1264,6 @@ Game dev offices:
   https://www.youtube.com/watch?v=hBcVpRFRIqQ
   https://journals.sagepub.com/doi/10.1177/0018726710375481
   people need/want to "nest"; personalize their space
+
+"Open-Source, not Open-Contribution":
+  https://www.sqlite.org/copyright.html

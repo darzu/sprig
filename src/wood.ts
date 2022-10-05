@@ -75,6 +75,15 @@ import { createSplinterPool, SplinterPool } from "./wood-splinters.js";
 //   };
 // });
 
+/*
+So how could wood + splinters work on the GPU?
+Compute shader computes the triangles and vertices,
+  based on control points: location, orientation, width, depthi
+What does compute shader gain us?
+  Less CPU->GPU bandwidth used
+  Less CPU work
+*/
+
 export const WoodStateDef = EM.defineComponent("woodState", (s: WoodState) => {
   return s;
 });
@@ -405,7 +414,16 @@ onInit((em: EntityManager) => {
         if (needsIndicesUpdate) {
           // console.log(`needsIndicesUpdate`);
           // TODO(@darzu): really need sub-mesh updateMesh
-          res.renderer.renderer.stdPool.updateMeshIndices(meshHandle, mesh);
+          // TODO(@darzu): consider doing particle system for end caps and such?
+          // TODO(@darzu): IMPL idx ranges
+          res.renderer.renderer.stdPool.updateMeshIndices(
+            meshHandle,
+            mesh,
+            0,
+            mesh.tri.length,
+            0,
+            mesh.quad.length
+          );
         }
         if (needsVertsUpdate) {
           // console.log(`needsVertsUpdate`);

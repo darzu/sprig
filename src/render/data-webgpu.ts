@@ -42,7 +42,12 @@ export interface CySingleton<O extends CyStructDesc> extends CyBuffer<O> {
 export interface CyArray<O extends CyStructDesc> extends CyBuffer<O> {
   length: number;
   queueUpdate: (data: CyToTS<O>, idx: number) => void;
-  queueUpdates: (data: CyToTS<O>[], idx: number) => void;
+  queueUpdates: (
+    data: CyToTS<O>[],
+    bufIdx: number,
+    dataIdx: number,
+    dataCount: number
+  ) => void;
 }
 
 export interface CyIdxBuffer {
@@ -235,16 +240,39 @@ export function createCyArray<O extends CyStructDesc>(
     }
     device.queue.writeBuffer(_buf, index * struct.size, b);
   }
-  function queueUpdates(data: CyToTS<O>[], index: number): void {
-    const serialized = new Uint8Array(struct.size * data.length);
-    data.forEach((d, i) => {
-      serialized.set(struct.serialize(d), struct.size * i);
-    });
-    // assert(serialized.length % 4 === 0);
-    if (GPU_DBG_PERF) {
-      _gpuQueueBufferWriteBytes += serialized.length;
+
+  // TODO(@darzu): somewhat hacky way to reuse Uint8Arrays here; we could do some more global pool
+  //    of these.
+  let tempUint8Array: Uint8Array = new Uint8Array(struct.size * 10);
+  function queueUpdates(
+    data: CyToTS<O>[],
+    bufIdx: number,
+    dataIdx: number, // TODO(@darzu): make last two params optional?
+    dataCount: number
+  ): void {
+    // TODO(@darzu): IMPL
+    // TODO(@darzu): PERF. probably a good idea to keep the serialized array
+    //  around and modify that directly for many scenarios that need frequent
+    //  updates.
+    const dataSize = struct.size * dataCount;
+    if (tempUint8Array.byteLength <= dataSize) {
+      tempUint8Array = new Uint8Array(dataSize);
     }
-    device.queue.writeBuffer(_buf, index * struct.size, serialized);
+    // TODO(@darzu): USE TEMP!
+    // const serialized = tempUint8Array;
+    const serialized = new Uint8Array(dataSize);
+
+    for (let i = dataIdx; i < dataIdx + dataCount; i++)
+      serialized.set(struct.serialize(data[i]), struct.size * (i - dataIdx));
+    // assert(serialized.length % 4 === 0);
+    if (GPU_DBG_PERF) _gpuQueueBufferWriteBytes += dataSize;
+    device.queue.writeBuffer(
+      _buf,
+      bufIdx * struct.size,
+      serialized,
+      0,
+      dataSize
+    );
   }
 
   function binding(idx: number, plurality: "one" | "many"): GPUBindGroupEntry {
