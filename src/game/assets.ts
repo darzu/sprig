@@ -55,8 +55,8 @@ export const LIGHT_GRAY = vec3.fromValues(0.2, 0.2, 0.2);
 export const DARK_BLUE = vec3.fromValues(0.03, 0.03, 0.2);
 export const LIGHT_BLUE = vec3.fromValues(0.05, 0.05, 0.2);
 
-const DEFAULT_ASSET_PATH = "/assets/";
-const BACKUP_ASSET_PATH = "https://sprig.land/ld51/assets/";
+const DEFAULT_ASSET_PATH = "assets/";
+const BACKUP_ASSET_PATH = "https://sprig.land/assets/";
 
 const RemoteMeshes = {
   ship: "barge.sprig.obj",
@@ -899,6 +899,11 @@ async function loadTxtInternal(relPath: string): Promise<string> {
   try {
     txt = await getText(DEFAULT_ASSET_PATH + relPath);
   } catch (_) {
+    console.warn(
+      `Asset path ${DEFAULT_ASSET_PATH + relPath} failed; trying ${
+        BACKUP_ASSET_PATH + relPath
+      }`
+    );
     txt = await getText(BACKUP_ASSET_PATH + relPath);
   }
 
