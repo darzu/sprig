@@ -1,12 +1,14 @@
+import { DBG_ASSERT } from "./flags.js";
 import { randInt } from "./math.js";
 
 export function assert(cond: any, msg?: string): asserts cond {
   // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#assertion-functions
   if (!cond)
-    throw new Error(
-      msg ??
-        "Assertion failed; please add a helpful msg and yell at the lazy dev who didn't."
-    );
+    throw new Error(msg ?? "Assertion failed (consider adding a helpful msg).");
+}
+
+export function assertDbg(cond: any, msg?: string): asserts cond {
+  if (DBG_ASSERT) assert(cond, msg);
 }
 
 export type Intersect<A> = A extends [infer X, ...infer Y]
@@ -244,4 +246,41 @@ export async function asyncTimeout(ms: number) {
       resolve(null);
     }, ms);
   });
+}
+
+export function createIntervalTracker(maxSep: number) {
+  let min = Infinity;
+  let max = -Infinity;
+
+  const intervals: { min: number; max: number }[] = [];
+
+  function addRange(rMin: number, rMax: number) {
+    if (
+      min === Infinity ||
+      (min - maxSep <= rMin && rMin <= max + maxSep) || // rMin is inside
+      (min - maxSep <= rMax && rMax <= max + maxSep) // rMax is inside
+    ) {
+      // update interval
+      min = Math.min(min, rMin);
+      max = Math.max(max, rMax);
+    } else {
+      // start new interval
+      intervals.push({ min, max });
+      min = rMin;
+      max = rMax;
+    }
+  }
+  function finishInterval() {
+    if (min !== Infinity) {
+      intervals.push({ min, max });
+      min = Infinity;
+      max = -Infinity;
+    }
+  }
+
+  return {
+    intervals,
+    addRange,
+    finishInterval,
+  };
 }

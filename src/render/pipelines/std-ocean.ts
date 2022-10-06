@@ -116,7 +116,12 @@ const oceanUnisPtr = CY.createArray("oceanUni", {
 });
 
 // TODO(@darzu): de-duplicate with std-scene's computeVertsData
-function computeOceanVertsData(m: Mesh): OceanVertTS[] {
+function computeOceanVertsData(
+  m: Mesh,
+  // TODO(@darzu): this isn't implemented right; needs to account for startIdx and count
+  startIdx: number,
+  count: number
+): OceanVertTS[] {
   assert(!!m.normals, "ocean meshes assumed to have normals");
   assert(!!m.tangents, "ocean meshes assumed to have tangents");
   // TODO(@darzu): change

@@ -12,7 +12,7 @@ import { BulletDef } from "./game/bullet.js";
 import { GravityDef } from "./game/gravity.js";
 import { mat4, quat, vec2, vec3, vec4 } from "./gl-matrix.js";
 import { onInit } from "./init.js";
-import { jitter } from "./math.js";
+import { align, jitter } from "./math.js";
 import { MusicDef } from "./music.js";
 import {
   AABB,
@@ -55,7 +55,7 @@ import {
   RendererDef,
 } from "./render/renderer-ecs.js";
 import { tempVec2, tempVec3 } from "./temp-pool.js";
-import { assert } from "./util.js";
+import { assert, createIntervalTracker } from "./util.js";
 import { never, range } from "./util.js";
 import {
   centroid,
@@ -211,7 +211,7 @@ onInit((em) => {
         }
         if (DBG_COLOR && (segAABBHits > 0 || segMidHits > 0)) {
           // TODO(@darzu): really need sub-mesh updateMesh
-          res.renderer.renderer.stdPool.updateMeshVertices(meshHandle, mesh);
+          // res.renderer.renderer.stdPool.updateMeshVertices(meshHandle, mesh);
           // res.renderer.renderer.updateMeshIndices(meshHandle, mesh);
         }
       }
@@ -263,8 +263,8 @@ onInit((em: EntityManager) => {
       // TODO(@darzu):
       for (let w of es) {
         // TODO(@darzu): track start and end offsets for each
-        let needsIndicesUpdate = false;
-        let needsVertsUpdate = false;
+        let splinterIndUpdated: number[] = [];
+        let segQuadIndUpdated: { min: number; max: number }[] = [];
 
         const meshHandle = w.renderable.meshHandle;
         const mesh = meshHandle.readonlyMesh!;
@@ -289,8 +289,19 @@ onInit((em: EntityManager) => {
             const h = w.woodHealth.boards[bIdx][sIdx];
             if (!h.broken && h.health <= 0) {
               h.broken = true;
-              hideSegment(seg, mesh);
-              needsIndicesUpdate = true;
+              // TODO(@darzu): how to unhide?
+              // TODO(@darzu): probably a more efficient way to do this..
+              let qMin = Infinity;
+              let qMax = -Infinity;
+              for (let qi of [...seg.quadSideIdxs, ...seg.quadEndIdxs]) {
+                const q = mesh.quad[qi];
+                vec4.set(q, 0, 0, 0, 0);
+                qMin = Math.min(qMin, qi);
+                qMax = Math.max(qMax, qi);
+              }
+              // todo something is wrong with seg quads here!!
+              // console.log(`seg quad: ${qMin} ${qMax}`);
+              segQuadIndUpdated.push({ min: qMin, max: qMax });
 
               // get the board's pool
               if (!pool) {
@@ -344,10 +355,8 @@ onInit((em: EntityManager) => {
                   const splinterIdx = addSplinterEnd(seg, w.woodState, false);
                   h.splinterBotIdx = splinterIdx;
                   h.splinterBotGeneration = splinterGen;
-                  needsIndicesUpdate = true;
-                  needsVertsUpdate = true;
-
                   _numSplinterEnds++;
+                  splinterIndUpdated.push(splinterIdx);
                 }
               }
 
@@ -357,10 +366,8 @@ onInit((em: EntityManager) => {
                   const splinterIdx = addSplinterEnd(seg, w.woodState, true);
                   h.splinterTopIdx = splinterIdx;
                   h.splinterTopGeneration = splinterGen;
-                  needsIndicesUpdate = true;
-                  needsVertsUpdate = true;
-
                   _numSplinterEnds++;
+                  splinterIndUpdated.push(splinterIdx);
                 }
               }
 
@@ -382,6 +389,7 @@ onInit((em: EntityManager) => {
                 // } else {
                 //   // console.log(`skipping removal b/c generation mismatch!`);
                 // }
+                splinterIndUpdated.push(h.next.splinterBotIdx);
                 h.next.splinterBotIdx = undefined;
                 h.next.splinterBotGeneration = undefined;
                 _numSplinterEnds--;
@@ -403,6 +411,7 @@ onInit((em: EntityManager) => {
                 // } else {
                 //   // console.log(`skipping removal b/c generation mismatch!`);
                 // }
+                splinterIndUpdated.push(h.prev.splinterTopIdx);
                 h.prev.splinterTopIdx = undefined;
                 h.prev.splinterTopGeneration = undefined;
                 _numSplinterEnds--;
@@ -411,24 +420,66 @@ onInit((em: EntityManager) => {
           });
         });
 
-        if (needsIndicesUpdate) {
-          // console.log(`needsIndicesUpdate`);
-          // TODO(@darzu): really need sub-mesh updateMesh
-          // TODO(@darzu): consider doing particle system for end caps and such?
-          // TODO(@darzu): IMPL idx ranges
-          res.renderer.renderer.stdPool.updateMeshIndices(
-            meshHandle,
-            mesh,
-            0,
-            mesh.tri.length,
-            0,
-            mesh.quad.length
-          );
-        }
-        if (needsVertsUpdate) {
-          // console.log(`needsVertsUpdate`);
-          // TODO(@darzu): really need sub-mesh updateMesh
-          res.renderer.renderer.stdPool.updateMeshVertices(meshHandle, mesh);
+        const ws = w.woodState;
+        if (
+          ws.splinterState &&
+          (splinterIndUpdated.length || segQuadIndUpdated.length)
+        ) {
+          const triIntervals = createIntervalTracker(100);
+          const quadIntervals = createIntervalTracker(100);
+          const vertIntervals = createIntervalTracker(100);
+
+          for (let spI of splinterIndUpdated) {
+            const tMin = ws.splinterState.triOffset + spI * _trisPerSplinter;
+            const tMax = tMin + _trisPerSplinter;
+            triIntervals.addRange(tMin, tMax);
+
+            const qMin = ws.splinterState.quadOffset + spI * _quadsPerSplinter;
+            const qMax = qMin + _quadsPerSplinter;
+            quadIntervals.addRange(qMin, qMax);
+
+            const vMin = ws.splinterState.vertOffset + spI * _vertsPerSplinter;
+            const vMax = vMin + _vertsPerSplinter;
+            vertIntervals.addRange(vMin, vMax);
+          }
+
+          for (let { min, max } of segQuadIndUpdated) {
+            quadIntervals.addRange(min, max);
+          }
+
+          triIntervals.finishInterval();
+          quadIntervals.finishInterval();
+          vertIntervals.finishInterval();
+
+          console.dir(triIntervals.intervals);
+          console.dir(quadIntervals.intervals);
+          console.dir(vertIntervals.intervals);
+
+          for (let { min, max } of triIntervals.intervals)
+            res.renderer.renderer.stdPool.updateMeshTriangles(
+              meshHandle,
+              mesh,
+              min,
+              max - min + 1
+            );
+
+          for (let { min, max } of quadIntervals.intervals) {
+            console.log(`updating quads: ${min} ${max}`);
+            res.renderer.renderer.stdPool.updateMeshQuads(
+              meshHandle,
+              mesh,
+              min,
+              max - min + 1
+            );
+          }
+
+          for (let { min, max } of vertIntervals.intervals)
+            res.renderer.renderer.stdPool.updateMeshVertices(
+              meshHandle,
+              mesh,
+              min,
+              max - min + 1
+            );
         }
       }
     },
@@ -782,15 +833,6 @@ export function createTimberBuilder(mesh: RawMesh) {
     vec3.transformMat4(v2, v2, cursor);
     vec3.transformMat4(v3, v3, cursor);
     mesh.pos.push(v0, v1, v2, v3);
-  }
-}
-
-function hideSegment(seg: BoardSeg, m: RawMesh) {
-  // TODO(@darzu): how to unhide?
-  // TODO(@darzu): probably a more efficient way to do this..
-  for (let qi of [...seg.quadSideIdxs, ...seg.quadEndIdxs]) {
-    const q = m.quad[qi];
-    vec4.set(q, 0, 0, 0, 0);
   }
 }
 

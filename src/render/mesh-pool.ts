@@ -1,5 +1,5 @@
-import { align } from "../math.js";
-import { assert } from "../util.js";
+import { align, alignDown } from "../math.js";
+import { assert, assertDbg } from "../util.js";
 import { CyStructDesc, CyToTS } from "./gpu-struct.js";
 import { Mesh } from "./mesh.js";
 import { CyArray, CyIdxBuffer } from "./data-webgpu.js";
@@ -23,6 +23,7 @@ export interface MeshHandle {
   readonly uniIdx: number;
   readonly vertIdx: number;
   readonly vertNum: number;
+  // NOTE: triIdx must always be 4-byte aligned
   readonly triIdx: number;
   readonly triNum: number;
   readonly lineIdx: number;
@@ -77,15 +78,21 @@ export interface MeshPool<V extends CyStructDesc, U extends CyStructDesc> {
   updateMeshVertices: (
     handle: MeshHandle,
     newMeshData: Mesh,
+    // TODO(@darzu): make optional again?
     startIdx?: number,
     count?: number
   ) => void;
-  updateMeshIndices: (
+  updateMeshTriangles: (
     handle: MeshHandle,
     newMeshData: Mesh,
     // TODO(@darzu): make optional again?
     triIdx: number,
-    triCount: number,
+    triCount: number
+  ) => void;
+  updateMeshQuads: (
+    handle: MeshHandle,
+    newMeshData: Mesh,
+    // TODO(@darzu): make optional again?
     quadIdx: number,
     quadCount: number
   ) => void;
@@ -170,12 +177,26 @@ let nextMeshId = 1;
 
 let tempTriData = new Uint16Array(256);
 function computeTriData(m: Mesh, startIdx: number, count: number): Uint16Array {
+  // NOTE: callee responsible for aligning-up the output length
+  // NOTE: caller responsible for aligning-down start-idx
+  assertDbg(startIdx % 2 === 0);
+  // assert(count % 2 === 0);
+  assertDbg(startIdx < m.tri.length);
+  assertDbg(startIdx + count <= m.tri.length);
+
+  // try to align-up by enumerating more data
   if (startIdx + count < m.tri.length && count % 2 === 1) count += 1;
+
+  // but our data output must always be aligned
   const dataLen = align(count * 3, 2);
+
+  // expand our temp array if needed
   if (tempTriData.length < dataLen) tempTriData = new Uint16Array(dataLen);
+
   // add tris
   for (let ti = startIdx; ti < startIdx + count; ti++) {
     const dIdx = (ti - startIdx) * 3;
+    assertDbg(0 <= ti && ti < m.tri.length);
     const triInd = m.tri[ti];
     tempTriData[dIdx + 0] = triInd[0];
     tempTriData[dIdx + 1] = triInd[1];
@@ -231,7 +252,8 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     addMesh,
     addMeshInstance,
     updateMeshVertices,
-    updateMeshIndices,
+    updateMeshTriangles,
+    updateMeshQuads,
   };
 
   // TODO(@darzu): default to all 1s?
@@ -245,7 +267,13 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
       "Too many lines!"
     );
     assert(m.usesProvoking, `mesh must use provoking vertices`);
+    // TODO(@darzu): what to do about this requirement...
+    assert(
+      !m.quad.length || m.tri.length % 2 === 0,
+      `tri.length not even for ${m.dbgName}`
+    );
 
+    assertDbg(pool.numTris % 2 === 0, "alignment");
     const handle: MeshHandle = {
       mId: nextMeshId++,
       // enabled: true,
@@ -264,13 +292,16 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     // add tris (and quads)
     if (m.tri.length) {
       const triData = computeTriData(m, 0, m.tri.length);
-      assert(triData.length % 2 === 0, "triData");
+      // const dataLen = align(m.tri.length, 2);
+      assertDbg(triData.byteLength % 4 === 0, "alignment");
+      // NOTE: CALLERS to queueUpdate must be 4-byte aligned
       opts.triInds.queueUpdate(triData, handle.triIdx * 3);
       if (GPU_DBG_PERF) _stats._accumTriDataQueued += triData.length * 2.0;
     }
     if (m.quad.length) {
       const quadData = computeQuadData(m, 0, m.quad.length);
-      opts.triInds.queueUpdate(quadData, (handle.triIdx + m.tri.length) * 3);
+      const quadStartIdx = align((handle.triIdx + m.tri.length) * 3, 2);
+      opts.triInds.queueUpdate(quadData, quadStartIdx);
       if (GPU_DBG_PERF) _stats._accumTriDataQueued += quadData.length * 2.0;
     }
 
@@ -299,8 +330,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     }
 
     pool.numTris += numTri;
-    // NOTE: mesh's triangles need to be 4-byte aligned.
-    // TODO(@darzu): is this still necessary? might be handled by the CyBuffer stuff
+    // NOTE: mesh's triangle start idx needs to be 4-byte aligned, and we start the
     pool.numTris = align(pool.numTris, 2);
     pool.numLines += m.lines?.length ?? 0;
     pool.numVerts += m.pos.length;
@@ -326,63 +356,59 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   function updateMeshVertices(
     handle: MeshHandle,
     newMesh: Mesh,
-    startIdx?: number,
-    count?: number
+    // TODO(@darzu): make optional again?
+    vertIdx?: number,
+    vertCount?: number
   ) {
-    startIdx = startIdx ?? 0;
-    count = count ?? newMesh.pos.length;
-    const data = opts.computeVertsData(newMesh, startIdx, count);
-    opts.verts.queueUpdates(data, handle.vertIdx, 0, count);
-
-    if (GPU_DBG_PERF) {
+    vertIdx = vertIdx ?? 0;
+    vertCount = vertCount ?? newMesh.pos.length;
+    const data = opts.computeVertsData(newMesh, vertIdx, vertCount);
+    opts.verts.queueUpdates(data, handle.vertIdx + vertIdx, 0, vertCount);
+    if (GPU_DBG_PERF)
       _stats._accumVertDataQueued += data.length * opts.verts.struct.size;
-    }
   }
-  function updateMeshIndices(
+  function updateMeshTriangles(
     handle: MeshHandle,
     newMesh: Mesh,
     triIdx: number,
-    triCount: number,
+    triCount: number
+  ) {
+    // TODO(@darzu): this align up and down thing seems a little hacky?
+    // NOTE: we need both the start and length to be 4-byte aligned!
+    let triEndIdx = triIdx + (triCount - 1);
+    triIdx = alignDown(triIdx, 2);
+    triCount = triEndIdx - triIdx + 1;
+    // let alignTriCount = align(triCount, 2);
+
+    assertDbg(triCount > 0); // TODO(@darzu): these asserts should probably be removed eventually
+    assertDbg(triIdx + triCount <= newMesh.tri.length);
+    assertDbg(handle.triIdx % 2 === 0);
+    const triData = computeTriData(newMesh, triIdx, triCount);
+    assertDbg(triData.byteLength % 4 === 0, "alignment");
+    opts.triInds.queueUpdate(triData, (handle.triIdx + triIdx) * 3);
+    if (GPU_DBG_PERF) _stats._accumTriDataQueued += triData.length * 2.0;
+  }
+  function updateMeshQuads(
+    handle: MeshHandle,
+    newMesh: Mesh,
     quadIdx: number,
     quadCount: number
   ) {
-    triIdx = triIdx ?? 0;
-    triCount = triCount ?? newMesh.tri.length - triIdx;
-    quadIdx = quadIdx ?? 0;
-    quadCount = quadCount ?? newMesh.quad.length - quadIdx;
-    // TODO(@darzu): IMPL! Use startIdx?: number, count?: number
-    // TODO(@darzu): IMPL w/ quad data too
-    // console.log(`updateMeshIndices: ${[triIdx, triCount, quadIdx, quadCount]}`);
+    assertDbg(0 <= quadIdx && quadIdx + quadCount <= newMesh.quad.length);
+    const quadData = computeQuadData(newMesh, quadIdx, quadCount);
+    assertDbg(quadData.length % 2 === 0);
 
-    // const oldData = OLD_computeTriData(newMesh);
-    // opts.triInds.queueUpdate(oldData, handle.triIdx * 3);
-    // return;
-
-    if (triCount > 0) {
-      const triData = computeTriData(newMesh, triIdx, triCount);
-      // console.dir(triData);
-      opts.triInds.queueUpdate(triData, handle.triIdx * 3);
-      if (GPU_DBG_PERF) _stats._accumTriDataQueued += triData.length * 2.0;
-    }
-    if (quadCount > 0) {
-      const quadData = computeQuadData(newMesh, quadIdx, quadCount);
-      // console.dir(quadData);
-      const bufQuadIdx = (handle.triIdx + newMesh.tri.length) * 3; // NOTE: tris come first
-      opts.triInds.queueUpdate(quadData, bufQuadIdx);
-      if (GPU_DBG_PERF) _stats._accumTriDataQueued += quadData.length * 2.0;
-    }
-
-    // console.log(
-    //   `oldData: ${oldData.length}, triData: ${triData.length}, quadData: ${quadData.length}`
-    // );
+    const bufQuadIndsStart = align((handle.triIdx + newMesh.tri.length) * 3, 2); // NOTE: tris come first
+    let bufQuadIdx = bufQuadIndsStart + quadIdx * 2 * 3;
+    assertDbg(bufQuadIdx % 2 === 0);
+    assertDbg(quadData.length % 2 === 0);
+    opts.triInds.queueUpdate(quadData, bufQuadIdx);
+    if (GPU_DBG_PERF) _stats._accumTriDataQueued += quadData.byteLength;
   }
 
   function updateUniform(m: MeshHandle, d: CyToTS<U>): void {
     opts.unis.queueUpdate(d, m.uniIdx);
-
-    if (GPU_DBG_PERF) {
-      _stats._accumUniDataQueued += opts.unis.struct.size;
-    }
+    if (GPU_DBG_PERF) _stats._accumUniDataQueued += opts.unis.struct.size;
   }
 
   return pool;

@@ -1,4 +1,5 @@
 import { vec3, mat4 } from "../../gl-matrix.js";
+import { assertDbg } from "../../util.js";
 import { computeTriangleNormal } from "../../utils-3d.js";
 import { CY } from "../gpu-registry.js";
 import { createCyStruct, CyToTS } from "../gpu-struct.js";
@@ -119,33 +120,33 @@ export function computeUniData(m: Mesh): MeshUniformTS {
   return uni;
 }
 
-// TODO(@darzu): Allow partial updates (start + len?)
 // TODO(@darzu): Allow updates directly to serialized data
 // TODO(@darzu): Related, allow updates that don't change e.g. the normals
 const tempVertsData: VertexTS[] = [];
 export function computeVertsData(
   m: Mesh,
-  startIdx?: number,
-  count?: number
+  startIdx: number,
+  count: number
 ): VertexTS[] {
-  count = count ?? m.pos.length;
-  startIdx = startIdx ?? 0;
+  assertDbg(0 <= startIdx && startIdx + count <= m.pos.length);
 
-  const missingLen = m.pos.length - tempVertsData.length;
-  if (missingLen > 0) {
-    for (let i = 0; i < missingLen; i++)
-      tempVertsData.push(createEmptyVertexTS());
-  }
-  m.pos.forEach((pos, i) => {
+  while (tempVertsData.length < count)
+    tempVertsData.push(createEmptyVertexTS());
+
+  for (let vi = startIdx; vi < startIdx + count; vi++) {
+    const dIdx = vi - startIdx;
     // NOTE: assignment is fine since this better not be used without being re-assigned
-    tempVertsData[i].position = pos;
-    // TODO(@darzu): UVs again?
-    // if (m.uvs)
-    //   tempVertsData[i].uv = m.uvs[i];
-  });
+    tempVertsData[dIdx].position = m.pos[vi];
+    // TODO(@darzu): UVs and other properties?
+  }
   // NOTE: for per-face data (e.g. color and surface IDs), first all the quads then tris
   m.tri.forEach((triInd, i) => {
     // set provoking vertex data
+    const provVi = triInd[0];
+    // is triangle relevant to changed vertices?
+    if (provVi < startIdx || startIdx + count <= provVi) return;
+
+    const dIdx = provVi - startIdx;
     // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
     // TODO(@darzu): what to do about normals. If we're modifying verts, they need to recompute. But it might be in the mesh.
     const normal = computeTriangleNormal(
@@ -153,22 +154,30 @@ export function computeVertsData(
       m.pos[triInd[1]],
       m.pos[triInd[2]]
     );
-    tempVertsData[triInd[0]].normal = normal;
+    tempVertsData[dIdx].normal = normal;
     const faceIdx = i + m.quad.length; // quads first
-    tempVertsData[triInd[0]].color = m.colors[faceIdx];
-    tempVertsData[triInd[0]].surfaceId = m.surfaceIds[faceIdx];
+    // TODO(@darzu): QUAD DATA BEING FIRST BUT TRIANGLES INDICES BEING FIRST IS INCONSISTENT
+    tempVertsData[dIdx].color = m.colors[faceIdx];
+    tempVertsData[dIdx].surfaceId = m.surfaceIds[faceIdx];
   });
+
   m.quad.forEach((quadInd, i) => {
     // set provoking vertex data
+    const provVi = quadInd[0];
+    // is quad relevant to changed vertices?
+    if (provVi < startIdx || startIdx + count <= provVi) return;
+
+    const dIdx = provVi - startIdx;
     const normal = computeTriangleNormal(
       m.pos[quadInd[0]],
       m.pos[quadInd[1]],
       m.pos[quadInd[2]]
     );
-    tempVertsData[quadInd[0]].normal = normal;
-    // TODO(@darzu): this isn't right, colors and surfaceIds r being indexed by tris and quads
-    tempVertsData[quadInd[0]].color = m.colors[i];
-    tempVertsData[quadInd[0]].surfaceId = m.surfaceIds[i];
+    tempVertsData[dIdx].normal = normal;
+    const faceIdx = i; // quads first
+    // TODO(@darzu): QUAD DATA BEING FIRST BUT TRIANGLES INDICES BEING FIRST IS INCONSISTENT
+    tempVertsData[dIdx].color = m.colors[faceIdx];
+    tempVertsData[dIdx].surfaceId = m.surfaceIds[faceIdx];
   });
 
   return tempVertsData;

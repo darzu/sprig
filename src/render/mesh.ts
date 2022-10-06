@@ -135,6 +135,10 @@ export function validateMesh(m: RawMesh) {
   const dbgName = `"${m.dbgName ?? "???"}"`;
 
   // TODO(@darzu): Don't assert, return a boolean + reason!
+  assert(
+    !m.quad.length || m.tri.length % 2 === 0,
+    `mesh ${dbgName} must have even number of triangles!`
+  );
   const faceCount = m.tri.length + m.quad.length;
   assert(
     m.colors.length === faceCount,

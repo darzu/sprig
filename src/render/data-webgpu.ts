@@ -1,5 +1,5 @@
 import { align } from "../math.js";
-import { assert } from "../util.js";
+import { assert, assertDbg } from "../util.js";
 import { dbgLogOnce, isNumber } from "../util.js";
 import {
   CyStructDesc,
@@ -54,6 +54,7 @@ export interface CyIdxBuffer {
   length: number;
   size: number;
   buffer: GPUBuffer;
+  // NOTE: Callers must ensure 4-byte aligned startIdx and data.byteLength
   queueUpdate: (data: Uint16Array, startIdx: number) => void;
 }
 
@@ -169,11 +170,9 @@ export function createCySingleton<O extends CyStructDesc>(
     // TODO(@darzu): measure perf. we probably want to allow hand written serializers
     buf.lastData = data;
     const b = struct.serialize(data);
-    // assert(b.length % 4 === 0, `buf write must be 4 byte aligned: ${b.length}`);
-    if (GPU_DBG_PERF) {
-      _gpuQueueBufferWriteBytes += b.length;
-    }
+    assertDbg(b.byteLength % 4 === 0, `alignment`);
     device.queue.writeBuffer(_buf, 0, b);
+    if (GPU_DBG_PERF) _gpuQueueBufferWriteBytes += b.byteLength;
   }
 
   function binding(idx: number, plurality: "one" | "many"): GPUBindGroupEntry {
@@ -233,12 +232,11 @@ export function createCyArray<O extends CyStructDesc>(
 
   function queueUpdate(data: CyToTS<O>, index: number): void {
     const b = struct.serialize(data);
-    // TODO(@darzu): disable for perf?
-    // assert(b.length % 4 === 0);
-    if (GPU_DBG_PERF) {
-      _gpuQueueBufferWriteBytes += b.length;
-    }
-    device.queue.writeBuffer(_buf, index * struct.size, b);
+    const bufOffset = index * struct.size;
+    assertDbg(bufOffset % 4 === 0, `alignment`);
+    assertDbg(b.length % 4 === 0, `alignment`);
+    device.queue.writeBuffer(_buf, bufOffset, b);
+    if (GPU_DBG_PERF) _gpuQueueBufferWriteBytes += b.length;
   }
 
   // TODO(@darzu): somewhat hacky way to reuse Uint8Arrays here; we could do some more global pool
@@ -258,21 +256,18 @@ export function createCyArray<O extends CyStructDesc>(
     if (tempUint8Array.byteLength <= dataSize) {
       tempUint8Array = new Uint8Array(dataSize);
     }
-    // TODO(@darzu): USE TEMP!
-    // const serialized = tempUint8Array;
-    const serialized = new Uint8Array(dataSize);
+    const serialized = tempUint8Array;
+    // TODO(@darzu): DBG HACK! USE TEMP!
+    // const serialized = new Uint8Array(dataSize);
 
     for (let i = dataIdx; i < dataIdx + dataCount; i++)
       serialized.set(struct.serialize(data[i]), struct.size * (i - dataIdx));
-    // assert(serialized.length % 4 === 0);
+
+    const bufOffset = bufIdx * struct.size;
+    assertDbg(dataSize % 4 === 0, `alignment`);
+    assertDbg(bufOffset % 4 === 0, `alignment`);
+    device.queue.writeBuffer(_buf, bufOffset, serialized, 0, dataSize);
     if (GPU_DBG_PERF) _gpuQueueBufferWriteBytes += dataSize;
-    device.queue.writeBuffer(
-      _buf,
-      bufIdx * struct.size,
-      serialized,
-      0,
-      dataSize
-    );
   }
 
   function binding(idx: number, plurality: "one" | "many"): GPUBindGroupEntry {
@@ -318,13 +313,11 @@ export function createCyIdxBuf(
   }
 
   function queueUpdate(data: Uint16Array, startIdx: number): void {
-    const startByte = startIdx * Uint16Array.BYTES_PER_ELEMENT;
-    // const byteView = new Uint8Array(data);
-    // assert(data.length % 2 === 0);
-    if (GPU_DBG_PERF) {
-      _gpuQueueBufferWriteBytes += data.length * 2.0;
-    }
+    const startByte = startIdx * 2;
+    assertDbg(data.byteLength % 4 === 0, `alignment`);
+    assertDbg(startByte % 4 === 0, `alignment`);
     device.queue.writeBuffer(_buf, startByte, data);
+    if (GPU_DBG_PERF) _gpuQueueBufferWriteBytes += data.byteLength;
   }
 
   return buf;

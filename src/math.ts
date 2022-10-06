@@ -38,6 +38,9 @@ export function randInt(min: number, max: number) {
 export function align(x: number, size: number): number {
   return Math.ceil(x / size) * size;
 }
+export function alignDown(x: number, size: number): number {
+  return Math.floor(x / size) * size;
+}
 
 export function chance(zeroToOne: number): boolean {
   return Math.random() < zeroToOne;
