@@ -365,7 +365,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     const data = opts.computeVertsData(newMesh, vertIdx, vertCount);
     opts.verts.queueUpdates(data, handle.vertIdx + vertIdx, 0, vertCount);
     if (GPU_DBG_PERF)
-      _stats._accumVertDataQueued += data.length * opts.verts.struct.size;
+      _stats._accumVertDataQueued += vertCount * opts.verts.struct.size;
   }
   function updateMeshTriangles(
     handle: MeshHandle,
@@ -375,17 +375,25 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   ) {
     // TODO(@darzu): this align up and down thing seems a little hacky?
     // NOTE: we need both the start and length to be 4-byte aligned!
-    let triEndIdx = triIdx + (triCount - 1);
-    triIdx = alignDown(triIdx, 2);
-    triCount = triEndIdx - triIdx + 1;
+    const triEndIdx = triIdx + triCount - 1;
+    const alignedTriIdx = alignDown(triIdx, 2);
+    const alignedTriCount = triEndIdx - alignedTriIdx + 1;
     // let alignTriCount = align(triCount, 2);
 
-    assertDbg(triCount > 0); // TODO(@darzu): these asserts should probably be removed eventually
-    assertDbg(triIdx + triCount <= newMesh.tri.length);
+    assertDbg(alignedTriCount > 0);
+    // TODO(@darzu): THIS ASSERT IS FAILING! \/
+    // {min: 3184, max: 3200}
+    // {min: 0, max: 32}
+    assertDbg(
+      alignedTriIdx + alignedTriCount <= newMesh.tri.length,
+      `triIdx: ${triIdx}, triCount: ${triCount}, triEndIdx: ${triEndIdx}
+      alignedTriIdx: ${alignedTriIdx}, alignedTriCount: ${alignedTriCount}, 
+      newMesh.tri.length: ${newMesh.tri.length}`
+    );
     assertDbg(handle.triIdx % 2 === 0);
-    const triData = computeTriData(newMesh, triIdx, triCount);
+    const triData = computeTriData(newMesh, alignedTriIdx, alignedTriCount);
     assertDbg(triData.byteLength % 4 === 0, "alignment");
-    opts.triInds.queueUpdate(triData, (handle.triIdx + triIdx) * 3);
+    opts.triInds.queueUpdate(triData, (handle.triIdx + alignedTriIdx) * 3);
     if (GPU_DBG_PERF) _stats._accumTriDataQueued += triData.length * 2.0;
   }
   function updateMeshQuads(

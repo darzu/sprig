@@ -425,35 +425,32 @@ onInit((em: EntityManager) => {
           ws.splinterState &&
           (splinterIndUpdated.length || segQuadIndUpdated.length)
         ) {
+          // TODO(@darzu): probably just create these trackers above? Persist them
+          //    frame to frame.
           const triIntervals = createIntervalTracker(100);
           const quadIntervals = createIntervalTracker(100);
           const vertIntervals = createIntervalTracker(100);
 
           for (let spI of splinterIndUpdated) {
             const tMin = ws.splinterState.triOffset + spI * _trisPerSplinter;
-            const tMax = tMin + _trisPerSplinter;
+            const tMax = tMin + _trisPerSplinter - 1;
             triIntervals.addRange(tMin, tMax);
 
             const qMin = ws.splinterState.quadOffset + spI * _quadsPerSplinter;
-            const qMax = qMin + _quadsPerSplinter;
+            const qMax = qMin + _quadsPerSplinter - 1;
             quadIntervals.addRange(qMin, qMax);
 
             const vMin = ws.splinterState.vertOffset + spI * _vertsPerSplinter;
-            const vMax = vMin + _vertsPerSplinter;
+            const vMax = vMin + _vertsPerSplinter - 1;
             vertIntervals.addRange(vMin, vMax);
           }
 
-          for (let { min, max } of segQuadIndUpdated) {
+          for (let { min, max } of segQuadIndUpdated)
             quadIntervals.addRange(min, max);
-          }
 
           triIntervals.finishInterval();
           quadIntervals.finishInterval();
           vertIntervals.finishInterval();
-
-          console.dir(triIntervals.intervals);
-          console.dir(quadIntervals.intervals);
-          console.dir(vertIntervals.intervals);
 
           for (let { min, max } of triIntervals.intervals)
             res.renderer.renderer.stdPool.updateMeshTriangles(
@@ -463,15 +460,13 @@ onInit((em: EntityManager) => {
               max - min + 1
             );
 
-          for (let { min, max } of quadIntervals.intervals) {
-            console.log(`updating quads: ${min} ${max}`);
+          for (let { min, max } of quadIntervals.intervals)
             res.renderer.renderer.stdPool.updateMeshQuads(
               meshHandle,
               mesh,
               min,
               max - min + 1
             );
-          }
 
           for (let { min, max } of vertIntervals.intervals)
             res.renderer.renderer.stdPool.updateMeshVertices(
