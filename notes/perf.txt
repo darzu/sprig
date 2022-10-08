@@ -183,7 +183,7 @@ New JS stuff to consider:
   Object.hasOwn
 
 Current memory/frame:
-  ~400kb
+  ~341kb
 
 Search for:
   TODO(@darzu): perf
