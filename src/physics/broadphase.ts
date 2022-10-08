@@ -523,11 +523,23 @@ export function getAABBCorners(aabb: AABB): vec3[] {
   return points;
 }
 
+const tempAabbCorners: vec3[] = range(8).map((_) => vec3.create());
+export function getAABBCornersTemp(aabb: AABB): vec3[] {
+  vec3.set(tempAabbCorners[0], aabb.max[0], aabb.max[1], aabb.max[2]);
+  vec3.set(tempAabbCorners[1], aabb.max[0], aabb.max[1], aabb.min[2]);
+  vec3.set(tempAabbCorners[2], aabb.max[0], aabb.min[1], aabb.max[2]);
+  vec3.set(tempAabbCorners[3], aabb.max[0], aabb.min[1], aabb.min[2]);
+  vec3.set(tempAabbCorners[4], aabb.min[0], aabb.max[1], aabb.max[2]);
+  vec3.set(tempAabbCorners[5], aabb.min[0], aabb.max[1], aabb.min[2]);
+  vec3.set(tempAabbCorners[6], aabb.min[0], aabb.min[1], aabb.max[2]);
+  vec3.set(tempAabbCorners[7], aabb.min[0], aabb.min[1], aabb.min[2]);
+  return tempAabbCorners;
+}
+
 export function transformAABB(out: AABB, t: mat4) {
-  // TODO(@darzu): highly inefficient. for one, this allocs new vecs
-  const wCorners = getAABBCorners(out).map((p) => vec3.transformMat4(p, p, t));
-  // TODO(@darzu): update localAABB too
-  copyAABB(out, getAABBFromPositions(wCorners));
+  const wCorners = getAABBCornersTemp(out);
+  wCorners.forEach((p) => vec3.transformMat4(p, p, t));
+  getAABBFromPositions(out, wCorners);
 }
 
 export function aabbCenter(out: vec3, a: AABB): vec3 {
@@ -556,17 +568,15 @@ export function mergeAABBs(out: AABB, a: AABB, b: AABB): AABB {
   return out;
 }
 
-export function getAABBFromPositions(positions: vec3[]): AABB {
-  const aabb: AABB = {
-    min: vec3.fromValues(Infinity, Infinity, Infinity),
-    max: vec3.fromValues(-Infinity, -Infinity, -Infinity),
-  };
+export function getAABBFromPositions(out: AABB, positions: vec3[]): AABB {
+  vec3.set(out.min, Infinity, Infinity, Infinity);
+  vec3.set(out.max, -Infinity, -Infinity, -Infinity);
 
   for (let pos of positions) {
-    updateAABBWithPoint(aabb, pos);
+    updateAABBWithPoint(out, pos);
   }
 
-  return aabb;
+  return out;
 }
 
 export interface Sphere {

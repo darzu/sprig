@@ -1064,7 +1064,10 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
 
       // create common segment data
       const vertIdxs = [...segVis.values()];
-      const aabb = getAABBFromPositions(vertIdxs.map((vi) => m.pos[vi]));
+      const aabb = getAABBFromPositions(
+        createAABB(),
+        vertIdxs.map((vi) => m.pos[vi])
+      );
       const lastMid = centroid([...lastLoop].map((vi) => m.pos[vi]));
       const nextMid = centroid([...nextLoop].map((vi) => m.pos[vi]));
       const mid = createLine(lastMid, nextMid);

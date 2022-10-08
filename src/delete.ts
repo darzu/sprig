@@ -47,3 +47,18 @@ export const OnDeleteDef = EM.defineComponent(
   "onDelete",
   (onDelete: (deletedId: number) => void) => onDelete
 );
+
+// TODO(@darzu): IMPL dead system.
+//    Idea: needed for entity pools. EM wont call a system w/ a Dead entity unless
+//    that system explicitly asks for Dead.
+export const DeadDef = EM.defineComponent("dead", () => true);
+
+EM.registerSerializerPair(
+  DeadDef,
+  () => {
+    return;
+  },
+  () => {
+    return;
+  }
+);

@@ -18,7 +18,6 @@ import {
   createAABB,
   doesOverlapAABB,
   doesTouchAABB,
-  getAABBFromPositions,
   Ray,
   RayHit,
   rayHitDist,

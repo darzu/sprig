@@ -83,7 +83,7 @@ EM.registerSerializerPair(
 
 const BULLET_COLOR: vec3 = [0.02, 0.02, 0.02];
 
-function createBullet(
+export function createBullet(
   em: EntityManager,
   e: Entity & { bulletConstruct: BulletConstruct },
   pid: number,
@@ -144,7 +144,7 @@ export function registerBulletUpdate(em: EntityManager) {
   );
 }
 
-export function fireBullet(
+export async function fireBullet(
   em: EntityManager,
   team: number,
   location: vec3,
@@ -165,8 +165,8 @@ export function fireBullet(
   const linearVelocity = vec3.scale(vec3.create(), bulletAxis, speed);
   const angularVelocity = vec3.scale(vec3.create(), bulletAxis, rotationSpeed);
   const e = em.newEntity();
-  em.addComponent(
-    e.id,
+  em.ensureComponentOn(
+    e,
     BulletConstructDef,
     vec3.clone(location),
     linearVelocity,
@@ -175,6 +175,12 @@ export function fireBullet(
     gravity,
     health
   );
+
+  // TODO(@darzu): This breaks multiplayer maybe!
+  // TODO(@darzu): need to think how multiplayer and entity pools interact.
+  const { me, assets } = await em.whenResources(MeDef, AssetsDef);
+  createBullet(em, e, me.pid, assets);
+  // TODO(@darzu): IMPL entity pool.
 }
 
 type BulletPart = EntityW<[typeof PositionDef, typeof ColorDef]>;

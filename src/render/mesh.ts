@@ -2,7 +2,11 @@ import { ASSET_LOG_VERT_CHANGES } from "../flags.js";
 import { createFabric } from "../game/assets.js";
 import { vec3, vec2, mat4, vec4 } from "../gl-matrix.js";
 import { max, sum } from "../math.js";
-import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
+import {
+  AABB,
+  createAABB,
+  getAABBFromPositions,
+} from "../physics/broadphase.js";
 import { assert } from "../util.js";
 import { arraySortedEqual, arrayUnsortedEqual } from "../util.js";
 import { vec3Dbg, vec3Mid } from "../utils-3d.js";
@@ -402,7 +406,7 @@ export function normalizeMesh(inM: RawMesh): Mesh {
 }
 
 export function getAABBFromMesh(m: RawMesh): AABB {
-  return getAABBFromPositions(m.pos);
+  return getAABBFromPositions(createAABB(), m.pos);
 }
 export function getCenterFromAABB(aabb: AABB): vec3 {
   return vec3Mid(vec3.create(), aabb.min, aabb.max);
