@@ -272,18 +272,18 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
       out +=
         s +
         ": " +
-        ((t * 100) / totalTime).toPrecision(2) +
+        ((t * 100) / totalTime).toFixed(1) +
         "%" +
         " (" +
-        (t / EM.loops).toPrecision(2) +
+        (t / EM.loops).toFixed(2) +
         "ms, max:" +
-        m.toPrecision(2) +
+        m.toFixed(1) +
         "ms)" +
         "\n";
     }
 
     out += "\n";
-    out += "time per frame: " + (totalTime / EM.loops).toPrecision(3) + "ms";
+    out += "time per frame: " + (totalTime / EM.loops).toFixed(3) + "ms";
     console.log(out);
   },
 };

@@ -181,3 +181,12 @@ New JS stuff to consider:
   Error.cause
   "at" method?
   Object.hasOwn
+
+Current memory/frame:
+  ~400kb
+
+Search for:
+  TODO(@darzu): perf
+  [ ] remove allocs in callSystem
+  [ ] reduce allocs in stepRenderer
+  [ ] object pool bullets, enemies

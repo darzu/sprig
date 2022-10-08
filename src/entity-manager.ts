@@ -534,6 +534,7 @@ export class EntityManager {
     if (!s) throw `No system named ${name}`;
     let start = performance.now();
     // try looking up in the query cache
+    // TODO(@darzu): PERF. Is this alloc'ing a lot of memory each call?
     let es: Entities<any[]> = [];
     if (s.cs) {
       if (this._systemsToEntities.has(s.name))

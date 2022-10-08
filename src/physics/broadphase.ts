@@ -98,6 +98,7 @@ export function checkBroadphase(
   //      100 objs: 0.1ms, 1,200 overlaps + 6,000 enclosed-bys
   if (BROAD_PHASE === "OCT") {
     // TODO(@darzu): check layer masks
+    // TODO(@darzu): PERF. Is this really created every frame?!
     const octObjs = new Map<number, AABB>(objs.map((o) => [o.id, o.aabb])); // TODO(@darzu): necessary?
     const tree = octtree(octObjs, universeAABB);
     function octCheckOverlap(tree: OctTree) {
