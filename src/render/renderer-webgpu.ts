@@ -278,7 +278,7 @@ export function createRenderer(
     }
 
     if (needsRebundle) {
-      // console.log("rebundeling");
+      if (GPU_DBG_PERF) console.log("rebundeling");
       updateRenderBundle(handles, renderPipelines);
     }
 

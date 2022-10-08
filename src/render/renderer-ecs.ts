@@ -299,6 +299,7 @@ export function registerRenderer(em: EntityManager) {
       const renderer = res.renderer.renderer;
       const cameraView = res.cameraView;
 
+      // TODO(@darzu): PERF. this might be creating a large array.
       objs = objs.filter((o) => o.renderable.enabled && !DeletedDef.isOn(o));
 
       // ensure our mesh handle is up to date
@@ -381,8 +382,8 @@ export function registerRenderer(em: EntityManager) {
       const pointLights = em
         .filterEntities([PointLightDef, RendererWorldFrameDef])
         .map((e) => {
-          e.pointLight.viewProj = positionAndTargetToOrthoViewProjMatrix(
-            mat4.create(),
+          positionAndTargetToOrthoViewProjMatrix(
+            e.pointLight.viewProj,
             e.rendererWorldFrame.position,
             cameraView.location
           );

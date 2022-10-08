@@ -1231,3 +1231,8 @@ Links from @reedbeta:
     Zero Wind :: Jamie Wong, Zero Wind :: Jamie Wong, http://feeds.feedburner.com/JamieWong, http://jamie-wong.com/
     zeuxcg.org, zeuxcg.org, http://zeuxcg.org/feed/, http://zeuxcg.org
     ZigguratVertigo's Hideout, ZigguratVertigo's Hideout, http://zigguratvertigo.com/feed/, https://colinbarrebrisebois.com
+
+Algebraic Geometry for Computer Graphics:
+  https://courses.cs.washington.edu/courses/cse590b/13au/
+  hn commenter recommended:
+    http://www.cs.uu.nl/docs/vakken/magr/2021-2022/index.html
