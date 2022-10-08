@@ -11,6 +11,7 @@ import {
 import { BulletDef } from "./game/bullet.js";
 import { GravityDef } from "./game/gravity.js";
 import { mat4, quat, vec2, vec3, vec4 } from "./gl-matrix.js";
+import { createIdxPool, createIdxRing } from "./idx-pool.js";
 import { onInit } from "./init.js";
 import { align, jitter } from "./math.js";
 import { MusicDef } from "./music.js";
@@ -351,23 +352,27 @@ onInit((em: EntityManager) => {
                 // create end caps
 
                 if (w.woodState.splinterState) {
-                  const splinterGen = w.woodState.splinterState.generation;
+                  // const splinterGen = w.woodState.splinterState.generation;
                   const splinterIdx = addSplinterEnd(seg, w.woodState, false);
-                  h.splinterBotIdx = splinterIdx;
-                  h.splinterBotGeneration = splinterGen;
-                  _numSplinterEnds++;
-                  splinterIndUpdated.push(splinterIdx);
+                  if (splinterIdx) {
+                    h.splinterBotIdx = splinterIdx;
+                    // h.splinterBotGeneration = splinterGen;
+                    _numSplinterEnds++;
+                    splinterIndUpdated.push(splinterIdx);
+                  }
                 }
               }
 
               if (h.next && !h.next.broken) {
                 if (w.woodState.splinterState) {
-                  const splinterGen = w.woodState.splinterState.generation;
+                  // const splinterGen = w.woodState.splinterState.generation;
                   const splinterIdx = addSplinterEnd(seg, w.woodState, true);
-                  h.splinterTopIdx = splinterIdx;
-                  h.splinterTopGeneration = splinterGen;
-                  _numSplinterEnds++;
-                  splinterIndUpdated.push(splinterIdx);
+                  if (splinterIdx) {
+                    h.splinterTopIdx = splinterIdx;
+                    // h.splinterTopGeneration = splinterGen;
+                    _numSplinterEnds++;
+                    splinterIndUpdated.push(splinterIdx);
+                  }
                 }
               }
 
@@ -390,8 +395,11 @@ onInit((em: EntityManager) => {
                 //   // console.log(`skipping removal b/c generation mismatch!`);
                 // }
                 splinterIndUpdated.push(h.next.splinterBotIdx);
+                w.woodState.splinterState.splinterIdxPool.free(
+                  h.next.splinterBotIdx
+                );
                 h.next.splinterBotIdx = undefined;
-                h.next.splinterBotGeneration = undefined;
+                // h.next.splinterBotGeneration = undefined;
                 _numSplinterEnds--;
               }
 
@@ -412,8 +420,11 @@ onInit((em: EntityManager) => {
                 //   // console.log(`skipping removal b/c generation mismatch!`);
                 // }
                 splinterIndUpdated.push(h.prev.splinterTopIdx);
+                w.woodState.splinterState.splinterIdxPool.free(
+                  h.prev.splinterTopIdx
+                );
                 h.prev.splinterTopIdx = undefined;
-                h.prev.splinterTopGeneration = undefined;
+                // h.prev.splinterTopGeneration = undefined;
                 _numSplinterEnds--;
               }
             }
@@ -523,8 +534,16 @@ function removeSplinterEnd(splinterIdx: number, wood: WoodState) {
   }
 }
 
-function addSplinterEnd(seg: BoardSeg, wood: WoodState, top: boolean): number {
+function addSplinterEnd(
+  seg: BoardSeg,
+  wood: WoodState,
+  top: boolean
+): number | undefined {
   assert(wood.splinterState, "!wood.splinterState");
+
+  const sIdx = wood.splinterState.splinterIdxPool.next();
+  if (!sIdx) return undefined;
+
   const W = seg.width;
   const D = seg.depth;
   const pos = vec3.copy(tempVec3(), seg.midLine.ray.org);
@@ -576,7 +595,6 @@ function addSplinterEnd(seg: BoardSeg, wood: WoodState, top: boolean): number {
   const splinterMesh = normalizeMesh(_tempSplinterMesh);
 
   // copy mesh into main mesh
-  const sIdx = wood.splinterState.nextSplinterIdx;
   const vertIdx = wood.splinterState.vertOffset + sIdx * _vertsPerSplinter;
   const triIdx = wood.splinterState.triOffset + sIdx * _trisPerSplinter;
   const quadIdx = wood.splinterState.quadOffset + sIdx * _quadsPerSplinter;
@@ -599,18 +617,7 @@ function addSplinterEnd(seg: BoardSeg, wood: WoodState, top: boolean): number {
     vec4.copy(wood.mesh.quad[quadIdx + i], splinterMesh.quad[i]);
   }
 
-  // advance the pool prt
-  wood.splinterState.nextSplinterIdx += 1;
-  if (
-    wood.splinterState.nextSplinterIdx >= wood.splinterState.maxNumSplinters
-  ) {
-    wood.splinterState.nextSplinterIdx = 0;
-    wood.splinterState.generation++;
-    // console.log(`splinter gen: ${wood.splinterState.generation}`);
-  }
-
   return sIdx;
-  // return splinter;
 }
 
 function createSplinterEnd(
@@ -859,11 +866,12 @@ const _trisPerSplinter = 16;
 const _quadsPerSplinter = 8;
 interface WoodSplinterState {
   maxNumSplinters: number;
-  nextSplinterIdx: number;
+  splinterIdxPool: ReturnType<typeof createIdxPool>;
+  // splinterIdxPool: ReturnType<typeof createIdxRing>;
   vertOffset: number;
   quadOffset: number;
   triOffset: number;
-  generation: number;
+  // generation: number;
 }
 
 interface WoodState {
@@ -898,11 +906,11 @@ export function reserveSplinterSpace(wood: WoodState, maxSplinters: number) {
 
   wood.splinterState = {
     maxNumSplinters: maxSplinters,
-    nextSplinterIdx: 0,
+    splinterIdxPool: createIdxPool(maxSplinters),
     vertOffset,
     quadOffset,
     triOffset,
-    generation: 1,
+    // generation: 1,
   };
   // console.log(meshStats(wood.mesh));
 }
@@ -1256,8 +1264,8 @@ interface SegHealth {
   broken: boolean;
   splinterTopIdx?: number;
   splinterBotIdx?: number;
-  splinterTopGeneration?: number;
-  splinterBotGeneration?: number;
+  // splinterTopGeneration?: number;
+  // splinterBotGeneration?: number;
 }
 type BoardHealth = SegHealth[];
 interface WoodHealth {

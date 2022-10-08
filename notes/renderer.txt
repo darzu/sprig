@@ -1025,3 +1025,209 @@ Recommendations for learning graphics programming:
   https://erkaman.github.io/posts/beginner_computer_graphics.html
   https://www.realtimerendering.com
   https://foundationsofgameenginedev.com
+
+Frustum culling:
+  https://bruop.github.io/frustum_culling/
+  better, seperating axis theorem:
+    https://gamedev.stackexchange.com/questions/44500/how-many-and-which-axes-to-use-for-3d-obb-collision-with-sat/44501#44501
+
+To sleuth:
+  https://www.reedbeta.com
+
+Bundling + frustum culling?
+  https://computergraphics.stackexchange.com/questions/13021/how-to-do-frustum-culling-with-draw-call-bundling
+  https://computergraphics.stackexchange.com/questions/4066/whats-the-main-difference-of-pipeline-process-between-vulkan-and-dx12
+  secondary command buffers (vulkan):
+    https://community.khronos.org/t/what-are-the-advantages-of-secondary-command-buffers/6977/5
+  dx12 vs vulkan:
+    https://computergraphics.stackexchange.com/questions/4066/whats-the-main-difference-of-pipeline-process-between-vulkan-and-dx12
+
+"GPU-driven rendering":
+  Offload culling and LOD selection to GPU?
+  https://advances.realtimerendering.com/s2015/aaltonenhaar_siggraph2015_combined_final_footer_220dpi.pdf
+
+Links from @reedbeta:
+    "Domipheus Labs", "Domipheus Labs", http://labs.domipheus.com/blog/feed/, http://labs.domipheus.com/blog
+    .mischief.mayhem.soap., .mischief.mayhem.soap., http://msinilo.pl/blog/?feed=rss2, http://msinilo.pl/blog2/
+    0 FPS, 0 FPS, https://0fps.net/feed/, https://0fps.net
+    A Graphics guy's note, A Graphics guy's note, https://agraphicsguy.wordpress.com/feed/, https://agraphicsguy.wordpress.com
+    A Random Walk Through Geek-Space, A Random Walk Through Geek-Space, http://www.sebastiansylvan.com/index.xml, https://www.sebastiansylvan.com/
+    Accidentally Quadratic, Accidentally Quadratic, http://accidentallyquadratic.tumblr.com/rss, https://accidentallyquadratic.tumblr.com/
+    Alexandre Pestana, Alexandre Pestana, http://www.alexandre-pestana.com/feed/, http://www.alexandre-pestana.com
+    Algorithmic Assertions, Algorithmic Assertions, http://algassert.com/feed.xml, http://algassert.com
+    Andreas Fredriksson, Andreas Fredriksson, http://deplinenoise.wordpress.com/feed/, https://deplinenoise.wordpress.com
+    Andrzej's C++ blog, Andrzej's C++ blog, http://akrzemi1.wordpress.com/feed/, https://akrzemi1.wordpress.com
+    Angelo Pesce, Angelo Pesce, http://c0de517e.blogspot.com/feeds/posts/default, http://c0de517e.blogspot.com/
+    Anteru's blog, Anteru's blog, https://anteru.net/rss.xml, https://anteru.net/
+    Apoorva Joshi, Apoorva Joshi, http://apoorvaj.io/feed.xml, http://apoorvaj.io
+    Aras' website, Aras' website, http://aras-p.info/atom.xml, https://aras-p.info/
+    Articles by Eric Arnebäck, Articles by Eric Arnebäck, https://erkaman.github.io/rss.xml, https://erkaman.github.io/articles.html
+    Arvid Gerstmann, Arvid Gerstmann, https://arvid.io/rss/, https://arvid.io/
+    Attila Áfra, Attila Áfra, http://voxelium.wordpress.com/feed/, https://voxelium.wordpress.com
+    Augmented Pixels, Augmented Pixels, https://www.tobias-franke.eu/log/rss/index.xml, https://www.tobias-franke.eu/
+    Avoyd devlog, Avoyd devlog, http://www.enkisoftware.com/rss, https://www.enkisoftware.com/
+    Bart Wronski, Bart Wronski, https://bartwronski.com/feed/, https://bartwronski.com
+    Bit Bashing, Bit Bashing, https://bitbashing.io/feed.xml, https://bitbashing.io/
+    bitsquid: development blog, bitsquid: development blog, http://bitsquid.blogspot.com/feeds/posts/default, http://bitsquid.blogspot.com/
+    Blog - Binomial, Blog - Binomial, http://www.binomial.info/blog?format=RSS, http://www.binomial.info/blog/
+    Blog - Stephanie Hurlburt, Blog - Stephanie Hurlburt, http://stephaniehurlburt.com/blog?format=RSS, http://stephaniehurlburt.com/blog/
+    Brian Karis, Brian Karis, http://graphicrants.blogspot.com/feeds/posts/default, http://graphicrants.blogspot.com/
+    Brian Sharpe, Brian Sharpe, http://briansharpe.wordpress.com/feed/, https://briansharpe.wordpress.com
+    Bruce Dawson, Bruce Dawson, http://randomascii.wordpress.com/feed/, https://randomascii.wordpress.com
+    C++ Secrets, C++ Secrets, http://cppsecrets.blogspot.com/feeds/posts/default, http://cppsecrets.blogspot.com/
+    Casey Muratori's Blog, Casey Muratori's Blog, http://mollyrocket.com/casey/stream_atom.rss, https://caseymuratori.com/blog
+    Cass Everitt, Cass Everitt, http://blog.xyzw.us/feeds/posts/default?alt=rss, http://blog.xyzw.us/
+    Casual Effects, Casual Effects, http://casual-effects.blogspot.com/feeds/posts/default, http://casual-effects.blogspot.com/
+    cbloom rants, cbloom rants, http://cbloomrants.blogspot.com/feeds/posts/default, http://cbloomrants.blogspot.com/
+    Christer Ericson, Christer Ericson, http://realtimecollisiondetection.net/blog/?feed=rss2, http://realtimecollisiondetection.net/blog
+    Christian Schüler, Christian Schüler, http://www.thetenthplanet.de/feed, http://www.thetenthplanet.de
+    Code &amp; Visuals, Code &amp; Visuals, http://blog.yiningkarlli.com/feeds/posts/default/, http://blog.yiningkarlli.com/
+    Code Capsule, Code Capsule, http://codecapsule.com/feed/, http://codecapsule.com
+    code4k, code4k, http://code4k.blogspot.com/feeds/posts/default, http://code4k.blogspot.com/
+    Coded Interactions, Coded Interactions, https://blog.dimitridiakopoulos.com/rss/, https://blog.dimitridiakopoulos.com/
+    CodeItNow, CodeItNow, http://www.rorydriscoll.com/feed/, http://www.rorydriscoll.com
+    codersnotes.com, codersnotes.com, http://www.codersnotes.com/rss/, http://www.codersnotes.com
+    Coding Horror, Coding Horror, http://feeds.feedburner.com/codinghorror/, https://blog.codinghorror.com/
+    Colour Science, Colour Science, https://www.colour-science.org/rss.xml, https://www.colour-science.org/
+    Computing and Recording, Computing and Recording, https://computingandrecording.wordpress.com/feed/, https://computingandrecording.wordpress.com
+    copypastepixel, copypastepixel, http://copypastepixel.blogspot.com/feeds/posts/default, http://copypastepixel.blogspot.com/
+    Cyril Crassin, Cyril Crassin, https://blog.icare3d.org/feeds/posts/default, https://blog.icare3d.org/
+    Dan Luu, Dan Luu, http://danluu.com/atom.xml, http://danluu.com/
+    Dev Curious - Medium, Dev Curious - Medium, https://blog.forrestthewoods.com/feed, https://blog.forrestthewoods.com?source=rss----4e87161953d9---4
+    Dreams of flashy pixels (on a white website), Dreams of flashy pixels (on a white website), https://flashypixels.wordpress.com/feed/, https://flashypixels.wordpress.com
+    duangle, duangle, https://blog.duangle.com/feeds/posts/default, https://blog.duangle.com/
+    Embedded in Academia, Embedded in Academia, http://blog.regehr.org/feed, https://blog.regehr.org
+    Emily Price, Emily Price, https://emilypriceisright.com/feed/, https://emilypriceisright.com
+    EpicShaders, EpicShaders, http://www.epicshaders.com/feed/, https://www.epicshaders.com
+    Extreme Learning, Extreme Learning, http://extremelearning.com.au/feed/, http://extremelearning.com.au
+    Fabian Giesen, Fabian Giesen, http://fgiesen.wordpress.com/feed/, https://fgiesen.wordpress.com
+    Fabien Sanglard, Fabien Sanglard, http://fabiensanglard.net/rss.xml, http://fabiensanglard.net
+    Filmic Worlds, Filmic Worlds, http://filmicworlds.com/feed.xml, http://filmicworlds.com/
+    Forward Scattering - The Weblog of Nicholas Chapman, Forward Scattering - The Weblog of Nicholas Chapman, http://www.forwardscattering.org/rss, http://www.forwardscattering.org/
+    fuzzy notepad, fuzzy notepad, http://eev.ee/feeds/atom.xml, https://eev.ee/
+    Fuzzy Reflection, Fuzzy Reflection, https://fuzzyreflection.com/feed/, https://fuzzyreflection.com
+    Gaffer On Games, Gaffer On Games, http://new.gafferongames.com/index.xml, https://gafferongames.com/
+    Gaming Reality, Gaming Reality, http://www.petecollier.com/?feed=rss2, http://www.petecollier.com
+    Gazoo.vrv, Gazoo.vrv, http://donw.io/index.xml, http://donw.io/
+    General Protection Fault, General Protection Fault, https://gpfault.net/rss.xml, http://www.gpfault.net/
+    Giliam de Carpentier, Giliam de Carpentier, http://www.decarpentier.nl/feed, http://www.decarpentier.nl
+    ginsweater's blog, ginsweater's blog, http://ginsweater.com/blog/feed/, http://ginsweater.com/blog
+    glowybits, glowybits, http://www.glowybits.com/index.xml, http://www.glowybits.com/index.xml
+    GPU Dissector, GPU Dissector, http://gpudissector.blogspot.com/feeds/posts/default, http://gpudissector.blogspot.com/
+    GPU Pro, GPU Pro, http://gpupro.blogspot.com/feeds/posts/default, http://gpupro.blogspot.com/
+    GPU Zen, GPU Zen, http://gpuzen.blogspot.com/feeds/posts/default?alt=rss, http://gpuzen.blogspot.com/
+    Graham Wihlidal, Graham Wihlidal, https://www.wihlidal.com/feed.xml, https://www.wihlidal.com/
+    Humus, Humus, http://www.humus.name/rss.xml, http://www.humus.name
+    I'm doing it wrong, I'm doing it wrong, http://imdoingitwrong.wordpress.com/feed/, https://imdoingitwrong.wordpress.com
+    Ignacio Castaño, Ignacio Castaño, http://castano.ludicon.com/blog/feed/, http://www.ludicon.com/castano/blog
+    Imagination, Imagination, https://imgtec.com/feed/, https://www.imgtec.com
+    Industrial Arithmetic, Industrial Arithmetic, http://industrialarithmetic.blogspot.com/feeds/posts/default, http://industrialarithmetic.blogspot.com/
+    Infinite-Realities, Infinite-Realities, http://ir-ltd.net/feed/, http://ir-ltd.net
+    James Dolan, James Dolan, http://jamesdolan.blogspot.com/feeds/posts/default, http://jamesdolan.blogspot.com/
+    James McNeill, James McNeill, http://playtechs.blogspot.com/feeds/posts/default, http://playtechs.blogspot.com/
+    Jendrik Illner - 3D Programmer on Jendrik Illner - 3D Programmer, Jendrik Illner - 3D Programmer on Jendrik Illner - 3D Programmer, https://www.jendrikillner.com/index.xml, https://www.jendrikillner.com/
+    Jeroen Baert, Jeroen Baert, https://www.forceflow.be/feed/, https://www.forceflow.be
+    Joe Duffy's Blog, Joe Duffy's Blog, http://joeduffyblog.com/feed.xml, http://joeduffyblog.com/
+    Johan Andersson, Johan Andersson, http://repi.blogspot.com/feeds/posts/default, http://repi.blogspot.com/
+    John Ahlgren, John Ahlgren, http://john-ahlgren.blogspot.com/feeds/posts/default, http://john-ahlgren.blogspot.com/
+    John Calsbeek, John Calsbeek, http://www.johncalsbeek.com/feed.xml, http://www.johncalsbeek.com
+    John White, John White, http://johnwhite3d.blogspot.com/feeds/posts/default, http://johnwhite3d.blogspot.com/
+    Jon Olick - Home, Jon Olick - Home, https://www.jonolick.com/2/feed, https://www.jonolick.com/home
+    Joost's Dev Blog, Joost's Dev Blog, http://joostdevblog.blogspot.com/feeds/posts/default, http://joostdevblog.blogspot.com/
+    Jorge Jimenez, Jorge Jimenez, http://www.iryoku.com/feed, http://www.iryoku.com
+    Julia Evans, Julia Evans, http://jvns.ca/atom.xml, http://jvns.ca
+    Kate Murphy, Kate Murphy, https://kate.io/feed.xml, https://kate.io/
+    Kosmokleaner, Kosmokleaner, http://kosmokleaner.wordpress.com/feed/, https://kosmokleaner.wordpress.com
+    kosmonaut's blog, kosmonaut's blog, http://kosmonautblog.wordpress.com/feed/, https://kosmonautblog.wordpress.com
+    Kostas Anagnostou, Kostas Anagnostou, http://interplayoflight.wordpress.com/feed/, https://interplayoflight.wordpress.com
+    Krister Walfridsson’s blog, Krister Walfridsson’s blog, https://kristerw.blogspot.com/feeds/posts/default, https://kristerw.blogspot.com/
+    Krzysztof Narkowicz, Krzysztof Narkowicz, http://knarkowicz.wordpress.com/feed/, https://knarkowicz.wordpress.com
+    Lei Zhang (antiagainst)'s Blog, Lei Zhang (antiagainst)'s Blog, https://antiagainst.github.io/index.xml, https://antiagainst.github.io/
+    Lia-Sae's Blog, Lia-Sae's Blog, http://feeds.lia-sae.net/main.rss.xml, http://lia-sae.net/
+    Light is beautiful, Light is beautiful, http://lousodrome.net/blog/light/feed/, http://lousodrome.net/blog/light
+    Maister's Graphics Adventures, Maister's Graphics Adventures, http://themaister.net/blog/feed/, http://themaister.net/blog
+    marc-b-reynolds.github.io, marc-b-reynolds.github.io, http://marc-b-reynolds.github.io/feed.xml, http://marc-b-reynolds.github.io
+    Marcelo's WebLog, Marcelo's WebLog, http://blogs.msdn.com/marcelolr/rss.xml, https://blogs.msdn.microsoft.com/marcelolr
+    Marmakoide's Blog, Marmakoide's Blog, http://blog.marmakoide.org/?feed=rss2, http://blog.marmakoide.org
+    Matt Pettineo, Matt Pettineo, http://mynameismjp.wordpress.com/feed/, https://mynameismjp.wordpress.com
+    Matt Pharr’s blog, Matt Pharr’s blog, http://pharr.org/matt/blog/feed.xml, https://pharr.org/matt/blog/
+    Matt Swoboda, Matt Swoboda, http://directtovideo.wordpress.com/feed/, https://directtovideo.wordpress.com
+    me == DeanoC, me == DeanoC, http://deanoc.com/rss.xml, http://deanoc.com/
+    Mediocre game technology, Mediocre game technology, https://tuxedolabs.blogspot.com/feeds/posts/default?alt=rss, https://tuxedolabs.blogspot.com/
+    Michal Valient, Michal Valient, http://www.dimension3.sk/feed/, http://www.dimension3.sk
+    Miles Macklin, Miles Macklin, http://blog.mmacklin.com/feed/, http://blog.mmacklin.com
+    Ming-Lun "Allen" Chou | 周明倫, Ming-Lun "Allen" Chou | 周明倫, http://allenchou.net/feed/, http://allenchou.net
+    Molecular Musings, Molecular Musings, http://molecularmusings.wordpress.com/feed/, https://blog.molecular-matters.com
+    Moments in Graphics, Moments in Graphics, http://momentsingraphics.de/?feed=rss2, http://momentsingraphics.de
+    Morten Mikkelsen, Morten Mikkelsen, http://mmikkelsen3d.blogspot.com/feeds/posts/default, http://mmikkelsen3d.blogspot.com/
+    Mr F, Mr F, http://ndotl.wordpress.com/feed/, https://ndotl.wordpress.com
+    Nathan Reed’s coding blog, Nathan Reed’s coding blog, http://reedbeta.com/feed/, http://reedbeta.com/
+    njs blog, njs blog, https://vorpus.org/blog/feeds/atom.xml, https://vorpus.org/blog/
+    nlguillemot, nlguillemot, https://nlguillemot.wordpress.com/feed/, https://nlguillemot.wordpress.com
+    NVIDIA Developer Blog, NVIDIA Developer Blog, http://developer.nvidia.com/blog/feed/2, https://devblogs.nvidia.com
+    OpenGL SuperBible, OpenGL SuperBible, http://www.openglsuperbible.com/feed/, http://www.openglsuperbible.com
+    Our Machinery, Our Machinery, https://ourmachinery.com/index.xml, https://ourmachinery.com/
+    Outerra, Outerra, https://outerra.blogspot.com/feeds/posts/default, https://outerra.blogspot.com/
+    Pablo Zurita's blog, Pablo Zurita's blog, http://pzurita.wordpress.com/feed/, https://pzurita.wordpress.com
+    Pete Shirley's Graphics Blog, Pete Shirley's Graphics Blog, http://psgraphics.blogspot.com/feeds/posts/default, http://psgraphics.blogspot.com/
+    Peter Sikachev Dev Blog, Peter Sikachev Dev Blog, http://petersikachev.blogspot.com/feeds/posts/default?alt=rss, http://petersikachev.blogspot.com/
+    pixel jet stream, pixel jet stream, https://pixeljetstream.blogspot.com/feeds/posts/default, https://pixeljetstream.blogspot.com/
+    Pointers Gone Wild, Pointers Gone Wild, http://pointersgonewild.com/feed/, https://pointersgonewild.com
+    Preshing on Programming, Preshing on Programming, https://preshing.com/feed, https://preshing.com/
+    Programming in the 21st Century, Programming in the 21st Century, http://prog21.dadgum.com/atom.xml, http://prog21.dadgum.com/
+    Promit's Ventspace, Promit's Ventspace, http://ventspace.wordpress.com/feed/, https://ventspace.wordpress.com
+    Pronounced /ˈʃɪ.vəʊ.æ/, Pronounced /ˈʃɪ.vəʊ.æ/, https://blog.shivoa.net/feeds/posts/default, https://blog.shivoa.net/
+    Rambles about code, games and other things, Rambles about code, games and other things, http://chainedchaos31.tumblr.com/rss, http://chainedchaos31.tumblr.com/
+    Randy Gaul's Game Programming Blog, Randy Gaul's Game Programming Blog, http://www.randygaul.net/feed/, http://www.randygaul.net
+    Ray Tracey's blog, Ray Tracey's blog, http://raytracey.blogspot.com/feeds/posts/default, http://raytracey.blogspot.com/
+    Real-Time Rendering, Real-Time Rendering, http://www.realtimerendering.com/blog/feed/, http://www.realtimerendering.com/blog
+    Real-Time Voxels, Real-Time Voxels, http://realtimevoxels.blogspot.com/feeds/posts/default, http://realtimevoxels.blogspot.com/
+    Rendering Equations, Rendering Equations, https://schuttejoe.github.io/index.xml, https://schuttejoe.github.io/
+    Rich Geldreich's Tech Blog, Rich Geldreich's Tech Blog, http://richg42.blogspot.com/feeds/posts/default, http://richg42.blogspot.com/
+    Run Hello, Run Hello, http://msm.grumpybumpers.com/?feed=rss2, https://msm.runhello.com
+    Sébastien Lagarde, Sébastien Lagarde, http://seblagarde.wordpress.com/feed/, https://seblagarde.wordpress.com
+    Sam Martin, Sam Martin, http://www.palgorithm.co.uk/feed/, http://www.palgorithm.co.uk
+    Sanders' blog, Sanders' blog, https://sandervanrossen.blogspot.com/feeds/posts/default, https://sandervanrossen.blogspot.com/
+    Shiny Pixels, Shiny Pixels, http://vec3.ca/feed/, http://vec3.ca
+    Simon schreibt., Simon schreibt., http://simonschreibt.blogspot.com/feeds/posts/default, http://simonschreibt.blogspot.com/
+    Simon's Graphics Blog, Simon's Graphics Blog, http://sjbrown.co.uk/index.xml, http://sjbrown.co.uk/
+    Snorri Sturluson, Snorri Sturluson, https://snorristurluson.github.io/feed.xml, https://snorristurluson.github.io//
+    Solid Angle, Solid Angle, http://solid-angle.blogspot.com/feeds/posts/default, https://solid-angle.blogspot.com/
+    Sophie's Blog, Sophie's Blog, http://www.sophiehoulden.com/feed/, http://www.sophiehoulden.com
+    Stephen Hill, Stephen Hill, http://blog.selfshadow.com/feed/, http://blog.selfshadow.com/
+    Steve McAuley, Steve McAuley, http://blog.stevemcauley.com/feed/, http://blog.stevemcauley.com
+    Stevey's Blog Rants, Stevey's Blog Rants, http://steve-yegge.blogspot.com/feeds/posts/default, http://steve-yegge.blogspot.com/
+    Stories by April Wensel on Medium, Stories by April Wensel on Medium, https://medium.com/feed/@Aprilw, https://medium.com/@Aprilw?source=rss-e52a7bee92a7------2
+    Stories by Ben Golus on Medium, Stories by Ben Golus on Medium, https://medium.com/feed/@bgolus, https://medium.com/@bgolus?source=rss-d4d33ac3d661------2
+    Stories by Fred Jennings on Medium, Stories by Fred Jennings on Medium, https://medium.com/feed/@Esquiring, https://medium.com/@Esquiring?source=rss-91833865fa3f------2
+    Stories by Steve Yegge on Medium, Stories by Steve Yegge on Medium, https://medium.com/feed/@steve.yegge, https://medium.com/@steve.yegge?source=rss-c1ec701babb7------2
+    Syntopia, Syntopia, http://blog.hvidtfeldts.net/index.php/feed/, http://blog.hvidtfeldts.net
+    The Big Mud Puddle, The Big Mud Puddle, http://evincarofautumn.blogspot.com/feeds/posts/default, http://evincarofautumn.blogspot.com/
+    The blog at the bottom of the sea, The blog at the bottom of the sea, http://blog.demofox.org/feed/, https://blog.demofox.org
+    The blog of Kyle Halladay, The blog of Kyle Halladay, http://kylehalladay.com/atom.xml, http://kylehalladay.com
+    The Brain Dump, The Brain Dump, http://floooh.github.com/feed.xml, https://floooh.github.com/
+    The Burning Basis Vector, The Burning Basis Vector, http://www.joshbarczak.com/blog/?feed=rss2, http://www.joshbarczak.com/blog
+    The Code Deposit, The Code Deposit, http://codedeposit.blogspot.com/feeds/posts/default, http://codedeposit.blogspot.com/
+    The Hacks of Life, The Hacks of Life, http://hacksoflife.blogspot.com/feeds/posts/default, http://hacksoflife.blogspot.com/
+    The Legend of GameDev, The Legend of GameDev, http://david.fancyfishgames.com/feeds/posts/default, http://david.fancyfishgames.com/
+    The Old New Thing, The Old New Thing, http://blogs.msdn.com/oldnewthing/rss.xml, https://blogs.msdn.microsoft.com/oldnewthing
+    The Visual Studio Blog, The Visual Studio Blog, http://blogs.msdn.com/b/visualstudio/rss.aspx, https://blogs.msdn.microsoft.com/visualstudio
+    The Witness, The Witness, http://the-witness.net/news/feed/, http://the-witness.net/news
+    Tom Bissell, Tom Bissell, http://grantland.com/contributors/tom-bissell/feed/, http://grantland.com
+    Tom Forsyth, Tom Forsyth, http://tomforsyth1000.github.io/blog.wiki.xml, http://eelpi.gotdns.org/blog.wiki.html
+    Tom Hammersley, Tom Hammersley, http://tomhammersley.blogspot.com/feeds/posts/default, http://tomhammersley.blogspot.com/
+    Tony Albrecht, Tony Albrecht, http://seven-degrees-of-freedom.blogspot.com/feeds/posts/default, http://seven-degrees-of-freedom.blogspot.com/
+    TRYING TO FIND THE OBVIOUS, TRYING TO FIND THE OBVIOUS, http://www.hlsl.co.uk/blog?format=RSS, http://www.hlsl.co.uk/
+    Video Encoding &amp; Streaming Technologies, Video Encoding &amp; Streaming Technologies, http://sonnati.wordpress.com/feed/, https://sonnati.wordpress.com
+    Wicked Engine DevBlog, Wicked Engine DevBlog, https://turanszkij.wordpress.com/feed/, https://turanszkij.wordpress.com
+    Will push pixels for food, Will push pixels for food, http://www.gijskaerts.com/wordpress/?feed=rss2, http://www.gijskaerts.com/wordpress
+    Windows Subsystem for Linux, Windows Subsystem for Linux, https://blogs.msdn.microsoft.com/wsl/feed/, https://blogs.msdn.microsoft.com/wsl
+    Wolfgang Engel, Wolfgang Engel, http://diaryofagraphicsprogrammer.blogspot.com/feeds/posts/default, http://diaryofagraphicsprogrammer.blogspot.com/
+    WORK: A Guide, WORK: A Guide, https://www.workaguide.com/?format=rss, https://www.workaguide.com/
+    xoofx, xoofx, http://xoofx.com/feed.xml, http://xoofx.com/
+    Yosoygames, Yosoygames, http://yosoygames.com.ar/wp/feed/, http://www.yosoygames.com.ar/wp
+    Yuriy O'Donnell, Yuriy O'Donnell, http://kayru.org/feed.xml, http://kayru.org/
+    Zack Rusin, Zack Rusin, http://zrusin.blogspot.com/feeds/posts/default, http://zrusin.blogspot.com/
+    Zero Wind :: Jamie Wong, Zero Wind :: Jamie Wong, http://feeds.feedburner.com/JamieWong, http://jamie-wong.com/
+    zeuxcg.org, zeuxcg.org, http://zeuxcg.org/feed/, http://zeuxcg.org
+    ZigguratVertigo's Hideout, ZigguratVertigo's Hideout, http://zigguratvertigo.com/feed/, https://colinbarrebrisebois.com
