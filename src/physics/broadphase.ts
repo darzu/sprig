@@ -25,7 +25,7 @@ export function* collisionPairs(
 
 export function resetCollidesWithSet(
   collidesWith: CollidesWith,
-  objs: { id: number }[]
+  objs: readonly { id: number }[]
 ): void {
   for (let o of objs) {
     if (!collidesWith.has(o.id)) collidesWith.set(o.id, []);

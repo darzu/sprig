@@ -1,5 +1,5 @@
 import { Serializer, Deserializer } from "./serialize.js";
-import { hashCode, Intersect } from "./util.js";
+import { assertDbg, hashCode, Intersect } from "./util.js";
 
 export interface Entity {
   readonly id: number;
@@ -27,11 +27,13 @@ export type EntityW<
   readonly id: ID;
 } & Intersect<{ [P in keyof CS]: WithComponent<CS[P]> }>;
 export type Entities<CS extends ComponentDef[]> = EntityW<CS>[];
+export type ReadonlyEntities<CS extends ComponentDef[]> =
+  readonly EntityW<CS>[];
 export type SystemFN<
   CS extends ComponentDef[] | null,
   RS extends ComponentDef[]
 > = (
-  es: CS extends ComponentDef[] ? Entities<CS> : [],
+  es: CS extends ComponentDef[] ? ReadonlyEntities<CS> : [],
   resources: EntityW<RS>
 ) => void;
 
@@ -101,7 +103,7 @@ export class EntityManager {
   stats: Record<string, SystemStats> = {};
   loops: number = 0;
 
-  private _systemsToEntities: Map<string, number[]> = new Map();
+  private _systemsToEntities: Map<string, Entity[]> = new Map();
   private _systemsToComponents: Map<string, string[]> = new Map();
   private _componentToSystems: Map<string, string[]> = new Map();
 
@@ -242,7 +244,7 @@ export class EntityManager {
     for (let name of systems ?? []) {
       const allNeededCs = this._systemsToComponents.get(name);
       if (allNeededCs?.every((n) => n in e)) {
-        this._systemsToEntities.get(name)?.push(id);
+        this._systemsToEntities.get(name)?.push(e);
       }
     }
 
@@ -360,7 +362,7 @@ export class EntityManager {
     for (let name of systems ?? []) {
       const es = this._systemsToEntities.get(name);
       if (es) {
-        const indx = es.findIndex((v) => v === id);
+        const indx = es.findIndex((v) => v.id === id);
         if (indx >= 0) {
           es.splice(indx, 1);
         }
@@ -497,10 +499,7 @@ export class EntityManager {
     //  by add/remove/ensure component calls
     // TODO(@darzu): ability to toggle this optimization on/off for better debugging
     const es = this.filterEntities(cs);
-    this._systemsToEntities.set(
-      name,
-      es.map((e) => e.id)
-    );
+    this._systemsToEntities.set(name, [...es]);
     if (cs) {
       for (let c of cs) {
         if (!this._componentToSystems.has(c.name))
@@ -534,17 +533,15 @@ export class EntityManager {
     if (!s) throw `No system named ${name}`;
     let start = performance.now();
     // try looking up in the query cache
-    // TODO(@darzu): PERF. Is this alloc'ing a lot of memory each call?
-    let es: Entities<any[]> = [];
+    let es: Entities<any[]>;
     if (s.cs) {
-      if (this._systemsToEntities.has(s.name))
-        es = this._systemsToEntities
-          .get(s.name)!
-          .map((id) => this.entities.get(id)! as EntityW<any[]>);
-      else {
-        throw `System ${s.name} doesn't have a query cache!`;
-        // es = this.filterEntities(s.cs);
-      }
+      assertDbg(
+        this._systemsToEntities.has(s.name),
+        `System ${s.name} doesn't have a query cache!`
+      );
+      es = this._systemsToEntities.get(s.name)! as EntityW<any[]>[];
+    } else {
+      es = [];
     }
     // TODO(@darzu): uncomment to debug query cache issues
     // es = this.filterEntities(s.cs);
