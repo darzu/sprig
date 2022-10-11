@@ -119,7 +119,7 @@ export function createOrResetBullet(
     aabb: assets.ball.aabb,
   });
   em.ensureComponentOn(e, LifetimeDef);
-  e.lifetime.ms = 1000;
+  e.lifetime.ms = 4000;
   em.ensureComponentOn(e, SyncDef);
   e.sync.dynamicComponents = [PositionDef.id];
   e.sync.fullComponents = [BulletConstructDef.id];
