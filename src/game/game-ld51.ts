@@ -23,7 +23,6 @@ import {
   WorldFrameDef,
 } from "../physics/nonintersection.js";
 import {
-  identityFrame,
   PhysicsParentDef,
   PositionDef,
   RotationDef,
@@ -35,8 +34,6 @@ import {
   getAABBFromMesh,
   getHalfsizeFromAABB,
   Mesh,
-  meshStats,
-  normalizeMesh,
   scaleMesh3,
   transformMesh,
   validateMesh,
@@ -768,7 +765,8 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
                     vec3.zero(b.linearVelocity);
                     vec3.zero(b.gravity);
                     if (_numGoodBalls < MAX_GOODBALLS) {
-                      em.ensureComponentOn(b, DeletedDef);
+                      // em.ensureComponentOn(b, DeletedDef);
+                      em.ensureComponentOn(b, DeadDef);
                       spawnGoodBall(b.world.position);
                     } else {
                       breakBullet(b);
@@ -1167,7 +1165,7 @@ function rotatePiratePlatform(
 
 const pitchSpeed = 0.000042;
 
-const numStartPirates = DBG_PLAYER ? 0 : 2;
+const numStartPirates = DBG_PLAYER ? 5 : 2;
 let nextSpawn = 0;
 
 const tenSeconds = 1000 * (DBG_PLAYER ? 3 : 10); // TODO(@darzu): make 10 seconds
@@ -1175,8 +1173,7 @@ const tenSeconds = 1000 * (DBG_PLAYER ? 3 : 10); // TODO(@darzu): make 10 second
 let spawnTimer = tenSeconds;
 const minSpawnTimer = 3000;
 
-const maxPirates = 0;
-// const maxPirates = 10;
+const maxPirates = DBG_PLAYER ? 10 : 10;
 
 async function startPirates() {
   const em: EntityManager = EM;

@@ -28,7 +28,7 @@ import { TimeDef } from "../time.js";
 import { GravityDef } from "./gravity.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
-import { DeadDef, DeletedDef } from "../delete.js";
+import { DeadDef } from "../delete.js";
 import { MusicDef } from "../music.js";
 import { randNormalVec3 } from "../utils-3d.js";
 import { SplinterParticleDef } from "../wood.js";
@@ -37,7 +37,7 @@ import { assert, assertDbg } from "../util.js";
 
 export const BulletDef = EM.defineComponent(
   "bullet",
-  (team: number, health: number) => {
+  (team: number = 0, health: number = 10) => {
     return {
       team,
       health,
@@ -84,7 +84,7 @@ EM.registerSerializerPair(
   }
 );
 
-export function createOrUpdateBullet(
+export function createOrResetBullet(
   em: EntityManager,
   e: Entity & { bulletConstruct: BulletConstruct },
   pid: number,
@@ -110,7 +110,7 @@ export function createOrUpdateBullet(
   em.ensureComponentOn(e, MotionSmoothingDef);
   em.ensureComponentOn(e, RenderableConstructDef, assets.ball.proto);
   em.ensureComponentOn(e, AuthorityDef, pid);
-  em.ensureComponentOn(e, BulletDef, props.team, props.health);
+  em.ensureComponentOn(e, BulletDef);
   e.bullet.team = props.team;
   e.bullet.health = props.health;
   em.ensureComponentOn(e, ColliderDef, {
@@ -118,12 +118,14 @@ export function createOrUpdateBullet(
     solid: false,
     aabb: assets.ball.aabb,
   });
-  em.ensureComponentOn(e, LifetimeDef, 1000);
+  em.ensureComponentOn(e, LifetimeDef);
   e.lifetime.ms = 1000;
-  em.ensureComponentOn(e, SyncDef, [PositionDef.id]);
+  em.ensureComponentOn(e, SyncDef);
+  e.sync.dynamicComponents = [PositionDef.id];
   e.sync.fullComponents = [BulletConstructDef.id];
   em.ensureComponentOn(e, PredictDef);
-  em.ensureComponentOn(e, GravityDef, [0, -props.gravity, 0]);
+  em.ensureComponentOn(e, GravityDef);
+  e.gravity[1] = -props.gravity;
 }
 
 export function registerBuildBulletsSystem(em: EntityManager) {
@@ -199,6 +201,11 @@ export async function fireBullet(
   const linearVelocity = vec3.scale(vec3.create(), bulletAxis, speed);
   const angularVelocity = vec3.scale(vec3.create(), bulletAxis, rotationSpeed);
 
+  // TODO(@darzu): WHY IS THIS location missing?
+  if (!e.bulletConstruct) {
+    console.dir(e);
+  }
+  assertDbg(e.bulletConstruct, `bulletConstruct missing on: ${e.id}`);
   vec3.copy(e.bulletConstruct.location, location);
   vec3.copy(e.bulletConstruct.linearVelocity, linearVelocity);
   vec3.copy(e.bulletConstruct.angularVelocity, angularVelocity);
@@ -209,7 +216,7 @@ export async function fireBullet(
   // TODO(@darzu): This breaks multiplayer maybe!
   // TODO(@darzu): need to think how multiplayer and entity pools interact.
   const { me, assets } = await em.whenResources(MeDef, AssetsDef);
-  createOrUpdateBullet(em, e, me.pid, assets);
+  createOrResetBullet(em, e, me.pid, assets);
   // TODO(@darzu): IMPL entity pool.
 }
 

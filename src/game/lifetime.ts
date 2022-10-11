@@ -3,9 +3,12 @@ import { Component, EM, EntityManager } from "../entity-manager.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { TimeDef } from "../time.js";
 
-export const LifetimeDef = EM.defineComponent("lifetime", (ms: number) => {
-  return { startMs: ms, ms: ms };
-});
+export const LifetimeDef = EM.defineComponent(
+  "lifetime",
+  (ms: number = 1000) => {
+    return { startMs: ms, ms: ms };
+  }
+);
 export type Lifetime = Component<typeof LifetimeDef>;
 
 export function registerUpdateLifetimes(em: EntityManager) {
