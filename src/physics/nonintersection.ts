@@ -27,20 +27,15 @@ import {
 import {
   Frame,
   IDENTITY_FRAME,
-  LocalFrameDefs,
   PhysicsParent,
   PhysicsParentDef,
   PositionDef,
   ReadonlyFrame,
   TransformDef,
   updateFrameFromPosRotScale,
-  updateFrameFromTransform,
 } from "./transform.js";
-import { assert } from "../util.js";
-import { IdPair, idPair, toBinary } from "../util.js";
+import { IdPair, idPair } from "../util.js";
 import { tempVec3 } from "../temp-pool.js";
-import { aabbDbg, vec3Dbg } from "../utils-3d.js";
-import { dbgLogOnce } from "../util.js";
 
 // TODO(@darzu): we use "object", "obj", "o" everywhere in here, we should use "entity", "ent", "e"
 
@@ -216,6 +211,27 @@ export type PhysicsBroadColliders = Component<typeof PhysicsBroadCollidersDef>;
 export function registerPhysicsStateInit(em: EntityManager) {
   em.addSingletonComponent(PhysicsResultsDef);
   em.addSingletonComponent(PhysicsBroadCollidersDef);
+
+  // TODO(@darzu): actually, this doesn't seem needed? delete?
+  // // rectify dead objects with the physics system.
+  // // TODO(@darzu): idk about this DeadDef thing
+  // em.registerSystem(
+  //   [ColliderDef, PositionDef, DeadDef],
+  //   [PhysicsBroadCollidersDef],
+  //   (objs, { _physBColliders }) => {
+  //     for (let o of objs) {
+  //       // reset collider state for dead objects so that the last frame
+  //       // of their previous life doesn't impact them
+  //       if (PhysicsStateDef.isOn(o)) {
+  //         for (let c of o._phys.colliders) {
+  //           vec3.zero(c.localPos);
+  //           vec3.zero(c.lastLocalPos);
+  //         }
+  //       }
+  //     }
+  //   },
+  //   "physicsDeadStuff"
+  // );
 
   // init the per-object physics state
   // TODO(@darzu): split this into different concerns

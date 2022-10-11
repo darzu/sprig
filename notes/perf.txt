@@ -187,6 +187,14 @@ Current memory/frame:
 
 Search for:
   TODO(@darzu): perf
-  [ ] remove allocs in callSystem
-  [ ] reduce allocs in stepRenderer
-  [ ] object pool bullets, enemies
+
+"Shader functions I'm fairly certain I'll never want to use":
+  https://twitter.com/m_ninepoints/status/1578622643128803328
+  lit, reflect/refract, sinh/cosh/tanh, degrees, log10, faceforward
+  "I generally agree with the sentiment that, trig and inv-trig functions in a shader are often a code smell (or maybe an algebra smell?) and they can often be simplified and removed with some identities, etc. But there are occasional legit uses for them." @reedbeta
+
+With GPUs and standard forward rendering,
+  why isn't there more frame-to-frame re-use?
+  e.g. my vertices and pixel calculations are mostly the same answer,
+    why should we do all the work each frame?
+  maybe vertex shader outputs could be re-used and just readjusted slightly based on camera change and moving objects

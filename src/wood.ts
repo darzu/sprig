@@ -134,6 +134,7 @@ onInit((em) => {
             });
           for (let _ball of balls) {
             const ball = _ball!;
+            // console.log(`hit: ${ball.id}`);
             // TODO(@darzu): move a bunch of the below into physic system features!
             assert(ball.collider.shape === "AABB");
             copyAABB(ballAABBWorld, ball.collider.aabb);
@@ -144,6 +145,7 @@ onInit((em) => {
               rad: (ballAABBWorld.max[0] - ballAABBWorld.min[0]) * 0.5,
             };
 
+            // TODO(@darzu): PERF. have groups of boards. Maybe "walls". Or just an oct-tree.
             w.woodState.boards.forEach((board, boardIdx) => {
               if (ball.bullet.health <= 0) return;
 

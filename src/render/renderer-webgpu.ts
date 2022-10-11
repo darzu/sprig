@@ -47,7 +47,7 @@ import {
   OceanVertStruct,
 } from "./pipelines/std-ocean.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
-import { GPU_DBG_PERF } from "../flags.js";
+import { PERF_DBG_GPU } from "../flags.js";
 import { dbgLogOnce } from "../util.js";
 
 const MAX_PIPELINES = 64;
@@ -191,7 +191,7 @@ export function createRenderer(
   }
 
   function updateScene(scene: Partial<SceneTS>) {
-    if (GPU_DBG_PERF) {
+    if (PERF_DBG_GPU) {
       dbgLogOnce("sceneUniSize", `SceneUni size: ${sceneUni.struct.size}`);
     }
     sceneUni.queueUpdate({
@@ -278,7 +278,7 @@ export function createRenderer(
     }
 
     if (needsRebundle) {
-      if (GPU_DBG_PERF) console.log("rebundeling");
+      if (PERF_DBG_GPU) console.log("rebundeling");
       updateRenderBundle(handles, renderPipelines);
     }
 

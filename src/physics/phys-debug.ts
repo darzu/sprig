@@ -25,6 +25,8 @@ import {
   updateFrameFromPosRotScale,
 } from "./transform.js";
 
+// TODO(@darzu): re-enable all this! it requires line drawing again
+
 export const PhysicsDbgDef = EM.defineComponent("_physDbgState", () => {
   return {
     showAABBs: false,

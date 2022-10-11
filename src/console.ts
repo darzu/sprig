@@ -1,5 +1,5 @@
 import { EM, EntityManager } from "./entity-manager.js";
-import { GPU_DBG_PERF } from "./flags.js";
+import { PERF_DBG_GPU } from "./flags.js";
 import { TextDef } from "./game/ui.js";
 import { InputsDef } from "./inputs.js";
 import {
@@ -60,7 +60,7 @@ export function registerDevSystems(em: EntityManager) {
     async (_, res) => {
       warmUpFrame--;
 
-      if (GPU_DBG_PERF) {
+      if (PERF_DBG_GPU) {
         const frameBytes = _gpuQueueBufferWriteBytes - lastGPUBytes;
 
         if (warmUpFrame <= 0) {
@@ -125,13 +125,13 @@ export function registerDevSystems(em: EntityManager) {
         `fps:${avgFPS.toFixed(1)} ` +
         `tris:${poolStats.numTris} ` +
         `verts:${poolStats.numVerts} ` +
-        (GPU_DBG_PERF ? `avgGpuBytes: ${avgGPUBytes.toFixed(0)}b ` : ``) +
-        (GPU_DBG_PERF
+        (PERF_DBG_GPU ? `avgGpuBytes: ${avgGPUBytes.toFixed(0)}b ` : ``) +
+        (PERF_DBG_GPU
           ? `allGpuBytes: ${(_gpuQueueBufferWriteBytes / (1024 * 1024)).toFixed(
               0
             )}mb `
           : ``) +
-        (GPU_DBG_PERF
+        (PERF_DBG_GPU
           ? `maxFrameGPUBytes: ${(maxFrameGPUBytes / 1024).toFixed(0)}kb `
           : ``) +
         //`buffers:(r=${reliableBufferSize}/u=${unreliableBufferSize}) ` +

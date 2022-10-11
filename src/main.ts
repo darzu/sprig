@@ -19,7 +19,7 @@ import { setSimulationAlpha } from "./render/renderer-ecs.js";
 import { never } from "./util.js";
 import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { initCubeGame } from "./game/xp-cube.js";
-import { VERBOSE_LOG } from "./flags.js";
+import { DBG_ASSERT, VERBOSE_LOG } from "./flags.js";
 import { initLD51Game, sandboxSystems } from "./game/game-ld51.js";
 
 export const FORCE_WEBGL = false;
@@ -137,6 +137,7 @@ function callFixedTimestepSystems() {
   }
   EM.callSystem("ensureFillOutLocalFrame");
   EM.callSystem("ensureWorldFrame");
+  // EM.callSystem("physicsDeadStuff");
   EM.callSystem("physicsInit");
   EM.callSystem("clampVelocityByContact");
   EM.callSystem("registerPhysicsClampVelocityBySize");
@@ -191,6 +192,7 @@ function callFixedTimestepSystems() {
   EM.callSystem("retargetCamera");
   EM.callSystem("renderView");
   EM.callSystem("constructRenderables");
+  if (DBG_ASSERT) EM.callSystem("deadCleanupWarning"); // SHOULD BE LAST(-ish); warns if cleanup is missing
   EM.callOneShotSystems();
   EM.loops++;
 }
@@ -254,7 +256,12 @@ async function startGame(localPeerName: string, host: string | null) {
     setSimulationAlpha(accumulator / TIMESTEP);
     EM.callSystem("updateRendererWorldFrames");
     EM.callSystem("updateCameraView");
-    EM.callSystem("stepRenderer");
+    {
+      // NOTE: these 3 must stay together in this order. See NOTE above renderListDeadHidden
+      EM.callSystem("renderListDeadHidden");
+      EM.callSystem("renderList");
+      EM.callSystem("stepRenderer");
+    }
     let jsTime = performance.now() - before_frame;
     let frameTime = frame_time - previous_frame_time;
     previous_frame_time = frame_time;

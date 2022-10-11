@@ -12,7 +12,7 @@ import {
 } from "../physics/transform.js";
 import { ColorDef } from "../color-ecs.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
-import { DeletedDef } from "../delete.js";
+import { DeadDef, DeletedDef } from "../delete.js";
 import { stdRenderPipeline } from "./pipelines/std-mesh.js";
 import { computeUniData, MeshUniformTS } from "./pipelines/std-scene.js";
 import { CanvasDef } from "../canvas.js";
@@ -42,7 +42,7 @@ import {
 import { assert } from "../util.js";
 import {
   DONT_SMOOTH_WORLD_FRAME,
-  GPU_DBG_PERF,
+  PERF_DBG_GPU,
   VERBOSE_LOG,
 } from "../flags.js";
 
@@ -57,6 +57,13 @@ export interface RenderableConstruct {
   //  later it is in the mesh handle.
   readonly mask?: number;
   readonly poolKind: PoolKind;
+  // TODO(@darzu): little hacky: hidden vs enabled?
+  // NOTE:
+  //   "enabled" objects are debundled and not sent to the GPU.
+  //   "hidden" objects are sent to the GPU w/ scale 0 (so they don't appear).
+  //   hidden objects might be more efficient in object pools b/c it causes
+  //   less rebundling, but this needs measurement.
+  readonly hidden: boolean;
   meshOrProto: Mesh | MeshHandle;
 }
 
@@ -67,7 +74,8 @@ export const RenderableConstructDef = EM.defineComponent(
     enabled: boolean = true,
     sortLayer: number = 0,
     mask?: number,
-    poolKind: PoolKind = "std"
+    poolKind: PoolKind = "std",
+    hidden: boolean = false
   ) => {
     const r: RenderableConstruct = {
       enabled,
@@ -75,13 +83,16 @@ export const RenderableConstructDef = EM.defineComponent(
       meshOrProto,
       mask,
       poolKind,
+      hidden,
     };
     return r;
   }
 );
 
 export interface Renderable {
+  // TODO(@darzu): clean up these options...
   enabled: boolean;
+  hidden: boolean;
   sortLayer: number;
   meshHandle: MeshHandle;
 }
@@ -290,33 +301,72 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
 }
 
 const _lastMeshHandlePos = new Map<number, vec3>();
+const _lastMeshHandleHidden = new Map<number, boolean>();
 
 export function registerRenderer(em: EntityManager) {
+  // NOTE: we use "renderListDeadHidden" and "renderList" to construct a custom
+  //  query of renderable objects that include dead, hidden objects. The reason
+  //  for this is that it causes a more stable entity list when we have object
+  //  pools, and thus we have to rebundle less often.
+  const renderObjs: EntityW<
+    [typeof RendererWorldFrameDef, typeof RenderableDef]
+  >[] = [];
+  em.registerSystem(
+    [RendererWorldFrameDef, RenderableDef, DeadDef],
+    [],
+    (objs, _) => {
+      renderObjs.length = 0;
+      for (let o of objs)
+        if (o.renderable.enabled && o.renderable.hidden && !DeletedDef.isOn(o))
+          renderObjs.push(o);
+    },
+    "renderListDeadHidden"
+  );
   em.registerSystem(
     [RendererWorldFrameDef, RenderableDef],
+    [],
+    (objs, _) => {
+      for (let o of objs)
+        if (o.renderable.enabled && !DeletedDef.isOn(o)) renderObjs.push(o);
+    },
+    "renderList"
+  );
+
+  em.registerSystem(
+    null, // NOTE: see "renderList*" systems and NOTE above. We use those to construct our query.
     [CameraViewDef, RendererDef, TimeDef, PartyDef],
-    (objs, res) => {
+    (_, res) => {
       const renderer = res.renderer.renderer;
       const cameraView = res.cameraView;
 
-      // TODO(@darzu): PERF. this might be creating a large array.
-      objs = objs.filter((o) => o.renderable.enabled && !DeletedDef.isOn(o));
+      const objs = renderObjs;
 
       // ensure our mesh handle is up to date
       for (let o of objs) {
         if (RenderDataStdDef.isOn(o)) {
-          // color / tint
+          if (o.renderable.hidden) {
+            // TODO(@darzu): hidden stuff is a bit wierd
+            mat4.fromScaling(o.renderDataStd.transform, vec3.ZEROS);
+          }
+
           let tintChange = false;
-          let prevTint = vec3.copy(tempVec3(), o.renderDataStd.tint);
-          if (ColorDef.isOn(o)) {
-            vec3.copy(o.renderDataStd.tint, o.color);
+          if (!o.renderable.hidden) {
+            // color / tint
+            let prevTint = vec3.copy(tempVec3(), o.renderDataStd.tint);
+            if (ColorDef.isOn(o)) vec3.copy(o.renderDataStd.tint, o.color);
+            if (TintsDef.isOn(o)) applyTints(o.tints, o.renderDataStd.tint);
+            if (vec3.sqrDist(prevTint, o.renderDataStd.tint) > 0.01)
+              tintChange = true;
           }
-          if (TintsDef.isOn(o)) {
-            applyTints(o.tints, o.renderDataStd.tint);
-          }
-          if (vec3.sqrDist(prevTint, o.renderDataStd.tint) > 0.01) {
-            tintChange = true;
-          }
+
+          let lastHidden = _lastMeshHandleHidden.get(
+            o.renderable.meshHandle.mId
+          );
+          let hiddenChanged = lastHidden !== o.renderable.hidden;
+          _lastMeshHandleHidden.set(
+            o.renderable.meshHandle.mId,
+            o.renderable.hidden
+          );
 
           // TODO(@darzu): actually we only set this at creation now so that
           //  it's overridable for gameplay
@@ -327,11 +377,17 @@ export function registerRenderer(em: EntityManager) {
           // TODO(@darzu): hACK! ONLY UPDATE UNIFORM IF WE"VE MOVED
           let lastPos = _lastMeshHandlePos.get(o.renderable.meshHandle.mId);
           const thisPos = o.rendererWorldFrame.position;
-          if (tintChange || !lastPos || vec3.sqrDist(lastPos, thisPos) > 0.01) {
-            mat4.copy(
-              o.renderDataStd.transform,
-              o.rendererWorldFrame.transform
-            );
+          if (
+            hiddenChanged ||
+            tintChange ||
+            !lastPos ||
+            vec3.sqrDist(lastPos, thisPos) > 0.01
+          ) {
+            if (!o.renderable.hidden)
+              mat4.copy(
+                o.renderDataStd.transform,
+                o.rendererWorldFrame.transform
+              );
             res.renderer.renderer.stdPool.updateUniform(
               o.renderable.meshHandle,
               o.renderDataStd
@@ -437,7 +493,7 @@ export function registerRenderer(em: EntityManager) {
       }
 
       // Performance logging
-      if (GPU_DBG_PERF) {
+      if (PERF_DBG_GPU) {
         const stats = res.renderer.renderer.stdPool._stats;
         const totalBytes =
           stats._accumTriDataQueued +
@@ -498,6 +554,7 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
 
           em.addComponent(e.id, RenderableDef, {
             enabled: e.renderableConstruct.enabled,
+            hidden: false,
             sortLayer: e.renderableConstruct.sortLayer,
             meshHandle,
           });

@@ -2,7 +2,7 @@ import { CameraDef, CameraFollowDef } from "../camera.js";
 import { CanvasDef } from "../canvas.js";
 import { ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { DeletedDef } from "../delete.js";
+import { DeadDef, DeletedDef } from "../delete.js";
 import { createRef } from "../em_helpers.js";
 import { EM, Entity, EntityManager, EntityW } from "../entity-manager.js";
 import { vec3, quat, mat4 } from "../gl-matrix.js";
@@ -23,6 +23,7 @@ import {
   WorldFrameDef,
 } from "../physics/nonintersection.js";
 import {
+  identityFrame,
   PhysicsParentDef,
   PositionDef,
   RotationDef,
@@ -48,6 +49,7 @@ import {
   RendererDef,
   RenderableConstructDef,
   RenderDataStdDef,
+  RenderableDef,
 } from "../render/renderer-ecs.js";
 import { tempMat4, tempVec3 } from "../temp-pool.js";
 import { assert } from "../util.js";
@@ -84,28 +86,34 @@ import { TextDef } from "./ui.js";
 /*
   TODO:
   [ ] PERF: sub-meshes
-  [ ] PERF: bullets pool
+  [x] PERF: bullets pool
 
-  [ ] Player can walk on ship
-  [ ] Player can fire cannon
-  [ ] Show controls, describe objective
-  [ ] PERF: Splinters pool
-  [ ] PERF: splinter end pool 
+  [x] Player can walk on ship
+  [x] Player can fire cannon
+  [x] Show controls, describe objective
+  [x] PERF: Splinters pool
+  [x] PERF: splinter end pool 
   [ ] Planks can be repaired
-  [ ] Can destroy enemies
+  [x] Can destroy enemies
   [x] cannon ball can't destroy everything
-  [ ] cannon balls explode
-  [ ] cannon balls drop and can be picked up
-  [ ] Enemies spawn
+  [x] cannon balls explode
+  [x] cannon balls drop and can be picked up
+  [x] Enemies spawn
   [ ] PERF: pool enemy ships
-  [ ] PERF: board AABB check
-  [ ] ship total health check
-  [ ] Sound!
-  [ ] close ship
+  [x] PERF: board AABB check
+  [x] ship total health check
+  [x] Sound!
+  [x] close ship
 
   [ ] change wood colors
   [ ] adjust ship size
-  [ ] add dark ends
+  [ ] add dark/fog ends
+
+  [x] remove allocs in callSystem
+  [ ] reduce allocs in stepRenderer
+  [x] object pool friend bullets
+  [ ] object pool enemy bullets
+  [ ] object pool enemies
 */
 
 // TODO(@darzu): GHOST MODE
@@ -588,6 +596,27 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
     "breakBullets"
   );
   sandboxSystems.push("breakBullets");
+
+  // dead bullet maintenance
+  // NOTE: this must be called after any system that can create dead bullets but
+  //   before the rendering systems.
+  em.registerSystem(
+    [BulletDef, PositionDef, DeadDef, RenderableDef],
+    [],
+    (es, _) => {
+      for (let e of es) {
+        if (e.dead.processed) continue;
+
+        e.bullet.health = 10;
+        vec3.set(e.position, 0, -100, 0);
+        e.renderable.hidden = true;
+
+        e.dead.processed = true;
+      }
+    },
+    "deadBullets"
+  );
+  sandboxSystems.push("deadBullets");
 
   // Create player
   {

@@ -180,10 +180,10 @@ export function toBinary(n: number, digits = 32): string {
 }
 
 let _logOnceKeys: Set<string> = new Set();
-export function dbgLogOnce(key: string, msg?: string) {
+export function dbgLogOnce(key: string, msg?: string, warn = false) {
   if (!_logOnceKeys.has(key)) {
     _logOnceKeys.add(key);
-    console.log(msg ?? key);
+    console[warn ? "warn" : "log"](msg ?? key);
   }
 }
 export function dbgDirOnce(key: string, obj?: any) {

@@ -1,4 +1,4 @@
-import { GPU_DBG_PERF, VERBOSE_LOG } from "../flags.js";
+import { PERF_DBG_GPU, VERBOSE_LOG } from "../flags.js";
 import { ControllableDef } from "../game/controllable.js";
 import { assert } from "../util.js";
 import {
@@ -210,7 +210,7 @@ export function createCyResources(
     const lengthOrData = typeof r.init === "number" ? r.init : r.init();
     const buf = createCyArray(device, r.struct, usage, lengthOrData);
     kindToNameToRes.array[r.name] = buf;
-    if (GPU_DBG_PERF) {
+    if (PERF_DBG_GPU) {
       console.log(`CyArray ${r.name}: ${r.struct.size * buf.length}b`);
     }
   });
@@ -224,7 +224,7 @@ export function createCyResources(
       r.init ? r.init() : undefined
     );
     kindToNameToRes.singleton[r.name] = buf;
-    if (GPU_DBG_PERF) {
+    if (PERF_DBG_GPU) {
       console.log(`CySingleton ${r.name}: ${r.struct.size}b`);
     }
   });
@@ -232,7 +232,7 @@ export function createCyResources(
   cy.kindToPtrs.idxBuffer.forEach((r) => {
     const buf = createCyIdxBuf(device, r.init());
     kindToNameToRes.idxBuffer[r.name] = buf;
-    if (GPU_DBG_PERF) {
+    if (PERF_DBG_GPU) {
       console.log(`CyIdx ${r.name}: ${buf.size}b`);
     }
   });

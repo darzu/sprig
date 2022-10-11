@@ -178,7 +178,7 @@ function updateEnts() {
   }
 }
 function filterEnts(...cmpNames: string[]): Entity[] {
-  return EM.filterEntitiesByKey(cmpNames);
+  return EM.dbgFilterEntitiesByKey(cmpNames);
 }
 function cmpByName(name: string): DbgCmp | null {
   let res = dbgCmps.get(name) ?? dbgCmpsAllByAbv.get(name);
@@ -253,7 +253,7 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
   },
 
   summarizeStats: () => {
-    let stats = EM.stats;
+    let stats = EM.sysStats;
     let totalQueryTime = Object.values(stats)
       .map((s) => s.queryTime)
       .reduce((x, y) => x + y);

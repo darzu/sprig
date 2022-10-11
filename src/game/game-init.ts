@@ -35,7 +35,10 @@ import {
   registerUpdateSmoothedWorldFrames,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { registerDeleteEntitiesSystem } from "../delete.js";
+import {
+  registerDeadEntitiesSystem,
+  registerDeleteEntitiesSystem,
+} from "../delete.js";
 import { registerCannonSystems } from "./cannon.js";
 import { registerInteractionSystem } from "./interact.js";
 import { registerModeler } from "./modeler.js";
@@ -105,6 +108,7 @@ export function registerCommonSystems(em: EntityManager) {
   registerSendOutboxes(em);
   registerEventSystems(em);
   registerDeleteEntitiesSystem(em);
+  registerDeadEntitiesSystem(em);
   registerMotionSmoothingSystems(em);
   registerUpdateSmoothedWorldFrames(em);
   registerUpdateRendererWorldFrames(em);
