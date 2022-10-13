@@ -51,3 +51,28 @@ Freelance consulting?:
     stick to that data
   "If you're not growing, you are shrinking"
     That's just not true
+
+Funding update for Patreons:
+  patreon is the best form, would like to continue and grow
+    growing it realistically involves a constant feed of articles and youtube videos
+      eventually this is absolutely the goal, but right now I believe the right
+      focus is on the tech platform which is much harder to make good vids about
+      without lots of effort in editting and story telling
+  so trying out selling games
+    fits all of our goals neatly
+      proves the platform, provides credibility
+      the real test case to iron out API and tech decisions on the way to 1.0 (i.e. backward compatibility)
+    might be closed source at first, hopefully for a short window of time
+    ideally even games w/ a price tag would be premissively open sourced,
+      but this is basically never done in the industry and while i think it's possible
+      it's also a risk factor. And there are already plenty of risk factors to selling
+      a game so we might de-risk things by having the game initially be closed-source.
+    All closed source games released by sprigland studios would eventually be open-source,
+      probably fully permissive (MIT or CC)
+  patreon future:
+    geared around supporting learning content, tools and open sourced games
+    eventually I want to get near daily streams of building games in Sprigland going (like MakeCode livestream)
+      but also edit these down to more watchable YT and TikToks
+    want accompanying interactive tutorial articles for many of these as well
+    patreon model fits well here
+  if patreons think they've been mislead in any way, happy to refund their contribution.

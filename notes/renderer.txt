@@ -1236,3 +1236,201 @@ Algebraic Geometry for Computer Graphics:
   https://courses.cs.washington.edu/courses/cse590b/13au/
   hn commenter recommended:
     http://www.cs.uu.nl/docs/vakken/magr/2021-2022/index.html
+
+Wind on terrain simulation:
+  https://nickmcd.me/2022/10/01/procedural-wind-and-clouds-using-gpu-accelerated-lattice-boltzmann-method/
+
+Indirect draw in WebGPU?
+  https://github.com/gpuweb/gpuweb/issues/2189
+  https://gpuweb.github.io/gpuweb/#dom-gpurendercommandsmixin-drawindirect
+
+Backstory on splitting render passes?
+  https://github.com/gpuweb/gpuweb/issues/2046#issuecomment-909981545
+
+Regarding Nanite:
+  https://golden-mandolin-675.notion.site/Notes-about-Nanite-in-UE5-1-preview-1bd49cb5986a46629214b82f9ce58ae5
+  https://docs.unrealengine.com/5.0/en-US/nanite-virtualized-geometry-in-unreal-engine/
+    meshes are analyzed and broken down into hierarchical clusters of triangle groups.
+    clusters are swapped on the fly at varying levels of detail based on the camera view, and connect perfectly without cracks to neighboring clusters within the same object. Data is streamed in on demand so that only visible detail needs to reside in memory. Nanite runs in its own rendering pass that completely bypasses traditional draw calls.
+    Nanite is currently limited to rigid meshes
+    "the maximum number of instances that can be present in the scene is hard-locked to 16 million instances"
+      uint24 ?
+      "Only instances streamed in are counted towards the total."
+  https://advances.realtimerendering.com/s2021/Karis_Nanite_SIGGRAPH_Advances_2021_final.pdf
+    considered:
+      voxels
+        doesn't work well for hard surfaces, animation, and uses too much space
+        it's a form of uniform resampling, which will never work
+      subdivision Surfaces
+        doesn't make things low-poly enough
+      displacement maps
+        doesn't work on bike chain, can't increase genus of a surface
+         it's a form of uniform resampling
+      Geometry images, 
+        same as displacement maps
+      Point rendering
+        super fast (?)
+        requires hole filling, a basically unsolvable problem
+          intentional gap or hole?
+        needs extra connectivity data, aka triangle index buffer (lol)
+        seems ripe for ML
+        Denoising is a form of sparse data interpolation
+      triangles
+        "for our requirements have found no higher quality or faster solution than triangles."
+        "If you can build an art style around the aesthetics of one of these other representations and embrace their pros and cons they could be incredibly valuable but Unreal can’t impose an art style."
+      Renderer now retained mode
+        ● GPU scene representation persists across frames
+        ● Sparsely updated where things change
+        ● All vertex/index data in single large resource
+      Per view:
+        ● GPU instance cull
+        ● Triangle rasterization
+      If only drawing depth the entire scene can draw with 1 DrawIndirect
+      unreal has a "retained mode design"
+      mesh data is stored in single large resources.
+      This means we can touch any of it at once without requiring bindless resources to do so.
+      necessary building blocks for a GPU driven pipeline.
+      Group triangles into clusters
+        ● Build bounding data for each cluster
+      Cull clusters based on bounds 
+        ● Frustum cull
+        ● Occlusion cull
+          Hierarchical Z-Buffer (HZB)
+      We are all familiar with cluster culling made popular by [40] and, [41] but the idea goes way back, at least to 1996 [37]
+      "We have found cone based backface culling is not typically worthwhile"
+      occlusion culling:
+        The test is identical to [39].
+        Visible objects last frame are likely still visible this frame
+        Two pass:
+          Draw what was visible in the previous frame
+          Build HZB
+          Draw what is visible now but wasn’t in the last frame
+          Conservative, Only falls apart under extreme visibility changes
+      First GPU occlusion: “March of the Froblins” [38]
+      First two-pass occlusion: “Patch-based Occlusion Culling for Hardware Tessellation” [19]
+      "Decouple visibility from material"
+        want to eliminate:
+          Switching shaders during rasterization
+          Overdraw for material eval
+          Depth prepass to avoid overdraw
+          Pixel quad inefficiencies from dense meshes
+        options:
+          object space shading:
+            REYES
+            Texture space shading
+            but these overshade by 4x or more
+              maybe solvable through caching but: view dependent, animating, non UV based, materials r too common
+          Deferred materials
+      Visibility Buffer
+        Write geometry data to screen:
+          Depth, InstanceID, TriangleID
+        Material shader per pixel:
+          Load VisBuffer
+          Load instance transform
+          Load 3 vert indexes
+          Load 3 positions
+          Transform positions to screen
+          Derive barycentric coordinates (?TO LEARN) for pixel
+          Load and lerp attributes
+        Sounds crazy? Not as slow as it seems
+          Lots of cache hits
+          No overdraw or pixel quad inefficiencies
+        Material pass writes GBuffer
+          Integrates with rest of our deferred shading renderer
+        Now we can draw all opaque geometry with 1 draw
+          Completely GPU driven
+          Not just depth prepass
+          Rasterize triangles once per view
+      "CPU cost is independent from number of objects in the scene or in view."
+      "Materials are a draw per shader"
+      "rasterize triangles once per view"
+      Linear scaling in instances can be ok
+        "We can handle a million instances easily."
+      Linear scaling in triangles is not ok
+      "Memory bandwidth is not a good vector to lean on."
+      the cost of rendering geometry should scale with screen resolution, not scene complexity.
+      hierarchy of LODs, Simplest is tree of clusters
+        Parents are the simplified versions of their children
+      view dependent cut of LOD tree
+        "based on the screen space projected error of the cluster."
+      Request data on demand during rendering
+        Like virtual texturing
+      Cracks!
+        Naive solution: Lock shared boundary edges during simplification
+          Collects dense cruft, Especially between deep subtrees
+      Cracks solution:
+        Can detect these cases during build
+        Group clusters
+          Force them to make the same LOD decision
+          Now free to unlock shared edges and collapse them
+        The key idea is to alternate group boundaries from level to level by grouping different clusters.
+        What is a boundary in one level becomes the interior in the next level
+    It wasn’t until years later after partly implementing QuickVDR that I tried rereading it once again and it sunk in how insightful it really was as a super set of multiple schemes.
+      I highly recommend reading this dissertation by Federico Ponchio https://d-nb.info/997062789/34 if the original paper doesn’t make sense at first. The slides for the paper are also helpful http://vcg.isti.cnr.it/Publications/2005/CGGMPS05/Slide_BatchedMT_Vis05.pdf
+    "we want groups of multiples of 128 triangles such that they can be divided into clusters of exactly 128."
+     Build operations
+      Cluster original triangles
+      While NumClusters > 1
+        Group clusters to clean their shared boundary
+        Merge triangles from group into shared list
+        Simplify to 50% the # of triangles
+        Split simplified triangle list into clusters (128 tris)
+    Group those with the most shared boundary edges ● Less boundary edges == less locked edges
+      This problem is called graph partitioning
+      Partition a graph optimizing for minimum edge cut cost
+      "Use METIS library to solve"
+    TODO: impl http://gamma.cs.unc.edu/QVDR/
+    Mesh simplify
+      Edge collapsing
+        "typical edge collapsing decimation"
+      Picks smallest error edge first
+      Error calculated using Quadric Error Metric (QEM)
+      Optimizes position of new vertex for minimal error
+      Highly refined
+      Returns estimate of error introduced
+        Later projected on screen to number of pixels error
+        The hardest part!
+      "So I calculate the average surface area per triangle and rescale the mesh such that that is roughly a constant I chose as a good mix of position to attribute balance."
+      "That small guy on the shoulder of the big guy is actually a really important case to get right."
+    Runtime LOD cutting on cluster DAG:
+      parallel on GPU, no communication or expansion
+      Draw a cluster when:
+        Parent error is too high &&
+        Our error is small enough
+      only works if there is a unique cut,
+        so force error to be monotonic
+    No LOD popping b/c of:
+      < 1 pixel error
+        between parent and child LOD?
+        "This is the reason why getting an accurate error estimate is so important."
+      (temporal antialiasing) TAA
+    When can we LOD cull a cluster?
+      Render: ParentError > threshold && ClusterError <= threshold
+      Cull: ParentError <= threshold || ClusterError > threshold
+        "we build a BVH (bounding volume hierarchy?) over the clusters."
+          "Traversing this tree is a classic parallel expansion work scheduling problem."
+          Persistent threads model:
+            Can’t spawn new threads. Reuse them instead!
+            Manage our own job queue
+            Single dispatch with enough worker threads to fill GPU
+            "Use simple multi-producer multi-consumer (MPMC) job-queue to communicate between threads"
+    TOLEARN: "Cluster selection must be isotropic like mip selection"
+    TODO: when rendering engineers say "vertex colors", what do they mean?
+    My summary of what's novel about nanite:
+      Better triangle cluster boundries than prior work
+      Better LOD switching b/c of good error estimation
+      Basically really good at solving cracks between clusteres of triangles w/ different LODs
+      Lots of engineering throughout to make it practical
+      Why now?
+        SSDs are necessary,
+        GPUs are powerful enough for a ton of per-pixel work
+        There's a threshold in GPU and memory that needs to be crossed in order to get such scene complexity-invariant results
+      Weakest at folliage like leaves and grass; still a big TODO for them
+      
+
+  Unanswered:
+    https://gamedev.stackexchange.com/questions/198454/how-does-unreal-engine-5-nanite-works
+      
+MUST READ, nanite guys: 
+  https://www.wihlidal.com/blog/
+  http://graphicrants.blogspot.com
