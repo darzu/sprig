@@ -367,29 +367,26 @@ onInit((em: EntityManager) => {
 
               if (h.prev && !h.prev.broken) {
                 // create end caps
-
-                if (w.woodState.splinterState) {
-                  // const splinterGen = w.woodState.splinterState.generation;
-                  const splinterIdx = addSplinterEnd(seg, w.woodState, false);
-                  if (splinterIdx) {
-                    h.splinterBotIdx = splinterIdx;
-                    // h.splinterBotGeneration = splinterGen;
-                    _numSplinterEnds++;
-                    splinterIndUpdated.push(splinterIdx);
-                  }
+                assert(w.woodState.splinterState);
+                // const splinterGen = w.woodState.splinterState.generation;
+                const splinterIdx = addSplinterEnd(seg, w.woodState, false);
+                if (splinterIdx !== undefined) {
+                  h.splinterBotIdx = splinterIdx;
+                  // h.splinterBotGeneration = splinterGen;
+                  _numSplinterEnds++;
+                  splinterIndUpdated.push(splinterIdx);
                 }
               }
 
               if (h.next && !h.next.broken) {
-                if (w.woodState.splinterState) {
-                  // const splinterGen = w.woodState.splinterState.generation;
-                  const splinterIdx = addSplinterEnd(seg, w.woodState, true);
-                  if (splinterIdx) {
-                    h.splinterTopIdx = splinterIdx;
-                    // h.splinterTopGeneration = splinterGen;
-                    _numSplinterEnds++;
-                    splinterIndUpdated.push(splinterIdx);
-                  }
+                assert(w.woodState.splinterState);
+                // const splinterGen = w.woodState.splinterState.generation;
+                const splinterIdx = addSplinterEnd(seg, w.woodState, true);
+                if (splinterIdx !== undefined) {
+                  h.splinterTopIdx = splinterIdx;
+                  // h.splinterTopGeneration = splinterGen;
+                  _numSplinterEnds++;
+                  splinterIndUpdated.push(splinterIdx);
                 }
               }
 
@@ -559,7 +556,10 @@ function addSplinterEnd(
   assert(wood.splinterState, "!wood.splinterState");
 
   const sIdx = wood.splinterState.splinterIdxPool.next();
-  if (!sIdx) return undefined;
+  if (sIdx === undefined) {
+    // console.warn(`splinterIdxPool failed?`);
+    return undefined;
+  }
 
   const W = seg.width;
   const D = seg.depth;
@@ -1122,6 +1122,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
       let seg: BoardSeg;
 
       function getQiAreaNorm(qi: number) {
+        // TODO(@darzu): i hate doing this vec4->number[] conversion just to get map.. wth
         const ps = [...m.quad[qi]].map((vi) => m.pos[vi]);
         // NOTE: assumes segments are parallelograms
         const ab = vec3.subtract(tempVec3(), ps[1], ps[0]);
