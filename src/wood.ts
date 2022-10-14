@@ -586,9 +586,7 @@ function addSplinterEnd(
     // TODO(@darzu): HACK. We're "snapping" the splinter loop and segment loops
     //    together via distance; we should be able to do this in a more analytic way
     const snapDistSqr = Math.pow(0.2 * 0.5, 2);
-    const loop = (
-      top ? seg.vertNextLoopIdxs : seg.vertLastLoopIdxs
-    ) as number[];
+    const loop = top ? seg.vertNextLoopIdxs : seg.vertLastLoopIdxs;
     for (let vi = b.mesh.pos.length - 4; vi < b.mesh.pos.length; vi++) {
       const p = b.mesh.pos[vi];
       for (let lp of loop.map((vi2) => wood.mesh.pos[vi2])) {
@@ -665,9 +663,7 @@ function createSplinterEnd(
     // TODO(@darzu): HACK. We're "snapping" the splinter loop and segment loops
     //    together via distance; we should be able to do this in a more analytic way
     const snapDistSqr = Math.pow(0.2 * 0.5, 2);
-    const loop = (
-      top ? seg.vertNextLoopIdxs : seg.vertLastLoopIdxs
-    ) as number[];
+    const loop = top ? seg.vertNextLoopIdxs : seg.vertLastLoopIdxs;
     for (let vi = b.mesh.pos.length - 4; vi < b.mesh.pos.length; vi++) {
       const p = b.mesh.pos[vi];
       for (let lp of loop.map((vi2) => boardMesh.pos[vi2])) {
@@ -1092,6 +1088,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
             : p,
         [] as number[]
       );
+      segQis.sort((a, b) => a - b); // TODO(@darzu): HACK?
 
       // TODO(@darzu): in the case of 6, we might have a single-segment
       //    board and we need to allow for that
@@ -1117,20 +1114,21 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
       const lastMid = centroid([...lastLoop].map((vi) => m.pos[vi]));
       const nextMid = centroid([...nextLoop].map((vi) => m.pos[vi]));
       const mid = createLine(lastMid, nextMid);
-      const areaNorms = segQis.map((qi) => {
-        const ps = (m.quad[qi] as number[]).map((vi) => m.pos[vi]);
-        // NOTE: assumes segments are parallelograms
-        const ab = vec3.subtract(tempVec3(), ps[1], ps[0]);
-        const ac = vec3.subtract(tempVec3(), ps[3], ps[0]);
-        const areaNorm = vec3.cross(vec3.create(), ab, ac);
-        // console.log(`vec3.len(areaNorm): ${vec3.len(areaNorm)}`);
-        return areaNorm;
-      });
+      const areaNorms = segQis.map(getQiAreaNorm);
       const len1 = vec3.dist(m.pos[lastLoop[1]], m.pos[lastLoop[0]]);
       const len2 = vec3.dist(m.pos[lastLoop[3]], m.pos[lastLoop[0]]);
       const width = Math.max(len1, len2) * 0.5;
       const depth = Math.min(len1, len2) * 0.5;
       let seg: BoardSeg;
+
+      function getQiAreaNorm(qi: number) {
+        const ps = [...m.quad[qi]].map((vi) => m.pos[vi]);
+        // NOTE: assumes segments are parallelograms
+        const ab = vec3.subtract(tempVec3(), ps[1], ps[0]);
+        const ac = vec3.subtract(tempVec3(), ps[3], ps[0]);
+        const areaNorm = vec3.cross(vec3.create(), ab, ac);
+        return areaNorm;
+      }
 
       // are we at an end of the board?
       if (segQis.length === 5) {
@@ -1148,7 +1146,6 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
             QI,
             QI
           ];
-          sideQuads.sort((a, b) => a - b); // TODO(@darzu): HACK?
           seg = {
             localAABB: aabb,
             midLine: mid,
