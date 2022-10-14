@@ -56,7 +56,7 @@ import {
   RendererDef,
 } from "./render/renderer-ecs.js";
 import { tempVec2, tempVec3 } from "./temp-pool.js";
-import { assert, createIntervalTracker, TupleN } from "./util.js";
+import { assert, assertDbg, createIntervalTracker, TupleN } from "./util.js";
 import { never, range } from "./util.js";
 import {
   centroid,
@@ -711,6 +711,30 @@ export function createEmptyMesh(dbgName: string) {
   return mesh;
 }
 
+function setSideQuadIdxs(
+  loop1Vi: number,
+  loop2Vi: number,
+  q0: vec4,
+  q1: vec4,
+  q2: vec4,
+  q3: vec4
+) {
+  // for provoking, we use loop1:2,3 and loop2:0,1
+  vec4.set(q0, loop2Vi + 3, loop2Vi + 2, loop1Vi + 2, loop1Vi + 3);
+  vec4.set(q1, loop2Vi + 2, loop2Vi + 1, loop1Vi + 1, loop1Vi + 2);
+  vec4.set(q2, loop1Vi + 1, loop2Vi + 1, loop2Vi + 0, loop1Vi + 0);
+  vec4.set(q3, loop1Vi + 0, loop2Vi + 0, loop2Vi + 3, loop1Vi + 3);
+}
+
+function setEndQuadIdxs(loopVi: number, q: vec4, facingDown: boolean) {
+  // for provoking, we use loop 0 or 3
+  // prettier-ignore
+  if (facingDown)
+    vec4.set(q, loopVi + 3, loopVi + 2, loopVi + 1, loopVi + 0);
+  else
+    vec4.set(q, loopVi + 0, loopVi + 1, loopVi + 2, loopVi + 3);
+}
+
 export type TimberBuilder = ReturnType<typeof createTimberBuilder>;
 export function createTimberBuilder(mesh: RawMesh) {
   // TODO(@darzu): have a system for building wood?
@@ -815,51 +839,32 @@ export function createTimberBuilder(mesh: RawMesh) {
     mesh.quad.push([v_blast, v_tlast, v_tbr, v_bbr]);
   }
 
+  // NOTE: for provoking vertices,
+  //  indexes 0, 1 of a loop are for stuff behind (end cap, previous sides)
+  //  indexes 2, 3 of a loop are for stuff ahead (next sides, end cap)
   function addSideQuads() {
-    const loop1EndIdx = mesh.pos.length - 1;
-    const loop2EndIdx = mesh.pos.length - 1 - 4;
+    const loop2Idx = mesh.pos.length - 4;
+    const loop1Idx = mesh.pos.length - 4 - 4;
 
-    // For provoking vertices, we use the middle two verts
-    // of each loop; the first and last of each loop is reserved
-    // for the end caps.
-    // TODO(@darzu): IMPL!
-    mesh.quad.push([
-      loop2EndIdx + -0,
-      loop1EndIdx + -0,
-      loop1EndIdx + -1,
-      loop2EndIdx + -1,
-    ]);
-    mesh.quad.push([
-      loop2EndIdx + -1,
-      loop1EndIdx + -1,
-      loop1EndIdx + -2,
-      loop2EndIdx + -2,
-    ]);
-    mesh.quad.push([
-      loop2EndIdx + -2,
-      loop1EndIdx + -2,
-      loop1EndIdx + -3,
-      loop2EndIdx + -3,
-    ]);
-    mesh.quad.push([
-      loop2EndIdx + -3,
-      loop1EndIdx + -3,
-      loop1EndIdx + -0,
-      loop2EndIdx + -0,
-    ]);
+    const q0 = vec4.create();
+    const q1 = vec4.create();
+    const q2 = vec4.create();
+    const q3 = vec4.create();
+
+    setSideQuadIdxs(loop1Idx, loop2Idx, q0, q1, q2, q3);
+
+    mesh.quad.push(q0, q1, q2, q3);
   }
 
   function addEndQuad(facingDown: boolean) {
-    // TODO(@darzu): take a "flipped" param
-    // TODO(@darzu): handle provoking verts
-    const lastIdx = mesh.pos.length - 1;
-    const q: vec4 = facingDown
-      ? [lastIdx, lastIdx - 1, lastIdx - 2, lastIdx - 3]
-      : [lastIdx - 3, lastIdx - 2, lastIdx - 1, lastIdx];
+    const lastLoopIdx = mesh.pos.length - 4;
+    const q = vec4.create();
+    setEndQuadIdxs(lastLoopIdx, q, facingDown);
     mesh.quad.push(q);
   }
 
   function addLoopVerts() {
+    // TODO(@darzu): ensure this agrees with the width/depth calculation in addBoard
     const v0 = vec3.fromValues(b.width, 0, b.depth);
     const v1 = vec3.fromValues(b.width, 0, -b.depth);
     const v2 = vec3.fromValues(-b.width, 0, -b.depth);
@@ -1011,7 +1016,8 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
     const boardVis = new Set<number>();
     const boardQis = new Set<number>();
 
-    const startLoop = m.quad[startQi] as [VI, VI, VI, VI];
+    const startLoop = vec4.clone(m.quad[startQi]) as [VI, VI, VI, VI];
+    startLoop.sort((a, b) => a - b); // TODO(@darzu): HACK?
 
     // build the board
     const allSegments = addBoardSegment(startLoop, true);
@@ -1069,6 +1075,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
         return undefined;
       }
       const nextLoop = nextLoop_ as [VI, VI, VI, VI];
+      nextLoop.sort((a, b) => a - b); // TODO(@darzu): HACK?
 
       // add next loop verts to segment
       nextLoop.forEach((vi) => segVis.add(vi));
@@ -1141,6 +1148,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
             QI,
             QI
           ];
+          sideQuads.sort((a, b) => a - b); // TODO(@darzu): HACK?
           seg = {
             localAABB: aabb,
             midLine: mid,
@@ -1189,8 +1197,10 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
     }
   }
 
+  const qEndCanidates = [...qIsMaybeEnd.values()];
+  qEndCanidates.sort((a, b) => a - b);
   const boards: Board[] = [];
-  for (let qi of qIsMaybeEnd) {
+  for (let qi of qEndCanidates) {
     if (!structureQis.has(qi)) {
       const b = createBoard(qi);
       if (b) boards.push(b);
@@ -1233,21 +1243,28 @@ export function resetWoodState(w: WoodState) {
     b.segments.forEach((s) => {
       // TODO(@darzu): extract for repair
       // TODO(@darzu): need enough info to reconstruct the mesh!
-      if (s.quadBackIdx)
-        vec4.copy(w.mesh.quad[s.quadBackIdx], s.vertLastLoopIdxs);
-      if (s.quadFrontIdx) {
-        vec4.copy(w.mesh.quad[s.quadFrontIdx], s.vertNextLoopIdxs);
-        vec4Reverse(w.mesh.quad[s.quadFrontIdx]);
+      if (s.quadBackIdx) {
+        setEndQuadIdxs(s.vertLastLoopIdxs[0], w.mesh.quad[s.quadBackIdx], true);
       }
-      for (let i = 0; i < 4; i++) {
-        vec4.set(
-          w.mesh.quad[s.quadSideIdxs[i]],
-          s.vertLastLoopIdxs[i],
-          s.vertNextLoopIdxs[i],
-          s.vertNextLoopIdxs[(i + 1) % 4],
-          s.vertLastLoopIdxs[(i + 1) % 4]
+      if (s.quadFrontIdx) {
+        setEndQuadIdxs(
+          s.vertNextLoopIdxs[0],
+          w.mesh.quad[s.quadFrontIdx],
+          false
         );
       }
+      assertDbg(
+        s.vertLastLoopIdxs[0] < s.vertNextLoopIdxs[0],
+        `Loops out of order`
+      );
+      setSideQuadIdxs(
+        s.vertLastLoopIdxs[0],
+        s.vertNextLoopIdxs[0],
+        w.mesh.quad[s.quadSideIdxs[0]],
+        w.mesh.quad[s.quadSideIdxs[1]],
+        w.mesh.quad[s.quadSideIdxs[2]],
+        w.mesh.quad[s.quadSideIdxs[3]]
+      );
     });
   });
 }

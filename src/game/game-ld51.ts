@@ -393,8 +393,8 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
 
   _timberMesh.surfaceIds = _timberMesh.colors.map((_, i) => i);
   const timberState = getBoardsFromMesh(_timberMesh);
-  unshareProvokingForWood(_timberMesh, timberState);
-  // verifyUnsharedProvokingForWood(_timberMesh, timberState);
+  // unshareProvokingForWood(_timberMesh, timberState);
+  verifyUnsharedProvokingForWood(_timberMesh, timberState);
   // console.log(`before: ` + meshStats(_timberMesh));
   // const timberMesh = normalizeMesh(_timberMesh);
   // console.log(`after: ` + meshStats(timberMesh));
