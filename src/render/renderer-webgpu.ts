@@ -50,6 +50,9 @@ import { GPUBufferUsage } from "./webgpu-hacks.js";
 import { PERF_DBG_GPU } from "../flags.js";
 import { dbgLogOnce } from "../util.js";
 
+// TODO(@darzu): Try using drawIndirect !!
+//    https://gpuweb.github.io/gpuweb/#dom-gpurendercommandsmixin-drawindirect
+
 const MAX_PIPELINES = 64;
 
 export function createRenderer(

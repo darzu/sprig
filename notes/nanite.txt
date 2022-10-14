@@ -1,4 +1,7 @@
+https://gamedev.stackexchange.com/questions/198454/how-does-unreal-engine-5-nanite-works/202884#202884
+
 I'm no expert, but since no one else has jumped in, I'll do my best to summarize what I gathered from these slides[1] and other research. (Hopefully a real expert in this space can clarify my many misrepresentations.)
+*Edit:* The Unreal folks have also uploaded a 2.5hr deep dive using these slides + more here: [20]
 
 # Nanite
 
@@ -15,7 +18,7 @@ In Nanite, LODs are instead determined at a sub-mesh level with much less artist
 [![view-dependent cut of LOD DAG][4]][4]
 
 ## A stable number of triangles per frame with little overdraw
-When all this comes together well, you end up with a system with a very consistent number of triangles rendered to the screen per-frame (~25M for their demo scene) and very little overdraw (aka wasted shader work). This efficiency is what lets Nanite achieve crazy high detail at decent FPS.
+When all this comes together well, you end up with a system with a very consistent number of triangles rendered to the screen per-frame (~25M for their demo scene) and very little overdraw (i.e. wasted shader work). This efficiency is what lets Nanite achieve crazy high detail at decent FPS.
 
 [![Nanite pipeline numbers][5]][5]
 
@@ -119,3 +122,4 @@ The main Epic folks behind Nanite seem to be (based on the slides[1]) Brian Kari
   [17]: https://www.wihlidal.com/blog/
   [18]: https://twitter.com/gwihlidal
   [19]: https://docs.unrealengine.com/5.0/en-US/nanite-virtualized-geometry-in-unreal-engine/
+  [20]: https://www.youtube.com/watch?v=TMorJX3Nj6U

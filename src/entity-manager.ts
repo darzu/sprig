@@ -12,6 +12,15 @@ export interface ComponentDef<
   Pargs extends any[] = any[]
 > {
   readonly name: N;
+  // TODO(@darzu): Instead of a constructor, we should require a copy fn that can
+  //  both initialize a new obj or copy new properties into an existing one. This
+  //  is really important for entity pools where entities are re-used and we need
+  //  to either "create new component with properties or stamp these properties
+  //  into existing component". Than method doesnt exist yet b/c we lack a standard
+  //  copy/construct fn.
+  // TODO(@darzu): while we're at it, we might require that components are always
+  //  objects. E.g. no naked numbers or booleans. There's some other reason i think
+  //  we want this that is eluding me..
   construct: (...args: Pargs) => P;
   readonly id: number;
   isOn: <E extends Entity>(e: E) => e is E & { [K in N]: P };

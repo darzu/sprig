@@ -56,16 +56,25 @@ import {
   RendererDef,
 } from "./render/renderer-ecs.js";
 import { tempVec2, tempVec3 } from "./temp-pool.js";
-import { assert, createIntervalTracker } from "./util.js";
+import { assert, createIntervalTracker, TupleN } from "./util.js";
 import { never, range } from "./util.js";
 import {
   centroid,
   quatFromUpForward,
   randNormalVec3,
   vec3Dbg,
+  vec4Reverse,
   vec4RotateLeft,
 } from "./utils-3d.js";
 import { createSplinterPool, SplinterPool } from "./wood-splinters.js";
+
+/* TODO(@darzu):
+[ ] standardize naming: wood or timber or ??
+[ ] remove gameplay specific stuff like
+  [ ] pirate ship
+  [ ] health values
+  [ ] BulletDef
+*/
 
 // TODO(@darzu): consider other mesh representations like:
 //    DCEL or half-edge data structure
@@ -164,12 +173,12 @@ onInit((em) => {
                 overlapChecks++;
                 if (doesOverlapAABB(ballAABBWorld, segAABBWorld)) {
                   segAABBHits += 1;
-                  for (let qi of seg.quadSideIdxs) {
-                    if (DBG_COLOR && mesh.colors[qi][1] < 1) {
-                      // dont change green to red
-                      mesh.colors[qi] = [1, 0, 0];
-                    }
-                  }
+                  // for (let qi of seg.quadSideIdxs) {
+                  //   if (DBG_COLOR && mesh.colors[qi][1] < 1) {
+                  //     // dont change green to red
+                  //     mesh.colors[qi] = [1, 0, 0];
+                  //   }
+                  // }
 
                   // does the ball hit the middle of the segment?
                   copyLine(worldLine, seg.midLine);
@@ -181,10 +190,10 @@ onInit((em) => {
                   if (midHits) {
                     // console.log(`mid hit: ${midHits}`);
                     segMidHits += 1;
-                    if (DBG_COLOR)
-                      for (let qi of seg.quadSideIdxs) {
-                        mesh.colors[qi] = [0, 1, 0];
-                      }
+                    // if (DBG_COLOR)
+                    //   for (let qi of seg.quadSideIdxs) {
+                    //     mesh.colors[qi] = [0, 1, 0];
+                    //   }
                     // TODO(@darzu): cannon ball health stuff!
                     const woodHealth = w.woodHealth.boards[boardIdx][segIdx];
                     const dmg =
@@ -242,6 +251,7 @@ onInit((em) => {
   );
 });
 
+// TODO(@darzu): SUPER HACK
 type DestroyPirateShipFn = (id: number, timber: Entity) => void;
 const _destroyPirateShipFns: DestroyPirateShipFn[] = [];
 export function registerDestroyPirateHandler(fn: DestroyPirateShipFn) {
@@ -296,7 +306,12 @@ onInit((em: EntityManager) => {
               // TODO(@darzu): probably a more efficient way to do this..
               let qMin = Infinity;
               let qMax = -Infinity;
-              for (let qi of [...seg.quadSideIdxs, ...seg.quadEndIdxs]) {
+              for (let qi of [
+                ...seg.quadSideIdxs,
+                // TODO(@darzu): PERF. how performant is the below?
+                ...(seg.quadBackIdx ? [seg.quadBackIdx] : []),
+                ...(seg.quadFrontIdx ? [seg.quadFrontIdx] : []),
+              ]) {
                 const q = mesh.quad[qi];
                 vec4.set(q, 0, 0, 0, 0);
                 qMin = Math.min(qMin, qi);
@@ -801,20 +816,37 @@ export function createTimberBuilder(mesh: RawMesh) {
   }
 
   function addSideQuads() {
-    const loop1Idx = mesh.pos.length - 1;
-    const loop2Idx = mesh.pos.length - 1 - 4;
+    const loop1EndIdx = mesh.pos.length - 1;
+    const loop2EndIdx = mesh.pos.length - 1 - 4;
 
-    // TODO(@darzu): handle rotation and provoking
-    for (let i = 0; i > -4; i--) {
-      const i2 = (i - 1) % 4;
-      // console.log(`i: ${i}, i2: ${i2}`);
-      mesh.quad.push([
-        loop2Idx + i,
-        loop1Idx + i,
-        loop1Idx + i2,
-        loop2Idx + i2,
-      ]);
-    }
+    // For provoking vertices, we use the middle two verts
+    // of each loop; the first and last of each loop is reserved
+    // for the end caps.
+    // TODO(@darzu): IMPL!
+    mesh.quad.push([
+      loop2EndIdx + -0,
+      loop1EndIdx + -0,
+      loop1EndIdx + -1,
+      loop2EndIdx + -1,
+    ]);
+    mesh.quad.push([
+      loop2EndIdx + -1,
+      loop1EndIdx + -1,
+      loop1EndIdx + -2,
+      loop2EndIdx + -2,
+    ]);
+    mesh.quad.push([
+      loop2EndIdx + -2,
+      loop1EndIdx + -2,
+      loop1EndIdx + -3,
+      loop2EndIdx + -3,
+    ]);
+    mesh.quad.push([
+      loop2EndIdx + -3,
+      loop1EndIdx + -3,
+      loop1EndIdx + -0,
+      loop2EndIdx + -0,
+    ]);
   }
 
   function addEndQuad(facingDown: boolean) {
@@ -844,17 +876,22 @@ interface OBB {
   // TODO(@darzu): 3 axis + lengths
 }
 
+type VI = number; // vertex index
+type QI = number; // quad index
 // each board has an AABB, OBB,
 interface BoardSeg {
   localAABB: AABB;
   midLine: Line;
-  areaNorms: vec3[];
+  areaNorms: vec3[]; // TODO(@darzu): fixed size
   width: number;
   depth: number;
-  vertLastLoopIdxs: vec4; // TODO(@darzu): always 4?
-  vertNextLoopIdxs: vec4; // TODO(@darzu): always 4?
-  quadSideIdxs: number[]; // TODO(@darzu): alway 4?
-  quadEndIdxs: number[]; // TODO(@darzu): always 0,1,2?
+  // TODO(@darzu): establish convention e.g. top-left, top-right, etc.
+  vertLastLoopIdxs: [VI, VI, VI, VI];
+  vertNextLoopIdxs: [VI, VI, VI, VI];
+  // TODO(@darzu): establish convention e.g. top, left, right, bottom
+  quadSideIdxs: [QI, QI, QI, QI];
+  quadBackIdx?: QI;
+  quadFrontIdx?: QI;
 }
 interface Board {
   segments: BoardSeg[];
@@ -974,7 +1011,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
     const boardVis = new Set<number>();
     const boardQis = new Set<number>();
 
-    const startLoop = m.quad[startQi];
+    const startLoop = m.quad[startQi] as [VI, VI, VI, VI];
 
     // build the board
     const allSegments = addBoardSegment(startLoop, true);
@@ -1004,7 +1041,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
     return undefined;
 
     function addBoardSegment(
-      lastLoop: vec4,
+      lastLoop: [VI, VI, VI, VI],
       isFirstLoop: boolean = false
     ): BoardSeg[] | undefined {
       // start tracking this segment
@@ -1031,7 +1068,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
           console.log(`invalid board: next loop has ${nextLoop_.length} verts`);
         return undefined;
       }
-      const nextLoop = nextLoop_ as vec4;
+      const nextLoop = nextLoop_ as [VI, VI, VI, VI];
 
       // add next loop verts to segment
       nextLoop.forEach((vi) => segVis.add(vi));
@@ -1098,7 +1135,12 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
         );
         if (endQuads.length === 1) {
           const endQuad = endQuads[0];
-          const sideQuads = segQis.filter((qi) => qi !== endQuad);
+          const sideQuads = segQis.filter((qi) => qi !== endQuad) as [
+            QI,
+            QI,
+            QI,
+            QI
+          ];
           seg = {
             localAABB: aabb,
             midLine: mid,
@@ -1108,7 +1150,8 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
             vertLastLoopIdxs: lastLoop,
             vertNextLoopIdxs: nextLoop,
             quadSideIdxs: sideQuads,
-            quadEndIdxs: [endQuad],
+            quadBackIdx: isFirstLoop ? endQuad : undefined,
+            quadFrontIdx: !isFirstLoop ? endQuad : undefined,
           };
           if (isFirstLoop) {
             // no-op, we'll continue below
@@ -1134,8 +1177,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
           depth,
           vertLastLoopIdxs: lastLoop,
           vertNextLoopIdxs: nextLoop,
-          quadSideIdxs: segQis,
-          quadEndIdxs: [],
+          quadSideIdxs: segQis as [QI, QI, QI, QI],
         };
       }
 
@@ -1185,6 +1227,52 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
   return woodenState;
 }
 
+// TODO(@darzu): share code with wood repair?
+export function resetWoodState(w: WoodState) {
+  w.boards.forEach((b) => {
+    b.segments.forEach((s) => {
+      // TODO(@darzu): extract for repair
+      // TODO(@darzu): need enough info to reconstruct the mesh!
+      if (s.quadBackIdx)
+        vec4.copy(w.mesh.quad[s.quadBackIdx], s.vertLastLoopIdxs);
+      if (s.quadFrontIdx) {
+        vec4.copy(w.mesh.quad[s.quadFrontIdx], s.vertNextLoopIdxs);
+        vec4Reverse(w.mesh.quad[s.quadFrontIdx]);
+      }
+      for (let i = 0; i < 4; i++) {
+        vec4.set(
+          w.mesh.quad[s.quadSideIdxs[i]],
+          s.vertLastLoopIdxs[i],
+          s.vertNextLoopIdxs[i],
+          s.vertNextLoopIdxs[(i + 1) % 4],
+          s.vertLastLoopIdxs[(i + 1) % 4]
+        );
+      }
+    });
+  });
+}
+
+export function verifyUnsharedProvokingForWood(
+  m: RawMesh,
+  woodState: WoodState
+): asserts m is RawMesh & { usesProvoking: true } {
+  const provokingVis = new Set<number>();
+  for (let b of woodState.boards) {
+    for (let seg of b.segments) {
+      for (let qi of [seg.quadBackIdx, seg.quadFrontIdx, ...seg.quadSideIdxs]) {
+        if (!qi) continue;
+        const pVi = m.quad[qi][0];
+        assert(
+          !provokingVis.has(pVi),
+          `Shared provoking vert found in quad ${qi} (vi: ${pVi}) for ${m.dbgName}`
+        );
+        provokingVis.add(pVi);
+      }
+    }
+  }
+  (m as Mesh).usesProvoking = true;
+}
+
 export function unshareProvokingForWood(m: RawMesh, woodState: WoodState) {
   // TODO(@darzu): verify this actually works. We should pre-split the mesh
   //  into islands (which will speed up getBoardsFromMesh by a lot), and then
@@ -1195,7 +1283,8 @@ export function unshareProvokingForWood(m: RawMesh, woodState: WoodState) {
     // for (let b of [woodState.boards[60]]) {
     // first, do ends
     for (let seg of b.segments) {
-      for (let qi of seg.quadEndIdxs) {
+      for (let qi of [seg.quadBackIdx, seg.quadFrontIdx]) {
+        if (!qi) continue;
         const done = unshareProvokingForBoardQuad(m.quad[qi], qi);
         if (!done)
           console.error(`invalid board ${bIdx}! End cap can't unshare`);
@@ -1305,4 +1394,15 @@ export function createWoodHealth(w: WoodState) {
       return segHealths;
     }),
   };
+}
+
+export function resetWoodHealth(wh: WoodHealth) {
+  wh.boards.forEach((b) =>
+    b.forEach((s) => {
+      s.health = 1.0;
+      s.broken = false;
+      s.splinterTopIdx = undefined;
+      s.splinterBotIdx = undefined;
+    })
+  );
 }

@@ -1249,6 +1249,7 @@ Backstory on splitting render passes?
 
 Regarding Nanite:
   https://golden-mandolin-675.notion.site/Notes-about-Nanite-in-UE5-1-preview-1bd49cb5986a46629214b82f9ce58ae5
+  https://www.youtube.com/watch?v=eviSykqSUUw
   https://docs.unrealengine.com/5.0/en-US/nanite-virtualized-geometry-in-unreal-engine/
     meshes are analyzed and broken down into hierarchical clusters of triangle groups.
     clusters are swapped on the fly at varying levels of detail based on the camera view, and connect perfectly without cracks to neighboring clusters within the same object. Data is streamed in on demand so that only visible detail needs to reside in memory. Nanite runs in its own rendering pass that completely bypasses traditional draw calls.
@@ -1431,6 +1432,38 @@ Regarding Nanite:
   Unanswered:
     https://gamedev.stackexchange.com/questions/198454/how-does-unreal-engine-5-nanite-works
       
-MUST READ, nanite guys: 
+to read, nanite guys: 
   https://www.wihlidal.com/blog/
   http://graphicrants.blogspot.com
+
+HZB:
+  https://docs.unrealengine.com/4.26/en-US/RenderingAndGraphics/VisibilityCulling/
+
+HiZ culling:
+  https://www.rastergrid.com/blog/2010/10/hierarchical-z-map-based-occlusion-culling/
+
+Unreal Lumen:
+  https://knarkowicz.wordpress.com/2022/08/18/journey-to-lumen/
+  http://advances.realtimerendering.com/s2022/index.html#Lumen
+
+HPG panel talk:
+  https://youtu.be/CoGo_3C7xR0?t=14108
+
+ZeniMax guy blog:
+  https://alextardif.com/eden.html
+
+WickedEngine:
+  https://wickedengine.net
+
+"what a "minimum viable" gpu api would look like":
+  https://twitter.com/nice_byte/status/1579187394880090112
+  "
+  dynamic rendering is very good. toss renderpasses, subpasses and framebuffers into the trash bin.
+  programmable vertex pulling only.
+  fully bindless. no binding images, buffers or anything else, ever. toss descriptor sets to the same pile as renderpasses.
+  in fact, no "buffers". preallocate chunks of different types of memory (e.g. for constants, for vert data), expose them to shaders and let the shader figure it out.
+  eliminate the concept of "samplers" from cpu code.  shaders have an indexable table of predefined samplers, and use them as necessary.
+  no msaa. everyone's doing taa these days anyway
+  do something so that the application knows what kinds of memory it's going to need _before_ it starts creating resources. right now in vk you don't know which heap you want until you actually create an image or buffer.
+  synchronization can probably be kept at api level. if you write your code carefully you can keep it to a minimum anyway.
+  "
