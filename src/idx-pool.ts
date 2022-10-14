@@ -28,6 +28,11 @@ export function createIdxPool(size: number) {
   const isFree: boolean[] = new Array(size).fill(true);
   let cursor = 0;
 
+  function reset() {
+    isFree.fill(true);
+    cursor = 0;
+  }
+
   function next(): number | undefined {
     for (let i = 0; i < isFree.length; i++) {
       const result = cursor;
@@ -45,8 +50,11 @@ export function createIdxPool(size: number) {
     isFree[idx] = true;
   }
 
+  reset();
+
   return {
     next,
     free,
+    reset,
   };
 }

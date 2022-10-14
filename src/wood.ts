@@ -1265,6 +1265,27 @@ export function resetWoodState(w: WoodState) {
       );
     });
   });
+  if (w.splinterState) {
+    w.splinterState.splinterIdxPool.reset();
+    for (
+      let qi = w.splinterState.quadOffset;
+      qi <
+      w.splinterState.quadOffset +
+        w.splinterState.maxNumSplinters * _quadsPerSplinter;
+      qi++
+    ) {
+      vec4.zero(w.mesh.quad[qi]);
+    }
+    for (
+      let ti = w.splinterState.triOffset;
+      ti <
+      w.splinterState.triOffset +
+        w.splinterState.maxNumSplinters * _trisPerSplinter;
+      ti++
+    ) {
+      vec3.zero(w.mesh.tri[ti]);
+    }
+  }
 }
 
 export function verifyUnsharedProvokingForWood(
