@@ -82,6 +82,7 @@ import { InRangeDef, InteractableDef } from "./interact.js";
 import { LifetimeDef } from "./lifetime.js";
 import { createPlayer, LocalPlayerDef, PlayerDef } from "./player.js";
 import { TextDef } from "./ui.js";
+import { createIdxPool } from "../idx-pool.js";
 
 /*
   TODO:
@@ -583,6 +584,7 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
 
       if (inputs.keyClicks["r"]) {
         const timber2 = await em.whenEntityHas(timber, RenderableDef);
+        resetWoodHealth(timber.woodHealth);
         resetWoodState(timber.woodState);
         res.renderer.renderer.stdPool.updateMeshQuads(
           timber2.renderable.meshHandle,
@@ -1168,6 +1170,7 @@ export const PiratePlatformDef = EM.defineComponent(
       tiltPeriod: 0,
       tiltTimer: 0,
       lastFire: 0,
+      poolIdx: -1, // TODO(@darzu): HACK. this is for object pooling
     };
   }
 );
@@ -1182,7 +1185,7 @@ function rotatePiratePlatform(
 
 const pitchSpeed = 0.000042;
 
-const numStartPirates = DBG_PLAYER ? 0 : 2;
+const numStartPirates = DBG_PLAYER ? 1 : 2;
 let nextSpawn = 0;
 
 const tenSeconds = 1000 * (DBG_PLAYER ? 3 : 10); // TODO(@darzu): make 10 seconds
@@ -1190,7 +1193,7 @@ const tenSeconds = 1000 * (DBG_PLAYER ? 3 : 10); // TODO(@darzu): make 10 second
 let spawnTimer = tenSeconds;
 const minSpawnTimer = 3000;
 
-const maxPirates = DBG_PLAYER ? 0 : 10;
+const maxPirates = DBG_PLAYER ? 1 : 10;
 
 async function startPirates() {
   const em: EntityManager = EM;
@@ -1292,6 +1295,7 @@ async function startPirates() {
   sandboxSystems.push("updatePiratePlatforms");
 }
 
+// TODO(@darzu): this is wierd. should probably just be component on root entity w/ pointer to others
 type Pirate = {
   platform: EntityW<
     [typeof PiratePlatformDef, typeof PositionDef, typeof RotationDef]
@@ -1299,21 +1303,27 @@ type Pirate = {
   cannon: EntityW<[typeof PositionDef, typeof RotationDef]>;
   timber: EntityW<[typeof WoodHealthDef, typeof WoodStateDef]>;
 };
-const _piratePool: Pirate[] = [];
-const _maxPoolPirates = maxPirates;
-let _nextPirateIdx = 0;
+const _pirateData: Pirate[] = [];
+const _piratePool = createIdxPool(maxPirates);
 
 async function spawnPirate(rad: number) {
-  // console.log("SPAWNED!");
+  // console.log("spawnPirate!");
   const em: EntityManager = EM;
 
   const initialPitch = Math.PI * 0.06;
 
-  const res = await em.whenResources(AssetsDef, RendererDef);
+  const res = await em.whenResources(AssetsDef, RendererDef, TimeDef);
 
-  let p: Pirate;
+  const pIdx = _piratePool.next();
 
-  if (_piratePool.length < _maxPoolPirates) {
+  if (pIdx === undefined) {
+    // console.warn(`Full on pirates!`);
+    return;
+  }
+
+  if (!_pirateData[pIdx]) {
+    // NEW PIRATE
+
     // make platform
     const platform = em.newEntity();
     em.ensureComponentOn(platform, ColorDef);
@@ -1352,7 +1362,8 @@ async function spawnPirate(rad: number) {
     appendPirateShip(builder);
     _timberMesh.surfaceIds = _timberMesh.colors.map((_, i) => i);
     const timberState = getBoardsFromMesh(_timberMesh);
-    unshareProvokingForWood(_timberMesh, timberState);
+    // unshareProvokingForWood(_timberMesh, timberState);
+    verifyUnsharedProvokingForWood(_timberMesh, timberState);
     // TODO(@darzu): maybe there shouldn't actually be any unsharing? We should
     //   be able to get it right at construction time.
     // console.log(`before: ` + meshStats(_timberMesh));
@@ -1379,39 +1390,51 @@ async function spawnPirate(rad: number) {
     // make joint entity
     em.ensureComponentOn(platform, PiratePlatformDef, cannon);
 
-    p = {
+    platform.piratePlatform.poolIdx = pIdx;
+
+    _pirateData[pIdx] = {
       platform,
       cannon,
       timber,
     };
 
     // TODO(@darzu): push to _piratePool
-  } else {
-    p = _piratePool[_nextPirateIdx];
-    _nextPirateIdx += 1;
-    if (_nextPirateIdx >= _piratePool.length) _nextPirateIdx = 0;
-
-    // reset timber
-    resetWoodHealth(p.timber.woodHealth);
-    resetWoodState(p.timber.woodState);
-    // TODO(@darzu): reset splinter state
-    // and fix quad orientation when constructing and reseting
   }
+
+  const p = _pirateData[pIdx];
 
   // set/reset platform, cannon, and wood properties
   const platform = p.platform;
   const cannon = p.cannon;
+  const timber = p.timber;
+
+  // reset timber
+  resetWoodHealth(p.timber.woodHealth);
+  resetWoodState(p.timber.woodState);
+  const timber2 = await em.whenEntityHas(timber, RenderableDef);
+  res.renderer.renderer.stdPool.updateMeshQuads(
+    timber2.renderable.meshHandle,
+    timber.woodState.mesh as Mesh,
+    0,
+    timber.woodState.mesh.quad.length
+  );
+
+  // undead
+  em.tryRemoveComponent(platform.id, DeadDef);
+  em.tryRemoveComponent(cannon.id, DeadDef);
 
   vec3.copy(platform.position, [0, 0, 30]);
+  quat.identity(platform.rotation);
 
   const tiltPeriod = 5700 + jitter(3000);
   const tiltTimer = Math.random() * tiltPeriod;
 
-  platform.piratePlatform.lastFire = startDelay;
+  platform.piratePlatform.lastFire = res.time.time + startDelay;
   platform.piratePlatform.tiltPeriod = tiltPeriod;
   platform.piratePlatform.tiltTimer = tiltTimer;
 
-  quat.rotateX(cannon.rotation, quat.IDENTITY, initialPitch);
+  quat.identity(cannon.rotation);
+  quat.rotateX(cannon.rotation, cannon.rotation, initialPitch);
   // TODO(@darzu): HACK!
   // so they start slightly different pitches
   let initTimer = 0;
@@ -1434,24 +1457,26 @@ export function destroyPirateShip(id: number, timber: Entity) {
 
   // pirateShip
   const e = EM.findEntity(id, [PiratePlatformDef]);
-  if (e) {
-    assert(!!e);
-    EM.ensureComponentOn(e, DeletedDef);
+  if (e && !DeadDef.isOn(e)) {
+    // TODO(@darzu): how can this happen?
+    EM.ensureComponentOn(e, DeadDef);
     if (e.piratePlatform.cannon())
-      EM.ensureComponentOn(e.piratePlatform.cannon()!, DeletedDef);
+      EM.ensureComponentOn(e.piratePlatform.cannon()!, DeadDef);
     pirateKills += 1;
 
     const music = EM.getResource(MusicDef);
     if (music) music.playChords([3], "minor", 2.0, 5.0, 1);
-  }
 
-  if (WoodHealthDef.isOn(timber) && PhysicsParentDef.isOn(timber)) {
-    // TODO(@darzu): necessary?
-    // timber.physicsParent.id = 0;
-    EM.ensureComponentOn(timber, LifetimeDef, 1000);
-    for (let b of timber.woodHealth.boards) {
-      for (let s of b) {
-        s.health = 0;
+    _piratePool.free(e.piratePlatform.poolIdx);
+
+    if (WoodHealthDef.isOn(timber) && PhysicsParentDef.isOn(timber)) {
+      // TODO(@darzu): necessary?
+      // timber.physicsParent.id = 0;
+      // EM.ensureComponentOn(timber, LifetimeDef, 1000);
+      for (let b of timber.woodHealth.boards) {
+        for (let s of b) {
+          s.health = 0;
+        }
       }
     }
   }
