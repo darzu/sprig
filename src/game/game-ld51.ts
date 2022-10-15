@@ -563,6 +563,8 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   // assert(_player?.collider.shape === "AABB");
   // console.dir(ghost.collider.aabb);
 
+  const BUSY_WAIT = 20.0;
+
   em.registerSystem(
     [GhostDef, WorldFrameDef, ColliderDef],
     [InputsDef, CanvasDef],
@@ -572,6 +574,23 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
       const ghost = ps[0];
 
       if (!htmlCanvas.hasFirstInteraction) return;
+
+      // if (BUSY_WAIT) {
+      //   let before = performance.now();
+      //   const mat = mat4.create();
+      //   while (performance.now() - before < BUSY_WAIT) {
+      //     mat4.mul(mat, mat, mat);
+      //   }
+      //   // console.log(before);
+      // }
+
+      if (inputs.keyDowns["t"] && BUSY_WAIT) {
+        let before = performance.now();
+        const mat = mat4.create();
+        while (performance.now() - before < BUSY_WAIT) {
+          mat4.mul(mat, mat, mat);
+        }
+      }
 
       if (inputs.lclick) {
         // console.log(`fire!`);
@@ -976,6 +995,7 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
               res.time.time / 1000
             ).toFixed(1)} seconds. Thanks for playing! Refresh to try again.`
           );
+          sandboxSystems.length = 0;
         }
       },
       "progressGame"
@@ -1185,7 +1205,7 @@ function rotatePiratePlatform(
 
 const pitchSpeed = 0.000042;
 
-const numStartPirates = DBG_PLAYER ? 1 : 2;
+const numStartPirates = DBG_PLAYER ? 10 : 2;
 let nextSpawn = 0;
 
 const tenSeconds = 1000 * (DBG_PLAYER ? 3 : 10); // TODO(@darzu): make 10 seconds
@@ -1193,7 +1213,7 @@ const tenSeconds = 1000 * (DBG_PLAYER ? 3 : 10); // TODO(@darzu): make 10 second
 let spawnTimer = tenSeconds;
 const minSpawnTimer = 3000;
 
-const maxPirates = DBG_PLAYER ? 1 : 10;
+const maxPirates = DBG_PLAYER ? 10 : 10;
 
 async function startPirates() {
   const em: EntityManager = EM;

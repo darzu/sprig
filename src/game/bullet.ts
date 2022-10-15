@@ -35,6 +35,8 @@ import { SplinterParticleDef } from "../wood.js";
 import { tempVec3 } from "../temp-pool.js";
 import { assert, assertDbg } from "../util.js";
 
+const _maxBullets = 15;
+
 export const BulletDef = EM.defineComponent(
   "bullet",
   (team: number = 0, health: number = 10) => {
@@ -160,7 +162,6 @@ export function registerBulletUpdate(em: EntityManager) {
 
 type BulletEnt = EntityW<[typeof BulletConstructDef]>;
 const _bulletPool: BulletEnt[] = [];
-const _maxBullets = 20;
 let _nextBulletIdx = 0;
 
 export async function fireBullet(

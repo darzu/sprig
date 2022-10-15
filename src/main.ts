@@ -40,7 +40,9 @@ const GAME = "ld51" as
 const TIMESTEP = 1000 / 60;
 
 // Don't run more than 5 simulation steps--if we do, reset accumulated time
-const MAX_SIM_LOOPS = 3;
+const MAX_SIM_LOOPS = 1;
+// TODO(@darzu): PERF ISSUES WITH LD51
+// const MAX_SIM_LOOPS = 3;
 
 export let gameStarted = false;
 
@@ -238,11 +240,12 @@ async function startGame(localPeerName: string, host: string | null) {
   let previous_frame_time = start_of_time;
   let accumulator = 0;
   let frame = (frame_time: number) => {
+    // console.log(`requestAnimationFrame: ${frame_time}`);
     let before_frame = performance.now();
     accumulator += frame_time - previous_frame_time;
     let loops = 0;
     while (accumulator > TIMESTEP) {
-      if (loops > MAX_SIM_LOOPS) {
+      if (loops >= MAX_SIM_LOOPS) {
         if (VERBOSE_LOG)
           console.log("too many sim loops, resetting accumulator");
         accumulator = 0;
