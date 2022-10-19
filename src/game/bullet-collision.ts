@@ -23,7 +23,7 @@ import {
   breakEnemyShip,
 } from "./enemy-ship.js";
 import { AssetsDef } from "./assets.js";
-import { MusicDef } from "../music.js";
+import { AudioDef } from "../audio.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { assert, NumberTuple } from "../util.js";
 
@@ -94,7 +94,7 @@ export const raiseBulletEnemyShip = eventWizard(
   ([bullet, enemyShip]) => {
     assert(false, `raiseBulletEnemyShip doesnt work on ld51`); // TODO(@darzu): ld51
     EM.ensureComponentOn(bullet, DeletedDef);
-    const res = EM.getResources([AssetsDef, MusicDef])!;
+    const res = EM.getResources([AssetsDef, AudioDef])!;
     breakEnemyShip(EM, enemyShip, res.assets.boat_broken, res.music);
   }
 );

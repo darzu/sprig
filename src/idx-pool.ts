@@ -1,4 +1,8 @@
-import { assertDbg } from "./util.js";
+import { DBG_ASSERT } from "./flags.js";
+import { assert, assertDbg } from "./util.js";
+
+export type IdxRing = ReturnType<typeof createIdxRing>;
+export type IdxPool = ReturnType<typeof createIdxPool>;
 
 // ring buffer
 export function createIdxRing(size: number) {
@@ -27,27 +31,34 @@ export function createIdxPool(size: number) {
   // TODO(@darzu): what to do on empty?
   const isFree: boolean[] = new Array(size).fill(true);
   let cursor = 0;
+  let numFree = size;
 
   function reset() {
     isFree.fill(true);
-    cursor = 0;
+    cursor = size;
   }
 
   function next(): number | undefined {
+    if (numFree === 0) return undefined; // pool full
     for (let i = 0; i < isFree.length; i++) {
       const result = cursor;
       cursor += 1;
       if (cursor >= isFree.length) cursor = 0;
       if (isFree[result]) {
         isFree[result] = false;
+        numFree--;
         return result;
       }
     }
-    return undefined; // pool full
+    assert(false, "pool error");
   }
-  function free(idx: number) {
-    assertDbg(!isFree[idx], `trying to double free?`);
-    isFree[idx] = true;
+  function free(idx: number, ignoreDoubleFree = false) {
+    if (DBG_ASSERT && !ignoreDoubleFree)
+      assertDbg(!isFree[idx], `trying to double free?`);
+    if (!isFree[idx]) {
+      isFree[idx] = true;
+      numFree++;
+    }
   }
 
   reset();
@@ -56,5 +67,6 @@ export function createIdxPool(size: number) {
     next,
     free,
     reset,
+    numFree: () => numFree,
   };
 }

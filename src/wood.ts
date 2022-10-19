@@ -14,7 +14,7 @@ import { mat4, quat, vec2, vec3, vec4 } from "./gl-matrix.js";
 import { createIdxPool, createIdxRing } from "./idx-pool.js";
 import { onInit } from "./init.js";
 import { align, jitter } from "./math.js";
-import { MusicDef } from "./music.js";
+import { AudioDef } from "./audio.js";
 import {
   AABB,
   copyAABB,
@@ -211,7 +211,7 @@ onInit((em) => {
                       for (let fn of _destroyPirateShipFns)
                         fn(w.physicsParent.id, w);
                     } else if (ball.bullet.team === 2) {
-                      const music = EM.getResource(MusicDef);
+                      const music = EM.getResource(AudioDef);
                       if (music)
                         music.playChords([2, 3], "minor", 0.2, 5.0, -2);
                     }

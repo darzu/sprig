@@ -51,7 +51,7 @@ import { registerCursorSystems } from "./cursor.js";
 import { registerPhysicsSystems } from "../physics/phys.js";
 import { registerNoodleSystem } from "./noodles.js";
 import { registerUpdateLifetimes } from "./lifetime.js";
-import { registerMusicSystems } from "../music.js";
+import { registerMusicSystems } from "../audio.js";
 import { registerNetDebugSystem } from "../net/net-debug.js";
 import { callInitFns } from "../init.js";
 import { registerGrappleDbgSystems } from "./grapple.js";

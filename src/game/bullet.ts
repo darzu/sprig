@@ -29,7 +29,7 @@ import { GravityDef } from "./gravity.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { DeadDef } from "../delete.js";
-import { MusicDef } from "../music.js";
+import { AudioDef } from "../audio.js";
 import { randNormalVec3 } from "../utils-3d.js";
 import { SplinterParticleDef } from "../wood.js";
 import { tempVec3 } from "../temp-pool.js";
@@ -175,11 +175,10 @@ export async function fireBullet(
   health: number
 ) {
   {
-    const music = EM.getResource(MusicDef);
-    // TODO(@darzu): REMOVE. for repro'ing audio bug
+    const music = EM.getResource(AudioDef);
     if (music) {
-      for (let i = 0; i < 10; i++) music.playChords([3], "minor", 2.0, 5.0, 1);
-      // music.playChords([3], "minor", 2.0, 5.0, 1);
+      // for (let i = 0; i < 10; i++) music.playChords([3], "minor", 2.0, 5.0, 1);
+      music.playChords([3], "minor", 2.0, 5.0, 1);
     }
   }
 

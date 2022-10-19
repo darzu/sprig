@@ -2,7 +2,7 @@ import { CameraDef } from "../camera.js";
 import { DeletedDef } from "../delete.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { quat, vec3 } from "../gl-matrix.js";
-import { MusicDef } from "../music.js";
+import { AudioDef } from "../audio.js";
 import { AuthorityDef, HostDef, MeDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
 import { LinearVelocityDef } from "../physics/motion.js";
@@ -47,7 +47,7 @@ export const endGame = eventWizard(
   () => [[PlayerShipPropsDef, PlayerShipLocalDef, PositionDef]] as const,
   ([ship]) => {
     console.log("end");
-    const res = EM.getResources([MusicDef, GameStateDef, MeDef])!;
+    const res = EM.getResources([AudioDef, GameStateDef, MeDef])!;
     res.music.playChords([1, 2, 3, 4, 4], "minor");
     res.gameState.state = GameState.GAMEOVER;
     res.gameState.time = 0;

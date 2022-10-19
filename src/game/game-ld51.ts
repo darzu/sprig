@@ -8,7 +8,7 @@ import { EM, Entity, EntityManager, EntityW } from "../entity-manager.js";
 import { vec3, quat, mat4 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { jitter } from "../math.js";
-import { MusicDef, randChordId } from "../music.js";
+import { AudioDef, randChordId } from "../audio.js";
 import {
   createAABB,
   copyAABB,
@@ -128,7 +128,7 @@ const MAX_GOODBALLS = 10;
 
 const pitchSpeed = 0.000042;
 
-const numStartPirates = DBG_PLAYER ? 20 : 2;
+const numStartPirates = DBG_PLAYER ? 0 : 2;
 let nextSpawn = 0;
 
 const tenSeconds = 1000 * (DBG_PLAYER ? 3 : 10); // TODO(@darzu): make 10 seconds
@@ -136,7 +136,7 @@ const tenSeconds = 1000 * (DBG_PLAYER ? 3 : 10); // TODO(@darzu): make 10 second
 let spawnTimer = tenSeconds;
 const minSpawnTimer = 3000;
 
-const maxPirates = DBG_PLAYER ? 20 : 10;
+const maxPirates = DBG_PLAYER ? 0 : 10;
 
 // TODO(@darzu): HACK. we need a better way to programmatically create sandbox games
 export const sandboxSystems: string[] = [];
@@ -488,7 +488,7 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
 
   em.registerSystem(
     [LD51CannonDef, WorldFrameDef, InRangeDef],
-    [InputsDef, LocalPlayerDef, MusicDef],
+    [InputsDef, LocalPlayerDef, AudioDef],
     (cannons, res) => {
       const player = em.findEntity(res.localPlayer.playerId, [PlayerDef])!;
       if (!player) return;
@@ -984,7 +984,7 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   {
     em.registerSystem(
       [],
-      [InputsDef, TextDef, TimeDef],
+      [InputsDef, TextDef, TimeDef, AudioDef],
       (es, res) => {
         // const player = em.findEntity(res.localPlayer.playerId, [PlayerDef])!;
         // if (!player) return;
@@ -1002,7 +1002,10 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
 
         if (DBG_PLAYER) {
           // res.text.lowerText = `splinterEnds: ${_numSplinterEnds}, goodballs: ${_numGoodBalls}`;
-          res.text.lowerText = `Time: ${(res.time.time / 1000).toFixed(1)}s`;
+          res.text.lowerText = ``;
+          res.text.lowerText += `Time: ${(res.time.time / 1000).toFixed(1)}s`;
+          res.text.lowerText += ` `;
+          res.text.lowerText += `Strings: ${res.music.state?._stringPool.numFree()}`;
         } else {
           res.text.lowerText = `WASD+Shift; left click to pick up cannon balls and fire the cannons. Survive! They attack like clockwork.`;
         }
@@ -1490,7 +1493,7 @@ export function destroyPirateShip(id: number, timber: Entity) {
       EM.ensureComponentOn(e.piratePlatform.cannon()!, DeadDef);
     pirateKills += 1;
 
-    const music = EM.getResource(MusicDef);
+    const music = EM.getResource(AudioDef);
     if (music) music.playChords([3], "minor", 2.0, 5.0, 1);
 
     _piratePool.free(e.piratePlatform.poolIdx);

@@ -32,7 +32,7 @@ import { BulletDef, fireBullet } from "./bullet.js";
 import { DeletedDef, OnDeleteDef } from "../delete.js";
 import { LifetimeDef } from "./lifetime.js";
 import { PlayerShipLocalDef } from "./player-ship.js";
-import { Music, MusicDef } from "../music.js";
+import { Music, AudioDef } from "../audio.js";
 import { defineNetEntityHelper } from "../em_helpers.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { raiseBulletEnemyShip } from "./bullet-collision.js";
@@ -227,7 +227,7 @@ export const raiseBreakEnemyShip = eventWizard(
   "break-enemyShip",
   [[EnemyShipLocalDef, PositionDef, RotationDef]] as const,
   ([enemyShip]) => {
-    const res = EM.getResources([AssetsDef, MusicDef])!;
+    const res = EM.getResources([AssetsDef, AudioDef])!;
     breakEnemyShip(EM, enemyShip, res.assets.boat_broken, res.music);
   }
 );
@@ -295,7 +295,7 @@ export function registerEnemyShipSystems(em: EntityManager) {
 
   em.registerSystem(
     [EnemyShipLocalDef, PositionDef, RotationDef],
-    [PhysicsResultsDef, AssetsDef, MusicDef, MeDef, DetectedEventsDef],
+    [PhysicsResultsDef, AssetsDef, AudioDef, MeDef, DetectedEventsDef],
     (objs, res) => {
       for (let enemyShip of objs) {
         const hits = res.physicsResults.collidesWith.get(enemyShip.id);
