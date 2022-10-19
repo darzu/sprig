@@ -5,7 +5,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef, DeletedDef } from "../delete.js";
 import { createRef } from "../em_helpers.js";
 import { EM, Entity, EntityManager, EntityW } from "../entity-manager.js";
-import { vec3, quat, mat4 } from "../gl-matrix.js";
+import { vec3, quat, mat4, vec4 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { jitter } from "../math.js";
 import { AudioDef, randChordId } from "../audio.js";
@@ -117,23 +117,23 @@ import { createIdxPool } from "../idx-pool.js";
   [x] object pool enemies
 */
 
-const DBG_PLAYER = true;
+const DBG_PLAYER = false;
 
 let pirateKills = 0;
 let healthPercent = 100;
 
-// TODO(@darzu): create GoodBalls pool
-let _numGoodBalls = 0;
 const MAX_GOODBALLS = 10;
 
 const pitchSpeed = 0.000042;
 
 const maxPirates = DBG_PLAYER ? 3 : 10;
 
-const numStartPirates = DBG_PLAYER ? maxPirates : 2;
+const numStartPirates = DBG_PLAYER ? maxPirates : maxPirates;
+// const numStartPirates = DBG_PLAYER ? maxPirates : 2;
 let nextSpawn = 0;
 
-const tenSeconds = 1000 * (DBG_PLAYER ? 3 : 10); // TODO(@darzu): make 10 seconds
+const tenSeconds = 1000 * (DBG_PLAYER ? 3 : 3); // TODO(@darzu): make 10 seconds
+// const tenSeconds = 1000 * (DBG_PLAYER ? 3 : 10); // TODO(@darzu): make 10 seconds
 
 let spawnTimer = tenSeconds;
 const minSpawnTimer = 3000;
@@ -486,6 +486,76 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
     em.ensureComponentOn(cannon, LD51CannonDef);
   }
 
+  // TODO(@darzu): use a pool for goodballs
+  const GoodBallDef = EM.defineComponent(
+    "goodBall",
+    (idx: number, interactBoxId: number) => ({
+      idx,
+      interactBoxId,
+    })
+  );
+  const _goodBalls: EntityW<
+    [
+      typeof PositionDef,
+      typeof GravityDef,
+      typeof LinearVelocityDef,
+      typeof GoodBallDef
+    ]
+  >[] = [];
+  const _goodBallPool = createIdxPool(MAX_GOODBALLS);
+  function despawnGoodBall(e: EntityW<[typeof GoodBallDef]>) {
+    em.ensureComponentOn(e, DeadDef);
+    if (RenderableDef.isOn(e)) e.renderable.hidden = true;
+    _goodBallPool.free(e.goodBall.idx);
+    e.dead.processed = true;
+  }
+  function spawnGoodBall(pos: vec3) {
+    const idx = _goodBallPool.next();
+    if (idx === undefined) return;
+
+    let ball = _goodBalls[idx];
+
+    if (!ball) {
+      const newBall = em.newEntity();
+      em.ensureComponentOn(
+        newBall,
+        RenderableConstructDef,
+        res.assets.ball.proto
+      );
+      em.ensureComponentOn(newBall, ColorDef, vec3.clone(ENDESGA16.orange));
+      em.ensureComponentOn(newBall, PositionDef);
+      em.ensureComponentOn(newBall, LinearVelocityDef);
+      em.ensureComponentOn(newBall, GravityDef);
+      const interactBox = EM.newEntity();
+      const interactAABB = copyAABB(createAABB(), res.assets.ball.aabb);
+      vec3.scale(interactAABB.min, interactAABB.min, 2);
+      vec3.scale(interactAABB.max, interactAABB.max, 2);
+      EM.ensureComponentOn(interactBox, PhysicsParentDef, newBall.id);
+      EM.ensureComponentOn(interactBox, PositionDef, [0, 0, 0]);
+      EM.ensureComponentOn(interactBox, ColliderDef, {
+        shape: "AABB",
+        solid: false,
+        aabb: interactAABB,
+      });
+      em.ensureComponentOn(newBall, InteractableDef, interactBox.id);
+      // em.ensureComponentOn(ball, WorldFrameDef);
+      em.ensureComponentOn(newBall, GoodBallDef, idx, interactBox.id);
+
+      ball = newBall;
+      _goodBalls[idx] = newBall;
+    } else {
+      if (RenderableDef.isOn(ball)) ball.renderable.hidden = false;
+      em.tryRemoveComponent(ball.id, DeadDef);
+      em.tryRemoveComponent(ball.id, PhysicsParentDef);
+      em.ensureComponentOn(ball, InteractableDef, ball.goodBall.interactBoxId);
+    }
+
+    vec3.copy(ball.position, pos);
+    vec3.copy(ball.gravity, [0, -3, 0]);
+    vec3.zero(ball.linearVelocity);
+    if (ScaleDef.isOn(ball)) vec3.copy(ball.scale, vec3.ONES);
+  }
+
   em.registerSystem(
     [LD51CannonDef, WorldFrameDef, InRangeDef],
     [InputsDef, LocalPlayerDef, AudioDef],
@@ -519,10 +589,11 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
           );
 
           // remove player ball
-          const heldBall = EM.findEntity(player.player.holdingBall, []);
+          const heldBall = EM.findEntity(player.player.holdingBall, [
+            GoodBallDef,
+          ]);
           if (heldBall) {
-            EM.ensureComponentOn(heldBall, DeletedDef);
-            _numGoodBalls--;
+            despawnGoodBall(heldBall);
           }
 
           player.player.holdingBall = 0;
@@ -553,6 +624,7 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
     (splinters, res) => {
       for (let s of splinters) {
         if (s.position[1] <= 0) {
+          // TODO(@darzu): zero these instead of remove?
           em.removeComponent(s.id, LinearVelocityDef);
           em.removeComponent(s.id, GravityDef);
           em.removeComponent(s.id, AngularVelocityDef);
@@ -793,7 +865,7 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
                   if (w.id === targetSide.id || w.id === targetFrontBack.id) {
                     vec3.zero(b.linearVelocity);
                     vec3.zero(b.gravity);
-                    if (_numGoodBalls < MAX_GOODBALLS) {
+                    if (_goodBallPool.numFree() > 0) {
                       // em.ensureComponentOn(b, DeletedDef);
                       em.ensureComponentOn(b, DeadDef);
                       spawnGoodBall(b.world.position);
@@ -832,32 +904,6 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
     );
     sandboxSystems.push("deadBullets");
 
-    // TODO(@darzu): use a pool for goodballs
-    const GoodBallDef = EM.defineComponent("goodBall", () => true);
-    function spawnGoodBall(pos: vec3) {
-      _numGoodBalls++;
-      const ball = em.newEntity();
-      em.ensureComponentOn(ball, RenderableConstructDef, res.assets.ball.proto);
-      em.ensureComponentOn(ball, ColorDef, vec3.clone(ENDESGA16.orange));
-      em.ensureComponentOn(ball, PositionDef, vec3.clone(pos));
-      em.ensureComponentOn(ball, GoodBallDef);
-      em.ensureComponentOn(ball, LinearVelocityDef);
-      em.ensureComponentOn(ball, GravityDef, [0, -3, 0]);
-      const interactBox = EM.newEntity();
-      const interactAABB = copyAABB(createAABB(), res.assets.ball.aabb);
-      vec3.scale(interactAABB.min, interactAABB.min, 2);
-      vec3.scale(interactAABB.max, interactAABB.max, 2);
-      EM.ensureComponentOn(interactBox, PhysicsParentDef, ball.id);
-      EM.ensureComponentOn(interactBox, PositionDef, [0, 0, 0]);
-      EM.ensureComponentOn(interactBox, ColliderDef, {
-        shape: "AABB",
-        solid: false,
-        aabb: interactAABB,
-      });
-      em.ensureComponentOn(ball, InteractableDef, interactBox.id);
-      // em.ensureComponentOn(ball, WorldFrameDef);
-    }
-
     // starter ammo
     {
       assert(colFloor.collider.shape === "AABB");
@@ -882,7 +928,6 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
             ball.position[1] = realFloorHeight + 1;
             vec3.zero(ball.linearVelocity);
             vec3.zero(ball.gravity);
-            em.removeComponent(ball.id, GravityDef);
           }
         }
       },
@@ -905,7 +950,8 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
             player.player.holdingBall = ball.id;
             em.ensureComponentOn(ball, PhysicsParentDef, player.id);
             vec3.set(ball.position, 0, 0, -1);
-            em.ensureComponentOn(ball, ScaleDef, [0.4, 0.4, 0.4]);
+            em.ensureComponentOn(ball, ScaleDef);
+            vec3.copy(ball.scale, [0.8, 0.8, 0.8]);
             em.removeComponent(ball.id, InteractableDef);
           }
         }
@@ -1426,8 +1472,6 @@ async function spawnPirate(rad: number) {
       cannon,
       timber,
     };
-
-    // TODO(@darzu): push to _piratePool
   }
 
   const p = _pirateData[pIdx];

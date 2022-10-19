@@ -36,6 +36,7 @@ export function createIdxPool(size: number) {
   function reset() {
     isFree.fill(true);
     cursor = 0;
+    numFree = size;
   }
 
   function next(): number | undefined {
