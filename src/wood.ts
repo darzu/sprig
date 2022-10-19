@@ -67,6 +67,7 @@ import {
   vec4RotateLeft,
 } from "./utils-3d.js";
 import { createSplinterPool, SplinterPool } from "./wood-splinters.js";
+import { VERBOSE_LOG } from "./flags.js";
 
 /* TODO(@darzu):
 [ ] standardize naming: wood or timber or ??
@@ -282,7 +283,7 @@ onInit((em: EntityManager) => {
         const meshHandle = w.renderable.meshHandle;
         const mesh = meshHandle.readonlyMesh!;
 
-        if (_ONCE && mesh.dbgName?.includes("home")) {
+        if (VERBOSE_LOG && _ONCE && mesh.dbgName?.includes("home")) {
           // console.log(`mesh: ${meshStats(mesh)}`);
           // console.log(`woodMesh: ${meshStats(w.woodState.mesh)}`);
           // if (meshHandle.triNum !== mesh.tri.length) {
@@ -327,7 +328,8 @@ onInit((em: EntityManager) => {
                   1
                 )}_d${seg.depth.toFixed(1)}_c${vec3Dbg(w.color)}`;
                 if (!splinterPools.has(poolKey)) {
-                  console.log(`new splinter pool!: ${poolKey}`);
+                  if (VERBOSE_LOG)
+                    console.log(`new splinter pool!: ${poolKey}`);
                   pool = createSplinterPool(
                     seg.width,
                     seg.depth,
@@ -802,7 +804,7 @@ export function createTimberBuilder(mesh: RawMesh) {
         vec2.cross(cross_last_this, [lastX, lastY], [x, y]);
         maxLoop--;
       }
-      if (cross_last_this[2] > 0) console.warn(`non-manifold!`);
+      if (VERBOSE_LOG && cross_last_this[2] > 0) console.warn(`non-manifold!`);
 
       // +D side
       const vtj = vec3.fromValues(x, y, d);

@@ -128,12 +128,10 @@ const pitchSpeed = 0.000042;
 
 const maxPirates = DBG_PLAYER ? 3 : 10;
 
-const numStartPirates = DBG_PLAYER ? maxPirates : maxPirates;
-// const numStartPirates = DBG_PLAYER ? maxPirates : 2;
+const numStartPirates = DBG_PLAYER ? maxPirates : 2;
 let nextSpawn = 0;
 
-const tenSeconds = 1000 * (DBG_PLAYER ? 3 : 3); // TODO(@darzu): make 10 seconds
-// const tenSeconds = 1000 * (DBG_PLAYER ? 3 : 10); // TODO(@darzu): make 10 seconds
+const tenSeconds = 1000 * (DBG_PLAYER ? 3 : 10); // TODO(@darzu): make 10 seconds
 
 let spawnTimer = tenSeconds;
 const minSpawnTimer = 3000;
@@ -999,7 +997,6 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
         ControllableDef,
         ColliderDef
       ).then((player) => {
-        console.log(`init player?`);
         Object.assign(player.controllable.modes, {
           canCameraYaw: false,
           canFall: true,

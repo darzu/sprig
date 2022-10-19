@@ -47,7 +47,7 @@ import {
   OceanVertStruct,
 } from "./pipelines/std-ocean.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
-import { PERF_DBG_GPU } from "../flags.js";
+import { PERF_DBG_GPU, VERBOSE_LOG } from "../flags.js";
 import { dbgLogOnce } from "../util.js";
 
 // TODO(@darzu): Try using drawIndirect !!
@@ -67,7 +67,7 @@ export function createRenderer(
         count: MAX_PIPELINES + 1, // start of execution + after each pipeline
       })
     : null;
-  console.log(`timestamp-query: ${!!timestampQuerySet}`);
+  if (VERBOSE_LOG) console.log(`timestamp-query: ${!!timestampQuerySet}`);
 
   const resources = createCyResources(CY, shaders, device);
   const cyKindToNameToRes = resources.kindToNameToRes;
@@ -218,7 +218,7 @@ export function createRenderer(
   ): void {
     // TODO(@darzu): a lot of the smarts of this fn should come out and be an explicit part
     //  of some pipeline sequencer-timeline-composition-y description thing
-    if (!pipelinePtrs.length) {
+    if (VERBOSE_LOG && !pipelinePtrs.length) {
       console.warn("rendering without any pipelines specified");
       return;
     }
