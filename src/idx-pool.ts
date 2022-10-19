@@ -35,7 +35,7 @@ export function createIdxPool(size: number) {
 
   function reset() {
     isFree.fill(true);
-    cursor = size;
+    cursor = 0;
   }
 
   function next(): number | undefined {
@@ -50,7 +50,7 @@ export function createIdxPool(size: number) {
         return result;
       }
     }
-    assert(false, "pool error");
+    assert(false, `pool error: ${numFree}, c: ${cursor}`);
   }
   function free(idx: number, ignoreDoubleFree = false) {
     if (DBG_ASSERT && !ignoreDoubleFree)

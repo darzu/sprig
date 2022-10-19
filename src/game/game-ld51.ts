@@ -100,7 +100,7 @@ import { createIdxPool } from "../idx-pool.js";
   [x] cannon balls explode
   [x] cannon balls drop and can be picked up
   [x] Enemies spawn
-  [ ] PERF: pool enemy ships
+  [x] PERF: pool enemy ships
   [x] PERF: board AABB check
   [x] ship total health check
   [x] Sound!
@@ -114,29 +114,29 @@ import { createIdxPool } from "../idx-pool.js";
   [ ] reduce allocs in stepRenderer
   [x] object pool friend bullets
   [x] object pool enemy bullets
-  [ ] object pool enemies
+  [x] object pool enemies
 */
 
-// TODO(@darzu): GHOST MODE
 const DBG_PLAYER = true;
 
 let pirateKills = 0;
 let healthPercent = 100;
 
+// TODO(@darzu): create GoodBalls pool
 let _numGoodBalls = 0;
 const MAX_GOODBALLS = 10;
 
 const pitchSpeed = 0.000042;
 
-const numStartPirates = DBG_PLAYER ? 0 : 2;
+const maxPirates = DBG_PLAYER ? 3 : 10;
+
+const numStartPirates = DBG_PLAYER ? maxPirates : 2;
 let nextSpawn = 0;
 
 const tenSeconds = 1000 * (DBG_PLAYER ? 3 : 10); // TODO(@darzu): make 10 seconds
 
 let spawnTimer = tenSeconds;
 const minSpawnTimer = 3000;
-
-const maxPirates = DBG_PLAYER ? 0 : 10;
 
 // TODO(@darzu): HACK. we need a better way to programmatically create sandbox games
 export const sandboxSystems: string[] = [];
@@ -644,27 +644,6 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
   );
   sandboxSystems.push("breakBullets");
 
-  // dead bullet maintenance
-  // NOTE: this must be called after any system that can create dead bullets but
-  //   before the rendering systems.
-  em.registerSystem(
-    [BulletDef, PositionDef, DeadDef, RenderableDef],
-    [],
-    (es, _) => {
-      for (let e of es) {
-        if (e.dead.processed) continue;
-
-        e.bullet.health = 10;
-        vec3.set(e.position, 0, -100, 0);
-        e.renderable.hidden = true;
-
-        e.dead.processed = true;
-      }
-    },
-    "deadBullets"
-  );
-  sandboxSystems.push("deadBullets");
-
   // Create player
   {
     const ColWallDef = em.defineComponent("ColWall", () => ({}));
@@ -831,6 +810,27 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
       );
       sandboxSystems.push("bulletBounce");
     }
+
+    // dead bullet maintenance
+    // NOTE: this must be called after any system that can create dead bullets but
+    //   before the rendering systems.
+    em.registerSystem(
+      [BulletDef, PositionDef, DeadDef, RenderableDef],
+      [],
+      (es, _) => {
+        for (let e of es) {
+          if (e.dead.processed) continue;
+
+          e.bullet.health = 10;
+          vec3.set(e.position, 0, -100, 0);
+          e.renderable.hidden = true;
+
+          e.dead.processed = true;
+        }
+      },
+      "deadBullets"
+    );
+    sandboxSystems.push("deadBullets");
 
     // TODO(@darzu): use a pool for goodballs
     const GoodBallDef = EM.defineComponent("goodBall", () => true);
@@ -1452,6 +1452,9 @@ async function spawnPirate(rad: number) {
   em.tryRemoveComponent(platform.id, DeadDef);
   em.tryRemoveComponent(cannon.id, DeadDef);
 
+  if (RenderableDef.isOn(platform)) platform.renderable.hidden = false;
+  if (RenderableDef.isOn(cannon)) cannon.renderable.hidden = false;
+
   vec3.copy(platform.position, [0, 0, 30]);
   quat.identity(platform.rotation);
 
@@ -1487,17 +1490,29 @@ export function destroyPirateShip(id: number, timber: Entity) {
   // pirateShip
   const e = EM.findEntity(id, [PiratePlatformDef]);
   if (e && !DeadDef.isOn(e)) {
-    // TODO(@darzu): how can this happen?
+    // dead platform
     EM.ensureComponentOn(e, DeadDef);
-    if (e.piratePlatform.cannon())
-      EM.ensureComponentOn(e.piratePlatform.cannon()!, DeadDef);
+    if (RenderableDef.isOn(e)) e.renderable.hidden = true;
+    e.dead.processed = true;
+
+    // dead cannon
+    if (e.piratePlatform.cannon()) {
+      const c = e.piratePlatform.cannon()!;
+      EM.ensureComponentOn(c, DeadDef);
+      if (RenderableDef.isOn(c)) c.renderable.hidden = true;
+      c.dead.processed = true;
+    }
+
+    // kill count
     pirateKills += 1;
 
+    // dead music
     const music = EM.getResource(AudioDef);
     if (music) music.playChords([3], "minor", 2.0, 5.0, 1);
 
     _piratePool.free(e.piratePlatform.poolIdx);
 
+    // wood state
     if (WoodHealthDef.isOn(timber) && PhysicsParentDef.isOn(timber)) {
       // TODO(@darzu): necessary?
       // timber.physicsParent.id = 0;

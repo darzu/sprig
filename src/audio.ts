@@ -4,8 +4,6 @@ import { ENABLE_AUDIO } from "./flags.js";
 import { createIdxPool, createIdxRing, IdxPool } from "./idx-pool.js";
 import { assert, range } from "./util.js";
 
-// TODO(@darzu): AUDIO IS CAUSING HUGE PERF ISSUES
-
 // NOTE: basically this whole file just tries to implement
 //    what Andrew suggests as a good way to start making good sounding
 //    music:
@@ -16,9 +14,11 @@ import { assert, range } from "./util.js";
 
 const MAX_VOLUME = 0.02;
 
-const NUM_STRINGS = 20;
+// TODO(@darzu): i don't love the current string pool setup. Better if we could
+//   it doesn't let us play sound on an existing string. But i don't know how
+//   to do that b/c we can't undo scheduled audio node stuff.
+const NUM_STRINGS = 300;
 
-// TODO(@darzu): create this somewhere as a proper resource
 // create web audio api context
 
 // TODO(@darzu): rename to .audio
