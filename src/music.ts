@@ -1,5 +1,6 @@
 import { CanvasDef } from "./canvas.js";
 import { Component, EM, EntityManager } from "./entity-manager.js";
+import { ENABLE_AUDIO } from "./flags.js";
 import { range } from "./util.js";
 
 // TODO(@darzu): AUDIO IS CAUSING HUGE PERF ISSUES
@@ -13,9 +14,10 @@ const MAX_VOLUME = 0.02;
 
 // TODO(@darzu): create this somewhere as a proper resource
 // create web audio api context
-const audioCtx = undefined as AudioContext | undefined;
-// const audioCtx =
-//   window.AudioContext != null ? new window.AudioContext() : undefined;
+const audioCtx =
+  window.AudioContext != null && ENABLE_AUDIO
+    ? new window.AudioContext()
+    : undefined;
 
 function playFreq(freq: number, durSec: number, offset: number) {
   if (!audioCtx) return;

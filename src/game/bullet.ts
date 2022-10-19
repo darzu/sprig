@@ -176,7 +176,11 @@ export async function fireBullet(
 ) {
   {
     const music = EM.getResource(MusicDef);
-    if (music) music.playChords([3], "minor", 2.0, 5.0, 1);
+    // TODO(@darzu): REMOVE. for repro'ing audio bug
+    if (music) {
+      for (let i = 0; i < 10; i++) music.playChords([3], "minor", 2.0, 5.0, 1);
+      // music.playChords([3], "minor", 2.0, 5.0, 1);
+    }
   }
 
   let e: BulletEnt;

@@ -9,3 +9,4 @@ export const DONT_SMOOTH_WORLD_FRAME = true; // TODO(@darzu): PERF HACK for sing
 export const DBG_ASSERT = true;
 export const PERF_DBG_GPU = true;
 export const PERF_DBG_EM = true;
+export const ENABLE_AUDIO = true;

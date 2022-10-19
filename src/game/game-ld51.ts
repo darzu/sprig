@@ -120,18 +120,30 @@ import { createIdxPool } from "../idx-pool.js";
 // TODO(@darzu): GHOST MODE
 const DBG_PLAYER = true;
 
+let pirateKills = 0;
+let healthPercent = 100;
+
+let _numGoodBalls = 0;
+const MAX_GOODBALLS = 10;
+
+const pitchSpeed = 0.000042;
+
+const numStartPirates = DBG_PLAYER ? 20 : 2;
+let nextSpawn = 0;
+
+const tenSeconds = 1000 * (DBG_PLAYER ? 3 : 10); // TODO(@darzu): make 10 seconds
+
+let spawnTimer = tenSeconds;
+const minSpawnTimer = 3000;
+
+const maxPirates = DBG_PLAYER ? 20 : 10;
+
 // TODO(@darzu): HACK. we need a better way to programmatically create sandbox games
 export const sandboxSystems: string[] = [];
 
 export const LD51CannonDef = EM.defineComponent("ld51Cannon", () => {
   return {};
 });
-
-let pirateKills = 0;
-let healthPercent = 100;
-
-let _numGoodBalls = 0;
-const MAX_GOODBALLS = 10;
 
 export async function initLD51Game(em: EntityManager, hosting: boolean) {
   const camera = em.addSingletonComponent(CameraDef);
@@ -903,25 +915,31 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
     sandboxSystems.push("pickUpBalls");
 
     if (DBG_PLAYER) {
-      const ghost = createGhost(em);
-      vec3.copy(ghost.position, [0, 1, -1.2]);
-      quat.setAxisAngle(ghost.rotation, [0.0, -1.0, 0.0], 1.62);
-      ghost.cameraFollow.positionOffset = [0, 0, 5];
-      ghost.controllable.speed *= 0.5;
-      ghost.controllable.sprintMul = 10;
+      const g = createGhost(em);
+      vec3.copy(g.position, [0, 1, -1.2]);
+      quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
+      g.cameraFollow.positionOffset = [0, 0, 5];
+      g.controllable.speed *= 0.5;
+      g.controllable.sprintMul = 10;
       const sphereMesh = cloneMesh(res.assets.ball.mesh);
       const visible = false;
-      em.ensureComponentOn(ghost, RenderableConstructDef, sphereMesh, visible);
-      em.ensureComponentOn(ghost, ColorDef, [0.1, 0.1, 0.1]);
-      em.ensureComponentOn(ghost, PositionDef, [0, 0, 0]);
+      em.ensureComponentOn(g, RenderableConstructDef, sphereMesh, visible);
+      em.ensureComponentOn(g, ColorDef, [0.1, 0.1, 0.1]);
+      em.ensureComponentOn(g, PositionDef, [0, 0, 0]);
       // em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
-      em.ensureComponentOn(ghost, WorldFrameDef);
+      em.ensureComponentOn(g, WorldFrameDef);
       // em.ensureComponentOn(b2, PhysicsParentDef, g.id);
-      em.ensureComponentOn(ghost, ColliderDef, {
+      em.ensureComponentOn(g, ColliderDef, {
         shape: "AABB",
         solid: false,
         aabb: res.assets.ball.aabb,
       });
+
+      vec3.copy(g.position, [-28.11, 26.0, -28.39]);
+      quat.copy(g.rotation, [0.0, -0.94, 0.0, 0.34]);
+      vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+      g.cameraFollow.yawOffset = 0.0;
+      g.cameraFollow.pitchOffset = -0.593;
     }
 
     if (!DBG_PLAYER) {
@@ -983,8 +1001,8 @@ export async function initLD51Game(em: EntityManager, hosting: boolean) {
         )}, Kills ${pirateKills}, !${elapsedPer}`;
 
         if (DBG_PLAYER) {
-          // TODO(@darzu): IMPL
-          res.text.lowerText = `splinterEnds: ${_numSplinterEnds}, goodballs: ${_numGoodBalls}`;
+          // res.text.lowerText = `splinterEnds: ${_numSplinterEnds}, goodballs: ${_numGoodBalls}`;
+          res.text.lowerText = `Time: ${(res.time.time / 1000).toFixed(1)}s`;
         } else {
           res.text.lowerText = `WASD+Shift; left click to pick up cannon balls and fire the cannons. Survive! They attack like clockwork.`;
         }
@@ -1202,18 +1220,6 @@ function rotatePiratePlatform(
   vec3.rotateY(p.position, p.position, vec3.ZEROS, rad);
   quat.rotateY(p.rotation, p.rotation, rad);
 }
-
-const pitchSpeed = 0.000042;
-
-const numStartPirates = DBG_PLAYER ? 10 : 2;
-let nextSpawn = 0;
-
-const tenSeconds = 1000 * (DBG_PLAYER ? 3 : 10); // TODO(@darzu): make 10 seconds
-
-let spawnTimer = tenSeconds;
-const minSpawnTimer = 3000;
-
-const maxPirates = DBG_PLAYER ? 10 : 10;
 
 async function startPirates() {
   const em: EntityManager = EM;

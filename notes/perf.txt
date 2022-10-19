@@ -198,3 +198,8 @@ With GPUs and standard forward rendering,
   e.g. my vertices and pixel calculations are mostly the same answer,
     why should we do all the work each frame?
   maybe vertex shader outputs could be re-used and just readjusted slightly based on camera change and moving objects
+
+about://tracing
+  https://stackoverflow.com/questions/56329780/inexplicit-task-in-chrome-perfomance-devtools/74075943#74075943
+  about:tracing can be very overwhelming, and it's difficult to document because of the size and because what's in there changes when we make code changes. So the best documentation is the code itself. There might be other documentation but unfortunately I don't know where it is exactly. This looks like the right place to start: https://sites.google.com/a/chromium.org/dev/developers/how-tos/trace-event-profiling-tool
+  
