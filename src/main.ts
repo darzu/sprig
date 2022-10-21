@@ -20,7 +20,7 @@ import { never } from "./util.js";
 import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { initCubeGame } from "./game/xp-cube.js";
 import { DBG_ASSERT, VERBOSE_LOG } from "./flags.js";
-import { initLD51Game, sandboxSystems } from "./game/game-ld51.js";
+import { initRogueGame, sandboxSystems } from "./game/game-rogue.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -234,7 +234,7 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "cloth") initClothSandbox(EM, hosting);
   else if (GAME === "hyperspace") initHyperspaceGame(EM);
   else if (GAME === "cube") initCubeGame(EM);
-  else if (GAME === "ld51") initLD51Game(EM, hosting);
+  else if (GAME === "ld51") initRogueGame(EM, hosting);
   else never(GAME, "TODO game");
 
   let previous_frame_time = start_of_time;

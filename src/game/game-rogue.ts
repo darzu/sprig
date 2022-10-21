@@ -143,7 +143,7 @@ export const LD51CannonDef = EM.defineComponent("ld51Cannon", () => {
   return {};
 });
 
-export async function initLD51Game(em: EntityManager, hosting: boolean) {
+export async function initRogueGame(em: EntityManager, hosting: boolean) {
   const camera = em.addSingletonComponent(CameraDef);
   camera.fov = Math.PI * 0.5;
 
