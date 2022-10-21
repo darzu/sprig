@@ -1467,3 +1467,19 @@ WickedEngine:
   do something so that the application knows what kinds of memory it's going to need _before_ it starts creating resources. right now in vk you don't know which heap you want until you actually create an image or buffer.
   synchronization can probably be kept at api level. if you write your code carefully you can keep it to a minimum anyway.
   "
+
+TAA (temporal anti-aliasing):
+  https://en.wikipedia.org/wiki/Temporal_anti-aliasing
+  seems like everybody uses this; more performant than MSAA?
+  Brief overview of AA: https://www.youtube.com/watch?v=g8iliJFLHSQ
+  TAA impl in INSIDE: https://www.youtube.com/watch?v=2XXS5UyNjjU
+  Brian Karis re TAA: https://twitter.com/BrianKaris/status/1327712610364522496
+
+  "Optical flow. :) I’d very seriously consider it. ILK can be super fast on the GPU."
+    ?
+
+"Monte Carlo integration of the rendering equation":
+  What is it?
+  https://twitter.com/BrianKaris/status/1327713322184019968?s=20&t=i_47-O6x15oB2ujl1OQjOA
+  
+  https://www.cs.rpi.edu/~cutler/classes/advancedgraphics/S08/lectures/17_monte_carlo.pdf
