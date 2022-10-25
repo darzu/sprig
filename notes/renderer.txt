@@ -1483,7 +1483,7 @@ TAA (temporal anti-aliasing):
   https://twitter.com/BrianKaris/status/1327713322184019968?s=20&t=i_47-O6x15oB2ujl1OQjOA
   
   https://www.cs.rpi.edu/~cutler/classes/advancedgraphics/S08/lectures/17_monte_carlo.pdf
-  
+
 TODO: Dreams' point-based renderer
   "atomic scattering points" ?
   "vray proxies", "grave hope"
@@ -1508,3 +1508,10 @@ Concepts to clarify:
     "blast"
     "t-lass" ?
     BVHs
+
+Big question: how do user shaders work with Nanite?
+  connection / handoff is confusing to me
+
+"What are the most distracting *visual* artifacts in video games that bother you, personally, most of the time?"
+  "Banding in subtle gradients. Just throw a simple dither in post it's free!"
+    https://www.shadertoy.com/view/MdccD2

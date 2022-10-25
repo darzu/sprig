@@ -1272,3 +1272,9 @@ Motivation for sprigland,
   every time I picked up a game engine,
   a voice screamed "this is way too complex" in my head,
   or the opposite problem: "this is too toy; the engine has no ambition to support real games"
+
+To play:
+  cave story (I know...)
+
+Boat building inspiration:
+  https://www.youtube.com/watch?v=ES80TIAjJog

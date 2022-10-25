@@ -24,6 +24,12 @@ export function randNormalVec3(out: vec3) {
   return out;
 }
 
+export function randNormalPosVec3(out: vec3) {
+  vec3.set(out, Math.random(), Math.random(), Math.random());
+  vec3.normalize(out, out);
+  return out;
+}
+
 export function randNormalVec2(out: vec2) {
   vec2.set(out, Math.random() - 0.5, Math.random() - 0.5);
   vec2.normalize(out, out);

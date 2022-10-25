@@ -67,7 +67,7 @@ import {
   vec4RotateLeft,
 } from "./utils-3d.js";
 import { createSplinterPool, SplinterPool } from "./wood-splinters.js";
-import { VERBOSE_LOG } from "./flags.js";
+import { DBG_ASSERT, VERBOSE_LOG } from "./flags.js";
 
 /* TODO(@darzu):
 [ ] standardize naming: wood or timber or ??
@@ -1294,17 +1294,23 @@ export function verifyUnsharedProvokingForWood(
   m: RawMesh,
   woodState: WoodState
 ): asserts m is RawMesh & { usesProvoking: true } {
-  const provokingVis = new Set<number>();
-  for (let b of woodState.boards) {
-    for (let seg of b.segments) {
-      for (let qi of [seg.quadBackIdx, seg.quadFrontIdx, ...seg.quadSideIdxs]) {
-        if (!qi) continue;
-        const pVi = m.quad[qi][0];
-        assert(
-          !provokingVis.has(pVi),
-          `Shared provoking vert found in quad ${qi} (vi: ${pVi}) for ${m.dbgName}`
-        );
-        provokingVis.add(pVi);
+  if (DBG_ASSERT) {
+    const provokingVis = new Set<number>();
+    for (let b of woodState.boards) {
+      for (let seg of b.segments) {
+        for (let qi of [
+          seg.quadBackIdx,
+          seg.quadFrontIdx,
+          ...seg.quadSideIdxs,
+        ]) {
+          if (!qi) continue;
+          const pVi = m.quad[qi][0];
+          assert(
+            !provokingVis.has(pVi),
+            `Shared provoking vert found in quad ${qi} (vi: ${pVi}) for ${m.dbgName}`
+          );
+          provokingVis.add(pVi);
+        }
       }
     }
   }

@@ -83,41 +83,51 @@ import { LifetimeDef } from "./lifetime.js";
 import { createPlayer, LocalPlayerDef, PlayerDef } from "./player.js";
 import { TextDef } from "./ui.js";
 import { createIdxPool } from "../idx-pool.js";
+import { randNormalPosVec3, randNormalVec3 } from "../utils-3d.js";
 
 /*
-  TODO:
-  [ ] PERF: sub-meshes
-  [x] PERF: bullets pool
-
-  [x] Player can walk on ship
-  [x] Player can fire cannon
-  [x] Show controls, describe objective
-  [x] PERF: Splinters pool
-  [x] PERF: splinter end pool 
+  Game mechanics:
   [ ] Planks can be repaired
-  [x] Can destroy enemies
-  [x] cannon ball can't destroy everything
-  [x] cannon balls explode
-  [x] cannon balls drop and can be picked up
-  [x] Enemies spawn
-  [x] PERF: pool enemy ships
-  [x] PERF: board AABB check
-  [x] ship total health check
-  [x] Sound!
-  [x] close ship
+  [ ] Two decks?
+
+  Wood:
+  [ ] Shipbuilding file, 
+    [ ] ∞ system refinement
+  [ ] Reproduce fang-ship
+  [ ] Dock
+  [ ] Small objs:
+    [ ] shelf     [ ] crate     [ ] figure head   [ ] bunk
+    [ ] table     [ ] barrel    [ ] bucket        [ ] small boat
+    [ ] ladder    [ ] wheel     [ ] chest         [ ] cannon ball holder
+    [ ] hoist     [ ] hatch     [ ] dingy         [ ] padel
+    [ ] mallet    [ ] stairs    [ ] picture frame [ ] lattice
+    [ ] drawer    [ ] cage      [ ] fiddle        [ ] club
+    [ ] port hole [ ] door      [ ] counter       [ ] cabinet
+    [ ] 
+  [ ] paintable
+  [ ] in-sprig modeling
+
+  "Physically based modeling" (lol):
+    [ ] metal (bends nicely)
+      [ ] barrel bands    [ ] nails     [ ] hinge [ ] latch
+    [ ] rope
+      [ ] pullies         [ ] knots     [ ] coils
+      [ ] anchor rope     [ ] nets
+    [ ] clay (breaks nicely)
+      [ ] pots
+    [ ] cloth: leather, canvas,
+    [ ] stone: walls, bridges, towers, castle
+    [ ] brick: paths, walls, furnace/oven/..., 
+    [ ] plants!: trees, grass, tomatoes, ivy
+  
+  [ ] PERF, huge: GPU-based culling
 
   [ ] change wood colors
   [ ] adjust ship size
   [ ] add dark/fog ends
-
-  [x] remove allocs in callSystem
-  [ ] reduce allocs in stepRenderer
-  [x] object pool friend bullets
-  [x] object pool enemy bullets
-  [x] object pool enemies
 */
 
-const DBG_PLAYER = false;
+const DBG_PLAYER = true;
 
 let pirateKills = 0;
 let healthPercent = 100;
@@ -131,7 +141,7 @@ const maxPirates = DBG_PLAYER ? 3 : 10;
 const numStartPirates = DBG_PLAYER ? maxPirates : 2;
 let nextSpawn = 0;
 
-const tenSeconds = 1000 * (DBG_PLAYER ? 3 : 10); // TODO(@darzu): make 10 seconds
+const tenSeconds = 1000 * (DBG_PLAYER ? 3 : 10);
 
 let spawnTimer = tenSeconds;
 const minSpawnTimer = 3000;
@@ -402,6 +412,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     }
   }
 
+  // console.dir(_timberMesh.colors);
   _timberMesh.surfaceIds = _timberMesh.colors.map((_, i) => i);
   const timberState = getBoardsFromMesh(_timberMesh);
   // unshareProvokingForWood(_timberMesh, timberState);
@@ -1131,6 +1142,7 @@ export function appendPirateShip(b: TimberBuilder) {
 
   for (let qi = firstQuadIdx; qi < b.mesh.quad.length; qi++)
     b.mesh.colors.push(vec3.clone(BLACK));
+  // b.mesh.colors.push(randNormalPosVec3(vec3.create()));
 
   return b.mesh;
 }
@@ -1170,8 +1182,14 @@ export function appendTimberWallPlank(
 
   b.addEndQuad(false);
 
-  for (let qi = firstQuadIdx; qi < b.mesh.quad.length; qi++)
-    b.mesh.colors.push(vec3.clone(BLACK));
+  for (let qi = firstQuadIdx; qi < b.mesh.quad.length; qi++) {
+    const clr = randNormalPosVec3(vec3.create());
+    // const clr = vec3.clone(BLACK);
+    // const clr = vec3.clone(vec3.ONES);
+    // vec3.scale(clr, clr, jitter(0.5));
+    vec3.scale(clr, clr, 0.5);
+    b.mesh.colors.push(clr);
+  }
 
   // console.dir(b.mesh);
 
