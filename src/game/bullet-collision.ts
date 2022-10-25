@@ -17,11 +17,6 @@ import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { AuthorityDef } from "../net/components.js";
 import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../delete.js";
-import {
-  EnemyShipLocalDef,
-  EnemyShipPropsDef,
-  breakEnemyShip,
-} from "./enemy-ship.js";
 import { AssetsDef } from "./assets.js";
 import { AudioDef } from "../audio.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
@@ -88,13 +83,13 @@ export const raiseBulletPlayer = eventWizard(
   }
 );
 
-export const raiseBulletEnemyShip = eventWizard(
-  "bullet-enemyShip",
-  () => [[BulletDef], [EnemyShipLocalDef, PositionDef, RotationDef]] as const,
-  ([bullet, enemyShip]) => {
-    assert(false, `raiseBulletEnemyShip doesnt work on ld51`); // TODO(@darzu): ld51
-    EM.ensureComponentOn(bullet, DeletedDef);
-    const res = EM.getResources([AssetsDef, AudioDef])!;
-    breakEnemyShip(EM, enemyShip, res.assets.boat_broken, res.music);
-  }
-);
+// export const raiseBulletEnemyShip = eventWizard(
+//   "bullet-enemyShip",
+//   () => [[BulletDef], [EnemyShipLocalDef, PositionDef, RotationDef]] as const,
+//   ([bullet, enemyShip]) => {
+//     assert(false, `raiseBulletEnemyShip doesnt work on ld51`); // TODO(@darzu): ld51
+//     EM.ensureComponentOn(bullet, DeletedDef);
+//     const res = EM.getResources([AssetsDef, AudioDef])!;
+//     breakEnemyShip(EM, enemyShip, res.assets.boat_broken, res.music);
+//   }
+// );

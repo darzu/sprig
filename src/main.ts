@@ -7,18 +7,12 @@ import { MeDef, JoinDef, HostDef, PeerNameDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";
 import { dbg } from "./debugger.js";
 import { DevConsoleDef } from "./console.js";
-import {
-  initClothSandbox,
-  initGJKSandbox,
-  initReboundSandbox,
-} from "./game/game-sandbox.js";
-import { callClothSystems } from "./game/cloth.js";
-import { callSpringSystems } from "./game/spring.js";
+import { initGJKSandbox, initReboundSandbox } from "./game/game-sandbox.js";
+// import { callClothSystems } from "./game/cloth.js";
 import { registerCommonSystems } from "./game/game-init.js";
 import { setSimulationAlpha } from "./render/renderer-ecs.js";
 import { never } from "./util.js";
-import { initHyperspaceGame } from "./game/game-hyperspace.js";
-import { initCubeGame } from "./game/xp-cube.js";
+// import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { DBG_ASSERT, VERBOSE_LOG } from "./flags.js";
 import { initRogueGame, sandboxSystems } from "./game/game-rogue.js";
 
@@ -28,13 +22,7 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-const GAME = "ld51" as
-  | "gjk"
-  | "rebound"
-  | "cloth"
-  | "hyperspace"
-  | "cube"
-  | "ld51";
+const GAME = "ld51" as "gjk" | "rebound" | "ld51";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -58,7 +46,7 @@ function callFixedTimestepSystems() {
   EM.callSystem("uiText");
   EM.callSystem("devConsoleToggle");
   EM.callSystem("devConsole");
-  EM.callSystem("restartTimer");
+  // EM.callSystem("restartTimer");
   // EM.callSystem("updateScore");
   EM.callSystem("renderInit");
   EM.callSystem("musicStart");
@@ -73,47 +61,47 @@ function callFixedTimestepSystems() {
   EM.callSystem("buildBullets");
   EM.callSystem("buildCursor");
   EM.callSystem("placeCursorAtScreenCenter");
-  EM.callSystem("stepEnemyShips");
-  EM.callSystem("enemyShipsFire");
-  EM.callSystem("breakEnemyShips");
+  // EM.callSystem("stepEnemyShips");
+  // EM.callSystem("enemyShipsFire");
+  // EM.callSystem("breakEnemyShips");
   EM.callSystem("controllableInput");
   EM.callSystem("controllableCameraFollow");
   EM.callSystem("buildPlayers");
   EM.callSystem("playerFacingDir");
   EM.callSystem("stepPlayers");
-  if (GAME === "hyperspace") {
-    EM.callSystem("playerLookingForShip");
-  }
+  // if (GAME === "hyperspace") {
+  //   EM.callSystem("playerLookingForShip");
+  // }
   if (GAME === "rebound") {
     EM.callSystem("sandboxSpawnBoxes");
   }
-  if (GAME === "cloth") {
-    EM.callSystem("clothSandbox");
-  }
-  if (GAME === "hyperspace") {
-    EM.callSystem("startGame");
-    EM.callSystem("shipHealthCheck");
-    EM.callSystem("easeRudder");
-    EM.callSystem("shipMove");
-    EM.callSystem("playerShipMove");
-    EM.callSystem("shipUpdateParty");
-    // EM.callSystem("shipScore");
-    EM.callSystem("enemyShipPropsBuild");
-    EM.callSystem("cannonPropsBuild");
-    EM.callSystem("gemPropsBuild");
-    EM.callSystem("rudderPropsBuild");
-    EM.callSystem("mastPropsBuild");
-    EM.callSystem("playerShipPropsBuild");
-    EM.callSystem("darkStarPropsBuild");
-    EM.callSystem("darkStarOrbit");
-    EM.callSystem("hyperspaceGame");
-    // EM.callSystem("runOcean");
-    EM.callSystem("oceanUVtoPos");
-    EM.callSystem("oceanUVDirToRot");
-    EM.callSystem("debugLoop");
-    // EM.callSystem("initWooden");
-    EM.callSystem("runWooden");
-  }
+  // if (GAME === "cloth") {
+  //   EM.callSystem("clothSandbox");
+  // }
+  // if (GAME === "hyperspace") {
+  //   EM.callSystem("startGame");
+  //   EM.callSystem("shipHealthCheck");
+  //   EM.callSystem("easeRudder");
+  //   EM.callSystem("shipMove");
+  //   EM.callSystem("playerShipMove");
+  //   EM.callSystem("shipUpdateParty");
+  //   // EM.callSystem("shipScore");
+  //   EM.callSystem("enemyShipPropsBuild");
+  //   EM.callSystem("cannonPropsBuild");
+  //   EM.callSystem("gemPropsBuild");
+  //   EM.callSystem("rudderPropsBuild");
+  //   EM.callSystem("mastPropsBuild");
+  //   EM.callSystem("playerShipPropsBuild");
+  //   EM.callSystem("darkStarPropsBuild");
+  //   EM.callSystem("darkStarOrbit");
+  //   EM.callSystem("hyperspaceGame");
+  //   // EM.callSystem("runOcean");
+  //   EM.callSystem("oceanUVtoPos");
+  //   EM.callSystem("oceanUVDirToRot");
+  //   EM.callSystem("debugLoop");
+  //   // EM.callSystem("initWooden");
+  //   EM.callSystem("runWooden");
+  // }
   if (GAME === "ld51") {
     // EM.callSystem("initWooden");
     EM.callSystem("runWooden");
@@ -121,22 +109,22 @@ function callFixedTimestepSystems() {
   }
   EM.callSystem("updateBullets");
   EM.callSystem("applyGravity");
-  EM.callSystem("updateNoodles");
+  // EM.callSystem("updateNoodles");
   EM.callSystem("updateLifetimes");
   EM.callSystem("interaction");
   EM.callSystem("turretAim");
   EM.callSystem("turretYawPitch");
   EM.callSystem("turretManUnman");
-  EM.callSystem("updateMastBoom");
-  EM.callSystem("sail");
-  EM.callSystem("orreryMotion");
+  // EM.callSystem("updateMastBoom");
+  // EM.callSystem("sail");
+  // EM.callSystem("orreryMotion");
   EM.callSystem("reloadCannon");
   EM.callSystem("playerControlCannon");
   EM.callSystem("playerManCanon");
-  if (GAME === "hyperspace") {
-    EM.callSystem("spawnOnTile");
-    EM.callSystem("spawnFinishAnimIn");
-  }
+  // if (GAME === "hyperspace") {
+  //   EM.callSystem("spawnOnTile");
+  //   EM.callSystem("spawnFinishAnimIn");
+  // }
   EM.callSystem("ensureFillOutLocalFrame");
   EM.callSystem("ensureWorldFrame");
   // EM.callSystem("physicsDeadStuff");
@@ -164,13 +152,13 @@ function callFixedTimestepSystems() {
   EM.callSystem("debugMeshes");
   EM.callSystem("debugMeshTransform");
   EM.callSystem("bulletCollision");
-  callSpringSystems(EM);
-  callClothSystems(EM);
+  // callSpringSystems(EM);
+  // callClothSystems(EM);
   EM.callSystem("modelerOnOff");
   EM.callSystem("modelerClicks");
   EM.callSystem("aabbBuilder");
-  EM.callSystem("toolPickup");
-  EM.callSystem("toolDrop");
+  // EM.callSystem("toolPickup");
+  // EM.callSystem("toolDrop");
   EM.callSystem("animateTo");
   // EM.callSystem("netDebugSystem");
   // EM.callSystem("netAck");
@@ -231,9 +219,9 @@ async function startGame(localPeerName: string, host: string | null) {
 
   if (GAME === "gjk") initGJKSandbox(EM, hosting);
   else if (GAME === "rebound") initReboundSandbox(EM, hosting);
-  else if (GAME === "cloth") initClothSandbox(EM, hosting);
-  else if (GAME === "hyperspace") initHyperspaceGame(EM);
-  else if (GAME === "cube") initCubeGame(EM);
+  // else if (GAME === "cloth") initClothSandbox(EM, hosting);
+  // else if (GAME === "hyperspace") initHyperspaceGame(EM);
+  // else if (GAME === "cube") initCubeGame(EM);
   else if (GAME === "ld51") initRogueGame(EM, hosting);
   else never(GAME, "TODO game");
 

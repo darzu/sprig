@@ -1,7 +1,6 @@
-import { EM, EntityManager } from "../entity-manager.js";
+import { EntityManager } from "../entity-manager.js";
 import { InputsDef } from "../inputs.js";
-import { PositionDef, registerInitTransforms } from "../physics/transform.js";
-import { registerEnemyShipSystems } from "./enemy-ship.js";
+import { registerInitTransforms } from "../physics/transform.js";
 import { LocalPlayerDef, registerPlayerSystems } from "./player.js";
 import {
   CameraDef,
@@ -9,7 +8,6 @@ import {
   registerCameraSystems,
   setCameraFollowPosition,
 } from "../camera.js";
-import { registerNetSystems } from "../net/net.js";
 import {
   registerHandleNetworkEvents,
   registerSendOutboxes,
@@ -23,9 +21,7 @@ import {
 import { registerPredictSystem } from "../net/predict.js";
 import { registerEventSystems } from "../net/events.js";
 import { registerBulletCollisionSystem } from "./bullet-collision.js";
-import { registerShipSystems } from "./player-ship.js";
 import { registerBuildBulletsSystem, registerBulletUpdate } from "./bullet.js";
-import { AssetsDef } from "./assets.js";
 import { registerInitCanvasSystem } from "../canvas.js";
 import {
   registerConstructRenderablesSystem,
@@ -42,32 +38,21 @@ import {
 import { registerCannonSystems } from "./cannon.js";
 import { registerInteractionSystem } from "./interact.js";
 import { registerModeler } from "./modeler.js";
-import { registerToolSystems } from "./tool.js";
 import {
   registerMotionSmoothingRecordLocationsSystem,
   registerMotionSmoothingSystems,
 } from "../motion-smoothing.js";
 import { registerCursorSystems } from "./cursor.js";
 import { registerPhysicsSystems } from "../physics/phys.js";
-import { registerNoodleSystem } from "./noodles.js";
 import { registerUpdateLifetimes } from "./lifetime.js";
 import { registerMusicSystems } from "../audio.js";
 import { registerNetDebugSystem } from "../net/net-debug.js";
 import { callInitFns } from "../init.js";
 import { registerGrappleDbgSystems } from "./grapple.js";
 import { registerTurretSystems } from "./turret.js";
-import { registerUISystems, TextDef } from "./ui.js";
-import { DevConsoleDef, registerDevSystems } from "../console.js";
+import { registerUISystems } from "./ui.js";
+import { registerDevSystems } from "../console.js";
 import { registerControllableSystems } from "./controllable.js";
-import {
-  GameStateDef,
-  GameState,
-  registerGameStateSystems,
-} from "./gamestate.js";
-import { MeDef } from "../net/components.js";
-import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
-import { postProcess } from "../render/pipelines/std-post.js";
-import { outlineRender } from "../render/pipelines/std-outline.js";
 
 export function registerCommonSystems(em: EntityManager) {
   // registerNetSystems(em);
@@ -75,7 +60,7 @@ export function registerCommonSystems(em: EntityManager) {
   registerInitCanvasSystem(em);
   registerUISystems(em);
   registerDevSystems(em);
-  registerGameStateSystems(em);
+  // registerGameStateSystems(em);
   registerRenderInitSystem(em);
   registerMusicSystems(em);
   registerHandleNetworkEvents(em);
@@ -84,16 +69,16 @@ export function registerCommonSystems(em: EntityManager) {
   registerPredictSystem(em);
   registerJoinSystems(em);
   // registerGroundSystems(em);
-  registerShipSystems(em);
+  // registerShipSystems(em);
   registerBuildBulletsSystem(em);
   registerCursorSystems(em);
   registerGrappleDbgSystems(em);
   registerInitTransforms(em);
-  registerEnemyShipSystems(em);
+  // registerEnemyShipSystems(em);
   registerControllableSystems(em);
   registerPlayerSystems(em);
   registerBulletUpdate(em);
-  registerNoodleSystem(em);
+  // registerNoodleSystem(em);
   registerUpdateLifetimes(em);
   registerInteractionSystem(em);
   registerTurretSystems(em);
@@ -101,7 +86,7 @@ export function registerCommonSystems(em: EntityManager) {
   registerPhysicsSystems(em);
   registerBulletCollisionSystem(em);
   registerModeler(em);
-  registerToolSystems(em);
+  // registerToolSystems(em);
   registerNetDebugSystem(em);
   registerAckUpdateSystem(em);
   registerSyncSystem(em);

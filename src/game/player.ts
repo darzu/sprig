@@ -30,7 +30,6 @@ import { LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { ModelerDef } from "./modeler.js";
 import { DeletedDef } from "../delete.js";
-import { PlayerShipLocalDef } from "./player-ship.js";
 import {
   CameraDef,
   CameraFollowDef,
@@ -40,7 +39,6 @@ import { defineSerializableComponent } from "../em_helpers.js";
 import { ControllableDef } from "./controllable.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { drawLine } from "../utils-game.js";
-import { GameState, GameStateDef } from "./gamestate.js";
 import { DevConsoleDef } from "../console.js";
 import { max } from "../math.js";
 import { AnimateToDef } from "../animate-to.js";
@@ -221,7 +219,7 @@ export function registerPlayerSystems(em: EntityManager) {
       PhysicsResultsDef,
       ModelerDef,
       GlobalCursor3dDef,
-      GameStateDef,
+      // GameStateDef,
     ],
     (players, res) => {
       const cheat = !!em.getResource(DevConsoleDef)?.showConsole;
@@ -260,9 +258,9 @@ export function registerPlayerSystems(em: EntityManager) {
           p.controllable.modes.canFly = !p.controllable.modes.canFly;
         }
 
-        if (res.gameState.state === GameState.GAMEOVER) {
-          p.controllable.modes.canFly = true;
-        }
+        // if (res.gameState.state === GameState.GAMEOVER) {
+        //   p.controllable.modes.canFly = true;
+        // }
         if (p.controllable.modes.canFly) {
           p.controllable.modes.canFall = false;
           p.controllable.modes.canJump = false;
@@ -421,81 +419,5 @@ export function registerPlayerSystems(em: EntityManager) {
       }
     },
     "stepPlayers"
-  );
-
-  em.registerSystem(
-    [
-      PlayerDef,
-      AuthorityDef,
-      PositionDef,
-      LinearVelocityDef,
-      PhysicsParentDef,
-      ColliderDef,
-      CameraFollowDef,
-      RotationDef,
-    ],
-    [PhysicsResultsDef, MeDef],
-    (players, res) => {
-      for (let p of players) {
-        if (p.authority.pid !== res.me.pid) continue;
-        if (!p.player.lookingForShip) continue;
-
-        const parent = em.findEntity(p.physicsParent.id, [ColliderDef]);
-        if (!parent) {
-          const ship = em.filterEntities([
-            ColliderDef,
-            PlayerShipLocalDef,
-            PositionDef,
-          ])[0];
-          if (ship) {
-            p.physicsParent.id = ship.id;
-            // vec3.copy(p.position, [0, 10, res.me.pid * 4 - 16]);
-            // console.log("found ship!");
-            p.player.lookingForShip = false;
-            const maxYFn: (c: Collider) => number = (c) =>
-              c.shape === "Multi"
-                ? Math.max(...c.children.map((c2) => maxYFn(c2)))
-                : c.shape === "AABB"
-                ? c.aabb.max[1]
-                : -Infinity;
-            const shipY = maxYFn(ship.collider);
-            const pFeetToMid = -(p.collider as AABBCollider).aabb.min[1];
-
-            const evenPlayer = res.me.pid % 2 === 0;
-
-            const endPos: vec3 = [
-              3.5 * (evenPlayer ? 1 : -1),
-              shipY + pFeetToMid + 1,
-              Math.floor((res.me.pid - 1) / 2) * 4 - 10,
-            ];
-            const startPos = vec3.add(
-              // tempVec3(),
-              vec3.create(),
-              endPos,
-              [0, 200, 0]
-            );
-            // console.log("player animateTo:");
-            // console.log(vec3Dbg(startPos));
-            // console.log(vec3Dbg(endPos));
-            // console.dir(startPos);
-            // console.dir(endPos);
-            p.cameraFollow.yawOffset = 0.0;
-            p.cameraFollow.pitchOffset = -0.75;
-            quat.copy(p.rotation, [0.0, 1.0, 0.0, 0.0]);
-            vec3.zero(p.linearVelocity);
-
-            // TODO(@darzu): uncomment to animate player entry
-            // em.ensureComponentOn(p, AnimateToDef, {
-            //   startPos,
-            //   endPos,
-            //   durationMs: 2000,
-            //   easeFn: EASE_OUTQUAD,
-            // });
-            vec3.copy(p.position, endPos);
-          }
-        }
-      }
-    },
-    "playerLookingForShip"
   );
 }

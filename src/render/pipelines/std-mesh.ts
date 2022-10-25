@@ -1,5 +1,5 @@
 import { ENDESGA16 } from "../../color/palettes.js";
-import { oceanJfa } from "../../game/ocean.js";
+// import { oceanJfa } from "../../game/ocean.js";
 import { vec3, vec4 } from "../../gl-matrix.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";
