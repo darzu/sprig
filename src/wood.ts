@@ -1,19 +1,12 @@
 import { ColorDef } from "./color-ecs.js";
-import { parseHex, parseRGB, toFRGB, toOKLAB, toV3 } from "./color/color.js";
 import { EM, Entity, EntityManager } from "./entity-manager.js";
-import {
-  AllMeshSymbols,
-  AssetsDef,
-  BLACK,
-  mkTimberSplinterEnd,
-  mkTimberSplinterFree,
-} from "./game/assets.js";
+import { AllMeshSymbols, BLACK } from "./game/assets.js";
 import { BulletDef } from "./game/bullet.js";
 import { GravityDef } from "./game/gravity.js";
 import { mat4, quat, vec2, vec3, vec4 } from "./gl-matrix.js";
-import { createIdxPool, createIdxRing } from "./idx-pool.js";
+import { createIdxPool } from "./idx-pool.js";
 import { onInit } from "./init.js";
-import { align, jitter } from "./math.js";
+import { jitter } from "./math.js";
 import { AudioDef } from "./audio.js";
 import {
   AABB,
@@ -43,7 +36,6 @@ import {
 } from "./physics/transform.js";
 import {
   getQuadMeshEdges,
-  mergeMeshes,
   Mesh,
   meshStats,
   normalizeMesh,
@@ -52,19 +44,16 @@ import {
 import {
   RenderableConstructDef,
   RenderableDef,
-  RenderDataStdDef,
   RendererDef,
 } from "./render/renderer-ecs.js";
-import { tempVec2, tempVec3 } from "./temp-pool.js";
-import { assert, assertDbg, createIntervalTracker, TupleN } from "./util.js";
-import { never, range } from "./util.js";
+import { tempVec3 } from "./temp-pool.js";
+import { assert, assertDbg, createIntervalTracker } from "./util.js";
+import { range } from "./util.js";
 import {
   centroid,
   quatFromUpForward,
   randNormalVec3,
   vec3Dbg,
-  vec4Reverse,
-  vec4RotateLeft,
 } from "./utils-3d.js";
 import { createSplinterPool, SplinterPool } from "./wood-splinters.js";
 import { DBG_ASSERT, VERBOSE_LOG } from "./flags.js";
@@ -916,8 +905,8 @@ interface WoodSplinterState {
   // generation: number;
 }
 
-interface WoodState {
-  mesh: RawMesh;
+export interface WoodState {
+  mesh: RawMesh; // TODO(@darzu): make non-raw
   usedVertIdxs: Set<number>;
   usedQuadIdxs: Set<number>;
   boards: Board[];
