@@ -826,6 +826,10 @@ Outlines / edge detection:
     
   https://atyuwen.github.io/posts/normal-reconstruction/
 
+  https://twitter.com/csims314/status/1482123212188180490
+  https://github.com/OmarShehata/webgl-outlines
+  https://omar-shehata.medium.com/better-outline-rendering-using-surface-ids-with-webgl-e13cdab1fd94
+
 Linearize depth:
   https://learnopengl.com/Advanced-OpenGL/Depth-testing
   https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
@@ -1515,3 +1519,6 @@ Big question: how do user shaders work with Nanite?
 "What are the most distracting *visual* artifacts in video games that bother you, personally, most of the time?"
   "Banding in subtle gradients. Just throw a simple dither in post it's free!"
     https://www.shadertoy.com/view/MdccD2
+
+"Please stop using screen-space reflections [...]"
+  ray tracing or cube map under the water

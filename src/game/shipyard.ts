@@ -1,6 +1,7 @@
-import { mat4, vec3 } from "../gl-matrix.js";
+import { mat3, mat4, quat, vec3, vec4 } from "../gl-matrix.js";
 import { jitter } from "../math.js";
-import { Mesh, validateMesh } from "../render/mesh.js";
+import { Mesh, RawMesh, validateMesh } from "../render/mesh.js";
+import { assertDbg } from "../util.js";
 import { randNormalPosVec3 } from "../utils-3d.js";
 import {
   createEmptyMesh,
@@ -10,6 +11,8 @@ import {
   reserveSplinterSpace,
   TimberBuilder,
   WoodState,
+  setSideQuadIdxs,
+  setEndQuadIdxs,
 } from "../wood.js";
 import { BLACK } from "./assets.js";
 
@@ -38,17 +41,27 @@ export function createHomeShip(): HomeShip {
   builder.depth = ribDepth;
   const ribCount = 10;
   const ribSpace = 3;
+
+  const rib = makeTimberRib(builder.width, builder.depth);
+
   for (let i = 0; i < ribCount; i++) {
-    mat4.identity(builder.cursor);
-    mat4.translate(builder.cursor, builder.cursor, [i * ribSpace, 0, 0]);
-    appendTimberRib(builder, true);
+    let b = cloneBoard(rib)!;
+    translateBoard(b, [i * ribSpace, 0, 0]);
+    appendBoard(builder.mesh, b);
   }
+
+  mirrorBoard(rib, [0, 0, 1]);
+
   for (let i = 0; i < ribCount; i++) {
-    mat4.identity(builder.cursor);
-    // mat4.scale(builder.cursor, builder.cursor, [1, 1, -1]);
-    mat4.translate(builder.cursor, builder.cursor, [i * ribSpace, 0, 0]);
-    appendTimberRib(builder, false);
+    let b = cloneBoard(rib)!;
+    translateBoard(b, [i * ribSpace, 0, 0]);
+    appendBoard(builder.mesh, b);
+
+    // mat4.identity(builder.cursor);
+    // mat4.translate(builder.cursor, builder.cursor, [i * ribSpace, 0, 0]);
+    // appendTimberRib(builder, true);
   }
+
   // FLOOR
   const floorPlankCount = 7;
   const floorSpace = 1.24;
@@ -299,6 +312,196 @@ export function appendTimberFloorPlank(
   // console.dir(b.mesh);
 
   return b.mesh;
+}
+
+interface BoardNode {
+  // TODO(@darzu): we should just use a list..
+  prev?: BoardNode;
+  next?: BoardNode;
+
+  pos: vec3;
+  rot: quat;
+  width: number;
+  depth: number;
+}
+
+// TODO(@darzu): mirror fn
+
+function nodeFromMat4(cursor: mat4, prev?: BoardNode): BoardNode {
+  // TODO(@darzu): can width/depth be captured in the mat4?
+  const rot = quat.create();
+  const pos = vec3.create();
+  mat4.getRotation(rot, cursor);
+  vec3.transformMat4(pos, pos, cursor);
+  // vec3.sub(dir, dir, pos);
+  // TODO(@darzu): assert dir is normalized?
+  const res: BoardNode = {
+    prev,
+    pos,
+    rot,
+    width: prev?.width ?? 1,
+    depth: prev?.depth ?? 1,
+  };
+  if (prev) prev.next = res;
+  return res;
+}
+
+function cloneBoard(
+  curr?: BoardNode,
+  newPrev?: BoardNode
+): BoardNode | undefined {
+  if (!curr) return undefined;
+  const res: BoardNode = {
+    prev: newPrev,
+    pos: vec3.clone(curr.pos),
+    rot: quat.clone(curr.rot),
+    width: curr.width,
+    depth: curr.depth,
+  };
+  res.next = cloneBoard(curr.next, res);
+  return res;
+}
+function translateBoard(b: BoardNode, tran: vec3) {
+  let curr: BoardNode | undefined = b;
+  while (curr) {
+    vec3.add(curr.pos, curr.pos, tran);
+    curr = curr.next;
+  }
+}
+function mirrorBoard(node: BoardNode, planeNorm: vec3) {
+  let a = planeNorm[0];
+  let b = planeNorm[1];
+  let c = planeNorm[2];
+
+  // https://math.stackexchange.com/a/696190/126904
+  let mirrorMat3 = mat3.fromValues(
+    1 - 2 * a ** 2,
+    -2 * a * b,
+    -2 * a * c,
+    -2 * a * b,
+    1 - 2 * b ** 2,
+    -2 * b * c,
+    -2 * a * c,
+    -2 * b * c,
+    1 - 2 * c ** 2
+  );
+
+  let mirrorNormalQuat = quat.fromValues(a, b, c, 0);
+
+  let curr: BoardNode | undefined = node;
+  while (curr) {
+    // TODO(@darzu): can we use mat3?
+    quat.mul(curr.rot, mirrorNormalQuat, curr.rot);
+    quat.mul(curr.rot, curr.rot, mirrorNormalQuat);
+
+    vec3.transformMat3(curr.pos, curr.pos, mirrorMat3);
+
+    curr = curr.next;
+  }
+}
+
+function makeTimberRib(width: number, depth: number): BoardNode {
+  const cursor = mat4.create();
+
+  mat4.rotateX(cursor, cursor, Math.PI * 0.4 * -1);
+
+  const first = nodeFromMat4(cursor);
+  first.width = width;
+  first.depth = depth;
+  let prev = first;
+
+  // b.addLoopVerts();
+  // b.addEndQuad(true);
+  let xFactor = 0.05;
+  for (let i = 0; i < numRibSegs; i++) {
+    mat4.translate(cursor, cursor, [0, 2, 0]);
+    mat4.rotateX(cursor, cursor, Math.PI * xFactor * 1);
+    prev = nodeFromMat4(cursor, prev);
+    // b.addLoopVerts();
+    // b.addSideQuads();
+    mat4.rotateX(cursor, cursor, Math.PI * xFactor * 1);
+    // mat4.rotateY(cursor, cursor, Math.PI * -0.003);
+    xFactor = xFactor - 0.005;
+  }
+  mat4.translate(cursor, cursor, [0, 2, 0]);
+  // b.addLoopVerts();
+  // b.addSideQuads();
+  // b.addEndQuad(false);
+  prev = nodeFromMat4(cursor, prev);
+
+  // console.dir(b.mesh);
+
+  return first;
+}
+
+function appendBoard(mesh: RawMesh, first: BoardNode) {
+  // TODO(@darzu): de-duplicate with TimberBuilder
+  const firstQuadIdx = mesh.quad.length;
+  // const mesh = b.mesh;
+
+  addLoopVerts(first);
+  addEndQuad(true);
+
+  let curr = first.next;
+  // let last = first;
+
+  while (curr) {
+    addLoopVerts(curr);
+    addSideQuads();
+    // last = curr;
+    curr = curr.next;
+  }
+
+  addEndQuad(false);
+
+  // TODO(@darzu): streamline
+  for (let qi = firstQuadIdx; qi < mesh.quad.length; qi++)
+    mesh.colors.push(vec3.clone(BLACK));
+
+  // NOTE: for provoking vertices,
+  //  indexes 0, 1 of a loop are for stuff behind (end cap, previous sides)
+  //  indexes 2, 3 of a loop are for stuff ahead (next sides, end cap)
+
+  function addSideQuads() {
+    const loop2Idx = mesh.pos.length - 4;
+    const loop1Idx = mesh.pos.length - 4 - 4;
+
+    const q0 = vec4.create();
+    const q1 = vec4.create();
+    const q2 = vec4.create();
+    const q3 = vec4.create();
+
+    setSideQuadIdxs(loop1Idx, loop2Idx, q0, q1, q2, q3);
+
+    mesh.quad.push(q0, q1, q2, q3);
+  }
+
+  function addEndQuad(facingDown: boolean) {
+    const lastLoopIdx = mesh.pos.length - 4;
+    const q = vec4.create();
+    setEndQuadIdxs(lastLoopIdx, q, facingDown);
+    mesh.quad.push(q);
+  }
+
+  function addLoopVerts(n: BoardNode) {
+    // width/depth
+    const v0 = vec3.fromValues(n.width, 0, n.depth);
+    const v1 = vec3.fromValues(n.width, 0, -n.depth);
+    const v2 = vec3.fromValues(-n.width, 0, -n.depth);
+    const v3 = vec3.fromValues(-n.width, 0, n.depth);
+    // rotate
+    vec3.transformQuat(v0, v0, n.rot);
+    vec3.transformQuat(v1, v1, n.rot);
+    vec3.transformQuat(v2, v2, n.rot);
+    vec3.transformQuat(v3, v3, n.rot);
+    // translate
+    vec3.add(v0, v0, n.pos);
+    vec3.add(v1, v1, n.pos);
+    vec3.add(v2, v2, n.pos);
+    vec3.add(v3, v3, n.pos);
+    // append
+    mesh.pos.push(v0, v1, v2, v3);
+  }
 }
 
 export function appendTimberRib(b: TimberBuilder, ccw: boolean) {

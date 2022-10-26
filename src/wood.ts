@@ -698,7 +698,7 @@ export function createEmptyMesh(dbgName: string) {
   return mesh;
 }
 
-function setSideQuadIdxs(
+export function setSideQuadIdxs(
   loop1Vi: number,
   loop2Vi: number,
   q0: vec4,
@@ -713,7 +713,7 @@ function setSideQuadIdxs(
   vec4.set(q3, loop1Vi + 0, loop2Vi + 0, loop2Vi + 3, loop1Vi + 3);
 }
 
-function setEndQuadIdxs(loopVi: number, q: vec4, facingDown: boolean) {
+export function setEndQuadIdxs(loopVi: number, q: vec4, facingDown: boolean) {
   // for provoking, we use loop 0 or 3
   // prettier-ignore
   if (facingDown)
