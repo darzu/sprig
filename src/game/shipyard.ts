@@ -44,24 +44,20 @@ export function createHomeShip(): HomeShip {
   const ribCount = 10;
   const ribSpace = 3;
 
-  const rib = makeTimberRib(builder.width, builder.depth);
-
   for (let i = 0; i < ribCount; i++) {
-    let b = cloneBoard(rib)!;
-    translatePath(b.path, [i * ribSpace, 0, 0]);
-    appendBoard(builder.mesh, b);
-  }
+    const p = translatePath(makeRibPath(i), [i * ribSpace, 0, 0]);
 
-  mirrorPath(rib.path, [0, 0, 1]);
+    appendBoard(builder.mesh, {
+      path: p,
+      width: ribWidth,
+      depth: ribDepth,
+    });
 
-  for (let i = 0; i < ribCount; i++) {
-    let b = cloneBoard(rib)!;
-    translatePath(b.path, [i * ribSpace, 0, 0]);
-    appendBoard(builder.mesh, b);
-
-    // mat4.identity(builder.cursor);
-    // mat4.translate(builder.cursor, builder.cursor, [i * ribSpace, 0, 0]);
-    // appendTimberRib(builder, true);
+    appendBoard(builder.mesh, {
+      path: mirrorPath(clonePath(p), [0, 0, 1]),
+      width: ribWidth,
+      depth: ribDepth,
+    });
   }
 
   // FLOOR
@@ -108,56 +104,57 @@ export function createHomeShip(): HomeShip {
   // mat4.translate(builder.cursor, builder.cursor, [0, 1, 0]);
   builder.width = 0.45;
   builder.depth = 0.2;
-  for (let ccwi = 0; ccwi < 2; ccwi++) {
-    const ccw = ccwi === 0;
-    const ccwf = ccw ? -1 : 1;
-    let xFactor = 0.05;
+  if (false)
+    for (let ccwi = 0; ccwi < 2; ccwi++) {
+      const ccw = ccwi === 0;
+      const ccwf = ccw ? -1 : 1;
+      let xFactor = 0.05;
 
-    const wallOffset: vec3 = [-ribWidth, 0, ribDepth * -ccwf];
+      const wallOffset: vec3 = [-ribWidth, 0, ribDepth * -ccwf];
 
-    const cursor2 = mat4.create();
-    mat4.rotateX(cursor2, cursor2, Math.PI * 0.4 * -ccwf);
+      const cursor2 = mat4.create();
+      mat4.rotateX(cursor2, cursor2, Math.PI * 0.4 * -ccwf);
 
-    // mat4.copy(builder.cursor, cursor2);
-    // mat4.translate(builder.cursor, builder.cursor, wallOffset);
-    // appendTimberWallPlank(builder, wallLength, wallSegCount);
+      // mat4.copy(builder.cursor, cursor2);
+      // mat4.translate(builder.cursor, builder.cursor, wallOffset);
+      // appendTimberWallPlank(builder, wallLength, wallSegCount);
 
-    mat4.copy(builder.cursor, cursor2);
-    mat4.translate(builder.cursor, builder.cursor, [0, 1, 0]);
-    // mat4.rotateX(builder.cursor, builder.cursor, Math.PI * xFactor * ccwf);
-    mat4.translate(builder.cursor, builder.cursor, wallOffset);
-    appendTimberWallPlank(builder, wallLength, wallSegCount, -1);
-
-    for (let i = 0; i < numRibSegs; i++) {
-      mat4.translate(cursor2, cursor2, [0, 2, 0]);
-      mat4.rotateX(cursor2, cursor2, Math.PI * xFactor * ccwf);
-
-      // plank 1
-      mat4.copy(builder.cursor, cursor2);
-      mat4.translate(builder.cursor, builder.cursor, wallOffset);
-      appendTimberWallPlank(builder, wallLength, wallSegCount, i);
-
-      // plank 2
       mat4.copy(builder.cursor, cursor2);
       mat4.translate(builder.cursor, builder.cursor, [0, 1, 0]);
-      mat4.rotateX(
-        builder.cursor,
-        builder.cursor,
-        Math.PI * xFactor * 1.0 * ccwf
-      );
+      // mat4.rotateX(builder.cursor, builder.cursor, Math.PI * xFactor * ccwf);
       mat4.translate(builder.cursor, builder.cursor, wallOffset);
-      appendTimberWallPlank(builder, wallLength, wallSegCount, i + 0.5);
+      appendTimberWallPlank(builder, wallLength, wallSegCount, -1);
 
-      mat4.rotateX(cursor2, cursor2, Math.PI * xFactor * ccwf);
-      xFactor = xFactor - 0.005;
+      for (let i = 0; i < numRibSegs; i++) {
+        mat4.translate(cursor2, cursor2, [0, 2, 0]);
+        mat4.rotateX(cursor2, cursor2, Math.PI * xFactor * ccwf);
+
+        // plank 1
+        mat4.copy(builder.cursor, cursor2);
+        mat4.translate(builder.cursor, builder.cursor, wallOffset);
+        appendTimberWallPlank(builder, wallLength, wallSegCount, i);
+
+        // plank 2
+        mat4.copy(builder.cursor, cursor2);
+        mat4.translate(builder.cursor, builder.cursor, [0, 1, 0]);
+        mat4.rotateX(
+          builder.cursor,
+          builder.cursor,
+          Math.PI * xFactor * 1.0 * ccwf
+        );
+        mat4.translate(builder.cursor, builder.cursor, wallOffset);
+        appendTimberWallPlank(builder, wallLength, wallSegCount, i + 0.5);
+
+        mat4.rotateX(cursor2, cursor2, Math.PI * xFactor * ccwf);
+        xFactor = xFactor - 0.005;
+      }
+      mat4.translate(cursor2, cursor2, [0, 2, 0]);
     }
-    mat4.translate(cursor2, cursor2, [0, 2, 0]);
-  }
   // }
 
   // FRONT AND BACK WALL
   let _floorWidth = floorWidth;
-  {
+  if (false) {
     let wallSegCount = 6;
     let numRibSegs = 6;
     let floorWidth = _floorWidth + 4;
@@ -354,6 +351,7 @@ function cloneBoard(board: Board): Board {
 }
 function translatePath(p: Path, tran: vec3) {
   p.forEach((n) => vec3.add(n.pos, n.pos, tran));
+  return p;
 }
 function mirrorPath(p: Path, planeNorm: vec3) {
   // TODO(@darzu): support non-origin planes
@@ -389,33 +387,39 @@ function mirrorPath(p: Path, planeNorm: vec3) {
     quat.mul(curr.rot, curr.rot, mirrorQuat);
     vec3.transformMat3(curr.pos, curr.pos, mirrorMat3);
   });
+
+  return p;
 }
 
-function makeTimberRib(width: number, depth: number): Board {
+function makeRibPath(idx: number): Path {
   const cursor = mat4.create();
 
-  mat4.rotateX(cursor, cursor, Math.PI * 0.4 * -1);
+  const ribCount = 10;
+  const iF = idx / (ribCount - 1.0);
+  const mF = Math.abs(iF - 0.5);
+  const eF = 1.0 - mF;
+
+  // TODO(@darzu): TWEAK ALL THIS IN UI!
+  let initAngle = -0.45;
+  let angle = 0.03 + mF * 0.02;
+  let dAngle = 0.005 + eF * 0.01;
 
   const path: Path = [];
 
+  mat4.rotateX(cursor, cursor, Math.PI * initAngle);
   path.push(nodeFromMat4(cursor));
 
-  let xFactor = 0.05;
   for (let i = 0; i < numRibSegs; i++) {
     mat4.translate(cursor, cursor, [0, 2, 0]);
-    mat4.rotateX(cursor, cursor, Math.PI * xFactor * 1);
+    mat4.rotateX(cursor, cursor, Math.PI * angle);
     path.push(nodeFromMat4(cursor));
-    mat4.rotateX(cursor, cursor, Math.PI * xFactor * 1);
-    xFactor = xFactor - 0.005;
+    mat4.rotateX(cursor, cursor, Math.PI * angle);
+    angle = angle - dAngle;
   }
   mat4.translate(cursor, cursor, [0, 2, 0]);
   path.push(nodeFromMat4(cursor));
 
-  return {
-    path,
-    width,
-    depth,
-  };
+  return path;
 }
 
 function appendBoard(mesh: RawMesh, board: Board) {
