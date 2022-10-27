@@ -1,7 +1,9 @@
+import { DBG_ASSERT } from "../flags.js";
 import { mat3, mat4, quat, vec3, vec4 } from "../gl-matrix.js";
 import { jitter } from "../math.js";
 import { Mesh, RawMesh, validateMesh } from "../render/mesh.js";
-import { assertDbg } from "../util.js";
+import { tempMat3, tempQuat } from "../temp-pool.js";
+import { assert, assertDbg } from "../util.js";
 import { randNormalPosVec3 } from "../utils-3d.js";
 import {
   createEmptyMesh,
@@ -46,15 +48,15 @@ export function createHomeShip(): HomeShip {
 
   for (let i = 0; i < ribCount; i++) {
     let b = cloneBoard(rib)!;
-    translateBoard(b, [i * ribSpace, 0, 0]);
+    translatePath(b.path, [i * ribSpace, 0, 0]);
     appendBoard(builder.mesh, b);
   }
 
-  mirrorBoard(rib, [0, 0, 1]);
+  mirrorPath(rib.path, [0, 0, 1]);
 
   for (let i = 0; i < ribCount; i++) {
     let b = cloneBoard(rib)!;
-    translateBoard(b, [i * ribSpace, 0, 0]);
+    translatePath(b.path, [i * ribSpace, 0, 0]);
     appendBoard(builder.mesh, b);
 
     // mat4.identity(builder.cursor);
@@ -314,67 +316,59 @@ export function appendTimberFloorPlank(
   return b.mesh;
 }
 
-interface BoardNode {
-  // TODO(@darzu): we should just use a list..
-  prev?: BoardNode;
-  next?: BoardNode;
+interface Board {
+  path: Path;
 
-  pos: vec3;
-  rot: quat;
   width: number;
   depth: number;
 }
 
-// TODO(@darzu): mirror fn
+interface PathNode {
+  // TODO(@darzu): different path formats? e.g. bezier, mat4s, relative pos/rot,
+  pos: vec3;
+  rot: quat;
+}
+type Path = PathNode[];
 
-function nodeFromMat4(cursor: mat4, prev?: BoardNode): BoardNode {
-  // TODO(@darzu): can width/depth be captured in the mat4?
-  const rot = quat.create();
-  const pos = vec3.create();
-  mat4.getRotation(rot, cursor);
-  vec3.transformMat4(pos, pos, cursor);
-  // vec3.sub(dir, dir, pos);
-  // TODO(@darzu): assert dir is normalized?
-  const res: BoardNode = {
-    prev,
+function nodeFromMat4(cursor: mat4): PathNode {
+  const rot = mat4.getRotation(quat.create(), cursor);
+  const pos = vec3.transformMat4(vec3.create(), vec3.ZEROS, cursor);
+  return {
     pos,
     rot,
-    width: prev?.width ?? 1,
-    depth: prev?.depth ?? 1,
   };
-  if (prev) prev.next = res;
-  return res;
 }
 
-function cloneBoard(
-  curr?: BoardNode,
-  newPrev?: BoardNode
-): BoardNode | undefined {
-  if (!curr) return undefined;
-  const res: BoardNode = {
-    prev: newPrev,
-    pos: vec3.clone(curr.pos),
-    rot: quat.clone(curr.rot),
-    width: curr.width,
-    depth: curr.depth,
+function clonePath(path: Path): Path {
+  return path.map((old) => ({
+    rot: quat.clone(old.rot),
+    pos: vec3.clone(old.pos),
+  }));
+}
+
+function cloneBoard(board: Board): Board {
+  return {
+    ...board,
+    path: clonePath(board.path),
   };
-  res.next = cloneBoard(curr.next, res);
-  return res;
 }
-function translateBoard(b: BoardNode, tran: vec3) {
-  let curr: BoardNode | undefined = b;
-  while (curr) {
-    vec3.add(curr.pos, curr.pos, tran);
-    curr = curr.next;
-  }
+function translatePath(p: Path, tran: vec3) {
+  p.forEach((n) => vec3.add(n.pos, n.pos, tran));
 }
-function mirrorBoard(node: BoardNode, planeNorm: vec3) {
+function mirrorPath(p: Path, planeNorm: vec3) {
+  // TODO(@darzu): support non-origin planes
+  if (DBG_ASSERT)
+    assert(
+      Math.abs(vec3.sqrLen(planeNorm) - 1.0) < 0.01,
+      `mirror plane must be normalized`
+    );
   let a = planeNorm[0];
   let b = planeNorm[1];
   let c = planeNorm[2];
 
   // https://math.stackexchange.com/a/696190/126904
-  let mirrorMat3 = mat3.fromValues(
+  let mirrorMat3 = mat3.set(
+    tempMat3(),
     1 - 2 * a ** 2,
     -2 * a * b,
     -2 * a * c,
@@ -386,72 +380,55 @@ function mirrorBoard(node: BoardNode, planeNorm: vec3) {
     1 - 2 * c ** 2
   );
 
-  let mirrorNormalQuat = quat.fromValues(a, b, c, 0);
+  // TODO(@darzu): can we use mat3 instead of mirror quat?
+  // https://stackoverflow.com/a/49234603/814454
+  let mirrorQuat = quat.set(tempQuat(), a, b, c, 0);
 
-  let curr: BoardNode | undefined = node;
-  while (curr) {
-    // TODO(@darzu): can we use mat3?
-    quat.mul(curr.rot, mirrorNormalQuat, curr.rot);
-    quat.mul(curr.rot, curr.rot, mirrorNormalQuat);
-
+  p.forEach((curr) => {
+    quat.mul(curr.rot, mirrorQuat, curr.rot);
+    quat.mul(curr.rot, curr.rot, mirrorQuat);
     vec3.transformMat3(curr.pos, curr.pos, mirrorMat3);
-
-    curr = curr.next;
-  }
+  });
 }
 
-function makeTimberRib(width: number, depth: number): BoardNode {
+function makeTimberRib(width: number, depth: number): Board {
   const cursor = mat4.create();
 
   mat4.rotateX(cursor, cursor, Math.PI * 0.4 * -1);
 
-  const first = nodeFromMat4(cursor);
-  first.width = width;
-  first.depth = depth;
-  let prev = first;
+  const path: Path = [];
 
-  // b.addLoopVerts();
-  // b.addEndQuad(true);
+  path.push(nodeFromMat4(cursor));
+
   let xFactor = 0.05;
   for (let i = 0; i < numRibSegs; i++) {
     mat4.translate(cursor, cursor, [0, 2, 0]);
     mat4.rotateX(cursor, cursor, Math.PI * xFactor * 1);
-    prev = nodeFromMat4(cursor, prev);
-    // b.addLoopVerts();
-    // b.addSideQuads();
+    path.push(nodeFromMat4(cursor));
     mat4.rotateX(cursor, cursor, Math.PI * xFactor * 1);
-    // mat4.rotateY(cursor, cursor, Math.PI * -0.003);
     xFactor = xFactor - 0.005;
   }
   mat4.translate(cursor, cursor, [0, 2, 0]);
-  // b.addLoopVerts();
-  // b.addSideQuads();
-  // b.addEndQuad(false);
-  prev = nodeFromMat4(cursor, prev);
+  path.push(nodeFromMat4(cursor));
 
-  // console.dir(b.mesh);
-
-  return first;
+  return {
+    path,
+    width,
+    depth,
+  };
 }
 
-function appendBoard(mesh: RawMesh, first: BoardNode) {
+function appendBoard(mesh: RawMesh, board: Board) {
+  assert(board.path.length >= 2);
   // TODO(@darzu): de-duplicate with TimberBuilder
   const firstQuadIdx = mesh.quad.length;
   // const mesh = b.mesh;
 
-  addLoopVerts(first);
-  addEndQuad(true);
-
-  let curr = first.next;
-  // let last = first;
-
-  while (curr) {
-    addLoopVerts(curr);
-    addSideQuads();
-    // last = curr;
-    curr = curr.next;
-  }
-
+  board.path.forEach((p, i) => {
+    addLoopVerts(p);
+    if (i === 0) addEndQuad(true);
+    else addSideQuads();
+  });
   addEndQuad(false);
 
   // TODO(@darzu): streamline
@@ -483,12 +460,12 @@ function appendBoard(mesh: RawMesh, first: BoardNode) {
     mesh.quad.push(q);
   }
 
-  function addLoopVerts(n: BoardNode) {
+  function addLoopVerts(n: PathNode) {
     // width/depth
-    const v0 = vec3.fromValues(n.width, 0, n.depth);
-    const v1 = vec3.fromValues(n.width, 0, -n.depth);
-    const v2 = vec3.fromValues(-n.width, 0, -n.depth);
-    const v3 = vec3.fromValues(-n.width, 0, n.depth);
+    const v0 = vec3.fromValues(board.width, 0, board.depth);
+    const v1 = vec3.fromValues(board.width, 0, -board.depth);
+    const v2 = vec3.fromValues(-board.width, 0, -board.depth);
+    const v3 = vec3.fromValues(-board.width, 0, board.depth);
     // rotate
     vec3.transformQuat(v0, v0, n.rot);
     vec3.transformQuat(v1, v1, n.rot);
