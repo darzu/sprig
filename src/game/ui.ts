@@ -1,5 +1,22 @@
 import { EM, EntityManager } from "../entity-manager.js";
 
+/*
+UI needed:
+text, buttons, sliders, text input?
+
+In-engine text rendering:
+  As 3D models?
+  As SDF-based font?
+
+[ ] As 2D triangles, can be extruded to 3D
+[ ] Pick a font
+[ ] Triangulate to 2D
+[ ] Render to texture, JFA
+[ ] Extrude to 3D
+[ ] Expand letters to triangles on GPU?
+[ ] Sensible first step: render font texture to plane, alpha clipping
+*/
+
 export const TextDef = EM.defineComponent("text", () => {
   return {
     upperText: "",

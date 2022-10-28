@@ -33,6 +33,12 @@ export interface HomeShip {
   floorWidth: number;
 }
 
+export interface ShipyardUI {
+  kind: "shipyard";
+  ribCount: number;
+  // TODO(@darzu): other params
+}
+
 export function createHomeShip(): HomeShip {
   const _timberMesh = createEmptyMesh("homeShip");
   // RIBS
