@@ -804,7 +804,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     gameplaySystems.push("pickUpBalls");
 
     if (DBG_PLAYER) {
-      const g = createGhost(em);
+      const g = createGhost();
       vec3.copy(g.position, [0, 1, -1.2]);
       quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
       g.cameraFollow.positionOffset = [0, 0, 5];

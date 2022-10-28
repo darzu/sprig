@@ -48,7 +48,7 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   em.ensureComponentOn(sunlight, PositionDef, [10, 100, 10]);
   em.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
 
-  const g = createGhost(em);
+  const g = createGhost();
   // em.ensureComponentOn(g, RenderableConstructDef, res.assets.cube.proto);
   // createPlayer(em);
 

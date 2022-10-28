@@ -39,7 +39,7 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
     RendererDef,
     TextDef
   );
-  const g = createGhost(em);
+  const g = createGhost();
   vec3.copy(g.position, [-6.5, 3.06, 22.51]);
   quat.copy(g.rotation, [0.0, -0.08, 0.0, 1.0]);
   vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);

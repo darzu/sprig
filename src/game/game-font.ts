@@ -1,13 +1,15 @@
-import { CameraDef } from "../camera.js";
+import { CameraDef, CameraViewDef } from "../camera.js";
+import { CanvasDef } from "../canvas.js";
 import { ColorDef } from "../color-ecs.js";
-import { EntityManager } from "../entity-manager.js";
-import { vec3, quat } from "../gl-matrix.js";
+import { EM, EntityManager } from "../entity-manager.js";
+import { vec3, quat, mat4 } from "../gl-matrix.js";
+import { mathMap } from "../math.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef } from "../physics/motion.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
-import { cloneMesh } from "../render/mesh.js";
+import { cloneMesh, transformMesh } from "../render/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -16,13 +18,24 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { AssetsDef } from "./assets.js";
+import { tempVec3, tempQuat, tempMat4 } from "../temp-pool.js";
+import { dbgLogOnce } from "../util.js";
+import { randNormalPosVec3, randNormalVec3 } from "../utils-3d.js";
+import { AssetsDef, makePlaneMesh } from "./assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";
-import { createGhost } from "./game.js";
+import { createGhost, gameplaySystems } from "./game.js";
+
+// TODO(@darzu): 2D editor!
+
+const DBG_3D = false;
+
+const PANEL_W = 4 * 12;
+const PANEL_H = 3 * 12;
 
 export async function initFontEditor(em: EntityManager) {
-  const camera = em.addSingletonComponent(CameraDef);
-  camera.fov = Math.PI * 0.5;
+  console.log(`panel ${PANEL_W}x${PANEL_H}`);
+
+  initCamera();
 
   const res = await em.whenResources(AssetsDef, GlobalCursor3dDef, RendererDef);
 
@@ -37,58 +50,119 @@ export async function initFontEditor(em: EntityManager) {
   em.ensureComponentOn(sunlight, PointLightDef);
   sunlight.pointLight.constant = 1.0;
   vec3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
-  // vec3.scale(sunlight.pointLight.ambient, sunlight.pointLight.ambient, 0.2);
-  // vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
   em.ensureComponentOn(sunlight, PositionDef, [10, 100, 10]);
-  em.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
-
-  const g = createGhost(em);
-  // em.ensureComponentOn(g, RenderableConstructDef, res.assets.cube.proto);
-  // createPlayer(em);
-
-  // vec3.copy(e.position, [-16.6, 5, -5.1]);
-  // quat.copy(e.rotation, [0, -0.77, 0, 0.636]);
-  // vec3.copy(e.cameraFollow.positionOffset, [0, 0, 0]);
-  // quat.copy(e.cameraFollow.rotationOffset, [-0.225, 0, 0, 0.974]);
-  // vec3.copy(g.position, [-4.28, 0.97, 0.11]);
-  // quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
-  // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-  // quat.copy(g.cameraFollow.rotationOffset, [-0.18, 0.0, 0.0, 0.98]);
-  vec3.copy(g.position, [0, 1, -1.2]);
-  quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
-  // setCameraFollowPosition(g, "thirdPerson");
-  g.cameraFollow.positionOffset = [0, 0, 5];
-  g.controllable.modes.canYaw = false;
-  g.controllable.modes.canCameraYaw = true;
-  // g.controllable.modes.canPitch = true;
-  g.controllable.speed *= 0.5;
-  g.controllable.sprintMul = 10;
+  // TODO(@darzu): weird, why does renderable need to be on here?
+  em.ensureComponentOn(
+    sunlight,
+    RenderableConstructDef,
+    res.assets.ball.proto,
+    false
+  );
 
   const c = res.globalCursor3d.cursor()!;
   if (RenderableDef.isOn(c)) c.renderable.enabled = false;
 
-  const p = em.newEntity();
-  em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
-  em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
-  em.ensureComponentOn(p, PositionDef, [0, -5, 0]);
+  const panel = em.newEntity();
+  const panelMesh = makePlaneMesh(
+    -PANEL_W * 0.5,
+    PANEL_W * 0.5,
+    -PANEL_H * 0.5,
+    PANEL_H * 0.5
+  );
+  panelMesh.colors[0] = [0.1, 0.3, 0.1];
+  panelMesh.colors[1] = [0.1, 0.1, 0.3];
+  em.ensureComponentOn(panel, RenderableConstructDef, panelMesh);
+  // em.ensureComponentOn(panel, ColorDef, [0.2, 0.3, 0.2]);
+  em.ensureComponentOn(panel, PositionDef, [0, 0, 0]);
 
-  const b1 = em.newEntity();
-  const m1 = cloneMesh(res.assets.cube.mesh);
-  em.ensureComponentOn(b1, RenderableConstructDef, m1);
-  em.ensureComponentOn(b1, ColorDef, [0.1, 0.1, 0.1]);
-  em.ensureComponentOn(b1, PositionDef, [0, 0, 3]);
-  em.ensureComponentOn(b1, RotationDef);
-  em.ensureComponentOn(b1, AngularVelocityDef, [0, 0.001, 0.001]);
-  em.ensureComponentOn(b1, WorldFrameDef);
-  em.ensureComponentOn(b1, ColliderDef, {
-    shape: "AABB",
-    solid: false,
-    aabb: res.assets.cube.aabb,
-  });
-  // em.ensureComponentOn(b1, ColliderDef, {
-  //   shape: "Box",
-  //   solid: false,
-  //   center: res.assets.cube.center,
-  //   halfsize: res.assets.cube.halfsize,
-  // });
+  for (let x of [-1, 0, 1])
+    for (let z of [-1, 0, 1]) {
+      const b1 = em.newEntity();
+      em.ensureComponentOn(b1, RenderableConstructDef, res.assets.cube.proto);
+      em.ensureComponentOn(b1, ColorDef, [
+        mathMap(x, -1, 1, 0.05, 0.8),
+        0,
+        mathMap(z, -1, 1, 0.05, 0.8),
+      ]);
+      em.ensureComponentOn(b1, PositionDef, [
+        PANEL_W * 0.5 * x,
+        0,
+        PANEL_H * 0.5 * z,
+      ]);
+    }
+
+  if (DBG_3D) {
+    const g = createGhost();
+    em.ensureComponentOn(g, RenderableConstructDef, res.assets.ball.proto);
+
+    // vec3.copy(g.position, [4.36,30.83,-1.53]);
+    // quat.copy(g.rotation, [0.00,0.71,0.00,0.70]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.00,0.00,0.00]);
+    // g.cameraFollow.yawOffset = 0.000;
+    // g.cameraFollow.pitchOffset = -1.496;
+    vec3.copy(g.position, [-1.45, 27.5, 6.93]);
+    quat.copy(g.rotation, [0.0, 0.0, 0.0, 1.0]);
+    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    g.cameraFollow.yawOffset = 0.0;
+    g.cameraFollow.pitchOffset = -1.496;
+  }
+}
+
+function initCamera() {
+  {
+    const camera = EM.addSingletonComponent(CameraDef);
+    camera.fov = Math.PI * 0.5;
+    camera.targetId = 0;
+  }
+
+  EM.registerSystem(
+    null,
+    [CameraViewDef, CanvasDef, CameraDef],
+    (_, res) => {
+      // TODO(@darzu):IMPL
+      const { cameraView, htmlCanvas } = res;
+
+      if (res.camera.targetId) return;
+
+      // update aspect ratio and size
+      cameraView.aspectRatio = Math.abs(
+        htmlCanvas.canvas.width / htmlCanvas.canvas.height
+      );
+      cameraView.width = htmlCanvas.canvas.width;
+      cameraView.height = htmlCanvas.canvas.height;
+
+      dbgLogOnce(
+        `ar${cameraView.aspectRatio.toFixed(2)}`,
+        `ar ${cameraView.aspectRatio.toFixed(2)}`
+      );
+
+      let viewMatrix = mat4.create();
+
+      mat4.rotateX(viewMatrix, viewMatrix, Math.PI * 0.5);
+      // mat4.translate(viewMatrix, viewMatrix, [0, 10, 0]);
+
+      // mat4.invert(viewMatrix, viewMatrix);
+
+      const projectionMatrix = mat4.create();
+
+      // TODO(@darzu): PRESERVE ASPECT RATIO!
+      const VIEW_PAD = PANEL_W / 12;
+      const halfW = PANEL_W * 0.5 + VIEW_PAD;
+      const halfH = PANEL_H * 0.5 + VIEW_PAD;
+      // const ORTHO_SIZE = 20;
+      // TODO(@darzu): i don't understand the near/far clipping; why can't they be -4, 4 ?
+      mat4.ortho(projectionMatrix, -halfW, halfW, -halfH, halfH, -24, 12);
+
+      const viewProj = mat4.multiply(
+        mat4.create(),
+        projectionMatrix,
+        viewMatrix
+      ) as Float32Array;
+
+      cameraView.viewProjMat = viewProj;
+    },
+    "uiCameraView"
+  );
+
+  gameplaySystems.push("uiCameraView");
 }

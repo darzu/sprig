@@ -517,35 +517,42 @@ const HEX_MESH: () => RawMesh = () => {
   // ],
   return { pos, tri, quad: [], lines, colors: tri.map((_) => BLACK) };
 };
-const PLANE_MESH: RawMesh = {
-  pos: [
-    [+1, 0, +1],
-    [-1, 0, +1],
-    [+1, 0, -1],
-    [-1, 0, -1],
-  ],
-  tri: [
-    [0, 2, 3],
-    [0, 3, 1], // top
-    [3, 2, 0],
-    [1, 3, 0], // bottom
-  ],
-  quad: [],
-  lines: [
-    [0, 1],
-    [0, 2],
-    [1, 3],
-    [2, 3],
-  ],
-  colors: [BLACK, BLACK, BLACK, BLACK],
-  // uvs: [
-  //   [1, 1],
-  //   [0, 1],
-  //   [1, 0],
-  //   [0, 0],
-  // ],
-};
-scaleMesh(PLANE_MESH, 10);
+export function makePlaneMesh(
+  x1: number,
+  x2: number,
+  z1: number,
+  z2: number
+): Mesh {
+  const res: Mesh = {
+    pos: [
+      [x2, 0, z2],
+      [x1, 0, z2],
+      [x2, 0, z1],
+      [x1, 0, z1],
+    ],
+    tri: [],
+    quad: [
+      [0, 2, 3, 1], // top
+      [1, 3, 2, 0], // bottom
+    ],
+    lines: [
+      [0, 1],
+      [0, 2],
+      [1, 3],
+      [2, 3],
+    ],
+    colors: [vec3.create(), vec3.create()],
+    // uvs: [
+    //   [1, 1],
+    //   [0, 1],
+    //   [1, 0],
+    //   [0, 0],
+    // ],
+    surfaceIds: [1, 2],
+    usesProvoking: true,
+  };
+  return res;
+}
 
 function makeSailMesh(): RawMesh {
   const mesh: RawMesh = {
@@ -755,7 +762,7 @@ export const LocalMeshes = {
   ocean: () => CUBE_MESH,
 
   cube: () => CUBE_MESH,
-  plane: () => PLANE_MESH,
+  plane: () => makePlaneMesh(-10, 10, -10, 10),
   tetra: () => TETRA_MESH,
   hex: HEX_MESH,
   enemyShip: () => BOAT_MESH,

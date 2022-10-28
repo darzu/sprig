@@ -1,7 +1,7 @@
 // TODO(@darzu): move other common infrastructure here?
 
 import { CameraFollowDef, setCameraFollowPosition } from "../camera.js";
-import { EM, EntityManager } from "../entity-manager.js";
+import { EM, Entity, EntityManager } from "../entity-manager.js";
 import { LinearVelocityDef } from "../physics/motion.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { ControllableDef } from "./controllable.js";
@@ -11,7 +11,8 @@ export const gameplaySystems: string[] = [];
 
 export const GhostDef = EM.defineComponent("ghost", () => ({}));
 
-export function createGhost(em: EntityManager) {
+export function createGhost() {
+  const em: EntityManager = EM;
   const g = em.newEntity();
   em.ensureComponentOn(g, GhostDef);
   em.ensureComponentOn(g, ControllableDef);
