@@ -2,7 +2,7 @@ import { EM, EntityManager } from "../entity-manager.js";
 
 /*
 UI needed:
-text, buttons, sliders, text input?
+text, button, check box, radio, sliders, text input?
 
 In-engine text rendering:
   As 3D models?
@@ -15,6 +15,10 @@ In-engine text rendering:
 [ ] Extrude to 3D
 [ ] Expand letters to triangles on GPU?
 [ ] Sensible first step: render font texture to plane, alpha clipping
+
+[ ] font editor: scrible brush for rough shape
+[ ] font editor: triangle editor to triangulate
+[ ] font editor: html reference fonts overlay
 */
 
 export const TextDef = EM.defineComponent("text", () => {

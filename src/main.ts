@@ -7,14 +7,17 @@ import { MeDef, JoinDef, HostDef, PeerNameDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";
 import { dbg } from "./debugger.js";
 import { DevConsoleDef } from "./console.js";
-import { initGJKSandbox, initReboundSandbox } from "./game/game-sandbox.js";
+import { initReboundSandbox } from "./game/game-rebound.js";
 // import { callClothSystems } from "./game/cloth.js";
 import { registerCommonSystems } from "./game/game-init.js";
 import { setSimulationAlpha } from "./render/renderer-ecs.js";
 import { never } from "./util.js";
 // import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { DBG_ASSERT, VERBOSE_LOG } from "./flags.js";
-import { initRogueGame, sandboxSystems } from "./game/game-rogue.js";
+import { initRogueGame } from "./game/game-rogue.js";
+import { gameplaySystems } from "./game/game.js";
+import { initFontEditor } from "./game/game-font.js";
+import { initGJKSandbox } from "./game/game-gjk.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -22,7 +25,7 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-const GAME = "ld51" as "gjk" | "rebound" | "ld51";
+const GAME = "font" as "gjk" | "rebound" | "ld51" | "font";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -140,7 +143,7 @@ function callFixedTimestepSystems() {
 
   // TODO(@darzu): HACK. we need to think better how to let different areas, like a sandbox game, register systems
   //    to be called in a less cumbersome way than adding text and guards in here.
-  for (let sys of sandboxSystems) EM.callSystem(sys);
+  for (let sys of gameplaySystems) EM.callSystem(sys);
 
   EM.callSystem("updateLocalFromPosRotScale");
   EM.callSystem("updateWorldFromLocalAndParent");
@@ -223,6 +226,7 @@ async function startGame(localPeerName: string, host: string | null) {
   // else if (GAME === "hyperspace") initHyperspaceGame(EM);
   // else if (GAME === "cube") initCubeGame(EM);
   else if (GAME === "ld51") initRogueGame(EM, hosting);
+  else if (GAME === "font") initFontEditor(EM);
   else never(GAME, "TODO game");
 
   let previous_frame_time = start_of_time;

@@ -76,7 +76,7 @@ import {
   fireBullet,
 } from "./bullet.js";
 import { ControllableDef } from "./controllable.js";
-import { createGhost, GhostDef } from "./game-sandbox.js";
+import { createGhost, GhostDef } from "./game.js";
 import { GravityDef } from "./gravity.js";
 import { InRangeDef, InteractableDef } from "./interact.js";
 import { LifetimeDef } from "./lifetime.js";
@@ -85,6 +85,7 @@ import { TextDef } from "./ui.js";
 import { createIdxPool } from "../idx-pool.js";
 import { randNormalPosVec3, randNormalVec3 } from "../utils-3d.js";
 import { createHomeShip } from "./shipyard.js";
+import { gameplaySystems } from "./game.js";
 
 /*
   Game mechanics:
@@ -146,9 +147,6 @@ const tenSeconds = 1000 * (DBG_PLAYER ? 3 : 10);
 
 let spawnTimer = tenSeconds;
 const minSpawnTimer = 3000;
-
-// TODO(@darzu): HACK. we need a better way to programmatically create sandbox games
-export const sandboxSystems: string[] = [];
 
 export const LD51CannonDef = EM.defineComponent("ld51Cannon", () => {
   return {};
@@ -451,7 +449,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     },
     "ld51PlayerFireCannon"
   );
-  sandboxSystems.push("ld51PlayerFireCannon");
+  gameplaySystems.push("ld51PlayerFireCannon");
 
   const splinterObjId = 7654;
   em.registerSystem(
@@ -484,7 +482,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     },
     "splintersOnFloor"
   );
-  sandboxSystems.push("splintersOnFloor");
+  gameplaySystems.push("splintersOnFloor");
 
   // const quadIdsNeedReset = new Set<number>();
 
@@ -543,7 +541,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     },
     "ld51Ghost"
   );
-  if (DBG_PLAYER) sandboxSystems.push("ld51Ghost");
+  if (DBG_PLAYER) gameplaySystems.push("ld51Ghost");
 
   // TODO(@darzu): breakBullet
   em.registerSystem(
@@ -558,7 +556,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     },
     "breakBullets"
   );
-  sandboxSystems.push("breakBullets");
+  gameplaySystems.push("breakBullets");
 
   // Create player
   {
@@ -725,7 +723,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
         },
         "bulletBounce"
       );
-      sandboxSystems.push("bulletBounce");
+      gameplaySystems.push("bulletBounce");
     }
 
     // dead bullet maintenance
@@ -747,7 +745,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
       },
       "deadBullets"
     );
-    sandboxSystems.push("deadBullets");
+    gameplaySystems.push("deadBullets");
 
     // starter ammo
     {
@@ -778,7 +776,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
       },
       "fallingGoodBalls"
     );
-    sandboxSystems.push("fallingGoodBalls");
+    gameplaySystems.push("fallingGoodBalls");
 
     em.registerSystem(
       [GoodBallDef, InteractableDef, InRangeDef, PositionDef],
@@ -803,7 +801,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
       },
       "pickUpBalls"
     );
-    sandboxSystems.push("pickUpBalls");
+    gameplaySystems.push("pickUpBalls");
 
     if (DBG_PLAYER) {
       const g = createGhost(em);
@@ -906,12 +904,12 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
               res.time.time / 1000
             ).toFixed(1)} seconds. Thanks for playing! Refresh to try again.`
           );
-          sandboxSystems.length = 0;
+          gameplaySystems.length = 0;
         }
       },
       "progressGame"
     );
-    sandboxSystems.push("progressGame");
+    gameplaySystems.push("progressGame");
   }
 
   function getCurrentHealth() {
@@ -1042,7 +1040,7 @@ async function startPirates() {
     },
     "spawnPirates"
   );
-  sandboxSystems.push("spawnPirates");
+  gameplaySystems.push("spawnPirates");
 
   const fireStagger = 150;
   // const tiltPeriod = 5700;
@@ -1104,7 +1102,7 @@ async function startPirates() {
     },
     "updatePiratePlatforms"
   );
-  sandboxSystems.push("updatePiratePlatforms");
+  gameplaySystems.push("updatePiratePlatforms");
 }
 
 // TODO(@darzu): this is wierd. should probably just be component on root entity w/ pointer to others
