@@ -15,6 +15,8 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
+import { tempVec2, tempVec3 } from "../temp-pool.js";
+import { screenPosToWorldPos } from "../utils-game.js";
 import { AssetsDef, makePlaneMesh } from "./assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { createGhost, gameplaySystems } from "./game.js";
@@ -133,8 +135,8 @@ async function initCamera() {
       cameraView.aspectRatio = Math.abs(
         htmlCanvas.canvas.width / htmlCanvas.canvas.height
       );
-      cameraView.width = htmlCanvas.canvas.width;
-      cameraView.height = htmlCanvas.canvas.height;
+      cameraView.width = htmlCanvas.canvas.clientWidth;
+      cameraView.height = htmlCanvas.canvas.clientHeight;
 
       // dbgLogOnce(
       //   `ar${cameraView.aspectRatio.toFixed(2)}`,
@@ -173,17 +175,47 @@ async function initCamera() {
         adjPanelW = adjPanelH * cameraAR;
       }
 
+      // TODO(@darzu): i don't understand the near/far clipping; why can't they be like -4, 4 ?
+      mat4.ortho(
+        projectionMatrix,
+        -adjPanelW * 0.5,
+        adjPanelW * 0.5,
+        -adjPanelH * 0.5,
+        adjPanelH * 0.5,
+        -24,
+        12
+      );
+
+      const viewProj = mat4.multiply(
+        mat4.create(),
+        projectionMatrix,
+        viewMatrix
+      ) as Float32Array;
+
+      cameraView.viewProjMat = viewProj;
+      cameraView.invViewProjMat = mat4.invert(
+        cameraView.invViewProjMat,
+        cameraView.viewProjMat
+      );
+
       let cursorFracX = inputs.mousePosX / htmlCanvas.canvas.clientWidth;
       let cursorFracY = inputs.mousePosY / htmlCanvas.canvas.clientHeight;
-      let cursorViewX = cursorFracX * adjPanelW;
-      let cursorViewY = cursorFracY * adjPanelH;
-      let cursorWorldX =
-        cursorViewX - (adjPanelW - PANEL_W) * 0.5 - PANEL_W * 0.5;
-      let cursorWorldZ =
-        cursorViewY - (adjPanelH - PANEL_H) * 0.5 - PANEL_H * 0.5;
+      // let cursorViewX = cursorFracX * adjPanelW;
+      // let cursorViewY = cursorFracY * adjPanelH;
+      // let cursorWorldX =
+      //   cursorViewX - (adjPanelW - PANEL_W) * 0.5 - PANEL_W * 0.5;
+      // let cursorWorldZ =
+      //   cursorViewY - (adjPanelH - PANEL_H) * 0.5 - PANEL_H * 0.5;
 
-      cursor.position[0] = cursorWorldX;
-      cursor.position[2] = cursorWorldZ;
+      const cursorWorld = screenPosToWorldPos(
+        vec3.create(),
+        inputs.mousePos,
+        cameraView
+      );
+      cursorWorld[1] = 0;
+
+      // cursor.position[0] = cursorWorldX;
+      // cursor.position[2] = cursorWorldZ;
 
       // TODO(@darzu): pain on surface
 
@@ -206,27 +238,25 @@ async function initCamera() {
           0,
           mathMap(cursorFracY, 0, 1, 0.05, 0.8),
         ]);
-        EM.ensureComponentOn(b1, PositionDef, [cursorWorldX, 0, cursorWorldZ]);
+        EM.ensureComponentOn(b1, PositionDef, cursorWorld);
       }
 
-      // TODO(@darzu): i don't understand the near/far clipping; why can't they be like -4, 4 ?
-      mat4.ortho(
-        projectionMatrix,
-        -adjPanelW * 0.5,
-        adjPanelW * 0.5,
-        -adjPanelH * 0.5,
-        adjPanelH * 0.5,
-        -24,
-        12
-      );
+      // // TODO(@darzu): experiment getting cursor from viewProj
+      // const invViewProj = mat4.invert(mat4.create(), viewProj);
+      // const worldPos2 = vec3.transformMat4(
+      //   tempVec3(),
+      //   [
+      //     mathMap(cursorFracX, 0, 1, -1, 1),
+      //     mathMap(cursorFracY, 0, 1, 1, -1),
+      //     0,
+      //   ],
+      //   invViewProj
+      // );
 
-      const viewProj = mat4.multiply(
-        mat4.create(),
-        projectionMatrix,
-        viewMatrix
-      ) as Float32Array;
-
-      cameraView.viewProjMat = viewProj;
+      // cursor.position[0] = worldPos2[0];
+      // cursor.position[2] = worldPos2[2];
+      cursor.position[0] = cursorWorld[0];
+      cursor.position[2] = cursorWorld[2];
     },
     "uiCameraView"
   );

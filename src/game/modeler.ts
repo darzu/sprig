@@ -16,7 +16,7 @@ import { tempVec3 } from "../temp-pool.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
 import { ColorDef, TintsDef } from "../color-ecs.js";
-import { drawLine } from "../utils-game.js";
+import { drawLine, screenPosToRay } from "../utils-game.js";
 import { CameraView, CameraViewDef } from "../camera.js";
 
 const ENABLED = true;
@@ -60,7 +60,7 @@ function registerObjClicker(em: EntityManager) {
       if (!res.modeler.clickerEnabled) return;
 
       if (res.inputs.lclick) {
-        const screenPos: vec2 = [res.inputs.mousePosX, res.inputs.mousePosY];
+        const screenPos: vec2 = res.inputs.mousePos;
 
         const r = screenPosToRay(screenPos, res.cameraView);
 
@@ -221,31 +221,4 @@ function registerAABBBuilder(em: EntityManager) {
     },
     "aabbBuilder"
   );
-}
-
-export function screenPosToRay(screenPos: vec2, cameraView: CameraView): Ray {
-  const invViewProj = mat4.create();
-  mat4.invert(invViewProj, cameraView.viewProjMat);
-  if (invViewProj === null) {
-    // TODO(@darzu): debugging
-    throw `invViewProj is null`;
-  }
-
-  const viewX = mathMap(screenPos[0], 0, cameraView.width, -1, 1);
-  const viewY = mathMap(screenPos[1], 0, cameraView.height, -1, 1) * -1;
-  const pos0: vec3 = [viewX, viewY, -1];
-  const pos1: vec3 = [viewX, viewY, 0];
-
-  const ray0 = vec3.transformMat4(vec3.create(), pos0, invViewProj);
-  const ray1 = vec3.transformMat4(vec3.create(), pos1, invViewProj);
-
-  const dir: vec3 = vec3.sub(vec3.create(), ray1, ray0);
-  vec3.normalize(dir, dir);
-
-  const r: Ray = {
-    org: ray0,
-    dir,
-  };
-
-  return r;
 }

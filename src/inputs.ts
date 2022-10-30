@@ -1,5 +1,6 @@
 import { Canvas, CanvasDef } from "./canvas.js";
 import { Component, EM, EntityManager } from "./entity-manager.js";
+import { vec2 } from "./gl-matrix.js";
 import { clamp } from "./math.js";
 
 // Consider: https://www.reddit.com/r/gamedev/comments/w1dau6/input_buffering_action_canceling_and_also/
@@ -13,6 +14,7 @@ export const InputsDef = EM.defineComponent("inputs", () => {
     mouseMovY: 0,
     mousePosX: 0,
     mousePosY: 0,
+    mousePos: vec2.create(),
     lclick: false,
     rclick: false,
     keyClicks: {} as { [key: string]: number },
@@ -78,6 +80,7 @@ function createInputsReader(canvas: Canvas): () => Inputs {
   let accumulated_mouseMovY = 0;
   let lastMouseX = 0;
   let lastMouseY = 0;
+  let lastMouse: vec2 = vec2.create();
   window.addEventListener(
     "mousemove",
     (ev) => {
@@ -92,6 +95,7 @@ function createInputsReader(canvas: Canvas): () => Inputs {
         lastMouseY += ev.movementY;
         lastMouseY = clamp(lastMouseY, 0, canvas.canvas.clientHeight);
       }
+      vec2.set(lastMouse, lastMouseX, lastMouseY);
     },
     false
   );
@@ -149,6 +153,7 @@ function createInputsReader(canvas: Canvas): () => Inputs {
       mouseMovY,
       mousePosX: lastMouseX,
       mousePosY: lastMouseY,
+      mousePos: lastMouse,
       lclick: lClicks > 0,
       rclick: rClicks > 0,
       keyDowns,

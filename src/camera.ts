@@ -44,6 +44,7 @@ export const CameraViewDef = EM.defineComponent("cameraView", () => {
     width: 100,
     height: 100,
     viewProjMat: mat4.create(),
+    invViewProjMat: mat4.create(),
     location: vec3.create(),
   };
 });
@@ -178,8 +179,8 @@ export function registerCameraSystems(em: EntityManager) {
       cameraView.aspectRatio = Math.abs(
         htmlCanvas.canvas.width / htmlCanvas.canvas.height
       );
-      cameraView.width = htmlCanvas.canvas.width;
-      cameraView.height = htmlCanvas.canvas.height;
+      cameraView.width = htmlCanvas.canvas.clientWidth;
+      cameraView.height = htmlCanvas.canvas.clientHeight;
 
       let viewMatrix = mat4.create();
       if (targetEnt) {
@@ -247,6 +248,10 @@ export function registerCameraSystems(em: EntityManager) {
       ) as Float32Array;
 
       cameraView.viewProjMat = viewProj;
+      cameraView.invViewProjMat = mat4.invert(
+        cameraView.invViewProjMat,
+        cameraView.viewProjMat
+      );
     },
     "updateCameraView"
   );

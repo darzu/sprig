@@ -1,8 +1,10 @@
+import { CameraView } from "./camera.js";
 import { ColorDef } from "./color-ecs.js";
 import { EM, Entity, EntityW } from "./entity-manager.js";
 import { AssetsDef } from "./game/assets.js";
-import { vec3 } from "./gl-matrix.js";
-import { getLineEnd, Line } from "./physics/broadphase.js";
+import { vec2, vec3 } from "./gl-matrix.js";
+import { mathMap } from "./math.js";
+import { getLineEnd, Line, Ray } from "./physics/broadphase.js";
 import { PositionDef, ScaleDef } from "./physics/transform.js";
 import { MeshHandle } from "./render/mesh-pool.js";
 import { Mesh } from "./render/mesh.js";
@@ -109,4 +111,34 @@ export async function randomizeMeshColors(e: Entity) {
   for (let c of mesh.colors)
     vec3.set(c, Math.random(), Math.random(), Math.random());
   res.renderer.renderer.stdPool.updateMeshVertices(meshH, mesh);
+}
+
+export function screenPosToWorldPos(
+  out: vec3,
+  screenPos: vec2,
+  cameraView: CameraView,
+  screenDepth: number = 0
+): vec3 {
+  const invViewProj = cameraView.invViewProjMat;
+
+  const viewX = mathMap(screenPos[0], 0, cameraView.width, -1, 1);
+  const viewY = mathMap(screenPos[1], 0, cameraView.height, 1, -1);
+  const viewPos3 = vec3.set(tempVec3(), viewX, viewY, screenDepth);
+
+  return vec3.transformMat4(out, viewPos3, invViewProj);
+}
+
+export function screenPosToRay(screenPos: vec2, cameraView: CameraView): Ray {
+  const origin = screenPosToWorldPos(vec3.create(), screenPos, cameraView, -1);
+  const target = screenPosToWorldPos(tempVec3(), screenPos, cameraView, 0);
+
+  const dir = vec3.sub(vec3.create(), target, origin);
+  vec3.normalize(dir, dir);
+
+  const r: Ray = {
+    org: origin,
+    dir,
+  };
+
+  return r;
 }

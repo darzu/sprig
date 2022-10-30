@@ -54,9 +54,10 @@ export function mathMap(
   outMin: number,
   outMax: number
 ): number {
-  assert(inMin < inMax, "must be: inMin < inMax");
-  assert(outMin <= outMax, "must be: outMin <= outMax");
-  assert(inMin <= n && n <= inMax, "must be: inMin <= n && n <= inMax");
+  // TODO(@darzu): actually, this works even if inMin > inMax, and/or outMin > outMax. idk why
+  // assert(inMin < inMax, "must be: inMin < inMax");
+  // assert(outMin <= outMax, "must be: outMin <= outMax");
+  // assert(inMin <= n && n <= inMax, "must be: inMin <= n && n <= inMax");
   const progress = (n - inMin) / (inMax - inMin);
   return progress * (outMax - outMin) + outMin;
 }
