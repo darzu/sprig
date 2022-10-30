@@ -284,3 +284,18 @@ export function createIntervalTracker(maxSep: number) {
     finishInterval,
   };
 }
+
+// Takes in a bounding width/height (e.g. viewport width/height), the aspect-ratio
+//   of a child rectangle we want to enclose, and returns the maximum child rectangle
+//   width that can be bound and maintain its aspect ratio.
+export function boxInBox(
+  boundW: number,
+  boundH: number,
+  childAR: number
+): number {
+  const boundAR = boundW / boundH;
+  // smaller aspect-ratio means "more portrait", so we're width-constrained
+  if (boundAR < childAR) return boundW;
+  // larger aspect-ratio means "more landscape", so we're height-constrained
+  else return boundH * childAR;
+}

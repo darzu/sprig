@@ -1,5 +1,6 @@
-import { CanvasDef } from "./canvas.js";
+import { Canvas, CanvasDef } from "./canvas.js";
 import { Component, EM, EntityManager } from "./entity-manager.js";
+import { clamp } from "./math.js";
 
 // Consider: https://www.reddit.com/r/gamedev/comments/w1dau6/input_buffering_action_canceling_and_also/
 
@@ -28,7 +29,7 @@ export function registerInputsSystem(em: EntityManager): void {
     null,
     [InputsDef, CanvasDef],
     (_: [], { inputs, htmlCanvas }) => {
-      if (!inputsReader) inputsReader = createInputsReader(htmlCanvas.canvas);
+      if (!inputsReader) inputsReader = createInputsReader(htmlCanvas);
       // TODO(@darzu): handle pause and menus?
       Object.assign(inputs, inputsReader());
     },
@@ -36,7 +37,7 @@ export function registerInputsSystem(em: EntityManager): void {
   );
 }
 
-function createInputsReader(canvas: HTMLCanvasElement): () => Inputs {
+function createInputsReader(canvas: Canvas): () => Inputs {
   // track which keys are pressed for use in the game loop
   const keyDowns: { [keycode: string]: boolean } = {};
   const accumulated_keyClicks: { [keycode: string]: number } = {};
@@ -82,8 +83,15 @@ function createInputsReader(canvas: HTMLCanvasElement): () => Inputs {
     (ev) => {
       accumulated_mouseMovX += ev.movementX;
       accumulated_mouseMovY += ev.movementY;
-      lastMouseX = ev.offsetX;
-      lastMouseY = ev.offsetY;
+      if (!canvas.hasMouseLock()) {
+        lastMouseX = ev.clientX;
+        lastMouseY = ev.clientY;
+      } else {
+        lastMouseX += ev.movementX;
+        lastMouseX = clamp(lastMouseX, 0, canvas.canvas.clientWidth);
+        lastMouseY += ev.movementY;
+        lastMouseY = clamp(lastMouseY, 0, canvas.canvas.clientHeight);
+      }
     },
     false
   );

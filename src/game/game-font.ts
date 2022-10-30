@@ -3,13 +3,10 @@ import { CanvasDef } from "../canvas.js";
 import { ColorDef } from "../color-ecs.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { vec3, quat, mat4 } from "../gl-matrix.js";
+import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
-import { ColliderDef } from "../physics/collider.js";
-import { AngularVelocityDef } from "../physics/motion.js";
-import { WorldFrameDef } from "../physics/nonintersection.js";
-import { PositionDef, RotationDef } from "../physics/transform.js";
+import { PositionDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
-import { cloneMesh, transformMesh } from "../render/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -18,9 +15,6 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { tempVec3, tempQuat, tempMat4 } from "../temp-pool.js";
-import { dbgLogOnce } from "../util.js";
-import { randNormalPosVec3, randNormalVec3 } from "../utils-3d.js";
 import { AssetsDef, makePlaneMesh } from "./assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { createGhost, gameplaySystems } from "./game.js";
@@ -108,19 +102,30 @@ export async function initFontEditor(em: EntityManager) {
   }
 }
 
-function initCamera() {
+async function initCamera() {
   {
     const camera = EM.addSingletonComponent(CameraDef);
     camera.fov = Math.PI * 0.5;
     camera.targetId = 0;
   }
 
+  // TODO(@darzu): mouse lock?
+  // EM.whenResources(CanvasDef).then((canvas) => canvas.htmlCanvas.unlockMouse());
+
+  const cursor = EM.newEntity();
+  EM.ensureComponentOn(cursor, ColorDef, [0.1, 0.1, 0.1]);
+  EM.ensureComponentOn(cursor, PositionDef, [0, 0, 0]);
+  {
+    const { assets } = await EM.whenResources(AssetsDef);
+    EM.ensureComponentOn(cursor, RenderableConstructDef, assets.cube.proto);
+  }
+
   EM.registerSystem(
     null,
-    [CameraViewDef, CanvasDef, CameraDef],
-    (_, res) => {
+    [CameraViewDef, CanvasDef, CameraDef, InputsDef],
+    async (_, res) => {
       // TODO(@darzu):IMPL
-      const { cameraView, htmlCanvas } = res;
+      const { cameraView, htmlCanvas, inputs } = res;
 
       if (res.camera.targetId) return;
 
@@ -131,10 +136,10 @@ function initCamera() {
       cameraView.width = htmlCanvas.canvas.width;
       cameraView.height = htmlCanvas.canvas.height;
 
-      dbgLogOnce(
-        `ar${cameraView.aspectRatio.toFixed(2)}`,
-        `ar ${cameraView.aspectRatio.toFixed(2)}`
-      );
+      // dbgLogOnce(
+      //   `ar${cameraView.aspectRatio.toFixed(2)}`,
+      //   `ar ${cameraView.aspectRatio.toFixed(2)}`
+      // );
 
       let viewMatrix = mat4.create();
 
@@ -147,11 +152,73 @@ function initCamera() {
 
       // TODO(@darzu): PRESERVE ASPECT RATIO!
       const VIEW_PAD = PANEL_W / 12;
-      const halfW = PANEL_W * 0.5 + VIEW_PAD;
-      const halfH = PANEL_H * 0.5 + VIEW_PAD;
-      // const ORTHO_SIZE = 20;
-      // TODO(@darzu): i don't understand the near/far clipping; why can't they be -4, 4 ?
-      mat4.ortho(projectionMatrix, -halfW, halfW, -halfH, halfH, -24, 12);
+
+      const padPanelW = PANEL_W + VIEW_PAD * 2;
+      const padPanelH = PANEL_H + VIEW_PAD * 2;
+
+      const padPanelAR = padPanelW / padPanelH;
+      const cameraAR = cameraView.width / cameraView.height;
+
+      // const maxPanelW = boxInBox(cameraView.width, cameraView.height, panelAR);
+
+      let adjPanelW: number;
+      let adjPanelH: number;
+      if (cameraAR < padPanelAR) {
+        // camera is "more portrait" than panel, thus we're width-constrained
+        adjPanelW = padPanelW;
+        adjPanelH = adjPanelW * (1 / cameraAR);
+      } else {
+        // conversely, we're height-constrained
+        adjPanelH = padPanelH;
+        adjPanelW = adjPanelH * cameraAR;
+      }
+
+      let cursorFracX = inputs.mousePosX / htmlCanvas.canvas.clientWidth;
+      let cursorFracY = inputs.mousePosY / htmlCanvas.canvas.clientHeight;
+      let cursorViewX = cursorFracX * adjPanelW;
+      let cursorViewY = cursorFracY * adjPanelH;
+      let cursorWorldX =
+        cursorViewX - (adjPanelW - PANEL_W) * 0.5 - PANEL_W * 0.5;
+      let cursorWorldZ =
+        cursorViewY - (adjPanelH - PANEL_H) * 0.5 - PANEL_H * 0.5;
+
+      cursor.position[0] = cursorWorldX;
+      cursor.position[2] = cursorWorldZ;
+
+      // TODO(@darzu): pain on surface
+
+      if (inputs.lclick) {
+        // console.dir({
+        //   cursorFracX,
+        //   cursorFracY,
+        //   cursorViewX,
+        //   cursorViewY,
+        //   cursorWorldX,
+        //   cursorWorldZ,
+        // });
+
+        // TODO(@darzu):
+        const { assets } = await EM.whenResources(AssetsDef);
+        const b1 = EM.newEntity();
+        EM.ensureComponentOn(b1, RenderableConstructDef, assets.cube.proto);
+        EM.ensureComponentOn(b1, ColorDef, [
+          mathMap(cursorFracX, 0, 1, 0.05, 0.8),
+          0,
+          mathMap(cursorFracY, 0, 1, 0.05, 0.8),
+        ]);
+        EM.ensureComponentOn(b1, PositionDef, [cursorWorldX, 0, cursorWorldZ]);
+      }
+
+      // TODO(@darzu): i don't understand the near/far clipping; why can't they be like -4, 4 ?
+      mat4.ortho(
+        projectionMatrix,
+        -adjPanelW * 0.5,
+        adjPanelW * 0.5,
+        -adjPanelH * 0.5,
+        adjPanelH * 0.5,
+        -24,
+        12
+      );
 
       const viewProj = mat4.multiply(
         mat4.create(),
