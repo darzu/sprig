@@ -3,10 +3,12 @@ import { CanvasDef } from "../canvas.js";
 import { ColorDef } from "../color-ecs.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { vec3, quat, mat4 } from "../gl-matrix.js";
+import { meshToHalfEdgePoly } from "../half-edge.js";
 import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
 import { PositionDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
+import { Mesh, RawMesh, scaleMesh, scaleMesh3 } from "../render/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -16,8 +18,9 @@ import {
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import { tempVec2, tempVec3 } from "../temp-pool.js";
+import { randNormalPosVec3 } from "../utils-3d.js";
 import { screenPosToWorldPos } from "../utils-game.js";
-import { AssetsDef, makePlaneMesh } from "./assets.js";
+import { AssetsDef, BLACK, makePlaneMesh } from "./assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { createGhost, gameplaySystems } from "./game.js";
 
@@ -71,21 +74,21 @@ export async function initFontEditor(em: EntityManager) {
   // em.ensureComponentOn(panel, ColorDef, [0.2, 0.3, 0.2]);
   em.ensureComponentOn(panel, PositionDef, [0, 0, 0]);
 
-  for (let x of [-1, 0, 1])
-    for (let z of [-1, 0, 1]) {
-      const b1 = em.newEntity();
-      em.ensureComponentOn(b1, RenderableConstructDef, res.assets.cube.proto);
-      em.ensureComponentOn(b1, ColorDef, [
-        mathMap(x, -1, 1, 0.05, 0.8),
-        0,
-        mathMap(z, -1, 1, 0.05, 0.8),
-      ]);
-      em.ensureComponentOn(b1, PositionDef, [
-        PANEL_W * 0.5 * x,
-        0,
-        PANEL_H * 0.5 * z,
-      ]);
-    }
+  // for (let x of [-1, 0, 1])
+  //   for (let z of [-1, 0, 1]) {
+  //     const b1 = em.newEntity();
+  //     em.ensureComponentOn(b1, RenderableConstructDef, res.assets.cube.proto);
+  //     em.ensureComponentOn(b1, ColorDef, [
+  //       mathMap(x, -1, 1, 0.05, 0.8),
+  //       0,
+  //       mathMap(z, -1, 1, 0.05, 0.8),
+  //     ]);
+  //     em.ensureComponentOn(b1, PositionDef, [
+  //       PANEL_W * 0.5 * x,
+  //       0,
+  //       PANEL_H * 0.5 * z,
+  //     ]);
+  //   }
 
   if (DBG_3D) {
     const g = createGhost();
@@ -112,7 +115,7 @@ async function initCamera() {
   }
 
   // TODO(@darzu): mouse lock?
-  // EM.whenResources(CanvasDef).then((canvas) => canvas.htmlCanvas.unlockMouse());
+  EM.whenResources(CanvasDef).then((canvas) => canvas.htmlCanvas.unlockMouse());
 
   const cursor = EM.newEntity();
   EM.ensureComponentOn(cursor, ColorDef, [0.1, 0.1, 0.1]);
@@ -262,4 +265,44 @@ async function initCamera() {
   );
 
   gameplaySystems.push("uiCameraView");
+
+  // testHalfEdge
+  {
+    const mesh: Mesh = {
+      quad: [
+        [0, 3, 4, 1],
+        [3, 5, 6, 4],
+      ],
+      tri: [
+        [2, 3, 0],
+        [5, 3, 2],
+      ],
+      pos: [
+        [0, 0, 0],
+        [1, 0, 0],
+        [-1, 0, 1],
+        [0, 0, 1],
+        [1, 0, 1],
+        [0, 0, 2],
+        [1, 0, 2],
+      ],
+      colors: [
+        randNormalPosVec3(),
+        randNormalPosVec3(),
+        randNormalPosVec3(),
+        randNormalPosVec3(),
+      ],
+      surfaceIds: [1, 2, 3, 4],
+      usesProvoking: true,
+    };
+    scaleMesh(mesh, 4);
+
+    // const { assets } = await EM.whenResources(AssetsDef);
+    const ent = EM.newEntity();
+    EM.ensureComponentOn(ent, RenderableConstructDef, mesh);
+    EM.ensureComponentOn(ent, PositionDef, [0, 0.1, 0]);
+
+    const he = meshToHalfEdgePoly(mesh);
+    // console.dir(he);
+  }
 }

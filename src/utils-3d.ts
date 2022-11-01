@@ -24,7 +24,8 @@ export function randNormalVec3(out: vec3) {
   return out;
 }
 
-export function randNormalPosVec3(out: vec3) {
+export function randNormalPosVec3(out?: vec3) {
+  if (!out) out = vec3.create();
   vec3.set(out, Math.random(), Math.random(), Math.random());
   vec3.normalize(out, out);
   return out;

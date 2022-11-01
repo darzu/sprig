@@ -1522,3 +1522,7 @@ Big question: how do user shaders work with Nanite?
 
 "Please stop using screen-space reflections [...]"
   ray tracing or cube map under the water
+
+Half-edge data structures:
+  http://15462.courses.cs.cmu.edu/fall2018/lecture/meshes/slide_028
+

@@ -1278,3 +1278,8 @@ To play:
 
 Boat building inspiration:
   https://www.youtube.com/watch?v=ES80TIAjJog
+
+Philosophy:
+  The best programming language/ide/tool/etc is the one that shows you the problem
+  with your idea quickest.
+  Productivity is just problem solving + overhead.
