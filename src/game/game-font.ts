@@ -3,7 +3,7 @@ import { CanvasDef } from "../canvas.js";
 import { ColorDef } from "../color-ecs.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { vec3, quat, mat4 } from "../gl-matrix.js";
-import { meshToHalfEdgePoly } from "../half-edge.js";
+import { extrudeQuad, meshToHalfEdgePoly } from "../half-edge.js";
 import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
 import { PositionDef } from "../physics/transform.js";
@@ -26,7 +26,7 @@ import { createGhost, gameplaySystems } from "./game.js";
 
 // TODO(@darzu): 2D editor!
 
-const DBG_3D = false;
+const DBG_3D = true; // TODO(@darzu): add in-game smooth transition!
 
 const PANEL_W = 4 * 12;
 const PANEL_H = 3 * 12;
@@ -115,7 +115,10 @@ async function initCamera() {
   }
 
   // TODO(@darzu): mouse lock?
-  EM.whenResources(CanvasDef).then((canvas) => canvas.htmlCanvas.unlockMouse());
+  if (!DBG_3D)
+    EM.whenResources(CanvasDef).then((canvas) =>
+      canvas.htmlCanvas.unlockMouse()
+    );
 
   const cursor = EM.newEntity();
   EM.ensureComponentOn(cursor, ColorDef, [0.1, 0.1, 0.1]);
@@ -297,12 +300,17 @@ async function initCamera() {
     };
     scaleMesh(mesh, 4);
 
-    // const { assets } = await EM.whenResources(AssetsDef);
-    const ent = EM.newEntity();
-    EM.ensureComponentOn(ent, RenderableConstructDef, mesh);
-    EM.ensureComponentOn(ent, PositionDef, [0, 0.1, 0]);
+    const hp = meshToHalfEdgePoly(mesh);
+    console.dir(hp);
 
-    const he = meshToHalfEdgePoly(mesh);
-    // console.dir(he);
+    const outerHes = hp.edges.filter((h) => !h.face)!;
+    const newHes = outerHes.map((he) => extrudeQuad(hp, he));
+    newHes.forEach((he, i) => {
+      vec3.set(mesh.colors[he.fi], i / newHes.length, 0.05, 0.05);
+    });
+
+    const ent0 = EM.newEntity();
+    EM.ensureComponentOn(ent0, RenderableConstructDef, mesh);
+    EM.ensureComponentOn(ent0, PositionDef, [0, 1, 0]);
   }
 }

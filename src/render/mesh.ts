@@ -12,8 +12,13 @@ import { arraySortedEqual, arrayUnsortedEqual } from "../util.js";
 import { vec3Dbg, vec3Mid } from "../utils-3d.js";
 import { drawBall, drawLine } from "../utils-game.js";
 
+// TODO(@darzu): NEEDS REFACTOR. we need to rethink these whole mesh family of objects;
+//    consider meshes that do aond don't need uvs, surface ids, tangents, normals
+//    consider half-edge meshes, line meshes, tri-only
+//    consider non-provoking meshes
+//    Raw vs not is hacky..
+
 // defines the geometry and coloring of a mesh
-// TODO(@darzu): we need to rethink theis whole mesh family of objects
 // geometry: pos, tri, quad, lines,
 // geo-data: colors, uvs, surfaceIds,
 // metadata: dbgName,
