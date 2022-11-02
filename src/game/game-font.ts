@@ -18,7 +18,7 @@ import {
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import { tempVec2, tempVec3 } from "../temp-pool.js";
-import { randNormalPosVec3 } from "../utils-3d.js";
+import { randNormalPosVec3, randNormalVec3 } from "../utils-3d.js";
 import { screenPosToWorldPos } from "../utils-game.js";
 import { AssetsDef, BLACK, makePlaneMesh } from "./assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";
@@ -303,11 +303,23 @@ async function initCamera() {
     const hp = meshToHalfEdgePoly(mesh);
     console.dir(hp);
 
-    const outerHes = hp.edges.filter((h) => !h.face)!;
-    const newHes = outerHes.map((he) => extrudeQuad(hp, he));
-    newHes.forEach((he, i) => {
-      vec3.set(mesh.colors[he.fi], i / newHes.length, 0.05, 0.05);
-    });
+    {
+      const outerHes = hp.edges.filter((h) => !h.face)!;
+      const newHes = outerHes.map((he) => extrudeQuad(hp, he));
+      newHes.forEach((he, i) => {
+        // vec3.set(mesh.colors[he.fi], 0.6, 0.05, 0.05);
+        randNormalVec3(mesh.colors[he.fi]);
+      });
+    }
+    console.dir(hp);
+    {
+      const outerHes = hp.edges.filter((h) => !h.face)!;
+      const newHes = outerHes.map((he) => extrudeQuad(hp, he));
+      newHes.forEach((he, i) => {
+        // vec3.set(mesh.colors[he.fi], 0.05, 0.05, 0.6);
+        randNormalVec3(mesh.colors[he.fi]);
+      });
+    }
 
     const ent0 = EM.newEntity();
     EM.ensureComponentOn(ent0, RenderableConstructDef, mesh);

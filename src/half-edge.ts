@@ -3,6 +3,7 @@ import { BLACK } from "./game/assets.js";
 import { vec3 } from "./gl-matrix.js";
 import { hexAvg } from "./hex.js";
 import { RawMesh } from "./render/mesh.js";
+import { tempVec3 } from "./temp-pool.js";
 import { assert, assertDbg, edges, range } from "./util.js";
 import { vec3Dbg } from "./utils-3d.js";
 
@@ -279,6 +280,15 @@ export function extrudeQuad(hp: HPoly, he: HEdge): HFace {
   vec3.sub(p1, p1a, p1b);
   vec3.add(p1, p1, p1a);
 
+  // move positions so they're the same length as the original edge
+  const len = vec3.dist(p0a, p1a);
+  const p01 = vec3.sub(tempVec3(), p0, p1);
+  const len2 = vec3.length(p01);
+  const lenScale = (len2 - len) / (2 * len2);
+  vec3.scale(p01, p01, lenScale);
+  vec3.sub(p0, p0, p01);
+  vec3.add(p1, p1, p01);
+
   // start verts
   const vi0 = hp.mesh.pos.push(p0) - 1;
   const v0: HVert_ = { vi: vi0 };
@@ -296,9 +306,9 @@ export function extrudeQuad(hp: HPoly, he: HEdge): HFace {
   const hi0: HEdge_ = { face: f, orig: v0a, prev: he };
   const hi01: HEdge_ = { face: f, orig: v0, prev: hi0 };
   const hi1: HEdge_ = { face: f, orig: v1, prev: hi01 };
-  const ho1: HEdge_ = { face: f, orig: v1a, prev: undefined };
-  const ho01: HEdge_ = { face: f, orig: v1, prev: ho1 };
-  const ho0: HEdge_ = { face: f, orig: v0, prev: ho01 };
+  const ho1: HEdge_ = { face: undefined, orig: v1a, prev: undefined };
+  const ho01: HEdge_ = { face: undefined, orig: v1, prev: ho1 };
+  const ho0: HEdge_ = { face: undefined, orig: v0, prev: ho01 };
 
   // patch up outer connections
   ho1.prev = he.prev;
