@@ -4,7 +4,8 @@ import { ColorDef } from "../color-ecs.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { vec3, quat, mat4, vec2 } from "../gl-matrix.js";
 import { extrudeQuad, meshToHalfEdgePoly } from "../half-edge.js";
-import { InputsDef } from "../inputs.js";
+import { onInit } from "../init.js";
+import { InputsDef, MouseDragDef } from "../inputs.js";
 import { mathMap } from "../math.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
@@ -325,68 +326,42 @@ async function initCamera() {
       assets.cube.aabb.min
     )
   );
-  console.dir(dragBoxMesh);
   EM.ensureComponentOn(dragBox, RenderableConstructDef, dragBoxMesh);
   EM.ensureComponentOn(dragBox, PositionDef, [0, 0, 0]);
   EM.ensureComponentOn(dragBox, ScaleDef, [1, 1, 1]);
   EM.ensureComponentOn(dragBox, ColorDef, [0.4, 0.1, 0.1]);
 
-  let isDragging = false;
-  let dragStart = vec2.create();
   EM.registerSystem(
     null,
-    [InputsDef, CameraViewDef],
-    (_, { inputs, cameraView }) => {
-      let isDragEnd = false;
-      // TODO(@darzu): impl
-      if (inputs.ldown && !isDragging) {
-        // drag start
-        isDragging = true;
-        vec2.copy(dragStart, inputs.mousePos);
-      } else if (!inputs.ldown && isDragging) {
-        // drag stop
-        isDragging = false;
-        isDragEnd = true;
-      }
-
+    [MouseDragDef, CameraViewDef],
+    (_, { mousedrag, cameraView }) => {
       // show drag box
-      if (isDragging) {
-        // TODO(@darzu): SHOW DRAG BOX
-        const start = screenPosToWorldPos(tempVec3(), dragStart, cameraView);
-        const end = screenPosToWorldPos(
+      if (mousedrag.isDragging) {
+        const min = screenPosToWorldPos(
           tempVec3(),
-          inputs.mousePos,
+          mousedrag.dragMin,
           cameraView
         );
-        const min = vec3.set(
+        min[1] = 0;
+        const max = screenPosToWorldPos(
           tempVec3(),
-          Math.min(start[0], end[0]),
-          0,
-          Math.min(start[2], end[2])
+          mousedrag.dragMax,
+          cameraView
         );
-        const max = vec3.set(
-          tempVec3(),
-          Math.max(start[0], end[0]),
-          1,
-          Math.max(start[2], end[2])
-        );
+        max[1] = 1;
+
+        // console.log(vec3Dbg(min));
+        // console.log(vec3Dbg(max));
 
         const size = vec3.sub(tempVec3(), max, min);
-
-        // console.log(vec3Dbg(start));
-        // console.log(vec3Dbg(end));
-        // console.log(vec3Dbg(size));
         vec3.copy(dragBox.position, min);
         vec3.copy(dragBox.scale, size);
 
-        // TODO(@darzu): DBG
-        // vec3.set(dragBox.scale, 2, 2, 2);
-        // console.log(`dragBox`);
-        // console.log(vec3Dbg(dragBox.position));
-        // console.log(vec3Dbg(dragBox.scale));
+        console.log(vec3Dbg(dragBox.position));
+        console.log(vec3Dbg(dragBox.scale));
       }
     },
-    "hpolyManipulate"
+    "dragBox"
   );
-  gameplaySystems.push("hpolyManipulate");
+  gameplaySystems.push("dragBox");
 }

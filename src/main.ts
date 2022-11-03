@@ -42,6 +42,7 @@ function callFixedTimestepSystems() {
   //    - uncalled systems maybe should give a warning? Or at least a one-time read out.
   //    - Lets use types for this. String matching the name is brittle and unnessessary
   EM.callSystem("inputs");
+  EM.callSystem("mouseDrag");
   // EM.callSystem("getStatsFromNet");
   // EM.callSystem("getEventsFromNet");
   // EM.callSystem("sendEventsToNet");
@@ -217,7 +218,6 @@ async function startGame(localPeerName: string, host: string | null) {
 
   addEventComponents(EM);
 
-  EM.addSingletonComponent(InputsDef);
   registerInputsSystem(EM);
 
   if (GAME === "gjk") initGJKSandbox(EM, hosting);
