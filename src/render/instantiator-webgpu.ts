@@ -480,10 +480,29 @@ export function createCyResources(
     if (isRenderPipelinePtr(p)) {
       const output = normalizeColorAttachments(p.output);
 
-      // TODO(@darzu): support blend modes
       const targets: GPUColorTargetState[] = output.map((o) => {
+        // TODO(@darzu): support configuring blend modes!
+        let blend: GPUBlendState | undefined = undefined;
+        if (o.ptr.format === "rgba16float" && false) {
+          // TODO(@darzu): this is a stub. Needs cooperation w/ depth buffer.
+          //   see: https://gpuweb.github.io/gpuweb/#blend-state
+          blend = {
+            color: {
+              srcFactor: "one",
+              dstFactor: "zero",
+              operation: "add",
+            },
+            alpha: {
+              srcFactor: "one",
+              dstFactor: "zero",
+              operation: "add",
+            },
+          };
+        }
+
         return {
           format: o.ptr.format,
+          blend,
         };
       });
 
