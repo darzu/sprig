@@ -204,8 +204,8 @@ async function initCamera() {
         cameraView.viewProjMat
       );
 
-      let cursorFracX = inputs.mousePosX / htmlCanvas.canvas.clientWidth;
-      let cursorFracY = inputs.mousePosY / htmlCanvas.canvas.clientHeight;
+      let cursorFracX = inputs.mousePos[0] / htmlCanvas.canvas.clientWidth;
+      let cursorFracY = inputs.mousePos[1] / htmlCanvas.canvas.clientHeight;
       // let cursorViewX = cursorFracX * adjPanelW;
       // let cursorViewY = cursorFracY * adjPanelH;
       // let cursorWorldX =
@@ -325,4 +325,14 @@ async function initCamera() {
     EM.ensureComponentOn(ent0, RenderableConstructDef, mesh);
     EM.ensureComponentOn(ent0, PositionDef, [0, 1, 0]);
   }
+
+  EM.registerSystem(
+    null,
+    [CameraViewDef, CanvasDef, CameraDef, InputsDef],
+    async (_, res) => {
+      // TODO(@darzu): impl
+    },
+    "hpolyManipulate"
+  );
+  gameplaySystems.push("hpolyManipulate");
 }

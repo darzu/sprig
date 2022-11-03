@@ -109,7 +109,7 @@ export function registerControllableSystems(em: EntityManager) {
           quat.rotateY(
             c.rotation,
             c.rotation,
-            -res.inputs.mouseMovX * c.controllable.turnSpeed
+            -res.inputs.mouseMov[0] * c.controllable.turnSpeed
           );
       }
     },
@@ -130,11 +130,11 @@ export function registerControllableSystems(em: EntityManager) {
         // TODO(@darzu): probably need to use yaw-pitch :(
         if (c.controllable.modes.canCameraYaw) {
           c.cameraFollow.yawOffset +=
-            -res.inputs.mouseMovX * c.controllable.turnSpeed;
+            -res.inputs.mouseMov[0] * c.controllable.turnSpeed;
         }
         if (c.controllable.modes.canPitch)
           c.cameraFollow.pitchOffset +=
-            -res.inputs.mouseMovY * c.controllable.turnSpeed;
+            -res.inputs.mouseMov[1] * c.controllable.turnSpeed;
       }
     },
     "controllableCameraFollow"

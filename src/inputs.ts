@@ -4,19 +4,19 @@ import { vec2 } from "./gl-matrix.js";
 import { clamp } from "./math.js";
 
 // Consider: https://www.reddit.com/r/gamedev/comments/w1dau6/input_buffering_action_canceling_and_also/
+// TODO(@darzu): needs refactor to address: events, controller vs mouse+keyboard, keybindings
 
 const DEBUG_INPUTS = false as const;
 const _seenKeyCodes: Set<string> = new Set();
 
 export const InputsDef = EM.defineComponent("inputs", () => {
   return {
-    mouseMovX: 0,
-    mouseMovY: 0,
-    mousePosX: 0,
-    mousePosY: 0,
+    mouseMov: vec2.create(),
     mousePos: vec2.create(),
+    // TODO(@darzu): need rising edge vs falling edge distinction
     lclick: false,
     rclick: false,
+    // TODO(@darzu): we might need a better way to track and think about events
     keyClicks: {} as { [key: string]: number },
     keyDowns: {} as { [key: string]: boolean },
   };
@@ -76,34 +76,30 @@ function createInputsReader(canvas: Canvas): () => Inputs {
   }
 
   // track mouse movement for use in the game loop
-  let accumulated_mouseMovX = 0;
-  let accumulated_mouseMovY = 0;
-  let lastMouseX = 0;
-  let lastMouseY = 0;
+  let accumulated_mouseMov = vec2.create();
   let lastMouse: vec2 = vec2.create();
   window.addEventListener(
     "mousemove",
     (ev) => {
-      accumulated_mouseMovX += ev.movementX;
-      accumulated_mouseMovY += ev.movementY;
+      accumulated_mouseMov[0] += ev.movementX;
+      accumulated_mouseMov[1] += ev.movementY;
       if (!canvas.hasMouseLock()) {
-        lastMouseX = ev.clientX;
-        lastMouseY = ev.clientY;
+        lastMouse[0] = ev.clientX;
+        lastMouse[1] = ev.clientY;
       } else {
-        lastMouseX += ev.movementX;
-        lastMouseX = clamp(lastMouseX, 0, canvas.canvas.clientWidth);
-        lastMouseY += ev.movementY;
-        lastMouseY = clamp(lastMouseY, 0, canvas.canvas.clientHeight);
+        lastMouse[0] += ev.movementX;
+        lastMouse[0] = clamp(lastMouse[0], 0, canvas.canvas.clientWidth);
+        lastMouse[1] += ev.movementY;
+        lastMouse[1] = clamp(lastMouse[1], 0, canvas.canvas.clientHeight);
       }
-      vec2.set(lastMouse, lastMouseX, lastMouseY);
     },
     false
   );
-  function takeAccumulatedMouseMovement(): { x: number; y: number } {
-    const result = { x: accumulated_mouseMovX, y: accumulated_mouseMovY };
-    accumulated_mouseMovX = 0; // reset accumulators
-    accumulated_mouseMovY = 0;
-    return result;
+  let last_mouseMov = vec2.create();
+  function takeAccumulatedMouseMovement(): vec2 {
+    vec2.copy(last_mouseMov, accumulated_mouseMov);
+    vec2.zero(accumulated_mouseMov); // reset accumulators
+    return last_mouseMov;
   }
 
   // track mouse buttons
@@ -145,14 +141,11 @@ function createInputsReader(canvas: Canvas): () => Inputs {
   }
 
   function takeInputs(): Inputs {
-    const { x: mouseMovX, y: mouseMovY } = takeAccumulatedMouseMovement();
+    const mouseMov = takeAccumulatedMouseMovement();
     const { lClicks, rClicks } = takeAccumulatedMouseClicks();
     const keyClicks = takeAccumulatedKeyClicks();
     let inputs: Inputs = {
-      mouseMovX,
-      mouseMovY,
-      mousePosX: lastMouseX,
-      mousePosY: lastMouseY,
+      mouseMov,
       mousePos: lastMouse,
       lclick: lClicks > 0,
       rclick: rClicks > 0,

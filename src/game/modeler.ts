@@ -192,7 +192,7 @@ function registerAABBBuilder(em: EntityManager) {
       else res.modeler.mode = "";
 
       if (res.modeler.mode === "move" || res.modeler.mode === "scale") {
-        const delta = res.inputs.mouseMovX;
+        const delta = res.inputs.mouseMov[0];
         const dim = res.inputs.keyDowns["x"]
           ? 0
           : res.inputs.keyDowns["y"]
