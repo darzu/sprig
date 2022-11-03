@@ -16,6 +16,8 @@ export const InputsDef = EM.defineComponent("inputs", () => {
     // TODO(@darzu): need rising edge vs falling edge distinction
     lclick: false,
     rclick: false,
+    ldown: false,
+    rdown: false,
     // TODO(@darzu): we might need a better way to track and think about events
     keyClicks: {} as { [key: string]: number },
     keyDowns: {} as { [key: string]: boolean },
@@ -95,11 +97,10 @@ function createInputsReader(canvas: Canvas): () => Inputs {
     },
     false
   );
-  let last_mouseMov = vec2.create();
   function takeAccumulatedMouseMovement(): vec2 {
-    vec2.copy(last_mouseMov, accumulated_mouseMov);
+    const res = vec2.clone(accumulated_mouseMov);
     vec2.zero(accumulated_mouseMov); // reset accumulators
-    return last_mouseMov;
+    return res;
   }
 
   // track mouse buttons
@@ -108,7 +109,6 @@ function createInputsReader(canvas: Canvas): () => Inputs {
   let isLMouseDown = false;
   let isRMouseDown = false;
   window.addEventListener("mousedown", (ev) => {
-    // if (document.pointerLockElement === canvas) {
     if (ev.button === 0) {
       if (!isLMouseDown) accumulated_lClicks += 1;
       isLMouseDown = true;
@@ -116,17 +116,14 @@ function createInputsReader(canvas: Canvas): () => Inputs {
       if (!isRMouseDown) accumulated_rClicks += 1;
       isRMouseDown = true;
     }
-    // }
     return false;
   });
   window.addEventListener("mouseup", (ev) => {
-    // if (document.pointerLockElement === canvas) {
     if (ev.button === 0) {
       isLMouseDown = false;
     } else {
       isRMouseDown = false;
     }
-    // }
     return false;
   });
 
@@ -146,9 +143,11 @@ function createInputsReader(canvas: Canvas): () => Inputs {
     const keyClicks = takeAccumulatedKeyClicks();
     let inputs: Inputs = {
       mouseMov,
-      mousePos: lastMouse,
+      mousePos: vec2.clone(lastMouse),
       lclick: lClicks > 0,
       rclick: rClicks > 0,
+      ldown: isLMouseDown,
+      rdown: isRMouseDown,
       keyDowns,
       keyClicks,
     };

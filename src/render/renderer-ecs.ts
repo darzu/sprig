@@ -300,7 +300,7 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
   );
 }
 
-const _lastMeshHandlePos = new Map<number, vec3>();
+const _lastMeshHandleTransform = new Map<number, mat4>();
 const _lastMeshHandleHidden = new Map<number, boolean>();
 
 export function registerRenderer(em: EntityManager) {
@@ -374,14 +374,19 @@ export function registerRenderer(em: EntityManager) {
           // o.renderDataStd.id = o.renderable.meshHandle.mId;
 
           // transform
-          // TODO(@darzu): hACK! ONLY UPDATE UNIFORM IF WE"VE MOVED
-          let lastPos = _lastMeshHandlePos.get(o.renderable.meshHandle.mId);
-          const thisPos = o.rendererWorldFrame.position;
+          // TODO(@darzu): hACK! ONLY UPDATE UNIFORM IF WE"VE MOVED/SCALED/ROT OR COLOR CHANGED OR HIDDEN CHANGED
+          // TODO(@darzu): probably the less hacky way to do this is require uniforms provide a
+          //    hash function
+          let lastTran = _lastMeshHandleTransform.get(
+            o.renderable.meshHandle.mId
+          );
+          const thisTran = o.rendererWorldFrame.transform;
           if (
             hiddenChanged ||
             tintChange ||
-            !lastPos ||
-            vec3.sqrDist(lastPos, thisPos) > 0.01
+            !lastTran ||
+            !mat4.equals(lastTran, thisTran)
+            // vec3.sqrDist(lastTran, thisTran) > 0.01
           ) {
             if (!o.renderable.hidden)
               mat4.copy(
@@ -392,11 +397,14 @@ export function registerRenderer(em: EntityManager) {
               o.renderable.meshHandle,
               o.renderDataStd
             );
-            if (!lastPos) {
-              lastPos = vec3.create();
-              _lastMeshHandlePos.set(o.renderable.meshHandle.mId, lastPos);
+            if (!lastTran) {
+              lastTran = mat4.create();
+              _lastMeshHandleTransform.set(
+                o.renderable.meshHandle.mId,
+                lastTran
+              );
             }
-            vec3.copy(lastPos, thisPos);
+            mat4.copy(lastTran, thisTran);
           }
         } else if (RenderDataOceanDef.isOn(o)) {
           // color / tint

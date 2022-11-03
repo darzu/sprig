@@ -2,13 +2,20 @@ import { CameraDef, CameraViewDef } from "../camera.js";
 import { CanvasDef } from "../canvas.js";
 import { ColorDef } from "../color-ecs.js";
 import { EM, EntityManager } from "../entity-manager.js";
-import { vec3, quat, mat4 } from "../gl-matrix.js";
+import { vec3, quat, mat4, vec2 } from "../gl-matrix.js";
 import { extrudeQuad, meshToHalfEdgePoly } from "../half-edge.js";
 import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
-import { PositionDef } from "../physics/transform.js";
+import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
-import { Mesh, RawMesh, scaleMesh, scaleMesh3 } from "../render/mesh.js";
+import {
+  cloneMesh,
+  Mesh,
+  RawMesh,
+  scaleMesh,
+  scaleMesh3,
+  transformMesh,
+} from "../render/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -17,8 +24,8 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { tempVec2, tempVec3 } from "../temp-pool.js";
-import { randNormalPosVec3, randNormalVec3 } from "../utils-3d.js";
+import { tempMat4, tempVec2, tempVec3 } from "../temp-pool.js";
+import { randNormalPosVec3, randNormalVec3, vec3Dbg } from "../utils-3d.js";
 import { screenPosToWorldPos } from "../utils-game.js";
 import { AssetsDef, BLACK, makePlaneMesh } from "./assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";
@@ -26,7 +33,7 @@ import { createGhost, gameplaySystems } from "./game.js";
 
 // TODO(@darzu): 2D editor!
 
-const DBG_3D = true; // TODO(@darzu): add in-game smooth transition!
+const DBG_3D = false; // TODO(@darzu): add in-game smooth transition!
 
 const PANEL_W = 4 * 12;
 const PANEL_H = 3 * 12;
@@ -123,10 +130,8 @@ async function initCamera() {
   const cursor = EM.newEntity();
   EM.ensureComponentOn(cursor, ColorDef, [0.1, 0.1, 0.1]);
   EM.ensureComponentOn(cursor, PositionDef, [0, 0, 0]);
-  {
-    const { assets } = await EM.whenResources(AssetsDef);
-    EM.ensureComponentOn(cursor, RenderableConstructDef, assets.cube.proto);
-  }
+  const { assets } = await EM.whenResources(AssetsDef);
+  EM.ensureComponentOn(cursor, RenderableConstructDef, assets.cube.proto);
 
   EM.registerSystem(
     null,
@@ -204,48 +209,28 @@ async function initCamera() {
         cameraView.viewProjMat
       );
 
-      let cursorFracX = inputs.mousePos[0] / htmlCanvas.canvas.clientWidth;
-      let cursorFracY = inputs.mousePos[1] / htmlCanvas.canvas.clientHeight;
-      // let cursorViewX = cursorFracX * adjPanelW;
-      // let cursorViewY = cursorFracY * adjPanelH;
-      // let cursorWorldX =
-      //   cursorViewX - (adjPanelW - PANEL_W) * 0.5 - PANEL_W * 0.5;
-      // let cursorWorldZ =
-      //   cursorViewY - (adjPanelH - PANEL_H) * 0.5 - PANEL_H * 0.5;
+      // const cursorWorld = screenPosToWorldPos(
+      //   vec3.create(),
+      //   inputs.mousePos,
+      //   cameraView
+      // );
+      // cursorWorld[1] = 0;
+      // cursor.position[0] = cursorWorld[0];
+      // cursor.position[2] = cursorWorld[2];
 
-      const cursorWorld = screenPosToWorldPos(
-        vec3.create(),
-        inputs.mousePos,
-        cameraView
-      );
-      cursorWorld[1] = 0;
+      // TODO(@darzu): paint on surface
 
-      // cursor.position[0] = cursorWorldX;
-      // cursor.position[2] = cursorWorldZ;
-
-      // TODO(@darzu): pain on surface
-
-      if (inputs.lclick) {
-        // console.dir({
-        //   cursorFracX,
-        //   cursorFracY,
-        //   cursorViewX,
-        //   cursorViewY,
-        //   cursorWorldX,
-        //   cursorWorldZ,
-        // });
-
-        // TODO(@darzu):
-        const { assets } = await EM.whenResources(AssetsDef);
-        const b1 = EM.newEntity();
-        EM.ensureComponentOn(b1, RenderableConstructDef, assets.cube.proto);
-        EM.ensureComponentOn(b1, ColorDef, [
-          mathMap(cursorFracX, 0, 1, 0.05, 0.8),
-          0,
-          mathMap(cursorFracY, 0, 1, 0.05, 0.8),
-        ]);
-        EM.ensureComponentOn(b1, PositionDef, cursorWorld);
-      }
+      // if (inputs.lclick) {
+      //   const { assets } = await EM.whenResources(AssetsDef);
+      //   const b1 = EM.newEntity();
+      //   EM.ensureComponentOn(b1, RenderableConstructDef, assets.cube.proto);
+      //   EM.ensureComponentOn(b1, ColorDef, [
+      //     mathMap(cursorFracX, 0, 1, 0.05, 0.8),
+      //     0,
+      //     mathMap(cursorFracY, 0, 1, 0.05, 0.8),
+      //   ]);
+      //   EM.ensureComponentOn(b1, PositionDef, cursorWorld);
+      // }
 
       // // TODO(@darzu): experiment getting cursor from viewProj
       // const invViewProj = mat4.invert(mat4.create(), viewProj);
@@ -258,11 +243,6 @@ async function initCamera() {
       //   ],
       //   invViewProj
       // );
-
-      // cursor.position[0] = worldPos2[0];
-      // cursor.position[2] = worldPos2[2];
-      cursor.position[0] = cursorWorld[0];
-      cursor.position[2] = cursorWorld[2];
     },
     "uiCameraView"
   );
@@ -326,11 +306,85 @@ async function initCamera() {
     EM.ensureComponentOn(ent0, PositionDef, [0, 1, 0]);
   }
 
+  const dragBox = EM.newEntity();
+  const dragBoxMesh = cloneMesh(assets.cube.mesh);
+  // normalize this cube to have min at 0,0,0 and max at 1,1,1
+
+  transformMesh(
+    dragBoxMesh,
+    mat4.fromRotationTranslationScaleOrigin(
+      tempMat4(),
+      quat.IDENTITY,
+      vec3.negate(tempVec3(), assets.cube.aabb.min),
+      vec3.set(
+        tempVec3(),
+        1 / (assets.cube.halfsize[0] * 2),
+        1 / (assets.cube.halfsize[1] * 2),
+        1 / (assets.cube.halfsize[2] * 2)
+      ),
+      assets.cube.aabb.min
+    )
+  );
+  console.dir(dragBoxMesh);
+  EM.ensureComponentOn(dragBox, RenderableConstructDef, dragBoxMesh);
+  EM.ensureComponentOn(dragBox, PositionDef, [0, 0, 0]);
+  EM.ensureComponentOn(dragBox, ScaleDef, [1, 1, 1]);
+  EM.ensureComponentOn(dragBox, ColorDef, [0.4, 0.1, 0.1]);
+
+  let isDragging = false;
+  let dragStart = vec2.create();
   EM.registerSystem(
     null,
-    [CameraViewDef, CanvasDef, CameraDef, InputsDef],
-    async (_, res) => {
+    [InputsDef, CameraViewDef],
+    (_, { inputs, cameraView }) => {
+      let isDragEnd = false;
       // TODO(@darzu): impl
+      if (inputs.ldown && !isDragging) {
+        // drag start
+        isDragging = true;
+        vec2.copy(dragStart, inputs.mousePos);
+      } else if (!inputs.ldown && isDragging) {
+        // drag stop
+        isDragging = false;
+        isDragEnd = true;
+      }
+
+      // show drag box
+      if (isDragging) {
+        // TODO(@darzu): SHOW DRAG BOX
+        const start = screenPosToWorldPos(tempVec3(), dragStart, cameraView);
+        const end = screenPosToWorldPos(
+          tempVec3(),
+          inputs.mousePos,
+          cameraView
+        );
+        const min = vec3.set(
+          tempVec3(),
+          Math.min(start[0], end[0]),
+          0,
+          Math.min(start[2], end[2])
+        );
+        const max = vec3.set(
+          tempVec3(),
+          Math.max(start[0], end[0]),
+          1,
+          Math.max(start[2], end[2])
+        );
+
+        const size = vec3.sub(tempVec3(), max, min);
+
+        // console.log(vec3Dbg(start));
+        // console.log(vec3Dbg(end));
+        // console.log(vec3Dbg(size));
+        vec3.copy(dragBox.position, min);
+        vec3.copy(dragBox.scale, size);
+
+        // TODO(@darzu): DBG
+        // vec3.set(dragBox.scale, 2, 2, 2);
+        // console.log(`dragBox`);
+        // console.log(vec3Dbg(dragBox.position));
+        // console.log(vec3Dbg(dragBox.scale));
+      }
     },
     "hpolyManipulate"
   );
