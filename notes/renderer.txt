@@ -1526,3 +1526,7 @@ Big question: how do user shaders work with Nanite?
 Half-edge data structures:
   http://15462.courses.cs.cmu.edu/fall2018/lecture/meshes/slide_028
 
+Transparency:
+  http://learnwebgl.brown37.net/11_advanced_rendering/alpha_blending.html
+  http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-10-transparency/
+  https://learnopengl.com/Advanced-OpenGL/Blending

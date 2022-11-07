@@ -38,6 +38,7 @@ import {
   texTypeToSampleType,
 } from "./gpu-struct.js";
 import { createMeshPool, MeshHandle } from "./mesh-pool.js";
+import { DEFAULT_MASK } from "./pipeline-masks.js";
 import { oceanPoolPtr } from "./pipelines/std-ocean.js";
 import { ShaderSet } from "./shader-loader.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
@@ -483,7 +484,7 @@ export function createCyResources(
       const targets: GPUColorTargetState[] = output.map((o) => {
         // TODO(@darzu): support configuring blend modes!
         let blend: GPUBlendState | undefined = undefined;
-        if (o.ptr.format === "rgba16float" && false) {
+        if (o.ptr.format === "rgba16float") {
           // TODO(@darzu): this is a stub. Needs cooperation w/ depth buffer.
           //   see: https://gpuweb.github.io/gpuweb/#blend-state
           blend = {
@@ -492,11 +493,21 @@ export function createCyResources(
               dstFactor: "zero",
               operation: "add",
             },
+            // color: {
+            //   srcFactor: "src",
+            //   dstFactor: "dst",
+            //   operation: "add",
+            // },
             alpha: {
               srcFactor: "one",
               dstFactor: "zero",
               operation: "add",
             },
+            // alpha: {
+            //   srcFactor: "src",
+            //   dstFactor: "dst",
+            //   operation: "add",
+            // },
           };
         }
 
@@ -852,8 +863,8 @@ export function bundleRenderPipelines(
         // console.log(`OCEAN MESH: ${m.mId} has: ${meshHandleIds.has(m.mId)}`);
         // }
         if (!meshHandleIds.has(m.mId)) continue;
-        if (p.ptr.meshOpt.meshMask && (p.ptr.meshOpt.meshMask & m.mask) === 0)
-          continue;
+        let mask = p.ptr.meshOpt.meshMask ?? DEFAULT_MASK;
+        if ((mask & m.mask) === 0) continue;
         bundleEnc.setBindGroup(1, uniBG, [
           m.uniIdx * p.pool.opts.unis.struct.size,
         ]);

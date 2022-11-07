@@ -1,6 +1,6 @@
 import { CameraDef, CameraViewDef } from "../camera.js";
 import { CanvasDef } from "../canvas.js";
-import { ColorDef } from "../color-ecs.js";
+import { AlphaDef, ColorDef } from "../color-ecs.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { vec3, quat, mat4, vec2 } from "../gl-matrix.js";
 import { extrudeQuad, meshToHalfEdgePoly } from "../half-edge.js";
@@ -17,9 +17,11 @@ import {
   scaleMesh3,
   transformMesh,
 } from "../render/mesh.js";
+import { ALPHA_MASK } from "../render/pipeline-masks.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
+import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
 import {
   RendererDef,
   RenderableConstructDef,
@@ -49,6 +51,7 @@ export async function initFontEditor(em: EntityManager) {
   res.renderer.pipelines = [
     // ...shadowPipelines,
     stdRenderPipeline,
+    alphaRenderPipeline,
     outlineRender,
     postProcess,
   ];
@@ -304,11 +307,12 @@ async function initCamera() {
 
     const ent0 = EM.newEntity();
     EM.ensureComponentOn(ent0, RenderableConstructDef, mesh);
-    EM.ensureComponentOn(ent0, PositionDef, [0, 1, 0]);
+    EM.ensureComponentOn(ent0, PositionDef, [0, 0.1, 0]);
   }
 
   const dragBox = EM.newEntity();
   const dragBoxMesh = cloneMesh(assets.cube.mesh);
+  EM.ensureComponentOn(dragBox, AlphaDef, 0.5);
   // normalize this cube to have min at 0,0,0 and max at 1,1,1
 
   transformMesh(
@@ -327,7 +331,7 @@ async function initCamera() {
     )
   );
   EM.ensureComponentOn(dragBox, RenderableConstructDef, dragBoxMesh);
-  EM.ensureComponentOn(dragBox, PositionDef, [0, 0, 0]);
+  EM.ensureComponentOn(dragBox, PositionDef, [0, 0.2, 0]);
   EM.ensureComponentOn(dragBox, ScaleDef, [1, 1, 1]);
   EM.ensureComponentOn(dragBox, ColorDef, [0.4, 0.1, 0.1]);
 
@@ -357,8 +361,8 @@ async function initCamera() {
         vec3.copy(dragBox.position, min);
         vec3.copy(dragBox.scale, size);
 
-        console.log(vec3Dbg(dragBox.position));
-        console.log(vec3Dbg(dragBox.scale));
+        // console.log(vec3Dbg(dragBox.position));
+        // console.log(vec3Dbg(dragBox.scale));
       }
     },
     "dragBox"

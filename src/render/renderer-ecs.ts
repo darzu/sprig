@@ -1,5 +1,5 @@
 import { EntityManager, EM, Entity, EntityW } from "../entity-manager.js";
-import { applyTints, TintsDef } from "../color-ecs.js";
+import { AlphaDef, applyTints, TintsDef } from "../color-ecs.js";
 import { CameraViewDef } from "../camera.js";
 import { mat4, quat, vec3 } from "../gl-matrix.js";
 import {
@@ -45,6 +45,7 @@ import {
   PERF_DBG_GPU,
   VERBOSE_LOG,
 } from "../flags.js";
+import { ALPHA_MASK } from "./pipeline-masks.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -72,6 +73,7 @@ export const RenderableConstructDef = EM.defineComponent(
   (
     meshOrProto: Mesh | MeshHandle,
     enabled: boolean = true,
+    // TODO(@darzu): do we need sort layers? Do we use them?
     sortLayer: number = 0,
     mask?: number,
     poolKind: PoolKind = "std",
@@ -357,6 +359,14 @@ export function registerRenderer(em: EntityManager) {
             if (TintsDef.isOn(o)) applyTints(o.tints, o.renderDataStd.tint);
             if (vec3.sqrDist(prevTint, o.renderDataStd.tint) > 0.01)
               tintChange = true;
+
+            // apha
+            if (AlphaDef.isOn(o)) {
+              if (o.renderDataStd.alpha !== o.alpha) tintChange = true;
+              o.renderDataStd.alpha = o.alpha;
+              // TODO(@darzu): MASK HACK! it's also in renderable construct?!
+              o.renderable.meshHandle.mask = ALPHA_MASK;
+            }
           }
 
           let lastHidden = _lastMeshHandleHidden.get(

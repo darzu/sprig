@@ -1,4 +1,4 @@
-import { vec3, mat4 } from "../../gl-matrix.js";
+import { vec3, mat4, vec4 } from "../../gl-matrix.js";
 import { assertDbg } from "../../util.js";
 import { computeTriangleNormal } from "../../utils-3d.js";
 import { CY } from "../gpu-registry.js";
@@ -58,6 +58,9 @@ export const MeshUniformStruct = createCyStruct(
     // aabbMin: "vec3<f32>",
     // aabbMax: "vec3<f32>",
     tint: "vec3<f32>",
+    // TODO(@darzu): is this how we want to handle alpha?
+    //  Shouldn't it just be part of color?
+    alpha: "f32",
     id: "u32",
     // TODO: is this a good idea?
     flags: "u32",
@@ -69,8 +72,9 @@ export const MeshUniformStruct = createCyStruct(
       // views.f32.set(d.aabbMin, offsets_32[1]);
       // views.f32.set(d.aabbMax, offsets_32[2]);
       views.f32.set(d.tint, offsets_32[1]);
-      views.u32[offsets_32[2]] = d.id;
-      views.u32[offsets_32[3]] = d.flags;
+      views.f32[offsets_32[2]] = d.alpha;
+      views.u32[offsets_32[3]] = d.id;
+      views.u32[offsets_32[4]] = d.flags;
     },
   }
 );
@@ -114,6 +118,7 @@ export function computeUniData(m: Mesh): MeshUniformTS {
     // aabbMin: min,
     // aabbMax: max,
     tint: vec3.create(),
+    alpha: 1.0,
     id: 0,
     flags: 0,
   };

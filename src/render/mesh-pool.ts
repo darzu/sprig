@@ -6,6 +6,7 @@ import { CyArray, CyIdxBuffer } from "./data-webgpu.js";
 import { PERF_DBG_GPU, VERBOSE_MESH_POOL_STATS } from "../flags.js";
 import { ComputeVertsDataFn } from "./gpu-registry.js";
 import { vec3, vec4 } from "../gl-matrix.js";
+import { DEFAULT_MASK } from "./pipeline-masks.js";
 
 // Mesh: lossless, all the data of a model/asset from blender
 // MeshPool: lossy, a reduced set of attributes for vertex, line, triangle, and model uniforms
@@ -285,7 +286,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
       lineIdx: pool.numLines,
       uniIdx: allMeshes.length,
       readonlyMesh: m,
-      mask: 0,
+      mask: DEFAULT_MASK,
       //shaderData: uni,
     };
 
