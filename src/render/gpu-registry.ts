@@ -145,6 +145,7 @@ export interface CyAttachment {
   ptr: CyTexturePtr;
   defaultColor?: vec2 | vec3 | vec4;
   clear: "always" | "never" | "once";
+  blend?: GPUBlendState;
   // TODO(@darzu): potential properties:
   // depthWriteEnabled: true,
   // depthCompare: "less",
@@ -206,6 +207,7 @@ export interface CyRenderPipelinePtr extends CyResourcePtr {
   //   for tutorial animations at a minimum
   output: CyColorAttachment[];
   depthStencil?: CyDepthTexturePtr;
+  depthReadonly?: boolean;
 }
 
 export type CyPipelinePtr = CyCompPipelinePtr | CyRenderPipelinePtr;

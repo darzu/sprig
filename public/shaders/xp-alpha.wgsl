@@ -13,7 +13,7 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     let worldPos: vec4<f32> = meshUni.transform * vec4<f32>(position, 1.0);
 
     output.position = scene.cameraViewProjMatrix * worldPos;
-    
+
     output.color = vec4(color + meshUni.tint, meshUni.alpha);
 
     return output;
@@ -29,8 +29,8 @@ fn frag_main(input: VertexOutput) -> FragOut {
     // let litColor = input.color.xyz;
 
     var out: FragOut;
-    // out.color = vec4<f32>(litColor, 0.4);
-    out.color = vec4<f32>(1.0, 0.0, 0.0, 0.4);
+    out.color = input.color;
+    // out.color = vec4<f32>(1.0, 0.0, 0.0, 0.4);
 
     return out;
 }

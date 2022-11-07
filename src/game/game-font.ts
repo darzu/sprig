@@ -79,8 +79,9 @@ export async function initFontEditor(em: EntityManager) {
     -PANEL_H * 0.5,
     PANEL_H * 0.5
   );
-  panelMesh.colors[0] = [0.1, 0.3, 0.1];
-  panelMesh.colors[1] = [0.1, 0.1, 0.3];
+  // panelMesh.colors[0] = [0.1, 0.3, 0.1];
+  // panelMesh.colors[1] = [0.1, 0.1, 0.3];
+  panelMesh.colors[0] = [0.4, 0.4, 0.4];
   em.ensureComponentOn(panel, RenderableConstructDef, panelMesh);
   // em.ensureComponentOn(panel, ColorDef, [0.2, 0.3, 0.2]);
   em.ensureComponentOn(panel, PositionDef, [0, 0, 0]);
@@ -312,7 +313,7 @@ async function initCamera() {
 
   const dragBox = EM.newEntity();
   const dragBoxMesh = cloneMesh(assets.cube.mesh);
-  EM.ensureComponentOn(dragBox, AlphaDef, 0.5);
+  EM.ensureComponentOn(dragBox, AlphaDef, 0.2);
   // normalize this cube to have min at 0,0,0 and max at 1,1,1
 
   transformMesh(
@@ -333,7 +334,8 @@ async function initCamera() {
   EM.ensureComponentOn(dragBox, RenderableConstructDef, dragBoxMesh);
   EM.ensureComponentOn(dragBox, PositionDef, [0, 0.2, 0]);
   EM.ensureComponentOn(dragBox, ScaleDef, [1, 1, 1]);
-  EM.ensureComponentOn(dragBox, ColorDef, [0.4, 0.1, 0.1]);
+  EM.ensureComponentOn(dragBox, ColorDef, [0.0, 120 / 255, 209 / 255]);
+  // EM.ensureComponentOn(dragBox, ColorDef, [0.2, 0.2, 0.2]);
 
   EM.registerSystem(
     null,

@@ -483,37 +483,37 @@ export function createCyResources(
 
       const targets: GPUColorTargetState[] = output.map((o) => {
         // TODO(@darzu): support configuring blend modes!
-        let blend: GPUBlendState | undefined = undefined;
-        if (o.ptr.format === "rgba16float") {
-          // TODO(@darzu): this is a stub. Needs cooperation w/ depth buffer.
-          //   see: https://gpuweb.github.io/gpuweb/#blend-state
-          blend = {
-            color: {
-              srcFactor: "one",
-              dstFactor: "zero",
-              operation: "add",
-            },
-            // color: {
-            //   srcFactor: "src",
-            //   dstFactor: "dst",
-            //   operation: "add",
-            // },
-            alpha: {
-              srcFactor: "one",
-              dstFactor: "zero",
-              operation: "add",
-            },
-            // alpha: {
-            //   srcFactor: "src",
-            //   dstFactor: "dst",
-            //   operation: "add",
-            // },
-          };
-        }
+        // let blend = o.blend;
+        // if (o.ptr.format === "rgba16float") {
+        //   // TODO(@darzu): this is a stub. Needs cooperation w/ depth buffer.
+        //   //   see: https://gpuweb.github.io/gpuweb/#blend-state
+        //   blend = {
+        //     color: {
+        //       srcFactor: "src-alpha",
+        //       dstFactor: "one-minus-src-alpha",
+        //       operation: "add",
+        //     },
+        //     // color: {
+        //     //   srcFactor: "src",
+        //     //   dstFactor: "dst",
+        //     //   operation: "add",
+        //     // },
+        //     alpha: {
+        //       srcFactor: "one",
+        //       dstFactor: "zero",
+        //       operation: "add",
+        //     },
+        //     // alpha: {
+        //     //   srcFactor: "src",
+        //     //   dstFactor: "dst",
+        //     //   operation: "add",
+        //     // },
+        //   };
+        // }
 
         return {
           format: o.ptr.format,
-          blend,
+          blend: o.blend,
         };
       });
 
@@ -522,7 +522,7 @@ export function createCyResources(
         // TODO(@darzu): parameterize
         // TODO(@darzu): hack
         // const depthWriteEnabled = p.name === "renderStars" ? false : true;
-        let depthWriteEnabled = true;
+        let depthWriteEnabled = !p.depthReadonly;
         depthStencilOpts = {
           depthWriteEnabled,
           depthCompare: "less",
@@ -988,6 +988,7 @@ export function startBundleRenderer(
       // TODO(@darzu): parameterize depth attachment?
       depthStencilAttachment: depthAtt,
     });
+    renderPassEncoder.setBlendConstant([1, 1, 1, 1]); // TODO(@darzu): hack? settable?
 
     renderPassEncoder.executeBundles([bundle]);
     renderPassEncoder.end();

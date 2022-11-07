@@ -27,10 +27,25 @@ export const alphaRenderPipeline = CY.createRenderPipeline("alphaRender", {
     {
       ptr: litTexturePtr,
       clear: "never",
+      // TODO(@darzu): don't write to depth buffer
+      // TODO(@darzu): is this the right blend state?
+      blend: {
+        color: {
+          srcFactor: "src-alpha",
+          dstFactor: "one-minus-src-alpha",
+          operation: "add",
+        },
+        alpha: {
+          srcFactor: "constant",
+          dstFactor: "zero",
+          operation: "add",
+        },
+      },
     },
     // TODO(@darzu): write to normals etc?
   ],
   depthStencil: mainDepthTex,
+  depthReadonly: true,
   shader: (shaderSet) => `
   ${shaderSet["xp-alpha"].code}
   `,
