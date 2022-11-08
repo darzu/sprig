@@ -1,6 +1,7 @@
 import { CameraDef, CameraViewDef } from "../camera.js";
 import { CanvasDef } from "../canvas.js";
 import { AlphaDef, ColorDef } from "../color-ecs.js";
+import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { vec3, quat, mat4, vec2 } from "../gl-matrix.js";
 import { extrudeQuad, meshToHalfEdgePoly } from "../half-edge.js";
@@ -309,6 +310,17 @@ async function initCamera() {
     const ent0 = EM.newEntity();
     EM.ensureComponentOn(ent0, RenderableConstructDef, mesh);
     EM.ensureComponentOn(ent0, PositionDef, [0, 0.1, 0]);
+
+    // vert glyphs
+    for (let v of hp.verts) {
+      const pos = vec3.clone(hp.mesh.pos[v.vi]);
+      pos[1] = 0.2;
+      const vert = EM.newEntity();
+      EM.ensureComponentOn(vert, RenderableConstructDef, assets.octo.proto);
+      EM.ensureComponentOn(vert, ColorDef, ENDESGA16.lightBlue);
+      // EM.ensureComponentOn(vert, AlphaDef, 0.9);
+      EM.ensureComponentOn(vert, PositionDef, pos);
+    }
   }
 
   const dragBox = EM.newEntity();
@@ -370,4 +382,11 @@ async function initCamera() {
     "dragBox"
   );
   gameplaySystems.push("dragBox");
+
+  /* TODO(@darzu): 
+    [ ] render widget for each: vertex, half-edge, face
+    [ ] drag select vertices
+    [ ] drag move vertices
+    [ ] click extrude half-edge
+  */
 }

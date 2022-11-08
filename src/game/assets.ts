@@ -28,6 +28,7 @@ import {
   computeTriangleNormal,
   farthestPointInDir,
   normalizeVec2s,
+  randNormalPosVec3,
   SupportFn,
   uintToVec3unorm,
   vec3Reverse,
@@ -46,6 +47,7 @@ import {
   WoodAssets,
   WoodAssetsDef,
 } from "../wood.js";
+import { tempMat4 } from "../temp-pool.js";
 
 // TODO: load these via streaming
 
@@ -756,6 +758,38 @@ scaleMesh3(BOAT_MESH, [10, 0.6, 5]);
 const BULLET_MESH = cloneMesh(CUBE_MESH);
 scaleMesh(BULLET_MESH, 0.3);
 
+export function mkOctogonMesh(): RawMesh {
+  return transformMesh(
+    {
+      pos: [
+        [1, 0, 0],
+        [2, 0, 0],
+        [3, 0, 1],
+        [3, 0, 2],
+        [2, 0, 3],
+        [1, 0, 3],
+        [0, 0, 2],
+        [0, 0, 1],
+      ],
+      tri: [],
+      quad: [
+        [0, 5, 4, 1],
+        [1, 4, 3, 2],
+        [7, 6, 5, 0],
+      ],
+      // colors: range(3).map((_) => randNormalPosVec3()),
+      colors: range(3).map((_) => vec3.clone(BLACK)),
+    },
+    mat4.fromRotationTranslationScaleOrigin(
+      tempMat4(),
+      quat.IDENTITY,
+      [-1.5, 0, -1.5],
+      [0.2, 0.2, 0.2],
+      [1.5, 0, 1.5]
+    )
+  );
+}
+
 export const LocalMeshes = {
   // TODO(@darzu): LD51 PERF HACKS:
   ship_fangs: () => CUBE_MESH,
@@ -764,6 +798,7 @@ export const LocalMeshes = {
   cube: () => CUBE_MESH,
   plane: () => makePlaneMesh(-10, 10, -10, 10),
   tetra: () => TETRA_MESH,
+  octo: mkOctogonMesh,
   hex: HEX_MESH,
   enemyShip: () => BOAT_MESH,
   bullet: () => BULLET_MESH,

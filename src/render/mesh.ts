@@ -440,6 +440,7 @@ export function scaleMesh3(m: RawMesh, by: vec3) {
 }
 export function transformMesh(m: RawMesh, t: mat4) {
   mapMeshPositions(m, (p) => vec3.transformMat4(vec3.create(), p, t));
+  return m;
 }
 // split mesh by connectivity
 // TODO(@darzu): actually, we probably don't need this function
