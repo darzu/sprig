@@ -34,6 +34,8 @@ export const MouseDragDef = EM.defineComponent("mousedrag", () => ({
   dragEnd: vec2.create(),
   dragMin: vec2.create(),
   dragMax: vec2.create(),
+  dragMov: vec2.create(),
+  dragLastEnd: vec2.create(),
 }));
 
 export function registerInputsSystem(em: EntityManager): void {
@@ -62,6 +64,7 @@ export function registerInputsSystem(em: EntityManager): void {
         // drag start
         mousedrag.isDragging = true;
         vec2.copy(mousedrag.dragStart, inputs.mousePos);
+        vec2.copy(mousedrag.dragEnd, inputs.mousePos);
       } else if (!inputs.ldown && mousedrag.isDragging) {
         // drag stop
         mousedrag.isDragging = false;
@@ -70,6 +73,7 @@ export function registerInputsSystem(em: EntityManager): void {
 
       // update min/max
       if (mousedrag.isDragging) {
+        vec2.copy(mousedrag.dragLastEnd, mousedrag.dragEnd);
         vec2.copy(mousedrag.dragEnd, inputs.mousePos);
         vec2.set(
           mousedrag.dragMin,
@@ -81,6 +85,7 @@ export function registerInputsSystem(em: EntityManager): void {
           Math.max(mousedrag.dragStart[0], mousedrag.dragEnd[0]),
           Math.max(mousedrag.dragStart[1], mousedrag.dragEnd[1])
         );
+        vec2.copy(mousedrag.dragMov, inputs.mouseMov);
       }
     },
     "mouseDrag"

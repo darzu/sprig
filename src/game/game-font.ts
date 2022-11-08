@@ -39,6 +39,7 @@ import {
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import { tempMat4, tempVec2, tempVec3 } from "../temp-pool.js";
+import { assert } from "../util.js";
 import {
   randNormalPosVec3,
   randNormalVec3,
@@ -47,7 +48,6 @@ import {
 } from "../utils-3d.js";
 import { screenPosToWorldPos } from "../utils-game.js";
 import { AssetsDef, BLACK, makePlaneMesh } from "./assets.js";
-import { GlobalCursor3dDef } from "./cursor.js";
 import { createGhost, gameplaySystems } from "./game.js";
 
 // TODO(@darzu): 2D editor!
@@ -62,7 +62,7 @@ export async function initFontEditor(em: EntityManager) {
 
   initCamera();
 
-  const res = await em.whenResources(AssetsDef, GlobalCursor3dDef, RendererDef);
+  const res = await em.whenResources(AssetsDef, RendererDef);
 
   res.renderer.pipelines = [
     // ...shadowPipelines,
@@ -84,9 +84,6 @@ export async function initFontEditor(em: EntityManager) {
     res.assets.ball.proto,
     false
   );
-
-  const c = res.globalCursor3d.cursor()!;
-  if (RenderableDef.isOn(c)) c.renderable.enabled = false;
 
   const panel = em.newEntity();
   const panelMesh = makePlaneMesh(
@@ -152,9 +149,11 @@ async function initCamera() {
   EM.ensureComponentOn(cursor, ColorDef, [0.1, 0.1, 0.1]);
   EM.ensureComponentOn(cursor, PositionDef, [0, 1.0, 0]);
   const { assets } = await EM.whenResources(AssetsDef);
+  // EM.ensureComponentOn(cursor, RenderableConstructDef, assets.cube.proto);
+  // const cursorLocalAABB = copyAABB(createAABB(), assets.cube.aabb);
   EM.ensureComponentOn(cursor, RenderableConstructDef, assets.he_octo.proto);
   const cursorLocalAABB = copyAABB(createAABB(), assets.he_octo.aabb);
-  cursorLocalAABB.min[1] = 0;
+  cursorLocalAABB.min[1] = -1;
   cursorLocalAABB.max[1] = 1;
   EM.ensureComponentOn(cursor, ColliderDef, {
     shape: "AABB",
@@ -341,12 +340,24 @@ async function initCamera() {
   });
   // EM.ensureComponentOn(dragBox, ColorDef, [0.2, 0.2, 0.2]);
 
+  // TODO(@darzu): refactor. Also have undo-stack
+  let hoverGlyphs: Glyph[] = [];
+  let selectedGlyphs: Glyph[] = [];
+  let cursorGlpyh: Glyph | undefined = undefined;
+  let worldDrag = vec3.create();
   EM.registerSystem(
     null,
-    [MouseDragDef, CameraViewDef],
-    (_, { mousedrag, cameraView }) => {
-      // show drag box
-      if (mousedrag.isDragging) {
+    [PhysicsResultsDef, MouseDragDef, CameraViewDef, RendererDef],
+    (_, { physicsResults, mousedrag, cameraView, renderer }) => {
+      let didUpdateMesh = false;
+
+      // update dragbox
+      if (cursorGlpyh || mousedrag.isDragEnd) {
+        // hide dragbox
+        vec3.copy(dragBox.position, [0, -1, 0]);
+        vec3.copy(dragBox.scale, [0, 0, 0]);
+      } else if (mousedrag.isDragging) {
+        // place dragbox
         const min = screenPosToWorldPos(
           tempVec3(),
           mousedrag.dragMin,
@@ -360,46 +371,49 @@ async function initCamera() {
         );
         max[1] = 1;
 
-        // console.log(vec3Dbg(min));
-        // console.log(vec3Dbg(max));
-
         const size = vec3.sub(tempVec3(), max, min);
         vec3.copy(dragBox.position, min);
         vec3.copy(dragBox.scale, size);
-
-        // console.log(vec3Dbg(dragBox.position));
-        // console.log(vec3Dbg(dragBox.scale));
-      } else if (mousedrag.isDragEnd) {
-        vec3.copy(dragBox.position, [0, -1, 0]);
-        vec3.copy(dragBox.scale, [0, 0, 0]);
       }
-    },
-    "dragBox"
-  );
-  gameplaySystems.push("dragBox");
 
-  let hoverGlyphs: Glyph[] = [];
-  let selectedGlyphs: Glyph[] = [];
-  let cursorGlpyh: Glyph | undefined = undefined;
-  EM.registerSystem(
-    null,
-    [PhysicsResultsDef, MouseDragDef],
-    (_, res) => {
-      if (res.mousedrag.isDragging) {
+      // update world drag
+      if (mousedrag.isDragging) {
+        const start = screenPosToWorldPos(
+          tempVec3(),
+          mousedrag.dragLastEnd,
+          cameraView
+        );
+        start[1] = 0;
+        const end = screenPosToWorldPos(
+          tempVec3(),
+          mousedrag.dragEnd,
+          cameraView
+        );
+        end[1] = 0;
+        vec3.sub(worldDrag, end, start);
+      }
+
+      // update glyph states
+      if (mousedrag.isDragging) {
         // de-hover
-        for (let g of hoverGlyphs) vec3.copy(g.color, ENDESGA16.lightBlue);
         hoverGlyphs.length = 0;
 
         if (cursorGlpyh) {
           // drag selected
-          // TODO(@darzu): impl
+          // TODO(@darzu): check that cursorGlyph is vert and selected
+          // TODO(@darzu): IMPL hedges
+          for (let g of selectedGlyphs) {
+            if (g.hglyph.kind === "vert") {
+              hpEditor.moveVert(g.hglyph.hv, worldDrag);
+              didUpdateMesh = true;
+            }
+          }
         } else {
           // deselect
-          for (let g of selectedGlyphs) vec3.copy(g.color, ENDESGA16.lightBlue);
           selectedGlyphs.length = 0;
 
           // find hover
-          const hits = res.physicsResults.collidesWith.get(dragBox.id) ?? [];
+          const hits = physicsResults.collidesWith.get(dragBox.id) ?? [];
           for (let hid of hits) {
             const g = EM.findEntity(hid, [
               HGlyphDef,
@@ -408,23 +422,53 @@ async function initCamera() {
               ColorDef,
             ]);
             if (!g) continue;
-            vec3.copy(g.color, ENDESGA16.yellow);
             hoverGlyphs.push(g);
           }
         }
-      } else if (res.mousedrag.isDragEnd) {
+      } else if (mousedrag.isDragEnd) {
         if (!cursorGlpyh) {
           // select box done
           selectedGlyphs = hoverGlyphs;
           hoverGlyphs = [];
-          for (let g of selectedGlyphs) {
-            vec3.copy(g.color, ENDESGA16.lightGreen);
-          }
         } else {
           // drag selected done
           // TODO(@darzu): IMPL
         }
+      } else {
+        // unselect cursor glpyh
+        cursorGlpyh = undefined;
+
+        // find under-cursor glyph
+        const hits = physicsResults.collidesWith.get(cursor.id) ?? [];
+        // console.dir(hits);
+        for (let hid of hits) {
+          const g = EM.findEntity(hid, [
+            HGlyphDef,
+            PositionDef,
+            RotationDef,
+            ColorDef,
+          ]);
+          if (g) {
+            vec3.copy(g.color, ENDESGA16.red);
+            cursorGlpyh = g;
+            break;
+          }
+        }
       }
+
+      // update glyph colors based on state
+      for (let g of [...hpEditor.vertGlpyhs, ...hpEditor.hedgeGlyphs])
+        vec3.copy(g.color, ENDESGA16.lightBlue);
+      for (let g of hoverGlyphs) vec3.copy(g.color, ENDESGA16.yellow);
+      for (let g of selectedGlyphs) vec3.copy(g.color, ENDESGA16.lightGreen);
+      if (cursorGlpyh) vec3.copy(cursorGlpyh.color, ENDESGA16.red);
+
+      // update mesh
+      if (didUpdateMesh)
+        renderer.renderer.stdPool.updateMeshVertices(
+          hpEditor.hpEnt.renderable.meshHandle,
+          hpEditor.hpEnt.renderable.meshHandle.readonlyMesh! // TODO(@darzu): hack
+        );
     },
     "editHPoly"
   );
@@ -489,18 +533,24 @@ async function createHalfEdgeEditor(hp: HPoly) {
   }
 
   // half-edge glyphs
+  // console.dir(assets.he_quad.mesh);
+  // console.dir(assets.he_quad.aabb);
+  // console.dir(assets.he_octo.mesh);
+  // console.dir(assets.he_octo.aabb);
   let hedgeGlyphs: Glyph[] = [];
   for (let he of hp.edges) {
     // TODO(@darzu): pos and rot
+    const visible = !he.face;
+    if (!visible) continue;
     const pos0 = hp.mesh.pos[he.orig.vi];
     const pos1 = hp.mesh.pos[he.twin.orig.vi];
     const diff = vec3.sub(tempVec3(), pos1, pos0);
     const theta = Math.atan2(diff[0], diff[2]) + Math.PI * 0.5;
     const rot = quat.fromEuler(quat.create(), 0, theta, 0);
+    // const rot = quat.create();
     const pos = vec3Mid(vec3.create(), pos0, pos1);
     pos[1] = 0.2;
     const glyph = EM.newEntity();
-    const visible = !he.face;
     EM.ensureComponentOn(
       glyph,
       RenderableConstructDef,
@@ -527,11 +577,22 @@ async function createHalfEdgeEditor(hp: HPoly) {
   const ent0 = EM.newEntity();
   EM.ensureComponentOn(ent0, RenderableConstructDef, hp.mesh as Mesh); // TODO(@darzu): hacky cast
   EM.ensureComponentOn(ent0, PositionDef, [0, 0.1, 0]);
+  const ent1 = await EM.whenEntityHas(ent0, RenderableDef);
 
   return {
     hp,
-    hpEnt: ent0,
+    hpEnt: ent1,
     vertGlpyhs,
     hedgeGlyphs,
+    moveVert,
   };
+
+  function moveVert(v: HVert, delta: vec3) {
+    const pos = hp.mesh.pos[v.vi];
+    vec3.add(pos, pos, delta);
+    const glyph = vertGlpyhs[v.vi];
+    assert(glyph && glyph.hglyph.kind === "vert" && glyph.hglyph.hv === v);
+    glyph.position[0] = pos[0];
+    glyph.position[2] = pos[2];
+  }
 }
