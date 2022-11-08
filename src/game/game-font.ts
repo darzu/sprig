@@ -1,6 +1,6 @@
 import { CameraDef, CameraViewDef } from "../camera.js";
 import { CanvasDef } from "../canvas.js";
-import { AlphaDef, ColorDef } from "../color-ecs.js";
+import { AlphaDef, ColorDef, TintsDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
 import { vec3, quat, mat4, vec2 } from "../gl-matrix.js";
@@ -14,6 +14,7 @@ import {
 import { onInit } from "../init.js";
 import { InputsDef, MouseDragDef } from "../inputs.js";
 import { mathMap } from "../math.js";
+import { copyAABB, createAABB } from "../physics/broadphase.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
@@ -152,6 +153,14 @@ async function initCamera() {
   EM.ensureComponentOn(cursor, PositionDef, [0, 1.0, 0]);
   const { assets } = await EM.whenResources(AssetsDef);
   EM.ensureComponentOn(cursor, RenderableConstructDef, assets.he_octo.proto);
+  const cursorLocalAABB = copyAABB(createAABB(), assets.he_octo.aabb);
+  cursorLocalAABB.min[1] = 0;
+  cursorLocalAABB.max[1] = 1;
+  EM.ensureComponentOn(cursor, ColliderDef, {
+    shape: "AABB",
+    solid: false,
+    aabb: cursorLocalAABB,
+  });
 
   EM.registerSystem(
     null,
@@ -299,7 +308,7 @@ async function initCamera() {
   //   });
   // }
 
-  const hpEditor = createHalfEdgeEditor(hp);
+  const hpEditor = await createHalfEdgeEditor(hp);
 
   const dragBox = EM.newEntity();
   const dragBoxMesh = cloneMesh(assets.cube.mesh);
@@ -360,27 +369,61 @@ async function initCamera() {
 
         // console.log(vec3Dbg(dragBox.position));
         // console.log(vec3Dbg(dragBox.scale));
+      } else if (mousedrag.isDragEnd) {
+        vec3.copy(dragBox.position, [0, -1, 0]);
+        vec3.copy(dragBox.scale, [0, 0, 0]);
       }
     },
     "dragBox"
   );
   gameplaySystems.push("dragBox");
 
+  let hoverGlyphs: Glyph[] = [];
+  let selectedGlyphs: Glyph[] = [];
+  let cursorGlpyh: Glyph | undefined = undefined;
   EM.registerSystem(
     null,
-    [PhysicsResultsDef],
+    [PhysicsResultsDef, MouseDragDef],
     (_, res) => {
-      // TODO(@darzu): hpEditor
-      const hits = res.physicsResults.collidesWith.get(dragBox.id) ?? [];
-      for (let hid of hits) {
-        const glyph = EM.findEntity(hid, [
-          HGlyphDef,
-          PositionDef,
-          RotationDef,
-          ColorDef,
-        ]);
-        if (!glyph) continue;
-        vec3.copy(glyph.color, ENDESGA16.lightGreen);
+      if (res.mousedrag.isDragging) {
+        // de-hover
+        for (let g of hoverGlyphs) vec3.copy(g.color, ENDESGA16.lightBlue);
+        hoverGlyphs.length = 0;
+
+        if (cursorGlpyh) {
+          // drag selected
+          // TODO(@darzu): impl
+        } else {
+          // deselect
+          for (let g of selectedGlyphs) vec3.copy(g.color, ENDESGA16.lightBlue);
+          selectedGlyphs.length = 0;
+
+          // find hover
+          const hits = res.physicsResults.collidesWith.get(dragBox.id) ?? [];
+          for (let hid of hits) {
+            const g = EM.findEntity(hid, [
+              HGlyphDef,
+              PositionDef,
+              RotationDef,
+              ColorDef,
+            ]);
+            if (!g) continue;
+            vec3.copy(g.color, ENDESGA16.yellow);
+            hoverGlyphs.push(g);
+          }
+        }
+      } else if (res.mousedrag.isDragEnd) {
+        if (!cursorGlpyh) {
+          // select box done
+          selectedGlyphs = hoverGlyphs;
+          hoverGlyphs = [];
+          for (let g of selectedGlyphs) {
+            vec3.copy(g.color, ENDESGA16.lightGreen);
+          }
+        } else {
+          // drag selected done
+          // TODO(@darzu): IMPL
+        }
       }
     },
     "editHPoly"
@@ -399,10 +442,12 @@ async function initCamera() {
 interface HEdgeGlyph {
   kind: "hedge";
   he: HEdge;
+  // state: "none" | "hover" | "selected";
 }
 interface HVertGlyph {
   kind: "vert";
   hv: HVert;
+  // state: "none" | "hover" | "selected";
 }
 type HGlyph = HEdgeGlyph | HVertGlyph;
 const HGlyphDef = EM.defineComponent("hglyph", (g: HGlyph) => g);
@@ -410,6 +455,8 @@ const HGlyphDef = EM.defineComponent("hglyph", (g: HGlyph) => g);
 type Glyph = EntityW<
   [typeof HGlyphDef, typeof ColorDef, typeof PositionDef, typeof RotationDef]
 >;
+
+type HEditor = ReturnType<typeof createHalfEdgeEditor>;
 async function createHalfEdgeEditor(hp: HPoly) {
   // TODO(@darzu):
   // editor operations: verts in area
@@ -424,11 +471,15 @@ async function createHalfEdgeEditor(hp: HPoly) {
     pos[1] = 0.2;
     const glyph = EM.newEntity();
     EM.ensureComponentOn(glyph, RenderableConstructDef, assets.he_octo.proto);
-    EM.ensureComponentOn(glyph, ColorDef, vec3.clone(ENDESGA16.lightBlue));
+    EM.ensureComponentOn(glyph, ColorDef);
     // EM.ensureComponentOn(glyph, AlphaDef, 0.9);
     EM.ensureComponentOn(glyph, PositionDef, pos);
     EM.ensureComponentOn(glyph, RotationDef, quat.create());
-    EM.ensureComponentOn(glyph, HGlyphDef, { kind: "vert", hv: v });
+    EM.ensureComponentOn(glyph, HGlyphDef, {
+      kind: "vert",
+      hv: v,
+      // state: "none",
+    });
     EM.ensureComponentOn(glyph, ColliderDef, {
       shape: "AABB",
       solid: false,
@@ -456,11 +507,15 @@ async function createHalfEdgeEditor(hp: HPoly) {
       assets.he_quad.proto,
       visible
     );
-    EM.ensureComponentOn(glyph, ColorDef, vec3.clone(ENDESGA16.lightBlue));
+    EM.ensureComponentOn(glyph, ColorDef);
     // EM.ensureComponentOn(vert, AlphaDef, 0.9);
     EM.ensureComponentOn(glyph, PositionDef, pos);
     EM.ensureComponentOn(glyph, RotationDef, rot);
-    EM.ensureComponentOn(glyph, HGlyphDef, { kind: "hedge", he: he });
+    EM.ensureComponentOn(glyph, HGlyphDef, {
+      kind: "hedge",
+      he: he,
+      // state: "none",
+    });
     EM.ensureComponentOn(glyph, ColliderDef, {
       shape: "AABB",
       solid: false,
@@ -472,4 +527,11 @@ async function createHalfEdgeEditor(hp: HPoly) {
   const ent0 = EM.newEntity();
   EM.ensureComponentOn(ent0, RenderableConstructDef, hp.mesh as Mesh); // TODO(@darzu): hacky cast
   EM.ensureComponentOn(ent0, PositionDef, [0, 0.1, 0]);
+
+  return {
+    hp,
+    hpEnt: ent0,
+    vertGlpyhs,
+    hedgeGlyphs,
+  };
 }

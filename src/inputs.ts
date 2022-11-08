@@ -26,6 +26,7 @@ export const InputsDef = EM.defineComponent("inputs", () => {
 
 export type Inputs = Component<typeof InputsDef>;
 
+// TODO(@darzu): generalize to other input types e.g. controller, gyro
 export const MouseDragDef = EM.defineComponent("mousedrag", () => ({
   isDragging: false,
   isDragEnd: false,
