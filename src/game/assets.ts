@@ -758,6 +758,8 @@ scaleMesh3(BOAT_MESH, [10, 0.6, 5]);
 const BULLET_MESH = cloneMesh(CUBE_MESH);
 scaleMesh(BULLET_MESH, 0.3);
 
+// TODO(@darzu): there should be hooks so we can define these nearer to
+//    where they are actually needed
 export function mkOctogonMesh(): RawMesh {
   return transformMesh(
     {
@@ -790,6 +792,29 @@ export function mkOctogonMesh(): RawMesh {
   );
 }
 
+function mkHalfEdgeQuadMesh(): RawMesh {
+  return transformMesh(
+    {
+      pos: [
+        [0, 0, 0],
+        [0, 0, 3],
+        [3, 0, 3],
+        [3, 0, 0],
+      ],
+      tri: [],
+      quad: [[0, 1, 2, 3]],
+      colors: [vec3.clone(BLACK)],
+    },
+    mat4.fromRotationTranslationScaleOrigin(
+      tempMat4(),
+      quat.IDENTITY,
+      [-1.5, 0, 0],
+      [0.4, 0.2, 0.2],
+      [1.5, 0, 0]
+    )
+  );
+}
+
 export const LocalMeshes = {
   // TODO(@darzu): LD51 PERF HACKS:
   ship_fangs: () => CUBE_MESH,
@@ -798,7 +823,8 @@ export const LocalMeshes = {
   cube: () => CUBE_MESH,
   plane: () => makePlaneMesh(-10, 10, -10, 10),
   tetra: () => TETRA_MESH,
-  octo: mkOctogonMesh,
+  he_octo: mkOctogonMesh,
+  he_quad: mkHalfEdgeQuadMesh,
   hex: HEX_MESH,
   enemyShip: () => BOAT_MESH,
   bullet: () => BULLET_MESH,
