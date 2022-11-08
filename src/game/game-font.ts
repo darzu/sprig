@@ -220,32 +220,9 @@ async function initCamera() {
         cameraView.viewProjMat
       );
 
-      // const cursorWorld = screenPosToWorldPos(
-      //   vec3.create(),
-      //   inputs.mousePos,
-      //   cameraView
-      // );
-      // cursorWorld[1] = 0;
-      // cursor.position[0] = cursorWorld[0];
-      // cursor.position[2] = cursorWorld[2];
-
-      // TODO(@darzu): paint on surface
-
-      // if (inputs.lclick) {
-      //   const { assets } = await EM.whenResources(AssetsDef);
-      //   const b1 = EM.newEntity();
-      //   EM.ensureComponentOn(b1, RenderableConstructDef, assets.cube.proto);
-      //   EM.ensureComponentOn(b1, ColorDef, [
-      //     mathMap(cursorFracX, 0, 1, 0.05, 0.8),
-      //     0,
-      //     mathMap(cursorFracY, 0, 1, 0.05, 0.8),
-      //   ]);
-      //   EM.ensureComponentOn(b1, PositionDef, cursorWorld);
-      // }
-
-      // // TODO(@darzu): experiment getting cursor from viewProj
-      // const invViewProj = mat4.invert(mat4.create(), viewProj);
-      const worldPos2 = vec3.transformMat4(
+      let cursorFracX = inputs.mousePos[0] / htmlCanvas.canvas.clientWidth;
+      let cursorFracY = inputs.mousePos[1] / htmlCanvas.canvas.clientHeight;
+      const cursorWorldPos = vec3.transformMat4(
         tempVec3(),
         [
           mathMap(cursorFracX, 0, 1, -1, 1),
@@ -254,6 +231,8 @@ async function initCamera() {
         ],
         cameraView.invViewProjMat
       );
+      cursor.position[0] = cursorWorldPos[0];
+      cursor.position[2] = cursorWorldPos[2];
     },
     "uiCameraView"
   );
