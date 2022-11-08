@@ -2,16 +2,25 @@ import { CameraDef, CameraViewDef } from "../camera.js";
 import { CanvasDef } from "../canvas.js";
 import { AlphaDef, ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM, EntityManager } from "../entity-manager.js";
+import { EM, EntityManager, EntityW } from "../entity-manager.js";
 import { vec3, quat, mat4, vec2 } from "../gl-matrix.js";
-import { extrudeQuad, meshToHalfEdgePoly } from "../half-edge.js";
+import {
+  extrudeQuad,
+  HEdge,
+  HPoly,
+  HVert,
+  meshToHalfEdgePoly,
+} from "../half-edge.js";
 import { onInit } from "../init.js";
 import { InputsDef, MouseDragDef } from "../inputs.js";
 import { mathMap } from "../math.js";
+import { ColliderDef } from "../physics/collider.js";
+import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
 import {
   cloneMesh,
+  getAABBFromMesh,
   Mesh,
   RawMesh,
   scaleMesh,
@@ -240,91 +249,57 @@ async function initCamera() {
   gameplaySystems.push("uiCameraView");
 
   // testHalfEdge
-  {
-    const mesh: Mesh = {
-      quad: [
-        [0, 3, 4, 1],
-        [3, 5, 6, 4],
-      ],
-      tri: [
-        [2, 3, 0],
-        [5, 3, 2],
-      ],
-      pos: [
-        [0, 0, 0],
-        [1, 0, 0],
-        [-1, 0, 1],
-        [0, 0, 1],
-        [1, 0, 1],
-        [0, 0, 2],
-        [1, 0, 2],
-      ],
-      colors: [
-        randNormalPosVec3(),
-        randNormalPosVec3(),
-        randNormalPosVec3(),
-        randNormalPosVec3(),
-      ],
-      surfaceIds: [1, 2, 3, 4],
-      usesProvoking: true,
-    };
-    scaleMesh(mesh, 4);
+  const hpMesh: Mesh = {
+    quad: [
+      [0, 3, 4, 1],
+      [3, 5, 6, 4],
+    ],
+    tri: [
+      [2, 3, 0],
+      [5, 3, 2],
+    ],
+    pos: [
+      [0, 0, 0],
+      [1, 0, 0],
+      [-1, 0, 1],
+      [0, 0, 1],
+      [1, 0, 1],
+      [0, 0, 2],
+      [1, 0, 2],
+    ],
+    colors: [
+      randNormalPosVec3(),
+      randNormalPosVec3(),
+      randNormalPosVec3(),
+      randNormalPosVec3(),
+    ],
+    surfaceIds: [1, 2, 3, 4],
+    usesProvoking: true,
+  };
+  scaleMesh(hpMesh, 4);
 
-    const hp = meshToHalfEdgePoly(mesh);
-    // console.dir(hp);
+  const hp = meshToHalfEdgePoly(hpMesh);
+  // console.dir(hp);
 
-    // {
-    //   const outerHes = hp.edges.filter((h) => !h.face)!;
-    //   const newHes = outerHes.map((he) => extrudeQuad(hp, he));
-    //   newHes.forEach((he, i) => {
-    //     // vec3.set(mesh.colors[he.fi], 0.6, 0.05, 0.05);
-    //     randNormalVec3(mesh.colors[he.fi]);
-    //   });
-    // }
-    // console.dir(hp);
-    // {
-    //   const outerHes = hp.edges.filter((h) => !h.face)!;
-    //   const newHes = outerHes.map((he) => extrudeQuad(hp, he));
-    //   newHes.forEach((he, i) => {
-    //     // vec3.set(mesh.colors[he.fi], 0.05, 0.05, 0.6);
-    //     randNormalVec3(mesh.colors[he.fi]);
-    //   });
-    // }
+  // {
+  //   const outerHes = hp.edges.filter((h) => !h.face)!;
+  //   const newHes = outerHes.map((he) => extrudeQuad(hp, he));
+  //   newHes.forEach((he, i) => {
+  //     // vec3.set(mesh.colors[he.fi], 0.6, 0.05, 0.05);
+  //     randNormalVec3(mesh.colors[he.fi]);
+  //   });
+  // }
+  // console.dir(hp);
+  // {
+  //   const outerHes = hp.edges.filter((h) => !h.face)!;
+  //   const newHes = outerHes.map((he) => extrudeQuad(hp, he));
+  //   newHes.forEach((he, i) => {
+  //     // vec3.set(mesh.colors[he.fi], 0.05, 0.05, 0.6);
+  //     randNormalVec3(mesh.colors[he.fi]);
+  //   });
+  // }
 
-    const ent0 = EM.newEntity();
-    EM.ensureComponentOn(ent0, RenderableConstructDef, mesh);
-    EM.ensureComponentOn(ent0, PositionDef, [0, 0.1, 0]);
-
-    // vert glyphs
-    for (let v of hp.verts) {
-      const pos = vec3.clone(hp.mesh.pos[v.vi]);
-      pos[1] = 0.2;
-      const vert = EM.newEntity();
-      EM.ensureComponentOn(vert, RenderableConstructDef, assets.he_octo.proto);
-      EM.ensureComponentOn(vert, ColorDef, ENDESGA16.lightBlue);
-      // EM.ensureComponentOn(vert, AlphaDef, 0.9);
-      EM.ensureComponentOn(vert, PositionDef, pos);
-    }
-
-    // half-edge glyphs
-    for (let he of hp.edges) {
-      if (he.face) continue;
-      // TODO(@darzu): pos and rot
-      const pos0 = hp.mesh.pos[he.orig.vi];
-      const pos1 = hp.mesh.pos[he.twin.orig.vi];
-      const diff = vec3.sub(tempVec3(), pos1, pos0);
-      const theta = Math.atan2(diff[0], diff[2]) + Math.PI * 0.5;
-      const rot = quat.fromEuler(quat.create(), 0, theta, 0);
-      const pos = vec3Mid(vec3.create(), pos0, pos1);
-      pos[1] = 0.2;
-      const vert = EM.newEntity();
-      EM.ensureComponentOn(vert, RenderableConstructDef, assets.he_quad.proto);
-      EM.ensureComponentOn(vert, ColorDef, ENDESGA16.lightBlue);
-      // EM.ensureComponentOn(vert, AlphaDef, 0.9);
-      EM.ensureComponentOn(vert, PositionDef, pos);
-      EM.ensureComponentOn(vert, RotationDef, rot);
-    }
-  }
+  const hpEditor = createHalfEdgeEditor(hp);
 
   const dragBox = EM.newEntity();
   const dragBoxMesh = cloneMesh(assets.cube.mesh);
@@ -350,6 +325,11 @@ async function initCamera() {
   EM.ensureComponentOn(dragBox, PositionDef, [0, 0.2, 0]);
   EM.ensureComponentOn(dragBox, ScaleDef, [1, 1, 1]);
   EM.ensureComponentOn(dragBox, ColorDef, [0.0, 120 / 255, 209 / 255]);
+  EM.ensureComponentOn(dragBox, ColliderDef, {
+    shape: "AABB",
+    solid: false,
+    aabb: getAABBFromMesh(dragBoxMesh),
+  });
   // EM.ensureComponentOn(dragBox, ColorDef, [0.2, 0.2, 0.2]);
 
   EM.registerSystem(
@@ -386,10 +366,110 @@ async function initCamera() {
   );
   gameplaySystems.push("dragBox");
 
+  EM.registerSystem(
+    null,
+    [PhysicsResultsDef],
+    (_, res) => {
+      // TODO(@darzu): hpEditor
+      const hits = res.physicsResults.collidesWith.get(dragBox.id) ?? [];
+      for (let hid of hits) {
+        const glyph = EM.findEntity(hid, [
+          HGlyphDef,
+          PositionDef,
+          RotationDef,
+          ColorDef,
+        ]);
+        if (!glyph) continue;
+        vec3.copy(glyph.color, ENDESGA16.lightGreen);
+      }
+    },
+    "editHPoly"
+  );
+  gameplaySystems.push("editHPoly");
+
   /* TODO(@darzu): 
-    [ ] render widget for each: vertex, half-edge, face
+    [x] render widget for each: vertex, half-edge
     [ ] drag select vertices
     [ ] drag move vertices
     [ ] click extrude half-edge
+    [ ] click to collapse hedge
   */
+}
+
+interface HEdgeGlyph {
+  kind: "hedge";
+  he: HEdge;
+}
+interface HVertGlyph {
+  kind: "vert";
+  hv: HVert;
+}
+type HGlyph = HEdgeGlyph | HVertGlyph;
+const HGlyphDef = EM.defineComponent("hglyph", (g: HGlyph) => g);
+
+type Glyph = EntityW<
+  [typeof HGlyphDef, typeof ColorDef, typeof PositionDef, typeof RotationDef]
+>;
+async function createHalfEdgeEditor(hp: HPoly) {
+  // TODO(@darzu):
+  // editor operations: verts in area
+  // editor operations: hedges in area
+  // mapping between vert and vert glpyhs
+
+  const { assets } = await EM.whenResources(AssetsDef);
+  // vert glyphs
+  let vertGlpyhs: Glyph[] = [];
+  for (let v of hp.verts) {
+    const pos = vec3.clone(hp.mesh.pos[v.vi]);
+    pos[1] = 0.2;
+    const glyph = EM.newEntity();
+    EM.ensureComponentOn(glyph, RenderableConstructDef, assets.he_octo.proto);
+    EM.ensureComponentOn(glyph, ColorDef, vec3.clone(ENDESGA16.lightBlue));
+    // EM.ensureComponentOn(glyph, AlphaDef, 0.9);
+    EM.ensureComponentOn(glyph, PositionDef, pos);
+    EM.ensureComponentOn(glyph, RotationDef, quat.create());
+    EM.ensureComponentOn(glyph, HGlyphDef, { kind: "vert", hv: v });
+    EM.ensureComponentOn(glyph, ColliderDef, {
+      shape: "AABB",
+      solid: false,
+      aabb: assets.he_octo.aabb,
+    });
+    vertGlpyhs.push(glyph);
+  }
+
+  // half-edge glyphs
+  let hedgeGlyphs: Glyph[] = [];
+  for (let he of hp.edges) {
+    // TODO(@darzu): pos and rot
+    const pos0 = hp.mesh.pos[he.orig.vi];
+    const pos1 = hp.mesh.pos[he.twin.orig.vi];
+    const diff = vec3.sub(tempVec3(), pos1, pos0);
+    const theta = Math.atan2(diff[0], diff[2]) + Math.PI * 0.5;
+    const rot = quat.fromEuler(quat.create(), 0, theta, 0);
+    const pos = vec3Mid(vec3.create(), pos0, pos1);
+    pos[1] = 0.2;
+    const glyph = EM.newEntity();
+    const visible = !he.face;
+    EM.ensureComponentOn(
+      glyph,
+      RenderableConstructDef,
+      assets.he_quad.proto,
+      visible
+    );
+    EM.ensureComponentOn(glyph, ColorDef, vec3.clone(ENDESGA16.lightBlue));
+    // EM.ensureComponentOn(vert, AlphaDef, 0.9);
+    EM.ensureComponentOn(glyph, PositionDef, pos);
+    EM.ensureComponentOn(glyph, RotationDef, rot);
+    EM.ensureComponentOn(glyph, HGlyphDef, { kind: "hedge", he: he });
+    EM.ensureComponentOn(glyph, ColliderDef, {
+      shape: "AABB",
+      solid: false,
+      aabb: assets.he_quad.aabb,
+    });
+    hedgeGlyphs.push(glyph);
+  }
+
+  const ent0 = EM.newEntity();
+  EM.ensureComponentOn(ent0, RenderableConstructDef, hp.mesh as Mesh); // TODO(@darzu): hacky cast
+  EM.ensureComponentOn(ent0, PositionDef, [0, 0.1, 0]);
 }
