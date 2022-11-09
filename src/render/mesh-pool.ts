@@ -16,21 +16,35 @@ const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * vertsPerTri;
 const bytesPerLine = Uint16Array.BYTES_PER_ELEMENT * 2;
 export const MAX_INDICES = 65535; // Since we're using u16 index type, this is our max indices count
 
+export interface MeshHandleReserve {
+  readonly maxVertNum: number;
+  readonly maxTriNum: number;
+  readonly maxLineNum: number;
+}
+
 export interface MeshHandle {
   // mesh id
   readonly mId: number;
 
-  // this mesh
+  // geo offsets
   readonly uniIdx: number;
   readonly vertIdx: number;
-  readonly vertNum: number;
-  // NOTE: triIdx must always be 4-byte aligned
   readonly triIdx: number;
-  readonly triNum: number;
   readonly lineIdx: number;
-  readonly lineNum: number;
 
-  readonly readonlyMesh?: Mesh;
+  // geo lengths
+  // NOTE: only changable if ".reserved" is set.
+  vertNum: number;
+  // NOTE: triIdx must always be 4-byte aligned
+  triNum: number;
+  lineNum: number;
+
+  // optional extra reserved geo space
+  readonly reserved?: MeshHandleReserve;
+
+  // NOTE: changes to this mesh must by manually synced to the
+  //  MeshPool & GPU via updateMeshVertices and friends.
+  readonly mesh?: Mesh;
 
   // state
   mask: number; // used for selecting which render pipelines to particpate in
@@ -62,42 +76,12 @@ function createMeshPoolDbgStats() {
 }
 export type MeshPoolDbgStats = ReturnType<typeof createMeshPoolDbgStats>;
 
-export interface MeshPool<V extends CyStructDesc, U extends CyStructDesc> {
-  // options
-  opts: MeshPoolOpts<V, U>;
-  // data
-  allMeshes: MeshHandle[];
-  numTris: number;
-  numVerts: number;
-  numLines: number;
-  // dbg data (requires GPU_DBG_PERF)
-  _stats: MeshPoolDbgStats;
-  // methods
-  addMesh: (m: Mesh) => MeshHandle;
-  addMeshInstance: (m: MeshHandle) => MeshHandle;
-  updateUniform: (m: MeshHandle, d: CyToTS<U>) => void;
-  updateMeshVertices: (
-    handle: MeshHandle,
-    newMeshData: Mesh,
-    // TODO(@darzu): make optional again?
-    startIdx?: number,
-    count?: number
-  ) => void;
-  updateMeshTriangles: (
-    handle: MeshHandle,
-    newMeshData: Mesh,
-    // TODO(@darzu): make optional again?
-    triIdx: number,
-    triCount: number
-  ) => void;
-  updateMeshQuads: (
-    handle: MeshHandle,
-    newMeshData: Mesh,
-    // TODO(@darzu): make optional again?
-    quadIdx: number,
-    quadCount: number
-  ) => void;
-}
+// TODO(@darzu): Opaque interface type was more readable but this is easier to
+//    update and goToDefinition. What's the right choice? Maybe code gen..
+export type MeshPool<
+  V extends CyStructDesc,
+  U extends CyStructDesc
+> = ReturnType<typeof createMeshPool<V, U>>;
 
 function logMeshPoolStats(opts: MeshPoolOpts<any, any>) {
   const maxMeshes = opts.unis.length;
@@ -230,7 +214,7 @@ function computeQuadData(
 
 export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   opts: MeshPoolOpts<V, U>
-): MeshPool<V, U> {
+) {
   logMeshPoolStats(opts);
 
   const maxMeshes = opts.unis.length;
@@ -242,7 +226,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
 
   const _stats = createMeshPoolDbgStats();
 
-  const pool: MeshPool<V, U> = {
+  const pool = {
     opts,
     allMeshes,
     numTris: 0,
@@ -255,10 +239,13 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     updateMeshVertices,
     updateMeshTriangles,
     updateMeshQuads,
+    updateMeshSize,
   };
 
   // TODO(@darzu): default to all 1s?
   function addMesh(m: Mesh): MeshHandle {
+    // TODO(@darzu): check .reserved sizes!!
+    // todo_check.reserved;
     assert(pool.allMeshes.length + 1 <= maxMeshes, "Too many meshes!");
     assert(pool.numVerts + m.pos.length <= maxVerts, "Too many vertices!");
     const numTri = m.tri.length + m.quad.length * 2;
@@ -285,50 +272,10 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
       triIdx: pool.numTris,
       lineIdx: pool.numLines,
       uniIdx: allMeshes.length,
-      readonlyMesh: m,
+      mesh: m,
       mask: DEFAULT_MASK,
       //shaderData: uni,
     };
-
-    // add tris (and quads)
-    if (m.tri.length) {
-      const triData = computeTriData(m, 0, m.tri.length);
-      // const dataLen = align(m.tri.length, 2);
-      assertDbg(triData.byteLength % 4 === 0, "alignment");
-      // NOTE: CALLERS to queueUpdate must be 4-byte aligned
-      opts.triInds.queueUpdate(triData, handle.triIdx * 3);
-      if (PERF_DBG_GPU) _stats._accumTriDataQueued += triData.length * 2.0;
-    }
-    if (m.quad.length) {
-      const quadData = computeQuadData(m, 0, m.quad.length);
-      const quadStartIdx = align((handle.triIdx + m.tri.length) * 3, 2);
-      opts.triInds.queueUpdate(quadData, quadStartIdx);
-      if (PERF_DBG_GPU) _stats._accumTriDataQueued += quadData.length * 2.0;
-    }
-
-    // add lines
-    // TODO(@darzu): untested for a while
-    let lineData: Uint16Array | undefined;
-    if (m.lines?.length) {
-      lineData = new Uint16Array(m.lines.length * 2);
-      m.lines.forEach((inds, i) => {
-        lineData?.set(inds, i * 2);
-      });
-    }
-    if (lineData) opts.lineInds.queueUpdate(lineData, handle.lineIdx * 2);
-
-    // add verts data
-    const vertsData = opts.computeVertsData(m, 0, m.pos.length);
-    opts.verts.queueUpdates(vertsData, handle.vertIdx, 0, m.pos.length);
-
-    // initial uniform data
-    const uni = opts.computeUniData(m);
-    opts.unis.queueUpdate(uni, handle.uniIdx);
-
-    if (PERF_DBG_GPU) {
-      _stats._accumVertDataQueued += m.pos.length * opts.verts.struct.size;
-      _stats._accumUniDataQueued += opts.unis.struct.size;
-    }
 
     pool.numTris += numTri;
     // NOTE: mesh's triangle start idx needs to be 4-byte aligned, and we start the
@@ -336,6 +283,13 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     pool.numLines += m.lines?.length ?? 0;
     pool.numVerts += m.pos.length;
     pool.allMeshes.push(handle);
+
+    // submit data to GPU
+    if (m.quad.length) updateMeshQuads(handle, m, 0, m.quad.length);
+    if (m.tri.length) updateMeshTriangles(handle, m, 0, m.tri.length);
+    if (m.pos.length) updateMeshVertices(handle, m, 0, m.pos.length);
+    const uni = opts.computeUniData(m);
+    updateUniform(handle, uni);
 
     return handle;
   }
@@ -413,6 +367,32 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     assertDbg(quadData.length % 2 === 0);
     opts.triInds.queueUpdate(quadData, bufQuadIdx);
     if (PERF_DBG_GPU) _stats._accumTriDataQueued += quadData.byteLength;
+  }
+
+  // TODO(@darzu): IMPL & VERIFY
+  function updateMeshSize(handle: MeshHandle, newMesh: Mesh) {
+    const m = newMesh;
+
+    assert(handle.reserved, "Must have .reserved to update MeshHandle's size");
+
+    const newNumVert = m.pos.length;
+    const newNumTri = m.tri.length + m.quad.length * 2;
+
+    assert(newNumVert <= handle.reserved.maxVertNum, "Too many vertices!");
+    assert(newNumTri <= handle.reserved.maxTriNum, "Too many triangles!");
+    assert(
+      (m.lines?.length ?? 0) <= handle.reserved.maxLineNum,
+      "Too many lines!"
+    );
+    // TODO(@darzu): what to do about this requirement...
+    assert(
+      !m.quad.length || m.tri.length % 2 === 0,
+      `tri.length not even for ${m.dbgName}`
+    );
+
+    handle.triNum = newNumTri;
+    handle.lineNum = m.lines?.length ?? 0;
+    handle.vertNum = newNumVert;
   }
 
   function updateUniform(m: MeshHandle, d: CyToTS<U>): void {

@@ -4,7 +4,7 @@ import { vec3 } from "./gl-matrix.js";
 import { hexAvg } from "./hex.js";
 import { RawMesh } from "./render/mesh.js";
 import { tempVec3 } from "./temp-pool.js";
-import { assert, assertDbg, edges, range } from "./util.js";
+import { assert, assertDbg, edges, range, TupleN } from "./util.js";
 import { vec3Dbg } from "./utils-3d.js";
 
 // https://jerryyin.info/geometry-processing-algorithms/half-edge/
@@ -263,7 +263,13 @@ export function meshToHalfEdgePoly(m: RawMesh): HPoly {
   }
 }
 
-export function extrudeQuad(hp: HPoly, he: HEdge): HFace {
+export interface HPolyDelta {
+  verts: TupleN<HVert, 2>;
+  edges: TupleN<HEdge, 6>;
+  face: HFace;
+}
+
+export function extrudeQuad(hp: HPoly, he: HEdge): HPolyDelta {
   assertDbg(!he.face, `can only extrude from an outside HEdge (no face)`);
 
   // NEW: 2 verts, 3 inner-hedge, 3 outer-hedge, 1 face
@@ -364,5 +370,9 @@ export function extrudeQuad(hp: HPoly, he: HEdge): HFace {
   newVs.forEach((v) => hp.verts.push(v));
   hp.faces.push(f);
 
-  return f;
+  return {
+    face: f,
+    verts: newVs as TupleN<HVert, 2>,
+    edges: newHs as TupleN<HEdge, 6>,
+  };
 }

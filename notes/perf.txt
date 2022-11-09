@@ -206,3 +206,4 @@ about://tracing
 Perf stats on Chrome:
   open -a 'Google Chrome Canary' --args --disable-dawn-features=disallow_unsafe_apis
   
+To learn: occlusion queries

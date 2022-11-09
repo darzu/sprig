@@ -489,7 +489,7 @@ async function initCamera() {
       if (didUpdateMesh) {
         renderer.renderer.stdPool.updateMeshVertices(
           hpEditor.hpEnt.renderable.meshHandle,
-          hpEditor.hpEnt.renderable.meshHandle.readonlyMesh! // TODO(@darzu): hack
+          hpEditor.hpEnt.renderable.meshHandle.mesh! // TODO(@darzu): hack
         );
       }
     },
@@ -632,5 +632,19 @@ async function createHalfEdgeEditor(hp: HPoly) {
       vec3Mid(glyph.position, pos0, pos1);
       glyph.position[1] = 0.2;
     }
+  }
+
+  function extrudeHEdge(he: HEdge) {
+    const { face, verts, edges } = extrudeQuad(hp, he);
+    // TODO(@darzu): need to create glyphs
+    // TODO(@darzu): need to update mesh handle
+    //    either this could be hidden from the mesh handle;
+    //      just alloc more verts, quads, tris than needed, keep them degenerate
+    //      would need to track pointers somewhere to used/unused space
+    //    or the mesh handle
+    //      could track extra space
+    //    either case, if we run out, alloc a new mesh-handle;
+    //      free-list the old one? Hmm. Maybe just create a new pool and recompact
+    //      if it becomes too fragmented
   }
 }

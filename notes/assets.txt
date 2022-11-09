@@ -194,3 +194,10 @@ I think game dev art assets often use Perforce:
   https://www.perforce.com/blog/vcs/version-control-for-binary-files
   https://www.perforce.com/indie-studio-pack
   mentioned by: https://www.youtube.com/watch?v=3DXAVeJh_-0
+
+Perforce:
+  Talked to Taylor
+  Perforce Helix Core
+  Free version: 5 people, 1,000 files, "unlimited" file size
+  Beyond 5 people: ~$400/year/person including first 5
+    might be able to get discount from sales folks

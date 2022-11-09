@@ -120,7 +120,7 @@ onInit((em) => {
       for (let w of es) {
         // console.log(`checking wood!`);
         const meshHandle = w.renderable.meshHandle;
-        const mesh = meshHandle.readonlyMesh!; // TODO(@darzu): again, shouldn't be modifying "readonlyXXXX"
+        const mesh = meshHandle.mesh!; // TODO(@darzu): again, shouldn't be modifying "readonlyXXXX"
         const hits = collidesWith.get(w.id);
         if (hits) {
           const balls = hits
@@ -270,7 +270,7 @@ onInit((em: EntityManager) => {
         let segQuadIndUpdated: { min: number; max: number }[] = [];
 
         const meshHandle = w.renderable.meshHandle;
-        const mesh = meshHandle.readonlyMesh!;
+        const mesh = meshHandle.mesh!;
 
         if (VERBOSE_LOG && _ONCE && mesh.dbgName?.includes("home")) {
           // console.log(`mesh: ${meshStats(mesh)}`);
