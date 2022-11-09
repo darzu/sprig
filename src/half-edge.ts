@@ -18,6 +18,7 @@ TODO(@darzu):
 */
 
 export interface HEdge {
+  hi: number;
   next: HEdge;
   prev: HEdge;
   twin: HEdge;
@@ -42,6 +43,7 @@ export interface HPoly {
 
 // nullable versions for intermediate building
 interface HEdge_ {
+  hi: number;
   next?: HEdge_;
   prev?: HEdge_;
   twin?: HEdge_;
@@ -105,6 +107,7 @@ export function meshToHalfEdgePoly(m: RawMesh): HPoly {
   }));
   const edges: HEdge_[] = range(m.tri.length * 3 + m.quad.length * 4).map(
     (ei) => ({
+      hi: ei,
       next: undefined,
       prev: undefined,
       twin: undefined,
@@ -140,7 +143,9 @@ export function meshToHalfEdgePoly(m: RawMesh): HPoly {
     if (!twin) {
       // outside the surface, so create a NEW twin HEdge
       // NOTE: we need to connect up these outside surface HEdges later
+      const idx = edges.length;
       twin = {
+        hi: idx,
         next: undefined,
         prev: undefined,
         twin: e,
@@ -302,13 +307,14 @@ export function extrudeQuad(hp: HPoly, he: HEdge): HFace {
     edg: he,
   };
 
-  // init hedges
-  const hi0: HEdge_ = { face: f, orig: v0a, prev: he };
-  const hi01: HEdge_ = { face: f, orig: v0, prev: hi0 };
-  const hi1: HEdge_ = { face: f, orig: v1, prev: hi01 };
-  const ho1: HEdge_ = { face: undefined, orig: v1a, prev: undefined };
-  const ho01: HEdge_ = { face: undefined, orig: v1, prev: ho1 };
-  const ho0: HEdge_ = { face: undefined, orig: v0, prev: ho01 };
+  // init new hedges
+  let hIdx = hp.edges.length;
+  const hi0: HEdge_ = { face: f, orig: v0a, prev: he, hi: hIdx++ };
+  const hi01: HEdge_ = { face: f, orig: v0, prev: hi0, hi: hIdx++ };
+  const hi1: HEdge_ = { face: f, orig: v1, prev: hi01, hi: hIdx++ };
+  const ho1: HEdge_ = { face: undefined, orig: v1a, hi: hIdx++ };
+  const ho01: HEdge_ = { face: undefined, orig: v1, prev: ho1, hi: hIdx++ };
+  const ho0: HEdge_ = { face: undefined, orig: v0, prev: ho01, hi: hIdx++ };
 
   // patch up outer connections
   ho1.prev = he.prev;
@@ -349,7 +355,10 @@ export function extrudeQuad(hp: HPoly, he: HEdge): HFace {
   // we're done! Verify and append to HPoly
   const newHs = [hi0, hi01, hi1, ho1, ho01, ho0];
   dbgCheckHEdges(newHs);
-  newHs.forEach((h) => hp.edges.push(h));
+  newHs.forEach((h) => {
+    assertDbg(hp.edges.length === h.hi);
+    hp.edges.push(h);
+  });
   const newVs = [v0, v1];
   dbgCheckHVerts(newVs);
   newVs.forEach((v) => hp.verts.push(v));

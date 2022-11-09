@@ -294,7 +294,7 @@ async function initCamera() {
   //   const newHes = outerHes.map((he) => extrudeQuad(hp, he));
   //   newHes.forEach((he, i) => {
   //     // vec3.set(mesh.colors[he.fi], 0.6, 0.05, 0.05);
-  //     randNormalVec3(mesh.colors[he.fi]);
+  //     randNormalVec3(hpMesh.colors[he.fi]);
   //   });
   // }
   // console.dir(hp);
@@ -402,6 +402,10 @@ async function initCamera() {
           // drag selected
           // TODO(@darzu): check that cursorGlyph is vert and selected
           // TODO(@darzu): IMPL hedges
+          const isCursorSelected = selectedGlyphs.some(
+            (g) => g === cursorGlpyh
+          );
+          if (!isCursorSelected) selectedGlyphs = [cursorGlpyh];
           for (let g of selectedGlyphs) {
             if (g.hglyph.kind === "vert") {
               hpEditor.moveVert(g.hglyph.hv, worldDrag);
