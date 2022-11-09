@@ -53,6 +53,10 @@ import { dbgLogOnce } from "../util.js";
 // TODO(@darzu): Try using drawIndirect !!
 //    https://gpuweb.github.io/gpuweb/#dom-gpurendercommandsmixin-drawindirect
 
+// TODO(@darzu): We should use:
+// "navigator.gpu.requestAdapter().then(a => console.log([...a.features]))"
+// to test for features on hardware we want to support
+
 const MAX_PIPELINES = 64;
 
 export function createRenderer(

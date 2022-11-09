@@ -350,6 +350,7 @@ async function initCamera() {
     [PhysicsResultsDef, MouseDragDef, CameraViewDef, RendererDef],
     (_, { physicsResults, mousedrag, cameraView, renderer }) => {
       let didUpdateMesh = false;
+      const hedgesToMove = new Set<number>();
 
       // update dragbox
       if (cursorGlpyh || mousedrag.isDragEnd) {
@@ -408,7 +409,14 @@ async function initCamera() {
           if (!isCursorSelected) selectedGlyphs = [cursorGlpyh];
           for (let g of selectedGlyphs) {
             if (g.hglyph.kind === "vert") {
-              hpEditor.moveVert(g.hglyph.hv, worldDrag);
+              hpEditor.translateVert(g.hglyph.hv, worldDrag);
+              let edg = g.hglyph.hv.edg;
+              while (edg.orig === g.hglyph.hv) {
+                hedgesToMove.add(edg.hi);
+                hedgesToMove.add(edg.twin.hi);
+                edg = edg.twin.next;
+                if (edg === g.hglyph.hv.edg) break;
+              }
               didUpdateMesh = true;
             }
           }
@@ -460,19 +468,30 @@ async function initCamera() {
         }
       }
 
+      // update hedges
+      for (let hi of hedgesToMove.values()) {
+        const he = hp.edges[hi];
+        assert(he.hi === hi, `hedge idx mismatch`);
+        hpEditor.positionHEdge(he);
+      }
+
       // update glyph colors based on state
-      for (let g of [...hpEditor.vertGlpyhs, ...hpEditor.hedgeGlyphs])
+      for (let g of [
+        ...hpEditor.vertGlpyhs.values(),
+        ...hpEditor.hedgeGlyphs.values(),
+      ])
         vec3.copy(g.color, ENDESGA16.lightBlue);
       for (let g of hoverGlyphs) vec3.copy(g.color, ENDESGA16.yellow);
       for (let g of selectedGlyphs) vec3.copy(g.color, ENDESGA16.lightGreen);
       if (cursorGlpyh) vec3.copy(cursorGlpyh.color, ENDESGA16.red);
 
       // update mesh
-      if (didUpdateMesh)
+      if (didUpdateMesh) {
         renderer.renderer.stdPool.updateMeshVertices(
           hpEditor.hpEnt.renderable.meshHandle,
           hpEditor.hpEnt.renderable.meshHandle.readonlyMesh! // TODO(@darzu): hack
         );
+      }
     },
     "editHPoly"
   );
@@ -513,7 +532,7 @@ async function createHalfEdgeEditor(hp: HPoly) {
 
   const { assets } = await EM.whenResources(AssetsDef);
   // vert glyphs
-  let vertGlpyhs: Glyph[] = [];
+  let vertGlpyhs: Map<number, Glyph> = new Map();
   for (let v of hp.verts) {
     const pos = vec3.clone(hp.mesh.pos[v.vi]);
     pos[1] = 0.2;
@@ -533,7 +552,7 @@ async function createHalfEdgeEditor(hp: HPoly) {
       solid: false,
       aabb: assets.he_octo.aabb,
     });
-    vertGlpyhs.push(glyph);
+    vertGlpyhs.set(v.vi, glyph);
   }
 
   // half-edge glyphs
@@ -541,19 +560,12 @@ async function createHalfEdgeEditor(hp: HPoly) {
   // console.dir(assets.he_quad.aabb);
   // console.dir(assets.he_octo.mesh);
   // console.dir(assets.he_octo.aabb);
-  let hedgeGlyphs: Glyph[] = [];
+  let hedgeGlyphs: Map<number, Glyph> = new Map();
   for (let he of hp.edges) {
     // TODO(@darzu): pos and rot
     const visible = !he.face;
     if (!visible) continue;
-    const pos0 = hp.mesh.pos[he.orig.vi];
-    const pos1 = hp.mesh.pos[he.twin.orig.vi];
-    const diff = vec3.sub(tempVec3(), pos1, pos0);
-    const theta = Math.atan2(diff[0], diff[2]) + Math.PI * 0.5;
-    const rot = quat.fromEuler(quat.create(), 0, theta, 0);
-    // const rot = quat.create();
-    const pos = vec3Mid(vec3.create(), pos0, pos1);
-    pos[1] = 0.2;
+
     const glyph = EM.newEntity();
     EM.ensureComponentOn(
       glyph,
@@ -563,8 +575,8 @@ async function createHalfEdgeEditor(hp: HPoly) {
     );
     EM.ensureComponentOn(glyph, ColorDef);
     // EM.ensureComponentOn(vert, AlphaDef, 0.9);
-    EM.ensureComponentOn(glyph, PositionDef, pos);
-    EM.ensureComponentOn(glyph, RotationDef, rot);
+    EM.ensureComponentOn(glyph, PositionDef);
+    EM.ensureComponentOn(glyph, RotationDef);
     EM.ensureComponentOn(glyph, HGlyphDef, {
       kind: "hedge",
       he: he,
@@ -575,7 +587,9 @@ async function createHalfEdgeEditor(hp: HPoly) {
       solid: false,
       aabb: assets.he_quad.aabb,
     });
-    hedgeGlyphs.push(glyph);
+    hedgeGlyphs.set(he.hi, glyph);
+
+    positionHEdge(he);
   }
 
   const ent0 = EM.newEntity();
@@ -588,15 +602,35 @@ async function createHalfEdgeEditor(hp: HPoly) {
     hpEnt: ent1,
     vertGlpyhs,
     hedgeGlyphs,
-    moveVert,
+    translateVert,
+    positionHEdge,
   };
 
-  function moveVert(v: HVert, delta: vec3) {
+  function translateVert(v: HVert, delta: vec3) {
+    const glyph = vertGlpyhs.get(v.vi);
+    assert(glyph && glyph.hglyph.kind === "vert" && glyph.hglyph.hv === v);
+
     const pos = hp.mesh.pos[v.vi];
     vec3.add(pos, pos, delta);
-    const glyph = vertGlpyhs[v.vi];
-    assert(glyph && glyph.hglyph.kind === "vert" && glyph.hglyph.hv === v);
     glyph.position[0] = pos[0];
     glyph.position[2] = pos[2];
+  }
+
+  function positionHEdge(he: HEdge) {
+    const glyph = hedgeGlyphs.get(he.hi);
+    if (glyph) {
+      assert(
+        glyph.hglyph.kind === "hedge" && glyph.hglyph.he === he,
+        `hedge glyph lookup mismatch: ${he.hi}`
+      );
+
+      const pos0 = hp.mesh.pos[he.orig.vi];
+      const pos1 = hp.mesh.pos[he.twin.orig.vi];
+      const diff = vec3.sub(tempVec3(), pos1, pos0);
+      const theta = Math.atan2(diff[0], diff[2]) + Math.PI * 0.5;
+      quat.fromEuler(glyph.rotation, 0, theta, 0);
+      vec3Mid(glyph.position, pos0, pos1);
+      glyph.position[1] = 0.2;
+    }
   }
 }
