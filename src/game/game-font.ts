@@ -1,9 +1,9 @@
 import { CameraDef, CameraViewDef } from "../camera.js";
 import { CanvasDef } from "../canvas.js";
-import { AlphaDef, ColorDef, TintsDef } from "../color-ecs.js";
+import { AlphaDef, ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { vec3, quat, mat4, vec2 } from "../gl-matrix.js";
+import { vec3, quat, mat4 } from "../gl-matrix.js";
 import {
   extrudeQuad,
   HEdge,
@@ -11,7 +11,6 @@ import {
   HVert,
   meshToHalfEdgePoly,
 } from "../half-edge.js";
-import { onInit } from "../init.js";
 import { InputsDef, MouseDragDef } from "../inputs.js";
 import { mathMap } from "../math.js";
 import { copyAABB, createAABB } from "../physics/broadphase.js";
@@ -23,12 +22,9 @@ import {
   cloneMesh,
   getAABBFromMesh,
   Mesh,
-  RawMesh,
   scaleMesh,
-  scaleMesh3,
   transformMesh,
 } from "../render/mesh.js";
-import { ALPHA_MASK } from "../render/pipeline-masks.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -38,16 +34,11 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { tempMat4, tempVec2, tempVec3 } from "../temp-pool.js";
+import { tempMat4, tempVec3 } from "../temp-pool.js";
 import { assert } from "../util.js";
-import {
-  randNormalPosVec3,
-  randNormalVec3,
-  vec3Dbg,
-  vec3Mid,
-} from "../utils-3d.js";
+import { randNormalPosVec3, vec3Mid } from "../utils-3d.js";
 import { screenPosToWorldPos } from "../utils-game.js";
-import { AssetsDef, BLACK, makePlaneMesh } from "./assets.js";
+import { AssetsDef, makePlaneMesh } from "./assets.js";
 import { createGhost, gameplaySystems } from "./game.js";
 
 // TODO(@darzu): 2D editor!
@@ -347,9 +338,10 @@ async function initCamera() {
   let worldDrag = vec3.create();
   EM.registerSystem(
     null,
-    [PhysicsResultsDef, MouseDragDef, CameraViewDef, RendererDef],
-    (_, { physicsResults, mousedrag, cameraView, renderer }) => {
+    [PhysicsResultsDef, MouseDragDef, CameraViewDef, RendererDef, InputsDef],
+    (_, { physicsResults, mousedrag, cameraView, renderer, inputs }) => {
       let didUpdateMesh = false;
+      let didEnlargeMesh = false;
       const hedgesToMove = new Set<number>();
 
       // update dragbox
@@ -446,7 +438,21 @@ async function initCamera() {
           // drag selected done
           // TODO(@darzu): IMPL
         }
-      } else {
+      }
+
+      // left-click actions
+      if (inputs.lclick) {
+        // console.log("lclick!");
+        if (cursorGlpyh?.hglyph.kind === "hedge") {
+          // console.log("EXTRUDE!");
+          // quad extrude
+          hpEditor.extrudeHEdge(cursorGlpyh.hglyph.he);
+          didEnlargeMesh = true;
+        }
+      }
+
+      // non dragging
+      if (!mousedrag.isDragging && !mousedrag.isDragEnd) {
         // unselect cursor glpyh
         cursorGlpyh = undefined;
 
@@ -486,11 +492,14 @@ async function initCamera() {
       if (cursorGlpyh) vec3.copy(cursorGlpyh.color, ENDESGA16.red);
 
       // update mesh
-      if (didUpdateMesh) {
-        renderer.renderer.stdPool.updateMeshVertices(
-          hpEditor.hpEnt.renderable.meshHandle,
-          hpEditor.hpEnt.renderable.meshHandle.mesh! // TODO(@darzu): hack
-        );
+      const handle = hpEditor.hpEnt.renderable.meshHandle;
+      if (didEnlargeMesh) {
+        renderer.renderer.stdPool.updateMeshSize(handle, handle.mesh!);
+        renderer.renderer.stdPool.updateMeshQuads(handle, handle.mesh!);
+        renderer.renderer.stdPool.updateMeshTriangles(handle, handle.mesh!);
+      }
+      if (didUpdateMesh || didEnlargeMesh) {
+        renderer.renderer.stdPool.updateMeshVertices(handle, handle.mesh!);
       }
     },
     "editHPoly"
@@ -593,7 +602,21 @@ async function createHalfEdgeEditor(hp: HPoly) {
   }
 
   const ent0 = EM.newEntity();
-  EM.ensureComponentOn(ent0, RenderableConstructDef, hp.mesh as Mesh); // TODO(@darzu): hacky cast
+  EM.ensureComponentOn(
+    ent0,
+    RenderableConstructDef,
+    hp.mesh as Mesh, // TODO(@darzu): hacky cast
+    true,
+    undefined,
+    undefined,
+    "std",
+    false,
+    {
+      maxVertNum: 100,
+      maxTriNum: 100,
+      maxLineNum: 0,
+    }
+  );
   EM.ensureComponentOn(ent0, PositionDef, [0, 0.1, 0]);
   const ent1 = await EM.whenEntityHas(ent0, RenderableDef);
 
@@ -604,6 +627,7 @@ async function createHalfEdgeEditor(hp: HPoly) {
     hedgeGlyphs,
     translateVert,
     positionHEdge,
+    extrudeHEdge,
   };
 
   function translateVert(v: HVert, delta: vec3) {

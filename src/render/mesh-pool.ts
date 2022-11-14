@@ -16,7 +16,8 @@ const bytesPerTri = Uint16Array.BYTES_PER_ELEMENT * vertsPerTri;
 const bytesPerLine = Uint16Array.BYTES_PER_ELEMENT * 2;
 export const MAX_INDICES = 65535; // Since we're using u16 index type, this is our max indices count
 
-export interface MeshHandleReserve {
+// TODO(@darzu): rename?
+export interface MeshReserve {
   readonly maxVertNum: number;
   readonly maxTriNum: number;
   readonly maxLineNum: number;
@@ -40,7 +41,7 @@ export interface MeshHandle {
   lineNum: number;
 
   // optional extra reserved geo space
-  readonly reserved?: MeshHandleReserve;
+  readonly reserved?: MeshReserve;
 
   // NOTE: changes to this mesh must by manually synced to the
   //  MeshPool & GPU via updateMeshVertices and friends.
@@ -217,10 +218,10 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
 ) {
   logMeshPoolStats(opts);
 
-  const maxMeshes = opts.unis.length;
-  const maxTris = Math.ceil(opts.triInds.length / 3);
-  const maxVerts = opts.verts.length;
-  const maxLines = opts.lineInds.length / 2;
+  const poolMaxMeshes = opts.unis.length;
+  const poolMaxTris = Math.ceil(opts.triInds.length / 3);
+  const poolMaxVerts = opts.verts.length;
+  const poolMaxLines = opts.lineInds.length / 2;
 
   const allMeshes: MeshHandle[] = [];
 
@@ -243,17 +244,17 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   };
 
   // TODO(@darzu): default to all 1s?
-  function addMesh(m: Mesh): MeshHandle {
-    // TODO(@darzu): check .reserved sizes!!
-    // todo_check.reserved;
-    assert(pool.allMeshes.length + 1 <= maxMeshes, "Too many meshes!");
-    assert(pool.numVerts + m.pos.length <= maxVerts, "Too many vertices!");
-    const numTri = m.tri.length + m.quad.length * 2;
-    assert(pool.numTris + numTri <= maxTris, "Too many triangles!");
-    assert(
-      pool.numLines + (m.lines?.length ?? 0) <= maxLines,
-      "Too many lines!"
-    );
+  function addMesh(m: Mesh, reserved?: MeshReserve): MeshHandle {
+    const vertNum = m.pos.length;
+    const maxVertNum = reserved?.maxVertNum ?? vertNum;
+    const triNum = m.tri.length + m.quad.length * 2;
+    const maxTriNum = reserved?.maxTriNum ?? triNum;
+    const lineNum = m.lines?.length ?? 0;
+    const maxLineNum = reserved?.maxLineNum ?? lineNum;
+    assert(pool.allMeshes.length + 1 <= poolMaxMeshes, "Too many meshes!");
+    assert(pool.numVerts + maxVertNum <= poolMaxVerts, "Too many vertices!");
+    assert(pool.numTris + maxTriNum <= poolMaxTris, "Too many triangles!");
+    assert(pool.numLines + maxLineNum <= poolMaxLines, "Too many lines!");
     assert(m.usesProvoking, `mesh must use provoking vertices`);
     // TODO(@darzu): what to do about this requirement...
     assert(
@@ -265,36 +266,37 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     const handle: MeshHandle = {
       mId: nextMeshId++,
       // enabled: true,
-      triNum: numTri,
-      lineNum: m.lines?.length ?? 0,
-      vertNum: m.pos.length,
+      triNum,
+      lineNum,
+      vertNum,
       vertIdx: pool.numVerts,
       triIdx: pool.numTris,
       lineIdx: pool.numLines,
       uniIdx: allMeshes.length,
       mesh: m,
       mask: DEFAULT_MASK,
+      reserved,
       //shaderData: uni,
     };
 
-    pool.numTris += numTri;
+    pool.numTris += maxTriNum;
     // NOTE: mesh's triangle start idx needs to be 4-byte aligned, and we start the
     pool.numTris = align(pool.numTris, 2);
-    pool.numLines += m.lines?.length ?? 0;
-    pool.numVerts += m.pos.length;
+    pool.numLines += maxLineNum;
+    pool.numVerts += maxVertNum;
     pool.allMeshes.push(handle);
 
     // submit data to GPU
-    if (m.quad.length) updateMeshQuads(handle, m, 0, m.quad.length);
-    if (m.tri.length) updateMeshTriangles(handle, m, 0, m.tri.length);
-    if (m.pos.length) updateMeshVertices(handle, m, 0, m.pos.length);
+    if (m.quad.length) updateMeshQuads(handle, m);
+    if (m.tri.length) updateMeshTriangles(handle, m);
+    if (m.pos.length) updateMeshVertices(handle, m);
     const uni = opts.computeUniData(m);
     updateUniform(handle, uni);
 
     return handle;
   }
   function addMeshInstance(m: MeshHandle): MeshHandle {
-    if (pool.allMeshes.length + 1 > maxMeshes) throw "Too many meshes!";
+    if (pool.allMeshes.length + 1 > poolMaxMeshes) throw "Too many meshes!";
 
     const uniOffset = allMeshes.length;
     const newHandle: MeshHandle = {
@@ -317,6 +319,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   ) {
     vertIdx = vertIdx ?? 0;
     vertCount = vertCount ?? newMesh.pos.length;
+
     const data = opts.computeVertsData(newMesh, vertIdx, vertCount);
     opts.verts.queueUpdates(data, handle.vertIdx + vertIdx, 0, vertCount);
     if (PERF_DBG_GPU)
@@ -325,9 +328,12 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   function updateMeshTriangles(
     handle: MeshHandle,
     newMesh: Mesh,
-    triIdx: number,
-    triCount: number
+    triIdx?: number,
+    triCount?: number
   ) {
+    triIdx = triIdx ?? 0;
+    triCount = triCount ?? newMesh.tri.length;
+
     // TODO(@darzu): this align up and down thing seems a little hacky?
     // NOTE: we need both the start and length to be 4-byte aligned!
     const triEndIdx = triIdx + triCount - 1;
@@ -354,9 +360,12 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   function updateMeshQuads(
     handle: MeshHandle,
     newMesh: Mesh,
-    quadIdx: number,
-    quadCount: number
+    quadIdx?: number,
+    quadCount?: number
   ) {
+    quadIdx = quadIdx ?? 0;
+    quadCount = quadCount ?? newMesh.quad.length;
+
     assertDbg(0 <= quadIdx && quadIdx + quadCount <= newMesh.quad.length);
     const quadData = computeQuadData(newMesh, quadIdx, quadCount);
     assertDbg(quadData.length % 2 === 0);

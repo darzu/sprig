@@ -868,7 +868,9 @@ export function bundleRenderPipelines(
         bundleEnc.setBindGroup(1, uniBG, [
           m.uniIdx * p.pool.opts.unis.struct.size,
         ]);
-        bundleEnc.drawIndexed(m.triNum * 3, undefined, m.triIdx * 3, m.vertIdx);
+        // TODO(@darzu): do we always want to draw max or do we want to rebundle?
+        let numTri = m.reserved?.maxTriNum ?? m.triNum;
+        bundleEnc.drawIndexed(numTri * 3, undefined, m.triIdx * 3, m.vertIdx);
         dbgNumTris += m.triNum * 3;
       }
     } else if (p.ptr.meshOpt.stepMode === "single-draw") {

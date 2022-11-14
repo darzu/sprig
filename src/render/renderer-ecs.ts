@@ -21,7 +21,7 @@ import { createRenderer } from "./renderer-webgpu.js";
 import { CyPipelinePtr, CyTexturePtr } from "./gpu-registry.js";
 import { createFrame, WorldFrameDef } from "../physics/nonintersection.js";
 import { tempVec3 } from "../temp-pool.js";
-import { isMeshHandle, MeshHandle } from "./mesh-pool.js";
+import { isMeshHandle, MeshHandle, MeshReserve } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import { SceneTS } from "./pipelines/std-scene.js";
 import { max } from "../math.js";
@@ -66,6 +66,7 @@ export interface RenderableConstruct {
   //   less rebundling, but this needs measurement.
   readonly hidden: boolean;
   meshOrProto: Mesh | MeshHandle;
+  readonly reserve?: MeshReserve;
 }
 
 export const RenderableConstructDef = EM.defineComponent(
@@ -77,7 +78,8 @@ export const RenderableConstructDef = EM.defineComponent(
     sortLayer: number = 0,
     mask?: number,
     poolKind: PoolKind = "std",
-    hidden: boolean = false
+    hidden: boolean = false,
+    reserve?: MeshReserve
   ) => {
     const r: RenderableConstruct = {
       enabled,
@@ -86,6 +88,7 @@ export const RenderableConstructDef = EM.defineComponent(
       mask,
       poolKind,
       hidden,
+      reserve,
     };
     return r;
   }
@@ -555,11 +558,13 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
           } else {
             if (e.renderableConstruct.poolKind === "std") {
               meshHandle = res.renderer.renderer.stdPool.addMesh(
-                e.renderableConstruct.meshOrProto
+                e.renderableConstruct.meshOrProto,
+                e.renderableConstruct.reserve
               );
             } else if (e.renderableConstruct.poolKind === "ocean") {
               meshHandle = res.renderer.renderer.oceanPool.addMesh(
-                e.renderableConstruct.meshOrProto
+                e.renderableConstruct.meshOrProto,
+                e.renderableConstruct.reserve
               );
             } else {
               never(e.renderableConstruct.poolKind);
