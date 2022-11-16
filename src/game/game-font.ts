@@ -424,6 +424,7 @@ async function initCamera() {
               PositionDef,
               RotationDef,
               ColorDef,
+              RenderableDef,
             ]);
             if (!g) continue;
             hoverGlyphs.push(g);
@@ -465,6 +466,7 @@ async function initCamera() {
             PositionDef,
             RotationDef,
             ColorDef,
+            RenderableDef,
           ]);
           if (g) {
             vec3.copy(g.color, ENDESGA16.red);
@@ -525,11 +527,18 @@ interface HVertGlyph {
   hv: HVert;
   // state: "none" | "hover" | "selected";
 }
+// TODO(@darzu): "H" in HGlyph vs Glyph is confusing
 type HGlyph = HEdgeGlyph | HVertGlyph;
 const HGlyphDef = EM.defineComponent("hglyph", (g: HGlyph) => g);
 
 type Glyph = EntityW<
-  [typeof HGlyphDef, typeof ColorDef, typeof PositionDef, typeof RotationDef]
+  [
+    typeof HGlyphDef,
+    typeof ColorDef,
+    typeof PositionDef,
+    typeof RotationDef,
+    typeof RenderableDef
+  ]
 >;
 
 type HEditor = ReturnType<typeof createHalfEdgeEditor>;
@@ -543,24 +552,37 @@ async function createHalfEdgeEditor(hp: HPoly) {
   // vert glyphs
   let vertGlpyhs: Map<number, Glyph> = new Map();
   for (let v of hp.verts) {
+    // TODO(@darzu): seperate positioning
+    createHVertGlyph(v);
+  }
+
+  async function createHVertGlyph(v: HVert) {
     const pos = vec3.clone(hp.mesh.pos[v.vi]);
     pos[1] = 0.2;
-    const glyph = EM.newEntity();
-    EM.ensureComponentOn(glyph, RenderableConstructDef, assets.he_octo.proto);
-    EM.ensureComponentOn(glyph, ColorDef);
+    const glyph_ = EM.newEntity();
+    EM.ensureComponentOn(glyph_, RenderableConstructDef, assets.he_octo.proto);
+    EM.ensureComponentOn(glyph_, ColorDef);
     // EM.ensureComponentOn(glyph, AlphaDef, 0.9);
-    EM.ensureComponentOn(glyph, PositionDef, pos);
-    EM.ensureComponentOn(glyph, RotationDef, quat.create());
-    EM.ensureComponentOn(glyph, HGlyphDef, {
+    EM.ensureComponentOn(glyph_, PositionDef, pos);
+    EM.ensureComponentOn(glyph_, RotationDef, quat.create());
+    EM.ensureComponentOn(glyph_, HGlyphDef, {
       kind: "vert",
       hv: v,
       // state: "none",
     });
-    EM.ensureComponentOn(glyph, ColliderDef, {
+    EM.ensureComponentOn(glyph_, ColliderDef, {
       shape: "AABB",
       solid: false,
       aabb: assets.he_octo.aabb,
     });
+    const glyph = await EM.whenEntityHas(
+      glyph_,
+      HGlyphDef,
+      ColorDef,
+      PositionDef,
+      RotationDef,
+      RenderableDef
+    );
     vertGlpyhs.set(v.vi, glyph);
   }
 
@@ -571,34 +593,44 @@ async function createHalfEdgeEditor(hp: HPoly) {
   // console.dir(assets.he_octo.aabb);
   let hedgeGlyphs: Map<number, Glyph> = new Map();
   for (let he of hp.edges) {
-    // TODO(@darzu): pos and rot
     const visible = !he.face;
-    if (!visible) continue;
+    if (visible) createHEdgeGlyph(he, visible);
+  }
 
-    const glyph = EM.newEntity();
+  async function createHEdgeGlyph(he: HEdge, visible: boolean): Promise<Glyph> {
+    // TODO(@darzu):
+    const glyph_ = EM.newEntity();
     EM.ensureComponentOn(
-      glyph,
+      glyph_,
       RenderableConstructDef,
       assets.he_quad.proto,
       visible
     );
-    EM.ensureComponentOn(glyph, ColorDef);
+    EM.ensureComponentOn(glyph_, ColorDef);
     // EM.ensureComponentOn(vert, AlphaDef, 0.9);
-    EM.ensureComponentOn(glyph, PositionDef);
-    EM.ensureComponentOn(glyph, RotationDef);
-    EM.ensureComponentOn(glyph, HGlyphDef, {
+    EM.ensureComponentOn(glyph_, PositionDef);
+    EM.ensureComponentOn(glyph_, RotationDef);
+    EM.ensureComponentOn(glyph_, HGlyphDef, {
       kind: "hedge",
       he: he,
       // state: "none",
     });
-    EM.ensureComponentOn(glyph, ColliderDef, {
+    EM.ensureComponentOn(glyph_, ColliderDef, {
       shape: "AABB",
       solid: false,
       aabb: assets.he_quad.aabb,
     });
+    const glyph = await EM.whenEntityHas(
+      glyph_,
+      HGlyphDef,
+      ColorDef,
+      PositionDef,
+      RotationDef,
+      RenderableDef
+    );
     hedgeGlyphs.set(he.hi, glyph);
-
-    positionHEdge(he);
+    positionHEdgeGlyph(he);
+    return glyph;
   }
 
   const ent0 = EM.newEntity();
@@ -626,7 +658,7 @@ async function createHalfEdgeEditor(hp: HPoly) {
     vertGlpyhs,
     hedgeGlyphs,
     translateVert,
-    positionHEdge,
+    positionHEdge: positionHEdgeGlyph,
     extrudeHEdge,
   };
 
@@ -640,7 +672,8 @@ async function createHalfEdgeEditor(hp: HPoly) {
     glyph.position[2] = pos[2];
   }
 
-  function positionHEdge(he: HEdge) {
+  function positionHEdgeGlyph(he: HEdge) {
+    // TODO(@darzu): take a glyph?
     const glyph = hedgeGlyphs.get(he.hi);
     if (glyph) {
       assert(
@@ -660,15 +693,19 @@ async function createHalfEdgeEditor(hp: HPoly) {
 
   function extrudeHEdge(he: HEdge) {
     const { face, verts, edges } = extrudeQuad(hp, he);
-    // TODO(@darzu): need to create glyphs
-    // TODO(@darzu): need to update mesh handle
-    //    either this could be hidden from the mesh handle;
-    //      just alloc more verts, quads, tris than needed, keep them degenerate
-    //      would need to track pointers somewhere to used/unused space
-    //    or the mesh handle
-    //      could track extra space
-    //    either case, if we run out, alloc a new mesh-handle;
-    //      free-list the old one? Hmm. Maybe just create a new pool and recompact
-    //      if it becomes too fragmented
+
+    const oldGlyph = hedgeGlyphs.get(he.hi);
+    if (oldGlyph) {
+      oldGlyph.renderable.hidden = true;
+    }
+
+    for (let v of verts) {
+      createHVertGlyph(v);
+    }
+
+    for (let he of edges) {
+      const visible = !he.face;
+      if (visible) createHEdgeGlyph(he, visible);
+    }
   }
 }
