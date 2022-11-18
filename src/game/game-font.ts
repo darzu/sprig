@@ -2,6 +2,7 @@ import { CameraDef, CameraViewDef } from "../camera.js";
 import { CanvasDef } from "../canvas.js";
 import { AlphaDef, ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
+import { dbg } from "../debugger.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
 import { vec3, quat, mat4 } from "../gl-matrix.js";
 import {
@@ -11,6 +12,7 @@ import {
   HVert,
   meshToHalfEdgePoly,
 } from "../half-edge.js";
+import { exportObj, importObj } from "../import_obj.js";
 import { InputsDef, MouseDragDef } from "../inputs.js";
 import { mathMap } from "../math.js";
 import { copyAABB, createAABB } from "../physics/broadphase.js";
@@ -22,8 +24,10 @@ import {
   cloneMesh,
   getAABBFromMesh,
   Mesh,
+  normalizeMesh,
   scaleMesh,
   transformMesh,
+  unshareProvokingVertices,
 } from "../render/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
@@ -41,12 +45,42 @@ import { screenPosToWorldPos } from "../utils-game.js";
 import { AssetsDef, makePlaneMesh } from "./assets.js";
 import { createGhost, gameplaySystems } from "./game.js";
 
-// TODO(@darzu): 2D editor!
+/*
+TODO(@darzu):
+ [x] new faces get new colors
+ [ ] allow edge collapse, towards either vert
+  [ ] quad -> tri
+  [ ] tri -> [none]
+ [ ] edge extrude should be perp
+ [ ] show 2D and 3D spinning preview of glyph
+ [ ] show font references
+ [ ] show font character bounds
+ [ ] loop cut
+ [ ] export to font
+  [ ] button render w/ click and action
+  [ ] bank of characters: map of character to mesh proto
+ [ ] render arbitrary-ish text
+*/
 
 const DBG_3D = false; // TODO(@darzu): add in-game smooth transition!
 
 const PANEL_W = 4 * 12;
 const PANEL_H = 3 * 12;
+
+const BTN_OBJ = `
+# sprigland exported mesh (8 verts, 0 faces)
+v 0.85 0.00 -4.00
+v -4.00 0.00 -4.00
+v -4.00 0.00 4.00
+v 0.85 0.00 4.00
+v 2.50 0.00 2.72
+v 2.37 0.00 -2.97
+v -5.64 0.00 -2.72
+v -5.64 0.00 3.17
+f 1// 2// 3// 4//
+f 5// 6// 1// 4//
+f 7// 8// 3// 2//
+`;
 
 export async function initFontEditor(em: EntityManager) {
   console.log(`panel ${PANEL_W}x${PANEL_H}`);
@@ -249,33 +283,47 @@ async function initCamera() {
 
   // testHalfEdge
   const hpMesh: Mesh = {
-    quad: [
-      [0, 3, 4, 1],
-      [3, 5, 6, 4],
-    ],
-    tri: [
-      [2, 3, 0],
-      [5, 3, 2],
-    ],
+    quad: [[0, 1, 2, 3]],
+    tri: [],
     pos: [
-      [0, 0, 0],
-      [1, 0, 0],
+      [1, 0, -1],
+      [-1, 0, -1],
       [-1, 0, 1],
-      [0, 0, 1],
       [1, 0, 1],
-      [0, 0, 2],
-      [1, 0, 2],
     ],
-    colors: [
-      randNormalPosVec3(),
-      randNormalPosVec3(),
-      randNormalPosVec3(),
-      randNormalPosVec3(),
-    ],
-    surfaceIds: [1, 2, 3, 4],
+    colors: [randNormalPosVec3()],
+    surfaceIds: [1],
     usesProvoking: true,
   };
   scaleMesh(hpMesh, 4);
+  // const hpMesh: Mesh = {
+  //   quad: [
+  //     [0, 3, 4, 1],
+  //     [3, 5, 6, 4],
+  //   ],
+  //   tri: [
+  //     [2, 3, 0],
+  //     [5, 3, 2],
+  //   ],
+  //   pos: [
+  //     [0, 0, 0],
+  //     [1, 0, 0],
+  //     [-1, 0, 1],
+  //     [0, 0, 1],
+  //     [1, 0, 1],
+  //     [0, 0, 2],
+  //     [1, 0, 2],
+  //   ],
+  //   colors: [
+  //     randNormalPosVec3(),
+  //     randNormalPosVec3(),
+  //     randNormalPosVec3(),
+  //     randNormalPosVec3(),
+  //   ],
+  //   surfaceIds: [1, 2, 3, 4],
+  //   usesProvoking: true,
+  // };
+  // scaleMesh(hpMesh, 4);
 
   const hp = meshToHalfEdgePoly(hpMesh);
   // console.dir(hp);
@@ -497,8 +545,10 @@ async function initCamera() {
       const handle = hpEditor.hpEnt.renderable.meshHandle;
       if (didEnlargeMesh) {
         renderer.renderer.stdPool.updateMeshSize(handle, handle.mesh!);
-        renderer.renderer.stdPool.updateMeshQuads(handle, handle.mesh!);
-        renderer.renderer.stdPool.updateMeshTriangles(handle, handle.mesh!);
+        if (handle.mesh!.quad.length)
+          renderer.renderer.stdPool.updateMeshQuads(handle, handle.mesh!);
+        if (handle.mesh!.tri.length)
+          renderer.renderer.stdPool.updateMeshTriangles(handle, handle.mesh!);
       }
       if (didUpdateMesh || didEnlargeMesh) {
         renderer.renderer.stdPool.updateMeshVertices(handle, handle.mesh!);
@@ -508,13 +558,26 @@ async function initCamera() {
   );
   gameplaySystems.push("editHPoly");
 
-  /* TODO(@darzu): 
-    [x] render widget for each: vertex, half-edge
-    [ ] drag select vertices
-    [ ] drag move vertices
-    [ ] click extrude half-edge
-    [ ] click to collapse hedge
-  */
+  // TODO(@darzu): HACK
+  (dbg as any).exportPoly = () => {
+    console.log(exportObj(hpMesh));
+  };
+
+  // TODO(@darzu): render buttons?
+  {
+    const btnMesh_ = importObj(BTN_OBJ);
+    assert(
+      typeof btnMesh_ !== "string" && btnMesh_.length === 1,
+      `btn mesh failed import: ${btnMesh_}`
+    );
+    const btnMesh = normalizeMesh(btnMesh_[0]);
+    scaleMesh(btnMesh, 0.2);
+    btnMesh.colors.forEach((c) => vec3.copy(c, ENDESGA16.lightGray));
+
+    const btn = EM.newEntity();
+    EM.ensureComponentOn(btn, RenderableConstructDef, btnMesh);
+    EM.ensureComponentOn(btn, PositionDef, [16, 0.1, 12]);
+  }
 }
 
 interface HEdgeGlyph {

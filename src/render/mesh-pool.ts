@@ -341,7 +341,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     const alignedTriCount = triEndIdx - alignedTriIdx + 1;
     // let alignTriCount = align(triCount, 2);
 
-    assertDbg(alignedTriCount > 0);
+    assertDbg(alignedTriCount > 0, `no triangles?`);
     // TODO(@darzu): THIS ASSERT IS FAILING! \/
     // {min: 3184, max: 3200}
     // {min: 0, max: 32}

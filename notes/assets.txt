@@ -194,6 +194,7 @@ I think game dev art assets often use Perforce:
   https://www.perforce.com/blog/vcs/version-control-for-binary-files
   https://www.perforce.com/indie-studio-pack
   mentioned by: https://www.youtube.com/watch?v=3DXAVeJh_-0
+  e.g.: https://twitter.com/delaneykingrox/status/1593289402058706944
 
 Perforce:
   Talked to Taylor

@@ -5,7 +5,7 @@ import { hexAvg } from "./hex.js";
 import { RawMesh } from "./render/mesh.js";
 import { tempVec3 } from "./temp-pool.js";
 import { assert, assertDbg, edges, range, TupleN } from "./util.js";
-import { vec3Dbg } from "./utils-3d.js";
+import { randNormalPosVec3, vec3Dbg } from "./utils-3d.js";
 
 // https://jerryyin.info/geometry-processing-algorithms/half-edge/
 
@@ -356,7 +356,7 @@ export function extrudeQuad(hp: HPoly, he: HEdge): HPolyDelta {
   hp.mesh.surfaceIds?.push(
     hp.mesh.surfaceIds[hp.mesh.surfaceIds.length - 1] + 1
   );
-  hp.mesh.colors?.push(vec3.clone(hp.mesh.colors[hp.mesh.colors.length - 1]));
+  hp.mesh.colors?.push(randNormalPosVec3(vec3.create()));
 
   // we're done! Verify and append to HPoly
   const newHs = [hi0, hi01, hi1, ho1, ho01, ho0];
