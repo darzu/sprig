@@ -42,7 +42,7 @@ import { tempMat4, tempVec3 } from "../temp-pool.js";
 import { assert } from "../util.js";
 import { randNormalPosVec3, vec3Mid } from "../utils-3d.js";
 import { screenPosToWorldPos } from "../utils-game.js";
-import { AssetsDef, makePlaneMesh } from "./assets.js";
+import { AssetsDef, gameMeshFromMesh, makePlaneMesh } from "./assets.js";
 import { createGhost, gameplaySystems } from "./game.js";
 
 /*
@@ -82,10 +82,36 @@ f 5// 6// 1// 4//
 f 7// 8// 3// 2//
 `;
 
+// TODO(@darzu): seperate component? better, more general GUI way?
+interface ButtonColors {
+  default: vec3;
+  hover: vec3;
+  down: vec3;
+}
+
+export const ButtonDef = EM.defineComponent(
+  "button",
+  (key: string, data?: number, colors?: ButtonColors) => ({
+    key,
+    // TODO(@darzu): better way to do this? Maybe typed "known" buttons ala assets
+    data,
+    colors,
+  })
+);
+
+// TODO(@darzu): GUIStateDef ?
+export const ButtonsStateDef = EM.defineComponent("buttonsState", () => ({
+  // the number is the LAST data
+  hover: {} as { [entId: number]: boolean },
+  down: {} as { [entId: number]: boolean },
+  click: {} as { [entId: number]: boolean },
+  clickByKey: {} as { [key: string]: number | undefined },
+}));
+
 export async function initFontEditor(em: EntityManager) {
   console.log(`panel ${PANEL_W}x${PANEL_H}`);
 
-  initCamera();
+  // initCamera();
 
   const res = await em.whenResources(AssetsDef, RendererDef);
 
@@ -155,9 +181,7 @@ export async function initFontEditor(em: EntityManager) {
     g.cameraFollow.yawOffset = 0.0;
     g.cameraFollow.pitchOffset = -1.496;
   }
-}
 
-async function initCamera() {
   {
     const camera = EM.addSingletonComponent(CameraDef);
     camera.fov = Math.PI * 0.5;
@@ -386,8 +410,18 @@ async function initCamera() {
   let worldDrag = vec3.create();
   EM.registerSystem(
     null,
-    [PhysicsResultsDef, MouseDragDef, CameraViewDef, RendererDef, InputsDef],
-    (_, { physicsResults, mousedrag, cameraView, renderer, inputs }) => {
+    [
+      PhysicsResultsDef,
+      MouseDragDef,
+      CameraViewDef,
+      RendererDef,
+      InputsDef,
+      ButtonsStateDef,
+    ],
+    (
+      _,
+      { physicsResults, mousedrag, cameraView, renderer, inputs, buttonsState }
+    ) => {
       let didUpdateMesh = false;
       let didEnlargeMesh = false;
       const hedgesToMove = new Set<number>();
@@ -473,6 +507,7 @@ async function initCamera() {
               RotationDef,
               ColorDef,
               RenderableDef,
+              ButtonDef,
             ]);
             if (!g) continue;
             hoverGlyphs.push(g);
@@ -489,15 +524,19 @@ async function initCamera() {
         }
       }
 
-      // left-click actions
-      if (inputs.lclick) {
-        // console.log("lclick!");
-        if (cursorGlpyh?.hglyph.kind === "hedge") {
-          // console.log("EXTRUDE!");
-          // quad extrude
-          hpEditor.extrudeHEdge(cursorGlpyh.hglyph.he);
-          didEnlargeMesh = true;
-        }
+      // click to extrude
+      // TODO(@darzu): move elsewhere?
+      const clickedHi = buttonsState.clickByKey["glyph-hedge"];
+      if (clickedHi !== undefined) {
+        // console.log("hedge click!");
+        const he = hpEditor.hedgeGlyphs.get(clickedHi);
+        assert(
+          he && he.hglyph.kind === "hedge",
+          `invalid click data: ${clickedHi}`
+        );
+        // quad extrude
+        hpEditor.extrudeHEdge(he.hglyph.he);
+        didEnlargeMesh = true;
       }
 
       // non dragging
@@ -515,6 +554,7 @@ async function initCamera() {
             RotationDef,
             ColorDef,
             RenderableDef,
+            ButtonDef,
           ]);
           if (g) {
             vec3.copy(g.color, ENDESGA16.red);
@@ -570,14 +610,92 @@ async function initCamera() {
       typeof btnMesh_ !== "string" && btnMesh_.length === 1,
       `btn mesh failed import: ${btnMesh_}`
     );
-    const btnMesh = normalizeMesh(btnMesh_[0]);
-    scaleMesh(btnMesh, 0.2);
-    btnMesh.colors.forEach((c) => vec3.copy(c, ENDESGA16.lightGray));
+    scaleMesh(btnMesh_[0], 0.2);
+    const btnGMesh = gameMeshFromMesh(btnMesh_[0], res.renderer.renderer);
+    // btnMesh.colors.forEach((c) => vec3.copy(c, ENDESGA16.lightGray));
 
-    const btn = EM.newEntity();
-    EM.ensureComponentOn(btn, RenderableConstructDef, btnMesh);
-    EM.ensureComponentOn(btn, PositionDef, [16, 0.1, 12]);
+    for (let i = 0; i < 26; i++) {
+      // TODO(@darzu): if they all have the same key, they don't work.
+      const btn = EM.newEntity();
+      EM.ensureComponentOn(btn, RenderableConstructDef, btnGMesh.proto);
+      EM.ensureComponentOn(btn, PositionDef, [-24 + i * 2, 0.1, 12]);
+      EM.ensureComponentOn(btn, ButtonDef, "letter-a", i, {
+        default: ENDESGA16.lightGray,
+        hover: ENDESGA16.darkGray,
+        down: ENDESGA16.orange,
+      });
+      EM.ensureComponentOn(btn, ColorDef);
+      EM.ensureComponentOn(btn, ColliderDef, {
+        shape: "AABB",
+        solid: false,
+        aabb: btnGMesh.aabb,
+      });
+    }
   }
+
+  const cursorId = cursor.id;
+
+  EM.addSingletonComponent(ButtonsStateDef);
+
+  EM.registerSystem(
+    [ButtonDef],
+    [PhysicsResultsDef, ButtonsStateDef, InputsDef],
+    (es, res) => {
+      // reset by-key state
+      for (let key of Object.keys(res.buttonsState.clickByKey))
+        res.buttonsState.clickByKey[key] = undefined;
+
+      for (let btn of es) {
+        const colW = res.physicsResults.collidesWith.get(btn.id);
+        const isHover = (colW ?? []).some((oId) => oId === cursorId);
+
+        const wasHover = res.buttonsState.hover[btn.id];
+        const wasDown = res.buttonsState.down[btn.id];
+
+        // hover
+        if (isHover) res.buttonsState.hover[btn.id] = true;
+        else res.buttonsState.hover[btn.id] = false;
+
+        // down
+        // TODO(@darzu): drag from outside?
+        if (isHover && res.inputs.ldown) res.buttonsState.down[btn.id] = true;
+        else res.buttonsState.down[btn.id] = false;
+
+        // click
+        if (isHover && wasDown && !res.inputs.ldown) {
+          res.buttonsState.click[btn.id] = true;
+          res.buttonsState.clickByKey[btn.button.key] = btn.button.data;
+        } else res.buttonsState.click[btn.id] = false;
+      }
+    },
+    "buttonStateUpdate"
+  );
+  gameplaySystems.push("buttonStateUpdate");
+
+  EM.registerSystem(
+    [ButtonDef, ColorDef],
+    [ButtonsStateDef],
+    (es, res) => {
+      for (let btn of es) {
+        const colors = btn.button.colors;
+        if (!colors) continue;
+        const isHover = res.buttonsState.hover[btn.id];
+        const isDown = res.buttonsState.down[btn.id];
+        const isClick = res.buttonsState.click[btn.id];
+
+        vec3.copy(btn.color, colors.default);
+        if (isHover) vec3.copy(btn.color, colors.hover);
+        if (isDown) vec3.copy(btn.color, colors.down);
+        // if (isClick) vec3.copy(btn.color, ENDESGA16.red);
+
+        // if (isClick) {
+        //   console.log(`click! ${btn.button.key}`);
+        // }
+      }
+    },
+    "buttonColors"
+  );
+  gameplaySystems.push("buttonColors");
 }
 
 interface HEdgeGlyph {
@@ -600,7 +718,8 @@ type Glyph = EntityW<
     typeof ColorDef,
     typeof PositionDef,
     typeof RotationDef,
-    typeof RenderableDef
+    typeof RenderableDef,
+    typeof ButtonDef
   ]
 >;
 
@@ -638,13 +757,15 @@ async function createHalfEdgeEditor(hp: HPoly) {
       solid: false,
       aabb: assets.he_octo.aabb,
     });
+    EM.ensureComponentOn(glyph_, ButtonDef, "glyph-vert", v.vi);
     const glyph = await EM.whenEntityHas(
       glyph_,
       HGlyphDef,
       ColorDef,
       PositionDef,
       RotationDef,
-      RenderableDef
+      RenderableDef,
+      ButtonDef
     );
     vertGlpyhs.set(v.vi, glyph);
   }
@@ -683,13 +804,15 @@ async function createHalfEdgeEditor(hp: HPoly) {
       solid: false,
       aabb: assets.he_quad.aabb,
     });
+    EM.ensureComponentOn(glyph_, ButtonDef, "glyph-hedge", he.hi);
     const glyph = await EM.whenEntityHas(
       glyph_,
       HGlyphDef,
       ColorDef,
       PositionDef,
       RotationDef,
-      RenderableDef
+      RenderableDef,
+      ButtonDef
     );
     hedgeGlyphs.set(he.hi, glyph);
     positionHEdgeGlyph(he);

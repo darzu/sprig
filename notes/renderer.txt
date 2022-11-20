@@ -1530,3 +1530,15 @@ Transparency:
   http://learnwebgl.brown37.net/11_advanced_rendering/alpha_blending.html
   http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-10-transparency/
   https://learnopengl.com/Advanced-OpenGL/Blending
+
+What is: parallax mapping
+  https://twitter.com/SebAaltonen/status/1593577976637038592
+  terms: parallax mapping", QDM (xbox360 era), UGC, shell mapping (xbox1 era), Cone step mapping
+  "If you need runtime compose with generate - I would still use it. Soft shadows in texture space are a nice boon too if composed to minimize sample count"
+  "parallax mapping of any kind is a risk that needs to account for sliding textures and limited silhouettes; especially with UGC where you don't want people wasting time covering up the artefacts."
+  https://developer.nvidia.com/gpugems/gpugems3/part-iii-rendering/chapter-18-relaxed-cone-stepping-relief-mapping
+  https://www.gamedevs.org/uploads/quadtree-displacement-mapping-with-height-blending.pdf
+    https://www.gdcvault.com/play/1012014/Quadtree-Displacement-Mapping-with-Height
+    Michal Drobot
+  https://www.unrealengine.com/marketplace/en-US/product/get-relief-rcsm-generator?sessionInvalidated=true
+  
