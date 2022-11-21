@@ -21,6 +21,7 @@ import { ColliderDef } from "../physics/collider.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
+import { MeshReserve } from "../render/mesh-pool.js";
 import {
   cloneMesh,
   getAABBFromMesh,
@@ -43,7 +44,12 @@ import { tempMat4, tempVec3 } from "../temp-pool.js";
 import { assert } from "../util.js";
 import { randNormalPosVec3, vec3Mid } from "../utils-3d.js";
 import { screenPosToWorldPos } from "../utils-game.js";
-import { AssetsDef, gameMeshFromMesh, makePlaneMesh } from "./assets.js";
+import {
+  AssetsDef,
+  GameMesh,
+  gameMeshFromMesh,
+  makePlaneMesh,
+} from "./assets.js";
 import { createGhost, gameplaySystems } from "./game.js";
 
 /*
@@ -567,16 +573,27 @@ export async function initFontEditor(em: EntityManager) {
 
   // TODO(@darzu): render buttons?
   {
+    const polyBank = new Map<string, GameMesh>();
+
     for (let i = 0; i < 26; i++) {
+      const key = `letter-a`;
+      const mesh = cloneMesh(res.buttonsState.gmesh.mesh);
+      mesh.dbgName = key;
+      // console.dir(res.buttonsState.gmesh.mesh);
+      // console.dir(mesh);
+      const reserve: MeshReserve = {
+        maxVertNum: 100,
+        maxTriNum: 100,
+        maxLineNum: 0,
+      };
+      const gmesh = gameMeshFromMesh(mesh, res.renderer.renderer, reserve);
+      // TODO(@darzu): update gmesh after half-edge editor changes
+
       // TODO(@darzu): if they all have the same key, they don't work.
       const btn = EM.newEntity();
-      EM.ensureComponentOn(
-        btn,
-        RenderableConstructDef,
-        res.buttonsState.gmesh.proto
-      );
+      EM.ensureComponentOn(btn, RenderableConstructDef, gmesh.proto);
       EM.ensureComponentOn(btn, PositionDef, [-24 + i * 2, 0.1, 12]);
-      EM.ensureComponentOn(btn, ButtonDef, "letter-a", i, {
+      EM.ensureComponentOn(btn, ButtonDef, key, i, {
         default: ENDESGA16.lightGray,
         hover: ENDESGA16.darkGray,
         down: ENDESGA16.orange,
@@ -585,7 +602,7 @@ export async function initFontEditor(em: EntityManager) {
       EM.ensureComponentOn(btn, ColliderDef, {
         shape: "AABB",
         solid: false,
-        aabb: res.buttonsState.gmesh.aabb,
+        aabb: gmesh.aabb,
       });
     }
   }

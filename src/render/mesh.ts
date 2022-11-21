@@ -7,7 +7,7 @@ import {
   createAABB,
   getAABBFromPositions,
 } from "../physics/broadphase.js";
-import { assert } from "../util.js";
+import { assert, range } from "../util.js";
 import { arraySortedEqual, arrayUnsortedEqual } from "../util.js";
 import { vec3Dbg, vec3Mid } from "../utils-3d.js";
 import { drawBall, drawLine } from "../utils-game.js";
@@ -57,6 +57,7 @@ export function meshStats(m: RawMesh): string {
 export function cloneMesh(m: Mesh): Mesh;
 export function cloneMesh(m: RawMesh): RawMesh;
 export function cloneMesh(m: Mesh | RawMesh): Mesh | RawMesh {
+  // TODO(@darzu): i hate having to manually update this
   return {
     ...m,
     pos: m.pos.map((p) => vec3.clone(p)),
@@ -361,18 +362,9 @@ export function unshareProvokingVertices(
   return mesh;
 }
 
-let nextSId = 1;
-
 function generateSurfaceIds(mesh: RawMesh): number[] {
-  // TODO(@darzu): HANDLE QUADS
-  // TODO(@darzu): better compute surface IDs
-  let triIdToSurfaceId: Map<number, number> = new Map();
-  let nextSId = 0;
-  mesh.tri.forEach((t, i) => {
-    triIdToSurfaceId.set(i, nextSId++);
-  });
-
-  return mesh.tri.map((_, i) => triIdToSurfaceId.get(i)!);
+  const faceCount = mesh.tri.length + mesh.quad.length;
+  return range(faceCount);
 }
 
 export function normalizeMesh(inM: RawMesh): Mesh {

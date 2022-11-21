@@ -34,7 +34,7 @@ import {
   vec3Reverse,
   vec4Reverse,
 } from "../utils-3d.js";
-import { MeshHandle } from "../render/mesh-pool.js";
+import { MeshHandle, MeshReserve } from "../render/mesh-pool.js";
 import { onInit } from "../init.js";
 import { jitter, mathMap, max, min } from "../math.js";
 import { VERBOSE_LOG } from "../flags.js";
@@ -995,14 +995,15 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
 
 export function gameMeshFromMesh(
   rawMesh: RawMesh,
-  renderer: Renderer
+  renderer: Renderer,
+  reserve?: MeshReserve
 ): GameMesh {
   validateMesh(rawMesh);
   const mesh = normalizeMesh(rawMesh);
   const aabb = getAABBFromMesh(mesh);
   const center = getCenterFromAABB(aabb);
   const halfsize = getHalfsizeFromAABB(aabb);
-  const proto = renderer.stdPool.addMesh(mesh);
+  const proto = renderer.stdPool.addMesh(mesh, reserve);
   const uniqueVerts = getUniqueVerts(mesh);
   const support = (d: vec3) => farthestPointInDir(uniqueVerts, d);
   const aabbCollider = (solid: boolean) =>
