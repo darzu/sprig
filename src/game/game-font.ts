@@ -5,12 +5,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { dbg } from "../debugger.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
 import { vec3, quat, mat4 } from "../gl-matrix.js";
-import {
-  BTN_OBJ,
-  ButtonDef,
-  ButtonsStateDef,
-  initButtonGUI,
-} from "../gui/button.js";
+import { ButtonDef, ButtonsStateDef, initButtonGUI } from "../gui/button.js";
 import {
   extrudeQuad,
   HEdge,
@@ -80,7 +75,7 @@ export async function initFontEditor(em: EntityManager) {
 
   // initCamera();
 
-  const res = await em.whenResources(AssetsDef, RendererDef);
+  const res = await em.whenResources(AssetsDef, RendererDef, ButtonsStateDef);
 
   res.renderer.pipelines = [
     // ...shadowPipelines,
@@ -572,19 +567,14 @@ export async function initFontEditor(em: EntityManager) {
 
   // TODO(@darzu): render buttons?
   {
-    const btnMesh_ = importObj(BTN_OBJ);
-    assert(
-      typeof btnMesh_ !== "string" && btnMesh_.length === 1,
-      `btn mesh failed import: ${btnMesh_}`
-    );
-    scaleMesh(btnMesh_[0], 0.2);
-    const btnGMesh = gameMeshFromMesh(btnMesh_[0], res.renderer.renderer);
-    // btnMesh.colors.forEach((c) => vec3.copy(c, ENDESGA16.lightGray));
-
     for (let i = 0; i < 26; i++) {
       // TODO(@darzu): if they all have the same key, they don't work.
       const btn = EM.newEntity();
-      EM.ensureComponentOn(btn, RenderableConstructDef, btnGMesh.proto);
+      EM.ensureComponentOn(
+        btn,
+        RenderableConstructDef,
+        res.buttonsState.gmesh.proto
+      );
       EM.ensureComponentOn(btn, PositionDef, [-24 + i * 2, 0.1, 12]);
       EM.ensureComponentOn(btn, ButtonDef, "letter-a", i, {
         default: ENDESGA16.lightGray,
@@ -595,15 +585,15 @@ export async function initFontEditor(em: EntityManager) {
       EM.ensureComponentOn(btn, ColliderDef, {
         shape: "AABB",
         solid: false,
-        aabb: btnGMesh.aabb,
+        aabb: res.buttonsState.gmesh.aabb,
       });
     }
   }
 
   // TODO(@darzu): HACKY
-  EM.whenResources(ButtonsStateDef).then((res) => {
-    res.buttonsState.cursorId = cursor.id;
-  });
+  // EM.whenResources(ButtonsStateDef).then((res) => {
+  res.buttonsState.cursorId = cursor.id;
+  // });
 }
 
 interface HEdgeGlyph {

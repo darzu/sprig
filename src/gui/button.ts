@@ -1,14 +1,19 @@
 import { ColorDef } from "../color-ecs.js";
 import { EM } from "../entity-manager.js";
+import { GameMesh, gameMeshFromMesh } from "../game/assets.js";
 import { gameplaySystems } from "../game/game.js";
 import { vec3 } from "../gl-matrix.js";
+import { importObj } from "../import_obj.js";
 import { InputsDef } from "../inputs.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
+import { scaleMesh } from "../render/mesh.js";
+import { RendererDef } from "../render/renderer-ecs.js";
+import { assert } from "../util.js";
 
 // TODO(@darzu): this should really go in assets.ts to follow the current patern.
 //    BUT I'm disatisfied with the current pattern. Subsystems should be able to
 //    own their own asset stuff. TODO: decentralize assets.ts?
-export const BTN_OBJ = `
+const BTN_OBJ = `
 # sprigland exported mesh (8 verts, 0 faces)
 v 0.85 0.00 -4.00
 v -4.00 0.00 -4.00
@@ -41,19 +46,37 @@ export const ButtonDef = EM.defineComponent(
 );
 
 // TODO(@darzu): GUIStateDef ?
-export const ButtonsStateDef = EM.defineComponent("buttonsState", () => ({
-  // the number is the LAST data
-  hover: {} as { [entId: number]: boolean },
-  down: {} as { [entId: number]: boolean },
-  click: {} as { [entId: number]: boolean },
-  clickByKey: {} as { [key: string]: number | undefined },
+export const ButtonsStateDef = EM.defineComponent(
+  "buttonsState",
+  (gmesh: GameMesh) => ({
+    // the number is the LAST data
+    hover: {} as { [entId: number]: boolean },
+    down: {} as { [entId: number]: boolean },
+    click: {} as { [entId: number]: boolean },
+    clickByKey: {} as { [key: string]: number | undefined },
 
-  // TODO(@darzu): is this state right or necessary?
-  cursorId: 0,
-}));
+    // TODO(@darzu): is this state right or necessary?
+    cursorId: 0,
+    gmesh,
+  })
+);
 
-export function initButtonGUI() {
-  EM.addSingletonComponent(ButtonsStateDef);
+export async function initButtonGUI() {
+  const res = await EM.whenResources(RendererDef);
+
+  // init ButtonsStateDef
+  {
+    const btnMesh_ = importObj(BTN_OBJ);
+    assert(
+      typeof btnMesh_ !== "string" && btnMesh_.length === 1,
+      `btn mesh failed import: ${btnMesh_}`
+    );
+    scaleMesh(btnMesh_[0], 0.2);
+    const btnGMesh = gameMeshFromMesh(btnMesh_[0], res.renderer.renderer);
+    // btnMesh.colors.forEach((c) => vec3.copy(c, ENDESGA16.lightGray));
+
+    EM.addSingletonComponent(ButtonsStateDef, btnGMesh);
+  }
 
   EM.registerSystem(
     [ButtonDef],
