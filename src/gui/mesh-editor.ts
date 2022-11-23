@@ -83,6 +83,145 @@ type GlyphEnt = EntityW<
 
 // }
 
+const MeshEditorDef = EM.defineComponent("meshEditor", createMeshEditor);
+
+function createMeshEditor() {
+  let hoverGlyphs: GlyphEnt[] = [];
+  let selectedGlyphs: GlyphEnt[] = [];
+  let cursorGlpyh = undefined as GlyphEnt | undefined;
+  let hedgeGlyphs = new Map<number, GlyphEnt>();
+  let vertGlpyhs = new Map<number, GlyphEnt>();
+
+  const res = {
+    hoverGlyphs,
+    selectedGlyphs,
+    cursorGlpyh,
+    hedgeGlyphs,
+    vertGlpyhs,
+    hp: undefined as HPoly | undefined,
+    hpEnt: undefined as EntityW<[typeof RenderableDef]> | undefined,
+
+    setHPoly,
+    translateVert,
+    positionHedge,
+    extrudeHEdge,
+  };
+
+  return res;
+
+  async function setHPoly(hp: HPoly) {
+    assert(!res.hp); // TODO(@darzu): support reset
+    res.hp = hp;
+
+    // TODO(@darzu): use pools
+    // vert glyphs
+    for (let v of hp.verts) {
+      // TODO(@darzu): seperate positioning
+      createHVertGlyph().then((g) => assignHVertGlyph(g, v));
+    }
+
+    // half-edge glyphs
+    for (let he of hp.edges) {
+      const visible = !he.face;
+      if (visible) {
+        // TODO(@darzu): move to pool
+        createHEdgeGlyph().then((g) => assignHEdgeGlyph(g, he));
+      }
+    }
+
+    const hpEnt_ = EM.newEntity();
+    EM.ensureComponentOn(
+      hpEnt_,
+      RenderableConstructDef,
+      hp.mesh as Mesh, // TODO(@darzu): hacky cast
+      true,
+      undefined,
+      undefined,
+      "std",
+      false,
+      {
+        maxVertNum: 100,
+        maxTriNum: 100,
+        maxLineNum: 0,
+      }
+    );
+    EM.ensureComponentOn(hpEnt_, PositionDef, [0, 0.1, 0]);
+    const hpEnt = await EM.whenEntityHas(hpEnt_, RenderableDef);
+    res.hpEnt = hpEnt;
+  }
+
+  function assignHVertGlyph(g: GlyphEnt, v: HVert) {
+    g.renderable.enabled = true;
+    g.renderable.hidden = false;
+    assert(g.hglyph.kind === "vert");
+    g.hglyph.hv = v;
+    g.button.data = v.vi;
+    vertGlpyhs.set(v.vi, g);
+    assert(res.hp);
+    const pos = vec3.copy(g.position, res.hp.mesh.pos[v.vi]);
+    pos[1] = 0.2;
+  }
+  function assignHEdgeGlyph(g: GlyphEnt, he: HEdge) {
+    g.renderable.enabled = true;
+    g.renderable.hidden = false;
+    assert(g.hglyph.kind === "hedge");
+    g.hglyph.he = he;
+    g.button.data = he.hi;
+    hedgeGlyphs.set(he.hi, g);
+    positionHedge(he);
+  }
+  function translateVert(v: HVert, delta: vec3) {
+    const glyph = vertGlpyhs.get(v.vi);
+    assert(glyph && glyph.hglyph.kind === "vert" && glyph.hglyph.hv === v);
+
+    assert(res.hp);
+    const pos = res.hp.mesh.pos[v.vi];
+    vec3.add(pos, pos, delta);
+    glyph.position[0] = pos[0];
+    glyph.position[2] = pos[2];
+  }
+  function positionHedge(he: HEdge) {
+    // TODO(@darzu): take a glyph?
+    const glyph = hedgeGlyphs.get(he.hi);
+    if (glyph) {
+      assert(
+        glyph.hglyph.kind === "hedge" && glyph.hglyph.he === he,
+        `hedge glyph lookup mismatch: ${he.hi}`
+      );
+      assert(res.hp);
+
+      const pos0 = res.hp.mesh.pos[he.orig.vi];
+      const pos1 = res.hp.mesh.pos[he.twin.orig.vi];
+      const diff = vec3.sub(tempVec3(), pos1, pos0);
+      const theta = Math.atan2(diff[0], diff[2]) + Math.PI * 0.5;
+      quat.fromEuler(glyph.rotation, 0, theta, 0);
+      vec3Mid(glyph.position, pos0, pos1);
+      glyph.position[1] = 0.2;
+    }
+  }
+  function extrudeHEdge(he: HEdge) {
+    assert(res.hp);
+    const { face, verts, edges } = extrudeQuad(res.hp, he);
+
+    const oldGlyph = hedgeGlyphs.get(he.hi);
+    if (oldGlyph) {
+      oldGlyph.renderable.hidden = true;
+    }
+
+    for (let v of verts) {
+      // TODO(@darzu): move to pool
+      createHVertGlyph().then((g) => assignHVertGlyph(g, v));
+    }
+
+    for (let he of edges) {
+      const visible = !he.face;
+      if (visible) {
+        createHEdgeGlyph().then((g) => assignHEdgeGlyph(g, he));
+      }
+    }
+  }
+}
+
 export async function initMeshEditor(hpMesh: Mesh, cursorId: number) {
   const { assets } = await EM.whenResources(AssetsDef);
 
@@ -118,57 +257,17 @@ export async function initMeshEditor(hpMesh: Mesh, cursorId: number) {
   // EM.ensureComponentOn(dragBox, ColorDef, [0.2, 0.2, 0.2]);
 
   const hp = meshToHalfEdgePoly(hpMesh);
-
   // const hpEditor = await createHalfEdgeEditor(hp);
 
-  // vert glyphs
-  let vertGlpyhs: Map<number, GlyphEnt> = new Map();
-  for (let v of hp.verts) {
-    // TODO(@darzu): seperate positioning
-    createHVertGlyph().then((g) => assignHVertGlyph(g, v));
-  }
+  const meshEditor = EM.addSingletonComponent(MeshEditorDef);
 
-  // half-edge glyphs
-  // console.dir(assets.he_quad.mesh);
-  // console.dir(assets.he_quad.aabb);
-  // console.dir(assets.he_octo.mesh);
-  // console.dir(assets.he_octo.aabb);
-  let hedgeGlyphs: Map<number, GlyphEnt> = new Map();
-  for (let he of hp.edges) {
-    const visible = !he.face;
-    if (visible) {
-      // TODO(@darzu): move to pool
-      createHEdgeGlyph().then((g) => assignHEdgeGlyph(g, he));
-    }
-  }
-
-  const ent0 = EM.newEntity();
-  EM.ensureComponentOn(
-    ent0,
-    RenderableConstructDef,
-    hp.mesh as Mesh, // TODO(@darzu): hacky cast
-    true,
-    undefined,
-    undefined,
-    "std",
-    false,
-    {
-      maxVertNum: 100,
-      maxTriNum: 100,
-      maxLineNum: 0,
-    }
-  );
-  EM.ensureComponentOn(ent0, PositionDef, [0, 0.1, 0]);
-  const hpEnt = await EM.whenEntityHas(ent0, RenderableDef);
+  meshEditor.setHPoly(hp);
 
   // TODO(@darzu): refactor. Also have undo-stack
-  let hoverGlyphs: GlyphEnt[] = [];
-  let selectedGlyphs: GlyphEnt[] = [];
-  let cursorGlpyh: GlyphEnt | undefined = undefined;
-  let worldDrag = vec3.create();
   EM.registerSystem(
     null,
     [
+      MeshEditorDef,
       PhysicsResultsDef,
       MouseDragDef,
       CameraViewDef,
@@ -178,14 +277,33 @@ export async function initMeshEditor(hpMesh: Mesh, cursorId: number) {
     ],
     (
       _,
-      { physicsResults, mousedrag, cameraView, renderer, inputs, buttonsState }
+      {
+        meshEditor,
+        physicsResults,
+        mousedrag,
+        cameraView,
+        renderer,
+        inputs,
+        buttonsState,
+      }
     ) => {
       let didUpdateMesh = false;
       let didEnlargeMesh = false;
       const hedgesToMove = new Set<number>();
 
+      const e = meshEditor;
+      const {
+        hoverGlyphs,
+        selectedGlyphs,
+        translateVert,
+        hedgeGlyphs,
+        extrudeHEdge,
+      } = meshEditor;
+
+      if (!e.hpEnt || !e.hp) return;
+
       // update dragbox
-      if (cursorGlpyh || mousedrag.isDragEnd) {
+      if (e.cursorGlpyh || mousedrag.isDragEnd) {
         // hide dragbox
         vec3.copy(dragBox.position, [0, -1, 0]);
         vec3.copy(dragBox.scale, [0, 0, 0]);
@@ -210,6 +328,7 @@ export async function initMeshEditor(hpMesh: Mesh, cursorId: number) {
       }
 
       // update world drag
+      let worldDrag = vec3.create();
       if (mousedrag.isDragging) {
         const start = screenPosToWorldPos(
           tempVec3(),
@@ -231,14 +350,17 @@ export async function initMeshEditor(hpMesh: Mesh, cursorId: number) {
         // de-hover
         hoverGlyphs.length = 0;
 
-        if (cursorGlpyh) {
+        if (e.cursorGlpyh) {
           // drag selected
           // TODO(@darzu): check that cursorGlyph is vert and selected
           // TODO(@darzu): IMPL hedges
           const isCursorSelected = selectedGlyphs.some(
-            (g) => g === cursorGlpyh
+            (g) => g === e.cursorGlpyh
           );
-          if (!isCursorSelected) selectedGlyphs = [cursorGlpyh];
+          if (!isCursorSelected) {
+            selectedGlyphs.length = 0;
+            selectedGlyphs.push(e.cursorGlpyh);
+          }
           for (let g of selectedGlyphs) {
             if (g.hglyph.kind === "vert") {
               assert(g.hglyph.hv);
@@ -273,10 +395,11 @@ export async function initMeshEditor(hpMesh: Mesh, cursorId: number) {
           }
         }
       } else if (mousedrag.isDragEnd) {
-        if (!cursorGlpyh) {
+        if (!e.cursorGlpyh) {
           // select box done
-          selectedGlyphs = hoverGlyphs;
-          hoverGlyphs = [];
+          selectedGlyphs.length = 0;
+          hoverGlyphs.forEach((g) => selectedGlyphs.push(g));
+          hoverGlyphs.length = 0;
         } else {
           // drag selected done
           // TODO(@darzu): IMPL
@@ -301,7 +424,7 @@ export async function initMeshEditor(hpMesh: Mesh, cursorId: number) {
       // non dragging
       if (!mousedrag.isDragging && !mousedrag.isDragEnd) {
         // unselect cursor glpyh
-        cursorGlpyh = undefined;
+        e.cursorGlpyh = undefined;
 
         // find under-cursor glyph
         const hits = physicsResults.collidesWith.get(cursorId) ?? [];
@@ -317,7 +440,7 @@ export async function initMeshEditor(hpMesh: Mesh, cursorId: number) {
           ]);
           if (g) {
             vec3.copy(g.color, ENDESGA16.red);
-            cursorGlpyh = g;
+            e.cursorGlpyh = g;
             break;
           }
         }
@@ -327,18 +450,18 @@ export async function initMeshEditor(hpMesh: Mesh, cursorId: number) {
       for (let hi of hedgesToMove.values()) {
         const he = hp.edges[hi];
         assert(he.hi === hi, `hedge idx mismatch`);
-        positionHedge(he);
+        e.positionHedge(he);
       }
 
       // update glyph colors based on state
-      for (let g of [...vertGlpyhs.values(), ...hedgeGlyphs.values()])
+      for (let g of [...e.vertGlpyhs.values(), ...hedgeGlyphs.values()])
         vec3.copy(g.color, ENDESGA16.lightBlue);
       for (let g of hoverGlyphs) vec3.copy(g.color, ENDESGA16.yellow);
       for (let g of selectedGlyphs) vec3.copy(g.color, ENDESGA16.lightGreen);
-      if (cursorGlpyh) vec3.copy(cursorGlpyh.color, ENDESGA16.red);
+      if (e.cursorGlpyh) vec3.copy(e.cursorGlpyh.color, ENDESGA16.red);
 
       // update mesh
-      const handle = hpEnt.renderable.meshHandle;
+      const handle = e.hpEnt.renderable.meshHandle;
       if (didEnlargeMesh) {
         renderer.renderer.stdPool.updateMeshSize(handle, handle.mesh!);
         if (handle.mesh!.quad.length)
@@ -353,149 +476,84 @@ export async function initMeshEditor(hpMesh: Mesh, cursorId: number) {
     "editHPoly"
   );
   gameplaySystems.push("editHPoly");
+}
 
-  function translateVert(v: HVert, delta: vec3) {
-    const glyph = vertGlpyhs.get(v.vi);
-    assert(glyph && glyph.hglyph.kind === "vert" && glyph.hglyph.hv === v);
-
-    const pos = hp.mesh.pos[v.vi];
-    vec3.add(pos, pos, delta);
-    glyph.position[0] = pos[0];
-    glyph.position[2] = pos[2];
-  }
-  function positionHedge(he: HEdge) {
-    // TODO(@darzu): take a glyph?
-    const glyph = hedgeGlyphs.get(he.hi);
-    if (glyph) {
-      assert(
-        glyph.hglyph.kind === "hedge" && glyph.hglyph.he === he,
-        `hedge glyph lookup mismatch: ${he.hi}`
-      );
-
-      const pos0 = hp.mesh.pos[he.orig.vi];
-      const pos1 = hp.mesh.pos[he.twin.orig.vi];
-      const diff = vec3.sub(tempVec3(), pos1, pos0);
-      const theta = Math.atan2(diff[0], diff[2]) + Math.PI * 0.5;
-      quat.fromEuler(glyph.rotation, 0, theta, 0);
-      vec3Mid(glyph.position, pos0, pos1);
-      glyph.position[1] = 0.2;
-    }
-  }
-  function extrudeHEdge(he: HEdge) {
-    const { face, verts, edges } = extrudeQuad(hp, he);
-
-    const oldGlyph = hedgeGlyphs.get(he.hi);
-    if (oldGlyph) {
-      oldGlyph.renderable.hidden = true;
-    }
-
-    for (let v of verts) {
-      // TODO(@darzu): move to pool
-      createHVertGlyph().then((g) => assignHVertGlyph(g, v));
-    }
-
-    for (let he of edges) {
-      const visible = !he.face;
-      if (visible) {
-        createHEdgeGlyph().then((g) => assignHEdgeGlyph(g, he));
-      }
-    }
-  }
-
-  async function createHVertGlyph(): Promise<GlyphEnt> {
-    // const pos = vec3.clone(hp.mesh.pos[v.vi]);
-    // pos[1] = 0.2;
-    const glyph_ = EM.newEntity();
-    EM.ensureComponentOn(
-      glyph_,
-      RenderableConstructDef,
-      assets.he_octo.proto,
-      false
-    );
-    EM.ensureComponentOn(glyph_, ColorDef);
-    // EM.ensureComponentOn(glyph, AlphaDef, 0.9);
-    EM.ensureComponentOn(glyph_, PositionDef);
-    // EM.ensureComponentOn(glyph_, PositionDef, pos);
-    EM.ensureComponentOn(glyph_, RotationDef, quat.create());
-    EM.ensureComponentOn(glyph_, GlyphDef, {
-      kind: "vert",
-      hv: undefined,
-      // state: "none",
-    });
-    EM.ensureComponentOn(glyph_, ColliderDef, {
-      shape: "AABB",
-      solid: false,
-      aabb: assets.he_octo.aabb,
-    });
-    EM.ensureComponentOn(glyph_, ButtonDef, "glyph-vert");
-    const glyph = await EM.whenEntityHas(
-      glyph_,
-      GlyphDef,
-      ColorDef,
-      PositionDef,
-      RotationDef,
-      RenderableDef,
-      ButtonDef
-    );
-    // vertGlpyhs.set(v.vi, glyph);
-    return glyph;
-  }
-  function assignHVertGlyph(g: GlyphEnt, v: HVert) {
-    g.renderable.enabled = true;
-    g.renderable.hidden = false;
-    assert(g.hglyph.kind === "vert");
-    g.hglyph.hv = v;
-    g.button.data = v.vi;
-    vertGlpyhs.set(v.vi, g);
-    const pos = vec3.copy(g.position, hp.mesh.pos[v.vi]);
-    pos[1] = 0.2;
-  }
-  function assignHEdgeGlyph(g: GlyphEnt, he: HEdge) {
-    g.renderable.enabled = true;
-    g.renderable.hidden = false;
-    assert(g.hglyph.kind === "hedge");
-    g.hglyph.he = he;
-    g.button.data = he.hi;
-    hedgeGlyphs.set(he.hi, g);
-    positionHedge(he);
-  }
-  async function createHEdgeGlyph(): Promise<GlyphEnt> {
-    // he: HEdge,
-    // visible: boolean
-    // TODO(@darzu):
-    const glyph_ = EM.newEntity();
-    EM.ensureComponentOn(
-      glyph_,
-      RenderableConstructDef,
-      assets.he_quad.proto,
-      false
-    );
-    EM.ensureComponentOn(glyph_, ColorDef);
-    // EM.ensureComponentOn(vert, AlphaDef, 0.9);
-    EM.ensureComponentOn(glyph_, PositionDef);
-    EM.ensureComponentOn(glyph_, RotationDef);
-    EM.ensureComponentOn(glyph_, GlyphDef, {
-      kind: "hedge",
-      he: undefined,
-      // state: "none",
-    });
-    EM.ensureComponentOn(glyph_, ColliderDef, {
-      shape: "AABB",
-      solid: false,
-      aabb: assets.he_quad.aabb,
-    });
-    EM.ensureComponentOn(glyph_, ButtonDef, "glyph-hedge");
-    const glyph = await EM.whenEntityHas(
-      glyph_,
-      GlyphDef,
-      ColorDef,
-      PositionDef,
-      RotationDef,
-      RenderableDef,
-      ButtonDef
-    );
-    // hedgeGlyphs.set(he.hi, glyph);
-    // positionHedge(he);
-    return glyph;
-  }
+async function createHVertGlyph(): Promise<GlyphEnt> {
+  const { assets } = await EM.whenResources(AssetsDef);
+  // const pos = vec3.clone(hp.mesh.pos[v.vi]);
+  // pos[1] = 0.2;
+  const glyph_ = EM.newEntity();
+  EM.ensureComponentOn(
+    glyph_,
+    RenderableConstructDef,
+    assets.he_octo.proto,
+    false
+  );
+  EM.ensureComponentOn(glyph_, ColorDef);
+  // EM.ensureComponentOn(glyph, AlphaDef, 0.9);
+  EM.ensureComponentOn(glyph_, PositionDef);
+  // EM.ensureComponentOn(glyph_, PositionDef, pos);
+  EM.ensureComponentOn(glyph_, RotationDef, quat.create());
+  EM.ensureComponentOn(glyph_, GlyphDef, {
+    kind: "vert",
+    hv: undefined,
+    // state: "none",
+  });
+  EM.ensureComponentOn(glyph_, ColliderDef, {
+    shape: "AABB",
+    solid: false,
+    aabb: assets.he_octo.aabb,
+  });
+  EM.ensureComponentOn(glyph_, ButtonDef, "glyph-vert");
+  const glyph = await EM.whenEntityHas(
+    glyph_,
+    GlyphDef,
+    ColorDef,
+    PositionDef,
+    RotationDef,
+    RenderableDef,
+    ButtonDef
+  );
+  // vertGlpyhs.set(v.vi, glyph);
+  return glyph;
+}
+async function createHEdgeGlyph(): Promise<GlyphEnt> {
+  const { assets } = await EM.whenResources(AssetsDef);
+  // he: HEdge,
+  // visible: boolean
+  // TODO(@darzu):
+  const glyph_ = EM.newEntity();
+  EM.ensureComponentOn(
+    glyph_,
+    RenderableConstructDef,
+    assets.he_quad.proto,
+    false
+  );
+  EM.ensureComponentOn(glyph_, ColorDef);
+  // EM.ensureComponentOn(vert, AlphaDef, 0.9);
+  EM.ensureComponentOn(glyph_, PositionDef);
+  EM.ensureComponentOn(glyph_, RotationDef);
+  EM.ensureComponentOn(glyph_, GlyphDef, {
+    kind: "hedge",
+    he: undefined,
+    // state: "none",
+  });
+  EM.ensureComponentOn(glyph_, ColliderDef, {
+    shape: "AABB",
+    solid: false,
+    aabb: assets.he_quad.aabb,
+  });
+  EM.ensureComponentOn(glyph_, ButtonDef, "glyph-hedge");
+  const glyph = await EM.whenEntityHas(
+    glyph_,
+    GlyphDef,
+    ColorDef,
+    PositionDef,
+    RotationDef,
+    RenderableDef,
+    ButtonDef
+  );
+  // hedgeGlyphs.set(he.hi, glyph);
+  // positionHedge(he);
+  return glyph;
 }
