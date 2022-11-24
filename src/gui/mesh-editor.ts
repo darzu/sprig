@@ -17,6 +17,7 @@ import { MouseDragDef, InputsDef } from "../inputs.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { PositionDef, ScaleDef, RotationDef } from "../physics/transform.js";
+import { MeshHandle } from "../render/mesh-pool.js";
 import {
   cloneMesh,
   transformMesh,
@@ -121,7 +122,7 @@ function createMeshEditor() {
     hp: undefined as HPoly | undefined,
     hpEnt: undefined as EntityW<[typeof RenderableDef]> | undefined,
 
-    setHPoly,
+    setMesh,
     translateVert,
     positionHedge,
     extrudeHEdge,
@@ -147,10 +148,15 @@ function createMeshEditor() {
     res.hpEnt = undefined;
   }
 
-  async function setHPoly(hp: HPoly) {
+  async function setMesh(handle: MeshHandle) {
+    assert(handle.mesh, `can only edit handles with a mesh ptr`);
+    assert(handle.reserved, `can only edit meshes w/ reserved space`);
+
     reset();
 
-    assert(!res.hp); // TODO(@darzu): support reset
+    const mesh = handle.mesh;
+    const hp = meshToHalfEdgePoly(mesh);
+
     res.hp = hp;
 
     // TODO(@darzu): use pools
@@ -169,6 +175,7 @@ function createMeshEditor() {
       }
     }
 
+    // TODO(@darzu): re-use this hpEnt?
     const hpEnt_ = EM.newEntity();
     EM.ensureComponentOn(
       hpEnt_,
@@ -276,7 +283,7 @@ function createMeshEditor() {
   }
 }
 
-export async function initMeshEditor(hpMesh: Mesh, cursorId: number) {
+export async function initMeshEditor(startMesh: MeshHandle, cursorId: number) {
   const { assets } = await EM.whenResources(AssetsDef);
 
   const dragBox = EM.newEntity();
@@ -310,12 +317,11 @@ export async function initMeshEditor(hpMesh: Mesh, cursorId: number) {
   });
   // EM.ensureComponentOn(dragBox, ColorDef, [0.2, 0.2, 0.2]);
 
-  const hp = meshToHalfEdgePoly(hpMesh);
   // const hpEditor = await createHalfEdgeEditor(hp);
 
   const meshEditor = EM.addSingletonComponent(MeshEditorDef);
 
-  meshEditor.setHPoly(hp);
+  meshEditor.setMesh(startMesh);
 
   // TODO(@darzu): refactor. Also have undo-stack
   EM.registerSystem(
@@ -502,7 +508,7 @@ export async function initMeshEditor(hpMesh: Mesh, cursorId: number) {
 
       // update hedges
       for (let hi of hedgesToMove.values()) {
-        const he = hp.edges[hi];
+        const he = e.hp.edges[hi];
         assert(he.hi === hi, `hedge idx mismatch`);
         e.positionHedge(he);
       }

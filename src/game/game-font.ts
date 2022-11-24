@@ -275,7 +275,7 @@ export async function initFontEditor(em: EntityManager) {
   gameplaySystems.push("uiCameraView");
 
   // testHalfEdge
-  const hpMesh: Mesh = {
+  const quadMesh: Mesh = {
     quad: [[0, 1, 2, 3]],
     tri: [],
     pos: [
@@ -288,11 +288,17 @@ export async function initFontEditor(em: EntityManager) {
     surfaceIds: [1],
     usesProvoking: true,
   };
-  scaleMesh(hpMesh, 4);
+  scaleMesh(quadMesh, 4);
+
+  const quadGMesh = gameMeshFromMesh(quadMesh, res.renderer.renderer, {
+    maxVertNum: 100,
+    maxTriNum: 100,
+    maxLineNum: 0,
+  });
 
   // TODO(@darzu): HACK
   (dbg as any).exportPoly = () => {
-    console.log(exportObj(hpMesh));
+    console.log(exportObj(quadMesh));
   };
 
   // TODO(@darzu): render buttons?
@@ -338,5 +344,5 @@ export async function initFontEditor(em: EntityManager) {
   res.buttonsState.cursorId = cursor.id;
   // });
 
-  initMeshEditor(hpMesh, cursor.id);
+  initMeshEditor(quadGMesh.proto, cursor.id);
 }
