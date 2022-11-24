@@ -146,6 +146,7 @@ export function createRenderer(
 
   // render bundle
   const bundledMIds = new Set<number>();
+  const bundledMIdToVertIdx = new Map<number, number>();
   let needsRebundle = false;
   let lastWireMode: [boolean, boolean] = [
     renderer.drawLines,
@@ -182,7 +183,10 @@ export function createRenderer(
     needsRebundle = false; // TODO(@darzu): hack?
 
     bundledMIds.clear();
-    handles.forEach((h) => bundledMIds.add(h.mId));
+    handles.forEach((h) => {
+      bundledMIds.add(h.mId);
+      bundledMIdToVertIdx.set(h.mId, h.vertIdx);
+    });
 
     lastWireMode = [renderer.drawLines, renderer.drawTris];
 
@@ -275,9 +279,14 @@ export function createRenderer(
       renderer.drawLines !== lastWireMode[0] ||
       renderer.drawTris !== lastWireMode[1];
     if (!needsRebundle) {
-      for (let mId of handles.map((o) => o.mId)) {
-        if (!bundledMIds.has(mId)) {
+      for (let h of handles) {
+        if (!bundledMIds.has(h.mId)) {
           // TODO(@darzu): BUG. this is currently true too often, maybe every frame
+          needsRebundle = true;
+          break;
+        }
+        // TODO(@darzu): perf cost of this check? Maybe we should just use dirty flags..
+        if (bundledMIdToVertIdx.get(h.mId) !== h.vertIdx) {
           needsRebundle = true;
           break;
         }

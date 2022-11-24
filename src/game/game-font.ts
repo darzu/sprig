@@ -339,7 +339,8 @@ export async function initFontEditor(em: EntityManager) {
     });
   }
 
-  // TODO(@darzu): HACKY
+  // TODO(@darzu): HACKY. Cursor or 2d gui or something needs some better
+  //    abstracting
   // EM.whenResources(ButtonsStateDef).then((res) => {
   res.buttonsState.cursorId = cursor.id;
   // });

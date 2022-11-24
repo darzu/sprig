@@ -551,6 +551,11 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
               e.renderableConstruct.poolKind === "std",
               `Instanced meshes only supported for std pool`
             );
+            // TODO(@darzu): renderableConstruct is getting to large and wierd
+            assert(
+              !e.renderableConstruct.reserve,
+              `cannot have a reserve when adding an instance`
+            );
             meshHandle = res.renderer.renderer.stdPool.addMeshInstance(
               e.renderableConstruct.meshOrProto
             );

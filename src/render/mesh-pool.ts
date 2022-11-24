@@ -241,6 +241,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     updateMeshTriangles,
     updateMeshQuads,
     updateMeshSize,
+    updateMeshInstance,
   };
 
   // TODO(@darzu): default to all 1s?
@@ -308,6 +309,15 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     allMeshes.push(newHandle);
     //updateUniform(newHandle);
     return newHandle;
+  }
+  function updateMeshInstance(m: MeshHandle, proto: MeshHandle): void {
+    const uniIdx = m.uniIdx;
+    const mId = m.mId;
+
+    Object.assign(m, proto, {
+      uniIdx,
+      mId,
+    });
   }
 
   function updateMeshVertices(

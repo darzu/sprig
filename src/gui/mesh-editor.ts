@@ -145,7 +145,7 @@ function createMeshEditor() {
     selectedGlyphs.length = 0;
     // TODO(@darzu): clean these up?
     res.hp = undefined;
-    res.hpEnt = undefined;
+    if (res.hpEnt) res.hpEnt.renderable.hidden = true;
   }
 
   async function setMesh(handle: MeshHandle) {
@@ -175,26 +175,29 @@ function createMeshEditor() {
       }
     }
 
-    // TODO(@darzu): re-use this hpEnt?
-    const hpEnt_ = EM.newEntity();
-    EM.ensureComponentOn(
-      hpEnt_,
-      RenderableConstructDef,
-      hp.mesh as Mesh, // TODO(@darzu): hacky cast
-      true,
-      undefined,
-      undefined,
-      "std",
-      false,
-      {
-        maxVertNum: 100,
-        maxTriNum: 100,
-        maxLineNum: 0,
-      }
-    );
-    EM.ensureComponentOn(hpEnt_, PositionDef, [0, 0.1, 0]);
-    const hpEnt = await EM.whenEntityHas(hpEnt_, RenderableDef);
-    res.hpEnt = hpEnt;
+    if (res.hpEnt) {
+      const { renderer } = await EM.whenResources(RendererDef);
+      res.hpEnt.renderable.hidden = false;
+      renderer.renderer.stdPool.updateMeshInstance(
+        res.hpEnt.renderable.meshHandle,
+        handle
+      );
+    } else {
+      const hpEnt_ = EM.newEntity();
+      EM.ensureComponentOn(
+        hpEnt_,
+        RenderableConstructDef,
+        handle,
+        true,
+        undefined,
+        undefined,
+        "std",
+        false
+      );
+      EM.ensureComponentOn(hpEnt_, PositionDef, [0, 0.1, 0]);
+      const hpEnt = await EM.whenEntityHas(hpEnt_, RenderableDef);
+      res.hpEnt = hpEnt;
+    }
   }
 
   function hideHVertGlyph(g: GlyphEnt) {
@@ -286,6 +289,7 @@ function createMeshEditor() {
 export async function initMeshEditor(startMesh: MeshHandle, cursorId: number) {
   const { assets } = await EM.whenResources(AssetsDef);
 
+  // TODO(@darzu): dragbox should be part of some 2d gui abstraction thing
   const dragBox = EM.newEntity();
   const dragBoxMesh = cloneMesh(assets.cube.mesh);
   EM.ensureComponentOn(dragBox, AlphaDef, 0.2);
