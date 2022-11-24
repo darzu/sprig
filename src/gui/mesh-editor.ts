@@ -4,7 +4,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityW } from "../entity-manager.js";
 import { AssetsDef } from "../game/assets.js";
 import { gameplaySystems } from "../game/game.js";
-import { mat4, quat, vec3 } from "../gl-matrix.js";
+import { mat3, mat4, quat, vec3 } from "../gl-matrix.js";
 import {
   extrudeQuad,
   HEdge,
@@ -15,7 +15,10 @@ import {
 import { createIdxPool, createIdxRing } from "../idx-pool.js";
 import { MouseDragDef, InputsDef } from "../inputs.js";
 import { ColliderDef } from "../physics/collider.js";
-import { PhysicsResultsDef } from "../physics/nonintersection.js";
+import {
+  PhysicsResultsDef,
+  WorldFrameDef,
+} from "../physics/nonintersection.js";
 import { PositionDef, ScaleDef, RotationDef } from "../physics/transform.js";
 import { MeshHandle } from "../render/mesh-pool.js";
 import {
@@ -29,9 +32,9 @@ import {
   RendererDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { tempMat4, tempVec3 } from "../temp-pool.js";
+import { tempMat3, tempMat4, tempVec3 } from "../temp-pool.js";
 import { assert } from "../util.js";
-import { vec3Mid } from "../utils-3d.js";
+import { randNormalPosVec3, vec3Mid } from "../utils-3d.js";
 import { screenPosToWorldPos } from "../utils-game.js";
 import { ButtonsStateDef, ButtonDef } from "./button.js";
 
@@ -120,7 +123,9 @@ function createMeshEditor() {
     hedgeGlyphs,
     vertGlpyhs,
     hp: undefined as HPoly | undefined,
-    hpEnt: undefined as EntityW<[typeof RenderableDef]> | undefined,
+    hpEnt: undefined as
+      | EntityW<[typeof RenderableDef, typeof WorldFrameDef]>
+      | undefined,
 
     setMesh,
     translateVert,
@@ -131,7 +136,17 @@ function createMeshEditor() {
 
   return res;
 
-  function reset() {
+  async function reset() {
+    if (res.hp && res.hpEnt) {
+      // TODO(@darzu): HACK. this color stuff is.. interesting
+      const { renderer } = await EM.whenResources(RendererDef);
+      res.hp.mesh.colors.forEach((c) => vec3.zero(c));
+      renderer.renderer.stdPool.updateMeshVertices(
+        res.hpEnt.renderable.meshHandle,
+        res.hpEnt.renderable.meshHandle.mesh!
+      );
+    }
+
     // TODO(@darzu): i don't like all this statefulness. probably a better FP
     //    way to do this.
     for (let g of hedgeGlyphs.values()) hideHEdgeGlyph(g);
@@ -152,7 +167,7 @@ function createMeshEditor() {
     assert(handle.mesh, `can only edit handles with a mesh ptr`);
     assert(handle.reserved, `can only edit meshes w/ reserved space`);
 
-    reset();
+    await reset();
 
     const mesh = handle.mesh;
     const hp = meshToHalfEdgePoly(mesh);
@@ -175,8 +190,13 @@ function createMeshEditor() {
       }
     }
 
+    const { renderer } = await EM.whenResources(RendererDef);
+
+    // TODO(@darzu): HACK. this color stuff is.. interesting
+    mesh.colors.forEach((c) => randNormalPosVec3(c));
+    renderer.renderer.stdPool.updateMeshVertices(handle, mesh);
+
     if (res.hpEnt) {
-      const { renderer } = await EM.whenResources(RendererDef);
       res.hpEnt.renderable.hidden = false;
       renderer.renderer.stdPool.updateMeshInstance(
         res.hpEnt.renderable.meshHandle,
@@ -195,7 +215,13 @@ function createMeshEditor() {
         false
       );
       EM.ensureComponentOn(hpEnt_, PositionDef, [0, 0.1, 0]);
-      const hpEnt = await EM.whenEntityHas(hpEnt_, RenderableDef);
+      // TODO(@darzu): handle scale everywhere
+      EM.ensureComponentOn(hpEnt_, ScaleDef, [3, 3, 3]);
+      const hpEnt = await EM.whenEntityHas(
+        hpEnt_,
+        RenderableDef,
+        WorldFrameDef
+      );
       res.hpEnt = hpEnt;
     }
   }
@@ -223,9 +249,11 @@ function createMeshEditor() {
     g.hglyph.hv = v;
     g.button.data = v.vi;
     vertGlpyhs.set(v.vi, g);
-    assert(res.hp);
+    assert(res.hp && res.hpEnt);
+    // TODO(@darzu): need to think about how we position verts
     const pos = vec3.copy(g.position, res.hp.mesh.pos[v.vi]);
-    pos[1] = 0.2;
+    vec3.transformMat4(pos, pos, res.hpEnt.world.transform);
+    pos[1] = 0.2; // TODO(@darzu): this z-layering stuff is wierd
   }
   function assignHEdgeGlyph(g: GlyphEnt, he: HEdge) {
     g.renderable.enabled = true;
@@ -239,14 +267,27 @@ function createMeshEditor() {
   function translateVert(v: HVert, delta: vec3) {
     const glyph = vertGlpyhs.get(v.vi);
     assert(glyph && glyph.hglyph.kind === "vert" && glyph.hglyph.hv === v);
-    assert(res.hp);
-    const pos = res.hp.mesh.pos[v.vi];
-    vec3.add(pos, pos, delta);
-    glyph.position[0] = pos[0];
-    glyph.position[2] = pos[2];
+    assert(res.hp && res.hpEnt);
+    const vertPos = res.hp.mesh.pos[v.vi];
+    // TODO(@darzu): perf, expensive inverse
+    // TODO(@darzu): wait this isn't right
+    const invTrans4 = mat4.invert(tempMat4(), res.hpEnt.world.transform);
+    const invTrans3 = mat3.fromMat4(tempMat3(), invTrans4);
+    // const invScale = mat4.getScaling(tempVec3(), invTrans4);
+    // const deltaE = vec3.transformMat4(tempVec3(), delta, invTrans4);
+    const deltaE = vec3.transformMat3(tempVec3(), delta, invTrans3);
+    // const deltaE = vec3.mul(tempVec3(), delta, invScale);
+    vec3.add(vertPos, vertPos, deltaE);
+
+    // TODO(@darzu): hacky
+    // vec3.transformMat4(glyph.position, vertPos, res.hpEnt.world.transform);
+    // glyph.position[1] = 0.2;
+    vec3.add(glyph.position, glyph.position, delta);
+    glyph.position[1] = 0.2;
   }
   function positionHedge(he: HEdge) {
     // TODO(@darzu): take a glyph?
+    assert(res.hpEnt);
     const glyph = hedgeGlyphs.get(he.hi);
     if (glyph) {
       assert(
@@ -255,8 +296,10 @@ function createMeshEditor() {
       );
       assert(res.hp);
 
-      const pos0 = res.hp.mesh.pos[he.orig.vi];
-      const pos1 = res.hp.mesh.pos[he.twin.orig.vi];
+      const pos0 = vec3.copy(tempVec3(), res.hp.mesh.pos[he.orig.vi]);
+      vec3.transformMat4(pos0, pos0, res.hpEnt.world.transform);
+      const pos1 = vec3.copy(tempVec3(), res.hp.mesh.pos[he.twin.orig.vi]);
+      vec3.transformMat4(pos1, pos1, res.hpEnt.world.transform);
       const diff = vec3.sub(tempVec3(), pos1, pos0);
       const theta = Math.atan2(diff[0], diff[2]) + Math.PI * 0.5;
       quat.fromEuler(glyph.rotation, 0, theta, 0);
@@ -284,6 +327,9 @@ function createMeshEditor() {
         nextHedgeGlyph().then((g) => assignHEdgeGlyph(g, he));
       }
     }
+
+    // TODO(@darzu): color hack
+    randNormalPosVec3(res.hp.mesh.colors[face.fi]);
   }
 }
 

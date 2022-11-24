@@ -356,7 +356,9 @@ export function extrudeQuad(hp: HPoly, he: HEdge): HPolyDelta {
   hp.mesh.surfaceIds?.push(
     hp.mesh.surfaceIds[hp.mesh.surfaceIds.length - 1] + 1
   );
-  hp.mesh.colors?.push(randNormalPosVec3(vec3.create()));
+  // TODO(@darzu): DBG colors
+  // hp.mesh.colors?.push(randNormalPosVec3(vec3.create()));
+  hp.mesh.colors?.push(vec3.create());
 
   // we're done! Verify and append to HPoly
   const newHs = [hi0, hi01, hi1, ho1, ho01, ho0];
