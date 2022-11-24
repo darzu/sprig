@@ -136,10 +136,10 @@ function createMeshEditor() {
     //    way to do this.
     for (let g of hedgeGlyphs.values()) hideHEdgeGlyph(g);
     hedgeGlyphs.clear();
-    // hedgeGlyphPoolIdx.reset();
+    hedgeGlyphPoolIdx.reset();
     for (let g of vertGlpyhs.values()) hideHVertGlyph(g);
     vertGlpyhs.clear();
-    // vertGlyphPoolIdx.reset();
+    vertGlyphPoolIdx.reset();
     cursorGlpyh = undefined;
     hoverGlyphs.length = 0;
     selectedGlyphs.length = 0;
