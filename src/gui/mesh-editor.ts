@@ -85,7 +85,7 @@ type GlyphEnt = EntityW<
 
 // }
 
-const MeshEditorDef = EM.defineComponent("meshEditor", createMeshEditor);
+export const MeshEditorDef = EM.defineComponent("meshEditor", createMeshEditor);
 
 // TODO(@darzu): this might be over engineered
 const vertGlyphPool: GlyphEnt[] = [];
@@ -208,6 +208,7 @@ function createMeshEditor() {
     g.button.data = undefined;
   }
   function hideHEdgeGlyph(g: GlyphEnt) {
+    // TODO(@darzu): we would love to disable the collider. No mechanism for that yet
     g.renderable.hidden = true;
     assert(g.hglyph.kind === "hedge");
     if (g.hglyph.he?.hi) hedgeGlyphs.delete(g.hglyph.he.hi);
@@ -325,6 +326,7 @@ export async function initMeshEditor(startMesh: MeshHandle, cursorId: number) {
 
   const meshEditor = EM.addSingletonComponent(MeshEditorDef);
 
+  // TODO(@darzu): DBG only
   meshEditor.setMesh(startMesh);
 
   // TODO(@darzu): refactor. Also have undo-stack
@@ -426,8 +428,8 @@ export async function initMeshEditor(startMesh: MeshHandle, cursorId: number) {
             selectedGlyphs.push(e.cursorGlpyh);
           }
           for (let g of selectedGlyphs) {
-            if (g.hglyph.kind === "vert") {
-              assert(g.hglyph.hv);
+            if (g.hglyph.kind === "vert" && g.hglyph.hv) {
+              // assert(g.hglyph.hv, `glyph missing vert ptr`);
               translateVert(g.hglyph.hv, worldDrag);
               let edg = g.hglyph.hv.edg;
               while (edg.orig === g.hglyph.hv) {

@@ -252,10 +252,13 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     const maxTriNum = reserved?.maxTriNum ?? triNum;
     const lineNum = m.lines?.length ?? 0;
     const maxLineNum = reserved?.maxLineNum ?? lineNum;
-    assert(pool.allMeshes.length + 1 <= poolMaxMeshes, "Too many meshes!");
-    assert(pool.numVerts + maxVertNum <= poolMaxVerts, "Too many vertices!");
-    assert(pool.numTris + maxTriNum <= poolMaxTris, "Too many triangles!");
-    assert(pool.numLines + maxLineNum <= poolMaxLines, "Too many lines!");
+    assert(vertNum <= maxVertNum, "Inconsistent num of vertices!");
+    assert(triNum <= maxTriNum, "Inconsistent num of triangles!");
+    assert(lineNum <= maxLineNum, "Inconsistent num of lines!");
+    assert(pool.allMeshes.length + 1 <= poolMaxMeshes, "Too many meshes!!");
+    assert(pool.numVerts + maxVertNum <= poolMaxVerts, "Too many vertices!!");
+    assert(pool.numTris + maxTriNum <= poolMaxTris, "Too many triangles!!");
+    assert(pool.numLines + maxLineNum <= poolMaxLines, "Too many lines!!");
     assert(m.usesProvoking, `mesh must use provoking vertices`);
     // TODO(@darzu): what to do about this requirement...
     assert(
@@ -311,6 +314,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     return newHandle;
   }
   function updateMeshInstance(m: MeshHandle, proto: MeshHandle): void {
+    // TODO(@darzu): not totally sure this method is a good idea..
     const uniIdx = m.uniIdx;
     const mId = m.mId;
 
@@ -401,7 +405,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     assert(newNumTri <= handle.reserved.maxTriNum, "Too many triangles!");
     assert(
       (m.lines?.length ?? 0) <= handle.reserved.maxLineNum,
-      "Too many lines!"
+      `Too many lines! ${m.lines?.length} vs ${handle.reserved.maxLineNum}`
     );
     // TODO(@darzu): what to do about this requirement...
     assert(

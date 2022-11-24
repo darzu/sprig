@@ -6,7 +6,7 @@ import { dbg } from "../debugger.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
 import { vec3, quat, mat4 } from "../gl-matrix.js";
 import { ButtonDef, ButtonsStateDef, initButtonGUI } from "../gui/button.js";
-import { initMeshEditor } from "../gui/mesh-editor.js";
+import { initMeshEditor, MeshEditorDef } from "../gui/mesh-editor.js";
 import {
   extrudeQuad,
   HEdge,
@@ -303,30 +303,30 @@ export async function initFontEditor(em: EntityManager) {
 
   // TODO(@darzu): render buttons?
   const CHARS = `abcdefghijklmnopqrstuvwxyz.`.split("");
-  const polyBank = new Map<string, GameMesh>();
+  const polyBank = new Map<number, GameMesh>();
+  const btnKey = `letter`;
 
   for (let i = 0; i < CHARS.length; i++) {
     const c = CHARS[i];
-    const key = `letter-${c}`;
+    const letterKey = `letter-${c}`;
     const mesh = cloneMesh(res.buttonsState.gmesh.mesh);
-    mesh.dbgName = key;
+    mesh.dbgName = letterKey;
     // console.dir(res.buttonsState.gmesh.mesh);
     // console.dir(mesh);
     const reserve: MeshReserve = {
       maxVertNum: 100,
       maxTriNum: 100,
-      maxLineNum: 0,
+      maxLineNum: mesh.lines?.length ?? 0,
     };
     const gmesh = gameMeshFromMesh(mesh, res.renderer.renderer, reserve);
     // TODO(@darzu): update gmesh after half-edge editor changes: aabb etc
 
-    polyBank.set(key, gmesh);
+    polyBank.set(i, gmesh);
 
-    // TODO(@darzu): if they all have the same key, they don't work.
     const btn = EM.newEntity();
     EM.ensureComponentOn(btn, RenderableConstructDef, gmesh.proto);
     EM.ensureComponentOn(btn, PositionDef, [-24 + i * 2, 0.1, 12]);
-    EM.ensureComponentOn(btn, ButtonDef, key, i, {
+    EM.ensureComponentOn(btn, ButtonDef, btnKey, i, {
       default: ENDESGA16.lightGray,
       hover: ENDESGA16.darkGray,
       down: ENDESGA16.orange,
@@ -337,7 +337,24 @@ export async function initFontEditor(em: EntityManager) {
       solid: false,
       aabb: gmesh.aabb,
     });
+
+    // TODO(@darzu): NEED TO UPDATE MeshEditor based on letter button press
   }
+
+  EM.registerSystem(
+    null,
+    [ButtonsStateDef, MeshEditorDef],
+    (_, res) => {
+      const btnIdx = res.buttonsState.clickByKey[btnKey];
+      if (btnIdx !== undefined) {
+        const poly = polyBank.get(btnIdx);
+        assert(poly);
+        res.meshEditor.setMesh(poly.proto);
+      }
+    },
+    `letterBtnClick`
+  );
+  gameplaySystems.push(`letterBtnClick`);
 
   // TODO(@darzu): HACKY. Cursor or 2d gui or something needs some better
   //    abstracting
