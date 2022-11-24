@@ -12,6 +12,7 @@ import {
   HVert,
   meshToHalfEdgePoly,
 } from "../half-edge.js";
+import { createIdxPool, createIdxRing } from "../idx-pool.js";
 import { MouseDragDef, InputsDef } from "../inputs.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
@@ -85,6 +86,25 @@ type GlyphEnt = EntityW<
 
 const MeshEditorDef = EM.defineComponent("meshEditor", createMeshEditor);
 
+// TODO(@darzu): this might be over engineered
+const vertGlyphPool: GlyphEnt[] = [];
+const vertGlyphPoolIdx = createIdxPool(20);
+const hedgeGlyphPool: GlyphEnt[] = [];
+const hedgeGlyphPoolIdx = createIdxPool(20);
+
+async function nextVertGlyph(): Promise<GlyphEnt> {
+  const idx = vertGlyphPoolIdx.next();
+  assert(idx !== undefined, `out of glyphs`);
+  if (!vertGlyphPool[idx]) vertGlyphPool[idx] = await createHVertGlyph();
+  return vertGlyphPool[idx];
+}
+async function nextHedgeGlyph(): Promise<GlyphEnt> {
+  const idx = hedgeGlyphPoolIdx.next();
+  assert(idx !== undefined, `out of glyphs`);
+  if (!hedgeGlyphPool[idx]) hedgeGlyphPool[idx] = await createHEdgeGlyph();
+  return hedgeGlyphPool[idx];
+}
+
 function createMeshEditor() {
   let hoverGlyphs: GlyphEnt[] = [];
   let selectedGlyphs: GlyphEnt[] = [];
@@ -105,11 +125,31 @@ function createMeshEditor() {
     translateVert,
     positionHedge,
     extrudeHEdge,
+    // reset,
   };
 
   return res;
 
+  function reset() {
+    // TODO(@darzu): i don't like all this statefulness. probably a better FP
+    //    way to do this.
+    for (let g of hedgeGlyphs.values()) hideHEdgeGlyph(g);
+    hedgeGlyphs.clear();
+    // hedgeGlyphPoolIdx.reset();
+    for (let g of vertGlpyhs.values()) hideHVertGlyph(g);
+    vertGlpyhs.clear();
+    // vertGlyphPoolIdx.reset();
+    cursorGlpyh = undefined;
+    hoverGlyphs.length = 0;
+    selectedGlyphs.length = 0;
+    // TODO(@darzu): clean these up?
+    res.hp = undefined;
+    res.hpEnt = undefined;
+  }
+
   async function setHPoly(hp: HPoly) {
+    reset();
+
     assert(!res.hp); // TODO(@darzu): support reset
     res.hp = hp;
 
@@ -117,7 +157,7 @@ function createMeshEditor() {
     // vert glyphs
     for (let v of hp.verts) {
       // TODO(@darzu): seperate positioning
-      createHVertGlyph().then((g) => assignHVertGlyph(g, v));
+      nextVertGlyph().then((g) => assignHVertGlyph(g, v));
     }
 
     // half-edge glyphs
@@ -125,7 +165,7 @@ function createMeshEditor() {
       const visible = !he.face;
       if (visible) {
         // TODO(@darzu): move to pool
-        createHEdgeGlyph().then((g) => assignHEdgeGlyph(g, he));
+        nextHedgeGlyph().then((g) => assignHEdgeGlyph(g, he));
       }
     }
 
@@ -148,6 +188,21 @@ function createMeshEditor() {
     EM.ensureComponentOn(hpEnt_, PositionDef, [0, 0.1, 0]);
     const hpEnt = await EM.whenEntityHas(hpEnt_, RenderableDef);
     res.hpEnt = hpEnt;
+  }
+
+  function hideHVertGlyph(g: GlyphEnt) {
+    g.renderable.hidden = true;
+    assert(g.hglyph.kind === "vert");
+    if (g.hglyph.hv?.vi) vertGlpyhs.delete(g.hglyph.hv.vi);
+    g.hglyph.hv = undefined;
+    g.button.data = undefined;
+  }
+  function hideHEdgeGlyph(g: GlyphEnt) {
+    g.renderable.hidden = true;
+    assert(g.hglyph.kind === "hedge");
+    if (g.hglyph.he?.hi) hedgeGlyphs.delete(g.hglyph.he.hi);
+    g.hglyph.he = undefined;
+    g.button.data = undefined;
   }
 
   function assignHVertGlyph(g: GlyphEnt, v: HVert) {
@@ -173,7 +228,6 @@ function createMeshEditor() {
   function translateVert(v: HVert, delta: vec3) {
     const glyph = vertGlpyhs.get(v.vi);
     assert(glyph && glyph.hglyph.kind === "vert" && glyph.hglyph.hv === v);
-
     assert(res.hp);
     const pos = res.hp.mesh.pos[v.vi];
     vec3.add(pos, pos, delta);
@@ -205,18 +259,18 @@ function createMeshEditor() {
 
     const oldGlyph = hedgeGlyphs.get(he.hi);
     if (oldGlyph) {
-      oldGlyph.renderable.hidden = true;
+      hideHEdgeGlyph(oldGlyph);
+      // TODO(@darzu): FREE IN POOL! Needs back ptr
     }
 
     for (let v of verts) {
-      // TODO(@darzu): move to pool
-      createHVertGlyph().then((g) => assignHVertGlyph(g, v));
+      nextVertGlyph().then((g) => assignHVertGlyph(g, v));
     }
 
     for (let he of edges) {
       const visible = !he.face;
       if (visible) {
-        createHEdgeGlyph().then((g) => assignHEdgeGlyph(g, he));
+        nextHedgeGlyph().then((g) => assignHEdgeGlyph(g, he));
       }
     }
   }
@@ -480,8 +534,6 @@ export async function initMeshEditor(hpMesh: Mesh, cursorId: number) {
 
 async function createHVertGlyph(): Promise<GlyphEnt> {
   const { assets } = await EM.whenResources(AssetsDef);
-  // const pos = vec3.clone(hp.mesh.pos[v.vi]);
-  // pos[1] = 0.2;
   const glyph_ = EM.newEntity();
   EM.ensureComponentOn(
     glyph_,
@@ -519,9 +571,6 @@ async function createHVertGlyph(): Promise<GlyphEnt> {
 }
 async function createHEdgeGlyph(): Promise<GlyphEnt> {
   const { assets } = await EM.whenResources(AssetsDef);
-  // he: HEdge,
-  // visible: boolean
-  // TODO(@darzu):
   const glyph_ = EM.newEntity();
   EM.ensureComponentOn(
     glyph_,
