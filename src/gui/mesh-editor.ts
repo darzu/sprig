@@ -91,10 +91,11 @@ type GlyphEnt = EntityW<
 export const MeshEditorDef = EM.defineComponent("meshEditor", createMeshEditor);
 
 // TODO(@darzu): this might be over engineered
+const MAX_GLYPHS = 100;
 const vertGlyphPool: GlyphEnt[] = [];
-const vertGlyphPoolIdx = createIdxPool(20);
+const vertGlyphPoolIdx = createIdxPool(MAX_GLYPHS);
 const hedgeGlyphPool: GlyphEnt[] = [];
-const hedgeGlyphPoolIdx = createIdxPool(20);
+const hedgeGlyphPoolIdx = createIdxPool(MAX_GLYPHS);
 
 async function nextVertGlyph(): Promise<GlyphEnt> {
   const idx = vertGlyphPoolIdx.next();
@@ -215,8 +216,8 @@ function createMeshEditor() {
         false
       );
       EM.ensureComponentOn(hpEnt_, PositionDef, [0, 0.1, 0]);
-      // TODO(@darzu): handle scale everywhere
-      EM.ensureComponentOn(hpEnt_, ScaleDef, [3, 3, 3]);
+      // TODO(@darzu): make scale configurable
+      EM.ensureComponentOn(hpEnt_, ScaleDef, [5, 5, 5]);
       const hpEnt = await EM.whenEntityHas(
         hpEnt_,
         RenderableDef,
@@ -333,7 +334,7 @@ function createMeshEditor() {
   }
 }
 
-export async function initMeshEditor(startMesh: MeshHandle, cursorId: number) {
+export async function initMeshEditor(cursorId: number) {
   const { assets } = await EM.whenResources(AssetsDef);
 
   // TODO(@darzu): dragbox should be part of some 2d gui abstraction thing
@@ -373,7 +374,7 @@ export async function initMeshEditor(startMesh: MeshHandle, cursorId: number) {
   const meshEditor = EM.addSingletonComponent(MeshEditorDef);
 
   // TODO(@darzu): DBG only
-  meshEditor.setMesh(startMesh);
+  // meshEditor.setMesh(startMesh);
 
   // TODO(@darzu): refactor. Also have undo-stack
   EM.registerSystem(

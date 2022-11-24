@@ -274,7 +274,6 @@ export async function initFontEditor(em: EntityManager) {
 
   gameplaySystems.push("uiCameraView");
 
-  // testHalfEdge
   const quadMesh: Mesh = {
     quad: [[0, 1, 2, 3]],
     tri: [],
@@ -288,7 +287,7 @@ export async function initFontEditor(em: EntityManager) {
     surfaceIds: [1],
     usesProvoking: true,
   };
-  scaleMesh(quadMesh, 4);
+  scaleMesh(quadMesh, 0.5);
 
   const quadGMesh = gameMeshFromMesh(quadMesh, res.renderer.renderer, {
     maxVertNum: 100,
@@ -309,7 +308,8 @@ export async function initFontEditor(em: EntityManager) {
   for (let i = 0; i < CHARS.length; i++) {
     const c = CHARS[i];
     const letterKey = `letter-${c}`;
-    const mesh = cloneMesh(res.buttonsState.gmesh.mesh);
+    const mesh = cloneMesh(quadGMesh.mesh);
+    // const mesh = cloneMesh(res.buttonsState.gmesh.mesh);
     mesh.dbgName = letterKey;
     // console.dir(res.buttonsState.gmesh.mesh);
     // console.dir(mesh);
@@ -362,5 +362,5 @@ export async function initFontEditor(em: EntityManager) {
   res.buttonsState.cursorId = cursor.id;
   // });
 
-  initMeshEditor(quadGMesh.proto, cursor.id);
+  initMeshEditor(cursor.id);
 }
