@@ -17,6 +17,10 @@ import { drawBall, drawLine } from "../utils-game.js";
 //    consider half-edge meshes, line meshes, tri-only
 //    consider non-provoking meshes
 //    Raw vs not is hacky..
+// TODO(@darzu): consider, should meshes have both lines and tri/quads? I think perhaps not,
+//    as the data is often redundant. Instead we should make a "line" version of a mesh if
+//    we want to show it as a wireframe. Esp thinking about half-edge data structure, what
+//    do we do with lines if its duplicate connectivity.
 
 // defines the geometry and coloring of a mesh
 // geometry: pos, tri, quad, lines,

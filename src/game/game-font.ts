@@ -4,7 +4,7 @@ import { AlphaDef, ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { dbg } from "../debugger.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { vec3, quat, mat4 } from "../gl-matrix.js";
+import { vec3, quat, mat4, vec2 } from "../gl-matrix.js";
 import { ButtonDef, ButtonsStateDef, initButtonGUI } from "../gui/button.js";
 import { initMeshEditor, MeshEditorDef } from "../gui/mesh-editor.js";
 import {
@@ -28,6 +28,7 @@ import {
   getAABBFromMesh,
   Mesh,
   normalizeMesh,
+  RawMesh,
   scaleMesh,
   transformMesh,
   unshareProvokingVertices,
@@ -52,6 +53,7 @@ import {
   makePlaneMesh,
 } from "./assets.js";
 import { createGhost, gameplaySystems } from "./game.js";
+import { TextDef } from "./ui.js";
 
 /*
 TODO(@darzu):
@@ -343,13 +345,17 @@ export async function initFontEditor(em: EntityManager) {
 
   EM.registerSystem(
     null,
-    [ButtonsStateDef, MeshEditorDef],
+    [ButtonsStateDef, MeshEditorDef, TextDef],
     (_, res) => {
       const btnIdx = res.buttonsState.clickByKey[btnKey];
       if (btnIdx !== undefined) {
         const poly = polyBank.get(btnIdx);
         assert(poly);
         res.meshEditor.setMesh(poly.proto);
+        res.text.upperText = CHARS[btnIdx];
+        res.text.upperDiv.style.fontSize = "256px";
+        res.text.upperDiv.style.top = "-64px";
+        // res.text.upperDiv.style.color = "";
       }
     },
     `letterBtnClick`
@@ -363,4 +369,100 @@ export async function initFontEditor(em: EntityManager) {
   // });
 
   initMeshEditor(cursor.id);
+
+  lineStuff();
+}
+
+// TODO(@darzu): can/should this be merged with half-edge stuff?
+interface HLine {
+  vi: number;
+  next?: HLine;
+  prev?: HLine;
+}
+
+function meshToHLines(m: RawMesh): HLine {
+  assert(m.lines && m.lines.length);
+  const lines = m.lines.map(([v0, v1]) => ({ vi: v0 } as HLine));
+  const linesByVi = new Map<number, HLine>();
+  lines.forEach((ln) => {
+    assert(!linesByVi.has(ln.vi), `HLines don't support 3-ways`);
+    linesByVi.set(ln.vi, ln);
+  });
+  m.lines.forEach(([v0, v1]) => {
+    const ln0 = linesByVi.get(v0);
+    const ln1 = linesByVi.get(v1);
+    if (ln0) ln0.next = ln1;
+    if (ln1) ln1.prev = ln0;
+  });
+
+  // // TODO(@darzu): DBG
+  // console.dir(lines);
+
+  return lines[0];
+}
+
+// TODO(@darzu): rename
+function lineStuff() {
+  const lnMesh: RawMesh = {
+    pos: [
+      [1, 0, 1],
+      [2, 0, 2],
+      [4, 0, 3],
+      [8, 0, 3],
+      [8, 0, 6],
+    ],
+    tri: [],
+    quad: [],
+    lines: [
+      [0, 1],
+      [3, 4],
+      [2, 3],
+      [1, 2],
+    ],
+    colors: [],
+  };
+
+  const hline = meshToHLines(lnMesh);
+
+  const lns = linesAsList([], hline);
+
+  const pts = lns.map((ln) => getControlPoints(ln));
+
+  console.dir(pts);
+
+  function getControlPoints(ln: HLine): [vec3, vec3] {
+    const A0 = vec3.create();
+    const A1 = vec3.create();
+
+    // TODO(@darzu): IMPL
+
+    return [A0, A1];
+  }
+
+  function linesAsList(acc: HLine[], curr?: HLine): HLine[] {
+    if (!curr) return acc;
+    if (!acc.length && curr.prev) return linesAsList(acc, curr.prev);
+    acc.push(curr);
+    return linesAsList(acc, curr.next);
+  }
+
+  // const points: vec2[] = [];
+
+  // let prevA1: vec2;
+  // let prevA2: vec2;
+  // for (let i = -1; i < points.length; i++) {
+  //   const A = points[i];
+  //   const B = points[i + 1];
+
+  //   if (!A && B) {
+  //     // start cap
+  //     // const A1 =
+  //   } else if (A && B) {
+  //     // mid section
+  //   } else if (A && !B) {
+  //     // end cap
+  //   } else {
+  //     assert(false, "should be unreachable");
+  //   }
+  // }
 }

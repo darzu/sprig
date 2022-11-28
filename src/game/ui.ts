@@ -21,20 +21,30 @@ In-engine text rendering:
 [ ] font editor: html reference fonts overlay
 */
 
-export const TextDef = EM.defineComponent("text", () => {
-  return {
-    upperText: "",
-    lowerText: "",
-    debugText: "",
-  };
-});
+export const TextDef = EM.defineComponent(
+  "text",
+  (
+    upperDiv: HTMLDivElement,
+    debugDiv: HTMLDivElement,
+    lowerDiv: HTMLDivElement
+  ) => {
+    return {
+      upperText: "",
+      lowerText: "",
+      debugText: "",
+      upperDiv,
+      debugDiv,
+      lowerDiv,
+    };
+  }
+);
 
 export function registerUISystems(em: EntityManager) {
-  em.addSingletonComponent(TextDef);
-
-  const titleDiv = document.getElementById("title-div") as HTMLDivElement;
+  const upperDiv = document.getElementById("title-div") as HTMLDivElement;
   const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
   const lowerDiv = document.getElementById("lower-div") as HTMLDivElement;
+
+  em.addSingletonComponent(TextDef, upperDiv, debugDiv, lowerDiv);
 
   em.registerSystem(
     null,
@@ -43,9 +53,12 @@ export function registerUISystems(em: EntityManager) {
       // PERF NOTE: using ".innerText =" creates a new DOM element each frame, whereas
       //    using ".firstChild.nodeValue =" reuses the DOM element. Unfortunately this
       //    means we'll need to do more work to get line breaks.
-      titleDiv.firstChild!.nodeValue = res.text.upperText;
-      debugDiv.firstChild!.nodeValue = res.text.debugText;
-      lowerDiv.firstChild!.nodeValue = res.text.lowerText;
+      if (res.text.upperText)
+        upperDiv.firstChild!.nodeValue = res.text.upperText;
+      if (res.text.debugText)
+        debugDiv.firstChild!.nodeValue = res.text.debugText;
+      if (res.text.lowerText)
+        lowerDiv.firstChild!.nodeValue = res.text.lowerText;
     },
     "uiText"
   );

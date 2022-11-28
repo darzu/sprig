@@ -75,7 +75,7 @@ export function registerDevSystems(em: EntityManager) {
       }
 
       if (!res.dev.showConsole) {
-        res.text.debugText = "";
+        res.text.debugText = " ";
         return;
       }
 
