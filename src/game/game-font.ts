@@ -72,7 +72,7 @@ TODO(@darzu):
  [ ] render arbitrary-ish text
 */
 
-const DBG_3D = false; // TODO(@darzu): add in-game smooth transition!
+const DBG_3D = true; // TODO(@darzu): add in-game smooth transition!
 
 const PANEL_W = 4 * 12;
 const PANEL_H = 3 * 12;
@@ -382,11 +382,10 @@ interface HLine {
 
 function meshToHLines(m: RawMesh): HLine {
   assert(m.lines && m.lines.length);
-  const lines = m.lines.map(([v0, v1]) => ({ vi: v0 } as HLine));
   const linesByVi = new Map<number, HLine>();
-  lines.forEach((ln) => {
-    assert(!linesByVi.has(ln.vi), `HLines don't support 3-ways`);
-    linesByVi.set(ln.vi, ln);
+  m.lines.forEach(([v0, v1]) => {
+    if (!linesByVi.has(v0)) linesByVi.set(v0, { vi: v0 } as HLine);
+    if (!linesByVi.has(v1)) linesByVi.set(v1, { vi: v1 } as HLine);
   });
   m.lines.forEach(([v0, v1]) => {
     const ln0 = linesByVi.get(v0);
@@ -395,14 +394,14 @@ function meshToHLines(m: RawMesh): HLine {
     if (ln1) ln1.prev = ln0;
   });
 
-  // // TODO(@darzu): DBG
-  // console.dir(lines);
+  let first = linesByVi.get(m.lines[0][0])!;
+  while (first.prev) first = first.prev;
 
-  return lines[0];
+  return first;
 }
 
 // TODO(@darzu): rename
-function lineStuff() {
+async function lineStuff() {
   const lnMesh: RawMesh = {
     pos: [
       [1, 0, 1],
@@ -426,17 +425,76 @@ function lineStuff() {
 
   const lns = linesAsList([], hline);
 
-  const pts = lns.map((ln) => getControlPoints(ln));
+  // console.log(lns);
 
-  console.dir(pts);
+  const width = 2.0;
 
-  function getControlPoints(ln: HLine): [vec3, vec3] {
-    const A0 = vec3.create();
+  const pts = lns.map((ln) => getControlPoints(ln, width));
+
+  // console.dir(pts);
+
+  const extMesh: Mesh = {
+    pos: [],
+    tri: [],
+    quad: [],
+    lines: [],
+    colors: [],
+    surfaceIds: [],
+    usesProvoking: true,
+  };
+
+  pts.forEach(([a1, a2]) => {
+    extMesh.pos.push(a1);
+    extMesh.pos.push(a2);
+  });
+
+  for (let i = 1; i < pts.length; i++) {
+    const pi = i * 2;
+    const pA1 = pi - 2;
+    const pA2 = pi - 1;
+    const A1 = pi + 0;
+    const A2 = pi + 1;
+    extMesh.quad.push([A1, pA1, pA2, A2]);
+    extMesh.surfaceIds.push(i);
+    extMesh.colors.push(randNormalPosVec3(vec3.create()));
+  }
+
+  const { renderer, assets } = await EM.whenResources(RendererDef, AssetsDef);
+
+  const gmesh = gameMeshFromMesh(extMesh, renderer.renderer);
+
+  const extEnt = EM.newEntity();
+  EM.ensureComponentOn(extEnt, RenderableConstructDef, gmesh.proto);
+  EM.ensureComponentOn(extEnt, PositionDef, [0, 0.5, 0]);
+
+  for (let ln of lns) {
+    const vertGlyph = EM.newEntity();
+    EM.ensureComponentOn(vertGlyph, RenderableConstructDef, assets.cube.proto);
+    EM.ensureComponentOn(vertGlyph, PositionDef, vec3.clone(lnMesh.pos[ln.vi]));
+    EM.ensureComponentOn(vertGlyph, ColorDef, [0.1, 0.2 + ln.vi * 0.1, 0.1]);
+    EM.ensureComponentOn(vertGlyph, ScaleDef, [0.2, 0.2, 0.2]);
+    vertGlyph.position[1] = 0.5;
+  }
+
+  function getControlPoints(ln: HLine, width: number): [vec3, vec3] {
     const A1 = vec3.create();
+    const A2 = vec3.create();
 
-    // TODO(@darzu): IMPL
+    const A = lnMesh.pos[ln.vi];
 
-    return [A0, A1];
+    const Oln = ln.next ?? ln.prev;
+    const O = Oln ? lnMesh.pos[Oln.vi] : vec3.add(tempVec3(), A, [1, 0, 0]);
+    const dir = vec3.sub(tempVec3(), O, A);
+    if (!ln.next && ln.prev) vec3.negate(dir, dir);
+    vec3.normalize(dir, dir);
+
+    const perp = vec3.cross(tempVec3(), dir, [0, 1, 0]);
+
+    // TODO(@darzu): this is right for end caps, not the mids!!
+    vec3.sub(A1, A, vec3.scale(tempVec3(), perp, width));
+    vec3.add(A2, A, vec3.scale(tempVec3(), perp, width));
+
+    return [A1, A2];
   }
 
   function linesAsList(acc: HLine[], curr?: HLine): HLine[] {
