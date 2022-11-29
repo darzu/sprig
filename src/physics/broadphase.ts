@@ -331,6 +331,54 @@ export interface RayHit {
   id: number;
   dist: number;
 }
+
+export function rayVsRay(ra: Ray, rb: Ray): vec3 | undefined {
+  // const x = (ra.org[0] + ra.dir[0] * da === rb.org[0] + rb.dir[0] * db)
+  // const y = (ra.org[1] + ra.dir[1] * da === rb.org[1] + rb.dir[1] * db)
+  // const z = (ra.org[2] + ra.dir[2] * da === rb.org[2] + rb.dir[2] * db)
+  // const da = ((rb.org[0] + rb.dir[0] * db) - ra.org[0]) / ra.dir[0];
+  // TODO(@darzu): how does line intersection work?
+
+  // TODO(@darzu): select axis based on rays
+  const x = 0;
+  const y = 2;
+
+  const a = ra.org;
+  const da = ra.dir;
+  const b = rb.org;
+  const db = rb.dir;
+
+  const term1 = a[y] - b[y] + (da[y] * b[x]) / da[x] - (da[y] * a[x]) / da[x];
+  const term2 = db[y] - (da[y] * db[x]) / da[x];
+  const tb = term1 / term2;
+
+  if (isNaN(tb) || !isFinite(tb) || tb < 0.0) return undefined;
+
+  const ta = (b[x] + db[x] * tb - a[x]) / da[x];
+
+  if (isNaN(ta) || !isFinite(ta) || ta < 0.0) return undefined;
+
+  const pt = vec3.add(vec3.create(), b, vec3.scale(tempVec3(), db, tb));
+
+  return pt;
+
+  // TODO(@darzu): put this in unit tests...
+  // const ra: Ray = {
+  //   org: [1, 0, 1],
+  //   dir: [1, 0, 0],
+  // };
+  // const rb: Ray = {
+  //   org: [-1, 0, -1],
+  //   dir: [0.3, 0, 0.5],
+  // };
+  // const pab = rayVsRay(ra, rb);
+  // console.dir({
+  //   ra,
+  //   rb,
+  //   pab,
+  // });
+}
+
 function checkRayVsOct(tree: OctTree, ray: Ray): RayHit[] {
   // check this node's AABB
   const d = rayHitDist(tree.aabb, ray);

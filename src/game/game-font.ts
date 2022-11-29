@@ -17,7 +17,7 @@ import {
 import { exportObj, importObj } from "../import_obj.js";
 import { InputsDef, MouseDragDef } from "../inputs.js";
 import { mathMap } from "../math.js";
-import { copyAABB, createAABB } from "../physics/broadphase.js";
+import { copyAABB, createAABB, Ray, rayVsRay } from "../physics/broadphase.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
@@ -477,24 +477,72 @@ async function lineStuff() {
   }
 
   function getControlPoints(ln: HLine, width: number): [vec3, vec3] {
-    const A1 = vec3.create();
-    const A2 = vec3.create();
-
     const A = lnMesh.pos[ln.vi];
 
-    const Oln = ln.next ?? ln.prev;
-    const O = Oln ? lnMesh.pos[Oln.vi] : vec3.add(tempVec3(), A, [1, 0, 0]);
-    const dir = vec3.sub(tempVec3(), O, A);
-    if (!ln.next && ln.prev) vec3.negate(dir, dir);
-    vec3.normalize(dir, dir);
+    if (!ln.next || !ln.prev) {
+      // end cap
+      const A1 = vec3.create();
+      const A2 = vec3.create();
 
-    const perp = vec3.cross(tempVec3(), dir, [0, 1, 0]);
+      const Oln = ln.next ?? ln.prev;
+      const O = Oln ? lnMesh.pos[Oln.vi] : vec3.add(tempVec3(), A, [1, 0, 0]);
+      const dir = vec3.sub(tempVec3(), O, A);
+      if (!ln.next && ln.prev) vec3.negate(dir, dir);
+      vec3.normalize(dir, dir);
 
-    // TODO(@darzu): this is right for end caps, not the mids!!
-    vec3.sub(A1, A, vec3.scale(tempVec3(), perp, width));
-    vec3.add(A2, A, vec3.scale(tempVec3(), perp, width));
+      const perp = vec3.cross(tempVec3(), dir, [0, 1, 0]);
 
-    return [A1, A2];
+      // TODO(@darzu): this is right for end caps, not the mids!!
+      vec3.sub(A1, A, vec3.scale(tempVec3(), perp, width));
+      vec3.add(A2, A, vec3.scale(tempVec3(), perp, width));
+
+      return [A1, A2];
+    } else {
+      // mid point
+      const P = lnMesh.pos[ln.prev.vi];
+      const PAdir = vec3.sub(tempVec3(), A, P);
+      vec3.normalize(PAdir, PAdir);
+      const PAperp = vec3.cross(tempVec3(), PAdir, [0, 1, 0]);
+      const P1 = vec3.sub(tempVec3(), A, vec3.scale(tempVec3(), PAperp, width));
+      vec3.sub(P1, P1, vec3.scale(tempVec3(), PAdir, width * 3));
+      const P2 = vec3.add(tempVec3(), A, vec3.scale(tempVec3(), PAperp, width));
+      vec3.sub(P2, P2, vec3.scale(tempVec3(), PAdir, width * 3));
+
+      const N = lnMesh.pos[ln.next.vi];
+      const NAdir = vec3.sub(tempVec3(), A, N);
+      vec3.normalize(NAdir, NAdir);
+      const NAperp = vec3.cross(tempVec3(), NAdir, [0, 1, 0]);
+      const N1 = vec3.sub(tempVec3(), A, vec3.scale(tempVec3(), NAperp, width));
+      vec3.sub(N1, N1, vec3.scale(tempVec3(), NAdir, width * 3));
+      const N2 = vec3.add(tempVec3(), A, vec3.scale(tempVec3(), NAperp, width));
+      vec3.sub(N2, N2, vec3.scale(tempVec3(), NAdir, width * 3));
+
+      const A1 = rayVsRay(
+        {
+          org: P1,
+          dir: PAdir,
+        },
+        {
+          org: N2,
+          dir: NAdir,
+        }
+      );
+      assert(A1, `P1 vs N2 failed`);
+
+      const A2 = rayVsRay(
+        {
+          org: P2,
+          dir: PAdir,
+        },
+        {
+          org: N1,
+          dir: NAdir,
+        }
+      );
+      assert(A2, `P2 vs N1 failed`);
+
+      return [A1, A2];
+    }
   }
 
   function linesAsList(acc: HLine[], curr?: HLine): HLine[] {
