@@ -155,3 +155,27 @@ Maps of Science, interactive wall idea:
   Maybe not one giant wall, but arranged like a mounted book with big sheafs u can browse
 
   Sprigland could absolutely do something like this for the realms of video game engines and computer science
+
+Outward dev story:
+  https://www.youtube.com/watch?v=DRNLemK6n7I
+
+  Timeline something like:
+  Guillaume saves up ~25k working at Activision as Q/A tester,
+  tries 3 times to make a side project happen at Activision with other Activision people,
+  quits Activision on good terms,
+  1 year on a game (Brand) with ~5 people, revenue shared, no salary, game earns $30k,
+  2.5 years on a game (God Factory) with ~8 people, revenue shared, minimum wage?, game earns $300k,
+  he takes ~50k in loans
+  2 failed kickstarters
+  5/8 people live in one shitty apt (?),
+  ~8 people make tech demo for open world RPG in ~3 months,
+  receives 1 million from Canadian Media fund (gov thing?)
+  spend 2 years on Outward, run out of money,
+  decide early access would require too much comprise of vision, (surprising to me)
+  so they get a publisher,
+  work another 2.5 years on Outward,
+  launches on March 2019,
+  by Dec 2019 (this interview), game has sold ~500k copies
+
+  pre-launch vid: https://www.youtube.com/watch?v=noPLDvUhxyk
+

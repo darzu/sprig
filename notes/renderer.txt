@@ -1542,3 +1542,16 @@ What is: parallax mapping
     Michal Drobot
   https://www.unrealengine.com/marketplace/en-US/product/get-relief-rcsm-generator?sessionInvalidated=true
   
+BotW lighting overview:
+  https://www.youtube.com/watch?v=By7qcgaqGI4&t=2s
+  more BoTW:
+    cedec 2017
+
+  great website for disecting old game rendering:
+    https://noclip.website
+
+  cell shading in Windwaker:
+    https://www.youtube.com/watch?v=mnxs6CR6Zrk
+
+  mario galaxy gravity and shadows:
+    https://www.youtube.com/watch?v=QLH_0T_xv3I
