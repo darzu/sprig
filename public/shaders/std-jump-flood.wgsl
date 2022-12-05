@@ -6,7 +6,7 @@
 
  @fragment
 fn frag_main(@location(0) centerUV : vec2<f32>) -> @location(0) vec2<f32> {
-  let dimsI : vec2<i32> = textureDimensions(inTex);
+  let dimsI : vec2<i32> = vec2<i32>(textureDimensions(inTex));
   let dimsF = vec2<f32>(dimsI);
   let centerXY = vec2<i32>(centerUV * dimsF);
 
