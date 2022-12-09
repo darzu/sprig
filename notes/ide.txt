@@ -83,3 +83,12 @@ Don't solve static and dynamic analysis in general, solve it for specific cases:
   Don't have a single push button tool for everybody 
     (well except to the extent we can leverage special sprigland knowledge)
   Have a toolkit that allows devs to create custom code analysis for their exact game.
+
+Maybe instead of "beginner" "advanced" "expert" UI modes,
+  there is instead "opinionated" and "custom" mode or something,
+  like beginners don't want / shouldn't have too many options,
+    be prescriptive, define clear boundries, constraints really help,
+  once they're orientated and ready to push boundries then allow getting outside
+    the opinionated rails.
+  But it's not "beginner" b/c big complex games can be made with that initial set
+    of opinionated choices.

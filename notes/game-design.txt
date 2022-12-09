@@ -238,3 +238,16 @@ Resources:
     exploring the map instead of the terrain
   egocentric vs allocentric
     "piecemeal" vs "big picture"
+
+“no save files”:
+  The more i think about it, the more i think Outward’s death system is genius. It completely solves save scumming (eg witcher) and death loop abuse (eg valheim), while not being overly punishing and in fact it builds on the narrative. It strongly disincentivizes death, which makes each encounter feel much more meaningful. And that the penalties of death are somewhat unknown only adds to the tension and flavor.
+
+  "Agreed. A nice point in the “no save files” design space along with roguelikes and soulslikes"
+
+  The cost of death:
+    almost none: 
+      super meat boy
+
+    good balance of tension: soulslikes, roguelikes, Outward
+
+    too much: permadeath, non-roguelikes
