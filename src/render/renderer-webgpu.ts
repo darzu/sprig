@@ -285,7 +285,7 @@ export function createRenderer(
           needsRebundle = true;
           break;
         }
-        // TODO(@darzu): perf cost of this check? Maybe we should just use dirty flags..
+        // TODO(@darzu): PERF. perf cost of this check? Maybe we should just use dirty flags..
         if (bundledMIdToVertIdx.get(h.mId) !== h.vertIdx) {
           needsRebundle = true;
           break;

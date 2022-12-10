@@ -333,10 +333,11 @@ export interface RayHit {
 }
 
 export function rayVsRay(ra: Ray, rb: Ray): vec3 | undefined {
-  // const x = (ra.org[0] + ra.dir[0] * da === rb.org[0] + rb.dir[0] * db)
-  // const y = (ra.org[1] + ra.dir[1] * da === rb.org[1] + rb.dir[1] * db)
-  // const z = (ra.org[2] + ra.dir[2] * da === rb.org[2] + rb.dir[2] * db)
-  // const da = ((rb.org[0] + rb.dir[0] * db) - ra.org[0]) / ra.dir[0];
+  // ra.org[0] + ra.dir[0] * ta === rb.org[0] + rb.dir[0] * tb
+  // ra.org[1] + ra.dir[1] * ta === rb.org[1] + rb.dir[1] * tb
+  // ra.org[2] + ra.dir[2] * ta === rb.org[2] + rb.dir[2] * tb
+  // const ta = ((rb.org[0] + rb.dir[0] * tb) - ra.org[0]) / ra.dir[0];
+  // const tb = ...
   // TODO(@darzu): how does line intersection work?
 
   // TODO(@darzu): select axis based on rays
@@ -359,6 +360,8 @@ export function rayVsRay(ra: Ray, rb: Ray): vec3 | undefined {
   if (isNaN(ta) || !isFinite(ta) || ta < 0.0) return undefined;
 
   const pt = vec3.add(vec3.create(), b, vec3.scale(tempVec3(), db, tb));
+
+  // TODO(@darzu): this doesn't handle the third axis!!
 
   return pt;
 

@@ -2,6 +2,10 @@ import { DBG_ASSERT } from "./flags.js";
 import { Serializer, Deserializer } from "./serialize.js";
 import { assert, assertDbg, hashCode, Intersect } from "./util.js";
 
+// TODO(@darzu): for perf, we really need to move component data to be
+//  colocated in arrays; and maybe introduce "arch-types" for commonly grouped
+//  components and "worlds" to section off entities.
+
 export interface Entity {
   readonly id: number;
 }

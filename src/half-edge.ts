@@ -18,6 +18,8 @@ TODO(@darzu):
 */
 
 export interface HEdge {
+  // TODO(@darzu): "hi" should be stably generated based on face idxes (fi),
+  //      difficult part is outer edge and also tri/quad thing makes it more difficult
   hi: number;
   next: HEdge;
   prev: HEdge;

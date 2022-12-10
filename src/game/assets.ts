@@ -47,7 +47,7 @@ import {
   WoodAssets,
   WoodAssetsDef,
 } from "../wood.js";
-import { tempMat4 } from "../temp-pool.js";
+import { tempMat4, tempVec3 } from "../temp-pool.js";
 
 // TODO: load these via streaming
 
@@ -816,11 +816,22 @@ function mkHalfEdgeQuadMesh(): RawMesh {
 }
 
 export const LocalMeshes = {
-  // TODO(@darzu): LD51 PERF HACKS:
+  // TODO(@darzu): LD51 PERF HACKS: many meshes were swapped with CUBE_MESH
   ship_fangs: () => CUBE_MESH,
   ocean: () => CUBE_MESH,
 
   cube: () => CUBE_MESH,
+  unitCube: () => {
+    const unitCube = cloneMesh(CUBE_MESH);
+    unitCube.dbgName = "unitCube";
+    // normalize this cube to have min at 0,0,0 and max at 1,1,1
+    unitCube.pos.forEach((p) => {
+      p[0] = p[0] < 0 ? 0 : 1;
+      p[1] = p[1] < 0 ? 0 : 1;
+      p[2] = p[2] < 0 ? 0 : 1;
+    });
+    return unitCube;
+  },
   plane: () => makePlaneMesh(-10, 10, -10, 10),
   tetra: () => TETRA_MESH,
   he_octo: mkOctogonMesh,

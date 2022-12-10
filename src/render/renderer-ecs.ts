@@ -72,6 +72,7 @@ export interface RenderableConstruct {
 export const RenderableConstructDef = EM.defineComponent(
   "renderableConstruct",
   (
+    // TODO(@darzu): this constructor is too messy, we should use a params obj instead
     meshOrProto: Mesh | MeshHandle,
     enabled: boolean = true,
     // TODO(@darzu): do we need sort layers? Do we use them?
