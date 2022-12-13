@@ -72,7 +72,7 @@ TODO(@darzu):
  [ ] render arbitrary-ish text
 */
 
-const DBG_3D = true; // TODO(@darzu): add in-game smooth transition!
+const DBG_3D = false; // TODO(@darzu): add in-game smooth transition!
 
 const PANEL_W = 4 * 12;
 const PANEL_H = 3 * 12;
