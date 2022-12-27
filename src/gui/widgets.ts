@@ -4,20 +4,16 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityW } from "../entity-manager.js";
 import { AssetsDef } from "../game/assets.js";
 import { gameplaySystems } from "../game/game.js";
-import { mat4, quat, vec3 } from "../gl-matrix.js";
+import { vec3 } from "../gl-matrix.js";
 import { MouseDragDef } from "../inputs.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
-import { PositionDef, ScaleDef, RotationDef } from "../physics/transform.js";
-import { cloneMesh, transformMesh, getAABBFromMesh } from "../render/mesh.js";
-import {
-  RenderableConstructDef,
-  RenderableDef,
-} from "../render/renderer-ecs.js";
-import { tempMat4, tempVec3 } from "../temp-pool.js";
+import { PositionDef, ScaleDef } from "../physics/transform.js";
+import { cloneMesh } from "../render/mesh.js";
+import { RenderableConstructDef } from "../render/renderer-ecs.js";
+import { tempVec3 } from "../temp-pool.js";
 import { assert } from "../util.js";
 import { screenPosToWorldPos } from "../utils-game.js";
-import { ButtonDef } from "./button.js";
 
 // adornments are: entities that are parented to an entity's mesh parts
 //    [ ] track changes via version number on the mesh data
@@ -35,7 +31,6 @@ What's my data?
 */
 
 export interface WidgetLayer {
-  // widgets: EntityW<[typeof WidgetDef]>[]; // this comes from query instead?
   selected: Set<number>;
   hover: Set<number>;
   cursor?: number;
@@ -53,42 +48,14 @@ function createWidgetLayer(): WidgetLayer {
   };
 }
 
-// type WidgetEnt = EntityW<
-//   [
-//     typeof GlyphDef,
-//     typeof ColorDef,
-//     typeof PositionDef,
-//     typeof RotationDef,
-//     typeof RenderableDef,
-//     typeof ButtonDef
-//   ]
-// >;
-
 async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
   const { assets } = await EM.whenResources(AssetsDef);
 
   // create dragbox
   // TODO(@darzu): dragbox should be part of some 2d gui abstraction thing
   const dragBox = EM.newEntity();
-  const dragBoxMesh = cloneMesh(assets.cube.mesh);
+  const dragBoxMesh = cloneMesh(assets.unitCube.mesh);
   EM.ensureComponentOn(dragBox, AlphaDef, 0.2);
-  // normalize this cube to have min at 0,0,0 and max at 1,1,1
-
-  transformMesh(
-    dragBoxMesh,
-    mat4.fromRotationTranslationScaleOrigin(
-      tempMat4(),
-      quat.IDENTITY,
-      vec3.negate(tempVec3(), assets.cube.aabb.min),
-      vec3.set(
-        tempVec3(),
-        1 / (assets.cube.halfsize[0] * 2),
-        1 / (assets.cube.halfsize[1] * 2),
-        1 / (assets.cube.halfsize[2] * 2)
-      ),
-      assets.cube.aabb.min
-    )
-  );
   EM.ensureComponentOn(dragBox, RenderableConstructDef, dragBoxMesh);
   EM.ensureComponentOn(dragBox, PositionDef, [0, 0.2, 0]);
   EM.ensureComponentOn(dragBox, ScaleDef, [1, 1, 1]);
@@ -96,7 +63,7 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
   EM.ensureComponentOn(dragBox, ColliderDef, {
     shape: "AABB",
     solid: false,
-    aabb: getAABBFromMesh(dragBoxMesh),
+    aabb: assets.unitCube.aabb,
   });
 
   EM.registerSystem(
@@ -236,4 +203,30 @@ export async function initWidgets(cursorId: number) {
     "updateWidgets"
   );
   gameplaySystems.push("updateWidgets");
+
+  EM.registerSystem(
+    [WidgetDef, ColorDef],
+    [WidgetLayerDef],
+    (ws, { widgets }) => {
+      // update glyph colors based on state
+      // TODO(@darzu): move to widgets.ts
+      for (let g of ws) {
+        vec3.copy(g.color, ENDESGA16.lightBlue);
+      }
+      for (let wi of widgets.hover) {
+        const g = EM.findEntity(wi, [ColorDef])!;
+        vec3.copy(g.color, ENDESGA16.yellow);
+      }
+      for (let wi of widgets.selected) {
+        const g = EM.findEntity(wi, [ColorDef])!;
+        vec3.copy(g.color, ENDESGA16.lightGreen);
+      }
+      if (widgets.cursor) {
+        const g = EM.findEntity(widgets.cursor, [ColorDef])!;
+        vec3.copy(g.color, ENDESGA16.red);
+      }
+    },
+    "colorWidgets"
+  );
+  gameplaySystems.push("colorWidgets");
 }

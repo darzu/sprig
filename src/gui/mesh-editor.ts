@@ -1,8 +1,6 @@
-import { CameraViewDef } from "../camera.js";
-import { AlphaDef, ColorDef } from "../color-ecs.js";
-import { ENDESGA16 } from "../color/palettes.js";
+import { ColorDef } from "../color-ecs.js";
 import { EM, EntityW } from "../entity-manager.js";
-import { AssetsDef } from "../game/assets.js";
+import { AssetsDef, GameMesh } from "../game/assets.js";
 import { gameplaySystems } from "../game/game.js";
 import { mat3, mat4, quat, vec3 } from "../gl-matrix.js";
 import {
@@ -12,21 +10,11 @@ import {
   HVert,
   meshToHalfEdgePoly,
 } from "../half-edge.js";
-import { createIdxPool, createIdxRing } from "../idx-pool.js";
-import { MouseDragDef, InputsDef } from "../inputs.js";
+import { createIdxPool } from "../idx-pool.js";
 import { ColliderDef } from "../physics/collider.js";
-import {
-  PhysicsResultsDef,
-  WorldFrameDef,
-} from "../physics/nonintersection.js";
+import { WorldFrameDef } from "../physics/nonintersection.js";
 import { PositionDef, ScaleDef, RotationDef } from "../physics/transform.js";
 import { MeshHandle } from "../render/mesh-pool.js";
-import {
-  cloneMesh,
-  transformMesh,
-  getAABBFromMesh,
-  Mesh,
-} from "../render/mesh.js";
 import {
   RenderableConstructDef,
   RendererDef,
@@ -35,7 +23,6 @@ import {
 import { tempMat3, tempMat4, tempVec3 } from "../temp-pool.js";
 import { assert } from "../util.js";
 import { randNormalPosVec3, vec3Mid } from "../utils-3d.js";
-import { screenPosToWorldPos } from "../utils-game.js";
 import { ButtonsStateDef, ButtonDef } from "./button.js";
 import { initWidgets, WidgetDef, WidgetLayerDef } from "./widgets.js";
 
@@ -54,7 +41,6 @@ type HEdgeWEnt = EntityW<
     typeof HEdgeDef,
     typeof PositionDef,
     typeof RotationDef,
-    // typeof ColliderDef,
     typeof ColorDef,
     typeof RenderableDef,
     typeof ButtonDef
@@ -66,15 +52,16 @@ type HVertWEnt = EntityW<
     typeof HVertDef,
     typeof PositionDef,
     typeof RotationDef,
-    // typeof ColliderDef,
     typeof ColorDef,
     typeof RenderableDef,
     typeof ButtonDef
   ]
 >;
-type WidgetEnt = HEdgeWEnt | HVertWEnt;
 
-export const MeshEditorDef = EM.defineComponent("meshEditor", createMeshEditor);
+export const MeshEditorDef = EM.defineComponent(
+  "meshEditor",
+  (me: MeshEditor) => me
+);
 
 // TODO(@darzu): this might be over engineered
 const MAX_GLYPHS = 100;
@@ -83,24 +70,15 @@ const vertGlyphPoolIdx = createIdxPool(MAX_GLYPHS);
 const hedgeGlyphPool: HEdgeWEnt[] = [];
 const hedgeGlyphPoolIdx = createIdxPool(MAX_GLYPHS);
 
-// async function OLD_nextVertGlyph(): Promise<HVertWEnt> {
-//   const idx = vertGlyphPoolIdx.next();
-//   assert(idx !== undefined, `out of glyphs`);
-//   if (!vertGlyphPool[idx]) vertGlyphPool[idx] = await OLD_createHVertGlyph();
-//   return vertGlyphPool[idx];
-// }
+type MeshEditor = ReturnType<typeof createMeshEditor> extends Promise<infer T>
+  ? T
+  : never;
 
-function createMeshEditor() {
-  // let hoverGlyphs: GlyphEnt[] = [];
-  // let selectedGlyphs: GlyphEnt[] = [];
-  // let cursorGlpyh = undefined as GlyphEnt | undefined;
+async function createMeshEditor() {
   let hedgeGlyphs = new Map<number, HEdgeWEnt>();
   let vertGlpyhs = new Map<number, HVertWEnt>();
 
   const res = {
-    // hoverGlyphs,
-    // selectedGlyphs,
-    // cursorGlpyh,
     hedgeGlyphs,
     vertGlpyhs,
     hp: undefined as HPoly | undefined,
@@ -109,18 +87,19 @@ function createMeshEditor() {
       | undefined,
 
     setMesh,
+    reset,
     positionVert,
     positionHedge,
     extrudeHEdge,
-    // reset,
   };
+
+  const { renderer, assets } = await EM.whenResources(RendererDef, AssetsDef);
 
   return res;
 
-  async function reset() {
+  function reset() {
     if (res.hp && res.hpEnt) {
       // TODO(@darzu): HACK. this color stuff is.. interesting
-      const { renderer } = await EM.whenResources(RendererDef);
       res.hp.mesh.colors.forEach((c) => vec3.zero(c));
       renderer.renderer.stdPool.updateMeshVertices(
         res.hpEnt.renderable.meshHandle,
@@ -136,10 +115,6 @@ function createMeshEditor() {
     for (let g of vertGlpyhs.values()) hideHVertGlyph(g);
     vertGlpyhs.clear();
     vertGlyphPoolIdx.reset();
-    // cursorGlpyh = undefined;
-    // hoverGlyphs.length = 0;
-    // selectedGlyphs.length = 0;
-    // TODO(@darzu): clean these up?
     res.hp = undefined;
     if (res.hpEnt) res.hpEnt.renderable.hidden = true;
   }
@@ -148,14 +123,12 @@ function createMeshEditor() {
     assert(handle.mesh, `can only edit handles with a mesh ptr`);
     assert(handle.reserved, `can only edit meshes w/ reserved space`);
 
-    await reset();
+    reset();
 
     const mesh = handle.mesh;
     const hp = meshToHalfEdgePoly(mesh);
 
     res.hp = hp;
-
-    const { renderer } = await EM.whenResources(RendererDef);
 
     // TODO(@darzu): HACK. this color stuff is.. interesting
     mesh.colors.forEach((c) => randNormalPosVec3(c));
@@ -193,19 +166,12 @@ function createMeshEditor() {
     // TODO(@darzu): use pools
     // vert glyphs
     for (let v of hp.verts) {
-      // TODO(@darzu): seperate positioning
-      // OLD_nextVertGlyph().then((g) => nextHVertGlyph(g, v));
       nextHVertGlyph(v);
     }
 
     // half-edge glyphs
     for (let he of hp.edges) {
-      const visible = !he.face;
-      if (visible) {
-        // TODO(@darzu): move to pool
-        // OLD_nextHedgeGlyph().then((g) => assignHEdgeGlyph(g, he));
-        nextHEdgeGlyph(he);
-      }
+      if (!he.face) nextHEdgeGlyph(he);
     }
   }
 
@@ -223,31 +189,29 @@ function createMeshEditor() {
     g.button.data = undefined;
   }
 
+  function _createGlyph(gm: GameMesh) {
+    const glyph_ = EM.newEntity();
+    EM.ensureComponentOn(glyph_, RenderableConstructDef, gm.proto, false);
+    EM.ensureComponentOn(glyph_, ColorDef);
+    EM.ensureComponentOn(glyph_, PositionDef);
+    EM.ensureComponentOn(glyph_, RotationDef, quat.create());
+    EM.ensureComponentOn(glyph_, WidgetDef);
+    EM.ensureComponentOn(glyph_, ColliderDef, {
+      shape: "AABB",
+      solid: false,
+      aabb: gm.aabb,
+    });
+
+    return glyph_;
+  }
+
   async function nextHVertGlyph(hv: HVert): Promise<HVertWEnt> {
     const idx = vertGlyphPoolIdx.next();
     assert(idx !== undefined, `out of glyphs`);
     if (!vertGlyphPool[idx]) {
       // create if missing
-      const { assets } = await EM.whenResources(AssetsDef);
-      const glyph_ = EM.newEntity();
-      EM.ensureComponentOn(
-        glyph_,
-        RenderableConstructDef,
-        assets.he_octo.proto,
-        false
-      );
-      EM.ensureComponentOn(glyph_, ColorDef);
-      // EM.ensureComponentOn(glyph, AlphaDef, 0.9);
-      EM.ensureComponentOn(glyph_, PositionDef);
-      // EM.ensureComponentOn(glyph_, PositionDef, pos);
-      EM.ensureComponentOn(glyph_, RotationDef, quat.create());
-      EM.ensureComponentOn(glyph_, WidgetDef);
+      const glyph_ = _createGlyph(assets.he_octo);
       EM.ensureComponentOn(glyph_, HVertDef, hv);
-      EM.ensureComponentOn(glyph_, ColliderDef, {
-        shape: "AABB",
-        solid: false,
-        aabb: assets.he_octo.aabb,
-      });
       EM.ensureComponentOn(glyph_, ButtonDef, "glyph-vert");
       const glyph = await EM.whenEntityHas(
         glyph_,
@@ -288,25 +252,8 @@ function createMeshEditor() {
     assert(idx !== undefined, `out of glyphs`);
     if (!hedgeGlyphPool[idx]) {
       // create if missing
-      const { assets } = await EM.whenResources(AssetsDef);
-      const glyph_ = EM.newEntity();
-      EM.ensureComponentOn(
-        glyph_,
-        RenderableConstructDef,
-        assets.he_quad.proto,
-        false
-      );
-      EM.ensureComponentOn(glyph_, ColorDef);
-      // EM.ensureComponentOn(vert, AlphaDef, 0.9);
-      EM.ensureComponentOn(glyph_, PositionDef);
-      EM.ensureComponentOn(glyph_, RotationDef);
-      EM.ensureComponentOn(glyph_, WidgetDef);
+      const glyph_ = _createGlyph(assets.he_quad);
       EM.ensureComponentOn(glyph_, HEdgeDef, he);
-      EM.ensureComponentOn(glyph_, ColliderDef, {
-        shape: "AABB",
-        solid: false,
-        aabb: assets.he_quad.aabb,
-      });
       EM.ensureComponentOn(glyph_, ButtonDef, "glyph-hedge");
       const glyph = await EM.whenEntityHas(
         glyph_,
@@ -387,11 +334,7 @@ function createMeshEditor() {
     }
 
     for (let he of edges) {
-      const visible = !he.face;
-      if (visible) {
-        // OLD_nextHedgeGlyph().then((g) => assignHEdgeGlyph(g, he));
-        nextHEdgeGlyph(he);
-      }
+      if (!he.face) nextHEdgeGlyph(he);
     }
 
     // TODO(@darzu): color hack
@@ -400,19 +343,17 @@ function createMeshEditor() {
 }
 
 export async function initMeshEditor(cursorId: number) {
-  // EM.ensureComponentOn(dragBox, ColorDef, [0.2, 0.2, 0.2]);
-
-  // const hpEditor = await createHalfEdgeEditor(hp);
-
-  // TODO(@darzu): move more stuff into here
   initWidgets(cursorId);
 
-  const meshEditor = EM.addSingletonComponent(MeshEditorDef);
+  {
+    const me = await createMeshEditor();
+    EM.addSingletonComponent(MeshEditorDef, me);
+  }
 
   // TODO(@darzu): DBG only
   // meshEditor.setMesh(startMesh);
 
-  // TODO(@darzu): refactor. Also have undo-stack
+  // TODO(@darzu): undo-stack
   EM.registerSystem(
     null,
     [MeshEditorDef, RendererDef, ButtonsStateDef, WidgetLayerDef],
@@ -421,17 +362,13 @@ export async function initMeshEditor(cursorId: number) {
       let didEnlargeMesh = false;
       const hedgesToMove = new Set<number>();
 
-      const { positionVert, hedgeGlyphs, extrudeHEdge } = meshEditor;
-
-      const { hover, selected, moved } = widgets;
-
       if (!e.hpEnt || !e.hp) return;
 
-      for (let wi of moved) {
-        // TODO(@darzu): move glyphs based on widgets
+      // move verts
+      for (let wi of widgets.moved) {
         const w = EM.findEntity(wi, [WidgetDef, HVertDef]);
         if (w) {
-          positionVert(w.hvert.hv);
+          e.positionVert(w.hvert.hv);
           let edg = w.hvert.hv.edg;
           while (edg.orig === w.hvert.hv) {
             hedgesToMove.add(edg.hi);
@@ -448,10 +385,10 @@ export async function initMeshEditor(cursorId: number) {
       const clickedHi = buttonsState.clickByKey["glyph-hedge"];
       if (clickedHi !== undefined) {
         // console.log("hedge click!");
-        const he = hedgeGlyphs.get(clickedHi);
+        const he = e.hedgeGlyphs.get(clickedHi);
         assert(he, `invalid click data: ${clickedHi}`);
         // quad extrude
-        extrudeHEdge(he.hedge.he);
+        e.extrudeHEdge(he.hedge.he);
         didEnlargeMesh = true;
       }
 
@@ -460,23 +397,6 @@ export async function initMeshEditor(cursorId: number) {
         const he = e.hp.edges[hi];
         assert(he.hi === hi, `hedge idx mismatch`);
         e.positionHedge(he);
-      }
-
-      // update glyph colors based on state
-      // TODO(@darzu): move to widgets.ts
-      for (let g of [...e.vertGlpyhs.values(), ...e.hedgeGlyphs.values()])
-        vec3.copy(g.color, ENDESGA16.lightBlue);
-      for (let wi of hover) {
-        const g = EM.findEntity(wi, [ColorDef])!;
-        vec3.copy(g.color, ENDESGA16.yellow);
-      }
-      for (let wi of selected) {
-        const g = EM.findEntity(wi, [ColorDef])!;
-        vec3.copy(g.color, ENDESGA16.lightGreen);
-      }
-      if (widgets.cursor) {
-        const g = EM.findEntity(widgets.cursor, [ColorDef])!;
-        vec3.copy(g.color, ENDESGA16.red);
       }
 
       // update mesh
