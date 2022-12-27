@@ -37,32 +37,7 @@ import { assert } from "../util.js";
 import { randNormalPosVec3, vec3Mid } from "../utils-3d.js";
 import { screenPosToWorldPos } from "../utils-game.js";
 import { ButtonsStateDef, ButtonDef } from "./button.js";
-import { initWidgets, WidgetLayerDef } from "./widgets.js";
-
-interface HedgeGlyph {
-  kind: "hedge";
-  he: HEdge | undefined;
-  // state: "none" | "hover" | "selected";
-}
-interface VertGlyph {
-  kind: "vert";
-  hv: HVert | undefined;
-  // state: "none" | "hover" | "selected";
-}
-// TODO(@darzu): "H" in HGlyph vs Glyph is confusing
-type Glyph = HedgeGlyph | VertGlyph;
-export const GlyphDef = EM.defineComponent("hglyph", (g: Glyph) => g);
-
-type GlyphEnt = EntityW<
-  [
-    typeof GlyphDef,
-    typeof ColorDef,
-    typeof PositionDef,
-    typeof RotationDef,
-    typeof RenderableDef,
-    typeof ButtonDef
-  ]
->;
+import { GlyphDef, GlyphEnt, initWidgets, WidgetLayerDef } from "./widgets.js";
 
 // type HEditor = ReturnType<typeof createHalfEdgeEditor>;
 
@@ -332,44 +307,12 @@ function createMeshEditor() {
 }
 
 export async function initMeshEditor(cursorId: number) {
-  const { assets } = await EM.whenResources(AssetsDef);
-
-  // TODO(@darzu): dragbox should be part of some 2d gui abstraction thing
-  const dragBox = EM.newEntity();
-  const dragBoxMesh = cloneMesh(assets.cube.mesh);
-  EM.ensureComponentOn(dragBox, AlphaDef, 0.2);
-  // normalize this cube to have min at 0,0,0 and max at 1,1,1
-
-  transformMesh(
-    dragBoxMesh,
-    mat4.fromRotationTranslationScaleOrigin(
-      tempMat4(),
-      quat.IDENTITY,
-      vec3.negate(tempVec3(), assets.cube.aabb.min),
-      vec3.set(
-        tempVec3(),
-        1 / (assets.cube.halfsize[0] * 2),
-        1 / (assets.cube.halfsize[1] * 2),
-        1 / (assets.cube.halfsize[2] * 2)
-      ),
-      assets.cube.aabb.min
-    )
-  );
-  EM.ensureComponentOn(dragBox, RenderableConstructDef, dragBoxMesh);
-  EM.ensureComponentOn(dragBox, PositionDef, [0, 0.2, 0]);
-  EM.ensureComponentOn(dragBox, ScaleDef, [1, 1, 1]);
-  EM.ensureComponentOn(dragBox, ColorDef, [0.0, 120 / 255, 209 / 255]);
-  EM.ensureComponentOn(dragBox, ColliderDef, {
-    shape: "AABB",
-    solid: false,
-    aabb: getAABBFromMesh(dragBoxMesh),
-  });
   // EM.ensureComponentOn(dragBox, ColorDef, [0.2, 0.2, 0.2]);
 
   // const hpEditor = await createHalfEdgeEditor(hp);
 
   // TODO(@darzu): move more stuff into here
-  initWidgets(dragBox, cursorId);
+  initWidgets(cursorId);
 
   const meshEditor = EM.addSingletonComponent(MeshEditorDef);
 
@@ -379,71 +322,17 @@ export async function initMeshEditor(cursorId: number) {
   // TODO(@darzu): refactor. Also have undo-stack
   EM.registerSystem(
     null,
-    [
-      MeshEditorDef,
-      PhysicsResultsDef,
-      MouseDragDef,
-      CameraViewDef,
-      RendererDef,
-      InputsDef,
-      ButtonsStateDef,
-      WidgetLayerDef,
-    ],
-    (
-      _,
-      {
-        meshEditor,
-        physicsResults,
-        mousedrag,
-        cameraView,
-        renderer,
-        inputs,
-        buttonsState,
-        widgets,
-      }
-    ) => {
+    [MeshEditorDef, RendererDef, ButtonsStateDef, WidgetLayerDef],
+    (_, { meshEditor: e, renderer, buttonsState, widgets }) => {
       let didUpdateMesh = false;
       let didEnlargeMesh = false;
       const hedgesToMove = new Set<number>();
 
-      const e = meshEditor;
-      const {
-        // hoverGlyphs,
-        // selectedGlyphs,
-        positionVert,
-        positionHedge,
-        hedgeGlyphs,
-        extrudeHEdge,
-      } = meshEditor;
+      const { positionVert, hedgeGlyphs, extrudeHEdge } = meshEditor;
 
       const { hover, selected, moved } = widgets;
 
       if (!e.hpEnt || !e.hp) return;
-
-      // update dragbox
-      if (widgets.cursor || mousedrag.isDragEnd) {
-        // hide dragbox
-        vec3.copy(dragBox.position, [0, -1, 0]);
-        vec3.copy(dragBox.scale, [0, 0, 0]);
-      } else if (mousedrag.isDragging) {
-        // place dragbox
-        const min = screenPosToWorldPos(
-          tempVec3(),
-          mousedrag.dragMin,
-          cameraView
-        );
-        min[1] = 0;
-        const max = screenPosToWorldPos(
-          tempVec3(),
-          mousedrag.dragMax,
-          cameraView
-        );
-        max[1] = 1;
-
-        const size = vec3.sub(tempVec3(), max, min);
-        vec3.copy(dragBox.position, min);
-        vec3.copy(dragBox.scale, size);
-      }
 
       for (let wi of moved) {
         // TODO(@darzu): move glyphs based on widgets

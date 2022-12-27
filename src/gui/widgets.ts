@@ -41,7 +41,31 @@ import { assert } from "../util.js";
 import { randNormalPosVec3, vec3Mid } from "../utils-3d.js";
 import { screenPosToWorldPos } from "../utils-game.js";
 import { ButtonsStateDef, ButtonDef } from "./button.js";
-import { GlyphDef } from "./mesh-editor.js";
+
+export interface HedgeGlyph {
+  kind: "hedge";
+  he: HEdge | undefined;
+  // state: "none" | "hover" | "selected";
+}
+export interface VertGlyph {
+  kind: "vert";
+  hv: HVert | undefined;
+  // state: "none" | "hover" | "selected";
+}
+// TODO(@darzu): "H" in HGlyph vs Glyph is confusing
+type Glyph = HedgeGlyph | VertGlyph;
+export const GlyphDef = EM.defineComponent("hglyph", (g: Glyph) => g);
+
+export type GlyphEnt = EntityW<
+  [
+    typeof GlyphDef,
+    typeof ColorDef,
+    typeof PositionDef,
+    typeof RotationDef,
+    typeof RenderableDef,
+    typeof ButtonDef
+  ]
+>;
 
 /*
 What's my data?
@@ -72,48 +96,100 @@ function createWidgetLayer(): WidgetLayer {
   };
 }
 
-type WidgetEnt = EntityW<
-  [
-    typeof GlyphDef,
-    typeof ColorDef,
-    typeof PositionDef,
-    typeof RotationDef,
-    typeof RenderableDef,
-    typeof ButtonDef
-  ]
->;
+// type WidgetEnt = EntityW<
+//   [
+//     typeof GlyphDef,
+//     typeof ColorDef,
+//     typeof PositionDef,
+//     typeof RotationDef,
+//     typeof RenderableDef,
+//     typeof ButtonDef
+//   ]
+// >;
 
-export async function initWidgets(
-  dragBox: EntityW<[typeof PositionDef]>,
-  cursorId: number
-) {
+async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
+  const { assets } = await EM.whenResources(AssetsDef);
+
+  // create dragbox
+  // TODO(@darzu): dragbox should be part of some 2d gui abstraction thing
+  const dragBox = EM.newEntity();
+  const dragBoxMesh = cloneMesh(assets.cube.mesh);
+  EM.ensureComponentOn(dragBox, AlphaDef, 0.2);
+  // normalize this cube to have min at 0,0,0 and max at 1,1,1
+
+  transformMesh(
+    dragBoxMesh,
+    mat4.fromRotationTranslationScaleOrigin(
+      tempMat4(),
+      quat.IDENTITY,
+      vec3.negate(tempVec3(), assets.cube.aabb.min),
+      vec3.set(
+        tempVec3(),
+        1 / (assets.cube.halfsize[0] * 2),
+        1 / (assets.cube.halfsize[1] * 2),
+        1 / (assets.cube.halfsize[2] * 2)
+      ),
+      assets.cube.aabb.min
+    )
+  );
+  EM.ensureComponentOn(dragBox, RenderableConstructDef, dragBoxMesh);
+  EM.ensureComponentOn(dragBox, PositionDef, [0, 0.2, 0]);
+  EM.ensureComponentOn(dragBox, ScaleDef, [1, 1, 1]);
+  EM.ensureComponentOn(dragBox, ColorDef, [0.0, 120 / 255, 209 / 255]);
+  EM.ensureComponentOn(dragBox, ColliderDef, {
+    shape: "AABB",
+    solid: false,
+    aabb: getAABBFromMesh(dragBoxMesh),
+  });
+
+  EM.registerSystem(
+    null,
+    [MouseDragDef, CameraViewDef, WidgetLayerDef],
+    (_, { mousedrag, cameraView, widgets }) => {
+      // update dragbox
+      if (widgets.cursor || mousedrag.isDragEnd) {
+        // hide dragbox
+        vec3.copy(dragBox.position, [0, -1, 0]);
+        vec3.copy(dragBox.scale, [0, 0, 0]);
+      } else if (mousedrag.isDragging) {
+        // place dragbox
+        const min = screenPosToWorldPos(
+          tempVec3(),
+          mousedrag.dragMin,
+          cameraView
+        );
+        min[1] = 0;
+        const max = screenPosToWorldPos(
+          tempVec3(),
+          mousedrag.dragMax,
+          cameraView
+        );
+        max[1] = 1;
+
+        const size = vec3.sub(tempVec3(), max, min);
+        vec3.copy(dragBox.position, min);
+        vec3.copy(dragBox.scale, size);
+      }
+    },
+    "updateDragbox"
+  );
+  gameplaySystems.push("updateDragbox");
+
+  // TODO(@darzu): store this on a resource?
+  return dragBox;
+}
+
+export async function initWidgets(cursorId: number) {
   EM.addSingletonComponent(WidgetLayerDef);
+
+  const dragBox = await initDragBox();
 
   // TODO(@darzu):
   // TODO(@darzu): refactor. Also have undo-stack
   EM.registerSystem(
-    [GlyphDef, ColorDef, PositionDef, RotationDef, RenderableDef, ButtonDef],
-    [
-      WidgetLayerDef,
-      PhysicsResultsDef,
-      MouseDragDef,
-      CameraViewDef,
-      RendererDef,
-      InputsDef,
-      ButtonsStateDef,
-    ],
-    (
-      es,
-      {
-        widgets,
-        physicsResults,
-        mousedrag,
-        cameraView,
-        renderer,
-        inputs,
-        buttonsState,
-      }
-    ) => {
+    null,
+    [WidgetLayerDef, PhysicsResultsDef, MouseDragDef, CameraViewDef],
+    (_, { widgets, physicsResults, mousedrag, cameraView }) => {
       const { selected, hover, moved } = widgets;
 
       moved.clear();
