@@ -37,6 +37,7 @@ import { assert } from "../util.js";
 import { randNormalPosVec3, vec3Mid } from "../utils-3d.js";
 import { screenPosToWorldPos } from "../utils-game.js";
 import { ButtonsStateDef, ButtonDef } from "./button.js";
+import { initWidgets, WidgetLayerDef } from "./widgets.js";
 
 interface HedgeGlyph {
   kind: "hedge";
@@ -50,7 +51,7 @@ interface VertGlyph {
 }
 // TODO(@darzu): "H" in HGlyph vs Glyph is confusing
 type Glyph = HedgeGlyph | VertGlyph;
-const GlyphDef = EM.defineComponent("hglyph", (g: Glyph) => g);
+export const GlyphDef = EM.defineComponent("hglyph", (g: Glyph) => g);
 
 type GlyphEnt = EntityW<
   [
@@ -111,16 +112,16 @@ async function nextHedgeGlyph(): Promise<GlyphEnt> {
 }
 
 function createMeshEditor() {
-  let hoverGlyphs: GlyphEnt[] = [];
-  let selectedGlyphs: GlyphEnt[] = [];
-  let cursorGlpyh = undefined as GlyphEnt | undefined;
+  // let hoverGlyphs: GlyphEnt[] = [];
+  // let selectedGlyphs: GlyphEnt[] = [];
+  // let cursorGlpyh = undefined as GlyphEnt | undefined;
   let hedgeGlyphs = new Map<number, GlyphEnt>();
   let vertGlpyhs = new Map<number, GlyphEnt>();
 
   const res = {
-    hoverGlyphs,
-    selectedGlyphs,
-    cursorGlpyh,
+    // hoverGlyphs,
+    // selectedGlyphs,
+    // cursorGlpyh,
     hedgeGlyphs,
     vertGlpyhs,
     hp: undefined as HPoly | undefined,
@@ -129,7 +130,7 @@ function createMeshEditor() {
       | undefined,
 
     setMesh,
-    translateVert,
+    positionVert,
     positionHedge,
     extrudeHEdge,
     // reset,
@@ -156,9 +157,9 @@ function createMeshEditor() {
     for (let g of vertGlpyhs.values()) hideHVertGlyph(g);
     vertGlpyhs.clear();
     vertGlyphPoolIdx.reset();
-    cursorGlpyh = undefined;
-    hoverGlyphs.length = 0;
-    selectedGlyphs.length = 0;
+    // cursorGlpyh = undefined;
+    // hoverGlyphs.length = 0;
+    // selectedGlyphs.length = 0;
     // TODO(@darzu): clean these up?
     res.hp = undefined;
     if (res.hpEnt) res.hpEnt.renderable.hidden = true;
@@ -265,26 +266,22 @@ function createMeshEditor() {
     hedgeGlyphs.set(he.hi, g);
     positionHedge(he);
   }
-  function translateVert(v: HVert, delta: vec3) {
+  function positionVert(v: HVert) {
+    // TODO(@darzu): fix IMPL!
     const glyph = vertGlpyhs.get(v.vi);
     assert(glyph && glyph.hglyph.kind === "vert" && glyph.hglyph.hv === v);
     assert(res.hp && res.hpEnt);
     const vertPos = res.hp.mesh.pos[v.vi];
-    // TODO(@darzu): perf, expensive inverse
-    // TODO(@darzu): wait this isn't right
+
+    // TODO(@darzu): PERF, expensive inverse
+    // TODO(@darzu): doesn't account for parent translation
+    // TODO(@darzu): should be done via parenting
     const invTrans4 = mat4.invert(tempMat4(), res.hpEnt.world.transform);
     const invTrans3 = mat3.fromMat4(tempMat3(), invTrans4);
-    // const invScale = mat4.getScaling(tempVec3(), invTrans4);
-    // const deltaE = vec3.transformMat4(tempVec3(), delta, invTrans4);
-    const deltaE = vec3.transformMat3(tempVec3(), delta, invTrans3);
-    // const deltaE = vec3.mul(tempVec3(), delta, invScale);
-    vec3.add(vertPos, vertPos, deltaE);
+    const posE = vec3.transformMat3(tempVec3(), glyph.position, invTrans3);
 
-    // TODO(@darzu): hacky
-    // vec3.transformMat4(glyph.position, vertPos, res.hpEnt.world.transform);
-    // glyph.position[1] = 0.2;
-    vec3.add(glyph.position, glyph.position, delta);
-    glyph.position[1] = 0.2;
+    vertPos[0] = posE[0];
+    vertPos[2] = posE[2];
   }
   function positionHedge(he: HEdge) {
     // TODO(@darzu): take a glyph?
@@ -371,6 +368,9 @@ export async function initMeshEditor(cursorId: number) {
 
   // const hpEditor = await createHalfEdgeEditor(hp);
 
+  // TODO(@darzu): move more stuff into here
+  initWidgets(dragBox, cursorId);
+
   const meshEditor = EM.addSingletonComponent(MeshEditorDef);
 
   // TODO(@darzu): DBG only
@@ -387,6 +387,7 @@ export async function initMeshEditor(cursorId: number) {
       RendererDef,
       InputsDef,
       ButtonsStateDef,
+      WidgetLayerDef,
     ],
     (
       _,
@@ -398,6 +399,7 @@ export async function initMeshEditor(cursorId: number) {
         renderer,
         inputs,
         buttonsState,
+        widgets,
       }
     ) => {
       let didUpdateMesh = false;
@@ -406,17 +408,20 @@ export async function initMeshEditor(cursorId: number) {
 
       const e = meshEditor;
       const {
-        hoverGlyphs,
-        selectedGlyphs,
-        translateVert,
+        // hoverGlyphs,
+        // selectedGlyphs,
+        positionVert,
+        positionHedge,
         hedgeGlyphs,
         extrudeHEdge,
       } = meshEditor;
 
+      const { hover, selected, moved } = widgets;
+
       if (!e.hpEnt || !e.hp) return;
 
       // update dragbox
-      if (e.cursorGlpyh || mousedrag.isDragEnd) {
+      if (widgets.cursor || mousedrag.isDragEnd) {
         // hide dragbox
         vec3.copy(dragBox.position, [0, -1, 0]);
         vec3.copy(dragBox.scale, [0, 0, 0]);
@@ -440,82 +445,20 @@ export async function initMeshEditor(cursorId: number) {
         vec3.copy(dragBox.scale, size);
       }
 
-      // update world drag
-      let worldDrag = vec3.create();
-      if (mousedrag.isDragging) {
-        const start = screenPosToWorldPos(
-          tempVec3(),
-          mousedrag.dragLastEnd,
-          cameraView
-        );
-        start[1] = 0;
-        const end = screenPosToWorldPos(
-          tempVec3(),
-          mousedrag.dragEnd,
-          cameraView
-        );
-        end[1] = 0;
-        vec3.sub(worldDrag, end, start);
-      }
-
-      // update glyph states
-      if (mousedrag.isDragging) {
-        // de-hover
-        hoverGlyphs.length = 0;
-
-        if (e.cursorGlpyh) {
-          // drag selected
-          // TODO(@darzu): check that cursorGlyph is vert and selected
-          // TODO(@darzu): IMPL hedges
-          const isCursorSelected = selectedGlyphs.some(
-            (g) => g === e.cursorGlpyh
-          );
-          if (!isCursorSelected) {
-            selectedGlyphs.length = 0;
-            selectedGlyphs.push(e.cursorGlpyh);
+      for (let wi of moved) {
+        // TODO(@darzu): move glyphs based on widgets
+        const w = EM.findEntity(wi, [GlyphDef]);
+        if (w?.hglyph.kind === "vert") {
+          assert(w.hglyph.hv);
+          positionVert(w.hglyph.hv);
+          let edg = w.hglyph.hv.edg;
+          while (edg.orig === w.hglyph.hv) {
+            hedgesToMove.add(edg.hi);
+            hedgesToMove.add(edg.twin.hi);
+            edg = edg.twin.next;
+            if (edg === w.hglyph.hv.edg) break;
           }
-          for (let g of selectedGlyphs) {
-            if (g.hglyph.kind === "vert" && g.hglyph.hv) {
-              // assert(g.hglyph.hv, `glyph missing vert ptr`);
-              translateVert(g.hglyph.hv, worldDrag);
-              let edg = g.hglyph.hv.edg;
-              while (edg.orig === g.hglyph.hv) {
-                hedgesToMove.add(edg.hi);
-                hedgesToMove.add(edg.twin.hi);
-                edg = edg.twin.next;
-                if (edg === g.hglyph.hv.edg) break;
-              }
-              didUpdateMesh = true;
-            }
-          }
-        } else {
-          // deselect
-          selectedGlyphs.length = 0;
-
-          // find hover
-          const hits = physicsResults.collidesWith.get(dragBox.id) ?? [];
-          for (let hid of hits) {
-            const g = EM.findEntity(hid, [
-              GlyphDef,
-              PositionDef,
-              RotationDef,
-              ColorDef,
-              RenderableDef,
-              ButtonDef,
-            ]);
-            if (!g) continue;
-            hoverGlyphs.push(g);
-          }
-        }
-      } else if (mousedrag.isDragEnd) {
-        if (!e.cursorGlpyh) {
-          // select box done
-          selectedGlyphs.length = 0;
-          hoverGlyphs.forEach((g) => selectedGlyphs.push(g));
-          hoverGlyphs.length = 0;
-        } else {
-          // drag selected done
-          // TODO(@darzu): IMPL
+          didUpdateMesh = true;
         }
       }
 
@@ -534,31 +477,6 @@ export async function initMeshEditor(cursorId: number) {
         didEnlargeMesh = true;
       }
 
-      // non dragging
-      if (!mousedrag.isDragging && !mousedrag.isDragEnd) {
-        // unselect cursor glpyh
-        e.cursorGlpyh = undefined;
-
-        // find under-cursor glyph
-        const hits = physicsResults.collidesWith.get(cursorId) ?? [];
-        // console.dir(hits);
-        for (let hid of hits) {
-          const g = EM.findEntity(hid, [
-            GlyphDef,
-            PositionDef,
-            RotationDef,
-            ColorDef,
-            RenderableDef,
-            ButtonDef,
-          ]);
-          if (g) {
-            vec3.copy(g.color, ENDESGA16.red);
-            e.cursorGlpyh = g;
-            break;
-          }
-        }
-      }
-
       // update hedges
       for (let hi of hedgesToMove.values()) {
         const he = e.hp.edges[hi];
@@ -569,9 +487,18 @@ export async function initMeshEditor(cursorId: number) {
       // update glyph colors based on state
       for (let g of [...e.vertGlpyhs.values(), ...hedgeGlyphs.values()])
         vec3.copy(g.color, ENDESGA16.lightBlue);
-      for (let g of hoverGlyphs) vec3.copy(g.color, ENDESGA16.yellow);
-      for (let g of selectedGlyphs) vec3.copy(g.color, ENDESGA16.lightGreen);
-      if (e.cursorGlpyh) vec3.copy(e.cursorGlpyh.color, ENDESGA16.red);
+      for (let wi of hover) {
+        const g = EM.findEntity(wi, [ColorDef])!;
+        vec3.copy(g.color, ENDESGA16.yellow);
+      }
+      for (let wi of selected) {
+        const g = EM.findEntity(wi, [ColorDef])!;
+        vec3.copy(g.color, ENDESGA16.lightGreen);
+      }
+      if (widgets.cursor) {
+        const g = EM.findEntity(widgets.cursor, [ColorDef])!;
+        vec3.copy(g.color, ENDESGA16.red);
+      }
 
       // update mesh
       const handle = e.hpEnt.renderable.meshHandle;

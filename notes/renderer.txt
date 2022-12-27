@@ -1555,3 +1555,8 @@ BotW lighting overview:
 
   mario galaxy gravity and shadows:
     https://www.youtube.com/watch?v=QLH_0T_xv3I
+
+Returnal Particles:
+  https://twitter.com/SharmanJag/status/1607712952601219072
+  3/ Basics. A particle size equals the voxel size. Particles request for vacant slots in a volume while moving. The voxels are represented with a single bit. 1 : "Occupied" and 0 : "Vacant". Requests are atomic operations. If "occupied", we resolve the collision, otherwise move.
+  6/ Oh dear, the creature we created the effect for is not watertight. Well, I made a look-up table to map each vertex to a bone segment. All we needed to do was to populate each triangle with points and trace towards the bone while requesting for occupancy. Now we have our volume
