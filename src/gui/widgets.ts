@@ -1,71 +1,28 @@
-// adornments are: entities that are parented to an entity's mesh parts
-//    [ ] track changes via version number on the mesh data
-
 import { CameraViewDef } from "../camera.js";
 import { AlphaDef, ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityW } from "../entity-manager.js";
 import { AssetsDef } from "../game/assets.js";
 import { gameplaySystems } from "../game/game.js";
-import { mat3, mat4, quat, vec3 } from "../gl-matrix.js";
-import {
-  extrudeQuad,
-  HEdge,
-  HPoly,
-  HVert,
-  meshToHalfEdgePoly,
-} from "../half-edge.js";
-import { createIdxPool, createIdxRing } from "../idx-pool.js";
-import { MouseDragDef, InputsDef } from "../inputs.js";
+import { mat4, quat, vec3 } from "../gl-matrix.js";
+import { MouseDragDef } from "../inputs.js";
 import { ColliderDef } from "../physics/collider.js";
-import {
-  PhysicsResultsDef,
-  WorldFrameDef,
-} from "../physics/nonintersection.js";
+import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { PositionDef, ScaleDef, RotationDef } from "../physics/transform.js";
-import { MeshHandle, MeshReserve } from "../render/mesh-pool.js";
-import {
-  cloneMesh,
-  transformMesh,
-  getAABBFromMesh,
-  Mesh,
-  RawMesh,
-} from "../render/mesh.js";
+import { cloneMesh, transformMesh, getAABBFromMesh } from "../render/mesh.js";
 import {
   RenderableConstructDef,
-  RendererDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { tempMat3, tempMat4, tempVec3 } from "../temp-pool.js";
+import { tempMat4, tempVec3 } from "../temp-pool.js";
 import { assert } from "../util.js";
-import { randNormalPosVec3, vec3Mid } from "../utils-3d.js";
 import { screenPosToWorldPos } from "../utils-game.js";
-import { ButtonsStateDef, ButtonDef } from "./button.js";
+import { ButtonDef } from "./button.js";
 
-export interface HedgeGlyph {
-  kind: "hedge";
-  he: HEdge | undefined;
-  // state: "none" | "hover" | "selected";
-}
-export interface VertGlyph {
-  kind: "vert";
-  hv: HVert | undefined;
-  // state: "none" | "hover" | "selected";
-}
-// TODO(@darzu): "H" in HGlyph vs Glyph is confusing
-type Glyph = HedgeGlyph | VertGlyph;
-export const GlyphDef = EM.defineComponent("hglyph", (g: Glyph) => g);
+// adornments are: entities that are parented to an entity's mesh parts
+//    [ ] track changes via version number on the mesh data
 
-export type GlyphEnt = EntityW<
-  [
-    typeof GlyphDef,
-    typeof ColorDef,
-    typeof PositionDef,
-    typeof RotationDef,
-    typeof RenderableDef,
-    typeof ButtonDef
-  ]
->;
+export const WidgetDef = EM.defineComponent("widget", () => true);
 
 /*
 What's my data?
@@ -240,14 +197,7 @@ export async function initWidgets(cursorId: number) {
           // find hover
           const hits = physicsResults.collidesWith.get(dragBox.id) ?? [];
           for (let hid of hits) {
-            const w = EM.findEntity(hid, [
-              GlyphDef,
-              PositionDef,
-              RotationDef,
-              ColorDef,
-              RenderableDef,
-              ButtonDef,
-            ]);
+            const w = EM.findEntity(hid, [WidgetDef]);
             if (!w) continue;
             hover.add(w.id);
           }
@@ -273,15 +223,9 @@ export async function initWidgets(cursorId: number) {
         const hits = physicsResults.collidesWith.get(cursorId) ?? [];
         // console.dir(hits);
         for (let hid of hits) {
-          const g = EM.findEntity(hid, [
-            GlyphDef,
-            PositionDef,
-            RotationDef,
-            ColorDef,
-            RenderableDef,
-            ButtonDef,
-          ]);
+          const g = EM.findEntity(hid, [WidgetDef, ColorDef]);
           if (g) {
+            // TODO(@darzu): better glyph color handling
             vec3.copy(g.color, ENDESGA16.red);
             widgets.cursor = g.id;
             break;

@@ -69,6 +69,7 @@ export type Collider =
   | CapsuleCollider
   | MultiCollider;
 
+// TODO(@darzu): ensure we support swapping colliders?
 export const ColliderDef = EM.defineComponent("collider", (c?: Collider) => {
   return (
     c ??
