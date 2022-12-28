@@ -121,22 +121,6 @@ export async function initFontEditor(em: EntityManager) {
   // em.ensureComponentOn(panel, ColorDef, [0.2, 0.3, 0.2]);
   em.ensureComponentOn(panel, PositionDef, [0, 0, 0]);
 
-  // for (let x of [-1, 0, 1])
-  //   for (let z of [-1, 0, 1]) {
-  //     const b1 = em.newEntity();
-  //     em.ensureComponentOn(b1, RenderableConstructDef, res.assets.cube.proto);
-  //     em.ensureComponentOn(b1, ColorDef, [
-  //       mathMap(x, -1, 1, 0.05, 0.8),
-  //       0,
-  //       mathMap(z, -1, 1, 0.05, 0.8),
-  //     ]);
-  //     em.ensureComponentOn(b1, PositionDef, [
-  //       PANEL_W * 0.5 * x,
-  //       0,
-  //       PANEL_H * 0.5 * z,
-  //     ]);
-  //   }
-
   if (DBG_3D) {
     const g = createGhost();
     em.ensureComponentOn(g, RenderableConstructDef, res.assets.ball.proto);
@@ -165,12 +149,12 @@ export async function initFontEditor(em: EntityManager) {
       canvas.htmlCanvas.unlockMouse()
     );
 
+  const { assets } = await EM.whenResources(AssetsDef);
+
+  // Cursor
   const cursor = EM.newEntity();
   EM.ensureComponentOn(cursor, ColorDef, [0.1, 0.1, 0.1]);
   EM.ensureComponentOn(cursor, PositionDef, [0, 1.0, 0]);
-  const { assets } = await EM.whenResources(AssetsDef);
-  // EM.ensureComponentOn(cursor, RenderableConstructDef, assets.cube.proto);
-  // const cursorLocalAABB = copyAABB(createAABB(), assets.cube.aabb);
   EM.ensureComponentOn(cursor, RenderableConstructDef, assets.he_octo.proto);
   const cursorLocalAABB = copyAABB(createAABB(), assets.he_octo.aabb);
   cursorLocalAABB.min[1] = -1;
@@ -181,6 +165,7 @@ export async function initFontEditor(em: EntityManager) {
     aabb: cursorLocalAABB,
   });
 
+  // TODO(@darzu): de-duplicate this with very similar code in other "games"
   EM.registerSystem(
     null,
     [CameraViewDef, CanvasDef, CameraDef, InputsDef],
@@ -273,9 +258,9 @@ export async function initFontEditor(em: EntityManager) {
     },
     "uiCameraView"
   );
-
   gameplaySystems.push("uiCameraView");
 
+  // Starter mesh for each letter
   const quadMesh: Mesh = {
     quad: [[0, 1, 2, 3]],
     tri: [],
@@ -290,7 +275,6 @@ export async function initFontEditor(em: EntityManager) {
     usesProvoking: true,
   };
   scaleMesh(quadMesh, 0.5);
-
   const quadGMesh = gameMeshFromMesh(quadMesh, res.renderer.renderer, {
     maxVertNum: 100,
     maxTriNum: 100,
@@ -298,15 +282,16 @@ export async function initFontEditor(em: EntityManager) {
   });
 
   // TODO(@darzu): HACK
+  // Export!
   (dbg as any).exportPoly = () => {
     console.log(exportObj(quadMesh));
   };
 
+  // button per letter
   // TODO(@darzu): render buttons?
   const CHARS = `abcdefghijklmnopqrstuvwxyz.`.split("");
   const polyBank = new Map<number, GameMesh>();
   const btnKey = `letter`;
-
   for (let i = 0; i < CHARS.length; i++) {
     const c = CHARS[i];
     const letterKey = `letter-${c}`;
@@ -343,6 +328,7 @@ export async function initFontEditor(em: EntityManager) {
     // TODO(@darzu): NEED TO UPDATE MeshEditor based on letter button press
   }
 
+  // Edit letters
   EM.registerSystem(
     null,
     [ButtonsStateDef, MeshEditorDef, TextDef],

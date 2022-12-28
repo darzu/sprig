@@ -70,7 +70,9 @@ const vertGlyphPoolIdx = createIdxPool(MAX_GLYPHS);
 const hedgeGlyphPool: HEdgeWEnt[] = [];
 const hedgeGlyphPoolIdx = createIdxPool(MAX_GLYPHS);
 
-type MeshEditor = ReturnType<typeof createMeshEditor> extends Promise<infer T>
+export type MeshEditor = ReturnType<typeof createMeshEditor> extends Promise<
+  infer T
+>
   ? T
   : never;
 
