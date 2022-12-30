@@ -127,7 +127,8 @@ export class EntityManager {
   //    would make certain scan operations (like updating them on component add/remove)
   //    cheaper. And perhaps better gameplay code too.
   private _systemsToEntities: Map<number, Entity[]> = new Map();
-  private _entitiesToSystems: Map<number, number[]> = new Map(); // TODO(@darzu): IMPL
+  // NOTE: _entitiesToSystems is only needed because of DeadDef
+  private _entitiesToSystems: Map<number, number[]> = new Map();
   private _systemsToComponents: Map<number, string[]> = new Map();
   private _componentToSystems: Map<string, number[]> = new Map();
 
@@ -497,7 +498,7 @@ export class EntityManager {
     const inclDead = cs.some((c) => this.isDeadC(c)); // TODO(@darzu): HACK? for DeadDef
     for (let e of this.entities.values()) {
       if (!inclDead && this.isDeadE(e)) continue;
-      if (e.id === 0) continue; // TODO(@darzu): Entity 0 needs to be fixed..
+      if (e.id === 0) continue; // TODO(@darzu): Remove ent 0, make first-class Resources
       if (cs.every((c) => c.name in e)) {
         res.push(e as EntityW<CS>);
       } else {
