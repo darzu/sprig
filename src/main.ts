@@ -18,6 +18,7 @@ import { initRogueGame } from "./game/game-rogue.js";
 import { gameplaySystems } from "./game/game.js";
 import { initFontEditor } from "./game/game-font.js";
 import { initGJKSandbox } from "./game/game-gjk.js";
+import { initHyperspaceGame } from "./game/game-hyperspace.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -25,7 +26,7 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-const GAME = "ld51" as "gjk" | "rebound" | "ld51" | "font";
+const GAME = "hyperspace" as "gjk" | "rebound" | "ld51" | "font" | "hyperspace";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -223,7 +224,7 @@ async function startGame(localPeerName: string, host: string | null) {
   if (GAME === "gjk") initGJKSandbox(EM, hosting);
   else if (GAME === "rebound") initReboundSandbox(EM, hosting);
   // else if (GAME === "cloth") initClothSandbox(EM, hosting);
-  // else if (GAME === "hyperspace") initHyperspaceGame(EM);
+  else if (GAME === "hyperspace") initHyperspaceGame(EM);
   // else if (GAME === "cube") initCubeGame(EM);
   else if (GAME === "ld51") initRogueGame(EM, hosting);
   else if (GAME === "font") initFontEditor(EM);
