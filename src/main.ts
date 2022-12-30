@@ -83,30 +83,30 @@ function callFixedTimestepSystems() {
   // if (GAME === "cloth") {
   //   EM.callSystem("clothSandbox");
   // }
-  // if (GAME === "hyperspace") {
-  //   EM.callSystem("startGame");
-  //   EM.callSystem("shipHealthCheck");
-  //   EM.callSystem("easeRudder");
-  //   EM.callSystem("shipMove");
-  //   EM.callSystem("playerShipMove");
-  //   EM.callSystem("shipUpdateParty");
-  //   // EM.callSystem("shipScore");
-  //   EM.callSystem("enemyShipPropsBuild");
-  //   EM.callSystem("cannonPropsBuild");
-  //   EM.callSystem("gemPropsBuild");
-  //   EM.callSystem("rudderPropsBuild");
-  //   EM.callSystem("mastPropsBuild");
-  //   EM.callSystem("playerShipPropsBuild");
-  //   EM.callSystem("darkStarPropsBuild");
-  //   EM.callSystem("darkStarOrbit");
-  //   EM.callSystem("hyperspaceGame");
-  //   // EM.callSystem("runOcean");
-  //   EM.callSystem("oceanUVtoPos");
-  //   EM.callSystem("oceanUVDirToRot");
-  //   EM.callSystem("debugLoop");
-  //   // EM.callSystem("initWooden");
-  //   EM.callSystem("runWooden");
-  // }
+  if (GAME === "hyperspace") {
+    EM.callSystem("startGame");
+    EM.callSystem("shipHealthCheck");
+    EM.callSystem("easeRudder");
+    EM.callSystem("shipMove");
+    EM.callSystem("playerShipMove");
+    EM.callSystem("shipUpdateParty");
+    // EM.callSystem("shipScore");
+    EM.callSystem("enemyShipPropsBuild");
+    EM.callSystem("cannonPropsBuild");
+    EM.callSystem("gemPropsBuild");
+    EM.callSystem("rudderPropsBuild");
+    EM.callSystem("mastPropsBuild");
+    EM.callSystem("playerShipPropsBuild");
+    EM.callSystem("darkStarPropsBuild");
+    EM.callSystem("darkStarOrbit");
+    EM.callSystem("hyperspaceGame");
+    // EM.callSystem("runOcean");
+    EM.callSystem("oceanUVtoPos");
+    EM.callSystem("oceanUVDirToRot");
+    EM.callSystem("debugLoop");
+    // EM.callSystem("initWooden");
+    EM.callSystem("runWooden");
+  }
   if (GAME === "ld51") {
     // EM.callSystem("initWooden");
     EM.callSystem("runWooden");

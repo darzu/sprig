@@ -161,9 +161,10 @@ export async function initHyperspaceGame(em: EntityManager) {
 
     for (let i = 0; i < NUM_ENEMY; i++) {
       let enemyUVPos: vec2 = [Math.random(), Math.random()];
-      while (ocean.uvToEdgeDist(enemyUVPos) < 0.1) {
-        enemyUVPos = [Math.random(), Math.random()];
-      }
+      // TODO(@darzu): re-enable
+      // while (ocean.uvToEdgeDist(enemyUVPos) < 0.1) {
+      //   enemyUVPos = [Math.random(), Math.random()];
+      // }
 
       // const enemyEndPos = ocean.uvToPos(vec3.create(), enemyUVPos);
       const enemyEndPos = vec3.create();

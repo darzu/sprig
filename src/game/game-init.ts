@@ -53,6 +53,7 @@ import { registerTurretSystems } from "./turret.js";
 import { registerUISystems } from "./ui.js";
 import { registerDevSystems } from "../console.js";
 import { registerControllableSystems } from "./controllable.js";
+import { registerShipSystems } from "./player-ship.js";
 
 export function registerCommonSystems(em: EntityManager) {
   // registerNetSystems(em);
@@ -69,7 +70,8 @@ export function registerCommonSystems(em: EntityManager) {
   registerPredictSystem(em);
   registerJoinSystems(em);
   // registerGroundSystems(em);
-  // registerShipSystems(em);
+  // TODO(@darzu): game-specific registrations!
+  registerShipSystems(em);
   registerBuildBulletsSystem(em);
   registerCursorSystems(em);
   registerGrappleDbgSystems(em);

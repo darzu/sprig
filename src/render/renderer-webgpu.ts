@@ -351,6 +351,20 @@ export function createRenderer(
     const commandEncoder = device.createCommandEncoder();
 
     // TODO(@darzu): shares a lot with CyTexture's queueUpdate
+    // TODO(@darzu): ERROR: bytesPerRow (64) is not a multiple of 256.
+    // TODO(@darzu): need to align up to 256 but then also account for this in the
+    //                CPU sampler?
+    /*
+    Required size for texture data layout (16192) 
+    exceeds the linear data size (4096) with offset (0).
+    - While encoding [CommandEncoder].CopyTextureToBuffer([Texture], [Buffer], 
+        [Extent3D width:64, height:64, depthOrArrayLayers:1]).
+    */
+    // bytesPerRow: align(tex.size[0] * bytesPerVal, 256), // TODO: alignment?
+    const bytesPerRow = tex.size[0] * bytesPerVal;
+    if (bytesPerRow % 256 !== 0) {
+      console.log(`texture alignment issues for: ${tex.ptr.name}`);
+    }
     commandEncoder.copyTextureToBuffer(
       {
         texture: tex.texture,
@@ -358,10 +372,7 @@ export function createRenderer(
       {
         buffer: gpuBuffer,
         offset: 0,
-        // TODO(@darzu): ERROR: bytesPerRow (64) is not a multiple of 256.
-        // TODO(@darzu): need to align up to 256 but then also account for this in the
-        //                CPU sampler?
-        bytesPerRow: tex.size[0] * bytesPerVal, // TODO: alignment?
+        bytesPerRow,
         rowsPerImage: tex.size[1],
       },
       {
