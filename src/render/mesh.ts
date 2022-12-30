@@ -52,6 +52,12 @@ export interface Mesh extends RawMesh {
   // verticesUnshared?: boolean;
 }
 
+// TODO(@darzu): doesn't fit well with other mesh stuff.....
+export interface LineMesh {
+  pos: vec3[];
+  lines: vec2[];
+}
+
 export function meshStats(m: RawMesh): string {
   return `${m.dbgName ?? "??"}: v${m.pos.length}, t${m.tri.length}, q${
     m.quad.length

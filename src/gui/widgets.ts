@@ -103,6 +103,10 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
   return dragBox;
 }
 
+// TODO(@darzu): FOR INIT STUFF,
+//    have a registration table where an init function can specify which resources and systems it provides
+//    then other code can require a certain resource / system, then it calls the right init function
+
 export async function initWidgets(cursorId: number) {
   EM.addSingletonComponent(WidgetLayerDef);
 
