@@ -35,6 +35,8 @@ import { SplinterParticleDef } from "../wood.js";
 import { tempVec3 } from "../temp-pool.js";
 import { assert, assertDbg } from "../util.js";
 
+// TODO(@darzu): MULTIPLAYER BULLETS might have been broken during LD51
+
 const _maxBullets = 15;
 
 export const BulletDef = EM.defineComponent(
@@ -205,10 +207,6 @@ export async function fireBullet(
   const linearVelocity = vec3.scale(vec3.create(), bulletAxis, speed);
   const angularVelocity = vec3.scale(vec3.create(), bulletAxis, rotationSpeed);
 
-  // TODO(@darzu): WHY IS THIS location missing?
-  if (!e.bulletConstruct) {
-    console.dir(e);
-  }
   assertDbg(e.bulletConstruct, `bulletConstruct missing on: ${e.id}`);
   vec3.copy(e.bulletConstruct.location, location);
   vec3.copy(e.bulletConstruct.linearVelocity, linearVelocity);
