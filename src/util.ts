@@ -136,13 +136,13 @@ export function hashCode(s: string) {
   return hash;
 }
 
-export function objMap<A, V1 extends A[keyof A], V2>(
+export function objMap<A extends {}, V1 extends A[keyof A], V2>(
   a: A,
   map: (v1: V1, n: keyof A) => V2
 ): { [P in keyof A]: V2 } {
   const res: { [k: string]: V2 } = {};
   Object.entries(a).forEach(([n, v1]) => {
-    res[n] = map(v1, n as keyof A);
+    res[n] = map(v1 as V1, n as keyof A);
   });
   return res as { [P in keyof A]: V2 };
 }
