@@ -25,7 +25,7 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-const GAME = "font" as "gjk" | "rebound" | "ld51" | "font";
+const GAME = "ld51" as "gjk" | "rebound" | "ld51" | "font";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;

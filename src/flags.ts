@@ -10,3 +10,4 @@ export const DBG_ASSERT = true;
 export const PERF_DBG_GPU = false;
 export const PERF_DBG_EM = false;
 export const ENABLE_AUDIO = true;
+export const DBG_FANG_SHIP = false;

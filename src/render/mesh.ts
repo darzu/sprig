@@ -1,4 +1,4 @@
-import { ASSET_LOG_VERT_CHANGES } from "../flags.js";
+import { ASSET_LOG_VERT_CHANGES, DBG_ASSERT, DBG_FANG_SHIP } from "../flags.js";
 import { createFabric } from "../game/assets.js";
 import { vec3, vec2, mat4, vec4 } from "../gl-matrix.js";
 import { max, sum } from "../math.js";
@@ -321,7 +321,7 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       // console.log(`duplicating: ${i0}!`);
 
       // TODO(@darzu): DBG
-      if (input.dbgName?.includes("fang")) {
+      if (DBG_FANG_SHIP && input.dbgName?.includes("fang")) {
         console.log("new vert for fang ship");
       }
     }
