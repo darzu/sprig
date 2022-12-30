@@ -36,7 +36,7 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   // TODO(@darzu): it'd be great if we could just output lines and compose elsewhere
   var color = textureSample(colorTex, samp, uv).rgb;
 
-  let dims : vec2<i32> = textureDimensions(surfTex);
+  let dims : vec2<u32> = textureDimensions(surfTex);
   let dimsF = vec2<f32>(dims);
 
   let lineWidth = 2.0;

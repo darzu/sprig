@@ -6,7 +6,7 @@
 fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
   // var index : u32 = GlobalInvocationID.x;
 
-  // let dims : vec2<i32> = textureDimensions(inTex, 0);
+  // let dims : vec2<u32> = textureDimensions(inTex, 0);
 
   // let uv: vec2<f32> = vec2<f32>(0.5, 0.5);
 
