@@ -27,7 +27,7 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-const GAME = "rebound" as
+const GAME = "hyperspace" as
   | "gjk"
   | "rebound"
   | "ld51"
@@ -81,9 +81,9 @@ function callFixedTimestepSystems() {
   EM.callSystem("buildPlayers");
   EM.callSystem("playerFacingDir");
   EM.callSystem("stepPlayers");
-  // if (GAME === "hyperspace") {
-  //   EM.callSystem("playerLookingForShip");
-  // }
+  if (GAME === "hyperspace") {
+    EM.callSystem("playerLookingForShip");
+  }
   if (GAME === "rebound") {
     EM.tryCallSystem("sandboxSpawnBoxes");
   }
