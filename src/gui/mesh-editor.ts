@@ -287,7 +287,6 @@ async function createMeshEditor() {
     return g;
   }
   function positionVert(v: HVert) {
-    // TODO(@darzu): fix IMPL!
     const glyph = vertGlpyhs.get(v.vi);
     assert(glyph); // TODO(@darzu): BUG. FAILS SOMETIMES. uh oh
     assert(res.hp && res.hpEnt);

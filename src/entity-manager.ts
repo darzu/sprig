@@ -280,7 +280,6 @@ export class EntityManager {
 
     // update query caches
     // TODO(@darzu): PERF. need to measure time spent maintaining these caches.
-    // TODO(@darzu): IMPL dead
     const eSystems = this._entitiesToSystems.get(e.id)!;
     if (this.isDeadC(def)) {
       // remove from every current system

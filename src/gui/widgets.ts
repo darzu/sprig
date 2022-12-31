@@ -148,7 +148,6 @@ export async function initWidgets(cursorId: number) {
         if (widgets.cursor) {
           // drag selected
           // TODO(@darzu): check that cursorGlyph is vert and selected
-          // TODO(@darzu): IMPL hedges
           const isCursorSelected = selected.has(widgets.cursor);
           if (!isCursorSelected) {
             selected.clear();

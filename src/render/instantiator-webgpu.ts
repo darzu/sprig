@@ -162,7 +162,6 @@ export function createCyResources(
   );
 
   // create resources
-  // TODO(@darzu): IMPL
   const kindToNameToRes: {
     [K in PtrKind]: { [name: string]: PtrKindToResourceType[K] };
   } = {
@@ -673,7 +672,7 @@ export function createCyResources(
         };
         kindToNameToRes.renderPipeline[p.name] = cyPipeline;
       } else if (p.meshOpt.stepMode === "single-draw") {
-        // TODO(@darzu): IMPL// render shader
+        // render shader
         // TODO(@darzu): pass vertex buffer and instance buffer into shader
         const shaderStr =
           `${shaderResStructs.join("\n")}\n` +

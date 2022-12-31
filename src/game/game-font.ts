@@ -172,7 +172,6 @@ export async function initFontEditor(em: EntityManager) {
     null,
     [CameraViewDef, CanvasDef, CameraDef, InputsDef],
     async (_, res) => {
-      // TODO(@darzu):IMPL
       const { cameraView, htmlCanvas, inputs } = res;
 
       if (res.camera.targetId) return;

@@ -155,7 +155,7 @@ async function createPathEditor() {
       //   handle
       // );
 
-      // TODO(@darzu): IMPL!!
+      // TODO(@darzu): IMPL copyMesh!!
       // copyMesh(res.outMesh, newOutMesh);
 
       // TODO(@darzu): move elsewhere

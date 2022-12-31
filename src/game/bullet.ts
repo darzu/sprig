@@ -219,7 +219,6 @@ export async function fireBullet(
   // TODO(@darzu): need to think how multiplayer and entity pools interact.
   const { me, assets } = await em.whenResources(MeDef, AssetsDef);
   createOrResetBullet(em, e, me.pid, assets);
-  // TODO(@darzu): IMPL entity pool.
 }
 
 type BulletPart = EntityW<[typeof PositionDef, typeof ColorDef]>;

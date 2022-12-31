@@ -72,6 +72,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
     // var lightingColor: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
     // let unlit = meshUni.flags & (1u >> 0u);
+    // TODO(@darzu): re-enable multi-point lights
     // for (var i: u32 = 0u; i < scene.numPointLights; i++) {
     let light = pointLights.ms[0];
     let toLight = normalize(light.position - input.worldPos.xyz);
@@ -79,6 +80,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
     let attenuation = 1.0 / light.constant;
     let angle = clamp(dot(toLight, normal), 0.0, 1.0);
     let posFromLight = (pointLights.ms[0].viewProj * input.worldPos).xyz;
+     // Convert XY to (0, 1), Y is flipped because texture coords are Y-down.
     let shadowPos = vec3<f32>(posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5), posFromLight.z);
     let shadowVis = getShadowVis(shadowPos, input.normal, toLight, 0);
     let lightingColor = (light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis);

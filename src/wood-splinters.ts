@@ -84,7 +84,6 @@ export const mkTimberSplinterFree = (
   width: number,
   depth: number
 ) => {
-  // TODO(@darzu): IMPL!
   // const b = createTimberBuilder(.5, .2);
   const b = createTimberBuilder(createEmptyMesh("splinter"));
   b.width = width;

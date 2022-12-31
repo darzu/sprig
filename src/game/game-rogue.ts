@@ -931,7 +931,6 @@ export function appendPirateShip(b: TimberBuilder) {
   b.width = 0.6;
   b.depth = 0.2;
 
-  // TODO(@darzu): IMPL
   const xFactor = 0.333;
 
   const cursor2 = mat4.create();

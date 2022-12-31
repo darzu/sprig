@@ -248,7 +248,6 @@ export function createCyArray<O extends CyStructDesc>(
     dataIdx: number, // TODO(@darzu): make last two params optional?
     dataCount: number
   ): void {
-    // TODO(@darzu): IMPL
     // TODO(@darzu): PERF. probably a good idea to keep the serialized array
     //  around and modify that directly for many scenarios that need frequent
     //  updates.
