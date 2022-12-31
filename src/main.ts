@@ -19,6 +19,7 @@ import { gameplaySystems } from "./game/game.js";
 import { initFontEditor } from "./game/game-font.js";
 import { initGJKSandbox } from "./game/game-gjk.js";
 import { initHyperspaceGame } from "./game/game-hyperspace.js";
+import { initClothSandbox } from "./game/game-cloth.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -26,7 +27,13 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-const GAME = "hyperspace" as "gjk" | "rebound" | "ld51" | "font" | "hyperspace";
+const GAME = "cloth" as
+  | "gjk"
+  | "rebound"
+  | "ld51"
+  | "font"
+  | "hyperspace"
+  | "cloth";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -80,9 +87,9 @@ function callFixedTimestepSystems() {
   if (GAME === "rebound") {
     EM.callSystem("sandboxSpawnBoxes");
   }
-  // if (GAME === "cloth") {
-  //   EM.callSystem("clothSandbox");
-  // }
+  if (GAME === "cloth") {
+    EM.tryCallSystem("clothSandbox");
+  }
   if (GAME === "hyperspace") {
     EM.callSystem("startGame");
     EM.callSystem("shipHealthCheck");
@@ -223,7 +230,7 @@ async function startGame(localPeerName: string, host: string | null) {
 
   if (GAME === "gjk") initGJKSandbox(EM, hosting);
   else if (GAME === "rebound") initReboundSandbox(EM, hosting);
-  // else if (GAME === "cloth") initClothSandbox(EM, hosting);
+  else if (GAME === "cloth") initClothSandbox(EM, hosting);
   else if (GAME === "hyperspace") initHyperspaceGame(EM);
   // else if (GAME === "cube") initCubeGame(EM);
   else if (GAME === "ld51") initRogueGame(EM, hosting);

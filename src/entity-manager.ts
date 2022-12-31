@@ -1,4 +1,4 @@
-import { DBG_ASSERT } from "./flags.js";
+import { DBG_ASSERT, DBG_TRYCALLSYSTEM } from "./flags.js";
 import { Serializer, Deserializer } from "./serialize.js";
 import { assert, assertDbg, hashCode, Intersect } from "./util.js";
 
@@ -619,13 +619,17 @@ export class EntityManager {
     return this.systems.has(name);
   }
 
-  callSystem(name: string) {
+  tryCallSystem(name: string): boolean {
     // TODO(@darzu):
     // if (name.endsWith("Build")) console.log(`calling ${name}`);
     // if (name == "groundPropsBuild") console.log("calling groundPropsBuild");
 
     const s = this.systems.get(name);
-    if (!s) throw `No system named ${name}`;
+    if (!s) {
+      if (DBG_TRYCALLSYSTEM)
+        console.warn(`Can't (yet) find system with name: ${name}`);
+      return false;
+    }
     let start = performance.now();
     // try looking up in the query cache
     let es: Entities<any[]>;
@@ -656,6 +660,12 @@ export class EntityManager {
         thisCallTime
       );
     }
+
+    return true;
+  }
+
+  callSystem(name: string) {
+    if (!this.tryCallSystem(name)) throw `No system named ${name}`;
   }
 
   callOneShotSystems() {

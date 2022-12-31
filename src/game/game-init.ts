@@ -54,6 +54,8 @@ import { registerUISystems } from "./ui.js";
 import { registerDevSystems } from "../console.js";
 import { registerControllableSystems } from "./controllable.js";
 import { registerShipSystems } from "./player-ship.js";
+import { registerGameStateSystems } from "./gamestate.js";
+import { registerEnemyShipSystems } from "./enemy-ship.js";
 
 export function registerCommonSystems(em: EntityManager) {
   // registerNetSystems(em);
@@ -61,7 +63,7 @@ export function registerCommonSystems(em: EntityManager) {
   registerInitCanvasSystem(em);
   registerUISystems(em);
   registerDevSystems(em);
-  // registerGameStateSystems(em);
+  registerGameStateSystems(em);
   registerRenderInitSystem(em);
   registerMusicSystems(em);
   registerHandleNetworkEvents(em);
@@ -76,10 +78,11 @@ export function registerCommonSystems(em: EntityManager) {
   registerCursorSystems(em);
   registerGrappleDbgSystems(em);
   registerInitTransforms(em);
-  // registerEnemyShipSystems(em);
+  registerEnemyShipSystems(em);
   registerControllableSystems(em);
   registerPlayerSystems(em);
   registerBulletUpdate(em);
+  // TODO(@darzu): re-enable noodles?
   // registerNoodleSystem(em);
   registerUpdateLifetimes(em);
   registerInteractionSystem(em);
@@ -88,6 +91,7 @@ export function registerCommonSystems(em: EntityManager) {
   registerPhysicsSystems(em);
   registerBulletCollisionSystem(em);
   registerModeler(em);
+  // TODO(@darzu): re-enable tools
   // registerToolSystems(em);
   registerNetDebugSystem(em);
   registerAckUpdateSystem(em);
