@@ -14,6 +14,7 @@ export const VertexStruct = createCyStruct(
     position: "vec3<f32>",
     color: "vec3<f32>",
     normal: "vec3<f32>",
+    // TODO(@darzu): add UV back? needed for ocean stuff?
     // uv: "vec2<f32>",
     surfaceId: "u32",
   },
@@ -55,6 +56,7 @@ export function createEmptyVertexTS(): VertexTS {
 export const MeshUniformStruct = createCyStruct(
   {
     transform: "mat4x4<f32>",
+    // TODO(@darzu): option for aabbs?
     // aabbMin: "vec3<f32>",
     // aabbMax: "vec3<f32>",
     tint: "vec3<f32>",
@@ -69,6 +71,7 @@ export const MeshUniformStruct = createCyStruct(
     isUniform: true,
     serializer: (d, _, offsets_32, views) => {
       views.f32.set(d.transform, offsets_32[0]);
+      // TODO(@darzu): option for aabbs?
       // views.f32.set(d.aabbMin, offsets_32[1]);
       // views.f32.set(d.aabbMax, offsets_32[2]);
       views.f32.set(d.tint, offsets_32[1]);
@@ -115,6 +118,7 @@ export function computeUniData(m: Mesh): MeshUniformTS {
   const { min, max } = getAABBFromMesh(m);
   const uni: MeshUniformTS = {
     transform: mat4.create(),
+    // TODO(@darzu): option for aabbs?
     // aabbMin: min,
     // aabbMax: max,
     tint: vec3.create(),

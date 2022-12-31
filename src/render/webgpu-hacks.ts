@@ -1,3 +1,4 @@
+// TODO(@darzu): is this still needed?
 export const GPUBufferUsage = {
   COPY_DST: 8,
   COPY_SRC: 4,
