@@ -4,7 +4,7 @@
 
 import { vec2, vec3, vec4 } from "./gl-matrix.js";
 import { RawMesh } from "./render/mesh.js";
-import { assert } from "./test.js";
+import { assert } from "./util.js";
 import { idPair, IdPair, isString } from "./util.js";
 
 /*
@@ -198,7 +198,17 @@ export function importObj(obj: string): RawMesh[] | ParseError {
           quad.push([inds[0], inds[1], inds[2], inds[3]]);
         }
       } else if (inds.length === 8) {
+        // TODO(@darzu): any large n-gon that's convex can just be made into a triangle fan
+        // TODO(@darzu): convexity test. probably something about sum of interior angles
         // TODO(@darzu): HACK. ignore 8 sided faces?
+        // triangle fan
+        for (let i = 1; i < 7; i++) {
+          if (FLIP_FACES) {
+            tri.push([inds[0], inds[i + 1], inds[i]]);
+          } else {
+            tri.push([inds[0], inds[i], inds[i + 1]]);
+          }
+        }
       } else {
         return `unsupported: ${faceOpt.length}-sided face`;
       }

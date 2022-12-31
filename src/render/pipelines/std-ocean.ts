@@ -1,11 +1,12 @@
 import { mat4, vec3 } from "../../gl-matrix.js";
-import { assert } from "../../test.js";
+import { assert } from "../../util.js";
 import { computeTriangleNormal } from "../../utils-3d.js";
 import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";
 import { createCyStruct, CyToTS } from "../gpu-struct.js";
 import { pointLightsPtr } from "../lights.js";
 import { MeshHandle } from "../mesh-pool.js";
 import { getAABBFromMesh, Mesh } from "../mesh.js";
+import { GPUBufferUsage } from "../webgpu-hacks.js";
 import {
   sceneBufPtr,
   litTexturePtr,
@@ -115,7 +116,12 @@ const oceanUnisPtr = CY.createArray("oceanUni", {
 });
 
 // TODO(@darzu): de-duplicate with std-scene's computeVertsData
-function computeOceanVertsData(m: Mesh): OceanVertTS[] {
+function computeOceanVertsData(
+  m: Mesh,
+  // TODO(@darzu): this isn't implemented right; needs to account for startIdx and count
+  startIdx: number,
+  count: number
+): OceanVertTS[] {
   assert(!!m.normals, "ocean meshes assumed to have normals");
   assert(!!m.tangents, "ocean meshes assumed to have tangents");
   // TODO(@darzu): change

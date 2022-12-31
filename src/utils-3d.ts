@@ -24,6 +24,13 @@ export function randNormalVec3(out: vec3) {
   return out;
 }
 
+export function randNormalPosVec3(out?: vec3) {
+  if (!out) out = vec3.create();
+  vec3.set(out, Math.random(), Math.random(), Math.random());
+  vec3.normalize(out, out);
+  return out;
+}
+
 export function randNormalVec2(out: vec2) {
   vec2.set(out, Math.random() - 0.5, Math.random() - 0.5);
   vec2.normalize(out, out);
@@ -216,4 +223,30 @@ export function signedAreaOfTriangle(a: vec2, b: vec2, c: vec2): number {
   vec2.subtract(ac, c, a);
   let cross = vec2.cross(tempVec3(), ab, ac);
   return 0.5 * cross[2];
+}
+
+export function vec3Reverse(out: vec3) {
+  const t = out[0];
+  out[0] = out[2];
+  out[2] = t;
+  return out;
+}
+
+export function vec4Reverse(out: vec4) {
+  let t = out[0];
+  out[0] = out[3];
+  out[3] = t;
+  t = out[1];
+  out[1] = out[2];
+  out[2] = t;
+  return out;
+}
+
+export function vec4RotateLeft(out: vec4) {
+  let t = out[0];
+  out[0] = out[1];
+  out[1] = out[2];
+  out[2] = out[3];
+  out[3] = t;
+  return out;
 }

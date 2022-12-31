@@ -1,5 +1,15 @@
+import { DBG_ASSERT } from "./flags.js";
 import { randInt } from "./math.js";
-import { assert } from "./test.js";
+
+export function assert(cond: any, msg?: string): asserts cond {
+  // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#assertion-functions
+  if (!cond)
+    throw new Error(msg ?? "Assertion failed (consider adding a helpful msg).");
+}
+
+export function assertDbg(cond: any, msg?: string): asserts cond {
+  if (DBG_ASSERT) assert(cond, msg);
+}
 
 export type Intersect<A> = A extends [infer X, ...infer Y]
   ? X & Intersect<Y>
@@ -170,10 +180,10 @@ export function toBinary(n: number, digits = 32): string {
 }
 
 let _logOnceKeys: Set<string> = new Set();
-export function dbgLogOnce(key: string, msg?: string) {
+export function dbgLogOnce(key: string, msg?: string, warn = false) {
   if (!_logOnceKeys.has(key)) {
     _logOnceKeys.add(key);
-    console.log(msg ?? key);
+    console[warn ? "warn" : "log"](msg ?? key);
   }
 }
 export function dbgDirOnce(key: string, obj?: any) {
@@ -236,4 +246,56 @@ export async function asyncTimeout(ms: number) {
       resolve(null);
     }, ms);
   });
+}
+
+export function createIntervalTracker(maxSep: number) {
+  let min = Infinity;
+  let max = -Infinity;
+
+  const intervals: { min: number; max: number }[] = [];
+
+  function addRange(rMin: number, rMax: number) {
+    if (
+      min === Infinity ||
+      (min - maxSep <= rMin && rMin <= max + maxSep) || // rMin is inside
+      (min - maxSep <= rMax && rMax <= max + maxSep) // rMax is inside
+    ) {
+      // update interval
+      min = Math.min(min, rMin);
+      max = Math.max(max, rMax);
+    } else {
+      // start new interval
+      intervals.push({ min, max });
+      min = rMin;
+      max = rMax;
+    }
+  }
+  function finishInterval() {
+    if (min !== Infinity) {
+      intervals.push({ min, max });
+      min = Infinity;
+      max = -Infinity;
+    }
+  }
+
+  return {
+    intervals,
+    addRange,
+    finishInterval,
+  };
+}
+
+// Takes in a bounding width/height (e.g. viewport width/height), the aspect-ratio
+//   of a child rectangle we want to enclose, and returns the maximum child rectangle
+//   width that can be bound and maintain its aspect ratio.
+export function boxInBox(
+  boundW: number,
+  boundH: number,
+  childAR: number
+): number {
+  const boundAR = boundW / boundH;
+  // smaller aspect-ratio means "more portrait", so we're width-constrained
+  if (boundAR < childAR) return boundW;
+  // larger aspect-ratio means "more landscape", so we're height-constrained
+  else return boundH * childAR;
 }

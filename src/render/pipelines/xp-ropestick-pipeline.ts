@@ -79,7 +79,7 @@ function generateRopeGrid(): {
     }
   }
 
-  console.log(RopeStickStruct.wgsl(true));
+  // console.log(RopeStickStruct.wgsl(true));
 
   // fix points
   ropePointData[idx(0, CLOTH_W - 1)].locked = 1.0;

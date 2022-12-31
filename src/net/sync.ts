@@ -142,7 +142,7 @@ export function registerUpdateSystem(em: EntityManager) {
 
 export function registerAckUpdateSystem(em: EntityManager) {
   function ack(
-    peers: { peer: Peer; inbox: Inbox }[],
+    peers: readonly { peer: Peer; inbox: Inbox }[],
     {
       time,
       me,

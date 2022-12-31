@@ -9,11 +9,10 @@ import {
   updateFrameFromPosRotScale,
 } from "../physics/transform.js";
 import { AssetsDef } from "./assets.js";
-import { ColorDef } from "../color.js";
-import { assert } from "../test.js";
+import { ColorDef } from "../color-ecs.js";
+import { assert } from "../util.js";
 import { CameraViewDef } from "../camera.js";
 import { vec2, vec3 } from "../gl-matrix.js";
-import { screenPosToRay } from "./modeler.js";
 import {
   PhysicsResultsDef,
   WorldFrameDef,
@@ -21,6 +20,7 @@ import {
 import { RayHit } from "../physics/broadphase.js";
 import { tempVec3 } from "../temp-pool.js";
 import { createRef, Ref } from "../em_helpers.js";
+import { screenPosToRay } from "../utils-game.js";
 
 export const GlobalCursor3dDef = EM.defineComponent("globalCursor3d", () => {
   return {

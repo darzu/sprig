@@ -44,6 +44,7 @@ export const CameraViewDef = EM.defineComponent("cameraView", () => {
     width: 100,
     height: 100,
     viewProjMat: mat4.create(),
+    invViewProjMat: mat4.create(),
     location: vec3.create(),
   };
 });
@@ -61,7 +62,8 @@ export const CameraFollowDef = EM.defineComponent(
 
 export const CAMERA_OFFSETS = {
   thirdPerson: [0, 0, 10],
-  thirdPersonOverShoulder: [2, 2, 8],
+  // thirdPersonOverShoulder: [1, 3, 2],
+  thirdPersonOverShoulder: [2, 2, 4],
   firstPerson: [0, 0, 0],
 } as const;
 
@@ -177,8 +179,8 @@ export function registerCameraSystems(em: EntityManager) {
       cameraView.aspectRatio = Math.abs(
         htmlCanvas.canvas.width / htmlCanvas.canvas.height
       );
-      cameraView.width = htmlCanvas.canvas.width;
-      cameraView.height = htmlCanvas.canvas.height;
+      cameraView.width = htmlCanvas.canvas.clientWidth;
+      cameraView.height = htmlCanvas.canvas.clientHeight;
 
       let viewMatrix = mat4.create();
       if (targetEnt) {
@@ -235,6 +237,7 @@ export function registerCameraSystems(em: EntityManager) {
           camera.fov,
           cameraView.aspectRatio,
           1,
+          // TODO(@darzu): hacky; why does it have to be so big
           100000.0 /*view distance*/
         );
       }
@@ -245,6 +248,10 @@ export function registerCameraSystems(em: EntityManager) {
       ) as Float32Array;
 
       cameraView.viewProjMat = viewProj;
+      cameraView.invViewProjMat = mat4.invert(
+        cameraView.invViewProjMat,
+        cameraView.viewProjMat
+      );
     },
     "updateCameraView"
   );

@@ -12,7 +12,7 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { vec3 } from "../gl-matrix.js";
 import { vec3Dbg } from "../utils-3d.js";
@@ -70,7 +70,7 @@ export function registerNoodleSystem(em: EntityManager) {
     [RendererDef],
     (es, rs) => {
       for (let e of es) {
-        const mesh = e.renderable.meshHandle.readonlyMesh;
+        const mesh = e.renderable.meshHandle.mesh;
         assert(!!mesh, "Cannot find mesh for noodle");
         // mapMeshPositions(m, (p, i) => p);
         // e.noodle.size *= 1.01;
@@ -83,7 +83,10 @@ export function registerNoodleSystem(em: EntityManager) {
           // TODO(@darzu): rotate around .dir
           return vec3.add(vec3.create(), p, seg.pos);
         });
-        rs.renderer.renderer.updateMesh(e.renderable.meshHandle, mesh);
+        rs.renderer.renderer.stdPool.updateMeshVertices(
+          e.renderable.meshHandle,
+          mesh
+        );
       }
     },
     "updateNoodles"

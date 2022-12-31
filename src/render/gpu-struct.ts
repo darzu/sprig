@@ -1,6 +1,6 @@
 import { mat4, quat, vec2, vec3, vec4 } from "../gl-matrix.js";
 import { align, max, sum } from "../math.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import { objMap } from "../util.js";
 
 // TABLES, CONSTS and TYPE-LEVEL HELPERS
@@ -30,6 +30,7 @@ type WGSLTypeToTSType = {
   "vec2<u32>": vec2;
   "vec2<f32>": vec2;
   "vec3<f32>": vec3;
+  "vec4<f32>": vec4;
   "mat4x4<f32>": mat4;
 };
 
@@ -160,6 +161,7 @@ const wgslTypeToSize: Partial<Record<WGSLType, number>> = {
   f32: 4,
   "vec2<f32>": 8,
   "vec3<f32>": 12,
+  "vec4<f32>": 16,
   "mat4x4<f32>": 64,
 };
 
@@ -236,6 +238,14 @@ function wgslTypeToDummyVal<T extends WGSLType>(
     const randVec3 = () =>
       vec3.fromValues(Math.random(), Math.random(), Math.random());
     if (wgsl === "vec3<f32>") return randVec3();
+    const randVec4 = () =>
+      vec4.fromValues(
+        Math.random(),
+        Math.random(),
+        Math.random(),
+        Math.random()
+      );
+    if (wgsl === "vec4<f32>") return randVec4();
     if (wgsl === "u32")
       return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
     const randAngle = () => Math.random() * 2 * Math.PI;
@@ -264,6 +274,7 @@ function cloneValue<T extends WGSLType>(
     if (wgsl === "f32") return val;
     if (wgsl === "vec2<f32>") return vec2.clone(val);
     if (wgsl === "vec3<f32>") return vec3.clone(val);
+    if (wgsl === "vec4<f32>") return vec4.clone(val);
     if (wgsl === "u32") return val;
     if (wgsl === "mat4x4<f32>") return mat4.clone(val);
 
@@ -397,6 +408,7 @@ export function createCyStruct<O extends CyStructDesc>(
       else if (t === "u32") views.u32[o32] = v;
       else if (t === "vec2<f32>") views.f32.set(v, o32);
       else if (t === "vec3<f32>") views.f32.set(v, o32);
+      else if (t === "vec4<f32>") views.f32.set(v, o32);
       else if (t === "mat4x4<f32>") views.f32.set(v, o32);
       else throw `Unimplemented type in serializer: ${t}`;
     });

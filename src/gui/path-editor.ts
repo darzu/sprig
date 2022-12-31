@@ -1,0 +1,534 @@
+import { ColorDef } from "../color-ecs.js";
+import { EM, EntityW } from "../entity-manager.js";
+import { AssetsDef, GameMesh, gameMeshFromMesh } from "../game/assets.js";
+import { gameplaySystems } from "../game/game.js";
+import { mat3, mat4, quat, vec3 } from "../gl-matrix.js";
+import {
+  extrudeQuad,
+  HEdge,
+  HPoly,
+  HVert,
+  meshToHalfEdgePoly,
+} from "../half-edge.js";
+import { createIdxPool } from "../idx-pool.js";
+import { rayVsRay } from "../physics/broadphase.js";
+import { ColliderDef } from "../physics/collider.js";
+import { WorldFrameDef } from "../physics/nonintersection.js";
+import { PositionDef, ScaleDef, RotationDef } from "../physics/transform.js";
+import { MeshHandle, MeshReserve } from "../render/mesh-pool.js";
+import { LineMesh, Mesh, RawMesh } from "../render/mesh.js";
+import {
+  RenderableConstructDef,
+  RendererDef,
+  RenderableDef,
+} from "../render/renderer-ecs.js";
+import { tempMat3, tempMat4, tempVec3 } from "../temp-pool.js";
+import { assert } from "../util.js";
+import { randNormalPosVec3, vec3Mid } from "../utils-3d.js";
+import { ButtonsStateDef, ButtonDef } from "./button.js";
+import { initWidgets, WidgetDef, WidgetLayerDef } from "./widgets.js";
+
+const HLineDef = EM.defineComponent("hline", (hl: HLine) => ({
+  hl,
+}));
+
+// TODO(@darzu): terrible name
+type HLineEnt = EntityW<
+  [
+    typeof WidgetDef,
+    typeof HLineDef,
+    typeof PositionDef,
+    typeof RotationDef,
+    typeof ColorDef,
+    typeof RenderableDef,
+    typeof ButtonDef
+  ]
+>;
+
+export const PathEditorDef = EM.defineComponent(
+  "pathEditor",
+  (pe: PathEditor) => pe
+);
+
+// TODO(@darzu): this might be over engineered
+const MAX_GLYPHS = 100;
+const glyphPool: HLineEnt[] = [];
+const glyphPoolIdx = createIdxPool(MAX_GLYPHS);
+
+export type PathEditor = ReturnType<typeof createPathEditor> extends Promise<
+  infer T
+>
+  ? T
+  : never;
+
+async function createPathEditor() {
+  let glyphs = new Map<number, HLineEnt>();
+
+  // TODO(@darzu): lnMesh
+
+  const res = {
+    // interaction
+    glyphs,
+
+    // truth
+    lnMesh: undefined as LineMesh | undefined,
+    lns: undefined as HLine[] | undefined,
+
+    // visual
+    outMesh: undefined as Mesh | undefined,
+    outEnt: undefined as
+      | EntityW<[typeof RenderableDef, typeof WorldFrameDef]>
+      | undefined,
+
+    // swap truth
+    setLineMesh,
+    reset,
+
+    // truth mutation
+    positionVert,
+  };
+
+  const { renderer, assets } = await EM.whenResources(RendererDef, AssetsDef);
+
+  return res;
+
+  function reset() {
+    for (let g of glyphs.values()) hideGlyph(g);
+    glyphs.clear();
+    glyphPoolIdx.reset();
+    res.lnMesh = undefined;
+    res.lns = undefined;
+    if (res.outEnt) res.outEnt.renderable.hidden = true;
+  }
+
+  function _generateOutMesh(): Mesh {
+    // TODO(@darzu):
+    throw "todo";
+  }
+
+  async function setLineMesh(newLnMesh: LineMesh) {
+    reset();
+
+    const lns = linesAsList([], meshToHLines(newLnMesh));
+
+    res.lns = lns;
+    res.lnMesh = newLnMesh;
+
+    const newOutMesh = _generateOutMesh();
+
+    assert(!!res.outMesh === !!res.outEnt);
+    if (!res.outEnt || !res.outMesh) {
+      res.outMesh = newOutMesh;
+
+      const reserve: MeshReserve = {
+        maxVertNum: 100,
+        maxTriNum: 100,
+        maxLineNum: 0,
+      };
+
+      const hpEnt_ = EM.newEntity();
+      EM.ensureComponentOn(
+        hpEnt_,
+        RenderableConstructDef,
+        res.outMesh,
+        true,
+        undefined,
+        undefined,
+        "std",
+        false,
+        reserve
+      );
+      EM.ensureComponentOn(hpEnt_, PositionDef, [0, 0.1, 0]);
+      // TODO(@darzu): make scale configurable
+      // EM.ensureComponentOn(hpEnt_, ScaleDef, [5, 5, 5]);
+      const hpEnt = await EM.whenEntityHas(
+        hpEnt_,
+        RenderableDef,
+        WorldFrameDef
+      );
+
+      res.outEnt = hpEnt;
+    } else {
+      res.outEnt.renderable.hidden = false;
+      // renderer.renderer.stdPool.updateMeshInstance(
+      //   res.outEnt.renderable.meshHandle,
+      //   handle
+      // );
+
+      // TODO(@darzu): IMPL copyMesh!!
+      // copyMesh(res.outMesh, newOutMesh);
+
+      // TODO(@darzu): move elsewhere
+      renderer.renderer.stdPool.updateMeshQuads(
+        res.outEnt.renderable.meshHandle,
+        res.outMesh
+      );
+      renderer.renderer.stdPool.updateMeshTriangles(
+        res.outEnt.renderable.meshHandle,
+        res.outMesh
+      );
+      renderer.renderer.stdPool.updateMeshSize(
+        res.outEnt.renderable.meshHandle,
+        res.outMesh
+      );
+      renderer.renderer.stdPool.updateMeshVertices(
+        res.outEnt.renderable.meshHandle,
+        res.outMesh
+      );
+    }
+
+    // vert glyphs
+    for (let ln of res.lns) {
+      nextGlyph(ln);
+    }
+  }
+
+  function hideGlyph(g: HLineEnt) {
+    g.renderable.hidden = true;
+    glyphs.delete(g.hline.hl.vi);
+    // g.hvert.hv = undefined; // TODO(@darzu): FIX
+    g.button.data = undefined;
+  }
+
+  function _createGlyph(gm: GameMesh) {
+    // TODO(@darzu): de-duplicate
+    const glyph_ = EM.newEntity();
+    EM.ensureComponentOn(glyph_, RenderableConstructDef, gm.proto, false);
+    EM.ensureComponentOn(glyph_, ColorDef);
+    EM.ensureComponentOn(glyph_, PositionDef);
+    EM.ensureComponentOn(glyph_, RotationDef, quat.create());
+    EM.ensureComponentOn(glyph_, WidgetDef);
+    EM.ensureComponentOn(glyph_, ColliderDef, {
+      shape: "AABB",
+      solid: false,
+      aabb: gm.aabb,
+    });
+
+    return glyph_;
+  }
+
+  async function nextGlyph(hl: HLine): Promise<HLineEnt> {
+    // TODO(@darzu): de-dupe
+    const idx = glyphPoolIdx.next();
+    assert(idx !== undefined, `out of glyphs`);
+    if (!glyphPool[idx]) {
+      // create if missing
+      const glyph_ = _createGlyph(assets.he_octo);
+      EM.ensureComponentOn(glyph_, HLineDef, hl);
+      EM.ensureComponentOn(glyph_, ButtonDef, "glyph-vert");
+      const glyph = await EM.whenEntityHas(
+        glyph_,
+        HLineDef,
+        WidgetDef,
+        ColorDef,
+        PositionDef,
+        RotationDef,
+        RenderableDef,
+        ButtonDef
+      );
+      // vertGlpyhs.set(v.vi, glyph);
+
+      glyphPool[idx] = glyph;
+    }
+    const g = glyphPool[idx];
+
+    // init once from pool
+    g.renderable.enabled = true;
+    g.renderable.hidden = false;
+    g.hline.hl = hl;
+    g.button.data = hl.vi;
+    glyphs.set(hl.vi, g);
+
+    // initial position
+    // TODO(@darzu): need to think about how we position verts
+    // console.dir(res);
+    assert(res.lnMesh);
+    const pos = vec3.copy(g.position, res.lnMesh.pos[hl.vi]);
+    // TODO(@darzu): support world transforms
+    // vec3.transformMat4(pos, pos, res.outEnt.world.transform);
+    pos[1] = 0.2; // TODO(@darzu): this z-layering stuff is wierd
+
+    return g;
+  }
+  function positionVert(hl: HLine) {
+    // TODO(@darzu): fix IMPL!
+    const glyph = glyphs.get(hl.vi);
+    assert(glyph);
+    assert(res.lnMesh);
+    const vertPos = res.lnMesh.pos[hl.vi];
+
+    // TODO(@darzu): PERF, expensive inverse
+    // TODO(@darzu): doesn't account for parent translation
+    // TODO(@darzu): should be done via parenting
+    // const invTrans4 = mat4.invert(tempMat4(), res.outEnt.world.transform);
+    // const invTrans3 = mat3.fromMat4(tempMat3(), invTrans4);
+    // const posE = vec3.transformMat3(tempVec3(), glyph.position, invTrans3);
+    const posE = glyph.position;
+
+    vertPos[0] = posE[0];
+    vertPos[2] = posE[2];
+  }
+}
+
+export async function initPathEditor(cursorId: number) {
+  // TODO(@darzu):  only call if mesh editor hasn't initted widgets!
+  initWidgets(cursorId);
+
+  {
+    const me = await createPathEditor();
+    EM.addSingletonComponent(PathEditorDef, me);
+  }
+
+  // TODO(@darzu): DBG only
+  // pathEditor.setMesh(startMesh);
+
+  // TODO(@darzu): undo-stack
+  EM.registerSystem(
+    null,
+    [PathEditorDef, RendererDef, ButtonsStateDef, WidgetLayerDef],
+    (_, { pathEditor: e, renderer, buttonsState, widgets }) => {
+      let didUpdateMesh = false;
+      let didEnlargeMesh = false;
+      // const hedgesToMove = new Set<number>();
+
+      if (!e.outEnt || !e.outMesh) return;
+
+      // move verts
+      for (let wi of widgets.moved) {
+        const w = EM.findEntity(wi, [WidgetDef, HLineDef]);
+        if (w) {
+          e.positionVert(w.hline.hl);
+          didUpdateMesh = true;
+        }
+      }
+
+      // TODO(@darzu): impl for path ends
+      // // click to extrude
+      // // TODO(@darzu): move elsewhere?
+      // const clickedHi = buttonsState.clickByKey["glyph-hedge"];
+      // if (clickedHi !== undefined) {
+      //   // console.log("hedge click!");
+      //   const he = e.hedgeGlyphs.get(clickedHi);
+      //   assert(he, `invalid click data: ${clickedHi}`);
+      //   // quad extrude
+      //   e.extrudeHEdge(he.hedge.he);
+      //   didEnlargeMesh = true;
+      // }
+
+      // update mesh
+      const handle = e.outEnt.renderable.meshHandle;
+      if (didEnlargeMesh) {
+        renderer.renderer.stdPool.updateMeshSize(handle, handle.mesh!);
+        if (handle.mesh!.quad.length)
+          renderer.renderer.stdPool.updateMeshQuads(handle, handle.mesh!);
+        if (handle.mesh!.tri.length)
+          renderer.renderer.stdPool.updateMeshTriangles(handle, handle.mesh!);
+      }
+      if (didUpdateMesh || didEnlargeMesh) {
+        renderer.renderer.stdPool.updateMeshVertices(handle, handle.mesh!);
+      }
+    },
+    "editHPoly"
+  );
+  gameplaySystems.push("editHPoly");
+}
+
+// TODO(@darzu): can/should this be merged with half-edge stuff?
+export interface HLine {
+  vi: number;
+  next?: HLine;
+  prev?: HLine;
+}
+
+function meshToHLines(m: LineMesh): HLine {
+  assert(m.lines.length);
+  const linesByVi = new Map<number, HLine>();
+  m.lines.forEach(([v0, v1]) => {
+    if (!linesByVi.has(v0)) linesByVi.set(v0, { vi: v0 } as HLine);
+    if (!linesByVi.has(v1)) linesByVi.set(v1, { vi: v1 } as HLine);
+  });
+  m.lines.forEach(([v0, v1]) => {
+    const ln0 = linesByVi.get(v0);
+    const ln1 = linesByVi.get(v1);
+    if (ln0) ln0.next = ln1;
+    if (ln1) ln1.prev = ln0;
+  });
+
+  let first = linesByVi.get(m.lines[0][0])!;
+  while (first.prev) first = first.prev;
+
+  return first;
+}
+
+// TODO(@darzu): rename
+export async function lineStuff() {
+  const lnMesh: RawMesh & LineMesh = {
+    pos: [
+      [1, 0, 1],
+      [2, 0, 2],
+      [4, 0, 3],
+      [8, 0, 3],
+      [8, 0, 6],
+    ],
+    tri: [],
+    quad: [],
+    lines: [
+      [0, 1],
+      [3, 4],
+      [2, 3],
+      [1, 2],
+    ],
+    colors: [],
+  };
+
+  const hline = meshToHLines(lnMesh);
+
+  const lns = linesAsList([], hline);
+
+  // console.log(lns);
+
+  const width = 2.0;
+
+  const pts = lns.map((ln) => getControlPoints(ln, width));
+
+  // console.dir(pts);
+
+  const extMesh: Mesh = {
+    pos: [],
+    tri: [],
+    quad: [],
+    lines: [],
+    colors: [],
+    surfaceIds: [],
+    usesProvoking: true,
+  };
+
+  pts.forEach(([a1, a2]) => {
+    extMesh.pos.push(a1);
+    extMesh.pos.push(a2);
+  });
+
+  for (let i = 1; i < pts.length; i++) {
+    const pi = i * 2;
+    const pA1 = pi - 2;
+    const pA2 = pi - 1;
+    const A1 = pi + 0;
+    const A2 = pi + 1;
+    extMesh.quad.push([A1, pA1, pA2, A2]);
+    extMesh.surfaceIds.push(i);
+    extMesh.colors.push(randNormalPosVec3(vec3.create()));
+  }
+
+  const { renderer, assets } = await EM.whenResources(RendererDef, AssetsDef);
+
+  const gmesh = gameMeshFromMesh(extMesh, renderer.renderer);
+
+  const extEnt = EM.newEntity();
+  EM.ensureComponentOn(extEnt, RenderableConstructDef, gmesh.proto);
+  EM.ensureComponentOn(extEnt, PositionDef, [0, 0.5, 0]);
+
+  for (let ln of lns) {
+    const vertGlyph = EM.newEntity();
+    EM.ensureComponentOn(vertGlyph, RenderableConstructDef, assets.cube.proto);
+    EM.ensureComponentOn(vertGlyph, PositionDef, vec3.clone(lnMesh.pos[ln.vi]));
+    EM.ensureComponentOn(vertGlyph, ColorDef, [0.1, 0.2 + ln.vi * 0.1, 0.1]);
+    EM.ensureComponentOn(vertGlyph, ScaleDef, [0.2, 0.2, 0.2]);
+    vertGlyph.position[1] = 0.5;
+  }
+
+  function getControlPoints(ln: HLine, width: number): [vec3, vec3] {
+    const A = lnMesh.pos[ln.vi];
+
+    if (!ln.next || !ln.prev) {
+      // end cap
+      const A1 = vec3.create();
+      const A2 = vec3.create();
+
+      const Oln = ln.next ?? ln.prev;
+      const O = Oln ? lnMesh.pos[Oln.vi] : vec3.add(tempVec3(), A, [1, 0, 0]);
+      const dir = vec3.sub(tempVec3(), O, A);
+      if (!ln.next && ln.prev) vec3.negate(dir, dir);
+      vec3.normalize(dir, dir);
+
+      const perp = vec3.cross(tempVec3(), dir, [0, 1, 0]);
+
+      // TODO(@darzu): this is right for end caps, not the mids!!
+      vec3.sub(A1, A, vec3.scale(tempVec3(), perp, width));
+      vec3.add(A2, A, vec3.scale(tempVec3(), perp, width));
+
+      return [A1, A2];
+    } else {
+      // mid point
+      const P = lnMesh.pos[ln.prev.vi];
+      const PAdir = vec3.sub(tempVec3(), A, P);
+      vec3.normalize(PAdir, PAdir);
+      const PAperp = vec3.cross(tempVec3(), PAdir, [0, 1, 0]);
+      const P1 = vec3.sub(tempVec3(), A, vec3.scale(tempVec3(), PAperp, width));
+      vec3.sub(P1, P1, vec3.scale(tempVec3(), PAdir, width * 3));
+      const P2 = vec3.add(tempVec3(), A, vec3.scale(tempVec3(), PAperp, width));
+      vec3.sub(P2, P2, vec3.scale(tempVec3(), PAdir, width * 3));
+
+      const N = lnMesh.pos[ln.next.vi];
+      const NAdir = vec3.sub(tempVec3(), A, N);
+      vec3.normalize(NAdir, NAdir);
+      const NAperp = vec3.cross(tempVec3(), NAdir, [0, 1, 0]);
+      const N1 = vec3.sub(tempVec3(), A, vec3.scale(tempVec3(), NAperp, width));
+      vec3.sub(N1, N1, vec3.scale(tempVec3(), NAdir, width * 3));
+      const N2 = vec3.add(tempVec3(), A, vec3.scale(tempVec3(), NAperp, width));
+      vec3.sub(N2, N2, vec3.scale(tempVec3(), NAdir, width * 3));
+
+      const A1 = rayVsRay(
+        {
+          org: P1,
+          dir: PAdir,
+        },
+        {
+          org: N2,
+          dir: NAdir,
+        }
+      );
+      assert(A1, `P1 vs N2 failed`);
+
+      const A2 = rayVsRay(
+        {
+          org: P2,
+          dir: PAdir,
+        },
+        {
+          org: N1,
+          dir: NAdir,
+        }
+      );
+      assert(A2, `P2 vs N1 failed`);
+
+      return [A1, A2];
+    }
+  }
+
+  // const points: vec2[] = [];
+
+  // let prevA1: vec2;
+  // let prevA2: vec2;
+  // for (let i = -1; i < points.length; i++) {
+  //   const A = points[i];
+  //   const B = points[i + 1];
+
+  //   if (!A && B) {
+  //     // start cap
+  //     // const A1 =
+  //   } else if (A && B) {
+  //     // mid section
+  //   } else if (A && !B) {
+  //     // end cap
+  //   } else {
+  //     assert(false, "should be unreachable");
+  //   }
+  // }
+}
+
+function linesAsList(acc: HLine[], curr?: HLine): HLine[] {
+  if (!curr) return acc;
+  if (!acc.length && curr.prev) return linesAsList(acc, curr.prev);
+  acc.push(curr);
+  return linesAsList(acc, curr.next);
+}

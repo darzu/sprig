@@ -1,5 +1,5 @@
-import { EaseFn } from "./animate-to.js";
-import { assert } from "./test.js";
+import { EaseFn } from "./util-ease.js";
+import { assert } from "./util.js";
 
 // functions
 export function sum(ns: number[]): number {
@@ -38,6 +38,9 @@ export function randInt(min: number, max: number) {
 export function align(x: number, size: number): number {
   return Math.ceil(x / size) * size;
 }
+export function alignDown(x: number, size: number): number {
+  return Math.floor(x / size) * size;
+}
 
 export function chance(zeroToOne: number): boolean {
   return Math.random() < zeroToOne;
@@ -51,9 +54,10 @@ export function mathMap(
   outMin: number,
   outMax: number
 ): number {
-  assert(inMin < inMax, "must be: inMin < inMax");
-  assert(outMin <= outMax, "must be: outMin <= outMax");
-  assert(inMin <= n && n <= inMax, "must be: inMin <= n && n <= inMax");
+  // TODO(@darzu): actually, this works even if inMin > inMax, and/or outMin > outMax. idk why
+  // assert(inMin < inMax, "must be: inMin < inMax");
+  // assert(outMin <= outMax, "must be: outMin <= outMax");
+  // assert(inMin <= n && n <= inMax, "must be: inMin <= n && n <= inMax");
   const progress = (n - inMin) / (inMax - inMin);
   return progress * (outMax - outMin) + outMin;
 }

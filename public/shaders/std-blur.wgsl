@@ -14,7 +14,7 @@ fn main(
   let blockDim = tileDim - (filterDim - 1u);
 
   let filterOffset : u32 = (filterDim - 1u) / 2u;
-  let dims : vec2<i32> = textureDimensions(inTex, 0);
+  let dims : vec2<i32> = vec2<i32>(textureDimensions(inTex, 0));
 
   let baseIndex = vec2<i32>(
     WorkGroupID.xy * vec2<u32>(blockDim, 4u) +

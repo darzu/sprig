@@ -1,5 +1,4 @@
 import { AnimateToDef } from "../animate-to.js";
-import { ColorDef } from "../color.js";
 import { createRef, Ref } from "../em_helpers.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { vec3, vec2, mat3, mat4 } from "../gl-matrix.js";
@@ -20,7 +19,6 @@ import {
   uvToNormTex,
   uvToPosTex,
   uvToTangTex,
-  UVUNWRAP_MASK,
 } from "../render/pipelines/xp-uv-unwrap.js";
 import {
   RenderableConstructDef,
@@ -39,6 +37,8 @@ import {
   vec3Dbg,
 } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
+import { ColorDef } from "../color-ecs.js";
+import { DEFAULT_MASK, UVUNWRAP_MASK } from "../render/pipeline-masks.js";
 
 const DISABLE_GERSTNER = false;
 
@@ -49,7 +49,8 @@ export interface Ocean {
   // TODO(@darzu): normal and tangent could probably come straight from CPU mesh
   uvToNorm: (out: vec3, uv: vec2) => vec3;
   uvToTang: (out: vec3, uv: vec2) => vec3;
-  uvToEdgeDist: (uv: vec2) => number;
+  // TODO(@darzu): re-enable
+  // uvToEdgeDist: (uv: vec2) => number;
   uvToGerstnerDispAndNorm: (outDisp: vec3, outNorm: vec3, uv: vec2) => void;
   gerstnerWaves: GerstnerWaveTS[];
 }
@@ -100,7 +101,7 @@ export async function initOcean() {
     // TODO(@darzu): needed?
     true,
     0,
-    UVUNWRAP_MASK,
+    UVUNWRAP_MASK | DEFAULT_MASK,
     "ocean"
   );
   EM.ensureComponentOn(ocean, ColorDef, [0.1, 0.3, 0.8]);
@@ -112,7 +113,7 @@ export async function initOcean() {
   // TODO(@darzu):
   const preOceanGPU = performance.now();
 
-  res.renderer.renderer.updateOceanUniform(
+  res.renderer.renderer.oceanPool.updateUniform(
     ocean2.renderable.meshHandle,
     ocean2.renderDataOcean
   );
@@ -129,12 +130,16 @@ export async function initOcean() {
     res.renderer.renderer.readTexture(uvToPosTex),
     res.renderer.renderer.readTexture(uvToNormTex),
     res.renderer.renderer.readTexture(uvToTangTex),
-    res.renderer.renderer.readTexture(oceanJfa.sdfTex),
+    // TODO(@darzu): JFA alignment issue! see note in readTexture
+    // res.renderer.renderer.readTexture(oceanJfa.sdfTex),
   ];
 
-  const [uvToPosData, uvToNormData, uvToTangData, sdfData] = await Promise.all(
-    readPromises
-  );
+  const [
+    uvToPosData,
+    uvToNormData,
+    uvToTangData,
+    // sdfData
+  ] = await Promise.all(readPromises);
 
   const timeOceanGPU = performance.now() - preOceanGPU;
   console.log(`ocean GPU round-trip: ${timeOceanGPU.toFixed(2)}ms`);
@@ -161,12 +166,13 @@ export async function initOcean() {
     uvToTangTex.format
   );
 
-  const sdfReader = createTextureReader(
-    sdfData,
-    oceanJfa.sdfTex.size,
-    1,
-    oceanJfa.sdfTex.format
-  );
+  // TODO(@darzu): SDF disabled b/c alignment issue
+  // const sdfReader = createTextureReader(
+  //   sdfData,
+  //   oceanJfa.sdfTex.size,
+  //   1,
+  //   oceanJfa.sdfTex.format
+  // );
 
   // console.log("adding OceanDef");
 
@@ -213,11 +219,12 @@ export async function initOcean() {
     // console.log(`${x},${y}`);
     return uvToTangReader.sample(out, x, y);
   };
-  const uvToEdgeDist = (uv: vec2) => {
-    const x = uv[0] * uvToNormReader.size[0];
-    const y = uv[1] * uvToNormReader.size[1];
-    return sdfReader.sample(NaN, x, y);
-  };
+  // TODO(@darzu): re-enable
+  // const uvToEdgeDist = (uv: vec2) => {
+  //   const x = uv[0] * uvToNormReader.size[0];
+  //   const y = uv[1] * uvToNormReader.size[1];
+  //   return sdfReader.sample(NaN, x, y);
+  // };
 
   const uvToGerstnerDispAndNorm = (outDisp: vec3, outNorm: vec3, uv: vec2) => {
     // TODO(@darzu): impl
@@ -269,7 +276,7 @@ export async function initOcean() {
     uvToPos,
     uvToNorm,
     uvToTang,
-    uvToEdgeDist,
+    // uvToEdgeDist,
     uvToGerstnerDispAndNorm,
     // TODO: enforce programmatically that sum(Q_i * A_i * w_i) <= 1.0
     gerstnerWaves,

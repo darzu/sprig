@@ -178,7 +178,7 @@ function updateEnts() {
   }
 }
 function filterEnts(...cmpNames: string[]): Entity[] {
-  return EM.filterEntitiesByKey(cmpNames);
+  return EM.dbgFilterEntitiesByKey(cmpNames);
 }
 function cmpByName(name: string): DbgCmp | null {
   let res = dbgCmps.get(name) ?? dbgCmpsAllByAbv.get(name);
@@ -253,7 +253,7 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
   },
 
   summarizeStats: () => {
-    let stats = EM.stats;
+    let stats = EM.sysStats;
     let totalQueryTime = Object.values(stats)
       .map((s) => s.queryTime)
       .reduce((x, y) => x + y);
@@ -263,25 +263,27 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
     let totalTime = totalQueryTime + totalCallTime;
     let callTimes = [];
     for (let s of Object.keys(stats)) {
-      callTimes.push({ s, t: stats[s].callTime });
+      callTimes.push({ s, t: stats[s].callTime, m: stats[s].maxCallTime });
     }
-    callTimes.push({ s: "ALL QUERIES", t: totalQueryTime });
+    callTimes.push({ s: "ALL QUERIES", t: totalQueryTime, m: -1 });
     callTimes.sort((x, y) => y.t - x.t);
     let out = "";
-    for (let { s, t } of callTimes) {
+    for (let { s, t, m } of callTimes) {
       out +=
         s +
         ": " +
-        ((t * 100) / totalTime).toPrecision(2) +
+        ((t * 100) / totalTime).toFixed(1) +
         "%" +
         " (" +
-        (t / EM.loops).toPrecision(2) +
+        (t / EM.loops).toFixed(2) +
+        "ms, max:" +
+        m.toFixed(1) +
         "ms)" +
         "\n";
     }
 
     out += "\n";
-    out += "time per frame: " + (totalTime / EM.loops).toPrecision(3) + "ms";
+    out += "time per frame: " + (totalTime / EM.loops).toFixed(3) + "ms";
     console.log(out);
   },
 };

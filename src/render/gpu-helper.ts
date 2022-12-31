@@ -1,4 +1,4 @@
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import { isFunction, never } from "../util.js";
 import {
   CY,
@@ -132,7 +132,8 @@ export function createRenderTextureToQuad(
 
     @fragment
     fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) ${returnWgslType} {
-      let dimsI : vec2<i32> = textureDimensions(inTex);
+      // TODO(@darzu): we probably shouldn't always cast this into i32..
+      let dimsI : vec2<i32> = vec2<i32>(textureDimensions(inTex));
       let dimsF = vec2<f32>(dimsI);
       let xy = vec2<i32>(uv * dimsF);
       ${

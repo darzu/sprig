@@ -1,5 +1,4 @@
 import { CameraDef } from "../camera.js";
-import { ColorDef } from "../color.js";
 import { EntityManager, EntityW } from "../entity-manager.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
@@ -23,11 +22,12 @@ import { DevConsoleDef } from "../console.js";
 import { initOcean, OceanDef, oceanJfa, UVPosDef, UVDirDef } from "./ocean.js";
 import { asyncTimeout } from "../util.js";
 import { vec2, vec3 } from "../gl-matrix.js";
-import { AnimateToDef, EASE_INQUAD } from "../animate-to.js";
+import { AnimateToDef } from "../animate-to.js";
 import { createSpawner, SpawnerDef } from "./spawner.js";
 import { tempVec3 } from "../temp-pool.js";
 import { createDarkStarNow, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
 import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
+import { EASE_INQUAD } from "../util-ease.js";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 
@@ -101,11 +101,11 @@ export async function initHyperspaceGame(em: EntityManager) {
         stdRenderPipeline,
         renderOceanPipe,
         outlineRender,
-        //renderStars,
-        //...blurPipelines,
+        // renderStars,
+        // ...blurPipelines,
 
         postProcess,
-        //...(res.dev.showConsole ? gridCompose : []),
+        // ...(res.dev.showConsole ? gridCompose : []),
       ];
     },
     "hyperspaceGame"
@@ -161,9 +161,10 @@ export async function initHyperspaceGame(em: EntityManager) {
 
     for (let i = 0; i < NUM_ENEMY; i++) {
       let enemyUVPos: vec2 = [Math.random(), Math.random()];
-      while (ocean.uvToEdgeDist(enemyUVPos) < 0.1) {
-        enemyUVPos = [Math.random(), Math.random()];
-      }
+      // TODO(@darzu): re-enable
+      // while (ocean.uvToEdgeDist(enemyUVPos) < 0.1) {
+      //   enemyUVPos = [Math.random(), Math.random()];
+      // }
 
       // const enemyEndPos = ocean.uvToPos(vec3.create(), enemyUVPos);
       const enemyEndPos = vec3.create();

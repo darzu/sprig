@@ -4,7 +4,7 @@ import { quat, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { EM, Entity, EntityManager, EntityW } from "../entity-manager.js";
 import { TimeDef } from "../time.js";
-import { ColorDef } from "../color.js";
+import { ColorDef } from "../color-ecs.js";
 import { FinishedDef } from "../build.js";
 import {
   RenderableConstructDef,
@@ -30,7 +30,6 @@ import { LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { ModelerDef } from "./modeler.js";
 import { DeletedDef } from "../delete.js";
-import { PlayerShipLocalDef } from "./player-ship.js";
 import {
   CameraDef,
   CameraFollowDef,
@@ -40,11 +39,11 @@ import { defineSerializableComponent } from "../em_helpers.js";
 import { ControllableDef } from "./controllable.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { drawLine } from "../utils-game.js";
-import { GameState, GameStateDef } from "./gamestate.js";
 import { DevConsoleDef } from "../console.js";
 import { max } from "../math.js";
-import { AnimateToDef, EASE_OUTQUAD } from "../animate-to.js";
+import { AnimateToDef } from "../animate-to.js";
 import { vec3Dbg } from "../utils-3d.js";
+import { PlayerShipLocalDef } from "./player-ship.js";
 
 // TODO(@darzu): it'd be great if these could hook into some sort of
 //    dev mode you could toggle at runtime.
@@ -52,8 +51,9 @@ import { vec3Dbg } from "../utils-3d.js";
 export function createPlayer(em: EntityManager) {
   // console.log("create player!");
   const e = em.newEntity();
-  em.addComponent(e.id, PlayerPropsDef, vec3.fromValues(0, 100, 0));
+  em.ensureComponentOn(e, PlayerPropsDef, vec3.fromValues(0, 100, 0));
   em.addSingletonComponent(LocalPlayerDef, e.id);
+  return e;
 }
 
 export const PlayerDef = EM.defineComponent("player", () => {
@@ -69,7 +69,10 @@ export const PlayerDef = EM.defineComponent("player", () => {
     leftLegId: 0,
     rightLegId: 0,
     facingDir: vec3.create(),
+    // TODO(@darzu): HACK. hyperspace game specific
     lookingForShip: true,
+    // TODO(@darzu): HACK. LD51 game specific
+    holdingBall: 0,
     // disabled noodle limbs
     // leftFootWorldPos: [0, 0, 0] as vec3,
     // rightFootWorldPos: [0, 0, 0] as vec3,
@@ -118,10 +121,12 @@ export function registerPlayerSystems(em: EntityManager) {
           );
         if (!LinearVelocityDef.isOn(e))
           em.addComponent(e.id, LinearVelocityDef);
+        // console.log("making player!");
         if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0, 0.2, 0]);
         if (!MotionSmoothingDef.isOn(e))
           em.addComponent(e.id, MotionSmoothingDef);
         if (!RenderableConstructDef.isOn(e)) {
+          // console.log("creating rend");
           const m = cloneMesh(res.assets.cube.mesh);
           scaleMesh3(m, [0.75, 0.75, 0.4]);
           em.addComponent(e.id, RenderableConstructDef, m);
@@ -150,6 +155,7 @@ export function registerPlayerSystems(em: EntityManager) {
         if (!ColliderDef.isOn(e)) {
           const collider = em.addComponent(e.id, ColliderDef);
           collider.shape = "AABB";
+          // collider.solid = false;
           collider.solid = true;
           const playerAABB = copyAABB(createAABB(), res.assets.cube.aabb);
           vec3.add(playerAABB.min, playerAABB.min, [0, -1, 0]);
@@ -215,7 +221,7 @@ export function registerPlayerSystems(em: EntityManager) {
       PhysicsResultsDef,
       ModelerDef,
       GlobalCursor3dDef,
-      GameStateDef,
+      // GameStateDef,
     ],
     (players, res) => {
       const cheat = !!em.getResource(DevConsoleDef)?.showConsole;
@@ -254,9 +260,9 @@ export function registerPlayerSystems(em: EntityManager) {
           p.controllable.modes.canFly = !p.controllable.modes.canFly;
         }
 
-        if (res.gameState.state === GameState.GAMEOVER) {
-          p.controllable.modes.canFly = true;
-        }
+        // if (res.gameState.state === GameState.GAMEOVER) {
+        //   p.controllable.modes.canFly = true;
+        // }
         if (p.controllable.modes.canFly) {
           p.controllable.modes.canFall = false;
           p.controllable.modes.canJump = false;

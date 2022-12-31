@@ -8,7 +8,7 @@ import {
 } from "./entity-manager.js";
 import { Authority, AuthorityDef, MeDef, SyncDef } from "./net/components.js";
 import { Serializer, Deserializer } from "./serialize.js";
-import { assert } from "./test.js";
+import { assert } from "./util.js";
 import { capitalize } from "./util.js";
 
 export function defineSerializableComponent<

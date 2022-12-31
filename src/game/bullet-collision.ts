@@ -17,15 +17,13 @@ import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { AuthorityDef } from "../net/components.js";
 import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../delete.js";
-import {
-  EnemyShipLocalDef,
-  EnemyShipPropsDef,
-  breakEnemyShip,
-} from "./enemy-ship.js";
 import { AssetsDef } from "./assets.js";
-import { MusicDef } from "../music.js";
+import { AudioDef } from "../audio.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
-import { NumberTuple } from "../util.js";
+import { assert, NumberTuple } from "../util.js";
+import { breakEnemyShip, EnemyShipLocalDef } from "./enemy-ship.js";
+
+const ENABLE_BULLETBULLET = false;
 
 export function registerBulletCollisionSystem(em: EntityManager) {
   // TODO(@darzu):
@@ -44,7 +42,8 @@ export function registerBulletCollisionSystem(em: EntityManager) {
           );
           for (let otherBullet of otherBullets) {
             if (otherBullet) {
-              raiseBulletBullet(o, otherBullet);
+              // TODO(@darzu): HACK. bullet-bullet disabled for LD51
+              if (ENABLE_BULLETBULLET) raiseBulletBullet(o, otherBullet);
             }
           }
 
@@ -67,6 +66,7 @@ export const raiseBulletBullet = eventWizard(
   "bullet-bullet",
   [[BulletDef], [BulletDef]] as const,
   ([b1, b2]) => {
+    // assert(false, `raiseBulletBullet doesnt work on ld51`); // TODO(@darzu): ld51
     // This bullet might have already been deleted via the sync system
     EM.ensureComponentOn(b1, DeletedDef);
     EM.ensureComponentOn(b2, DeletedDef);
@@ -81,6 +81,7 @@ export const raiseBulletPlayer = eventWizard(
   "bullet-player",
   () => [[BulletDef], [PlayerDef]] as const,
   ([bullet, player]) => {
+    // assert(false, `raiseBulletPlayer doesnt work on ld51`); // TODO(@darzu): ld51
     EM.ensureComponent(bullet.id, DeletedDef);
   }
 );
@@ -89,8 +90,9 @@ export const raiseBulletEnemyShip = eventWizard(
   "bullet-enemyShip",
   () => [[BulletDef], [EnemyShipLocalDef, PositionDef, RotationDef]] as const,
   ([bullet, enemyShip]) => {
+    // assert(false, `raiseBulletEnemyShip doesnt work on ld51`); // TODO(@darzu): ld51
     EM.ensureComponentOn(bullet, DeletedDef);
-    const res = EM.getResources([AssetsDef, MusicDef])!;
+    const res = EM.getResources([AssetsDef, AudioDef])!;
     breakEnemyShip(EM, enemyShip, res.assets.boat_broken, res.music);
   }
 );

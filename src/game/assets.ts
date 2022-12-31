@@ -1,5 +1,5 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { mat4, vec2, vec3, vec4 } from "../gl-matrix.js";
+import { mat3, mat4, quat, vec2, vec3, vec4 } from "../gl-matrix.js";
 import { importObj, isParseError } from "../import_obj.js";
 import {
   cloneMesh,
@@ -15,11 +15,12 @@ import {
   scaleMesh,
   scaleMesh3,
   transformMesh,
+  validateMesh,
 } from "../render/mesh.js";
 import { AABB } from "../physics/broadphase.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { Renderer } from "../render/renderer-ecs.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import { objMap, range } from "../util.js";
 import { getText } from "../webget.js";
 import { AABBCollider } from "../physics/collider.js";
@@ -27,14 +28,29 @@ import {
   computeTriangleNormal,
   farthestPointInDir,
   normalizeVec2s,
+  randNormalPosVec3,
   SupportFn,
   uintToVec3unorm,
+  vec3Reverse,
+  vec4Reverse,
 } from "../utils-3d.js";
-import { MeshHandle } from "../render/mesh-pool.js";
+import { MeshHandle, MeshReserve } from "../render/mesh-pool.js";
 import { onInit } from "../init.js";
-import { mathMap, max, min } from "../math.js";
+import { jitter, mathMap, max, min } from "../math.js";
+import { VERBOSE_LOG } from "../flags.js";
+import {
+  createEmptyMesh,
+  createTimberBuilder,
+  debugBoardSystem,
+  getBoardsFromMesh,
+  unshareProvokingForWood,
+  WoodAssets,
+  WoodAssetsDef,
+} from "../wood.js";
+import { tempMat4, tempVec3 } from "../temp-pool.js";
 
 // TODO: load these via streaming
+// TODO(@darzu): it's really bad that all these assets are loaded for each game
 
 export const BLACK = vec3.fromValues(0, 0, 0);
 export const DARK_GRAY = vec3.fromValues(0.02, 0.02, 0.02);
@@ -42,8 +58,8 @@ export const LIGHT_GRAY = vec3.fromValues(0.2, 0.2, 0.2);
 export const DARK_BLUE = vec3.fromValues(0.03, 0.03, 0.2);
 export const LIGHT_BLUE = vec3.fromValues(0.05, 0.05, 0.2);
 
-const DEFAULT_ASSET_PATH = "/assets/";
-const BACKUP_ASSET_PATH = "http://sprig.land/assets/";
+const DEFAULT_ASSET_PATH = "assets/";
+const BACKUP_ASSET_PATH = "https://sprig.land/assets/";
 
 const RemoteMeshes = {
   ship: "barge.sprig.obj",
@@ -55,13 +71,13 @@ const RemoteMeshes = {
   ammunitionBox: "ammunition_box.sprig.obj",
   linstock: "linstock.sprig.obj",
   cannon: "cannon_simple.sprig.obj",
+  ld51_cannon: "ld51_cannon.sprig.obj",
   grappleHook: "grapple-hook.sprig.obj",
   grappleGun: "grapple-gun.sprig.obj",
   grappleGunUnloaded: "grapple-gun-unloaded.sprig.obj",
   rudder: "rudder.sprig.obj",
   // TODO(@darzu): including hyperspace-ocean makes load time ~100ms slower :/
   ocean: "hyperspace-ocean.sprig.obj",
-  // ocean: "rudder.sprig.obj",
 } as const;
 
 type RemoteMeshSymbols = keyof typeof RemoteMeshes;
@@ -69,18 +85,24 @@ type RemoteMeshSymbols = keyof typeof RemoteMeshes;
 const RemoteMesheSets = {
   // TODO(@darzu): both of these are doing "cell fracture" in Blender
   //    than exporting into here. It'd be great if sprigland could
-  //    natively do that. Doing it natively would be great b/c there
+  //    natively do cell fracture b/c there
   //    is a lot of translate/scale alignment issues when we have
   //    a base model and a fractured model. Very hard to make changes.
   // TODO(@darzu): enemy broken parts doesn't seem to work rn. probably rename related
   boat_broken: "boat_broken.sprig.obj",
   ship_broken: "barge1_broken.sprig.obj",
+  ball_broken: "ball_broken6.sprig.obj",
 } as const;
 
 type RemoteMeshSetSymbols = keyof typeof RemoteMesheSets;
 
+export type AllMeshSymbols =
+  | RemoteMeshSymbols
+  | RemoteMeshSetSymbols
+  | LocalMeshSymbols;
+
 const MeshTransforms: Partial<{
-  [P in RemoteMeshSymbols | RemoteMeshSetSymbols | LocalMeshSymbols]: mat4;
+  [P in AllMeshSymbols]: mat4;
 }> = {
   cannon: mat4.fromYRotation(mat4.create(), -Math.PI / 2),
   linstock: mat4.fromScaling(mat4.create(), [0.1, 0.1, 0.1]),
@@ -97,7 +119,15 @@ const MeshTransforms: Partial<{
   ),
   ocean: mat4.fromScaling(mat4.create(), [2, 2, 2]),
   ship_fangs: mat4.fromScaling(mat4.create(), [3, 3, 3]),
+  ld51_cannon: mat4.fromRotationTranslationScale(
+    mat4.create(),
+    quat.rotateX(quat.create(), quat.IDENTITY, Math.PI * -0.5),
+    [0, 0, 0],
+    [0.8, 0.8, 0.8]
+  ),
 };
+
+// TODO(@darzu): PERF. "ocean" and "ship_fangs" are expensive to load and aren't needed in all games.
 
 // TODO(@darzu): these sort of hacky offsets are a pain to deal with. It'd be
 //    nice to have some asset import helper tooling
@@ -107,20 +137,47 @@ const blackoutColor: (m: RawMesh) => RawMesh = (m: RawMesh) => {
   return m;
 };
 const MeshModify: Partial<{
-  [P in RemoteMeshSymbols | RemoteMeshSetSymbols | LocalMeshSymbols]: (
-    m: RawMesh
-  ) => RawMesh;
+  [P in AllMeshSymbols]: (m: RawMesh) => RawMesh;
 }> = {
   ship_fangs: (m) => {
-    m.colors = m.colors.map((c) => [0.2, 0.2, 0.2]);
+    // m.colors = m.colors.map((c) => [0.2, 0.2, 0.2]);
     m.surfaceIds = m.colors.map((_, i) => i);
     // console.log(`
     // Fang ship has:
     // ${m.tri.length} tris
     // ${m.quad.length} quads
     // `);
+
+    // m = debugBoardSystem(m);
+
+    // TODO(@darzu): call getBoardsFromMesh,
+    //    then move this data into some resource to be accessed later in an entities lifecycle
+    const woodState = getBoardsFromMesh(m);
+
+    unshareProvokingForWood(m, woodState);
+
+    const woodAssets: WoodAssets =
+      EM.getResource(WoodAssetsDef) ?? EM.addSingletonComponent(WoodAssetsDef);
+
+    woodAssets["ship_fangs"] = woodState;
+
     return m;
   },
+  // timber_rib: (m) => {
+  //   // TODO(@darzu): de-duplicate w/ fang ship above
+  //   m.surfaceIds = m.colors.map((_, i) => i);
+
+  //   const woodState = getBoardsFromMesh(m);
+
+  //   unshareProvokingForWood(m, woodState);
+
+  //   const woodAssets: WoodAssets =
+  //     EM.getResource(WoodAssetsDef) ?? EM.addSingletonComponent(WoodAssetsDef);
+
+  //   woodAssets["timber_rib"] = woodState;
+
+  //   return m;
+  // },
   cannon: (m) => {
     m.colors = m.colors.map((c) => [0.2, 0.2, 0.2]);
     return m;
@@ -347,6 +404,36 @@ export const CUBE_MESH: RawMesh = {
   ],
 };
 
+export function mkTimberSplinterEnd(loopCursor?: mat4, splintersCursor?: mat4) {
+  loopCursor = loopCursor ?? mat4.create();
+  splintersCursor = splintersCursor ?? mat4.create();
+  const b = createTimberBuilder(createEmptyMesh("splinterEnd"));
+  b.width = 0.5;
+  b.depth = 0.2;
+
+  // mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.5); // TODO(@darzu): DBG
+  // b.addLoopVerts();
+  // mat4.translate(b.cursor, b.cursor, [0, 2, 0]);
+  b.setCursor(loopCursor);
+  b.addLoopVerts();
+  b.addEndQuad(true);
+  // b.addSideQuads();
+
+  b.setCursor(splintersCursor);
+  mat4.translate(b.cursor, b.cursor, [0, 0.1, 0]);
+  b.addSplinteredEnd(b.mesh.pos.length, 5);
+
+  // b.addEndQuad(false);
+
+  // TODO(@darzu): triangle vs quad coloring doesn't work
+  b.mesh.quad.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
+  b.mesh.tri.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
+
+  // console.dir(b.mesh);
+
+  return b.mesh;
+}
+
 const TETRA_MESH: RawMesh = {
   pos: [
     [0, 1, 0],
@@ -434,35 +521,42 @@ const HEX_MESH: () => RawMesh = () => {
   // ],
   return { pos, tri, quad: [], lines, colors: tri.map((_) => BLACK) };
 };
-const PLANE_MESH: RawMesh = {
-  pos: [
-    [+1, 0, +1],
-    [-1, 0, +1],
-    [+1, 0, -1],
-    [-1, 0, -1],
-  ],
-  tri: [
-    [0, 2, 3],
-    [0, 3, 1], // top
-    [3, 2, 0],
-    [1, 3, 0], // bottom
-  ],
-  quad: [],
-  lines: [
-    [0, 1],
-    [0, 2],
-    [1, 3],
-    [2, 3],
-  ],
-  colors: [BLACK, BLACK, BLACK, BLACK],
-  // uvs: [
-  //   [1, 1],
-  //   [0, 1],
-  //   [1, 0],
-  //   [0, 0],
-  // ],
-};
-scaleMesh(PLANE_MESH, 10);
+export function makePlaneMesh(
+  x1: number,
+  x2: number,
+  z1: number,
+  z2: number
+): Mesh {
+  const res: Mesh = {
+    pos: [
+      [x2, 0, z2],
+      [x1, 0, z2],
+      [x2, 0, z1],
+      [x1, 0, z1],
+    ],
+    tri: [],
+    quad: [
+      [0, 2, 3, 1], // top
+      [1, 3, 2, 0], // bottom
+    ],
+    lines: [
+      [0, 1],
+      [0, 2],
+      [1, 3],
+      [2, 3],
+    ],
+    colors: [vec3.create(), vec3.create()],
+    // uvs: [
+    //   [1, 1],
+    //   [0, 1],
+    //   [1, 0],
+    //   [0, 0],
+    // ],
+    surfaceIds: [1, 2],
+    usesProvoking: true,
+  };
+  return res;
+}
 
 function makeSailMesh(): RawMesh {
   const mesh: RawMesh = {
@@ -666,24 +760,99 @@ scaleMesh3(BOAT_MESH, [10, 0.6, 5]);
 const BULLET_MESH = cloneMesh(CUBE_MESH);
 scaleMesh(BULLET_MESH, 0.3);
 
+// TODO(@darzu): there should be hooks so we can define these nearer to
+//    where they are actually needed
+export function mkOctogonMesh(): RawMesh {
+  return transformMesh(
+    {
+      pos: [
+        [1, 0, 0],
+        [2, 0, 0],
+        [3, 0, 1],
+        [3, 0, 2],
+        [2, 0, 3],
+        [1, 0, 3],
+        [0, 0, 2],
+        [0, 0, 1],
+      ],
+      tri: [],
+      quad: [
+        [0, 5, 4, 1],
+        [1, 4, 3, 2],
+        [7, 6, 5, 0],
+      ],
+      // colors: range(3).map((_) => randNormalPosVec3()),
+      colors: range(3).map((_) => vec3.clone(BLACK)),
+    },
+    mat4.fromRotationTranslationScaleOrigin(
+      tempMat4(),
+      quat.IDENTITY,
+      [-1.5, 0, -1.5],
+      [0.2, 0.2, 0.2],
+      [1.5, 0, 1.5]
+    )
+  );
+}
+
+function mkHalfEdgeQuadMesh(): RawMesh {
+  return transformMesh(
+    {
+      pos: [
+        [0, 0, 0],
+        [0, 0, 3],
+        [3, 0, 3],
+        [3, 0, 0],
+      ],
+      tri: [],
+      quad: [[0, 1, 2, 3]],
+      colors: [vec3.clone(BLACK)],
+    },
+    mat4.fromRotationTranslationScaleOrigin(
+      tempMat4(),
+      quat.IDENTITY,
+      [-1.5, 0, 0],
+      [0.4, 0.2, 0.2],
+      [1.5, 0, 0]
+    )
+  );
+}
+
 export const LocalMeshes = {
   cube: () => CUBE_MESH,
-  plane: () => PLANE_MESH,
+  unitCube: () => {
+    const unitCube = cloneMesh(CUBE_MESH);
+    unitCube.dbgName = "unitCube";
+    // normalize this cube to have min at 0,0,0 and max at 1,1,1
+    unitCube.pos.forEach((p) => {
+      p[0] = p[0] < 0 ? 0 : 1;
+      p[1] = p[1] < 0 ? 0 : 1;
+      p[2] = p[2] < 0 ? 0 : 1;
+    });
+    return unitCube;
+  },
+  plane: () => makePlaneMesh(-10, 10, -10, 10),
   tetra: () => TETRA_MESH,
+  he_octo: mkOctogonMesh,
+  he_quad: mkHalfEdgeQuadMesh,
   hex: HEX_MESH,
   enemyShip: () => BOAT_MESH,
   bullet: () => BULLET_MESH,
   gridPlane: () => GRID_PLANE_MESH,
   fabric: () => DBG_FABRIC,
   triFence: TRI_FENCE,
-  wireCube: () => ({ ...CUBE_MESH, tri: [] } as RawMesh),
+  // TODO(@darzu): wire cube is kinda broken; needs line renderer
+  wireCube: () =>
+    ({ ...CUBE_MESH, tri: [], colors: [], dbgName: "wireCube" } as RawMesh),
   mast: () => {
     let m = cloneMesh(CUBE_MESH);
+    m.dbgName = "mast";
     mapMeshPositions(m, (p) => [p[0], p[1] + 1, p[2]]);
     scaleMesh3(m, [0.5, 20, 0.5]);
     return m;
   },
   sail: () => SAIL_MESH,
+  // timber_rib: mkTimberRib,
+  timber_splinter: mkTimberSplinterEnd,
 } as const;
 
 type LocalMeshSymbols = keyof typeof LocalMeshes;
@@ -727,13 +896,14 @@ onInit(async (em) => {
 
   const assetsPromise = loadAssets(renderer.renderer);
   assetLoader.promise = assetsPromise;
-  try {
-    const result = await assetsPromise;
-    em.addSingletonComponent(AssetsDef, result);
-  } catch (failureReason) {
-    // TODO(@darzu): fail more gracefully
-    throw `Failed to load assets: ${failureReason}`;
-  }
+  // TODO(@darzu): do we want this try-catch here? It just obscures errors.
+  // try {
+  const result = await assetsPromise;
+  em.addSingletonComponent(AssetsDef, result);
+  // } catch (failureReason) {
+  //   // TODO(@darzu): fail more gracefully
+  //   throw `Failed to load assets: ${failureReason}`;
+  // }
 });
 
 async function loadTxtInternal(relPath: string): Promise<string> {
@@ -743,6 +913,11 @@ async function loadTxtInternal(relPath: string): Promise<string> {
   try {
     txt = await getText(DEFAULT_ASSET_PATH + relPath);
   } catch (_) {
+    console.warn(
+      `Asset path ${DEFAULT_ASSET_PATH + relPath} failed; trying ${
+        BACKUP_ASSET_PATH + relPath
+      }`
+    );
     txt = await getText(BACKUP_ASSET_PATH + relPath);
   }
 
@@ -777,6 +952,7 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
   const singlesList = Object.entries(singlePromises);
   const singlesMeshList = await Promise.all(singlesList.map(([_, p]) => p));
 
+  // TODO(@darzu): We need clearer asset processing stages. "processMesh", "meshModify", "gameMeshFromMesh", "normalizeMesh"
   const singleMeshes = objMap(singlePromises, (_, n) => {
     const idx = singlesList.findIndex(([n2, _]) => n === n2);
     let m = singlesMeshList[idx];
@@ -795,11 +971,12 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
     return ms.map((m) => processMesh(n, m));
   });
 
-  function processMesh(n: string, m: RawMesh): RawMesh {
-    const t1 = (MeshTransforms as { [key: string]: mat4 })[n];
+  function processMesh(n: AllMeshSymbols, m: RawMesh): RawMesh {
+    const t1 = MeshTransforms[n];
     if (t1) transformMesh(m, t1);
-    const t2 = (MeshModify as { [key: string]: (m: RawMesh) => RawMesh })[n];
+    const t2 = MeshModify[n];
     if (t2) m = t2(m);
+    if (!m.dbgName) m.dbgName = n;
     return m;
   }
 
@@ -821,20 +998,22 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
 
   // perf tracking
   const elapsed = performance.now() - start;
-  console.log(`took ${elapsed.toFixed(1)}ms to load assets.`);
+  if (VERBOSE_LOG) console.log(`took ${elapsed.toFixed(1)}ms to load assets.`);
 
   return result;
 }
 
 export function gameMeshFromMesh(
   rawMesh: RawMesh,
-  renderer: Renderer
+  renderer: Renderer,
+  reserve?: MeshReserve
 ): GameMesh {
+  validateMesh(rawMesh);
   const mesh = normalizeMesh(rawMesh);
   const aabb = getAABBFromMesh(mesh);
   const center = getCenterFromAABB(aabb);
   const halfsize = getHalfsizeFromAABB(aabb);
-  const proto = renderer.addMesh(mesh);
+  const proto = renderer.stdPool.addMesh(mesh, reserve);
   const uniqueVerts = getUniqueVerts(mesh);
   const support = (d: vec3) => farthestPointInDir(uniqueVerts, d);
   const aabbCollider = (solid: boolean) =>

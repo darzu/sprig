@@ -1,13 +1,28 @@
+import { ASSET_LOG_VERT_CHANGES, DBG_ASSERT, DBG_FANG_SHIP } from "../flags.js";
 import { createFabric } from "../game/assets.js";
 import { vec3, vec2, mat4, vec4 } from "../gl-matrix.js";
-import { AABB, getAABBFromPositions } from "../physics/broadphase.js";
-import { assert } from "../test.js";
+import { max, sum } from "../math.js";
+import {
+  AABB,
+  createAABB,
+  getAABBFromPositions,
+} from "../physics/broadphase.js";
+import { assert, range } from "../util.js";
 import { arraySortedEqual, arrayUnsortedEqual } from "../util.js";
 import { vec3Dbg, vec3Mid } from "../utils-3d.js";
 import { drawBall, drawLine } from "../utils-game.js";
 
+// TODO(@darzu): NEEDS REFACTOR. we need to rethink these whole mesh family of objects;
+//    consider meshes that do aond don't need uvs, surface ids, tangents, normals
+//    consider half-edge meshes, line meshes, tri-only
+//    consider non-provoking meshes
+//    Raw vs not is hacky..
+// TODO(@darzu): consider, should meshes have both lines and tri/quads? I think perhaps not,
+//    as the data is often redundant. Instead we should make a "line" version of a mesh if
+//    we want to show it as a wireframe. Esp thinking about half-edge data structure, what
+//    do we do with lines if its duplicate connectivity.
+
 // defines the geometry and coloring of a mesh
-// TODO(@darzu): we need to rethink theis whole mesh family of objects
 // geometry: pos, tri, quad, lines,
 // geo-data: colors, uvs, surfaceIds,
 // metadata: dbgName,
@@ -18,7 +33,8 @@ export interface RawMesh {
   tri: vec3[];
   quad: vec4[]; // MUST NOT be redundant w/ `tri`
   lines?: vec2[];
-  // per-face data, so one per tri and quad
+  // per-face data, so one per quad and tri
+  //  NOTE: first all the quad data is stored, then all the tri data
   colors: vec3[]; // in r,g,b float [0-1] format
   surfaceIds?: number[];
   // per-vertex data
@@ -36,9 +52,22 @@ export interface Mesh extends RawMesh {
   // verticesUnshared?: boolean;
 }
 
+// TODO(@darzu): doesn't fit well with other mesh stuff.....
+export interface LineMesh {
+  pos: vec3[];
+  lines: vec2[];
+}
+
+export function meshStats(m: RawMesh): string {
+  return `${m.dbgName ?? "??"}: v${m.pos.length}, t${m.tri.length}, q${
+    m.quad.length
+  }`;
+}
+
 export function cloneMesh(m: Mesh): Mesh;
 export function cloneMesh(m: RawMesh): RawMesh;
 export function cloneMesh(m: Mesh | RawMesh): Mesh | RawMesh {
+  // TODO(@darzu): i hate having to manually update this
   return {
     ...m,
     pos: m.pos.map((p) => vec3.clone(p)),
@@ -107,6 +136,69 @@ export function cloneMesh(m: Mesh | RawMesh): Mesh | RawMesh {
 //   };
 // }
 
+export function validateMesh(m: RawMesh) {
+  //  // geometry
+  //  pos: vec3[];
+  //  tri: vec3[];
+  //  quad: vec4[]; // MUST NOT be redundant w/ `tri`
+  //  lines?: vec2[];
+  //  // per-face data, so one per tri and quad
+  //  colors: vec3[]; // in r,g,b float [0-1] format
+  //  surfaceIds?: number[];
+  //  // per-vertex data
+  //  uvs?: vec2[]; // optional; one uv per vertex
+  //  tangents?: vec3[]; // optional; one tangent per vertex
+  //  normals?: vec3[]; // optional; one tangent per vertex
+  //  // TODO(@darzu):
+  //  dbgName?: string;
+
+  const dbgName = `"${m.dbgName ?? "???"}"`;
+
+  // TODO(@darzu): Don't assert, return a boolean + reason!
+  assert(
+    !m.quad.length || m.tri.length % 2 === 0,
+    `mesh ${dbgName} must have even number of triangles!`
+  );
+  const faceCount = m.tri.length + m.quad.length;
+  assert(
+    m.colors.length === faceCount,
+    `mesh ${dbgName} color count (${m.colors.length}) doesn't match face count (${faceCount})`
+  );
+  assert(
+    !m.surfaceIds || m.surfaceIds.length === faceCount,
+    `mesh ${dbgName} surface id count (${m.surfaceIds?.length}) doesn't match face count (${faceCount})`
+  );
+  const vertCount = m.pos.length;
+  assert(
+    !m.uvs || m.uvs.length === vertCount,
+    `mesh ${dbgName} uvs count (${m.uvs?.length}) doesn't match vert count (${vertCount})`
+  );
+  assert(
+    !m.normals || m.normals.length === vertCount,
+    `mesh ${dbgName} normals count (${m.normals?.length}) doesn't match vert count (${vertCount})`
+  );
+  assert(
+    !m.tangents || m.tangents.length === vertCount,
+    `mesh ${dbgName} tangents count (${m.tangents?.length}) doesn't match vert count (${vertCount})`
+  );
+
+  for (let q of m.quad)
+    for (let qi of q)
+      assert(
+        qi <= m.pos.length - 1,
+        `invalid vert idx in quad: ${q} (vert count: ${m.pos.length})}`
+      );
+
+  for (let q of m.tri)
+    for (let qi of q)
+      assert(
+        qi <= m.pos.length - 1,
+        `invalid vert idx in tri: ${q} (vert count: ${m.pos.length})`
+      );
+}
+
+let _timeSpentOnNeighborIsh = 0;
+
 export function unshareProvokingVerticesWithMap(input: RawMesh): {
   mesh: RawMesh & { usesProvoking: true };
   posMap: Map<number, number>;
@@ -125,6 +217,48 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
   const provoking: { [key: number]: boolean } = {};
   const posMap: Map<number, number> = new Map();
   pos.forEach((_, i) => posMap.set(i, i));
+
+  // TODO(@darzu): probably remove this once we have unshareProvoking working for board-specific assets w/ board knowledge
+  // TODO(@darzu): HACK. We're getting this "neighbor-ish" count to use as a heuristic
+  //    during unshare provoking quads below. We probably need some better pre-processing
+  //    that many stages could use like a half-edge data structure or something.
+  const quadIdxToNeighborIshCount: number[] = [];
+  {
+    const before = performance.now();
+    // TODO(@darzu): count quad neighbors, do provoking changes for quads w/ fewest neighbors first
+    const vertIdxToFaceCount: number[] = [];
+    [...input.tri, ...input.quad].forEach((vs) =>
+      vs.forEach(
+        (vi) => (vertIdxToFaceCount[vi] = (vertIdxToFaceCount[vi] ?? 0) + 1)
+      )
+    );
+    input.quad.forEach((v, qi) => {
+      quadIdxToNeighborIshCount[qi] = (v as number[]) // TSC can't handle the Float32Array/number[] ambiguity :(
+        .map((vi) => vertIdxToFaceCount[vi])
+        .reduce((p, n) => p + n, 0);
+    });
+    const uniqueNeighborIshCounts = (() => {
+      const countsSet = new Set<number>();
+      quadIdxToNeighborIshCount.forEach((c) => countsSet.add(c));
+      const countsList = [...countsSet.values()];
+      countsList.sort();
+      return countsList;
+    })();
+    if (input.dbgName?.includes("fang")) {
+      // console.dir(vertIdxToFaceCount);
+      // console.dir(quadIdxToNeighborIshCount);
+      // console.dir(uniqueNeighborIshCounts);
+      // console.log(
+      //   `uniqueNeighborIshCounts.length: ${uniqueNeighborIshCounts.length}`
+      // );
+    }
+    const after = performance.now();
+    _timeSpentOnNeighborIsh += after - before;
+    // console.log(
+    //   `_timeSpentOnNeighborIsh: ${_timeSpentOnNeighborIsh.toFixed(2)}ms`
+    // );
+  }
+
   input.tri.forEach(([i0, i1, i2]) => {
     if (!provoking[i0]) {
       // First vertex is unused as a provoking vertex, so we'll use it for this triangle.
@@ -151,26 +285,28 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       tri.push([i3, i1, i2]);
     }
   });
-  // TODO(@darzu): IMPL
-  // input.quad.forEach((q) => quad.push(q));
-  input.quad.forEach(([i0, i1, i2, i3]) => {
+
+  const unshareProvokingForQuad: (q: vec4, qi: number) => void = (
+    [i0, i1, i2, i3],
+    qi
+  ) => {
     if (!provoking[i0]) {
       // First vertex is unused as a provoking vertex, so we'll use it for this triangle.
       provoking[i0] = true;
-      quad.push([i0, i1, i2, i3]);
+      quad[qi] = [i0, i1, i2, i3];
     } else if (!provoking[i1]) {
       // First vertex was taken, so let's see if we can rotate the indices to get an unused
       // provoking vertex.
       provoking[i1] = true;
-      quad.push([i1, i2, i3, i0]);
+      quad[qi] = [i1, i2, i3, i0];
     } else if (!provoking[i2]) {
       // ditto
       provoking[i2] = true;
-      quad.push([i2, i3, i0, i1]);
+      quad[qi] = [i2, i3, i0, i1];
     } else if (!provoking[i3]) {
       // ditto
       provoking[i3] = true;
-      quad.push([i3, i0, i1, i2]);
+      quad[qi] = [i3, i0, i1, i2];
     } else {
       // All vertices are taken, so create a new one
       const i4 = pos.length;
@@ -181,9 +317,38 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       if (tangents) tangents.push(input.tangents![i0]);
       if (normals) normals.push(input.normals![i0]);
       provoking[i4] = true;
-      quad.push([i4, i1, i2, i3]);
+      quad[qi] = [i4, i1, i2, i3];
       // console.log(`duplicating: ${i0}!`);
+
+      // TODO(@darzu): DBG
+      if (DBG_FANG_SHIP && input.dbgName?.includes("fang")) {
+        console.log("new vert for fang ship");
+      }
     }
+  };
+  // input.quad.forEach((q, qi) => {
+  //   unshareProvokingForQuad(q, qi);
+  // });
+  // HACK!
+  // first pass for quads w/ a "small" number of neighbors
+  // if (input.dbgName?.includes("fang")) {
+  //   input.quad.forEach((q, qi) => {
+  //     const colorIdx = qi;
+  //     // TODO(@darzu): IMPORTANT! Color indexing seems v broken
+  //     // const colorIdx = input.tri.length + qi;
+  //     if (quadIdxToNeighborIshCount[qi] <= 12) {
+  //       input.colors[colorIdx] = [1, 0, 0];
+  //     } else {
+  //       input.colors[colorIdx] = [0.2, 0.2, 0.2];
+  //     }
+  //   });
+  // }
+  input.quad.forEach((q, qi) => {
+    if (quadIdxToNeighborIshCount[qi] <= 12) unshareProvokingForQuad(q, qi);
+  });
+  // second pass for the rest
+  input.quad.forEach((q, qi) => {
+    if (quadIdxToNeighborIshCount[qi] > 12) unshareProvokingForQuad(q, qi);
   });
 
   return {
@@ -207,18 +372,9 @@ export function unshareProvokingVertices(
   return mesh;
 }
 
-let nextSId = 1;
-
 function generateSurfaceIds(mesh: RawMesh): number[] {
-  // TODO(@darzu): HANDLE QUADS
-  // TODO(@darzu): better compute surface IDs
-  let triIdToSurfaceId: Map<number, number> = new Map();
-  let nextSId = 0;
-  mesh.tri.forEach((t, i) => {
-    triIdToSurfaceId.set(i, nextSId++);
-  });
-
-  return mesh.tri.map((_, i) => triIdToSurfaceId.get(i)!);
+  const faceCount = mesh.tri.length + mesh.quad.length;
+  return range(faceCount);
 }
 
 export function normalizeMesh(inM: RawMesh): Mesh {
@@ -230,17 +386,24 @@ export function normalizeMesh(inM: RawMesh): Mesh {
     provoking,
   } = unshareProvokingVerticesWithMap(inM);
   const newVertNum = outM.pos.length;
-  if (inM.tri.length === 0 && inM.quad.length > 0) {
-    // single-sided quad meshes shouldn't need to create new verts
-    // if (oldVertNum !== newVertNum) {
-    //   console.warn(
-    //     `quad mesh w/ ${oldVertNum} verts had ${
-    //       newVertNum - oldVertNum
-    //     } extra verts added by unshareProvokingVerticesWithMap`
-    //   );
-    //   console.log(`quad count: ${inM.quad.length}`);
-    //   console.dir(Object.keys(provoking).map((n) => Number(n)));
-    // }
+  // if (inM.tri.length === 0 && inM.quad.length > 0) {
+  //   single-sided quad meshes shouldn't need to create new verts
+  //   if (oldVertNum !== newVertNum) {
+  //     console.warn(
+  //       `quad mesh w/ ${oldVertNum} verts had ${
+  //         newVertNum - oldVertNum
+  //       } extra verts added by unshareProvokingVerticesWithMap`
+  //     );
+  //     console.log(`quad count: ${inM.quad.length}`);
+  //     console.dir(Object.keys(provoking).map((n) => Number(n)));
+  //   }
+  // }
+  if (ASSET_LOG_VERT_CHANGES && oldVertNum !== newVertNum) {
+    console.log(
+      `mesh "${
+        inM.dbgName ?? "??"
+      }" had vert change: ${oldVertNum} -> ${newVertNum}`
+    );
   }
   return {
     // TODO(@darzu): always generate UVs?
@@ -250,7 +413,7 @@ export function normalizeMesh(inM: RawMesh): Mesh {
 }
 
 export function getAABBFromMesh(m: RawMesh): AABB {
-  return getAABBFromPositions(m.pos);
+  return getAABBFromPositions(createAABB(), m.pos);
 }
 export function getCenterFromAABB(aabb: AABB): vec3 {
   return vec3Mid(vec3.create(), aabb.min, aabb.max);
@@ -279,6 +442,7 @@ export function scaleMesh3(m: RawMesh, by: vec3) {
 }
 export function transformMesh(m: RawMesh, t: mat4) {
   mapMeshPositions(m, (p) => vec3.transformMat4(vec3.create(), p, t));
+  return m;
 }
 // split mesh by connectivity
 // TODO(@darzu): actually, we probably don't need this function
@@ -290,6 +454,7 @@ export function splitMesh(m: RawMesh): RawMesh[] {
 
   // tris and lines define connectivity, so
   //    merge together islands
+  // TODO(@darzu): quad connectivity
   for (let tri of m.tri) {
     mergeIslands(tri[0], tri[1]);
     mergeIslands(tri[0], tri[2]);
@@ -323,13 +488,6 @@ function uniqueRefs<T>(ts: T[]): T[] {
   return res;
 }
 
-export function quadToTris(q: vec4): [vec3, vec3] {
-  return [
-    [q[0], q[1], q[2]],
-    [q[0], q[2], q[3]],
-  ];
-}
-
 // {
 //   // TODO(@darzu): DEBUG
 //   const f = createFabric(5);
@@ -338,6 +496,34 @@ export function quadToTris(q: vec4): [vec3, vec3] {
 //   // console.dir(res);
 //   // console.log("getMeshAsGrid on fabric done.");
 // }
+
+export function getQuadMeshEdges(m: RawMesh): number[][] {
+  // Collect all edges
+  const numVerts = m.pos.length;
+  const edges = new Array(numVerts).fill([]).map(() => [] as number[]);
+  for (let [t0, t1, t2, t3] of m.quad) {
+    // top
+    addEdge(t0, t1);
+    addEdge(t1, t0);
+    // right
+    addEdge(t1, t2);
+    addEdge(t2, t1);
+    // bottom
+    addEdge(t2, t3);
+    addEdge(t3, t2);
+    // left
+    addEdge(t0, t3);
+    addEdge(t3, t0);
+  }
+  return edges;
+
+  function addEdge(va: number, vb: number) {
+    const es = edges[va];
+    if (es.length < 4 && es[0] !== vb && es[1] !== vb && es[2] !== vb) {
+      es.push(vb);
+    }
+  }
+}
 
 export function getMeshAsGrid(m: RawMesh): {
   coords: vec2[];
@@ -364,23 +550,7 @@ export function getMeshAsGrid(m: RawMesh): {
   // console.log("refGrid");
   // console.dir(refGrid);
 
-  // Collect all edges
-  const numVerts = m.pos.length;
-  const edges = new Array(numVerts).fill([]).map(() => [] as number[]);
-  for (let [t0, t1, t2, t3] of m.quad) {
-    // top
-    addEdge(t0, t1);
-    addEdge(t1, t0);
-    // right
-    addEdge(t1, t2);
-    addEdge(t2, t1);
-    // bottom
-    addEdge(t2, t3);
-    addEdge(t3, t2);
-    // left
-    addEdge(t0, t3);
-    addEdge(t3, t0);
-  }
+  const edges = getQuadMeshEdges(m);
   // TODO(@darzu): There are issues with line generation from our quad mesh
   // if (m.lines)
   //   for (let [t0, t1] of m.lines) {
@@ -616,13 +786,6 @@ export function getMeshAsGrid(m: RawMesh): {
       if (o >= 0) res.push(o);
     }
     return res;
-  }
-
-  function addEdge(va: number, vb: number) {
-    const es = edges[va];
-    if (es.length < 4 && es[0] !== vb && es[1] !== vb && es[2] !== vb) {
-      es.push(vb);
-    }
   }
 }
 

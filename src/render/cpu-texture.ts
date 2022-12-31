@@ -1,7 +1,7 @@
 import { vec2, vec3, vec4 } from "../gl-matrix.js";
 import { clamp } from "../math.js";
 import { tempVec2, tempVec3, tempVec4 } from "../temp-pool.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import { never } from "../util.js";
 
 type ArityToVec<N extends 1 | 2 | 3 | 4> = N extends 1

@@ -1,5 +1,5 @@
 import { vec2, vec3, vec4 } from "../gl-matrix.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import {
   CyStructDesc,
   CyStruct,
@@ -91,12 +91,21 @@ export type CySamplerPtr =
   | typeof comparisonSamplerPtr;
 // | typeof linearUnfilterSamplerPtr;
 
+// NOTE: the return value's length can extend beyond "count"! That's b/c ur being handed a shared, temp array. Only
+//    read up until count and don't hold onto the result.
+// TODO(@darzu): Is there a cleaner way to handle this and be performant?
+export type ComputeVertsDataFn<V extends CyStructDesc> = (
+  m: Mesh,
+  startIdx: number,
+  count: number
+) => CyToTS<V>[];
+
 // MESH POOL
 export interface CyMeshPoolPtr<V extends CyStructDesc, U extends CyStructDesc>
   extends CyResourcePtr {
   kind: "meshPool";
   // TODO(@darzu): remove id and name, this doesn't need to be inited directly
-  computeVertsData: (m: Mesh) => CyToTS<V>[];
+  computeVertsData: ComputeVertsDataFn<V>;
   computeUniData: (m: Mesh) => CyToTS<U>;
   vertsPtr: CyArrayPtr<V>;
   unisPtr: CyArrayPtr<U>;
@@ -136,6 +145,7 @@ export interface CyAttachment {
   ptr: CyTexturePtr;
   defaultColor?: vec2 | vec3 | vec4;
   clear: "always" | "never" | "once";
+  blend?: GPUBlendState;
   // TODO(@darzu): potential properties:
   // depthWriteEnabled: true,
   // depthCompare: "less",
@@ -197,6 +207,7 @@ export interface CyRenderPipelinePtr extends CyResourcePtr {
   //   for tutorial animations at a minimum
   output: CyColorAttachment[];
   depthStencil?: CyDepthTexturePtr;
+  depthReadonly?: boolean;
 }
 
 export type CyPipelinePtr = CyCompPipelinePtr | CyRenderPipelinePtr;

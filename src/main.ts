@@ -7,18 +7,22 @@ import { MeDef, JoinDef, HostDef, PeerNameDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";
 import { dbg } from "./debugger.js";
 import { DevConsoleDef } from "./console.js";
-import {
-  initClothSandbox,
-  initGJKSandbox,
-  initReboundSandbox,
-} from "./game/game-sandbox.js";
-import { callClothSystems } from "./game/cloth.js";
-import { callSpringSystems } from "./game/spring.js";
+import { initReboundSandbox } from "./game/game-rebound.js";
+// import { callClothSystems } from "./game/cloth.js";
 import { registerCommonSystems } from "./game/game-init.js";
 import { setSimulationAlpha } from "./render/renderer-ecs.js";
 import { never } from "./util.js";
+// import { initHyperspaceGame } from "./game/game-hyperspace.js";
+import { DBG_ASSERT, VERBOSE_LOG } from "./flags.js";
+import { initRogueGame } from "./game/game-rogue.js";
+import { gameplaySystems } from "./game/game.js";
+import { initFontEditor } from "./game/game-font.js";
+import { initGJKSandbox } from "./game/game-gjk.js";
 import { initHyperspaceGame } from "./game/game-hyperspace.js";
+import { initClothSandbox } from "./game/game-cloth.js";
 import { initCubeGame } from "./game/xp-cube.js";
+import { callSpringSystems } from "./game/spring.js";
+import { callClothSystems } from "./game/cloth.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -28,16 +32,20 @@ const AUTOSTART = true;
 
 const GAME = "hyperspace" as
   | "gjk"
-  | "rebound"
-  | "cloth"
+  | "rebound" // broken-ish
+  | "ld51"
+  | "font"
   | "hyperspace"
+  | "cloth" // broken-ish
   | "cube";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
 
 // Don't run more than 5 simulation steps--if we do, reset accumulated time
-const MAX_SIM_LOOPS = 3;
+const MAX_SIM_LOOPS = 1;
+// TODO(@darzu): PERF ISSUES WITH LD51
+// const MAX_SIM_LOOPS = 3;
 
 export let gameStarted = false;
 
@@ -46,6 +54,7 @@ function callFixedTimestepSystems() {
   //    - uncalled systems maybe should give a warning? Or at least a one-time read out.
   //    - Lets use types for this. String matching the name is brittle and unnessessary
   EM.callSystem("inputs");
+  EM.callSystem("mouseDrag");
   EM.callSystem("getStatsFromNet");
   EM.callSystem("getEventsFromNet");
   EM.callSystem("sendEventsToNet");
@@ -53,7 +62,9 @@ function callFixedTimestepSystems() {
   EM.callSystem("uiText");
   EM.callSystem("devConsoleToggle");
   EM.callSystem("devConsole");
-  EM.callSystem("restartTimer");
+  if (GAME === "hyperspace") {
+    EM.callSystem("restartTimer");
+  }
   // EM.callSystem("updateScore");
   EM.callSystem("renderInit");
   EM.callSystem("musicStart");
@@ -68,20 +79,24 @@ function callFixedTimestepSystems() {
   EM.callSystem("buildBullets");
   EM.callSystem("buildCursor");
   EM.callSystem("placeCursorAtScreenCenter");
-  EM.callSystem("stepEnemyShips");
-  EM.callSystem("enemyShipsFire");
-  EM.callSystem("breakEnemyShips");
+  if (GAME === "hyperspace") {
+    EM.callSystem("stepEnemyShips");
+    EM.callSystem("enemyShipsFire");
+    EM.callSystem("breakEnemyShips");
+  }
   EM.callSystem("controllableInput");
   EM.callSystem("controllableCameraFollow");
   EM.callSystem("buildPlayers");
   EM.callSystem("playerFacingDir");
   EM.callSystem("stepPlayers");
-  EM.callSystem("playerLookingForShip");
+  if (GAME === "hyperspace") {
+    EM.callSystem("playerLookingForShip");
+  }
   if (GAME === "rebound") {
-    EM.callSystem("sandboxSpawnBoxes");
+    EM.tryCallSystem("sandboxSpawnBoxes");
   }
   if (GAME === "cloth") {
-    EM.callSystem("clothSandbox");
+    EM.tryCallSystem("clothSandbox");
   }
   if (GAME === "hyperspace") {
     EM.callSystem("startGame");
@@ -104,17 +119,30 @@ function callFixedTimestepSystems() {
     EM.callSystem("oceanUVtoPos");
     EM.callSystem("oceanUVDirToRot");
     EM.callSystem("debugLoop");
+    // EM.callSystem("initWooden");
+    EM.callSystem("runWooden");
+  }
+  if (GAME === "ld51") {
+    // EM.callSystem("initWooden");
+    EM.callSystem("runWooden");
+    EM.callSystem("woodHealth");
   }
   EM.callSystem("updateBullets");
-  EM.callSystem("updateNoodles");
+  EM.callSystem("applyGravity");
+  if (GAME === "hyperspace") {
+    // TODO(@darzu): noodles broken?
+    EM.callSystem("updateNoodles");
+  }
   EM.callSystem("updateLifetimes");
   EM.callSystem("interaction");
   EM.callSystem("turretAim");
   EM.callSystem("turretYawPitch");
   EM.callSystem("turretManUnman");
-  EM.callSystem("updateMastBoom");
-  EM.callSystem("sail");
-  EM.callSystem("orreryMotion");
+  if (GAME === "hyperspace") {
+    EM.callSystem("updateMastBoom");
+    EM.callSystem("sail");
+    EM.callSystem("orreryMotion");
+  }
   EM.callSystem("reloadCannon");
   EM.callSystem("playerControlCannon");
   EM.callSystem("playerManCanon");
@@ -124,6 +152,7 @@ function callFixedTimestepSystems() {
   }
   EM.callSystem("ensureFillOutLocalFrame");
   EM.callSystem("ensureWorldFrame");
+  // EM.callSystem("physicsDeadStuff");
   EM.callSystem("physicsInit");
   EM.callSystem("clampVelocityByContact");
   EM.callSystem("registerPhysicsClampVelocityBySize");
@@ -133,6 +162,11 @@ function callFixedTimestepSystems() {
     // TODO(@darzu): Doug, we should talk about this. It is only registered after a one-shot
     if (EM.hasSystem("checkGJK")) EM.callSystem("checkGJK");
   }
+
+  // TODO(@darzu): HACK. we need to think better how to let different areas, like a sandbox game, register systems
+  //    to be called in a less cumbersome way than adding text and guards in here.
+  for (let sys of gameplaySystems) EM.callSystem(sys);
+
   EM.callSystem("updateLocalFromPosRotScale");
   EM.callSystem("updateWorldFromLocalAndParent");
   EM.callSystem("registerUpdateWorldAABBs");
@@ -148,9 +182,12 @@ function callFixedTimestepSystems() {
   EM.callSystem("modelerOnOff");
   EM.callSystem("modelerClicks");
   EM.callSystem("aabbBuilder");
-  EM.callSystem("toolPickup");
-  EM.callSystem("toolDrop");
+  if (GAME === "hyperspace") {
+    EM.callSystem("toolPickup");
+    EM.callSystem("toolDrop");
+  }
   EM.callSystem("animateTo");
+
   EM.callSystem("netDebugSystem");
   EM.callSystem("netAck");
   EM.callSystem("netSync");
@@ -163,6 +200,7 @@ function callFixedTimestepSystems() {
   EM.callSystem("sendEvents");
   EM.callSystem("handleEvents");
   EM.callSystem("handleEventAcks");
+
   EM.callSystem("runEvents");
   EM.callSystem("delete");
   EM.callSystem("smoothMotion");
@@ -173,6 +211,7 @@ function callFixedTimestepSystems() {
   EM.callSystem("retargetCamera");
   EM.callSystem("renderView");
   EM.callSystem("constructRenderables");
+  if (DBG_ASSERT) EM.callSystem("deadCleanupWarning"); // SHOULD BE LAST(-ish); warns if cleanup is missing
   EM.callOneShotSystems();
   EM.loops++;
 }
@@ -204,7 +243,6 @@ async function startGame(localPeerName: string, host: string | null) {
 
   addEventComponents(EM);
 
-  EM.addSingletonComponent(InputsDef);
   registerInputsSystem(EM);
 
   if (GAME === "gjk") initGJKSandbox(EM, hosting);
@@ -212,17 +250,21 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "cloth") initClothSandbox(EM, hosting);
   else if (GAME === "hyperspace") initHyperspaceGame(EM);
   else if (GAME === "cube") initCubeGame(EM);
+  else if (GAME === "ld51") initRogueGame(EM, hosting);
+  else if (GAME === "font") initFontEditor(EM);
   else never(GAME, "TODO game");
 
   let previous_frame_time = start_of_time;
   let accumulator = 0;
   let frame = (frame_time: number) => {
+    // console.log(`requestAnimationFrame: ${frame_time}`);
     let before_frame = performance.now();
     accumulator += frame_time - previous_frame_time;
     let loops = 0;
     while (accumulator > TIMESTEP) {
-      if (loops > MAX_SIM_LOOPS) {
-        console.log("too many sim loops, resetting accumulator");
+      if (loops >= MAX_SIM_LOOPS) {
+        if (VERBOSE_LOG)
+          console.log("too many sim loops, resetting accumulator");
         accumulator = 0;
         break;
       }
@@ -234,13 +276,20 @@ async function startGame(localPeerName: string, host: string | null) {
     setSimulationAlpha(accumulator / TIMESTEP);
     EM.callSystem("updateRendererWorldFrames");
     EM.callSystem("updateCameraView");
-    EM.callSystem("stepRenderer");
+    {
+      // NOTE: these 3 must stay together in this order. See NOTE above renderListDeadHidden
+      EM.callSystem("renderListDeadHidden");
+      EM.callSystem("renderList");
+      EM.callSystem("stepRenderer");
+    }
     let jsTime = performance.now() - before_frame;
     let frameTime = frame_time - previous_frame_time;
     previous_frame_time = frame_time;
 
     const devStats = EM.getResource(DevConsoleDef);
-    if (devStats) devStats.updateAvgs(jsTime, frameTime, jsTime);
+    if (devStats) {
+      devStats.updateAvgs(jsTime, frameTime, jsTime);
+    }
 
     requestAnimationFrame(frame);
   };
@@ -266,7 +315,8 @@ async function main() {
   );
   const urlServerId = queryString["server"] ?? null;
 
-  const peerName = getPeerName(queryString);
+  // const peerName = getPeerName(queryString);
+  const peerName = "myPeerName";
 
   let controls = document.getElementById("server-controls") as HTMLDivElement;
   let serverStartButton = document.getElementById(

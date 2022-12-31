@@ -127,3 +127,55 @@ Portals:
       no enemy AI
       no recursion (can't see 1 through another)
       avoid seeing two portals at once
+
+Regarding creative work:
+  https://www.youtube.com/watch?v=X2wLP0izeJE
+  Nobody tells this to people who are beginners, and I really wish somebody had told this to me.
+  All of us who do creative work, we get into it because we have good taste. But it's like there is this gap. For the first couple years that you're making stuff, what you're making isn't so good. It’s not that great. It’s trying to be good, it has ambition to be good, but it’s not that good.
+  But your taste, the thing that got you into the game, is still killer. And your taste is good enough that you can tell that what you're making is kind of a disappointment to you. A lot of people never get past that phase. They quit.
+  Everybody I know who does interesting, creative work they went through years where they had really good taste and they could tell that what they were making wasn't as good as they wanted it to be. They knew it fell short. Everybody goes through that.
+  And if you are just starting out or if you are still in this phase, you gotta know its normal and the most important thing you can do is do a lot of work. Do a huge volume of work. Put yourself on a deadline so that every week or every month you know you're going to finish one story. It is only by going through a volume of work that you're going to catch up and close that gap. And the work you're making will be as good as your ambitions.
+  I took longer to figure out how to do this than anyone I’ve ever met. It takes awhile. It’s gonna take you a while. It’s normal to take a while. You just have to fight your way through that.
+  —Ira Glass
+
+Maps of Science, interactive wall idea:
+  Get every poster from this channel, Domain of Science
+  https://www.youtube.com/watch?v=ohyai6GIRZg
+  Put them all on a grid on a big piece (or several connectable pieces) of plywood
+  In the center of all of them will be a monitor, speaker, and raspberry pi (or similar)
+  Each one will have a button; when pressed it'll play the relevant video for that poster
+  Optionally, each also has a slider
+     which dictates where in the video it should play when u press the button
+     this lets u seek, ff, rewind, etc
+  Optionally, the monitor has buttons for different language subtitles
+  Optionally, the posters are tagged with little timestamps (or slider indicators) so u know where to seek to hear about that section
+    perhaps this is printed on a transparent overlay per poster (maybe talk to Dom about this)
+    or more extreme: little buttons for each section
+  Maybe projector instead of monitor
+  Maybe not one giant wall, but arranged like a mounted book with big sheafs u can browse
+
+  Sprigland could absolutely do something like this for the realms of video game engines and computer science
+
+Outward dev story:
+  https://www.youtube.com/watch?v=DRNLemK6n7I
+
+  Timeline something like:
+  Guillaume saves up ~25k working at Activision as Q/A tester,
+  tries 3 times to make a side project happen at Activision with other Activision people,
+  quits Activision on good terms,
+  1 year on a game (Brand) with ~5 people, revenue shared, no salary, game earns $30k,
+  2.5 years on a game (God Factory) with ~8 people, revenue shared, minimum wage?, game earns $300k,
+  he takes ~50k in loans
+  2 failed kickstarters
+  5/8 people live in one shitty apt (?),
+  ~8 people make tech demo for open world RPG in ~3 months,
+  receives 1 million from Canadian Media fund (gov thing?)
+  spend 2 years on Outward, run out of money,
+  decide early access would require too much comprise of vision, (surprising to me)
+  so they get a publisher,
+  work another 2.5 years on Outward,
+  launches on March 2019,
+  by Dec 2019 (this interview), game has sold ~500k copies
+
+  pre-launch vid: https://www.youtube.com/watch?v=noPLDvUhxyk
+

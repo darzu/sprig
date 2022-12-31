@@ -1,0 +1,14 @@
+Gyros good!:
+  https://docs.google.com/presentation/d/e/2PACX-1vRIMW7LjNqVswbgclHJPqc_fbTJQ1vDfqDridFM8o1qNYpkQHm4zZtY6SJST0fcQRabeeZmq8PTxSSF/pub?start=false&loop=false&delayms=0&slide=id.g149dde8bc43_0_87
+  http://gyrowiki.jibbsmart.com/blog:good-gyro-controls-part-1:the-gyro-is-a-mouse
+
+  player-space:
+    http://gyrowiki.jibbsmart.com/blog:player-space-gyro-and-alternatives-explained
+
+  soft-tier smoothing:
+    http://gyrowiki.jibbsmart.com/blog:tight-and-smooth:soft-tiered-smoothing
+
+  Flick stick:
+    http://gyrowiki.jibbsmart.com/blog:good-gyro-controls-part-2:the-flick-stick
+    needs gyro
+    recommended w/ ease-out, .1s

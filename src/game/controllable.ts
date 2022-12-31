@@ -58,17 +58,11 @@ export function registerControllableSystems(em: EntityManager) {
   const steerVel = vec3.create();
 
   em.registerSystem(
-    [
-      ControllableDef,
-      AuthorityDef,
-      LinearVelocityDef,
-      RotationDef,
-      WorldFrameDef,
-    ],
+    [ControllableDef, LinearVelocityDef, RotationDef, WorldFrameDef],
     [InputsDef, MeDef, CanvasDef, TimeDef],
     (controllables, res) => {
       for (let c of controllables) {
-        if (c.authority.pid !== res.me.pid) continue;
+        if (AuthorityDef.isOn(c) && c.authority.pid !== res.me.pid) continue;
         // don't control things when we're not locked onto the canvas
         if (
           c.controllable.requiresPointerLock &&
@@ -115,7 +109,7 @@ export function registerControllableSystems(em: EntityManager) {
           quat.rotateY(
             c.rotation,
             c.rotation,
-            -res.inputs.mouseMovX * c.controllable.turnSpeed
+            -res.inputs.mouseMov[0] * c.controllable.turnSpeed
           );
       }
     },
@@ -123,11 +117,11 @@ export function registerControllableSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [ControllableDef, CameraFollowDef, AuthorityDef],
+    [ControllableDef, CameraFollowDef],
     [InputsDef, MeDef, CanvasDef],
     (controllables, res) => {
       for (let c of controllables) {
-        if (c.authority.pid !== res.me.pid) continue;
+        if (AuthorityDef.isOn(c) && c.authority.pid !== res.me.pid) continue;
         if (
           c.controllable.requiresPointerLock &&
           !res.htmlCanvas.hasMouseLock()
@@ -136,11 +130,11 @@ export function registerControllableSystems(em: EntityManager) {
         // TODO(@darzu): probably need to use yaw-pitch :(
         if (c.controllable.modes.canCameraYaw) {
           c.cameraFollow.yawOffset +=
-            -res.inputs.mouseMovX * c.controllable.turnSpeed;
+            -res.inputs.mouseMov[0] * c.controllable.turnSpeed;
         }
         if (c.controllable.modes.canPitch)
           c.cameraFollow.pitchOffset +=
-            -res.inputs.mouseMovY * c.controllable.turnSpeed;
+            -res.inputs.mouseMov[1] * c.controllable.turnSpeed;
       }
     },
     "controllableCameraFollow"

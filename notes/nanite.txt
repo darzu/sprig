@@ -1,0 +1,125 @@
+https://gamedev.stackexchange.com/questions/198454/how-does-unreal-engine-5-nanite-works/202884#202884
+
+I'm no expert, but since no one else has jumped in, I'll do my best to summarize what I gathered from these slides[1] and other research. (Hopefully a real expert in this space can clarify my many misrepresentations.)
+*Edit:* The Unreal folks have also uploaded a 2.5hr deep dive using these slides + more here: [20]
+
+# Nanite
+
+## GPU-driven rendering
+First off, it's a GPU-driven rendering pipeline meaning culling (frustum and occlusion) and level-of-detail (LOD) selection happens on the GPU using compute shaders. Compute fills vertex and index buffers which are then rendered using indirect draw calls. For more see this talk [2] from the Ubisoft folks ~2015 following Assassin's Creed Unity. Traditionally, the CPU would cull and select LODs for the frame then use draw calls to draw each visible mesh.
+
+[![GPU-driven rendering at Ubisoft][3]][3]
+
+## 128-triangle clusters hierarchically arranged by LOD
+Next, in traditional rendering systems you have different LODs per-mesh, and your artists are heavily involved in creating good per-mesh LODs.
+
+In Nanite, LODs are instead determined at a sub-mesh level with much less artist involvement. A whole tree (well a directed acyclic graph, or DAG, technically) of 128-triangle clusters is computed for each mesh at asset import time. Each node in the tree is <=128 triangles and the children of any node represents a more detailed view of that node. Then a "cut" of this tree is determined at runtime (on the GPU!), and based on this "cut" a set of triangle clusters will be rendered. Culling also happens on a per-cluster not per-mesh basis. Here's an excerpt from those slides:
+
+[![view-dependent cut of LOD DAG][4]][4]
+
+## A stable number of triangles per frame with little overdraw
+When all this comes together well, you end up with a system with a very consistent number of triangles rendered to the screen per-frame (~25M for their demo scene) and very little overdraw (i.e. wasted shader work). This efficiency is what lets Nanite achieve crazy high detail at decent FPS.
+
+[![Nanite pipeline numbers][5]][5]
+
+Note that Nanite does not currently use any raytracing, although they mention this might change in the future.
+
+# The devil is in the details
+
+Now this glosses over a lot of really hard details! If you implement such a system naively, you end up with really bad cracks or seams between clusters especially at adjacent jumps in LOD level >1, visual popping as you switch between LODs, memory issues as this is an enormous amount of data (each mesh's full tree of clusters), and performance issues since this involves a ton of GPU compute pre-shading work! And exactly how does this cluster-based visibility culling happen on a GPU?
+
+## Mesh simplification and constructing the heirarchy
+
+First, a ton of work went into determining how triangles should be clustered and hierarchically arranged at asset-import-time so that you don't see cracks and yet you can still efficiently determine a cut of this hierarchy at runtime. This involves complex graph partitioning and multi-dimensional optimization, see the slide 50 for more[1].
+
+## LOD N vs LOD N+1 difference/error calculations
+
+Also very essential and related (and if I understand correctly this is one of the most novel contributions of Nanite) is calculating good perceptual error metrics between different LODs. Basically, you need to know how much worse a simpler triangle cluster is than its child (i.e. more detailed) clusters in order to do good LOD selection. Amazingly, if the error difference is <1 pixel, and you have some temporal anti-aliasing on top, you won't notice any popping!
+
+## Cutting the cluster heirarchy DAG (LOD selection)
+
+These two, a good cluster hierarchy and LOD error calculations, come together at runtime with view-based information (in GPU compute, using a bounding volume hierarchy (BVH) and custom parallel task system) to determine the "cut" of the cluster DAG, which is the LOD selection for that frame.
+
+## Cluster-based visibility culling
+
+For visibility culling, they use a modified "two-pass occlusion culling"[7] technique where you use what was visible in the previous frame (captured in a hierarchical z-buffer (HZB)) to massively speed up your determination of what is visible this frame. Nanite diverges somewhat from other two-pass culling systems because they use a bunch of information from the LOD selection phase described above to make this work. The output of this visibility check is then written to a "visibility buffer" that includes per-pixel depth and cluster index data.
+
+## Streaming virtual geometry
+
+For memory management, they aggressively eject unused clusters from working memory and stream in new ones from disk. For this reason, it seems a decent SSD is basically required for Nanite to work[19]. They call this "virtual geometry", analogous to "virtual texturing"[6]. Formatting, compressing, and deciding what to stream is complex. About ~1M input asset triangles becomes ~11MB compressed Nanite data on disk (slide 144[1]).
+
+## Material selection and shading
+
+Once they have this visibility data, they then need to do material shading which outputs to g-buffers and the rest of their deferred shading pipeline. One of the more illuminating slides for me was this description of their per pixel material shading:
+
+[![Material shader per pixel][8]][8]
+
+Which did seem crazy to me, but they point out that they get a very good cache hit-rate and no overdraw.
+
+Knowing which materials are visible and which pixels they are assigned to is another complex task, and they use a combination of repurposed HW depth-testing for material testing and screen tiles for material culling to do this. See slides 98[1] onward.
+
+## Rasterization woes
+
+It's also worth mentioning that because Nanite has such a crazy high level of detail, they ran into rasterization problems. (Rasterization is the process of matching triangles to pixels). They commonly had triangles as small as pixels, which preformed poorly on the built-in hardware rasterization, which is overwhelmingly the common way to do rasterization. So they wrote their own software rasterizer (called  Micropoly?) and it runs in a compute shader. This includes doing their own depth-testing to create their z-buffer. They then chose between HW and SW rasterization per-cluster (big triangles still work better on HW.)
+
+Relatedly, because triangles are so small, UV derivatives need special treatment (slide 106-107[1]).
+
+## Virtualized shadow maps
+
+Next, there are shadows and multi-view rendering. I feel less confident summarizing this, so I'll refer you to slides[1] 115-120. Suffice it say, their unique triangle cluster  approach lets them efficiently maintain high resolution (16k) "virtual shadow maps".
+
+# Limitations
+
+## Folliage
+
+My understanding is that Nanite isn't great at folliage like leaves and grass, although that seems to have improved in 5.1 [9] [10]. In the slides[1], they mention limitations of the software rasterizer as a key problem here.
+
+## Tiny instances
+
+And they call out tiny mesh instances (~1px in size) as a problem they're still working to solve, with hierarchical instancing being their chosen direction. Currently they use an imposter system. As an example, if you have a large building made of tilable wall segments and you zoom out such that these wall tiles are ~1px, Nanite doesn't perform well currently.
+
+## ??
+
+They also mention on slide 94[1] that "the reliance on previous frame depth for occlusion culling is one of Nanite’s biggest deficiencies", although it's unclear to me all of what that implies.
+
+# Nanite goals, alternatives, and prior work
+
+## Goals
+
+At the start of their slides[1], they discuss Nanite's goals and other approaches they dismissed. The goal was to be able to render high fidelity assets without require a ton of up-front work by asset creators and instead let the engine dynamically change the level of detail to maintain real-time performance.
+
+## Alternative approaches
+
+Approaches they considered and dismissed for various reasons included: voxels (bad at hard surfaces; fundamentally uniform sampling), subdivision Surfaces, displacement maps, geometry images, and point rendering.
+
+[![Voxels?][11]][11]
+
+## Prior work
+
+Nanite was built on a lot of prior work, some of the most important seems to be Quick-VDR (2004)[12] and Batched Multi Triangulations (2005)[13], but there's 85 other citations on slide 149[1] onward.
+
+## Who made Nanite?
+
+The main Epic folks behind Nanite seem to be (based on the slides[1]) Brian Karis[14] [15], Rune Stubbe[16], Graham Wihlidal[17] [18].
+
+
+  [1]: https://advances.realtimerendering.com/s2021/Karis_Nanite_SIGGRAPH_Advances_2021_final.pdf
+  [2]: https://advances.realtimerendering.com/s2015/aaltonenhaar_siggraph2015_combined_final_footer_220dpi.pdf
+  [3]: https://i.stack.imgur.com/C38ax.jpg
+  [4]: https://i.stack.imgur.com/VWe2y.png
+  [5]: https://i.stack.imgur.com/0KiR6.jpg
+  [6]: https://docs.unrealengine.com/4.26/en-US/RenderingAndGraphics/VirtualTexturing/
+  [7]: http://www.graphics.stanford.edu/~niessner/papers/2012/2occlusion/niessner2012patch.pdf
+  [8]: https://i.stack.imgur.com/GXJ56.png
+  [9]: https://80.lv/articles/working-with-nanite-in-unreal-engine-5-1/
+  [10]: https://golden-mandolin-675.notion.site/Notes-about-Nanite-in-UE5-1-preview-1bd49cb5986a46629214b82f9ce58ae5
+  [11]: https://i.stack.imgur.com/69CCq.jpg
+  [12]: http://gamma.cs.unc.edu/QVDR/
+  [13]: http://vcg.isti.cnr.it/Publications/2005/CGGMPS05/Slide_BatchedMT_Vis05.pdf
+  [14]: http://graphicrants.blogspot.com
+  [15]: https://twitter.com/briankaris
+  [16]: https://twitter.com/stubbesaurus
+  [17]: https://www.wihlidal.com/blog/
+  [18]: https://twitter.com/gwihlidal
+  [19]: https://docs.unrealengine.com/5.0/en-US/nanite-virtualized-geometry-in-unreal-engine/
+  [20]: https://www.youtube.com/watch?v=TMorJX3Nj6U
