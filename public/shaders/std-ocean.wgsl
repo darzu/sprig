@@ -91,8 +91,8 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     let surfBasis = mat3x3<f32>(perp, normal, tangent);
     let gerst = gerstner(input.uv * 1000, scene.time * .001);
 
-    let displacedPos = position;
-    // let displacedPos = position + surfBasis * gerst[0];
+    // let displacedPos = position;
+    let displacedPos = position + surfBasis * gerst[0];
 
     //let displacedPos = flattenedPos + gerst[0];
     let gerstNormal = surfBasis * gerst[1];

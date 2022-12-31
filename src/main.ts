@@ -38,6 +38,7 @@ const GAME = "hyperspace" as
   | "hyperspace"
   | "cloth" // broken-ish
   | "cube";
+
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
 
