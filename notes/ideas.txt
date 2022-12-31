@@ -85,3 +85,5 @@ Workshop game:
     move out for more space,
     family?
   
+Draw cool rope:
+  https://muffinman.io/blog/draw-svg-rope-using-javascript/

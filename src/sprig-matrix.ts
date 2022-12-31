@@ -16,6 +16,8 @@ export type mat3 = Float32ArrayOfLength<9>;
 
 export type mat4 = Float32ArrayOfLength<16>;
 
+// TODO(@darzu): perhaps all non-temp (and temp) vecs should be suballocations on bigger Float32Arrays
+//    this might give some perf wins w/ cache hits
 function float32ArrayOfLength<N extends number>(n: N): Float32ArrayOfLength<N> {
   return new Float32Array(n) as Float32ArrayOfLength<N>;
 }
