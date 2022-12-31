@@ -198,6 +198,8 @@ export function importObj(obj: string): RawMesh[] | ParseError {
           quad.push([inds[0], inds[1], inds[2], inds[3]]);
         }
       } else if (inds.length === 8) {
+        // TODO(@darzu): any large n-gon that's convex can just be made into a triangle fan
+        // TODO(@darzu): convexity test. probably something about sum of interior angles
         // TODO(@darzu): HACK. ignore 8 sided faces?
         // triangle fan
         for (let i = 1; i < 7; i++) {

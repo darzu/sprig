@@ -21,6 +21,8 @@ import { initGJKSandbox } from "./game/game-gjk.js";
 import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { initClothSandbox } from "./game/game-cloth.js";
 import { initCubeGame } from "./game/xp-cube.js";
+import { callSpringSystems } from "./game/spring.js";
+import { callClothSystems } from "./game/cloth.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -28,7 +30,7 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-const GAME = "hyperspace" as
+const GAME = "ld51" as
   | "gjk"
   | "rebound"
   | "ld51"
@@ -53,31 +55,35 @@ function callFixedTimestepSystems() {
   //    - Lets use types for this. String matching the name is brittle and unnessessary
   EM.callSystem("inputs");
   EM.callSystem("mouseDrag");
-  // EM.callSystem("getStatsFromNet");
-  // EM.callSystem("getEventsFromNet");
-  // EM.callSystem("sendEventsToNet");
+  EM.callSystem("getStatsFromNet");
+  EM.callSystem("getEventsFromNet");
+  EM.callSystem("sendEventsToNet");
   EM.callSystem("canvas");
   EM.callSystem("uiText");
   EM.callSystem("devConsoleToggle");
   EM.callSystem("devConsole");
-  // EM.callSystem("restartTimer");
+  if (GAME === "hyperspace") {
+    EM.callSystem("restartTimer");
+  }
   // EM.callSystem("updateScore");
   EM.callSystem("renderInit");
   EM.callSystem("musicStart");
-  // EM.callSystem("handleNetworkEvents");
+  EM.callSystem("handleNetworkEvents");
   EM.callSystem("recordPreviousLocations");
   EM.callSystem("clearRemoteUpdatesMarker");
-  // EM.callSystem("netUpdate");
+  EM.callSystem("netUpdate");
   EM.callSystem("predict");
-  // EM.callSystem("connectToServer");
-  // EM.callSystem("handleJoin");
-  // EM.callSystem("handleJoinResponse");
+  EM.callSystem("connectToServer");
+  EM.callSystem("handleJoin");
+  EM.callSystem("handleJoinResponse");
   EM.callSystem("buildBullets");
   EM.callSystem("buildCursor");
   EM.callSystem("placeCursorAtScreenCenter");
-  // EM.callSystem("stepEnemyShips");
-  // EM.callSystem("enemyShipsFire");
-  // EM.callSystem("breakEnemyShips");
+  if (GAME === "hyperspace") {
+    EM.callSystem("stepEnemyShips");
+    EM.callSystem("enemyShipsFire");
+    EM.callSystem("breakEnemyShips");
+  }
   EM.callSystem("controllableInput");
   EM.callSystem("controllableCameraFollow");
   EM.callSystem("buildPlayers");
@@ -123,22 +129,27 @@ function callFixedTimestepSystems() {
   }
   EM.callSystem("updateBullets");
   EM.callSystem("applyGravity");
-  // EM.callSystem("updateNoodles");
+  if (GAME === "hyperspace") {
+    // TODO(@darzu): noodles broken?
+    EM.callSystem("updateNoodles");
+  }
   EM.callSystem("updateLifetimes");
   EM.callSystem("interaction");
   EM.callSystem("turretAim");
   EM.callSystem("turretYawPitch");
   EM.callSystem("turretManUnman");
-  // EM.callSystem("updateMastBoom");
-  // EM.callSystem("sail");
-  // EM.callSystem("orreryMotion");
+  if (GAME === "hyperspace") {
+    EM.callSystem("updateMastBoom");
+    EM.callSystem("sail");
+    EM.callSystem("orreryMotion");
+  }
   EM.callSystem("reloadCannon");
   EM.callSystem("playerControlCannon");
   EM.callSystem("playerManCanon");
-  // if (GAME === "hyperspace") {
-  //   EM.callSystem("spawnOnTile");
-  //   EM.callSystem("spawnFinishAnimIn");
-  // }
+  if (GAME === "hyperspace") {
+    EM.callSystem("spawnOnTile");
+    EM.callSystem("spawnFinishAnimIn");
+  }
   EM.callSystem("ensureFillOutLocalFrame");
   EM.callSystem("ensureWorldFrame");
   // EM.callSystem("physicsDeadStuff");
@@ -166,26 +177,30 @@ function callFixedTimestepSystems() {
   EM.callSystem("debugMeshes");
   EM.callSystem("debugMeshTransform");
   EM.callSystem("bulletCollision");
-  // callSpringSystems(EM);
-  // callClothSystems(EM);
+  callSpringSystems(EM);
+  callClothSystems(EM);
   EM.callSystem("modelerOnOff");
   EM.callSystem("modelerClicks");
   EM.callSystem("aabbBuilder");
-  // EM.callSystem("toolPickup");
-  // EM.callSystem("toolDrop");
+  if (GAME === "hyperspace") {
+    EM.callSystem("toolPickup");
+    EM.callSystem("toolDrop");
+  }
   EM.callSystem("animateTo");
-  // EM.callSystem("netDebugSystem");
-  // EM.callSystem("netAck");
-  // EM.callSystem("netSync");
-  // EM.callSystem("sendOutboxes");
-  // EM.callSystem("detectedEventsToHost");
-  // EM.callSystem("handleEventRequests");
-  // EM.callSystem("handleEventRequestAcks");
-  // EM.callSystem("detectedEventsToRequestedEvents");
-  // EM.callSystem("requestedEventsToEvents");
-  // EM.callSystem("sendEvents");
-  // EM.callSystem("handleEvents");
-  // EM.callSystem("handleEventAcks");
+
+  EM.callSystem("netDebugSystem");
+  EM.callSystem("netAck");
+  EM.callSystem("netSync");
+  EM.callSystem("sendOutboxes");
+  EM.callSystem("detectedEventsToHost");
+  EM.callSystem("handleEventRequests");
+  EM.callSystem("handleEventRequestAcks");
+  EM.callSystem("detectedEventsToRequestedEvents");
+  EM.callSystem("requestedEventsToEvents");
+  EM.callSystem("sendEvents");
+  EM.callSystem("handleEvents");
+  EM.callSystem("handleEventAcks");
+
   EM.callSystem("runEvents");
   EM.callSystem("delete");
   EM.callSystem("smoothMotion");
@@ -213,7 +228,7 @@ async function startGame(localPeerName: string, host: string | null) {
   EM.setIdRange("local", 1, 10000);
   // TODO(@darzu): ECS stuff
   // init ECS
-  // EM.addSingletonComponent(PeerNameDef, localPeerName);
+  EM.addSingletonComponent(PeerNameDef, localPeerName);
   if (hosting) {
     // TODO(@darzu): ECS
     EM.setDefaultRange("net");
