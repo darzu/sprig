@@ -38,7 +38,7 @@ import {
 } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
 import { ColorDef } from "../color-ecs.js";
-import { UVUNWRAP_MASK } from "../render/pipeline-masks.js";
+import { DEFAULT_MASK, UVUNWRAP_MASK } from "../render/pipeline-masks.js";
 
 const DISABLE_GERSTNER = false;
 
@@ -101,7 +101,7 @@ export async function initOcean() {
     // TODO(@darzu): needed?
     true,
     0,
-    UVUNWRAP_MASK,
+    UVUNWRAP_MASK | DEFAULT_MASK,
     "ocean"
   );
   EM.ensureComponentOn(ocean, ColorDef, [0.1, 0.3, 0.8]);

@@ -50,6 +50,7 @@ import {
 import { tempMat4, tempVec3 } from "../temp-pool.js";
 
 // TODO: load these via streaming
+// TODO(@darzu): it's really bad that all these assets are loaded for each game
 
 export const BLACK = vec3.fromValues(0, 0, 0);
 export const DARK_GRAY = vec3.fromValues(0.02, 0.02, 0.02);
