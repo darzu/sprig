@@ -1,6 +1,6 @@
 import { align } from "../math.js";
-import { assert } from "../test.js";
-import { isNumber } from "../util.js";
+import { assert, assertDbg } from "../util.js";
+import { dbgLogOnce, isNumber } from "../util.js";
 import {
   CyStructDesc,
   CyStruct,
@@ -21,7 +21,9 @@ import {
 } from "./gpu-registry.js";
 import { MeshPool } from "./mesh-pool.js";
 import { BLACK } from "../game/assets.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4 } from "../gl-matrix.js";
+import { GPUBufferUsage } from "./webgpu-hacks.js";
+import { PERF_DBG_GPU } from "../flags.js";
 
 export interface CyBuffer<O extends CyStructDesc> {
   struct: CyStruct<O>;
@@ -40,13 +42,19 @@ export interface CySingleton<O extends CyStructDesc> extends CyBuffer<O> {
 export interface CyArray<O extends CyStructDesc> extends CyBuffer<O> {
   length: number;
   queueUpdate: (data: CyToTS<O>, idx: number) => void;
-  queueUpdates: (data: CyToTS<O>[], idx: number) => void;
+  queueUpdates: (
+    data: CyToTS<O>[],
+    bufIdx: number,
+    dataIdx: number,
+    dataCount: number
+  ) => void;
 }
 
 export interface CyIdxBuffer {
   length: number;
   size: number;
   buffer: GPUBuffer;
+  // NOTE: Callers must ensure 4-byte aligned startIdx and data.byteLength
   queueUpdate: (data: Uint16Array, startIdx: number) => void;
 }
 
@@ -124,6 +132,8 @@ export interface CySampler {
   sampler: GPUSampler;
 }
 
+export let _gpuQueueBufferWriteBytes = 0;
+
 export function createCySingleton<O extends CyStructDesc>(
   device: GPUDevice,
   struct: CyStruct<O>,
@@ -160,8 +170,9 @@ export function createCySingleton<O extends CyStructDesc>(
     // TODO(@darzu): measure perf. we probably want to allow hand written serializers
     buf.lastData = data;
     const b = struct.serialize(data);
-    // assert(b.length % 4 === 0, `buf write must be 4 byte aligned: ${b.length}`);
+    assertDbg(b.byteLength % 4 === 0, `alignment`);
     device.queue.writeBuffer(_buf, 0, b);
+    if (PERF_DBG_GPU) _gpuQueueBufferWriteBytes += b.byteLength;
   }
 
   function binding(idx: number, plurality: "one" | "many"): GPUBindGroupEntry {
@@ -209,31 +220,53 @@ export function createCyArray<O extends CyStructDesc>(
     binding,
   };
 
-  const stride = struct.size;
-
   if (hasInitData) {
     const data = lenOrData;
     const mappedBuf = new Uint8Array(_buf.getMappedRange());
     for (let i = 0; i < data.length; i++) {
       const d = struct.serialize(data[i]);
-      mappedBuf.set(d, i * stride);
+      mappedBuf.set(d, i * struct.size);
     }
     _buf.unmap();
   }
 
   function queueUpdate(data: CyToTS<O>, index: number): void {
     const b = struct.serialize(data);
-    // TODO(@darzu): disable for perf?
-    // assert(b.length % 4 === 0);
-    device.queue.writeBuffer(_buf, index * stride, b);
+    const bufOffset = index * struct.size;
+    assertDbg(bufOffset % 4 === 0, `alignment`);
+    assertDbg(b.length % 4 === 0, `alignment`);
+    device.queue.writeBuffer(_buf, bufOffset, b);
+    if (PERF_DBG_GPU) _gpuQueueBufferWriteBytes += b.length;
   }
-  function queueUpdates(data: CyToTS<O>[], index: number): void {
-    const serialized = new Uint8Array(stride * data.length);
-    data.forEach((d, i) => {
-      serialized.set(struct.serialize(d), stride * i);
-    });
-    // assert(serialized.length % 4 === 0);
-    device.queue.writeBuffer(_buf, index * stride, serialized);
+
+  // TODO(@darzu): somewhat hacky way to reuse Uint8Arrays here; we could do some more global pool
+  //    of these.
+  let tempUint8Array: Uint8Array = new Uint8Array(struct.size * 10);
+  function queueUpdates(
+    data: CyToTS<O>[],
+    bufIdx: number,
+    dataIdx: number, // TODO(@darzu): make last two params optional?
+    dataCount: number
+  ): void {
+    // TODO(@darzu): PERF. probably a good idea to keep the serialized array
+    //  around and modify that directly for many scenarios that need frequent
+    //  updates.
+    const dataSize = struct.size * dataCount;
+    if (tempUint8Array.byteLength <= dataSize) {
+      tempUint8Array = new Uint8Array(dataSize);
+    }
+    const serialized = tempUint8Array;
+    // TODO(@darzu): DBG HACK! USE TEMP!
+    // const serialized = new Uint8Array(dataSize);
+
+    for (let i = dataIdx; i < dataIdx + dataCount; i++)
+      serialized.set(struct.serialize(data[i]), struct.size * (i - dataIdx));
+
+    const bufOffset = bufIdx * struct.size;
+    assertDbg(dataSize % 4 === 0, `alignment`);
+    assertDbg(bufOffset % 4 === 0, `alignment`);
+    device.queue.writeBuffer(_buf, bufOffset, serialized, 0, dataSize);
+    if (PERF_DBG_GPU) _gpuQueueBufferWriteBytes += dataSize;
   }
 
   function binding(idx: number, plurality: "one" | "many"): GPUBindGroupEntry {
@@ -255,7 +288,7 @@ export function createCyIdxBuf(
   const length = hasInitData ? lenOrData.length : lenOrData;
 
   const size = align(length * Uint16Array.BYTES_PER_ELEMENT, 4);
-  console.log(`idx size: ${size}`);
+  // console.log(`idx size: ${size}`);
 
   const _buf = device.createBuffer({
     size: size,
@@ -279,10 +312,11 @@ export function createCyIdxBuf(
   }
 
   function queueUpdate(data: Uint16Array, startIdx: number): void {
-    const startByte = startIdx * Uint16Array.BYTES_PER_ELEMENT;
-    // const byteView = new Uint8Array(data);
-    // assert(data.length % 2 === 0);
+    const startByte = startIdx * 2;
+    assertDbg(data.byteLength % 4 === 0, `alignment`);
+    assertDbg(startByte % 4 === 0, `alignment`);
     device.queue.writeBuffer(_buf, startByte, data);
+    if (PERF_DBG_GPU) _gpuQueueBufferWriteBytes += data.byteLength;
   }
 
   return buf;
@@ -314,10 +348,13 @@ export function createCyTexture(
   resize(size[0], size[1]);
 
   if (init) {
-    queueUpdate(init());
+    const data = init();
+    if (PERF_DBG_GPU)
+      console.log(`creating texture of size: ${(data.length * 4) / 1024}kb`);
+    queueUpdate(data);
   }
 
-  const black: vec4 = vec4.clone([0, 0, 0, 1]);
+  const black: vec4 = [0, 0, 0, 1];
 
   return cyTex;
 

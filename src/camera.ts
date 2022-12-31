@@ -6,7 +6,7 @@ import {
   EntityW,
   WithComponent,
 } from "./entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
+import { mat4, quat, vec3 } from "./gl-matrix.js";
 import { max } from "./math.js";
 import { AuthorityDef, MeDef } from "./net/components.js";
 import { WorldFrameDef } from "./physics/nonintersection.js";
@@ -44,6 +44,7 @@ export const CameraViewDef = EM.defineComponent("cameraView", () => {
     width: 100,
     height: 100,
     viewProjMat: mat4.create(),
+    invViewProjMat: mat4.create(),
     location: vec3.create(),
   };
 });
@@ -60,9 +61,10 @@ export const CameraFollowDef = EM.defineComponent(
 );
 
 export const CAMERA_OFFSETS = {
-  thirdPerson: vec3.clone([0, 0, 10]),
-  thirdPersonOverShoulder: vec3.clone([2, 2, 8]),
-  firstPerson: vec3.clone([0, 0, 0]),
+  thirdPerson: [0, 0, 10],
+  // thirdPersonOverShoulder: [1, 3, 2],
+  thirdPersonOverShoulder: [2, 2, 4],
+  firstPerson: [0, 0, 0],
 } as const;
 
 export function setCameraFollowPosition(
@@ -138,10 +140,12 @@ export function registerCameraSystems(em: EntityManager) {
         );
 
         const computedRotation = quat.mul(
+          tempQuat(),
           prevTarget.world.rotation,
           res.camera.lastRotation
         );
         const newComputedRotation = quat.mul(
+          tempQuat(),
           newTarget.world.rotation,
           res.camera.rotationOffset
         );
@@ -175,67 +179,79 @@ export function registerCameraSystems(em: EntityManager) {
       cameraView.aspectRatio = Math.abs(
         htmlCanvas.canvas.width / htmlCanvas.canvas.height
       );
-      cameraView.width = htmlCanvas.canvas.width;
-      cameraView.height = htmlCanvas.canvas.height;
+      cameraView.width = htmlCanvas.canvas.clientWidth;
+      cameraView.height = htmlCanvas.canvas.clientHeight;
 
       let viewMatrix = mat4.create();
       if (targetEnt) {
         const computedTranslation = vec3.add(
+          tempVec3(),
           frame.position,
           camera.targetPositionError
         );
         mat4.fromRotationTranslationScale(
+          viewMatrix,
           frame.rotation,
           computedTranslation,
-          frame.scale,
-          viewMatrix
+          frame.scale
         );
         vec3.copy(cameraView.location, computedTranslation);
       }
 
       const computedCameraRotation = quat.mul(
+        tempQuat(),
         camera.rotationOffset,
         camera.rotationError
       );
 
-      mat4.mul(
+      mat4.multiply(
         viewMatrix,
-        mat4.fromQuat(computedCameraRotation, mat4.create()),
-        viewMatrix
+        viewMatrix,
+        mat4.fromQuat(mat4.create(), computedCameraRotation)
       );
 
       const computedCameraTranslation = vec3.add(
+        tempVec3(),
         camera.positionOffset,
         camera.cameraPositionError
       );
 
-      mat4.translate(viewMatrix, computedCameraTranslation, viewMatrix);
+      mat4.translate(viewMatrix, viewMatrix, computedCameraTranslation);
       mat4.invert(viewMatrix, viewMatrix);
 
       const projectionMatrix = mat4.create();
       if (camera.perspectiveMode === "ortho") {
         const ORTHO_SIZE = 10;
         mat4.ortho(
+          projectionMatrix,
           -ORTHO_SIZE,
           ORTHO_SIZE,
           -ORTHO_SIZE,
           ORTHO_SIZE,
           -400,
-          100,
-          projectionMatrix
+          100
         );
       } else {
         mat4.perspective(
+          projectionMatrix,
           camera.fov,
           cameraView.aspectRatio,
           1,
-          100000.0 /*view distance*/,
-          projectionMatrix
+          // TODO(@darzu): hacky; why does it have to be so big
+          100000.0 /*view distance*/
         );
       }
-      const viewProj = mat4.mul(projectionMatrix, viewMatrix, mat4.create());
+      const viewProj = mat4.multiply(
+        mat4.create(),
+        projectionMatrix,
+        viewMatrix
+      ) as Float32Array;
 
       cameraView.viewProjMat = viewProj;
+      cameraView.invViewProjMat = mat4.invert(
+        cameraView.invViewProjMat,
+        cameraView.viewProjMat
+      );
     },
     "updateCameraView"
   );

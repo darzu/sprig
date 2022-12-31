@@ -1,5 +1,5 @@
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
-import { assert } from "../test.js";
+import { mat4 } from "../gl-matrix.js";
+import { assert } from "../util.js";
 import {
   CY,
   CyPipelinePtr,
@@ -46,6 +46,16 @@ import {
   OceanUniTS,
   OceanVertStruct,
 } from "./pipelines/std-ocean.js";
+import { GPUBufferUsage } from "./webgpu-hacks.js";
+import { PERF_DBG_GPU, VERBOSE_LOG } from "../flags.js";
+import { dbgLogOnce } from "../util.js";
+
+// TODO(@darzu): Try using drawIndirect !!
+//    https://gpuweb.github.io/gpuweb/#dom-gpurendercommandsmixin-drawindirect
+
+// TODO(@darzu): We should use:
+// "navigator.gpu.requestAdapter().then(a => console.log([...a.features]))"
+// to test for features on hardware we want to support
 
 const MAX_PIPELINES = 64;
 
@@ -55,40 +65,13 @@ export function createRenderer(
   context: GPUCanvasContext,
   shaders: ShaderSet
 ) {
-  const renderer = {
-    drawLines: true,
-    drawTris: true,
-
-    // std mesh
-    addMesh,
-    addMeshInstance,
-    updateMesh,
-
-    // ocean
-    addOcean,
-    updateOcean,
-    updateGerstnerWaves,
-
-    // std scene
-    updateScene,
-    updatePointLights,
-
-    // uniforms
-    updateStdUniform,
-    updateOceanUniform,
-
-    // gpu commands
-    submitPipelines,
-    readTexture,
-    stats,
-  };
-
   const timestampQuerySet = device.features.has("timestamp-query")
     ? device.createQuerySet({
         type: "timestamp",
         count: MAX_PIPELINES + 1, // start of execution + after each pipeline
       })
     : null;
+  if (VERBOSE_LOG) console.log(`timestamp-query: ${!!timestampQuerySet}`);
 
   const resources = createCyResources(CY, shaders, device);
   const cyKindToNameToRes = resources.kindToNameToRes;
@@ -103,6 +86,55 @@ export function createRenderer(
     typeof OceanUniStruct.desc
   > = cyKindToNameToRes.meshPool[oceanPoolPtr.name]!;
 
+  const renderer = {
+    drawLines: true,
+    drawTris: true,
+
+    // std mesh
+    // addMeshInstance,
+    // TODO(@darzu): need sub-mesh updateMesh variant (e.g. coloring a few quads)
+    // updateMeshVertices,
+    // updateMeshIndices,
+
+    // ocean
+    // addOcean,
+    // updateOcean,
+    updateGerstnerWaves,
+
+    // std scene
+    updateScene,
+    updatePointLights,
+
+    // uniforms
+    // updateStdUniform,
+    // updateOceanUniform,
+
+    // gpu commands
+    submitPipelines,
+    readTexture,
+    stats,
+
+    // debug
+    getMeshPoolStats,
+
+    // TODO(@darzu): collapose the renderer-webgpu layer, it shouldn't exist
+    stdPool,
+    oceanPool,
+  };
+
+  // TODO(@darzu): collapse this with MeshPool._stats
+  function getMeshPoolStats() {
+    const stats = {
+      numTris: 0,
+      numVerts: 0,
+    };
+    for (let p of Object.values(cyKindToNameToRes.meshPool)) {
+      stats.numTris += p.numTris;
+      stats.numVerts += p.numVerts;
+    }
+    return stats;
+  }
+
   const sceneUni: CySingleton<typeof SceneStruct.desc> =
     cyKindToNameToRes.singleton[sceneBufPtr.name]!;
 
@@ -114,6 +146,7 @@ export function createRenderer(
 
   // render bundle
   const bundledMIds = new Set<number>();
+  const bundledMIdToVertIdx = new Map<number, number>();
   let needsRebundle = false;
   let lastWireMode: [boolean, boolean] = [
     renderer.drawLines,
@@ -142,26 +175,6 @@ export function createRenderer(
     return true;
   }
 
-  function addMesh(m: Mesh): MeshHandle {
-    const handle: MeshHandle = stdPool.addMesh(m);
-    return handle;
-  }
-  function addMeshInstance(oldHandle: MeshHandle): MeshHandle {
-    const newHandle = stdPool.addMeshInstance(oldHandle);
-    return newHandle;
-  }
-  function updateMesh(handle: MeshHandle, newMeshData: Mesh) {
-    stdPool.updateMeshVertices(handle, newMeshData);
-  }
-
-  function addOcean(m: Mesh): OceanMeshHandle {
-    const handle: OceanMeshHandle = oceanPool.addMesh(m);
-    return handle;
-  }
-  function updateOcean(handle: OceanMeshHandle, newMeshData: Mesh) {
-    oceanPool.updateMeshVertices(handle, newMeshData);
-  }
-
   function updateRenderBundle(
     handles: MeshHandle[],
     pipelines: CyRenderPipeline[]
@@ -170,7 +183,10 @@ export function createRenderer(
     needsRebundle = false; // TODO(@darzu): hack?
 
     bundledMIds.clear();
-    handles.forEach((h) => bundledMIds.add(h.mId));
+    handles.forEach((h) => {
+      bundledMIds.add(h.mId);
+      bundledMIdToVertIdx.set(h.mId, h.vertIdx);
+    });
 
     lastWireMode = [renderer.drawLines, renderer.drawTris];
 
@@ -186,6 +202,9 @@ export function createRenderer(
   }
 
   function updateScene(scene: Partial<SceneTS>) {
+    if (PERF_DBG_GPU) {
+      dbgLogOnce("sceneUniSize", `SceneUni size: ${sceneUni.struct.size}`);
+    }
     sceneUni.queueUpdate({
       ...sceneUni.lastData!,
       ...scene,
@@ -193,19 +212,11 @@ export function createRenderer(
   }
 
   function updatePointLights(pointLights: PointLightTS[]) {
-    pointLightsArray.queueUpdates(pointLights, 0);
+    pointLightsArray.queueUpdates(pointLights, 0, 0, pointLights.length);
   }
 
   function updateGerstnerWaves(gerstnerWaves: GerstnerWaveTS[]) {
-    gerstnerWavesArray.queueUpdates(gerstnerWaves, 0);
-  }
-
-  function updateStdUniform(handle: MeshHandle, data: MeshUniformTS) {
-    stdPool.updateUniform(handle, data);
-  }
-
-  function updateOceanUniform(handle: MeshHandle, data: OceanUniTS) {
-    oceanPool.updateUniform(handle, data);
+    gerstnerWavesArray.queueUpdates(gerstnerWaves, 0, 0, gerstnerWaves.length);
   }
 
   // TODO(@darzu): support ocean!
@@ -215,7 +226,7 @@ export function createRenderer(
   ): void {
     // TODO(@darzu): a lot of the smarts of this fn should come out and be an explicit part
     //  of some pipeline sequencer-timeline-composition-y description thing
-    if (!pipelinePtrs.length) {
+    if (VERBOSE_LOG && !pipelinePtrs.length) {
       console.warn("rendering without any pipelines specified");
       return;
     }
@@ -268,9 +279,14 @@ export function createRenderer(
       renderer.drawLines !== lastWireMode[0] ||
       renderer.drawTris !== lastWireMode[1];
     if (!needsRebundle) {
-      for (let mId of handles.map((o) => o.mId)) {
-        if (!bundledMIds.has(mId)) {
+      for (let h of handles) {
+        if (!bundledMIds.has(h.mId)) {
           // TODO(@darzu): BUG. this is currently true too often, maybe every frame
+          needsRebundle = true;
+          break;
+        }
+        // TODO(@darzu): PERF. perf cost of this check? Maybe we should just use dirty flags..
+        if (bundledMIdToVertIdx.get(h.mId) !== h.vertIdx) {
           needsRebundle = true;
           break;
         }
@@ -278,7 +294,7 @@ export function createRenderer(
     }
 
     if (needsRebundle) {
-      // console.log("rebundeling");
+      if (PERF_DBG_GPU) console.log("rebundeling");
       updateRenderBundle(handles, renderPipelines);
     }
 
@@ -335,6 +351,20 @@ export function createRenderer(
     const commandEncoder = device.createCommandEncoder();
 
     // TODO(@darzu): shares a lot with CyTexture's queueUpdate
+    // TODO(@darzu): ERROR: bytesPerRow (64) is not a multiple of 256.
+    // TODO(@darzu): need to align up to 256 but then also account for this in the
+    //                CPU sampler?
+    /*
+    Required size for texture data layout (16192) 
+    exceeds the linear data size (4096) with offset (0).
+    - While encoding [CommandEncoder].CopyTextureToBuffer([Texture], [Buffer], 
+        [Extent3D width:64, height:64, depthOrArrayLayers:1]).
+    */
+    // bytesPerRow: align(tex.size[0] * bytesPerVal, 256), // TODO: alignment?
+    const bytesPerRow = tex.size[0] * bytesPerVal;
+    if (bytesPerRow % 256 !== 0) {
+      console.log(`texture alignment issues for: ${tex.ptr.name}`);
+    }
     commandEncoder.copyTextureToBuffer(
       {
         texture: tex.texture,
@@ -342,10 +372,7 @@ export function createRenderer(
       {
         buffer: gpuBuffer,
         offset: 0,
-        // TODO(@darzu): ERROR: bytesPerRow (64) is not a multiple of 256.
-        // TODO(@darzu): need to align up to 256 but then also account for this in the
-        //                CPU sampler?
-        bytesPerRow: tex.size[0] * bytesPerVal, // TODO: alignment?
+        bytesPerRow,
         rowsPerImage: tex.size[1],
       },
       {

@@ -1,4 +1,5 @@
 import { EM, EntityManager } from "./entity-manager.js";
+import { PERF_DBG_GPU } from "./flags.js";
 import { TextDef } from "./game/ui.js";
 import { InputsDef } from "./inputs.js";
 import {
@@ -7,6 +8,7 @@ import {
   _enclosedBys,
   _cellChecks,
 } from "./physics/broadphase.js";
+import { _gpuQueueBufferWriteBytes } from "./render/data-webgpu.js";
 import { RendererDef } from "./render/renderer-ecs.js";
 
 export const DevConsoleDef = EM.defineComponent("dev", () => {
@@ -30,7 +32,7 @@ export const DevConsoleDef = EM.defineComponent("dev", () => {
 
 let avgWeight = 0.05;
 
-function updateAvg(avg: number, curr: number): number {
+export function updateAvg(avg: number, curr: number): number {
   return avg ? (1 - avgWeight) * avg + avgWeight * curr : curr;
 }
 
@@ -46,12 +48,34 @@ export function registerDevSystems(em: EntityManager) {
     "devConsoleToggle"
   );
 
+  let lastGPUBytes = 0;
+  let avgGPUBytes = 0;
+  let maxFrameGPUBytes = 0;
+
+  let warmUpFrame = 60 * 3;
+
   em.registerSystem(
     null,
     [RendererDef, TextDef, DevConsoleDef],
     async (_, res) => {
+      warmUpFrame--;
+
+      if (PERF_DBG_GPU) {
+        const frameBytes = _gpuQueueBufferWriteBytes - lastGPUBytes;
+
+        if (warmUpFrame <= 0) {
+          maxFrameGPUBytes = Math.max(maxFrameGPUBytes, frameBytes);
+          if (frameBytes >= 1024 * 100) {
+            console.log(`Big frame!: ${(frameBytes / 1024).toFixed(0)}kb`);
+          }
+        }
+
+        avgGPUBytes = updateAvg(avgGPUBytes, frameBytes);
+        lastGPUBytes = _gpuQueueBufferWriteBytes;
+      }
+
       if (!res.dev.showConsole) {
-        res.text.debugText = "";
+        res.text.debugText = " ";
         return;
       }
 
@@ -87,6 +111,8 @@ export function registerDevSystems(em: EntityManager) {
 
       const { avgFrameTime, avgJsTime, avgSimTime } = res.dev;
 
+      const poolStats = res.renderer.renderer.getMeshPoolStats();
+
       const avgFPS = 1000 / avgFrameTime;
 
       const dbgTxt =
@@ -97,6 +123,17 @@ export function registerDevSystems(em: EntityManager) {
         `broad:(${_lastCollisionTestTimeMs.toFixed(1)}ms ` +
         `o:${_doesOverlapAABBs} e:${_enclosedBys} c:${_cellChecks}) ` +
         `fps:${avgFPS.toFixed(1)} ` +
+        `tris:${poolStats.numTris} ` +
+        `verts:${poolStats.numVerts} ` +
+        (PERF_DBG_GPU ? `avgGpuBytes: ${avgGPUBytes.toFixed(0)}b ` : ``) +
+        (PERF_DBG_GPU
+          ? `allGpuBytes: ${(_gpuQueueBufferWriteBytes / (1024 * 1024)).toFixed(
+              0
+            )}mb `
+          : ``) +
+        (PERF_DBG_GPU
+          ? `maxFrameGPUBytes: ${(maxFrameGPUBytes / 1024).toFixed(0)}kb `
+          : ``) +
         //`buffers:(r=${reliableBufferSize}/u=${unreliableBufferSize}) ` +
         `dropped:${numDroppedUpdates} ` +
         `entities:${EM.entities.size} ` +

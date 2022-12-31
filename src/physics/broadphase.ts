@@ -1,6 +1,6 @@
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { mat3, mat4, vec2, vec3 } from "../gl-matrix.js";
 import { clamp } from "../math.js";
-import { tempVec3 } from "../temp-pool.js";
+import { tempMat3, tempVec3 } from "../temp-pool.js";
 import { range } from "../util.js";
 import { vec3Floor } from "../utils-3d.js";
 
@@ -25,7 +25,7 @@ export function* collisionPairs(
 
 export function resetCollidesWithSet(
   collidesWith: CollidesWith,
-  objs: { id: number }[]
+  objs: readonly { id: number }[]
 ): void {
   for (let o of objs) {
     if (!collidesWith.has(o.id)) collidesWith.set(o.id, []);
@@ -98,6 +98,7 @@ export function checkBroadphase(
   //      100 objs: 0.1ms, 1,200 overlaps + 6,000 enclosed-bys
   if (BROAD_PHASE === "OCT") {
     // TODO(@darzu): check layer masks
+    // TODO(@darzu): PERF. Is this really created every frame?!
     const octObjs = new Map<number, AABB>(objs.map((o) => [o.id, o.aabb])); // TODO(@darzu): necessary?
     const tree = octtree(octObjs, universeAABB);
     function octCheckOverlap(tree: OctTree) {
@@ -140,7 +141,7 @@ export function checkBroadphase(
   //      3000 objs @[2000, 200, 2000]: 1.2-7.6ms, 180,000-400,000 overlaps, 4,400 cell checks
   if (BROAD_PHASE === "GRID") {
     // initialize world
-    if (!_worldGrid) _worldGrid = createWorldGrid(universeAABB, vec3.clone([10, 10, 10]));
+    if (!_worldGrid) _worldGrid = createWorldGrid(universeAABB, [10, 10, 10]);
     // place objects in grid
     for (let o of objs) {
       let ll = _objToObjLL[o.id];
@@ -169,7 +170,7 @@ export function checkBroadphase(
         for (let x = o.minCoord[0]; x <= o.maxCoord[0]; x++) {
           for (let y = o.minCoord[1]; y <= o.maxCoord[1]; y++) {
             for (let z = o.minCoord[2]; z <= o.maxCoord[2]; z++) {
-              const c = _worldGrid.grid[gridIdx(_worldGrid, vec3.clone([x, y, z]))];
+              const c = _worldGrid.grid[gridIdx(_worldGrid, [x, y, z])];
               checkCell(o, c);
             }
           }
@@ -217,8 +218,8 @@ interface ObjLL {
   prev: WorldCell | ObjLL | null;
 }
 function createWorldGrid(aabb: AABB, cellSize: vec3): WorldGrid {
-  const chunkSize = vec3.sub(aabb.max, aabb.min, vec3.create());
-  const dims = vec3.div(chunkSize, cellSize, vec3.create());
+  const chunkSize = vec3.sub(vec3.create(), aabb.max, aabb.min);
+  const dims = vec3.div(vec3.create(), chunkSize, cellSize);
   vec3Floor(dims, dims);
   const gridLength = dims[0] * dims[1] * dims[2];
   console.log(gridLength);
@@ -249,7 +250,7 @@ function gridIdx(g: WorldGrid, coord: vec3): number {
   return idx;
 }
 function gridCoord(out: vec3, g: WorldGrid, pos: vec3): vec3 {
-  vec3.div(vec3.sub(pos, g.aabb.min, out), g.cellSize, out);
+  vec3.div(out, vec3.sub(out, pos, g.aabb.min), g.cellSize);
   // clamp coordinates onto world grid
   // TODO(@darzu): should we use multiple grids?
   out[0] = clamp(Math.floor(out[0]), 0, g.dimensions[0] - 1);
@@ -330,6 +331,57 @@ export interface RayHit {
   id: number;
   dist: number;
 }
+
+export function rayVsRay(ra: Ray, rb: Ray): vec3 | undefined {
+  // ra.org[0] + ra.dir[0] * ta === rb.org[0] + rb.dir[0] * tb
+  // ra.org[1] + ra.dir[1] * ta === rb.org[1] + rb.dir[1] * tb
+  // ra.org[2] + ra.dir[2] * ta === rb.org[2] + rb.dir[2] * tb
+  // const ta = ((rb.org[0] + rb.dir[0] * tb) - ra.org[0]) / ra.dir[0];
+  // const tb = ...
+  // TODO(@darzu): how does line intersection work?
+
+  // TODO(@darzu): select axis based on rays
+  const x = 0;
+  const y = 2;
+
+  const a = ra.org;
+  const da = ra.dir;
+  const b = rb.org;
+  const db = rb.dir;
+
+  const term1 = a[y] - b[y] + (da[y] * b[x]) / da[x] - (da[y] * a[x]) / da[x];
+  const term2 = db[y] - (da[y] * db[x]) / da[x];
+  const tb = term1 / term2;
+
+  if (isNaN(tb) || !isFinite(tb) || tb < 0.0) return undefined;
+
+  const ta = (b[x] + db[x] * tb - a[x]) / da[x];
+
+  if (isNaN(ta) || !isFinite(ta) || ta < 0.0) return undefined;
+
+  const pt = vec3.add(vec3.create(), b, vec3.scale(tempVec3(), db, tb));
+
+  // TODO(@darzu): this doesn't handle the third axis!!
+
+  return pt;
+
+  // TODO(@darzu): put this in unit tests...
+  // const ra: Ray = {
+  //   org: [1, 0, 1],
+  //   dir: [1, 0, 0],
+  // };
+  // const rb: Ray = {
+  //   org: [-1, 0, -1],
+  //   dir: [0.3, 0, 0.5],
+  // };
+  // const pab = rayVsRay(ra, rb);
+  // console.dir({
+  //   ra,
+  //   rb,
+  //   pab,
+  // });
+}
+
 function checkRayVsOct(tree: OctTree, ray: Ray): RayHit[] {
   // check this node's AABB
   const d = rayHitDist(tree.aabb, ray);
@@ -392,7 +444,11 @@ function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
     _nextMap--;
     return null;
   }
-  const nextLen = vec3.scale(vec3.sub(aabb.max, aabb.min, _scratchVec3), 0.5, _scratchVec3);
+  const nextLen = vec3.scale(
+    _scratchVec3,
+    vec3.sub(_scratchVec3, aabb.max, aabb.min),
+    0.5
+  );
   if (thisObjs.size <= 2 || nextLen[0] <= _octtreeMinLen)
     return {
       aabb,
@@ -404,8 +460,8 @@ function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
     for (let yMin of [aabb.min[1], aabb.min[1] + nextLen[1]]) {
       for (let zMin of [aabb.min[2], aabb.min[2] + nextLen[2]]) {
         childAABBs.push({
-          min: vec3.clone([xMin, yMin, zMin]),
-          max: vec3.clone([xMin + nextLen[0], yMin + nextLen[1], zMin + nextLen[2]]),
+          min: [xMin, yMin, zMin],
+          max: [xMin + nextLen[0], yMin + nextLen[1], zMin + nextLen[2]],
         });
       }
     }
@@ -494,8 +550,8 @@ export interface AABB {
 }
 export function createAABB(): AABB {
   return {
-    min: vec3.create(),
-    max: vec3.create(),
+    min: vec3.fromValues(Infinity, Infinity, Infinity),
+    max: vec3.fromValues(-Infinity, -Infinity, -Infinity),
   };
 }
 export function copyAABB(out: AABB, a: AABB) {
@@ -503,24 +559,173 @@ export function copyAABB(out: AABB, a: AABB) {
   vec3.copy(out.max, a.max);
   return out;
 }
+
+export function getAABBCorners(aabb: AABB): vec3[] {
+  const points: vec3[] = [
+    [aabb.max[0], aabb.max[1], aabb.max[2]],
+    [aabb.max[0], aabb.max[1], aabb.min[2]],
+    [aabb.max[0], aabb.min[1], aabb.max[2]],
+    [aabb.max[0], aabb.min[1], aabb.min[2]],
+
+    [aabb.min[0], aabb.max[1], aabb.max[2]],
+    [aabb.min[0], aabb.max[1], aabb.min[2]],
+    [aabb.min[0], aabb.min[1], aabb.max[2]],
+    [aabb.min[0], aabb.min[1], aabb.min[2]],
+  ];
+  return points;
+}
+
+const tempAabbCorners: vec3[] = range(8).map((_) => vec3.create());
+export function getAABBCornersTemp(aabb: AABB): vec3[] {
+  vec3.set(tempAabbCorners[0], aabb.max[0], aabb.max[1], aabb.max[2]);
+  vec3.set(tempAabbCorners[1], aabb.max[0], aabb.max[1], aabb.min[2]);
+  vec3.set(tempAabbCorners[2], aabb.max[0], aabb.min[1], aabb.max[2]);
+  vec3.set(tempAabbCorners[3], aabb.max[0], aabb.min[1], aabb.min[2]);
+  vec3.set(tempAabbCorners[4], aabb.min[0], aabb.max[1], aabb.max[2]);
+  vec3.set(tempAabbCorners[5], aabb.min[0], aabb.max[1], aabb.min[2]);
+  vec3.set(tempAabbCorners[6], aabb.min[0], aabb.min[1], aabb.max[2]);
+  vec3.set(tempAabbCorners[7], aabb.min[0], aabb.min[1], aabb.min[2]);
+  return tempAabbCorners;
+}
+
+export function transformAABB(out: AABB, t: mat4) {
+  const wCorners = getAABBCornersTemp(out);
+  wCorners.forEach((p) => vec3.transformMat4(p, p, t));
+  getAABBFromPositions(out, wCorners);
+}
+
 export function aabbCenter(out: vec3, a: AABB): vec3 {
   out[0] = (a.min[0] + a.max[0]) * 0.5;
   out[1] = (a.min[1] + a.max[1]) * 0.5;
   out[2] = (a.min[2] + a.max[2]) * 0.5;
   return out;
 }
-export function getAABBFromPositions(positions: vec3[]): AABB {
-  const min = vec3.fromValues(Infinity, Infinity, Infinity);
-  const max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
+export function updateAABBWithPoint(aabb: AABB, pos: vec3): AABB {
+  aabb.min[0] = Math.min(pos[0], aabb.min[0]);
+  aabb.min[1] = Math.min(pos[1], aabb.min[1]);
+  aabb.min[2] = Math.min(pos[2], aabb.min[2]);
+  aabb.max[0] = Math.max(pos[0], aabb.max[0]);
+  aabb.max[1] = Math.max(pos[1], aabb.max[1]);
+  aabb.max[2] = Math.max(pos[2], aabb.max[2]);
+  return aabb;
+}
+
+export function mergeAABBs(out: AABB, a: AABB, b: AABB): AABB {
+  out.min[0] = Math.min(a.min[0], b.min[0]);
+  out.min[1] = Math.min(a.min[1], b.min[1]);
+  out.min[2] = Math.min(a.min[2], b.min[2]);
+  out.max[0] = Math.max(a.max[0], b.max[0]);
+  out.max[1] = Math.max(a.max[1], b.max[1]);
+  out.max[2] = Math.max(a.max[2], b.max[2]);
+  return out;
+}
+
+export function getAABBFromPositions(out: AABB, positions: vec3[]): AABB {
+  vec3.set(out.min, Infinity, Infinity, Infinity);
+  vec3.set(out.max, -Infinity, -Infinity, -Infinity);
 
   for (let pos of positions) {
-    min[0] = Math.min(pos[0], min[0]);
-    min[1] = Math.min(pos[1], min[1]);
-    min[2] = Math.min(pos[2], min[2]);
-    max[0] = Math.max(pos[0], max[0]);
-    max[1] = Math.max(pos[1], max[1]);
-    max[2] = Math.max(pos[2], max[2]);
+    updateAABBWithPoint(out, pos);
   }
 
-  return { min, max };
+  return out;
+}
+
+export interface Sphere {
+  org: vec3;
+  rad: number;
+}
+
+export interface Line {
+  ray: Ray;
+  len: number;
+}
+export function getLineEnd(out: vec3, line: Line) {
+  vec3.scale(out, line.ray.dir, line.len);
+  vec3.add(out, line.ray.org, out);
+  return out;
+}
+export function getLineMid(out: vec3, line: Line) {
+  vec3.scale(out, line.ray.dir, line.len * 0.5);
+  vec3.add(out, line.ray.org, out);
+  return out;
+}
+
+// TODO(@darzu): do we need this pattern?
+export function emptyRay(): Ray {
+  return {
+    org: vec3.create(),
+    dir: vec3.create(),
+  };
+}
+export function copyRay(out: Ray, a: Ray): Ray {
+  vec3.copy(out.org, a.org);
+  vec3.copy(out.dir, a.dir);
+  return out;
+}
+export function emptyLine(): Line {
+  return {
+    ray: emptyRay(),
+    len: 0,
+  };
+}
+export function copyLine(out: Line, a: Line): Line {
+  copyRay(out.ray, a.ray);
+  out.len = a.len;
+  return out;
+}
+
+export function createLine(a: vec3, b: vec3): Line {
+  const len = vec3.dist(a, b);
+  const dir = vec3.sub(vec3.create(), b, a);
+  vec3.normalize(dir, dir);
+  return {
+    ray: {
+      org: vec3.clone(a),
+      dir,
+    },
+    len,
+  };
+}
+
+export function transformLine(out: Line, t: mat4) {
+  // TODO(@darzu): this code needs review. It might not work right with scaling
+  vec3.normalize(out.ray.dir, out.ray.dir); // might not be needed if inputs r always normalized
+  vec3.transformMat4(out.ray.org, out.ray.org, t);
+  const t3 = mat3.fromMat4(tempMat3(), t);
+  vec3.transformMat3(out.ray.dir, out.ray.dir, t3);
+  const lenScale = vec3.len(out.ray.dir);
+  out.len = out.len * lenScale;
+  vec3.normalize(out.ray.dir, out.ray.dir);
+  return out;
+}
+
+export function raySphereIntersections(
+  ray: Ray,
+  sphere: Sphere
+): vec2 | undefined {
+  // https://iquilezles.org/articles/intersectors/
+  const a = vec3.sub(tempVec3(), ray.org, sphere.org);
+  const b = vec3.dot(a, ray.dir);
+  const c = vec3.dot(a, a) - sphere.rad * sphere.rad;
+  const h = b * b - c;
+  if (h < 0.0) return undefined; // no intersection
+  const h2 = Math.sqrt(h);
+  return vec2.fromValues(-b - h2, -b + h2);
+}
+
+export function lineSphereIntersections(
+  line: Line,
+  sphere: Sphere
+): vec2 | undefined {
+  const hits = raySphereIntersections(line.ray, sphere);
+  // return hits; // TODO(@darzu): HACK
+  if (!hits) return undefined;
+  // TODO(@darzu): what about negative numbers?
+  if (
+    (hits[0] < 0 || line.len < hits[0]) &&
+    (hits[1] < 0 || line.len < hits[1])
+  )
+    return undefined;
+  return hits;
 }

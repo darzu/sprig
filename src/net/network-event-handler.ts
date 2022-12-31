@@ -59,7 +59,7 @@ export function registerHandleNetworkEvents(em: EntityManager) {
 
 export function registerSendOutboxes(em: EntityManager) {
   function sendOutboxes(
-    peers: { peer: Peer; outbox: Outbox }[],
+    peers: readonly { peer: Peer; outbox: Outbox }[],
     { eventsToNetwork }: { eventsToNetwork: ToNetworkEvent[] }
   ) {
     for (let {

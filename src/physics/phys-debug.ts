@@ -1,7 +1,7 @@
 import { ColliderDef } from "./collider.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { AssetsDef, LocalMeshes } from "../game/assets.js";
-import { ColorDef } from "../color.js";
+import { ColorDef } from "../color-ecs.js";
 import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
 import { cloneMesh, mapMeshPositions, RawMesh } from "../render/mesh.js";
@@ -24,7 +24,8 @@ import {
   ScaleDef,
   updateFrameFromPosRotScale,
 } from "./transform.js";
-import { vec3 } from "../sprig-matrix.js";
+
+// TODO(@darzu): re-enable all this! it requires line drawing again
 
 export const PhysicsDbgDef = EM.defineComponent("_physDbgState", () => {
   return {
@@ -57,6 +58,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
             const dbgE = em.newEntity();
 
             // with a wireframe mesh
+            // TODO(@darzu): doesn't work w/o our line renderer
             em.addComponent(
               dbgE.id,
               RenderableConstructDef,
@@ -66,7 +68,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
             );
 
             // colored
-            em.addComponent(dbgE.id, ColorDef, vec3.clone([0, 1, 0]));
+            em.addComponent(dbgE.id, ColorDef, [0, 1, 0]);
 
             // positioned and scaled
             em.ensureComponentOn(dbgE, PositionDef);
@@ -140,13 +142,11 @@ export function setCubePosScaleToAABB(
 function meshFromAABB(aabb: AABB): RawMesh {
   // resize
   const m = cloneMesh(LocalMeshes.cube());
-  mapMeshPositions(m, (p) =>
-    vec3.clone([
-      mathMap(p[0], -1, 1, 0, aabb.max[0] - aabb.min[0]),
-      mathMap(p[1], -1, 1, 0, aabb.max[1] - aabb.min[1]),
-      mathMap(p[2], -1, 1, 0, aabb.max[2] - aabb.min[2]),
-    ])
-  );
+  mapMeshPositions(m, (p) => [
+    mathMap(p[0], -1, 1, 0, aabb.max[0] - aabb.min[0]),
+    mathMap(p[1], -1, 1, 0, aabb.max[1] - aabb.min[1]),
+    mathMap(p[2], -1, 1, 0, aabb.max[2] - aabb.min[2]),
+  ]);
   // drop the triangles (wireframe lines only)
   m.tri = [];
   m.colors = [];

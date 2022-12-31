@@ -1,6 +1,6 @@
 import { Collider, ColliderDef } from "./collider.js";
 import { EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { mat3, mat4, quat, vec3 } from "../gl-matrix.js";
 import { clamp } from "../math.js";
 import {
   AngularVelocityDef,
@@ -60,7 +60,11 @@ export function registerPhysicsClampVelocityByContact(em: EntityManager) {
           let bToAInBParent = data.bToANorm;
           const bInDirOfA = vec3.dot(b.linearVelocity, bToAInBParent);
           if (bInDirOfA > 0) {
-            vec3.sub(b.linearVelocity, vec3.scale(bToAInBParent, bInDirOfA), b.linearVelocity);
+            vec3.sub(
+              b.linearVelocity,
+              b.linearVelocity,
+              vec3.scale(tempVec3(), bToAInBParent, bInDirOfA)
+            );
           }
         }
 
@@ -69,7 +73,11 @@ export function registerPhysicsClampVelocityByContact(em: EntityManager) {
           let bToAInAParent = data.bToANorm;
           const aInDirOfB = -vec3.dot(a.linearVelocity, bToAInAParent);
           if (aInDirOfB > 0) {
-            vec3.sub(a.linearVelocity, vec3.scale(bToAInAParent, -aInDirOfB), a.linearVelocity);
+            vec3.sub(
+              a.linearVelocity,
+              a.linearVelocity,
+              vec3.scale(tempVec3(), bToAInAParent, -aInDirOfB)
+            );
           }
         }
       }
@@ -106,8 +114,8 @@ export function registerPhysicsApplyLinearVelocity(em: EntityManager) {
     (objs, res) => {
       for (let o of objs) {
         // translate position and AABB according to linear velocity
-        linVelDelta = vec3.scale(o.linearVelocity, res.time.dt, linVelDelta);
-        vec3.add(o.position, linVelDelta, o.position);
+        linVelDelta = vec3.scale(linVelDelta, o.linearVelocity, res.time.dt);
+        vec3.add(o.position, o.position, linVelDelta);
       }
     },
     "registerPhysicsApplyLinearVelocity"
@@ -121,14 +129,16 @@ export function registerPhysicsApplyAngularVelocity(em: EntityManager) {
     (objs, res) => {
       for (let o of objs) {
         // change rotation according to angular velocity
-        // change rotation according to angular velocity
-vec3.normalize(o.angularVelocity, normalizedVelocity);
+        vec3.normalize(normalizedVelocity, o.angularVelocity);
         let angle = vec3.length(o.angularVelocity) * res.time.dt;
-        deltaRotation = quat.setAxisAngle(normalizedVelocity, angle, deltaRotation);
+        deltaRotation = quat.setAxisAngle(
+          deltaRotation,
+          normalizedVelocity,
+          angle
+        );
         quat.normalize(deltaRotation, deltaRotation);
         // note--quat multiplication is not commutative, need to multiply on the left
-        // note--quat multiplication is not commutative, need to multiply on the left
-quat.mul(deltaRotation, o.rotation, o.rotation);
+        quat.multiply(o.rotation, deltaRotation, o.rotation);
       }
     },
     "physicsApplyAngularVelocity"

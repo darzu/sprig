@@ -1,5 +1,12 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import {
+  mat4,
+  quat,
+  ReadonlyMat4,
+  ReadonlyQuat,
+  ReadonlyVec3,
+  vec3,
+} from "../gl-matrix.js";
 import { createFrame, WorldFrameDef } from "./nonintersection.js";
 import { tempVec3, tempQuat } from "../temp-pool.js";
 import { FALSE, dbgLogOnce } from "../util.js";
@@ -30,10 +37,10 @@ export interface Frame {
   scale: vec3;
 }
 export interface ReadonlyFrame {
-  transform: mat4;
-  position: vec3;
-  rotation: quat;
-  scale: vec3;
+  transform: ReadonlyMat4;
+  position: ReadonlyVec3;
+  rotation: ReadonlyQuat;
+  scale: ReadonlyVec3;
 }
 
 export const IDENTITY_FRAME: ReadonlyFrame = {
@@ -44,13 +51,18 @@ export const IDENTITY_FRAME: ReadonlyFrame = {
 };
 
 export function updateFrameFromTransform(f: Frame): asserts f is Frame {
-  f.position = mat4.getTranslation(f.transform, f.position);
-  f.rotation = mat4.getRotation(f.transform, f.rotation);
-  f.scale = mat4.getScaling(f.transform, f.scale);
+  f.position = mat4.getTranslation(f.position, f.transform);
+  f.rotation = mat4.getRotation(f.rotation, f.transform);
+  f.scale = mat4.getScaling(f.scale, f.transform);
 }
 
 export function updateFrameFromPosRotScale(f: Frame) {
-  f.transform = mat4.fromRotationTranslationScale(f.rotation, f.position, f.scale, f.transform);
+  f.transform = mat4.fromRotationTranslationScale(
+    f.transform,
+    f.rotation,
+    f.position,
+    f.scale
+  );
 }
 
 export function copyFrame(out: Frame, frame: Frame) {
@@ -58,6 +70,13 @@ export function copyFrame(out: Frame, frame: Frame) {
   vec3.copy(out.scale, frame.scale);
   quat.copy(out.rotation, frame.rotation);
   mat4.copy(out.transform, frame.transform);
+}
+
+export function identityFrame(out: Frame) {
+  vec3.zero(out.position);
+  vec3.copy(out.scale, vec3.ONES);
+  quat.identity(out.rotation);
+  mat4.identity(out.transform);
 }
 
 // TRANSFORM
@@ -149,8 +168,7 @@ function updateWorldFromLocalAndParent(o: Transformable) {
     }
 
     // update relative to parent
-    // update relative to parent
-mat4.mul(parent.world.transform, o.transform, o.world.transform);
+    mat4.mul(o.world.transform, parent.world.transform, o.transform);
     updateFrameFromTransform(o.world);
   } else {
     // no parent
@@ -185,6 +203,7 @@ export function registerUpdateLocalFromPosRotScale(
     null,
     [],
     (objs) => {
+      // TODO(@darzu): PERF. Hacky custom query! Not cached n stuff.
       for (let o of em.entities.values()) {
         if (!o.id) continue;
         // TODO(@darzu): do we really want these on every entity?

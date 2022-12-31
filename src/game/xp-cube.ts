@@ -1,7 +1,6 @@
 import { CameraDef } from "../camera.js";
-import { ColorDef } from "../color.js";
 import { EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec3, quat } from "../gl-matrix.js";
 import { max } from "../math.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef } from "../physics/motion.js";
@@ -25,7 +24,7 @@ import {
 import { uintToVec3unorm } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";
-import { createGhost } from "./game-sandbox.js";
+import { createGhost } from "./game.js";
 
 export async function initCubeGame(em: EntityManager) {
   const camera = em.addSingletonComponent(CameraDef);
@@ -42,9 +41,9 @@ export async function initCubeGame(em: EntityManager) {
   ];
   res.renderer.pipelines = [...computePipelinesPtrs, ...renderPipelinesPtrs];
 
-  const e = createGhost(em);
+  const e = createGhost();
   vec3.copy(e.position, [0, 1, -1.2]);
-  quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, e.rotation);
+  quat.setAxisAngle(e.rotation, [0.0, -1.0, 0.0], 1.62);
   e.controllable.sprintMul = 3;
 
   // TODO(@darzu): this shouldn't be necessary
@@ -68,9 +67,9 @@ export async function initCubeGame(em: EntityManager) {
   // console.dir(boxM.colors);
   em.ensureComponentOn(box, RenderableConstructDef, boxM);
   // em.ensureComponentOn(box, ColorDef, [0.1, 0.4, 0.1]);
-  em.ensureComponentOn(box, PositionDef, vec3.clone([0, 0, 3]));
+  em.ensureComponentOn(box, PositionDef, [0, 0, 3]);
   em.ensureComponentOn(box, RotationDef);
-  em.ensureComponentOn(box, AngularVelocityDef, vec3.clone([0, 0.001, 0.001]));
+  em.ensureComponentOn(box, AngularVelocityDef, [0, 0.001, 0.001]);
   em.ensureComponentOn(box, WorldFrameDef);
   em.ensureComponentOn(box, ColliderDef, {
     shape: "AABB",
@@ -92,7 +91,7 @@ const cubeRenderPipeline = CY.createRenderPipeline("cubeRender", {
       ptr: litTexturePtr,
       clear: "once",
       // defaultColor: [0.0, 0.0, 0.0, 1.0],
-      defaultColor: vec4.clone([0.1, 0.1, 0.1, 1.0]),
+      defaultColor: [0.1, 0.1, 0.1, 1.0],
       // defaultColor: [0.7, 0.8, 1.0, 1.0],
     },
   ],

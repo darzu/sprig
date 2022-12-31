@@ -5,7 +5,7 @@ import {
   EntityW,
   Component,
 } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { quat, ReadonlyVec3, vec3 } from "../gl-matrix.js";
 import {
   PhysicsParentDef,
   PositionDef,
@@ -50,7 +50,7 @@ export function constructNetTurret(
   cameraYawOffset: number = 0,
   cameraPitchOffset: number = -Math.PI / 8,
   cameraYawFactor: number = 0,
-  cameraFollowOffset: vec3 = CAMERA_OFFSETS.thirdPersonOverShoulder
+  cameraFollowOffset: ReadonlyVec3 = CAMERA_OFFSETS.thirdPersonOverShoulder
 ): asserts e is EntityW<
   [
     typeof TurretDef,
@@ -85,10 +85,10 @@ export function constructNetTurret(
   if ("min" in aabbOrInteractionEntity) {
     interactBox = EM.newEntity();
     const interactAABB = copyAABB(createAABB(), aabbOrInteractionEntity);
-    vec3.scale(interactAABB.min, 2, interactAABB.min);
-    vec3.scale(interactAABB.max, 2, interactAABB.max);
+    vec3.scale(interactAABB.min, interactAABB.min, 2);
+    vec3.scale(interactAABB.max, interactAABB.max, 2);
     EM.ensureComponentOn(interactBox, PhysicsParentDef, e.id);
-    EM.ensureComponentOn(interactBox, PositionDef, vec3.clone([0, 0, 0]));
+    EM.ensureComponentOn(interactBox, PositionDef, [0, 0, 0]);
     EM.ensureComponentOn(interactBox, ColliderDef, {
       shape: "AABB",
       solid: false,
@@ -168,13 +168,13 @@ export function registerTurretSystems(em: EntityManager) {
         if (DeletedDef.isOn(c)) continue;
         if (c.turret.mannedId !== player.id) continue;
 
-        c.yawpitch.yaw += -res.inputs.mouseMovX * 0.005;
+        c.yawpitch.yaw += -res.inputs.mouseMov[0] * 0.005;
         c.yawpitch.yaw = clamp(
           c.yawpitch.yaw,
           c.turret.minYaw,
           c.turret.maxYaw
         );
-        c.yawpitch.pitch += -res.inputs.mouseMovY * 0.002;
+        c.yawpitch.pitch += -res.inputs.mouseMov[1] * 0.002;
         c.yawpitch.pitch = clamp(
           c.yawpitch.pitch,
           c.turret.minPitch,

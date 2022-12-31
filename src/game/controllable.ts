@@ -2,7 +2,7 @@ import { AnimateToDef } from "../animate-to.js";
 import { CameraFollowDef } from "../camera.js";
 import { CanvasDef } from "../canvas.js";
 import { EM, EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec3, quat } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { LinearVelocityDef } from "../physics/motion.js";
@@ -58,17 +58,11 @@ export function registerControllableSystems(em: EntityManager) {
   const steerVel = vec3.create();
 
   em.registerSystem(
-    [
-      ControllableDef,
-      AuthorityDef,
-      LinearVelocityDef,
-      RotationDef,
-      WorldFrameDef,
-    ],
+    [ControllableDef, LinearVelocityDef, RotationDef, WorldFrameDef],
     [InputsDef, MeDef, CanvasDef, TimeDef],
     (controllables, res) => {
       for (let c of controllables) {
-        if (c.authority.pid !== res.me.pid) continue;
+        if (AuthorityDef.isOn(c) && c.authority.pid !== res.me.pid) continue;
         // don't control things when we're not locked onto the canvas
         if (
           c.controllable.requiresPointerLock &&
@@ -106,25 +100,28 @@ export function registerControllableSystems(em: EntityManager) {
             c.linearVelocity[1] = c.controllable.jumpSpeed * res.time.dt;
 
         // apply our steering velocity
-        // apply our steering velocity
-vec3.transformQuat(steerVel, c.rotation, steerVel);
+        vec3.transformQuat(steerVel, steerVel, c.rotation);
         c.linearVelocity[0] = steerVel[0];
         c.linearVelocity[2] = steerVel[2];
         if (modes.canFly) c.linearVelocity[1] = steerVel[1];
 
         if (modes.canYaw)
-          quat.rotateY(c.rotation, -res.inputs.mouseMovX * c.controllable.turnSpeed, c.rotation);
+          quat.rotateY(
+            c.rotation,
+            c.rotation,
+            -res.inputs.mouseMov[0] * c.controllable.turnSpeed
+          );
       }
     },
     "controllableInput"
   );
 
   em.registerSystem(
-    [ControllableDef, CameraFollowDef, AuthorityDef],
+    [ControllableDef, CameraFollowDef],
     [InputsDef, MeDef, CanvasDef],
     (controllables, res) => {
       for (let c of controllables) {
-        if (c.authority.pid !== res.me.pid) continue;
+        if (AuthorityDef.isOn(c) && c.authority.pid !== res.me.pid) continue;
         if (
           c.controllable.requiresPointerLock &&
           !res.htmlCanvas.hasMouseLock()
@@ -133,11 +130,11 @@ vec3.transformQuat(steerVel, c.rotation, steerVel);
         // TODO(@darzu): probably need to use yaw-pitch :(
         if (c.controllable.modes.canCameraYaw) {
           c.cameraFollow.yawOffset +=
-            -res.inputs.mouseMovX * c.controllable.turnSpeed;
+            -res.inputs.mouseMov[0] * c.controllable.turnSpeed;
         }
         if (c.controllable.modes.canPitch)
           c.cameraFollow.pitchOffset +=
-            -res.inputs.mouseMovY * c.controllable.turnSpeed;
+            -res.inputs.mouseMov[1] * c.controllable.turnSpeed;
       }
     },
     "controllableCameraFollow"

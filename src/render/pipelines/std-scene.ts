@@ -1,25 +1,33 @@
-import { vec2, vec3, vec4, quat, mat4 } from "../../sprig-matrix.js";
+import { vec3, mat4, vec4 } from "../../gl-matrix.js";
+import { assertDbg } from "../../util.js";
 import { computeTriangleNormal } from "../../utils-3d.js";
 import { CY } from "../gpu-registry.js";
 import { createCyStruct, CyToTS } from "../gpu-struct.js";
-import { MeshHandle } from "../mesh-pool.js";
+import { MAX_INDICES, MeshHandle } from "../mesh-pool.js";
 import { getAABBFromMesh, Mesh } from "../mesh.js";
 
 export const MAX_MESHES = 20000;
-export const MAX_VERTICES = 21844;
+export const MAX_VERTICES = MAX_INDICES; // 21844;
 
 export const VertexStruct = createCyStruct(
   {
     position: "vec3<f32>",
     color: "vec3<f32>",
     normal: "vec3<f32>",
-    uv: "vec2<f32>",
+    // TODO(@darzu): add UV back? needed for ocean stuff?
+    // uv: "vec2<f32>",
     surfaceId: "u32",
   },
   {
     isCompact: true,
     serializer: (
-      { position, color, normal, uv, surfaceId },
+      {
+        position,
+        color,
+        normal,
+        // uv,
+        surfaceId,
+      },
       _,
       offsets_32,
       views
@@ -27,19 +35,34 @@ export const VertexStruct = createCyStruct(
       views.f32.set(position, offsets_32[0]);
       views.f32.set(color, offsets_32[1]);
       views.f32.set(normal, offsets_32[2]);
-      views.f32.set(uv, offsets_32[3]);
-      views.u32[offsets_32[4]] = surfaceId;
+      // views.f32.set(uv, offsets_32[3]);
+      // views.u32[offsets_32[4]] = surfaceId;
+      views.u32[offsets_32[3]] = surfaceId;
     },
   }
 );
 export type VertexTS = CyToTS<typeof VertexStruct.desc>;
+export function createEmptyVertexTS(): VertexTS {
+  return {
+    position: vec3.create(),
+    color: vec3.create(),
+    // tangent: m.tangents ? m.tangents[i] : [1.0, 0.0, 0.0],
+    normal: vec3.create(),
+    // uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
+    surfaceId: 0,
+  };
+}
 
 export const MeshUniformStruct = createCyStruct(
   {
     transform: "mat4x4<f32>",
-    aabbMin: "vec3<f32>",
-    aabbMax: "vec3<f32>",
+    // TODO(@darzu): option for aabbs?
+    // aabbMin: "vec3<f32>",
+    // aabbMax: "vec3<f32>",
     tint: "vec3<f32>",
+    // TODO(@darzu): is this how we want to handle alpha?
+    //  Shouldn't it just be part of color?
+    alpha: "f32",
     id: "u32",
     // TODO: is this a good idea?
     flags: "u32",
@@ -48,11 +71,13 @@ export const MeshUniformStruct = createCyStruct(
     isUniform: true,
     serializer: (d, _, offsets_32, views) => {
       views.f32.set(d.transform, offsets_32[0]);
-      views.f32.set(d.aabbMin, offsets_32[1]);
-      views.f32.set(d.aabbMax, offsets_32[2]);
-      views.f32.set(d.tint, offsets_32[3]);
-      views.u32[offsets_32[4]] = d.id;
-      views.u32[offsets_32[5]] = d.flags;
+      // TODO(@darzu): option for aabbs?
+      // views.f32.set(d.aabbMin, offsets_32[1]);
+      // views.f32.set(d.aabbMax, offsets_32[2]);
+      views.f32.set(d.tint, offsets_32[1]);
+      views.f32[offsets_32[2]] = d.alpha;
+      views.u32[offsets_32[3]] = d.id;
+      views.u32[offsets_32[4]] = d.flags;
     },
   }
 );
@@ -93,26 +118,44 @@ export function computeUniData(m: Mesh): MeshUniformTS {
   const { min, max } = getAABBFromMesh(m);
   const uni: MeshUniformTS = {
     transform: mat4.create(),
-    aabbMin: min,
-    aabbMax: max,
+    // TODO(@darzu): option for aabbs?
+    // aabbMin: min,
+    // aabbMax: max,
     tint: vec3.create(),
+    alpha: 1.0,
     id: 0,
     flags: 0,
   };
   return uni;
 }
 
-export function computeVertsData(m: Mesh): VertexTS[] {
-  const vertsData: VertexTS[] = m.pos.map((pos, i) => ({
-    position: pos,
-    color: vec3.clone([1.0, 0.0, 1.0]), // per-face; changed below
-    tangent: m.tangents ? m.tangents[i] : vec3.clone([1.0, 0.0, 0.0]), // per-face; changed below (maybe)
-    normal: m.normals ? m.normals[i] : vec3.clone([0.0, 1.0, 0.0]), // per-face; changed below (maybe)
-    uv: m.uvs ? m.uvs[i] : vec2.clone([0.0, 0.0]),
-    surfaceId: 0, // per-face; changed below
-  }));
+// TODO(@darzu): Allow updates directly to serialized data
+// TODO(@darzu): Related, allow updates that don't change e.g. the normals
+const tempVertsData: VertexTS[] = [];
+export function computeVertsData(
+  m: Mesh,
+  startIdx: number,
+  count: number
+): VertexTS[] {
+  assertDbg(0 <= startIdx && startIdx + count <= m.pos.length);
+
+  while (tempVertsData.length < count)
+    tempVertsData.push(createEmptyVertexTS());
+
+  for (let vi = startIdx; vi < startIdx + count; vi++) {
+    const dIdx = vi - startIdx;
+    // NOTE: assignment is fine since this better not be used without being re-assigned
+    tempVertsData[dIdx].position = m.pos[vi];
+    // TODO(@darzu): UVs and other properties?
+  }
+  // NOTE: for per-face data (e.g. color and surface IDs), first all the quads then tris
   m.tri.forEach((triInd, i) => {
     // set provoking vertex data
+    const provVi = triInd[0];
+    // is triangle relevant to changed vertices?
+    if (provVi < startIdx || startIdx + count <= provVi) return;
+
+    const dIdx = provVi - startIdx;
     // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
     // TODO(@darzu): what to do about normals. If we're modifying verts, they need to recompute. But it might be in the mesh.
     const normal = computeTriangleNormal(
@@ -120,23 +163,33 @@ export function computeVertsData(m: Mesh): VertexTS[] {
       m.pos[triInd[1]],
       m.pos[triInd[2]]
     );
-    vertsData[triInd[0]].normal = normal;
-    vertsData[triInd[0]].color = m.colors[i];
-    vertsData[triInd[0]].surfaceId = m.surfaceIds[i];
+    tempVertsData[dIdx].normal = normal;
+    const faceIdx = i + m.quad.length; // quads first
+    // TODO(@darzu): QUAD DATA BEING FIRST BUT TRIANGLES INDICES BEING FIRST IS INCONSISTENT
+    tempVertsData[dIdx].color = m.colors[faceIdx];
+    tempVertsData[dIdx].surfaceId = m.surfaceIds[faceIdx];
   });
+
   m.quad.forEach((quadInd, i) => {
     // set provoking vertex data
+    const provVi = quadInd[0];
+    // is quad relevant to changed vertices?
+    if (provVi < startIdx || startIdx + count <= provVi) return;
+
+    const dIdx = provVi - startIdx;
     const normal = computeTriangleNormal(
       m.pos[quadInd[0]],
       m.pos[quadInd[1]],
       m.pos[quadInd[2]]
     );
-    vertsData[quadInd[0]].normal = normal;
-    // TODO(@darzu): this isn't right, colors and surfaceIds r being indexed by tris and quads
-    vertsData[quadInd[0]].color = m.colors[i];
-    vertsData[quadInd[0]].surfaceId = m.surfaceIds[i];
+    tempVertsData[dIdx].normal = normal;
+    const faceIdx = i; // quads first
+    // TODO(@darzu): QUAD DATA BEING FIRST BUT TRIANGLES INDICES BEING FIRST IS INCONSISTENT
+    tempVertsData[dIdx].color = m.colors[faceIdx];
+    tempVertsData[dIdx].surfaceId = m.surfaceIds[faceIdx];
   });
-  return vertsData;
+
+  return tempVertsData;
 }
 
 export const SceneStruct = createCyStruct(

@@ -1,5 +1,5 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { mat3, mat4, quat, vec2, vec3, vec4 } from "../gl-matrix.js";
 import { importObj, isParseError } from "../import_obj.js";
 import {
   cloneMesh,
@@ -8,17 +8,19 @@ import {
   getHalfsizeFromAABB,
   getMeshAsGrid,
   mapMeshPositions,
+  mergeMeshes,
   Mesh,
   normalizeMesh,
   RawMesh,
   scaleMesh,
   scaleMesh3,
   transformMesh,
+  validateMesh,
 } from "../render/mesh.js";
 import { AABB } from "../physics/broadphase.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { Renderer } from "../render/renderer-ecs.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import { objMap, range } from "../util.js";
 import { getText } from "../webget.js";
 import { AABBCollider } from "../physics/collider.js";
@@ -26,14 +28,29 @@ import {
   computeTriangleNormal,
   farthestPointInDir,
   normalizeVec2s,
+  randNormalPosVec3,
   SupportFn,
   uintToVec3unorm,
+  vec3Reverse,
+  vec4Reverse,
 } from "../utils-3d.js";
-import { MeshHandle } from "../render/mesh-pool.js";
+import { MeshHandle, MeshReserve } from "../render/mesh-pool.js";
 import { onInit } from "../init.js";
-import { mathMap, max, min } from "../math.js";
+import { jitter, mathMap, max, min } from "../math.js";
+import { VERBOSE_LOG } from "../flags.js";
+import {
+  createEmptyMesh,
+  createTimberBuilder,
+  debugBoardSystem,
+  getBoardsFromMesh,
+  unshareProvokingForWood,
+  WoodAssets,
+  WoodAssetsDef,
+} from "../wood.js";
+import { tempMat4, tempVec3 } from "../temp-pool.js";
 
 // TODO: load these via streaming
+// TODO(@darzu): it's really bad that all these assets are loaded for each game
 
 export const BLACK = vec3.fromValues(0, 0, 0);
 export const DARK_GRAY = vec3.fromValues(0.02, 0.02, 0.02);
@@ -41,11 +58,12 @@ export const LIGHT_GRAY = vec3.fromValues(0.2, 0.2, 0.2);
 export const DARK_BLUE = vec3.fromValues(0.03, 0.03, 0.2);
 export const LIGHT_BLUE = vec3.fromValues(0.05, 0.05, 0.2);
 
-const DEFAULT_ASSET_PATH = "/assets/";
-const BACKUP_ASSET_PATH = "http://sprig.land/assets/";
+const DEFAULT_ASSET_PATH = "assets/";
+const BACKUP_ASSET_PATH = "https://sprig.land/assets/";
 
 const RemoteMeshes = {
   ship: "barge.sprig.obj",
+  ship_fangs: "enemy_ship_fangs.sprig.obj",
   ball: "ball.sprig.obj",
   pick: "pick.sprig.obj",
   spaceore: "spaceore.sprig.obj",
@@ -53,13 +71,13 @@ const RemoteMeshes = {
   ammunitionBox: "ammunition_box.sprig.obj",
   linstock: "linstock.sprig.obj",
   cannon: "cannon_simple.sprig.obj",
+  ld51_cannon: "ld51_cannon.sprig.obj",
   grappleHook: "grapple-hook.sprig.obj",
   grappleGun: "grapple-gun.sprig.obj",
   grappleGunUnloaded: "grapple-gun-unloaded.sprig.obj",
   rudder: "rudder.sprig.obj",
   // TODO(@darzu): including hyperspace-ocean makes load time ~100ms slower :/
   ocean: "hyperspace-ocean.sprig.obj",
-  // ocean: "rudder.sprig.obj",
 } as const;
 
 type RemoteMeshSymbols = keyof typeof RemoteMeshes;
@@ -67,54 +85,106 @@ type RemoteMeshSymbols = keyof typeof RemoteMeshes;
 const RemoteMesheSets = {
   // TODO(@darzu): both of these are doing "cell fracture" in Blender
   //    than exporting into here. It'd be great if sprigland could
-  //    natively do that. Doing it natively would be great b/c there
+  //    natively do cell fracture b/c there
   //    is a lot of translate/scale alignment issues when we have
   //    a base model and a fractured model. Very hard to make changes.
   // TODO(@darzu): enemy broken parts doesn't seem to work rn. probably rename related
   boat_broken: "boat_broken.sprig.obj",
   ship_broken: "barge1_broken.sprig.obj",
+  ball_broken: "ball_broken6.sprig.obj",
 } as const;
 
 type RemoteMeshSetSymbols = keyof typeof RemoteMesheSets;
 
+export type AllMeshSymbols =
+  | RemoteMeshSymbols
+  | RemoteMeshSetSymbols
+  | LocalMeshSymbols;
+
 const MeshTransforms: Partial<{
-  [P in RemoteMeshSymbols | RemoteMeshSetSymbols | LocalMeshSymbols]: mat4;
+  [P in AllMeshSymbols]: mat4;
 }> = {
-  cannon: mat4.fromYRotation(-Math.PI / 2, mat4.create()),
-  linstock: mat4.fromScaling([0.1, 0.1, 0.1], mat4.create()),
+  cannon: mat4.fromYRotation(mat4.create(), -Math.PI / 2),
+  linstock: mat4.fromScaling(mat4.create(), [0.1, 0.1, 0.1]),
   // ship: mat4.fromScaling(mat4.create(), [3, 3, 3]),
   // ship_broken: mat4.fromScaling(mat4.create(), [3, 3, 3]),
-  spacerock: mat4.fromScaling([1.5, 1.5, 1.5], mat4.create()),
-  grappleGun: mat4.fromScaling([0.5, 0.5, 0.5], mat4.create()),
-  grappleGunUnloaded: mat4.fromScaling([0.5, 0.5, 0.5], mat4.create()),
-  grappleHook: mat4.fromScaling([0.5, 0.5, 0.5], mat4.create()),
+  spacerock: mat4.fromScaling(mat4.create(), [1.5, 1.5, 1.5]),
+  grappleGun: mat4.fromScaling(mat4.create(), [0.5, 0.5, 0.5]),
+  grappleGunUnloaded: mat4.fromScaling(mat4.create(), [0.5, 0.5, 0.5]),
+  grappleHook: mat4.fromScaling(mat4.create(), [0.5, 0.5, 0.5]),
   rudder: mat4.translate(
-    mat4.fromYRotation(-Math.PI * 0.5, mat4.create()),
-    vec3.fromValues(-5, 0, 0),
-    mat4.create()
+    mat4.create(),
+    mat4.fromYRotation(mat4.create(), -Math.PI * 0.5),
+    vec3.fromValues(-5, 0, 0)
   ),
-  ocean: mat4.fromScaling([2, 2, 2], mat4.create()),
+  ocean: mat4.fromScaling(mat4.create(), [2, 2, 2]),
+  ship_fangs: mat4.fromScaling(mat4.create(), [3, 3, 3]),
+  ld51_cannon: mat4.fromRotationTranslationScale(
+    mat4.create(),
+    quat.rotateX(quat.create(), quat.IDENTITY, Math.PI * -0.5),
+    [0, 0, 0],
+    [0.8, 0.8, 0.8]
+  ),
 };
+
+// TODO(@darzu): PERF. "ocean" and "ship_fangs" are expensive to load and aren't needed in all games.
 
 // TODO(@darzu): these sort of hacky offsets are a pain to deal with. It'd be
 //    nice to have some asset import helper tooling
-const SHIP_OFFSET: vec3 = vec3.clone([3.85 - 2.16, -0.33 - 0.13, -8.79 + 4.63]);
+const SHIP_OFFSET: vec3 = [3.85 - 2.16, -0.33 - 0.13, -8.79 + 4.63];
 const blackoutColor: (m: RawMesh) => RawMesh = (m: RawMesh) => {
   m.colors.map((c) => vec3.zero(c));
   return m;
 };
 const MeshModify: Partial<{
-  [P in RemoteMeshSymbols | RemoteMeshSetSymbols | LocalMeshSymbols]: (
-    m: RawMesh
-  ) => RawMesh;
+  [P in AllMeshSymbols]: (m: RawMesh) => RawMesh;
 }> = {
+  ship_fangs: (m) => {
+    // m.colors = m.colors.map((c) => [0.2, 0.2, 0.2]);
+    m.surfaceIds = m.colors.map((_, i) => i);
+    // console.log(`
+    // Fang ship has:
+    // ${m.tri.length} tris
+    // ${m.quad.length} quads
+    // `);
+
+    // m = debugBoardSystem(m);
+
+    // TODO(@darzu): call getBoardsFromMesh,
+    //    then move this data into some resource to be accessed later in an entities lifecycle
+    const woodState = getBoardsFromMesh(m);
+
+    unshareProvokingForWood(m, woodState);
+
+    const woodAssets: WoodAssets =
+      EM.getResource(WoodAssetsDef) ?? EM.addSingletonComponent(WoodAssetsDef);
+
+    woodAssets["ship_fangs"] = woodState;
+
+    return m;
+  },
+  // timber_rib: (m) => {
+  //   // TODO(@darzu): de-duplicate w/ fang ship above
+  //   m.surfaceIds = m.colors.map((_, i) => i);
+
+  //   const woodState = getBoardsFromMesh(m);
+
+  //   unshareProvokingForWood(m, woodState);
+
+  //   const woodAssets: WoodAssets =
+  //     EM.getResource(WoodAssetsDef) ?? EM.addSingletonComponent(WoodAssetsDef);
+
+  //   woodAssets["timber_rib"] = woodState;
+
+  //   return m;
+  // },
   cannon: (m) => {
-    m.colors = m.colors.map((c) => vec3.clone([0.2, 0.2, 0.2]));
+    m.colors = m.colors.map((c) => [0.2, 0.2, 0.2]);
     return m;
   },
   spacerock: (m) => {
-    m.colors = m.colors.map((c) => vec3.clone([0.05, 0.15, 0.2]));
-    const t = mat4.fromYRotation(Math.PI * 0.2, mat4.create());
+    m.colors = m.colors.map((c) => [0.05, 0.15, 0.2]);
+    const t = mat4.fromYRotation(mat4.create(), Math.PI * 0.2);
     transformMesh(m, t);
     m.lines = [];
     return m;
@@ -130,7 +200,7 @@ const MeshModify: Partial<{
   },
   ship_broken: (m) => {
     m.lines = [];
-    m.pos = m.pos.map((p) => vec3.sub(p, SHIP_OFFSET, vec3.create()));
+    m.pos = m.pos.map((p) => vec3.subtract(vec3.create(), p, SHIP_OFFSET));
     scaleMesh(m, 3);
     return m;
   },
@@ -174,13 +244,7 @@ const MeshModify: Partial<{
     const uvs = m.pos.map((_, vi) => vec2.create());
     m.uvs = uvs;
     // setUV(Math.floor(xLen / 2), 0, [0, 1], [0, 0], true);
-    setUV(
-      0,
-      Math.floor(yLen / 2),
-      vec2.clone([1, 0]),
-      vec2.clone([0, 0]),
-      true
-    );
+    setUV(0, Math.floor(yLen / 2), [1, 0], [0, 0], true);
     // TODO(@darzu): lots of little annoying issues happen when you go right to the texture edge
     normalizeVec2s(uvs, 0 + 0.01, 1 - 0.01);
 
@@ -202,7 +266,7 @@ const MeshModify: Partial<{
 
           normal = computeTriangleNormal(pos, posNX, posNY);
 
-          tangent = vec3.sub(posNX, pos, m.tangents[grid[xIndex][yIndex]]);
+          tangent = vec3.sub(m.tangents[grid[xIndex][yIndex]], posNX, pos);
           vec3.normalize(tangent, tangent);
         } else if (xIndex + 1 >= grid.length) {
           normal = m.normals[grid[xIndex - 1][yIndex]];
@@ -242,8 +306,8 @@ const MeshModify: Partial<{
 
       // branch?
       if (branch) {
-        setUV(x, y, vec2.clone([dir[1], dir[0]]), currDist, false);
-        setUV(x, y, vec2.clone([-dir[1], -dir[0]]), currDist, false);
+        setUV(x, y, [dir[1], dir[0]], currDist, false);
+        setUV(x, y, [-dir[1], -dir[0]], currDist, false);
       }
 
       // continue forward?
@@ -252,10 +316,10 @@ const MeshModify: Partial<{
       if (nX < 0 || xLen <= nX || nY < 0 || yLen <= nY) return;
       const nVi = grid[nX][nY];
       const delta = vec3.dist(m.pos[vi], m.pos[nVi]);
-      const newDist: vec2 = vec2.clone([
+      const newDist: vec2 = [
         currDist[0] + dir[0] * delta,
         currDist[1] + dir[1] * delta,
-      ]);
+      ];
       setUV(nX, nY, dir, newDist, branch);
     }
     // console.dir({
@@ -282,71 +346,47 @@ export const CUBE_FACES = {
 export const CUBE_MESH: RawMesh = {
   dbgName: "cube",
   pos: [
-    vec3.clone([+1.0, +1.0, +1.0]),
-    vec3.clone([-1.0, +1.0, +1.0]),
-    vec3.clone([-1.0, -1.0, +1.0]),
-    vec3.clone([+1.0, -1.0, +1.0]),
+    [+1.0, +1.0, +1.0],
+    [-1.0, +1.0, +1.0],
+    [-1.0, -1.0, +1.0],
+    [+1.0, -1.0, +1.0],
 
-    vec3.clone([+1.0, +1.0, -1.0]),
-    vec3.clone([-1.0, +1.0, -1.0]),
-    vec3.clone([-1.0, -1.0, -1.0]),
-    vec3.clone([+1.0, -1.0, -1.0]),
+    [+1.0, +1.0, -1.0],
+    [-1.0, +1.0, -1.0],
+    [-1.0, -1.0, -1.0],
+    [+1.0, -1.0, -1.0],
   ],
   tri: [
-    vec3.clone([0, 1, 2]),
-    vec3.clone([0, 2, 3]), // front
-    vec3.clone(
-      // front
-      [4, 5, 1]
-    ),
-    vec3.clone([4, 1, 0]), // top
-    vec3.clone(
-      // top
-      [3, 4, 0]
-    ),
-    vec3.clone([3, 7, 4]), // right
-    vec3.clone(
-      // right
-      [2, 1, 5]
-    ),
-    vec3.clone([2, 5, 6]), // left
-    vec3.clone(
-      // left
-      [6, 3, 2]
-    ),
-    vec3.clone([6, 7, 3]), // bottom
-    vec3.clone(
-      // bottom
-      [5, 4, 7]
-    ),
-    vec3.clone([5, 7, 6]), // back
+    [0, 1, 2],
+    [0, 2, 3], // front
+    [4, 5, 1],
+    [4, 1, 0], // top
+    [3, 4, 0],
+    [3, 7, 4], // right
+    [2, 1, 5],
+    [2, 5, 6], // left
+    [6, 3, 2],
+    [6, 7, 3], // bottom
+    [5, 4, 7],
+    [5, 7, 6], // back
   ],
   quad: [],
   lines: [
     // top
-    vec2.clone(
-      // top
-      [0, 1]
-    ),
-    vec2.clone([1, 2]),
-    vec2.clone([2, 3]),
-    vec2.clone([3, 0]),
+    [0, 1],
+    [1, 2],
+    [2, 3],
+    [3, 0],
     // bottom
-    vec2.clone(
-      // bottom
-      [4, 5]
-    ),
-    vec2.clone([5, 6]),
-    vec2.clone([6, 7]),
-    vec2.clone([7, 4]),
+    [4, 5],
+    [5, 6],
+    [6, 7],
+    [7, 4],
     // connectors
-    vec2.clone(
-      // connectors
-      [0, 4]
-    ),
-    vec2.clone([1, 5]),
-    vec2.clone([2, 6]),
-    vec2.clone([3, 7]),
+    [0, 4],
+    [1, 5],
+    [2, 6],
+    [3, 7],
   ],
   colors: [
     BLACK,
@@ -364,27 +404,57 @@ export const CUBE_MESH: RawMesh = {
   ],
 };
 
+export function mkTimberSplinterEnd(loopCursor?: mat4, splintersCursor?: mat4) {
+  loopCursor = loopCursor ?? mat4.create();
+  splintersCursor = splintersCursor ?? mat4.create();
+  const b = createTimberBuilder(createEmptyMesh("splinterEnd"));
+  b.width = 0.5;
+  b.depth = 0.2;
+
+  // mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.5); // TODO(@darzu): DBG
+  // b.addLoopVerts();
+  // mat4.translate(b.cursor, b.cursor, [0, 2, 0]);
+  b.setCursor(loopCursor);
+  b.addLoopVerts();
+  b.addEndQuad(true);
+  // b.addSideQuads();
+
+  b.setCursor(splintersCursor);
+  mat4.translate(b.cursor, b.cursor, [0, 0.1, 0]);
+  b.addSplinteredEnd(b.mesh.pos.length, 5);
+
+  // b.addEndQuad(false);
+
+  // TODO(@darzu): triangle vs quad coloring doesn't work
+  b.mesh.quad.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
+  b.mesh.tri.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
+
+  // console.dir(b.mesh);
+
+  return b.mesh;
+}
+
 const TETRA_MESH: RawMesh = {
   pos: [
-    vec3.clone([0, 1, 0]),
-    vec3.clone([-1, 0, -1]),
-    vec3.clone([1, 0, -1]),
-    vec3.clone([0, 0, 1]),
+    [0, 1, 0],
+    [-1, 0, -1],
+    [1, 0, -1],
+    [0, 0, 1],
   ],
   tri: [
-    vec3.clone([2, 1, 0]),
-    vec3.clone([3, 2, 0]),
-    vec3.clone([1, 3, 0]),
-    vec3.clone([2, 3, 1]),
+    [2, 1, 0],
+    [3, 2, 0],
+    [1, 3, 0],
+    [2, 3, 1],
   ],
   quad: [],
   lines: [
-    vec2.clone([0, 1]),
-    vec2.clone([0, 2]),
-    vec2.clone([0, 3]),
-    vec2.clone([1, 2]),
-    vec2.clone([2, 3]),
-    vec2.clone([3, 4]),
+    [0, 1],
+    [0, 2],
+    [0, 3],
+    [1, 2],
+    [2, 3],
+    [3, 4],
   ],
   colors: [BLACK, BLACK, BLACK, BLACK],
 };
@@ -403,39 +473,36 @@ const HEX_MESH: () => RawMesh = () => {
   ];
   const sideTri: (i: number) => vec3[] = (i) => {
     const i2 = (i + 1) % 6;
-    return [vec3.clone([i + 6, i, i2]), vec3.clone([i + 6, i2, i2 + 6])];
+    return [
+      [i + 6, i, i2],
+      [i + 6, i2, i2 + 6],
+    ];
   };
   const pos: vec3[] = [
-    vec3.clone([+1, 1, +0]),
-    vec3.clone([+A, 1, +B]),
-    vec3.clone([-A, 1, +B]),
-    vec3.clone([-1, 1, +0]),
-    vec3.clone([-A, 1, -B]),
-    vec3.clone([+A, 1, -B]),
-    vec3.clone([+1, 0, +0]),
-    vec3.clone([+A, 0, +B]),
-    vec3.clone([-A, 0, +B]),
-    vec3.clone([-1, 0, +0]),
-    vec3.clone([-A, 0, -B]),
-    vec3.clone([+A, 0, -B]),
+    [+1, 1, +0],
+    [+A, 1, +B],
+    [-A, 1, +B],
+    [-1, 1, +0],
+    [-A, 1, -B],
+    [+A, 1, -B],
+    [+1, 0, +0],
+    [+A, 0, +B],
+    [-A, 0, +B],
+    [-1, 0, +0],
+    [-A, 0, -B],
+    [+A, 0, -B],
   ];
   const tri: vec3[] = [
     // top 4
-    vec3.clone(
-      // top 4
-      [4, 2, 1]
-    ),
-    vec3.clone([1, 5, 4]),
-    vec3.clone([0, 5, 1]),
-    vec3.clone([4, 3, 2]),
+    [4, 2, 1],
+    [1, 5, 4],
+    [0, 5, 1],
+    [4, 3, 2],
     // bottom 4
-    vec3.clone(
-      // bottom 4
-      [8, 10, 7]
-    ),
-    vec3.clone([11, 7, 10]),
-    vec3.clone([11, 6, 7]),
-    vec3.clone([9, 10, 8]),
+    [8, 10, 7],
+    [11, 7, 10],
+    [11, 6, 7],
+    [9, 10, 8],
     // sides
     ...sideTri(0),
     ...sideTri(1),
@@ -454,38 +521,42 @@ const HEX_MESH: () => RawMesh = () => {
   // ],
   return { pos, tri, quad: [], lines, colors: tri.map((_) => BLACK) };
 };
-const PLANE_MESH: RawMesh = {
-  pos: [
-    vec3.clone([+1, 0, +1]),
-    vec3.clone([-1, 0, +1]),
-    vec3.clone([+1, 0, -1]),
-    vec3.clone([-1, 0, -1]),
-  ],
-  tri: [
-    vec3.clone([0, 2, 3]),
-    vec3.clone([0, 3, 1]), // top
-    vec3.clone(
-      // top
-      [3, 2, 0]
-    ),
-    vec3.clone([1, 3, 0]), // bottom
-  ],
-  quad: [],
-  lines: [
-    vec2.clone([0, 1]),
-    vec2.clone([0, 2]),
-    vec2.clone([1, 3]),
-    vec2.clone([2, 3]),
-  ],
-  colors: [BLACK, BLACK, BLACK, BLACK],
-  // uvs: [
-  //   [1, 1],
-  //   [0, 1],
-  //   [1, 0],
-  //   [0, 0],
-  // ],
-};
-scaleMesh(PLANE_MESH, 10);
+export function makePlaneMesh(
+  x1: number,
+  x2: number,
+  z1: number,
+  z2: number
+): Mesh {
+  const res: Mesh = {
+    pos: [
+      [x2, 0, z2],
+      [x1, 0, z2],
+      [x2, 0, z1],
+      [x1, 0, z1],
+    ],
+    tri: [],
+    quad: [
+      [0, 2, 3, 1], // top
+      [1, 3, 2, 0], // bottom
+    ],
+    lines: [
+      [0, 1],
+      [0, 2],
+      [1, 3],
+      [2, 3],
+    ],
+    colors: [vec3.create(), vec3.create()],
+    // uvs: [
+    //   [1, 1],
+    //   [0, 1],
+    //   [1, 0],
+    //   [0, 0],
+    // ],
+    surfaceIds: [1, 2],
+    usesProvoking: true,
+  };
+  return res;
+}
 
 function makeSailMesh(): RawMesh {
   const mesh: RawMesh = {
@@ -496,11 +567,11 @@ function makeSailMesh(): RawMesh {
     colors: [],
   };
   for (let i = 0; i < 6; i++) {
-    mesh.pos.push(vec3.clone([0, 0, 0]));
-    mesh.pos.push(vec3.clone([0, 1, 0]));
-    mesh.pos.push(vec3.clone([0, 1, 1]));
-    mesh.tri.push(vec3.clone([i * 3, i * 3 + 1, i * 3 + 2]));
-    mesh.tri.push(vec3.clone([i * 3 + 2, i * 3 + 1, i * 3]));
+    mesh.pos.push([0, 0, 0]);
+    mesh.pos.push([0, 1, 0]);
+    mesh.pos.push([0, 1, 1]);
+    mesh.tri.push([i * 3, i * 3 + 1, i * 3 + 2]);
+    mesh.tri.push([i * 3 + 2, i * 3 + 1, i * 3]);
     mesh.colors.push(BLACK);
     mesh.colors.push(BLACK);
   }
@@ -514,13 +585,11 @@ const TRI_FENCE: () => RawMesh = () => {
   const pos: vec3[] = [];
   const tri: vec3[] = [];
   for (let i = 0; i < TRI_FENCE_LN; i++) {
-    tri.push(
-      vec3.clone([
-        pos.push(vec3.clone([-0.5 + i, 0, 0])) - 1,
-        pos.push(vec3.clone([0 + i, 2, 0])) - 1,
-        pos.push(vec3.clone([0.5 + i, 0, 0])) - 1,
-      ])
-    );
+    tri.push([
+      pos.push([-0.5 + i, 0, 0]) - 1,
+      pos.push([0 + i, 2, 0]) - 1,
+      pos.push([0.5 + i, 0, 0]) - 1,
+    ]);
   }
   const surfaceIds = tri.map((_, i) => i);
 
@@ -556,21 +625,19 @@ function createGridPlane(width: number, height: number): RawMesh {
 
   for (let x = 0; x <= width; x++) {
     const i = m.pos.length;
-    m.pos.push(vec3.clone([x, 0, 0]));
-    m.pos.push(vec3.clone([x, 0, height]));
-    m.lines!.push(vec2.clone([i, i + 1]));
+    m.pos.push([x, 0, 0]);
+    m.pos.push([x, 0, height]);
+    m.lines!.push([i, i + 1]);
   }
 
   for (let z = 0; z <= height; z++) {
     const i = m.pos.length;
-    m.pos.push(vec3.clone([0, 0, z]));
-    m.pos.push(vec3.clone([width, 0, z]));
-    m.lines!.push(vec2.clone([i, i + 1]));
+    m.pos.push([0, 0, z]);
+    m.pos.push([width, 0, z]);
+    m.lines!.push([i, i + 1]);
   }
 
-  mapMeshPositions(m, (p) =>
-    vec3.clone([p[0] - width / 2, p[1], p[2] - height / 2])
-  );
+  mapMeshPositions(m, (p) => [p[0] - width / 2, p[1], p[2] - height / 2]);
   scaleMesh(m, 10 / Math.min(width, height));
 
   return m;
@@ -586,22 +653,22 @@ export function createFabric(size: number): RawMesh {
   // create each vert
   for (let x = 0; x < size; x++) {
     for (let y = 0; y < size; y++) {
-      pos.push(vec3.clone([x, y, 0]));
-      uvs.push(vec2.clone([x / size, y / size]));
+      pos.push([x, y, 0]);
+      uvs.push([x / size, y / size]);
     }
   }
 
   // create each quad
   for (let x = 0; x < size - 1; x++) {
     for (let y = 0; y < size - 1; y++) {
-      const q: vec4 = vec4.clone([
+      const q: vec4 = [
         idx(x, y),
         idx(x + 1, y),
         idx(x + 1, y + 1),
         idx(x, y + 1),
-      ]);
+      ];
       quad.push(q);
-      quad.push(vec4.clone([q[3], q[2], q[1], q[0]]));
+      quad.push([q[3], q[2], q[1], q[0]]);
     }
   }
 
@@ -610,7 +677,7 @@ export function createFabric(size: number): RawMesh {
     tri: [],
     uvs,
     quad,
-    colors: quad.map((_, i) => vec3.clone([i / quad.length, 0.2, 0.2])),
+    colors: quad.map((_, i) => [i / quad.length, 0.2, 0.2]),
     dbgName: `fabric-${size}`,
   };
 
@@ -621,135 +688,48 @@ export function createFabric(size: number): RawMesh {
 }
 
 export const SHIP_AABBS: AABB[] = [
-  { min: vec3.clone([-20.3, 1.7, -31.3]), max: vec3.clone([13.5, 3.75, 16.9]) },
-  { min: vec3.clone([-11.6, -2.7, 17.2]), max: vec3.clone([4.8, 13.75, 42.8]) },
-  { min: vec3.clone([-11.6, 13.1, 16.4]), max: vec3.clone([4.8, 15.4, 18.0]) },
-  { min: vec3.clone([-21.7, 13.8, 42.3]), max: vec3.clone([13.7, 17.6, 43.3]) },
-  {
-    min: vec3.clone([-12.9, 13.6, 16.4]),
-    max: vec3.clone([-11.1, 15.4, 25.6]),
-  },
-  { min: vec3.clone([3.1, 13.6, 16.4]), max: vec3.clone([4.9, 15.4, 25.6]) },
-  { min: vec3.clone([13.1, 13.4, 20.9]), max: vec3.clone([14.9, 16.4, 42.7]) },
-  {
-    min: vec3.clone([-23.1, 13.4, 20.9]),
-    max: vec3.clone([-21.3, 16.4, 42.7]),
-  },
-  { min: vec3.clone([-21.7, 0.4, 22.5]), max: vec3.clone([13.7, 13.75, 42.7]) },
-  {
-    min: vec3.clone([-21.7, -5.6, -35.7]),
-    max: vec3.clone([13.7, 3.75, 16.9]),
-  },
-  {
-    min: vec3.clone([-22.55, -2.8, -12.4]),
-    max: vec3.clone([-20.65, 6.75, 16.0]),
-  },
-  {
-    min: vec3.clone([12.65, 0.65, -12.4]),
-    max: vec3.clone([14.55, 6.75, 16.0]),
-  },
-  {
-    min: vec3.clone([12.25, 0.65, -29.9]),
-    max: vec3.clone([14.55, 6.75, -18.1]),
-  },
-  {
-    min: vec3.clone([-22.55, 0.65, -29.9]),
-    max: vec3.clone([-20.25, 6.75, -18.1]),
-  },
-  {
-    min: vec3.clone([-21.45, 0.65, -34.7]),
-    max: vec3.clone([-16.95, 6.75, -29.7]),
-  },
-  {
-    min: vec3.clone([-17.85, 0.65, -39.7]),
-    max: vec3.clone([-13.35, 6.75, -34.7]),
-  },
-  {
-    min: vec3.clone([-13.45, 0.65, -44.7]),
-    max: vec3.clone([-8.95, 6.75, -39.7]),
-  },
-  {
-    min: vec3.clone([-8.95, 0.65, -49.5]),
-    max: vec3.clone([0.95, 6.75, -44.5]),
-  },
-  {
-    min: vec3.clone([0.05, 0.65, -44.7]),
-    max: vec3.clone([5.15, 6.75, -39.7]),
-  },
-  {
-    min: vec3.clone([4.85, 0.65, -39.7]),
-    max: vec3.clone([9.95, 6.75, -34.7]),
-  },
-  {
-    min: vec3.clone([9.25, 0.65, -34.7]),
-    max: vec3.clone([14.35, 6.75, -29.7]),
-  },
-  {
-    min: vec3.clone([-13.35, -2.35, -44.9]),
-    max: vec3.clone([4.55, 3.75, -35.5]),
-  },
-  {
-    min: vec3.clone([12.35, 0.65, -18.2]),
-    max: vec3.clone([15.25, 4.35, -12.2]),
-  },
-  {
-    min: vec3.clone([-23.45, 0.65, -18.2]),
-    max: vec3.clone([-20.55, 4.35, -12.2]),
-  },
-  {
-    min: vec3.clone([-21.15, 2.05, 16.9]),
-    max: vec3.clone([-12.85, 5.75, 19.1]),
-  },
-  {
-    min: vec3.clone([-21.15, 4.05, 18.3]),
-    max: vec3.clone([-12.85, 7.75, 20.5]),
-  },
-  {
-    min: vec3.clone([-21.15, 6.05, 19.7]),
-    max: vec3.clone([-12.85, 9.75, 21.9]),
-  },
-  {
-    min: vec3.clone([-21.15, 8.05, 20.9]),
-    max: vec3.clone([-12.85, 11.75, 23.1]),
-  },
-  {
-    min: vec3.clone([4.85, 8.05, 20.9]),
-    max: vec3.clone([13.15, 11.75, 23.1]),
-  },
-  { min: vec3.clone([4.85, 6.05, 19.7]), max: vec3.clone([13.15, 9.75, 21.9]) },
-  { min: vec3.clone([4.85, 4.05, 18.3]), max: vec3.clone([13.15, 7.75, 20.5]) },
-  { min: vec3.clone([4.85, 2.05, 16.9]), max: vec3.clone([13.15, 5.75, 19.1]) },
-  {
-    min: vec3.clone([12.95, 6.45, 15.9]),
-    max: vec3.clone([14.65, 13.75, 20.9]),
-  },
-  {
-    min: vec3.clone([-22.65, 6.45, 15.9]),
-    max: vec3.clone([-20.95, 13.75, 20.9]),
-  },
+  { min: [-20.3, 1.7, -31.3], max: [13.5, 3.75, 16.9] },
+  { min: [-11.6, -2.7, 17.2], max: [4.8, 13.75, 42.8] },
+  { min: [-11.6, 13.1, 16.4], max: [4.8, 15.4, 18.0] },
+  { min: [-21.7, 13.8, 42.3], max: [13.7, 17.6, 43.3] },
+  { min: [-12.9, 13.6, 16.4], max: [-11.1, 15.4, 25.6] },
+  { min: [3.1, 13.6, 16.4], max: [4.9, 15.4, 25.6] },
+  { min: [13.1, 13.4, 20.9], max: [14.9, 16.4, 42.7] },
+  { min: [-23.1, 13.4, 20.9], max: [-21.3, 16.4, 42.7] },
+  { min: [-21.7, 0.4, 22.5], max: [13.7, 13.75, 42.7] },
+  { min: [-21.7, -5.6, -35.7], max: [13.7, 3.75, 16.9] },
+  { min: [-22.55, -2.8, -12.4], max: [-20.65, 6.75, 16.0] },
+  { min: [12.65, 0.65, -12.4], max: [14.55, 6.75, 16.0] },
+  { min: [12.25, 0.65, -29.9], max: [14.55, 6.75, -18.1] },
+  { min: [-22.55, 0.65, -29.9], max: [-20.25, 6.75, -18.1] },
+  { min: [-21.45, 0.65, -34.7], max: [-16.95, 6.75, -29.7] },
+  { min: [-17.85, 0.65, -39.7], max: [-13.35, 6.75, -34.7] },
+  { min: [-13.45, 0.65, -44.7], max: [-8.95, 6.75, -39.7] },
+  { min: [-8.95, 0.65, -49.5], max: [0.95, 6.75, -44.5] },
+  { min: [0.05, 0.65, -44.7], max: [5.15, 6.75, -39.7] },
+  { min: [4.85, 0.65, -39.7], max: [9.95, 6.75, -34.7] },
+  { min: [9.25, 0.65, -34.7], max: [14.35, 6.75, -29.7] },
+  { min: [-13.35, -2.35, -44.9], max: [4.55, 3.75, -35.5] },
+  { min: [12.35, 0.65, -18.2], max: [15.25, 4.35, -12.2] },
+  { min: [-23.45, 0.65, -18.2], max: [-20.55, 4.35, -12.2] },
+  { min: [-21.15, 2.05, 16.9], max: [-12.85, 5.75, 19.1] },
+  { min: [-21.15, 4.05, 18.3], max: [-12.85, 7.75, 20.5] },
+  { min: [-21.15, 6.05, 19.7], max: [-12.85, 9.75, 21.9] },
+  { min: [-21.15, 8.05, 20.9], max: [-12.85, 11.75, 23.1] },
+  { min: [4.85, 8.05, 20.9], max: [13.15, 11.75, 23.1] },
+  { min: [4.85, 6.05, 19.7], max: [13.15, 9.75, 21.9] },
+  { min: [4.85, 4.05, 18.3], max: [13.15, 7.75, 20.5] },
+  { min: [4.85, 2.05, 16.9], max: [13.15, 5.75, 19.1] },
+  { min: [12.95, 6.45, 15.9], max: [14.65, 13.75, 20.9] },
+  { min: [-22.65, 6.45, 15.9], max: [-20.95, 13.75, 20.9] },
 ];
 
 const RAW_BARGE_AABBS: AABB[] = [
-  {
-    min: vec3.clone([-5.1, -13.6, 83.35]),
-    max: vec3.clone([22.1, -11.6, 135.05]),
-  },
-  {
-    min: vec3.clone([19.2, -11.5, 83.35]),
-    max: vec3.clone([22.0, -9.5, 135.05]),
-  },
-  {
-    min: vec3.clone([-5.1, -11.5, 83.35]),
-    max: vec3.clone([-2.3, -9.5, 135.05]),
-  },
-  {
-    min: vec3.clone([-2.95, -11.5, 83.35]),
-    max: vec3.clone([19.55, -9.5, 86.05]),
-  },
-  {
-    min: vec3.clone([-2.95, -11.5, 132.25]),
-    max: vec3.clone([19.55, -9.5, 134.95]),
-  },
+  { min: [-5.1, -13.6, 83.35], max: [22.1, -11.6, 135.05] },
+  { min: [19.2, -11.5, 83.35], max: [22.0, -9.5, 135.05] },
+  { min: [-5.1, -11.5, 83.35], max: [-2.3, -9.5, 135.05] },
+  { min: [-2.95, -11.5, 83.35], max: [19.55, -9.5, 86.05] },
+  { min: [-2.95, -11.5, 132.25], max: [19.55, -9.5, 134.95] },
 ];
 export const BARGE_AABBS: AABB[] = RAW_BARGE_AABBS.map((aabb) => {
   // TODO(@darzu): this is especially hacky offset/scale fixing
@@ -760,14 +740,14 @@ export const BARGE_AABBS: AABB[] = RAW_BARGE_AABBS.map((aabb) => {
   aabb.min[2] += zShift;
   aabb.max[2] += zShift;
 
-  vec3.scale(aabb.min, 1 / 5, aabb.min);
-  vec3.scale(aabb.max, 1 / 5, aabb.max);
+  vec3.scale(aabb.min, aabb.min, 1 / 5);
+  vec3.scale(aabb.max, aabb.max, 1 / 5);
 
-  vec3.sub(aabb.min, SHIP_OFFSET, aabb.min);
-  vec3.sub(aabb.max, SHIP_OFFSET, aabb.max);
+  vec3.subtract(aabb.min, aabb.min, SHIP_OFFSET);
+  vec3.subtract(aabb.max, aabb.max, SHIP_OFFSET);
 
-  vec3.scale(aabb.min, 3, aabb.min);
-  vec3.scale(aabb.max, 3, aabb.max);
+  vec3.scale(aabb.min, aabb.min, 3);
+  vec3.scale(aabb.max, aabb.max, 3);
   return aabb;
 });
 // const shipMinX = min(SHIP_AABBS.map((a) => a.min[0]));
@@ -775,29 +755,104 @@ export const BARGE_AABBS: AABB[] = RAW_BARGE_AABBS.map((aabb) => {
 // console.log(`${(shipMaxX + shipMinX) / 2}`);
 
 const BOAT_MESH = cloneMesh(CUBE_MESH);
-scaleMesh3(BOAT_MESH, vec3.clone([10, 0.6, 5]));
+scaleMesh3(BOAT_MESH, [10, 0.6, 5]);
 
 const BULLET_MESH = cloneMesh(CUBE_MESH);
 scaleMesh(BULLET_MESH, 0.3);
 
+// TODO(@darzu): there should be hooks so we can define these nearer to
+//    where they are actually needed
+export function mkOctogonMesh(): RawMesh {
+  return transformMesh(
+    {
+      pos: [
+        [1, 0, 0],
+        [2, 0, 0],
+        [3, 0, 1],
+        [3, 0, 2],
+        [2, 0, 3],
+        [1, 0, 3],
+        [0, 0, 2],
+        [0, 0, 1],
+      ],
+      tri: [],
+      quad: [
+        [0, 5, 4, 1],
+        [1, 4, 3, 2],
+        [7, 6, 5, 0],
+      ],
+      // colors: range(3).map((_) => randNormalPosVec3()),
+      colors: range(3).map((_) => vec3.clone(BLACK)),
+    },
+    mat4.fromRotationTranslationScaleOrigin(
+      tempMat4(),
+      quat.IDENTITY,
+      [-1.5, 0, -1.5],
+      [0.2, 0.2, 0.2],
+      [1.5, 0, 1.5]
+    )
+  );
+}
+
+function mkHalfEdgeQuadMesh(): RawMesh {
+  return transformMesh(
+    {
+      pos: [
+        [0, 0, 0],
+        [0, 0, 3],
+        [3, 0, 3],
+        [3, 0, 0],
+      ],
+      tri: [],
+      quad: [[0, 1, 2, 3]],
+      colors: [vec3.clone(BLACK)],
+    },
+    mat4.fromRotationTranslationScaleOrigin(
+      tempMat4(),
+      quat.IDENTITY,
+      [-1.5, 0, 0],
+      [0.4, 0.2, 0.2],
+      [1.5, 0, 0]
+    )
+  );
+}
+
 export const LocalMeshes = {
   cube: () => CUBE_MESH,
-  plane: () => PLANE_MESH,
+  unitCube: () => {
+    const unitCube = cloneMesh(CUBE_MESH);
+    unitCube.dbgName = "unitCube";
+    // normalize this cube to have min at 0,0,0 and max at 1,1,1
+    unitCube.pos.forEach((p) => {
+      p[0] = p[0] < 0 ? 0 : 1;
+      p[1] = p[1] < 0 ? 0 : 1;
+      p[2] = p[2] < 0 ? 0 : 1;
+    });
+    return unitCube;
+  },
+  plane: () => makePlaneMesh(-10, 10, -10, 10),
   tetra: () => TETRA_MESH,
+  he_octo: mkOctogonMesh,
+  he_quad: mkHalfEdgeQuadMesh,
   hex: HEX_MESH,
   enemyShip: () => BOAT_MESH,
   bullet: () => BULLET_MESH,
   gridPlane: () => GRID_PLANE_MESH,
   fabric: () => DBG_FABRIC,
   triFence: TRI_FENCE,
-  wireCube: () => ({ ...CUBE_MESH, tri: [] } as RawMesh),
+  // TODO(@darzu): wire cube is kinda broken; needs line renderer
+  wireCube: () =>
+    ({ ...CUBE_MESH, tri: [], colors: [], dbgName: "wireCube" } as RawMesh),
   mast: () => {
     let m = cloneMesh(CUBE_MESH);
-    mapMeshPositions(m, (p) => vec3.clone([p[0], p[1] + 1, p[2]]));
-    scaleMesh3(m, vec3.clone([0.5, 20, 0.5]));
+    m.dbgName = "mast";
+    mapMeshPositions(m, (p) => [p[0], p[1] + 1, p[2]]);
+    scaleMesh3(m, [0.5, 20, 0.5]);
     return m;
   },
   sail: () => SAIL_MESH,
+  // timber_rib: mkTimberRib,
+  timber_splinter: mkTimberSplinterEnd,
 } as const;
 
 type LocalMeshSymbols = keyof typeof LocalMeshes;
@@ -841,13 +896,14 @@ onInit(async (em) => {
 
   const assetsPromise = loadAssets(renderer.renderer);
   assetLoader.promise = assetsPromise;
-  try {
-    const result = await assetsPromise;
-    em.addSingletonComponent(AssetsDef, result);
-  } catch (failureReason) {
-    // TODO(@darzu): fail more gracefully
-    throw `Failed to load assets: ${failureReason}`;
-  }
+  // TODO(@darzu): do we want this try-catch here? It just obscures errors.
+  // try {
+  const result = await assetsPromise;
+  em.addSingletonComponent(AssetsDef, result);
+  // } catch (failureReason) {
+  //   // TODO(@darzu): fail more gracefully
+  //   throw `Failed to load assets: ${failureReason}`;
+  // }
 });
 
 async function loadTxtInternal(relPath: string): Promise<string> {
@@ -857,6 +913,11 @@ async function loadTxtInternal(relPath: string): Promise<string> {
   try {
     txt = await getText(DEFAULT_ASSET_PATH + relPath);
   } catch (_) {
+    console.warn(
+      `Asset path ${DEFAULT_ASSET_PATH + relPath} failed; trying ${
+        BACKUP_ASSET_PATH + relPath
+      }`
+    );
     txt = await getText(BACKUP_ASSET_PATH + relPath);
   }
 
@@ -864,8 +925,7 @@ async function loadTxtInternal(relPath: string): Promise<string> {
 }
 async function loadMeshInternal(relPath: string): Promise<RawMesh> {
   const res = await loadMeshSetInternal(relPath);
-  assert(res.length === 1, "too many meshes; use loadMeshSet for multi meshes");
-  return res[0];
+  return mergeMeshes(res);
 }
 async function loadMeshSetInternal(relPath: string): Promise<RawMesh[]> {
   // download
@@ -892,6 +952,7 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
   const singlesList = Object.entries(singlePromises);
   const singlesMeshList = await Promise.all(singlesList.map(([_, p]) => p));
 
+  // TODO(@darzu): We need clearer asset processing stages. "processMesh", "meshModify", "gameMeshFromMesh", "normalizeMesh"
   const singleMeshes = objMap(singlePromises, (_, n) => {
     const idx = singlesList.findIndex(([n2, _]) => n === n2);
     let m = singlesMeshList[idx];
@@ -910,11 +971,12 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
     return ms.map((m) => processMesh(n, m));
   });
 
-  function processMesh(n: string, m: RawMesh): RawMesh {
-    const t1 = (MeshTransforms as { [key: string]: mat4 })[n];
+  function processMesh(n: AllMeshSymbols, m: RawMesh): RawMesh {
+    const t1 = MeshTransforms[n];
     if (t1) transformMesh(m, t1);
-    const t2 = (MeshModify as { [key: string]: (m: RawMesh) => RawMesh })[n];
+    const t2 = MeshModify[n];
     if (t2) m = t2(m);
+    if (!m.dbgName) m.dbgName = n;
     return m;
   }
 
@@ -936,20 +998,22 @@ async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
 
   // perf tracking
   const elapsed = performance.now() - start;
-  console.log(`took ${elapsed.toFixed(1)}ms to load assets.`);
+  if (VERBOSE_LOG) console.log(`took ${elapsed.toFixed(1)}ms to load assets.`);
 
   return result;
 }
 
 export function gameMeshFromMesh(
   rawMesh: RawMesh,
-  renderer: Renderer
+  renderer: Renderer,
+  reserve?: MeshReserve
 ): GameMesh {
+  validateMesh(rawMesh);
   const mesh = normalizeMesh(rawMesh);
   const aabb = getAABBFromMesh(mesh);
   const center = getCenterFromAABB(aabb);
   const halfsize = getHalfsizeFromAABB(aabb);
-  const proto = renderer.addMesh(mesh);
+  const proto = renderer.stdPool.addMesh(mesh, reserve);
   const uniqueVerts = getUniqueVerts(mesh);
   const support = (d: vec3) => farthestPointInDir(uniqueVerts, d);
   const aabbCollider = (solid: boolean) =>

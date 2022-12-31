@@ -162,3 +162,109 @@ Pipeline GPU stats from Doug:
   outlineRender, 2.091969ms,
   renderStars, 0.120638ms,
   postProcess, 2.823797ms,
+
+Animometer:
+  WebGL: 
+    https://github.com/kenrussell/webgl-animometer
+    http://kenrussell.github.io/webgl-animometer/Animometer/tests/3d/webgl.html
+    http://sprig.land/webgl-animometer/Animometer/tests/3d/webgl.html
+    https://sprig.land/webgl-animometer/Animometer/tests/3d/webgl.html?webgl_version=2&use_ubos=1&use_multi_draw=1
+    ?webgl_version=2&use_ubos=1&use_multi_draw=1
+
+Webgpu timestamp querries:
+  https://github.com/OmarShehata/webgpu-compute-rasterizer/blob/main/how-to-use-timestamp-queries.md
+
+New JS stuff to consider:
+  FinalizationRegistry
+  WeakRef
+  Object.prototype.hasOwnProperty
+  Error.cause
+  "at" method?
+  Object.hasOwn
+
+Current memory/frame:
+  ~341kb
+
+Search for:
+  TODO(@darzu): perf
+
+"Shader functions I'm fairly certain I'll never want to use":
+  https://twitter.com/m_ninepoints/status/1578622643128803328
+  lit, reflect/refract, sinh/cosh/tanh, degrees, log10, faceforward
+  "I generally agree with the sentiment that, trig and inv-trig functions in a shader are often a code smell (or maybe an algebra smell?) and they can often be simplified and removed with some identities, etc. But there are occasional legit uses for them." @reedbeta
+
+With GPUs and standard forward rendering,
+  why isn't there more frame-to-frame re-use?
+  e.g. my vertices and pixel calculations are mostly the same answer,
+    why should we do all the work each frame?
+  maybe vertex shader outputs could be re-used and just readjusted slightly based on camera change and moving objects
+
+about://tracing
+  https://stackoverflow.com/questions/56329780/inexplicit-task-in-chrome-perfomance-devtools/74075943#74075943
+  about:tracing can be very overwhelming, and it's difficult to document because of the size and because what's in there changes when we make code changes. So the best documentation is the code itself. There might be other documentation but unfortunately I don't know where it is exactly. This looks like the right place to start: https://sites.google.com/a/chromium.org/dev/developers/how-tos/trace-event-profiling-tool
+
+Perf stats on Chrome:
+  open -a 'Google Chrome Canary' --args --disable-dawn-features=disallow_unsafe_apis
+  
+To learn: occlusion queries
+
+Memory Caches, CPU:
+  What is a cache line?
+    probably ~64 bytes, it's the smallest block of data that can be stored in your CPUs L1-L3 caches
+
+  https://akkadia.org/drepper/cpumemory.pdf (2007)
+    https://stackoverflow.com/questions/8126311/how-much-of-what-every-programmer-should-know-about-memory-is-still-valid
+    https://news.ycombinator.com/item?id=19302299
+    https://news.ycombinator.com/item?id=25908018
+    https://news.ycombinator.com/item?id=3919429
+  CppCon 2014: Mike Acton "Data-Oriented Design and C++"
+    https://www.youtube.com/watch?v=rX0ItVEVjHc&t=4681s
+      lie 1: software is the platform
+        truth: hardware is the platform
+      lie 2: world modeling
+        engineering by analogy or story telling; doesn't match reality
+        truth: design around the data, not an idealized world
+      lie 3: code is more important than the data
+        truth: your main responsibility is to transform data, solve that first, not the code design
+    purpose of any code is to transform data
+      programmer is fundamentally responsible for the data, for ensuring the transform happens correctly
+      programmer's job is not to write code, programmer's job is to solve (data transformation) problems
+    L2 cache misses are the most significant time sink
+    tip to determine information density: print it out and zip it
+      e.g. "do_spawn" bool variable
+    when u have poor cache line utilization for a decision per frame:
+      a) make the decision many more times
+      b) combine with other reads that will statistically be needed (cannot solve this in an abstract bubble)
+      c) look over frames, only read when needed (?)
+        so precalculate when the rare event will be needed and queue that for the future
+    (?) bools mean lots of last minute decision making
+
+  https://agner.org/optimize/
+
+Unity DOTs:
+  https://www.youtube.com/watch?v=u8B3j8rqYMw
+    "the global energy required to transform some data should be proportional to the amount of surprise."
+    two types of abstraction: utility abstraction (good) vs story abstraction (bad)
+    if you don't understand your data, you don't understand your problem
+      Daryl: what is your data, what are your access patterns (transformations you need to do)
+        that is your problem, your solution should mirror that
+    performant by default, optimizable by default, concurrent by default
+
+What is:
+  icache
+    virtual function stuff
+  shared memory modes,
+    properties:
+      GPU-visible,
+      cached,
+      GPU Coherent,
+
+    Heap-cacheable
+    Heap-write-combined
+    Physical-uncached
+    GPU-write-combined
+    GPU-write-combined-read-only
+    GPU-cacheable
+    GPU-cacheable-noncoherent-RO
+    Command-write-combined
+    Command-cacheable

@@ -1,5 +1,5 @@
 import { Component, EM } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec3 } from "../gl-matrix.js";
 import { AABB } from "./broadphase.js";
 
 export type Layer = number;
@@ -21,6 +21,7 @@ export type ColliderShape =
 
 interface ColliderBase {
   shape: ColliderShape;
+  // TODO(@darzu): rename "solid" to "non-intersection?" or move this to physics systems options somewhere
   solid: boolean;
   myLayers?: Layer[];
   targetLayers?: Layer[];
@@ -68,6 +69,7 @@ export type Collider =
   | CapsuleCollider
   | MultiCollider;
 
+// TODO(@darzu): ensure we support swapping colliders?
 export const ColliderDef = EM.defineComponent("collider", (c?: Collider) => {
   return (
     c ??

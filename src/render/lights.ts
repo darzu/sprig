@@ -1,7 +1,8 @@
 import { EM } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec3, mat4 } from "../gl-matrix.js";
 import { CY } from "./gpu-registry.js";
 import { createCyStruct, CyToTS } from "./gpu-struct.js";
+import { GPUBufferUsage } from "./webgpu-hacks.js";
 
 const MAX_POINT_LIGHTS = 12;
 

@@ -1,3 +1,5 @@
+import { VERBOSE_LOG } from "../flags.js";
+
 /*
   A drastically simplified PeerJS, with code copied liberally from PeerJS
 */
@@ -91,7 +93,8 @@ export class Peer {
   }
 
   private async handleServerMessage(msg: ServerMessage) {
-    console.log(`Received server message of type: ${msg.type}`);
+    if (VERBOSE_LOG)
+      console.log(`Received server message of type: ${msg.type}`);
     let payload = msg.payload;
     let remotePeerId = msg.src;
     switch (msg.type) {

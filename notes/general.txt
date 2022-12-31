@@ -1247,3 +1247,44 @@ Recoverable vs unrecoverable errors:
   with regards to panic
   think instead: error-but-not-a-bug vs bug
   https://blog.burntsushi.net/unwrap/#what-about-recoverable-vs-unrecoverable-errors
+
+"A Mega-List of Learning Resources for Game Creators":
+  https://github.com/notpresident35/learn-awesome-gamedev
+
+Twitter contacts for gamedevs?
+  https://docs.google.com/spreadsheets/d/e/2PACX-1vRYveFAl_GuvBo0iuy3EvgPm0fWAGci-Z8e5CZ6hoYz9n8gcoK4dgE0RML-x0pWqRNjGqte-V7phtqB/pubhtml
+
+Game AI:
+  http://www.gameaipro.com
+
+What's the deal with https://observablehq.com?
+  seems like interactive, source controlled, collaborative?, source-inspectable content?
+
+Game dev offices:
+  https://www.youtube.com/watch?v=hBcVpRFRIqQ
+  https://journals.sagepub.com/doi/10.1177/0018726710375481
+  people need/want to "nest"; personalize their space
+
+"Open-Source, not Open-Contribution":
+  https://www.sqlite.org/copyright.html
+
+Motivation for sprigland,
+  every time I picked up a game engine,
+  a voice screamed "this is way too complex" in my head,
+  or the opposite problem: "this is too toy; the engine has no ambition to support real games"
+
+To play:
+  cave story (I know...)
+
+Boat building inspiration:
+  https://www.youtube.com/watch?v=ES80TIAjJog
+
+Philosophy:
+  The best programming language/ide/tool/etc is the one that shows you the problem
+  with your idea quickest.
+  Productivity is just problem solving + overhead.
+
+To learn: barycentrics
+
+Advice and bad advice:
+  https://www.youtube.com/watch?v=miwrDpbb25Q

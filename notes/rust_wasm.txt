@@ -54,3 +54,6 @@ Rustcraft uses wgpu:
 
 Mandelbrot perf with wasm:
     https://blog.feather.systems/jekyll/update/2021/06/21/WasmPerformance.html
+
+Minimal example of animating the HTML5 canvas from C++ using OpenGL through WebAssembly
+  https://github.com/timhutton/opengl-canvas-wasm

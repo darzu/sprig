@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec3 } from "../gl-matrix.js";
 import { dbgDirOnce, __isSMI } from "../util.js";
 import {
   PhysCollider,
@@ -25,7 +25,7 @@ import {
 import { Collider } from "./collider.js";
 import { AABB, aabbCenter } from "./broadphase.js";
 import { registerNarrowPhaseSystems } from "./narrowphase.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import { tempVec3 } from "../temp-pool.js";
 
 // TODO(@darzu): PHYSICS TODO:

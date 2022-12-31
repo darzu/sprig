@@ -1,6 +1,6 @@
 import { ColliderDef } from "../physics/collider.js";
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { quat, vec2, vec3 } from "../gl-matrix.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../serialize.js";
@@ -18,8 +18,8 @@ import {
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { ColorDef } from "../color.js";
 import { tempVec3 } from "../temp-pool.js";
+import { ColorDef } from "../color-ecs.js";
 
 export interface ClothConstruct {
   location: vec3;
@@ -83,7 +83,7 @@ function clothMesh(cloth: ClothConstruct): {
       continue;
     }
     pos.push(vec3.fromValues(x * cloth.distance, y * cloth.distance, 0));
-    uvs.push(vec2.clone([x / (cloth.columns - 1), y / (cloth.rows - 1)]));
+    uvs.push([x / (cloth.columns - 1), y / (cloth.rows - 1)]);
     // add triangles
     if (y > 0) {
       if (x > 0) {
@@ -105,10 +105,10 @@ function clothMesh(cloth: ClothConstruct): {
     }
     // add lines
     if (x > 0) {
-      lines.push(vec2.clone([i - 1, i]));
+      lines.push([i - 1, i]);
     }
     if (y > 0) {
-      lines.push(vec2.clone([i - cloth.columns, i]));
+      lines.push([i - cloth.columns, i]);
     }
     x = x + 1;
     i = i + 1;
@@ -172,12 +172,15 @@ onInit((em: EntityManager) => {
     (cloths, { renderer }) => {
       for (let cloth of cloths) {
         // NOTE: this cast is only safe so long as we're sure this mesh isn't being shared
-        const m = cloth.renderable.meshHandle.readonlyMesh! as Mesh;
+        const m = cloth.renderable.meshHandle.mesh! as Mesh;
         m.pos.forEach((p, i) => {
           const originalIndex = cloth.clothLocal.posMap.get(i)!;
           return vec3.copy(p, cloth.springGrid.positions[originalIndex]);
         });
-        renderer.renderer.updateMesh(cloth.renderable.meshHandle, m);
+        renderer.renderer.stdPool.updateMeshVertices(
+          cloth.renderable.meshHandle,
+          m
+        );
       }
     },
     "updateClothMesh"

@@ -1,5 +1,5 @@
 import { EM, EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3 } from "../gl-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import {
   RenderableConstructDef,
@@ -17,13 +17,12 @@ import {
   MultiCollider,
 } from "../physics/collider.js";
 import { copyAABB, createAABB } from "../physics/broadphase.js";
-import { ColorDef } from "../color.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../delete.js";
 import { clamp, min } from "../math.js";
 import { createCannon } from "./cannon.js";
-import { MusicDef } from "../music.js";
+import { AudioDef } from "../audio.js";
 import { LocalPlayerDef, PlayerDef } from "./player.js";
 import { CameraDef } from "../camera.js";
 import { InputsDef } from "../inputs.js";
@@ -40,10 +39,11 @@ import { PartyDef } from "./party.js";
 import { ShipDef } from "./ship.js";
 import { createMastNow, MastLocalDef, MastPropsDef } from "./sail.js";
 import { makeOrrery, OrreryDef } from "./orrery.js";
+import { ColorDef } from "../color-ecs.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
-export const BOAT_COLOR: vec3 = vec3.clone([0.2, 0.1, 0.05]);
+export const BOAT_COLOR: vec3 = [0.2, 0.1, 0.05];
 
 export const ShipPartDef = EM.defineComponent(
   "shipPart",
@@ -72,7 +72,7 @@ export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper(
     build: (gem, res) => {
       const em: EntityManager = EM;
 
-      em.ensureComponentOn(gem, PositionDef, vec3.clone([0, 0, 10]));
+      em.ensureComponentOn(gem, PositionDef, [0, 0, 10]);
 
       em.ensureComponentOn(
         gem,
@@ -86,7 +86,7 @@ export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper(
       const interactBox = em.newEntity();
       const interactAABB = copyAABB(createAABB(), res.assets.spacerock.aabb);
       em.ensureComponentOn(interactBox, PhysicsParentDef, gem.id);
-      em.ensureComponentOn(interactBox, PositionDef, vec3.clone([0, 0, 0]));
+      em.ensureComponentOn(interactBox, PositionDef, [0, 0, 0]);
       em.ensureComponentOn(interactBox, ColliderDef, {
         shape: "AABB",
         solid: false,
@@ -115,7 +115,7 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
     build: (rudder, res) => {
       const em: EntityManager = EM;
 
-      em.ensureComponentOn(rudder, PositionDef, vec3.clone([0, 0.5, -15]));
+      em.ensureComponentOn(rudder, PositionDef, [0, 0.5, -15]);
 
       em.ensureComponentOn(
         rudder,
@@ -124,7 +124,7 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
       );
       em.ensureComponentOn(rudder, PhysicsParentDef, rudder.rudderProps.shipId);
       em.ensureComponentOn(rudder, ColorDef, vec3.clone(BOAT_COLOR));
-      vec3.scale(rudder.color, 0.5, rudder.color);
+      vec3.scale(rudder.color, rudder.color, 0.5);
 
       // create seperate hitbox for interacting with the rudder
       const interactBox = em.newEntity();
@@ -133,7 +133,7 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
         PhysicsParentDef,
         rudder.rudderProps.shipId
       );
-      em.ensureComponentOn(interactBox, PositionDef, vec3.clone([0, 0, -12]));
+      em.ensureComponentOn(interactBox, PositionDef, [0, 0, -12]);
       em.ensureComponentOn(interactBox, ColliderDef, {
         shape: "AABB",
         solid: false,
@@ -150,7 +150,7 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
         Math.PI,
         -Math.PI / 8,
         1.5,
-        vec3.clone([0, 20, 50])
+        [0, 20, 50]
       );
 
       rudder.turret.maxPitch = 0;
@@ -219,14 +219,14 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
         // create cannons
         const cannonPitch = Math.PI * +0.05;
         const cannonR = createCannon(
-          vec3.clone([-6, 3, 5]),
+          [-6, 3, 5],
           Math.PI * 0.5,
           cannonPitch,
           s.id
         );
         s.playerShipProps.cannonRId = cannonR.id;
         const cannonL = createCannon(
-          vec3.clone([6, 3, 5]),
+          [6, 3, 5],
           Math.PI * 1.5,
           cannonPitch,
           s.id
@@ -235,7 +235,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
       }
 
       vec2.copy(s.uvPos, s.playerShipProps.uvPos);
-      vec2.set(1, 0, s.uvDir);
+      vec2.set(s.uvDir, 1, 0);
 
       em.ensureComponentOn(s, PositionDef);
       em.ensureComponentOn(s, RotationDef);
@@ -270,7 +270,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
         em.ensureComponentOn(part, PhysicsParentDef, s.id);
         em.ensureComponentOn(part, RenderableConstructDef, m.proto);
         em.ensureComponentOn(part, ColorDef, vec3.clone(BOAT_COLOR));
-        em.ensureComponentOn(part, PositionDef, vec3.clone([0, 0, 0]));
+        em.ensureComponentOn(part, PositionDef, [0, 0, 0]);
         const isCritical = criticalPartIdxes.includes(i);
         em.ensureComponentOn(part, ShipPartDef, isCritical);
         em.ensureComponentOn(part, ColliderDef, {
@@ -324,7 +324,7 @@ export function registerShipSystems(em: EntityManager) {
     "ship-hit",
     [[PlayerShipLocalDef]] as const,
     ([ship], partIdx: number) => {
-      const music = em.getResource(MusicDef)!;
+      const music = em.getResource(AudioDef)!;
       const part = ship.playerShipLocal.parts[partIdx]()!;
       part.renderable.enabled = false;
       part.shipPart.damaged = true;
@@ -340,7 +340,7 @@ export function registerShipSystems(em: EntityManager) {
   em.registerSystem(
     [PlayerShipPropsDef, PlayerShipLocalDef, PositionDef, AuthorityDef],
     [
-      MusicDef,
+      AudioDef,
       InputsDef,
       CameraDef,
       GameStateDef,
@@ -421,7 +421,7 @@ export function registerShipSystems(em: EntityManager) {
         // STEERING
         let yaw = s.playerShipProps.rudder()!.yawpitch.yaw;
 
-        vec2.rotate(s.uvDir, vec2.ZEROS, yaw * 0.02, s.uvDir);
+        vec2.rotate(s.uvDir, s.uvDir, vec2.ZEROS, yaw * 0.02);
       }
     },
     "playerShipMove"

@@ -1,6 +1,6 @@
 import { defineSerializableComponent } from "./em_helpers.js";
 import { EM, Component } from "./entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
+import { quat } from "./gl-matrix.js";
 
 export const YawPitchDef = defineSerializableComponent(
   EM,
@@ -27,7 +27,7 @@ export function yawpitchToQuat(
   yp: { yaw: number; pitch: number }
 ): quat {
   quat.copy(out, quat.IDENTITY);
-  quat.rotateY(out, yp.yaw, out);
-  quat.rotateX(out, yp.pitch, out);
+  quat.rotateY(out, out, yp.yaw);
+  quat.rotateX(out, out, yp.pitch);
   return out;
 }

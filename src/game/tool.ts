@@ -1,7 +1,7 @@
 import { FinishedDef } from "../build.js";
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { quat, vec3 } from "../gl-matrix.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { AABB } from "../physics/broadphase.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
@@ -11,7 +11,6 @@ import {
   RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
-import { ColorDef } from "../color.js";
 import { registerEventHandler, DetectedEventsDef } from "../net/events.js";
 import { LocalPlayerDef, PlayerDef } from "./player.js";
 import { InteractableDef, InRangeDef } from "./interact.js";
@@ -49,8 +48,8 @@ export function registerToolSystems(em: EntityManager) {
       for (let { player, id, position, rotation } of players) {
         if (player.dropping && player.tool > 0) {
           let dropLocation = vec3.fromValues(0, 0, -5);
-          vec3.transformQuat(dropLocation, rotation, dropLocation);
-          vec3.add(dropLocation, position, dropLocation);
+          vec3.transformQuat(dropLocation, dropLocation, rotation);
+          vec3.add(dropLocation, dropLocation, position);
           detectedEvents.raise({
             type: "tool-drop",
             entities: [id, player.tool],
@@ -75,9 +74,7 @@ export function registerToolSystems(em: EntityManager) {
       tool.physicsParent.id = player.id;
       // TODO(@darzu): add interact box
       // em.removeComponent(tool.id, InteractableDef);
-      // TODO(@darzu): add interact box
-// em.removeComponent(tool.id, InteractableDef);
-vec3.set(0, 0, -1.5, tool.position);
+      vec3.set(tool.position, 0, 0, -1.5);
       em.ensureComponentOn(tool, ScaleDef);
       vec3.copy(tool.scale, [0.5, 0.5, 0.5]);
       player.player.tool = tool.id;

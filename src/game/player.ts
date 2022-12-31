@@ -1,11 +1,10 @@
 // player controller component and system
 
-// player controller component and system
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { quat, vec3 } from "../gl-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { EM, Entity, EntityManager, EntityW } from "../entity-manager.js";
 import { TimeDef } from "../time.js";
-import { ColorDef } from "../color.js";
+import { ColorDef } from "../color-ecs.js";
 import { FinishedDef } from "../build.js";
 import {
   RenderableConstructDef,
@@ -31,7 +30,6 @@ import { LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { ModelerDef } from "./modeler.js";
 import { DeletedDef } from "../delete.js";
-import { PlayerShipLocalDef } from "./player-ship.js";
 import {
   CameraDef,
   CameraFollowDef,
@@ -41,11 +39,11 @@ import { defineSerializableComponent } from "../em_helpers.js";
 import { ControllableDef } from "./controllable.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { drawLine } from "../utils-game.js";
-import { GameState, GameStateDef } from "./gamestate.js";
 import { DevConsoleDef } from "../console.js";
 import { max } from "../math.js";
-import { AnimateToDef, EASE_OUTQUAD } from "../animate-to.js";
+import { AnimateToDef } from "../animate-to.js";
 import { vec3Dbg } from "../utils-3d.js";
+import { PlayerShipLocalDef } from "./player-ship.js";
 
 // TODO(@darzu): it'd be great if these could hook into some sort of
 //    dev mode you could toggle at runtime.
@@ -53,8 +51,9 @@ import { vec3Dbg } from "../utils-3d.js";
 export function createPlayer(em: EntityManager) {
   // console.log("create player!");
   const e = em.newEntity();
-  em.addComponent(e.id, PlayerPropsDef, vec3.fromValues(0, 100, 0));
+  em.ensureComponentOn(e, PlayerPropsDef, vec3.fromValues(0, 100, 0));
   em.addSingletonComponent(LocalPlayerDef, e.id);
+  return e;
 }
 
 export const PlayerDef = EM.defineComponent("player", () => {
@@ -70,7 +69,10 @@ export const PlayerDef = EM.defineComponent("player", () => {
     leftLegId: 0,
     rightLegId: 0,
     facingDir: vec3.create(),
+    // TODO(@darzu): HACK. hyperspace game specific
     lookingForShip: true,
+    // TODO(@darzu): HACK. LD51 game specific
+    holdingBall: 0,
     // disabled noodle limbs
     // leftFootWorldPos: [0, 0, 0] as vec3,
     // rightFootWorldPos: [0, 0, 0] as vec3,
@@ -115,16 +117,18 @@ export function registerPlayerSystems(em: EntityManager) {
           em.addComponent(
             e.id,
             RotationDef,
-            quat.rotateY(quat.IDENTITY, Math.PI, quat.create())
+            quat.rotateY(quat.create(), quat.IDENTITY, Math.PI)
           );
         if (!LinearVelocityDef.isOn(e))
           em.addComponent(e.id, LinearVelocityDef);
-        if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, vec3.clone([0, 0.2, 0]));
+        // console.log("making player!");
+        if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, [0, 0.2, 0]);
         if (!MotionSmoothingDef.isOn(e))
           em.addComponent(e.id, MotionSmoothingDef);
         if (!RenderableConstructDef.isOn(e)) {
+          // console.log("creating rend");
           const m = cloneMesh(res.assets.cube.mesh);
-          scaleMesh3(m, vec3.clone([0.75, 0.75, 0.4]));
+          scaleMesh3(m, [0.75, 0.75, 0.4]);
           em.addComponent(e.id, RenderableConstructDef, m);
         }
         em.ensureComponentOn(e, AuthorityDef, res.me.pid);
@@ -134,14 +138,14 @@ export function registerPlayerSystems(em: EntityManager) {
           // create legs
           function makeLeg(x: number): Entity {
             const l = em.newEntity();
-            em.ensureComponentOn(l, PositionDef, vec3.clone([x, -1.5, 0]));
+            em.ensureComponentOn(l, PositionDef, [x, -1.5, 0]);
             em.ensureComponentOn(
               l,
               RenderableConstructDef,
               res.assets.cube.proto
             );
-            em.ensureComponentOn(l, ScaleDef, vec3.clone([0.15, 0.75, 0.15]));
-            em.ensureComponentOn(l, ColorDef, vec3.clone([0.05, 0.05, 0.05]));
+            em.ensureComponentOn(l, ScaleDef, [0.15, 0.75, 0.15]);
+            em.ensureComponentOn(l, ColorDef, [0.05, 0.05, 0.05]);
             em.ensureComponentOn(l, PhysicsParentDef, e.id);
             return l;
           }
@@ -151,9 +155,10 @@ export function registerPlayerSystems(em: EntityManager) {
         if (!ColliderDef.isOn(e)) {
           const collider = em.addComponent(e.id, ColliderDef);
           collider.shape = "AABB";
+          // collider.solid = false;
           collider.solid = true;
           const playerAABB = copyAABB(createAABB(), res.assets.cube.aabb);
-          vec3.add(playerAABB.min, [0, -1, 0], playerAABB.min);
+          vec3.add(playerAABB.min, playerAABB.min, [0, -1, 0]);
           (collider as AABBCollider).aabb = playerAABB;
         }
         if (!SyncDef.isOn(e)) {
@@ -184,12 +189,12 @@ export function registerPlayerSystems(em: EntityManager) {
       for (let p of players) {
         const facingDir = p.player.facingDir;
         vec3.copy(facingDir, [0, 0, -1]);
-        vec3.transformQuat(facingDir, p.world.rotation, facingDir);
+        vec3.transformQuat(facingDir, facingDir, p.world.rotation);
 
         // use cursor for facingDir if possible
         const cursor = res.globalCursor3d.cursor();
         if (cursor) {
-          vec3.sub(cursor.world.position, p.world.position, facingDir);
+          vec3.sub(facingDir, cursor.world.position, p.world.position);
           vec3.normalize(facingDir, facingDir);
         }
       }
@@ -216,7 +221,7 @@ export function registerPlayerSystems(em: EntityManager) {
       PhysicsResultsDef,
       ModelerDef,
       GlobalCursor3dDef,
-      GameStateDef,
+      // GameStateDef,
     ],
     (players, res) => {
       const cheat = !!em.getResource(DevConsoleDef)?.showConsole;
@@ -255,9 +260,9 @@ export function registerPlayerSystems(em: EntityManager) {
           p.controllable.modes.canFly = !p.controllable.modes.canFly;
         }
 
-        if (res.gameState.state === GameState.GAMEOVER) {
-          p.controllable.modes.canFly = true;
-        }
+        // if (res.gameState.state === GameState.GAMEOVER) {
+        //   p.controllable.modes.canFly = true;
+        // }
         if (p.controllable.modes.canFly) {
           p.controllable.modes.canFall = false;
           p.controllable.modes.canJump = false;
@@ -289,14 +294,14 @@ export function registerPlayerSystems(em: EntityManager) {
 
         // add bullet on lclick
         if (cheat && inputs.lclick) {
-          const linearVelocity = vec3.scale(facingDir, 0.02, vec3.create());
+          const linearVelocity = vec3.scale(vec3.create(), facingDir, 0.02);
           // TODO(@darzu): adds player motion
           // bulletMotion.linearVelocity = vec3.add(
           //   bulletMotion.linearVelocity,
           //   bulletMotion.linearVelocity,
           //   player.linearVelocity
           // );
-          const angularVelocity = vec3.scale(facingDir, 0.01, vec3.create());
+          const angularVelocity = vec3.scale(vec3.create(), facingDir, 0.01);
           // spawnBullet(
           //   EM,
           //   vec3.clone(p.world.position),
@@ -314,11 +319,27 @@ export function registerPlayerSystems(em: EntityManager) {
               const x = (xi - SPREAD / 2) * GAP;
               const y = (yi - SPREAD / 2) * GAP;
               let bullet_axis = vec3.fromValues(0, 0, -1);
-              bullet_axis = vec3.transformQuat(bullet_axis, p.rotation, bullet_axis);
-              const position = vec3.add(p.world.position, vec3.fromValues(x, y, 0), vec3.create());
-              const linearVelocity = vec3.scale(bullet_axis, 0.005, vec3.create());
-              vec3.add(linearVelocity, p.linearVelocity, linearVelocity);
-              const angularVelocity = vec3.scale(bullet_axis, 0.01, vec3.create());
+              bullet_axis = vec3.transformQuat(
+                bullet_axis,
+                bullet_axis,
+                p.rotation
+              );
+              const position = vec3.add(
+                vec3.create(),
+                p.world.position,
+                vec3.fromValues(x, y, 0)
+              );
+              const linearVelocity = vec3.scale(
+                vec3.create(),
+                bullet_axis,
+                0.005
+              );
+              vec3.add(linearVelocity, linearVelocity, p.linearVelocity);
+              const angularVelocity = vec3.scale(
+                vec3.create(),
+                bullet_axis,
+                0.01
+              );
               // spawnBullet(EM, position, linearVelocity, angularVelocity);
             }
           }
@@ -328,7 +349,15 @@ export function registerPlayerSystems(em: EntityManager) {
         if (cheat && inputs.keyClicks["r"]) {
           // create our ray
           const r: Ray = {
-            org: vec3.add(p.world.position, vec3.scale(vec3.mul(facingDir, p.world.scale), 3.0), vec3.create()),
+            org: vec3.add(
+              vec3.create(),
+              p.world.position,
+              vec3.scale(
+                tempVec3(),
+                vec3.multiply(tempVec3(), facingDir, p.world.scale),
+                3.0
+              )
+            ),
             dir: facingDir,
           };
           playerShootRay(r);
@@ -381,8 +410,12 @@ export function registerPlayerSystems(em: EntityManager) {
 
           // draw our ray
           const rayDist = doesHit ? firstHit.dist : 1000;
-          const color: vec3 = doesHit ? vec3.clone([0, 1, 0]) : vec3.clone([1, 0, 0]);
-          const endPoint = vec3.add(r.org, vec3.scale(r.dir, rayDist), vec3.create());
+          const color: vec3 = doesHit ? [0, 1, 0] : [1, 0, 0];
+          const endPoint = vec3.add(
+            vec3.create(),
+            r.org,
+            vec3.scale(tempVec3(), r.dir, rayDist)
+          );
           drawLine(r.org, endPoint, color);
         }
       }
@@ -430,14 +463,17 @@ export function registerPlayerSystems(em: EntityManager) {
 
             const evenPlayer = res.me.pid % 2 === 0;
 
-            const endPos: vec3 = vec3.clone([
-    3.5 * (evenPlayer ? 1 : -1),
-    shipY + pFeetToMid + 1,
-    Math.floor((res.me.pid - 1) / 2) * 4 - 10,
-]);
-            const startPos = vec3.add(endPos, [0, 200, 0], 
-// tempVec3(),
-vec3.create());
+            const endPos: vec3 = [
+              3.5 * (evenPlayer ? 1 : -1),
+              shipY + pFeetToMid + 1,
+              Math.floor((res.me.pid - 1) / 2) * 4 - 10,
+            ];
+            const startPos = vec3.add(
+              // tempVec3(),
+              vec3.create(),
+              endPos,
+              [0, 200, 0]
+            );
             // console.log("player animateTo:");
             // console.log(vec3Dbg(startPos));
             // console.log(vec3Dbg(endPos));

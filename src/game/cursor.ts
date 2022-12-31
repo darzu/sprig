@@ -9,11 +9,10 @@ import {
   updateFrameFromPosRotScale,
 } from "../physics/transform.js";
 import { AssetsDef } from "./assets.js";
-import { ColorDef } from "../color.js";
-import { assert } from "../test.js";
+import { ColorDef } from "../color-ecs.js";
+import { assert } from "../util.js";
 import { CameraViewDef } from "../camera.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
-import { screenPosToRay } from "./modeler.js";
+import { vec2, vec3 } from "../gl-matrix.js";
 import {
   PhysicsResultsDef,
   WorldFrameDef,
@@ -21,6 +20,7 @@ import {
 import { RayHit } from "../physics/broadphase.js";
 import { tempVec3 } from "../temp-pool.js";
 import { createRef, Ref } from "../em_helpers.js";
+import { screenPosToRay } from "../utils-game.js";
 
 export const GlobalCursor3dDef = EM.defineComponent("globalCursor3d", () => {
   return {
@@ -47,7 +47,7 @@ export function registerCursorSystems(em: EntityManager) {
         em.addComponent(id, PositionDef);
         const wireframe: Mesh = { ...res.assets.ball.mesh, tri: [] };
         em.addComponent(id, RenderableConstructDef, wireframe, true);
-        em.addComponent(id, ColorDef, vec3.clone([0, 1, 1]));
+        em.addComponent(id, ColorDef, [0, 1, 1]);
         res.globalCursor3d.cursor = createRef(id, [Cursor3dDef, WorldFrameDef]);
       }
     },
@@ -63,10 +63,10 @@ export function registerCursorSystems(em: EntityManager) {
       assert(cs.length === 1, "we only support one cursor right now");
 
       // shoot a ray from screen center to figure out where to put the cursor
-      const screenMid: vec2 = vec2.clone([
-    res.cameraView.width * 0.5,
-    res.cameraView.height * 0.4,
-]);
+      const screenMid: vec2 = [
+        res.cameraView.width * 0.5,
+        res.cameraView.height * 0.4,
+      ];
       const r = screenPosToRay(screenMid, res.cameraView);
       let cursorDistance = c.cursor3d.maxDistance;
 
@@ -91,8 +91,11 @@ export function registerCursorSystems(em: EntityManager) {
       }
 
       // place the cursor
-      // place the cursor
-vec3.add(r.org, vec3.scale(r.dir, cursorDistance), c.position);
+      vec3.add(
+        c.position,
+        r.org,
+        vec3.scale(tempVec3(), r.dir, cursorDistance)
+      );
 
       // NOTE/HACK: since the cursor is updated after the render view is updated, we need
       //    to update it's world frame ourselves

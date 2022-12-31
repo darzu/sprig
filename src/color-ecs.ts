@@ -1,5 +1,5 @@
 import { Component, EM, EntityManager } from "./entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
+import { vec3 } from "./gl-matrix.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
@@ -25,7 +25,7 @@ export const TintsDef = EM.defineComponent(
 export type Tints = Component<typeof TintsDef>;
 
 export function applyTints(tints: Tints, tint: vec3) {
-  tints.forEach((c) => vec3.add(tint, c, tint));
+  tints.forEach((c) => vec3.add(tint, tint, c));
 }
 
 export function setTint(tints: Tints, name: string, tint: vec3) {
@@ -40,6 +40,9 @@ export function setTint(tints: Tints, name: string, tint: vec3) {
 export function clearTint(tints: Tints, name: string) {
   let current = tints.get(name);
   if (current) {
-    vec3.set(0, 0, 0, current);
+    vec3.set(current, 0, 0, 0);
   }
 }
+
+export const AlphaDef = EM.defineComponent("alpha", (c?: number) => c ?? 1.0);
+export type Alpha = Component<typeof AlphaDef>;

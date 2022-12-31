@@ -63,3 +63,25 @@ Unrelated:
     optionally a start button per-site so you know it's fully loaded
     an exception system, but it gets logged and you can see how much excess time you spent
     you get to save links to a reading list
+
+Workshop game:
+  You have a garage, 
+    (that becomes a detached garage and then gets upgraded in size)
+  With tools:
+    woodworking,
+    welding,
+    smelting,
+    smithing,
+    pottery,
+    sewing,
+    glass blowing,
+    stain glass,
+    machining,
+  Acquired over time
+    Maybe you build your own tools?
+  Maybe u sell at the local farmers market?
+  Life sim?
+    u start in a city,
+    move out for more space,
+    family?
+  

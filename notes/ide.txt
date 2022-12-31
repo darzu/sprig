@@ -74,3 +74,21 @@ For debugging async or init code:
 Have a "step frame" notion
 
 MidJourney or similiar integration for references generation?
+
+Don't solve static and dynamic analysis in general, solve it for specific cases:
+  "Developers hate annotating their code!" 
+    Well, no, they hate spending time on something when they don't know the returns.
+  Halting problem etc, of course these aren't solvable in general!
+  But devs don't care about the general case, they care about their case.
+  Don't have a single push button tool for everybody 
+    (well except to the extent we can leverage special sprigland knowledge)
+  Have a toolkit that allows devs to create custom code analysis for their exact game.
+
+Maybe instead of "beginner" "advanced" "expert" UI modes,
+  there is instead "opinionated" and "custom" mode or something,
+  like beginners don't want / shouldn't have too many options,
+    be prescriptive, define clear boundries, constraints really help,
+  once they're orientated and ready to push boundries then allow getting outside
+    the opinionated rails.
+  But it's not "beginner" b/c big complex games can be made with that initial set
+    of opinionated choices.

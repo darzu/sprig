@@ -1,6 +1,6 @@
-import { Component, EM, EntityManager } from "../entity-manager.js";
+import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { LocalPlayerDef, PlayerDef } from "./player.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec3 } from "../gl-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import {
   Position,
@@ -12,13 +12,15 @@ import {
   PhysicsResultsDef,
   WorldFrameDef,
 } from "../physics/nonintersection.js";
-import { clearTint, setTint, TintsDef } from "../color.js";
+import { clearTint, setTint, TintsDef } from "../color-ecs.js";
+import { DeletedDef } from "../delete.js";
 
 export const InteractableDef = EM.defineComponent(
   "interaction",
   (colliderId?: number) => ({
     // TODO(@darzu): components having pointers to entities should be
     //  handled better
+    // TODO(@darzu): use Ref system
     colliderId: colliderId || 0,
   })
 );
@@ -36,11 +38,17 @@ export function registerInteractionSystem(em: EntityManager) {
       const player = em.findEntity(resources.localPlayer.playerId, [PlayerDef]);
       if (!player) return;
 
-      const interactablesMap = interactables.reduce((map, i) => {
-        map.set(i.interaction.colliderId, i);
-        return map;
-      }, new Map());
+      const interactablesMap: Map<number, Entity> = interactables.reduce(
+        (map, i) => {
+          map.set(i.interaction.colliderId, i);
+          return map;
+        },
+        new Map()
+      );
       for (let interactable of interactables) {
+        if (DeletedDef.isOn(interactable))
+          // TODO(@darzu): HACK this shouldn't be needed
+          continue;
         if (InRangeDef.isOn(interactable)) {
           em.removeComponent(interactable.id, InRangeDef);
         }
@@ -53,9 +61,11 @@ export function registerInteractionSystem(em: EntityManager) {
       ).find((id) => interactablesMap.has(id));
       if (interactableColliderId) {
         const interactable = interactablesMap.get(interactableColliderId)!;
-        em.ensureComponentOn(interactable, InRangeDef);
-        em.ensureComponentOn(interactable, TintsDef);
-        setTint(interactable.tints, INTERACTION_TINT_NAME, INTERACTION_TINT);
+        if (!DeletedDef.isOn(interactable)) {
+          em.ensureComponentOn(interactable, InRangeDef);
+          em.ensureComponentOn(interactable, TintsDef);
+          setTint(interactable.tints, INTERACTION_TINT_NAME, INTERACTION_TINT);
+        }
       }
     },
     "interaction"

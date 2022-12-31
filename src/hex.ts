@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
+import { vec2, vec3 } from "./gl-matrix.js";
 import { packI16s, TupleN } from "./util.js";
 
 export interface HexGrid<D> {
@@ -92,12 +92,12 @@ export function* hexesWithin(
 // export type Hex = { q: number; r: number };
 
 export const HEX_DIRS: TupleN<vec2, 6> = [
-  vec2.clone([+0, -1]),
-  vec2.clone([+1, -1]),
-  vec2.clone([+1, -0]),
-  vec2.clone([-0, +1]),
-  vec2.clone([-1, +1]),
-  vec2.clone([-1, +0]),
+  [+0, -1],
+  [+1, -1],
+  [+1, -0],
+  [-0, +1],
+  [-1, +1],
+  [-1, +0],
 ];
 export const HEX_N_IDX = 0;
 export const HEX_NE_IDX = 1;
@@ -155,16 +155,16 @@ export function hexNeighbors(
   dirIdx: number = 0
 ): TupleN<vec2, 6> {
   const qr = [q, r] as const;
-  return hexNeighborDirs(dirIdx).map((d) => vec2.add(qr, d, vec2.clone([0, 0]))) as TupleN<
+  return hexNeighborDirs(dirIdx).map((d) => vec2.add([0, 0], qr, d)) as TupleN<
     vec2,
     6
   >;
 }
 
 export function hexAvg(qr1: vec2, qr2: vec2): vec3 {
-  return vec3.clone([
+  return [
     (qr1[0] + qr2[0]) * 0.5,
     (qr1[1] + qr2[1]) * 0.5,
     (-qr1[0] - qr1[1] - qr2[0] - qr2[1]) * 0.5,
-]);
+  ];
 }

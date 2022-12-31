@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec3 } from "../gl-matrix.js";
 import {
   EntityManager,
   EM,
@@ -26,7 +26,7 @@ import {
 import { hashCode, NumberTuple } from "../util.js";
 import { TimeDef } from "../time.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import { onInit } from "../init.js";
 
 export interface Event<Extra> {

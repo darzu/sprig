@@ -1,7 +1,7 @@
 import { EM, EntityManager } from "../entity-manager.js";
 import { TimeDef } from "../time.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
-import { ColorDef } from "../color.js";
+import { quat, vec3 } from "../gl-matrix.js";
+import { ColorDef } from "../color-ecs.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { PhysicsParentDef, PositionDef } from "../physics/transform.js";
 import { ColliderDef } from "../physics/collider.js";
@@ -12,7 +12,7 @@ import { InRangeDef } from "./interact.js";
 import { LocalPlayerDef, PlayerDef } from "./player.js";
 import { AssetsDef } from "./assets.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
-import { MusicDef, randChordId } from "../music.js";
+import { AudioDef, randChordId } from "../audio.js";
 import { InputsDef } from "../inputs.js";
 import { DeletedDef } from "../delete.js";
 import { defineNetEntityHelper } from "../em_helpers.js";
@@ -59,7 +59,7 @@ export const { CannonPropsDef, CannonLocalDef, createCannon } =
       const props = e.cannonProps;
       em.ensureComponent(e.id, PositionDef, props.location);
       constructNetTurret(e, props.yaw, props.pitch, res.assets.cannon.aabb);
-      em.ensureComponent(e.id, ColorDef, vec3.clone([0, 0, 0]));
+      em.ensureComponent(e.id, ColorDef, [0, 0, 0]);
       em.ensureComponent(e.id, RenderableConstructDef, res.assets.cannon.mesh);
       em.ensureComponent(e.id, ColliderDef, {
         shape: "AABB",
@@ -94,16 +94,17 @@ export function registerCannonSystems(em: EntityManager) {
         // const fireDir = quat.create();
         // quat.rotateY(fireDir, cannon.world.rotation, Math.PI * 0.5);
         const firePos = vec3.create();
-        vec3.transformQuat(firePos, fireDir, firePos);
-        vec3.add(firePos, cannon.world.position, firePos);
-        fireBullet(EM, 1, firePos, fireDir, 0.1);
+        vec3.transformQuat(firePos, firePos, fireDir);
+        vec3.add(firePos, firePos, cannon.world.position);
+        // TODO(@darzu): MULTIPLAYER BULLETS broken b/c LD51
+        // fireBullet(EM, 1, firePos, fireDir, 0.1);
       }
 
       // but everyone resets the cooldown and plays sound effects
       cannon.cannonLocal.fireMs = cannon.cannonLocal.fireDelayMs;
 
       const chord = randChordId();
-      EM.getResource(MusicDef)!.playChords([chord], "major", 2.0, 3.0, -2);
+      EM.getResource(AudioDef)!.playChords([chord], "major", 2.0, 3.0, -2);
     },
     {
       legalEvent: ([player, cannon]) => {

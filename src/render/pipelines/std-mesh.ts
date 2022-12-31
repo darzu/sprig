@@ -1,4 +1,6 @@
-import { oceanJfa } from "../../game/ocean.js";
+import { ENDESGA16 } from "../../color/palettes.js";
+// import { oceanJfa } from "../../game/ocean.js";
+import { vec3, vec4 } from "../../gl-matrix.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";
 import { pointLightsPtr } from "../lights.js";
@@ -12,7 +14,6 @@ import {
   surfacesTexturePtr,
 } from "./std-scene.js";
 import { shadowDepthTextures } from "./std-shadow.js";
-import { vec4 } from "../../sprig-matrix.js";
 
 // TODO:
 //  [x] pipeline attachements / outputs
@@ -49,7 +50,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
     { ptr: comparisonSamplerPtr, alias: "shadowSampler" },
     // TODO(@darzu): object-specific SDFs?
     // TODO(@darzu): REMOVE HARD-CODED DEPENDENCY ON OCEAN SDF!
-    { ptr: oceanJfa.sdfTex, alias: "sdf" },
+    // { ptr: oceanJfa.sdfTex, alias: "sdf" },
     pointLightsPtr,
     // { ptr: oceanJfa._inputMaskTex, alias: "sdf" },
     // { ptr: oceanJfa._uvMaskTex, alias: "sdf" },
@@ -57,6 +58,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
     // { ptr: clothTexPtr0, access: "read", alias: "clothTex" },
   ],
   cullMode: "back",
+  // cullMode: "none",
   meshOpt: {
     pool: meshPoolPtr,
     stepMode: "per-mesh-handle",
@@ -70,13 +72,14 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
       // defaultColor: [0.0, 0.0, 0.0, 1.0],
       // defaultColor: [0.1, 0.1, 0.1, 1.0],
       // defaultColor: [0.15, 0.15, 0.6, 1.0],
-      defaultColor: vec4.clone([0.015, 0.015, 0.015, 1.0]),
+      defaultColor: [0.015, 0.015, 0.015, 1.0],
+      // defaultColor: [...vec3.clone(ENDESGA16.white), 1.0] as vec4,
       // defaultColor: [0.7, 0.8, 1.0, 1.0],
     },
     {
       ptr: normalsTexturePtr,
       clear: "once",
-      defaultColor: vec4.clone([0, 0, 0, 0]),
+      defaultColor: [0, 0, 0, 0],
     },
     // {
     //   ptr: positionsTexturePtr,
@@ -86,7 +89,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
     {
       ptr: surfacesTexturePtr,
       clear: "once",
-      defaultColor: vec4.clone([0, 0, 0, 0]),
+      defaultColor: [0, 0, 0, 0],
     },
   ],
   depthStencil: mainDepthTex,

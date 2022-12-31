@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4 } from "../../sprig-matrix.js";
+import { vec3 } from "../../gl-matrix.js";
 import { CY } from "../gpu-registry.js";
 import { createCyStruct, CyToTS } from "../gpu-struct.js";
 import { sceneBufPtr, litTexturePtr, mainDepthTex } from "./std-scene.js";
@@ -49,7 +49,7 @@ function generateRopeGrid(): {
     for (let y = 0; y < CLOTH_W; y++) {
       let i = idx(x, y);
       // assert(i === n, "i === n");
-      const pos: vec3 = vec3.clone([x, y + 4, 0]);
+      const pos: vec3 = [x, y + 4, 0];
       const p: RopePointTS = {
         position: pos,
         prevPosition: pos,
@@ -79,7 +79,7 @@ function generateRopeGrid(): {
     }
   }
 
-  console.log(RopeStickStruct.wgsl(true));
+  // console.log(RopeStickStruct.wgsl(true));
 
   // fix points
   ropePointData[idx(0, CLOTH_W - 1)].locked = 1.0;
@@ -225,10 +225,10 @@ const ParticleVertStruct = createCyStruct(
 const initParticleVertData: () => CyToTS<
   typeof ParticleVertStruct.desc
 >[] = () => [
-  { position: vec3.clone([1, 1, 1]) },
-  { position: vec3.clone([1, -1, -1]) },
-  { position: vec3.clone([-1, 1, -1]) },
-  { position: vec3.clone([-1, -1, 1]) },
+  { position: [1, 1, 1] },
+  { position: [1, -1, -1] },
+  { position: [-1, 1, -1] },
+  { position: [-1, -1, 1] },
 ];
 const particleVertBufPtr = CY.createArray("particleVert", {
   struct: ParticleVertStruct,

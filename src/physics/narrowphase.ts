@@ -1,8 +1,8 @@
 import { EntityManager, EntityW } from "../entity-manager.js";
 import { AssetsDef } from "../game/assets.js";
-import { ColorDef } from "../color.js";
+import { ColorDef } from "../color-ecs.js";
 import { LocalPlayerDef } from "../game/player.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec3 } from "../gl-matrix.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { BoxCollider, Collider } from "./collider.js";
 import { PhysicsObject, WorldFrameDef } from "./nonintersection.js";
@@ -92,16 +92,16 @@ export function doesSimplexOverlapOrigin(s: vec3[]) {
 
   for (let t of tris) {
     const [C, B, A] = t;
-    const AB = vec3.sub(B, A, vec3.create());
-    const AC = vec3.sub(C, A, vec3.create());
-    const ABCperp = vec3.cross(AB, AC, vec3.create());
+    const AB = vec3.sub(vec3.create(), B, A);
+    const AC = vec3.sub(vec3.create(), C, A);
+    const ABCperp = vec3.cross(vec3.create(), AB, AC);
     vec3.normalize(ABCperp, ABCperp);
     const triCenter = centroid(t);
-    const triCenterToSimplexCenter = vec3.sub(center, triCenter, vec3.create());
+    const triCenterToSimplexCenter = vec3.sub(vec3.create(), center, triCenter);
     vec3.normalize(triCenterToSimplexCenter, triCenterToSimplexCenter);
     if (vec3.dot(ABCperp, triCenterToSimplexCenter) < 0)
       vec3.negate(ABCperp, ABCperp);
-    const AO = vec3.sub([0, 0, 0], A, vec3.create());
+    const AO = vec3.sub(vec3.create(), [0, 0, 0], A);
     if (vec3.dot(ABCperp, AO) < 0) return false;
   }
   return true;
@@ -110,8 +110,8 @@ export function doesSimplexOverlapOrigin(s: vec3[]) {
 // minkowski difference support
 function mSupport(s1: Shape, s2: Shape, d: vec3): vec3 {
   // TODO(@darzu):
-  const nD = vec3.negate(d);
-  return vec3.sub(s2.support(d), s1.support(nD));
+  const nD = vec3.negate(tempVec3(), d);
+  return vec3.sub(tempVec3(), s2.support(d), s1.support(nD));
 }
 
 // GJK visualization
@@ -125,10 +125,10 @@ export function gjk(
   let simplex: vec3[] = [];
   let distToOrigin = Infinity;
 
-  vec3.sub(s2.center, s1.center, d);
+  vec3.sub(d, s2.center, s1.center);
   vec3.normalize(d, d);
   simplex = [mSupport(s1, s2, d)];
-  vec3.sub([0, 0, 0], simplex[0], d);
+  vec3.sub(d, [0, 0, 0], simplex[0]);
   vec3.normalize(d, d);
   let step = 0;
   while (true) {
@@ -146,7 +146,7 @@ export function gjk(
     }
     // console.log(`adding: ${A}`);
     simplex.push(A);
-    const newDist = vec3.length(centroid(simplex));
+    const newDist = vec3.len(centroid(simplex));
     // if (newDist > distToOrigin) {
     //   console.warn(`moving away from origin!`);
     // }
@@ -165,38 +165,38 @@ export function gjk(
     if (simplex.length === 2) {
       // line case
       const [B, A] = simplex;
-      const AB = vec3.sub(B, A);
-      const AO = vec3.sub([0, 0, 0], A);
+      const AB = vec3.sub(tempVec3(), B, A);
+      const AO = vec3.sub(tempVec3(), [0, 0, 0], A);
       const ABperp = tripleProd(tempVec3(), AB, AO, AB);
       vec3.copy(d, ABperp);
       return false;
     } else if (simplex.length === 3) {
       // triangle case
       const [C, B, A] = simplex;
-      const AB = vec3.sub(B, A);
-      const AC = vec3.sub(C, A);
-      const ABCperp = vec3.cross(AB, AC);
-      const AO = vec3.sub([0, 0, 0], A);
+      const AB = vec3.sub(tempVec3(), B, A);
+      const AC = vec3.sub(tempVec3(), C, A);
+      const ABCperp = vec3.cross(tempVec3(), AB, AC);
+      const AO = vec3.sub(tempVec3(), [0, 0, 0], A);
       if (vec3.dot(ABCperp, AO) < 0) vec3.negate(ABCperp, ABCperp);
       vec3.copy(d, ABCperp);
       return false;
     } else {
       // tetrahedron
       const [D, C, B, A] = simplex;
-      const AB = vec3.sub(B, A);
-      const AC = vec3.sub(C, A);
-      const AD = vec3.sub(D, A);
-      const AO = vec3.sub([0, 0, 0], A);
+      const AB = vec3.sub(tempVec3(), B, A);
+      const AC = vec3.sub(tempVec3(), C, A);
+      const AD = vec3.sub(tempVec3(), D, A);
+      const AO = vec3.sub(tempVec3(), [0, 0, 0], A);
 
-      const ABCperp = vec3.cross(AB, AC);
+      const ABCperp = vec3.cross(tempVec3(), AB, AC);
       if (vec3.dot(ABCperp, AD) > 0) {
         vec3.negate(ABCperp, ABCperp);
       }
-      const ACDperp = vec3.cross(AC, AD);
+      const ACDperp = vec3.cross(tempVec3(), AC, AD);
       if (vec3.dot(ACDperp, AB) > 0) {
         vec3.negate(ACDperp, ACDperp);
       }
-      const ADBperp = vec3.cross(AD, AB);
+      const ADBperp = vec3.cross(tempVec3(), AD, AB);
       if (vec3.dot(ADBperp, AC) > 0) {
         vec3.negate(ADBperp, ADBperp);
       }
@@ -225,46 +225,46 @@ export function penetrationDepth(
   s1: Shape,
   s2: Shape,
   simplex: vec3[],
-  offset: vec3 = vec3.clone([0, 0, 0])
+  offset: vec3 = [0, 0, 0]
 ): number {
   if (vec3.equals(s1.travel, s2.travel)) return Infinity;
-  const forwardDir = vec3.sub(s1.travel, s2.travel);
+  const forwardDir = vec3.sub(tempVec3(), s1.travel, s2.travel);
   vec3.normalize(forwardDir, forwardDir);
-  const backwardDir = vec3.negate(forwardDir);
+  const backwardDir = vec3.negate(tempVec3(), forwardDir);
 
   const [D, C, B, A] = simplex;
-  const AB = vec3.sub(B, A);
-  const BC = vec3.sub(B, C);
-  const BD = vec3.sub(B, D);
-  const AC = vec3.sub(C, A);
-  const AD = vec3.sub(D, A);
-  const AO = vec3.sub(A, offset);
-  const BO = vec3.sub(B, offset);
+  const AB = vec3.sub(tempVec3(), B, A);
+  const BC = vec3.sub(tempVec3(), B, C);
+  const BD = vec3.sub(tempVec3(), B, D);
+  const AC = vec3.sub(tempVec3(), C, A);
+  const AD = vec3.sub(tempVec3(), D, A);
+  const AO = vec3.sub(tempVec3(), A, offset);
+  const BO = vec3.sub(tempVec3(), B, offset);
 
-  const ABCperp = vec3.cross(AB, AC);
+  const ABCperp = vec3.cross(tempVec3(), AB, AC);
   if (vec3.dot(ABCperp, AD) > 0) {
     vec3.negate(ABCperp, ABCperp);
   }
-  const ACDperp = vec3.cross(AC, AD);
+  const ACDperp = vec3.cross(tempVec3(), AC, AD);
   if (vec3.dot(ACDperp, AB) > 0) {
     vec3.negate(ACDperp, ACDperp);
   }
-  const ABDperp = vec3.cross(AD, AB);
+  const ABDperp = vec3.cross(tempVec3(), AD, AB);
   if (vec3.dot(ABDperp, AC) > 0) {
     vec3.negate(ABDperp, ABDperp);
   }
-  const BCDperp = vec3.cross(BC, BD);
+  const BCDperp = vec3.cross(tempVec3(), BC, BD);
   if (vec3.dot(BCDperp, AB) < 0) {
     vec3.negate(BCDperp, BCDperp);
   }
 
   let minD = Infinity;
-  let minPerp: vec3 = vec3.clone([NaN, NaN, NaN]);
+  let minPerp: vec3 = [NaN, NaN, NaN];
   let minVs: vec3[] = [];
-  let minNotV: vec3 = vec3.clone([NaN, NaN, NaN]);
+  let minNotV: vec3 = [NaN, NaN, NaN];
 
   if (vec3.dot(ABCperp, backwardDir) > 0) {
-    const ABCnorm = vec3.normalize(ABCperp);
+    const ABCnorm = vec3.normalize(tempVec3(), ABCperp);
     const n = vec3.dot(AO, ABCnorm);
     const d = n / vec3.dot(ABCnorm, backwardDir);
     // console.log(d);
@@ -276,7 +276,7 @@ export function penetrationDepth(
     }
   }
   if (vec3.dot(ACDperp, backwardDir) > 0) {
-    const ACDnorm = vec3.normalize(ACDperp);
+    const ACDnorm = vec3.normalize(tempVec3(), ACDperp);
     const n = vec3.dot(AO, ACDnorm);
     const d = n / vec3.dot(ACDnorm, backwardDir);
     // console.log(d);
@@ -288,7 +288,7 @@ export function penetrationDepth(
     }
   }
   if (vec3.dot(ABDperp, backwardDir) > 0) {
-    const ABDnorm = vec3.normalize(ABDperp);
+    const ABDnorm = vec3.normalize(tempVec3(), ABDperp);
     const n = vec3.dot(AO, ABDnorm);
     const d = n / vec3.dot(ABDnorm, backwardDir);
     // console.log(d);
@@ -301,7 +301,7 @@ export function penetrationDepth(
   }
   // TODO(@darzu): can skip if `offset` === [0,0,0]
   if (vec3.dot(BCDperp, backwardDir) > 0) {
-    const BCDnorm = vec3.normalize(BCDperp);
+    const BCDnorm = vec3.normalize(tempVec3(), BCDperp);
     const n = vec3.dot(BO, BCDnorm);
     const d = n / vec3.dot(BCDnorm, backwardDir);
     // console.log(d);
@@ -340,19 +340,19 @@ export function penetrationDepth(
 
   minD += PAD;
 
-  const newTravel = vec3.scale(backwardDir, minD);
-  const newOffset = vec3.add(offset, newTravel);
+  const newTravel = vec3.scale(tempVec3(), backwardDir, minD);
+  const newOffset = vec3.add(tempVec3(), offset, newTravel);
 
   const F = mSupport(s1, s2, minPerp);
-  const Fs = vec3.sub(F, newOffset);
+  const Fs = vec3.sub(tempVec3(), F, newOffset);
   if (vec3.dot(Fs, minPerp) <= 0) {
     console.log(
       `done!` +
-        (vec3.length(offset) > 0
-          ? `${vec3.length(offset).toFixed(3)} + ${minD.toFixed(3)}`
+        (vec3.len(offset) > 0
+          ? `${vec3.len(offset).toFixed(3)} + ${minD.toFixed(3)}`
           : ``)
     );
-    return vec3.length(newOffset);
+    return vec3.len(newOffset);
   }
 
   console.log(`more to do!`);
@@ -387,8 +387,8 @@ export function penetrationDepth(
 }
 
 function tripleProd(out: vec3, a: vec3, b: vec3, c: vec3): vec3 {
-  vec3.cross(a, b, out);
-  vec3.cross(out, c, out);
+  vec3.cross(out, a, b);
+  vec3.cross(out, out, c);
   return out;
 }
 

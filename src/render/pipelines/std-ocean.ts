@@ -1,11 +1,12 @@
-import { vec2, vec3, vec4, quat, mat4 } from "../../sprig-matrix.js";
-import { assert } from "../../test.js";
+import { mat4, vec3 } from "../../gl-matrix.js";
+import { assert } from "../../util.js";
 import { computeTriangleNormal } from "../../utils-3d.js";
 import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";
 import { createCyStruct, CyToTS } from "../gpu-struct.js";
 import { pointLightsPtr } from "../lights.js";
 import { MeshHandle } from "../mesh-pool.js";
 import { getAABBFromMesh, Mesh } from "../mesh.js";
+import { GPUBufferUsage } from "../webgpu-hacks.js";
 import {
   sceneBufPtr,
   litTexturePtr,
@@ -115,16 +116,21 @@ const oceanUnisPtr = CY.createArray("oceanUni", {
 });
 
 // TODO(@darzu): de-duplicate with std-scene's computeVertsData
-function computeOceanVertsData(m: Mesh): OceanVertTS[] {
+function computeOceanVertsData(
+  m: Mesh,
+  // TODO(@darzu): this isn't implemented right; needs to account for startIdx and count
+  startIdx: number,
+  count: number
+): OceanVertTS[] {
   assert(!!m.normals, "ocean meshes assumed to have normals");
   assert(!!m.tangents, "ocean meshes assumed to have tangents");
   // TODO(@darzu): change
   const vertsData: OceanVertTS[] = m.pos.map((pos, i) => ({
     position: pos,
-    color: vec3.clone([1.0, 0.0, 1.0]), // per-face; changed below
+    color: [1.0, 0.0, 1.0], // per-face; changed below
     tangent: m.tangents![i],
     normal: m.normals![i],
-    uv: m.uvs ? m.uvs[i] : vec2.clone([0.0, 0.0]),
+    uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
     surfaceId: 0, // per-face; changed below
   }));
   // TODO: compute tangents here? right now tangents are wrong if we
