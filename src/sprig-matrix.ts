@@ -120,10 +120,13 @@ export module vec2 {
   }
 }
 
+// TODO(@darzu): use "namespace" keyword instead of "module" (re: https://www.typescriptlang.org/docs/handbook/namespaces.html)
 export module vec3 {
   export type T = vec3;
   export type InputT = T | readonly [number, number, number];
   const GL = GLM.vec3;
+
+  // export default = fromValues;
 
   export function tmp(): T {
     return tmpArray(3);
