@@ -30,7 +30,7 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-const GAME = "hyperspace" as
+const GAME = "ld51" as
   | "gjk"
   | "rebound" // broken-ish
   | "ld51"
