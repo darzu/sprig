@@ -13,6 +13,7 @@ const shadowDepthTextureSize = 2048.0;
 // const shadowDepthTextureSize = vec2<f32>(textureDimensions(shadowMap, 0.0));
 
 fn sampleShadowTexture(pos: vec2<f32>, depth: f32, index: u32) -> f32 {
+  // TODO(@darzu): re-enable multi-shadow? probably w/ option
     // if (index == 0) {
         return textureSampleCompare(shadowMap0, shadowSampler, pos, depth);
     // } else if (index == 1) {
