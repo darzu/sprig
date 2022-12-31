@@ -27,7 +27,7 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-const GAME = "cloth" as
+const GAME = "rebound" as
   | "gjk"
   | "rebound"
   | "ld51"
@@ -85,7 +85,7 @@ function callFixedTimestepSystems() {
   //   EM.callSystem("playerLookingForShip");
   // }
   if (GAME === "rebound") {
-    EM.callSystem("sandboxSpawnBoxes");
+    EM.tryCallSystem("sandboxSpawnBoxes");
   }
   if (GAME === "cloth") {
     EM.tryCallSystem("clothSandbox");

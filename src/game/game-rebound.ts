@@ -26,6 +26,12 @@ import { GlobalCursor3dDef } from "./cursor.js";
 // import { ForceDef, SpringGridDef } from "./spring.js";
 import { TextDef } from "./ui.js";
 import { createGhost } from "./game.js";
+import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
+import { outlineRender } from "../render/pipelines/std-outline.js";
+import { postProcess } from "../render/pipelines/std-post.js";
+import { shadowPipelines } from "../render/pipelines/std-shadow.js";
+
+// TODO(@darzu): BROKEN. camera is in a wonky place?
 
 export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
   const camera = em.addSingletonComponent(CameraDef);
@@ -39,6 +45,14 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
     RendererDef,
     TextDef
   );
+
+  res.renderer.pipelines = [
+    ...shadowPipelines,
+    stdRenderPipeline,
+    outlineRender,
+    postProcess,
+  ];
+
   const g = createGhost();
   vec3.copy(g.position, [-6.5, 3.06, 22.51]);
   quat.copy(g.rotation, [0.0, -0.08, 0.0, 1.0]);
