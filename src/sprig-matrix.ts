@@ -100,14 +100,15 @@ export module vec2 {
   export function dot(v1: InputT, v2: InputT): number {
     return GL.dot(v1, v2);
   }
-  export function cross(v1: InputT, v2: InputT, out?: vec3.T): vec3.T {
-    return GL.cross(out ?? vec3.tmp(), v1, v2) as vec3.T;
-  }
+  // unused
+  // export function cross(v1: InputT, v2: InputT, out?: vec3.T): vec3.T {
+  //   return GL.cross(out ?? vec3.tmp(), v1, v2) as vec3.T;
+  // }
   export function scale(v1: InputT, n: number, out?: T): T {
-    return GL.scale(out ?? vec3.tmp(), v1, n) as T;
+    return GL.scale(out ?? tmp(), v1, n) as T;
   }
   export function negate(v1: InputT, out?: T): T {
-    return GL.negate(out ?? vec3.tmp(), v1) as T;
+    return GL.negate(out ?? tmp(), v1) as T;
   }
   export function dist(v1: InputT, v2: InputT): number {
     return GL.dist(v1, v2);
@@ -191,10 +192,10 @@ export module vec3 {
     return GL.cross(out ?? tmp(), v1, v2) as T;
   }
   export function scale(v1: InputT, n: number, out?: T): T {
-    return GL.scale(out ?? vec3.tmp(), v1, n) as T;
+    return GL.scale(out ?? tmp(), v1, n) as T;
   }
   export function negate(v1: InputT, out?: T): T {
-    return GL.negate(out ?? vec3.tmp(), v1) as T;
+    return GL.negate(out ?? tmp(), v1) as T;
   }
   export function dist(v1: InputT, v2: InputT): number {
     return GL.dist(v1, v2);
@@ -298,10 +299,10 @@ export module vec4 {
   }
 
   export function scale(v1: InputT, n: number, out?: T): T {
-    return GL.scale(out ?? vec3.tmp(), v1, n) as T;
+    return GL.scale(out ?? tmp(), v1, n) as T;
   }
   export function negate(v1: InputT, out?: T): T {
-    return GL.negate(out ?? vec3.tmp(), v1) as T;
+    return GL.negate(out ?? tmp(), v1) as T;
   }
   export function dist(v1: InputT, v2: InputT): number {
     return GL.dist(v1, v2);
