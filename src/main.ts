@@ -20,6 +20,7 @@ import { initFontEditor } from "./game/game-font.js";
 import { initGJKSandbox } from "./game/game-gjk.js";
 import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { initClothSandbox } from "./game/game-cloth.js";
+import { initCubeGame } from "./game/xp-cube.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -33,7 +34,8 @@ const GAME = "hyperspace" as
   | "ld51"
   | "font"
   | "hyperspace"
-  | "cloth";
+  | "cloth"
+  | "cube";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -232,7 +234,7 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "rebound") initReboundSandbox(EM, hosting);
   else if (GAME === "cloth") initClothSandbox(EM, hosting);
   else if (GAME === "hyperspace") initHyperspaceGame(EM);
-  // else if (GAME === "cube") initCubeGame(EM);
+  else if (GAME === "cube") initCubeGame(EM);
   else if (GAME === "ld51") initRogueGame(EM, hosting);
   else if (GAME === "font") initFontEditor(EM);
   else never(GAME, "TODO game");
