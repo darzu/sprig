@@ -32,13 +32,12 @@ const AUTOSTART = true;
 
 const GAME = "hyperspace" as
   | "gjk"
-  | "rebound"
+  | "rebound" // broken-ish
   | "ld51"
   | "font"
   | "hyperspace"
-  | "cloth"
+  | "cloth" // broken-ish
   | "cube";
-
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
 
