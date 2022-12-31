@@ -268,3 +268,11 @@ What is:
     GPU-cacheable-noncoherent-RO
     Command-write-combined
     Command-cacheable
+
+"":
+  https://www.forrestthewoods.com/blog/should-small-rust-structs-be-passed-by-copy-or-by-borrow/
+  disassembly via GodBolt
+    https://godbolt.org/z/1gENA_
+  branch prediction via VTune
+    https://www.intel.com/content/www/us/en/developer/tools/oneapi/vtune-profiler.html#gs.lshm3t
+  
