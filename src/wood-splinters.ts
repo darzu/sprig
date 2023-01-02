@@ -4,7 +4,7 @@ import { ColorDef } from "./color-ecs.js";
 import { EntityW, EntityManager, EM } from "./entity-manager.js";
 import { AssetsDef, BLACK } from "./game/assets.js";
 import { GravityDef } from "./game/gravity.js";
-import { vec3, quat, mat4 } from "./gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
 import { jitter } from "./math.js";
 import { getLineMid } from "./physics/broadphase.js";
 import { LinearVelocityDef, AngularVelocityDef } from "./physics/motion.js";
@@ -101,12 +101,12 @@ export const mkTimberSplinterFree = (
   const topJags = Math.round(10 * width * Wtop);
   const botJags = Math.round(10 * width * Wbot);
 
-  mat4.translate(b.cursor, b.cursor, [0, -H * 0.5, 0]);
-  mat4.scale(b.cursor, b.cursor, [Wbot, 1, 1]);
+  mat4.translate(b.cursor, [0, -H * 0.5, 0], b.cursor);
+  mat4.scale(b.cursor, [Wbot, 1, 1], b.cursor);
   b.addLoopVerts();
   const loopBotEndIdx = b.mesh.pos.length;
-  mat4.translate(b.cursor, b.cursor, [0, +H, 0]);
-  mat4.scale(b.cursor, b.cursor, [(1 / Wbot) * Wtop, 1, 1]);
+  mat4.translate(b.cursor, [0, +H, 0], b.cursor);
+  mat4.scale(b.cursor, [(1 / Wbot) * Wtop, 1, 1], b.cursor);
   b.addLoopVerts();
   const loopTopEndIdx = b.mesh.pos.length;
   b.addSideQuads();
@@ -116,9 +116,9 @@ export const mkTimberSplinterFree = (
 
   // mat4.translate(b.cursor, b.cursor, [0, -0.2, 0]);
   {
-    mat4.scale(b.cursor, b.cursor, [(1 / Wtop) * Wbot, 1, 1]);
-    mat4.translate(b.cursor, b.cursor, [0, -H, 0]);
-    mat4.scale(b.cursor, b.cursor, [1, -1, 1]);
+    mat4.scale(b.cursor, [(1 / Wtop) * Wbot, 1, 1], b.cursor);
+    mat4.translate(b.cursor, [0, -H, 0], b.cursor);
+    mat4.scale(b.cursor, [1, -1, 1], b.cursor);
 
     const tIdx = b.mesh.tri.length;
     const qIdx = b.mesh.quad.length;

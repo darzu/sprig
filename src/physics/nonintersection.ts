@@ -1,6 +1,6 @@
 import { Collider, ColliderDef, DefaultLayer, Layer } from "./collider.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
-import { mat4, quat, vec3 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import {
   CollidesWith,
   computeContactData,
@@ -82,12 +82,12 @@ export interface PhysCollider {
 const DUMMY_COLLIDER: PhysCollider = {
   id: 0,
   oId: 0,
-  aabb: { min: [0, 0, 0], max: [0, 0, 0] },
-  localAABB: { min: [0, 0, 0], max: [0, 0, 0] },
-  selfAABB: { min: [0, 0, 0], max: [0, 0, 0] },
+  aabb: { min: vec3.clone([0, 0, 0]), max: vec3.clone([0, 0, 0]) },
+  localAABB: { min: vec3.clone([0, 0, 0]), max: vec3.clone([0, 0, 0]) },
+  selfAABB: { min: vec3.clone([0, 0, 0]), max: vec3.clone([0, 0, 0]) },
   parentOId: 0,
-  localPos: [0, 0, 0],
-  lastLocalPos: [0, 0, 0],
+  localPos: vec3.clone([0, 0, 0]),
+  lastLocalPos: vec3.clone([0, 0, 0]),
   myLayers: 0b1,
   targetLayers: 0xffff,
 };
@@ -543,16 +543,17 @@ export function registerPhysicsContactSystems(em: EntityManager) {
           if (movFrac) {
             // TODO(@darzu): PARENT. this needs to rebound in the parent frame, not world frame
             const refl = tempVec3();
-            vec3.sub(refl, o._phys.lastLocalPos, o.position);
-            vec3.scale(refl, refl, movFrac);
-            vec3.add(o.position, o.position, refl);
+            vec3.sub(o._phys.lastLocalPos, o.position, refl);
+            vec3.scale(refl, movFrac, refl);
+            vec3.add(o.position, refl, o.position);
 
             // translate non-sweep AABBs
             for (let c of o._phys.colliders) {
               // TODO(@darzu): PARENT. translate world AABBs?
-              vec3.add(c.localAABB.min, c.localAABB.min, refl);
-              vec3.add(c.localAABB.max, c.localAABB.max, refl);
-              vec3.add(c.localPos, c.localPos, refl);
+              // TODO(@darzu): PARENT. translate world AABBs?
+vec3.add(c.localAABB.min, refl, c.localAABB.min);
+              vec3.add(c.localAABB.max, refl, c.localAABB.max);
+              vec3.add(c.localPos, refl, c.localPos);
             }
 
             // track that some movement occured

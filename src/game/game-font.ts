@@ -4,7 +4,7 @@ import { AlphaDef, ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { dbg } from "../debugger.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { vec3, quat, mat4, vec2 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { ButtonDef, ButtonsStateDef, initButtonGUI } from "../gui/button.js";
 import { initMeshEditor, MeshEditorDef } from "../gui/mesh-editor.js";
 import { lineStuff } from "../gui/path-editor.js";
@@ -100,7 +100,7 @@ export async function initFontEditor(em: EntityManager) {
   em.ensureComponentOn(sunlight, PointLightDef);
   sunlight.pointLight.constant = 1.0;
   vec3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
-  em.ensureComponentOn(sunlight, PositionDef, [10, 100, 10]);
+  em.ensureComponentOn(sunlight, PositionDef, vec3.clone([10, 100, 10]));
   // TODO(@darzu): weird, why does renderable need to be on here?
   em.ensureComponentOn(
     sunlight,
@@ -118,10 +118,10 @@ export async function initFontEditor(em: EntityManager) {
   );
   // panelMesh.colors[0] = [0.1, 0.3, 0.1];
   // panelMesh.colors[1] = [0.1, 0.1, 0.3];
-  panelMesh.colors[0] = [0.4, 0.4, 0.4];
+  panelMesh.colors[0] = vec3.clone([0.4, 0.4, 0.4]);
   em.ensureComponentOn(panel, RenderableConstructDef, panelMesh);
   // em.ensureComponentOn(panel, ColorDef, [0.2, 0.3, 0.2]);
-  em.ensureComponentOn(panel, PositionDef, [0, 0, 0]);
+  em.ensureComponentOn(panel, PositionDef, vec3.clone([0, 0, 0]));
 
   if (DBG_3D) {
     const g = createGhost();
@@ -155,8 +155,8 @@ export async function initFontEditor(em: EntityManager) {
 
   // Cursor
   const cursor = EM.newEntity();
-  EM.ensureComponentOn(cursor, ColorDef, [0.1, 0.1, 0.1]);
-  EM.ensureComponentOn(cursor, PositionDef, [0, 1.0, 0]);
+  EM.ensureComponentOn(cursor, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
+  EM.ensureComponentOn(cursor, PositionDef, vec3.clone([0, 1.0, 0]));
   EM.ensureComponentOn(cursor, RenderableConstructDef, assets.he_octo.proto);
   const cursorLocalAABB = copyAABB(createAABB(), assets.he_octo.aabb);
   cursorLocalAABB.min[1] = -1;
@@ -190,7 +190,7 @@ export async function initFontEditor(em: EntityManager) {
 
       let viewMatrix = mat4.create();
 
-      mat4.rotateX(viewMatrix, viewMatrix, Math.PI * 0.5);
+      mat4.rotateX(viewMatrix, Math.PI * 0.5, viewMatrix);
       // mat4.translate(viewMatrix, viewMatrix, [0, 10, 0]);
 
       // mat4.invert(viewMatrix, viewMatrix);
@@ -221,32 +221,28 @@ export async function initFontEditor(em: EntityManager) {
       }
 
       // TODO(@darzu): i don't understand the near/far clipping; why can't they be like -4, 4 ?
+      // TODO(@darzu): i don't understand the near/far clipping; why can't they be like -4, 4 ?
       mat4.ortho(
-        projectionMatrix,
         -adjPanelW * 0.5,
         adjPanelW * 0.5,
         -adjPanelH * 0.5,
         adjPanelH * 0.5,
         -24,
-        12
+        12,
+        projectionMatrix
       );
 
-      const viewProj = mat4.multiply(
-        mat4.create(),
-        projectionMatrix,
-        viewMatrix
-      ) as Float32Array;
+      const viewProj = mat4.mul(projectionMatrix, viewMatrix, mat4.create());
 
       cameraView.viewProjMat = viewProj;
       cameraView.invViewProjMat = mat4.invert(
-        cameraView.invViewProjMat,
-        cameraView.viewProjMat
+        cameraView.viewProjMat,
+        cameraView.invViewProjMat
       );
 
       let cursorFracX = inputs.mousePos[0] / htmlCanvas.canvas.clientWidth;
       let cursorFracY = inputs.mousePos[1] / htmlCanvas.canvas.clientHeight;
       const cursorWorldPos = vec3.transformMat4(
-        tempVec3(),
         [
           mathMap(cursorFracX, 0, 1, -1, 1),
           mathMap(cursorFracY, 0, 1, 1, -1),
@@ -263,13 +259,13 @@ export async function initFontEditor(em: EntityManager) {
 
   // Starter mesh for each letter
   const quadMesh: Mesh = {
-    quad: [[0, 1, 2, 3]],
+    quad: [vec4.clone([0, 1, 2, 3])],
     tri: [],
     pos: [
-      [1, 0, -1],
-      [-1, 0, -1],
-      [-1, 0, 1],
-      [1, 0, 1],
+      vec3.clone([1, 0, -1]),
+      vec3.clone([-1, 0, -1]),
+      vec3.clone([-1, 0, 1]),
+      vec3.clone([1, 0, 1]),
     ],
     colors: [randNormalPosVec3()],
     surfaceIds: [1],
@@ -313,7 +309,7 @@ export async function initFontEditor(em: EntityManager) {
 
     const btn = EM.newEntity();
     EM.ensureComponentOn(btn, RenderableConstructDef, gmesh.proto);
-    EM.ensureComponentOn(btn, PositionDef, [-24 + i * 2, 0.1, 12]);
+    EM.ensureComponentOn(btn, PositionDef, vec3.clone([-24 + i * 2, 0.1, 12]));
     EM.ensureComponentOn(btn, ButtonDef, btnKey, i, {
       default: ENDESGA16.lightGray,
       hover: ENDESGA16.darkGray,

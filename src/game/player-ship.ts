@@ -1,5 +1,5 @@
 import { EM, EntityManager } from "../entity-manager.js";
-import { vec2, vec3 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import {
   RenderableConstructDef,
@@ -43,7 +43,7 @@ import { ColorDef } from "../color-ecs.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
-export const BOAT_COLOR: vec3 = [0.2, 0.1, 0.05];
+export const BOAT_COLOR: vec3 = vec3.clone([0.2, 0.1, 0.05]);
 
 export const ShipPartDef = EM.defineComponent(
   "shipPart",
@@ -72,7 +72,7 @@ export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper(
     build: (gem, res) => {
       const em: EntityManager = EM;
 
-      em.ensureComponentOn(gem, PositionDef, [0, 0, 10]);
+      em.ensureComponentOn(gem, PositionDef, vec3.clone([0, 0, 10]));
 
       em.ensureComponentOn(
         gem,
@@ -86,7 +86,7 @@ export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper(
       const interactBox = em.newEntity();
       const interactAABB = copyAABB(createAABB(), res.assets.spacerock.aabb);
       em.ensureComponentOn(interactBox, PhysicsParentDef, gem.id);
-      em.ensureComponentOn(interactBox, PositionDef, [0, 0, 0]);
+      em.ensureComponentOn(interactBox, PositionDef, vec3.clone([0, 0, 0]));
       em.ensureComponentOn(interactBox, ColliderDef, {
         shape: "AABB",
         solid: false,
@@ -115,7 +115,7 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
     build: (rudder, res) => {
       const em: EntityManager = EM;
 
-      em.ensureComponentOn(rudder, PositionDef, [0, 0.5, -15]);
+      em.ensureComponentOn(rudder, PositionDef, vec3.clone([0, 0.5, -15]));
 
       em.ensureComponentOn(
         rudder,
@@ -124,7 +124,7 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
       );
       em.ensureComponentOn(rudder, PhysicsParentDef, rudder.rudderProps.shipId);
       em.ensureComponentOn(rudder, ColorDef, vec3.clone(BOAT_COLOR));
-      vec3.scale(rudder.color, rudder.color, 0.5);
+      vec3.scale(rudder.color, 0.5, rudder.color);
 
       // create seperate hitbox for interacting with the rudder
       const interactBox = em.newEntity();
@@ -133,7 +133,7 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
         PhysicsParentDef,
         rudder.rudderProps.shipId
       );
-      em.ensureComponentOn(interactBox, PositionDef, [0, 0, -12]);
+      em.ensureComponentOn(interactBox, PositionDef, vec3.clone([0, 0, -12]));
       em.ensureComponentOn(interactBox, ColliderDef, {
         shape: "AABB",
         solid: false,
@@ -150,7 +150,7 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
         Math.PI,
         -Math.PI / 8,
         1.5,
-        [0, 20, 50]
+        vec3.clone([0, 20, 50])
       );
 
       rudder.turret.maxPitch = 0;
@@ -219,14 +219,14 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
         // create cannons
         const cannonPitch = Math.PI * +0.05;
         const cannonR = createCannon(
-          [-6, 3, 5],
+          vec3.clone([-6, 3, 5]),
           Math.PI * 0.5,
           cannonPitch,
           s.id
         );
         s.playerShipProps.cannonRId = cannonR.id;
         const cannonL = createCannon(
-          [6, 3, 5],
+          vec3.clone([6, 3, 5]),
           Math.PI * 1.5,
           cannonPitch,
           s.id
@@ -235,7 +235,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
       }
 
       vec2.copy(s.uvPos, s.playerShipProps.uvPos);
-      vec2.set(s.uvDir, 1, 0);
+      vec2.set(1, 0, s.uvDir);
 
       em.ensureComponentOn(s, PositionDef);
       em.ensureComponentOn(s, RotationDef);
@@ -270,7 +270,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
         em.ensureComponentOn(part, PhysicsParentDef, s.id);
         em.ensureComponentOn(part, RenderableConstructDef, m.proto);
         em.ensureComponentOn(part, ColorDef, vec3.clone(BOAT_COLOR));
-        em.ensureComponentOn(part, PositionDef, [0, 0, 0]);
+        em.ensureComponentOn(part, PositionDef, vec3.clone([0, 0, 0]));
         const isCritical = criticalPartIdxes.includes(i);
         em.ensureComponentOn(part, ShipPartDef, isCritical);
         em.ensureComponentOn(part, ColliderDef, {
@@ -421,7 +421,7 @@ export function registerShipSystems(em: EntityManager) {
         // STEERING
         let yaw = s.playerShipProps.rudder()!.yawpitch.yaw;
 
-        vec2.rotate(s.uvDir, s.uvDir, vec2.ZEROS, yaw * 0.02);
+        vec2.rotate(s.uvDir, vec2.ZEROS, yaw * 0.02, s.uvDir);
       }
     },
     "playerShipMove"

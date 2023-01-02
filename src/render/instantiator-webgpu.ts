@@ -1,5 +1,6 @@
 import { PERF_DBG_GPU, VERBOSE_LOG } from "../flags.js";
 import { ControllableDef } from "../game/controllable.js";
+import { vec4 } from "../sprig-matrix.js";
 import { assert } from "../util.js";
 import {
   never,
@@ -965,7 +966,7 @@ export function startBundleRenderer(
       seenTextures.add(o.ptr.name);
       let tex = resources.kindToNameToRes.texture[o.ptr.name]!;
       const doClear = isFirst ? o.clear === "once" : o.clear === "always";
-      const defaultColor = o.defaultColor ?? [0, 0, 0, 1];
+      const defaultColor = o.defaultColor ?? vec4.fromValues(0, 0, 0, 1);
       const viewOverride = o.ptr.attachToCanvas
         ? context.getCurrentTexture().createView()
         : undefined;

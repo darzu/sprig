@@ -5,7 +5,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef, DeletedDef } from "../delete.js";
 import { createRef } from "../em_helpers.js";
 import { EM, Entity, EntityManager, EntityW } from "../entity-manager.js";
-import { vec3, quat, mat4, vec4 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { jitter } from "../math.js";
 import { AudioDef, randChordId } from "../audio.js";
@@ -129,7 +129,7 @@ import { gameplaySystems } from "./game.js";
   [ ] add dark/fog ends
 */
 
-const DBG_PLAYER = false;
+const DBG_PLAYER = true;
 
 let pirateKills = 0;
 let healthPercent = 100;
@@ -177,7 +177,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
   vec3.copy(sunlight.pointLight.ambient, [0.4, 0.4, 0.4]);
   // vec3.scale(sunlight.pointLight.ambient, sunlight.pointLight.ambient, 0.2);
   vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  em.ensureComponentOn(sunlight, PositionDef, [50, 100, 10]);
+  em.ensureComponentOn(sunlight, PositionDef, vec3.clone([50, 100, 10]));
   em.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
 
   // const c = res.globalCursor3d.cursor()!;
@@ -187,17 +187,12 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
   const groundMesh = cloneMesh(res.assets.hex.mesh);
   transformMesh(
     groundMesh,
-    mat4.fromRotationTranslationScale(
-      tempMat4(),
-      quat.IDENTITY,
-      [0, -2, 0],
-      [20, 2, 20]
-    )
+    mat4.fromRotationTranslationScale(quat.IDENTITY, [0, -2, 0], [20, 2, 20])
   );
   em.ensureComponentOn(ground, RenderableConstructDef, groundMesh);
   em.ensureComponentOn(ground, ColorDef, vec3.clone(ENDESGA16.blue));
   // em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
-  em.ensureComponentOn(ground, PositionDef, [0, 0, 0]);
+  em.ensureComponentOn(ground, PositionDef, vec3.clone([0, 0, 0]));
   // em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
 
   // const cube = em.newEntity();
@@ -277,7 +272,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
   em.ensureComponentOn(timber, PositionDef, timberPos);
   // em.ensureComponentOn(timber, PositionDef, [0, 0, -4]);
   em.ensureComponentOn(timber, RotationDef);
-  em.ensureComponentOn(timber, ScaleDef, [scale, scale, scale]);
+  em.ensureComponentOn(timber, ScaleDef, vec3.clone([scale, scale, scale]));
   em.ensureComponentOn(timber, WorldFrameDef);
   em.ensureComponentOn(timber, ColliderDef, {
     shape: "AABB",
@@ -298,26 +293,27 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
       RenderableConstructDef,
       res.assets.ld51_cannon.proto
     );
-    em.ensureComponentOn(cannon, PositionDef, [
-      -7.5,
-      realFloorHeight + 2,
-      -4 * isLeft,
-    ]);
+    em.ensureComponentOn(
+      cannon,
+      PositionDef,
+      vec3.clone([-7.5, realFloorHeight + 2, -4 * isLeft])
+    );
     em.ensureComponentOn(cannon, RotationDef);
-    quat.rotateX(cannon.rotation, cannon.rotation, Math.PI * 0.01 * isLeft);
+    quat.rotateX(cannon.rotation, Math.PI * 0.01 * isLeft, cannon.rotation);
     if (isLeft !== 1) {
-      quat.rotateY(cannon.rotation, cannon.rotation, Math.PI);
+      quat.rotateY(cannon.rotation, Math.PI, cannon.rotation);
     }
     em.ensureComponentOn(cannon, ColorDef, vec3.clone(ENDESGA16.darkGreen));
     // TODO(@darzu): USE PALETTE PROPERLY
-    vec3.scale(cannon.color, cannon.color, 0.5);
+    // TODO(@darzu): USE PALETTE PROPERLY
+    vec3.scale(cannon.color, 0.5, cannon.color);
     {
       const interactBox = EM.newEntity();
       const interactAABB = copyAABB(createAABB(), res.assets.ld51_cannon.aabb);
-      vec3.scale(interactAABB.min, interactAABB.min, 2);
-      vec3.scale(interactAABB.max, interactAABB.max, 2);
+      vec3.scale(interactAABB.min, 2, interactAABB.min);
+      vec3.scale(interactAABB.max, 2, interactAABB.max);
       EM.ensureComponentOn(interactBox, PhysicsParentDef, cannon.id);
-      EM.ensureComponentOn(interactBox, PositionDef, [0, 0, 0]);
+      EM.ensureComponentOn(interactBox, PositionDef, vec3.clone([0, 0, 0]));
       EM.ensureComponentOn(interactBox, ColliderDef, {
         shape: "AABB",
         solid: false,
@@ -370,10 +366,10 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
       em.ensureComponentOn(newBall, GravityDef);
       const interactBox = EM.newEntity();
       const interactAABB = copyAABB(createAABB(), res.assets.ball.aabb);
-      vec3.scale(interactAABB.min, interactAABB.min, 2);
-      vec3.scale(interactAABB.max, interactAABB.max, 2);
+      vec3.scale(interactAABB.min, 2, interactAABB.min);
+      vec3.scale(interactAABB.max, 2, interactAABB.max);
       EM.ensureComponentOn(interactBox, PhysicsParentDef, newBall.id);
-      EM.ensureComponentOn(interactBox, PositionDef, [0, 0, 0]);
+      EM.ensureComponentOn(interactBox, PositionDef, vec3.clone([0, 0, 0]));
       EM.ensureComponentOn(interactBox, ColliderDef, {
         shape: "AABB",
         solid: false,
@@ -413,11 +409,11 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
           const ballHealth = 2.0;
 
           let bulletAxis = vec3.fromValues(0, 0, -1);
-          vec3.transformQuat(bulletAxis, bulletAxis, c.world.rotation);
+          vec3.transformQuat(bulletAxis, c.world.rotation, bulletAxis);
           vec3.normalize(bulletAxis, bulletAxis);
           const bulletPos = vec3.clone(c.world.position);
-          vec3.scale(bulletAxis, bulletAxis, 2);
-          vec3.add(bulletPos, bulletPos, bulletAxis);
+          vec3.scale(bulletAxis, 2, bulletAxis);
+          vec3.add(bulletPos, bulletAxis, bulletPos);
 
           fireBullet(
             em,
@@ -473,8 +469,8 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
 
           s.position[1] = 0;
           quat.identity(s.rotation);
-          quat.rotateX(s.rotation, s.rotation, Math.PI * 0.5);
-          quat.rotateZ(s.rotation, s.rotation, Math.PI * Math.random());
+          quat.rotateX(s.rotation, Math.PI * 0.5, s.rotation);
+          quat.rotateZ(s.rotation, Math.PI * Math.random(), s.rotation);
           s.renderDataStd.id = splinterObjId; // stops z-fighting
           // console.log("freeze!");
         }
@@ -567,16 +563,16 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     const colFloor = em.newEntity();
     const flAABB: AABB = {
       // prettier-ignore
-      min: [
-        -floorLength * 0.5 - ribWidth * 3.0,
-        0, 
-        -floorWidth * 0.5
-      ],
-      max: [
+      min: vec3.clone([
+    -floorLength * 0.5 - ribWidth * 3.0,
+    0,
+    -floorWidth * 0.5
+]),
+      max: vec3.clone([
         +floorLength * 0.5 - ribWidth * 3.0,
         realFloorHeight,
         +floorWidth * 0.5,
-      ],
+      ]),
     };
     em.ensureComponentOn(colFloor, ColliderDef, {
       shape: "AABB",
@@ -591,8 +587,12 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
       shape: "AABB",
       solid: true,
       aabb: {
-        min: [flAABB.min[0], realFloorHeight + 0.5, flAABB.min[2] - 2],
-        max: [flAABB.max[0], realCeilHeight, flAABB.min[2]],
+        min: vec3.clone([
+          flAABB.min[0],
+          realFloorHeight + 0.5,
+          flAABB.min[2] - 2,
+        ]),
+        max: vec3.clone([flAABB.max[0], realCeilHeight, flAABB.min[2]]),
       },
     });
     em.ensureComponentOn(colLeftWall, PositionDef);
@@ -603,8 +603,8 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
       shape: "AABB",
       solid: true,
       aabb: {
-        min: [flAABB.min[0], realFloorHeight + 0.5, flAABB.max[2]],
-        max: [flAABB.max[0], realCeilHeight, flAABB.max[2] + 2],
+        min: vec3.clone([flAABB.min[0], realFloorHeight + 0.5, flAABB.max[2]]),
+        max: vec3.clone([flAABB.max[0], realCeilHeight, flAABB.max[2] + 2]),
       },
     });
     em.ensureComponentOn(colRightWall, PositionDef);
@@ -615,8 +615,16 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
       shape: "AABB",
       solid: true,
       aabb: {
-        min: [flAABB.max[0], realFloorHeight + 0.5, flAABB.min[2] + 0.5],
-        max: [flAABB.max[0] + 2, realCeilHeight, flAABB.max[2] - 0.5],
+        min: vec3.clone([
+          flAABB.max[0],
+          realFloorHeight + 0.5,
+          flAABB.min[2] + 0.5,
+        ]),
+        max: vec3.clone([
+          flAABB.max[0] + 2,
+          realCeilHeight,
+          flAABB.max[2] - 0.5,
+        ]),
       },
     });
     em.ensureComponentOn(colFrontWall, PositionDef);
@@ -627,8 +635,12 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
       shape: "AABB",
       solid: true,
       aabb: {
-        min: [flAABB.min[0] - 2, realFloorHeight + 0.5, flAABB.min[2] + 0.5],
-        max: [flAABB.min[0], realCeilHeight, flAABB.max[2] - 0.5],
+        min: vec3.clone([
+          flAABB.min[0] - 2,
+          realFloorHeight + 0.5,
+          flAABB.min[2] + 0.5,
+        ]),
+        max: vec3.clone([flAABB.min[0], realCeilHeight, flAABB.max[2] - 0.5]),
       },
     });
     em.ensureComponentOn(colBackWall, PositionDef);
@@ -647,7 +659,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
       const size = getHalfsizeFromAABB(aabbEnt.collider.aabb);
       const center = aabbCenter(tempVec3(), aabbEnt.collider.aabb);
       scaleMesh3(mesh, size);
-      transformMesh(mesh, mat4.fromTranslation(tempMat4(), center));
+      transformMesh(mesh, mat4.fromTranslation(center));
       em.ensureComponentOn(aabbEnt, RenderableConstructDef, mesh);
       em.ensureComponentOn(aabbEnt, ColorDef, vec3.clone(ENDESGA16.orange));
     }
@@ -737,7 +749,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
           if (e.dead.processed) continue;
 
           e.bullet.health = 10;
-          vec3.set(e.position, 0, -100, 0);
+          vec3.set(0, -100, 0, e.position);
           e.renderable.hidden = true;
 
           e.dead.processed = true;
@@ -751,11 +763,11 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     {
       assert(colFloor.collider.shape === "AABB");
       for (let i = 0; i < 3; i++) {
-        const pos: vec3 = [
+        const pos: vec3 = vec3.clone([
           colFloor.collider.aabb.max[0] - 2,
           colFloor.collider.aabb.max[1] + 2,
           colFloor.collider.aabb.max[2] - 2 * i - 3,
-        ];
+        ]);
         spawnGoodBall(pos);
       }
     }
@@ -792,7 +804,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
             // pick up this ball
             player.player.holdingBall = ball.id;
             em.ensureComponentOn(ball, PhysicsParentDef, player.id);
-            vec3.set(ball.position, 0, 0, -1);
+            vec3.set(0, 0, -1, ball.position);
             em.ensureComponentOn(ball, ScaleDef);
             vec3.copy(ball.scale, [0.8, 0.8, 0.8]);
             em.removeComponent(ball.id, InteractableDef);
@@ -806,15 +818,15 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     if (DBG_PLAYER) {
       const g = createGhost();
       vec3.copy(g.position, [0, 1, -1.2]);
-      quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
-      g.cameraFollow.positionOffset = [0, 0, 5];
+      quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, g.rotation);
+      g.cameraFollow.positionOffset = vec3.clone([0, 0, 5]);
       g.controllable.speed *= 0.5;
       g.controllable.sprintMul = 10;
       const sphereMesh = cloneMesh(res.assets.ball.mesh);
       const visible = false;
       em.ensureComponentOn(g, RenderableConstructDef, sphereMesh, visible);
-      em.ensureComponentOn(g, ColorDef, [0.1, 0.1, 0.1]);
-      em.ensureComponentOn(g, PositionDef, [0, 0, 0]);
+      em.ensureComponentOn(g, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
+      em.ensureComponentOn(g, PositionDef, vec3.clone([0, 0, 0]));
       // em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
       em.ensureComponentOn(g, WorldFrameDef);
       // em.ensureComponentOn(b2, PhysicsParentDef, g.id);
@@ -833,7 +845,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
 
     if (!DBG_PLAYER) {
       const _player = createPlayer(em);
-      vec3.set(_player.playerProps.location, -10, realFloorHeight + 6, 0);
+      vec3.set(-10, realFloorHeight + 6, 0, _player.playerProps.location);
       em.whenEntityHas(
         _player,
         PositionDef,
@@ -853,7 +865,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
           canSprint: true,
           canYaw: true,
         });
-        quat.rotateY(player.rotation, player.rotation, Math.PI * 0.5);
+        quat.rotateY(player.rotation, Math.PI * 0.5, player.rotation);
 
         player.collider.solid = true;
         // player.cameraFollow.positionOffset = [0, 0, 5];
@@ -935,8 +947,8 @@ export function appendPirateShip(b: TimberBuilder) {
 
   const cursor2 = mat4.create();
 
-  mat4.rotateZ(cursor2, cursor2, Math.PI * 1.5);
-  mat4.rotateX(cursor2, cursor2, Math.PI * xFactor);
+  mat4.rotateZ(cursor2, Math.PI * 1.5, cursor2);
+  mat4.rotateX(cursor2, Math.PI * xFactor, cursor2);
   // mat4.rotateX(b.cursor, b.cursor, Math.PI * -0.3 * 0.5);
 
   for (let hi = 0; hi < 5; hi++) {
@@ -949,11 +961,11 @@ export function appendPirateShip(b: TimberBuilder) {
     b.addLoopVerts();
     b.addEndQuad(true);
     for (let i = 0; i < numSegs; i++) {
-      mat4.translate(b.cursor, b.cursor, [0, segLen, 0]);
-      mat4.rotateX(b.cursor, b.cursor, Math.PI * xFactor * 0.5);
+      mat4.translate(b.cursor, [0, segLen, 0], b.cursor);
+      mat4.rotateX(b.cursor, Math.PI * xFactor * 0.5, b.cursor);
       b.addLoopVerts();
       b.addSideQuads();
-      mat4.rotateX(b.cursor, b.cursor, Math.PI * xFactor * 0.5);
+      mat4.rotateX(b.cursor, Math.PI * xFactor * 0.5, b.cursor);
     }
     b.addEndQuad(false);
 
@@ -967,10 +979,10 @@ export function appendPirateShip(b: TimberBuilder) {
     mid[1] = 0;
     for (let vi = firstVi; vi < b.mesh.pos.length; vi++) {
       const p = b.mesh.pos[vi];
-      vec3.sub(p, p, mid);
+      vec3.sub(p, mid, p);
     }
 
-    mat4.translate(cursor2, cursor2, [-(b.width * 2.0 + 0.05), 0, 0]);
+    mat4.translate(cursor2, [-(b.width * 2.0 + 0.05), 0, 0], cursor2);
   }
 
   for (let qi = firstQuadIdx; qi < b.mesh.quad.length; qi++)
@@ -1000,8 +1012,8 @@ function rotatePiratePlatform(
   p: EntityW<[typeof PositionDef, typeof RotationDef]>,
   rad: number
 ) {
-  vec3.rotateY(p.position, p.position, vec3.ZEROS, rad);
-  quat.rotateY(p.rotation, p.rotation, rad);
+  vec3.rotateY(p.position, vec3.ZEROS, rad, p.position);
+  quat.rotateY(p.rotation, rad, p.rotation);
 }
 
 async function startPirates() {
@@ -1071,7 +1083,7 @@ async function startPirates() {
           p.piratePlatform.tiltPeriod * 0.5;
         if (RotationDef.isOn(c)) {
           let r = Math.PI * pitchSpeed * res.time.dt * (upMode ? -1 : 1);
-          quat.rotateX(c.rotation, c.rotation, r);
+          quat.rotateX(c.rotation, r, c.rotation);
         }
 
         // fire cannons
@@ -1142,12 +1154,7 @@ async function spawnPirate(rad: number) {
     const groundMesh = cloneMesh(res.assets.hex.mesh);
     transformMesh(
       groundMesh,
-      mat4.fromRotationTranslationScale(
-        tempMat4(),
-        quat.IDENTITY,
-        [0, -1, 0],
-        [4, 1, 4]
-      )
+      mat4.fromRotationTranslationScale(quat.IDENTITY, [0, -1, 0], [4, 1, 4])
     );
     em.ensureComponentOn(platform, RenderableConstructDef, groundMesh);
 
@@ -1185,7 +1192,11 @@ async function spawnPirate(rad: number) {
     em.ensureComponentOn(timber, WoodStateDef, timberState);
     em.ensureComponentOn(timber, ColorDef, vec3.clone(ENDESGA16.red));
     const timberAABB = getAABBFromMesh(timberMesh);
-    em.ensureComponentOn(timber, PositionDef, [0, builder.width, 0]);
+    em.ensureComponentOn(
+      timber,
+      PositionDef,
+      vec3.clone([0, builder.width, 0])
+    );
     em.ensureComponentOn(timber, RotationDef);
     em.ensureComponentOn(timber, ColliderDef, {
       shape: "AABB",
@@ -1244,7 +1255,7 @@ async function spawnPirate(rad: number) {
   platform.piratePlatform.tiltTimer = tiltTimer;
 
   quat.identity(cannon.rotation);
-  quat.rotateX(cannon.rotation, cannon.rotation, initialPitch);
+  quat.rotateX(cannon.rotation, initialPitch, cannon.rotation);
   // TODO(@darzu): HACK!
   // so they start slightly different pitches
   let initTimer = 0;
@@ -1253,7 +1264,7 @@ async function spawnPirate(rad: number) {
     initTimer += 16.6666;
     const upMode = initTimer % tiltPeriod > tiltPeriod * 0.5;
     let r = Math.PI * pitchSpeed * 16.6666 * (upMode ? -1 : 1);
-    quat.rotateX(cannon.rotation, cannon.rotation, r);
+    quat.rotateX(cannon.rotation, r, cannon.rotation);
   }
 
   rotatePiratePlatform(platform, rad);

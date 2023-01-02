@@ -1,6 +1,6 @@
 import { createRef, defineNetEntityHelper } from "../em_helpers.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { vec3 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { onInit } from "../init.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
@@ -55,7 +55,7 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
       em.ensureComponentOn(star, PointLightDef);
       star.pointLight.constant = 1.0;
       vec3.copy(star.pointLight.ambient, star.color);
-      vec3.scale(star.pointLight.ambient, star.pointLight.ambient, 0.2);
+      vec3.scale(star.pointLight.ambient, 0.2, star.pointLight.ambient);
       vec3.copy(star.pointLight.diffuse, star.color);
       em.whenEntityHas(star, RenderDataStdDef).then((star1) => {
         star1.renderDataStd.flags |= FLAG_UNLIT;
@@ -75,11 +75,7 @@ onInit((em) => {
       }
       for (let star of es) {
         if (star.authority.pid !== res.me.pid) continue;
-        const toCenter = vec3.sub(
-          tempVec3(),
-          star.darkStarProps.orbiting,
-          star.position
-        );
+        const toCenter = vec3.sub(star.darkStarProps.orbiting, star.position);
         const distance = vec3.length(toCenter);
         // TODO: revisit random orbits
         /*
@@ -103,24 +99,17 @@ onInit((em) => {
         const movementDirection = vec3.add(basis1, basis1, basis2);
         vec3.normalize(movementDirection, movementDirection);
         */
-        const movementDirection = vec3.cross(
-          tempVec3(),
-          toCenter,
-          star.darkStarProps.orbitalAxis
-        );
+        const movementDirection = vec3.cross(toCenter, star.darkStarProps.orbitalAxis);
         vec3.normalize(movementDirection, movementDirection);
-        vec3.add(
-          star.position,
-          star.position,
-          vec3.scale(movementDirection, movementDirection, DARKSTAR_SPEED)
-        );
+        vec3.add(star.position, vec3.scale(movementDirection, DARKSTAR_SPEED, movementDirection), star.position);
 
-        vec3.sub(toCenter, star.darkStarProps.orbiting, star.position);
+        vec3.sub(star.darkStarProps.orbiting, star.position, toCenter);
         const newDistance = vec3.length(toCenter);
         vec3.normalize(toCenter, toCenter);
-        vec3.scale(toCenter, toCenter, newDistance - distance);
+        vec3.scale(toCenter, newDistance - distance, toCenter);
         //console.log(`distance ${distance}, newDistance ${newDistance}`);
-        vec3.add(star.position, star.position, toCenter);
+        //console.log(`distance ${distance}, newDistance ${newDistance}`);
+vec3.add(star.position, toCenter, star.position);
       }
     },
     "darkStarOrbit"

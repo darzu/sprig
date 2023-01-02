@@ -2,7 +2,7 @@ import { ColorDef } from "../color-ecs.js";
 import { EM, EntityW } from "../entity-manager.js";
 import { AssetsDef, GameMesh, gameMeshFromMesh } from "../game/assets.js";
 import { gameplaySystems } from "../game/game.js";
-import { mat3, mat4, quat, vec3 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import {
   extrudeQuad,
   HEdge,
@@ -22,7 +22,6 @@ import {
   RendererDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { tempMat3, tempMat4, tempVec3 } from "../temp-pool.js";
 import { assert } from "../util.js";
 import { randNormalPosVec3, vec3Mid } from "../utils-3d.js";
 import { ButtonsStateDef, ButtonDef } from "./button.js";
@@ -138,7 +137,7 @@ async function createPathEditor() {
         false,
         reserve
       );
-      EM.ensureComponentOn(hpEnt_, PositionDef, [0, 0.1, 0]);
+      EM.ensureComponentOn(hpEnt_, PositionDef, vec3.clone([0, 0.1, 0]));
       // TODO(@darzu): make scale configurable
       // EM.ensureComponentOn(hpEnt_, ScaleDef, [5, 5, 5]);
       const hpEnt = await EM.whenEntityHas(
@@ -364,19 +363,19 @@ function meshToHLines(m: LineMesh): HLine {
 export async function lineStuff() {
   const lnMesh: RawMesh & LineMesh = {
     pos: [
-      [1, 0, 1],
-      [2, 0, 2],
-      [4, 0, 3],
-      [8, 0, 3],
-      [8, 0, 6],
+      vec3.clone([1, 0, 1]),
+      vec3.clone([2, 0, 2]),
+      vec3.clone([4, 0, 3]),
+      vec3.clone([8, 0, 3]),
+      vec3.clone([8, 0, 6]),
     ],
     tri: [],
     quad: [],
     lines: [
-      [0, 1],
-      [3, 4],
-      [2, 3],
-      [1, 2],
+      vec2.clone([0, 1]),
+      vec2.clone([3, 4]),
+      vec2.clone([2, 3]),
+      vec2.clone([1, 2]),
     ],
     colors: [],
   };
@@ -414,7 +413,7 @@ export async function lineStuff() {
     const pA2 = pi - 1;
     const A1 = pi + 0;
     const A2 = pi + 1;
-    extMesh.quad.push([A1, pA1, pA2, A2]);
+    extMesh.quad.push(vec4.clone([A1, pA1, pA2, A2]));
     extMesh.surfaceIds.push(i);
     extMesh.colors.push(randNormalPosVec3(vec3.create()));
   }
@@ -425,14 +424,18 @@ export async function lineStuff() {
 
   const extEnt = EM.newEntity();
   EM.ensureComponentOn(extEnt, RenderableConstructDef, gmesh.proto);
-  EM.ensureComponentOn(extEnt, PositionDef, [0, 0.5, 0]);
+  EM.ensureComponentOn(extEnt, PositionDef, vec3.clone([0, 0.5, 0]));
 
   for (let ln of lns) {
     const vertGlyph = EM.newEntity();
     EM.ensureComponentOn(vertGlyph, RenderableConstructDef, assets.cube.proto);
     EM.ensureComponentOn(vertGlyph, PositionDef, vec3.clone(lnMesh.pos[ln.vi]));
-    EM.ensureComponentOn(vertGlyph, ColorDef, [0.1, 0.2 + ln.vi * 0.1, 0.1]);
-    EM.ensureComponentOn(vertGlyph, ScaleDef, [0.2, 0.2, 0.2]);
+    EM.ensureComponentOn(
+      vertGlyph,
+      ColorDef,
+      vec3.clone([0.1, 0.2 + ln.vi * 0.1, 0.1])
+    );
+    EM.ensureComponentOn(vertGlyph, ScaleDef, vec3.clone([0.2, 0.2, 0.2]));
     vertGlyph.position[1] = 0.5;
   }
 
@@ -445,37 +448,38 @@ export async function lineStuff() {
       const A2 = vec3.create();
 
       const Oln = ln.next ?? ln.prev;
-      const O = Oln ? lnMesh.pos[Oln.vi] : vec3.add(tempVec3(), A, [1, 0, 0]);
-      const dir = vec3.sub(tempVec3(), O, A);
+      const O = Oln ? lnMesh.pos[Oln.vi] : vec3.add(A, [1, 0, 0]);
+      const dir = vec3.sub(O, A);
       if (!ln.next && ln.prev) vec3.negate(dir, dir);
       vec3.normalize(dir, dir);
 
-      const perp = vec3.cross(tempVec3(), dir, [0, 1, 0]);
+      const perp = vec3.cross(dir, [0, 1, 0]);
 
       // TODO(@darzu): this is right for end caps, not the mids!!
-      vec3.sub(A1, A, vec3.scale(tempVec3(), perp, width));
-      vec3.add(A2, A, vec3.scale(tempVec3(), perp, width));
+      // TODO(@darzu): this is right for end caps, not the mids!!
+      vec3.sub(A, vec3.scale(perp, width), A1);
+      vec3.add(A, vec3.scale(perp, width), A2);
 
       return [A1, A2];
     } else {
       // mid point
       const P = lnMesh.pos[ln.prev.vi];
-      const PAdir = vec3.sub(tempVec3(), A, P);
+      const PAdir = vec3.sub(A, P);
       vec3.normalize(PAdir, PAdir);
-      const PAperp = vec3.cross(tempVec3(), PAdir, [0, 1, 0]);
-      const P1 = vec3.sub(tempVec3(), A, vec3.scale(tempVec3(), PAperp, width));
-      vec3.sub(P1, P1, vec3.scale(tempVec3(), PAdir, width * 3));
-      const P2 = vec3.add(tempVec3(), A, vec3.scale(tempVec3(), PAperp, width));
-      vec3.sub(P2, P2, vec3.scale(tempVec3(), PAdir, width * 3));
+      const PAperp = vec3.cross(PAdir, [0, 1, 0]);
+      const P1 = vec3.sub(A, vec3.scale(PAperp, width));
+      vec3.sub(P1, vec3.scale(PAdir, width * 3), P1);
+      const P2 = vec3.add(A, vec3.scale(PAperp, width));
+      vec3.sub(P2, vec3.scale(PAdir, width * 3), P2);
 
       const N = lnMesh.pos[ln.next.vi];
-      const NAdir = vec3.sub(tempVec3(), A, N);
+      const NAdir = vec3.sub(A, N);
       vec3.normalize(NAdir, NAdir);
-      const NAperp = vec3.cross(tempVec3(), NAdir, [0, 1, 0]);
-      const N1 = vec3.sub(tempVec3(), A, vec3.scale(tempVec3(), NAperp, width));
-      vec3.sub(N1, N1, vec3.scale(tempVec3(), NAdir, width * 3));
-      const N2 = vec3.add(tempVec3(), A, vec3.scale(tempVec3(), NAperp, width));
-      vec3.sub(N2, N2, vec3.scale(tempVec3(), NAdir, width * 3));
+      const NAperp = vec3.cross(NAdir, [0, 1, 0]);
+      const N1 = vec3.sub(A, vec3.scale(NAperp, width));
+      vec3.sub(N1, vec3.scale(NAdir, width * 3), N1);
+      const N2 = vec3.add(A, vec3.scale(NAperp, width));
+      vec3.sub(N2, vec3.scale(NAdir, width * 3), N2);
 
       const A1 = rayVsRay(
         {

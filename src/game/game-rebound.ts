@@ -2,7 +2,7 @@ import { CameraDef } from "../camera.js";
 import { ColorDef } from "../color-ecs.js";
 import { DeletedDef } from "../delete.js";
 import { EntityManager } from "../entity-manager.js";
-import { vec3, quat } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { jitter } from "../math.js";
 import { ColliderDef } from "../physics/collider.js";
@@ -66,8 +66,8 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
 
   const p = em.newEntity();
   em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
-  em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
-  em.ensureComponentOn(p, PositionDef, [0, -10, 0]);
+  em.ensureComponentOn(p, ColorDef, vec3.clone([0.2, 0.3, 0.2]));
+  em.ensureComponentOn(p, PositionDef, vec3.clone([0, -10, 0]));
   em.ensureComponentOn(p, ColliderDef, {
     shape: "AABB",
     solid: false,
@@ -76,9 +76,9 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
 
   const t = em.newEntity();
   em.ensureComponentOn(t, RenderableConstructDef, res.assets.gridPlane.proto);
-  em.ensureComponentOn(t, ColorDef, [0.2, 0.2, 0.9]);
-  em.ensureComponentOn(t, PositionDef, [0, 0, 0]);
-  em.ensureComponentOn(t, AngularVelocityDef, [0, 0.0002, 0.0002]);
+  em.ensureComponentOn(t, ColorDef, vec3.clone([0.2, 0.2, 0.9]));
+  em.ensureComponentOn(t, PositionDef, vec3.clone([0, 0, 0]));
+  em.ensureComponentOn(t, AngularVelocityDef, vec3.clone([0, 0.0002, 0.0002]));
   em.ensureComponentOn(t, ColliderDef, {
     shape: "AABB",
     solid: true,
@@ -94,12 +94,12 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
     const e = em.newEntity();
     em.ensureComponentOn(e, RenderableConstructDef, m.proto);
     const [r, g, b] = [jitter(0.1) + 0.2, jitter(0.1) + 0.2, jitter(0.1) + 0.2];
-    em.ensureComponentOn(e, ColorDef, [r, g, b]);
+    em.ensureComponentOn(e, ColorDef, vec3.clone([r, g, b]));
     em.ensureComponentOn(e, PositionDef, pos);
-    em.ensureComponentOn(e, ScaleDef, [0.5, 0.5, 0.5]);
+    em.ensureComponentOn(e, ScaleDef, vec3.clone([0.5, 0.5, 0.5]));
     // em.ensureComponentOn(b, RotationDef);
     // em.ensureComponentOn(b, AngularVelocityDef, [0, 0.001, 0.001]);
-    em.ensureComponentOn(e, LinearVelocityDef, [0, -0.02, 0]);
+    em.ensureComponentOn(e, LinearVelocityDef, vec3.clone([0, -0.02, 0]));
     em.ensureComponentOn(e, PhysicsParentDef, tableId);
     em.ensureComponentOn(e, ColliderDef, {
       shape: "AABB",
@@ -126,7 +126,7 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
 
           const x = jitter(5);
           const z = jitter(5);
-          spawn(res.assets.cube, [x, 20, z]);
+          spawn(res.assets.cube, vec3.clone([x, 20, z]));
         }
       }
 
@@ -135,7 +135,7 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
         const NUM = 1;
         const SPC = 2;
         for (let i = 0; i < NUM; i++)
-          spawn(res.assets.cube, [0, 10 + i * SPC, 0]);
+          spawn(res.assets.cube, vec3.clone([0, 10 + i * SPC, 0]));
       }
 
       if (res.inputs.keyClicks["backspace"]) {

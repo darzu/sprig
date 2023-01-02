@@ -1,7 +1,7 @@
 import { CameraDef } from "../camera.js";
 import { ColorDef } from "../color-ecs.js";
 import { EntityManager } from "../entity-manager.js";
-import { vec3, quat, mat4 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef } from "../physics/motion.js";
@@ -45,7 +45,7 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   vec3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
   // vec3.scale(sunlight.pointLight.ambient, sunlight.pointLight.ambient, 0.2);
   // vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  em.ensureComponentOn(sunlight, PositionDef, [10, 100, 10]);
+  em.ensureComponentOn(sunlight, PositionDef, vec3.clone([10, 100, 10]));
   em.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
 
   const g = createGhost();
@@ -61,9 +61,9 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
   // quat.copy(g.cameraFollow.rotationOffset, [-0.18, 0.0, 0.0, 0.98]);
   vec3.copy(g.position, [0, 1, -1.2]);
-  quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
+  quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, g.rotation);
   // setCameraFollowPosition(g, "thirdPerson");
-  g.cameraFollow.positionOffset = [0, 0, 5];
+  g.cameraFollow.positionOffset = vec3.clone([0, 0, 5]);
   g.controllable.modes.canYaw = false;
   g.controllable.modes.canCameraYaw = true;
   // g.controllable.modes.canPitch = true;
@@ -75,16 +75,16 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
 
   const p = em.newEntity();
   em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
-  em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
-  em.ensureComponentOn(p, PositionDef, [0, -5, 0]);
+  em.ensureComponentOn(p, ColorDef, vec3.clone([0.2, 0.3, 0.2]));
+  em.ensureComponentOn(p, PositionDef, vec3.clone([0, -5, 0]));
 
   const b1 = em.newEntity();
   const m1 = cloneMesh(res.assets.cube.mesh);
   em.ensureComponentOn(b1, RenderableConstructDef, m1);
-  em.ensureComponentOn(b1, ColorDef, [0.1, 0.1, 0.1]);
-  em.ensureComponentOn(b1, PositionDef, [0, 0, 3]);
+  em.ensureComponentOn(b1, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
+  em.ensureComponentOn(b1, PositionDef, vec3.clone([0, 0, 3]));
   em.ensureComponentOn(b1, RotationDef);
-  em.ensureComponentOn(b1, AngularVelocityDef, [0, 0.001, 0.001]);
+  em.ensureComponentOn(b1, AngularVelocityDef, vec3.clone([0, 0.001, 0.001]));
   em.ensureComponentOn(b1, WorldFrameDef);
   em.ensureComponentOn(b1, ColliderDef, {
     shape: "AABB",
@@ -101,8 +101,8 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   const b2 = g;
   const m2 = cloneMesh(res.assets.cube.mesh);
   em.ensureComponentOn(b2, RenderableConstructDef, m2);
-  em.ensureComponentOn(b2, ColorDef, [0.1, 0.1, 0.1]);
-  em.ensureComponentOn(b2, PositionDef, [0, 0, 0]);
+  em.ensureComponentOn(b2, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
+  em.ensureComponentOn(b2, PositionDef, vec3.clone([0, 0, 0]));
   // em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
   em.ensureComponentOn(b2, WorldFrameDef);
   // em.ensureComponentOn(b2, PhysicsParentDef, g.id);
@@ -121,8 +121,8 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   const b3 = em.newEntity();
   const m3 = cloneMesh(res.assets.ball.mesh);
   em.ensureComponentOn(b3, RenderableConstructDef, m3);
-  em.ensureComponentOn(b3, ColorDef, [0.1, 0.1, 0.1]);
-  em.ensureComponentOn(b3, PositionDef, [0, 0, -4]);
+  em.ensureComponentOn(b3, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
+  em.ensureComponentOn(b3, PositionDef, vec3.clone([0, 0, -4]));
   em.ensureComponentOn(b3, RotationDef);
   em.ensureComponentOn(b3, WorldFrameDef);
   em.ensureComponentOn(b3, ColliderDef, {
@@ -134,8 +134,8 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   const b4 = em.newEntity();
   const m4 = cloneMesh(res.assets.tetra.mesh);
   em.ensureComponentOn(b4, RenderableConstructDef, m4);
-  em.ensureComponentOn(b4, ColorDef, [0.1, 0.1, 0.1]);
-  em.ensureComponentOn(b4, PositionDef, [0, -3, 0]);
+  em.ensureComponentOn(b4, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
+  em.ensureComponentOn(b4, PositionDef, vec3.clone([0, -3, 0]));
   em.ensureComponentOn(b4, RotationDef);
   em.ensureComponentOn(b4, WorldFrameDef);
   em.ensureComponentOn(b4, ColliderDef, {
@@ -153,13 +153,13 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
     rot: quat,
     lastWorldPos: vec3
   ): Shape {
-    const transform = mat4.fromRotationTranslation(mat4.create(), rot, pos);
+    const transform = mat4.fromRotationTranslation(rot, pos, mat4.create());
     const worldVerts = g.uniqueVerts.map((p) =>
-      vec3.transformMat4(tempVec3(), p, transform)
+      vec3.transformMat4(p, transform)
     );
     const support = (d: vec3) => farthestPointInDir(worldVerts, d);
-    const center = vec3.transformMat4(tempVec3(), g.center, transform);
-    const travel = vec3.sub(tempVec3(), pos, lastWorldPos);
+    const center = vec3.transformMat4(g.center, transform);
+    const travel = vec3.sub(pos, lastWorldPos);
     return {
       center,
       support,
@@ -243,7 +243,7 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
 
         if (simplex) {
           const penD = penetrationDepth(shapeOther, playerShape, simplex);
-          const travelD = vec3.len(playerShape.travel);
+          const travelD = vec3.length(playerShape.travel);
           if (penD < Infinity) {
             backTravelD += penD;
           }
@@ -254,12 +254,13 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
         }
       }
 
-      backTravelD = Math.min(backTravelD, vec3.len(playerShape.travel));
-      const travelN = vec3.normalize(tempVec3(), playerShape.travel);
-      const backTravel = vec3.scale(tempVec3(), travelN, backTravelD);
+      backTravelD = Math.min(backTravelD, vec3.length(playerShape.travel));
+      const travelN = vec3.normalize(playerShape.travel);
+      const backTravel = vec3.scale(travelN, backTravelD);
 
       // console.log(backTravel);
-      vec3.sub(b2.position, b2.position, backTravel);
+      // console.log(backTravel);
+vec3.sub(b2.position, backTravel, b2.position);
 
       lastWorldPos = [
         vec3.clone(b1.position),

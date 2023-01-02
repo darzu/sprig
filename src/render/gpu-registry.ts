@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { assert } from "../util.js";
 import {
   CyStructDesc,

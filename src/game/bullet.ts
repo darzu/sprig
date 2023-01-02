@@ -5,7 +5,7 @@ import {
   Entity,
   EntityW,
 } from "../entity-manager.js";
-import { quat, vec3 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "../color-ecs.js";
 import {
@@ -202,10 +202,10 @@ export async function fireBullet(
   }
 
   let bulletAxis = vec3.fromValues(0, 0, -1);
-  vec3.transformQuat(bulletAxis, bulletAxis, rotation);
+  vec3.transformQuat(bulletAxis, rotation, bulletAxis);
   vec3.normalize(bulletAxis, bulletAxis);
-  const linearVelocity = vec3.scale(vec3.create(), bulletAxis, speed);
-  const angularVelocity = vec3.scale(vec3.create(), bulletAxis, rotationSpeed);
+  const linearVelocity = vec3.scale(bulletAxis, speed, vec3.create());
+  const angularVelocity = vec3.scale(bulletAxis, rotationSpeed, vec3.create());
 
   assertDbg(e.bulletConstruct, `bulletConstruct missing on: ${e.id}`);
   vec3.copy(e.bulletConstruct.location, location);
@@ -256,7 +256,7 @@ async function initBulletPartPool() {
       em.ensureComponentOn(pe, LinearVelocityDef);
       em.ensureComponentOn(pe, AngularVelocityDef);
       // em.ensureComponentOn(pe, LifetimeDef, 2000);
-      em.ensureComponentOn(pe, GravityDef, [0, -4, 0]);
+      em.ensureComponentOn(pe, GravityDef, vec3.clone([0, -4, 0]));
       em.ensureComponentOn(pe, SplinterParticleDef);
       bset.push(pe);
     }
@@ -292,10 +292,10 @@ export async function breakBullet(
     const vel = vec3.clone(bullet.linearVelocity);
     vec3.normalize(vel, vel);
     vec3.negate(vel, vel);
-    vec3.add(vel, vel, randNormalVec3(tempVec3()));
-    vec3.add(vel, vel, [0, -1, 0]);
+    vec3.add(vel, randNormalVec3(tempVec3()), vel);
+    vec3.add(vel, [0, -1, 0], vel);
     vec3.normalize(vel, vel);
-    vec3.scale(vel, vel, 0.02);
+    vec3.scale(vel, 0.02, vel);
     em.ensureComponentOn(pe, LinearVelocityDef);
     vec3.copy(pe.linearVelocity, vel);
     em.ensureComponentOn(pe, AngularVelocityDef);

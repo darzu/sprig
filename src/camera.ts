@@ -6,7 +6,7 @@ import {
   EntityW,
   WithComponent,
 } from "./entity-manager.js";
-import { mat4, quat, vec3 } from "./gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
 import { max } from "./math.js";
 import { AuthorityDef, MeDef } from "./net/components.js";
 import { WorldFrameDef } from "./physics/nonintersection.js";
@@ -61,10 +61,10 @@ export const CameraFollowDef = EM.defineComponent(
 );
 
 export const CAMERA_OFFSETS = {
-  thirdPerson: [0, 0, 10],
+  thirdPerson: vec3.clone([0, 0, 10]),
   // thirdPersonOverShoulder: [1, 3, 2],
-  thirdPersonOverShoulder: [2, 2, 4],
-  firstPerson: [0, 0, 0],
+  thirdPersonOverShoulder: vec3.clone([2, 2, 4]),
+  firstPerson: vec3.clone([0, 0, 0]),
 } as const;
 
 export function setCameraFollowPosition(
@@ -140,12 +140,10 @@ export function registerCameraSystems(em: EntityManager) {
         );
 
         const computedRotation = quat.mul(
-          tempQuat(),
           prevTarget.world.rotation,
           res.camera.lastRotation
         );
         const newComputedRotation = quat.mul(
-          tempQuat(),
           newTarget.world.rotation,
           res.camera.rotationOffset
         );
@@ -185,72 +183,65 @@ export function registerCameraSystems(em: EntityManager) {
       let viewMatrix = mat4.create();
       if (targetEnt) {
         const computedTranslation = vec3.add(
-          tempVec3(),
           frame.position,
           camera.targetPositionError
         );
         mat4.fromRotationTranslationScale(
-          viewMatrix,
           frame.rotation,
           computedTranslation,
-          frame.scale
+          frame.scale,
+          viewMatrix
         );
         vec3.copy(cameraView.location, computedTranslation);
       }
 
       const computedCameraRotation = quat.mul(
-        tempQuat(),
         camera.rotationOffset,
         camera.rotationError
       );
 
-      mat4.multiply(
+      mat4.mul(
         viewMatrix,
-        viewMatrix,
-        mat4.fromQuat(mat4.create(), computedCameraRotation)
+        mat4.fromQuat(computedCameraRotation, mat4.create()),
+        viewMatrix
       );
 
       const computedCameraTranslation = vec3.add(
-        tempVec3(),
         camera.positionOffset,
         camera.cameraPositionError
       );
 
-      mat4.translate(viewMatrix, viewMatrix, computedCameraTranslation);
+      mat4.translate(viewMatrix, computedCameraTranslation, viewMatrix);
       mat4.invert(viewMatrix, viewMatrix);
 
       const projectionMatrix = mat4.create();
       if (camera.perspectiveMode === "ortho") {
         const ORTHO_SIZE = 10;
         mat4.ortho(
-          projectionMatrix,
           -ORTHO_SIZE,
           ORTHO_SIZE,
           -ORTHO_SIZE,
           ORTHO_SIZE,
           -400,
-          100
+          100,
+          projectionMatrix
         );
       } else {
         mat4.perspective(
-          projectionMatrix,
           camera.fov,
           cameraView.aspectRatio,
           1,
           // TODO(@darzu): hacky; why does it have to be so big
-          100000.0 /*view distance*/
+          100000.0 /*view distance*/,
+          projectionMatrix
         );
       }
-      const viewProj = mat4.multiply(
-        mat4.create(),
-        projectionMatrix,
-        viewMatrix
-      ) as Float32Array;
+      const viewProj = mat4.mul(projectionMatrix, viewMatrix, mat4.create());
 
       cameraView.viewProjMat = viewProj;
       cameraView.invViewProjMat = mat4.invert(
-        cameraView.invViewProjMat,
-        cameraView.viewProjMat
+        cameraView.viewProjMat,
+        cameraView.invViewProjMat
       );
     },
     "updateCameraView"

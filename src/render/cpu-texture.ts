@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { clamp } from "../math.js";
 import { tempVec2, tempVec3, tempVec4 } from "../temp-pool.js";
 import { assert } from "../util.js";
@@ -15,7 +15,7 @@ type ArityToVec<N extends 1 | 2 | 3 | 4> = N extends 1
   : never;
 
 export interface TextureReader<A extends 1 | 2 | 3 | 4> {
-  size: vec2;
+  size: [number, number];
   data: ArrayBuffer;
   format: GPUTextureFormat;
   outArity: A;
@@ -27,7 +27,7 @@ export interface TextureReader<A extends 1 | 2 | 3 | 4> {
 //  sampling, loading, comparison, derivatives, etc.
 export function createTextureReader<A extends 1 | 2 | 3 | 4>(
   data: ArrayBuffer,
-  size: vec2,
+  size: [number, number],
   outArity: A,
   format: GPUTextureFormat
 ): TextureReader<A> {
@@ -71,16 +71,16 @@ export function createTextureReader<A extends 1 | 2 | 3 | 4>(
     if (outArity === 1) {
       return f32[idx];
     } else if (outArity === 2) {
-      return vec2.set(out as vec2, f32[idx], f32[idx + 1]);
+      return vec2.set(f32[idx], f32[idx + 1], out as vec2);
     } else if (outArity === 3) {
-      return vec3.set(out as vec3, f32[idx], f32[idx + 1], f32[idx + 2]);
+      return vec3.set(f32[idx], f32[idx + 1], f32[idx + 2], out as vec3);
     } else if (outArity === 4) {
       return vec4.set(
-        out as vec4,
         f32[idx + 0],
         f32[idx + 1],
         f32[idx + 2],
-        f32[idx + 3]
+        f32[idx + 3],
+        out as vec4
       );
     } else {
       never(outArity);
@@ -154,16 +154,16 @@ export function createTextureReader<A extends 1 | 2 | 3 | 4>(
     if (outArity === 1) {
       return _sample(0);
     } else if (outArity === 2) {
-      return vec2.set(out as vec2, _sample(0), _sample(1));
+      return vec2.set(_sample(0), _sample(1), out as vec2);
     } else if (outArity === 3) {
-      return vec3.set(out as vec3, _sample(0), _sample(1), _sample(2));
+      return vec3.set(_sample(0), _sample(1), _sample(2), out as vec3);
     } else if (outArity === 4) {
       return vec4.set(
-        out as vec4,
         _sample(0),
         _sample(1),
         _sample(2),
-        _sample(3)
+        _sample(3),
+        out as vec4
       );
     } else {
       never(outArity);
