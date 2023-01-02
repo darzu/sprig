@@ -364,7 +364,9 @@ export module quat {
   }
 
   export function create(): T {
-    return float32ArrayOfLength(4);
+    const out = float32ArrayOfLength(4);
+    out[3] = 1;
+    return out;
   }
 
   export function clone(v: InputT): T {
@@ -450,7 +452,12 @@ export module mat4 {
   }
 
   export function create(): T {
-    return float32ArrayOfLength(16);
+    const out = float32ArrayOfLength(16);
+    out[0] = 1;
+    out[5] = 1;
+    out[10] = 1;
+    out[15] = 1;
+    return out;
   }
 
   export function clone(v: InputT): T {
@@ -608,8 +615,13 @@ export module mat3 {
     return tmpArray(9);
   }
 
+  /* creates identity matrix */
   export function create(): T {
-    return float32ArrayOfLength(9);
+    const out = float32ArrayOfLength(9);
+    out[0] = 1;
+    out[4] = 1;
+    out[8] = 1;
+    return out;
   }
 
   export function clone(v: InputT): T {
