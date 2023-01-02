@@ -583,6 +583,7 @@ function addSplinterEnd(
       for (let vi2 of loop) {
         const lp = wood.mesh.pos[vi2];
         if (vec3.sqrDist(p, lp) < snapDistSqr) {
+          // console.log("snap!");
           vec3.copy(p, lp);
           break;
         }

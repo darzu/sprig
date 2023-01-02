@@ -77,7 +77,10 @@ export module vec2 {
   }
 
   export function fromValues(n0: number, n1: number): T {
-    return set(n0, n1, create());
+    const out = create();
+    out[0] = n0;
+    out[1] = n1;
+    return out;
   }
 
   export const ZEROS = fromValues(0, 0);
@@ -123,7 +126,7 @@ export module vec2 {
     return GL.dist(v1, v2);
   }
   export function sqrDist(v1: InputT, v2: InputT): number {
-    return GL.dist(v1, v2);
+    return GL.sqrDist(v1, v2);
   }
   export function rotate(v1: InputT, v2: InputT, rad: number, out?: T): T {
     return GL.rotate(out ?? tmp(), v1, v2, rad) as T;
@@ -155,6 +158,7 @@ export module vec3 {
     return GL.copy(out, v1) as T;
   }
 
+  // TODO(@darzu): "set" should probably follow copy and have the out param first and required
   export function set(n0: number, n1: number, n2: number, out?: T): T {
     out = out ?? tmp();
     out[0] = n0;
@@ -164,7 +168,11 @@ export module vec3 {
   }
 
   export function fromValues(n0: number, n1: number, n2: number): T {
-    return set(n0, n1, n2, create());
+    const out = create();
+    out[0] = n0;
+    out[1] = n1;
+    out[2] = n2;
+    return out;
   }
 
   export const ZEROS = fromValues(0, 0, 0);
@@ -211,7 +219,7 @@ export module vec3 {
     return GL.dist(v1, v2);
   }
   export function sqrDist(v1: InputT, v2: InputT): number {
-    return GL.dist(v1, v2);
+    return GL.sqrDist(v1, v2);
   }
   export function sqrLen(v: InputT): number {
     return GL.sqrLen(v);
@@ -289,7 +297,12 @@ export module vec4 {
     n2: number,
     n3: number
   ): T {
-    return set(n0, n1, n2, n3, create());
+    const out = create();
+    out[0] = n0;
+    out[1] = n1;
+    out[2] = n2;
+    out[3] = n3;
+    return out;
   }
 
   export const ZEROS = fromValues(0, 0, 0, 0);
@@ -334,7 +347,7 @@ export module vec4 {
     return GL.dist(v1, v2);
   }
   export function sqrDist(v1: InputT, v2: InputT): number {
-    return GL.dist(v1, v2);
+    return GL.sqrDist(v1, v2);
   }
 
   export function lerp(v1: InputT, v2: InputT, n: number, out?: T): T {

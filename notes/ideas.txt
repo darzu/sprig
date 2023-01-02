@@ -87,3 +87,17 @@ Workshop game:
   
 Draw cool rope:
   https://muffinman.io/blog/draw-svg-rope-using-javascript/
+
+For backwards compatibility long term:
+  perhaps if a project wants to have backwards compatibility it must:
+  1) opt into backwards compatibility, and
+  2) provide source code (at least to the service)
+  b/c w/ source code access, it's possible to do checks like 
+    "wait, does anyone actually count on this broken behavior? 
+      if not, we can remove it; 
+      if so, we can rewrite or provide a shim for those few;
+    "
+  The key idea is that whole program analysis is so much more powerful than
+    partial program analysis.
+  Old code would still work, it just has to be pegged to a specific version
+  Just a thought.
